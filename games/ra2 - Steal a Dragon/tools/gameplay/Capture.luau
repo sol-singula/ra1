@@ -145,6 +145,7 @@ function Capture.snapshot(Engine, camera)
 					mat = p.Material and p.Material.Name or "Plastic",
 					t = transparency,
 					n = p.Name,
+					studs = p.TopSurface ~= nil and p.TopSurface.Name == "Studs" or nil,
 				})
 				for _, child in d:GetChildren() do
 					if child.ClassName == "Fire" then

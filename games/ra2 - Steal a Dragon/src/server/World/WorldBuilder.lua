@@ -790,6 +790,7 @@ function WorldBuilder.build()
 	spawn.Color = rgb(255, 205, 50)
 	spawn.Material = Enum.Material.Neon
 	spawn.Duration = 0
+	Scenery.brick(spawn)
 	spawn.Parent = lobby
 	-- the golden dragon statue
 	local statueBase = Vector3.new(-146, 0.6, -20)

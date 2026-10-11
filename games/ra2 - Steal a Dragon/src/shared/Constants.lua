@@ -1,6 +1,9 @@
 -- Every tunable number in one place.
 local Constants = {}
 
+-- Look: plastic bricks with studs on top, like most popular Roblox games (false = smooth stone, wood and grass)
+Constants.BRICK_STYLE = true
+
 -- Players and bases
 Constants.MAX_BASES = 8 -- set Max Players to 8 in Game Settings
 Constants.START_NESTS = 4

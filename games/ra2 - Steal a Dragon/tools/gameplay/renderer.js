@@ -41,7 +41,7 @@
   }
   function material(p) {
     const color = new THREE.Color(p.c);
-    const opts = { color, roughness: 0.55, metalness: 0.0 };
+    const opts = { color, roughness: p.mat === 'Plastic' ? 0.42 : 0.55, metalness: 0.0 };
     if (p.mat === 'Metal') { opts.metalness = 0.35; opts.roughness = 0.35; }
     if (p.mat === 'Neon') return new THREE.MeshBasicMaterial({ color: color.clone().multiplyScalar(1.35) });
     const canvas = textureFor(p.mat);
@@ -55,6 +55,29 @@
     if (p.t > 0) { opts.transparent = true; opts.opacity = 1 - p.t; }
     return new THREE.MeshStandardMaterial(opts);
   }
+  // Roblox's stud surface: a grid of round bumps, one per stud, lit from the top left
+  let studCanvas = null;
+  function studTexture(sx, sz) {
+    if (!studCanvas) {
+      const n = 64, c = document.createElement('canvas');
+      c.width = c.height = n;
+      const g = c.getContext('2d');
+      g.fillStyle = 'rgb(226,226,226)'; g.fillRect(0, 0, n, n);
+      const r = n * 0.32;
+      g.fillStyle = 'rgba(0,0,0,0.38)'; g.beginPath(); g.arc(n / 2 + 4, n / 2 + 5, r, 0, Math.PI * 2); g.fill();
+      const grad = g.createRadialGradient(n / 2 - r * 0.35, n / 2 - r * 0.35, r * 0.1, n / 2, n / 2, r);
+      grad.addColorStop(0, 'rgb(255,255,255)'); grad.addColorStop(0.7, 'rgb(240,240,240)'); grad.addColorStop(1, 'rgb(205,205,205)');
+      g.fillStyle = grad; g.beginPath(); g.arc(n / 2, n / 2, r, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(0,0,0,0.2)'; g.lineWidth = 2; g.stroke();
+      studCanvas = c;
+    }
+    const t = new THREE.CanvasTexture(studCanvas);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(Math.max(1, Math.round(sx)), Math.max(1, Math.round(sz)));
+    t.anisotropy = 8;
+    return t;
+  }
+
   function wedgeGeometry(x, y, z) {
     const a = x / 2, b = y / 2, c = z / 2;
     const v = [
@@ -164,6 +187,11 @@
         const mats = [mat, mat, mat, mat, mat, mat];
         mats[st.index] = face;
         mat = mats;
+      }
+      if (p.studs && p.s === 'Block' && !Array.isArray(mat)) {
+        const top = new THREE.MeshStandardMaterial({ color: new THREE.Color(p.c), map: studTexture(p.size[0], p.size[2]), roughness: 0.45 });
+        if (p.t > 0) { top.transparent = true; top.opacity = 1 - p.t; }
+        mat = [mat, mat, top, mat, mat, mat];
       }
       const mesh = new THREE.Mesh(geometry(p), mat);
       const m = p.m;

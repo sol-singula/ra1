@@ -416,6 +416,17 @@ local DEFAULTS = {
 			Transparency = 0,
 			Anchored = false,
 			AssemblyLinearVelocity = v3(),
+			Shape = Enum.PartType.Block,
+		}
+	end,
+	SpawnLocation = function()
+		return {
+			Size = v3(12, 1, 12),
+			CFrame = cf(v3()),
+			Transparency = 0,
+			Anchored = true,
+			AssemblyLinearVelocity = v3(),
+			Shape = Enum.PartType.Block,
 		}
 	end,
 	WedgePart = function()

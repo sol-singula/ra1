@@ -1,6 +1,42 @@
 -- Scenery pieces built from plain parts: trees, rocks, flowers, mountains, clouds, lanterns, castle towers,
 -- flags and the lobby's golden dragon statue. Small decorations don't cast shadows, to keep phones fast.
+--
+-- Brick style (Constants.BRICK_STYLE): like most top Roblox games, the world is made of shiny plastic bricks with
+-- Roblox's classic studs on top. Stone, wood, grass and fabric become plain plastic in the same colour, and every
+-- block gets SurfaceType.Studs on top (Inlet underneath). Neon, foil and glass keep their glow and shine.
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Constants = require(ReplicatedStorage.Shared.Constants)
+
 local Scenery = {}
+
+local TO_PLASTIC = {
+	[Enum.Material.SmoothPlastic] = true,
+	[Enum.Material.Cobblestone] = true,
+	[Enum.Material.Slate] = true,
+	[Enum.Material.Grass] = true,
+	[Enum.Material.WoodPlanks] = true,
+	[Enum.Material.Wood] = true,
+	[Enum.Material.Fabric] = true,
+	[Enum.Material.Marble] = true,
+	[Enum.Material.Pavement] = true,
+	[Enum.Material.Snow] = true,
+}
+
+-- Turn a part into a plastic brick with studs on top (blocks only; balls and cylinders just become plastic).
+function Scenery.brick(p)
+	if not Constants.BRICK_STYLE then
+		return p
+	end
+	if TO_PLASTIC[p.Material] then
+		p.Material = Enum.Material.Plastic
+	end
+	if p.Material == Enum.Material.Plastic and (p.Shape == nil or p.Shape == Enum.PartType.Block) then
+		p.TopSurface = Enum.SurfaceType.Studs
+		p.BottomSurface = Enum.SurfaceType.Inlet
+	end
+	return p
+end
 
 local function rgb(r, g, b)
 	return Color3.fromRGB(r, g, b)
@@ -18,6 +54,7 @@ function Scenery.part(props)
 			p[k] = v
 		end
 	end
+	Scenery.brick(p)
 	p.Parent = props.Parent
 	return p
 end

@@ -8,6 +8,10 @@ relative to the game folder.
 
 Everything is built from plain parts, so it runs in a blank Baseplate with no uploaded assets. The map: a cobblestone lobby with a golden dragon statue and the leaderboards, the Dragon Road (a royal carpet with lanterns and banners) running from a lava cave to a crystal mountain, 8 little castles with towers and flags, forests, rocks, flowers, a ring of snowy mountains, clouds, and three dragons circling in the sky.
 
+**Brick look:** like most top Roblox games, the world is shiny plastic bricks with Roblox's classic studs on top
+(built in, no uploads). To switch back to smooth stone, wood and grass, set `BRICK_STYLE = false` in
+`src/shared/Constants.lua`.
+
 ## Run it in Roblox Studio
 
 1. Open the prebuilt file `StealADragon.rbxl` in the game folder. Or, to keep it synced while you edit:
