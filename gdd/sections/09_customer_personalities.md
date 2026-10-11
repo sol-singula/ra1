@@ -40,7 +40,7 @@ mechanic that creates a funny situation on its own, without a script.
 | Style / Huff | NPC combat style (§C11.6) and Huff Points (40–300, inside the §11.5.2 style bands) | §10.7, §11 |
 | DEF / Dmg× | `PersonalityDEF` (0–40, added to the tier DEF term) and `PersonalityDamageMult` (multiplies NPC damage) | §11.5.1 |
 | Items / γ | item range for §8.2.6; price bias γ for menu weighting (§8.8) | §8 |
-| ModAffinity | §6.18.3 affinity group (Aff, JokeAff, HidAff multipliers) plus favored modification categories (§9.4) | §6.18, §8.8 |
+| ModAffinity | §6.18.3 affinity group with its Aff / JokeAff / HidAff multipliers ("Aff / Joke / Hidden" in §9.4) plus the favored modification categories, derived from §6.18's "Favored by" column (favored mods get ×3 pick weight) | §6.18, §8.8 |
 | Tip× | `PersonalityTipMult` in §C11.4 | §10.5 |
 | Timing | WalkMult · MenuMult · InspectMult · EatMult (§9.4) | §8 |
 | Unlock / Base wt | first tier it may spawn; spawn weight in band C (all bands in §8.2.5) | §8.2.5 |
@@ -121,7 +121,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Satisfaction thresholds:** 95 / 80 / 60 / 40; P_mult 0.85, P_offset −5.
 - **Anger probability:** 0.45; sensitivity 1.3.
 - **Combat behavior:** `INSTIGATOR`, Huff 100, DEF 10, Dmg ×0.8. She may Yell (§10.6) from level 2, one level early. Abilities: `ABL_023` Bat Screech (`MUT_089`), `ABL_029` Peacock Dazzle (`MUT_219`), `ABL_047` Mind Buzz (`MUT_033`). Her thrown food falls 30 % short (tiny arms).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Very picky — Aff ×2.0 · JokeAff ×0.5 · HidAff ×1.0; favored categories OMIT, SHAPE, SEQUENCE (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Very picky (Aff ×2.0 · Joke ×0.5 · Hidden ×1.0) · favors OMIT, SHAPE, SEQUENCE.
 - **Spending range:** 1–2 items, γ 0 → ref. spend 10–30 MB. **Tip behavior:** ×0.6.
 - **Unique animations:** "Manager Summon" megaphone-hands stomp (variant of `ANM_050`); clipboard tap with tiny arms; holding the plate up to the light, appalled.
 - **Dialogue:** Ordering — "One cheeseburger. The cheese must be room temperature. Not warm. Not cool. *Room.*" · Delighted — "Hmph. Acceptable. I'll only write you a *four*-paragraph review." · Furious — "I want to speak to the MANAGER! ...You ARE the manager? Then your manager's MANAGER!"
@@ -137,7 +137,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset +5.
 - **Anger probability:** 0.30; sensitivity 0.8.
 - **Combat behavior:** `TANK`, Huff 260, DEF 30, Dmg ×1.0. Abilities: `ABL_021` Ground Pound (`MUT_148`), `ABL_010` Bear Slam (`MUT_140`), `ABL_025` Puff Up (`MUT_129`). (Its signature Vacuum Mouth is not `TANK`-eligible for `ABL_035`; the snack trick below is a personality hook.)
-- **Mod affinity (`ModAffinity`, §6.18.3):** Low-fuss — Aff ×0.6 · JokeAff ×0.5 · HidAff ×0.5; favored categories EXTRA, COUNT (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Low-fuss (Aff ×0.6 · Joke ×0.5 · Hidden ×0.5) · favors EXTRA, COUNT.
 - **Spending range:** 3–5 items, γ +0.5, plus "Seconds!" → ref. spend 60–120 MB. **Tip behavior:** ×0.9.
 - **Unique animations:** four-handed eating blur (`ANM_043` at 2× speed); belly-pat; spider-leg tap-dance of joy.
 - **Dialogue:** Ordering — "One of everything. Then the same again, but louder." · Delighted — "Eight legs, one stomach, ZERO regrets!" · Furious — "You call that a PORTION? I've had bigger crumbs!"
@@ -152,7 +152,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Satisfaction thresholds:** 88 / 65 / 45 / 25; P_mult 1.05, P_offset +5.
 - **Anger probability:** 0.12; **provoked** → 0.90 and sensitivity 1.8 for the rest of the visit.
 - **Combat behavior:** `BRAWLER`, Huff 180, DEF 15, Dmg ×1.2. Abilities: `ABL_043` Lava Slam (`MUT_163`, signature), `ABL_031` Rocket Punch (`MUT_154`), `ABL_042` Thunder Clap (`MUT_105`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Standard — Aff ×1.0 · JokeAff ×1.0 · HidAff ×1.0; favored categories OMIT, DONENESS, MOOD (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Standard (Aff ×1.0 · Joke ×1.0 · Hidden ×1.0) · favors OMIT, DONENESS, MOOD.
 - **Spending range:** 1–2 items → ref. spend 14–30 MB. **Tip behavior:** ×1.3 (always rounds up).
 - **Unique animations:** deep courtly bow on arrival; napkin tucked into collar; at level 4 he slowly rolls up the sleeve over the Lava Fist (the "aggressive form" reveal, horns glow).
 - **Dialogue:** Ordering — "Good evening! If it's no trouble at all, might I have the Volcano Burger? Only if convenient!" · Delighted — "Exquisite. My compliments to the chef, the sous-chef, and the very kind grill." · Furious — "I asked SO nicely. Excuse me while I roll up my sleeve. I do apologise in advance."
@@ -167,7 +167,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Satisfaction thresholds:** 95 / 80 / 60 / 40; P_mult 0.90, P_offset 0.
 - **Anger probability:** 0.05; sensitivity 0.6.
 - **Combat behavior:** `PACIFIST`, Huff 60, DEF 0. Never attacks; when upset she writes furiously (sulk) or leaves.
-- **Mod affinity (`ModAffinity`, §6.18.3):** Very picky — Aff ×2.0 · JokeAff ×0.5 · HidAff ×1.0; favored categories DONENESS, COUNT, PRESENT (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Very picky (Aff ×2.0 · Joke ×0.5 · Hidden ×1.0) · favors DONENESS, COUNT, PRESENT.
 - **Spending range:** exactly 2 items (main + drink or dessert) → ref. spend 25–40 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** notebook scribble; pinky-raised tasting; dramatic pen-click verdict.
 - **Dialogue:** Ordering — "Bring me your most ambitious dish. And a pen that hasn't been chewed." · Delighted — "Five stars. Six, if I were allowed. I am not allowed." · Furious — "This dish has the emotional depth of a puddle. A shallow one."
@@ -182,7 +182,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0.
 - **Anger probability:** 0.40; sensitivity 1.2.
 - **Combat behavior:** `TRICKSTER`, Huff 70, DEF 5, Dmg ×0.8: plate theft and hit-and-run per §11.8.2. Abilities: `ABL_016` Tongue Yank (`MUT_061`), `ABL_048` Slime Trail (`MUT_256`), `ABL_024` Skunk Cloud (`MUT_220`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Low-fuss — Aff ×0.6 · JokeAff ×0.5 · HidAff ×0.5; favored categories MOOD, TEMP (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Low-fuss (Aff ×0.6 · Joke ×0.5 · Hidden ×0.5) · favors MOOD, TEMP.
 - **Spending range:** 1 item → ref. spend 8–16 MB. **Tip behavior:** ×0.8, but ×2 if the item lands within 25 % of patience ("FAST! GOOD!").
 - **Unique animations:** constant `ANM_046` foot tap from the moment he sits; wrist-tapping (no watch); vibrating with impatience.
 - **Dialogue:** Ordering — "Burger. Fast. Faster than that. Why are you still listening? GO." · Delighted — "FAST! GOOD! MORE FAST NEXT TIME!" · Furious — "I've been waiting since I was BORN!"
@@ -197,7 +197,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Satisfaction thresholds:** 85 / 65 / 45 / 25; P_mult 1.05, P_offset +5.
 - **Anger probability:** 0.15; sensitivity 0.7.
 - **Combat behavior:** `CHARGER`, Huff 120, DEF 20, Dmg ×1.1. His rush (§11.8.2) gets a cosmetic rocket ignition; he only escalates past level 4 after a nap is interrupted. Abilities: `ABL_013` Rhino Charge (`MUT_099`), `ABL_027` Armadillo Roll (`MUT_128`), `ABL_044` Gust Kick (`MUT_197`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Low-fuss — Aff ×0.6 · JokeAff ×0.5 · HidAff ×0.5; favored categories OMIT, TEMP, MOOD (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Low-fuss (Aff ×0.6 · Joke ×0.5 · Hidden ×0.5) · favors OMIT, TEMP, MOOD.
 - **Spending range:** 1–2 items → ref. spend 12–28 MB. **Tip behavior:** ×1.1.
 - **Unique animations:** slow-motion menu page turn; snore bubble with drool-free "Zzz"; rocket exhaust puffs when startled.
 - **Dialogue:** Ordering — "I'll have the... (yaaawn)... the... what was the question?" · Delighted — "Mmm... so good... I'm gonna blast off... in a minute... or five..." · Furious — "You woke me up for THIS? Initiating... ROCKET MODE!"
@@ -212,7 +212,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0.
 - **Anger probability:** 0.50; sensitivity 1.2.
 - **Combat behavior:** `TRICKSTER`, Huff 80, DEF 5, Dmg ×0.9. Abilities: `ABL_056` Stink Bomb (`MUT_251`), `ABL_048` Slime Trail (`MUT_256`), `ABL_057` Firefly Flash (`MUT_083`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Chaotic — Aff ×1.7 · JokeAff ×2.5 · HidAff ×1.0; favored categories JOKE, SEQUENCE, TEMP (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Chaotic (Aff ×1.7 · Joke ×2.5 · Hidden ×1.0) · favors JOKE, SEQUENCE, TEMP.
 - **Spending range:** 1–2 items → ref. spend 10–30 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** rubbing hands with a cackle; tiptoe sneak; innocent whistle after every prank.
 - **Dialogue:** Ordering — "Something that explodes, please. Or something that WILL explode if I shake it." · Delighted — "Perfect! Now watch this—" · Furious — "Oh, you've done it now. I'm going to be SO MUCH TROUBLE."
@@ -227,7 +227,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Satisfaction thresholds:** 96 / 85 / 65 / 45; P_mult 0.90, P_offset 0.
 - **Anger probability:** 0.20; sensitivity 1.0.
 - **Combat behavior:** `PACIFIST`, Huff 80, DEF 10. Storms out loudly instead ("I'll buy this restaurant and close it!").
-- **Mod affinity (`ModAffinity`, §6.18.3):** Fancy — Aff ×1.5 · JokeAff ×1.0 · HidAff ×1.0; favored categories DONENESS, PRESENT (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Fancy (Aff ×1.5 · Joke ×1.0 · Hidden ×1.0) · favors DONENESS, PRESENT.
 - **Spending range:** 1–3 items at top prices → ref. spend 30–70 MB. **Tip behavior:** ×2.5; Jackpot Tip chance doubled.
 - **Unique animations:** monocle polish; tosses a coin to the server (cosmetic sparkle); fainting-couch swoon when displeased.
 - **Dialogue:** Ordering — "Your most expensive item. Twice. Gold-plated, if you own a plater." · Delighted — "Splendid! Keep the change. Keep ALL the change." · Furious — "Disgraceful! I shall buy this restaurant just to close it! ...It's not for sale? DISGRACEFUL!"
@@ -242,7 +242,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Satisfaction thresholds:** 92 / 75 / 55 / 35; P_mult 1.0, P_offset 0 (+3 if the table's local décor ≥ 60).
 - **Anger probability:** 0.30; sensitivity 1.1.
 - **Combat behavior:** `INSTIGATOR`, Huff 75, DEF 5, Dmg ×0.7: livestreams the tantrum ("Chat, should I flip this table?") — her Yell (§10.6) reaches 20 studs instead of 12. Abilities: `ABL_029` Peacock Dazzle (`MUT_219`, signature: the ring-light dazzle), `ABL_023` Bat Screech (`MUT_089`), `ABL_047` Mind Buzz (`MUT_033`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Fancy — Aff ×1.5 · JokeAff ×1.0 · HidAff ×1.0; favored categories DONENESS, PRESENT, EXTRA (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Fancy (Aff ×1.5 · Joke ×1.0 · Hidden ×1.0) · favors DONENESS, PRESENT, EXTRA.
 - **Spending range:** 1–2 items → ref. spend 12–30 MB. **Tip behavior:** ×1.2.
 - **Unique animations:** selfie-angle hold; ring-light spin; dramatic "unfollow" swipe.
 - **Dialogue:** Ordering — "Hi chat! I'm getting the Rainbow Burger! Make it, like, extra photogenic?" · Delighted — "OMG, everybody come here RIGHT NOW!" · Furious — "Chat, zero stars. Negative stars. UNFOLLOWED."
@@ -257,7 +257,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0.
 - **Anger probability:** 0.55; sensitivity 1.6.
 - **Combat behavior:** `BRAWLER`, Huff 180, DEF 30, Dmg ×1.25 (the hardest-hitting customer). Abilities: `ABL_010` Bear Slam (`MUT_140`), `ABL_031` Rocket Punch (`MUT_154`), `ABL_050` Beak Peck Combo (`MUT_063`), `ABL_017` Claw Grab & Toss (`MUT_144`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Standard — Aff ×1.0 · JokeAff ×1.0 · HidAff ×1.0; favored categories OMIT, EXTRA, DONENESS (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Standard (Aff ×1.0 · Joke ×1.0 · Hidden ×1.0) · favors OMIT, EXTRA, DONENESS.
 - **Spending range:** 1–3 items → ref. spend 15–45 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** double-bicep flex on entry; head-bob strut; offended chest-puff (feathers fluff).
 - **Dialogue:** Ordering — "Protein. Double protein. And a protein on the side, bro." · Delighted — "That burger just gave ME a pump. COO-COO, LET'S GO!" · Furious — "Did you just call my legs skinny?! Nobody did? WELL, I HEARD IT!"
@@ -272,7 +272,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 0.95, P_offset 0.
 - **Anger probability:** 0.30; sensitivity 1.0.
 - **Combat behavior:** `TRICKSTER`, Huff 70, DEF 5, Dmg ×0.8: flutters between ceiling lights, debuffs, never stays in melee. Abilities: `ABL_057` Firefly Flash (`MUT_083`), `ABL_040` Spore Puff (`MUT_248`), `ABL_046` Comet Blink (`MUT_228`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Quirky — Aff ×1.2 · JokeAff ×1.5 · HidAff ×2.0; favored categories OMIT, SEQUENCE, MOOD (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Quirky (Aff ×1.2 · Joke ×1.5 · Hidden ×2.0) · favors OMIT, SEQUENCE, MOOD.
 - **Spending range:** 1–2 items → ref. spend 10–28 MB. **Tip behavior:** ×0.9.
 - **Unique animations:** red-string corkboard pantomime; circling the nearest lamp; peering at food through antennae.
 - **Dialogue:** Ordering — "I'll have the soup. Not the soup on the menu — the REAL soup." · Delighted — "Delicious... TOO delicious. Who sent you? ...Never mind, another, please." · Furious — "The fries are ROUND on the INSIDE. Wake UP, people!"
@@ -285,7 +285,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** mild; `RCP_PST_001` Butter Noodles, `RCP_SAN_001` Grilled Cheese, `RCP_DRK_002` Lemonade, `RCP_DES_002` Vanilla Ice Cream. **Disliked:** `RCP_BRG_012` Exploding Burger, `RCP_PIZ_009` Screaming Cheese Pizza, `RCP_DES_013` Screaming Sorbet.
 - **Satisfaction thresholds:** 85 / 65 / 45 / 25; P_mult 1.10, P_offset 0. **Anger probability:** 0.05; sensitivity 1.5 (startles easily).
 - **Combat behavior:** `PACIFIST`, Huff 40, DEF 0. No abilities (flees at ×1.3 only if a `MUT_186` Cheetah Leg rolled, §36.6).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Standard — Aff ×1.0 · JokeAff ×1.0 · HidAff ×1.0; favored categories OMIT, MOOD (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Standard (Aff ×1.0 · Joke ×1.0 · Hidden ×1.0) · favors OMIT, MOOD.
 - **Spending range:** 1 item → ref. spend 8–16 MB. **Tip behavior:** ×1.2; ×1.5 more if served with W = 1 ("You're so nice!").
 - **Unique animations:** hides behind the menu; startled hop with tail curl; tiny happy wiggle.
 - **Dialogue:** Ordering — "Um, h-hi, sorry, could I maybe have the noodles? Only if it's okay? Sorry. Hi." · Delighted — "You remembered my order! Nobody remembers my order!" · Furious — "Oh no oh no — I'm very upset — sorry — bye!"
@@ -298,7 +298,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** comfort food; `RCP_SOP_001` Tomato Soup, `RCP_SOP_002` Chicken Noodle-ish Soup, `RCP_PST_002` Mac & Cheese, `RCP_BRG_002` Cheeseburger, `RCP_DES_001` Chocolate Chip Cookie, `RCP_DES_006` Birthday Cake Slice. **Disliked:** `RCP_DRK_015` Liquid Lightning ("In MY day lightning stayed in the sky"), `RCP_PIZ_012` Backwards Pizza.
 - **Satisfaction thresholds:** 85 / 60 / 40 / 20; P_mult 1.05, P_offset +5. **Anger probability:** 0.10; sensitivity 0.5.
 - **Combat behavior:** `TANK`, Huff 300, DEF 40, Dmg ×0.9 (the sturdiest customer): her slams also wobble every table within 10 studs (20 % spill chance per plate). Abilities: `ABL_021` Ground Pound (`MUT_148`), `ABL_010` Bear Slam (`MUT_140`), `ABL_025` Puff Up (`MUT_129`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Standard — Aff ×1.0 · JokeAff ×1.0 · HidAff ×1.0; favored categories DONENESS, OMIT (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Standard (Aff ×1.0 · Joke ×1.0 · Hidden ×1.0) · favors DONENESS, OMIT.
 - **Spending range:** 1–2 items → ref. spend 10–26 MB. **Tip behavior:** ×1.5 ("Buy yourself a sweater, dear").
 - **Unique animations:** knitting while waiting; cheek-pinch wave at the server (air pinch); rock-crumble chuckle.
 - **Dialogue:** Ordering — "A nice bowl of soup for me, sweetie. You look thin. Eat something too." · Delighted — "Just like I made in the Stone Age!" · Furious — "Young chef, I have been around four hundred years and I have NEVER been so disappointed."
@@ -311,7 +311,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** `RCP_SEA_001` Fish Sticks, `RCP_SEA_003` Sushi Roll Block, `RCP_SAN_005` Peanut Butter & Jellyfish, `RCP_BRG_001` Basic Burger. **Disliked:** `RCP_FRI_005` Fried Everything Basket ("too many things TOUCHING"), `RCP_SAN_008` Sandwich With Bread in the Middle, `RCP_PIZ_013` Pizza Inside Another Pizza.
 - **Satisfaction thresholds:** 92 / 75 / 55 / 35; P_mult 0.90, P_offset −5. **Anger probability:** 0.35; sensitivity 1.1.
 - **Combat behavior:** `THROWER`, Huff 90, DEF 10, Dmg ×1.0: flicks offending garnishes with half the normal aim error. Abilities: `ABL_028` Trunk Spray (`MUT_053`), `ABL_034` Toast Barrage (`MUT_010`), `ABL_041` Frost Blast (`MUT_162`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Very picky — Aff ×2.0 · JokeAff ×0.5 · HidAff ×1.0; favored categories OMIT, COUNT, PRESENT (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Very picky (Aff ×2.0 · Joke ×0.5 · Hidden ×1.0) · favors OMIT, COUNT, PRESENT.
 - **Spending range:** 1–2 items → ref. spend 10–28 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** bill-tweezers garnish removal; lines up fries by size; horrified recoil when sauce touches bun.
 - **Dialogue:** Ordering — "Fish sticks, cut into rectangles that are less rectangular. And nothing may touch anything." · Delighted — "Nothing is touching. Nothing is TOUCHING! Best day of my life." · Furious — "A pea touched my fry. I'm throwing BOTH."
@@ -324,7 +324,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** efficient and square; `RCP_PIZ_014` Square Circle Pizza, `RCP_SEA_003` Sushi Roll Block, `RCP_DES_005` Brownie Brick, `RCP_SAN_002` Ham & Cheese Sandwich (γ −0.5: likes cheap). **Disliked:** `RCP_PST_008` The Infinite Noodle ("UNBOUNDED VALUE ERROR"), `RCP_SOP_010` Bottomless Soup.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0 (+5 during `EVT_017`). **Anger probability:** 0.25; sensitivity 0.9.
 - **Combat behavior:** `TANK`, Huff 200, DEF 35, Dmg ×1.0: marches in straight lines, "AUDIT" stomp. Abilities: `ABL_032` Laser Eyes (`MUT_078`, optional signature 30 %), `ABL_021` Ground Pound (`MUT_148`), `ABL_042` Thunder Clap (`MUT_105`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Very picky — Aff ×2.0 · JokeAff ×0.5 · HidAff ×1.0; favored categories COUNT, SHAPE (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Very picky (Aff ×2.0 · Joke ×0.5 · Hidden ×1.0) · favors COUNT, SHAPE.
 - **Spending range:** 1–2 cheap items → ref. spend 8–22 MB. **Tip behavior:** ×1.0, rounded to the nearest whole MB; never Jackpots ("RANDOMNESS NOT PERMITTED").
 - **Unique animations:** calculator-finger typing; receipt printing from the chest; precise 90° turns.
 - **Dialogue:** Ordering — "ORDER: ONE (1) SQUARE CIRCLE PIZZA. BUDGET: OPTIMAL." · Delighted — "SATISFACTION 97.2 PERCENT. TIP CALCULATED. THANK YOU, HUMAN-ISH." · Furious — "ERROR. CALCULATING DAMAGES. RESULT: YOUR TABLE."
@@ -337,7 +337,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** kid classics; `RCP_FRI_001` French Fries, `RCP_PIZ_001` Cheese Pizza, `RCP_SAN_003` Hot Dog Classic, `RCP_DES_002` Vanilla Ice Cream, `RCP_DES_003` Donut Ring, `RCP_DRK_001` Fizzy Soda. **Disliked:** `RCP_SAL_001` Garden Salad, `RCP_SOP_007` Swamp Stew.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.35; sensitivity 1.2.
 - **Combat behavior:** `BRAWLER`, Huff 50 each (×3), DEF 0, Dmg ×0.5, body scale 0.6: they dog-pile one target (still bound by the §11.8.1 two-attacker token limit). Abilities: `ABL_011` Kangaroo Kick (`MUT_184`), `ABL_050` Beak Peck Combo (`MUT_063`), `ABL_037` Jelly Bounce (`MUT_134`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Standard — Aff ×1.0 · JokeAff ×1.0 · HidAff ×1.0; favored categories EXTRA, PRESENT (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Standard (Aff ×1.0 · Joke ×1.0 · Hidden ×1.0) · favors EXTRA, PRESENT.
 - **Spending range:** 1 item each, one ticket → ref. spend 24–40 MB per party. **Tip behavior:** ×1.1 on the shared bill.
 - **Unique animations:** triple high-five; chair-hopping; synchronized "WHOAAA" when food arrives.
 - **Dialogue:** Ordering — "FRIES! — NO, PIZZA! — I WANT WHAT SHE'S HAVING!" · Delighted — "BEST! PARTY! EVER!" · Furious — "Mini-mutants... ASSEMBLE!"
@@ -350,7 +350,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** SEA; `RCP_SEA_001` Fish Sticks, `RCP_SEA_002` Fried Shrimp Basket, `RCP_SEA_005` Waving Calamari Rings, `RCP_SEA_009` Sea Monster Steak, `RCP_TAC_006` Fish Taco of Destiny, `RCP_DRK_011` Tentacle Tea. **Disliked:** `RCP_SEA_006` Crab Cake Kerfuffle ("That be me Uncle Pinchy!"), `RCP_SAL_001` Garden Salad.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.40; sensitivity 1.1.
 - **Combat behavior:** `THROWER`, Huff 120, DEF 15, Dmg ×1.0: "cannonball" meatball lobs with +5-stud range. Abilities: `ABL_049` Tentacle Whip (`MUT_146`), `ABL_031` Rocket Punch (`MUT_154`, "the cannon arm"), `ABL_028` Trunk Spray (`MUT_053`). His crab claw is for show (its `ABL_017` is not `THROWER`-eligible).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Standard — Aff ×1.0 · JokeAff ×1.0 · HidAff ×1.0; favored categories EXTRA, COUNT, DONENESS (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Standard (Aff ×1.0 · Joke ×1.0 · Hidden ×1.0) · favors EXTRA, COUNT, DONENESS.
 - **Spending range:** 1–2 items → ref. spend 12–30 MB. **Tip behavior:** ×1.0; *Buried Treasure* — Jackpot chance ×2.
 - **Unique animations:** sideways scuttle with `ANM_008` peg-leg wobble; spyglass menu read; telescope-sighting the kitchen.
 - **Dialogue:** Ordering — "Arr! Fetch me yer finest fish sticks, and be quick about it, matey!" · Delighted — "Shiver me shell! Worth its weight in doubloons!" · Furious — "Ready the meatball cannons! FIRE!"
@@ -363,7 +363,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** theatrical; `RCP_BRG_007` Volcano Burger, `RCP_PIZ_009` Screaming Cheese Pizza, `RCP_DES_013` Screaming Sorbet, `RCP_SOP_006` Pumpkin Screamer Soup, `RCP_DES_007` Pie in the Face (Edible). **Disliked:** `RCP_PST_001` Butter Noodles ("So... beige").
 - **Satisfaction thresholds:** 92 / 72 / 52 / 32; P_mult 0.95, P_offset 0. **Anger probability:** 0.35; sensitivity 1.4.
 - **Combat behavior:** `INSTIGATOR`, Huff 100, DEF 10, Dmg ×0.8: monologues (her Yell) that rile up the room. Abilities: `ABL_023` Bat Screech (`MUT_089`), `ABL_029` Peacock Dazzle (`MUT_219`), `ABL_047` Mind Buzz (`MUT_033`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Chaotic — Aff ×1.7 · JokeAff ×2.5 · HidAff ×1.0; favored categories SHAPE, SEQUENCE, JOKE (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Chaotic (Aff ×1.7 · Joke ×2.5 · Hidden ×1.0) · favors SHAPE, SEQUENCE, JOKE.
 - **Spending range:** 1–2 items → ref. spend 12–28 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** back-of-hoof forehead swoon; standing ovation; slow-motion faint onto the floor.
 - **Dialogue:** Ordering — "I would like... (dramatic pause)... the Volcano Burger. And I would like it to CHANGE MY LIFE." · Delighted — "BRAVO! I'm weeping! Somebody bring me a tissue and a second burger!" · Furious — "This is the WORST thing that has EVER happened to ANYONE!" *(faints)*
@@ -376,7 +376,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** quiet food; `RCP_BRG_014` Invisible Burger (a mime's dream), `RCP_DES_002` Vanilla Ice Cream, `RCP_SEA_003` Sushi Roll Block, `RCP_PST_001` Butter Noodles. **Disliked:** loud food; `RCP_PIZ_009` Screaming Cheese Pizza, `RCP_DES_013` Screaming Sorbet, `RCP_SOP_006` Pumpkin Screamer Soup, `RCP_SOP_004` Alphabet Grumble Soup.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0 (+5 when the pictogram order is fully correct). **Anger probability:** 0.25; sensitivity 1.0.
 - **Combat behavior:** `TRICKSTER`, Huff 100, DEF 10, Dmg ×0.9: its debuff throw is mimed as an "invisible box" (`STS_STICKY`, §36.7). Abilities: `ABL_020` Web Shot (`MUT_028`, the "invisible rope"), `ABL_016` Tongue Yank (`MUT_061`), `ABL_046` Comet Blink (`MUT_228`). The scythe arms are for (silent) show.
-- **Mod affinity (`ModAffinity`, §6.18.3):** Quirky — Aff ×1.2 · JokeAff ×1.5 · HidAff ×1.0; favored categories JOKE, COUNT, SHAPE (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Quirky (Aff ×1.2 · Joke ×1.5 · Hidden ×1.0) · favors JOKE, COUNT, SHAPE.
 - **Spending range:** 1–2 items → ref. spend 10–28 MB. **Tip behavior:** ×1.2.
 - **Unique animations:** walking against invisible wind; pulling an invisible rose from an invisible sleeve; trapped-in-a-box routine.
 - **Dialogue (pictogram bubbles):** Ordering — *burger icon · crossed-out tomato · two fingers* while miming careful eating · Delighted — *silent applause, invisible rose, deep bow* · Furious — *mimes being trapped in a box... then mimes building one around YOU.*
@@ -389,7 +389,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** sweets; `RCP_DES_002` Vanilla Ice Cream, `RCP_DES_004` Strawberry Sundae, `RCP_DES_003` Donut Ring, `RCP_BRK_001` Pancake Stack, `RCP_DRK_003` Chocolate Milkshake, `RCP_SAN_001` Grilled Cheese. **Disliked:** `RCP_SAL_001` Garden Salad ("NO GREEN!"), `RCP_SOP_007` Swamp Stew, `RCP_DRK_008` Swamp Water Smoothie.
 - **Satisfaction thresholds:** 85 / 65 / 45 / 25; P_mult 1.0, P_offset 0 (+5 for any DES item). **Anger probability:** 0.45; sensitivity 1.3.
 - **Combat behavior:** `THROWER`, Huff 120, DEF 20, Dmg ×0.9, body scale 1.35 (needs a booth or a 2-seat table): its aim error is doubled — a menace to bystanders. Abilities: `ABL_034` Toast Barrage (`MUT_010`), `ABL_028` Trunk Spray (`MUT_053`), `ABL_041` Frost Blast (`MUT_162`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Quirky — Aff ×1.2 · JokeAff ×1.5 · HidAff ×1.0; favored categories EXTRA, OMIT, JOKE (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Quirky (Aff ×1.2 · Joke ×1.5 · Hidden ×1.0) · favors EXTRA, OMIT, JOKE.
 - **Spending range:** 1–2 items → ref. spend 8–24 MB. **Tip behavior:** ×0.8.
 - **Unique animations:** spoon-banging; floor-kicking tantrum (variant of `ANM_050`); sticky-hug lunge when happy.
 - **Dialogue:** Ordering — "WANT ICE CREAM! WANT IT NOW! WANT IT YESTERDAY!" · Delighted — "YAAAY! You're my BEST FRIEND!" · Furious — "NO! NO! NOOOOO!"
@@ -402,7 +402,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** SAL, smoothies; `RCP_SAL_001` Garden Salad, `RCP_SAL_003` Fruit Salad Explosion, `RCP_DRK_004` Strawberry Smoothie, `RCP_DRK_008` Swamp Water Smoothie, `RCP_SEA_003` Sushi Roll Block. **Disliked:** FRI; `RCP_FRI_001` French Fries, `RCP_FRI_004` Fried Ice Cream, `RCP_FRI_005` Fried Everything Basket, `RCP_BRG_015` The Unreasonably Large Burger.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 0.95, P_offset 0. **Anger probability:** 0.25; sensitivity 1.0.
 - **Combat behavior:** `CHARGER`, Huff 110, DEF 15, Dmg ×1.0: curls into a hamster ball and rolls through furniture. Abilities: `ABL_027` Armadillo Roll (`MUT_128`, signature), `ABL_011` Kangaroo Kick (`MUT_184`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Standard — Aff ×1.0 · JokeAff ×1.0 · HidAff ×1.0; favored categories OMIT, TEMP (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Standard (Aff ×1.0 · Joke ×1.0 · Hidden ×1.0) · favors OMIT, TEMP.
 - **Spending range:** 1–2 items → ref. spend 10–26 MB. **Tip behavior:** ×1.1.
 - **Unique animations:** jogging in place while waiting; label-squint; protein-free victory jumping jacks.
 - **Dialogue:** Ordering — "One Garden Salad, extra garden. Is the lettuce free-range?" · Delighted — "So many vitamins! I'll run nine miles on my wheel tonight!" · Furious — "Is that... GREASE?! I'm rolling OUT of here!"
@@ -415,7 +415,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** `spicy` tag; `RCP_BRG_007` Volcano Burger, `RCP_PIZ_008` Lava Pizza, `RCP_TAC_008` Hot Sauce Volcano Burrito, `RCP_TAC_009` Ghost Pepper Ghost Taco, `RCP_SOP_008` Lava Lentil Soup, `RCP_DRK_010` Hot Sauce Latte, `RCP_PST_010` Spicy Lava Lasagna. **Disliked:** frozen; `RCP_BRG_008` Frozen Burger, `RCP_SOP_003` Soupsicle (Frozen Soup), `RCP_DRK_009` Ice Ice Smoothie.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0 (−5 for any item without the `spicy` tag unless it carries a heat modification from §6.18). **Anger probability:** 0.35; sensitivity 1.0.
 - **Combat behavior:** `THROWER`, Huff 120, DEF 15, Dmg ×1.1: prefers `spicy` food as ammunition (`STS_TOASTY` on hit per §11.6.1). Abilities: `ABL_032` Laser Eyes (`MUT_078`, "heat vision"), `ABL_034` Toast Barrage (`MUT_010`), `ABL_031` Rocket Punch (`MUT_154`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Quirky — Aff ×1.2 · JokeAff ×1.5 · HidAff ×1.0; favored categories EXTRA, TEMP, MOOD (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Quirky (Aff ×1.2 · Joke ×1.5 · Hidden ×1.0) · favors EXTRA, TEMP, MOOD.
 - **Spending range:** 1–2 items → ref. spend 14–32 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** fanning mouth with delight; steam-ear puffs; drinking hot sauce like soda.
 - **Dialogue:** Ordering — "Volcano Burger. Hotter. Hotter than that. Make the volcano nervous." · Delighted — "PERFECT! My tongue just took a vacation to the sun!" · Furious — "This is MILD. Do you know what I do to MILD things?"
@@ -428,7 +428,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** cold; `RCP_BRG_008` Frozen Burger, `RCP_SOP_003` Soupsicle (Frozen Soup), `RCP_DES_002` Vanilla Ice Cream, `RCP_DES_013` Screaming Sorbet, `RCP_DES_011` Frozen Lava Cake, `RCP_DRK_006` Rainbow Slushie, `RCP_DRK_009` Ice Ice Smoothie. **Disliked:** `RCP_SOP_008` Lava Lentil Soup, `RCP_PIZ_008` Lava Pizza, `RCP_DRK_010` Hot Sauce Latte.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.25; sensitivity 0.9.
 - **Combat behavior:** `CHARGER`, Huff 170, DEF 25, Dmg ×1.0: his rush is a belly slide that leaves a 6-stud ice streak (players crossing it get `STS_SLOW`, §36.7). Abilities: `ABL_054` Hammerhead Bash (`MUT_025`), `ABL_044` Gust Kick (`MUT_197`), `ABL_013` Rhino Charge (`MUT_099`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Quirky — Aff ×1.2 · JokeAff ×1.5 · HidAff ×1.0; favored categories TEMP, EXTRA (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Quirky (Aff ×1.2 · Joke ×1.5 · Hidden ×1.0) · favors TEMP, EXTRA.
 - **Spending range:** 1–2 items → ref. spend 10–28 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** fanning himself with a menu; shiver of joy; ice-skating belly slide.
 - **Dialogue:** Ordering — "Brrr-illiant. One Frozen Burger, colder than a snowball's snowball." · Delighted — "Chilly perfection! I'm so happy I could hibernate." · Furious — "It's WARM. You served me WARM. Prepare for... the BELLY SLIDE!"
@@ -441,7 +441,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** breakfast at all hours; `RCP_BRK_009` Breakfast-for-Dinner-for-Breakfast, `RCP_BRK_005` Upside-Down Pancakes, `RCP_BRK_007` Cereal With Soup Instead of Milk, `RCP_SOP_003` Soupsicle (Frozen Soup). **Disliked:** `RCP_DRK_015` Liquid Lightning ("Last time I drank that I ended up in next Tuesday").
 - **Satisfaction thresholds:** 85 / 65 / 45 / 25; P_mult 1.0, P_offset +5. **Anger probability:** 0.10; sensitivity 0.6.
 - **Combat behavior:** `PACIFIST`, Huff 80, DEF 40 (it is mostly shell). No abilities; when upset it retreats into its shell and sulks.
-- **Mod affinity (`ModAffinity`, §6.18.3):** Quirky — Aff ×1.2 · JokeAff ×1.5 · HidAff ×1.0; favored categories DONENESS, TEMP, SEQUENCE (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Quirky (Aff ×1.2 · Joke ×1.5 · Hidden ×1.0) · favors DONENESS, TEMP, SEQUENCE.
 - **Spending range:** 1–2 items → ref. spend 12–30 MB. **Tip behavior:** ×1.3.
 - **Unique animations:** pocket-watch check; slow-motion everything; a brief rewind shimmer when sitting.
 - **Dialogue:** Ordering — "I'd like the Galaxy Pizza, please. Oh — you won't know it for another forty levels? Then whatever's closest." · Delighted — "Marvelous! I'll tip you now AND last Tuesday." · Furious — "I have waited CENTURIES! ...Well, it felt like centuries. It was ninety seconds."
@@ -454,7 +454,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** deliberately ordinary; `RCP_SAN_002` Ham & Cheese Sandwich, `RCP_SOP_001` Tomato Soup, `RCP_DRK_002` Lemonade. **Disliked:** `RCP_BRG_010` Mystery Meat Burger ("Where did this meat come from? Asking for... no one.").
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.00 (would blow the cover); sensitivity 0.5.
 - **Combat behavior:** `PACIFIST`, Huff 80, DEF 10. No abilities.
-- **Mod affinity (`ModAffinity`, §6.18.3):** Fancy — Aff ×1.5 · JokeAff ×1.0 · HidAff ×2.0; favored categories PRESENT, SEQUENCE (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Fancy (Aff ×1.5 · Joke ×1.0 · Hidden ×2.0) · favors PRESENT, SEQUENCE.
 - **Spending range:** 1 item → ref. spend 10–18 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** table-top finger swipe for dust; hidden notepad scribble; badge half-flash, quickly hidden.
 - **Dialogue:** Ordering — "One perfectly normal sandwich, for me, a perfectly normal customer." · Delighted — "Very... clean. I mean TASTY. Tasty is what I meant." · Furious (cover blown) — "Alright, FINE! INSPECTOR! You have a SPILL in aisle three!"
@@ -467,7 +467,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** nuts and quick bites; `RCP_SAN_005` Peanut Butter & Jellyfish, `RCP_DES_010` Bug Brittle, `RCP_DES_001` Chocolate Chip Cookie, `RCP_FRI_001` French Fries, `RCP_DRK_001` Fizzy Soda. **Disliked:** `RCP_PST_008` The Infinite Noodle ("unskippable cutscene"), `RCP_SOP_010` Bottomless Soup.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.40; sensitivity 1.2.
 - **Combat behavior:** `CHARGER`, Huff 110, DEF 5, Dmg ×0.9: zig-zag rush approach. Abilities: `ABL_011` Kangaroo Kick (`MUT_184`), `ABL_044` Gust Kick (`MUT_197`), `ABL_058` Goat Headbutt (`MUT_097`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Low-fuss — Aff ×0.6 · JokeAff ×0.5 · HidAff ×0.5; favored categories JOKE, DONENESS (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Low-fuss (Aff ×0.6 · Joke ×0.5 · Hidden ×0.5) · favors JOKE, DONENESS.
 - **Spending range:** 1 item → ref. spend 8–16 MB. **Tip behavior:** ×1.0; ×2 if served within 25 % of patience ("WORLD RECORD!").
 - **Unique animations:** split-timer tap on arrival and at every state change; frame-perfect chair slide; reset-facepalm.
 - **Dialogue:** Ordering — "Fries. GO GO GO — timer's running!" · Delighted — "NEW PERSONAL BEST! Frame-perfect fries!" · Furious — "RESET! RESET! This run is RUINED!"
@@ -480,7 +480,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** shareable; `RCP_DES_004` Strawberry Sundae, `RCP_DES_006` Birthday Cake Slice, `RCP_DRK_004` Strawberry Smoothie, `RCP_PIZ_002` Pepperoni Pizza, `RCP_PST_003` Spaghetti & Meatballs. **Disliked:** `RCP_SEA_008` Jellyfish Jiggle Bowl ("We don't talk about the Jiggle Bowl").
 - **Satisfaction thresholds:** 88 / 68 / 48 / 28; P_mult 1.05, P_offset +5. **Anger probability:** 0.10; sensitivity 1.2.
 - **Combat behavior:** `PACIFIST`, Huff 70 each, DEF 0. No abilities; they leave together.
-- **Mod affinity (`ModAffinity`, §6.18.3):** Fancy — Aff ×1.5 · JokeAff ×1.0 · HidAff ×1.0; favored categories SHAPE, PRESENT (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Fancy (Aff ×1.5 · Joke ×1.0 · Hidden ×1.0) · favors SHAPE, PRESENT.
 - **Spending range:** 1–2 items each on one ticket → ref. spend 26–56 MB per couple. **Tip behavior:** ×1.3.
 - **Unique animations:** tentacle hand-holding; synchronized pink glow pulses; sharing one milkshake with two straws.
 - **Dialogue:** Ordering — "We'll share the sundae! — Two spoons! — One cherry, cut in half!" · Delighted — "Best anniversary EVER!" *(both glow)* · Furious — "Sweetie, let's go. — Yes, darling. We are VERY disappointed. Together."
@@ -493,7 +493,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** bread; `RCP_SAN_001` Grilled Cheese, `RCP_SAN_004` Club Sandwich Stack, `RCP_SAN_010` The Sandwich Sandwich, `RCP_BRK_001` Pancake Stack, `RCP_SOP_009` Bread Bowl in a Bread Bowl. **Disliked:** wet; `RCP_SOP_007` Swamp Stew, `RCP_DRK_008` Swamp Water Smoothie.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.35; sensitivity 1.0.
 - **Combat behavior:** `THROWER`, Huff 100, DEF 15, Dmg ×1.0. Abilities: `ABL_034` Toast Barrage (`MUT_010`, signature), `ABL_028` Trunk Spray (`MUT_053`). *Ghostly* (personality hook): 25 % of thrown-food hits pass straight through him (no anger) and keep flying.
-- **Mod affinity (`ModAffinity`, §6.18.3):** Chaotic — Aff ×1.7 · JokeAff ×2.5 · HidAff ×1.0; favored categories DONENESS, JOKE, TEMP (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Chaotic (Aff ×1.7 · Joke ×2.5 · Hidden ×1.0) · favors DONENESS, JOKE, TEMP.
 - **Spending range:** 1–2 items → ref. spend 10–28 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** toast pops from the head when happy; spooky float-bob; slots glowing when annoyed.
 - **Dialogue:** Ordering — "Grilled cheeeeese... ooooOOOooo..." · Delighted — "Toasty! I haven't felt this warm since I was plugged in!" · Furious — "SOGGY BREAD? Taste my TOAST BARRAGE!"
@@ -506,7 +506,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** ALN plus Earth classics; `RCP_ALN_001` Moon Cheese Nuggets, `RCP_ALN_006` UFO Saucer Pancakes, `RCP_BRG_001` Basic Burger, `RCP_DRK_001` Fizzy Soda, `RCP_PIZ_015` Galaxy Pizza. **Disliked:** `RCP_ALN_009` Glorp Stew ("Tastes like home. TOO much like home."), `RCP_PIZ_014` Square Circle Pizza.
 - **Satisfaction thresholds:** 85 / 65 / 45 / 25; P_mult 1.05, P_offset +5. **Anger probability:** 0.20; sensitivity 1.0.
 - **Combat behavior:** `TRICKSTER`, Huff 100, DEF 15, Dmg ×0.9: its plate thefts are "beamed up as evidence", angering those diners. Abilities: `ABL_045` Tractor Beam (`MUT_166`, optional signature 50 %), `ABL_046` Comet Blink (`MUT_228`), `ABL_020` Web Shot (`MUT_028`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Quirky — Aff ×1.2 · JokeAff ×1.5 · HidAff ×1.0; favored categories JOKE, OMIT, COUNT (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Quirky (Aff ×1.2 · Joke ×1.5 · Hidden ×1.0) · favors JOKE, OMIT, COUNT.
 - **Spending range:** 1–3 items → ref. spend 14–45 MB. **Tip behavior:** ×1.2.
 - **Unique animations:** photographing every plate; antenna wiggle while reading; awestruck slow-clap with three hands.
 - **Dialogue (glyph bubbles + subtitles):** Ordering — "Greetings, Earth cook! I wish to sample your famous Basic Burger disc." · Delighted — "I will tell all eleven of my moons about this!" · Furious — "Reporting this to the Galactic Tourism Board. Beaming up your plates as evidence."
@@ -519,7 +519,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** big plates; `RCP_SEA_009` Sea Monster Steak, `RCP_SEA_002` Fried Shrimp Basket, `RCP_BRG_015` The Unreasonably Large Burger, `RCP_SAN_009` Sub of Unreasonable Length, `RCP_DRK_003` Chocolate Milkshake. **Disliked:** `RCP_SEA_005` Waving Calamari Rings ("They're waving at me. I can't eat a fan.").
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.40; sensitivity 1.3.
 - **Combat behavior:** `BRAWLER`, Huff 180, DEF 35, Dmg ×1.2: grapples and body-splashes. Abilities: `ABL_010` Bear Slam (`MUT_140`, signature — "The Body Splash"), `ABL_042` Thunder Clap (`MUT_105`), `ABL_053` Tail Spin (`MUT_227`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Standard — Aff ×1.0 · JokeAff ×1.0 · HidAff ×1.0; favored categories EXTRA, MOOD (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Standard (Aff ×1.0 · Joke ×1.0 · Hidden ×1.0) · favors EXTRA, MOOD.
 - **Spending range:** 1–3 items → ref. spend 18–50 MB. **Tip behavior:** ×1.1.
 - **Unique animations:** championship-belt raise (imaginary); turnbuckle pose on his chair; tusk-gleam grin.
 - **Dialogue:** Ordering — "Biggest steak you've got, kid. I used to bench-press these." · Delighted — "That meal just won the CHAMPIONSHIP BELT! OOOH YEAH!" · Furious — "Ding ding ding! The Walrus is coming OUT OF RETIREMENT!"
@@ -532,7 +532,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Preferred foods:** party food; `RCP_DES_006` Birthday Cake Slice (always the extra item; any DES if absent), `RCP_PIZ_002` Pepperoni Pizza, `RCP_DES_009` Exploding Cupcake, `RCP_DRK_006` Rainbow Slushie, `RCP_BRG_009` Rainbow Burger. **Disliked:** `RCP_SAL_004` Salad With No Lettuce ("No salad on my BIRTHDAY").
 - **Satisfaction thresholds:** 92 / 72 / 52 / 32; P_mult 1.10, P_offset +5. **Anger probability:** 0.40; sensitivity 1.5.
 - **Combat behavior:** `THROWER`, Huff 120, DEF 10, Dmg ×1.0: hurls cake slices (confetti bursts on impact). Abilities: `ABL_031` Rocket Punch (`MUT_154`, "confetti cannon"), `ABL_049` Tentacle Whip (`MUT_146`), `ABL_034` Toast Barrage (`MUT_010`).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Fancy — Aff ×1.5 · JokeAff ×1.0 · HidAff ×1.0; favored categories PRESENT, EXTRA (favored mods ×3 weight per §6.18's "Favored by" column).
+- **Mod affinity:** Fancy (Aff ×1.5 · Joke ×1.0 · Hidden ×1.0) · favors PRESENT, EXTRA.
 - **Spending range:** exactly 2 items (main + cake) → ref. spend 20–36 MB. **Tip behavior:** ×1.5.
 - **Unique animations:** party-horn toot; candle-blowing on anything round; confetti stomp when upset.
 - **Dialogue:** Ordering — "It's my BIRTHDAY! Pizza, cake, and everyone has to sing. Those are the rules." · Delighted — "Best. Birthday. EVER! I'm having another one next week!" · Furious — "Nobody SANG! IT'S MY BIRTHDAY!"
@@ -544,7 +544,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience / thresholds / anger / style / Huff / items:** pre-reveal ×1.0 · 90/70/50/30 · P_mult 1.0 · P_offset 0; at reveal **every** parameter, ability list, preference and special interaction switches to the revealed personality.
 - **Preferred / disliked foods:** hidden ("???" on the ticket until reveal; the order itself is generated from the revealed personality at `PLACE_ORDER`).
 - **Combat behavior:** as revealed (the reveal happens before it could ever become hostile).
-- **Mod affinity (`ModAffinity`, §6.18.3):** Chaotic — Aff ×1.7 · JokeAff ×2.5 · HidAff ×1.0; favored categories JOKE, COUNT, SEQUENCE (favored mods ×3 weight per §6.18's "Favored by" column). The Mystery Mutant keeps this affinity for its order even after the reveal ("the mystery lingers").
+- **Mod affinity:** Chaotic (Aff ×1.7 · Joke ×2.5 · Hidden ×1.0) · favors JOKE, COUNT, SEQUENCE. The Mystery Mutant keeps this affinity for its order even after the reveal ("the mystery lingers").
 - **Spending range:** as revealed. **Tip behavior:** revealed Tip× × 1.2 ("Mystery Bonus").
 - **Unique animations:** sheet-wobble walk; the **Reveal** — the sheet is whipped away in a confetti burst, the revealed personality's signature parts pop on, and it strikes that personality's pose.
 - **Dialogue:** Ordering (pre-reveal) — "? ?? ????" · Reveal — "Ta-daaa! Bet you didn't see THAT coming!" · Delighted — "Was it me you were expecting? No? Even better!" · Furious — the revealed personality's lines.

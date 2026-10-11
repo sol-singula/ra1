@@ -578,7 +578,7 @@ per-tier probabilities and maximums, joke share, hidden-mod chance, conflict gro
    `{match, recipeId, A, Q, C, defects}` — the plate is matched to any pending item on that customer's ticket.
 2. **Inspect.** 1.5 s × InspectMult: sniff, squint, poke (PER_004 uses a magnifying glass for 3 s; PER_014 picks at
    it for 3 s). Defects found here add anger immediately (§10.6): wrong dish, burned/undercooked components,
-   missing modifications, MUSHY/SPILLED components.
+   failed non-joke modifications, MUSHY/SPILLED components.
 3. **Evaluate.** `S_item` per §10.2; the reaction emote shows the band label and icon (§10.13).
 4. **Eat.** EatTime = (10 + 3 × D) s × EatMult (D = recipe difficulty). Eating reduces anger 1.0/s at levels ≤ 2.
    Mutation Cuisine items additionally give the 60 s cosmetic random part (§C10, client-only).

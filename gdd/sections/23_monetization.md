@@ -132,3 +132,153 @@ pop-ups). **Accessibility:** animated and glowing skins respect Reduced VFX (§2
 - **Nonessential customization:** nameplate frames, sign fonts and neon colours, plate and tray styles in the player's own
   restaurant. Sign text remains player-authored and filtered (§21.6).
 
+### 23.6 Game Passes vs Developer Products
+
+| Use a… | When | Products | Ownership check | Grant path |
+|---|---|---|---|---|
+| **Game pass** | a single permanent perk that is the same for everyone and few in number | Extra Looks I, Extra Looks II, VIP Visual Effects | `MarketplaceService:UserOwnsGamePassAsync(userId, passId)` at join (cached for the session, `pcall` + retry 1/2/4 s) and on `PromptGamePassPurchaseFinished` (server re-checks; the client signal alone grants nothing) | no ledger needed: ownership is Roblox's record; perks are recomputed from ownership at every join |
+| **Developer product** | the large, growing catalog of individual cosmetics (skins, palettes, themes, decor packs, emotes, customization) | every other SKU | server catalog maps `ProductId → SKU`; owned SKUs live in `inventory.cosmetics` (§28) | `MarketplaceService.ProcessReceipt` → zero-delta `EconomyService:TransactWith` (reason `robux_cosmetic`, key `rbx:<PurchaseId>`) → `InventoryService:GrantCosmetic` (§28.18) |
+
+**Developer products are "consumable" to Roblox but permanent in our game:** the grant writes the SKU into
+`inventory.cosmetics`, so it is owned forever, survives server changes, and is restored from the receipt ledger if a
+profile is ever rolled back (§28 re-applies receipts newer than a restored version).
+
+**`ProcessReceipt` rules (implemented in §28.18, summarised here):**
+1. Player not in this server, profile not loaded, or Safe Mode → `NotProcessedYet` (Roblox re-delivers later).
+2. `PurchaseId` already in `wallet.receipts` (ring of 100) or the write-once `MMR_Receipts_v1` ledger → `PurchaseGranted`
+   without granting again (**idempotent by PurchaseId**).
+3. Unknown `ProductId` → `NotProcessedYet` + engineering alert (never guess a grant).
+4. Otherwise grant inside one `TransactWith` critical section (cosmetic + receipt record), then `SaveNowAsync`; return
+   `PurchaseGranted` **only after the save commits**, else `NotProcessedYet` (the item stays visible in-session).
+5. Purchases are requested through the server: the client calls `Market.RequestPurchase {sku}`; the server checks the
+   Marketplace is unlocked (§23.1 rule 5), the SKU is on sale and **not already owned**, then calls
+   `MarketplaceService:PromptProductPurchase(player, productId)` or `PromptGamePassPurchase`.
+6. **No gifting** of Robux items between players (consistent with §22.14.4); there is no trade or resale.
+
+### 23.7 Exclusively Earnable — Never Sold for Robux
+
+The following are obtainable **only** through play. No developer product, game pass, bundle, season track or promotion may
+grant, accelerate, discount or unlock them (audited per AC-23-03 and §35 TC-MUT-13):
+
+| Category | Items |
+|---|---|
+| Currencies | Morph Bucks, Mutation Shards, Research Tokens (§C4.1) — no premium currency exists |
+| Mutations | every gameplay mutation part `MUT_001`–`MUT_280` (incl. FX and Secret parts), their stats, abilities, passives, upgrade levels, duplicates, Lab fusions, Mystery Market access and rotations |
+| Morph Capsules | all capsules, their odds and the pity counter (§C4.7) |
+| Employees | hiring, rerolls, training, promotions, raises, managers and therefore **offline caps** (§C14.3) and offline income |
+| Restaurant | tiers and City Hall permits (§C6), stations and station levels, appliance/menu/seat capacity, earnable furniture and its atmosphere and durability, repairs |
+| Recipes | every recipe `RCP_*` and its learning |
+| Progression | XP, levels, stat points, skill points, stat and skill respecs (no paid respec), achievements, milestones, titles |
+| Quests & story | all quests, story chapters, event participation and event rewards |
+| Trophies | `FRN_901`–`FRN_910` (§C16.6) |
+| Social & arena | arena ratings, brackets, season rewards, showcase wins, co-op rewards, the 26 earnable emotes (§21.8.5) |
+| Customization basics | 5 functional loadouts, Looks 1–2 (+1 event Look), starter and earnable palettes, Body Mods MB palettes |
+| Travel & access | every district, Metro station, building and event (no paid areas, no paid queue priority) |
+
+### 23.8 Paid Random Items: None
+
+- **Policy:** the game sells **no paid random items** of any kind (§C4.1). Morph Capsules are earnable only, their odds are
+  always disclosed in the UI and the pity counter persists (§C4.7). The Marketplace never shows a "mystery" product.
+- **Future-proofing (required if this policy is ever revisited through §38):**
+  1. Call `PolicyService:GetPolicyInfoForPlayerAsync(player)` on join (wrapped in `pcall`; on failure assume the **most
+     restrictive** policy) and cache it for the session.
+  2. If `ArePaidRandomItemsRestricted` is `true`, the product is hidden and not purchasable for that player (server-
+     enforced in `Market.RequestPurchase`, not just hidden in UI).
+  3. Odds for every possible outcome must be shown on the product card **before** the purchase prompt, as percentages that
+     sum to 100 %, with no hidden rarity tiers, no dynamic odds and the same odds for every player.
+  4. The realised distribution is audited with the §22.15 χ² check; any pity rule is disclosed.
+  5. Random items could still never contain stats, currencies, capsules or anything listed in §23.7.
+- Other `PolicyInfo` fields: `IsPaidItemTradingAllowed` is irrelevant (no trading); `AreAdsAllowed` gates any future ad
+  placement; `AllowedExternalLinkReferences` — the game shows no external links.
+
+### 23.9 Premium Payouts
+
+Roblox Premium Payouts reward engagement time of Premium subscribers, which suits a game built around daily returns and
+long, relaxed sessions. Rules:
+- **No Premium-only gameplay**, areas, currency, caps or offline bonuses. Premium members may receive one cosmetic
+  welcome gift (a palette) detected via `player.MembershipType == Enum.MembershipType.Premium` and
+  `Players.PlayerMembershipChanged`.
+- `MarketplaceService:PromptPremiumPurchase` is called **only** when the player taps the neutral "About Premium" info
+  button in Settings — never automatically.
+- Engagement is pursued through fun (co-op, events, offline return loop), never through manipulative retention mechanics
+  (no streak-loss punishment beyond the gentle login streak in §20, no "you'll lose your stuff" messaging).
+
+### 23.10 Revenue Expectations (hypotheses, to be validated)
+
+All values below are **hypotheses** for planning, not commitments; live telemetry (§31) replaces them within 4 weeks of
+launch.
+
+```
+MonthlyRobux ≈ MAU × PayerConversion × ARPPU_month + PremiumPayouts
+```
+
+| Hypothesis | Low | Base | High | Rationale |
+|---|---|---|---|---|
+| Payer conversion (monthly payers ÷ MAU) | 1.0 % | 2.0 % | 3.0 % | cosmetic-only catalog, young audience, no random items |
+| ARPPU per month (R$) | 200 | 325 | 450 | typical basket: one theme or VIP + a skin or emote |
+| Premium Payouts share of total Robux | 20 % | 30 % | 40 % | engagement-heavy design (daily returns, long sessions) |
+| Top-selling lines (share of product revenue) | — | themes 30 %, skins 25 %, VIP 15 %, Looks 10 %, emotes 10 %, other 10 % | — | showing off restaurants and morphs to friends |
+| Example at 100,000 MAU (base) | — | 100,000 × 2 % × 325 = 650,000 R$ + ≈ 280,000 R$ Premium Payouts ≈ 930,000 R$/month | — | — |
+
+**Decision rules:** if conversion is below the low case, improve catalog breadth, previews and show-off moments (photo mode,
+showcases) — **never** add pressure, timers or power. If any cohort shows spend concentration (top 1 % of payers > 50 % of
+product revenue) the catalog is reviewed for kid-appropriateness. Revenue goals never override §23.1.
+
+### 23.11 Roblox Implementation
+
+- **Catalog config:** `ReplicatedStorage/Shared/Config/Marketplace` (display) and a server-only mirror with
+  `ProductId`/`PassId` ↔ SKU, line, price band, colourways, seasonal window and `onSale` flag; the build validator (§35)
+  fails if a SKU references anything in §23.7 or lacks the COSMETIC flag.
+- **Remotes:** `Market.RequestPurchase` (RF C2S `{ sku }`, 0.5/s b2) and `Market.OwnershipChanged` (Event S2C); grants only
+  from `ProcessReceipt` / pass checks (§29 TM-13).
+- **Unlock gate:** `Market.RequestPurchase` returns `LOCKED` until `QST_TUT_012` is complete and level ≥ 5; the Marketplace
+  button is hidden until then.
+- **Spending summary for families:** Settings → Account lists the player's Robux purchases in this game (from
+  `wallet.receipts` and `MMR_Receipts_v1`: date, item, price) — transparency for parents; Roblox's own parental spend
+  controls always apply.
+- **Analytics:** `mmr_market_view`, `mmr_market_preview`, `mmr_market_prompt`, `mmr_market_purchase` (sku, line, price),
+  `mmr_market_cancel` (§31); purchases are excluded from the §29.14 income anomaly metric.
+
+### 23.12 Edge Cases
+
+| # | Situation | Expected behaviour |
+|---|---|---|
+| 1 | Receipt arrives while the player is in another server or offline | `NotProcessedYet`; Roblox re-delivers when the player is in a server with the profile loaded (§28.18). |
+| 2 | Save fails after the grant | Item visible in-session; `NotProcessedYet` until a save commits; never granted twice (`rbx:` key + receipt ring + ledger). |
+| 3 | Same receipt delivered three times | Granted once; later deliveries return `PurchaseGranted` immediately (§35 TC-DATA-11). |
+| 4 | Accidental duplicate purchase of an owned SKU (race across two devices) | Server pre-check normally blocks it; if both receipts arrive, the second grants the item's alternate colourway (still cosmetic, never currency) and support is flagged. |
+| 5 | Game-pass ownership check fails at join (Marketplace outage) | Perks default off, retry 1/2/4 s and on next join; no permanent loss. |
+| 6 | Profile rolled back to an older version | All receipts newer than the restored version are re-applied (§28). |
+| 7 | Hostile customer auto-closes the Marketplace mid-purchase (E2) | Roblox's prompt is CoreGui and stays up; the result arrives as a toast (§24.30). |
+| 8 | Player under a policy that restricts a product type | `PolicyInfo` hides it and the server refuses the request. |
+| 9 | Seasonal product outside its window | Not purchasable; owners keep it forever; it returns next year (no permanent scarcity). |
+| 10 | Chargeback / refunded purchase reported by Roblox | The cosmetic is not revoked automatically (kid-friendly); repeated abuse is handled by moderation (§29.17). |
+| 11 | Paid skin on a part that is later unequipped or fused | The skin stays owned and can be applied to any other owned part. |
+| 12 | Theme applied, then the restaurant upgrades tier | Theme carries to the new shell; unmatched pieces fall back to default looks without loss (§15). |
+
+### 23.13 Acceptance Criteria
+
+- **AC-23-01:** No Robux product changes any number used by gameplay (stats, damage, cooldowns, atmosphere, seats, slots,
+  income, XP, odds, timers) — verified by diffing a full gameplay-state snapshot before and after granting every SKU.
+- **AC-23-02:** The catalog contains no random-outcome product; every product card lists its exact contents before the
+  purchase prompt opens.
+- **AC-23-03:** An automated audit finds 0 products or passes that grant MB, MS, RT, capsules, mutation parts, employees,
+  offline time, recipes, skill points, respecs or anything in §23.7 (shared with AC-01-02, AC-12-09).
+- **AC-23-04:** The Marketplace button is hidden and `Market.RequestPurchase` returns `LOCKED` until `QST_TUT_012` is complete
+  and the player is level ≥ 5; no purchase prompt appears in a player's first session (funnel test).
+- **AC-23-05:** No product card shows a countdown timer, stock counter or urgency text; every card shows the COSMETIC badge.
+- **AC-23-06:** No single product costs more than 499 R$ and no bundle more than 799 R$; bundles cost ≤ 80 % of their unowned
+  contents.
+- **AC-23-07:** Replaying a `ProcessReceipt` delivery for the same `PurchaseId` 3 times grants the cosmetic exactly once and
+  returns `PurchaseGranted` only after the grant is saved (with AC-28-06, TC-DATA-11).
+- **AC-23-08:** Game-pass perks are granted only after a server-side `UserOwnsGamePassAsync` returns true; a forged
+  `PromptGamePassPurchaseFinished` grants nothing.
+- **AC-23-09:** A skinned furniture item has exactly the atmosphere, durability and footprint of its earnable base item, and
+  Robux themes add 0 atmosphere (unit test over every decor/theme SKU).
+- **AC-23-10:** Arena hurtboxes and showcase theme scores are identical with and without paid skins (§21.9.3, §21.8.6).
+- **AC-23-11:** `PolicyService:GetPolicyInfoForPlayerAsync` is called once per session with a most-restrictive fallback, and
+  any product restricted by policy is refused server-side.
+- **AC-23-12:** Seasonal cosmetics are offered again at their next yearly event (catalog schedule check).
+- **AC-23-13:** `PromptPremiumPurchase` is only reachable from the Settings "About Premium" button; no Premium-only gameplay
+  exists (code search + UI audit).
+- **AC-23-14:** The Settings spending summary lists every Robux purchase in this game with date, item and price within 2 s.

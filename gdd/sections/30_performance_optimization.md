@@ -344,13 +344,13 @@ An exhausted pool **skips** the cosmetic effect rather than allocating — under
 %% diagram: quality-autoscale
 stateDiagram-v2
     [*] --> Probe
-    Probe --> Low: "first 30 s avg FPS < 28 or memory > 85 % of MID budget"
-    Probe --> Mid: "otherwise (touch)"
-    Probe --> High: "keyboard/console and avg FPS > 58"
-    High --> Mid: "avg FPS < 50 for 10 s or memory > 90 %"
-    Mid --> Low: "avg FPS < 40 for 10 s or memory > 90 %"
-    Low --> Mid: "avg FPS > 55 for 60 s and memory < 70 %"
-    Mid --> High: "avg FPS > 70 for 60 s and memory < 70 %"
+    Probe --> Low: first 30 s avg FPS below 28 or memory above 85 pct of MID budget
+    Probe --> Mid: otherwise on touch devices
+    Probe --> High: keyboard or console and avg FPS above 58
+    High --> Mid: avg FPS below 50 for 10 s or memory above 90 pct
+    Mid --> Low: avg FPS below 40 for 10 s or memory above 90 pct
+    Low --> Mid: avg FPS above 55 for 60 s and memory below 70 pct
+    Mid --> High: avg FPS above 70 for 60 s and memory below 70 pct
 ```
 
 Hysteresis: ≥ 120 s between changes; never upgrade above the player's manual choice; never change tier while

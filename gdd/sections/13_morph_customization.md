@@ -768,29 +768,31 @@ Remotes.Equip.OnServerInvoke = function(player: Player, payload: any)
 end
 ```
 
-### 13.21 Data Model (morph sub-schema; persistence rules in §28)
+### 13.21 Data Model (fields the Morph screen reads and writes; schema owned by §28)
 
-```lua
---!strict
-export type MorphProfile = {
-	equipped: { [string]: string },          -- slot instance -> "MUT_###" (mandatory slots always present)
-	abilityBar: { string },                  -- up to 4 ABL ids, order = bar order
-	pinnedSynergies: { string },             -- up to 5 SYN ids (active loadout copy)
-	tints: { [string]: { p: number, a: number } }, -- slot -> swatch codes
-	name: { raw: string?, filtered: string? },
-	loadouts: { [number]: {                  -- 1..5
-		name: string, icon: string, equipped: { [string]: string }, abilityBar: { string },
-		pins: { string }, tints: { [string]: { p: number, a: number } }, look: number?, morphName: string?,
-	} },
-	looks: { [number]: { tints: { [string]: { p: number, a: number } }, fx: boolean, title: string?, pedestal: string } },
-	activeLoadout: number?, lastSwapAt: number, -- server os.time() of the last completed channel
-	keepDuplicates: { [string]: boolean },
-	morphdex: { spotted: string, worn: string, titles: number }, -- base64 bitsets (§12.9.4)
-}
-```
+Persistence lives in the §28 `mutations` block (writer `MutationService`) and `morph` block (written through
+`MorphAssemblyService`). The screen needs the fields below; ✚ marks fields that this section requires §28 to carry
+in addition to what it lists today.
 
-Estimated size: about 1.6 KB for equipped + 5 loadouts + 10 Looks, plus ≈ 3.4 KB Morphdex, so ≈ 5 KB of a
-profile's 4 MB DataStore budget. The morph is saved on autosave and with any upgrade purchase ≥ 10,000 MB (canon C3).
+| Field (§28 path) | Type | Used for |
+|---|---|---|
+| `mutations.owned[partId]` `{lvl, copies, fav, new}` | per part ID | grid, upgrade costs, Favorite star, NEW dots |
+| `mutations.keepDuplicates` | boolean | global "Keep duplicates for upgrades" toggle (13.15) |
+| `mutations.equipped` | slot → part ID | current body (mandatory slots always present) |
+| `mutations.abilityBar` | ≤ 4 `ABL_` IDs | ability bar order |
+| `mutations.loadouts[1..5]` `{name, slots, abilityBar, palette}` | functional loadouts | 1 Chef, 2 Fighter, 3 Repair, 4–5 earnable (13.12) |
+| ✚ `mutations.loadouts[i].palette` as a per-slot map | slot → palette index | per-part colors (13.14); today §28 holds a single palette key |
+| ✚ `mutations.loadouts[i].pins` | ≤ 5 `SYN_` IDs | synergy pins (§12.10.3) |
+| ✚ `mutations.loadouts[i].icon`, `.look` | string, number? | loadout icon and linked Look |
+| `mutations.activeLoadout`, `mutations.lastLoadoutSwapAt` | number, UnixTime | swap cooldown (canon E4) |
+| `morph.morphName` | filtered string | custom name (13.13); the raw text is kept only for audit as §28 specifies |
+| `morph.palettes` | owned palette keys | palette ownership checks |
+| ✚ `morph.looks[1..10]` `{palette, fx, title, pedestal}` | cosmetic loadouts | Looks (13.12, §23) |
+| `morph.morphdex` `{spotted, worn, titleBits}` | base64 bitsets | §12.9.4 |
+
+Size: loadouts with per-slot palettes and pins add ≈ 0.4 KB, and Looks ≈ 0.6 KB, well inside §28's `mutations`
+(31 KB) and `morph` (4.5 KB) caps. The morph is saved on autosave and with any upgrade purchase ≥ 10,000 MB
+(canon C3).
 
 ### 13.22 Performance
 
@@ -806,8 +808,8 @@ profile's 4 MB DataStore budget. The morph is saved on autosave and with any upg
 ### 13.23 Dependencies
 
 §5 (station effects of synergies), §11 (In Combat flag, abilities, Arena), §12 / §36.3 (part data, passives,
-acquisition, fusion recipes), §12.9–12.10 / §36.4–36.5 (naming, Morphdex, synergies), §14 (stats, level
-requirements, respec), §16 (employee looks), §18 (`BLD_01`, `BLD_02`, `BLD_11`, `BLD_13`, `BLD_16`, `BLD_22`),
+acquisition, fusion recipes, §12.7 generator and compatibility flags), §12.9–12.10 / §36.4–36.5
+(naming, Morphdex, synergies), §14 (stats, level requirements, respec), §16 (employee looks), §18 (`BLD_01`, `BLD_02`, `BLD_11`, `BLD_13`, `BLD_16`, `BLD_22`),
 §21 (Arena locking), §22 (MB/MS/RT sinks), §23 (cosmetic Look slots and palettes), §24 (UI framework, HUD wheel),
 §25 (rig, tint masks, icons), §26 (animations `ANM_001`, `ANM_008`, `ANM_010`, `ANM_011`, `ANM_051`, `ANM_065`,
 `ANM_301`–`ANM_370`; sound cues), §27 (`MutationService`, `MorphAssemblyService`, `EconomyService`, `UIController`),
@@ -824,11 +826,11 @@ requirements, respec), §16 (employee looks), §18 (`BLD_01`, `BLD_02`, `BLD_11`
 | 4 | Network drops after Upgrade was sent | On reconnect the client resends the same `reqId`. The server replays the stored response or, if the upgrade never committed, `expectedLevel` guarantees at most one level-up. |
 | 5 | A loadout references a part that was converted to MS | That slot keeps its current part; the card shows "1 part missing" plus a fix-up shortcut. The saved loadout is not silently rewritten. |
 | 6 | The equip would push the ability bar past 4 | `ReplaceAbilityModal`; if dismissed, the new ability goes to the bench and the equip still succeeds. |
-| 7 | Removing a carry part while carrying more than the new capacity | Refused with `CARRY_OVER` ("Put something down first!"); nothing changes. |
-| 8 | New legs or neck make the morph taller than an indoor ceiling | The server nudges the character ≤ 2 studs to open space. If none exists, the equip still applies and the camera uses its collision offset; no damage, no stuck state (Restaurant Row ceilings ≥ 12 studs per §15). |
+| 7 | Removing a carry part while carrying more than the new capacity | Refused with `PUT_SOMETHING_DOWN` ("Put something down first!"); nothing changes. |
+| 8 | New legs, neck and horns would make the morph taller than 9.5 studs, or a third huge part is equipped | `MorphRules` compresses NeckLength, then sinks horns (§12 height clamp), and renders the third huge part at ×0.7. The preview and world both show "Squished to fit!"; collision never changes, so doors and pathing always work. |
 | 9 | The filter service is down during rename | `FILTER_UNAVAILABLE`, the old name is kept, the attempt is not counted. If filtering also fails at join, the generated name is shown until it succeeds. |
 | 10 | Profile loaded in Safe Mode (E6) | The screen opens read-only (preview, rotate, photo); every write button is disabled with "Saving is paused — your stuff is safe!". |
-| 11 | Equipping FUR while SCALES is worn on a saved loadout | The current morph swaps with a 5 s Undo; saved loadouts change only when the player saves. |
+| 11 | Equipping wings while a blocksWings back part (e.g. Jetpack `MUT_245`) is worn, or FUR over SCALES | One-tap swap prompt; confirming removes the conflicting part (Undo restores it). A crafted request without `swap` gets `CONFLICT_WINGS` / `CONFLICT_COVERING`. Saved loadouts change only when the player saves. |
 | 12 | Player levels up while the screen is open (E14) | Level-locked cards unlock live with a "Now equippable!" sparkle. Stat allocation still waits for the level-up menu. |
 | 13 | A part's data is hot-fixed (tags, ability) while equipped | On the version broadcast the screen refreshes cards, stats and synergies within 5 s. Equipped state is untouched. |
 | 14 | Device rotates mid-drag in portrait support | The drag is cancelled, the layout re-profiles in ≤ 1 frame, and selection and scroll position are preserved. |
@@ -848,8 +850,10 @@ requirements, respec), §16 (employee looks), §18 (`BLD_01`, `BLD_02`, `BLD_11`
   that the server applies after the equip (verified on the 130 §36.5 loadouts with one random part swap each).
 - **AC-13-06:** Equipping an ARM or LEG part offers Left / Right / Both. "Both" applies the matched-pair bonus
   (+25 % to that pair's stats), and mismatched legs show the "Wobbly gait (no penalty)" note.
-- **AC-13-07:** Equipping FUR while SCALES is worn (or the reverse) leaves exactly one covering equipped and offers
-  a 5 s Undo. `HEAD` can never be emptied, and other mandatory slots revert to Plain Human.
+- **AC-13-07:** Equipping FUR over SCALES (or the reverse), or WINGS with a blocksWings BACK part (or the reverse),
+  always shows the swap prompt and never leaves both parts equipped; a request without `swap = true` returns
+  `CONFLICT_COVERING` / `CONFLICT_WINGS`. `HEAD` can never be emptied, and other mandatory slots revert to Plain
+  Human.
 - **AC-13-08:** Loadout apply always takes a 3.0 s (± 0.1 s) server-timed channel, is blocked while In Combat, is
   interrupted by damage without consuming the cooldown, and enforces a 10 s cooldown after completion (canon E4).
 - **AC-13-09:** Photo mode hides 100 % of UI elements and offers ≥ 4 poses and ≥ 4 backdrops. The pedestal glow

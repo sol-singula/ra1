@@ -16,9 +16,10 @@ never as a passive bonus.
 
 Design rules (they settle every later trade-off):
 
-1. **Offline complements, never replaces.** A well-staffed restaurant earns 35–50 % of active net per hour offline
-   (canon §C15; proven in §17.9). Research Tokens, recipe learning, quests, combat, skill points and most XP stay
-   active-only.
+1. **Offline complements, never replaces.** A well-staffed restaurant earns 35–50 % of active net per hour during
+   the first 2 offline hours, then a long-absence taper applies (×0.5 for hours 2–8, ×0.2 for hours 8–24), so even a
+   24 h Legendary-Manager absence is worth about 3 active hours (§17.4, proven in §17.9). Research Tokens, recipe
+   learning, quests, combat, skill points and all player XP stay active-only.
 2. **Every hire is a decision.** A candidate always trades something: wage vs output, a great trait vs a funny
    drawback (the Dragon Chef burns 6 % of grill items), rarity vs the employee cap of the tier. There is no "best
    employee" for every restaurant — the bottleneck decides (§16.9 ROI table).
@@ -295,7 +296,7 @@ filing-cabinet torso). From `TIER_06` the **Hirewell Hotline** button in the Emp
 | Personality | archetype's |
 | Training potential | grade S/A/B/C/D (gain ×1.5/1.3/1.15/1.0/0.75) and cap (rarity cap + 3 per star) |
 | Quirk line | 1 of 24 cosmetic lines ("Hums the city anthem while chopping", "Afraid of round plates") |
-| Offline impact preview | Δ offline MB/h if hired into the suggested role, computed by the §17 model with expected values (no RNG) |
+| Offline impact preview | Δ full-rate offline MB/h (first 2 h) and Δ MB per full capped absence if hired into the suggested role, computed by the §17 model with expected values (no RNG) |
 
 #### 16.6.3 Recruitment interface
 
@@ -310,7 +311,7 @@ filing-cabinet torso). From `TIER_06` the **Hirewell Hotline** button in the Emp
 │ Waiter       │ Security     │ Waiter       │ Dishwasher   │  │ Svc ███████░ 68 ...     │  │
 │ 12,000 MB    │ 12,500 MB    │ 2,300 MB     │ 200 MB       │  │ Speedster · Zoomies     │  │
 │ 165 MB/h     │ 170 MB/h     │ 55 MB/h      │ 10 MB/h      │  │ Show-Off · Potential A  │  │
-│ +812 MB/h ▲  │ +0 MB/h      │ +434 MB/h ▲  │ +288 MB/h ▲  │  │ Offline: +812 MB/h      │  │
+│ +695 MB/h ▲  │ +0 MB/h      │ +443 MB/h ▲  │ +121 MB/h ▲  │  │ Offline: +695 MB/h      │  │
 │ [HOLD 5%]    │ [HOLD 5%]    │ [HOLD 5%]    │ [HOLD 5%]    │  │ [ HIRE AS: Waiter ▾ ]   │  │
 └──────────────┴──────────────┴──────────────┴──────────────┴──└─────────────────────────┘──┘
 ```
@@ -362,17 +363,17 @@ Server validation for `Recruit.Hire` (any failure returns a reason code and chan
    (canon autosave rule) — otherwise at the next autosave.
 
 The first hire is scripted by `QST_TUT_012` "Hire Help": Ms. Hirewell gifts Ollie (`EMP_001`, cost 0) and the
-screen shows the **Offline Forecast** ("If you log off now, Ollie earns about 270 MB/h for up to 2 h").
+screen shows the **Offline Forecast** ("If you log off now, Ollie earns about 280 MB/h for up to 2 h").
 
 ### 16.7 Employee Management
 
 #### 16.7.1 Roster screen (Employee menu, HUD quick-access, usable anywhere)
 
 ```
-┌─ MY STAFF ── 8/8 ── Wages 498 MB/h ── Offline cap 8 h (Mister Mustache ■) ── Forecast 2,180 MB/h ─ [X] ┐
+┌─ MY STAFF ── 8/8 ── Wages 636 MB/h ── Offline cap 8 h (Mister Mustache ■) ── Forecast 2,205 MB/h* ─ [X] ┐
 │ [All][Kitchen][Floor][Support]    Sort: Role ▾      [Night Menu] [Auto-buy budget] [Wage priority]    │
 ├────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ● Sloane  Dish   ▮▮▮▮▮▮▮▮▮▮ E 100%  ☺ 90  KPI B  10 MB/h  Always   "washed 486 plates"     [ ▸ ]    │
+│ ● Sloane  Dish   ▮▮▮▮▮▮▮▮▮▮ E 100%  ☺ 90  KPI B  10 MB/h  Always   "washed 456 plates"     [ ▸ ]    │
 │ ▲ Octavia Chef   ▮▮▮▮▮▮▮▮░░ E 90%   ☺ 80  KPI A  50 MB/h  Always   GRILL LINE  ⏳ —        [ ▸ ]    │
 │ ■ Chet    Waiter ▮▮▮▮▮▮▮░░░ E 88%   ☺ 80  KPI S  165 MB/h Always   Zone A       ★☆☆       [ ▸ ]    │
 ├────────────────────────────────── DETAIL: Octavia ──────────────────────────────────────────────────┤
@@ -383,8 +384,9 @@ screen shows the **Offline Forecast** ("If you log off now, Ollie earns about 27
 └────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Hierarchy: `StaffScreen` → `StaffHeader` (count/cap, wages/h, offline cap with the manager's rarity icon, Offline
-Forecast MB/h) → `FilterTabs` + `SettingsButtons` (Night Menu, Auto-buy budget, Wage priority) → `RosterList`
+\* The Forecast is the expected full-rate MB/h for the first 2 offline hours plus the total for one full cap with the
+taper ("8 h ≈ 11,000 MB"). Hierarchy: `StaffScreen` → `StaffHeader` (count/cap, wages/h, offline cap with the
+manager's rarity icon, Offline Forecast) → `FilterTabs` + `SettingsButtons` (Night Menu, Auto-buy budget, Wage priority) → `RosterList`
 (`EmployeeRow`: rarity icon, name, role icon, Energy bar, Morale face + number, KPI grade letter, wage, shift chip,
 station/zone, training timer, stars) → `EmployeeDetail` (viewport, assignment dropdowns, stat bars with potential cap
 marker, traits, KPIs, action buttons). Every action button shows its MB price; destructive actions (Fire, Replace)
@@ -596,20 +598,22 @@ The Employee Management skill tree (`SKL_MGMT_01`–`SKL_MGMT_10`, §14) may onl
 | `TIER_07`–`TIER_08` | first Legendaries, Epic pity | full line, Elite Manager (12–14) | 12 h (+2 h) |
 | `TIER_09`–`TIER_10` | Legendary pool 12–20 % | 16–20 specialists, Legendary Manager | 24 h |
 
-**Employee ROI.** `Payback hours = HireCost ÷ (ΔNet_offline/h + ΔNet_online/h)`. The table measures the offline part
-with the §17 reference model by removing one employee from a §17.9 example roster (base economy, no incidents):
+**Employee ROI.** `Payback = HireCost ÷ (ΔNet_offline + ΔNet_online)` over the player's real schedule. The table
+measures the offline part with the §17 reference model by removing one employee from a §17.9 example roster (base
+economy, no incidents): the full-rate delta of the first 2 offline hours and the delta over that example's whole
+tapered absence ("report").
 
-| Example roster | Employee | Hire (MB) | Wage (MB/h) | Δ offline net / h | Offline payback |
-|---|---|---|---|---|---|
-| B (`TIER_03`) | Benny Bun, Common Waiter | 400 | 18 | +316 | 1.3 h |
-| B (`TIER_03`) | Skates McGee, Uncommon Waiter | 2,300 | 55 | +434 | 5.3 h |
-| C (`TIER_05`) | Octavia, Uncommon Chef (trained) | 2,100 | 50 | +1,217 | 1.7 h |
-| C (`TIER_05`) | Sloane, Common Dishwasher | 200 | 10 | +288 | 0.7 h |
-| C (`TIER_05`) | Dusty, Common Cleaner | 400 | 18 | +191 | 2.1 h |
-| C (`TIER_05`) | Chet Speedwell, Rare Waiter | 12,000 | 165 | +812 | 14.8 h |
-| D (`TIER_07`) | Rocco, Rare Security Guard | 12,500 | 170 | −170 (not a bottleneck) | online / insurance only |
-| E (`TIER_10`) | Tractor Trixie, Epic Stocker | 57,000 | 440 | +4,764 (auto-buy keeps special dishes live) | 12 h |
-| E (`TIER_10`) | Comet Carla, Epic Courier | 61,000 | 465 | +492 | 124 h |
+| Example roster | Employee | Hire (MB) | Wage (MB/h) | Δ full-rate MB/h | Δ per report | Payback (reports) |
+|---|---|---|---|---|---|---|
+| B (`TIER_03`, 4 h) | Benny Bun, Common Waiter | 400 | 18 | +325 | +970 | 0.4 |
+| B (`TIER_03`, 4 h) | Skates McGee, Uncommon Waiter | 2,300 | 55 | +443 | +1,311 | 1.8 |
+| C (`TIER_05`, 8 h) | Octavia, Uncommon Chef (trained) | 2,100 | 50 | +1,120 | +6,000 | 0.35 |
+| C (`TIER_05`, 8 h) | Sloane, Common Dishwasher | 200 | 10 | +121 | +1,285 | 0.16 |
+| C (`TIER_05`, 8 h) | Dusty, Common Cleaner | 400 | 18 | +190 | +953 | 0.42 |
+| C (`TIER_05`, 8 h) | Chet Speedwell, Rare Waiter | 12,000 | 165 | +695 | +3,931 | 3.1 |
+| D (`TIER_07`, 12 h) | Rocco, Rare Security Guard | 12,500 | 170 | −170 (not a bottleneck) | −986 | online / insurance only |
+| E (`TIER_10`, 24 h) | Tractor Trixie, Epic Stocker | 57,000 | 440 | +1,452 | +25,579 (keeps special dishes live) | 2.2 |
+| E (`TIER_10`, 24 h) | Comet Carla, Epic Courier | 61,000 | 465 | +2,472 | +5,529 | 11.0 |
 
 Lessons the UI teaches through the Forecast and the Upgrade Suggestions: hire into the **bottleneck** (cheap
 presence roles like Dishwasher and Cleaner pay back in minutes once their penalty applies), Security Guards earn their

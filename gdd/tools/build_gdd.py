@@ -61,6 +61,40 @@ def run_renderers():
         subprocess.run([sys.executable, str(script)], cwd=g.ROOT, check=True)
 
 
+APPENDIX_TITLE = "Appendix A. Design Canon — Identifiers, Constants and Formulas"
+
+
+def canon_appendix() -> str:
+    """The design canon, demoted one heading level, as the document's final appendix.
+
+    Sections cite canon clauses as `canon C4.4` / `§C4.4`; this appendix is where those resolve.
+    It is not used for identifier definitions (the validator reads gdd/sections only), so a missing
+    database row can never be masked by the canon's master lists.
+    """
+    lines = g.CANON_PATH.read_text(encoding="utf-8").splitlines()
+    mask = g.iter_code_fence_mask(lines)
+    out = [f"## {APPENDIX_TITLE}", "",
+           "> The canon is the single source of truth that every section above is built on: identifier rules, the fixed "
+           "master lists, global constants, economy anchors, core formulas and edge-case rulings. References written "
+           "as `canon C4.4` or `§C4.4` point to the numbered clauses below. Where a section elaborates a value, the "
+           "section's detail governs only if it does not contradict this appendix.", ""]
+    started = False
+    for i, ln in enumerate(lines):
+        if not started:
+            if ln.startswith("# "):
+                started = True
+            continue
+        if not mask[i] and ln.startswith("#"):
+            ln = "#" + ln
+        out.append(ln)
+    return "\n".join(out).rstrip() + "\n"
+
+
+class _Pseudo:
+    def __init__(self, text):
+        self.lines = text.splitlines()
+
+
 def toc(sections, preceding_text: str) -> list[str]:
     seen: dict[str, int] = {}
     # Headings that precede the sections (front matter) consume anchor slugs first, as on GitHub.
@@ -165,6 +199,8 @@ def front_matter(sections, res) -> str:
         "\"done\".",
         "- **Cross-references** use `§N` (section) and `§N.M` (subsection).",
         "- **Databases:** recipes §6, ingredients §7, personalities §9, NPCs §19, quests §20; everything else in §36.",
+        "- **Canon references** (`canon C4.4`, `§C4.4`, `E1`–`E14`) point to Appendix A, the Design Canon: the shared "
+        "identifiers, constants, formulas and edge-case rulings every section builds on.",
         "",
         "## Completion Manifest",
         "",
@@ -183,7 +219,7 @@ def front_matter(sections, res) -> str:
         "",
     ]
     head = "\n".join(L)
-    return head + "\n" + "\n".join(toc(sections, head)) + "\n\n---\n"
+    return head + "\n" + "\n".join(toc(list(sections) + [_Pseudo(canon_appendix())], head)) + "\n\n---\n"
 
 
 def main():
@@ -198,7 +234,7 @@ def main():
     fm = front_matter(sections, res)
     (g.SECTIONS_DIR / g.FRONT_MATTER).write_text(fm, encoding="utf-8")
     body = "\n\n".join(s.text.rstrip() + "\n" for s in sections)
-    g.OUTPUT_PATH.write_text(fm + "\n" + body, encoding="utf-8")
+    g.OUTPUT_PATH.write_text(fm + "\n" + body + "\n" + canon_appendix(), encoding="utf-8")
     size = g.OUTPUT_PATH.stat().st_size
     print(f"Wrote {g.OUTPUT_PATH.name}: {size/1024:.0f} KB, {len(sections)} section files, "
           f"validation {'PASS' if res['ok'] else 'FAIL'} ({res['undefined_count']} unresolved IDs)")

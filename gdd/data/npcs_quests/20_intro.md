@@ -310,21 +310,23 @@ Nana's hologram flickers at dramatic moments, and Old Man Pigeon always already 
 - **Set pieces:** a food-court cook-off with Corndog Cornelius as hype-man. Ratbeard rides a giant rolling cheese wheel
   down the avenue. At the feast he weeps happy cheese tears into a Bread Bowl in a Bread Bowl.
 - **Cast:** `NPC_014`, `NPC_071`, `NPC_032`, `NPC_030`, `NPC_026`, `NPC_020`. **Unlocks:** `FRN_902` Rat King's Crown
-  Display; Ratbeard becomes an ally; skill point.
+  Display, `MUT_084` Crystal Ball Eyes (Legendary); Ratbeard becomes an ally; skill point.
 
 #### Chapter 7 — "Five Forks Up" (`TIER_07`, L45–55) · `QST_STY_021`–`QST_STY_023`
 - **Synopsis:** The Food Critic Convention comes to town. Undercover inspectors hide among your customers, and
   Fourchette offers her legendary five-course tasting challenge.
 - **Set pieces:** every customer wears a fake mustache, so which one is the inspector? Paloma sneezes confetti at
   Perfect dishes. On the last course, Fourchette's neck rises right through a ceiling tile.
-- **Cast:** `NPC_022`, `NPC_016`, `NPC_082`, `NPC_083`. **Unlocks:** `FRN_903` Critic's Five-Star Plaque; skill point.
+- **Cast:** `NPC_022`, `NPC_016`, `NPC_082`, `NPC_083`. **Unlocks:** `FRN_903` Critic's Five-Star Plaque, `MUT_038` Kraken
+  Head + `MUT_137` Kraken Core (Legendary); skill point.
 
 #### Chapter 8 — "Poach Perfect" (`TIER_08`, L56–67) · `QST_STY_024`–`QST_STY_026`
 - **Synopsis:** The Baron slips glittery job offers into your staff lockers. He fires Sniffles for being too nice, and
   Sniffles switches sides, bringing the Baron's master plan: win the deeds to Restaurant Row in a public cook-off.
 - **Set pieces:** a locker-room "poaching" montage, then Sniffles sobbing under a pickle drizzle. The "Mustache Memo"
   is delivered by forty pigeons in formation.
-- **Cast:** `NPC_007`, `NPC_028`, `NPC_025`, `NPC_017`, `NPC_030`. **Unlocks:** emote "Sniffles Sneeze"; skill point.
+- **Cast:** `NPC_007`, `NPC_028`, `NPC_025`, `NPC_017`, `NPC_030`. **Unlocks:** emote "Sniffles Sneeze", `MUT_037` Phoenix Head +
+  `MUT_200` Phoenix Talon Leg (Legendary); skill point.
 
 #### Chapter 9 — "Cook-Off on Restaurant Row" (`TIER_09`, L68–79) · `QST_STY_027`–`QST_STY_029`
 - **Synopsis:** The Baron challenges you (with a too-hot oven mitt) to a cook-off judged by Fourchette. He loses, and his
@@ -332,8 +334,8 @@ Nana's hologram flickers at dramatic moments, and Old Man Pigeon always already 
   into a grumpy friend. Nana reveals she and the Baron's grandmother were bake-off rivals.
 - **Set pieces:** all of Restaurant Row watching from rooftops. The mustache falls in slow motion. The Baron "hates"
   every bite of his grilled cheese while asking for seconds.
-- **Cast:** `NPC_003`, `NPC_016`, `NPC_002`, `NPC_001`. **Unlocks:** `MUT_178` Golden Chef Hands, `FRN_905` Baron's
-  Defeated Mustache Portrait; the Baron becomes friendable; skill point.
+- **Cast:** `NPC_003`, `NPC_016`, `NPC_002`, `NPC_001`. **Unlocks:** `MUT_178` Golden Chef Hands + `MUT_108` Demon Horns
+  (Legendary), `FRN_905` Baron's Defeated Mustache Portrait; the Baron becomes friendable; skill point.
 
 #### Chapter 10 — "Legendary" (`TIER_10`, L80+) · `QST_STY_030`–`QST_STY_032`, epilogue `QST_STY_033`
 - **Synopsis:** Chef Supreme Omnivora invites you to the **Legendary Chef Tournament** (`EVT_005`). You clear Saffron's
@@ -344,6 +346,7 @@ Nana's hologram flickers at dramatic moments, and Old Man Pigeon always already 
 - **Epilogue:** at L90 Nana's hologram sends you to the Museum archives for her last recipe page, which unlocks the final
   Legendary Recipe quest (`QST_CHF_015`).
 - **Cast:** `NPC_029`, `NPC_087`, `NPC_003`, `NPC_001`, `NPC_018`, `NPC_080`. **Unlocks:** `FRN_910` Omnivora's Signed
-  Apron, `MUT_168` Cosmic Chef Arm (Mythic), title "Legendary Chef"; skill points (finale + epilogue).
+  Apron, a Mythic part of your choice (`MUT_039` Golden Burger Head **or** `MUT_242` Phoenix Wings), title "Legendary Chef";
+  skill points (finale + epilogue).
 
 ### 20.9 Quest database
