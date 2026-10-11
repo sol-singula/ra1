@@ -741,7 +741,7 @@ data) so the client can preview costs; client UI in `UIController` (`LevelPanel`
 | Signals `XpGained`, `LevelUp`, `StatsChanged`, `AchievementUnlocked`, `MilestoneReached` | consumed by HUD, quests, analytics |
 
 Internal helpers (not remotes): `IncrementCounter(player, counter, n)` and `SetFlag(player, flag)` used by other
-services to feed `achievements.counters` (§28.9.12).
+services to feed `progression.achievements.counters` (§28.9.3).
 
 **Remotes** (§27.8.19 names and rate limits; validation per §14):
 
@@ -758,11 +758,10 @@ XP bar, points, counters and milestone cards update through the replicated profi
 `Humanoid.MaxHealth` (§14.8); clients never write either.
 
 **Profile.** Field names follow §28.9.3 `progression` (`level`, `xp` = XP into the current level, `totalXp`, `statAlloc`,
-`unspentStatPoints`, `lastFreeStatRespecAt`, `skillNodes`, `bonusSkillPoints`, `unspentSkillPoints`,
-`lastFreeSkillRespecAt`, `respecTokens`, `titles`, `equippedTitle`, `emotes`, `palettes`) and §28.9.12 `achievements`
-(`unlocked`, `milestones`, `counters`). Multi-rank nodes are stored by repeating the node ID once per purchased rank in
-`skillNodes` (`{"SKL_CHEF_01","SKL_CHEF_01","SKL_CHEF_01"}` = rank 3). §14 additionally needs `specs: {string}`,
-`overtimeXp: number` and `xpOnceKeys: {[string]: true}` in `progression` (requested from §28). Rolling-cap windows live
+`unspentStatPoints`, `lastFreeStatRespecAt`, `respecTokens`, `skillNodes` (node ID → rank, e.g. `skillNodes["SKL_CHEF_01"] = 3`),
+`specs`, `bonusSkillPoints`, `unspentSkillPoints`, `lastFreeSkillRespecAt`, `overtimeXp`, `xpOnceKeys`, `titles`, `emotes`)
+with achievements and milestones in `progression.achievements` (`unlocked`, `milestones`, `counters`). Cosmetic palettes
+live in `morph` (§28.9.6) and the equipped title in `social.titleEquipped` (§28.9.12). Rolling-cap windows live
 in server memory only (reset on rejoin — bounded by the caps themselves).
 
 ```lua
@@ -863,5 +862,5 @@ for changed fields, XP toasts batched.
 - **AC-14-17:** Instigated fights grant 0 `CALM_FIGHT` XP, and self-caused damage grants 0 `REPAIR` XP, in 20/20 scripted attempts each.
 - **AC-14-18:** On level-up the player's `Humanoid.MaxHealth` equals `100 + 2 × (Level − 1) + mutation HP bonuses` and current HP rises by exactly 2.
 - **AC-14-19:** Satisfying an achievement's condition twice (including across rejoin and server change) records it once and grants its §36.16 reward once; hidden achievements display "???" plus category until unlocked.
-- **AC-14-20:** Each §36.17 milestone fires its analytics event exactly once per account (`MLS_045` once per bar), and `MLS_001`–`MLS_013` log `LogOnboardingFunnelStepEvent` steps 1–13 in ID order.
+- **AC-14-20:** Each §36.17 milestone fires its analytics event exactly once per account (`MLS_045` once per bar), and `MLS_001`–`MLS_013` log `LogFunnelStepEvent` steps 1–13 of the `mmr_first_session` funnel in ID order (the single onboarding funnel belongs to the tutorial, §31.8).
 - **AC-14-21:** Every unlock in the §14.4 table becomes available exactly at its level: the Cooking Academy refuses a recipe one level early and offers it at its §C10 level; districts open at their §C16.1 level; tier upgrades below the §C6 level are refused.

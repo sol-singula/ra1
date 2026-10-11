@@ -46,7 +46,7 @@ INC = {1: 630, 2: 1080, 3: 1730, 4: 3100, 5: 5400, 6: 9600, 7: 17400, 8: 32800, 
 
 
 # Tier pacing factors [TUNABLE] (§20.6): early tiers are short (1–7 h) but carry many teaching quests, late tiers are long.
-P_MB = {1: 0.3, 2: 0.3, 3: 0.35, 4: 0.5, 5: 0.7, 6: 1.2, 7: 2.0, 8: 2.8, 9: 3.8, 10: 5.0}
+P_MB = {1: 0.3, 2: 0.3, 3: 0.35, 4: 0.4, 5: 0.47, 6: 0.8, 7: 1.35, 8: 1.9, 9: 2.5, 10: 3.4}
 P_XP = {1: 0.15, 2: 0.14, 3: 0.18, 4: 0.21, 5: 0.33, 6: 0.6, 7: 1.0, 8: 1.4, 9: 1.7, 10: 2.8}
 
 
@@ -160,13 +160,13 @@ def xpreq(level: int) -> int:
 
 
 def scale_table() -> str:
-    rows = ["| Tier | Entry L | IncH (MB/h) | Daily MB (0.03·IncH) | Daily XP (0.25·XPR) | Daily MS (2+T) | "
-            "Weekly MB (0.12·IncH) | Weekly XP (0.5·XPR) | Weekly MS (5×T) | Weekly RT |",
+    rows = ["| Tier | Entry L | IncH (MB/h) | Daily MB (0.02·IncH) | Daily XP (0.25·XPR) | Daily MS (2+T) | "
+            "Weekly MB (0.08·IncH) | Weekly XP (0.5·XPR) | Weekly MS (5×T) | Weekly RT |",
             "|---|---|---|---|---|---|---|---|---|---|"]
     for t in range(1, 11):
         L = ENTRY_L[t]
-        rows.append(f"| `TIER_{t:02d}` | {L} | {INC[t]:,} | {nice(0.03 * INC[t]):,} | {nice(0.25 * xprate(L)):,} | "
-                    f"{2 + t} | {nice(0.12 * INC[t]):,} | {nice(0.5 * xprate(L)):,} | {5 * t} | {1 + (t - 1) // 4} |")
+        rows.append(f"| `TIER_{t:02d}` | {L} | {INC[t]:,} | {nice(0.02 * INC[t]):,} | {nice(0.25 * xprate(L)):,} | "
+                    f"{2 + t} | {nice(0.08 * INC[t]):,} | {nice(0.5 * xprate(L)):,} | {5 * t} | {1 + (t - 1) // 4} |")
     return "\n".join(rows)
 
 

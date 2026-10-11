@@ -14,8 +14,8 @@
   only, while Morph Capsules are explicitly allowed (§C4.7). XP is written **XP n XPU** (§14.3). **Exactly 6 milestones
   grant 1 skill point each** (feeds §14.14).
 - **Analytics.** Each row fires its listed event once plus `mmr_milestone_reached {mls_id, level, hours_active,
-  session_index}`. `MLS_001`–`MLS_013` also call `AnalyticsService:LogOnboardingFunnelStepEvent(player, step, name)` with
-  step = 1–13 in ID order; level bands call `LogProgressionEvent(player, "PlayerLevel",
+  session_index}`. `MLS_001`–`MLS_013` also call `AnalyticsService:LogFunnelStepEvent(player, "mmr_first_session", sessionId, step, name)`
+  with step = 1–13 in ID order (the onboarding funnel itself is reserved for the tutorial, §31.8); level bands call `LogProgressionEvent(player, "PlayerLevel",
   Enum.AnalyticsProgressionType.Complete, level)`; tier rows call it with path `"RestaurantTier"` and the tier number.
 
 | ID | Milestone | Trigger | Unlocks | Reward | Analytics event |

@@ -298,12 +298,16 @@ function OfflineEarningsService.Collect(player: Player, reportId: string)
     if not r or r.reportId ~= reportId then return { ok = false, reason = "Stale", current = r and r.reportId } end
     -- one synchronous block: grant + ring + clear mutate the same in-memory profile, then one save
     local mb = math.floor(r.net + 0.5)                        -- canon C0: round half-up at payout only
-    EconomyService:Grant(player, "MB", mb, "offline_report", reportId)
-    if r.ms > 0 then EconomyService:Grant(player, "MS", r.ms, "offline_report", reportId .. ":ms") end
-    for _, c in r.crates do InventoryService:AddStock(player, c.ing, c.units, "offline_find") end
-    if r.capsules > 0 then MutationService:GrantCapsules(player, r.capsules, "OFFLINE_FIND") end
-    if r.welcomeBackCrate then MutationService:GrantCapsules(player, 1, "welcome_back")
-        EconomyService:Grant(player, "MS", 50, "welcome_back", reportId .. ":wb") end
+    local ms = r.ms + (r.welcomeBackCrate and 50 or 0)        -- Welcome Back Crate MS (canon E5) rides the same txn
+    -- single-writer economy (§27 P3): one idempotent transaction, reason code `offline_collect` (§22/§31),
+    -- key `offline:<reportId>` (§28); non-currency grants run inside the same non-yielding step
+    local res = EconomyService:TransactWith(player, { id = `offline:{reportId}`, deltas = { MB = mb, MS = ms },
+        src = "offline_collect", ref = reportId }, function()
+        for _, c in r.crates do InventoryService:AddStock(player, c.ing, c.units, "offline_find") end
+        if r.capsules > 0 then MutationService:GrantCapsules(player, r.capsules, "OFFLINE_FIND") end
+        if r.welcomeBackCrate then MutationService:GrantCapsules(player, 1, "welcome_back") end
+    end)
+    if not res.ok and res.reason ~= "duplicate" then return res end
     table.insert(data.claimedReportIds, reportId)
     if #data.claimedReportIds > RING then table.remove(data.claimedReportIds, 1) end
     data.pendingOfflineReport = nil
@@ -1015,7 +1019,7 @@ moving") without replacing it:
 | `mmr_offline_ceiling_hit` / `mmr_offline_clock_skew` / `mmr_offline_merge` | safety paths | reportId, amount / skewSec / segments |
 | `mmr_welcome_back_crate` | E5 crate granted | daysAway |
 
-Collect also logs `AnalyticsService:LogEconomyEvent` (Source, MB, "offline_earnings"). The first collected report is
+Collect also logs `AnalyticsService:LogEconomyEvent` (Source, MB, "offline_collect"). The first collected report is
 an onboarding funnel step owned by §31. These feed the §17.6 tuning table, including the guardrail KPI (offline share
 of MB by D7/D30 cohort).
 

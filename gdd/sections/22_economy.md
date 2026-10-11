@@ -78,7 +78,7 @@ flowchart LR
 **Purpose.** Give every reward and price exactly one unambiguous unit.
 
 **Rules & Mechanics.**
-- Balances are **non-negative integers** stored in the profile (`wallet.MB`, `wallet.MS`, `wallet.RT`); fractional
+- Balances are **non-negative integers** stored in the profile (`wallet.balances.MB`, `wallet.balances.MS`, `wallet.balances.RT`, §28); fractional
   accruals (offline steps, per-minute wages) use server-side accumulators and are floored when committed.
 - **Sanity hard caps** (overflow protection, far beyond intended play): MB 1,000,000,000,000; MS 10,000,000; RT 1,000,000.
   A grant that would exceed a cap is clamped and logged `mmr_economy_cap_hit`.
@@ -808,7 +808,7 @@ can never push a player up the restaurant ladder faster than canon pacing (scena
 endingBalance, transactionType, itemSKU)` with `flowType` = `Enum.AnalyticsEconomyFlowType.Source/Sink`, `currencyType`
 = `"MB"`, `"MS"` or `"RT"`, `transactionType` from `Enum.AnalyticsEconomyTransactionType` (`Gameplay`, `Shop`,
 `TimedReward`, `Onboarding`) and `itemSKU` = the content id when present (e.g. `MUT_216`). High-frequency customer payments are aggregated per 60 s per
-player into one event. Internal events (registered in §31): `mmr_currency_tx`, `mmr_tier_upgraded`,
+player into one event. Internal events (registered in §31): `mmr_currency_tx`, `mmr_restaurant_tier_up`,
 `mmr_offline_collected`, `mmr_economy_cap_hit`, `mmr_ms_softcap_hit`, `mmr_purchase_failed_insufficient`,
 `mmr_unpaid_break`, `mmr_wallet_snapshot` (daily per player: balances, NetRef, tier, level, active and offline hours).
 
@@ -925,7 +925,7 @@ end
   within ±20 % or equals its §C5.1 level gate (±0.05 h).
 - **AC-22-03:** In the scenario-B simulation (with offline earnings) no tier is reached before its §C5.1 level gate.
 - **AC-22-04:** A telemetry cohort of ≥ 1,000 new players reaches `TIER_05` in a median of 14 ± 2.8 active hours (§C4.4 ±20 %).
-- **AC-22-05:** No code path outside `EconomyService` writes `wallet.MB`, `wallet.MS` or `wallet.RT` (static lint in CI).
+- **AC-22-05:** No code path outside `EconomyService` writes `wallet.balances.MB`, `.MS` or `.RT` (static lint in CI).
 - **AC-22-06:** Replaying any economy remote 100 times with the same client GUID / idempotency key changes the balance exactly once.
 - **AC-22-07:** Balances never go below 0 across a 10,000-session soak test with random purchases, wages and repairs.
 - **AC-22-08:** A purchase interrupted by a forced server shutdown results in either both the debit and the item or neither

@@ -138,7 +138,7 @@ Quality qualifiers: `≥GOOD` / `PERFECT` (§C8). `S≥n` means customer satisfa
 | Eligibility | unlock level, district unlocked, required systems (e.g. employees, Arena opt-in), personality in spawn table | same |
 | Diversity | ≤ 1 per category tag (cook / serve / combat / repair / explore / staff) per day; no repeats from yesterday | ≤ 2 per category tag; no repeats from last week |
 | Free reroll | **1 per UTC day** (any one slot) | **1 per week** |
-| Extra rerolls | 0.02 × IncH(T) MB each, max 3 per day [TUNABLE]. MB only, never Robux (§23) | 0.1 × IncH(T) MB, max 1 per week |
+| Extra rerolls | 0.01 × IncH(T) MB each, max 3 per day [TUNABLE]. MB only, never Robux (§23) | 0.04 × IncH(T) MB, max 1 per week |
 | Social exemption | — | co-op/social weeklies (`QST_WKY_013`, `QST_WKY_014`) can be rerolled free at any time by players who prefer solo play |
 | Completion bonus | **Daily Trio** — all 3 claimed: 1 Morph Capsule | **Weekly Sweep** — all 5 claimed: 2 Morph Capsules + 1 RT |
 | Expiry | unfinished dailies expire at reset (no penalty) | unfinished weeklies expire at reset (no penalty) |
@@ -150,30 +150,36 @@ keeping the `dayIndex`.
 ### 20.6 Variables — reward scaling [TUNABLE]
 
 **Notation.** `IncH(T)` = canon net MB per active hour at tier T (§C4.4). `XPR(L)` = `900 × 1.045^(L−1)` (§C5.1).
-Fixed (one-time) quests carry a reference tier `t` and level `l`. Their database MB = `f_MB × IncH(t)` and XP =
-`f_XP × XPR(l)`, rounded to friendly numbers (< 100 → 5, < 1,000 → 10, < 10,000 → 50, < 100,000 → 100, else 1,000).
-Daily and weekly rewards are snapshotted at **accept** time from the player's current tier T and level L, so upgrading
-mid-quest neither raises nor lowers the payout.
+Each one-time quest carries a reference tier `t` and level `l`:
+`MB = f_MB × IncH(t) × P_MB(t)` and `XP = f_XP × XPR(l) × P_XP(t)`. Values are rounded to friendly numbers
+(< 100 → 5, < 1,000 → 10, < 10,000 → 50, < 100,000 → 100, else 1,000). `P_MB` / `P_XP` are **tier pacing factors**
+(table below). Tiers 2–4 last only 2–7 hours (§C4.4) yet hold many teaching quests, while tiers 8–10 last 25–80 hours,
+so a constant fraction would either flood the early game or starve the late game. Daily and weekly rewards scale with
+the player's **current** T and L, snapshotted at accept, so upgrading mid-quest never changes the payout.
 
-| Quest type | f_MB (× IncH) | f_XP (× XPR) | MS | RT | Other |
+| Quest type | f_MB | f_XP | MS | RT | Other |
 |---|---|---|---|---|---|
 | TUT | fixed: 600 MB total | fixed: 390 XP total | — | — | `MUT_145` / `MUT_144` / `MUT_153` choice; 1 Morph Capsule |
-| STY (regular / chapter finale) | 0.20 / 0.40 | 0.30 / 0.60 | 2×T to 6×T | from Ch. 3: 1–12 (finale Ch. 10: 50) | finales: 1 skill point; trophies, parts, titles |
-| DLY | 0.03 | 0.25 (canon example) | 2 + T | — | Daily Trio bonus: 1 Morph Capsule |
-| WKY | 0.12 | 0.50 | 5 × T | 1 + ⌊(T−1)/4⌋ | Weekly Sweep: 2 Morph Capsules + 1 RT |
-| CHF / CBT / RPR / EXP / EMP | 0.10–0.25 | 0.15–0.40 | 2×T to 8×T | late-game only | trophies, parts, palettes, titles |
-| Legendary Recipe quests (CHF_011–015) | 0.30 | 0.50 | 10×T | 10–25 | the `RCP_LEG_` recipe |
-| RST permits / other RST | 0.15 / 0.10 | 0.50 / 0.20 | 3×T | — | permit flag (not a reward item) |
+| STY (regular / chapter finale) | 0.15–0.20 / 0.30–0.40 | 0.30 / 0.60 | 2×T to 10×T | from Ch. 3: 1–15 (finale Ch. 10: 50) | finales: 1 skill point; trophies, parts, titles |
+| DLY (no P factor) | 0.02 | 0.25 (canon example) | 2 + T | — | Daily Trio bonus: 1 Morph Capsule |
+| WKY (no P factor) | 0.08 | 0.50 | 5 × T | 1 + ⌊(T−1)/4⌋ | Weekly Sweep: 2 Morph Capsules + 1 RT |
+| CHF / CBT / RPR / EXP / EMP | 0.10–0.25 | 0.20–0.40 | 3 to 60 | late-game: 1–5 | trophies, parts, palettes, titles |
+| Legendary Recipe quests (CHF_011–015) | 0.30 | 0.50 | 80–150 | 10–25 | the `RCP_LEG_` recipe |
+| RST permits / other RST | 0.15 / 0.10 | 0.50 / 0.20 | 3 × T | — | permit flag (a gate, not a reward item) |
 
 **Daily and weekly reward values by tier** (XP shown at each tier's entry level; generated):
 
 {{SCALE_TABLE}}
 
-**Budget check** (generated from the database). One-time quest MB at each reference tier, divided by the income a player
-earns while in that tier (`IncH × hours in tier`, from the cumulative-hours column of §C4.4), and one-time quest XP
-divided by the XP needed to cross the tier's level band. Canon C4.4 assumes about 15 % of income comes from
-quests + events. One-time quests are kept to ≤ 12 % of income in every tier, so dailies, weeklies and events fit in the
-remaining headroom for a typical 1.5 h/day player (dailies ≈ 6 %, weeklies ≈ 4 % of income at that pace).
+**Budget check** (generated from the database). For each tier: total one-time quest MB divided by the income earned
+while in that tier (`IncH × hours in tier`, from the cumulative-hours column of §C4.4), and total one-time quest XP
+divided by the XP needed to cross the tier's level band (§C5.1). Targets [TUNABLE]:
+
+- `TIER_01` is the tutorial onboarding grant, deliberately generous: it pays for the first upgrade and reaches about L3.
+- `TIER_02`–`TIER_04` allow ≤ 25 % MB / ≤ 20 % XP, a deliberate early-session boost.
+- `TIER_05`+ allow ≈ 8 % MB / ≈ 12 % XP.
+- For a typical 1.5 h/day player, dailies add ≈ 4 % and weeklies ≈ 4 % of income. One-time + repeatable quests
+  therefore stay near the canon ~15 % "quests + events" share from mid-game on; events are budgeted in §36.11.
 
 {{BUDGET_TABLE}}
 

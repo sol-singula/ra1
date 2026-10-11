@@ -265,7 +265,7 @@ the 60-name budget, 55 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 | `mmr_customer_calmed` | hostile reaches Apologizing (§11) | method, personalityId | Custom (CF01 method, CF02 personality) |
 | `mmr_ability_used` | ability activation accepted (10 % sampled, §11) | abilityId, context | Custom (CF01 ability, CF02 context) |
 | `mmr_prop_thrown` | prop thrown (10 % sampled, §11) | propClass, hitKind | Custom (CF01 prop class) |
-| `mmr_restaurant_tier_up` | tier upgrade completed (§36.17 tier milestones; §22 calls it `mmr_tier_upgraded`) | tier, activeHoursSinceInstall, level | **Prog `RestaurantTier`** (level = tier number) |
+| `mmr_restaurant_tier_up` | tier upgrade completed (§36.17 tier milestones) | tier, activeHoursSinceInstall, level | **Prog `RestaurantTier`** (level = tier number) |
 | `mmr_station_upgraded` | station level purchased | stationRef, newLevel | Internal |
 | `mmr_employee_hired` | hire committed (`EmployeeService`) | archetype, rarity, role, cost | Custom (CF01 rarity, CF02 role) + **Fun `mmr_hire` 3** |
 | `mmr_unpaid_break` | wage tick uncovered (E8, §22) | staffCount, deficit | Custom (CF03 tier) |

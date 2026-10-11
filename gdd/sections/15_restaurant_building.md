@@ -177,7 +177,7 @@ progress, restaurant name. Damage does **not** carry over: Mutant Builders "fix 
 4. Still failing → moved to storage with a "Needs a home" badge (never lost, never sold).
 5. Run connectivity (§15.5.9). If it fails, store the blocking decor with the lowest atmosphere points first
    until it passes; seats and essentials are never auto-stored if any decor could be stored instead.
-6. Toast: "Moved 41 items · 2 need a home". Analytics `mmr_tier_upgraded` logs counts (§31).
+6. Toast: "Moved 41 items · 2 need a home". Analytics `mmr_restaurant_tier_up` logs counts (§31).
 
 ### 15.4 Plot and Instanced Interior Model
 
@@ -743,7 +743,7 @@ finger, Rotate/Place/Store/Undo buttons ≥ 56 u).
 | `PAUSED` | no | run | Pause Service; customers inside finish |
 | `EDITING` | held | frozen | 0 customers inside (§15.5.3) |
 | `RENOVATING` | no | frozen | Last Call then Mutant Builders (§15.3) |
-| `AWAY` (owner in the city, same server) | staffed: yes · unstaffed: no ("Out to Lunch", or "Event Break" during city events) | heat stations paused (no fires while away) | per §18: seated customers finish or leave politely with no reputation loss; anger escalation above level 2 is suppressed unless a Security Guard is on shift, so level-4 smashing (and furniture damage from it) cannot happen in an unguarded restaurant |
+| `AWAY` (owner in the city, same server) | staffed: yes · unstaffed: no ("Out to Lunch", or "Event Break" during city events) | heat stations paused (no fires while away) | per §18: seated customers finish or leave politely with no reputation loss; anger escalation into levels 4–6 is suppressed unless a Security Guard is on shift (would-be escalators sulk and leave, §18), so level-4 smashing (and furniture damage from it) cannot happen in an unguarded restaurant |
 | `CLOSING` | no | finish/discard | canon E1 on owner disconnect |
 
 #### 15.12.2 Layout serialization (DataStore)
@@ -821,7 +821,7 @@ that each kitchen fits its canon slot count.
 
 #### 15.12.6 Analytics
 
-`mmr_furniture_purchased` (item, price, tier), `mmr_layout_op` (op, reason code if rejected), `mmr_tier_upgraded`
+`mmr_furniture_purchased` (item, price, tier), `mmr_layout_op` (op, reason code if rejected), `mmr_restaurant_tier_up`
 (tier, migrated, stored), `mmr_object_damaged` / `mmr_object_destroyed` (item, source), `mmr_repair_completed`
 (item, worst state, cost, actor, minigame grade), `mmr_insurance_settled`, plus `LogEconomyEvent` sinks for
 purchases, repairs, rebuilds and upgrades (§31).
@@ -860,7 +860,7 @@ purchases, repairs, rebuilds and upgrades (§31).
 | 15 | Offline damage hits an object with a paused repair job | merged by E3; offline damage never Destroys (floor 1 %) |
 | 16 | Sprinkler and a player extinguish the same fire | first completion wins; one puddle at most; no double effects |
 | 17 | Seat cap reached but the player buys more chairs | purchase allowed (goes to storage); placement refused with `SEAT_CAP` |
-| 18 | Restaurant left unstaffed while the owner explores the city | `AWAY` "Out to Lunch": no arrivals, heat timers paused, escalation capped at level 2 without security — nothing burns or gets smashed (§15.12.1) |
+| 18 | Restaurant left unstaffed while the owner explores the city | `AWAY` "Out to Lunch": no arrivals, heat timers paused, escalation into levels 4–6 suppressed without security (§18) — nothing burns or gets smashed (§15.12.1) |
 
 ### 15.15 Acceptance Criteria
 
@@ -905,4 +905,4 @@ purchases, repairs, rebuilds and upgrades (§31).
 - **AC-15-21:** Buying a station path level upgrades every owned instance of that type (including premium variants
   and copies bought later) and costs ×1.5/×4/×10/×25 of the stock item price.
 - **AC-15-22:** While the restaurant is `AWAY` and unstaffed, no new customers arrive, no station reaches ON_FIRE,
-  and no customer exceeds anger level 2 without a Security Guard on shift.
+  and no customer escalates into anger levels 4–6 without a Security Guard on shift (§18).
