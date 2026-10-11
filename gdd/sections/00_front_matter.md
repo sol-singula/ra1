@@ -27,7 +27,7 @@
 
 Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the counts below are counted from this document and are never typed by hand.
 
-**Automated validation:** ⚠️ ISSUES FOUND — 2,117 defined identifiers, 12,815 identifier references, **216 unresolved**, 192 canonical-name mismatches, 36 Mermaid diagrams. Re-run with `python3 gdd/tools/validate_gdd.py`.
+**Automated validation:** ⚠️ ISSUES FOUND — 2,389 defined identifiers, 14,973 identifier references, **173 unresolved**, 150 canonical-name mismatches, 39 Mermaid diagrams. Re-run with `python3 gdd/tools/validate_gdd.py`.
 
 #### Content counts
 
@@ -57,8 +57,8 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | Offline incidents (≥50) | 50 | 69 | ✅ | §36.9 |
 | City districts (≥10) | 10 | 10 | ✅ | §18, §36.1 |
 | City buildings (≥16) | 16 | 22 | ✅ | §36.10 |
-| Named NPCs (≥100) | 100 | 0 | ❌ | §19 |
-| Quests (≥100) | 100 | 0 | ❌ | §20 |
+| Named NPCs (≥100) | 100 | 115 | ✅ | §19 |
+| Quests (≥100) | 100 | 157 | ✅ | §20 |
 | City events (≥30) | 30 | 32 | ✅ | §36.11 |
 | Animations (≥150) | 150 | 235 | ✅ | §36.14 |
 | Sound effects | 100 | 201 | ✅ | §36.15 |
@@ -103,8 +103,8 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | 16 | Employee Management | ✅ |
 | 17 | Offline Restaurant Simulation | ✅ |
 | 18 | Morph City | ✅ |
-| 19 | City NPCs | ❌ |
-| 20 | Quests | ❌ |
+| 19 | City NPCs | ✅ |
+| 20 | Quests | ✅ |
 | 21 | Multiplayer | ✅ |
 | 22 | Economy | ✅ |
 | 23 | Monetization | ✅ |
@@ -131,7 +131,7 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | Source file | Size (KB) | Acceptance criteria | [TUNABLE] markers |
 |---|---|---|---|
 | `gdd/sections/01_executive_summary.md` | 14 | 5 | 18 |
-| `gdd/sections/02_game_vision.md` | 23 | 5 | 5 |
+| `gdd/sections/02_game_vision.md` | 22 | 5 | 5 |
 | `gdd/sections/03_design_pillars.md` | 25 | 5 | 17 |
 | `gdd/sections/04_core_gameplay_loops.md` | 43 | 10 | 12 |
 | `gdd/sections/05_cooking_mechanics.md` | 112 | 26 | 2 |
@@ -142,23 +142,25 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | `gdd/sections/11_combat_system.md` | 78 | 24 | 9 |
 | `gdd/sections/12_mutation_system.md` | 62 | 16 | 8 |
 | `gdd/sections/12b_combinations_synergies.md` | 40 | 13 | 7 |
-| `gdd/sections/13_morph_customization.md` | 65 | 15 | 4 |
+| `gdd/sections/13_morph_customization.md` | 66 | 15 | 4 |
 | `gdd/sections/14_player_progression.md` | 75 | 21 | 13 |
 | `gdd/sections/15_restaurant_building.md` | 68 | 22 | 8 |
 | `gdd/sections/16_employee_management.md` | 61 | 15 | 7 |
-| `gdd/sections/17_offline_simulation.md` | 65 | 0 | 1 |
+| `gdd/sections/17_offline_simulation.md` | 82 | 17 | 6 |
 | `gdd/sections/18_morph_city.md` | 85 | 24 | 9 |
+| `gdd/sections/19_city_npcs.md` | 75 | 14 | 4 |
+| `gdd/sections/20_quests.md` | 99 | 17 | 8 |
 | `gdd/sections/21_multiplayer.md` | 54 | 25 | 10 |
 | `gdd/sections/22_economy.md` | 74 | 20 | 9 |
-| `gdd/sections/23_monetization.md` | 11 | 0 | 0 |
+| `gdd/sections/23_monetization.md` | 24 | 17 | 0 |
 | `gdd/sections/24_ui_ux.md` | 103 | 32 | 11 |
-| `gdd/sections/25_art_direction.md` | 63 | 23 | 2 |
+| `gdd/sections/25_art_direction.md` | 64 | 23 | 2 |
 | `gdd/sections/26_animation_audio.md` | 45 | 20 | 2 |
 | `gdd/sections/27_roblox_architecture.md` | 144 | 25 | 11 |
-| `gdd/sections/28_data_persistence.md` | 91 | 20 | 12 |
+| `gdd/sections/28_data_persistence.md` | 95 | 20 | 12 |
 | `gdd/sections/29_security_anti_exploit.md` | 46 | 15 | 5 |
 | `gdd/sections/30_performance_optimization.md` | 28 | 14 | 2 |
-| `gdd/sections/31_analytics.md` | 45 | 14 | 3 |
+| `gdd/sections/31_analytics.md` | 46 | 14 | 3 |
 | `gdd/sections/32_tutorial.md` | 72 | 17 | 6 |
 | `gdd/sections/33_content_expansion.md` | 24 | 8 | 5 |
 | `gdd/sections/34_development_roadmap.md` | 57 | 38 | 5 |
@@ -169,10 +171,10 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | `gdd/sections/36_05_morph_combinations.md` | 31 | 0 | 0 |
 | `gdd/sections/36_06_abilities.md` | 45 | 0 | 0 |
 | `gdd/sections/36_07_status_effects.md` | 10 | 0 | 0 |
-| `gdd/sections/36_08_employee_archetypes.md` | 40 | 0 | 0 |
-| `gdd/sections/36_09_offline_incidents.md` | 20 | 0 | 0 |
+| `gdd/sections/36_08_employee_archetypes.md` | 40 | 0 | 1 |
+| `gdd/sections/36_09_offline_incidents.md` | 20 | 0 | 1 |
 | `gdd/sections/36_10_city_buildings.md` | 47 | 15 | 13 |
-| `gdd/sections/36_11_city_events.md` | 39 | 13 | 2 |
+| `gdd/sections/36_11_city_events.md` | 41 | 14 | 2 |
 | `gdd/sections/36_12_restaurant_tiers_upgrades.md` | 36 | 0 | 2 |
 | `gdd/sections/36_13_furniture_catalog.md` | 47 | 0 | 1 |
 | `gdd/sections/36_14_animation_library.md` | 44 | 0 | 0 |
@@ -181,13 +183,13 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | `gdd/sections/36_17_milestones.md` | 11 | 0 | 0 |
 | `gdd/sections/37_implementation_checklists.md` | 26 | 17 | 1 |
 | `gdd/sections/38_open_design_decisions.md` | 12 | 3 | 0 |
-| `gdd/sections/39_balancing_assumptions.md` | 32 | 6 | 2 |
+| `gdd/sections/39_balancing_assumptions.md` | 33 | 6 | 2 |
 | `gdd/sections/40_definition_of_done.md` | 14 | 13 | 2 |
-| **Total** | **2686** | **613** | **265** |
+| **Total** | **2902** | **679** | **284** |
 
 </details>
 
-Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLICE`, `ING_BUG_CRUNCH`, `ING_BUN`, `ING_BUTTER`, `ING_CHEESE`, `ING_CHOCOLATE`, `ING_DOUGH`, `ING_EGG`, `ING_GOLDEN_PATTY`, `ING_GUMMY_EYEBALL`, `ING_HAM`, `ING_HOT_SAUCE`, `ING_ICE`, `ING_ICE_CREAM_BASE`, `ING_KETCHUP`, `ING_LAVA_PEPPER`, `ING_LEMON`, `ING_LETTUCE`, `ING_MOON_CHEESE`, `ING_MOZZARELLA`, `ING_MUSTARD`, `ING_MUTAGEN_GOO`, `ING_ONION`, `ING_PASTA`, `ING_PEPPERONI`, `ING_PICKLE`, `ING_POTATO`, `ING_SHRIMP`, `ING_SODA_SYRUP`, `ING_STARDUST`, `ING_SUGAR`, `ING_TAPIOCA`, `ING_TOMATO`, `ING_TOMATO_SAUCE`, `NPC_001`, `NPC_002`, `NPC_003`, `NPC_004`, `NPC_005`, `NPC_006`, `NPC_007`, `NPC_008`, `NPC_009`, `NPC_010`, `NPC_011`, `NPC_012`, `NPC_013`
+Unresolved identifiers: `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLICE`, `ING_BUG_CRUNCH`, `ING_BUN`, `ING_BUTTER`, `ING_CHEESE`, `ING_CHOCOLATE`, `ING_DOUGH`, `ING_EGG`, `ING_GOLDEN_PATTY`, `ING_GUMMY_EYEBALL`, `ING_HAM`, `ING_HOT_SAUCE`, `ING_ICE`, `ING_ICE_CREAM_BASE`, `ING_KETCHUP`, `ING_LAVA_PEPPER`, `ING_LEMON`, `ING_LETTUCE`, `ING_MOON_CHEESE`, `ING_MOZZARELLA`, `ING_MUSTARD`, `ING_MUTAGEN_GOO`, `ING_ONION`, `ING_PASTA`, `ING_PEPPERONI`, `ING_PICKLE`, `ING_POTATO`, `ING_SHRIMP`, `ING_SODA_SYRUP`, `ING_STARDUST`, `ING_SUGAR`, `ING_TAPIOCA`, `ING_TOMATO`, `ING_TOMATO_SAUCE`, `RCP_ALN_001`, `RCP_ALN_002`, `RCP_ALN_003`, `RCP_ALN_005`, `RCP_ALN_006`, `RCP_ALN_007`, `RCP_ALN_008`, `RCP_ALN_009`, `RCP_ALN_010`, `RCP_BRG_002`, `RCP_BRG_003`, `RCP_BRG_004`, `RCP_BRG_005`, `RCP_BRG_006`
 
 ## Brief Coverage Map
 
@@ -440,12 +442,17 @@ Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLI
   - [17.1 Purpose and principles](#171-purpose-and-principles)
   - [17.2 The return procedure](#172-the-return-procedure)
   - [17.3 Variables [TUNABLE]](#173-variables-tunable)
-  - [17.4 The model in detail (A11 elaborations of canon §C15)](#174-the-model-in-detail-a11-elaborations-of-canon-c15)
+  - [17.4 The model in detail (elaborations of canon §C15) [TUNABLE]](#174-the-model-in-detail-elaborations-of-canon-c15-tunable)
   - [17.5 Deterministic RNG and hourly stepping](#175-deterministic-rng-and-hourly-stepping)
-  - [17.6 Caps and the tuning plan](#176-caps-and-the-tuning-plan)
+  - [17.6 Caps and the tuning plan [TUNABLE]](#176-caps-and-the-tuning-plan-tunable)
   - [17.7 Persistence and idempotency (canon §C15, E11)](#177-persistence-and-idempotency-canon-c15-e11)
   - [17.8 Anti-exploit](#178-anti-exploit)
   - [17.9 Worked examples](#179-worked-examples)
+  - [17.10 Welcome Back screen](#1710-welcome-back-screen)
+  - [17.11 Offline mutation progression [TUNABLE]](#1711-offline-mutation-progression-tunable)
+  - [17.12 Analytics hooks](#1712-analytics-hooks)
+  - [17.13 Edge cases](#1713-edge-cases)
+  - [17.14 Acceptance criteria](#1714-acceptance-criteria)
 - [18. Morph City](#18-morph-city)
   - [18.1 City Overview & Visual Hooks](#181-city-overview--visual-hooks)
   - [18.2 City Layout & District Map](#182-city-layout--district-map)
@@ -458,6 +465,33 @@ Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLI
   - [18.9 Roblox Implementation](#189-roblox-implementation)
   - [18.10 Edge Cases](#1810-edge-cases)
   - [18.11 Acceptance Criteria](#1811-acceptance-criteria)
+- [19. City NPCs](#19-city-npcs)
+  - [19.1 Purpose](#191-purpose)
+  - [19.2 Rules & Mechanics — the NPC data model](#192-rules--mechanics--the-npc-data-model)
+  - [19.3 Dialogue trees (conditions, variables, effects)](#193-dialogue-trees-conditions-variables-effects)
+  - [19.4 Interaction prompt rules](#194-interaction-prompt-rules)
+  - [19.5 Idle schedules & behaviors](#195-idle-schedules--behaviors)
+  - [19.6 Hearts — optional friendship (Progression · Player Interactions)](#196-hearts--optional-friendship-progression--player-interactions)
+  - [19.7 Roblox Implementation — SPCV placement, streaming, performance](#197-roblox-implementation--spcv-placement-streaming-performance)
+  - [19.8 Localization-ready dialogue keys](#198-localization-ready-dialogue-keys)
+  - [19.9 NPC database (115 named NPCs)](#199-npc-database-115-named-npcs)
+  - [19.10 Edge Cases](#1910-edge-cases)
+  - [19.11 Dependencies](#1911-dependencies)
+  - [19.12 Acceptance Criteria](#1912-acceptance-criteria)
+- [20. Quests](#20-quests)
+  - [20.1 Purpose](#201-purpose)
+  - [20.2 Rules & Mechanics — quest types and lifecycle](#202-rules--mechanics--quest-types-and-lifecycle)
+  - [20.3 Objective grammar (typed objectives)](#203-objective-grammar-typed-objectives)
+  - [20.4 UI — journal, tracking, markers](#204-ui--journal-tracking-markers)
+  - [20.5 Daily & weekly rotation and rerolls](#205-daily--weekly-rotation-and-rerolls)
+  - [20.6 Variables — reward scaling [TUNABLE]](#206-variables--reward-scaling-tunable)
+  - [20.7 Failure, abandon, retry — and Roblox implementation](#207-failure-abandon-retry--and-roblox-implementation)
+  - [20.8 Progression — the story campaign "From Shack to Legendary"](#208-progression--the-story-campaign-from-shack-to-legendary)
+  - [20.9 Quest database](#209-quest-database)
+  - [20.10 Unlock & trophy map (quick reference)](#2010-unlock--trophy-map-quick-reference)
+  - [20.11 Edge Cases](#2011-edge-cases)
+  - [20.12 Dependencies](#2012-dependencies)
+  - [20.13 Acceptance Criteria](#2013-acceptance-criteria)
 - [21. Multiplayer](#21-multiplayer)
   - [21.1 Purpose and Social Pillars](#211-purpose-and-social-pillars)
   - [21.2 Server, Plot and Visit Model](#212-server-plot-and-visit-model)
@@ -496,6 +530,14 @@ Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLI
   - [23.3 Morph Skins and Palettes](#233-morph-skins-and-palettes)
   - [23.4 Restaurant Themes and Decorative Furniture Packs](#234-restaurant-themes-and-decorative-furniture-packs)
   - [23.5 Emotes, Looks, VIP Visual Effects and Nonessential Customization](#235-emotes-looks-vip-visual-effects-and-nonessential-customization)
+  - [23.6 Game Passes vs Developer Products](#236-game-passes-vs-developer-products)
+  - [23.7 Exclusively Earnable — Never Sold for Robux](#237-exclusively-earnable--never-sold-for-robux)
+  - [23.8 Paid Random Items: None](#238-paid-random-items-none)
+  - [23.9 Premium Payouts](#239-premium-payouts)
+  - [23.10 Revenue Expectations (hypotheses, to be validated)](#2310-revenue-expectations-hypotheses-to-be-validated)
+  - [23.11 Roblox Implementation](#2311-roblox-implementation)
+  - [23.12 Edge Cases](#2312-edge-cases)
+  - [23.13 Acceptance Criteria](#2313-acceptance-criteria)
 - [24. UI/UX](#24-uiux)
   - [24.1 System Summary](#241-system-summary)
   - [24.2 Design System](#242-design-system)
@@ -767,14 +809,14 @@ Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLI
   - [40.8 Launch-Readiness Checklist (Go / No-Go)](#408-launch-readiness-checklist-go--no-go)
   - [40.9 Acceptance Criteria](#409-acceptance-criteria)
 - [Appendix A. Design Canon — Identifiers, Constants and Formulas](#appendix-a-design-canon--identifiers-constants-and-formulas)
-  - [C0. Contributor Rules (Style & Format Contract)](#c0-contributor-rules-style--format-contract)
-  - [C1. Document Structure & Ownership](#c1-document-structure--ownership)
+  - [C0. Authoring Rules (Style & Format Contract)](#c0-authoring-rules-style--format-contract)
+  - [C1. Document Structure](#c1-document-structure)
   - [C2. Identifier Conventions](#c2-identifier-conventions)
   - [C3. Global Constants](#c3-global-constants)
   - [C4. Currencies & Economy Anchors](#c4-currencies--economy-anchors)
   - [C5. Player Statistics (9) & Formulas [TUNABLE]](#c5-player-statistics-9--formulas-tunable)
   - [C6. Restaurant Tiers (fixed values) [TUNABLE]](#c6-restaurant-tiers-fixed-values-tunable)
-  - [C7. Kitchen Stations (fixed list; A2 specifies every field)](#c7-kitchen-stations-fixed-list-a2-specifies-every-field)
+  - [C7. Kitchen Stations (fixed list; §5 specifies every field)](#c7-kitchen-stations-fixed-list-5-specifies-every-field)
   - [C8. Preparation Actions, Ingredient States, Quality](#c8-preparation-actions-ingredient-states-quality)
   - [C9. Ingredient Tags & Guaranteed Core Ingredients](#c9-ingredient-tags--guaranteed-core-ingredients)
   - [C10. Recipe Master List (150 — names, IDs, categories, unlock levels are fixed)](#c10-recipe-master-list-150--names-ids-categories-unlock-levels-are-fixed)
@@ -782,11 +824,11 @@ Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLI
   - [C12. Combat Constants, Abilities, Status Effects](#c12-combat-constants-abilities-status-effects)
   - [C13. Mutation System Constants & Master List](#c13-mutation-system-constants--master-list)
   - [C14. Employees](#c14-employees)
-  - [C15. Offline Simulation — Canonical Model (A11 elaborates with worked examples)](#c15-offline-simulation--canonical-model-a11-elaborates-with-worked-examples)
+  - [C15. Offline Simulation — Canonical Model (§16–§17 elaborates with worked examples)](#c15-offline-simulation--canonical-model-1617-elaborates-with-worked-examples)
   - [C16. Morph City](#c16-morph-city)
   - [C17. Quests](#c17-quests)
   - [C18. Skill Trees (IDs)](#c18-skill-trees-ids)
-  - [C19. Roblox Services (fixed names; A17 specifies every field)](#c19-roblox-services-fixed-names-a17-specifies-every-field)
+  - [C19. Roblox Services (fixed names; §27 specifies every field)](#c19-roblox-services-fixed-names-27-specifies-every-field)
   - [C20. Analytics](#c20-analytics)
   - [C21. Animation & Sound IDs](#c21-animation--sound-ids)
   - [C22. Edge-Case Rulings (all sections must agree with these)](#c22-edge-case-rulings-all-sections-must-agree-with-these)

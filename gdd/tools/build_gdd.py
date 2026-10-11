@@ -222,6 +222,28 @@ def front_matter(sections, res) -> str:
     return head + "\n" + "\n".join(toc(list(sections) + [_Pseudo(canon_appendix())], head)) + "\n\n---\n"
 
 
+README_START, README_END = "<!-- sections:start -->", "<!-- sections:end -->"
+
+
+def update_readme(sections):
+    """Refresh the per-section reading index in README.md (between marker comments)."""
+    readme = g.ROOT / "README.md"
+    if not readme.exists():
+        return
+    text = readme.read_text(encoding="utf-8")
+    if README_START not in text or README_END not in text:
+        return
+    rows = ["| Section | Source file | Size |", "|---|---|---|"]
+    for s in sections:
+        first = s.lines[0].lstrip("#").strip() if s.lines else s.name
+        kb = len(s.text.encode("utf-8")) / 1024
+        rows.append(f"| {first} | [`{s.name}`](gdd/sections/{s.name}) | {kb:.0f} KB |")
+    rows.append(f"| Appendix A. Design Canon | [`canon.md`](gdd/canon.md) | {g.CANON_PATH.stat().st_size / 1024:.0f} KB |")
+    head, rest = text.split(README_START, 1)
+    _, tail = rest.split(README_END, 1)
+    readme.write_text(head + README_START + "\n" + "\n".join(rows) + "\n" + README_END + tail, encoding="utf-8")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--render", action="store_true", help="re-run data renderers first")
@@ -235,6 +257,7 @@ def main():
     (g.SECTIONS_DIR / g.FRONT_MATTER).write_text(fm, encoding="utf-8")
     body = "\n\n".join(s.text.rstrip() + "\n" for s in sections)
     g.OUTPUT_PATH.write_text(fm + "\n" + body + "\n" + canon_appendix(), encoding="utf-8")
+    update_readme(sections)
     size = g.OUTPUT_PATH.stat().st_size
     print(f"Wrote {g.OUTPUT_PATH.name}: {size/1024:.0f} KB, {len(sections)} section files, "
           f"validation {'PASS' if res['ok'] else 'FAIL'} ({res['undefined_count']} unresolved IDs)")

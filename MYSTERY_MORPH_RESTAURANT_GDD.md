@@ -27,7 +27,7 @@
 
 Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the counts below are counted from this document and are never typed by hand.
 
-**Automated validation:** ⚠️ ISSUES FOUND — 2,117 defined identifiers, 12,815 identifier references, **216 unresolved**, 192 canonical-name mismatches, 36 Mermaid diagrams. Re-run with `python3 gdd/tools/validate_gdd.py`.
+**Automated validation:** ⚠️ ISSUES FOUND — 2,389 defined identifiers, 14,973 identifier references, **173 unresolved**, 150 canonical-name mismatches, 39 Mermaid diagrams. Re-run with `python3 gdd/tools/validate_gdd.py`.
 
 #### Content counts
 
@@ -57,8 +57,8 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | Offline incidents (≥50) | 50 | 69 | ✅ | §36.9 |
 | City districts (≥10) | 10 | 10 | ✅ | §18, §36.1 |
 | City buildings (≥16) | 16 | 22 | ✅ | §36.10 |
-| Named NPCs (≥100) | 100 | 0 | ❌ | §19 |
-| Quests (≥100) | 100 | 0 | ❌ | §20 |
+| Named NPCs (≥100) | 100 | 115 | ✅ | §19 |
+| Quests (≥100) | 100 | 157 | ✅ | §20 |
 | City events (≥30) | 30 | 32 | ✅ | §36.11 |
 | Animations (≥150) | 150 | 235 | ✅ | §36.14 |
 | Sound effects | 100 | 201 | ✅ | §36.15 |
@@ -103,8 +103,8 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | 16 | Employee Management | ✅ |
 | 17 | Offline Restaurant Simulation | ✅ |
 | 18 | Morph City | ✅ |
-| 19 | City NPCs | ❌ |
-| 20 | Quests | ❌ |
+| 19 | City NPCs | ✅ |
+| 20 | Quests | ✅ |
 | 21 | Multiplayer | ✅ |
 | 22 | Economy | ✅ |
 | 23 | Monetization | ✅ |
@@ -131,7 +131,7 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | Source file | Size (KB) | Acceptance criteria | [TUNABLE] markers |
 |---|---|---|---|
 | `gdd/sections/01_executive_summary.md` | 14 | 5 | 18 |
-| `gdd/sections/02_game_vision.md` | 23 | 5 | 5 |
+| `gdd/sections/02_game_vision.md` | 22 | 5 | 5 |
 | `gdd/sections/03_design_pillars.md` | 25 | 5 | 17 |
 | `gdd/sections/04_core_gameplay_loops.md` | 43 | 10 | 12 |
 | `gdd/sections/05_cooking_mechanics.md` | 112 | 26 | 2 |
@@ -142,23 +142,25 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | `gdd/sections/11_combat_system.md` | 78 | 24 | 9 |
 | `gdd/sections/12_mutation_system.md` | 62 | 16 | 8 |
 | `gdd/sections/12b_combinations_synergies.md` | 40 | 13 | 7 |
-| `gdd/sections/13_morph_customization.md` | 65 | 15 | 4 |
+| `gdd/sections/13_morph_customization.md` | 66 | 15 | 4 |
 | `gdd/sections/14_player_progression.md` | 75 | 21 | 13 |
 | `gdd/sections/15_restaurant_building.md` | 68 | 22 | 8 |
 | `gdd/sections/16_employee_management.md` | 61 | 15 | 7 |
-| `gdd/sections/17_offline_simulation.md` | 65 | 0 | 1 |
+| `gdd/sections/17_offline_simulation.md` | 82 | 17 | 6 |
 | `gdd/sections/18_morph_city.md` | 85 | 24 | 9 |
+| `gdd/sections/19_city_npcs.md` | 75 | 14 | 4 |
+| `gdd/sections/20_quests.md` | 99 | 17 | 8 |
 | `gdd/sections/21_multiplayer.md` | 54 | 25 | 10 |
 | `gdd/sections/22_economy.md` | 74 | 20 | 9 |
-| `gdd/sections/23_monetization.md` | 11 | 0 | 0 |
+| `gdd/sections/23_monetization.md` | 24 | 17 | 0 |
 | `gdd/sections/24_ui_ux.md` | 103 | 32 | 11 |
-| `gdd/sections/25_art_direction.md` | 63 | 23 | 2 |
+| `gdd/sections/25_art_direction.md` | 64 | 23 | 2 |
 | `gdd/sections/26_animation_audio.md` | 45 | 20 | 2 |
 | `gdd/sections/27_roblox_architecture.md` | 144 | 25 | 11 |
-| `gdd/sections/28_data_persistence.md` | 91 | 20 | 12 |
+| `gdd/sections/28_data_persistence.md` | 95 | 20 | 12 |
 | `gdd/sections/29_security_anti_exploit.md` | 46 | 15 | 5 |
 | `gdd/sections/30_performance_optimization.md` | 28 | 14 | 2 |
-| `gdd/sections/31_analytics.md` | 45 | 14 | 3 |
+| `gdd/sections/31_analytics.md` | 46 | 14 | 3 |
 | `gdd/sections/32_tutorial.md` | 72 | 17 | 6 |
 | `gdd/sections/33_content_expansion.md` | 24 | 8 | 5 |
 | `gdd/sections/34_development_roadmap.md` | 57 | 38 | 5 |
@@ -169,10 +171,10 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | `gdd/sections/36_05_morph_combinations.md` | 31 | 0 | 0 |
 | `gdd/sections/36_06_abilities.md` | 45 | 0 | 0 |
 | `gdd/sections/36_07_status_effects.md` | 10 | 0 | 0 |
-| `gdd/sections/36_08_employee_archetypes.md` | 40 | 0 | 0 |
-| `gdd/sections/36_09_offline_incidents.md` | 20 | 0 | 0 |
+| `gdd/sections/36_08_employee_archetypes.md` | 40 | 0 | 1 |
+| `gdd/sections/36_09_offline_incidents.md` | 20 | 0 | 1 |
 | `gdd/sections/36_10_city_buildings.md` | 47 | 15 | 13 |
-| `gdd/sections/36_11_city_events.md` | 39 | 13 | 2 |
+| `gdd/sections/36_11_city_events.md` | 41 | 14 | 2 |
 | `gdd/sections/36_12_restaurant_tiers_upgrades.md` | 36 | 0 | 2 |
 | `gdd/sections/36_13_furniture_catalog.md` | 47 | 0 | 1 |
 | `gdd/sections/36_14_animation_library.md` | 44 | 0 | 0 |
@@ -181,13 +183,13 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | `gdd/sections/36_17_milestones.md` | 11 | 0 | 0 |
 | `gdd/sections/37_implementation_checklists.md` | 26 | 17 | 1 |
 | `gdd/sections/38_open_design_decisions.md` | 12 | 3 | 0 |
-| `gdd/sections/39_balancing_assumptions.md` | 32 | 6 | 2 |
+| `gdd/sections/39_balancing_assumptions.md` | 33 | 6 | 2 |
 | `gdd/sections/40_definition_of_done.md` | 14 | 13 | 2 |
-| **Total** | **2686** | **613** | **265** |
+| **Total** | **2902** | **679** | **284** |
 
 </details>
 
-Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLICE`, `ING_BUG_CRUNCH`, `ING_BUN`, `ING_BUTTER`, `ING_CHEESE`, `ING_CHOCOLATE`, `ING_DOUGH`, `ING_EGG`, `ING_GOLDEN_PATTY`, `ING_GUMMY_EYEBALL`, `ING_HAM`, `ING_HOT_SAUCE`, `ING_ICE`, `ING_ICE_CREAM_BASE`, `ING_KETCHUP`, `ING_LAVA_PEPPER`, `ING_LEMON`, `ING_LETTUCE`, `ING_MOON_CHEESE`, `ING_MOZZARELLA`, `ING_MUSTARD`, `ING_MUTAGEN_GOO`, `ING_ONION`, `ING_PASTA`, `ING_PEPPERONI`, `ING_PICKLE`, `ING_POTATO`, `ING_SHRIMP`, `ING_SODA_SYRUP`, `ING_STARDUST`, `ING_SUGAR`, `ING_TAPIOCA`, `ING_TOMATO`, `ING_TOMATO_SAUCE`, `NPC_001`, `NPC_002`, `NPC_003`, `NPC_004`, `NPC_005`, `NPC_006`, `NPC_007`, `NPC_008`, `NPC_009`, `NPC_010`, `NPC_011`, `NPC_012`, `NPC_013`
+Unresolved identifiers: `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLICE`, `ING_BUG_CRUNCH`, `ING_BUN`, `ING_BUTTER`, `ING_CHEESE`, `ING_CHOCOLATE`, `ING_DOUGH`, `ING_EGG`, `ING_GOLDEN_PATTY`, `ING_GUMMY_EYEBALL`, `ING_HAM`, `ING_HOT_SAUCE`, `ING_ICE`, `ING_ICE_CREAM_BASE`, `ING_KETCHUP`, `ING_LAVA_PEPPER`, `ING_LEMON`, `ING_LETTUCE`, `ING_MOON_CHEESE`, `ING_MOZZARELLA`, `ING_MUSTARD`, `ING_MUTAGEN_GOO`, `ING_ONION`, `ING_PASTA`, `ING_PEPPERONI`, `ING_PICKLE`, `ING_POTATO`, `ING_SHRIMP`, `ING_SODA_SYRUP`, `ING_STARDUST`, `ING_SUGAR`, `ING_TAPIOCA`, `ING_TOMATO`, `ING_TOMATO_SAUCE`, `RCP_ALN_001`, `RCP_ALN_002`, `RCP_ALN_003`, `RCP_ALN_005`, `RCP_ALN_006`, `RCP_ALN_007`, `RCP_ALN_008`, `RCP_ALN_009`, `RCP_ALN_010`, `RCP_BRG_002`, `RCP_BRG_003`, `RCP_BRG_004`, `RCP_BRG_005`, `RCP_BRG_006`
 
 ## Brief Coverage Map
 
@@ -440,12 +442,17 @@ Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLI
   - [17.1 Purpose and principles](#171-purpose-and-principles)
   - [17.2 The return procedure](#172-the-return-procedure)
   - [17.3 Variables [TUNABLE]](#173-variables-tunable)
-  - [17.4 The model in detail (A11 elaborations of canon §C15)](#174-the-model-in-detail-a11-elaborations-of-canon-c15)
+  - [17.4 The model in detail (elaborations of canon §C15) [TUNABLE]](#174-the-model-in-detail-elaborations-of-canon-c15-tunable)
   - [17.5 Deterministic RNG and hourly stepping](#175-deterministic-rng-and-hourly-stepping)
-  - [17.6 Caps and the tuning plan](#176-caps-and-the-tuning-plan)
+  - [17.6 Caps and the tuning plan [TUNABLE]](#176-caps-and-the-tuning-plan-tunable)
   - [17.7 Persistence and idempotency (canon §C15, E11)](#177-persistence-and-idempotency-canon-c15-e11)
   - [17.8 Anti-exploit](#178-anti-exploit)
   - [17.9 Worked examples](#179-worked-examples)
+  - [17.10 Welcome Back screen](#1710-welcome-back-screen)
+  - [17.11 Offline mutation progression [TUNABLE]](#1711-offline-mutation-progression-tunable)
+  - [17.12 Analytics hooks](#1712-analytics-hooks)
+  - [17.13 Edge cases](#1713-edge-cases)
+  - [17.14 Acceptance criteria](#1714-acceptance-criteria)
 - [18. Morph City](#18-morph-city)
   - [18.1 City Overview & Visual Hooks](#181-city-overview--visual-hooks)
   - [18.2 City Layout & District Map](#182-city-layout--district-map)
@@ -458,6 +465,33 @@ Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLI
   - [18.9 Roblox Implementation](#189-roblox-implementation)
   - [18.10 Edge Cases](#1810-edge-cases)
   - [18.11 Acceptance Criteria](#1811-acceptance-criteria)
+- [19. City NPCs](#19-city-npcs)
+  - [19.1 Purpose](#191-purpose)
+  - [19.2 Rules & Mechanics — the NPC data model](#192-rules--mechanics--the-npc-data-model)
+  - [19.3 Dialogue trees (conditions, variables, effects)](#193-dialogue-trees-conditions-variables-effects)
+  - [19.4 Interaction prompt rules](#194-interaction-prompt-rules)
+  - [19.5 Idle schedules & behaviors](#195-idle-schedules--behaviors)
+  - [19.6 Hearts — optional friendship (Progression · Player Interactions)](#196-hearts--optional-friendship-progression--player-interactions)
+  - [19.7 Roblox Implementation — SPCV placement, streaming, performance](#197-roblox-implementation--spcv-placement-streaming-performance)
+  - [19.8 Localization-ready dialogue keys](#198-localization-ready-dialogue-keys)
+  - [19.9 NPC database (115 named NPCs)](#199-npc-database-115-named-npcs)
+  - [19.10 Edge Cases](#1910-edge-cases)
+  - [19.11 Dependencies](#1911-dependencies)
+  - [19.12 Acceptance Criteria](#1912-acceptance-criteria)
+- [20. Quests](#20-quests)
+  - [20.1 Purpose](#201-purpose)
+  - [20.2 Rules & Mechanics — quest types and lifecycle](#202-rules--mechanics--quest-types-and-lifecycle)
+  - [20.3 Objective grammar (typed objectives)](#203-objective-grammar-typed-objectives)
+  - [20.4 UI — journal, tracking, markers](#204-ui--journal-tracking-markers)
+  - [20.5 Daily & weekly rotation and rerolls](#205-daily--weekly-rotation-and-rerolls)
+  - [20.6 Variables — reward scaling [TUNABLE]](#206-variables--reward-scaling-tunable)
+  - [20.7 Failure, abandon, retry — and Roblox implementation](#207-failure-abandon-retry--and-roblox-implementation)
+  - [20.8 Progression — the story campaign "From Shack to Legendary"](#208-progression--the-story-campaign-from-shack-to-legendary)
+  - [20.9 Quest database](#209-quest-database)
+  - [20.10 Unlock & trophy map (quick reference)](#2010-unlock--trophy-map-quick-reference)
+  - [20.11 Edge Cases](#2011-edge-cases)
+  - [20.12 Dependencies](#2012-dependencies)
+  - [20.13 Acceptance Criteria](#2013-acceptance-criteria)
 - [21. Multiplayer](#21-multiplayer)
   - [21.1 Purpose and Social Pillars](#211-purpose-and-social-pillars)
   - [21.2 Server, Plot and Visit Model](#212-server-plot-and-visit-model)
@@ -496,6 +530,14 @@ Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLI
   - [23.3 Morph Skins and Palettes](#233-morph-skins-and-palettes)
   - [23.4 Restaurant Themes and Decorative Furniture Packs](#234-restaurant-themes-and-decorative-furniture-packs)
   - [23.5 Emotes, Looks, VIP Visual Effects and Nonessential Customization](#235-emotes-looks-vip-visual-effects-and-nonessential-customization)
+  - [23.6 Game Passes vs Developer Products](#236-game-passes-vs-developer-products)
+  - [23.7 Exclusively Earnable — Never Sold for Robux](#237-exclusively-earnable--never-sold-for-robux)
+  - [23.8 Paid Random Items: None](#238-paid-random-items-none)
+  - [23.9 Premium Payouts](#239-premium-payouts)
+  - [23.10 Revenue Expectations (hypotheses, to be validated)](#2310-revenue-expectations-hypotheses-to-be-validated)
+  - [23.11 Roblox Implementation](#2311-roblox-implementation)
+  - [23.12 Edge Cases](#2312-edge-cases)
+  - [23.13 Acceptance Criteria](#2313-acceptance-criteria)
 - [24. UI/UX](#24-uiux)
   - [24.1 System Summary](#241-system-summary)
   - [24.2 Design System](#242-design-system)
@@ -767,14 +809,14 @@ Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLI
   - [40.8 Launch-Readiness Checklist (Go / No-Go)](#408-launch-readiness-checklist-go--no-go)
   - [40.9 Acceptance Criteria](#409-acceptance-criteria)
 - [Appendix A. Design Canon — Identifiers, Constants and Formulas](#appendix-a-design-canon--identifiers-constants-and-formulas)
-  - [C0. Contributor Rules (Style & Format Contract)](#c0-contributor-rules-style--format-contract)
-  - [C1. Document Structure & Ownership](#c1-document-structure--ownership)
+  - [C0. Authoring Rules (Style & Format Contract)](#c0-authoring-rules-style--format-contract)
+  - [C1. Document Structure](#c1-document-structure)
   - [C2. Identifier Conventions](#c2-identifier-conventions)
   - [C3. Global Constants](#c3-global-constants)
   - [C4. Currencies & Economy Anchors](#c4-currencies--economy-anchors)
   - [C5. Player Statistics (9) & Formulas [TUNABLE]](#c5-player-statistics-9--formulas-tunable)
   - [C6. Restaurant Tiers (fixed values) [TUNABLE]](#c6-restaurant-tiers-fixed-values-tunable)
-  - [C7. Kitchen Stations (fixed list; A2 specifies every field)](#c7-kitchen-stations-fixed-list-a2-specifies-every-field)
+  - [C7. Kitchen Stations (fixed list; §5 specifies every field)](#c7-kitchen-stations-fixed-list-5-specifies-every-field)
   - [C8. Preparation Actions, Ingredient States, Quality](#c8-preparation-actions-ingredient-states-quality)
   - [C9. Ingredient Tags & Guaranteed Core Ingredients](#c9-ingredient-tags--guaranteed-core-ingredients)
   - [C10. Recipe Master List (150 — names, IDs, categories, unlock levels are fixed)](#c10-recipe-master-list-150--names-ids-categories-unlock-levels-are-fixed)
@@ -782,11 +824,11 @@ Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLI
   - [C12. Combat Constants, Abilities, Status Effects](#c12-combat-constants-abilities-status-effects)
   - [C13. Mutation System Constants & Master List](#c13-mutation-system-constants--master-list)
   - [C14. Employees](#c14-employees)
-  - [C15. Offline Simulation — Canonical Model (A11 elaborates with worked examples)](#c15-offline-simulation--canonical-model-a11-elaborates-with-worked-examples)
+  - [C15. Offline Simulation — Canonical Model (§16–§17 elaborates with worked examples)](#c15-offline-simulation--canonical-model-1617-elaborates-with-worked-examples)
   - [C16. Morph City](#c16-morph-city)
   - [C17. Quests](#c17-quests)
   - [C18. Skill Trees (IDs)](#c18-skill-trees-ids)
-  - [C19. Roblox Services (fixed names; A17 specifies every field)](#c19-roblox-services-fixed-names-a17-specifies-every-field)
+  - [C19. Roblox Services (fixed names; §27 specifies every field)](#c19-roblox-services-fixed-names-27-specifies-every-field)
   - [C20. Analytics](#c20-analytics)
   - [C21. Animation & Sound IDs](#c21-animation--sound-ids)
   - [C22. Edge-Case Rulings (all sections must agree with these)](#c22-edge-case-rulings-all-sections-must-agree-with-these)
@@ -795,7 +837,7 @@ Unresolved identifiers: `FRN_899`, `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLI
 
 ## 1. Executive Summary
 
-> **Owner:** A1 Vision & Onboarding. This section summarizes the whole document for decision makers and points
+> This section summarizes the whole document for decision makers and points
 > to the sections that specify each system. Where a number appears here it is quoted from canon; every system
 > section that owns the number is authoritative for its details.
 
@@ -956,7 +998,7 @@ roles, districts and other small enumerations is §36.1.
 
 ## 2. Game Vision
 
-> **Owner:** A1 Vision & Onboarding. This section fixes *why* the game exists, *who* it is for, *how it feels*, and
+> This section fixes *why* the game exists, *who* it is for, *how it feels*, and
 > the design laws every other section must respect. The design laws (§2.9) are binding in the same way as canon
 > constants: any feature that breaks a law needs a written exception in §38.
 
@@ -1150,7 +1192,7 @@ beats are allusions only, since §20 writes the campaign.
 | 1 | TIER_01 | Broken Burger Shack | 1 | 0 | start | "I can barely flip a burger, and a dinosaur flipped my table." | Starter body + 1 tutorial part |
 | 2 | TIER_02 | Tiny Mutation Diner | 5 | 1 | 1,000 | "I have a real menu and an octopus employee." | 2–3 Common/Uncommon swaps |
 | 3 | TIER_03 | Neighborhood Freak Café | 10 | 3 | 2,000 | "Table service! Waiters! The critic noticed me." | First full Chef loadout |
-| 4 | TIER_04 | Morph City Grill | 18 | 7 | 5,000 | "City Hall gave me a permit; the Baron is worried." | First Rare part; Fighter loadout |
+| 4 | TIER_04 | Morph City Grill | 18 | 8 | 5,000 | "City Hall gave me a permit; the Baron is worried." | First Rare part; Fighter loadout |
 | 5 | TIER_05 | Mutant Family Restaurant | 26 | 14 | 15,000 | "Aliens eat here now" (Alien Cuisine, chapter 5, Zorp `NPC_027`). | First Epic; first synergy build |
 | 6 | TIER_06 | Monster Food Court | 35 | 25 | 40,000 | "My staff runs a shift for 8 hours without me." | Epic upgrades at Lv4+ using RT |
 | 7 | TIER_07 | Mutation Megadiner | 45 | 40 | 100,000 | "I'm famous on Restaurant Row." | First Legendary within reach |
@@ -1187,7 +1229,7 @@ Law L1 intends.
 
 ## 3. Design Pillars
 
-> **Owner:** A1 Vision & Onboarding. The seven pillars come from brief Part 1.2. Each pillar below states the promise
+> The seven pillars come from brief Part 1.2. Each pillar below states the promise
 > to the player, its verbs, the systems that deliver it, how we measure it, the rules that protect it, the traps to
 > avoid, and the kind of unscripted funny moment it should produce. §3.4 makes the brief's Part 26 requirements
 > enforceable across every system.
@@ -1528,7 +1570,7 @@ These rules apply to **every** system section. Rule codes (e.g. R-HUM-1) are cit
 
 ## 4. Core Gameplay Loops
 
-> **Owner:** A1 Vision & Onboarding. This section specifies the game across the five timescales of brief Part 2
+> This section specifies the game across the five timescales of brief Part 2
 > (immediate, short session, medium session, long-term, offline) and how they interlock. It *orchestrates*
 > systems owned elsewhere. Station timings live in §5, customer behavior in §8–§10, combat in §11, economy in §22,
 > offline formulas in §17. Values quoted from canon are binding. Example-only values are labelled
@@ -2027,7 +2069,7 @@ flowchart LR
 
 ## 5. Cooking Mechanics
 
-> **Owner:** A2 Cooking. This section is the rulebook for everything that happens between "order taken" and
+> This section is the rulebook for everything that happens between "order taken" and
 > "customer evaluates the plate": the interaction model, all 24 kitchen stations (canon §C7), every
 > preparation verb (canon §C8), quality scoring, tickets and the server-side **Dish** object, kitchen
 > hazards, co-op rules and the `CookingService` implementation. Order modifications live in §6.18, recipe
@@ -2246,7 +2288,7 @@ unlocked, so any co-op player may flip or remove it (items are restaurant-owned 
 | Lv4 Mutant | × 10 | TIER_06 | × 0.70; `W_perfect` × 1.25; burn grace +3 s | × 0.70; zone × 1.25; failure chance −50 % (over-process margin +50 %) | × 0.70; × 1.25; failure −50 % (e.g. trash capacity +50 %) |
 | Lv5 Ridiculous | × 25 | TIER_08 | × 0.60; `W_perfect` × 1.5; burn grace +3 s retained; **gimmick** | × 0.60; zone × 1.5; −50 % retained; **gimmick** | × 0.60; × 1.5; −50 % retained; **gimmick** |
 
-*Interpretation (A2):* canon's "cumulative, replaces previous" means multipliers replace earlier multipliers while the Lv4
+*Interpretation:* canon's "cumulative, replaces previous" means multipliers replace earlier multipliers while the Lv4
 additive bonus (burn grace / failure reduction) is kept at Lv5. Upgrading is refused while any slot of that station is
 `PROCESSING` ("Finish cooking first!"); the purchase is queued and applied when the station idles.
 
@@ -2422,7 +2464,7 @@ Durations are Lv1 values before stats/KA; all heat items use `W_perfect` 2.0 s, 
 | Purpose & interaction | Each burner holds a **pan** (SAUTE) or a **pot** (BOIL small); pan by default, long-press 0.5 s while placing for pot. SAUTE: **Toss** prompts at 33 % and 66 % of `T_ready` (1.0 s windows); pancakes/omelettes/crêpes use one Flip instead. BOIL: no input. Grab removes. |
 | Duration / in → out | Onions 5 s, sauce 8 s, pancake 6 s, fried egg 5 s, omelette 7 s, crêpe 6 s · boil: pasta 9 s, noodles 8 s, egg 7 s, **Warm It** (drink) 4 s · → SAUTEED / BOILED (`temp = HOT` for Warm It). |
 | Upgrades | **Lv5 Pan-Demonium:** a 3rd burner pops out; pans stop at BURNED (smoke) and never ignite. |
-| Failure | Missed tosses cap the grade (0 → PERFECT, 1 → GOOD, 2 → OK). Pan: BURNED → ON_FIRE. Pot: BURNED ("overboiled") → at `T_burn + 4 s` **Boil-Over** — SPILLED puddle, item RUINED, no flames (A2 ruling for water-based verbs). |
+| Failure | Missed tosses cap the grade (0 → PERFECT, 1 → GOOD, 2 → OK). Pan: BURNED → ON_FIRE. Pot: BURNED ("overboiled") → at `T_burn + 4 s` **Boil-Over** — SPILLED puddle, item RUINED, no flames (ruling for water-based verbs). |
 | VFX & audio | Pan sizzle; toss arc with sparkle; pot bubbles get grumpier; boil-over *blorp*. |
 | Co-op | Per-burner locks. |
 | Mutations | KA `fire`: +6 % window/part. `MUT_156` Spatula Arm: toss/flip windows +0.5 s. Chicken family (`MUT_008`, `MUT_121`, `MUT_141`, `MUT_180`): egg dishes +1 s `W_perfect`. `MUT_145` Octopus Arm: one tap answers toss prompts on both burners. |
@@ -3390,7 +3432,7 @@ back and plays a soft "bonk" with the reason ("Busy!", "Too far!").
 
 ### 6.18 Ridiculous Order Modifications
 
-> **Owner:** A2 Cooking. Morph City customers do not just order food; they order *experiences*: "Make my burger upside
+> Morph City customers do not just order food; they order *experiences*: "Make my burger upside
 > down." "Make my drink angry." This subsection defines how modifications ("mods") are generated, how each one is
 > completed with the cooking system of §5, how the server verifies it on the Dish object (§5.6.4), how it affects order
 > accuracy `A` (canon §C11.3) and pay, and lists **93 modifications** (`MOD_001`–`MOD_093`). Golden rule: **no impossible
@@ -3792,7 +3834,7 @@ Analytics (§31): `mmr_mod_generated` {modId, tier, personalityId, hidden}, `mmr
 
 ## 8. Customer AI
 
-> **Owner:** A5 Customers. **Runtime:** `CustomerAIService` (server) with the client-side builder of
+> **Runtime:** `CustomerAIService` (server) with the client-side builder of
 > `MorphAssemblyService`. **Companion sections:** personality data lives in §9; the satisfaction, anger,
 > chain-reaction and chaos math lives in §10. Order generation and dish validation are executed by
 > `OrderService` using the weighting rules defined here. Values marked **[TUNABLE]** are balancing
@@ -4093,7 +4135,7 @@ combinations; a hit re-rolls the suffix from the same stream (deterministic).
 | 8 | `PLACE_ORDER` | Core | ≤ 30 s × PatienceMult | `ANM_042` Order wave until someone takes the order |
 | 9 | `WAIT` | Core | ≤ Patience (§C11.2) | patience ring drains; eats already-delivered items meanwhile |
 | 10 | `RECEIVE_FOOD` | Core | 0.8 s | reaches for the plate (server plays `ANM_019` on the deliverer) |
-| 11 | `INSPECT_FOOD` | Core | 1.5 s × InspectMult | sniff-and-squint inspect (A16 assigns the ID in §36.14) |
+| 11 | `INSPECT_FOOD` | Core | 1.5 s × InspectMult | sniff-and-squint inspect (§25–§26 assigns the ID in §36.14) |
 | 12 | `EVALUATE` | Core | 0.6 s | computes S for the item (§10); shows the reaction emote |
 | 13 | `EAT` | Core | (10 + 3·D) s × EatMult per item | `ANM_043` Eat |
 | 14 | `PAY` | Core | 1.5 s | `ANM_044` Pay; spawns the Cash Stack (§8.11) |
@@ -4328,7 +4370,7 @@ If every eligible weight is 0 (e.g. only disliked dishes on the menu), the custo
 highest-weighted neutral-ised dish anyway (Pref treated as 0.25) and its P_offset loses 5 (§10.3). Item count
 follows §8.2.6. E9 applies: if everything is SOLD OUT, `RCP_BRG_001` is auto-added.
 
-**Modifications (§6.18).** `OrderService` rolls modifications per item exactly as §6.18.3 specifies (owned by A2):
+**Modifications (§6.18).** `OrderService` rolls modifications per item exactly as §6.18.3 specifies:
 per-tier probabilities and maximums, joke share, hidden-mod chance, conflict groups, and the personality
 `ModAffinity` multipliers listed in §9.4. Two rules matter for customers:
 - **Time budget:** a modification is only generated if `EstPrep(item) + Σ ExtraTime(mod) ≤ 0.6 × Patience(item)`,
@@ -4698,7 +4740,7 @@ end)
 
 ## 9. Customer Personalities
 
-> **Owner:** A5 Customers. This section is the **personality database** (§C1.1): the table in §9.3 defines
+> This section is the **personality database** (§C1.1): the table in §9.3 defines
 > `PER_001`–`PER_032` (names fixed by §C11.1); §9.4 specifies every field for each. Spawning, bodies and the state
 > machine are in §8; the satisfaction, anger and chaos math these parameters feed is in §10.
 
@@ -4720,7 +4762,7 @@ mechanic that creates a funny situation on its own, without a script.
 2. **Behavior parameters** (§9.3) plug into the formulas of §8 and §10. Nothing in a personality bypasses those
    formulas; personalities only change inputs, thresholds and which special hooks fire.
 3. **Animation set.** Each personality has a locomotion/idle variant set built on the core library (§C21); new
-   variants are listed in words and receive IDs from A16 in §36.14.
+   variants are listed in words and receive IDs from §25–§26 in §36.14.
 4. **Dialogue.** Bubble lines are chosen client-side from the personality's pools keyed by emote code (`ORDER`,
    `DELIGHT`, `HAPPY`, `MEH`, `UNHAPPY`, `FURIOUS`, `HOSTILE`, `CALM`, `APOLOGY`, `LEAVE`). Launch requires ≥ 3 lines
    per pool per personality; §9.4 lists the canonical ordering / delighted / furious examples. Lines are
@@ -4746,10 +4788,10 @@ mechanic that creates a funny situation on its own, without a script.
 #### 9.2.3 Combat ability selection
 
 Per §C11.6 a customer may use the **active ability of one of its own visible parts**. Selection and use follow
-§11.8.3 (owned by A6): each customer has at most one **Signature Move**, chosen among its visible parts whose §36.6
+§11.8.3: each customer has at most one **Signature Move**, chosen among its visible parts whose §36.6
 "NPC use" entry lists the customer's style; it is used only at anger level 5 or in a scuffle, never by `PACIFIST`
 customers, and utilities are never used (the only exception is the §36.6 flee entry of `ABL_063`). NPC numbers are
-the §36.6 "NPC use" values. **A5 extension:** when a personality's signature part grants an eligible ability, that
+the §36.6 "NPC use" values. **Extension:** when a personality's signature part grants an eligible ability, that
 ability is chosen before §11.8.3's slot priority, so recurring personalities keep a recognisable move. The §9.4
 "Abilities" lists show, in priority order, the eligible options that personality's signature and commonly rolled
 parts can provide; a customer whose body carries none of them fights with its style's basic attacks only (§11.8.2).
@@ -5354,7 +5396,7 @@ Hooks.QualityGate = {
 }
 
 function Hooks.pickSignatureMove(c, def, npcUse: (string, string) -> boolean): string?
-	-- A5 extension: signature parts first, then §11.8.3 slot priority (performed by CombatService)
+	-- extension (§9): signature parts first, then §11.8.3 slot priority (performed by CombatService)
 	for _, entry in def.abilities do
 		if c.signatureParts[entry.part] and npcUse(entry.ability, def.style) then return entry.ability end
 	end
@@ -5421,7 +5463,7 @@ second-reviewer sign-off before localization.
 
 ## 10. Satisfaction and Tantrum Systems
 
-> **Owner:** A5 Customers. Implements §C11.3 (satisfaction), §C11.4 (payment, tips, reputation) and §C11.5
+> Implements §C11.3 (satisfaction), §C11.4 (payment, tips, reputation) and §C11.5
 > (anger levels), using personality parameters from §9.3 and customer states from §8.4. Fight AI per combat style
 > belongs to §11; ability and status numbers to §36.6 / §36.7. Values marked **[TUNABLE]** are balancing
 > assumptions.
@@ -5460,7 +5502,7 @@ patience ends, so an abandoned item contributes at most `(0.10·K + 0.10·M) × 
 
 #### 10.2.1 A — order accuracy
 
-A is computed by `OrderService` exactly as §6.18.4 specifies (owned by A2) and consumed here:
+A is computed by `OrderService` exactly as §6.18.4 specifies and consumed here:
 
 ```
 DishMatch = 0 → wrong dish: rejected at INSPECT_FOOD, never evaluated (anger +20 × sens, §10.6)
@@ -5555,7 +5597,7 @@ hooks (e.g. PER_008 Perfectionist −10, PER_031 Sing +8), clamped to [−20, +1
 
 **EventModifier** (sum of active events, clamped to −15..+15 per §C11.3 and §36.11). Event schedules and rules are
 owned by §36.11; where §36.11 states an EventModifier (marked **§36.11**) that value is repeated here, the other
-values are A5's satisfaction effects. Unlisted events give 0 — including `EVT_003`, `EVT_004`, `EVT_008` and
+values are §8–§10's satisfaction effects. Unlisted events give 0 — including `EVT_003`, `EVT_004`, `EVT_008` and
 `EVT_026`, whose challenge comes from their own rules (extra demand, invaders, critics, inspections).
 
 | Event | ID | Modifier |
@@ -5702,23 +5744,23 @@ sensitivity, so a crowded room escalates quickly but never instantly.
 | Event | Amount × sens | Defined in |
 |---|---|---|
 | Wrong dish (rejected at inspect) | +20 | §8.4.2 |
-| Burned or ruined component | +12 (once per item) | A5 |
-| Undercooked component | +8 | A5 |
-| Each failed non-joke modification — the "Wrong Order?!" reaction (COUNT near miss +2.5; joke mods never add anger) | +5 | §6.18.4, A5 |
-| MUSHY or SPILLED component | +6 | A5 |
-| *Per-item defect cap* | *+30* | A5 |
-| Evaluation label × item price share | Delighted −25 · Happy −12 · Meh +6 · Unhappy +18 · Furious +32 (negative values are not × sens; PER_018 ×1.5 both ways) | A5 |
+| Burned or ruined component | +12 (once per item) | §8–§10 |
+| Undercooked component | +8 | §8–§10 |
+| Each failed non-joke modification — the "Wrong Order?!" reaction (COUNT near miss +2.5; joke mods never add anger) | +5 | §6.18.4, §8–§10 |
+| MUSHY or SPILLED component | +6 | §8–§10 |
+| *Per-item defect cap* | *+30* | §8–§10 |
+| Evaluation label × item price share | Delighted −25 · Happy −12 · Meh +6 · Unhappy +18 · Furious +32 (negative values are not × sens; PER_018 ×1.5 both ways) | §8–§10 |
 | Hit by a thrown object of any kind, from anyone | +25 | §C11.5, §11.2.2 |
-| Splash: within 4 studs of a food impact but not hit | +6 | A5 |
+| Splash: within 4 studs of a food impact but not hit | +6 | §8–§10 |
 | Player melee or area contact while not hostile (0 damage, 0.3 s flinch) | +8 | §11.2.2 |
 | `PACIFIST` hit by anything (cries and flees 8 studs) | +10 extra | §11.8.2 |
 | Watching a scuffle hit within 10 studs | +3 per hit | §11.6.4 |
 | Instigator Yell (12 studs; the Influencer 20 studs) | +4 every 2 s, max +20 per customer per yelling session | §11.8.2 |
 | INSTIGATOR Bat Screech / Mind Buzz (NPC versions) | +10 to each affected customer | §36.6 (`ABL_023`, `ABL_047`) |
 | Plate stolen from its table (theft, food grab, tractor beam) | +15 | §11.6.4 |
-| A table within 6 studs flipped / its own table flipped | +10 / +25 | A5 (flip execution §11.6.3) |
-| Its seat or table becomes Broken under it | +15 | A5 |
-| Its reserved seat taken | +10 | A5 |
+| A table within 6 studs flipped / its own table flipped | +10 / +25 | §8–§10 (flip execution §11.6.3) |
+| Its seat or table becomes Broken under it | +15 | §8–§10 |
+| Its reserved seat taken | +10 | §8–§10 |
 | Personality hooks (Karenosaurus ignored "Manager!" +10, Sloth-Rocket woken +10, Newt startle +15, Birthday Beast "No Cake?!" +20) | as listed | §9.4 |
 | Regular with a grudge | starts at 15 × Grudge | §8.12 |
 
@@ -5837,7 +5879,7 @@ A brawl is never scripted; it emerges from these rules, each of which is visible
    computed on a 15-stud spatial hash every tick), they form a **mob**: every customer within 15 studs of any
    member gains +0.3 /s and +0.10 on escalation rolls. A mob dissolves when fewer than 3 members remain at level ≥ 2.
 4. **Furniture knock-ons.** Smashes, flips, charges and wall splats damage objects per §11.6.3. Their anger effects
-   are A5's: a table flipped within 6 studs +10 × sens, one's own table flipped +25 × sens (dish handling §8.5),
+   are §8–§10's: a table flipped within 6 studs +10 × sens, one's own table flipped +25 × sens (dish handling §8.5),
    a seat turning Broken under someone +15 × sens. Spilled plates become splats (K).
 5. **Chain depth limit.** Each anger event carries a `chainDepth`: 0 for a direct cause (bad food, waiting, a
    player's throw); an event produced by a customer whose hostility came from a depth-d event carries d + 1.
@@ -5909,7 +5951,7 @@ Only two customers ever reached level 3, so chaos never ignited — with one mor
 |---|---|---|
 | Calm Down! | anger −(20 + 0.1 × CHARM), max −35; at level ≤ 4 drops at least one level; at level 5 works only on a Winded or ≤ 50 % Huff customer (`TRICKSTER` ≤ 25 %) and then **talks it down** to level 2; ×2 against `INSTIGATOR` and inside PER_001's "Manager!" window (never more than ×2) | §36.6 (`ABL_006`), §11.10.1 |
 | Soothing Song | −15 (−25 at level ≤ 2) within 12 studs; talks down level-5 hostiles at ≤ 70 % Huff; silences `INSTIGATOR` 8 s | §36.6 (`ABL_065`) |
-| **Peace Offering** | serve any off-ticket DES or DRK dish to a customer at level ≥ 1 — the only thing that can be handed to a hostile customer: −35 anger (PER_020: −2 full levels); a second offering in the same visit −10; free for the customer, ingredient cost charged; at level 0 it is simply nice (P_offset +3) | A5 |
+| **Peace Offering** | serve any off-ticket DES or DRK dish to a customer at level ≥ 1 — the only thing that can be handed to a hostile customer: −35 anger (PER_020: −2 full levels); a second offering in the same visit −10; free for the customer, ingredient cost charged; at level 0 it is simply nice (P_offset +3) | §8–§10 |
 | Chill décor | `FRN_146` Lava Lamp Floor Lamp: anger **gains** ×0.90 within 6 studs · `FRN_434` Chill-Out Beanbag Corner: ×0.85 within 8 studs; the strongest applies, never stacked | §15 |
 | Chill auras (customers) | PER_013 Grandma Golem and Superfan Regulars: +0.3 /s decay within 8 studs | §9.4, §8.12 |
 | One-off personality calms | PER_030 Tag Team −25 · PER_027 Anniversary −20 (15 studs) · PER_008 Round for the house −15 · PER_010 Spotter −10 · PER_018 Standing Ovation −10 | §9.4 |
@@ -6205,7 +6247,7 @@ Apology Payment (40 %), which is always worse than a happy customer's payment.
 **Combatant kinds:** *Player*, *Customer* (SPCV proxy, canon C3), *Employee* (SPCV proxy), and *Event boss*
 (city events in §18 reuse this framework with boss-scaled numbers).
 
-#### 11.2.1 Anger level → combat behavior (A5 owns escalation triggers; this table owns the fight)
+#### 11.2.1 Anger level → combat behavior (§8–§10 owns escalation triggers; this table owns the fight)
 
 | Anger level (canon C11.5) | Hostile flag | Combat behavior |
 |---|---|---|
@@ -6458,7 +6500,7 @@ casualties, which keeps fights funny and ties combat back into repair (§15) and
 #### 11.6.1 Props table
 
 Throw damage uses the §11.5.1 formula with the Base below. Durability values are percentages of the object's
-maximum durability (A10 converts to its own units in §15); canon C6 damage states apply. `PropClass` is the
+maximum durability (§15 converts it to its own units); canon C6 damage states apply. `PropClass` is the
 attribute `CombatService` reads on the object's model.
 
 | Prop class (`PropClass`) | Weight · pickup time | Who can lift | Throw Base dmg · range | Effect on hit | Self-damage to the prop | Damage to objects it hits | NPC users |
@@ -6665,7 +6707,7 @@ ragdolled; KO uses an authored animation (`ANM_062`).
   Kangaroo Leg → `ABL_011`, Octopus Arm → `ABL_012`, Rhino Horn → `ABL_013`, Electric Eel Skin → `ABL_014`,
   Porcupine Spines → `ABL_015`, Frog Tongue → `ABL_016`, Crab Claw Arm → `ABL_017`, Dragon Head → `ABL_018`.
 - **Power curve:** part upgrade level raises LevelScale (+5 % damage/level) and lowers cooldown (−2 %/level);
-  CC durations never scale with level (no lock-down creep). Passives and stat budgets are §12 (A7).
+  CC durations never scale with level (no lock-down creep). Passives and stat budgets are §12.
 - **Synergies** (§12, §36.4) may modify combat numbers but `CombatService` clamps the totals: damage +25 %,
   cooldown −20 %, CC duration +20 %, knockback +30 %.
 - **Swapping (canon E4):** blocked while In Combat; otherwise a loadout swap is a 3 s channel interrupted by
@@ -6718,10 +6760,11 @@ KO'd (storm-outs still follow §10 rules).
 
 #### 11.10.5 Protective upgrades (generic; owned by §15 and §36.12)
 
-Combat exposes four multipliers that restaurant upgrades may modify (bounded here): `FurnitureCombatDamageMult`
-(sturdier/padded furniture, ≥ 0.5), `SecurityResponseMult` (alarm/bell upgrades: Security reaction time,
-≥ 0.5), `WoozyDurationMult` (comfy break-room style upgrades, ≥ 0.3), and `EscalationDampener` (calming decor
-or music; applied by §10 to escalation rolls). §15 names the upgrades and prices; `CombatService` reads the
+Combat exposes three multipliers and one subtractive dampener that restaurant upgrades may modify (bounded here):
+`FurnitureCombatDamageMult` (sturdier/padded furniture, ≥ 0.5), `SecurityResponseMult` (alarm/bell upgrades:
+Security reaction time, ≥ 0.5), `WoozyDurationMult` (comfy break-room style upgrades, ≥ 0.3; e.g. 0.6), and
+`EscalationDampener` (calming decor or music, e.g. 0.05; **subtracted** by §10 from the escalation-roll
+probability, never a multiplier). §15 names the upgrades and prices; `CombatService` reads the
 restaurant attributes.
 
 #### 11.10.6 Employee intervention (`ROLE_SECURITY`)
@@ -7590,7 +7633,7 @@ color **and** shape (§24 accessibility).
 | ■ Rare | 4,000–10,000 | 20 MS | 5,200 | 7,000 | 8,200 | 10,000 | 4,000 | 75 |
 | ⬟ Epic | 25,000–60,000 | 80 MS | 32,000 | 42,500 | 49,500 | 60,000 | 25,000 | 36 |
 | ★ Legendary | 150,000–400,000 | 250 MS + 10 RT | 200,000 | · | 325,000 | 400,000 | · | 10 |
-| ⬢ Mythic | not sold | Lab fusion: 3 Legendary of same category + 600 MS + 40 RT | · | · | · | · | · | 0 |
+| ⬢ Mythic | not sold | Lab fusion: 3 Legendary parts from one fusion route (MYTHOLOGICAL / MARINE / OBJECT routes, see §12.5) + 600 MS + 40 RT | · | · | · | · | · | 0 |
 | ? Secret | not sold | hidden discovery condition | · | · | · | · | · | 0 |
 <!-- END GENERATED: price-points -->
 
@@ -8012,7 +8055,7 @@ return MutationService
 
 ### 12.9 Morph Combinations
 
-> Contributor: A8 (Morph UI & combination systems). Parts are referenced only by canon `MUT_` IDs; their stats,
+> Parts are referenced only by canon `MUT_` IDs; their stats,
 > passives and acquisition live in §12.1–12.8 and §36.3. Synergies are listed in §36.4, combination examples in §36.5.
 
 **Purpose.** A morph is more fun to show off when the game *notices* it. Every morph a player wears, and every customer,
@@ -8273,8 +8316,8 @@ morph economy: a build is worth more than the sum of its parts, but only a littl
    equip or unequip, a loadout apply, a part upgrade (no effect on matching, but the stat totals are rebuilt), a
    pin change, or entering/leaving the Arena ruleset. Nothing is evaluated per frame.
 2. **Hash.** `loadoutHash = "HEAD=MUT_001;TORSO=MUT_117;…|pins=SYN_014,…"` (slot instances in canon order,
-   sorted pins). If the hash is in the 512-entry result cache (flushed when full; shared by everyone on the server, since identical
-   loadouts resolve identically), the cached result is reused.
+   sorted pins). If the hash is in the 512-entry result cache (flushed when full; shared by everyone on the server,
+   since identical loadouts resolve identically), the cached result is reused.
 3. **Count index.** One pass over the ≤ 21 occupied non-FX slot instances (FX is indexed separately) builds counts
    per family, tag, category and rarity-rank for every slot instance.
 4. **Match.** Each synergy's requirement was compiled into a predicate tree at server start (§36.4 data →
@@ -8341,16 +8384,16 @@ Parts hidden by the §12 visibility flags still count, because hidden ≠ disabl
 **Plain Human defaults are neutral filler.** `MUT_117`/`MUT_139`/`MUT_179` are ignored by every atom (tags,
 categories, rarity, `slot`, `distinct`, `pair`) except an explicit `family:human` atom, and they are never named.
 Canon gives them the `charm` tag, so without this rule every starter morph would already hold five charm parts and
-trivially trigger charm-count synergies. Synergies must be earned with mutations. **FX parts count only for atoms scoped `@FX`**, and a
-synergy with any FX atom must be `social`-only (cosmetic), because FX parts carry no stats (canon C13.4).
-Secret parts count normally.
+trivially trigger charm-count synergies. Synergies must be earned with mutations.
+**FX parts count only for atoms scoped `@FX`**, and a synergy with any FX atom must be `social`-only (cosmetic),
+because FX parts carry no stats (canon C13.4). Secret parts count normally.
 
 #### 12.10.3 Stacking Rules & Caps
 
 1. **Stacking groups.** Every synergy belongs to one stacking group (`SG_…`) and has a rank r1–r3 inside it. Only
    the highest-ranked qualifying synergy of a group is active; on equal rank, the lower ID wins. Example: Dragon
-   Head + Fireproof Skin qualifies for both `SYN_004` Dragon's Own Kitchen (r3) and `SYN_006` Oven Mitts Optional (r1) in `SG_HEATCOOK`, so only `SYN_004` Dragon's Own Kitchen
-   applies.
+   Head + Fireproof Skin qualifies for both `SYN_004` Dragon's Own Kitchen (r3) and `SYN_006` Oven Mitts Optional
+   (r1) in `SG_HEATCOOK`, so only `SYN_004` Dragon's Own Kitchen applies.
 2. **At most 5 active synergies** [TUNABLE]. If more than 5 groups have a winner, the player's pinned synergies
    (up to 5, chosen in §13) go first, then higher rank, then lower ID. The rest are listed as *suppressed* (grey).
 3. **Per-stat cap:** the `STAT` effects of all active synergies add at most **+25 points per stat** [TUNABLE]. The
@@ -8360,8 +8403,8 @@ Secret parts count normally.
    applies per target. Example: `PROC_TIME` −12 % (all stations) + −10 % (`STN_GRILL`) = −22 % on the grill. Flat
    effects have the caps in the table below. The capped synergy layer then multiplies with stats, skill nodes and
    station levels in the owning system's formula (§5, §11, §15).
-5. **Drawbacks** (e.g. the +10 % damage taken of `SYN_060` Glass-Jaw Slugger) are fixed, never capped and never cancelled by other
-   synergies, so a trade-off stays a trade-off.
+5. **Drawbacks** (e.g. the +10 % damage taken of `SYN_060` Glass-Jaw Slugger) are fixed, never capped and never
+   cancelled by other synergies, so a trade-off stays a trade-off.
 6. **No scaling with upgrades.** Synergy magnitudes do not grow with part upgrade level, which keeps them easy to
    read. Upgrades raise part stat budgets instead (canon C13.4).
 
@@ -8413,8 +8456,8 @@ Secret parts count normally.
   **Active**, **Suppressed: same group** (names the winner), **Suppressed: limit 5**, **Would activate** or
   **Would deactivate** (during previews). State is never shown by color alone; every state has a word and an icon.
 - **Pins:** tapping the pin on a chip reserves one of the 5 active slots for it (max 5 pins).
-- **HUD:** a strip of up to 5 synergy icons sits beside the ability bar; hover, long-press or the controller's
-  D-pad-down shows the effect text with live numbers ("Grill −22 % (cap 30 %)").
+- **HUD:** a strip of up to 5 synergy icons sits beside the ability bar. Hover, long-press, or (on gamepad) opening
+  the §24 quick-access radial shows the effect text with live numbers ("Grill −22 % (cap 30 %)").
 - **Activation toast:** "SYNERGY! Eight-Arm Kitchen Nightmare", 1.5 s, at most one every 3 s. With reduced motion,
   a static banner replaces the slide.
 - **Inspect card (players):** the target's active synergies (names only) under their combo key.
@@ -8449,8 +8492,8 @@ in §16, not here.
 
 #### 12.10.7 Roblox Implementation
 
-**Modules.** `ReplicatedStorage/Shared/MutationDefs` (A7, generated from §36.3) and
-`ReplicatedStorage/Shared/MorphRules` (A7: slot fit, exclusions, visibility) are reused. A8 adds, in
+**Modules.** `ReplicatedStorage/Shared/MutationDefs` (§12, generated from §36.3) and
+`ReplicatedStorage/Shared/MorphRules` (§12: slot fit, exclusions, visibility) are reused. §13 adds, in
 `ReplicatedStorage/Shared/Morph/`: `SynergyDefs` (generated from §36.4; requirements are pre-compiled into the node
 tables below by the build script), `NamingRules`, `MorphNames` and `SynergyEvaluator`. `ServerScriptService/Services/MutationService` calls the evaluator, owns the
 `ModifierStack`, and sets the `ActiveSynergies` attribute. The client UI requires the same modules for previews only.
@@ -8460,7 +8503,7 @@ tables below by the build script), `NamingRules`, `MorphNames` and `SynergyEvalu
 -- ReplicatedStorage/Shared/Morph/SynergyEvaluator.lua
 -- Shared: authoritative on the server (MutationService), preview-only on the client (Morph menu).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PartDefs = require(ReplicatedStorage.Shared.MutationDefs) -- A7: id -> { family, category, rarityRank, tagSet, ... }
+local PartDefs = require(ReplicatedStorage.Shared.MutationDefs) -- §36.3: id -> { family, category, rarityRank, tagSet, ... }
 local SynergyDefs = require(script.Parent.SynergyDefs) -- array of { id, group, rank, req: Node }
 
 export type Loadout = { [string]: string }             -- slot instance ("ARM_L") -> part id ("MUT_145")
@@ -8688,9 +8731,9 @@ service at 4 Hz with 0.5 s hysteresis, not by the evaluator.
 
 ## 13. Morph Customization
 
-> Contributor: A8 (UI/UX + morph customization systems). This section specifies the **Customize Your Morph** screen
+> This section specifies the **Customize Your Morph** screen
 > from the mockup (left category list, center 3D preview on a glowing pedestal, right inventory grid) and every rule
-> behind it: equipping, loadouts, naming, tints, upgrades, and the doors to Lab fusion and Body Mods. Part data is in
+> behind it: equipping, loadouts, naming, colors (palettes), upgrades, and the doors to Lab fusion and Body Mods. Part data is in
 > §12 / §36.3, combination naming and synergies in §12.9–12.10 / §36.4 / §36.5, abilities in §36.6, and the
 > generic UI framework in §24.
 
@@ -8715,7 +8758,7 @@ equip), and **switching** (saved loadouts for Chef / Fighter / Repair work).
 
 | Entry point | Opens on | Notes |
 |---|---|---|
-| HUD quick-access "Morph" button (keyboard `M`, mobile button, controller View button) | Parts tab, last category used | Main entry |
+| Direct key `N`, the quick-access radial (`T` / Select / ≡) → Morph, or an empty ability slot's "+" (§24) | Parts tab, last category used | Main entry |
 | "Equip now" after a Mutation Mart (`BLD_01`) purchase, capsule reveal or quest reward | Parts tab with the new part selected | Shows the equip preview immediately |
 | Body Mods (`BLD_02`), talking to stylist Glamtrax (`NPC_005`) | Style tab in **Salon mode** (palette shop, Looks, photo booth) | 13.16 |
 | Mutation Laboratory (`BLD_11`), talking to Dr. Splice (`NPC_013`) | Upgrade tab in **Lab mode** (fusion enabled) | 13.16 |
@@ -8728,7 +8771,7 @@ equip), and **switching** (saved loadouts for Chef / Fighter / Repair work).
   says "Can't change outfits during a brawl!" (or the matching reason).
 - **Auto-close:** if a customer turns hostile toward you while the screen is open, it closes at once and you get
   1.5 s of invulnerability (canon E2). Equips are applied the moment the server accepts them, so nothing is lost.
-  An unsent tint draft or a half-typed name is kept locally and restored next time.
+  An unsent palette change or a half-typed name is kept locally and restored next time.
 - **The world keeps running.** The Morph screen is a full-screen menu over the live game; customers keep waiting.
   A thin **order alert strip** (an overlay panel, allowed by E2) at the top of the screen flashes when any customer
   drops below 30 % patience, with a "Back to work" button.
@@ -8737,23 +8780,23 @@ equip), and **switching** (saved loadouts for Chef / Fighter / Repair work).
 %% diagram: morph-customization-states
 stateDiagram-v2
   [*] --> Closed
-  Closed --> Opening: press Morph / entry point
-  Opening --> Closed: blocked (In Combat, level-5 target, KO, Arena, Safe Mode)
-  Opening --> Browsing: Mutation.OpenSession OK
+  Closed --> Opening: press Morph or another entry point
+  Opening --> Closed: blocked by combat, KO, Arena or Safe Mode
+  Opening --> Browsing: OpenSession accepted
   Browsing --> Previewing: select or hover a part
   Previewing --> Browsing: deselect
-  Previewing --> Equipping: Equip / Unequip
-  Equipping --> Browsing: server OK (state delta)
-  Equipping --> Previewing: server rejects (toast + revert)
-  Browsing --> LoadoutChannel: Apply loadout
+  Previewing --> Equipping: Equip or Unequip
+  Equipping --> Browsing: server accepts with state delta
+  Equipping --> Previewing: server rejects with toast and revert
+  Browsing --> LoadoutChannel: apply loadout
   LoadoutChannel --> Browsing: 3 s complete or interrupted
   Browsing --> ConfirmUpgrade: Upgrade
-  ConfirmUpgrade --> Browsing: confirm / cancel
+  ConfirmUpgrade --> Browsing: confirm or cancel
   Browsing --> Renaming: edit name
-  Renaming --> Browsing: filtered OK / rejected
+  Renaming --> Browsing: filtered OK or rejected
   Browsing --> PhotoMode: camera button
   PhotoMode --> Browsing: exit
-  Browsing --> Closed: close (B / Esc / X)
+  Browsing --> Closed: close
   Previewing --> ForcedClose: customer turns hostile
   Browsing --> ForcedClose: customer turns hostile
   ForcedClose --> Closed: 1.5 s invulnerability granted
@@ -8863,21 +8906,23 @@ the last input type (`UserInputService.LastInputTypeChanged`) and re-parents pan
 |             /|  ^^  |\     PREVIEW       |  |  Lv 2  | |  Lv 1  | |  Lv 3  | |        |    |
 |              |______|~~                  |  +--------+ +--------+ +--------+ +--------+    |
 |          ==================              |  DETAIL: Octopus Arm  ^ Uncommon  Lv 2/6       |
-|  (RS) rotate  (LT/RT) zoom  (R3) reset   |  Cook Speed 64 ^+6   Strength 42 v-4            |
+|  (RS) rotate / zoom   (R3) reset         |  Cook Speed 64 ^+6   Strength 42 v-4            |
 |  STATS | SYNERGIES  (L3 toggles)         |  + Tentacle Tango   - Battering Ram             |
 +------------------------------------------+-------------------------------------------------+
-| (A) Select  (X) Equip both  (Y) Compare  (B) Back  (View) Loadouts  (Menu) Style/Upgrade    |
+| (A) Select/Equip  (X) Compare  (Y) Upgrade  (B) Back  (LT/RT) Loadout  (R3) Reset view       |
 +--------------------------------------------------------------------------------------------+
   Cards 128 x 156 px; focus ring = 4 px glow + 1.06x scale; text >= 24 px at 1080p.
 ```
 
 ### 13.4 ScreenGui Component Hierarchy
 
-One `ScreenGui` (built from a template in `ReplicatedStorage/UI/MorphScreen`, cloned into `PlayerGui` on first open
-and then kept but disabled). Names are the instance names used in code.
+One `ScreenGui` (built from a template in `ReplicatedStorage/UI/MorphMenu`, cloned into `PlayerGui` on first open
+and then kept but disabled). It uses the shared §24 components: `MmrPreview3D` (ViewportFrame + WorldModel + orbit)
+for the preview, `MmrVirtualList` of `MmrRarityTile` for the grid, `MmrStatRow`, `MmrModal`, `MmrTooltip` and
+`MmrProgressRing`. Names are the instance names used in code.
 
 ```text
-MorphScreen (ScreenGui: IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=20, ZIndexBehavior=Sibling, Enabled=false)
+MorphMenu (ScreenGui: IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=20, ZIndexBehavior=Sibling, Enabled=false)
 └─ Root (Frame, 1x1 scale)  + UIScale "TextScale"  + UIAspectRatioConstraint (desktop only)
    ├─ TopBar (Frame)
    │  ├─ TitleLabel ("CUSTOMIZE YOUR MORPH")
@@ -8887,7 +8932,7 @@ MorphScreen (ScreenGui: IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=20
    ├─ CategoryRail (ScrollingFrame + UIListLayout)
    │  ├─ CategoryButton_All, _Head, _Ears, _Eyes, _Arms, _Legs, _Tails, _Extras (ImageButton + Label + NewBadge)
    │  └─ SubSlotChips (Frame + UIListLayout) └─ Chip_<SLOT> (e.g. Chip_ARM_L, Chip_HANDS)
-   ├─ PreviewPanel (Frame)
+   ├─ PreviewPanel (MmrPreview3D)
    │  ├─ PedestalGlow (ImageLabel radial sprite + UIGradient; tinted by best equipped rarity)
    │  ├─ PreviewViewport (ViewportFrame: Ambient, LightColor, LightDirection set in 13.5)
    │  │  ├─ PreviewCamera (Camera; ViewportFrame.CurrentCamera)
@@ -8905,7 +8950,7 @@ MorphScreen (ScreenGui: IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=20
    │  ├─ PartsPage
    │  │  ├─ FilterBar └─ SearchBox (TextBox), FilterButton, SortDropdown, OwnedToggle, LockedToggle
    │  │  ├─ FilterSheet (category / rarity / tag / ability / upgradeable toggles)
-   │  │  └─ InventoryGrid (ScrollingFrame, manual virtualization) └─ PartCard x40 (pooled)
+   │  │  └─ InventoryGrid (MmrVirtualList: ScrollingFrame, manual virtualization) └─ PartCard x40 (pooled MmrRarityTile)
    │  │        PartCard: Icon (ImageRectOffset into atlas), RarityFrame, RarityGlyph, LevelPips,
    │  │                  EquippedBadge (L/R/both), NewDot, LockOverlay, AbilityIcon, DupeCount
    │  ├─ EquippedPage └─ SlotRow_<SLOT> x22 (grouped by UI group headers)
@@ -8940,9 +8985,9 @@ MorphScreen (ScreenGui: IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=20
 
 | Input | Rotate | Zoom | Reset |
 |---|---|---|---|
-| Mouse | left-drag: 0.4°/px yaw, 0.25°/px pitch | wheel: 1.0 stud per notch | `R` or double-click |
+| Mouse | left-drag: 0.4°/px yaw, 0.25°/px pitch | wheel: 1.0 stud per notch | double-click the preview |
 | Touch | one-finger drag (same rates × 1.5) | `UserInputService.TouchPinch` (scale delta → distance) | double-tap |
-| Gamepad | right stick: 180°/s yaw, 90°/s pitch at full deflection, dead zone 0.15 | `LT` out / `RT` in: 6 studs/s × trigger depth | `R3` |
+| Gamepad | right stick X: 180°/s yaw at full deflection (pitch follows the category framing), dead zone 0.15 | right stick Y: 6 studs/s (LT/RT switch loadouts per §24) | `R3` |
 
 - **Feel [TUNABLE].** Release inertia decays at e^(−6t). After 4 s without input the morph idle-spins at 12°/s.
   Selecting a category eases the camera over 0.35 s (Quad Out) to frame it: Head/Ears/Eyes 5-stud close-up of the
@@ -9048,10 +9093,11 @@ fuel or MS conversion (13.15). The starter morph's "×2" arms and legs are one o
 | Action | Mouse/keyboard | Touch | Gamepad |
 |---|---|---|---|
 | Select part | click card | tap card (opens bottom sheet) | D-pad / left stick + `A` |
-| Equip (single-slot part) | double-click card, or `E`, or EQUIP button | EQUIP in sheet or sticky bar | `A` on EQUIP, or `X` quick-equip |
-| Equip ARM/LEG to both sides | EQUIP BOTH (default button) | EQUIP BOTH | `X` |
-| Equip to one side | Left / Right buttons, or `Shift`+click = left, `Ctrl`+click = right | Left / Right buttons | `A` → choose side |
-| Unequip | right-click equipped card → Unequip, or `Del` | UNEQUIP in sheet | `Y` → Unequip |
+| Equip (single-slot part) | double-click card, `Enter`, or EQUIP button | EQUIP in sheet or sticky bar | `A` on the card (focus jumps to EQUIP), `A` again |
+| Equip ARM/LEG to both sides | EQUIP BOTH (default button) | EQUIP BOTH | `A`, `A` (EQUIP BOTH is the default focus) |
+| Equip to one side | Left / Right buttons, or `Shift`+click = left, `Ctrl`+click = right | Left / Right buttons | `A`, then D-pad to Left / Right, `A` |
+| Unequip | right-click equipped card → Unequip | UNEQUIP in sheet | focus UNEQUIP in the drawer, `A` |
+| Compare / Upgrade | right-click → Compare; Upgrade button | Compare / Upgrade in sheet | `X` compare, `Y` upgrade (§24 Morph row) |
 | Undo last change (10 deep) | `Ctrl+Z` or Undo | Undo | hold `B` 0.5 s |
 
 **Slot rules (all re-checked by the server, 13.20).**
@@ -9107,7 +9153,7 @@ Rarity is always shown by **color + shape + text**, never by color alone.
 | Mythic | magenta `#FF3EA5` | ⬢ hexagon | hex-tiled border (animated unless reduced motion) | magenta, shimmer |
 | Secret | rainbow shimmer on black | ? glyph | black card, rainbow edge | rotating rainbow |
 
-The detail drawer always spells out the rarity name ("Uncommon"). Tints (13.14) never change rarity frames.
+The detail drawer always spells out the rarity name ("Uncommon"). Palettes (13.14) never change rarity frames.
 
 ### 13.10 Stats Panel & Compare Deltas
 
@@ -9172,9 +9218,9 @@ expands all nine plus a derived block in plain numbers:
 | Looks 1–2 | "Natural", "Party" | from the start | free |
 | Looks 3–10 | cosmetic loadouts | §23 (Robux, cosmetic only), or 1 extra Look from an event reward | — |
 
-- A **functional loadout** stores per-slot part IDs, per-slot tints, the 4-slot ability bar order, synergy pins,
+- A **functional loadout** stores per-slot part IDs, per-slot palettes, the 4-slot ability bar order, synergy pins,
   an optional loadout name and a linked Look. Names, icons and order are editable.
-- A **Look** (cosmetic loadout) stores *appearance only*: tints, FX visibility, nameplate title, pedestal style and
+- A **Look** (cosmetic loadout) stores *appearance only*: per-slot palettes, FX visibility, nameplate title, pedestal style and
   Photo-mode pose. It can be applied on top of any functional loadout. Looks never store parts, so buying Look
   slots can never change stats. This keeps §23 strictly non-pay-to-win.
 - **Save:** "Save to slot" snapshots the current morph; overwriting a non-empty slot asks for confirmation.
@@ -9185,9 +9231,9 @@ expands all nine plus a derived block in plain numbers:
 | Situation | Rule [TUNABLE values from canon] |
 |---|---|
 | Single-part equip inside the Morph screen | instant |
-| Applying a whole loadout (`Mutation.SwapLoadout`, from the screen or the HUD quick-swap wheel: hold `Q`, long-press the mobile Morph button, or hold D-pad up) | **3 s channel**, then a **10 s cooldown** that starts when the channel completes |
+| Applying a whole loadout (`Mutation.SwapLoadout`, from the screen, `LT`/`RT` inside it, or the inner "Loadouts" ring of the §24 quick-access radial: hold `T` / Select / ≡) | **3 s channel**, then a **10 s cooldown** that starts when the channel completes |
 | During the channel | walk at 50 % speed; interacting, attacking, or taking damage **interrupts** it (no cooldown consumed). A cartoon "costume-change" dust cloud plays (client FX), with `ANM_065` on completion |
-| In Combat (6 s flag), Seeing Stars, a level-5 customer targeting you | channel cannot start; the wheel shows "Can't change outfits during a brawl!" |
+| In Combat (6 s flag), Seeing Stars, a level-5 customer targeting you | channel cannot start; the radial's Loadouts ring shows "Can't change outfits during a brawl!" |
 | Arena (`BLD_08`) | the loadout is locked when the match is accepted; it can be changed in the lobby under the same channel rules |
 | Carrying items | allowed only if the target loadout's carry capacity ≥ items carried |
 | Loadout contains a part no longer owned (converted to MS) or above your level | that slot keeps its current part; the card shows "1 part missing" with a fix-up shortcut |
@@ -9210,10 +9256,11 @@ expands all nine plus a derived block in plain numbers:
      `:GetNonChatStringForBroadcastAsync()`. If the result differs from the input (characters replaced by `#`), the
      name is rejected: "The filter scrambled that one. Try another!". If the filter service errors, the name is
      rejected with "Name service is busy, try again soon" and the attempt is not counted.
-  5. Store `rawName` (owner's audit only, never displayed) and `filteredName`. Everyone, including the owner, sees
-     `filteredName`.
-  6. **Re-filter on every join:** filter rules change, so the saved name is filtered again at session start. If it
-     now comes back scrambled, it resets to the generated name and the player gets a notice.
+  5. Persist the raw text as §28 specifies (`morph.morphName`, never logged). Only the broadcast-filtered string is
+     ever replicated or displayed, to everyone including the owner.
+  6. **Re-filter on every session load:** filter rules change, so the saved name is filtered again when the profile
+     loads, and the result is cached for the session. If it now comes back scrambled, the nameplate falls back to the
+     generated name and the player gets a notice.
 - **Where names appear:** the overhead nameplate (`BillboardGui`, MaxDistance 60 studs), the inspect card, the
   Showcase Stage (`BLD_22`) and co-op guest lists. Each loadout may carry its own name ("Chef Loadout" can be
   "Sir Saucelot").
@@ -9335,18 +9382,17 @@ hosts their UI and shows the result on the pedestal.
 | Button | Action |
 |---|---|
 | Left stick / D-pad | move focus (grid, chips, tabs, detail buttons) |
-| `A` | select / confirm |
+| `A` | select a card (focus jumps to its primary button) / confirm (equip) |
 | `B` | back: close modal → close drawer → close screen; hold 0.5 s = Undo |
-| `X` | quick-equip (Both for arms/legs) |
-| `Y` | open the detail drawer / toggle Compare |
+| `X` | compare (pins the selected part's deltas) |
+| `Y` | upgrade the selected part (opens the Upgrade tab) |
 | `LB` / `RB` | previous / next category |
-| `LT` / `RT` | zoom out / in (analog) |
-| Right stick | rotate preview |
+| `LT` / `RT` | previous / next loadout (applying starts the 3 s channel) |
+| Right stick | X = rotate preview, Y = zoom |
 | `R3` | reset camera |
 | `L3` | toggle Stats ↔ Synergies |
-| View | jump to the Loadouts bar |
-| Menu | cycle right tabs (Parts → Equipped → Loadouts → Style → Upgrade) |
-| D-pad down (HUD, outside the screen) | show synergy tooltips; hold D-pad up = loadout wheel |
+| Select (tap) | §24 quick-access radial (unchanged inside menus) |
+| Start | reserved for the Roblox menu (§24) |
 
 ```text
 Focus graph (left/right moves between panels; up/down inside a panel)
@@ -9399,7 +9445,7 @@ Each code maps to one friendly toast string in the localization table.
 -- per-slot rules in MutationService.ValidateEquip (§12).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Remotes = ReplicatedStorage.Remotes.Mutation
-local MorphRules = require(ReplicatedStorage.Shared.MorphRules) -- A7: SlotAccepts, CheckExclusions, CarryCapacity
+local MorphRules = require(ReplicatedStorage.Shared.MorphRules) -- §12: SlotAccepts, CheckExclusions, CarryCapacity
 
 local BOTH = { ARM_BOTH = { "ARM_L", "ARM_R" }, LEG_BOTH = { "LEG_L", "LEG_R" } }
 
@@ -9473,7 +9519,7 @@ in addition to what it lists today.
 | ✚ `mutations.loadouts[i].pins` | ≤ 5 `SYN_` IDs | synergy pins (§12.10.3) |
 | ✚ `mutations.loadouts[i].icon`, `.look` | string, number? | loadout icon and linked Look |
 | `mutations.activeLoadout`, `mutations.lastLoadoutSwapAt` | number, UnixTime | swap cooldown (canon E4) |
-| `morph.morphName` | filtered string | custom name (13.13); the raw text is kept only for audit as §28 specifies |
+| `morph.morphName` | raw text (§28) | custom name (13.13); only the filtered result is ever replicated |
 | `morph.palettes` | owned palette keys | palette ownership checks |
 | ✚ `morph.looks[1..10]` `{palette, fx, title, pedestal}` | cosmetic loadouts | Looks (13.12, §23) |
 | `morph.morphdex` `{spotted, worn, titleBits}` | base64 bitsets | §12.9.4 |
@@ -9490,16 +9536,16 @@ Size: loadouts with per-slot palettes and pins add ≈ 0.4 KB, and Looks ≈ 0.6
 | Part icons | pre-rendered **icon atlases**: 128 × 128 px icons on 1,024 × 1,024 sheets (64 per sheet → 5 sheets for 280 parts, plus 1 UI-glyph sheet). Cards use `ImageRectOffset`/`ImageRectSize`. Low-memory phones get a 64 px set (512 px sheets). The visible sheets are preloaded with `ContentProvider:PreloadAsync` on open, with shimmer placeholders until ready. No per-card ViewportFrames, ever. |
 | Grid | 40 pooled cards with manual virtualization (13.7); no layout recalculation per scroll frame |
 | Previews | stats and synergy previews are computed on selection change only (results cached by hypothetical-loadout hash) |
-| Network | equip request ≈ 120 bytes; responses are deltas; tints batched every 0.5 s |
+| Network | equip request ≈ 120 bytes; responses are deltas; palette changes batched every 0.5 s |
 | Targets | open-to-interactive ≤ 400 ms on a mid-tier phone; ≤ 25 MB texture memory on mobile while open; stable 60 fps desktop / 30 fps mobile with the preview animating |
 
 ### 13.23 Dependencies
 
 §5 (station effects of synergies), §11 (In Combat flag, abilities, Arena), §12 / §36.3 (part data, passives,
-acquisition, fusion recipes, §12.7 generator and compatibility flags), §12.9–12.10 / §36.4–36.5 (naming, Morphdex, synergies), §14 (stats, level
-requirements, respec), §16 (employee looks), §18 (`BLD_01`, `BLD_02`, `BLD_11`, `BLD_13`, `BLD_16`, `BLD_22`),
+acquisition, fusion recipes, §12.7 generator and compatibility flags), §12.9–12.10 / §36.4–36.5
+(naming, Morphdex, synergies), §14 (stats, level requirements, respec), §16 (employee looks), §18 (`BLD_01`, `BLD_02`, `BLD_11`, `BLD_13`, `BLD_16`, `BLD_22`),
 §21 (Arena locking), §22 (MB/MS/RT sinks), §23 (cosmetic Look slots and palettes), §24 (UI framework, HUD wheel),
-§25 (rig, tint masks, icons), §26 (animations `ANM_001`, `ANM_008`, `ANM_010`, `ANM_011`, `ANM_051`, `ANM_065`,
+§25 (rig, palette atlases, icons), §26 (animations `ANM_001`, `ANM_008`, `ANM_010`, `ANM_011`, `ANM_051`, `ANM_065`,
 `ANM_301`–`ANM_370`; sound cues), §27 (`MutationService`, `MorphAssemblyService`, `EconomyService`, `UIController`),
 §28 (persistence), §29 (remote security), §30 (performance budgets), §31 (`mmr_mutation_equip`,
 `mmr_loadout_apply`, `mmr_mutation_upgrade`, `mmr_morph_rename`, `mmr_photo_taken`).
@@ -9508,17 +9554,17 @@ requirements, respec), §16 (employee looks), §18 (`BLD_01`, `BLD_02`, `BLD_11`
 
 | # | Situation | Expected behavior |
 |---|---|---|
-| 1 | A customer turns hostile while the screen is open (E2) | The screen closes, 1.5 s invulnerability, `Mutation.SessionClosed {HOSTILE}`. Accepted equips persist; unsent tints and name drafts are restored next open. |
+| 1 | A customer turns hostile while the screen is open (E2) | The screen closes, 1.5 s invulnerability, `Mutation.SessionClosed {HOSTILE}`. Accepted equips persist; unsent palette changes and name drafts are restored next open. |
 | 2 | Player is damaged during the 3 s loadout channel | The channel is interrupted, the loadout is unchanged, no cooldown is consumed, toast "Costume change interrupted!". |
 | 3 | Two devices or tabs send conflicting equips (exploit or lag) | Requests are serialized per player on the server; the second applies to the state the first produced. `reqId` replay prevents doubles. |
 | 4 | Network drops after Upgrade was sent | On reconnect the client resends the same `reqId`. The server replays the stored response or, if the upgrade never committed, `expectedLevel` guarantees at most one level-up. |
 | 5 | A loadout references a part that was converted to MS | That slot keeps its current part; the card shows "1 part missing" plus a fix-up shortcut. The saved loadout is not silently rewritten. |
 | 6 | The equip would push the ability bar past 4 | `ReplaceAbilityModal`; if dismissed, the new ability goes to the bench and the equip still succeeds. |
-| 7 | Removing a carry part while carrying more than the new capacity | Refused with `CARRY_OVER` ("Put something down first!"); nothing changes. |
-| 8 | New legs or neck make the morph taller than an indoor ceiling | The server nudges the character ≤ 2 studs to open space. If none exists, the equip still applies and the camera uses its collision offset; no damage, no stuck state (Restaurant Row ceilings ≥ 12 studs per §15). |
+| 7 | Removing a carry part while carrying more than the new capacity | Refused with `PUT_SOMETHING_DOWN` ("Put something down first!"); nothing changes. |
+| 8 | New legs, neck and horns would make the morph taller than 9.5 studs, or a third huge part is equipped | `MorphRules` compresses NeckLength, then sinks horns (§12 height clamp), and renders the third huge part at ×0.7. The preview and world both show "Squished to fit!"; collision never changes, so doors and pathing always work. |
 | 9 | The filter service is down during rename | `FILTER_UNAVAILABLE`, the old name is kept, the attempt is not counted. If filtering also fails at join, the generated name is shown until it succeeds. |
 | 10 | Profile loaded in Safe Mode (E6) | The screen opens read-only (preview, rotate, photo); every write button is disabled with "Saving is paused — your stuff is safe!". |
-| 11 | Equipping FUR while SCALES is worn on a saved loadout | The current morph swaps with a 5 s Undo; saved loadouts change only when the player saves. |
+| 11 | Equipping wings while a blocksWings back part (e.g. Jetpack `MUT_245`) is worn, or FUR over SCALES | One-tap swap prompt; confirming removes the conflicting part (Undo restores it). A crafted request without `swap` gets `CONFLICT_WINGS` / `CONFLICT_COVERING`. Saved loadouts change only when the player saves. |
 | 12 | Player levels up while the screen is open (E14) | Level-locked cards unlock live with a "Now equippable!" sparkle. Stat allocation still waits for the level-up menu. |
 | 13 | A part's data is hot-fixed (tags, ability) while equipped | On the version broadcast the screen refreshes cards, stats and synergies within 5 s. Equipped state is untouched. |
 | 14 | Device rotates mid-drag in portrait support | The drag is cancelled, the layout re-profiles in ≤ 1 frame, and selection and scroll position are preserved. |
@@ -9531,15 +9577,17 @@ requirements, respec), §16 (employee looks), §18 (`BLD_01`, `BLD_02`, `BLD_11`
 - **AC-13-02:** The screen is interactive ≤ 400 ms after pressing Morph on the mid-tier reference phone, with the
   preview rig built and the visible icon atlas loaded (or placeholders shown) within that time.
 - **AC-13-03:** The preview responds on all input types: mouse drag, one-finger drag, right stick (dead zone 0.15).
-  Zoom works by wheel, pinch and triggers. Pitch never leaves −10° to +35°, and distance stays 6–18 studs.
+  Zoom works by wheel, pinch and right-stick Y. Pitch never leaves −10° to +35°, and distance stays 6–18 studs.
 - **AC-13-04:** Every equip preview shows stat deltas as arrow + sign + number (never color alone), and the
   post-equip server stats equal the previewed values in 100 % of 1,000 automated random equips.
 - **AC-13-05:** The synergy preview lists exactly the activations, deactivations, replacements and suppressions
   that the server applies after the equip (verified on the 130 §36.5 loadouts with one random part swap each).
 - **AC-13-06:** Equipping an ARM or LEG part offers Left / Right / Both. "Both" applies the matched-pair bonus
   (+25 % to that pair's stats), and mismatched legs show the "Wobbly gait (no penalty)" note.
-- **AC-13-07:** Equipping FUR while SCALES is worn (or the reverse) leaves exactly one covering equipped and offers
-  a 5 s Undo. `HEAD` can never be emptied, and other mandatory slots revert to Plain Human.
+- **AC-13-07:** Equipping FUR over SCALES (or the reverse), or WINGS with a blocksWings BACK part (or the reverse),
+  always shows the swap prompt and never leaves both parts equipped; a request without `swap = true` returns
+  `CONFLICT_COVERING` / `CONFLICT_WINGS`. `HEAD` can never be emptied, and other mandatory slots revert to Plain
+  Human.
 - **AC-13-08:** Loadout apply always takes a 3.0 s (± 0.1 s) server-timed channel, is blocked while In Combat, is
   interrupted by damage without consuming the cooldown, and enforces a 10 s cooldown after completion (canon E4).
 - **AC-13-09:** Photo mode hides 100 % of UI elements and offers ≥ 4 poses and ≥ 4 backdrops. The pedestal glow
@@ -9562,7 +9610,7 @@ requirements, respec), §16 (employee looks), §18 (`BLD_01`, `BLD_02`, `BLD_11`
 
 ## 14. Player Progression
 
-> **Owner:** A9 Progression. **Binding inputs:** canon §C5 (stats), §C5.1 (XP curve), §C4.4 (pacing), §C6 (tiers),
+> **Binding inputs:** canon §C5 (stats), §C5.1 (XP curve), §C4.4 (pacing), §C6 (tiers),
 > §C7.1 (stations), §C10 (recipe unlock levels), §C16.1 (districts), §C17.4 (reward vocabulary), §C18 (skill trees),
 > §C22 E14. Tables between `BEGIN/END GENERATED` markers are produced from the canon formulas by
 > `python3 gdd/tools/render_progression.py` (run `--check` to validate this section, §36.16 and §36.17). Do not hand-edit them.
@@ -9803,7 +9851,7 @@ All values are multiples of **XPU(L)** at grant time. "Once" sources are idempot
 | `FIRST_PERFECT` | First PERFECT dish (Q ≥ 0.95) of each recipe | 3 | once per recipe | one-time |
 | `DISCOVER` | First entry to a district / Metro station / hidden secret spot | 15 / 5 / 10 | once per location key | one-time |
 | `NPC_MEET` | First conversation with each named NPC | 1 | once per NPC | one-time |
-| `QUEST` | Quest completed (A13 picks the value inside the band) | TUT 2–3 each (≤ 35 for all twelve) · DLY ≈ 25 (canon: 0.25 × XPRate) · WKY ≈ 150 · STY 60–120 · CHF/CBT/RPR/EXP/EMP/RST 30–60 | once per quest instance | 11–14 |
+| `QUEST` | Quest completed (§19–§20 picks the value inside the band) | TUT 2–3 each (≤ 35 for all twelve) · DLY ≈ 25 (canon: 0.25 × XPRate) · WKY ≈ 150 · STY 60–120 · CHF/CBT/RPR/EXP/EMP/RST 30–60 | once per quest instance | 11–14 |
 | `UPGRADE` | Tier upgrade · first purchase of each restaurant upgrade · station reaches Lv n (once per station type and level) · first copy of each mutation part · part upgraded to a new level · first activation of each synergy · first hire per role | 40 · 5 · 3 × n · 2 · 2 · 3 · 5 | once per key | 4–7 (with `DISCOVER`, `EVENT`, `LEARN`) |
 | `EVENT` | City event reward band reached (§18: Participation / Success / Top) | `XPF × 100` with the event's listed XPF (highest band only, typically 15–45) | idempotent per event slot (`<EVT>@<slot>`, §18) | (inside the 4–7) |
 | `CITY` | City micro-activities and secret spots priced in XPF by §18 (props, races, litter, secrets) | `XPF × 100` as listed in §18 (e.g. a secret 0.1 → 10) | §18 daily caps; rolling cap 10 XPU/h | (inside the 4–7) |
@@ -9846,7 +9894,7 @@ above level by level and stays within ±0.3 h of canon.
 |---|---|---|---|---|---|---|
 | 5 | 1.1 | 1.1 | +0.0 | 1.1 | 1 (`TIER_02`) | 1,098 |
 | 10 | 3.3 | 3.3 | +0.0 | 3.3 | 3 (`TIER_03`) | 3,661 |
-| 18 | 8.5 | 8.5 | +0.0 | 8.5 | 7 (`TIER_04`) | 11,911 |
+| 18 | 8.5 | 8.5 | +0.0 | 8.5 | 8 (`TIER_04`) | 11,911 |
 | 26 | 15.8 | 15.8 | +0.0 | 15.8 | 14 (`TIER_05`) | 28,402 |
 | 35 | 26.6 | 26.6 | +0.0 | 26.6 | 25 (`TIER_06`) | 63,749 |
 | 45 | 41.8 | 41.8 | +0.0 | 41.6 | 40 (`TIER_07`) | 139,261 |
@@ -10014,7 +10062,7 @@ multitasking), Combat tree (strength, defense, mobility, mutation effectiveness)
 sturdier furniture, disaster recovery), plus two optional specializations — Customer Service (`SVC`) and Employee Management (`MGMT`).
 
 - **Points.** 1 skill point per level from L2 (99 by L100, §C18) + grants: 6 from milestones (§36.17), 10 from achievements
-  (§36.16), and at most 15 from quests (§20; design ceiling handed to A13) [TUNABLE] → **130 maximum**.
+  (§36.16), and at most 15 from quests (§20; design ceiling handed to §19–§20) [TUNABLE] → **130 maximum**.
 - **Buying a rank** requires: (a) enough unspent points (Cost is *per rank*); (b) every listed prerequisite owned at ≥ 1 rank
   ("or" = any one); (c) the node's level requirement; (d) the row gate — points already spent *in that tree*:
 
@@ -10303,7 +10351,7 @@ data) so the client can preview costs; client UI in `UIController` (`LevelPanel`
 | Signals `XpGained`, `LevelUp`, `StatsChanged`, `AchievementUnlocked`, `MilestoneReached` | consumed by HUD, quests, analytics |
 
 Internal helpers (not remotes): `IncrementCounter(player, counter, n)` and `SetFlag(player, flag)` used by other
-services to feed `achievements.counters` (§28.9.12).
+services to feed `progression.achievements.counters` (§28.9.3).
 
 **Remotes** (§27.8.19 names and rate limits; validation per §14):
 
@@ -10320,11 +10368,10 @@ XP bar, points, counters and milestone cards update through the replicated profi
 `Humanoid.MaxHealth` (§14.8); clients never write either.
 
 **Profile.** Field names follow §28.9.3 `progression` (`level`, `xp` = XP into the current level, `totalXp`, `statAlloc`,
-`unspentStatPoints`, `lastFreeStatRespecAt`, `skillNodes`, `bonusSkillPoints`, `unspentSkillPoints`,
-`lastFreeSkillRespecAt`, `respecTokens`, `titles`, `equippedTitle`, `emotes`, `palettes`) and §28.9.12 `achievements`
-(`unlocked`, `milestones`, `counters`). Multi-rank nodes are stored by repeating the node ID once per purchased rank in
-`skillNodes` (`{"SKL_CHEF_01","SKL_CHEF_01","SKL_CHEF_01"}` = rank 3). §14 additionally needs `specs: {string}`,
-`overtimeXp: number` and `xpOnceKeys: {[string]: true}` in `progression` (requested from §28). Rolling-cap windows live
+`unspentStatPoints`, `lastFreeStatRespecAt`, `respecTokens`, `skillNodes` (node ID → rank, e.g. `skillNodes["SKL_CHEF_01"] = 3`),
+`specs`, `bonusSkillPoints`, `unspentSkillPoints`, `lastFreeSkillRespecAt`, `overtimeXp`, `xpOnceKeys`, `titles`, `emotes`)
+with achievements and milestones in `progression.achievements` (`unlocked`, `milestones`, `counters`). Cosmetic palettes
+live in `morph` (§28.9.6) and the equipped title in `social.titleEquipped` (§28.9.12). Rolling-cap windows live
 in server memory only (reset on rejoin — bounded by the caps themselves).
 
 ```lua
@@ -10425,13 +10472,13 @@ for changed fields, XP toasts batched.
 - **AC-14-17:** Instigated fights grant 0 `CALM_FIGHT` XP, and self-caused damage grants 0 `REPAIR` XP, in 20/20 scripted attempts each.
 - **AC-14-18:** On level-up the player's `Humanoid.MaxHealth` equals `100 + 2 × (Level − 1) + mutation HP bonuses` and current HP rises by exactly 2.
 - **AC-14-19:** Satisfying an achievement's condition twice (including across rejoin and server change) records it once and grants its §36.16 reward once; hidden achievements display "???" plus category until unlocked.
-- **AC-14-20:** Each §36.17 milestone fires its analytics event exactly once per account (`MLS_045` once per bar), and `MLS_001`–`MLS_013` log `LogOnboardingFunnelStepEvent` steps 1–13 in ID order.
+- **AC-14-20:** Each §36.17 milestone fires its analytics event exactly once per account (`MLS_045` once per bar), and `MLS_001`–`MLS_013` log `LogFunnelStepEvent` steps 1–13 of the `mmr_first_session` funnel in ID order (the single onboarding funnel belongs to the tutorial, §31.8).
 - **AC-14-21:** Every unlock in the §14.4 table becomes available exactly at its level: the Cooking Academy refuses a recipe one level early and offers it at its §C10 level; districts open at their §C16.1 level; tier upgrades below the §C6 level are refused.
 
 
 ## 15. Restaurant Building
 
-> Owner: A10 (tycoon/building systems + environment art). This section specifies the **Build** pillar:
+> This section specifies the **Build** pillar:
 > how the restaurant grows from Nana Gristle's shabby shack to a neon monster palace with an aquarium wall
 > ("Upgrade Your Restaurant: **Basic → Expand → Go Wild**"), how players place furniture, how atmosphere and
 > cleanliness are scored, and how everything breaks hilariously and gets fixed again. Databases live in
@@ -10459,7 +10506,7 @@ collection as the long-term chase.
 
 ### 15.2 Restaurant Tier Progression
 
-All ten canon tiers (§C6) with A10's physical and economic detail. Canon columns (cost, level, seats,
+All ten canon tiers (§C6) with §15's physical and economic detail. Canon columns (cost, level, seats,
 appliance slots, menu, staff cap, base demand) are verbatim; floor plans, throughput and offline potential are
 defined here. Online throughput is the planning estimate `min(BaseDemand × RepMult × DecorMult, Seats × 3600 /
 240 s)` at the tier's typical reputation and atmosphere (§36.12.3); offline values use canon §C15 exactly.
@@ -10468,15 +10515,15 @@ defined here. Online throughput is the planning estimate `min(BaseDemand × RepM
 | # | Tier | Cost (MB) | Level | Permit | Interior W×D (sq studs) | Patio | Seats | Appliance slots | Kitchen area | Menu | Staff cap | Base demand | Online throughput | Offline net/h lean–full | Max offline session |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | `TIER_01` Broken Burger Shack | 0 | 1 | no | 32×26 (832) | — | 4 | 6 | 32×12 | 4 | 2 | 50 | ≈ 56/h | 149–185 | 370 (2 h) |
-| 2 | `TIER_02` Tiny Mutation Diner | 1,000 | 5 | no | 40×30 (1,200) | — | 6 | 8 | 40×12 | 5 | 3 | 65 | ≈ 79/h | 171–303 | 1,210 (4 h) |
+| 2 | `TIER_02` Tiny Mutation Diner | 1,000 | 5 | no | 40×30 (1,200) | — | 6 | 8 | 40×12 | 5 | 3 | 65 | ≈ 79/h | 171–308 | 924 (4 h) |
 | 3 | `TIER_03` Neighborhood Freak Café | 2,000 | 10 | no | 48×34 (1,632) | 24×12 | 8 | 10 | 48×14 | 6 | 4 | 80 | ≈ 104/h | 246–410 | 820 (2 h) |
-| 4 | `TIER_04` Morph City Grill | 5,000 | 18 | yes | 56×38 (2,128) | 28×12 | 10 | 12 | 56×14 | 8 | 6 | 95 | ≈ 130/h | 281–760 | 3,038 (4 h) |
-| 5 | `TIER_05` Mutant Family Restaurant | 15,000 | 26 | yes | 64×42 (2,688) | 32×14 | 12 | 14 | 64×16 | 10 | 8 | 110 | ≈ 158/h | 503–1,587 | 12,693 (8 h) |
-| 6 | `TIER_06` Monster Food Court | 40,000 | 35 | yes | 72×48 (3,456) | 36×16 | 14 | 16 | 72×18 | 12 | 10 | 125 | ≈ 189/h | 762–3,119 | 24,951 (8 h) |
-| 7 | `TIER_07` Mutation Megadiner | 100,000 | 45 | yes | 80×52 (4,160) | 40×16 | 16 | 18 | 80×18 | 14 | 12 | 140 | ≈ 222/h | 1,374–5,607 | 67,289 (12 h) |
-| 8 | `TIER_08` Luxury Freak Restaurant | 225,000 | 56 | yes | 88×58 (5,104) | 44×18 | 18 | 20 | 88×20 | 16 | 14 | 155 | ≈ 259/h | 2,263–12,101 | 145,211 (12 h) |
-| 9 | `TIER_09` Morph City Food Palace | 525,000 | 68 | yes | 96×64 (6,144) | 48×20 | 20 | 22 | 96×22 | 20 | 16 | 170 | ≈ 300/h | 3,969–23,915 | 573,962 (24 h) |
-| 10 | `TIER_10` Legendary Mutation Restaurant | 1,500,000 | 80 | yes | 112×72 (8,064) | 56×24 | 24 | 24 | 112×24 | 24 | 20 | 190 | ≈ 359/h | 6,183–47,477 | 1,139,443 (24 h) |
+| 4 | `TIER_04` Morph City Grill | 5,000 | 18 | yes | 56×38 (2,128) | 28×12 | 10 | 12 | 56×14 | 8 | 6 | 95 | ≈ 130/h | 281–776 | 2,328 (4 h) |
+| 5 | `TIER_05` Mutant Family Restaurant | 15,000 | 26 | yes | 64×42 (2,688) | 32×14 | 12 | 14 | 64×16 | 10 | 8 | 110 | ≈ 158/h | 503–1,587 | 7,933 (8 h) |
+| 6 | `TIER_06` Monster Food Court | 40,000 | 35 | yes | 72×48 (3,456) | 36×16 | 14 | 16 | 72×18 | 12 | 10 | 125 | ≈ 189/h | 762–3,119 | 15,594 (8 h) |
+| 7 | `TIER_07` Mutation Megadiner | 100,000 | 45 | yes | 80×52 (4,160) | 40×16 | 16 | 18 | 80×18 | 14 | 12 | 140 | ≈ 222/h | 1,374–5,607 | 32,523 (12 h) |
+| 8 | `TIER_08` Luxury Freak Restaurant | 225,000 | 56 | yes | 88×58 (5,104) | 44×18 | 18 | 20 | 88×20 | 16 | 14 | 155 | ≈ 259/h | 2,263–12,101 | 70,185 (12 h) |
+| 9 | `TIER_09` Morph City Food Palace | 525,000 | 68 | yes | 96×64 (6,144) | 48×20 | 20 | 22 | 96×22 | 20 | 16 | 170 | ≈ 300/h | 3,969–24,584 | 201,587 (24 h) |
+| 10 | `TIER_10` Legendary Mutation Restaurant | 1,500,000 | 80 | yes | 112×72 (8,064) | 56×24 | 24 | 24 | 112×24 | 24 | 20 | 190 | ≈ 359/h | 6,183–51,314 | 420,771 (24 h) |
 <!-- AUTO:render_restaurant:tier-summary END -->
 
 **Service style.** `TIER_01`–`TIER_02` are counter service: customers order at the Serving Window's dining
@@ -10526,22 +10573,22 @@ Morale 80, average Energy over the manager's cap) gives the following canon §C1
 | # | Full crew | Demand_off = Base × Rep × Decor × 0.6 | min(Cap_seat, Cap_kitchen, Cap_service) | Q | Revenue = Q × 1.4P × q | + Tips − Ingredients − Wages | Net / h (% of active) |
 |---|---|---|---|---|---|---|---|
 | 1 | Ollie (EMP_001), 1×Chef (C) | 50 × 1.125 × 0.990 × 0.6 = 33.4 | 48, 48.3, 48.3 | 33.4 | 33.4 × 13.3 × 0.77 = 343 | +14 −142 −30 | **185** (29 %) |
-| 2 | Ollie (EMP_001), 1×Chef (C), 1×Manager (C) | 65 × 1.200 × 1.014 × 0.6 = 47.5 | 72, 45.1, 45.1 | 45.1 | 45.1 × 16.0 × 0.77 = 558 | +22 −230 −48 | **303** (28 %) |
+| 2 | Ollie (EMP_001), 1×Chef (C), 1×Manager (C) | 65 × 1.200 × 1.014 × 0.6 = 47.5 | 72, 45.8, 45.8 | 45.8 | 45.8 × 16.0 × 0.77 = 567 | +23 −233 −48 | **308** (29 %) |
 | 3 | Ollie (EMP_001), 1×Chef (U), 2×Waiter (U) | 80 × 1.250 × 1.035 × 0.6 = 62.1 | 96, 53.2, 65.2 | 53.2 | 53.2 × 20.6 × 0.79 = 869 | +50 −347 −162 | **410** (24 %) |
-| 4 | 3×Chef (U), 2×Waiter (U), 1×Manager (U) | 95 × 1.300 × 1.050 × 0.6 = 77.8 | 120, 69.8, 65.2 | 65.2 | 65.2 × 29.2 × 0.81 = 1,548 | +90 −578 −300 | **760** (25 %) |
-| 5 | 3×Chef (R), 3×Waiter (R), 1×Dish (C), 1×Manager (R) | 110 × 1.350 × 1.065 × 0.6 = 94.9 | 144, 103.9, 122.8 | 94.9 | 94.9 × 45.6 × 0.84 = 3,654 | +231 −1,300 −998 | **1,587** (29 %) |
-| 6 | 4×Chef (R), 3×Waiter (R), 1×Dish (C), 1×Security (R), 1×Manager (R) | 125 × 1.400 × 1.080 × 0.6 = 113.4 | 168, 129.4, 123.8 | 113.4 | 113.4 × 64.5 × 0.84 = 6,178 | +390 −2,171 −1,278 | **3,119** (32 %) |
-| 7 | 4×Chef (E), 3×Waiter (E), 1×Cashier (R), 1×Dish (U), 1×Security (R), 1×Repair (R), 1×Manager (E) | 140 × 1.450 × 1.095 × 0.6 = 133.4 | 192, 146.0, 164.9 | 133.4 | 133.4 × 105.7 × 0.88 = 12,408 | +871 −4,002 −3,670 | **5,607** (32 %) |
-| 8 | 5×Chef (E), 3×Waiter (E), 1×Cashier (R), 1×Dish (U), 1×Security (R), 1×Repair (R), 1×Manager (E) | 155 × 1.500 × 1.116 × 0.6 = 155.7 | 216, 172.2, 166.1 | 155.7 | 155.7 × 157.0 × 0.88 = 21,511 | +1,510 −6,849 −4,070 | **12,101** (37 %) |
-| 9 | 6×Chef (E), 4×Waiter (E), 1×Cashier (E), 1×Dish (R), 1×Security (R), 1×Repair (R), 1×Manager (L), 1×Asst Mgr (E) | 170 × 1.550 × 1.140 × 0.6 = 180.2 | 240, 176.3, 201.1 | 176.3 | 176.3 × 256.7 × 0.88 = 39,832 | +2,823 −12,520 −6,220 | **23,915** (38 %) |
-| 10 | 6×Chef (E), 1×Chef (L), 5×Waiter (E), 1×Cashier (E), 1×Dish (R), 1×Security (E), 1×Repair (E), 1×Stocker (R), 1×Manager (L), 1×Asst Mgr (E) | 190 × 1.625 × 1.164 × 0.6 = 215.6 | 288, 201.7, 253.3 | 201.7 | 201.7 × 393.3 × 0.89 = 70,270 | +4,980 −19,493 −8,280 | **47,477** (39 %) |
+| 4 | 3×Chef (U), 2×Waiter (U), 1×Manager (U) | 95 × 1.300 × 1.050 × 0.6 = 77.8 | 120, 70.9, 66.2 | 66.2 | 66.2 × 29.2 × 0.81 = 1,572 | +91 −587 −300 | **776** (25 %) |
+| 5 | 3×Chef (R), 3×Waiter (R), 1×Dish (C), 1×Manager (R) | 110 × 1.350 × 1.065 × 0.6 = 94.9 | 144, 108.8, 128.7 | 94.9 | 94.9 × 45.6 × 0.84 = 3,654 | +231 −1,300 −998 | **1,587** (29 %) |
+| 6 | 4×Chef (R), 3×Waiter (R), 1×Dish (C), 1×Security (R), 1×Manager (R) | 125 × 1.400 × 1.080 × 0.6 = 113.4 | 168, 135.5, 129.7 | 113.4 | 113.4 × 64.5 × 0.84 = 6,178 | +390 −2,171 −1,278 | **3,119** (32 %) |
+| 7 | 4×Chef (E), 3×Waiter (E), 1×Cashier (R), 1×Dish (U), 1×Security (R), 1×Repair (R), 1×Manager (E) | 140 × 1.450 × 1.095 × 0.6 = 133.4 | 192, 158.0, 178.5 | 133.4 | 133.4 × 105.7 × 0.88 = 12,408 | +871 −4,002 −3,670 | **5,607** (32 %) |
+| 8 | 5×Chef (E), 3×Waiter (E), 1×Cashier (R), 1×Dish (U), 1×Security (R), 1×Repair (R), 1×Manager (E) | 155 × 1.500 × 1.116 × 0.6 = 155.7 | 216, 186.3, 179.8 | 155.7 | 155.7 × 157.0 × 0.88 = 21,511 | +1,510 −6,849 −4,070 | **12,101** (37 %) |
+| 9 | 6×Chef (E), 4×Waiter (E), 1×Cashier (E), 1×Dish (R), 1×Security (R), 1×Repair (R), 1×Manager (L), 1×Asst Mgr (E) | 170 × 1.550 × 1.140 × 0.6 = 180.2 | 240, 211.8, 241.6 | 180.2 | 180.2 × 256.7 × 0.88 = 40,716 | +2,885 −12,798 −6,220 | **24,584** (39 %) |
+| 10 | 6×Chef (E), 1×Chef (L), 5×Waiter (E), 1×Cashier (E), 1×Dish (R), 1×Security (E), 1×Repair (E), 1×Stocker (R), 1×Manager (L), 1×Asst Mgr (E) | 190 × 1.625 × 1.164 × 0.6 = 215.6 | 288, 242.3, 304.3 | 215.6 | 215.6 × 393.3 × 0.89 = 75,106 | +5,322 −20,835 −8,280 | **51,314** (43 %) |
 <!-- AUTO:render_restaurant:offline-calc END -->
 
 `P` (menu-weighted mean item price) is calibrated so the online model reproduces canon §C4.4 (§36.12.3). From
 `TIER_06` a well-staffed restaurant returns ≈ 32–39 % of active income per offline hour (canon target 35–50 %,
 ceiling 60 %); `TIER_01`–`TIER_05` sit at ≈ 24–29 % because low chef accuracy caps `q` and, from `TIER_03`,
 waiters bind `Cap_service` while staff caps are tiny — offline is a teaser until the player can staff properly.
-§17 owns the simulation; this is A10's capacity check that every tier can feed it.
+§17 owns the simulation; this is §15's capacity check that every tier can feed it.
 
 ### 15.3 Tier Upgrade Flow
 
@@ -10608,7 +10655,7 @@ progress, restaurant name. Damage does **not** carry over: Mutant Builders "fix 
 4. Still failing → moved to storage with a "Needs a home" badge (never lost, never sold).
 5. Run connectivity (§15.5.9). If it fails, store the blocking decor with the lowest atmosphere points first
    until it passes; seats and essentials are never auto-stored if any decor could be stored instead.
-6. Toast: "Moved 41 items · 2 need a home". Analytics `mmr_tier_upgraded` logs counts (§31).
+6. Toast: "Moved 41 items · 2 need a home". Analytics `mmr_restaurant_tier_up` logs counts (§31).
 
 ### 15.4 Plot and Instanced Interior Model
 
@@ -11174,14 +11221,14 @@ finger, Rotate/Place/Store/Undo buttons ≥ 56 u).
 | `PAUSED` | no | run | Pause Service; customers inside finish |
 | `EDITING` | held | frozen | 0 customers inside (§15.5.3) |
 | `RENOVATING` | no | frozen | Last Call then Mutant Builders (§15.3) |
-| `AWAY` (owner in the city, same server) | staffed: yes · unstaffed: no ("Out to Lunch", or "Event Break" during city events) | heat stations paused (no fires while away) | per §18: seated customers finish or leave politely with no reputation loss; anger escalation above level 2 is suppressed unless a Security Guard is on shift, so level-4 smashing (and furniture damage from it) cannot happen in an unguarded restaurant |
+| `AWAY` (owner in the city, same server) | staffed: yes · unstaffed: no ("Out to Lunch", or "Event Break" during city events) | heat stations paused (no fires while away) | per §18: seated customers finish or leave politely with no reputation loss; anger escalation into levels 4–6 is suppressed unless a Security Guard is on shift (would-be escalators sulk and leave, §18), so level-4 smashing (and furniture damage from it) cannot happen in an unguarded restaurant |
 | `CLOSING` | no | finish/discard | canon E1 on owner disconnect |
 
 #### 15.12.2 Layout serialization (DataStore)
 
 Logical record per placed object: **`{itemId, x, z, rot, durability}`** plus the restaurant-unique `uid`
 (home cell for §11 Furniture Homing). Physical encoding is §28's 10-byte packed record
-(`kind, num, uid, x, z, rotLvl, dur`, Base64): every A10 item uses `kind = 0` (FRN, `num` = numeric ID, so
+(`kind, num, uid, x, z, rotLvl, dur`, Base64): every §15 item uses `kind = 0` (FRN, `num` = numeric ID, so
 `FRN_006` → 6); appliances are FRN items whose station type comes from the catalog; `rotLvl = rot + 4 × (typeLevel
 − 1)` mirrors the station-type level. `x`/`z` are **2-stud cell indices** (§15.5.1). Non-floor layers use reserved
 `z` ranges so no schema change is needed:
@@ -11252,7 +11299,7 @@ that each kitchen fits its canon slot count.
 
 #### 15.12.6 Analytics
 
-`mmr_furniture_purchased` (item, price, tier), `mmr_layout_op` (op, reason code if rejected), `mmr_tier_upgraded`
+`mmr_furniture_purchased` (item, price, tier), `mmr_layout_op` (op, reason code if rejected), `mmr_restaurant_tier_up`
 (tier, migrated, stored), `mmr_object_damaged` / `mmr_object_destroyed` (item, source), `mmr_repair_completed`
 (item, worst state, cost, actor, minigame grade), `mmr_insurance_settled`, plus `LogEconomyEvent` sinks for
 purchases, repairs, rebuilds and upgrades (§31).
@@ -11291,7 +11338,7 @@ purchases, repairs, rebuilds and upgrades (§31).
 | 15 | Offline damage hits an object with a paused repair job | merged by E3; offline damage never Destroys (floor 1 %) |
 | 16 | Sprinkler and a player extinguish the same fire | first completion wins; one puddle at most; no double effects |
 | 17 | Seat cap reached but the player buys more chairs | purchase allowed (goes to storage); placement refused with `SEAT_CAP` |
-| 18 | Restaurant left unstaffed while the owner explores the city | `AWAY` "Out to Lunch": no arrivals, heat timers paused, escalation capped at level 2 without security — nothing burns or gets smashed (§15.12.1) |
+| 18 | Restaurant left unstaffed while the owner explores the city | `AWAY` "Out to Lunch": no arrivals, heat timers paused, escalation into levels 4–6 suppressed without security (§18) — nothing burns or gets smashed (§15.12.1) |
 
 ### 15.15 Acceptance Criteria
 
@@ -11336,12 +11383,12 @@ purchases, repairs, rebuilds and upgrades (§31).
 - **AC-15-21:** Buying a station path level upgrades every owned instance of that type (including premium variants
   and copies bought later) and costs ×1.5/×4/×10/×25 of the stock item price.
 - **AC-15-22:** While the restaurant is `AWAY` and unstaffed, no new customers arrive, no station reaches ON_FIRE,
-  and no customer exceeds anger level 2 without a Security Guard on shift.
+  and no customer escalates into anger levels 4–6 without a Security Guard on shift (§18).
 
 
 ## 16. Employee Management
 
-> Owner: A11 (Employees). Binding inputs: canon §C14 (roles, statistics, offline caps, `EMP_001`), §C4.8 (rarity
+> Binding inputs: canon §C14 (roles, statistics, offline caps, `EMP_001`), §C4.8 (rarity
 > bands), §C6 (employee cap per tier), §C22 E8 (wages). The offline half of this system is specified in §17; the
 > archetype database is §36.8 and the offline incident database is §36.9. Every value marked **[TUNABLE]** is a
 > balancing assumption that the systems in §17 and §22 already agree on.
@@ -11403,8 +11450,8 @@ the employee cap is canon §C6. Only one Manager and one Assistant Manager may b
   delivers to the ticket's seat; on a missed modification the customer gets the normal Accuracy penalty (§10).
 - **Security Guard.** Patrols an assigned post (Door / Dining / Kitchen). Never attacks a customer below anger 45.
   Security upgrades bought in §15 (§36.12) shorten the guard's response by 1 s and widen the 30-stud intercept
-  radius by +3 / +4 studs (§16.3.3); while the owner is in the city, escalation past anger level 2 is only possible
-  when a guard is on shift (§16.3.4).
+  radius by +3 / +4 studs (§16.3.3); while the owner is in the city, escalation into anger levels 4–6 is only possible
+  when a guard is on shift (§16.3.4, §18.8.6).
 - **Manager.** Never cooks; while the owner is in the city (Away Mode, §16.3.4) the Manager is the one who flips the sign to "Out to Lunch" if every Chef goes on break or unpaid break.
 
 ### 16.3 Online Work AI
@@ -11485,18 +11532,18 @@ PERFECT timing (1.00) stays the best cook in the building, by design.
   Rebuild if the object reaches Destroyed; cost is charged once at completion (canon E3).
 - **Co-op.** Guests' actions reserve tasks like the owner's; employees obey the owner's assignments only.
 
-#### 16.3.4 Away Mode (owner online, exploring the city) — consistent with §18
+#### 16.3.4 Away Mode (owner online, exploring the city) — consistent with §18.8.6
 
-Away Mode is **not** the offline simulation. While the owner is online on the same server but outside the interior,
-a **staffed** restaurant (≥ 1 Chef on an Always or Online Only shift) keeps running **live**: the same online AI of
-this section, the same SPCV customers, normal online wages (§16.7.11) and normal income. Two safety rules from §18
-apply while the owner is away: anger escalation beyond level 2 is suppressed unless a Security Guard is on shift
-(customers sulk or leave instead), and heat-station timers pause so unattended items never burn. An **unstaffed**
-restaurant goes "Out to Lunch" / "Event Break": no new customers, no reputation loss, no wages. The §17 offline
-simulation covers **only** time when the player is in no server at all, starting from the `lastSimAt` written by the
-last save (PlayerRemoving / BindToClose, canon E1/E13); an idle player removed by Roblox's idle kick simply becomes
-offline from that save. Staffing therefore pays twice: it lets the player explore Morph City without closing, and it
-earns while they are logged off.
+Away Mode is **not** the offline simulation. It engages when the owner has been outside their own interior for ≥ 20 s
+while still online on the same server. A **staffed** restaurant (≥ 1 `ROLE_CHEF` on an Always or Online Only shift, or
+a co-op guest with Cook permission inside) stays **OPEN** and runs **live**: the online AI of this section, SPCV
+customers, online wages (§16.7.11) and online income; anger escalation into levels 4–6 is suppressed unless a
+`ROLE_SECURITY` is on shift (would-be escalators sulk and leave). An **unstaffed** restaurant goes "Out to Lunch" (or
+"Event Break" while the owner is at a live event): no new customers, rain checks for seated customers without food,
+heat-station timers pause, no reputation loss, no wages. The §17 offline simulation covers **only** time when the
+player is in no server at all, starting from the `lastSimAt` written by the last save (PlayerRemoving / BindToClose,
+canon E1/E13); an idle player removed by Roblox's idle kick simply becomes offline from that save. Staffing therefore
+pays twice: the player can explore Morph City without closing, and the restaurant earns while they are logged off.
 
 ### 16.4 Employee Statistics
 
@@ -11611,18 +11658,18 @@ filing-cabinet torso). From `TIER_06` the **Hirewell Hotline** button in the Emp
 | Pity | at `TIER_05`+, 12 windows without a Rare-or-better candidate → next pool has one; at `TIER_08`+, 24 windows without Epic+ → next pool has one (counters persist, reset on sight) |
 | Disclosure | the rarity odds below are shown in the UI (ⓘ button); rerolls cost MB only and are never sold for Robux |
 
-| Tier | ● Common | ▲ Uncommon | ■ Rare | ⬟ Epic | ★ Legendary |
-|---|---|---|---|---|---|
-| `TIER_01` | 90 % | 10 % | 0 % | 0 % | 0 % |
-| `TIER_02` | 78 % | 22 % | 0 % | 0 % | 0 % |
-| `TIER_03` | 60 % | 36 % | 4 % | 0 % | 0 % |
-| `TIER_04` | 42 % | 46 % | 12 % | 0 % | 0 % |
-| `TIER_05` | 28 % | 44 % | 25 % | 3 % | 0 % |
-| `TIER_06` | 18 % | 38 % | 34 % | 10 % | 0 % |
-| `TIER_07` | 10 % | 30 % | 38 % | 20 % | 2 % |
-| `TIER_08` | 6 % | 22 % | 38 % | 28 % | 6 % |
-| `TIER_09` | 4 % | 16 % | 34 % | 34 % | 12 % |
-| `TIER_10` | 2 % | 12 % | 30 % | 36 % | 20 % |
+| Tier | Tier ID | ● Common | ▲ Uncommon | ■ Rare | ⬟ Epic | ★ Legendary |
+|---|---|---|---|---|---|---|
+| T1 | `TIER_01` | 90 % | 10 % | 0 % | 0 % | 0 % |
+| T2 | `TIER_02` | 78 % | 22 % | 0 % | 0 % | 0 % |
+| T3 | `TIER_03` | 60 % | 36 % | 4 % | 0 % | 0 % |
+| T4 | `TIER_04` | 42 % | 46 % | 12 % | 0 % | 0 % |
+| T5 | `TIER_05` | 28 % | 44 % | 25 % | 3 % | 0 % |
+| T6 | `TIER_06` | 18 % | 38 % | 34 % | 10 % | 0 % |
+| T7 | `TIER_07` | 10 % | 30 % | 38 % | 20 % | 2 % |
+| T8 | `TIER_08` | 6 % | 22 % | 38 % | 28 % | 6 % |
+| T9 | `TIER_09` | 4 % | 16 % | 34 % | 34 % | 12 % |
+| T10 | `TIER_10` | 2 % | 12 % | 30 % | 36 % | 20 % |
 
 #### 16.6.2 What each candidate has
 
@@ -11866,7 +11913,7 @@ floored at 0 and the Manager closes early instead of running a loss).
 
 - **Equipment upgrades** are bought in §15; for staff they matter through the canon station levels (§C4.9): online
   station process time is shared with players, and offline `PrepSec_eff = PrepSec × (1 − 0.5 × (1 − levelMult))`
-  (half of a dish's base time is station processing). Lv5 stations make a kitchen ~20 % faster offline.
+  (half of a dish's base time is station processing). All-Lv5 stations give a kitchen +25 % offline capacity.
 - **Night Menu**: an optional subset of known recipes used for offline time (default = the day menu). The screen
   compares the Forecast for both menus and warns when a dish fails the chef skill gate or lacks special stock. A one-chef
   kitchen often earns more with fast D2 dishes (§17.9 Example B).
@@ -11931,13 +11978,13 @@ The Employee Management skill tree (`SKL_MGMT_01`–`SKL_MGMT_10`, §14) may onl
 
 ### 16.9 Progression and return on investment
 
-| Tier band | What opens up | Typical staff (cap) | Offline cap |
+| Tier band (§C6) | What opens up | Typical staff (cap) | Offline cap |
 |---|---|---|---|
-| `TIER_01`–`TIER_02` | Ollie (tutorial), Commons; Manager & Repair at T2 | Chef + Cashier/Prep (2–3) | 2 h → 4 h with a Basic Manager |
-| `TIER_03`–`TIER_04` | Waiters & Security (table service), first Rares; Delivery & Stocker at T4 | Chef, 2 Waiters, Manager (4–6) | 4 h |
-| `TIER_05`–`TIER_06` | Assistant Manager, first Epics, Hotline at T6, Rare pity | 2 Chefs, 3 Waiters, Dish, Cleaner, Rare Manager (8–10) | 8 h (+2 h) |
-| `TIER_07`–`TIER_08` | first Legendaries, Epic pity | full line, Elite Manager (12–14) | 12 h (+2 h) |
-| `TIER_09`–`TIER_10` | Legendary pool 12–20 % | 16–20 specialists, Legendary Manager | 24 h |
+| Tiers 1–2 | Ollie (tutorial), Commons; Manager & Repair at T2 | Chef + Cashier/Prep (2–3) | 2 h → 4 h with a Basic Manager |
+| Tiers 3–4 | Waiters & Security (table service), first Rares; Delivery & Stocker at T4 | Chef, 2 Waiters, Manager (4–6) | 4 h |
+| Tiers 5–6 | Assistant Manager, first Epics, Hotline at T6, Rare pity | 2 Chefs, 3 Waiters, Dish, Cleaner, Rare Manager (8–10) | 8 h (+2 h) |
+| Tiers 7–8 | first Legendaries, Epic pity | full line, Elite Manager (12–14) | 12 h (+2 h) |
+| Tiers 9–10 | Legendary pool 12–20 % | 16–20 specialists, Legendary Manager | 24 h |
 
 **Employee ROI.** `Payback = HireCost ÷ (ΔNet_offline + ΔNet_online)` over the player's real schedule. The table
 measures the offline part with the §17 reference model by removing one employee from a §17.9 example roster (base
@@ -11946,15 +11993,15 @@ tapered absence ("report").
 
 | Example roster | Employee | Hire (MB) | Wage (MB/h) | Δ full-rate MB/h | Δ per report | Payback (reports) |
 |---|---|---|---|---|---|---|
-| B (`TIER_03`, 4 h) | Benny Bun, Common Waiter | 400 | 18 | +325 | +970 | 0.4 |
-| B (`TIER_03`, 4 h) | Skates McGee, Uncommon Waiter | 2,300 | 55 | +443 | +1,311 | 1.8 |
-| C (`TIER_05`, 8 h) | Octavia, Uncommon Chef (trained) | 2,100 | 50 | +1,120 | +6,000 | 0.35 |
-| C (`TIER_05`, 8 h) | Sloane, Common Dishwasher | 200 | 10 | +121 | +1,285 | 0.16 |
-| C (`TIER_05`, 8 h) | Dusty, Common Cleaner | 400 | 18 | +190 | +953 | 0.42 |
-| C (`TIER_05`, 8 h) | Chet Speedwell, Rare Waiter | 12,000 | 165 | +695 | +3,931 | 3.1 |
-| D (`TIER_07`, 12 h) | Rocco, Rare Security Guard | 12,500 | 170 | −170 (not a bottleneck) | −986 | online / insurance only |
-| E (`TIER_10`, 24 h) | Tractor Trixie, Epic Stocker | 57,000 | 440 | +1,452 | +25,579 (keeps special dishes live) | 2.2 |
-| E (`TIER_10`, 24 h) | Comet Carla, Epic Courier | 61,000 | 465 | +2,472 | +5,529 | 11.0 |
+| B (T3, 4 h) | Benny Bun, Common Waiter | 400 | 18 | +325 | +970 | 0.4 |
+| B (T3, 4 h) | Skates McGee, Uncommon Waiter | 2,300 | 55 | +443 | +1,311 | 1.8 |
+| C (T5, 8 h) | Octavia, Uncommon Chef (trained) | 2,100 | 50 | +1,120 | +6,000 | 0.35 |
+| C (T5, 8 h) | Sloane, Common Dishwasher | 200 | 10 | +121 | +1,285 | 0.16 |
+| C (T5, 8 h) | Dusty, Common Cleaner | 400 | 18 | +190 | +953 | 0.42 |
+| C (T5, 8 h) | Chet Speedwell, Rare Waiter | 12,000 | 165 | +695 | +3,931 | 3.1 |
+| D (T7, 12 h) | Rocco, Rare Security Guard | 12,500 | 170 | −170 (not a bottleneck) | −986 | online / insurance only |
+| E (T10, 24 h) | Tractor Trixie, Epic Stocker | 57,000 | 440 | +1,452 | +25,579 (keeps special dishes live) | 2.2 |
+| E (T10, 24 h) | Comet Carla, Epic Courier | 61,000 | 465 | +2,472 | +5,529 | 11.0 |
 
 Lessons the UI teaches through the Forecast and the Upgrade Suggestions: hire into the **bottleneck** (cheap
 presence roles like Dishwasher and Cleaner pay back in minutes once their penalty applies), Security Guards earn their
@@ -12002,7 +12049,7 @@ local EmployeeService = {}
 function EmployeeService:Hire(player: Player, candidateId: string, role: string, replaceUid: string?): (boolean, string)
 function EmployeeService:Fire(player: Player, uid: string, confirmToken: string): (boolean, string)
 function EmployeeService:Assign(player: Player, uid: string, role: string, station: string?): (boolean, string)
-function EmployeeService:Forecast(player: Player): { mbPerHour: number, capHours: number, bottleneck: string }
+function EmployeeService:Forecast(player: Player): { fullRateMBh: number, capHours: number, perCapMB: number, bottleneck: string }
 ```
 
 **Remotes** (`<Domain>.<Action>`; every handler checks profile loaded, owner of the restaurant, not Safe Mode):
@@ -12096,7 +12143,7 @@ tier, source pool/hotline/tutorial, slot}, `mmr_candidate_reroll` {n, cost}, `mm
 
 ## 17. Offline Restaurant Simulation
 
-> Owner: A11 (Employees). Binding inputs: canon §C15 (model, persistence, idempotency), §C14.3 (caps), §C4.4 (active
+> Binding inputs: canon §C15 (model, persistence, idempotency), §C14.3 (caps), §C4.4 (active
 > net per hour), §C22 E5 / E8 / E11. Staff, traits and management live in §16; archetypes in §36.8; incidents in §36.9.
 > The reference implementation is `gdd/tools/offline_sim_examples.py` (Python 3 stdlib), which produced every number
 > in §17.9 and is the golden source for the Luau `OfflineEarningsService` tests.
@@ -12116,7 +12163,7 @@ which runs live (§16.3.4, §18).
 | Deterministic | `Seed = FNV-1a-32("<UserId>:<lastSimAt>:<SIM_VERSION>")` → `Random.new(seed)`; fixed draw order (§17.5); money kept as fractions, rounded half-up only at payout (canon C0) |
 | Capped | interval cap from the best Manager (canon §C14.3); incident caps 10 % / 15 %; hard ceiling 60 % of the tier's active net per hour |
 | Idempotent | the report and `lastSimAt` are written in one session-locked `UpdateAsync`; Collect is keyed by `reportId` with a 20-entry `claimedReportIds` ring (canon E11) |
-| Complements active play | target 35–50 % of active net/hour for a well-staffed restaurant (proved in §17.9); no XP, no Research Tokens, no recipes or quests offline |
+| Complements active play | 35–50 % of active net/hour during the **first 2 offline hours** of a well-staffed restaurant, then a long-absence taper (×0.5 for hours 2–8, ×0.2 for hours 8–24): a full 24 h Legendary interval ≈ 3 active hours (proved in §17.9); no XP, no Research Tokens, no recipes or quests offline; guardrail KPI in §17.6 |
 
 ### 17.2 The return procedure
 
@@ -12127,12 +12174,12 @@ profile-load `UpdateAsync` transform (no yields); step 13 is the client screen.
 |---|---|---|---|
 | 1 | Retrieve last saved logout/simulation timestamp | read `profile.lastSimAt` (unset → set to `now`, no report) | `lastSimAt` |
 | 2 | Determine elapsed offline time | `elapsed = now − lastSimAt`; < 0 → 0 + `mmr_offline_clock_skew`; < 300 s → no report, `lastSimAt` unchanged | `H_elapsed` |
-| 3 | Apply the offline earnings cap | `H = min(H_elapsed, CapHours(best Manager, Assistant))`; hours beyond the cap are forfeited | `H`, §C14.3 |
+| 3 | Apply the offline earnings cap | `H = min(H_elapsed, CapHours(best Manager, Assistant))`; hours beyond the cap are forfeited; each hourly step gets its shift factor from the long-absence taper (×1.0 / ×0.5 / ×0.2) | `H`, §C14.3, taper |
 | 4 | Calculate employee productivity | per step: RoleStatAvg → Efficiency(Morale, Energy, EFFICIENCY) → `Eff = Efficiency/100` → Contribution = Eff × TraitMult | §C14.2 |
 | 5 | Estimate customer throughput | `Q = min(Demand_off, Cap_seat, Cap_kitchen, Cap_service)`; N via fractional accumulator | `Q`, `N_step` |
 | 6 | Calculate revenue | `N × AvgTicket × q` (+ tips, + delivery) on the live menu (skill gate, stations, special stock) | `Revenue`, `Tips` |
 | 7 | Deduct ingredient costs | basic ingredients netted per dish; special stock consumed; Stocker auto-buy inside the step | `IngredientCost` |
-| 8 | Deduct employee wages | `Σ wage × hours worked` (only employees on Always/Offline Only, not training) | `Wages` |
+| 8 | Deduct employee wages | `Σ wage × hours worked × shift factor` (only employees on Always/Offline Only, not training) | `Wages` |
 | 9 | Apply equipment and mutation bonuses | station levels (§C4.9), traits & signatures (§16.5), Manager coordination, Glow-Up decor | elaboration |
 | 10 | Calculate incidents and operational losses | incident count & draws (§36.9), caps, damage → auto-repair or deferred | `Incidents`, `Repairs` |
 | 11 | Determine net profit | `Net = max(0, Σ Net_step)` with close-early rule and the 60 % ceiling | `Net_step`, `Net` |
@@ -12152,10 +12199,10 @@ flowchart TD
     D --> E{"at least 1 Chef on an offline shift?"}
     E -->|"no"| R0["zero report + hint: hire a Chef"]
     E -->|"yes"| S["Seed = FNV-1a(UserId:lastSimAt:SIM_VERSION), Random.new(seed)"]
-    S --> F["for each hourly step (last one fractional)"]
+    S --> F["for each hourly step (last one fractional), shift factor 1.0 / 0.5 / 0.2"]
     F --> G["Efficiency from Morale and Energy, Contribution with traits"]
     G --> H2["Q = min(Demand_off, Cap_seat, Cap_kitchen, Cap_service)"]
-    H2 --> I["Revenue + Tips + Delivery - Ingredients (incl. auto-buy) - Wages"]
+    H2 --> I["N = Q x h x shift; Revenue + Tips + Delivery - Ingredients (incl. auto-buy) - Wages x shift"]
     I --> K{"Net_step < 0 ?"}
     K -->|"yes"| X["Manager closes early: void step, stop"]
     K -->|"no"| M["decay Energy and Morale, consume special stock"]
@@ -12163,7 +12210,7 @@ flowchart TD
     X --> N["incidents: count, draws, caps; damage to auto-repair or deferred"]
     M --> N
     N --> O["discoveries: MS, crate, capsule (max 1 per UTC day)"]
-    O --> P["Net = max(0, min(sum, 0.6 x active net x H)), round half-up"]
+    O --> P["Net = max(0, min(sum, 0.6 x active net x effective hours)), round half-up"]
     P --> Q2["merge into pendingOfflineReport, lastSimAt = now, save atomically"]
     Q2 --> W["Welcome Back screen"]
     W --> CL["Offline.Collect(reportId): idempotent grant, ring buffer"]
@@ -12207,12 +12254,14 @@ flowchart TD
 | `REPAIR_DISCOUNT` | min(0.60, bestRepair/200 + 0.10 Wall Crawler) (canon base) | auto-repair |
 | `MS_CHANCE` / `CRATE_CHANCE` / `CAPSULE_CHANCE` | 8 % / 1 % / 5 % per simulated hour (first two canon) | discoveries |
 | `DISCOVERY_BOOST_CAP` | ×1.25 | Sniffer ×1.10, Lucky Charm ×1.15 |
-| `OFFLINE_CEILING_SHARE` | 0.60 of §C4.4 active net/h × H | hard clamp (canon "never above 60 %") |
+| `OFFLINE_CEILING_SHARE` | 0.60 of §C4.4 active net/h × effective hours | hard clamp (canon "never above 60 %") |
+| `TAPER_BANDS` | hours 0–2 ×1.0 ("Full Shift") · 2–8 ×0.5 ("Late Shift") · 8–24 ×0.2 ("Skeleton Shift") | long-absence taper (integrator policy); scales the whole operation of the step |
+| `TAPER_CLOCK` | `interval` | hour index counted from `lastSimAt`; fallback `rolling24h` counts offline hours already simulated in the last 24 h (§17.6 lever) |
 | `CAP_HOURS` | none 2 · Basic 4 · Experienced 8 · Elite 12 · Legendary 24; Assistant +2; max 24 (canon) | interval cap |
 | `CLAIMED_RING` | 20 (canon) | idempotency ring buffer |
 | `WELCOME_BACK_CRATE_DAYS` | 7 (canon E5) | absence for the crate |
 
-### 17.4 The model in detail (A11 elaborations of canon §C15)
+### 17.4 The model in detail (elaborations of canon §C15) [TUNABLE]
 
 **Snapshot.** Everything is read from the profile as saved at `lastSimAt`: tier, reputation ★, Atmosphere, station
 levels, menu (or Night Menu), special stock, roster with stats/Energy/Morale/shift/training, auto-buy budget, player
@@ -12220,6 +12269,13 @@ EFFICIENCY. Nothing that happened online after that time can leak in, and the sn
 
 **Who works.** Employees on *Always* or *Offline Only* shifts and not in training; a course whose `endsAt` falls inside
 the interval adds the employee from the next step. No working `ROLE_CHEF` → zero report with the hint "Hire a Chef!".
+
+**Long-absence taper [TUNABLE].** Step k (starting at hour k) runs a shift with factor `S_k` = 1.0 for k < 2, 0.5 for
+2 ≤ k < 8, 0.2 for k ≥ 8: only that share of the restaurant operates ("Late Shift": half the tables, half the staff on
+the clock; "Skeleton Shift": a fifth). Customers, revenue, tips, delivery, ingredients **and paid wages** all scale
+by `S_k`, so a long absence never flips a step negative and longer caps still add value; Energy and Morale keep
+decaying at the canon rates (the taper sits on top of energy decay). `H_eff = Σ h × S_k` is the interval's effective
+hours (Example E: 24 h → 8.2 effective h).
 
 **Per step k** (step length h = 1, last one fractional):
 
@@ -12235,13 +12291,13 @@ Cap_seat       = Seats × 3600 / 300
 Cap_kitchen    = Σ_chefs 3600/PrepSec_avg × Contribution_c / 1.4 × (1 + 0.15·min(3, preps)) × DishFactor × (1 + Coord)
 Cap_service    = tier ≤ 2 ? Cap_kitchen : waiters ≥ 1 ? Σ 80 × Contribution_w × (1 + 0.10·min(3, cashiers)) × (1 + Coord)
                                         : 0.30 × Cap_kitchen
-Q              = min(Demand_off, Cap_seat, Cap_kitchen, Cap_service);  N = floor(carry + Q·h); carry keeps the fraction
+Q              = min(Demand_off, Cap_seat, Cap_kitchen, Cap_service);  N = floor(carry + Q·h·S_k); carry keeps the fraction
 q              = min(0.95, 0.70 + 0.25·avgChefAcc/100 + ChefsInstinct − GrillMaster) × CleanFactor
 Revenue        = N × AvgTicket × q
 Tips           = Revenue × (0.04 + 0.04·avgWaiterService/100) × (1 + 0.01·floor(cashierSkill/20)) × TipTraitMult (≤ 1.25)
 Delivery       = Revenue × min(DELIVERY_CAP, Σ 0.06·Contribution_d, Cap_kitchen/Q − 1)
 Ingredients    = (N + N_delivery) × AvgIngredientCost × (1 − StockerDiscount) × (1 − 0.0015·EFFICIENCY) + AutoBuy_k
-Wages          = Σ wage_i × h
+Wages          = Σ wage_i × h × S_k
 Net_step       = Revenue + Tips + Delivery − Ingredients − Wages
 if Net_step < 0: the Manager closes early — the step is voided (no customers, no wages, its auto-buy rolled back), stop
 Energy_i      −= decay_i × h   (8 %/h, 5 %/h with a Manager, minus signature/Night Owl bonuses, floor 3 %/h;
@@ -12253,18 +12309,18 @@ special stock −= (N + N_delivery) × 1.4 × (users of that ingredient / live r
   topped up to that step's expected need at `unit = mean(price × ratio(D) × 0.4)` × (1 − discount); the cost lands in that
   step's Ingredients, so it can never push the wallet negative (a voided step rolls it back). When a pool hits 0, every
   recipe using it is **SOLD OUT** from the next step and PrepSec_avg / AvgTicket are recomputed (§17.9 Examples D, E).
-- **Incidents** (after the step loop, over operated hours H_op): `λ = H_op × 0.6 × (1 − SM)`,
+- **Incidents** (after the step loop, over effective hours H_eff): `λ = H_eff × 0.6 × (1 − SM)`,
   `count = floor(λ) + (rng < frac(λ))`; each draw picks an eligible §36.9 row by effective weight, a step uniformly, and
-  `{n}`. Effects are fractions of `Rh` (interval Revenue+Tips+Delivery per operated hour); negatives (MB + damage
+  `{n}`. Effects are fractions of `Rh` (interval Revenue+Tips+Delivery per effective hour); negatives (MB + damage
   value) are scaled to ≤ 10 % of Revenue+Tips, positives to ≤ 15 %. They are booked into their step for the report but
   do not feed the close-early test (the caps depend on the interval total, so the test uses the operating result).
 - **Repairs.** Damage value → points = ceil(value / CostPerPoint[tier]) on random destructible objects (never past
   Broken). With a Repair Technician it is auto-paid at `value × (1 − discount)`; otherwise it stays visible and costs
   nothing until the player repairs (cheaper manual repair, §15).
-- **Discoveries** per operated step: MS `rng < 0.08 × boost × h` → 1–3 MS; crate `rng < 0.01 × h` (×1.5 `EMP_091`) →
-  5–15 units of a special ingredient the restaurant can use; capsule `rng < 0.05 × h`, at most **one per report and one
+- **Discoveries** per operated step: MS `rng < 0.08 × boost × h × S_k` → 1–3 MS; crate `rng < 0.01 × h × S_k` (×1.5 `EMP_091`) →
+  5–15 units of a special ingredient the restaurant can use; capsule `rng < 0.05 × h × S_k`, at most **one per report and one
   per UTC day** (`lastOfflineCapsuleDay`).
-- **Totals.** `Net = max(0, Σ Net_step + incidents − auto-repairs)`, clamped to `0.60 × ActiveNet[tier] × H_op`
+- **Totals.** `Net = max(0, Σ Net_step + incidents − auto-repairs)`, clamped to `0.60 × ActiveNet[tier] × H_eff`
   (`mmr_offline_ceiling_hit`), then rounded half-up to whole MB — the only money rounding (canon C0).
 - **Closed hours.** For `elapsed − H` beyond the cap employees recover Energy +10 %/h (staff went home); Morale is
   unchanged.
@@ -12292,11 +12348,12 @@ of later draws within a version. The deterministic economy (steps 4–9, 11) use
 reproduces it to the MB, while its incident/discovery draws use Python's generator with the same seed (different
 numbers, same distribution).
 
-### 17.6 Caps and the tuning plan
+### 17.6 Caps and the tuning plan [TUNABLE]
 
 The cap ladder (canon §C14.3) is the progression spine of management: a Basic Manager doubles a newcomer's offline
-income per absence, an Experienced one covers a school day, an Elite one an evening + night, a Legendary one a full
-day. Tuning uses §31 telemetry, always changes **one variable at a time** behind a server config flag, bumps
+window, an Experienced one covers a school day, an Elite one an evening + night, a Legendary one a full day. With the
+taper, the *first* hours are worth the most, so returning 2–3 times a day is rewarded, while a longer cap still adds
+total value (Examples C–E: 8 h ≈ 2.0, 12 h ≈ 2.5, 24 h ≈ 3.1 active hours). Tuning uses §31 telemetry, always changes **one variable at a time** behind a server config flag, bumps
 `SIM_VERSION`, and is A/B tested on new cohorts for ≥ 14 days.
 
 | Signal (§31) | Healthy band | If too low | If too high |
@@ -12305,15 +12362,17 @@ day. Tuning uses §31 telemetry, always changes **one variable at a time** behin
 | Share of returns that hit the cap | 30–60 % | caps feel generous — keep | > 70 % for 7 days: raise the Basic cap 4 → 5 h in a test cohort, or add Assistant earlier |
 | Median hours between sessions vs cap | median ≤ cap | — | median ≫ cap and falling D7: test +2 h for Basic/Experienced |
 | Report collect rate (collected within 24 h) | ≥ 90 % | simplify the screen; auto-collect on Continue (already) | — |
-| Offline ÷ active net per hour (per tier, logged per report) | 35–50 % | raise `OFFLINE_DEMAND_FACTOR` 0.6 → 0.65 | lower it to 0.55; ceiling hits > 1 % of reports → investigate |
-| Offline share of all MB earned (T5+) | 25–40 % | as above | > 45 %: lower demand factor or raise `ENERGY_DECAY` 8 → 9 |
+| **Guardrail: median player's offline share of all MB earned** | **≤ 60 % at D7, ≤ 70 % at D30** | — | lower the taper factors first (Late 0.5 → 0.4, Skeleton 0.2 → 0.15); if driven by many short check-ins per day, switch `TAPER_CLOCK` to `rolling24h`; only then touch caps or demand |
+| First-2-h offline ÷ active net per hour (per tier, logged per report) | 35–50 % | raise `OFFLINE_DEMAND_FACTOR` 0.6 → 0.65 | lower it to 0.55; ceiling hits > 1 % of reports → investigate |
+| Value of a full capped absence (MB ÷ active net/h) | Basic ≈ 1–1.5, Experienced ≈ 2, Elite ≈ 2.5, Legendary ≈ 3 active hours | raise the Late Shift factor | lower the Skeleton Shift factor |
+| Offline share of all MB earned (T5+, players with ≥ 2 h active/day) | 25–40 % | as above | > 45 %: lower taper factors before demand |
 | Inflation: median wallet ÷ next-tier cost (§C4.4) | ≤ 1.5 for 7 days | — | > 3: raise sinks (training growth 1.08 → 1.10) before touching caps |
 | Closed-early reports | < 5 % | — | > 10 %: stronger Forecast warnings and "you are paying for idle staff" suggestions |
 | Incident net / R | −3 % … +3 % | soften negative weights | raise negative weights or lower positives |
 
 ### 17.7 Persistence and idempotency (canon §C15, E11)
 
-**Profile fields** (schema owned by §28; A11 defines the contents):
+**Profile fields** (schema owned by §28; §16–§17 defines the contents):
 
 ```lua
 --!strict
@@ -12333,7 +12392,7 @@ export type OfflineReport = {
 -- profile.pendingOfflineReport: OfflineReport?                          profile.claimedReportIds: { string } (≤ 20)
 ```
 
-**Simulate on join** — runs inside the session-locked load (`PlayerDataService`), as a pure function: no yields, no
+**Simulate on join** — `SimulateTransform` runs inside the session-locked load (`PlayerDataService`, §28), as a pure function: no yields, no
 remote calls, no analytics until the write succeeds (an `UpdateAsync` transform may run more than once).
 
 ```lua
@@ -12341,8 +12400,9 @@ remote calls, no analytics until the write succeeds (an `UpdateAsync` transform 
 local OfflineEarningsService = {}
 local SIM_VERSION, MIN_OFFLINE, RING = 1, 300, 20
 
--- called by PlayerDataService inside DataStore:UpdateAsync(key, function(old) ... end) after the lock is acquired
-function OfflineEarningsService.SimulateOnJoin(data: any, userId: number, now: number): any
+-- registered with PlayerDataService:RegisterLoadTransform (§27, §28): runs inside the session-locked UpdateAsync
+function OfflineEarningsService.SimulateTransform(data: any, ctx: { userId: number, now: number }): any
+    local userId, now = ctx.userId, ctx.now
     if data.lastSimAt == nil then data.lastSimAt = now; return nil end
     local elapsed = now - data.lastSimAt
     if elapsed < 0 then data._flags.clockSkew = elapsed; elapsed = 0 end   -- negative → 0, flagged (canon)
@@ -12381,12 +12441,16 @@ function OfflineEarningsService.Collect(player: Player, reportId: string)
     if not r or r.reportId ~= reportId then return { ok = false, reason = "Stale", current = r and r.reportId } end
     -- one synchronous block: grant + ring + clear mutate the same in-memory profile, then one save
     local mb = math.floor(r.net + 0.5)                        -- canon C0: round half-up at payout only
-    EconomyService:Grant(player, "MB", mb, "offline_report", reportId)
-    if r.ms > 0 then EconomyService:Grant(player, "MS", r.ms, "offline_report", reportId .. ":ms") end
-    for _, c in r.crates do InventoryService:AddStock(player, c.ing, c.units, "offline_find") end
-    if r.capsules > 0 then MutationService:GrantCapsules(player, r.capsules, "OFFLINE_FIND") end
-    if r.welcomeBackCrate then MutationService:GrantCapsules(player, 1, "welcome_back")
-        EconomyService:Grant(player, "MS", 50, "welcome_back", reportId .. ":wb") end
+    local ms = r.ms + (r.welcomeBackCrate and 50 or 0)        -- Welcome Back Crate MS (canon E5) rides the same txn
+    -- single-writer economy (§27 P3): one idempotent transaction, reason code `offline_collect` (§22/§31),
+    -- key `offline:<reportId>` (§28); non-currency grants run inside the same non-yielding step
+    local res = EconomyService:TransactWith(player, { id = `offline:{reportId}`, deltas = { MB = mb, MS = ms },
+        src = "offline_collect", ref = reportId }, function()
+        for _, c in r.crates do InventoryService:AddStock(player, c.ing, c.units, "offline_find") end
+        if r.capsules > 0 then MutationService:GrantCapsules(player, r.capsules, "OFFLINE_FIND") end
+        if r.welcomeBackCrate then MutationService:GrantCapsules(player, 1, "welcome_back") end
+    end)
+    if not res.ok and res.reason ~= "duplicate" then return res end
     table.insert(data.claimedReportIds, reportId)
     if #data.claimedReportIds > RING then table.remove(data.claimedReportIds, 1) end
     data.pendingOfflineReport = nil
@@ -12428,12 +12492,13 @@ Mode/live play). `PlayerRemoving` and `BindToClose` write `lastSimAt` and `lastL
 
 ### 17.9 Worked examples
 
-Generated by `python3 gdd/tools/offline_sim_examples.py` (stdlib only; `--check` asserts the band). Five well-staffed
-restaurants at different progression points plus one deliberately bad roster. Shared assumptions, so each example
-only lists what differs:
+Generated by `python3 gdd/tools/offline_sim_examples.py` (stdlib only; `--check` asserts that every well-staffed
+example's **first-2-hour rate** is 35–50 % of the tier's §C4.4 active net/hour). Five well-staffed restaurants at
+different progression points plus one deliberately bad roster; every example shows the taper column ("Shift") and the
+value of the whole absence in active hours. Shared assumptions, so each example only lists what differs:
 
-- **Canon constants unchanged** (§C15 as written); A11 elaborations exactly as §17.3–§17.4. Employees use their §36.8
-  values (trained stats are starred).
+- **Canon §C15 constants unchanged**, plus the long-absence taper (§17.4) and the §16–§17 elaborations exactly as
+  §17.3–§17.4. Employees use their §36.8 values (trained stats listed under the roster).
 - **Menus** use real recipe IDs from §C10 with prices from the canon curve (§C4.2, no flavor variance). Difficulty D,
   base prep seconds (mains 10 + 7D, desserts/fried/salads 8 + 5D, drinks 4 + 3D, legendary 20 + 10D) and ingredient
   ratios (D1 36 % … D5 26 %, inside the canon 25–40 % band) are *assumed for the examples*; the live game reads §6.
@@ -12456,13 +12521,14 @@ only lists what differs:
 | Stations | starter kit, all Lv1 | PrepSec × (1 − 0.5 × (1 − 1.00)) = × 1.000 |
 | Offline cap | 2 h | no Manager → 2 h |
 | Elapsed / simulated | 9 h 00 min / **2 h 00 min** (capped) | H = min(H_elapsed, cap) |
+| Long-absence taper | 2.00 effective h | Full Shift h0–2 ×1.0 · Late Shift h2–8 ×0.5 · Skeleton Shift h8–24 ×0.2 |
 | Seed | `0xDD6C3873` | FNV-1a-32("81234567:1760131800:1") |
 
 **Roster**
 
-| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Ollie | `EMP_001` | Chef | Common | Cook 30, Acc 28, Rel 40 | 30.4 | 90 / 100 | 29.2 | ×1.25 | 0.365 | 12 |
+| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
+|---|---|---|---|---|---|---|---|---|---|
+| Ollie | `EMP_001` | Chef | Common | 30.4 | 90 / 100 | 29.2 | ×1.25 | 0.365 | 12 |
 
 **Menu** (skill gate: D ≤ 1 + floor(30 / 25) = 2)
 
@@ -12481,15 +12547,15 @@ only lists what differs:
 
 **Hourly steps**
 
-| Step | h | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
+| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1.00 | 100.0 | 0.365 | 52.1 | 52.1 | 45.0 | Demand | 45 | 485 | 19 | 0 | 215 | 12 | 277 |
-| 2 | 1.00 | 92.0 | 0.355 | 50.7 | 50.7 | 45.0 | Demand | 45 | 485 | 19 | 0 | 215 | 12 | 277 |
-| **Σ** | 2.00 | | | | | | | **90** | **970** | **39** | **0** | **431** | **24** | **554** |
+| 1 | 1.00 | ×1.0 | 100.0 | 52.1 | 52.1 | 45.0 | Demand | 45 | 485 | 19 | 0 | 215 | 12 | 277 |
+| 2 | 1.00 | ×1.0 | 92.0 | 50.7 | 50.7 | 45.0 | Demand | 45 | 485 | 19 | 0 | 215 | 12 | 277 |
+| **Σ** | 2.00 | 2.00 eff. | | | | | | **90** | **970** | **39** | **0** | **431** | **24** | **554** |
 
 **Incidents & discoveries**
 
-- Security Mitigation SM = 0.000; λ = 2.00 h × 0.6 × (1 − SM) = 1.200 → count = floor(λ) + roll(0.200) = **1**; eligible pool 21 incidents; Rh = 505 MB/h.
+- Security Mitigation SM = 0.000; λ = 2.00 effective h × 0.6 × (1 − SM) = 1.200 → count = floor(λ) + roll(0.200) = **1**; eligible pool 21 incidents; Rh = 505 MB per effective hour.
 - Caps: negatives 15 ≤ 10 % of R (101) → scale ×1.00; positives 0 ≤ 15 % of R (151) → scale ×1.00.
 
 | # | Step | Incident | MB effect | Damage value | Report line |
@@ -12500,9 +12566,9 @@ only lists what differs:
 
 **Result**
 
-| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | Net / h | C4.4 active net / h | Offline ÷ active |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 90 | 970 | 39 | 0 | −431 | −24 | 0 | −15 | **539** | 269 | 630 | **42.8 %** (base economy 44.0 %) |
+| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | First-2-h rate (MB/h) | C4.4 active net / h | First-2-h ÷ active | Interval worth |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 90 | 970 | 39 | 0 | −431 | −24 | 0 | −15 | **539** | 277 | 630 | **44.0 %** | 0.86 active h |
 
 #### 17.9.2 Example B — TIER_03 — basic staff + Basic Manager, 4 h
 
@@ -12517,16 +12583,17 @@ only lists what differs:
 | Stations | all Lv2 Tuned | PrepSec × (1 − 0.5 × (1 − 0.90)) = × 0.950 |
 | Offline cap | 4 h | Barnaby Hoot (Common) → 4 h |
 | Elapsed / simulated | 5 h 20 min / **4 h 00 min** (capped) | H = min(H_elapsed, cap) |
+| Long-absence taper | 3.00 effective h | Full Shift h0–2 ×1.0 · Late Shift h2–8 ×0.5 · Skeleton Shift h8–24 ×0.2 |
 | Seed | `0x9D1F42EB` | FNV-1a-32("81234567:1760380200:1") |
 
 **Roster**
 
-| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Octavia | `EMP_005` | Chef | Uncommon | Cook 52, Acc 46, Rel 42 | 49.2 | 82 / 92 | 45.0 | ×1.25 | 0.563 | 50 |
-| Skates McGee | `EMP_026` | Waiter | Uncommon | Svc 53, Acc 43, Rel 39 | 48.6 | 80 / 90 | 43.8 | ×1.20 | 0.526 | 55 |
-| Benny Bun | `EMP_023` | Waiter | Common | Svc 38, Acc 26, Rel 23 | 32.9 | 85 / 95 | 30.8 | ×1.20 | 0.369 | 18 |
-| Barnaby Hoot | `EMP_070` | Manager | Common | Rel 31, Svc 30, Acc 31 | 30.7 | 80 / 95 | 28.1 | ×1.00 | 0.281 | 17 |
+| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
+|---|---|---|---|---|---|---|---|---|---|
+| Octavia | `EMP_005` | Chef | Uncommon | 49.2 | 82 / 92 | 45.0 | ×1.25 | 0.563 | 50 |
+| Skates McGee | `EMP_026` | Waiter | Uncommon | 48.6 | 80 / 90 | 43.8 | ×1.20 | 0.526 | 55 |
+| Benny Bun | `EMP_023` | Waiter | Common | 32.9 | 85 / 95 | 30.8 | ×1.20 | 0.369 | 18 |
+| Barnaby Hoot | `EMP_070` | Manager | Common | 30.7 | 80 / 95 | 28.1 | ×1.00 | 0.281 | 17 |
 
 **Menu** (skill gate: D ≤ 1 + floor(52 / 25) = 3)
 
@@ -12547,32 +12614,30 @@ only lists what differs:
 
 **Hourly steps**
 
-| Step | h | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
+| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1.00 | 93.0 | 0.563 | 73.8 | 75.1 | 73.8 | Kitchen | 73 | 1,277 | 82 | 0 | 509 | 140 | 710 |
-| 2 | 1.00 | 89.2 | 0.553 | 72.5 | 73.9 | 72.5 | Kitchen | 73 | 1,277 | 82 | 0 | 509 | 140 | 710 |
-| 3 | 1.00 | 85.5 | 0.544 | 71.3 | 72.6 | 71.3 | Kitchen | 71 | 1,242 | 80 | 0 | 495 | 140 | 686 |
-| 4 | 1.00 | 81.8 | 0.535 | 70.1 | 71.4 | 70.1 | Kitchen | 70 | 1,225 | 78 | 0 | 488 | 140 | 675 |
-| **Σ** | 4.00 | | | | | | | **287** | **5,021** | **321** | **0** | **2,003** | **560** | **2,780** |
+| 1 | 1.00 | ×1.0 | 93.0 | 73.8 | 75.1 | 73.8 | Kitchen | 73 | 1,277 | 82 | 0 | 509 | 140 | 710 |
+| 2 | 1.00 | ×1.0 | 89.2 | 72.5 | 73.9 | 72.5 | Kitchen | 73 | 1,277 | 82 | 0 | 509 | 140 | 710 |
+| 3 | 1.00 | ×0.5 | 85.5 | 71.3 | 72.6 | 71.3 | Kitchen | 35 | 612 | 39 | 0 | 244 | 70 | 337 |
+| 4 | 1.00 | ×0.5 | 81.8 | 70.1 | 71.4 | 70.1 | Kitchen | 36 | 630 | 40 | 0 | 251 | 70 | 349 |
+| **Σ** | 4.00 | 3.00 eff. | | | | | | **217** | **3,796** | **243** | **0** | **1,514** | **420** | **2,105** |
 
 **Incidents & discoveries**
 
-- Security Mitigation SM = 0.000; λ = 4.00 h × 0.6 × (1 − SM) = 2.400 → count = floor(λ) + roll(0.400) = **2**; eligible pool 38 incidents; Rh = 1,336 MB/h.
-- Caps: negatives 147 ≤ 10 % of R (534) → scale ×1.00; positives 0 ≤ 15 % of R (801) → scale ×1.00.
+- Security Mitigation SM = 0.000; λ = 3.00 effective h × 0.6 × (1 − SM) = 1.800 → count = floor(λ) + roll(0.800) = **1**; eligible pool 38 incidents; Rh = 1,347 MB per effective hour.
+- Caps: negatives 40 ≤ 10 % of R (404) → scale ×1.00; positives 0 ≤ 15 % of R (606) → scale ×1.00.
 
 | # | Step | Incident | MB effect | Damage value | Report line |
 |---|---|---|---|---|---|
 | 1 | 1 | `INC_006` Drama Llama Monologue | −40 | — | A Drama Llama performed a monologue about lukewarm soup. 3 customers left before the second act. |
-| 2 | 3 | `INC_002` Meatball Food Fight | −53 | 53 | One meatball was thrown. Then 24 meatballs were thrown. Octavia is still finding them. |
 
-- Damage value 53 MB (22 damage points) is **left for the player** (no Repair Technician): shown in the Restaurant Damage tab, not deducted.
-- Discoveries (MS chance 9.2 %/h after trait boost ×1.15; crate 1 %/h; capsule 5 %/h, ≤ 1 per UTC day): none this time.
+- Discoveries (MS chance 9.2 %/h after trait boost ×1.15; crate 1 %/h; capsule 5 %/h, ≤ 1 per UTC day): step 1: +3 MS.
 
 **Result**
 
-| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | Net / h | C4.4 active net / h | Offline ÷ active |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 287 | 5,021 | 321 | 0 | −2,003 | −560 | 0 | −93 | **2,687** | 672 | 1,730 | **38.8 %** (base economy 40.2 %) |
+| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | First-2-h rate (MB/h) | C4.4 active net / h | First-2-h ÷ active | Interval worth |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 217 | 3,796 | 243 | 0 | −1,514 | −420 | 0 | −40 | **2,065** | 710 | 1,730 | **41.0 %** | 1.19 active h |
 
 #### 17.9.3 Example C — TIER_05 — Experienced Manager, 8 h
 
@@ -12587,22 +12652,23 @@ only lists what differs:
 | Stations | mix of Lv2 and Lv3 (mean process multiplier 0.85) | PrepSec × (1 − 0.5 × (1 − 0.85)) = × 0.925 |
 | Offline cap | 8 h | Mister Mustache (Rare) → 8 h |
 | Elapsed / simulated | 8 h 00 min / **8 h 00 min** | H = min(H_elapsed, cap) |
+| Long-absence taper | 5.00 effective h | Full Shift h0–2 ×1.0 · Late Shift h2–8 ×0.5 · Skeleton Shift h8–24 ×0.2 |
 | Seed | `0x8B08E0D0` | FNV-1a-32("81234567:1761085800:1") |
 
 **Roster**
 
-| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Mister Mustache | `EMP_073` | Manager | Rare | Rel 68, Svc 61, Acc 59 | 63.2 | 80 / 95 | 58.7 | ×1.00 | 0.587 | 160 |
-| Sir Loin | `EMP_008` | Chef | Rare | Cook 67, Acc 62, Rel 56 | 64.9 | 78 / 90 | 58.8 | ×1.00 | 0.588 | 160 |
-| Octavia | `EMP_005` | Chef | Uncommon | Cook 58*, Acc 52*, Rel 42 | 54.6 | 80 / 90 | 49.9 | ×1.25 | 0.624 | 50 |
-| Benny Bun | `EMP_023` | Waiter | Common | Svc 38, Acc 26, Rel 23 | 32.9 | 85 / 92 | 30.9 | ×1.20 | 0.371 | 18 |
-| Chet Speedwell | `EMP_028` | Waiter | Rare | Svc 68, Acc 58, Rel 53 | 63.5 | 80 / 88 | 57.7 | ×1.20 | 0.693 | 165 |
-| Skates McGee | `EMP_026` | Waiter | Uncommon | Svc 53, Acc 43, Rel 39 | 48.6 | 78 / 90 | 44.1 | ×1.20 | 0.529 | 55 |
-| Sloane | `EMP_039` | Dish | Common | Svc 15, Rel 40 | 27.5 | 90 / 100 | 27.1 | ×0.60 | 0.162 | 10 |
-| Dusty | `EMP_048` | Cleaner | Common | Svc 37, Rel 26, Acc 31 | 32.5 | 75 / 90 | 29.1 | ×1.20 | 0.349 | 18 |
+| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
+|---|---|---|---|---|---|---|---|---|---|
+| Mister Mustache | `EMP_073` | Manager | Rare | 63.2 | 80 / 95 | 58.7 | ×1.00 | 0.587 | 160 |
+| Sir Loin | `EMP_008` | Chef | Rare | 64.9 | 78 / 90 | 58.8 | ×1.00 | 0.588 | 160 |
+| Octavia | `EMP_005` | Chef | Uncommon | 54.6 | 80 / 90 | 49.9 | ×1.25 | 0.624 | 50 |
+| Benny Bun | `EMP_023` | Waiter | Common | 32.9 | 85 / 92 | 30.9 | ×1.20 | 0.371 | 18 |
+| Chet Speedwell | `EMP_028` | Waiter | Rare | 63.5 | 80 / 88 | 57.7 | ×1.20 | 0.693 | 165 |
+| Skates McGee | `EMP_026` | Waiter | Uncommon | 48.6 | 78 / 90 | 44.1 | ×1.20 | 0.529 | 55 |
+| Sloane | `EMP_039` | Dish | Common | 27.5 | 90 / 100 | 27.1 | ×0.60 | 0.162 | 10 |
+| Dusty | `EMP_048` | Cleaner | Common | 32.5 | 75 / 90 | 29.1 | ×1.20 | 0.349 | 18 |
 
-\* trained above the archetype value (within the potential cap, §16.6).
+Trained above the §36.8 values (within the potential cap, §16.7.4): Octavia Cooking 58, Accuracy 52.
 
 **Menu** (skill gate: D ≤ 1 + floor(67 / 25) = 3)
 
@@ -12627,39 +12693,37 @@ only lists what differs:
 
 **Hourly steps**
 
-| Step | h | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
+| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1.00 | 91.9 | 1.213 | 130.8 | 136.5 | 108.7 | Demand | 108 | 3,886 | 262 | 0 | 1,320 | 636 | 2,192 |
-| 2 | 1.00 | 87.4 | 1.189 | 128.2 | 133.7 | 108.7 | Demand | 109 | 3,922 | 264 | 0 | 1,332 | 636 | 2,218 |
-| 3 | 1.00 | 83.0 | 1.165 | 125.5 | 130.9 | 108.7 | Demand | 109 | 3,922 | 264 | 0 | 1,332 | 636 | 2,218 |
-| 4 | 1.00 | 78.6 | 1.141 | 122.9 | 128.2 | 108.7 | Demand | 108 | 3,886 | 262 | 0 | 1,320 | 636 | 2,192 |
-| 5 | 1.00 | 74.1 | 1.118 | 120.3 | 125.5 | 108.7 | Demand | 109 | 3,922 | 264 | 0 | 1,332 | 636 | 2,218 |
-| 6 | 1.00 | 69.7 | 1.095 | 117.7 | 122.8 | 108.7 | Demand | 109 | 3,922 | 264 | 0 | 1,332 | 636 | 2,218 |
-| 7 | 1.00 | 65.2 | 1.071 | 115.1 | 120.1 | 108.7 | Demand | 108 | 3,886 | 262 | 0 | 1,320 | 636 | 2,192 |
-| 8 | 1.00 | 60.8 | 1.048 | 112.6 | 117.4 | 108.7 | Demand | 109 | 3,922 | 264 | 0 | 1,332 | 636 | 2,218 |
-| **Σ** | 8.00 | | | | | | | **869** | **31,270** | **2,105** | **0** | **10,620** | **5,088** | **17,667** |
+| 1 | 1.00 | ×1.0 | 91.9 | 130.8 | 136.5 | 108.7 | Demand | 108 | 3,886 | 262 | 0 | 1,320 | 636 | 2,192 |
+| 2 | 1.00 | ×1.0 | 87.4 | 128.2 | 133.7 | 108.7 | Demand | 109 | 3,922 | 264 | 0 | 1,332 | 636 | 2,218 |
+| 3 | 1.00 | ×0.5 | 83.0 | 125.5 | 130.9 | 108.7 | Demand | 54 | 1,943 | 131 | 0 | 660 | 318 | 1,096 |
+| 4 | 1.00 | ×0.5 | 78.6 | 122.9 | 128.2 | 108.7 | Demand | 55 | 1,979 | 133 | 0 | 672 | 318 | 1,122 |
+| 5 | 1.00 | ×0.5 | 74.1 | 120.3 | 125.5 | 108.7 | Demand | 54 | 1,943 | 131 | 0 | 660 | 318 | 1,096 |
+| 6 | 1.00 | ×0.5 | 69.7 | 117.7 | 122.8 | 108.7 | Demand | 54 | 1,943 | 131 | 0 | 660 | 318 | 1,096 |
+| 7 | 1.00 | ×0.5 | 65.2 | 115.1 | 120.1 | 108.7 | Demand | 55 | 1,979 | 133 | 0 | 672 | 318 | 1,122 |
+| 8 | 1.00 | ×0.5 | 60.8 | 112.6 | 117.4 | 108.7 | Demand | 54 | 1,943 | 131 | 0 | 660 | 318 | 1,096 |
+| **Σ** | 8.00 | 5.00 eff. | | | | | | **543** | **19,539** | **1,315** | **0** | **6,636** | **3,180** | **11,039** |
 
 **Incidents & discoveries**
 
-- Security Mitigation SM = 0.000; λ = 8.00 h × 0.6 × (1 − SM) = 4.800 → count = floor(λ) + roll(0.800) = **5**; eligible pool 47 incidents; Rh = 4,172 MB/h.
-- Caps: negatives 918 ≤ 10 % of R (3,337) → scale ×1.00; positives 209 ≤ 15 % of R (5,006) → scale ×1.00.
+- Security Mitigation SM = 0.000; λ = 5.00 effective h × 0.6 × (1 − SM) = 3.000 → count = floor(λ) + roll(0.000) = **3**; eligible pool 47 incidents; Rh = 4,171 MB per effective hour.
+- Caps: negatives 459 ≤ 10 % of R (2,085) → scale ×1.00; positives 209 ≤ 15 % of R (3,128) → scale ×1.00.
 
 | # | Step | Incident | MB effect | Damage value | Report line |
 |---|---|---|---|---|---|
 | 1 | 5 | `INC_008` Wrong Table Waltz | −125 | — | Chet Speedwell delivered 8 orders to the wrong table. The wrong tables said thank you. |
 | 2 | 4 | `INC_049` Rich Mutant Big Tipper | 209 | — | A Rich Mutant tipped 268 shiny coins and a monocle. We kept the coins. |
 | 3 | 8 | `INC_002` Meatball Food Fight | −167 | 167 | One meatball was thrown. Then 12 meatballs were thrown. Dusty is still finding them. |
-| 4 | 8 | `INC_014` Grill Soot Sneeze | −125 | 125 | The grill sneezed a soot cloud. Octavia now has a cartoon soot mustache and 7 extra-crispy patties. |
-| 5 | 7 | `INC_010` Chair Domino Effect | 0 | 209 | 4 chairs fell over like dominoes. Octavia called it modern art and left them for later. |
 
-- Damage value 501 MB (72 damage points) is **left for the player** (no Repair Technician): shown in the Restaurant Damage tab, not deducted.
-- Discoveries (MS chance 9.2 %/h after trait boost ×1.15; crate 1 %/h; capsule 5 %/h, ≤ 1 per UTC day): step 7: +3 MS.
+- Damage value 167 MB (24 damage points) is **left for the player** (no Repair Technician): shown in the Restaurant Damage tab, not deducted.
+- Discoveries (MS chance 9.2 %/h after trait boost ×1.15; crate 1 %/h; capsule 5 %/h, ≤ 1 per UTC day): none this time.
 
 **Result**
 
-| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | Net / h | C4.4 active net / h | Offline ÷ active |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 869 | 31,270 | 2,105 | 0 | −10,620 | −5,088 | 0 | −209 | **17,459** | 2,182 | 5,400 | **40.4 %** (base economy 40.9 %) |
+| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | First-2-h rate (MB/h) | C4.4 active net / h | First-2-h ÷ active | Interval worth |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 543 | 19,539 | 1,315 | 0 | −6,636 | −3,180 | 0 | −83 | **10,955** | 2,205 | 5,400 | **40.8 %** | 2.03 active h |
 
 #### 17.9.4 Example D — TIER_07 — Elite Manager, 12 h, special stock runs out
 
@@ -12674,25 +12738,26 @@ only lists what differs:
 | Stations | mostly Lv3–Lv4 (mean process multiplier 0.75) | PrepSec × (1 − 0.5 × (1 − 0.75)) = × 0.875 |
 | Offline cap | 12 h | Megaphone Maxine (Epic) → 12 h |
 | Elapsed / simulated | 14 h 30 min / **12 h 00 min** (capped) | H = min(H_elapsed, cap) |
+| Long-absence taper | 5.80 effective h | Full Shift h0–2 ×1.0 · Late Shift h2–8 ×0.5 · Skeleton Shift h8–24 ×0.2 |
 | Seed | `0x52BD87E4` | FNV-1a-32("81234567:1762378200:1") |
 | Special stock at logout | `ING_MOON_CHEESE` × 70, `ING_MUTAGEN_GOO` × 400 | consumed 1 unit per special dish |
 
 **Roster**
 
-| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Megaphone Maxine | `EMP_075` | Manager | Epic | Rel 79, Svc 77, Acc 72 | 76.3 | 80 / 95 | 72.3 | ×1.00 | 0.723 | 500 |
-| Ember | `EMP_009` | Chef | Epic | Cook 84, Acc 62, Rel 74 | 76.4 | 75 / 90 | 69.7 | ×1.15 | 0.802 | 515 |
-| Frostina | `EMP_007` | Chef | Rare | Cook 63, Acc 55, Rel 53 | 59.6 | 80 / 92 | 55.9 | ×1.00 | 0.559 | 135 |
-| Sir Loin | `EMP_008` | Chef | Rare | Cook 67, Acc 62, Rel 56 | 64.9 | 80 / 90 | 60.5 | ×1.00 | 0.605 | 160 |
-| Mantis Mandy | `EMP_019` | Prep | Rare | Cook 65, Svc 66, Acc 57 | 63.8 | 80 / 90 | 59.5 | ×1.00 | 0.595 | 155 |
-| Twinkle Thistlewing | `EMP_030` | Waiter | Epic | Svc 82, Acc 77, Rel 71 | 79.4 | 85 / 95 | 76.8 | ×1.00 | 0.768 | 500 |
-| Chet Speedwell | `EMP_028` | Waiter | Rare | Svc 68, Acc 58, Rel 53 | 63.5 | 80 / 90 | 59.2 | ×1.20 | 0.711 | 165 |
-| Ozzie | `EMP_029` | Waiter | Rare | Svc 65, Acc 57, Rel 55 | 61.6 | 80 / 90 | 57.4 | ×1.20 | 0.689 | 135 |
-| Cassie Cassette | `EMP_036` | Cashier | Rare | Acc 63, Svc 66, Rel 59 | 64.3 | 80 / 95 | 60.9 | ×1.00 | 0.609 | 160 |
-| Drippy | `EMP_043` | Dish | Rare | Svc 64, Rel 62 | 63.0 | 80 / 95 | 59.7 | ×1.10 | 0.656 | 145 |
-| Vacuuma Vera | `EMP_051` | Cleaner | Rare | Svc 65, Rel 60, Acc 58 | 62.1 | 80 / 92 | 58.3 | ×1.20 | 0.699 | 155 |
-| Rocco | `EMP_066` | Security | Rare | Cmb 70, Rel 62, Svc 56 | 65.6 | 85 / 95 | 63.5 | ×1.00 | 0.635 | 170 |
+| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
+|---|---|---|---|---|---|---|---|---|---|
+| Megaphone Maxine | `EMP_075` | Manager | Epic | 76.3 | 80 / 95 | 72.3 | ×1.00 | 0.723 | 500 |
+| Ember | `EMP_009` | Chef | Epic | 76.4 | 75 / 90 | 69.7 | ×1.15 | 0.802 | 515 |
+| Frostina | `EMP_007` | Chef | Rare | 59.6 | 80 / 92 | 55.9 | ×1.00 | 0.559 | 135 |
+| Sir Loin | `EMP_008` | Chef | Rare | 64.9 | 80 / 90 | 60.5 | ×1.00 | 0.605 | 160 |
+| Mantis Mandy | `EMP_019` | Prep | Rare | 63.8 | 80 / 90 | 59.5 | ×1.00 | 0.595 | 155 |
+| Twinkle Thistlewing | `EMP_030` | Waiter | Epic | 79.4 | 85 / 95 | 76.8 | ×1.00 | 0.768 | 500 |
+| Chet Speedwell | `EMP_028` | Waiter | Rare | 63.5 | 80 / 90 | 59.2 | ×1.20 | 0.711 | 165 |
+| Ozzie | `EMP_029` | Waiter | Rare | 61.6 | 80 / 90 | 57.4 | ×1.20 | 0.689 | 135 |
+| Cassie Cassette | `EMP_036` | Cashier | Rare | 64.3 | 80 / 95 | 60.9 | ×1.00 | 0.609 | 160 |
+| Drippy | `EMP_043` | Dish | Rare | 63.0 | 80 / 95 | 59.7 | ×1.10 | 0.656 | 145 |
+| Vacuuma Vera | `EMP_051` | Cleaner | Rare | 62.1 | 80 / 92 | 58.3 | ×1.20 | 0.699 | 155 |
+| Rocco | `EMP_066` | Security | Rare | 65.6 | 85 / 95 | 63.5 | ×1.00 | 0.635 | 170 |
 
 **Menu** (skill gate: D ≤ 1 + floor(84 / 25) = 4)
 
@@ -12721,44 +12786,41 @@ only lists what differs:
 
 **Hourly steps**
 
-| Step | h | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
+| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1.00 | 92.4 | 1.966 | 247.3 | 210.0 | 147.6 | Demand | 147 | 13,107 | 1,030 | 0 | 3,862 | 2,895 | 7,380 |
-| 2 | 1.00 | 87.4 | 1.927 | 242.2 | 205.8 | 147.6 | Demand | 148 | 13,196 | 1,037 | 0 | 3,888 | 2,895 | 7,449 |
-| 3 | 1.00 | 82.4 | 1.889 | 237.1 | 201.7 | 147.6 | Demand | 147 | 13,107 | 1,030 | 0 | 3,862 | 2,895 | 7,380 |
-| 4 | 1.00 | 77.4 | 1.850 | 229.4 | 197.6 | 147.6 | Demand | 148 | 13,709 | 1,077 | 0 | 4,191 | 2,895 | 7,700 |
-| 5 | 1.00 | 72.4 | 1.812 | 224.5 | 193.6 | 147.6 | Demand | 148 | 13,709 | 1,077 | 0 | 4,191 | 2,895 | 7,700 |
-| 6 | 1.00 | 67.4 | 1.774 | 219.6 | 189.6 | 147.6 | Demand | 147 | 13,617 | 1,070 | 0 | 4,163 | 2,895 | 7,628 |
-| 7 | 1.00 | 62.4 | 1.737 | 214.8 | 185.6 | 147.6 | Demand | 148 | 13,709 | 1,077 | 0 | 4,191 | 2,895 | 7,700 |
-| 8 | 1.00 | 57.4 | 1.700 | 210.0 | 181.6 | 147.6 | Demand | 148 | 13,709 | 1,077 | 0 | 4,191 | 2,895 | 7,700 |
-| 9 | 1.00 | 52.4 | 1.663 | 205.3 | 177.7 | 147.6 | Demand | 147 | 13,617 | 1,070 | 0 | 4,163 | 2,895 | 7,628 |
-| 10 | 1.00 | 47.4 | 1.626 | 200.6 | 173.8 | 147.6 | Demand | 148 | 13,709 | 1,077 | 0 | 4,191 | 2,895 | 7,700 |
-| 11 | 1.00 | 42.4 | 1.590 | 195.9 | 169.9 | 147.6 | Demand | 148 | 13,709 | 1,077 | 0 | 4,191 | 2,895 | 7,700 |
-| 12 | 1.00 | 37.4 | 1.553 | 191.3 | 166.0 | 147.6 | Demand | 147 | 13,617 | 1,070 | 0 | 4,163 | 2,895 | 7,628 |
-| **Σ** | 12.00 | | | | | | | **1,771** | **162,515** | **12,766** | **0** | **49,248** | **34,740** | **91,294** |
+| 1 | 1.00 | ×1.0 | 92.4 | 247.3 | 210.0 | 147.6 | Demand | 147 | 13,107 | 1,030 | 0 | 3,862 | 2,895 | 7,380 |
+| 2 | 1.00 | ×1.0 | 87.4 | 242.2 | 205.8 | 147.6 | Demand | 148 | 13,196 | 1,037 | 0 | 3,888 | 2,895 | 7,449 |
+| 3 | 1.00 | ×0.5 | 82.4 | 237.1 | 201.7 | 147.6 | Demand | 74 | 6,598 | 518 | 0 | 1,944 | 1,448 | 3,725 |
+| 4 | 1.00 | ×0.5 | 77.4 | 229.4 | 197.6 | 147.6 | Demand | 73 | 6,762 | 531 | 0 | 2,067 | 1,448 | 3,778 |
+| 5 | 1.00 | ×0.5 | 72.4 | 224.5 | 193.6 | 147.6 | Demand | 74 | 6,855 | 538 | 0 | 2,096 | 1,448 | 3,850 |
+| 6 | 1.00 | ×0.5 | 67.4 | 219.6 | 189.6 | 147.6 | Demand | 74 | 6,855 | 538 | 0 | 2,096 | 1,448 | 3,850 |
+| 7 | 1.00 | ×0.5 | 62.4 | 214.8 | 185.6 | 147.6 | Demand | 74 | 6,855 | 538 | 0 | 2,096 | 1,448 | 3,850 |
+| 8 | 1.00 | ×0.5 | 57.4 | 210.0 | 181.6 | 147.6 | Demand | 74 | 6,855 | 538 | 0 | 2,096 | 1,448 | 3,850 |
+| 9 | 1.00 | ×0.2 | 52.4 | 205.3 | 177.7 | 147.6 | Demand | 29 | 2,686 | 211 | 0 | 821 | 579 | 1,497 |
+| 10 | 1.00 | ×0.2 | 47.4 | 200.6 | 173.8 | 147.6 | Demand | 30 | 2,779 | 218 | 0 | 850 | 579 | 1,569 |
+| 11 | 1.00 | ×0.2 | 42.4 | 195.9 | 169.9 | 147.6 | Demand | 29 | 2,686 | 211 | 0 | 821 | 579 | 1,497 |
+| 12 | 1.00 | ×0.2 | 37.4 | 191.3 | 166.0 | 147.6 | Demand | 30 | 2,779 | 218 | 0 | 850 | 579 | 1,569 |
+| **Σ** | 12.00 | 5.80 eff. | | | | | | **856** | **78,012** | **6,128** | **0** | **23,485** | **16,791** | **43,863** |
 
-Special stock used: `ING_MOON_CHEESE` 70, `ING_MUTAGEN_GOO` 398 (left: 0, 2). **SOLD OUT** from step 4: `RCP_ALN_004`, `RCP_ALN_001` — later steps recompute PrepSec_avg and AvgTicket without those dishes.
+Special stock used: `ING_MOON_CHEESE` 70, `ING_MUTAGEN_GOO` 187 (left: 0, 213). **SOLD OUT** from step 4: `RCP_ALN_004`, `RCP_ALN_001` — later steps recompute PrepSec_avg and AvgTicket without those dishes.
 
 **Incidents & discoveries**
 
-- Security Mitigation SM = 0.309; λ = 12.00 h × 0.6 × (1 − SM) = 4.977 → count = floor(λ) + roll(0.977) = **5**; eligible pool 52 incidents; Rh = 14,607 MB/h.
-- Caps: negatives 876 ≤ 10 % of R (17,528) → scale ×1.00; positives 2,337 ≤ 15 % of R (26,292) → scale ×1.00.
+- Security Mitigation SM = 0.309; λ = 5.80 effective h × 0.6 × (1 − SM) = 2.406 → count = floor(λ) + roll(0.406) = **2**; eligible pool 52 incidents; Rh = 14,507 MB per effective hour.
+- Caps: negatives 580 ≤ 10 % of R (8,414) → scale ×1.00; positives 725 ≤ 15 % of R (12,621) → scale ×1.00.
 
 | # | Step | Incident | MB effect | Damage value | Report line |
 |---|---|---|---|---|---|
-| 1 | 12 | `INC_051` Brawl Stopped Cold | 730 | — | Rocco stopped 2 angry customers with one very stern eyebrow. |
-| 2 | 10 | `INC_003` Goblin Dine-and-Dash | −584 | — | 2 Impatient Goblins sprinted out before paying. Twinkle Thistlewing chased them to the corner, then waved. |
-| 3 | 12 | `INC_034` Surprise Lunch Rush | 1,169 | — | A surprise rush of 14 hungry mutants arrived at once. Ember handled it like a pro. |
-| 4 | 12 | `INC_053` Cake Catch of the Century | 438 | — | Twinkle Thistlewing caught a falling birthday cake 4 centimeters from the floor. Standing ovation. |
-| 5 | 2 | `INC_019` Dish Station Foam Party | −292 | — | The dishwasher made 197 cubic studs of foam. Three customers asked if it was dessert. |
+| 1 | 12 | `INC_051` Brawl Stopped Cold | 725 | — | Rocco stopped 2 angry customers with one very stern eyebrow. |
+| 2 | 10 | `INC_003` Goblin Dine-and-Dash | −580 | — | 2 Impatient Goblins sprinted out before paying. Twinkle Thistlewing chased them to the corner, then waved. |
 
 - Discoveries (MS chance 8.0 %/h after trait boost ×1.00; crate 1 %/h; capsule 5 %/h, ≤ 1 per UTC day): none this time.
 
 **Result**
 
-| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | Net / h | C4.4 active net / h | Offline ÷ active |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1,771 | 162,515 | 12,766 | 0 | −49,248 | −34,740 | 0 | +1,461 | **92,754** | 7,730 | 17,400 | **44.4 %** (base economy 43.7 %) |
+| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | First-2-h rate (MB/h) | C4.4 active net / h | First-2-h ÷ active | Interval worth |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 856 | 78,012 | 6,128 | 0 | −23,485 | −16,791 | 0 | +145 | **44,009** | 7,414 | 17,400 | **42.6 %** | 2.53 active h |
 
 #### 17.9.5 Example E — TIER_10 — Legendary Manager, 24 h
 
@@ -12773,40 +12835,41 @@ Special stock used: `ING_MOON_CHEESE` 70, `ING_MUTAGEN_GOO` 398 (left: 0, 2). **
 | Stations | mostly Lv4–Lv5 (mean process multiplier 0.65) | PrepSec × (1 − 0.5 × (1 − 0.65)) = × 0.825 |
 | Offline cap | 24 h | The Oracle of Orders (Legendary) → 24 h (+2 h Assistant, absolute max 24 h) |
 | Elapsed / simulated | 31 h 00 min / **24 h 00 min** (capped) | H = min(H_elapsed, cap) |
+| Long-absence taper | 8.20 effective h | Full Shift h0–2 ×1.0 · Late Shift h2–8 ×0.5 · Skeleton Shift h8–24 ×0.2 |
 | Seed | `0x00F61938` | FNV-1a-32("81234567:1764970200:1") |
-| Special stock at logout | `ING_GOLDEN_PATTY` × 700, `ING_MUTAGEN_GOO` × 900, `ING_STARDUST` × 900 | consumed 1 unit per special dish |
+| Special stock at logout | `ING_GOLDEN_PATTY` × 200, `ING_MUTAGEN_GOO` × 300, `ING_STARDUST` × 300 | consumed 1 unit per special dish |
 
 **Roster**
 
-| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| The Oracle of Orders | `EMP_076` | Manager | Legendary | Rel 95, Svc 88, Acc 90 | 91.4 | 85 / 95 | 91.4 | ×1.00 | 0.914 | 1,480 |
-| Lady Luckfeather | `EMP_097` | Asst Mgr | Legendary | Rel 97, Svc 91, Acc 89 | 92.8 | 85 / 95 | 92.8 | ×1.00 | 0.928 | 1,410 |
-| Captain Calamari | `EMP_011` | Chef | Legendary | Cook 100*, Acc 90, Rel 88 | 95.8 | 85 / 95 | 95.8 | ×1.35 | 1.293 | 1,480 |
-| Goldie Gourmand | `EMP_012` | Chef | Legendary | Cook 97, Acc 87, Rel 90 | 93.3 | 85 / 95 | 93.3 | ×1.00 | 0.933 | 1,340 |
-| Ember | `EMP_009` | Chef | Epic | Cook 84, Acc 62, Rel 74 | 76.4 | 80 / 95 | 74.8 | ×1.15 | 0.860 | 515 |
-| Professor Dice | `EMP_021` | Prep | Epic | Cook 83, Svc 77, Acc 73 | 78.6 | 80 / 95 | 76.9 | ×1.00 | 0.769 | 500 |
-| Hoverina | `EMP_031` | Waiter | Legendary | Svc 94, Acc 91, Rel 88 | 92.5 | 85 / 95 | 92.5 | ×1.15 | 1.064 | 1,410 |
-| Twinkle Thistlewing | `EMP_030` | Waiter | Epic | Svc 82, Acc 77, Rel 71 | 79.4 | 85 / 95 | 79.4 | ×1.00 | 0.794 | 500 |
-| Chet Speedwell | `EMP_028` | Waiter | Rare | Svc 68, Acc 58, Rel 53 | 63.5 | 80 / 95 | 62.1 | ×1.20 | 0.746 | 165 |
-| Ozzie | `EMP_029` | Waiter | Rare | Svc 65, Acc 57, Rel 55 | 61.6 | 80 / 95 | 60.3 | ×1.20 | 0.723 | 135 |
-| Sterling Silverfin | `EMP_037` | Cashier | Epic | Acc 80, Svc 77, Rel 71 | 77.9 | 80 / 95 | 76.2 | ×1.00 | 0.762 | 500 |
-| The Rinse-o-Tron 3000 | `EMP_045` | Dish | Epic | Svc 83, Rel 81 | 84.5 | 80 / 95 | 82.7 | ×1.25 | 1.034 | 500 |
-| Gale Force | `EMP_052` | Cleaner | Epic | Svc 83, Rel 75, Acc 77 | 79.4 | 80 / 95 | 77.7 | ×1.00 | 0.777 | 455 |
-| Gearhart | `EMP_060` | Repair | Epic | Rep 79, Rel 75, Svc 68 | 78.1 | 80 / 95 | 76.4 | ×1.25 | 0.955 | 500 |
-| Steggy | `EMP_068` | Security | Epic | Cmb 77, Rel 77, Svc 74 | 76.4 | 80 / 95 | 74.8 | ×1.00 | 0.748 | 465 |
-| Golem Gary | `EMP_069` | Security | Legendary | Cmb 93, Rel 91, Svc 90 | 92.0 | 85 / 95 | 92.0 | ×1.00 | 0.920 | 1,410 |
-| Comet Carla | `EMP_083` | Delivery | Epic | Svc 81, Rel 71, Cmb 72 | 77.1 | 80 / 95 | 75.5 | ×1.20 | 0.905 | 465 |
-| Tractor Trixie | `EMP_090` | Stocker | Epic | Acc 83, Rel 71, Svc 71 | 77.0 | 80 / 95 | 75.4 | ×1.00 | 0.754 | 440 |
+| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
+|---|---|---|---|---|---|---|---|---|---|
+| The Oracle of Orders | `EMP_076` | Manager | Legendary | 91.4 | 85 / 95 | 91.4 | ×1.00 | 0.914 | 1,480 |
+| Lady Luckfeather | `EMP_097` | Asst Mgr | Legendary | 92.8 | 85 / 95 | 92.8 | ×1.00 | 0.928 | 1,410 |
+| Captain Calamari | `EMP_011` | Chef | Legendary | 95.8 | 85 / 95 | 95.8 | ×1.35 | 1.293 | 1,480 |
+| Goldie Gourmand | `EMP_012` | Chef | Legendary | 93.3 | 85 / 95 | 93.3 | ×1.00 | 0.933 | 1,340 |
+| Ember | `EMP_009` | Chef | Epic | 76.4 | 80 / 95 | 74.8 | ×1.15 | 0.860 | 515 |
+| Professor Dice | `EMP_021` | Prep | Epic | 78.6 | 80 / 95 | 76.9 | ×1.00 | 0.769 | 500 |
+| Hoverina | `EMP_031` | Waiter | Legendary | 92.5 | 85 / 95 | 92.5 | ×1.15 | 1.064 | 1,410 |
+| Twinkle Thistlewing | `EMP_030` | Waiter | Epic | 79.4 | 85 / 95 | 79.4 | ×1.00 | 0.794 | 500 |
+| Chet Speedwell | `EMP_028` | Waiter | Rare | 63.5 | 80 / 95 | 62.1 | ×1.20 | 0.746 | 165 |
+| Ozzie | `EMP_029` | Waiter | Rare | 61.6 | 80 / 95 | 60.3 | ×1.20 | 0.723 | 135 |
+| Sterling Silverfin | `EMP_037` | Cashier | Epic | 77.9 | 80 / 95 | 76.2 | ×1.00 | 0.762 | 500 |
+| The Rinse-o-Tron 3000 | `EMP_045` | Dish | Epic | 84.5 | 80 / 95 | 82.7 | ×1.25 | 1.034 | 500 |
+| Gale Force | `EMP_052` | Cleaner | Epic | 79.4 | 80 / 95 | 77.7 | ×1.00 | 0.777 | 455 |
+| Gearhart | `EMP_060` | Repair | Epic | 78.1 | 80 / 95 | 76.4 | ×1.25 | 0.955 | 500 |
+| Steggy | `EMP_068` | Security | Epic | 76.4 | 80 / 95 | 74.8 | ×1.00 | 0.748 | 465 |
+| Golem Gary | `EMP_069` | Security | Legendary | 92.0 | 85 / 95 | 92.0 | ×1.00 | 0.920 | 1,410 |
+| Comet Carla | `EMP_083` | Delivery | Epic | 77.1 | 80 / 95 | 75.5 | ×1.20 | 0.905 | 465 |
+| Tractor Trixie | `EMP_090` | Stocker | Epic | 77.0 | 80 / 95 | 75.4 | ×1.00 | 0.754 | 440 |
 
-\* trained above the archetype value (within the potential cap, §16.6).
+Trained above the §36.8 values (within the potential cap, §16.7.4): Captain Calamari Cooking 100.
 
 **Menu** (skill gate: D ≤ 1 + floor(100 / 25) = 5)
 
 | Recipe | ID | L | D | Price (MB) | Ingredients/item (MB) | PrepSec base → eff (s) | Offline? |
 |---|---|---|---|---|---|---|---|
 | The Golden Patty Supreme | `RCP_LEG_001` | 65 | 5 | 738 | 115.13 | 70 → 57.8 | yes · stock `ING_GOLDEN_PATTY` |
-| Dragon Feast | `RCP_LEG_002` | 72 | 5 | 1,038 | 161.93 | 70 → 57.8 | yes · stock `ING_GOLDEN_PATTY` |
+| The Infinite Noodle | `RCP_PST_008` | 39 | 4 | 77 | 21.56 | 38 → 31.3 | yes |
 | Infinity Pizza | `RCP_LEG_003` | 80 | 5 | 1,534 | 239.30 | 70 → 57.8 | yes · stock `ING_GOLDEN_PATTY` |
 | Chimera Casserole | `RCP_MUT_004` | 63 | 4 | 247 | 41.50 | 38 → 31.3 | yes · stock `ING_MUTAGEN_GOO` |
 | Evolution Burrito | `RCP_MUT_005` | 70 | 4 | 348 | 58.46 | 38 → 31.3 | yes · stock `ING_MUTAGEN_GOO` |
@@ -12833,63 +12896,59 @@ Special stock used: `ING_MOON_CHEESE` 70, `ING_MUTAGEN_GOO` 398 (left: 0, 2). **
 **Interval constants**
 
 - Demand_off = 190 × 1.650 × 1.173 × 0.6 = **220.6 customers/h**; Cap_seat = 24 × 3600 / 300 = **288/h**.
-- Step-1 PrepSec_avg = 32.31 s; AvgTicket = 1.4 × mean price = 380.86 MB; q = min(0.95, 0.70 + 0.25 × avgChefAcc/100 +0.01) × CleanFactor 1.00 = 0.909.
+- Step-1 PrepSec_avg = 31.21 s; AvgTicket = 1.4 × mean price = 324.80 MB; q = min(0.95, 0.70 + 0.25 × avgChefAcc/100 +0.01) × CleanFactor 1.00 = 0.909.
 - Preps counted 1.50 (+22 %), cashiers counted 1, DishFactor 1.00, Manager/Assistant coordination +14.2 %, stocker discount 14.5 %, delivery share 5.4 %, tip trait multiplier ×1.20.
 
 **Hourly steps**
 
-| Step | h | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
+| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1.00 | 95.0 | 3.086 | 343.5 | 334.3 | 220.6 | Demand | 220 | 76,178 | 6,676 | 4,139 | 12,580 | 13,670 | 60,742 |
-| 2 | 1.00 | 91.0 | 3.035 | 337.5 | 328.6 | 220.6 | Demand | 221 | 76,524 | 6,706 | 4,089 | 12,645 | 13,670 | 61,004 |
-| 3 | 1.00 | 87.0 | 2.985 | 331.5 | 322.9 | 220.6 | Demand | 220 | 76,178 | 6,676 | 4,003 | 12,595 | 13,670 | 60,591 |
-| 4 | 1.00 | 83.0 | 2.935 | 325.6 | 317.3 | 220.6 | Demand | 221 | 76,524 | 6,706 | 3,953 | 12,660 | 13,670 | 60,853 |
-| 5 | 1.00 | 79.0 | 2.885 | 319.7 | 311.7 | 220.6 | Demand | 221 | 76,524 | 6,706 | 3,886 | 12,668 | 13,670 | 60,779 |
-| 6 | 1.00 | 75.0 | 2.836 | 313.9 | 306.2 | 220.6 | Demand | 220 | 76,178 | 6,676 | 3,802 | 12,617 | 13,670 | 60,368 |
-| 7 | 1.00 | 71.0 | 2.787 | 308.1 | 300.7 | 220.6 | Demand | 221 | 76,524 | 6,706 | 3,753 | 12,682 | 13,670 | 60,631 |
-| 8 | 1.00 | 67.0 | 2.738 | 302.4 | 295.3 | 220.6 | Demand | 221 | 76,524 | 6,706 | 3,687 | 12,689 | 13,670 | 60,558 |
-| 9 | 1.00 | 63.0 | 2.690 | 296.7 | 289.9 | 220.6 | Demand | 220 | 76,178 | 6,676 | 3,605 | 12,639 | 13,670 | 60,150 |
-| 10 | 1.00 | 59.0 | 2.642 | 291.1 | 284.6 | 220.6 | Demand | 221 | 76,524 | 6,706 | 3,557 | 12,703 | 13,670 | 60,414 |
-| 11 | 1.00 | 55.0 | 2.594 | 285.5 | 279.3 | 220.6 | Demand | 221 | 76,524 | 6,706 | 3,492 | 12,710 | 13,670 | 60,342 |
-| 12 | 1.00 | 51.0 | 2.547 | 280.0 | 274.0 | 220.6 | Demand | 220 | 76,178 | 6,676 | 3,413 | 12,659 | 13,670 | 59,937 |
-| 13 | 1.00 | 47.0 | 2.500 | 274.5 | 268.8 | 220.6 | Demand | 221 | 76,524 | 6,706 | 3,365 | 12,724 | 13,670 | 60,201 |
-| 14 | 1.00 | 43.0 | 2.453 | 269.0 | 263.6 | 220.6 | Demand | 220 | 76,178 | 6,676 | 3,286 | 13,317 | 13,670 | 59,153 |
-| 15 | 1.00 | 39.0 | 2.406 | 263.6 | 258.4 | 220.6 | Demand | 221 | 76,524 | 6,706 | 3,239 | 13,734 | 13,670 | 59,065 |
-| 16 | 1.00 | 35.0 | 2.360 | 258.3 | 253.3 | 220.6 | Demand | 221 | 76,524 | 6,706 | 3,176 | 13,741 | 13,670 | 58,996 |
-| 17 | 1.00 | 31.0 | 2.314 | 253.0 | 248.3 | 220.6 | Demand | 220 | 76,178 | 6,676 | 3,100 | 14,005 | 13,670 | 58,279 |
-| 18 | 1.00 | 27.0 | 2.269 | 247.8 | 243.3 | 220.6 | Demand | 221 | 76,524 | 6,706 | 3,053 | 17,393 | 13,670 | 55,221 |
-| 19 | 1.00 | 23.0 | 2.224 | 242.6 | 238.3 | 220.6 | Demand | 221 | 76,524 | 6,706 | 2,992 | 18,671 | 13,670 | 53,881 |
-| 20 | 1.00 | 19.0 | 2.179 | 237.4 | 233.4 | 220.6 | Demand | 220 | 76,178 | 6,676 | 2,918 | 18,206 | 13,670 | 53,896 |
-| 21 | 1.00 | 15.0 | 2.134 | 276.4 | 228.5 | 220.6 | Demand | 221 | 36,147 | 3,168 | 1,356 | 9,033 | 13,670 | 17,968 |
-| 22 | 1.00 | 11.0 | 2.090 | 270.4 | 223.7 | 220.6 | Demand | 221 | 36,147 | 3,168 | 1,328 | 9,037 | 13,670 | 17,935 |
-| 23 | 1.00 | 7.0 | 2.046 | 264.4 | 218.8 | 218.8 | Service | 218 | 35,656 | 3,125 | 1,282 | 8,918 | 13,670 | 17,474 |
-| 24 | 1.00 | 3.0 | 2.003 | 258.5 | 214.1 | 214.1 | Service | 215 | 35,165 | 3,082 | 1,238 | 8,800 | 13,670 | 17,015 |
-| **Σ** | 24.00 | | | | | | | **5,287** | **1,670,830** | **146,419** | **75,712** | **309,427** | **328,080** | **1,255,453** |
+| 1 | 1.00 | ×1.0 | 95.0 | 355.6 | 334.3 | 220.6 | Demand | 220 | 64,965 | 5,693 | 3,530 | 11,152 | 13,670 | 49,366 |
+| 2 | 1.00 | ×1.0 | 91.0 | 349.4 | 328.6 | 220.6 | Demand | 221 | 65,261 | 5,719 | 3,487 | 11,209 | 13,670 | 49,587 |
+| 3 | 1.00 | ×0.5 | 87.0 | 343.2 | 322.9 | 220.6 | Demand | 110 | 32,483 | 2,847 | 1,707 | 5,583 | 6,835 | 24,618 |
+| 4 | 1.00 | ×0.5 | 83.0 | 337.1 | 317.3 | 220.6 | Demand | 110 | 32,483 | 2,847 | 1,678 | 5,586 | 6,835 | 24,586 |
+| 5 | 1.00 | ×0.5 | 79.0 | 331.0 | 311.7 | 220.6 | Demand | 111 | 32,778 | 2,872 | 1,665 | 5,640 | 6,835 | 24,840 |
+| 6 | 1.00 | ×0.5 | 75.0 | 324.9 | 306.2 | 220.6 | Demand | 110 | 32,483 | 2,847 | 1,621 | 5,592 | 6,835 | 24,523 |
+| 7 | 1.00 | ×0.5 | 71.0 | 319.0 | 300.7 | 220.6 | Demand | 110 | 32,483 | 2,847 | 1,593 | 5,642 | 6,835 | 24,446 |
+| 8 | 1.00 | ×0.5 | 67.0 | 313.0 | 295.3 | 220.6 | Demand | 111 | 32,778 | 2,872 | 1,579 | 6,156 | 6,835 | 24,239 |
+| 9 | 1.00 | ×0.2 | 63.0 | 307.2 | 289.9 | 220.6 | Demand | 44 | 12,993 | 1,139 | 615 | 2,440 | 2,734 | 9,572 |
+| 10 | 1.00 | ×0.2 | 59.0 | 301.3 | 284.6 | 220.6 | Demand | 44 | 12,993 | 1,139 | 604 | 2,441 | 2,734 | 9,560 |
+| 11 | 1.00 | ×0.2 | 55.0 | 295.6 | 279.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 593 | 2,506 | 2,734 | 9,485 |
+| 12 | 1.00 | ×0.2 | 51.0 | 289.8 | 274.0 | 220.6 | Demand | 44 | 12,993 | 1,139 | 582 | 2,675 | 2,734 | 9,305 |
+| 13 | 1.00 | ×0.2 | 47.0 | 284.1 | 268.8 | 220.6 | Demand | 44 | 12,993 | 1,139 | 571 | 2,655 | 2,734 | 9,314 |
+| 14 | 1.00 | ×0.2 | 43.0 | 278.5 | 263.6 | 220.6 | Demand | 44 | 12,993 | 1,139 | 561 | 2,678 | 2,734 | 9,281 |
+| 15 | 1.00 | ×0.2 | 39.0 | 272.9 | 258.4 | 220.6 | Demand | 45 | 13,288 | 1,164 | 562 | 2,730 | 2,734 | 9,551 |
+| 16 | 1.00 | ×0.2 | 35.0 | 267.4 | 253.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 539 | 2,659 | 2,734 | 9,278 |
+| 17 | 1.00 | ×0.2 | 31.0 | 261.9 | 248.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 529 | 2,681 | 2,734 | 9,245 |
+| 18 | 1.00 | ×0.2 | 27.0 | 256.5 | 243.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 518 | 2,661 | 2,734 | 9,255 |
+| 19 | 1.00 | ×0.2 | 23.0 | 251.1 | 238.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 508 | 2,683 | 2,734 | 9,222 |
+| 20 | 1.00 | ×0.2 | 19.0 | 245.8 | 233.4 | 220.6 | Demand | 44 | 12,993 | 1,139 | 498 | 2,663 | 2,734 | 9,232 |
+| 21 | 1.00 | ×0.2 | 15.0 | 240.5 | 228.5 | 220.6 | Demand | 44 | 12,993 | 1,139 | 487 | 3,189 | 2,734 | 8,696 |
+| 22 | 1.00 | ×0.2 | 11.0 | 255.0 | 223.7 | 220.6 | Demand | 45 | 8,581 | 752 | 315 | 1,760 | 2,734 | 5,154 |
+| 23 | 1.00 | ×0.2 | 7.0 | 261.3 | 218.8 | 218.8 | Service | 43 | 6,816 | 597 | 245 | 1,704 | 2,734 | 3,221 |
+| 24 | 1.00 | ×0.2 | 3.0 | 255.5 | 214.1 | 214.1 | Service | 43 | 6,816 | 597 | 240 | 1,705 | 2,734 | 3,215 |
+| **Σ** | 24.00 | 8.20 eff. | | | | | | **1,807** | **517,132** | **45,318** | **24,828** | **96,392** | **112,094** | **378,791** |
 
-Special stock used: `ING_GOLDEN_PATTY` 804, `ING_MUTAGEN_GOO` 1,071, `ING_STARDUST` 1,305 (left: 0, 0, 0). Stocker auto-buy: 14 top-ups in steps 14–20 costing 19,989 MB (charged inside those steps' Ingredients) until the 20,000 MB budget ran out. **SOLD OUT** from step 21: `RCP_LEG_001`, `RCP_LEG_002`, `RCP_LEG_003`, `RCP_MUT_004`, `RCP_MUT_005`, `RCP_ALN_010`, `RCP_ALN_009`, `RCP_MUT_003`, `RCP_ALN_008`, `RCP_ALN_007`, `RCP_MUT_002`, `RCP_ALN_006` — later steps recompute PrepSec_avg and AvgTicket without those dishes.
+Special stock used: `ING_GOLDEN_PATTY` 205, `ING_MUTAGEN_GOO` 411, `ING_STARDUST` 506 (left: 0, 0, 0). Stocker auto-buy: 29 top-ups in steps 7–22 costing 5,999 MB (charged inside those steps' Ingredients) until the 6,000 MB budget ran out. **SOLD OUT** from step 22: `RCP_LEG_001`, `RCP_LEG_003`; step 23: `RCP_MUT_004`, `RCP_MUT_005`, `RCP_ALN_010`, `RCP_ALN_009`, `RCP_MUT_003`, `RCP_ALN_008`, `RCP_ALN_007`, `RCP_MUT_002`, `RCP_ALN_006` — later steps recompute PrepSec_avg and AvgTicket without those dishes.
 
 **Incidents & discoveries**
 
-- Security Mitigation SM = 0.567; λ = 24.00 h × 0.6 × (1 − SM) = 6.236 → count = floor(λ) + roll(0.236) = **7**; eligible pool 53 incidents; Rh = 78,873 MB/h.
-- Caps: negatives 5,048 ≤ 10 % of R (189,296) → scale ×1.00; positives 11,831 ≤ 15 % of R (283,944) → scale ×1.00.
+- Security Mitigation SM = 0.567; λ = 8.20 effective h × 0.6 × (1 − SM) = 2.131 → count = floor(λ) + roll(0.131) = **3**; eligible pool 53 incidents; Rh = 71,619 MB per effective hour.
+- Caps: negatives 2,865 ≤ 10 % of R (58,728) → scale ×1.00; positives 2,149 ≤ 15 % of R (88,092) → scale ×1.00.
 
 | # | Step | Incident | MB effect | Damage value | Report line |
 |---|---|---|---|---|---|
-| 1 | 22 | `INC_053` Cake Catch of the Century | 2,366 | — | Hoverina caught a falling birthday cake 9 centimeters from the floor. Standing ovation. |
-| 2 | 10 | `INC_040` Baron's Coupon Blitz | −2,524 | — | Baron Von Bistro handed out 45 coupons for Le Fancy Fin right outside our door. Rude. Effective. |
-| 3 | 7 | `INC_031` Ratbeard's "Borrowing" | −631 | — | King Ratbeard's minions borrowed 4 crates and left an IOU written in cheese. |
-| 4 | 20 | `INC_053` Cake Catch of the Century | 2,366 | — | Hoverina caught a falling birthday cake 8 centimeters from the floor. Standing ovation. |
-| 5 | 24 | `INC_052` Grill Saved Mid-Sizzle | 2,366 | — | Gearhart fixed the grill mid-sizzle. 10 patties were saved and are grateful. |
-| 6 | 23 | `INC_050` Omnivora Sniffs the Air | 4,732 | — | Chef Supreme Omnivora walked past, sniffed, and nodded 3 times. The kitchen hasn't stopped grinning. |
-| 7 | 4 | `INC_038` Rainy-Day Lull | −1,893 | — | It rained 4 different flavors of weather. Customers stayed home. |
+| 1 | 22 | `INC_053` Cake Catch of the Century | 2,149 | — | Hoverina caught a falling birthday cake 9 centimeters from the floor. Standing ovation. |
+| 2 | 10 | `INC_040` Baron's Coupon Blitz | −2,292 | — | Baron Von Bistro handed out 45 coupons for Le Fancy Fin right outside our door. Rude. Effective. |
+| 3 | 7 | `INC_031` Ratbeard's "Borrowing" | −573 | — | King Ratbeard's minions borrowed 4 crates and left an IOU written in cheese. |
 
-- Discoveries (MS chance 9.2 %/h after trait boost ×1.15; crate 1 %/h; capsule 5 %/h, ≤ 1 per UTC day): step 7: +1 MS; step 22: +3 MS; step 24: +3 MS; 1 Morph Capsule.
+- Discoveries (MS chance 9.2 %/h after trait boost ×1.15; crate 1 %/h; capsule 5 %/h, ≤ 1 per UTC day): step 5: +1 MS; step 18: +1 MS; 1 Morph Capsule.
 
 **Result**
 
-| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | Net / h | C4.4 active net / h | Offline ÷ active |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 5,287 | 1,670,830 | 146,419 | 75,712 | −309,427 | −328,080 | 0 | +6,783 | **1,262,237** | 52,593 | 120,500 | **43.6 %** (base economy 43.4 %) |
+| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | First-2-h rate (MB/h) | C4.4 active net / h | First-2-h ÷ active | Interval worth |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1,807 | 517,132 | 45,318 | 24,828 | −96,392 | −112,094 | 0 | −716 | **378,075** | 49,477 | 120,500 | **41.1 %** | 3.14 active h |
 
 #### 17.9.6 Example F — what goes wrong — TIER_04, one weak chef carrying an expensive floor team (closes early)
 
@@ -12904,17 +12963,18 @@ Special stock used: `ING_GOLDEN_PATTY` 804, `ING_MUTAGEN_GOO` 1,071, `ING_STARDU
 | Stations | all Lv2 Tuned | PrepSec × (1 − 0.5 × (1 − 0.90)) = × 0.950 |
 | Offline cap | 4 h | Gus (Common) → 4 h |
 | Elapsed / simulated | 6 h 00 min / **4 h 00 min** (capped) | H = min(H_elapsed, cap) |
+| Long-absence taper | 2.00 effective h | Full Shift h0–2 ×1.0 · Late Shift h2–8 ×0.5 · Skeleton Shift h8–24 ×0.2 |
 | Seed | `0xF442C339` | FNV-1a-32("81234567:1760650200:1") |
 
 **Roster**
 
-| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Gus | `EMP_071` | Manager | Common | Rel 34, Svc 26, Acc 27 | 29.5 | 70 / 80 | 24.6 | ×1.00 | 0.246 | 17 |
-| Toastmaster Tim | `EMP_003` | Chef | Common | Cook 33, Acc 31, Rel 25 | 31.6 | 70 / 80 | 26.4 | ×1.15 | 0.304 | 15 |
-| Chet Speedwell | `EMP_028` | Waiter | Rare | Svc 68, Acc 58, Rel 53 | 63.5 | 70 / 80 | 53.1 | ×1.20 | 0.637 | 165 |
-| Rocco | `EMP_066` | Security | Rare | Cmb 70, Rel 62, Svc 56 | 65.6 | 70 / 80 | 54.8 | ×1.00 | 0.548 | 170 |
-| Skates McGee | `EMP_026` | Waiter | Uncommon | Svc 53, Acc 43, Rel 39 | 48.6 | 70 / 80 | 40.6 | ×1.20 | 0.487 | 55 |
+| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
+|---|---|---|---|---|---|---|---|---|---|
+| Gus | `EMP_071` | Manager | Common | 29.5 | 70 / 80 | 24.6 | ×1.00 | 0.246 | 17 |
+| Toastmaster Tim | `EMP_003` | Chef | Common | 31.6 | 70 / 80 | 26.4 | ×1.15 | 0.304 | 15 |
+| Chet Speedwell | `EMP_028` | Waiter | Rare | 63.5 | 70 / 80 | 53.1 | ×1.20 | 0.637 | 165 |
+| Rocco | `EMP_066` | Security | Rare | 65.6 | 70 / 80 | 54.8 | ×1.00 | 0.548 | 170 |
+| Skates McGee | `EMP_026` | Waiter | Uncommon | 48.6 | 70 / 80 | 40.6 | ×1.20 | 0.487 | 55 |
 
 
 **Interval constants**
@@ -12925,55 +12985,247 @@ Special stock used: `ING_GOLDEN_PATTY` 804, `ING_MUTAGEN_GOO` 1,071, `ING_STARDU
 
 **Hourly steps**
 
-| Step | h | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
+| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1.00 | 80.0 | 0.304 | 32.0 | 94.2 | 32.0 | Kitchen | 32 | 703 | 47 | 0 | 309 | 422 | 19 |
-| 2 | 1.00 | 75.0 | 0.297 | 31.4 | 92.2 | 31.4 | Kitchen | 31 | 681 | 46 | 0 | 300 | 422 | 5 |
-| 3 | 1.00 | 70.0 | 0.291 | 30.7 | 90.3 | 30.7 | Kitchen | 31 | 681 | 46 | 0 | 300 | 422 | 5 |
-| 4 (voided) | 1.00 | 65.0 | 0.285 | 30.0 | 88.3 | 30.0 | Kitchen | 30 | 659 | 44 | 0 | 290 | 422 | −8 |
-| **Σ** | 3.00 | | | | | | | **94** | **2,066** | **139** | **0** | **909** | **1,266** | **30** |
+| 1 | 1.00 | ×1.0 | 80.0 | 32.0 | 94.2 | 32.0 | Kitchen | 32 | 703 | 47 | 0 | 309 | 422 | 19 |
+| 2 | 1.00 | ×1.0 | 75.0 | 31.4 | 92.2 | 31.4 | Kitchen | 31 | 681 | 46 | 0 | 300 | 422 | 5 |
+| 3 (voided) | 1.00 | ×0.5 | 70.0 | 30.7 | 90.3 | 30.7 | Kitchen | 15 | 330 | 22 | 0 | 145 | 211 | −4 |
+| **Σ** | 2.00 | 2.00 eff. | | | | | | **63** | **1,384** | **93** | **0** | **609** | **844** | **24** |
 
-Step 4 would have lost money (Net_step < 0), so the Manager **closed early**: that step is voided (no customers, no wages) and the simulation stops.
+Step 3 would have lost money (Net_step < 0), so the Manager **closed early**: that step is voided (no customers, no wages) and the simulation stops.
 
-Incidents: λ = 1.28 → 1 drawn (29 MB net, within caps); discoveries: none.
+Incidents: λ = 0.86 → 0 drawn (0 MB net, within caps); discoveries: none.
 
 **Result**
 
-| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | Net / h | C4.4 active net / h | Offline ÷ active |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 94 | 2,066 | 139 | 0 | −909 | −1,266 | 0 | +29 | **59** | 20 | 3,100 | **0.6 %** (base economy 0.3 %) |
+| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | First-2-h rate (MB/h) | C4.4 active net / h | First-2-h ÷ active | Interval worth |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 63 | 1,384 | 93 | 0 | −609 | −844 | 0 | +0 | **24** | 12 | 3,100 | **0.4 %** | 0.01 active h |
 
 #### 17.9.7 Summary of the worked examples
 
-| Example | Tier | Staff | Simulated | Customers | Net | Net / h | Active net / h (C4.4) | Offline ÷ active | Band 35–50 % |
-|---|---|---|---|---|---|---|---|---|---|
-| A | `TIER_01` | 1 | 2 h 00 min | 90 | 539 | 269 | 630 | 42.8 % | ✓ |
-| B | `TIER_03` | 4 | 4 h 00 min | 287 | 2,687 | 672 | 1,730 | 38.8 % | ✓ |
-| C | `TIER_05` | 8 | 8 h 00 min | 869 | 17,459 | 2,182 | 5,400 | 40.4 % | ✓ |
-| D | `TIER_07` | 12 | 12 h 00 min | 1,771 | 92,754 | 7,730 | 17,400 | 44.4 % | ✓ |
-| E | `TIER_10` | 18 | 24 h 00 min | 5,287 | 1,262,237 | 52,593 | 120,500 | 43.6 % | ✓ |
-| F | `TIER_04` | 5 | 3 h 00 min | 94 | 59 | 20 | 3,100 | 0.6 % | ✗ (intentional) |
+| Example | Tier | Staff | Simulated (effective) | Customers | Net | First-2-h rate | Active net / h (C4.4) | First-2-h ÷ active | Band 35–50 % | Interval worth (active hours) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| A | `TIER_01` | 1 | 2 h 00 min (2.00 h) | 90 | 539 | 277 | 630 | 44.0 % | ✓ | 0.86 |
+| B | `TIER_03` | 4 | 4 h 00 min (3.00 h) | 217 | 2,065 | 710 | 1,730 | 41.0 % | ✓ | 1.19 |
+| C | `TIER_05` | 8 | 8 h 00 min (5.00 h) | 543 | 10,955 | 2,205 | 5,400 | 40.8 % | ✓ | 2.03 |
+| D | `TIER_07` | 12 | 12 h 00 min (5.80 h) | 856 | 44,009 | 7,414 | 17,400 | 42.6 % | ✓ | 2.53 |
+| E | `TIER_10` | 18 | 24 h 00 min (8.20 h) | 1,807 | 378,075 | 49,477 | 120,500 | 41.1 % | ✓ | 3.14 |
+| F | `TIER_04` | 5 | 2 h 00 min (2.00 h) | 63 | 24 | 12 | 3,100 | 0.4 % | ✗ (intentional) | 0.01 |
 
 **What the examples show.**
 
-- Every well-staffed example lands in the canon band (38.8–44.4 %); none approaches the 60 % ceiling, so the clamp is a
-  safety net, not a balancing tool.
-- The binding constraint teaches the next purchase: Example B is kitchen-bound until its single chef cooks a fast D2
-  Night Menu; Example C swapped an unnecessary prep for a third waiter; Example E's Stocker budget ran dry in step 20
-  and the special menu sold out for the last 4 h — the Welcome Back screen turns exactly these facts into Upgrade
-  Suggestions (§17.10.4).
-- Energy decay matters only for long caps: Example E's kitchen falls from 404 to 263 customers/h of capacity over
-  24 h but stays above demand, because the roster was sized for the end of the shift.
-- Example F shows the canon close-early rule: a single weak Common chef cannot feed a Rare/Uncommon floor team at
-  `TIER_04` without a dishwasher; profit per step falls as Energy drops and step 4 is voided. The player still gets
-  59 MB instead of a loss, and the report says why.
+- Every well-staffed example's first-2-hour rate lands in the band (40.8–44.0 %); none approaches the 60 % ceiling.
+  The taper then makes the absence worth 0.9 (2 h), 1.2 (4 h), 2.0 (8 h), 2.5 (12 h) and 3.1 (24 h) active hours —
+  meaningful, never a replacement for playing.
+- The limiting factor teaches the next purchase: B stays kitchen-bound by about one customer/h even on a fast D2
+  Night Menu (a Prep Cook is the next hire, but the 4-slot cap forces a choice); C swapped a prep it did not need for a
+  third waiter; E's 6,000 MB auto-buy budget ran dry in step 22 and the special dishes sold out — the Welcome Back
+  screen turns exactly these facts into Upgrade Suggestions (§17.10.4).
+- Energy decay bites late: E's kitchen capacity falls from 356 to 255 customers/h and service from 334 to 214 over
+  24 h, so the last hour is service-bound — but by then the Skeleton Shift only runs a fifth of the floor.
+- F demonstrates the canon close-early rule: a single weak Common chef cannot feed a Rare/Uncommon floor team at
+  `TIER_04` without a dishwasher; profit per step goes 19 → 5 → −4, step 3 is voided, and the player still gets
+  24 MB instead of a loss, with the reason on screen.
+
+### 17.10 Welcome Back screen
+
+#### 17.10.1 UI state machine
+
+```mermaid
+%% diagram: welcome-back-ui
+stateDiagram-v2
+    [*] --> Loading: profile loaded, Offline.ReportReady
+    Loading --> NoReport: no pending report
+    Loading --> ZeroReport: report.customers == 0
+    Loading --> Summary: report received
+    NoReport --> [*]
+    ZeroReport --> Suggestions: show hint (hire a Chef)
+    Summary --> Summary: counters animate (4 s, tap to skip)
+    Summary --> Tabs: counters done
+    Tabs --> Tabs: Employee Report / Restaurant Damage / Incidents and Discoveries
+    Tabs --> Collecting: press COLLECT (or CONTINUE)
+    Collecting --> Collected: ok or alreadyClaimed
+    Collecting --> CollectFailed: timeout or error
+    CollectFailed --> Collecting: retry (max 3, backoff 1-2-4 s)
+    CollectFailed --> Suggestions: "we kept it safe" (HUD badge stays)
+    Collecting --> Loading: Stale (refetch report)
+    Collected --> Rewards: MS, capsule or crate present
+    Collected --> Suggestions: no extra rewards
+    Rewards --> Suggestions
+    Suggestions --> [*]: CONTINUE PLAYING
+```
+
+The screen opens after the spawn fade, never during the tutorial's first five steps, and never in combat (canon E2).
+Closing it at any point keeps the report pending; a gold **"Uncollected earnings"** HUD badge reopens it, and
+CONTINUE PLAYING always collects first (one tap is enough).
+
+#### 17.10.2 Wireframe — the brief's example, adapted to §17.9 Example C
+
+```
+┌──────────────────────────── WELCOME BACK, YOU WEIRDO! ────────────────────────────┐
+│  Your restaurant operated for 8 hours and 0 minutes (capped at 8 h by Mister ■).   │
+│  Full Shift 2 h ▸ Late Shift 6 h at half pace  — tip: drop by more often!          │
+│                                                                                    │
+│   Customers Served ............  543        Revenue ...............  19,539 MB      │
+│   Tips ........................ 1,315 MB    Ingredients ........... −6,636 MB      │
+│   Employee Wages .............. −3,180 MB   Repairs ...............      0 MB      │
+│   Incidents ...................   −83 MB    (167 MB of damage is waiting for you)  │
+│   ────────────────────────────────────────────────────────────────────────────    │
+│   TOTAL PROFIT ............................................... 10,955 MB  ✨       │
+│                                                                                    │
+│  "Octavia cooked 391 dishes — 78 of them simultaneously, with arms to spare."      │
+│  "Sloane washed 456 plates, very thoroughly. The other 304 are 'soaking'."         │
+│  "A Rich Mutant tipped 268 shiny coins and a monocle. We kept the coins."          │
+│                                                                                    │
+│ [Employee Report] [Restaurant Damage •24] [Incidents & Discoveries 3]              │
+│                                                                                    │
+│        [  COLLECT 10,955 MB  ]          [Upgrade Suggestions ▸]   [Continue ▸]     │
+└────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+Component hierarchy: `WelcomeBackScreen` → `Header` (title, operated-time line with cap chip and manager icon, shift
+strip with the taper) → `CounterGrid` (6–8 `AnimatedCounter`s: customers, revenue, tips, ingredients, wages, repairs,
+incidents, profit; numbers tick up over 4 s with cash-register sound and coin particles; Reduced Motion shows final
+values instantly) → `HighlightLines` (3 funniest lines) → `TabBar` → `TabContent` → `ActionBar` (Collect, Upgrade
+Suggestions, Continue Playing). Controller: A Collect, X tabs, Y suggestions, B continue. Text ≥ 18 px on mobile;
+negative lines carry a "−" sign *and* a red-orange color (never color-only).
+
+#### 17.10.3 Tabs and report lines
+
+- **Employee Report:** one card per employee: hours worked, Energy/Morale start → end, KPI grade, wage paid, and one
+  generated line. Lines come from deterministic templates per role/trait fed by the report's KPIs, e.g. Multi-Tasker
+  chefs "cooked {n} dishes — {m} of them simultaneously", Unhurried dishwashers "washed {n} plates, very thoroughly.
+  The other {m} are 'soaking'", Speedster waiters "served {n} tables at roughly the speed of sound", guards
+  "stopped {n} angry customers with one very stern eyebrow" (the brief's Rhino line), Managers "kept the doors open for
+  {h} and approved {n} snack breaks". Incident lines (§36.9) are attached to the employee they name.
+- **Restaurant Damage:** a mini floor plan with damaged objects pulsing (state icon + durability %), total points,
+  "auto-repaired by {employee} for {x} MB" or the estimated manual repair bill; buttons *Repair all* and *Go fix it*.
+- **Incidents & Discoveries:** chronological cards (step hour, icon by category, MB effect, line) and the discovery
+  roll-up (MS, crates, capsule); a capped report shows "Your Manager stopped the clock after 8 h — hire an Elite
+  Manager for 12 h".
+- **Mutation Rewards** (after Collect, only if present): MS counter, capsule card with *Open now* (odds disclosed,
+  §C4.7), crate card with the ingredient and units; Welcome Back Crate (canon E5) appears here.
+
+#### 17.10.4 Upgrade Suggestions (computed server-side into `report.suggestions`) [TUNABLE]
+
+| Report fact | Suggestion (deep link) |
+|---|---|
+| Limit = Kitchen in ≥ 50 % of steps | "Your kitchen was the bottleneck — hire a Prep Cook (+15 %) or a Chef" (Recruitment map pin) / upgrade station levels (Build menu) |
+| Limit = Service | "Customers waited for waiters — hire a Waiter or a Cashier (+10 %)" |
+| Limit = Seats | "Every seat was full — time to expand" (tier upgrade, §15) |
+| Limit = Demand | "Make the place more popular — raise ★ and Atmosphere" (decor shop) |
+| elapsed > cap | "You were away 14 h but your Manager stops at 12 h — an Assistant Manager adds 2 h" |
+| Taper used (> 2 h) | "Drop by every few hours to keep your restaurant at full pace" |
+| SOLD OUT or auto-buy budget exhausted | "Special dishes sold out at hour 22 — raise the auto-buy budget or stock up" |
+| Closed early | "You paid for staff who had nothing to do — check the Forecast before logging off" |
+| No Chef / zero report | "Hire a Chef so your restaurant can open while you're away" |
+
+#### 17.10.5 Server validation of every button
+
+| Button | Server call | Validation |
+|---|---|---|
+| COLLECT / CONTINUE PLAYING | `Offline.Collect(reportId)` | owner's profile loaded, not Safe Mode; `reportId` matches pending or is in `claimedReportIds` (idempotent success); rate limit 1/s |
+| Employee Report / Incidents tabs | none (renders the server-sent report) | read-only; KPIs come from the stored report |
+| Restaurant Damage tab | `Offline.GetDamage()` | returns current object durability from `RepairService` (truth after any auto-repair) |
+| Repair all | `RepairService` normal repair purchase | standard costs and E3 rules; never reads report numbers from the client |
+| Upgrade Suggestions links | none / navigation | purchases happen in their own validated screens |
+| Open capsule | `MutationService:OpenCapsule` | capsule owned (granted at Collect), server RNG, odds disclosed |
+
+### 17.11 Offline mutation progression [TUNABLE]
+
+Offline income feeds the morph economy (Creative Director: "when the player logs off, employees keep that progression
+moving") without replacing it:
+
+- **MB** from offline time buys mutations, upgrades and staff like any other MB.
+- **Mutation Shards:** 8 %/h × shift factor × discovery boost (≤ ×1.25) for 1–3 MS → ≈ 0.8–1.0 MS per 8 h
+  Experienced report (5 effective hours) and ≈ 1.3–1.6 MS per full 24 h report (8.2 effective hours). Rare+ purchases need 20+ MS and Epic+ upgrades need Research Tokens
+  (§C4.5/§C4.6), which come from active play only.
+- **Morph Capsule:** 5 %/h × shift factor, **max one per report and one per UTC day** (canon "≤ 1 per real day") —
+  ≈ 10 % for a 2 h report, ≈ 22 % for an 8 h report, ≈ 34 % for a 24 h report. Same disclosed odds and pity counter
+  as every earnable capsule (§C4.7).
+- **Rare ingredient crates:** 1 %/h × shift factor (×1.5 with `EMP_091`): 5–15 units of a special ingredient the menu
+  can use — they keep special dishes on the menu, a mid-game convenience.
+- **Why active play stays superior:** offline pays 35–50 % of the active rate for 2 hours and then tapers; no XP, no
+  Research Tokens, no recipes, quests, skill points, arena or event rewards offline; reputation only moves by
+  incident effects (±0.05 ★ per report); offline Food Quality caps at 0.95 while a skilled player plates PERFECT 1.00.
+
+### 17.12 Analytics hooks
+
+| Event (`mmr_`) | When | Key fields |
+|---|---|---|
+| `mmr_offline_report_generated` | after the join `UpdateAsync` succeeds | reportId, simVersion, tier, elapsedSec, simulatedSec, effectiveHours, capped, capHours, managerRarity, customers, net, first2Rate, ratioToActive, valueInActiveHours, bottleneck, closedEarlyStep, incidents, ms, capsule, crates, merged |
+| `mmr_offline_report_viewed` | screen/tab opened | reportId, tab, secondsOnScreen |
+| `mmr_offline_collected` | Collect succeeded | reportId, mb, delaySec, auto (via Continue), alreadyClaimed |
+| `mmr_offline_collect_failed` | retry exhausted | reportId, reason |
+| `mmr_offline_suggestion_clicked` | suggestion tapped | reportId, type |
+| `mmr_offline_ceiling_hit` / `mmr_offline_clock_skew` / `mmr_offline_merge` | safety paths | reportId, amount / skewSec / segments |
+| `mmr_welcome_back_crate` | E5 crate granted | daysAway |
+
+Collect also logs `AnalyticsService:LogEconomyEvent` (Source, MB, "offline_collect"). The first collected report is
+an onboarding funnel step owned by §31. These feed the §17.6 tuning table, including the guardrail KPI (offline share
+of MB by D7/D30 cohort).
+
+### 17.13 Edge cases
+
+| # | Situation | Expected behavior |
+|---|---|---|
+| E5 | Returning after 30 days | H capped at the manager cap (≤ 24 h) and tapered; report shows "capped"; wages only for simulated (tapered) hours; ≥ 7 days away adds the Welcome Back Crate (1 Morph Capsule + 50 MS) granted at Collect; no decay of restaurant, staff or mutations |
+| E8 | No money to pay employees | Offline wages come out of the interval's own income; the wallet is never touched (auto-buy also from income); a losing step closes the restaurant early; Net floored at 0 |
+| E11 | Offline earnings received twice after a reconnect | Impossible: report + `lastSimAt` in one locked `UpdateAsync`; Collect idempotent by `reportId` with the 20-entry ring; second server cannot load the profile |
+| 1 | Employee fired while a report is pending | Report stays valid (computed from the snapshot); its KPI card shows "(no longer employed)"; next interval uses the new roster |
+| 2 | Tier upgraded after a pending report | Impossible mid-interval (tier changes need the player online); a pending report merged with a new interval keeps one segment per tier/cap |
+| 3 | `SIM_VERSION` changes | Pending reports keep their stored values; new intervals use the new version (seed and `reportId` include it); never recomputed |
+| 4 | No Chef on an offline shift | Zero report with the "Hire a Chef" hint; `lastSimAt = now`; no wages charged |
+| 5 | Training course ends mid-interval | Employee joins from the next step; course cost already paid |
+| 6 | All special stock gone at logout | Those recipes are off the offline menu from step 1; if nothing remains cookable the report is zero with a "stock up" hint (`RCP_BRG_001` fallback is online-only, canon E9) |
+| 7 | Player rejoins after 4 minutes | Under `MIN_OFFLINE_SECONDS`: no report, `lastSimAt` unchanged, no screen |
+| 8 | Server shuts down during the join simulation | `UpdateAsync` writes all or nothing; next join simulates the same interval with the same seed |
+| 9 | DataStore failure at join | Safe Mode (canon E6): no simulation, `lastSimAt` untouched, so the interval is simulated on the next successful load |
+| 10 | Report never collected, player leaves again | Next join merges the new interval into the pending report (each interval capped and tapered on its own); nothing expires |
+| 11 | Client closes the screen before Collect | Report stays pending, HUD badge; any later Collect or Continue pays it once |
+| 12 | Clock of the new server is behind `lastSimAt` | elapsed < 0 → 0 hours, flagged; `lastSimAt` is not moved backwards |
+
+### 17.14 Acceptance criteria
+
+- **AC-17-01:** Given the inputs of §17.9 Examples A–F, the Luau `OfflineEarningsService` reproduces customers,
+  revenue, tips, delivery, ingredients, wages and base net of every step to within 1 MB of the reference script.
+- **AC-17-02:** Each well-staffed example's first-2-hour rate is 35–50 % of the tier's §C4.4 active net/hour
+  (`offline_sim_examples.py --check` exits 0), and no report ever exceeds 60 % of active net × effective hours.
+- **AC-17-03:** A 24 h Legendary-Manager absence at `TIER_10` is worth 2.5–3.5 active hours (Example E: 3.14).
+- **AC-17-04:** The same profile, `lastSimAt` and `SIM_VERSION` produce a byte-identical report on 100 repeated runs
+  and on two different servers.
+- **AC-17-05:** H = min(elapsed, cap) for every manager rarity (2/4/8/12/24 h, +2 h with an Assistant, max 24 h);
+  absences longer than the cap show the "capped" chip and charge wages only for simulated hours.
+- **AC-17-06:** Steps starting at hours 0–1 use shift factor 1.0, hours 2–7 use 0.5, hours 8–23 use 0.2, applied to
+  customers, revenue, tips, delivery, ingredients and wages alike.
+- **AC-17-07:** Absences < 300 s create no report and leave `lastSimAt` unchanged; a negative elapsed produces 0 hours
+  and a `mmr_offline_clock_skew` event.
+- **AC-17-08:** Killing the server between report creation and Collect never loses or duplicates money: after rejoin
+  the same `reportId` is pending and pays exactly once.
+- **AC-17-09:** Calling `Offline.Collect` 50 times concurrently or from two clients grants the amount exactly once;
+  later calls return `alreadyClaimed`; the ring keeps the last 20 IDs.
+- **AC-17-10:** A step whose net would be negative is voided (no customers, no wages, auto-buy rolled back) and the
+  simulation stops; the report's net is ≥ 0 (Example F).
+- **AC-17-11:** Over 10,000 seeded reports, Σ negative incident effects never exceed 10 % and Σ positive never exceed
+  15 % of Revenue + Tips; no incident ID appears more than twice in one report.
+- **AC-17-12:** Over 10,000 simulated days, at most one offline Morph Capsule is granted per UTC day and per report.
+- **AC-17-13:** A profile with no working Chef yields a zero report with the hint and charges no wages.
+- **AC-17-14:** The Welcome Back screen shows counters within 1 s of spawn on mobile, animates in ≤ 4 s (instant with
+  Reduced Motion), and every button maps to the validated server action of §17.10.5.
+- **AC-17-15:** Closing the screen without collecting keeps the pending report and shows the HUD badge; Continue
+  Playing collects before closing.
+- **AC-17-16:** Merged reports keep one segment per interval, each capped and tapered separately, and get a new
+  `reportId`; old IDs are never paid.
+- **AC-17-17:** `mmr_offline_report_generated` and `mmr_offline_collected` fire for 100 % of reports in a soak test,
+  and the dashboard computes the guardrail KPI (offline share of MB ≤ 60 % D7 / ≤ 70 % D30).
 
 
 ## 18. Morph City
 
-> **Owner:** A12 City. **Binding inputs:** canon §C16 (districts, buildings, NPCs, plots, events, trophies),
+> **Binding inputs:** canon §C16 (districts, buildings, NPCs, plots, events, trophies),
 > §C13.8 (Secret mutation conditions), §C17.4 (reward vocabulary), §C4 (economy), §C3 (constants).
-> Building rows live in §36.10, event rows in §36.11. Acceptance criteria for all three A12 files use the
+> Building rows live in §36.10, event rows in §36.11. Acceptance criteria for all three §18 files use the
 > `AC-18-NN` series (§18: 01–29 · §36.10: 30–49 · §36.11: 50–69) so IDs never collide inside §36.
 
 Morph City is the **Explore** pillar made physical: a compact, neon-soaked cartoon metropolis where every
@@ -13150,7 +13402,7 @@ player only (the snail finally finishes crossing) and pins the district on the m
 ### 18.3 District Specifications
 
 Each block lists: **Theme · Footprint · Landmarks · Buildings · Ambient life · Vehicles · Music & ambience
-(described in words; IDs are A16's) · Secrets · Unlock · Customer flavor.** *Customer flavor* names the
+(described in words; IDs are §25–§26's) · Secrets · Unlock · Customer flavor.** *Customer flavor* names the
 citizen types that dominate the district crowd (§18.7) and, as an optional hook for §8, the personalities
 whose spawn weight rises by ×1.25 [TUNABLE] while a city event is centered on that district.
 
@@ -13963,7 +14215,7 @@ ambience by 6 dB. Positional props use `RollOffMode = InverseTapered`, `RollOffM
 | Monster Mall (DST_05) | `ParkingLot` / `Hallway` inside the mall | Arena (DST_10) | `Arena` |
 | Hidden alleys | `Alley` (district music −9 dB) | Building interiors | per §36.10 row (default `Room`) |
 
-Ambience beds and music moods per district are listed in §18.3 (descriptions for A16, who owns the IDs).
+Ambience beds and music moods per district are listed in §18.3 (descriptions for §25–§26, who owns the IDs).
 
 #### 18.9.6 Remotes & validation
 
@@ -14066,9 +14318,1123 @@ custom events): `mmr_city_district_enter`, `mmr_city_travel` (mode, cost), `mmr_
   weapons, no gore; defeat is shown only as Dizzy/Seeing Stars.
 
 
+## 19. City NPCs
+
+> Morph City's named residents are the game's living UI. They hand out quests, run shops, gossip, heckle,
+> and react to what the player has done. This section covers the **NPC runtime system** (§19.1–§19.8) and the
+> **NPC database** (§19.9): **115 named NPCs**, made up of canon `NPC_001`–`NPC_030` plus `NPC_031`–`NPC_115`,
+> grouped by district. Quest IDs referenced here are defined in §20. Buildings, districts and events are
+> canon (§C16) and are specified in §18 / §36.10 / §36.11.
+
+### 19.1 Purpose
+
+- Make the city feel inhabited and funny. Every named NPC has a distinct silhouette, a voice and a running joke.
+- Act as the front end of every city service: shopkeepers open shop UIs, Ms. Hirewell opens hiring, Mayor
+  Moosington issues permits.
+- Deliver quests (§20) through markers, dialogue and turn-ins, and carry the story campaign's cast.
+- Offer an optional, light **Hearts** friendship track (§19.6) that rewards curiosity with cosmetics. It
+  never gates core progression.
+
+### 19.2 Rules & Mechanics — the NPC data model
+
+Each named NPC is a single data record (`ReplicatedStorage/Shared/Data/NPCs/<NPC_ID>.lua`, generated from
+`gdd/data/npcs.jsonl`). Behavior is entirely data-driven: the runtime ships no per-NPC scripts.
+
+```lua
+--!strict
+export type NPCDef = {
+	id: string,                 -- "NPC_016"
+	nameKey: string,            -- "npc.NPC_016.name"
+	district: string,           -- "DST_07"
+	building: string?,          -- "BLD_14" (nil = street NPC)
+	morph: { parts: {string}, signature: {string}, scale: number }, -- MUT ids + NPC-only signature meshes
+	role: "SERVICE" | "QUEST" | "AMBIENT" | "STORY" | "BOSS",
+	service: string?,           -- UI screen opened by the "Shop"/"Service" option, e.g. "CriticHQ"
+	schedule: {ScheduleEntry},  -- §19.5
+	dialogueTree: string,       -- "dlg_NPC_016"
+	questIds: {string},         -- quests offered or involving this NPC (§20)
+	hearts: { enabled: boolean, favoriteCategory: string? }, -- §19.6
+	voice: { blipSet: string, pitch: number },               -- gibberish "blip" voice, never real speech
+	barkCooldown: number,       -- seconds, default 45 [TUNABLE]
+}
+```
+
+**Morph rule.** Named NPCs are built by `MorphAssemblyService` from canon mutation parts (`MUT_` ids, §C13.6)
+plus, where canon calls for something outside the catalog (a moose head, a vending-machine torso, a news-desk
+body), **signature meshes**. These are NPC-only MeshParts authored to the same R15 attachment contract
+(§C13.7) and the 24-MeshPart / 6,000-triangle NPC budget. Signature meshes are **never obtainable** and grant no
+stats; they keep key characters unique (§25 owns the art). In §19.9 they appear in the morph column as plain
+words with no ID.
+
+**Role classes** (tagged in brackets at the start of each NPC's *Interaction behavior* cell in §19.9)
+
+| Role class | Count | Always present? | Moves? | Notes |
+|---|---|---|---|---|
+| SERVICE | 18 | yes, at the counter | no (idles in place) | opens a building UI; must never be unavailable |
+| STORY | 9 | yes (chapter-aware position) | scripted | campaign cast; may appear in the player's restaurant during set pieces |
+| QUEST | 80 | while the district is loaded | short wander ≤ 12 studs (PATROL/RIDE NPCs: fixed loops) | gives or is involved in ≥ 1 quest |
+| AMBIENT | 7 | district loaded | full schedule | color, barks, hints; still involved in ≥ 1 quest |
+| BOSS | 1 | event-driven | event script | King Ratbeard during `EVT_007` (§11 and §36.11 define the fight) |
+
+### 19.3 Dialogue trees (conditions, variables, effects)
+
+A dialogue tree is a graph of nodes. The client renders it. The **server** evaluates conditions and applies
+effects, so a client can never pick a branch it isn't entitled to.
+
+```lua
+--!strict
+export type DialogueNode = {
+	id: string,                       -- "greet_day"
+	speaker: string,                  -- "NPC_016" or "PLAYER"
+	textKey: string,                  -- "npc.NPC_016.greet_day.01"
+	conditions: {Condition}?,         -- all must pass
+	effects: {Effect}?,               -- applied server-side when the node is shown
+	choices: {{ textKey: string, next: string, conditions: {Condition}? }}?,
+	next: string?,                    -- auto-advance when there are no choices
+}
+-- Condition examples:
+-- {kind="QuestState", quest="QST_STY_007", state="Active"}   states: Locked|Available|Active|ReadyToTurnIn|Completed
+-- {kind="LevelAtLeast", value=10}       {kind="TierAtLeast", value=3}     {kind="Hearts", npc="NPC_016", atLeast=2}
+-- {kind="TimeOfDay", phase="Night"}     {kind="EventActive", event="EVT_008"}
+-- {kind="HasMutationTag", tag="chef"}   {kind="Flag", name="baron_friend"}  {kind="Chance", p=0.25}
+-- Effect examples:
+-- {kind="OfferQuest", quest="QST_STY_007"}  {kind="TurnIn", quest="QST_STY_007"}  {kind="TalkObjective", npc="NPC_016"}
+-- {kind="SetFlag", name="met_fourchette"}   {kind="AddHearts", npc="NPC_016", amount=5}  {kind="OpenService", screen="CriticHQ"}
+```
+
+**Variables** (resolved on the client from replicated state, inserted through `LocalizationTable` format
+arguments, never by string concatenation): `{player}` morph nickname, `{restaurant}` restaurant name,
+`{tierName}` canon tier name, `{level}`, `{stars}` reputation to one decimal, `{eventName}`, `{favDish}`
+(the player's most-served recipe this week), `{hearts}`.
+
+**Opening-line priority** (first match wins):
+1. a quest is **ReadyToTurnIn** with this NPC → turn-in line (purple ? marker);
+2. a story beat is pending → story line;
+3. a quest is **Available** from this NPC → offer line (yellow ! marker);
+4. an event in this district is active → event line;
+5. Hearts ≥ 3 → friendly line (uses `{player}`);
+6. a time-of-day line;
+7. a random line from the NPC's pool of 6–10, never repeating any of the last 3 shown to this player.
+
+**Barks.** These are ambient one-liners in a speech bubble when the player passes within 20 studs. Cooldown is
+45 s per NPC per player. A client shows at most 2 bubbles at once, and none while the player is In Combat.
+Barks react to systemic state such as "Nice Octopus Arm!" (the player has the `tentacle` tag), "Smells like
+burnt toast…" (a fire in the last 60 s), or "Your reputation's up to {stars}★!", so humor comes out of play
+rather than from scripts alone.
+
+```mermaid
+%% diagram: npc-dialogue-flow
+flowchart TD
+    A["Player presses Talk (≤ 10 studs)"] --> B{"Server: in combat or menu-locked?"}
+    B -- yes --> X["Prompt hidden; bark 'Busy brawling, huh?'"]
+    B -- no --> C["Server picks opening node by priority"]
+    C --> D["Client renders node + allowed choices"]
+    D --> E{"Choice selected"}
+    E --> F["Server re-checks conditions"]
+    F -- fail --> D
+    F -- pass --> G["Apply effects: OfferQuest / TurnIn / AddHearts / OpenService / SetFlag"]
+    G --> H{"Next node?"}
+    H -- yes --> D
+    H -- no --> I["Close; NPC resumes schedule after 2 s"]
+```
+
+### 19.4 Interaction prompt rules
+
+| Rule | Value [TUNABLE] |
+|---|---|
+| Prompt type | `ProximityPrompt` on the proxy, `RequiresLineOfSight = false`, `HoldDuration = 0` |
+| Range | 10 studs (matches customers, §C3); server re-validates at 12 studs |
+| Prompt selection | only the single best prompt shows: the nearest NPC inside a 60° view cone; ties go to quest markers |
+| Labels | "Talk", "Shop", "Quest !", "Turn In ?", "Hire", "Permit" |
+| Input | E (keyboard) · ButtonX (gamepad) · tap the prompt (mobile, 56 px minimum target) |
+| Facing | NPC turns its head/torso toward the player over 0.3 s and pauses its schedule while dialogue is open |
+| Auto-close | dialogue closes after 90 s idle, or if the player moves > 16 studs away |
+| Combat | prompts hide while the player is In Combat (§C12.1) or targeted by a level-5 customer (E2) |
+| Concurrency | any number of players can talk to the same NPC at once. Each sees their own dialogue. The NPC faces the most recent speaker |
+| Rate limit | `NPC.Interact` remote: 4 calls/s per player; `NPC.Choose`: 8 calls/s; excess calls are dropped and logged (§29) |
+
+**Quest markers** (shape plus color, so they never rely on color alone, §26.3): yellow **!** = new quest
+available · purple **?** = ready to turn in · blue **↻** = daily/weekly poster · gold **★** = story quest ·
+gray **…** = quest locked (tooltip gives the requirement, e.g. "Requires L20"). Markers are client-side
+BillboardGuis, visible at 80 studs and on the minimap.
+
+### 19.5 Idle schedules & behaviors
+
+The city's cosmetic lighting cycle lasts 24 minutes (§C3), split into four phases: **Dawn** (min 0–4),
+**Day** (4–14), **Dusk** (14–18) and **Night** (18–24). Each NPC has 1–4 schedule entries of
+`{phase, anchor, behavior}`. Behaviors:
+
+| Behavior | Description | Server cost |
+|---|---|---|
+| `STATION` | stands at a counter or desk; loops 2–3 idle animations (from §36.14, by role) | static proxy |
+| `WANDER` | random waypoints within a radius (default 12 studs) on the district's waypoint graph | 4 Hz CFrame tween |
+| `PATROL` | fixed waypoint loop (guards, mall walkers, couriers) | 4 Hz |
+| `COMMUTE` | moves between two anchors at phase change, using the Metro platform as a door (despawn/respawn) | 4 Hz while moving |
+| `PERFORM` | stage or busker loop with a crowd-cheer trigger when ≥ 3 players are nearby | static + client FX |
+| `SIT` / `SLEEP` | bench, café table or hammock; snore bubbles at Night | static |
+| `RIDE` | rides a Metro carriage loop (metro riders); can be talked to when the carriage is docked | rides carriage |
+
+**Rules.** SERVICE NPCs are always `STATION` while their building's service is open, and services are open
+24/7, so the schedule only changes their idle animation and barks. QUEST NPCs stay within 12 studs
+of their anchor, or on a fixed PATROL/RIDE loop of ≤ 60 s drawn on the minimap while they hold a quest marker, so
+quest givers stay findable. Only AMBIENT NPCs commute. During city events,
+`CityEventService` may override schedules (`EventOverride`): for example, every DST_07 NPC gathers at the
+Showcase Stage (`BLD_22`) during `EVT_027` Downtown Dance-Off.
+
+### 19.6 Hearts — optional friendship (Progression · Player Interactions)
+
+**Purpose.** Reward players who chat, help and feed the cast, with cosmetic goodies only.
+
+| Rule | Value [TUNABLE] |
+|---|---|
+| Friendable NPCs | 60 (every canon NPC except `NPC_020` during `EVT_007`, plus 30 others; marked "♥ fav: CAT" in §19.9) |
+| Scale | 0–5 Hearts; Heart points never decay and never go negative |
+| Daily chat | +5 for the first conversation per NPC per UTC day |
+| Quest | +20 when completing a quest this NPC gives; +10 when the NPC is only involved |
+| Gift a dish | +15 (or +25 if it's their favorite category); 1 gift per NPC per UTC day. A gift is *virtual*: choose any recipe you have served at ≥ GOOD in the last 24 h (server-tracked list). It costs nothing and consumes nothing |
+| Event together | +10 when you complete an event in which this NPC appears |
+| Thresholds | 1♥ 20 · 2♥ 60 · 3♥ 120 · 4♥ 200 · 5♥ 300 points |
+
+| Heart | Reward (canon C17.4 vocabulary only) |
+|---|---|
+| 1♥ | new dialogue pool; NPC uses your nickname; favorite category revealed |
+| 2♥ | an emote themed on the NPC (plain-text cosmetic, e.g. "Monocle Pop") |
+| 3♥ | a cosmetic color palette themed on the NPC |
+| 4♥ | 10 × T MS (T = your current tier at the moment of unlock) |
+| 5♥ | title "<NPC name>'s Best Friend" + 1 Morph Capsule |
+
+**UI.** A heart row sits under the NPC's name in the dialogue header. The Quest Journal's "Friends of Morph City" tab lists
+every friendable NPC met so far, their favorite (once revealed) and the next reward. **Pacing:** 5♥ takes about 10–14 days
+of daily chat + gift, and the 60 one-time 5♥ capsules sit outside the capsule pity economy (§C4.7). Hearts never unlock
+stats, recipes, mutations or services.
+
+### 19.7 Roblox Implementation — SPCV placement, streaming, performance
+
+- **Pattern:** Server Proxy + Client Visual (§C3). For each named NPC the server owns one anchored,
+  invisible, non-colliding proxy `Part` (2 × 5 × 2 studs) under `Workspace/City/NPCProxies/<DST>`. Its
+  attributes are `NpcId`, `State`, `Facing` and `Anim`, plus the `ProximityPrompt`.
+  `MorphAssemblyService` (client builder) builds the visual locally when the proxy streams in
+  (`StreamingEnabled`, `ModelStreamingMode = Atomic` for the visual container). Beyond 60 studs it swaps to the
+  1,500-triangle impostor and destroys the visual at 150 studs.
+- **Spawning:** SERVICE and STORY proxies always exist (static, cheap). QUEST and AMBIENT proxies exist
+  only for districts with ≥ 1 player inside, plus a 30 s linger after the last player leaves.
+- **Budgets [TUNABLE]:** ≤ 115 named-NPC proxies per server (separate from the 160 customer-proxy cap);
+  ≤ 14 per district; ≤ 20 moving proxies per district at once; client visual cap 25 named NPCs (nearest
+  first). City crowds stay client-only cosmetic (§C3).
+- **Movement:** server tweens proxy CFrames along precomputed district waypoint graphs at 4 Hz, and clients
+  interpolate. Named NPCs never use runtime `PathfindingService`. If a waypoint is blocked > 3 s, the NPC
+  waits, then "poofs" to the next node (cartoon puff, "Pardon my morph!").
+- **Services:** the `Dialogue` submodule of `QuestService` (§27) owns named-NPC proxies, schedules and dialogue
+  evaluation; city discovery state lives in its `Discovery` submodule. Remotes (catalogued in §27):
+  `Quest.Interact {npcId}`, `Quest.DialogueChoice {npcId, nodeId, choice}`, `Quest.Gift {npcId, recipeId}`;
+  server→client `Quest.Dialogue {node}` and `Quest.Bark {npcId, key}`.
+- **Persistence (§28):** `profile.npc = { hearts = {[npcId] = points}, lastChatDay = {[npcId] = dayIndex},
+  lastGiftDay = {...}, flags = {...} }`. Days are UTC day indices computed from server `os.time()`.
+
+### 19.8 Localization-ready dialogue keys
+
+- Every visible string has a key: `npc.<NPC_ID>.name`, `npc.<NPC_ID>.<nodeId>.<nn>`, `npc.<NPC_ID>.bark.<nn>`,
+  `npc.<NPC_ID>.role`. Example: `npc.NPC_025.bark.03` = "Back in my day, burgers had ONE patty and we LIKED it."
+- English source lines are ≤ 90 characters, leaving about 30 % room for expansion. Placeholders use named
+  arguments (`{player}`). Plurals use separate keys (`.one` / `.other`). Jokes that depend on English
+  wordplay carry a `context` column note for translators ("pun on 'fork'; free to replace with a local food
+  pun").
+- Strings ship in a single `LocalizationTable` per domain (`NPC`, `Quest`). The voice is gibberish blips
+  (never recorded speech), so localization never needs re-recording.
+- Text passes through `TextService:FilterStringAsync` only when it contains player-authored content
+  (`{player}` nickname, `{restaurant}`).
+
+### 19.9 NPC database (115 named NPCs)
+
+Column notes: **Morph** lists canon mutation parts by ID plus a short description. Unlisted words are
+NPC-only signature meshes (§19.2). **Quest possibilities** is generated from §20: quests this NPC gives or is
+involved in. **Interaction behavior** gives the behavior class (§19.5), what the prompt opens, and
+"♥ fav: CAT" for friendable NPCs (favorite recipe category code, §C10).
+
+#### 19.9.1 Restaurant Row (`DST_01`) — 13 NPCs
+
+| ID | Name | Morph combination | Personality | Location | Role | Dialogue | Quest possibilities | Interaction behavior |
+|---|---|---|---|---|---|---|---|---|
+| `NPC_001` | **Nana Gristle** | Tortoise head + toaster torso + MUT_171 Oven Mitt Hands; appears as a flickering hologram on your menu board | Cranky, sentimental, allergic to compliments | `DST_01` · `BLD_17` (your shack's menu board) | Tutorial mentor; your great-aunt who left you the shack (now on a permanent retirement cruise) | “I'm on a retirement cruise, sweetie, not on vacation from judging you.” / “Back in my day we didn't have mutations. We had MOODS.” / “That patty is raw. I can hear it mooing through the hologram.” | QST_TUT_001, QST_TUT_002, QST_TUT_003, QST_TUT_004, QST_TUT_005, QST_TUT_006, QST_TUT_007, QST_TUT_008, QST_TUT_009, QST_TUT_012, QST_STY_002, QST_STY_029, QST_STY_033, QST_CHF_015, QST_RST_002 | [STORY] Client-local hologram inside each player's own restaurant; opens tutorial hints & story recap; ♥ fav: SAN |
+| `NPC_003` | **Baron Von Bistro** | MUT_011 Shark Head + MUT_219 Peacock Tail + monocle; velvet waistcoat | Snooty, theatrical, secretly lonely | `DST_01` (Le Fancy Fin, end of the Row) | Comedic rival restaurateur and story antagonist; runs Le Fancy Fin | “Your shack has charm. The charm of a damp sock.” / “I'll buy it for three Morph Bucks and a coupon. Final offer. Fine — two coupons.” / “(after Ch. 9) Hmph. Your grilled cheese is… adequate. Make me another.” | QST_STY_001, QST_STY_003, QST_STY_004, QST_STY_008, QST_STY_009, QST_STY_024, QST_STY_027, QST_STY_028, QST_STY_029, QST_STY_032 | [STORY] STATION at Le Fancy Fin door; struts the Row at Dusk; position is chapter-aware; ♥ fav: SEA (friendable after QST_STY_029) |
+| `NPC_006` | **Bolt Butterworth** | Beaver head (MUT_060 Beaver Teeth) + forklift legs + MUT_218 Beaver Tail | Chipper, pun-happy, measures everything twice | `DST_01` · `BLD_03` | Restaurant Supplies clerk (stations, ingredients, special stock) | “Need a grill? I've got grills that'll grill your grill.” / “Special stock's fresh today. Fresh-ish. Glowing is normal.” | QST_TUT_011, QST_RST_001 | [SERVICE] STATION at counter; opens Restaurant Supplies; slaps tail on the counter at each sale; ♥ fav: BRG |
+| `NPC_012` | **Pinboard Pete** | MUT_004 Pigeon Head + corkboard torso covered in pinned notices | Frantic, helpful, loses pins constantly | `DST_01` · `BLD_10` | Job Board keeper (daily & weekly quest board, rerolls) | “New jobs! Hot off the board! Literally — someone pinned a pizza.” / “Reroll? Sure! Un-pin, re-pin… ow. Pinned myself.” | QST_DLY_001, QST_WKY_001 | [SERVICE] STATION at the Job Board; opens Daily/Weekly board; pecks at notices; ♥ fav: BRK |
+| `NPC_028` | **Sous-Chef Sniffles** | MUT_006 Rat Head + mop arm (right) + MUT_139 Plain Human Arm (left); oversized chef hat | Nervous, sneezy, good-hearted underneath | `DST_01` (alley behind Le Fancy Fin) | Baron's sidekick; redeemable (switches sides in Ch. 8) | “The Baron says I can't say your food smells good. …It smells good.” / “A-CHOO! Allergic to pepper. I work in a kitchen. Life is hard.” / “(after Ch. 8) Need a mop? I AM a mop. Partly.” | QST_STY_001, QST_STY_003, QST_STY_009, QST_STY_025 | [STORY] WANDER behind Le Fancy Fin; hides behind bins when the Baron yells; ♥ fav: SOP |
+| `NPC_031` | **Fizzwick Pompadour** | MUT_111 Flamingo Neck + MUT_125 Penguin Body + MUT_047 Mustache of Destiny | Snooty maître d', sniffs at everything | `DST_01` (Le Fancy Fin podium) | Rival restaurant staff: Le Fancy Fin maître d' | “Reservations are booked until the end of time. Try again Tuesday.” / “Your menu has… pictures. How quaint.” | QST_STY_004, QST_RST_013 | [QUEST] STATION at podium; looks down his flamingo neck at passers-by |
+| `NPC_032` | **Truffle Trufflington** | MUT_058 Truffle Pig Super-Snout + MUT_002 Cat Head + MUT_156 Spatula Arm | Prim pastry perfectionist, privately impressed by you | `DST_01` (Le Fancy Fin back door) | Rival restaurant staff: Le Fancy Fin head pastry chef | “I sniffed your dessert from across the street. It is… not a crime.” / “A soufflé is like a reputation: rises slowly, collapses instantly.” | QST_STY_018, QST_WKY_003 | [QUEST] WANDER back alley; sniffs toward your plot at Dusk; ♥ fav: DES |
+| `NPC_033` | **Busboy Bix** | MUT_042 Bandit Raccoon Mask + MUT_204 Roller Skates + MUT_212 Dog Tail | Hyper, honest to a fault, snack thief | `DST_01` (Restaurant Row sidewalk) | Rival restaurant staff: Le Fancy Fin busser (sneaks your fries) | “Le Fancy Fin fries are cut with a laser. Yours are cut with LOVE. And a knife.” / “I'm on break. I'm always on break. Don't tell Fizzwick.” | QST_STY_004, QST_DLY_016 | [QUEST] PATROL the Row on skates; bonks a lamppost at Night (comedy loop); ♥ fav: FRI |
+| `NPC_034` | **Greta Griddlebottom** | MUT_120 Cow Body + MUT_013 Deer Head + MUT_171 Oven Mitt Hands | Warm, competitive neighbor, co-op fanatic | `DST_01` ('Dog Days' cart on the Row) | Street-food neighbor; co-op cooking champion | “Neighbor! Borrow a cup of ketchup? I'll trade a cup of mustard.” / “Cooking's better with friends. And worse with the Baron.” | QST_WKY_013 | [QUEST] STATION at cart; serves pretend hot dogs to crowd NPCs; ♥ fav: SAN |
+| `NPC_035` | **Gus the Plot Surveyor** | MUT_015 Giraffe Head + MUT_110 Giraffe Neck + MUT_187 Robot Leg ×2 (tripod stance) | Precise, geometry-obsessed, deadpan | `DST_01` · `BLD_17` (between plots) | City plot surveyor; measures façades for tier upgrades | “Your façade is 0.3 studs off-center. I've lost sleep.” / “A circle is just a square that gave up.” | QST_CHF_002, QST_RST_003 | [QUEST] WANDER between plots with a theodolite; measures players who stand still |
+| `NPC_036` | **Spork** | MUT_185 Spider Leg Cluster ×2 + toolbox-shaped MUT_022 Robot Head + MUT_173 Whisk Fingers | Eager apprentice, overcommits to everything | `DST_01` · `BLD_03` | Restaurant Supplies assistant (deliveries, repair tips) | “Boss says I'm half spoon, half fork, all enthusiasm!” / “I can carry six crates! …Five. Four. Help.” | QST_RPR_001 | [QUEST] WANDER aisles stacking crates; drops one every 5 min (comedy SFX) |
+| `NPC_037` | **Tackatha** | MUT_063 Toucan Beak + MUT_085 Bunny Ears + MUT_232 Butterfly Wings | Bubbly, gossip-adjacent, speed-reader | `DST_01` · `BLD_10` | Job Board assistant; Pete's niece (posts dailies) | “Uncle Pete pinned himself again. I've got the board!” / “Fresh daily! Smells like burgers and ambition.” | QST_DLY_002 | [QUEST] STATION beside the board; pins new posters at 00:00 UTC with a fanfare; ♥ fav: DRK |
+| `NPC_038` | **Lumpy the Line-Waiter** | MUT_001 Bear Head + MUT_259 Bear Fur + MUT_198 Rocket Booster Leg ×2 (never used) | Sleepy, philosophical professional queue-stander | `DST_01` (outside the busiest restaurant on the server) | Professional line-waiter | “I've waited in every line in Morph City. Yours is… adequate.” / “Rocket legs. Never used 'em. Waiting is an art.” | QST_DLY_018 | [AMBIENT] SIT on the sidewalk outside the busiest plot (street only, never a customer, never blocks the door) |
+
+#### 19.9.2 Mutation Market (`DST_02`) — 12 NPCs
+
+| ID | Name | Morph combination | Personality | Location | Role | Dialogue | Quest possibilities | Interaction behavior |
+|---|---|---|---|---|---|---|---|---|
+| `NPC_004` | **Mutty McMutface** | Chameleon head (MUT_077 Chameleon Eyes, MUT_255 Chameleon Skin) + vending-machine torso | Salesy, color-shifts with mood | `DST_02` · `BLD_01` | Mutation Mart shopkeeper | “Welcome to Mutation Mart! Today's special: arms. So many arms.” / “Buy, then try, then cry with joy!” | QST_TUT_010 | [SERVICE] STATION behind the vending torso; opens Mutation Mart; dispenses a capsule-shaped receipt; ♥ fav: ALN |
+| `NPC_005` | **Glamtrax** | MUT_111 Flamingo Neck + MUT_123 Robot Body + MUT_272 Sparkle Aura | Fabulous, dramatic, brutally honest stylist | `DST_02` · `BLD_02` | Body Mods stylist (colors, palettes, looks) | “Darling, your colors are screaming. Let's make them sing.” / “Pink neck, chrome body, zero regrets.” | QST_RST_012 | [SERVICE] STATION at the mirror; opens Body Mods; strikes a pose at every compliment; ♥ fav: DRK |
+| `NPC_023` | **Farmer Fungus** | MUT_248 Mushroom Cap + MUT_120 Cow Body + MUT_177 Leaf Hands | Laid-back, spore-tastic, speaks slowly | `DST_02` · `BLD_20` | Weird produce vendor (special crates: moon cheese, lava peppers) | “These lava peppers? Grown with love. And a volcano.” / “Moon cheese ain't from the moon. It's from a guy. The guy's from the moon.” | QST_STY_016 | [SERVICE] STATION at the stand; opens Weird Produce; sneezes a puff of glitter spores hourly; ♥ fav: SAL |
+| `NPC_039` | **Cappy Capsule** | MUT_123 Robot Body + MUT_071 Googly Eyes + MUT_103 Antenna Bobbles; gumball-dome head | Bouncy, rule-loving, transparent about odds | `DST_02` · `BLD_01` | Mutation Mart assistant; explains capsule odds, pity counter and upgrades | “Capsule odds are posted right here! Common 55 percent! I love math!” / “Forty capsules without an Epic? The pity counter has your back!” | QST_TUT_010, QST_WKY_009 | [QUEST] STATION by the odds board; opens Capsule Odds & Upgrade help; ♥ fav: DES |
+| `NPC_040` | **Snipsy Shearwater** | MUT_144 Crab Claw Arm ×2 (salon scissors) + MUT_009 Fish Head + MUT_046 Fish Gill Cheeks | Chatty hairdresser, snips the air when nervous | `DST_02` · `BLD_02` | Body Mods assistant (equip previews, color trials) | “Snip snip! Sorry, habit. Claws.” / “New look, who dis? You, darling. It's you.” | QST_EXP_014 | [QUEST] WANDER salon chairs snipping the air |
+| `NPC_041` | **Auntie Okra** | MUT_093 Leaf Ears + MUT_209 Root Feet + MUT_117 Plain Human Torso | Folksy pickle evangelist; Farmer Fungus's rival | `DST_02` (pickle stall beside BLD_20) | Pickle & 'suspicious vegetable' vendor | “A pickle a day keeps the Karenosaurus away.” / “Fungus sells moon cheese. I sell TRUTH. In brine.” | QST_STY_016, QST_CHF_001 | [QUEST] STATION at stall; trades scripted barks with Farmer Fungus at Dusk; ♥ fav: BRG |
+| `NPC_042` | **Haggle Hank** | MUT_007 Goat Head + MUT_097 Goat Horns + MUT_199 Goat Hoof Leg ×2 | Cheapskate who haggles with vending machines | `DST_02` (market plaza) | Professional haggler; money-making tips | “Five MB? I'll give you four and a compliment.” / “I haggled a lamppost down to half price. Still a lamppost.” | QST_DLY_006 | [QUEST] WANDER plaza; tries to haggle with Mutty (bark exchange) |
+| `NPC_043` | **Mira-Bel** | MUT_021 TV Head (screen shows compliments) + MUT_232 Butterfly Wings + MUT_202 Bunny Slippers | Relentlessly positive compliment machine | `DST_02` (outside BLD_02) | Hype-mutant; cheers on players' morphs | “Your morph is a 10! My screen only goes to 9!” / “Chef's kiss! Literally — my screen shows lips now.” | QST_DLY_007 | [QUEST] STATION at the Body Mods window; screen shows the nearest player's rarest part name; ♥ fav: DES |
+| `NPC_044` | **Professor Pocketlint** | MUT_247 Camel Humps + MUT_074 Owl Eyes + MUT_217 Monkey Tail | Know-it-all trivia host, pockets full of facts | `DST_02` (quiz kiosk) | Mutation trivia quizmaster; teaches employee job-fit | “Pop quiz! Better waiter: cheetah legs or a fridge body? …Legs. Always legs.” / “My humps store water. And trivia.” | QST_EMP_002 | [QUEST] STATION at kiosk; daily 3-question quiz (barks only; Hearts only reward) |
+| `NPC_045` | **Sprinkles McGee** | MUT_080 Gummy Bear Eyes + MUT_085 Bunny Ears + MUT_161 Tiny T-Rex Arm ×2 | Sugar-rushed kid who wants everything rainbow | `DST_02` (candy corner) | Kid; pizza-party enthusiast | “Can pizza be a rainbow? Can a rainbow be pizza? WHY NOT BOTH?” / “My arms are tiny but my appetite is HUGE!” | QST_DLY_022 | [QUEST] WANDER candy corner; hops whenever a player emotes; ♥ fav: PIZ |
+| `NPC_046` | **Barnaby Bargainbin** | MUT_050 Pig Snout + MUT_192 Unicycle Wheel Leg + MUT_213 Pig Curly Tail; shopping-cart torso | Upbeat hustler, terrible at math | `DST_02` (clearance cart) | Clearance-cart vendor (flavor only, sells nothing) | “Everything must go! Including me — I'm late for lunch.” / “This cart is 100 percent off! Because it's empty.” | QST_WKY_008 | [QUEST] PATROL market loop on one wheel; wobbles into stalls |
+| `NPC_047` | **Yolanda Yolk** | MUT_008 Chicken Head + MUT_121 Chicken Body + MUT_180 Chicken Leg ×2 | Motherly worrier, egg-obsessed | `DST_02` (egg stall) | Egg vendor; breakfast challenge giver | “Gently! These eggs have feelings. Mostly scrambled.” / “Sunny side up means SMILING side up, dear.” | QST_CHF_003 | [QUEST] STATION at stall; clucks in alarm when a player sprints past; ♥ fav: BRK |
+
+#### 19.9.3 Downtown Morph City (`DST_03`) — 17 NPCs
+
+| ID | Name | Morph combination | Personality | Location | Role | Dialogue | Quest possibilities | Interaction behavior |
+|---|---|---|---|---|---|---|---|---|
+| `NPC_002` | **Mayor Moosington** | Moose head + MUT_125 Penguin Body + mayoral sash | Pompous ribbon-cutting addict, fair underneath | `DST_03` · `BLD_09` | Mayor; issues City Hall Expansion Permits | “By the antlers vested in me, I declare this permit… pending.” / “I've cut 400 ribbons this year. I may have a problem.” | QST_STY_013, QST_STY_027, QST_RST_004, QST_RST_005, QST_RST_006, QST_RST_007, QST_RST_008, QST_RST_009, QST_RST_010 | [SERVICE] STATION at City Hall desk; opens Permits; carries giant scissors at ceremonies; ♥ fav: SOP |
+| `NPC_007` | **Ms. Hirewell** | MUT_016 Owl Head + MUT_074 Owl Eyes + filing-cabinet torso | Organized, unflappable; rotates head 270° when surprised | `DST_03` · `BLD_04` | Recruitment officer (hiring, rosters, training) | “Every mutant deserves a job. That octopus deserves eight.” / “Résumé says 'can juggle plates.' References say 'mostly.'” | QST_TUT_012, QST_STY_024, QST_EMP_001, QST_EMP_003, QST_EMP_005 | [SERVICE] STATION at desk; opens Recruitment; a drawer pops open with each hire; ♥ fav: DRK |
+| `NPC_009` | **Professor Saucington** | MUT_029 Octopus Head + tweed torso + MUT_145 Octopus Arm ×2 | Absent-minded, joyful; lectures with all arms | `DST_03` · `BLD_06` | Cooking Academy dean (recipe learning, Alien Cuisine course) | “Today's lesson: the grill is hot. Tomorrow's lesson: the grill is STILL hot.” / “Eight arms, eight whisks, zero patience for soggy fries.” | QST_STY_017, QST_CHF_011 | [SERVICE] STATION at lectern; opens Cooking Academy; chalks with three arms at once; ♥ fav: PST |
+| `NPC_019` | **Conductor Choo** | Centipede body + train-engine head with smokestack hat | Punctual to the nanosecond; choo-choo puns | `DST_03` · `BLD_18` | Morph Metro conductor (fast travel, station discovery) | “All aboard! Mind the gap. Mind the legs. I have many.” / “Next stop: everywhere you've already been!” | QST_EXP_001 | [SERVICE] STATION on the Central platform; opens Metro map; toots at each real-time minute :00 (SFX slider); ♥ fav: BRK |
+| `NPC_022` | **Inspector Grimewell** | Mole head (MUT_054 Star-Nosed Mole Nose) + clipboard hands; trench coat | Stern squinter who secretly loves tidy kitchens | `DST_03` (Downtown streets; visits restaurants during inspections) | Health inspector (inspection story beats, EVT_026) | “I can smell a crumb from forty studs. Forty-one if it's a big crumb.” / “Clean kitchen, clean conscience. Clipboard says so.” / “That's a spill. That's a spill. That's… art? No. A spill.” | QST_STY_003, QST_STY_021, QST_RST_005 | [STORY] PATROL Downtown; enters player restaurants only during his quests and EVT_026; ♥ fav: SAL |
+| `NPC_026` | **Sergeant Rhonda** | MUT_099 Rhino Horn + traffic-cone body + MUT_189 Elephant Leg ×2 | Gruff, protective, whistle-happy | `DST_03` (Downtown plaza checkpoint) | City security chief (combat tips, event defense) | “Halt! …Oh, you're just hungry. Carry on.” / “Tray up, knees bent, Calm Down! ready. The Rhonda Method.” | QST_STY_011, QST_STY_019, QST_WKY_004, QST_CBT_002, QST_RST_008 | [QUEST] PATROL Downtown plaza; whistles at sprinting players (cosmetic); ♥ fav: BRG |
+| `NPC_030` | **Anchor Andy** | Anglerfish head with glowing lure + news-desk torso | Dramatic newscaster; everything is BREAKING | `DST_03` (jumbotron studio) | City news anchor (event announcements) | “BREAKING: Local chef makes burger. More at eleven.” / “This just in: it's raining pickles. Again.” | QST_STY_019, QST_STY_026, QST_WKY_006 | [QUEST] STATION at news desk; jumbotron shows live event countdowns; ♥ fav: SEA |
+| `NPC_048` | **Clerk Stampwell** | MUT_145 Octopus Arm ×2 (a stamp in each sucker) + MUT_109 Turtle Neck + MUT_244 Turtle Backpack Shell | Slow, meticulous bureaucrat who loves forms | `DST_03` · `BLD_09` | City Hall permit clerk (stamps permits, Citizen Passport) | “Form 27-Moose? Triplicate. Quadruplicate if you're a hydra.” / “Stamp. Stamp. Stamp. Ahh. Best sound in the world.” | QST_STY_013, QST_EXP_004, QST_RST_004, QST_RST_005, QST_RST_006, QST_RST_007, QST_RST_008, QST_RST_009, QST_RST_010 | [QUEST] STATION at side desk; stamps the air in rhythm |
+| `NPC_049` | **Paige Turner** | MUT_090 Fox Ears + MUT_226 Fluffy Fox Tail + MUT_117 Plain Human Torso; clipboard | Overworked, efficient, runs on coffee | `DST_03` · `BLD_09` | Mayor's assistant (emergencies, event coordination) | “The Mayor is cutting a ribbon. Again. How can I help?” / “Invasion at three, dance-off at four, lunch never.” | QST_CBT_007, QST_RST_006 | [QUEST] WANDER City Hall lobby at a speed-walk |
+| `NPC_050` | **TA Basilica Basil** | MUT_030 Broccoli Head + MUT_167 Whisk Arm + MUT_139 Plain Human Arm | Earnest teaching assistant who grades everything | `DST_03` · `BLD_06` | Cooking Academy teaching assistant (Perfect-timing drills) | “A-plus for effort! C-minus for the smoke.” / “The Perfect window is green. Like me. Coincidence? Yes.” | QST_DLY_003 | [QUEST] WANDER Academy practice stations |
+| `NPC_051` | **Gary the Applicant** | MUT_005 Frog Head + MUT_117 Plain Human Torso + MUT_142 Frog Arm ×2; clutching a résumé | Hopeful, endlessly cheerful, perpetually unhired | `DST_03` · `BLD_04` (waiting chair) | Eternal job applicant; shift-supervision tips | “Applying for chef! And waiter! And mop!” / “Interview number 47 today. Feeling lucky! Feeling… damp.” | QST_DLY_014 | [QUEST] SIT in the waiting chair; leaps up when anyone hires ('Was it me?') |
+| `NPC_052` | **Commuter Carl** | MUT_186 Cheetah Leg ×2 + MUT_012 Wolf Head + briefcase | Frazzled; always late despite cheetah legs | `DST_03` · `BLD_18` (Metro carriages) | Metro rider; speed-cooking challenge giver | “Cheetah legs, and I STILL miss the train.” / “Breakfast in four minutes or I'm doomed!” | QST_CHF_004, QST_EXP_001 | [QUEST] RIDE the Metro loop; talkable when his carriage docks at Central; sprints platforms at Dawn |
+| `NPC_053` | **Snapshot Sally** | MUT_073 Fly Compound Eyes + MUT_125 Penguin Body + MUT_210 Moon Boots; floral shirt | Camera-crazy tourist, thrilled by everything | `DST_03` (Downtown fountain) | Tourist; sightseeing dailies | “Smile! Now from 2,000 eye angles!” / “Is that a REAL mutant? Oh, they're all real. Wow!” | QST_DLY_015 | [QUEST] WANDER landmarks photographing players (soft flash; off with reduced FX); ♥ fav: DES |
+| `NPC_054` | **Silent Simone** | MUT_026 Mantis Head + MUT_151 Mantis Scythe Arm ×2 (pantomime only) + striped torso | Mime; speaks only in gestures | `DST_03` (street corner by BLD_06) | Street mime; teaches Mime Mantis orders | “(mimes being trapped in an invisible soup bowl)” / “(points at you, then a burger, then gives two thumbs up)” | QST_DLY_023 | [QUEST] PERFORM on the corner; crowd-cheer when 3+ players watch; ♥ fav: DES |
+| `NPC_055` | **Newsie Nibbles** | MUT_087 Mouse Ears + MUT_049 Rat Nose + MUT_191 Pogo Stick Leg; newsboy cap | Loud kid headline-shouter | `DST_03` (street corners) | Newspaper kid; headline hints | “EXTRA! EXTRA! Spaghetti tornado spotted downtown!” / “Read all about it! Baron loses argument with a pigeon!” | QST_CHF_007 | [QUEST] PATROL corners on a pogo stick; headlines react to live events |
+| `NPC_056` | **Officer Biscuit** | MUT_003 Dog Head + MUT_212 Dog Tail + MUT_117 Plain Human Torso; whistle | Overeager rookie, tail always wagging | `DST_03` (Downtown plaza) | Rookie security officer (de-escalation dailies) | “Sergeant Rhonda says I'm a good boy. Officer! Good OFFICER!” / “Calm Down! works on customers. Not on squirrels. I tried.” | QST_DLY_004 | [QUEST] PATROL a few steps behind Sergeant Rhonda |
+| `NPC_057` | **Fountain Fran** | MUT_119 Fish Body + MUT_183 Fish Tail Hopper ×2 + MUT_091 Fin Ears | Dreamy coin-diver who believes in wishes | `DST_03` (Downtown fountain) | Fountain dweller; wishes and landmark hints | “Every coin's a wish. Mostly wishes for fries.” / “Something once fell off City Hall's roof and landed right… here. Spooky.” | QST_EXP_013 | [QUEST] SIT in the fountain; dives for coins at Night; ♥ fav: SEA |
+
+#### 19.9.4 Industrial District (`DST_04`) — 10 NPCs
+
+| ID | Name | Morph combination | Personality | Location | Role | Dialogue | Quest possibilities | Interaction behavior |
+|---|---|---|---|---|---|---|---|---|
+| `NPC_010` | **Wrenchy** | MUT_185 Spider Leg Cluster ×2 + MUT_022 Robot Head + MUT_153 Wrench Claw Arm | Grumbly perfectionist, secretly soft | `DST_04` · `BLD_07` | Repair Workshop mechanic (repair skills, tools) | “Broken? Good. Broken means business.” / “Eight legs, one wrench, zero excuses.” | QST_WKY_005, QST_RPR_003, QST_RPR_009 | [SERVICE] STATION at workbench; opens Repair Workshop; climbs walls while idle; ♥ fav: BRG |
+| `NPC_017` | **Dispatch Dot** | Snail head + rocket boots + MUT_123 Robot Body | Speed-obsessed boss, cheerfully ironic about being a snail | `DST_04` · `BLD_15` | Delivery Depot boss (delivery missions) | “I'm a snail in rocket boots. Speed is a STATE OF MIND.” / “Hot food delivered hot. Cold food delivered… also hot. Sorry.” | QST_STY_005, QST_STY_026, QST_WKY_007 | [SERVICE] STATION at dispatch desk; opens Delivery missions; zooms two studs, stops, repeats; ♥ fav: TAC |
+| `NPC_058` | **Rivet Rosie** | MUT_153 Wrench Claw Arm + MUT_174 Wrench Fingers + MUT_246 Hermit Crab Shell | Can-do apprentice who whistles while welding | `DST_04` · `BLD_07` | Repair Workshop apprentice (daily repair jobs) | “We can fix it! Probably! Maybe twice!” / “My shell holds 40 screws and one sandwich.” | QST_DLY_005, QST_RPR_003 | [QUEST] WANDER workshop benches |
+| `NPC_059` | **Zoomie Zara** | MUT_198 Rocket Booster Leg ×2 + MUT_126 Bee Body + MUT_236 Bee Wings | Hyperactive courier who talks at double speed | `DST_04` · `BLD_15` (loading dock) | Star courier (delivery tips) | “Delivered-it-before-you-ordered-it, that's my motto!” / “Buzz buzz, gotta zoom, soup's getting cold!” | QST_STY_005, QST_DLY_010 | [QUEST] PATROL loading dock to Downtown loop; ♥ fav: TAC |
+| `NPC_060` | **Forklift Fernando** | MUT_053 Elephant Trunk + MUT_088 Elephant Ears + MUT_187 Robot Leg ×2 (forklift prongs) | Gentle giant who never forgets a chair | `DST_04` (warehouse yard) | Warehouse worker; furniture-rescue challenges | “I never forget. Especially chairs. I miss them all.” / “Lift with your legs. Or your trunk.” | QST_RPR_004 | [QUEST] PATROL warehouse yard lifting crates |
+| `NPC_061` | **Dr. Kablooey** | MUT_036 Microwave Head + MUT_249 Extra Arm Backpack + MUT_123 Robot Body | Manic inventor whose inventions end in confetti | `DST_04` (garage lab) | Inventor; station-upgrade challenges | “Behold: the Self-Flipping Grill! (confetti) …Version two!” / “Microwave head? DING! New idea!” | QST_RST_011 | [QUEST] STATION at garage; harmless confetti 'explosion' every 3 min (reduced-FX safe); ♥ fav: FRI |
+| `NPC_062` | **Smokestack Stan** | MUT_001 Bear Head + MUT_118 Bear Body + MUT_250 Fire Extinguisher Tank; hard hat | Safety-obsessed foreman | `DST_04` (factory gate) | Factory foreman (repair emergencies) | “Safety first! Second! Also third!” / “Grill fire? Extinguish it, then apologize to the grill.” | QST_RPR_005 | [QUEST] PATROL factory gate; mists harmless spray at cosmetic sparks |
+| `NPC_063` | **Kate Crate** | MUT_024 Gorilla Head + MUT_148 Gorilla Arm ×2 + cardboard-box helmet | Strong, blunt, fond of rubble | `DST_04` · `BLD_15` (crate stacks) | Crate stacker; rebuild challenges | “Rubble's just furniture taking a break.” / “I stack crates. Crates stack me. It's a relationship.” | QST_RPR_002 | [QUEST] STATION at crate stack; restacks fallen crates |
+| `NPC_064` | **Sir Squeaks-a-Lot** | MUT_022 Robot Head + MUT_192 Unicycle Wheel Leg + MUT_155 Magnet Hand Arm | Excessively polite robot who squeaks every step | `DST_04` (Industrial roads) | Oil-can courier robot; ally during EVT_017 | “Pardon me. Excuse me. Terribly sorry. Squeak.” / “My fellow robots are rising up. Politely. Please calm them gently.” | QST_CBT_011 | [QUEST] PATROL roads; bows to every player; ♥ fav: DRK |
+| `NPC_065` | **Mildred Mopsworth** | MUT_066 Vacuum Mouth + MUT_260 Sheep Wool + MUT_202 Bunny Slippers; reading glasses | Retired cleaner; sweet but spotless standards | `DST_04` · `BLD_15` (Lost & Found window) | Retiree; Lost & Found keeper; cleanliness challenges | “Back in my day we cleaned with our mouths. Vacuum mouths. Different times.” / “Pristine, dear. Not 'pretty clean'. PRISTINE.” | QST_RPR_006 | [QUEST] SIT at Lost & Found; hoovers crumbs off players who linger; ♥ fav: DES |
+
+#### 19.9.5 Monster Mall (`DST_05`) — 9 NPCs
+
+| ID | Name | Morph combination | Personality | Location | Role | Dialogue | Quest possibilities | Interaction behavior |
+|---|---|---|---|---|---|---|---|---|
+| `NPC_014` | **Mallory Megamall** | MUT_219 Peacock Tail + escalator legs + MUT_117 Plain Human Torso; power blazer | Ambitious, trend-obsessed, loves foot traffic | `DST_05` · `BLD_12` | Monster Mall manager (cosmetics & decorations) | “Foot traffic! I love feet. And traffic.” / “Everything's on sale! Not really. But it FEELS like it.” | QST_STY_018, QST_RST_007 | [SERVICE] STATION at atrium kiosk; opens Monster Mall; ♥ fav: DES |
+| `NPC_066` | **Mall Cop Mallomar** | MUT_009 Fish Head + MUT_129 Pufferfish Body + MUT_204 Roller Skates; tiny hat | Jumpy guard who puffs up when startled | `DST_05` · `BLD_12` | Mall security (bouncer dailies) | “Halt! Oh no, I'm puffing. Give me a second.” / “No running in the mall! Roller skating is fine.” | QST_DLY_013 | [QUEST] PATROL concourse; puffs up when a player jumps beside him |
+| `NPC_067` | **Speedwalk Gladys** | MUT_013 Deer Head + MUT_260 Sheep Wool + MUT_188 Ostrich Leg ×2; sweatband | Fiercely fit retiree mall-walker | `DST_05` · `BLD_12` | Retiree; Grandma Golem service dailies | “Ten laps before lunch! Eleven if there's pie.” / “You young mutants and your 'sprinting'. Walk with PURPOSE.” | QST_DLY_011 | [QUEST] PATROL the mall loop fast; overtakes running players; ♥ fav: DES |
+| `NPC_068` | **Kiosk Kevin** | MUT_103 Antenna Bobbles + MUT_068 Megaphone Mouth + MUT_117 Plain Human Torso | Pushy but harmless salesman | `DST_05` · `BLD_12` (antenna-case kiosk) | Kiosk vendor; social & photo weeklies | “Antenna case? Protect those bobbles!” / “Photo mode is FREE. Antenna cases are not.” | QST_WKY_014 | [QUEST] STATION at kiosk; megaphone-greets anyone within 12 studs (SFX slider) |
+| `NPC_069` | **Lil' Tantrum Timmy** | Oversized toddler head + MUT_161 Tiny T-Rex Arm ×2 + MUT_202 Bunny Slippers | Dramatic, adorable, extremely loud toddler | `DST_05` · `BLD_12` (toy store) | Kid; Toddler Titan service dailies | “I WANT THE BIG BURGER! …no, the small one. NO, THE BIG ONE!” / “(stomps; a tiny burst of confetti)” | QST_DLY_024 | [QUEST] WANDER toy store; harmless tantrum stomp (ANM_050) every 4 min; ♥ fav: DES |
+| `NPC_070` | **Duchess Decora** | MUT_101 Unicorn Horn + MUT_241 Fairy Wings + MUT_272 Sparkle Aura | Lavish sparkle-maximalist decorator | `DST_05` · `BLD_12` (Décor Boutique) | Decoration boutique owner; parade-float quests | “More sparkle. No, MORE. There's no such thing as too much sparkle.” / “A restaurant without a chandelier is a kitchen with chairs.” | QST_EXP_007 | [QUEST] STATION in boutique; glitter puff on every purchase (reduced-FX safe) |
+| `NPC_071` | **Corndog Cornelius** | Corn-dog head + MUT_143 Noodle Arm ×2 + MUT_121 Chicken Body | Competitive but fair food-court rival | `DST_05` · `BLD_12` (food court stall) | Food-court stall owner (rival vendor) | “My corn dogs are battered with SUCCESS.” / “The Baron opened a kiosk here. A KIOSK. In MY food court.” | QST_STY_018 | [QUEST] STATION at stall flipping pretend corn dogs |
+| `NPC_072` | **Escalator Ed** | MUT_113 Spring Neck + MUT_208 Spring Boots + MUT_117 Plain Human Torso | Bouncy escalator enthusiast; Mallory's cousin | `DST_05` · `BLD_12` | Mall regular who rides the escalators all day | “Up! Down! Up! This is the life.” / “Cousin Mallory says I'm 'bad for business'. I'm GREAT for escalators.” | QST_EXP_004 | [AMBIENT] PATROL the escalators endlessly; bounces at the top |
+| `NPC_073` | **Photobooth Phoebe** | MUT_255 Chameleon Skin + MUT_095 Headphone Ears + MUT_202 Bunny Slippers | Cool, encouraging teen; color-shifts per photo | `DST_05` · `BLD_12` (photo booth) | Photo-booth attendant; staff-morale challenges | “Say 'mutation'! …Nailed it.” / “Happy staff, happy photos. Ever done a staff photo day?” | QST_EMP_004 | [QUEST] STATION at booth; skin shifts color whenever a player emotes |
+
+#### 19.9.6 Mutation Research District (`DST_06`) — 10 NPCs
+
+| ID | Name | Morph combination | Personality | Location | Role | Dialogue | Quest possibilities | Interaction behavior |
+|---|---|---|---|---|---|---|---|---|
+| `NPC_013` | **Dr. Splice** | MUT_014 Axolotl Head + lab coat + MUT_147 Robot Arm | Enthusiastic, slightly mad, very safety-conscious | `DST_06` · `BLD_11` | Mutation Lab scientist (fusion, research) | “Fusion is like cooking, but the soup has opinions.” / “Regeneration is my hobby. Also my species.” | QST_CHF_008, QST_EXP_002 | [SERVICE] STATION at the fusion chamber; opens Mutation Lab; ♥ fav: ALN |
+| `NPC_018` | **Curator Fossilbottom** | Triceratops head (MUT_104 Triceratops Frill) + grandfather-clock torso | Slow-talking lore lover; chimes on the hour | `DST_06` · `BLD_16` | Museum curator (collection log & lore) | “Every part tells a story. This one tells a LOUD story.” / “BONG. Pardon me. That was my torso.” | QST_STY_033, QST_EXP_009 | [SERVICE] STATION in the Great Hall; opens Museum collection log; chimes each real-time minute :00 (SFX slider); ♥ fav: SOP |
+| `NPC_074` | **Lab Assistant Beaker** | MUT_130 Jellyfish Body + MUT_044 Robot Visor + MUT_142 Frog Arm ×2 | Nervous, very kind, jiggles when anxious | `DST_06` · `BLD_11` | Lab assistant; safety orientation | “Please don't tap the glass. I am the glass. Sort of.” / “Safety orientation step one: don't panic. Step two: I'm panicking.” | QST_CHF_008, QST_EXP_002 | [QUEST] WANDER lab benches; glows brighter when a player approaches; ♥ fav: DES |
+| `NPC_075` | **Dr. Hypothesis Hoot** | MUT_114 Brachiosaurus Neck + MUT_044 Robot Visor + MUT_123 Robot Body | Contrarian theorist with wild hypotheses | `DST_06` · `BLD_11` (rival research balcony) | Rival scientist; paradox-cooking challenges | “Hypothesis: soup can be frozen AND remain soup. Prove me right!” / “My neck lets me see the big picture. Literally.” | QST_CHF_005 | [QUEST] STATION on balcony; lowers his neck into conversations |
+| `NPC_076` | **Test Subject Todd** | MUT_026 Mantis Head + MUT_119 Fish Body + MUT_191 Pogo Stick Leg + MUT_179 Plain Human Leg (wobbly gait) | Unbothered volunteer guinea pig and glitch-hunter | `DST_06` (Research plaza) | Professional test subject; secret-hunting hints | “I've tried 200 mutations. Today: mantis-fish-pogo. Tomorrow? Mystery!” / “I see dead pixels everywhere. Not spooky. Techy.” | QST_EXP_002, QST_EXP_005 | [QUEST] WANDER plaza with ANM_008 wobbly gait; ♥ fav: MUT |
+| `NPC_077` | **Docent Dottie** | MUT_045 Moth Fuzz Face + MUT_094 Moth Feather Antennae + MUT_233 Moth Wings | Whispery guide, distracted by lamps | `DST_06` · `BLD_16` | Museum tour guide | “(whispering) Welcome to the museum… please whisper… WHISPER.” / “This fossil is 10,000 years old. Or 10. The label fell off.” | QST_EXP_009 | [QUEST] PATROL the exhibit loop; drifts toward lights at Night |
+| `NPC_078` | **Professor Quark Quibble** | MUT_092 Satellite Dish Ears + MUT_197 Cloud Leg ×2 (hovers) + MUT_279 Tiny Moons | Cosmic physicist; inventor of the Anti-Gravity Wok | `DST_06` · `BLD_11` (observatory deck) | Physicist; meteor & Infinity Pizza challenges | “Infinity is just a pizza that refuses to end.” / “Meteor shower tonight! Bring a bucket. And a soft helmet.” | QST_CHF_013, QST_EXP_006 | [QUEST] STATION on the observatory deck, floating one stud up |
+| `NPC_079` | **Specimen Seven (Sevvy)** | MUT_134 Slime Body + MUT_071 Googly Eyes; lives in a big glass jar on wheels | Polite, philosophical blob who wants to see the world | `DST_06` · `BLD_11` | Sentient slime; lab lore | “Hello! I am a slime. I contain multitudes. Mostly jelly.” / “Mutation cuisine? I AM mutation cuisine. Please don't eat me.” | QST_CHF_008, QST_EXP_002 | [AMBIENT] STATION in jar; waves a pseudopod at passers-by; ♥ fav: DES |
+| `NPC_080` | **Archivist Inkwell** | MUT_075 Sea Slug Eye Stalks + MUT_146 Squid Tentacle Arm ×2 + ink-stained cardigan | Meticulous record-keeper who inks when startled | `DST_06` · `BLD_16` (archive stacks) | Museum archivist (city lore, Nana's old records) | “Shh. The archive is sleeping.” / “I've filed every recipe since the city began. Some twice. By accident.” | QST_STY_033 | [AMBIENT] STATION at the shelves; ink-puff if a player jumps nearby |
+| `NPC_081` | **Night Guard Nocturna** | MUT_089 Bat Ears + MUT_234 Bat Wings + MUT_117 Plain Human Torso; flashlight | Night guard who is afraid of the dark | `DST_06` · `BLD_16` | Museum night guard; night-shift employee challenges | “I'm a bat who's scared of the dark. Don't make it weird.” / “Night shift is when the real work happens. Ask your employees.” | QST_EMP_007 | [QUEST] PATROL with a flashlight cone at Night; SIT by the door at Day |
+
+#### 19.9.7 Entertainment District (`DST_07`) — 14 NPCs
+
+| ID | Name | Morph combination | Personality | Location | Role | Dialogue | Quest possibilities | Interaction behavior |
+|---|---|---|---|---|---|---|---|---|
+| `NPC_016` | **Madame Fourchette** | MUT_110 Giraffe Neck + MUT_146 Squid Tentacle Arm ×2; tiny beret | Exacting, elegant, unexpectedly kind to effort | `DST_07` · `BLD_14` | Chief food critic; holds the city's star ratings | “I taste with my neck. It gives the food time to think about what it did.” / “Three stars. Do not cry. Cry at four.” / “A perfect grilled cheese is rarer than caviar, darling.” | QST_STY_007, QST_STY_010, QST_STY_022, QST_STY_023, QST_STY_028, QST_RST_009 | [STORY] STATION in the tasting salon; opens Critic HQ rating challenges; ♥ fav: SAN |
+| `NPC_021` | **Vlogzilla** | MUT_017 Lizard Head + smartphone face + MUT_215 Lizard Tail | Hype-driven influencer, insecure, ultimately genuine | `DST_07` (Entertainment streets) | Influencer celebrity | “Hey Morph-fam! Smash that like button! On your face!” / “This restaurant? Mid. Wait — this fry? ELITE.” / “Sponsored by nobody. That's my brand.” | QST_STY_008 | [STORY] WANDER streets livestreaming (soft flash; off with reduced FX); ♥ fav: DRK |
+| `NPC_024` | **DJ Morphenstein** | MUT_089 Bat Ears + boombox torso + MUT_175 Boxing Gloves (worn as headphone pads) | Loud party-starter, surprisingly wise | `DST_07` · `BLD_22` | Showcase Stage host (shows, contests) | “Drop the beat! Not the plates. Never the plates.” / “Tonight: chefs, freaks, and one very confused moose.” | QST_CHF_010 | [SERVICE] PERFORM at the DJ booth; opens Showcase Stage; ♥ fav: FRI |
+| `NPC_027` | **Zorp** | MUT_033 Alien Grey Head + tour-bus torso + MUT_210 Moon Boots | Cheerful alien tour guide who mistranslates idioms | `DST_07` (tour-bus stop) | Alien tour guide (Alien Cuisine, EVT_018) | “Greetings, Earth-chef! My tourists hunger for… what is 'flavor'?” / “On my planet we eat with elbows. Is rude here? Okay.” / “Hold your antennae! Tour departs when bus remembers how to bus.” | QST_STY_014, QST_STY_015, QST_STY_017 | [STORY] STATION at the bus stop; honks his horn-face at passing players; ♥ fav: ALN |
+| `NPC_029` | **Chef Supreme Omnivora** | MUT_031 Dragon Head + MUT_165 Kraken Tentacle Arm ×2 + MUT_178 Golden Chef Hands | Serene legend with impossible standards; warm to the worthy | `DST_07` (Grand Culinary Pavilion) | Legendary chef; story finale & Legendary Chef Tournament host | “Every great chef begins with a burnt burger. Most stop there.” / “Cook as if for your grandmother. A very picky grandmother.” / “The tournament awaits. Bring your best… and your strangest.” | QST_STY_030, QST_STY_031, QST_STY_032, QST_CHF_012, QST_CHF_014 | [STORY] STATION in the pavilion (visible from L45, talkable from L65); ♥ fav: LEG |
+| `NPC_082` | **Critic Crumbsworth** | MUT_055 Anteater Snoot + MUT_117 Plain Human Torso; tweed jacket | Eager junior critic who sniffs every crumb | `DST_07` · `BLD_14` | Junior food critic (critic dailies) | “Sniff. Notes of grill. Hints of ambition. A whisper of pickle.” / “Madame says I'm 'promising'. I wrote it down. Twice.” | QST_STY_007, QST_STY_022, QST_DLY_012 | [QUEST] WANDER Critic HQ lobby; sniffs players' hands |
+| `NPC_083` | **Paloma Peppermill** | MUT_053 Elephant Trunk + MUT_111 Flamingo Neck + MUT_272 Sparkle Aura | Flamboyant critic who rates by sneezes | `DST_07` · `BLD_14` | Senior food critic (tasting flights, five-star weeklies) | “One sneeze: bland. Two: pleasant. Three: MAGNIFIQUE! Achoo!” / “Darling, your plating is a poem. A limerick, but still.” | QST_STY_022, QST_STY_023, QST_WKY_002, QST_CHF_009 | [QUEST] STATION at the tasting table; confetti sneeze at Perfect dishes; ♥ fav: DES |
+| `NPC_084` | **Stagehand Stubs** | MUT_087 Mouse Ears + MUT_150 Spider Arm Bundle + MUT_217 Monkey Tail | Grumbly behind-the-scenes fixer | `DST_07` · `BLD_22` (backstage) | Showcase Stage stagehand | “Six arms, one tail, zero applause. Story of my life.” / “Who put a grill on the stage? …For the contest? Fine.” | QST_CHF_010 | [AMBIENT] WANDER backstage; hangs from the rigging by his tail at Dusk |
+| `NPC_085` | **Chuckles McGuffaw** | MUT_051 Clown Nose + MUT_068 Megaphone Mouth + MUT_202 Bunny Slippers | Pun-addicted comedian who laughs at his own jokes | `DST_07` (Giggle Grotto comedy club) | Stand-up comic; time-loop breakfast challenge | “Why did the burger go to school? To be well-bred! …I'll see myself out.” / “Breakfast for dinner for breakfast? That's my whole schedule!” | QST_CHF_006 | [QUEST] PERFORM at the club door; laugh-track SFX when a player emotes |
+| `NPC_086` | **Fleem** | MUT_082 Alien Eye-Stalk Trio + MUT_210 Moon Boots + MUT_228 Comet Tail | Wide-eyed alien tourist who loves Earth weirdness | `DST_07` (Zorp's tour group) | Alien tourist from Zorp's group | “Earth food is so… solid. Fascinating!” / “I photographed a pickle. My planet will never believe it.” | QST_STY_014, QST_STY_015 | [QUEST] WANDER near Zorp's bus; stares at fountains with all three eyes; ♥ fav: ALN |
+| `NPC_087` | **Sous-Chef Saffron** | MUT_096 Dragon Fin Ears + MUT_268 Dragon Scales + MUT_171 Oven Mitt Hands | Strict, precise, fiercely loyal to Omnivora | `DST_07` (Grand Culinary Pavilion gate) | Omnivora's sous-chef (tournament qualifiers, Dragon Feast trial) | “Chef Omnivora sees all. I see the rest.” / “Your sear is acceptable. Your garnish is a crime.” | QST_STY_031, QST_STY_032, QST_CHF_012 | [QUEST] STATION at the pavilion gate; inspects plating with a magnifying glass |
+| `NPC_088` | **Busker Bellows** | MUT_115 Frill Lizard Collar + MUT_265 Snake Scales + MUT_222 Rattlesnake Tail | Wandering musician who speaks in rhymes | `DST_07` (busking corners) | Street musician; busker-tour exploration | “Five buskers play, five songs are sung; one secret waits for old and young.” / “My tail's a maraca. My collar's a speaker. My rent is late.” | QST_EXP_012 | [QUEST] PERFORM, rotating between busker spots each phase |
+| `NPC_089` | **Neon Nell** | MUT_083 Firefly Glow Eyes + MUT_230 Lightning Tail + MUT_264 Static Fluff Fur | Electric, artsy sign-painter who hates blackouts | `DST_07` (neon sign workshop) | Neon sign artist; blackout repair quests | “Neon is just light that went to art school.” / “Blackout Night? My nightmare. Help me relight the street!” | QST_RPR_008 | [QUEST] STATION at the workshop; her tail powers the shop sign at Night |
+| `NPC_090` | **Usher Umbra** | MUT_252 Ghost Sheet Cape + MUT_071 Googly Eyes + MUT_202 Bunny Slippers | Gentle, spooky-cute shusher | `DST_07` · `BLD_22` (stage entrance) | Theater usher; quiet-service daily | “Shhhh. The show is about to — shhhh.” / “Calm diners are happy diners. Shhh.” | QST_DLY_025 | [QUEST] STATION at the doors; shushes loud emotes |
+
+#### 19.9.8 Residential District (`DST_08`) — 10 NPCs
+
+| ID | Name | Morph combination | Personality | Location | Role | Dialogue | Quest possibilities | Interaction behavior |
+|---|---|---|---|---|---|---|---|---|
+| `NPC_025` | **Old Man Pigeon** | MUT_004 Pigeon Head + MUT_124 Muscle Torso + MUT_235 Pigeon Wings | Gossip who flexes constantly and knows everything | `DST_08` · `BLD_19` | Park regular; gossip, tips and story intel | “Back in my day, burgers had ONE patty and we LIKED it.” / “Coo. I've heard things. Rat things. Crown things.” / “Want a tip? Never trust a shark in a monocle.” | QST_STY_005, QST_STY_006, QST_STY_026, QST_EXP_010 | [STORY] SIT on the park bench; flexes at joggers; feeds crowd pigeons at Dawn; ♥ fav: BRG |
+| `NPC_091` | **Granny Gumdrop** | MUT_135 Golem Rock Body + MUT_260 Sheep Wool + MUT_169 Mitten Paws | Sweet, stubborn, rock-solid baker | `DST_08` (cottage porch) | Retiree; dessert dailies and family-recipe lore | “Have a cookie, dearie. It's rock-hard. I'm a golem, it's tradition.” / “Dessert first. Life's short. Mine isn't — I'm a rock.” | QST_DLY_009 | [QUEST] SIT on the porch knitting; her 2♥ emote is 'Cookie Offer'; ♥ fav: DES |
+| `NPC_092` | **Pipsqueak Polly** | MUT_231 Tiny Chicken Wings + MUT_180 Chicken Leg ×2 + MUT_085 Bunny Ears | Determined kid who wants to fly | `DST_08` · `BLD_19` | Kid; travel & sky exploration | “One day these wings will lift me! (flap flap) …One day.” / “Did you ride a Pigeon Taxi? What was it LIKE?” | QST_EXP_011 | [QUEST] WANDER the park; flaps and hops every 30 s; ♥ fav: DES |
+| `NPC_093` | **Walter Walksalot** | MUT_012 Wolf Head + MUT_150 Spider Arm Bundle (nine leashes) + MUT_181 Frog Leg ×2 | Unflappable multitasker who walks nine pets | `DST_08` (sidewalk loop) | Pet-walker; staffing-capacity challenge | “Nine pets, nine leashes, one very organized brain.” / “Managing staff? Like pets, but they ask for wages.” | QST_EMP_008 | [QUEST] PATROL the sidewalk trailed by nine client-only cosmetic pets |
+| `NPC_094` | **Mrs. Hedge Trimmington** | MUT_158 Vine Arm ×2 + MUT_107 Sprout Antlers + MUT_278 Falling Leaves | Competitive gardener, neighborly to a fault | `DST_08` (topiary garden) | Gardener; neighborly repair challenge | “My hedges are shaped like burgers. Took me eleven years.” / “Help a neighbor, help yourself. That's Residential law.” | QST_RPR_007 | [QUEST] STATION at her hedge; trims a new topiary shape each in-game day |
+| `NPC_095` | **Captain Kerplunk** | MUT_246 Hermit Crab Shell + MUT_144 Crab Claw Arm + MUT_139 Plain Human Arm; paper pirate hat | Pirate-playing kid and treasure-map maker | `DST_08` · `BLD_19` (park pond) | Kid; owner of Squishy, a small lost pet kraken (EVT_022) | “Arr! Have ye seen Squishy? He's a kraken. A SMALL kraken.” / “X marks the spot! The spot is… also X.” | QST_CHF_014, QST_EXP_008 | [QUEST] WANDER the pond; digs for 'treasure' in the sandbox; ♥ fav: SEA |
+| `NPC_096` | **Professor Emeritus Snore** | MUT_259 Bear Fur + MUT_109 Turtle Neck + MUT_202 Bunny Slippers; mortarboard | Retired Academy professor who dozes mid-sentence | `DST_08` · `BLD_19` | Retiree; soup dailies | “When I taught at the Academy, soup was… zzz…” / “A good broth needs patience. Zzz. And salt. Zzz.” | QST_DLY_017 | [QUEST] SLEEP on a park bench; wakes with a snort when talked to |
+| `NPC_097` | **Mail Carrier Marge** | MUT_184 Kangaroo Leg ×2 + MUT_211 Cat Tail + MUT_117 Plain Human Torso; pouch satchel | Reliable, bouncy, never misses a mailbox | `DST_08` (Residential & Downtown routes) | Mail carrier (delivers offline reports & story letters as flavor) | “Special delivery! Your offline report, still warm.” / “Rain, sleet or pickle storm — the mail gets through.” | QST_STY_006, QST_WKY_011 | [QUEST] PATROL mailbox route; hops to your plot's mailbox when a report is pending (cosmetic) |
+| `NPC_098` | **Lemonade Lulu** | MUT_002 Cat Head + MUT_142 Frog Arm ×2 + MUT_211 Cat Tail | Fierce kid entrepreneur | `DST_08` (lemonade stand near BLD_19) | Kid; drink dailies | “Lemonade! One MB! Two if you want a cup.” / “My business plan: lemons. That's the whole plan.” | QST_DLY_008 | [QUEST] STATION at her stand selling pretend lemonade to crowd NPCs; ♥ fav: DRK |
+| `NPC_099` | **Neighborhood Watch Walt** | MUT_079 Eagle Eyes + MUT_110 Giraffe Neck + MUT_115 Frill Lizard Collar | Nosy, observant, tracks everyone's business | `DST_08` (lookout porch) | Neighborhood watch; personality-spotting weekly | “I saw a Karenosaurus at 3:42. She was asking for a manager's manager.” / “I know every customer type in this city. EVERY. ONE.” | QST_WKY_012 | [QUEST] STATION on the porch peering over hedges with his long neck |
+
+#### 19.9.9 Underground Mutation Sewers (`DST_09`) — 10 NPCs
+
+| ID | Name | Morph combination | Personality | Location | Role | Dialogue | Quest possibilities | Interaction behavior |
+|---|---|---|---|---|---|---|---|---|
+| `NPC_015` | **The Hooded Hagfish** | Hagfish head + mysterious cloak + MUT_275 Bubble Trail | Cryptic, theatrical, scrupulously honest merchant | `DST_09` · `BLD_13` | Mystery Market merchant (weekly rotation) | “Welcome, seeker… prices are fair. Mysteriously fair.” / “This week's wares came from… places. Wet places.” | QST_EXP_003 | [SERVICE] STATION behind a curtained stall; opens Mystery Market; ♥ fav: MUT |
+| `NPC_020` | **King Ratbeard** | Giant rat head (MUT_006 Rat Head at 1.6× scale) + crown + MUT_144 Crab Claw Arm ×2; cape | Blustering, cheese-loving, soft-hearted monarch | `DST_09` · `BLD_21` | Sewer King; boss of EVT_007; story ally after Ch. 6 | “I don't STEAL. I BORROW. Permanently.” / “Bring me cheese and I shall bring you… more requests for cheese.” / “(after Ch. 6) The display crown looks better on your wall anyway.” | QST_STY_012, QST_STY_013, QST_STY_019, QST_STY_020 | [BOSS] STATION on the throne; leads the EVT_007 attack (fight by §11/§36.11); ♥ fav: PIZ (not during EVT_007) |
+| `NPC_100` | **Duchess Drainsworth** | MUT_049 Rat Nose + MUT_087 Mouse Ears + MUT_225 Mermaid Fin Tail; ballgown | Aristocratic royal advisor with perfect sewer manners | `DST_09` · `BLD_21` | Ratbeard's royal advisor; court-management challenge | “One does not 'sludge'. One 'glides'.” / “His Majesty's staff are loyal. Staff are everything, dear.” | QST_STY_012, QST_STY_020, QST_EMP_009 | [QUEST] STATION beside the throne; curtsies to visitors |
+| `NPC_101` | **Sir Gunk** | MUT_023 Crocodile Head + MUT_127 Crab Shell Torso + plunger lance | Earnest sewer knight, hopeless at sneaking | `DST_09` · `BLD_21` | Royal sewer guard | “Halt! Who goes there? …A chef. Carry on. Bring snacks.” / “My lance is a plunger. It is VERY effective.” | QST_STY_012, QST_CBT_010 | [QUEST] PATROL the throne-room bridge, clanking |
+| `NPC_102` | **Mossimo the Hermit** | MUT_263 Moss Fur + MUT_248 Mushroom Cap + MUT_209 Root Feet | Zen hermit who speaks in calm riddles | `DST_09` (quiet grotto) | Hermit; calm-combat challenge | “The angriest customer is just a hungry friend.” / “Breathe in. Breathe out. Block the flying soup.” | QST_CBT_005 | [QUEST] SIT in the grotto with drifting spores; ♥ fav: SAL |
+| `NPC_103` | **Gutter Gourmet Gloop** | MUT_005 Frog Head + MUT_256 Frog Slime Skin + MUT_102 Chef Hat Crest | Proud underground chef of 'sewer cuisine' (all fruit jelly) | `DST_09` (Sewer Supper Club) | Underground chef; spicy & sewer-cuisine challenges | “Sewer cuisine is all fruit jelly. The rumors are FALSE.” / “Spice is the sewer's secret. One of them.” | QST_DLY_019, QST_CHF_016 | [QUEST] STATION at the supper-club stove |
+| `NPC_104` | **Phantasma** | MUT_159 Electric Eel Arm ×2 + MUT_266 Fish Scales + MUT_275 Bubble Trail | Dramatic pipe-organist who echoes everything | `DST_09` (Pipe Organ Hall junction) | Sewer musician; flood-cleanup combat quest | “Welcome to my pipe organ… organ… organ…” / “The flood clogged my pipes! Help! Pipes! Pipes!” | QST_CBT_010 | [QUEST] PERFORM at the pipe organ; echo filter on dialogue audio |
+| `NPC_105` | **Glowcap Gillian** | MUT_075 Sea Slug Eye Stalks + MUT_046 Fish Gill Cheeks + MUT_177 Leaf Hands | Gentle forager of glowing mushrooms | `DST_09` (Glowcap Caverns) | Mushroom forager; sewer exploration | “Glowcaps glow when they're happy. So do I.” / “Six glowcaps hide in these tunnels. They're shy.” | QST_EXP_015 | [QUEST] WANDER the caverns; her lantern lights the path |
+| `NPC_106` | **Slime Jr.** | MUT_256 Frog Slime Skin + MUT_071 Googly Eyes + miniature hooded cloak | Eager apprentice merchant who counts coins out loud | `DST_09` · `BLD_13` | Mystery Market apprentice | “One coin, two coin, slimy coin, new coin!” / “The master says I'm 'adequately mysterious'. Best day ever.” | QST_EXP_003 | [QUEST] STATION beside the Hagfish's stall |
+| `NPC_107` | **Tunnel Tom** | MUT_196 Mole Digger Leg ×2 + MUT_054 Star-Nosed Mole Nose + hard hat with lamp | Chatty miner, very proud of his manholes | `DST_09` (tunnels; pops out of the DST_08 manhole) | Mole miner; sewer guide | “Every manhole's a front door if you're brave enough.” / “I dug this tunnel. And that one. That one's a mistake.” | QST_STY_011, QST_EXP_003 | [QUEST] WANDER tunnels; surfaces at the DST_08 manhole to offer QST_EXP_003 at L20 |
+
+#### 19.9.10 Arena District (`DST_10`) — 10 NPCs
+
+| ID | Name | Morph combination | Personality | Location | Role | Dialogue | Quest possibilities | Interaction behavior |
+|---|---|---|---|---|---|---|---|---|
+| `NPC_008` | **Coach Crunch** | MUT_004 Pigeon Head + MUT_148 Gorilla Arm ×2 + MUT_124 Muscle Torso | Motivational yeller who believes in everyone | `DST_10` · `BLD_05` | Training Gym coach (combat drills, staff training) | “DROP AND GIVE ME TWENTY… BURGERS!” / “Block! Dodge! Swipe! Calm Down! Repeat until dinner!” | QST_CBT_003, QST_EMP_006 | [SERVICE] STATION in the gym ring; opens Training Gym; ♥ fav: BRG |
+| `NPC_011` | **Rex Rumbleton** | MUT_032 T-Rex Head + microphone hand + MUT_161 Tiny T-Rex Arm | Booming announcer who lives for a showdown | `DST_10` · `BLD_08` | Arena announcer (arena access, seasons) | “LADIES, GENTLEMEN, AND ASSORTED MUTANTS!” / “In this corner: a chef! In THAT corner: another chef! Fight… respectfully!” | QST_CBT_001, QST_CBT_009 | [SERVICE] STATION at the announcer booth; opens the opt-in Arena queue; ♥ fav: BRG |
+| `NPC_108` | **Brawlin' Barbara** | MUT_069 Blender Mouth + MUT_149 Kangaroo Boxing Arm ×2 + MUT_184 Kangaroo Leg ×2 | Cheerful fighter who blends victory smoothies | `DST_10` · `BLD_08` | Arena fighter (contender challenge) | “They call me 'The Blender'. I make victory smoothies.” / “Good match! Smoothie? It's mostly protein and confetti.” | QST_CBT_008 | [QUEST] WANDER the arena tunnel shadow-boxing; ♥ fav: DRK |
+| `NPC_109` | **Iron Ingrid** | MUT_128 Armadillo Body + MUT_269 Pangolin Plates + MUT_175 Boxing Gloves | Calm, dry-humored defensive champion | `DST_10` · `BLD_05` | Arena fighter; dodge & defense trainer | “Best offense? Never getting hit.” / “I roll into a ball when stressed. Also when winning.” | QST_CBT_003, QST_CBT_004 | [QUEST] STATION at the sparring mat; rolls across it every 2 min |
+| `NPC_110` | **Referee Stripes** | MUT_261 Tiger Stripe Fur + MUT_072 Cat Eyes + MUT_207 Ice Skates; whistle | Scrupulously fair and whistle-obsessed | `DST_10` · `BLD_08` | Arena referee (fair-play rules, weekly matches) | “Fair fight! No biting! Unless you have shark jaws — then GENTLE biting!” / “TWEET! Foul. TWEET! …That was a bird. Carry on.” | QST_WKY_010 | [QUEST] PATROL the arena floor edge on skates |
+| `NPC_111` | **Kid Knuckles** | MUT_175 Boxing Gloves (far too big) + MUT_085 Bunny Ears + MUT_202 Bunny Slippers | Tiny trainee with huge dreams | `DST_10` · `BLD_05` | Kid trainee; arena warm-up daily | “One day I'll be champion! Today I'm lunchtime champion.” / “These gloves were my dad's. And my dad's dad's.” | QST_DLY_020 | [QUEST] WANDER the gym; punches the bag and bounces off |
+| `NPC_112` | **Grand Tusk Gerald** | MUT_064 Walrus Tusks + MUT_124 Muscle Torso + MUT_182 Bear Leg ×2; replica title belt | Gentle retired wrestler walrus who loves a story | `DST_10` · `BLD_05` | Retiree; bouncer certification | “Back in the day I pinned a hydra. All nine heads. Took a while.” / “A real bouncer protects the diner. And the diners.” | QST_CBT_006 | [QUEST] SIT ringside; flexes when cheered; ♥ fav: SEA |
+| `NPC_113` | **Mascot Muncho** | MUT_136 Pizza Box Body + MUT_071 Googly Eyes + MUT_204 Roller Skates | Silent mascot running on maximum hype | `DST_10` · `BLD_08` | Arena mascot (cheers rookies) | “(enthusiastic pizza-box flapping)” / “MUN-CHO! MUN-CHO! (that is the whole chant)” | QST_CBT_001 | [AMBIENT] PERFORM in the stands; starts a crowd wave when a player wins |
+| `NPC_114` | **Spin Doctor Dolores** | MUT_095 Headphone Ears + MUT_077 Chameleon Eyes + MUT_117 Plain Human Torso | Rapid-fire color commentator | `DST_10` · `BLD_08` | Arena color commentator | “What a dodge! What a block! Is that a… sandwich?” / “Statistically, 80 percent of fights end. The rest are cooking.” | QST_CBT_009 | [AMBIENT] STATION in the commentary booth beside Rex |
+| `NPC_115` | **Professor Punch** | Hamster-cheek head + MUT_124 Muscle Torso + MUT_177 Leaf Hands | Energetic health-nut nutritionist | `DST_10` · `BLD_05` (gym juice bar) | Gym nutritionist; morph-workout daily | “Protein! Fiber! Mutations! The three food groups!” / “Use your abilities! Muscles that don't move become decorative.” | QST_DLY_021 | [QUEST] WANDER the gym juice bar |
+
+### 19.10 Edge Cases
+
+| # | Situation | Ruling |
+|---|---|---|
+| N1 | A quest needs an NPC in a district with no players loaded | The proxy spawns when the player enters the district (QUEST/AMBIENT spawn rule), and quest markers on the map always show the anchor position. |
+| N2 | Story NPC "visits" the player's restaurant (Grimewell in `QST_STY_003`, Zorp in `QST_STY_014`, Baron in Ch. 9) | `QuestService.Dialogue` spawns a temporary proxy inside the owner's instanced interior. Co-op guests see it, but only the owner's quest advances. Guests get a "witness" bark. The proxy despawns when the beat ends or after 10 min. |
+| N3 | Two players with different quest states talk to the same NPC | Dialogue is per player. The NPC faces the latest speaker, and neither conversation blocks the other. |
+| N4 | Player disconnects mid-dialogue | No effect is applied until the server has processed the choice. `TurnIn` is a single atomic `QuestService` transaction (§20.7), so a half-finished conversation can never pay out. |
+| N5 | NPC is moved by an event override (§19.5) while holding a quest marker | The marker and waypoint follow the NPC. Turn-in works at the override location, and the NPC returns to its anchor when the event ends. |
+| N6 | King Ratbeard during `EVT_007` | Not talkable while in boss state (prompt label "Busy being dramatic"). Hearts and gifts are suspended until the event ends. |
+| N7 | Baron Von Bistro before and after `QST_STY_029` | The dialogue tree switches pools on the flag `baron_friend`. Hearts unlock only after the flag is set, and earlier Heart points are not retroactive (the Baron "was being difficult"). |
+| N8 | Player stands on an NPC's waypoint | The NPC waits 3 s, says a polite bark, then poofs to the next node (§19.7). It never pushes players. |
+| N9 | Gift exploit attempts (spamming remotes, gifting un-cooked dishes) | The server checks `recentDishes` (served ≥ GOOD in the last 24 h) and `lastGiftDay[npc] < today`. Failing requests are dropped and rate-limit strikes are logged (§29). |
+| N10 | Missing localization key | The EN source string is shown, and an `mmr_loc_missing` analytics event fires with the key. The UI never shows a raw key. |
+| N11 | Player is In Combat or targeted by a level-5 customer near an NPC | The prompt is hidden. If dialogue was already open, it auto-closes and the player gets the canon 1.5 s invulnerability (E2). |
+| N12 | Low-end mobile device | The client visual cap drops from 25 to 12 named NPCs (nearest first; quest-marker NPCs are prioritized). Barks still show as bubbles above impostors. |
+| N13 | Player is in a different chapter from a friend in the same server | NPC positions and lines that depend on the chapter are client-local overlays. The shared server proxy stays at the NPC's neutral anchor, so each player sees their own story state. |
+
+### 19.11 Dependencies
+
+- **§18 / §36.10 / §36.11:** building interiors, anchors, waypoint graphs and event schedules (`EVT_` overrides).
+- **§20:** quest IDs, states and markers. Dialogue effects call `QuestService` (`OfferQuest`, `TurnIn`, `TalkObjective`).
+- **§12 / §36.3 / §13:** mutation parts used in NPC morphs; `MorphAssemblyService` builds the visuals.
+- **§25 / §26 / §36.14 / §36.15:** signature meshes, idle animations, blip voices and bark SFX (§36.14/§36.15 assign IDs).
+- **§24:** dialogue box, heart row, quest markers and the "Friends of Morph City" journal tab.
+- **§27 / §28 / §29:** service hosting, the `profile.npc` schema, and remote rate limits.
+- **§31:** analytics events `mmr_npc_talk {npcId, nodeId}`, `mmr_npc_gift {npcId, recipeId, fav}`, `mmr_npc_heart_up {npcId, hearts}`,
+  `mmr_npc_bark_seen {npcId}` (sampled at 5 %).
+
+### 19.12 Acceptance Criteria
+
+- **AC-19-01:** The rendered database contains ≥ 110 named NPCs (currently 115). Every canon `NPC_001`–`NPC_030` keeps its canon name, morph, role and location, and each NPC appears in exactly one district table.
+- **AC-19-02:** Every NPC row lists ≥ 1 quest possibility, and every listed `QST_` ID resolves to a row in §20 (enforced by `render_npcs_quests.py --check`).
+- **AC-19-03:** Pressing Talk within 10 studs opens the correct opening node in ≤ 200 ms server round-trip at p95. A request from > 12 studs is rejected server-side.
+- **AC-19-04:** Only one interaction prompt is visible at a time, and it belongs to the nearest NPC within a 60° view cone. Prompts are hidden 100 % of the time while the player is In Combat.
+- **AC-19-05:** Opening-line priority follows §19.3: with a ReadyToTurnIn quest the turn-in line is shown first in 100 % of tests, and random lines never repeat any of the last 3 shown.
+- **AC-19-06:** A client-forged `NPC.Choose` for a branch whose conditions fail produces no effect and no reward, and is logged.
+- **AC-19-07:** SERVICE NPCs are present and interactable at all four day phases, and every service screen opens from its NPC.
+- **AC-19-08:** Hearts: the first daily chat grants exactly +5 once per UTC day per NPC. Gifting twice to the same NPC on one UTC day grants points once. The 5♥ reward (title + 1 Morph Capsule) is granted exactly once per NPC, even across reconnects.
+- **AC-19-09:** With 8 players spread over 3 districts, the server holds ≤ 115 named-NPC proxies and ≤ 20 moving proxies per district, and server NPC movement costs ≤ 1.5 ms per frame (MicroProfiler p95).
+- **AC-19-10:** A mid-tier phone client renders ≤ 25 named-NPC visuals (≤ 12 in low-end mode). Visuals beyond 60 studs use impostors, and those beyond 150 studs are destroyed.
+- **AC-19-11:** Every visible NPC string resolves through a `LocalizationTable` key of the form `npc.<NPC_ID>.<node>.<nn>`. The pseudo-localization build (+30 % length) shows no clipped dialogue lines.
+- **AC-19-12:** Quest markers use shape plus color (!, ?, ↻, ★, …) and remain distinguishable in the three color-blind simulation modes.
+- **AC-19-13:** No NPC dialogue line contains real brands, real people, copyrighted characters, violence beyond cartoon slapstick, or mean-spirited humor (content review checklist signed off before Beta).
+- **AC-19-14:** NPCs blocked by a player for more than 3 s poof to their next waypoint, and no NPC ever physically pushes or traps a player.
+
+
+## 20. Quests
+
+> Quests turn "cook, earn, morph" into a guided, funny journey. This section covers the quest runtime (§20.1–§20.7),
+> the ten-chapter **story campaign** (§20.8), and the **quest database** (§20.9) of 157 fully specified quests.
+> NPCs are defined in §19, events in §36.11, tiers in §36.12, recipes in §6 and mutation parts in §36.3. Rewards use
+> only the canon C17.4 vocabulary: MB, MS, RT, XP, Morph Capsules, specific `MUT_` parts, `RCP_` recipe unlocks,
+> trophies `FRN_901`–`FRN_910`, skill points, stat respec tokens, and plain-text titles, emotes and color palettes.
+
+### 20.1 Purpose
+
+- **Teach** each system at the moment it unlocks (tutorial, district/building access quests, first-hire quests).
+- **Pace** progression: every tier has a story chapter, a City Hall permit (TIER_04+), and a handful of challenges.
+- **Pull players into the city**: about a third of quests need a city visit, an event, or an NPC conversation.
+- **Give every session a goal**: 3 dailies plus 5 weeklies, so a 10-minute session always finishes something.
+- **Tell a lighthearted story** about becoming Morph City's greatest restaurateur. The rival is beaten by cooking, never by combat.
+
+### 20.2 Rules & Mechanics — quest types and lifecycle
+
+| Code | Type | Repeatable | Giver / turn-in | Abandon? | Concurrency |
+|---|---|---|---|---|---|
+| TUT | Tutorial | no | Nana Gristle (`NPC_001`) and the building NPCs named in each row; auto turn-in | no (skip offered, §32) | sequential |
+| STY | Story | no | chapter cast; turn in to the giver | no (can untrack) | one chapter at a time, quests in order |
+| DLY | Daily | daily pool | Job Board poster NPC (portrait only); auto-claim in journal | no; **reroll** instead | 3 slots |
+| WKY | Weekly | weekly pool | Job Board poster NPC; auto-claim | no; weekly reroll | 5 slots |
+| CHF | Cooking challenge | no | giver NPC | yes | up to 10 non-story quests active in total [TUNABLE] |
+| CBT | Combat challenge | no | giver NPC | yes | shared cap of 10 |
+| RPR | Repair challenge | no | giver NPC | yes | shared cap of 10 |
+| EXP | Exploration challenge | no | giver NPC | yes | shared cap of 10 |
+| EMP | Employee challenge | no | giver NPC | yes | shared cap of 10 |
+| RST | Restaurant expansion (incl. permits) | no | Mayor/Bolt/etc. | permits: no; others: yes | shared cap of 10 |
+
+```mermaid
+%% diagram: quest-lifecycle
+stateDiagram-v2
+    [*] --> Locked
+    Locked --> Available: prerequisites met (level, tier, quests, district)
+    Available --> Active: accept at NPC or journal
+    Active --> ReadyToTurnIn: all objectives complete (NPC turn-in quests)
+    Active --> Completed: all objectives complete (auto-claim quests)
+    ReadyToTurnIn --> Completed: talk to turn-in NPC
+    Active --> Failed: timer expired or fail condition hit (timed quests only)
+    Failed --> Available: 60 s retry cooldown, no penalty
+    Active --> Available: abandoned (progress reset)
+    Active --> Expired: daily or weekly reset passes
+    Completed --> [*]: rewards granted once (idempotent key)
+```
+
+**Progress rules**
+
+1. **Server-only progress.** Objectives advance only from server-side gameplay signals (§20.3). The client never reports
+   progress.
+2. **No retroactive counting** for count objectives: progress starts at acceptance. **State objectives** (`ReachLevel`,
+   `ReachReputation`, `ReachAtmosphere`, `UpgradeTier`, `OwnEmployees`) are evaluated immediately on accept, so they
+   can already be true.
+3. **Co-op attribution (§21).** Cook, serve, calm, defeat and repair objectives credit the player who performed the
+   action, in any restaurant. `EarnMB`, reputation, atmosphere and staffing objectives count only for the restaurant
+   owner. Guests never progress the owner's story quests.
+4. **Multi-step objectives** are ordered unless marked "(any order)". The journal shows the current step plus a
+   collapsed list.
+5. **Recipe Loan rule.** When a STY or CHF objective names a specific `RCP_` the player doesn't know yet, and the player's
+   level ≥ that recipe's unlock level, accepting the quest teaches the recipe permanently for free (counts as a C17.4
+   recipe-unlock reward). Required stations are never granted. The quest card shows "Needs `STN_…`" with a shortcut to
+   Restaurant Supplies (`BLD_03`).
+6. **District gates.** A quest whose location is in a locked district stays **Locked** with the tooltip "Unlocks at L*n*"
+   (canon §C16.1).
+
+### 20.3 Objective grammar (typed objectives)
+
+Objectives are typed records `{type, params, target, progress}` written in the database as `Type(params, target)`.
+`⁺` after a target means it scales with the player's tier at accept time: `round(N × (1 + 0.15 × (T − 1)))` [TUNABLE].
+Quality qualifiers: `≥GOOD` / `PERFECT` (§C8). `S≥n` means customer satisfaction ≥ n (§C11.3).
+
+| Objective type | Parameters | Advanced by (server signal) | Validation notes |
+|---|---|---|---|
+| `TakeOrder` | n | `OrderService.OrderTaken` | tutorial only |
+| `CookRecipe` | recipe, n, quality? | `CookingService.DishCompleted` | dish must be plated and served (not just cooked) for count > 1, to stop trash-farming |
+| `CookCategory` | category or "distinct k", n, quality? | `CookingService.DishCompleted` | category from the recipe ID (§C10) |
+| `CookQuality` | grade, n | `CookingService.DishCompleted` | any recipe |
+| `ServeCustomers` | n, condition? | `OrderService.OrderServed` | condition e.g. "S≥80", "table service", "≥ 2 employees assigned" |
+| `ServePersonality` | `PER_` or "distinct k", n, S≥? | `CustomerAIService.CustomerPaid` | only rolled or required if the personality is in the player's current spawn table (§9) |
+| `AchieveSatisfaction` | threshold, n | `CustomerAIService.CustomerPaid` | uses final S after modifiers |
+| `EarnMB` | amount | `EconomyService.Credit` (source ∈ sales, tips, offline) | quest rewards never count toward EarnMB |
+| `CalmCustomers` | n, ability? | `CustomerAIService.Deescalated` | a customer counts once per visit |
+| `DefeatHostiles` | n, location/event? | `CombatService.TargetDizzied` | hostile customers, event hostiles, training dummies when stated |
+| `RepairObjects` | n, state/grade/location? | `RepairService.RepairCompleted` | an object counts once per damage instance (E3 rebuild counts once) |
+| `MaintainCleanliness` | value, duration | `RestaurantService.CleanlinessTick` | timer resets if K < value |
+| `VisitBuilding` | `BLD_` or "any distinct k" | `QuestService.Dialogue.ZoneEntered` | interior volume trigger, server-checked position |
+| `DiscoverSecret` | secret key | `QuestService.Discovery.SecretFound` | secret keys are listed in §18 (story props) or by canon §C13.8 |
+| `DiscoverLocation` | kind, n | `QuestService.Discovery.LocationDiscovered` | metro stations, landmarks, exhibits, collectibles |
+| `Travel` | mode (Metro / Pigeon Taxi), n distinct districts | `QuestService.Discovery.TravelCompleted` | |
+| `TalkToNPC` | `NPC_` or "distinct k" | `QuestService.Dialogue.TalkObjective` | dialogue node must be reached server-side |
+| `CompleteEvent` | `EVT_` or "any", stage/score? | `CityEventService.ParticipationAwarded` | Bronze participation or better unless stated |
+| `HireEmployee` | role or `EMP_001`, n | `EmployeeService.Hired` | |
+| `AssignRole` | role or "distinct k" | `EmployeeService.Assigned` | |
+| `TrainEmployee` | n sessions | `EmployeeService.Trained` | |
+| `RaiseMorale` | n employees, threshold | `EmployeeService.MoraleChanged` | state check: true at the moment of evaluation |
+| `OwnEmployees` | n, filter? | `EmployeeService.RosterChanged` | state objective |
+| `UpgradeTier` | `TIER_` | `BuildingService.TierUpgraded` | state objective |
+| `UpgradeStation` | level, n | `BuildingService.StationUpgraded` | |
+| `PlaceFurniture` | n, category? | `BuildingService.Placed` | placing, removing and re-placing the same item counts once |
+| `FillMenu` | n slots, min distinct categories? | `RecipeService.MenuChanged` | state objective; counts only recipes the player can currently cook (not SOLD OUT) |
+| `ReachAtmosphere` | value | `RestaurantService.AtmosphereChanged` | state objective |
+| `ReachReputation` | stars | `RestaurantService.ReputationChanged` | state objective |
+| `PurchaseStock` | `ING_`, crates | `InventoryService.StockPurchased` | special stock only |
+| `EquipMutation` | `MUT_` / "k slots" / family | `MutationService.Equipped` | |
+| `UpgradeMutation` | part or "any", n | `MutationService.Upgraded` | |
+| `UseAbility` | `ABL_` or "any mutation", n, outcome? | `CombatService.AbilityResolved` | outcome e.g. "blocked a hit", "successful dodge" |
+| `CollectOffline` | n reports, minHours? | `OfflineEarningsService.Claimed` | idempotent by `reportId` (§C15) |
+| `WinArenaMatch` | n, mode? | `MultiplayerService.ArenaResult` | every arena objective also accepts the non-PvP **Bash the Bots** (PvE) and **Cook-Off** race modes (§21), so **PvP is never required** |
+| `DeliverOrders` | n, destination? | `OrderService.DeliveryCompleted` | Delivery Depot missions (§18) or quest drop-offs |
+| `ReachLevel` | L | `ProgressionService.LevelUp` | state objective |
+| `MoveTo` | marker | `QuestService.Dialogue.ZoneEntered` | tutorial only |
+
+### 20.4 UI — journal, tracking, markers
+
+- **Quest Journal** (full-screen; hotkey J / gamepad Select / mobile scroll icon). Tabs: **Story** (chapter cards, art
+  thumbnails, "Previously on…" recap read by Nana's hologram), **Daily & Weekly** (slots, reset countdowns in local time,
+  reroll button), **Challenges** (filter chips TUT · CHF · CBT · RPR · EXP · EMP · RST), **Completed**, and
+  **Friends of Morph City** (§19.6).
+- **Quest card:** name, giver portrait, short description, objective checklist with progress bars ("7/10"), timer chip
+  for timed quests, rewards row (currency icons + item thumbnails with rarity shape), Track toggle, Abandon (where allowed).
+- **HUD tracker:** up to **3** tracked quests [TUNABLE] (story auto-tracked first). Each shows the current step only. Tapping it
+  sets a **waypoint** that draws an arrow-trail on the ground (client-only) and pins the map.
+- **Markers:** ! ? ↻ ★ … above NPCs and on the minimap (§19.4). Completed objective = check + chime + a small confetti
+  burst (reduced-FX: chime only).
+- **Toasts:** "Quest updated" (≤ 1 per 2 s, merged), "Quest complete!" with a reward fly-out into the currency counters.
+  Toasts never cover the order queue or the patience meters (§24 safe zones).
+- **Accessibility:** every timer has a text countdown, colors are paired with icons, and the "Story Assist" toggle
+  (§20.7) is reachable from any failed timed quest.
+
+### 20.5 Daily & weekly rotation and rerolls
+
+| Rule | Daily | Weekly |
+|---|---|---|
+| Slots | **3** | **5** |
+| Reset | 00:00 UTC every day (§C3) | Monday 00:00 UTC |
+| Draw | deterministic seeded draw from the eligible pool: `seed = hash(UserId, dayIndex, POOL_VERSION)` | `seed = hash(UserId, weekIndex, POOL_VERSION)` |
+| Eligibility | unlock level, district unlocked, required systems (e.g. employees, Arena opt-in), personality in spawn table | same |
+| Diversity | ≤ 1 per category tag (cook / serve / combat / repair / explore / staff) per day; no repeats from yesterday | ≤ 2 per category tag; no repeats from last week |
+| Free reroll | **1 per UTC day** (any one slot) | **1 per week** |
+| Extra rerolls | 0.01 × IncH(T) MB each, max 3 per day [TUNABLE]. MB only, never Robux (§23) | 0.04 × IncH(T) MB, max 1 per week |
+| Social exemption | — | co-op/social weeklies (`QST_WKY_013`, `QST_WKY_014`) can be rerolled free at any time by players who prefer solo play |
+| Completion bonus | **Daily Trio** — all 3 claimed: 1 Morph Capsule | **Weekly Sweep** — all 5 claimed: 2 Morph Capsules + 1 RT |
+| Expiry | unfinished dailies expire at reset (no penalty) | unfinished weeklies expire at reset (no penalty) |
+
+The draw is stored when the player first loads after reset (`profile.quests.daily = {dayIndex, slots, rerollsUsed}`).
+Reconnecting the same day restores the same slots and progress, and rerolling replaces one slot's quest ID while
+keeping the `dayIndex`.
+
+### 20.6 Variables — reward scaling [TUNABLE]
+
+**Notation.** `IncH(T)` = canon net MB per active hour at tier T (§C4.4). `XPR(L)` = `900 × 1.045^(L−1)` (§C5.1).
+Each one-time quest carries a reference tier `t` and level `l`:
+`MB = f_MB × IncH(t) × P_MB(t)` and `XP = f_XP × XPR(l) × P_XP(t)`. Values are rounded to friendly numbers
+(< 100 → 5, < 1,000 → 10, < 10,000 → 50, < 100,000 → 100, else 1,000). `P_MB` / `P_XP` are **tier pacing factors**
+(table below). Tiers 2–4 last only 2–7 hours (§C4.4) yet hold many teaching quests, while tiers 8–10 last 25–80 hours,
+so a constant fraction would either flood the early game or starve the late game. Daily and weekly rewards scale with
+the player's **current** T and L, snapshotted at accept, so upgrading mid-quest never changes the payout.
+
+| Quest type | f_MB | f_XP | MS | RT | Other |
+|---|---|---|---|---|---|
+| TUT | fixed per §32.5: 600 MB total (500 MB before `QST_TUT_011`) | fixed per §32.5: ≈ 360–380 XP (`QST_TUT_007` tops up to Level 2) | 10 | — | `MUT_145` / `MUT_144` / `MUT_153` choice; 1 Morph Capsule; 2 titles; 1 emote |
+| STY (regular / chapter finale) | 0.15–0.20 / 0.30–0.40 | 0.30 / 0.60 | 2×T to 10×T | from Ch. 3: 1–15 (finale Ch. 10: 50) | finales: 1 skill point; trophies, parts, titles |
+| DLY (no P factor) | 0.02 | 0.25 (canon example) | 2 + T | — | Daily Trio bonus: 1 Morph Capsule |
+| WKY (no P factor) | 0.08 | 0.50 | 5 × T | 1 + ⌊(T−1)/4⌋ | Weekly Sweep: 2 Morph Capsules + 1 RT |
+| CHF / CBT / RPR / EXP / EMP | 0.10–0.25 | 0.20–0.40 | 3 to 60 | late-game: 1–5 | trophies, parts, palettes, titles |
+| Legendary Recipe quests (CHF_011–015) | 0.30 | 0.50 | 80–150 | 10–25 | the `RCP_LEG_` recipe |
+| RST permits / other RST | 0.15 / 0.10 | 0.50 / 0.20 | 3 × T | — | permit flag (a gate, not a reward item) |
+
+**Daily and weekly reward values by tier** (XP shown at each tier's entry level; generated):
+
+| Tier | Entry L | IncH (MB/h) | Daily MB (0.02·IncH) | Daily XP (0.25·XPR) | Daily MS (2+T) | Weekly MB (0.08·IncH) | Weekly XP (0.5·XPR) | Weekly MS (5×T) | Weekly RT |
+|---|---|---|---|---|---|---|---|---|---|
+| T1 · `TIER_01` | 1 | 630 | 15 | 220 | 3 | 50 | 450 | 5 | 1 |
+| T2 · `TIER_02` | 5 | 1,080 | 20 | 270 | 4 | 85 | 540 | 10 | 1 |
+| T3 · `TIER_03` | 10 | 1,730 | 35 | 330 | 5 | 140 | 670 | 15 | 1 |
+| T4 · `TIER_04` | 18 | 3,100 | 60 | 480 | 6 | 250 | 950 | 20 | 1 |
+| T5 · `TIER_05` | 26 | 5,400 | 110 | 680 | 7 | 430 | 1,350 | 25 | 2 |
+| T6 · `TIER_06` | 35 | 9,600 | 190 | 1,000 | 8 | 770 | 2,000 | 30 | 2 |
+| T7 · `TIER_07` | 45 | 17,400 | 350 | 1,550 | 9 | 1,400 | 3,100 | 35 | 2 |
+| T8 · `TIER_08` | 56 | 32,800 | 660 | 2,550 | 10 | 2,600 | 5,050 | 40 | 2 |
+| T9 · `TIER_09` | 68 | 63,700 | 1,250 | 4,300 | 11 | 5,100 | 8,600 | 45 | 3 |
+| T10 · `TIER_10` | 80 | 120,500 | 2,400 | 7,300 | 12 | 9,650 | 14,600 | 50 | 3 |
+
+**Budget check** (generated from the database). For each tier: total one-time quest MB divided by the income earned
+while in that tier (`IncH × hours in tier`, from the cumulative-hours column of §C4.4), and total one-time quest XP
+divided by the XP needed to cross the tier's level band (§C5.1). Targets [TUNABLE]:
+
+- `TIER_01` is the tutorial onboarding grant (§32.5), deliberately generous: it pays for the first upgrade and leaves the player at Level 2.
+- `TIER_02`–`TIER_04` allow ≤ 25 % MB / ≤ 20 % XP, a deliberate early-session boost.
+- `TIER_05`+ allow ≈ 8 % MB / ≈ 12 % XP.
+- For a typical 1.5 h/day player, dailies add ≈ 4 % and weeklies ≈ 4 % of income. One-time + repeatable quests
+  therefore stay near the canon ~15 % "quests + events" share from mid-game on; events are budgeted in §36.11.
+
+| Tier | P_MB | P_XP | Hours in tier | Income in tier (MB) | One-time quests | Quest MB | MB share | XP to cross band | Quest XP | XP share |
+|---|---|---|---|---|---|---|---|---|---|---|
+| T1 · `TIER_01` | ×0.3 | ×0.15 | 1 | 630 | 20 | 815 | 129.4 % | 1,098 | 680 | 61.9 % |
+| T2 · `TIER_02` | ×0.3 | ×0.14 | 2 | 2,160 | 13 | 515 | 23.8 % | 2,563 | 510 | 19.9 % |
+| T3 · `TIER_03` | ×0.35 | ×0.18 | 4 | 6,920 | 21 | 1,545 | 22.3 % | 8,250 | 1,475 | 17.9 % |
+| T4 · `TIER_04` | ×0.4 | ×0.21 | 7 | 21,700 | 20 | 3,140 | 14.5 % | 16,491 | 2,475 | 15.0 % |
+| T5 · `TIER_05` | ×0.47 | ×0.33 | 11 | 59,400 | 13 | 4,890 | 8.2 % | 35,347 | 4,180 | 11.8 % |
+| T6 · `TIER_06` | ×0.8 | ×0.6 | 15 | 144,000 | 8 | 11,520 | 8.0 % | 75,512 | 8,800 | 11.7 % |
+| T7 · `TIER_07` | ×1.35 | ×1.0 | 20 | 348,000 | 6 | 26,900 | 7.7 % | 162,549 | 18,550 | 11.4 % |
+| T8 · `TIER_08` | ×1.9 | ×1.4 | 25 | 820,000 | 5 | 65,450 | 8.0 % | 355,214 | 41,500 | 11.7 % |
+| T9 · `TIER_09` | ×2.5 | ×1.7 | 35 | 2,229,500 | 5 | 175,200 | 7.9 % | 708,673 | 83,750 | 11.8 % |
+| T10 · `TIER_10` | ×3.4 | ×2.8 | 80 | 9,640,000 | 7 | 717,500 | 7.4 % | 2,953,708 | 327,900 | 11.1 % |
+
+**Skill points.** Quests grant at most **15** skill points in total (§14 budget: levels 99 + achievements 10 + milestones
+6 + quests ≤ 15). The database grants 12: one per story chapter finale, one for the epilogue, and one for
+the final Legendary Recipe quest.
+
+### 20.7 Failure, abandon, retry — and Roblox implementation
+
+**Timed quests**
+
+- The timer is server-side (`os.time()`). Shift-style challenges begin when the player presses **Start Challenge** in
+  the journal or at the NPC, not on accept, so accepting and walking away is never punished.
+- The timer runs only while the player is online and inside the required location (their restaurant, a district, an
+  event zone). Leaving pauses it for up to 60 s; staying away longer fails the attempt.
+- **Fail** → state `Failed` → 60 s cooldown [TUNABLE] → `Available`. There is **no currency, item or XP penalty, ever**. Only the
+  timed attempt's progress resets; untimed steps already completed in the same quest stay completed.
+- **Disconnect / server shutdown** during a timed attempt voids the attempt (no fail count, no cooldown).
+- **Story Assist:** after 3 failed attempts of the same STY or TUT step, the player may toggle Story Assist for that step
+  (+50 % time, −20 % count targets rounded up, same rewards) [TUNABLE]. The story can always be finished (§26.4).
+
+**Event-dependent quests**
+
+- Non-story event quests (e.g. `QST_EXP_006`) are offered only while their event is active or scheduled within the
+  next 24 h. Progress **persists across event occurrences** and they never fail.
+- Story quests that need an event (`QST_STY_019`, `QST_STY_022`, `QST_STY_031`, `QST_STY_032`) open a **Story Replay**
+  instance if the live event isn't running within 60 min of the player starting the step. Story Replay is a solo or
+  party instance of the event's script that grants only the quest objective, not the event's own rewards. §36.11 provides
+  the replay mode per event (§36.11).
+
+**Abandon / retry**
+
+- Challenge quests (CHF/CBT/RPR/EXP/EMP, non-permit RST) can be abandoned from the journal (confirmation dialog).
+  Progress resets, and the quest can be re-accepted immediately.
+- STY, TUT and permit quests can't be abandoned, only untracked. Dailies and weeklies are rerolled, not abandoned (§20.5).
+
+**Server validation & duplicate-reward prevention**
+
+```lua
+--!strict
+-- QuestService (server). Rewards come only from server data; clients send IDs, never values.
+export type QuestState = {
+	id: string, key: string, progress: {number}, acceptedAt: number,
+	timerEndsAt: number?, tierSnap: number, levelSnap: number, status: string,
+}
+
+local function questKey(def, slotInfo): string
+	if def.kind == "DLY" then return ("D:%d:%d:%s"):format(slotInfo.dayIndex, slotInfo.slot, def.id) end
+	if def.kind == "WKY" then return ("W:%d:%d:%s"):format(slotInfo.weekIndex, slotInfo.slot, def.id) end
+	return def.id                                    -- one-off quests: the ID itself, claimable once forever
+end
+
+function QuestService.Claim(player: Player, key: string)
+	return PlayerDataService.Update(player, function(profile)  -- session-locked UpdateAsync wrapper (§28)
+		local q = profile.quests.active[key]
+		if not q or q.status ~= "Completed" then return false, "NotComplete" end
+		if profile.quests.claimed[key] then return false, "AlreadyClaimed" end
+		local bundle = QuestRewards.Build(QuestDefs[q.id], q.tierSnap, q.levelSnap)  -- §20.6 formulas
+		local ok = EconomyService.GrantBundle(profile, bundle, "quest:" .. key)      -- idempotent key, txn log
+		if not ok then return false, "GrantFailed" end
+		profile.quests.claimed[key] = os.time()   -- one-offs: kept forever; repeatables: ring buffer of last 200
+		profile.quests.active[key] = nil
+		return true
+	end)
+end
+```
+
+- Remotes (rate-limited per player): `Quest.Accept(questId)` 2/s · `Quest.Claim(key)` 2/s · `Quest.Reroll(slot)` 1/s ·
+  `Quest.Track(key, on)` 4/s · `Quest.StartChallenge(key)` 1/s. Server → client: `Quest.State(snapshot)`,
+  `Quest.Progress(key, idx, value)` (batched at most every 0.5 s).
+- Anti-farm: a customer, dish ticket, damaged object or hostile counts **once** per objective. Self-ordered dishes don't
+  exist (orders come from `OrderService`), and trash-binned dishes never count.
+- Claims and the profile write are one session-locked update. A reward bundle ≥ 10,000 MB triggers an immediate save
+  (canon §C3). `EconomyService` rejects a repeated idempotency key (last 500 kept), so double-taps, reconnects and
+  cross-server races can't pay twice (E11-style).
+- Content updates: quest IDs are never reused. If a definition's target drops, active progress is clamped and
+  re-evaluated. If a quest is retired, active instances with ≥ 50 % progress auto-complete with their rewards; the
+  rest are removed with an apology toast and 1 Morph Capsule.
+- Analytics (§31): `mmr_quest_accept`, `mmr_quest_progress` (sampled), `mmr_quest_complete {questId, durationS,
+  attempts}`, `mmr_quest_fail {questId, reason}`, `mmr_quest_reroll {slot, paid}`, `mmr_story_chapter {chapter}`.
+
+### 20.8 Progression — the story campaign "From Shack to Legendary"
+
+Ten chapters, one per restaurant tier (canon §C17.3). Each chapter opens when the player reaches its tier and
+finishes the previous chapter. Chapter quests unlock in order. Finales grant a skill point and a signature reward.
+Recurring jokes: the Baron's offers keep getting smaller ("three MB and a coupon" → "a coupon" → "half a coupon"),
+Nana's hologram flickers at dramatic moments, and Old Man Pigeon always already knew.
+
+#### Chapter 1 — "Grease Is the Word" (`TIER_01`, L1–4) · `QST_STY_001`–`QST_STY_003`
+- **Synopsis:** You inherit Nana Gristle's crumbling shack. Baron Von Bistro makes an insulting offer, you refuse, and he
+  "anonymously" tips off the health inspector.
+- **Set pieces:** the Baron's contract arrives as a paper airplane that bonks you on the nose. Nana's recipe tin is hidden
+  inside the cold fryer, guarded by one very offended pickle. During the inspection, Inspector Grimewell sniffs every
+  surface while Sniffles hides in your trash can, sneezing.
+- **Cast:** `NPC_001`, `NPC_003`, `NPC_028`, `NPC_022`. **Unlocks:** `RCP_DRK_002` Lemonade; finale skill point.
+
+#### Chapter 2 — "Diner-Mite" (`TIER_02`, L5–9) · `QST_STY_004`–`QST_STY_006`
+- **Synopsis:** Le Fancy Fin fires free canapés at your queue from a sample cannon. Meanwhile your crates vanish
+  overnight, and tiny crowned footprints lead to a manhole.
+- **Set pieces:** canapés splat on customers' faces (they need calming). Old Man Pigeon's informants arrange
+  breadcrumbs into a map. Each footprint has a tiny crown imprint.
+- **Cast:** `NPC_003`, `NPC_031`, `NPC_033`, `NPC_017`, `NPC_059`, `NPC_025`, `NPC_097`. **Unlocks:** `MUT_235`
+  Pigeon Wings; skill point.
+
+#### Chapter 3 — "Café Society" (`TIER_03`, L10–17) · `QST_STY_007`–`QST_STY_010`
+- **Synopsis:** Madame Fourchette grants your first official rating. The Baron pays Vlogzilla for a bad review, then
+  sends Sniffles to sneeze pepper through your vents. You climb to 3.5★ anyway.
+- **Set pieces:** the whole café holds its breath as Fourchette's neck lowers inch by inch toward a fry. Vlogzilla's
+  live chat rains thumbs-down icons that flip to flame icons on the first bite. Pepper clouds make customers sneeze
+  their soup across the room.
+- **Cast:** `NPC_016`, `NPC_082`, `NPC_021`, `NPC_028`, `NPC_003`. **Unlocks:** title "Café Celebrity"; skill point.
+  Chapter barks point players to Arena access (`QST_CBT_001`, L12) and Lab access (`QST_EXP_002`, L15).
+
+#### Chapter 4 — "Down the Drain" (`TIER_04`, L18–25) · `QST_STY_011`–`QST_STY_013`
+- **Synopsis:** The footprints lead to King Ratbeard, who "borrows" ingredients through the pipes. A Borrowing Treaty
+  ends the raids and reveals who has been buying the borrowed crates: the Baron.
+- **Set pieces:** a throne room built from upturned colanders. The treaty is signed with a ketchup quill and notarized
+  by the Mayor's giant stamp.
+- **Cast:** `NPC_026`, `NPC_107`, `NPC_020`, `NPC_100`, `NPC_101`, `NPC_002`. **Requires:** Mystery Market access
+  (`QST_EXP_003`, L20). **Unlocks:** `MUT_049` Rat Nose, title "Friend of the Sewer Crown"; skill point.
+
+#### Chapter 5 — "Close Encounters of the Fried Kind" (`TIER_05`, L26–34) · `QST_STY_014`–`QST_STY_017`
+- **Synopsis:** Zorp's tour bus parks inside your dining-room wall. The alien tourists find Earth food "too solid",
+  so Professor Saucington and Zorp create the **Alien Cuisine course**.
+- **Set pieces:** a cartoon crash (only the wall's pride is hurt) followed by aliens photographing the ketchup bottle.
+  Zorp's translator glitches and customers order "a medium-rare emotion". Graduation happens in zero gravity, with
+  mortarboards floating away.
+- **Cast:** `NPC_027`, `NPC_086`, `NPC_023`, `NPC_041`, `NPC_009`. **Unlocks:** Alien Cuisine course (every ALN recipe
+  becomes learnable at `BLD_06` at its unlock level, §C10), `RCP_ALN_001`, `MUT_103`; skill point.
+
+#### Chapter 6 — "The Rat King Cometh" (`TIER_06`, L35–44) · `QST_STY_018`–`QST_STY_020`
+- **Synopsis:** The Baron opens a kiosk in the Monster Mall food court and stops paying Ratbeard, who blames the whole
+  city and storms the surface (`EVT_007`). You end it with an apology feast, not a knockout.
+- **Set pieces:** a food-court cook-off with Corndog Cornelius as hype-man. Ratbeard rides a giant rolling cheese wheel
+  down the avenue. At the feast he weeps happy cheese tears into a Bread Bowl in a Bread Bowl.
+- **Cast:** `NPC_014`, `NPC_071`, `NPC_032`, `NPC_030`, `NPC_026`, `NPC_020`. **Unlocks:** `FRN_902` Rat King's Crown
+  Display, `MUT_084` Crystal Ball Eyes (Legendary); Ratbeard becomes an ally; skill point.
+
+#### Chapter 7 — "Five Forks Up" (`TIER_07`, L45–55) · `QST_STY_021`–`QST_STY_023`
+- **Synopsis:** The Food Critic Convention comes to town. Undercover inspectors hide among your customers, and
+  Fourchette offers her legendary five-course tasting challenge.
+- **Set pieces:** every customer wears a fake mustache, so which one is the inspector? Paloma sneezes confetti at
+  Perfect dishes. On the last course, Fourchette's neck rises right through a ceiling tile.
+- **Cast:** `NPC_022`, `NPC_016`, `NPC_082`, `NPC_083`. **Unlocks:** `FRN_903` Critic's Five-Star Plaque, `MUT_038` Kraken
+  Head + `MUT_137` Kraken Core (Legendary); skill point.
+
+#### Chapter 8 — "Poach Perfect" (`TIER_08`, L56–67) · `QST_STY_024`–`QST_STY_026`
+- **Synopsis:** The Baron slips glittery job offers into your staff lockers. He fires Sniffles for being too nice, and
+  Sniffles switches sides, bringing the Baron's master plan: win the deeds to Restaurant Row in a public cook-off.
+- **Set pieces:** a locker-room "poaching" montage, then Sniffles sobbing under a pickle drizzle. The "Mustache Memo"
+  is delivered by forty pigeons in formation.
+- **Cast:** `NPC_007`, `NPC_028`, `NPC_025`, `NPC_017`, `NPC_030`. **Unlocks:** emote "Sniffles Sneeze", `MUT_037` Phoenix Head +
+  `MUT_200` Phoenix Talon Leg (Legendary); skill point.
+
+#### Chapter 9 — "Cook-Off on Restaurant Row" (`TIER_09`, L68–79) · `QST_STY_027`–`QST_STY_029`
+- **Synopsis:** The Baron challenges you (with a too-hot oven mitt) to a cook-off judged by Fourchette. He loses, and his
+  famous mustache falls off: it was fake all along. A Perfect grilled cheese, his childhood favorite, turns the rival
+  into a grumpy friend. Nana reveals she and the Baron's grandmother were bake-off rivals.
+- **Set pieces:** all of Restaurant Row watching from rooftops. The mustache falls in slow motion. The Baron "hates"
+  every bite of his grilled cheese while asking for seconds.
+- **Cast:** `NPC_003`, `NPC_016`, `NPC_002`, `NPC_001`. **Unlocks:** `MUT_178` Golden Chef Hands + `MUT_108` Demon Horns
+  (Legendary), `FRN_905` Baron's Defeated Mustache Portrait; the Baron becomes friendable; skill point.
+
+#### Chapter 10 — "Legendary" (`TIER_10`, L80+) · `QST_STY_030`–`QST_STY_032`, epilogue `QST_STY_033`
+- **Synopsis:** Chef Supreme Omnivora invites you to the **Legendary Chef Tournament** (`EVT_005`). You clear Saffron's
+  qualifiers, and in the finale the Baron, in an apron reading "GRUMPY SOUS-CHEF", cooks at your side. Finishing the
+  final at **any** placement completes the story; placements only change the event's own rewards (§36.11).
+- **Set pieces:** the invitation appears written in sauce on your window. Omnivora tastes with all eight tentacles at
+  once. City-wide confetti cannons fire when the final ends.
+- **Epilogue:** at L90 Nana's hologram sends you to the Museum archives for her last recipe page, which unlocks the final
+  Legendary Recipe quest (`QST_CHF_015`).
+- **Cast:** `NPC_029`, `NPC_087`, `NPC_003`, `NPC_001`, `NPC_018`, `NPC_080`. **Unlocks:** `FRN_910` Omnivora's Signed
+  Apron, a Mythic part of your choice (`MUT_039` Golden Burger Head **or** `MUT_242` Phoenix Wings), title "Legendary Chef";
+  skill points (finale + epilogue).
+
+### 20.9 Quest database
+
+| Type | Code | Count | Minimum |
+|---|---|---|---|
+| Tutorial quests | TUT | 12 | 12 |
+| Story quests (campaign) | STY | 33 | 30 |
+| Daily quest pool | DLY | 25 | 20 |
+| Weekly quest pool | WKY | 14 | 12 |
+| Cooking challenges (incl. Legendary Recipe quests) | CHF | 16 | 10 |
+| Combat challenges | CBT | 11 | 10 |
+| Repair challenges | RPR | 9 | 8 |
+| Exploration challenges | EXP | 15 | 10 |
+| Employee management challenges | EMP | 9 | 8 |
+| Restaurant expansion challenges (incl. City Hall permits) | RST | 13 | 10 |
+| **Total** | — | **157** | 125 |
+
+#### 20.9.1 Tutorial quests — 12 quests
+
+| ID | Name | Description | NPC | Location | Objectives | Prerequisites | Completion conditions | Rewards | Failure conditions |
+|---|---|---|---|---|---|---|---|---|---|
+| `QST_TUT_001` | **Welcome to the Shack** | Nana's hologram flickers on: follow the footprints to your new (old) shack and shove the sticky door. | `NPC_001` Nana Gristle | DST_01 · BLD_17 | 1) MoveTo(footprint trail to your plot) 2) VisitBuilding(BLD_17 — interact with the sticky door) | New profile | Auto-completes on entering the interior | title “Shack Inheritor” | None. Wander > 80 studs away and the hologram pings a waypoint every 20 s. |
+| `QST_TUT_002` | **Your First Order** | A polite Grandma Golem waddles in. Take her order before she knits a sweater out of boredom. | `NPC_001` Nana Gristle | DST_01 · BLD_17 | 1) Greet the scripted customer (PER_013) 2) TakeOrder(1) | QST_TUT_001 | Ticket and patience ring appear on the order rail (order queue unlocked) | no currency — unlocks the order queue (§32.5) | None. The scripted customer's patience is frozen. |
+| `QST_TUT_003` | **Burger 101** | Bun from the pantry, patty from the fridge, flip at the arrow, stack it right. | `NPC_001` Nana Gristle | DST_01 · BLD_17 | 1) Carry ING_BUN (STN_PANTRY) and ING_BEEF_PATTY (STN_FRIDGE) 2) Grill the patty at STN_GRILL (≥ GOOD) 3) CookRecipe(RCP_BRG_001, 1) at STN_ASSEMBLY: bun → patty → bun | QST_TUT_002 | A Basic Burger is assembled; the Level badge appears and the tutorial skip unlocks (§32) | 50 MB · 60 XP | A burned patty triggers Nana's 'That's charcoal, sweetie' and a free retry (no ingredient charge). |
+| `QST_TUT_004` | **Plate It, Serve It** | Plate it and hand it over the serving window. Presentation is 20 percent of… something. | `NPC_001` Nana Gristle | DST_01 · BLD_17 | 1) Plate the burger 2) ServeCustomers(1) via STN_WINDOW | QST_TUT_003 | Grandma receives the dish and eats | 25 MB · 30 XP | None (only one ticket exists, so it can't be mis-served). |
+| `QST_TUT_005` | **Happy Customer, Happy Wallet** | Learn what makes customers happy, then cook for a Polite Demon with fewer hints. | `NPC_001` Nana Gristle | DST_01 · BLD_17 | 1) Read the satisfaction reaction card; collect pay + tip 2) ServeCustomers(1) — Polite Demon (PER_003): RCP_BRG_002 + RCP_DRK_001 3) AchieveSatisfaction(≥70, 1) | QST_TUT_004 | MB counter revealed; Polite Demon pays | 75 MB · 30 XP | If S < 70, Nana explains the satisfaction bar and the Demon politely re-orders (unlimited). |
+| `QST_TUT_006` | **Uh-Oh, Karenosaurus** | The lights flicker. She storms in and orders the impossible. It goes about as well as you'd think. | `NPC_001` Nana Gristle | DST_01 · BLD_17 | 1) ServePersonality(PER_001, 1) — serve her a Cheeseburger 2) Watch the scripted escalation: complain → soggy pickle → table flip | QST_TUT_005 | She turns on the player (hand-off to QST_TUT_007) | 25 MB · 20 XP | None (fully scripted; she cannot leave or damage anything beyond the one table). |
+| `QST_TUT_007` | **Defend the Diner** | Block, dodge, swipe — then calm the splashed Polite Demon before the chaos spreads. | `NPC_001` Nana Gristle | DST_01 · BLD_17 | 1) UseAbility(ABL_003, 2 blocked hits) 2) UseAbility(ABL_004, 1 successful dodge — the soda splashes the Polite Demon) 3) UseAbility(ABL_001, 2 combos) → Karenosaurus Dizzy → apology → Apology Payment 4) CalmCustomers(1, ABL_006 — the Polite Demon) | QST_TUT_006 | Karenosaurus is escorted out; the Demon leaves a 'dinner theater' tip; the player reaches Level 2 | 75 MB · max(50, 210 − current XP) XP · emote “Phew!” | A KO plays 'Seeing Stars', respawns at full HP and restarts the current step. Nothing is ever lost (canon C12.1). |
+| `QST_TUT_008` | **Fix It Up** | She flipped a table on her way out. Grab the hammer, fix the bulb, mop the puddle. | `NPC_001` Nana Gristle | DST_01 · BLD_17 | 1) RepairObjects(1 — the flipped table) 2) Quick-fix the bulb and windows (Atmosphere 22 → 42) 3) Mop the puddle (CLEAN) | QST_TUT_007 | Table Pristine; the first repair is free | 50 MB · 40 XP | None. |
+| `QST_TUT_009` | **Cash In** | Ka-ching! Read your Shift Receipt and open Nana's Inheritance Envelope. | `NPC_001` Nana Gristle | DST_01 · BLD_17 | 1) Interact with the cash register (ANM_066) 2) Read the Shift Receipt and the MB / MS / RT wallet tooltip 3) Open Nana's Inheritance Envelope | QST_TUT_008 | Wallet tooltip closed | 150 MB · 20 XP | None. The envelope amount is the §32.5 balancing lever (Σ tutorial MB − first upgrade price = 400 ± 50 MB). |
+| `QST_TUT_010` | **Your First Mutation** | Mutty McMutface has a free arm on the Starter Pedestal with your name on it. Choose wisely (or randomly — we don't judge). | `NPC_004` Mutty McMutface (with `NPC_039`) | DST_02 · BLD_01 | 1) VisitBuilding(BLD_01) — footprint trail (free Pigeon Taxi if slow) 2) Try on and choose one free part: MUT_145, MUT_144 or MUT_153 3) EquipMutation(chosen part) and test its ability on the Complaint Dummy | QST_TUT_009 | Part equipped (ANM_065 flex). Completion opens the DST_03 Downtown gate (canon tutorial step 10) | 50 MB · 40 XP · 10 MS · one free part (equip-level override): MUT_145 Octopus Arm (Chef) · MUT_144 Crab Claw Arm (Fighter) · MUT_153 Wrench Claw Arm (Repair) | None. The choice is final; all three can be bought later at BLD_01. |
+| `QST_TUT_011` | **Fancy Upgrades** | You have about 525 MB. Make the shack slightly less shack-like — Bolt will install it. | `NPC_006` Bolt Butterworth | DST_01 · BLD_17 (Restaurant Hub → Upgrades) | 1) Return Door home 2) Buy the circled first restaurant upgrade (§15/§32, priced 150–250 MB) 3) Watch Bolt install it (PlaceFurniture if placeable) | QST_TUT_010 | First upgrade purchased and installed | 50 MB · 30 XP | If the balance is somehow below the circled item's price, Nana's 'emergency savings' tops it up to exactly that price (once). |
+| `QST_TUT_012` | **Hire Help** | Ollie the Octopus Intern knocks with a referral from Ms. Hirewell. He is all arms and enthusiasm. | `NPC_001` Nana Gristle (with `NPC_007`) | DST_01 · BLD_17 (front door) | 1) HireEmployee(EMP_001 'Ollie' the Octopus Intern — 0 MB) 2) AssignRole(ROLE_CHEF) at the grill 3) Watch Ollie cook two patties at once for a walk-in 4) View the Offline Income Preview card | QST_TUT_011 | Ollie hired and assigned; preview shows ≈ 315 MB per 2 h offline for the current setup | 50 MB · 40 XP · 1 Morph Capsule · title “Restaurant Owner (Probably)” | None. |
+
+#### 20.9.2 Story quests (campaign) — 33 quests
+
+| ID | Name | Description | NPC | Location | Objectives | Prerequisites | Completion conditions | Rewards | Failure conditions |
+|---|---|---|---|---|---|---|---|---|---|
+| `QST_STY_001` | **A Shark in a Monocle** | The Baron offers to buy your shack for three MB and a coupon. Prove you're staying. | `NPC_003` Baron Von Bistro (with `NPC_028`) | DST_01 (Le Fancy Fin) → BLD_17 | 1) TalkToNPC(NPC_003) 2) ServeCustomers(10) 3) TalkToNPC(NPC_001) — Nana's verdict | QST_TUT_012 | Turn in to NPC_001's hologram | 30 MB · 40 XP · 3 MS · title “Not For Sale” | None. |
+| `QST_STY_002` | **Nana's Recipe Tin** | Nana hid her recipe tin somewhere in the shack. Somewhere greasy. | `NPC_001` Nana Gristle | DST_01 · BLD_17 | 1) DiscoverSecret(nana_recipe_tin — inside the cold fryer, guarded by a pickle) 2) CookRecipe(RCP_SAN_001, 3, ≥GOOD) | QST_STY_001 · L2 | Turn in to NPC_001 | 30 MB · 40 XP · 3 MS · RCP_DRK_002 | None. |
+| `QST_STY_003` | **The Inspector Cometh** | An 'anonymous' tip sends Inspector Grimewell to your door. Keep it clean for 8 minutes. | `NPC_022` Inspector Grimewell (with `NPC_028`, `NPC_003`) | DST_01 · BLD_17 | 1) Start Challenge (8 min timer) 2) MaintainCleanliness(≥75, 8 min) 3) AchieveSatisfaction(≥70, 6) | QST_STY_002 · L3 | Grimewell stamps 'PASSED (barely)'; turn in to NPC_022. Chapter 1 finale | 55 MB · 90 XP · 5 MS · 1 skill point · title “Inspection Survivor” | Timer ends with an objective unmet, or any object Destroyed at the end → Failed (60 s retry; Story Assist after 3). |
+| `QST_STY_004` | **Free Samples, Expensive Problems** | Le Fancy Fin's sample cannon is pelting your queue with canapés. Keep customers happy anyway. | `NPC_003` Baron Von Bistro (with `NPC_031`, `NPC_033`) | DST_01 · BLD_17 | 1) ServeCustomers(20) 2) CalmCustomers(3) | QST_STY_003 · TIER_02 · L5 | Return to NPC_003, who stomps off muttering | 50 MB · 45 XP · 6 MS | None (untimed). |
+| `QST_STY_005` | **The Case of the Missing Crates** | Crates keep vanishing. Dispatch Dot has a theory: tiny nibbles. | `NPC_017` Dispatch Dot (with `NPC_059`, `NPC_025`) | DST_04 · BLD_15 → DST_08 | 1) VisitBuilding(BLD_15) 2) TalkToNPC(NPC_059) 3) TalkToNPC(NPC_025) 4) DiscoverSecret(crowned_footprints — manhole in DST_08) | QST_STY_004 · L8 | Turn in to NPC_017 | 50 MB · 50 XP · 6 MS | None. |
+| `QST_STY_006` | **Pigeon Intelligence Network** | Old Man Pigeon's informants will talk… for snacks. Deliver food to the flock's contacts. | `NPC_025` Old Man Pigeon (with `NPC_097`) | DST_08 · BLD_19 | 1) DeliverOrders(5) 2) TalkToNPC(NPC_097) 3) TalkToNPC(NPC_025) — debrief | QST_STY_005 · L8 | Pigeon reveals 'a rat with a crown'. Chapter 2 finale | 95 MB · 100 XP · 8 MS · 1 skill point · MUT_235 | None. |
+| `QST_STY_007` | **Meet the Fork** | Madame Fourchette will rate your café. Serve well — she's watching from somewhere tall. | `NPC_016` Madame Fourchette (with `NPC_082`) | DST_07 · BLD_14 → BLD_17 | 1) VisitBuilding(BLD_14) 2) TalkToNPC(NPC_016) 3) ServeCustomers(25, average S≥75 over the last 25) | QST_STY_006 · TIER_03 · L10 | Turn in to NPC_016 for your first official rating card | 90 MB · 70 XP · 9 MS · 1 RT | Never fails: serving continues until the rolling last-25 average reaches 75. |
+| `QST_STY_008` | **Going Viral (Gently)** | The Baron paid Vlogzilla to trash your café. Win her over with three flawless visits. | `NPC_021` Vlogzilla (with `NPC_003`) | DST_07 → BLD_17 | 1) TalkToNPC(NPC_021) 2) ServePersonality(PER_009, 3, S≥90) | QST_STY_007 · L11 | Vlogzilla posts a glowing review; turn in to NPC_021 | 90 MB · 75 XP · 9 MS · emote “Selfie Spin” | None (Influencer visits under S 90 just don't count). |
+| `QST_STY_009` | **Sneeze Sabotage** | Sniffles is sneezing pepper through your vents. Survive one chaotic shift. | `NPC_028` Sous-Chef Sniffles (with `NPC_003`) | DST_01 · BLD_17 | 1) Start Challenge (12 min timer) 2) CalmCustomers(5) or DefeatHostiles(5) (combined count) 3) ServeCustomers(15) | QST_STY_008 · L13 | Sniffles tumbles out of the vent; turn in to NPC_028 | 90 MB · 80 XP · 10 MS | Timer expires, or 4 storm-outs during the shift → Failed (60 s retry; Story Assist after 3). |
+| `QST_STY_010` | **One-Star Wonder No More** | Fourchette's verdict: 'promising'. Prove it with a 3.5-star reputation. | `NPC_016` Madame Fourchette | DST_07 · BLD_14 | 1) ReachReputation(3.5★) 2) TalkToNPC(NPC_016) | QST_STY_009 · L15 | Turn in to NPC_016. Chapter 3 finale | 180 MB · 180 XP · 15 MS · 2 RT · 1 skill point · title “Café Celebrity” | None. |
+| `QST_STY_011` | **Pipe Dreams** | Sergeant Rhonda has reports of crates disappearing down manholes. Follow the trail underground. | `NPC_026` Sergeant Rhonda (with `NPC_107`) | DST_03 → DST_09 | 1) TalkToNPC(NPC_107) 2) DiscoverSecret(stolen_crate_pile — DST_09) 3) VisitBuilding(BLD_21) | QST_STY_010 · QST_EXP_003 · TIER_04 · L20 | Auto-completes on entering BLD_21 | 190 MB · 130 XP · 12 MS · 1 RT | None. |
+| `QST_STY_012` | **An Audience with the Sewer King** | King Ratbeard will listen — after a royal snack. | `NPC_020` King Ratbeard (with `NPC_100`, `NPC_101`) | DST_09 · BLD_21 | 1) TalkToNPC(NPC_020) 2) CookRecipe(RCP_SOP_005, 3, ≥GOOD) 3) DeliverOrders(3, destination BLD_21) | QST_STY_011 · L21 | Turn in to NPC_020 | 190 MB · 140 XP · 12 MS · 1 RT | None. |
+| `QST_STY_013` | **The Borrowing Treaty** | Ratbeard will stop 'borrowing' for a weekly cheese delivery — and spills who's been buying his loot. | `NPC_020` King Ratbeard (with `NPC_002`, `NPC_048`) | DST_09 · BLD_21 → DST_03 · BLD_09 | 1) DeliverOrders(10, destination BLD_21) 2) TalkToNPC(NPC_002) — notarize the treaty | QST_STY_012 · L22 | Treaty stamped (it was the Baron!); turn in to NPC_020. Chapter 4 finale | 370 MB · 290 XP · 20 MS · 3 RT · 1 skill point · MUT_049 · title “Friend of the Sewer Crown” | None. |
+| `QST_STY_014` | **Tour Bus Fender-Bender** | Zorp's tour bus parked in your dining room. Through the wall. Fix everything before lunch. | `NPC_027` Zorp (with `NPC_086`) | DST_01 · BLD_17 | 1) Start Challenge (10 min timer) 2) RepairObjects(8) | QST_STY_013 · TIER_05 · L26 | The bus backs out apologetically; turn in to NPC_027 | 380 MB · 270 XP · 15 MS · 2 RT · MUT_103 | Timer expires → Failed; bus damage is reset free of charge before the retry (60 s). |
+| `QST_STY_015` | **Lost in Translation** | Zorp's tourists find Earth food 'too solid'. Satisfy eight of them anyway. | `NPC_027` Zorp (with `NPC_086`) | DST_01 · BLD_17 | 1) ServePersonality(PER_029, 8, S≥80) | QST_STY_014 · L27 | Turn in to NPC_027 | 380 MB · 280 XP · 15 MS · 2 RT | None. While active, PER_029 spawn weight is ×3 in your restaurant. |
+| `QST_STY_016` | **Moon Cheese, Please** | Alien cuisine needs moon cheese. Farmer Fungus knows a guy. The guy knows the moon. | `NPC_023` Farmer Fungus (with `NPC_041`) | DST_02 · BLD_20 | 1) VisitBuilding(BLD_20) 2) TalkToNPC(NPC_041) — settle the pickle-vs-fungus feud 3) PurchaseStock(ING_MOON_CHEESE, 1 crate) | QST_STY_015 · L28 | Turn in to NPC_023 | 510 MB · 290 XP · 15 MS · 2 RT | None. |
+| `QST_STY_017` | **Alien Cuisine 101** | Professor Saucington and Zorp co-teach the city's first Alien Cuisine course. Graduation is in zero gravity. | `NPC_009` Professor Saucington (with `NPC_027`) | DST_03 · BLD_06 | 1) TalkToNPC(NPC_009) — lecture (grants RCP_ALN_001) 2) CookRecipe(RCP_ALN_001, 5, ≥GOOD) 3) TalkToNPC(NPC_027) — graduation | QST_STY_016 · L30 | Sets course_alien = true: every ALN recipe becomes learnable at BLD_06 at its unlock level. Chapter 5 finale | 760 MB · 640 XP · 25 MS · 5 RT · 1 skill point · RCP_ALN_001 (granted at step 1) | None. |
+| `QST_STY_018` | **Food Court Fracas** | The Baron opened a kiosk in Mallory's food court. Out-serve him for a day. | `NPC_014` Mallory Megamall (with `NPC_071`, `NPC_032`) | DST_05 · BLD_12 → BLD_17 | 1) TalkToNPC(NPC_071) 2) ServeCustomers(40, S≥80) | QST_STY_017 · TIER_06 · L35 | The kiosk closes in shame; turn in to NPC_014 | 1,150 MB · 720 XP · 20 MS · 3 RT | None. |
+| `QST_STY_019` | **The Rat King Cometh** | BREAKING: the Sewer King is rolling down the avenue on a giant cheese wheel! Defend the city. | `NPC_030` Anchor Andy (with `NPC_020`, `NPC_026`) | DST_03 (event zone) | 1) CompleteEvent(EVT_007, Bronze+) | QST_STY_018 · L37 | Auto-completes on the participation award (or via Story Replay, §20.7) | 1,150 MB · 790 XP · 20 MS · 3 RT | None (Story Replay opens if the live event isn't running within 60 min). |
+| `QST_STY_020` | **A Crown of Cheese** | Ratbeard was only angry because the Baron stopped paying. Cook him an apology feast. | `NPC_020` King Ratbeard (with `NPC_100`) | DST_09 · BLD_21 | 1) CookRecipe(RCP_SOP_009, 3, PERFECT) 2) DeliverOrders(3, destination BLD_21) 3) TalkToNPC(NPC_020) | QST_STY_019 · L40 | Ratbeard weeps happy cheese tears; turn in to NPC_020. Chapter 6 finale | 2,300 MB · 1,800 XP · 30 MS · 5 RT · 1 skill point · FRN_902 · MUT_084 | None. |
+| `QST_STY_021` | **The Undercover Inspector** | Everyone at the Convention wears a fake mustache. Three are inspectors. Wow all of them. | `NPC_022` Inspector Grimewell | DST_01 · BLD_17 | 1) ServePersonality(PER_025, 3, S≥90) | QST_STY_020 · TIER_07 · L45 | Turn in to NPC_022 | 3,500 MB · 1,850 XP · 25 MS · 4 RT · title “Mustache Detective” | None. PER_025 spawn weight ×2 while active; ABL_064 Super Sniff reveals them. |
+| `QST_STY_022` | **Convention Season** | The Food Critic Convention is in town and every critic wants a bite. | `NPC_016` Madame Fourchette (with `NPC_082`, `NPC_083`) | DST_07 (event zone) | 1) CompleteEvent(EVT_008, Bronze+) | QST_STY_021 · L47 | Auto (or Story Replay) | 3,500 MB · 2,050 XP · 25 MS · 4 RT | None (Story Replay available). |
+| `QST_STY_023` | **Five Forks Up** | Fourchette's tasting challenge: five categories, five Perfect dishes, one very long neck. | `NPC_016` Madame Fourchette (with `NPC_083`) | DST_07 · BLD_14 | 1) ReachReputation(4.5★) 2) CookCategory(distinct 5, 1 each, PERFECT) 3) DeliverOrders(5, destination BLD_14) | QST_STY_022 · L50 | Fourchette's neck goes through the ceiling tile; turn in to NPC_016. Chapter 7 finale | 7,050 MB · 4,650 XP · 40 MS · 8 RT · 1 skill point · FRN_903 · MUT_038 · MUT_137 | None. |
+| `QST_STY_024` | **Poach Perfect** | The Baron is slipping glittery job offers into your staff lockers. Keep your team happy. | `NPC_007` Ms. Hirewell (with `NPC_003`) | DST_03 · BLD_04 → BLD_17 | 1) RaiseMorale(4 employees, ≥80) 2) TrainEmployee(2) | QST_STY_023 · TIER_08 · L56 | Turn in to NPC_007 | 9,350 MB · 4,250 XP · 30 MS · 5 RT | None. |
+| `QST_STY_025` | **Sniffles Switches Sides** | The Baron fired Sniffles for being too nice. He's sobbing in the pickle drizzle outside your door. | `NPC_028` Sous-Chef Sniffles | DST_01 · BLD_17 | 1) TalkToNPC(NPC_028) 2) CookRecipe(RCP_SOP_002, 1, PERFECT) and serve it to Sniffles 3) TalkToNPC(NPC_028) | QST_STY_024 · L58 | Sniffles hands over the Baron's notebook; sets flag sniffles_friend | 9,350 MB · 4,650 XP · 30 MS · 5 RT · emote “Sniffles Sneeze” | None. |
+| `QST_STY_026` | **The Mustache Memo** | The notebook mentions a 'Mustache Memo'. Old Man Pigeon's flock can intercept it. | `NPC_025` Old Man Pigeon (with `NPC_017`, `NPC_030`) | DST_08 · BLD_19 | 1) DeliverOrders(15) 2) TalkToNPC(NPC_017) 3) TalkToNPC(NPC_030) — go public | QST_STY_025 · L60 | Memo revealed: the Baron plans to win Restaurant Row's deeds in a cook-off. Chapter 8 finale | 18,700 MB · 10,100 XP · 50 MS · 10 RT · 1 skill point · MUT_037 · MUT_200 · title “Memo Interceptor” | None. |
+| `QST_STY_027` | **Gauntlet of Garnish** | The Baron slaps you with an oven mitt (it's hot; he regrets it) and demands a cook-off. Train for it. | `NPC_003` Baron Von Bistro (with `NPC_002`) | DST_01 → DST_03 · BLD_09 | 1) TalkToNPC(NPC_002) — register the cook-off 2) CookRecipe(RCP_SEA_010, 3, PERFECT) | QST_STY_026 · TIER_09 · L68 | Turn in to NPC_003 | 23,900 MB · 8,750 XP · 40 MS · 8 RT · MUT_178 | None. |
+| `QST_STY_028` | **Cook-Off on Restaurant Row** | Twelve judges. Fifteen minutes. One Baron. Madame Fourchette keeps score. | `NPC_016` Madame Fourchette (with `NPC_003`) | DST_01 (cook-off stage instance) | 1) Start Challenge (15 min timer) 2) ServeCustomers(12 judges, average S≥90) | QST_STY_027 · L70 | Your average beats the Baron's scripted 89 and his fake mustache falls off; turn in to NPC_016 | 31,800 MB · 12,800 XP · 50 MS · 10 RT · FRN_905 | Timer expires, or average < 90 after 12 judges → Failed (60 s retry; Story Assist after 3). |
+| `QST_STY_029` | **A Grumpy Friendship** | The Baron is sulking. Nana's hologram has a hint: his grandmother's grilled cheese. | `NPC_003` Baron Von Bistro (with `NPC_001`) | DST_01 (Le Fancy Fin) | 1) TalkToNPC(NPC_001) 2) CookRecipe(RCP_SAN_001, 1, PERFECT) and serve it to the Baron 3) TalkToNPC(NPC_003) | QST_STY_028 · L71 | Sets flag baron_friend: the Baron becomes friendable and visits as a regular. Chapter 9 finale | 47,800 MB · 20,000 XP · 60 MS · 12 RT · 1 skill point · MUT_108 · title “Baron's Frenemy” · emote “Monocle Pop” | None. |
+| `QST_STY_030` | **An Invitation Written in Sauce** | Chef Supreme Omnivora has written your name on your window. In sauce. It's an invitation. | `NPC_029` Chef Supreme Omnivora | DST_07 (Grand Culinary Pavilion) | 1) ReachLevel(80) 2) CookRecipe(RCP_LEG_001, 1, ≥GOOD) 3) TalkToNPC(NPC_029) | QST_STY_029 · QST_CHF_011 · TIER_10 · L80 | Turn in to NPC_029 | 61,500 MB · 24,500 XP · 50 MS · 10 RT | None. |
+| `QST_STY_031` | **Qualifier Rounds** | Saffron runs the qualifiers with a magnifying glass and no mercy. | `NPC_087` Sous-Chef Saffron (with `NPC_029`) | DST_07 (event zone) | 1) CompleteEvent(EVT_005, qualifier stage) | QST_STY_030 · L82 | Auto (or Story Replay) | 61,500 MB · 26,700 XP · 50 MS · 10 RT | None (Story Replay available). |
+| `QST_STY_032` | **The Legendary Chef Tournament** | The final. The Baron ties on an apron reading GRUMPY SOUS-CHEF. Omnivora raises a fork in every tentacle. | `NPC_029` Chef Supreme Omnivora (with `NPC_003`, `NPC_087`) | DST_07 (event zone) | 1) CompleteEvent(EVT_005, final stage, any placement) 2) TalkToNPC(NPC_029) | QST_STY_031 · L85 | Story complete; city-wide confetti. Chapter 10 finale | 164,000 MB · 61,000 XP · 100 MS · 50 RT · 1 skill point · FRN_910 · one Mythic part of your choice: MUT_039 Golden Burger Head or MUT_242 Phoenix Wings · title “Legendary Chef” | None (Story Replay available). |
+| `QST_STY_033` | **Nana's Last Recipe** | Nana's hologram flickers: 'One last thing, sweetie. Check the Museum archives.' | `NPC_001` Nana Gristle (with `NPC_018`, `NPC_080`) | DST_06 · BLD_16 | 1) ReachLevel(90) 2) VisitBuilding(BLD_16) 3) TalkToNPC(NPC_080) 4) TalkToNPC(NPC_001) | QST_STY_032 · L90 | Epilogue; unlocks QST_CHF_015 | 61,500 MB · 38,000 XP · 80 MS · 15 RT · 1 skill point · title “Nana's Favorite” | None. |
+
+#### 20.9.3 Daily quest pool — 25 quests
+
+| ID | Name | Description | NPC | Location | Objectives | Prerequisites | Completion conditions | Rewards | Failure conditions |
+|---|---|---|---|---|---|---|---|---|---|
+| `QST_DLY_001` | **Burger Bonanza** | The city is hungry for burgers. Feed it. | `NPC_012` Pinboard Pete | Any (your restaurant) | 1) CookCategory(BRG, 8⁺, served) | L1 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_002` | **Happy Plates** | Fifteen happy customers. Smiles are free; burgers are not. | `NPC_037` Tackatha | Any (your restaurant) | 1) AchieveSatisfaction(≥70, 15⁺) | L1 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_003` | **Perfectionist Practice** | Hit the green window. Basil is grading. | `NPC_050` TA Basilica Basil | Any (your restaurant) | 1) CookQuality(PERFECT, 6⁺) | L2 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_004` | **Chill Pill** | Calm three upset customers. Officer Biscuit believes in you. | `NPC_056` Officer Biscuit | Any (your restaurant) | 1) CalmCustomers(3) | L3 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_005` | **Fix-It Any Day** | Something is always broken. Fix four somethings. | `NPC_058` Rivet Rosie | Any (your restaurant) | 1) RepairObjects(4⁺) | L3 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_006` | **Cash Flow** | Earn half an hour's income. Hank says haggling is optional. | `NPC_042` Haggle Hank | Any (your restaurant) | 1) EarnMB(0.5·IncH) | L2 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_007` | **Chef's Kiss Club** | Five Delighted customers. Mira-Bel's screen will show lips. | `NPC_043` Mira-Bel | Any (your restaurant) | 1) AchieveSatisfaction(≥90, 5⁺) | L4 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_008` | **Drink Up** | Lulu's lemonade stand has competition: you. | `NPC_098` Lemonade Lulu | Any (your restaurant) | 1) CookCategory(DRK, 6⁺, served) | L2 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_009` | **Dessert First** | Granny's rule: dessert before everything. | `NPC_091` Granny Gumdrop | Any (your restaurant) | 1) CookCategory(DES, 5⁺, served) | L4 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_010` | **Delivery Dash** | Zoom some orders across town. Zara already did six while you read this. | `NPC_059` Zoomie Zara | DST_04 · BLD_15 missions | 1) DeliverOrders(4) | L8 · DST_04 unlocked | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_011` | **Grandma Approved** | Serve two Grandma Golems. Bonus points for not rushing them. | `NPC_067` Speedwalk Gladys | Any (your restaurant) | 1) ServePersonality(PER_013, 2, S≥70) | PER_013 in your spawn table | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_012` | **Critic Proof** | One Food Critic, one great meal. Crumbsworth is taking notes. | `NPC_082` Critic Crumbsworth | Any (your restaurant) | 1) ServePersonality(PER_004, 1, S≥80) | L10 · PER_004 in spawn table | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_013` | **Bouncer Duty** | Three hostile customers need a gentle, cartoonish timeout. | `NPC_066` Mall Cop Mallomar | Any (your restaurant) | 1) DefeatHostiles(3) | L5 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_014` | **Shift Supervisor** | Run a shift with your crew. Gary is taking notes for his next interview. | `NPC_051` Gary the Applicant | Any (your restaurant) | 1) ServeCustomers(15⁺, with ≥ 2 employees assigned) | L5 · ≥ 2 employees | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_015` | **City Stroll** | Visit three different buildings. Sally will photograph you at each. | `NPC_053` Snapshot Sally | City-wide | 1) VisitBuilding(any distinct 3) | L3 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_016` | **Fry Day** | Every day is Fry Day if you believe. | `NPC_033` Busboy Bix | Any (your restaurant) | 1) CookCategory(FRI, 8⁺, served) | L1 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_017` | **Soup's On** | Professor Snore dreams of soup. Make his dream come true. | `NPC_096` Professor Emeritus Snore | Any (your restaurant) | 1) CookCategory(SOP, 4⁺, served) | L4 · STN_SOUP_POT owned | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_018` | **Rush Hour** | Serve 25 customers. Lumpy will watch from the queue, approvingly. | `NPC_038` Lumpy the Line-Waiter | Any (your restaurant) | 1) ServeCustomers(25⁺) | L1 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_019` | **Spicy Business** | Two Spicy Salamanders want it HOT. Gloop approves of spice. | `NPC_103` Gutter Gourmet Gloop | Any (your restaurant) | 1) ServePersonality(PER_022, 2, S≥70) | L10 · PER_022 in spawn table | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_020` | **Arena Warm-Up** | One win. Bots count. Kid Knuckles is cheering anyway. | `NPC_111` Kid Knuckles | DST_10 · BLD_08 | 1) WinArenaMatch(1, any mode — Bash the Bots (PvE) or Cook-Off race count; PvP optional) | QST_CBT_001 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_021` | **Morph Workout** | Muscles that don't move become decorative. Use those abilities! | `NPC_115` Professor Punch | Anywhere | 1) UseAbility(any mutation ability, 15) | L2 · ≥ 1 equipped part with an active ability | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_022` | **Pizza Party** | Sprinkles demands pizza. Lots of pizza. | `NPC_045` Sprinkles McGee | Any (your restaurant) | 1) CookCategory(PIZ, 5⁺, served) | L3 · an oven station owned | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_023` | **Read My Hands** | Two Mime Mantises will order by pantomime. Watch closely. | `NPC_054` Silent Simone | Any (your restaurant) | 1) ServePersonality(PER_019, 2, S≥70) | PER_019 in spawn table | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_024` | **Toddler Tamer** | Two Toddler Titans. Nap time is not an option. | `NPC_069` Lil' Tantrum Timmy | Any (your restaurant) | 1) ServePersonality(PER_020, 2, S≥70) | PER_020 in spawn table | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. |
+| `QST_DLY_025` | **Hush Hour** | Serve ten in a row without anyone reaching Complaining. Shhh. | `NPC_090` Usher Umbra | Any (your restaurant) | 1) ServeCustomers(10 consecutive, none reaching anger level 2) | L6 | Auto-claim | 0.02·IncH MB · 0.25·XPR XP · (2+T) MS | Expires at 00:00 UTC. A customer reaching anger level 2 resets the streak (not the quest). |
+
+#### 20.9.4 Weekly quest pool — 14 quests
+
+| ID | Name | Description | NPC | Location | Objectives | Prerequisites | Completion conditions | Rewards | Failure conditions |
+|---|---|---|---|---|---|---|---|---|---|
+| `QST_WKY_001` | **Century of Service** | One hundred customers this week. Pete will pin a gold star on you (and himself). | `NPC_012` Pinboard Pete | Any (your restaurant) | 1) ServeCustomers(100⁺) | L1 | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_002` | **Five-Star Streak** | Forty Delighted customers this week. Paloma will sneeze thrice. | `NPC_083` Paloma Peppermill | Any (your restaurant) | 1) AchieveSatisfaction(≥90, 40⁺) | L5 | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_003` | **Menu Tour** | Truffle dares you to master six categories. He'll pretend not to be impressed. | `NPC_032` Truffle Trufflington | Any (your restaurant) | 1) CookCategory(distinct 6, 5 each, served) | L8 | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_004` | **Peacekeeper** | Sergeant Rhonda wants twenty calm customers. No whistles required. | `NPC_026` Sergeant Rhonda | Any (your restaurant) | 1) CalmCustomers(20) | L5 | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_005` | **Handy Mutant** | Wrenchy's weekly quota: twenty-five repairs. Gently. | `NPC_010` Wrenchy | Any restaurant (co-op counts) | 1) RepairObjects(25⁺) | L8 | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_006` | **Event Enthusiast** | Anchor Andy needs field reporters. Show up at two city events. | `NPC_030` Anchor Andy | City (event zones) | 1) CompleteEvent(any, 2) | L6 | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_007` | **Courier of the Week** | Twenty deliveries. Dot says speed is a state of mind. | `NPC_017` Dispatch Dot | DST_04 · BLD_15 missions | 1) DeliverOrders(20) | L8 | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_008` | **Big Earner** | Earn four hours' worth of income. Barnaby will count it (badly). | `NPC_046` Barnaby Bargainbin | Any | 1) EarnMB(4·IncH) | L3 | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_009` | **Mutation Maintenance** | Cappy says every part deserves a level-up. Upgrade two. | `NPC_039` Cappy Capsule | DST_02 · BLD_01 or Morph menu | 1) UpgradeMutation(any, 2) | L5 | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_010` | **Arena Regular** | Five wins this week. Referee Stripes will be watching. TWEET. | `NPC_110` Referee Stripes | DST_10 · BLD_08 | 1) WinArenaMatch(5, any mode — Bash the Bots (PvE) or Cook-Off race count; PvP optional) | QST_CBT_001 | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_011` | **Offline Mogul** | Marge delivers your offline reports. Collect four of them. | `NPC_097` Mail Carrier Marge | Welcome Back screen | 1) CollectOffline(4 reports, ≥ 1 h each) | ≥ 1 ROLE_CHEF assigned | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_012` | **Personality Bingo** | Walt has spotted every customer type. Serve eight different ones. | `NPC_099` Neighborhood Watch Walt | Any (your restaurant) | 1) ServePersonality(distinct 8, 1 each) | L10 | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_013` | **Co-op Kitchen** | Cook in a friend's kitchen, or host one. Greta says food tastes better shared. | `NPC_034` Greta Griddlebottom | Any player restaurant | 1) ServeCustomers(30, as a guest, or as host with ≥ 1 guest present) | L6 · social weekly (free reroll any time) | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+| `QST_WKY_014` | **Going Viral IRL** | Strike a pose! Emote near other players, or snap photos at landmarks. | `NPC_068` Kiosk Kevin | City-wide | 1) Emote within 10 studs of 5 different players OR DiscoverLocation(Photo Mode shot at a landmark, 5) | L4 · social weekly (free reroll any time) | Auto-claim | 0.08·IncH MB · 0.5·XPR XP · 5×T MS · 1+⌊(T−1)/4⌋ RT | Expires Monday 00:00 UTC. |
+
+#### 20.9.5 Cooking challenges (incl. Legendary Recipe quests) — 16 quests
+
+| ID | Name | Description | NPC | Location | Objectives | Prerequisites | Completion conditions | Rewards | Failure conditions |
+|---|---|---|---|---|---|---|---|---|---|
+| `QST_CHF_001` | **Pickle Mountain Climber** | Auntie Okra wants a burger with more pickle than burger. | `NPC_041` Auntie Okra | DST_02 → BLD_17 | 1) CookRecipe(RCP_BRG_006, 5, served) | L5 | Return to NPC_041 | 30 MB · 30 XP · 6 MS · title “Pickle Pilgrim” | None. |
+| `QST_CHF_002` | **Pizza Geometry** | Gus needs a pizza that is both square and circle. For science. And lunch. | `NPC_035` Gus the Plot Surveyor | DST_01 → BLD_17 | 1) CookRecipe(RCP_PIZ_014, 4, PERFECT) | L19 | Return to NPC_035 | 120 MB · 85 XP · 12 MS · cosmetic color palette “Blueprint” | None. |
+| `QST_CHF_003` | **Sunny Side Hustle** | Yolanda wants eight fried eggs, smiling side up. | `NPC_047` Yolanda Yolk | DST_02 → BLD_17 | 1) CookRecipe(RCP_BRK_002, 8, ≥GOOD) | L3 | Return to NPC_047 | 20 MB · 30 XP · 3 MS · emote “Egg Wobble” | None. |
+| `QST_CHF_004` | **Speed Chef Trials** | Carl's train leaves in four minutes. Serve eight dishes before it does. | `NPC_052` Commuter Carl | DST_01 · BLD_17 | 1) Start Challenge (4 min timer) 2) ServeCustomers(8) | L10 | Auto on completion | 75 MB · 60 XP · 9 MS · title “Fast Food (Literally)” | Timer expires → Failed (60 s retry, no penalty). |
+| `QST_CHF_005` | **Frozen Soup Paradox** | Dr. Hoot hypothesizes frozen soup is still soup. Prove it five times. | `NPC_075` Dr. Hypothesis Hoot | DST_06 → BLD_17 | 1) CookRecipe(RCP_SOP_003, 5, ≥GOOD) | L13 · STN_FREEZER owned | Return to NPC_075 | 60 MB · 55 XP · 9 MS · cosmetic color palette “Brain Freeze” | None. |
+| `QST_CHF_006` | **Breakfast Time Loop** | Chuckles wants breakfast-for-dinner-for-breakfast. He's been awake since yesterday tomorrow. | `NPC_085` Chuckles McGuffaw | DST_07 → BLD_17 | 1) CookRecipe(RCP_BRK_009, 6, ≥GOOD) 2) AchieveSatisfaction(≥90, 3, customers who ordered RCP_BRK_009) | L36 | Return to NPC_085 | 770 MB · 500 XP · 24 MS | None. |
+| `QST_CHF_007` | **Spaghetti Tornado Warning** | EXTRA! EXTRA! Spaghetti tornado! (It's you. You're the tornado.) | `NPC_055` Newsie Nibbles | DST_03 → BLD_17 | 1) CookRecipe(RCP_PST_005, 6, ≥GOOD) | L23 | Return to NPC_055 | 120 MB · 100 XP · 12 MS | None. |
+| `QST_CHF_008` | **Mutation Cuisine Certification** | Dr. Splice certifies chefs to cook food that briefly mutates the eater. Totally safe. Mostly hilarious. | `NPC_013` Dr. Splice (with `NPC_074`, `NPC_079`) | DST_06 · BLD_11 → BLD_17 | 1) TalkToNPC(NPC_013) 2) CookRecipe(RCP_MUT_001, 5, ≥GOOD) 3) AchieveSatisfaction(≥90, 3, MUT dishes) | L42 · STN_INFUSER owned | Return to NPC_013 | 1,550 MB · 980 XP · 40 MS · 3 RT · title “Certified Mutagenic” | None. |
+| `QST_CHF_009` | **The Critic's Tasting Flight** | Paloma's flight: five categories, each at least Good. Sneezes optional. | `NPC_083` Paloma Peppermill | DST_07 · BLD_14 | 1) CookCategory(distinct 5, 1 each, ≥GOOD) 2) DeliverOrders(5, destination BLD_14) | L30 | Return to NPC_083 | 300 MB · 270 XP · 20 MS · 1 RT | None. |
+| `QST_CHF_010` | **Golden Spatula Gauntlet** | DJ Morphenstein's live cook-off show: three rounds, one golden spatula. | `NPC_024` DJ Morphenstein (with `NPC_084`) | DST_07 · BLD_22 | 1) Round 1: CookRecipe(RCP_BRG_014, 3, PERFECT) 2) Round 2: CookCategory(DES, 3, PERFECT) 3) Round 3: Start Challenge (6 min) — CookRecipe(RCP_TAC_010, 3, ≥GOOD) | L50 | Turn in to NPC_024 on stage | 5,850 MB · 3,100 XP · 60 MS · 5 RT · FRN_901 | Round 3 timer expires → only round 3 fails (rounds 1–2 stay done); 60 s retry. |
+| `QST_CHF_011` | **Legendary Recipe: The Golden Patty Supreme** | Saucington opens the vault: the golden patty that started it all. | `NPC_009` Professor Saucington | DST_03 · BLD_06 | 1) PurchaseStock(ING_GOLDEN_PATTY, 1 crate) 2) CookRecipe(RCP_BRG_015, 3, PERFECT) 3) TalkToNPC(NPC_009) | L65 | Turn in to NPC_009; the recipe is learned instantly | 18,700 MB · 10,500 XP · 80 MS · 10 RT · RCP_LEG_001 | None. |
+| `QST_CHF_012` | **Legendary Recipe: Dragon Feast** | Saffron tests whether you can handle dragon-grade heat. | `NPC_087` Sous-Chef Saffron (with `NPC_029`) | DST_07 (Grand Culinary Pavilion) | 1) CookRecipe(RCP_BRK_010, 5, PERFECT) 2) CookRecipe(RCP_PIZ_008, 5, ≥GOOD) 3) ServePersonality(PER_022, 5, S≥90) | L72 · QST_CHF_011 | Turn in to NPC_087 | 47,800 MB · 17,400 XP · 90 MS · 15 RT · RCP_LEG_002 | None. |
+| `QST_CHF_013` | **Legendary Recipe: Infinity Pizza** | Professor Quibble has proven pizza can be infinite. Now someone has to cook it. | `NPC_078` Professor Quark Quibble | DST_06 · BLD_11 | 1) CookRecipe(RCP_PIZ_013, 5, PERFECT) 2) CookRecipe(RCP_PIZ_015, 3, PERFECT) 3) TalkToNPC(NPC_078) | L80 · QST_CHF_012 | Turn in to NPC_078 | 123,000 MB · 40,800 XP · 100 MS · 20 RT · RCP_LEG_003 | None. |
+| `QST_CHF_014` | **Legendary Recipe: Kraken King Banquet** | Omnivora's banquet for a kraken king. Squishy the pet kraken is guest of honor (he eats jelly). | `NPC_029` Chef Supreme Omnivora (with `NPC_095`) | DST_07 (Grand Culinary Pavilion) | 1) CookRecipe(RCP_SEA_010, 5, PERFECT) 2) CompleteEvent(EVT_022) | L88 · QST_CHF_013 | Turn in to NPC_029 | 123,000 MB · 58,000 XP · 100 MS · 25 RT · RCP_LEG_004 | None; event progress persists across occurrences. |
+| `QST_CHF_015` | **Legendary Recipe: The Mystery Morph Meal** | Nana's last page: one Perfect dish from every category in the city. Then the meal reveals itself. | `NPC_001` Nana Gristle | DST_01 · BLD_17 | 1) CookCategory(distinct 15 — every category incl. ALN, MUT, LEG — 1 each, PERFECT) 2) TalkToNPC(NPC_001) | L95 · QST_STY_033 | Turn in to NPC_001's hologram | 123,000 MB · 78,900 XP · 150 MS · 25 RT · 1 skill point · RCP_LEG_005 · title “Mystery Morph Master” | None. |
+| `QST_CHF_016` | **Sewer Supper Club** | Gloop's guests want Swamp Stew delivered to the Supper Club. It's fruit jelly; no nose-holding needed. | `NPC_103` Gutter Gourmet Gloop | DST_09 (Sewer Supper Club) | 1) CookRecipe(RCP_SOP_007, 5, ≥GOOD) 2) DeliverOrders(5, destination Sewer Supper Club) | L27 · QST_EXP_003 | Return to NPC_103 | 300 MB · 230 XP · 15 MS | None. |
+
+#### 20.9.6 Combat challenges — 11 quests
+
+| ID | Name | Description | NPC | Location | Objectives | Prerequisites | Completion conditions | Rewards | Failure conditions |
+|---|---|---|---|---|---|---|---|---|---|
+| `QST_CBT_001` | **Ring Debut** | Rex wants a new face in the ring. Your first opponent is a very polite robot. | `NPC_011` Rex Rumbleton (with `NPC_113`) | DST_10 · BLD_08 | 1) VisitBuilding(BLD_08) 2) TalkToNPC(NPC_011) 3) WinArenaMatch(1, Bash the Bots exhibition) | L12 · DST_10 unlocked | Unlocks Arena access: Bash the Bots (PvE), Cook-Off race, and the opt-in PvP queues (§21) | 75 MB · 65 XP · 10 MS · title “Rookie Rumbler” | A loss simply retries (no penalty). |
+| `QST_CBT_002` | **Tray Chic** | Sergeant Rhonda's lesson: a tray is a shield with snacks. | `NPC_026` Sergeant Rhonda | DST_03 → BLD_17 | 1) UseAbility(ABL_008, 15, blocked a thrown item) | L6 | Return to NPC_026 | 30 MB · 30 XP · 5 MS | None. |
+| `QST_CBT_003` | **Gym Orientation** | Coach Crunch's obstacle drill. Three minutes. Infinite yelling. | `NPC_008` Coach Crunch (with `NPC_109`) | DST_10 · BLD_05 | 1) Start Challenge (3 min timer) 2) UseAbility(ABL_004, 10, successful dodge) 3) UseAbility(ABL_002, 5, landed) 4) DefeatHostiles(5 training dummies) | L12 | Auto on completion | 60 MB · 55 XP · 10 MS | Timer expires → Failed (60 s retry). |
+| `QST_CBT_004` | **Dodge This** | Ingrid's rule: the best hit is the one that misses you. | `NPC_109` Iron Ingrid | Anywhere | 1) UseAbility(ABL_004, 25, successful dodge) | L14 · QST_CBT_003 | Return to NPC_109 | 60 MB · 55 XP · 10 MS · emote “Armadillo Roll” | None. |
+| `QST_CBT_005` | **Calm Before the Storm** | Mossimo teaches the way of the calm chef: soothe eight tempers in one rush. | `NPC_102` Mossimo the Hermit | DST_09 → BLD_17 | 1) Start Challenge (10 min timer) 2) CalmCustomers(8) | L20 | Return to NPC_102 | 150 MB · 110 XP · 15 MS · title “Zen Chef” | Timer expires → Failed (60 s retry). |
+| `QST_CBT_006` | **Bouncer Certification** | Gerald certifies bouncers: fifteen timeouts, zero naps on the floor. | `NPC_112` Grand Tusk Gerald | DST_10 · BLD_05 → BLD_17 | 1) DefeatHostiles(15) without being KO'd | L25 | Return to NPC_112 | 150 MB · 140 XP · 15 MS · MUT_175 | Being KO'd ('Seeing Stars') resets the count to 0; the quest stays active. |
+| `QST_CBT_007` | **Invasion Defense** | Paige's calendar says: Angry Customer Invasion, 3 p.m. Be there. | `NPC_049` Paige Turner | DST_03 (event zone) | 1) CompleteEvent(EVT_004) 2) DefeatHostiles(20, during EVT_004) | L28 | Auto-claim | 380 MB · 290 XP · 25 MS · 1 RT | None; progress persists across event occurrences. |
+| `QST_CBT_008` | **Arena Contender** | Barbara will blend you a victory smoothie for ten wins in any arena mode. | `NPC_108` Brawlin' Barbara | DST_10 · BLD_08 | 1) WinArenaMatch(10, any mode — Bash the Bots, Cook-Off race or opt-in PvP) | QST_CBT_001 | Return to NPC_108 | 150 MB · 100 XP · 20 MS · emote “Victory Smoothie” | None. |
+| `QST_CBT_009` | **Champion of the Arena** | Become champion: clear the Bash the Bots Champion Gauntlet, top a Cook-Off final, or reach Gold in an opt-in season. | `NPC_011` Rex Rumbleton (with `NPC_114`) | DST_10 · BLD_08 | 1) WinArenaMatch(25, any mode — Bash the Bots, Cook-Off race or opt-in PvP) 2) One of: clear the Bash the Bots Champion Gauntlet (5 bots in a row) · win a Cook-Off race final · reach Gold rank in an opt-in PvP season (§21) | L40 · QST_CBT_008 | Return to NPC_011 | 1,550 MB · 1,200 XP · 60 MS · 5 RT · FRN_904 · title “Arena Champion” | A Gauntlet or final loss just restarts that attempt (no penalty). |
+| `QST_CBT_010` | **Sewer Scuffle** | The Sewer Flood washed rowdy event hostiles into Phantasma's organ hall. Clear them out. | `NPC_104` Phantasma (with `NPC_101`) | DST_09 (event zone) | 1) DefeatHostiles(15, in DST_09 during EVT_013) | L22 · QST_EXP_003 | Return to NPC_104 | 150 MB · 120 XP · 15 MS · 1 RT | None; progress persists across event occurrences. |
+| `QST_CBT_011` | **Politeness Protocol** | The robots are rising up — politely. Calm them down — politely. | `NPC_064` Sir Squeaks-a-Lot | DST_04 (event zone) | 1) CalmCustomers(12, robot hostiles during EVT_017) | L30 | Return to NPC_064 | 300 MB · 270 XP · 20 MS · 1 RT · MUT_155 | None; progress persists across event occurrences. |
+
+#### 20.9.7 Repair challenges — 9 quests
+
+| ID | Name | Description | NPC | Location | Objectives | Prerequisites | Completion conditions | Rewards | Failure conditions |
+|---|---|---|---|---|---|---|---|---|---|
+| `QST_RPR_001` | **Hammer Time** | Spork's tip: tap broken things gently. With a hammer. | `NPC_036` Spork | DST_01 · BLD_03 → BLD_17 | 1) RepairObjects(5) | QST_TUT_012 · L3 | Return to NPC_036 | 20 MB · 30 XP · 3 MS | None. |
+| `QST_RPR_002` | **From Rubble to Table** | Kate says nothing's ever destroyed. Prove it: rebuild a rubble pile. | `NPC_063` Kate Crate | DST_04 → BLD_17 | 1) RepairObjects(1, from Destroyed — Rebuild) | L10 | Return to NPC_063 | 60 MB · 50 XP · 8 MS | None (re-arms automatically the next time an object is Destroyed). |
+| `QST_RPR_003` | **Workshop Apprentice** | Wrenchy will teach you — if you can nail five Perfect repairs. | `NPC_010` Wrenchy (with `NPC_058`) | DST_04 · BLD_07 | 1) VisitBuilding(BLD_07) 2) RepairObjects(5, minigame grade PERFECT) | L8 | Return to NPC_010 | 30 MB · 35 XP · 6 MS · title “Wrench Wrangler” | None. |
+| `QST_RPR_004` | **No Seat Left Behind** | Fernando can't bear an empty seat. After a brawl, fix every broken seat in 90 seconds. | `NPC_060` Forklift Fernando | DST_04 → BLD_17 | 1) When ≥ 2 seats are Broken: Start Challenge (90 s) 2) RepairObjects(all Broken seats) | L15 | Return to NPC_060 | 60 MB · 60 XP · 9 MS | Timer expires → Failed; re-arms at the next brawl. |
+| `QST_RPR_005` | **Repair Emergency** | Stan's sirens are blaring: Restaurant Repair Emergency! | `NPC_062` Smokestack Stan | City (event zone) | 1) CompleteEvent(EVT_010) 2) RepairObjects(20, during EVT_010) | L18 | Auto-claim | 150 MB · 100 XP · 15 MS · 1 RT | None; progress persists across event occurrences. |
+| `QST_RPR_006` | **Pristine Condition** | Mildred's standard: spotless for twenty minutes, and nothing left broken. | `NPC_065` Mildred Mopsworth | DST_01 · BLD_17 | 1) MaintainCleanliness(≥90, 20 min) 2) RepairObjects(10) | L24 | Return to NPC_065 | 150 MB · 130 XP · 12 MS · cosmetic color palette “Pristine White” | Cleanliness below 90 resets only the timer. |
+| `QST_RPR_007` | **Neighborly Fix** | Help fix a neighbor's restaurant, or practice on the Workshop benches. | `NPC_094` Mrs. Hedge Trimmington | Any player restaurant or DST_04 · BLD_07 | 1) RepairObjects(10, in another player's restaurant) OR RepairObjects(10, Workshop practice benches at BLD_07) | L20 | Return to NPC_094 | 120 MB · 85 XP · 12 MS | None. |
+| `QST_RPR_008` | **Blackout Electrician** | Blackout Night! Relight six streetlamps before Nell's neon nerves give out. | `NPC_089` Neon Nell | DST_03 / DST_07 (event zone) | 1) RepairObjects(6 city streetlamps, during EVT_009) | L30 | Return to NPC_089 | 300 MB · 270 XP · 20 MS · 1 RT | None; progress persists across event occurrences. |
+| `QST_RPR_009` | **Master Mender** | Wrenchy's ultimate test: three hundred repairs. He'll pretend he isn't proud. | `NPC_010` Wrenchy | Any restaurant | 1) RepairObjects(300) | L35 · QST_RPR_003 | Return to NPC_010 | 1,900 MB · 960 XP · 40 MS · 3 RT · MUT_250 · title “Master Mender” | None. |
+
+#### 20.9.8 Exploration challenges — 15 quests
+
+| ID | Name | Description | NPC | Location | Objectives | Prerequisites | Completion conditions | Rewards | Failure conditions |
+|---|---|---|---|---|---|---|---|---|---|
+| `QST_EXP_001` | **Metro Pass** | Conductor Choo stamps your Metro pass at every station you discover. | `NPC_019` Conductor Choo (with `NPC_052`) | DST_03 · BLD_18 | 1) DiscoverLocation(Metro station, 4) 2) Travel(Metro, 2 distinct districts) | L4 | Return to NPC_019 | 20 MB · 30 XP · 4 MS · title “Mind the Gap” | None. |
+| `QST_EXP_002` | **Lab Rat (Voluntary)** | Dr. Splice needs a volunteer for the safety orientation. It's not a trick. Mostly. | `NPC_013` Dr. Splice (with `NPC_074`, `NPC_076`, `NPC_079`) | DST_06 · BLD_11 | 1) VisitBuilding(BLD_11) 2) TalkToNPC(NPC_074) — safety orientation 3) TalkToNPC(NPC_013) | L15 · DST_06 unlocked | Unlocks Mutation Lab access (fusion & research, §12) | 60 MB · 60 XP · 20 MS · cosmetic color palette “Lab Coat” | None. |
+| `QST_EXP_003` | **Down the Drain** | Tunnel Tom pops out of a manhole: 'Wanna see the best market in town? It's down here.' | `NPC_107` Tunnel Tom (with `NPC_015`, `NPC_106`) | DST_08 manhole → DST_09 · BLD_13 | 1) Enter the sewers through the DST_08 manhole 2) VisitBuilding(BLD_13) 3) TalkToNPC(NPC_015) | L20 | Unlocks Mystery Market access (weekly rotation, §18) | 120 MB · 85 XP · 15 MS · title “Drain Explorer” | None. |
+| `QST_EXP_004` | **Every Nook and Cranny** | Clerk Stampwell's Citizen Passport needs a stamp from every building in the city. | `NPC_048` Clerk Stampwell (with `NPC_072`) | City-wide | 1) VisitBuilding(all 22: BLD_01–BLD_22) | L20 | Return to NPC_048 for the final stamp | 190 MB · 130 XP · 20 MS · 2 Morph Capsules · title “Certified Citizen” | None. |
+| `QST_EXP_005` | **Dead Pixel Hunter** | Todd keeps seeing dead pixels. Find three — he swears there are more. | `NPC_076` Test Subject Todd | City-wide | 1) DiscoverSecret(dead pixel, 3 of 8) | L10 | Hint quest only; finding all 8 still triggers the secret part per canon §C13.8 | 60 MB · 50 XP · 10 MS · emote “Glitch Shuffle” | None. |
+| `QST_EXP_006` | **Meteor Chaser** | Mutation Meteor Shower tonight! Professor Quibble needs ten fragments. Soft helmet recommended. | `NPC_078` Professor Quark Quibble | City (event zone) | 1) CompleteEvent(EVT_006, ≥ 10 meteor fragments collected) | L26 | Return to NPC_078 | 300 MB · 220 XP · 20 MS · 1 RT · FRN_906 | None; progress persists across event occurrences. |
+| `QST_EXP_007` | **Float Your Boat** | Duchess Decora wants you on the Mutation Parade route, morph fully coordinated. | `NPC_070` Duchess Decora | DST_03 (parade route) | 1) EquipMutation(3 parts of one family) 2) CompleteEvent(EVT_002) | L12 | Return to NPC_070 | 75 MB · 65 XP · 12 MS · FRN_907 | None; progress persists across event occurrences. |
+| `QST_EXP_008` | **Where's Squishy?** | Captain Kerplunk's pet kraken is loose again. Find him and coax him home with jelly. | `NPC_095` Captain Kerplunk | City (event zone) | 1) DiscoverSecret(squishy — during EVT_022) 2) CookRecipe(RCP_DES_008, 3, ≥GOOD) and deliver to Squishy | L30 | Return to NPC_095 | 300 MB · 270 XP · 20 MS · 1 RT · FRN_908 | None; progress persists across event occurrences. |
+| `QST_EXP_009` | **Fossil Fun** | Curator Fossilbottom wants your thoughts on ten exhibits. Whispering mandatory. | `NPC_018` Curator Fossilbottom (with `NPC_077`) | DST_06 · BLD_16 | 1) DiscoverLocation(museum exhibit, 10) 2) TalkToNPC(NPC_077) | L16 | Return to NPC_018 | 60 MB · 65 XP · 10 MS · FRN_909 | None. |
+| `QST_EXP_010` | **Gossip Tour** | Old Man Pigeon says you don't know a city until you know its gossip. | `NPC_025` Old Man Pigeon | City-wide | 1) TalkToNPC(distinct 10 named NPCs) | L6 | Return to NPC_025 | 30 MB · 30 XP · 5 MS | None. |
+| `QST_EXP_011` | **Frequent Flyer** | Polly can't fly yet. Ride the Pigeon Taxi and tell her everything. | `NPC_092` Pipsqueak Polly | Any street corner | 1) Travel(Pigeon Taxi, 3 distinct districts) 2) TalkToNPC(NPC_092) | L8 | Return to NPC_092 | 50 MB · 35 XP · 5 MS · emote “Flap Flap” | None. |
+| `QST_EXP_012` | **Busker Bingo** | Bellows rhymes: five buskers, five songs. Listen to them all. | `NPC_088` Busker Bellows | DST_07 | 1) DiscoverLocation(busker spot, 5) 2) TalkToNPC(NPC_088) | L10 | Return to NPC_088 (does not reveal the secret order, canon §C13.8) | 60 MB · 50 XP · 9 MS | None. |
+| `QST_EXP_013` | **Make a Wish** | Fran says a fountain coin is lucky. Finding five lost bottle caps is luckier. | `NPC_057` Fountain Fran | DST_03 (Downtown fountain) | 1) Toss 1 MB into the fountain (interact) 2) DiscoverLocation(lost bottle cap, 5) | L3 · DST_03 unlocked | Return to NPC_057 | 20 MB · 30 XP · 3 MS | None. |
+| `QST_EXP_014` | **New Look, Who Dis?** | Snipsy wants to see your morph in three new slots. Snip snip! | `NPC_040` Snipsy Shearwater | DST_02 · BLD_02 | 1) VisitBuilding(BLD_02) 2) EquipMutation(parts in 3 different slots) | L5 | Return to NPC_040 | 30 MB · 30 XP · 5 MS · cosmetic color palette “Salon Fresh” | None. |
+| `QST_EXP_015` | **Glow Show** | Six shy glowcaps hide in the caverns. Gillian would love you to say hello to each. | `NPC_105` Glowcap Gillian | DST_09 (Glowcap Caverns) | 1) DiscoverLocation(glowcap, 6) 2) TalkToNPC(NPC_105) | L21 · QST_EXP_003 | Return to NPC_105 | 120 MB · 90 XP · 12 MS · cosmetic color palette “Glowcap” | None. |
+
+#### 20.9.9 Employee management challenges — 9 quests
+
+| ID | Name | Description | NPC | Location | Objectives | Prerequisites | Completion conditions | Rewards | Failure conditions |
+|---|---|---|---|---|---|---|---|---|---|
+| `QST_EMP_001` | **Second Pair of Tentacles** | Ollie needs a buddy. Ms. Hirewell has candidates. | `NPC_007` Ms. Hirewell | DST_03 · BLD_04 | 1) HireEmployee(any, 1) 2) AssignRole(ROLE_PREP or ROLE_DISH) | L5 · QST_TUT_012 | Return to NPC_007 | 30 MB · 30 XP · 5 MS | None. |
+| `QST_EMP_002` | **Right Mutant, Right Job** | Pocketlint's quiz: match each employee to the role that fits. | `NPC_044` Professor Pocketlint | Any (Employee screen) | 1) AssignRole(distinct 3, each marked “Good Fit”) | L8 | Return to NPC_044 | 30 MB · 35 XP · 6 MS | None. |
+| `QST_EMP_003` | **Waiter Wanted** | Table service means waiters. Hire one before customers start seating themselves on the counter. | `NPC_007` Ms. Hirewell | DST_03 · BLD_04 → BLD_17 | 1) HireEmployee(ROLE_WAITER, 1) 2) ServeCustomers(20, table service) | TIER_03 | Return to NPC_007 | 60 MB · 50 XP · 8 MS | None. |
+| `QST_EMP_004` | **Morale Booster** | Phoebe's staff photo day: get one employee grinning at Morale 90. | `NPC_073` Photobooth Phoebe | Any (your restaurant) | 1) RaiseMorale(1 employee, ≥90) | L12 | Return to NPC_073 | 60 MB · 55 XP · 9 MS · emote “Staff Photo” | None. |
+| `QST_EMP_005` | **Manager Material** | A manager keeps the lights on while you sleep. Hire one and see the difference. | `NPC_007` Ms. Hirewell | DST_03 · BLD_04 | 1) HireEmployee(ROLE_MANAGER, 1) 2) AssignRole(ROLE_MANAGER) 3) CollectOffline(1 report, ≥ 2.5 h) | L18 | Return to NPC_007 | 150 MB · 100 XP · 12 MS | None. |
+| `QST_EMP_006` | **Training Montage** | Coach Crunch trains your staff. Cue the montage music. | `NPC_008` Coach Crunch | DST_10 · BLD_05 / Employee screen | 1) TrainEmployee(3) | L20 | Return to NPC_008 | 120 MB · 85 XP · 12 MS | None. |
+| `QST_EMP_007` | **Night Shift** | Nocturna knows the real work happens at night. Collect a long, profitable offline report. | `NPC_081` Night Guard Nocturna | Welcome Back screen | 1) CollectOffline(1 report, ≥ 4 h, net > 0) | L22 · ROLE_MANAGER assigned | Return to NPC_081 | 120 MB · 95 XP · 12 MS | None. |
+| `QST_EMP_008` | **Full House** | Walter walks nine pets. You can run eight staff. | `NPC_093` Walter Walksalot | Any (Employee screen) | 1) OwnEmployees(8, all assigned) | TIER_05 | Return to NPC_093 | 300 MB · 220 XP · 20 MS | None. |
+| `QST_EMP_009` | **Dream Team** | Duchess Drainsworth: 'Staff are everything, dear.' Build a court worthy of a king. | `NPC_100` Duchess Drainsworth | DST_09 · BLD_21 / Employee screen | 1) OwnEmployees(Rare or better in 5 distinct roles) 2) AssignRole(ROLE_ASST_MGR) | L45 | Return to NPC_100 | 3,500 MB · 1,850 XP · 50 MS · 3 RT · title “Royal Employer” | None. |
+
+#### 20.9.10 Restaurant expansion challenges (incl. City Hall permits) — 13 quests
+
+| ID | Name | Description | NPC | Location | Objectives | Prerequisites | Completion conditions | Rewards | Failure conditions |
+|---|---|---|---|---|---|---|---|---|---|
+| `QST_RST_001` | **Fresh Coat of Paint** | Bolt says three new pieces will make the shack 'slightly less sad'. | `NPC_006` Bolt Butterworth | DST_01 · BLD_03 → BLD_17 | 1) PlaceFurniture(3) | QST_TUT_012 | Return to NPC_006 | 20 MB · 30 XP · 3 MS | None. |
+| `QST_RST_002` | **Tiny Diner Dreams** | Nana's dream: the shack becomes a real diner. (No permit needed below TIER_04.) | `NPC_001` Nana Gristle | DST_01 · BLD_17 | 1) UpgradeTier(TIER_02) | L5 | Auto on upgrade; Nana's hologram cries one pixelated tear | 30 MB · 30 XP · 5 MS · title “Diner Owner” | None. |
+| `QST_RST_003` | **Café Society** | Gus measured twice. Upgrade once, then add tables for table service. | `NPC_035` Gus the Plot Surveyor | DST_01 · BLD_17 | 1) UpgradeTier(TIER_03) 2) PlaceFurniture(2, tables) | L10 | Return to NPC_035 | 60 MB · 50 XP · 8 MS | None. |
+| `QST_RST_004` | **Permit: Morph City Grill** | The Mayor needs proof your café is grill-worthy. And a stamp. Several stamps. | `NPC_002` Mayor Moosington (with `NPC_048`) | DST_03 · BLD_09 | 1) ReachReputation(3.0★) 2) ServeCustomers(60) 3) TalkToNPC(NPC_048) — Form 27-Moose stamped by 3 departments | L18 · TIER_03 | Grants the City Hall Expansion Permit for TIER_04 (sets permits[TIER_04] = true; the Mayor signs with his hoof); the tier-upgrade button unlocks | 90 MB · 170 XP · 9 MS · title “Licensed to Grill” | None. |
+| `QST_RST_005` | **Permit: Mutant Family Restaurant** | Family restaurants need staff, safety, and an inspector's nod. | `NPC_002` Mayor Moosington (with `NPC_048`, `NPC_022`) | DST_03 · BLD_09 → BLD_17 | 1) ReachReputation(3.3★) 2) OwnEmployees(4, assigned) 3) MaintainCleanliness(≥80, 10 min) during Grimewell's spot check 4) TalkToNPC(NPC_048) | L26 · TIER_04 | Permit for TIER_05 (sets permits[TIER_05] = true; the Mayor signs with his hoof) | 190 MB · 280 XP · 12 MS | Spot-check timer resets if cleanliness drops below 80 (never fails). |
+| `QST_RST_006` | **Permit: Monster Food Court** | Paige has a checklist. It's long. It's laminated. | `NPC_002` Mayor Moosington (with `NPC_048`, `NPC_049`) | DST_03 · BLD_09 | 1) ReachReputation(3.6★) 2) FillMenu(10 slots) 3) EarnMB(2·IncH) 4) TalkToNPC(NPC_048) | L35 · TIER_05 | Permit for TIER_06 (sets permits[TIER_06] = true; the Mayor signs with his hoof) | 380 MB · 660 XP · 15 MS | None. |
+| `QST_RST_007` | **Permit: Mutation Megadiner** | Mallory must approve the foot traffic. The Mayor must approve Mallory's approval. | `NPC_002` Mayor Moosington (with `NPC_048`, `NPC_014`) | DST_03 · BLD_09 → DST_05 · BLD_12 | 1) ReachReputation(3.9★) 2) ReachAtmosphere(60) 3) RepairObjects(30) 4) TalkToNPC(NPC_014) 5) TalkToNPC(NPC_048) | L45 · TIER_06 | Permit for TIER_07 (sets permits[TIER_07] = true; the Mayor signs with his hoof) | 1,150 MB · 1,850 XP · 18 MS | None. |
+| `QST_RST_008` | **Permit: Luxury Freak Restaurant** | Luxury means security. Sergeant Rhonda will inspect your bouncers. | `NPC_002` Mayor Moosington (with `NPC_048`, `NPC_026`) | DST_03 · BLD_09 | 1) ReachReputation(4.2★) 2) AchieveSatisfaction(≥90, 60) 3) AssignRole(ROLE_SECURITY) 4) TalkToNPC(NPC_026) 5) TalkToNPC(NPC_048) | L56 · TIER_07 | Permit for TIER_08 (sets permits[TIER_08] = true; the Mayor signs with his hoof) | 3,500 MB · 5,050 XP · 21 MS | None. |
+| `QST_RST_009` | **Permit: Morph City Food Palace** | A palace needs a critic's blessing. Madame Fourchette's neck is already stretching. | `NPC_002` Mayor Moosington (with `NPC_048`, `NPC_016`) | DST_03 · BLD_09 → DST_07 · BLD_14 | 1) ReachReputation(4.5★) 2) CookCategory(distinct 10, 3 each, served) 3) CollectOffline(3 reports, net > 0) 4) TalkToNPC(NPC_016) 5) TalkToNPC(NPC_048) | L68 · TIER_08 | Permit for TIER_09 (sets permits[TIER_09] = true; the Mayor signs with his hoof) | 9,350 MB · 12,000 XP · 24 MS | None. |
+| `QST_RST_010` | **Permit: Legendary Mutation Restaurant** | The final permit. The Mayor has saved his biggest scissors for this. | `NPC_002` Mayor Moosington (with `NPC_048`) | DST_03 · BLD_09 | 1) ReachReputation(4.7★) 2) AchieveSatisfaction(≥98, 25) 3) ServePersonality(PER_008, 10, S≥90) 4) TalkToNPC(NPC_048) | L80 · TIER_09 | Permit for TIER_10 (sets permits[TIER_10] = true); the Mayor signs with his hoof and cuts a ribbon on your façade | 23,900 MB · 24,800 XP · 27 MS · title “Legendary License” | None. |
+| `QST_RST_011` | **Station Tune-Up** | Dr. Kablooey insists your stations need 'more oomph'. Tune one to Lv2 (confetti not included). | `NPC_061` Dr. Kablooey | DST_04 → BLD_17 | 1) UpgradeStation(Lv2, 1) | L6 · TIER_02 | Return to NPC_061 | 30 MB · 30 XP · 5 MS | None. |
+| `QST_RST_012` | **Atmosphere Architect** | Glamtrax: 'Darling, your dining room needs DRAMA.' | `NPC_005` Glamtrax | DST_02 · BLD_02 → BLD_17 | 1) ReachAtmosphere(50) | L14 | Return to NPC_005 | 60 MB · 55 XP · 8 MS · cosmetic color palette “Glam Dining” | None. |
+| `QST_RST_013` | **Menu Maximalist** | Fizzwick sneers at your tiny menu. Fill every slot and watch him drop his borrowed monocle. | `NPC_031` Fizzwick Pompadour | DST_01 (Le Fancy Fin) → BLD_17 | 1) FillMenu(8 slots, ≥ 4 categories) | TIER_04 | Return to NPC_031 | 120 MB · 80 XP · 12 MS | None. |
+
+### 20.10 Unlock & trophy map (quick reference)
+
+| Unlock / reward | Granted by | Gate |
+|---|---|---|
+| Downtown district (`DST_03`) | `QST_TUT_010` (canon tutorial step 10) | tutorial |
+| Arena access: Bash the Bots, Cook-Off race, opt-in PvP | `QST_CBT_001` Ring Debut | L12 (`DST_10`) |
+| Mutation Lab access | `QST_EXP_002` Lab Rat (Voluntary) | L15 (`DST_06`) |
+| Mystery Market access | `QST_EXP_003` Down the Drain | L20 (`DST_09`) |
+| Alien Cuisine course (all ALN recipes learnable) | `QST_STY_017` Alien Cuisine 101 (Chapter 5, Zorp `NPC_027`) | L30, `TIER_05` |
+| `RCP_LEG_001` … `RCP_LEG_005` | `QST_CHF_011` … `QST_CHF_015` (Legendary Recipe quests, chained) | L65 / 72 / 80 / 88 / 95 |
+| City Hall Expansion Permits `TIER_04` … `TIER_10` | `QST_RST_004` … `QST_RST_010` (Mayor `NPC_002`) | the tier's canon required level (§C6) |
+| Trophies `FRN_901`–`FRN_910` (one each) | `FRN_901` ← `QST_CHF_010` · `FRN_902` ← `QST_STY_020` · `FRN_903` ← `QST_STY_023` · `FRN_904` ← `QST_CBT_009` · `FRN_905` ← `QST_STY_028` · `FRN_906` ← `QST_EXP_006` (`EVT_006`) · `FRN_907` ← `QST_EXP_007` (`EVT_002`) · `FRN_908` ← `QST_EXP_008` (`EVT_022`) · `FRN_909` ← `QST_EXP_009` · `FRN_910` ← `QST_STY_032` (`EVT_005`, host `NPC_029`) | L50 · L40 · L50 · L40 · L70 · L26 · L12 · L30 · L16 · L85 |
+| Story mutation parts | Ch. 2 `MUT_235` · Ch. 4 `MUT_049` · Ch. 5 `MUT_103` · Ch. 6 `MUT_084` · Ch. 7 `MUT_038` + `MUT_137` · Ch. 8 `MUT_037` + `MUT_200` · Ch. 9 `MUT_178` + `MUT_108` · Ch. 10 choice of `MUT_039` or `MUT_242` | story |
+
+Trophies are one per profile, non-tradeable and non-purchasable (§36.13). A trophy from an event quest can still be
+earned in a later occurrence of that event if missed.
+
+### 20.11 Edge Cases
+
+| # | Situation | Ruling |
+|---|---|---|
+| Q1 | Player completes an objective while offline (e.g. offline report collected) | Only `CollectOffline` counts offline activity, and it counts at the moment of the server-validated claim. Offline customers never advance serve/cook objectives. |
+| Q2 | Daily reset happens while the player is online mid-quest | Unclaimed completed dailies auto-claim at reset (rewards are never lost). Incomplete dailies expire, and the new draw appears with a toast. Weekly works the same way on Monday. |
+| Q3 | Player upgrades tier between accepting and claiming a daily | Rewards use the tier and level snapshot taken at accept (§20.6). |
+| Q4 | Event-dependent story step, but the event is weeks away | Story Replay opens after 60 min (§20.7), so the story never waits on the live calendar. |
+| Q5 | Personality-based daily rolled but the personality stops spawning (e.g. event override) | Server re-validates eligibility at each daily draw. If a slot becomes impossible mid-day, a free reroll is granted for that slot. |
+| Q6 | Player reaches a quest's level gate in a district they haven't unlocked | The quest stays Locked with a tooltip. District unlock levels (§C16.1) always take precedence. |
+| Q7 | Required station not owned (e.g. `STN_SOUP_POT`, `STN_INFUSER`) | The quest card shows "Needs `STN_…`" with a shortcut. The quest can still be accepted, but cook objectives won't progress until the station exists. |
+| Q8 | Co-op guest cooks for the host during the host's story challenge | Cook/serve actions credit whoever performed them (§20.2). The host's story objective counts dishes served in the host's restaurant regardless of who cooked them; the guest gets guest rewards (§21), not the host's story rewards. |
+| Q9 | Player is KO'd during a timed challenge | The timer keeps running and the player respawns at kitchen spawn (canon C12.1). No extra penalty applies; the attempt fails only if the timer expires. |
+| Q10 | Two claims race (double tap, two devices) | The session lock plus the idempotent `quest:<key>` grant means exactly one succeeds and the other returns `AlreadyClaimed` (§20.7). |
+| Q11 | Story Assist enabled and then the player levels up | Assist applies only to the current attempt of that step and resets when the step completes. |
+| Q12 | Player skipped the tutorial (§32) | Skipping grants the same ledger as playing (600 MB, ≈ 360–380 XP, 10 MS, the part choice, `EMP_001`, 1 Morph Capsule, titles and emote; §32 AC-32-10), so skippers are never behind. |
+| Q13 | A quest grants a part the player already owns (e.g. `MUT_175`) | The duplicate follows canon dupe rules (kept for upgrades or auto-converted to MS, §C4.6–C4.7). It never fails. |
+| Q14 | Player declines PvP entirely | Every arena objective accepts Bash the Bots or Cook-Off race (§21), and social weeklies reroll free. No quest requires PvP or another player. |
+
+### 20.12 Dependencies
+
+- **§19:** quest givers, dialogue effects and markers. **§18 / §36.10:** buildings, secrets and location triggers.
+  **§36.11:** event participation awards and the Story Replay mode for `EVT_005`, `EVT_007` and `EVT_008`.
+- **§5 / §6 / §C10:** cooking signals, recipe IDs and unlock levels. **§9:** personality spawn tables.
+  **§12 / §36.3:** reward parts. **§15 / §36.12 / §36.13:** tiers, the Starter upgrade shelf, menu slots, trophies.
+- **§16 / §17:** hiring, roles, training, morale, offline reports. **§21:** co-op attribution, Bash the Bots / Cook-Off / PvP modes.
+- **§14:** skill-point budget (quests ≤ 15). **§22:** economy budget review. **§24:** journal and HUD tracker.
+- **§27 / §28 / §29:** `QuestService`, the `profile.quests` schema and remote rate limits. **§31:** quest analytics.
+  **§32:** tutorial script for `QST_TUT_001`–`QST_TUT_012`.
+
+### 20.13 Acceptance Criteria
+
+- **AC-20-01:** The database defines ≥ 125 quests: TUT 12 · STY ≥ 30 · DLY ≥ 20 · WKY ≥ 12 · CHF ≥ 10 · CBT ≥ 10 · RPR ≥ 8 · EXP ≥ 10 · EMP ≥ 8 · RST ≥ 10. Every row has all 10 columns filled.
+- **AC-20-02:** `QST_TUT_001`–`QST_TUT_012` carry the canon titles and match the §32.5 reward ledger row for row. MB rewards sum to exactly 600 MB, with 500 MB granted before `QST_TUT_011` (enough for the 150–250 MB first upgrade). `QST_TUT_010` offers exactly `MUT_145` / `MUT_144` / `MUT_153` (+10 MS), and `QST_TUT_012` hires `EMP_001` at 0 MB and grants 1 Morph Capsule.
+- **AC-20-03:** Every quest's NPC and involved NPCs exist in §19, every NPC lists ≥ 1 quest, and every reward ID is a canon `MUT_`/`RCP_`/`FRN_901–910` (`render_npcs_quests.py --check` exits 0).
+- **AC-20-04:** Exactly 3 dailies are drawn per UTC day and 5 weeklies per Monday-UTC week. The same `UserId` + day always yields the same draw (reconnect test), and resets fire at 00:00 UTC ± 5 s.
+- **AC-20-05:** One free daily reroll per UTC day (one per week for weeklies). A second free reroll attempt is rejected server-side, and paid rerolls cost MB only.
+- **AC-20-06:** Completing all 3 dailies grants exactly 1 Morph Capsule once per day, and all 5 weeklies grant 2 Morph Capsules + 1 RT once per week.
+- **AC-20-07:** Spamming `Quest.Claim` 50 times (or claiming from two clients at once) grants a quest's rewards exactly once, verified via the `EconomyService` transaction log.
+- **AC-20-08:** No client remote can advance objective progress. A forged `Quest.Progress` from a client is ignored and logged.
+- **AC-20-09:** A failed timed quest applies no MB/MS/RT/XP/item penalty and becomes Available again after 60 s ± 1 s. After 3 fails of a STY/TUT step, Story Assist is offered.
+- **AC-20-10:** Each story chapter opens only at its tier (`TIER_01`–`TIER_10`) after the previous chapter. All 10 chapters plus the epilogue are completable solo, with event steps completable via Story Replay within 60 min.
+- **AC-20-11:** `QST_STY_017` sets the Alien Cuisine flag, after which every ALN recipe is learnable at `BLD_06` at its unlock level. `QST_CHF_011`–`QST_CHF_015` grant `RCP_LEG_001`–`RCP_LEG_005` respectively.
+- **AC-20-12:** The tier-upgrade button for `TIER_04`–`TIER_10` stays disabled until the matching permit quest (`QST_RST_004`–`QST_RST_010`) is complete. `TIER_02`–`TIER_03` never require a permit.
+- **AC-20-13:** All 10 trophies `FRN_901`–`FRN_910` are obtainable from exactly the quests listed in §20.10.
+- **AC-20-14:** The sum of skill points granted by quests is ≤ 15 (currently 12), as printed by the renderer.
+- **AC-20-15:** Every quest with an arena objective can be completed without entering PvP (Bash the Bots or Cook-Off race), verified by a PvP-disabled test account completing `QST_CBT_001`, `QST_CBT_008`, `QST_CBT_009`, `QST_DLY_020` and `QST_WKY_010`.
+- **AC-20-16:** The HUD tracks ≤ 3 quests, and quest toasts never overlap the order queue or patience meters on a 1280×720 phone layout. Every timer has a text countdown.
+
+
 ## 21. Multiplayer
 
-> **Owner:** A14 Social & Economy. **Binding inputs:** §C3 (8 players per server, instanced interiors), §C16.4 (Restaurant
+> **Binding inputs:** §C3 (8 players per server, instanced interiors), §C16.4 (Restaurant
 > Row plots, visiting via door or friends list), §C22 E1/E7/E12/E13 (disconnects, shared stations, Co-op Insurance,
 > shutdown), §C12 (combat constants), §C19 (`MultiplayerService`, `CombatService`, `EconomyService`). Economy numbers
 > (guest pay, caps, MS budgets) are defined in §22 and only applied here.
@@ -14356,7 +15722,7 @@ client for morph LOD (§30); farther players render as impostors.
   (both accept; stats never change; reverts automatically).
 
 #### 21.8.3 Cooperative Quests (parties up to 4)
-§20 flags quests as `coop` (A13 owns the content). Framework:
+§20 flags quests as `coop` (§19–§20 owns the content). Framework:
 - Shared objective counters; all members must be in the same server (Gather).
 - **Every contributing member gets the full reward** of the quest (rewards follow §22.3/§22.13 budgets — no co-op
   multiplier on MB, so parties are not a farming tool); "contributing" = ≥ 15 % of progress or ≥ 3 qualifying actions.
@@ -14578,7 +15944,7 @@ sequenceDiagram
 | XP | per §14 `ARENA` row (4, +4 on a win, first 10 matches per UTC day) | Friendly Spar and Bash the Bots count toward the same 10 |
 | Season end (≥ 10 rated matches) | by peak bracket: Rookie 5 RT + 40 MS · Bronze 10 RT + 70 MS · Silver 15 RT + 100 MS · Gold 20 RT + 130 MS · Platinum 30 RT + 160 MS · Morph Master 40 RT + 200 MS | within the §29.14 `arena_reward` ceilings (≤ 200 MS, ≤ 50 RT per transaction); key `arenaseason:<seasonId>` |
 | Season cosmetics | bracket title (e.g. "Season 3 Gold Whisk"), bracket palette at Silver+, Champions Walk plinth (§18) for the server's weekly top 8 | cosmetic only |
-| Achievements | `ACH_035` Arena Rookie, `ACH_036` Arena Champion (grants `FRN_904` Arena Champion Belt Case) per §36.16 | trophy repeats → 100 MS (§18.8.4) |
+| Achievements | the arena achievements of §36.16 ("Arena Rookie"; "Arena Champion", which grants `FRN_904` Arena Champion Belt Case) | trophy repeats → 100 MS (§18.8.4) |
 
 The Cook-Off ladder pays the identical table, so a player who never fights can earn every arena reward type.
 
@@ -14763,7 +16129,7 @@ with client-only VFX (§30).
 
 ## 22. Economy
 
-> **Owner:** A14 Social & Economy. **Binding inputs:** canon §C4 (currencies, price curve, pacing, mutation
+> **Binding inputs:** canon §C4 (currencies, price curve, pacing, mutation
 > prices/upgrades, capsules, employee bands, station levels), §C5.1 (XP curve), §C6 (tiers), §C11.3–C11.4
 > (satisfaction, payment, tips, reputation, DecorMult), §C14.3 (offline caps), §C15 (offline model), §C22 E8/E9/E11.
 > **All tables marked "generated" are produced by `gdd/tools/economy_sim.py`** (Python 3 stdlib, deterministic) and can be
@@ -14841,7 +16207,7 @@ flowchart LR
 **Purpose.** Give every reward and price exactly one unambiguous unit.
 
 **Rules & Mechanics.**
-- Balances are **non-negative integers** stored in the profile (`wallet.MB`, `wallet.MS`, `wallet.RT`); fractional
+- Balances are **non-negative integers** stored in the profile (`wallet.balances.MB`, `wallet.balances.MS`, `wallet.balances.RT`, §28); fractional
   accruals (offline steps, per-minute wages) use server-side accumulators and are floored when committed.
 - **Sanity hard caps** (overflow protection, far beyond intended play): MB 1,000,000,000,000; MS 10,000,000; RT 1,000,000.
   A grant that would exceed a cap is clamped and logged `mmr_economy_cap_hit`.
@@ -15136,7 +16502,7 @@ SpeedGain(Lv)  = time(Lv−1) / time(Lv) − 1           -- 0.90 / 0.80 / 0.70 /
 Payback (h)    = CostMult(Lv) × B / ΔNet/h            -- Bottleneck 0.5 (rush share), QualityGain 0.03 [TUNABLE]
 ```
 
-Generated with illustrative base prices B (the real B values live in §36.13 — this table tells A10 which B values keep
+Generated with illustrative base prices B (the real B values live in §36.13 — this table tells §15 which B values keep
 upgrades worthwhile):
 
 <!-- sim:stations -->
@@ -15318,7 +16684,7 @@ requirement is met. Spending policy [TUNABLE]:
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | `TIER_02` | 1,000 | 1 | 1.13 | 1.03 | +3 % | 1.15 | +15 % | level (C5.1) | 1.03 | 1.15 | 1 |
 | `TIER_03` | 2,000 | 3 | 3.30 | 3.32 | +11 % | 3.32 | +11 % | level (C5.1) | 2.30 | 3.32 | 3 |
-| `TIER_04` | 5,000 | 7 | 8.50 | 7.65 | +9 % | 8.52 | +22 % | level (C5.1) | 6.00 | 8.52 | 6 |
+| `TIER_04` | 5,000 | 8 | 8.50 | 7.65 | -4 % | 8.52 | +6 % | level (C5.1) | 6.00 | 8.52 | 6 |
 | `TIER_05` | 15,000 | 14 | 15.83 | 16.05 | +15 % | 16.05 | +15 % | money | 12.65 | 15.85 | 11 |
 | `TIER_06` | 40,000 | 25 | 26.63 | 27.25 | +9 % | 27.25 | +9 % | money | 21.00 | 26.65 | 18 |
 | `TIER_07` | 100,000 | 40 | 41.80 | 42.65 | +7 % | 42.65 | +7 % | money | 34.42 | 41.82 | 28 |
@@ -15571,7 +16937,7 @@ can never push a player up the restaurant ladder faster than canon pacing (scena
 endingBalance, transactionType, itemSKU)` with `flowType` = `Enum.AnalyticsEconomyFlowType.Source/Sink`, `currencyType`
 = `"MB"`, `"MS"` or `"RT"`, `transactionType` from `Enum.AnalyticsEconomyTransactionType` (`Gameplay`, `Shop`,
 `TimedReward`, `Onboarding`) and `itemSKU` = the content id when present (e.g. `MUT_216`). High-frequency customer payments are aggregated per 60 s per
-player into one event. Internal events (registered in §31): `mmr_currency_tx`, `mmr_tier_upgraded`,
+player into one event. Internal events (registered in §31): `mmr_currency_tx`, `mmr_restaurant_tier_up`,
 `mmr_offline_collected`, `mmr_economy_cap_hit`, `mmr_ms_softcap_hit`, `mmr_purchase_failed_insufficient`,
 `mmr_unpaid_break`, `mmr_wallet_snapshot` (daily per player: balances, NetRef, tier, level, active and offline hours).
 
@@ -15688,7 +17054,7 @@ end
   within ±20 % or equals its §C5.1 level gate (±0.05 h).
 - **AC-22-03:** In the scenario-B simulation (with offline earnings) no tier is reached before its §C5.1 level gate.
 - **AC-22-04:** A telemetry cohort of ≥ 1,000 new players reaches `TIER_05` in a median of 14 ± 2.8 active hours (§C4.4 ±20 %).
-- **AC-22-05:** No code path outside `EconomyService` writes `wallet.MB`, `wallet.MS` or `wallet.RT` (static lint in CI).
+- **AC-22-05:** No code path outside `EconomyService` writes `wallet.balances.MB`, `.MS` or `.RT` (static lint in CI).
 - **AC-22-06:** Replaying any economy remote 100 times with the same client GUID / idempotency key changes the balance exactly once.
 - **AC-22-07:** Balances never go below 0 across a 10,000-session soak test with random purchases, wages and repairs.
 - **AC-22-08:** A purchase interrupted by a forced server shutdown results in either both the debit and the item or neither
@@ -15716,7 +17082,7 @@ end
 
 ## 23. Monetization
 
-> **Owner:** A14 Social & Economy. **Binding inputs:** canon §C4.1 ("Robux purchases buy cosmetics only … no premium soft
+> **Binding inputs:** canon §C4.1 ("Robux purchases buy cosmetics only … no premium soft
 > currency and no paid random rewards"), §C4.7 (capsules are earnable, never sold), §C17.4 (reward vocabulary).
 > **Implementation anchors in other sections:** receipt processing §28.18 (`ProcessReceipt`, `rbx:<PurchaseId>`,
 > `wallet.receipts`, `MMR_Receipts_v1`), Marketplace screen §24.30, Looks (cosmetic loadouts) §13, restaurant theme
@@ -15848,10 +17214,161 @@ pop-ups). **Accessibility:** animated and glowing skins respect Reduced VFX (§2
 - **Nonessential customization:** nameplate frames, sign fonts and neon colours, plate and tray styles in the player's own
   restaurant. Sign text remains player-authored and filtered (§21.6).
 
+### 23.6 Game Passes vs Developer Products
+
+| Use a… | When | Products | Ownership check | Grant path |
+|---|---|---|---|---|
+| **Game pass** | a single permanent perk that is the same for everyone and few in number | Extra Looks I, Extra Looks II, VIP Visual Effects | `MarketplaceService:UserOwnsGamePassAsync(userId, passId)` at join (cached for the session, `pcall` + retry 1/2/4 s) and on `PromptGamePassPurchaseFinished` (server re-checks; the client signal alone grants nothing) | no ledger needed: ownership is Roblox's record; perks are recomputed from ownership at every join |
+| **Developer product** | the large, growing catalog of individual cosmetics (skins, palettes, themes, decor packs, emotes, customization) | every other SKU | server catalog maps `ProductId → SKU`; owned SKUs live in `inventory.cosmetics` (§28) | `MarketplaceService.ProcessReceipt` → zero-delta `EconomyService:TransactWith` (reason `robux_cosmetic`, key `rbx:<PurchaseId>`) → `InventoryService:GrantCosmetic` (§28.18) |
+
+**Developer products are "consumable" to Roblox but permanent in our game:** the grant writes the SKU into
+`inventory.cosmetics`, so it is owned forever, survives server changes, and is restored from the receipt ledger if a
+profile is ever rolled back (§28 re-applies receipts newer than a restored version).
+
+**`ProcessReceipt` rules (implemented in §28.18, summarised here):**
+1. Player not in this server, profile not loaded, or Safe Mode → `NotProcessedYet` (Roblox re-delivers later).
+2. `PurchaseId` already in `wallet.receipts` (ring of 100) or the write-once `MMR_Receipts_v1` ledger → `PurchaseGranted`
+   without granting again (**idempotent by PurchaseId**).
+3. Unknown `ProductId` → `NotProcessedYet` + engineering alert (never guess a grant).
+4. Otherwise grant inside one `TransactWith` critical section (cosmetic + receipt record), then `SaveNowAsync`; return
+   `PurchaseGranted` **only after the save commits**, else `NotProcessedYet` (the item stays visible in-session).
+5. Purchases are requested through the server: the client calls `Market.RequestPurchase {sku}`; the server checks the
+   Marketplace is unlocked (§23.1 rule 5), the SKU is on sale and **not already owned**, then calls
+   `MarketplaceService:PromptProductPurchase(player, productId)` or `PromptGamePassPurchase`.
+6. **No gifting** of Robux items between players (consistent with §22.14.4); there is no trade or resale.
+
+### 23.7 Exclusively Earnable — Never Sold for Robux
+
+The following are obtainable **only** through play. No developer product, game pass, bundle, season track or promotion may
+grant, accelerate, discount or unlock them (audited per AC-23-03 and §35 TC-MUT-13):
+
+| Category | Items |
+|---|---|
+| Currencies | Morph Bucks, Mutation Shards, Research Tokens (§C4.1) — no premium currency exists |
+| Mutations | every gameplay mutation part `MUT_001`–`MUT_280` (incl. FX and Secret parts), their stats, abilities, passives, upgrade levels, duplicates, Lab fusions, Mystery Market access and rotations |
+| Morph Capsules | all capsules, their odds and the pity counter (§C4.7) |
+| Employees | hiring, rerolls, training, promotions, raises, managers and therefore **offline caps** (§C14.3) and offline income |
+| Restaurant | tiers and City Hall permits (§C6), stations and station levels, appliance/menu/seat capacity, earnable furniture and its atmosphere and durability, repairs |
+| Recipes | every recipe `RCP_*` and its learning |
+| Progression | XP, levels, stat points, skill points, stat and skill respecs (no paid respec), achievements, milestones, titles |
+| Quests & story | all quests, story chapters, event participation and event rewards |
+| Trophies | `FRN_901`–`FRN_910` (§C16.6) |
+| Social & arena | arena ratings, brackets, season rewards, showcase wins, co-op rewards, the 26 earnable emotes (§21.8.5) |
+| Customization basics | 5 functional loadouts, Looks 1–2 (+1 event Look), starter and earnable palettes, Body Mods MB palettes |
+| Travel & access | every district, Metro station, building and event (no paid areas, no paid queue priority) |
+
+### 23.8 Paid Random Items: None
+
+- **Policy:** the game sells **no paid random items** of any kind (§C4.1). Morph Capsules are earnable only, their odds are
+  always disclosed in the UI and the pity counter persists (§C4.7). The Marketplace never shows a "mystery" product.
+- **Future-proofing (required if this policy is ever revisited through §38):**
+  1. Call `PolicyService:GetPolicyInfoForPlayerAsync(player)` on join (wrapped in `pcall`; on failure assume the **most
+     restrictive** policy) and cache it for the session.
+  2. If `ArePaidRandomItemsRestricted` is `true`, the product is hidden and not purchasable for that player (server-
+     enforced in `Market.RequestPurchase`, not just hidden in UI).
+  3. Odds for every possible outcome must be shown on the product card **before** the purchase prompt, as percentages that
+     sum to 100 %, with no hidden rarity tiers, no dynamic odds and the same odds for every player.
+  4. The realised distribution is audited with the §22.15 χ² check; any pity rule is disclosed.
+  5. Random items could still never contain stats, currencies, capsules or anything listed in §23.7.
+- Other `PolicyInfo` fields: `IsPaidItemTradingAllowed` is irrelevant (no trading); `AreAdsAllowed` gates any future ad
+  placement; `AllowedExternalLinkReferences` — the game shows no external links.
+
+### 23.9 Premium Payouts
+
+Roblox Premium Payouts reward engagement time of Premium subscribers, which suits a game built around daily returns and
+long, relaxed sessions. Rules:
+- **No Premium-only gameplay**, areas, currency, caps or offline bonuses. Premium members may receive one cosmetic
+  welcome gift (a palette) detected via `player.MembershipType == Enum.MembershipType.Premium` and
+  `Players.PlayerMembershipChanged`.
+- `MarketplaceService:PromptPremiumPurchase` is called **only** when the player taps the neutral "About Premium" info
+  button in Settings — never automatically.
+- Engagement is pursued through fun (co-op, events, offline return loop), never through manipulative retention mechanics
+  (no streak-loss punishment beyond the gentle login streak in §20, no "you'll lose your stuff" messaging).
+
+### 23.10 Revenue Expectations (hypotheses, to be validated)
+
+All values below are **hypotheses** for planning, not commitments; live telemetry (§31) replaces them within 4 weeks of
+launch.
+
+```
+MonthlyRobux ≈ MAU × PayerConversion × ARPPU_month + PremiumPayouts
+```
+
+| Hypothesis | Low | Base | High | Rationale |
+|---|---|---|---|---|
+| Payer conversion (monthly payers ÷ MAU) | 1.0 % | 2.0 % | 3.0 % | cosmetic-only catalog, young audience, no random items |
+| ARPPU per month (R$) | 200 | 325 | 450 | typical basket: one theme or VIP + a skin or emote |
+| Premium Payouts share of total Robux | 20 % | 30 % | 40 % | engagement-heavy design (daily returns, long sessions) |
+| Top-selling lines (share of product revenue) | — | themes 30 %, skins 25 %, VIP 15 %, Looks 10 %, emotes 10 %, other 10 % | — | showing off restaurants and morphs to friends |
+| Example at 100,000 MAU (base) | — | 100,000 × 2 % × 325 = 650,000 R$ + ≈ 280,000 R$ Premium Payouts ≈ 930,000 R$/month | — | — |
+
+**Decision rules:** if conversion is below the low case, improve catalog breadth, previews and show-off moments (photo mode,
+showcases) — **never** add pressure, timers or power. If any cohort shows spend concentration (top 1 % of payers > 50 % of
+product revenue) the catalog is reviewed for kid-appropriateness. Revenue goals never override §23.1.
+
+### 23.11 Roblox Implementation
+
+- **Catalog config:** `ReplicatedStorage/Shared/Config/Marketplace` (display) and a server-only mirror with
+  `ProductId`/`PassId` ↔ SKU, line, price band, colourways, seasonal window and `onSale` flag; the build validator (§35)
+  fails if a SKU references anything in §23.7 or lacks the COSMETIC flag.
+- **Remotes:** `Market.RequestPurchase` (RF C2S `{ sku }`, 0.5/s b2) and `Market.OwnershipChanged` (Event S2C); grants only
+  from `ProcessReceipt` / pass checks (§29 TM-13).
+- **Unlock gate:** `Market.RequestPurchase` returns `LOCKED` until `QST_TUT_012` is complete and level ≥ 5; the Marketplace
+  button is hidden until then.
+- **Spending summary for families:** Settings → Account lists the player's Robux purchases in this game (from
+  `wallet.receipts` and `MMR_Receipts_v1`: date, item, price) — transparency for parents; Roblox's own parental spend
+  controls always apply.
+- **Analytics:** `mmr_market_view`, `mmr_market_preview`, `mmr_market_prompt`, `mmr_market_purchase` (sku, line, price),
+  `mmr_market_cancel` (§31); purchases are excluded from the §29.14 income anomaly metric.
+
+### 23.12 Edge Cases
+
+| # | Situation | Expected behaviour |
+|---|---|---|
+| 1 | Receipt arrives while the player is in another server or offline | `NotProcessedYet`; Roblox re-delivers when the player is in a server with the profile loaded (§28.18). |
+| 2 | Save fails after the grant | Item visible in-session; `NotProcessedYet` until a save commits; never granted twice (`rbx:` key + receipt ring + ledger). |
+| 3 | Same receipt delivered three times | Granted once; later deliveries return `PurchaseGranted` immediately (§35 TC-DATA-11). |
+| 4 | Accidental duplicate purchase of an owned SKU (race across two devices) | Server pre-check normally blocks it; if both receipts arrive, the second grants the item's alternate colourway (still cosmetic, never currency) and support is flagged. |
+| 5 | Game-pass ownership check fails at join (Marketplace outage) | Perks default off, retry 1/2/4 s and on next join; no permanent loss. |
+| 6 | Profile rolled back to an older version | All receipts newer than the restored version are re-applied (§28). |
+| 7 | Hostile customer auto-closes the Marketplace mid-purchase (E2) | Roblox's prompt is CoreGui and stays up; the result arrives as a toast (§24.30). |
+| 8 | Player under a policy that restricts a product type | `PolicyInfo` hides it and the server refuses the request. |
+| 9 | Seasonal product outside its window | Not purchasable; owners keep it forever; it returns next year (no permanent scarcity). |
+| 10 | Chargeback / refunded purchase reported by Roblox | The cosmetic is not revoked automatically (kid-friendly); repeated abuse is handled by moderation (§29.17). |
+| 11 | Paid skin on a part that is later unequipped or fused | The skin stays owned and can be applied to any other owned part. |
+| 12 | Theme applied, then the restaurant upgrades tier | Theme carries to the new shell; unmatched pieces fall back to default looks without loss (§15). |
+
+### 23.13 Acceptance Criteria
+
+- **AC-23-01:** No Robux product changes any number used by gameplay (stats, damage, cooldowns, atmosphere, seats, slots,
+  income, XP, odds, timers) — verified by diffing a full gameplay-state snapshot before and after granting every SKU.
+- **AC-23-02:** The catalog contains no random-outcome product; every product card lists its exact contents before the
+  purchase prompt opens.
+- **AC-23-03:** An automated audit finds 0 products or passes that grant MB, MS, RT, capsules, mutation parts, employees,
+  offline time, recipes, skill points, respecs or anything in §23.7 (shared with AC-01-02, AC-12-09).
+- **AC-23-04:** The Marketplace button is hidden and `Market.RequestPurchase` returns `LOCKED` until `QST_TUT_012` is complete
+  and the player is level ≥ 5; no purchase prompt appears in a player's first session (funnel test).
+- **AC-23-05:** No product card shows a countdown timer, stock counter or urgency text; every card shows the COSMETIC badge.
+- **AC-23-06:** No single product costs more than 499 R$ and no bundle more than 799 R$; bundles cost ≤ 80 % of their unowned
+  contents.
+- **AC-23-07:** Replaying a `ProcessReceipt` delivery for the same `PurchaseId` 3 times grants the cosmetic exactly once and
+  returns `PurchaseGranted` only after the grant is saved (with AC-28-06, TC-DATA-11).
+- **AC-23-08:** Game-pass perks are granted only after a server-side `UserOwnsGamePassAsync` returns true; a forged
+  `PromptGamePassPurchaseFinished` grants nothing.
+- **AC-23-09:** A skinned furniture item has exactly the atmosphere, durability and footprint of its earnable base item, and
+  Robux themes add 0 atmosphere (unit test over every decor/theme SKU).
+- **AC-23-10:** Arena hurtboxes and showcase theme scores are identical with and without paid skins (§21.9.3, §21.8.6).
+- **AC-23-11:** `PolicyService:GetPolicyInfoForPlayerAsync` is called once per session with a most-restrictive fallback, and
+  any product restricted by policy is refused server-side.
+- **AC-23-12:** Seasonal cosmetics are offered again at their next yearly event (catalog schedule check).
+- **AC-23-13:** `PromptPremiumPurchase` is only reachable from the Settings "About Premium" button; no Premium-only gameplay
+  exists (code search + UI audit).
+- **AC-23-14:** The Settings spending summary lists every Robux purchase in this game with date, item and price within 2 s.
+
 
 ## 24. UI/UX
 
-> **Owner:** A15 UI. This section specifies every player-facing interface of Mystery Morph Restaurant: the
+> This section specifies every player-facing interface of Mystery Morph Restaurant: the
 > shared design system, input adaptation, scaling and safe areas, the screen stack and the `UIController` state
 > machine, readability-in-chaos rules, accessibility, localization, UI performance, and a wireframe-level spec for
 > every interface in brief Part 17. Rules owned elsewhere are **displayed, never redefined**: morph customization
@@ -17430,7 +18947,7 @@ attachments. The table below adds the art envelope and per-slot budgets. These p
 4. **Skinned parts** (tails, long necks, tentacles, wings, antennae) use an armature of 2–6 bones with unique names
    and ≤ 4 weights per vertex. Bones arrive as `Bone` instances, which SecondaryMotion drives (§26).
 5. **LODs.** Export `_L0` and `_L1` (≈ 40 % of L0 tris). HEAD parts also export an `_L2` silhouette (≤ 300 tris),
-   which the §30 impostor swaps in. Body impostors are authored once per body-plan class (§25.3.8), not per part.
+   which the §30 impostor swaps in. Body impostors are authored once per body-plan class (§25.3.9), not per part.
 6. The pre-export validator script checks tri counts against §25.3.1, envelope fit, required sockets, UVs inside
    the 0–1 atlas space, and the 0.25-stud pivot grid.
 7. **Studio settings,** applied by the Asset Validator plugin on the templates (these cannot be changed at
@@ -17598,7 +19115,24 @@ inspection, from `ItemS` using the canon §C11.3 thresholds. It sets `Decal.Text
   - **Balance:** scythes, spatulas and whisks; the item balances on the flat side.
   - **Hover:** fallback; the item floats 0.25 stud off the attachment with a 1 Hz bob.
 
-#### 25.3.8 Budgets, LOD and impostors
+#### 25.3.8 NPC signature meshes
+
+Some named NPCs (§19) need body pieces that are not in the mutation catalogue (§36.3), so key characters stay
+unique. These **signature meshes** are NPC-only: never obtainable, stat-free, and listed in §19 as plain words with
+no ID. They are authored like mutation parts: same R15 attachment contract (§C13.7), same 0.25-stud grid and palette
+rules, and they count toward the 24-MeshPart / 6,000-triangle NPC budget.
+
+| Group | Signature meshes (from the canon key NPCs, §C16.3) | Attachment slot |
+|---|---|---|
+| Heads | moose head (`NPC_002`), tortoise head (`NPC_001`), hagfish head (`NPC_015`), snail head (`NPC_017`), train-engine head (`NPC_019`), giant rat head with crown (`NPC_020`), mole head (`NPC_022`), anglerfish head (`NPC_030`) | HEAD |
+| Torsos | toaster torso (`NPC_001`), vending-machine torso (`NPC_004`), filing-cabinet torso (`NPC_007`), tweed torso (`NPC_009`), corkboard torso (`NPC_012`), grandfather-clock torso (`NPC_018`), boombox torso (`NPC_024`), traffic-cone body (`NPC_026`), tour-bus torso (`NPC_027`), news-desk body (`NPC_030`), centipede body (`NPC_019`) | TORSO |
+| Limbs and hands | forklift legs (`NPC_006`), escalator legs (`NPC_014`), microphone hand (`NPC_011`), clipboard hands (`NPC_022`), mop arm (`NPC_028`) | LEG / ARM / HANDS |
+| Props worn as parts | monocle (`NPC_003`), lab coat (`NPC_013`), mysterious cloak (`NPC_015`), smartphone face (`NPC_021`) | FACE / BACK / SKIN layer |
+
+Rules: budget ≈ 30 signature meshes at launch (one art-week per ~6 meshes, §34); NPC_031+ use catalogue parts first
+and add a signature mesh only when §19 names one; each mesh ships with an impostor silhouette like any part (§25.3.9).
+
+#### 25.3.9 Budgets, LOD and impostors
 - **Player (L0):** ≤ 40 MeshParts, ≤ 15,000 tris (canon), guaranteed by §25.3.1. Other players' morphs render at
   L0 within 40 studs, at L1 beyond that, and as impostors beyond 100 studs. This is a client choice, stricter than
   canon.
@@ -17911,7 +19445,7 @@ flowchart LR
 | Asset | Pattern | Example |
 |---|---|---|
 | Mutation part mesh | `mut_<part id>_<Name>_<L/R>_L<0-2>` | `mut_MUT_145_OctopusArm_R_L1` |
-| Furniture | `frn_<Family>_<Name>_<State>` (A10 maps its ids) | `frn_DinerRetro_BoothRed_Cracked` |
+| Furniture | `frn_<Family>_<Name>_<State>` (§15 maps its ids) | `frn_DinerRetro_BoothRed_Cracked` |
 | Appliance body / kit | `stn_<Station>_Body`, `stn_<Station>_Lv<N>Kit` | `stn_Grill_Lv3Kit` |
 | Façade / interior shell | `fac_T<NN>_<Part>`, `int_T<NN>_<Part>` | `fac_T04_Sign` |
 | City | `cty_D<NN>_<Name>` | `cty_D03_CityHallDome` |
@@ -17969,7 +19503,7 @@ with impostors.
    hidden interpenetration is accepted; visible clipping > 0.1 stud fails review.
 2. **Horns plus toque.** Resolved by the HatMode and HORNS rules in §25.3.7. `MUT_102` suppresses the toque.
 3. **Faceless and screen heads.** Front sticker cards or Screen-style faces (§25.3.6).
-4. **NPC over the MeshPart budget.** Deterministic drop order (§25.3.8), so every client renders the same customer.
+4. **NPC over the MeshPart budget.** Deterministic drop order (§25.3.9), so every client renders the same customer.
 5. **Neon pink signage next to a Mythic item.** Signage pink `#FF4FD8` is offset from Mythic `#FF3EA5`, and rarity
    always carries its shape glyph.
 6. **Low-end devices without Future lighting quality.** Neon self-illumination and painted glows keep signage
@@ -18201,7 +19735,7 @@ on hire.
 | ROLE_ASST_MGR | `ANM_240` pace → `ANM_244` at the busiest station | 20 per lap | `ANM_240` |
 
 ##### Customer animation map by anger level
-Anger levels and thresholds are canon §C11.5; escalation logic is A5's (§10).
+Anger levels and thresholds are canon §C11.5; escalation logic lives in §10.
 
 | Anger level | Body | Face (§25) | Voice / SFX | Adaptive music |
 |---|---|---|---|---|
@@ -18440,7 +19974,7 @@ and must stay inside mobile CPU and memory limits.
 | UI | Master | 0.6 | — | UI, currency, level-up |
 | Ambience | Master | 0.4 | `CompressorSoundEffect` (SideChain = SFX; Threshold −24 dB, Ratio 3) | district beds, emitters, room tone |
 
-The player's settings sliders (0–100 %) multiply each default. A18 persists them (§28). **Alerts floor:** every duck
+The player's settings sliders (0–100 %) multiply each default. §28–§31 persists them (§28). **Alerts floor:** every duck
 in the table below skips Alerts, and the AudioController clamps any scripted Alerts reduction to −6 dB. Only the
 player's own Kitchen Alerts slider can go lower (readability and accessibility).
 
@@ -18462,7 +19996,7 @@ never pitch-bend.
 | Big event sources (`SFX_176`, `SFX_180`, `SFX_182`) | 20 / 200 (Rat King 30 / 300) | |
 
 **No bleed rule.** The largest max distance is 300 studs, so instanced interiors must sit ≥ 600 studs from every
-city emitter and from each other. This is an A17 layout requirement in §27.
+city emitter and from each other. This is a §27 layout requirement in §27.
 
 ##### Voice budget and stealing
 - Concurrent one-shot and loop voices: **24** (§27 AudioController budget), counting SFX, Alerts, Voice and UI.
@@ -18498,7 +20032,7 @@ city emitter and from each other. This is an A17 layout requirement in §27.
 - **Sentence synthesis.** Each sentence strings 3–9 grains with 30–60 ms gaps. The proxy's `Seed` attribute (§8)
   fixes a base pitch offset between −2 and +2 semitones, so a given customer always sounds like itself.
   Syllable order uses that seed plus a sentence counter.
-- **Personality tint.** The shared personality data (A5, §9) may carry a voice pitch offset (±2 semitones) and
+- **Personality tint.** The shared personality data (§8–§10, §9) may carry a voice pitch offset (±2 semitones) and
   tempo (0.8–1.25), looked up client-side by `PersonalityId`; for example, PER_006 talks at tempo 0.8. No extra
   attribute is replicated.
 - **Mood pitch shifts** use `Sound.PlaybackSpeed`, which shifts pitch and tempo together for a deliberate cartoon
@@ -18515,7 +20049,7 @@ city emitter and from each other. This is an A17 layout requirement in §27.
 | EVT_015 Tiny Day / EVT_016 Giant Day | +5 / −5 extra | clamp 0.6–1.6 | — | event modifier |
 
 - **Mouth sync.** On each grain onset, the client opens the MOUTH part's hinged jaw (a `Weld.C0` rotation of 8–20°)
-  or plays a face-decal "talk" frame (§25). Speech bubbles show A5's text; the audio stays gibberish.
+  or plays a face-decal "talk" frame (§25). Speech bubbles show §8–§10's text; the audio stays gibberish.
 - **Caps.** At most 4 customer voices play at once. Priority order: anger ≥ 3 first, then the customer being served
   or targeting you, then the nearest. Each customer waits ≥ 2.5 s between sentences, and an order call (`SFX_048`)
   plays once per order.
@@ -18774,7 +20308,7 @@ loading. District music streams on demand.
 
 ## 27. Roblox Architecture
 
-> **Owner:** A17 Architecture. This section is the build plan for the game: the source tree, toolchain, content
+> This section is the build plan for the game: the source tree, toolchain, content
 > pipeline, service framework, networking layer, the 20 canon services (§C19) and the client controllers, startup
 > and join flows, tick budgets, scaling and remote configuration. It **places and connects** systems; their rules
 > live in their own sections (cooking §5, customers §8–§10, combat §11, mutations §12, offline §17, economy §22, UI
@@ -19967,10 +21501,10 @@ offers for Mutation Mart (`BLD_01`) and Mystery Market (`BLD_13`), the starter m
 
 ```lua
 Grant(player: Player, mutationId: ContentId, source: string, txnId: string): PartInstance?
-Equip(player: Player, slot: string, partUid: string): Result; Unequip(player: Player, slot: string): Result
+Equip(player: Player, slot: string, partId: string): Result; Unequip(player: Player, slot: string): Result -- parts keyed by part ID (§28 `owned[partId]`)
 SwapLoadout(player: Player, index: number): Result; SaveLoadout(player: Player, index: number, name: string): Result
-Upgrade(player: Player, partUid: string, dupeUid: string?): Result -- txn "upg:<partUid>:<toLevel>"
-Fuse(player: Player, partUids: { string }): Result -- txn "fuse:<fusionCount>"
+Upgrade(player: Player, partId: string, useDuplicate: boolean): Result -- txn "upg:<partId>:<toLevel>"
+Fuse(player: Player, partIds: { string }, outputId: string): Result -- txn "fuse:<fusionCount>" (route rules §12.5)
 OpenCapsule(player: Player): Result -- { mutationId, rarity, convertedMS? }; dupes "dup:<partId>:<capsulesOpened>"
 SetMorphMeta(player: Player, meta: { name: string?, palette: { [string]: number }? }): () -- MorphAssemblyService only
 GetEquipped(player: Player): { [string]: string }; GetStatContribution(player: Player): StatBlock
@@ -19984,9 +21518,9 @@ PartGranted, EquipChanged, LoadoutSwapped, PartUpgraded, CapsuleOpened: Signal<.
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Mutation.Equip` / `Mutation.Unequip` | RF C2S | `{ slot, partUid? }` | menu |
+| `Mutation.Equip` / `Mutation.Unequip` | RF C2S | `{ slot, partId? }` | menu |
 | `Mutation.SwapLoadout` / `Mutation.SaveLoadout` | RF C2S | `{ index, name? }` | menu |
-| `Mutation.Upgrade` / `Mutation.Fuse` | RF C2S | `{ partUid, dupeUid? }` / `{ partUids }` | transaction |
+| `Mutation.Upgrade` / `Mutation.Fuse` | RF C2S | `{ partId, useDuplicate }` / `{ partIds, outputId }` | transaction |
 | `Mutation.OpenCapsule` | RF C2S | `{}` | transaction |
 | `Mutation.InventoryChanged` | Event S2C | `{ changed: { PartView }, removed: { string } }` | on change |
 
@@ -20017,7 +21551,7 @@ MorphBuilt: Signal<Player>
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Morph.SetName` | RF C2S | `{ name: string (≤ 20) }` | menu + 5 s cooldown |
+| `Morph.SetName` | RF C2S | `{ name: string (3–20) }` | menu + 30 s cooldown, max 10 per day (§13) |
 | `Morph.SetPalette` | RF C2S | `{ palette: { [slot]: paletteIndex } }` | menu |
 
 **Validation.** Names filtered with `TextService:FilterStringAsync` + `GetNonChatStringForBroadcastAsync`; palettes
@@ -20065,7 +21599,7 @@ EmployeeHired, EmployeeFired, AssignmentChanged, UnpaidBreakChanged: Signal<...>
 transform, so the report, `pendingOfflineReport`, `lastSimAt = toTs`, the offline side effects (special-stock
 consumption, durability damage, staff energy/morale — each applied by its owner's registered pure function) and the
 Welcome Back Crate (E5, txn `wb:<lastSimAt>`) commit in the **same** session-locked `UpdateAsync` (E11); merges into an
-existing pending report; idempotent Collect (`claimedReportIds` ring of 20, txn `off:<reportId>`); discoveries
+existing pending report; idempotent Collect (`claimedReportIds` ring of 20, txn `offline:<reportId>`); discoveries
 (≤ 1 capsule per real day); negative elapsed time → 0 and flagged.
 
 ```lua
@@ -20181,6 +21715,9 @@ QuestAccepted, ObjectiveProgress, QuestCompleted, QuestClaimed: Signal<...>
 | `Quest.Claim` | RF C2S | `{ questId }` | transaction |
 | `Quest.Track` | Event C2S | `{ questId? }` | menu |
 | `Quest.DialogueChoice` | Event C2S | `{ npcId, nodeId, choice: 1..4 }` | interact |
+| `Quest.Interact` | Event C2S | `{ npcId }` | interact |
+| `Quest.Gift` | RF C2S | `{ npcId, recipeId }` | transaction |
+| `Quest.Dialogue` / `Quest.Bark` | Event S2C / Unrel S2C | `{ node }` / `{ npcId, key }` | — |
 | `Quest.Progress` | Batch S2C | `{ questId, objective, value }` | 20 Hz |
 
 **Validation.** No client "complete" remote exists; the dialogue node must be the player's current node with that NPC,
@@ -20230,7 +21767,9 @@ the access code; `arena` block), emotes. It is the **single permission policy po
 `GetPermission` before acting for a non-owner.
 
 ```lua
-GetPermission(restaurantId: string, player: Player, action: "Cook" | "Serve" | "Clean" | "Fight" | "Build" | "Spend"): boolean
+GetPermission(restaurantId: string, player: Player, action: CoopAction): boolean
+-- CoopAction (matches the §21 permission matrix): "Cook" | "Serve" | "Clean" | "Fight" | "Repair" | "Build"
+--   | "UseSpecialStock" | "AssignStaff" | "ChangeMenu" | "Spend" | "KickGuest" | "Invite"
 SetPermissions(owner: Player, perms: CoopPermissions): Result -- persists via RestaurantService:SetCoopSettings
 Invite(owner: Player, targetUserId: number): Result
 VisitFriend(player: Player, targetUserId: number): Result
@@ -21195,7 +22734,7 @@ reward value, price, grade or damage number.
 
 ## 28. Data Persistence
 
-> **Owner:** A18 Data & Ops. **Binding inputs:** §C3 (autosave 120 s, level cap 100, reputation scale),
+> **Binding inputs:** §C3 (autosave 120 s, level cap 100, reputation scale),
 > §C4 (MB/MS/RT only), §C5 (stat caps, respec rules), §C15 (offline persistence & idempotency),
 > §C19 (`PlayerDataService`, `EconomyService`, `OfflineEarningsService`, …), §C22 E1/E5/E6/E11/E13.
 > §27 places the modules named here in the project tree; this section is authoritative for *what* is
@@ -21238,8 +22777,8 @@ the restaurant, staff, quests, offline reports, purchases — so that:
 | `SCHEMA_VERSION` | 3 | Current profile schema; increments with every migration (§28.12). |
 | `AUTOSAVE_INTERVAL_S` | **120** (canon §C3) | Per player; staggered 15 s per player slot (8 slots × 15 s = 120 s, §27.1). |
 | `LOCK_STALE_S` | **360** [TUNABLE] | = 3 missed refreshes × 120 s. A lock older than this may be stolen. |
-| `PRESENCE_TTL_S` / `PRESENCE_REFRESH_S` | 90 / 30 [TUNABLE] | MemoryStore liveness key of the owning server (§28.13). |
-| `PRESENCE_DEAD_CONFIRM` | 2 reads ≥ 10 s apart [TUNABLE] | Required before a "presence-confirmed" steal of a non-stale lock. |
+| `HEARTBEAT_TTL_S` / `HEARTBEAT_REFRESH_S` | 90 / 30 [TUNABLE] | Lock-owner heartbeat in MemoryStore (§28.13); distinct from §21.10's player `Presence` map. |
+| `HEARTBEAT_DEAD_CONFIRM` | 2 reads ≥ 10 s apart [TUNABLE] | Required before a "heartbeat-confirmed" steal of a non-stale lock. |
 | `RELEASE_WAIT_S` | 15 [TUNABLE] | How long a loader waits after a MessagingService release request. |
 | `RETRY_BACKOFF_S` | **1, 2, 4, 8, 16** (canon E6) | Max 5 retries for every DataStore call. |
 | `SAFE_MODE_KICK_S` | **60** (canon E6) | Safe Mode duration before the friendly kick. |
@@ -21264,11 +22803,11 @@ the restaurant, staff, quests, offline reports, purchases — so that:
 | Element | Behavior |
 |---|---|
 | Save pip | A tiny pickle-jar icon next to the MB counter pulses once (0.6 s) after each successful save. No text, no sound. |
-| "Saving delayed…" | If the last successful save is > 300 s old, the pip turns orange with a tooltip: *"The filing cabinet is stuck — we'll keep trying. Your progress is safe up to <time>."* |
+| "Saving delayed…" | If the last successful save is > 300 s old, the pip turns orange with a tooltip: *"The filing cabinet is stuck — we'll keep trying. Your progress is safe up to [time]."* |
 | Safe Mode banner | Full-width, non-blocking: *"Your kitchen keys are stuck in the pickle jar! You can look around, but earning and spending are paused while we try again."* Countdown to the 60 s retry/kick. Shop, hire, collect and claim buttons are disabled with a lock glyph (not color-only). |
 | Load screen | "Unlocking the shack…" with Nana Gristle's hologram tapping a clock; shows "Waiting for your other kitchen to close…" while a lock handoff is in progress (§28.13). |
 | Kick texts | Load failure (E6): *"We couldn't open your restaurant's filing cabinet. Your progress is safe — please rejoin in a minute!"* · Lock lost: *"Your restaurant was opened somewhere else. Your saved progress is safe — rejoin to keep cooking!"* · Newer build: *"A fresher version of Morph City just opened! Hop over to keep cooking."* |
-| Rollback notice | One-time modal after an automatic or support rollback: *"Nana Gristle tidied up a mix-up in your recipe box. Your restaurant was restored to <date/time>."* Optional compensation [TUNABLE]: 1 Morph Capsule (a §C17.4 reward). |
+| Rollback notice | One-time modal after an automatic or support rollback: *"Nana Gristle tidied up a mix-up in your recipe box. Your restaurant was restored to [date and time]."* Optional compensation [TUNABLE]: 1 Morph Capsule (a §C17.4 reward). |
 
 ### 28.5 Progression
 
@@ -21279,8 +22818,8 @@ grows with content. Growth is bounded by design:
 |---|---|---|
 | New player after tutorial (L5, TIER_01) | ≈ 9 KB | defaults, 5 starter parts, 12 layout objects |
 | Mid-game (L26, TIER_05, ~15 h) | ≈ 32 KB | ~60 parts, 120 layout objects, 8 staff |
-| Late-game (L80, TIER_10, ~120 h) | ≈ 67 KB | ~200 parts, 300 layout objects, 20 staff |
-| Theoretical worst case (all 280 parts, all rings full) | ≈ 118 KB | §28.10 |
+| Late-game (L80, TIER_10, ~120 h) | ≈ 69 KB | ~200 parts, 300 layout objects, 20 staff |
+| Theoretical worst case (all 280 parts, all rings full) | ≈ 123 KB | §28.10 |
 
 New content is **append-only**: new mutation, recipe, quest or achievement IDs extend the bitsets and maps
 without a migration. Only *representation* changes (renamed/reshaped fields) need a schema migration (§28.12).
@@ -21310,8 +22849,8 @@ load transform run as the owners' registered pure functions (ownership by code, 
 | `settings` | `PlayerDataService` | `uiSettings` and graphics preferences via validated `PlayerData.UpdateSettings` |
 | `wallet` | **`EconomyService` only** (§C19) | balances, idempotency keys, ledger, Robux receipt ring |
 | `progression` | `ProgressionService` | level, XP, stats, skills, specializations, achievements, milestones, counters, titles, emotes |
-| `mutations` | `MutationService` | owned parts, duplicates, capsules and pity, equipped body, ability bar, loadouts |
-| `morph` | `MorphAssemblyService` | morph name, colors, owned palettes |
+| `mutations` | `MutationService` | owned parts, duplicates, capsules and pity, equipped body with per-slot palettes, ability bar, 5 functional loadouts (palettes, synergy pins, icon, linked Look) |
+| `morph` | `MorphAssemblyService` | morph name (30 s cooldown, ≤ 10/day), colors, owned palettes, cosmetic Looks, Morphdex bitsets |
 | `restaurant` | `RestaurantService` | tier, plot preference, upgrades (incl. per-station-type levels `UPG_…#n`), reputation, regulars |
 | `layout` | `BuildingService` | packed placed objects — every placed item, appliances included, is a furniture record |
 | `durability` | `RepairService` | sparse durability per placed object |
@@ -21321,7 +22860,7 @@ load transform run as the owners' registered pure functions (ownership by code, 
 | `offline` | `OfflineEarningsService` | `lastSimAt`, pending report, claimed ring, capsule and welcome-back stamps |
 | `quests` | `QuestService` | quest states and claims, daily/weekly cycles, login streak, tutorial |
 | `city` | `CityEventService` (§27.17 lists no `city` section; added for §18.9.7 — single writer to be confirmed by §27) | discoveries, secrets, event claims, pending event rewards, season track |
-| `social` | `MultiplayerService` | co-op permissions, arena record |
+| `social` | `MultiplayerService` | door policy, role permissions, Co-Chefs, ban list, guest-pay counters, per-mode arena ratings, emote wheel, equipped title (§21.10) |
 
 External platform dependencies: `DataStoreService`, `MemoryStoreService`, `MessagingService`,
 `MarketplaceService`, `TeleportService`, `HttpService` (GUIDs, JSON), Open Cloud Data Stores API (ops tools).
@@ -21345,7 +22884,7 @@ External platform dependencies: `DataStoreService`, `MemoryStoreService`, `Messa
 
 | MemoryStore structure | Kind | Key | TTL | Purpose |
 |---|---|---|---|---|
-| `mmr_presence` | HashMap | `u<UserId>` → `{jobId, nonce}` | 90 s, refreshed every 30 s | Liveness of the lock owner (§28.13). |
+| `mmr_lock_heartbeat` | HashMap | `u<UserId>` → `{jobId, nonce}` | 90 s, refreshed every 30 s | Liveness of the lock owner, written only by the server holding the lock — not player location (§21.10 `Presence` serves that). |
 | `mmr_handoff` | HashMap | `u<UserId>` → `{fromJobId, releasedAt, saveSeq}` | 120 s | Tells a teleport destination that a release is in flight (wait, don't steal). |
 | `mmr_lb_cache` | HashMap | `<board>` → top-100 rows | 300 s | Cross-server leaderboard cache; one elected server refreshes it. |
 | `mmr_mod_queue` | Queue | — | 7 days | Flags awaiting human review (§29). |
@@ -21382,9 +22921,9 @@ erasure procedure (§28.24); `b` lets the rollback tool find the last version wr
 
 The profile is split into the **sections and single writers fixed in §27.17** (`meta`, `settings`, `wallet`,
 `progression`, `mutations`, `morph`, `restaurant`, `layout`, `durability`, `inventory`, `recipes`,
-`employees`, `offline`, `quests`, `social`). Types live in `ReplicatedStorage/Shared/Types` (types only, so
+`employees`, `offline`, `quests`, `social`) plus a `city` section required by §18.9.7. Types live in `ReplicatedStorage/Shared/Types` (types only, so
 client code can be typed against the replicated view) and are enforced by the server validator (§28.20.4).
-Field names stay readable: the worst case is ~2.9 % of the 4 MB key limit (§28.10), so only structures that
+Field names stay readable: the worst case is ~3.0 % of the 4 MB key limit (§28.10), so only structures that
 grow with content are compacted (§28.11). Fields marked *transient* exist in memory only and are stripped by
 the encoder before every write.
 
@@ -21490,9 +23029,8 @@ export type Progression = {
 		counters: { [string]: number },     -- shared lifetime counters ("customers_served", "tantrums_calmed",
 		                                    -- "repairs_done", "perfect_dishes", ...) read by achievements & quests
 	},
-	titles: { string },                -- cosmetic text titles (§C17.4)
-	equippedTitle: string?,
-	emotes: { string },                -- earnable emote keys
+	titles: { string },                -- earned cosmetic text titles (§C17.4); equipped one in social.titleEquipped
+	emotes: { string },                -- earned emote keys; Robux emotes live in inventory.cosmetics
 }
 ```
 
@@ -21534,11 +23072,14 @@ export type OwnedPart = {
 	new: boolean,           -- "NEW" badge not yet seen
 }
 
-export type Loadout = {
+export type Loadout = {               -- functional loadout (§13.12)
 	name: string,                     -- player text (<= 20 chars): stored raw, filtered on display, never logged
 	slots: { [string]: string },      -- AnatomySlot -> part ID
 	abilityBar: { string },           -- <= 4 ABL IDs, each from an equipped part (§C12.1)
-	palette: string?,                 -- palette key from morph.palettes
+	palette: { [string]: number },    -- per-slot colors: AnatomySlot -> palette index (§13.14)
+	pins: { string },                 -- <= 5 pinned synergy IDs (SYN_, §12.10.3)
+	icon: string,                     -- loadout icon key (§13.12)
+	look: number?,                    -- linked cosmetic Look index (morph.looks)
 }
 
 export type Mutations = {
@@ -21550,8 +23091,10 @@ export type Mutations = {
 	keepDuplicates: boolean,          -- false = auto-convert duplicates to MS per §C4.6
 	secretProgress: { [string]: number }, -- e.g. secretProgress["MUT_116"] = PERFECT RCP_PST_008 served
 	equipped: { [string]: string },   -- current body: AnatomySlot -> part ID (FUR/SCALES exclusive, §C13.1)
+	slotPalette: { [string]: number }, -- live body's per-slot colors: AnatomySlot -> palette index (§13.14)
 	abilityBar: { string },
-	loadouts: { Loadout },            -- [1] Chef, [2] Fighter, [3] Repair, [4+] cosmetic extra slots (§23)
+	loadouts: { Loadout },            -- [1] Chef, [2] Fighter, [3] Repair (free); [4]-[5] functional, earned
+	                                  -- via achievements (§13.12) — never cosmetic; cosmetic Looks are morph.looks
 	activeLoadout: number,            -- 0 = unsaved custom body
 	lastLoadoutSwapAt: UnixTime,      -- 10 s swap cooldown (§C22 E4)
 }
@@ -21561,7 +23104,7 @@ Equipped and loadout parts must exist in `owned`; a part consumed by Lab fusion 
 and every loadout in the same in-memory step. Secrets cannot duplicate (§C4.6): a second Secret grant converts
 to MS, and the validator rejects `copies > 0` on a Secret.
 
-#### 28.9.6 `morph` — name, palettes, Morphdex (writer: `MorphAssemblyService`)
+#### 28.9.6 `morph` — name, palettes, cosmetic Looks, Morphdex (writer: `MorphAssemblyService`)
 
 ```lua
 export type MorphColors = { primary: string, secondary: string, accent: string }  -- "#RRGGBB"
@@ -21570,10 +23113,20 @@ export type Morphdex = {               -- §12.9 Morphdex (§12b): keyIndex = he
 	worn: string,                     -- base64 bitset, same layout
 	titleBits: number,                -- 32-bit mask of Morphdex titles earned
 }
+export type Look = {                  -- cosmetic Look (§13.12; extra slots purchasable per §23)
+	palette: { [string]: number },    -- per-slot palette indices
+	fx: string?,                      -- cosmetic FX key
+	title: string?,                   -- displayed title key
+	pedestal: string?,                -- showcase pedestal key
+}
 export type Morph = {
 	morphName: string,          -- player text, same rules as Loadout.name (`Morph.SetName`)
+	lastNameChangeAt: UnixTime, -- 30 s cooldown between name changes (§13.13)
+	nameChangeDay: DayStamp,    -- with nameChangesToday: max 10 changes per UTC day (§13.13)
+	nameChangesToday: number,
 	colors: MorphColors,        -- current colors (`Morph.SetPalette`)
 	palettes: { string },       -- owned cosmetic palette keys (rewards §C17.4, Body Mods BLD_02)
+	looks: { Look },            -- 1..10 cosmetic Looks, stored apart from functional loadouts
 	morphdex: Morphdex,
 }
 ```
@@ -21745,45 +23298,63 @@ export type City = {                  -- fields required by §18.9.7
 #### 28.9.11 `offline` — simulation state (writer: `OfflineEarningsService`)
 
 ```lua
-export type IncidentLine = { inc: string, count: number, delta: number }  -- incident ID (§36.9), MB effect
+export type OfflineSegment = {        -- one simulated interval; each capped separately (§C15)
+	fromTs: UnixTime, toTs: UnixTime, simulatedSec: number, capHours: number,
+	capped: boolean, tier: number, closedEarlyStep: number?,
+}
 
-export type OfflineReport = {
-	reportId: string,                 -- deterministic: hash(UserId, fromTs, toTs, SIM_VERSION)
-	fromTs: UnixTime, toTs: UnixTime,
-	hours: number,                    -- simulated hours after cap
-	capHours: number,                 -- manager cap applied (§C14.3)
-	capped: boolean,                  -- "capped" label (§C22 E5)
-	segments: number,                 -- intervals merged into this report (each capped separately, §C15)
-	customers: number,
-	revenue: number, tips: number, ingredients: number, wages: number, repairs: number,
-	incidents: { IncidentLine },
-	discoveries: { ms: number, crates: { [string]: number }, capsules: number },  -- never RT (§C4.1)
-	net: number,                      -- max(0, sum of Net_step) (§C15)
+export type OfflineReport = {         -- contents defined by §17.7; fractions kept until payout
+	reportId: string,                 -- "<UserId>:<firstFromTs>:<lastToTs>:v<SIM_VERSION>" (§17.7)
 	simVersion: number,
+	segments: { OfflineSegment },
+	customers: number, revenue: number, tips: number, delivery: number, ingredients: number,
+	wages: number, autoRepairs: number, incidentNet: number, net: number,
+	ms: number, capsules: number,     -- discoveries; never RT (§C4.1)
+	crates: { { ing: string, units: number } },
+	damage: { { objectId: string, points: number } }, deferredRepairMB: number,
+	incidents: { { id: string, step: number, mb: number, employeeUid: string?, n: number } }, -- <= 20 kept
+	employeeLines: { { uid: string, kpi: { [string]: number } } },
+	soldOut: { { rcp: string, step: number } },
+	suggestions: { string },
+	welcomeBackCrate: boolean,        -- E5 crate (absence >= 7 days), granted at Collect (§17.7)
 }
 
 export type Offline = {
 	lastSimAt: UnixTime,              -- §C15; advanced by online saves and set to leave time (E1)
+	lastLogoutAt: UnixTime,           -- §17.7
 	simVersion: number,
 	pendingOfflineReport: OfflineReport?,
 	claimedReportIds: { string },     -- ring of CLAIMED_REPORT_RING = 20 (§C15)
-	lastCapsuleDay: DayStamp,         -- at most 1 offline Morph Capsule per real day (§C15)
-	lastWelcomeBackAt: UnixTime,      -- Welcome Back Crate idempotency (§C22 E5)
+	lastOfflineCapsuleDay: DayStamp,  -- at most 1 offline Morph Capsule per real day (§C15)
 	clockFlags: number,               -- loads where now < lastSimAt beyond tolerance (flagged, §C15)
 }
 ```
 
-#### 28.9.12 `social` — co-op permissions and arena (writer: `MultiplayerService`)
+#### 28.9.12 `social` — co-op roles, door policy, ban list, arena (writer: `MultiplayerService`, §21.10)
 
 ```lua
-export type CoopSettings = {
-	allowGuests: "FRIENDS" | "NOBODY" | "EVERYONE",
-	guestCanCook: boolean, guestCanServe: boolean, guestCanRepair: boolean,   -- `Multiplayer.SetPermissions`
-	guestPayToday: number,            -- MB earned as a guest today; daily cap 1.5 x NetRef (§22.3)
+export type CoopSettings = {          -- = §21.10 (writer MultiplayerService, social section <= 2 KB)
+	doorPolicy: "OPEN" | "FRIENDS" | "INVITE" | "CLOSED",   -- default "FRIENDS"
+	rolePerms: { CoChef: { [string]: boolean }, Guest: { [string]: boolean } }, -- §21.3 permission toggles
+	playerOverrides: { [string]: "COCHEF" | "GUEST" },     -- keyed by tostring(UserId), max 20
+	coChefs: { number },              -- max 10 UserIds (friends at promotion time)
+	banList: { number },              -- max 50 UserIds
+	acceptInvitesFrom: "FRIENDS" | "NOBODY",
 	guestPayDay: DayStamp,            -- resets guestPayToday when the DayStamp changes
+	guestPayToday: number,            -- MB earned as a guest today; daily cap 1.5 x NetRef (§21.4.1, §22.3)
 }
-export type Arena = { optedIn: boolean, season: number, rating: number, wins: number, losses: number }
-export type Social = { coop: CoopSettings, arena: Arena }
+export type Arena = {
+	optedIn: boolean, season: number,
+	ratings: { duel: number, tag: number, brawl: number, cookoff: number },   -- per-mode ratings (§21.9)
+	matchesThisSeason: number, peakBracket: number, wins: number, losses: number,
+	leaverStrikes: { UnixTime },      -- strike timestamps within the last 24 h
+}
+export type Social = {
+	coop: CoopSettings,
+	arena: Arena,
+	emoteWheel: { string },           -- equipped emote keys (owned emotes: progression.emotes / inventory.cosmetics)
+	titleEquipped: string?,           -- equipped title (owned titles: progression.titles)
+}
 ```
 
 #### 28.9.13 `settings` and `uiSettings` (writer: `PlayerDataService`)
@@ -21857,8 +23428,8 @@ Encoded size = `#HttpService:JSONEncode(profile)`, measured before every write.
 | `settings` | 1 KB | 2.5 KB | `uiSettings` ≤ 2 KB (validator) |
 | `wallet` | 7 KB | 13 KB | ledger 50 × ~110 B, keys 64 × ~30 B, receipts 100 × ~60 B |
 | `progression` | 8 KB | 20 KB | one entry per achievement/milestone/skill node; ≤ 60 counters; `xpOnceKeys` bounded by content (expired cycle keys pruned) |
-| `mutations` | 21 KB | 31 KB | ≤ 280 distinct parts × ~95 B (+ ~95 B per future part) + ≤ 8 loadouts |
-| `morph` | 4 KB | 4.5 KB | Morphdex bitsets ≈ 3.4 KB (§12b) + palettes |
+| `mutations` | 22 KB | 32 KB | ≤ 280 distinct parts × ~95 B (+ ~95 B per future part) + 5 loadouts with per-slot palettes and pins |
+| `morph` | 4.5 KB | 5.5 KB | Morphdex bitsets ≈ 3.4 KB (§12b) + palettes + ≤ 10 Looks |
 | `restaurant` | 3 KB | 4 KB | regulars ≤ 20 × ~120 B + upgrade entries |
 | `layout` | 4 KB | 6 KB | ≤ 400 objects × ~14 chars |
 | `durability` | 0.5 KB | 6 KB | sparse; worst = every object damaged × ~14 B |
@@ -21868,8 +23439,8 @@ Encoded size = `#HttpService:JSONEncode(profile)`, measured before every write.
 | `offline` | 1.5 KB | 2.5 KB | one pending report + ring 20 |
 | `quests` | 3 KB | 5 KB | bitsets + ≤ 25 active quests + cycles |
 | `city` | 2 KB | 4 KB | event-claim ring 50, secrets list, season track |
-| `social` | 0.2 KB | 0.2 KB | fixed shape |
-| **Total** | **≈ 67 KB (1.6 %)** | **≈ 119 KB (2.9 %)** | |
+| `social` | 0.8 KB | 2 KB | §21.10 caps: overrides 20, Co-Chefs 10, ban list 50 |
+| **Total** | **≈ 69 KB (1.7 %)** | **≈ 123 KB (3.0 %)** | |
 
 **Guards.** `> SIZE_WARN` (512 KB) logs `profile_size_warn` with the per-block breakdown; `> SIZE_SOFT`
 (1 MB) halves every ring buffer before encoding and raises a P1 alert; `> SIZE_HARD` (3.5 MB) refuses the
@@ -21898,7 +23469,7 @@ per-type station level stored in `restaurant.upgrades` (decoders trust `restaura
 
 ```lua
 --!strict
--- ServerScriptService/PlayerDataService/Codec/Layout.lua
+-- ServerScriptService/Server/Services/PlayerDataService/Codec/Layout.lua
 local Base64 = require(script.Parent.Base64)        -- pure-Luau RFC 4648 encoder/decoder
 local Types = require(game:GetService("ReplicatedStorage").Shared.Types.ProfileTypes)
 
@@ -21954,7 +23525,7 @@ layout into the §27.17 `layout` (packed) and `durability` (sparse) sections.
 
 ```lua
 --!strict
--- ServerScriptService/PlayerDataService/Migrations.lua
+-- ServerScriptService/Server/Services/PlayerDataService/Migrations.lua
 local Layout = require(script.Parent.Codec.Layout)
 
 export type Migration = {
@@ -22059,14 +23630,14 @@ atomic `UpdateAsync`. Lock shape: `{jobId, placeId, acquiredAt, refreshedAt, non
 | L1 | `nil` (released or new player) | Acquire. | `lock_acquired` |
 | L2 | `jobId == game.JobId` (rejoin to same server) | Re-acquire with a new `nonce`; the old in-memory session is discarded first. | `lock_reacquired` |
 | L3 | `now − refreshedAt ≥ LOCK_STALE_S` (360 s = 3 missed refreshes) | **Steal.** | `lock_steal_stale` |
-| L4 | Not stale, and `mmr_presence[u<UserId>]` is absent or names a different `jobId`/`nonce` on `PRESENCE_DEAD_CONFIRM` reads | **Presence-confirmed steal** (owner is dead: it would refresh presence every 30 s). | `lock_steal_presence` |
-| L5 | Not stale and presence alive | Cancel the write (`return nil`), publish `mmr_lock_release`, poll every 3 s up to `RELEASE_WAIT_S`; if `mmr_handoff` shows a release in flight, keep polling. | `lock_wait` |
+| L4 | Not stale, and `mmr_lock_heartbeat[u<UserId>]` is absent or names a different `jobId`/`nonce` on `HEARTBEAT_DEAD_CONFIRM` reads | **Heartbeat-confirmed steal** (owner is dead: it would refresh its heartbeat every 30 s). | `lock_steal_heartbeat` |
+| L5 | Not stale and heartbeat alive | Cancel the write (`return nil`), publish `mmr_lock_release`, poll every 3 s up to `RELEASE_WAIT_S`; if `mmr_handoff` shows a release in flight, keep polling. | `lock_wait` |
 | L6 | Still held after the wait | Count as one failed attempt of the E6 backoff (1, 2, 4, 8, 16 s); after the 5th, Safe Mode (§28.16). | `lock_wait_timeout` |
 
 If MemoryStore itself is unavailable, L4 is skipped and only the stale rule applies (worst case: a crashed
 server's lock delays reload by ≤ 360 s; the player sees the load screen and then Safe Mode per E6).
 
-**Refresh.** Every successful save sets `lock.refreshedAt = now` (autosave doubles as heartbeat); presence is
+**Refresh.** Every successful save sets `lock.refreshedAt = now` (autosave doubles as the lock refresh); the MemoryStore heartbeat is
 refreshed every 30 s independently. **Lock lost.** Every save transform first checks
 `lock.jobId == game.JobId and lock.nonce == session.nonce`; if not, it returns `nil`, the session is marked
 `lost`, no further writes are attempted, unsaved deltas are summarized to the moderation log for support,
@@ -22079,17 +23650,17 @@ save immediately. If the player *is* still present (ghost request), it ignores t
 
 ```lua
 --!strict
--- ServerScriptService/PlayerDataService/SessionLock.lua (excerpt: the acquire transform)
+-- ServerScriptService/Server/Services/PlayerDataService/SessionLock.lua (excerpt: the acquire transform)
 local Types = require(game:GetService("ReplicatedStorage").Shared.Types.ProfileTypes)
-local BuildInfo = require(game:GetService("ServerScriptService").Shared.BuildInfo) -- { ID: string }
+local BuildInfo = require(game:GetService("ServerScriptService").Server.Framework.BuildInfo) -- { ID: string }
 local Defaults = require(script.Parent.Defaults)
 
-export type AcquireOutcome = "acquired" | "reacquired" | "stolen_stale" | "stolen_presence" | "locked"
+export type AcquireOutcome = "acquired" | "reacquired" | "stolen_stale" | "stolen_heartbeat" | "locked"
 
 local LOCK_STALE_S = 360
 
 local function acquireTransform(
-	userId: number, now: number, nonce: string, presenceDead: boolean,
+	userId: number, now: number, nonce: string, heartbeatDead: boolean,
 	onOutcome: (AcquireOutcome) -> ()
 ): (any, DataStoreKeyInfo?) -> (any, { number }?, { [string]: any }?)
 	return function(current: any, _keyInfo: DataStoreKeyInfo?)
@@ -22102,8 +23673,8 @@ local function acquireTransform(
 			outcome = "reacquired"
 		elseif now - lock.refreshedAt >= LOCK_STALE_S then
 			outcome = "stolen_stale"
-		elseif presenceDead then
-			outcome = "stolen_presence"
+		elseif heartbeatDead then
+			outcome = "stolen_heartbeat"
 		else
 			onOutcome("locked")
 			return nil, nil, nil            -- cancel: do not touch the stored value
@@ -22141,7 +23712,7 @@ sequenceDiagram
     participant B as Server B (new)
     B->>DS: UpdateAsync acquire (lock held by A)
     DS-->>B: cancelled - locked and not stale
-    B->>MS: read mmr_presence and mmr_handoff
+    B->>MS: read mmr_lock_heartbeat and mmr_handoff
     B->>A: MessagingService mmr_lock_release
     A->>DS: UpdateAsync leave save with lock = nil
     A->>MS: write mmr_handoff (TTL 120 s)
@@ -22160,17 +23731,19 @@ sequenceDiagram
    seeded function (`Seed = hash(UserId, lastSimAt, SIM_VERSION)`) that builds or merges `pendingOfflineReport`,
    applies offline side effects through the owners' registered pure functions (special-stock consumption in
    `inventory`, offline damage in `durability`, staff energy/morale in `employees`) and sets `lastSimAt = toTs`
-   (§C15) → grants the
-   **Welcome Back Crate** if `now − lastSimAt ≥ 7 days` (1 Morph Capsule + 50 MS, txn `wb:<lastSimAt>`,
-   §C22 E5) → returns `(data, {UserId}, metadata)`. This is exactly the canon "one session-locked
+   (§C15). The simulation rules — including no report for absences under 300 s and the long-absence taper
+   (hours 0–2 ×1.0, 2–8 ×0.5, 8–24 ×0.2) — are §17's. When the absence measured from `offline.lastLogoutAt` is
+   ≥ 7 days, the transform only sets the report's `welcomeBackCrate` flag (§C22 E5): the crate (1 Morph Capsule +
+   50 MS) is granted **at Collect**, idempotent by `reportId` exactly like the earnings (§17.7, §28.17); nothing is
+   granted at load time → returns `(data, {UserId}, metadata)`. This is exactly the canon "one session-locked
    `UpdateAsync`": the report and `lastSimAt` commit together or not at all (§C22 E11). A transform that throws
    is skipped and logged without blocking the load; for the offline transform that leaves `lastSimAt` unchanged,
    so the next session simulates the same interval — no loss, no duplicate (§27.8.11).
 3. On `locked`: rules L4–L6. On `future_schema`: refuse, message, teleport (§28.12 rule 6).
 4. After commit, in memory: decode packed fields; run the **validator** (§28.20.4); replay `pendingOps`
-   (§28.20.2); roll daily/weekly quest offers if the stamps changed (`QuestService`); write presence; start
+   (§28.20.2); roll daily/weekly quest offers if the stamps changed (`QuestService`); write the lock heartbeat; start
    the save scheduler; replicate the read model to the client; show Welcome Back if a report is pending.
-5. Analytics: `mmr_session_start` and the onboarding step if new (§31).
+5. Analytics: `mmr_session_start`, plus `mmr_daily_return` on the first session of a new UTC day (§31.10.2).
 
 `now < lastSimAt` (server clock skew between servers) yields `H = 0`; within `CLOCK_SKEW_TOLERANCE_S` it is
 silent, beyond it `offline.clockFlags += 1` and a `clock_skew` flag is logged (§C15, §29.15).
@@ -22202,7 +23775,7 @@ access) fail fast and alert; throttling and backend errors retry on the canon sc
 
 ```lua
 --!strict
--- ServerScriptService/PlayerDataService/Retry.lua
+-- ServerScriptService/Server/Services/PlayerDataService/Retry.lua
 local BACKOFF_S: { number } = { 1, 2, 4, 8, 16 }   -- canon §C22 E6: max 5 retries
 
 local NON_RETRYABLE: { string } = { "too large", "KeyNameLimit", "not allowed", "API access" }
@@ -22273,9 +23846,9 @@ entry → `MarkDirty(player, "wallet")` → `LogEconomyEvent` (§31.12). Persist
 | Customer payment / tip | `serve:<ticketId>` (§27.12.5) | a ticket settles once (`OrderService`); tickets are never persisted (E1/E13) |
 | Quest reward claim | `quest:<questId>:<cycleStamp>` (0 for non-repeatables) | quest state `COMPLETE → CLAIMED`, `quests.doneBits` |
 | Achievement / milestone claim | `ach:<id>` / `mls:<id>` | `progression.achievements.unlocked` / `.milestones` |
-| Offline collect | `offline:<reportId>` (§27.8.11) | `claimedReportIds` ring + pending-equality check (§28.19) |
+| Offline collect | `offline:<reportId>` (MB), `offline:<reportId>:ms` (§27.8.11, §17.7) | `claimedReportIds` ring + pending-equality check (§28.19) |
 | Daily login reward | `login:<DayStamp>` | `quests.dailyLogin.lastClaimDay` |
-| Welcome Back Crate | `wb:<lastSimAt>` | granted in the same write that advances `lastSimAt` |
+| Welcome Back Crate | `offline:<reportId>:wb` | `welcomeBackCrate` flag on the report, cleared with the report at Collect (§17.7) |
 | Robux cosmetic grant | `rbx:<PurchaseId>` | `wallet.receipts` + `MMR_Receipts_v1` (§28.18) |
 | Tier upgrade | `tier:<TIER_NN>` | `restaurant.tier` already ≥ target |
 | Shop purchase (MB/MS/RT) | client-generated GUID per purchase attempt (§27.12.5); price always read from the server catalog | none needed: a new GUID is a new, paid purchase |
@@ -22285,7 +23858,10 @@ entry → `MarkDirty(player, "wallet")` → `LogEconomyEvent` (§31.12). Persist
 | Repair charge (E3) | `repair:<jobId>` (§27.16) | the job completes once |
 | City event reward | `evt:<instanceId>` | `city.eventClaims` ring of 50 (§18.9.7) |
 | Co-op guest pay | `coop:<visitId>:<checkpointNo>` (§22) | visit record closed at settlement; `social.coop.guestPayToday` daily cap |
+| Arena match reward | `arena:<matchId>` (§22) | match record in `ArenaMatches` marked paid (§21.10) |
 | Arena season reward | `arenaseason:<seasonId>` (§22) | `social.arena.season` ≥ reward season |
+| Showcase podium reward | `showcase:<roundId>` (§22) | round record closed; daily round counter |
+| Furniture sell-back | `sell:<placedItemUid>` (§22) | item removed in the same `TransactWith` |
 
 Luau runs one script at a time without preemption, so a transaction and its grant cannot interleave with another
 request for the same player; the only requirement is that nothing inside the critical section yields (asserted in
@@ -22396,8 +23972,8 @@ the same profile key as the reward — so no ordering of reconnects, retries or 
 | Daily login streak | `dailyLogin.lastClaimDay` (DayStamp, server clock) | `today > lastClaimDay`; streak continues only if `today == lastClaimDay + 1` |
 | **Offline earnings** (§C15) | `pendingOfflineReport.reportId`, `claimedReportIds` (ring 20) | request's `reportId == pending.reportId` **and** `∉ claimedReportIds`; then credit via key `offline:<reportId>`, append id, clear pending — one step |
 | Merged offline intervals | new deterministic `reportId` for the merged span | the superseded id was never claimable once replaced |
-| Offline Morph Capsule | `offline.lastCapsuleDay` | ≤ 1 per real day, decided at simulation time (§C15) |
-| Welcome Back Crate (E5) | granted in the load write that advances `lastSimAt` | absence measured against the stored `lastSimAt` |
+| Offline Morph Capsule | `offline.lastOfflineCapsuleDay` | ≤ 1 per real day, decided at simulation time (§C15) |
+| Welcome Back Crate (E5) | report flag `welcomeBackCrate` set in the load write (absence from `lastLogoutAt` ≥ 7 days) | granted only at the report's Collect, once per `reportId` |
 | Achievements / milestones | `progression.achievements.unlocked[id]` / `progression.achievements.milestones[id]` | key absent |
 | One-time XP grants | `progression.xpOnceKeys` (§14) | key absent |
 | Tutorial gifts (QST_TUT_010 part, `EMP_001` via QST_TUT_012) | `quests.tutorial.choice`, `quests.tutorial.step` | choice unset / step below the granting step |
@@ -22420,7 +23996,7 @@ itself if `current.meta.lastWriteId == writeId` and reports success.
 
 ```lua
 --!strict
--- ServerScriptService/PlayerDataService/SaveTransform.lua (excerpt)
+-- ServerScriptService/Server/Services/PlayerDataService/SaveTransform.lua (excerpt)
 local function saveTransform(session: any, encoded: any, writeId: string, now: number, release: boolean)
 	return function(current: any, _info: DataStoreKeyInfo?): (any, { number }?, { [string]: any }?)
 		if current == nil then
@@ -22607,7 +24183,7 @@ contested locks ≤ 48 calls in one minute (34 %). Policy, checked with
 `DataStoreService:GetRequestBudgetForRequestType(Enum.DataStoreRequestType.UpdateAsync)` before each write:
 below `BUDGET_RESERVE_NONCRITICAL` (20) defer leaderboards, snapshots and moderation batches; below
 `BUDGET_RESERVE_AUTOSAVE` (5) slip autosaves by 30 s; receipt, leave and shutdown saves are never deferred.
-MemoryStore use (presence: 16 requests/min per full server) is negligible against the experience quota
+MemoryStore use (lock heartbeat: 16 requests/min per full server) is negligible against the experience quota
 (≈ 1,000 + 100 × CCU request units/min at time of writing).
 
 ### 28.24 Roblox Implementation — Data Erasure (Right to Be Forgotten)
@@ -22625,16 +24201,19 @@ configured webhook) with the affected UserIds. Target completion: **7 days** [TU
    under Roblox's 30-day version retention; version-level deletion is used where the API offers it.
 4. **Ordered stores:** enumerate store names with prefix `MMR_LB_` (`ListDataStoresAsync`) and `RemoveAsync`
    the `<UserId>` key in each (all weekly and season boards).
-5. **MemoryStore:** remove `mmr_presence`/`mmr_handoff` keys (they also expire in ≤ 120 s); purge any queued
+5. **MemoryStore:** remove `mmr_lock_heartbeat`/`mmr_handoff` keys (they also expire in ≤ 120 s); purge any queued
    moderation items for the user.
 6. **Analytics:** Roblox processes its own AnalyticsService data; the optional external warehouse deletes all
    rows for the user's pseudonymous id (§31.17).
 7. **Verify:** prefix listing returns zero keys in every store and every ordered `GetAsync` returns `nil`;
    close the ticket with the hashed id and date.
 
-Design rule that keeps erasure complete: **no profile ever stores another player's UserId** (co-op visit IDs,
-event instance IDs and regulars are opaque or NPC-only), so erasing one player never requires editing another
-player's data.
+Design rule that keeps erasure tractable: profiles store another player's UserId **only** in the §21.10 social
+lists (`coChefs`, `banList`, `playerOverrides` — bare numbers, capped at 10/50/20, no other data about that
+person); co-op visit IDs, event instance IDs and regulars are opaque or NPC-only. Because erasure cannot enumerate
+every profile that lists a given UserId, those lists are **pruned lazily**: when the owner's profile loads, at most
+once per 7 days, `MultiplayerService` batch-checks the listed IDs with `UserService:GetUserInfosByUserIdsAsync`
+and drops any ID that no longer resolves to an account.
 
 ### 28.25 Edge Cases
 
@@ -22644,11 +24223,11 @@ player's data.
 | DP-02 | Disconnect during a capsule reveal | Result was committed to `mutations` before the reveal began; the leave save persists it; the next join shows a "You got…" recap. No re-roll. |
 | DP-03 | Collect pressed twice, from two devices, or after a reconnect (§C22 E11) | Second request fails the `reportId == pending.reportId` / `∉ claimedReportIds` check → no-op; the other server cannot load the locked profile at all. |
 | DP-04 | Same account joins server B while still on A | Roblox disconnects A; B's acquire finds a live lock → `mmr_lock_release` → A's leave save releases → B acquires (typically < 10 s). |
-| DP-05 | Server crashes with 8 players | Locks are orphaned; on rejoin, presence (TTL 90 s) is gone → presence-confirmed steal; without MemoryStore, stale steal at 360 s. Loss ≤ 120 s; the gap is simulated as offline time. |
+| DP-05 | Server crashes with 8 players | Locks are orphaned; on rejoin, the lock heartbeat (TTL 90 s) is gone → heartbeat-confirmed steal; without MemoryStore, stale steal at 360 s. Loss ≤ 120 s; the gap is simulated as offline time. |
 | DP-06 | DataStore outage at join (§C22 E6) | Backoff 1/2/4/8/16 s → Safe Mode (never saved) → silent retry at 30 s → kick at 60 s with the friendly message. |
 | DP-07 | DataStore outage at leave | Session stays in memory retrying until success or `BindToClose`; the lock prevents any other server from loading older data meanwhile. |
 | DP-08 | Server clock is behind the stored `lastSimAt` | `H = 0`; beyond 120 s of skew, `clockFlags += 1` and a `clock_skew` flag (§C15). No negative earnings, no wage charge. |
-| DP-09 | Return after 30 days (§C22 E5) | Offline hours capped at the manager cap ("capped" label); Welcome Back Crate granted in the load write; no decay of anything stored. |
+| DP-09 | Return after 30 days (§C22 E5) | Offline hours capped at the manager cap ("capped" label); the report carries the Welcome Back Crate flag (granted at Collect); no decay of anything stored. |
 | DP-10 | Robux purchase while saves are failing | Grant is applied in memory but `NotProcessedYet` is returned until a save commits; Roblox re-delivers; the player keeps the item visibly in-session and it becomes durable on the next commit. |
 | DP-11 | An old build loads a profile written by a newer build | `future_schema` → refuse, no write, "fresher version" message, teleport to an updated server. |
 | DP-12 | Shutdown during heavy throttling (§C22 E13) | Parallel final saves within 25 s; unsaved sessions keep their lock (no other server loads stale data) and are logged; worst-case loss = autosave window. |
@@ -22664,7 +24243,7 @@ player's data.
 - **AC-28-01:** With healthy DataStores, profile load (lock + migrations + offline simulation committed) completes in ≤ 3.0 s at p95 and ≤ 6.0 s at p99, measured from `PlayerAdded` across 1,000 test joins.
 - **AC-28-02:** In a harness where 2 servers call acquire on the same profile simultaneously 1,000 times, exactly one acquire succeeds per round and the loser never writes (verified by `saveSeq` continuity).
 - **AC-28-03:** Autosave fires every 120 s ± 6 s per player; each committed autosave advances `meta.saveSeq` by 1, `lock.refreshedAt` and `offline.lastSimAt` to the save time.
-- **AC-28-04:** After a simulated server crash, a rejoining player's profile loads in ≤ 100 s when MemoryStore is available (presence-confirmed steal) and ≤ 380 s when it is not (stale steal); data loss is ≤ 120 s of play.
+- **AC-28-04:** After a simulated server crash, a rejoining player's profile loads in ≤ 100 s when MemoryStore is available (heartbeat-confirmed steal) and ≤ 380 s when it is not (stale steal); data loss is ≤ 120 s of play.
 - **AC-28-05:** Pressing Collect on one offline report 1,000 times across double clicks, reconnects and a second server credits the wallet exactly once; `claimedReportIds` never exceeds 20 entries.
 - **AC-28-06:** With a fault injector failing the receipt save, `ProcessReceipt` returns `NotProcessedYet`; after the fault clears, the item is granted exactly once and `PurchaseGranted` is returned only after a committed save (0 duplicates in 500 trials).
 - **AC-28-07:** Applying the same idempotency key twice returns `DUPLICATE` and leaves all three balances, `txKeys` and the ledger unchanged; a transaction that would make any balance negative returns `INSUFFICIENT_FUNDS` and changes nothing (§27.12.5); after a server change, a key applied on the old server is still rejected on the new one.
@@ -22679,13 +24258,13 @@ player's data.
 - **AC-28-16:** At steady state with 8 players, DataStore usage stays ≤ 15 % of each per-minute budget; when the UpdateAsync budget is < 20, leaderboard/snapshot writes are deferred while receipt and leave saves still execute.
 - **AC-28-17:** A fixture with a NaN wallet triggers automatic restore of the newest valid version from the last 24 h, shows the rollback notice once, and sets `ROLLBACK_AUTO_<yyyymmdd>`.
 - **AC-28-18:** When another server steals the lock, the original server performs 0 further writes and kicks the player with the "opened somewhere else" message within 5 s of detecting the loss.
-- **AC-28-19:** Teleporting between servers loads the destination profile within 10 s at p95 without any stale or presence steal (`lock_steal_*` count = 0 in 200 teleports).
+- **AC-28-19:** Teleporting between servers loads the destination profile within 10 s at p95 without any stale or heartbeat steal (`lock_steal_*` count = 0 in 200 teleports).
 - **AC-28-20:** A capsule opened and followed immediately by a disconnect yields the same part on rejoin in 100 % of 200 trials (no re-roll), and the pity counter matches the number of capsules opened since the last Epic-or-better.
 
 
 ## 29. Security and Anti-Exploit
 
-> **Owner:** A18 Data & Ops. **Binding inputs:** §C3 (interaction range 7/10 studs + 2-stud server
+> **Binding inputs:** §C3 (interaction range 7/10 studs + 2-stud server
 > tolerance, MOVE cap 20.8, prop caps), §C4 (MB/MS/RT only, cosmetic-only Robux), §C5 (stat caps),
 > §C12 (combat constants), §C15 (server-time offline model), §C19 services, §C22 E2/E4/E7/E11/E12.
 > Persistence-side guarantees (session lock, transaction IDs, receipts) live in §28; this section covers
@@ -22719,7 +24298,7 @@ most of our audience plays on phones over mobile data.
 | Variable | Value | Notes |
 |---|---|---|
 | `rateClass` `interact` | 10/s, burst 15 [TUNABLE] | station & customer interactions, pick-up/drop, chop taps (`Cooking.InteractStation`) |
-| `rateClass` `combat` | **8/s, burst 12** | `Combat.UseAbility` and attack intents (integrator ruling; §11 aligns) |
+| `rateClass` `combat` | **8/s, burst 12** | `Combat.UseAbility` and attack intents (§11 aligns to this class) |
 | `rateClass` `menu` | 4/s, burst 8 | default class: shop browsing, inventory pages, queries |
 | `rateClass` `transaction` | 2/s, burst 4 | purchase, hire, upgrade, claim (a remote may declare a stricter limit, e.g. `Offline.Collect` 1/s burst 2, §27.8.11) |
 | `rateClass` `cosmetic` | 3/s, burst 6 | emotes, pings |
@@ -22728,6 +24307,7 @@ most of our audience plays on phones over mobile data.
 | `CHOP_MIN_GAP_S` | 0.12 s | minimum spacing between accepted chop taps |
 | `SPAM_FLAG` / `SPAM_KICK` | 50 strike points / 10 s → flag; 500 / 60 s → kick | strike weights in §29.10 |
 | `MOVE_SAMPLE_S` | 0.25 s | server position sampling (4 Hz) |
+| City Sprint multiplier | ×1.35 (§18), city districts only | legal city speed up to 20.8 × 1.35 ≈ 28.1 studs/s |
 | `MOVE_TOLERANCE` | ×1.30 + 4 studs per window | over the legal speed (§29.11) |
 | `MOVE_CORRECT_AFTER` | 3 violations within 2 s | then one soft correction |
 | `MAX_AIRTIME_S` | 3.0 s rising/hovering without an allowance | falling is always legal |
@@ -22750,7 +24330,7 @@ most of our audience plays on phones over mobile data.
   later!"*
 - **Ban text** (Roblox Ban API `DisplayReason`): *"Our kitchen inspectors found something fishy with this
   account. You can cook again on the date shown."* No details that teach evasion.
-- **Ops moderation console** (private ops place): per-player flag timeline, currency journal, offline report
+- **Ops moderation console** (private ops place): per-player flag timeline, wallet ledger, offline report
   history, DataStore version list, rollback (§28.20.4), kick/ban/unban buttons with mandatory reason codes.
 
 ### 29.5 Progression (escalation ladder)
@@ -22760,7 +24340,7 @@ most of our audience plays on phones over mobile data.
 | 0 Info | single anomalies (sev 1) | log only | — |
 | 1 Watch | ≥ 3 sev-2 flags in 24 h | `mmr_mod_queue` item; detectors log verbose | review within 72 h |
 | 2 Hold | economy rule ≥ 6× or impossible-sequence chain | `meta.moderation.econHold = true` (sources frozen, spending allowed) | review within 24 h; release or rollback |
-| 3 Kick | spam ≥ 500/60 s; ≥ 10 blatant teleports/60 s after correction | kick with friendly text | — |
+| 3 Kick | long strike meter ≥ 500 points (§29.10); ≥ 10 blatant teleports/60 s after correction | kick with friendly text | — |
 | 4 Ban | confirmed exploitation | none automatic | ladder §29.17 |
 
 ### 29.6 Player Interactions
@@ -22774,13 +24354,13 @@ most of our audience plays on phones over mobile data.
 
 | Component | Kind | Owner | Used by |
 |---|---|---|---|
-| `NetServer` middleware, `RateLimiter`, `Schema` | §27.7 framework | A17 (§27) | every remote; §29 supplies the strike policy |
-| `StrikePolicy`, `HandlerChecks` | shared server libraries (§29.10) | A18 | `Telemetry.remoteRejected`; every state-changing handler |
-| `MovementSanity` | shared server library, started by the server bootstrap | A18 | allowances granted by `CombatService`, `RestaurantService` (door transitions), `MultiplayerService` (visits, arena), `CityEventService` (scale events), travel code |
-| `AnomalyMonitor` | shared server library | A18 | subscribes to `EconomyService` journal + `OfflineEarningsService` reports |
-| `SecurityLog` | shared server library | A18 | all of the above; persists via `PlayerDataService` (§28) |
-| Hit validation, cooldown authority | inside `CombatService` | A6/A17 | spec in §29.12 |
-| Cooking authority | inside `CookingService` | A2/A17 | spec in §29.13 |
+| `NetServer` middleware, `RateLimiter`, `Schema` | §27.7 framework | §27 | every remote; §29 supplies the strike policy |
+| `StrikePolicy`, `HandlerChecks` | shared server libraries (§29.10) | §28–§31 | `Telemetry.remoteRejected`; every state-changing handler |
+| `MovementSanity` | shared server library, started by the server bootstrap | §28–§31 | allowances granted by `CombatService`, `RestaurantService` (door transitions), `MultiplayerService` (visits, arena), `CityEventService` (scale events), travel code |
+| `AnomalyMonitor` | shared server library | §28–§31 | subscribes to `EconomyService.TransactionCommitted` (ledger entries) + `OfflineEarningsService` reports |
+| `SecurityLog` | shared server library | §28–§31 | all of the above; persists via `PlayerDataService` (§28) |
+| Hit validation, cooldown authority | inside `CombatService` | §11/§27 | spec in §29.12 |
+| Cooking authority | inside `CookingService` | §5/§27 | spec in §29.13 |
 
 These libraries are not new §C19 services; §27 places them in the tree. Roblox APIs: `Players:BanAsync`,
 `Player:GetNetworkPing`, `Player.AccountAge`, `workspace:Raycast`, `workspace:GetPartBoundsInRadius`,
@@ -22793,7 +24373,7 @@ These libraries are not new §C19 services; §27 places them in the tree. Roblox
 | TM-01 | Speed / teleport / fly / noclip | client owns its character physics | reach stations/secrets instantly, escape fights | `MovementSanity` displacement + airtime + wall checks; soft correction (§29.11) | violation counters, `move_*` flags |
 | TM-02 | Remote spam / flooding | fire remotes at thousands/s | server lag, brute-force races | per-remote + global token buckets (§27.7); strike policy (§29.10) | `remote_spam` |
 | TM-03 | Forged / malformed payloads | NaN, huge numbers, wrong types, foreign Instances, deep tables | crashes, negative prices, out-of-bounds writes | §27.7 schemas; S4 server IDs; size caps | `BAD_PAYLOAD` strikes |
-| TM-04 | Economy duping | race double-claims, replay purchases, reconnect tricks | inflation, unfair leaderboards | §28 transaction IDs, claim keys, session lock; one-step check+grant | `AnomalyMonitor`, journal audit |
+| TM-04 | Economy duping | race double-claims, replay purchases, reconnect tricks | inflation, unfair leaderboards | §28 idempotency keys, claim keys, session lock; one-step check+grant | `AnomalyMonitor`, ledger audit |
 | TM-05 | Reward forging | client sends "quest complete", "dish PERFECT", "+MB" | free progress | S1: server computes objectives, quality, payments | impossible-sequence rules |
 | TM-06 | Combat cheating | reach, aimbot, no-cooldown, multi-hit, god mode | trivialize tantrums, arena unfairness | server hit resolution with rewind, LOS, caps; server HP (§29.12) | hit-rate & range-miss stats |
 | TM-07 | Cooking automation | perfect-timing macros, instant chopping | inflated quality/income | server timers; tap spacing; ping-bounded fairness (§29.13) | perfect-rate statistics |
@@ -22808,7 +24388,7 @@ These libraries are not new §C19 services; §27 places them in the tree. Roblox
 
 | Domain (brief Part 19.4 first) | Client may send | Server decides / validates | Owner service |
 |---|---|---|---|
-| **Currency changes** | nothing directly | every change is a `Txn` with `txnId`, integer deltas, non-negative balances (§28.17) | `EconomyService` |
+| **Currency changes** | nothing directly | every change is a `TransactWith` request with an idempotency key, registered reason, integer deltas within the reason ceiling, non-negative balances (§28.17, §29.14) | `EconomyService` |
 | **Item purchases** (MB/MS/RT) | item content ID + client GUID idempotency key (§27.12.5) | price read from the server catalog; level/tier requirement; per-reason ceiling; balance; key dedupe | `EconomyService` + domain service |
 | **Robux purchases** | prompt request only | grant only in `ProcessReceipt` after a committed save (§28.18) | `EconomyService` |
 | **Mutation ownership** | equip/unequip/upgrade/fuse intents with `MUT_` IDs | part owned; level requirement (§C13.3); slot legality; not In Combat (E4); upgrade costs per §C4.6; fusion inputs owned and not `fav` | `MutationService` |
@@ -23042,27 +24622,27 @@ intent in it), divided by the current `EventMult` so event bonuses do not trip i
 Welcome Back Crate and Robux cosmetics are excluded (validated separately). Rules evaluate only after
 `ECON_MIN_SAMPLE_MIN` = 20 active minutes in the session.
 
-| Tier | Canon net MB / active hour (§C4.4) | Flag at 3× (sev 2) | Earnings hold at 6× (sev 3) |
-|---|---|---|---|
-| `TIER_01` | 630 | 1,890 | 3,780 |
-| `TIER_02` | 1,080 | 3,240 | 6,480 |
-| `TIER_03` | 1,730 | 5,190 | 10,380 |
-| `TIER_04` | 3,100 | 9,300 | 18,600 |
-| `TIER_05` | 5,400 | 16,200 | 32,400 |
-| `TIER_06` | 9,600 | 28,800 | 57,600 |
-| `TIER_07` | 17,400 | 52,200 | 104,400 |
-| `TIER_08` | 32,800 | 98,400 | 196,800 |
-| `TIER_09` | 63,700 | 191,100 | 382,200 |
-| `TIER_10` | 120,500 | 361,500 | 723,000 |
+| # | Tier | Canon net MB / active hour (§C4.4) | Flag at 3× (sev 2) | Earnings hold at 6× (sev 3) |
+|---|---|---|---|---|
+| 1 | `TIER_01` | 630 | 1,890 | 3,780 |
+| 2 | `TIER_02` | 1,080 | 3,240 | 6,480 |
+| 3 | `TIER_03` | 1,730 | 5,190 | 10,380 |
+| 4 | `TIER_04` | 3,100 | 9,300 | 18,600 |
+| 5 | `TIER_05` | 5,400 | 16,200 | 32,400 |
+| 6 | `TIER_06` | 9,600 | 28,800 | 57,600 |
+| 7 | `TIER_07` | 17,400 | 52,200 | 104,400 |
+| 8 | `TIER_08` | 32,800 | 98,400 | 196,800 |
+| 9 | `TIER_09` | 63,700 | 191,100 | 382,200 |
+| 10 | `TIER_10` | 120,500 | 361,500 | 723,000 |
 
 | Rule | Condition | Action |
 |---|---|---|
-| E-R1 | active net rate > 3× tier expectation | `econ_rate_3x` (sev 2), verbose journal logging for 24 h |
+| E-R1 | active net rate > 3× tier expectation | `econ_rate_3x` (sev 2), verbose ledger logging for 24 h |
 | E-R2 | active net rate > 6× | `meta.moderation.econHold = true` (earning remotes rejected as `frozen`; spending and play still work; banner-free), `econ_rate_6x` (sev 3), review ≤ 24 h |
 | E-R3 | any single transaction above its reason's ceiling (table below; e.g. a tip above the Jackpot bound, §C11.4) | `EconomyService` rejects it (`INVALID_AMOUNT`), sev 3 engineering alert (a server bug or a bypassed code path) |
 | E-R4 | MS or RT earned per active hour > 3× the tier cohort's p95 (refreshed weekly from §31 data) | sev 2 |
 | E-R5 | any RT credit whose source is offline (§C4.1: RT is never offline) | hard reject, sev 3 |
-| E-R6 | wallet change between two saves ≠ Σ journal deltas for that window | sev 3 integrity alert (engineering) |
+| E-R6 | wallet change between two saves ≠ Σ ledger deltas for that window | sev 3 integrity alert (engineering) |
 | E-R7 | offline net > 0.60 × tier active rate × simulated hours (§C15 "never above 60 %") | clamp the report to the bound, engineering alert (simulation bug, never the player's fault) |
 | E-R8 | impossible sequence (list below); 3 within 10 min | sev 2 each; the third → hold (E-R2 path) |
 
@@ -23078,7 +24658,7 @@ player's current tier (§22.3). Reason codes are the §31.12 analytics codes.
 | `serve_tip` | source | 15,000 per ticket | 0 | 0 | 25 % of the payment bound, or the ×5 Jackpot capped at 5,000 (§C11.4) |
 | `quest_reward` | source | 0.2 × NetRef(T) | 500 | 20 | chapter finale = 15 % NetRef (§22.3) |
 | `achievement_reward`, `milestone_reward` | source | 0.5 × NetRef(T) | 1,000 | 40 | 10–50 % NetRef (§22.3) |
-| `event_reward` | source | 0.15 × NetRef(T) | 500 | 5 | participation 10 % NetRef; 1–5 RT (§22.3) |
+| `event_reward` | source | 0.4 × NetRef(T) | 500 | 5 | §36.11 result bands (e.g. a 12-ERM success = 0.2 × NetRef) with 2× margin; 1–5 RT (§22.3) |
 | `delivery_reward` | source | 0.02 × NetRef(T) | 0 | 0 | 1.5 % NetRef per run |
 | `daily_login` | source | 0.1 × NetRef(T) | 100 | 0 | streak rewards (§20) |
 | `offline_collect` | source | 0.60 × NetRef(T) × 24 | 72 | **0** | §C15 "never above 60 %", ≤ 24 h cap; ≤ 3 MS per hour; never RT |
@@ -23109,8 +24689,8 @@ upgrade without the City Hall permit quest (§C6); equipping an unowned part or 
 requirement; more serves in an hour than `seats × 3600 / minimum eat time` allows; learning a recipe above
 the player's level.
 
-**Reversal.** Confirmed exploited gains are reversed by journal-based compensating transactions
-(`src = "mod_reversal"`, idempotent `txnId = "rev:<caseId>:<n>"`) or, for broad damage, by a version rollback
+**Reversal.** Confirmed exploited gains are reversed by ledger-based compensating transactions
+(reason `mod_reversal`, idempotency key `rev:<caseId>:<n>`) or, for broad damage, by a version rollback
 (§28.20.4). Paid cosmetics are never removed as punishment.
 
 ### 29.15 Offline-Time and Clock Integrity
@@ -23121,7 +24701,7 @@ the player's level.
   so **rejoin loops cannot multiply earnings** — 50 rejoins in an hour simulate, in total, at most that hour.
 - **Splitting requirement on §17:** dividing an absence into many short intervals must not raise expected
   rewards: per-step incident/discovery chances scale with step length and the ≤ 1 capsule/day rule uses
-  `offline.lastCapsuleDay` (§28.9.11). If §17 needs a fractional accumulator, it is added to the `offline`
+  `offline.lastOfflineCapsuleDay` (§28.9.11). If §17 needs a fractional accumulator, it is added to the `offline`
   block (schema-additive, §28.5).
 - Negative elapsed time → `H = 0`; beyond 120 s of skew → `clock_skew` (sev 1) — this flags *servers*, so
   ops can spot a bad host, not players.
@@ -23129,7 +24709,7 @@ the player's level.
 
 ### 29.16 Co-op Griefing and Alt Farming
 
-**Co-op guests** (permissions from `social.coop`, enforced by `MultiplayerService` as the single permission point):
+**Co-op guests** (door policy, Co-Chef/Guest role permissions, per-player overrides and the ban list from `social.coop`, §21.10; enforced by `MultiplayerService` as the single permission point — `Spend` and furniture store/sell/delete always return `false` for non-owners):
 
 | Guests may (if the owner allows) | Guests may never |
 |---|---|
@@ -23147,7 +24727,7 @@ the player's level.
 **Alt farming.** Canon defines no player-to-player transfer of currency or parts, so alts cannot funnel
 wealth; their only value is in social rewards. Controls: owner-side co-op bonuses count only guests with
 `Player.AccountAge ≥ 7` days, once per guest per owner per UTC day, at most 5 distinct guests per day
-[TUNABLE]; guest reward accrual stops after a daily cap set by §21; arena rated matches are limited to 3 per
+[TUNABLE]; guest pay stops at the daily cap of 1.5 × NetRef (§22.3), tracked in `social.coop.guestPayToday`; arena rated matches are limited to 3 per
 opponent pair per day and accounts younger than 3 days play unranked; alternating win patterns between the
 same pair (> 6 per day) raise `pair_farming` (sev 2). Bans are issued with `ExcludeAltAccounts = false` so
 Roblox extends them to detected alternate accounts. If §21/§22 ever add gifting, it must be a two-party
@@ -23173,7 +24753,7 @@ chat or free text.
 | `receipt_unknown` | 3 (engineering) | §28.18 |
 
 **Moderation console** (ops place, group-rank + allowlist gated, every action audit-logged): flag timeline,
-journal, offline report history, version list and rollback, kick, ban/unban, econ-hold release.
+ledger, offline report history, version list and rollback, kick, ban/unban, econ-hold release.
 
 **Kick policy (automatic):** only for `SPAM_KICK`, ≥ 10 blatant teleports in 60 s, lock loss, Safe Mode
 timeout, erasure and moderator action — always with the friendly texts of §29.4.
@@ -23283,7 +24863,7 @@ gains, removal of purchased cosmetics.
 
 ## 30. Performance Optimization
 
-> **Owner:** A18 Data & Ops. **Binding inputs:** §C3 (8 players/server; customer cap = seats + 4 queue per
+> **Binding inputs:** §C3 (8 players/server; customer cap = seats + 4 queue per
 > restaurant, max 28; server hard cap 160 customer proxies; **SPCV** pattern; ≤ 30 loose props per interior;
 > thrown food = scripted arc; debris client-only, 4 s), §C6 (seats/employee caps per tier), §C13.7 (morph rig
 > & part budgets), §C19 services. The chaos is the product — a level-6 restaurant brawl with 28 mutants must
@@ -23399,7 +24979,7 @@ abbreviated — written **only on change**:
 
 Patience and order details reach clients through `Order.TicketsChanged` (batched, occupants only, ≤ 10 Hz).
 
-**Movement replication** (integrator ruling): proxy `CFrame`s replicate at **10 Hz while a customer is moving or
+**Movement replication:** proxy `CFrame`s replicate at **10 Hz while a customer is moving or
 fighting**, **2 Hz while seated or stationary**, and **1 Hz when no player is inside that interior**; each client
 lerps its visual toward the proxy and moves all visual roots with one `workspace:BulkMoveTo` per frame
 (§27.12.4), so visuals stay smooth at any frame rate.
@@ -23526,8 +25106,8 @@ ledger, candidates) are pulled page by page when a menu opens, never pushed (§2
 `Workspace.FallenPartsDestroyHeight = −1,200` because the Underground Mutation Sewers (`DST_09`) sit at
 Y ≈ −700 (§18); the default (−500) would delete players and props there.
 
-**Interiors region:** interior regions are spaced **≥ 2,000 studs apart** (integrator ruling; §27 places the region
-far from the city) — far more than `StreamingTargetRadius` (384) plus an interior's half-extent, so a client never
+**Interiors region:** interior regions are spaced **≥ 2,000 studs apart** (§27 places the region far from
+the city) — far more than `StreamingTargetRadius` (384) plus an interior's half-extent, so a client never
 streams two interiors or the city while inside one — and all lie within ±20,000 studs of the origin to avoid
 floating-point jitter. Any change to the target radius must keep `radius + interior half-extent < 2,000`.
 
@@ -23701,7 +25281,7 @@ In Combat (§C12.1) — the change waits until combat ends.
 
 ## 31. Analytics
 
-> **Owner:** A18 Data & Ops. **Binding inputs:** §C20 (Roblox `AnalyticsService` + an internal event schema;
+> **Binding inputs:** §C20 (Roblox `AnalyticsService` + an internal event schema;
 > names `mmr_<snake_case>`), §C4.4 (pacing targets), §C14.3/§C15 (offline caps and the 35–50 % rate), §C4.7
 > (capsule odds and pity), §C22. KPI targets are stated in §1.7 and are **defined and measured here**; the
 > `Telemetry` module is placed by §27; economy events are emitted only inside `EconomyService:TransactWith`
@@ -23756,7 +25336,7 @@ dashboards of §31.14 (built from the optional export). The settings screen show
 |---|---|---|
 | First 15 min | Where do new players stop? | onboarding funnel (tutorial steps 1–12), `mmr_first_*` moments |
 | First hour | Do they reach TIER_02 and hire Ollie? | `RestaurantTier` progression, `mmr_first_employee_hire`, economy flows |
-| First day | Do they come back to a Welcome Back report? | `mmr_session_start`, `mmr_offline_report_shown`, `mmr_offline_collected` |
+| First day | Do they come back to a Welcome Back report? | `mmr_session_start`, `mmr_offline_report_viewed`, `mmr_offline_collected` |
 | First week | Are mutations pulling them forward? | `mmr_mutation_acquired`, capsule funnel, collection KPIs |
 | First month+ | Is the mid-game paced to §C4.4? Is offline replacing play? | tier-reach times, offline share, session length, events, arena |
 
@@ -23782,14 +25362,15 @@ do not identify a person outside Roblox.
 
 | Roblox call | Used for | Rules |
 |---|---|---|
-| `LogOnboardingFunnelStepEvent(player, step, stepName, customFields)` | **the one onboarding funnel**: §32 tutorial steps 1–12, names `mmr_tutorial_step_01` … `mmr_tutorial_step_12` | logged once per player per step, sequentially (AC-32-03); custom field 01 = `skipped` when skipped |
+| `LogOnboardingFunnelStepEvent(player, step, stepName, customFields)` | **the one onboarding funnel**: §32 tutorial steps 1–12 (`mmr_tutorial_step_01` … `_12`) and step 13 = first offline collection (`mmr_first_offline_collect`, §17.12) | logged once per player per step, sequentially (AC-32-03); custom field 01 = `skipped` when skipped |
 | `LogFunnelStepEvent(player, funnelName, funnelSessionId, step, stepName, customFields)` | first-session moments (`mmr_first_session`) and recurring funnels (shop, capsule, hire, offline collect, tier upgrade, §31.11) | recurring funnels use a fresh GUID per attempt; `mmr_first_session` uses the constant session id `"fs"` |
 | `LogEconomyEvent(player, flowType, currencyType, amount, endingBalance, transactionType, itemSku, customFields)` | every MB/MS/RT movement | only inside `EconomyService:TransactWith`; `currencyType` ∈ `MB`, `MS`, `RT`; `transactionType` = an `Enum.AnalyticsEconomyTransactionType` name (§31.12) |
 | `LogProgressionEvent(player, pathName, Enum.AnalyticsProgressionType.Complete, level, levelName, customFields)` | paths `PlayerLevel` (§14), `RestaurantTier` (1–10), `StoryChapter` (1–10) | `Start` is logged for `StoryChapter` when a chapter opens |
 | `LogCustomEvent(player, eventName, value, customFields)` | the budgeted custom events flagged "custom" in §31.10 | `value` is a meaningful number (seconds, MB, count) or 1 |
 
 **Ruling — one onboarding funnel.** Roblox supports a single onboarding funnel per experience. It is the §32
-tutorial (as §1.7 and AC-32-03 define). The first 13 §36.17 milestones (from `MLS_001`, the first-session "firsts") therefore log their
+tutorial (steps 1–12, as §1.7 and AC-32-03 define) followed by step 13, the first Welcome Back collection that §17.12
+asks for — the D1 hook that completes onboarding. The first 13 §36.17 milestones (from `MLS_001`, the first-session "firsts") therefore log their
 events through the recurring funnel `mmr_first_session` (step = milestone order 1–13) rather than through
 `LogOnboardingFunnelStepEvent`; this supersedes the onboarding wording in AC-14-20.
 
@@ -23914,7 +25495,7 @@ return Events
 
 Legend for the last column — **Onb N**: onboarding funnel step N; **FS N**: `mmr_first_session` funnel step N;
 **Fun `<name>` N**: recurring funnel step; **Custom** (fields CF01/CF02/CF03): `LogCustomEvent` (counts toward
-the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**: `LogEconomyEvent` by
+the 60-name budget, 55 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**: `LogEconomyEvent` by
 `EconomyService`; **Internal**: envelope only. Names already used by other sections are kept verbatim.
 
 #### 31.10.1 Onboarding, tutorial and first moments
@@ -23938,7 +25519,7 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 | `mmr_first_mutation` | first part equipped (§36.17 #10) | partId (`MUT_145` / `MUT_144` / `MUT_153`) | **FS 10** (CF01 part) |
 | `mmr_first_restaurant_upgrade` | first upgrade or furniture purchase (§36.17 #11) | itemRef | **FS 11** |
 | `mmr_first_employee_hire` | `EMP_001` hired (§36.17 #12) | — | **FS 12** |
-| `mmr_first_offline_collect` | first Welcome Back report collected (§36.17 #17) | hours, net, capped | Custom (value = net) |
+| `mmr_first_offline_collect` | first Welcome Back report collected (§36.17 #17) | hours, net, capped | **Onb 13** (CF01 capped, CF03 hours band) |
 | `mmr_first_city_trip` | first district other than `DST_01` (§36.17 #18) | district, travelMode | Custom (CF01 district) |
 | `mmr_first` | any other once-only first (`mmr_first_level_up`, `mmr_first_stat_allocation`, `mmr_first_skill_node`, `mmr_first_capsule`, `mmr_first_lab_fusion`, `mmr_first_mutation_upgrade`, `mmr_first_synergy`, `mmr_first_perfect_dish`, `mmr_first_recipe_learned`, `mmr_first_station_upgrade`, `mmr_first_quest_complete`, `mmr_first_metro_ride`, `mmr_first_city_event`, `mmr_first_coop_visit`, `mmr_first_arena_match`) | which (the internal name), hoursSinceInstall | Custom grouped (CF01 which) — internal envelope keeps the specific name |
 
@@ -23965,7 +25546,7 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 | `mmr_customer_calmed` | hostile reaches Apologizing (§11) | method, personalityId | Custom (CF01 method, CF02 personality) |
 | `mmr_ability_used` | ability activation accepted (10 % sampled, §11) | abilityId, context | Custom (CF01 ability, CF02 context) |
 | `mmr_prop_thrown` | prop thrown (10 % sampled, §11) | propClass, hitKind | Custom (CF01 prop class) |
-| `mmr_restaurant_tier_up` | tier upgrade completed (§36.17 tier milestones; §22 calls it `mmr_tier_upgraded`) | tier, activeHoursSinceInstall, level | **Prog `RestaurantTier`** (level = tier number) |
+| `mmr_restaurant_tier_up` | tier upgrade completed (§36.17 tier milestones) | tier, activeHoursSinceInstall, level | **Prog `RestaurantTier`** (level = tier number) |
 | `mmr_station_upgraded` | station level purchased | stationRef, newLevel | Internal |
 | `mmr_employee_hired` | hire committed (`EmployeeService`) | archetype, rarity, role, cost | Custom (CF01 rarity, CF02 role) + **Fun `mmr_hire` 3** |
 | `mmr_unpaid_break` | wage tick uncovered (E8, §22) | staffCount, deficit | Custom (CF03 tier) |
@@ -23987,8 +25568,13 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 
 | Event | Trigger (server) | Properties | AnalyticsService call |
 |---|---|---|---|
-| `mmr_offline_report_shown` | Welcome Back screen opened with a pending report | hours, capHours, capped, customers, net, incidents, segments | **Fun `mmr_offline_collect` 1** (CF01 capped, CF03 hours band) |
-| `mmr_offline_collected` | Collect committed (key `offline:<reportId>`) | hours, net, delaySinceShownS, firstOfDay | Custom (value = net) + **Fun `mmr_offline_collect` 3** |
+| `mmr_offline_report_generated` | after the join `UpdateAsync` commits a new or merged report (§17.12) | reportId-free summary: simVersion, tier, elapsedSec, simulatedSec, effectiveHours, capped, capHours, managerRarity, customers, net, ratioToActive | Custom (value = net; CF01 capped, CF02 manager rarity, CF03 tier) |
+| `mmr_offline_report_viewed` | Welcome Back screen or tab opened (§17.12) | tab, secondsOnScreen, hours band | **Fun `mmr_offline_collect` 1** (CF01 tab, CF03 hours band) |
+| `mmr_offline_collected` | Collect committed (key `offline:<reportId>`) | mb, delaySec, auto (via Continue), alreadyClaimed | Custom (value = mb) + **Fun `mmr_offline_collect` 3** |
+| `mmr_offline_collect_failed` | Collect retries exhausted (§17.12) | reason | Internal |
+| `mmr_offline_suggestion_clicked` | upgrade suggestion tapped (§17.12) | type | Internal |
+| `mmr_offline_ceiling_hit` | a report clamped by a safety ceiling (§17.12; §29.14 E-R7) | amount | Custom (ops) |
+| `mmr_offline_clock_skew` / `mmr_offline_merge` | skew or merge safety paths (§17.12) | skewSec / segments | Internal |
 | `mmr_welcome_back_crate` | E5 crate granted (absence ≥ 7 days) | daysAway | Custom (value = daysAway) |
 
 #### 31.10.6 Quests, progression and achievements
@@ -24049,8 +25635,9 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 
 ### 31.11 Funnels
 
-**Onboarding funnel** (the only one, §31.8): step N = completion of `QST_TUT_00N`/`QST_TUT_01N`, names
-`mmr_tutorial_step_01` … `_12`. Completion KPI = step 12 ÷ step 1 (§1.7 target ≥ 80 %).
+**Onboarding funnel** (the only one, §31.8): steps 1–12 = completion of `QST_TUT_001` … `QST_TUT_012`, names
+`mmr_tutorial_step_01` … `_12`; step 13 = first offline collection. Tutorial completion KPI = step 12 ÷ step 1
+(§1.7 target ≥ 80 %); step 13 ÷ step 12 measures the next-day hook.
 
 | Step | Quest | Step | Quest |
 |---|---|---|---|
@@ -24060,6 +25647,7 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 | 4 | `QST_TUT_004` Plate It, Serve It | 10 | `QST_TUT_010` Your First Mutation |
 | 5 | `QST_TUT_005` Happy Customer, Happy Wallet | 11 | `QST_TUT_011` Fancy Upgrades |
 | 6 | `QST_TUT_006` Uh-Oh, Karenosaurus | 12 | `QST_TUT_012` Hire Help |
+| — | — | 13 | first Welcome Back collection (`mmr_first_offline_collect`) |
 
 **First-session funnel** `mmr_first_session` (`LogFunnelStepEvent`, session id `"fs"`): steps 1–13 =
 the first 13 §36.17 milestones (`MLS_001` onward) in ID order (table §31.10.1). Because players can reach some moments out of order (a KO
@@ -24073,7 +25661,7 @@ strict conversion.
 | `mmr_shop` | shop opened (`BLD_01`, `BLD_03`, `BLD_12`, `BLD_13` …) | item inspected | purchase committed | which shops convert, which items stall at inspection |
 | `mmr_capsule` | capsule earned | reveal started | result shown (rarity, pity) | do players open capsules promptly; are odds observed as disclosed |
 | `mmr_hire` | Recruitment Office (`BLD_04`) opened | candidate inspected | hire committed | does hiring stall on price |
-| `mmr_offline_collect` | Welcome Back shown | Collect pressed | credited | collect rate (§1.7 target ≥ 95 %) |
+| `mmr_offline_collect` | Welcome Back viewed (`mmr_offline_report_viewed`) | Collect pressed | credited (`mmr_offline_collected`) | collect rate (§1.7 target ≥ 95 %) |
 | `mmr_tier_upgrade` | upgrade panel opened with an affordable next tier | confirm pressed | upgrade committed | hesitation at expensive tiers |
 | `mmr_mutation_upgrade` | upgrade panel opened | confirm pressed | upgrade applied | MS/RT bottlenecks |
 
@@ -24137,7 +25725,7 @@ Targets restate §1.7 [TUNABLE]; this table owns the formulas. "Day N" uses UTC 
 | Mutation collection | distinct parts owned at D7 / D30; share of MB spent on mutations | `mmr_mutation_acquired`, Econ sinks | ≥ 50 % of D7 players own ≥ 15 parts; ≥ 40 % of MB spent on mutations by D30 median |
 | Offline-earnings engagement | collect rate = Fun step 3 ÷ step 1; % of D1 returners whose first screen is Welcome Back; % of reports capped | `mmr_offline_collect` funnel, `mmr_session_start` | collect ≥ 95 %; Welcome-Back-first ≥ 70 % |
 | Offline share of MB income | offline-collect MB ÷ all MB sources, per player, median | Econ | D7 ≤ 60 %, D30 ≤ 70 % (§1.7, §4.5) |
-| Offline rate ratio | (offline net ÷ simulated hours) ÷ (active net per active hour) at the same tier | `mmr_offline_collected`, Econ, `activeS` | 35–50 %, never > 60 % (§C15) |
+| Offline rate ratio | (offline net ÷ simulated hours) ÷ (active net per active hour) at the same tier | `mmr_offline_report_generated.ratioToActive`, cross-checked with Econ and `activeS` | 35–50 %, never > 60 % (§C15) |
 | Chaos health | % of sessions ≥ 10 min with ≥ 1 brawl (anger level ≥ 5) | `mmr_session_end.brawls` | ≥ 70 % |
 | Social reach | % of players who visit or co-op another restaurant by D7 | `mmr_coop_visit_end`, visits | ≥ 20 % |
 | Revenue per active user | ARPDAU = Robux revenue ÷ DAU; payer conversion = payers ÷ MAU; ARPPU | native monetization | [TUNABLE] ARPDAU ≥ 0.5 R$, conversion ≥ 1.5 % by D30 — cosmetics only, never a gameplay lever |
@@ -24262,7 +25850,7 @@ return { variantFor = variantFor }
 | AE-05 | Custom-field value outside the registry | bucketed to `other` and counted in `mmr_service_error` (registry drift) |
 | AE-06 | Experiment ends mid-session | the player keeps the variant until the session ends; no mid-session flip |
 | AE-07 | Tutorial skipped | steps are still logged in order with `CustomField01 = skipped` (AC-32-03) |
-| AE-08 | Offline report merged across two sessions | one `mmr_offline_report_shown` per showing; `segments` records the merge; collect logged once by `reportId` key |
+| AE-08 | Offline report merged across two sessions | one `mmr_offline_report_generated` per commit and one `mmr_offline_report_viewed` per showing; `segments` records the merge; collect logged once by `reportId` key |
 | AE-09 | Studio play test | `Telemetry` prints envelopes and never calls `AnalyticsService` or the export |
 | AE-10 | Reversal by moderation | `mod_reversal` is excluded from economy dashboards; counted only in the security dashboard |
 
@@ -24271,7 +25859,7 @@ return { variantFor = variantFor }
 - **AC-31-01:** Every event emitted in code exists in the §31.10 catalog (CI scan of `Telemetry.track` call sites: 0 unregistered names), and the number of distinct `LogCustomEvent` names in production stays ≤ 60.
 - **AC-31-02:** Each brief-required moment — onboarding, tutorial completion, first order, first successful meal, first tantrum, first combat, first mutation, first restaurant upgrade, first employee hire, first offline collection, city exploration, quest completion, session duration, return visits — produces its event in a scripted end-to-end playthrough (14 of 14).
 - **AC-31-03:** Once-only events fire at most once per account across 50 scripted reconnects and server hops (verified on the export and against `firstsBits`).
-- **AC-31-04:** The onboarding funnel contains exactly the 12 tutorial steps, logged sequentially once per player; no other code path calls `LogOnboardingFunnelStepEvent` (static scan).
+- **AC-31-04:** The onboarding funnel contains exactly the 12 tutorial steps plus step 13 (first offline collection), each logged once per player in order; only `TutorialDirector` and the first-collect path call `LogOnboardingFunnelStepEvent` (static scan).
 - **AC-31-05:** For 1,000 randomized transactions, the sum of logged `LogEconomyEvent` amounts per currency equals the net wallet change (sources − sinks), excluding zero-delta and `mod_reversal` transactions.
 - **AC-31-06:** No custom field or export property contains a UserId, display name, chat text or player-written string (automated scan of a 24-hour export sample: 0 hits).
 - **AC-31-07:** Every §31.13 KPI is computable from the catalogued events or Roblox native analytics, and the KPI query suite runs green on soft-launch data.
@@ -24284,7 +25872,7 @@ return { variantFor = variantFor }
 
 ## 32. Tutorial
 
-> **Owner:** A1 Vision & Onboarding. This section scripts the first 15 minutes line by line: the twelve tutorial
+> This section scripts the first 15 minutes line by line: the twelve tutorial
 > quests `QST_TUT_001`–`QST_TUT_012` (IDs and titles fixed by canon C17.1; quest rows in §20), their dialogue,
 > prompts per input device, highlights, timing, animations, rewards, recovery, skip and resume rules, analytics,
 > and the post-tutorial contextual tips. Widget reveal order follows §24.3 (progressive disclosure), and input
@@ -25291,7 +26879,7 @@ step-12 hire), which are checked first. Every resume logs `mmr_tutorial_resume` 
 
 ## 33. Content Expansion
 
-> **Owner:** A1 Vision & Onboarding. This section covers how Mystery Morph Restaurant grows after launch: eleven
+> This section covers how Mystery Morph Restaurant grows after launch: eleven
 > expansion mini-designs, the identifier plan for new content, a 12-month roadmap, the live-ops cadence, and the
 > data-driven pipeline that lets content ship without code changes. Launch scope and phases are in §34, and the
 > economy validation of each drop is in §22.
@@ -27675,7 +29263,7 @@ Every passive above maps to one engineering key (`passive.key`); the key vocabul
 
 ### 36.4 Mutation Synergies Database
 
-> Contributor: A8. Rules for reading, stacking and capping these rows are in §12.10. Parts are referenced by canon
+> Rules for reading, stacking and capping these rows are in §12.10. Parts are referenced by canon
 > `MUT_` IDs (details in §36.3), abilities by `ABL_` (§36.6), statuses by `STS_` (§36.7). All magnitudes are
 > **[TUNABLE]** balancing assumptions.
 
@@ -27941,7 +29529,7 @@ Groups with more than one member. Every other group has a single member and alwa
 
 ### 36.5 Morph Combination Examples
 
-> Contributor: A8. These rows are *examples* of the modular system in §12.9. The game never stores combinations;
+> These rows are *examples* of the modular system in §12.9. The game never stores combinations;
 > it derives them from equipped parts. Parts are canon `MUT_` IDs (details in §36.3), synergies are §36.4 IDs.
 
 **How to read a row.**
@@ -28347,7 +29935,7 @@ attributes holding the server expiry time and clear on KO, respawn, disconnect a
 
 > Generated by `python3 gdd/tools/render_employees.py` from `gdd/data/employees.json` — edit the JSON, never this file. The renderer validates every row against canon §C4.8 (hire, wage, stat band, potential cap), §C13.6 (parts, slots, families, tags) and the trait-derivation keys of §16 before writing.
 
-This database lists **97 employee archetypes** (`EMP_001` is fixed by canon §C14.4; `EMP_002`+ are defined here). An archetype is a *template*: the Recruitment Office (§16) rolls individual candidates from it with small seeded variance (stats ±3, hire ±10 %, wage ±10 %, always clamped inside the rarity band) and a random quirk line. Formulas that consume these columns (Efficiency, offline contribution, training, morale) live in §16 and §17; incidents that reference traits live in §36.9.
+This database lists **97 employee archetypes** (`EMP_001` is fixed by canon §C14.4; `EMP_002`+ are defined here). An archetype is a *template*: the Recruitment Office (§16) rolls individual candidates from it with small seeded variance (stats ±3, hire ±10 %, wage ±10 %, always clamped inside the rarity band) and a random quirk line. Formulas that consume these columns (Efficiency, offline contribution, training, morale) live in §16 and §17; incidents that reference traits live in §36.9. All per-archetype numbers are **[TUNABLE]** balancing assumptions, always inside the canon bands.
 
 **How to read a row**
 
@@ -28513,10 +30101,10 @@ RoleStatAvg uses the role weights of §16 (e.g. Chef = 0.6 Cook + 0.3 Accuracy +
 
 > Generated by `python3 gdd/tools/render_incidents.py` from `gdd/data/offline_incidents.json`. The same rows drive the reference simulator `gdd/tools/offline_sim_examples.py` and must be mirrored 1:1 in the Luau data module `ReplicatedStorage.Shared.Data.OfflineIncidents` (golden test, §17).
 
-**69 incidents**: 65 drawable by the incident roll plus 4 *discovery dressings* (they never use the incident count; they narrate the separate Discoveries rolls of §17). Rules that apply to every row:
+**69 incidents**: 65 drawable by the incident roll plus 4 *discovery dressings* (they never use the incident count; they narrate the separate Discoveries rolls of §17). Weights, effect magnitudes and ranges are **[TUNABLE]**; the caps are canon. Rules that apply to every row:
 
-- **Count** (canon §C15): `count = floor(H × 0.6 × (1 − SecurityMitigation)) + seeded extra roll` over the operated hours of the interval; each draw picks one eligible row by effective weight. An incident ID appears at most twice per report; draws are assigned to a random operated step.
-- **Rh** = average hourly Revenue + Tips + Delivery of the interval before incidents. Expressing effects in Rh keeps every row meaningful from `TIER_01` to `TIER_10` and makes the total scale with hours, never with tier.
+- **Count** (canon §C15): `count = floor(H × 0.6 × (1 − SecurityMitigation)) + seeded extra roll`, where H is the interval's *effective* hours after the long-absence taper (§17.4: hours 0–2 ×1.0, 2–8 ×0.5, 8–24 ×0.2); each draw picks one eligible row by effective weight. An incident ID appears at most twice per report; draws are assigned to a random operated step.
+- **Rh** = Revenue + Tips + Delivery of the interval per effective hour, before incidents. Expressing effects in Rh keeps every row meaningful from `TIER_01` to `TIER_10` and makes the total scale with activity, never with tier.
 - **Damage x·Rh** is a repair bill converted to damage points on random destructible objects (`points = ceil(x·Rh / CostPerPoint[tier])`, §17). It is auto-paid at a discount if a `ROLE_REPAIR` works offline, otherwise left as visibly damaged objects for the player (Restaurant Damage tab). Damage never destroys an object (offline damage stops at Broken; §C6 objects are never lost).
 - **Caps** (canon §C15): Σ negative effects (MB losses + damage value) ≤ **10 %** of interval Revenue + Tips; Σ positive MB ≤ **15 %**; excess is scaled down proportionally. An assigned `ROLE_ASST_MGR` multiplies negative magnitudes by **0.8** (canon −20 %); a Security Guard with *Tough Shell* multiplies customer-category negatives by 0.9.
 - **Mitigated by** (negative rows): each listed role present scales the weight by `max(0.4, 1 − 0.6 × min(1, best Contribution of that role))`; listed traits apply the stated weight multiplier. **Hero** rows *require* the role and scale weight by `0.5 + min(1, best Contribution)`.
@@ -28625,7 +30213,7 @@ RoleStatAvg uses the role weights of §16 (e.g. Chef = 0.6 Cook + 0.3 Accuracy +
 
 ### 36.10 City Buildings Database
 
-> **Owner:** A12 City. All 22 canon buildings (§C16.2). Districts, travel, secrets and the event system are
+> All 22 canon buildings (§C16.2). Districts, travel, secrets and the event system are
 > specified in §18; events in §36.11. Prices follow §C4 (mutations §C4.5–§C4.6, hiring §C4.8, station
 > upgrades §C4.9, recipe learning 5 × price §C10, taxi §C16.1). Activity MB rewards use the **ERM** unit of
 > §18.8.4 (`MB = round(ERM × NetMBPerHour[tier] / 60)`). Acceptance criteria: `AC-18-30` … `AC-18-49`.
@@ -29246,7 +30834,7 @@ RoleStatAvg uses the role weights of §16 (e.g. Chef = 0.6 Cook + 0.3 Accuracy +
 
 ### 36.11 City Events Database
 
-> **Owner:** A12 City. All 32 canon events (§C16.5). The scheduler, cross-server sync, announcements, reward
+> All 32 canon events (§C16.5). The scheduler, cross-server sync, announcements, reward
 > units and restaurant protections are specified in §18.8; this appendix holds the per-event rows.
 > Acceptance criteria: `AC-18-50` … `AC-18-69`.
 
@@ -29546,7 +31134,35 @@ Each block gives **Phases** (minute:second from T0), **Mechanics**, **Success / 
   clamped to −15…+15 (§C11.3).
 - `EVT_009` forces night for its duration; a concurrent modifier keeps its rules but uses night lighting.
 
-#### 36.11.5 Acceptance Criteria
+#### 36.11.5 Story Replay mode
+
+The story campaign must never wait on the live calendar (§20). When a story step needs an event that is not running
+within 60 minutes of the player starting that step, `QuestService` asks `CityEventService:StartReplay(questId,
+eventId, party)` for a **Story Replay** — a private copy of the event's script.
+
+| Event | Story steps that may replay | Replay arena | Replay script (shortened) | Duration cap |
+|---|---|---|---|---|
+| `EVT_005` Legendary Chef Tournament | `QST_STY_031`, `QST_STY_032` | private copy of the tournament kitchen in the `Interiors` region | qualifier round, then the finale cook-off judged by `NPC_029` | 15 min |
+| `EVT_007` Giant Rat King Attack | `QST_STY_019` | private copy of the Sewer King's Throne Room (`BLD_21`) | street defence wave, then the boss fight with `NPC_020` | 12 min |
+| `EVT_008` Food Critic Convention | `QST_STY_022` | private convention hall built from the `BLD_14` interior kit | three critic tastings scored by `NPC_016` | 12 min |
+
+Rules:
+- **Party:** solo or a party of up to 4 (the quest owner plus friends); difficulty scales with party size exactly as
+  the live event's per-player scaling. Joining friends do not need the quest themselves.
+- **Rewards:** a replay grants only the story objective and the normal XP for actions performed. It never grants the
+  event's Participation/Success/Top bands, Morph Capsules, trophies or global-goal contributions, so replays cannot be
+  farmed in place of the live event.
+- **Failure:** failing a replay costs nothing; the player may restart it at once. Leaving mid-replay keeps quest
+  progress at the start of the step.
+- **Restaurant:** while the owner is inside a replay, the restaurant follows the Away Mode rules (§18).
+- **Implementation:** the replay reuses the live event's script module with a `replay = true` flag that disables reward
+  and global-goal hooks. It runs in a reserved slot of the `Interiors` region (≥ 2,000 studs from other interiors,
+  §27) and is torn down when the party leaves or the cap expires.
+
+#### 36.11.6 Acceptance Criteria
+- **AC-18-62:** Starting `QST_STY_019`, `QST_STY_022`, `QST_STY_031` or `QST_STY_032` while the required event is more
+  than 60 minutes away offers a Story Replay; completing it advances the quest and grants no event rewards, capsules,
+  trophies or global-goal progress.
 
 - **AC-18-50:** All 32 events `EVT_001`–`EVT_032` are schedulable and runnable from a debug console, and each
   starts, resolves and pays rewards without errors.
@@ -29575,7 +31191,7 @@ Each block gives **Phases** (minute:second from T0), **Mechanics**, **Success / 
 
 ### 36.12 Restaurant Tiers and Upgrades Database
 
-> Generated by `python3 gdd/tools/render_restaurant.py` from `gdd/data/furniture.json` (owner A10). Edit the JSON, not this file. Canon values (cost, level, seats, appliance slots, menu slots, employee cap, base demand) are copied verbatim from canon §C6; everything else is defined here and in §15. All economy figures are **[TUNABLE]** balancing assumptions.
+> Generated by `python3 gdd/tools/render_restaurant.py` from `gdd/data/furniture.json`. Edit the JSON, not this file. Canon values (cost, level, seats, appliance slots, menu slots, employee cap, base demand) are copied verbatim from canon §C6; everything else is defined here and in §15. All economy figures are **[TUNABLE]** balancing assumptions.
 
 **How to read the tier table.** *Table capacity* = canon Seats = the hard cap on attached seats a layout may contain (§15.5). *Kitchen capacity* = canon appliance slots (only the 14 slot-using appliances count; utility fixtures are free but need floor space) plus the kitchen floor area. *Customer throughput* is the online planning estimate `min(BaseDemand × RepMult × DecorMult, Seats × 3600 / 240 s)` at the tier's typical reputation and atmosphere, and the offline value is the canon §C15 `Q` for the full crew. *Offline earning potential* is canon §C15 net MB per offline hour for a lean crew (1 chef, +1 waiter from TIER_03, no manager) and a full tier-typical crew (§36.12.3), with the full crew's offline cap and the resulting maximum per collected session.
 
@@ -29584,15 +31200,15 @@ Each block gives **Phases** (minute:second from T0), **Mechanics**, **Success / 
 | ID | Name | Upgrade cost (MB) | Unlock requirements | Floor area (studs) | Table capacity | Kitchen capacity | Menu slots | Customer throughput (cust/h) | Available equipment (new at this tier) | Decoration options | Employee capacity | Offline earning potential |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `TIER_01` | Broken Burger Shack | 0 | Start (Level 1); granted by the story intro (Nana Gristle's shack) | 32×26 = 832 | 4 seats (counter service) | 6 appliance slots · kitchen 32×12 = 384 sq studs · utility fixtures slot-free | 4 | online ≈ 56 · offline ≈ 33 | Starter kit (12 fixtures: FRN_001, FRN_002, FRN_004, FRN_005, FRN_006, FRN_007, FRN_015, FRN_017, FRN_019, FRN_020, FRN_021, FRN_022); buyable STN_STOVE (L2), STN_OVEN + STN_PIZZA_OVEN (L3), STN_SOUP_POT + STN_ICECREAM (L4), STN_BLENDER (L5); 2 free appliance slots | Greasy Spoon Classic set; basic plants, bare bulbs, card tables; 2 window sockets; 4 curb sockets | 2 | 149–185 MB/h · cap 2 h → ≤ 370 MB per session (29 % of active) |
-| `TIER_02` | Tiny Mutation Diner | 1,000 | L5 · 1,000 MB · owns `TIER_01` · empty dining room (§15.3) | 40×30 = 1,200 | 6 seats (counter service) | 8 appliance slots · kitchen 40×12 = 480 sq studs · utility fixtures slot-free | 5 | online ≈ 79 · offline ≈ 45 | STN_MIXER, STN_FREEZER, STN_PLATING (L5), STN_STEAMER (L7); station Lv2 (Tuned) | Chrome Comet Diner set, jukebox, goldfish bowl, bouncer rope, gumball globe; 3 window sockets | 3 | 171–303 MB/h · cap 4 h → ≤ 1,210 MB per session (28 % of active) |
+| `TIER_02` | Tiny Mutation Diner | 1,000 | L5 · 1,000 MB · owns `TIER_01` · empty dining room (§15.3) | 40×30 = 1,200 | 6 seats (counter service) | 8 appliance slots · kitchen 40×12 = 480 sq studs · utility fixtures slot-free | 5 | online ≈ 79 · offline ≈ 46 | STN_MIXER, STN_FREEZER, STN_PLATING (L5), STN_STEAMER (L7); station Lv2 (Tuned) | Chrome Comet Diner set, jukebox, goldfish bowl, bouncer rope, gumball globe; 3 window sockets | 3 | 171–308 MB/h · cap 4 h → ≤ 924 MB per session (29 % of active) |
 | `TIER_03` | Neighborhood Freak Café | 2,000 | L10 · 2,000 MB · owns `TIER_02` · empty dining room (§15.3) | 48×34 = 1,632 + patio 24×12 (288, needs `UPG_031`) | 8 seats (table service) | 10 appliance slots · kitchen 48×14 = 672 sq studs · utility fixtures slot-free | 6 | online ≈ 104 · offline ≈ 53 | Premium variants begin (Chrome Comet grill/fountain/assembly, Swamp fryer/soup pot); UPG_031 Patio Permit; table service (waiters) starts | Swamp Bistro set, patio furniture, string lights, Morph Mirror, Host Podium (granted), Trophy Shelf, beanbag Chill Corner | 4 | 246–410 MB/h · cap 2 h → ≤ 820 MB per session (24 % of active) |
-| `TIER_04` | Morph City Grill | 5,000 | L18 · 5,000 MB · owns `TIER_03` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 56×38 = 2,128 + patio 28×12 (336, needs `UPG_031`) | 10 seats (table service) | 12 appliance slots · kitchen 56×14 = 784 sq studs · utility fixtures slot-free | 8 | online ≈ 130 · offline ≈ 65 | Station Lv3 (Pro); 2nd serving window (UPG_029); Garbage Gobbler; dishwasher matters offline (no ROLE_DISH = kitchen cap ×0.8) | Tentacle Tavern set begins, photo booth, Owl camera, porthole windows, spinning burger curb sign | 6 | 281–760 MB/h · cap 4 h → ≤ 3,038 MB per session (25 % of active) |
-| `TIER_05` | Mutant Family Restaurant | 15,000 | L26 · 15,000 MB · owns `TIER_04` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 64×42 = 2,688 + patio 32×14 (448, needs `UPG_031`) | 12 seats (table service) | 14 appliance slots · kitchen 64×16 = 1,024 sq studs · utility fixtures slot-free | 10 | online ≈ 158 · offline ≈ 95 | STN_ANTIGRAV (L30); Tentacle premium kitchen (Octo-Burner, Tentacle Pantry, Igloo Freezer, Dish-O-Saurus) | Family Feast long tables, ship-hull booths, jellyfish chandelier, arcade cabinet, player piano, showcase pedestal | 8 | 503–1,587 MB/h · cap 8 h → ≤ 12,693 MB per session (29 % of active) |
-| `TIER_06` | Monster Food Court | 40,000 | L35 · 40,000 MB · owns `TIER_05` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 72×48 = 3,456 + patio 36×16 (576, needs `UPG_031`) | 14 seats (table service) | 16 appliance slots · kitchen 72×18 = 1,296 sq studs · utility fixtures slot-free | 12 | online ≈ 189 · offline ≈ 113 | STN_INFUSER (L40); station Lv4 (Mutant); 3rd serving window (UPG_030); Neon Monster + Mad Lab premium kitchen | Neon Monster and Mad Lab sets, food-court kiosk counters, security booth, wishing fountain, jellyfish tank | 10 | 762–3,119 MB/h · cap 8 h → ≤ 24,951 MB per session (32 % of active) |
-| `TIER_07` | Mutation Megadiner | 100,000 | L45 · 100,000 MB · owns `TIER_06` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 80×52 = 4,160 + patio 40×16 (640, needs `UPG_031`) | 16 seats (table service) | 18 appliance slots · kitchen 80×18 = 1,440 sq studs · utility fixtures slot-free | 14 | online ≈ 222 · offline ≈ 133 | Space Saucer premium kitchen (Retro Rocket Oven, Saucer Wok, Cloud-Puff Steamer); Lava-Lamp Fryer | Space Saucer set, karaoke stage, disco ball, hedge maze mini, hologram menu board | 12 | 1,374–5,607 MB/h · cap 12 h → ≤ 67,289 MB per session (32 % of active) |
-| `TIER_08` | Luxury Freak Restaurant | 225,000 | L56 · 225,000 MB · owns `TIER_07` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 88×58 = 5,104 + patio 44×18 (792, needs `UPG_031`) | 18 seats (table service) | 20 appliance slots · kitchen 88×20 = 1,760 sq studs · utility fixtures slot-free | 16 | online ≈ 259 · offline ≈ 156 | Station Lv5 (Ridiculous); Royal premium kitchen (Golden Whisk Mixer, Golden Swirl, Chill Throne, Plating Altar); Bubbletron Infuser Mk II | Royal Ridiculous set, velvet horseshoe booths, crystal chandeliers, Kraken viewing tank, valet podium | 14 | 2,263–12,101 MB/h · cap 12 h → ≤ 145,211 MB per session (37 % of active) |
-| `TIER_09` | Morph City Food Palace | 525,000 | L68 · 525,000 MB · owns `TIER_08` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 96×64 = 6,144 + patio 48×20 (960, needs `UPG_031`) | 20 seats (table service) | 22 appliance slots · kitchen 96×22 = 2,112 sq studs · utility fixtures slot-free | 20 | online ≈ 300 · offline ≈ 176 | All 24 stations available; full premium catalog; searchlights (UPG_065) | Legendary Menagerie set starts (palace round tables, dome chandeliers, garden tree, panoramic windows, moray tank) | 16 | 3,969–23,915 MB/h · cap 24 h → ≤ 573,962 MB per session (38 % of active) |
-| `TIER_10` | Legendary Mutation Restaurant | 1,500,000 | L80 · 1,500,000 MB · owns `TIER_09` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 112×72 = 8,064 + patio 56×24 (1,344, needs `UPG_031`) | 24 seats (table service) | 24 appliance slots · kitchen 112×24 = 2,688 sq studs · utility fixtures slot-free | 24 | online ≈ 359 · offline ≈ 202 | Everything; 24 appliance slots = one of every slot-using station plus 10 duplicates/premiums | Grand Aquarium Wall, Glass Aquarium Floor, Grand Monster Gate, Statue of You, Living Mural, Legendary Neon Monster Sign | 20 | 6,183–47,477 MB/h · cap 24 h → ≤ 1,139,443 MB per session (39 % of active) |
+| `TIER_04` | Morph City Grill | 5,000 | L18 · 5,000 MB · owns `TIER_03` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 56×38 = 2,128 + patio 28×12 (336, needs `UPG_031`) | 10 seats (table service) | 12 appliance slots · kitchen 56×14 = 784 sq studs · utility fixtures slot-free | 8 | online ≈ 130 · offline ≈ 66 | Station Lv3 (Pro); 2nd serving window (UPG_029); Garbage Gobbler; dishwasher matters offline (no ROLE_DISH = kitchen cap ×0.8) | Tentacle Tavern set begins, photo booth, Owl camera, porthole windows, spinning burger curb sign | 6 | 281–776 MB/h · cap 4 h → ≤ 2,328 MB per session (25 % of active) |
+| `TIER_05` | Mutant Family Restaurant | 15,000 | L26 · 15,000 MB · owns `TIER_04` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 64×42 = 2,688 + patio 32×14 (448, needs `UPG_031`) | 12 seats (table service) | 14 appliance slots · kitchen 64×16 = 1,024 sq studs · utility fixtures slot-free | 10 | online ≈ 158 · offline ≈ 95 | STN_ANTIGRAV (L30); Tentacle premium kitchen (Octo-Burner, Tentacle Pantry, Igloo Freezer, Dish-O-Saurus) | Family Feast long tables, ship-hull booths, jellyfish chandelier, arcade cabinet, player piano, showcase pedestal | 8 | 503–1,587 MB/h · cap 8 h → ≤ 7,933 MB per session (29 % of active) |
+| `TIER_06` | Monster Food Court | 40,000 | L35 · 40,000 MB · owns `TIER_05` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 72×48 = 3,456 + patio 36×16 (576, needs `UPG_031`) | 14 seats (table service) | 16 appliance slots · kitchen 72×18 = 1,296 sq studs · utility fixtures slot-free | 12 | online ≈ 189 · offline ≈ 113 | STN_INFUSER (L40); station Lv4 (Mutant); 3rd serving window (UPG_030); Neon Monster + Mad Lab premium kitchen | Neon Monster and Mad Lab sets, food-court kiosk counters, security booth, wishing fountain, jellyfish tank | 10 | 762–3,119 MB/h · cap 8 h → ≤ 15,594 MB per session (32 % of active) |
+| `TIER_07` | Mutation Megadiner | 100,000 | L45 · 100,000 MB · owns `TIER_06` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 80×52 = 4,160 + patio 40×16 (640, needs `UPG_031`) | 16 seats (table service) | 18 appliance slots · kitchen 80×18 = 1,440 sq studs · utility fixtures slot-free | 14 | online ≈ 222 · offline ≈ 133 | Space Saucer premium kitchen (Retro Rocket Oven, Saucer Wok, Cloud-Puff Steamer); Lava-Lamp Fryer | Space Saucer set, karaoke stage, disco ball, hedge maze mini, hologram menu board | 12 | 1,374–5,607 MB/h · cap 12 h → ≤ 32,523 MB per session (32 % of active) |
+| `TIER_08` | Luxury Freak Restaurant | 225,000 | L56 · 225,000 MB · owns `TIER_07` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 88×58 = 5,104 + patio 44×18 (792, needs `UPG_031`) | 18 seats (table service) | 20 appliance slots · kitchen 88×20 = 1,760 sq studs · utility fixtures slot-free | 16 | online ≈ 259 · offline ≈ 156 | Station Lv5 (Ridiculous); Royal premium kitchen (Golden Whisk Mixer, Golden Swirl, Chill Throne, Plating Altar); Bubbletron Infuser Mk II | Royal Ridiculous set, velvet horseshoe booths, crystal chandeliers, Kraken viewing tank, valet podium | 14 | 2,263–12,101 MB/h · cap 12 h → ≤ 70,185 MB per session (37 % of active) |
+| `TIER_09` | Morph City Food Palace | 525,000 | L68 · 525,000 MB · owns `TIER_08` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 96×64 = 6,144 + patio 48×20 (960, needs `UPG_031`) | 20 seats (table service) | 22 appliance slots · kitchen 96×22 = 2,112 sq studs · utility fixtures slot-free | 20 | online ≈ 300 · offline ≈ 180 | All 24 stations available; full premium catalog; searchlights (UPG_065) | Legendary Menagerie set starts (palace round tables, dome chandeliers, garden tree, panoramic windows, moray tank) | 16 | 3,969–24,584 MB/h · cap 24 h → ≤ 201,587 MB per session (39 % of active) |
+| `TIER_10` | Legendary Mutation Restaurant | 1,500,000 | L80 · 1,500,000 MB · owns `TIER_09` · City Hall Expansion Permit (§20) · empty dining room (§15.3) | 112×72 = 8,064 + patio 56×24 (1,344, needs `UPG_031`) | 24 seats (table service) | 24 appliance slots · kitchen 112×24 = 2,688 sq studs · utility fixtures slot-free | 24 | online ≈ 359 · offline ≈ 216 | Everything; 24 appliance slots = one of every slot-using station plus 10 duplicates/premiums | Grand Aquarium Wall, Glass Aquarium Floor, Grand Monster Gate, Statue of You, Living Mural, Legendary Neon Monster Sign | 20 | 6,183–51,314 MB/h · cap 24 h → ≤ 420,771 MB per session (43 % of active) |
 
 #### 36.12.2 Layout Limits per Tier
 
@@ -29633,15 +31249,15 @@ Assumptions per tier **[TUNABLE]**: typical reputation (Stars) and Atmosphere; `
 | # | Tier | Crew | Cap H | Demand_off | Cap_seat | Cap_kitchen | Cap_service | Q (binding) | q | Revenue | Tips | Ingredients | Wages | Net / h | % of active | Max per session |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | `TIER_01` | Ollie (EMP_001), 1×Chef (C) | 2 | 33.4 | 48 | 48.3 | 48.3 | 33.4 (demand) | 0.77 | 343 | 14 | 142 | 30 | **185** | 29 % | 370 |
-| 2 | `TIER_02` | Ollie (EMP_001), 1×Chef (C), 1×Manager (C) | 4 | 47.5 | 72 | 45.1 | 45.1 | 45.1 (kitchen) | 0.77 | 558 | 22 | 230 | 48 | **303** | 28 % | 1,210 |
+| 2 | `TIER_02` | Ollie (EMP_001), 1×Chef (C), 1×Manager (C) | 4 | 47.5 | 72 | 45.8 | 45.8 | 45.8 (kitchen) | 0.77 | 567 | 23 | 233 | 48 | **308** | 29 % | 924 |
 | 3 | `TIER_03` | Ollie (EMP_001), 1×Chef (U), 2×Waiter (U) | 2 | 62.1 | 96 | 53.2 | 65.2 | 53.2 (kitchen) | 0.79 | 869 | 50 | 347 | 162 | **410** | 24 % | 820 |
-| 4 | `TIER_04` | 3×Chef (U), 2×Waiter (U), 1×Manager (U) | 4 | 77.8 | 120 | 69.8 | 65.2 | 65.2 (service) | 0.81 | 1,548 | 90 | 578 | 300 | **760** | 25 % | 3,038 |
-| 5 | `TIER_05` | 3×Chef (R), 3×Waiter (R), 1×Dish (C), 1×Manager (R) | 8 | 94.9 | 144 | 103.9 | 122.8 | 94.9 (demand) | 0.84 | 3,654 | 231 | 1,300 | 998 | **1,587** | 29 % | 12,693 |
-| 6 | `TIER_06` | 4×Chef (R), 3×Waiter (R), 1×Dish (C), 1×Security (R), 1×Manager (R) | 8 | 113.4 | 168 | 129.4 | 123.8 | 113.4 (demand) | 0.84 | 6,178 | 390 | 2,171 | 1,278 | **3,119** | 32 % | 24,951 |
-| 7 | `TIER_07` | 4×Chef (E), 3×Waiter (E), 1×Cashier (R), 1×Dish (U), 1×Security (R), 1×Repair (R), 1×Manager (E) | 12 | 133.4 | 192 | 146.0 | 164.9 | 133.4 (demand) | 0.88 | 12,408 | 871 | 4,002 | 3,670 | **5,607** | 32 % | 67,289 |
-| 8 | `TIER_08` | 5×Chef (E), 3×Waiter (E), 1×Cashier (R), 1×Dish (U), 1×Security (R), 1×Repair (R), 1×Manager (E) | 12 | 155.7 | 216 | 172.2 | 166.1 | 155.7 (demand) | 0.88 | 21,511 | 1,510 | 6,849 | 4,070 | **12,101** | 37 % | 145,211 |
-| 9 | `TIER_09` | 6×Chef (E), 4×Waiter (E), 1×Cashier (E), 1×Dish (R), 1×Security (R), 1×Repair (R), 1×Manager (L), 1×Asst Mgr (E) | 24 | 180.2 | 240 | 176.3 | 201.1 | 176.3 (kitchen) | 0.88 | 39,832 | 2,823 | 12,520 | 6,220 | **23,915** | 38 % | 573,962 |
-| 10 | `TIER_10` | 6×Chef (E), 1×Chef (L), 5×Waiter (E), 1×Cashier (E), 1×Dish (R), 1×Security (E), 1×Repair (E), 1×Stocker (R), 1×Manager (L), 1×Asst Mgr (E) | 24 | 215.6 | 288 | 201.7 | 253.3 | 201.7 (kitchen) | 0.89 | 70,270 | 4,980 | 19,493 | 8,280 | **47,477** | 39 % | 1,139,443 |
+| 4 | `TIER_04` | 3×Chef (U), 2×Waiter (U), 1×Manager (U) | 4 | 77.8 | 120 | 70.9 | 66.2 | 66.2 (service) | 0.81 | 1,572 | 91 | 587 | 300 | **776** | 25 % | 2,328 |
+| 5 | `TIER_05` | 3×Chef (R), 3×Waiter (R), 1×Dish (C), 1×Manager (R) | 8 | 94.9 | 144 | 108.8 | 128.7 | 94.9 (demand) | 0.84 | 3,654 | 231 | 1,300 | 998 | **1,587** | 29 % | 7,933 |
+| 6 | `TIER_06` | 4×Chef (R), 3×Waiter (R), 1×Dish (C), 1×Security (R), 1×Manager (R) | 8 | 113.4 | 168 | 135.5 | 129.7 | 113.4 (demand) | 0.84 | 6,178 | 390 | 2,171 | 1,278 | **3,119** | 32 % | 15,594 |
+| 7 | `TIER_07` | 4×Chef (E), 3×Waiter (E), 1×Cashier (R), 1×Dish (U), 1×Security (R), 1×Repair (R), 1×Manager (E) | 12 | 133.4 | 192 | 158.0 | 178.5 | 133.4 (demand) | 0.88 | 12,408 | 871 | 4,002 | 3,670 | **5,607** | 32 % | 32,523 |
+| 8 | `TIER_08` | 5×Chef (E), 3×Waiter (E), 1×Cashier (R), 1×Dish (U), 1×Security (R), 1×Repair (R), 1×Manager (E) | 12 | 155.7 | 216 | 186.3 | 179.8 | 155.7 (demand) | 0.88 | 21,511 | 1,510 | 6,849 | 4,070 | **12,101** | 37 % | 70,185 |
+| 9 | `TIER_09` | 6×Chef (E), 4×Waiter (E), 1×Cashier (E), 1×Dish (R), 1×Security (R), 1×Repair (R), 1×Manager (L), 1×Asst Mgr (E) | 24 | 180.2 | 240 | 211.8 | 241.6 | 180.2 (demand) | 0.88 | 40,716 | 2,885 | 12,798 | 6,220 | **24,584** | 39 % | 201,587 |
+| 10 | `TIER_10` | 6×Chef (E), 1×Chef (L), 5×Waiter (E), 1×Cashier (E), 1×Dish (R), 1×Security (E), 1×Repair (E), 1×Stocker (R), 1×Manager (L), 1×Asst Mgr (E) | 24 | 215.6 | 288 | 242.3 | 304.3 | 215.6 (demand) | 0.89 | 75,106 | 5,322 | 20,835 | 8,280 | **51,314** | 43 % | 420,771 |
 
 **Lean crew (minimum viable):**
 
@@ -29658,7 +31274,7 @@ Assumptions per tier **[TUNABLE]**: typical reputation (Stars) and Atmosphere; `
 | 9 | `TIER_09` | 1×Chef (E), 1×Waiter (E) | 2 | 28.0 (kitchen) | 6,321 | **3,969** | 6 % | 7,939 |
 | 10 | `TIER_10` | 1×Chef (E), 1×Waiter (E) | 2 | 26.6 (kitchen) | 9,205 | **6,183** | 5 % | 12,365 |
 
-**Reading the result.** A well-staffed restaurant returns 32–39 % of active income per offline hour from `TIER_06` (reaching the canon 35–50 % band from `TIER_08`) and never approaches the 60 % ceiling. `TIER_01`–`TIER_05` land at 24–29 % because canon quality `q` is capped by low chef accuracy and, from `TIER_03`, `Cap_service = 80 × Eff` per waiter binds while employee caps are small. This is intentional early pacing (offline is a teaser until the player can staff properly); §17 owns any retuning.
+**Reading the result.** These figures are a deliberately *conservative, crew-only* estimate: they apply the canon §C15 formula to generic rarity profiles and omit §17's employee-trait, manager-coordination and station-level multipliers, so they land at 24–43 % of active income per offline hour. §17's worked examples with real archetypes (40–44 % at `TIER_01`/`03`/`05`/`07`/`10`) are the authoritative balance reference. *Net / h* is the rate during the first two offline hours; *Max per session* applies the canon long-absence taper (hours 0–2 ×1.0, 2–8 ×0.5, 8–24 ×0.2), i.e. effective hours 2 h → 2, 4 h → 3, 8 h → 5, 12 h → 5.8, 24 h → 8.2.
 
 #### 36.12.4 Restaurant Upgrades
 
@@ -29767,7 +31383,7 @@ Total MB to buy every station level on all 24 paths: **1,946,025 MB**; all other
 
 ### 36.13 Furniture and Equipment Catalog
 
-> Generated by `python3 gdd/tools/render_restaurant.py` from `gdd/data/furniture.json` (owner A10). **214 purchasable items** (`FRN_001`–`FRN_899` range) plus the **10 canon trophy decorations** (`FRN_901`–`FRN_910`, not purchasable). Prices, atmosphere points and durability are **[TUNABLE]**.
+> Generated by `python3 gdd/tools/render_restaurant.py` from `gdd/data/furniture.json`. **214 purchasable items** (numbered from `FRN_001`; numbers below 900 are reserved for purchasable items) plus the **10 canon trophy decorations** (`FRN_901`–`FRN_910`, not purchasable). Prices, atmosphere points and durability are **[TUNABLE]**.
 
 **Column legend.** *Station* = canon station type if the item is a kitchen appliance or utility fixture. *Req tier* `T3` = needs `TIER_03` or higher (stations also need their canon unlock level, shown in notes). *Price* = Morph Bucks at Restaurant Supplies (`BLD_03`, kitchen items) or Monster Mall (`BLD_12`, everything else); once an item has been seen in its shop it can be re-bought from the Build Mode catalog. The **price of a station's stock item is that station's Lv1 base price** used by canon §C4.9 upgrade multipliers (§36.12). *Footprint* in studs (W×D on the 2-stud grid; `wall N` = N studs of wall socket; `ceiling` items use the ceiling layer and never block floor cells; `zone` = whole-zone finish). *Atmosphere pts* feed the §15.6 formula. *Durability* = max durability points (— = indestructible); damage states are percentages of it (Pristine 100–76 · Scuffed 75–51 · Cracked 50–26 · Broken 25–1 · Destroyed 0, canon §C6) and repair costs are a share of *Price* (§15.9: 4 % / 8 % / 15 % / 25 % rebuild).
 
@@ -30158,7 +31774,7 @@ Every canon station has a stock item (its Lv1 base price) and, for most, premium
 
 ### 36.14 Animation Library
 
-Owner: A16 Art & Audio. This appendix is the **only place `ANM_` ids are defined**. Numbers 001–300 are the
+This appendix is the **only place `ANM_` ids are defined**. Numbers 001–300 are the
 general library; `ANM_301`–`ANM_370` are the ability animations, mapped 1:1 to `ABL_001`–`ABL_070` (same last two
 digits, canon §C21). The 52 canon core ids keep their canon names verbatim. Playback rules (priorities, blending,
 gait classes, LOD, employee cycles) are specified in §26; art rules in §25.
@@ -30407,8 +32023,8 @@ Unlisted numbers in the 001–300 general range are reserved for future content 
 
 #### 36.14.12 Ability animations (`ANM_301`–`ANM_370` ↔ `ABL_001`–`ABL_070`)
 
-Names equal the canon ability names (§C12.2). Mutation actives list their source part (§C13.6). A6 owns timing,
-damage and hitboxes in §36.6. Where these durations disagree with §36.6, A6's cast and recovery windows win, and the
+Names equal the canon ability names (§C12.2). Mutation actives list their source part (§C13.6). §11 owns timing,
+damage and hitboxes in §36.6. Where these durations disagree with §36.6, §11's cast and recovery windows win, and the
 track is speed-scaled to fit. Users: P = player, C = customer using the NPC-tuned version (§C11.6).
 
 | ID | Name | Category | Rig / users | Loop? | Duration (s) | Priority | Description | Used by (systems / ability ids) |
@@ -30494,7 +32110,7 @@ track is speed-scaled to fit. Users: P = player, C = customer using the NPC-tune
 
 ### 36.15 Sound Library
 
-Owner: A16 Art & Audio. This appendix is the **only place `SFX_` and `MUS_` ids are defined**. Bus structure,
+This appendix is the **only place `SFX_` and `MUS_` ids are defined**. Bus structure,
 3D rolloff, ducking, the voice budget, adaptive music and accessibility are specified in §26. Other sections describe
 audio in words and reference these ids.
 
@@ -30848,7 +32464,7 @@ stem of a multi-stem track has identical length and BPM (§26 adaptive music). R
 
 ### 36.16 Achievements Database
 
-> **Owner:** A9 Progression. Rules live in §14 (XP Unit **XPU**, §14.3; reward granting, §14.18). Checked by
+> Rules live in §14 (XP Unit **XPU**, §14.3; reward granting, §14.18). Checked by
 > `python3 gdd/tools/render_progression.py --check` (IDs, categories, C17.4 reward vocabulary, skill-point totals).
 
 **Rules & Mechanics.**
@@ -30976,7 +32592,7 @@ quest income; Legendary-or-better parts are granted only by end-game achievement
 
 ### 36.17 Progression Milestones Database
 
-> **Owner:** A9 Progression. Milestones are one-time progression beats (except `MLS_045`) that mark onboarding firsts,
+> Milestones are one-time progression beats (except `MLS_045`) that mark onboarding firsts,
 > level bands and restaurant tiers, unlock or explain features, and anchor the analytics funnel (brief Part 20, §31).
 
 **Rules & Mechanics.**
@@ -30990,8 +32606,8 @@ quest income; Legendary-or-better parts are granted only by end-game achievement
   only, while Morph Capsules are explicitly allowed (§C4.7). XP is written **XP n XPU** (§14.3). **Exactly 6 milestones
   grant 1 skill point each** (feeds §14.14).
 - **Analytics.** Each row fires its listed event once plus `mmr_milestone_reached {mls_id, level, hours_active,
-  session_index}`. `MLS_001`–`MLS_013` also call `AnalyticsService:LogOnboardingFunnelStepEvent(player, step, name)` with
-  step = 1–13 in ID order; level bands call `LogProgressionEvent(player, "PlayerLevel",
+  session_index}`. `MLS_001`–`MLS_013` also call `AnalyticsService:LogFunnelStepEvent(player, "mmr_first_session", sessionId, step, name)`
+  with step = 1–13 in ID order (the onboarding funnel itself is reserved for the tutorial, §31.8); level bands call `LogProgressionEvent(player, "PlayerLevel",
   Enum.AnalyticsProgressionType.Complete, level)`; tier rows call it with path `"RestaurantTier"` and the tier number.
 
 | ID | Milestone | Trigger | Unlocks | Reward | Analytics event |
@@ -31594,7 +33210,7 @@ defaults are generated from these tables (AC-39-02).
 | Autosave interval [T] | 120 | s | caps data-loss window vs DataStore budget | DataStore request rate; throttle warnings; lost-progress reports | 60–180 | Lead Eng |
 | Extra save on purchase | ≥ 10,000 | MB | protects big purchases between autosaves | saves per minute | 5,000–25,000 | Lead Eng |
 | Base WalkSpeed | 16 | studs/s | familiar Roblox feel | — | Locked | Design-Sys |
-| Max WalkSpeed (MOVE cap) | 20.8 (labelled ≈ 21) | studs/s | faster kitchens without breaking validation | median station-to-station time | 19–22 | Design-Sys |
+| Max WalkSpeed (MOVE cap) | 20.8 | studs/s | faster kitchens without breaking validation | median station-to-station time | 19–22 | Design-Sys |
 | Carry capacity: base / per boosting part / hard max | 1 / +1 / 3 | items | juggling skill; prevents hoarding | items carried per serve | hard max 2–4 | Design-Sys |
 | Interaction range: stations / customers / server tolerance | 7 / 10 / +2 | studs | phone reach; anti-teleport | rejected interactions per 1,000 | 6–9 / 8–12 / 1–3 | Lead Eng |
 | Customers per restaurant | seats + 4 queue (max 28) | customers | throughput vs crowding | queue abandonment rate | queue 2–6 | Design-Sys |
@@ -31603,7 +33219,7 @@ defaults are generated from these tables (AC-39-02).
 | Client debris lifetime | 4 | s | readability vs clutter | client particle count | 2–6 | Art Dir |
 | City lighting cycle | 24 | min | cosmetic; night-only discoveries | — | 16–40 | Art Dir |
 | Daily / weekly reset | 00:00 UTC / Monday 00:00 UTC | clock | one global rule | — | Locked | Producer |
-| Level cap | 100 | level | ≈ 200-hour arc | % of players at cap | Locked at launch | Design-Sys |
+| Level cap | 100 | level | ≈ 185-hour arc (C5.1) | % of players at cap | Locked at launch | Design-Sys |
 | Reputation start / range | 2.5 / 1.0–5.0 | ★ | start mid-scale | Stars distribution by tier | Locked | Design-Sys |
 | Return Door cooldown | 10 | s | free fast return without abuse | uses per session | 5–30 | Design-Sys |
 | Pigeon Taxi fare | 25 × tier | MB | small convenience sink | rides per DAU | 10–50 × tier | Design-Econ |
@@ -31637,7 +33253,7 @@ defaults are generated from these tables (AC-39-02).
 | Shop price — Rare [T] | 4,000–10,000 + 20 MS | MB, MS | Mart rotation aspiration | | ±25 % (MS 10–40) | Design-Econ |
 | Shop price — Epic [T] | 25,000–60,000 + 80 MS | MB, MS | mid-game goal | | ±25 % (MS 50–120) | Design-Econ |
 | Shop price — Legendary [T] | 150,000–400,000 + 250 MS + 10 RT | MB, MS, RT | weekly Mystery Market chase | | ±25 % (RT 5–20) | Design-Econ |
-| Mythic fusion | 3 Legendary (same category) + 600 MS + 40 RT | — | prestige, never sold | fusions per week | MS 400–900; RT 25–60 | Design-Econ |
+| Mythic fusion | 3 Legendary from one fusion route (§12.5) + 600 MS + 40 RT | — | prestige, never sold | fusions per week | MS 400–900; RT 25–60 | Design-Econ |
 | Upgrade MB [T] | `BaseMB × 1.5^(L−1)`; BaseMB 100 · 300 · 900 · 3,000 · 10,000 · 30,000 · Secret 15,000 | MB | exponential late sink | upgrades per level band | growth 1.4–1.6 | Design-Econ |
 | Upgrade MS [T] | `BaseMS × L`; BaseMS 2 · 4 · 8 · 15 · 30 · 50 · Secret 40 | MS | shard sink | median MS balance | ±30 % | Design-Econ |
 | Upgrade RT [T] | `RTBase × (L − 3)` for Epic+ at L ≥ 4; RTBase 1 · 2 · 4 · Secret 3 | RT | gates the top levels | median RT balance; RT earned/week | ±1 per base | Design-Econ |
@@ -31792,10 +33408,13 @@ defaults are generated from these tables (AC-39-02).
 | Incident bounds | Σ negative ≤ 10 % · Σ positive ≤ 15 % of (Revenue + Tips) | % | never catastrophic | realized incident share | Locked (fairness) | Design-Econ |
 | Energy drain offline | −8 %/h per employee (−5 %/h with a Manager) | %/h | managers matter | Energy at return | 5–10 / 3–7 | Design-Sys |
 | Morale drift offline | −1 per hour | morale | gentle care loop | morale at return | 0–2 | Design-Sys |
-| Discoveries | 8 %/h chance of 1–3 MS · 1 %/h rare ingredient crate · ≤ 1 Morph Capsule per real day · RT never | %, items | offline complements active play | MS/day from offline vs active | MS chance 5–12 %; crate 0.5–2 % | Design-Econ |
-| Offline/active net ratio target | 35–50 % (well-staffed), never above 60 % | % | active play stays best | ratio by tier cohort (TC-OFF-10) | 30–55 %; hard max 60 % | Design-Econ |
+| Discoveries | per effective hour: 8 % chance of 1–3 MS · 1 % rare ingredient crate · ≤ 1 Morph Capsule per report and per UTC day · RT never | %, items | offline complements active play | MS/day from offline vs active | MS chance 5–12 %; crate 0.5–2 % | Design-Econ |
+| Offline/active net ratio target | 35–50 % during the first 2 offline hours (well-staffed), never above 60 % | % | active play stays best | ratio by tier cohort (TC-OFF-10) | 30–55 %; hard max 60 % | Design-Econ |
+| Long-absence taper [T] | offline hours 0–2 ×1.0 · 2–8 ×0.5 · 8–24 ×0.2 (24 h = 8.2 effective hours ≈ 3 active hours) | × | rewards checking in 2–3×/day without letting offline replace play | offline share of MB income | factors ±50 % | Design-Econ |
+| Offline-share guardrail KPI | median player's offline share of MB income ≤ 60 % at D7, ≤ 70 % at D30 | % | offline complements active play | `mmr_offline_collected` vs all MB sources (§31) | Locked thresholds; tune the taper first | Design-Econ |
+| Minimum absence for a report | 300 | s | no micro-reports from rejoins | reports per DAU | 120–600 | Design-Econ |
 | Claimed-report ring buffer | 20 | reports | idempotent collects | — | Locked (≥ 20) | Lead Eng |
-| Close-early rule | stop when a step's net < 0; that step's wages not charged; Net floored at 0 | — | no offline debt | closed-early reports % | Locked | Design-Econ |
+| Close-early rule | stop when a step's operating result (before incidents) < 0; that step's wages not charged; Net floored at 0 | — | no offline debt | closed-early reports % | Locked | Design-Econ |
 
 ### 39.12 Tuning Process
 
@@ -31930,7 +33549,7 @@ launch-readiness checklist (§40.8) is the final Go/No-Go.
 
 | # | Criterion | Measure |
 |---|---|---|
-| C1 | Data row complete | every field required by the owning section filled (e.g. 20 brief fields per recipe in §6; all §C13.6 + A7 fields per part in §36.3) |
+| C1 | Data row complete | every field required by the owning section filled (e.g. 20 brief fields per recipe in §6; all §C13.6 + §12 fields per part in §36.3) |
 | C2 | Identity valid | ID follows §C2, unique, canon names unchanged; ID appears as a definition exactly once in the assembled GDD |
 | C3 | References resolve | the GDD validator reports 0 unresolved references introduced by the item |
 | C4 | Balance in range | values inside canon bands and §39 safe ranges (price curve, rarity bands, budgets); economy validators pass |
@@ -32070,27 +33689,26 @@ every AC of its section is verified by the listed evidence.
 > The canon is the single source of truth that every section above is built on: identifier rules, the fixed master lists, global constants, economy anchors, core formulas and edge-case rulings. References written as `canon C4.4` or `§C4.4` point to the numbered clauses below. Where a section elaborates a value, the section's detail governs only if it does not contradict this appendix.
 
 
-> **Every contributor must read this file in full before writing.** It fixes identifiers, master
-> content lists, global constants, and core formulas so that all 40 sections of
-> `MYSTERY_MORPH_RESTAURANT_GDD.md` agree. If your section needs a value defined here, **use this
-> value**. If you need something not defined here and it belongs to *your* domain, define it in your
-> own section. Never invent an ID in another contributor's domain (see §C1 ownership).
+> This canon fixes the identifiers, master content lists, global constants, core formulas and edge-case
+> rulings that all 40 sections of `MYSTERY_MORPH_RESTAURANT_GDD.md` share. Sections elaborate these values but
+> never contradict them; where a section needs something not defined here, it defines it within its own domain
+> (§C2 lists which section defines each identifier family).
 >
-> Values marked **[TUNABLE]** are balancing assumptions: you must keep them as stated (so systems
-> agree) but you may describe how they would be tuned.
+> Values marked **[TUNABLE]** are balancing assumptions: implement them exactly as stated (other systems depend
+> on them) and expose them in configuration so they can be tuned with telemetry (§39).
 
 ---
 
-### C0. Contributor Rules (Style & Format Contract)
+### C0. Authoring Rules (Style & Format Contract)
 
-1. **Headings.** Your file's first line is the section heading exactly as allocated in §C1, as an H2:
+1. **Headings.** Each section file's first line is the section heading exactly as allocated in §C1, as an H2:
    `## 5. Cooking Mechanics`. Subsections are H3 `### 5.1 Title`, then H4/H5 freely. Never emit an H1.
    Files that contribute subsections to another file's section (e.g. `06b_...`, `12b_...`, `36_xx_...`)
    start with their allocated H3 heading instead of an H2.
 2. **Template for every major system** (use these labelled sub-blocks, in this order, wherever a system
    is specified): **Purpose · Rules & Mechanics · Variables (with [TUNABLE] values) · UI · Progression ·
    Player Interactions · Dependencies · Roblox Implementation · Edge Cases · Acceptance Criteria.**
-3. **Acceptance criteria** are measurable and IDed `AC-<SS>-<NN>` where `SS` is your two-digit section
+3. **Acceptance criteria** are measurable and IDed `AC-<SS>-<NN>` where `SS` is the two-digit section
    number, e.g. `AC-05-07: A Perfect grill window is ≥ 1.5 s at station Lv1 and is shown with a green band
    plus a ✓ icon.`
 4. **Tables** for all databases. The **first column of every database table is the ID** (in backticks is
@@ -32105,86 +33723,86 @@ every AC of its section is verified by the listed evidence.
    rules/numbers. Kid-safe (ages 8–16): **no gore, no blood, no realistic weapons, no death** — defeat is
    "Seeing Stars"/"Dizzy", damage shows as cartoon stars, feathers, sauce splats, confetti, soot puffs.
    No real brands, no copyrighted characters, no real people. No mean-spirited humor about real groups.
-8. **Cross references:** refer to other sections as `§N` (section number only) — you cannot know other
-   contributors' subsection numbers, except the fixed allocations in §C1.2 (e.g. `§36.6` Ability Database).
+8. **Cross references:** refer to other sections as `§N`; subsection anchors (`§N.M`) are stable for the fixed
+   allocations in §C1.2 (e.g. `§36.6` Ability Database) and within a section.
 9. **Numbers:** use the canon economy (§C4). **Rounding:** currency costs/prices round half-up to whole MB (MS/RT likewise); stat budgets round to the nearest whole point and are distributed across stats by largest remainder; simulations keep fractions internally and round only for display/payout. Use thousands separators (12,500). Currency abbreviations:
    **MB** (Morph Bucks), **MS** (Mutation Shards), **RT** (Research Tokens). Time in seconds `s`,
    minutes `min`, hours `h`. Distances in Roblox studs.
-10. **Do not silently omit.** If a list requires N items, deliver ≥ N complete rows. If you run long,
-    write your file in several appends — never truncate a table.
-11. **Write only your own files** (listed in §C1). Do not edit other files, do not `git commit`/`push`.
+10. **Do not silently omit.** If a list requires N items, it has ≥ N complete rows; tables are never truncated.
+11. **Sources, not output.** Edit section sources (`gdd/sections/`) and data (`gdd/data/`), never the assembled
+    document; `python3 gdd/tools/build_gdd.py --render` regenerates it and re-validates every cross-reference.
 12. **Data-backed tables are encouraged.** For large databases with computed columns, author data in
     `gdd/data/<domain>.json` and a renderer `gdd/tools/render_<domain>.py` (Python 3 stdlib only) that
-    writes your markdown file(s). The renderer must be idempotent and runnable as
+    writes the section's markdown file(s). The renderer must be idempotent and runnable as
     `python3 gdd/tools/render_<domain>.py` from the repo root.
 
 ---
 
-### C1. Document Structure & Ownership
+### C1. Document Structure
 
 #### C1.1 Section files (assembled in filename order into the final GDD)
 
-| File (in `gdd/sections/`) | Heading | Owner |
+| File (in `gdd/sections/`) | Heading | Discipline |
 |---|---|---|
-| `00_front_matter.md` | Title, conventions, manifest, TOC (generated) | Integrator |
-| `01_executive_summary.md` | `## 1. Executive Summary` | A1 Vision |
-| `02_game_vision.md` | `## 2. Game Vision` | A1 Vision |
-| `03_design_pillars.md` | `## 3. Design Pillars` | A1 Vision |
-| `04_core_gameplay_loops.md` | `## 4. Core Gameplay Loops` | A1 Vision |
-| `05_cooking_mechanics.md` | `## 5. Cooking Mechanics` | A2 Cooking |
-| `06_recipe_database.md` | `## 6. Recipe Database` (subsections 6.1–6.17) | A3 Recipes |
-| `06b_order_modifications.md` | `### 6.18 Ridiculous Order Modifications` | A2 Cooking |
-| `07_ingredient_database.md` | `## 7. Ingredient Database` | A3 Recipes |
-| `08_customer_ai.md` | `## 8. Customer AI` | A5 Customers |
-| `09_customer_personalities.md` | `## 9. Customer Personalities` | A5 Customers |
-| `10_satisfaction_tantrum.md` | `## 10. Satisfaction and Tantrum Systems` | A5 Customers |
-| `11_combat_system.md` | `## 11. Combat System` | A6 Combat |
-| `12_mutation_system.md` | `## 12. Mutation System` (subsections 12.1–12.8) | A7 Mutations |
-| `12b_combinations_synergies.md` | `### 12.9 Morph Combinations` and `### 12.10 Mutation Synergy Rules` | A8 Morph UI |
-| `13_morph_customization.md` | `## 13. Morph Customization` | A8 Morph UI |
-| `14_player_progression.md` | `## 14. Player Progression` | A9 Progression |
-| `15_restaurant_building.md` | `## 15. Restaurant Building` | A10 Restaurant |
-| `16_employee_management.md` | `## 16. Employee Management` | A11 Employees |
-| `17_offline_simulation.md` | `## 17. Offline Restaurant Simulation` | A11 Employees |
-| `18_morph_city.md` | `## 18. Morph City` | A12 City |
-| `19_city_npcs.md` | `## 19. City NPCs` | A13 NPCs & Quests |
-| `20_quests.md` | `## 20. Quests` | A13 NPCs & Quests |
-| `21_multiplayer.md` | `## 21. Multiplayer` | A14 Social & Economy |
-| `22_economy.md` | `## 22. Economy` | A14 Social & Economy |
-| `23_monetization.md` | `## 23. Monetization` | A14 Social & Economy |
-| `24_ui_ux.md` | `## 24. UI/UX` | A15 UI |
-| `25_art_direction.md` | `## 25. Art Direction` | A16 Art & Audio |
-| `26_animation_audio.md` | `## 26. Animation and Audio` | A16 Art & Audio |
-| `27_roblox_architecture.md` | `## 27. Roblox Architecture` | A17 Architecture |
-| `28_data_persistence.md` | `## 28. Data Persistence` | A18 Data & Ops |
-| `29_security_anti_exploit.md` | `## 29. Security and Anti-Exploit` | A18 Data & Ops |
-| `30_performance_optimization.md` | `## 30. Performance Optimization` | A18 Data & Ops |
-| `31_analytics.md` | `## 31. Analytics` | A18 Data & Ops |
-| `32_tutorial.md` | `## 32. Tutorial` | A1 Vision |
-| `33_content_expansion.md` | `## 33. Content Expansion` | A1 Vision |
-| `34_development_roadmap.md` | `## 34. Development Roadmap` | A19 Production |
-| `35_testing_qa.md` | `## 35. Testing and QA` | A19 Production |
-| `36_00_index.md` | `## 36. Content Database Appendices` + `### 36.1` | Integrator |
-| `36_02_recipe_quick_reference.md` | `### 36.2 Recipe Quick Reference` | A3 Recipes |
-| `36_03_mutation_parts.md` | `### 36.3 Mutation Parts Database` | A7 Mutations |
-| `36_04_mutation_synergies.md` | `### 36.4 Mutation Synergies Database` | A8 Morph UI |
-| `36_05_morph_combinations.md` | `### 36.5 Morph Combination Examples` | A8 Morph UI |
-| `36_06_abilities.md` | `### 36.6 Ability Database` | A6 Combat |
-| `36_07_status_effects.md` | `### 36.7 Status Effects Database` | A6 Combat |
-| `36_08_employee_archetypes.md` | `### 36.8 Employee Archetypes Database` | A11 Employees |
-| `36_09_offline_incidents.md` | `### 36.9 Offline Incidents Database` | A11 Employees |
-| `36_10_city_buildings.md` | `### 36.10 City Buildings Database` | A12 City |
-| `36_11_city_events.md` | `### 36.11 City Events Database` | A12 City |
-| `36_12_restaurant_tiers_upgrades.md` | `### 36.12 Restaurant Tiers and Upgrades Database` | A10 Restaurant |
-| `36_13_furniture_catalog.md` | `### 36.13 Furniture and Equipment Catalog` | A10 Restaurant |
-| `36_14_animation_library.md` | `### 36.14 Animation Library` | A16 Art & Audio |
-| `36_15_sound_library.md` | `### 36.15 Sound Library` | A16 Art & Audio |
-| `36_16_achievements.md` | `### 36.16 Achievements Database` | A9 Progression |
-| `36_17_milestones.md` | `### 36.17 Progression Milestones Database` | A9 Progression |
-| `37_implementation_checklists.md` | `## 37. Implementation Checklists` | A19 Production |
-| `38_open_design_decisions.md` | `## 38. Open Design Decisions` | A19 Production |
-| `39_balancing_assumptions.md` | `## 39. Balancing Assumptions` | A19 Production |
-| `40_definition_of_done.md` | `## 40. Definition of Done` | A19 Production |
+| `00_front_matter.md` | Title, conventions, manifest, TOC (generated) | Integration |
+| `01_executive_summary.md` | `## 1. Executive Summary` | Vision & Onboarding |
+| `02_game_vision.md` | `## 2. Game Vision` | Vision & Onboarding |
+| `03_design_pillars.md` | `## 3. Design Pillars` | Vision & Onboarding |
+| `04_core_gameplay_loops.md` | `## 4. Core Gameplay Loops` | Vision & Onboarding |
+| `05_cooking_mechanics.md` | `## 5. Cooking Mechanics` | Cooking Systems |
+| `06_recipe_database.md` | `## 6. Recipe Database` (subsections 6.1–6.17) | Food Content |
+| `06b_order_modifications.md` | `### 6.18 Ridiculous Order Modifications` | Cooking Systems |
+| `07_ingredient_database.md` | `## 7. Ingredient Database` | Food Content |
+| `08_customer_ai.md` | `## 8. Customer AI` | Customer AI |
+| `09_customer_personalities.md` | `## 9. Customer Personalities` | Customer AI |
+| `10_satisfaction_tantrum.md` | `## 10. Satisfaction and Tantrum Systems` | Customer AI |
+| `11_combat_system.md` | `## 11. Combat System` | Combat |
+| `12_mutation_system.md` | `## 12. Mutation System` (subsections 12.1–12.8) | Mutation Systems |
+| `12b_combinations_synergies.md` | `### 12.9 Morph Combinations` and `### 12.10 Mutation Synergy Rules` | Morph UX |
+| `13_morph_customization.md` | `## 13. Morph Customization` | Morph UX |
+| `14_player_progression.md` | `## 14. Player Progression` | Progression |
+| `15_restaurant_building.md` | `## 15. Restaurant Building` | Restaurant Building |
+| `16_employee_management.md` | `## 16. Employee Management` | Employees & Offline |
+| `17_offline_simulation.md` | `## 17. Offline Restaurant Simulation` | Employees & Offline |
+| `18_morph_city.md` | `## 18. Morph City` | World & Events |
+| `19_city_npcs.md` | `## 19. City NPCs` | Narrative & Quests |
+| `20_quests.md` | `## 20. Quests` | Narrative & Quests |
+| `21_multiplayer.md` | `## 21. Multiplayer` | Economy & Social |
+| `22_economy.md` | `## 22. Economy` | Economy & Social |
+| `23_monetization.md` | `## 23. Monetization` | Economy & Social |
+| `24_ui_ux.md` | `## 24. UI/UX` | UI/UX |
+| `25_art_direction.md` | `## 25. Art Direction` | Art & Audio |
+| `26_animation_audio.md` | `## 26. Animation and Audio` | Art & Audio |
+| `27_roblox_architecture.md` | `## 27. Roblox Architecture` | Architecture |
+| `28_data_persistence.md` | `## 28. Data Persistence` | Data & Ops |
+| `29_security_anti_exploit.md` | `## 29. Security and Anti-Exploit` | Data & Ops |
+| `30_performance_optimization.md` | `## 30. Performance Optimization` | Data & Ops |
+| `31_analytics.md` | `## 31. Analytics` | Data & Ops |
+| `32_tutorial.md` | `## 32. Tutorial` | Vision & Onboarding |
+| `33_content_expansion.md` | `## 33. Content Expansion` | Vision & Onboarding |
+| `34_development_roadmap.md` | `## 34. Development Roadmap` | Production |
+| `35_testing_qa.md` | `## 35. Testing and QA` | Production |
+| `36_00_index.md` | `## 36. Content Database Appendices` + `### 36.1` | Integration |
+| `36_02_recipe_quick_reference.md` | `### 36.2 Recipe Quick Reference` | Food Content |
+| `36_03_mutation_parts.md` | `### 36.3 Mutation Parts Database` | Mutation Systems |
+| `36_04_mutation_synergies.md` | `### 36.4 Mutation Synergies Database` | Morph UX |
+| `36_05_morph_combinations.md` | `### 36.5 Morph Combination Examples` | Morph UX |
+| `36_06_abilities.md` | `### 36.6 Ability Database` | Combat |
+| `36_07_status_effects.md` | `### 36.7 Status Effects Database` | Combat |
+| `36_08_employee_archetypes.md` | `### 36.8 Employee Archetypes Database` | Employees & Offline |
+| `36_09_offline_incidents.md` | `### 36.9 Offline Incidents Database` | Employees & Offline |
+| `36_10_city_buildings.md` | `### 36.10 City Buildings Database` | World & Events |
+| `36_11_city_events.md` | `### 36.11 City Events Database` | World & Events |
+| `36_12_restaurant_tiers_upgrades.md` | `### 36.12 Restaurant Tiers and Upgrades Database` | Restaurant Building |
+| `36_13_furniture_catalog.md` | `### 36.13 Furniture and Equipment Catalog` | Restaurant Building |
+| `36_14_animation_library.md` | `### 36.14 Animation Library` | Art & Audio |
+| `36_15_sound_library.md` | `### 36.15 Sound Library` | Art & Audio |
+| `36_16_achievements.md` | `### 36.16 Achievements Database` | Progression |
+| `36_17_milestones.md` | `### 36.17 Progression Milestones Database` | Progression |
+| `37_implementation_checklists.md` | `## 37. Implementation Checklists` | Production |
+| `38_open_design_decisions.md` | `## 38. Open Design Decisions` | Production |
+| `39_balancing_assumptions.md` | `## 39. Balancing Assumptions` | Production |
+| `40_definition_of_done.md` | `## 40. Definition of Done` | Production |
 
 Where a Part-27 section *is* a database, the database lives in that section: Recipes §6,
 Ingredients §7, Personalities §9, NPCs §19, Quests §20. All other databases live in §36.
@@ -32197,17 +33815,17 @@ Ingredients §7, Personalities §9, NPCs §19, Quests §20. All other databases 
 §36.16 Achievements · §36.17 Milestones.
 
 #### C1.3 Required Mermaid diagrams (key → owner)
-| Key | Section | Owner |
+| Key | Section |
 |---|---|---|
-| `core-gameplay-loop` | §4 | A1 |
-| `cooking-workflow` | §5 | A2 |
-| `customer-state-machine` | §8 | A5 |
-| `combat-state-machine` | §11 | A6 |
-| `player-progression` | §14 | A9 |
-| `employee-management` | §16 | A11 |
-| `offline-earnings` | §17 | A11 |
-| `service-architecture` | §27 | A17 |
-| `data-persistence-flow` | §28 | A18 |
+| `core-gameplay-loop` | §4 |
+| `cooking-workflow` | §5 |
+| `customer-state-machine` | §8 |
+| `combat-state-machine` | §11 |
+| `player-progression` | §14 |
+| `employee-management` | §16 |
+| `offline-earnings` | §17 |
+| `service-architecture` | §27 |
+| `data-persistence-flow` | §28 |
 
 Additional diagrams are welcome (give them any other key).
 
@@ -32217,35 +33835,35 @@ Additional diagrams are welcome (give them any other key).
 
 All IDs are UPPER_SNAKE, ASCII, stable forever (never re-used; deprecated IDs stay reserved).
 
-| Prefix / Pattern | Entity | Owner (defines rows) | Example |
+| Prefix / Pattern | Entity | Defined in | Example |
 |---|---|---|---|
-| `RCP_<CAT>_<NNN>` | Recipe | A3 (names fixed in §C10) | `RCP_BRG_001` |
-| `ING_<NAME>` | Ingredient | A3 (core set fixed in §C9) | `ING_BEEF_PATTY` |
-| `MOD_<NNN>` | Order modification | A2 | `MOD_017` |
-| `STN_<NAME>` | Kitchen station type | Canon §C7 (detailed by A2) | `STN_GRILL` |
-| `PER_<NNN>` | Customer personality | Canon §C11 names; A5 details | `PER_001` |
-| `ABL_<NNN>` | Ability (combat & utility) | Canon §C12 names; A6 details | `ABL_018` |
-| `STS_<NAME>` | Status effect | Canon §C12 names; A6 details | `STS_DIZZY` |
-| `MUT_<NNN>` | Mutation part | Canon §C13 names; A7 details | `MUT_216` |
-| `SYN_<NNN>` | Mutation synergy | A8 | `SYN_001` |
-| `CMB_<NNN>` | Example morph combination | A8 | `CMB_001` |
-| `SKL_<TREE>_<NN>` | Skill node; TREE ∈ CHEF, CMBT, RPR, SVC, MGMT | A9 | `SKL_CHEF_07` |
-| `ACH_<NNN>` | Achievement | A9 | `ACH_001` |
-| `MLS_<NNN>` | Progression milestone | A9 | `MLS_001` |
-| `TIER_<NN>` | Restaurant tier 01–10 | Canon §C6; A10 details | `TIER_03` |
-| `FRN_<NNN>` | Furniture / decor / appliance item | A10 (trophies fixed §C16.6) | `FRN_042` |
-| `UPG_<NNN>` | Restaurant upgrade (non-furniture) | A10 | `UPG_012` |
+| `RCP_<CAT>_<NNN>` | Recipe | §6 (names fixed in §C10) | `RCP_BRG_001` |
+| `ING_<NAME>` | Ingredient | §7 (core set fixed in §C9) | `ING_BEEF_PATTY` |
+| `MOD_<NNN>` | Order modification | §5 | `MOD_017` |
+| `STN_<NAME>` | Kitchen station type | Canon §C7 (detailed by §5) | `STN_GRILL` |
+| `PER_<NNN>` | Customer personality | Canon §C11 names; §8–§10 details | `PER_001` |
+| `ABL_<NNN>` | Ability (combat & utility) | Canon §C12 names; §11 details | `ABL_018` |
+| `STS_<NAME>` | Status effect | Canon §C12 names; §11 details | `STS_DIZZY` |
+| `MUT_<NNN>` | Mutation part | Canon §C13 names; §12 details | `MUT_216` |
+| `SYN_<NNN>` | Mutation synergy | §12.9–§13 | `SYN_001` |
+| `CMB_<NNN>` | Example morph combination | §12.9–§13 | `CMB_001` |
+| `SKL_<TREE>_<NN>` | Skill node; TREE ∈ CHEF, CMBT, RPR, SVC, MGMT | §14 | `SKL_CHEF_07` |
+| `ACH_<NNN>` | Achievement | §14 | `ACH_001` |
+| `MLS_<NNN>` | Progression milestone | §14 | `MLS_001` |
+| `TIER_<NN>` | Restaurant tier 01–10 | Canon §C6; §15 details | `TIER_03` |
+| `FRN_<NNN>` | Furniture / decor / appliance item | §15 (trophies fixed §C16.6) | `FRN_042` |
+| `UPG_<NNN>` | Restaurant upgrade (non-furniture) | §15 | `UPG_012` |
 | `ROLE_<NAME>` | Employee role | Canon §C14 | `ROLE_CHEF` |
-| `EMP_<NNN>` | Employee archetype | A11 (EMP_001 fixed) | `EMP_001` |
-| `INC_<NNN>` | Offline incident | A11 | `INC_001` |
+| `EMP_<NNN>` | Employee archetype | §16–§17 (EMP_001 fixed) | `EMP_001` |
+| `INC_<NNN>` | Offline incident | §16–§17 | `INC_001` |
 | `DST_<NN>` | City district | Canon §C16 | `DST_01` |
-| `BLD_<NN>` | City building | Canon §C16; A12 details | `BLD_09` |
-| `NPC_<NNN>` | Named NPC | Canon NPC_001–030; A13 adds 031+ | `NPC_016` |
-| `QST_<TYPE>_<NNN>` | Quest; TYPE ∈ TUT, STY, DLY, WKY, CHF, CBT, RPR, EXP, EMP, RST | A13 (TUT IDs fixed §C17) | `QST_TUT_003` |
-| `EVT_<NNN>` | City event | Canon §C16.5; A12 details | `EVT_007` |
-| `ANM_<NNN>` | Animation | A16 (core set fixed §C21) | `ANM_010` |
-| `CSEC_<NN>` / `CPROP_<NN>` / `CPIX_<NN>` | City secret / interactive prop / dead pixel | A12 | `CSEC_01` |
-| `SFX_<NNN>` / `MUS_<NNN>` | Sound effect / music track | A16 | `SFX_101` |
+| `BLD_<NN>` | City building | Canon §C16; §18 details | `BLD_09` |
+| `NPC_<NNN>` | Named NPC | Canon NPC_001–030; §19 adds 031+ | `NPC_016` |
+| `QST_<TYPE>_<NNN>` | Quest; TYPE ∈ TUT, STY, DLY, WKY, CHF, CBT, RPR, EXP, EMP, RST | §20 (TUT IDs fixed §C17) | `QST_TUT_003` |
+| `EVT_<NNN>` | City event | Canon §C16.5; §18 details | `EVT_007` |
+| `ANM_<NNN>` | Animation | §25–§26 (core set fixed §C21) | `ANM_010` |
+| `CSEC_<NN>` / `CPROP_<NN>` / `CPIX_<NN>` | City secret / interactive prop / dead pixel | §18 | `CSEC_01` |
+| `SFX_<NNN>` / `MUS_<NNN>` | Sound effect / music track | §25–§26 | `SFX_101` |
 
 Non-database names: Roblox services use PascalCase (`CookingService`); remotes use
 `<Domain>.<Action>` (e.g. `Cooking.InteractStation`); analytics events use `snake_case` prefixed `mmr_`.
@@ -32300,7 +33918,7 @@ Average ticket = 1.4 × menu-weighted average item price.
 | TIER_01 | 1 | 0 | 630 | 1,000 |
 | TIER_02 | 5 | 1 | 1,080 | 2,000 |
 | TIER_03 | 10 | 3 | 1,730 | 5,000 |
-| TIER_04 | 18 | 7 | 3,100 | 15,000 |
+| TIER_04 | 18 | 8 | 3,100 | 15,000 |
 | TIER_05 | 26 | 14 | 5,400 | 40,000 |
 | TIER_06 | 35 | 25 | 9,600 | 100,000 |
 | TIER_07 | 45 | 40 | 17,400 | 225,000 |
@@ -32421,7 +34039,7 @@ Player HP = `100 + 2 × (Level − 1) + mutation HP bonuses`.
 - **Service style:** TIER_01–02 are *counter service* (food handed over the serving window/counter;
   customers sit at nearby seats); TIER_03+ are *table service*.
 - **Demand:** online customers/h = `BaseDemand × RepMult × DecorMult × EventMult`; offline uses ×0.6 (§C15).
-- **Damage states** (all destructible furniture & appliances; A10 owns details): **Pristine** (durability
+- **Damage states** (all destructible furniture & appliances; §15 owns details): **Pristine** (durability
   100–76 %), **Scuffed** (75–51 %), **Cracked** (50–26 %), **Broken** (25–1 %: seats/appliances unusable),
   **Destroyed** (0 %: becomes a cartoon rubble pile; auto-rebuild offered for ≤ 25 % of item price — objects are
   **never permanently lost**).
@@ -32429,7 +34047,7 @@ Player HP = `100 + 2 × (Level − 1) + mutation HP bonuses`.
 
 ---
 
-### C7. Kitchen Stations (fixed list; A2 specifies every field)
+### C7. Kitchen Stations (fixed list; §5 specifies every field)
 
 | ID | Name | Kind | Slots (items processed at once, Lv1) | Starting kit at TIER_01? |
 |---|---|---|---|---|
@@ -32511,7 +34129,7 @@ tentacle, eyeball, slime, bug, alien, mutagen, glowing, legendary, gold, plant, 
 (All "gross" ingredients are kid-friendly versions: eyeballs are gummy/jelly, tentacles are squishy
 calamari-style, bugs are crunchy candy-like "Bug Crunch", slime is fruit jelly.)
 
-**Guaranteed core ingredient IDs** (A3 must define all of these; others may reference them):
+**Guaranteed core ingredient IDs** (§7 defines all of these; others may reference them):
 `ING_BUN, ING_BEEF_PATTY, ING_CHEESE, ING_LETTUCE, ING_TOMATO, ING_ONION, ING_PICKLE, ING_BACON, ING_KETCHUP,
 ING_MUSTARD, ING_POTATO, ING_DOUGH, ING_TOMATO_SAUCE, ING_MOZZARELLA, ING_PEPPERONI, ING_PINEAPPLE,
 ING_TORTILLA, ING_BEANS, ING_RICE, ING_BREAD_SLICE, ING_HAM, ING_PASTA, ING_EGG, ING_MILK, ING_FLOUR,
@@ -32699,7 +34317,7 @@ Alien Cuisine course (story chapter 5), MUT requires `STN_INFUSER`, LEG requires
 
 ### C11. Customers: Personalities, Satisfaction, Payment, Anger
 
-#### C11.1 Personality master list (A5 defines every field; others may reference)
+#### C11.1 Personality master list (§8–§10 defines every field; others may reference)
 | ID | Name |
 |---|---|
 | `PER_001` | The Karenosaurus |
@@ -32736,13 +34354,13 @@ Alien Cuisine course (story chapter 5), MUT requires `STN_INFUSER`, LEG requires
 | `PER_032` | The Mystery Mutant |
 
 Customer *appearance* is procedurally assembled from mutation parts (§12) — personalities define behavior,
-not a fixed body (except signature looks noted by A5, e.g. the Bodybuilder Pigeon always has a pigeon head).
+not a fixed body (except signature looks noted by §8–§10, e.g. the Bodybuilder Pigeon always has a pigeon head).
 
 #### C11.2 Patience [TUNABLE]
 `Patience (s) = (70 + 20 × (items − 1) + 5 × ΣDifficulty) × PersonalityPatienceMult × (1 + 0.004 × CHARM)`.
 Ordering phase: a seated customer waits up to 30 s × PersonalityPatienceMult for the order to be taken.
 
-#### C11.3 Satisfaction formula (exact; A5 elaborates)
+#### C11.3 Satisfaction formula (exact; §8–§10 elaborates)
 ```
 S_base = 100 × (0.25·A + 0.20·Q + 0.15·C + 0.20·W + 0.10·K + 0.10·M)
   A = order accuracy (0–1): correct dish & every requested modification (§6.18) satisfied
@@ -32757,7 +34375,7 @@ Thresholds (defaults; personalities may shift them): **Delighted ≥ 90 · Happy
 Unhappy 30–49 · Furious < 30.**
 
 #### C11.4 Payment, tips, reputation
-- **Pay** = Σ item menu prices × PayFactor: `1.0` if S ≥ 50; `0.8` if 30 ≤ S < 50; customers who become
+- **Pay** = Σ item menu prices × PayFactor: `1.0` if S ≥ 50; `0.8` if 30 ≤ S < 50; `0.6` if S < 30 and the customer stays to pay; customers who become
   hostile and are calmed by combat pay an **Apology Payment of 40 %** (no tip); customers who storm out pay 0.
 - **Tip** = Σ prices × TipRate(S) × PersonalityTipMult; TipRate: S < 70 → 0; 70–79 → 5 %; 80–89 → 10 %;
   90–97 → 18 %; 98–100 → 25 % ("Chef's Kiss"). Target: competent play averages ≈ 10 % tips.
@@ -32766,7 +34384,7 @@ Unhappy 30–49 · Furious < 30.**
   (1 ★ ×0.75 … 5 ★ ×1.75). Storm-outs apply an extra −0.03 ★. Offline uses the same Stars.
 - **DecorMult** = `0.9 + 0.003 × Atmosphere` (Atmosphere 0–100 → ×0.9–×1.2).
 
-#### C11.5 Anger levels (A5 designs escalation; A6 designs fights)
+#### C11.5 Anger levels (§8–§10 designs escalation; §11 designs fights)
 Anger meter 0–100 per customer. **0 Happy** (0–14) · **1 Annoyed** (15–29) · **2 Complaining** (30–44) ·
 **3 Throwing food** (45–59) · **4 Destroying furniture** (60–74) · **5 Fighting the player** (75–89) ·
 **6 Restaurant-wide chaos** (90–100; requires ≥ 3 customers at level ≥ 3 simultaneously, or an event).
@@ -32776,7 +34394,7 @@ customer attacks. Being hit by thrown food: +25 anger × personality sensitivity
 **De-escalation:** `ABL_006` Calm Down!, a free dessert/drink ("Peace Offering"), Chill Aura effects, a
 Security Guard employee, or finishing their order Perfect while they're at level ≤ 2.
 
-#### C11.6 NPC combat styles (A5 assigns one per personality; A6 defines the AI for each)
+#### C11.6 NPC combat styles (§8–§10 assigns one per personality; §11 defines the AI for each)
 | Style | Behavior summary |
 |---|---|
 | `PACIFIST` | never attacks; at levels 3–5 sulks, cries dramatically, or storms out |
@@ -32806,7 +34424,7 @@ A customer may use the **active ability of one of its own visible mutation parts
 - Max 4 equipped active mutation abilities on the ability bar (+ fixed basic kit). Abilities come from
   equipped parts only.
 
-#### C12.2 Ability master list (A6 specifies cooldown, damage, range, animation, effects, balance, counters)
+#### C12.2 Ability master list (§11 specifies cooldown, damage, range, animation, effects, balance, counters)
 `ABL_001`–`ABL_008` are the base kit; `ABL_009`–`ABL_060` are mutation combat abilities;
 `ABL_061`–`ABL_070` are mutation utility abilities. Source parts are fixed in §C13.6.
 
@@ -32883,7 +34501,7 @@ A customer may use the **active ability of one of its own visible mutation parts
 | `ABL_069` | Hover Serve | utility (fly over tables while carrying) |
 | `ABL_070` | Eagle Eye | utility (show all patience/anger meters) |
 
-#### C12.3 Status effects (A6 defines duration, magnitude, stacking, visuals, cleanse)
+#### C12.3 Status effects (§11 defines duration, magnitude, stacking, visuals, cleanse)
 `STS_STUN, STS_DIZZY, STS_KNOCKDOWN, STS_SLOW, STS_STICKY, STS_SHOCKED, STS_TOASTY, STS_FROZEN, STS_SOAKED,
 STS_CONFUSED, STS_STINKY, STS_CHARMED, STS_SLEEPY, STS_FLOATING, STS_WOOZY, STS_BLINDED, STS_GREASY,
 STS_INSPIRED, STS_HYPED, STS_SHIELDED`.
@@ -32941,9 +34559,11 @@ horn, flying, light, heavy, armored, aquatic, robotic, plant, alien, cosmic, glo
 tall, gold, sweet`.
 Synergies (§36.4) are defined against **families** (the `Family` column), **categories**, **slots**, and
 **tags** — never against single IDs only — so new parts automatically participate.
+The plain starter parts (`MUT_117`, `MUT_139`, `MUT_179`) are **neutral**: they are ignored by synergy evaluation and
+morph naming (§12.9–§12.10), so every new player does not start with charm synergies.
 
 #### C13.6 Mutation master list (280 parts — ID, name, slot, category, rarity, family, tags, active ability are fixed)
-A7 adds: unlock requirement, acquisition, visual description, model & animation requirements, stat
+§36.3 adds: unlock requirement, acquisition, visual description, model & animation requirements, stat
 distribution (cook / combat / repair / movement bonuses expressed as §C5 stats), passive, upgrade levels,
 balance limits.
 
@@ -33261,7 +34881,7 @@ attribute that sets `Humanoid.HipHeight`; NECK parts carry `NeckLength` that off
 Part budgets: player morph ≤ 40 MeshParts and ≤ 15,000 triangles total; customer/employee visuals ≤ 24
 MeshParts and ≤ 6,000 triangles (LOD swap beyond 60 studs to a 1,500-triangle impostor).
 
-#### C13.8 Secret mutation discovery conditions (fixed; A7 lists them, A12 places the secrets in the city)
+#### C13.8 Secret mutation discovery conditions (fixed; listed in §36.3, placed in the city by §18)
 | Part | Discovery condition |
 |---|---|
 | `MUT_040` Glitch Head | During `EVT_009` Blackout Night, interact with the flickering "ERROR" billboard in `DST_03` three times. |
@@ -33275,7 +34895,7 @@ MeshParts and ≤ 6,000 triangles (LOD swap beyond 60 studs to a 1,500-triangle 
 **Tutorial first mutation** (QST_TUT_010): choose one of `MUT_145` Octopus Arm (Chef), `MUT_144` Crab Claw
 Arm (Fighter), `MUT_153` Wrench Claw Arm (Repair) — granted free at Lv1 regardless of rarity requirement.
 
-**Acquisition method codes** (A7 uses these): `SHOP_MART`, `SHOP_ROTATION` (Mystery Market), `LAB_FUSION`,
+**Acquisition method codes** (used in §36.3): `SHOP_MART`, `SHOP_ROTATION` (Mystery Market), `LAB_FUSION`,
 `CAPSULE` (earnable Morph Capsule), `QUEST`, `EVENT`, `ARENA`, `OFFLINE_FIND`, `ACHIEVEMENT`, `SECRET`,
 `STARTER`.
 
@@ -33287,7 +34907,7 @@ all `STARTER` acquisition.
 
 ### C14. Employees
 
-#### C14.1 Roles (fixed; A11 defines responsibilities)
+#### C14.1 Roles (fixed; §16–§17 defines responsibilities)
 | ID | Role | Online behavior summary | Offline contribution |
 |---|---|---|---|
 | `ROLE_CHEF` | Chef | cooks full recipes at assigned stations | kitchen capacity (required for offline) |
@@ -33322,17 +34942,22 @@ In formulas that multiply by an efficiency (e.g. `Eff_chef` in §C15), use the n
 #### C14.4 Fixed archetypes
 `EMP_001` = **"Ollie" the Octopus Intern** — ROLE_CHEF, Common, hire cost 0 (tutorial gift via QST_TUT_012),
 wage 12 MB/h, Cooking 30, Service 15, Accuracy 28, Reliability 40; trait "Eight Arms, One Brain Cell"
-(cooks 2 items at once, 5 % chance to put a pickle on everything). A11 defines EMP_002+ (≥ 75 total).
+(cooks 2 items at once, 5 % chance to put a pickle on everything). §36.8 defines EMP_002+ (≥ 75 total).
 Must include the brief's examples: Octopus Chef, Cheetah Waiter, Rhino Security Guard, Spider Repair
 Technician, Robot Cashier, Sloth Dishwasher, Dragon Chef.
 
 ---
 
-### C15. Offline Simulation — Canonical Model (A11 elaborates with worked examples)
+### C15. Offline Simulation — Canonical Model (§16–§17 elaborates with worked examples)
 
 **Principles:** server-authoritative; timestamp-based (`os.time()` on the server only); deterministic (seeded RNG);
-capped; idempotent claims; offline net/hour targets **35–50 %** of active net/hour at the same tier for a
-well-staffed restaurant, never above 60 % [TUNABLE].
+capped; idempotent claims. **Rate target:** during the first 2 offline hours a well-staffed restaurant nets
+**35–50 %** of the active net/hour at the same tier (hard ceiling 60 %) [TUNABLE]. **Long-absence taper:** offline
+hours 0–2 run at ×1.0, hours 2–8 at ×0.5, hours 8–24 at ×0.2 of that rate (applied to customers, revenue, tips,
+ingredients and wages alike), so a full 24 h interval equals **8.2 effective hours ≈ 3 active hours** at that tier
+[TUNABLE]. **Guardrail KPI:** the median player's offline share of MB income ≤ 60 % at D7 and ≤ 70 % at D30 — if
+exceeded, lower the taper factors first. Absences under 300 s produce no report. §17 holds the full model and the
+worked examples.
 
 ```
 H_elapsed = max(0, now − lastSimAt) / 3600            -- server clock; negative → 0, flagged
@@ -33361,9 +34986,11 @@ Incidents    = count = floor(H × 0.6 × (1 − SecurityMitigation)) + seeded ex
 Repairs      = offline damage points × cost/pt; auto-paid at −(RepairSkill/200) discount if a Repair Tech exists,
                else left as damaged objects for the player to fix (cheaper than replacing; atmosphere −)
 Net_step     = Revenue + Tips − IngredientCost − Wages − AutoRepairs ± Incidents
-Rule         = if Net_step < 0 the Manager "closes early": simulation stops, that step's wages are not charged
+Rule         = if a step's operating result (before incidents) is < 0 the Manager "closes early": simulation stops,
+               that step's wages are not charged
 Energy       = −8 %/h per employee (−5 %/h with a Manager); Efficiency uses Energy each step; Morale −1/h offline
-Discoveries  = per hour: 8 % chance of 1–3 MS; 1 % chance of a rare ingredient crate; ≤ 1 Morph Capsule per real day
+Discoveries  = per effective hour: 8 % chance of 1–3 MS; 1 % chance of a rare ingredient crate; ≤ 1 Morph Capsule per report and per UTC day
+Taper        = each step's volume × TaperFactor(h): 1.0 for h < 2, 0.5 for 2 ≤ h < 8, 0.2 for 8 ≤ h < 24
 Net          = max(0, Σ Net_step)
 ```
 **Requirement to run:** ≥ 1 `ROLE_CHEF` assigned. Without one the report shows 0 customers and a hint.
@@ -33396,7 +35023,7 @@ Travel: walking/sprinting; **Morph Metro** fast-travel between district stations
 discovered (free); **Pigeon Taxi** from any street corner to any discovered district (25 MB × tier,
 cosmetic ride); restaurant **Return Door** button (free, 10 s cooldown) from anywhere in the city.
 
-#### C16.2 Buildings (fixed; A12 specifies every field)
+#### C16.2 Buildings (fixed; §18 specifies every field)
 | ID | Building | District |
 |---|---|---|
 | `BLD_01` | Mutation Mart | DST_02 |
@@ -33422,7 +35049,7 @@ cosmetic ride); restaurant **Return Door** button (free, 10 s cooldown) from any
 | `BLD_21` | Sewer King's Throne Room | DST_09 |
 | `BLD_22` | Showcase Stage | DST_07 |
 
-#### C16.3 Key named NPCs (fixed; A13 adds NPC_031+ for ≥ 100 total and fully specifies all)
+#### C16.3 Key named NPCs (fixed; §19 adds NPC_031+ for ≥ 100 total and fully specifies all)
 | ID | Name | Morph | Role | Location |
 |---|---|---|---|---|
 | `NPC_001` | Nana Gristle | Tortoise head + Toaster torso + oven-mitt hands | Tutorial mentor; your great-aunt who left you the shack (appears via a cranky hologram menu board) | BLD_17 |
@@ -33461,7 +35088,7 @@ cosmetic ride); restaurant **Return Door** button (free, 10 s cooldown) from any
 interiors are instanced (§C3). Visiting a friend = walking into their door (same server) or joining their
 server via the friends list (TeleportService to their server).
 
-#### C16.5 City events master list (A12 defines schedule, rules, rewards; others may reference)
+#### C16.5 City events master list (§18 defines schedule, rules, rewards; others may reference)
 | ID | Event |
 |---|---|
 | `EVT_001` | Giant Food Festival |
@@ -33497,7 +35124,7 @@ server via the friends list (TeleportService to their server).
 | `EVT_031` | Spring Sprout Bloom (seasonal: April) |
 | `EVT_032` | Bug Swarm Brunch |
 
-#### C16.6 Trophy decorations (quest/event rewards; A10 must list them in §36.13 as non-purchasable)
+#### C16.6 Trophy decorations (quest/event rewards; §15 must list them in §36.13 as non-purchasable)
 `FRN_901` Golden Spatula Trophy · `FRN_902` Rat King's Crown Display · `FRN_903` Critic's Five-Star Plaque ·
 `FRN_904` Arena Champion Belt Case · `FRN_905` Baron's Defeated Mustache Portrait · `FRN_906` Meteor Chunk Lamp ·
 `FRN_907` Parade Float Mini · `FRN_908` Kraken Plush · `FRN_909` Museum Replica Fossil · `FRN_910` Omnivora's
@@ -33507,7 +35134,7 @@ Signed Apron. (Regular furniture uses `FRN_001`–`FRN_899`.)
 
 ### C17. Quests
 
-#### C17.1 Tutorial quest IDs (fixed; A13 defines rows in §20, A1 scripts them in §32)
+#### C17.1 Tutorial quest IDs (fixed; §20 defines the rows, §32 scripts them)
 | ID | Title | Teaches |
 |---|---|---|
 | `QST_TUT_001` | Welcome to the Shack | movement, entering the restaurant |
@@ -33527,7 +35154,7 @@ Signed Apron. (Regular furniture uses `FRN_001`–`FRN_899`.)
 TUT tutorial · STY story · DLY daily · WKY weekly · CHF cooking challenge · CBT combat challenge · RPR repair
 challenge · EXP exploration challenge · EMP employee management challenge · RST restaurant expansion challenge.
 
-#### C17.3 Story frame (A13 writes the campaign; others may allude to it)
+#### C17.3 Story frame (§19–§20 writes the campaign; others may allude to it)
 Ten chapters, one per restaurant tier. You inherit Nana Gristle's shack; the snooty rival **Baron Von Bistro**
 (`NPC_003`) wants Restaurant Row for his luxury chain; **Madame Fourchette** (`NPC_016`) holds the city's star
 ratings; **King Ratbeard** (`NPC_020`) keeps "borrowing" ingredients from below; the finale is the
@@ -33549,7 +35176,7 @@ grants; total node cost must exceed available points so players must choose. Fre
 
 ---
 
-### C19. Roblox Services (fixed names; A17 specifies every field)
+### C19. Roblox Services (fixed names; §27 specifies every field)
 | Service | One-line responsibility |
 |---|---|
 | `PlayerDataService` | load/save profiles with session locking, schema migration, autosave |
@@ -33582,9 +35209,9 @@ Use Roblox `AnalyticsService` (`LogOnboardingFunnelStepEvent`, `LogFunnelStepEve
 ---
 
 ### C21. Animation & Sound IDs
-`ANM_001`–`ANM_300` general library (A16), `ANM_301`–`ANM_370` = ability animations for `ABL_001`–`ABL_070`
+`ANM_001`–`ANM_300` general library (§25–§26), `ANM_301`–`ANM_370` = ability animations for `ABL_001`–`ABL_070`
 (ANM_3xx ↔ ABL_0xx, same last two digits; `ANM_370` ↔ `ABL_070`).
-**Core animations (fixed IDs; A16 must define them, anyone may reference):**
+**Core animations (fixed IDs; §25–§26 must define them, anyone may reference):**
 
 | ID | Animation | ID | Animation |
 |---|---|---|---|
@@ -33615,7 +35242,7 @@ Use Roblox `AnalyticsService` (`LogOnboardingFunnelStepEvent`, `LogFunnelStepEve
 | `ANM_063` | Respawn poof | `ANM_064` | Level-up celebrate |
 | `ANM_065` | Mutation equip flex | `ANM_066` | Cash register cha-ching |
 
-Sound IDs `SFX_001`+ and music `MUS_001`+ are defined only by A16; other sections describe audio in words.
+Sound IDs `SFX_001`+ and music `MUS_001`+ are defined only in §36.15; other sections describe audio in words.
 
 ---
 
