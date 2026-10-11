@@ -115,7 +115,13 @@ serverSends("Profile", {
 	goal = false,
 })
 Engine.advance(0.3)
+Engine.advance(1) -- the coin counter counts up over about half a second
 check("coins shown", hud.Coins.Value.Text == "1.2K", hud.Coins.Value.Text)
+serverSends("Profile", { coins = 5000 })
+Engine.advance(0.1)
+check("coins count up, not jump", hud.Coins.Value.Text ~= "5K", hud.Coins.Value.Text)
+Engine.advance(1.5)
+check("coins reach the new total", hud.Coins.Value.Text == "5K", hud.Coins.Value.Text)
 check(
 	"income + friend bonus shown",
 	string.find(hud.Coins.Cps.Text, "+12 / sec", 1, true) and string.find(hud.Coins.Cps.Text, "+10%", 1, true)
@@ -184,6 +190,16 @@ Engine.advance(0.05)
 check("lock button", sent("Lock") ~= nil)
 Engine.actions.Bonk(nil, Engine.Enum.UserInputState.Begin)
 check("bonk key", countSent("Bonk") == 2)
+Engine.actions.Lock(nil, Engine.Enum.UserInputState.Begin)
+check("lock key", countSent("Lock") == 2)
+
+-- Key hints follow the input in use
+check("no key hints on a touch screen", hud.BonkButton.KeyHint.Visible == false)
+Engine.setInput(Engine.Enum.UserInputType.Keyboard)
+check("keyboard hint Q on BONK", hud.BonkButton.KeyHint.Visible and hud.BonkButton.KeyHint.Text == "Q")
+check("keyboard hint L on LOCK", hud.LockButton.KeyHint.Text == "L")
+Engine.setInput(Engine.Enum.UserInputType.Gamepad1)
+check("gamepad hint R2 on BONK", hud.BonkButton.KeyHint.Text == "R2")
 
 -- Panels
 local panels = gui.Panels
@@ -192,7 +208,16 @@ Engine.advance(0.05)
 check("shop opens", panels.Dim.Visible and string.find(panels.Dim.Card.Title.Text, "SHOP", 1, true) ~= nil)
 check("boost cards", panels.Dim.Card.Body:FindFirstChild("LUCK") ~= nil)
 check("hidden products not listed", panels.Dim.Card.Body:FindFirstChild("GROW") == nil)
+check("gamepad: the first panel button is selected", Engine.game:GetService("GuiService").SelectedObject ~= nil)
+Engine.setInput(Engine.Enum.UserInputType.Touch)
+local luckBuy = findButton(panels.Dim.Card.Body.LUCK, "R$ 99")
 click(panels.Dim.Card.Body.LUCK, "R$ 99")
+check("purchase button shows it's busy", luckBuy.Text == "...")
+luckBuy.Activated:Fire()
+Engine.advance(0.05)
+check("double tap doesn't buy twice", countSent("Purchase") == 1)
+Engine.advance(2)
+check("button comes back", luckBuy.Text == "R$ 99")
 local p = sent("Purchase")
 check("buy Server Luck", p and p.args[1] == "product" and p.args[2] == "LUCK")
 click(panels.Dim.Card.Tabs, "PASSES")
@@ -260,6 +285,26 @@ body.Color = Color3.new(0, 0, 0)
 CollectionService:AddTag(rainbow, "RainbowDragon")
 Engine.advance(0.3)
 check("rainbow dragon colours change", body.Color.R + body.Color.G + body.Color.B > 0)
+
+-- Closing panels: tap outside, or gamepad B
+hud.ShopButton.Activated:Fire()
+Engine.advance(0.05)
+panels.Dim.Outside.Activated:Fire()
+Engine.advance(0.05)
+check("tap outside closes the panel", panels.Dim.Visible == false)
+hud.GiftButton.Activated:Fire()
+Engine.advance(0.05)
+Engine.actions.ClosePanel(nil, Engine.Enum.UserInputState.Begin)
+check("gamepad B closes the panel", panels.Dim.Visible == false)
+
+-- Accessibility settings
+local GuiService = Engine.game:GetService("GuiService")
+Engine.setProperty(GuiService, "PreferredTransparency", 0)
+check("solid backgrounds when the player turns transparency off", hud.Egg.BackgroundTransparency == 0)
+GuiService.ReducedMotionEnabled = true
+serverSends("Profile", { coins = 777 })
+check("reduced motion: numbers snap", hud.Coins.Value.Text == "777", hud.Coins.Value.Text)
+GuiService.ReducedMotionEnabled = false
 
 -- Rotating to a bigger screen rescales
 Engine.workspace.CurrentCamera.ViewportSize = Vector2.new(1920, 1080)

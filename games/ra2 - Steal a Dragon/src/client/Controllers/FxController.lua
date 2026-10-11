@@ -119,7 +119,9 @@ function FxController:init()
 	Players.PlayerAdded:Connect(watchCharacter)
 	Net.listen("Swing", swing)
 	Net.listen("Bonked", function(seconds)
-		shakeUntil = os.clock() + math.min(seconds, 0.6)
+		if not Theme.reducedMotion() then -- no camera shake for players who asked for reduced motion
+			shakeUntil = os.clock() + math.min(seconds, 0.5)
+		end
 	end)
 	Store.Changed:Connect(function(partial)
 		if partial.baseIndex ~= nil or partial.carrying ~= nil then
@@ -127,13 +129,21 @@ function FxController:init()
 		end
 	end)
 
-	-- bonk: Q / gamepad on computers and consoles, a tap on empty screen on PC mouse, the big button on phones
+	-- bonk: Q / R2 on computers and consoles, a click on empty screen with a mouse, the big button on phones
+	-- (gamepad X is left alone: Roblox uses it for proximity prompts)
 	ContextActionService:BindAction("Bonk", function(_, state)
 		if state == Enum.UserInputState.Begin then
 			Net.send("Bonk")
 		end
 		return Enum.ContextActionResult.Sink
-	end, false, Enum.KeyCode.Q, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonX)
+	end, false, Enum.KeyCode.Q, Enum.KeyCode.ButtonR2)
+	-- lock: L / gamepad Y (the on-screen LOCK button shows these keys)
+	ContextActionService:BindAction("Lock", function(_, state)
+		if state == Enum.UserInputState.Begin then
+			Net.send("Lock")
+		end
+		return Enum.ContextActionResult.Sink
+	end, false, Enum.KeyCode.L, Enum.KeyCode.ButtonY)
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if not processed and input.UserInputType == Enum.UserInputType.MouseButton1 then
 			Net.send("Bonk")
@@ -158,7 +168,9 @@ function FxController:init()
 		local hum = character and character:FindFirstChildOfClass("Humanoid")
 		if hum then
 			if t < shakeUntil then
-				hum.CameraOffset = Vector3.new(math.random() - 0.5, math.random() - 0.5, 0) * 0.8
+				-- a short shake that dies away instead of staying the same strength
+				local strength = (shakeUntil - t) / 0.5
+				hum.CameraOffset = Vector3.new(math.random() - 0.5, math.random() - 0.5, 0) * strength
 			elseif hum.CameraOffset ~= Vector3.zero then
 				hum.CameraOffset = Vector3.zero
 			end

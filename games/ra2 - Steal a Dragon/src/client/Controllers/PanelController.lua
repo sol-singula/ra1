@@ -1,6 +1,8 @@
 -- Pop-up panels: Shop (boosts and passes), Speed (upgrades), Gift (daily streak) and Welcome Back (coins
 -- earned while away). One panel at a time: a coloured header, a round close button on the corner, big glossy
 -- buttons, and a little pop when it opens. Sized to fit a phone in landscape.
+local ContextActionService = game:GetService("ContextActionService")
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -42,6 +44,20 @@ local HEADER_COLORS = { Shop = C.purple, Speed = C.sky, Gift = C.pink, Offline =
 function PanelController.close()
 	current = nil
 	dim.Visible = false
+	ContextActionService:UnbindAction("ClosePanel")
+	if GuiService.SelectedObject and GuiService.SelectedObject:IsDescendantOf(gui) then
+		GuiService.SelectedObject = nil
+	end
+end
+
+-- First button in the panel, for gamepad players (so the D-pad works right away).
+local function firstButton()
+	for _, d in card:GetDescendants() do
+		if d:IsA("TextButton") and d.Name ~= "Close" and d.Visible ~= false then
+			return d
+		end
+	end
+	return nil
 end
 
 function PanelController.open(name)
@@ -54,7 +70,20 @@ function PanelController.open(name)
 	header.BackgroundColor3 = HEADER_COLORS[name] or C.purple
 	clearBody()
 	builders[name]()
+	-- 0.2 s fade for the backdrop and a pop for the card (both snap with Reduced Motion)
+	dim.BackgroundTransparency = 1
+	Theme.tween(dim, 0.2, { BackgroundTransparency = 0.45 })
 	Theme.pop(card)
+	-- gamepad B (or the Back button) closes the panel; the D-pad starts on the first button
+	ContextActionService:BindActionAtPriority("ClosePanel", function(_, state)
+		if state == Enum.UserInputState.Begin then
+			PanelController.close()
+		end
+		return Enum.ContextActionResult.Sink
+	end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.ButtonB, Enum.KeyCode.Backspace)
+	if Theme.inputKind() == "gamepad" then
+		GuiService.SelectedObject = firstButton()
+	end
 end
 
 local function refreshOpen()
@@ -134,10 +163,10 @@ local function shopCard(item, kind, order)
 	})
 	Theme.text({
 		Text = item.text,
-		TextSize = 14,
+		TextSize = 16,
 		TextScaled = false,
 		TextColor3 = C.muted,
-		Size = UDim2.new(1, -14, 0, 40),
+		Size = UDim2.new(1, -14, 0, 56),
 		Position = UDim2.fromOffset(7, 114),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextYAlignment = Enum.TextYAlignment.Top,
@@ -153,7 +182,7 @@ local function shopCard(item, kind, order)
 		Parent = cell,
 	})
 	buy.Activated:Connect(function()
-		if not owned then
+		if not owned and Theme.busy(buy) then
 			Net.send("Purchase", kind, item.key)
 		end
 	end)
@@ -170,7 +199,7 @@ builders.Shop = function()
 		end
 	end
 	new("UIGridLayout", {
-		CellSize = UDim2.fromOffset(172, 206),
+		CellSize = UDim2.fromOffset(172, 222),
 		CellPadding = UDim2.fromOffset(10, 10),
 		HorizontalAlignment = Enum.HorizontalAlignment.Center,
 		SortOrder = Enum.SortOrder.LayoutOrder,
@@ -244,7 +273,9 @@ builders.Speed = function()
 		Parent = body,
 	})
 	fast.Activated:Connect(function()
-		Net.send("Purchase", "pass", "FAST")
+		if Theme.busy(fast) then
+			Net.send("Purchase", "pass", "FAST")
+		end
 	end)
 	line(
 		`🪺 Nests: {s.nests or Constants.START_NESTS}. Buy more at your base!`,
@@ -292,7 +323,7 @@ builders.Gift = function()
 		Theme.text({
 			Text = gift.kind == "coins" and ("💰\n" .. Format.num(gift.amount))
 				or (gift.kind == "luck" and "🍀\nLuck" or "🐉\n" .. gift.text:match("^(%S+)")),
-			TextSize = 15,
+			TextSize = 17,
 			TextScaled = false,
 			Size = UDim2.new(1, -6, 1, -30),
 			Position = UDim2.fromOffset(3, 28),
@@ -369,6 +400,17 @@ function PanelController:init()
 		Active = true,
 		Parent = gui,
 	})
+	-- tapping the dark area around the panel closes it
+	local outside = new("TextButton", {
+		Name = "Outside",
+		Text = "",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		AutoButtonColor = false,
+		Selectable = false,
+		Parent = dim,
+	})
+	outside.Activated:Connect(PanelController.close)
 	card = Theme.card({
 		Name = "Card",
 		AnchorPoint = Vector2.new(0.5, 0.5),

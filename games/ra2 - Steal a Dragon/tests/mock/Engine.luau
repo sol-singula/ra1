@@ -422,7 +422,7 @@ local SIGNALS = {
 	ProximityPrompt = { "Triggered" },
 	Players = { "PlayerAdded", "PlayerRemoving" },
 	Player = { "CharacterAdded" },
-	TextButton = { "Activated", "MouseButton1Click", "MouseButton1Down", "MouseButton1Up", "MouseLeave" },
+	TextButton = { "Activated", "MouseButton1Click", "MouseButton1Down", "MouseButton1Up", "MouseEnter", "MouseLeave" },
 }
 local DEFAULTS = {
 	Part = function()
@@ -1171,7 +1171,39 @@ function methods.UnbindAction(_, name)
 end
 _ = ContextActionService
 local UserInputService = service("UserInputService")
-rawset(UserInputService, "_signals", { InputBegan = newSignal(), InputEnded = newSignal() })
+rawset(
+	UserInputService,
+	"_signals",
+	{ InputBegan = newSignal(), InputEnded = newSignal(), LastInputTypeChanged = newSignal() }
+)
+Engine.lastInputType = Enum.UserInputType.Touch
+function methods.GetLastInputType()
+	return Engine.lastInputType
+end
+-- switch the player's input (fires LastInputTypeChanged like Roblox does)
+function Engine.setInput(inputType)
+	Engine.lastInputType = inputType
+	UserInputService.LastInputTypeChanged:Fire(inputType)
+end
+-- GuiService: the player's accessibility settings and gamepad selection
+local GuiService = service("GuiService")
+GuiService.ReducedMotionEnabled = false
+GuiService.PreferredTransparency = 1
+GuiService.PreferredTextSize = Enum.PreferredTextSize.Medium
+local propSignals = setmetatable({}, { __mode = "k" })
+function methods.GetPropertyChangedSignal(inst, prop)
+	propSignals[inst] = propSignals[inst] or {}
+	propSignals[inst][prop] = propSignals[inst][prop] or newSignal()
+	return propSignals[inst][prop]
+end
+-- change a property and fire its GetPropertyChangedSignal (the mock doesn't do this on plain assignment)
+function Engine.setProperty(inst, prop, value)
+	inst[prop] = value
+	local sig = propSignals[inst] and propSignals[inst][prop]
+	if sig then
+		sig:Fire()
+	end
+end
 
 -- Players helpers ---------------------------------------------------------------------------------------------
 local nextUserId = 1000

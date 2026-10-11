@@ -35,7 +35,8 @@ landscape on its own.
 |---|---|---|---|
 | Grab, buy, steal, sell, hatch | tap the prompt | **E** (sell **F**, grow **G**) | X |
 | Bonk | big red **BONK** button | **Q** or click | R2 |
-| Lock your door | step on the red pad, or the **LOCK** button inside your base | same | same |
+| Close a panel | ✕, or tap outside it | ✕ or Backspace | B |
+| Lock your door | step on the red pad, or the **LOCK** button (shown inside your base) | same, or **L** | Y |
 | Collect coins | step on the gold pad | same | same |
 
 1. **First time:** an 8-step tutorial with a bouncing **HERE** arrow. You grab a free dragon, run it home,
@@ -110,7 +111,9 @@ games/ra2 - Steal a Dragon/
 
 **Look of the screens:** chunky glossy buttons with thick dark outlines, white text with a black outline, pill-shaped
 bars, red "!" badges, panels with a coloured header and a round close button that pop in, and buttons that
-squish when tapped (all in `src/client/UI/Theme.lua`).
+squish when tapped (all in `src/client/UI/Theme.lua`). The screens follow Roblox's UI, accessibility and
+adaptive-design guidance: Reduced Motion, Text Size and Background Transparency settings, key hints for
+keyboard and gamepad, gamepad navigation and more. See [UI_GUIDELINES.md](UI_GUIDELINES.md).
 
 **Phones first:** every screen is laid out for a 1000 × 560 canvas and scaled to the real screen, about 0.7 on a
 phone. Buttons stay about 48 points or bigger. The menu buttons sit above the thumbstick and BONK sits left of

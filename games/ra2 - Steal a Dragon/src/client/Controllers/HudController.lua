@@ -29,6 +29,8 @@ local giftDot
 local toastHolder, alertLabel, bonkedLabel
 local events = { legendAt = nil, luckUntil = nil, luckBy = nil }
 local eggReceived -- os.clock() when the egg view arrived
+local coinsShown, coinsTarget = nil, 0 -- the number on screen eases toward the real coin count
+local hints = {} -- key hint badges, shown for keyboard and gamepad players
 local tutorialActive = false
 
 HudController.openPanel = nil -- set by PanelController: function(name)
@@ -48,10 +50,10 @@ function HudController.toast(text, kind)
 		Size = UDim2.fromOffset(470, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = C.slate,
-		BackgroundTransparency = 0.08,
 		BorderSizePixel = 0,
 		Parent = toastHolder,
 	}, { Theme.corner("round"), Theme.stroke(3, accent) })
+	Theme.translucent(card, 0.08)
 	new("UIPadding", {
 		PaddingLeft = UDim.new(0, 16),
 		PaddingRight = UDim.new(0, 16),
@@ -61,7 +63,7 @@ function HudController.toast(text, kind)
 	})
 	Theme.text({
 		Text = (TOAST_ICONS[kind] or "💬") .. "  " .. text,
-		TextSize = 21,
+		TextSize = 22,
 		TextScaled = false,
 		TextColor3 = C.white,
 		outline = 1.5,
@@ -145,13 +147,13 @@ local function infoPill(name, y, color)
 		Name = name,
 		Text = "",
 		Font = Theme.Body,
-		TextSize = 17,
+		TextSize = math.floor(19 * Theme.textFactor() + 0.5),
 		TextColor3 = color,
 		BackgroundColor3 = C.slate,
 		BackgroundTransparency = 0.2,
 		BorderSizePixel = 0,
 		AutomaticSize = Enum.AutomaticSize.X,
-		Size = UDim2.fromOffset(0, 26),
+		Size = UDim2.fromOffset(0, 28),
 		Position = UDim2.fromOffset(14, y),
 		Visible = false,
 		Parent = gui,
@@ -160,7 +162,7 @@ local function infoPill(name, y, color)
 		Theme.textStroke(1.5),
 		new("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }),
 	})
-	return label
+	return Theme.translucent(label, 0.2)
 end
 
 local function buildCoins()
@@ -208,7 +210,7 @@ local function buildCoins()
 		Name = "Cps",
 		Text = "+0 / sec",
 		Font = Theme.Display,
-		TextSize = 18,
+		TextSize = math.floor(19 * Theme.textFactor() + 0.5),
 		TextColor3 = C.good,
 		BackgroundColor3 = C.slate,
 		BackgroundTransparency = 0.15,
@@ -287,6 +289,7 @@ local function buildActions()
 	bonkButton.Activated:Connect(function()
 		Net.send("Bonk")
 	end)
+	table.insert(hints, Theme.keyHint(bonkButton, "Q", "R2"))
 	lockButton = Theme.button({
 		Name = "LockButton",
 		Text = "🔓 LOCK",
@@ -300,6 +303,7 @@ local function buildActions()
 	lockButton.Activated:Connect(function()
 		Net.send("Lock")
 	end)
+	table.insert(hints, Theme.keyHint(lockButton, "L", "Y"))
 end
 
 local function banner(name, size, position, color, anchor)
@@ -452,7 +456,18 @@ end
 -- Updating ---------------------------------------------------------------------------------------------------
 local function refresh()
 	local s = Store.state
-	coinsLabel.Text = Format.num(s.coins or 0)
+	-- coins count up over about half a second instead of jumping, and the pill gives a little punch
+	local target = s.coins or 0
+	if coinsShown == nil or Theme.reducedMotion() then
+		coinsShown = target
+		coinsLabel.Text = Format.num(target)
+	elseif target > coinsTarget then
+		local punch = coinsLabel.Parent:FindFirstChild("Punch")
+			or new("UIScale", { Name = "Punch", Parent = coinsLabel.Parent })
+		punch.Scale = 1.12
+		Theme.tween(punch, 0.3, { Scale = 1 }, Enum.EasingStyle.Back)
+	end
+	coinsTarget = target
 	cpsLabel.Text = "+"
 		.. Format.num(s.cps or 0)
 		.. " / sec"
@@ -485,7 +500,8 @@ local function tick()
 		eggLabel.Text = ""
 	end
 	eggLabel.Visible = eggLabel.Text ~= ""
-	-- lock button
+	-- lock button: only shown inside your own base, where it works (contextual UI keeps the screen clear)
+	lockButton.Visible = HudController.inOwnBase() ~= false
 	local lockLeft = (s.lockUntil or 0) - serverNow()
 	if lockLeft > 0 then
 		lockButton.Text = "🔒 " .. Format.time(lockLeft)
@@ -494,8 +510,8 @@ local function tick()
 		lockButton.Text = "🔓 LOCK"
 		lockButton.BackgroundColor3 = C.orange
 	end
-	-- the carry banner gently pulses so it's hard to miss
-	if carryBanner.Visible then
+	-- the carry banner gently pulses so it's hard to miss (not with Reduced Motion)
+	if carryBanner.Visible and not Theme.reducedMotion() then
 		local pulse = carryBanner:FindFirstChild("Pulse") or new("UIScale", { Name = "Pulse", Parent = carryBanner })
 		pulse.Scale = 1 + math.abs(math.sin(os.clock() * 4)) * 0.05
 	end
@@ -513,6 +529,31 @@ local function tick()
 		luckBanner.Text.Text = "🍀 LUCK " .. Format.time(luckLeft)
 	else
 		luckBanner.Visible = false
+	end
+end
+
+-- true / false when we can tell whether the character stands in its own base, nil when we can't.
+function HudController.inOwnBase()
+	local index = Store.state.baseIndex
+	local bases = workspace:FindFirstChild("Bases")
+	local base = index and bases and bases:FindFirstChild("Base" .. index)
+	local floor = base and base:FindFirstChild("Floor")
+	local character = player.Character
+	local hrp = character and character:FindFirstChild("HumanoidRootPart")
+	if not floor or not hrp then
+		return nil
+	end
+	local p = floor.CFrame:PointToObjectSpace(hrp.Position)
+	return math.abs(p.X) <= floor.Size.X / 2 + 1 and math.abs(p.Z) <= floor.Size.Z / 2 + 1 and p.Y < 30
+end
+
+-- Key hints follow the input the player is using right now (hidden on touch screens).
+function HudController.updateHints()
+	local kind = Theme.inputKind()
+	for _, badge in hints do
+		badge.Visible = kind ~= "touch"
+		badge.Text = badge:GetAttribute(kind == "gamepad" and "Gamepad" or "Keyboard")
+		badge.Size = UDim2.fromOffset(kind == "gamepad" and 36 or 30, 26)
 	end
 end
 
@@ -564,6 +605,17 @@ function HudController:init()
 		end)
 	end)
 	refresh()
+	HudController.updateHints()
+	pcall(function()
+		game:GetService("UserInputService").LastInputTypeChanged:Connect(HudController.updateHints)
+	end)
+	RunService.RenderStepped:Connect(function(dt)
+		if coinsShown and coinsShown ~= coinsTarget then
+			local diff = coinsTarget - coinsShown
+			coinsShown = math.abs(diff) < 1 and coinsTarget or coinsShown + diff * math.min(1, dt * 7)
+			coinsLabel.Text = Format.num(coinsShown)
+		end
+	end)
 	task.spawn(function()
 		while true do
 			pcall(tick)
