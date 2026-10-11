@@ -289,7 +289,8 @@ Each block gives **Phases** (minute:second from T0), **Mechanics**, **Success / 
 
 #### 36.11.4 Compatibility rules
 
-- One H/F/X, one S and one M run at most simultaneously (§18.8.1).
+- One H/F/X, one S and one M run at most simultaneously (§18.8.1); `EVT_024` is the only exception and runs
+  alongside the 00:00 headline because it is confined to `BLD_13`.
 - Scale modifiers (`EVT_015`, `EVT_016`) and Gravity changes (`EVT_011`) never apply inside restaurant interiors,
   Arena pits (`BLD_08`) or the `BLD_21` boss arena.
 - `EVT_015` ↔ `EVT_016` and `EVT_019` ↔ `EVT_020` are never in consecutive modifier windows (deck swap rule).

@@ -417,7 +417,7 @@ pinch-zoom, Travel Card as a bottom sheet with 56-px buttons; controller: right 
 Return Door.
 
 **Progression.** Districts gate by level (§C16.1); stations and perches expand as districts are discovered;
-taxi costs scale with tier so travel stays a trivial convenience sink (≤ 0.4 % of hourly income at every tier).
+taxi costs scale with tier so travel stays a small convenience sink (one ride ≤ 5 % of an active hour's income at every tier, falling to 0.2 % at TIER_10; Metro and Return Door stay free).
 
 **Player Interactions.** Party members can **share a taxi** (one pays; up to 4 players within 12 studs of
 the perch ride together, each lands at the same drop point). Metro rides are per-player. A friend's map dot
@@ -494,7 +494,7 @@ and are capped as listed.
 | `CPROP_07` | Snail Bus | loop DST_01 → DST_03 → DST_08 | 6 studs/s (slower than walking). | Ride the full 4-min loop once → title "Patient Passenger". | Server `VehicleSeat` ×6; bus path is server-tweened at 2 Hz, client-smoothed. |
 | `CPROP_08` | Hot Dog Blimp | sky over DST_01/03/07 | Every 3 min drops a "Blimp Coupon" with a parachute at a random sidewalk spot. | Catch it → 0.5 ERM MB. | Max 3 coupons per player per real hour; server spawns ≤ 1 at a time. |
 | `CPROP_09` | Tentacle Ice Cream Truck | DST_08 loop | Plays a jingle; tentacles wave cones. | Get a free cone (cosmetic held item, 60 s) + "Brain Freeze" face. | Once per city day per player. |
-| `CPROP_10` | Fire hydrant geysers ×30 | all surface districts | Kick it (interact) → water spout. | Launches the player 25 studs up; `STS_SOAKED` (cosmetic drip, 5 s). | 5 s cooldown per hydrant; arc is a scripted `AssemblyLinearVelocity` impulse on the player's own character. |
+| `CPROP_10` | Fire hydrant geysers ×30 | all surface districts | Kick it (interact) → water spout. | Launches the player 25 studs up; `STS_SOAKED` (cosmetic drip, 5 s). | 5 s cooldown per hydrant; the server approves the kick and the client applies the impulse to its own character (it owns that assembly's physics); the server sanity-checks the resulting velocity. |
 | `CPROP_11` | Awning trampolines ×12 | DST_02, Bazaar Steps | Bouncy awnings. | Bounce +18 studs; 5 bounces in a row → confetti puff. | Client-side jump boost validated by server velocity sanity check. |
 | `CPROP_12` | Fortune-Telling Toaster | DST_02 Fortune Alley | Pops toast with a printed fortune. | 1 free fortune per city day: a cryptic hint to one secret the player has not found. | Hint pool server-side (spoiler-safe). |
 | `CPROP_13` | Busker instruments ×5 | DST_07 busker corner | Slide Whistle, Bucket Drums, Kazoo Organ, Banjo-Tuba, Rubber-Chicken Bagpipe. | Play each (1 note phrase); correct 5-sequence → `MUT_112` (`CSEC_03`). | Positional sounds, `RollOffMaxDistance` 60. |
@@ -700,8 +700,8 @@ events are in §36.11; this section defines the machinery. Runtime owner: `CityE
 | Fixed (F) | anchored UTC times | varies | 15–30 min | `EVT_005`, `EVT_007`, `EVT_024`, `EVT_025` |
 | Seasonal (X) | replaces H slots in season | city-wide | 12–15 min editions + month-long track | `EVT_028`–`EVT_031` |
 
-At most **one H/F/X + one S + one M** event run at once; rule conflicts are resolved by the compatibility
-list in §36.11.
+At most **one H/F/X + one S + one M** event run at once (sole exception: `EVT_024`, a district-scope shop
+event that runs alongside the 00:00 headline); rule conflicts are resolved by the compatibility list in §36.11.
 
 #### 18.8.2 Scheduler: global UTC grid + deterministic rotation
 

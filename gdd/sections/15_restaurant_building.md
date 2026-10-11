@@ -207,3 +207,201 @@ serve, clean and repair if allowed, but can never sell, move or store owner furn
 spend owner currency (canon E12). **Restaurant name:** 3–24 characters chosen by the owner, filtered with
 `TextService:FilterStringAsync` and shown via `GetNonChatStringForBroadcastAsync` on the façade sign
 (`TIER_02`+) and the Monster Marquee.
+
+### 15.5 Building Placement System
+
+**Purpose.** Let players arrange kitchen and dining with zero ambiguity on every device, while guaranteeing that
+every saved layout is cookable, servable, repairable and walkable.
+
+#### 15.5.1 Grid and rotation decision
+
+| Option | Pros | Cons | Verdict |
+|---|---|---|---|
+| 1-stud grid, free rotation | maximum freedom | fiddly on touch; nav grid mismatch; float drift in saves | rejected |
+| **2-stud grid, 90° rotation** | matches the 2×2-stud nav cells of §8.7, integer saves, chair = 1 cell, thumb-friendly | less freedom for decorators | **chosen** |
+| 4-stud grid | trivial on mobile | chairs and aisles too coarse; small interiors waste space | rejected |
+
+Every footprint is an even number of studs; rotation is 0/90/180/270 (stored 0–3). Ceiling and wall items
+snap to the same 2-stud rhythm along their surface.
+
+#### 15.5.2 Layers and zones
+
+| Layer | Blocks floor cells? | Holds |
+|---|---|---|
+| FLOOR | yes | appliances, fixtures, tables, seats, decor, floor lamps |
+| WALKABLE | no | rugs (`FRN_495`) — placed over free floor, removable in one tap |
+| CEILING | no | ceiling lights, hanging plants, smoke detector (one per cell) |
+| WALL | no | windows, wall art, wall lights, signs, Morph Mirror, Trophy Shelf (wall sockets per tier) |
+| DOOR | no | front door (1), staff doors (1–2), patio door, back door (sockets fixed by the shell) |
+| ZONE FINISH | no | one floor finish + one wall finish per zone |
+| CURB | no (exterior) | façade-side decor in curb sockets |
+
+| Zone | Purpose | Accepts | Fixed features kept clear |
+|---|---|---|---|
+| KITCHEN | staff only; customers never path here | appliances, utility fixtures, safety items, kitchen decor | staff spawn 2×2 cells, back door + delivery dock socket |
+| DINING | seats and their surfaces | tables, counters, chairs, booths, decor, lights, aquariums, interactive | divider pickup side of each serving window (1×2 cells) |
+| LOBBY | inside the door: waiting and ordering | podium, decor, interactive, signs (no seats) | **door clearance 3×3 cells**; party wait spots (4 cells beside the podium); counter line (counter service) |
+| OUTSIDE | patio (`UPG_031`), always fully lit | Outside-rated tables/chairs, Patio items, plants, sculptures | patio door 2×2 cells |
+| CURB | exterior plot (cosmetic) | curb signs, planters, gnomes, valet podium, Bouncer Rope | door approach lane, 4 queue spots |
+
+#### 15.5.3 Edit Mode rules
+
+- **Who:** the owner, or a co-owner whose co-op settings grant Build (§21). One editor at a time per restaurant
+  (edit lock); other co-owners see a "Pardon our dust" view. Guests never.
+- **When:** not In Combat and no level-6 chaos (canon E2), **and** zero customers inside (seated, walking,
+  waiting at the podium or in the counter line). If customers are inside, the button becomes **Pause Service**:
+  arrivals stop and the button counts down "Waiting for 3 customers to finish…". **Last Call** (optional) applies
+  the Renovation no-penalty rule to unserved customers. Queued customers outside keep waiting (queue patience
+  paused) or walk by.
+- **While editing:** restaurant state `EDITING` holds arrivals, freezes every station timer (no burning, §5),
+  sends employees to idle at the staff spawn, and blocks guests from interacting with furniture. Ops commit one
+  at a time on the server (§15.12), so a disconnect never loses work and never leaves an invalid layout.
+- **Exit:** always allowed (every committed op already passed validation); restores the previous state (OPEN or
+  PAUSED). Auto-exit after 10 min without input [TUNABLE].
+
+#### 15.5.4 Placement rules
+
+Checked in this order (cheapest first) for every Place/Move/Rotate; the first failure returns its reason code
+(§15.11).
+
+| # | Rule | Reason code |
+|---|---|---|
+| R1 | Actor may build; restaurant in `EDITING`; item owned and unplaced (Place) or placed and movable (Move) | `NO_PERMISSION` / `NOT_EDITING` |
+| R2 | Item's tier ≤ current tier; station's canon unlock level ≤ player level (§C7.1) | `TIER_LOCKED` / `LEVEL_LOCKED` |
+| R3 | Footprint inside the shell, entirely in an accepting zone (or socket of the right type) | `OUT_OF_BOUNDS` / `WRONG_ZONE` |
+| R4 | No overlap with other FLOOR footprints, walls, fixed features or clearance cells | `OVERLAP` / `KEEP_CLEAR` |
+| R5 | Access cells free: chair front cell, station operator cell(s), door swing, window pickup side | `ACCESS_BLOCKED` |
+| R6 | Appliance slots used ≤ tier slots (canon §C6); serving windows ≤ 1/2/3 (`UPG_029`/`UPG_030`) | `SLOTS_FULL` / `WINDOWS_FULL` |
+| R7 | Attached seats ≤ tier Seats (§15.5.6) | `SEAT_CAP` |
+| R8 | Placed items ≤ tier Max placed items (60 → 400, §36.12.2; trophies, rugs and finishes exempt) and per-item max counts (catalog notes) | `ITEM_CAP` |
+| R9 | Essentials remain: ≥ 1 each of PANTRY, FRIDGE, PREP, ASSEMBLY, WINDOW, DISHWASH, TRASH, DELIVERY, ≥ 1 slot-using appliance, and (T3+) the Host Podium | `ESSENTIAL` |
+| R10 | Connectivity C1–C6 still holds (§15.5.9) | `PATH_BLOCKED_*` |
+| R11 | Object is not Destroyed and not occupied (seated customer or proxy on it) | `IS_RUBBLE` / `OCCUPIED` |
+
+**Store** requires R1, R9, R11 and **Pristine** durability (≥ 76 %): damaged objects must be repaired first, so
+store-and-replace can never heal anything. **Sell** (from storage only): 50 % of price, or 100 % if bought ≤ 5 min
+ago and never placed ("Changed my mind") [TUNABLE]; trophies cannot be sold. Stations holding food can be moved
+(contents move with them) but not stored.
+
+#### 15.5.5 Collisions
+
+Placement uses the server's integer **occupancy grid**, never physics. Placed models are `Anchored`; tables,
+counters, booths and appliances use collision group `MMR_Furniture` (collides with players); chairs and decor
+are `CanCollide = false` for players so nobody gets wedged. NPC proxies are anchored and follow grid paths
+(§8.7), so furniture never shoves them. A player standing inside a target footprint does not block placement:
+they are nudged 2 studs out on commit.
+
+#### 15.5.6 Seats and surfaces
+
+- A **chair** is a seat only if its front cell is adjacent to a **surface** (table, counter, booth table) cell and
+  that surface still has capacity ("serves N"). Unattached chairs are allowed only in the LOBBY as waiting
+  benches (0 seats, decor).
+- A **booth** provides its built-in seats and table. **Counters** take stools along their long side(s).
+- **Counter service (T1–T2):** the counter line forms on the dining side of the serving window: as many cells as
+  Seats must be free in a straight or L-shaped line from the window front (§8.6).
+- Seat count shown live in Build Mode ("Seats 6/6"); a surface with a Broken/Destroyed state disables its
+  attached seats until repaired.
+
+#### 15.5.7 Appliance slots and utilities (canon §C6)
+
+Slot-using appliances (14 station types, any variant) cost 1 slot each, duplicates included (two grills = 2
+slots). Utility fixtures (PANTRY, FRIDGE, FREEZER, PREP, ASSEMBLY, PLATING, WINDOW, DISHWASH, TRASH, DELIVERY)
+never use slots. The starter kit uses 4 of `TIER_01`'s 6 slots, leaving the canon "choose two of STOVE / OVEN /
+PIZZA_OVEN / SOUP_POT / ICECREAM / BLENDER" decision. Removing the last instance of a station type used by a
+menu recipe asks for confirmation and flags those recipes "Missing station" (§6); it is never silently allowed.
+
+#### 15.5.8 Undo, redo and blueprints
+
+- The client keeps a stack of **inverse ops** (≤ 50 per edit session). Undo/redo sends the inverse as a normal
+  Place/Move/Store/Rotate and the server validates it like any op; if the world changed ("Can't undo: that spot
+  is taken"), the entry is dropped. Purchases are not undoable (use "Changed my mind").
+- **Blueprints** (`UPG_070`/`UPG_071`): save the current layout to a slot; applying one stores everything
+  not in the blueprint, then places the blueprint items in a deterministic order; items you no longer own are
+  listed as "missing" and skipped. The applied result must pass R1–R11, otherwise the swap is rolled back.
+
+#### 15.5.9 Path connectivity validation (canon E10)
+
+Validation runs a 4-neighbour flood fill on the occupancy grid (free floor and WALKABLE cells are passable).
+4-neighbour reachability is stricter than the 8-neighbour A* customers use (§8.7), so any layout that passes is
+walkable by customers and staff. Aisles may be 1 cell (2 studs); routes narrower than 2 cells show an amber
+"Tight squeeze" hint but are legal.
+
+| Check | Sources | Every one of these must be reachable |
+|---|---|---|
+| C1 Customers | front door cell | the access cell of every attached seat (the cell in front of the chair / booth opening) |
+| C2 Ordering | front door cell | podium wait spots (T3+) or the full counter line (T1–T2); patio door if a patio exists |
+| C3 Kitchen | staff spawn + staff door(s) | every station operator cell and the kitchen side of every serving window |
+| C4 Service (T3+) | staff door(s) | every seat access cell and every window pickup side (waiters) |
+| C5 Repair access | front door ∪ staff spawn | ≥ 1 neighbouring cell of every destructible object (incl. decor and lights' floor cell) |
+| C6 Deliveries | back door | the delivery dock's unload cell |
+
+Cost: the largest grid (`TIER_10` + Elbow Room III + Patio Sprawl ≈ 2,900 cells) floods in ≈ 0.2 ms. The client
+runs the same shared module on the ghost at ≤ 10 Hz to show the red route preview and reason text before the
+player taps Place.
+
+```lua
+--!strict
+-- ReplicatedStorage/Shared/Building/Connectivity.lua  (shared: server validation + client ghost preview)
+export type Grid = { w: number, h: number, x0: number, blocked: buffer } -- 1 byte per cell, 1 = blocked
+export type Target = { cell: Vector2int16, tag: string }
+
+local DIRS = { Vector2int16.new(1, 0), Vector2int16.new(-1, 0), Vector2int16.new(0, 1), Vector2int16.new(0, -1) }
+local Connectivity = {}
+
+local function index(g: Grid, x: number, z: number): number? -- x may be negative (patio)
+	local col = x - g.x0
+	if col < 0 or col >= g.w or z < 0 or z >= g.h then return nil end
+	return z * g.w + col
+end
+
+function Connectivity.flood(g: Grid, sources: { Vector2int16 }): buffer
+	local seen = buffer.create(g.w * g.h)
+	local queue: { number } = table.create(g.w * g.h)
+	local head, tail = 1, 0
+	for _, s in sources do
+		local i = index(g, s.X, s.Y)
+		if i and buffer.readu8(g.blocked, i) == 0 and buffer.readu8(seen, i) == 0 then
+			buffer.writeu8(seen, i, 1); tail += 1; queue[tail] = i
+		end
+	end
+	while head <= tail do
+		local i = queue[head]; head += 1
+		local x, z = (i % g.w) + g.x0, i // g.w
+		for _, d in DIRS do
+			local j = index(g, x + d.X, z + d.Y)
+			if j and buffer.readu8(seen, j) == 0 and buffer.readu8(g.blocked, j) == 0 then
+				buffer.writeu8(seen, j, 1); tail += 1; queue[tail] = j
+			end
+		end
+	end
+	return seen
+end
+
+-- Returns nil if every target is reachable, otherwise the tag of the first unreachable target
+-- (e.g. "seat:17" -> reason PATH_BLOCKED_SEAT, highlights seat uid 17 in red).
+function Connectivity.firstUnreachable(g: Grid, sources: { Vector2int16 }, targets: { Target }): string?
+	local seen = Connectivity.flood(g, sources)
+	for _, t in targets do
+		local i = index(g, t.cell.X, t.cell.Y)
+		if not i or buffer.readu8(seen, i) == 0 then return t.tag end
+	end
+	return nil
+end
+
+return Connectivity
+```
+
+**Runtime fallback (canon E10).** If a customer's path fails twice or they are stuck > 6 s, they poof to the seat
+(§8.7). Rubble keeps its object's footprint, so destruction never changes connectivity mid-shift; Broken doors
+never block.
+
+| Variable | Value [TUNABLE] |
+|---|---|
+| Grid cell | 2 studs |
+| Rotations | 4 (90° steps) |
+| Door clearance | 3 × 3 cells |
+| Undo stack | 50 ops per session |
+| Edit Mode auto-exit | 10 min idle |
+| Sell-back | 50 % (100 % within 5 min, never placed) |
+| Client path preview rate | ≤ 10 Hz |
+| Server op rate | 4 ops/s, burst 8 (§27.8.17) |

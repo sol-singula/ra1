@@ -138,3 +138,196 @@ use the same rules through the same shared `MorphRules` module (§12.7).
 **Variables [TUNABLE].** `MAX_MORPH_HEIGHT = 9.5` studs · `HUGE_LIMIT = 2` · `HUGE_OVERFLOW_SCALE = 0.7` ·
 `TINY_SCALE` authored into the mesh (≈ 0.6 of slot volume) · `PAIR_BONUS = 0.25` · `LEG_LENGTH ∈ [1.4, 3.0]` ·
 `NECK_LENGTH ∈ [0, 2.5]` · `HORN_SINK_MAX = 0.5` stud.
+
+### 12.3 Attaching Parts to Roblox R15 Rigs
+
+**Purpose.** One assembly path builds every body in the game — players, customers, employees, named NPCs — from a part
+list, on any device, inside fixed budgets (the "skin-over-rig" contract).
+
+**Base rig.** `StarterPlayer.StarterCharacter` is `MMR_BaseRig`: a standard R15 rig at scale 1.0 (5.5 studs tall),
+`Humanoid.AutomaticScalingEnabled = false`, default body MeshParts kept for joints and hit tests but set to
+`Transparency = 1`, Roblox avatar accessories and HumanoidDescription not applied. `MorphAssemblyService` inserts the
+canon attachments (`MMR_HeadCore` … `MMR_FXRoot`, plus `MMR_Grip` in each hand) once, and stores every leg/neck
+Motor6D's original `C0`/`C1` as CFrame attributes (`BaseC0`, `BaseC1`) so builds are repeatable.
+
+**Asset format.** `ReplicatedStorage/MorphParts/<SLOT>/<MUT_ID>` is a Model with three LOD folders — `Hi` (players),
+`Lo` (customers/employees within 60 studs) and `L2` (impostor silhouette pieces: HEAD, TORSO, ARMS, LEGS, TAIL, WINGS,
+BACK, EARS, HORNS only). Each MeshPart has a child Attachment `Mount` and attributes `Host` (canon attachment name),
+`Side` (`L`/`R`/nil — Roblox cannot mirror meshes at runtime, so paired parts ship authored L and R meshes), `Tris`,
+optional `JointName` (animatable sub-part) and `MMR_Skin = true` on organic surfaces. Model attributes mirror the JSON:
+`Slot`, `LegLength`, `NeckLength`, `SizeClass`, `FaceLocked`, `HandsLocked`, `Hides`, `BlocksWings`, `Motion`. Parts are
+authored on a 0.25-stud grid at R15 standard scale; organic surfaces use uniform texel density so tiling covering
+materials line up across parts. The generated `MutationDefs` module (from `gdd/data/mutations.json`) is the only place
+code reads part data.
+
+**Assembly algorithm** (`MorphAssemblyService.Build(rig, loadout, opts)`; identical shared code builds NPC visuals on clients):
+
+1. **Resolve** the loadout through `MorphRules.Resolve`: validate slots and exclusions, compute the visibility set
+   (faceLocked, hides, handsLocked), apply the huge-part limit and the 9.5-stud height clamp, and produce a build order:
+   TORSO → LEG_L/R → NECK → HEAD → EYES/MOUTH/NOSE/FACE → EARS/HORNS → ARM_L/R → HANDS → FEET → TAIL → BACK → WINGS → FX.
+   The order doubles as trim priority.
+2. **Release** the previous `MMR_Visual` folder (players: destroy; NPC visuals: return MeshParts to a per-`MUT_ID`/LOD pool).
+3. **Clone** each visible MeshPart of the chosen LOD (and matching `Side`) and set `Anchored = false`, `Massless = true`,
+   `CanCollide = false`, `CanTouch = false`, `CanQuery = false`, `CastShadow = (lod == "Hi")`, `CollisionGroup = "MMR_Visual"`.
+4. **Align & join**: `part.CFrame = host.WorldCFrame * mount.CFrame:Inverse()`; join with a `WeldConstraint` (Part0 =
+   host's rig part), or — if the mesh has `JointName` — rename the part to that joint name and join it with a `Motor6D`
+   (`C0 = host.CFrame`, `C1 = mount.CFrame`) so animation poses named `MMR_Jaw`, `MMR_TailTip`, `MMR_WingL` … can drive it.
+5. **Legs**: scale the Y offsets of Hip/Knee/Ankle `C0`/`C1` by `LegLength / 2.0` per side; set
+   `Humanoid.HipHeight = BASE_HIP_HEIGHT + (max(LegLength_L, LegLength_R) − 2.0)`; the shorter leg of a mismatched pair
+   dangles and the client plays `ANM_008`. Reversed-knee legs flip the Knee `C0` rotation.
+6. **Neck**: `Neck.C0 = BaseC0 * CFrame.new(0, NeckLength_clamped, 0)`; the neck mesh spans the gap; long necks are bone chains.
+7. **Surface pass**: on every MeshPart with `MMR_Skin`, SKIN sets `Color` and `Material`/`MaterialVariant`; FUR or SCALES
+   then override the `MaterialVariant` (e.g. `MMR_Fur_Shaggy`, `MMR_Scales_Dragon`; 18 variants total in MaterialService);
+   FUR adds ≤ 3 alpha shell meshes on Hi LOD only. Object/robot parts use SurfaceAppearance and are never furred
+   ("toasters don't grow fur"); only `MUT_258` tints them through `SurfaceAppearance.Color`.
+8. **Palette pass**: primary color → `MeshPart.Color` under SurfaceAppearance `AlphaMode = Overlay` regions and skin;
+   secondary/accent → texture-variant index (4 variants per part).
+9. **FX**: clone emitters/trails under `MMR_FXRoot`; `Rate × QualityFactor`, ×0.5 under "Reduced Effects"; NPC Lo FX at
+   ×0.5 within 40 studs, off beyond; FX never parented to body skin (cartoon flames orbit, never burn).
+10. **Motion registration**: tag spring Bones `MMR_Spring` and flap/rotor parts `MMR_Motion` via CollectionService.
+11. **Budget check**: count MeshParts and `Tris`; anything over budget is skipped in reverse build order and logged
+    (`mmr_morph_budget_trim`). Set `MMR_MorphCode` and `MMR_BuildVersion` attributes, fire `MorphBuilt`.
+
+| Joint type | Used for | Why |
+|---|---|---|
+| `WeldConstraint` | rigid visual mounts (most parts) | cheapest; keeps the aligned offset; no animation |
+| `Motor6D` (named per asset) | jaws, pincers, scythe folds, tail tips, wing roots, fans, lids | driven by ability/emote clips (§36.14) through the Animator |
+| Skinned MeshPart + `Bone` chain | tails, tentacles, trunks, long necks, cloth capes, hoses | procedural client motion; no network cost |
+| none (surface swap) | SKIN, FUR, SCALES | `Color` + `MaterialVariant` only |
+
+**Who builds what.** Player characters are built **on the server** (welds replicate; all clients see the same body; the
+hit rig is unchanged). Customers, employees and named NPCs follow SPCV: the server owns an anchored, invisible proxy with
+the attribute `MMR_MorphCode`, and **each client builds the visual locally** for proxies in its interior or within
+120 studs (streamed), reusing pooled MeshParts. NPC visuals swap to the `L2` impostor beyond 60 studs and are culled
+beyond 150 studs. After a rebuild, the client re-loads ability animation tracks so new Motor6Ds bind.
+
+**Procedural secondary motion (client only).** `SecondaryMotionController` simulates tagged Bone chains with damped
+springs (stiffness/damping per part attribute): 30 Hz within 40 studs, 15 Hz to 80 studs, frozen beyond; at most 40
+chains per client (nearest first); own character always simulated. Wings idle-flutter procedurally and flap through
+Motor6D clips; ears and antennae use 1–2-bone springs; prehensile tails and tentacles lerp bone angles toward
+`MMR_Grip` targets to "hold" carried items. The server never simulates cosmetic motion.
+
+**Budgets** (per part; totals equal the canon limits — player ≤ 40 MeshParts / 15,000 tris, NPC ≤ 24 / 6,000, impostor ≤ 1,500):
+
+| Slot | Max MP (player) | Hi tris | NPC Lo tris | Impostor tris |
+|---|---|---|---|---|
+| HEAD (incl. built-in features) | 3 | 1,500 | 600 | 250 |
+| FACE / NOSE / MOUTH / EYES | 1 / 1 / 1 / 2 | 300 / 250 / 350 / 300 | 100 / 80 / 120 / 100 | — |
+| EARS / HORNS / NECK | 2 / 2 / 1 | 400 / 400 / 500 | 150 / 150 / 180 | 60 / 60 / — |
+| TORSO | 2 | 2,000 | 800 | 300 |
+| ARM (each side) | 3 | 1,100 | 400 | 100 |
+| HANDS (pair) / FEET (pair) | 2 / 2 | 600 / 500 | 150 / 150 | — |
+| LEG (each side) | 2 | 1,000 | 350 | 100 |
+| TAIL / WINGS (pair) / BACK | 1 / 2 / 3 | 900 / 1,200 / 900 | 350 / 450 / 320 | 120 / 150 / 100 |
+| FUR or SCALES shells | 3 | 500 | 0 (material only) | — |
+| FX | 1 | 200 | 0 | — |
+| **Full 22-slot total** | **39** (+1 for a held utensil) | **15,000** | **5,200** | **1,440** |
+
+NPC Lo assets merge paired meshes that share a host (eyes, ears, horns, wings) into one MeshPart, so a fully filled NPC
+needs exactly 24; the generator's fill rates (§12.7) average 15–19.
+
+```lua
+--!strict
+-- ReplicatedStorage/Shared/MorphBuilder (used by MorphAssemblyService on the server and the NPC visual builder on clients)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CollectionService = game:GetService("CollectionService")
+local MorphRules = require(ReplicatedStorage.Shared.MorphRules)
+local PartLib = ReplicatedStorage:WaitForChild("MorphParts")
+
+export type BuildOpts = { lod: "Hi" | "Lo" | "L2", pool: any? }
+local BASE_HIP_HEIGHT = 2.0 -- MMR_BaseRig at LegLength 2.0 [TUNABLE]
+local BUDGET = { Hi = { mp = 40, tris = 15000 }, Lo = { mp = 24, tris = 6000 }, L2 = { mp = 12, tris = 1500 } }
+
+local MorphBuilder = {}
+
+local function hostOf(rig: Model, name: string): Attachment
+	local a = rig:FindFirstChild(name, true)
+	assert(a ~= nil and a:IsA("Attachment"), "rig is missing attachment " .. name)
+	return a
+end
+
+local function mount(rig: Model, visual: Folder, src: MeshPart, opts: BuildOpts): MeshPart
+	local part = if opts.pool then opts.pool:Take(src) else src:Clone()
+	part.Anchored, part.Massless = false, true
+	part.CanCollide, part.CanTouch, part.CanQuery = false, false, false
+	part.CastShadow = opts.lod == "Hi"
+	part.CollisionGroup = "MMR_Visual"
+	local m = part:FindFirstChild("Mount") :: Attachment
+	local host = hostOf(rig, part:GetAttribute("Host") :: string)
+	local hostPart = host.Parent :: BasePart
+	part.CFrame = host.WorldCFrame * m.CFrame:Inverse()
+	local jointName = part:GetAttribute("JointName") :: string?
+	if jointName then
+		part.Name = jointName -- animation poses address the Part1 name
+		local j = Instance.new("Motor6D")
+		j.Name, j.Part0, j.Part1, j.C0, j.C1 = jointName, hostPart, part, host.CFrame, m.CFrame
+		j.Parent = part
+	else
+		local w = Instance.new("WeldConstraint")
+		w.Part0, w.Part1 = hostPart, part
+		w.Parent = part
+	end
+	part.Parent = visual
+	return part
+end
+
+local function scaleJointY(joint: Motor6D, k: number)
+	local c0, c1 = joint:GetAttribute("BaseC0") :: CFrame, joint:GetAttribute("BaseC1") :: CFrame
+	joint.C0 = CFrame.new(c0.X, c0.Y * k, c0.Z) * c0.Rotation
+	joint.C1 = CFrame.new(c1.X, c1.Y * k, c1.Z) * c1.Rotation
+end
+
+function MorphBuilder.Build(rig: Model, loadout: { [string]: string }, opts: BuildOpts)
+	local hum = rig:FindFirstChildOfClass("Humanoid") :: Humanoid
+	local plan = MorphRules.Resolve(loadout) -- validated, visibility + clamps applied, ordered by trim priority
+	local old = rig:FindFirstChild("MMR_Visual")
+	if old then MorphBuilder.Release(old, opts) end
+	local visual = Instance.new("Folder")
+	visual.Name = "MMR_Visual"
+	local mp, tris, budget = 0, 0, BUDGET[opts.lod]
+	for _, e in plan.order do
+		if not e.visible then continue end
+		local lodFolder = PartLib[e.slotCode][e.id]:FindFirstChild(opts.lod)
+		if not lodFolder then continue end -- e.g. no L2 piece for FACE
+		for _, src in lodFolder:GetChildren() do
+			if not src:IsA("MeshPart") then continue end
+			local side = src:GetAttribute("Side")
+			if side ~= nil and side ~= e.side then continue end
+			local cost = (src:GetAttribute("Tris") :: number?) or 0
+			if mp + 1 > budget.mp or tris + cost > budget.tris then
+				plan.trimmed += 1
+				continue
+			end
+			local p = mount(rig, visual, src, opts)
+			if e.scale ~= 1 then MorphBuilder.Rescale(p, e.scale) end
+			mp += 1
+			tris += cost
+		end
+	end
+	for side, ll in { Left = plan.legLengthL, Right = plan.legLengthR } do
+		for _, jn in { side .. "Hip", side .. "Knee", side .. "Ankle" } do
+			local j = rig:FindFirstChild(jn, true)
+			if j and j:IsA("Motor6D") then scaleJointY(j, ll / 2.0) end
+		end
+	end
+	hum.HipHeight = BASE_HIP_HEIGHT + (math.max(plan.legLengthL, plan.legLengthR) - 2.0)
+	local neck = rig:FindFirstChild("Neck", true) :: Motor6D
+	neck.C0 = (neck:GetAttribute("BaseC0") :: CFrame) * CFrame.new(0, plan.neckLength, 0)
+	MorphBuilder.ApplySurface(visual, plan.skin, plan.covering, opts.lod)
+	MorphBuilder.ApplyPalette(visual, plan.palette)
+	MorphBuilder.AttachFX(rig, plan.fx, opts)
+	for _, d in visual:GetDescendants() do
+		if d:IsA("Bone") and d:GetAttribute("Spring") then CollectionService:AddTag(d, "MMR_Spring") end
+	end
+	visual.Parent = rig
+	rig:SetAttribute("MMR_MorphCode", plan.morphCode)
+	return plan
+end
+
+return MorphBuilder
+```
+
+**Edge handling inside the builder.** A missing asset (content failed to load) mounts a grey 1-stud "Loading…" placeholder
+from `MorphParts/_Placeholder` and retries via `ContentProvider:PreloadAsync` after 5 s; stats are unaffected because the
+server never reads visuals. Server builds are rate-limited to one per player per 0.5 s (rapid equips coalesce into the
+latest loadout). A rebuild during an ability keeps the old Motor6D until the clip ends (≤ 1.5 s), then swaps.
