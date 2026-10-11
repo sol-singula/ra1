@@ -104,9 +104,11 @@ door (≈ 25–35 studs) and request a reservation: counter service (`TIER_01`�
 (adjacent preferred); table service (`TIER_03`+) needs one whole table with seats ≥ party size — strangers never
 share a table. A reserved seat is held for that party only. No reservation → join the outside queue.
 
-**Outside queue.** Up to 4 customers on the velvet-rope spots by the door. Queue patience = 60 s × the lowest
-PatienceMult in the party [TUNABLE]; expiry is a walk-by (no reputation effect). Queued customers advance
-first-come-first-served; PER_005 may cut the line (§9). The HUD shows a `Queue 2/4` chip while you are inside.
+**Outside queue.** Up to 4 customers on the 4 curb queue spots by the door (lined by the `FRN_433` Bouncer Rope when
+owned, §15). Queue patience = 60 s × the lowest PatienceMult in the party × `QueuePatienceMult` [TUNABLE]; expiry is a
+walk-by (no reputation effect). `QueuePatienceMult` is the product of the queue-comfort items of §15 (`FRN_433`
+Bouncer Rope ×1.15, `UPG_034` Curbside Benches ×1.2), capped at ×1.4. Queued customers advance first-come-first-served;
+PER_005 may cut the line (§9) unless a Bouncer Rope is owned. The HUD shows a `Queue 2/4` chip while you are inside.
 
 **Server fair share.** Hard cap 160 proxies per server (§C3). Each restaurant's cap is `Seats + 4`; if the sum
 across open restaurants exceeds 160, each cap becomes `floor(160 × (Seats_r + 4) / Σ(Seats + 4))`, removing queue
@@ -472,7 +474,8 @@ Food is either **placed on a `STN_WINDOW` pickup spot** tagged with their ticket
 customer (Serve interaction, 10 studs). W stops the moment the plate touches the pickup spot, so a long walk
 never costs the cook.
 
-**Table service (`TIER_03`+).** Parties wait at the host podium inside the door. Seating happens by:
+**Table service (`TIER_03`+).** Parties wait at the `FRN_396` Host Podium inside the door — the party wait node,
+required from `TIER_03` (granted free with that upgrade, §15). Seating happens by:
 1. a `ROLE_WAITER` employee (§16) — automatic, within the waiter's assigned section;
 2. a player — tap the party, then tap a highlighted free table (or press **Seat** to accept the host's pick);
 3. **Auto-Seat** (restaurant setting, default ON) — if neither acts within 8 s, the party seats itself at the
@@ -488,7 +491,7 @@ is delivered by whoever carries the plate. MutationBonus (§10.3) uses the parts
 | Fit | −2 per empty seat left at the table |
 | Clean | +3 if bussed; a dirty table is not eligible (the party waits — long seat wait, §10.6) |
 | Waiter balance | +2 if the table's waiter section has the fewest active parties |
-| Local décor | + local Atmosphere / 25 (§15) |
+| Local atmosphere | + LocalAtmosphere(table) / 25, using the §15 formula (customers prefer nicer seats) |
 | Personality preference | PER_023 near the door +3; PER_012 corner seat +3; PER_009 highest-décor table +3; PER_022 nearest the kitchen +2; PER_020 booth or table for 2+ (occupies 2 seats) |
 
 ### 8.7 Rules & Mechanics — Navigation
@@ -546,6 +549,10 @@ per-tier probabilities and maximums, joke share, hidden-mod chance, conflict gro
   CHARM is the highest effective CHARM among players inside the interior (rewards co-op charm builds). An event
   patience multiplier stated by §36.11 (e.g. `EVT_003` ×1.15) multiplies the result. Patience starts when the
   ticket is created and stops when the last item is delivered.
+- **Seat comfort:** once seated, patience and the ordering window are multiplied by
+  `SeatPatienceMult = clamp(1 + 0.02 × AtmospherePts(seat), 1.0, 1.2)` using the seat item's §36.13 Atmosphere
+  points (a Cracked seat counts ×0.95: "it wobbles"). Regular "Friendly" (×1.10) and §36.11 event multipliers stack
+  multiplicatively on top of §C11.2. [TUNABLE]
 - **Ordering window:** 30 s × PatienceMult, then a 15 s × PatienceMult last-chance window (anger accrues).
 - **Per-item wait factor** (§10.2): W = 1 until 50 % of P, then linear to 0 at 100 %.
 - **Eat-while-waiting:** items arrive independently; the customer eats item 1 while item 2's clock keeps
@@ -622,7 +629,8 @@ Regulars are named repeat customers who remember you. Unlocks at `TIER_02`.
 | Arrival jitter band | 0.65–1.35 × mean | §8.2.2 |
 | Rush wave | ±20 %, 360 s period | §8.2.2 |
 | Lull guarantee | 20 s idle → arrival in 3 s | §8.2.2 |
-| Outside queue | 4 customers; patience 60 s × PatMult | §8.2.3 |
+| Outside queue | 4 customers; patience 60 s × PatMult × QueuePatienceMult (cap ×1.4) | §8.2.3 |
+| SeatPatienceMult | 1 + 0.02 × seat Atmosphere pts, clamp 1.0–1.2 (Cracked ×0.95) | §8.9 |
 | Away Mode delay | 30 s without a player inside (and no chef on shift) | §8.2.3 |
 | Regular arrival share / promotion | 12 % / 8 % at S ≥ 90; cap 20 | §8.12 |
 | Showcase body chance | 1 in 50 | §8.3.3 |
@@ -825,7 +833,7 @@ for _, p in CollectionService:GetTagged("MMR_Customer") do onAdded(p) end
 RunService.RenderStepped:Connect(function(dt: number)
 	local alpha = math.min(1, dt * 10)
 	for proxy, model in visuals do
-		model:PivotTo(model:GetPivot():Lerp(proxy.CFrame, alpha)) -- 4 Hz server steps → smooth motion
+		model:PivotTo(model:GetPivot():Lerp(proxy.CFrame, alpha)) -- 10 / 2 / 1 Hz flushes → smooth motion
 	end
 end)
 ```

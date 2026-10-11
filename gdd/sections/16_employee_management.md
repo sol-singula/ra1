@@ -60,6 +60,9 @@ the employee cap is canon §C6. Only one Manager and one Assistant Manager may b
 - **Waiter.** Seats in arrival order except Rich/celebrity personalities (`PER_008`, `PER_009`) who are seated first;
   delivers to the ticket's seat; on a missed modification the customer gets the normal Accuracy penalty (§10).
 - **Security Guard.** Patrols an assigned post (Door / Dining / Kitchen). Never attacks a customer below anger 45.
+  Security upgrades bought in §15 (§36.12) shorten the guard's response by 1 s and widen the 30-stud intercept
+  radius by +3 / +4 studs (§16.3.3); while the owner is in the city, escalation past anger level 2 is only possible
+  when a guard is on shift (§16.3.4).
 - **Manager.** Never cooks; while the owner is in the city (Away Mode, §16.3.4) the Manager is the one who flips the sign to "Out to Lunch" if every Chef goes on break or unpaid break.
 
 ### 16.3 Online Work AI
@@ -126,7 +129,7 @@ PERFECT timing (1.00) stays the best cook in the building, by design.
 #### 16.3.3 Customers, combat and repairs
 
 - **Interception (Security).** Trigger: a customer reaches anger ≥ 45 (level 3) within 30 studs of the guard's post
-  (anywhere if no post). The guard walks over and channels **Calm Talk** for 2.0 s:
+  (+3 / +4 studs with §15 security upgrades; anywhere if no post); reaction delay 1.5 s (−1 s with the upgrade). The guard walks over and channels **Calm Talk** for 2.0 s:
   `P(calm) = clamp(0.25 + 0.6 × Combat/100 + 0.25 [Bouncer] − 0.10 × (angerLevel − 3), 0.10, 0.95)`. Success: anger
   −40 and the customer enters *Calming down*. Failure: the guard **subdues** — 4 + Combat/10 Huff Points per hit every
   1.2 s until the customer is `STS_DIZZY` and is escorted out with the canon Apology Payment (40 %, no tip). At

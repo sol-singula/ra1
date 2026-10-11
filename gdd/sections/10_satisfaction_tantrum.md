@@ -39,19 +39,26 @@ patience ends, so an abandoned item contributes at most `(0.10·K + 0.10·M) × 
 
 #### 10.2.1 A — order accuracy
 
-- A wrong dish is rejected at `INSPECT_FOOD` and never evaluated (anger +20 × sens, §10.6).
-- For the correct recipe: `A = (1 + Σ_m sat_m) / (1 + n_mods)`, where each requested §6.18 modification scores
-  `sat_m = 1` satisfied, `0.5` partially satisfied (only where §6.18 defines a partial outcome), `0` missing.
-  Joke modifications score through their alternative satisfaction mechanic defined in §6.18.
-- Accepted substitutes (PER_024) score A = 0.8.
+A is computed by `OrderService` exactly as §6.18.4 specifies (owned by A2) and consumed here:
 
-| Requested mods | Outcome | A |
+```
+DishMatch = 0 → wrong dish: rejected at INSPECT_FOOD, never evaluated (anger +20 × sens, §10.6)
+          = max(0.4, 1 − 0.15 × (missing non-core components + unrequested extras)) otherwise
+ModScore  = (1 + Σ sat_j) / (1 + n)     sat_j = 1 satisfied · 0 failed · 0.5 COUNT near miss ·
+                                          0.75 joke "Straight Answer" · 1 waived (station broke after ordering)
+A_item    = DishMatch × ModScore
+```
+
+Accepted substitutes (PER_024) score A = 0.8. For a DONENESS modification, §6.18.4 also remaps C for the targeted
+component (requested band 1.00, an ordinary PERFECT 0.80).
+
+| Requested mods | Outcome | A (DishMatch 1) |
 |---|---|---|
 | 0 | — | 1.00 |
-| 1 | missed | 0.50 |
-| 2 | one missed | 0.667 |
-| 3 | all satisfied | 1.00 |
-| 3 | one partial, one missed | 0.625 |
+| 1 | failed | 0.50 |
+| 1 | joke, Straight Answer | 0.875 |
+| 2 | one failed | 0.667 |
+| 3 | one near miss, one failed | 0.625 |
 
 #### 10.2.2 Q — food quality
 
@@ -174,11 +181,12 @@ Recipe prices and difficulties below are illustrative (§6 is authoritative); ev
 - S = (56.74 × 15 + 74.90 × 6) / 21 = **61.93** → "Meh" by her bands (60–79). Pay 21 MB (S ≥ 50), tip 0.
   Stars 3.20 → **3.198 ★**.
 - *Take it back!* (§9.4) lets the cook remake the burger within 60 s; the remake keeps the original W (0.50) and,
-  with A = 1.00, scores 81.60 × 0.85 − 2 = 67.36 → S = **69.51**. Still under 70: no tip. The Karenosaurus is hard
-  to please, by design.
-- Anger along the way: 25.2 s of patience pressure (50–75 %) at 0.6 × 1.3 /s = **19.7**; missing mod +8 × 1.3 =
-  **30.1** (level 2, "Manager!" ping); Unhappy evaluation +18 × 1.3 × 15/21 = **46.8** → crosses 45 → escalation roll
-  p = 0.45 × 100/120 = **37.5 %** (§10.7).
+  with A = 1.00, scores 81.60 × 0.85 − 2 = 67.36 → S = **69.51** (and the burger now earns its §6.18.5 modification
+  bonus). Still under 70: no tip. The Karenosaurus is hard to please, by design.
+- Anger along the way: 25.2 s of patience pressure (50–75 %) at 0.6 × 1.3 /s = **19.7**; failed modification
+  ("Wrong Order?!") +5 × 1.3 = **26.2**; Unhappy evaluation +18 × 1.3 × 15/21 = **42.9** → level 2, Complaining, and
+  the "Manager!" ping. One more insult — a splash from a nearby food fight (+6 × 1.3) — would cross 45 and trigger an
+  escalation roll of p = 0.45 × 100/120 = **37.5 %** (§10.7).
 
 **Example 3 — Rich Mutant (PER_008), `TIER_07`, three premium items (ΣD 9, ticket 412 MB), CHARM 60, LUCK 40, during
 `EVT_028` Neon Lights Festival.**
@@ -209,7 +217,8 @@ D 4) during `EVT_006` Mutation Meteor Shower, after a food fight; CHARM 50.**
 
 ### 10.5 Rules & Mechanics — Payment, Tips and Reputation
 
-**Payment** (§C11.4): `Pay = round(Σ Price_i × PayFactor)` with PayFactor **1.0** if S ≥ 50, **0.8** if 30 ≤ S < 50,
+**Payment** (§C11.4 with the §6.18.5 modification bonus): `Pay = Σ_i round(Price_i × (1 + ModBonusPct_i)) × PayFactor`,
+where `ModBonusPct_i` is the capped sum of the pay bonuses of item i's satisfied modifications (§6.18.5), and PayFactor **1.0** if S ≥ 50, **0.8** if 30 ≤ S < 50,
 and **0.6** if S < 30 for a customer who stays to pay (canon is silent on this case; [TUNABLE]). Only delivered
 items are charged. Rounding is half-up to whole MB.
 
@@ -274,7 +283,7 @@ sensitivity, so a crowded room escalates quickly but never instantly.
 | Wrong dish (rejected at inspect) | +20 | §8.4.2 |
 | Burned or ruined component | +12 (once per item) | A5 |
 | Undercooked component | +8 | A5 |
-| Each missing modification (partial: +4) | +8 | A5 |
+| Each failed non-joke modification — the "Wrong Order?!" reaction (COUNT near miss +2.5; joke mods never add anger) | +5 | §6.18.4, A5 |
 | MUSHY or SPILLED component | +6 | A5 |
 | *Per-item defect cap* | *+30* | A5 |
 | Evaluation label × item price share | Delighted −25 · Happy −12 · Meh +6 · Unhappy +18 · Furious +32 (negative values are not × sens; PER_018 ×1.5 both ways) | A5 |
@@ -299,7 +308,7 @@ sensitivity, so a crowded room escalates quickly but never instantly.
 | Calm decay | −0.5 /s at levels 0–2 once no gain has applied for 5 s |
 | Eating | −1.0 /s at levels 0–2 while in `EAT` (replaces calm decay) |
 | Hostile fatigue | −0.2 /s at levels 3–4 once the customer has not been hit for 5 s; level 5 does not tire (resolved by combat or talk-down) |
-| Chill effects | additive with decay (§10.10); total decay capped at 3.0 /s |
+| Chill effects | Chill décor scales gains (§10.10); chill auras add decay; total decay capped at 3.0 /s |
 | Sheepish | for 30 s after calming: all gains ×0.5 and escalation rolls ×0.5 |
 | Perfect Recovery | finishing the whole order Perfect (every item A = 1, Q ≥ 0.95, C ≥ 0.95) at level ≤ 2 → anger 0 (§C11.5) |
 
@@ -313,10 +322,11 @@ with escalation rolls (§10.7) → level-6 gate → replicate `Anger`/`AngerLeve
 Crossing into levels 3, 4 and 5 requires a roll (§C11.5):
 
 ```
-p = clamp( AngerP × 100 / (100 + CHARM) × EventMul × EscalationDampener + Adds , 0 , 0.95 ) × Dampers
+p = clamp( AngerP × 100 / (100 + CHARM) × EventMul + Adds − EscalationDampener , 0 , 0.95 ) × Dampers
 CHARM              = highest effective CHARM among players inside the interior
 EventMul           = 1.5 during EVT_004 (§36.11), else 1.0
-EscalationDampener = restaurant upgrade multiplier from §11.10.5 / §15 (≤ 1.0; 1.0 by default)
+EscalationDampener = calm décor/security subtraction from §15 (e.g. FRN_214 Soothing Seafoam Paint 0.05;
+                     sum capped at 0.15; 0 by default)
 Adds               = +0.10 in a mob · +0.10 retaliation (hit by a thrown object or attack in the last 10 s)
                      · +0.15 while chaos is active
 Dampers            = ×0.5 each for Sheepish, Rough Patch and Bad-Luck Breaker (§10.11); ×0.75 on a 2nd attempt

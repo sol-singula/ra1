@@ -117,8 +117,8 @@ load transform run as the owners' registered pure functions (ownership by code, 
 | `progression` | `ProgressionService` | level, XP, stats, skills, specializations, achievements, milestones, counters, titles, emotes |
 | `mutations` | `MutationService` | owned parts, duplicates, capsules and pity, equipped body, ability bar, loadouts |
 | `morph` | `MorphAssemblyService` | morph name, colors, owned palettes |
-| `restaurant` | `RestaurantService` | tier, plot preference, reputation, regulars |
-| `layout` | `BuildingService` | packed placed objects (furniture, stations with levels), restaurant upgrades |
+| `restaurant` | `RestaurantService` | tier, plot preference, upgrades (incl. per-station-type levels `UPG_…#n`), reputation, regulars |
+| `layout` | `BuildingService` | packed placed objects — every placed item, appliances included, is a furniture record |
 | `durability` | `RepairService` | sparse durability per placed object |
 | `inventory` | `InventoryService` | special-ingredient stock, unplaced furniture and trophies, Robux cosmetics |
 | `recipes` | `RecipeService` | known recipes, menu, tracked perfect counts, courses |
@@ -408,23 +408,25 @@ export type Regular = {               -- repeat customer record defined by §8 (
 export type Restaurant = {            -- writer: RestaurantService
 	tier: string,                     -- "TIER_01".."TIER_10"
 	plotPreference: number?,          -- last Restaurant Row plot (non-binding)
+	upgrades: { string },             -- purchased restaurant upgrades (§36.12): plain "UPG_012" for one-offs,
+	                                  -- "UPG_006#3" for leveled ones; station upgrade levels are per station
+	                                  -- TYPE and live here (§15) — any per-object level only mirrors them
 	reputation: Reputation,
 	regulars: { Regular },            -- <= REGULARS_CAP = 20; replacement rule per §8 (lowest loyalty, newcomer S >= 95)
 }
 
 export type PlacedObject = {          -- decoded in memory from layout.packed (§28.11)
 	uid: number,                      -- unique within this restaurant
-	kind: "FRN" | "STN",              -- furniture/decor item or kitchen station
-	ref: string,                      -- "FRN_901" or "STN_GRILL"
-	x: number, z: number,             -- cell on the interior placement grid, 0.5-stud units (§15)
+	ref: string,                      -- catalog furniture ID, e.g. "FRN_901"; appliances/stations are furniture
+	                                  -- records too (their §36.13 row names the STN_ type they provide, §15)
+	x: number, z: number,             -- 2-stud cell indices on the interior placement grid (§15)
 	rot: number,                      -- 0..3 quarter turns
-	lvl: number?,                     -- station upgrade Lv1..Lv5 (§C4.9); STN only
+	lvl: number,                      -- mirror of the per-type station level in restaurant.upgrades (1 for decor)
 }
 export type Layout = {                -- writer: BuildingService
 	packed: string,                   -- compact {PlacedObject}
 	objects: { PlacedObject }?,       -- transient decoded view
 	nextUid: number,
-	upgrades: { string },             -- purchased non-furniture restaurant upgrade IDs (§36.12)
 }
 
 export type Durability = {            -- writer: RepairService
@@ -436,7 +438,9 @@ export type Durability = {            -- writer: RepairService
 
 export type Inventory = {             -- writer: InventoryService
 	stock: { [string]: number },      -- stocked special ingredients only (§C9): ING ID -> units
-	furniture: { [string]: number },  -- owned but unplaced FRN/STN items (incl. earned trophies FRN_901..FRN_910)
+	furniture: { [string]: number },  -- unplaced items as counts only: FRN ID -> count (incl. earned trophies
+	                                  -- FRN_901..FRN_910); only undamaged (100 %) items can be stored, which
+	                                  -- prevents a store-to-heal exploit (§15)
 	cosmetics: { string },            -- owned Robux cosmetic SKUs (§23): never gameplay power
 }
 ```
@@ -660,8 +664,8 @@ Encoded size = `#HttpService:JSONEncode(profile)`, measured before every write.
 | `progression` | 8 KB | 20 KB | one entry per achievement/milestone/skill node; ≤ 60 counters; `xpOnceKeys` bounded by content (expired cycle keys pruned) |
 | `mutations` | 21 KB | 31 KB | ≤ 280 distinct parts × ~95 B (+ ~95 B per future part) + ≤ 8 loadouts |
 | `morph` | 4 KB | 4.5 KB | Morphdex bitsets ≈ 3.4 KB (§12b) + palettes |
-| `restaurant` | 2.5 KB | 3 KB | regulars ≤ 20 × ~120 B |
-| `layout` | 4 KB | 6 KB | ≤ 400 objects × ~14 chars + upgrade IDs |
+| `restaurant` | 3 KB | 4 KB | regulars ≤ 20 × ~120 B + upgrade entries |
+| `layout` | 4 KB | 6 KB | ≤ 400 objects × ~14 chars |
 | `durability` | 0.5 KB | 6 KB | sparse; worst = every object damaged × ~14 B |
 | `inventory` | 2 KB | 4 KB | ≤ 150 unplaced item types, stocked specials, cosmetics |
 | `recipes` | 1 KB | 2 KB | bitset + menu ≤ 24 |
@@ -670,7 +674,7 @@ Encoded size = `#HttpService:JSONEncode(profile)`, measured before every write.
 | `quests` | 3 KB | 5 KB | bitsets + ≤ 25 active quests + cycles |
 | `city` | 2 KB | 4 KB | event-claim ring 50, secrets list, season track |
 | `social` | 0.2 KB | 0.2 KB | fixed shape |
-| **Total** | **≈ 67 KB (1.6 %)** | **≈ 118 KB (2.9 %)** | |
+| **Total** | **≈ 67 KB (1.6 %)** | **≈ 119 KB (2.9 %)** | |
 
 **Guards.** `> SIZE_WARN` (512 KB) logs `profile_size_warn` with the per-block breakdown; `> SIZE_SOFT`
 (1 MB) halves every ring buffer before encoding and raises a P1 alert; `> SIZE_HARD` (3.5 MB) refuses the
@@ -692,15 +696,15 @@ Only structures that grow with content are compacted. All encodings are versione
 | `recipes.knownBits` | 1 bit per recipe in §C10 order (append-only index table) | 150 recipes → 28 chars |
 | `quests.doneBits` | 1 bit per quest index (append-only `QuestIndex` generated from §20) | ~200 quests → 36 chars |
 
-DataStore strings must be valid UTF-8, so packed binary is always Base64-wrapped. `kind` 0 = FRN (`num` = the
-numeric part of the furniture ID), 1 = STN (`num` = index in an append-only station table mirroring §C7);
-`rotLvl` = `rot + 4 × (lvl − 1)`.
+DataStore strings must be valid UTF-8, so packed binary is always Base64-wrapped. `kind` is always 0 (furniture
+record — appliances and stations included, §15; other values are reserved); `num` = the numeric part of the
+furniture ID; `x`, `z` = 2-stud cell indices; `rotLvl` = `rot + 4 × (lvl − 1)`, where `lvl` only mirrors the
+per-type station level stored in `restaurant.upgrades` (decoders trust `restaurant.upgrades` if they disagree).
 
 ```lua
 --!strict
 -- ServerScriptService/PlayerDataService/Codec/Layout.lua
 local Base64 = require(script.Parent.Base64)        -- pure-Luau RFC 4648 encoder/decoder
-local StationIndex = require(script.Parent.StationIndex) -- append-only {"STN_PANTRY", "STN_FRIDGE", ...}
 local Types = require(game:GetService("ReplicatedStorage").Shared.Types.ProfileTypes)
 
 local FORMAT = "<BI2I2i2i2B"   -- kind, num, uid, x, z, rotLvl  (10 bytes)
@@ -711,10 +715,9 @@ local Layout = {}
 function Layout.encode(objects: { Types.PlacedObject }): string
 	local parts = table.create(#objects)
 	for i, o in objects do
-		local kind = if o.kind == "STN" then 1 else 0
-		local num = if kind == 1 then StationIndex.toIndex(o.ref) else tonumber(string.sub(o.ref, 5)) :: number
-		local rotLvl = o.rot + 4 * ((o.lvl or 1) - 1)
-		parts[i] = string.pack(FORMAT, kind, num, o.uid, o.x, o.z, rotLvl)
+		local num = tonumber(string.sub(o.ref, 5)) :: number   -- "FRN_901" -> 901
+		local rotLvl = o.rot + 4 * (o.lvl - 1)
+		parts[i] = string.pack(FORMAT, 0, num, o.uid, o.x, o.z, rotLvl)
 	end
 	return Base64.encode(table.concat(parts))
 end
@@ -725,12 +728,10 @@ function Layout.decode(packed: string): { Types.PlacedObject }
 	local out: { Types.PlacedObject } = table.create(#raw // RECORD)
 	for offset = 1, #raw, RECORD do
 		local kind, num, uid, x, z, rotLvl = string.unpack(FORMAT, raw, offset)
-		local isStation = kind == 1
+		assert(kind == 0, "layout: reserved record kind")
 		table.insert(out, {
-			uid = uid, kind = if isStation then "STN" else "FRN",
-			ref = if isStation then StationIndex.fromIndex(num) else string.format("FRN_%03d", num),
-			x = x, z = z, rot = rotLvl % 4,
-			lvl = if isStation then (rotLvl // 4) + 1 else nil,
+			uid = uid, ref = string.format("FRN_%03d", num),
+			x = x, z = z, rot = rotLvl % 4, lvl = (rotLvl // 4) + 1,
 		})
 	end
 	return out
@@ -806,10 +807,9 @@ local LIST: { Migration } = {
 					damaged[tostring(o.uid)] = math.clamp(o.dur, 0, 99)
 				end
 			end
-			d.layout = { packed = Layout.encode(objects), nextUid = d.restaurant.nextUid or 1,
-				upgrades = d.restaurant.upgrades or {} }
+			d.layout = { packed = Layout.encode(objects), nextUid = d.restaurant.nextUid or 1 }
 			d.durability = { damaged = damaged }
-			d.restaurant.layout, d.restaurant.nextUid, d.restaurant.upgrades = nil, nil, nil
+			d.restaurant.layout, d.restaurant.nextUid = nil, nil   -- restaurant.upgrades stays where it is
 			return d
 		end,
 	},

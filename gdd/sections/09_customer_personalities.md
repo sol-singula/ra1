@@ -186,7 +186,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Spending range:** 1 item → ref. spend 8–16 MB. **Tip behavior:** ×0.8, but ×2 if the item lands within 25 % of patience ("FAST! GOOD!").
 - **Unique animations:** constant `ANM_046` foot tap from the moment he sits; wrist-tapping (no watch); vibrating with impatience.
 - **Dialogue:** Ordering — "Burger. Fast. Faster than that. Why are you still listening? GO." · Delighted — "FAST! GOOD! MORE FAST NEXT TIME!" · Furious — "I've been waiting since I was BORN!"
-- **Special interactions:** *Line Cutter* — in the outside queue he jumps to the front; everyone he passes gains +5 anger on entry. *Speed reader* — orders without a menu phase if a ticket card is free.
+- **Special interactions:** *Line Cutter* — in the outside queue he jumps to the front (impossible once a `FRN_433` Bouncer Rope lines the queue, §15); everyone he passes gains +5 anger on entry. *Speed reader* — orders without a menu phase if a ticket card is free.
 - **Signature look:** `MUT_017` Lizard Head, `MUT_090` Fox Ears, `MUT_204` Roller Skates. **Tier band:** `TIER_01`+ (A 4 · B–E 7).
 
 #### PER_006 — The Sleepy Sloth-Rocket

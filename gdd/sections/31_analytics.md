@@ -209,3 +209,170 @@ end
 return Events
 ```
 
+### 31.10 Event Catalog
+
+Legend for the last column — **Onb N**: onboarding funnel step N; **FS N**: `mmr_first_session` funnel step N;
+**Fun `<name>` N**: recurring funnel step; **Custom** (fields CF01/CF02/CF03): `LogCustomEvent` (counts toward
+the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**: `LogEconomyEvent` by
+`EconomyService`; **Internal**: envelope only. Names already used by other sections are kept verbatim.
+
+#### 31.10.1 Onboarding, tutorial and first moments
+
+| Event | Trigger (server) | Properties | AnalyticsService call |
+|---|---|---|---|
+| `mmr_tutorial_step_01` … `mmr_tutorial_step_12` | completion of `QST_TUT_001` … `QST_TUT_012` (§32) | step, durationS, skipped, inputMode, step-specific field (§32) | **Onb 1–12** (CF01 `skipped`, CF02 input mode, CF03 per §32) |
+| `mmr_tutorial_assist` | a §32 tutorial assist fires | step, assist (`burn_recovery`, `auto_flip`, `assembly_ghost`, …) | Custom (CF01 assist, CF03 step) |
+| `mmr_tutorial_skip` | player confirms the skip | atStep | Custom (CF03 step) |
+| `mmr_tutorial_resume` | a session resumes an unfinished tutorial | atStep, hoursSinceLast | Custom (CF03 step) |
+| `mmr_tutorial_complete` | `QST_TUT_012` done (also `MLS_013`) | totalDurationS, skipped, assistsUsed | Custom (value = totalDurationS) + **FS 13** |
+| `mmr_onboarding_enter_restaurant` | first interior entry (`MLS_001`) | secondsSinceJoin | **FS 1** |
+| `mmr_first_order` | first order taken (`MLS_002`) | tier, secondsSinceInstall | **FS 2** |
+| `mmr_first_successful_meal` | first dish served with S ≥ 50 (`MLS_003`) | satisfaction band, quality grade | **FS 3** |
+| `mmr_first_tip` | first tip (`MLS_004`) | tipBand | **FS 4** |
+| `mmr_first_tantrum` | first customer reaches anger level 3 (`MLS_005`) | personalityId (scripted `PER_001` in tutorial) | **FS 5** |
+| `mmr_first_combat` | first damage dealt to a hostile customer (`MLS_006`) | abilityId | **FS 6** |
+| `mmr_first_calm_down` | first hostile customer reaches Apologizing (`MLS_007`) | method | **FS 7** |
+| `mmr_first_repair` | first object repaired (`MLS_008`) | objectRef | **FS 8** |
+| `mmr_first_ko` | first Seeing Stars (`MLS_009`) | killerStyle | **FS 9** |
+| `mmr_first_mutation` | first part equipped (`MLS_010`) | partId (`MUT_145` / `MUT_144` / `MUT_153`) | **FS 10** (CF01 part) |
+| `mmr_first_restaurant_upgrade` | first upgrade or furniture purchase (`MLS_011`) | itemRef | **FS 11** |
+| `mmr_first_employee_hire` | `EMP_001` hired (`MLS_012`) | — | **FS 12** |
+| `mmr_first_offline_collect` | first Welcome Back report collected (`MLS_017`) | hours, net, capped | Custom (value = net) |
+| `mmr_first_city_trip` | first district other than `DST_01` (`MLS_018`) | district, travelMode | Custom (CF01 district) |
+| `mmr_first` | any other once-only first (`mmr_first_level_up`, `mmr_first_stat_allocation`, `mmr_first_skill_node`, `mmr_first_capsule`, `mmr_first_lab_fusion`, `mmr_first_mutation_upgrade`, `mmr_first_synergy`, `mmr_first_perfect_dish`, `mmr_first_recipe_learned`, `mmr_first_station_upgrade`, `mmr_first_quest_complete`, `mmr_first_metro_ride`, `mmr_first_city_event`, `mmr_first_coop_visit`, `mmr_first_arena_match`) | which (the internal name), hoursSinceInstall | Custom grouped (CF01 which) — internal envelope keeps the specific name |
+
+#### 31.10.2 Sessions and retention
+
+| Event | Trigger (server) | Properties | AnalyticsService call |
+|---|---|---|---|
+| `mmr_session_start` | profile loaded (§28.14) | sessionIndex, daysSinceInstall, daysSinceLastSession, platform, deviceTier, offlineReportPending | Custom (value = daysSinceLastSession; CF01 platform, CF02 input mode) |
+| `mmr_join_ready` | `UI.Ready` received (§27.11) | loadMs, deviceTier | Custom (value = loadMs; CF01 device tier) |
+| `mmr_daily_return` | first session of a new UTC day for a returning player | dayIndex (days since install), streak | Custom (value = dayIndex) |
+| `mmr_return_visit` | first session on a second distinct UTC day — once (`MLS_031`) | daysSinceInstall | Custom |
+| `mmr_session_end` | `PlayerRemoving` / shutdown | durationS, activeS, endReason, ordersServed, perfectRate, avgSatisfaction, tantrums, brawls, kos, mbNet, partsGained | Custom (value = durationS; CF01 end reason, CF02 input mode, CF03 length band) |
+
+#### 31.10.3 Restaurant, customers and combat
+
+| Event | Trigger (server) | Properties | AnalyticsService call |
+|---|---|---|---|
+| `mmr_order_served` | ticket settled (`OrderService`) | recipeId, satisfaction, quality, waitPct, mods, tipBand | Internal (aggregated into `mmr_session_end`) |
+| `mmr_customer_walkby` | party leaves because the line is full (§8) | tier, queueLength | Internal |
+| `mmr_customer_poof` | E10 poof to a seat (§8) | tier, layoutHash | Custom (CF01 tier) — finds bad layouts |
+| `mmr_combat_encounter_start` | first hostile of an encounter (§11) | tier, trigger, hostiles | Internal |
+| `mmr_combat_encounter_end` | encounter resolved (§11) | durationS, hostiles, playerKos, calmedBy, durabilityLostPct | Custom (value = durationS; CF01 calmedBy, CF03 tier) |
+| `mmr_player_ko` | Seeing Stars (§11) | tier, killerStyle, hadSecurity | Custom (CF01 killer style, CF03 tier) |
+| `mmr_customer_calmed` | hostile reaches Apologizing (§11) | method, personalityId | Custom (CF01 method, CF02 personality) |
+| `mmr_ability_used` | ability activation accepted (10 % sampled, §11) | abilityId, context | Custom (CF01 ability, CF02 context) |
+| `mmr_prop_thrown` | prop thrown (10 % sampled, §11) | propClass, hitKind | Custom (CF01 prop class) |
+| `mmr_restaurant_tier_up` | tier upgrade completed (`MLS_046`+; §22 calls it `mmr_tier_upgraded`) | tier, activeHoursSinceInstall, level | **Prog `RestaurantTier`** (level = tier number) |
+| `mmr_station_upgraded` | station level purchased | stationRef, newLevel | Internal |
+| `mmr_employee_hired` | hire committed (`EmployeeService`) | archetype, rarity, role, cost | Custom (CF01 rarity, CF02 role) + **Fun `mmr_hire` 3** |
+| `mmr_unpaid_break` | wage tick uncovered (E8, §22) | staffCount, deficit | Custom (CF03 tier) |
+
+#### 31.10.4 Mutations and morph
+
+| Event | Trigger (server) | Properties | AnalyticsService call |
+|---|---|---|---|
+| `mmr_mutation_acquired` | part added to `mutations.owned` (new or duplicate) | partId, rarity, source (§C13.8 code), duplicate | Custom (CF01 source, CF02 rarity) |
+| `mmr_capsule_opened` | capsule result committed | rarity, pityCount, pityTriggered | **Fun `mmr_capsule` 3** (CF01 rarity, CF03 pity yes/no) |
+| `mmr_mutation_upgraded` | upgrade applied | partId, rarity, newLevel, usedDuplicate | Custom (CF01 rarity, CF03 level) |
+| `mmr_lab_fusion` | fusion applied | resultRarity, category | Custom (CF01 result rarity) |
+| `mmr_loadout_swap` | loadout swap completed (E4) | fromSlot, toSlot | Internal |
+| `mmr_morphdex_spotted` | new Morphdex cell spotted (§12b) | headFamily, domFamily | Internal |
+| `mmr_morphdex_worn` | new Morphdex cell worn (§12b) | headFamily, domFamily | Custom (CF01 head family) |
+| `mmr_signature_unlocked` | signature combination unlocked (§12b) | signatureKey | Custom (CF01 key) |
+
+#### 31.10.5 Offline earnings
+
+| Event | Trigger (server) | Properties | AnalyticsService call |
+|---|---|---|---|
+| `mmr_offline_report_shown` | Welcome Back screen opened with a pending report | hours, capHours, capped, customers, net, incidents, segments | **Fun `mmr_offline_collect` 1** (CF01 capped, CF03 hours band) |
+| `mmr_offline_collected` | Collect committed (key `offline:<reportId>`) | hours, net, delaySinceShownS, firstOfDay | Custom (value = net) + **Fun `mmr_offline_collect` 3** |
+| `mmr_welcome_back_crate` | E5 crate granted (absence ≥ 7 days) | daysAway | Custom (value = daysAway) |
+
+#### 31.10.6 Quests, progression and achievements
+
+| Event | Trigger (server) | Properties | AnalyticsService call |
+|---|---|---|---|
+| `mmr_quest_completed` | quest reaches `COMPLETE` | questId, type (TUT/STY/DLY/WKY/CHF/CBT/RPR/EXP/EMP/RST), durationS | Custom (CF01 type, CF02 quest ID) |
+| `mmr_quest_claimed` | quest reward claimed | questId, rewardMB, rewardMS, rewardRT | Internal (money also via Econ) |
+| `mmr_daily_set_complete` | all 3 dailies claimed in one UTC day | streak | Custom |
+| `mmr_story_chapter` | chapter opens / completes | chapter | **Prog `StoryChapter`** (Start / Complete) |
+| `mmr_level_up` | level gained (§14) | level, hoursActive | **Prog `PlayerLevel`** (§14) |
+| `mmr_level_band_reached` | milestone levels 5/10/12/15/20/25/30/40/50/60/75/90/100 (§36.17) | level | Custom (CF03 level) |
+| `mmr_stat_allocated` | stat point allocated (§14) | stat, newValue | Internal |
+| `mmr_skill_node_unlocked` | skill node rank committed (§14) | node, rank | Custom (CF01 node) |
+| `mmr_respec` | respec (§14) | kind, paid, cost, level | Custom (CF01 kind) |
+| `mmr_xp_session_summary` | session end (§14) | xpu by tag | Internal |
+| `mmr_xp_anomaly` | > 180 XPU in a rolling hour (§14) | rate, tag | Custom (ops) |
+| `mmr_achievement_unlocked` | achievement claimed (§36.16) | achievementId | Custom (CF01 ID) |
+| `mmr_milestone_reached` | milestone claimed (§36.17) | milestoneId | Custom (CF01 ID) |
+| `mmr_overtime_bar` | Overtime bar filled (`MLS_045`) | barIndex | Custom (value = barIndex) |
+| `mmr_journal_opened` | quest/achievement journal opened (§36.16) | tab | Internal |
+
+#### 31.10.7 City exploration, social and events
+
+| Event | Trigger (server) | Properties | AnalyticsService call |
+|---|---|---|---|
+| `mmr_city_district_enter` | player enters a district (§18) | district, firstVisit | Custom (CF01 district) |
+| `mmr_city_travel` | Metro / Pigeon Taxi / Return Door / walk arrival (§18) | mode, cost, from, to | Custom (CF01 mode) |
+| `mmr_city_secret_found` | secret discovered (§18) | secretKey, district | Custom (CF01 district) |
+| `mmr_city_event_join` | joins a city event (§18) | eventId | Custom (CF01 event ID) |
+| `mmr_city_event_result` | event result band (§18) | eventId, band, erm | Custom (CF01 event ID, CF03 band) |
+| `mmr_city_away_mode` | restaurant runs while the owner explores (§18) | staffed, minutes | Internal |
+| `mmr_building_enter` | building entered (§36.10) | buildingId | Internal |
+| `mmr_shop_purchase` | shop purchase committed (§36.10) | buildingId, item, currency, amount | **Fun `mmr_shop` 3** (CF01 building, CF02 currency) |
+| `mmr_coop_visit_end` | co-op visit settles (§21) | durationS, role (owner/guest), ordersHelped | Custom (value = durationS; CF01 role) |
+| `mmr_arena_match_end` | arena match ends (§21) | result, ratingDelta | Custom (CF01 result) |
+
+#### 31.10.8 Economy, monetization and operations
+
+| Event | Trigger (server) | Properties | AnalyticsService call |
+|---|---|---|---|
+| `mmr_currency_tx` | every committed transaction (§22) | reason, currency, delta, balance, sku | **Econ** (one `LogEconomyEvent` per currency moved) |
+| `mmr_wallet_snapshot` | first save of each UTC day (§22) | MB, MS, RT balances | Internal |
+| `mmr_economy_cap_hit` | grant clamped at a hard cap (§22) | currency | Custom (CF01 currency) |
+| `mmr_ms_softcap_hit` | repeatable MS soft cap reached (§22) | source | Custom (CF01 source) |
+| `mmr_purchase_failed_insufficient` | repeated failed purchases throttled (§22) | reason | Custom |
+| `mmr_cosmetic_purchase` | Robux cosmetic granted (§28.18) | skuCategory | Custom (CF01 category) — Robux revenue itself comes from Roblox's monetization dashboards |
+| `mmr_perf_sample` | every 300 s per client (§30.20) | fpsP50, fpsP5, memMb, kbpsIn, kbpsOut, qualityTier | Custom (value = fpsP50; CF01 device tier, CF02 platform, CF03 tier band) |
+| `mmr_service_error` | service error (§27) | service, phase | Custom (CF01 service) |
+| `mmr_security_flag` | §29.17 flag raised | code, sev | Custom (CF01 code, CF03 sev) |
+| `mmr_save_failed` | a save exhausted its retries (§28.16) | reason, attempt | Custom (CF01 reason) |
+| `mmr_safe_mode_entered` | Safe Mode (§28.16) | cause | Custom (CF01 cause) |
+| `mmr_profile_rollback` | automatic or support rollback (§28.20.4) | kind, ageH | Custom (CF01 kind) |
+| `mmr_lock_steal` | lock rule L3/L4 applied (§28.13) | rule | Internal |
+| `mmr_exp_exposure` | first exposure per session to an experiment (§31.16) | experiment, variant | Custom (CF01 `<experiment>:<variant>`) |
+| `mmr_anim_load_fail`, `mmr_audio_load_fail` | asset load failure (§26) | assetKind | Internal |
+| `mmr_ui_menu_blocked_combat` | menu blocked by E2 (§24) | screen | Internal |
+
+### 31.11 Funnels
+
+**Onboarding funnel** (the only one, §31.8): step N = completion of `QST_TUT_00N`/`QST_TUT_01N`, names
+`mmr_tutorial_step_01` … `_12`. Completion KPI = step 12 ÷ step 1 (§1.7 target ≥ 80 %).
+
+| Step | Quest | Step | Quest |
+|---|---|---|---|
+| 1 | `QST_TUT_001` Welcome to the Shack | 7 | `QST_TUT_007` Defend the Diner |
+| 2 | `QST_TUT_002` Your First Order | 8 | `QST_TUT_008` Fix It Up |
+| 3 | `QST_TUT_003` Burger 101 | 9 | `QST_TUT_009` Cash In |
+| 4 | `QST_TUT_004` Plate It, Serve It | 10 | `QST_TUT_010` Your First Mutation |
+| 5 | `QST_TUT_005` Happy Customer, Happy Wallet | 11 | `QST_TUT_011` Fancy Upgrades |
+| 6 | `QST_TUT_006` Uh-Oh, Karenosaurus | 12 | `QST_TUT_012` Hire Help |
+
+**First-session funnel** `mmr_first_session` (`LogFunnelStepEvent`, session id `"fs"`): steps 1–13 =
+`MLS_001` … `MLS_013` in ID order (table §31.10.1). Because players can reach some moments out of order (a KO
+before the first calm-down), dashboards read it as "% of new players who reached step N within 60 min", not as
+strict conversion.
+
+**Recurring funnels** (`LogFunnelStepEvent`, fresh `funnelSessionId` GUID per attempt):
+
+| Funnel | Step 1 | Step 2 | Step 3 | Key question |
+|---|---|---|---|---|
+| `mmr_shop` | shop opened (`BLD_01`, `BLD_03`, `BLD_12`, `BLD_13` …) | item inspected | purchase committed | which shops convert, which items stall at inspection |
+| `mmr_capsule` | capsule earned | reveal started | result shown (rarity, pity) | do players open capsules promptly; are odds observed as disclosed |
+| `mmr_hire` | Recruitment Office (`BLD_04`) opened | candidate inspected | hire committed | does hiring stall on price |
+| `mmr_offline_collect` | Welcome Back shown | Collect pressed | credited | collect rate (§1.7 target ≥ 95 %) |
+| `mmr_tier_upgrade` | upgrade panel opened with an affordable next tier | confirm pressed | upgrade committed | hesitation at expensive tiers |
+| `mmr_mutation_upgrade` | upgrade panel opened | confirm pressed | upgrade applied | MS/RT bottlenecks |
+
