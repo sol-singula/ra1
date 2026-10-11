@@ -1,26 +1,25 @@
 # MYSTERY MORPH RESTAURANT — DESIGN CANON (Single Source of Truth)
 
-> **Every contributor must read this file in full before writing.** It fixes identifiers, master
-> content lists, global constants, and core formulas so that all 40 sections of
-> `MYSTERY_MORPH_RESTAURANT_GDD.md` agree. If your section needs a value defined here, **use this
-> value**. If you need something not defined here and it belongs to *your* domain, define it in your
-> own section. Never invent an ID in another contributor's domain (see §C1 ownership).
+> This canon fixes the identifiers, master content lists, global constants, core formulas and edge-case
+> rulings that all 40 sections of `MYSTERY_MORPH_RESTAURANT_GDD.md` share. Sections elaborate these values but
+> never contradict them; where a section needs something not defined here, it defines it within its own domain
+> (§C2 lists which section defines each identifier family).
 >
-> Values marked **[TUNABLE]** are balancing assumptions: you must keep them as stated (so systems
-> agree) but you may describe how they would be tuned.
+> Values marked **[TUNABLE]** are balancing assumptions: implement them exactly as stated (other systems depend
+> on them) and expose them in configuration so they can be tuned with telemetry (§39).
 
 ---
 
-## C0. Contributor Rules (Style & Format Contract)
+## C0. Authoring Rules (Style & Format Contract)
 
-1. **Headings.** Your file's first line is the section heading exactly as allocated in §C1, as an H2:
+1. **Headings.** Each section file's first line is the section heading exactly as allocated in §C1, as an H2:
    `## 5. Cooking Mechanics`. Subsections are H3 `### 5.1 Title`, then H4/H5 freely. Never emit an H1.
    Files that contribute subsections to another file's section (e.g. `06b_...`, `12b_...`, `36_xx_...`)
    start with their allocated H3 heading instead of an H2.
 2. **Template for every major system** (use these labelled sub-blocks, in this order, wherever a system
    is specified): **Purpose · Rules & Mechanics · Variables (with [TUNABLE] values) · UI · Progression ·
    Player Interactions · Dependencies · Roblox Implementation · Edge Cases · Acceptance Criteria.**
-3. **Acceptance criteria** are measurable and IDed `AC-<SS>-<NN>` where `SS` is your two-digit section
+3. **Acceptance criteria** are measurable and IDed `AC-<SS>-<NN>` where `SS` is the two-digit section
    number, e.g. `AC-05-07: A Perfect grill window is ≥ 1.5 s at station Lv1 and is shown with a green band
    plus a ✓ icon.`
 4. **Tables** for all databases. The **first column of every database table is the ID** (in backticks is
@@ -35,86 +34,86 @@
    rules/numbers. Kid-safe (ages 8–16): **no gore, no blood, no realistic weapons, no death** — defeat is
    "Seeing Stars"/"Dizzy", damage shows as cartoon stars, feathers, sauce splats, confetti, soot puffs.
    No real brands, no copyrighted characters, no real people. No mean-spirited humor about real groups.
-8. **Cross references:** refer to other sections as `§N` (section number only) — you cannot know other
-   contributors' subsection numbers, except the fixed allocations in §C1.2 (e.g. `§36.6` Ability Database).
+8. **Cross references:** refer to other sections as `§N`; subsection anchors (`§N.M`) are stable for the fixed
+   allocations in §C1.2 (e.g. `§36.6` Ability Database) and within a section.
 9. **Numbers:** use the canon economy (§C4). **Rounding:** currency costs/prices round half-up to whole MB (MS/RT likewise); stat budgets round to the nearest whole point and are distributed across stats by largest remainder; simulations keep fractions internally and round only for display/payout. Use thousands separators (12,500). Currency abbreviations:
    **MB** (Morph Bucks), **MS** (Mutation Shards), **RT** (Research Tokens). Time in seconds `s`,
    minutes `min`, hours `h`. Distances in Roblox studs.
-10. **Do not silently omit.** If a list requires N items, deliver ≥ N complete rows. If you run long,
-    write your file in several appends — never truncate a table.
-11. **Write only your own files** (listed in §C1). Do not edit other files, do not `git commit`/`push`.
+10. **Do not silently omit.** If a list requires N items, it has ≥ N complete rows; tables are never truncated.
+11. **Sources, not output.** Edit section sources (`gdd/sections/`) and data (`gdd/data/`), never the assembled
+    document; `python3 gdd/tools/build_gdd.py --render` regenerates it and re-validates every cross-reference.
 12. **Data-backed tables are encouraged.** For large databases with computed columns, author data in
     `gdd/data/<domain>.json` and a renderer `gdd/tools/render_<domain>.py` (Python 3 stdlib only) that
-    writes your markdown file(s). The renderer must be idempotent and runnable as
+    writes the section's markdown file(s). The renderer must be idempotent and runnable as
     `python3 gdd/tools/render_<domain>.py` from the repo root.
 
 ---
 
-## C1. Document Structure & Ownership
+## C1. Document Structure
 
 ### C1.1 Section files (assembled in filename order into the final GDD)
 
-| File (in `gdd/sections/`) | Heading | Owner |
+| File (in `gdd/sections/`) | Heading | Discipline |
 |---|---|---|
-| `00_front_matter.md` | Title, conventions, manifest, TOC (generated) | Integrator |
-| `01_executive_summary.md` | `## 1. Executive Summary` | A1 Vision |
-| `02_game_vision.md` | `## 2. Game Vision` | A1 Vision |
-| `03_design_pillars.md` | `## 3. Design Pillars` | A1 Vision |
-| `04_core_gameplay_loops.md` | `## 4. Core Gameplay Loops` | A1 Vision |
-| `05_cooking_mechanics.md` | `## 5. Cooking Mechanics` | A2 Cooking |
-| `06_recipe_database.md` | `## 6. Recipe Database` (subsections 6.1–6.17) | A3 Recipes |
-| `06b_order_modifications.md` | `### 6.18 Ridiculous Order Modifications` | A2 Cooking |
-| `07_ingredient_database.md` | `## 7. Ingredient Database` | A3 Recipes |
-| `08_customer_ai.md` | `## 8. Customer AI` | A5 Customers |
-| `09_customer_personalities.md` | `## 9. Customer Personalities` | A5 Customers |
-| `10_satisfaction_tantrum.md` | `## 10. Satisfaction and Tantrum Systems` | A5 Customers |
-| `11_combat_system.md` | `## 11. Combat System` | A6 Combat |
-| `12_mutation_system.md` | `## 12. Mutation System` (subsections 12.1–12.8) | A7 Mutations |
-| `12b_combinations_synergies.md` | `### 12.9 Morph Combinations` and `### 12.10 Mutation Synergy Rules` | A8 Morph UI |
-| `13_morph_customization.md` | `## 13. Morph Customization` | A8 Morph UI |
-| `14_player_progression.md` | `## 14. Player Progression` | A9 Progression |
-| `15_restaurant_building.md` | `## 15. Restaurant Building` | A10 Restaurant |
-| `16_employee_management.md` | `## 16. Employee Management` | A11 Employees |
-| `17_offline_simulation.md` | `## 17. Offline Restaurant Simulation` | A11 Employees |
-| `18_morph_city.md` | `## 18. Morph City` | A12 City |
-| `19_city_npcs.md` | `## 19. City NPCs` | A13 NPCs & Quests |
-| `20_quests.md` | `## 20. Quests` | A13 NPCs & Quests |
-| `21_multiplayer.md` | `## 21. Multiplayer` | A14 Social & Economy |
-| `22_economy.md` | `## 22. Economy` | A14 Social & Economy |
-| `23_monetization.md` | `## 23. Monetization` | A14 Social & Economy |
-| `24_ui_ux.md` | `## 24. UI/UX` | A15 UI |
-| `25_art_direction.md` | `## 25. Art Direction` | A16 Art & Audio |
-| `26_animation_audio.md` | `## 26. Animation and Audio` | A16 Art & Audio |
-| `27_roblox_architecture.md` | `## 27. Roblox Architecture` | A17 Architecture |
-| `28_data_persistence.md` | `## 28. Data Persistence` | A18 Data & Ops |
-| `29_security_anti_exploit.md` | `## 29. Security and Anti-Exploit` | A18 Data & Ops |
-| `30_performance_optimization.md` | `## 30. Performance Optimization` | A18 Data & Ops |
-| `31_analytics.md` | `## 31. Analytics` | A18 Data & Ops |
-| `32_tutorial.md` | `## 32. Tutorial` | A1 Vision |
-| `33_content_expansion.md` | `## 33. Content Expansion` | A1 Vision |
-| `34_development_roadmap.md` | `## 34. Development Roadmap` | A19 Production |
-| `35_testing_qa.md` | `## 35. Testing and QA` | A19 Production |
-| `36_00_index.md` | `## 36. Content Database Appendices` + `### 36.1` | Integrator |
-| `36_02_recipe_quick_reference.md` | `### 36.2 Recipe Quick Reference` | A3 Recipes |
-| `36_03_mutation_parts.md` | `### 36.3 Mutation Parts Database` | A7 Mutations |
-| `36_04_mutation_synergies.md` | `### 36.4 Mutation Synergies Database` | A8 Morph UI |
-| `36_05_morph_combinations.md` | `### 36.5 Morph Combination Examples` | A8 Morph UI |
-| `36_06_abilities.md` | `### 36.6 Ability Database` | A6 Combat |
-| `36_07_status_effects.md` | `### 36.7 Status Effects Database` | A6 Combat |
-| `36_08_employee_archetypes.md` | `### 36.8 Employee Archetypes Database` | A11 Employees |
-| `36_09_offline_incidents.md` | `### 36.9 Offline Incidents Database` | A11 Employees |
-| `36_10_city_buildings.md` | `### 36.10 City Buildings Database` | A12 City |
-| `36_11_city_events.md` | `### 36.11 City Events Database` | A12 City |
-| `36_12_restaurant_tiers_upgrades.md` | `### 36.12 Restaurant Tiers and Upgrades Database` | A10 Restaurant |
-| `36_13_furniture_catalog.md` | `### 36.13 Furniture and Equipment Catalog` | A10 Restaurant |
-| `36_14_animation_library.md` | `### 36.14 Animation Library` | A16 Art & Audio |
-| `36_15_sound_library.md` | `### 36.15 Sound Library` | A16 Art & Audio |
-| `36_16_achievements.md` | `### 36.16 Achievements Database` | A9 Progression |
-| `36_17_milestones.md` | `### 36.17 Progression Milestones Database` | A9 Progression |
-| `37_implementation_checklists.md` | `## 37. Implementation Checklists` | A19 Production |
-| `38_open_design_decisions.md` | `## 38. Open Design Decisions` | A19 Production |
-| `39_balancing_assumptions.md` | `## 39. Balancing Assumptions` | A19 Production |
-| `40_definition_of_done.md` | `## 40. Definition of Done` | A19 Production |
+| `00_front_matter.md` | Title, conventions, manifest, TOC (generated) | Integration |
+| `01_executive_summary.md` | `## 1. Executive Summary` | Vision & Onboarding |
+| `02_game_vision.md` | `## 2. Game Vision` | Vision & Onboarding |
+| `03_design_pillars.md` | `## 3. Design Pillars` | Vision & Onboarding |
+| `04_core_gameplay_loops.md` | `## 4. Core Gameplay Loops` | Vision & Onboarding |
+| `05_cooking_mechanics.md` | `## 5. Cooking Mechanics` | Cooking Systems |
+| `06_recipe_database.md` | `## 6. Recipe Database` (subsections 6.1–6.17) | Food Content |
+| `06b_order_modifications.md` | `### 6.18 Ridiculous Order Modifications` | Cooking Systems |
+| `07_ingredient_database.md` | `## 7. Ingredient Database` | Food Content |
+| `08_customer_ai.md` | `## 8. Customer AI` | Customer AI |
+| `09_customer_personalities.md` | `## 9. Customer Personalities` | Customer AI |
+| `10_satisfaction_tantrum.md` | `## 10. Satisfaction and Tantrum Systems` | Customer AI |
+| `11_combat_system.md` | `## 11. Combat System` | Combat |
+| `12_mutation_system.md` | `## 12. Mutation System` (subsections 12.1–12.8) | Mutation Systems |
+| `12b_combinations_synergies.md` | `### 12.9 Morph Combinations` and `### 12.10 Mutation Synergy Rules` | Morph UX |
+| `13_morph_customization.md` | `## 13. Morph Customization` | Morph UX |
+| `14_player_progression.md` | `## 14. Player Progression` | Progression |
+| `15_restaurant_building.md` | `## 15. Restaurant Building` | Restaurant Building |
+| `16_employee_management.md` | `## 16. Employee Management` | Employees & Offline |
+| `17_offline_simulation.md` | `## 17. Offline Restaurant Simulation` | Employees & Offline |
+| `18_morph_city.md` | `## 18. Morph City` | World & Events |
+| `19_city_npcs.md` | `## 19. City NPCs` | Narrative & Quests |
+| `20_quests.md` | `## 20. Quests` | Narrative & Quests |
+| `21_multiplayer.md` | `## 21. Multiplayer` | Economy & Social |
+| `22_economy.md` | `## 22. Economy` | Economy & Social |
+| `23_monetization.md` | `## 23. Monetization` | Economy & Social |
+| `24_ui_ux.md` | `## 24. UI/UX` | UI/UX |
+| `25_art_direction.md` | `## 25. Art Direction` | Art & Audio |
+| `26_animation_audio.md` | `## 26. Animation and Audio` | Art & Audio |
+| `27_roblox_architecture.md` | `## 27. Roblox Architecture` | Architecture |
+| `28_data_persistence.md` | `## 28. Data Persistence` | Data & Ops |
+| `29_security_anti_exploit.md` | `## 29. Security and Anti-Exploit` | Data & Ops |
+| `30_performance_optimization.md` | `## 30. Performance Optimization` | Data & Ops |
+| `31_analytics.md` | `## 31. Analytics` | Data & Ops |
+| `32_tutorial.md` | `## 32. Tutorial` | Vision & Onboarding |
+| `33_content_expansion.md` | `## 33. Content Expansion` | Vision & Onboarding |
+| `34_development_roadmap.md` | `## 34. Development Roadmap` | Production |
+| `35_testing_qa.md` | `## 35. Testing and QA` | Production |
+| `36_00_index.md` | `## 36. Content Database Appendices` + `### 36.1` | Integration |
+| `36_02_recipe_quick_reference.md` | `### 36.2 Recipe Quick Reference` | Food Content |
+| `36_03_mutation_parts.md` | `### 36.3 Mutation Parts Database` | Mutation Systems |
+| `36_04_mutation_synergies.md` | `### 36.4 Mutation Synergies Database` | Morph UX |
+| `36_05_morph_combinations.md` | `### 36.5 Morph Combination Examples` | Morph UX |
+| `36_06_abilities.md` | `### 36.6 Ability Database` | Combat |
+| `36_07_status_effects.md` | `### 36.7 Status Effects Database` | Combat |
+| `36_08_employee_archetypes.md` | `### 36.8 Employee Archetypes Database` | Employees & Offline |
+| `36_09_offline_incidents.md` | `### 36.9 Offline Incidents Database` | Employees & Offline |
+| `36_10_city_buildings.md` | `### 36.10 City Buildings Database` | World & Events |
+| `36_11_city_events.md` | `### 36.11 City Events Database` | World & Events |
+| `36_12_restaurant_tiers_upgrades.md` | `### 36.12 Restaurant Tiers and Upgrades Database` | Restaurant Building |
+| `36_13_furniture_catalog.md` | `### 36.13 Furniture and Equipment Catalog` | Restaurant Building |
+| `36_14_animation_library.md` | `### 36.14 Animation Library` | Art & Audio |
+| `36_15_sound_library.md` | `### 36.15 Sound Library` | Art & Audio |
+| `36_16_achievements.md` | `### 36.16 Achievements Database` | Progression |
+| `36_17_milestones.md` | `### 36.17 Progression Milestones Database` | Progression |
+| `37_implementation_checklists.md` | `## 37. Implementation Checklists` | Production |
+| `38_open_design_decisions.md` | `## 38. Open Design Decisions` | Production |
+| `39_balancing_assumptions.md` | `## 39. Balancing Assumptions` | Production |
+| `40_definition_of_done.md` | `## 40. Definition of Done` | Production |
 
 Where a Part-27 section *is* a database, the database lives in that section: Recipes §6,
 Ingredients §7, Personalities §9, NPCs §19, Quests §20. All other databases live in §36.
@@ -127,17 +126,17 @@ Ingredients §7, Personalities §9, NPCs §19, Quests §20. All other databases 
 §36.16 Achievements · §36.17 Milestones.
 
 ### C1.3 Required Mermaid diagrams (key → owner)
-| Key | Section | Owner |
+| Key | Section |
 |---|---|---|
-| `core-gameplay-loop` | §4 | A1 |
-| `cooking-workflow` | §5 | A2 |
-| `customer-state-machine` | §8 | A5 |
-| `combat-state-machine` | §11 | A6 |
-| `player-progression` | §14 | A9 |
-| `employee-management` | §16 | A11 |
-| `offline-earnings` | §17 | A11 |
-| `service-architecture` | §27 | A17 |
-| `data-persistence-flow` | §28 | A18 |
+| `core-gameplay-loop` | §4 |
+| `cooking-workflow` | §5 |
+| `customer-state-machine` | §8 |
+| `combat-state-machine` | §11 |
+| `player-progression` | §14 |
+| `employee-management` | §16 |
+| `offline-earnings` | §17 |
+| `service-architecture` | §27 |
+| `data-persistence-flow` | §28 |
 
 Additional diagrams are welcome (give them any other key).
 
@@ -147,35 +146,35 @@ Additional diagrams are welcome (give them any other key).
 
 All IDs are UPPER_SNAKE, ASCII, stable forever (never re-used; deprecated IDs stay reserved).
 
-| Prefix / Pattern | Entity | Owner (defines rows) | Example |
+| Prefix / Pattern | Entity | Defined in | Example |
 |---|---|---|---|
-| `RCP_<CAT>_<NNN>` | Recipe | A3 (names fixed in §C10) | `RCP_BRG_001` |
-| `ING_<NAME>` | Ingredient | A3 (core set fixed in §C9) | `ING_BEEF_PATTY` |
-| `MOD_<NNN>` | Order modification | A2 | `MOD_017` |
-| `STN_<NAME>` | Kitchen station type | Canon §C7 (detailed by A2) | `STN_GRILL` |
-| `PER_<NNN>` | Customer personality | Canon §C11 names; A5 details | `PER_001` |
-| `ABL_<NNN>` | Ability (combat & utility) | Canon §C12 names; A6 details | `ABL_018` |
-| `STS_<NAME>` | Status effect | Canon §C12 names; A6 details | `STS_DIZZY` |
-| `MUT_<NNN>` | Mutation part | Canon §C13 names; A7 details | `MUT_216` |
-| `SYN_<NNN>` | Mutation synergy | A8 | `SYN_001` |
-| `CMB_<NNN>` | Example morph combination | A8 | `CMB_001` |
-| `SKL_<TREE>_<NN>` | Skill node; TREE ∈ CHEF, CMBT, RPR, SVC, MGMT | A9 | `SKL_CHEF_07` |
-| `ACH_<NNN>` | Achievement | A9 | `ACH_001` |
-| `MLS_<NNN>` | Progression milestone | A9 | `MLS_001` |
-| `TIER_<NN>` | Restaurant tier 01–10 | Canon §C6; A10 details | `TIER_03` |
-| `FRN_<NNN>` | Furniture / decor / appliance item | A10 (trophies fixed §C16.6) | `FRN_042` |
-| `UPG_<NNN>` | Restaurant upgrade (non-furniture) | A10 | `UPG_012` |
+| `RCP_<CAT>_<NNN>` | Recipe | §6 (names fixed in §C10) | `RCP_BRG_001` |
+| `ING_<NAME>` | Ingredient | §7 (core set fixed in §C9) | `ING_BEEF_PATTY` |
+| `MOD_<NNN>` | Order modification | §5 | `MOD_017` |
+| `STN_<NAME>` | Kitchen station type | Canon §C7 (detailed by §5) | `STN_GRILL` |
+| `PER_<NNN>` | Customer personality | Canon §C11 names; §8–§10 details | `PER_001` |
+| `ABL_<NNN>` | Ability (combat & utility) | Canon §C12 names; §11 details | `ABL_018` |
+| `STS_<NAME>` | Status effect | Canon §C12 names; §11 details | `STS_DIZZY` |
+| `MUT_<NNN>` | Mutation part | Canon §C13 names; §12 details | `MUT_216` |
+| `SYN_<NNN>` | Mutation synergy | §12.9–§13 | `SYN_001` |
+| `CMB_<NNN>` | Example morph combination | §12.9–§13 | `CMB_001` |
+| `SKL_<TREE>_<NN>` | Skill node; TREE ∈ CHEF, CMBT, RPR, SVC, MGMT | §14 | `SKL_CHEF_07` |
+| `ACH_<NNN>` | Achievement | §14 | `ACH_001` |
+| `MLS_<NNN>` | Progression milestone | §14 | `MLS_001` |
+| `TIER_<NN>` | Restaurant tier 01–10 | Canon §C6; §15 details | `TIER_03` |
+| `FRN_<NNN>` | Furniture / decor / appliance item | §15 (trophies fixed §C16.6) | `FRN_042` |
+| `UPG_<NNN>` | Restaurant upgrade (non-furniture) | §15 | `UPG_012` |
 | `ROLE_<NAME>` | Employee role | Canon §C14 | `ROLE_CHEF` |
-| `EMP_<NNN>` | Employee archetype | A11 (EMP_001 fixed) | `EMP_001` |
-| `INC_<NNN>` | Offline incident | A11 | `INC_001` |
+| `EMP_<NNN>` | Employee archetype | §16–§17 (EMP_001 fixed) | `EMP_001` |
+| `INC_<NNN>` | Offline incident | §16–§17 | `INC_001` |
 | `DST_<NN>` | City district | Canon §C16 | `DST_01` |
-| `BLD_<NN>` | City building | Canon §C16; A12 details | `BLD_09` |
-| `NPC_<NNN>` | Named NPC | Canon NPC_001–030; A13 adds 031+ | `NPC_016` |
-| `QST_<TYPE>_<NNN>` | Quest; TYPE ∈ TUT, STY, DLY, WKY, CHF, CBT, RPR, EXP, EMP, RST | A13 (TUT IDs fixed §C17) | `QST_TUT_003` |
-| `EVT_<NNN>` | City event | Canon §C16.5; A12 details | `EVT_007` |
-| `ANM_<NNN>` | Animation | A16 (core set fixed §C21) | `ANM_010` |
-| `CSEC_<NN>` / `CPROP_<NN>` / `CPIX_<NN>` | City secret / interactive prop / dead pixel | A12 | `CSEC_01` |
-| `SFX_<NNN>` / `MUS_<NNN>` | Sound effect / music track | A16 | `SFX_101` |
+| `BLD_<NN>` | City building | Canon §C16; §18 details | `BLD_09` |
+| `NPC_<NNN>` | Named NPC | Canon NPC_001–030; §19 adds 031+ | `NPC_016` |
+| `QST_<TYPE>_<NNN>` | Quest; TYPE ∈ TUT, STY, DLY, WKY, CHF, CBT, RPR, EXP, EMP, RST | §20 (TUT IDs fixed §C17) | `QST_TUT_003` |
+| `EVT_<NNN>` | City event | Canon §C16.5; §18 details | `EVT_007` |
+| `ANM_<NNN>` | Animation | §25–§26 (core set fixed §C21) | `ANM_010` |
+| `CSEC_<NN>` / `CPROP_<NN>` / `CPIX_<NN>` | City secret / interactive prop / dead pixel | §18 | `CSEC_01` |
+| `SFX_<NNN>` / `MUS_<NNN>` | Sound effect / music track | §25–§26 | `SFX_101` |
 
 Non-database names: Roblox services use PascalCase (`CookingService`); remotes use
 `<Domain>.<Action>` (e.g. `Cooking.InteractStation`); analytics events use `snake_case` prefixed `mmr_`.
@@ -351,7 +350,7 @@ Player HP = `100 + 2 × (Level − 1) + mutation HP bonuses`.
 - **Service style:** TIER_01–02 are *counter service* (food handed over the serving window/counter;
   customers sit at nearby seats); TIER_03+ are *table service*.
 - **Demand:** online customers/h = `BaseDemand × RepMult × DecorMult × EventMult`; offline uses ×0.6 (§C15).
-- **Damage states** (all destructible furniture & appliances; A10 owns details): **Pristine** (durability
+- **Damage states** (all destructible furniture & appliances; §15 owns details): **Pristine** (durability
   100–76 %), **Scuffed** (75–51 %), **Cracked** (50–26 %), **Broken** (25–1 %: seats/appliances unusable),
   **Destroyed** (0 %: becomes a cartoon rubble pile; auto-rebuild offered for ≤ 25 % of item price — objects are
   **never permanently lost**).
@@ -359,7 +358,7 @@ Player HP = `100 + 2 × (Level − 1) + mutation HP bonuses`.
 
 ---
 
-## C7. Kitchen Stations (fixed list; A2 specifies every field)
+## C7. Kitchen Stations (fixed list; §5 specifies every field)
 
 | ID | Name | Kind | Slots (items processed at once, Lv1) | Starting kit at TIER_01? |
 |---|---|---|---|---|
@@ -441,7 +440,7 @@ tentacle, eyeball, slime, bug, alien, mutagen, glowing, legendary, gold, plant, 
 (All "gross" ingredients are kid-friendly versions: eyeballs are gummy/jelly, tentacles are squishy
 calamari-style, bugs are crunchy candy-like "Bug Crunch", slime is fruit jelly.)
 
-**Guaranteed core ingredient IDs** (A3 must define all of these; others may reference them):
+**Guaranteed core ingredient IDs** (§7 defines all of these; others may reference them):
 `ING_BUN, ING_BEEF_PATTY, ING_CHEESE, ING_LETTUCE, ING_TOMATO, ING_ONION, ING_PICKLE, ING_BACON, ING_KETCHUP,
 ING_MUSTARD, ING_POTATO, ING_DOUGH, ING_TOMATO_SAUCE, ING_MOZZARELLA, ING_PEPPERONI, ING_PINEAPPLE,
 ING_TORTILLA, ING_BEANS, ING_RICE, ING_BREAD_SLICE, ING_HAM, ING_PASTA, ING_EGG, ING_MILK, ING_FLOUR,
@@ -629,7 +628,7 @@ Alien Cuisine course (story chapter 5), MUT requires `STN_INFUSER`, LEG requires
 
 ## C11. Customers: Personalities, Satisfaction, Payment, Anger
 
-### C11.1 Personality master list (A5 defines every field; others may reference)
+### C11.1 Personality master list (§8–§10 defines every field; others may reference)
 | ID | Name |
 |---|---|
 | `PER_001` | The Karenosaurus |
@@ -666,13 +665,13 @@ Alien Cuisine course (story chapter 5), MUT requires `STN_INFUSER`, LEG requires
 | `PER_032` | The Mystery Mutant |
 
 Customer *appearance* is procedurally assembled from mutation parts (§12) — personalities define behavior,
-not a fixed body (except signature looks noted by A5, e.g. the Bodybuilder Pigeon always has a pigeon head).
+not a fixed body (except signature looks noted by §8–§10, e.g. the Bodybuilder Pigeon always has a pigeon head).
 
 ### C11.2 Patience [TUNABLE]
 `Patience (s) = (70 + 20 × (items − 1) + 5 × ΣDifficulty) × PersonalityPatienceMult × (1 + 0.004 × CHARM)`.
 Ordering phase: a seated customer waits up to 30 s × PersonalityPatienceMult for the order to be taken.
 
-### C11.3 Satisfaction formula (exact; A5 elaborates)
+### C11.3 Satisfaction formula (exact; §8–§10 elaborates)
 ```
 S_base = 100 × (0.25·A + 0.20·Q + 0.15·C + 0.20·W + 0.10·K + 0.10·M)
   A = order accuracy (0–1): correct dish & every requested modification (§6.18) satisfied
@@ -696,7 +695,7 @@ Unhappy 30–49 · Furious < 30.**
   (1 ★ ×0.75 … 5 ★ ×1.75). Storm-outs apply an extra −0.03 ★. Offline uses the same Stars.
 - **DecorMult** = `0.9 + 0.003 × Atmosphere` (Atmosphere 0–100 → ×0.9–×1.2).
 
-### C11.5 Anger levels (A5 designs escalation; A6 designs fights)
+### C11.5 Anger levels (§8–§10 designs escalation; §11 designs fights)
 Anger meter 0–100 per customer. **0 Happy** (0–14) · **1 Annoyed** (15–29) · **2 Complaining** (30–44) ·
 **3 Throwing food** (45–59) · **4 Destroying furniture** (60–74) · **5 Fighting the player** (75–89) ·
 **6 Restaurant-wide chaos** (90–100; requires ≥ 3 customers at level ≥ 3 simultaneously, or an event).
@@ -706,7 +705,7 @@ customer attacks. Being hit by thrown food: +25 anger × personality sensitivity
 **De-escalation:** `ABL_006` Calm Down!, a free dessert/drink ("Peace Offering"), Chill Aura effects, a
 Security Guard employee, or finishing their order Perfect while they're at level ≤ 2.
 
-### C11.6 NPC combat styles (A5 assigns one per personality; A6 defines the AI for each)
+### C11.6 NPC combat styles (§8–§10 assigns one per personality; §11 defines the AI for each)
 | Style | Behavior summary |
 |---|---|
 | `PACIFIST` | never attacks; at levels 3–5 sulks, cries dramatically, or storms out |
@@ -736,7 +735,7 @@ A customer may use the **active ability of one of its own visible mutation parts
 - Max 4 equipped active mutation abilities on the ability bar (+ fixed basic kit). Abilities come from
   equipped parts only.
 
-### C12.2 Ability master list (A6 specifies cooldown, damage, range, animation, effects, balance, counters)
+### C12.2 Ability master list (§11 specifies cooldown, damage, range, animation, effects, balance, counters)
 `ABL_001`–`ABL_008` are the base kit; `ABL_009`–`ABL_060` are mutation combat abilities;
 `ABL_061`–`ABL_070` are mutation utility abilities. Source parts are fixed in §C13.6.
 
@@ -813,7 +812,7 @@ A customer may use the **active ability of one of its own visible mutation parts
 | `ABL_069` | Hover Serve | utility (fly over tables while carrying) |
 | `ABL_070` | Eagle Eye | utility (show all patience/anger meters) |
 
-### C12.3 Status effects (A6 defines duration, magnitude, stacking, visuals, cleanse)
+### C12.3 Status effects (§11 defines duration, magnitude, stacking, visuals, cleanse)
 `STS_STUN, STS_DIZZY, STS_KNOCKDOWN, STS_SLOW, STS_STICKY, STS_SHOCKED, STS_TOASTY, STS_FROZEN, STS_SOAKED,
 STS_CONFUSED, STS_STINKY, STS_CHARMED, STS_SLEEPY, STS_FLOATING, STS_WOOZY, STS_BLINDED, STS_GREASY,
 STS_INSPIRED, STS_HYPED, STS_SHIELDED`.
@@ -875,7 +874,7 @@ The plain starter parts (`MUT_117`, `MUT_139`, `MUT_179`) are **neutral**: they 
 morph naming (§12.9–§12.10), so every new player does not start with charm synergies.
 
 ### C13.6 Mutation master list (280 parts — ID, name, slot, category, rarity, family, tags, active ability are fixed)
-A7 adds: unlock requirement, acquisition, visual description, model & animation requirements, stat
+§36.3 adds: unlock requirement, acquisition, visual description, model & animation requirements, stat
 distribution (cook / combat / repair / movement bonuses expressed as §C5 stats), passive, upgrade levels,
 balance limits.
 
@@ -1193,7 +1192,7 @@ attribute that sets `Humanoid.HipHeight`; NECK parts carry `NeckLength` that off
 Part budgets: player morph ≤ 40 MeshParts and ≤ 15,000 triangles total; customer/employee visuals ≤ 24
 MeshParts and ≤ 6,000 triangles (LOD swap beyond 60 studs to a 1,500-triangle impostor).
 
-### C13.8 Secret mutation discovery conditions (fixed; A7 lists them, A12 places the secrets in the city)
+### C13.8 Secret mutation discovery conditions (fixed; listed in §36.3, placed in the city by §18)
 | Part | Discovery condition |
 |---|---|
 | `MUT_040` Glitch Head | During `EVT_009` Blackout Night, interact with the flickering "ERROR" billboard in `DST_03` three times. |
@@ -1207,7 +1206,7 @@ MeshParts and ≤ 6,000 triangles (LOD swap beyond 60 studs to a 1,500-triangle 
 **Tutorial first mutation** (QST_TUT_010): choose one of `MUT_145` Octopus Arm (Chef), `MUT_144` Crab Claw
 Arm (Fighter), `MUT_153` Wrench Claw Arm (Repair) — granted free at Lv1 regardless of rarity requirement.
 
-**Acquisition method codes** (A7 uses these): `SHOP_MART`, `SHOP_ROTATION` (Mystery Market), `LAB_FUSION`,
+**Acquisition method codes** (used in §36.3): `SHOP_MART`, `SHOP_ROTATION` (Mystery Market), `LAB_FUSION`,
 `CAPSULE` (earnable Morph Capsule), `QUEST`, `EVENT`, `ARENA`, `OFFLINE_FIND`, `ACHIEVEMENT`, `SECRET`,
 `STARTER`.
 
@@ -1219,7 +1218,7 @@ all `STARTER` acquisition.
 
 ## C14. Employees
 
-### C14.1 Roles (fixed; A11 defines responsibilities)
+### C14.1 Roles (fixed; §16–§17 defines responsibilities)
 | ID | Role | Online behavior summary | Offline contribution |
 |---|---|---|---|
 | `ROLE_CHEF` | Chef | cooks full recipes at assigned stations | kitchen capacity (required for offline) |
@@ -1254,13 +1253,13 @@ In formulas that multiply by an efficiency (e.g. `Eff_chef` in §C15), use the n
 ### C14.4 Fixed archetypes
 `EMP_001` = **"Ollie" the Octopus Intern** — ROLE_CHEF, Common, hire cost 0 (tutorial gift via QST_TUT_012),
 wage 12 MB/h, Cooking 30, Service 15, Accuracy 28, Reliability 40; trait "Eight Arms, One Brain Cell"
-(cooks 2 items at once, 5 % chance to put a pickle on everything). A11 defines EMP_002+ (≥ 75 total).
+(cooks 2 items at once, 5 % chance to put a pickle on everything). §36.8 defines EMP_002+ (≥ 75 total).
 Must include the brief's examples: Octopus Chef, Cheetah Waiter, Rhino Security Guard, Spider Repair
 Technician, Robot Cashier, Sloth Dishwasher, Dragon Chef.
 
 ---
 
-## C15. Offline Simulation — Canonical Model (A11 elaborates with worked examples)
+## C15. Offline Simulation — Canonical Model (§16–§17 elaborates with worked examples)
 
 **Principles:** server-authoritative; timestamp-based (`os.time()` on the server only); deterministic (seeded RNG);
 capped; idempotent claims. **Rate target:** during the first 2 offline hours a well-staffed restaurant nets
@@ -1335,7 +1334,7 @@ Travel: walking/sprinting; **Morph Metro** fast-travel between district stations
 discovered (free); **Pigeon Taxi** from any street corner to any discovered district (25 MB × tier,
 cosmetic ride); restaurant **Return Door** button (free, 10 s cooldown) from anywhere in the city.
 
-### C16.2 Buildings (fixed; A12 specifies every field)
+### C16.2 Buildings (fixed; §18 specifies every field)
 | ID | Building | District |
 |---|---|---|
 | `BLD_01` | Mutation Mart | DST_02 |
@@ -1361,7 +1360,7 @@ cosmetic ride); restaurant **Return Door** button (free, 10 s cooldown) from any
 | `BLD_21` | Sewer King's Throne Room | DST_09 |
 | `BLD_22` | Showcase Stage | DST_07 |
 
-### C16.3 Key named NPCs (fixed; A13 adds NPC_031+ for ≥ 100 total and fully specifies all)
+### C16.3 Key named NPCs (fixed; §19 adds NPC_031+ for ≥ 100 total and fully specifies all)
 | ID | Name | Morph | Role | Location |
 |---|---|---|---|---|
 | `NPC_001` | Nana Gristle | Tortoise head + Toaster torso + oven-mitt hands | Tutorial mentor; your great-aunt who left you the shack (appears via a cranky hologram menu board) | BLD_17 |
@@ -1400,7 +1399,7 @@ cosmetic ride); restaurant **Return Door** button (free, 10 s cooldown) from any
 interiors are instanced (§C3). Visiting a friend = walking into their door (same server) or joining their
 server via the friends list (TeleportService to their server).
 
-### C16.5 City events master list (A12 defines schedule, rules, rewards; others may reference)
+### C16.5 City events master list (§18 defines schedule, rules, rewards; others may reference)
 | ID | Event |
 |---|---|
 | `EVT_001` | Giant Food Festival |
@@ -1436,7 +1435,7 @@ server via the friends list (TeleportService to their server).
 | `EVT_031` | Spring Sprout Bloom (seasonal: April) |
 | `EVT_032` | Bug Swarm Brunch |
 
-### C16.6 Trophy decorations (quest/event rewards; A10 must list them in §36.13 as non-purchasable)
+### C16.6 Trophy decorations (quest/event rewards; §15 must list them in §36.13 as non-purchasable)
 `FRN_901` Golden Spatula Trophy · `FRN_902` Rat King's Crown Display · `FRN_903` Critic's Five-Star Plaque ·
 `FRN_904` Arena Champion Belt Case · `FRN_905` Baron's Defeated Mustache Portrait · `FRN_906` Meteor Chunk Lamp ·
 `FRN_907` Parade Float Mini · `FRN_908` Kraken Plush · `FRN_909` Museum Replica Fossil · `FRN_910` Omnivora's
@@ -1446,7 +1445,7 @@ Signed Apron. (Regular furniture uses `FRN_001`–`FRN_899`.)
 
 ## C17. Quests
 
-### C17.1 Tutorial quest IDs (fixed; A13 defines rows in §20, A1 scripts them in §32)
+### C17.1 Tutorial quest IDs (fixed; §20 defines the rows, §32 scripts them)
 | ID | Title | Teaches |
 |---|---|---|
 | `QST_TUT_001` | Welcome to the Shack | movement, entering the restaurant |
@@ -1466,7 +1465,7 @@ Signed Apron. (Regular furniture uses `FRN_001`–`FRN_899`.)
 TUT tutorial · STY story · DLY daily · WKY weekly · CHF cooking challenge · CBT combat challenge · RPR repair
 challenge · EXP exploration challenge · EMP employee management challenge · RST restaurant expansion challenge.
 
-### C17.3 Story frame (A13 writes the campaign; others may allude to it)
+### C17.3 Story frame (§19–§20 writes the campaign; others may allude to it)
 Ten chapters, one per restaurant tier. You inherit Nana Gristle's shack; the snooty rival **Baron Von Bistro**
 (`NPC_003`) wants Restaurant Row for his luxury chain; **Madame Fourchette** (`NPC_016`) holds the city's star
 ratings; **King Ratbeard** (`NPC_020`) keeps "borrowing" ingredients from below; the finale is the
@@ -1488,7 +1487,7 @@ grants; total node cost must exceed available points so players must choose. Fre
 
 ---
 
-## C19. Roblox Services (fixed names; A17 specifies every field)
+## C19. Roblox Services (fixed names; §27 specifies every field)
 | Service | One-line responsibility |
 |---|---|
 | `PlayerDataService` | load/save profiles with session locking, schema migration, autosave |
@@ -1521,9 +1520,9 @@ Use Roblox `AnalyticsService` (`LogOnboardingFunnelStepEvent`, `LogFunnelStepEve
 ---
 
 ## C21. Animation & Sound IDs
-`ANM_001`–`ANM_300` general library (A16), `ANM_301`–`ANM_370` = ability animations for `ABL_001`–`ABL_070`
+`ANM_001`–`ANM_300` general library (§25–§26), `ANM_301`–`ANM_370` = ability animations for `ABL_001`–`ABL_070`
 (ANM_3xx ↔ ABL_0xx, same last two digits; `ANM_370` ↔ `ABL_070`).
-**Core animations (fixed IDs; A16 must define them, anyone may reference):**
+**Core animations (fixed IDs; §25–§26 must define them, anyone may reference):**
 
 | ID | Animation | ID | Animation |
 |---|---|---|---|
@@ -1554,7 +1553,7 @@ Use Roblox `AnalyticsService` (`LogOnboardingFunnelStepEvent`, `LogFunnelStepEve
 | `ANM_063` | Respawn poof | `ANM_064` | Level-up celebrate |
 | `ANM_065` | Mutation equip flex | `ANM_066` | Cash register cha-ching |
 
-Sound IDs `SFX_001`+ and music `MUS_001`+ are defined only by A16; other sections describe audio in words.
+Sound IDs `SFX_001`+ and music `MUS_001`+ are defined only in §36.15; other sections describe audio in words.
 
 ---
 
