@@ -226,8 +226,8 @@ README_START, README_END = "<!-- sections:start -->", "<!-- sections:end -->"
 
 
 def update_readme(sections):
-    """Refresh the per-section reading index in README.md (between marker comments)."""
-    readme = g.ROOT / "README.md"
+    """Refresh the per-section reading index in GDD_README.md (between marker comments)."""
+    readme = g.ROOT / "GDD_README.md"
     if not readme.exists():
         return
     text = readme.read_text(encoding="utf-8")

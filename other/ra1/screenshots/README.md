@@ -1,6 +1,6 @@
 # Gameplay screenshots
 
-Frames from a real session of the game in `game/`. The actual server and client scripts ran on the mock engine
+Frames from a real session of the game in `games/ra1 - Mystery Morph Restaurant/`. The actual server and client scripts ran on the mock engine
 (`tests/mock/Engine.luau`), and a bot played through the real prompts, remotes and UI buttons. Everything in each
 frame was produced by the game code: the restaurant, the stations, customers and their bubbles, prompts, the HUD,
 panels, and every number in them. Three things are stand-ins:
@@ -10,7 +10,7 @@ panels, and every number in them. Three things are stand-ins:
 - **The avatar:** a blocky placeholder, because Roblox would load your own.
 - **The Roblox top-bar icons.**
 
-Regenerate with:
+Regenerate with these commands, run from the game folder (`games/ra1 - Mystery Morph Restaurant/`):
 
 ```bash
 tools/luaurun/target/release/luaurun tools/gameplay/session.luau <jsonDir> 23   # 23 = random seed

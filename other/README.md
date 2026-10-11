@@ -1,0 +1,17 @@
+# Roblox games
+
+Every game has a short ID: `ra1` means "Roblox game A1", `ra2` is the next one, and so on.
+
+```text
+games/                      the games themselves (Rojo projects you open and run)
+  ra1 - Mystery Morph Restaurant/
+other/                      everything else: READMEs, screenshots, design docs
+  ra1/
+```
+
+| ID | Game | Code | Docs |
+|---|---|---|---|
+| ra1 | Mystery Morph Restaurant | [`games/ra1 - Mystery Morph Restaurant/`](<../games/ra1 - Mystery Morph Restaurant>) | [How to run and play](ra1/README.md) · [Screenshots](ra1/screenshots/README.md) · [Game design document](ra1/GDD_README.md) |
+
+To run a game, open a terminal in its folder under `games/` and run `rojo serve`, or double-click the prebuilt
+`.rbxl` file there. Each game's README in `other/` has the details.

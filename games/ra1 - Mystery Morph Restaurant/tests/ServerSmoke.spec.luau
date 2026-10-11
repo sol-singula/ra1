@@ -3,7 +3,7 @@ Server smoke test: boots the real server scripts on the mock engine (tests/mock/
 session: join, pick a mutation, cook a burger end to end, serve customers, let an order go wrong, fight,
 repair, upgrade the restaurant, leave and rejoin. Fails on any script error or broken expectation.
 
-  luaurun tests/ServerSmoke.spec.luau                 (from the game/ folder)
+  luaurun tests/ServerSmoke.spec.luau                 (from the game folder)
   luaurun tests/ServerSmoke.spec.luau nodatastore     (Studio-without-API-access fallback)
 ]]
 local Engine = loadModule("tests/mock/Engine.luau")

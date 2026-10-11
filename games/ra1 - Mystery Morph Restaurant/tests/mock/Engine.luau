@@ -4,7 +4,7 @@ A small mock of the Roblox engine, enough to boot this game's scripts outside St
 replication and most properties are absent. Members that the game reads but the mock does not model raise an
 error, so typos such as `part.Szie` fail loudly here instead of in Studio.
 
-Needs the luaurun helpers readFile / isDir / listDir / loadChunk (see game/README.md).
+Needs the luaurun helpers readFile / isDir / listDir / loadChunk (see other/ra1/README.md).
 ]]
 local Engine = { errors = {}, clientLog = {}, side = "server" }
 

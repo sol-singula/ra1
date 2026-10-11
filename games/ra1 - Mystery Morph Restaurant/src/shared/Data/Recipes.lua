@@ -2,7 +2,7 @@
 -- `parts` lists { ingredientId, count, requiredState }. `core` ingredients can never be left out.
 -- `drink = true` recipes are poured whole at the Drink Dispenser.
 --
--- MVP build simplifications (kept deliberately small, see game/README.md):
+-- MVP build simplifications (kept deliberately small, see other/ra1/README.md):
 --   * one pantry grab is one portion, so French Fries use 1 potato (canon 3), Onion Rings 1 onion with the
 --     batter folded in (canon 2 onions + flour + egg) and Grilled Cheese 2 grilled bread slices + 1 cheese
 --     (canon adds grilled cheese ×3 and butter);

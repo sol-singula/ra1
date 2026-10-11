@@ -3,7 +3,7 @@ Plays a real session of the game on the mock engine, server and client code toge
 what the player sees at each interesting moment. A small bot plays: it takes orders, cooks every recipe step at
 the real stations, serves, levels up, upgrades the restaurant and gets into trouble with angry customers.
 
-  luaurun tools/gameplay/session.luau <outDir>        (from the game/ folder)
+  luaurun tools/gameplay/session.luau <outDir>        (from the game folder)
 
 Then render the snapshots with tools/gameplay/render.js.
 ]]

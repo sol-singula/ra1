@@ -1,30 +1,33 @@
 # Mystery Morph Restaurant: playable base (Roblox)
 
-The first playable slice of the game described in [`MYSTERY_MORPH_RESTAURANT_GDD.md`](../MYSTERY_MORPH_RESTAURANT_GDD.md),
+The first playable slice of the game described in [`MYSTERY_MORPH_RESTAURANT_GDD.md`](MYSTERY_MORPH_RESTAURANT_GDD.md),
 built as a [Rojo](https://rojo.space) project. You run a greybox restaurant on Restaurant Row: take orders,
 cook them at real stations, serve customers, deal with the angry ones, earn Morph Bucks, level up and upgrade.
 Every model is primitive parts, so it runs in a blank Baseplate with no uploaded assets.
+
+The game itself lives in [`games/ra1 - Mystery Morph Restaurant/`](<../../games/ra1 - Mystery Morph Restaurant>). This folder only holds docs: this README, the screenshots and the GDD. Every command and path below is relative to the game folder.
 
 ## Screenshots
 
 [`screenshots/`](screenshots/README.md) has 20 frames from a real play session. The game's own server and client
 scripts ran on the mock engine while a bot cooked, served, fought and upgraded through the real prompts and UI.
-`tools/gameplay/` has the session script and the three.js renderer that drew them. The renderer and the avatar
+The game folder's `tools/gameplay/` has the session script and the three.js renderer that drew them. The renderer and the avatar
 are stand-ins for Roblox's.
 
 ## Run it in Roblox Studio
 
-1. Install the tools. With [Rokit](https://github.com/rojo-rbx/rokit): open a terminal in this `game/` folder and
+1. Install the tools. With [Rokit](https://github.com/rojo-rbx/rokit): open a terminal in the game folder
+   (`games/ra1 - Mystery Morph Restaurant/`) and
    run `rokit install` (it reads `rokit.toml`). Aftman or Foreman work too, or install Rojo 7 directly.
 2. Install the Rojo plugin for Studio: run `rojo plugin install`, or get "Rojo" from the Creator Store.
 3. In Studio, create a new **Baseplate** place.
-4. In this folder, run `rojo serve`.
+4. In the game folder, run `rojo serve`.
 5. In Studio, open the Rojo plugin and click **Connect**. The scripts appear under ReplicatedStorage,
    ServerScriptService and StarterPlayer and stay synced while you edit files.
 6. Press **Play**.
 
 To get a single file instead: `rojo build -o MysteryMorph.rbxl`, then double-click the file to open it in Studio.
-A prebuilt copy, `MysteryMorphRestaurant.rbxl`, is already in this folder.
+A prebuilt copy, `MysteryMorphRestaurant.rbxl`, is already in the game folder.
 
 **Better lighting.** The game adds atmosphere, bloom, sun rays and colour correction on its own. For the best
 look, also select **Lighting** in the Explorer and set **Technology** to **Future**. Scripts can't change that
@@ -107,7 +110,7 @@ events, monetization, sound and animation. Level 6 "restaurant-wide chaos" is al
 ## Code layout
 
 ```text
-game/
+games/ra1 - Mystery Morph Restaurant/
 ├─ default.project.json        Rojo project (src/shared → ReplicatedStorage.Shared, src/server → ServerScriptService.Server,
 │                              src/client → StarterPlayerScripts.Client)
 ├─ src/shared/                 code both sides use

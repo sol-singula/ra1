@@ -2,7 +2,7 @@
 Client smoke test: boots the real client scripts on the mock engine, feeds them every server → client event
 the game sends, clicks through each panel, and spawns a fake customer proxy. Fails on any script error.
 
-  luaurun tests/ClientSmoke.spec.luau      (from the game/ folder)
+  luaurun tests/ClientSmoke.spec.luau      (from the game folder)
 ]]
 local Engine = loadModule("tests/mock/Engine.luau")
 local Vector3, CFrame = Engine.Vector3, Engine.CFrame

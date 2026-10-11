@@ -1,4 +1,4 @@
--- Global tunables. Values come from the GDD canon (gdd/canon.md, section in brackets) unless marked MVP.
+-- Global tunables. Values come from the GDD canon (other/ra1/gdd/canon.md, section in brackets) unless marked MVP.
 local Constants = {}
 
 Constants.MAX_PLAYERS = 8 -- [C3] one plot per player on Restaurant Row

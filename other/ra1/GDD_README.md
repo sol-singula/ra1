@@ -14,9 +14,9 @@ index below — each link opens that section's source file, which renders normal
 
 ## Playable base (Roblox Studio)
 
-[`game/`](game/README.md) is a Rojo project with the first playable slice: a greybox restaurant where you take
+[`games/ra1 - Mystery Morph Restaurant/`](<../../games/ra1 - Mystery Morph Restaurant>) is a Rojo project with the first playable slice: a greybox restaurant where you take
 orders, cook at real stations, serve customers, handle angry ones, earn money, level up and upgrade. See
-[`game/README.md`](game/README.md) to run it in Studio.
+[`README.md`](README.md) to run it in Studio.
 
 ## Gameplay previews
 
@@ -101,13 +101,14 @@ station, tantrums and combat, morph customization, shops, build mode, staff, off
 | `gdd/tools/render_*.py` | Render data-backed tables from `gdd/data/` into section files |
 | `gdd/tools/validate_gdd.py` | Validates section order, identifier cross-references, content counts, canonical names and required diagrams |
 | `gdd/tools/build_gdd.py` | Validates, generates the front matter (manifest + TOC) and assembles the GDD |
-| `game/` | Playable Roblox base: Rojo project, Luau source, tests (see its README) |
+| `../../games/ra1 - Mystery Morph Restaurant/` | Playable Roblox base: Rojo project, Luau source, tests (see `README.md` here) |
+| `README.md`, `screenshots/` | How to run and play the base, and 20 real gameplay frames |
 | `gdd/previews/` | 52 mock gameplay screenshots (GUI, ordering, cooking, shops, building, city) — see its README |
 | `gdd/tools/compose_previews*.py`, `render_previews.js` | Build the preview GUI overlays and render them over the background plates |
 
 ## Rebuilding
 
-Python 3.10+ (standard library only):
+Python 3.10+ (standard library only), run from this folder (`other/ra1/`):
 
 ```bash
 python3 gdd/tools/validate_gdd.py          # report; exit code 1 on any failure

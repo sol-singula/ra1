@@ -1,6 +1,6 @@
 -- Unit tests for Shared/Formulas against the GDD canon reference values.
--- Runs outside Roblox with any Luau runtime that exposes `loadModule(path)` (see game/README.md):
---   luaurun tests/Formulas.spec.luau      (from the game/ folder)
+-- Runs outside Roblox with any Luau runtime that exposes `loadModule(path)` (see other/ra1/README.md):
+--   luaurun tests/Formulas.spec.luau      (from the game folder)
 local Formulas = loadModule("src/shared/Formulas.lua")
 
 local passed, failed = 0, 0
