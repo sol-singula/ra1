@@ -661,7 +661,7 @@ local EmployeeService = {}
 function EmployeeService:Hire(player: Player, candidateId: string, role: string, replaceUid: string?): (boolean, string)
 function EmployeeService:Fire(player: Player, uid: string, confirmToken: string): (boolean, string)
 function EmployeeService:Assign(player: Player, uid: string, role: string, station: string?): (boolean, string)
-function EmployeeService:Forecast(player: Player): { mbPerHour: number, capHours: number, bottleneck: string }
+function EmployeeService:Forecast(player: Player): { fullRateMBh: number, capHours: number, perCapMB: number, bottleneck: string }
 ```
 
 **Remotes** (`<Domain>.<Action>`; every handler checks profile loaded, owner of the restaurant, not Safe Mode):

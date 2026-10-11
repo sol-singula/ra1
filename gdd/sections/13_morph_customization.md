@@ -2,7 +2,7 @@
 
 > Contributor: A8 (UI/UX + morph customization systems). This section specifies the **Customize Your Morph** screen
 > from the mockup (left category list, center 3D preview on a glowing pedestal, right inventory grid) and every rule
-> behind it: equipping, loadouts, naming, tints, upgrades, and the doors to Lab fusion and Body Mods. Part data is in
+> behind it: equipping, loadouts, naming, colors (palettes), upgrades, and the doors to Lab fusion and Body Mods. Part data is in
 > §12 / §36.3, combination naming and synergies in §12.9–12.10 / §36.4 / §36.5, abilities in §36.6, and the
 > generic UI framework in §24.
 
@@ -40,7 +40,7 @@ equip), and **switching** (saved loadouts for Chef / Fighter / Repair work).
   says "Can't change outfits during a brawl!" (or the matching reason).
 - **Auto-close:** if a customer turns hostile toward you while the screen is open, it closes at once and you get
   1.5 s of invulnerability (canon E2). Equips are applied the moment the server accepts them, so nothing is lost.
-  An unsent tint draft or a half-typed name is kept locally and restored next time.
+  An unsent palette change or a half-typed name is kept locally and restored next time.
 - **The world keeps running.** The Morph screen is a full-screen menu over the live game; customers keep waiting.
   A thin **order alert strip** (an overlay panel, allowed by E2) at the top of the screen flashes when any customer
   drops below 30 % patience, with a "Back to work" button.
@@ -419,7 +419,7 @@ Rarity is always shown by **color + shape + text**, never by color alone.
 | Mythic | magenta `#FF3EA5` | ⬢ hexagon | hex-tiled border (animated unless reduced motion) | magenta, shimmer |
 | Secret | rainbow shimmer on black | ? glyph | black card, rainbow edge | rotating rainbow |
 
-The detail drawer always spells out the rarity name ("Uncommon"). Tints (13.14) never change rarity frames.
+The detail drawer always spells out the rarity name ("Uncommon"). Palettes (13.14) never change rarity frames.
 
 ### 13.10 Stats Panel & Compare Deltas
 
@@ -484,9 +484,9 @@ expands all nine plus a derived block in plain numbers:
 | Looks 1–2 | "Natural", "Party" | from the start | free |
 | Looks 3–10 | cosmetic loadouts | §23 (Robux, cosmetic only), or 1 extra Look from an event reward | — |
 
-- A **functional loadout** stores per-slot part IDs, per-slot tints, the 4-slot ability bar order, synergy pins,
+- A **functional loadout** stores per-slot part IDs, per-slot palettes, the 4-slot ability bar order, synergy pins,
   an optional loadout name and a linked Look. Names, icons and order are editable.
-- A **Look** (cosmetic loadout) stores *appearance only*: tints, FX visibility, nameplate title, pedestal style and
+- A **Look** (cosmetic loadout) stores *appearance only*: per-slot palettes, FX visibility, nameplate title, pedestal style and
   Photo-mode pose. It can be applied on top of any functional loadout. Looks never store parts, so buying Look
   slots can never change stats. This keeps §23 strictly non-pay-to-win.
 - **Save:** "Save to slot" snapshots the current morph; overwriting a non-empty slot asks for confirmation.
@@ -802,7 +802,7 @@ Size: loadouts with per-slot palettes and pins add ≈ 0.4 KB, and Looks ≈ 0.6
 | Part icons | pre-rendered **icon atlases**: 128 × 128 px icons on 1,024 × 1,024 sheets (64 per sheet → 5 sheets for 280 parts, plus 1 UI-glyph sheet). Cards use `ImageRectOffset`/`ImageRectSize`. Low-memory phones get a 64 px set (512 px sheets). The visible sheets are preloaded with `ContentProvider:PreloadAsync` on open, with shimmer placeholders until ready. No per-card ViewportFrames, ever. |
 | Grid | 40 pooled cards with manual virtualization (13.7); no layout recalculation per scroll frame |
 | Previews | stats and synergy previews are computed on selection change only (results cached by hypothetical-loadout hash) |
-| Network | equip request ≈ 120 bytes; responses are deltas; tints batched every 0.5 s |
+| Network | equip request ≈ 120 bytes; responses are deltas; palette changes batched every 0.5 s |
 | Targets | open-to-interactive ≤ 400 ms on a mid-tier phone; ≤ 25 MB texture memory on mobile while open; stable 60 fps desktop / 30 fps mobile with the preview animating |
 
 ### 13.23 Dependencies
@@ -811,7 +811,7 @@ Size: loadouts with per-slot palettes and pins add ≈ 0.4 KB, and Looks ≈ 0.6
 acquisition, fusion recipes, §12.7 generator and compatibility flags), §12.9–12.10 / §36.4–36.5
 (naming, Morphdex, synergies), §14 (stats, level requirements, respec), §16 (employee looks), §18 (`BLD_01`, `BLD_02`, `BLD_11`, `BLD_13`, `BLD_16`, `BLD_22`),
 §21 (Arena locking), §22 (MB/MS/RT sinks), §23 (cosmetic Look slots and palettes), §24 (UI framework, HUD wheel),
-§25 (rig, tint masks, icons), §26 (animations `ANM_001`, `ANM_008`, `ANM_010`, `ANM_011`, `ANM_051`, `ANM_065`,
+§25 (rig, palette atlases, icons), §26 (animations `ANM_001`, `ANM_008`, `ANM_010`, `ANM_011`, `ANM_051`, `ANM_065`,
 `ANM_301`–`ANM_370`; sound cues), §27 (`MutationService`, `MorphAssemblyService`, `EconomyService`, `UIController`),
 §28 (persistence), §29 (remote security), §30 (performance budgets), §31 (`mmr_mutation_equip`,
 `mmr_loadout_apply`, `mmr_mutation_upgrade`, `mmr_morph_rename`, `mmr_photo_taken`).
@@ -820,7 +820,7 @@ acquisition, fusion recipes, §12.7 generator and compatibility flags), §12.9�
 
 | # | Situation | Expected behavior |
 |---|---|---|
-| 1 | A customer turns hostile while the screen is open (E2) | The screen closes, 1.5 s invulnerability, `Mutation.SessionClosed {HOSTILE}`. Accepted equips persist; unsent tints and name drafts are restored next open. |
+| 1 | A customer turns hostile while the screen is open (E2) | The screen closes, 1.5 s invulnerability, `Mutation.SessionClosed {HOSTILE}`. Accepted equips persist; unsent palette changes and name drafts are restored next open. |
 | 2 | Player is damaged during the 3 s loadout channel | The channel is interrupted, the loadout is unchanged, no cooldown is consumed, toast "Costume change interrupted!". |
 | 3 | Two devices or tabs send conflicting equips (exploit or lag) | Requests are serialized per player on the server; the second applies to the state the first produced. `reqId` replay prevents doubles. |
 | 4 | Network drops after Upgrade was sent | On reconnect the client resends the same `reqId`. The server replays the stored response or, if the upgrade never committed, `expectedLevel` guarantees at most one level-up. |

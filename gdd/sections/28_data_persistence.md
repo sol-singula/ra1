@@ -703,7 +703,7 @@ per-type station level stored in `restaurant.upgrades` (decoders trust `restaura
 
 ```lua
 --!strict
--- ServerScriptService/PlayerDataService/Codec/Layout.lua
+-- ServerScriptService/Server/Services/PlayerDataService/Codec/Layout.lua
 local Base64 = require(script.Parent.Base64)        -- pure-Luau RFC 4648 encoder/decoder
 local Types = require(game:GetService("ReplicatedStorage").Shared.Types.ProfileTypes)
 
@@ -759,7 +759,7 @@ layout into the §27.17 `layout` (packed) and `durability` (sparse) sections.
 
 ```lua
 --!strict
--- ServerScriptService/PlayerDataService/Migrations.lua
+-- ServerScriptService/Server/Services/PlayerDataService/Migrations.lua
 local Layout = require(script.Parent.Codec.Layout)
 
 export type Migration = {
@@ -884,9 +884,9 @@ save immediately. If the player *is* still present (ghost request), it ignores t
 
 ```lua
 --!strict
--- ServerScriptService/PlayerDataService/SessionLock.lua (excerpt: the acquire transform)
+-- ServerScriptService/Server/Services/PlayerDataService/SessionLock.lua (excerpt: the acquire transform)
 local Types = require(game:GetService("ReplicatedStorage").Shared.Types.ProfileTypes)
-local BuildInfo = require(game:GetService("ServerScriptService").Shared.BuildInfo) -- { ID: string }
+local BuildInfo = require(game:GetService("ServerScriptService").Server.Framework.BuildInfo) -- { ID: string }
 local Defaults = require(script.Parent.Defaults)
 
 export type AcquireOutcome = "acquired" | "reacquired" | "stolen_stale" | "stolen_presence" | "locked"
@@ -1007,7 +1007,7 @@ access) fail fast and alert; throttling and backend errors retry on the canon sc
 
 ```lua
 --!strict
--- ServerScriptService/PlayerDataService/Retry.lua
+-- ServerScriptService/Server/Services/PlayerDataService/Retry.lua
 local BACKOFF_S: { number } = { 1, 2, 4, 8, 16 }   -- canon §C22 E6: max 5 retries
 
 local NON_RETRYABLE: { string } = { "too large", "KeyNameLimit", "not allowed", "API access" }
@@ -1225,7 +1225,7 @@ itself if `current.meta.lastWriteId == writeId` and reports success.
 
 ```lua
 --!strict
--- ServerScriptService/PlayerDataService/SaveTransform.lua (excerpt)
+-- ServerScriptService/Server/Services/PlayerDataService/SaveTransform.lua (excerpt)
 local function saveTransform(session: any, encoded: any, writeId: string, now: number, release: boolean)
 	return function(current: any, _info: DataStoreKeyInfo?): (any, { number }?, { [string]: any }?)
 		if current == nil then
