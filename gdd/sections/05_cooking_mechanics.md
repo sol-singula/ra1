@@ -141,13 +141,14 @@ rejected with a reason.
 
 #### 5.2.5 Control scheme (all actions, all inputs)
 
-Keyboard bindings avoid Roblox-reserved keys (Esc, Tab player list, `/` chat, `` ` `` console). Shift-lock is disabled in the
+This is the kitchen view of the canonical default control map in §24.3.2 (which is authoritative if they ever differ).
+Keyboard bindings avoid Roblox-reserved keys (Esc, Tab player list, `/` chat, `` ` `` console). Shift Lock is disabled in the
 restaurant interior (`StarterPlayer.EnableMouseLockOption = false`) so Left Shift can be Dodge.
 
 | Action | Keyboard + mouse | Controller (Xbox / PlayStation glyphs) | Touch |
 |---|---|---|---|
 | Move | WASD / arrow keys | Left stick | Dynamic thumbstick (left 45 % of screen) |
-| Camera | Right-mouse drag; wheel zoom | Right stick | One-finger drag on empty right area; pinch zoom |
+| Camera | Right-mouse drag; wheel zoom (when not locked on) | Right stick | One-finger drag on empty right area; pinch zoom |
 | Jump | Space | A / Cross | Jump button |
 | **Use / Interact** (context: chop, flip, toss, dial step, take order, serve, extinguish) | E | X / Square | **Context button** (largest, 96 dp; icon + label change with target) |
 | Chop (rhythm) | E taps | X / Square taps | Context button becomes **CHOP** (with ring) |
@@ -160,10 +161,11 @@ restaurant interior (`StarterPlayer.EnableMouseLockOption = false`) so Left Shif
 | Swap held item | R | Y / Triangle (tap) | Tap the carry widget |
 | Cycle target | Mouse hover override, or C | D-pad Right | Tap the station directly (world tap selects target if in range) |
 | Attack: Swipe Combo `ABL_001` / Wallop `ABL_002` | Left mouse tap / hold 0.6 s (hands empty) | RT / R2 tap / hold | Attack button tap / hold |
-| Block `ABL_003` | Hold Q | Hold LT / L2 | Hold Shield button |
-| Dodge Roll `ABL_004` | Left Shift | RB / R1 | Swipe on Shield button, or Dodge button |
+| Lock-on (combat target) | Middle mouse button; mouse wheel cycles targets while locked | R3 (press right stick); right stick flick cycles | Tap an enemy |
+| Block `ABL_003` | Hold Q | Hold LT / L2 | Hold **SHIELD** button |
+| Dodge Roll `ABL_004` | Left Shift (Shift Lock disabled) | RB / R1 | Swipe on SHIELD button, or Dodge button |
 | Calm Down! `ABL_006` | V | D-pad Up | Speech-bubble button (above Attack) |
-| Ability bar slots 1–4 | 1, 2, 3, 4 | Hold LB / L1 + X / Y / B / A | 4 ability buttons in an arc around Attack (56 dp) |
+| Ability bar slots 1–4 | 1, 2, 3, 4 | Hold LB / L1 + X / Y / B / A | 4 ability buttons (64 u each) in an arc around Attack |
 | Open order queue (overlay) | O, or click the ticket strip | Hold Y / Triangle 0.4 s | Tap the ticket strip |
 | Pin ticket (drives ghost previews) | Click ticket / 1–6 while queue open | D-pad Left/Right to move, A to pin | Tap ticket |
 | Call-out ping (co-op) | Z (wheel on hold) | D-pad Left (wheel on hold) | Ping button (top of cluster) → 6-wedge wheel |
@@ -171,15 +173,15 @@ restaurant interior (`StarterPlayer.EnableMouseLockOption = false`) so Left Shif
 #### 5.2.6 Touch layout, feedback and accessibility
 
 - **Right-thumb cluster** (bottom-right, safe-area aware via `GuiService:GetGuiInset()`): Context (96 dp) at the thumb's
-  rest point; Grab (88 dp) up-left of it; Attack/Throw (88 dp) left; Jump (72 dp) below-right; Shield/Dodge (64 dp); ability
-  arc (4 × 56 dp); Ping (48 dp). No two primary buttons closer than 12 dp.
+  rest point; Grab (88 dp) up-left of it; Attack/Throw (88 dp) left; Jump (72 dp) below-right; SHIELD/Dodge (64 dp); ability
+  arc (4 × 64 u); Ping (48 dp). No two primary buttons closer than 12 dp.
 - **Minigame meters** render as world-space `BillboardGui`s on the station (max 1 active per player) *and* mirrored in a
   screen-space strip above the Context button on touch devices so the thumb never covers the meter.
 - **Haptics:** `HapticService` small pulse on PERFECT, double pulse on BURNED warning, long pulse on ON_FIRE (controller
   and supported mobile devices); disabled by the Reduced Effects setting.
 - **Accessibility settings** (persisted per player): Auto-Rhythm (canon §C8: every chop/pump/polish tap = yellow 0.8),
   Toggle-Hold, Reduced Effects (no screen shake, fire VFX at 30 % particles, no flashing), Colour-blind palettes (status
-  shapes stay identical), Audio sliders for "kitchen alerts" separately from music, Large Meter mode (+50 % meter size),
+  shapes stay identical), a separate **Kitchen Alerts** volume slider (drives the `Alerts` SoundGroup, §26) independent of music and SFX, Large Meter mode (+50 % meter size),
   "Fewer Weird Requests" (§6.18).
 
 ---

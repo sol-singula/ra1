@@ -332,16 +332,16 @@ Targets are defined in the matrix of §35.10; these cases are the gate checks ru
 
 | ID | Preconditions | Steps | Expected result | Priority |
 |---|---|---|---|---|
-| TC-PERF-01 | Low-phone class, scenario P-01 | 5-min capture | FPS p50 ≥ 30, p5 ≥ 24; client memory ≤ 700 MB | P0 |
-| TC-PERF-02 | Low-phone class, scenario P-02 (`TIER_10` full rush, chaos level 6) | 5-min capture | FPS p50 ≥ 30, p5 ≥ 20; client memory ≤ 850 MB | P0 |
-| TC-PERF-03 | Server, scenario P-03 (8 owners in full rush) | 10-min capture | Heartbeat p50 ≥ 55 Hz, p5 ≥ 45 Hz; server memory ≤ 3,000 MB; ≤ 160 customer proxies | P0 |
-| TC-PERF-04 | Low-phone class, scenario P-04 (city event, 8 players in one district) | 5-min capture | FPS p50 ≥ 30; network receive p95 ≤ 80 KB/s | P1 |
-| TC-PERF-05 | Low-phone class, scenario P-05 (8 max-budget morphs in view) | 5-min capture | FPS p50 ≥ 30 | P1 |
-| TC-PERF-06 | Any class, scenario P-08 (3-h soak) | Sample every 5 min | Client memory growth ≤ 10 % after minute 10; server growth ≤ 15 %; instance count drift ≤ 2 % | P1 |
-| TC-PERF-07 | Low-phone class on a throttled 4G-class profile | Cold join; then enter the restaurant door | Time-to-interactive ≤ 25 s p50; interior transfer ≤ 3 s | P1 |
-| TC-PERF-08 | Scenario P-02 | Measure per-client network | Average receive ≤ 50 KB/s, send ≤ 10 KB/s | P1 |
-| TC-PERF-09 | Low-phone class, 30-min P-02 loop | Watch thermal throttling | Final-5-min FPS p50 ≥ 24 | P2 |
-| TC-PERF-10 | Mid-PC class, scenario P-02 | 5-min capture | FPS p50 ≥ 60 | P1 |
+| TC-PERF-01 | D1 (LOW), scenario P-01 | 5-min capture | FPS p50 ≥ 30, p5 ≥ 25; client memory ≤ 700 MB (well inside the 900 MB LOW budget) | P0 |
+| TC-PERF-02 | D1 (LOW), scenario P-02 (`TIER_10` full rush, chaos level 6) | 5-min capture | FPS p50 ≥ 30, p5 ≥ 25; no frame > 100 ms; client memory ≤ 900 MB | P0 |
+| TC-PERF-03 | Server, scenario P-03 (8 owners in full rush) | 30-min capture | Heartbeat ≥ 45 Hz at p95 and ≥ 40 Hz at p99; server memory ≤ 3,500 MB; ≤ 160 customer proxies | P0 |
+| TC-PERF-04 | D1 (LOW), scenario P-04 (city event, 8 players in one district) | 5-min capture | FPS p50 ≥ 30, p5 ≥ 25; server → client ≤ 40 KB/s avg, ≤ 80 KB/s burst | P1 |
+| TC-PERF-05 | D1 (LOW), scenario P-05 (8 max-budget morphs in view) | 5-min capture | FPS p50 ≥ 30, p5 ≥ 25 | P1 |
+| TC-PERF-06 | D1 and D2, scenario P-08 (3-h soak) | Sample every 5 min | Client memory growth ≤ 50 MB/h; server ≤ 100 MB/h; instance count drift ≤ 2 % | P1 |
+| TC-PERF-07 | D1 on a throttled 4G-class profile | Cold join; then enter the restaurant door | First input ≤ 20 s cold (≤ 10 s warm); ≤ 600 MB at tutorial start; interior transfer ≤ 3 s | P1 |
+| TC-PERF-08 | Scenario P-02 | Measure per-client network | Server → client ≤ 40 KB/s avg; client → server ≤ 6 KB/s avg | P1 |
+| TC-PERF-09 | D4 (tablet), 30-min P-02 loop | Watch thermal throttling | FPS drop ≤ 20 % from minute 1 to minute 30 (auto-scaler may step down once) | P2 |
+| TC-PERF-10 | D7 (HIGH), scenario P-02 | 5-min capture | FPS p50 ≥ 60, p5 ≥ 50 | P1 |
 
 #### 35.5.15 Economy Exploits (§22, §29, §C4)
 
@@ -540,30 +540,35 @@ and Collect.
 | P-07 | Arena 2v2 with 4 ability-heavy morphs |
 | P-08 | 3-hour soak looping P-01 → city travel → P-02 → Welcome Back |
 
-#### 35.10.3 Client targets (FPS p50 / p5) [TUNABLE]
+#### 35.10.3 Client targets [TUNABLE — owned by §30]
 
-| Scenario | D1 | D2 | D3 | D4 | D5 | D6 | D7 |
+QA does not set its own budgets: the floors below are the §30 per-quality-tier budgets (LOW / MID / HIGH),
+mapped to device classes, and **every scenario P-01…P-07 must meet the floor of its device class**. Device
+classes run at the quality tier the §30 auto-scaler settles on (expected: D1, D4 → LOW; D2, D6 → MID;
+D3, D5, D7 → HIGH).
+
+| Metric | D1 | D2 | D3 | D4 | D5 | D6 | D7 |
 |---|---|---|---|---|---|---|---|
-| P-01 | 30 / 24 | 45 / 30 | 60 / 45 | 30 / 24 | 60 / 45 | 60 / 40 | 60 / 55 |
-| P-02 | 30 / 20 | 40 / 28 | 55 / 40 | 30 / 20 | 55 / 40 | 50 / 35 | 60 / 50 |
-| P-03 | 30 / 22 | 40 / 30 | 55 / 42 | 30 / 22 | 55 / 42 | 50 / 36 | 60 / 50 |
-| P-04 | 30 / 22 | 40 / 30 | 55 / 45 | 30 / 22 | 55 / 45 | 50 / 35 | 60 / 50 |
-| P-05 | 30 / 24 | 40 / 30 | 55 / 45 | 30 / 24 | 55 / 45 | 50 / 38 | 60 / 50 |
-| P-06 | 30 / 20 | 40 / 28 | 55 / 40 | 30 / 20 | 55 / 40 | 50 / 35 | 60 / 50 |
-| P-07 | 30 / 24 | 45 / 30 | 60 / 45 | 30 / 24 | 60 / 45 | 55 / 40 | 60 / 55 |
-| Peak client memory (any scenario) | ≤ 850 MB | ≤ 1,100 MB | ≤ 1,500 MB | ≤ 1,000 MB | ≤ 1,500 MB | ≤ 1,800 MB | ≤ 2,500 MB |
-| P-08 memory growth after min 10 | ≤ 10 % | ≤ 10 % | ≤ 10 % | ≤ 10 % | ≤ 10 % | ≤ 10 % | ≤ 10 % |
+| FPS p50 / p5, every scenario P-01…P-07 | 30 / 25 | 45 / 35 | 60 / 50 | 30 / 25 | 60 / 50 | 45 / 35 | 60 / 50 |
+| Peak client memory (any scenario) | ≤ 900 MB | ≤ 1,400 MB | ≤ 2,500 MB | ≤ 900 MB | ≤ 2,500 MB | ≤ 1,400 MB | ≤ 2,500 MB |
+| Single frame spike during P-02 | ≤ 100 ms | ≤ 100 ms | ≤ 100 ms | ≤ 100 ms | ≤ 100 ms | ≤ 100 ms | ≤ 100 ms |
+| P-08 client memory growth | ≤ 50 MB/h | ≤ 50 MB/h | ≤ 50 MB/h | ≤ 50 MB/h | ≤ 50 MB/h | ≤ 50 MB/h | ≤ 50 MB/h |
+| Join to first input (cold) | ≤ 20 s (throttled 4G) | ≤ 20 s | ≤ 20 s | ≤ 20 s | ≤ 20 s | ≤ 20 s | ≤ 20 s |
 
-#### 35.10.4 Server and network targets [TUNABLE]
+#### 35.10.4 Server and network targets [TUNABLE — owned by §30]
 
 | Metric | P-02 | P-03 | P-04 | P-06 | P-08 |
 |---|---|---|---|---|---|
-| Heartbeat p50 / p5 | ≥ 58 / 50 Hz | ≥ 55 / 45 Hz | ≥ 55 / 45 Hz | ≥ 55 / 45 Hz | no downward trend |
-| Server memory | ≤ 1,500 MB | ≤ 3,000 MB | ≤ 3,000 MB | ≤ 2,000 MB | growth ≤ 15 % |
+| Heartbeat (target 60 Hz) | ≥ 45 Hz at p95 | ≥ 45 Hz at p95, ≥ 40 Hz at p99 | ≥ 45 Hz at p95 | ≥ 45 Hz at p95 | no downward trend |
+| Server memory | ≤ 3,500 MB | ≤ 3,500 MB | ≤ 3,500 MB | ≤ 3,500 MB | growth ≤ 100 MB/h |
 | Customer proxies | ≤ 28 | ≤ 160 | ≤ 160 | ≤ 28 | — |
 | Loose physics props per interior | ≤ 30 | ≤ 30 | — | ≤ 30 | — |
-| Per-client receive (avg / p95) | ≤ 50 / 70 KB/s | ≤ 50 / 70 KB/s | ≤ 60 / 80 KB/s | ≤ 60 / 80 KB/s | — |
-| Pathfinding requests | ≤ 20/s per interior | ≤ 80/s server | — | ≤ 20/s | — |
+| Server → client per player | ≤ 40 KB/s avg, ≤ 80 KB/s 2-s burst | same | same | same | — |
+| Client → server per player | ≤ 6 KB/s avg, ≤ 12 KB/s burst | same | same | same | — |
+| Server-wide moving primitives | ≤ 120 | ≤ 120 | ≤ 120 | ≤ 120 | — |
+
+Mapping to the §30 performance tests: P-02 ≈ PT-03 (level-6 brawl), P-03 ≈ PT-02 (8 full restaurants),
+P-04 ≈ PT-04 (city event), P-08 ≈ PT-05 (soak). QA runs the §30 tests as part of this matrix.
 
 **Capture method:** client FPS from `RunService.RenderStepped` deltas, memory from
 `Stats:GetTotalMemoryUsageMb()`, network from `Stats.DataReceiveKbps`/`DataSendKbps`; server from
@@ -598,7 +603,7 @@ review** of the Beta build before G4.
 
 | Gate | When | Required test evidence | Bug thresholds | Performance | Playtest |
 |---|---|---|---|---|---|
-| G1 Prototype | W12 | 100 % unit tests; smoke for implemented areas; TC-DATA-01/02 | S0 = 0; S1 ≤ 5 | P-01 on D1 ≥ 30 FPS p50 | AC-34-01 |
+| G1 Prototype | W12 | 100 % unit tests; smoke for implemented areas; TC-DATA-01/02 | S0 = 0; S1 ≤ 5 | P-01 on D1 ≥ 30 FPS p50 (§30 LOW) | AC-34-01 |
 | G2 Vertical Slice | W25 (MVP check at W19) | all P0 in slice areas; TC-EDGE-01…TC-EDGE-21 pass; offline goldens | S0 = 0; S1 = 0 in slice; S2 ≤ 10 | P-01 and a `TIER_03` rush on D1, D2, D6 | R1–R7 at Phase-2 targets; AC-34-14 |
 | G3 Alpha | W41 | all 17 area plans executed; ≥ 90 % of P0 + P1 pass; exploit pass 1 | S0 = 0; S1 ≤ 5 (none in data, economy, offline); S2 ≤ 40 | P-01, P-03, P-06 on all 7 classes within 10 % of targets | R1–R10 recorded |
 | G4 Beta | W55 | 100 % P0, ≥ 97 % P1; external exploit review; economy sims within ±15 % | S0 = 0; S1 = 0 in launch-critical systems; S2 ≤ 25 | full matrix §35.10 met | closed beta: D1 ≥ 30 %, tutorial ≥ 75 % |

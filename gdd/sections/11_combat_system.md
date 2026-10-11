@@ -62,30 +62,32 @@ Apology Payment (40 %), which is always worse than a happy customer's payment.
 
 ### 11.3 Controls & Input (per device)
 
-All bindings are rebindable (§24 Settings). Input mode switches automatically on the last input type
-(`UserInputService.LastInputTypeChanged`); HUD glyphs update instantly.
+The canonical default map is **§24.3.2** (built on §5's kitchen scheme); this table repeats the combat subset
+and must stay identical to it. All bindings are rebindable (§24 Settings). Input mode switches automatically on
+the last input type (`UserInputService.LastInputTypeChanged`); HUD glyphs update instantly. **Shift Lock is
+disabled** (LeftShift is Dodge); lock-on replaces it for camera-relative fighting.
 
 | Action | Ability | Keyboard & Mouse | Controller | Touch (phone / tablet) |
 |---|---|---|---|---|
-| Move / camera | — | WASD / mouse (Shift Lock recommended; one toggle in Settings) | Left stick / right stick | Dynamic thumbstick (left half) / drag right half |
-| Swipe Combo | `ABL_001` | LMB tap (each tap = next hit) | RT tap | ATTACK button tap (auto-target) |
-| Wallop | `ABL_002` | Hold LMB ≥ 0.6 s, release | Hold RT, release | Hold ATTACK (charge ring fills), release |
-| Block | `ABL_003` | Hold F (or RMB while Shift Lock is on) | Hold LT | Hold BLOCK (Settings: tap-to-toggle) |
-| Dodge Roll | `ABL_004` | Q (direction = WASD; none = backward) | B | DODGE button (direction = thumbstick) |
-| Grab (lift prop) | `ABL_005` | E (ProximityPrompt) | X | Contextual INTERACT bubble |
-| Throw carried prop | — | LMB tap = quick throw at lock/cursor; hold = arc preview, release | RT tap / hold | ATTACK becomes THROW: tap = auto-target; drag = aim arc |
-| Drop carried item | — | G | D-pad Down | Long-press INTERACT |
-| Calm Down! | `ABL_006` | R | Y | CALM button (heart icon) |
-| Mutation slots 1–4 | — | 1 / 2 / 3 / 4 | Hold LB + X / Y / B / A (radial overlay shows icons on face-button glyphs) | Four buttons in an arc around ATTACK; tap = auto-aim, drag = manual aim, drag back to centre = cancel |
-| Lock-on / cycle | — | MMB or Z toggles; mouse wheel cycles while locked | RB tap; flick right stick to cycle | Tap an enemy; tap again to release |
+| Move / camera | — | WASD or arrows / RMB-drag, wheel zoom | Left stick / right stick | Dynamic thumbstick (left 45 %) / drag right area, pinch |
+| Swipe Combo | `ABL_001` | LMB tap (each tap = next hit) | RT tap | ATTACK tap (auto-target) |
+| Wallop | `ABL_002` | Hold LMB ≥ 0.6 s, release | Hold RT ≥ 0.6 s, release | Hold ATTACK (charge ring fills), release |
+| Block | `ABL_003` | Hold Q | Hold LT | Hold SHIELD (Settings: tap-to-toggle) |
+| Dodge Roll | `ABL_004` | LeftShift (direction = WASD; none = backward) | RB | Swipe on SHIELD in a direction, or the DODGE button (direction = thumbstick) |
+| Grab / pick up a prop | `ABL_005` | F | B | GRAB button |
+| Throw carried prop (hands full) | — | LMB hold = arc, release | RT hold = arc, release | ATTACK becomes THROW: hold, drag to aim, release |
+| Drop carried item | — | G | D-pad Down | Long-press the carry widget 0.4 s |
+| Calm Down! | `ABL_006` | V | D-pad Up | Speech-bubble CALM button |
+| Mutation slots 1–4 | — | 1 / 2 / 3 / 4 | Hold LB + X / Y / B / A (radial overlay shows icons on face-button glyphs) | Four 64 u buttons in an arc around ATTACK; tap = auto-aim, drag = aim, drag back to centre = cancel |
+| Lock-on / cycle | — | MMB toggles; mouse wheel cycles while locked | R3 toggles; flick right stick to cycle | Tap an enemy; tap again to release |
 | Jump | — | Space | A | JUMP button |
-| Revive ally (Smelling Salts) | — | Hold E 2 s | Hold X 2 s | Hold INTERACT 2 s |
+| Revive ally (Smelling Salts) | — | Hold E 2 s | Hold X 2 s | Hold Context button 2 s |
 
 **Contextual swaps.** Holding a frying pan replaces Swipe/Wallop with `ABL_007` Pan Bonk; holding an empty
 tray replaces Block with `ABL_008` Tray Shield. Carrying any prop turns ATTACK into THROW. Hold-type
 abilities (channels such as `ABL_032`) channel while the key is held, up to their maximum. Input buffer: the
 next combat input pressed ≤ 0.25 s before the current action can accept it is queued (one queued input max).
-Touch layout keeps every combat button ≥ 64 × 64 px at 1080p-equivalent and inside the thumb arc; the
+Touch layout keeps every combat button ≥ 64 u (§24 layout units) and inside the thumb arc; the
 order-queue overlay stays tappable during combat.
 
 ---
@@ -94,10 +96,10 @@ order-queue overlay stays tappable during combat.
 
 | Mode | Default on | Rules |
 |---|---|---|
-| **Free aim** | KB/M | Melee faces camera direction under Shift Lock, otherwise movement direction. Aimed abilities fire at the mouse ground point (raycast from camera), clamped to max range. |
+| **Free aim** | KB/M | Melee faces the lock-on target when locked, otherwise movement direction (Shift Lock is disabled). Aimed abilities fire at the mouse ground point (raycast from camera), clamped to max range. |
 | **Soft lock** | Touch, controller (optional on KB/M) | Candidates: Hostile combatants within 18 studs with line of sight. Score = `1.0 × (1 − d/18) + 0.8 × facingDot + 0.6 (if it is targeting you) + 0.3 (if it was your last target)`. Re-evaluated every 0.2 s and on every attack press; switches only if a candidate beats the current by ≥ 0.25 (hysteresis). |
 | **Auto-target** (touch; controller optional) | Touch | ATTACK turns you toward the soft-lock target (≤ 0.1 s turn) if it is within 12 studs; melee lunge-assist closes up to 1.5 studs; aimed abilities aim at the target centre, projectiles lead by `targetVelocity × travelTime` (lead capped at 4 studs). Drag-from-button overrides with manual aim. |
-| **Hard lock** | Any (opt-in) | Camera keeps the target framed. Breaks at > 30 studs, after 1.5 s without line of sight, or on target defeat. |
+| **Hard lock** (lock-on) | Any (opt-in: MMB / R3 / tap enemy) | Camera keeps the target framed and melee/abilities face it. Breaks at > 30 studs, after 1.5 s without line of sight, or on target defeat. |
 | **Aim assist** (controller) | Controller | 30 % camera slowdown inside a 4-stud bubble around soft-lock target; never snaps. |
 
 **Never-target list:** bystanders (anger ≤ 2 and not flagged Hostile), `PACIFIST` customers, defeated
@@ -316,8 +318,8 @@ attribute `CombatService` reads on the object's model.
 2. **Carrying** a Medium prop: WalkSpeed ×0.85; Heavy: ×0.7, no Block, and Dodge becomes a 4-stud stumble
    with no invulnerability.
 3. **Throwing** is a scripted parabolic arc (canon C3), never Roblox physics: launch speed 45 studs/s, fake
-   gravity 60 studs/s², apex ≤ 6 studs, range per prop. Throw cooldown 0.8 s. Quick throw targets the soft
-   lock (or cursor); hold shows the arc and landing reticle to the thrower.
+   gravity 60 studs/s², apex ≤ 6 studs, range per prop. Throw cooldown 0.8 s. Holding Attack shows the arc and landing
+   reticle (pre-aimed at the soft lock on touch/controller, at the cursor on KB/M); release throws.
 4. **A projectile is never consumed by an invulnerable target.** A dodged, phased or mis-aimed projectile
    keeps flying along its arc and can hit whoever is next on the path — including bystanders.
 5. **Interception:** `ABL_008` Tray Shield and `ABL_036` Umbrella Parry reflect thrown projectiles; `ABL_035`
@@ -471,8 +473,11 @@ ragdolled; KO uses an authored animation (`ANM_062`).
 1. At spawn, `CustomerAIService` lists the customer's **visible** parts that grant an active ability (canon
    C13.6). The first one (slot priority HEAD → ARM → TAIL → LEG → BACK → others) whose §36.6 "NPC use" entry
    includes the customer's style becomes its single **Signature Move**; no match → none.
-2. Used only at anger level 5 or in a scuffle, never by `PACIFIST`. Utility abilities `ABL_061`–`ABL_070` are
-   never used by customers.
+2. **When (aligned with §9):** at anger level ≥ 4 and in scuffles — at level 4 only against a player within 6
+   studs who hit it in the last 6 s, or to clear furniture in its path; `TRICKSTER` and `INSTIGATOR` debuff/aura
+   Signature Moves may be used from level 3. `PACIFIST` customers use only non-damaging escape actives (the
+   §36.6 rows that list `PACIFIST`). Utility abilities `ABL_061`–`ABL_070` are never used by customers, except
+   the `ABL_063` flee variant listed in §36.6.
 3. **NPC tuning** (already applied to §36.6 "NPC use" values): damage ≈ 0.6 × player Base before TierScale;
    cooldown ≥ 1.5 × player cooldown; wind-up = max(0.4 s, listed); CC on players ≤ the §11.5.4 cap; no
    paired bonuses; area radius ×0.8.
@@ -510,9 +515,11 @@ ragdolled; KO uses an authored animation (`ANM_062`).
 0 Huff → **Defeat-Dizzy** (`STS_DIZZY` 3 s, `ANM_052`; untargetable, immune) → *Calming down* →
 *Apologizing* (`ANM_053`) → **Apology Payment 40 %** of its bill, no tip → *Escorted out* (`ANM_055`).
 **Talked down** instead (`ABL_006` on a level-5 customer that is Winded or ≤ 50 % Huff — `TRICKSTER` ≤ 25 % —
-or `ABL_065` on a level-5 customer at ≤ 70 % Huff; levels 3–4 simply lose anger, §36.6.2): the customer drops
-to level 2, returns to its seat, and pays by satisfaction with a −10 penalty — strictly better than the
-apology route, so de-escalation is the economically smart play.
+or `ABL_065` on a level-5 customer at ≤ 70 % Huff; levels 3–4 simply lose anger, §36.6.2): the fight ends at
+once and the customer drops to level 2. Payment follows §10's outcome table: if it took **no damage** this
+episode (the "defend until Winded, then talk" route) it returns to its seat and pays and tips by satisfaction
+("calmed without combat"); if it took damage, it apologizes and pays the 40 % Apology Payment ("calmed by
+combat"). De-escalating without hitting is therefore the economically smart play.
 
 #### 11.10.2 Player KO ("Seeing Stars") and respawn
 
@@ -555,7 +562,7 @@ restaurant attributes.
 | Guard HP | `50 + 2 × CS`; at 0 the guard is Bonked (`STS_DIZZY` 3 s) then resumes |
 | Bouncer Hug | Holds a hostile 2.5 s (`STS_STUN`, DR applies), cooldown 10 s |
 | Calm Damage | `6 + 0.2 × CS` Huff damage every 1.2 s while engaged; may use its own part's Signature Move (NPC version) |
-| Talk-down | Every 4 s: success chance `0.25 + 0.006 × CS` (doubled if Winded) → customer talked down (§11.10.1) |
+| Talk-down | Every 4 s: success chance `0.25 + 0.006 × CS` (doubled if Winded) → fight ends; a Security intercept always counts as "calmed by combat" (40 % Apology Payment, §10) |
 | Escort | Escorts defeated customers out (`ANM_055`) so players can go back to cooking |
 | KO response | When a player is KO'd, Security prioritizes the KO'er |
 
@@ -563,7 +570,7 @@ Other roles never fight: they flee to the kitchen (`ANM_054`), then resume work 
 
 #### 11.10.7 Co-op revive — "Smelling Salts"
 
-A teammate within 4 studs holds Interact for 2 s on a KO'd player. While any ally is within 20 studs of a
+A teammate within 4 studs holds the Revive input (E / pad X / touch Context) for 2 s on a KO'd player. While any ally is within 20 studs of a
 KO'd player, Seeing Stars extends to up to 10 s with a "Hang in there!" bubble (the KO'd player may tap
 "Respawn now" at any time). Success: the player stands up in place with 50 % HP, `STS_WOOZY` 5 s and 2.0 s
 invulnerability. The hold is interrupted if the reviver takes damage or moves > 4 studs. A player can be
@@ -1008,9 +1015,9 @@ had_security) · `mmr_customer_calmed` (method, personality) · `mmr_ability_use
 - **AC-11-13:** Canon E2: a hostile turn while a full-screen menu is open closes the menu on the same frame the client receives the event and applies 1.5 s invulnerability.
 - **AC-11-14:** Canon E4: loadout swaps are refused while In Combat; out of combat the swap is a 3 s channel cancelled by damage, with a 10 s cooldown.
 - **AC-11-15:** A customer at 0 Huff enters `STS_DIZZY` for 3 s, apologizes, pays exactly 40 % of its bill (rounded to whole MB) with no tip, and is escorted out.
-- **AC-11-16:** `ABL_006` used on a Winded customer succeeds 100 % of the time; the talked-down customer returns to its seat and pays by satisfaction − 10.
+- **AC-11-16:** `ABL_006` used on a Winded customer succeeds 100 % of the time; a talked-down customer that took no damage this episode returns to its seat and pays and tips by satisfaction, while one that took damage pays exactly the 40 % Apology Payment (§10).
 - **AC-11-17:** Soft lock and auto-target never select a bystander, `PACIFIST`, defeated customer, ally or employee in 200 automated presses across crowded scenarios.
-- **AC-11-18:** Touch: every combat button is ≥ 64 × 64 px at 1080p-equivalent; auto-target turns the player to the target within 0.1 s; playtest median time-to-calm on touch is within ±10 % of KB/M.
+- **AC-11-18:** Touch: every combat button is ≥ 64 u (§24.3.2 layout units); auto-target turns the player to the target within 0.1 s; playtest median time-to-calm on touch is within ±10 % of KB/M.
 - **AC-11-19:** The third hard CC of the same family within 8 s lasts 25 % of its base duration; no NPC-applied hard CC on a player exceeds 1.5 s (1.0 s at TIER_01–02).
 - **AC-11-20:** With 6 hostiles in one restaurant, `CombatService` uses ≤ 1.5 ms per Heartbeat for that restaurant and combat AI ≤ 1.0 ms per Heartbeat per server (MicroProfiler capture on a mid-range phone-hosted test).
 - **AC-11-21:** The §11.6.5 hamburger chain reproduces in a sandbox using only scripted player inputs and default rules (no special-case code paths).

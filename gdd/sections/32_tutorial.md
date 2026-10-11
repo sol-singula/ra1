@@ -262,7 +262,7 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
   - Wrong station (patty into the fryer) → the station rejects it: "That's a fryer. The patty wants the grill."
   - Bun trashed → infinite basic stock (canon C9), no charge.
   - Idle while holding an item → L2/L3 guidance toward the next station.
-- **Analytics:** step 3. Assists logged as `LogCustomEvent(player, "mmr_tutorial_assist", 1, {CustomField01 = "burn_recovery" | "auto_flip" | "assembly_ghost"})`.
+- **Analytics:** step 3. Assists logged via `AnalyticsService:LogCustomEvent(player, "mmr_tutorial_assist", 1, fields)` with custom field 01 = `burn_recovery` | `auto_flip` | `assembly_ghost` (§32.13).
 
 #### 32.6.4 Step 4: `QST_TUT_004` Plate It, Serve It
 
@@ -679,3 +679,302 @@ room to grow ("Hire more staff and a Manager to earn more while you're away!").
 - **Analytics:** step 12 (= tutorial complete). `LogCustomEvent "mmr_tutorial_complete"` with total duration
   (seconds) as the value.
 
+### 32.7 UI
+
+All tutorial UI lives in `UIController`'s overlay layer (§24.5). It is input-adaptive and respects safe areas.
+
+| Element | Description | Behavior |
+|---|---|---|
+| Tutorial tracker | Top-left chip: "Step 5/12 · Happy Customer, Happy Wallet", with sub-objective checkboxes; a secondary **Skip tutorial ▸** link appears after step 3 | Collapses to a single line while In Combat; never covers the ticket card (R-READ-1) |
+| Dialogue panel | Bottom subtitle bar: Nana portrait (hologram-tinted), speaker name, ≤ 2 lines, ▸ advance glyph, ↺ replay-line icon | Tap, click or A advances; blocking lines dim the world 20 % (none with Reduced Motion) |
+| Board bubble | A speech bubble on the menu board Nana is speaking from | Mirrors the subtitle text so it is readable at a distance |
+| Coach marks | `UIStroke` pulse (1 Hz) plus an arrow on a HUD widget; world targets use a `Highlight` | Static outline with Reduced Motion |
+| Footprint trail | `Beam` between the player's attachment and the target, scrolling footprint texture | `TextureSpeed = 0` with Reduced Motion; hidden when within 6 studs of the target |
+| Screen-edge arrow | Points to an off-screen target, with a distance label | Only one at a time |
+| Reaction card (step 5) | Face icon, number, top 2 factors with ▲/▼ icons | Shown 3 s, then shrinks into the customer's bubble |
+| Shift Receipt (step 9) | Diegetic paper receipt | Also opens as a 2D panel on phone for legibility |
+| Starter Pod cards (step 10) | Three cards: rarity color + shape, role, ability, stats, Try On | Gamepad: D-pad cycles cards; touch: swipe between cards on phone |
+| Offline Income Preview (step 12) | Big number, range, cap line, tip, **Show the math** expander | Expander text is selectable; numbers use thousands separators |
+
+### 32.8 Player Interactions (multiplayer)
+
+- **Steps 1–9 are solo.** The interior rejects visitors ("Under Renovation"). Friends can see the player's façade on
+  Restaurant Row, and their join invites are queued with "Finish Nana's lessons first!" until step 12 completes or
+  the tutorial is skipped.
+- **Steps 10–12 are social.** The player walks through the shared city. Others see the Starter Pod confetti, and
+  friends can follow them into the Mart.
+- **Server moves.** If the player follows a friend to another server (TeleportService) mid-tutorial, they land at
+  their plot in the new server and resume the current step (§32.14).
+- **Chat** is Roblox's standard `TextChatService`. The tutorial adds no free-text input.
+
+### 32.9 Accessibility
+
+- **Reduced Motion** (seeded from `GuiService.ReducedMotionEnabled`, toggle in Settings) removes:
+  - the step-1 fly-by and the step-10 camera orbit (both become cuts);
+  - the pickle splat (it becomes a small HUD icon);
+  - the light flicker (it becomes a soft dim);
+  - pulsing coach marks (they become static outlines);
+  - confetti (cut to 20 %).
+- **No flashing faster than 3 Hz** anywhere in the tutorial (R-ACC-6).
+- **Auto-Rhythm chopping** (canon C8: every tap counts as yellow, 0.8) is offered in the first-chop hint (in step 3
+  if §6's recipe has a CHOP, otherwise TIP-01) and is always available in Settings → Accessibility.
+- **Hold or toggle:** the step-7 Block prompt mentions the toggle option, and Sprint has the same option (§24.3.2).
+- **Timing windows:** Tutorial Assist widens Perfect windows to 3.0 s, and no tutorial input requires a window
+  shorter than 1.0 s. Missing a window is never a fail state.
+- **Text and audio:** every line is subtitled and replayable from the Quest Journal (R-ACC-7). Nana's gibberish
+  voice has its own *Voice barks* slider. Text size follows the §24 text-scale setting.
+- **Color independence:** timing rings carry ✓ ticks in the good zone. Rarity is shown by shape as well as color.
+  Anger shows level numerals.
+- **Input parity:** the full tutorial can be completed with keyboard and mouse, controller only, or touch only
+  (AC-32-11).
+
+### 32.10 Skip Rules
+
+1. **When:** the **Skip tutorial ▸** link appears in the tracker once `QST_TUT_003` is complete (the first burger is
+   mandatory). It stays available until step 12.
+2. **Confirmation modal:** "Skip Nana's lessons? You'll still get everything: the remaining Morph Bucks, XP, 10
+   Mutation Shards, your free mutation (choose now!), Ollie the Octopus Intern, Downtown access and a graduation
+   capsule." [Skip] [Keep learning]. Nana: "Fine. FINE. I'll be on my cruise. Call me never. (Call me.)"
+3. **Server behavior:** pop all Tutorial Assist modifiers. Complete each remaining step in order, granting its
+   rewards idempotently and logging its funnel step with custom field 01 = `skipped`. Then:
+   - If no starter part has been chosen yet, open the **mandatory** choice modal. It has no close button, and the
+     player can still Try On. "Pick one! You can buy the others later."
+   - Unlock `DST_03`.
+   - Hire `EMP_001` and assign him as `ROLE_CHEF` on `STN_GRILL`.
+   - Show the **short Offline Income Preview card** (big number plus cap line), so skippers also see offline income.
+   - Set the next objective "Save 1,000 MB for Tiny Mutation Diner".
+4. **Not auto-performed:** the step-11 *purchase* (players keep the MB; the Upgrades entry gets a contextual tip
+   later) and the scripted Karenosaurus fight (combat basics come from TIP-12 at the player's first anger ≥ 3
+   customer).
+5. **Scripted customers** present at skip time are served automatically, pay normally and leave. Held items are
+   discarded at no charge.
+6. Skipping is final, but every line stays replayable in the Quest Journal. Target skip rate ≤ 15 % of players
+   offered the skip (§1.7).
+
+### 32.11 Dependencies
+
+§5 (stations, timers, the assist modifier hooks), §6 (Basic Burger, Cheeseburger and Fizzy Soda recipes and
+prices), §8–§10 (scripted spawn API, satisfaction, anger levels), §11 (base kit, Huff Points, In-Combat flag), §12–§13
+(starter parts, Morph menu), §14 (per-serve XP, level-up toast), §15 (repair minigame, tutorial-eligible upgrade flag,
+Atmosphere), §16–§17 (hire flow, `PreviewAsync`), §18 (Mart route, Downtown arch, Pigeon Taxi), §19 (`NPC_001`,
+`NPC_004`, `NPC_006`, `NPC_007`), §20 (`QST_TUT_` quest rows and rewards), §24 (progressive HUD, bindings, overlays),
+§26 (Nana's voice, SFX, music stingers), §27 (remotes), §28 (tutorial state schema), §31 (funnel dashboards).
+
+### 32.12 Progression after the Tutorial: Contextual Tips
+
+One-time tips fire the first time a situation occurs. Each is a short Nana bark plus a coach mark, persisted per
+profile as a bitmask and skippable with one tap.
+
+| Tip | Trigger | Content |
+|---|---|---|
+| TIP-01 | First use of `STN_CUT` | Chop ring (green = clean cut, yellow, miss; over-chopping makes MUSHY) and an **Auto-Rhythm** toggle button right in the hint |
+| TIP-02 | First ON_FIRE station | "FIRE! Extinguisher! Hold Interact!" (`ANM_030` Extinguish fire) |
+| TIP-03 | First visit after reaching TIER_03 | Table service: waiters, seating, plating now matters (×0.9 if un-plated, canon C8) |
+| TIP-04 | First login with a pending offline report | The Welcome Back screen: Collect, Employee Report, Restaurant Damage, Upgrade Suggestions (§17) |
+| TIP-05 | First player KO | "Seeing Stars! You lose nothing. Ever. Walk it off." (canon C12.1) |
+| TIP-06 | First capsule open | Disclosed odds and the 40-capsule pity counter (canon C4.7) |
+| TIP-07 | First time opening Stats after a level-up | Stat allocation: Cooking, Strength, Repair, Luck "+" buttons, "More Stats" (canon C5) |
+| TIP-08 | First SOLD OUT | Special ingredients are stocked; buy crates at Restaurant Supplies (canon C9) |
+| TIP-09 | First city event toast | Events, map pings, rewards; Return Door to get home |
+| TIP-10 | Second part owned in any slot group | Saved loadouts (Chef, Fighter, Repair) and the in-combat swap rules (canon E4) |
+| TIP-11 | First order with a modification | Reading modification icons on the ticket (§6.18) |
+| TIP-12 | First customer at anger ≥ 3 (skippers only) | Block / Dodge / Swipe / Calm Down! quick card |
+| TIP-13 | First storm-out | Pay 0, a small reputation hit; how Calm Down! and Peace Offerings prevent it |
+| TIP-14 | First Manager hired | The offline cap rises to 4 h; the Closing Checklist (§4.5.1) |
+| TIP-15 | First Upgrades visit after skipping | The "Affordable now" badge and Atmosphere |
+
+### 32.13 Roblox Implementation
+
+**Architecture.**
+- Server: `TutorialDirector` is a module owned by `QuestService`. Client: `TutorialController` is owned by
+  `UIController`.
+- The server decides; the client presents. Objectives subscribe to domain signals:
+  - `OrderService`: ticket opened, dish served.
+  - `CookingService`: item graded, dish completed.
+  - `CustomerAIService`: satisfaction resolved, anger level changed.
+  - `CombatService`: ability used, hit landed, Huff Points zero.
+  - `RepairService`: repair completed. `MutationService`: part equipped. `BuildingService`: upgrade purchased.
+  - `EmployeeService`: hired, assigned.
+- Scripted customers use CustomerAIService's scripted-spawn API with fixed looks and orders. Tutorial Assist values
+  are pushed as modifiers keyed by the restaurant instance.
+- Remotes (`<Domain>.<Action>`, final names in §27):
+  - `Tutorial.StepChanged` (server → client)
+  - `Tutorial.RequestSkip` (client → server)
+  - `Tutorial.ChooseMutation` (client → server; validated against the three canon choices)
+  - `Tutorial.ForceChoice` (server → client)
+  - `Tutorial.DialogueAck` (client → server; only releases blocking-line pauses, rate-limited)
+
+**Persistence (in the profile; schema in §28).**
+
+```lua
+--!strict
+export type TutorialState = {
+	v: number,                     -- tutorial script version (migrations map old steps to new)
+	step: number,                  -- last COMPLETED step, 0..12
+	skipped: boolean,
+	choice: string?,               -- "MUT_145" | "MUT_144" | "MUT_153" once chosen
+	startedAt: number,             -- os.time() on the server
+	completedAt: number?,
+	tipsSeen: number,              -- bitmask for TIP-01..TIP-15
+	assists: { [string]: number }, -- analytics counters (burn_recovery, auto_flip, taxi, ...)
+}
+```
+
+**Step completion, rewards and funnel logging (excerpt).** API names other than Roblox's are illustrative; §27
+fixes the service interfaces.
+
+```lua
+--!strict
+-- ServerScriptService/Services/QuestService/TutorialDirector.lua (excerpt)
+local AnalyticsService = game:GetService("AnalyticsService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Remotes = require(ReplicatedStorage.Shared.Remotes)
+-- Injected by the §27 service loader during Init (loader omitted from this excerpt):
+local PlayerDataService: any, QuestService: any, MutationService: any, EmployeeService: any
+
+local LAST_STEP, SKIP_MIN_STEP = 12, 3
+local STARTER_CHOICES = { MUT_145 = "octopus", MUT_144 = "crab", MUT_153 = "wrench" }
+local CF = Enum.AnalyticsCustomFieldKeys
+
+local TutorialDirector = {}
+
+local function questId(step: number): string
+	return string.format("QST_TUT_%03d", step)
+end
+
+local function logFunnel(player: Player, step: number, mode: string, extra: string?)
+	AnalyticsService:LogOnboardingFunnelStepEvent(player, step, string.format("mmr_tutorial_step_%02d", step), {
+		[CF.CustomField01.Name] = mode,                                  -- "played" | "skipped"
+		[CF.CustomField02.Name] = player:GetAttribute("InputMode") or "unknown", -- analytics only
+		[CF.CustomField03.Name] = extra or "",
+	})
+end
+
+function TutorialDirector.completeStep(player: Player, step: number, mode: string, extra: string?): boolean
+	local profile = PlayerDataService:GetProfile(player)
+	if not profile or profile.SafeMode then
+		return false -- canon E6: no progress or rewards in Safe Mode
+	end
+	local t = profile.Data.tutorial
+	if step ~= t.step + 1 or step > LAST_STEP then
+		return false -- strictly sequential; replays and duplicates are no-ops
+	end
+	-- Idempotent by quest ID: EconomyService:Transact uses questId(step) as the idempotency key.
+	if not QuestService:GrantRewardsOnce(player, questId(step)) then
+		return false -- step stays incomplete and is retried; nothing is half-granted
+	end
+	t.step = step
+	if step == LAST_STEP then
+		t.completedAt = os.time()
+		TutorialDirector.popAssists(player)
+	end
+	logFunnel(player, step, mode, extra)
+	Remotes.Tutorial.StepChanged:FireClient(player, step, mode)
+	return true
+end
+
+Remotes.Tutorial.ChooseMutation.OnServerEvent:Connect(function(player: Player, partId: unknown)
+	if typeof(partId) ~= "string" or STARTER_CHOICES[partId] == nil then
+		return
+	end
+	local profile = PlayerDataService:GetProfile(player)
+	if not profile then return end
+	local t = profile.Data.tutorial
+	if t.choice ~= nil or t.step < 9 then
+		return -- exactly one free choice, only from step 10 (or during skip)
+	end
+	t.choice = partId
+	MutationService:Grant(player, partId, { source = "QUEST", questId = questId(10), ignoreLevelReq = true })
+	TutorialDirector.onChoice(player, STARTER_CHOICES[partId])
+end)
+
+function TutorialDirector.skip(player: Player)
+	local profile = PlayerDataService:GetProfile(player)
+	if not profile then return end
+	local t = profile.Data.tutorial
+	if t.step < SKIP_MIN_STEP or t.step >= LAST_STEP then return end
+	t.skipped = true
+	TutorialDirector.popAssists(player)
+	TutorialDirector.serveAndDismissScriptedCustomers(player)
+	for step = t.step + 1, LAST_STEP do
+		if step == 10 and t.choice == nil then
+			Remotes.Tutorial.ForceChoice:FireClient(player)
+			if not TutorialDirector.waitForChoice(player, 300) then
+				return -- resumes at step 10 next session; the modal reopens
+			end
+		end
+		if step == 12 then
+			EmployeeService:GrantTutorialHire(player, "EMP_001", "ROLE_CHEF", "STN_GRILL")
+		end
+		if not TutorialDirector.completeStep(player, step, "skipped") then
+			return
+		end
+	end
+end
+
+return TutorialDirector
+```
+
+**Other implementation notes.**
+- Highlights use `Highlight` (`DepthMode = AlwaysOnTop`, `FillTransparency = 1`, yellow outline). Roblox caps
+  simultaneous Highlights, and the tutorial uses at most 2 at a time.
+- Trails are `Beam`s between `Attachment`s on the HumanoidRootPart and the target.
+- Glyphs come from `UserInputService:GetStringForKeyCode` / `GetImageForKeyCode`. The input mode is
+  `UIController.InputMode` (§24).
+- Dialogue strings live in the localization table under keys `tut.<step>.<speaker>.<n>` and are served through
+  `LocalizationService`.
+- Analytics: funnel steps 1–12 are logged once per player via `LogOnboardingFunnelStepEvent`. Sub-events
+  (`mmr_tutorial_assist`, `mmr_tutorial_skip`, `mmr_tutorial_resume`, `mmr_tutorial_complete`) go through
+  `LogCustomEvent` with custom field 01 carrying the sub-type. The schema and dashboards are in §31.
+- Performance: scripted customers are SPCV proxies like any other customer (canon C3). The tutorial adds ≤ 3 active
+  customers, 1 Pod model and 1 dummy, which is well within §30 budgets.
+
+### 32.14 Edge Cases and Resume
+
+**Resume rule.** On join, if `tutorial.step < 12`, start step `tutorial.step + 1` with that step's re-setup. Progress
+inside an incomplete step is not persisted, *except* for permanent grants made mid-step (the step-10 part, the
+step-12 hire), which are checked first. Every resume logs `mmr_tutorial_resume` with the step number.
+
+| Situation | Behavior |
+|---|---|
+| Disconnect during steps 2–5 | Re-enter the interior; the scripted customer for that step respawns with a fresh ticket; held items are gone (no charge) |
+| Disconnect during step 6 | The Karenosaurus re-enters and goes straight to ordering ("Where WERE you?") |
+| Disconnect during step 7 | The Karenosaurus re-enters at anger 78: "I'M BAAACK." The table stays Broken because damage persists. The Polite Demon respawns seated for the splash beat |
+| Disconnect during step 8 | The table is still Broken and the puddle is still there; repair starts from the persisted durability |
+| Disconnect during step 10 after choosing | The part is already owned; resume at the equip lesson in front of the Mart (Return Door works) |
+| Disconnect during step 12 after hiring | Ollie is already on the roster; resume at "assign to Grill" |
+| Server shutdown (canon E13) | Same as a disconnect, in the new server |
+| DataStore failure / Safe Mode (canon E6) | Tutorial paused with a friendly banner; no rewards granted; resumes next join |
+| Player tries to leave the interior during steps 1–9 | The door shows a velvet rope; N: "Not yet! The city can wait. The burger cannot." |
+| Visitor tries to enter during steps 1–9 | "Under Renovation" sign; entry rejected |
+| Player attacks a customer before step 7 | Combat inputs are unbound until step 7 (the HUD isn't shown), so nothing happens |
+| Patty put in the wrong station / bun trashed / 3 burns | Rejection line / free restock / Auto-Flip assist (§32.6.3) |
+| Player idle 30 s / 90 s | Nudge line / pause with timers frozen. Roblox's own idle kick still applies; resume next join |
+| Full-screen menu opened in step 7 | Blocked by In Combat (canon E2); overlays still work |
+| Choice modal dismissed in step 10 | Re-openable from the tracker; the step can't complete without a choice |
+| Profile already owns the chosen starter part (migrated or test profile) | Grant converts to MS per canon C4.7 duplicate rules, and the tracker suggests equipping the owned copy |
+| Balance below the tutorial upgrade price | Shortfall granted as "Nana's Loan Forgiveness" (never expected; logged as an anomaly) |
+| Player declines Ollie | Ollie waits at the door; step 12 stays pending; reminders every 60 s |
+| Player levels up from per-serve XP before step 7 | Allowed; the step-7 formula then grants the 50 XP minimum; the level-up toast follows canon E14 |
+| Tutorial script updated between sessions | `tutorial.v` migration maps old steps to new (§28); no step is replayed for rewards |
+| Returning player on a new device | No tutorial (the profile flag is server-side) |
+
+### 32.15 Acceptance Criteria
+
+- **AC-32-01:** Median tutorial duration is 13–17 min and p90 ≤ 20 min across ≥ 30 first-time testers split across phone, PC and controller.
+- **AC-32-02:** Tutorial completion (funnel step 12 ÷ step 1) is ≥ 80 % in soft launch [TUNABLE].
+- **AC-32-03:** Every player who reaches step N has exactly one `LogOnboardingFunnelStepEvent` for each step 1..N with sequential step numbers and names `mmr_tutorial_step_01`…`_12`. Skipped steps carry custom field 01 = `skipped`.
+- **AC-32-04:** After completion (played or skipped), the profile has received exactly 600 MB from `QST_TUT_` rewards, 10 MS, 1 Morph Capsule, exactly one of `MUT_145` / `MUT_144` / `MUT_153`, and `EMP_001` assigned as `ROLE_CHEF`. Re-firing any completion or choice event changes nothing (idempotency test).
+- **AC-32-05:** In 1,000 simulated runs including the worst case (every patty burned, Karenosaurus unserved), the wallet at the start of `QST_TUT_011` is ≥ the tutorial upgrade price in 100 % of runs.
+- **AC-32-06:** Fault injection that disconnects at 3 points inside each of the 12 steps always resumes at the first incomplete step with the documented re-setup, with 0 duplicate grants and 0 lost grants.
+- **AC-32-07:** Level 2 is reached at the completion of `QST_TUT_007` in 100 % of runs where it had not been reached earlier.
+- **AC-32-08:** The Karenosaurus set piece plays all four beats (`ANM_047`, `ANM_048`, `ANM_049` + `ANM_050`, then the fight), and the soda splash on the Polite Demon (anger 35) occurs in 100 % of runs, whether or not the player dodges.
+- **AC-32-09:** With the §32.6.12 fixture inputs, `OfflineEarningsService:PreviewAsync` returns `Demand_off` 32.4 ± 0.1 /h, Q 32.4 /h, 2-hour net 351 ± 2 MB and a displayed range of 289–444 ± 2 MB.
+- **AC-32-10:** The skip link is absent before `QST_TUT_003` completes. Skipping grants a reward ledger identical to playing (except the optional purchase). The skip-path choice modal cannot be dismissed without choosing.
+- **AC-32-11:** The full tutorial can be completed using only keyboard and mouse, only an Xbox controller, only a PlayStation controller, or only touch. Prompts show the correct glyphs and update within 0.25 s of an input-mode change.
+- **AC-32-12:** With Reduced Motion on, there is no fly-by, camera orbit, shake, full-screen splat or pulse faster than 1 Hz, and no effect anywhere in the tutorial flashes faster than 3 Hz.
+- **AC-32-13:** No player can be KO'd during `QST_TUT_007`, and no scripted customer can storm out during steps 2–7.
+- **AC-32-14:** During steps 1–9, 100 % of visitor entry attempts to the player's interior are rejected, and friend invites are queued.
+- **AC-32-15:** The tutorial runs at ≥ 30 FPS p95 on the §30 reference low-end phone.
+- **AC-32-16:** In observed playtests, ≥ 70 % of testers aged 8–11 laugh or smile during the Karenosaurus beat (observer checklist) [TUNABLE].
+- **AC-32-17:** Within the first 10,000 players, each starter part is chosen by ≥ 15 % of players. If not, card copy and previews are revised [TUNABLE].

@@ -257,7 +257,7 @@
   Mayor (§20).
 - **UI screens:** `PermitScreen` (checklist: level, tier MB, quest steps), `RenameModal`,
   `EventCalendarScreen`, `RecordsScreen`.
-- **Roblox implementation:** permits stored as `permits[TIER_xx] = true`; `BuildingService` refuses TIER_04+
+- **Roblox implementation:** permits stored as `permits[<TIER id>] = true`; `BuildingService` refuses TIER_04+
   upgrades without the permit; names filtered via `TextService`.
 
 #### BLD_10 — Job Board

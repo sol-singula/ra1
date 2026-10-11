@@ -13,7 +13,7 @@ audio in words and reference these ids.
 | Variations | Number of distinct takes. Playback picks at random with no immediate repeat, plus pitch jitter (default `PlaybackSpeed` 0.96–1.04). |
 | 2D/3D | **3D** = `Sound` parented to a part or attachment (positional). **2D** = parented to `SoundService` or played with `SoundService:PlayLocalSound`. **2D/3D** = 2D for the acting player, 3D for everyone else. |
 | Loop | `Sound.Looped`. Loops stop on state exit with a 0.15 s fade. |
-| SoundGroup | Bus under Master: `Music`, `SFX`, `Voice`, `UI`, `Ambience` (§26). |
+| SoundGroup | Bus under Master: `Music`, `SFX`, `Alerts`, `Voice`, `UI`, `Ambience` (§26). `Alerts` holds the kitchen-warning cues behind the separate "Kitchen Alerts" slider (§5, §24): `SFX_009`, `SFX_022`, `SFX_029`, `SFX_030`, `SFX_032`, `SFX_157`. It is never ducked below −6 dB. |
 | Priority | Voice-budget class (§26). **P1** critical gameplay cue, never culled. **P2** the player's own actions and hits on them. **P3** normal. **P4** low (other players' kitchens, crowd one-shots). **Bed** = music or ambience bed managed by its director, outside the one-shot budget. |
 
 **Content rules (binding for every row):**
@@ -53,7 +53,7 @@ audio in words and reference these ids.
 | `SFX_006` | Fryer dunk | kitchen | Bubbly "blorp-sssh". | `ANM_012` `Vfx` | 3 | 3D | No | SFX | P2 |
 | `SFX_007` | Fryer bubble loop | kitchen | Rolling oil-bubble bed. | STN_FRYER active | 2 | 3D | Yes | SFX | P3 |
 | `SFX_008` | Oven door | kitchen | Creak open, clunk shut. | `ANM_013`; unload | 3 | 3D | No | SFX | P3 |
-| `SFX_009` | Ready ding | kitchen | Two-tone bell. Each heat station has its own pitch so ears can find it. | Heat item reaches T_ready | 6 (per station) | 3D | No | SFX | P2 |
+| `SFX_009` | Ready ding | kitchen | Two-tone bell. Each heat station has its own pitch so ears can find it. | Heat item reaches T_ready | 6 (per station) | 3D | No | Alerts | P2 |
 | `SFX_010` | Pizza peel swoosh | kitchen | Wooden scrape plus a whoosh. | `ANM_026` | 3 | 3D | No | SFX | P3 |
 | `SFX_011` | Sauté toss sizzle | kitchen | Pan rattle and a sizzle burst. | `ANM_024` `Impact` | 4 | 3D | No | SFX | P3 |
 | `SFX_012` | Pot bubble loop | kitchen | Thick blub-blub whose pitch drops as it nears done. | STN_SOUP_POT / STN_STOVE boil | 2 | 3D | Yes | SFX | P4 |
@@ -66,17 +66,17 @@ audio in words and reference these ids.
 | `SFX_019` | Fridge & pantry grab | kitchen | Door pop, rustle, grab. | `ANM_031` | 5 | 3D | No | SFX | P4 |
 | `SFX_020` | Stack plop | kitchen | Soft plop that rises +1 semitone per layer (major scale). | `ANM_017` per layer | 4 | 2D/3D | No | SFX | P2 |
 | `SFX_021` | Plate & garnish clink | kitchen | Ceramic clink plus a sprinkle shimmer. | `ANM_018` | 3 | 3D | No | SFX | P3 |
-| `SFX_022` | Order-up bell | kitchen | Counter bell "ding!". | Dish placed on STN_WINDOW; `ANM_230` | 2 | 3D | No | SFX | P2 |
+| `SFX_022` | Order-up bell | kitchen | Counter bell "ding!". | Dish placed on STN_WINDOW; `ANM_230` | 2 | 3D | No | Alerts | P2 |
 | `SFX_023` | Dish scrub loop | kitchen | Suds squeak and splash. | `ANM_021`, `ANM_235` | 2 | 3D | Yes | SFX | P4 |
 | `SFX_024` | Trash thunk | kitchen | Lid flap and a thunk. A miss plays a clatter. | `ANM_023` | 4 | 3D | No | SFX | P4 |
 | `SFX_025` | Mop squeak loop | kitchen | Wet rubbery squeaks. | `ANM_022` | 2 | 3D | Yes | SFX | P4 |
 | `SFX_026` | Delivery honk & thump | kitchen | Toy-horn honk, then a crate thump. | Crate arrives at STN_DELIVERY | 2 | 3D | No | SFX | P3 |
 | `SFX_027` | Mutagen pump gloop | kitchen | Bellows wheeze and a glowing gloop. | `ANM_028`; STN_INFUSER | 3 | 3D | Yes | SFX | P3 |
 | `SFX_028` | Anti-grav hum | kitchen | Wobbly theremin hum and a whoosh. | STN_ANTIGRAV; `ANM_029` | 2 | 3D | Yes | SFX | P3 |
-| `SFX_029` | Perfect window ting | kitchen | Bright "ting" paired with the ✓ visual. | Heat item enters Perfect window | 1 | 2D/3D | No | SFX | P1 |
-| `SFX_030` | Burn warning ticks | kitchen | Accelerating kettle "tss-tss" ticks. | Last 3 s before T_burn | 1 | 2D/3D | Yes | SFX | P1 |
+| `SFX_029` | Perfect window ting | kitchen | Bright "ting" paired with the ✓ visual. | Heat item enters Perfect window | 1 | 2D/3D | No | Alerts | P1 |
+| `SFX_030` | Burn warning ticks | kitchen | Accelerating kettle "tss-tss" ticks. | Last 3 s before T_burn | 1 | 2D/3D | Yes | Alerts | P1 |
 | `SFX_031` | Burnt poof | kitchen | Soot "pfoomf" plus a cough. | Item becomes BURNED; `ANM_035` | 2 | 3D | No | SFX | P2 |
-| `SFX_032` | Station fire loop | kitchen | Cartoon crackle with a comedic "woo-woo" alarm. | ON_FIRE; `ANM_187` | 1 | 3D | Yes | SFX | P1 |
+| `SFX_032` | Station fire loop | kitchen | Cartoon crackle with a comedic "woo-woo" alarm. | ON_FIRE; `ANM_187` | 1 | 3D | Yes | Alerts | P1 |
 | `SFX_033` | Extinguisher foam | kitchen | Foam whoosh, then a fizzle-out on success. | `ANM_030` | 2 | 3D | Yes | SFX | P2 |
 | `SFX_034` | Spill splat | kitchen | Juicy splat. | Item SPILLED or dropped | 4 | 3D | No | SFX | P3 |
 | `SFX_035` | Station upgrade clank | kitchen | Ratchet clank plus a rising sparkle chord, one per level. | Station Lv2–Lv5 purchased | 4 | 3D | No | SFX | P2 |
@@ -239,7 +239,7 @@ Each bank is a set of 28 syllable grains (80–220 ms) plus 8 reaction takes. Th
 | `SFX_154` | Error / denied | UI | Friendly double "bonk-bonk". | Invalid action; "Can't shop during a brawl!" | 2 | 2D | No | UI | P2 |
 | `SFX_155` | Toast notification | UI | Light "plink". | HUD toast (quests, level-up deferral, hints) | 3 | 2D | No | UI | P3 |
 | `SFX_156` | New order ticket | UI | Ticket-printer "zzt-zzt" plus a paper tear. | New order added to the queue | 2 | 2D | No | UI | P2 |
-| `SFX_157` | Patience warning | UI | Rising two-note "uh-oh" chirp, plus a directional cue if the customer is off-screen. | Any customer patience ≤ 25 % | 1 | 2D | No | UI | P1 |
+| `SFX_157` | Patience warning | UI | Rising two-note "uh-oh" chirp, plus a directional cue if the customer is off-screen. | Any customer patience ≤ 25 % | 1 | 2D | No | Alerts | P1 |
 | `SFX_158` | Hostile alert | UI | Comic "dun-dun!" horn stab. | Customer reaches anger 5 targeting the player | 1 | 2D | No | UI | P1 |
 | `SFX_159` | Quest accept & complete | UI | Accept: scroll unroll. Complete: stamp "THUNK" plus a mini fanfare. | Quest state change | 2 | 2D | No | UI | P2 |
 | `SFX_160` | Placement valid / invalid | UI | Valid: soft snap. Invalid: muted buzz. | Build-mode placement attempt | 2 | 2D | No | UI | P3 |

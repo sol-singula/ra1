@@ -1,0 +1,404 @@
+## 25. Art Direction
+
+The supplied graphics sheet is the visual bible. It shows polished, blocky Roblox characters with oversized,
+expressive heads; chefs in white coats and toques; neon city signage in pink, cyan and green; warm wooden diners
+that grow into purple-neon monster restaurants with aquariums; comic impact text ("WRONG ORDER?!", "THIS TASTES LIKE
+GARBAGE!!!"); cartoon destruction (splintered wood, flying plates); and health bars over combatants. This section
+turns that sheet into buildable rules. Animation and audio systems are in §26, and the content databases are §36.14
+and §36.15.
+
+### 25.1 Visual Pillars
+
+| Pillar | Meaning | Pass test |
+|---|---|---|
+| **Readable Chaos** | At anger level 6 with 24 customers, the player can still find their target, the burning grill and the angriest customer. | 5-second screenshot test: ≥ 8 of 10 testers point to all three. |
+| **Blocky but Bouncy** | Roblox-native chunky forms on a 0.25-stud grid, animated with anticipation, overshoot and holds. | Every asset passes the grid and bevel lint (§25.7.5). |
+| **Absurd but Coherent** | Any combination of parts looks like *one* character: shared bevels, palette logic and face language. | 20 random customer morphs reviewed: 0 rejected for "doesn't belong". |
+| **Neon Appetite** | Food and signage glow. Diners start warm-wood and end purple-neon. | Tier ladder review (§25.4.1). |
+| **Cartoon Consequences** | Destruction is splinters, stars, sauce and soot. Nothing hurts, and nothing is lost (canon §C6). | Kid-safety scan (AC-25-19). |
+
+### 25.2 Visual Style
+
+#### 25.2.1 Proportions and grid
+Baseline character height is **5.5 studs**. All parts are authored on a **0.25-stud grid** at R15 standard scale
+(canon §C13.7). Pivots and sockets snap to the grid; vertices may sit anywhere.
+
+| Region (standard morph) | Height (studs) | Share | Rule |
+|---|---|---|---|
+| Head (HEAD visual) | 2.0 | ≈ 36 % | Oversized on purpose. HEAD parts range 1.5–2.5 tall; head width ≥ 0.9 × shoulder width. |
+| Torso (upper + lower) | 1.75 | ≈ 32 % | Shoulders 2.0–2.5 wide. Shell and box torsos may reach 3.0. |
+| Legs (`LegLength`) | 2.0 | ≈ 36 % | Classes: Stubby 1.25 · Standard 2.0 · Long 2.75 · Stilt 3.5. Sets `HipHeight`. |
+| Neck seam overlap | −0.25 | — | Hidden under the head. NECK parts add `NeckLength` 0.5–2.5. |
+| **Total** | **5.5** | | |
+
+- **Envelope.** Maximum morph height is 9.5 studs (Stilt legs plus a 2.5 neck). Maximum width is 7 studs with
+  wings spread. Doorways and ceilings in §15 should clear 10 studs. `ANM_077` (door squeeze) covers tight spots.
+- **Bevels.** Every hard edge gets a one-segment bevel of 0.05–0.1 stud to catch highlights. There are no needle
+  points: minimum tip radius is 0.1 stud, so horns, claws and teeth read as toy-safe.
+
+#### 25.2.2 Exaggerated silhouettes
+1. **One hero shape per part**, at about 2× realistic proportion: the shark fin, the giraffe neck, the crab claw.
+2. **Silhouette test:** a part is identifiable as a black silhouette on a neutral morph at 120 px tall (about 30
+   studs at 1080p) by ≥ 8 of 10 testers.
+3. **Negative space:** in `ANM_001` idle, arms and tails keep ≥ 0.25 stud of gap from the torso.
+4. **Rarity reads in shape:** Common parts stay within 110 % of the slot envelope. Legendary, Mythic and Secret
+   parts may reach 130 % and add one secondary flourish (crown spikes, flame tips, orbiting bits). Rarity is never
+   color-only (canon §C13.3).
+5. **Asymmetry is a feature.** Mismatched limbs are never "fixed". `ANM_008` celebrates them.
+
+#### 25.2.3 Oversized facial features
+- **Eyes:** combined eye width is 45–60 % of face width; pupils are 40 % of the eye; white sclera with a baked dark
+  rim and one specular dot. Googly eyes are encouraged.
+- **Brows:** thick (≥ 0.12 stud) floating "sticker" brows do half the emoting (§25.3.6).
+- **Mouths:** ≥ 50 % of face width when open. Tongues are pink `#FF7AA8`. Teeth are blocky, rounded and white.
+  Shark and piranha teeth are rounded triangles, never realistic.
+- **Cheeks:** blush ovals `#FF9CB8` for happy and embarrassed. No pores, wrinkles or realistic lashes.
+
+#### 25.2.4 Master palette
+**Brand and environment colors**
+
+| Token | Hex | Use |
+|---|---|---|
+| Chef White | `#F7F5EF` | chef coats, toques, plates (white plates give food contrast) |
+| Ketchup Red | `#E8413C` | diner trims, sauces, waiter uniforms |
+| Mustard | `#FFC93C` | accents, early-tier signage |
+| Coin Gold | `#FFD447` | Morph Bucks, trophies, palace trim |
+| Diner Wood / Dark / Light | `#B86B3C` / `#7A4325` / `#E0A86E` | TIER_01–05 interiors |
+| Mint Diner | `#9FF0D0` | TIER_02 trims, fridges |
+| Neon Pink | `#FF4FD8` | signage only (deliberately shifted away from Mythic `#FF3EA5`) |
+| Neon Cyan | `#2EE6FF` | signage, tech, Morph Metro |
+| Neon Green | `#7CFF4F` | signage, mutagen, Mutation Market |
+| Neon Yellow | `#FFF35C` | signage, impact text |
+| Monster Purple / Deep / Night | `#5B2A86` / `#2A1145` / `#1B1035` | TIER_06+ interiors, night sky, text outlines |
+| Aquarium Teal / Deep | `#19C3B5` / `#0E6F8A` | aquariums (TIER_06+), sewer glow |
+| Soot Gray | `#4A4A55` | soot, smoke, burnt food |
+| Sky Day / Dusk | `#8FD8FF` / `#FF9E7A` | sky gradients |
+
+**Reserved gameplay colors.** Each is always paired with a shape or icon, so no state is color-only.
+
+| Meaning | Hex | Shape / icon partner |
+|---|---|---|
+| Interactable focus | `#FFF6D6` warm white | outline plus hand-tap icon |
+| Ready / Perfect | `#B6FF3B` lime | ✓ check |
+| Warning (patience, about to burn) | `#FFD23F` yolk | "!" in a burst bubble |
+| Danger / hostile | `#FF4D3D` tomato | jagged burst, fist icon, scribble cloud |
+| Calm / de-escalated | `#7FD3FF` sky | peace-dove icon |
+| Repair needed | `#8FB3C9` steel | wrench icon |
+
+**Rarity colors** (canon §C13.3) are reserved for rarity frames, beams and glyphs. A palette lint rejects any
+non-rarity UI or highlight color within ΔE 10 of them.
+
+**Value contrast.** Interactables are ≥ 3:1 relative-luminance contrast against their immediate background. Floors
+sit in mid value (L* 35–60). Interactables are L* ≥ 65 or saturated. Background walls carry ≤ 60 % of foreground
+saturation. On any character, the face region has the highest value.
+
+#### 25.2.5 Readability rules
+1. **Silhouette and grayscale tests** for every part, station and state (§25.2.2, §25.3.6).
+2. **Gameplay highlighting** uses Roblox `Highlight`. The engine renders at most 31 at once, so the budget is:
+   1 focus target (warm-white outline, `FillTransparency` 1), ≤ 8 hostile customers (tomato outline,
+   `DepthMode.AlwaysOnTop` within 40 studs, ≤ 2 Hz pulse), and ≤ 6 station alerts (burning or fire). The rest is
+   reserved. Anything beyond the budget uses BillboardGui icons.
+3. **Overhead stack:** at most 2 rows per customer. Row 1 is the patience or anger icon; row 2 is the Huff Points
+   bar, shown only in combat as on the mockup. Layout is in §24.
+4. **Comic text:** ≤ 3 on screen at once. Text relevant to the player wins (§25.6.3).
+5. **Clutter band:** decor within 0.5–3 studs of height beside walkways stays low-contrast, and walkways stay
+   clear.
+6. **Food:** every dish has a readable top-view hero silhouette on a white plate.
+
+#### 25.2.6 Expressive animation principles (art side)
+- **Anticipation:** ≥ 3 frames for any action, and ≥ 0.6 s tells for NPC attacks (`ANM_146`, `ANM_147`).
+- **Squash and stretch** are faked with poses and prop swaps. Animation cannot scale rig parts (a `Motor6D`
+  transform is a CFrame with no scale), so props squash through client-side `TweenService` size tweens (a plate
+  boings 1.0 → 1.2 → 1.0) and puff-ups swap pre-modeled meshes (`ANM_325`).
+- **Overshoot and settle:** 2–4 frames. **Comedic holds:** 2-frame freezes on CHOMP, KO and table-flip apex.
+- **Smears:** speed-line `Trail`s and `Beam`s instead of mesh smears.
+- **Faces change on the beat,** masked by a blink frame (§25.3.6).
+
+#### 25.2.7 Cartoon destruction language
+
+| Material | Breaks into | VFX | Never |
+|---|---|---|---|
+| Wood | 3–6 chunky planks (0.5–1.5 studs) with rounded zig-zag splinter ends | wood-chip puffs, "CRACK!" | sharp spikes |
+| Ceramic (plates, cups) | 4–6 rounded "cookie" shards that bounce | ting stars, "CRASH!" | glassy shards |
+| Metal appliances | panels pop open on hinges, springs boing out, bolts bounce | yellow star sparks, gray cartoon smoke | realistic arcs, burning |
+| Fabric | stuffing tufts and drifting feathers | feather drift | — |
+| "Jelly-glass" (aquariums, windows) | thick rounded chunks that bounce like gummies | blue cartoon splash blobs; fish pull "blub!" faces, then hop back in | sharp glass |
+| Food | splat decals (ketchup, mustard, cream, slime green, chocolate) with seeds and chunks so they read as food | splat ring, drips | blood-like red on characters |
+| Characters | **never break**: stars, birds, swirls, soot, food splats (≤ 2 s) | per §25.6 | wounds, bruises, detached limbs |
+
+Debris pieces are client-only, ≤ 12 per event, and despawn in 4 s (canon §C3). Rubble piles from Destroyed items
+are persistent props until rebuilt (§25.4.6).
+
+#### 25.2.8 Neon city lighting and stylized interiors
+- **`Lighting.Technology`** is set to `Future` in Studio. It cannot be changed from scripts, and Roblox
+  automatically reduces quality on low-end devices. Art must read **without shadows**: neon comes from the `Neon`
+  material's self-illumination plus painted glow decals.
+- **City cycle** (24 min cosmetic loop, canon §C3). The client tweens `Lighting` and its effects over 60 s per
+  phase:
+
+| Phase | ClockTime | Ambient / OutdoorAmbient | Brightness | Atmosphere (Color, Density, Haze) | Bloom (Intensity / Size / Threshold) | ColorCorrection (Saturation, Contrast, Tint) |
+|---|---|---|---|---|---|---|
+| Day | 13.5 | `#6E7FA0` / `#9AB0D0` | 2.5 | `#C7E8FF`, 0.28, 1.0 | 0.4 / 24 / 1.8 | 0.15, 0.05, `#FFFFFF` |
+| Dusk | 18.2 | `#8A6A8E` / `#B08AA0` | 1.8 | `#FFB4A0`, 0.32, 1.2 | 0.7 / 28 / 1.4 | 0.20, 0.08, `#FFF0E6` |
+| Night | 22.0 | `#3A2A66` / `#4B3A80` | 1.0 | `#6B4FB0`, 0.38, 1.6 | 1.0 / 32 / 1.0 | 0.30, 0.10, `#F1E6FF` |
+| Dawn | 6.3 | `#7C7096` / `#A39AC0` | 1.6 | `#FFD1B8`, 0.30, 1.1 | 0.5 / 24 / 1.6 | 0.15, 0.05, `#FFF6EE` |
+
+- **Sky:** a custom stylized skybox (1024² faces) with puffy clouds; at night a giant moon wearing a monocle.
+- **Light budget:** per streamed city chunk, ≤ 40 active lights (PointLight, SpotLight, SurfaceLight) and ≤ 6
+  with `Shadows = true`. Hero signs get a PointLight (Range 12–16, Brightness 1.5); most neon uses no light at all.
+- **Interiors** ignore the city clock. On entry the client tweens to the tier preset (§25.4.3) in ≤ 1.0 s.
+
+#### 25.2.9 What to avoid
+
+| Avoid | Do instead |
+|---|---|
+| Realistic PBR (pores, grime, photo wood) | SmoothPlastic plus painted toon MaterialVariants (2–3 tone grain) |
+| Horror: realistic teeth, dark red, blood, skulls, jump scares, horror fonts | rounded teeth, googly eyes, silly-spooky pastel purples for EVT_009 and EVT_029 |
+| Fire on bodies | soot for STS_TOASTY; cartoon flame on appliances and props only |
+| Realistic weapons; knives in combat poses | utensils used comically (`ABL_007`, `ABL_008`); knives appear only in station animations |
+| Muddy, desaturated grime | saturated palette; dirt as cartoon dust bunnies and stains |
+| Details thinner than 0.1 stud | chunky readable forms |
+| Real brands, logos, celebrity likenesses | original fictional names (§25.5.3) |
+| Text-heavy signs | 1–3 words, icon first |
+| Flicker > 3 Hz or full-screen flashes | ≤ 2 Hz pulses; Reduced-VFX mode (§25.6.4) |
+| Gross-out realism | gummy eyeballs, candy bugs, fruit-jelly slime (canon §C9) |
+
+### 25.3 Character Art
+
+#### 25.3.1 Modular construction (skin-over-rig)
+Every character (player, customer, employee, NPC) is a standard **R15** rig. Its default body meshes are hidden
+(Transparency 1). Mutation visual MeshParts (Massless; CanCollide, CanTouch and CanQuery false) are welded to the
+rig through the named attachments that MorphAssemblyService inserts (canon §C13.7). Art authors to those
+attachments. The table below adds the art envelope and per-slot budgets. These per-slot maxima are designed so that
+**any legal combination stays inside the canon caps by construction**.
+
+| Slot | Attachment(s) (canon) | Max envelope W×H×D (studs) | Tris L0 | Tris L1 (NPC) | MeshParts L0 | Notes |
+|---|---|---|---|---|---|---|
+| HEAD | `MMR_HeadCore` | 2.5 × 2.5 × 2.5 | 1,600 | 640 | 2 (head + face card) | provides face-socket overrides (§25.3.2) |
+| FACE | `MMR_FaceFront` | 2.0 × 1.5 × 0.5 | 300 | 120 | 1 | masks carry their own face card |
+| NOSE | `MMR_Nose` | 1.0 × 1.0 × 1.5 (trunk 1.0 × 2.5 × 1.5) | 250 | 100 | 1 | |
+| MOUTH | `MMR_Mouth` | 1.5 × 1.0 × 1.0 | 400 | 160 | 2 (upper + hinged jaw) | jaw flaps for gibberish (§26) |
+| EYES | `MMR_Eyes` | 1.75 × 0.75 × 0.5 | 400 | 160 | 4 (2 eyes + 2 pupils) | pupils look at targets |
+| EARS | `MMR_EarL`, `MMR_EarR` | 1.0 × 1.5 × 0.5 each | 500 (pair) | 200 | 2 | antennae are skinned |
+| HORNS | `MMR_HeadTop` | 2.5 × 2.0 × 1.5 | 600 | 240 | 1 | toque interplay (§25.3.7) |
+| NECK | `MMR_Neck` | 1.0 × `NeckLength` (≤ 2.5) × 1.0 | 500 | 200 | 1 (skinned) | |
+| TORSO | `MMR_TorsoCore`, `MMR_Hips` | 2.5 × 2.0 × 1.75 (shells 3.0 × 2.25 × 2.25) | 2,000 | 800 | 2 | provides back, wing, tail and neck socket overrides |
+| ARM ×2 | `MMR_ArmL_Upper/Lower/Hand` (R mirrored) | 1.0 × 2.5 × 1.0 each (tentacles 3.0 long) | 1,100 each | 440 each | 3 each | `GripStyle` attribute |
+| HANDS ×2 | `MMR_HandL`, `MMR_HandR` | 0.75 cube each | 250 each | 100 each | 1 each | |
+| LEG ×2 | `MMR_LegL_Upper/Lower` (R mirrored) | 1.0 × `LegLength` × 1.0 | 850 each | 340 each | 2 each | `LegLength` attribute |
+| FEET ×2 | `MMR_FootL`, `MMR_FootR` | 1.0 × 0.5 × 1.5 each | 200 each | 80 each | 1 each | |
+| TAIL | `MMR_TailBase` | 1.0 × 1.5 × 3.0 (fans 3.5 wide) | 900 | 360 | 1 (skinned) | |
+| WINGS | `MMR_WingL`, `MMR_WingR` | 3.0 × 2.5 × 0.75 each | 1,000 (pair) | 400 | 2 | |
+| BACK | `MMR_Back` | 2.5 × 2.5 × 1.5 | 900 | 360 | 1 | |
+| SKIN / FUR / SCALES | surface swap on all parts | — | 0 | 0 | 0 | MaterialVariant plus palette swap; shells only inside HEAD/TORSO budgets |
+| FX | `MMR_FXRoot` | 3-stud radius | 300 (orbitals) | 0 | 2 | particles have a separate budget (§25.6.2) |
+| Chef toque + apron | `MMR_HeadTop`, `MMR_TorsoCore` | — | 500 | 200 | 2 | §25.3.7 |
+| **Total (worst case)** | | | **14,950 ≤ 15,000** | **5,860 ≤ 6,000** | **38 ≤ 40** | canon §C13.7 caps |
+
+#### 25.3.2 Scale and attachment guidelines
+1. **Mount frame.** Each part is modeled with its mount point at the origin, +Y up and −Z forward (Roblox
+   `LookVector`). Its `Mount` attachment sits at the origin. The builder welds `Mount` to the rig's `MMR_*`
+   attachment (`Weld.C0` = rig attachment CFrame, `C1` = mount CFrame).
+2. **Socket overrides.** Anatomy differs wildly: a shark's eyes are on its sides, and a TV head's "mouth" is its
+   screen. So a HEAD part carries child attachments named exactly like the face sockets (`MMR_FaceFront`,
+   `MMR_Nose`, `MMR_Mouth`, `MMR_Eyes`, `MMR_EarL`, `MMR_EarR`, `MMR_HeadTop`), and the builder moves the rig
+   Head's sockets to them before attaching face parts. TORSO parts likewise override `MMR_Neck`, `MMR_WingL`,
+   `MMR_WingR`, `MMR_Back` and `MMR_TailBase`.
+3. **Clearance.** In `ANM_210` rest pose, no part may intersect a neighbor's envelope by more than 0.1 stud, except
+   designed overlaps such as collars and the neck seam.
+4. **Mirroring.** A MeshPart cannot take a negative scale, so ARM, LEG, EARS and WINGS ship explicit `_L` and `_R`
+   meshes, mirrored in Blender. Text and decals on those parts must read correctly when mirrored.
+5. **Variety scaling.** For customers, the client builder may scale HEAD and TORSO meshes by 0.9–1.1 through
+   `Size`, rescaling the child sockets proportionally. It never scales below the silhouette test size.
+6. **Leg classes.** `LegLength` takes only the four class values (§25.2.1), so animation stride and seat offsets
+   stay predictable.
+
+#### 25.3.3 Socket authoring rules in Blender
+1. Start from the template file containing the R15 rest-pose body, per-slot envelope boxes and a 1 × 1 × 1 stud
+   calibration cube. Scene units: 1 Blender unit = 1 stud. Export uses the template's FBX preset (Forward −Z, Up
+   Y). On import, the Studio 3D Importer must report the calibration cube as exactly 1 × 1 × 1.
+2. Build the part at the origin in its mount frame. Triangulate before export, and leave no n-gons and no
+   zero-area faces.
+3. **Sockets.** FBX empties do not import reliably as Attachments, so each socket is a 3-triangle marker mesh named
+   `skt.` plus the exact canon attachment name (for example `skt.MMR_Eyes`), plus one `skt.Mount`. The in-house
+   **Socket Baker** Studio plugin converts each marker into an `Attachment` with the same name (prefix removed) and
+   CFrame, then deletes the marker.
+4. **Skinned parts** (tails, long necks, tentacles, wings, antennae) use an armature of 2–6 bones with unique names
+   and ≤ 4 weights per vertex. Bones arrive as `Bone` instances, which SecondaryMotion drives (§26).
+5. **LODs.** Export `_L0`, `_L1` (≈ 40 % of L0 tris) and, for HEAD, TORSO, ARM, LEG, TAIL and WINGS, `_L2`
+   (≈ 10 %) for the impostor.
+6. The pre-export validator script checks tri counts against §25.3.1, envelope fit, required sockets, UVs inside
+   the 0–1 atlas space, and the 0.25-stud pivot grid.
+7. **Studio settings,** applied by the Asset Validator plugin on the templates (these cannot be changed at
+   runtime): `CollisionFidelity = Box`, `RenderFidelity = Automatic` (L0) or `Performance` (L1/L2), `DoubleSided`
+   false, Massless, no collision or queries. Templates are stored per part id and LOD level for the builder.
+
+#### 25.3.4 Materials
+- **SmoothPlastic first.** At least 80 % of a morph's surface is SmoothPlastic.
+- **Palette atlases instead of painted textures.** Multi-color parts use `TextureID` pointing at a 256² category
+  *palette atlas* (16 × 16 flat swatches), with UVs collapsed onto swatches. That gives crisp flat colors at near-zero
+  texture memory, and recoloring a part only means swapping the atlas (cosmetic color palettes, canon §C17.4).
+  Painted detail (stripes, eye whites, logos) comes from a shared 1024² category detail atlas.
+- **Neon** for glow features only (laser eyes, mutagen, LEDs, firefly): ≤ 3 Neon MeshParts per morph, ≤ 15 % of
+  surface.
+- **SurfaceAppearance** (ColorMap, NormalMap, RoughnessMap, MetalnessMap, each ≤ 512²) is allowed only on
+  Legendary, Mythic and Secret player parts (≤ 4 per player morph), trophies `FRN_901`–`FRN_910`, and TIER_09–10
+  hero signage. Normals are soft painted bevels, roughness sits at 0.4–0.8, and metalness is used only on robots
+  and gold. `AlphaMode = Overlay` lets the part's `Color` show through transparent ColorMap areas for tintable hero
+  parts. NPC L1 and L2 meshes never use SurfaceAppearance.
+- **SKIN / FUR / SCALES** apply a `MaterialVariant` from `MaterialService` (ToonFur on a Fabric base, ToonScales,
+  ToonSlime, ToonRubber, ToonGold, ToonRock) plus a palette swap across all visual parts.
+- **Never on characters:** Glass, ForceField, and realistic stock materials. Ghost Phase (`ANM_359`) fades with
+  Transparency.
+
+#### 25.3.5 Per-category color palettes
+Part palettes avoid exact rarity hexes (ΔE ≥ 5), so a part's color is never mistaken for its rarity frame.
+
+| Category | Base | Accent | Highlight / glow | Finish notes |
+|---|---|---|---|---|
+| MAMMAL | `#C68A5B` | `#7A4E33` | `#FFE2C4` | ToonFur option; soft fur fringe cards |
+| BIRD | `#F7F5EF` | `#FFB627` | `#5AA9FF` | feather-card edges; beak orange |
+| REPTILE | `#6CC24A` | `#2F7D32` | `#E6F57A` | ToonScales |
+| AMPHIBIAN | `#5ED16A` | `#FF7AA8` | `#FFF35C` | glossy (SA roughness 0.3 on heroes) |
+| FISH | `#3FA9F5` | `#FF8A3D` | `#E9FBFF` | atlas scale pattern |
+| INSECT | `#FFCC33` | `#2B2B33` | `#9BE8FF` | iridescent wing atlas |
+| ARACHNID | `#6B4AA8` | `#2B2340` | `#FF5DA2` | fuzzy and cute, big eye shines |
+| MARINE | `#FF6F61` | `#7B5CFF` | `#9FF7E8` | suction-cup dots |
+| DINOSAUR | `#8BC34A` | `#F4A259` | `#FFF1B5` | chunky plates |
+| MYTHOLOGICAL | `#E85D75` | `#FFD447` | `#FFF6D6` | gold trim, sparkle accents |
+| ROBOT | `#B8C4CE` | `#5BC0EB` | `#7CFF4F` | toon Metal variant, Neon LEDs |
+| OBJECT | `#F2E8CF` | `#E8413C` | `#2EE6FF` | toy-like plastic |
+| FOOD | `#F4A259` | `#E8413C` | `#7CC242` | glossy sauces; looks tasty, never rotten |
+| PLANT | `#59B84A` | `#A0522D` | `#FF8FD1` | leaf cards, blossoms |
+| ALIEN | `#8DF5A2` | `#7B3FE4` | `#2EE6FF` | Neon accents |
+| ELEMENTAL | per element: fire `#FF7A2F`, ice `#9EE8FF`, storm `#FFE45C`, lava rock `#4A3A3A` | glow `#FF6A00` (lava), `#FFFFFF` (cloud) | `#F4F8FF` | animated glow via Neon cores, never body flames |
+
+#### 25.3.6 Facial expression system
+**Purpose.** Faces are the fastest read of a customer's state. A customer's face has to show their mood (and
+whether they are about to throw the soup) before any UI does.
+
+**Rules & Mechanics.**
+- **Layers.**
+  1. **EYES parts:** 3D eyeballs with pupil sub-meshes. Pupils look at the `Target` attribute by offsetting their
+     `Weld.C0` by up to 0.08 stud.
+  2. **Expression sheet:** a `Decal` on the HEAD's face card showing brows, the mouth (only when no MOUTH part is
+     equipped) and cheeks.
+  3. **MOUTH jaw hinge** for talking.
+  4. **Head FX** (sweat drop, steam, scribble cloud, hearts) at `MMR_HeadTop`.
+- **Face styles (6):**
+  - **Toon:** default round.
+  - **Beady:** small-eyed animals.
+  - **Screen:** TV, microwave, robot visor. Pixel-emoji faces on the screen surface.
+  - **Beak:** brows plus beak-corner marks.
+  - **Fishy:** side-eyes; expression lives in the brows and bubbles.
+  - **Bug:** antenna-brows and mandible marks.
+
+  Each style has 16 textures (256² for players, 128² for NPCs). They are preloaded, because a `Decal` cannot crop an
+  atlas.
+- **The 16 expressions:**
+
+| # | Expression | Used for | Head FX |
+|---|---|---|---|
+| 1 | Neutral | default, waiting | — |
+| 2 | Happy | Happy (70–89) | — |
+| 3 | Delighted | Delighted (≥ 90), STS_CHARMED (heart pupils) | hearts |
+| 4 | Meh | Meh (50–69) | — |
+| 5 | Unhappy | Unhappy (30–49) | tiny rain cloud when sulking |
+| 6 | Annoyed | anger 1 | sweat drop |
+| 7 | Complaining | anger 2: open shouting mouth, V brows | steam puffs (small) |
+| 8 | Furious | Furious (< 30), anger 3–4: gritted blocky teeth | steam puffs (big at 4) |
+| 9 | Rage | anger 5–6 | black scribble cloud (1 Hz pulse at 6) |
+| 10 | Dizzy | STS_DIZZY, KO (`ANM_052`, `ANM_062`) | orbiting stars |
+| 11 | Sleepy | STS_SLEEPY, `ANM_109` | "Z" bubbles |
+| 12 | Eating | `ANM_043`: puffed cheeks, closed happy eyes | crumbs |
+| 13 | Surprised | wrong dish, "Whoa!" (`ANM_106`) | "!" pop |
+| 14 | Embarrassed | `ANM_053` apology | blush shine |
+| 15 | Smug | `ANM_051` victory dance, `ANM_161` arena taunt | sparkle |
+| 16 | Talk | gibberish mouth flap when no MOUTH part exists | — |
+
+- **Resolution order:** action override (Eating, Talk) > status (Dizzy, Sleepy, Charmed) > anger ≥ 1 > mood
+  (canon §C11.3 thresholds) > Neutral. Player characters use the same sheet, driven by their own state:
+  concentration while cooking, Furious in combat, Dizzy on KO, Delighted on level-up.
+- **Color independence.** Anger is carried by brow shape and FX shapes (sweat drop → steam → scribble cloud).
+  Faces are **never tinted red**, so the grayscale test passes.
+
+**Variables [TUNABLE].**
+- Swap throttle: 4 Hz.
+- A 0.08 s eyelid-closed blink frame is inserted before every swap, so swaps read as blinks.
+- Idle blink every 2–6 s.
+- LOD1 swaps only on Mood or Anger change.
+- The impostor uses a 3-state decal: Happy, Meh, Angry.
+
+**UI.** No UI of its own; it complements the overhead icon row (§24).
+
+**Progression.** Cosmetic face-style palettes (earnable) recolor brows and blush only.
+
+**Player interactions.** `ABL_070` Eagle Eye adds meters on top of faces; it never replaces them.
+
+**Dependencies.** §8 and §10 (Mood, Anger attributes), §36.7 (statuses), §26 (mouth sync).
+
+**Roblox implementation.** A client FaceController listens to `GetAttributeChangedSignal("Mood")`, `"Anger"` and
+status attributes on each proxy. It sets `Decal.Texture` from the preloaded list and drives pupils within 30 studs.
+
+**Edge cases.**
+- A FACE mask covers the face card: the sheet renders on the mask's own face card.
+- A MOUTH part is equipped: "no-mouth" sheet variants are used.
+- Faceless heads (pumpkin, Golden Burger Head) put the sheet on a front sticker card.
+- `MUT_040` Glitch Head uses Screen faces with a ≤ 2 Hz glitch offset, which is static in Reduced-VFX.
+
+#### 25.3.7 Equipment compatibility (chef toque, apron, uniforms, held items)
+- **Default chef whites.** The starter torso `MUT_117` wears a white double-breasted chef-coat palette by default,
+  matching the mockup. Every player morph also shows a toque and apron (toggle in §13, default on). These cosmetic
+  layers sit over any morph.
+- **Toque fit.** Each HEAD part carries `HatOffset` (Vector3), `HatScale` (0.6–1.4) and `HatMode`:
+  - **Top** (default).
+  - **Perch:** a tiny toque tilted 15° for huge or irregular heads.
+  - **Halo:** floats 0.25 stud above heads with no flat top (kraken, flytrap).
+  - **Screen:** sits on top of a TV or microwave.
+- **HORNS interplay.**
+  - A single centered horn (unicorn, rhino, narwhal, lightning rod) uses the **Pierced** toque, where the horn pokes
+    through a hole.
+  - Paired horns ≤ 1.5 studs apart: the toque sits between them, 0.25 stud lower.
+  - Wider antlers and frills force Perch.
+  - `MUT_102` Chef Hat Crest replaces the toque, so there is never a double hat.
+- **Apron fit.** Each TORSO part carries `ApronFit`, one of six apron meshes (≤ 250 tris each): Slim, Standard,
+  Round, Shell, Box, Blob. Aprons are front-only plus a neck loop, so BACK and WINGS parts never clip.
+- **Employee role uniforms.** Readability first. Uniform colors avoid rarity and gameplay hexes.
+
+| Role | Uniform | Band color |
+|---|---|---|
+| ROLE_CHEF | toque + apron | `#F7F5EF` |
+| ROLE_PREP | bandana + half-apron | `#9FF0D0` |
+| ROLE_WAITER | bow tie + vest + tray | `#E8413C` |
+| ROLE_CASHIER | visor + name tag | `#FFC93C` |
+| ROLE_DISH | rubber gloves + splash apron | `#6EC6FF` |
+| ROLE_CLEANER | headscarf + belt spray bottle | `#19C3B5` |
+| ROLE_REPAIR | hard hat + tool belt | `#FF6B35` |
+| ROLE_SECURITY | cap + "SECURITY" sash | `#2E3A87` |
+| ROLE_MANAGER | necktie + clipboard | `#5B2A86` |
+| ROLE_DELIVERY | cap + insulated backpack | `#2EE6FF` |
+| ROLE_STOCKER | beanie + utility apron | `#B86B3C` |
+| ROLE_ASST_MGR | necktie + whistle | `#C9B6FF` |
+
+- **Held items.** Pans, trays, mops, hammers, wrenches and extinguishers each carry a `Grip` attachment (+Y up). The
+  grip point is `MMR_ArmR_Hand`, or `MMR_HandR` when a HANDS part is equipped. The ARM or HANDS `GripStyle`
+  attribute picks the pose:
+  - **Hand:** fingers wrap.
+  - **Pinch:** claws and wrenches.
+  - **Curl:** tentacles, vines and noodles wrap 0.2 stud inside.
+  - **Stick:** magnets, mitten paws and suction cups; the item sticks to the flat face.
+  - **Balance:** scythes, spatulas and whisks; the item balances on the flat side.
+  - **Hover:** fallback; the item floats 0.25 stud off the attachment with a 1 Hz bob.
+
+#### 25.3.8 Budgets, LOD and impostors
+- **Player (L0):** ≤ 40 MeshParts, ≤ 15,000 tris (canon), guaranteed by §25.3.1. Other players' morphs render at
+  L0 within 40 studs, at L1 beyond that, and as impostors beyond 100 studs. This is a client choice, stricter than
+  canon.
+- **Customer and employee visuals (L1):** ≤ 24 MeshParts, ≤ 6,000 tris (canon). L1 bakes pupils into the eyes and
+  the jaw into the mouth. If a generated morph still exceeds 24 MeshParts, the client builder drops slots in this
+  fixed order: FX → FACE → FEET → BACK → NOSE → HORNS → EARS → NECK. The order is deterministic, so every client
+  shows the same customer. Employees never drop their uniform.
+- **Impostor (L2), beyond 60 studs** (canon; 35 studs at `SavedQualityLevel` ≤ 3): ≤ 8 MeshParts, ≤ 1,500 tris.
+  It keeps the L2 HEAD, TORSO, one mesh per arm and per leg, TAIL and combined WINGS, plus the 3-state face decal. No
+  FX and no secondary motion; the uniform color shows through the TORSO palette.
+- **Texture memory per morph:** ≤ 2 palette atlases (256²), ≤ 4 SurfaceAppearance sets (512²), and the face sheet.

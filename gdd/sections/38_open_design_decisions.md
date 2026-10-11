@@ -50,7 +50,54 @@ Owner roles refer to the team in §34.1: Producer (PM/QA lead), Lead Engineer, D
 | OD-26 | (Canon §C11.4) Jackpot cap at exactly `TIER_05` | (a) `TIER_01`–`TIER_04` 500 MB, `TIER_05`+ 5,000 MB; (b) `TIER_05` still 500 MB | (a) (TC-SAT-09) | Designer | G2 | tip economy |
 | OD-27 | (Canon §C4.6, §C13.4) Rounding of fractional costs and budgets (e.g. 337.5 MB, 18.92 points) | (a) costs round half-up to whole MB; budgets kept to 1 decimal internally, distributed so stats sum exactly; (b) floor everything | (a) | Designer | G2 | data validators, UI display |
 
-### 38.3 Acceptance Criteria
+### 38.3 Evidence Needed and Work Blocked
+
+| ID | Evidence the owner must bring | Work that waits on the decision (build to the recommendation meanwhile) |
+|---|---|---|
+| OD-01 | P-03 server captures (§35.10); CCU distribution from closed beta | Restaurant Row plot layout beyond 8 plots |
+| OD-02 | P-03 client memory on D1 after the Phase 3 performance pass | Interior streaming setup; co-op entry flow |
+| OD-03 | support-ticket forecast; Roblox trading policy review; economy-sim impact | any trade UI; gifting in Live Ops |
+| OD-04 | arena opt-in rate in playtests; RT inflow model (§39.3.2) | arena reward tables |
+| OD-05 | profile-size estimate; plot solution sketch; offline-ratio model with two properties | second-property design spike |
+| OD-06 | platform eligibility controls at the time; moderation cost estimate | voice settings in §37.4.3 |
+| OD-07 | cosmetic catalogue depth (§23); art capacity in Live Ops | season-pass UI shell |
+| OD-08 | D1/D7 by offline cap cohort; offline/active ratio per tier (TC-OFF-10) | Manager pricing; Welcome Back copy |
+| OD-09 | completed questionnaire draft; kid-safety sign-off (§37.3.3) | store page copy; marketing creatives |
+| OD-10 | co-op playtest notes on mobile typing; quick-chat phrase list | co-op HUD layout |
+| OD-11 | arena engineering estimate vs Beta capacity (F4.9) | cut-list item 1 (§34.13) |
+| OD-12 | private-server usage in closed beta | experience settings |
+| OD-13 | friend-join failure rate in closed beta | server-fill setting |
+| OD-14 | library code audit; failure-injection results (TC-EDGE-10, TC-EDGE-11) | `PlayerDataService` v0 |
+| OD-15 | OrderedDataStore budget estimate; social KPI targets | leaderboard UI |
+| OD-16 | D5 column of §35.10; TC-UI-08 results | device list in §37.4.1 |
+| OD-17 | accessibility playtest results (R6, R7 in §35.8) | settings screen |
+| OD-18 | traffic forecast by locale; vendor quotes | LocalizationTable import plan |
+| OD-19 | streak-break rates in Phase 3 playtests | login-streak UI |
+| OD-20 | Mystery Market purchase data from Alpha | `BLD_13` stock generator |
+| OD-21 | Premium-player share in closed beta | cosmetic catalogue |
+| OD-22 | privacy review; dashboard latency needs | analytics pipeline (F4.10) |
+| OD-23 | BindToClose timing measurements under 8 players | Closing state (`RestaurantService`), TC-EDGE-02 |
+| OD-24 | offline goldens computed both ways vs §C15 ratio targets | offline goldens F-OFF-01…F-OFF-10 |
+| OD-25 | none (formula check) | movement validation thresholds |
+| OD-26 | none (wording check) | jackpot cap code, TC-SAT-09 |
+| OD-27 | none (rounding check) | data validators, UI number display |
+
+### 38.4 Decision Log Template
+
+Each decided item is recorded as a row in the producer's decision log (kept with the GDD):
+
+| Field | Content |
+|---|---|
+| Decision ID | OD-NN |
+| Date / gate | e.g. 2027-04-20 / G2 |
+| Chosen option | letter + one sentence |
+| Rationale | evidence summary with links (captures, playtest notes, telemetry) |
+| Sections updated | list of §N touched |
+| Tests updated | TC IDs added or changed (§35) |
+| LiveConfig keys | if tunable (§39) |
+| Revisit trigger | KPI floor or date |
+
+### 38.5 Acceptance Criteria
 
 - **AC-38-01:** Every OD has an owner role and a decide-by gate; no gate closes with an OD due at that
   gate still Open.

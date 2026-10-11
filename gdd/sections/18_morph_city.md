@@ -904,13 +904,13 @@ gameplay hooks (never from a client "I contributed" remote). **Edge Cases.** §1
 | Content | `ModelStreamingMode` | `LevelOfDetail` | Notes |
 |---|---|---|---|
 | District folder roots | (Folders; children stream individually) | — | roads, sidewalks, terrain decorations |
-| Building façades (`BLD_xx.Facade`) | `Atomic` | `StreamingMesh` | façade, door and sign arrive together; the skyline impostor keeps distant districts visible |
-| Building interiors (`BLD_xx.Interior`) | `Atomic` | `Disabled` | built inside the façade footprint; per-floor models for `BLD_12` and per-wing models for `BLD_16` |
+| Building façades (`<BLD>.Facade`) | `Atomic` | `StreamingMesh` | façade, door and sign arrive together; the skyline impostor keeps distant districts visible |
+| Building interiors (`<BLD>.Interior`) | `Atomic` | `Disabled` | built inside the façade footprint; per-floor models for `BLD_12` and per-wing models for `BLD_16` |
 | MORPH CITY sign, Noodle Helix, Ketchup Tower, Arena jumbotron | `Atomic` | `StreamingMesh` | orientation landmarks visible from everywhere |
 | Restaurant façades on plots (`BLD_17`) | `Atomic` | `StreamingMesh` | swapped per tier (§15) |
 | Named NPC proxies | `Atomic` | — | proxy + prompt arrive together |
 | Event set pieces | `Atomic` | — | cloned at T0 |
-| `BLD_21` boss arena during `EVT_007` | `PersistentPerPlayer` + `Model:AddPersistentPlayer(p)` for each participant | — | arena cannot stream out mid-fight; `RemovePersistentPlayer` at Cooldown |
+| Throne Room boss arena (`BLD_21`) during `EVT_007` | `PersistentPerPlayer` + `Model:AddPersistentPlayer(p)` for each participant | — | arena cannot stream out mid-fight; `RemovePersistentPlayer` at Cooldown |
 | District safe-spawn pads (10 tiny parts) | `Persistent` | — | fallback landing if streaming times out |
 
 #### 18.9.2 Hierarchy
@@ -921,7 +921,7 @@ Workspace
     Districts
       DST_01 … DST_10            -- Folders; each has Roads, Props, Perches, Buildings
         Buildings
-          BLD_xx (Model)         -- Facade (Atomic, StreamingMesh), Interior (Atomic), Door, Counters
+          <BLD> (Model)          -- Facade (Atomic, StreamingMesh), Interior (Atomic), Door, Counters
     NPCProxies                   -- named NPC proxy parts (tag CityNPC)
     EventSets                    -- live event set pieces (server-spawned)
     SafePads                     -- Persistent landing pads
@@ -932,7 +932,7 @@ ReplicatedStorage.Shared
 ReplicatedStorage.CityEventState -- attributes: HeadlineId, SideId, ModifierId, Phase, EndsAt, Progress
 ServerStorage
   Config.CitySecrets             -- secret definitions, never replicated
-  CityEvents.<EVT_xxx>           -- event set-piece templates
+  CityEvents.<EVT>               -- event set-piece templates
 ServerScriptService
   Services.CityEventService      -- canon service; hosts city submodules:
     City.Travel, City.Districts (guard), City.Props, City.Secrets, City.NpcPosts
@@ -986,11 +986,11 @@ ambience by 6 dB. Positional props use `RollOffMode = InverseTapered`, `RollOffM
 
 | Zone | `AmbientReverb` | Zone | `AmbientReverb` |
 |---|---|---|---|
-| DST_01 | `City` | DST_06 | `StoneCorridor` indoors / `Plain` outdoors |
-| DST_02 | `Alley` under awnings / `City` | DST_07 | `City` / `ConcertHall` at the stage |
-| DST_03 | `City` | DST_08 | `Plain` |
-| DST_04 | `Hangar` | DST_09 | `SewerPipe` |
-| DST_05 | `ParkingLot` / `Hallway` inside the mall | DST_10 | `Arena` |
+| Restaurant Row (DST_01) | `City` | Research (DST_06) | `StoneCorridor` indoors / `Plain` outdoors |
+| Mutation Market (DST_02) | `Alley` under awnings / `City` | Entertainment (DST_07) | `City` / `ConcertHall` at the stage |
+| Downtown (DST_03) | `City` | Residential (DST_08) | `Plain` |
+| Industrial (DST_04) | `Hangar` | Sewers (DST_09) | `SewerPipe` |
+| Monster Mall (DST_05) | `ParkingLot` / `Hallway` inside the mall | Arena (DST_10) | `Arena` |
 | Hidden alleys | `Alley` (district music −9 dB) | Building interiors | per §36.10 row (default `Room`) |
 
 Ambience beds and music moods per district are listed in §18.3 (descriptions for A16, who owns the IDs).

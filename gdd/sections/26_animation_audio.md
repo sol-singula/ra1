@@ -392,15 +392,18 @@ and must stay inside mobile CPU and memory limits.
 
 | SoundGroup | Parent | Default `Volume` | Effects chain | Contents |
 |---|---|---|---|---|
-| Master | `SoundService` | 1.0 | `CompressorSoundEffect` (Threshold −12 dB, Ratio 4, Attack 0.005 s, Release 0.25 s), `EqualizerSoundEffect` (all gains 0; KO muffle uses HighGain −12 dB) | everything |
+| Master | `SoundService` | 1.0 | `CompressorSoundEffect` (Threshold −12 dB, Ratio 4, Attack 0.005 s, Release 0.25 s), `EqualizerSoundEffect` (all gains 0) | everything |
 | Music | Master | 0.45 | `CompressorSoundEffect` (SideChain = Announce; Threshold −30 dB, Ratio 4, Attack 0.05 s, Release 0.6 s) | `MUS_` tracks, stingers |
 | SFX | Master | 0.8 | `EqualizerSoundEffect` (menu-open duck: MidGain −3, HighGain −6) | kitchen, combat, destruction, repair, mutation, event one-shots |
+| Alerts | Master | 0.9 | — (no compressor; **never ducked below −6 dB**, including during chaos) | kitchen warnings behind the "Kitchen Alerts" slider (§5, §24): ready ding `SFX_009`, order-up bell `SFX_022`, Perfect ting `SFX_029`, burn warning `SFX_030`, fire alarm `SFX_032`, patience-critical warning `SFX_157` |
 | Voice | Master | 0.7 | `ChorusSoundEffect` (Mix 0 by default; set to 0.2 for Delighted grains) | customer gibberish |
 | Announce | Voice | 1.0 | — | news jingle voice-overs, NPC_001 tutorial gibberish lines |
 | UI | Master | 0.6 | — | UI, currency, level-up |
 | Ambience | Master | 0.4 | `CompressorSoundEffect` (SideChain = SFX; Threshold −24 dB, Ratio 3) | district beds, emitters, room tone |
 
-The player's settings sliders (0–100 %) multiply each default. A18 persists them (§28).
+The player's settings sliders (0–100 %) multiply each default. A18 persists them (§28). **Alerts floor:** every duck
+in the table below skips Alerts, and the AudioDirector clamps any scripted Alerts reduction to −6 dB. Only the
+player's own Kitchen Alerts slider can go lower (readability and accessibility).
 
 ##### 3D rolloff
 All 3D sounds use `RollOffMode = Enum.RollOffMode.InverseTapered` unless listed otherwise. Global settings:
@@ -440,8 +443,8 @@ city emitter and from each other. This is an A17 layout requirement in §27.
 |---|---|---|---|
 | Announcement (`SFX_199` plus NPC_030 lines, tutorial lines) | Music −8 dB, Ambience −6 dB | 0.05 s / 0.6 s | Compressor SideChain = Announce |
 | Stinger playing (`SFX_190`–`SFX_201`) | Music bed −6 dB for the stinger's length | 0.05 s / 0.4 s | scripted stem `Volume` tween |
-| Chaos state (adaptive music in Chaos) | Ambience −6 dB, room tone `SFX_178` −3 dB, non-angry customer voices −3 dB | 0.3 s / 2.0 s | scripted |
-| Player KO (`ANM_062`, 4 s) | Master EQ HighGain −12 dB ("muffled stars"), Music −6 dB | 0.1 s / 0.8 s | scripted |
+| Chaos state (adaptive music in Chaos) | Ambience −6 dB, room tone `SFX_178` −3 dB, non-angry customer voices −3 dB; Alerts untouched | 0.3 s / 2.0 s | scripted |
+| Player KO (`ANM_062`, 4 s) | SFX, Voice, Ambience EQ HighGain −12 dB ("muffled stars"), Music −6 dB; Alerts at most −6 dB | 0.1 s / 0.8 s | scripted |
 | Full-screen menu open | SFX EQ duck, Ambience −6 dB | 0.15 s / 0.3 s | scripted |
 | Heavy SFX bursts | Ambience compresses automatically | engine | Ambience Compressor SideChain = SFX |
 
@@ -551,7 +554,7 @@ Delivery format: OGG, 44.1 kHz, mono for 3D sounds and stereo for 2D beds and mu
   source for 2 s. It uses shape plus icon, never color alone (canon §C13.3 principle).
 - **Haptics** (gamepad). For P1 cues, `HapticService:SetMotor(Enum.UserInputType.Gamepad1,
   Enum.VibrationMotor.Large, 0.5)` runs for 0.15 s when "Visual & haptic cues" is on.
-- **Settings.** Per-bus sliders. "Reduce sudden loud sounds" (Master compressor: Ratio 8, Threshold −18 dB).
+- **Settings.** Per-bus sliders, including the separate **Kitchen Alerts** slider (the `Alerts` group). "Reduce sudden loud sounds" (Master compressor: Ratio 8, Threshold −18 dB).
   "Customer voices: Gibberish / Soft chimes / Off" (chimes replace grains with one soft tone per sentence). "Kitchen
   music: On / Off". "Captions". "Visual sound cues".
 
@@ -565,7 +568,7 @@ Delivery format: OGG, 44.1 kHz, mono for 3D sounds and stereo for 2D beds and mu
 | Adaptive music thresholds | Rush: 75 % seats / 4 tickets / 25 % patience; Chaos: anger ≥ 4 or 2 at ≥ 3 | hysteresis 12 s / 8 s |
 | Stem fades | up 1.5 s, down 4.0 s | |
 | Zone crossfade | 2.0 s; zone poll 4 Hz | |
-| Ducking | announce −8 dB music; stinger −6 dB; chaos −6 dB ambience | |
+| Ducking | announce −8 dB music; stinger −6 dB; chaos −6 dB ambience | Alerts floor −6 dB (never ducked further) |
 | Pitch jitter | `PlaybackSpeed` 0.96–1.04 | per play |
 
 #### 26.3.4 UI
@@ -699,7 +702,8 @@ loading. District music streams on demand.
 8. **Many players in one kitchen.** Remote players' station loops are capped at 10 in total. The nearest loops win.
 
 #### 26.3.10 Acceptance Criteria
-- **AC-26-09:** The SoundGroups Master, Music, SFX, Voice, Announce, UI and Ambience exist with the listed defaults.
+- **AC-26-09:** The SoundGroups Master, Music, SFX, Alerts, Voice, Announce, UI and Ambience exist with the listed
+  defaults.
   Each settings slider changes its bus within 1 frame, and the value persists across rejoin.
 - **AC-26-10:** During an announcement, Music drops 8 ± 1 dB within 100 ms and recovers within 600 ± 100 ms after
   the announcement ends.
@@ -720,3 +724,6 @@ loading. District music streams on demand.
 - **AC-26-18:** Inside any interior, every city emitter measures ≤ −60 dB relative to its source level.
 - **AC-26-19:** With Reduced Motion on, secondary-motion amplitude is ≤ 30 % of default, camera nudges are 0, and
   no wing flap exceeds 2 Hz.
+- **AC-26-20:** During a level-6 chaos capture with the player KO'd, the Alerts bus (`SFX_009`, `SFX_022`, `SFX_029`,
+  `SFX_030`, `SFX_032`, `SFX_157`) never measures more than 6 dB below its undiminished level, unless the player's
+  Kitchen Alerts slider is set lower.

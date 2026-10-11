@@ -363,7 +363,7 @@ Vertical-slice gate (W25):
 - **AC-34-16:** 500 automated save/load cycles with injected DataStore failures produce 0 corrupted
   profiles and enter Safe Mode exactly per §C22 E6.
 - **AC-34-17:** Low-phone reference device holds ≥ 30 FPS p50 in a `TIER_03` rush (8 seated + 4 queued,
-  4 employees) with client memory ≤ 800 MB.
+  4 employees) with client memory ≤ 900 MB (§30 LOW budget).
 - **AC-34-18:** 0 open S0/S1 bugs in slice scope; ≤ 10 open S2 bugs.
 
 ### 34.7 Phase 3 — Alpha (W26–W41)

@@ -52,6 +52,7 @@ PROCESS_SHARE = 0.5
 OFF_ROLE_PENALTY = 0.85
 TRAIT_MULT_CAP = 1.5
 OFFLINE_CEILING_SHARE = 0.60         # canon C15 "never above 60 %" -> hard clamp
+MAX_SAME_INCIDENT = 2                # an incident ID appears at most twice per report
 CAP_HOURS = {None: 2, "Common": 4, "Uncommon": 4, "Rare": 8, "Epic": 12, "Legendary": 24}
 ASST_CAP_BONUS, ABS_CAP = 2, 24
 COST_PER_DAMAGE_POINT = {1: 1, 2: 1.5, 3: 2.5, 4: 4, 5: 7, 6: 12, 7: 20, 8: 35, 9: 60, 10: 100}
@@ -444,10 +445,13 @@ def simulate(ex):
         return w
 
     pool = [(inc, weight(inc)) for inc in INCIDENTS if eligible(inc)]
-    W = sum(w for _, w in pool)
+    pool_size = len(pool)
     drawn = []
     op_steps = [r for r in rows if not r.get("voided")]
+    seen = {}
     for _ in range(count):
+        pool = [(inc, w) for inc, w in pool if seen.get(inc["id"], 0) < MAX_SAME_INCIDENT]
+        W = sum(w for _, w in pool)
         x = rng.random() * W
         acc = 0
         for inc, w in pool:
@@ -457,6 +461,7 @@ def simulate(ex):
         st_idx = rng.randrange(len(op_steps)) + 1
         n = rng.randint(inc["n"][0], inc["n"][1]) if isinstance(inc["n"], list) else 1
         drawn.append(dict(inc=inc, step=st_idx, n=n))
+        seen[inc["id"]] = seen.get(inc["id"], 0) + 1
     # cancels (INC_052 cancels one equipment incident)
     if any(d["inc"]["id"] == "INC_052" for d in drawn):
         for d in drawn:
@@ -528,7 +533,7 @@ def simulate(ex):
         if rng.random() < CRATE_CHANCE * crate_boost * r["h"]:
             crates.append((r["step"], rng.randint(5, 15)))
         step_day = (ex["last_sim_at"] + int((r["step"] - 1) * 3600)) // 86400
-        if rng.random() < CAPSULE_CHANCE * r["h"] and step_day > day_of_last:
+        if rng.random() < CAPSULE_CHANCE * r["h"] and step_day > day_of_last and capsules < 1:
             capsules += 1
             day_of_last = step_day
 
@@ -546,7 +551,7 @@ def simulate(ex):
                 clamped=clamped, ceiling=ceiling, stock_used=stock_used, sold_out=sold_out,
                 prep_count=prep_count, cashier_count=cashier_count, autobuy_log=autobuy_log, stock_end=stock, stock0=stock0, dish_factor=dish_factor,
                 clean_factor=clean_factor, q_adj=q_adj, tip_trait=tip_trait, headroom=headroom,
-                disc_boost=disc_boost, H_op=H_op, pool_size=len(pool))
+                disc_boost=disc_boost, H_op=H_op, pool_size=pool_size)
 
 
 # ---------------------------------------------------------------- the five worked examples
@@ -852,8 +857,9 @@ def render_example(r, idx):
         w("Incidents: λ = %.2f → %d drawn (%s MB net, within caps); discoveries: %s." % (
             r["lam"], r["count"], fmt(r["inc_mb"]), "none" if not (r["ms_events"] or r["crates"] or r["capsules"]) else "see report"))
         w("")
-    w("**Incidents & discoveries**" if not compact else "")
-    w("")
+    if not compact:
+        w("**Incidents & discoveries**")
+        w("")
     if not compact:
         w("- Security Mitigation SM = %.3f; λ = %.2f h × 0.6 × (1 − SM) = %.3f → count = floor(λ) + roll(%.3f) = **%d**; eligible pool %d incidents; Rh = %s MB/h." % (
             r["sm"], r["H_op"], r["lam"], r["lam"] - math.floor(r["lam"]), r["count"], r["pool_size"], fmt(r["Rh"])))
@@ -892,9 +898,10 @@ def render_example(r, idx):
     w("")
     w("| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | Net / h | C4.4 active net / h | Offline ÷ active |")
     w("|---|---|---|---|---|---|---|---|---|---|---|---|")
-    w("| %s | %s | %s | %s | −%s | −%s | −%s | %s | **%s** | %s | %s | **%.1f %%** (base economy %.1f %%) |" % (
-        fmt(tot["N"]), fmt(tot["rev"]), fmt(tot["tips"]), fmt(tot["deliv"]), fmt(tot["ing"]), fmt(tot["wages"]),
-        fmt(r["auto_rep"]).replace("−", ""), ("+" if r["inc_mb"] >= 0 else "") + fmt(r["inc_mb"]), fmt(r["net"]), fmt(nph), fmt(n_active),
+    neg_s = lambda v: ("−" + fmt(v)) if round(v) else "0"
+    w("| %s | %s | %s | %s | %s | %s | %s | %s | **%s** | %s | %s | **%.1f %%** (base economy %.1f %%) |" % (
+        fmt(tot["N"]), fmt(tot["rev"]), fmt(tot["tips"]), fmt(tot["deliv"]), neg_s(tot["ing"]), neg_s(tot["wages"]),
+        neg_s(r["auto_rep"]), ("+" if r["inc_mb"] >= 0 else "") + fmt(r["inc_mb"]), fmt(r["net"]), fmt(nph), fmt(n_active),
         100 * nph / n_active, 100 * bph / n_active))
     w("")
     return "\n".join(L)
