@@ -159,7 +159,7 @@ the player's **current** T and L, snapshotted at accept, so upgrading mid-quest 
 
 | Quest type | f_MB | f_XP | MS | RT | Other |
 |---|---|---|---|---|---|
-| TUT | fixed: 600 MB total | fixed: 390 XP total | — | — | `MUT_145` / `MUT_144` / `MUT_153` choice; 1 Morph Capsule |
+| TUT | fixed per §32.5: 600 MB total (500 MB before `QST_TUT_011`) | fixed per §32.5: ≈ 360–380 XP (`QST_TUT_007` tops up to Level 2) | 10 | — | `MUT_145` / `MUT_144` / `MUT_153` choice; 1 Morph Capsule; 2 titles; 1 emote |
 | STY (regular / chapter finale) | 0.15–0.20 / 0.30–0.40 | 0.30 / 0.60 | 2×T to 10×T | from Ch. 3: 1–15 (finale Ch. 10: 50) | finales: 1 skill point; trophies, parts, titles |
 | DLY (no P factor) | 0.02 | 0.25 (canon example) | 2 + T | — | Daily Trio bonus: 1 Morph Capsule |
 | WKY (no P factor) | 0.08 | 0.50 | 5 × T | 1 + ⌊(T−1)/4⌋ | Weekly Sweep: 2 Morph Capsules + 1 RT |
@@ -175,7 +175,7 @@ the player's **current** T and L, snapshotted at accept, so upgrading mid-quest 
 while in that tier (`IncH × hours in tier`, from the cumulative-hours column of §C4.4), and total one-time quest XP
 divided by the XP needed to cross the tier's level band (§C5.1). Targets [TUNABLE]:
 
-- `TIER_01` is the tutorial onboarding grant, deliberately generous: it pays for the first upgrade and reaches about L3.
+- `TIER_01` is the tutorial onboarding grant (§32.5), deliberately generous: it pays for the first upgrade and leaves the player at Level 2.
 - `TIER_02`–`TIER_04` allow ≤ 25 % MB / ≤ 20 % XP, a deliberate early-session boost.
 - `TIER_05`+ allow ≈ 8 % MB / ≈ 12 % XP.
 - For a typical 1.5 h/day player, dailies add ≈ 4 % and weeklies ≈ 4 % of income. One-time + repeatable quests

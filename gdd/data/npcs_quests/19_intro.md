@@ -183,13 +183,10 @@ Showcase Stage (`BLD_22`) during `EVT_027` Downtown Dance-Off.
 | 4♥ | 10 × T MS (T = your current tier at the moment of unlock) |
 | 5♥ | title "<NPC name>'s Best Friend" + 1 Morph Capsule |
 
-**UI.** A heart row sits under the NPC's name in the dialogue header, and the "Friends of Morph City" tab
-in the Quest Journal shows every friendable NPC met so far, their favorite (once revealed), and the next
-reward. A full-Heart NPC waves when you pass and gives a bonus bark.
-
-**Progression math.** Five Hearts takes about 10–14 days of casual daily chat-and-gift, or less with quests.
-At most about 60 Morph Capsules exist across all 60 NPCs, a one-time total that does not compete with the
-capsule pity economy (§C4.7). Hearts unlock no stats, recipes, mutations or services.
+**UI.** A heart row sits under the NPC's name in the dialogue header. The Quest Journal's "Friends of Morph City" tab lists
+every friendable NPC met so far, their favorite (once revealed) and the next reward. **Pacing:** 5♥ takes about 10–14 days
+of daily chat + gift, and the 60 one-time 5♥ capsules sit outside the capsule pity economy (§C4.7). Hearts never unlock
+stats, recipes, mutations or services.
 
 ### 19.7 Roblox Implementation — SPCV placement, streaming, performance
 

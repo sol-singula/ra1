@@ -132,8 +132,12 @@ def render_rewards(q: dict) -> str:
         parts.append(f"{rw['mb']}·IncH MB")
         parts.append(f"{rw['xp']}·XPR XP")
     elif "MB" in rw:
-        parts.append(f"{rw['MB']:,} MB")
-        parts.append(f"{rw['XP']:,} XP")
+        for key in ("MB", "XP"):
+            v = rw[key]
+            if isinstance(v, str):
+                parts.append(f"{v} {key}")
+            elif v:
+                parts.append(f"{v:,} {key}")
     else:
         if rw.get("mb"):
             parts.append(f"{fixed_mb(q):,} MB")
@@ -183,7 +187,8 @@ def budget_table(quests: list[dict]) -> str:
         for q in qs:
             rw = q["rw"]
             if "MB" in rw:
-                mb += rw["MB"]; xp += rw["XP"]
+                mb += rw["MB"]
+                xp += rw["XP"] if isinstance(rw["XP"], int) else 50  # formula XP counted at its 50 XP floor
             else:
                 mb += fixed_mb(q)
                 xp += fixed_xp(q)

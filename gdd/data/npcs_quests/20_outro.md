@@ -9,16 +9,7 @@
 | Alien Cuisine course (all ALN recipes learnable) | `QST_STY_017` Alien Cuisine 101 (Chapter 5, Zorp `NPC_027`) | L30, `TIER_05` |
 | `RCP_LEG_001` … `RCP_LEG_005` | `QST_CHF_011` … `QST_CHF_015` (Legendary Recipe quests, chained) | L65 / 72 / 80 / 88 / 95 |
 | City Hall Expansion Permits `TIER_04` … `TIER_10` | `QST_RST_004` … `QST_RST_010` (Mayor `NPC_002`) | the tier's canon required level (§C6) |
-| `FRN_901` Golden Spatula Trophy | `QST_CHF_010` | L50 |
-| `FRN_902` Rat King's Crown Display | `QST_STY_020` (Chapter 6 finale) | L40 |
-| `FRN_903` Critic's Five-Star Plaque | `QST_STY_023` (Chapter 7 finale) | L50 |
-| `FRN_904` Arena Champion Belt Case | `QST_CBT_009` | L40 |
-| `FRN_905` Baron's Defeated Mustache Portrait | `QST_STY_028` (Chapter 9) | L70 |
-| `FRN_906` Meteor Chunk Lamp | `QST_EXP_006` (`EVT_006`) | L26 |
-| `FRN_907` Parade Float Mini | `QST_EXP_007` (`EVT_002`) | L12 |
-| `FRN_908` Kraken Plush | `QST_EXP_008` (`EVT_022`) | L30 |
-| `FRN_909` Museum Replica Fossil | `QST_EXP_009` | L16 |
-| `FRN_910` Omnivora's Signed Apron | `QST_STY_032` (finale, `EVT_005`, host `NPC_029`) | L85 |
+| Trophies `FRN_901`–`FRN_910` (one each) | `FRN_901` ← `QST_CHF_010` · `FRN_902` ← `QST_STY_020` · `FRN_903` ← `QST_STY_023` · `FRN_904` ← `QST_CBT_009` · `FRN_905` ← `QST_STY_028` · `FRN_906` ← `QST_EXP_006` (`EVT_006`) · `FRN_907` ← `QST_EXP_007` (`EVT_002`) · `FRN_908` ← `QST_EXP_008` (`EVT_022`) · `FRN_909` ← `QST_EXP_009` · `FRN_910` ← `QST_STY_032` (`EVT_005`, host `NPC_029`) | L50 · L40 · L50 · L40 · L70 · L26 · L12 · L30 · L16 · L85 |
 | Story mutation parts | Ch. 2 `MUT_235` · Ch. 4 `MUT_049` · Ch. 5 `MUT_103` · Ch. 6 `MUT_084` · Ch. 7 `MUT_038` + `MUT_137` · Ch. 8 `MUT_037` + `MUT_200` · Ch. 9 `MUT_178` + `MUT_108` · Ch. 10 choice of `MUT_039` or `MUT_242` | story |
 
 Trophies are one per profile, non-tradeable and non-purchasable (§36.13). A trophy from an event quest can still be
@@ -39,7 +30,7 @@ earned in a later occurrence of that event if missed.
 | Q9 | Player is KO'd during a timed challenge | The timer keeps running and the player respawns at kitchen spawn (canon C12.1). No extra penalty applies; the attempt fails only if the timer expires. |
 | Q10 | Two claims race (double tap, two devices) | The session lock plus the idempotent `quest:<key>` grant means exactly one succeeds and the other returns `AlreadyClaimed` (§20.7). |
 | Q11 | Story Assist enabled and then the player levels up | Assist applies only to the current attempt of that step and resets when the step completes. |
-| Q12 | Player skipped the tutorial (§32) | Skipping auto-completes `QST_TUT_001`–`QST_TUT_012` with their full rewards (600 MB, 390 XP, the part choice, `EMP_001`, 1 Morph Capsule) after a 3-screen summary, so skippers are never behind. |
+| Q12 | Player skipped the tutorial (§32) | Skipping grants the same ledger as playing (600 MB, ≈ 360–380 XP, 10 MS, the part choice, `EMP_001`, 1 Morph Capsule, titles and emote; §32 AC-32-10), so skippers are never behind. |
 | Q13 | A quest grants a part the player already owns (e.g. `MUT_175`) | The duplicate follows canon dupe rules (kept for upgrades or auto-converted to MS, §C4.6–C4.7). It never fails. |
 | Q14 | Player declines PvP entirely | Every arena objective accepts Bash the Bots or Cook-Off race (§21), and social weeklies reroll free. No quest requires PvP or another player. |
 
@@ -57,7 +48,7 @@ earned in a later occurrence of that event if missed.
 ### 20.13 Acceptance Criteria
 
 - **AC-20-01:** The database defines ≥ 125 quests: TUT 12 · STY ≥ 30 · DLY ≥ 20 · WKY ≥ 12 · CHF ≥ 10 · CBT ≥ 10 · RPR ≥ 8 · EXP ≥ 10 · EMP ≥ 8 · RST ≥ 10. Every row has all 10 columns filled.
-- **AC-20-02:** `QST_TUT_001`–`QST_TUT_012` carry the canon titles. Their MB rewards sum to exactly 600 MB, and a player who never spends finishes `QST_TUT_010` with ≥ 525 MB from quests alone (enough for the ≤ 500 MB first upgrade). `QST_TUT_010` offers exactly `MUT_145` / `MUT_144` / `MUT_153`, and `QST_TUT_012` hires `EMP_001` at 0 MB.
+- **AC-20-02:** `QST_TUT_001`–`QST_TUT_012` carry the canon titles and match the §32.5 reward ledger row for row. MB rewards sum to exactly 600 MB, with 500 MB granted before `QST_TUT_011` (enough for the 150–250 MB first upgrade). `QST_TUT_010` offers exactly `MUT_145` / `MUT_144` / `MUT_153` (+10 MS), and `QST_TUT_012` hires `EMP_001` at 0 MB and grants 1 Morph Capsule.
 - **AC-20-03:** Every quest's NPC and involved NPCs exist in §19, every NPC lists ≥ 1 quest, and every reward ID is a canon `MUT_`/`RCP_`/`FRN_901–910` (`render_npcs_quests.py --check` exits 0).
 - **AC-20-04:** Exactly 3 dailies are drawn per UTC day and 5 weeklies per Monday-UTC week. The same `UserId` + day always yields the same draw (reconnect test), and resets fire at 00:00 UTC ± 5 s.
 - **AC-20-05:** One free daily reroll per UTC day (one per week for weeklies). A second free reroll attempt is rejected server-side, and paid rerolls cost MB only.
