@@ -242,3 +242,233 @@ then personality hooks (PER_004, PER_009, PER_025), clamped to [1.0, 5.0]. `RepM
   2.80) = 2.764, then −0.03 → **2.734 ★**.
 - *Jackpot cap:* at `TIER_04` a 120 MB tip hits the Jackpot: ×5 = 600 → capped at **500 MB**.
 
+### 10.6 Rules & Mechanics — The Anger Meter
+
+Anger is a float 0–100 per customer, updated every 4 Hz brain tick. Levels follow §C11.5: **0 Happy** (0–14) ·
+**1 Annoyed** (15–29) · **2 Complaining** (30–44) · **3 Throwing food** (45–59) · **4 Destroying furniture**
+(60–74) · **5 Fighting** (75–89) · **6 Restaurant-wide chaos** (90–100, only during chaos, §10.9). Outside chaos the
+meter is clamped at 89. Every **gain** is multiplied by the personality sensitivity (§9.3); decay never is.
+Amounts that originate in combat rules are restated from §11 so both sections agree.
+
+**Continuous gains (per second)**
+
+| Source | Rate × sens [TUNABLE] | Condition |
+|---|---|---|
+| Patience pressure | +0.6 /s from 50 % to 75 % of patience; +1.0 /s from 75 % to 100 % | `WAIT` with items pending |
+| Ordering pressure | +0.5 /s after 50 % of the ordering window; +1.0 /s in the last-chance window | `PLACE_ORDER` |
+| Long seat wait | +0.5 /s after 10 s unseated at the podium (table service) or un-served in the counter line | `REQUEST_SEAT` |
+| Dirty room | +0.005 × max(0, 60 − K) /s (K 40 → +0.10 /s; K 0 → +0.30 /s) | any Core state |
+| Fire | +0.3 /s | a station `ON_FIRE` within 30 studs (PER_022 is exempt) |
+| Complaining aura | +0.15 /s | a level-2 customer within 6 studs |
+| Tantrum aura | +0.4 /s (the strongest single tantrum aura only) | a level ≥ 3 customer within 12 studs |
+| Mob aura | +0.3 /s | inside a mob cluster (§10.8) |
+| Rumor Mill | +0.3 /s | PER_011 complaining within 8 studs |
+
+All aura-type gains together (complaining, tantrum, mob, rumor) are capped at **+2.0 /s** per customer before
+sensitivity, so a crowded room escalates quickly but never instantly.
+
+**One-off gains**
+
+| Event | Amount × sens | Defined in |
+|---|---|---|
+| Wrong dish (rejected at inspect) | +20 | §8.4.2 |
+| Burned or ruined component | +12 (once per item) | A5 |
+| Undercooked component | +8 | A5 |
+| Each missing modification (partial: +4) | +8 | A5 |
+| MUSHY or SPILLED component | +6 | A5 |
+| *Per-item defect cap* | *+30* | A5 |
+| Evaluation label × item price share | Delighted −25 · Happy −12 · Meh +6 · Unhappy +18 · Furious +32 (negative values are not × sens; PER_018 ×1.5 both ways) | A5 |
+| Hit by a thrown object of any kind, from anyone | +25 | §C11.5, §11.2.2 |
+| Splash: within 4 studs of a food impact but not hit | +6 | A5 |
+| Player melee or area contact while not hostile (0 damage, 0.3 s flinch) | +8 | §11.2.2 |
+| `PACIFIST` hit by anything (cries and flees 8 studs) | +10 extra | §11.8.2 |
+| Watching a scuffle hit within 10 studs | +3 per hit | §11.6.4 |
+| Instigator Yell (12 studs; PER_009 20 studs) | +4 every 2 s, max +20 per customer per yelling session | §11.8.2 |
+| NPC `ABL_023` Bat Screech / `ABL_047` Mind Buzz (INSTIGATOR versions) | +10 to each affected customer | §36.6 |
+| Plate stolen from its table (theft, food grab, tractor beam) | +15 | §11.6.4 |
+| A table within 6 studs flipped / its own table flipped | +10 / +25 | A5 (flip execution §11.6.3) |
+| Its seat or table becomes Broken under it | +15 | A5 |
+| Its reserved seat taken | +10 | A5 |
+| Personality hooks (PER_001 ignored "Manager!" +10, PER_006 woken +10, PER_012 startle +15, PER_031 "No Cake?!" +20) | as listed | §9.4 |
+| Regular with a grudge | starts at 15 × Grudge | §8.12 |
+
+**Decay and resets**
+
+| Rule | Value [TUNABLE] |
+|---|---|
+| Calm decay | −0.5 /s at levels 0–2 once no gain has applied for 5 s |
+| Eating | −1.0 /s at levels 0–2 while in `EAT` (replaces calm decay) |
+| Hostile fatigue | −0.2 /s at levels 3–4 once the customer has not been hit for 5 s; level 5 does not tire (resolved by combat or talk-down) |
+| Chill effects | additive with decay (§10.10); total decay capped at 3.0 /s |
+| Sheepish | for 30 s after calming: all gains ×0.5 and escalation rolls ×0.5 |
+| Perfect Recovery | finishing the whole order Perfect (every item A = 1, Q ≥ 0.95, C ≥ 0.95) at level ≤ 2 → anger 0 (§C11.5) |
+
+**Tick order:** queued one-off events → continuous gains → decay → clamp → threshold crossings in ascending order
+with escalation rolls (§10.7) → level-6 gate → replicate `Anger`/`AngerLevel` (§8.18).
+
+### 10.7 Rules & Mechanics — Escalation Rolls and Behavior by Level
+
+#### 10.7.1 The escalation roll
+
+Crossing into levels 3, 4 and 5 requires a roll (§C11.5):
+
+```
+p = clamp( AngerP × 100 / (100 + CHARM) × EventMul × EscalationDampener + Adds , 0 , 0.95 ) × Dampers
+CHARM              = highest effective CHARM among players inside the interior
+EventMul           = 1.5 during EVT_004 (§36.11), else 1.0
+EscalationDampener = restaurant upgrade multiplier from §11.10.5 / §15 (≤ 1.0; 1.0 by default)
+Adds               = +0.10 in a mob · +0.10 retaliation (hit by a thrown object or attack in the last 10 s)
+                     · +0.15 while chaos is active
+Dampers            = ×0.5 each for Sheepish, Rough Patch and Bad-Luck Breaker (§10.11); ×0.75 on a 2nd attempt
+```
+
+- **Forced results:** PER_010 after a thrown-object hit (success); PER_003 when provoked uses AngerP 0.90; the
+  QST_TUT_006/007 beats bypass rolls (§32).
+- **Deferred (no roll spent):** when the hostile cap (level 3), the fighter cap (level 5) or new-player protection
+  (level 5, owner below level 5) blocks the crossing, anger is held at threshold − 1 and the customer keeps its
+  current behavior until a slot frees — the same "deferred" rule §11.7 uses for its absolute caps.
+- **Failure:** anger is held at threshold − 1 (44 / 59 / 74), the customer draws a fallback reaction (table
+  below), and that threshold's attempt counter increases. After 2 failures at the same threshold, the next crossing
+  automatically picks **Leave** (a storm-out) — nobody sulks forever.
+- **`PACIFIST` success** lets the meter cross, but the customer only uses the pacifist rows below.
+
+| Fallback after a failed roll | Sulk | Complain | Leave |
+|---|---|---|---|
+| `PACIFIST` | 30 % | 30 % (cries dramatically) | 40 % |
+| `THROWER` | 30 % | 50 % | 20 % |
+| `BRAWLER` | 35 % | 45 % | 20 % |
+| `CHARGER` | 40 % | 35 % | 25 % |
+| `TANK` | 55 % | 35 % | 10 % |
+| `TRICKSTER` | 25 % | 45 % | 30 % |
+| `INSTIGATOR` | 10 % | 80 % | 10 % |
+
+*Sulk* = arms crossed for 12 s with anger frozen, then decay at double rate for 10 s. *Complain* = `ANM_047` for
+6 s with its complaining aura doubled. *Leave* = storm-out (pay 0, §10.5).
+
+#### 10.7.2 Behavior per level
+
+| Level | State / overlay | What the customer does | Hostile flag (§11.2.1) |
+|---|---|---|---|
+| 0 Happy | — | normal service; happy idles and emotes | no |
+| 1 Annoyed | `IMPATIENT` | `ANM_046` foot tap, grumble bubbles; no mechanical effect | no |
+| 2 Complaining | `COMPLAINING` | `ANM_047`; complaining aura; PER_001 "Manager!", PER_018 faint, PER_028 poltergeist | no |
+| 3 Throwing food | `ANGRY` | draws a mode each ModeTick from the level-3 table; throws follow the §11.2.1 cadence and §11.6.2 arcs | for 6 s after throwing at a player, and in scuffles |
+| 4 Destroying furniture | `ENRAGED` | level-4 table; smashing and flips per §11.6.3 | yes |
+| 5 Fighting the player | `FIGHTING` | the §11.8 style AI, Signature Move (§9.2.3), Huff Points | yes |
+| 6 Restaurant-wide chaos | `FIGHTING` (Ringleader) + restaurant chaos | §10.9 | every customer at level ≥ 3 |
+
+**ModeTick:** a mode is drawn on entering a level and every 6 s while there (4 s for `THROWER` and `TRICKSTER`);
+the mode runs, executed by §11, until the next draw. *Special* = the style's own trick from §11.8.2 (`TRICKSTER`:
+plate theft or condiment debuff; `INSTIGATOR`: climb a chair and Yell). *Fight* is only possible at level 5.
+
+| Level 3 mode draw | Sulk | Complain | Leave | Throw | Break | Fight | Special |
+|---|---|---|---|---|---|---|---|
+| `PACIFIST` | 40 % | 35 % | 25 % | — | — | — | — |
+| `THROWER` | 5 % | 10 % | 0 % | 85 % | 0 % | — | 0 % |
+| `BRAWLER` | 10 % | 25 % | 0 % | 65 % | 0 % | — | 0 % |
+| `CHARGER` | 15 % | 25 % | 0 % | 60 % | 0 % | — | 0 % |
+| `TANK` | 25 % | 25 % | 0 % | 50 % | 0 % | — | 0 % |
+| `TRICKSTER` | 10 % | 15 % | 0 % | 50 % | 0 % | — | 25 % |
+| `INSTIGATOR` | 5 % | 20 % | 0 % | 25 % | 0 % | — | 50 % |
+
+| Level 4 mode draw | Sulk | Complain | Leave | Throw | Break | Fight | Special |
+|---|---|---|---|---|---|---|---|
+| `PACIFIST` | 25 % | 35 % | 40 % | — | — | — | — |
+| `THROWER` | 0 % | 5 % | 0 % | 60 % | 35 % | — | 0 % |
+| `BRAWLER` | 0 % | 10 % | 0 % | 30 % | 60 % | — | 0 % |
+| `CHARGER` | 0 % | 5 % | 0 % | 15 % | 80 % | — | 0 % |
+| `TANK` | 5 % | 5 % | 0 % | 20 % | 70 % | — | 0 % |
+| `TRICKSTER` | 0 % | 5 % | 0 % | 30 % | 30 % | — | 35 % |
+| `INSTIGATOR` | 0 % | 15 % | 0 % | 20 % | 25 % | — | 40 % |
+
+| Level 5 mode draw | Sulk | Complain | Leave | Throw | Break | Fight | Special |
+|---|---|---|---|---|---|---|---|
+| `PACIFIST` | 0 % | 30 % | 70 % | — | — | — | — |
+| `THROWER` | 0 % | 0 % | 0 % | 15 % | 10 % | 75 % | 0 % |
+| `BRAWLER` | 0 % | 0 % | 0 % | 5 % | 10 % | 85 % | 0 % |
+| `CHARGER` | 0 % | 0 % | 0 % | 0 % | 20 % | 80 % | 0 % |
+| `TANK` | 0 % | 0 % | 0 % | 5 % | 15 % | 80 % | 0 % |
+| `TRICKSTER` | 0 % | 0 % | 0 % | 10 % | 10 % | 50 % | 30 % |
+| `INSTIGATOR` | 0 % | 10 % | 0 % | 10 % | 10 % | 30 % | 40 % |
+
+### 10.8 Rules & Mechanics — Chain Reactions (Emergent Chaos)
+
+A brawl is never scripted; it emerges from these rules, each of which is visible and bounded.
+
+1. **Thrown-food arcs.** Every throw is a scripted arc (§11.6.2: launch 45 studs/s, fake gravity 60 studs/s², apex
+   ≤ 6 studs, 0.5 s telegraph with a landing reticle). A dodged, phased or missed projectile **keeps flying** and
+   hits whoever is next on its path. A direct hit on a customer applies +25 × sens; the impact point spawns a splat
+   (K −4) and splashes everyone within **4 studs** (+6 × sens).
+2. **Bystanders fight back.** A hit customer records the thrower as its grievance target and gets the +0.10
+   retaliation add for 10 s. If it then passes a level-3 roll it starts a **scuffle** with the thrower even below
+   level 5 (§11.6.4), and every scuffle hit adds +3 to customers within 10 studs ("Ooh, a fight!").
+3. **Mob mentality.** When ≥ 3 customers at level ≥ 2 stand within 15 studs of one another (single-link cluster,
+   computed on a 15-stud spatial hash every tick), they form a **mob**: every customer within 15 studs of any
+   member gains +0.3 /s and +0.10 on escalation rolls. A mob dissolves when fewer than 3 members remain at level ≥ 2.
+4. **Furniture knock-ons.** Smashes, flips, charges and wall splats damage objects per §11.6.3. Their anger effects
+   are A5's: a table flipped within 6 studs +10 × sens, one's own table flipped +25 × sens (dish handling §8.5),
+   a seat turning Broken under someone +15 × sens. Spilled plates become splats (K).
+5. **Chain depth limit.** Each anger event carries a `chainDepth`: 0 for a direct cause (bad food, waiting, a
+   player's throw); an event produced by a customer whose hostility came from a depth-d event carries d + 1.
+   Escalation rolls triggered by events of depth ≥ 3 automatically fail (fallback). Cascades therefore stop after
+   three links unless the player keeps feeding them.
+6. **Caps** (escalations beyond a cap are deferred, §10.7.1). §11.7's absolute limit of 6 fighting customers
+   (8 during chaos) is never exceeded.
+
+| Tier | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Max customers at level ≥ 3 | 2 | 3 | 3 | 3 | 4 | 4 | 5 | 5 | 6 | 6 |
+| Max customers at level 5 | 1 | 1 | 2 | 2 | 2 | 2 | 3 | 3 | 3 | 3 |
+| During chaos (each +2, absolute max 8 fighters) | 4 / 3 | 5 / 3 | 5 / 4 | 5 / 4 | 6 / 4 | 6 / 4 | 7 / 5 | 7 / 5 | 8 / 5 | 8 / 5 |
+
+7. **New-player protection.** While the owner is below level 5 (the scripted tutorial excepted): no customer may
+   reach level 5, chaos cannot ignite, the level-3 cap is min(tier cap, 2) and the damage budget (§10.11) is
+   halved. Escalation still reaches level 4 — tantrums stay memorable.
+
+**Worked chain reaction** (`TIER_04`, owner level 20, CHARM 20 → charm factor 100/120 = 0.833):
+
+| t (s) | What happens | Numbers | Rule |
+|---|---|---|---|
+| 0.0 | A Picky Platypus (anger 47, level 3) draws Throw and lobs her fries at the player | `THROWER` level 3: Throw 85 % | §10.7.2 |
+| 0.5 | The player dodges; the fries keep flying and hit a Bodybuilder Pigeon (anger 12) | +25 × 1.6 = **+40 → 52** | rule 1 |
+| 0.5 | The Pigeon crosses 45: *Easily Offended* forces success → `ANGRY`, grievance = Platypus | forced roll | §9.4, §10.7.1 |
+| 0.5 | Splash 3 studs from a Grandma Golem (anger 5): +6 × 0.5 → 8. A Nervous Newt startles: +15 × 1.5 → 32.5 | level 2 for the Newt | rule 1, §9.4 |
+| 1.5 | The Pigeon throws his burger back and hits the Platypus | +25 × 1.1 = 27.5 → **74.5** → crosses 60: p = 0.35 × 0.833 + 0.10 = **0.39** → passes → `ENRAGED` | rule 2 |
+| 2.0 | The burger lands: a splat (K −4 room-wide, −6 within 12 studs) | | §10.2.5 |
+| 4.0 | The Platypus draws Break (35 %) and smashes her table; its plates spill (two more splats) | §11.6.3 values | §10.7.2 |
+| 4.0 | The Newt's table is 5 studs away: +10 × 1.5 → 47.5 → crosses 45: p = 0.05 × 0.833 = 0.04 → fails → fallback draws Leave | storm-out: pays 0, Stars −0.06 | §10.5 |
+| 6.0 | The player uses Calm Down! on the Pigeon: −(20 + 0.1 × 20) = −22 → 30 → `CALMING_DOWN`, Sheepish | §36.6 | §10.10 |
+| 8.0 | A free Strawberry Smoothie (Peace Offering) to the Platypus: −35 → 39.5 → `CALMING_DOWN`, Sheepish | | §10.10 |
+| after | One storm-out, three splats to mop, one table to repair; both calmed customers will still pay by S | | §10.11 |
+
+Only two customers ever reached level 3, so chaos never ignited — with one more angry diner it would have.
+
+### 10.9 Rules & Mechanics — Level 6: Restaurant-wide Chaos
+
+- **Ignition:** (a) ≥ 3 customers at level ≥ 3 on two consecutive brain ticks (0.5 s; §11.6.4-6); or (b) a
+  chaos command from an event (§36.11). Never while the owner is below level 5, while the restaurant is `Closing`,
+  or within the **3-minute chaos cooldown** after the previous chaos ended.
+- **On ignition:** the hostile with the highest anger becomes the **Ringleader** (anger set to ≥ 90, crown glyph);
+  every other customer at level ≥ 3 gains +10 (rolls apply, with the +0.15 chaos add); every customer at level ≤ 2
+  rolls a chaos reaction — `PACIFIST`: 60 % flee / 40 % hide; others: 45 % flee / 35 % hide / 20 % join (anger set to
+  45 without a roll if the chaos cap allows, otherwise hide). Hiding customers crouch under the nearest table,
+  ignore auras and are untargetable.
+- **During chaos (max 45 s):** arrivals are held, the outside queue and every patience clock pause, caps rise per
+  §10.8, the 89 clamp is lifted, the "CHAOS!" banner and music sting play (§11.2.1, §26). A KO'd player's KO'er
+  stays in the fight (§C12.1).
+- **Chaos Meter:** `CM = 100 × Σ_hostile max(0, anger − 44) / CM₀`, where CM₀ is that sum at ignition (joins add to
+  CM₀). It falls as hostiles are calmed, talked down, defeated or leave. Calming or defeating the Ringleader first
+  removes 25 points at once and gives every hostile −10 anger ("Without a leader, the mob loses steam").
+- **Resolution:** *Resolved* when fewer than 2 customers remain at level ≥ 3 for 8 consecutive seconds
+  (§11.6.4-6) → **"BRAWL SURVIVED!"**; the last hostile, if any, continues as a normal hostile. *Fizzled* at 45 s →
+  every remaining hostile storms out (pay 0; the chaos's total extra reputation loss is capped at −0.10 ★); hiding
+  customers resume with patience restored to at least 50 %. *Closed* if the owner disconnects (E1): no reward and no
+  reputation loss.
+- **"Brawl Survived" reward:** XP `round(0.03 × XPRate(L))` to each participating player (dealt or blocked damage,
+  calmed or talked down a customer, or was targeted) — 62 XP at level 20 — and MB `round(0.02 × NetMB/h[tier])` (§C4.4)
+  to the owner: 13 MB at `TIER_01`, 35 MB at `TIER_03`, 192 MB at `TIER_06`, 2,410 MB at `TIER_10`. Guests follow §21.
+  **Anti-farm:** no reward if ≥ 50 % of the anger that carried the hostiles past 45 came from player-caused sources
+  (player-thrown objects, player contact), and at most one reward per restaurant per 15 min.
+- **Afterwards:** the 3-minute cooldown starts; "Calm Afterglow" halves anger gains for the next 5 arrivals;
+  Aftermath (Furniture Homing, repair markers) runs per §11.6.3.
+

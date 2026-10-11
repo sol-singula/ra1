@@ -908,7 +908,7 @@ def render_example(r, idx):
     w("")
     w("| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | Net / h | C4.4 active net / h | Offline ÷ active |")
     w("|---|---|---|---|---|---|---|---|---|---|---|---|")
-    neg_s = lambda v: ("−" + fmt(v)) if round(v) else "0"
+    neg_s = lambda v: ("−" + fmt(v)) if half_up(v) else "0"
     w("| %s | %s | %s | %s | %s | %s | %s | %s | **%s** | %s | %s | **%.1f %%** (base economy %.1f %%) |" % (
         fmt(tot["N"]), fmt(tot["rev"]), fmt(tot["tips"]), fmt(tot["deliv"]), neg_s(tot["ing"]), neg_s(tot["wages"]),
         neg_s(r["auto_rep"]), ("+" if r["inc_mb"] >= 0 else "") + fmt(r["inc_mb"]), fmt(r["net"]), fmt(nph), fmt(n_active),

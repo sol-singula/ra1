@@ -435,12 +435,14 @@ Atmosphere  = clamp(round(A_furn + A_variety + A_theme + A_light − A_penalty),
 | PtsTarget (Σ Eff for full A_furn) | 30 | 50 | 75 | 100 | 130 | 170 | 215 | 265 | 320 | 400 |
 | TierCap (max Atmosphere) | 55 | 60 | 65 | 70 | 75 | 80 | 85 | 90 | 95 | 100 |
 
-**Worked example — the starter shack.** Pre-damaged starter layout: Σ Eff = 6.3 → A_furn 11.5; categories
-with ≥ 1 pt: chairs, tables → A_variety 3; Greasy Spoon Classic is already a complete set (7 countable pieces —
-"Congratulations, consistently shabby!") → +10; the Cracked bulb gives no light, Cracked windows give 0.25
-coverage → 3.8; penalty 3 Cracked + 1 Broken = 6. **Atmosphere 22** (DecorMult ×0.966). After the tutorial
-repairs (`QST_TUT_008`) the bulb lights (+0.45 coverage), penalties vanish and variety grows: **Atmosphere 42**
-(×1.026) — the first lesson that fixing things pays.
+**Worked example — the starter shack** (template geometry). Pre-damaged layout: tables 1 + 0 (Broken), folding
+chairs 1 + 0.85, Cracked bulb 0.5, Cracked windows 0.5 + 0.43, Scuffed door 0.75, curb sign 0.5, kitchen
+starter kit 4 × 0.25 → Σ Eff ≈ 6.5 → A_furn ≈ 12; categories with ≥ 1 pt: chairs, tables → A_variety 3; Greasy
+Spoon Classic is already complete (7 countable pieces — "Congratulations, consistently shabby!") → +10; the
+Cracked bulb gives no light, the windows ≈ 0.25 coverage → ≈ 3.8; penalty 3 Cracked + 1 Broken = 6.
+**Atmosphere ≈ 23** (DecorMult ×0.969). After repairing the table, bulb and windows (`QST_TUT_008` teaches the
+first one): Σ Eff ≈ 8.8 → 16, variety 6, theme 10, light ≈ 0.55 coverage → 8, no penalty: **Atmosphere ≈ 40**
+(×1.02) — the first lesson that fixing things pays.
 
 **Local atmosphere** (host scoring term in §8.6): `LocalAtmosphere(table) = clamp(Atmosphere + 20 × (D_t −
 D_avg) / max(D_avg, 1), 0, 100)` where `D_t` is Σ Eff of decor within 12 studs of the table centre and `D_avg`
@@ -877,7 +879,8 @@ purchases, repairs, rebuilds and upgrades (§31).
   kit uses exactly 4 of 6 slots at `TIER_01`.
 - **AC-15-08:** Attached seats never exceed tier Seats; a Broken surface disables its seats within one server tick.
 - **AC-15-09:** Atmosphere is an integer 0–TierCap, recomputed ≤ 1 s after a change, and `DecorMult = 0.9 + 0.003 ×
-  Atmosphere` is what `CustomerAIService` reads; the starter shack reads 22 before and 42 after the tutorial repairs.
+  Atmosphere` is what `CustomerAIService` reads; the template starter shack reads 20–26 before and 36–44 after
+  repairing its table, bulb and windows.
 - **AC-15-10:** Cleanliness K drops by exactly 4 per dining trash item and 6 per spill (fixtures), recovers when
   they are cleaned, and is clamped to 0–100.
 - **AC-15-11:** Durability is stored as an integer 0–100 per object; states derive from canon bands (76/51/26/1/0)

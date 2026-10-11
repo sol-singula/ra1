@@ -118,8 +118,8 @@ P = {
     "mod_bonus":  [0.010, 0.010, 0.010, 0.020, 0.025, 0.030, 0.035, 0.050, 0.050, 0.050],
 }
 VISIT_SEC_ACTIVE = 225          # [TUNABLE] active seat turnover -> seat cap = seats x 16 / h
-MENU_MIX = 1.10                 # [TUNABLE] menu-weighted difficulty x category factor
-MENU_LEVEL_RATIO = 0.835        # [TUNABLE] menu level Lm = 1 + 0.835 (L - 1)
+MENU_MIX = 1.08                 # [TUNABLE] menu-weighted difficulty x category factor
+MENU_LEVEL_RATIO = 0.825        # [TUNABLE] menu level Lm = 1 + 0.825 (L - 1)
 PERSONALITY_TIP_MULT = 1.10     # [TUNABLE] order-weighted mean PersonalityTipMult
 OFFLINE_RATIO = 0.42            # [TUNABLE] offline net/h as share of active net/h (canon 35-50 %)
 ONBOARDING_GRANT = 400          # [TUNABLE] one-time MB budget across QST_TUT_001-012 (paid in first 0.25 h)
