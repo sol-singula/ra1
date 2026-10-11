@@ -25,18 +25,18 @@ defaults, budgeted work, and observability. Services are server ModuleScripts lo
 |---|---|---|
 | Max players / restaurants per server | 8 / 8 | canon §C3 |
 | Customer proxies per restaurant / per server | seats + 4 queue (≤ 28) / hard cap 160 | canon §C3; fair-share allocator §27.14 |
-| Autosave interval | 120 s, staggered 15 s per player slot | canon §C3; stagger [TUNABLE] |
-| Customer AI simulation rate | 10 Hz, round-robin within budget | [TUNABLE] |
+| Autosave interval | 120 s; first save at `UserId % 120` s, then ±5 s jitter | canon §C3; schedule in §28 |
+| Customer AI decision rate | per §8 and §30 (decimated when no player is in the interior), round-robin | movement is evaluated client-side from path segments |
 | Employee work AI rate | 5 Hz | [TUNABLE] |
-| Server gameplay script budget | ≤ 8.0 ms per Heartbeat (avg), ≤ 12 ms p95 | per-system split §27.13 [TUNABLE] |
-| Net batch flush | every 100 ms (10 Hz) per player | [TUNABLE] |
-| Default remote rate limit | 4 calls/s, burst 8 (per player, per remote) | overridden per remote [TUNABLE] |
+| Server gameplay script budget | ≤ 8.0 ms per Heartbeat (avg); Heartbeat ≥ 45 Hz sustained (§30) | per-system split §27.13 [TUNABLE] |
+| Net batch flush | every 50 ms (20 Hz): one `Net.Batch` fire per player | §30 |
+| Remote rate limits | per §29 rate class: `interact`, `chop`, `combat`, `menu`, `transaction`, `cosmetic`, `settings` | values and strike policy owned by §29 |
 | UnreliableRemoteEvent payload ceiling | ≤ 900 bytes | stays under the engine limit [TUNABLE] |
-| Lag-compensation window | 250 ms (position history 0.5 s at 20 Hz) | combat, chop taps [TUNABLE] |
-| Idempotency ring (per profile) | last 64 transaction keys | offline claims use canon ring of 20 [TUNABLE] |
-| Interiors region | origin X = 8,000 studs, interior slots 1,200 studs apart | > StreamingTargetRadius + interior size, so one interior streams at a time [TUNABLE] |
+| Rhythm-input lag window | 250 ms (`Cooking.ChopTap`, `Repair.Input`) | combat uses ping-based grace (§11) [TUNABLE] |
+| Applied-transaction ring | last 200 transaction ids | §28; offline claims also use the canon ring of 20 (§C15) |
+| Interiors region | ≥ 3,000 studs from the city, interiors 2,000 studs apart, within ±20,000 studs of the origin | one interior streams at a time (§8, §30) |
 | Join → HUD ready | p50 ≤ 10 s, p95 ≤ 20 s on reference phone | [TUNABLE] |
-| Remote-config poll | 60 s + MessagingService fast path | §27.15 [TUNABLE] |
+| Remote config refresh | durable live config every 300 s (§28); emergency overrides every 60 s; MessagingService fast path | §27.15 [TUNABLE] |
 
 **UI.** All screens belong to `UIController` (§27.8.20, layout and widgets in §24). Architecture guarantees the UI
 only renders server-replicated values and sends intents.
@@ -59,8 +59,8 @@ schema §31; test plans §35.
 | Principle | Rule | Enforcement | Violation example (rejected in review) |
 |---|---|---|---|
 | P1 Server authority | The client sends **intents** (which station, which customer, which ability), never outcomes (quality, damage, money, XP). | `Net` schemas contain no outcome fields; services compute outcomes from server state (§29). | `Cooking.InteractStation` carrying `quality = 1.0`. |
-| P2 Single-writer state | Every profile section and every runtime entity has exactly one owning service; others read it or call the owner's API. | Ownership table §27.17; Selene/grep CI rule forbids writes to foreign sections. | `QuestService` incrementing `profile.progression.xp` directly. |
-| P3 Single-writer economy | Only `EconomyService:Transact` mutates MB, MS or RT; every call carries a reason code and an idempotency key. | CI test greps for wallet writes outside `EconomyService`; analytics `LogEconomyEvent` emitted inside `Transact` only. | `OrderService` doing `wallet.MB += pay`. |
+| P2 Single-writer state | Every profile section and every runtime entity has exactly one owning service; others read it or call the owner's API. | Ownership table §27.17; services write only through `PlayerDataService:Update(player, block, fn)`, which asserts ownership in test builds. | `QuestService` incrementing `profile.progression.xp` directly. |
+| P3 Single-writer economy | Only `EconomyService:Transact` mutates MB, MS or RT; every call carries a reason code and an idempotency key. | CI test greps for writes to the `currency` block outside `EconomyService`; analytics `LogEconomyEvent` is emitted inside `TransactWith` only. | `OrderService` doing `wallet.MB += pay`. |
 | P4 Data-driven content | Recipes, ingredients, stations, parts, abilities, employees, incidents, events, quests, furniture are rows in generated read-only modules; behavior is selected by data "kinds". | Generated modules are `table.freeze`d; content builds fail on dangling references (§27.5). | Hard-coding `if recipeId == "RCP_BRG_001"` in `OrderService`. |
 | P5 SPCV NPCs | Customers, employees and named NPCs are an anchored invisible server proxy + attributes; each client builds the morph visual locally (§C3). | Proxy factory is the only place NPC instances are created server-side; visual builder exists only on clients. | Server cloning a 24-MeshPart customer model into Workspace. |
 | P6 Deterministic simulation | Offline simulation, candidate pools, NPC appearance and event schedules derive from seeded, engine-independent RNG and server `os.time()`. | In-house xorshift32 `Rng` (bit32), FNV-1a `Hash`; identical outputs in Lune and Roblox tests (AC-27-09). | Using `math.random()` inside the offline simulation. |
@@ -81,9 +81,9 @@ packages/assets, and referenced by ID from data, or committed as `.rbxm` files w
 | Rokit | Pins tool versions (`rokit.toml`) | required | Successor to Aftman/Foreman; any of them works if the team prefers. |
 | Wally | Package manager | optional | Keep dependencies few and vendored (`Packages/`, `wally.lock` committed). Candidates: React-Lua (UI), a Promise library. Everything in this section is implementable without packages. |
 | StyLua | Formatter | required | `stylua --check src` in CI; tabs, 120 columns. |
-| Selene | Linter | required | `std = "roblox"`; custom rule bans `wait()`, `spawn()`, `delay()` (use `task.*`) and wallet writes outside `EconomyService`. |
+| Selene | Linter | required | `std = "roblox"`; custom rule bans `wait()`, `spawn()`, `delay()` (use `task.*`) and `currency` writes outside `EconomyService`. |
 | luau-lsp | Type checking (`--!strict`) | required | `luau-lsp analyze --sourcemap sourcemap.json --definitions globalTypes.d.luau src`; every module starts `--!strict` except generated data (also strict). |
-| Lune | Standalone Luau runtime | recommended | Runs **pure** modules (Formulas, OfflineSim, Schema, Rng, Hash, RateLimiter, Signal) in CI on Linux with no Roblox engine. |
+| Lune | Standalone Luau runtime | recommended | Runs **pure** modules (Formulas, OfflineSim, Schema, Rng, Hash, the NetServer guard logic, Signal) in CI on Linux with no Roblox engine. |
 | Spec runner | `describe/it/expect` unit tests in a test place | required | TestEZ-style specs (`*.spec.lua`). TestEZ itself is archived; Jest-Lua is the maintained runner with the same spec style. Pick one per repo. |
 | run-in-roblox | Runs a script inside Studio from CI and pipes output | option A | Needs a Studio install and a logged-in user, so it runs on a **self-hosted Windows/macOS runner**, not headless Linux. Community tool, lightly maintained. |
 | Open Cloud (Place Publishing + Luau Execution) | Publish a built test place, then execute the test runner script on Roblox servers | option B | Fully headless; needs an API key scoped to the **test universe** only; tests run against that universe's own DataStores, never production data. |
@@ -160,9 +160,10 @@ ReplicatedStorage
 │  ├─ Formulas/                   -- PURE functions: Satisfaction (§C11.3), Patience (§C11.2), Payment & Tips &
 │  │                                 Reputation (§C11.4), Stats (§C5), Xp (§C5.1), PriceCurve (§C4.2),
 │  │                                 HeatTiming (§C8), Damage (§C5/§C12) — used by server; client uses for previews only
-│  ├─ Types/                      -- exported Luau types (ids, profile views, Net payloads, results)
+│  ├─ Types/                      -- exported Luau types: ProfileTypes (§28), Net payloads, ids, results
 │  ├─ Net/                        -- Net, Definitions, Schema, Batcher, Codec (buffer packing) (§27.7)
 │  ├─ Morph/                      -- MorphBuilder (one assembly implementation, §C13.7), PartListGen (seeded NPC looks)
+│  ├─ Npc/                        -- ProxyAttributes (the one table of NPC attribute keys, §8/§30), PathEval
 │  ├─ Config/                     -- FeatureFlags + Tunables defaults (§27.15)
 │  └─ Util/                       -- Signal, Trove (cleanup), Rng (xorshift32), Hash (FNV-1a 32), TableUtil,
 │                                    Throttle, Time (UTC daily/weekly cycle ids), Log
@@ -174,7 +175,7 @@ ReplicatedStorage
 │  ├─ Vfx/                        -- cartoon stars, sauce splats, feathers, soot puffs, confetti emitters
 │  └─ Props/                      -- client-only debris and thrown-food meshes
 ├─ UI/                            -- ScreenGui templates (one per §24 layer), components, icon atlases
-└─ Net/ (runtime)                 -- RemoteEvent / RemoteFunction / UnreliableRemoteEvent instances created by Net
+└─ Net/ (runtime)                 -- remote instances created by NetServer, including the Net.Batch carrier
 ```
 
 #### 27.4.2 ServerScriptService and ServerStorage (server only)
@@ -186,12 +187,12 @@ ServerScriptService
    ├─ Framework/
    │  ├─ Loader                   -- discovery, dependency sort, lifecycle, error isolation (§27.6)
    │  ├─ Scheduler                -- per-system Heartbeat budgets, fixed-rate jobs, amortized queues (§27.13)
-   │  ├─ NetServer                -- middleware: flag → gates → rate limit → schema → handler (§27.7)
-   │  ├─ RateLimiter              -- token buckets + strike counter (kick/flag policy in §29)
+   │  ├─ NetServer                -- remote creation, guard pipeline in §29's order, 20 Hz Net.Batch, envelopes (§27.7)
+   │  ├─ RemoteGuardPolicy        -- §29 rate-class values, strike thresholds and kick rules (data owned by §29)
    │  ├─ Telemetry                -- error counters, mmr_ events (§31), debug.profilebegin labels
-   │  └─ RemoteConfig             -- defaults + MemoryStore overrides + MessagingService refresh (§27.15)
+   │  └─ RemoteConfig             -- defaults + durable live config (§28) + MemoryStore emergency overrides (§27.15)
    └─ Services/                   -- one folder per canon service; init.lua is the public module
-      ├─ PlayerDataService/       -- ProfileStoreAdapter (session lock), Migrations/, Replica (client view + deltas)
+      ├─ PlayerDataService/       -- SessionLock, Migrations/, SaveScheduler, ReadModel (persistence details §28)
       ├─ RestaurantService/       -- PlotRegistry, InteriorSpawner, Lifecycle, Ambience
       ├─ OrderService/            -- OrderGenerator, TicketBoard, ServeEvaluator, Settlement
       ├─ RecipeService/           -- Catalog (indexes), Learning, Menu
@@ -202,7 +203,7 @@ ServerScriptService
       ├─ MorphAssemblyService/    -- server player builds via Shared/Morph/MorphBuilder, budget checks
       ├─ EmployeeService/         -- Candidates, Roster, WorkAI, Wages, Morale
       ├─ OfflineEarningsService/  -- LoadTransform, Reports, Collect
-      ├─ EconomyService/          -- Transact, Ledger, Reasons (registered source/sink codes)
+      ├─ EconomyService/          -- Apply (§28 transaction core), TransactWith, Shops (offer tokens), Sources
       ├─ InventoryService/        -- Stock, Furniture, Items, Shops
       ├─ QuestService/            -- Objectives (signal routing), Cycles (UTC), Dialogue, Rewards
       ├─ CityEventService/        -- Schedule, Overrides, Runtime/ (one module per event kind)
@@ -251,17 +252,17 @@ StarterGui                        -- intentionally empty except BootNotice (stat
 #### 27.4.4 Workspace, SoundService, Lighting
 
 ```text
-Workspace                         -- StreamingEnabled; StreamingMinRadius / StreamingTargetRadius per §30
+Workspace                         -- StreamingEnabled (radii per §30); FallenPartsDestroyHeight = −1,200 (Sewers `DST_09` ≈ Y −700, §18)
 ├─ City/
 │  ├─ DST_01 … DST_10/            -- district geometry; blocks are Models (default streaming)
 │  ├─ RestaurantRow/Plots/Plot1 … Plot8 -- BLD_17: façade anchor, door ProximityPrompt (server Triggered)
 │  ├─ Buildings/BLD_01 … BLD_22   -- shells + interaction zones (CollectionService tag MMR_Building)
 │  ├─ Metro/                      -- Morph Metro station markers (fast travel)
 │  └─ Secrets/                    -- discovery interactables (conditions evaluated server-side)
-├─ Interiors/                     -- far-off region (origin X = 8,000), never inside the city streaming radius
-│  └─ Slot1 … Slot8/              -- one interior per occupied plot; shell ModelStreamingMode = Atomic
+├─ Interiors/                     -- ≥ 3,000 studs from the city, 2,000 studs apart (§8, §30)
+│  └─ Plot1 … Plot8/              -- one interior per occupied plot; shell ModelStreamingMode = Atomic
 │     ├─ Shell, Stations/, Furniture/, Seats/  -- tags MMR_Station, MMR_Destructible, MMR_Seat
-│     ├─ Proxies/                 -- customer + employee SPCV proxies (anchored, Transparency 1)
+│     ├─ Customers/, Employees/   -- SPCV proxies (anchored, Transparency 1; tags MMR_Proxy + MMR_Customer / MMR_Employee)
 │     └─ Props/                   -- ≤ 30 server-owned loose physics props (§C3)
 ├─ Npcs/                          -- named NPC proxies in the city (SPCV)
 ├─ Arena/                         -- BLD_08 local spar volume (opt-in PvP only, §21)
@@ -599,37 +600,46 @@ return RepairService
 #### 27.7.1 Rules
 
 1. **Declarative.** Every remote is a row in `Shared/Net/Definitions`: `name` (`<Domain>.<Action>`, §C2), `kind`
-   (`Event` | `Function` | `Unreliable`), `dir` (`C2S` | `S2C`), `schema`, `rate` (per-second + burst), gates, owning
-   feature flag, and `cosmetic = true` for unreliable streams. The server creates all instances at Init in
-   `ReplicatedStorage.Net`; nothing else may call `Instance.new("RemoteEvent")` (CI grep, AC-27-03).
-2. **Middleware order:** feature flag → readiness/Safe-Mode/combat gates → rate limit (per player per remote, plus a
-   global per-player budget) → schema → handler under `xpcall` → response envelope. Rejections are counted (§29).
-   Only `UI.Ready` and `PlayerData.UpdateSettings` set `allowInSafeMode`; every other remote is refused in Safe Mode.
+   (`Event` | `Function` | `Unreliable`), `dir` (`C2S` | `S2C`), `schema`, `rateClass`, feature `flag`, and the
+   switches `allowInSafeMode`, `noCombat`, `batched` (S2C) and `cosmetic` (required for Unreliable). The server
+   creates the instances at Init in `ReplicatedStorage.Net`; only `NetServer` may create remotes or bind handlers
+   (CI lint, AC-27-03). Security policy — rate-class values, strike thresholds, kick rules, the threat model — is
+   owned by §29; `NetServer` + `Schema` are the generic implementation of §29's guard pipeline.
+2. **Guard order** (§29): rate-class token bucket, evaluated before any parsing → schema (shape, types, ranges,
+   content IDs) → session gates (feature flag, profile ready or Safe Mode session, Safe Mode, menu lock) → handler
+   under `xpcall`, where the owning service checks legality, ownership, range and cooldown → response envelope.
+   Rejections count toward §29's strike thresholds. Only `UI.Ready` and `Settings.Update` set `allowInSafeMode`.
+   `noCombat` remotes are refused while the player's `InCombat` or `TargetedByLevel5` attribute is true (E2).
 3. **Envelopes.** C2S `RemoteFunction`s always return `{ ok: boolean, code: string, data: any? }` and never error.
    The server **never** uses `InvokeClient`. Client `Net.invoke` resolves `{ ok = false, code = "TIMEOUT" }` after 10 s.
-4. **Typed payloads.** Payload types live in `Shared/Types`; schemas reject wrong types, NaN/±inf, non-string or
-   unexpected keys, over-long strings, out-of-range numbers, unknown content IDs, and over-long vectors.
-5. **Intents only** (P1). Prices, rewards, quality, damage and timestamps used for money are never accepted from
-   clients. The only client timestamps accepted are rhythm inputs (chop taps, repair minigame) and combat rewind times
-   (`Combat.UseAbility.t`), all clamped to the 250 ms lag-compensation window (§27.8.5, §27.8.7).
-6. **Unreliable = cosmetic.** `UnreliableRemoteEvent` carries only droppable, unordered cosmetic streams (emote
-   bubbles, sizzle/steam pulses, ability telegraphs, emotes); each payload ≤ 900 bytes, asserted in Studio.
-7. **Batching.** Reliable S2C state goes through `Batcher`: per player and per remote, updates are coalesced by key
-   (latest station state per slot wins) and flushed every 100 ms as one fire carrying an array; arrays above 32 entries
-   are packed into a `buffer` by `Codec`.
+4. **Typed payloads.** One table per call, validated by a struct schema; payload types live in `Shared/Types`.
+   Schemas reject wrong types, NaN/±inf, non-string or unexpected keys, over-long strings, out-of-range numbers,
+   unknown content IDs and over-long vectors.
+5. **Intents only** (P1). Prices, rewards, quality, damage and money-relevant timestamps are never accepted. The only
+   client timestamps accepted are rhythm inputs (`Cooking.ChopTap`, `Repair.Input`), clamped to a 250 ms window;
+   combat grace uses server receive time minus a capped half-ping (§11). Clients never choose idempotency keys:
+   shop purchases echo a server-issued single-use `offerToken`, and every other money-moving request derives a
+   deterministic transaction id server-side (§28).
+6. **Unreliable = cosmetic.** `UnreliableRemoteEvent` carries only droppable, unordered cosmetic streams (sizzle and
+   steam pulses, hit confirms, emotes); each payload ≤ 900 bytes, asserted in Studio.
+7. **Batching.** Batched S2C remotes are logical names in `Definitions`: entries are coalesced per player by key
+   (latest station state per slot wins), filtered by the player's zone (interior or district, from
+   `RestaurantService:GetZone`), and delivered together in one `Net.Batch` RemoteEvent fire every 50 ms (20 Hz, §30).
+   Numeric bulk (layout diffs, roster stats) is packed into a `buffer` by `Codec`.
 
 | State | Mechanism | Rate |
 |---|---|---|
-| Profile snapshot | `PlayerData.ProfileReady` (once) | join |
-| Wallet | `Economy.WalletChanged` (coalesced; carries the reason so the UI can play coin juice only after confirmation, §24) | ≤ 10 Hz |
-| XP, level, settings, quest progress | coalesced deltas (`PlayerData.Delta`, `Quest.Progress`) | ≤ 10 Hz |
-| NPC proxy state (state, anger level, seat, temp parts) | Attributes on the proxy part (replicate with streaming) | on change |
-| NPC proxy position | server CFrame writes at sim rate; client interpolates the visual | 10 Hz |
-| Station slot timing | `Cooking.StationState` with absolute `workspace:GetServerTimeNow()` times; client animates bars locally | on change |
-| Large lists (inventory, ledger, candidates) | pulled by RF when a menu opens (paged), never pushed | on demand |
+| Profile read model | `PlayerData.ProfileReady` snapshot (≤ 64 KB, §30), then `PlayerData.Delta` | join, then batched |
+| Wallet | `Economy.WalletChanged` (carries the reason, so coin juice plays only after confirmation, §24) | batched 20 Hz |
+| XP, level, settings, quest progress | `PlayerData.Delta`, `Quest.Progress` | batched 20 Hz |
+| Player combat locks | Player attributes `InCombat`, `TargetedByLevel5` (server-written) | on change |
+| NPC proxy state (state, anger level, patience, seat, look seed, emote code) | attributes on the proxy (names §8, encoding §30) through `Shared/Npc/ProxyAttributes` | on change |
+| NPC proxy movement | path-segment attribute (waypoints + start time + speed) evaluated client-side with `workspace:GetServerTimeNow()`; the server moves the proxy CFrame only for hit validation | per segment; CFrame ≤ 5 Hz (§30) |
+| Station slot timing | `Cooking.StationState` with absolute server times; clients animate bars locally | batched, on change |
+| Large lists (inventory, journal, candidates, shop offers) | pulled by RemoteFunction when a menu opens (paged) | on demand |
 | Cosmetic pulses | Unreliable remotes | ≤ 10 Hz |
 
-#### 27.7.2 Schema, rate limiter and middleware
+#### 27.7.2 Schema, definitions and middleware
 
 ```lua
 --!strict
@@ -681,12 +691,12 @@ function Schema.contentId(domain: string, pattern: string): Validator
 	end
 end
 
-function Schema.vector3(maxMagnitude: number): Validator
+function Schema.unitVector(): Validator
 	return function(v)
 		if typeof(v) ~= "Vector3" or not (finite(v.X) and finite(v.Y) and finite(v.Z)) then
 			return false, "bad vector"
 		end
-		return v.Magnitude <= maxMagnitude, "vector too long"
+		return math.abs(v.Magnitude - 1) < 0.01, "not a unit vector"
 	end
 end
 
@@ -719,26 +729,28 @@ return Schema
 -- ReplicatedStorage/Shared/Net/Definitions.lua (excerpt; the full catalog is the per-service tables in §27.8)
 local S = require(script.Parent.Schema)
 local UID = "^[%w%-_]+$"
-local GUID = "^[%x%-]+$"
+local TOKEN = "^[%x%-]+$"
 
 return {
+	["Net.Batch"] = { kind = "Event", dir = "S2C" }, -- carrier for every `batched` S2C name
 	["Cooking.InteractStation"] = {
-		kind = "Event", dir = "C2S", flag = "cooking", rate = { perSec = 10, burst = 15 },
+		kind = "Event", dir = "C2S", flag = "cooking", rateClass = "interact",
 		schema = S.struct({
 			stationUid = S.string(36, UID),
 			slot = S.int(1, 4),
-			action = S.enum({ "Place", "Take", "Start", "Tap", "Extinguish", "Clean" }),
-			tapTime = S.optional(S.number(0, 2 ^ 31)), -- rhythm inputs only (§27.7.1 rule 5)
+			action = S.enum({ "Place", "Take", "Start", "Extinguish", "Clean" }),
 		}),
 	},
-	["Mutation.Purchase"] = {
-		kind = "Function", dir = "C2S", flag = "shops", rate = { perSec = 1, burst = 3 }, noCombat = true,
-		schema = S.struct({
-			mutationId = S.contentId("Mutations", "^MUT_%d%d%d$"),
-			idempotencyKey = S.string(36, GUID), -- HttpService:GenerateGUID(false) on the client
-		}),
+	["Cooking.ChopTap"] = {
+		kind = "Event", dir = "C2S", flag = "cooking", rateClass = "chop",
+		schema = S.struct({ stationUid = S.string(36, UID), slot = S.int(1, 4), tapTime = S.number(0, 2 ^ 31) }),
 	},
-	["Customer.Emote"] = { kind = "Unreliable", dir = "S2C", cosmetic = true },
+	["Shop.Purchase"] = {
+		kind = "Function", dir = "C2S", flag = "shops", rateClass = "transaction", noCombat = true,
+		schema = S.struct({ offerToken = S.string(36, TOKEN) }), -- issued by Shop.Open, single use (§28)
+	},
+	["Cooking.StationState"] = { kind = "Event", dir = "S2C", batched = true },
+	["Cooking.StationFx"] = { kind = "Unreliable", dir = "S2C", cosmetic = true },
 }
 ```
 
@@ -747,57 +759,62 @@ return {
 -- ServerScriptService/Server/Framework/NetServer.lua (abridged)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local Definitions = require(ReplicatedStorage.Shared.Net.Definitions)
 local Telemetry = require(script.Parent.Telemetry)
 local RemoteConfig = require(script.Parent.RemoteConfig)
 
 export type Envelope = { ok: boolean, code: string, data: any? }
 type Handler = (player: Player, payload: any) -> Envelope?
-type Gates = { isReady: (Player) -> boolean, isSafeMode: (Player) -> boolean, inCombat: (Player) -> boolean }
+type Gates = { isReady: (Player) -> boolean, isSafeMode: (Player) -> boolean, isMenuLocked: (Player) -> boolean }
 type Bucket = { tokens: number, last: number }
 
-local GLOBAL_PER_SEC, GLOBAL_BURST = 60, 90 -- all remotes combined, per player [TUNABLE]
+local RATE_CLASSES: { [string]: { perSec: number, burst: number } } = { -- values owned by §29
+	interact = { perSec = 10, burst = 20 }, chop = { perSec = 1 / 0.12, burst = 10 },
+	combat = { perSec = 8, burst = 12 }, menu = { perSec = 4, burst = 8 },
+	transaction = { perSec = 2, burst = 4 }, cosmetic = { perSec = 3, burst = 6 },
+	settings = { perSec = 2, burst = 4 },
+}
+local FLUSH_SEC = 1 / 20 -- §30
 local folder = Instance.new("Folder")
 folder.Name = "Net"
 local buckets: { [Player]: { [string]: Bucket } } = {}
+local queues: { [Player]: { [string]: { any } } } = {} -- coalescing key → { name, payload }
 local gates: Gates
+local batchRemote: RemoteEvent
 local NetServer = {}
 
-local function take(b: Bucket, perSec: number, burst: number, now: number): boolean
-	b.tokens = math.min(burst, b.tokens + (now - b.last) * perSec)
-	b.last = now
-	if b.tokens < 1 then return false end
-	b.tokens -= 1
-	return true
-end
-
-local function allow(player: Player, name: string, perSec: number, burst: number): boolean
+local function allow(player: Player, class: string): boolean
+	local rc = RATE_CLASSES[class]
 	local now = os.clock()
 	local mine = buckets[player]
 	if not mine then
 		mine = {}
 		buckets[player] = mine
 	end
-	local g = mine["*"] or { tokens = GLOBAL_BURST, last = now }
-	local b = mine[name] or { tokens = burst, last = now }
-	mine["*"], mine[name] = g, b
-	return take(g, GLOBAL_PER_SEC, GLOBAL_BURST, now) and take(b, perSec, burst, now)
+	local b = mine[class] or { tokens = rc.burst, last = now }
+	mine[class] = b
+	b.tokens = math.min(rc.burst, b.tokens + (now - b.last) * rc.perSec)
+	b.last = now
+	if b.tokens < 1 then return false end
+	b.tokens -= 1
+	return true
 end
 
 local function reject(player: Player, name: string, code: string, detail: string?): Envelope
-	Telemetry.remoteRejected(player, name, code, detail) -- strike/kick policy lives in §29
+	Telemetry.remoteRejected(player, name, code, detail) -- strike counting and kicks: §29
 	return { ok = false, code = code }
 end
 
 local function run(player: Player, name: string, def: any, handler: Handler, payload: any): Envelope
+	if not allow(player, def.rateClass) then return reject(player, name, "RATE_LIMITED") end -- before parsing
+	local valid, why = def.schema(payload)
+	if not valid then return reject(player, name, "BAD_PAYLOAD", why) end
 	if not RemoteConfig.isRemoteEnabled(name, def.flag) then return reject(player, name, "DISABLED") end
 	if not gates.isReady(player) then return reject(player, name, "NOT_READY") end
 	if gates.isSafeMode(player) and not def.allowInSafeMode then return reject(player, name, "SAFE_MODE") end
-	if def.noCombat and gates.inCombat(player) then return reject(player, name, "IN_COMBAT") end
-	if not allow(player, name, def.rate.perSec, def.rate.burst) then return reject(player, name, "RATE_LIMITED") end
-	local valid, why = def.schema(payload)
-	if not valid then return reject(player, name, "BAD_PAYLOAD", why) end
-	local ok, result = xpcall(handler, debug.traceback, player, payload)
+	if def.noCombat and gates.isMenuLocked(player) then return reject(player, name, "IN_COMBAT") end
+	local ok, result = xpcall(handler, debug.traceback, player, payload) -- legality/ownership/range/cooldown inside
 	if not ok then
 		Telemetry.handlerError(name, result)
 		return { ok = false, code = "SERVER_ERROR" }
@@ -808,18 +825,36 @@ end
 function NetServer.init(g: Gates)
 	gates = g
 	for name, def in Definitions do
-		local class = if def.kind == "Function" then "RemoteFunction"
-			elseif def.kind == "Unreliable" then "UnreliableRemoteEvent"
-			else "RemoteEvent"
-		local remote = Instance.new(class)
-		remote.Name = name
-		remote.Parent = folder
+		if not def.batched then -- batched names travel inside Net.Batch
+			local class = if def.kind == "Function" then "RemoteFunction"
+				elseif def.kind == "Unreliable" then "UnreliableRemoteEvent"
+				else "RemoteEvent"
+			local remote = Instance.new(class)
+			remote.Name = name
+			remote.Parent = folder
+		end
 	end
+	batchRemote = folder:FindFirstChild("Net.Batch") :: RemoteEvent
 	folder.Parent = ReplicatedStorage -- one replication burst, after all children exist
-	Players.PlayerRemoving:Connect(function(p) buckets[p] = nil end)
+	Players.PlayerRemoving:Connect(function(p)
+		buckets[p] = nil
+		queues[p] = nil
+	end)
+	local acc = 0
+	RunService.Heartbeat:Connect(function(dt: number)
+		acc += dt
+		if acc < FLUSH_SEC then return end
+		acc = 0
+		for player, q in queues do
+			local out = {}
+			for _, entry in q do table.insert(out, entry) end
+			if #out > 0 then batchRemote:FireClient(player, out) end
+			queues[player] = {}
+		end
+	end)
 end
 
-function NetServer.handle(name: string, handler: Handler)
+function NetServer.handle(name: string, handler: Handler) -- the only way to bind a C2S remote
 	local def = Definitions[name]
 	assert(def and def.dir == "C2S", `{name} is not a declared client-to-server remote`)
 	local remote = folder:FindFirstChild(name)
@@ -834,6 +869,20 @@ function NetServer.handle(name: string, handler: Handler)
 	end
 end
 
+function NetServer.send(player: Player, name: string, key: string, payload: any) -- S2C, reliable
+	local def = Definitions[name]
+	if not def.batched then
+		(folder:FindFirstChild(name) :: RemoteEvent):FireClient(player, payload)
+		return
+	end
+	local q = queues[player]
+	if not q then
+		q = {}
+		queues[player] = q
+	end
+	q[`{name}|{key}`] = { name, payload } -- latest value per key wins
+end
+
 return NetServer
 ```
 
@@ -841,327 +890,361 @@ return NetServer
 
 All 20 canon services follow one block format: **Responsibilities · Interface · Data · Signals · Remotes · Validation ·
 Errors · Performance**. Nineteen are server ModuleScripts under `ServerScriptService/Server/Services`; `UIController`
-is the client service (§27.8.20). Shared result and value types:
+is the client service (§27.8.20). Shared types:
 
 ```lua
 --!strict
--- ReplicatedStorage/Shared/Types (excerpt)
+-- ReplicatedStorage/Shared/Types (excerpt; profile block types live in Types/ProfileTypes per §28)
 export type Result = { ok: boolean, code: string, data: any? } -- same shape as a Net envelope
 export type Wallet = { MB: number, MS: number, RT: number } -- integers ≥ 0, §C4.1 only
 export type StatBlock = { [string]: number } -- keyed by §C5 stat codes (COOK_SPD … EFFICIENCY)
 export type ContentId = string -- a canon ID validated against generated Data
+export type Txn = { id: string, deltas: { [string]: number }, src: string, ref: string? } -- §28 transaction
+export type Offer = { token: string, itemId: ContentId, cost: Wallet, expiresAt: number }
+export type ShopProvider = {
+	list: (player: Player, shopId: ContentId) -> { { itemId: ContentId, cost: Wallet } },
+	grant: (player: Player, itemId: ContentId) -> (), -- runs inside EconomyService:TransactWith (no yields)
+}
 ```
 
-Remote rates are per player per remote ("10/s b15" = 10 tokens per second, burst 15). "RF" = RemoteFunction,
-"Unrel" = UnreliableRemoteEvent. Every C2S remote is additionally subject to the global per-player budget (§27.7.2).
+**Rate column** = §29 rate class: `interact` 10/s b20 · `chop` 1 per 0.12 s b10 · `combat` 8/s b12 · `menu` 4/s b8 ·
+`transaction` 2/s b4 · `cosmetic` 3/s b6 · `settings` 2/s b4 (values owned by §29). "RF" = RemoteFunction, "Unrel" =
+UnreliableRemoteEvent, "Batch" = logical S2C name delivered in `Net.Batch` at 20 Hz. Money-moving requests carry no
+client key; the transaction id each one derives is noted in the interface comments (§28).
 
 #### 27.8.1 PlayerDataService *(critical)*
 
-**Responsibilities.** Session-locked profile load/save (§28 schema), schema migrations, autosave every 120 s
-(staggered), immediate saves on purchases ≥ 10,000 MB, `PlayerRemoving` and `BindToClose` (§C3); Safe Mode (E6);
-**load transforms** run inside the lock-acquiring `UpdateAsync` (used by OfflineEarningsService for §C15 atomicity);
-the client replica (a read-only profile view plus coalesced deltas); GDPR `userIds` tagging on writes.
+**Responsibilities.** The only module doing DataStore I/O (§28): session-locked load/save with lock handoff,
+ordered schema migrations, autosave every 120 s (§C3) plus immediate coalesced saves (spends ≥ 10,000 MB, high-value
+moments, `PlayerRemoving` after E1 settles, `BindToClose`); Safe Mode (E6); **load transforms** executed inside the
+lock-acquiring `UpdateAsync` (the §C15 offline simulation); the block write API that enforces single writers; the
+client read model (snapshot + coalesced deltas); `userIds` tagging for erasure requests.
 
 ```lua
-HandleJoin(player: Player): () -- LoadProfile → OnPlayerReady hooks (dependency order) → LoadCharacter
+HandleJoin(player: Player): () -- Load → OnPlayerReady hooks (dependency order) → LoadCharacter
 HandleLeave(player: Player): () -- OnPlayerLeaving hooks (reverse order) → final save → release lock
 SaveAllAndRelease(budgetSec: number): () -- BindToClose: parallel saves of every loaded profile
-LoadProfile(player: Player): (Profile?, string?) -- yields; retries 1, 2, 4, 8, 16 s
-GetProfile(player: Player): Profile?
-IsSafeMode(player: Player): boolean
-MarkDirty(player: Player, section: string): ()
-RequestSave(player: Player, reason: "Autosave" | "Purchase" | "Leave" | "Shutdown" | "Claim"): ()
-RegisterLoadTransform(name: string, fn: (data: ProfileData, ctx: LoadContext) -> ()): () -- Init only; pure, non-yielding
-PushReplica(player: Player, path: string, value: any): () -- coalesced into PlayerData.Delta
+Load(player: Player): (Profile?, string?) -- one UpdateAsync; retries 1, 2, 4, 8, 16 s (E6)
+GetProfile(player: Player): Profile?; IsSafeMode(player: Player): boolean
+Update(player: Player, block: string, fn: (blockData: any) -> ()): () -- caller must own `block` (§27.17); marks dirty
+RequestSave(player: Player, reason: "Purchase" | "HighValue" | "Leave" | "Shutdown"): () -- coalesced
+RegisterLoadTransform(name: string, fn: (data: ProfileData, now: number) -> ()): () -- Init only; pure, non-yielding
+PushReadModel(player: Player, path: string, value: any): () -- coalesced into PlayerData.Delta
 ProfileLoaded: Signal<Player, Profile>; ProfileReleasing: Signal<Player, Profile>; SaveFailed: Signal<Player, string>
 ```
 
-**Data.** DataStore profile key per UserId (names, lock fields and stale-lock timeout in §28); `meta` section.
-**Signals.** Emits the three above; consumes `EconomyService.TransactionCommitted` (purchase-save trigger).
+**Data.** Profile, snapshot and lock structures named in §28; owns the `meta` and `settings` blocks.
+**Signals.** Emits the three above; consumes `EconomyService.TransactionCommitted` (big-spend save trigger).
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
 | `PlayerData.ProfileReady` | Event S2C | `{ cv: string, safeMode: boolean, view: ProfileView }` | once |
-| `PlayerData.Delta` | Event S2C | `{ { path: string, value: any } }` (batched) | ≤ 10 Hz |
+| `PlayerData.Delta` | Batch S2C | `{ path: string, value: any }` | 20 Hz |
 | `PlayerData.SafeMode` | Event S2C | `{ reason: string, kickInSec: number }` | on enter |
-| `PlayerData.UpdateSettings` | Event C2S | `{ [settingKey]: boolean \| number }` (whitelisted keys) | 2/s b4 |
+| `Settings.Update` | Event C2S | `{ [settingKey]: boolean \| number }` (whitelisted keys) | settings |
 
-**Validation.** Settings keys/ranges whitelisted (volumes 0–1, booleans for reduced VFX, auto-rhythm, etc.); no other
-client write path exists. **Errors.** Backoff 1, 2, 4, 8, 16 s (max 5); load failure → Safe Mode banner, kick with retry
-message at 60 s; save failure → keep dirty, retry next cycle, `SaveFailed` telemetry; transforms that throw are skipped
-(and logged) without blocking the load. **Performance.** Autosaves staggered 15 s apart across the 8 slots; checks
-`DataStoreService:GetRequestBudgetForRequestType` before non-urgent writes; profile target size in §28.
+**Validation.** `Update` asserts block ownership in Studio and test builds; settings keys and ranges whitelisted; no
+other client write path exists. **Errors.** Backoff 1, 2, 4, 8, 16 s (max 5); load failure → Safe Mode banner, kick
+with a retry message at 60 s; failed saves stay dirty and retry; a load transform that throws is skipped and logged and
+never blocks the load. **Performance.** Autosave schedule and request-budget math per §28 (non-urgent writes check
+`DataStoreService:GetRequestBudgetForRequestType`); read-model snapshot ≤ 64 KB (§30).
 
 #### 27.8.2 RestaurantService *(critical)*
 
 **Responsibilities.** Plot assignment (8 `BLD_17` plots), tier façade, instanced interior lifecycle
-(`Spawning → Open ⇄ Paused → Closing → Despawned`), entering/leaving interiors, occupancy, reputation (single writer of
-★ per §C11.4), ambience aggregation (K from RepairService, M from BuildingService), E1 Closing, E13 shutdown hand-off.
+(`Spawning → Open ⇄ Paused → Closing → Despawned`), entering/leaving interiors, occupancy and player zones (feeds the
+Net interest filter), ambience aggregation (K from RepairService, M from BuildingService), tier state, persistence of
+co-op settings (`restaurant.coop`, edited through MultiplayerService), E1 Closing and the E13 shutdown hand-off.
 
 ```lua
 AssignPlot(player: Player): number? -- 1..8
 GetRestaurant(restaurantId: string): RestaurantState?
 GetRestaurantOf(player: Player): RestaurantState? -- owned
-GetCurrentRestaurant(player: Player): RestaurantState? -- the interior the player stands in (owner or guest)
-EnterInterior(player: Player, restaurantId: string): boolean -- RequestStreamAroundAsync, then pivot character
+GetCurrentRestaurant(player: Player): RestaurantState? -- interior the player stands in (owner or guest)
+GetZone(player: Player): string -- interior uid or district ID
+EnterInterior(player: Player, restaurantId: string): boolean -- RequestStreamAroundAsync, then PivotTo
 ExitInterior(player: Player): ()
 SetOpen(owner: Player, open: boolean): Result
-ApplyTier(restaurantId: string, tierId: ContentId): () -- called by BuildingService after payment
-ApplyCustomerOutcome(restaurantId: string, satisfaction: number, stormedOut: boolean): () -- Stars update
+ApplyTier(restaurantId: string, tierId: ContentId): () -- BuildingService, after payment
+SetCoopSettings(restaurantId: string, settings: CoopSettings): () -- MultiplayerService only
 GetAmbience(restaurantId: string): (number, number) -- K, M in 0..100
 BeginClosing(restaurantId: string, reason: "OwnerLeft" | "Shutdown"): ()
-RestaurantSpawned, RestaurantClosing, RestaurantDespawned, OccupantEntered, OccupantLeft, ReputationChanged: Signal<...>
+RestaurantSpawned, RestaurantClosing, RestaurantDespawned, OccupantEntered, OccupantLeft, TierApplied: Signal<...>
 ```
 
-**Data.** `restaurant` section (tier, stars, plot preference); Tiers data; interior templates in ServerStorage.
-**Signals.** Consumes `BuildingService.TierUpgraded`, `BuildingService.LayoutChanged`, `PlayerDataService.ProfileReleasing`.
+**Data.** `restaurant.tier`, `restaurant.upgrades`, `restaurant.coop` blocks; Tiers data; interior templates.
+**Signals.** Consumes `BuildingService.TierUpgraded/LayoutChanged`, `CustomerAIService.ReputationChanged` (façade
+star sign), `PlayerDataService.ProfileReleasing`.
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Restaurant.ReturnHome` | Event C2S | `{}` | 1 per 10 s (§C16.1 cooldown) |
-| `Restaurant.ExitInterior` | Event C2S | `{}` | 1/s b2 |
-| `Restaurant.SetOpen` | RF C2S | `{ open: boolean }` | 0.5/s b2 |
+| `Restaurant.ReturnHome` | Event C2S | `{}` | interact + 10 s cooldown (§C16.1) |
+| `Restaurant.ExitInterior` | Event C2S | `{}` | interact |
+| `Restaurant.SetOpen` | RF C2S | `{ open: boolean }` | menu |
 | `Restaurant.StateChanged` | Event S2C | `{ restaurantId, plot, ownerUserId, tier, state, stars }` | on change |
 
-Door entry uses the plot door's `ProximityPrompt.Triggered` on the server (no remote). **Validation.** Owner-only
+Door entry uses the plot door's server-side `ProximityPrompt.Triggered` (no remote). **Validation.** Owner-only
 `SetOpen`; guests enter only with MultiplayerService permission; door distance re-checked. **Errors.** Interior spawn
-failure retries once, then spawns the tier's default layout and flags the profile layout for repair (no data loss).
-**Performance.** Interior cloning amortized ≤ 300 instances per frame; shells use Atomic streaming; despawn ≤ 60 s after
+failure retries once, then spawns the tier's default layout and flags the saved layout for repair (no data loss).
+**Performance.** Interior cloning amortized ≤ 300 instances per frame; shells Atomic-streamed; despawn ≤ 60 s after
 Closing completes.
 
 #### 27.8.3 OrderService *(critical)*
 
-**Responsibilities.** Order generation when a customer reaches *Place order* (menu minus SOLD OUT, personality weights,
-≈ 1.4 items, parties per member, feasible §6.18 modifications only), the ticket board (`Open → Cooking → Ready →
-Served | Expired | Cancelled`), serve evaluation (A, Q, C inputs to §C11.3), settlement (pay, tips, Jackpot, Apology
-Payment, basic-ingredient netting §C9) via one EconomyService transaction keyed `serve:<ticketId>`.
+**Responsibilities.** Order generation when a customer reaches *Place order* (menu minus SOLD OUT, personality
+weights, ≈ 1.4 items, parties per member, feasible §6.18 modifications only); the ticket board (`Open → Cooking → Ready
+→ Served → Settled | Expired | Cancelled`); serve validation (A, Q, C inputs to §C11.3, incl. pickup-spot serving at
+`STN_WINDOW`); settlement at payment — pay, tips, Jackpot, Apology Payment, basic-ingredient netting (§C9) — credited
+through `EconomyService:CreditServe` (single pay guaranteed by the one-way `Served → Settled` transition; journaled as
+`serve_agg`, §28). Handles the §8 remotes `Customer.TakeOrder` and `Customer.ServePlate`.
 
 ```lua
 GenerateOrder(customerId: string, partySize: number): Ticket?
 GetTickets(restaurantId: string): { Ticket }
-TakeOrder(player: Player, customerId: string): Result
-Serve(player: Player, customerId: string): Result -- uses CookingService:GetCarried(player)
+TakeOrder(actor: Player | EmployeeRef, customerId: string): Result
+ServePlate(actor: Player | EmployeeRef, customerId: string): Result -- plate from CookingService:GetCarried
 EvaluateServe(ticket: Ticket, plate: PlateRecord): ServeEvaluation -- { A: number, Q: number, C: number }
 Settle(ticketId: string, satisfaction: number, outcome: "Paid" | "Apology" | "StormOut"): Result
 CancelTicket(ticketId: string, reason: string): ()
 TicketCreated, TicketReady, TicketServed, TicketExpired, TicketSettled: Signal<...>
 ```
 
-**Data.** Recipes, OrderModifications, Personalities; runtime tickets (not persisted, E13). **Signals.** Consumes
-`CustomerAIService.CustomerOrdered`, `CookingService.DishPlated`; emits the ticket signals (QuestService,
-TutorialController via remotes, analytics).
+**Data.** Recipes, OrderModifications, Personalities; runtime tickets (never persisted, E1/E13). **Signals.** Consumes
+`CustomerAIService.CustomerOrdered`, `CookingService.DishPlated`; emits ticket signals (QuestService, analytics).
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Order.TakeOrder` | Event C2S | `{ customerId: string }` | 4/s b6 |
-| `Order.Serve` | Event C2S | `{ customerId: string }` | 4/s b6 |
-| `Order.TicketsChanged` | Event S2C | `{ restaurantId, tickets: { TicketView } }` (batched, occupants only) | ≤ 10 Hz |
+| `Customer.TakeOrder` | Event C2S | `{ customerId: string }` | interact |
+| `Customer.ServePlate` | Event C2S | `{ customerId: string }` | interact |
+| `Order.TicketsChanged` | Batch S2C | `{ restaurantId, tickets: { TicketView } }` (occupants only) | 20 Hz |
 | `Order.Served` | Event S2C | `{ customerId, satisfaction, pay, tip, reaction }` | on serve |
 
-**Validation.** Customer is in the player's current restaurant, within 10 + 2 studs (§C3), ticket state allows the
-action, player has serve permission, and the plate is actually carried by that player. **Errors.** Settlement failure
-(e.g. Safe Mode) leaves the ticket `Served` but unsettled and retries on the next tick; idempotency key prevents double
-pay. **Performance.** ≤ 28 tickets per restaurant; generation O(menu size); evaluation O(components).
+**Validation.** Customer in the actor's current restaurant, within 10 + 2 studs (§C3); ticket state allows the action;
+serve permission for guests; the plate is actually carried by that actor. **Errors.** If crediting fails (Safe Mode,
+§29 earnings hold) the ticket stays `Served` and settlement retries next tick; `Settled` is entered once, so retries can
+never double pay. **Performance.** ≤ 28 tickets per restaurant; generation O(menu); evaluation O(components).
 
 #### 27.8.4 RecipeService *(critical)*
 
-**Responsibilities.** Read-only recipe/ingredient/station catalog with indexes; recipe learning at `BLD_06`
-(5 × price MB) or by quest grant, with ALN/MUT/LEG gates (§C10); menu management (≤ tier menu slots, §C6); SOLD OUT
-from special stock; E9 fallback (`RCP_BRG_001` auto-added when everything is sold out); the "orderable menu" used by
+**Responsibilities.** Read-only recipe/ingredient/station catalog with indexes; recipe learning at the Cooking Academy
+(`BLD_06`) as shop offers at 5 × price MB, or by quest grant, with the ALN/MUT/LEG gates (§C10); menu management
+(≤ tier menu slots, §C6); SOLD OUT from special stock; E9 fallback (`RCP_BRG_001`); the orderable menu used by
 OrderService and the offline simulation.
 
 ```lua
 GetRecipe(id: ContentId): RecipeDef?; GetIngredient(id: ContentId): IngredientDef?
 IsKnown(player: Player, recipeId: ContentId): boolean
-Learn(player: Player, recipeId: ContentId, idempotencyKey: string): Result
-GrantRecipe(player: Player, recipeId: ContentId, source: string): ()
+GrantRecipe(player: Player, recipeId: ContentId, source: string): () -- quests
 SetMenu(player: Player, recipeIds: { ContentId }): Result
 GetOrderableMenu(restaurantId: string): { ContentId } -- excludes SOLD OUT, applies E9
+AcademyShop: ShopProvider -- registered for BLD_06: learnable recipes at 5 × price
 RecipeLearned, MenuChanged, SoldOutChanged: Signal<...>
 ```
 
-**Data.** Recipes, Ingredients, Stations; `recipes` section (known, menu). **Signals.** Consumes
+**Data.** Recipes, Ingredients, Stations; `recipes` and `restaurant.menu` blocks. **Signals.** Consumes
 `InventoryService.StockChanged`, `BuildingService.LayoutChanged` (stations present).
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Recipe.Learn` | RF C2S | `{ recipeId, idempotencyKey }` | 1/s b2 |
-| `Recipe.SetMenu` | RF C2S | `{ recipeIds: { string } }` (≤ 24) | 1/s b2 |
+| `Recipe.SetMenu` | RF C2S | `{ recipeIds: { string } }` (≤ 24) | menu |
 | `Recipe.MenuChanged` | Event S2C | `{ menu: { string }, soldOut: { string } }` | on change |
 
-**Validation.** Level ≥ unlock, gate quests/stations met, player inside the Academy zone for `Learn`, menu length ≤ tier
-slots, every menu recipe known and its stations owned. **Errors.** Unknown IDs rejected at schema; payment via
-`EconomyService:TransactWith` so learning and charging are atomic. **Performance.** All lookups O(1) on frozen tables.
+Learning is bought through `Shop.Open`/`Shop.Purchase` (§27.8.12). **Validation.** Level ≥ unlock, gate
+quests/stations met, menu length ≤ tier slots, every menu recipe known and its stations owned. **Errors.** Learning
+and charging are one `TransactWith` step. **Performance.** O(1) lookups on frozen tables.
 
 #### 27.8.5 CookingService *(critical)*
 
 **Responsibilities.** Station registry per interior (tag `MMR_Station`; attributes `StationId`, `Level`, `Slots`);
 per-slot state machines implementing §C8 heat timing (`T_ready`, Perfect window, `T_burn`, ON_FIRE at `T_burn + 4 s`)
-with §C4.9 level, `COOK_SPD`/`COOK_QLT` and mutation modifiers; chop tap grading; the **item registry** (restaurant-owned
-ingredients, components and plates with quality records); carry (1 + carry parts, max 3); per-slot locks (E7); fire,
-washing, trash (waste cost never below 0 MB); E1 discard/return-to-stock; the same API serves employees.
+with §C4.9 level, `COOK_SPD`/`COOK_QLT` and mutation modifiers; chop rhythm grading; the **item registry**
+(restaurant-owned ingredients, components and plates with quality records); carry (1 + carry parts, max 3); per-slot
+locks (E7); fire, washing, trash (waste cost never below 0 MB); E1 discard/return-to-stock; the same API serves
+employees. Station-level rules are §5's; this service is their runtime.
 
 ```lua
 Interact(actor: Player | EmployeeRef, req: InteractRequest): Result
-GetCarried(player: Player): { ItemRecord }
-DropCarried(player: Player): ()
+ChopTap(player: Player, stationUid: string, slot: number, tapTime: number): ()
+GetCarried(player: Player): { ItemRecord }; DropCarried(player: Player): ()
+GiveCarried(actor: Player | EmployeeRef, item: ItemRecord): boolean -- e.g. bussed dirty plates
 ForceFinish(stationUid: string, slot: number, grade: "GOOD"): boolean -- ABL_066 Microwave Zap-Cook
 ResetRestaurant(restaurantId: string, reason: "OwnerLeft" | "Shutdown"): () -- E1
 ItemCooked, ItemBurned, StationFire, DishPlated, ItemTrashed: Signal<...>
 ```
 
-**Data.** Stations, Recipes, Ingredients; stats from ProgressionService; special stock via InventoryService.
-**Signals.** Consumes `RepairService.StateChanged` (Broken stations unusable), `ProgressionService.StatsChanged`.
+**Data.** Stations, Recipes, Ingredients; effective stats; special stock via InventoryService. **Signals.** Consumes
+`RepairService.StateChanged` (Broken stations unusable), `ProgressionService.StatsChanged`.
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Cooking.InteractStation` | Event C2S | `{ stationUid, slot, action, tapTime? }` | 10/s b15 |
-| `Cooking.DropCarried` | Event C2S | `{}` | 4/s b6 |
-| `Cooking.StationState` | Event S2C | `{ { stationUid, slot, state, itemId?, tReady?, tPerfectEnd?, tBurn? } }` | ≤ 10 Hz |
+| `Cooking.InteractStation` | Event C2S | `{ stationUid, slot, action }` | interact |
+| `Cooking.ChopTap` | Event C2S | `{ stationUid, slot, tapTime }` | chop |
+| `Cooking.DropCarried` | Event C2S | `{}` | interact |
+| `Cooking.StationState` | Batch S2C | `{ stationUid, slot, state, itemId?, tReady?, tPerfectEnd?, tBurn? }` | 20 Hz |
 | `Cooking.CarryChanged` | Event S2C | `{ items: { ItemView } }` | on change |
 | `Cooking.StationFx` | Unrel S2C | `{ stationUid, fx: "Sizzle" \| "Steam" \| "Smoke" \| "Ding" }` | ≤ 10 Hz |
 
-**Validation.** Station in the actor's current interior; distance ≤ 7 + 2 studs; slot lock owned or free; action legal in
-the slot state; carried item legal for the station's action; cook permission for guests; `tapTime` accepted only if
-within [last tap, now] and ≥ now − 250 ms. **Errors.** Lock holders that disconnect release locks immediately; a slot
-whose item record is missing resets to Idle (never grants items). **Performance.** Timers are absolute times evaluated by
-one 4 Hz sweep per restaurant plus `task.delay` wakeups at exact `T_ready`/`T_burn`; no per-frame loops; ≤ 24 appliances.
+**Validation.** Station in the actor's current interior; distance ≤ 7 + 2 studs; slot lock free or owned; action legal
+in the slot state; carried item legal for the station action; cook permission for guests; `tapTime` clamped to
+[last tap, now] and ≥ now − 250 ms. **Errors.** Locks of disconnecting players release immediately; a slot whose item
+record is missing resets to Idle (never grants items). **Performance.** Absolute-time timers evaluated by one 4 Hz sweep
+per restaurant plus exact `task.delay` wakeups; no per-frame loops.
 
 #### 27.8.6 CustomerAIService *(critical)*
 
 **Responsibilities.** Arrivals (`BaseDemand × RepMult × DecorMult × EventMult`, §C6) as a seeded Poisson process;
-fair-share allocation under the 160-proxy server cap (§27.14); SPCV proxies (§27.12.3); the §8 state machine (16 core +
-conditional states); door→seat paths; patience (§C11.2); satisfaction (§C11.3); anger meter and escalation rolls
-(§C11.5); combat-style behavior (§C11.6) issuing attacks through CombatService; seeded appearance part lists; MUT dish
-cosmetic part (60 s, client visual only); E10 poof recovery; E1 forced leave.
+fair-share allocation under the 160-proxy cap (§27.14); SPCV proxies with the §8 attribute contract (§27.12.3); the §8
+state machine; seating; patience (§C11.2); satisfaction (§C11.3); anger and escalation rolls (§C11.5); **reputation ★
+and regulars** (single writer, §28); combat styles (§C11.6) executed through CombatService; seeded looks (clients
+derive part lists from the proxy's seed); Cash Stack presentation and table bussing (§8); Peace Offerings (§10); the
+MUT-dish cosmetic part; sets the player attribute `TargetedByLevel5` while a level-5 customer targets that player (E2);
+E10 poof recovery; E1 forced leave.
 
 ```lua
 SpawnCustomer(restaurantId: string, spec: CustomerSpec?): string?
-GetCustomer(id: string): CustomerState?
-GetCustomersIn(restaurantId: string): { CustomerState }
-AssignSeat(player: Player, customerId: string, seatId: string): Result
+GetCustomer(id: string): CustomerState?; GetCustomersIn(restaurantId: string): { CustomerState }
+SeatParty(actor: Player | EmployeeRef, partyId: string, tableId: string): Result
+PeaceOffering(player: Player, customerId: string): Result -- consumes the carried off-ticket dessert/drink
+BusTable(actor: Player | EmployeeRef, tableId: string): Result -- dirty plates → CookingService:GiveCarried
 AddAnger(id: string, amount: number, source: string): ()
 Calm(id: string, method: "Ability" | "PeaceOffering" | "Aura" | "Security" | "PerfectDish"): ()
-OnServed(id: string, eval: ServeEvaluation): number -- returns S (0..100)
+OnServed(id: string, eval: ServeEvaluation): number -- S in 0..100
+GetReputation(restaurantId: string): number -- 1.0–5.0 ★
 ForceLeave(restaurantId: string, reason: "Closed" | "Shutdown"): ()
-CustomerSpawned, CustomerOrdered, SatisfactionComputed, AngerLevelChanged, CustomerTurnedHostile, CustomerLeft: Signal<...>
+CustomerSpawned, CustomerOrdered, SatisfactionComputed, AngerLevelChanged, CustomerTurnedHostile, CustomerLeft,
+ReputationChanged: Signal<...>
 ```
 
-**Data.** Personalities, Mutations (looks), Tiers; restaurant ambience; event modifiers. **Signals.** Consumes
-`OrderService.TicketServed/TicketExpired`, `CombatService.CombatantKO`, `BuildingService.LayoutChanged` (path cache),
-`CityEventService.EventStarted`.
+**Data.** Personalities, Mutations, Tiers; `restaurant.reputation` and `regulars` blocks; ambience; event modifiers.
+**Signals.** Consumes `OrderService.TicketServed/TicketExpired`, `CombatService.CombatantKO`,
+`BuildingService.LayoutChanged` (path cache), `CityEventService.EventStarted`.
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Customer.AssignSeat` | Event C2S | `{ customerId, seatId }` | 4/s b6 |
-| `Customer.Bubble` | Event S2C | `{ customerId, kind: "Order" \| "Line", key: string, args: { string }? }` | on event |
-| `Customer.Emote` | Unrel S2C | `{ customerId, anim: string }` (an `ANM_` ID) | ≤ 10 Hz |
+| `Customer.SeatParty` | Event C2S | `{ partyId, tableId }` | interact |
+| `Customer.CollectCash` | Event C2S | `{ customerId }` (presentation only: money was credited at payment, §8) | interact |
+| `Customer.BusTable` | Event C2S | `{ tableId }` | interact |
+| `Customer.PeaceOffering` | Event C2S | `{ customerId }` | interact |
 
-Proxy state is replicated by attributes (`State`, `AngerLevel` 0–6, `Seat`, `Parts`, `TempPart`), not remotes.
-**Validation.** Seat free, reachable, inside the same interior; actor has serve permission; range 10 + 2 studs.
-**Errors.** A brain error for one customer moves that customer to *Leave* (poof) and logs; others continue.
-**Performance.** 10 Hz round-robin within 2.0 ms/frame (§27.12.6); door→seat paths precomputed per layout; dynamic
-PathfindingService calls ≤ 4 concurrent; chasing uses direct steering with raycasts inside small interiors.
+`Customer.TakeOrder` and `Customer.ServePlate` are handled by OrderService (§27.8.3). Proxy state replicates through
+attributes (names §8, keys centralized in `Shared/Npc/ProxyAttributes`); dialogue bubbles are an `Emote` code chosen
+client-side (§8). **Validation.** Table free, reachable, in the same interior; actor has serve permission; range
+10 + 2 studs. **Errors.** A brain error for one customer moves only that customer to *Leave* (poof) and logs.
+**Performance.** Round-robin decision ticks at the §8/§30 rates within 1.5 ms/frame average and ≤ 3.0 ms p95
+(§27.12.6); door→seat paths precomputed per layout; ≤ 4 concurrent `ComputeAsync`; combat chasing uses direct steering
+with raycasts; proxy CFrame writes ≤ 5 Hz while walking, 0 Hz while seated (§30).
 
-#### 27.8.7 CombatService *(critical for hostile customers)*
+#### 27.8.7 CombatService *(critical)*
 
-**Responsibilities.** Server hit resolution from client intents using a 0.5 s position history (lag compensation
-≤ 250 ms); damage (§C5 `STR`/`DEF`), abilities from equipped parts (`ABL_` IDs, kinds §27.5.3), cooldowns, Guard meter,
-dodge i-frames, status effects (`STS_` IDs), In Combat flag (6 s), KO "Seeing Stars" and respawn (4 s, 60 % HP,
-`STS_WOOZY`), E2 menu auto-close + 1.5 s invulnerability, thrown food as scripted raycast arcs, ≤ 30 loose props per
-interior (§C3), NPC attacks requested by CustomerAIService, arena rules hooks (§21).
+**Responsibilities.** Server hit resolution from client intents with ping-based grace (receive time − min(ping/2,
+cap), §11) against a 0.5 s position history; damage (§C5 `STR`/`DEF`); abilities from the base kit, held utensils and
+equipped parts (`ABL_` IDs, kinds §27.5.3); cooldown authority (`readyAt`, corrected via `Combat.CooldownSync`); Guard
+meter; dodge i-frames; status effects (`STS_` IDs); the player attributes `InCombat` (6 s, §C12.1) and, with
+CustomerAIService, `TargetedByLevel5` (E2); KO "Seeing Stars" and respawn (4 s, 60 % HP, `STS_WOOZY`); E2 menu
+auto-close + 1.5 s invulnerability; grab/throw with scripted raycast arcs and ≤ 30 loose props per interior (§C3);
+knockback (the victim's client drives the displacement, the server audits it, §29); revive; NPC attacks and
+telegraphs requested by CustomerAIService; arena rule hooks (§21). Combat rules and numbers are §11's.
 
 ```lua
-UseAbility(player: Player, req: AbilityRequest): Result -- { abilityId, aim: Vector3?, targetId: string? }
+UseAbility(player: Player, req: AbilityRequest): Result -- { abilityId, seq, aimDir, targetId? }
+SetBlocking(player: Player, isBlocking: boolean, seq: number): ()
+Dodge(player: Player, dir: Vector3, seq: number): ()
 ApplyDamage(source: CombatantRef, target: CombatantRef, amount: number, info: DamageInfo): number
 ApplyStatus(target: CombatantRef, statusId: ContentId, duration: number, source: CombatantRef?): ()
 IsInCombat(player: Player): boolean
-Throw(source: CombatantRef, item: string, aim: Vector3): () -- scripted arc, hit via Workspace:Raycast
+IsMenuLocked(player: Player): boolean -- InCombat or TargetedByLevel5 (E2); used by the Net noCombat gate
+Throw(source: CombatantRef, item: string, aimDir: Vector3, charge: number): () -- arc resolved with Workspace:Raycast
 DamageDealt, StatusApplied, CombatantKO, PlayerRespawned, CombatStateChanged: Signal<...>
 ```
 
-**Data.** Abilities, StatusEffects, Combat constants; effective stats (ProgressionService); equipped abilities
+**Data.** Abilities, StatusEffects, Combat constants; effective stats (ProgressionService); slotted abilities
 (MutationService). **Signals.** Consumes `CustomerAIService.CustomerTurnedHostile`, `MutationService.EquipChanged`.
 
-| Remote | Kind · Dir | Payload | Rate |
+| Remote | Kind · Dir | Payload (names per §11) | Rate |
 |---|---|---|---|
-| `Combat.UseAbility` | Event C2S | `{ abilityId, aim?: Vector3 (unit), targetId?: string, t: number }` | 8/s b10 |
-| `Combat.Block` | Event C2S | `{ down: boolean }` | 6/s b8 |
-| `Combat.Dodge` | Event C2S | `{ dir: Vector3 (unit) }` | 3/s b3 |
-| `Combat.Hit` | Event S2C | `{ { attacker, victim, damage, statusId? } }` (batched) | ≤ 10 Hz |
+| `Combat.UseAbility` | Event C2S | `{ abilityId, seq, aimDir, targetId? }` | combat |
+| `Combat.BlockState` | Event C2S | `{ isBlocking, seq }` | combat |
+| `Combat.Dodge` | Event C2S | `{ dir, seq }` | combat |
+| `Combat.Grab` / `Combat.Throw` | Event C2S | `{ propId }` / `{ aimDir, charge }` | combat |
+| `Combat.Revive` | Event C2S | `{ targetUserId, begin: boolean }` | interact |
+| `Combat.HitConfirm` | Unrel S2C | hit list batched per Heartbeat per interior (cosmetic; HP, Huff and guard replicate as attributes) | per Heartbeat |
+| `Combat.Telegraph` | Event S2C | `{ npcId, abilityId, shape, serverStart, windup }` | on wind-up |
+| `Combat.Knockback` | Event S2C (victim) | `{ displacement, duration }` | on hit |
+| `Combat.CooldownSync` | Event S2C | `{ seq, reason, readyAt }` | on correction |
 | `Combat.StatusChanged` | Event S2C | `{ entityId, statusId, endsAt }` | on change |
 | `Combat.ForceCloseMenus` | Event S2C | `{ invulnerableUntil: number }` | on E2 |
-| `Combat.Fx` | Unrel S2C | `{ kind, origin, dir }` telegraphs | ≤ 10 Hz |
 
-**Validation.** Ability equipped and off cooldown (server clock), unit aim vectors, target in same interior/arena,
-range + 2 studs tolerance, line of sight via `RaycastParams`, PvP only inside opted-in arena volumes, max targets per
-ability. **Errors.** Unknown combatant → drop request; respawn always completes even if the kitchen spawn is blocked
-(falls back to interior door). **Performance.** No physics projectiles; spatial queries via
-`Workspace:GetPartBoundsInRadius` with `OverlapParams` filtered to proxies/characters; history ring at 20 Hz.
+**Validation.** Ability granted by the base kit, a held utensil or a slotted ability of an equipped part; `readyAt` on
+the server clock (§11 tolerance); unit vectors; target in the same zone; range + 2 studs; line of sight via
+`RaycastParams`; PvP only inside opted-in arena volumes; max targets per ability. **Errors.** Unknown combatant → drop;
+respawn always completes (falls back to the interior door if the kitchen spawn is blocked). **Performance.** No physics
+projectiles; `Workspace:GetPartBoundsInRadius` with `OverlapParams` filtered to proxies and characters; hostile-NPC
+decision AI within §11's budget; history ring at 20 Hz.
 
 #### 27.8.8 MutationService *(critical)*
 
-**Responsibilities.** Part ownership (instances with uid, level, acquisition code §C13.8), equip rules (slot codes,
-ARM/LEG mirroring, FUR/SCALES exclusivity, level requirements, matched pairs), stat contribution (§C13.4 budgets),
-loadouts (≥ 3; E4: 3 s channel, 10 s cooldown, blocked In Combat), upgrades (§C4.6), Lab fusion (§C4.5 Mythic rule),
-earnable capsules (§C4.7 odds, pity at 40, duplicate conversion), shop purchases (§C4.5), starter morph and the
-tutorial pick (`QST_TUT_010`: `MUT_145` / `MUT_144` / `MUT_153`), secret discoveries (conditions server-only).
+**Responsibilities.** Part ownership (instances with uid, level, copies, acquisition code §C13.8), equip rules (slot
+codes, ARM/LEG mirroring, FUR/SCALES exclusivity, level requirements, matched pairs), stat contribution (§C13.4),
+loadouts (≥ 3; E4: 3 s channel, 10 s cooldown, blocked in combat), upgrades (§C4.6), Lab fusion (§C4.5 Mythic rule),
+earnable capsules (§C4.7 odds, pity at 40, duplicate conversion; result committed before the reveal plays, §28), shop
+offers for Mutation Mart (`BLD_01`) and Mystery Market (`BLD_13`), the starter morph and the `QST_TUT_010` pick
+(`MUT_145` / `MUT_144` / `MUT_153`), secret discoveries (conditions server-only), and persistence of the `morph` block
+(name, palettes) on behalf of MorphAssemblyService.
 
 ```lua
-Grant(player: Player, mutationId: ContentId, source: string, key: string): PartInstance?
+Grant(player: Player, mutationId: ContentId, source: string, txnId: string): PartInstance?
 Equip(player: Player, slot: string, partUid: string): Result; Unequip(player: Player, slot: string): Result
-SwapLoadout(player: Player, index: number): Result -- starts the 3 s channel
-Upgrade(player: Player, partUid: string, dupeUid: string?, key: string): Result
-Fuse(player: Player, partUids: { string }, key: string): Result
-OpenCapsule(player: Player, key: string): Result -- data = { mutationId, rarity, convertedMS? }
-Purchase(player: Player, mutationId: ContentId, key: string): Result
+SwapLoadout(player: Player, index: number): Result; SaveLoadout(player: Player, index: number, name: string): Result
+Upgrade(player: Player, partUid: string, dupeUid: string?): Result -- txn "upg:<partUid>:<toLevel>"
+Fuse(player: Player, partUids: { string }): Result -- txn "fuse:<fusionCount>"
+OpenCapsule(player: Player): Result -- { mutationId, rarity, convertedMS? }; dupes "dup:<partId>:<capsulesOpened>"
+SetMorphMeta(player: Player, meta: { name: string?, palette: { [string]: number }? }): () -- MorphAssemblyService only
 GetEquipped(player: Player): { [string]: string }; GetStatContribution(player: Player): StatBlock
 GetActiveAbilities(player: Player): { ContentId } -- ≤ 4 on the bar (§C12.1)
+MutationShop: ShopProvider -- BLD_01, BLD_13 offers at §C4.5 prices
 PartGranted, EquipChanged, LoadoutSwapped, PartUpgraded, CapsuleOpened: Signal<...>
 ```
 
-**Data.** Mutations data; `mutations` section (owned, equipped, loadouts, pity counter). **Signals.** Consumes
-`CombatService.DamageDealt` (interrupts channel), `QuestService.QuestClaimed` (part rewards).
+**Data.** Mutations data; `mutations` (owned parts, equipped, loadouts, capsules, pity) and `morph` blocks.
+**Signals.** Consumes `CombatService.DamageDealt` (interrupts the channel), `QuestService.QuestClaimed` (part rewards).
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Mutation.Equip` / `Mutation.Unequip` | RF C2S | `{ slot, partUid? }` | 4/s b6 |
-| `Mutation.SwapLoadout` / `Mutation.SaveLoadout` | RF C2S | `{ index: 1..N, name? }` | 0.5/s b2 |
-| `Mutation.Upgrade` / `Mutation.Fuse` | RF C2S | `{ partUid \| partUids, dupeUid?, idempotencyKey }` | 1/s b2 |
-| `Mutation.OpenCapsule` | RF C2S | `{ idempotencyKey }` | 1/s b2 |
-| `Mutation.Purchase` | RF C2S | `{ mutationId, idempotencyKey }` | 1/s b3 |
+| `Mutation.Equip` / `Mutation.Unequip` | RF C2S | `{ slot, partUid? }` | menu |
+| `Mutation.SwapLoadout` / `Mutation.SaveLoadout` | RF C2S | `{ index, name? }` | menu |
+| `Mutation.Upgrade` / `Mutation.Fuse` | RF C2S | `{ partUid, dupeUid? }` / `{ partUids }` | transaction |
+| `Mutation.OpenCapsule` | RF C2S | `{}` | transaction |
 | `Mutation.InventoryChanged` | Event S2C | `{ changed: { PartView }, removed: { string } }` | on change |
 
-**Validation.** Ownership of every uid; slot/part compatibility; level and rarity requirements; `noCombat` gate on all
-equips (the Morph menu is unavailable in combat, E4); shop stock/location. **Errors.** All costs and grants run in one
-`TransactWith` (rollback on failure); capsule rolls use server `Random.new()` and log the roll for audits.
-**Performance.** Stat contribution cached and recomputed only on `EquipChanged`.
+**Validation.** Ownership of every uid; slot/part compatibility; level and rarity requirements; `noCombat` on every
+equip and swap (E4). **Errors.** Costs and grants run as one `TransactWith`; capsule rolls use a server `Random` and
+are logged for audits. **Performance.** Stat contribution cached and recomputed only on `EquipChanged`.
 
 #### 27.8.9 MorphAssemblyService *(critical)*
 
 **Responsibilities.** Owns the §C13.7 skin-over-rig contract. `Shared/Morph/MorphBuilder` is the single assembly
-implementation: the server uses it for **player** characters (replicated to all), clients use it for SPCV visuals
-(§27.9). Hides default R15 meshes (Transparency 1), clones part templates (Massless, CanCollide/CanTouch/CanQuery false),
-joins them with `RigidConstraint`s between same-named `MMR_` attachments, applies `LegLength` → `Humanoid.HipHeight`
-and `NeckLength` offsets, SKIN/FUR/SCALES surface swaps, FX on `MMR_FXRoot`; enforces budgets (player ≤ 40 MeshParts /
-15,000 triangles; NPC ≤ 24 / 6,000); morph names and palettes.
+implementation: the server uses it for **player** characters (replicated to everyone), clients use it for SPCV visuals
+(§27.9). It hides default R15 meshes (Transparency 1), clones part templates (Massless, CanCollide/CanTouch/CanQuery
+false), joins them with `RigidConstraint`s between same-named `MMR_` attachments, applies `LegLength` →
+`Humanoid.HipHeight` and `NeckLength` offsets, SKIN/FUR/SCALES surface swaps and FX on `MMR_FXRoot`, and enforces
+budgets (player ≤ 40 MeshParts / 15,000 triangles; NPC ≤ 24 / 6,000). `Shared/Morph/PartListGen` turns an NPC seed
+into a deterministic part list (same result on every client).
 
 ```lua
 BuildPlayerMorph(player: Player, equipped: { [string]: string }): () -- diff-based rebuild
 ValidateBudget(partIds: { ContentId }, kind: "Player" | "Npc"): (boolean, string?)
-GenerateNpcParts(seed: number, constraints: NpcLookConstraints): { ContentId } -- shared, deterministic
-SetMorphName(player: Player, name: string): Result -- TextService filtering
-SetPalette(player: Player, palette: { [string]: number }): Result
+SetMorphName(player: Player, name: string): Result -- filtered, then MutationService:SetMorphMeta
+SetPalette(player: Player, palette: { [string]: number }): Result -- owned palettes only
 MorphBuilt: Signal<Player>
 ```
 
-**Data.** Mutations + asset manifest; `morph` section. **Signals.** Consumes `MutationService.EquipChanged`,
-`Players.PlayerAdded → CharacterAdded`.
+**Data.** Mutations + asset manifest; `morph` block through MutationService. **Signals.** Consumes
+`MutationService.EquipChanged`, `Player.CharacterAdded`.
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Morph.SetName` | RF C2S | `{ name: string (≤ 20) }` | 0.2/s b1 |
-| `Morph.SetPalette` | RF C2S | `{ palette: { [slot]: paletteIndex } }` | 1/s b2 |
+| `Morph.SetName` | RF C2S | `{ name: string (≤ 20) }` | menu + 5 s cooldown |
+| `Morph.SetPalette` | RF C2S | `{ palette: { [slot]: paletteIndex } }` | menu |
 
 **Validation.** Names filtered with `TextService:FilterStringAsync` + `GetNonChatStringForBroadcastAsync`; palettes
 must be owned (§C17.4). **Errors.** Missing template → that slot falls back to the default human part and logs.
@@ -1170,164 +1253,175 @@ must be owned (§C17.4). **Errors.** Missing template → that slot falls back t
 #### 27.8.10 EmployeeService
 
 **Responsibilities.** Seeded candidate pools at the Recruitment Office (`BLD_04`), hiring (§C4.8 bands, tier caps §C6),
-roster, roles (§C14.1) and station assignments, online work AI (employees are SPCV proxies that call CookingService,
-OrderService, CustomerAIService and RepairService through the same APIs as players), wages per hour worked settled every
-60 s (E8 Unpaid Break), energy/morale/efficiency (§C14.2), training/promotion, traits; `EMP_001` via `QST_TUT_012`;
-pure offline effect function registered for the offline transform.
+roster, roles (§C14.1) and station assignments, online work AI (employees are SPCV proxies calling CookingService,
+OrderService, CustomerAIService and RepairService through the same APIs as players), wages accrued per minute worked
+and charged by the hourly wage tick (txn `wage:<hourStamp>`, §28; E8 Unpaid Break when uncovered),
+energy/morale/efficiency (§C14.2), training and promotion, traits; `EMP_001` via `QST_TUT_012`; registers its pure
+offline-effect function (energy, morale) with OfflineEarningsService.
 
 ```lua
 GetCandidates(player: Player): { Candidate }
-Hire(player: Player, candidateId: string, key: string): Result; Fire(player: Player, employeeUid: string): Result
+Hire(player: Player, candidateId: string): Result -- txn "hire:<recruitSeed>:<candidateIdx>"
+Fire(player: Player, employeeUid: string): Result
 Assign(player: Player, employeeUid: string, roleId: ContentId, stationUid: string?): Result
-Train(player: Player, employeeUid: string, stat: string, key: string): Result
-GetOfflineStaffing(data: ProfileData): StaffingSnapshot -- pure (used by OfflineSim)
-ApplyOfflineEffects(data: ProfileData, effects: OfflineEmployeeEffects): () -- pure, writes only `employees`
+Train(player: Player, employeeUid: string, stat: string): Result -- txn "train:<employeeUid>:<toLevel>"
+GetOfflineStaffing(data: ProfileData): StaffingSnapshot -- pure, used by OfflineSim
+ApplyOfflineEffects(data: ProfileData, effects: OfflineEmployeeEffects): () -- pure; writes only `employees`
 EmployeeHired, EmployeeFired, AssignmentChanged, UnpaidBreakChanged: Signal<...>
 ```
 
-**Data.** Roles, Employees data; `employees` section. **Signals.** Consumes `RestaurantService.RestaurantSpawned`
+**Data.** Roles, Employees data; `employees` block. **Signals.** Consumes `RestaurantService.RestaurantSpawned`
 (spawn proxies), `EconomyService.WalletChanged` (resume after Unpaid Break).
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Employee.GetCandidates` | RF C2S | `{}` | 0.5/s b1 |
-| `Employee.Hire` / `Employee.Fire` | RF C2S | `{ candidateId \| employeeUid, idempotencyKey? }` | 1/s b2 |
-| `Employee.Assign` | RF C2S | `{ employeeUid, roleId, stationUid? }` | 2/s b4 |
-| `Employee.Train` / `Employee.SetWage` | RF C2S | `{ employeeUid, stat? \| wage?, idempotencyKey }` | 1/s b2 |
+| `Employee.GetCandidates` | RF C2S | `{}` | menu |
+| `Employee.Hire` / `Employee.Fire` | RF C2S | `{ candidateId }` / `{ employeeUid }` | transaction |
+| `Employee.Assign` | RF C2S | `{ employeeUid, roleId, stationUid? }` | menu |
+| `Employee.Train` / `Employee.SetWage` | RF C2S | `{ employeeUid, stat? , wage? }` | transaction |
 | `Employee.RosterChanged` | Event S2C | `{ changed: { EmployeeView }, removed: { string } }` | on change |
 
-**Validation.** Candidate belongs to the player's current pool; employee cap; role IDs from §C14.1; wage ≥ archetype base.
-**Errors.** Wage transaction failure → Unpaid Break, never negative balance (E8). **Performance.** 5 Hz work AI within
-1.0 ms/frame; employees follow cached station routes; up to 20 per restaurant (§C6).
+**Validation.** Candidate in the player's current pool; employee cap; role IDs from §C14.1; wage ≥ archetype base.
+**Errors.** An uncovered wage tick → Unpaid Break, never a negative balance (E8). **Performance.** 5 Hz work AI within
+1.0 ms/frame; cached station routes; ≤ 20 per restaurant (§C6) with the on-floor proxy cap of §27.14.
 
 #### 27.8.11 OfflineEarningsService
 
-**Responsibilities.** The §C15 model, implemented as the pure `ServerModules/OfflineSim` and registered as a
-**PlayerDataService load transform**, so the report, `pendingOfflineReport`, `lastSimAt = toTs`, employee energy/morale
-effects and offline damage are written in the **same** session-locked `UpdateAsync` that acquires the lock (E11);
-merges into an existing pending report; idempotent Collect (`claimedReportIds` ring of 20); Welcome Back Crate (E5);
-discoveries (≤ 1 capsule per real day); negative elapsed time → 0 and flagged.
+**Responsibilities.** The §C15 model as the pure `ServerModules/OfflineSim`, registered as a PlayerDataService load
+transform, so the report, `pendingOfflineReport`, `lastSimAt = toTs`, the offline side effects (special-stock
+consumption, durability damage, staff energy/morale — each applied by its owner's registered pure function) and the
+Welcome Back Crate (E5, txn `wb:<lastSimAt>`) commit in the **same** session-locked `UpdateAsync` (E11); merges into an
+existing pending report; idempotent Collect (`claimedReportIds` ring of 20, txn `off:<reportId>`); discoveries
+(≤ 1 capsule per real day); negative elapsed time → 0 and flagged.
 
 ```lua
-SimulateTransform(data: ProfileData, ctx: LoadContext): () -- pure, non-yielding, deterministic (seed per §C15)
+Simulate(data: ProfileData, now: number): () -- pure, non-yielding, seeded per §C15; the registered load transform
 GetPendingReport(player: Player): OfflineReport?
-Collect(player: Player, reportId: string): Result -- credits via EconomyService (key "offline:" .. reportId)
-Preview(player: Player): Result -- same pure sim for 1 h; used by QST_TUT_012
+Collect(player: Player, reportId: string): Result -- credits via EconomyService, txn "off:<reportId>"
+Preview(player: Player): Result -- same pure sim for 1 h; the QST_TUT_012 income preview
 ReportReady, ReportCollected: Signal<...>
 ```
 
-**Data.** `offline` section (`lastSimAt`, `pendingOfflineReport`, `claimedReportIds`); Tiers, Recipes, Employees,
-Incidents data; `SIM_VERSION`. **Signals.** Emits `ReportReady` on `OnPlayerReady` if a report is pending.
+**Data.** `offline` block; Tiers, Recipes, Employees, Incidents data; `SIM_VERSION`. **Signals.** Emits `ReportReady`
+from `OnPlayerReady` when a report is pending; `ReportCollected` (InventoryService grants discovered crates).
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
 | `Offline.ReportReady` | Event S2C | `{ report: OfflineReportView }` | on join |
-| `Offline.GetReport` | RF C2S | `{}` | 1/s b2 |
-| `Offline.Collect` | RF C2S | `{ reportId: string }` | 1/s b2 |
-| `Offline.Preview` | RF C2S | `{}` | 0.2/s b1 |
+| `Offline.GetReport` | RF C2S | `{}` | menu |
+| `Offline.Collect` | RF C2S | `{ reportId: string }` | transaction |
+| `Offline.Preview` | RF C2S | `{}` | menu |
 
 **Validation.** `reportId` must equal the pending report's id and not be in `claimedReportIds`. **Errors.** If the
-simulation throws inside the transform it is skipped and `lastSimAt` is left unchanged, so the next session simulates
-the same interval (no loss, no duplicate). **Performance.** ≤ 24 hourly steps, < 1 ms; autosaves also stamp
-`lastSimAt` so a crash cannot count more than one autosave interval of online time as offline.
+simulation throws inside the transform it is skipped and `lastSimAt` stays unchanged, so the next session simulates the
+same interval (no loss, no duplicate). **Performance.** ≤ 24 hourly steps, < 1 ms; every save also stamps `lastSimAt`
+(§28), so a crash never counts online time as offline beyond one autosave interval.
 
 #### 27.8.12 EconomyService *(critical, single writer of currency)*
 
-**Responsibilities.** The only module that mutates MB, MS or RT (§C19). Integer amounts; balances never negative;
-all-or-nothing multi-currency transactions; idempotency keys (ring of 64 per profile); registered reason codes
-(sources/sinks for §22 dashboards); ledger (recent entries in profile, full stream to analytics `LogEconomyEvent`);
-save trigger for spends ≥ 10,000 MB; `TransactWith` for atomic "pay + grant" across services.
+**Responsibilities.** The only module that mutates MB, MS or RT (§C19), via §28's transaction core: integer deltas,
+balances never negative, all-or-nothing multi-currency transactions, deterministic txn ids with the `appliedTxnIds`
+ring, the currency journal, registered source/sink codes (shared with §31); `TransactWith` for atomic "pay + grant"
+across services; serve income credited without ringing (`serve_agg`); **shops**: issues single-use `offerToken`s
+(bound to player, item and price, 120 s expiry, §28) when a shop opens and routes paid grants to the registered shop
+provider; the big-spend save trigger (≥ 10,000 MB).
 
 ```lua
-Transact(player: Player, req: TxRequest): Result -- §27.12.5
-TransactWith(player: Player, req: TxRequest, apply: () -> ()): Result -- apply() runs inside the same critical section
-GetBalances(player: Player): Wallet
-CanAfford(player: Player, cost: Wallet): boolean
-WalletChanged: Signal<Player, Wallet, string>; TransactionCommitted: Signal<Player, LedgerEntry>
+Transact(player: Player, txn: Txn): Result -- duplicate / insufficient / invalid / frozen per §28
+TransactWith(player: Player, txn: Txn, grant: () -> ()): Result -- grant runs in the same non-yielding step (§27.12.5)
+CreditServe(player: Player, mb: number, ticketId: string): Result -- not ringed; journaled as serve_agg
+OpenShop(player: Player, shopId: ContentId): { Offer }
+Purchase(player: Player, offerToken: string): Result -- txn "shop:<offerToken>"; grant via the shop's provider
+RegisterShopProvider(shopId: ContentId, provider: ShopProvider): () -- Init only
+GetBalances(player: Player): Wallet; CanAfford(player: Player, cost: Wallet): boolean
+WalletChanged: Signal<Player, Wallet, string>; TransactionCommitted: Signal<Player, JournalEntry>
 ```
 
-**Data.** `wallet` section (balances, `txKeys`, recent ledger). **Signals.** Emits the two above (UI replica,
-PlayerDataService save trigger, QuestService "earn" objectives).
+**Data.** `currency` (wallet, lifetime totals, journal, `appliedTxnIds`) and `purchases` blocks (§28).
+**Signals.** Emits the two above (read model, big-spend save, QuestService "earn" objectives, analytics).
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Economy.WalletChanged` | Event S2C | `{ MB, MS, RT, reason }` | on change (coalesced) |
-| `Economy.GetLedger` | RF C2S | `{ page: number }` | 0.5/s b2 |
+| `Economy.WalletChanged` | Batch S2C | `{ MB, MS, RT, reason }` | 20 Hz |
+| `Economy.GetLedger` | RF C2S | `{ page: number }` | menu |
+| `Shop.Open` | RF C2S | `{ shopId }` (a building ID) | menu |
+| `Shop.Purchase` | RF C2S | `{ offerToken }` | transaction |
 
-**Validation.** Reason registered; deltas finite integers; per-reason credit ceilings (values in §29); Safe Mode
-rejects all. **Errors.** `apply()` errors roll the wallet back and return `APPLY_FAILED`. **Performance.** O(1), no
-yields inside the critical section.
+**Validation.** Source code registered; deltas finite integers within §28's sanity bound; per-source credit ceilings
+(§29); offer token exists, is unexpired, unused, belongs to the player, and the player is inside that shop's zone;
+Safe Mode and §29 earnings holds reject. **Errors.** A failing `grant()` restores the currency block exactly and returns
+`APPLY_FAILED`. **Performance.** O(ring) duplicate check (200 ids), no yields inside the critical step.
 
 #### 27.8.13 InventoryService
 
-**Responsibilities.** Special-ingredient stock (§C9 crates; consumed when taken from `STN_PANTRY`), unplaced furniture
-(uid + durability), trophies `FRN_901`–`FRN_910` (not sellable), consumables (capsules, respec tokens), cosmetic unlocks
-(titles, emotes, palettes); purchases at Restaurant Supplies (`BLD_03`) through `TransactWith`; E1 return-to-stock.
+**Responsibilities.** Special-ingredient stock (§C9 crates in `restaurant.specialStock`; consumed when taken from
+`STN_PANTRY`), the furniture inventory logic named in §C19 (grants, purchases, sales, trophy rules — trophies
+`FRN_901`–`FRN_910` are never sold), E1 return-to-stock, discovered crates from offline reports, and shop offers at
+Restaurant Supplies (`BLD_03`) and Monster Mall (`BLD_12`). Unplaced furniture is persisted in `restaurant.storage`,
+whose single writer is BuildingService (§28), so InventoryService writes it through BuildingService's storage API.
 
 ```lua
 GetStock(player: Player, ingredientId: ContentId): number
 ConsumeStock(player: Player, ingredientId: ContentId, qty: number): boolean
 AddStock(player: Player, ingredientId: ContentId, qty: number, source: string): ()
-BuyStock(player: Player, ingredientId: ContentId, crates: number, key: string): Result
-AddFurniture(player: Player, furnitureId: ContentId, source: string): string -- uid
-BuyFurniture(player: Player, furnitureId: ContentId, qty: number, key: string): Result
-SellFurniture(player: Player, uid: string, key: string): Result
-GrantItem(player: Player, itemId: string, qty: number, source: string, key: string): Result
-StockChanged, FurnitureChanged, ItemChanged: Signal<...>
+AddFurniture(player: Player, furnitureId: ContentId, source: string): string -- uid, via BuildingService:AddToStorage
+SellFurniture(player: Player, uid: string): Result -- txn "sell:<uid>"; trophies refused
+SuppliesShop: ShopProvider -- BLD_03 (stock crates, equipment, furniture), BLD_12 (decor)
+StockChanged, FurnitureChanged: Signal<...>
 ```
 
-**Data.** Ingredients, Furniture data; `inventory` section. **Signals.** Consumes `OfflineEarningsService.ReportCollected`
-(crates), `QuestService.QuestClaimed` (trophies).
+**Data.** Ingredients, Furniture data; `restaurant.specialStock`; `restaurant.storage` via BuildingService.
+**Signals.** Consumes `OfflineEarningsService.ReportCollected` (crates), `QuestService.QuestClaimed` (trophies).
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Inventory.BuyStock` | RF C2S | `{ ingredientId, crates: 1..99, idempotencyKey }` | 1/s b3 |
-| `Inventory.BuyFurniture` | RF C2S | `{ furnitureId, qty: 1..20, idempotencyKey }` | 1/s b3 |
-| `Inventory.SellFurniture` | RF C2S | `{ uid, idempotencyKey }` | 1/s b3 |
-| `Inventory.GetPage` | RF C2S | `{ category, page }` | 2/s b4 |
-| `Inventory.Changed` | Event S2C | `{ stock?, furniture?, items? }` (deltas) | on change |
+| `Inventory.SellFurniture` | RF C2S | `{ uid }` | transaction |
+| `Inventory.GetPage` | RF C2S | `{ category, page }` | menu |
+| `Inventory.Changed` | Batch S2C | `{ stock?, furniture? }` (deltas) | 20 Hz |
 
-**Validation.** Shop zone, tier requirements, purchasable flag (trophies never), owner-only selling (E12).
-**Errors.** Atomic pay + grant. **Performance.** Paged pulls; deltas only.
+Purchases go through `Shop.Open`/`Shop.Purchase` (§27.8.12). **Validation.** Owner-only selling (E12), uid owned and
+unplaced, tier requirements in offers. **Errors.** Pay + grant atomic. **Performance.** Paged pulls; deltas only.
 
 #### 27.8.14 QuestService
 
 **Responsibilities.** Quest state (`Locked → Available → Active → Completed → Claimed`), objectives driven only by
-server signals (kinds §27.5.3), rewards restricted to §C17.4 and paid through the owning services, daily/weekly cycles
-(00:00 UTC; Monday 00:00 UTC) from server `os.time()`, the tutorial chain `QST_TUT_001`–`QST_TUT_012`, NPC dialogue.
+server signals (kinds §27.5.3), rewards restricted to §C17.4 and paid through the owning services, daily/weekly
+cycles (00:00 UTC; Monday 00:00 UTC) from server `os.time()`, the tutorial chain `QST_TUT_001`–`QST_TUT_012`, NPC
+dialogue, city discovery state.
 
 ```lua
 Accept(player: Player, questId: ContentId): Result; Abandon(player: Player, questId: ContentId): Result
-Claim(player: Player, questId: ContentId, key: string): Result -- key "quest:<id>:<cycleId>"
+Claim(player: Player, questId: ContentId): Result -- txn "q:<questId>:<cycleStamp>"
 ReportProgress(player: Player, kind: string, payload: { [string]: any }): () -- server callers only
-GetCycleId(kind: "Daily" | "Weekly", now: number): number
+GetCycleStamp(kind: "Daily" | "Weekly", now: number): number
 QuestAccepted, ObjectiveProgress, QuestCompleted, QuestClaimed: Signal<...>
 ```
 
-**Data.** Quests, Npcs data; `quests` section. **Signals.** Consumes `CookingService.ItemCooked`,
+**Data.** Quests, Npcs data; `quests`, `tutorial`, `city` blocks. **Signals.** Consumes `CookingService.ItemCooked`,
 `OrderService.TicketSettled`, `CustomerAIService.CustomerLeft`, `CombatService.CombatantKO`,
 `RepairService.RepairCompleted`, `RestaurantService.OccupantEntered`, `EmployeeService.EmployeeHired`.
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Quest.Accept` / `Quest.Abandon` | RF C2S | `{ questId }` | 1/s b2 |
-| `Quest.Claim` | RF C2S | `{ questId, idempotencyKey }` | 1/s b2 |
-| `Quest.Track` | Event C2S | `{ questId? }` | 1/s b2 |
-| `Quest.DialogueChoice` | Event C2S | `{ npcId, nodeId, choice: 1..4 }` | 2/s b4 |
-| `Quest.Progress` | Event S2C | `{ { questId, objective, value } }` (batched) | ≤ 10 Hz |
+| `Quest.Accept` / `Quest.Abandon` | RF C2S | `{ questId }` | menu |
+| `Quest.Claim` | RF C2S | `{ questId }` | transaction |
+| `Quest.Track` | Event C2S | `{ questId? }` | menu |
+| `Quest.DialogueChoice` | Event C2S | `{ npcId, nodeId, choice: 1..4 }` | interact |
+| `Quest.Progress` | Batch S2C | `{ questId, objective, value }` | 20 Hz |
 
-**Validation.** No client "complete" remote exists; dialogue node must be the player's current node with that NPC
-within interaction range. **Errors.** Reward grant failures leave the quest `Completed` (claimable again; the key keeps
-it single-pay). **Performance.** Objective index `kind → active objectives` keeps signal routing O(active).
+**Validation.** No client "complete" remote exists; the dialogue node must be the player's current node with that NPC,
+within interaction range. **Errors.** A failed reward grant leaves the quest `Completed` (claimable again; the txn id
+keeps it single-pay). **Performance.** Objective index `kind → active objectives` keeps routing O(active).
 
 #### 27.8.15 CityEventService
 
-**Responsibilities.** The schedule for the 32 events (rules §18/§36.11) is a **deterministic function of UTC time**
-(seeded by the cycle id), so every server computes the same calendar with no leader; ops-inserted or cancelled events
-are overrides in a MemoryStore sorted map, broadcast on MessagingService for immediacy. Per-server event runtimes (kinds
-§27.5.3) supply `EventMult` (demand) and `EventModifier` (−15..+15 satisfaction), spawn waves within NPC caps, apply
-lighting/scale profiles, and report participation to QuestService. Seasonal windows: `EVT_029` October, `EVT_030`
-December, `EVT_031` April.
+**Responsibilities.** The schedule for the 32 events (rules §18/§36.11) is computed identically on every server from
+UTC time plus a **seeded weekly shuffle** (§18), so no leader is needed. MemoryStore holds the weekly seed, live-ops
+overrides (inserted/cancelled events) and global-goal counters; MessagingService pushes changes, with polling as the
+fallback. If the seed cannot be read, servers fall back to a hash of the week stamp (identical everywhere). Per-server runtimes
+(kinds §27.5.3) supply `EventMult` (demand) and `EventModifier` (−15..+15 satisfaction), spawn waves inside NPC caps,
+apply lighting/scale profiles, and report participation to QuestService. Seasonal windows: `EVT_029` October,
+`EVT_030` December, `EVT_031` April.
 
 ```lua
 GetActiveEvents(): { ActiveEvent }; GetUpcoming(hours: number): { ScheduledEvent }
@@ -1337,31 +1431,33 @@ ForceStart(eventId: ContentId, durationSec: number): () -- QA/ops only
 EventStarted, EventEnded, EventPhaseChanged: Signal<...>
 ```
 
-**Data.** Events data; MemoryStore sorted map of overrides (items expire; absent ⇒ deterministic calendar).
-**Signals.** Consumed by CustomerAIService, QuestService, AudioController (via remotes).
+**Data.** Events data; MemoryStore weekly seed, override map and global-goal counters. **Signals.** Consumed by
+CustomerAIService, QuestService and, via remotes, AudioController and CameraController.
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
 | `CityEvent.Schedule` | Event S2C | `{ upcoming: { { eventId, startsAt, endsAt } } }` | join + on change |
 | `CityEvent.Started` / `CityEvent.Ended` | Event S2C | `{ eventId, districtId?, endsAt? }` | on change |
-| `CityEvent.Participate` | Event C2S | `{ eventId, action, targetId? }` | 6/s b10 |
+| `CityEvent.Participate` | Event C2S | `{ eventId, action, targetId? }` | interact |
 
 **Validation.** Event active, player in its district/volume, action legal for the event kind, target exists.
-**Errors.** MemoryStore/MessagingService outage → calendar continues from UTC, overrides resume when reachable (P7).
-**Performance.** Override poll every 60 s; runtime work ≤ 0.3 ms/frame.
+**Errors.** MemoryStore/MessagingService outage → the UTC calendar continues; overrides and counters resume when
+reachable (P7). **Performance.** Polling fallback every 60 s; global-goal increments batched every 10 s; runtime work
+≤ 0.3 ms/frame.
 
 #### 27.8.16 MultiplayerService
 
-**Responsibilities.** Co-op permissions (owner presets and per-action toggles: cook, serve, clean, fight), guests and
-same-server visits (walk through the door), cross-server visits (`TeleportService:GetPlayerPlaceInstanceAsync` to locate
-a friend, then `TeleportAsync` with `TeleportOptions.ServerInstanceId`), invites (MessagingService), E12 Co-op Insurance
-bookkeeping (damage attributed to guests and co-op customers is repaired free after the visit), arena matchmaking (a
-MemoryStore queue → `TeleportService:ReserveServer` → `TeleportAsync` with the access code, §21), emotes. It is the
-**single permission policy point**: every service asks `GetPermission` before acting for a non-owner.
+**Responsibilities.** Co-op permissions (owner presets and per-action toggles: cook, serve, clean, fight; persisted by
+RestaurantService in `restaurant.coop`), guests and same-server visits (walk through the door), cross-server visits
+(`TeleportService:GetPlayerPlaceInstanceAsync` locates a friend, `TeleportAsync` with
+`TeleportOptions.ServerInstanceId`; the profile lock handoff is §28's), invites over MessagingService, E12 Co-op
+Insurance bookkeeping, arena matchmaking (MemoryStore queue → `TeleportService:ReserveServer` → `TeleportAsync` with
+the access code; `arena` block), emotes. It is the **single permission policy point**: every service asks
+`GetPermission` before acting for a non-owner.
 
 ```lua
 GetPermission(restaurantId: string, player: Player, action: "Cook" | "Serve" | "Clean" | "Fight" | "Build" | "Spend"): boolean
-SetPermissions(owner: Player, perms: CoopPermissions): Result
+SetPermissions(owner: Player, perms: CoopPermissions): Result -- persists via RestaurantService:SetCoopSettings
 Invite(owner: Player, targetUserId: number): Result
 VisitFriend(player: Player, targetUserId: number): Result
 JoinArenaQueue(player: Player, mode: string): Result; LeaveArenaQueue(player: Player): ()
@@ -1369,147 +1465,156 @@ RecordGuestDamage(restaurantId: string, objectId: string, points: number): ()
 GuestJoined, GuestLeft, PermissionsChanged, ArenaMatchFound: Signal<...>
 ```
 
-**Data.** `social` section (permissions); MemoryStore arena queue. **Signals.** Consumes
+**Data.** `restaurant.coop` (through RestaurantService), `arena` block; MemoryStore arena queue. **Signals.** Consumes
 `RestaurantService.OccupantEntered/OccupantLeft`, `RepairService.ObjectDamaged`.
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Multiplayer.SetPermissions` | RF C2S | `{ preset, toggles: { [action]: boolean } }` | 1/s b2 |
-| `Multiplayer.Invite` | RF C2S | `{ targetUserId }` | 0.2/s b2 |
-| `Multiplayer.RespondInvite` | Event C2S | `{ inviteId, accept: boolean }` | 1/s b2 |
-| `Multiplayer.VisitFriend` | RF C2S | `{ targetUserId }` | 0.2/s b1 |
-| `Multiplayer.ArenaQueue` | RF C2S | `{ mode, join: boolean }` | 0.5/s b2 |
+| `Multiplayer.SetPermissions` | RF C2S | `{ preset, toggles: { [action]: boolean } }` | menu |
+| `Multiplayer.Invite` | RF C2S | `{ targetUserId }` | menu + 5 s cooldown |
+| `Multiplayer.RespondInvite` | Event C2S | `{ inviteId, accept: boolean }` | menu |
+| `Multiplayer.VisitFriend` | RF C2S | `{ targetUserId }` | menu |
+| `Multiplayer.ArenaQueue` | RF C2S | `{ mode, join: boolean }` | menu |
 | `Multiplayer.InviteReceived` | Event S2C | `{ inviteId, fromUserId, expiresAt }` | on event |
-| `Multiplayer.Emote` | Event C2S | `{ emote: string }` (owned) | 1/s b2 |
+| `Multiplayer.Emote` | Event C2S | `{ emote: string }` (owned) | cosmetic |
 | `Multiplayer.EmotePlayed` | Unrel S2C | `{ userId, emote }` | on event |
 
-**Validation.** Friendship via `Player:IsFriendsWith` (cached per session); guests can never Build, Spend owner
-currency, sell, move or store owner furniture (E12). **Errors.** Teleport failures (`TeleportInitFailed`) retried twice
-then reported; queue entries expire after 120 s. **Performance.** Presence lookups on demand only.
+**Validation.** Friendship via `Player:IsFriendsWith` (cached per session); guests never Build, Spend owner currency,
+sell, move or store owner furniture (E12). **Errors.** Teleport failures (`TeleportInitFailed`) retried twice, then
+reported; queue entries expire after 120 s. **Performance.** Presence lookups only on demand.
 
 #### 27.8.17 BuildingService
 
-**Responsibilities.** Placement grid (cell size and footprints §15), placement validation (bounds, overlap, appliance
-slots §C6, floor space, door→every-seat connectivity via grid BFS, E10), applying a saved layout to a fresh interior,
-atmosphere score M (§15), tier upgrades (cost, level, City Hall permit for `TIER_04`+, §C6) charged through
-`TransactWith` then `RestaurantService:ApplyTier`, and layout migration to the larger shell (items that no longer fit
-move to inventory, never lost).
+**Responsibilities.** Placement grid (cell size and footprints §15), validation (bounds, overlap, appliance slots §C6,
+floor space, door→every-seat connectivity via grid BFS, E10), applying a saved layout to a fresh interior, atmosphere
+score M (§15), tier upgrades (cost, level, City Hall permit for `TIER_04`+, §C6) charged through `TransactWith` and
+then `RestaurantService:ApplyTier`, layout migration into the larger shell (items that no longer fit move to storage,
+never lost), and the furniture storage API (single writer of `restaurant.storage`, §28).
 
 ```lua
 ValidatePlacement(restaurantId: string, p: Placement): (boolean, string?)
 Place(owner: Player, itemUid: string, p: Placement): Result; Move(owner: Player, placedId: string, p: Placement): Result
 Store(owner: Player, placedId: string): Result
-UpgradeTier(owner: Player, targetTier: ContentId, key: string): Result
+AddToStorage(player: Player, furnitureId: ContentId, source: string): string; RemoveFromStorage(player: Player, uid: string): boolean
+UpgradeTier(owner: Player, targetTier: ContentId): Result -- txn "tier:<TIER_NN>"
 ApplyLayout(restaurantId: string, layout: Layout): ()
 GetAtmosphere(restaurantId: string): number; GetSeats(restaurantId: string): { SeatRef }
 LayoutChanged, TierUpgraded: Signal<...>
 ```
 
-**Data.** Tiers, Furniture, Stations data; `layout` section. **Signals.** Consumes `InventoryService.FurnitureChanged`.
+**Data.** Tiers, Furniture, Stations data; `restaurant.layoutPacked` and `restaurant.storage` blocks.
+**Signals.** Consumes `InventoryService.FurnitureChanged`.
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Building.EnterBuildMode` / `Building.ExitBuildMode` | RF C2S | `{}` | 0.5/s b2 |
-| `Building.Place` / `Building.Move` | RF C2S | `{ itemUid \| placedId, x: int, z: int, rot: 0 \| 90 \| 180 \| 270 }` | 4/s b8 |
-| `Building.Store` | RF C2S | `{ placedId }` | 4/s b8 |
-| `Building.UpgradeTier` | RF C2S | `{ targetTier, idempotencyKey }` | 0.2/s b1 |
-| `Building.LayoutChanged` | Event S2C | `{ restaurantId, ops: { LayoutOp } }` | on change |
+| `Building.EnterBuildMode` / `Building.ExitBuildMode` | RF C2S | `{}` | menu |
+| `Building.Place` / `Building.Move` | RF C2S | `{ itemUid \| placedId, x: int, z: int, rot: 0 \| 90 \| 180 \| 270 }` | interact |
+| `Building.Store` | RF C2S | `{ placedId }` | interact |
+| `Building.UpgradeTier` | RF C2S | `{ targetTier }` | transaction |
+| `Building.LayoutChanged` | Event S2C | `{ restaurantId, ops: { LayoutOp } }` (`buffer`-packed) | on change |
 
-**Validation.** Owner only; `noCombat`; integer cells inside the shell; rotation enum; item owned and unplaced; target
-tier = current + 1. **Errors.** A layout that fails validation on load (content change) moves offending items to
-inventory and logs. **Performance.** BFS over ≤ 64 × 64 cells < 1 ms; validation only on request.
+**Validation.** Owner only; `noCombat`; integer cells inside the shell; rotation enum; item owned and unplaced;
+target tier = current + 1. **Errors.** A layout that fails validation on load (content change) moves offending items to
+storage and logs. **Performance.** BFS over ≤ 64 × 64 cells < 1 ms; validation only on request.
 
 #### 27.8.18 RepairService
 
-**Responsibilities.** Durability for every destructible (tag `MMR_Destructible`; attributes `Durability` 0–100 and
-`DamageState` per §C6 bands), damage intake (combat, incidents, events), repair jobs by players (minigame) or
-`ROLE_REPAIR` employees, E3 (jobs absorb new damage; Destroyed converts to Rebuild; cost charged once at completion),
-Rebuild for ≤ 25 % of item price, E12 insurance, applying offline damage from the report, and **messes** (trash, spills)
-that feed cleanliness K.
+**Responsibilities.** Durability for every destructible (tag `MMR_Destructible`; attributes for durability and damage
+state per §C6 bands), damage intake (combat, incidents, events), repair jobs by players (minigame) or `ROLE_REPAIR`
+employees, E3 (jobs absorb new damage; Destroyed converts to Rebuild; cost charged once at completion), Rebuild for
+≤ 25 % of item price, E12 insurance, offline damage (its pure function runs inside the load transform), and **messes**
+(trash, spills, dirty tables) that feed cleanliness K. Durability values persist inside `restaurant.layoutPacked`,
+written through RepairService (§28).
 
 ```lua
 ApplyDamage(objectId: string, amount: number, source: DamageSource): ()
 StartRepair(actor: Player | EmployeeRef, objectId: string): (RepairJob?, string)
 SubmitInput(player: Player, jobId: string, input: string, tapTime: number): ()
-Rebuild(owner: Player, objectId: string, key: string): Result
+Rebuild(owner: Player, objectId: string): Result -- txn "rebuild:<objectId>:<destroyedAt>"
+ApplyOfflineDamage(data: ProfileData, damage: OfflineDamage): () -- pure; registered with OfflineEarningsService
 GetCleanliness(restaurantId: string): number
-SpawnMess(restaurantId: string, kind: "Trash" | "Spill", position: Vector3): ()
+SpawnMess(restaurantId: string, kind: "Trash" | "Spill" | "DirtyTable", position: Vector3): ()
 ObjectDamaged, StateChanged, RepairCompleted, ObjectDestroyed, MessCleaned: Signal<...>
 ```
 
-**Data.** Furniture/Stations durability data; `durability` section. **Signals.** Consumes `CombatService.DamageDealt`
-(prop hits), `OfflineEarningsService.ReportCollected` (damage list), `MultiplayerService.GuestLeft` (insurance).
+**Data.** Furniture/Stations durability data; durability fields in `restaurant.layoutPacked`. **Signals.** Consumes
+`CombatService.DamageDealt` (prop hits), `MultiplayerService.GuestLeft` (insurance).
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Repair.Start` | Event C2S | `{ objectId }` | 2/s b3 |
-| `Repair.Input` | Event C2S | `{ jobId, input, tapTime }` | 10/s b15 |
-| `Repair.Cancel` | Event C2S | `{ jobId }` | 2/s b3 |
-| `Repair.Rebuild` | RF C2S | `{ objectId, idempotencyKey }` | 0.5/s b2 |
+| `Repair.Start` | Event C2S | `{ objectId }` | interact |
+| `Repair.Input` | Event C2S | `{ jobId, input, tapTime }` | chop |
+| `Repair.Cancel` | Event C2S | `{ jobId }` | interact |
+| `Repair.Rebuild` | RF C2S | `{ objectId }` | transaction |
 
-Durability and state replicate as attributes on the object (clients swap damage visuals locally).
+Durability and damage state replicate as attributes on the object; clients swap damage visuals locally.
 **Validation.** Range 7 + 2 studs, clean/repair permission, job ownership, rhythm `tapTime` window as in §27.8.5.
-**Errors.** Cost charging failure leaves the object repaired but marks a debt-free "owner pays later" job — never a
-negative balance (E8 spirit). **Performance.** Job sweep 4 Hz ≤ 0.2 ms.
+**Errors.** If charging fails at completion, the repair still completes and the charge is waived — never a negative
+balance (E8 spirit). **Performance.** Job sweep 4 Hz ≤ 0.2 ms.
 
 #### 27.8.19 ProgressionService *(critical)*
 
-**Responsibilities.** XP and levels (§C5.1, cap 100), stat allocation (2 points/level, ≤ 50 per stat; free respec once
-per 24 h, else 500 MB × level), effective stats = allocation + mutations + skills with §C5 caps (sets `WalkSpeed` from
-`MOVE`, HP formula), skill trees (§C18; free full respec once per 7 days), achievements and milestones (§36.16, §36.17),
-E14 (level-up toast only; allocation deferred until the player opens the menu).
+**Responsibilities.** XP and levels (§C5.1, cap 100) — XP grants are expressed in **XP Units** (XPU = XPRate(L)/100,
+§14) and one-time grants are idempotent through an optional `eventKey` stored in the profile's `xpOnceKeys`; stat
+allocation (2 points/level, ≤ 50 per stat; free respec once per 24 h, else 500 MB × level); effective stats =
+allocation + mutations + skills with §C5 caps (sets `Humanoid.WalkSpeed` = 16 × (1 + 0.003 × MOVE), max 20.8 at the
+cap; HP formula); skill trees (§C18; free full respec once per 7 days; a SVC/MGMT specialization is chosen implicitly
+by buying its first node — no separate remote); achievements and milestones (§36.16, §36.17); cosmetic unlocks
+(titles, emotes, palettes) and respec tokens; E14 (level-up toast only; allocation deferred to the menu).
 
 ```lua
-AddXp(player: Player, amount: number, source: string): ()
+AddXp(player: Player, xpu: number, source: string, eventKey: string?): () -- XPU (§14); eventKey ⇒ once only
 AllocateStat(player: Player, stat: string, points: number): Result
-Respec(player: Player, kind: "Stats" | "Skills", key: string): Result
+Respec(player: Player, kind: "Stats" | "Skills"): Result -- txn "respec:<kind>:<dayStamp>" when MB is charged
 UnlockSkill(player: Player, skillId: ContentId): Result
 GetEffectiveStats(player: Player): StatBlock
 UnlockAchievement(player: Player, achievementId: ContentId): ()
 XpGained, LevelUp, StatsChanged, AchievementUnlocked, MilestoneReached: Signal<...>
 ```
 
-**Data.** Skills, Achievements, Milestones, Stats constants; `progression` section. **Signals.** Consumes
-`MutationService.EquipChanged`, `QuestService.QuestClaimed`, `OrderService.TicketSettled` (XP), etc.
+**Data.** Skills, Achievements, Milestones, Stats constants; `progression` and `achievements` blocks.
+**Signals.** Consumes `MutationService.EquipChanged`, `QuestService.QuestClaimed`, `OrderService.TicketSettled` (XP).
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Progression.AllocateStat` | RF C2S | `{ stat, points: 1..10 }` | 4/s b8 |
-| `Progression.Respec` | RF C2S | `{ kind, idempotencyKey }` | 0.2/s b1 |
-| `Progression.UnlockSkill` | RF C2S | `{ skillId }` | 2/s b4 |
+| `Progression.AllocateStat` | RF C2S | `{ stat, points: 1..10 }` | menu |
+| `Progression.Respec` | RF C2S | `{ kind }` | transaction |
+| `Progression.UnlockSkill` | RF C2S | `{ skillId }` | menu |
 | `Progression.LevelUp` | Event S2C | `{ level, statPoints, skillPoints }` | on event |
 | `Progression.AchievementUnlocked` | Event S2C | `{ achievementId }` | on event |
 
 **Validation.** Unspent points available, per-stat cap, prerequisite nodes, respec timers from server time.
-**Errors.** XP from unknown sources rejected (sources registered like economy reasons). **Performance.** Effective stats
-cached; recomputed on `EquipChanged`/allocation only.
+**Errors.** XP from unregistered sources is rejected (sources registered like economy codes). **Performance.**
+Effective stats cached; recomputed only on `EquipChanged`, allocation or skill unlocks.
 
 #### 27.8.20 UIController *(client service)*
 
-**Responsibilities.** The client UI state machine (`Boot → Loading → Hud ⇄ Overlay | Menu | Modal`, plus `WelcomeBack`,
-`Tutorial`, `SafeMode`, `System` curtain), creation of the §24 layer ScreenGuis from `ReplicatedStorage.UI` (once,
-`ResetOnSpawn = false`), HUD bindings to the `ReplicaStore`, input-mode adaptation (driven by InputController), combat
-gating (E2: refuses full-screen menus while the local character's `InCombat` attribute is true; closes them on
-`Combat.ForceCloseMenus`), toast queue (E14), accessibility and localization (§24).
+**Responsibilities.** The client UI state machine (`Boot → Loading → Hud ⇄ Overlay | Menu | Modal`, plus
+`WelcomeBack`, `Tutorial`, `SafeMode`, `System` curtain), creation of the §24 layer ScreenGuis from
+`ReplicatedStorage.UI` (once, `ResetOnSpawn = false`), HUD bindings to the `ReplicaStore`, input-mode adaptation
+(driven by InputController), combat gating per E2 — refuses full-screen menus while the local Player's `InCombat` or
+`TargetedByLevel5` attribute is true and closes them on `Combat.ForceCloseMenus` — the toast queue (E14),
+accessibility and localization (§24).
 
 ```lua
-Open(screen: string, params: any?): boolean -- false if gated (combat, tutorial lock)
+Open(screen: string, params: any?): boolean -- false if gated (combat lock, tutorial lock)
 Close(screen: string?): ()
 Toast(spec: { key: string, args: { string }?, critical: boolean? }): ()
 GetState(): UIState
 StateChanged: Signal<UIState, UIState>
 ```
 
-**Data.** `ReplicaStore` (profile view), generated Data for names/icons. **Signals.** Consumes every S2C remote above
-through controllers/replica; emits `StateChanged` (CameraController, InputController, TutorialController).
+**Data.** `ReplicaStore` (profile read model), Player attributes, generated Data for names/icons. **Signals.** Consumes
+every S2C remote through controllers and the replica; emits `StateChanged` (CameraController, InputController,
+TutorialController).
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `UI.Ready` | Event C2S | `{ loadMs: number }` (HUD interactive; feeds the §31 onboarding funnel) | 1 per session |
+| `UI.Ready` | Event C2S | `{ loadMs: number }` (HUD interactive; §31 onboarding funnel) | settings (once per session) |
 
-**Validation.** Client-side checks are UX only (disable buttons, show reasons); the server re-validates everything.
-**Errors.** Each screen renders under `pcall`; a failing screen shows a friendly "Oops, the menu tripped" panel while the
-HUD keeps running. **Performance.** Event-driven updates, HUD numbers throttled to ≤ 10 Hz, billboards pooled (§24).
+**Validation.** Client checks are UX only (disable buttons, show reasons); the server re-validates everything.
+**Errors.** Each screen renders under `pcall`; a failing screen shows a friendly "Oops, the menu tripped" panel while
+the HUD keeps running. **Performance.** Event-driven updates, HUD numbers throttled to ≤ 10 Hz, billboards pooled (§24).
 
 ### 27.9 Client Controllers
 
@@ -1520,9 +1625,9 @@ Controllers live in `StarterPlayerScripts/Client/Controllers`, are booted by `Co
 |---|---|---|---|
 | `InputController` | Binds actions with `ContextActionService` (interact, chop, attack, block, dodge, abilities 1–4, carry drop, menu); tracks input mode from `UserInputService:GetLastInputType()` / `LastInputTypeChanged` (KBM, Gamepad, Touch); touch buttons per §24; haptics. | Emits `ActionTriggered`, `InputModeChanged` to other controllers; never fires remotes itself. | One binding table; no per-frame polling except held-chop timing. |
 | `CameraController` | Third-person kitchen camera, city camera, combat lock-on, menu/preview cameras; view-context switches (City ⇄ Interior) that also swap Lighting profiles via `LightingCycle`; reduced-motion shake settings. | Reads `UIController.StateChanged`, `Restaurant.StateChanged`; sets `Workspace.CurrentCamera`. | `RenderStepped` work ≤ 0.3 ms. |
-| `MorphVisualController` | SPCV client builder: on `CollectionService` tag `MMR_Proxy` added (streamed in) build the visual with `MorphBuilder` from the proxy's `Parts` attribute; release on removal; interpolate visuals toward proxy CFrames; play state animations; LOD impostor beyond 60 studs; pooled rigs and parts (§27.12.4). Also previews the player's own morph in the customization viewport. | Proxy attributes (`State`, `AngerLevel`, `Seat`, `TempPart`), `Customer.Emote` (Unrel). | ≤ 1 build per frame (queue), `Workspace:BulkMoveTo` for all visual roots each frame, pools: 32 rigs, 6 per part template [TUNABLE]. |
-| `StationController` | Prompts and minigame UIs for stations: chop rhythm ring, timing bars rendered from absolute server times, burn warnings, carry display; sends `Cooking.InteractStation` with `tapTime = workspace:GetServerTimeNow()` for rhythm inputs; optimistic cosmetic feedback reverted on rejection. | `Cooking.StationState`, `Cooking.CarryChanged`, `Cooking.StationFx`. | Bars animate locally; zero network traffic while a timer runs. |
-| `CombatController` | Ability bar, aim resolution (mouse ray / gamepad assist / touch auto-target), local wind-up animations and telegraph VFX, hit reactions on `Combat.Hit`, status visuals, "Seeing Stars" sequence (`ANM_062`), `ANM_063` respawn poof. | `Combat.UseAbility/Block/Dodge` out; `Combat.Hit`, `Combat.StatusChanged`, `Combat.Fx`, `Combat.ForceCloseMenus` in. | Predicts animations only, never damage; VFX pooled; debris client-only, 4 s. |
+| `MorphVisualController` | SPCV client builder: on `CollectionService` tag `MMR_Proxy` added (streamed in) build the visual with `MorphBuilder` from the part list its kind implies (customer seed via `PartListGen`, employee archetype, named NPC); release on removal; evaluate published path segments (fallback: ease toward the proxy CFrame); play state animations; LOD impostor beyond 60 studs; pooled rigs and parts (§27.12.4). Also previews the player's own morph in the customization viewport. | Proxy attributes through `ProxyAttributes` (state, anger, seed, path segment, emote code). | ≤ 1 build per frame (queue), `Workspace:BulkMoveTo` for all visual roots each frame, pools: 32 rigs, 6 per part template [TUNABLE]. |
+| `StationController` | Prompts and minigame UIs for stations: chop rhythm ring, timing bars rendered from absolute server times, burn warnings, carry display; sends `Cooking.InteractStation`, and `Cooking.ChopTap` with `tapTime = workspace:GetServerTimeNow()` for rhythm inputs; optimistic cosmetic feedback reverted on rejection. | `Cooking.StationState`, `Cooking.CarryChanged`, `Cooking.StationFx`. | Bars animate locally; zero network traffic while a timer runs. |
+| `CombatController` | Ability bar, aim resolution (mouse ray / gamepad assist / touch auto-target), local wind-up animations and telegraph VFX, hit reactions on `Combat.HitConfirm`, knockback displacement driven locally from `Combat.Knockback`, status visuals, "Seeing Stars" sequence (`ANM_062`), `ANM_063` respawn poof. | `Combat.UseAbility/BlockState/Dodge/Grab/Throw/Revive` out; `Combat.HitConfirm`, `Combat.Telegraph`, `Combat.Knockback`, `Combat.CooldownSync`, `Combat.StatusChanged`, `Combat.ForceCloseMenus` in. | Predicts animations only, never damage; VFX pooled; debris client-only, 4 s. |
 | `AudioController` | Music by context (kitchen, city district, event, combat), SFX pooling on `SoundService` groups, creature gibberish voice lines for bubbles, volumes from settings, ducking on toasts. | All cosmetic remotes, `CityEvent.Started/Ended`, UI state. | ≤ 24 simultaneous sounds; pooled `Sound` instances; streamed music. |
 | `TutorialController` | Client side of `QST_TUT_001`–`QST_TUT_012` (§32): arrows, highlights, scripted camera beats, widget reveal steps (§24), skip/recover UI; progress itself is server-side in QuestService. | `Quest.Progress`, `PlayerData.ProfileReady` (tutorial flags); requests UI through `UIController`. | Idle when tutorial complete (no connections). |
 
@@ -1544,7 +1649,7 @@ flowchart LR
   end
   subgraph NL["Net layer (ReplicatedStorage.Net)"]
     C2S["C2S RemoteEvents and RemoteFunctions"]
-    S2C["S2C RemoteEvents (batched 10 Hz)"]
+    S2C["S2C events (Net.Batch, 20 Hz)"]
     UNR["UnreliableRemoteEvents (cosmetic)"]
     ATT["Proxy Attributes and CFrames (streamed)"]
     NSV["NetServer middleware: flag, gates, rate limit, schema"]
@@ -1601,17 +1706,17 @@ flowchart LR
   CAI -->|"orders"| OS
   CKS -->|"plates"| OS
   CAI -->|"NPC attacks"| CBS
-  OS -->|"settle serve:ticketId"| ECO
+  OS -->|"CreditServe at payment"| ECO
   MUTS --> ECO
   EMS -->|"wages"| ECO
-  OES -->|"collect offline:reportId"| ECO
+  OES -->|"collect off:reportId"| ECO
   INV --> ECO
   QS --> ECO
   BS -->|"tier upgrade"| ECO
   RPS --> ECO
   RCS --> ECO
   BS -->|"ApplyTier, layout"| RS
-  RS -->|"ambience, reputation"| CAI
+  RS -->|"ambience K and M"| CAI
   MUTS -->|"EquipChanged"| MAS
   MUTS --> PGS
   PGS -->|"effective stats"| CBS
@@ -1665,7 +1770,7 @@ sequenceDiagram
   Main->>Main: set ServerReady attribute
   Note over Main,Cli: Player joins with Players.CharacterAutoLoads = false
   Cli->>Cli: LoadingCurtain, wait for ReplicatedStorage.Net
-  Main->>PDS: PlayerAdded then LoadProfile
+  Main->>PDS: PlayerAdded then Load
   PDS->>DS: UpdateAsync with transform
   Note right of DS: transform checks and stamps the lock, migrates, runs OfflineSim, writes pending report and lastSimAt
   DS-->>PDS: locked profile
@@ -1727,7 +1832,7 @@ NetServer.init({ -- remotes must exist before services register handlers in Init
 		return data:GetProfile(p) ~= nil or data:IsSafeMode(p)
 	end,
 	isSafeMode = function(p: Player) return registry.PlayerDataService:IsSafeMode(p) end,
-	inCombat = function(p: Player) return registry.CombatService:IsInCombat(p) end,
+	isMenuLocked = function(p: Player) return registry.CombatService:IsMenuLocked(p) end, -- InCombat or TargetedByLevel5 (E2)
 })
 
 if not Loader.boot(script.Parent.Services, registry) then
@@ -1754,30 +1859,41 @@ Players.PlayerRemoving:Connect(function(p: Player) registry.PlayerDataService:Ha
 --!strict
 local INTERACT_RANGE, TOLERANCE, LAG_WINDOW, LOCK_HOLD = 7, 2, 0.25, 2 -- §C3; seconds
 
-local function onInteract(player: Player, p: Types.InteractPayload): Types.Result?
+-- Shared by Cooking.InteractStation and Cooking.ChopTap: zone, station, range, damage, permission, slot lock.
+local function resolveSlot(player: Player, stationUid: string, slotIndex: number): (any, any, any, string?)
 	local restaurant = Restaurant:GetCurrentRestaurant(player)
-	if not restaurant then return { ok = false, code = "NOT_IN_RESTAURANT" } end
-	local station = Registry.get(restaurant.id, p.stationUid)
-	if not station then return { ok = false, code = "NO_STATION" } end
+	if not restaurant then return nil, nil, nil, "NOT_IN_RESTAURANT" end
+	local station = Registry.get(restaurant.id, stationUid)
+	if not station then return nil, nil, nil, "NO_STATION" end
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root or (root.Position - station.interactPos).Magnitude > INTERACT_RANGE + TOLERANCE then
-		return { ok = false, code = "OUT_OF_RANGE" }
+		return nil, nil, nil, "OUT_OF_RANGE"
 	end
 	if station.damageState == "Broken" or station.damageState == "Destroyed" then
-		return { ok = false, code = "STATION_BROKEN" }
+		return nil, nil, nil, "STATION_BROKEN"
 	end
 	if restaurant.ownerUserId ~= player.UserId and not Multiplayer:GetPermission(restaurant.id, player, "Cook") then
-		return { ok = false, code = "NO_PERMISSION" }
+		return nil, nil, nil, "NO_PERMISSION"
 	end
-	local slot = station.slots[p.slot]
-	if not slot then return { ok = false, code = "NO_SLOT" } end
+	local slot = station.slots[slotIndex]
+	if not slot then return nil, nil, nil, "NO_SLOT" end
 	local now = workspace:GetServerTimeNow()
 	if slot.lockedBy and slot.lockedBy ~= player.UserId and now < slot.lockUntil then
-		return { ok = false, code = "SLOT_BUSY" } -- E7: one interactor per slot; other slots stay free
+		return nil, nil, nil, "SLOT_BUSY" -- E7: one interactor per slot; other slots stay free
 	end
 	slot.lockedBy, slot.lockUntil = player.UserId, now + LOCK_HOLD
+	return restaurant, station, slot, nil
+end
 
+local function publish(restaurantId: string, stationUid: string, slotIndex: number, slot: any)
+	Batcher.queueZone(restaurantId, "Cooking.StationState", `{stationUid}#{slotIndex}`, SlotMachine.view(slot))
+end
+
+local function onInteract(player: Player, p: Types.InteractPayload): Types.Result?
+	local restaurant, station, slot, err = resolveSlot(player, p.stationUid, p.slot)
+	if err then return { ok = false, code = err } end
+	local now = workspace:GetServerTimeNow()
 	if p.action == "Place" then
 		local item = Carry.peek(player)
 		if not item or not StationRules.accepts(station.def, slot, item) then return { ok = false, code = "WRONG_ITEM" } end
@@ -1790,10 +1906,6 @@ local function onInteract(player: Player, p: Types.InteractPayload): Types.Resul
 			SlotMachine.putBack(station, slot, item)
 			return { ok = false, code = "HANDS_FULL" }
 		end
-	elseif p.action == "Tap" then
-		local t = math.clamp(p.tapTime or now, math.max(slot.lastTap or 0, now - LAG_WINDOW), now)
-		slot.lastTap = t
-		SlotMachine.chopTap(station, slot, t) -- ring phase is a pure function of the slot's server start time
 	elseif p.action == "Start" then
 		SlotMachine.start(station, slot, now) -- manual-start stations (blender, mixer)
 	elseif p.action == "Extinguish" then
@@ -1801,47 +1913,80 @@ local function onInteract(player: Player, p: Types.InteractPayload): Types.Resul
 	elseif p.action == "Clean" then
 		SlotMachine.clean(station, slot)
 	end
-	Batcher.queueOccupants(restaurant.id, "Cooking.StationState", `{p.stationUid}#{p.slot}`, SlotMachine.view(slot))
+	publish(restaurant.id, p.stationUid, p.slot, slot)
 	return nil -- RemoteEvent: the batched StationState is the response
 end
+
+local function onChopTap(player: Player, p: Types.ChopTapPayload): Types.Result?
+	local restaurant, station, slot, err = resolveSlot(player, p.stationUid, p.slot)
+	if err then return { ok = false, code = err } end
+	local now = workspace:GetServerTimeNow()
+	-- rhythm input: trust the client clock only inside [last tap, now] and no older than 250 ms
+	local t = math.clamp(p.tapTime, math.max(slot.lastTap or 0, now - LAG_WINDOW), now)
+	slot.lastTap = t
+	SlotMachine.chopTap(station, slot, t) -- ring phase is a pure function of the slot's server start time
+	publish(restaurant.id, p.stationUid, p.slot, slot)
+	return nil
+end
+
+Net.handle("Cooking.InteractStation", onInteract)
+Net.handle("Cooking.ChopTap", onChopTap)
 ```
 
 #### 27.12.3 SPCV proxy (server)
 
 ```lua
 --!strict
--- CustomerAIService/Proxy.lua
+-- CustomerAIService/Proxy.lua — attribute names per §8; keys come from one module so §30 encodings change one file
 local CollectionService = game:GetService("CollectionService")
-local PROXY_SIZE = Vector3.new(2.5, 5.5, 2.5) -- baseline character height 5.5 studs (§C13.7)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local A = require(ReplicatedStorage.Shared.Npc.ProxyAttributes)
+local BASE_SIZE = Vector3.new(2.5, 5, 2.5) -- × body scale (§8)
 
+export type ProxySpec = { id: string, seed: number, band: string, personalityId: string, bodyScale: number, cf: CFrame }
 local Proxy = {}
 
-function Proxy.create(folder: Folder, id: string, personalityId: string, parts: { string }, cf: CFrame): Part
+function Proxy.create(folder: Folder, c: ProxySpec): Part
 	local p = Instance.new("Part")
-	p.Name = id
-	p.Size = PROXY_SIZE
+	p.Name = c.id
+	p.Size = BASE_SIZE * c.bodyScale
 	p.Anchored = true
 	p.CanCollide = false
 	p.CanTouch = false
-	p.CanQuery = true -- combat queries and click/tap targeting
+	p.CanQuery = true -- CombatService queries and click/tap targeting
 	p.CastShadow = false
 	p.Transparency = 1
 	p.CollisionGroup = "Proxies"
-	p.CFrame = cf
-	p:SetAttribute("Kind", "Customer")
-	p:SetAttribute("PersonalityId", personalityId) -- e.g. "PER_014"
-	p:SetAttribute("Parts", table.concat(parts, ",")) -- ≤ 24 IDs, e.g. "MUT_015,MUT_146,MUT_211"
-	p:SetAttribute("State", "Spawn")
-	p:SetAttribute("AngerLevel", 0)
-	p:SetAttribute("Seat", "")
-	CollectionService:AddTag(p, "MMR_Proxy")
-	p.Parent = folder -- Interiors/SlotN/Proxies: streams only to clients in this interior
+	p.CFrame = c.cf
+	p:SetAttribute(A.CustomerId, c.id)
+	p:SetAttribute(A.Seed, c.seed) -- clients derive the look with Shared/Morph/PartListGen (deterministic)
+	p:SetAttribute(A.Band, c.band)
+	p:SetAttribute(A.PersonalityId, c.personalityId) -- e.g. "PER_014"
+	p:SetAttribute(A.State, "SPAWN")
+	p:SetAttribute(A.StateT0, workspace:GetServerTimeNow())
+	p:SetAttribute(A.AngerLevel, 0)
+	CollectionService:AddTag(p, "MMR_Proxy") -- generic tag: MorphVisualController builds every NPC kind
+	CollectionService:AddTag(p, "MMR_Customer") -- kind tag (§8)
+	p.Parent = folder -- Workspace.Interiors.<PlotId>.Customers: streams only to clients in that interior
 	return p
 end
 
-function Proxy.setState(p: Part, state: string, angerLevel: number)
-	if p:GetAttribute("State") ~= state then p:SetAttribute("State", state) end -- write only on change
-	if p:GetAttribute("AngerLevel") ~= angerLevel then p:SetAttribute("AngerLevel", angerLevel) end
+function Proxy.setState(p: Part, state: string)
+	if p:GetAttribute(A.State) ~= state then -- attributes are written only on change
+		p:SetAttribute(A.State, state)
+		p:SetAttribute(A.StateT0, workspace:GetServerTimeNow())
+	end
+end
+
+function Proxy.setAngerLevel(p: Part, level: number)
+	if p:GetAttribute(A.AngerLevel) ~= level then p:SetAttribute(A.AngerLevel, level) end
+end
+
+-- One write per path segment; clients evaluate position(t) locally, so walking costs ~0 bandwidth (§30).
+function Proxy.setPath(p: Part, waypoints: { Vector3 }, speed: number)
+	local pts = table.create(#waypoints)
+	for i, w in waypoints do pts[i] = string.format("%.1f,%.1f,%.1f", w.X, w.Y, w.Z) end
+	p:SetAttribute(A.Path, `{workspace:GetServerTimeNow()};{speed};{table.concat(pts, "|")}`)
 end
 
 return Proxy
@@ -1856,13 +2001,18 @@ local CollectionService = game:GetService("CollectionService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MorphBuilder = require(ReplicatedStorage.Shared.Morph.MorphBuilder)
+local PartListGen = require(ReplicatedStorage.Shared.Morph.PartListGen)
+local A = require(ReplicatedStorage.Shared.Npc.ProxyAttributes)
+local PathEval = require(ReplicatedStorage.Shared.Npc.PathEval)
+local Data = require(ReplicatedStorage.Shared.Data)
 local VisualPool = require(script.Parent.Parent.Modules.VisualPool)
-local AnimCache = require(script.Parent.Parent.Modules.AnimCache) -- resolves IDs via Shared/Data/Animations, caches tracks
+local AnimCache = require(script.Parent.Parent.Modules.AnimCache) -- resolves IDs via Shared/Data/Animations
 
 type Visual = { model: Model, root: BasePart, anim: Animator, lod: boolean, conn: RBXScriptConnection }
-local STATE_ANIM: { [string]: string } = {
-	Sit = "ANM_040", ReviewMenu = "ANM_041", Eat = "ANM_043", Pay = "ANM_044", Impatient = "ANM_046",
-	Complaining = "ANM_047", ThrowingFood = "ANM_048", Dizzy = "ANM_052", Apologizing = "ANM_053", Fleeing = "ANM_054",
+local STATE_ANIM: { [string]: string } = { -- §8 state → canon animation
+	SIT = "ANM_040", REVIEW_MENU = "ANM_041", PLACE_ORDER = "ANM_042", EAT = "ANM_043", PAY = "ANM_044",
+	TIP = "ANM_045", IMPATIENT = "ANM_046", COMPLAINING = "ANM_047", THROWING_FOOD = "ANM_048",
+	APOLOGIZING = "ANM_053", FLEEING = "ANM_054", ESCORTED_OUT = "ANM_055",
 }
 local LOD_DISTANCE = 60 -- studs: swap to the 1,500-triangle impostor (§C13.7)
 local visuals: { [BasePart]: Visual } = {}
@@ -1871,29 +2021,36 @@ local container = Instance.new("Folder")
 container.Name = "ClientOnly"
 container.Parent = workspace
 
-local function play(v: Visual, state: string?)
+local function partsFor(proxy: BasePart): { string } -- look by NPC kind
+	if CollectionService:HasTag(proxy, "MMR_Customer") then
+		return PartListGen.fromSeed(proxy:GetAttribute(A.Seed) :: number, proxy:GetAttribute(A.Band) :: string)
+	elseif CollectionService:HasTag(proxy, "MMR_Employee") then
+		return Data.Employees.rows[proxy:GetAttribute(A.ArchetypeId) :: string].parts
+	end
+	return Data.Npcs.rows[proxy:GetAttribute(A.NpcId) :: string].parts
+end
+
+local function play(v: Visual?, state: string?)
 	local id = state and STATE_ANIM[state]
-	if id then AnimCache.play(v.anim, id) end -- one cached AnimationTrack per (Animator, ID)
+	if v and id then AnimCache.play(v.anim, id) end -- one cached AnimationTrack per (Animator, ID)
 end
 
 local function build(proxy: BasePart)
 	if visuals[proxy] or not proxy:IsDescendantOf(workspace) then return end
-	local ids = string.split((proxy:GetAttribute("Parts") :: string?) or "", ",")
 	local rig = VisualPool.acquireRig() -- R15 Motor6Ds + AnimationController/Animator, anchored root
-	MorphBuilder.assemble(rig, ids, VisualPool.acquirePart) -- identical §C13.7 code path to player builds
-	local root = rig.PrimaryPart :: BasePart
+	MorphBuilder.assemble(rig, partsFor(proxy), VisualPool.acquirePart) -- same §C13.7 code path as player builds
 	rig:PivotTo(proxy.CFrame)
 	rig.Parent = container
 	local controller = rig:FindFirstChildOfClass("AnimationController") :: AnimationController
 	local v: Visual = {
-		model = rig, root = root, lod = false,
+		model = rig, root = rig.PrimaryPart :: BasePart, lod = false,
 		anim = controller:FindFirstChildOfClass("Animator") :: Animator,
-		conn = proxy:GetAttributeChangedSignal("State"):Connect(function()
-			play(visuals[proxy], proxy:GetAttribute("State") :: string?)
+		conn = proxy:GetAttributeChangedSignal(A.State):Connect(function()
+			play(visuals[proxy], proxy:GetAttribute(A.State) :: string?)
 		end),
 	}
 	visuals[proxy] = v
-	play(v, proxy:GetAttribute("State") :: string?)
+	play(v, proxy:GetAttribute(A.State) :: string?)
 end
 
 local function release(proxy: BasePart)
@@ -1913,15 +2070,17 @@ RunService.RenderStepped:Connect(function(dt: number)
 	local nextProxy = table.remove(queue, 1) -- ≤ 1 build per frame keeps frame time flat
 	if nextProxy then build(nextProxy) end
 	local cam = workspace.CurrentCamera.CFrame.Position
-	local alpha = math.min(1, dt * 12) -- smooths 10 Hz server moves
+	local now = workspace:GetServerTimeNow()
 	for proxy, v in visuals do
 		local far = (proxy.Position - cam).Magnitude > LOD_DISTANCE
 		if far ~= v.lod then
 			v.lod = far
 			VisualPool.setLod(v.model, far)
 		end
+		-- walking: evaluate the published path segment; otherwise ease toward the proxy CFrame
+		local goal = PathEval.at(proxy:GetAttribute(A.Path) :: string?, now) or proxy.CFrame
 		table.insert(roots, v.root)
-		table.insert(goals, v.root.CFrame:Lerp(proxy.CFrame, alpha))
+		table.insert(goals, v.root.CFrame:Lerp(goal, math.min(1, dt * 15)))
 	end
 	workspace:BulkMoveTo(roots, goals, Enum.BulkMoveMode.FireCFrameChanged)
 	table.clear(roots)
@@ -1929,62 +2088,76 @@ RunService.RenderStepped:Connect(function(dt: number)
 end)
 ```
 
-#### 27.12.5 EconomyService transaction with idempotency key
+#### 27.12.5 EconomyService transaction with an idempotent transaction id
+
+The core `apply` (duplicate / invalid / frozen / insufficient checks, journal, `appliedTxnIds` ring) is §28's
+`EconomyService/Apply` module; this wrapper adds Safe Mode, source registration, the atomic grant, analytics, the
+big-spend save trigger and the client signal.
 
 ```lua
 --!strict
 local AnalyticsService = game:GetService("AnalyticsService")
-local CURRENCIES = { "MB", "MS", "RT" }
-local KEY_RING = 64
+local Apply = require(script.Apply) -- §28 transaction core
 local BIG_SPEND = 10000 -- §C3: immediate save on purchases ≥ 10,000 MB
 
-export type TxRequest = {
-	deltas: { MB: number?, MS: number?, RT: number? }, -- negative = spend
-	reason: string, -- registered code, e.g. "serve_payment", "mutation_purchase"
-	idempotencyKey: string, -- client GUID for purchases; "serve:<ticketId>", "offline:<reportId>" for server sources
-	sku: string?, -- content ID for analytics, e.g. "MUT_216"
-}
+local function snapshot(c: any): any -- the currency block is small: wallet, lifetime totals, two capped rings
+	return {
+		wallet = table.clone(c.wallet), lifetimeEarned = table.clone(c.lifetimeEarned),
+		lifetimeSpent = table.clone(c.lifetimeSpent), journal = table.clone(c.journal),
+		appliedTxnIds = table.clone(c.appliedTxnIds),
+	}
+end
 
-function EconomyService:TransactWith(player: Player, req: TxRequest, apply: (() -> ())?): Types.Result
+function EconomyService:TransactWith(player: Player, txn: Types.Txn, grant: (() -> ())?): Types.Result
 	local profile = PlayerData:GetProfile(player)
 	if not profile or PlayerData:IsSafeMode(player) then return { ok = false, code = "SAFE_MODE" } end
-	local reason = Reasons[req.reason]
-	if not reason then return { ok = false, code = "UNKNOWN_REASON" } end
-	local w = profile.data.wallet -- txKeySet is rebuilt from the txKeys array at load
-	if w.txKeySet[req.idempotencyKey] then
-		return { ok = false, code = "DUPLICATE", data = table.clone(w.balances) } -- already applied: no-op
-	end
-	local new = table.clone(w.balances)
-	for _, c in CURRENCIES do -- validate everything before mutating anything (all-or-nothing)
-		local d = (req.deltas :: any)[c] or 0
-		if d ~= d or d % 1 ~= 0 or math.abs(d) > reason.maxAbs then return { ok = false, code = "INVALID_AMOUNT" } end
-		new[c] += d
-		if new[c] < 0 then return { ok = false, code = "INSUFFICIENT_FUNDS" } end -- balance never negative (E8)
-	end
-	local old = w.balances -- critical section: nothing below may yield
-	w.balances = new
-	if apply then
-		local ok, err = pcall(apply) -- e.g. grant the part / furniture / recipe in its owner's section
-		if not ok then
-			w.balances = old
-			Telemetry.economyApplyFailed(player, req.reason, err)
-			return { ok = false, code = "APPLY_FAILED" }
+	local source = Sources[txn.src] -- registered source/sink codes, shared with §31
+	if not source then return { ok = false, code = "UNKNOWN_SOURCE" } end
+	local result: Types.Result
+	PlayerData:Update(player, "currency", function(c) -- EconomyService owns this block; nothing below yields
+		local before = snapshot(c)
+		local outcome = Apply(profile.data, txn, os.time()) -- "applied" | "duplicate" | "insufficient" | "invalid" | "frozen"
+		if outcome ~= "applied" then
+			-- "duplicate" means a retry of something already paid for: report success, change nothing
+			result = { ok = outcome == "duplicate", code = string.upper(outcome), data = table.clone(c.wallet) }
+			return
 		end
-	end
-	table.insert(w.txKeys, req.idempotencyKey)
-	w.txKeySet[req.idempotencyKey] = true
-	if #w.txKeys > KEY_RING then w.txKeySet[table.remove(w.txKeys, 1) :: string] = nil end
-	PlayerData:MarkDirty(player, "wallet")
-	for _, c in CURRENCIES do
-		local d = (req.deltas :: any)[c]
-		if d and d ~= 0 then
+		if grant then
+			local ok, err = pcall(grant) -- e.g. MutationService grants the part in its own block
+			if not ok then
+				for k, v in before do c[k] = v end -- restore the currency block exactly
+				Telemetry.economyGrantFailed(player, txn, err)
+				result = { ok = false, code = "APPLY_FAILED" }
+				return
+			end
+		end
+		result = { ok = true, code = "OK", data = table.clone(c.wallet) }
+	end)
+	if result.ok and result.code == "OK" then
+		local wallet = result.data :: Types.Wallet
+		for code, d in txn.deltas do
 			local flow = if d > 0 then Enum.AnalyticsEconomyFlowType.Source else Enum.AnalyticsEconomyFlowType.Sink
-			AnalyticsService:LogEconomyEvent(player, flow, c, math.abs(d), new[c], reason.transactionType, req.sku)
+			AnalyticsService:LogEconomyEvent(player, flow, code, math.abs(d), (wallet :: any)[code],
+				source.transactionType, txn.ref)
 		end
+		if (txn.deltas.MB or 0) <= -BIG_SPEND then PlayerData:RequestSave(player, "Purchase") end
+		EconomyService.WalletChanged:Fire(player, wallet, txn.src)
 	end
-	if (req.deltas.MB or 0) <= -BIG_SPEND then PlayerData:RequestSave(player, "Purchase") end
-	EconomyService.WalletChanged:Fire(player, table.clone(new), req.reason)
-	return { ok = true, code = "OK", data = table.clone(new) }
+	return result
+end
+
+-- Shop.Purchase: the token was issued by Shop.Open, bound to player + item + price, single use, 120 s (§28).
+function EconomyService:Purchase(player: Player, offerToken: string): Types.Result
+	-- nil if unknown, expired or another player's; a token stays readable until it expires, so a retried
+	-- purchase reaches Apply and returns DUPLICATE via its `shop:<token>` id instead of charging twice
+	local offer = Offers.get(player, offerToken)
+	if not offer then return { ok = false, code = "OFFER_INVALID" } end
+	if not Zones.isInShop(player, offer.shopId) then return { ok = false, code = "NOT_IN_SHOP" } end
+	local deltas: { [string]: number } = {}
+	for code, amount in offer.cost do deltas[code] = -amount end
+	local provider = Providers[offer.shopId]
+	return self:TransactWith(player, { id = `shop:{offerToken}`, deltas = deltas, src = provider.src, ref = offer.itemId },
+		function() provider.grant(player, offer.itemId) end)
 end
 ```
 
@@ -1994,11 +2167,10 @@ end
 --!strict
 local RunService = game:GetService("RunService")
 local PathfindingService = game:GetService("PathfindingService")
-local BUDGET_SEC = 0.002 -- 2.0 ms per Heartbeat [TUNABLE]
-local THINK_INTERVAL = 0.1 -- 10 Hz per customer [TUNABLE]
+local BUDGET_SEC = 0.0015 -- 1.5 ms average per Heartbeat (§8); p95 cap 3.0 ms (§30)
 local STUCK_SEC = 6 -- E10
 local MAX_PATH_JOBS = 4 -- concurrent ComputeAsync calls server-wide [TUNABLE]
-local AGENT = { AgentRadius = 1.5, AgentHeight = 5.5, AgentCanJump = false }
+local AGENT = { AgentRadius = 1.5, AgentHeight = 5, AgentCanJump = false }
 
 local active: { Types.CustomerState } = {} -- dense array, swap-remove on leave
 local cursor, pathJobs = 1, 0
@@ -2006,12 +2178,13 @@ local moveParts: { BasePart }, moveGoals: { CFrame } = {}, {}
 
 local function requestPath(c: Types.CustomerState, goal: Vector3)
 	pathJobs += 1
-	task.spawn(function() -- ComputeAsync yields; never inside the Heartbeat budget
+	task.spawn(function() -- ComputeAsync yields: never inside the Heartbeat budget
 		local path = PathfindingService:CreatePath(AGENT)
 		local ok = pcall(function() path:ComputeAsync(c.proxy.Position, goal) end)
 		pathJobs -= 1
 		if ok and path.Status == Enum.PathStatus.Success then
-			c.waypoints, c.waypointIndex, c.pathFailures = path:GetWaypoints(), 1, 0
+			c.pathFailures = 0
+			Steering.follow(c, path:GetWaypoints()) -- also publishes the segment via Proxy.setPath
 		else
 			c.pathFailures += 1
 			if c.pathFailures >= 2 then Brain.poofToGoal(c) end -- E10: cartoon puff + "Pardon me!"
@@ -2031,13 +2204,14 @@ RunService.Heartbeat:Connect(function()
 		visited += 1
 		if now >= c.nextThinkAt then
 			local dt = now - c.lastThinkAt
-			c.lastThinkAt, c.nextThinkAt = now, now + THINK_INTERVAL
-			Brain.step(c, dt, now) -- §8 state machine, patience, anger rolls (§C11.5)
+			-- decision rate per §8/§30 (decimated when no player is in the interior, slower while queued)
+			c.lastThinkAt, c.nextThinkAt = now, now + Decimation.interval(c)
+			Brain.step(c, dt, now) -- §8 state machine: patience, anger rolls (§C11.5), transitions
 			if c.wantsPathTo and pathJobs < MAX_PATH_JOBS then
 				requestPath(c, c.wantsPathTo) -- door→seat paths are precomputed; this is the rare dynamic case
 				c.wantsPathTo = nil
 			end
-			local cf = Steering.advance(c, dt)
+			local cf = Steering.serverCFrame(c, now) -- non-nil at most 5 Hz while walking, never while seated (§30)
 			if cf then
 				table.insert(moveParts, c.proxy)
 				table.insert(moveGoals, cf)
@@ -2058,28 +2232,28 @@ end)
 ### 27.13 Server Tick Budgets and Scheduling
 
 A server frame at 60 Hz is 16.7 ms; gameplay scripts get ≤ 8 ms on average so physics, replication and GC keep
-headroom. `Scheduler.every(name, period, budgetMs, fn)` measures each job with `os.clock()`, wraps it in
+headroom and Heartbeat stays ≥ 45 Hz (§30). The p95 caps below are §30's. `Scheduler.every(name, period, budgetMs, fn)` measures each job with `os.clock()`, wraps it in
 `debug.profilebegin(name)` for the MicroProfiler, and reports overruns to Telemetry (§30 owns final thresholds).
 
 | System | Cadence | Avg budget (ms/frame) | p95 cap | Notes [TUNABLE] |
 |---|---|---|---|---|
-| CustomerAIService | 10 Hz per customer, round-robin | 2.0 | 3.0 | Over budget ⇒ thinking defers to next frame (customers act slightly later, never skip states). |
+| CustomerAIService | decision ticks at §8/§30 rates, round-robin | 1.5 | 3.0 | Over budget ⇒ thinking defers to next frame (customers act slightly later, never skip states). |
 | EmployeeService work AI | 5 Hz | 1.0 | 1.5 | Cached station routes. |
-| CombatService | event-driven + 10 Hz status sweep | 0.8 | 2.5 | Bursty during brawls. |
-| CookingService | 4 Hz sweep + exact `task.delay` wakeups | 0.4 | 0.8 | No per-frame timers. |
+| CombatService | event-driven + hostile-NPC decisions (§11) | 1.0 | 1.5 | Includes §11's combat-AI budget. |
+| CookingService | 4 Hz sweep + exact `task.delay` wakeups | 0.4 | 1.0 | No per-frame timers. |
 | OrderService + RecipeService | event-driven | 0.3 | 0.6 | |
 | RepairService | 4 Hz | 0.2 | 0.4 | |
 | CityEventService runtime | 2–10 Hz by event kind | 0.3 | 1.0 | |
 | NetServer middleware | per request | 0.5 | 1.0 | ≈ 8 players × ~10 req/s. |
-| Batcher flush + replica deltas | 10 Hz | 0.6 | 1.0 | |
+| `Net.Batch` flush + read-model deltas | 20 Hz | 0.6 | — | §30 |
 | MorphAssemblyService builds | queue, ≤ 1 per frame | 0.5 | 2.0 | Amortized. |
 | RestaurantService interior spawn | ≤ 300 instances per frame while spawning | 0.8 | 3.0 | Only during joins / tier upgrades. |
 | PlayerDataService | staggered autosave | 0.1 | 0.5 | DataStore calls are async (off-frame). |
 | Telemetry + RemoteConfig | 1 Hz / 60 s | 0.1 | 0.2 | |
-| **Total gameplay scripts** | | **7.6** | **≤ 12** | |
+| **Total gameplay scripts** | | **7.3** | **≤ 12** | all systems not capped above share ≤ 5.0 ms p95 (§30) |
 
 **Degrade ladder** (automatic when total > 12 ms for 5 s, reverts after 30 s under 8 ms): 1) cosmetic Unreliable
-streams 10 → 5 Hz; 2) customer think rate 10 → 7 Hz; 3) new-customer arrival rate × 0.8. The ladder never touches
+streams 10 → 5 Hz; 2) customer decision intervals × 1.4; 3) new-customer arrival rate × 0.8. The ladder never touches
 economy, saves, or validation.
 
 **Parallel Luau (optional, profiling-gated).** Only if `Brain.step` averages > 1.5 ms: one `Actor` per interior runs
@@ -2093,15 +2267,17 @@ instance creation and pathfinding stay serial (they are either async already or 
   restaurant `cap_i = min(seats_i + 4, floor(160 × w_i / Σw))` with `w_i = seats_i + 4`, redistributing unused share
   every 10 s. Eight `TIER_10` restaurants (224 wanted) get 20 each; queues shrink before seats. Offline income is
   unaffected (it never uses proxies).
-- **Employees.** Up to 20 per restaurant (`TIER_10`); on-floor employee proxies have a server soft cap of 120 [TUNABLE];
-  beyond it, extra staff work "in the back room" (no proxy, same outputs) so worst-case servers stay within §30.
+- **Employees.** Up to 20 per restaurant (`TIER_10`) as SPCV proxies with cached routes; the worst case (8 × 20 =
+  160 employee proxies alongside 160 customers) is §30's peak load test and must hold its Heartbeat target.
 - **Interiors.** Spawned only while the owner is present (8 max), Atomic-streamed, despawned ≤ 60 s after Closing; each
   interior obeys the part/instance budgets in §30 and ≤ 30 loose props (§C3).
 - **Named NPCs.** City NPC proxies are cheap anchored parts; visuals exist only on clients that stream them in.
-- **DataStores.** Per-server request budgets scale with player count; 8 staggered autosaves ≈ 4 writes/min plus event
-  saves, far below budget; non-urgent writes check `GetRequestBudgetForRequestType` first.
-- **MemoryStore / MessagingService.** Small footprints: config overrides (< 50 items), arena queue, invites; topics
-  `mmr_config`, `mmr_invite`, `mmr_events`; MessagingService payloads ≤ 1 KB, low rate, never gameplay-critical.
+- **DataStores.** Per-server request budgets scale with player count; 8 autosaves ≈ 4 writes/min plus event saves,
+  far below budget (budget math in §28); non-urgent writes check `GetRequestBudgetForRequestType` first.
+- **MemoryStore / MessagingService.** Small footprints beside §28's lock and presence structures: emergency config
+  overrides (`MMR_ConfigOverride`, < 50 items), the city-event weekly seed, overrides and global-goal counters (§18),
+  the arena queue and invites. MessagingService topics (§28's `MMR_ConfigBump`, plus `MMR_Invite` and
+  `MMR_CityEvent`) carry ≤ 1 KB, low-rate, never gameplay-critical messages.
 - **Places.** One universe: the **Main** place (city + restaurants, 8 players) and an **Arena** place for matched PvP
   (reserved servers, §21). Both build from the same Rojo project with a place-specific entry flag.
 - **Updates.** New builds use Roblox's server migration; `BindToClose` saves, restaurants close cleanly, players are
@@ -2120,12 +2296,14 @@ instance creation and pathfinding stay serial (they are either async already or 
 | `content.disabled` | `{}` | Content IDs treated as unavailable everywhere (e.g. a buggy ability `ABL_018` greys out; a recipe leaves menus). |
 | `tunables.aiThinkHz` / `tunables.batchHz` / `tunables.spawnScale` | 10 / 10 / 1.0 | Live performance tuning within validated ranges. |
 
-**Backend.** A MemoryStore sorted map `mmr_remote_config` (key = flag, value = JSON with `cv` targeting). Servers read
-the full range every 60 s and immediately on a `mmr_config` MessagingService message; effective flags replicate to
-clients as a JSON workspace attribute. Ops write overrides through Open Cloud MemoryStore APIs or an allow-listed admin
-command. Values are type- and range-checked against the defaults; invalid values are ignored and alerted. MemoryStore
-items expire (≤ 45 days), so a forgotten override falls back to defaults. The `RemoteConfig.get` interface can later
-sit on a first-party Roblox configuration service without changing callers.
+**Backend.** Durable flags, experiments and kill switches live in §28's live-config DataStore (`MMR_LiveConfig_v1`),
+read at boot, every 300 s, and immediately on its `MMR_ConfigBump` MessagingService topic. **Emergency overrides** go
+to a MemoryStore sorted map `MMR_ConfigOverride` (TTL ≤ 24 h [TUNABLE]) polled every 60 s, so a kill switch reaches
+every server in ≤ 60 s (≤ 5 s typical via MessagingService) and silently expires back to the durable config. Effective
+flags replicate to clients as a JSON workspace attribute. Ops write through Open Cloud (DataStore and MemoryStore
+APIs) or an allow-listed admin command; every value is type- and range-checked against the defaults, invalid values
+are ignored and alerted, and an unreadable backend means defaults (P7). `RemoteConfig.get` hides the backend, so a
+first-party Roblox configuration service could replace it without touching callers.
 
 **Never remotely tunable:** anything that feeds deterministic simulations (offline coefficients, `SIM_VERSION`) or the
 canon economy formulas (§C4); changing those requires a content/code release and a `SIM_VERSION` bump.
@@ -2135,10 +2313,10 @@ canon economy formulas (§C4); changing those requires a content/code release an
 | Ruling | Owning code | Mechanism |
 |---|---|---|
 | E1 Owner disconnects while cooking | RestaurantService → EmployeeService, CustomerAIService, CookingService, InventoryService, PlayerDataService | `BeginClosing("OwnerLeft")`: online staff finish current tickets; `ForceLeave("Closed")` (pay 0, no reputation loss); `ResetRestaurant` discards basic food free and returns special stock; save stamps `lastSimAt`; guests moved to the street. |
-| E2 Attack while in a menu | CombatService, UIController | `noCombat` gates server-side; `Combat.ForceCloseMenus` + 1.5 s invulnerability; overlays stay usable. |
-| E3 Damage during a repair | RepairService | Job absorbs damage; Destroyed converts to Rebuild; single charge at completion (`repair:<jobId>` key). |
+| E2 Attack while in a menu | CombatService, CustomerAIService, UIController | Player attributes `InCombat` and `TargetedByLevel5` drive the server `noCombat` gate and the client menu lock; `Combat.ForceCloseMenus` + 1.5 s invulnerability; overlays stay usable. |
+| E3 Damage during a repair | RepairService | Job absorbs damage; Destroyed converts to Rebuild; single charge at completion (txn `repair:<jobId>`). |
 | E4 Mutations during combat | MutationService | `noCombat` gate; 3 s channel interrupted by `DamageDealt`; 10 s server cooldown; menu equips instant. |
-| E5 Back after 30 days | OfflineEarningsService | Cap applied, report marked capped, wages only for simulated hours, Welcome Back Crate at ≥ 7 days; no decay code exists. |
+| E5 Back after 30 days | OfflineEarningsService | Cap applied, report marked capped, wages only for simulated hours, Welcome Back Crate granted in the load transform at ≥ 7 days (txn `wb:<lastSimAt>`); no decay code exists. |
 | E6 DataStore failure | PlayerDataService | Backoff 1–16 s; Safe Mode; kick at 60 s; session lock; `BindToClose` retries. |
 | E7 Same station, two players | CookingService | Per-slot locks (§27.12.2). |
 | E8 Can't pay employees | EconomyService, EmployeeService, OfflineSim | Never negative; Unpaid Break; offline net floored, manager closes early. |
@@ -2151,30 +2329,36 @@ canon economy formulas (§C4); changing those requires a content/code release an
 
 ### 27.17 State Ownership, Persistence and Security Overview
 
-Single-writer ownership of profile sections (P2). Field schemas, key layout, migration and recovery are in §28.
+Single-writer ownership of profile blocks (P2) — block names, field schemas, key layout, migration and recovery are
+§28's; this table fixes which service's code may call `PlayerDataService:Update` for each block.
 
-| Profile section | Single writer | Main readers |
+| Profile block | Single writer | Main readers |
 |---|---|---|
-| `meta` (schema/content version, lock, timestamps), `settings` | PlayerDataService | all |
-| `wallet` (balances, `txKeys`, recent ledger) | EconomyService | UI replica, Quest |
-| `progression` (level, XP, stat allocation, skills, respec timers, achievements, milestones) | ProgressionService | Combat, Cooking, UI |
-| `mutations` (owned parts, equipped, loadouts, capsule pity) | MutationService | MorphAssembly, Progression, Combat |
-| `morph` (name, palettes) | MorphAssemblyService | UI |
-| `restaurant` (tier, reputation, plot preference) | RestaurantService | CustomerAI, Offline |
-| `layout` (placed furniture and stations) | BuildingService | Restaurant, Cooking, CustomerAI |
-| `durability` (per placed object) | RepairService | Restaurant, Offline |
-| `inventory` (stock, unplaced furniture, items, cosmetics) | InventoryService | Recipe, Cooking, Building |
-| `recipes` (known, menu) | RecipeService | Order, Offline |
-| `employees` (roster, assignments, candidate seed) | EmployeeService | Offline |
-| `offline` (`lastSimAt`, `pendingOfflineReport`, `claimedReportIds`) | OfflineEarningsService | UI |
-| `quests` (states, cycle ids, tutorial flags) | QuestService | Tutorial, UI |
-| `social` (co-op permissions) | MultiplayerService | all permission checks |
+| `meta`, `settings` | PlayerDataService | all |
+| `currency` (wallet, lifetime totals, journal, `appliedTxnIds`), `purchases` | EconomyService | read model, QuestService |
+| `progression` (level, XP, stats, skills, respec timers, respec tokens, titles, emotes, palettes, `xpOnceKeys`), `achievements` | ProgressionService | CombatService, CookingService, UI |
+| `mutations` (owned parts, equipped, loadouts, capsules, pity), `morph` (name, palettes) | MutationService | MorphAssemblyService, CombatService, UI |
+| `restaurant.tier`, `restaurant.upgrades`, `restaurant.coop` | RestaurantService | BuildingService, CustomerAIService, OfflineEarningsService |
+| `restaurant.layoutPacked` (placement), `restaurant.storage` (unplaced furniture) | BuildingService (durability fields inside `layoutPacked` via RepairService) | RestaurantService, OfflineEarningsService |
+| `restaurant.specialStock` | InventoryService | RecipeService, OrderService, OfflineEarningsService |
+| `restaurant.menu`, `recipes` | RecipeService | OrderService, OfflineEarningsService |
+| `restaurant.reputation`, `regulars` | CustomerAIService | RestaurantService, OfflineEarningsService |
+| `employees` | EmployeeService | OfflineEarningsService, UI |
+| `quests`, `tutorial`, `city` | QuestService | UI, CityEventService |
+| `offline` | OfflineEarningsService | UI |
+| `arena` | MultiplayerService | UI |
+| `moderation`, `analytics` | §29 / §31 libraries through PlayerDataService | ops tooling |
 
-The offline load transform writes `offline` plus the effects owned by EmployeeService and RepairService by calling
-**their** registered pure functions inside the same `UpdateAsync` — ownership is by code, atomicity by transaction.
+Two cross-service writes are deliberate and still single-writer by code: (1) the offline load transform calls the pure
+functions registered by EmployeeService, InventoryService and RepairService, each writing only its own data, inside the
+same `UpdateAsync` (ownership by code, atomicity by transaction); (2) canon §C19 gives InventoryService the furniture
+inventory, while §28 stores unplaced furniture in `restaurant.storage` owned by BuildingService — InventoryService
+keeps the logic (grants, purchases, sales, trophy rules) and writes through `BuildingService:AddToStorage` /
+`RemoveFromStorage`.
 
 **Server authority map (brief Part 19.4; threat handling in §29).** Currency → EconomyService. Item purchases →
-InventoryService / MutationService / RecipeService via `TransactWith`. Mutation ownership → MutationService. Combat
+`Shop.Purchase` (EconomyService offer tokens) granting through the MutationService / InventoryService / RecipeService
+shop providers. Mutation ownership → MutationService. Combat
 damage → CombatService. Cooking results → CookingService (grades from server time). Quest rewards → QuestService
 (signal-driven objectives, keyed claims). Offline earnings → OfflineEarningsService (server `os.time()`, seeded,
 capped, idempotent). Employee hiring → EmployeeService. Restaurant upgrades → BuildingService. No remote carries a
@@ -2187,23 +2371,24 @@ reward value, price, grade or damage number.
 - **AC-27-02:** A unit test with a dependency cycle (A → B → A) or an unknown dependency makes `Loader.boot` fail
   before any `Init` runs, and the error message names the full cycle path.
 - **AC-27-03:** CI fails if any RemoteEvent, RemoteFunction or UnreliableRemoteEvent is created outside `NetServer`, or
-  if any instance under `ReplicatedStorage.Net` lacks a `Definitions` row (and vice versa).
-- **AC-27-04:** Firing `Cooking.InteractStation` 100 times within 1 s from one client results in ≤ 25 handler
-  invocations (burst 15 + 10/s); the rest are rejected with `RATE_LIMITED` and counted.
+  if the instances under `ReplicatedStorage.Net` differ from the non-batched `Definitions` rows.
+- **AC-27-04:** Firing `Cooking.InteractStation` 100 times within 1 s from one client results in ≤ 30 handler
+  invocations (`interact` class: burst 20 + 10/s); the rest are rejected with `RATE_LIMITED` and counted.
 - **AC-27-05:** A fuzz test sending 10,000 random payloads per C2S remote (wrong types, NaN, ±inf, extra keys, strings
   over limit, unknown IDs, oversized vectors) produces 0 handler invocations for invalid payloads and 0 server errors.
-- **AC-27-06:** A static CI check finds no write to any `wallet` field outside `EconomyService`, and no write to a
-  profile section from a service other than its owner in §27.17.
-- **AC-27-07:** Invoking a purchase RemoteFunction twice with the same `idempotencyKey` charges exactly once; the second
-  call returns `DUPLICATE` with unchanged balances.
+- **AC-27-06:** A static CI check finds no write to the `currency` block outside `EconomyService`, and in test builds
+  `PlayerDataService:Update` rejects 100 % of writes to a block by any service other than its owner in §27.17.
+- **AC-27-07:** Invoking `Shop.Purchase` twice with the same `offerToken` charges exactly once (the second call returns
+  `DUPLICATE` with unchanged balances); an expired or another player's token returns `OFFER_INVALID`; replaying a
+  server-derived txn id (e.g. `off:<reportId>`, `tier:<TIER_NN>`) never changes a balance.
 - **AC-27-08:** A 1,000,000-transaction randomized simulation of `TransactWith` never yields a negative balance, a
-  non-integer balance, or a partially applied multi-currency transaction (including forced `apply()` failures).
+  non-integer balance, or a partially applied multi-currency transaction (including forced `grant()` failures).
 - **AC-27-09:** `OfflineSim` produces byte-identical JSON reports for identical inputs across 100 runs, and identical
   results under Lune (CI) and inside a Roblox server.
 - **AC-27-10:** Reconnecting 10 times during an offline report and calling `Offline.Collect` from two concurrent
   sessions credits the report exactly once (E11).
 - **AC-27-11:** Join → `UI.Ready` is ≤ 10 s at p50 and ≤ 20 s at p95 on the reference phone with 8 players present.
-- **AC-27-12:** With 160 customer proxies active server-wide, the CustomerAI Heartbeat label averages ≤ 2.0 ms
+- **AC-27-12:** With 160 customer proxies active server-wide, the CustomerAI Heartbeat label averages ≤ 1.5 ms
   (p95 ≤ 3.0 ms) over a 10-minute capture, and total gameplay script time averages ≤ 8 ms.
 - **AC-27-13:** A 2-hour soak with 8 players never exceeds 160 customer proxies server-wide or `seats + 4` in any
   restaurant.
@@ -2218,8 +2403,9 @@ reward value, price, grade or damage number.
 - **AC-27-18:** With DataStore requests mocked to fail, a joining player enters Safe Mode after the 5th retry, sees the
   banner, cannot change any currency, and is kicked with a retry message 60 s later.
 - **AC-27-19:** `BindToClose` with 8 dirty profiles saves all 8 within 25 s in a test server.
-- **AC-27-20:** A `remotes.disabled` override written to MemoryStore takes effect on all servers within 70 s (≤ 5 s
-  typical via MessagingService); with MemoryStore unavailable, defaults apply and no error reaches players.
+- **AC-27-20:** A `remotes.disabled` emergency override written to `MMR_ConfigOverride` takes effect on all servers
+  within 70 s (≤ 5 s typical via MessagingService); with MemoryStore unavailable, the durable config (or defaults)
+  applies and no error reaches players.
 - **AC-27-21:** Two players interacting with the same station slot in the same frame: exactly one succeeds; on different
   slots of the same station both succeed (E7).
 - **AC-27-22:** Every `Unreliable` definition is marked `cosmetic`, no unreliable payload exceeds 900 bytes (Studio
@@ -2228,3 +2414,6 @@ reward value, price, grade or damage number.
   no reputation change, special ingredients in stations are back in stock, and the saved `lastSimAt` equals the save time.
 - **AC-27-24:** Every module under `Shared/Formulas`, `Shared/Net`, `Shared/Util` and `ServerModules/OfflineSim` has a
   spec file, and CI runs them (Lune) on every PR in < 2 min.
+- **AC-27-25:** While a level-5 customer targets a player, that Player's `TargetedByLevel5` attribute is true within
+  0.25 s and every `noCombat` remote (e.g. `Shop.Purchase`, `Mutation.Equip`) returns `IN_COMBAT`; the attribute
+  clears within 0.25 s after targeting ends, and full-screen menus open again (E2).

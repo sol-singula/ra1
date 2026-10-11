@@ -125,11 +125,15 @@ and §36.17 (milestones) must express MB rewards as these fractions (rounded to 
 | Tips | MB | `Σ price × TipRate(S) × PersonalityTipMult`; Jackpot ×5 at `0.5 % + 0.1 %·LUCK` on S ≥ 90 (cap 500 / 5,000 MB) | §10 | 10 % → 16 % of net |
 | Quests | MB, MS, RT | MB: daily 2 % NetRef each (3/day), weekly 4 % (5/week), challenge (CHF/CBT/RPR/EXP/EMP/RST) 2 %, story quest 3 %, chapter finale 15 %; tutorial chain `QST_TUT_001`–`012` total **400 MB** one-time | §20 | 12 % → 8 % |
 | Milestones & achievements | MB, MS, RT, capsules | one-time; MB 10–50 % NetRef each; aggregate ≈ 5 % of net early → 1 % late | §36.16, §36.17 | 5 % → 1 % |
-| City events | MB, MS, RT, capsules | participation 10 % NetRef (max 2 MB rewards per event per day); MS per §22.13; top-tier event rewards may include 1–5 RT | §18, §36.11 | 1 % → 3 % |
+| City events | MB, MS, RT, capsules | MB in **ERM** (Event Reward Minute = NetRef ÷ 60, §18.8.4) by band Participation / Success / Top (typically 3–15 ERM); +25 % MB if the cross-server goal is met; MS/RT flat per §36.11; full rewards for the first 16 events (8 M objectives) per UTC day, then ×0.5 MB and MS; ≤ 3 event capsules/day (extras → 25 MS); ≤ 10 event RT/week (`EVT_005` exempt); repeat trophies (`FRN_901`–`FRN_910`) → 100 MS | §18, §36.11 | 1 % → 3 % (net uplift) |
 | Deliveries | MB | Delivery Depot (`BLD_15`) run = 1.5 % NetRef (≤ 10 runs/day); `ROLE_DELIVERY` revenue stream per §16 | §16, §18 | 1 % → 2 % |
 | Offline earnings | MB (+ rare MS, ≤ 1 capsule/day) | §C15: 35–50 % of active net/h, capped by §C14.3; never RT | §17 | see §22.11 |
 | Co-op guest pay | MB, XP | 50 % of the guest-level base value of orders the guest completes, game-funded, daily cap 1.5 × own NetRef (§21.4) | §21 | optional |
 | Arena | MS, RT, cosmetics | per-match MS with daily soft cap; RT at season end only; **never MB** (§C4.1) | §21 | optional |
+
+**Events are mostly a time-for-reward swap for MB:** an event of D minutes pays about D ERM, i.e. roughly the restaurant
+income of the minutes spent away (§18.8.5 worked example), so its *net* MB uplift per active hour is small (≈ 3 %,
+from Post-Event Rush, global bonuses and staffed restaurants); the real event rewards are MS, RT, capsules and trophies.
 
 The recurring "quests/events/other" share is **25 % of service net at T1, 22 % at T2, 19 % at T3, 17 % at T4 and 15 % from
 T5** (front-loaded by onboarding, first-time milestones and story pacing), matching §C4.4's "~15 % quests/events".
@@ -149,7 +153,7 @@ T5** (front-loaded by onboarding, first-time milestones and story pacing), match
 | Mutation upgrades & fusion | MB, MS, RT | §C4.6; Mythic fusion = 3 Legendary + 600 MS + 40 RT | rarity × level (×1.5/level) | §12 | §22.10 |
 | Recipe learning | MB | `5 × price` at Cooking Academy (`BLD_06`); `RCP_LEG_*` quest-granted | recipe price | §6 | repays in ≈ 6 servings (§22.6) |
 | Earnable cosmetics & prestige | MB | Body Mods (`BLD_02`) palettes, Monster Mall (`BLD_12`) decor beyond the atmosphere cap, façade flair | tier | §13, §15, §18 | absorbs late-game surplus (§22.14.3) |
-| Misc | MB | Pigeon Taxi `25 × tier` per ride; stat respec `500 × level` after the free daily one (§C5) | tier / level | §18, §14 | ≈ 2 % of discretionary spend |
+| Misc | MB | Pigeon Taxi `25 × tier` per ride, charged on arrival (§18); stat respec `500 × level` after the free daily one (§C5) | tier / level | §18, §14 | ≈ 2 % of discretionary spend |
 
 ### 22.5 Active Income Model and Canon Calibration
 
@@ -690,7 +694,8 @@ mid = `TIER_04`–`06`, late = `TIER_07`–`10`.
 | Source | MS (early / mid / late) | RT (early / mid / late) | Frequency |
 |---|---|---|---|
 | Daily quest | 6 / 10 / 15 each | — | 3 per day |
-| City event completion | 15 / 30 / 45 | top-tier events 1–5 | ≈ 1 per play day |
+| City events (P/S/T bands, flat per §36.11) | ≈ 15 / 30 / 45 average per play day (band mix improves with skill) | ≈ 1 / 3 / 5 per week (cap 10/week, `EVT_005` exempt) | ≈ 1 event per play day; full rewards for the first 16/day |
+| Event capsule overflow / repeat trophies | 25 MS per capsule beyond 3/day; 100 MS per repeated `FRN_901`–`FRN_910` | — | rare |
 | Weekly quest | 40 / 70 / 110 each | 0 / 1 / 2 each | 5 per week |
 | Story chapter finale | part (§22.10) | ch. 4–10: 5, 8, 10, 12, 15, 20, 25 | 1 per tier |
 | Legendary dish orders (`RCP_LEG_*`, L65+) | — | +1 RT per 4 Legendary dishes served at S ≥ 90, max 5 RT/day (≈ 0.5 RT/h) | while serving |
@@ -702,29 +707,29 @@ mid = `TIER_04`–`06`, late = `TIER_07`–`10`.
 **Weekly MS and RT (scenario A reference player, without arena; generated):**
 
 <!-- sim:ms_rt -->
-| Week | MS dailies+events | MS weeklies | MS dupes | MS in | MS spent | MS balance | RT weeklies | RT story | RT Legendary dishes | RT in | RT spent | RT balance |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 266 | 350 | 22 | 638 | 0 | 638 | 5 | 0 | 0 | 5 | 0 | 5 |
-| 2 | 420 | 350 | 34 | 804 | 216 | 1,227 | 5 | 5 | 0 | 10 | 0 | 15 |
-| 3 | 420 | 350 | 34 | 804 | 326 | 1,705 | 5 | 8 | 0 | 13 | 0 | 28 |
-| 4 | 420 | 350 | 34 | 804 | 586 | 1,923 | 5 | 0 | 0 | 5 | 0 | 33 |
-| 5 | 616 | 550 | 52 | 1,218 | 744 | 2,397 | 10 | 10 | 0 | 20 | 0 | 53 |
-| 6 | 630 | 550 | 53 | 1,233 | 1,064 | 2,567 | 10 | 12 | 0 | 22 | 0 | 75 |
-| 7 | 630 | 550 | 53 | 1,233 | 1,140 | 2,660 | 10 | 0 | 0 | 10 | 0 | 85 |
-| 8 | 630 | 550 | 53 | 1,233 | 1,314 | 2,580 | 10 | 0 | 1 | 11 | 0 | 96 |
-| 9 | 630 | 550 | 53 | 1,233 | 1,448 | 2,365 | 10 | 15 | 5 | 30 | 4 | 122 |
-| 10 | 630 | 550 | 53 | 1,233 | 1,495 | 2,104 | 10 | 0 | 5 | 15 | 18 | 119 |
-| 11 | 630 | 550 | 53 | 1,233 | 1,951 | 1,386 | 10 | 0 | 5 | 15 | 6 | 129 |
-| 12 | 630 | 550 | 53 | 1,233 | 2,018 | 602 | 10 | 20 | 5 | 35 | 22 | 142 |
-| 13 | 630 | 550 | 53 | 1,233 | 1,270 | 565 | 10 | 25 | 5 | 40 | 0 | 182 |
-| 14 | 210 | 0 | 18 | 228 | 770 | 23 | 0 | 0 | 2 | 2 | 0 | 184 |
+| Week | MS dailies+events | MS weeklies | MS dupes | MS in | MS spent | MS balance | RT weeklies | RT events | RT story | RT Legendary dishes | RT in | RT spent | RT balance |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 266 | 350 | 22 | 638 | 0 | 638 | 5 | 3 | 0 | 0 | 8 | 0 | 8 |
+| 2 | 420 | 350 | 34 | 804 | 216 | 1,227 | 5 | 3 | 5 | 0 | 13 | 0 | 21 |
+| 3 | 420 | 350 | 34 | 804 | 326 | 1,705 | 5 | 3 | 8 | 0 | 16 | 0 | 37 |
+| 4 | 420 | 350 | 34 | 804 | 586 | 1,923 | 5 | 3 | 0 | 0 | 8 | 0 | 45 |
+| 5 | 616 | 550 | 52 | 1,218 | 744 | 2,397 | 10 | 5 | 10 | 0 | 25 | 0 | 70 |
+| 6 | 630 | 550 | 53 | 1,233 | 1,064 | 2,567 | 10 | 5 | 12 | 0 | 27 | 0 | 97 |
+| 7 | 630 | 550 | 53 | 1,233 | 1,140 | 2,660 | 10 | 5 | 0 | 0 | 15 | 0 | 112 |
+| 8 | 630 | 550 | 53 | 1,233 | 1,314 | 2,580 | 10 | 5 | 0 | 1 | 16 | 0 | 128 |
+| 9 | 630 | 550 | 53 | 1,233 | 1,448 | 2,365 | 10 | 5 | 15 | 5 | 35 | 4 | 159 |
+| 10 | 630 | 550 | 53 | 1,233 | 1,495 | 2,104 | 10 | 5 | 0 | 5 | 20 | 18 | 161 |
+| 11 | 630 | 550 | 53 | 1,233 | 1,951 | 1,386 | 10 | 5 | 0 | 5 | 20 | 6 | 176 |
+| 12 | 630 | 550 | 53 | 1,233 | 2,018 | 602 | 10 | 5 | 20 | 5 | 40 | 22 | 194 |
+| 13 | 630 | 550 | 53 | 1,233 | 1,270 | 565 | 10 | 5 | 25 | 5 | 45 | 0 | 239 |
+| 14 | 210 | 0 | 18 | 228 | 770 | 23 | 0 | 0 | 0 | 2 | 2 | 0 | 241 |
 <!-- /sim:ms_rt -->
 
 MS accumulates through the mid-game (a ≈ 2,600 MS reserve by week 7 lets players afford Rare/Epic purchases and the
 first Lab experiments) and becomes the **binding late-game constraint from week 9–10** (`TIER_09`), when Epic and Legendary
-upgrades consume 1,400–2,000 MS per week against 1,233 earned. RT keeps a modest reserve (≈ 180 at `TIER_10`) so that
-the first Mythic fusion (40 RT) and Mythic Lv4+ upgrades (84 RT to Lv10) are reachable within weeks of the finale; RT
-then paces Mythic progression. An arena regular adds up to 560 MS per week (80/day soft cap), i.e. +45 % — meaningful
+upgrades consume 1,400–2,000 MS per week against 1,233 earned. RT keeps a reserve (≈ 240 by week 13, just after `TIER_10`) so
+that the first Mythic fusion (40 RT) and Mythic Lv4+ upgrades (84 RT to Lv10) are reachable right after the finale; from
+then on each Mythic costs ≈ 124 RT plus 30 RT per maxed Legendary, so RT paces Mythic progression. An arena regular adds up to 560 MS per week (80/day soft cap), i.e. +45 % — meaningful
 but never required, and the soft cap keeps win-trading worthless.
 
 ### 22.14 Inflation Controls
@@ -747,7 +752,7 @@ but never required, and the soft cap keeps win-trading worthless.
 | Offline capsules | ≤ 1 per real day | §C15 |
 | Jackpot Tip | 500 MB below `TIER_05`, 5,000 MB from `TIER_05` | §C11.4 |
 | Atmosphere | 100 (DecorMult ≤ ×1.2), Robux decor counts toward it | §C11.4, §23.4 |
-| Event MB rewards | ≤ 2 per event per day | §22.3 |
+| Event rewards | full for the first 16 events (8 M objectives) per UTC day, then ×0.5 MB and MS; ≤ 3 event capsules/day; ≤ 10 event RT/week | §18.8.4 |
 | Delivery runs | ≤ 10 per day | §22.3 |
 | Co-op guest pay | ≤ 1.5 × own NetRef per day, then XP only | §21.4 |
 | Repeatable MS (arena, repeatable event activities, showcases, co-op quest repeats) | **soft cap 150 MS/day** (arena sub-cap 80), ×0.25 beyond, **hard stop 250 MS/day** | §22.13, §21 |
@@ -829,8 +834,7 @@ enforce and the keys for the flows this section and §21 own.
 3. **Registered reason codes** (§31.12) with per-transaction ceilings (§29.14): e.g. `serve_payment`, `serve_tip`,
    `quest_reward`, `event_reward`, `delivery_reward`, `offline_collect`, `coop_guest_pay`, `arena_reward`,
    `tier_upgrade`, `mutation_purchase`, `mutation_upgrade`, `lab_fusion`, `hire`, `wages`, `repair`, `recipe_learn`,
-   `cosmetic_mb`. This section adds `furniture_sellback` (source, ceiling 0.5 × catalog price) and `fountain_wish`
-   (sink, 1 MB, §21.8.1) for registration in §31.12.
+   `cosmetic_mb`. This section adds `furniture_sellback` (source, ceiling 0.5 × catalog price) for registration in §31.12.
 4. **Idempotency keys** follow §28.17 (`serve:<ticketId>`, `quest:<questId>:<cycleStamp>`, `offline:<reportId>`,
    `tier:<TIER_NN>`, `hire:<recruitSeed>:<candidateIdx>`, `wage:<hourStamp>`, `repair:<jobId>`, client GUID per shop
    purchase). Keys for the flows owned here:
@@ -895,7 +899,7 @@ end
 | 8 | Price changed by live tuning while a purchase dialog is open | Server validates against the current price, returns `PRICE_CHANGED` with the new price; the player re-confirms. |
 | 9 | Quest completed during a teleport between servers | Session lock prevents two servers holding the profile; `quest:<questId>:<cycleStamp>` key and quest state `CLAIMED` prevent a double reward. |
 | 10 | Every menu item is SOLD OUT (no special stock) | E9: `RCP_BRG_001` auto-added; income continues at basic-menu rates; a hint links to Restaurant Supplies (`BLD_03`). |
-| 11 | Event multiplies demand (e.g. `EVT_003` Citywide Restaurant Rush) | Demand rises but customers stay ≤ seat capacity; event MB rewards limited to 2 per event per day. |
+| 11 | Event multiplies demand (e.g. `EVT_003` Citywide Restaurant Rush) | Demand rises but customers stay ≤ seat capacity; event rewards follow the §18.8.4 daily caps (×0.5 after 16 events). |
 | 12 | Player sets the device clock forward | Ignored: dailies, weeklies, offline time and soft caps use server UTC (`os.time()` on the server, §C3). |
 | 13 | Duplicate converted to MS while an upgrade wants it | `MutationService` locks the part stack; the upgrade re-checks and falls back to DupeSubstituteMS with a confirm prompt. |
 | 14 | Player hoards 100 × NetRef | Allowed; telemetry alarm only. No decay, no tax — hoarding is never punished, sinks are added instead. |
@@ -915,8 +919,8 @@ end
 - **AC-22-07:** Balances never go below 0 across a 10,000-session soak test with random purchases, wages and repairs.
 - **AC-22-08:** A purchase interrupted by a forced server shutdown results in either both the debit and the item or neither
   (100 of 100 fault-injection trials).
-- **AC-22-09:** Every MB reward in §20, §36.11, §36.16 and §36.17 is expressed as a NetRef fraction within the §22.3 budgets
-  (validator check).
+- **AC-22-09:** Every MB reward in §20, §36.16 and §36.17 is expressed as a NetRef fraction, and every event MB reward in
+  §36.11 in ERM (= NetRef ÷ 60), within the §22.3 budgets (validator check).
 - **AC-22-10:** The tutorial chain `QST_TUT_001`–`012` grants exactly 400 MB in total.
 - **AC-22-11:** No source grants RT while the player is offline; no Robux product grants MB, MS, RT, capsules or parts
   (validator + §23 catalog audit).

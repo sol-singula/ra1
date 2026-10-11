@@ -536,7 +536,7 @@ def block_offline_calc(d, econ):
         e = econ[t["id"]]
         f = e["crew_full"]
         n = tnum(t["id"])
-        L.append(f"| {n} | {crew_text(d, t['crew_full'])} | {t['demand']} \u00d7 {e['rep']:.2f} \u00d7 {e['dec']:.3f} \u00d7 0.6 "
+        L.append(f"| {n} | {crew_text(d, t['crew_full'])} | {t['demand']} \u00d7 {e['rep']:.3f} \u00d7 {e['dec']:.3f} \u00d7 0.6 "
                  f"= {fmt(f['dem'], 1)} | {fmt(f['cap_seat'])}, {fmt(f['cap_k'], 1)}, {fmt(f['cap_s'], 1)} | "
                  f"{fmt(f['Q'], 1)} | {fmt(f['Q'], 1)} \u00d7 {fmt(f['ticket'], 1)} \u00d7 {f['q']:.2f} = {fmt(f['rev'])} | "
                  f"+{fmt(f['tips'])} \u2212{fmt(f['ingr'])} \u2212{fmt(f['wages'])} | **{fmt(f['net'])}** "

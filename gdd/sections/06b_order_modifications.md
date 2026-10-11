@@ -59,18 +59,18 @@ no sauce); one DONENESS per component; one TEMP, one MOOD, one PRESENT (except `
 
 **Per-tier probabilities** (rolled per order item by `OrderService` when the order is placed):
 
-| Tier | P(item has ≥ 1 mod) | Max mods per item | P(2nd mod given 1st) | P(3rd given 2nd) | Joke share of 1st pick | Hidden-mod chance |
-|---|---|---|---|---|---|---|
-| `TIER_01` | 10 % | 1 | — | — | 10 % | 0 % |
-| `TIER_02` | 14 % | 1 | — | — | 10 % | 0 % |
-| `TIER_03` | 18 % | 1 | — | — | 12 % | 0 % |
-| `TIER_04` | 22 % | 2 | 25 % | — | 12 % | 0 % |
-| `TIER_05` | 26 % | 2 | 30 % | — | 14 % | 5 % |
-| `TIER_06` | 30 % | 2 | 33 % | — | 14 % | 8 % |
-| `TIER_07` | 33 % | 2 | 36 % | — | 15 % | 10 % |
-| `TIER_08` | 36 % | 3 | 40 % | 20 % | 15 % | 12 % |
-| `TIER_09` | 40 % | 3 | 42 % | 25 % | 16 % | 12 % |
-| `TIER_10` | 45 % | 3 | 45 % | 30 % | 16 % | 15 % |
+| Tier # | Tier ID | P(item has ≥ 1 mod) | Max mods per item | P(2nd mod given 1st) | P(3rd given 2nd) | Joke share of 1st pick | Hidden-mod chance |
+|---|---|---|---|---|---|---|---|
+| 1 | `TIER_01` | 10 % | 1 | — | — | 10 % | 0 % |
+| 2 | `TIER_02` | 14 % | 1 | — | — | 10 % | 0 % |
+| 3 | `TIER_03` | 18 % | 1 | — | — | 12 % | 0 % |
+| 4 | `TIER_04` | 22 % | 2 | 25 % | — | 12 % | 0 % |
+| 5 | `TIER_05` | 26 % | 2 | 30 % | — | 14 % | 5 % |
+| 6 | `TIER_06` | 30 % | 2 | 33 % | — | 14 % | 8 % |
+| 7 | `TIER_07` | 33 % | 2 | 36 % | — | 15 % | 10 % |
+| 8 | `TIER_08` | 36 % | 3 | 40 % | 20 % | 15 % | 12 % |
+| 9 | `TIER_09` | 40 % | 3 | 42 % | 25 % | 16 % | 12 % |
+| 10 | `TIER_10` | 45 % | 3 | 45 % | 30 % | 16 % | 15 % |
 
 **Personality affinity** (defaults; §9 may override per personality with a `ModAffinity` field). `Aff` multiplies the
 three mod-count probabilities (each clamped to ≤ 85 %); `JokeAff` multiplies the joke share; `HidAff` the hidden chance.
@@ -125,10 +125,10 @@ Requests":** P(≥ 1 mod) × 0.5, no hidden mods, and joke chips show a "Play al
 
 At serve (§5.6.5, step 7) the server evaluates each mod's **predicate** against the Dish. Predicate vocabulary:
 `count(ING)` (sum of component `count`), `tagCount(tag)`, `base(ING)` (recipe default count), `doneness(c)` / `grade(c)`
-(last heat step of component *c*; "protein" = the recipe's main heat component), `state(c)`, `shape(c)`,
+(last heat step of component *c*; "protein" = every instance of the recipe's main heat component, e.g. both patties of a double burger), `state(c)`, `shape(c)`,
 `stackIndex(ING)`, `orientation`, `layout`, `cut`, `fold`, `container`, `kind`, `boxType`, `wrapped`, `garnish`, `drizzle`,
 `plateGrade`, `temp`, `hotFrac` (remaining HOT time / 20 s; the heat lamp pauses it), `lampSec`, `frosty`, `wasHeated`,
-`mood`, `moodHistory`, `fryCount(c)`, `gridMarks(c)`, `bakeDial(c)`, `dialCorrect(c)`, `seqReversed(c)`,
+`mood`, `moodHistory`, `shaken(c)`, `fryCount(c)`, `gridMarks(c)`, `bakeDial(c)`, `dialCorrect(c)`, `seqReversed(c)`,
 `sourceRecipeId`, `hoverUntil`, `serve.flourish`, `serve.airborne`, `lastHeatActor.slots`, `customer.offered`.
 
 ```
@@ -205,7 +205,7 @@ be owned). *Favored by* personalities pick that mod with × 3 weight. The seven 
 | `MOD_030` | "Rare, please. Just introduce it to the grill." | DONENESS | GRILL-cooked `meat`/`seafood` components | Pull it from STN_GRILL in the RARE band [T_ready − 1 s, T_ready) | doneness(protein) = RARE | 12 % | 1 | PER_010, PER_004 | No |
 | `MOD_031` | "Well done. Retirement-home well done." | DONENESS | GRILL- or FRY-cooked `meat`/`poultry`/`seafood` | Pull it in the WELL_DONE band [T_pe + 1 s, T_burn − 1.5 s) | doneness(protein) = WELL_DONE | 10 % | 1 | PER_013, PER_024 | No |
 | `MOD_032` | "Burn it. On purpose. I like it crunchy-dark." | DONENESS | GRILL, BAKE or FRY items | Pull it in the BURNED band [T_burn, T_burn + 4 s) — before it ignites | doneness(protein) = BURNED (remapped to 1.00 for C) | 14 % | 3 | PER_028, PER_007 | No |
-| `MOD_033` | "Extra crispy. I want to hear it from across the room." | DONENESS | FRI items, RCP_SEA_001, RCP_SEA_002 | Shake in window at STN_FRYER, then pull in WELL_DONE | doneness = WELL_DONE and shaken | 10 % | 1 | PER_026, PER_009 | No |
+| `MOD_033` | "Extra crispy. I want to hear it from across the room." | DONENESS | FRI items, RCP_SEA_001, RCP_SEA_002 | Shake in window at STN_FRYER, then pull in WELL_DONE | doneness = WELL_DONE and shaken = true | 10 % | 1 | PER_026, PER_009 | No |
 | `MOD_034` | "Toast my bun. Just a little tan." | DONENESS | items containing ING_BUN or ING_BREAD_SLICE | GRILL the bread 3 s at STN_GRILL (or toast it in a Toaster Head, MUT_010) | state(bread) = GRILLED and grade ≥ GOOD | 8 % | 1 | PER_028, PER_013 | No |
 | `MOD_035` | "Al dente. The noodles should fight back a little." | DONENESS | PST items with BOILED ING_PASTA | Pull the pasta pot at STN_STOVE in the RARE band | doneness(ING_PASTA) = RARE | 10 % | 2 | PER_004, PER_008 | No |
 | `MOD_036` | "Runny egg. I like my yolks adventurous." | DONENESS | items with ING_EGG cooked at STN_STOVE | Pull the egg in the RARE band | doneness(ING_EGG) = RARE | 10 % | 3 | PER_013, PER_003 | No |

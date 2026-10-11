@@ -115,7 +115,7 @@ PASSIVE_KEYS: "OrderedDict[str, tuple[str, str, str]]" = OrderedDict([
     ("aura", ("Combat", "Area effect on hostile customers", "same-type auras never stack (strongest wins)")),
     ("repair_speed", ("Repair", "Repair speed +X %", "+40 % (multiplies with REPAIR)")),
     ("repair_cost", ("Repair", "Repair material cost −X %", "−15 % (≤ −40 % together with REPAIR)")),
-    ("sprint", ("Movement", "+MOVE while running or under a condition", "+8 MOVE; MOVE cap 100; WalkSpeed ≤ 21")),
+    ("sprint", ("Movement", "+MOVE while running or under a condition", "+8 MOVE; MOVE cap 100; WalkSpeed ≤ 20.8")),
     ("jump", ("Movement", "Jump height / extra jump", "+40 % height; max 1 extra jump")),
     ("glide", ("Movement", "Fall-speed reduction, glide, apex hover", "−60 % fall speed; no sustained flight")),
     ("swim", ("Movement", "Sewer-water speed / soaked penalty", "+30 %")),
@@ -584,31 +584,28 @@ def render_db(canon: Canon, parts: list[dict]) -> str:
 
 def passive_table(parts) -> str:
     c = Counter(p["passive"]["key"] for p in parts)
-    lines = ["| Passive key | Group | Effect | Combined cap / stacking [TUNABLE] | Parts |", "|---|---|---|---|---|"]
+    lines = ["| Passive key (group) | Effect | Combined cap / stacking [TUNABLE] | Parts |", "|---|---|---|---|"]
     for k, (g, d, cap) in PASSIVE_KEYS.items():
         if c[k]:
-            lines.append(f"| `{k}` | {g} | {esc(d)} | {esc(cap)} | {c[k]} |")
+            lines.append(f"| `{k}` ({g.lower()}) | {esc(d)} | {esc(cap)} | {c[k]} |")
     return "\n".join(lines)
 
 
 # ----------------------------------------------------------------------------- §12 generated regions
 def gen_budget_growth(canon: Canon) -> str:
-    o = []
-    for label, w in (("Major slot (weight 1.0: HEAD, TORSO, each ARM, TAIL, WINGS, BACK)", 1.0),
-                     ("Minor slot (weight 0.5: FACE, NOSE, MOUTH, EYES, EARS, HORNS, NECK, HANDS, each LEG, FEET, SKIN, FUR, SCALES)", 0.5)):
-        o.append(f"**{label}** — total stat points per part at each level:\n")
-        o.append("| Level | Multiplier | " + " | ".join(f"{RARITY_ICON[r]} {r}" for r in RARITIES) + " |")
-        o.append("|---|---|" + "---|" * len(RARITIES))
-        for L in range(1, 11):
-            cells = []
-            for r in RARITIES:
-                if L > canon.upg[r]["max"]:
-                    cells.append("—")
-                else:
-                    cells.append(str(rhu(canon.base_budget[r] * w * (1 + 0.12 * (L - 1)))))
-            o.append(f"| Lv{L} | ×{1 + 0.12 * (L - 1):.2f} | " + " | ".join(cells) + " |")
-        o.append("")
-    o.append("FX parts (weight 0.0) carry no stats at any level.")
+    o = ["Total stat points per part, shown as **major / minor** slot (major = HEAD, TORSO, each ARM, TAIL, WINGS, BACK; "
+         "minor = FACE, NOSE, MOUTH, EYES, EARS, HORNS, NECK, HANDS, each LEG, FEET, SKIN, FUR, SCALES; FX = 0 at every level):\n",
+         "| Level | Multiplier | " + " | ".join(f"{RARITY_ICON[r]} {r}" for r in RARITIES) + " |",
+         "|---|---|" + "---|" * len(RARITIES)]
+    for L in range(1, 11):
+        cells = []
+        for r in RARITIES:
+            if L > canon.upg[r]["max"]:
+                cells.append("—")
+            else:
+                k = 1 + 0.12 * (L - 1)
+                cells.append(f"{rhu(canon.base_budget[r] * k)} / {rhu(canon.base_budget[r] * 0.5 * k)}")
+        o.append(f"| Lv{L} | ×{1 + 0.12 * (L - 1):.2f} | " + " | ".join(cells) + " |")
     return "\n".join(o)
 
 

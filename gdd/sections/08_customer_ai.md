@@ -140,7 +140,7 @@ Weights are relative, not percentages. The band-C column equals the "Base wt" co
 | The Karenosaurus | `PER_001` | `TIER_01` | 3 | 6 | 6 | 6 | 6 | scripted in QST_TUT_006; kept rare in band A |
 | The Hungry Hippo-Spider | `PER_002` | `TIER_02` | 4 | 5 | 5 | 5 | 5 | |
 | The Polite Demon | `PER_003` | `TIER_01` | 6 | 6 | 6 | 5 | 5 | |
-| The Food Critic | `PER_004` | `TIER_03` | 0 | 2 | 2 | 3 | 3 | ×5 during `EVT_008` Food Critic Convention |
+| The Food Critic | `PER_004` | `TIER_03` | 0 | 2 | 2 | 3 | 3 | extra scheduled visits during `EVT_008` (§36.11) |
 | The Impatient Goblin | `PER_005` | `TIER_01` | 4 | 7 | 7 | 7 | 7 | halved in band A (new-player comfort) |
 | The Sleepy Sloth-Rocket | `PER_006` | `TIER_01` | 7 | 6 | 6 | 5 | 5 | |
 | The Chaos Gremlin | `PER_007` | `TIER_02` | 3 | 5 | 5 | 6 | 6 | |
@@ -151,7 +151,7 @@ Weights are relative, not percentages. The band-C column equals the "Base wt" co
 | The Nervous Newt | `PER_012` | `TIER_01` | 8 | 6 | 5 | 4 | 4 | the gentle starter customer |
 | The Grandma Golem | `PER_013` | `TIER_01` | 7 | 5 | 5 | 4 | 4 | |
 | The Picky Platypus | `PER_014` | `TIER_01` | 6 | 6 | 6 | 6 | 6 | |
-| The Robot Accountant | `PER_015` | `TIER_02` | 3 | 4 | 4 | 4 | 4 | ×4 during `EVT_017` Polite Robot Uprising |
+| The Robot Accountant | `PER_015` | `TIER_02` | 3 | 4 | 4 | 4 | 4 | ×3 during `EVT_017` Polite Robot Uprising |
 | The Party Pack | `PER_016` | `TIER_03` | 0 | 3 | 3 | 4 | 4 | one draw = a party of 3 |
 | The Pirate Crab | `PER_017` | `TIER_02` | 3 | 4 | 4 | 4 | 4 | |
 | The Drama Llama | `PER_018` | `TIER_02` | 3 | 4 | 4 | 4 | 4 | |
@@ -161,7 +161,7 @@ Weights are relative, not percentages. The band-C column equals the "Base wt" co
 | The Spicy Salamander | `PER_022` | `TIER_03` | 0 | 4 | 4 | 4 | 4 | ×3 during `EVT_019` Hot Sauce Heatwave |
 | The Frozen Yeti-Fish | `PER_023` | `TIER_03` | 0 | 4 | 4 | 4 | 4 | ×3 during `EVT_020` Frozen Snap |
 | The Time-Traveler Tortoise | `PER_024` | `TIER_04` | 0 | 2 | 2 | 3 | 3 | |
-| The Undercover Inspector | `PER_025` | `TIER_03` | 0 | 2 | 2 | 2 | 2 | ×6 during `EVT_026` Health Inspector Sweep |
+| The Undercover Inspector | `PER_025` | `TIER_03` | 0 | 2 | 2 | 2 | 2 | unchanged during `EVT_026` (`NPC_022` inspects instead) |
 | The Speedrunner Squirrel | `PER_026` | `TIER_04` | 0 | 3 | 3 | 3 | 3 | |
 | The Lovebird Jellyfish Couple | `PER_027` | `TIER_03` | 0 | 3 | 3 | 3 | 3 | one draw = a party of 2 |
 | The Haunted Toaster | `PER_028` | `TIER_04` | 0 | 3 | 3 | 3 | 3 | ×4 during `EVT_029` Haunted Kitchen Night |
@@ -175,13 +175,14 @@ Weights are relative, not percentages. The band-C column equals the "Base wt" co
 Nervous Newt with probability 8/41 = 19.5 % and a Karenosaurus with 3/41 = 7.3 %.
 
 **Weight modifiers (multiplicative, applied before the draw):**
-- **Events:** as noted in the table; additionally `EVT_004` Angry Customer Invasion doubles every `BRAWLER`,
-  `CHARGER` and `INSTIGATOR` personality (§9.3 style column). Event schedules are owned by §36.11.
+- **Events:** as noted in the table. During `EVT_017`, procedural bodies also roll ROBOT-category HEAD/TORSO parts
+  ×3 as often (§36.11 "ROBOT-category customers ×3"). `EVT_004` Angry Customer Invasion spawns its own invader
+  waves (§36.11) on top of normal arrivals. Event schedules and rules are owned by §36.11.
 - **Rough Patch pity** (§10): `PACIFIST` personalities ×2 for 2 min.
 - **Regular injection:** before the draw, a 12 % roll (Regulars unlocked, ≥ 1 Regular not already present)
   replaces the arrival with a stored Regular (§8.12). [TUNABLE]
-- **Tutorial override:** while QST_TUT_002–QST_TUT_007 are active, arrivals are scripted by §32 (the first
-  customers are PER_012 / PER_013, then the scripted PER_001).
+- **Tutorial override:** while QST_TUT_002–QST_TUT_007 are active, arrivals are scripted by §32 (PER_013 Grandma
+  Golem, then PER_003 Polite Demon, then the scripted PER_001).
 
 #### 8.2.6 Items per customer (canon average 1.4)
 
@@ -303,7 +304,7 @@ combinations; a hit re-rolls the suffix from the same stream (deterministic).
 | C2 | `IMPATIENT` | Mood | while condition holds | `ANM_046` Impatient foot tap; patience ring pulses |
 | C3 | `COMPLAINING` | Mood | while anger level = 2 | `ANM_047` Complain; small anger aura (§10) |
 | C4 | `ANGRY` | Action | while level = 3 | hostile hub: picks a level-3 action every ActionTick (§10) |
-| C5 | `ENRAGED` | Action | while level = 4 | hostile hub for level 4; "aggressive form" visual (scale ×1.1, steam puffs, parts flare) |
+| C5 | `ENRAGED` | Action | while level = 4 | hostile hub for level 4; "aggressive form" visual (steam puffs, wings/tails/spines flare); the ×1.15 "Rage Puff" swell plays on entering level 5 (§11.2.1) |
 | C6 | `THROWING_FOOD` | Action | 1.2 s | `ANM_048` Throw food; scripted arc (§10.8) |
 | C7 | `BREAKING_FURNITURE` | Action | 2.0 s | `ANM_049` Flip table or `ANM_050` Tantrum stomp on a target object |
 | C8 | `FIGHTING` | Action | while level ≥ 5 | combat AI of its style (§11), Huff Points active |
@@ -369,11 +370,11 @@ Anger thresholds and escalation rolls are specified in §10.7.
 | `ENRAGED` | anger crosses 75, roll succeeds, fighter cap free | `FIGHTING` | — | |
 | `ENRAGED` | anger drops to 45–59 | `ANGRY` | — | |
 | `FIGHTING` | anger drops to 60–74 | `ENRAGED` | — | |
-| `FIGHTING` | Huff Points reach 0 | `CALMING_DOWN` | 3 s Dizzy + 2.5 s | combat-calmed |
+| `FIGHTING` | Huff Points reach 0 | `CALMING_DOWN` | 3 s Dizzy + 2.5 s | defeated (§11.10.1) |
 | `FIGHTING` | its target is KO'd, no chaos active | `LEAVE` | — | `ANM_051` Victory dance; pays 0 (§C12.1) |
-| Hostile (C4–C8) | Security Guard intercept succeeds | `APOLOGIZING` | — | counts as combat-calmed |
-| `CALMING_DOWN` | combat-calmed (took player/employee damage this episode) | `APOLOGIZING` | 2.5 s | |
-| `CALMING_DOWN` | calmed without damage | `resumeState` | 2.5 s | "Sheepish" 30 s (§10.10) |
+| `FIGHTING` | talked down: `ABL_006`/`ABL_065` or Security talk-down succeeds (§11.10.1) | `CALMING_DOWN` | — | drops to level 2, returns to its seat; pays by S − 10 |
+| `CALMING_DOWN` | defeated (Huff Points reached 0) | `APOLOGIZING` | 2.5 s | |
+| `CALMING_DOWN` | calmed or talked down (not defeated) | `resumeState` | 2.5 s | "Sheepish" 30 s (§10.10) |
 | `APOLOGIZING` | bow done | `ESCORTED_OUT` | 2 s | Apology Payment 40 %, no tip |
 | `ESCORTED_OUT` | crossed the door | despawn | — | |
 | Any | chaos starts and the customer's chaos roll = flee | `FLEEING` | — | §10.9 |
@@ -427,8 +428,8 @@ stateDiagram-v2
     Fighting --> CalmingDown: Huff Points zero
     Angry --> CalmingDown: anger below 45
     Enraged --> CalmingDown: anger below 45
-    CalmingDown --> Wait: calmed without combat
-    CalmingDown --> Apologizing: combat-calmed
+    CalmingDown --> Wait: calmed or talked down
+    CalmingDown --> Apologizing: defeated
     Apologizing --> EscortedOut
     EscortedOut --> [*]
     Fighting --> Leave: target knocked out
@@ -499,7 +500,10 @@ is delivered by whoever carries the plate. MutationBonus (§10.3) uses the parts
 - **Local avoidance.** Each tick a customer reserves the next cell on its path. If another customer holds it,
   wait up to 1 s, then side-step to a free neighbour cell and re-path from there. Clients add a ±0.6-stud lateral
   smoothing offset so crowds do not look like trains.
-- **Speed.** 10 studs/s base × personality WalkMult (§9.4); `FLEEING` ×1.4; `ESCORTED_OUT` ×0.7. [TUNABLE]
+- **Speed.** 10 studs/s base × personality WalkMult (§9.4); `FLEEING` ×1.4; `ESCORTED_OUT` ×0.7; hostile chase
+  speeds per §11.8.1. [TUNABLE]
+- **Hostile paths.** `CustomerAIService` answers the §11.8.1 chase-path requests (≤ 1 per second per hostile) from
+  the same cached graph; `PathfindingService` is used only by `BuildingService` for placement validation.
 - **Stuck handling (E10).** A path request that fails twice, or a customer whose position has not advanced
   ≥ 1 stud for 6 s, "poofs" (cartoon puff, "Pardon me!") to its seat node — or, if leaving, to the door.
   Poofs are logged (`mmr_customer_poof`) so level designers can find bad layouts.
@@ -542,15 +546,18 @@ PER_015 roll at half chance. All values [TUNABLE].
 ### 8.9 Rules & Mechanics — Waiting and Patience
 
 - **Patience** (§C11.2): `P = (70 + 20 × (items − 1) + 5 × ΣDifficulty) × PatienceMult × (1 + 0.004 × CHARM)`.
-  CHARM is the highest effective CHARM among players inside the interior (rewards co-op charm builds). Patience
-  starts when the ticket is created and stops when the last item is delivered.
+  CHARM is the highest effective CHARM among players inside the interior (rewards co-op charm builds). An event
+  patience multiplier stated by §36.11 (e.g. `EVT_003` ×1.15) multiplies the result. Patience starts when the
+  ticket is created and stops when the last item is delivered.
 - **Ordering window:** 30 s × PatienceMult, then a 15 s × PatienceMult last-chance window (anger accrues).
 - **Per-item wait factor** (§10.2): W = 1 until 50 % of P, then linear to 0 at 100 %.
 - **Eat-while-waiting:** items arrive independently; the customer eats item 1 while item 2's clock keeps
   running. Plates delivered during `EAT` are placed on the table and inspected when the current item finishes,
   but their W timestamp is the placement time.
-- **Pauses:** patience pauses only during chaos (customers are busy hiding), during `CONFUSED` caused by the
-  restaurant (seat lost, table destroyed) and while PER_006 is asleep (max 15 s per visit).
+- **Pauses:** patience pauses only during chaos (customers are busy hiding), while the customer itself is hostile
+  (levels 3–6), during `CONFUSED` caused by the restaurant (seat lost, table destroyed) and while PER_006 is asleep
+  (max 15 s per visit). A hostile customer cannot be served ("Can't serve an angry customer!") except with a Peace
+  Offering (§10.10).
 
 | Example | Items | ΣD | Mult | CHARM | Patience |
 |---|---|---|---|---|---|
@@ -819,7 +826,7 @@ end)
 | Server brain time | ≤ 1.5 ms/frame p95 at 160 proxies; rebake ≤ 8 ms, debounced 0.5 s |
 | Network | CFrame moves at 4 Hz via `BulkMoveTo`; ≤ 2 attribute writes per customer per second on average |
 | Client visuals | built only inside the interior (street visuals for the queue); pooled rigs; ≤ 24 MeshParts / 6,000 triangles each; 1,500-triangle impostor beyond 60 studs; rigs beyond 40 studs stop non-locomotion tracks |
-| Thrown food | scripted raycast arcs, ≤ 6 in flight per restaurant (§10.8); debris client-only, despawns in 4 s |
+| Thrown food | scripted arcs per §11.6.2, ≤ 12 concurrent projectiles per restaurant (§11.7); debris client-only, despawns in 4 s |
 
 ### 8.19 Edge Cases
 

@@ -347,6 +347,6 @@ stem of a multi-stem track has identical length and BPM (§26 adaptive music). R
 | `MUS_031` | Dance-Off Beat | event music | Four-on-the-floor disco whose tempo rises 118→128 BPM by round. | EVT_027; BLD_22 | 3 (per round) | 2D | Yes | Music | Bed |
 | `MUS_032` | Build-a-Beast | menu music | Curious pizzicato plus beeps. Each slot group adds a light layer. | Morph customization (§13); BLD_11 | 1 + 7 layers | 2D | Yes | Music | Bed |
 | `MUS_033` | Shop Browse | menu music | Cheery muzak. The lead instrument swaps per shop. | BLD_01, BLD_02, BLD_03, BLD_12 interiors | 4 | 2D | Yes | Music | Bed |
-| `MUS_034` | Under Construction | event music | 8 s hammer-percussion build-up into a fanfare (ends with `SFX_197`). | Tier upgrade cinematic | 1 | 2D | No | Music | Bed |
+| `MUS_034` | Under Construction | event music | Hammer-percussion build-up into a fanfare, 10 s, plus a 3 s short edit (hands off to `SFX_197` at the reveal). | Mutant Builders sequence (§15) | 2 (10 s, 3 s) | 2D | No | Music | Bed |
 | `MUS_035` | Rush Hour Frenzy | event music | 140 BPM frantic swing. Replaces the tier track inside interiors during citywide rushes. | EVT_003, EVT_023 | 1 | 2D | Yes | Music | Bed |
 | `MUS_036` | Midnight Market | event music | Mysterious-cute lounge: muted trumpet, harp, cricket shaker. | BLD_13; EVT_024 | 1 | 2D | Yes | Music | Bed |

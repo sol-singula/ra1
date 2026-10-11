@@ -60,7 +60,7 @@ the employee cap is canon §C6. Only one Manager and one Assistant Manager may b
 - **Waiter.** Seats in arrival order except Rich/celebrity personalities (`PER_008`, `PER_009`) who are seated first;
   delivers to the ticket's seat; on a missed modification the customer gets the normal Accuracy penalty (§10).
 - **Security Guard.** Patrols an assigned post (Door / Dining / Kitchen). Never attacks a customer below anger 45.
-- **Manager.** Never cooks; is the only role allowed to "close" the restaurant in Away Mode (§16.3.4).
+- **Manager.** Never cooks; while the owner is in the city (Away Mode, §16.3.4) the Manager is the one who flips the sign to "Out to Lunch" if every Chef goes on break or unpaid break.
 
 ### 16.3 Online Work AI
 
@@ -134,14 +134,417 @@ PERFECT timing (1.00) stays the best cook in the building, by design.
   Rebuild if the object reaches Destroyed; cost is charged once at completion (canon E3).
 - **Co-op.** Guests' actions reserve tasks like the owner's; employees obey the owner's assignments only.
 
-#### 16.3.4 Away Mode (owner online, outside the restaurant) [TUNABLE]
+#### 16.3.4 Away Mode (owner online, exploring the city) — consistent with §18
 
-When the owner is in the server but no player has been inside the interior for 60 s, the interior finishes its current
-customers (≤ 60 s), despawns the proxies and runs the **§17 model in real time** with 60-second steps (same
-formulas, demand factor 0.6, incidents and discoveries off, Energy/Morale use the offline rates). Income is credited
-every 60 s through `EconomyService` with source `away_mode`; wages are paid by the normal wage tick. Away Mode needs
-≥ 1 Chef and stops ("Closed — owner napping") when the owner has made no validated gameplay action for 15 min; at that
-moment `lastSimAt` is written, so AFK time becomes ordinary capped offline time instead of an exploit. This lets a
-player explore Morph City (§18) without abandoning the restaurant — the brief's "events should encourage players to
-leave their restaurants". Flagged for review in §38.
+Away Mode is **not** the offline simulation. While the owner is online on the same server but outside the interior,
+a **staffed** restaurant (≥ 1 Chef on an Always or Online Only shift) keeps running **live**: the same online AI of
+this section, the same SPCV customers, normal online wages (§16.7.11) and normal income. Two safety rules from §18
+apply while the owner is away: anger escalation beyond level 2 is suppressed unless a Security Guard is on shift
+(customers sulk or leave instead), and heat-station timers pause so unattended items never burn. An **unstaffed**
+restaurant goes "Out to Lunch" / "Event Break": no new customers, no reputation loss, no wages. The §17 offline
+simulation covers **only** time when the player is in no server at all, starting from the `lastSimAt` written by the
+last save (PlayerRemoving / BindToClose, canon E1/E13); an idle player removed by Roblox's idle kick simply becomes
+offline from that save. Staffing therefore pays twice: it lets the player explore Morph City without closing, and it
+earns while they are logged off.
+
+### 16.4 Employee Statistics
+
+All statistics of canon §C14.2. The six *trainable* stats live on the 1–100 scale; at hire they sit inside the rarity
+band of §C4.8 (Common 15–40 … Legendary 75–100) and training can raise them to the **potential cap** (rarity cap
+55 / 70 / 82 / 92 / 100, +3 per seniority star, max 100).
+
+| Stat | Range | Online effect (§16.3.2) | Offline effect (§17.4) | Raised by |
+|---|---|---|---|---|
+| Cooking Skill | 1–100 | kitchen handling speed, PERFECT/UNDERCOOKED odds, recipe skill gate D ≤ 1 + floor(Cook/25) | best chef's Cook sets the offline menu gate; RoleStatAvg of Chef/Prep | Cooking Academy course (`BLD_06`) |
+| Service Speed | 1–100 | walk speed, floor handling speed | RoleStatAvg of Waiter/Cashier/Dish/Cleaner/Delivery; avg waiter Service raises tip rate | Training Gym course (`BLD_05`) |
+| Accuracy | 1–100 | PERFECT and BURNED odds, order mistakes | avg chef Accuracy sets quality q = min(0.95, 0.70 + 0.25 × Acc/100) | Cooking Academy course |
+| Repair Skill | 1–100 | repair rate, material discount | auto-repair discount Repair/200 | Repair Workshop course (`BLD_07`) |
+| Combat Strength | 1–100 | calm chance, subdue damage, staff HP | Security Mitigation via Contribution | Training Gym course |
+| Reliability | 1–100 | mistake multiplier, wander-off chance | weight in most roles; staff-mistake incident odds | Repair Workshop course |
+| Energy | 0–100 % | at < 25 % takes a break; Efficiency × (0.7 + 0.3·E/100) | −8 %/h (−5 %/h with Manager) per simulated hour | breaks, Off Duty, closed hours |
+| Morale | 0–100 | Efficiency × (0.6 + 0.4·M/100); < 25 = Sulking | −1/h offline | raises, stars, praise, snacks, good days |
+| Salary | MB/h | paid every 60 s while on shift (E8) | Σ wage × hours worked | raises (+10 %), stars (+5 %) |
+| Efficiency | derived | drives utility and speed | drives every capacity | all of the above |
+| Special Abilities | traits | §16.5 | §16.5 | promotions (star 3 upgrades the signature) |
+
+**Efficiency (canon §C14.2, exact).**
+
+```
+RoleStatAvg = Σ weight_role(stat) × stat            (weights in §16.2; × 0.85 if off-native role and not cross-trained;
+                                                     Calculator Brain counts Reliability +5)
+Efficiency  = RoleStatAvg × (0.6 + 0.4 × Morale/100) × (0.7 + 0.3 × Energy/100) × (1 + 0.001 × player EFFICIENCY)
+Eff         = Efficiency / 100                       (0–1.15; the form used by every capacity formula)
+Contribution = Eff × TraitMult(role)                 (TraitMult = product of applicable trait multipliers, max ×1.5)
+```
+
+Example: Ollie (`EMP_001`, Cook 30 / Acc 28 / Rel 40) → RoleStatAvg 30.4; at Morale 90, Energy 100, player EFFICIENCY 0
+→ Efficiency 29.2 → Eff 0.292 → Contribution 0.292 × 1.25 (Multi-Tasker) = **0.365** (§17.9 Example A).
+
+### 16.5 How Employee Mutations Shape Performance
+
+**Derivation rule.** A trait is derived when the employee's parts contain one of its **key families** (any part) or
+**≥ 2 parts carrying its key tag** (a matched pair counts as two parts). Families and tags are the canon vocabulary of
+§C13.5/§C13.6, so every future mutation part automatically produces employees with sensible traits. An employee shows
+at most **two derived traits** (designer-picked per archetype; the procedural generator keeps the two most relevant to
+the native role) plus one **signature ability** unique to the archetype (§36.8). Per-employee trait multipliers cap at
+×1.5; restaurant-wide bonuses have their own caps (listed).
+
+| Trait | Derived from | Online effect | Offline effect | Drawback |
+|---|---|---|---|---|
+| Multi-Tasker | families octopus, kraken, squid; or an ARM/BACK part tagged `multi` | works 2 station slots / 2 racks / 2 repair jobs at once (80 % speed each) | Chef, Dish, Repair, Cleaner Contribution ×1.25 (kraken ×1.35); a Multi-Tasker prep counts 1.25 preps | — |
+| Speedster | families cheetah, ostrich, raptor, wheel, skate, grasshopper, kangaroo; or ≥ 2 `speed` | walk speed ×1.35 | Waiter, Delivery, Cleaner ×1.20 | 1 % chance per delivery to overshoot the table (comedy only) |
+| Bouncer | families rhino, bull, triceratops; or ≥ 2 `horn` | calm chance +25 %; charges to split two brawlers | Security Mitigation +0.10 per guard | knocks over 1 chair per charge (Scuffed) |
+| Wall Crawler | families spider, gecko | repairs walls/ceilings without a ladder; travel between jobs ×0.6 | auto-repair discount +10 pp (max 60 %); "Sauce on the Ceiling" weight ×0.5 | — |
+| Calculator Brain | family robot; or ≥ 2 `robotic` | payments 0.5 s; order-entry mistakes −80 % | cashier skill ×1.5 for the tip bonus; Reliability +5 in RoleStatAvg | speaks only in beeps |
+| Unhurried | family turtle; or ≥ 2 `tank` and no `speed` | action speed ×0.6; Energy drain ×0.5; immune to rush stress | capacity roles ×0.6; *presence* roles (Dish, Cleaner, Repair existence checks) count fully; Energy decay ×0.5 | slow |
+| Grill Master | families dragon, lava, phoenix; or ≥ 2 `fire` | GRILL/FRY/BAKE handling ×0.8 (dragon ×0.7), PERFECT +10 % | Chef ×1.15; offline quality q −0.02 per Grill Master chef (max −0.04) | 4 % burn chance per heat item (dragon 6 %) |
+| Ice Hands | families ice, yeti, penguin; or ≥ 2 `ice` | FREEZE/BLEND/SCOOP ×0.75 | Chef ×1.05 if ≥ 25 % of the menu is drinks/desserts, ×1.10 if ≥ 50 % | — |
+| Charmer | ≥ 2 `charm` | customer patience +8 % within 10 studs; tips +5 % on their tables | tip multiplier +0.05 per Charmer waiter/cashier (max +0.10) | — |
+| Loudmouth | ≥ 2 `loud` | shouts tickets: chefs within 15 studs +5 % speed | coordination +2 pp (Manager/Assistant) | nearby customers −2 satisfaction |
+| Sniffer | families pig, dog, mole, rat | spots messes and SOLD OUT risks 2× sooner | stocker discount +2 pp; discovery chances ×1.10 (once per restaurant) | — |
+| Lucky Charm | ≥ 2 `luck` | +0.5 % Jackpot Tip chance on their tables | discovery chances ×1.15 (once; combined discovery boost max ×1.25) | — |
+| Tough Shell | ≥ 2 `armored` | damage taken −40 %, cannot be knocked down | as a guard: customer-incident losses ×0.9 | — |
+| Heavyweight | families bear, gorilla, golem, elephant, muscle; or ≥ 2 `heavy` | immune to knockback; carries 2 trays | as a guard: Security Mitigation +0.05 | walk speed ×0.9 |
+| Grabby | ≥ 2 `grabby` | carry +1 (max 3, §C3) | Waiter ×1.10; breakage incidents ×0.3 | — |
+| Glow-Up | ≥ 2 `glow` | Atmosphere +2 while on shift | DecorMult +0.006 each (max +0.02) | — |
+| Splash Zone | families elephant, faucet, hydrant, extinguisher; or ≥ 2 `water`/`aquatic` | extinguishes ON_FIRE instantly; racks ×1.25 | fire incidents ×0.3; Dish ×1.10 | leaves puddles (CleanMess task) |
+| Sticky Grip | ≥ 2 `sticky` | never drops plates or trays | breakage incidents ×0.3 | leaves faint footprints |
+| Regenerator | ≥ 2 `regen` | Energy drain ×0.75 | Energy decay ×0.75 | — |
+| Electric | ≥ 2 `electric` | appliance repairs ×1.3 | as Repair Tech: equipment incidents ×0.7 | 2 %/h chance to trip a breaker (10 s stall) |
+| Flying | any part tagged `flying` | Hover Serve over tables (path ×0.8) | Waiter, Delivery ×1.15 | — |
+| Golden Touch | any part tagged `gold` | tips +10 % on their tables | tip multiplier +0.10 (once per restaurant) | — |
+| Chef's Instinct | ≥ 2 `chef` | PERFECT +10 % | offline q +0.02 per such chef (max +0.03) | — |
+| Cosmic Intuition | ≥ 2 `cosmic` | sees anger spikes 3 s early (meter flashes) | as Manager/Assistant: positive incident weights ×1.15 | — |
+
+The brief's examples map exactly: Octopus Chef → Multi-Tasker (`EMP_005`), Cheetah Waiter → Speedster (`EMP_028`),
+Rhino Security Guard → Bouncer (`EMP_066`), Spider Repair Technician → Wall Crawler (`EMP_058`), Robot Cashier →
+Calculator Brain (`EMP_034`), Sloth Dishwasher → Unhurried and the band-minimum wage (`EMP_039`), Dragon Chef → Grill
+Master with burns (`EMP_009`).
+
+**Employee personalities** (one per archetype; small, readable effects; they also flavor report lines).
+
+| Personality | Effect [TUNABLE] |
+|---|---|
+| Eager Beaver | Morale baseline +5; online Energy drain ×1.1 |
+| Zen Noodle | all Morale changes ×0.5 (offline −0.5/h) |
+| Drama Royalty | all Morale changes ×1.5; report lines are extra dramatic |
+| Perfectionist | Accuracy +5 effective online; handling ×1.05 slower |
+| Chatterbox | customer patience +5 % near them; online Energy drain ×1.05 |
+| Grump | Morale baseline −10; no Morale loss from being hit by food |
+| Clumsy Sweetheart | mistake chance ×1.5; Morale baseline +10 |
+| Overachiever | training gain +1; online Energy drain ×1.1 |
+| Snack Goblin | Morale baseline +5; enables "Snack Break Became a Picnic" (`INC_024`) |
+| Night Owl | offline Energy decay −2 %/h; online drain ×1.1; boosts midnight incidents |
+| Show-Off | tips +3 % on their tables; mistake chance ×1.2 |
+| Shy Genius | customer-facing tasks ×0.9 speed; kitchen tasks ×1.05 |
+| Loyal Lump | Morale floor 40; coworkers lose double Morale if this employee is fired |
+| Daydreamer | wander-off chance ×1.5; discovery report lines more often |
+
+### 16.6 Hiring System
+
+**Where.** The Recruitment Office (`BLD_04`, Downtown `DST_03`), staffed by **Ms. Hirewell** (`NPC_007`, owl head,
+filing-cabinet torso). From `TIER_06` the **Hirewell Hotline** button in the Employee menu allows remote hiring for a
++10 % fee, so late-game players are not forced to commute, while early players learn the city.
+
+#### 16.6.1 Candidate pool
+
+| Rule | Value [TUNABLE] |
+|---|---|
+| Refresh | every 4 h on UTC windows (00:00, 04:00, … 20:00); `windowIndex = floor(os.time() / 14400)` |
+| Seed | `hash(UserId, windowIndex, rerollIndex)` → `Random.new(seed)`; rejoining or server-hopping shows the same pool |
+| Pool size by tier | T1 3 · T2 3 · T3 4 · T4 4 · T5 5 · T6 5 · T7 6 · T8 6 · T9 7 · T10 8 |
+| Slot 1 "Hirewell's Pick" | role-gap fill: no Chef → Chef; else the role behind the last offline report's bottleneck (Kitchen → Chef/Prep, Service → Waiter/Cashier, cap reached → Manager/Assistant, SOLD OUT → Stocker) |
+| Archetype pick | roll rarity (table below) → uniform among archetypes of that rarity with `min_tier ≤ tier`; archetypes already employed weigh ×0.5 |
+| Rerolls | first reroll per window free; then `50 × tier × 2^(n−1)` MB for paid reroll n = 1..3 (T5: 250 / 500 / 1,000) |
+| Hold | pin one candidate into the next window for 5 % of its hire cost (non-refundable) |
+| Pity | at `TIER_05`+, 12 windows without a Rare-or-better candidate → next pool has one; at `TIER_08`+, 24 windows without Epic+ → next pool has one (counters persist, reset on sight) |
+| Disclosure | the rarity odds below are shown in the UI (ⓘ button); rerolls cost MB only and are never sold for Robux |
+
+| Tier | ● Common | ▲ Uncommon | ■ Rare | ⬟ Epic | ★ Legendary |
+|---|---|---|---|---|---|
+| `TIER_01` | 90 % | 10 % | 0 % | 0 % | 0 % |
+| `TIER_02` | 78 % | 22 % | 0 % | 0 % | 0 % |
+| `TIER_03` | 60 % | 36 % | 4 % | 0 % | 0 % |
+| `TIER_04` | 42 % | 46 % | 12 % | 0 % | 0 % |
+| `TIER_05` | 28 % | 44 % | 25 % | 3 % | 0 % |
+| `TIER_06` | 18 % | 38 % | 34 % | 10 % | 0 % |
+| `TIER_07` | 10 % | 30 % | 38 % | 20 % | 2 % |
+| `TIER_08` | 6 % | 22 % | 38 % | 28 % | 6 % |
+| `TIER_09` | 4 % | 16 % | 34 % | 34 % | 12 % |
+| `TIER_10` | 2 % | 12 % | 30 % | 36 % | 20 % |
+
+#### 16.6.2 What each candidate has
+
+| Field | Generation rule |
+|---|---|
+| Name & morph | archetype name; parts from §36.8 (client visual, ≤ 24 MeshParts) |
+| Rarity | rolled per 16.6.1; color + shape icon (§C13.3) so it is never color-only |
+| Stats | archetype values ± up to 3 (seeded), clamped to the rarity band |
+| Hire cost | archetype hire × U(0.9, 1.1), rounded (50 MB under Rare, 500 Rare, 1,000 Epic, 5,000 Legendary), clamped to band |
+| Wage | archetype wage × U(0.9, 1.1), clamped to band |
+| Traits & signature | archetype's; procedural candidates (future) derive traits from parts by the §16.5 rule |
+| Personality | archetype's |
+| Training potential | grade S/A/B/C/D (gain ×1.5/1.3/1.15/1.0/0.75) and cap (rarity cap + 3 per star) |
+| Quirk line | 1 of 24 cosmetic lines ("Hums the city anthem while chopping", "Afraid of round plates") |
+| Offline impact preview | Δ offline MB/h if hired into the suggested role, computed by the §17 model with expected values (no RNG) |
+
+#### 16.6.3 Recruitment interface
+
+```
+┌─ RECRUITMENT OFFICE ─ Ms. Hirewell ─────────────────── Pool refreshes in 02:41:13 ── [X] ┐
+│ Staff 5/8 ▸ Wages 498 MB/h ▸ Bottleneck: SERVICE              [Reroll: FREE] [ⓘ Odds]    │
+├──────────────┬──────────────┬──────────────┬──────────────┬──────────────────────────────┤
+│ ★ HIREWELL'S │ ■ RARE       │ ▲ UNCOMMON   │ ● COMMON     │  ┌ CANDIDATE DETAIL ───────┐  │
+│   PICK       │              │              │              │  │ [ rotating 3D morph ]   │  │
+│ [3D bust]    │ [3D bust]    │ [3D bust]    │ [3D bust]    │  │ "Chet Speedwell"        │  │
+│ Chet         │ Rocco        │ Skates       │ Sloane       │  │ ■ Rare · Waiter         │  │
+│ Waiter       │ Security     │ Waiter       │ Dishwasher   │  │ Svc ███████░ 68 ...     │  │
+│ 12,000 MB    │ 12,500 MB    │ 2,300 MB     │ 200 MB       │  │ Speedster · Zoomies     │  │
+│ 165 MB/h     │ 170 MB/h     │ 55 MB/h      │ 10 MB/h      │  │ Show-Off · Potential A  │  │
+│ +812 MB/h ▲  │ +0 MB/h      │ +434 MB/h ▲  │ +288 MB/h ▲  │  │ Offline: +812 MB/h      │  │
+│ [HOLD 5%]    │ [HOLD 5%]    │ [HOLD 5%]    │ [HOLD 5%]    │  │ [ HIRE AS: Waiter ▾ ]   │  │
+└──────────────┴──────────────┴──────────────┴──────────────┴──└─────────────────────────┘──┘
+```
+
+Component hierarchy: `RecruitScreen` → `HeaderBar` (staff count / cap, wages per hour, bottleneck chip, refresh
+timer, `RerollButton` showing price, `OddsButton`) → `CandidateRow` (`CandidateCard` × poolSize: bust viewport, rarity
+badge with shape, name, role icon, hire cost, wage, offline-impact delta with ▲/▼ arrow, `HoldButton`) →
+`CandidateDetail` (ViewportFrame morph preview with idle work animation, stat bars with potential ghost bar, trait
+chips with tooltips, signature ability, personality, quirk, `RoleDropdown`, `HireButton`, `ReplaceToggle` when at cap).
+Input: mouse/touch tap cards; controller D-pad moves focus, A selects, X rerolls, Y holds, B closes; mobile cards
+scroll horizontally with 88 px minimum touch targets. Hire buttons are disabled (with reason text) when funds, cap or
+role unlock fail — the server still re-validates.
+
+#### 16.6.4 Hiring workflow
+
+```mermaid
+%% diagram: hiring-sequence
+sequenceDiagram
+    participant P as Player client
+    participant R as Recruit remotes
+    participant E as EmployeeService
+    participant $ as EconomyService
+    participant D as PlayerDataService
+    P->>R: Recruit.GetPool()
+    R->>E: BuildPool(UserId, windowIndex, rerollIndex)
+    E-->>P: candidates + offline previews
+    P->>R: Recruit.Hire(candidateId, role, replaceUid?)
+    R->>E: validate (window, slot, cap, unlock, proximity, rate)
+    E->>$: TrySpend(player, hireCost, "hire", txnId)
+    $-->>E: ok / insufficient
+    E->>D: add employee record, mark slot hired
+    E-->>P: HireResult + new roster
+    E->>E: spawn SPCV proxy at the door if owner is inside
+```
+
+Server validation for `Recruit.Hire` (any failure returns a reason code and changes nothing):
+
+1. Rate limit 1 hire request per 2 s per player; profile loaded and not in Safe Mode (E6).
+2. `candidateId` = `windowIndex:slot` belongs to the *current* window (or the held candidate) and the slot is not yet
+   hired; stats/costs are regenerated server-side from the seed — the client never sends a price.
+3. Player is within 12 studs of Ms. Hirewell's ProximityPrompt, or uses the Hotline at `TIER_06`+ (fee applied).
+4. Not In Combat and no full-screen menu restriction (canon E2).
+5. `#employees < EmployeeCap[tier]` (canon §C6), unless `replaceUid` is given (that employee is fired first, §16.7.7,
+   atomically in the same transaction).
+6. The requested role is unlocked at the current tier; Manager/Assistant uniqueness respected.
+7. `EconomyService:TrySpend` succeeds with idempotency key `hire:<UserId>:<windowIndex>:<slot>` (a retried request
+   cannot double-charge).
+8. The employee record is written to the profile and the profile is saved immediately if the cost is ≥ 10,000 MB
+   (canon autosave rule) — otherwise at the next autosave.
+
+The first hire is scripted by `QST_TUT_012` "Hire Help": Ms. Hirewell gifts Ollie (`EMP_001`, cost 0) and the
+screen shows the **Offline Forecast** ("If you log off now, Ollie earns about 270 MB/h for up to 2 h").
+
+### 16.7 Employee Management
+
+#### 16.7.1 Roster screen (Employee menu, HUD quick-access, usable anywhere)
+
+```
+┌─ MY STAFF ── 8/8 ── Wages 498 MB/h ── Offline cap 8 h (Mister Mustache ■) ── Forecast 2,180 MB/h ─ [X] ┐
+│ [All][Kitchen][Floor][Support]    Sort: Role ▾      [Night Menu] [Auto-buy budget] [Wage priority]    │
+├────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ● Sloane  Dish   ▮▮▮▮▮▮▮▮▮▮ E 100%  ☺ 90  KPI B  10 MB/h  Always   "washed 486 plates"     [ ▸ ]    │
+│ ▲ Octavia Chef   ▮▮▮▮▮▮▮▮░░ E 90%   ☺ 80  KPI A  50 MB/h  Always   GRILL LINE  ⏳ —        [ ▸ ]    │
+│ ■ Chet    Waiter ▮▮▮▮▮▮▮░░░ E 88%   ☺ 80  KPI S  165 MB/h Always   Zone A       ★☆☆       [ ▸ ]    │
+├────────────────────────────────── DETAIL: Octavia ──────────────────────────────────────────────────┤
+│ [3D morph]  Role [Chef ▾]  Station [Grill line ▾]  Shift [Always ▾]  Cook 58/70 ▮▮▮▮▮▮▮░ Acc 52/70 …  │
+│ Traits: Multi-Tasker · Tentacle Tornado     Personality: Overachiever   Potential A   Stars ★☆☆     │
+│ Last 24 h: 412 dishes · avg Q 0.81 · 3 burns · KPI 84 (A) · value 3.1× wage                           │
+│ [Train ▸] [Raise +10%] [Promote ★] [Praise] [Snack Bonus] [Replace] [Fire]                            │
+└────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+Hierarchy: `StaffScreen` → `StaffHeader` (count/cap, wages/h, offline cap with the manager's rarity icon, Offline
+Forecast MB/h) → `FilterTabs` + `SettingsButtons` (Night Menu, Auto-buy budget, Wage priority) → `RosterList`
+(`EmployeeRow`: rarity icon, name, role icon, Energy bar, Morale face + number, KPI grade letter, wage, shift chip,
+station/zone, training timer, stars) → `EmployeeDetail` (viewport, assignment dropdowns, stat bars with potential cap
+marker, traits, KPIs, action buttons). Every action button shows its MB price; destructive actions (Fire, Replace)
+open a confirm dialog. Controller: LB/RB switch tabs, D-pad rows, A open detail, X Praise, Y Train.
+
+#### 16.7.2 Assign roles and change workstations
+
+- **Role**: any unlocked role; off-native roles show "Unfamiliar ×0.85" until cross-trained. Changing role is free,
+  takes effect after the current task, and has a 60 s cooldown per employee.
+- **Workstation / zone** (ZoneBonus ×1.3 in §16.3.1): Chef → station group (Grill line, Fry line, Bake line,
+  Drinks & Desserts, Any); Prep → board/counter; Waiter/Cleaner → dining zone A/B/C or Any (zones auto-split by
+  table count); Security → Door / Dining / Kitchen post; Repair → Kitchen-first / Dining-first priority.
+  Idle employees still help outside their zone after 5 s without a zone task.
+
+#### 16.7.3 Shifts and rest
+
+| Shift mode | Online | Offline (§17) | Wage | Energy |
+|---|---|---|---|---|
+| Always (default) | works | works | paid both | drains online and offline |
+| Online Only | works | rests | online only | recovers +10 %/h offline |
+| Offline Only | rests at home | works | offline only | recovers +10 %/h while you play |
+| Off Duty ("vacation") | — | — | none | +10 %/h; Morale +2/h up to baseline |
+
+Breaks are automatic (§16.7.10). The restaurant always keeps the last Chef working when breaks overlap, unless his
+Energy is < 10 %.
+
+#### 16.7.4 Training
+
+Courses run in the city — **Cooking Academy** (`BLD_06`): Cooking, Accuracy; **Training Gym** (`BLD_05`): Service,
+Combat; **Repair Workshop** (`BLD_07`): Repair, Reliability — and are bought from the roster (no commute). The trainee
+leaves for the course in real time (it continues while you are offline), does not work and is not paid during it,
+but still counts toward the employee cap.
+
+| Rule | Formula [TUNABLE] | Example |
+|---|---|---|
+| Gain | `round(4 × GradeMult)` points (D 3, C 4, B 5, A 5, S 6; Overachiever +1), never above the effective cap | Ollie (B): +5 Cooking |
+| Effective cap | `min(100, RarityCap + 3 × stars)` (55 / 70 / 82 / 92 / 100) | Ollie with 2 stars: 61 |
+| Cost | `0.04 × ArchetypeHire × 1.08^(stat − bandMin)` MB (`EMP_001` uses 400 as its hire basis) | Ollie Cooking 30: 51 MB · Captain Calamari Cook 96: ≈ 77,000 MB |
+| Duration | `min(240, 20 + 3 × (stat − bandMin))` minutes | Ollie: 65 min · Captain: 83 min |
+| Concurrent trainees | 1 (`TIER_01`–`TIER_03`), 2 (`TIER_04`–`TIER_07`), 3 (`TIER_08`+) | — |
+| Cross-Training | `0.10 × ArchetypeHire` MB, 60 min: removes Unfamiliar for one chosen role | Octavia → Prep: 210 MB |
+| Completion | Morale +5; report line "Graduated with honors (and a tiny hat)" | — |
+
+Training is the long-term sink that keeps old favorites relevant: a trained Uncommon can match an untrained Rare at a
+fraction of the wage (Example C trains Octavia to Cook 58 / Accuracy 52).
+
+#### 16.7.5 Salary raises
+
+`Raise` sets wage × 1.10 (max 3 raises, +33 %): Morale +10 now and Morale baseline +5 per raise. An employee whose
+Morale stays < 40 for 24 h of shift time *asks* for a raise (notification); ignoring it for 72 h lowers the baseline
+by 5 until a raise is given. Raised wages may exceed the hire band (bands apply at hire, §C4.8).
+
+#### 16.7.6 Promotions ("seniority stars")
+
+| Star | Requires | Fee | Effects |
+|---|---|---|---|
+| ★ Senior | 10 h worked (online + offline) and last review ≥ B | 25 % × ArchetypeHire (min 100 MB) | potential cap +3, primary stat +2, Morale baseline +5, wage +5 % |
+| ★★ Veteran | 40 h worked, review ≥ B | 50 % × ArchetypeHire | same again |
+| ★★★ Legend of the Kitchen | 120 h worked, review ≥ A | 75 % × ArchetypeHire | same again + signature upgrade (e.g. Multi-Tasker ×1.30, Grill Master burn 4 % → 2 %) and a celebration (`ANM_064`) |
+
+#### 16.7.7 Replace or fire
+
+- **Fire**: confirm dialog → the employee waves goodbye with a cardboard box (client-only animation) and is removed.
+  Within 15 min of hiring ("probation") the player gets 50 % of the hire cost back; afterwards the employee receives
+  a severance of 2 h wage. Coworkers lose 3 Morale (8 if the fired employee had ≥ 2 stars or ≥ 7 days of tenure;
+  doubled by Loyal Lump). An employee in training must have the course cancelled first (no refund). The individual
+  can never be re-hired; the archetype can reappear in pools.
+- **Replace**: from the roster, opens the Recruitment pool filtered to that role (at `BLD_04`, or Hotline at
+  `TIER_06`+). Hire + fire happen in one transaction; the newcomer inherits role, station, shift and zone; the
+  coworker Morale hit is halved.
+
+#### 16.7.8 Hiring managers
+
+Managers are hired like anyone else; their **rarity** sets the offline cap (canon §C14.3: none 2 h, Common/Uncommon
+"Basic" 4 h, Rare "Experienced" 8 h, Epic "Elite" 12 h, Legendary 24 h; Assistant +2 h, max 24 h). Online the
+Manager raises team Morale baseline (+5, +10 at Epic+), schedules breaks so two employees of the same role never
+rest together, and adds coordination (`min(0.10, 0.03 + 0.07 × Contribution)`, +2 pp for Loudmouth or `EMP_072`).
+The Assistant Manager covers the Manager's breaks, adds +2–5 pp coordination and −20 % incident losses offline.
+
+#### 16.7.9 Performance reviews
+
+Each employee gets a **KPI score** (0–100) over the rolling 24 h of shift time (online and offline), shown as a grade:
+S ≥ 90, A ≥ 75, B ≥ 60, C ≥ 40, D < 40. "Employee of the Day" (best score, ≥ 3 employees) gets Morale +10.
+
+| Role | KPI components (each normalized to its expected value at the employee's tier) |
+|---|---|
+| Chef | 40 % dishes/h · 40 % average Food Quality · 20 % burn-free rate |
+| Prep | 60 % components/h · 40 % clean-cut rate |
+| Waiter | 40 % deliveries/h · 40 % average wait factor W of served customers · 20 % mistake-free orders |
+| Cashier | 50 % transactions/h · 50 % tip uplift |
+| Dishwasher | 60 % plates/h · 40 % minutes without a "No Clean Plates" stall |
+| Cleaner | 50 % messes cleaned · 50 % average cleanliness K |
+| Repair Technician | 60 % durability restored/h · 40 % average time objects stayed Broken |
+| Security Guard | 40 % intercepts · 40 % calm rate · 20 % damage prevented |
+| Manager / Assistant | 50 % team average Morale · 50 % team average KPI |
+| Delivery Worker | 60 % runs/h · 40 % on-time rate |
+| Stocker | 50 % SOLD OUT minutes avoided · 50 % discount saved |
+
+The review panel also shows **value vs wage**: MB attributed to the employee (their share of dishes, deliveries,
+tips, losses avoided, offline marginal net) ÷ wage paid. Review actions: **Praise** (free, once per employee per day,
+Morale +5), **Pep Talk** (free, once per day, whole team +3), **Snack Bonus** (costs 1 h of that wage, Morale +15,
+12 h cooldown).
+
+#### 16.7.10 Morale and energy
+
+```
+Morale baseline B = 60 + 5·raises + 5·stars + personality (Grump −10, Clumsy Sweetheart +10, Eager Beaver +5,
+                    Snack Goblin +5) + Manager aura (+5; +10 Epic/Legendary)                         [clamp 0–100]
+Online: Morale drifts toward B at 4 points/h, plus events:
+   +1 per Delighted customer they served (max +6/h) · −2 hit by thrown food (Grump 0) · −5 Seeing Stars ·
+   −5/h on Unpaid Break · −2/h while Energy < 20 % · +5 training done · +10 raise · +15 promotion ·
+   +5 Praise · +3 Pep Talk · +15 Snack Bonus · −3/−8 coworker fired · +10 Employee of the Day
+Offline (§17): −1/h (Zen Noodle −0.5/h); morale events from incidents (§36.9)
+Morale < 25 = "Sulking": 20 % chance per online hour of a 3-min sulk break (raincloud VFX)
+
+Energy (online) drain = 10 %/h × RoleDrain × personality × traits
+   RoleDrain: Chef 1.2 · Prep 1.1 · Waiter 1.15 · Dish 1.2 · Cleaner 1.0 · Repair 1.0 · Security 0.8 · Cashier 0.8 ·
+              Manager 0.6 · Delivery 1.2 · Stocker 0.9 · Assistant 0.6; Regenerator ×0.75; Unhurried ×0.5
+Break: at Energy < 25 % if another employee of the role is working or the player is present (forced at < 10 %):
+   4 min, +6 %/min (×1.5 if the restaurant owns a staff-room upgrade from §15), returns ≥ 49 %
+Off Duty / Online Only while offline / closed hours beyond the offline cap: +10 %/h
+Offline: −8 %/h, −5 %/h with a Manager; never below 3 %/h after bonuses (§17.4)
+```
+
+#### 16.7.11 Online wages (canon E8)
+
+Every **60 s** while the restaurant is open (live or Away Mode) `EmployeeService` pays `Σ wage/60` for every employee
+on shift (working or on a normal break; not Off Duty, not training, not on Unpaid Break) through
+`EconomyService:TrySpend(…, "wages")`. If the balance cannot cover the whole tick, employees are paid **in wage
+priority order** (default Manager → Chefs → Waiters → everyone else; player-reorderable) and the unpaid ones go on
+**Unpaid Break**: they stop working, show a "💤 waiting for payday" bubble and lose 5 Morale/h; they resume
+automatically on the first tick that can pay them. The balance never goes negative. Offline wages follow §17 (net is
+floored at 0 and the Manager closes early instead of running a loss).
+
+#### 16.7.12 Equipment, Night Menu and auto-buy budget
+
+- **Equipment upgrades** are bought in §15; for staff they matter through the canon station levels (§C4.9): online
+  station process time is shared with players, and offline `PrepSec_eff = PrepSec × (1 − 0.5 × (1 − levelMult))`
+  (half of a dish's base time is station processing). Lv5 stations make a kitchen ~20 % faster offline.
+- **Night Menu**: an optional subset of known recipes used for offline time (default = the day menu). The screen
+  compares the Forecast for both menus and warns when a dish fails the chef skill gate or lacks special stock. A one-chef
+  kitchen often earns more with fast D2 dishes (§17.9 Example B).
+- **Auto-buy budget**: MB per offline report the Stocker may spend to top up special stock (default 0 = off, slider up
+  to 2 h of the tier's active net). Purchases are paid from the interval's own income, never from the wallet (§17.4).
+
+```mermaid
+%% diagram: employee-management
+flowchart TD
+    A["Recruitment Office BLD_04<br/>pool refresh every 4 h"] -->|"Hire (MB, cap check)"| B["Roster"]
+    A -->|"Reroll / Hold"| A
+    B --> C["Assign role + station + shift"]
+    C --> D{"Owner online?"}
+    D -->|"yes, inside"| E["Live work AI<br/>utility task board"]
+    D -->|"yes, in city"| F["Away Mode<br/>live if staffed, else Out to Lunch"]
+    D -->|"no server"| G["Offline simulation §17"]
+    E --> H["Wage tick every 60 s"]
+    F --> H
+    H -->|"cannot pay"| I["Unpaid Break<br/>Morale -5/h"]
+    I -->|"funds return"| E
+    G --> J["Welcome Back report<br/>KPIs, incidents"]
+    E --> K["Daily performance review<br/>KPI grade S-D"]
+    J --> K
+    K -->|"good grade + hours"| L["Promote: seniority star"]
+    K -->|"potential left"| M["Train at BLD_05 / BLD_06 / BLD_07"]
+    K -->|"low morale"| N["Raise / Praise / Snack Bonus"]
+    K -->|"poor fit"| O["Replace or Fire"]
+    L --> B
+    M --> B
+    N --> B
+    O --> A
+```
 

@@ -1,6 +1,6 @@
 ### 36.14 Animation Library
 
-Owner: A16 Art & Audio. This appendix is the **only place `ANM_` ids are defined**. numbers 001–300 are the
+Owner: A16 Art & Audio. This appendix is the **only place `ANM_` ids are defined**. Numbers 001–300 are the
 general library; `ANM_301`–`ANM_370` are the ability animations, mapped 1:1 to `ABL_001`–`ABL_070` (same last two
 digits, canon §C21). The 52 canon core ids keep their canon names verbatim. Playback rules (priorities, blending,
 gait classes, LOD, employee cycles) are specified in §26; art rules in §25.
@@ -173,9 +173,9 @@ Unlisted numbers in the 001–300 general range are reserved for future content 
 | `ANM_180` | Sweep debris | Repair | R15 · P, E | Yes | 1.0 | Action | Broom sweeps rubble into a neat pile before rebuild. A dust puff on each stroke. | Repair prelude (Broken/Destroyed) |
 | `ANM_181` | Rebuild from rubble | Repair | R15 · P, E | Seg | 2.4 | Action | Arms spread in a "rewind" conductor gesture while the rubble pieces fly back together. | Rebuild job (Destroyed → Pristine) |
 | `ANM_182` | Placement hold | Build | R15 · P | Yes | 1.5 | Action (UB) | Hands frame the hologram furniture like a director while the object follows the cursor. | BuildingService placement mode |
-| `ANM_183` | Construction crew hammer | Build | R15 · X | Yes | 0.8 | Action | Tiny client-only crew mutants hammer, saw and wave flags on the scaffold. | Tier upgrade cinematic (§25) |
-| `ANM_184` | Ribbon cutting | Build | R15 · P, N | No | 2.0 | Action | Giant scissors snip, the ribbon halves flop, confetti on `Vfx`. | Tier complete; NPC_002 at TIER_04+ |
-| `ANM_185` | Prop – façade unfold | Prop | Prop | No | 1.5 | Action | Tarp yank, then the new façade panels flip in sequence like a pop-up book. | Tier upgrade façade swap |
+| `ANM_183` | Construction crew hammer | Build | R15 · X | Yes | 0.8 | Action | Tiny client-only crew mutants hammer, saw and wave flags on the scaffold. | Mutant Builders sequence (§15, §25.4.7) |
+| `ANM_184` | Ribbon cutting | Build | R15 · P, N | No | 2.0 | Action | Giant scissors snip, the ribbon halves flop, confetti on `Vfx`. | Grand Opening (§15); optional NPC_002 at TIER_04+ |
+| `ANM_185` | Prop – façade unfold | Prop | Prop | No | 1.5 | Action | As the dust clears, the new façade panels snap into place like a pop-up book. | Mutant Builders reveal at 7.0 s (§15) |
 | `ANM_186` | Prop – capsule shake-open | Prop | Prop | No | 2.2 | Action | Morph Capsule wobbles 3× (each shake bigger), pops the lid, rarity beam rises. | Capsule open; `ANM_207` |
 | `ANM_187` | Prop – appliance fire rattle | Prop | Prop | Yes | 0.4 | Action | Appliance hops and rattles with a cartoon flame on top (flame on the appliance only). | ON_FIRE; Broken appliance |
 

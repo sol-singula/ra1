@@ -37,7 +37,8 @@ mechanic that creates a funny situation on its own, without a script.
 | Thresholds D/H/M/U | personality bands for Delighted / Happy / Meh / Unhappy (below U = Furious). They drive the reaction emote, the evaluation anger delta and Regular loyalty. **Pay, tips and reputation always use raw S** (§C11.4). | §10.2, §10.6 |
 | AngerP | base `AngerProbability` of the escalation roll at levels 3/4/5 | §10.7 |
 | Sens | sensitivity: multiplies every anger **gain** (never decay) | §10.6 |
-| Style / Huff | NPC combat style (§C11.6) and Huff Points (40–300) | §10.7, §11 |
+| Style / Huff | NPC combat style (§C11.6) and Huff Points (40–300, inside the §11.5.2 style bands) | §10.7, §11 |
+| DEF / Dmg× | `PersonalityDEF` (0–40, added to the tier DEF term) and `PersonalityDamageMult` (multiplies NPC damage) | §11.5.1 |
 | Items / γ | item range for §8.2.6; price bias γ for menu weighting (§8.8) | §8 |
 | Tip× | `PersonalityTipMult` in §C11.4 | §10.5 |
 | Timing | WalkMult · MenuMult · InspectMult · EatMult (§9.4) | §8 |
@@ -45,14 +46,14 @@ mechanic that creates a funny situation on its own, without a script.
 
 #### 9.2.3 Combat ability selection
 
-Per §C11.6 a customer may use the **active ability of one of its own visible parts**, in its NPC-tuned variant
-from §36.6 (A6 sets the numbers). Selection rule: the customer uses the **first** entry of its §9.4 ability list
-whose source part is present on its body; if none is present it fights with its style's basic attacks only
-(§11). Abilities are used only at anger level ≥ 4 (level 3 is throws only), except `TRICKSTER` and `INSTIGATOR`
-debuff/aura abilities, which may be used from level 3. `PACIFIST` customers use only non-damaging escape actives
-(`ABL_022`, `ABL_046`, `ABL_048`, `ABL_055`, `ABL_059`, `ABL_063`) and only while `FLEEING`. PER_016 minis deal
-× 0.5 of the NPC values. The AI considers an ability at most once per ActionTick (§10.7) and never while its §36.6
-NPC cooldown is running.
+Per §C11.6 a customer may use the **active ability of one of its own visible parts**. Selection and use follow
+§11.8.3 (owned by A6): each customer has at most one **Signature Move**, chosen among its visible parts whose §36.6
+"NPC use" entry lists the customer's style; it is used only at anger level 5 or in a scuffle, never by `PACIFIST`
+customers, and utilities are never used (the only exception is the §36.6 flee entry of `ABL_063`). NPC numbers are
+the §36.6 "NPC use" values. **A5 extension:** when a personality's signature part grants an eligible ability, that
+ability is chosen before §11.8.3's slot priority, so recurring personalities keep a recognisable move. The §9.4
+"Abilities" lists show, in priority order, the eligible options that personality's signature and commonly rolled
+parts can provide; a customer whose body carries none of them fights with its style's basic attacks only (§11.8.2).
 
 #### 9.2.4 Spawn bands
 
@@ -118,12 +119,12 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Disliked foods:** `RCP_PIZ_004` Pineapple Pizza (Controversial), `RCP_BRG_013` Upside-Down Burger.
 - **Satisfaction thresholds:** 95 / 80 / 60 / 40; P_mult 0.85, P_offset −5.
 - **Anger probability:** 0.45; sensitivity 1.3.
-- **Combat behavior:** `INSTIGATOR`, Huff 140. Rile-up aura starts at level 2 (one level early). Abilities: `ABL_023` Bat Screech (`MUT_089`), `ABL_053` Tail Spin (`MUT_227`), `ABL_029` Peacock Dazzle (`MUT_219`). Her thrown food falls 30 % short (tiny arms).
+- **Combat behavior:** `INSTIGATOR`, Huff 100, DEF 10, Dmg ×0.8. She may Yell (§10.6) from level 2, one level early. Abilities: `ABL_023` Bat Screech (`MUT_089`), `ABL_029` Peacock Dazzle (`MUT_219`), `ABL_047` Mind Buzz (`MUT_033`). Her thrown food falls 30 % short (tiny arms).
 - **Spending range:** 1–2 items, γ 0 → ref. spend 10–30 MB. **Tip behavior:** ×0.6.
 - **Unique animations:** "Manager Summon" megaphone-hands stomp (variant of `ANM_050`); clipboard tap with tiny arms; holding the plate up to the light, appalled.
 - **Dialogue:** Ordering — "One cheeseburger. The cheese must be room temperature. Not warm. Not cool. *Room.*" · Delighted — "Hmph. Acceptable. I'll only write you a *four*-paragraph review." · Furious — "I want to speak to the MANAGER! ...You ARE the manager? Then your manager's MANAGER!"
 - **Special interactions:** *Manager!* — at level 2 the HUD pings "A customer demands the manager!"; if a player lands `ABL_006` on her within 20 s the calm amount is doubled, otherwise +10 anger. *Take it back!* — any item with A < 1 or Q < 0.80 is handed back; a remake served within 60 s replaces that item's S. 50 % extra modification chance (§8.8).
-- **Tutorial variant (QST_TUT_006):** fixed seed and body, name "Mrs. Rexalot". Complains "This burger is TOO ROUND!" whatever its quality; anger is scripted 0 → 45 over 6 s; her thrown burger always misses the player and cracks a table (sets up QST_TUT_008); the level-5 roll is forced (exempt from new-player protection). Huff 40, damage ×0.25, attacks telegraphed every 2.5 s, and she cannot reduce the player below 25 % HP (QST_TUT_007 teaches block, dodge, swipe, Calm Down!). Huff 0 or Calm Down! → `APOLOGIZING`, Apology Payment 40 % of the burger, leaves. If the player idles 60 s she sits down and §32 re-prompts.
+- **Tutorial variant (QST_TUT_006 → QST_TUT_007):** scripted by §32 and bound to its values (§32.3): fixed tutorial look (signature parts plus cosmetic sunglasses and handbag props), orders `RCP_BRG_002`, escalation rolls bypassed and anger driven through the scripted beats 32 → 48 → 63 → 78 (complain → soggy-pickle throw → table flip to Broken → fight). Fight values: Huff 48, 4 damage per hit, 1.0 s wind-up (1.5 s after two missed blocks), ≥ 3.0 s between attacks; the player has Plot Armor (≥ 1 HP). Calm Down! is refused at level 5 ("She's past talking"); at 0 Huff she goes Dizzy, apologizes and pays the Apology Payment (40 % of 10 MB = 4 MB). The variant is exempt from new-player protection (§10.11) and cannot storm out. Normal §9 values apply to every later Karenosaurus.
 - **Signature look:** `MUT_032` T-Rex Head, `MUT_161` Tiny T-Rex Arm ×2. **Tier band:** `TIER_01`+ (A 3 · B–E 6).
 
 #### PER_002 — The Hungry Hippo-Spider
@@ -133,11 +134,11 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Disliked foods:** `RCP_SAL_004` Salad With No Lettuce, `RCP_BRG_014` Invisible Burger ("Where's the FOOD?").
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset +5.
 - **Anger probability:** 0.30; sensitivity 0.8.
-- **Combat behavior:** `TANK`, Huff 260. Abilities: `ABL_035` Vacuum Suck (`MUT_066`, signature), `ABL_020` Web Shot (`MUT_028`), `ABL_021` Ground Pound (`MUT_148`).
+- **Combat behavior:** `TANK`, Huff 260, DEF 30, Dmg ×1.0. Abilities: `ABL_021` Ground Pound (`MUT_148`), `ABL_010` Bear Slam (`MUT_140`), `ABL_025` Puff Up (`MUT_129`). (Its signature Vacuum Mouth is not `TANK`-eligible for `ABL_035`; the snack trick below is a personality hook.)
 - **Spending range:** 3–5 items, γ +0.5, plus "Seconds!" → ref. spend 60–120 MB. **Tip behavior:** ×0.9.
 - **Unique animations:** four-handed eating blur (`ANM_043` at 2× speed); belly-pat; spider-leg tap-dance of joy.
 - **Dialogue:** Ordering — "One of everything. Then the same again, but louder." · Delighted — "Eight legs, one stomach, ZERO regrets!" · Furious — "You call that a PORTION? I've had bigger crumbs!"
-- **Special interactions:** *Seconds!* — after the last item, 30 % chance to order 1–2 more items as a new ticket with fresh patience. *Free snack* — while hostile, thrown food that passes within 4 studs is vacuumed and eaten: no hit, anger −5 instead of +25.
+- **Special interactions:** *Seconds!* — after the last item, 30 % chance to order 1–2 more items as a new ticket with fresh patience. *Free snack* (personality hook) — thrown food aimed at it, or passing within 2 studs, is slurped out of the air and eaten: no hit, anger −5 instead of +25 (the projectile is consumed and cannot continue).
 - **Signature look:** `MUT_066` Vacuum Mouth, `MUT_185` Spider Leg Cluster ×2, `MUT_120` Cow Body. **Tier band:** `TIER_02`+ (A 4 · B–E 5).
 
 #### PER_003 — The Polite Demon
@@ -147,11 +148,11 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Disliked foods:** `RCP_DES_012` Cloud Cotton Candy, `RCP_DRK_014` Cloud Juice ("A little too heavenly for me, thank you").
 - **Satisfaction thresholds:** 88 / 65 / 45 / 25; P_mult 1.05, P_offset +5.
 - **Anger probability:** 0.12; **provoked** → 0.90 and sensitivity 1.8 for the rest of the visit.
-- **Combat behavior:** `BRAWLER`, Huff 180. Abilities: `ABL_043` Lava Slam (`MUT_163`, signature), `ABL_052` Horn Toss (`MUT_100`), `ABL_031` Rocket Punch (`MUT_154`).
+- **Combat behavior:** `BRAWLER`, Huff 180, DEF 15, Dmg ×1.2. Abilities: `ABL_043` Lava Slam (`MUT_163`, signature), `ABL_031` Rocket Punch (`MUT_154`), `ABL_042` Thunder Clap (`MUT_105`).
 - **Spending range:** 1–2 items → ref. spend 14–30 MB. **Tip behavior:** ×1.3 (always rounds up).
 - **Unique animations:** deep courtly bow on arrival; napkin tucked into collar; at level 4 he slowly rolls up the sleeve over the Lava Fist (the "aggressive form" reveal, horns glow).
 - **Dialogue:** Ordering — "Good evening! If it's no trouble at all, might I have the Volcano Burger? Only if convenient!" · Delighted — "Exquisite. My compliments to the chef, the sous-chef, and the very kind grill." · Furious — "I asked SO nicely. Excuse me while I roll up my sleeve. I do apologise in advance."
-- **Special interactions:** *Provoked* flag — set when hit by thrown food, hit by any player attack, or served a wrong dish twice. Unprovoked, he is the calmest customer in the game; provoked, he skips sulking. *Gentleman's apology* — when calmed he pays 10 % extra on top of the Apology Payment ("For the table, with my sincerest regrets").
+- **Special interactions:** *Provoked* flag — set when hit by thrown food, hit by any player attack, or served a wrong dish twice. Unprovoked, he is the calmest customer in the game; provoked, he skips sulking. *Gentleman's apology* — when defeated he pays 10 % extra on top of the Apology Payment ("For the table, with my sincerest regrets"). **Tutorial:** the step-5 customer and the soda-splashed bystander of QST_TUT_007, calmed with Calm Down! (§32).
 - **Signature look:** `MUT_108` Demon Horns, `MUT_047` Mustache of Destiny, `MUT_163` Lava Fist Arm (right arm only). **Tier band:** `TIER_01`+ (A–C 6 · D–E 5).
 
 #### PER_004 — The Food Critic
@@ -161,11 +162,11 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Disliked foods:** `RCP_FRI_001` French Fries, `RCP_DRK_001` Fizzy Soda ("Pedestrian").
 - **Satisfaction thresholds:** 95 / 80 / 60 / 40; P_mult 0.90, P_offset 0.
 - **Anger probability:** 0.05; sensitivity 0.6.
-- **Combat behavior:** `PACIFIST`, Huff 60. Never attacks; when upset she writes furiously (sulk) or leaves.
+- **Combat behavior:** `PACIFIST`, Huff 60, DEF 0. Never attacks; when upset she writes furiously (sulk) or leaves.
 - **Spending range:** exactly 2 items (main + drink or dessert) → ref. spend 25–40 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** notebook scribble; pinky-raised tasting; dramatic pen-click verdict.
 - **Dialogue:** Ordering — "Bring me your most ambitious dish. And a pen that hasn't been chewed." · Delighted — "Five stars. Six, if I were allowed. I am not allowed." · Furious — "This dish has the emotional depth of a puddle. A shallow one."
-- **Special interactions:** *The Review.* On leaving she scores 5 categories, each 0–5 ★ in half steps: Taste = 5·Q, Technique = 5·C, Accuracy = 5·A, Speed = 5·W (price-weighted over items), Ambience = 5·(K + M)/200. If the average ≥ 4.5 **and** S ≥ 90 she awards a **Critic's Star**: +0.05 ★ reputation applied directly, a newspaper review card, and +1 to the profile's `criticStars` counter (read by §20's critic quest line). Average < 2.0 → −0.05 ★. Weight ×5 during `EVT_008`. Worked example in §10.4.
+- **Special interactions:** *The Review.* On leaving she scores 5 categories, each 0–5 ★ in half steps: Taste = 5·Q, Technique = 5·C, Accuracy = 5·A, Speed = 5·W (price-weighted over items), Ambience = 5·(K + M)/200. If the average ≥ 4.5 **and** S ≥ 90 she awards a **Critic's Star**: +0.05 ★ reputation applied directly, a newspaper review card, and +1 to the profile's `criticStars` counter (read by §20's critic quest line). Average < 2.0 → −0.05 ★. During `EVT_008` she visits up to twice per restaurant on the §36.11 schedule and her verdict is also converted to Forks (`BLD_14` formula). Worked example in §10.4.
 - **Signature look:** `MUT_016` Owl Head, `MUT_110` Giraffe Neck (looking down her nose). **Tier band:** `TIER_03`+ (B–C 2 · D–E 3).
 
 #### PER_005 — The Impatient Goblin
@@ -175,7 +176,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Disliked foods:** `RCP_SOP_010` Bottomless Soup, `RCP_PST_004` Lasagna Tower, `RCP_PIZ_013` Pizza Inside Another Pizza.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0.
 - **Anger probability:** 0.40; sensitivity 1.2.
-- **Combat behavior:** `TRICKSTER`, Huff 70: steals a plate from the nearest table and sprints; returns 8 s later. Abilities: `ABL_016` Tongue Yank (`MUT_061`), `ABL_048` Slime Trail (`MUT_256`), `ABL_024` Skunk Cloud (`MUT_220`).
+- **Combat behavior:** `TRICKSTER`, Huff 70, DEF 5, Dmg ×0.8: plate theft and hit-and-run per §11.8.2. Abilities: `ABL_016` Tongue Yank (`MUT_061`), `ABL_048` Slime Trail (`MUT_256`), `ABL_024` Skunk Cloud (`MUT_220`).
 - **Spending range:** 1 item → ref. spend 8–16 MB. **Tip behavior:** ×0.8, but ×2 if the item lands within 25 % of patience ("FAST! GOOD!").
 - **Unique animations:** constant `ANM_046` foot tap from the moment he sits; wrist-tapping (no watch); vibrating with impatience.
 - **Dialogue:** Ordering — "Burger. Fast. Faster than that. Why are you still listening? GO." · Delighted — "FAST! GOOD! MORE FAST NEXT TIME!" · Furious — "I've been waiting since I was BORN!"
@@ -189,7 +190,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Disliked foods:** `RCP_DES_009` Exploding Cupcake, `RCP_BRG_012` Exploding Burger ("Too... loud...").
 - **Satisfaction thresholds:** 85 / 65 / 45 / 25; P_mult 1.05, P_offset +5.
 - **Anger probability:** 0.15; sensitivity 0.7.
-- **Combat behavior:** `CHARGER`, Huff 120. Rocket boosters ignite only at level ≥ 4: a long, slow wind-up (1.5 s), then a very fast straight rush. Abilities: `ABL_013` Rhino Charge (`MUT_099`), `ABL_027` Armadillo Roll (`MUT_128`), `ABL_044` Gust Kick (`MUT_197`).
+- **Combat behavior:** `CHARGER`, Huff 120, DEF 20, Dmg ×1.1. His rush (§11.8.2) gets a cosmetic rocket ignition; he only escalates past level 4 after a nap is interrupted. Abilities: `ABL_013` Rhino Charge (`MUT_099`), `ABL_027` Armadillo Roll (`MUT_128`), `ABL_044` Gust Kick (`MUT_197`).
 - **Spending range:** 1–2 items → ref. spend 12–28 MB. **Tip behavior:** ×1.1.
 - **Unique animations:** slow-motion menu page turn; snore bubble with drool-free "Zzz"; rocket exhaust puffs when startled.
 - **Dialogue:** Ordering — "I'll have the... (yaaawn)... the... what was the question?" · Delighted — "Mmm... so good... I'm gonna blast off... in a minute... or five..." · Furious — "You woke me up for THIS? Initiating... ROCKET MODE!"
@@ -203,7 +204,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Disliked foods:** `RCP_SAL_001` Garden Salad, `RCP_PST_001` Butter Noodles ("Boooring").
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0.
 - **Anger probability:** 0.50; sensitivity 1.2.
-- **Combat behavior:** `TRICKSTER`, Huff 80. Abilities: `ABL_023` Bat Screech (`MUT_089`, signature), `ABL_056` Stink Bomb (`MUT_251`), `ABL_048` Slime Trail (`MUT_256`).
+- **Combat behavior:** `TRICKSTER`, Huff 80, DEF 5, Dmg ×0.9. Abilities: `ABL_056` Stink Bomb (`MUT_251`), `ABL_048` Slime Trail (`MUT_256`), `ABL_057` Firefly Flash (`MUT_083`).
 - **Spending range:** 1–2 items → ref. spend 10–30 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** rubbing hands with a cackle; tiptoe sneak; innocent whistle after every prank.
 - **Dialogue:** Ordering — "Something that explodes, please. Or something that WILL explode if I shake it." · Delighted — "Perfect! Now watch this—" · Furious — "Oh, you've done it now. I'm going to be SO MUCH TROUBLE."
@@ -217,7 +218,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Disliked foods:** `RCP_SAN_003` Hot Dog Classic, `RCP_PST_001` Butter Noodles ("Peasant noodles").
 - **Satisfaction thresholds:** 96 / 85 / 65 / 45; P_mult 0.90, P_offset 0.
 - **Anger probability:** 0.20; sensitivity 1.0.
-- **Combat behavior:** `PACIFIST`, Huff 90. Storms out loudly instead ("I'll buy this restaurant and close it!").
+- **Combat behavior:** `PACIFIST`, Huff 80, DEF 10. Storms out loudly instead ("I'll buy this restaurant and close it!").
 - **Spending range:** 1–3 items at top prices → ref. spend 30–70 MB. **Tip behavior:** ×2.5; Jackpot Tip chance doubled.
 - **Unique animations:** monocle polish; tosses a coin to the server (cosmetic sparkle); fainting-couch swoon when displeased.
 - **Dialogue:** Ordering — "Your most expensive item. Twice. Gold-plated, if you own a plater." · Delighted — "Splendid! Keep the change. Keep ALL the change." · Furious — "Disgraceful! I shall buy this restaurant just to close it! ...It's not for sale? DISGRACEFUL!"
@@ -231,12 +232,12 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Disliked foods:** `RCP_SOP_007` Swamp Stew ("Not aesthetic"), `RCP_BRG_014` Invisible Burger ("Can't post what I can't see").
 - **Satisfaction thresholds:** 92 / 75 / 55 / 35; P_mult 1.0, P_offset 0 (+3 if the table's local décor ≥ 60).
 - **Anger probability:** 0.30; sensitivity 1.1.
-- **Combat behavior:** `INSTIGATOR`, Huff 75: livestreams the tantrum ("Chat, should I flip this table?"), a rile-up aura with 20-stud radius. Abilities: `ABL_057` Firefly Flash (`MUT_083`, signature: the camera flash), `ABL_029` Peacock Dazzle (`MUT_219`), `ABL_023` Bat Screech (`MUT_089`).
+- **Combat behavior:** `INSTIGATOR`, Huff 75, DEF 5, Dmg ×0.7: livestreams the tantrum ("Chat, should I flip this table?") — her Yell (§10.6) reaches 20 studs instead of 12. Abilities: `ABL_029` Peacock Dazzle (`MUT_219`, signature: the ring-light dazzle), `ABL_023` Bat Screech (`MUT_089`), `ABL_047` Mind Buzz (`MUT_033`).
 - **Spending range:** 1–2 items → ref. spend 12–30 MB. **Tip behavior:** ×1.2.
 - **Unique animations:** selfie-angle hold; ring-light spin; dramatic "unfollow" swipe.
 - **Dialogue:** Ordering — "Hi chat! I'm getting the Rainbow Burger! Make it, like, extra photogenic?" · Delighted — "OMG, everybody come here RIGHT NOW!" · Furious — "Chat, zero stars. Negative stars. UNFOLLOWED."
 - **Special interactions:** *The Post.* On leaving: S ≥ 90 → +0.1 ★ applied directly and 2–4 **Follower** customers arrive within 60 s (bonus arrivals outside base demand, random personalities, each 30 % likely to copy her order). S < 50 → −0.1 ★ (−0.05 ★ while the owner is below level 5) and one queued customer leaves. Max one Post effect per restaurant per 10 min. Posts appear as a "Morph Feed" toast.
-- **Signature look:** `MUT_021` TV Head, `MUT_083` Firefly Glow Eyes, `MUT_272` Sparkle Aura. **Tier band:** `TIER_02`+ (A 2 · B–C 3 · D–E 4).
+- **Signature look:** `MUT_021` TV Head, `MUT_219` Peacock Tail (her ring light), `MUT_272` Sparkle Aura. **Tier band:** `TIER_02`+ (A 2 · B–C 3 · D–E 4).
 
 #### PER_010 — The Bodybuilder Pigeon
 *Extremely strong. Extremely easily offended. Never skips arm day; always skips leg day.*
@@ -245,7 +246,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Disliked foods:** `RCP_SAL_004` Salad With No Lettuce, `RCP_DES_012` Cloud Cotton Candy.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0.
 - **Anger probability:** 0.55; sensitivity 1.6.
-- **Combat behavior:** `BRAWLER`, Huff 220. Abilities: `ABL_010` Bear Slam (`MUT_140`), `ABL_021` Ground Pound (`MUT_148`), `ABL_031` Rocket Punch (`MUT_154`), `ABL_022` Flap Hover (`MUT_231`).
+- **Combat behavior:** `BRAWLER`, Huff 180, DEF 30, Dmg ×1.25 (the hardest-hitting customer). Abilities: `ABL_010` Bear Slam (`MUT_140`), `ABL_031` Rocket Punch (`MUT_154`), `ABL_050` Beak Peck Combo (`MUT_063`), `ABL_017` Claw Grab & Toss (`MUT_144`).
 - **Spending range:** 1–3 items → ref. spend 15–45 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** double-bicep flex on entry; head-bob strut; offended chest-puff (feathers fluff).
 - **Dialogue:** Ordering — "Protein. Double protein. And a protein on the side, bro." · Delighted — "That burger just gave ME a pump. COO-COO, LET'S GO!" · Furious — "Did you just call my legs skinny?! Nobody did? WELL, I HEARD IT!"
@@ -259,7 +260,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Disliked foods:** `RCP_BRG_014` Invisible Burger ("That's what THEY want"), `RCP_PIZ_014` Square Circle Pizza ("geometrically suspicious").
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 0.95, P_offset 0.
 - **Anger probability:** 0.30; sensitivity 1.0.
-- **Combat behavior:** `TRICKSTER`, Huff 70: flutters between ceiling lights, debuffs, never stays in melee. Abilities: `ABL_047` Mind Buzz (`MUT_033`), `ABL_040` Spore Puff (`MUT_248`), `ABL_057` Firefly Flash (`MUT_083`).
+- **Combat behavior:** `TRICKSTER`, Huff 70, DEF 5, Dmg ×0.8: flutters between ceiling lights, debuffs, never stays in melee. Abilities: `ABL_057` Firefly Flash (`MUT_083`), `ABL_040` Spore Puff (`MUT_248`), `ABL_046` Comet Blink (`MUT_228`).
 - **Spending range:** 1–2 items → ref. spend 10–28 MB. **Tip behavior:** ×0.9.
 - **Unique animations:** red-string corkboard pantomime; circling the nearest lamp; peering at food through antennae.
 - **Dialogue:** Ordering — "I'll have the soup. Not the soup on the menu — the REAL soup." · Delighted — "Delicious... TOO delicious. Who sent you? ...Never mind, another, please." · Furious — "The fries are ROUND on the INSIDE. Wake UP, people!"
@@ -271,11 +272,11 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.1. Timing: walk ×1.1 · menu ×1.5 · inspect ×1.0 · eat ×1.0.
 - **Preferred foods:** mild; `RCP_PST_001` Butter Noodles, `RCP_SAN_001` Grilled Cheese, `RCP_DRK_002` Lemonade, `RCP_DES_002` Vanilla Ice Cream. **Disliked:** `RCP_BRG_012` Exploding Burger, `RCP_PIZ_009` Screaming Cheese Pizza, `RCP_DES_013` Screaming Sorbet.
 - **Satisfaction thresholds:** 85 / 65 / 45 / 25; P_mult 1.10, P_offset 0. **Anger probability:** 0.05; sensitivity 1.5 (startles easily).
-- **Combat behavior:** `PACIFIST`, Huff 40. Escape: `ABL_048` Slime Trail (`MUT_256`, signature) while fleeing.
+- **Combat behavior:** `PACIFIST`, Huff 40, DEF 0. No abilities (flees at ×1.3 only if a `MUT_186` Cheetah Leg rolled, §36.6).
 - **Spending range:** 1 item, half modification chance → ref. spend 8–16 MB. **Tip behavior:** ×1.2; ×1.5 more if served with W = 1 ("You're so nice!").
 - **Unique animations:** hides behind the menu; startled hop with tail curl; tiny happy wiggle.
 - **Dialogue:** Ordering — "Um, h-hi, sorry, could I maybe have the noodles? Only if it's okay? Sorry. Hi." · Delighted — "You remembered my order! Nobody remembers my order!" · Furious — "Oh no oh no — I'm very upset — sorry — bye!"
-- **Special interactions:** *Startle* — any thrown food, broken object or fight within 10 studs adds +15 × 1.5 anger; at level ≥ 3 she flees (`FLEEING`, leaving the price of already-eaten items on the table — the only fleeing customer who pays). The ideal first customer: the tutorial's QST_TUT_002 guest is a scripted Newt.
+- **Special interactions:** *Startle* — any thrown food, broken object or fight within 10 studs adds +15 × 1.5 anger; at level ≥ 3 she flees (`FLEEING`, leaving the price of already-eaten items on the table — the only fleeing customer who pays). With the highest band-A weight she is most players' first unscripted customer.
 - **Signature look:** `MUT_014` Axolotl Head, `MUT_256` Frog Slime Skin, `MUT_181` Frog Leg ×2. **Tier band:** `TIER_01`+ (A 8 · B 6 · C 5 · D–E 4).
 
 #### PER_013 — The Grandma Golem
@@ -283,11 +284,11 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.4. Timing: walk ×0.8 · menu ×1.2 · inspect ×1.0 · eat ×1.3.
 - **Preferred foods:** comfort food; `RCP_SOP_001` Tomato Soup, `RCP_SOP_002` Chicken Noodle-ish Soup, `RCP_PST_002` Mac & Cheese, `RCP_BRG_002` Cheeseburger, `RCP_DES_001` Chocolate Chip Cookie, `RCP_DES_006` Birthday Cake Slice. **Disliked:** `RCP_DRK_015` Liquid Lightning ("In MY day lightning stayed in the sky"), `RCP_PIZ_012` Backwards Pizza.
 - **Satisfaction thresholds:** 85 / 60 / 40 / 20; P_mult 1.05, P_offset +5. **Anger probability:** 0.10; sensitivity 0.5.
-- **Combat behavior:** `TANK`, Huff 300 (the sturdiest customer): slow, ground-slam shockwaves that wobble every table within 10 studs (20 % spill chance per plate). Abilities: `ABL_021` Ground Pound (`MUT_148`), `ABL_010` Bear Slam (`MUT_140`), `ABL_027` Armadillo Roll (`MUT_128`).
+- **Combat behavior:** `TANK`, Huff 300, DEF 40, Dmg ×0.9 (the sturdiest customer): her slams also wobble every table within 10 studs (20 % spill chance per plate). Abilities: `ABL_021` Ground Pound (`MUT_148`), `ABL_010` Bear Slam (`MUT_140`), `ABL_025` Puff Up (`MUT_129`).
 - **Spending range:** 1–2 items → ref. spend 10–26 MB. **Tip behavior:** ×1.5 ("Buy yourself a sweater, dear").
 - **Unique animations:** knitting while waiting; cheek-pinch wave at the server (air pinch); rock-crumble chuckle.
 - **Dialogue:** Ordering — "A nice bowl of soup for me, sweetie. You look thin. Eat something too." · Delighted — "Just like I made in the Stone Age!" · Furious — "Young chef, I have been around four hundred years and I have NEVER been so disappointed."
-- **Special interactions:** *Calming Presence* — while she is at level 0 and seated, customers within 8 studs decay anger 0.3/s faster (a Chill Aura, §10.10). *Second Helping* — Delighted at the end: 25 % chance she pre-pays a free cookie for the next customer (that customer's P_offset +3).
+- **Special interactions:** *Calming Presence* — while she is at level 0 and seated, customers within 8 studs decay anger 0.3/s faster (a Chill Aura, §10.10). *Second Helping* — Delighted at the end: 25 % chance she pre-pays a free cookie for the next customer (that customer's P_offset +3). **Tutorial:** QST_TUT_002's first customer, with a fixed look and patience ×3 (§32).
 - **Signature look:** `MUT_135` Golem Rock Body, `MUT_169` Mitten Paws, `MUT_260` Sheep Wool (her shawl). **Tier band:** `TIER_01`+ (A 7 · B–C 5 · D–E 4).
 
 #### PER_014 — The Picky Platypus
@@ -295,7 +296,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.0. Timing: walk ×1.0 · menu ×1.5 · inspect ×2.0 (3 s of picking) · eat ×1.2.
 - **Preferred foods:** `RCP_SEA_001` Fish Sticks, `RCP_SEA_003` Sushi Roll Block, `RCP_SAN_005` Peanut Butter & Jellyfish, `RCP_BRG_001` Basic Burger. **Disliked:** `RCP_FRI_005` Fried Everything Basket ("too many things TOUCHING"), `RCP_SAN_008` Sandwich With Bread in the Middle, `RCP_PIZ_013` Pizza Inside Another Pizza.
 - **Satisfaction thresholds:** 92 / 75 / 55 / 35; P_mult 0.90, P_offset −5. **Anger probability:** 0.35; sensitivity 1.1.
-- **Combat behavior:** `THROWER`, Huff 90: flicks offending garnishes in precise arcs (spread ±3°). Abilities: `ABL_014` Eel Zap (`MUT_253`, optional signature 20 %), `ABL_028` Trunk Spray (`MUT_053`), `ABL_034` Toast Barrage (`MUT_010`).
+- **Combat behavior:** `THROWER`, Huff 90, DEF 10, Dmg ×1.0: flicks offending garnishes with half the normal aim error. Abilities: `ABL_028` Trunk Spray (`MUT_053`), `ABL_034` Toast Barrage (`MUT_010`), `ABL_041` Frost Blast (`MUT_162`).
 - **Spending range:** 1–2 items → ref. spend 10–28 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** bill-tweezers garnish removal; lines up fries by size; horrified recoil when sauce touches bun.
 - **Dialogue:** Ordering — "Fish sticks, cut into rectangles that are less rectangular. And nothing may touch anything." · Delighted — "Nothing is touching. Nothing is TOUCHING! Best day of my life." · Furious — "A pea touched my fry. I'm throwing BOTH."
@@ -306,8 +307,8 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 *Calculates everything, including your tip, to the decimal.*
 - **Patience:** ×1.0 (exactly). Timing: walk ×1.0 · menu ×0.8 · inspect ×1.0 · eat ×1.0.
 - **Preferred foods:** efficient and square; `RCP_PIZ_014` Square Circle Pizza, `RCP_SEA_003` Sushi Roll Block, `RCP_DES_005` Brownie Brick, `RCP_SAN_002` Ham & Cheese Sandwich (γ −0.5: likes cheap). **Disliked:** `RCP_PST_008` The Infinite Noodle ("UNBOUNDED VALUE ERROR"), `RCP_SOP_010` Bottomless Soup.
-- **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0 (+10 during `EVT_017`). **Anger probability:** 0.25; sensitivity 0.9.
-- **Combat behavior:** `TANK`, Huff 200: marches in straight lines, "AUDIT" stomp. Abilities: `ABL_033` Magnet Pull (`MUT_155`, optional signature 30 %), `ABL_032` Laser Eyes (`MUT_078`), `ABL_031` Rocket Punch (`MUT_154`).
+- **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0 (+5 during `EVT_017`). **Anger probability:** 0.25; sensitivity 0.9.
+- **Combat behavior:** `TANK`, Huff 200, DEF 35, Dmg ×1.0: marches in straight lines, "AUDIT" stomp. Abilities: `ABL_032` Laser Eyes (`MUT_078`, optional signature 30 %), `ABL_021` Ground Pound (`MUT_148`), `ABL_042` Thunder Clap (`MUT_105`).
 - **Spending range:** 1–2 cheap items → ref. spend 8–22 MB. **Tip behavior:** ×1.0, rounded to the nearest whole MB; never Jackpots ("RANDOMNESS NOT PERMITTED").
 - **Unique animations:** calculator-finger typing; receipt printing from the chest; precise 90° turns.
 - **Dialogue:** Ordering — "ORDER: ONE (1) SQUARE CIRCLE PIZZA. BUDGET: OPTIMAL." · Delighted — "SATISFACTION 97.2 PERCENT. TIP CALCULATED. THANK YOU, HUMAN-ISH." · Furious — "ERROR. CALCULATING DAMAGES. RESULT: YOUR TABLE."
@@ -319,7 +320,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×0.9 (shared). Timing: walk ×1.3 · menu ×0.7 · inspect ×0.5 · eat ×0.7.
 - **Preferred foods:** kid classics; `RCP_FRI_001` French Fries, `RCP_PIZ_001` Cheese Pizza, `RCP_SAN_003` Hot Dog Classic, `RCP_DES_002` Vanilla Ice Cream, `RCP_DES_003` Donut Ring, `RCP_DRK_001` Fizzy Soda. **Disliked:** `RCP_SAL_001` Garden Salad, `RCP_SOP_007` Swamp Stew.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.35; sensitivity 1.2.
-- **Combat behavior:** `BRAWLER`, Huff 50 each (×3), body scale 0.6, damage ×0.5: they dog-pile one target. Abilities: `ABL_011` Kangaroo Kick (`MUT_184`), `ABL_050` Beak Peck Combo (`MUT_063`), `ABL_058` Goat Headbutt (`MUT_097`).
+- **Combat behavior:** `BRAWLER`, Huff 50 each (×3), DEF 0, Dmg ×0.5, body scale 0.6: they dog-pile one target (still bound by the §11.8.1 two-attacker token limit). Abilities: `ABL_011` Kangaroo Kick (`MUT_184`), `ABL_050` Beak Peck Combo (`MUT_063`), `ABL_037` Jelly Bounce (`MUT_134`).
 - **Spending range:** 1 item each, one ticket → ref. spend 24–40 MB per party. **Tip behavior:** ×1.1 on the shared bill.
 - **Unique animations:** triple high-five; chair-hopping; synchronized "WHOAAA" when food arrives.
 - **Dialogue:** Ordering — "FRIES! — NO, PIZZA! — I WANT WHAT SHE'S HAVING!" · Delighted — "BEST! PARTY! EVER!" · Furious — "Mini-mutants... ASSEMBLE!"
@@ -331,7 +332,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.0. Timing: walk ×0.8 (peg leg) · menu ×1.0 · inspect ×1.0 · eat ×1.0.
 - **Preferred foods:** SEA; `RCP_SEA_001` Fish Sticks, `RCP_SEA_002` Fried Shrimp Basket, `RCP_SEA_005` Waving Calamari Rings, `RCP_SEA_009` Sea Monster Steak, `RCP_TAC_006` Fish Taco of Destiny, `RCP_DRK_011` Tentacle Tea. **Disliked:** `RCP_SEA_006` Crab Cake Kerfuffle ("That be me Uncle Pinchy!"), `RCP_SAL_001` Garden Salad.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.40; sensitivity 1.1.
-- **Combat behavior:** `THROWER`, Huff 130: "cannonball" meatball lobs with +5-stud range. Abilities: `ABL_017` Claw Grab & Toss (`MUT_144`, signature), `ABL_049` Tentacle Whip (`MUT_146`), `ABL_012` Octo-Flurry (`MUT_145`).
+- **Combat behavior:** `THROWER`, Huff 120, DEF 15, Dmg ×1.0: "cannonball" meatball lobs with +5-stud range. Abilities: `ABL_049` Tentacle Whip (`MUT_146`), `ABL_031` Rocket Punch (`MUT_154`, "the cannon arm"), `ABL_028` Trunk Spray (`MUT_053`). His crab claw is for show (its `ABL_017` is not `THROWER`-eligible).
 - **Spending range:** 1–2 items → ref. spend 12–30 MB. **Tip behavior:** ×1.0; *Buried Treasure* — Jackpot chance ×2.
 - **Unique animations:** sideways scuttle with `ANM_008` peg-leg wobble; spyglass menu read; telescope-sighting the kitchen.
 - **Dialogue:** Ordering — "Arr! Fetch me yer finest fish sticks, and be quick about it, matey!" · Delighted — "Shiver me shell! Worth its weight in doubloons!" · Furious — "Ready the meatball cannons! FIRE!"
@@ -343,7 +344,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×0.9. Timing: walk ×1.0 · menu ×1.3 · inspect ×1.3 · eat ×1.0.
 - **Preferred foods:** theatrical; `RCP_BRG_007` Volcano Burger, `RCP_PIZ_009` Screaming Cheese Pizza, `RCP_DES_013` Screaming Sorbet, `RCP_SOP_006` Pumpkin Screamer Soup, `RCP_DES_007` Pie in the Face (Edible). **Disliked:** `RCP_PST_001` Butter Noodles ("So... beige").
 - **Satisfaction thresholds:** 92 / 72 / 52 / 32; P_mult 0.95, P_offset 0. **Anger probability:** 0.35; sensitivity 1.4.
-- **Combat behavior:** `INSTIGATOR`, Huff 110: monologues that rile up the room. Abilities: `ABL_023` Bat Screech (`MUT_089`), `ABL_029` Peacock Dazzle (`MUT_219`), `ABL_058` Goat Headbutt (`MUT_097`).
+- **Combat behavior:** `INSTIGATOR`, Huff 100, DEF 10, Dmg ×0.8: monologues (her Yell) that rile up the room. Abilities: `ABL_023` Bat Screech (`MUT_089`), `ABL_029` Peacock Dazzle (`MUT_219`), `ABL_047` Mind Buzz (`MUT_033`).
 - **Spending range:** 1–2 items → ref. spend 12–28 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** back-of-hoof forehead swoon; standing ovation; slow-motion faint onto the floor.
 - **Dialogue:** Ordering — "I would like... (dramatic pause)... the Volcano Burger. And I would like it to CHANGE MY LIFE." · Delighted — "BRAVO! I'm weeping! Somebody bring me a tissue and a second burger!" · Furious — "This is the WORST thing that has EVER happened to ANYONE!" *(faints)*
@@ -355,7 +356,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.1. Timing: walk ×1.0 · menu ×1.2 · inspect ×1.0 · eat ×1.0.
 - **Preferred foods:** quiet food; `RCP_BRG_014` Invisible Burger (a mime's dream), `RCP_DES_002` Vanilla Ice Cream, `RCP_SEA_003` Sushi Roll Block, `RCP_PST_001` Butter Noodles. **Disliked:** loud food; `RCP_PIZ_009` Screaming Cheese Pizza, `RCP_DES_013` Screaming Sorbet, `RCP_SOP_006` Pumpkin Screamer Soup, `RCP_SOP_004` Alphabet Grumble Soup.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0 (+5 when the pictogram order is fully correct). **Anger probability:** 0.25; sensitivity 1.0.
-- **Combat behavior:** `TRICKSTER`, Huff 100: "invisible box" traps a target (`STS_STICKY`, per §36.7), "invisible rope" tug. Abilities: `ABL_026` Mantis Chop (`MUT_151`, signature — mimed, still lands), `ABL_020` Web Shot (`MUT_028`).
+- **Combat behavior:** `TRICKSTER`, Huff 100, DEF 10, Dmg ×0.9: its debuff throw is mimed as an "invisible box" (`STS_STICKY`, §36.7). Abilities: `ABL_020` Web Shot (`MUT_028`, the "invisible rope"), `ABL_016` Tongue Yank (`MUT_061`), `ABL_046` Comet Blink (`MUT_228`). The scythe arms are for (silent) show.
 - **Spending range:** 1–2 items → ref. spend 10–28 MB. **Tip behavior:** ×1.2.
 - **Unique animations:** walking against invisible wind; pulling an invisible rose from an invisible sleeve; trapped-in-a-box routine.
 - **Dialogue (pictogram bubbles):** Ordering — *burger icon · crossed-out tomato · two fingers* while miming careful eating · Delighted — *silent applause, invisible rose, deep bow* · Furious — *mimes being trapped in a box... then mimes building one around YOU.*
@@ -367,7 +368,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×0.7. Timing: walk ×0.9 · menu ×0.6 · inspect ×0.5 · eat ×1.4 (messy).
 - **Preferred foods:** sweets; `RCP_DES_002` Vanilla Ice Cream, `RCP_DES_004` Strawberry Sundae, `RCP_DES_003` Donut Ring, `RCP_BRK_001` Pancake Stack, `RCP_DRK_003` Chocolate Milkshake, `RCP_SAN_001` Grilled Cheese. **Disliked:** `RCP_SAL_001` Garden Salad ("NO GREEN!"), `RCP_SOP_007` Swamp Stew, `RCP_DRK_008` Swamp Water Smoothie.
 - **Satisfaction thresholds:** 85 / 65 / 45 / 25; P_mult 1.0, P_offset 0 (+5 for any DES item). **Anger probability:** 0.45; sensitivity 1.3.
-- **Combat behavior:** `THROWER`, Huff 160, body scale 1.35 (needs a booth or a 2-seat table): throws every 2.5 s with wild ±25° spread — a menace to bystanders. Abilities: `ABL_025` Puff Up (`MUT_129`), `ABL_037` Jelly Bounce (`MUT_134`), `ABL_021` Ground Pound (`MUT_148`).
+- **Combat behavior:** `THROWER`, Huff 120, DEF 20, Dmg ×0.9, body scale 1.35 (needs a booth or a 2-seat table): its aim error is doubled — a menace to bystanders. Abilities: `ABL_034` Toast Barrage (`MUT_010`), `ABL_028` Trunk Spray (`MUT_053`), `ABL_041` Frost Blast (`MUT_162`).
 - **Spending range:** 1–2 items → ref. spend 8–24 MB. **Tip behavior:** ×0.8.
 - **Unique animations:** spoon-banging; floor-kicking tantrum (variant of `ANM_050`); sticky-hug lunge when happy.
 - **Dialogue:** Ordering — "WANT ICE CREAM! WANT IT NOW! WANT IT YESTERDAY!" · Delighted — "YAAAY! You're my BEST FRIEND!" · Furious — "NO! NO! NOOOOO!"
@@ -379,7 +380,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.0. Timing: walk ×1.2 · menu ×1.4 (reads labels) · inspect ×1.2 · eat ×0.9.
 - **Preferred foods:** SAL, smoothies; `RCP_SAL_001` Garden Salad, `RCP_SAL_003` Fruit Salad Explosion, `RCP_DRK_004` Strawberry Smoothie, `RCP_DRK_008` Swamp Water Smoothie, `RCP_SEA_003` Sushi Roll Block. **Disliked:** FRI; `RCP_FRI_001` French Fries, `RCP_FRI_004` Fried Ice Cream, `RCP_FRI_005` Fried Everything Basket, `RCP_BRG_015` The Unreasonably Large Burger.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 0.95, P_offset 0. **Anger probability:** 0.25; sensitivity 1.0.
-- **Combat behavior:** `CHARGER`, Huff 110: curls into a hamster ball and rolls through furniture. Abilities: `ABL_027` Armadillo Roll (`MUT_128`, signature), `ABL_011` Kangaroo Kick (`MUT_184`).
+- **Combat behavior:** `CHARGER`, Huff 110, DEF 15, Dmg ×1.0: curls into a hamster ball and rolls through furniture. Abilities: `ABL_027` Armadillo Roll (`MUT_128`, signature), `ABL_011` Kangaroo Kick (`MUT_184`).
 - **Spending range:** 1–2 items → ref. spend 10–26 MB. **Tip behavior:** ×1.1.
 - **Unique animations:** jogging in place while waiting; label-squint; protein-free victory jumping jacks.
 - **Dialogue:** Ordering — "One Garden Salad, extra garden. Is the lettuce free-range?" · Delighted — "So many vitamins! I'll run nine miles on my wheel tonight!" · Furious — "Is that... GREASE?! I'm rolling OUT of here!"
@@ -391,11 +392,11 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.0. Timing: walk ×1.0 · menu ×1.0 · inspect ×1.0 · eat ×0.8.
 - **Preferred foods:** `spicy` tag; `RCP_BRG_007` Volcano Burger, `RCP_PIZ_008` Lava Pizza, `RCP_TAC_008` Hot Sauce Volcano Burrito, `RCP_TAC_009` Ghost Pepper Ghost Taco, `RCP_SOP_008` Lava Lentil Soup, `RCP_DRK_010` Hot Sauce Latte, `RCP_PST_010` Spicy Lava Lasagna. **Disliked:** frozen; `RCP_BRG_008` Frozen Burger, `RCP_SOP_003` Soupsicle (Frozen Soup), `RCP_DRK_009` Ice Ice Smoothie.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0 (−5 for any item without the `spicy` tag unless it carries a heat modification from §6.18). **Anger probability:** 0.35; sensitivity 1.0.
-- **Combat behavior:** `THROWER`, Huff 120: lobs hot-sauce globs that leave targets `STS_TOASTY` (cartoon soot, §C12.3). Abilities: `ABL_018` Dragon Breath (`MUT_031`), `ABL_043` Lava Slam (`MUT_163`), `ABL_053` Tail Spin (`MUT_227`).
+- **Combat behavior:** `THROWER`, Huff 120, DEF 15, Dmg ×1.1: prefers `spicy` food as ammunition (`STS_TOASTY` on hit per §11.6.1). Abilities: `ABL_032` Laser Eyes (`MUT_078`, "heat vision"), `ABL_034` Toast Barrage (`MUT_010`), `ABL_031` Rocket Punch (`MUT_154`).
 - **Spending range:** 1–2 items → ref. spend 14–32 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** fanning mouth with delight; steam-ear puffs; drinking hot sauce like soda.
 - **Dialogue:** Ordering — "Volcano Burger. Hotter. Hotter than that. Make the volcano nervous." · Delighted — "PERFECT! My tongue just took a vacation to the sun!" · Furious — "This is MILD. Do you know what I do to MILD things?"
-- **Special interactions:** *Heat Seeker* — sits nearest the kitchen when possible (§8.6); +10 EventModifier during `EVT_019` stacks with his spicy preference. A station going `ON_FIRE` does **not** anger him (he cheers instead: anger −5).
+- **Special interactions:** *Heat Seeker* — sits nearest the kitchen when possible (§8.6); the `EVT_019` EventModifier (+5 for spicy dishes served with a drink) stacks with his spicy preference. A station going `ON_FIRE` does **not** anger him (he cheers instead: anger −5).
 - **Signature look:** `MUT_254` Fireproof Skin, `MUT_215` Lizard Tail, `MUT_115` Frill Lizard Collar. **Tier band:** `TIER_03`+ (B–E 4).
 
 #### PER_023 — The Frozen Yeti-Fish
@@ -403,7 +404,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.1 (×0.87 effective drain if ≥ 4 heat stations are running within 20 studs). Timing: walk ×0.9 · menu ×1.0 · inspect ×1.0 · eat ×1.0.
 - **Preferred foods:** cold; `RCP_BRG_008` Frozen Burger, `RCP_SOP_003` Soupsicle (Frozen Soup), `RCP_DES_002` Vanilla Ice Cream, `RCP_DES_013` Screaming Sorbet, `RCP_DES_011` Frozen Lava Cake, `RCP_DRK_006` Rainbow Slushie, `RCP_DRK_009` Ice Ice Smoothie. **Disliked:** `RCP_SOP_008` Lava Lentil Soup, `RCP_PIZ_008` Lava Pizza, `RCP_DRK_010` Hot Sauce Latte.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.25; sensitivity 0.9.
-- **Combat behavior:** `CHARGER`, Huff 170: belly-slide charge that leaves a 6-stud ice streak (players crossing it get `STS_SLOW`, §36.7). Abilities: `ABL_041` Frost Blast (`MUT_162`), `ABL_054` Hammerhead Bash (`MUT_025`), `ABL_019` Shark Chomp (`MUT_062`).
+- **Combat behavior:** `CHARGER`, Huff 170, DEF 25, Dmg ×1.0: his rush is a belly slide that leaves a 6-stud ice streak (players crossing it get `STS_SLOW`, §36.7). Abilities: `ABL_054` Hammerhead Bash (`MUT_025`), `ABL_044` Gust Kick (`MUT_197`), `ABL_013` Rhino Charge (`MUT_099`).
 - **Spending range:** 1–2 items → ref. spend 10–28 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** fanning himself with a menu; shiver of joy; ice-skating belly slide.
 - **Dialogue:** Ordering — "Brrr-illiant. One Frozen Burger, colder than a snowball's snowball." · Delighted — "Chilly perfection! I'm so happy I could hibernate." · Furious — "It's WARM. You served me WARM. Prepare for... the BELLY SLIDE!"
@@ -415,7 +416,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.5. Timing: walk ×0.5 · menu ×1.5 · inspect ×1.0 · eat ×1.5.
 - **Preferred foods:** breakfast at all hours; `RCP_BRK_009` Breakfast-for-Dinner-for-Breakfast, `RCP_BRK_005` Upside-Down Pancakes, `RCP_BRK_007` Cereal With Soup Instead of Milk, `RCP_SOP_003` Soupsicle (Frozen Soup). **Disliked:** `RCP_DRK_015` Liquid Lightning ("Last time I drank that I ended up in next Tuesday").
 - **Satisfaction thresholds:** 85 / 65 / 45 / 25; P_mult 1.0, P_offset +5. **Anger probability:** 0.10; sensitivity 0.6.
-- **Combat behavior:** `PACIFIST`, Huff 150. Escape: `ABL_046` Comet Blink (`MUT_228`) — "blinks back to five seconds ago".
+- **Combat behavior:** `PACIFIST`, Huff 80, DEF 40 (it is mostly shell). No abilities; when upset it retreats into its shell and sulks.
 - **Spending range:** 1–2 items → ref. spend 12–30 MB. **Tip behavior:** ×1.3.
 - **Unique animations:** pocket-watch check; slow-motion everything; a brief rewind shimmer when sitting.
 - **Dialogue:** Ordering — "I'd like the Galaxy Pizza, please. Oh — you won't know it for another forty levels? Then whatever's closest." · Delighted — "Marvelous! I'll tip you now AND last Tuesday." · Furious — "I have waited CENTURIES! ...Well, it felt like centuries. It was ninety seconds."
@@ -427,11 +428,11 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.0. Timing: walk ×1.0 · menu ×1.0 · inspect ×1.5 · eat ×1.0.
 - **Preferred foods:** deliberately ordinary; `RCP_SAN_002` Ham & Cheese Sandwich, `RCP_SOP_001` Tomato Soup, `RCP_DRK_002` Lemonade. **Disliked:** `RCP_BRG_010` Mystery Meat Burger ("Where did this meat come from? Asking for... no one.").
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.00 (would blow the cover); sensitivity 0.5.
-- **Combat behavior:** `PACIFIST`, Huff 80. Escape: `ABL_055` Mole Burrow (`MUT_196`) if present.
+- **Combat behavior:** `PACIFIST`, Huff 80, DEF 10. No abilities.
 - **Spending range:** 1 item → ref. spend 10–18 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** table-top finger swipe for dust; hidden notepad scribble; badge half-flash, quickly hidden.
 - **Dialogue:** Ordering — "One perfectly normal sandwich, for me, a perfectly normal customer." · Delighted — "Very... clean. I mean TASTY. Tasty is what I meant." · Furious (cover blown) — "Alright, FINE! INSPECTOR! You have a SPILL in aisle three!"
-- **Special interactions:** *Inspection* — tracks the minimum dining cleanliness K seen during the visit (§10.2). On leaving: K_min ≥ 80 → "Spotless" certificate, +0.05 ★ and a cosmetic façade badge for 1 h; K_min < 50 → "Citation", −0.05 ★. *Blown Cover* — if hit by anything, or revealed by `ABL_064` Super Sniff and then served last, he flashes the badge and leaves after paying: the inspection completes immediately using the current K. Weight ×6 during `EVT_026`; cousin of `NPC_022` Inspector Grimewell.
+- **Special interactions:** *Inspection* — tracks the minimum dining cleanliness K seen during the visit (§10.2). On leaving: K_min ≥ 80 → "Spotless" certificate, +0.05 ★ and a cosmetic façade badge for 1 h; K_min < 50 → "Citation", −0.05 ★. *Blown Cover* — if hit by anything, or revealed by `ABL_064` Super Sniff and then served last, he flashes the badge and leaves after paying: the inspection completes immediately using the current K. Cousin of `NPC_022` Inspector Grimewell, who runs the official `EVT_026` sweeps (§36.11); the undercover visits keep their normal weight during a sweep.
 - **Signature look:** `MUT_047` Mustache of Destiny (obviously fake), `MUT_054` Star-Nosed Mole Nose. **Tier band:** `TIER_03`+ (B–E 2).
 
 #### PER_026 — The Speedrunner Squirrel
@@ -439,7 +440,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×0.6 — a visible speedrun timer floats above the head. Timing: walk ×1.6 · menu ×0.3 · inspect ×0.3 · eat ×0.4.
 - **Preferred foods:** nuts and quick bites; `RCP_SAN_005` Peanut Butter & Jellyfish, `RCP_DES_010` Bug Brittle, `RCP_DES_001` Chocolate Chip Cookie, `RCP_FRI_001` French Fries, `RCP_DRK_001` Fizzy Soda. **Disliked:** `RCP_PST_008` The Infinite Noodle ("unskippable cutscene"), `RCP_SOP_010` Bottomless Soup.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.40; sensitivity 1.2.
-- **Combat behavior:** `CHARGER`, Huff 80: zig-zag dash charges. Abilities: `ABL_011` Kangaroo Kick (`MUT_184`), `ABL_063` Cheetah Dash (`MUT_186`, signature — used to reposition), `ABL_044` Gust Kick (`MUT_197`).
+- **Combat behavior:** `CHARGER`, Huff 110, DEF 5, Dmg ×0.9: zig-zag rush approach. Abilities: `ABL_011` Kangaroo Kick (`MUT_184`), `ABL_044` Gust Kick (`MUT_197`), `ABL_058` Goat Headbutt (`MUT_097`).
 - **Spending range:** 1 item → ref. spend 8–16 MB. **Tip behavior:** ×1.0; ×2 if served within 25 % of patience ("WORLD RECORD!").
 - **Unique animations:** split-timer tap on arrival and at every state change; frame-perfect chair slide; reset-facepalm.
 - **Dialogue:** Ordering — "Fries. GO GO GO — timer's running!" · Delighted — "NEW PERSONAL BEST! Frame-perfect fries!" · Furious — "RESET! RESET! This run is RUINED!"
@@ -451,7 +452,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.3 (shared). Timing: walk ×0.9 · menu ×1.3 · inspect ×1.0 · eat ×1.3.
 - **Preferred foods:** shareable; `RCP_DES_004` Strawberry Sundae, `RCP_DES_006` Birthday Cake Slice, `RCP_DRK_004` Strawberry Smoothie, `RCP_PIZ_002` Pepperoni Pizza, `RCP_PST_003` Spaghetti & Meatballs. **Disliked:** `RCP_SEA_008` Jellyfish Jiggle Bowl ("We don't talk about the Jiggle Bowl").
 - **Satisfaction thresholds:** 88 / 68 / 48 / 28; P_mult 1.05, P_offset +5. **Anger probability:** 0.10; sensitivity 1.2.
-- **Combat behavior:** `PACIFIST`, Huff 70 each. Escape: `ABL_022` Flap Hover (`MUT_231`) while fleeing.
+- **Combat behavior:** `PACIFIST`, Huff 70 each, DEF 0. No abilities; they leave together.
 - **Spending range:** 1–2 items each on one ticket → ref. spend 26–56 MB per couple. **Tip behavior:** ×1.3.
 - **Unique animations:** tentacle hand-holding; synchronized pink glow pulses; sharing one milkshake with two straws.
 - **Dialogue:** Ordering — "We'll share the sundae! — Two spoons! — One cherry, cut in half!" · Delighted — "Best anniversary EVER!" *(both glow)* · Furious — "Sweetie, let's go. — Yes, darling. We are VERY disappointed. Together."
@@ -463,7 +464,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.0. Timing: walk ×1.0 (floats) · menu ×1.0 · inspect ×1.0 · eat ×1.0.
 - **Preferred foods:** bread; `RCP_SAN_001` Grilled Cheese, `RCP_SAN_004` Club Sandwich Stack, `RCP_SAN_010` The Sandwich Sandwich, `RCP_BRK_001` Pancake Stack, `RCP_SOP_009` Bread Bowl in a Bread Bowl. **Disliked:** wet; `RCP_SOP_007` Swamp Stew, `RCP_DRK_008` Swamp Water Smoothie.
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.35; sensitivity 1.0.
-- **Combat behavior:** `THROWER`, Huff 100. Abilities: `ABL_034` Toast Barrage (`MUT_010`, signature), `ABL_059` Ghost Phase (`MUT_252`, signature — thrown food passes through him while active).
+- **Combat behavior:** `THROWER`, Huff 100, DEF 15, Dmg ×1.0. Abilities: `ABL_034` Toast Barrage (`MUT_010`, signature), `ABL_028` Trunk Spray (`MUT_053`). *Ghostly* (personality hook): 25 % of thrown-food hits pass straight through him (no anger) and keep flying.
 - **Spending range:** 1–2 items → ref. spend 10–28 MB. **Tip behavior:** ×1.0.
 - **Unique animations:** toast pops from the head when happy; spooky float-bob; slots glowing when annoyed.
 - **Dialogue:** Ordering — "Grilled cheeeeese... ooooOOOooo..." · Delighted — "Toasty! I haven't felt this warm since I was plugged in!" · Furious — "SOGGY BREAD? Taste my TOAST BARRAGE!"
@@ -475,7 +476,7 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.2. Timing: walk ×1.0 · menu ×1.5 (translating) · inspect ×1.5 (photos) · eat ×1.0.
 - **Preferred foods:** ALN plus Earth classics; `RCP_ALN_001` Moon Cheese Nuggets, `RCP_ALN_006` UFO Saucer Pancakes, `RCP_BRG_001` Basic Burger, `RCP_DRK_001` Fizzy Soda, `RCP_PIZ_015` Galaxy Pizza. **Disliked:** `RCP_ALN_009` Glorp Stew ("Tastes like home. TOO much like home."), `RCP_PIZ_014` Square Circle Pizza.
 - **Satisfaction thresholds:** 85 / 65 / 45 / 25; P_mult 1.05, P_offset +5. **Anger probability:** 0.20; sensitivity 1.0.
-- **Combat behavior:** `TRICKSTER`, Huff 100: beams plates off other tables ("evidence"), angering those diners. Abilities: `ABL_045` Tractor Beam (`MUT_166`, optional signature 50 %), `ABL_047` Mind Buzz (`MUT_033`, signature).
+- **Combat behavior:** `TRICKSTER`, Huff 100, DEF 15, Dmg ×0.9: its plate thefts are "beamed up as evidence", angering those diners. Abilities: `ABL_045` Tractor Beam (`MUT_166`, optional signature 50 %), `ABL_046` Comet Blink (`MUT_228`), `ABL_020` Web Shot (`MUT_028`).
 - **Spending range:** 1–3 items → ref. spend 14–45 MB. **Tip behavior:** ×1.2.
 - **Unique animations:** photographing every plate; antenna wiggle while reading; awestruck slow-clap with three hands.
 - **Dialogue (glyph bubbles + subtitles):** Ordering — "Greetings, Earth cook! I wish to sample your famous Basic Burger disc." · Delighted — "I will tell all eleven of my moons about this!" · Furious — "Reporting this to the Galactic Tourism Board. Beaming up your plates as evidence."
@@ -487,19 +488,19 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 - **Patience:** ×1.0. Timing: walk ×0.8 · menu ×1.0 · inspect ×1.0 · eat ×0.8.
 - **Preferred foods:** big plates; `RCP_SEA_009` Sea Monster Steak, `RCP_SEA_002` Fried Shrimp Basket, `RCP_BRG_015` The Unreasonably Large Burger, `RCP_SAN_009` Sub of Unreasonable Length, `RCP_DRK_003` Chocolate Milkshake. **Disliked:** `RCP_SEA_005` Waving Calamari Rings ("They're waving at me. I can't eat a fan.").
 - **Satisfaction thresholds:** 90 / 70 / 50 / 30; P_mult 1.0, P_offset 0. **Anger probability:** 0.40; sensitivity 1.3.
-- **Combat behavior:** `BRAWLER`, Huff 280: grapples and body-splashes. Abilities: `ABL_021` Ground Pound (`MUT_148`, signature — "The Body Splash"), `ABL_010` Bear Slam (`MUT_140`).
+- **Combat behavior:** `BRAWLER`, Huff 180, DEF 35, Dmg ×1.2: grapples and body-splashes. Abilities: `ABL_010` Bear Slam (`MUT_140`, signature — "The Body Splash"), `ABL_042` Thunder Clap (`MUT_105`), `ABL_053` Tail Spin (`MUT_227`).
 - **Spending range:** 1–3 items → ref. spend 18–50 MB. **Tip behavior:** ×1.1.
 - **Unique animations:** championship-belt raise (imaginary); turnbuckle pose on his chair; tusk-gleam grin.
 - **Dialogue:** Ordering — "Biggest steak you've got, kid. I used to bench-press these." · Delighted — "That meal just won the CHAMPIONSHIP BELT! OOOH YEAH!" · Furious — "Ding ding ding! The Walrus is coming OUT OF RETIREMENT!"
 - **Special interactions:** *Tag Team* — if Delighted and still seated, he intercepts the first hostile customer that comes within 15 studs: a harmless headlock that drops its anger by 25 (once per visit; counts as a Chill effect, not combat). *Tag In* — if a player is fighting another customer within 12 studs while he is at level ≥ 2, 25 % chance he joins the fight on the *customer's* side.
-- **Signature look:** `MUT_064` Walrus Tusks, `MUT_047` Mustache of Destiny, `MUT_124` Muscle Torso, `MUT_148` Gorilla Arm ×2. **Tier band:** `TIER_05`+ (C–E 3).
+- **Signature look:** `MUT_064` Walrus Tusks, `MUT_047` Mustache of Destiny, `MUT_124` Muscle Torso, `MUT_140` Bear Arm ×2. **Tier band:** `TIER_05`+ (C–E 3).
 
 #### PER_031 — The Birthday Beast
 *It's their birthday. It's always their birthday.*
 - **Patience:** ×1.0. Timing: walk ×1.1 · menu ×0.8 · inspect ×1.0 · eat ×1.0.
 - **Preferred foods:** party food; `RCP_DES_006` Birthday Cake Slice (always the extra item; any DES if absent), `RCP_PIZ_002` Pepperoni Pizza, `RCP_DES_009` Exploding Cupcake, `RCP_DRK_006` Rainbow Slushie, `RCP_BRG_009` Rainbow Burger. **Disliked:** `RCP_SAL_004` Salad With No Lettuce ("No salad on my BIRTHDAY").
 - **Satisfaction thresholds:** 92 / 72 / 52 / 32; P_mult 1.10, P_offset +5. **Anger probability:** 0.40; sensitivity 1.5.
-- **Combat behavior:** `THROWER`, Huff 120: hurls cake slices and party poppers (confetti bursts). Abilities: `ABL_037` Jelly Bounce (`MUT_134`), `ABL_029` Peacock Dazzle (`MUT_219`), `ABL_042` Thunder Clap (`MUT_105`, "party popper").
+- **Combat behavior:** `THROWER`, Huff 120, DEF 10, Dmg ×1.0: hurls cake slices (confetti bursts on impact). Abilities: `ABL_031` Rocket Punch (`MUT_154`, "confetti cannon"), `ABL_049` Tentacle Whip (`MUT_146`), `ABL_034` Toast Barrage (`MUT_010`).
 - **Spending range:** exactly 2 items (main + cake) → ref. spend 20–36 MB. **Tip behavior:** ×1.5.
 - **Unique animations:** party-horn toot; candle-blowing on anything round; confetti stomp when upset.
 - **Dialogue:** Ordering — "It's my BIRTHDAY! Pizza, cake, and everyone has to sing. Those are the rules." · Delighted — "Best. Birthday. EVER! I'm having another one next week!" · Furious — "Nobody SANG! IT'S MY BIRTHDAY!"
@@ -585,7 +586,7 @@ locally; behavior hooks are server-only and dispatched by name.
 export type PersonalityDef = {
 	id: string, patience: number, pMult: number, pOffset: number,
 	thresholds: { delighted: number, happy: number, meh: number, unhappy: number },
-	angerP: number, sens: number, style: string, huff: number,
+	angerP: number, sens: number, style: string, huff: number, def: number, dmgMult: number,
 	items: { number }, gamma: number, tipMult: number, unlockTier: number,
 	timing: { walk: number, menu: number, inspect: number, eat: number },
 	signature: { string }, abilities: { { part: string, ability: string } }, hooks: { string },
@@ -599,8 +600,9 @@ local Defs: { [string]: PersonalityDef } = {
 		items = { 1, 2 }, gamma = 0, tipMult = 1.0, unlockTier = 1,
 		timing = { walk = 1.0, menu = 1.5, inspect = 2.0, eat = 1.2 },
 		signature = { "MUT_059", "MUT_218", "MUT_201" },
-		abilities = { { part = "MUT_253", ability = "ABL_014" }, { part = "MUT_053", ability = "ABL_028" },
-			{ part = "MUT_010", ability = "ABL_034" } },
+		def = 10, dmgMult = 1.0,
+		abilities = { { part = "MUT_053", ability = "ABL_028" }, { part = "MUT_010", ability = "ABL_034" },
+			{ part = "MUT_162", ability = "ABL_041" } },
 		hooks = { "AlwaysMod", "QualityGate", "PlatingBonus" },
 	},
 }
@@ -618,11 +620,12 @@ Hooks.QualityGate = {
 	end,
 }
 
-function Hooks.pickAbility(c, def): string?
-	for _, entry in def.abilities do               -- first entry whose part is on this body (§9.2.3)
-		if c.partSet[entry.part] then return entry.ability end
+function Hooks.pickSignatureMove(c, def, npcUse: (string, string) -> boolean): string?
+	-- A5 extension: signature parts first, then §11.8.3 slot priority (performed by CombatService)
+	for _, entry in def.abilities do
+		if c.signatureParts[entry.part] and npcUse(entry.ability, def.style) then return entry.ability end
 	end
-	return nil                                       -- style basics only (§11)
+	return nil -- CombatService falls back to the §11.8.3 slot-priority scan of the visible parts
 end
 
 function Hooks.dispatch(c, def, event: string, ...)
@@ -649,7 +652,7 @@ second-reviewer sign-off before localization.
 | 4 | PER_032 reveals as a personality whose unlock tier exceeds the restaurant tier | Impossible: the pool is the current tier's eligible set |
 | 5 | PER_016 or PER_027 rolled but no table fits the party | They queue; if the queue lacks room for the whole party → walk-by |
 | 6 | PER_025 inspected while chaos is active | K_min freezes at chaos start (the inspector is hiding under a table) — chaos never auto-fails an inspection |
-| 7 | PER_002 vacuums thrown food during level-6 chaos | Still counts as eating it (anger −5); the projectile is consumed and cannot hit anyone behind |
+| 7 | PER_002's Free snack during level-6 chaos | Still counts as eating it (anger −5); the projectile is consumed and cannot hit anyone behind |
 | 8 | PER_003 provoked by a co-op guest's accidental hit | Provoked regardless of who hit him; guest damage rules follow E12 |
 | 9 | PER_019 order on a mobile screen too small for pictograms | Pictogram Hints is forced ON below 6-inch screens (text after 5 s) |
 | 10 | Two Influencer Posts in the same 10 min | The second Post shows the toast but applies no ★ change and spawns no followers |
@@ -661,13 +664,13 @@ second-reviewer sign-off before localization.
   columns filled.
 - **AC-09-02:** Every personality's Huff Points lie within 40–300 and every combat style is one of the 7 §C11.6
   styles (PER_032 inherits).
-- **AC-09-03:** Every signature part and ability reference resolves to §C13.6 / §C12.2, and each listed ability
-  is the canon active of the listed part.
+- **AC-09-03:** Every signature part and ability reference resolves to §C13.6 / §C12.2, each listed ability is the
+  canon active of the listed part, and each is eligible for that personality's style in §36.6 "NPC use".
 - **AC-09-04:** In 10,000 simulated spawns per personality, signature parts appear on 100 % of bodies and
   optional signatures within ± 2 percentage points of their stated chance.
 - **AC-09-05:** A `PACIFIST` customer never deals damage in 1,000 simulated chaos events.
-- **AC-09-06:** PER_001's tutorial variant always throws, always misses the player, always reaches level 5, and
-  never reduces the player below 25 % HP in 200 scripted runs.
+- **AC-09-06:** PER_001's tutorial variant plays the §32.3 beats (32 → 48 → 63 → 78) in order, reaches level 5 and
+  never KOs the player in 200 scripted runs, and later Karenosauruses use only §9.3 values.
 - **AC-09-07:** PER_009 with S ≥ 90 changes Stars by exactly +0.10 (clamped) and spawns 2–4 followers within
   60 s; a second Post within 10 min changes nothing.
 - **AC-09-08:** PER_004's five category scores equal the formulas in §9.4 to the half-star, and a Critic's Star is

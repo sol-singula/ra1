@@ -406,26 +406,27 @@ status attributes on each proxy. It sets `Decal.Texture` from the preloaded list
 ### 25.4 Restaurant Art
 
 #### 25.4.1 Tier art progression ("Basic → Expand → Go Wild")
-Names are canon §C6. Footprints, seats and slots belong to §15 and §36.12. Art follows them.
+Names are canon §C6. Footprints, layouts and the façade brief for each tier belong to §15 and §36.12. This table is
+the art treatment of those briefs.
 
-| Tier | Exterior façade | Interior look | Signature set piece | Façade / interior-shell tris |
+| Tier | Exterior façade (per §15) | Interior look | Signature set piece | Façade / interior-shell tris |
 |---|---|---|---|---|
-| TIER_01 Broken Burger Shack | Lopsided plywood shack, patched tin roof, boarded window, flickering "BURG R" neon (the E is missing), burger-shaped mailbox | Worn warm wood, mismatched crate stools, duct-taped counter, one bare bulb plus string lights | Nana Gristle's cranky hologram menu board (NPC_001) | 6k / 8k |
-| TIER_02 Tiny Mutation Diner | Chrome-trimmed diner box, red-and-white awning, pink "DINER" neon with a green DNA swirl | Checkerboard floor, red vinyl stools, pie case, counter service window | Spinning pie-case carousel | 8k / 10k |
-| TIER_03 Neighborhood Freak Café | Two-story brick café, planters of eyeball sunflowers, chalkboard "SOUP THAT STARES BACK" | Cozy tables, bookshelves, potted flytraps, warm pendants; first table service | Chalkboard menu that doodles itself (flipbook) | 10k / 12k |
-| TIER_04 Morph City Grill | Industrial brick and steel, giant rotating burger sign, chimney puffing heart-shaped smoke | Open kitchen under a steel hood, booths, Edison bulbs, cartoon grill glow | Rotating rooftop burger | 12k / 15k |
-| TIER_05 Mutant Family Restaurant | Pastel family restaurant, mascot statue (a generic mutant holding a spatula), kids' corner slide | Pastel booths, balloons, crayon-art walls, birthday corner | Mascot statue that waves at passers-by | 14k / 18k |
-| TIER_06 Monster Food Court | Wide glass-front pavilion with several kiosk neons | Multi-counter food-court stalls, molded seats, central fountain, **first aquarium column**, purple neon begins | Aquarium column with cartoon fish | 16k / 22k |
-| TIER_07 Mutation Megadiner | Huge retro-futurist chrome diner, roof-mounted spinning milkshake, cyan and pink neon tubes | Two-level mezzanine, cosmetic plate conveyor, jukebox, neon edge lights | Giant milkshake with a bendy straw | 18k / 26k |
-| TIER_08 Luxury Freak Restaurant | Art-deco façade, velvet rope, red carpet, sweeping spotlights | Purple velvet booths, fork chandeliers, wall aquariums with jellyfish, robot pianist decor | Jellyfish aquarium wall | 20k / 30k |
-| TIER_09 Morph City Food Palace | Palace with cloche-shaped domes, banners, soda fountains | Grand hall, stylized marble, balconies, gold chandeliers, giant aquarium wall | Soda-fountain plaza | 22k / 35k |
-| TIER_10 Legendary Mutation Restaurant | Mutant-organic tower: tentacle columns, blinking eyeball windows, purple-neon crown, rooftop hologram of a spinning golden dish | Purple-neon monster restaurant: **360° aquarium tunnel ceiling**, glowing mutagen pipes, stage, floating-dish decor (cosmetic, anchored) | Aquarium tunnel ceiling with a friendly kraken (`FRN_908` vibe) | 25k / 40k |
+| TIER_01 Broken Burger Shack | Crooked plywood shack, patched tin roof, flickering sign with missing letters ("BRO EN BURG R SHA K"), one flickering bulb | Worn warm wood, wobbly card tables, crooked stools, duct-taped counter, bare bulb plus string lights | Nana Gristle's cranky hologram menu board (NPC_001) | 6k / 8k |
+| TIER_02 Tiny Mutation Diner | Mint paint, striped awning, small neon DINER sign with a winking mutant eye | Checkerboard floor, red vinyl stools, snack-bar row, counter service window | Winking-eye neon (2-frame blink, ≤ 1 Hz) | 8k / 10k |
+| TIER_03 Neighborhood Freak Café | Corner café, chalkboard easel, window boxes of snapping flytraps, two patio umbrellas | Cozy tables, host podium, bookshelves, warm pendants; first table service | Flytrap window boxes that snap at passers-by | 10k / 12k |
+| TIER_04 Morph City Grill | Red-brick grill house, chimney puffing burger-shaped smoke rings, City Hall permit plaque | Two dining wings, open kitchen under a steel hood, Edison bulbs, cartoon grill glow | Burger smoke rings (particle flipbook) | 12k / 15k |
+| TIER_05 Mutant Family Restaurant | Two-story family front (the upper floor is painted on), big waving mascot board | Long-table center row, pastel booths, kids' corner, balloons, crayon-art walls | Waving mascot board | 14k / 18k |
+| TIER_06 Monster Food Court | Arcade of three mini storefront arches under one roof, giant crossed fork and spoon on top | Three dining pods around a shared center, up to three serving windows, **first aquarium column**, purple neon begins | Aquarium column with cartoon fish | 16k / 22k |
+| TIER_07 Mutation Megadiner | Chrome streamline megadiner, giant rotating burger on the roof, neon racing stripes | Horseshoe of booths, karaoke corner, jukebox, cyan and pink neon edge lights | Rotating roof burger | 18k / 26k |
+| TIER_08 Luxury Freak Restaurant | Marble columns, red carpet, gold awning, waving cardboard valet | Fine-dining salon with a ramped VIP ring, purple velvet, fork chandeliers, jellyfish tanks, dessert bar | Jellyfish tanks | 20k / 30k |
+| TIER_09 Morph City Food Palace | Palace with cloche-shaped domes, twin sauce fountains, sweeping searchlights | Banquet hall, gold chandeliers, stylized marble, garden patio | Twin sauce fountains | 22k / 35k |
+| TIER_10 Legendary Mutation Restaurant | **Go Wild:** giant neon monster building whose open mouth is the entrance, roof tentacles holding neon signs, aquarium visible from the street, fireworks at 4.5 ★ | Purple-neon showpiece hall around a 16-stud aquarium wall, glass-floor aisle with fish below, glowing mutagen pipes | Monster-mouth entrance and the aquarium wall | 25k / 40k |
 
 **Façade rules.**
-- Fit the plot volume in §15. Height ≤ 40 studs including the sign; the TIER_10 hologram may extend 10 studs more as
-  non-colliding `Beam` and Neon.
+- Fit the plot footprint in §15. Height ≤ 40 studs including the sign. TIER_10 roof tentacles and fireworks may
+  extend 10 studs more as non-colliding visuals.
 - The door is centered, ≥ 10 studs tall, with a glowing frame while the restaurant is open. During Closing (canon
-  E1) it shows a "Closed for the day!" sign.
+  E1) it shows a "Closed for the day!" sign, and during renovation a "CLOSED FOR RENOVATION" banner (§15).
 - Name-sign cap height runs from 3 studs (T1) to 5 studs (T10), legible at 80 studs on 1080p. The custom
   restaurant name renders through a SurfaceGui after the text filter (§21, §29).
 - Façade LOD1 (≤ 30 % tris) applies beyond 120 studs, and neon stays at every LOD.
@@ -507,9 +508,9 @@ Budget: ≤ 2,000 tris at L0, plus ≤ 500 for the Lv5 kit, ≤ 6 MeshParts, and
   | Aquarium | 2,500, plus ≤ 6 fish at 150 each (client sine-swim) |
   | Trophies `FRN_901`–`FRN_910` | 1,200 (one SurfaceAppearance set allowed) |
 
-- **Destructible items** ship a Pristine mesh, a Cracked variant, a Broken variant and ≤ 3 damage decals. Rubble is
-  shared per size class (S, M, L) and tinted with the item's primary color, plus one recognizable fragment (the
-  fryer basket, a booth cushion).
+- **Destructible items** ship a Pristine mesh, a Cracked variant, a Broken variant and ≤ 3 damage decals. Rubble uses the
+  6 shared rubble sizes (§15), tinted with the item's primary color, plus one recognizable fragment (the fryer
+  basket, a booth cushion).
 - Interactive decor (jukebox, arcade cabinet, fish tank) idles with `TweenService` loops. No physics.
 
 #### 25.4.5 Damage-state visuals
@@ -518,17 +519,19 @@ Budget: ≤ 2,000 tris at L0, plus ≤ 500 for the Lv5 kit, ≤ 6 MeshParts, and
 
 **Rules & Mechanics.** States and ranges are canon. Visuals:
 
-| State (durability) | Wood furniture | Metal appliances | Soft goods | Jelly-glass decor (aquariums) | Icon (shape-coded) |
+| State (durability) | Wood furniture | Metal appliances | Soft goods | Jelly-glass decor (aquariums, windows) | Icon (shape-coded) |
 |---|---|---|---|---|---|
 | Pristine (100–76 %) | clean, slight sheen | face smiling, lamp normal | plump | crystal clear, fish happy | none |
-| Scuffed (75–51 %) | 2 scuff decals, 2° wobble tilt | dent decal, peeling sticker | food-stain splat decal | smudges | 1 crack line |
-| Cracked (50–26 %) | Cracked mesh: a plank sticks out, 5° tilt, periodic creak | loose flapping panel, gray smoke puff every 4 s, grimace face | torn seam with a stuffing tuft | tape "X" over the crack, slow drip | 2 crack lines |
-| Broken (25–1 %, unusable) | Broken mesh: split in half, propped on a sad brick | door hangs open, springs boing out, star sparks every 3 s, X-eyes | flattened, feathers out | water at half, fish in tiny snorkels | X badge |
-| Destroyed (0 %) | rubble pile plus a dust cloud on the transition | rubble pile with its signature fragment | fluff pile | rubble plus puddle decal, fish in a bowl | rubble icon plus "Rebuild" price badge (≤ 25 %) |
+| Scuffed (75–51 %) | scuff decals plus a "fix me?" sticky note (§15) | dent decal, peeling sticker | food-stain splat decal | smudges | 1 crack line |
+| Cracked (50–26 %) | crack decals, 3° tilt, a cartoon bandage; the Cracked mesh variant has a plank sticking out | loose flapping panel, gray smoke puff every 4 s, grimace face | torn seam with a stuffing tuft | tape "X" over the crack, slow drip | 2 crack lines |
+| Broken (25–1 %, unusable) | slumped "broken pose" mesh per model (fallback: 12° tilt plus a popped leg) | X-eyes, door hanging open, springs boing out, star sparks every 3 s. Timers paused (§5). | flattened, feathers out | window boarded with cartoon planks; aquarium water at half, fish in tiny snorkels | X badge |
+| Destroyed (0 %) | poof into a tinted rubble pile (6 sizes, §15) plus a dust cloud | rubble pile with its signature fragment | fluff pile | rubble plus puddle decal, fish in a bowl | rubble icon plus "Rebuild" price badge (≤ 25 %) |
+
+Lights go dark when Broken. Doors hang from one hinge but stay passable (§15).
 
 **Variables [TUNABLE].**
 - ≤ 3 decals per item.
-- Tilt: 2° Scuffed, 5° Cracked.
+- Tilt: 3° Cracked; 12° fallback for Broken.
 - Smoke period 4 s; spark period 3 s.
 - Debris: ≤ 12 pieces per event, 4 s life (canon).
 - Transition wobble 0.3 s.
@@ -563,18 +566,22 @@ inside the item model. The client toggles visibility from the replicated `Damage
 - **Offline auto-repairs** (canon §C15) show small "fixed while you were away" sparkle tags on first entry.
 
 #### 25.4.7 Upgrade and construction animation
-Tier upgrade sequence: 8 s total, skippable after 1 s (a skip jumps to 6.5 s). The façade sequence plays locally on
-every client on Restaurant Row when the plot's tier attribute changes.
+The tier upgrade flow and its **Mutant Builders sequence** belong to §15: 10.0 s on first view, a 3.0 s short
+version afterwards, skippable for others, camera on the exterior. This is the art and audio treatment of that
+timeline. The crew is client-only cosmetic, built from random Common parts, and wears the ROLE_REPAIR hard-hat
+uniform look.
 
-| Time (s) | Façade | Audio |
-|---|---|---|
-| 0.0–1.0 | A tarp printed with the restaurant logo drops over the façade; the crew arrives (`ANM_183`) | `MUS_034` starts |
-| 1.0–5.0 | Hammering, dust clouds (≤ 40 particles), "BANG!", "WHIRR!", "OOPS!" texts, a crane swings the next tier's set piece. The new façade streams in hidden. | hammer hits |
-| 5.0–6.5 | Tarp yank and pop-up-book unfold (`ANM_185`), confetti, spotlights sweep | — |
-| 6.5–8.0 | Ribbon cutting (`ANM_184`) by the owner, with NPC_002 present for TIER_04+ permits. The sign lights up letter by letter. | `SFX_197` |
+| t (s) | Beat (§15) | Art treatment | Animation / audio |
+|---|---|---|---|
+| 0.0 | Fade to exterior | "CLOSED FOR RENOVATION" banner unrolls over the old façade | `MUS_034` starts |
+| 0.5 | Crew of 6 pours out of a tiny van | Clown-car gag; a hard hat on every head shape, one on a tail | `SFX_177` toots |
+| 1.5–7.0 | Scaffolding, hammering, crane lifts the new sign, dust hides the swap | Dust clouds ≤ 40 particles; "BANG!", "WHIRR!", "OOPS!" texts; one builder hits their thumb (stars). The new façade streams in hidden. | `ANM_183` (crew variant of `ANM_060`), `SFX_119`, `SFX_079` |
+| 7.0 | Dust clears: new façade | Pop-up-book panel snap (`ANM_185`), confetti | `SFX_197` |
+| 8.0–9.5 | Builders celebrate; sign lights letter by letter | Neon letters ignite at 0.1 s per letter | `ANM_064`, `SFX_174` |
+| 10.0 | Door opens; fade inside | Interior already migrated (§15). The Grand Opening confetti burst can use `ANM_184` ribbon cutting. | — |
 
-- **Inside the restaurant during an upgrade:** a 3 s "renovation curtain" ScreenGui wipe hides the interior swap.
-- **Furniture and appliance purchases** drop in from above in a gift box that unboxes in 0.6 s with a dust puff.
+The 3.0 s short version keeps 0.0 → 7.0 → 8.0 compressed to a dust puff, the reveal and the sign. **Furniture and
+appliance purchases** drop in from above in a gift box that unboxes in 0.6 s with a dust puff.
 
 ### 25.5 City Art
 
@@ -752,8 +759,8 @@ players (≤ 120k), shell plus furniture plus 24 appliances (≈ 140k).
 7. **Reduced-VFX with fire.** The fire flipbook drops to 6 particles, but the station lamp icon and outline remain
    (§25.6.4).
 8. **City night cycle versus interiors.** Interiors keep their tier preset regardless of the city clock (§25.2.8).
-9. **Owner inside during a tier upgrade.** The renovation curtain hides the interior swap (§25.4.7). The façade
-   sequence still plays for people outside.
+9. **Owner inside during a tier upgrade.** §15 cuts the camera to the exterior for the sequence and fades back
+   inside afterwards, so nobody sees the interior swap.
 10. **Debris storms in level-6 chaos.** The canon cap of 30 loose physics props is unaffected, because debris is
     client-only mesh (≤ 12 per event). Pools recycle the oldest pieces first.
 11. **Temporary mutation from MUT dishes** (60 s, canon §C10). It is built at L1 with the normal sockets and pops in
@@ -787,8 +794,8 @@ players (≤ 120k), shell plus furniture plus 24 appliances (≈ 140k).
 - **AC-25-13:** Entering a restaurant applies the tier lighting preset within 1.0 s. `Lighting.Technology` is never
   modified at runtime.
 - **AC-25-14:** Each tier's name sign is legible at 80 studs on a 1080p display (cap height ≥ 3 studs).
-- **AC-25-15:** The tier-upgrade sequence lasts ≤ 8 s, is skippable after 1 s, and shows no façade pop-in outside
-  the tarp.
+- **AC-25-15:** The Mutant Builders sequence matches the §15 timeline (10.0 s first view, 3.0 s short version), and
+  the façade swap is never visible outside the dust cloud.
 - **AC-25-16:** No texture exceeds 1024². SurfaceAppearance maps are ≤ 512² and appear only on the asset classes
   allowed by §25.3.4.
 - **AC-25-17:** All 10 districts contain ≥ 3 ambient animated elements and ≥ 2 absurd billboards from §25.5.

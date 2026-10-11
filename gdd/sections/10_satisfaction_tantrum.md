@@ -125,33 +125,30 @@ hooks (e.g. PER_008 Perfectionist −10, PER_031 Sing +8), clamped to [−20, +1
 | Mutation Cuisine "Whoa!" | +10 | the item is a MUT recipe (§C10) |
 | §12 part passives | as defined in §12 | add into this same pool; the +10 cap always holds |
 
-**EventModifier** (sum of active events, clamped to −15..+15; event schedules and rules are owned by §36.11, the
-satisfaction effects below are owned here; unlisted events give 0):
+**EventModifier** (sum of active events, clamped to −15..+15 per §C11.3 and §36.11). Event schedules and rules are
+owned by §36.11; where §36.11 states an EventModifier (marked **§36.11**) that value is repeated here, the other
+values are A5's satisfaction effects. Unlisted events give 0 — including `EVT_003`, `EVT_004`, `EVT_008` and
+`EVT_026`, whose challenge comes from their own rules (extra demand, invaders, critics, inspections).
 
 | Event | ID | Modifier |
 |---|---|---|
-| Giant Food Festival | `EVT_001` | +5 all items |
-| Mutation Parade | `EVT_002` | +3 all items |
-| Citywide Restaurant Rush | `EVT_003` | −5 all items (everyone is in a hurry) |
-| Angry Customer Invasion | `EVT_004` | −10 all items; escalation rolls ×1.5 (§10.7) |
+| Giant Food Festival | `EVT_001` | +3 all items (festive mood) |
 | Legendary Chef Tournament | `EVT_005` | +5 LEG items |
 | Mutation Meteor Shower | `EVT_006` | +10 MUT items and items with the `mutagen` tag |
-| Food Critic Convention | `EVT_008` | −5 all items (everyone is a critic) |
-| Blackout Night | `EVT_009` | −5 all items unless Atmosphere ≥ 50 ("candlelit charm") |
-| Upside-Down Day | `EVT_011` | +10 `RCP_BRG_013`, `RCP_BRK_005`, `RCP_PIZ_012` and upside-down modifications |
-| Pickle Rain | `EVT_012` | +8 items with the `pickle` tag |
-| Sewer Flood | `EVT_013` | −5 all items |
-| Celebrity Chef Visit | `EVT_014` | +5 all items |
-| Polite Robot Uprising | `EVT_017` | +10 for customers whose HEAD or TORSO is ROBOT category |
-| Alien Tourist Season | `EVT_018` | +10 ALN items |
-| Hot Sauce Heatwave | `EVT_019` | +10 `spicy` items; +5 `frozen` drinks |
-| Frozen Snap | `EVT_020` | +10 SOP items, `RCP_DRK_007` and `RCP_DRK_010`; −5 `frozen` items |
-| Health Inspector Sweep | `EVT_026` | −(100 − K) / 10 (0 to −10) |
+| Blackout Night | `EVT_009` | +5 all items — candlelit dining (**§36.11**, which also grants Atmosphere +10) |
+| Upside-Down Day | `EVT_011` | +5 `RCP_BRG_013`, `RCP_BRK_005`, `RCP_PIZ_012` and items carrying an upside-down modification |
+| Pickle Rain | `EVT_012` | +5 items with the `pickle` tag |
+| Sewer Flood | `EVT_013` | −3 all items (soggy socks) |
+| Celebrity Chef Visit | `EVT_014` | +3 all items (star-struck diners) |
+| Polite Robot Uprising | `EVT_017` | +5 for customers whose HEAD or TORSO is ROBOT category |
+| Alien Tourist Season | `EVT_018` | +5 ALN items |
+| Hot Sauce Heatwave | `EVT_019` | +5 `spicy` items served together with a drink (**§36.11**) |
+| Frozen Snap | `EVT_020` | +5 SOP items, `RCP_DRK_007` and `RCP_DRK_010`; −5 `frozen` items |
 | Neon Lights Festival | `EVT_028` | +5 all items |
-| Haunted Kitchen Night | `EVT_029` | +8 `RCP_SOP_006`, `RCP_SOP_005`, `RCP_PIZ_006` |
-| Snowmorph Holiday | `EVT_030` | +8 DES items |
-| Spring Sprout Bloom | `EVT_031` | +10 SAL items |
-| Bug Swarm Brunch | `EVT_032` | +10 items with the `bug` tag; −3 all others |
+| Haunted Kitchen Night | `EVT_029` | +5 spooky-themed items, e.g. `RCP_SOP_006`, `RCP_SOP_005`, `RCP_PIZ_006` (**§36.11**) |
+| Snowmorph Holiday | `EVT_030` | +5 SOP items and hot drinks |
+| Spring Sprout Bloom | `EVT_031` | +5 SAL items |
+| Bug Swarm Brunch | `EVT_032` | +5 items with the `bug` tag |
 
 ### 10.4 Worked Satisfaction Examples
 

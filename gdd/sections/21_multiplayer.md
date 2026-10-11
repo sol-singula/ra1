@@ -130,7 +130,8 @@ the owner earns little MB (and plenty of XP and goodwill), and a much lower help
 - The owner receives **all** payments and tips for every order, whoever cooked or served it.
 - **Busy Kitchen bonus** per *active* visitor (≥ 3 qualifying actions — cook step, serve, clean, repair, calm — in the last
   5 min): **+5 % tips, +5 % XP for everyone inside, +8 % customer arrival rate** (seat capacity still caps customers).
-  Max 3 visitors → +15 % tips, +15 % XP, +24 % arrivals [TUNABLE]. AFK visitors give nothing.
+  Max 3 visitors → +15 % tips, +15 % XP, +24 % arrivals [TUNABLE]. AFK visitors give nothing. Anti-alt rules from §29.16:
+  only visitors with `Player.AccountAge` ≥ 7 days count, at most 5 distinct visitors per owner per UTC day.
 - Owner co-op milestones (orders completed with helpers) unlock cosmetic titles ("Head Chef of Chaos") and emotes.
 
 #### 21.4.3 Co-op Insurance and Reputation Shield (E12)
@@ -148,7 +149,7 @@ the owner earns little MB (and plenty of XP and goodwill), and a much lower help
 
 | Topic | Rule |
 |---|---|
-| Station locks | One interactor per **slot** (E7); multi-slot stations (grill 2, stove 2 burners, …) allow parallel use. A slot lock releases on completion, after 2 s idle, or when the holder moves > 9 studs away (7 + 2 tolerance, §C3). |
+| Station locks | One interactor per **slot** (E7); multi-slot stations (grill 2, stove 2 burners, …) allow parallel use. A slot lock releases on completion, after 20 s without input from the holder (§29.16 anti-hogging), or when the holder moves > 9 studs away (7 + 2 tolerance, §C3). |
 | Shared items | Every ingredient, component and plate is restaurant-owned: any permitted player may continue, plate or serve another player's item. Quality uses the component scores regardless of who made them (§C8). |
 | Tickets | One shared ticket rail. Any permitted player can take an order. Tapping a ticket places a **soft claim** (name tag, 20 s) to reduce collisions — it is a hint, not a lock. |
 | Carry | Each player's own capacity (1–3, §C3); passing items = put down / pick up (no throwing plates to players). |
@@ -156,7 +157,7 @@ the owner earns little MB (and plenty of XP and goodwill), and a much lower help
 | Cleaning & dishes | Any permitted player; cleanliness K and dish stock are shared. |
 | Combat targets | Hostile customers choose targets per §11 AI among *all* players and staff inside. KO'd visitors respawn at this restaurant's kitchen spawn with §C12.1 rules (no loss). |
 | Friendly fire | Off and locked: player attacks never damage, knock back, stun or pull another player outside the arena. Area abilities pass through allies. |
-| Customer escalation | Hits from any player count the same toward customer anger (§C11.5); grief heuristics watch visitor-caused anger (§21.6). |
+| Customer escalation | Hits on non-hostile customers add anger per §11.2.2 × a role factor: owner 1.0, Co-Chef 0.5, Guest 0.25 (`GUEST_ANGER_FACTOR`, §29.16) — a guest cannot easily start a brawl in a friend's diner; grief heuristics watch visitor-caused anger (§21.6). |
 | Difficulty | Co-op does not raise customer hostility or anger probabilities; only arrivals rise (Busy Kitchen), bounded by seats. |
 | Disconnects | Visitor leaves → held items set down; their soft claims clear; nothing is lost. Owner leaves → E1 Closing; visitors moved to the street with a friendly "The chef went home!" card. |
 
@@ -172,7 +173,7 @@ leaves); never damage players. All session damage is insured (§21.4.3).
 | Tool | Effect | Persistence |
 |---|---|---|
 | Pause | Visitor can walk, chat and emote but not act | until restored or 2 min |
-| Kick | Visitor is moved to the street outside the door; cannot re-enter for 10 min | session |
+| Kick ("Show them the door", §29.16) | Visitor is moved to the street outside the door; cannot re-enter for 10 min | session |
 | Ban | Visitor cannot enter or receive invites from this owner; listed in Co-op → Banned | profile `coop.banList` (max 50, oldest dropped with a prompt) |
 | Close door | No new visitors; current visitors may stay or be removed with *Close & clear* | profile |
 | Block (Roblox) | `StarterGui:SetCore("PromptBlockPlayer", player)`; blocked users are treated as banned (the client reports `GetCore("GetBlockedUserIds")` to the server — it can only restrict, never grant) | Roblox account |
@@ -181,8 +182,10 @@ leaves); never damage players. All session damage is insured (§21.4.3).
 There is **no vote-kick, no majority rule and no way for visitors to remove the owner** or each other (Co-Chefs may
 kick Guests only if the owner enables it).
 
-**Automated grief heuristics** [TUNABLE] (server-side, per visitor; any trigger → visitor auto-**Paused** for 2 min and the
-owner sees *Restore / Kick / Ban*; a second trigger in the same visit → auto-kick):
+**Automated grief heuristics** [TUNABLE] (server-side, per visitor, feeding the §29.16 guest disruption score). *Severe*
+signals (first three rows) auto-remove the visitor (street, 10-min re-entry block) and notify the owner with *Ban / Undo*;
+*mild* signals (last three rows) auto-**Pause** the visitor for 2 min and offer the owner *Restore / Kick / Ban*; a second
+mild trigger in the same visit escalates to removal:
 
 | Signal | Threshold |
 |---|---|
@@ -261,15 +264,15 @@ sequenceDiagram
 
 | Building | District | Social features |
 |---|---|---|
-| `BLD_19` Morph Park & Fountain | `DST_08` | Emote Circle (synchronised emotes), picnic tables (sit together), Fountain Wish (toss 1 MB, ≤ 10/day: harmless cosmetic splash effect for 30 s — a cheerful micro-sink), pigeon feeding and gossip with Old Man Pigeon (`NPC_025`), photo spots |
-| `BLD_22` Showcase Stage | `DST_07` | Morph showcases with DJ Morphenstein (`NPC_024`, §21.8.6), dance floor for `EVT_027` Downtown Dance-Off, audience bleachers |
+| `BLD_19` Morph Park & Fountain | `DST_08` | Emote Circle (5+ players emoting together trigger confetti, §36.10), picnic tables and benches (`Seat`s), wading in the fountain, the daily rumor from Old Man Pigeon (`NPC_025`), photo spots, seasonal areas for `EVT_030`/`EVT_031`; free |
+| `BLD_22` Showcase Stage | `DST_07` | Morph shows with DJ Morphenstein (`NPC_024`, §21.8.6), runway and bleachers for 8 players plus NPC crowd, Grand Tournament Kitchen backstage for `EVT_005`; free |
 
 Gathering areas are no-combat zones (abilities disabled except movement and emotes) and have a 16-player visual cap per
 client for morph LOD (§30); farther players render as impostors.
 
 #### 21.8.2 Social Activities (no new currency)
-- **Emote Circle:** ≥ 3 players performing the same emote within 2 s trigger a confetti burst and +1 progress toward the
-  "In Sync" title; 1 trigger per player per 60 s.
+- **Emote Circle:** 5+ players emoting in the circle trigger a confetti burst (§36.10) and +1 progress toward the "In Sync"
+  emote; progress counts once per player per 60 s.
 - **Picnic Peace Offering:** two players at a picnic table can share a snack emote; both gain 0.01 × XPRate(L) (≤ 10/day).
 - **Photo Mode:** free camera, poses, frames and filters; images stay on the device (no in-game upload or sharing of UGC).
 - **Morph Swap Hour** (`EVT_021`): temporary *cosmetic* swaps of one visual part between consenting friends for 60 s
@@ -294,12 +297,12 @@ client for morph LOD (§30); farther players render as impostors.
 | `EVT_003` Citywide Restaurant Rush | all restaurants on the server add served customers to one shared goal; every contributing player earns the tier reward |
 | `EVT_027` Downtown Dance-Off | rhythm emote mini-game at `BLD_22`; teams of up to 4 |
 | `EVT_002` Mutation Parade | parade route walk with showcase-style cheering; cosmetic rewards |
-| `EVT_025` Arena Brawl Bash | arena event with double cosmetic progress; **Cook-Off bracket runs in parallel** so it is never PvP-only |
-| `EVT_005` Legendary Chef Tournament | Cook-Off finals hosted by Chef Supreme Omnivora (`NPC_029`); non-violent |
+| `EVT_025` Arena Brawl Bash | opt-in PvP king-of-the-hill with ring-outs in the local arena pits (§36.11), §11.11 normalization; the parallel PvE "Bash the Bots" waves give non-PvP players the same participation path — never PvP-only |
+| `EVT_005` Legendary Chef Tournament | cooking finals in the Grand Tournament Kitchen behind `BLD_22`, hosted by Chef Supreme Omnivora (`NPC_029`); non-violent |
 | `EVT_021` Morph Swap Hour | consensual cosmetic swaps (§21.8.2) |
 
-Event rewards obey §22.3 (≤ 2 MB rewards per event per day) and §22.13 MS budgets; AFK players (no qualifying action for
-90 s) receive nothing.
+Event rewards follow §18.8.4 (ERM bands, ×0.5 after 16 events per day, ≤ 3 capsules/day, ≤ 10 RT/week) and the §22.13 MS
+budgets; contribution bands make co-op events reward helpers, never last hits; AFK players earn nothing.
 
 #### 21.8.5 Emotes (all earnable)
 Emotes are plain-text cosmetic rewards (§C17.4). Players equip 8 on the emote wheel (`B` / d-pad down / emote button).
@@ -321,7 +324,7 @@ Animations come from the §36.14 library. Robux emotes (§23) are extra and neve
 | Zen Pose | calm 50 customers with `ABL_006` Calm Down! |
 | Belly Bump Victory | win 10 arena matches (any combat mode) |
 | Cook-Off Salute | finish 10 Cook-Off races |
-| Runway Strut | place top 3 in a morph showcase |
+| Runway Spin | win 10 morph shows at `BLD_22` (§36.10) |
 | Confetti Pop | take part in `EVT_001` Giant Food Festival |
 | Rat Rally Cheer | contribute to defeating King Ratbeard in `EVT_007` |
 | Moonwalk-ish | finish a round of `EVT_027` Downtown Dance-Off |
@@ -338,28 +341,25 @@ Seasonal emotes always return with their yearly event, so missing one is never p
 
 #### 21.8.6 Morph Showcases (`BLD_22`, host DJ Morphenstein `NPC_024`)
 
-**Flow:** a round opens every 10 min per server [TUNABLE] → 2-min sign-up (3–6 entrants) → each entrant walks the runway
-for 12 s while the stage camera frames them and their filtered morph name appears → 20-s voting → results, confetti and
-rewards. Fewer than 3 entrants postpones the round by 5 min.
+§36.10 (`BLD_22`) fixes the show format; this subsection adds the social and anti-abuse rules `MultiplayerService` enforces.
 
-**Themes** (rotating, announced at sign-up): Most Ridiculous · Best Chef Look · Cutest Monster · Most Legs · Tallest Morph ·
-Most Colourful · Best Use of Food Parts · Spooky-but-Friendly · Sea Creature Couture · Robot Remix · Fewest Matching Parts ·
-Best Duo (pairs) · **Parts Only** (paid skins and palettes are hidden for the round — pure mutation creativity).
+**Format (§36.10):** shows auto-start every 15 min, or on demand when ≥ 3 players queue; 2–6 contestants walk the 40-stud
+runway with pose prompts every 4 s while their **filtered** morph name is displayed; one theme per show (Most Tentacles ·
+Tallest Morph · Best Color Coordination · Cutest Spooky · Most Legs · Breakfast Energy · Robot Chic · Ocean Vibes · Pure
+Chaos · Tiny but Mighty · Shiniest · Animal Kingdom). **Score = 60 % audience votes + 40 % theme match** computed from the
+contestant's equipped parts' categories, slots and §C13.5 tags. Rewards: every contestant 0.03 × XPRate(L) + 5 MS; winner
+20 MS + 2 ERM; first win title "Showstopper"; 10 wins emote "Runway Spin"; 5 rewarded shows per player per day.
 
 **Voting rules [TUNABLE]:**
-- Eligible voters: players in the audience zone for ≥ 30 s, plus entrants (who cannot rate themselves).
-- One 1–5 ★ rating per voter per entrant. Weight 1.0, reduced to **0.5** for: party members or Roblox friends of the entrant,
-  accounts younger than 3 days (`Player.AccountAge`), and voters who give every entrant the same score.
-- DJ Morphenstein adds **3 NPC judge votes** per entrant from a deterministic theme score (theme tags, part categories,
-  slot fill; paid cosmetic overlays ignored), so rounds work on quiet servers and collusion is diluted.
-- Score = Bayesian average `(Σ w·r + 2 × 3.0) / (Σ w + 2)`; ties → more NPC judge points → earlier sign-up.
-- Minimum 4 eligible human voters for MS rewards (XP is always granted).
+- Eligible voters: players in the bleachers for ≥ 30 s plus the other contestants; no self-votes; one 1–5 vote per voter per
+  contestant (`Stage.Vote(showId, contestantUserId, value)`, server-validated, §36.10).
+- Vote weight 1.0, reduced to **0.5** for party members and Roblox friends of the contestant (AC-18-42), for accounts younger
+  than 3 days (`Player.AccountAge`), and for voters who give every contestant the same value.
+- Audience component = Bayesian average `(Σ w·v + 2 × 3.0) / (Σ w + 2)` so two friends cannot swing a quiet show; with
+  fewer than 3 eligible human voters the theme match counts 100 % and MS rewards are withheld (XP still granted).
+- Reciprocal maximum votes between the same two players in ≥ 3 shows on one UTC day drop that pair's weight to 0.25.
 
-**Rewards:** everyone 0.05 × XPRate(L); top 3 earn 15 / 10 / 5 MS (counts toward the repeatable-MS soft cap) and title
-progress ("Runway Freak" at 5 podiums, "Morph Icon" at 25); rewards for at most 5 rounds per player per day.
-
-**Anti-abuse:** vote input rate-limited (1 rating per entrant per round, server-validated); reciprocal max-rating pairs
-detected ≥ 3 times in a day drop to weight 0.25; offensive morph combinations can be reported (auto-hidden after 3
-reports pending review); entrants must stay on stage; no Robux-only advantage (Parts Only rounds; NPC judges ignore paid
-overlays).
+**Fairness and safety:** theme match ignores paid cosmetic overlays (§23) — only owned mutation parts count — so Robux never
+wins a show; offensive combinations can be reported from the results card (hidden after 3 reports pending review);
+contestants are live characters (no copies) and must stay on the runway; the stage is a no-combat zone.
 

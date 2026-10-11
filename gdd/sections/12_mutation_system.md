@@ -150,7 +150,7 @@ list, on any device, inside fixed budgets (the "skin-over-rig" contract).
 canon attachments (`MMR_HeadCore` … `MMR_FXRoot`, plus `MMR_Grip` in each hand) once, and stores every leg/neck
 Motor6D's original `C0`/`C1` as CFrame attributes (`BaseC0`, `BaseC1`) so builds are repeatable.
 
-**Asset format.** `ReplicatedStorage/MorphParts/<SLOT>/<MUT_ID>` is a Model with three LOD folders — `Hi` (players),
+**Asset format.** `ReplicatedStorage/MorphParts/<SLOT>/<PartId>` (e.g. `MorphParts/HEAD/MUT_031`) is a Model with three LOD folders — `Hi` (players),
 `Lo` (customers/employees within 60 studs) and `L2` (impostor silhouette pieces: HEAD, TORSO, ARMS, LEGS, TAIL, WINGS,
 BACK, EARS, HORNS only). Each MeshPart has a child Attachment `Mount` and attributes `Host` (canon attachment name),
 `Side` (`L`/`R`/nil — Roblox cannot mirror meshes at runtime, so paired parts ship authored L and R meshes), `Tris`,
@@ -166,7 +166,7 @@ code reads part data.
    (faceLocked, hides, handsLocked), apply the huge-part limit and the 9.5-stud height clamp, and produce a build order:
    TORSO → LEG_L/R → NECK → HEAD → EYES/MOUTH/NOSE/FACE → EARS/HORNS → ARM_L/R → HANDS → FEET → TAIL → BACK → WINGS → FX.
    The order doubles as trim priority.
-2. **Release** the previous `MMR_Visual` folder (players: destroy; NPC visuals: return MeshParts to a per-`MUT_ID`/LOD pool).
+2. **Release** the previous `MMR_Visual` folder (players: destroy; NPC visuals: return MeshParts to a per-part, per-LOD pool).
 3. **Clone** each visible MeshPart of the chosen LOD (and matching `Side`) and set `Anchored = false`, `Massless = true`,
    `CanCollide = false`, `CanTouch = false`, `CanQuery = false`, `CastShadow = (lod == "Hi")`, `CollisionGroup = "MMR_Visual"`.
 4. **Align & join**: `part.CFrame = host.WorldCFrame * mount.CFrame:Inverse()`; join with a `WeldConstraint` (Part0 =
@@ -357,6 +357,25 @@ Stat leanings come from each part's tags plus a small category bias, so a FOOD a
 | ELEMENTAL | emissive crystal, lava, storm and cloud materials | STR, COOK_SPD | status procs and immunities, temperature stations |
 
 <!-- BEGIN GENERATED: category-counts -->
+| Category | Common | Uncommon | Rare | Epic | Legendary | Mythic | Secret | Total |
+|---|---|---|---|---|---|---|---|---|
+| MAMMAL | 31 | 23 | 9 | 1 | · | · | · | **64** |
+| BIRD | 9 | 7 | 2 | · | · | · | · | **18** |
+| REPTILE | 4 | 9 | 4 | · | · | · | · | **17** |
+| AMPHIBIAN | 5 | 2 | · | · | · | · | · | **7** |
+| FISH | 5 | 4 | 6 | · | · | · | · | **15** |
+| INSECT | · | 6 | 7 | · | · | · | · | **13** |
+| ARACHNID | 1 | 3 | 2 | · | · | · | · | **6** |
+| MARINE | 1 | 6 | 6 | 1 | 3 | · | · | **17** |
+| DINOSAUR | · | 1 | 2 | 5 | · | · | · | **8** |
+| MYTHOLOGICAL | · | 1 | 2 | 8 | 5 | 1 | · | **17** |
+| ROBOT | · | 4 | 11 | 3 | · | · | 1 | **19** |
+| OBJECT | 5 | 8 | 10 | 3 | 2 | · | 2 | **30** |
+| FOOD | 1 | 2 | 2 | 1 | · | 1 | 1 | **8** |
+| PLANT | 1 | 6 | 4 | 1 | · | · | · | **12** |
+| ALIEN | · | 1 | 2 | 6 | · | 3 | 3 | **15** |
+| ELEMENTAL | · | 1 | 6 | 7 | · | · | · | **14** |
+| **Total** | **63** | **84** | **75** | **36** | **10** | **5** | **7** | **280** |
 <!-- END GENERATED: category-counts -->
 
 ### 12.5 Rarities and Acquisition
@@ -379,6 +398,15 @@ color **and** shape (§24 accessibility).
 (Epic), 5,000 (Legendary). Resulting price points [TUNABLE]:
 
 <!-- BEGIN GENERATED: price-points -->
+| Rarity | Canon range (MB) | Extra cost | Minor slot | Minor + active | Major slot | Major + active | FX (cosmetic) | Parts sold |
+|---|---|---|---|---|---|---|---|---|
+| ● Common | 150–400 | — | 200 | 280 | 330 | 400 | 150 | 63 |
+| ▲ Uncommon | 800–2,000 | — | 1,040 | 1,400 | 1,640 | 2,000 | 800 | 84 |
+| ■ Rare | 4,000–10,000 | 20 MS | 5,200 | 7,000 | 8,200 | 10,000 | 4,000 | 75 |
+| ⬟ Epic | 25,000–60,000 | 80 MS | 32,000 | 42,500 | 49,500 | 60,000 | 25,000 | 36 |
+| ★ Legendary | 150,000–400,000 | 250 MS + 10 RT | 200,000 | · | 325,000 | 400,000 | · | 10 |
+| ⬢ Mythic | not sold | Lab fusion: 3 Legendary of same category + 600 MS + 40 RT | · | · | · | · | · | 0 |
+| ? Secret | not sold | hidden discovery condition | · | · | · | · | · | 0 |
 <!-- END GENERATED: price-points -->
 
 **Sources in detail.**
@@ -437,7 +465,8 @@ of the part or `DupeSubstituteMS[r]`. MB results are rounded half up to whole MB
 pay the substitute.
 
 - **Stat growth:** `Budget(L) = round(BaseBudget[r] × SlotWeight × (1 + 0.12 × (L − 1)))`, distributed over the part's Lv1
-  stat split by largest remainder (ties in canon stat order), so a part never changes identity as it grows.
+  stat split by largest remainder (ties in canon stat order), so a part never changes identity as it grows. Small
+  budgets grow in steps (a Common minor part reaches its 3rd point at Lv4), so their passive growth carries more weight.
 - **Passive growth:** numeric magnitudes scale ×(1 + 0.05 × (L − 1)) — Common Lv5 ×1.20, Mythic Lv10 ×1.45 — while ICDs,
   durations, radii, counts (carry +1, +1 target) and flat triggers never scale; combined caps (§12.8) never move.
 - **Active growth:** `MutationService` passes the part level to `CombatService`; potency per level is defined in §36.6.
@@ -448,11 +477,49 @@ pay the substitute.
 **Stat budget by level [TUNABLE]:**
 
 <!-- BEGIN GENERATED: budget-growth -->
+Total stat points per part, shown as **major / minor** slot (major = HEAD, TORSO, each ARM, TAIL, WINGS, BACK; minor = FACE, NOSE, MOUTH, EYES, EARS, HORNS, NECK, HANDS, each LEG, FEET, SKIN, FUR, SCALES; FX = 0 at every level):
+
+| Level | Multiplier | ● Common | ▲ Uncommon | ■ Rare | ⬟ Epic | ★ Legendary | ⬢ Mythic | ? Secret |
+|---|---|---|---|---|---|---|---|---|
+| Lv1 | ×1.00 | 4 / 2 | 7 / 4 | 11 / 6 | 16 / 8 | 22 / 11 | 28 / 14 | 24 / 12 |
+| Lv2 | ×1.12 | 4 / 2 | 8 / 4 | 12 / 6 | 18 / 9 | 25 / 12 | 31 / 16 | 27 / 13 |
+| Lv3 | ×1.24 | 5 / 2 | 9 / 4 | 14 / 7 | 20 / 10 | 27 / 14 | 35 / 17 | 30 / 15 |
+| Lv4 | ×1.36 | 5 / 3 | 10 / 5 | 15 / 7 | 22 / 11 | 30 / 15 | 38 / 19 | 33 / 16 |
+| Lv5 | ×1.48 | 6 / 3 | 10 / 5 | 16 / 8 | 24 / 12 | 33 / 16 | 41 / 21 | 36 / 18 |
+| Lv6 | ×1.60 | — | 11 / 6 | 18 / 9 | 26 / 13 | 35 / 18 | 45 / 22 | 38 / 19 |
+| Lv7 | ×1.72 | — | — | 19 / 9 | 28 / 14 | 38 / 19 | 48 / 24 | 41 / 21 |
+| Lv8 | ×1.84 | — | — | — | 29 / 15 | 40 / 20 | 52 / 26 | 44 / 22 |
+| Lv9 | ×1.96 | — | — | — | — | 43 / 22 | 55 / 27 | 47 / 24 |
+| Lv10 | ×2.08 | — | — | — | — | — | 58 / 29 | 50 / 25 |
 <!-- END GENERATED: budget-growth -->
 
 **Upgrade cost tables (computed from the canon formula):**
 
 <!-- BEGIN GENERATED: upgrade-costs -->
+| Rarity | Max Lv | Total MB to max | Total MS to max | Total RT to max | Copies used (or extra MS) | Spare copy → MS |
+|---|---|---|---|---|---|---|
+| ● Common | 5 | 813 | 20 | — | 4 copies or 40 MS | 5 MS |
+| ▲ Uncommon | 6 | 3,957 | 60 | — | 5 copies or 125 MS | 12 MS |
+| ■ Rare | 7 | 18,703 | 168 | — | 6 copies or 360 MS | 30 MS |
+| ⬟ Epic | 8 | 96,516 | 420 | 10 | 7 copies or 1,120 MS | 80 MS |
+| ★ Legendary | 9 | 492,578 | 1,080 | 30 | 8 copies or 3,200 MS | 200 MS |
+| ⬢ Mythic | 10 | 2,246,602 | 2,250 | 84 | 9 copies or 9,000 MS | 500 MS |
+| ? Secret | 10 | 1,123,301 | 1,800 | 63 | no copies: 5,400 MS | — (cannot duplicate) |
+
+Per-step cost of upgrading **Lv L → L+1** (cell = MB · MS · RT; every step also consumes the duplicate shown in the last row):
+
+| Step | ● Common | ▲ Uncommon | ■ Rare | ⬟ Epic | ★ Legendary | ⬢ Mythic | ? Secret |
+|---|---|---|---|---|---|---|---|
+| Lv1 → 2 | 100 MB · 2 MS | 300 MB · 4 MS | 900 MB · 8 MS | 3,000 MB · 15 MS | 10,000 MB · 30 MS | 30,000 MB · 50 MS | 15,000 MB · 40 MS |
+| Lv2 → 3 | 150 MB · 4 MS | 450 MB · 8 MS | 1,350 MB · 16 MS | 4,500 MB · 30 MS | 15,000 MB · 60 MS | 45,000 MB · 100 MS | 22,500 MB · 80 MS |
+| Lv3 → 4 | 225 MB · 6 MS | 675 MB · 12 MS | 2,025 MB · 24 MS | 6,750 MB · 45 MS | 22,500 MB · 90 MS | 67,500 MB · 150 MS | 33,750 MB · 120 MS |
+| Lv4 → 5 | 338 MB · 8 MS | 1,013 MB · 16 MS | 3,038 MB · 32 MS | 10,125 MB · 60 MS · 1 RT | 33,750 MB · 120 MS · 2 RT | 101,250 MB · 200 MS · 4 RT | 50,625 MB · 160 MS · 3 RT |
+| Lv5 → 6 | — | 1,519 MB · 20 MS | 4,556 MB · 40 MS | 15,188 MB · 75 MS · 2 RT | 50,625 MB · 150 MS · 4 RT | 151,875 MB · 250 MS · 8 RT | 75,938 MB · 200 MS · 6 RT |
+| Lv6 → 7 | — | — | 6,834 MB · 48 MS | 22,781 MB · 90 MS · 3 RT | 75,938 MB · 180 MS · 6 RT | 227,813 MB · 300 MS · 12 RT | 113,906 MB · 240 MS · 9 RT |
+| Lv7 → 8 | — | — | — | 34,172 MB · 105 MS · 4 RT | 113,906 MB · 210 MS · 8 RT | 341,719 MB · 350 MS · 16 RT | 170,859 MB · 280 MS · 12 RT |
+| Lv8 → 9 | — | — | — | — | 170,859 MB · 240 MS · 10 RT | 512,578 MB · 400 MS · 20 RT | 256,289 MB · 320 MS · 15 RT |
+| Lv9 → 10 | — | — | — | — | — | 768,867 MB · 450 MS · 24 RT | 384,434 MB · 360 MS · 18 RT |
+| **Duplicate per step** | 1 copy or 10 MS | 1 copy or 25 MS | 1 copy or 60 MS | 1 copy or 160 MS | 1 copy or 400 MS | 1 copy or 1,000 MS | 600 MS (no copies) |
 <!-- END GENERATED: upgrade-costs -->
 
 ### 12.7 Procedural Generation and the Combination System
@@ -511,6 +578,16 @@ shop window for the Morphdex.
 **The combination space.** The counts below are computed by the renderer from the canon slot counts and flags:
 
 <!-- BEGIN GENERATED: combination-math -->
+| Scope | How it is counted | Distinct combinations |
+|---|---|---|
+| Matched core body | HEAD × TORSO × (one ARM part on both sides) × (one LEG part on both sides) = 40 × 22 × 30 × 22 | 580,800 |
+| Core body | HEAD × TORSO × ARM_L × ARM_R × LEG_L × LEG_R = 40 × 22 × 30² × 22² | 383,328,000 |
+| Silhouette | core × TAIL (20 + empty) × WINGS/BACK pairs that respect blocksWings (83) | 668,140,704,000 |
+| Full loadout | silhouette × optional FACE, NOSE, MOUTH, EYES, EARS, HORNS, NECK, HANDS, FEET, SKIN, FX (each + empty) × covering (FUR 6 ⊕ SCALES 6 ⊕ none) | 2,376,218,638,994,599,919,520,000 (≈ 2.38e+24) |
+| Visually distinct | full loadout, collapsing face-group choices under the 5 faceLocked heads | 2,079,206,695,151,348,450,688,000 (≈ 2.08e+24) |
+| With palettes | visually distinct × 24 palettes (§12.7) | ≈ 4.99e+25 |
+
+Art builds **280** parts (of which 10 are emitter-only FX and 18 are surface swaps), yet the matched core alone yields 0.6 million bodies and the full space exceeds 10^24. No combination is ever authored by hand.
 <!-- END GENERATED: combination-math -->
 
 ### 12.8 Balance Limits
@@ -531,7 +608,7 @@ rounded, then capped; the Morph screen shows the overflow as wasted "MAXED" poin
 - **Synergies** add on top of passives but are capped separately — synergy caps and stacking live in §12.10 and §36.4.
 - **Loadouts** (§13): equips are blocked while In Combat (6 s); a saved-loadout swap is a 3 s channel interrupted by
   damage, then a 10 s cooldown; single-part equips in the Morph screen are instant.
-- **Movement & carry:** WalkSpeed is clamped to 21 studs/s outside active abilities (server check every 0.5 s, §29);
+- **Movement & carry:** WalkSpeed is clamped to 20.8 studs/s (the MOVE-cap value) outside active abilities (server check every 0.5 s, §29);
   airtime ≤ 1.5 s outside `ABL_022`/`ABL_069`, no part gains altitude while gliding, max one extra jump; carry capacity
   is 1 + one per distinct carry part (`MUT_145`, `MUT_217`, `MUT_249`), hard max **3**; reach never works through walls
   (server line-of-sight raycast) and stays within the server's +2-stud tolerance.
@@ -539,6 +616,56 @@ rounded, then capped; the Morph screen shows the overflow as wasted "MAXED" poin
   (Lv-scaled values included, synergies excluded):
 
 <!-- BEGIN GENERATED: passive-caps -->
+| Passive key (group) | Effect | Combined cap / stacking [TUNABLE] | Parts |
+|---|---|---|---|
+| `station_speed` (cooking) | Process/action time −X % at named stations, tagged ingredients or recipe categories | −25 % per station (multiplies with COOK_SPD and station level) | 15 |
+| `perfect_window` (cooking) | Perfect window +X s | +0.8 s per station | 3 |
+| `burn_grace` (cooking) | Burn delay +X s | +2.0 s per station | 1 |
+| `chop` (cooking) | Fewer chop taps | −2 taps; minimum 2 taps; timing ring always kept | 1 |
+| `ingredient_save` (cooking) | Chance an ingredient is not consumed / cost refunded | 15 % | 2 |
+| `dish_quality` (cooking) | +Food Quality on matching dishes, Golden-dish chance | +0.10 Q (Q ≤ 1.00) | 4 |
+| `plating` (cooking) | Plating & garnish time | −40 % time | 1 |
+| `cleanup` (cooking) | Trash / spill / debris cleaning speed or auto-clean | −40 % time; auto-clean interval ≥ 2 s | 4 |
+| `fire_safety` (cooking) | Station-fire extinguish speed / range | −60 % extinguish time | 3 |
+| `service_speed` (service) | Order-taking and hand-off time | −40 % time | 2 |
+| `patience` (service) | Customer patience +X % (after CHARM) | +25 % | 8 |
+| `tip_bonus` (service) | Tips × (1 + X) | +30 % | 5 |
+| `satisfaction` (service) | +N satisfaction on serve | shares the MutationBonus cap of +10 (§10) | 6 |
+| `reputation` (service) | Reputation gain multiplier | +50 % | 1 |
+| `anger_resist` (service) | Anger gain / escalation-roll multiplier | combined multiplier floor ×0.70 | 3 |
+| `calm_bonus` (service) | Calm Down! range/cooldown/targets; passive anger removal | range +3 studs; cooldown −20 %; +1 target; 1 removal per customer per 30 s | 6 |
+| `reveal` (service) | Information & telegraphs (UI only) | binary; telegraph leads never stack (longest wins) | 17 |
+| `employee_boost` (service) | Efficiency of nearby employees | +10 %; online only | 1 |
+| `damage_bonus` (combat) | +X % damage (often conditional) | +30 % combined, applied before STR | 13 |
+| `attack_speed` (combat) | Swipe Combo hit interval | −10 % | 1 |
+| `cleave` (combat) | Extra targets on a hit | +1 target | 1 |
+| `damage_reduction` (combat) | −X % damage taken (typed or directional) | 35 % combined, applied before DEF | 12 |
+| `knockback_resist` (combat) | Knockback received −X % | 60 %; immunity only from conditional parts | 9 |
+| `knockback_bonus` (combat) | Knockback dealt +X % | +40 % | 8 |
+| `throw_power` (combat) | Grab & Throw range / damage / knockback | +30 % | 3 |
+| `on_hit_status` (combat) | Status applied on hit (chance or conditional) | max 2 proc sources active; each ICD ≥ 4 s | 9 |
+| `thorns` (combat) | Damage or status returned to melee attackers | 8 damage per hit; ICD ≥ 1.5 s; status thorns use an on-hit proc slot | 7 |
+| `status_resist` (combat) | Status duration −X % or immunity | −60 % per status; immunity only where listed | 17 |
+| `guard` (combat) | Block guard meter / block reduction | +20 guard; block reduction ≤ 80 % | 3 |
+| `dodge` (combat) | Dodge cooldown / i-frames / distance; projectile miss | cooldown ≥ 0.9 s; i-frames ≤ 0.40 s; distance +25 %; miss 25 % | 8 |
+| `regen` (combat) | HP regeneration | 3 HP/s combined | 10 |
+| `max_hp` (combat) | +max HP | +60 | 4 |
+| `revive` (combat) | KO prevention / faster KO recovery | one trigger per KO; 180 s shared cooldown; off in ranked Arena | 2 |
+| `aggro` (combat) | Targeting priority / stealth | binary | 2 |
+| `aura` (combat) | Area effect on hostile customers | same-type auras never stack (strongest wins) | 3 |
+| `repair_speed` (repair) | Repair speed +X % | +40 % (multiplies with REPAIR) | 10 |
+| `repair_cost` (repair) | Repair material cost −X % | −15 % (≤ −40 % together with REPAIR) | 2 |
+| `sprint` (movement) | +MOVE while running or under a condition | +8 MOVE; MOVE cap 100; WalkSpeed ≤ 20.8 | 8 |
+| `jump` (movement) | Jump height / extra jump | +40 % height; max 1 extra jump | 9 |
+| `glide` (movement) | Fall-speed reduction, glide, apex hover | −60 % fall speed; no sustained flight | 10 |
+| `swim` (movement) | Sewer-water speed / soaked penalty | +30 % | 5 |
+| `move_terrain` (movement) | Immunity to floor slowdowns (spills, sticky, greasy) | binary per terrain | 5 |
+| `reach` (movement) | +studs interaction or pickup range | +2 studs stations/customers; +4 studs pickup; server re-validates | 9 |
+| `grip` (movement) | Keep carried item when knocked back | 100 %; KO always drops | 2 |
+| `carry` (movement) | +1 carry capacity | hard max 3 items (§12.8) | 3 |
+| `drop_luck` (luck) | Rare-drop weight / finds | +30 %; never changes Morph Capsule odds | 8 |
+| `jackpot` (luck) | Jackpot Tip chance +pp | +2.0 pp | 4 |
+| `cosmetic` (cosmetic) | FX flavor only | no stats, no gameplay effect | 10 |
 <!-- END GENERATED: passive-caps -->
 
 **PvP normalization (Arena, §21).** Inside Arena matches every equipped part's stats are recomputed as if it were **Rare
@@ -593,17 +720,20 @@ function MutationService.PartStats(def, level: number): { [string]: number }
 	if lv1 == 0 then return {} end
 	local target = math.floor(BASE_BUDGET[def.rarity] * def.slotWeight * (1 + 0.12 * (level - 1)) + 0.5)
 	local out, rema, given = {}, {}, 0
-	for _, s in STAT_ORDER do
+	for idx, s in STAT_ORDER do
 		local v = def.stats[s]
 		if v then
 			local exact = v * target / lv1
 			out[s] = math.floor(exact)
 			given += out[s]
-			table.insert(rema, { s = s, r = exact - out[s] })
+			table.insert(rema, { s = s, r = exact - out[s], i = idx })
 		end
 	end
-	table.sort(rema, function(a, b) return a.r > b.r end) -- stable enough: STAT_ORDER insertion breaks ties upstream
-	for i = 1, target - given do out[rema[i].s] += 1 end
+	table.sort(rema, function(a, b) -- largest remainder first; ties in canon stat order
+		if a.r ~= b.r then return a.r > b.r end
+		return a.i < b.i
+	end)
+	for k = 1, target - given do out[rema[k].s] += 1 end
 	return out
 end
 
@@ -645,10 +775,9 @@ return MutationService
 | 8 | Ostrich legs + Brachiosaurus neck + antlers exceed 9.5 studs | NeckLength compresses to fit, then horns sink ≤ 0.5 stud; stats and reach bonuses unchanged. |
 | 9 | A Secret condition is completed again | "Already discovered" — no duplicate, no reward (Secrets cannot duplicate; prevents farming). |
 | 10 | Duplicate arrives while the part is Mastered | Auto-converts to MS regardless of the "keep copies" toggle. |
-| 11 | Client asset fails to load | Grey placeholder mesh + retry after 5 s; server stats unaffected. |
-| 12 | Generated NPC would exceed 24 MeshParts | Solver redraws; at build time the lowest-priority slots (FX, shells, horns, face) are trimmed and logged. |
-| 13 | Player enters the Arena with Mythic Lv10 parts | Stats normalized to Rare Lv4 equivalents on entry, restored on exit (§21). |
-| 14 | A part ID is retired in a future update | It stays owned and equippable, shown as "Retired"; IDs are never reused (§36.1). |
+| 11 | Generated NPC would exceed 24 MeshParts | Solver redraws; at build time the lowest-priority slots (FX, shells, horns, face) are trimmed and logged. |
+| 12 | Player enters the Arena with Mythic Lv10 parts | Stats normalized to Rare Lv4 equivalents on entry, restored on exit (§21). |
+| 13 | Two upgrade requests for the same part arrive together (double-tap, lag) | Each request carries the expected current level; `MutationService` applies the first inside the profile's update and rejects the stale one (`LEVEL_CHANGED`) — never double-charged (§28). |
 
 **Acceptance Criteria.**
 - **AC-12-01:** `python3 gdd/tools/render_mutations.py` exits 0 with 280 parts; every part's Lv1 stat sum equals
@@ -671,7 +800,7 @@ return MutationService
 - **AC-12-09:** The Robux catalog audit finds 0 developer products or passes that grant parts, stats, MS, RT, capsules,
   upgrades or fusions.
 - **AC-12-10:** No effective stat exceeds its cap; excess appears as MAXED; MOVE at cap gives WalkSpeed 20.8, and no part
-  combination yields WalkSpeed > 21 outside an active ability.
+  combination yields WalkSpeed > 20.8 outside an active ability.
 - **AC-12-11:** Equipping `MUT_145` on both arms with `MUT_217` and `MUT_249` gives carry capacity exactly 3; any two of
   them give 3; one gives 2.
 - **AC-12-12:** Four `station_speed` sources totalling −37 % at one station apply −25 %; two `revive` parts trigger at

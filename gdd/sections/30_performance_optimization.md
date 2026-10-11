@@ -237,6 +237,8 @@ ledger, candidates) are pulled page by page when a menu opens, never pushed (§2
 **Workspace settings:** `StreamingEnabled = true`, `StreamingMinRadius = 64`, `StreamingTargetRadius = 384`
 [TUNABLE] (Roblox further lowers the effective radius on memory-constrained devices),
 `StreamOutBehavior = Opportunistic`, `StreamingIntegrityMode = MinimumRadiusPause`.
+`Workspace.FallenPartsDestroyHeight = −1,200` because the Underground Mutation Sewers (`DST_09`) sit at
+Y ≈ −700 (§18); the default (−500) would delete players and props there.
 
 **Interiors region** (§27.1): origin X = 8,000 studs, interior slots 1,200 studs apart — more than
 `StreamingTargetRadius` (384) plus an interior's half-extent, so a client never streams two interiors or the city

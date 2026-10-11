@@ -46,14 +46,14 @@ body), **signature meshes**. These are NPC-only MeshParts authored to the same R
 stats; they keep key characters unique (§25 owns the art). In §19.9 they appear in the morph column as plain
 words with no ID.
 
-**Role classes**
+**Role classes** (tagged in brackets at the start of each NPC's *Interaction behavior* cell in §19.9)
 
 | Role class | Count | Always present? | Moves? | Notes |
 |---|---|---|---|---|
-| SERVICE | 24 | yes, at the counter | no (idles in place) | opens a building UI; must never be unavailable |
+| SERVICE | 18 | yes, at the counter | no (idles in place) | opens a building UI; must never be unavailable |
 | STORY | 9 | yes (chapter-aware position) | scripted | campaign cast; may appear in the player's restaurant during set pieces |
-| QUEST | 58 | yes | short wander ≤ 12 studs | offers or involves ≥ 1 quest |
-| AMBIENT | 23 | district loaded | full schedule | color, barks, hints, Hearts |
+| QUEST | 80 | while the district is loaded | short wander ≤ 12 studs (PATROL/RIDE NPCs: fixed loops) | gives or is involved in ≥ 1 quest |
+| AMBIENT | 7 | district loaded | full schedule | color, barks, hints; still involved in ≥ 1 quest |
 | BOSS | 1 | event-driven | event script | King Ratbeard during `EVT_007` (A6/A12 define the fight) |
 
 ### 19.3 Dialogue trees (conditions, variables, effects)

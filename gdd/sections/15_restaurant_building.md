@@ -8,18 +8,7 @@
 > `python3 gdd/tools/render_restaurant.py` from `gdd/data/furniture.json`, which also refreshes the two AUTO
 > tables in this section. Every number marked **[TUNABLE]** is a balancing assumption.
 
-| Template block (§C0) | Where |
-|---|---|
-| Purpose | §15.1 |
-| Rules & Mechanics | §15.2–§15.10 |
-| Variables | tables inside each subsection, collected in §15.12.6 |
-| UI | §15.11 (screens themselves: §24.22–§24.24) |
-| Progression | §15.2, §15.3, §15.8, §15.10 |
-| Player Interactions | §15.5, §15.9, §15.4 (visiting) |
-| Dependencies | §15.13 |
-| Roblox Implementation | §15.12 |
-| Edge Cases | §15.14 |
-| Acceptance Criteria | §15.15 |
+Template map (§C0): Purpose §15.1 · Rules & Mechanics §15.2–§15.10 · Variables in each subsection · UI §15.11 · Progression §15.2/§15.3/§15.8/§15.10 · Player Interactions §15.4/§15.5/§15.9 · Dependencies §15.13 · Roblox Implementation §15.12 · Edge Cases §15.14 · Acceptance Criteria §15.15.
 
 ### 15.1 Purpose and Design Goals
 
@@ -45,7 +34,18 @@ defined here. Online throughput is the planning estimate `min(BaseDemand × RepM
 240 s)` at the tier's typical reputation and atmosphere (§36.12.3); offline values use canon §C15 exactly.
 
 <!-- AUTO:render_restaurant:tier-summary BEGIN -->
-(generated)
+| # | Tier | Cost (MB) | Level | Permit | Interior W×D (sq studs) | Patio | Seats | Appliance slots | Kitchen area | Menu | Staff cap | Base demand | Online throughput | Offline net/h lean–full | Max offline session |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | `TIER_01` Broken Burger Shack | 0 | 1 | no | 32×26 (832) | — | 4 | 6 | 32×12 | 4 | 2 | 50 | ≈ 56/h | 149–185 | 370 (2 h) |
+| 2 | `TIER_02` Tiny Mutation Diner | 1,000 | 5 | no | 40×30 (1,200) | — | 6 | 8 | 40×12 | 5 | 3 | 65 | ≈ 79/h | 171–303 | 1,210 (4 h) |
+| 3 | `TIER_03` Neighborhood Freak Café | 2,000 | 10 | no | 48×34 (1,632) | 24×12 | 8 | 10 | 48×14 | 6 | 4 | 80 | ≈ 104/h | 246–410 | 820 (2 h) |
+| 4 | `TIER_04` Morph City Grill | 5,000 | 18 | yes | 56×38 (2,128) | 28×12 | 10 | 12 | 56×14 | 8 | 6 | 95 | ≈ 130/h | 281–760 | 3,038 (4 h) |
+| 5 | `TIER_05` Mutant Family Restaurant | 15,000 | 26 | yes | 64×42 (2,688) | 32×14 | 12 | 14 | 64×16 | 10 | 8 | 110 | ≈ 158/h | 503–1,587 | 12,693 (8 h) |
+| 6 | `TIER_06` Monster Food Court | 40,000 | 35 | yes | 72×48 (3,456) | 36×16 | 14 | 16 | 72×18 | 12 | 10 | 125 | ≈ 189/h | 762–3,119 | 24,951 (8 h) |
+| 7 | `TIER_07` Mutation Megadiner | 100,000 | 45 | yes | 80×52 (4,160) | 40×16 | 16 | 18 | 80×18 | 14 | 12 | 140 | ≈ 222/h | 1,374–5,607 | 67,289 (12 h) |
+| 8 | `TIER_08` Luxury Freak Restaurant | 225,000 | 56 | yes | 88×58 (5,104) | 44×18 | 18 | 20 | 88×20 | 16 | 14 | 155 | ≈ 259/h | 2,263–12,101 | 145,211 (12 h) |
+| 9 | `TIER_09` Morph City Food Palace | 525,000 | 68 | yes | 96×64 (6,144) | 48×20 | 20 | 22 | 96×22 | 20 | 16 | 170 | ≈ 300/h | 3,969–23,915 | 573,962 (24 h) |
+| 10 | `TIER_10` Legendary Mutation Restaurant | 1,500,000 | 80 | yes | 112×72 (8,064) | 56×24 | 24 | 24 | 112×24 | 24 | 20 | 190 | ≈ 359/h | 6,183–47,477 | 1,139,443 (24 h) |
 <!-- AUTO:render_restaurant:tier-summary END -->
 
 **Service style.** `TIER_01`–`TIER_02` are counter service: customers order at the Serving Window's dining
@@ -92,28 +92,33 @@ Morale 80, average Energy over the manager's cap) gives the following canon §C1
 (before incidents and auto-repairs):
 
 <!-- AUTO:render_restaurant:offline-calc BEGIN -->
-(generated)
+| # | Full crew | Demand_off = Base × Rep × Decor × 0.6 | min(Cap_seat, Cap_kitchen, Cap_service) | Q | Revenue = Q × 1.4P × q | + Tips − Ingredients − Wages | Net / h (% of active) |
+|---|---|---|---|---|---|---|---|
+| 1 | Ollie (EMP_001), 1×Chef (C) | 50 × 1.125 × 0.990 × 0.6 = 33.4 | 48, 48.3, 48.3 | 33.4 | 33.4 × 13.3 × 0.77 = 343 | +14 −142 −30 | **185** (29 %) |
+| 2 | Ollie (EMP_001), 1×Chef (C), 1×Manager (C) | 65 × 1.200 × 1.014 × 0.6 = 47.5 | 72, 45.1, 45.1 | 45.1 | 45.1 × 16.0 × 0.77 = 558 | +22 −230 −48 | **303** (28 %) |
+| 3 | Ollie (EMP_001), 1×Chef (U), 2×Waiter (U) | 80 × 1.250 × 1.035 × 0.6 = 62.1 | 96, 53.2, 65.2 | 53.2 | 53.2 × 20.6 × 0.79 = 869 | +50 −347 −162 | **410** (24 %) |
+| 4 | 3×Chef (U), 2×Waiter (U), 1×Manager (U) | 95 × 1.300 × 1.050 × 0.6 = 77.8 | 120, 69.8, 65.2 | 65.2 | 65.2 × 29.2 × 0.81 = 1,548 | +90 −578 −300 | **760** (25 %) |
+| 5 | 3×Chef (R), 3×Waiter (R), 1×Dish (C), 1×Manager (R) | 110 × 1.350 × 1.065 × 0.6 = 94.9 | 144, 103.9, 122.8 | 94.9 | 94.9 × 45.6 × 0.84 = 3,654 | +231 −1,300 −998 | **1,587** (29 %) |
+| 6 | 4×Chef (R), 3×Waiter (R), 1×Dish (C), 1×Security (R), 1×Manager (R) | 125 × 1.400 × 1.080 × 0.6 = 113.4 | 168, 129.4, 123.8 | 113.4 | 113.4 × 64.5 × 0.84 = 6,178 | +390 −2,171 −1,278 | **3,119** (32 %) |
+| 7 | 4×Chef (E), 3×Waiter (E), 1×Cashier (R), 1×Dish (U), 1×Security (R), 1×Repair (R), 1×Manager (E) | 140 × 1.450 × 1.095 × 0.6 = 133.4 | 192, 146.0, 164.9 | 133.4 | 133.4 × 105.7 × 0.88 = 12,408 | +871 −4,002 −3,670 | **5,607** (32 %) |
+| 8 | 5×Chef (E), 3×Waiter (E), 1×Cashier (R), 1×Dish (U), 1×Security (R), 1×Repair (R), 1×Manager (E) | 155 × 1.500 × 1.116 × 0.6 = 155.7 | 216, 172.2, 166.1 | 155.7 | 155.7 × 157.0 × 0.88 = 21,511 | +1,510 −6,849 −4,070 | **12,101** (37 %) |
+| 9 | 6×Chef (E), 4×Waiter (E), 1×Cashier (E), 1×Dish (R), 1×Security (R), 1×Repair (R), 1×Manager (L), 1×Asst Mgr (E) | 170 × 1.550 × 1.140 × 0.6 = 180.2 | 240, 176.3, 201.1 | 176.3 | 176.3 × 256.7 × 0.88 = 39,832 | +2,823 −12,520 −6,220 | **23,915** (38 %) |
+| 10 | 6×Chef (E), 1×Chef (L), 5×Waiter (E), 1×Cashier (E), 1×Dish (R), 1×Security (E), 1×Repair (E), 1×Stocker (R), 1×Manager (L), 1×Asst Mgr (E) | 190 × 1.625 × 1.164 × 0.6 = 215.6 | 288, 201.7, 253.3 | 201.7 | 201.7 × 393.3 × 0.89 = 70,270 | +4,980 −19,493 −8,280 | **47,477** (39 %) |
 <!-- AUTO:render_restaurant:offline-calc END -->
 
-`P` (menu-weighted mean item price) is calibrated per tier so the online model reproduces canon §C4.4 net
-income; `q = min(0.95, 0.70 + 0.25 × chef accuracy / 100)`; tips use `(0.04 + 0.04 × waiter service / 100)`.
-From `TIER_06` a well-staffed restaurant returns ≈ 32–39 % of active income per offline hour (canon target
-35–50 %, ceiling 60 %); early tiers sit at ≈ 24–29 % because low chef accuracy caps `q` and, from `TIER_03`,
-waiters bind `Cap_service` while staff caps are tiny — offline is a teaser until the player can staff
-properly. Lean crews (1 chef + 1 waiter, no manager) earn roughly a fifth to a half of the full-crew value
-(§36.12.3). §17 owns the simulation; this table is A10's capacity check that every tier can feed it.
+`P` (menu-weighted mean item price) is calibrated so the online model reproduces canon §C4.4 (§36.12.3). From
+`TIER_06` a well-staffed restaurant returns ≈ 32–39 % of active income per offline hour (canon target 35–50 %,
+ceiling 60 %); `TIER_01`–`TIER_05` sit at ≈ 24–29 % because low chef accuracy caps `q` and, from `TIER_03`,
+waiters bind `Cap_service` while staff caps are tiny — offline is a teaser until the player can staff properly.
+§17 owns the simulation; this is A10's capacity check that every tier can feed it.
 
 ### 15.3 Tier Upgrade Flow
 
-**Requirements** (all checked server-side by `BuildingService.UpgradeTier`, target = current + 1 only):
-
-| # | Requirement | Source | Failure text (padlock chip, §24.22) |
-|---|---|---|---|
-| 1 | Player level ≥ tier's Req. level | canon §C6 | "Reach Level 18" |
-| 2 | Wallet ≥ upgrade cost (MB) | canon §C6 | "Need 1,230 more MB" |
-| 3 | `TIER_04`+: City Hall Expansion Permit held for that tier (quest-gated formality at `BLD_09` with `NPC_002`; permit fee is inside the canon price) | canon §C6, §20 | "Get your permit at City Hall" |
-| 4 | Owner present in the interior or at their façade; not In Combat; no anger-level-6 chaos | canon E2 | "Can't renovate during a brawl!" |
-| 5 | No other Renovation, Edit Mode session or blueprint swap in progress | §15.5 | "Finish editing first" |
+**Requirements** (checked server-side by `BuildingService.UpgradeTier`; target = current + 1 only; each failure
+shows a padlock chip with the exact gap, §24.22): (1) player level ≥ the tier's canon level ("Reach Level 18");
+(2) wallet ≥ canon cost ("Need 1,230 more MB"); (3) `TIER_04`+: the City Hall Expansion Permit for that tier — a
+quest-gated formality with `NPC_002` at `BLD_09`, fee included in the canon price (§20); (4) not In Combat, no
+level-6 chaos (canon E2: "Can't renovate during a brawl!"); (5) no Edit Mode session or blueprint swap running.
 
 **Flow.** The Upgrades screen uses hold-to-confirm 0.8 s (§24.22). Then:
 
@@ -144,17 +149,13 @@ flowchart TD
     G --> H["Grand Opening: OPEN + optional Edit Mode prompt"]
 ```
 
-**Mutant Builders sequence (cartoon, kid-safe, no NPC IDs: the crew is a client-only cosmetic built from random
-Common mutation parts).** Camera cuts to the exterior.
-
-| t (s) | Beat | Visual / audio (described; IDs by §26) |
-|---|---|---|
-| 0.0 | Fade to exterior | old façade, "CLOSED FOR RENOVATION" banner unrolls |
-| 0.5 | Crew of 6 builders pours out of a tiny van (clown-car gag) | hard hats on every head shape, one on a tail |
-| 1.5–7.0 | Scaffolding pops up; hammering loops (`ANM_060`), a crane lifts the new sign, dust clouds hide the swap | rhythmic hammer chorus, one builder hits their own thumb (cartoon stars) |
-| 7.0 | Dust clears: new façade (tier model swap under the cloud) | "ta-da" sting, confetti |
-| 8.0–9.5 | Builders celebrate (`ANM_064`), sign lights up letter by letter | neon buzz |
-| 10.0 | Door opens; fade back inside | interior already migrated |
+**Mutant Builders sequence** (cartoon, kid-safe; the crew is a client-only cosmetic built from random Common
+mutation parts, no NPC IDs). 0.0 s fade to the exterior, "CLOSED FOR RENOVATION" banner unrolls · 0.5 s six
+builders pour out of a tiny van (clown-car gag), hard hats on every head shape (one on a tail) · 1.5–7.0 s
+scaffolding pops up, hammering loops (`ANM_060`), a crane lifts the new sign, one builder bonks their own thumb
+(cartoon stars), dust clouds hide the swap · 7.0 s dust clears on the new façade with a "ta-da" and confetti ·
+8.0–9.5 s builders celebrate (`ANM_064`) while the sign lights letter by letter · 10.0 s door opens, fade back
+inside to the already-migrated interior.
 
 **What carries over (everything):** placed and stored furniture, trophies, station-type upgrade levels, all
 purchased `UPG_` upgrades (kitchen expansion and patio re-apply to the new shell), employees and assignments,
@@ -193,13 +194,9 @@ façade so the street looks busy (§8). The façade shows live state: windows li
 when `RENOVATING`, and flickering silhouettes plus a "Uh-oh!" sign wobble when chaos is happening inside — a
 free advert for passers-by.
 
-| Interior folder | Contents |
-|---|---|
-| `Shell` | tier model (walls, sockets, divider, doors, patio shell), zone volumes, spawn points |
-| `Stations` | appliance and utility fixture models (tag `MMR_Station`, `MMR_Destructible`) |
-| `Furniture` | all other placed items (tags `MMR_Destructible`, `MMR_Seat` where relevant) |
-| `Rubble` | generic rubble piles for Destroyed objects (6 sizes, tinted to the item) |
-| `CombatProxies`, `Messes` | owned by §11 and RepairService respectively |
+Interior folders: `Shell` (tier model, sockets, zone volumes, spawns), `Stations` (tags `MMR_Station`,
+`MMR_Destructible`), `Furniture` (`MMR_Destructible`, `MMR_Seat`), `Rubble` (6 shared tinted piles), plus
+`CombatProxies` (§11) and `Messes` (RepairService).
 
 **Visiting.** Same-server visitors walk in through the door; cross-server friends join via the friends list
 (`TeleportService`, §21). Guests follow the owner's co-op settings (§21, `restaurant.coop`): they may cook,
@@ -576,9 +573,6 @@ grill) is ≈ 18 s of hands-on time with the starter stat — inside §4's ≤ 6
 ```lua
 --!strict
 -- ServerScriptService/Server/Services/RepairService/RepairMath.lua
-local RATE = { Scuffed = 0.04, Cracked = 0.08, Broken = 0.15, Destroyed = 0.25 }
-local BASE = { S = { 2, 3.5, 5, 8 }, M = { 3, 5, 7.5, 11 }, L = { 4, 6.5, 10, 15 }, XL = { 5, 8, 12.5, 19 } }
-local COL = { Scuffed = 1, Cracked = 2, Broken = 3, Destroyed = 4 }
 local FLOOR = { Pristine = 51, Scuffed = 26, Cracked = 1, Broken = 0, Destroyed = 0 } -- step limit targets
 
 local RepairMath = {}
@@ -596,16 +590,7 @@ function RepairMath.applyDamage(pct: number, quoted: number, maxDurEff: number, 
 	return math.clamp(math.floor(new + 0.5), 0, 100)
 end
 
-function RepairMath.cost(price: number, worst: string, discount: number, rebuildRate: number?): number
-	local rate = if worst == "Destroyed" then (rebuildRate or RATE.Destroyed) else RATE[worst]
-	if rate == nil then return 0 end
-	return math.max(1, math.floor(price * rate * (1 - math.clamp(discount, 0, 0.5)) + 0.5))
-end
-
-function RepairMath.duration(sizeClass: string, worst: string, repairStat: number): number
-	local col = COL[worst]
-	return if col then BASE[sizeClass][col] / (1 + 0.01 * math.min(repairStat, 150)) else 0
-end
+-- cost(price, worstState, discount) and duration(sizeClass, worstState, REPAIR) implement the two tables above.
 
 return RepairMath
 ```
@@ -713,3 +698,205 @@ on stored items), makes second copies immediately useful, and is generous on pur
 side sink beside mutations. Persistence: `restaurant.upgrades` holds `"UPG_006#3"`-style entries (path + level);
 the §28 codec's per-object `lvl` mirrors the type level for `CookingService`. A purchase made while any instance
 is `PROCESSING` is queued and applied as each instance idles (§5). No recipe ever requires above Lv1.
+
+### 15.11 UI
+
+Screens are specified in §24 (Upgrades §24.22, Build Mode §24.23, Repair widget §24.24); §15 supplies their data
+and rules. Build Mode additions: zone tint overlay (pattern + label per zone, not colour alone), live counters
+"Slots 6/8 · Seats 6/6 · Items 54/60", the red route preview to the first unreachable target, an amber "Tight
+squeeze" hint, and a "Needs a home" storage tab after migrations. Every rejection shows ✕ + one of these texts:
+
+| Code | Text | Code | Text |
+|---|---|---|---|
+| `WRONG_ZONE` | "Appliances live in the kitchen!" | `SEAT_CAP` | "Fire marshal says 6 seats max!" |
+| `OVERLAP` | "Something's already there." | `ITEM_CAP` | "Only 1 Jukebox fits the vibe." |
+| `KEEP_CLEAR` | "Keep the doorway clear!" | `ESSENTIAL` | "You need at least one Pantry!" |
+| `ACCESS_BLOCKED` | "Nobody can reach the front of that." | `LEVEL_LOCKED` | "Unlocks at Level 5." |
+| `SLOTS_FULL` | "All 8 appliance slots used." | `TIER_LOCKED` | "Needs Tier 6." |
+| `WINDOWS_FULL` | "One pass is plenty (for now)." | `IS_RUBBLE` | "Rebuild it before moving it." |
+| `PATH_BLOCKED_SEAT` | "Blocks the path to a seat!" | `OCCUPIED` | "Someone's sitting there!" |
+| `PATH_BLOCKED_STATION` | "Your cooks can't reach that station!" | `DAMAGED_STORE` | "Repair it before storing it." |
+
+Inputs follow §24.23 (KB/M: mouse ghost, R rotate, LMB/E place, X store, Ctrl+Z undo, Ctrl+Y redo · gamepad: stick
+cursor 8 cells/s, LB/RB rotate, A place, Y move, X store, B exit · touch: drag ghost drawn 1.5 cells above the
+finger, Rotate/Place/Store/Undo buttons ≥ 56 u).
+
+### 15.12 Roblox Implementation
+
+#### 15.12.1 Services (names fixed by canon §C19; APIs per §27.8.17–18)
+
+| Service | §15 responsibilities |
+|---|---|
+| `BuildingService` | occupancy grid per interior; rules R1–R11; connectivity C1–C6; Place/Move/Store/Rotate ops; blueprints; atmosphere and local atmosphere; tier upgrade validation, Mutant Builders cue, layout migration; Grand Opening Kits; `LayoutChanged`, `TierUpgraded`, `AtmosphereChanged` signals; publishes nav-blocked cells to `CustomerAIService` (§8.7 rebake) |
+| `RepairService` | durability attributes `Durability`/`DamageState`; damage intake and conversion; repair jobs (Fix-It Ring sessions, technician jobs, E3 merging); costs via `EconomyService`; rebuild/Elbow Grease; insurance ledger; offline damage application; messes and K |
+| `RestaurantService` | interior lifecycle and operating state (table below), shell spawning per tier, plot façade swap |
+| `InventoryService` / `EconomyService` | storage counts and purchases (`Inventory.BuyFurniture`), the only currency mutations |
+
+| Operating state | Arrivals | Station timers | Notes |
+|---|---|---|---|
+| `OPEN` | yes | run | normal service |
+| `PAUSED` | no | run | Pause Service; customers inside finish |
+| `EDITING` | held | frozen | 0 customers inside (§15.5.3) |
+| `RENOVATING` | no | frozen | Last Call then Mutant Builders (§15.3) |
+| `AWAY` (owner in the city, same server) | staffed: yes · unstaffed: no ("Out to Lunch", or "Event Break" during city events) | heat stations paused (no fires while away) | per §18: seated customers finish or leave politely with no reputation loss; anger escalation above level 2 is suppressed unless a Security Guard is on shift, so level-4 smashing (and furniture damage from it) cannot happen in an unguarded restaurant |
+| `CLOSING` | no | finish/discard | canon E1 on owner disconnect |
+
+#### 15.12.2 Layout serialization (DataStore)
+
+Logical record per placed object: **`{itemId, x, z, rot, durability}`** plus the restaurant-unique `uid`
+(home cell for §11 Furniture Homing). Physical encoding is §28.11's 10-byte packed record
+(`kind, num, uid, x, z, rotLvl, dur`, Base64): every A10 item uses `kind = 0` (FRN, `num` = numeric ID, so
+`FRN_006` → 6); appliances are FRN items whose station type comes from the catalog; `rotLvl = rot + 4 × (typeLevel
+− 1)` mirrors the station-type level. `x`/`z` are **2-stud cell indices** (§15.5.1). Non-floor layers use reserved
+`z` ranges so no schema change is needed:
+
+| Layer | `x` | `z` | `rot` |
+|---|---|---|---|
+| FLOOR / WALKABLE | cell column (patio = negative x) | cell row 0–511 | 0–3 |
+| CEILING | cell column | row + 2048 | 0–3 |
+| WALL socket | socket index | −1 | wall side 0–3 |
+| DOOR socket | 0 front · 1–2 staff · 3 patio · 4 back | −2 | 0 |
+| ZONE finish | 0 kitchen · 1 dining · 2 lobby · 3 outside | −3 | 0 floor · 1 wall |
+| CURB socket | socket index | −4 | 0–3 |
+
+Budget: 400 objects × 14 Base64 chars ≈ 5.6 KB (§28 allots 9 KB to `restaurant`). Storage = `{FRN → count}` of
+Pristine items only (§15.5.4), so counts suffice. On load, a record that fails validation (content change) is
+moved to storage and logged (§27.8.17); connectivity repair follows §15.3 step 5.
+
+#### 15.12.3 Server validation and client ghost
+
+```mermaid
+%% diagram: placement-commit
+sequenceDiagram
+    participant C as Client (ghost)
+    participant B as BuildingService
+    participant R as RepairService
+    participant A as CustomerAIService
+    C->>C: PlacementRules + Connectivity on ghost (max 10 Hz)
+    C->>B: Building.Place {itemUid, x, z, rot}
+    B->>B: rate limit, ownership, R1 to R11, C1 to C6 on a copy of the grid
+    alt valid
+        B->>B: swap grid, spawn model, mark profile dirty
+        B->>R: register destructible (Durability attribute)
+        B-->>A: LayoutChanged (debounced nav rebake)
+        B-->>C: ok + Building.LayoutChanged to all clients in the interior
+    else invalid
+        B-->>C: reason code + first unreachable target tag
+    end
+```
+
+- **Shared rules module** `ReplicatedStorage.Shared.Building.PlacementRules` (pure Luau, no instances) is required by
+  both sides, so the ghost shows exactly what the server will decide; the server never trusts client results.
+- **Ghost:** the client clones the item from `ReplicatedStorage.Assets.Furniture/<id>`, sets parts to 0.5
+  transparency with `CanCollide/CanQuery = false`, adds a `Highlight` (valid ✓ green outline / invalid ✕ red with a
+  diagonal-stripe `Decal` for colour-blind players), and positions it each `RunService.RenderStepped` from
+  `Camera:ViewportPointToRay` + `workspace:Raycast` (whitelist: the interior floor), snapped to the grid.
+  `ContextActionService` binds rotate/place/store/undo per input type.
+- **Atomicity:** each op is validated on a copy of the grid and swapped in only if all rules pass; purchases
+  go through `EconomyService` with idempotency keys; tier upgrades are one session-locked transaction (§15.3).
+- **Anti-exploit:** ops ≤ 4/s (burst 8); integer cells inside the shell only; item counts reconciled against
+  ownership on every load (placed + stored ≤ owned); durability is server-only; repair completion floored at
+  0.6 × base time (§29 owns the general framework).
+
+#### 15.12.4 Performance budgets [TUNABLE]
+
+Furniture models ≤ 12 parts / 2,000 triangles (showpieces such as `FRN_345`, `FRN_267`, `FRN_288` ≤ 40 parts /
+8,000 triangles); a `TIER_10` interior ≤ 3,500 parts and ≤ 150,000 triangles; furniture uses
+`ModelStreamingMode.Atomic`; damage states are decal/`SurfaceAppearance` swaps plus one optional broken pose (no
+extra models); rubble uses 6 shared meshes; animated decor (fish, fireflies, murals) runs client-side only within
+60 studs. Atmosphere recompute < 0.5 ms; connectivity < 0.3 ms; offline damage application < 1 ms.
+
+#### 15.12.5 Content pipeline
+
+`render_restaurant.py` validates the catalog (unique IDs, all 24 canon stations covered, trophies exactly
+`FRN_901`–`FRN_910` with canon names, every set ≥ 6 pieces, sequential `UPG_` IDs and prereqs) and the
+generated read-only `Furniture`/`Tiers`/`Upgrades` Luau modules (§27.5) are built from the same JSON. Each tier
+ships a **template layout** (the Grand Opening default) that must pass R1–R11 with every slot filled — the proof
+that each kitchen fits its canon slot count.
+
+#### 15.12.6 Analytics
+
+`mmr_furniture_purchased` (item, price, tier), `mmr_layout_op` (op, reason code if rejected), `mmr_tier_upgraded`
+(tier, migrated, stored), `mmr_object_damaged` / `mmr_object_destroyed` (item, source), `mmr_repair_completed`
+(item, worst state, cost, actor, minigame grade), `mmr_insurance_settled`, plus `LogEconomyEvent` sinks for
+purchases, repairs, rebuilds and upgrades (§31).
+
+### 15.13 Dependencies
+
+| Depends on | For | Provides to | What |
+|---|---|---|---|
+| canon §C3, §C4, §C6, §C7, §C15, §C16.4, E3/E10/E12 | binding values | §5 Cooking | station footprints, durability, PAUSED/eject triggers, station-type levels |
+| §5 | station verbs, gimmicks, fire rules | §8 Customer AI | seat/surface nodes, nav-blocked cells, local atmosphere, podium, counter line |
+| §8, §10 | arrivals, queue, escalation | §10 / §C11 | `M` (Atmosphere), `K` (Cleanliness), `DecorMult` |
+| §11 | combat damage events, PropClass use | §11 | PropClass mapping, durability conversion, protective multipliers |
+| §14 | REPAIR stat, `SKL_RPR_` nodes | §16 / §17 | repair jobs for `ROLE_REPAIR`, offline damage rules, capacity check per tier |
+| §16 / §17 | technicians, offline report | §20 | City Hall permit gate (`TIER_04`+), repair objectives |
+| §21 | co-op permissions, guests | §24 | data for §24.22–24 screens, reason texts |
+| §27 / §28 | services, codec | §27 / §28 | layout record meaning, reserved z ranges |
+
+### 15.14 Edge Cases
+
+| # | Situation | Ruling |
+|---|---|---|
+| 1 | Damage lands on an object while an employee or player repairs it (canon **E3**) | job absorbs it (remaining work grows, ring drops, "More damage!"); Destroyed converts the job to Rebuild; cost charged once at completion at the worst state reached |
+| 2 | A layout would disconnect the door from a seat (canon **E10**) | the op is rejected with `PATH_BLOCKED_SEAT` and the route preview; at runtime, stuck customers poof (§8.7) |
+| 3 | A guest (or a customer during co-op) breaks the owner's furniture (canon **E12**) | insured share repaired free at visit end; guests can't sell/move/store or spend |
+| 4 | Owner tries to place furniture while a customer is seated | Edit Mode cannot open while customers are inside (Pause Service/Last Call first); an occupied seat can never be moved or stored (`OCCUPIED`) |
+| 5 | Tier upgrade with damaged or Destroyed items | Mutant Builders restore all to Pristine and rebuild rubble for free; active repair jobs are cancelled with no charge |
+| 6 | Tier upgrade requested mid-brawl or during chaos | refused ("Can't renovate during a brawl!"), nothing charged |
+| 7 | Owner disconnects during Edit Mode | every committed op was already valid; restaurant goes to E1 Closing; next session opens normally |
+| 8 | Server dies after the tier transaction but before migration | profile says new tier, `layoutMigratedFor` false → deterministic migration runs on next load; no double charge (idempotency key) |
+| 9 | Player tries to store/sell the last Pantry (or the podium at T3+) | `ESSENTIAL`; sell is storage-only anyway |
+| 10 | A station breaks mid-cook / is destroyed | Broken → PAUSED, timers frozen; Destroyed → contents ejected per §5; no burn, no charge |
+| 11 | Wallet too low to rebuild | Elbow Grease: free manual rebuild at ×2 time |
+| 12 | Store a damaged item to "heal" it | refused (`DAMAGED_STORE`); durability lives on the placed uid |
+| 13 | Content update makes a saved item invalid (new footprint, tier change) | item moves to storage with a "Needs a home" badge; connectivity repair stores lowest-value blockers |
+| 14 | Two co-owners try to edit at once | single edit lock; the second sees a read-only view with the editor's name |
+| 15 | Offline damage hits an object with a paused repair job | merged by E3; offline damage never Destroys (floor 1 %) |
+| 16 | Sprinkler and a player extinguish the same fire | first completion wins; one puddle at most; no double effects |
+| 17 | Seat cap reached but the player buys more chairs | purchase allowed (goes to storage); placement refused with `SEAT_CAP` |
+| 18 | Restaurant left unstaffed while the owner explores the city | `AWAY` "Out to Lunch": no arrivals, heat timers paused, escalation capped at level 2 without security — nothing burns or gets smashed (§15.12.1) |
+
+### 15.15 Acceptance Criteria
+
+- **AC-15-01:** All 10 tiers load with canon §C6 values; an upgrade with insufficient level, MB or (T4+) permit is
+  refused with the exact gap shown and charges 0 MB.
+- **AC-15-02:** A tier upgrade from `OPEN` completes in ≤ 45 s Last Call + 10.0 s ± 0.2 s builders sequence (3.0 s
+  short version after the first view) and no customer loses reputation because of it.
+- **AC-15-03:** After any tier upgrade, 100 % of previously owned items exist (placed or in storage), every object
+  is Pristine, and the migrated layout passes R1–R11.
+- **AC-15-04:** Every placement op is answered by the server in ≤ 250 ms on a 150 ms-latency client, and the client
+  ghost's verdict matches the server's in 100 % of 10,000 randomized fixture placements.
+- **AC-15-05:** No saved layout ever disconnects the front door from any attached seat; a fuzz test of 5,000 random
+  op sequences produces 0 invalid committed layouts.
+- **AC-15-06:** Connectivity validation of the largest interior (≈ 2,900 cells) takes ≤ 1 ms on the server.
+- **AC-15-07:** Appliance slot use never exceeds canon slots; utility fixtures never consume a slot; the starter
+  kit uses exactly 4 of 6 slots at `TIER_01`.
+- **AC-15-08:** Attached seats never exceed tier Seats; a Broken surface disables its seats within one server tick.
+- **AC-15-09:** Atmosphere is an integer 0–TierCap, recomputed ≤ 1 s after a change, and `DecorMult = 0.9 + 0.003 ×
+  Atmosphere` is what `CustomerAIService` reads; the starter shack reads 22 before and 42 after the tutorial repairs.
+- **AC-15-10:** Cleanliness K drops by exactly 4 per dining trash item and 6 per spill (fixtures), recovers when
+  they are cleaned, and is clamped to 0–100.
+- **AC-15-11:** Durability is stored as an integer 0–100 per object; states derive from canon bands (76/51/26/1/0)
+  and a single combat hit never lowers an object by more than one state.
+- **AC-15-12:** Repair cost equals 4/8/15/25 % of price for Scuffed/Cracked/Broken/Destroyed (± 1 MB rounding,
+  before discounts) and is charged exactly once per job even if damage occurs during the job (E3).
+- **AC-15-13:** With `REPAIR` 0, a Small Cracked object repairs in 3.5 s ± 0.1 s in Hold mode without pips; no job
+  completes faster than 0.6 × its base time.
+- **AC-15-14:** The Fix-It Ring is fully playable with one thumb on a 5-inch phone (FIX button ≥ 96 × 96 px) and
+  with Auto-Fix enabled requires no timing input.
+- **AC-15-15:** A Destroyed object always offers Rebuild at ≤ 25 % of price, or Elbow Grease at 0 MB when the wallet
+  is short; no code path deletes a placed object without a player sell action.
+- **AC-15-16:** Damage caused by guests, or by customers while a guest is present, is fully repaired at 0 MB within
+  2 s of the last guest leaving (E12).
+- **AC-15-17:** Offline reports never Destroy objects, damage at most `min(6, 1 + floor(H/2))` objects, and identical
+  inputs reproduce identical damaged-object lists (seeded).
+- **AC-15-18:** With a Repair Tech, offline-damaged objects are Pristine on return and the report's Repairs line
+  equals the state costs × (1 − RepairSkill / 200), ± 1 MB.
+- **AC-15-19:** Store is refused for any object below 76 % durability; storage holds only Pristine items.
+- **AC-15-20:** A `TIER_10` interior with 400 placed items stays within 3,500 parts and 150,000 triangles, and
+  destruction debris despawns within 4 s.
+- **AC-15-21:** Buying a station path level upgrades every owned instance of that type (including premium variants
+  and copies bought later) and costs ×1.5/×4/×10/×25 of the stock item price.
+- **AC-15-22:** While the restaurant is `AWAY` and unstaffed, no new customers arrive, no station reaches ON_FIRE,
+  and no customer exceeds anger level 2 without a Security Guard on shift.

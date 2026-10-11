@@ -255,6 +255,7 @@ EVENT_MS = {"early": 15, "mid": 30, "late": 45}         # per city event complet
 WEEKLY_MS = {"early": 40, "mid": 70, "late": 110}       # per weekly quest, 5 per week
 WEEKLY_RT = {"early": 0, "mid": 1, "late": 2}           # per weekly quest, 5 per week
 STORY_RT = {1: 0, 2: 0, 3: 0, 4: 5, 5: 8, 6: 10, 7: 12, 8: 15, 9: 20, 10: 25}  # on finishing chapter N
+EVENT_RT_WEEK = {"early": 1, "mid": 3, "late": 5}     # RT from city events per week (§18.8.4 cap: <= 10/week)
 LEG_DISH_RT_PER_HOUR = 0.5      # RT per active hour from Legendary dish orders once RCP_LEG_001 is known (L65+)
 STORY_PART = {1: "Uncommon", 2: "Uncommon", 3: "Rare", 4: "Rare", 5: "Epic", 6: "Epic", 7: "Epic",
               8: "Legendary", 9: "Legendary", 10: "Mythic"}
@@ -389,9 +390,10 @@ class Sim:
                 self.offline_day(bucket, wk)
             if day % 7 == 0:
                 self.ms += 5 * WEEKLY_MS[b]
-                self.rt += 5 * WEEKLY_RT[b]
+                self.rt += 5 * WEEKLY_RT[b] + EVENT_RT_WEEK[b]
                 self.add(wk, "ms_weekly", 5 * WEEKLY_MS[b])
                 self.add(wk, "rt_weekly", 5 * WEEKLY_RT[b])
+                self.add(wk, "rt_events", EVENT_RT_WEEK[b])
         self.n += 1
 
     def offline_day(self, bucket, wk):
@@ -903,15 +905,15 @@ def t_ms_rt():
         if wk.get("hours", 0) < 1.0:
             continue
         msin = wk.get("ms_daily_events", 0) + wk.get("ms_dupes", 0) + wk.get("ms_weekly", 0)
-        rtin = wk.get("rt_weekly", 0) + wk.get("rt_story", 0) + wk.get("rt_leg", 0)
+        rtin = wk.get("rt_weekly", 0) + wk.get("rt_events", 0) + wk.get("rt_story", 0) + wk.get("rt_leg", 0)
         msb += msin - wk.get("ms_spent", 0)
         rtb += rtin - wk.get("rt_spent", 0)
         rows.append([w, fm(wk.get("ms_daily_events", 0)), fm(wk.get("ms_weekly", 0)), fm(wk.get("ms_dupes", 0)),
                      fm(msin), fm(wk.get("ms_spent", 0)), fm(msb), fm(wk.get("rt_weekly", 0)),
-                     fm(wk.get("rt_story", 0)), fm(wk.get("rt_leg", 0)), fm(rtin), fm(wk.get("rt_spent", 0)),
-                     fm(rtb)])
+                     fm(wk.get("rt_events", 0)), fm(wk.get("rt_story", 0)), fm(wk.get("rt_leg", 0)), fm(rtin),
+                     fm(wk.get("rt_spent", 0)), fm(rtb)])
     return md(["Week", "MS dailies+events", "MS weeklies", "MS dupes", "MS in", "MS spent", "MS balance",
-               "RT weeklies", "RT story", "RT Legendary dishes", "RT in", "RT spent", "RT balance"], rows)
+               "RT weeklies", "RT events", "RT story", "RT Legendary dishes", "RT in", "RT spent", "RT balance"], rows)
 
 
 def guest_tier(level):

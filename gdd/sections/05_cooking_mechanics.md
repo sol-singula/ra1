@@ -267,7 +267,7 @@ Suggested base prices drive upgrade costs; the Furniture & Equipment Catalog (§
 | `STN_MIXER` | Mixer | MIX (sequence) | 1 bowl | 5 / TIER_02 | 6 s | wrong sequence, over-mixed | 1,800 | **Professor Whisk** — auto-sorts any insertion order |
 | `STN_DRINK` | Drink Dispenser | POUR, ice, AGITATE | 1 nozzle | 1 / TIER_01 (starter) | 3 s fill | overflow / exploded SPILLED | 350 | **Twin Burp Nozzles** — 2nd nozzle, one-tap auto-stop pours |
 | `STN_ICECREAM` | Ice Cream Machine | SCOOP / SWIRL | 1 | 4 / TIER_01 | 0.6 s per scoop; 1.2 s per swirl tier | drip SPILLED, MELTY | 1,100 | **Soft-Serve Sniper** — swirl auto-stops at the ticket's height; no melt for 60 s |
-| `STN_ASSEMBLY` | Food Assembly Counter | ASSEMBLE (+ count, flip stack, box, basic PLATE) | 2 boards | 1 / TIER_01 (starter) | 0.35 s per component | wrong order (factor 0.85 / 0.7) | 300 | **Bun Backflip** — top bun auto-lands on correct stacks; 3rd board |
+| `STN_ASSEMBLY` | Food Assembly Counter | ASSEMBLE (+ count, flip stack, box; PLATE at TIER_01–02) | 2 boards | 1 / TIER_01 (starter) | 0.35 s per component | wrong order (factor 0.85 / 0.7) | 300 | **Bun Backflip** — top bun auto-lands on correct stacks; 3rd board |
 | `STN_PLATING` | Plating Station | PLATE, garnish, drizzle, advanced presentation | 2 | 5 / TIER_02 | 0.8 s plate; 0.5 s garnish | no clean plates | 1,500 | **Plate Juggler** — conjures 4 emergency clean plates per minute |
 | `STN_WINDOW` | Serving Window | hand-off, ticket rail, heat lamp | 4 pickup spots | 1 / TIER_01 (starter) | instant; lamp +20 s HOT | dish cools, wrong spot | 500 | **Bell of Destiny** — operatic bell summons pickups / rushes waiters |
 | `STN_DISHWASH` | Dishwashing Station | WASH (+ polish) | 1 rack = 4 plates | 1 / TIER_01 (starter) | 1.5 s per plate | backlog → "No Clean Plates" | 400 | **Bubble Tsunami** — whole rack in one hold; bubbles clean a spill |
@@ -476,7 +476,7 @@ Durations are Lv1 values before stats/KA; all heat items use `W_perfect` 2.0 s, 
 ##### `STN_ASSEMBLY` — Food Assembly Counter
 | Field | Spec |
 |---|---|
-| Purpose & interaction | **ASSEMBLE** stacks/combos on 2 boards (§5.4.9). Place a clean plate first to assemble *on* the plate (= plated). Each Grab-place pushes a component; empty-hand Grab pops the top one. **Count Mode** (auto when the pinned ticket has a count mod, or long-press 0.5 s): tap = +1 unit, hold = +5 per 0.4 s, empty-hand Grab = −1. **Count Out** moves single pieces from a portion (fries, shrimp, noodles). **Flip Stack:** hold Use 0.6 s on a finished stack. Basic **PLATE**, **Garnish (sprig/candle)**, **Box It** and **Fold** are also available here at every tier (canon: assembly doubles as plating at TIER_01–02; at TIER_03+ plating here takes × 1.5 time). |
+| Purpose & interaction | **ASSEMBLE** stacks/combos on 2 boards (§5.4.9). At TIER_01–02, place a clean plate first to assemble *on* it (= plated). Each Grab-place pushes a component; empty-hand Grab pops the top one. **Count Mode** (auto when the pinned ticket has a count mod, or long-press 0.5 s): tap = +1 unit, hold = +5 per 0.4 s, empty-hand Grab = −1. **Count Out** moves single pieces from a portion (fries, shrimp, noodles). **Flip Stack:** hold Use 0.6 s on a finished stack. **Garnish (sprig/candle)**, **Box It** and **Fold** are available here at every tier. **Plating:** at TIER_01–02 a clean plate placed first makes the dish plated (canon: assembly doubles as plating); from TIER_03 the plate stack moves to `STN_PLATING` and only dishes plated there earn plating factor 1.0. |
 | Duration / in → out | 0.35 s per component · components → dish with ordered `stack`. |
 | Upgrades | **Lv5 Bun Backflip:** when the stack below is in correct order, the top bun backflips onto it automatically; a 3rd board appears. |
 | Failure | Assembly-order factor 1.0 / 0.85 / 0.7 (canon §C8) evaluated at serve; un-plated at TIER_03+ → plating factor 0.9. |
@@ -590,7 +590,7 @@ Every canon §C8 verb, at Lv1 with 0 stats. "Mobile" = adaptation on touch; ever
 | POUR | `STN_DRINK` | hold fill + optional Agitate | fill band 90–100 % | fill score | hold; Lv5 one-tap | overflow SPILLED |
 | SCOOP | `STN_ICECREAM` | tap per scoop / hold swirl | swirl ±0.25 s of tier | swirl score | tap / hold | drip SPILLED, MELTY |
 | ASSEMBLE | `STN_ASSEMBLY` | place components in order | — | order factor 1.0 / 0.85 / 0.7 | ghost stack shows next layer | wrong order |
-| PLATE | `STN_PLATING`, `STN_ASSEMBLY` | transfer + optional garnish | garnish 0.5 s | plating factor 1.0 / 0.9 (T3+) | tap | no clean plates |
+| PLATE | `STN_PLATING` (`STN_ASSEMBLY` at TIER_01–02) | transfer + optional garnish | garnish 0.5 s | plating factor 1.0 / 0.9 (T3+) | tap | no clean plates |
 | SERVE | `STN_WINDOW`, customer | Use on spot / customer | patience (§C11.2) | A, Q, C evaluated (§5.5) | Context "Serve" | wrong dish → returned |
 | CLEAN | hazards (§5.7) | hold with mop / extinguisher | 1.0–2.0 s per hazard | — | hold | — |
 | WASH | `STN_DISHWASH` | hold scrub; optional polish | 1.5 s per plate | SPARKLING flag | hold | plate backlog |
@@ -712,7 +712,8 @@ shrimp, noodles, sugar sprinkles, pancake layers) store `count`; Add places the 
 Out edit it one unit at a time with a live "n/target" chip.
 
 #### 5.4.10 Plating and garnish
-At TIER_03+ an un-plated dish scores plating factor 0.9 (canon §C8). Garnish (3 spots, centre = Chef's Flourish cosmetic)
+At TIER_03+ an un-plated dish scores plating factor 0.9 (canon §C8), and plating happens only at `STN_PLATING` (assembly
+doubles as plating at TIER_01–02 only — canon §C7). Garnish (3 spots, centre = Chef's Flourish cosmetic)
 sets `garnish`; it does not change `Q` (canon formula) but is read by mods and may be read by personalities (§9).
 Drizzle Art: trace a 3-point pattern within 1.5 s (touch) or press the 3 shown directions (keyboard/controller); result
 `drizzle = {pattern, ingredient}`.
@@ -837,6 +838,7 @@ export type Component = {
 	count: number,                        -- countables (pickle slices, fries, scoops...), default 1
 	gridMarks: string?, fryCount: number?, bakeDial: string?, dialCorrect: boolean?,
 	seqInversions: number?, seqReversed: boolean?,
+	needsFlip: boolean?, flipped: boolean?, shaken: boolean?, spun: boolean?, -- input flags behind grade caps (§5.4.2)
 }
 export type Dish = {
 	dishId: string, restaurantId: string, createdAt: number, lastHandler: number,

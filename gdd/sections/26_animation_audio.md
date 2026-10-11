@@ -579,7 +579,8 @@ report uses `SFX_201` + `SFX_134` with `MUS_014`. Audio settings are listed unde
 #### 26.3.5 Progression
 The restaurant soundtrack grows with the tier, from skiffle (`MUS_003`) to a gibberish choir (`MUS_012`). District
 music plays as each district unlocks. Unlocks get audible punctuation: tier fanfare `SFX_197`, Epic+ reveals
-`SFX_198`, secrets `SFX_148`.
+`SFX_198`, secrets `SFX_148`. The §15 Mutant Builders sequence uses `MUS_034`, `SFX_177`, `SFX_119`, `SFX_079`,
+`SFX_197` and `SFX_174` on the beats listed in §25.4.7.
 
 #### 26.3.6 Player Interactions
 Each client runs its own AudioDirector. Your own actions play at P2 (2D for cues). Other players' kitchen actions

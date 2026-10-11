@@ -493,12 +493,15 @@ export type CycleQuests = {
 	offers: { QuestProgress },        -- rolled at first load after the reset
 	rerolls: number,
 }
-export type Tutorial = {
-	step: number,                     -- 0..11 = index of the current QST_TUT_001..QST_TUT_012; 12 = done
+export type Tutorial = {               -- = §32.13 TutorialState
+	v: number,                        -- tutorial script version (its own step migrations, §32)
+	step: number,                     -- last COMPLETED step 0..12 (QST_TUT_001..QST_TUT_012); 12 = done
 	skipped: boolean,
-	starterPick: string?,             -- "MUT_145" | "MUT_144" | "MUT_153" (QST_TUT_010, §C13.8)
-	ollieHired: boolean,              -- EMP_001 granted by QST_TUT_012 (§C14.4)
-	checkpointAt: UnixTime,
+	choice: string?,                  -- "MUT_145" | "MUT_144" | "MUT_153" (QST_TUT_010, §C13.8)
+	startedAt: UnixTime,
+	completedAt: UnixTime?,
+	tipsSeen: number,                 -- bitmask of tutorial tips shown
+	assists: { [string]: number },    -- analytics counters (burn_recovery, auto_flip, ...)
 }
 export type Exploration = {
 	districtBits: number,             -- visited DST_01..DST_10 (bit i-1)
@@ -1173,7 +1176,7 @@ the same profile key as the reward — so no ordering of reconnects, retries or 
 | Welcome Back Crate (E5) | granted in the load write that advances `lastSimAt` | absence measured against the stored `lastSimAt` |
 | Achievements / milestones | `progression.achievements[id]` / `progression.milestones[id]` | key absent |
 | One-time XP grants | `progression.xpOnceKeys` (§14) | key absent |
-| Tutorial gifts (QST_TUT_010 part, `EMP_001`) | `quests.tutorial.starterPick`, `quests.tutorial.ollieHired` | field unset |
+| Tutorial gifts (QST_TUT_010 part, `EMP_001` via QST_TUT_012) | `quests.tutorial.choice`, `quests.tutorial.step` | choice unset / step below the granting step |
 | Capsule results | result committed to `mutations` before the reveal plays | disconnecting mid-reveal cannot re-roll: the leave save persists it |
 | Recruit candidates | `employees.recruit.hiredMask` | candidate bit clear |
 | Robux receipts | `wallet.receipts` + `MMR_Receipts_v1` | §28.18 |
