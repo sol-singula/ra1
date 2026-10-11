@@ -194,7 +194,7 @@ beats are allusions only, since §20 writes the campaign.
 | 1 | TIER_01 | Broken Burger Shack | 1 | 0 | start | "I can barely flip a burger, and a dinosaur flipped my table." | Starter body + 1 tutorial part |
 | 2 | TIER_02 | Tiny Mutation Diner | 5 | 1 | 1,000 | "I have a real menu and an octopus employee." | 2–3 Common/Uncommon swaps |
 | 3 | TIER_03 | Neighborhood Freak Café | 10 | 3 | 2,000 | "Table service! Waiters! The critic noticed me." | First full Chef loadout |
-| 4 | TIER_04 | Morph City Grill | 18 | 7 | 5,000 | "City Hall gave me a permit; the Baron is worried." | First Rare part; Fighter loadout |
+| 4 | TIER_04 | Morph City Grill | 18 | 8 | 5,000 | "City Hall gave me a permit; the Baron is worried." | First Rare part; Fighter loadout |
 | 5 | TIER_05 | Mutant Family Restaurant | 26 | 14 | 15,000 | "Aliens eat here now" (Alien Cuisine, chapter 5, Zorp `NPC_027`). | First Epic; first synergy build |
 | 6 | TIER_06 | Monster Food Court | 35 | 25 | 40,000 | "My staff runs a shift for 8 hours without me." | Epic upgrades at Lv4+ using RT |
 | 7 | TIER_07 | Mutation Megadiner | 45 | 40 | 100,000 | "I'm famous on Restaurant Row." | First Legendary within reach |

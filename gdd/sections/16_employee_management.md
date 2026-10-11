@@ -270,18 +270,18 @@ filing-cabinet torso). From `TIER_06` the **Hirewell Hotline** button in the Emp
 | Pity | at `TIER_05`+, 12 windows without a Rare-or-better candidate → next pool has one; at `TIER_08`+, 24 windows without Epic+ → next pool has one (counters persist, reset on sight) |
 | Disclosure | the rarity odds below are shown in the UI (ⓘ button); rerolls cost MB only and are never sold for Robux |
 
-| Tier | ● Common | ▲ Uncommon | ■ Rare | ⬟ Epic | ★ Legendary |
-|---|---|---|---|---|---|
-| `TIER_01` | 90 % | 10 % | 0 % | 0 % | 0 % |
-| `TIER_02` | 78 % | 22 % | 0 % | 0 % | 0 % |
-| `TIER_03` | 60 % | 36 % | 4 % | 0 % | 0 % |
-| `TIER_04` | 42 % | 46 % | 12 % | 0 % | 0 % |
-| `TIER_05` | 28 % | 44 % | 25 % | 3 % | 0 % |
-| `TIER_06` | 18 % | 38 % | 34 % | 10 % | 0 % |
-| `TIER_07` | 10 % | 30 % | 38 % | 20 % | 2 % |
-| `TIER_08` | 6 % | 22 % | 38 % | 28 % | 6 % |
-| `TIER_09` | 4 % | 16 % | 34 % | 34 % | 12 % |
-| `TIER_10` | 2 % | 12 % | 30 % | 36 % | 20 % |
+| Tier | Tier ID | ● Common | ▲ Uncommon | ■ Rare | ⬟ Epic | ★ Legendary |
+|---|---|---|---|---|---|---|
+| T1 | `TIER_01` | 90 % | 10 % | 0 % | 0 % | 0 % |
+| T2 | `TIER_02` | 78 % | 22 % | 0 % | 0 % | 0 % |
+| T3 | `TIER_03` | 60 % | 36 % | 4 % | 0 % | 0 % |
+| T4 | `TIER_04` | 42 % | 46 % | 12 % | 0 % | 0 % |
+| T5 | `TIER_05` | 28 % | 44 % | 25 % | 3 % | 0 % |
+| T6 | `TIER_06` | 18 % | 38 % | 34 % | 10 % | 0 % |
+| T7 | `TIER_07` | 10 % | 30 % | 38 % | 20 % | 2 % |
+| T8 | `TIER_08` | 6 % | 22 % | 38 % | 28 % | 6 % |
+| T9 | `TIER_09` | 4 % | 16 % | 34 % | 34 % | 12 % |
+| T10 | `TIER_10` | 2 % | 12 % | 30 % | 36 % | 20 % |
 
 #### 16.6.2 What each candidate has
 
@@ -525,7 +525,7 @@ floored at 0 and the Manager closes early instead of running a loss).
 
 - **Equipment upgrades** are bought in §15; for staff they matter through the canon station levels (§C4.9): online
   station process time is shared with players, and offline `PrepSec_eff = PrepSec × (1 − 0.5 × (1 − levelMult))`
-  (half of a dish's base time is station processing). Lv5 stations make a kitchen ~20 % faster offline.
+  (half of a dish's base time is station processing). All-Lv5 stations give a kitchen +25 % offline capacity.
 - **Night Menu**: an optional subset of known recipes used for offline time (default = the day menu). The screen
   compares the Forecast for both menus and warns when a dish fails the chef skill gate or lacks special stock. A one-chef
   kitchen often earns more with fast D2 dishes (§17.9 Example B).
@@ -590,13 +590,13 @@ The Employee Management skill tree (`SKL_MGMT_01`–`SKL_MGMT_10`, §14) may onl
 
 ### 16.9 Progression and return on investment
 
-| Tier band | What opens up | Typical staff (cap) | Offline cap |
+| Tier band (§C6) | What opens up | Typical staff (cap) | Offline cap |
 |---|---|---|---|
-| `TIER_01`–`TIER_02` | Ollie (tutorial), Commons; Manager & Repair at T2 | Chef + Cashier/Prep (2–3) | 2 h → 4 h with a Basic Manager |
-| `TIER_03`–`TIER_04` | Waiters & Security (table service), first Rares; Delivery & Stocker at T4 | Chef, 2 Waiters, Manager (4–6) | 4 h |
-| `TIER_05`–`TIER_06` | Assistant Manager, first Epics, Hotline at T6, Rare pity | 2 Chefs, 3 Waiters, Dish, Cleaner, Rare Manager (8–10) | 8 h (+2 h) |
-| `TIER_07`–`TIER_08` | first Legendaries, Epic pity | full line, Elite Manager (12–14) | 12 h (+2 h) |
-| `TIER_09`–`TIER_10` | Legendary pool 12–20 % | 16–20 specialists, Legendary Manager | 24 h |
+| Tiers 1–2 | Ollie (tutorial), Commons; Manager & Repair at T2 | Chef + Cashier/Prep (2–3) | 2 h → 4 h with a Basic Manager |
+| Tiers 3–4 | Waiters & Security (table service), first Rares; Delivery & Stocker at T4 | Chef, 2 Waiters, Manager (4–6) | 4 h |
+| Tiers 5–6 | Assistant Manager, first Epics, Hotline at T6, Rare pity | 2 Chefs, 3 Waiters, Dish, Cleaner, Rare Manager (8–10) | 8 h (+2 h) |
+| Tiers 7–8 | first Legendaries, Epic pity | full line, Elite Manager (12–14) | 12 h (+2 h) |
+| Tiers 9–10 | Legendary pool 12–20 % | 16–20 specialists, Legendary Manager | 24 h |
 
 **Employee ROI.** `Payback = HireCost ÷ (ΔNet_offline + ΔNet_online)` over the player's real schedule. The table
 measures the offline part with the §17 reference model by removing one employee from a §17.9 example roster (base
@@ -605,15 +605,15 @@ tapered absence ("report").
 
 | Example roster | Employee | Hire (MB) | Wage (MB/h) | Δ full-rate MB/h | Δ per report | Payback (reports) |
 |---|---|---|---|---|---|---|
-| B (`TIER_03`, 4 h) | Benny Bun, Common Waiter | 400 | 18 | +325 | +970 | 0.4 |
-| B (`TIER_03`, 4 h) | Skates McGee, Uncommon Waiter | 2,300 | 55 | +443 | +1,311 | 1.8 |
-| C (`TIER_05`, 8 h) | Octavia, Uncommon Chef (trained) | 2,100 | 50 | +1,120 | +6,000 | 0.35 |
-| C (`TIER_05`, 8 h) | Sloane, Common Dishwasher | 200 | 10 | +121 | +1,285 | 0.16 |
-| C (`TIER_05`, 8 h) | Dusty, Common Cleaner | 400 | 18 | +190 | +953 | 0.42 |
-| C (`TIER_05`, 8 h) | Chet Speedwell, Rare Waiter | 12,000 | 165 | +695 | +3,931 | 3.1 |
-| D (`TIER_07`, 12 h) | Rocco, Rare Security Guard | 12,500 | 170 | −170 (not a bottleneck) | −986 | online / insurance only |
-| E (`TIER_10`, 24 h) | Tractor Trixie, Epic Stocker | 57,000 | 440 | +1,452 | +25,579 (keeps special dishes live) | 2.2 |
-| E (`TIER_10`, 24 h) | Comet Carla, Epic Courier | 61,000 | 465 | +2,472 | +5,529 | 11.0 |
+| B (T3, 4 h) | Benny Bun, Common Waiter | 400 | 18 | +325 | +970 | 0.4 |
+| B (T3, 4 h) | Skates McGee, Uncommon Waiter | 2,300 | 55 | +443 | +1,311 | 1.8 |
+| C (T5, 8 h) | Octavia, Uncommon Chef (trained) | 2,100 | 50 | +1,120 | +6,000 | 0.35 |
+| C (T5, 8 h) | Sloane, Common Dishwasher | 200 | 10 | +121 | +1,285 | 0.16 |
+| C (T5, 8 h) | Dusty, Common Cleaner | 400 | 18 | +190 | +953 | 0.42 |
+| C (T5, 8 h) | Chet Speedwell, Rare Waiter | 12,000 | 165 | +695 | +3,931 | 3.1 |
+| D (T7, 12 h) | Rocco, Rare Security Guard | 12,500 | 170 | −170 (not a bottleneck) | −986 | online / insurance only |
+| E (T10, 24 h) | Tractor Trixie, Epic Stocker | 57,000 | 440 | +1,452 | +25,579 (keeps special dishes live) | 2.2 |
+| E (T10, 24 h) | Comet Carla, Epic Courier | 61,000 | 465 | +2,472 | +5,529 | 11.0 |
 
 Lessons the UI teaches through the Forecast and the Upgrade Suggestions: hire into the **bottleneck** (cheap
 presence roles like Dishwasher and Cleaner pay back in minutes once their penalty applies), Security Guards earn their

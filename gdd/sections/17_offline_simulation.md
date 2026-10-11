@@ -349,8 +349,8 @@ example's **first-2-hour rate** is 35–50 % of the tier's §C4.4 active net/hou
 different progression points plus one deliberately bad roster; every example shows the taper column ("Shift") and the
 value of the whole absence in active hours. Shared assumptions, so each example only lists what differs:
 
-- **Canon constants unchanged** (§C15 as written); A11 elaborations exactly as §17.3–§17.4. Employees use their §36.8
-  values (trained stats are starred).
+- **Canon §C15 constants unchanged**, plus the long-absence taper (§17.4) and the A11 elaborations exactly as
+  §17.3–§17.4. Employees use their §36.8 values (trained stats listed under the roster).
 - **Menus** use real recipe IDs from §C10 with prices from the canon curve (§C4.2, no flavor variance). Difficulty D,
   base prep seconds (mains 10 + 7D, desserts/fried/salads 8 + 5D, drinks 4 + 3D, legendary 20 + 10D) and ingredient
   ratios (D1 36 % … D5 26 %, inside the canon 25–40 % band) are *assumed for the examples*; the live game reads §6.
@@ -865,3 +865,209 @@ Incidents: λ = 0.86 → 0 drawn (0 MB net, within caps); discoveries: none.
 | E | `TIER_10` | 18 | 24 h 00 min (8.20 h) | 1,807 | 378,075 | 49,477 | 120,500 | 41.1 % | ✓ | 3.14 |
 | F | `TIER_04` | 5 | 2 h 00 min (2.00 h) | 63 | 24 | 12 | 3,100 | 0.4 % | ✗ (intentional) | 0.01 |
 
+**What the examples show.**
+
+- Every well-staffed example's first-2-hour rate lands in the band (40.8–44.0 %); none approaches the 60 % ceiling.
+  The taper then makes the absence worth 0.9 (2 h), 1.2 (4 h), 2.0 (8 h), 2.5 (12 h) and 3.1 (24 h) active hours —
+  meaningful, never a replacement for playing.
+- The limiting factor teaches the next purchase: B stays kitchen-bound by about one customer/h even on a fast D2
+  Night Menu (a Prep Cook is the next hire, but the 4-slot cap forces a choice); C swapped a prep it did not need for a
+  third waiter; E's 6,000 MB auto-buy budget ran dry in step 22 and the special dishes sold out — the Welcome Back
+  screen turns exactly these facts into Upgrade Suggestions (§17.10.4).
+- Energy decay bites late: E's kitchen capacity falls from 356 to 255 customers/h and service from 334 to 214 over
+  24 h, so the last hour is service-bound — but by then the Skeleton Shift only runs a fifth of the floor.
+- F demonstrates the canon close-early rule: a single weak Common chef cannot feed a Rare/Uncommon floor team at
+  `TIER_04` without a dishwasher; profit per step goes 19 → 5 → −4, step 3 is voided, and the player still gets
+  24 MB instead of a loss, with the reason on screen.
+
+### 17.10 Welcome Back screen
+
+#### 17.10.1 UI state machine
+
+```mermaid
+%% diagram: welcome-back-ui
+stateDiagram-v2
+    [*] --> Loading: profile loaded, Offline.ReportReady
+    Loading --> NoReport: no pending report
+    Loading --> ZeroReport: report.customers == 0
+    Loading --> Summary: report received
+    NoReport --> [*]
+    ZeroReport --> Suggestions: show hint (hire a Chef)
+    Summary --> Summary: counters animate (4 s, tap to skip)
+    Summary --> Tabs: counters done
+    Tabs --> Tabs: Employee Report / Restaurant Damage / Incidents and Discoveries
+    Tabs --> Collecting: press COLLECT (or CONTINUE)
+    Collecting --> Collected: ok or alreadyClaimed
+    Collecting --> CollectFailed: timeout or error
+    CollectFailed --> Collecting: retry (max 3, backoff 1-2-4 s)
+    CollectFailed --> Suggestions: "we kept it safe" (HUD badge stays)
+    Collecting --> Loading: Stale (refetch report)
+    Collected --> Rewards: MS, capsule or crate present
+    Collected --> Suggestions: no extra rewards
+    Rewards --> Suggestions
+    Suggestions --> [*]: CONTINUE PLAYING
+```
+
+The screen opens after the spawn fade, never during the tutorial's first five steps, and never in combat (canon E2).
+Closing it at any point keeps the report pending; a gold **"Uncollected earnings"** HUD badge reopens it, and
+CONTINUE PLAYING always collects first (one tap is enough).
+
+#### 17.10.2 Wireframe — the brief's example, adapted to §17.9 Example C
+
+```
+┌──────────────────────────── WELCOME BACK, YOU WEIRDO! ────────────────────────────┐
+│  Your restaurant operated for 8 hours and 0 minutes (capped at 8 h by Mister ■).   │
+│  Full Shift 2 h ▸ Late Shift 6 h at half pace  — tip: drop by more often!          │
+│                                                                                    │
+│   Customers Served ............  543        Revenue ...............  19,539 MB      │
+│   Tips ........................ 1,315 MB    Ingredients ........... −6,636 MB      │
+│   Employee Wages .............. −3,180 MB   Repairs ...............      0 MB      │
+│   Incidents ...................   −83 MB    (167 MB of damage is waiting for you)  │
+│   ────────────────────────────────────────────────────────────────────────────    │
+│   TOTAL PROFIT ............................................... 10,955 MB  ✨       │
+│                                                                                    │
+│  "Octavia cooked 391 dishes — 78 of them simultaneously, with arms to spare."      │
+│  "Sloane washed 456 plates, very thoroughly. The other 304 are 'soaking'."         │
+│  "A Rich Mutant tipped 268 shiny coins and a monocle. We kept the coins."          │
+│                                                                                    │
+│ [Employee Report] [Restaurant Damage •24] [Incidents & Discoveries 3]              │
+│                                                                                    │
+│        [  COLLECT 10,955 MB  ]          [Upgrade Suggestions ▸]   [Continue ▸]     │
+└────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+Component hierarchy: `WelcomeBackScreen` → `Header` (title, operated-time line with cap chip and manager icon, shift
+strip with the taper) → `CounterGrid` (6–8 `AnimatedCounter`s: customers, revenue, tips, ingredients, wages, repairs,
+incidents, profit; numbers tick up over 4 s with cash-register sound and coin particles; Reduced Motion shows final
+values instantly) → `HighlightLines` (3 funniest lines) → `TabBar` → `TabContent` → `ActionBar` (Collect, Upgrade
+Suggestions, Continue Playing). Controller: A Collect, X tabs, Y suggestions, B continue. Text ≥ 18 px on mobile;
+negative lines carry a "−" sign *and* a red-orange color (never color-only).
+
+#### 17.10.3 Tabs and report lines
+
+- **Employee Report:** one card per employee: hours worked, Energy/Morale start → end, KPI grade, wage paid, and one
+  generated line. Lines come from deterministic templates per role/trait fed by the report's KPIs, e.g. Multi-Tasker
+  chefs "cooked {n} dishes — {m} of them simultaneously", Unhurried dishwashers "washed {n} plates, very thoroughly.
+  The other {m} are 'soaking'", Speedster waiters "served {n} tables at roughly the speed of sound", guards
+  "stopped {n} angry customers with one very stern eyebrow" (the brief's Rhino line), Managers "kept the doors open for
+  {h} and approved {n} snack breaks". Incident lines (§36.9) are attached to the employee they name.
+- **Restaurant Damage:** a mini floor plan with damaged objects pulsing (state icon + durability %), total points,
+  "auto-repaired by {employee} for {x} MB" or the estimated manual repair bill; buttons *Repair all* and *Go fix it*.
+- **Incidents & Discoveries:** chronological cards (step hour, icon by category, MB effect, line) and the discovery
+  roll-up (MS, crates, capsule); a capped report shows "Your Manager stopped the clock after 8 h — hire an Elite
+  Manager for 12 h".
+- **Mutation Rewards** (after Collect, only if present): MS counter, capsule card with *Open now* (odds disclosed,
+  §C4.7), crate card with the ingredient and units; Welcome Back Crate (canon E5) appears here.
+
+#### 17.10.4 Upgrade Suggestions (computed server-side into `report.suggestions`)
+
+| Report fact | Suggestion (deep link) |
+|---|---|
+| Limit = Kitchen in ≥ 50 % of steps | "Your kitchen was the bottleneck — hire a Prep Cook (+15 %) or a Chef" (Recruitment map pin) / upgrade station levels (Build menu) |
+| Limit = Service | "Customers waited for waiters — hire a Waiter or a Cashier (+10 %)" |
+| Limit = Seats | "Every seat was full — time to expand" (tier upgrade, §15) |
+| Limit = Demand | "Make the place more popular — raise ★ and Atmosphere" (decor shop) |
+| elapsed > cap | "You were away 14 h but your Manager stops at 12 h — an Assistant Manager adds 2 h" |
+| Taper used (> 2 h) | "Drop by every few hours to keep your restaurant at full pace" |
+| SOLD OUT or auto-buy budget exhausted | "Special dishes sold out at hour 22 — raise the auto-buy budget or stock up" |
+| Closed early | "You paid for staff who had nothing to do — check the Forecast before logging off" |
+| No Chef / zero report | "Hire a Chef so your restaurant can open while you're away" |
+
+#### 17.10.5 Server validation of every button
+
+| Button | Server call | Validation |
+|---|---|---|
+| COLLECT / CONTINUE PLAYING | `Offline.Collect(reportId)` | owner's profile loaded, not Safe Mode; `reportId` matches pending or is in `claimedReportIds` (idempotent success); rate limit 1/s |
+| Employee Report / Incidents tabs | none (renders the server-sent report) | read-only; KPIs come from the stored report |
+| Restaurant Damage tab | `Offline.GetDamage()` | returns current object durability from `RepairService` (truth after any auto-repair) |
+| Repair all | `RepairService` normal repair purchase | standard costs and E3 rules; never reads report numbers from the client |
+| Upgrade Suggestions links | none / navigation | purchases happen in their own validated screens |
+| Open capsule | `MutationService:OpenCapsule` | capsule owned (granted at Collect), server RNG, odds disclosed |
+
+### 17.11 Offline mutation progression
+
+Offline income feeds the morph economy (Creative Director: "when the player logs off, employees keep that progression
+moving") without replacing it:
+
+- **MB** from offline time buys mutations, upgrades and staff like any other MB.
+- **Mutation Shards:** 8 %/h × shift factor × discovery boost (≤ ×1.25) for 1–3 MS → ≈ 0.8–1.0 MS per 8 h
+  Experienced report (5 effective hours) and ≈ 1.3–1.6 MS per full 24 h report (8.2 effective hours). Rare+ purchases need 20+ MS and Epic+ upgrades need Research Tokens
+  (§C4.5/§C4.6), which come from active play only.
+- **Morph Capsule:** 5 %/h × shift factor, **max one per report and one per UTC day** (canon "≤ 1 per real day") —
+  ≈ 10 % for a 2 h report, ≈ 22 % for an 8 h report, ≈ 34 % for a 24 h report. Same disclosed odds and pity counter
+  as every earnable capsule (§C4.7).
+- **Rare ingredient crates:** 1 %/h × shift factor (×1.5 with `EMP_091`): 5–15 units of a special ingredient the menu
+  can use — they keep special dishes on the menu, a mid-game convenience.
+- **Why active play stays superior:** offline pays 35–50 % of the active rate for 2 hours and then tapers; no XP, no
+  Research Tokens, no recipes, quests, skill points, arena or event rewards offline; reputation only moves by
+  incident effects (±0.05 ★ per report); offline Food Quality caps at 0.95 while a skilled player plates PERFECT 1.00.
+
+### 17.12 Analytics hooks
+
+| Event (`mmr_`) | When | Key fields |
+|---|---|---|
+| `mmr_offline_report_generated` | after the join `UpdateAsync` succeeds | reportId, simVersion, tier, elapsedSec, simulatedSec, effectiveHours, capped, capHours, managerRarity, customers, net, first2Rate, ratioToActive, valueInActiveHours, bottleneck, closedEarlyStep, incidents, ms, capsule, crates, merged |
+| `mmr_offline_report_viewed` | screen/tab opened | reportId, tab, secondsOnScreen |
+| `mmr_offline_collected` | Collect succeeded | reportId, mb, delaySec, auto (via Continue), alreadyClaimed |
+| `mmr_offline_collect_failed` | retry exhausted | reportId, reason |
+| `mmr_offline_suggestion_clicked` | suggestion tapped | reportId, type |
+| `mmr_offline_ceiling_hit` / `mmr_offline_clock_skew` / `mmr_offline_merge` | safety paths | reportId, amount / skewSec / segments |
+| `mmr_welcome_back_crate` | E5 crate granted | daysAway |
+
+Collect also logs `AnalyticsService:LogEconomyEvent` (Source, MB, "offline_earnings"). The first collected report is
+an onboarding funnel step owned by §31. These feed the §17.6 tuning table, including the guardrail KPI (offline share
+of MB by D7/D30 cohort).
+
+### 17.13 Edge cases
+
+| # | Situation | Expected behavior |
+|---|---|---|
+| E5 | Returning after 30 days | H capped at the manager cap (≤ 24 h) and tapered; report shows "capped"; wages only for simulated (tapered) hours; ≥ 7 days away adds the Welcome Back Crate (1 Morph Capsule + 50 MS) granted at Collect; no decay of restaurant, staff or mutations |
+| E8 | No money to pay employees | Offline wages come out of the interval's own income; the wallet is never touched (auto-buy also from income); a losing step closes the restaurant early; Net floored at 0 |
+| E11 | Offline earnings received twice after a reconnect | Impossible: report + `lastSimAt` in one locked `UpdateAsync`; Collect idempotent by `reportId` with the 20-entry ring; second server cannot load the profile |
+| 1 | Employee fired while a report is pending | Report stays valid (computed from the snapshot); its KPI card shows "(no longer employed)"; next interval uses the new roster |
+| 2 | Tier upgraded after a pending report | Impossible mid-interval (tier changes need the player online); a pending report merged with a new interval keeps one segment per tier/cap |
+| 3 | `SIM_VERSION` changes | Pending reports keep their stored values; new intervals use the new version (seed and `reportId` include it); never recomputed |
+| 4 | No Chef on an offline shift | Zero report with the "Hire a Chef" hint; `lastSimAt = now`; no wages charged |
+| 5 | Training course ends mid-interval | Employee joins from the next step; course cost already paid |
+| 6 | All special stock gone at logout | Those recipes are off the offline menu from step 1; if nothing remains cookable the report is zero with a "stock up" hint (`RCP_BRG_001` fallback is online-only, canon E9) |
+| 7 | Player rejoins after 4 minutes | Under `MIN_OFFLINE_SECONDS`: no report, `lastSimAt` unchanged, no screen |
+| 8 | Server shuts down during the join simulation | `UpdateAsync` writes all or nothing; next join simulates the same interval with the same seed |
+| 9 | DataStore failure at join | Safe Mode (canon E6): no simulation, `lastSimAt` untouched, so the interval is simulated on the next successful load |
+| 10 | Report never collected, player leaves again | Next join merges the new interval into the pending report (each interval capped and tapered on its own); nothing expires |
+| 11 | Client closes the screen before Collect | Report stays pending, HUD badge; any later Collect or Continue pays it once |
+| 12 | Clock of the new server is behind `lastSimAt` | elapsed < 0 → 0 hours, flagged; `lastSimAt` is not moved backwards |
+
+### 17.14 Acceptance criteria
+
+- **AC-17-01:** Given the inputs of §17.9 Examples A–F, the Luau `OfflineEarningsService` reproduces customers,
+  revenue, tips, delivery, ingredients, wages and base net of every step to within 1 MB of the reference script.
+- **AC-17-02:** Each well-staffed example's first-2-hour rate is 35–50 % of the tier's §C4.4 active net/hour
+  (`offline_sim_examples.py --check` exits 0), and no report ever exceeds 60 % of active net × effective hours.
+- **AC-17-03:** A 24 h Legendary-Manager absence at `TIER_10` is worth 2.5–3.5 active hours (Example E: 3.14).
+- **AC-17-04:** The same profile, `lastSimAt` and `SIM_VERSION` produce a byte-identical report on 100 repeated runs
+  and on two different servers.
+- **AC-17-05:** H = min(elapsed, cap) for every manager rarity (2/4/8/12/24 h, +2 h with an Assistant, max 24 h);
+  absences longer than the cap show the "capped" chip and charge wages only for simulated hours.
+- **AC-17-06:** Steps starting at hours 0–1 use shift factor 1.0, hours 2–7 use 0.5, hours 8–23 use 0.2, applied to
+  customers, revenue, tips, delivery, ingredients and wages alike.
+- **AC-17-07:** Absences < 300 s create no report and leave `lastSimAt` unchanged; a negative elapsed produces 0 hours
+  and a `mmr_offline_clock_skew` event.
+- **AC-17-08:** Killing the server between report creation and Collect never loses or duplicates money: after rejoin
+  the same `reportId` is pending and pays exactly once.
+- **AC-17-09:** Calling `Offline.Collect` 50 times concurrently or from two clients grants the amount exactly once;
+  later calls return `alreadyClaimed`; the ring keeps the last 20 IDs.
+- **AC-17-10:** A step whose net would be negative is voided (no customers, no wages, auto-buy rolled back) and the
+  simulation stops; the report's net is ≥ 0 (Example F).
+- **AC-17-11:** Over 10,000 seeded reports, Σ negative incident effects never exceed 10 % and Σ positive never exceed
+  15 % of Revenue + Tips; no incident ID appears more than twice in one report.
+- **AC-17-12:** Over 10,000 simulated days, at most one offline Morph Capsule is granted per UTC day and per report.
+- **AC-17-13:** A profile with no working Chef yields a zero report with the hint and charges no wages.
+- **AC-17-14:** The Welcome Back screen shows counters within 1 s of spawn on mobile, animates in ≤ 4 s (instant with
+  Reduced Motion), and every button maps to the validated server action of §17.10.5.
+- **AC-17-15:** Closing the screen without collecting keeps the pending report and shows the HUD badge; Continue
+  Playing collects before closing.
+- **AC-17-16:** Merged reports keep one segment per interval, each capped and tapered separately, and get a new
+  `reportId`; old IDs are never paid.
+- **AC-17-17:** `mmr_offline_report_generated` and `mmr_offline_collected` fire for 100 % of reports in a soak test,
+  and the dashboard computes the guardrail KPI (offline share of MB ≤ 60 % D7 / ≤ 70 % D30).

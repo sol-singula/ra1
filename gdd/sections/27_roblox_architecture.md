@@ -1456,7 +1456,9 @@ the access code; `arena` block), emotes. It is the **single permission policy po
 `GetPermission` before acting for a non-owner.
 
 ```lua
-GetPermission(restaurantId: string, player: Player, action: "Cook" | "Serve" | "Clean" | "Fight" | "Build" | "Spend"): boolean
+GetPermission(restaurantId: string, player: Player, action: CoopAction): boolean
+-- CoopAction (matches the §21 permission matrix): "Cook" | "Serve" | "Clean" | "Fight" | "Repair" | "Build"
+--   | "UseSpecialStock" | "AssignStaff" | "ChangeMenu" | "Spend" | "KickGuest" | "Invite"
 SetPermissions(owner: Player, perms: CoopPermissions): Result -- persists via RestaurantService:SetCoopSettings
 Invite(owner: Player, targetUserId: number): Result
 VisitFriend(player: Player, targetUserId: number): Result

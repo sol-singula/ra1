@@ -27,7 +27,7 @@ defaults are generated from these tables (AC-39-02).
 | Autosave interval [T] | 120 | s | caps data-loss window vs DataStore budget | DataStore request rate; throttle warnings; lost-progress reports | 60–180 | Lead Eng |
 | Extra save on purchase | ≥ 10,000 | MB | protects big purchases between autosaves | saves per minute | 5,000–25,000 | Lead Eng |
 | Base WalkSpeed | 16 | studs/s | familiar Roblox feel | — | Locked | Design-Sys |
-| Max WalkSpeed (MOVE cap) | 20.8 (labelled ≈ 21) | studs/s | faster kitchens without breaking validation | median station-to-station time | 19–22 | Design-Sys |
+| Max WalkSpeed (MOVE cap) | 20.8 | studs/s | faster kitchens without breaking validation | median station-to-station time | 19–22 | Design-Sys |
 | Carry capacity: base / per boosting part / hard max | 1 / +1 / 3 | items | juggling skill; prevents hoarding | items carried per serve | hard max 2–4 | Design-Sys |
 | Interaction range: stations / customers / server tolerance | 7 / 10 / +2 | studs | phone reach; anti-teleport | rejected interactions per 1,000 | 6–9 / 8–12 / 1–3 | Lead Eng |
 | Customers per restaurant | seats + 4 queue (max 28) | customers | throughput vs crowding | queue abandonment rate | queue 2–6 | Design-Sys |
@@ -36,7 +36,7 @@ defaults are generated from these tables (AC-39-02).
 | Client debris lifetime | 4 | s | readability vs clutter | client particle count | 2–6 | Art Dir |
 | City lighting cycle | 24 | min | cosmetic; night-only discoveries | — | 16–40 | Art Dir |
 | Daily / weekly reset | 00:00 UTC / Monday 00:00 UTC | clock | one global rule | — | Locked | Producer |
-| Level cap | 100 | level | ≈ 200-hour arc | % of players at cap | Locked at launch | Design-Sys |
+| Level cap | 100 | level | ≈ 185-hour arc (C5.1) | % of players at cap | Locked at launch | Design-Sys |
 | Reputation start / range | 2.5 / 1.0–5.0 | ★ | start mid-scale | Stars distribution by tier | Locked | Design-Sys |
 | Return Door cooldown | 10 | s | free fast return without abuse | uses per session | 5–30 | Design-Sys |
 | Pigeon Taxi fare | 25 × tier | MB | small convenience sink | rides per DAU | 10–50 × tier | Design-Econ |
@@ -70,7 +70,7 @@ defaults are generated from these tables (AC-39-02).
 | Shop price — Rare [T] | 4,000–10,000 + 20 MS | MB, MS | Mart rotation aspiration | | ±25 % (MS 10–40) | Design-Econ |
 | Shop price — Epic [T] | 25,000–60,000 + 80 MS | MB, MS | mid-game goal | | ±25 % (MS 50–120) | Design-Econ |
 | Shop price — Legendary [T] | 150,000–400,000 + 250 MS + 10 RT | MB, MS, RT | weekly Mystery Market chase | | ±25 % (RT 5–20) | Design-Econ |
-| Mythic fusion | 3 Legendary (same category) + 600 MS + 40 RT | — | prestige, never sold | fusions per week | MS 400–900; RT 25–60 | Design-Econ |
+| Mythic fusion | 3 Legendary from one fusion route (§12.5) + 600 MS + 40 RT | — | prestige, never sold | fusions per week | MS 400–900; RT 25–60 | Design-Econ |
 | Upgrade MB [T] | `BaseMB × 1.5^(L−1)`; BaseMB 100 · 300 · 900 · 3,000 · 10,000 · 30,000 · Secret 15,000 | MB | exponential late sink | upgrades per level band | growth 1.4–1.6 | Design-Econ |
 | Upgrade MS [T] | `BaseMS × L`; BaseMS 2 · 4 · 8 · 15 · 30 · 50 · Secret 40 | MS | shard sink | median MS balance | ±30 % | Design-Econ |
 | Upgrade RT [T] | `RTBase × (L − 3)` for Epic+ at L ≥ 4; RTBase 1 · 2 · 4 · Secret 3 | RT | gates the top levels | median RT balance; RT earned/week | ±1 per base | Design-Econ |

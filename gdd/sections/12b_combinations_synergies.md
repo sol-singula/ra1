@@ -261,8 +261,8 @@ morph economy: a build is worth more than the sum of its parts, but only a littl
    equip or unequip, a loadout apply, a part upgrade (no effect on matching, but the stat totals are rebuilt), a
    pin change, or entering/leaving the Arena ruleset. Nothing is evaluated per frame.
 2. **Hash.** `loadoutHash = "HEAD=MUT_001;TORSO=MUT_117;…|pins=SYN_014,…"` (slot instances in canon order,
-   sorted pins). If the hash is in the 512-entry result cache (flushed when full; shared by everyone on the server, since identical
-   loadouts resolve identically), the cached result is reused.
+   sorted pins). If the hash is in the 512-entry result cache (flushed when full; shared by everyone on the server,
+   since identical loadouts resolve identically), the cached result is reused.
 3. **Count index.** One pass over the ≤ 21 occupied non-FX slot instances (FX is indexed separately) builds counts
    per family, tag, category and rarity-rank for every slot instance.
 4. **Match.** Each synergy's requirement was compiled into a predicate tree at server start (§36.4 data →
@@ -329,16 +329,16 @@ Parts hidden by the §12 visibility flags still count, because hidden ≠ disabl
 **Plain Human defaults are neutral filler.** `MUT_117`/`MUT_139`/`MUT_179` are ignored by every atom (tags,
 categories, rarity, `slot`, `distinct`, `pair`) except an explicit `family:human` atom, and they are never named.
 Canon gives them the `charm` tag, so without this rule every starter morph would already hold five charm parts and
-trivially trigger charm-count synergies. Synergies must be earned with mutations. **FX parts count only for atoms scoped `@FX`**, and a
-synergy with any FX atom must be `social`-only (cosmetic), because FX parts carry no stats (canon C13.4).
-Secret parts count normally.
+trivially trigger charm-count synergies. Synergies must be earned with mutations.
+**FX parts count only for atoms scoped `@FX`**, and a synergy with any FX atom must be `social`-only (cosmetic),
+because FX parts carry no stats (canon C13.4). Secret parts count normally.
 
 #### 12.10.3 Stacking Rules & Caps
 
 1. **Stacking groups.** Every synergy belongs to one stacking group (`SG_…`) and has a rank r1–r3 inside it. Only
    the highest-ranked qualifying synergy of a group is active; on equal rank, the lower ID wins. Example: Dragon
-   Head + Fireproof Skin qualifies for both `SYN_004` Dragon's Own Kitchen (r3) and `SYN_006` Oven Mitts Optional (r1) in `SG_HEATCOOK`, so only `SYN_004` Dragon's Own Kitchen
-   applies.
+   Head + Fireproof Skin qualifies for both `SYN_004` Dragon's Own Kitchen (r3) and `SYN_006` Oven Mitts Optional
+   (r1) in `SG_HEATCOOK`, so only `SYN_004` Dragon's Own Kitchen applies.
 2. **At most 5 active synergies** [TUNABLE]. If more than 5 groups have a winner, the player's pinned synergies
    (up to 5, chosen in §13) go first, then higher rank, then lower ID. The rest are listed as *suppressed* (grey).
 3. **Per-stat cap:** the `STAT` effects of all active synergies add at most **+25 points per stat** [TUNABLE]. The
@@ -348,8 +348,8 @@ Secret parts count normally.
    applies per target. Example: `PROC_TIME` −12 % (all stations) + −10 % (`STN_GRILL`) = −22 % on the grill. Flat
    effects have the caps in the table below. The capped synergy layer then multiplies with stats, skill nodes and
    station levels in the owning system's formula (§5, §11, §15).
-5. **Drawbacks** (e.g. the +10 % damage taken of `SYN_060` Glass-Jaw Slugger) are fixed, never capped and never cancelled by other
-   synergies, so a trade-off stays a trade-off.
+5. **Drawbacks** (e.g. the +10 % damage taken of `SYN_060` Glass-Jaw Slugger) are fixed, never capped and never
+   cancelled by other synergies, so a trade-off stays a trade-off.
 6. **No scaling with upgrades.** Synergy magnitudes do not grow with part upgrade level, which keeps them easy to
    read. Upgrades raise part stat budgets instead (canon C13.4).
 
@@ -401,8 +401,8 @@ Secret parts count normally.
   **Active**, **Suppressed: same group** (names the winner), **Suppressed: limit 5**, **Would activate** or
   **Would deactivate** (during previews). State is never shown by color alone; every state has a word and an icon.
 - **Pins:** tapping the pin on a chip reserves one of the 5 active slots for it (max 5 pins).
-- **HUD:** a strip of up to 5 synergy icons sits beside the ability bar; hover, long-press or the controller's
-  D-pad-down shows the effect text with live numbers ("Grill −22 % (cap 30 %)").
+- **HUD:** a strip of up to 5 synergy icons sits beside the ability bar. Hover, long-press, or (on gamepad) opening
+  the §24 quick-access radial shows the effect text with live numbers ("Grill −22 % (cap 30 %)").
 - **Activation toast:** "SYNERGY! Eight-Arm Kitchen Nightmare", 1.5 s, at most one every 3 s. With reduced motion,
   a static banner replaces the slide.
 - **Inspect card (players):** the target's active synergies (names only) under their combo key.

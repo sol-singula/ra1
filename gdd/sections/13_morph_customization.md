@@ -27,7 +27,7 @@ equip), and **switching** (saved loadouts for Chef / Fighter / Repair work).
 
 | Entry point | Opens on | Notes |
 |---|---|---|
-| HUD quick-access "Morph" button (keyboard `M`, mobile button, controller View button) | Parts tab, last category used | Main entry |
+| Direct key `N`, the quick-access radial (`T` / Select / ≡) → Morph, or an empty ability slot's "+" (§24) | Parts tab, last category used | Main entry |
 | "Equip now" after a Mutation Mart (`BLD_01`) purchase, capsule reveal or quest reward | Parts tab with the new part selected | Shows the equip preview immediately |
 | Body Mods (`BLD_02`), talking to stylist Glamtrax (`NPC_005`) | Style tab in **Salon mode** (palette shop, Looks, photo booth) | 13.16 |
 | Mutation Laboratory (`BLD_11`), talking to Dr. Splice (`NPC_013`) | Upgrade tab in **Lab mode** (fusion enabled) | 13.16 |
@@ -49,23 +49,23 @@ equip), and **switching** (saved loadouts for Chef / Fighter / Repair work).
 %% diagram: morph-customization-states
 stateDiagram-v2
   [*] --> Closed
-  Closed --> Opening: press Morph / entry point
-  Opening --> Closed: blocked (In Combat, level-5 target, KO, Arena, Safe Mode)
-  Opening --> Browsing: Mutation.OpenSession OK
+  Closed --> Opening: press Morph or another entry point
+  Opening --> Closed: blocked by combat, KO, Arena or Safe Mode
+  Opening --> Browsing: OpenSession accepted
   Browsing --> Previewing: select or hover a part
   Previewing --> Browsing: deselect
-  Previewing --> Equipping: Equip / Unequip
-  Equipping --> Browsing: server OK (state delta)
-  Equipping --> Previewing: server rejects (toast + revert)
-  Browsing --> LoadoutChannel: Apply loadout
+  Previewing --> Equipping: Equip or Unequip
+  Equipping --> Browsing: server accepts with state delta
+  Equipping --> Previewing: server rejects with toast and revert
+  Browsing --> LoadoutChannel: apply loadout
   LoadoutChannel --> Browsing: 3 s complete or interrupted
   Browsing --> ConfirmUpgrade: Upgrade
-  ConfirmUpgrade --> Browsing: confirm / cancel
+  ConfirmUpgrade --> Browsing: confirm or cancel
   Browsing --> Renaming: edit name
-  Renaming --> Browsing: filtered OK / rejected
+  Renaming --> Browsing: filtered OK or rejected
   Browsing --> PhotoMode: camera button
   PhotoMode --> Browsing: exit
-  Browsing --> Closed: close (B / Esc / X)
+  Browsing --> Closed: close
   Previewing --> ForcedClose: customer turns hostile
   Browsing --> ForcedClose: customer turns hostile
   ForcedClose --> Closed: 1.5 s invulnerability granted
@@ -175,21 +175,23 @@ the last input type (`UserInputService.LastInputTypeChanged`) and re-parents pan
 |             /|  ^^  |\     PREVIEW       |  |  Lv 2  | |  Lv 1  | |  Lv 3  | |        |    |
 |              |______|~~                  |  +--------+ +--------+ +--------+ +--------+    |
 |          ==================              |  DETAIL: Octopus Arm  ^ Uncommon  Lv 2/6       |
-|  (RS) rotate  (LT/RT) zoom  (R3) reset   |  Cook Speed 64 ^+6   Strength 42 v-4            |
+|  (RS) rotate / zoom   (R3) reset         |  Cook Speed 64 ^+6   Strength 42 v-4            |
 |  STATS | SYNERGIES  (L3 toggles)         |  + Tentacle Tango   - Battering Ram             |
 +------------------------------------------+-------------------------------------------------+
-| (A) Select  (X) Equip both  (Y) Compare  (B) Back  (View) Loadouts  (Menu) Style/Upgrade    |
+| (A) Select/Equip  (X) Compare  (Y) Upgrade  (B) Back  (LT/RT) Loadout  (R3) Reset view       |
 +--------------------------------------------------------------------------------------------+
   Cards 128 x 156 px; focus ring = 4 px glow + 1.06x scale; text >= 24 px at 1080p.
 ```
 
 ### 13.4 ScreenGui Component Hierarchy
 
-One `ScreenGui` (built from a template in `ReplicatedStorage/UI/MorphScreen`, cloned into `PlayerGui` on first open
-and then kept but disabled). Names are the instance names used in code.
+One `ScreenGui` (built from a template in `ReplicatedStorage/UI/MorphMenu`, cloned into `PlayerGui` on first open
+and then kept but disabled). It uses the shared §24 components: `MmrPreview3D` (ViewportFrame + WorldModel + orbit)
+for the preview, `MmrVirtualList` of `MmrRarityTile` for the grid, `MmrStatRow`, `MmrModal`, `MmrTooltip` and
+`MmrProgressRing`. Names are the instance names used in code.
 
 ```text
-MorphScreen (ScreenGui: IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=20, ZIndexBehavior=Sibling, Enabled=false)
+MorphMenu (ScreenGui: IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=20, ZIndexBehavior=Sibling, Enabled=false)
 └─ Root (Frame, 1x1 scale)  + UIScale "TextScale"  + UIAspectRatioConstraint (desktop only)
    ├─ TopBar (Frame)
    │  ├─ TitleLabel ("CUSTOMIZE YOUR MORPH")
@@ -199,7 +201,7 @@ MorphScreen (ScreenGui: IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=20
    ├─ CategoryRail (ScrollingFrame + UIListLayout)
    │  ├─ CategoryButton_All, _Head, _Ears, _Eyes, _Arms, _Legs, _Tails, _Extras (ImageButton + Label + NewBadge)
    │  └─ SubSlotChips (Frame + UIListLayout) └─ Chip_<SLOT> (e.g. Chip_ARM_L, Chip_HANDS)
-   ├─ PreviewPanel (Frame)
+   ├─ PreviewPanel (MmrPreview3D)
    │  ├─ PedestalGlow (ImageLabel radial sprite + UIGradient; tinted by best equipped rarity)
    │  ├─ PreviewViewport (ViewportFrame: Ambient, LightColor, LightDirection set in 13.5)
    │  │  ├─ PreviewCamera (Camera; ViewportFrame.CurrentCamera)
@@ -217,7 +219,7 @@ MorphScreen (ScreenGui: IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=20
    │  ├─ PartsPage
    │  │  ├─ FilterBar └─ SearchBox (TextBox), FilterButton, SortDropdown, OwnedToggle, LockedToggle
    │  │  ├─ FilterSheet (category / rarity / tag / ability / upgradeable toggles)
-   │  │  └─ InventoryGrid (ScrollingFrame, manual virtualization) └─ PartCard x40 (pooled)
+   │  │  └─ InventoryGrid (MmrVirtualList: ScrollingFrame, manual virtualization) └─ PartCard x40 (pooled MmrRarityTile)
    │  │        PartCard: Icon (ImageRectOffset into atlas), RarityFrame, RarityGlyph, LevelPips,
    │  │                  EquippedBadge (L/R/both), NewDot, LockOverlay, AbilityIcon, DupeCount
    │  ├─ EquippedPage └─ SlotRow_<SLOT> x22 (grouped by UI group headers)
@@ -252,9 +254,9 @@ MorphScreen (ScreenGui: IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=20
 
 | Input | Rotate | Zoom | Reset |
 |---|---|---|---|
-| Mouse | left-drag: 0.4°/px yaw, 0.25°/px pitch | wheel: 1.0 stud per notch | `R` or double-click |
+| Mouse | left-drag: 0.4°/px yaw, 0.25°/px pitch | wheel: 1.0 stud per notch | double-click the preview |
 | Touch | one-finger drag (same rates × 1.5) | `UserInputService.TouchPinch` (scale delta → distance) | double-tap |
-| Gamepad | right stick: 180°/s yaw, 90°/s pitch at full deflection, dead zone 0.15 | `LT` out / `RT` in: 6 studs/s × trigger depth | `R3` |
+| Gamepad | right stick X: 180°/s yaw at full deflection (pitch follows the category framing), dead zone 0.15 | right stick Y: 6 studs/s (LT/RT switch loadouts per §24) | `R3` |
 
 - **Feel [TUNABLE].** Release inertia decays at e^(−6t). After 4 s without input the morph idle-spins at 12°/s.
   Selecting a category eases the camera over 0.35 s (Quad Out) to frame it: Head/Ears/Eyes 5-stud close-up of the
@@ -360,10 +362,11 @@ fuel or MS conversion (13.15). The starter morph's "×2" arms and legs are one o
 | Action | Mouse/keyboard | Touch | Gamepad |
 |---|---|---|---|
 | Select part | click card | tap card (opens bottom sheet) | D-pad / left stick + `A` |
-| Equip (single-slot part) | double-click card, or `E`, or EQUIP button | EQUIP in sheet or sticky bar | `A` on EQUIP, or `X` quick-equip |
-| Equip ARM/LEG to both sides | EQUIP BOTH (default button) | EQUIP BOTH | `X` |
-| Equip to one side | Left / Right buttons, or `Shift`+click = left, `Ctrl`+click = right | Left / Right buttons | `A` → choose side |
-| Unequip | right-click equipped card → Unequip, or `Del` | UNEQUIP in sheet | `Y` → Unequip |
+| Equip (single-slot part) | double-click card, `Enter`, or EQUIP button | EQUIP in sheet or sticky bar | `A` on the card (focus jumps to EQUIP), `A` again |
+| Equip ARM/LEG to both sides | EQUIP BOTH (default button) | EQUIP BOTH | `A`, `A` (EQUIP BOTH is the default focus) |
+| Equip to one side | Left / Right buttons, or `Shift`+click = left, `Ctrl`+click = right | Left / Right buttons | `A`, then D-pad to Left / Right, `A` |
+| Unequip | right-click equipped card → Unequip | UNEQUIP in sheet | focus UNEQUIP in the drawer, `A` |
+| Compare / Upgrade | right-click → Compare; Upgrade button | Compare / Upgrade in sheet | `X` compare, `Y` upgrade (§24 Morph row) |
 | Undo last change (10 deep) | `Ctrl+Z` or Undo | Undo | hold `B` 0.5 s |
 
 **Slot rules (all re-checked by the server, 13.20).**
@@ -497,9 +500,9 @@ expands all nine plus a derived block in plain numbers:
 | Situation | Rule [TUNABLE values from canon] |
 |---|---|
 | Single-part equip inside the Morph screen | instant |
-| Applying a whole loadout (`Mutation.SwapLoadout`, from the screen or the HUD quick-swap wheel: hold `Q`, long-press the mobile Morph button, or hold D-pad up) | **3 s channel**, then a **10 s cooldown** that starts when the channel completes |
+| Applying a whole loadout (`Mutation.SwapLoadout`, from the screen, `LT`/`RT` inside it, or the inner "Loadouts" ring of the §24 quick-access radial: hold `T` / Select / ≡) | **3 s channel**, then a **10 s cooldown** that starts when the channel completes |
 | During the channel | walk at 50 % speed; interacting, attacking, or taking damage **interrupts** it (no cooldown consumed). A cartoon "costume-change" dust cloud plays (client FX), with `ANM_065` on completion |
-| In Combat (6 s flag), Seeing Stars, a level-5 customer targeting you | channel cannot start; the wheel shows "Can't change outfits during a brawl!" |
+| In Combat (6 s flag), Seeing Stars, a level-5 customer targeting you | channel cannot start; the radial's Loadouts ring shows "Can't change outfits during a brawl!" |
 | Arena (`BLD_08`) | the loadout is locked when the match is accepted; it can be changed in the lobby under the same channel rules |
 | Carrying items | allowed only if the target loadout's carry capacity ≥ items carried |
 | Loadout contains a part no longer owned (converted to MS) or above your level | that slot keeps its current part; the card shows "1 part missing" with a fix-up shortcut |
@@ -522,10 +525,11 @@ expands all nine plus a derived block in plain numbers:
      `:GetNonChatStringForBroadcastAsync()`. If the result differs from the input (characters replaced by `#`), the
      name is rejected: "The filter scrambled that one. Try another!". If the filter service errors, the name is
      rejected with "Name service is busy, try again soon" and the attempt is not counted.
-  5. Store `rawName` (owner's audit only, never displayed) and `filteredName`. Everyone, including the owner, sees
-     `filteredName`.
-  6. **Re-filter on every join:** filter rules change, so the saved name is filtered again at session start. If it
-     now comes back scrambled, it resets to the generated name and the player gets a notice.
+  5. Persist the raw text as §28 specifies (`morph.morphName`, never logged). Only the broadcast-filtered string is
+     ever replicated or displayed, to everyone including the owner.
+  6. **Re-filter on every session load:** filter rules change, so the saved name is filtered again when the profile
+     loads, and the result is cached for the session. If it now comes back scrambled, the nameplate falls back to the
+     generated name and the player gets a notice.
 - **Where names appear:** the overhead nameplate (`BillboardGui`, MaxDistance 60 studs), the inspect card, the
   Showcase Stage (`BLD_22`) and co-op guest lists. Each loadout may carry its own name ("Chef Loadout" can be
   "Sir Saucelot").
@@ -647,18 +651,17 @@ hosts their UI and shows the result on the pedestal.
 | Button | Action |
 |---|---|
 | Left stick / D-pad | move focus (grid, chips, tabs, detail buttons) |
-| `A` | select / confirm |
+| `A` | select a card (focus jumps to its primary button) / confirm (equip) |
 | `B` | back: close modal → close drawer → close screen; hold 0.5 s = Undo |
-| `X` | quick-equip (Both for arms/legs) |
-| `Y` | open the detail drawer / toggle Compare |
+| `X` | compare (pins the selected part's deltas) |
+| `Y` | upgrade the selected part (opens the Upgrade tab) |
 | `LB` / `RB` | previous / next category |
-| `LT` / `RT` | zoom out / in (analog) |
-| Right stick | rotate preview |
+| `LT` / `RT` | previous / next loadout (applying starts the 3 s channel) |
+| Right stick | X = rotate preview, Y = zoom |
 | `R3` | reset camera |
 | `L3` | toggle Stats ↔ Synergies |
-| View | jump to the Loadouts bar |
-| Menu | cycle right tabs (Parts → Equipped → Loadouts → Style → Upgrade) |
-| D-pad down (HUD, outside the screen) | show synergy tooltips; hold D-pad up = loadout wheel |
+| Select (tap) | §24 quick-access radial (unchanged inside menus) |
+| Start | reserved for the Roblox menu (§24) |
 
 ```text
 Focus graph (left/right moves between panels; up/down inside a panel)
@@ -785,7 +788,7 @@ in addition to what it lists today.
 | ✚ `mutations.loadouts[i].pins` | ≤ 5 `SYN_` IDs | synergy pins (§12.10.3) |
 | ✚ `mutations.loadouts[i].icon`, `.look` | string, number? | loadout icon and linked Look |
 | `mutations.activeLoadout`, `mutations.lastLoadoutSwapAt` | number, UnixTime | swap cooldown (canon E4) |
-| `morph.morphName` | filtered string | custom name (13.13); the raw text is kept only for audit as §28 specifies |
+| `morph.morphName` | raw text (§28) | custom name (13.13); only the filtered result is ever replicated |
 | `morph.palettes` | owned palette keys | palette ownership checks |
 | ✚ `morph.looks[1..10]` `{palette, fx, title, pedestal}` | cosmetic loadouts | Looks (13.12, §23) |
 | `morph.morphdex` `{spotted, worn, titleBits}` | base64 bitsets | §12.9.4 |
@@ -843,7 +846,7 @@ acquisition, fusion recipes, §12.7 generator and compatibility flags), §12.9�
 - **AC-13-02:** The screen is interactive ≤ 400 ms after pressing Morph on the mid-tier reference phone, with the
   preview rig built and the visible icon atlas loaded (or placeholders shown) within that time.
 - **AC-13-03:** The preview responds on all input types: mouse drag, one-finger drag, right stick (dead zone 0.15).
-  Zoom works by wheel, pinch and triggers. Pitch never leaves −10° to +35°, and distance stays 6–18 studs.
+  Zoom works by wheel, pinch and right-stick Y. Pitch never leaves −10° to +35°, and distance stays 6–18 studs.
 - **AC-13-04:** Every equip preview shows stat deltas as arrow + sign + number (never color alone), and the
   post-equip server stats equal the previewed values in 100 % of 1,000 automated random equips.
 - **AC-13-05:** The synergy preview lists exactly the activations, deactivations, replacements and suppressions

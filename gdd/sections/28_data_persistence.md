@@ -43,8 +43,8 @@ the restaurant, staff, quests, offline reports, purchases — so that:
 | `SCHEMA_VERSION` | 3 | Current profile schema; increments with every migration (§28.12). |
 | `AUTOSAVE_INTERVAL_S` | **120** (canon §C3) | Per player; staggered 15 s per player slot (8 slots × 15 s = 120 s, §27.1). |
 | `LOCK_STALE_S` | **360** [TUNABLE] | = 3 missed refreshes × 120 s. A lock older than this may be stolen. |
-| `PRESENCE_TTL_S` / `PRESENCE_REFRESH_S` | 90 / 30 [TUNABLE] | MemoryStore liveness key of the owning server (§28.13). |
-| `PRESENCE_DEAD_CONFIRM` | 2 reads ≥ 10 s apart [TUNABLE] | Required before a "presence-confirmed" steal of a non-stale lock. |
+| `HEARTBEAT_TTL_S` / `HEARTBEAT_REFRESH_S` | 90 / 30 [TUNABLE] | Lock-owner heartbeat in MemoryStore (§28.13); distinct from §21.10's player `Presence` map. |
+| `HEARTBEAT_DEAD_CONFIRM` | 2 reads ≥ 10 s apart [TUNABLE] | Required before a "heartbeat-confirmed" steal of a non-stale lock. |
 | `RELEASE_WAIT_S` | 15 [TUNABLE] | How long a loader waits after a MessagingService release request. |
 | `RETRY_BACKOFF_S` | **1, 2, 4, 8, 16** (canon E6) | Max 5 retries for every DataStore call. |
 | `SAFE_MODE_KICK_S` | **60** (canon E6) | Safe Mode duration before the friendly kick. |
@@ -84,8 +84,8 @@ grows with content. Growth is bounded by design:
 |---|---|---|
 | New player after tutorial (L5, TIER_01) | ≈ 9 KB | defaults, 5 starter parts, 12 layout objects |
 | Mid-game (L26, TIER_05, ~15 h) | ≈ 32 KB | ~60 parts, 120 layout objects, 8 staff |
-| Late-game (L80, TIER_10, ~120 h) | ≈ 67 KB | ~200 parts, 300 layout objects, 20 staff |
-| Theoretical worst case (all 280 parts, all rings full) | ≈ 118 KB | §28.10 |
+| Late-game (L80, TIER_10, ~120 h) | ≈ 68 KB | ~200 parts, 300 layout objects, 20 staff |
+| Theoretical worst case (all 280 parts, all rings full) | ≈ 121 KB | §28.10 |
 
 New content is **append-only**: new mutation, recipe, quest or achievement IDs extend the bitsets and maps
 without a migration. Only *representation* changes (renamed/reshaped fields) need a schema migration (§28.12).
@@ -126,7 +126,7 @@ load transform run as the owners' registered pure functions (ownership by code, 
 | `offline` | `OfflineEarningsService` | `lastSimAt`, pending report, claimed ring, capsule and welcome-back stamps |
 | `quests` | `QuestService` | quest states and claims, daily/weekly cycles, login streak, tutorial |
 | `city` | `CityEventService` (§27.17 lists no `city` section; added for §18.9.7 — single writer to be confirmed by §27) | discoveries, secrets, event claims, pending event rewards, season track |
-| `social` | `MultiplayerService` | co-op permissions, arena record |
+| `social` | `MultiplayerService` | door policy, role permissions, Co-Chefs, ban list, guest-pay counters, per-mode arena ratings, emote wheel, equipped title (§21.10) |
 
 External platform dependencies: `DataStoreService`, `MemoryStoreService`, `MessagingService`,
 `MarketplaceService`, `TeleportService`, `HttpService` (GUIDs, JSON), Open Cloud Data Stores API (ops tools).
@@ -150,7 +150,7 @@ External platform dependencies: `DataStoreService`, `MemoryStoreService`, `Messa
 
 | MemoryStore structure | Kind | Key | TTL | Purpose |
 |---|---|---|---|---|
-| `mmr_presence` | HashMap | `u<UserId>` → `{jobId, nonce}` | 90 s, refreshed every 30 s | Liveness of the lock owner (§28.13). |
+| `mmr_lock_heartbeat` | HashMap | `u<UserId>` → `{jobId, nonce}` | 90 s, refreshed every 30 s | Liveness of the lock owner, written only by the server holding the lock — not player location (§21.10 `Presence` serves that). |
 | `mmr_handoff` | HashMap | `u<UserId>` → `{fromJobId, releasedAt, saveSeq}` | 120 s | Tells a teleport destination that a release is in flight (wait, don't steal). |
 | `mmr_lb_cache` | HashMap | `<board>` → top-100 rows | 300 s | Cross-server leaderboard cache; one elected server refreshes it. |
 | `mmr_mod_queue` | Queue | — | 7 days | Flags awaiting human review (§29). |
@@ -189,7 +189,7 @@ The profile is split into the **sections and single writers fixed in §27.17** (
 `progression`, `mutations`, `morph`, `restaurant`, `layout`, `durability`, `inventory`, `recipes`,
 `employees`, `offline`, `quests`, `social`) plus a `city` section required by §18.9.7. Types live in `ReplicatedStorage/Shared/Types` (types only, so
 client code can be typed against the replicated view) and are enforced by the server validator (§28.20.4).
-Field names stay readable: the worst case is ~2.9 % of the 4 MB key limit (§28.10), so only structures that
+Field names stay readable: the worst case is ~3.0 % of the 4 MB key limit (§28.10), so only structures that
 grow with content are compacted (§28.11). Fields marked *transient* exist in memory only and are stripped by
 the encoder before every write.
 
@@ -295,9 +295,8 @@ export type Progression = {
 		counters: { [string]: number },     -- shared lifetime counters ("customers_served", "tantrums_calmed",
 		                                    -- "repairs_done", "perfect_dishes", ...) read by achievements & quests
 	},
-	titles: { string },                -- cosmetic text titles (§C17.4)
-	equippedTitle: string?,
-	emotes: { string },                -- earnable emote keys
+	titles: { string },                -- earned cosmetic text titles (§C17.4); equipped one in social.titleEquipped
+	emotes: { string },                -- earned emote keys; Robux emotes live in inventory.cosmetics
 }
 ```
 
@@ -578,17 +577,31 @@ export type Offline = {
 }
 ```
 
-#### 28.9.12 `social` — co-op permissions and arena (writer: `MultiplayerService`)
+#### 28.9.12 `social` — co-op roles, door policy, ban list, arena (writer: `MultiplayerService`, §21.10)
 
 ```lua
-export type CoopSettings = {
-	allowGuests: "FRIENDS" | "NOBODY" | "EVERYONE",
-	guestCanCook: boolean, guestCanServe: boolean, guestCanRepair: boolean,   -- `Multiplayer.SetPermissions`
-	guestPayToday: number,            -- MB earned as a guest today; daily cap 1.5 x NetRef (§22.3)
+export type CoopSettings = {          -- = §21.10 (writer MultiplayerService, social section <= 2 KB)
+	doorPolicy: "OPEN" | "FRIENDS" | "INVITE" | "CLOSED",   -- default "FRIENDS"
+	rolePerms: { CoChef: { [string]: boolean }, Guest: { [string]: boolean } }, -- §21.3 permission toggles
+	playerOverrides: { [string]: "COCHEF" | "GUEST" },     -- keyed by tostring(UserId), max 20
+	coChefs: { number },              -- max 10 UserIds (friends at promotion time)
+	banList: { number },              -- max 50 UserIds
+	acceptInvitesFrom: "FRIENDS" | "NOBODY",
 	guestPayDay: DayStamp,            -- resets guestPayToday when the DayStamp changes
+	guestPayToday: number,            -- MB earned as a guest today; daily cap 1.5 x NetRef (§21.4.1, §22.3)
 }
-export type Arena = { optedIn: boolean, season: number, rating: number, wins: number, losses: number }
-export type Social = { coop: CoopSettings, arena: Arena }
+export type Arena = {
+	optedIn: boolean, season: number,
+	ratings: { duel: number, tag: number, brawl: number, cookoff: number },   -- per-mode ratings (§21.9)
+	matchesThisSeason: number, peakBracket: number, wins: number, losses: number,
+	leaverStrikes: { UnixTime },      -- strike timestamps within the last 24 h
+}
+export type Social = {
+	coop: CoopSettings,
+	arena: Arena,
+	emoteWheel: { string },           -- equipped emote keys (owned emotes: progression.emotes / inventory.cosmetics)
+	titleEquipped: string?,           -- equipped title (owned titles: progression.titles)
+}
 ```
 
 #### 28.9.13 `settings` and `uiSettings` (writer: `PlayerDataService`)
@@ -673,8 +686,8 @@ Encoded size = `#HttpService:JSONEncode(profile)`, measured before every write.
 | `offline` | 1.5 KB | 2.5 KB | one pending report + ring 20 |
 | `quests` | 3 KB | 5 KB | bitsets + ≤ 25 active quests + cycles |
 | `city` | 2 KB | 4 KB | event-claim ring 50, secrets list, season track |
-| `social` | 0.2 KB | 0.2 KB | fixed shape |
-| **Total** | **≈ 67 KB (1.6 %)** | **≈ 119 KB (2.9 %)** | |
+| `social` | 0.8 KB | 2 KB | §21.10 caps: overrides 20, Co-Chefs 10, ban list 50 |
+| **Total** | **≈ 68 KB (1.7 %)** | **≈ 121 KB (3.0 %)** | |
 
 **Guards.** `> SIZE_WARN` (512 KB) logs `profile_size_warn` with the per-block breakdown; `> SIZE_SOFT`
 (1 MB) halves every ring buffer before encoding and raises a P1 alert; `> SIZE_HARD` (3.5 MB) refuses the
@@ -864,14 +877,14 @@ atomic `UpdateAsync`. Lock shape: `{jobId, placeId, acquiredAt, refreshedAt, non
 | L1 | `nil` (released or new player) | Acquire. | `lock_acquired` |
 | L2 | `jobId == game.JobId` (rejoin to same server) | Re-acquire with a new `nonce`; the old in-memory session is discarded first. | `lock_reacquired` |
 | L3 | `now − refreshedAt ≥ LOCK_STALE_S` (360 s = 3 missed refreshes) | **Steal.** | `lock_steal_stale` |
-| L4 | Not stale, and `mmr_presence[u<UserId>]` is absent or names a different `jobId`/`nonce` on `PRESENCE_DEAD_CONFIRM` reads | **Presence-confirmed steal** (owner is dead: it would refresh presence every 30 s). | `lock_steal_presence` |
-| L5 | Not stale and presence alive | Cancel the write (`return nil`), publish `mmr_lock_release`, poll every 3 s up to `RELEASE_WAIT_S`; if `mmr_handoff` shows a release in flight, keep polling. | `lock_wait` |
+| L4 | Not stale, and `mmr_lock_heartbeat[u<UserId>]` is absent or names a different `jobId`/`nonce` on `HEARTBEAT_DEAD_CONFIRM` reads | **Heartbeat-confirmed steal** (owner is dead: it would refresh presence every 30 s). | `lock_steal_presence` |
+| L5 | Not stale and heartbeat alive | Cancel the write (`return nil`), publish `mmr_lock_release`, poll every 3 s up to `RELEASE_WAIT_S`; if `mmr_handoff` shows a release in flight, keep polling. | `lock_wait` |
 | L6 | Still held after the wait | Count as one failed attempt of the E6 backoff (1, 2, 4, 8, 16 s); after the 5th, Safe Mode (§28.16). | `lock_wait_timeout` |
 
 If MemoryStore itself is unavailable, L4 is skipped and only the stale rule applies (worst case: a crashed
 server's lock delays reload by ≤ 360 s; the player sees the load screen and then Safe Mode per E6).
 
-**Refresh.** Every successful save sets `lock.refreshedAt = now` (autosave doubles as heartbeat); presence is
+**Refresh.** Every successful save sets `lock.refreshedAt = now` (autosave doubles as the lock refresh); the MemoryStore heartbeat is
 refreshed every 30 s independently. **Lock lost.** Every save transform first checks
 `lock.jobId == game.JobId and lock.nonce == session.nonce`; if not, it returns `nil`, the session is marked
 `lost`, no further writes are attempted, unsaved deltas are summarized to the moderation log for support,
@@ -889,12 +902,12 @@ local Types = require(game:GetService("ReplicatedStorage").Shared.Types.ProfileT
 local BuildInfo = require(game:GetService("ServerScriptService").Server.Framework.BuildInfo) -- { ID: string }
 local Defaults = require(script.Parent.Defaults)
 
-export type AcquireOutcome = "acquired" | "reacquired" | "stolen_stale" | "stolen_presence" | "locked"
+export type AcquireOutcome = "acquired" | "reacquired" | "stolen_stale" | "stolen_heartbeat" | "locked"
 
 local LOCK_STALE_S = 360
 
 local function acquireTransform(
-	userId: number, now: number, nonce: string, presenceDead: boolean,
+	userId: number, now: number, nonce: string, heartbeatDead: boolean,
 	onOutcome: (AcquireOutcome) -> ()
 ): (any, DataStoreKeyInfo?) -> (any, { number }?, { [string]: any }?)
 	return function(current: any, _keyInfo: DataStoreKeyInfo?)
@@ -907,8 +920,8 @@ local function acquireTransform(
 			outcome = "reacquired"
 		elseif now - lock.refreshedAt >= LOCK_STALE_S then
 			outcome = "stolen_stale"
-		elseif presenceDead then
-			outcome = "stolen_presence"
+		elseif heartbeatDead then
+			outcome = "stolen_heartbeat"
 		else
 			onOutcome("locked")
 			return nil, nil, nil            -- cancel: do not touch the stored value
@@ -946,7 +959,7 @@ sequenceDiagram
     participant B as Server B (new)
     B->>DS: UpdateAsync acquire (lock held by A)
     DS-->>B: cancelled - locked and not stale
-    B->>MS: read mmr_presence and mmr_handoff
+    B->>MS: read mmr_lock_heartbeat and mmr_handoff
     B->>A: MessagingService mmr_lock_release
     A->>DS: UpdateAsync leave save with lock = nil
     A->>MS: write mmr_handoff (TTL 120 s)
@@ -974,7 +987,7 @@ sequenceDiagram
    so the next session simulates the same interval — no loss, no duplicate (§27.8.11).
 3. On `locked`: rules L4–L6. On `future_schema`: refuse, message, teleport (§28.12 rule 6).
 4. After commit, in memory: decode packed fields; run the **validator** (§28.20.4); replay `pendingOps`
-   (§28.20.2); roll daily/weekly quest offers if the stamps changed (`QuestService`); write presence; start
+   (§28.20.2); roll daily/weekly quest offers if the stamps changed (`QuestService`); write the lock heartbeat; start
    the save scheduler; replicate the read model to the client; show Welcome Back if a report is pending.
 5. Analytics: `mmr_session_start`, plus `mmr_daily_return` on the first session of a new UTC day (§31.10.2).
 
@@ -1091,7 +1104,10 @@ entry → `MarkDirty(player, "wallet")` → `LogEconomyEvent` (§31.12). Persist
 | Repair charge (E3) | `repair:<jobId>` (§27.16) | the job completes once |
 | City event reward | `evt:<instanceId>` | `city.eventClaims` ring of 50 (§18.9.7) |
 | Co-op guest pay | `coop:<visitId>:<checkpointNo>` (§22) | visit record closed at settlement; `social.coop.guestPayToday` daily cap |
+| Arena match reward | `arena:<matchId>` (§22) | match record in `ArenaMatches` marked paid (§21.10) |
 | Arena season reward | `arenaseason:<seasonId>` (§22) | `social.arena.season` ≥ reward season |
+| Showcase podium reward | `showcase:<roundId>` (§22) | round record closed; daily round counter |
+| Furniture sell-back | `sell:<placedItemUid>` (§22) | item removed in the same `TransactWith` |
 
 Luau runs one script at a time without preemption, so a transaction and its grant cannot interleave with another
 request for the same player; the only requirement is that nothing inside the critical section yields (asserted in
@@ -1413,7 +1429,7 @@ contested locks ≤ 48 calls in one minute (34 %). Policy, checked with
 `DataStoreService:GetRequestBudgetForRequestType(Enum.DataStoreRequestType.UpdateAsync)` before each write:
 below `BUDGET_RESERVE_NONCRITICAL` (20) defer leaderboards, snapshots and moderation batches; below
 `BUDGET_RESERVE_AUTOSAVE` (5) slip autosaves by 30 s; receipt, leave and shutdown saves are never deferred.
-MemoryStore use (presence: 16 requests/min per full server) is negligible against the experience quota
+MemoryStore use (lock heartbeat: 16 requests/min per full server) is negligible against the experience quota
 (≈ 1,000 + 100 × CCU request units/min at time of writing).
 
 ### 28.24 Roblox Implementation — Data Erasure (Right to Be Forgotten)
@@ -1431,16 +1447,19 @@ configured webhook) with the affected UserIds. Target completion: **7 days** [TU
    under Roblox's 30-day version retention; version-level deletion is used where the API offers it.
 4. **Ordered stores:** enumerate store names with prefix `MMR_LB_` (`ListDataStoresAsync`) and `RemoveAsync`
    the `<UserId>` key in each (all weekly and season boards).
-5. **MemoryStore:** remove `mmr_presence`/`mmr_handoff` keys (they also expire in ≤ 120 s); purge any queued
+5. **MemoryStore:** remove `mmr_lock_heartbeat`/`mmr_handoff` keys (they also expire in ≤ 120 s); purge any queued
    moderation items for the user.
 6. **Analytics:** Roblox processes its own AnalyticsService data; the optional external warehouse deletes all
    rows for the user's pseudonymous id (§31.17).
 7. **Verify:** prefix listing returns zero keys in every store and every ordered `GetAsync` returns `nil`;
    close the ticket with the hashed id and date.
 
-Design rule that keeps erasure complete: **no profile ever stores another player's UserId** (co-op visit IDs,
-event instance IDs and regulars are opaque or NPC-only), so erasing one player never requires editing another
-player's data.
+Design rule that keeps erasure tractable: profiles store another player's UserId **only** in the §21.10 social
+lists (`coChefs`, `banList`, `playerOverrides` — bare numbers, capped at 10/50/20, no other data about that
+person); co-op visit IDs, event instance IDs and regulars are opaque or NPC-only. Because erasure cannot enumerate
+every profile that lists a given UserId, those lists are **pruned lazily**: when the owner's profile loads, at most
+once per 7 days, `MultiplayerService` batch-checks the listed IDs with `UserService:GetUserInfosByUserIdsAsync`
+and drops any ID that no longer resolves to an account.
 
 ### 28.25 Edge Cases
 
@@ -1450,7 +1469,7 @@ player's data.
 | DP-02 | Disconnect during a capsule reveal | Result was committed to `mutations` before the reveal began; the leave save persists it; the next join shows a "You got…" recap. No re-roll. |
 | DP-03 | Collect pressed twice, from two devices, or after a reconnect (§C22 E11) | Second request fails the `reportId == pending.reportId` / `∉ claimedReportIds` check → no-op; the other server cannot load the locked profile at all. |
 | DP-04 | Same account joins server B while still on A | Roblox disconnects A; B's acquire finds a live lock → `mmr_lock_release` → A's leave save releases → B acquires (typically < 10 s). |
-| DP-05 | Server crashes with 8 players | Locks are orphaned; on rejoin, presence (TTL 90 s) is gone → presence-confirmed steal; without MemoryStore, stale steal at 360 s. Loss ≤ 120 s; the gap is simulated as offline time. |
+| DP-05 | Server crashes with 8 players | Locks are orphaned; on rejoin, the lock heartbeat (TTL 90 s) is gone → heartbeat-confirmed steal; without MemoryStore, stale steal at 360 s. Loss ≤ 120 s; the gap is simulated as offline time. |
 | DP-06 | DataStore outage at join (§C22 E6) | Backoff 1/2/4/8/16 s → Safe Mode (never saved) → silent retry at 30 s → kick at 60 s with the friendly message. |
 | DP-07 | DataStore outage at leave | Session stays in memory retrying until success or `BindToClose`; the lock prevents any other server from loading older data meanwhile. |
 | DP-08 | Server clock is behind the stored `lastSimAt` | `H = 0`; beyond 120 s of skew, `clockFlags += 1` and a `clock_skew` flag (§C15). No negative earnings, no wage charge. |
@@ -1470,7 +1489,7 @@ player's data.
 - **AC-28-01:** With healthy DataStores, profile load (lock + migrations + offline simulation committed) completes in ≤ 3.0 s at p95 and ≤ 6.0 s at p99, measured from `PlayerAdded` across 1,000 test joins.
 - **AC-28-02:** In a harness where 2 servers call acquire on the same profile simultaneously 1,000 times, exactly one acquire succeeds per round and the loser never writes (verified by `saveSeq` continuity).
 - **AC-28-03:** Autosave fires every 120 s ± 6 s per player; each committed autosave advances `meta.saveSeq` by 1, `lock.refreshedAt` and `offline.lastSimAt` to the save time.
-- **AC-28-04:** After a simulated server crash, a rejoining player's profile loads in ≤ 100 s when MemoryStore is available (presence-confirmed steal) and ≤ 380 s when it is not (stale steal); data loss is ≤ 120 s of play.
+- **AC-28-04:** After a simulated server crash, a rejoining player's profile loads in ≤ 100 s when MemoryStore is available (heartbeat-confirmed steal) and ≤ 380 s when it is not (stale steal); data loss is ≤ 120 s of play.
 - **AC-28-05:** Pressing Collect on one offline report 1,000 times across double clicks, reconnects and a second server credits the wallet exactly once; `claimedReportIds` never exceeds 20 entries.
 - **AC-28-06:** With a fault injector failing the receipt save, `ProcessReceipt` returns `NotProcessedYet`; after the fault clears, the item is granted exactly once and `PurchaseGranted` is returned only after a committed save (0 duplicates in 500 trials).
 - **AC-28-07:** Applying the same idempotency key twice returns `DUPLICATE` and leaves all three balances, `txKeys` and the ledger unchanged; a transaction that would make any balance negative returns `INSUFFICIENT_FUNDS` and changes nothing (§27.12.5); after a server change, a key applied on the old server is still rejected on the new one.
@@ -1485,5 +1504,5 @@ player's data.
 - **AC-28-16:** At steady state with 8 players, DataStore usage stays ≤ 15 % of each per-minute budget; when the UpdateAsync budget is < 20, leaderboard/snapshot writes are deferred while receipt and leave saves still execute.
 - **AC-28-17:** A fixture with a NaN wallet triggers automatic restore of the newest valid version from the last 24 h, shows the rollback notice once, and sets `ROLLBACK_AUTO_<yyyymmdd>`.
 - **AC-28-18:** When another server steals the lock, the original server performs 0 further writes and kicks the player with the "opened somewhere else" message within 5 s of detecting the loss.
-- **AC-28-19:** Teleporting between servers loads the destination profile within 10 s at p95 without any stale or presence steal (`lock_steal_*` count = 0 in 200 teleports).
+- **AC-28-19:** Teleporting between servers loads the destination profile within 10 s at p95 without any stale or heartbeat steal (`lock_steal_*` count = 0 in 200 teleports).
 - **AC-28-20:** A capsule opened and followed immediately by a disconnect yields the same part on rejoin in 100 % of 200 trials (no re-roll), and the pity counter matches the number of capsules opened since the last Epic-or-better.

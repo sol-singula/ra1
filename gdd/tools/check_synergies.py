@@ -578,8 +578,11 @@ class Rules:
         for r in find_table(text, ["Tie-break slot order"]):
             self.priority = [c.strip() for c in clean(r[0]).split(">")]
         self.signatures = []
+        self.signature_examples = {}
         for r in find_table(text, ["Signature title", "Rule (grammar)"]):
             self.signatures.append((clean(r[0]), clean(r[1]), parse_req(clean(r[1]))))
+            if len(r) > 2:
+                self.signature_examples[clean(r[0])] = re.findall(r"CMB_\d{3}", r[2])
         self.effect_types = {clean(r[0]) for r in find_table(text, ["Effect type", "Meaning"])}
 
     def word(self, fam):
@@ -756,6 +759,7 @@ def main(argv):
     if len(combos) < MIN_COMBOS:
         errors.append("only %d combos (< %d)" % (len(combos), MIN_COMBOS))
     keys_seen, names_seen, sigs_seen = set(), set(), set()
+    display_by_id = {}
     trig_count = collections.Counter()
     for r in combos:
         cid = clean(r[0])
@@ -779,6 +783,7 @@ def main(argv):
                 errors.append("%s: generated name should be '%s' (cell: '%s' / %s)" % (cid, spoken, clean(disp), m.group(1)))
         keys_seen.add(key)
         names_seen.add(clean(disp))
+        display_by_id[cid] = clean(disp)
         if sig:
             sigs_seen.add(sig)
         trig = triggered_by(lo, synergies)
@@ -796,6 +801,9 @@ def main(argv):
     for title, _text, _tree in rules.signatures:
         if title not in sigs_seen:
             errors.append("signature '%s' has no §36.5 example (unreachable or shadowed rule?)" % title)
+        for ex in rules.signature_examples.get(title, []):
+            if display_by_id.get(ex) != title:
+                errors.append("12b signature '%s' cites %s, whose display name is '%s'" % (title, ex, display_by_id.get(ex)))
 
     # ---------------- brief / mockup coverage
     for k in ["Bear-Scorpion", "Shark-Spider", "Giraffe-Squid", "TV-Moth", "Frog-Robot", "Cat-Fish", "Axolotl-Cow",

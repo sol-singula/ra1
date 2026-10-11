@@ -116,7 +116,7 @@ abbreviated — written **only on change**:
 
 Patience and order details reach clients through `Order.TicketsChanged` (batched, occupants only, ≤ 10 Hz).
 
-**Movement replication** (integrator ruling): proxy `CFrame`s replicate at **10 Hz while a customer is moving or
+**Movement replication:** proxy `CFrame`s replicate at **10 Hz while a customer is moving or
 fighting**, **2 Hz while seated or stationary**, and **1 Hz when no player is inside that interior**; each client
 lerps its visual toward the proxy and moves all visual roots with one `workspace:BulkMoveTo` per frame
 (§27.12.4), so visuals stay smooth at any frame rate.
@@ -243,8 +243,8 @@ ledger, candidates) are pulled page by page when a menu opens, never pushed (§2
 `Workspace.FallenPartsDestroyHeight = −1,200` because the Underground Mutation Sewers (`DST_09`) sit at
 Y ≈ −700 (§18); the default (−500) would delete players and props there.
 
-**Interiors region:** interior regions are spaced **≥ 2,000 studs apart** (integrator ruling; §27 places the region
-far from the city) — far more than `StreamingTargetRadius` (384) plus an interior's half-extent, so a client never
+**Interiors region:** interior regions are spaced **≥ 2,000 studs apart** (§27 places the region far from
+the city) — far more than `StreamingTargetRadius` (384) plus an interior's half-extent, so a client never
 streams two interiors or the city while inside one — and all lie within ±20,000 studs of the origin to avoid
 floating-point jitter. Any change to the target radius must keep `radius + interior half-extent < 2,000`.
 

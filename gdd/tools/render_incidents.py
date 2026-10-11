@@ -84,11 +84,12 @@ def main():
       "count; they narrate the separate Discoveries rolls of §17). Rules that apply to every row:" % (
           len(DATA), len(drawable), len(DATA) - len(drawable)))
     w("")
-    w("- **Count** (canon §C15): `count = floor(H × 0.6 × (1 − SecurityMitigation)) + seeded extra roll` over the "
-      "operated hours of the interval; each draw picks one eligible row by effective weight. An incident ID appears "
-      "at most twice per report; draws are assigned to a random operated step.")
-    w("- **Rh** = average hourly Revenue + Tips + Delivery of the interval before incidents. Expressing effects in Rh "
-      "keeps every row meaningful from `TIER_01` to `TIER_10` and makes the total scale with hours, never with tier.")
+    w("- **Count** (canon §C15): `count = floor(H × 0.6 × (1 − SecurityMitigation)) + seeded extra roll`, where H is "
+      "the interval's *effective* hours after the long-absence taper (§17.4: hours 0–2 ×1.0, 2–8 ×0.5, 8–24 ×0.2); each "
+      "draw picks one eligible row by effective weight. An incident ID appears at most twice per report; draws are "
+      "assigned to a random operated step.")
+    w("- **Rh** = Revenue + Tips + Delivery of the interval per effective hour, before incidents. Expressing effects in "
+      "Rh keeps every row meaningful from `TIER_01` to `TIER_10` and makes the total scale with activity, never with tier.")
     w("- **Damage x·Rh** is a repair bill converted to damage points on random destructible objects "
       "(`points = ceil(x·Rh / CostPerPoint[tier])`, §17). It is auto-paid at a discount if a `ROLE_REPAIR` works "
       "offline, otherwise left as visibly damaged objects for the player (Restaurant Damage tab). Damage never "
