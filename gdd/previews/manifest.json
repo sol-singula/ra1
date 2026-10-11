@@ -1,0 +1,422 @@
+{
+ "generator": "Higgsfield nano_banana_2_1, 2k, 16:9, style reference = the brief's mockup image",
+ "overlay": "gdd/tools/compose_previews.py + compose_previews_shots.py, rendered by gdd/tools/render_previews.js",
+ "shots": [
+  {
+   "n": 1,
+   "title": "Title Screen",
+   "caption": "Main menu over Restaurant Row at dusk.",
+   "section": "§24.20",
+   "file": "01.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game image from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: title-screen view of a tiny rundown burger shack at dusk on a neon-lit street of a cartoon mutant city. Crooked roof, boarded window, a glowing cartoon burger shape on the roof (no letters). In front, four mutant friends pose heroically: a chef with a shark head, a cat with fish fins, a TV-head creature with moth wings, and a bear with a scorpion tail. Pink, cyan and green neon signs glow on the buildings behind them, purple sky, sparkles. Leave the upper-left third of the frame relatively empty sky for a logo."
+  },
+  {
+   "n": 2,
+   "title": "Tutorial: Nana Gristle",
+   "caption": "QST_TUT_001 — the cranky hologram great-aunt explains the shack.",
+   "section": "§32",
+   "file": "02.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft lighting, kid-friendly, third-person camera. No text, no letters, no numbers, no logos, no user interface. Scene: interior of a dusty, shabby little burger shack with cobwebs, a wobbly table, a broken chair and a cracked counter. Mounted on the wall is an old menu board that shows a glowing cyan hologram of a cranky elderly tortoise grandma with a toaster for a body and oven mitts for hands, wagging a finger. The player chef (blocky body, white chef coat and toque, cat head) looks up at the hologram, startled. Dust motes in a sunbeam."
+  },
+  {
+   "n": 3,
+   "title": "Your First Mutation",
+   "caption": "QST_TUT_010 — pick one free starter part.",
+   "section": "§12, §32",
+   "file": "03.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic materials, bright saturated colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: inside a colorful mutant-parts shop with shelves full of glowing jars containing cartoon animal arms, tails, horns and wings. In the center, a glowing capsule on a pedestal bursts open with radiant light beams and confetti, and three floating creature arms hover above it: a purple octopus tentacle arm, a red crab claw arm, and a silver robot wrench-claw arm. Behind the counter, a chameleon shopkeeper whose torso is a vending machine grins. The player chef (white coat, toque, dog head) gasps in amazement."
+  },
+  {
+   "n": 4,
+   "title": "Hire Help: Ollie the Octopus Intern",
+   "caption": "QST_TUT_012 — first employee and the offline-income preview.",
+   "section": "§16, §17, §32",
+   "file": "04.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: at the door of a small burger shack at golden hour, the player chef (white coat, toque, cat head) shakes hands with a cheerful purple octopus intern wearing a tiny chef hat and apron, who holds a spatula, a whisk, a ladle and a pickle in four of its eight tentacles. The octopus has a goofy proud smile. Paperwork and a pen float comically in another tentacle. Warm light, a little potted plant by the door."
+  },
+  {
+   "n": 5,
+   "title": "Taking Orders",
+   "caption": "Customers order with food-icon bubbles; patience rings track the wait.",
+   "section": "§8, §24.13",
+   "file": "05.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera slightly above and behind the player. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: inside a cozy, slightly shabby wooden diner. In the foreground, the player character (a blocky mutant chef in a white chef coat and tall white toque, with a wolf head and one big red crab claw arm) stands behind the serving counter. Across the counter, four absurd mutant customers sit at booths: a giraffe-necked squid, a frog wearing a robot body, a pink axolotl with a cow body, and a pigeon with huge bodybuilder arms. Above each customer floats a round white thought bubble containing only a food picture (a burger, a noodle bowl, a sushi roll, a bubble tea) with no writing. Warm lamps, menu board without readable text, checkered floor."
+  },
+  {
+   "n": 6,
+   "title": "Cooking: The Grill",
+   "caption": "Flip at the right time: the Perfect window is 2 s at Lv1, wider with Cooking Quality.",
+   "section": "§5.4",
+   "file": "06.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: close-up over-the-shoulder view of a restaurant kitchen grill station. The player chef (blocky body in white chef coat and toque, with a deer head with antlers and a black-and-white wolf face) flips a sizzling burger patty with a spatula on a chunky flat-top grill. Two more patties sizzle with cartoon steam puffs and grill marks; a stack of buns, a cutting board with lettuce and tomato, ketchup and mustard bottles nearby. Glowing orange heat, little cartoon sparkles of grease, stainless steel and warm wood kitchen."
+  },
+  {
+   "n": 7,
+   "title": "Cooking: Chopping",
+   "caption": "Tap in rhythm: green = clean cut, yellow = 0.8, miss = 0.6. Octopus Arms chop two boards.",
+   "section": "§5.4",
+   "file": "07.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly, over-the-shoulder camera. No text, no letters, no numbers, no logos, no user interface. Scene: a kitchen cutting-board station. The player chef has a raccoon head, a white chef coat and two purple octopus tentacle arms, chopping lettuce, tomatoes and onions at blurring speed with a big chunky knife; cartoon motion lines, flying lettuce bits and tomato slices, one onion making the chef cry cartoon tears. Wooden board, bowls of chopped veggies, stainless steel counter, warm kitchen light."
+  },
+  {
+   "n": 8,
+   "title": "Cooking: Assembly",
+   "caption": "Stack order matters: one swap = ×0.85 quality.",
+   "section": "§5.4, §6.3",
+   "file": "08.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: a food assembly counter where the player chef (white coat, toque, frog head, sticky green frog hands) carefully stacks a giant cheeseburger layer by layer: bottom bun, patty, melting cheese, lettuce, tomato, pickles, top bun, with a pickle about to fall. Little ingredient trays line the counter. Camera slightly above the counter, focus on the burger tower, bokeh kitchen behind."
+  },
+  {
+   "n": 9,
+   "title": "Cooking: The Fryer",
+   "caption": "Basket timers and an overheat gauge; Lv5 'Ridiculous' fryers auto-salt.",
+   "section": "§5.3",
+   "file": "09.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: a deep fryer station. The player chef (white coat, toque, chicken head with a red comb) lifts a basket of golden french fries out of bubbling oil; cartoon bubbles, sizzle sparkles, a second basket of onion rings and fried pickles waiting. Red-and-white paper fry boats on the counter, a salt shaker mid-shake. Warm kitchen lighting, stainless steel."
+  },
+  {
+   "n": 10,
+   "title": "Cooking: The Pizza Oven",
+   "caption": "Dial LOW / MED / HIGH per recipe; spin at halfway for an even bake.",
+   "section": "§5.3, §6.4",
+   "file": "10.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: a dome-shaped brick pizza oven glowing orange inside. The player chef (white coat, toque, goat head with curly horns) slides a pizza on a long wooden peel into the oven; the pizza is covered in cartoon gummy eyeballs and pepperoni, cheese bubbling. Another pizza with tentacle toppings rests on a cooling rack. Flour dust in the air, rustic tiles."
+  },
+  {
+   "n": 11,
+   "title": "Cooking: The Soup Pot",
+   "caption": "One pot = four servings. Pots boil over (no fire) if left too long.",
+   "section": "§5.3",
+   "file": "11.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: a huge bubbling soup pot on a stove filled with bright green swamp stew with cute floating gummy eyeballs and lily pads. The player chef (white coat, toque, elephant head) stirs it with a giant wooden spoon while sniffing the steam with its trunk; green steam swirls form little cartoon hearts. Ladles hang on the wall, bowls stacked."
+  },
+  {
+   "n": 12,
+   "title": "Cooking: The Blender",
+   "caption": "Hold the lid! Past 100 % the smoothie turns MUSHY.",
+   "section": "§5.4",
+   "file": "12.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: a counter-top blender going wild: a rainbow slime smoothie swirls violently inside, the lid hopping, rainbow splashes and sparkles escaping. The player chef (white coat, toque, monkey head and a monkey tail holding a banana) holds the lid down with both hands, eyes wide. Fruit, a jar of glowing jelly and cups on the counter. Bright drink-bar setting."
+  },
+  {
+   "n": 13,
+   "title": "Ridiculous Modification: 'Make my drink angry'",
+   "caption": "MOD_076 — joke request with a real mechanic: Agitate ×5 at the drink dispenser.",
+   "section": "§6.18",
+   "file": "13.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: at a soda fountain drink dispenser, the player chef (white coat, toque, hamster head) furiously shakes a big cup of fizzy red soda; the soda foam has formed a cartoon angry face with furrowed eyebrows and steam puffs, fizz spraying everywhere. A customer with a lizard head watches approvingly in the background. Neon drink-bar lighting."
+  },
+  {
+   "n": 14,
+   "title": "Cooking: Ice Cream Machine",
+   "caption": "Swirl height scores the tower; too tall and it topples.",
+   "section": "§5.3",
+   "file": "14.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: a candy-colored ice cream machine swirling an impossibly tall strawberry-vanilla soft-serve tower into a sundae glass, topped with sprinkles, a cherry and a tiny umbrella, slightly leaning. The player chef (white coat, toque, penguin body and bunny ears) balances it carefully with flippers. Pastel dessert station with toppings jars."
+  },
+  {
+   "n": 15,
+   "title": "Serving & Satisfaction",
+   "caption": "Satisfaction = accuracy, quality, cooking, wait, cleanliness and atmosphere (§10).",
+   "section": "§10",
+   "file": "15.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic, bright colors, kid-friendly, third-person camera. No text, no letters, no numbers, no logos, no user interface. Scene: in a cozy diner, the player chef (white coat, toque, bear head and a black scorpion tail) proudly hands a tray with a perfect cheeseburger and a fizzy soda across the counter to a delighted giraffe-necked customer with pink squid tentacles, whose eyes are cartoon hearts. Sparkles and little floating hearts around the food. Warm lighting, wooden booths behind."
+  },
+  {
+   "n": 16,
+   "title": "Kitchen Hazard: Grill Fire!",
+   "caption": "ON_FIRE 4 s after burning; extinguish, or Trunk Spray / Freeze Touch puts it out.",
+   "section": "§5.7",
+   "file": "16.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly cartoon (not scary). No text, no letters, no numbers, no logos, no user interface. Scene: a restaurant kitchen where a flat-top grill has burst into big puffy cartoon orange flames. The player chef (white coat, toque, hamster head) blasts it with a fire extinguisher spraying fluffy white foam clouds. A purple octopus cook panics in the background, juggling plates. A red rotating alarm light washes the room in red; cartoon smoke puffs, comedic expressions."
+  },
+  {
+   "n": 17,
+   "title": "Co-op Kitchen",
+   "caption": "Friends cook in your restaurant; guests earn their own XP and MB paid by the game.",
+   "section": "§21",
+   "file": "17.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: three friends cooking together in a busy restaurant kitchen, wide angle: a chef with a shark head tossing noodles in a flaming pan, a chef with a cat head and purple octopus arms juggling three plates, and a chef with a boxy robot head carrying a tall stack of pizza boxes. Ingredients fly between them, joyful teamwork chaos, orange and teal lighting, stainless steel stations."
+  },
+  {
+   "n": 18,
+   "title": "Late Game: Mutagen Infuser",
+   "caption": "Mutation Cuisine: diners grow a random cosmetic part for 60 s (+10 'Whoa!').",
+   "section": "§5.3, §6.16",
+   "file": "18.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: a late-game restaurant kitchen with a glowing sci-fi cooking machine: a big glass chamber full of swirling neon-green goo infusing a plate of meatballs, bubbling tubes, sparks and little floating cartoon DNA spirals. The player chef (white coat, toque, red dragon head with small horns) pulls a big chrome lever with excitement. Purple and green glow, polished steel."
+  },
+  {
+   "n": 19,
+   "title": "Late Game: Anti-Gravity Wok",
+   "caption": "Alien Cuisine: keep the ingredients airborne with FLOAT taps.",
+   "section": "§5.3, §6.15",
+   "file": "19.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: a glowing blue anti-gravity wok hovering above a futuristic stove; noodles, broccoli, shrimp and bright alien vegetables float in an orbiting swirl above it. The player chef (white coat, toque, small grey alien head with huge black eyes and antenna bobbles) conducts the floating food with chopsticks like an orchestra. A friendly green alien tourist with a camera watches. Starry neon kitchen, purple and cyan lighting."
+  },
+  {
+   "n": 20,
+   "title": "Dining Room at Tier 5",
+   "caption": "Mutant Family Restaurant: 12 seats, table service, employees run the floor.",
+   "section": "§8, §15",
+   "file": "20.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized heads, glossy plastic, bright colors, kid-friendly, high wide camera. No text, no letters, no numbers, no logos, no user interface. Scene: a big bustling family restaurant, much nicer than a diner: rows of booths full of absurd mutant customers (a TV-headed creature with moth wings, a shark with spider legs, a bunny with a snake body, a deer with leafy plant antlers, a frog in a robot body). A waiter with cheetah legs zooms between tables with a tray, leaving speed lines; a purple octopus chef is visible through the kitchen pass window. Warm string lights, potted plants, a big glowing aquarium wall."
+  },
+  {
+   "n": 21,
+   "title": "Ridiculous Modification: 'Exactly seventeen pickles'",
+   "caption": "MOD_052 — a COUNT mod checked by the server on the Dish object.",
+   "section": "§6.18",
+   "file": "21.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: at a diner counter, a platypus customer in a tiny business suit and glasses squints intensely, counting, at a cheeseburger on a plate topped with a ridiculous wobbly tower of green pickle slices. The player chef (white coat, toque, frog head) holds one more pickle with tongs, sweating nervously. Funny comedic tension, warm diner lighting."
+  },
+  {
+   "n": 22,
+   "title": "The Food Critic",
+   "caption": "Madame Fourchette scores five categories; a great review raises the star rating.",
+   "section": "§9 PER_004, §19",
+   "file": "22.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: an elegant giraffe-necked food critic with pink squid tentacles instead of a mane, wearing a monocle and a string of pearls, takes a tiny bite of a fancy plated dish at a white-tablecloth table under a spotlight, holding a little notebook. Other mutant customers watch nervously from nearby tables, and the player chef (white coat, toque, cat head) peeks anxiously from behind the kitchen door. Luxurious restaurant with chandeliers."
+  },
+  {
+   "n": 23,
+   "title": "The Influencer",
+   "caption": "Vlogzilla's posts swing reputation ±0.1 ★ and bring follower customers.",
+   "section": "§9 PER_009",
+   "file": "23.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: a trendy neon cafe. A green lizard customer whose face is a glowing smartphone screen (showing a happy emoji face) takes a selfie with a huge rainbow burger, a ring light on the table, little cartoon hearts and thumbs-up icons floating upward. Two other mutant customers photobomb in the background. Pink and teal neon lights."
+  },
+  {
+   "n": 24,
+   "title": "Party Pack Order",
+   "caption": "PER_016: one party, three tiny orders, one very sticky table.",
+   "section": "§9",
+   "file": "24.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: a party of three tiny mutant kids (a mini bee, a mini frog and a mini dinosaur wearing party hats) standing on their chairs around a booth table piled with burgers, fries, milkshakes and a birthday cake, making a happy mess with sprinkles and confetti. Balloons tied to the booth. A waiter with a cat head laughs while carrying more milkshakes."
+  },
+  {
+   "n": 25,
+   "title": "The Mime Mantis",
+   "caption": "PER_019 orders in pictograms only; Super Sniff (ABL_064) reveals hidden mods.",
+   "section": "§9",
+   "file": "25.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly. No text, no letters, no numbers, no logos, no user interface. Scene: at a diner counter, a green praying-mantis customer dressed as a classic mime (striped shirt, beret, white face paint) silently acts out an order, pretending to hold an invisible burger and shake invisible salt. The player chef (white coat, toque, dog head) scratches its head with a big cartoon question-mark expression. Warm diner lighting."
+  },
+  {
+   "n": 26,
+   "title": "WRONG ORDER?! — A Tantrum Begins",
+   "caption": "Anger climbs 0→6; each escalation past level 2 is a personality roll (§10).",
+   "section": "§10",
+   "file": "26.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters, glossy plastic, bright colors, kid-friendly cartoon slapstick (no gore). No text, no letters, no numbers, no logos, no user interface. Scene: in a diner, a furious customer with a green dinosaur head, purple blouse and pearl necklace screams with mouth wide open and flips a tray of food off the table; a soggy pickle and a burger fly through the air, cartoon ketchup splats on the floor. The player chef (white coat, toque, wolf head) raises a serving tray like a shield. Other customers gasp. Dynamic action angle, motion lines."
+  },
+  {
+   "n": 27,
+   "title": "Restaurant-Wide Chaos (Level 6)",
+   "caption": "Three angry customers ignite chaos: 45 s max, then a 3-minute cooldown.",
+   "section": "§10",
+   "file": "27.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: total food-fight chaos inside a cheerful diner dining room. Three red-faced angry mutant customers (a goat with crab claws, a frog with bat wings, a pig with a lizard tail) stand on tables throwing spaghetti, pies and burgers. Chairs are tipped over, one table is snapped in half, ketchup splats on the walls, a smoke puff, flying plates frozen mid-air. The player chef (bear head, white toque, scorpion tail) stands in the center foreground looking shocked. Warm orange emergency-tinted lighting, wide shot."
+  },
+  {
+   "n": 28,
+   "title": "Combat: Mutation Abilities",
+   "caption": "Scorpion Tail Swipe (ABL_009) stuns; damage = base × STR × 100/(100+DEF).",
+   "section": "§11, §36.6",
+   "file": "28.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a slapstick cartoon scuffle in a restaurant dining room. On the left, the player chef (brown bear head, white chef coat and toque, a big glossy orange scorpion tail) swings the scorpion tail in a sweeping arc with a bright yellow motion trail. On the right, a goofy angry customer with a shark head and eight spindly spider legs is knocked backward with little cartoon stars circling its head. A soft impact flash between them, no blood, playful. Tables and diners react in the background."
+  },
+  {
+   "n": 29,
+   "title": "Emergent Chaos: The Chain Reaction",
+   "caption": "A thrown burger misses you, hits a bystander, and starts a whole new fight.",
+   "section": "§11.6",
+   "file": "29.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a chain reaction in a busy diner. A big cheeseburger flies through the air with a curved motion trail. The player chef (wolf head, white coat, toque) dodge-rolls on the floor under it on the left. The burger smacks into the face of a surprised bystander customer (a hippo with antlers) on the right, who is spinning around; next to him a rooster customer with octopus arms is rolling up its sleeves, ready to start a new fight. Fun, comedic, mid-action freeze frame."
+  },
+  {
+   "n": 30,
+   "title": "Security Guard at Work",
+   "caption": "EMP_066 Rocco the Rhino intercepts angry customers (40 % Apology Payment).",
+   "section": "§16, §36.8",
+   "file": "30.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a big friendly grey rhino security guard in a navy security uniform and cap, arms spread wide, calmly blocking a small furious customer (a raccoon with a crocodile tail) who is stomping and waving a fork near the restaurant entrance. Other diners eat calmly in the background. The rhino is in the center-right of the frame. Bright daytime diner interior."
+  },
+  {
+   "n": 31,
+   "title": "Seeing Stars (Knocked Out)",
+   "caption": "KO never costs mutations, items or currency: respawn in the kitchen with 60 % HP.",
+   "section": "§11.10",
+   "file": "31.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: the player chef (bear head, white coat, toque tipped sideways, scorpion tail) sitting dazed on a restaurant kitchen floor, a ring of cartoon stars and tiny birds circling the head, a squashed pie beside them, comedic and harmless. Kitchen counters and stoves around, warm lighting, low camera angle, character centered."
+  },
+  {
+   "n": 32,
+   "title": "Repair Minigame",
+   "caption": "Damage states Pristine → Destroyed; Destroyed items rebuild for ≤ 25 % of price.",
+   "section": "§15.9",
+   "file": "32.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: the player (cat head, chef coat, one arm replaced by a shiny robot arm ending in a wrench claw) kneeling beside a broken wooden restaurant table cracked in half, fixing it; sparks and little bolts fly, a toolbox and wooden planks on the floor, a cartoon dust cloud. The table and player are in the center-left. Cozy dining room in the background."
+  },
+  {
+   "n": 33,
+   "title": "Customize Your Morph",
+   "caption": "22 anatomy slots, rarity by color and shape, three free loadouts (Chef, Fighter, Repair).",
+   "section": "§13",
+   "file": "33.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a single mutant character standing proudly on a round glowing turquoise pedestal in the exact center of the frame inside a sci-fi customization lab: brown bear head, white chef coat, one big red crab claw arm, glossy orange scorpion tail, small purple bat wings. Soft spotlight from above, dark teal lab walls with glowing tubes and floating holographic rings around the pedestal, lots of empty space on the left and right sides."
+  },
+  {
+   "n": 34,
+   "title": "Level Up & Get Stronger",
+   "caption": "2 stat points per level; the mockup's four headline stats with a 'More Stats' view.",
+   "section": "§14",
+   "file": "34.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: the player chef (bear head, white coat and toque, scorpion tail) jumping for joy with both fists in the air in the middle of a bright restaurant kitchen, golden light beams radiating from behind, colorful confetti and stars bursting around. Character centered, a bit lower in the frame."
+  },
+  {
+   "n": 35,
+   "title": "Mutation Mart",
+   "caption": "Commons and Uncommons always stocked; Rares rotate. Prices from §36.3.",
+   "section": "§18 BLD_01, §36.3",
+   "file": "35.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: inside a quirky mutation shop. On the LEFT third of the frame, a friendly green chameleon shopkeeper whose body is a glowing vending machine stands behind a counter, waving. Shelves behind hold glowing glass jars containing creature parts: crab claws, bat wings, scorpion tails, octopus tentacles, horns, fins, all softly lit in purple, teal and gold. The right side of the frame is mostly shelves and soft background so it can sit behind a menu. Warm, magical, inviting lighting."
+  },
+  {
+   "n": 36,
+   "title": "Mutation Laboratory: Fusion",
+   "caption": "Mythic fusion: 3 Legendaries from one route + 600 MS + 40 RT, deterministic output.",
+   "section": "§12.5, §18 BLD_11",
+   "file": "36.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a mad-science mutation laboratory. On the RIGHT third of the frame, a cheerful pink axolotl scientist in a white lab coat and goggles pulls a big lever on a huge brass fusion machine with three glass chambers glowing gold, cyan and magenta, lightning arcs connecting them. Bubbling beakers, tubes and pipes. The left side of the frame is a darker, softer lab background. Dramatic purple and teal lighting."
+  },
+  {
+   "n": 37,
+   "title": "Body Mods: Colors & Palettes",
+   "caption": "Per-part tint palettes; cosmetic only, earnable or purchased.",
+   "section": "§13, §23",
+   "file": "37.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a funky salon for body modifications. On the LEFT third of the frame, a robot stylist with a long pink flamingo neck holds a paint sprayer and color swatches, spraying a rainbow mist onto a customer (a chef with a bear head and a big crab claw arm) sitting in a salon chair; the crab claw is turning from red to bright teal. Mirrors with bulb lights, paint buckets, colorful palettes. Right side of the frame is soft salon background. Pastel pink, teal and gold lighting."
+  },
+  {
+   "n": 38,
+   "title": "Synergy Unlocked",
+   "caption": "SYN_001 Eight-Arm Kitchen Nightmare: octopus arms + chef parts cook several items faster.",
+   "section": "§12.10, §36.4",
+   "file": "38.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a raccoon chef with a white toque and eight purple octopus tentacle arms cooks at six stations at once in a busy restaurant kitchen: flipping a burger, stirring soup, tossing a pizza, frying, chopping and plating simultaneously, with a glowing golden aura and sparkles around the tentacles. Character centered, kitchen around. Warm lighting with magical golden highlights."
+  },
+  {
+   "n": 39,
+   "title": "Restaurant Supplies",
+   "caption": "Stock appliances (Lv1 prices from §36.13) and upgrade paths Lv2–Lv5.",
+   "section": "§15, §36.13",
+   "file": "39.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a restaurant equipment warehouse store. On the RIGHT third of the frame, a beaver shop clerk in an orange vest whose legs are a small yellow forklift carries a shiny new grill on the forks. Around: stacked stoves, pizza ovens, deep fryers, blenders, soda machines, cute dining tables and chairs on display. Left side of the frame is aisles of appliances, slightly softer. Bright warehouse lighting."
+  },
+  {
+   "n": 40,
+   "title": "Build Mode",
+   "caption": "2-stud grid, 90° rotation; every layout must keep the door connected to every seat.",
+   "section": "§15.5",
+   "file": "40.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: chunky glossy plastic look, bright saturated colors, soft lighting, kid-friendly. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a high isometric top-down view of a cute restaurant interior with the roof removed, like a building-mode camera: a checkered floor, a kitchen area with stoves and counters at the top, booths and round tables with chairs in the middle, plants, a front door at the bottom, one empty space where a new table could go. Clean, readable, evenly lit, soft shadows."
+  },
+  {
+   "n": 41,
+   "title": "Restaurant Upgrade: Tier 3 → Tier 4",
+   "caption": "Morph City Grill: 5,000 MB + City Hall permit; the Mutant Builders take 10 seconds.",
+   "section": "§15.2, §36.12",
+   "file": "41.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a funny construction crew of mutant animal builders (a bulldog with a hammer arm, a crab in a hard hat, a giraffe used as a crane) upgrading the facade of a cute two-story restaurant on a city street; scaffolding, dust clouds, flying planks and bricks, a big blank signboard being hoisted. Sunny day."
+  },
+  {
+   "n": 42,
+   "title": "Recruitment Office",
+   "caption": "Candidates refresh every 4 h; rarity sets stats, wage and potential.",
+   "section": "§16.4, §36.8",
+   "file": "42.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a cozy recruitment office. On the LEFT half of the frame, a wise owl recruiter with round glasses whose torso is a wooden filing cabinet sits at a desk, and a short line of job candidates waits beside it: a speedy cheetah in sneakers, a big rhino in a security cap, and a sleepy sloth holding a coffee cup. The right half of the frame is a soft wall with a corkboard and windows. Warm office lighting."
+  },
+  {
+   "n": 43,
+   "title": "Employee Roster",
+   "caption": "Roles, efficiency, morale and energy; assign stations and review performance.",
+   "section": "§16.5",
+   "file": "43.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a cheerful group photo of restaurant staff posing in a row inside a diner: a purple octopus chef with a toque, a cheetah waiter with a tray, a rhino security guard, a sleepy sloth cashier, a robot dishwasher with a mop arm, and a goat host in a vest. Everyone smiling, warm lighting."
+  },
+  {
+   "n": 44,
+   "title": "Welcome Back! (Offline Earnings)",
+   "caption": "§17 Example C: TIER_05, Rare manager, 8 h with the long-absence taper.",
+   "section": "§17.10",
+   "file": "44.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: early morning sunlight streams into a tidy restaurant dining room; tired but proud mutant staff (an octopus chef, a cheetah waiter, a rhino guard) wave hello at the entrance, a big pile of golden coins sits on the counter, a few dirty plates remain from the night. Cozy, warm golden light."
+  },
+  {
+   "n": 45,
+   "title": "Restaurant Hub: Finances",
+   "caption": "Daily active vs offline income, best dishes, and bottleneck hints.",
+   "section": "§24.14",
+   "file": "45.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: chunky glossy plastic look, bright saturated colors, soft lighting, kid-friendly. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a wide view of a busy, fancy mutant restaurant interior at dinner time: many tables full of creature customers, waiters carrying trays, an open kitchen in the back with flames, a fish tank wall, warm lamps. Wide establishing shot."
+  },
+  {
+   "n": 46,
+   "title": "Morph City: Downtown",
+   "caption": "Walk, sprint (city-only ×1.35), Morph Metro or Pigeon Taxi between 10 districts.",
+   "section": "§18",
+   "file": "46.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a bustling downtown street of a cartoon city at dusk, seen from behind the player character (bear head, chef coat, scorpion tail) walking down the middle of the street. Colorful shop buildings with blank glowing neon shapes (burger, mushroom, flask), a metro entrance, mutant animal pedestrians (a giraffe with a briefcase, a frog on a scooter, a robot dog), street lamps, a food truck. Vibrant purple and orange sky."
+  },
+  {
+   "n": 47,
+   "title": "City Map & Fast Travel",
+   "caption": "Ten districts; the Sewers link via hidden manholes (dashed).",
+   "section": "§18.2, §24.17",
+   "file": "47.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: chunky glossy plastic look, bright saturated colors, soft lighting, kid-friendly. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a high aerial view of a whole cartoon city with distinct colorful districts: a neon downtown, a harbor with boats, a park with a giant mushroom, a spooky purple swamp, a lab district with domes, a market square, and a river with bridges. Sunny afternoon, toy-like."
+  },
+  {
+   "n": 48,
+   "title": "Pigeon Taxi",
+   "caption": "Fly to any discovered district; the fare is charged on arrival.",
+   "section": "§18.4",
+   "file": "48.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: the player (bear head, chef coat, scorpion tail) rides on the back of a giant friendly grey pigeon wearing a little taxi cap and goggles, flying over a colorful cartoon city with rooftops and streets far below, fluffy clouds, sunny sky. The pigeon and rider are in the upper middle of the frame; the bottom of the frame shows rooftops."
+  },
+  {
+   "n": 49,
+   "title": "City Event: Giant Rat King Attack",
+   "caption": "EVT_007 every 4 h: the whole server defends the avenue together.",
+   "section": "§36.11",
+   "file": "49.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a giant goofy rat king wearing a wobbly golden crown and a red cape rides a huge rolling wheel of cheese down a city avenue, chased and surrounded by many small players with mutant parts (crab claws, bat wings, tentacles) throwing pies and spraying water at it. The rat king is center-left of the frame. Comedic boss battle, bright afternoon, cartoon dust clouds."
+  },
+  {
+   "n": 50,
+   "title": "Mystery Market (Sewers)",
+   "caption": "Weekly Legendary, daily Epics and Rares; odds-free, priced items only.",
+   "section": "§18, §36.10 BLD_13",
+   "file": "50.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a secret underground market in a cartoon sewer tunnel lit by candles and green glowing mushrooms. On the LEFT third of the frame, a mysterious hooded merchant (a friendly hagfish with big googly eyes peeking from under a patched purple hood) stands behind a wooden stall covered in glowing jars, odd trinkets and treasure chests. The right side of the frame is a softer brick tunnel with dripping pipes. Moody but kid-friendly teal and purple lighting."
+  },
+  {
+   "n": 51,
+   "title": "Job Board & Quest Journal",
+   "caption": "157 quests: story chapters, dailies, weeklies and challenge lines.",
+   "section": "§20",
+   "file": "51.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: in a cozy town square, a chubby pigeon NPC whose torso is a big corkboard covered in blank paper notes and pins stands beside a wooden job board; the player chef (bear head, toque, scorpion tail) reads the notes. Sunny day, colorful shops behind."
+  },
+  {
+   "n": 52,
+   "title": "Morph Arena (Opt-in PvP)",
+   "caption": "Normalized stats, PvP damage ×0.7; never required for restaurant progression.",
+   "section": "§21.12",
+   "file": "52.jpg",
+   "plate_prompt": "Use the reference image ONLY as an art-style guide (do not copy its layout, collage panels, logos or text). Create ONE single full-frame in-game screenshot from a polished Roblox-style 3D game: blocky chunky characters with oversized expressive heads, glossy plastic materials, bright saturated colors, soft global illumination, cartoon proportions, kid-friendly, third-person game camera. No text, no letters, no numbers, no logos, no user interface, no HUD. Scene: a neon-lit circular arena with cheering creature crowds in the stands. A T-rex announcer in a sparkly tuxedo holds a microphone on a raised platform in the background. In the arena center two mutant players face off playfully: one with a bear head and scorpion tail, the other a cat with octopus arms and bat wings, cartoon energy sparks between them. Pink, purple and cyan spotlights, confetti."
+  }
+ ]
+}

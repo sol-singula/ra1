@@ -12,6 +12,11 @@ definition of done), a generated completion manifest, and a full table of conten
 The file is large (several MB), so GitHub may show it as raw text. To read one section at a time, use the
 index below — each link opens that section's source file, which renders normally.
 
+## Gameplay previews
+
+[`gdd/previews/`](gdd/previews/README.md) has 52 captioned mock screenshots (title screen, HUD, ordering, every cooking
+station, tantrums and combat, morph customization, shops, build mode, staff, offline earnings, Morph City and events).
+
 ## Section index
 
 <!-- sections:start -->
@@ -90,6 +95,8 @@ index below — each link opens that section's source file, which renders normal
 | `gdd/tools/render_*.py` | Render data-backed tables from `gdd/data/` into section files |
 | `gdd/tools/validate_gdd.py` | Validates section order, identifier cross-references, content counts, canonical names and required diagrams |
 | `gdd/tools/build_gdd.py` | Validates, generates the front matter (manifest + TOC) and assembles the GDD |
+| `gdd/previews/` | 52 mock gameplay screenshots (GUI, ordering, cooking, shops, building, city) — see its README |
+| `gdd/tools/compose_previews*.py`, `render_previews.js` | Build the preview GUI overlays and render them over the background plates |
 
 ## Rebuilding
 
