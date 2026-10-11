@@ -45,6 +45,7 @@ local function defaults()
 		menu = table.clone(Recipes.defaultMenu),
 		mutations = { owned = {}, equipped = nil },
 		lifetime = { served = 0, earned = 0 },
+		tutorialDone = false,
 		meta = { createdAt = os.time(), lastSeen = os.time(), lock = nil },
 	}
 end

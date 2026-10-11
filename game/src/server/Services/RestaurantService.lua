@@ -86,6 +86,7 @@ function RestaurantService:_build(r)
 	end
 	r.layout = RestaurantBuilder.build(r.owner, r.plotIndex, r.tierIndex)
 	r.tier = Progression.Tiers[r.tierIndex]
+	r.layout.setMenu(self:MenuRecipes(r.owner))
 	self.Built:Fire(r.owner, r)
 end
 
@@ -172,6 +173,7 @@ function RestaurantService:_setMenu(player, list)
 		return
 	end
 	profile.menu = clean
+	r.layout.setMenu(self:MenuRecipes(player))
 	self:Push(player)
 	Net.fire(player, "Toast", "Menu updated.", "good")
 end

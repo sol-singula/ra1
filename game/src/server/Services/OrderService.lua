@@ -79,6 +79,8 @@ function OrderService:Describe(order)
 	for _, item in order.items do
 		local mod = item.modId and Modifications.byId[item.modId]
 		table.insert(view, {
+			id = item.recipeId,
+			omit = item.omit,
 			name = Recipes.byId[item.recipeId].name,
 			mod = mod and mod.text or nil,
 			served = item.served,

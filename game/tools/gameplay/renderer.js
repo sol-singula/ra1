@@ -83,21 +83,34 @@
     if (p.s === 'Wedge') return wedgeGeometry(x, y, z);
     return new THREE.BoxGeometry(x, y, z);
   }
+  // face of a box in three.js material order (+X, -X, +Y, -Y, +Z, -Z) and its width/height in studs
+  const FACES = { Right: [0, 2, 1], Left: [1, 2, 1], Top: [2, 0, 2], Bottom: [3, 0, 2], Back: [4, 0, 1], Front: [5, 0, 1] };
   function signTexture(sign, part) {
+    const f = FACES[sign.face] || FACES.Front;
     const c = document.createElement('canvas');
-    const aspect = part.size[0] / part.size[1];
-    c.height = 200; c.width = Math.round(200 * aspect);
+    const aspect = part.size[f[1]] / part.size[f[2]];
+    c.height = 300; c.width = Math.round(300 * aspect);
     const g = c.getContext('2d');
     g.fillStyle = part.c; g.fillRect(0, 0, c.width, c.height);
     g.fillStyle = sign.color;
-    let fs = 150;
     const family = sign.font === 'LuckiestGuy' ? '"Luckiest Guy"' : '"Fredoka"';
-    do { g.font = `${fs}px ${family}`; fs -= 4; } while (g.measureText(sign.text).width > c.width * 0.94 && fs > 10);
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(sign.text, c.width / 2, c.height / 2 + fs * 0.08);
+    const weight = sign.font === 'LuckiestGuy' ? '' : '600 ';
+    const lines = String(sign.text || '').split('\n');
+    let fs = 220;
+    const fits = () => {
+      g.font = `${weight}${fs}px ${family}`;
+      const widest = Math.max(...lines.map((l) => g.measureText(l).width));
+      return widest <= c.width * 0.9 && fs * 1.15 * lines.length <= c.height * 0.92;
+    };
+    while (!fits() && fs > 8) fs -= 2;
+    const left = sign.align === 'Left';
+    g.textAlign = left ? 'left' : 'center';
+    g.textBaseline = 'middle';
+    const total = fs * 1.15 * lines.length;
+    lines.forEach((l, i) => g.fillText(l, left ? c.width * 0.06 : c.width / 2, c.height / 2 - total / 2 + fs * 1.15 * (i + 0.5)));
     const t = new THREE.CanvasTexture(c);
     t.encoding = THREE.sRGBEncoding;
-    return t;
+    return { texture: t, index: f[0] };
   }
   function skyTexture() {
     const c = document.createElement('canvas');
@@ -144,8 +157,11 @@
       let mat = material(p);
       const sign = snap.signs.find((sg) => sg.part === i + 1);
       if (sign && p.s === 'Block') {
-        const face = new THREE.MeshStandardMaterial({ map: signTexture(sign, p), roughness: 0.6 });
-        mat = [mat, mat, mat, mat, mat, face]; // -Z is the front face in Roblox
+        const st = signTexture(sign, p);
+        const face = new THREE.MeshStandardMaterial({ map: st.texture, roughness: 0.6 });
+        const mats = [mat, mat, mat, mat, mat, mat];
+        mats[st.index] = face;
+        mat = mats;
       }
       const mesh = new THREE.Mesh(geometry(p), mat);
       const m = p.m;

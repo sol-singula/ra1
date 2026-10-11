@@ -18,6 +18,7 @@ Net.ClientEvents = {
 	UpgradeTier = 1,
 	ChooseMutation = 1,
 	Ready = 1,
+	SkipTutorial = 1,
 }
 
 -- Server → client.
@@ -38,6 +39,7 @@ Net.ServerEvents = {
 	"ChooseMutation", -- list of mutation ids
 	"KO", -- seconds
 	"Served", -- summary of a finished customer
+	"Tutorial", -- { step, total, text, target } or false when the tutorial is over
 }
 
 local folder

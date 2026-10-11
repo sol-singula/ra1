@@ -97,15 +97,16 @@ function CustomerAIService:_freeSeat(r)
 	return nil
 end
 
-function CustomerAIService:_spawn(r)
+-- `scripted` (tutorial) = { personality = id, order = { items = … } }: a patient customer with a fixed order.
+function CustomerAIService:_spawn(r, scripted)
 	local seat = self:_freeSeat(r)
 	if not seat or #r.ai.line >= 4 then
-		return
+		return nil
 	end
 	nextId += 1
 	local seed = math.random(1, 1073741823)
 	local rng = Random.new(seed)
-	local personality = pickPersonality(r, rng)
+	local personality = scripted and Personalities[scripted.personality] or pickPersonality(r, rng)
 
 	local proxy = Instance.new("Part")
 	proxy.Name = "Customer" .. nextId
@@ -152,6 +153,7 @@ function CustomerAIService:_spawn(r)
 		calmImmuneUntil = 0,
 		lastPatience = 1,
 	}
+	c.scripted = scripted
 	r.ai.seatTaken[seat.index] = c
 	r.ai.customers[c.id] = c
 	r.customerCount = (r.customerCount or 0) + 1
@@ -173,6 +175,7 @@ function CustomerAIService:_spawn(r)
 	table.insert(r.ai.line, c)
 	self:_setState(c, "ENTER")
 	self:_setPath(c, { r.layout.way.door, r.layout.way.aisle, self:_lineSpot(r, #r.ai.line) })
+	return c
 end
 
 function CustomerAIService:_lineSpot(r, index)
@@ -210,7 +213,7 @@ end
 -- Interactions --------------------------------------------------------------------------------------------
 function CustomerAIService:_takeOrder(c, player)
 	local p = c.personality
-	c.order = orders:Generate(player, p, c.rng)
+	c.order = c.scripted and c.scripted.order or orders:Generate(player, p, c.rng)
 	local sumD = 0
 	for _, item in c.order.items do
 		sumD += Recipes.byId[item.recipeId].difficulty
@@ -265,8 +268,13 @@ end
 function CustomerAIService:_setAnger(c, value)
 	c.anger = math.clamp(value, 0, 100)
 	c.level = math.min(Formulas.angerLevel(c.anger, FLOORS), 5)
-	c.proxy:SetAttribute("Anger", math.floor(c.anger))
-	c.proxy:SetAttribute("AngerLevel", c.level)
+	-- only replicate whole-number changes
+	if c.proxy:GetAttribute("Anger") ~= math.floor(c.anger) then
+		c.proxy:SetAttribute("Anger", math.floor(c.anger))
+	end
+	if c.proxy:GetAttribute("AngerLevel") ~= c.level then
+		c.proxy:SetAttribute("AngerLevel", c.level)
+	end
 end
 
 function CustomerAIService:_addAnger(c, amount)
@@ -275,6 +283,11 @@ function CustomerAIService:_addAnger(c, amount)
 	end
 	local target = math.clamp(c.anger + amount, 0, 100)
 	local newLevel = math.min(Formulas.angerLevel(target, FLOORS), 5) -- level 6 chaos is out of MVP scope
+	if newLevel >= 3 and progression:Level(c.r.owner) < Constants.BEGINNER_PROTECTION_LEVEL then
+		-- new chefs: a customer who would start throwing food just walks out instead
+		self:_stormOut(c)
+		return
+	end
 	for lvl = c.level + 1, newLevel do
 		if lvl >= 3 and not c.passedRoll[lvl] then
 			local chance = Formulas.escalationChance(c.personality.angerP, progression:Stat(c.r.owner, "CHARM"))
@@ -549,14 +562,24 @@ function CustomerAIService:_tickCustomer(c, dt)
 		self:_remove(c)
 		return
 	end
+	if c.scripted then
+		return -- the tutorial customer waits as long as it takes
+	end
 	self:_patienceTick(c, dt)
 	self:_behaviour(c, dt)
+end
+
+function CustomerAIService:SpawnScripted(r, scripted)
+	local c = self:_spawn(r, scripted)
+	return c
 end
 
 function CustomerAIService:_tickRestaurant(r, dt)
 	local ai = r.ai
 	local t = now()
-	if t >= ai.nextSpawnAt then
+	if r.tutorialActive then
+		ai.nextSpawnAt = t + Constants.FIRST_CUSTOMER_DELAY -- the tutorial decides when guests arrive
+	elseif t >= ai.nextSpawnAt then
 		local demand =
 			Formulas.demandPerHour(r.tier.demand, restaurantSvc:Stars(r.owner), restaurantSvc:Atmosphere(r.owner))
 		ai.nextSpawnAt = t + 3600 / (demand * Constants.DEMAND_SCALE) * (0.75 + math.random() * 0.5)

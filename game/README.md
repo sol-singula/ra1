@@ -24,6 +24,11 @@ are stand-ins for Roblox's.
 6. Press **Play**.
 
 To get a single file instead: `rojo build -o MysteryMorph.rbxl`, then double-click the file to open it in Studio.
+A prebuilt copy, `MysteryMorphRestaurant.rbxl`, is already in this folder.
+
+**Better lighting.** The game adds atmosphere, bloom, sun rays and colour correction on its own. For the best
+look, also select **Lighting** in the Explorer and set **Technology** to **Future**. Scripts can't change that
+property.
 
 **Saving progress.** Profiles save to a DataStore. In an unpublished place, or with API access off, the game still
 runs but shows "Studio: turn on API access…" and progress resets when you stop. To save: publish the place, then
@@ -41,22 +46,31 @@ in **Game Settings → Security** turn on **Enable Studio Access to API Services
 | Calm Down! | **Q** | L1 | 💗 button |
 | Mutation ability | **G** | R1 | mutation button |
 
+**The first time you play, a 13-step tutorial walks you through everything.** A card on the left says what to do,
+and a bouncing **HERE** arrow with a glow marks the station or customer to use next. Your first customer is a
+patient, scripted Grandma Golem who orders a plain Basic Burger. Finish the tutorial for a 25 MB bonus, or press
+**Skip tutorial**. Players who have already served a customer never see it.
+
 1. On your first join, pick a free mutation: **Octopus Arm** (carry 2 items, cook faster), **Crab Claw Arm**
    (hits harder) or **Wrench Claw Arm** (repairs faster).
 2. A customer walks up to the counter. Press **E** on them to take the order, then they sit down. Their order is
    on the ticket rail at the top of the screen and in their speech bubble, including requests like
-   "Hold the pickles".
-3. Cook it. Take ingredients from the **Pantry**. Chop vegetables at the **Cutting Board** by tapping when the
+   "Hold the pickles". The **menu board** on the wall shows what's on today's menu.
+3. Read the **recipe card** (top right). For the oldest order you still owe, it lists every part of the dish and
+   where it comes from: 📦 Pantry, 🔥 Grill, 🍟 Fryer or 🔪 Cutting Board. Parts already on a board get a ✅, and
+   anything the customer asked you to leave out gets a 🚫.
+4. Cook it. Take ingredients from the **Pantry**. Chop vegetables at the **Cutting Board** by tapping when the
    marker is in the green. Put patties on the **Grill** and potatoes in the **Fryer**, and take them off while the
    bar is green (Perfect). Burn something for too long and the station catches fire; hold E to put it out.
-4. Stack everything on an **Assembly Counter** board. When the stack matches a menu dish, the prompt says
+5. Stack everything on an **Assembly Counter** board. When the stack matches a menu dish, the prompt says
    "Plate …". Press E to pick up the plated dish. Pour drinks at the **Drink Dispenser** and stop in the top band.
-5. Walk the dish to the customer and press **E**. They pay, tip by satisfaction and leave a little reputation.
+6. Walk the dish to the customer and press **E**. They pay, tip by satisfaction and leave a little reputation.
    The hint line above your hands always says what to do next.
-6. Customers who wait too long get angry: they throw food (move to dodge), smash tables, and the worst start a
+7. Customers who wait too long get angry: they throw food (move to dodge), smash tables, and the worst start a
    fight. Calm them with **Q**, or bop them until they're dizzy and pay an apology. A knock-out never costs you
-   anything. Broken tables and stools need repairs before anyone can sit there.
-7. Spend stat points in **Stats**, change dishes in **Menu**, and at level 5 with 1,000 MB use **Upgrade** to turn
+   anything. Broken tables and stools need repairs before anyone can sit there. **Beginner protection:** until
+   you reach level 2, a customer who would start throwing things storms out instead.
+8. Spend stat points in **Stats**, change dishes in **Menu**, and at level 5 with 1,000 MB use **Upgrade** to turn
    the Broken Burger Shack into the Tiny Mutation Diner (6 seats, 5 menu slots, new customer types).
 
 ## What's in this base

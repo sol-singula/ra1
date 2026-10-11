@@ -13,7 +13,7 @@ panels, and every number in them. Three things are stand-ins:
 Regenerate with:
 
 ```bash
-tools/luaurun/target/release/luaurun tools/gameplay/session.luau <jsonDir>
+tools/luaurun/target/release/luaurun tools/gameplay/session.luau <jsonDir> 23   # 23 = random seed
 node tools/gameplay/render.js <jsonDir> <pngDir> --modules <node_modules with puppeteer, three@0.149.0, @fontsource/fredoka, @fontsource/luckiest-guy>
 ```
 
@@ -21,61 +21,61 @@ node tools/gameplay/render.js <jsonDir> <pngDir> --modules <node_modules with pu
 
 ![First join: pick a free mutation](01_first_join_mutation_pick.jpg)
 
-Octopus Arm, Crab Claw Arm or Wrench Claw Arm. The bot picks the Octopus Arm.
+Octopus Arm, Crab Claw Arm or Wrench Claw Arm. The tutorial card on the left already says what comes next. The bot picks the Octopus Arm.
 
-### 2. The Pantry
+### 2. Tutorial step 2: take the first order
 
-![The Pantry](02_pantry.jpg)
+![Tutorial step 2: take the first order](02_tutorial_take_order.jpg)
 
-The panel lists every ingredient on the current menu. The purple Octopus Arm is on, and the carry bar shows 2 hands.
+A scripted first customer, the Grandma Golem, waits at the counter. A bouncing **HERE** arrow and a glow mark the spot, and the card says exactly what to do. The menu board on the wall lists today's dishes and prices.
 
-### 3. Two patties on the Grill
+### 3. Step 3: the Pantry
 
-![Two patties on the Grill](03_grill.jpg)
+![Step 3: the Pantry](03_pantry.jpg)
 
-Live doneness bars over each patty: UNDERCOOKED, then PERFECT, then BURNED.
+The recipe card on the right lists every part of the Basic Burger and where each one comes from (📦 Pantry, 🔥 Grill, 🔪 Cutting Board). The arrow moved to the Pantry.
 
-### 4. Chopping lettuce
+### 4. Step 5: patty on the Grill
 
-![Chopping lettuce](04_chopping.jpg)
+![Step 5: patty on the Grill](04_grill.jpg)
 
-Tap when the marker is in the green. Each pip shows how clean that cut was.
+"When it says PERFECT (green), press E to take it off." The doneness bar over the patty is live.
 
-### 5. Building a Basic Burger
+### 5. Step 8: chopping a pickle
 
-![Building a Basic Burger](05_assembly.jpg)
+![Step 8: chopping a pickle](05_chopping.jpg)
 
-Patty, lettuce, bun, ketchup and pickle stacked on board 1. The prompt names the dish once the stack matches.
+Tap when the marker is in the green. Ingredients already on the board are ticked ✅ on the recipe card.
 
-### 6. The first customer
+### 6. Step 11: plating
 
-![The first customer](06_customer_at_counter.jpg)
+![Step 11: plating](06_assembly.jpg)
 
-A Sleepy Sloth-Rocket at the counter: "Ready to order!" and the Take order prompt.
+Everything is stacked, so the recipe card is all ticks and the arrow points at the board: "Press E to pick up the finished burger."
 
-### 7. Serving with a special request
+### 7. Step 12: serving
 
-![Serving with a special request](07_serving.jpg)
+![Step 12: serving](07_serving.jpg)
 
-The ticket and the bubble both show "Hold the pickles." Cheeseburger in hand, Serve prompt up.
+The customer is seated at a round table. The arrow and the Serve prompt are over them.
 
 ### 8. Paid
 
 ![Paid](08_served.jpg)
 
-+17 MB and a Delighted customer. Money, XP and reputation all come from the server's satisfaction formula.
++9 MB and a Delighted customer. Step 13 says the restaurant is open for business: real customers start arriving, and the tutorial ends with a 25 MB bonus.
 
 ### 9. Pouring a Fizzy Soda
 
 ![Pouring a Fizzy Soda](09_pouring_a_drink.jpg)
 
-Stop the fill inside the green band for a Perfect drink.
+For drinks, the recipe card just says "Pour it at the Drink Dispenser. Stop in the green band."
 
 ### 10. Lunch rush
 
 ![Lunch rush](10_dining_room.jpg)
 
-Three orders taken at once. The ticket rail fills up and every table has an order bubble.
+Three orders on the ticket rail. The recipe card always shows the oldest unserved order, so you know what to make next. You can see the street outside through the front windows.
 
 ### 11. Grill fire
 
@@ -87,13 +87,13 @@ A forgotten patty burned and caught fire. Hold the prompt to put it out.
 
 ![Food fight](12_food_fight.jpg)
 
-An Impatient Goblin hits anger level 3 and throws food. The plate is mid-air over the kitchen.
+An Impatient Goblin hits anger level 3 and throws food. New players are protected: below level 2, an angry customer storms out instead of starting a fight.
 
 ### 13. Fighting back
 
 ![Fighting back](13_fight.jpg)
 
-Swipe Combo on a Sleepy Sloth-Rocket at anger level 5 ("BIF!" on the third hit). Its table is already cracked.
+Swipe Combo on an Impatient Goblin ("BIF!"). It wanted its burger with no lettuce, and its table is already cracked.
 
 ### 14. Dizzy
 
@@ -117,22 +117,22 @@ Smashed by an angry customer. Press R to rebuild it for 20 MB.
 
 ![Menu editor](17_menu.jpg)
 
-Four menu slots at TIER_01. Recipes unlock by level.
+Four menu slots at TIER_01, and recipes unlock by level. Saving the menu also updates the menu board on the wall.
 
 ### 18. Upgrade
 
 ![Upgrade](18_upgrade_panel.jpg)
 
-Level 6 and 1,118 MB earned by the bot: ready to become the Tiny Mutation Diner.
+Level 6 and over 1,000 MB earned by the bot: ready to become the Tiny Mutation Diner.
 
 ### 19. The Tiny Mutation Diner
 
 ![The Tiny Mutation Diner](19_tiny_mutation_diner.jpg)
 
-Six seats, five menu slots, and new customer types such as the Bodybuilder Pigeon on the ticket rail.
+More seats, more menu slots, and a bigger dining room with a checkered floor, lamps, plants, a striped awning and a neon OPEN sign.
 
 ### 20. Restaurant Row
 
 ![Restaurant Row](20_restaurant_row.jpg)
 
-Three players' restaurants on the street: ChefGrizzle's diner, then BoltNugget's and PixelPaws' shacks.
+Three players' restaurants on the street, with trees, lamp posts, planters and crosswalks between the plots.

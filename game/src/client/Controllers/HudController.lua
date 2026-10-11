@@ -362,7 +362,7 @@ local function popup(position, text, color)
 end
 
 function HudController:servedCard(s)
-	local card = Theme.card({ Size = UDim2.fromOffset(300, 96), Position = UDim2.new(1, 20, 0, 116), Parent = gui })
+	local card = Theme.card({ Size = UDim2.fromOffset(300, 96), Position = UDim2.new(1, 20, 1, -330), Parent = gui })
 	Theme.text({
 		Text = s.name,
 		Font = Theme.Display,
@@ -388,9 +388,9 @@ function HudController:servedCard(s)
 		Position = UDim2.fromOffset(12, 60),
 		Parent = card,
 	})
-	card:TweenPosition(UDim2.new(1, -316, 0, 116), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.35, true)
+	card:TweenPosition(UDim2.new(1, -316, 1, -330), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.35, true)
 	task.delay(4, function()
-		card:TweenPosition(UDim2.new(1, 20, 0, 116), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.3, true)
+		card:TweenPosition(UDim2.new(1, 20, 1, -330), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.3, true)
 		task.wait(0.35)
 		card:Destroy()
 	end)

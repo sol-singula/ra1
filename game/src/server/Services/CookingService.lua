@@ -3,6 +3,7 @@
 -- Assembly Counter (2 boards, doubles as plating at TIER_01-02) and Trash.
 -- All outcomes are decided here on the server; clients only draw prompts, rings and progress bars.
 local CollectionService = game:GetService("CollectionService")
+local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
@@ -122,21 +123,32 @@ function CookingService:_syncCarry(player)
 	end
 	local folder = Instance.new("Model")
 	folder.Name = "Carried"
-	for i, item in list do
+	local function piece(size, cf, color, shape)
 		local p = Instance.new("Part")
 		p.CanCollide = false
 		p.CanQuery = false
 		p.CanTouch = false
 		p.Massless = true
-		p.Size = item.kind == "DISH" and Vector3.new(1.6, 0.9, 1.6) or Vector3.new(1.1, 0.6, 1.1)
-		p.Color = itemColor(item)
+		p.Shape = shape
+		p.Size = size
+		p.Color = color
 		p.Material = Enum.Material.SmoothPlastic
-		p.CFrame = hrp.CFrame * CFrame.new(0, 0.2 + (i - 1) * 1.0, -1.6)
+		p.CFrame = cf
 		local w = Instance.new("WeldConstraint")
 		w.Part0 = hrp
 		w.Part1 = p
 		w.Parent = p
 		p.Parent = folder
+	end
+	for i, item in list do
+		local cf = hrp.CFrame * CFrame.new(0, 0.2 + (i - 1) * 1.0, -1.6)
+		local flat = CFrame.Angles(0, 0, math.rad(90)) -- Roblox cylinders run along X; turn them into discs
+		if item.kind == "DISH" then
+			piece(Vector3.new(0.15, 2.2, 2.2), cf * flat, Color3.fromRGB(250, 250, 250), Enum.PartType.Cylinder) -- plate
+			piece(Vector3.new(1.3, 1.3, 1.3), cf * CFrame.new(0, 0.55, 0), itemColor(item), Enum.PartType.Ball)
+		else
+			piece(Vector3.new(0.45, 1.3, 1.3), cf * flat, itemColor(item), Enum.PartType.Cylinder)
+		end
 	end
 	folder.Parent = character
 end
@@ -198,14 +210,17 @@ local function ownerOnly(r, player)
 	return true
 end
 
+-- Food on a station: a round disc (patties, buns and toppings all read as burger layers).
 local function itemVisual(parent, item, cf, size)
+	size = size or Vector3.new(1.4, 0.4, 1.4)
 	local p = Instance.new("Part")
 	p.Name = "Item"
 	p.Anchored = true
 	p.CanCollide = false
-	p.Size = size or Vector3.new(1.4, 0.4, 1.4)
+	p.Shape = Enum.PartType.Cylinder
+	p.Size = Vector3.new(size.Y, math.min(size.X, size.Z), math.min(size.X, size.Z))
 	p.Color = itemColor(item)
-	p.CFrame = cf
+	p.CFrame = cf * CFrame.Angles(0, 0, math.rad(90))
 	p.Parent = parent
 	return p
 end
@@ -657,6 +672,7 @@ function CookingService:_drawBoard(r, i)
 		h += 0.32
 	end
 	local any = next(b.contents) ~= nil
+	b.part:SetAttribute("Contents", HttpService:JSONEncode(b.contents)) -- read by the client's recipe card
 	b.clearPrompt.Enabled = any
 	if any then
 		local match = Formulas.bestMatch(restaurantSvc:MenuRecipes(r.owner), b.contents)
@@ -777,6 +793,25 @@ function CookingService:Init(registry)
 	Net.on("PourStop", function(player)
 		self:_stopPour(player)
 	end)
+end
+
+-- What the player is doing right now, for the tutorial: carried items, board contents and what's cooking.
+function CookingService:Snapshot(player)
+	local r = restaurantSvc:Get(player)
+	local snap = { carry = carry[player] or {}, boards = {}, heat = {} }
+	if r and r.cooking then
+		for i, b in r.cooking.boards do
+			snap.boards[i] = b.contents
+		end
+		for stationId, heat in r.cooking.heat do
+			for _, s in heat.slots do
+				if s.item then
+					table.insert(snap.heat, { station = stationId, id = s.item.id })
+				end
+			end
+		end
+	end
+	return snap
 end
 
 function CookingService:Start()

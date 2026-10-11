@@ -132,16 +132,18 @@ function Capture.snapshot(Engine, camera)
 				})
 				for _, child in d:GetChildren() do
 					if child.ClassName == "Fire" then
-						table.insert(
-							snap.fires,
-							{ pos = { cf.p.X, cf.p.Y + p.Size.Y / 2, cf.p.Z }, size = rawget(child, "_props").Size or 5 }
-						)
+						table.insert(snap.fires, {
+							pos = { cf.p.X, cf.p.Y + p.Size.Y / 2, cf.p.Z },
+							size = rawget(child, "_props").Size or 5,
+						})
 					elseif child.ClassName == "SurfaceGui" then
 						local label = child:FindFirstChildWhichIsA("TextLabel")
 						if label then
 							local lp = rawget(label, "_props")
 							table.insert(snap.signs, {
 								part = #snap.parts,
+								face = rawget(child, "_props").Face and rawget(child, "_props").Face.Name or "Front",
+								align = lp.TextXAlignment and lp.TextXAlignment.Name or "Center",
 								text = lp.Text,
 								font = lp.Font and lp.Font.Name or "SourceSans",
 								color = lp.TextColor3 and hex(lp.TextColor3) or "#000000",

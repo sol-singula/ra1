@@ -158,12 +158,68 @@ Engine.fireServer(player, "SetMenu", { "RCP_BRG_006" })
 Engine.advance(0.1)
 check("locked recipe refused", profile.menu[1] == "RCP_BRG_001")
 
+-- Tutorial: a scripted customer orders a Basic Burger and every step is highlighted ---------------------------
+local tutorialEvent = Engine.lastClientEvent("Tutorial", player)
+check("tutorial running", tutorialEvent ~= nil and tutorialEvent.args[1] and tutorialEvent.args[1].step >= 2)
+local waitedTut = 0
+local tutCustomer
+while not tutCustomer and waitedTut < 60 do
+	Engine.advance(0.5)
+	waitedTut += 0.5
+	for _, c in r.ai.customers do
+		if c.scripted and c.state == "ORDER" then
+			tutCustomer = c
+		end
+	end
+end
+check("tutorial customer at the counter", tutCustomer ~= nil)
+check(
+	"tutorial points at the customer",
+	Engine.lastClientEvent("Tutorial", player).args[1].target == (tutCustomer and tutCustomer.proxy)
+)
+if tutCustomer then
+	Engine.moveTo(player, tutCustomer.pos + Vector3.new(0, 0, 3))
+	tutCustomer.prompt.Triggered:Fire(player)
+	Engine.advance(0.5)
+	check("tutorial order is a plain Basic Burger", tutCustomer.order.items[1].recipeId == "RCP_BRG_001")
+	check("tutorial moved to the pantry step", Engine.lastClientEvent("Tutorial", player).args[1].step == 3)
+	makeBurger()
+	Engine.advance(0.5)
+	check("tutorial waiting to serve", Engine.lastClientEvent("Tutorial", player).args[1].step == 12)
+	Engine.moveTo(player, tutCustomer.pos + Vector3.new(0, 0, 3))
+	tutCustomer.prompt.Triggered:Fire(player)
+	Engine.advance(12)
+	check(
+		"tutorial finished",
+		profile.tutorialDone == true and Engine.lastClientEvent("Tutorial", player).args[1] == false
+	)
+	check("tutorial reward paid", profile.mb >= 25)
+end
+
 -- Cook one burger before anyone arrives (also exercises every station)
 makeBurger()
 -- trash it and check the waste charge never goes below zero
 use(st.STN_TRASH.PrimaryPart)
 check("trash empties hands", top() == nil)
 check("waste never makes MB negative", profile.mb >= 0)
+
+-- French Fries: fryer + ketchup (needs fries on the menu for a moment)
+Engine.fireServer(player, "SetMenu", { "RCP_BRG_001", "RCP_DRK_001", "RCP_FRI_001" })
+Engine.advance(0.1)
+pick("ING_POTATO")
+use(st.STN_FRYER.PrimaryPart)
+check("potato in the fryer", top() == nil)
+Engine.advance(7.5)
+use(st.STN_FRYER.PrimaryPart)
+check("potato fried", top() and top().state == "FRIED" and top().grade == "PERFECT", top() and top().grade)
+use(board1, "Add")
+pick("ING_KETCHUP")
+use(board1, "Add")
+use(board1, "Plate")
+check("plated French Fries", top() and top().recipeId == "RCP_FRI_001")
+use(st.STN_TRASH.PrimaryPart)
+Engine.fireServer(player, "SetMenu", { "RCP_BRG_001", "RCP_DRK_001" })
+Engine.advance(0.1)
 
 -- Burn something to test the fire
 pick("ING_BEEF_PATTY")
@@ -222,7 +278,7 @@ end
 check("served three customers", served == 3)
 check("earned money", profile.mb > 0, profile.mb)
 check("earned XP", profile.xp > 0 or profile.level > 1)
-check("lifetime served counted", profile.lifetime.served == 3, profile.lifetime.served)
+check("lifetime served counted", profile.lifetime.served == 4, profile.lifetime.served)
 
 -- Wrong dish -------------------------------------------------------------------------------------------------
 local waited = 0

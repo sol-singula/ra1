@@ -244,10 +244,30 @@ proxy:SetAttribute(
 	})
 )
 proxy:SetAttribute("State", "WAIT_FOOD")
+proxy:SetAttribute(
+	"Order",
+	Engine.game:GetService("HttpService"):JSONEncode({
+		{
+			id = "RCP_BRG_001",
+			name = "Basic Burger",
+			omit = { "ING_PICKLE" },
+			mod = "Hold the pickles.",
+			served = false,
+		},
+	})
+)
 proxy:SetAttribute("Patience", 0.4)
 proxy:SetAttribute("AngerLevel", 3)
 proxy:SetAttribute("Huff", 120)
 Engine.advance(0.5)
+check("recipe card shown", gui.RecipeCard.Card.Visible == true)
+local sawLine = false
+for _, d in gui.RecipeCard:GetDescendants() do
+	if d.ClassName == "TextLabel" and d.Text and string.find(d.Text, "Beefy Puck Patty", 1, true) then
+		sawLine = true
+	end
+end
+check("recipe card lists the patty", sawLine)
 local tickets = gui.Tickets:GetDescendants()
 local sawTicket = false
 for _, d in tickets do
@@ -264,6 +284,13 @@ Engine.advance(0.3)
 proxy:Destroy()
 Engine.advance(0.5)
 check("customer visual removed", #Engine.workspace.ClientCustomers:GetChildren() == 0)
+
+-- Tutorial card and arrow
+serverSends("Tutorial", { step = 3, total = 13, text = "Grab a patty from the Pantry.", target = proxy })
+check("tutorial card visible", gui.Tutorial.Card.Visible == true)
+check("tutorial arrow placed", gui:FindFirstChild("TutorialArrow") ~= nil)
+serverSends("Tutorial", false)
+check("tutorial card hidden", gui.Tutorial.Card.Visible == false and gui:FindFirstChild("TutorialArrow") == nil)
 
 -- Food on the grill gets a progress bar
 local patty = Engine.Instance.new("Part")

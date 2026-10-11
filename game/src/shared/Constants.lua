@@ -48,6 +48,7 @@ Constants.WALK_SPEED_NPC = 9 -- MVP studs/s
 Constants.CHASE_SPEED_NPC = 12
 Constants.NPC_TICK = 1 / 15 -- server proxy update rate (clients interpolate)
 Constants.FIRST_CUSTOMER_DELAY = 6 -- MVP
+Constants.BEGINNER_PROTECTION_LEVEL = 2 -- MVP: below this level customers never throw food or fight
 Constants.DEMAND_SCALE = 1 -- MVP multiplier on canon demand; raise it to test with more customers
 
 -- Combat [C12.1] and the base-kit rows in §36.6

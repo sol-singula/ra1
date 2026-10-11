@@ -94,9 +94,120 @@ function WorldBuilder.build()
 	restaurants.Name = "Restaurants"
 	restaurants.Parent = workspace
 
-	Lighting.ClockTime = 15
-	Lighting.Brightness = 2.5
-	Lighting.OutdoorAmbient = Color3.fromRGB(150, 140, 130)
+	-- street dressing between the plots: trees, lamp posts, flower beds and crosswalks
+	local props = Instance.new("Folder")
+	props.Name = "StreetProps"
+	props.Parent = city
+	local function prop(name, size, cf, color, material, shape)
+		local p = block(props, name, size, cf, color, material)
+		if shape then
+			p.Shape = shape
+		end
+		return p
+	end
+	for i = 0, Constants.MAX_PLAYERS do
+		local x = (i - Constants.MAX_PLAYERS / 2) * WorldBuilder.PLOT_SPACING
+		-- tree on the far sidewalk
+		prop(
+			"Trunk",
+			Vector3.new(1.2, 7, 1.2),
+			CFrame.new(x, 3.5, -27),
+			Color3.fromRGB(120, 82, 52),
+			Enum.Material.Wood
+		)
+		prop(
+			"Canopy",
+			Vector3.new(7, 7, 7),
+			CFrame.new(x, 9, -27),
+			Color3.fromRGB(80, 170, 80),
+			Enum.Material.Grass,
+			Enum.PartType.Ball
+		)
+		prop(
+			"Canopy",
+			Vector3.new(5, 5, 5),
+			CFrame.new(x + 2, 11, -26),
+			Color3.fromRGB(96, 186, 92),
+			Enum.Material.Grass,
+			Enum.PartType.Ball
+		)
+		-- lamp post on the near sidewalk, between restaurants
+		prop(
+			"LampPost",
+			Vector3.new(0.6, 12, 0.6),
+			CFrame.new(x, 6, 2),
+			Color3.fromRGB(40, 44, 56),
+			Enum.Material.Metal
+		)
+		prop(
+			"LampArm",
+			Vector3.new(0.4, 0.4, 3),
+			CFrame.new(x, 12, 0.8),
+			Color3.fromRGB(40, 44, 56),
+			Enum.Material.Metal
+		)
+		local bulb = prop(
+			"LampBulb",
+			Vector3.new(1.4, 0.8, 1.4),
+			CFrame.new(x, 11.6, -0.4),
+			Color3.fromRGB(255, 236, 190),
+			Enum.Material.Neon
+		)
+		local light = Instance.new("PointLight")
+		light.Range = 24
+		light.Brightness = 1
+		light.Color = Color3.fromRGB(255, 220, 170)
+		light.Parent = bulb
+		-- flower bed between plots
+		prop("Planter", Vector3.new(8, 1, 3), CFrame.new(x, 0.9, 10), Color3.fromRGB(150, 100, 70), Enum.Material.Wood)
+		for f = -1, 1 do
+			local colors =
+				{ Color3.fromRGB(255, 120, 170), Color3.fromRGB(255, 210, 80), Color3.fromRGB(170, 120, 255) }
+			prop(
+				"Flowers",
+				Vector3.new(2, 2, 2),
+				CFrame.new(x + f * 2.5, 2, 10),
+				colors[f + 2],
+				Enum.Material.SmoothPlastic,
+				Enum.PartType.Ball
+			)
+		end
+		-- crosswalk
+		for z = 0, 4 do
+			prop("Crosswalk", Vector3.new(8, 0.22, 2), CFrame.new(x, 0.13, -18 + z * 4), Color3.fromRGB(245, 245, 245))
+		end
+	end
+
+	-- lighting: warm afternoon with a little haze, bloom and sun rays.
+	-- For the best look also set Lighting.Technology to Future in Studio (it can't be set from a script).
+	Lighting.ClockTime = 14.6
+	Lighting.GeographicLatitude = 30
+	Lighting.Brightness = 2.6
+	Lighting.OutdoorAmbient = Color3.fromRGB(150, 145, 140)
+	Lighting.Ambient = Color3.fromRGB(70, 70, 80)
+	Lighting.EnvironmentDiffuseScale = 0.6
+	Lighting.EnvironmentSpecularScale = 0.6
+	local function effect(className, values)
+		local e = Lighting:FindFirstChildOfClass(className) or Instance.new(className)
+		for k, v in values do
+			e[k] = v
+		end
+		e.Parent = Lighting
+	end
+	effect("Atmosphere", {
+		Density = 0.28,
+		Offset = 0.2,
+		Color = Color3.fromRGB(199, 220, 240),
+		Decay = Color3.fromRGB(110, 120, 140),
+		Glare = 0.2,
+		Haze = 1.2,
+	})
+	effect(
+		"ColorCorrectionEffect",
+		{ Saturation = 0.18, Contrast = 0.06, Brightness = 0.02, TintColor = Color3.fromRGB(255, 248, 238) }
+	)
+	effect("BloomEffect", { Intensity = 0.6, Size = 24, Threshold = 1.6 })
+	effect("SunRaysEffect", { Intensity = 0.06, Spread = 0.6 })
 end
 
 return WorldBuilder

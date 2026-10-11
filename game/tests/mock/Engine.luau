@@ -361,7 +361,6 @@ end
 
 -- Instances -------------------------------------------------------------------------------------------------
 local INST = {}
-local classOf = {}
 local ISA = {
 	Part = { "BasePart", "PVInstance" },
 	WedgePart = { "BasePart", "PVInstance" },
@@ -729,7 +728,6 @@ function Instance.new(className, parent)
 		_destroying = newSignal(),
 		_signals = signals,
 	}, INST)
-	classOf[inst] = className
 	if parent then
 		inst.Parent = parent
 	end

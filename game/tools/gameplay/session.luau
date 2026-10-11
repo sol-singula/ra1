@@ -286,82 +286,85 @@ local function serveCustomer(c)
 end
 
 -- Scenes ----------------------------------------------------------------------------------------------------
--- 1. First join: the free mutation pick
+local function tutorialCustomer()
+	for _, c in r.ai.customers do
+		if c.scripted then
+			return c
+		end
+	end
+	return nil
+end
+
+-- 1. First join: the tutorial asks for a free mutation
 Engine.moveTo(player, r.layout.kitchenSpawn.Position, at(-2, 3.5, 30))
 shot("01_first_join_mutation_pick", behind(11, 5))
 clickText("Pick") -- first card: Octopus Arm
+Engine.advance(0.5)
+
+-- 2. The tutorial customer arrives; the arrow points at them
+waitFor(function()
+	local c = tutorialCustomer()
+	return c and c.state == "ORDER"
+end, 60)
+local c1 = tutorialCustomer()
+faceCustomer(c1, 6)
+Engine.advance(0.3)
+shot("02_tutorial_take_order", twoShot(c1, 13, 7))
+takeOrder(c1)
+Engine.advance(0.5)
+
+-- 3. Pantry (tutorial step: grab a patty), recipe card on the right
+use(st().STN_PANTRY.PrimaryPart)
+shot("03_pantry", behind(9, 4, 2))
+clickText(Ingredients.ING_BEEF_PATTY.name)
 Engine.advance(0.3)
 
--- 2. Pantry panel open
-use(st().STN_PANTRY.PrimaryPart)
-shot("02_pantry", behind(9, 4, 2))
-clickText(Ingredients.ING_BEEF_PATTY.name)
-
--- 3. Two patties on the grill
+-- 4. Patty on the grill, the arrow says take it off when green
 use(st().STN_GRILL.PrimaryPart)
-pick("ING_BEEF_PATTY")
-use(st().STN_GRILL.PrimaryPart)
-Engine.advance(5)
+Engine.advance(8.3)
 standAt(st().STN_GRILL.PrimaryPart, 5)
-shot("03_grill", behind(8, 5, 1.5))
-Engine.advance(4)
-use(st().STN_GRILL.PrimaryPart) -- take one off (Perfect)
-use(st().STN_ASSEMBLY.Board1, "Add")
+shot("04_grill", behind(8, 5, 1.5))
 use(st().STN_GRILL.PrimaryPart)
-use(st().STN_ASSEMBLY.Board2, "Add")
+use(st().STN_ASSEMBLY.Board1, "Add")
+pick("ING_BUN")
+use(st().STN_ASSEMBLY.Board1, "Add")
 
--- 4. Chopping minigame
-pick("ING_LETTUCE")
+-- 5. Chopping a pickle (tutorial step), recipe card ticking off the burger
+pick("ING_PICKLE")
 use(st().STN_CUT.PrimaryPart)
 Engine.advance(0.44)
 Engine.fireServer(player, "ChopTap")
 Engine.advance(0.44)
 Engine.fireServer(player, "ChopTap")
 Engine.advance(0.2)
-shot("04_chopping", behind(8, 4.5, 2))
+shot("05_chopping", behind(8, 4.5, 2))
 Engine.advance(0.24)
 Engine.fireServer(player, "ChopTap")
 Engine.advance(0.44)
 Engine.fireServer(player, "ChopTap")
 Engine.advance(0.1)
 use(st().STN_ASSEMBLY.Board1, "Add")
-for _, id in { "ING_BUN", "ING_KETCHUP" } do
-	pick(id)
-	use(st().STN_ASSEMBLY.Board1, "Add")
-end
-pick("ING_PICKLE")
+pick("ING_LETTUCE")
 chop()
 use(st().STN_ASSEMBLY.Board1, "Add")
-standAt(st().STN_ASSEMBLY.Board1, 4)
-shot("05_assembly", behind(8, 6, -2))
-use(st().STN_ASSEMBLY.Board1, "Plate")
+pick("ING_KETCHUP")
+use(st().STN_ASSEMBLY.Board1, "Add")
+Engine.advance(0.5)
 
--- 6. The first customer reaches the counter
-waitFor(function()
-	return #customers("ORDER") > 0
-end, 120)
-local c1 = customers("ORDER")[1]
-faceCustomer(c1, 5)
-shot("06_customer_at_counter", twoShot(c1, 12, 6))
-takeOrder(c1)
-Engine.advance(1.5)
--- serve whatever they ordered (the burger in hand may already be right)
-for _, item in c1.order.items do
-	if not (top() and top().recipeId == item.recipeId) then
-		if top() then
-			use(st().STN_TRASH.PrimaryPart)
-		end
-		cook(item.recipeId, item.omit)
-	end
-	if item == c1.order.items[#c1.order.items] then
-		faceCustomer(c1, 4)
-		Engine.advance(0.1)
-		shot("07_serving", twoShot(c1, 11, 6))
-	end
-	serve(c1)
-end
+-- 6. The finished stack: "Plate Basic Burger"
+standAt(st().STN_ASSEMBLY.Board1, 4)
+shot("06_assembly", behind(8, 6, -2))
+use(st().STN_ASSEMBLY.Board1, "Plate")
+Engine.advance(0.5)
+
+-- 7. Serving the tutorial customer
+faceCustomer(c1, 4)
 Engine.advance(0.3)
+shot("07_serving", twoShot(c1, 11, 6))
+serve(c1)
+Engine.advance(0.5)
 shot("08_served", twoShot(c1, 12, 7))
+Engine.advance(11) -- tutorial wraps up
 
 -- Play for a while: serve everyone, capture the drink station on the way
 local tookPour = false
@@ -409,6 +412,18 @@ local function seatGuests(n, maxSeconds)
 		Engine.advance(0.5, 1 / 15)
 	end
 end
+
+multitask = true
+while profile.level < 2 and Engine.now() < 4000 do
+	takeWaitingOrders()
+	local c = nextHungry()
+	if c then
+		serveNextItem(c)
+	else
+		Engine.advance(1, 1 / 15)
+	end
+end
+multitask = false
 
 -- 10. A lunch rush: several orders taken, the dining room fills up
 seatGuests(3, 400)
