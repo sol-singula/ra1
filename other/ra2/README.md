@@ -108,6 +108,10 @@ games/ra2 - Steal a Dragon/
 └─ tools/                      run_tests.sh, the Luau test runner, gameplay/ (screenshot session + renderer)
 ```
 
+**Look of the screens:** chunky glossy buttons with thick dark outlines, white text with a black outline, pill-shaped
+bars, red "!" badges, panels with a coloured header and a round close button that pop in, and buttons that
+squish when tapped (all in `src/client/UI/Theme.lua`).
+
 **Phones first:** every screen is laid out for a 1000 × 560 canvas and scaled to the real screen, about 0.7 on a
 phone. Buttons stay about 48 points or bigger. The menu buttons sit above the thumbstick and BONK sits left of
 the jump button. Each player only sees the prompts that make sense for them, and the server checks everything

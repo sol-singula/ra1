@@ -309,6 +309,22 @@ function Color3.fromRGB(r, g, b)
 	return Color3.new(r / 255, g / 255, b / 255)
 end
 
+local ColorSequence = {}
+function ColorSequence.new(a, b)
+	local keypoints
+	if type(a) == "table" and rawget(a, 1) then
+		keypoints = a
+	else
+		keypoints = { { Time = 0, Value = a }, { Time = 1, Value = b or a } }
+	end
+	return setmetatable({ Keypoints = keypoints }, { __type = "ColorSequence" })
+end
+local ColorSequenceKeypoint = {
+	new = function(t, c)
+		return { Time = t, Value = c }
+	end,
+}
+
 local function dataType(name, fields)
 	return setmetatable(fields, { __type = name })
 end
@@ -406,7 +422,7 @@ local SIGNALS = {
 	ProximityPrompt = { "Triggered" },
 	Players = { "PlayerAdded", "PlayerRemoving" },
 	Player = { "CharacterAdded" },
-	TextButton = { "Activated", "MouseButton1Click" },
+	TextButton = { "Activated", "MouseButton1Click", "MouseButton1Down", "MouseButton1Up", "MouseLeave" },
 }
 local DEFAULTS = {
 	Part = function()
@@ -1336,6 +1352,8 @@ globals = setmetatable({
 	Vector2 = Vector2,
 	CFrame = CFrame,
 	Color3 = Color3,
+	ColorSequence = ColorSequence,
+	ColorSequenceKeypoint = ColorSequenceKeypoint,
 	UDim = UDim,
 	UDim2 = UDim2,
 	TweenInfo = TweenInfo,

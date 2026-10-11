@@ -103,11 +103,11 @@ function TutorialController:init()
 	})
 	Theme.padding(12).Parent = card
 	new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = card })
-	stepLabel = Theme.text({
+	stepLabel = Theme.title({
 		Name = "Step",
 		Text = "",
-		Font = Theme.Display,
-		TextColor3 = C.ketchup,
+		TextColor3 = C.orange,
+		outline = 2,
 		TextSize = 22,
 		TextScaled = false,
 		Size = UDim2.new(1, 0, 0, 24),
@@ -128,6 +128,8 @@ function TutorialController:init()
 		Name = "Skip",
 		Text = "Skip tutorial",
 		BackgroundColor3 = C.white,
+		dark = true,
+		Font = Theme.Body,
 		TextSize = 15,
 		TextScaled = false,
 		Size = UDim2.fromOffset(120, 30),

@@ -268,7 +268,21 @@
     if (auto === 'X' || auto === 'XY') { el.style.width = 'max-content'; el.style.minWidth = w; } else el.style.width = w;
     if (auto === 'Y' || auto === 'XY') { el.style.height = 'auto'; el.style.minHeight = h; } else el.style.height = h;
     const bgT = props.BackgroundTransparency ?? 0;
-    if (bgT < 1 && props.BackgroundColor3) el.style.background = rgba(props.BackgroundColor3, bgT);
+    const modsG = node.mods || {};
+    if (bgT < 1 && props.BackgroundColor3) {
+      if (modsG.UIGradient && modsG.UIGradient.Color) {
+        // Roblox multiplies the background colour by the gradient
+        const base = new THREE.Color(props.BackgroundColor3);
+        const stops = modsG.UIGradient.Color.map(([t, c]) => {
+          const g = new THREE.Color(c);
+          const m = new THREE.Color(base.r * g.r, base.g * g.g, base.b * g.b);
+          return `${rgba('#' + m.getHexString(), bgT)} ${t * 100}%`;
+        });
+        el.style.background = `linear-gradient(${(modsG.UIGradient.Rotation || 0) + 90}deg, ${stops.join(', ')})`;
+      } else {
+        el.style.background = rgba(props.BackgroundColor3, bgT);
+      }
+    }
     if (props.ZIndex) el.style.zIndex = props.ZIndex;
     if (props.ClipsDescendants) el.style.overflow = 'hidden';
     const mods = node.mods || {};
@@ -297,7 +311,16 @@
       el.style.whiteSpace = props.TextWrapped ? 'pre-wrap' : 'pre';
       el.style.lineHeight = '1.05';
       if (props.TextTruncate === 'AtEnd') { span.style.overflow = 'hidden'; span.style.textOverflow = 'ellipsis'; span.style.maxWidth = '100%'; }
-      if ((props.TextStrokeTransparency ?? 1) < 1) {
+      const ts = (node.mods || {}).TextStroke;
+      if (ts) {
+        const w = ts.Thickness || 1, sc = rgba(ts.Color || '#000000', ts.Transparency || 0), parts = [];
+        for (let a = 0; a < 16; a++) {
+          const ang = a / 16 * Math.PI * 2;
+          parts.push(`${(Math.cos(ang) * w).toFixed(2)}px ${(Math.sin(ang) * w).toFixed(2)}px 0 ${sc}`);
+        }
+        parts.push(`0 ${(w * 0.9).toFixed(2)}px 0 ${sc}`);
+        span.style.textShadow = parts.join(', ');
+      } else if ((props.TextStrokeTransparency ?? 1) < 1) {
         const sc = rgba(props.TextStrokeColor3 || '#000000', props.TextStrokeTransparency);
         span.style.textShadow = `1.5px 0 ${sc}, -1.5px 0 ${sc}, 0 1.5px ${sc}, 0 -1.5px ${sc}`;
       }

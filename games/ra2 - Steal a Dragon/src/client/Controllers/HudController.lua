@@ -22,7 +22,7 @@ local HudController = { Name = "HudController", Order = 10 }
 
 local gui
 local coinsLabel, cpsLabel, eggLabel, waitingLabel
-local goalCard, goalText, goalFill, goalReward
+local goalCard, goalText, goalFill, goalReward, goalCount
 local carryBanner, eventBanner, luckBanner
 local lockButton, bonkButton
 local giftDot
@@ -38,26 +38,39 @@ local function serverNow()
 end
 
 -- Toasts and alerts ------------------------------------------------------------------------------------------
-local TOAST_COLORS = { good = C.good, bad = C.red, info = C.white }
+local TOAST_COLORS = { good = C.good, bad = C.red, info = C.sky }
+local TOAST_ICONS = { good = "✅", bad = "⛔", info = "💬" }
 
 function HudController.toast(text, kind)
-	local card = Theme.card({
+	local accent = TOAST_COLORS[kind] or C.sky
+	local card = new("Frame", {
 		Name = "Toast",
-		Size = UDim2.fromOffset(460, 0),
+		Size = UDim2.fromOffset(470, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = TOAST_COLORS[kind] or C.white,
+		BackgroundColor3 = C.slate,
+		BackgroundTransparency = 0.08,
+		BorderSizePixel = 0,
 		Parent = toastHolder,
+	}, { Theme.corner("round"), Theme.stroke(3, accent) })
+	new("UIPadding", {
+		PaddingLeft = UDim.new(0, 16),
+		PaddingRight = UDim.new(0, 16),
+		PaddingTop = UDim.new(0, 7),
+		PaddingBottom = UDim.new(0, 7),
+		Parent = card,
 	})
-	Theme.padding(8).Parent = card
 	Theme.text({
-		Text = text,
-		TextSize = 22,
+		Text = (TOAST_ICONS[kind] or "💬") .. "  " .. text,
+		TextSize = 21,
 		TextScaled = false,
+		TextColor3 = C.white,
+		outline = 1.5,
 		AutomaticSize = Enum.AutomaticSize.Y,
 		Size = UDim2.fromScale(1, 0),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Parent = card,
 	})
+	Theme.pop(card)
 	-- keep at most 3
 	local list = {}
 	for _, c in toastHolder:GetChildren() do
@@ -77,6 +90,7 @@ function HudController.alert(text, color)
 	alertLabel.Text = text
 	alertLabel.TextColor3 = color or C.mustard
 	alertLabel.Visible = true
+	Theme.pop(alertLabel)
 	local mine = text
 	task.delay(3.2, function()
 		if alertLabel.Text == mine then
@@ -100,17 +114,14 @@ function HudController.popup(position, text, color)
 	local bb = new("BillboardGui", {
 		Name = "Popup",
 		Adornee = anchor,
-		Size = UDim2.fromOffset(220, 60),
+		Size = UDim2.fromOffset(240, 70),
 		AlwaysOnTop = true,
 		MaxDistance = 120,
 		Parent = anchor,
 	})
-	Theme.text({
+	Theme.title({
 		Text = text,
-		Font = Theme.Display,
 		TextColor3 = color or C.mustard,
-		TextStrokeTransparency = 0,
-		TextStrokeColor3 = C.ink,
 		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Parent = bb,
@@ -128,56 +139,100 @@ function HudController.popup(position, text, color)
 end
 
 -- Building ---------------------------------------------------------------------------------------------------
-local function buildCoins()
-	local slab = Theme.slab({
-		Name = "Coins",
-		Size = UDim2.fromOffset(240, 68),
-		Position = UDim2.fromOffset(12, 8),
+-- A small dark pill with outlined text, hidden while its text is empty.
+local function infoPill(name, y, color)
+	local label = new("TextLabel", {
+		Name = name,
+		Text = "",
+		Font = Theme.Body,
+		TextSize = 17,
+		TextColor3 = color,
+		BackgroundColor3 = C.slate,
+		BackgroundTransparency = 0.2,
+		BorderSizePixel = 0,
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromOffset(0, 26),
+		Position = UDim2.fromOffset(14, y),
+		Visible = false,
 		Parent = gui,
+	}, {
+		Theme.corner("round"),
+		Theme.textStroke(1.5),
+		new("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }),
 	})
-	coinsLabel = Theme.text({
+	return label
+end
+
+local function buildCoins()
+	local pill = new("Frame", {
+		Name = "Coins",
+		Size = UDim2.fromOffset(224, 54),
+		Position = UDim2.fromOffset(40, 10),
+		BackgroundColor3 = C.mustard,
+		BorderSizePixel = 0,
+		Parent = gui,
+	}, {
+		Theme.corner("round"),
+		Theme.stroke(3.5),
+		Theme.gloss(Color3.fromRGB(255, 255, 255), Color3.fromRGB(215, 175, 120)),
+	})
+	local icon = new("Frame", {
+		Name = "CoinIcon",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Size = UDim2.fromOffset(62, 62),
+		Position = UDim2.new(0, 0, 0.5, 0),
+		BackgroundColor3 = C.orange,
+		BorderSizePixel = 0,
+		Parent = pill,
+	}, {
+		Theme.corner("round"),
+		Theme.stroke(3.5),
+		Theme.gloss(Color3.fromRGB(255, 240, 160), Color3.fromRGB(230, 150, 40)),
+	})
+	Theme.text({
+		Text = "💰",
+		Size = UDim2.fromScale(0.8, 0.8),
+		Position = UDim2.fromScale(0.1, 0.08),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = icon,
+	})
+	coinsLabel = Theme.title({
 		Name = "Value",
-		Text = "💰 0",
-		Font = Theme.Display,
-		TextColor3 = C.mustard,
-		Size = UDim2.new(1, -16, 0, 40),
-		Position = UDim2.fromOffset(10, 4),
-		Parent = slab,
+		Text = "0",
+		Size = UDim2.new(1, -48, 1, -10),
+		Position = UDim2.fromOffset(38, 5),
+		outline = 3,
+		Parent = pill,
 	})
-	cpsLabel = Theme.text({
+	cpsLabel = new("TextLabel", {
 		Name = "Cps",
 		Text = "+0 / sec",
-		TextColor3 = C.white,
-		Size = UDim2.new(1, -16, 0, 20),
-		Position = UDim2.fromOffset(12, 44),
-		Parent = slab,
+		Font = Theme.Display,
+		TextSize = 18,
+		TextColor3 = C.good,
+		BackgroundColor3 = C.slate,
+		BackgroundTransparency = 0.15,
+		BorderSizePixel = 0,
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.fromOffset(0, 24),
+		Position = UDim2.new(0, 34, 1, -2),
+		Parent = pill,
+	}, {
+		Theme.corner("round"),
+		Theme.stroke(2),
+		Theme.textStroke(1.5),
+		new("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }),
 	})
-	eggLabel = Theme.text({
-		Name = "Egg",
-		Text = "",
-		TextColor3 = C.white,
-		TextStrokeTransparency = 0,
-		Size = UDim2.fromOffset(260, 22),
-		Position = UDim2.fromOffset(14, 80),
-		Parent = gui,
-	})
-	waitingLabel = Theme.text({
-		Name = "Waiting",
-		Text = "",
-		TextColor3 = C.mustard,
-		TextStrokeTransparency = 0,
-		Size = UDim2.fromOffset(260, 22),
-		Position = UDim2.fromOffset(14, 102),
-		Parent = gui,
-	})
+	eggLabel = infoPill("Egg", 92, C.white)
+	waitingLabel = infoPill("Waiting", 120, C.mustard)
 end
 
 local function buildMenu()
 	local items = {
-		{ "Shop", "🛒", "SHOP", C.mustard, 12, 132 },
-		{ "Speed", "👟", "SPEED", C.sky, 88, 132 },
-		{ "Gift", "🎁", "GIFT", C.good, 12, 208 },
-		{ "Invite", "👥", "FRIENDS", C.teal, 88, 208 },
+		{ "Shop", "🛒", "SHOP", C.mustard, 14, 156 },
+		{ "Speed", "👟", "SPEED", C.sky, 96, 156 },
+		{ "Gift", "🎁", "GIFT", C.pink, 14, 246 },
+		{ "Invite", "👥", "FRIENDS", C.teal, 96, 246 },
 	}
 	for _, it in items do
 		local button, dot = Theme.iconButton({
@@ -207,23 +262,24 @@ local function buildActions()
 		Text = "",
 		BackgroundColor3 = C.red,
 		AnchorPoint = Vector2.new(1, 1),
-		Size = UDim2.fromOffset(108, 108),
+		Size = UDim2.fromOffset(112, 112),
 		Position = UDim2.new(1, -170, 1, -20),
+		round = true,
 		Parent = gui,
 	})
-	bonkButton.UICorner.CornerRadius = UDim.new(1, 0)
+	bonkButton.UIStroke.Thickness = 4
 	Theme.text({
+		Name = "Icon",
 		Text = "🔨",
-		Size = UDim2.new(1, 0, 0.6, 0),
+		Size = UDim2.new(1, 0, 0.58, 0),
+		Position = UDim2.fromScale(0, 0.04),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Parent = bonkButton,
 	})
-	Theme.text({
+	Theme.title({
+		Name = "Label",
 		Text = "BONK",
-		Font = Theme.Display,
-		TextColor3 = C.white,
-		TextStrokeTransparency = 0,
-		Size = UDim2.new(1, 0, 0.32, 0),
+		Size = UDim2.new(1, 0, 0.3, 0),
 		Position = UDim2.new(0, 0, 0.6, 0),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Parent = bonkButton,
@@ -233,12 +289,12 @@ local function buildActions()
 	end)
 	lockButton = Theme.button({
 		Name = "LockButton",
-		Text = "🔒 LOCK",
-		Font = Theme.Display,
-		BackgroundColor3 = C.white,
+		Text = "🔓 LOCK",
+		BackgroundColor3 = C.orange,
 		AnchorPoint = Vector2.new(1, 1),
-		Size = UDim2.fromOffset(150, 56),
-		Position = UDim2.new(1, -150, 1, -140),
+		Size = UDim2.fromOffset(150, 54),
+		Position = UDim2.new(1, -152, 1, -146),
+		round = true,
 		Parent = gui,
 	})
 	lockButton.Activated:Connect(function()
@@ -246,98 +302,118 @@ local function buildActions()
 	end)
 end
 
+local function banner(name, size, position, color, anchor)
+	local frame = new("Frame", {
+		Name = name,
+		AnchorPoint = anchor or Vector2.new(0.5, 0),
+		Size = size,
+		Position = position,
+		BackgroundColor3 = color,
+		BorderSizePixel = 0,
+		Visible = false,
+		Parent = gui,
+	}, {
+		Theme.corner("round"),
+		Theme.stroke(3.5),
+		Theme.gloss(Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 200, 200)),
+	})
+	Theme.title({
+		Name = "Text",
+		Text = "",
+		Size = UDim2.new(1, -24, 1, -10),
+		Position = UDim2.fromOffset(12, 5),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = frame,
+	})
+	return frame
+end
+
 local function buildCenter()
-	goalCard = Theme.card({
+	goalCard = Theme.slab({
 		Name = "Goal",
 		AnchorPoint = Vector2.new(0.5, 0),
-		Size = UDim2.fromOffset(400, 70),
-		Position = UDim2.new(0.5, 0, 0, 8),
+		Size = UDim2.fromOffset(430, 62),
+		Position = UDim2.new(0.5, 10, 0, 10),
 		Visible = false,
+		round = true,
 		Parent = gui,
 	})
-	goalText = Theme.text({
+	local star = new("Frame", {
+		Name = "Star",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Size = UDim2.fromOffset(58, 58),
+		Position = UDim2.new(0, 4, 0.5, 0),
+		BackgroundColor3 = C.mustard,
+		BorderSizePixel = 0,
+		Parent = goalCard,
+	}, {
+		Theme.corner("round"),
+		Theme.stroke(3.5),
+		Theme.gloss(Color3.fromRGB(255, 255, 255), Color3.fromRGB(220, 160, 60)),
+	})
+	Theme.text({
+		Text = "⭐",
+		Size = UDim2.fromScale(0.74, 0.74),
+		Position = UDim2.fromScale(0.13, 0.12),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = star,
+	})
+	goalText = Theme.title({
 		Name = "Text",
 		Text = "",
-		Font = Theme.Display,
-		Size = UDim2.new(1, -110, 0, 30),
-		Position = UDim2.fromOffset(12, 6),
+		Size = UDim2.new(1, -150, 0, 24),
+		Position = UDim2.fromOffset(42, 6),
+		outline = 2,
 		Parent = goalCard,
 	})
-	goalReward = Theme.text({
+	local reward = new("Frame", {
+		Name = "RewardPill",
+		AnchorPoint = Vector2.new(1, 0.5),
+		Size = UDim2.fromOffset(96, 34),
+		Position = UDim2.new(1, -8, 0.5, 0),
+		BackgroundColor3 = C.mustard,
+		BorderSizePixel = 0,
+		Parent = goalCard,
+	}, {
+		Theme.corner("round"),
+		Theme.stroke(2.5),
+		Theme.gloss(Color3.fromRGB(255, 255, 255), Color3.fromRGB(220, 170, 80)),
+	})
+	goalReward = Theme.title({
 		Name = "Reward",
 		Text = "",
-		TextColor3 = Color3.fromRGB(190, 130, 0),
-		Size = UDim2.new(0, 96, 0, 26),
-		Position = UDim2.new(1, -104, 0, 8),
-		TextXAlignment = Enum.TextXAlignment.Right,
-		Parent = goalCard,
+		Size = UDim2.new(1, -10, 1, -6),
+		Position = UDim2.fromOffset(5, 3),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		outline = 2,
+		Parent = reward,
 	})
 	local bar
-	bar, goalFill = Theme.bar(
-		{ Name = "Bar", Size = UDim2.new(1, -24, 0, 18), Position = UDim2.fromOffset(12, 42), Parent = goalCard },
-		C.good
-	)
-	_ = bar
-	carryBanner = Theme.card({
-		Name = "Carry",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Size = UDim2.fromOffset(360, 54),
-		Position = UDim2.new(0.5, 0, 0, 86),
-		BackgroundColor3 = C.mustard,
-		Visible = false,
-		Parent = gui,
-	})
-	Theme.text({
-		Name = "Text",
-		Text = "🏠 RUN HOME!",
-		Font = Theme.Display,
-		Size = UDim2.new(1, -16, 1, -10),
-		Position = UDim2.fromOffset(8, 5),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Parent = carryBanner,
-	})
-	eventBanner = Theme.slab({
-		Name = "Event",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Size = UDim2.fromOffset(380, 40),
-		Position = UDim2.new(0.5, 0, 0, 146),
-		Visible = false,
-		Parent = gui,
-	})
-	Theme.text({
-		Name = "Text",
+	bar, goalFill = Theme.bar({
+		Name = "Bar",
+		Size = UDim2.new(1, -150, 0, 18),
+		Position = UDim2.fromOffset(42, 34),
+		Parent = goalCard,
+	}, C.good)
+	goalCount = Theme.title({
+		Name = "Count",
 		Text = "",
-		Font = Theme.Display,
-		TextColor3 = C.mustard,
-		Size = UDim2.new(1, -16, 1, -8),
-		Position = UDim2.fromOffset(8, 4),
+		Size = UDim2.fromScale(1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
-		Parent = eventBanner,
+		outline = 1.5,
+		ZIndex = 3,
+		Parent = bar,
 	})
-	luckBanner = Theme.slab({
-		Name = "Luck",
-		AnchorPoint = Vector2.new(1, 0),
-		Size = UDim2.fromOffset(250, 40),
-		Position = UDim2.new(1, -12, 0, 8),
-		Visible = false,
-		Parent = gui,
-	})
-	Theme.text({
-		Name = "Text",
-		Text = "",
-		Font = Theme.Display,
-		TextColor3 = C.good,
-		Size = UDim2.new(1, -16, 1, -8),
-		Position = UDim2.fromOffset(8, 4),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Parent = luckBanner,
-	})
+	carryBanner = banner("Carry", UDim2.fromOffset(380, 54), UDim2.new(0.5, 10, 0, 84), C.mustard)
+	carryBanner.Text.Text = "🏠 RUN HOME!"
+	eventBanner = banner("Event", UDim2.fromOffset(390, 44), UDim2.new(0.5, 10, 0, 146), C.purple)
+	luckBanner = banner("Luck", UDim2.fromOffset(230, 44), UDim2.new(1, -12, 0, 10), C.good, Vector2.new(1, 0))
 
 	toastHolder = new("Frame", {
 		Name = "Toasts",
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0.5, 1),
-		Size = UDim2.fromOffset(460, 220),
+		Size = UDim2.fromOffset(470, 220),
 		Position = UDim2.new(0.5, 0, 1, -150),
 		Parent = gui,
 	})
@@ -348,29 +424,26 @@ local function buildCenter()
 		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = toastHolder,
 	})
-	alertLabel = Theme.text({
+	alertLabel = Theme.title({
 		Name = "Alert",
 		Text = "",
-		Font = Theme.Display,
-		TextStrokeTransparency = 0,
-		TextStrokeColor3 = C.ink,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Size = UDim2.fromOffset(640, 80),
+		Size = UDim2.fromOffset(680, 84),
 		Position = UDim2.new(0.5, 0, 0.42, 0),
 		TextXAlignment = Enum.TextXAlignment.Center,
+		outline = 4,
 		Visible = false,
 		Parent = gui,
 	})
-	bonkedLabel = Theme.text({
+	bonkedLabel = Theme.title({
 		Name = "Bonked",
 		Text = "💫 BONKED! 💫",
-		Font = Theme.Display,
 		TextColor3 = C.mustard,
-		TextStrokeTransparency = 0,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Size = UDim2.fromOffset(420, 70),
+		Size = UDim2.fromOffset(440, 76),
 		Position = UDim2.new(0.5, 0, 0.3, 0),
 		TextXAlignment = Enum.TextXAlignment.Center,
+		outline = 4,
 		Visible = false,
 		Parent = gui,
 	})
@@ -379,7 +452,7 @@ end
 -- Updating ---------------------------------------------------------------------------------------------------
 local function refresh()
 	local s = Store.state
-	coinsLabel.Text = "💰 " .. Format.num(s.coins or 0)
+	coinsLabel.Text = Format.num(s.coins or 0)
 	cpsLabel.Text = "+"
 		.. Format.num(s.cps or 0)
 		.. " / sec"
@@ -387,8 +460,9 @@ local function refresh()
 	local goal = s.goal
 	goalCard.Visible = goal ~= nil and goal ~= false and not tutorialActive
 	if goal then
-		goalText.Text = "⭐ " .. goal.text
+		goalText.Text = goal.text
 		goalReward.Text = "+" .. Format.num(goal.reward)
+		goalCount.Text = Format.num(goal.progress) .. " / " .. Format.num(goal.target)
 		goalFill.Size = UDim2.fromScale(math.clamp(goal.progress / goal.target, 0, 1), 1)
 	end
 	carryBanner.Visible = s.carrying ~= nil and s.carrying ~= false
@@ -397,6 +471,7 @@ local function refresh()
 	end
 	local waiting = s.waiting or 0
 	waitingLabel.Text = waiting > 0 and `🪺 {waiting} dragon{waiting > 1 and "s" or ""} waiting for a nest` or ""
+	waitingLabel.Visible = waiting > 0
 	giftDot.Visible = s.daily ~= nil and s.daily.canClaim == true
 end
 
@@ -409,6 +484,7 @@ local function tick()
 	else
 		eggLabel.Text = ""
 	end
+	eggLabel.Visible = eggLabel.Text ~= ""
 	-- lock button
 	local lockLeft = (s.lockUntil or 0) - serverNow()
 	if lockLeft > 0 then
@@ -416,7 +492,12 @@ local function tick()
 		lockButton.BackgroundColor3 = C.good
 	else
 		lockButton.Text = "🔓 LOCK"
-		lockButton.BackgroundColor3 = C.white
+		lockButton.BackgroundColor3 = C.orange
+	end
+	-- the carry banner gently pulses so it's hard to miss
+	if carryBanner.Visible then
+		local pulse = carryBanner:FindFirstChild("Pulse") or new("UIScale", { Name = "Pulse", Parent = carryBanner })
+		pulse.Scale = 1 + math.abs(math.sin(os.clock() * 4)) * 0.05
 	end
 	-- events
 	local legendLeft = events.legendAt and events.legendAt - serverNow()

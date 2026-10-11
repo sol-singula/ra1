@@ -24,6 +24,12 @@ local function value(v, Engine)
 		return { v.Scale, v.Offset }
 	elseif t == "Vector2" or t == "Vector3" then
 		return t == "Vector2" and { v.X, v.Y } or { v.X, v.Y, v.Z }
+	elseif t == "ColorSequence" then
+		local out = {}
+		for _, k in v.Keypoints do
+			table.insert(out, { k.Time, hex(k.Value) })
+		end
+		return out
 	elseif t == "EnumItem" then
 		return v.Name
 	elseif t == "number" or t == "string" or t == "boolean" then
@@ -66,6 +72,7 @@ local MOD_PROPS = {
 	UIListLayout = { "FillDirection", "Padding", "HorizontalAlignment", "VerticalAlignment" },
 	UIGridLayout = { "CellSize", "CellPadding", "HorizontalAlignment" },
 	UIScale = { "Scale" },
+	UIGradient = { "Color", "Rotation" },
 }
 
 local function guiTree(inst, Engine)
@@ -87,7 +94,13 @@ local function guiTree(inst, Engine)
 					m[k] = value(v, Engine)
 				end
 			end
-			node.mods[cls] = m
+			-- a Contextual UIStroke on a text object outlines the text, not the box
+			if cls == "UIStroke" and m.ApplyStrokeMode == "Contextual" then
+				cls = "TextStroke"
+			end
+			if not (cls == "UIScale" and child.Name ~= "Scale") then
+				node.mods[cls] = m
+			end
 		elseif child:IsA("GuiObject") then
 			table.insert(node.children, guiTree(child, Engine))
 		end

@@ -115,7 +115,7 @@ serverSends("Profile", {
 	goal = false,
 })
 Engine.advance(0.3)
-check("coins shown", hud.Coins.Value.Text == "💰 1.2K", hud.Coins.Value.Text)
+check("coins shown", hud.Coins.Value.Text == "1.2K", hud.Coins.Value.Text)
 check(
 	"income + friend bonus shown",
 	string.find(hud.Coins.Cps.Text, "+12 / sec", 1, true) and string.find(hud.Coins.Cps.Text, "+10%", 1, true)
