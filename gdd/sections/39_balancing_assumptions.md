@@ -225,10 +225,13 @@ defaults are generated from these tables (AC-39-02).
 | Incident bounds | Σ negative ≤ 10 % · Σ positive ≤ 15 % of (Revenue + Tips) | % | never catastrophic | realized incident share | Locked (fairness) | Design-Econ |
 | Energy drain offline | −8 %/h per employee (−5 %/h with a Manager) | %/h | managers matter | Energy at return | 5–10 / 3–7 | Design-Sys |
 | Morale drift offline | −1 per hour | morale | gentle care loop | morale at return | 0–2 | Design-Sys |
-| Discoveries | 8 %/h chance of 1–3 MS · 1 %/h rare ingredient crate · ≤ 1 Morph Capsule per real day · RT never | %, items | offline complements active play | MS/day from offline vs active | MS chance 5–12 %; crate 0.5–2 % | Design-Econ |
-| Offline/active net ratio target | 35–50 % (well-staffed), never above 60 % | % | active play stays best | ratio by tier cohort (TC-OFF-10) | 30–55 %; hard max 60 % | Design-Econ |
+| Discoveries | per effective hour: 8 % chance of 1–3 MS · 1 % rare ingredient crate · ≤ 1 Morph Capsule per report and per UTC day · RT never | %, items | offline complements active play | MS/day from offline vs active | MS chance 5–12 %; crate 0.5–2 % | Design-Econ |
+| Offline/active net ratio target | 35–50 % during the first 2 offline hours (well-staffed), never above 60 % | % | active play stays best | ratio by tier cohort (TC-OFF-10) | 30–55 %; hard max 60 % | Design-Econ |
+| Long-absence taper [T] | offline hours 0–2 ×1.0 · 2–8 ×0.5 · 8–24 ×0.2 (24 h = 8.2 effective hours ≈ 3 active hours) | × | rewards checking in 2–3×/day without letting offline replace play | offline share of MB income | factors ±50 % | Design-Econ |
+| Offline-share guardrail KPI | median player's offline share of MB income ≤ 60 % at D7, ≤ 70 % at D30 | % | offline complements active play | `mmr_offline_collected` vs all MB sources (§31) | Locked thresholds; tune the taper first | Design-Econ |
+| Minimum absence for a report | 300 | s | no micro-reports from rejoins | reports per DAU | 120–600 | Design-Econ |
 | Claimed-report ring buffer | 20 | reports | idempotent collects | — | Locked (≥ 20) | Lead Eng |
-| Close-early rule | stop when a step's net < 0; that step's wages not charged; Net floored at 0 | — | no offline debt | closed-early reports % | Locked | Design-Econ |
+| Close-early rule | stop when a step's operating result (before incidents) < 0; that step's wages not charged; Net floored at 0 | — | no offline debt | closed-early reports % | Locked | Design-Econ |
 
 ### 39.12 Tuning Process
 
