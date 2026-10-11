@@ -69,11 +69,11 @@ the restaurant, staff, quests, offline reports, purchases — so that:
 | Element | Behavior |
 |---|---|
 | Save pip | A tiny pickle-jar icon next to the MB counter pulses once (0.6 s) after each successful save. No text, no sound. |
-| "Saving delayed…" | If the last successful save is > 300 s old, the pip turns orange with a tooltip: *"The filing cabinet is stuck — we'll keep trying. Your progress is safe up to <time>."* |
+| "Saving delayed…" | If the last successful save is > 300 s old, the pip turns orange with a tooltip: *"The filing cabinet is stuck — we'll keep trying. Your progress is safe up to [time]."* |
 | Safe Mode banner | Full-width, non-blocking: *"Your kitchen keys are stuck in the pickle jar! You can look around, but earning and spending are paused while we try again."* Countdown to the 60 s retry/kick. Shop, hire, collect and claim buttons are disabled with a lock glyph (not color-only). |
 | Load screen | "Unlocking the shack…" with Nana Gristle's hologram tapping a clock; shows "Waiting for your other kitchen to close…" while a lock handoff is in progress (§28.13). |
 | Kick texts | Load failure (E6): *"We couldn't open your restaurant's filing cabinet. Your progress is safe — please rejoin in a minute!"* · Lock lost: *"Your restaurant was opened somewhere else. Your saved progress is safe — rejoin to keep cooking!"* · Newer build: *"A fresher version of Morph City just opened! Hop over to keep cooking."* |
-| Rollback notice | One-time modal after an automatic or support rollback: *"Nana Gristle tidied up a mix-up in your recipe box. Your restaurant was restored to <date/time>."* Optional compensation [TUNABLE]: 1 Morph Capsule (a §C17.4 reward). |
+| Rollback notice | One-time modal after an automatic or support rollback: *"Nana Gristle tidied up a mix-up in your recipe box. Your restaurant was restored to [date and time]."* Optional compensation [TUNABLE]: 1 Morph Capsule (a §C17.4 reward). |
 
 ### 28.5 Progression
 
@@ -116,7 +116,7 @@ load transform run as the owners' registered pure functions (ownership by code, 
 | `wallet` | **`EconomyService` only** (§C19) | balances, idempotency keys, ledger, Robux receipt ring |
 | `progression` | `ProgressionService` | level, XP, stats, skills, specializations, achievements, milestones, counters, titles, emotes |
 | `mutations` | `MutationService` | owned parts, duplicates, capsules and pity, equipped body, ability bar, loadouts |
-| `morph` | `MorphAssemblyService` | morph name, colors, owned palettes |
+| `morph` | `MorphAssemblyService` | morph name, colors, owned palettes, Morphdex bitsets |
 | `restaurant` | `RestaurantService` | tier, plot preference, upgrades (incl. per-station-type levels `UPG_…#n`), reputation, regulars |
 | `layout` | `BuildingService` | packed placed objects — every placed item, appliances included, is a furniture record |
 | `durability` | `RepairService` | sparse durability per placed object |
@@ -187,7 +187,7 @@ erasure procedure (§28.24); `b` lets the rollback tool find the last version wr
 
 The profile is split into the **sections and single writers fixed in §27.17** (`meta`, `settings`, `wallet`,
 `progression`, `mutations`, `morph`, `restaurant`, `layout`, `durability`, `inventory`, `recipes`,
-`employees`, `offline`, `quests`, `social`). Types live in `ReplicatedStorage/Shared/Types` (types only, so
+`employees`, `offline`, `quests`, `social`) plus a `city` section required by §18.9.7. Types live in `ReplicatedStorage/Shared/Types` (types only, so
 client code can be typed against the replicated view) and are enforced by the server validator (§28.20.4).
 Field names stay readable: the worst case is ~2.9 % of the 4 MB key limit (§28.10), so only structures that
 grow with content are compacted (§28.11). Fields marked *transient* exist in memory only and are stripped by
@@ -965,9 +965,10 @@ sequenceDiagram
    seeded function (`Seed = hash(UserId, lastSimAt, SIM_VERSION)`) that builds or merges `pendingOfflineReport`,
    applies offline side effects through the owners' registered pure functions (special-stock consumption in
    `inventory`, offline damage in `durability`, staff energy/morale in `employees`) and sets `lastSimAt = toTs`
-   (§C15) → grants the
-   **Welcome Back Crate** if `now − lastSimAt ≥ 7 days` (1 Morph Capsule + 50 MS, txn `wb:<lastSimAt>`,
-   §C22 E5) → returns `(data, {UserId}, metadata)`. This is exactly the canon "one session-locked
+   (§C15) → grants the **Welcome Back Crate** when `now` minus the *stored* `lastSimAt` (read before the
+   simulation advanced it) is ≥ 7 days — 1 Morph Capsule + 50 MS, key `wb:<previous lastSimAt>`, applied through
+   `EconomyService`'s registered pure load-time grant (ownership by code, §27.17; §C22 E5) → returns
+   `(data, {UserId}, metadata)`. This is exactly the canon "one session-locked
    `UpdateAsync`": the report and `lastSimAt` commit together or not at all (§C22 E11). A transform that throws
    is skipped and logged without blocking the load; for the offline transform that leaves `lastSimAt` unchanged,
    so the next session simulates the same interval — no loss, no duplicate (§27.8.11).
@@ -975,7 +976,7 @@ sequenceDiagram
 4. After commit, in memory: decode packed fields; run the **validator** (§28.20.4); replay `pendingOps`
    (§28.20.2); roll daily/weekly quest offers if the stamps changed (`QuestService`); write presence; start
    the save scheduler; replicate the read model to the client; show Welcome Back if a report is pending.
-5. Analytics: `mmr_session_start` and the onboarding step if new (§31).
+5. Analytics: `mmr_session_start`, plus `mmr_daily_return` on the first session of a new UTC day (§31.10.2).
 
 `now < lastSimAt` (server clock skew between servers) yields `H = 0`; within `CLOCK_SKEW_TOLERANCE_S` it is
 silent, beyond it `offline.clockFlags += 1` and a `clock_skew` flag is logged (§C15, §29.15).

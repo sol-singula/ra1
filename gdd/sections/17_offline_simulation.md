@@ -378,9 +378,9 @@ value of the whole absence in active hours. Shared assumptions, so each example 
 
 **Roster**
 
-| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Ollie | `EMP_001` | Chef | Common | Cook 30, Acc 28, Rel 40 | 30.4 | 90 / 100 | 29.2 | ×1.25 | 0.365 | 12 |
+| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
+|---|---|---|---|---|---|---|---|---|---|
+| Ollie | `EMP_001` | Chef | Common | 30.4 | 90 / 100 | 29.2 | ×1.25 | 0.365 | 12 |
 
 **Menu** (skill gate: D ≤ 1 + floor(30 / 25) = 2)
 
@@ -399,11 +399,11 @@ value of the whole absence in active hours. Shared assumptions, so each example 
 
 **Hourly steps**
 
-| Step | h | Shift | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1.00 | ×1.0 | 100.0 | 0.365 | 52.1 | 52.1 | 45.0 | Demand | 45 | 485 | 19 | 0 | 215 | 12 | 277 |
-| 2 | 1.00 | ×1.0 | 92.0 | 0.355 | 50.7 | 50.7 | 45.0 | Demand | 45 | 485 | 19 | 0 | 215 | 12 | 277 |
-| **Σ** | 2.00 | 2.00 eff. | | | | | | | **90** | **970** | **39** | **0** | **431** | **24** | **554** |
+| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1.00 | ×1.0 | 100.0 | 52.1 | 52.1 | 45.0 | Demand | 45 | 485 | 19 | 0 | 215 | 12 | 277 |
+| 2 | 1.00 | ×1.0 | 92.0 | 50.7 | 50.7 | 45.0 | Demand | 45 | 485 | 19 | 0 | 215 | 12 | 277 |
+| **Σ** | 2.00 | 2.00 eff. | | | | | | **90** | **970** | **39** | **0** | **431** | **24** | **554** |
 
 **Incidents & discoveries**
 
@@ -440,12 +440,12 @@ value of the whole absence in active hours. Shared assumptions, so each example 
 
 **Roster**
 
-| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Octavia | `EMP_005` | Chef | Uncommon | Cook 52, Acc 46, Rel 42 | 49.2 | 82 / 92 | 45.0 | ×1.25 | 0.563 | 50 |
-| Skates McGee | `EMP_026` | Waiter | Uncommon | Svc 53, Acc 43, Rel 39 | 48.6 | 80 / 90 | 43.8 | ×1.20 | 0.526 | 55 |
-| Benny Bun | `EMP_023` | Waiter | Common | Svc 38, Acc 26, Rel 23 | 32.9 | 85 / 95 | 30.8 | ×1.20 | 0.369 | 18 |
-| Barnaby Hoot | `EMP_070` | Manager | Common | Rel 31, Svc 30, Acc 31 | 30.7 | 80 / 95 | 28.1 | ×1.00 | 0.281 | 17 |
+| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
+|---|---|---|---|---|---|---|---|---|---|
+| Octavia | `EMP_005` | Chef | Uncommon | 49.2 | 82 / 92 | 45.0 | ×1.25 | 0.563 | 50 |
+| Skates McGee | `EMP_026` | Waiter | Uncommon | 48.6 | 80 / 90 | 43.8 | ×1.20 | 0.526 | 55 |
+| Benny Bun | `EMP_023` | Waiter | Common | 32.9 | 85 / 95 | 30.8 | ×1.20 | 0.369 | 18 |
+| Barnaby Hoot | `EMP_070` | Manager | Common | 30.7 | 80 / 95 | 28.1 | ×1.00 | 0.281 | 17 |
 
 **Menu** (skill gate: D ≤ 1 + floor(52 / 25) = 3)
 
@@ -466,13 +466,13 @@ value of the whole absence in active hours. Shared assumptions, so each example 
 
 **Hourly steps**
 
-| Step | h | Shift | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1.00 | ×1.0 | 93.0 | 0.563 | 73.8 | 75.1 | 73.8 | Kitchen | 73 | 1,277 | 82 | 0 | 509 | 140 | 710 |
-| 2 | 1.00 | ×1.0 | 89.2 | 0.553 | 72.5 | 73.9 | 72.5 | Kitchen | 73 | 1,277 | 82 | 0 | 509 | 140 | 710 |
-| 3 | 1.00 | ×0.5 | 85.5 | 0.544 | 71.3 | 72.6 | 71.3 | Kitchen | 35 | 612 | 39 | 0 | 244 | 70 | 337 |
-| 4 | 1.00 | ×0.5 | 81.8 | 0.535 | 70.1 | 71.4 | 70.1 | Kitchen | 36 | 630 | 40 | 0 | 251 | 70 | 349 |
-| **Σ** | 4.00 | 3.00 eff. | | | | | | | **217** | **3,796** | **243** | **0** | **1,514** | **420** | **2,105** |
+| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1.00 | ×1.0 | 93.0 | 73.8 | 75.1 | 73.8 | Kitchen | 73 | 1,277 | 82 | 0 | 509 | 140 | 710 |
+| 2 | 1.00 | ×1.0 | 89.2 | 72.5 | 73.9 | 72.5 | Kitchen | 73 | 1,277 | 82 | 0 | 509 | 140 | 710 |
+| 3 | 1.00 | ×0.5 | 85.5 | 71.3 | 72.6 | 71.3 | Kitchen | 35 | 612 | 39 | 0 | 244 | 70 | 337 |
+| 4 | 1.00 | ×0.5 | 81.8 | 70.1 | 71.4 | 70.1 | Kitchen | 36 | 630 | 40 | 0 | 251 | 70 | 349 |
+| **Σ** | 4.00 | 3.00 eff. | | | | | | **217** | **3,796** | **243** | **0** | **1,514** | **420** | **2,105** |
 
 **Incidents & discoveries**
 
@@ -509,18 +509,18 @@ value of the whole absence in active hours. Shared assumptions, so each example 
 
 **Roster**
 
-| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Mister Mustache | `EMP_073` | Manager | Rare | Rel 68, Svc 61, Acc 59 | 63.2 | 80 / 95 | 58.7 | ×1.00 | 0.587 | 160 |
-| Sir Loin | `EMP_008` | Chef | Rare | Cook 67, Acc 62, Rel 56 | 64.9 | 78 / 90 | 58.8 | ×1.00 | 0.588 | 160 |
-| Octavia | `EMP_005` | Chef | Uncommon | Cook 58*, Acc 52*, Rel 42 | 54.6 | 80 / 90 | 49.9 | ×1.25 | 0.624 | 50 |
-| Benny Bun | `EMP_023` | Waiter | Common | Svc 38, Acc 26, Rel 23 | 32.9 | 85 / 92 | 30.9 | ×1.20 | 0.371 | 18 |
-| Chet Speedwell | `EMP_028` | Waiter | Rare | Svc 68, Acc 58, Rel 53 | 63.5 | 80 / 88 | 57.7 | ×1.20 | 0.693 | 165 |
-| Skates McGee | `EMP_026` | Waiter | Uncommon | Svc 53, Acc 43, Rel 39 | 48.6 | 78 / 90 | 44.1 | ×1.20 | 0.529 | 55 |
-| Sloane | `EMP_039` | Dish | Common | Svc 15, Rel 40 | 27.5 | 90 / 100 | 27.1 | ×0.60 | 0.162 | 10 |
-| Dusty | `EMP_048` | Cleaner | Common | Svc 37, Rel 26, Acc 31 | 32.5 | 75 / 90 | 29.1 | ×1.20 | 0.349 | 18 |
+| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
+|---|---|---|---|---|---|---|---|---|---|
+| Mister Mustache | `EMP_073` | Manager | Rare | 63.2 | 80 / 95 | 58.7 | ×1.00 | 0.587 | 160 |
+| Sir Loin | `EMP_008` | Chef | Rare | 64.9 | 78 / 90 | 58.8 | ×1.00 | 0.588 | 160 |
+| Octavia | `EMP_005` | Chef | Uncommon | 54.6 | 80 / 90 | 49.9 | ×1.25 | 0.624 | 50 |
+| Benny Bun | `EMP_023` | Waiter | Common | 32.9 | 85 / 92 | 30.9 | ×1.20 | 0.371 | 18 |
+| Chet Speedwell | `EMP_028` | Waiter | Rare | 63.5 | 80 / 88 | 57.7 | ×1.20 | 0.693 | 165 |
+| Skates McGee | `EMP_026` | Waiter | Uncommon | 48.6 | 78 / 90 | 44.1 | ×1.20 | 0.529 | 55 |
+| Sloane | `EMP_039` | Dish | Common | 27.5 | 90 / 100 | 27.1 | ×0.60 | 0.162 | 10 |
+| Dusty | `EMP_048` | Cleaner | Common | 32.5 | 75 / 90 | 29.1 | ×1.20 | 0.349 | 18 |
 
-\* trained above the archetype value (within the potential cap, §16.6).
+Trained above the §36.8 values (within the potential cap, §16.7.4): Octavia Cooking 58, Accuracy 52.
 
 **Menu** (skill gate: D ≤ 1 + floor(67 / 25) = 3)
 
@@ -545,17 +545,17 @@ value of the whole absence in active hours. Shared assumptions, so each example 
 
 **Hourly steps**
 
-| Step | h | Shift | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1.00 | ×1.0 | 91.9 | 1.213 | 130.8 | 136.5 | 108.7 | Demand | 108 | 3,886 | 262 | 0 | 1,320 | 636 | 2,192 |
-| 2 | 1.00 | ×1.0 | 87.4 | 1.189 | 128.2 | 133.7 | 108.7 | Demand | 109 | 3,922 | 264 | 0 | 1,332 | 636 | 2,218 |
-| 3 | 1.00 | ×0.5 | 83.0 | 1.165 | 125.5 | 130.9 | 108.7 | Demand | 54 | 1,943 | 131 | 0 | 660 | 318 | 1,096 |
-| 4 | 1.00 | ×0.5 | 78.6 | 1.141 | 122.9 | 128.2 | 108.7 | Demand | 55 | 1,979 | 133 | 0 | 672 | 318 | 1,122 |
-| 5 | 1.00 | ×0.5 | 74.1 | 1.118 | 120.3 | 125.5 | 108.7 | Demand | 54 | 1,943 | 131 | 0 | 660 | 318 | 1,096 |
-| 6 | 1.00 | ×0.5 | 69.7 | 1.095 | 117.7 | 122.8 | 108.7 | Demand | 54 | 1,943 | 131 | 0 | 660 | 318 | 1,096 |
-| 7 | 1.00 | ×0.5 | 65.2 | 1.071 | 115.1 | 120.1 | 108.7 | Demand | 55 | 1,979 | 133 | 0 | 672 | 318 | 1,122 |
-| 8 | 1.00 | ×0.5 | 60.8 | 1.048 | 112.6 | 117.4 | 108.7 | Demand | 54 | 1,943 | 131 | 0 | 660 | 318 | 1,096 |
-| **Σ** | 8.00 | 5.00 eff. | | | | | | | **543** | **19,539** | **1,315** | **0** | **6,636** | **3,180** | **11,039** |
+| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1.00 | ×1.0 | 91.9 | 130.8 | 136.5 | 108.7 | Demand | 108 | 3,886 | 262 | 0 | 1,320 | 636 | 2,192 |
+| 2 | 1.00 | ×1.0 | 87.4 | 128.2 | 133.7 | 108.7 | Demand | 109 | 3,922 | 264 | 0 | 1,332 | 636 | 2,218 |
+| 3 | 1.00 | ×0.5 | 83.0 | 125.5 | 130.9 | 108.7 | Demand | 54 | 1,943 | 131 | 0 | 660 | 318 | 1,096 |
+| 4 | 1.00 | ×0.5 | 78.6 | 122.9 | 128.2 | 108.7 | Demand | 55 | 1,979 | 133 | 0 | 672 | 318 | 1,122 |
+| 5 | 1.00 | ×0.5 | 74.1 | 120.3 | 125.5 | 108.7 | Demand | 54 | 1,943 | 131 | 0 | 660 | 318 | 1,096 |
+| 6 | 1.00 | ×0.5 | 69.7 | 117.7 | 122.8 | 108.7 | Demand | 54 | 1,943 | 131 | 0 | 660 | 318 | 1,096 |
+| 7 | 1.00 | ×0.5 | 65.2 | 115.1 | 120.1 | 108.7 | Demand | 55 | 1,979 | 133 | 0 | 672 | 318 | 1,122 |
+| 8 | 1.00 | ×0.5 | 60.8 | 112.6 | 117.4 | 108.7 | Demand | 54 | 1,943 | 131 | 0 | 660 | 318 | 1,096 |
+| **Σ** | 8.00 | 5.00 eff. | | | | | | **543** | **19,539** | **1,315** | **0** | **6,636** | **3,180** | **11,039** |
 
 **Incidents & discoveries**
 
@@ -596,20 +596,20 @@ value of the whole absence in active hours. Shared assumptions, so each example 
 
 **Roster**
 
-| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Megaphone Maxine | `EMP_075` | Manager | Epic | Rel 79, Svc 77, Acc 72 | 76.3 | 80 / 95 | 72.3 | ×1.00 | 0.723 | 500 |
-| Ember | `EMP_009` | Chef | Epic | Cook 84, Acc 62, Rel 74 | 76.4 | 75 / 90 | 69.7 | ×1.15 | 0.802 | 515 |
-| Frostina | `EMP_007` | Chef | Rare | Cook 63, Acc 55, Rel 53 | 59.6 | 80 / 92 | 55.9 | ×1.00 | 0.559 | 135 |
-| Sir Loin | `EMP_008` | Chef | Rare | Cook 67, Acc 62, Rel 56 | 64.9 | 80 / 90 | 60.5 | ×1.00 | 0.605 | 160 |
-| Mantis Mandy | `EMP_019` | Prep | Rare | Cook 65, Svc 66, Acc 57 | 63.8 | 80 / 90 | 59.5 | ×1.00 | 0.595 | 155 |
-| Twinkle Thistlewing | `EMP_030` | Waiter | Epic | Svc 82, Acc 77, Rel 71 | 79.4 | 85 / 95 | 76.8 | ×1.00 | 0.768 | 500 |
-| Chet Speedwell | `EMP_028` | Waiter | Rare | Svc 68, Acc 58, Rel 53 | 63.5 | 80 / 90 | 59.2 | ×1.20 | 0.711 | 165 |
-| Ozzie | `EMP_029` | Waiter | Rare | Svc 65, Acc 57, Rel 55 | 61.6 | 80 / 90 | 57.4 | ×1.20 | 0.689 | 135 |
-| Cassie Cassette | `EMP_036` | Cashier | Rare | Acc 63, Svc 66, Rel 59 | 64.3 | 80 / 95 | 60.9 | ×1.00 | 0.609 | 160 |
-| Drippy | `EMP_043` | Dish | Rare | Svc 64, Rel 62 | 63.0 | 80 / 95 | 59.7 | ×1.10 | 0.656 | 145 |
-| Vacuuma Vera | `EMP_051` | Cleaner | Rare | Svc 65, Rel 60, Acc 58 | 62.1 | 80 / 92 | 58.3 | ×1.20 | 0.699 | 155 |
-| Rocco | `EMP_066` | Security | Rare | Cmb 70, Rel 62, Svc 56 | 65.6 | 85 / 95 | 63.5 | ×1.00 | 0.635 | 170 |
+| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
+|---|---|---|---|---|---|---|---|---|---|
+| Megaphone Maxine | `EMP_075` | Manager | Epic | 76.3 | 80 / 95 | 72.3 | ×1.00 | 0.723 | 500 |
+| Ember | `EMP_009` | Chef | Epic | 76.4 | 75 / 90 | 69.7 | ×1.15 | 0.802 | 515 |
+| Frostina | `EMP_007` | Chef | Rare | 59.6 | 80 / 92 | 55.9 | ×1.00 | 0.559 | 135 |
+| Sir Loin | `EMP_008` | Chef | Rare | 64.9 | 80 / 90 | 60.5 | ×1.00 | 0.605 | 160 |
+| Mantis Mandy | `EMP_019` | Prep | Rare | 63.8 | 80 / 90 | 59.5 | ×1.00 | 0.595 | 155 |
+| Twinkle Thistlewing | `EMP_030` | Waiter | Epic | 79.4 | 85 / 95 | 76.8 | ×1.00 | 0.768 | 500 |
+| Chet Speedwell | `EMP_028` | Waiter | Rare | 63.5 | 80 / 90 | 59.2 | ×1.20 | 0.711 | 165 |
+| Ozzie | `EMP_029` | Waiter | Rare | 61.6 | 80 / 90 | 57.4 | ×1.20 | 0.689 | 135 |
+| Cassie Cassette | `EMP_036` | Cashier | Rare | 64.3 | 80 / 95 | 60.9 | ×1.00 | 0.609 | 160 |
+| Drippy | `EMP_043` | Dish | Rare | 63.0 | 80 / 95 | 59.7 | ×1.10 | 0.656 | 145 |
+| Vacuuma Vera | `EMP_051` | Cleaner | Rare | 62.1 | 80 / 92 | 58.3 | ×1.20 | 0.699 | 155 |
+| Rocco | `EMP_066` | Security | Rare | 65.6 | 85 / 95 | 63.5 | ×1.00 | 0.635 | 170 |
 
 **Menu** (skill gate: D ≤ 1 + floor(84 / 25) = 4)
 
@@ -638,21 +638,21 @@ value of the whole absence in active hours. Shared assumptions, so each example 
 
 **Hourly steps**
 
-| Step | h | Shift | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1.00 | ×1.0 | 92.4 | 1.966 | 247.3 | 210.0 | 147.6 | Demand | 147 | 13,107 | 1,030 | 0 | 3,862 | 2,895 | 7,380 |
-| 2 | 1.00 | ×1.0 | 87.4 | 1.927 | 242.2 | 205.8 | 147.6 | Demand | 148 | 13,196 | 1,037 | 0 | 3,888 | 2,895 | 7,449 |
-| 3 | 1.00 | ×0.5 | 82.4 | 1.889 | 237.1 | 201.7 | 147.6 | Demand | 74 | 6,598 | 518 | 0 | 1,944 | 1,448 | 3,725 |
-| 4 | 1.00 | ×0.5 | 77.4 | 1.850 | 229.4 | 197.6 | 147.6 | Demand | 73 | 6,762 | 531 | 0 | 2,067 | 1,448 | 3,778 |
-| 5 | 1.00 | ×0.5 | 72.4 | 1.812 | 224.5 | 193.6 | 147.6 | Demand | 74 | 6,855 | 538 | 0 | 2,096 | 1,448 | 3,850 |
-| 6 | 1.00 | ×0.5 | 67.4 | 1.774 | 219.6 | 189.6 | 147.6 | Demand | 74 | 6,855 | 538 | 0 | 2,096 | 1,448 | 3,850 |
-| 7 | 1.00 | ×0.5 | 62.4 | 1.737 | 214.8 | 185.6 | 147.6 | Demand | 74 | 6,855 | 538 | 0 | 2,096 | 1,448 | 3,850 |
-| 8 | 1.00 | ×0.5 | 57.4 | 1.700 | 210.0 | 181.6 | 147.6 | Demand | 74 | 6,855 | 538 | 0 | 2,096 | 1,448 | 3,850 |
-| 9 | 1.00 | ×0.2 | 52.4 | 1.663 | 205.3 | 177.7 | 147.6 | Demand | 29 | 2,686 | 211 | 0 | 821 | 579 | 1,497 |
-| 10 | 1.00 | ×0.2 | 47.4 | 1.626 | 200.6 | 173.8 | 147.6 | Demand | 30 | 2,779 | 218 | 0 | 850 | 579 | 1,569 |
-| 11 | 1.00 | ×0.2 | 42.4 | 1.590 | 195.9 | 169.9 | 147.6 | Demand | 29 | 2,686 | 211 | 0 | 821 | 579 | 1,497 |
-| 12 | 1.00 | ×0.2 | 37.4 | 1.553 | 191.3 | 166.0 | 147.6 | Demand | 30 | 2,779 | 218 | 0 | 850 | 579 | 1,569 |
-| **Σ** | 12.00 | 5.80 eff. | | | | | | | **856** | **78,012** | **6,128** | **0** | **23,485** | **16,791** | **43,863** |
+| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1.00 | ×1.0 | 92.4 | 247.3 | 210.0 | 147.6 | Demand | 147 | 13,107 | 1,030 | 0 | 3,862 | 2,895 | 7,380 |
+| 2 | 1.00 | ×1.0 | 87.4 | 242.2 | 205.8 | 147.6 | Demand | 148 | 13,196 | 1,037 | 0 | 3,888 | 2,895 | 7,449 |
+| 3 | 1.00 | ×0.5 | 82.4 | 237.1 | 201.7 | 147.6 | Demand | 74 | 6,598 | 518 | 0 | 1,944 | 1,448 | 3,725 |
+| 4 | 1.00 | ×0.5 | 77.4 | 229.4 | 197.6 | 147.6 | Demand | 73 | 6,762 | 531 | 0 | 2,067 | 1,448 | 3,778 |
+| 5 | 1.00 | ×0.5 | 72.4 | 224.5 | 193.6 | 147.6 | Demand | 74 | 6,855 | 538 | 0 | 2,096 | 1,448 | 3,850 |
+| 6 | 1.00 | ×0.5 | 67.4 | 219.6 | 189.6 | 147.6 | Demand | 74 | 6,855 | 538 | 0 | 2,096 | 1,448 | 3,850 |
+| 7 | 1.00 | ×0.5 | 62.4 | 214.8 | 185.6 | 147.6 | Demand | 74 | 6,855 | 538 | 0 | 2,096 | 1,448 | 3,850 |
+| 8 | 1.00 | ×0.5 | 57.4 | 210.0 | 181.6 | 147.6 | Demand | 74 | 6,855 | 538 | 0 | 2,096 | 1,448 | 3,850 |
+| 9 | 1.00 | ×0.2 | 52.4 | 205.3 | 177.7 | 147.6 | Demand | 29 | 2,686 | 211 | 0 | 821 | 579 | 1,497 |
+| 10 | 1.00 | ×0.2 | 47.4 | 200.6 | 173.8 | 147.6 | Demand | 30 | 2,779 | 218 | 0 | 850 | 579 | 1,569 |
+| 11 | 1.00 | ×0.2 | 42.4 | 195.9 | 169.9 | 147.6 | Demand | 29 | 2,686 | 211 | 0 | 821 | 579 | 1,497 |
+| 12 | 1.00 | ×0.2 | 37.4 | 191.3 | 166.0 | 147.6 | Demand | 30 | 2,779 | 218 | 0 | 850 | 579 | 1,569 |
+| **Σ** | 12.00 | 5.80 eff. | | | | | | **856** | **78,012** | **6,128** | **0** | **23,485** | **16,791** | **43,863** |
 
 Special stock used: `ING_MOON_CHEESE` 70, `ING_MUTAGEN_GOO` 187 (left: 0, 213). **SOLD OUT** from step 4: `RCP_ALN_004`, `RCP_ALN_001` — later steps recompute PrepSec_avg and AvgTicket without those dishes.
 
@@ -693,28 +693,28 @@ Special stock used: `ING_MOON_CHEESE` 70, `ING_MUTAGEN_GOO` 187 (left: 0, 213). 
 
 **Roster**
 
-| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| The Oracle of Orders | `EMP_076` | Manager | Legendary | Rel 95, Svc 88, Acc 90 | 91.4 | 85 / 95 | 91.4 | ×1.00 | 0.914 | 1,480 |
-| Lady Luckfeather | `EMP_097` | Asst Mgr | Legendary | Rel 97, Svc 91, Acc 89 | 92.8 | 85 / 95 | 92.8 | ×1.00 | 0.928 | 1,410 |
-| Captain Calamari | `EMP_011` | Chef | Legendary | Cook 100*, Acc 90, Rel 88 | 95.8 | 85 / 95 | 95.8 | ×1.35 | 1.293 | 1,480 |
-| Goldie Gourmand | `EMP_012` | Chef | Legendary | Cook 97, Acc 87, Rel 90 | 93.3 | 85 / 95 | 93.3 | ×1.00 | 0.933 | 1,340 |
-| Ember | `EMP_009` | Chef | Epic | Cook 84, Acc 62, Rel 74 | 76.4 | 80 / 95 | 74.8 | ×1.15 | 0.860 | 515 |
-| Professor Dice | `EMP_021` | Prep | Epic | Cook 83, Svc 77, Acc 73 | 78.6 | 80 / 95 | 76.9 | ×1.00 | 0.769 | 500 |
-| Hoverina | `EMP_031` | Waiter | Legendary | Svc 94, Acc 91, Rel 88 | 92.5 | 85 / 95 | 92.5 | ×1.15 | 1.064 | 1,410 |
-| Twinkle Thistlewing | `EMP_030` | Waiter | Epic | Svc 82, Acc 77, Rel 71 | 79.4 | 85 / 95 | 79.4 | ×1.00 | 0.794 | 500 |
-| Chet Speedwell | `EMP_028` | Waiter | Rare | Svc 68, Acc 58, Rel 53 | 63.5 | 80 / 95 | 62.1 | ×1.20 | 0.746 | 165 |
-| Ozzie | `EMP_029` | Waiter | Rare | Svc 65, Acc 57, Rel 55 | 61.6 | 80 / 95 | 60.3 | ×1.20 | 0.723 | 135 |
-| Sterling Silverfin | `EMP_037` | Cashier | Epic | Acc 80, Svc 77, Rel 71 | 77.9 | 80 / 95 | 76.2 | ×1.00 | 0.762 | 500 |
-| The Rinse-o-Tron 3000 | `EMP_045` | Dish | Epic | Svc 83, Rel 81 | 84.5 | 80 / 95 | 82.7 | ×1.25 | 1.034 | 500 |
-| Gale Force | `EMP_052` | Cleaner | Epic | Svc 83, Rel 75, Acc 77 | 79.4 | 80 / 95 | 77.7 | ×1.00 | 0.777 | 455 |
-| Gearhart | `EMP_060` | Repair | Epic | Rep 79, Rel 75, Svc 68 | 78.1 | 80 / 95 | 76.4 | ×1.25 | 0.955 | 500 |
-| Steggy | `EMP_068` | Security | Epic | Cmb 77, Rel 77, Svc 74 | 76.4 | 80 / 95 | 74.8 | ×1.00 | 0.748 | 465 |
-| Golem Gary | `EMP_069` | Security | Legendary | Cmb 93, Rel 91, Svc 90 | 92.0 | 85 / 95 | 92.0 | ×1.00 | 0.920 | 1,410 |
-| Comet Carla | `EMP_083` | Delivery | Epic | Svc 81, Rel 71, Cmb 72 | 77.1 | 80 / 95 | 75.5 | ×1.20 | 0.905 | 465 |
-| Tractor Trixie | `EMP_090` | Stocker | Epic | Acc 83, Rel 71, Svc 71 | 77.0 | 80 / 95 | 75.4 | ×1.00 | 0.754 | 440 |
+| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
+|---|---|---|---|---|---|---|---|---|---|
+| The Oracle of Orders | `EMP_076` | Manager | Legendary | 91.4 | 85 / 95 | 91.4 | ×1.00 | 0.914 | 1,480 |
+| Lady Luckfeather | `EMP_097` | Asst Mgr | Legendary | 92.8 | 85 / 95 | 92.8 | ×1.00 | 0.928 | 1,410 |
+| Captain Calamari | `EMP_011` | Chef | Legendary | 95.8 | 85 / 95 | 95.8 | ×1.35 | 1.293 | 1,480 |
+| Goldie Gourmand | `EMP_012` | Chef | Legendary | 93.3 | 85 / 95 | 93.3 | ×1.00 | 0.933 | 1,340 |
+| Ember | `EMP_009` | Chef | Epic | 76.4 | 80 / 95 | 74.8 | ×1.15 | 0.860 | 515 |
+| Professor Dice | `EMP_021` | Prep | Epic | 78.6 | 80 / 95 | 76.9 | ×1.00 | 0.769 | 500 |
+| Hoverina | `EMP_031` | Waiter | Legendary | 92.5 | 85 / 95 | 92.5 | ×1.15 | 1.064 | 1,410 |
+| Twinkle Thistlewing | `EMP_030` | Waiter | Epic | 79.4 | 85 / 95 | 79.4 | ×1.00 | 0.794 | 500 |
+| Chet Speedwell | `EMP_028` | Waiter | Rare | 63.5 | 80 / 95 | 62.1 | ×1.20 | 0.746 | 165 |
+| Ozzie | `EMP_029` | Waiter | Rare | 61.6 | 80 / 95 | 60.3 | ×1.20 | 0.723 | 135 |
+| Sterling Silverfin | `EMP_037` | Cashier | Epic | 77.9 | 80 / 95 | 76.2 | ×1.00 | 0.762 | 500 |
+| The Rinse-o-Tron 3000 | `EMP_045` | Dish | Epic | 84.5 | 80 / 95 | 82.7 | ×1.25 | 1.034 | 500 |
+| Gale Force | `EMP_052` | Cleaner | Epic | 79.4 | 80 / 95 | 77.7 | ×1.00 | 0.777 | 455 |
+| Gearhart | `EMP_060` | Repair | Epic | 78.1 | 80 / 95 | 76.4 | ×1.25 | 0.955 | 500 |
+| Steggy | `EMP_068` | Security | Epic | 76.4 | 80 / 95 | 74.8 | ×1.00 | 0.748 | 465 |
+| Golem Gary | `EMP_069` | Security | Legendary | 92.0 | 85 / 95 | 92.0 | ×1.00 | 0.920 | 1,410 |
+| Comet Carla | `EMP_083` | Delivery | Epic | 77.1 | 80 / 95 | 75.5 | ×1.20 | 0.905 | 465 |
+| Tractor Trixie | `EMP_090` | Stocker | Epic | 77.0 | 80 / 95 | 75.4 | ×1.00 | 0.754 | 440 |
 
-\* trained above the archetype value (within the potential cap, §16.6).
+Trained above the §36.8 values (within the potential cap, §16.7.4): Captain Calamari Cooking 100.
 
 **Menu** (skill gate: D ≤ 1 + floor(100 / 25) = 5)
 
@@ -753,33 +753,33 @@ Special stock used: `ING_MOON_CHEESE` 70, `ING_MUTAGEN_GOO` 187 (left: 0, 213). 
 
 **Hourly steps**
 
-| Step | h | Shift | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1.00 | ×1.0 | 95.0 | 3.086 | 355.6 | 334.3 | 220.6 | Demand | 220 | 64,965 | 5,693 | 3,530 | 11,152 | 13,670 | 49,366 |
-| 2 | 1.00 | ×1.0 | 91.0 | 3.035 | 349.4 | 328.6 | 220.6 | Demand | 221 | 65,261 | 5,719 | 3,487 | 11,209 | 13,670 | 49,587 |
-| 3 | 1.00 | ×0.5 | 87.0 | 2.985 | 343.2 | 322.9 | 220.6 | Demand | 110 | 32,483 | 2,847 | 1,707 | 5,583 | 6,835 | 24,618 |
-| 4 | 1.00 | ×0.5 | 83.0 | 2.935 | 337.1 | 317.3 | 220.6 | Demand | 110 | 32,483 | 2,847 | 1,678 | 5,586 | 6,835 | 24,586 |
-| 5 | 1.00 | ×0.5 | 79.0 | 2.885 | 331.0 | 311.7 | 220.6 | Demand | 111 | 32,778 | 2,872 | 1,665 | 5,640 | 6,835 | 24,840 |
-| 6 | 1.00 | ×0.5 | 75.0 | 2.836 | 324.9 | 306.2 | 220.6 | Demand | 110 | 32,483 | 2,847 | 1,621 | 5,592 | 6,835 | 24,523 |
-| 7 | 1.00 | ×0.5 | 71.0 | 2.787 | 319.0 | 300.7 | 220.6 | Demand | 110 | 32,483 | 2,847 | 1,593 | 5,642 | 6,835 | 24,446 |
-| 8 | 1.00 | ×0.5 | 67.0 | 2.738 | 313.0 | 295.3 | 220.6 | Demand | 111 | 32,778 | 2,872 | 1,579 | 6,156 | 6,835 | 24,239 |
-| 9 | 1.00 | ×0.2 | 63.0 | 2.690 | 307.2 | 289.9 | 220.6 | Demand | 44 | 12,993 | 1,139 | 615 | 2,440 | 2,734 | 9,572 |
-| 10 | 1.00 | ×0.2 | 59.0 | 2.642 | 301.3 | 284.6 | 220.6 | Demand | 44 | 12,993 | 1,139 | 604 | 2,441 | 2,734 | 9,560 |
-| 11 | 1.00 | ×0.2 | 55.0 | 2.594 | 295.6 | 279.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 593 | 2,506 | 2,734 | 9,485 |
-| 12 | 1.00 | ×0.2 | 51.0 | 2.547 | 289.8 | 274.0 | 220.6 | Demand | 44 | 12,993 | 1,139 | 582 | 2,675 | 2,734 | 9,305 |
-| 13 | 1.00 | ×0.2 | 47.0 | 2.500 | 284.1 | 268.8 | 220.6 | Demand | 44 | 12,993 | 1,139 | 571 | 2,655 | 2,734 | 9,314 |
-| 14 | 1.00 | ×0.2 | 43.0 | 2.453 | 278.5 | 263.6 | 220.6 | Demand | 44 | 12,993 | 1,139 | 561 | 2,678 | 2,734 | 9,281 |
-| 15 | 1.00 | ×0.2 | 39.0 | 2.406 | 272.9 | 258.4 | 220.6 | Demand | 45 | 13,288 | 1,164 | 562 | 2,730 | 2,734 | 9,551 |
-| 16 | 1.00 | ×0.2 | 35.0 | 2.360 | 267.4 | 253.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 539 | 2,659 | 2,734 | 9,278 |
-| 17 | 1.00 | ×0.2 | 31.0 | 2.314 | 261.9 | 248.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 529 | 2,681 | 2,734 | 9,245 |
-| 18 | 1.00 | ×0.2 | 27.0 | 2.269 | 256.5 | 243.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 518 | 2,661 | 2,734 | 9,255 |
-| 19 | 1.00 | ×0.2 | 23.0 | 2.224 | 251.1 | 238.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 508 | 2,683 | 2,734 | 9,222 |
-| 20 | 1.00 | ×0.2 | 19.0 | 2.179 | 245.8 | 233.4 | 220.6 | Demand | 44 | 12,993 | 1,139 | 498 | 2,663 | 2,734 | 9,232 |
-| 21 | 1.00 | ×0.2 | 15.0 | 2.134 | 240.5 | 228.5 | 220.6 | Demand | 44 | 12,993 | 1,139 | 487 | 3,189 | 2,734 | 8,696 |
-| 22 | 1.00 | ×0.2 | 11.0 | 2.090 | 255.0 | 223.7 | 220.6 | Demand | 45 | 8,581 | 752 | 315 | 1,760 | 2,734 | 5,154 |
-| 23 | 1.00 | ×0.2 | 7.0 | 2.046 | 261.3 | 218.8 | 218.8 | Service | 43 | 6,816 | 597 | 245 | 1,704 | 2,734 | 3,221 |
-| 24 | 1.00 | ×0.2 | 3.0 | 2.003 | 255.5 | 214.1 | 214.1 | Service | 43 | 6,816 | 597 | 240 | 1,705 | 2,734 | 3,215 |
-| **Σ** | 24.00 | 8.20 eff. | | | | | | | **1,807** | **517,132** | **45,318** | **24,828** | **96,392** | **112,094** | **378,791** |
+| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1.00 | ×1.0 | 95.0 | 355.6 | 334.3 | 220.6 | Demand | 220 | 64,965 | 5,693 | 3,530 | 11,152 | 13,670 | 49,366 |
+| 2 | 1.00 | ×1.0 | 91.0 | 349.4 | 328.6 | 220.6 | Demand | 221 | 65,261 | 5,719 | 3,487 | 11,209 | 13,670 | 49,587 |
+| 3 | 1.00 | ×0.5 | 87.0 | 343.2 | 322.9 | 220.6 | Demand | 110 | 32,483 | 2,847 | 1,707 | 5,583 | 6,835 | 24,618 |
+| 4 | 1.00 | ×0.5 | 83.0 | 337.1 | 317.3 | 220.6 | Demand | 110 | 32,483 | 2,847 | 1,678 | 5,586 | 6,835 | 24,586 |
+| 5 | 1.00 | ×0.5 | 79.0 | 331.0 | 311.7 | 220.6 | Demand | 111 | 32,778 | 2,872 | 1,665 | 5,640 | 6,835 | 24,840 |
+| 6 | 1.00 | ×0.5 | 75.0 | 324.9 | 306.2 | 220.6 | Demand | 110 | 32,483 | 2,847 | 1,621 | 5,592 | 6,835 | 24,523 |
+| 7 | 1.00 | ×0.5 | 71.0 | 319.0 | 300.7 | 220.6 | Demand | 110 | 32,483 | 2,847 | 1,593 | 5,642 | 6,835 | 24,446 |
+| 8 | 1.00 | ×0.5 | 67.0 | 313.0 | 295.3 | 220.6 | Demand | 111 | 32,778 | 2,872 | 1,579 | 6,156 | 6,835 | 24,239 |
+| 9 | 1.00 | ×0.2 | 63.0 | 307.2 | 289.9 | 220.6 | Demand | 44 | 12,993 | 1,139 | 615 | 2,440 | 2,734 | 9,572 |
+| 10 | 1.00 | ×0.2 | 59.0 | 301.3 | 284.6 | 220.6 | Demand | 44 | 12,993 | 1,139 | 604 | 2,441 | 2,734 | 9,560 |
+| 11 | 1.00 | ×0.2 | 55.0 | 295.6 | 279.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 593 | 2,506 | 2,734 | 9,485 |
+| 12 | 1.00 | ×0.2 | 51.0 | 289.8 | 274.0 | 220.6 | Demand | 44 | 12,993 | 1,139 | 582 | 2,675 | 2,734 | 9,305 |
+| 13 | 1.00 | ×0.2 | 47.0 | 284.1 | 268.8 | 220.6 | Demand | 44 | 12,993 | 1,139 | 571 | 2,655 | 2,734 | 9,314 |
+| 14 | 1.00 | ×0.2 | 43.0 | 278.5 | 263.6 | 220.6 | Demand | 44 | 12,993 | 1,139 | 561 | 2,678 | 2,734 | 9,281 |
+| 15 | 1.00 | ×0.2 | 39.0 | 272.9 | 258.4 | 220.6 | Demand | 45 | 13,288 | 1,164 | 562 | 2,730 | 2,734 | 9,551 |
+| 16 | 1.00 | ×0.2 | 35.0 | 267.4 | 253.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 539 | 2,659 | 2,734 | 9,278 |
+| 17 | 1.00 | ×0.2 | 31.0 | 261.9 | 248.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 529 | 2,681 | 2,734 | 9,245 |
+| 18 | 1.00 | ×0.2 | 27.0 | 256.5 | 243.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 518 | 2,661 | 2,734 | 9,255 |
+| 19 | 1.00 | ×0.2 | 23.0 | 251.1 | 238.3 | 220.6 | Demand | 44 | 12,993 | 1,139 | 508 | 2,683 | 2,734 | 9,222 |
+| 20 | 1.00 | ×0.2 | 19.0 | 245.8 | 233.4 | 220.6 | Demand | 44 | 12,993 | 1,139 | 498 | 2,663 | 2,734 | 9,232 |
+| 21 | 1.00 | ×0.2 | 15.0 | 240.5 | 228.5 | 220.6 | Demand | 44 | 12,993 | 1,139 | 487 | 3,189 | 2,734 | 8,696 |
+| 22 | 1.00 | ×0.2 | 11.0 | 255.0 | 223.7 | 220.6 | Demand | 45 | 8,581 | 752 | 315 | 1,760 | 2,734 | 5,154 |
+| 23 | 1.00 | ×0.2 | 7.0 | 261.3 | 218.8 | 218.8 | Service | 43 | 6,816 | 597 | 245 | 1,704 | 2,734 | 3,221 |
+| 24 | 1.00 | ×0.2 | 3.0 | 255.5 | 214.1 | 214.1 | Service | 43 | 6,816 | 597 | 240 | 1,705 | 2,734 | 3,215 |
+| **Σ** | 24.00 | 8.20 eff. | | | | | | **1,807** | **517,132** | **45,318** | **24,828** | **96,392** | **112,094** | **378,791** |
 
 Special stock used: `ING_GOLDEN_PATTY` 205, `ING_MUTAGEN_GOO` 411, `ING_STARDUST` 506 (left: 0, 0, 0). Stocker auto-buy: 29 top-ups in steps 7–22 costing 5,999 MB (charged inside those steps' Ingredients) until the 6,000 MB budget ran out. **SOLD OUT** from step 22: `RCP_LEG_001`, `RCP_LEG_003`; step 23: `RCP_MUT_004`, `RCP_MUT_005`, `RCP_ALN_010`, `RCP_ALN_009`, `RCP_MUT_003`, `RCP_ALN_008`, `RCP_ALN_007`, `RCP_MUT_002`, `RCP_ALN_006` — later steps recompute PrepSec_avg and AvgTicket without those dishes.
 
@@ -820,13 +820,13 @@ Special stock used: `ING_GOLDEN_PATTY` 205, `ING_MUTAGEN_GOO` 411, `ING_STARDUST
 
 **Roster**
 
-| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Gus | `EMP_071` | Manager | Common | Rel 34, Svc 26, Acc 27 | 29.5 | 70 / 80 | 24.6 | ×1.00 | 0.246 | 17 |
-| Toastmaster Tim | `EMP_003` | Chef | Common | Cook 33, Acc 31, Rel 25 | 31.6 | 70 / 80 | 26.4 | ×1.15 | 0.304 | 15 |
-| Chet Speedwell | `EMP_028` | Waiter | Rare | Svc 68, Acc 58, Rel 53 | 63.5 | 70 / 80 | 53.1 | ×1.20 | 0.637 | 165 |
-| Rocco | `EMP_066` | Security | Rare | Cmb 70, Rel 62, Svc 56 | 65.6 | 70 / 80 | 54.8 | ×1.00 | 0.548 | 170 |
-| Skates McGee | `EMP_026` | Waiter | Uncommon | Svc 53, Acc 43, Rel 39 | 48.6 | 70 / 80 | 40.6 | ×1.20 | 0.487 | 55 |
+| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |
+|---|---|---|---|---|---|---|---|---|---|
+| Gus | `EMP_071` | Manager | Common | 29.5 | 70 / 80 | 24.6 | ×1.00 | 0.246 | 17 |
+| Toastmaster Tim | `EMP_003` | Chef | Common | 31.6 | 70 / 80 | 26.4 | ×1.15 | 0.304 | 15 |
+| Chet Speedwell | `EMP_028` | Waiter | Rare | 63.5 | 70 / 80 | 53.1 | ×1.20 | 0.637 | 165 |
+| Rocco | `EMP_066` | Security | Rare | 65.6 | 70 / 80 | 54.8 | ×1.00 | 0.548 | 170 |
+| Skates McGee | `EMP_026` | Waiter | Uncommon | 48.6 | 70 / 80 | 40.6 | ×1.20 | 0.487 | 55 |
 
 
 **Interval constants**
@@ -837,12 +837,12 @@ Special stock used: `ING_GOLDEN_PATTY` 205, `ING_MUTAGEN_GOO` 411, `ING_STARDUST
 
 **Hourly steps**
 
-| Step | h | Shift | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 1.00 | ×1.0 | 80.0 | 0.304 | 32.0 | 94.2 | 32.0 | Kitchen | 32 | 703 | 47 | 0 | 309 | 422 | 19 |
-| 2 | 1.00 | ×1.0 | 75.0 | 0.297 | 31.4 | 92.2 | 31.4 | Kitchen | 31 | 681 | 46 | 0 | 300 | 422 | 5 |
-| 3 (voided) | 1.00 | ×0.5 | 70.0 | 0.291 | 30.7 | 90.3 | 30.7 | Kitchen | 15 | 330 | 22 | 0 | 145 | 211 | −4 |
-| **Σ** | 2.00 | 2.00 eff. | | | | | | | **63** | **1,384** | **93** | **0** | **609** | **844** | **24** |
+| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1.00 | ×1.0 | 80.0 | 32.0 | 94.2 | 32.0 | Kitchen | 32 | 703 | 47 | 0 | 309 | 422 | 19 |
+| 2 | 1.00 | ×1.0 | 75.0 | 31.4 | 92.2 | 31.4 | Kitchen | 31 | 681 | 46 | 0 | 300 | 422 | 5 |
+| 3 (voided) | 1.00 | ×0.5 | 70.0 | 30.7 | 90.3 | 30.7 | Kitchen | 15 | 330 | 22 | 0 | 145 | 211 | −4 |
+| **Σ** | 2.00 | 2.00 eff. | | | | | | **63** | **1,384** | **93** | **0** | **609** | **844** | **24** |
 
 Step 3 would have lost money (Net_step < 0), so the Manager **closed early**: that step is voided (no customers, no wages) and the simulation stops.
 

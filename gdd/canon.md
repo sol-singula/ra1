@@ -687,7 +687,7 @@ Thresholds (defaults; personalities may shift them): **Delighted ≥ 90 · Happy
 Unhappy 30–49 · Furious < 30.**
 
 ### C11.4 Payment, tips, reputation
-- **Pay** = Σ item menu prices × PayFactor: `1.0` if S ≥ 50; `0.8` if 30 ≤ S < 50; customers who become
+- **Pay** = Σ item menu prices × PayFactor: `1.0` if S ≥ 50; `0.8` if 30 ≤ S < 50; `0.6` if S < 30 and the customer stays to pay; customers who become
   hostile and are calmed by combat pay an **Apology Payment of 40 %** (no tip); customers who storm out pay 0.
 - **Tip** = Σ prices × TipRate(S) × PersonalityTipMult; TipRate: S < 70 → 0; 70–79 → 5 %; 80–89 → 10 %;
   90–97 → 18 %; 98–100 → 25 % ("Chef's Kiss"). Target: competent play averages ≈ 10 % tips.

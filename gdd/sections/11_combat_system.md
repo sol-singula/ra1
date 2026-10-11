@@ -547,10 +547,11 @@ KO'd (storm-outs still follow §10 rules).
 
 #### 11.10.5 Protective upgrades (generic; owned by §15 and §36.12)
 
-Combat exposes four multipliers that restaurant upgrades may modify (bounded here): `FurnitureCombatDamageMult`
-(sturdier/padded furniture, ≥ 0.5), `SecurityResponseMult` (alarm/bell upgrades: Security reaction time,
-≥ 0.5), `WoozyDurationMult` (comfy break-room style upgrades, ≥ 0.3), and `EscalationDampener` (calming decor
-or music; applied by §10 to escalation rolls). §15 names the upgrades and prices; `CombatService` reads the
+Combat exposes three multipliers and one subtractive dampener that restaurant upgrades may modify (bounded here):
+`FurnitureCombatDamageMult` (sturdier/padded furniture, ≥ 0.5), `SecurityResponseMult` (alarm/bell upgrades:
+Security reaction time, ≥ 0.5), `WoozyDurationMult` (comfy break-room style upgrades, ≥ 0.3; e.g. 0.6), and
+`EscalationDampener` (calming decor or music, e.g. 0.05; **subtracted** by §10 from the escalation-roll
+probability, never a multiplier). §15 names the upgrades and prices; `CombatService` reads the
 restaurant attributes.
 
 #### 11.10.6 Employee intervention (`ROLE_SECURITY`)

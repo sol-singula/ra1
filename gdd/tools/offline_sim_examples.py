@@ -810,20 +810,21 @@ def render_example(r, idx):
     w("")
     w("**Roster**")
     w("")
-    w("| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |")
-    w("|---|---|---|---|---|---|---|---|---|---|---|")
+    w("| Employee | Archetype | Role | Rarity | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |")
+    w("|---|---|---|---|---|---|---|---|---|---|")
     row1 = r["rows"][0]
     for s in r["staff"]:
-        rs = ", ".join("%s %d%s" % ({"cook": "Cook", "svc": "Svc", "acc": "Acc", "rep": "Rep", "cmb": "Cmb", "rel": "Rel"}[k], s.stats[k],
-                                     "*" if k in dict((x for x in [(kk, 1) for kk in next(sp for sp in ex["roster"] if sp["id"] == s.id).get("trained", {})])) else "")
-                       for k in ROLE_W[s.role])
         tm = row1["contrib"][s.id] / (row1["eff"][s.id] / 100) if row1["eff"][s.id] else 1
-        w("| %s | `%s` | %s | %s | %s | %.1f | %d / %d | %.1f | ×%.2f | %.3f | %s |" % (
-            s.short, s.id, ROLE_SHORT[s.role], s.a["rarity"], rs, s.role_stat_avg(), s.morale0, s.energy0,
+        w("| %s | `%s` | %s | %s | %.1f | %d / %d | %.1f | ×%.2f | %.3f | %s |" % (
+            s.short, s.id, ROLE_SHORT[s.role], s.a["rarity"], s.role_stat_avg(), s.morale0, s.energy0,
             row1["eff"][s.id], tm, row1["contrib"][s.id], fmt(s.wage)))
     w("")
-    if any(sp.get("trained") for sp in ex["roster"]):
-        w("\\* trained above the archetype value (within the potential cap, §16.6).")
+    trained = [(sp["id"], sp["trained"]) for sp in ex["roster"] if sp.get("trained")]
+    if trained:
+        names = {s.id: s.short for s in r["staff"]}
+        w("Trained above the §36.8 values (within the potential cap, §16.7.4): " + "; ".join(
+            "%s %s" % (names[i], ", ".join("%s %d" % ({"cook": "Cooking", "acc": "Accuracy", "svc": "Service", "rep": "Repair", "cmb": "Combat", "rel": "Reliability"}[k], v) for k, v in t.items()))
+            for i, t in trained) + ".")
         w("")
     compact = ex.get("negative_example")
     if not compact:
@@ -848,15 +849,15 @@ def render_example(r, idx):
     w("")
     w("**Hourly steps**")
     w("")
-    w("| Step | h | Shift | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |")
-    w("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    w("| Step | h | Shift | Avg Energy % | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |")
+    w("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for row in r["rows"]:
-        w("| %d%s | %.2f | ×%.1f | %.1f | %.3f | %.1f | %.1f | %.1f | %s | %d | %s | %s | %s | %s | %s | %s |" % (
-            row["step"], " (voided)" if row.get("voided") else "", row["h"], row["tp"], row["E"], row["chef_contrib"], row["cap_k"], row["cap_s"],
+        w("| %d%s | %.2f | ×%.1f | %.1f | %.1f | %.1f | %.1f | %s | %d | %s | %s | %s | %s | %s | %s |" % (
+            row["step"], " (voided)" if row.get("voided") else "", row["h"], row["tp"], row["E"], row["cap_k"], row["cap_s"],
             row["Q"], row["lim"], row["N"], fmt(row["rev"]), fmt(row["tips"]), fmt(row["deliv"]), fmt(row["ing"]),
             fmt(row["wages"]), fmt(row["net"])))
     tot = r["tot"]
-    w("| **Σ** | %.2f | %.2f eff. | | | | | | | **%s** | **%s** | **%s** | **%s** | **%s** | **%s** | **%s** |" % (
+    w("| **Σ** | %.2f | %.2f eff. | | | | | | **%s** | **%s** | **%s** | **%s** | **%s** | **%s** | **%s** |" % (
         r["H_op"], r["H_eff"], fmt(tot["N"]), fmt(tot["rev"]), fmt(tot["tips"]), fmt(tot["deliv"]), fmt(tot["ing"]), fmt(tot["wages"]), fmt(r["base_net"])))
     w("")
     if r["closed_at"]:

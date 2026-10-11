@@ -510,7 +510,7 @@ sequenceDiagram
 | XP | per §14 `ARENA` row (4, +4 on a win, first 10 matches per UTC day) | Friendly Spar and Bash the Bots count toward the same 10 |
 | Season end (≥ 10 rated matches) | by peak bracket: Rookie 5 RT + 40 MS · Bronze 10 RT + 70 MS · Silver 15 RT + 100 MS · Gold 20 RT + 130 MS · Platinum 30 RT + 160 MS · Morph Master 40 RT + 200 MS | within the §29.14 `arena_reward` ceilings (≤ 200 MS, ≤ 50 RT per transaction); key `arenaseason:<seasonId>` |
 | Season cosmetics | bracket title (e.g. "Season 3 Gold Whisk"), bracket palette at Silver+, Champions Walk plinth (§18) for the server's weekly top 8 | cosmetic only |
-| Achievements | `ACH_035` Arena Rookie, `ACH_036` Arena Champion (grants `FRN_904` Arena Champion Belt Case) per §36.16 | trophy repeats → 100 MS (§18.8.4) |
+| Achievements | the arena achievements of §36.16 ("Arena Rookie"; "Arena Champion", which grants `FRN_904` Arena Champion Belt Case) | trophy repeats → 100 MS (§18.8.4) |
 
 The Cook-Off ladder pays the identical table, so a player who never fights can earn every arena reward type.
 
