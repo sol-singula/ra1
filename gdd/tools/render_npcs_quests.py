@@ -165,7 +165,7 @@ def scale_table() -> str:
             "|---|---|---|---|---|---|---|---|---|---|"]
     for t in range(1, 11):
         L = ENTRY_L[t]
-        rows.append(f"| `TIER_{t:02d}` | {L} | {INC[t]:,} | {nice(0.02 * INC[t]):,} | {nice(0.25 * xprate(L)):,} | "
+        rows.append(f"| T{t} · `TIER_{t:02d}` | {L} | {INC[t]:,} | {nice(0.02 * INC[t]):,} | {nice(0.25 * xprate(L)):,} | "
                     f"{2 + t} | {nice(0.08 * INC[t]):,} | {nice(0.5 * xprate(L)):,} | {5 * t} | {1 + (t - 1) // 4} |")
     return "\n".join(rows)
 
@@ -187,7 +187,7 @@ def budget_table(quests: list[dict]) -> str:
             else:
                 mb += fixed_mb(q)
                 xp += fixed_xp(q)
-        rows.append(f"| `TIER_{t:02d}` | ×{P_MB[t]} | ×{P_XP[t]} | {hours} | {income:,} | {len(qs)} | {mb:,} | {100 * mb / income:.1f} % | "
+        rows.append(f"| T{t} · `TIER_{t:02d}` | ×{P_MB[t]} | ×{P_XP[t]} | {hours} | {income:,} | {len(qs)} | {mb:,} | {100 * mb / income:.1f} % | "
                     f"{xpband:,} | {xp:,} | {100 * xp / xpband:.1f} % |")
     return "\n".join(rows)
 
