@@ -283,7 +283,7 @@ end
 - Analytics (§31): `mmr_quest_accept`, `mmr_quest_progress` (sampled), `mmr_quest_complete {questId, durationS,
   attempts}`, `mmr_quest_fail {questId, reason}`, `mmr_quest_reroll {slot, paid}`, `mmr_story_chapter {chapter}`.
 
-### 20.8 Story campaign — "From Shack to Legendary"
+### 20.8 Progression — the story campaign "From Shack to Legendary"
 
 Ten chapters, one per restaurant tier (canon §C17.3). Each chapter opens when the player reaches its tier and
 finishes the previous chapter. Chapter quests unlock in order. Finales grant a skill point and a signature reward.

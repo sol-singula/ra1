@@ -248,7 +248,7 @@ def main() -> int:
                 loc += f" ({n['at']})"
             lines = n["d"] if n["b"].startswith(("[STORY]", "[BOSS]")) else n["d"][:2]
             dlg = " / ".join(f"“{d}”" for d in lines)
-            ql = ", ".join(sorted(links[n["id"]]))
+            ql = ", ".join(sorted(links[n["id"]], key=lambda x: (list(QTYPES).index(x[4:7]), x)))
             out.append("| " + " | ".join(cell(x) for x in [
                 tick(n["id"]), f"**{n['n']}**", n["m"], n["p"], loc, n["r"], dlg, ql, n["b"]]) + " |")
         out.append("")
