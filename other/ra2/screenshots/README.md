@@ -10,7 +10,7 @@ hiding the ones behind walls, so some views look busier than they will in Roblox
 
 ![Spawn in the lobby](01_lobby_spawn.jpg)
 
-Tutorial step 1 points at the FREE dragon. The leaderboards are on the right. The phone HUD shows coins, four big
+Tutorial step 1 points at the FREE dragon. The golden dragon statue stands on the plaza and the leaderboards are on the right. The phone HUD shows coins, four big
 menu buttons above the thumbstick, and LOCK and BONK left of the jump button.
 
 ### 2. Grab the free dragon
@@ -21,7 +21,7 @@ menu buttons above the thumbstick, and LOCK and BONK left of the jump button.
 
 ![Run home](03_carry_home_arrow.jpg)
 
-The dragon rides on your head and you walk slower. "RUN HOME!" and the "YOUR BASE" marker show the way.
+The dragon rides on your head and you walk slower. "RUN HOME!" and the "YOUR BASE" marker show the way down the lantern-lit sidewalk past the castle bases.
 
 ### 4. First nest
 
@@ -122,4 +122,4 @@ TOP COINS, TOP THIEVES and BEST DRAGONS.
 
 ![The map](21_map_overview.jpg)
 
-The lobby (front right), the Dragon Road down the middle and 8 bases.
+Eight castle bases along the Dragon Road, the lobby and its rocky cave arch (front right), the crystal-cave mountain at the far end, forests, mountains all around, clouds and dragons circling in the sky.

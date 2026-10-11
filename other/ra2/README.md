@@ -6,7 +6,7 @@ The game lives in [`games/ra2 - Steal a Dragon/`](<../../games/ra2 - Steal a Dra
 this README, the [plan](PLAN.md) and the [screenshots](screenshots/README.md). Every command and path below is
 relative to the game folder.
 
-Everything is built from plain parts, so it runs in a blank Baseplate with no uploaded assets.
+Everything is built from plain parts, so it runs in a blank Baseplate with no uploaded assets. The map: a cobblestone lobby with a golden dragon statue and the leaderboards, the Dragon Road (a royal carpet with lanterns and banners) running from a lava cave to a crystal mountain, 8 little castles with towers and flags, forests, rocks, flowers, a ring of snowy mountains, clouds, and three dragons circling in the sky.
 
 ## Run it in Roblox Studio
 
@@ -92,7 +92,8 @@ games/ra2 - Steal a Dragon/
 │                              Data/ (Dragons, Shop, Goals)
 ├─ src/server/
 │  ├─ Main.server.lua, Loader.lua
-│  ├─ World/                   WorldBuilder (lobby, road, 8 bases, Practice Base), DragonBuilder (dragon models)
+│  ├─ World/                   WorldBuilder (lobby, road, 8 castle bases, Practice Base), Scenery (trees,
+│  │                           rocks, mountains, lanterns, towers, clouds), DragonBuilder (dragon models)
 │  └─ Services/                PlayerData (saving), Economy (coins, passes, leaderstats), Team (friends),
 │                              Base (locks, banks, pads), Dragon (nests, carry, steal, drop, place),
 │                              Road (spawns, Legend event, luck, free and practice stands), Combat (bonk, speed),

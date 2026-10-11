@@ -587,10 +587,34 @@ function methods.GetPivot(inst)
 	local list = parts(inst)
 	return list[1] and list[1].CFrame or cf(v3())
 end
+-- Exact inverse of a CFrame (general 3x3 inverse, so tiny rounding in a rotation never grows frame to frame).
+local function exactInverse(c)
+	local m = c.r
+	local a, b, cc, d, e, f, g, h, i = m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9]
+	local det = a * (e * i - f * h) - b * (d * i - f * g) + cc * (d * h - e * g)
+	local inv = {
+		(e * i - f * h) / det,
+		(cc * h - b * i) / det,
+		(b * f - cc * e) / det,
+		(f * g - d * i) / det,
+		(a * i - cc * g) / det,
+		(cc * d - a * f) / det,
+		(d * h - e * g) / det,
+		(b * g - a * h) / det,
+		(a * e - b * d) / det,
+	}
+	return cf(-rotate(inv, c.p), inv)
+end
 function methods.PivotTo(inst, target)
-	local delta = target * methods.GetPivot(inst):Inverse()
+	local pivot = methods.GetPivot(inst)
+	local delta = target * exactInverse(pivot)
+	local primary = not isA(inst, "BasePart") and rawget(inst, "_props").PrimaryPart
 	for _, p in parts(inst) do
-		rawget(p, "_props").CFrame = delta * rawget(p, "_props").CFrame
+		if p == primary or p == inst then
+			rawget(p, "_props").CFrame = target -- Roblox puts the pivot exactly where you ask
+		else
+			rawget(p, "_props").CFrame = delta * rawget(p, "_props").CFrame
+		end
 	end
 end
 function methods.ScaleTo() end

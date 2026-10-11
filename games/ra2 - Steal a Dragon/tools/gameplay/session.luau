@@ -156,7 +156,7 @@ Engine.advance(0.3)
 follow("02_free_dragon_prompt", 12, 6, 4)
 trigger(Road.freeModel, "free")
 Engine.advance(0.6)
-walk(V3.new(-120, 0.5, 14), gate)
+walk(V3.new(-100, 0.5, 16), gate)
 follow("03_carry_home_arrow", 14, 7, 8)
 
 -- 04 Placed in a nest
@@ -206,7 +206,7 @@ walk(at(base, 0, 0.5, 2))
 Engine.advance(1.5)
 walk(at(base, 8, 0.5, -14), base.world.eggStand.Position)
 Engine.advance(0.3)
-follow("09_tutorial_done_egg", 12, 6, 4)
+shot("09_tutorial_done_egg", at(base, -2, 13, -4), base.world.eggStand.Position + V3.new(0, 2, 0), 65)
 
 -- Fill up the base over a "few days" so later shots look lived-in
 profile.nestsBought = 8

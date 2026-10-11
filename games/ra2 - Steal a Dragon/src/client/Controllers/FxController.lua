@@ -1,5 +1,6 @@
 -- Look and feel: a bonk bat in every character's hand (swings when its owner bonks), rainbow dragons,
--- the "YOUR BASE" marker that is always visible, camera shake when you get bonked, and the bonk keys.
+-- dragons circling in the sky, the "YOUR BASE" marker that is always visible, camera shake when you get
+-- bonked, and the bonk keys.
 local CollectionService = game:GetService("CollectionService")
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
@@ -161,6 +162,19 @@ function FxController:init()
 			elseif hum.CameraOffset ~= Vector3.zero then
 				hum.CameraOffset = Vector3.zero
 			end
+		end
+		-- dragons circling in the sky
+		for _, d in CollectionService:GetTagged("SkyDragon") do
+			local r, h = d:GetAttribute("Radius") or 80, d:GetAttribute("Height") or 60
+			local a = (d:GetAttribute("Phase") or 0) + t * (d:GetAttribute("Speed") or 0.04)
+			local p = Vector3.new(-20 + math.cos(a) * r, h + math.sin(t * 0.8 + a) * 3, math.sin(a) * r * 0.7)
+			local ahead = Vector3.new(-20 + math.cos(a + 0.05) * r, h, math.sin(a + 0.05) * r * 0.7)
+			if (d:GetAttribute("Speed") or 0) < 0 then
+				ahead = p + (p - ahead)
+			end
+			d:PivotTo(
+				CFrame.lookAt(p, Vector3.new(ahead.X, p.Y, ahead.Z)) * CFrame.Angles(0, 0, math.sin(t + a) * 0.15)
+			)
 		end
 		-- rainbow dragons, 10 times a second
 		acc += dt
