@@ -3,7 +3,7 @@
 Grab a dragon. Run home. Lock your door. Steal from everyone else.
 
 The game lives in [`games/ra2 - Steal a Dragon/`](<../../games/ra2 - Steal a Dragon>). This folder holds the docs:
-this README, the [plan](PLAN.md) and the [screenshots](screenshots/README.md). Every command and path below is
+this README, the [plan](PLAN.md), the [screenshots](screenshots/README.md) and the [thumbnails](thumbnails/README.md). Every command and path below is
 relative to the game folder.
 
 Everything is built from plain parts, so it runs in a blank Baseplate with no uploaded assets. The map: a cobblestone lobby with a golden dragon statue and the leaderboards, the Dragon Road (a royal carpet with lanterns and banners) running from a lava cave to a crystal mountain, 8 little castles with towers and flags, forests, rocks, flowers, a ring of snowy mountains, clouds, and three dragons circling in the sky.
