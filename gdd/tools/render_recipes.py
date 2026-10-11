@@ -207,9 +207,10 @@ def validate_ingredients(c, ings):
     by_id = {}
     for i in ings:
         iid = i.get("id", "?")
-        for k in ("id", "name", "tags", "group", "cost", "unlock", "storage", "actions", "asset", "look"):
+        for k in ("id", "name", "tags", "group", "cost", "unlock", "storage", "actions", "look"):
             if k not in i:
                 err("%s: missing field %s" % (iid, k))
+        i.setdefault("asset", "ing_" + iid[4:].lower())
         if iid in by_id:
             err("duplicate ingredient %s" % iid)
         by_id[iid] = i

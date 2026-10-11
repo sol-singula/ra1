@@ -371,7 +371,7 @@ Targets are defined in the matrix of §35.10; these cases are the gate checks ru
 | TC-QST-02 | At `QST_TUT_007` | Disconnect mid-step; rejoin | Resumes per §32 recovery rules with state restored; no duplicate reward | P0 |
 | TC-QST-03 | 100 fresh runs | Reach `QST_TUT_006` | Scripted `PER_001` spawns, escalates to the scripted level and resolves in 100/100 runs | P0 |
 | TC-QST-04 | At `QST_TUT_003` | Cook `RCP_BRG_001` but trash it; then serve one | Completes only on serving to the tutorial customer | P1 |
-| TC-QST-05 | At `QST_TUT_012` | Accept the hire | `EMP_001` granted once; offline income preview shown | P0 |
+| TC-QST-05 | At `QST_TUT_012` | Accept the hire | `EMP_001` granted once; offline income preview shown; the other §32 rewards (incl. 1 Morph Capsule) granted once | P0 |
 | TC-QST-06 | Fake clock 23:59:50 UTC on Sunday; two servers | Cross 00:00 UTC Monday; hop servers | Daily and weekly resets each happen once per player per period | P0 |
 | TC-QST-07 | §20 data | Validator | Rewards use only the §C17.4 vocabulary (MB, MS, RT, XP, Morph Capsules, `MUT_` parts, `RCP_` unlocks, `FRN_901`–`FRN_910`, skill points, respec tokens, titles, emotes, palettes) | P1 |
 | TC-QST-08 | §20 data | Validator | Daily-quest XP = 0.25 × XPRate(L) ± 10 % (≈ 334 XP at L10) | P1 |

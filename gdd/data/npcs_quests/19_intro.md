@@ -155,8 +155,9 @@ The city's cosmetic lighting cycle lasts 24 minutes (§C3), split into four phas
 | `RIDE` | rides a Metro carriage loop (metro riders); can be talked to when the carriage is docked | rides carriage |
 
 **Rules.** SERVICE NPCs are always `STATION` while their building's service is open, and services are open
-24/7, so the schedule only changes their idle animation and barks. QUEST NPCs never move more than 12 studs
-from their anchor, so quest markers stay findable. Only AMBIENT NPCs commute. During city events,
+24/7, so the schedule only changes their idle animation and barks. QUEST NPCs stay within 12 studs
+of their anchor, or on a fixed PATROL/RIDE loop of ≤ 60 s drawn on the minimap while they hold a quest marker, so
+quest givers stay findable. Only AMBIENT NPCs commute. During city events,
 `CityEventService` may override schedules (`EventOverride`): for example, every DST_07 NPC gathers at the
 Showcase Stage (`BLD_22`) during `EVT_027` Downtown Dance-Off.
 
