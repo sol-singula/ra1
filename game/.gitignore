@@ -1,0 +1,4 @@
+tools/luaurun/target/
+*.rbxl
+*.rbxlx
+sourcemap.json
