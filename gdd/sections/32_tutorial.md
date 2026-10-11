@@ -1,6 +1,6 @@
 ## 32. Tutorial
 
-> **Owner:** A1 Vision & Onboarding. This section scripts the first 15 minutes line by line: the twelve tutorial
+> This section scripts the first 15 minutes line by line: the twelve tutorial
 > quests `QST_TUT_001`–`QST_TUT_012` (IDs and titles fixed by canon C17.1; quest rows in §20), their dialogue,
 > prompts per input device, highlights, timing, animations, rewards, recovery, skip and resume rules, analytics,
 > and the post-tutorial contextual tips. Widget reveal order follows §24.3 (progressive disclosure), and input

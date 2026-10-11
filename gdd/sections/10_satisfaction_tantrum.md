@@ -1,6 +1,6 @@
 ## 10. Satisfaction and Tantrum Systems
 
-> **Owner:** A5 Customers. Implements §C11.3 (satisfaction), §C11.4 (payment, tips, reputation) and §C11.5
+> Implements §C11.3 (satisfaction), §C11.4 (payment, tips, reputation) and §C11.5
 > (anger levels), using personality parameters from §9.3 and customer states from §8.4. Fight AI per combat style
 > belongs to §11; ability and status numbers to §36.6 / §36.7. Values marked **[TUNABLE]** are balancing
 > assumptions.
@@ -39,7 +39,7 @@ patience ends, so an abandoned item contributes at most `(0.10·K + 0.10·M) × 
 
 #### 10.2.1 A — order accuracy
 
-A is computed by `OrderService` exactly as §6.18.4 specifies (owned by A2) and consumed here:
+A is computed by `OrderService` exactly as §6.18.4 specifies and consumed here:
 
 ```
 DishMatch = 0 → wrong dish: rejected at INSPECT_FOOD, never evaluated (anger +20 × sens, §10.6)
@@ -134,7 +134,7 @@ hooks (e.g. PER_008 Perfectionist −10, PER_031 Sing +8), clamped to [−20, +1
 
 **EventModifier** (sum of active events, clamped to −15..+15 per §C11.3 and §36.11). Event schedules and rules are
 owned by §36.11; where §36.11 states an EventModifier (marked **§36.11**) that value is repeated here, the other
-values are A5's satisfaction effects. Unlisted events give 0 — including `EVT_003`, `EVT_004`, `EVT_008` and
+values are §8–§10's satisfaction effects. Unlisted events give 0 — including `EVT_003`, `EVT_004`, `EVT_008` and
 `EVT_026`, whose challenge comes from their own rules (extra demand, invaders, critics, inspections).
 
 | Event | ID | Modifier |
@@ -281,23 +281,23 @@ sensitivity, so a crowded room escalates quickly but never instantly.
 | Event | Amount × sens | Defined in |
 |---|---|---|
 | Wrong dish (rejected at inspect) | +20 | §8.4.2 |
-| Burned or ruined component | +12 (once per item) | A5 |
-| Undercooked component | +8 | A5 |
-| Each failed non-joke modification — the "Wrong Order?!" reaction (COUNT near miss +2.5; joke mods never add anger) | +5 | §6.18.4, A5 |
-| MUSHY or SPILLED component | +6 | A5 |
-| *Per-item defect cap* | *+30* | A5 |
-| Evaluation label × item price share | Delighted −25 · Happy −12 · Meh +6 · Unhappy +18 · Furious +32 (negative values are not × sens; PER_018 ×1.5 both ways) | A5 |
+| Burned or ruined component | +12 (once per item) | §8–§10 |
+| Undercooked component | +8 | §8–§10 |
+| Each failed non-joke modification — the "Wrong Order?!" reaction (COUNT near miss +2.5; joke mods never add anger) | +5 | §6.18.4, §8–§10 |
+| MUSHY or SPILLED component | +6 | §8–§10 |
+| *Per-item defect cap* | *+30* | §8–§10 |
+| Evaluation label × item price share | Delighted −25 · Happy −12 · Meh +6 · Unhappy +18 · Furious +32 (negative values are not × sens; PER_018 ×1.5 both ways) | §8–§10 |
 | Hit by a thrown object of any kind, from anyone | +25 | §C11.5, §11.2.2 |
-| Splash: within 4 studs of a food impact but not hit | +6 | A5 |
+| Splash: within 4 studs of a food impact but not hit | +6 | §8–§10 |
 | Player melee or area contact while not hostile (0 damage, 0.3 s flinch) | +8 | §11.2.2 |
 | `PACIFIST` hit by anything (cries and flees 8 studs) | +10 extra | §11.8.2 |
 | Watching a scuffle hit within 10 studs | +3 per hit | §11.6.4 |
 | Instigator Yell (12 studs; the Influencer 20 studs) | +4 every 2 s, max +20 per customer per yelling session | §11.8.2 |
 | INSTIGATOR Bat Screech / Mind Buzz (NPC versions) | +10 to each affected customer | §36.6 (`ABL_023`, `ABL_047`) |
 | Plate stolen from its table (theft, food grab, tractor beam) | +15 | §11.6.4 |
-| A table within 6 studs flipped / its own table flipped | +10 / +25 | A5 (flip execution §11.6.3) |
-| Its seat or table becomes Broken under it | +15 | A5 |
-| Its reserved seat taken | +10 | A5 |
+| A table within 6 studs flipped / its own table flipped | +10 / +25 | §8–§10 (flip execution §11.6.3) |
+| Its seat or table becomes Broken under it | +15 | §8–§10 |
+| Its reserved seat taken | +10 | §8–§10 |
 | Personality hooks (Karenosaurus ignored "Manager!" +10, Sloth-Rocket woken +10, Newt startle +15, Birthday Beast "No Cake?!" +20) | as listed | §9.4 |
 | Regular with a grudge | starts at 15 × Grudge | §8.12 |
 
@@ -416,7 +416,7 @@ A brawl is never scripted; it emerges from these rules, each of which is visible
    computed on a 15-stud spatial hash every tick), they form a **mob**: every customer within 15 studs of any
    member gains +0.3 /s and +0.10 on escalation rolls. A mob dissolves when fewer than 3 members remain at level ≥ 2.
 4. **Furniture knock-ons.** Smashes, flips, charges and wall splats damage objects per §11.6.3. Their anger effects
-   are A5's: a table flipped within 6 studs +10 × sens, one's own table flipped +25 × sens (dish handling §8.5),
+   are §8–§10's: a table flipped within 6 studs +10 × sens, one's own table flipped +25 × sens (dish handling §8.5),
    a seat turning Broken under someone +15 × sens. Spilled plates become splats (K).
 5. **Chain depth limit.** Each anger event carries a `chainDepth`: 0 for a direct cause (bad food, waiting, a
    player's throw); an event produced by a customer whose hostility came from a depth-d event carries d + 1.
@@ -488,7 +488,7 @@ Only two customers ever reached level 3, so chaos never ignited — with one mor
 |---|---|---|
 | Calm Down! | anger −(20 + 0.1 × CHARM), max −35; at level ≤ 4 drops at least one level; at level 5 works only on a Winded or ≤ 50 % Huff customer (`TRICKSTER` ≤ 25 %) and then **talks it down** to level 2; ×2 against `INSTIGATOR` and inside PER_001's "Manager!" window (never more than ×2) | §36.6 (`ABL_006`), §11.10.1 |
 | Soothing Song | −15 (−25 at level ≤ 2) within 12 studs; talks down level-5 hostiles at ≤ 70 % Huff; silences `INSTIGATOR` 8 s | §36.6 (`ABL_065`) |
-| **Peace Offering** | serve any off-ticket DES or DRK dish to a customer at level ≥ 1 — the only thing that can be handed to a hostile customer: −35 anger (PER_020: −2 full levels); a second offering in the same visit −10; free for the customer, ingredient cost charged; at level 0 it is simply nice (P_offset +3) | A5 |
+| **Peace Offering** | serve any off-ticket DES or DRK dish to a customer at level ≥ 1 — the only thing that can be handed to a hostile customer: −35 anger (PER_020: −2 full levels); a second offering in the same visit −10; free for the customer, ingredient cost charged; at level 0 it is simply nice (P_offset +3) | §8–§10 |
 | Chill décor | `FRN_146` Lava Lamp Floor Lamp: anger **gains** ×0.90 within 6 studs · `FRN_434` Chill-Out Beanbag Corner: ×0.85 within 8 studs; the strongest applies, never stacked | §15 |
 | Chill auras (customers) | PER_013 Grandma Golem and Superfan Regulars: +0.3 /s decay within 8 studs | §9.4, §8.12 |
 | One-off personality calms | PER_030 Tag Team −25 · PER_027 Anniversary −20 (15 studs) · PER_008 Round for the house −15 · PER_010 Spotter −10 · PER_018 Standing Ovation −10 | §9.4 |

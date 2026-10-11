@@ -1,6 +1,6 @@
 ## 14. Player Progression
 
-> **Owner:** A9 Progression. **Binding inputs:** canon §C5 (stats), §C5.1 (XP curve), §C4.4 (pacing), §C6 (tiers),
+> **Binding inputs:** canon §C5 (stats), §C5.1 (XP curve), §C4.4 (pacing), §C6 (tiers),
 > §C7.1 (stations), §C10 (recipe unlock levels), §C16.1 (districts), §C17.4 (reward vocabulary), §C18 (skill trees),
 > §C22 E14. Tables between `BEGIN/END GENERATED` markers are produced from the canon formulas by
 > `python3 gdd/tools/render_progression.py` (run `--check` to validate this section, §36.16 and §36.17). Do not hand-edit them.
@@ -241,7 +241,7 @@ All values are multiples of **XPU(L)** at grant time. "Once" sources are idempot
 | `FIRST_PERFECT` | First PERFECT dish (Q ≥ 0.95) of each recipe | 3 | once per recipe | one-time |
 | `DISCOVER` | First entry to a district / Metro station / hidden secret spot | 15 / 5 / 10 | once per location key | one-time |
 | `NPC_MEET` | First conversation with each named NPC | 1 | once per NPC | one-time |
-| `QUEST` | Quest completed (A13 picks the value inside the band) | TUT 2–3 each (≤ 35 for all twelve) · DLY ≈ 25 (canon: 0.25 × XPRate) · WKY ≈ 150 · STY 60–120 · CHF/CBT/RPR/EXP/EMP/RST 30–60 | once per quest instance | 11–14 |
+| `QUEST` | Quest completed (§19–§20 picks the value inside the band) | TUT 2–3 each (≤ 35 for all twelve) · DLY ≈ 25 (canon: 0.25 × XPRate) · WKY ≈ 150 · STY 60–120 · CHF/CBT/RPR/EXP/EMP/RST 30–60 | once per quest instance | 11–14 |
 | `UPGRADE` | Tier upgrade · first purchase of each restaurant upgrade · station reaches Lv n (once per station type and level) · first copy of each mutation part · part upgraded to a new level · first activation of each synergy · first hire per role | 40 · 5 · 3 × n · 2 · 2 · 3 · 5 | once per key | 4–7 (with `DISCOVER`, `EVENT`, `LEARN`) |
 | `EVENT` | City event reward band reached (§18: Participation / Success / Top) | `XPF × 100` with the event's listed XPF (highest band only, typically 15–45) | idempotent per event slot (`<EVT>@<slot>`, §18) | (inside the 4–7) |
 | `CITY` | City micro-activities and secret spots priced in XPF by §18 (props, races, litter, secrets) | `XPF × 100` as listed in §18 (e.g. a secret 0.1 → 10) | §18 daily caps; rolling cap 10 XPU/h | (inside the 4–7) |
@@ -452,7 +452,7 @@ multitasking), Combat tree (strength, defense, mobility, mutation effectiveness)
 sturdier furniture, disaster recovery), plus two optional specializations — Customer Service (`SVC`) and Employee Management (`MGMT`).
 
 - **Points.** 1 skill point per level from L2 (99 by L100, §C18) + grants: 6 from milestones (§36.17), 10 from achievements
-  (§36.16), and at most 15 from quests (§20; design ceiling handed to A13) [TUNABLE] → **130 maximum**.
+  (§36.16), and at most 15 from quests (§20; design ceiling handed to §19–§20) [TUNABLE] → **130 maximum**.
 - **Buying a rank** requires: (a) enough unspent points (Cost is *per rank*); (b) every listed prerequisite owned at ≥ 1 rank
   ("or" = any one); (c) the node's level requirement; (d) the row gate — points already spent *in that tree*:
 

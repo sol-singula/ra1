@@ -1,6 +1,6 @@
 ### 36.16 Achievements Database
 
-> **Owner:** A9 Progression. Rules live in §14 (XP Unit **XPU**, §14.3; reward granting, §14.18). Checked by
+> Rules live in §14 (XP Unit **XPU**, §14.3; reward granting, §14.18). Checked by
 > `python3 gdd/tools/render_progression.py --check` (IDs, categories, C17.4 reward vocabulary, skill-point totals).
 
 **Rules & Mechanics.**

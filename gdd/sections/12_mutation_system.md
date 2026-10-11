@@ -391,7 +391,7 @@ color **and** shape (§24 accessibility).
 | ■ Rare | 4,000–10,000 | 20 MS | 5,200 | 7,000 | 8,200 | 10,000 | 4,000 | 75 |
 | ⬟ Epic | 25,000–60,000 | 80 MS | 32,000 | 42,500 | 49,500 | 60,000 | 25,000 | 36 |
 | ★ Legendary | 150,000–400,000 | 250 MS + 10 RT | 200,000 | · | 325,000 | 400,000 | · | 10 |
-| ⬢ Mythic | not sold | Lab fusion: 3 Legendary of same category + 600 MS + 40 RT | · | · | · | · | · | 0 |
+| ⬢ Mythic | not sold | Lab fusion: 3 Legendary parts from one fusion route (MYTHOLOGICAL / MARINE / OBJECT routes, see §12.5) + 600 MS + 40 RT | · | · | · | · | · | 0 |
 | ? Secret | not sold | hidden discovery condition | · | · | · | · | · | 0 |
 <!-- END GENERATED: price-points -->
 

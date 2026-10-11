@@ -1,8 +1,8 @@
 ## 18. Morph City
 
-> **Owner:** A12 City. **Binding inputs:** canon §C16 (districts, buildings, NPCs, plots, events, trophies),
+> **Binding inputs:** canon §C16 (districts, buildings, NPCs, plots, events, trophies),
 > §C13.8 (Secret mutation conditions), §C17.4 (reward vocabulary), §C4 (economy), §C3 (constants).
-> Building rows live in §36.10, event rows in §36.11. Acceptance criteria for all three A12 files use the
+> Building rows live in §36.10, event rows in §36.11. Acceptance criteria for all three §18 files use the
 > `AC-18-NN` series (§18: 01–29 · §36.10: 30–49 · §36.11: 50–69) so IDs never collide inside §36.
 
 Morph City is the **Explore** pillar made physical: a compact, neon-soaked cartoon metropolis where every
@@ -179,7 +179,7 @@ player only (the snail finally finishes crossing) and pins the district on the m
 ### 18.3 District Specifications
 
 Each block lists: **Theme · Footprint · Landmarks · Buildings · Ambient life · Vehicles · Music & ambience
-(described in words; IDs are A16's) · Secrets · Unlock · Customer flavor.** *Customer flavor* names the
+(described in words; IDs are §25–§26's) · Secrets · Unlock · Customer flavor.** *Customer flavor* names the
 citizen types that dominate the district crowd (§18.7) and, as an optional hook for §8, the personalities
 whose spawn weight rises by ×1.25 [TUNABLE] while a city event is centered on that district.
 
@@ -992,7 +992,7 @@ ambience by 6 dB. Positional props use `RollOffMode = InverseTapered`, `RollOffM
 | Monster Mall (DST_05) | `ParkingLot` / `Hallway` inside the mall | Arena (DST_10) | `Arena` |
 | Hidden alleys | `Alley` (district music −9 dB) | Building interiors | per §36.10 row (default `Room`) |
 
-Ambience beds and music moods per district are listed in §18.3 (descriptions for A16, who owns the IDs).
+Ambience beds and music moods per district are listed in §18.3 (descriptions for §25–§26, who owns the IDs).
 
 #### 18.9.6 Remotes & validation
 

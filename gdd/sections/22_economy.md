@@ -1,6 +1,6 @@
 ## 22. Economy
 
-> **Owner:** A14 Social & Economy. **Binding inputs:** canon §C4 (currencies, price curve, pacing, mutation
+> **Binding inputs:** canon §C4 (currencies, price curve, pacing, mutation
 > prices/upgrades, capsules, employee bands, station levels), §C5.1 (XP curve), §C6 (tiers), §C11.3–C11.4
 > (satisfaction, payment, tips, reputation, DecorMult), §C14.3 (offline caps), §C15 (offline model), §C22 E8/E9/E11.
 > **All tables marked "generated" are produced by `gdd/tools/economy_sim.py`** (Python 3 stdlib, deterministic) and can be
@@ -373,7 +373,7 @@ SpeedGain(Lv)  = time(Lv−1) / time(Lv) − 1           -- 0.90 / 0.80 / 0.70 /
 Payback (h)    = CostMult(Lv) × B / ΔNet/h            -- Bottleneck 0.5 (rush share), QualityGain 0.03 [TUNABLE]
 ```
 
-Generated with illustrative base prices B (the real B values live in §36.13 — this table tells A10 which B values keep
+Generated with illustrative base prices B (the real B values live in §36.13 — this table tells §15 which B values keep
 upgrades worthwhile):
 
 <!-- sim:stations -->

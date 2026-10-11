@@ -1,6 +1,6 @@
 ## 28. Data Persistence
 
-> **Owner:** A18 Data & Ops. **Binding inputs:** §C3 (autosave 120 s, level cap 100, reputation scale),
+> **Binding inputs:** §C3 (autosave 120 s, level cap 100, reputation scale),
 > §C4 (MB/MS/RT only), §C5 (stat caps, respec rules), §C15 (offline persistence & idempotency),
 > §C19 (`PlayerDataService`, `EconomyService`, `OfflineEarningsService`, …), §C22 E1/E5/E6/E11/E13.
 > §27 places the modules named here in the project tree; this section is authoritative for *what* is
@@ -569,7 +569,7 @@ export type OfflineSegment = {        -- one simulated interval; each capped sep
 	capped: boolean, tier: number, closedEarlyStep: number?,
 }
 
-export type OfflineReport = {         -- contents defined by §17.7 (A11); fractions kept until payout
+export type OfflineReport = {         -- contents defined by §17.7; fractions kept until payout
 	reportId: string,                 -- "<UserId>:<firstFromTs>:<lastToTs>:v<SIM_VERSION>" (§17.7)
 	simVersion: number,
 	segments: { OfflineSegment },

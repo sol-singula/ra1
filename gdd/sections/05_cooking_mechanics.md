@@ -1,6 +1,6 @@
 ## 5. Cooking Mechanics
 
-> **Owner:** A2 Cooking. This section is the rulebook for everything that happens between "order taken" and
+> This section is the rulebook for everything that happens between "order taken" and
 > "customer evaluates the plate": the interaction model, all 24 kitchen stations (canon §C7), every
 > preparation verb (canon §C8), quality scoring, tickets and the server-side **Dish** object, kitchen
 > hazards, co-op rules and the `CookingService` implementation. Order modifications live in §6.18, recipe
@@ -219,7 +219,7 @@ unlocked, so any co-op player may flip or remove it (items are restaurant-owned 
 | Lv4 Mutant | × 10 | TIER_06 | × 0.70; `W_perfect` × 1.25; burn grace +3 s | × 0.70; zone × 1.25; failure chance −50 % (over-process margin +50 %) | × 0.70; × 1.25; failure −50 % (e.g. trash capacity +50 %) |
 | Lv5 Ridiculous | × 25 | TIER_08 | × 0.60; `W_perfect` × 1.5; burn grace +3 s retained; **gimmick** | × 0.60; zone × 1.5; −50 % retained; **gimmick** | × 0.60; × 1.5; −50 % retained; **gimmick** |
 
-*Interpretation (A2):* canon's "cumulative, replaces previous" means multipliers replace earlier multipliers while the Lv4
+*Interpretation:* canon's "cumulative, replaces previous" means multipliers replace earlier multipliers while the Lv4
 additive bonus (burn grace / failure reduction) is kept at Lv5. Upgrading is refused while any slot of that station is
 `PROCESSING` ("Finish cooking first!"); the purchase is queued and applied when the station idles.
 
@@ -395,7 +395,7 @@ Durations are Lv1 values before stats/KA; all heat items use `W_perfect` 2.0 s, 
 | Purpose & interaction | Each burner holds a **pan** (SAUTE) or a **pot** (BOIL small); pan by default, long-press 0.5 s while placing for pot. SAUTE: **Toss** prompts at 33 % and 66 % of `T_ready` (1.0 s windows); pancakes/omelettes/crêpes use one Flip instead. BOIL: no input. Grab removes. |
 | Duration / in → out | Onions 5 s, sauce 8 s, pancake 6 s, fried egg 5 s, omelette 7 s, crêpe 6 s · boil: pasta 9 s, noodles 8 s, egg 7 s, **Warm It** (drink) 4 s · → SAUTEED / BOILED (`temp = HOT` for Warm It). |
 | Upgrades | **Lv5 Pan-Demonium:** a 3rd burner pops out; pans stop at BURNED (smoke) and never ignite. |
-| Failure | Missed tosses cap the grade (0 → PERFECT, 1 → GOOD, 2 → OK). Pan: BURNED → ON_FIRE. Pot: BURNED ("overboiled") → at `T_burn + 4 s` **Boil-Over** — SPILLED puddle, item RUINED, no flames (A2 ruling for water-based verbs). |
+| Failure | Missed tosses cap the grade (0 → PERFECT, 1 → GOOD, 2 → OK). Pan: BURNED → ON_FIRE. Pot: BURNED ("overboiled") → at `T_burn + 4 s` **Boil-Over** — SPILLED puddle, item RUINED, no flames (ruling for water-based verbs). |
 | VFX & audio | Pan sizzle; toss arc with sparkle; pot bubbles get grumpier; boil-over *blorp*. |
 | Co-op | Per-burner locks. |
 | Mutations | KA `fire`: +6 % window/part. `MUT_156` Spatula Arm: toss/flip windows +0.5 s. Chicken family (`MUT_008`, `MUT_121`, `MUT_141`, `MUT_180`): egg dishes +1 s `W_perfect`. `MUT_145` Octopus Arm: one tap answers toss prompts on both burners. |

@@ -1,6 +1,6 @@
 ### 12.9 Morph Combinations
 
-> Contributor: A8 (Morph UI & combination systems). Parts are referenced only by canon `MUT_` IDs; their stats,
+> Parts are referenced only by canon `MUT_` IDs; their stats,
 > passives and acquisition live in §12.1–12.8 and §36.3. Synergies are listed in §36.4, combination examples in §36.5.
 
 **Purpose.** A morph is more fun to show off when the game *notices* it. Every morph a player wears, and every customer,
@@ -437,8 +437,8 @@ in §16, not here.
 
 #### 12.10.7 Roblox Implementation
 
-**Modules.** `ReplicatedStorage/Shared/MutationDefs` (A7, generated from §36.3) and
-`ReplicatedStorage/Shared/MorphRules` (A7: slot fit, exclusions, visibility) are reused. A8 adds, in
+**Modules.** `ReplicatedStorage/Shared/MutationDefs` (§12, generated from §36.3) and
+`ReplicatedStorage/Shared/MorphRules` (§12: slot fit, exclusions, visibility) are reused. §13 adds, in
 `ReplicatedStorage/Shared/Morph/`: `SynergyDefs` (generated from §36.4; requirements are pre-compiled into the node
 tables below by the build script), `NamingRules`, `MorphNames` and `SynergyEvaluator`. `ServerScriptService/Services/MutationService` calls the evaluator, owns the
 `ModifierStack`, and sets the `ActiveSynergies` attribute. The client UI requires the same modules for previews only.
@@ -448,7 +448,7 @@ tables below by the build script), `NamingRules`, `MorphNames` and `SynergyEvalu
 -- ReplicatedStorage/Shared/Morph/SynergyEvaluator.lua
 -- Shared: authoritative on the server (MutationService), preview-only on the client (Morph menu).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PartDefs = require(ReplicatedStorage.Shared.MutationDefs) -- A7: id -> { family, category, rarityRank, tagSet, ... }
+local PartDefs = require(ReplicatedStorage.Shared.MutationDefs) -- §36.3: id -> { family, category, rarityRank, tagSet, ... }
 local SynergyDefs = require(script.Parent.SynergyDefs) -- array of { id, group, rank, req: Node }
 
 export type Loadout = { [string]: string }             -- slot instance ("ARM_L") -> part id ("MUT_145")

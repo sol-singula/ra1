@@ -1,6 +1,6 @@
 ## 15. Restaurant Building
 
-> Owner: A10 (tycoon/building systems + environment art). This section specifies the **Build** pillar:
+> This section specifies the **Build** pillar:
 > how the restaurant grows from Nana Gristle's shabby shack to a neon monster palace with an aquarium wall
 > ("Upgrade Your Restaurant: **Basic → Expand → Go Wild**"), how players place furniture, how atmosphere and
 > cleanliness are scored, and how everything breaks hilariously and gets fixed again. Databases live in
@@ -28,7 +28,7 @@ collection as the long-term chase.
 
 ### 15.2 Restaurant Tier Progression
 
-All ten canon tiers (§C6) with A10's physical and economic detail. Canon columns (cost, level, seats,
+All ten canon tiers (§C6) with §15's physical and economic detail. Canon columns (cost, level, seats,
 appliance slots, menu, staff cap, base demand) are verbatim; floor plans, throughput and offline potential are
 defined here. Online throughput is the planning estimate `min(BaseDemand × RepMult × DecorMult, Seats × 3600 /
 240 s)` at the tier's typical reputation and atmosphere (§36.12.3); offline values use canon §C15 exactly.
@@ -110,7 +110,7 @@ Morale 80, average Energy over the manager's cap) gives the following canon §C1
 `TIER_06` a well-staffed restaurant returns ≈ 32–39 % of active income per offline hour (canon target 35–50 %,
 ceiling 60 %); `TIER_01`–`TIER_05` sit at ≈ 24–29 % because low chef accuracy caps `q` and, from `TIER_03`,
 waiters bind `Cap_service` while staff caps are tiny — offline is a teaser until the player can staff properly.
-§17 owns the simulation; this is A10's capacity check that every tier can feed it.
+§17 owns the simulation; this is §15's capacity check that every tier can feed it.
 
 ### 15.3 Tier Upgrade Flow
 
@@ -750,7 +750,7 @@ finger, Rotate/Place/Store/Undo buttons ≥ 56 u).
 
 Logical record per placed object: **`{itemId, x, z, rot, durability}`** plus the restaurant-unique `uid`
 (home cell for §11 Furniture Homing). Physical encoding is §28's 10-byte packed record
-(`kind, num, uid, x, z, rotLvl, dur`, Base64): every A10 item uses `kind = 0` (FRN, `num` = numeric ID, so
+(`kind, num, uid, x, z, rotLvl, dur`, Base64): every §15 item uses `kind = 0` (FRN, `num` = numeric ID, so
 `FRN_006` → 6); appliances are FRN items whose station type comes from the catalog; `rotLvl = rot + 4 × (typeLevel
 − 1)` mirrors the station-type level. `x`/`z` are **2-stud cell indices** (§15.5.1). Non-floor layers use reserved
 `z` ranges so no schema change is needed:

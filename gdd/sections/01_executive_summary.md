@@ -1,6 +1,6 @@
 ## 1. Executive Summary
 
-> **Owner:** A1 Vision & Onboarding. This section summarizes the whole document for decision makers and points
+> This section summarizes the whole document for decision makers and points
 > to the sections that specify each system. Where a number appears here it is quoted from canon; every system
 > section that owns the number is authoritative for its details.
 

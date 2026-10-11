@@ -1,6 +1,6 @@
 ## 33. Content Expansion
 
-> **Owner:** A1 Vision & Onboarding. This section covers how Mystery Morph Restaurant grows after launch: eleven
+> This section covers how Mystery Morph Restaurant grows after launch: eleven
 > expansion mini-designs, the identifier plan for new content, a 12-month roadmap, the live-ops cadence, and the
 > data-driven pipeline that lets content ship without code changes. Launch scope and phases are in §34, and the
 > economy validation of each drop is in §22.

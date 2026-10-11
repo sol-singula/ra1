@@ -36,7 +36,7 @@ launch-readiness checklist (§40.8) is the final Go/No-Go.
 
 | # | Criterion | Measure |
 |---|---|---|
-| C1 | Data row complete | every field required by the owning section filled (e.g. 20 brief fields per recipe in §6; all §C13.6 + A7 fields per part in §36.3) |
+| C1 | Data row complete | every field required by the owning section filled (e.g. 20 brief fields per recipe in §6; all §C13.6 + §12 fields per part in §36.3) |
 | C2 | Identity valid | ID follows §C2, unique, canon names unchanged; ID appears as a definition exactly once in the assembled GDD |
 | C3 | References resolve | the GDD validator reports 0 unresolved references introduced by the item |
 | C4 | Balance in range | values inside canon bands and §39 safe ranges (price curve, rarity bands, budgets); economy validators pass |

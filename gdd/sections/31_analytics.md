@@ -1,6 +1,6 @@
 ## 31. Analytics
 
-> **Owner:** A18 Data & Ops. **Binding inputs:** §C20 (Roblox `AnalyticsService` + an internal event schema;
+> **Binding inputs:** §C20 (Roblox `AnalyticsService` + an internal event schema;
 > names `mmr_<snake_case>`), §C4.4 (pacing targets), §C14.3/§C15 (offline caps and the 35–50 % rate), §C4.7
 > (capsule odds and pity), §C22. KPI targets are stated in §1.7 and are **defined and measured here**; the
 > `Telemetry` module is placed by §27; economy events are emitted only inside `EconomyService:TransactWith`

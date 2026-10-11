@@ -1,6 +1,6 @@
 ## 2. Game Vision
 
-> **Owner:** A1 Vision & Onboarding. This section fixes *why* the game exists, *who* it is for, *how it feels*, and
+> This section fixes *why* the game exists, *who* it is for, *how it feels*, and
 > the design laws every other section must respect. The design laws (§2.9) are binding in the same way as canon
 > constants: any feature that breaks a law needs a written exception in §38.
 

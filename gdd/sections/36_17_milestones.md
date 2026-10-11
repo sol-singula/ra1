@@ -1,6 +1,6 @@
 ### 36.17 Progression Milestones Database
 
-> **Owner:** A9 Progression. Milestones are one-time progression beats (except `MLS_045`) that mark onboarding firsts,
+> Milestones are one-time progression beats (except `MLS_045`) that mark onboarding firsts,
 > level bands and restaurant tiers, unlock or explain features, and anchor the analytics funnel (brief Part 20, §31).
 
 **Rules & Mechanics.**

@@ -1,6 +1,6 @@
 ## 4. Core Gameplay Loops
 
-> **Owner:** A1 Vision & Onboarding. This section specifies the game across the five timescales of brief Part 2
+> This section specifies the game across the five timescales of brief Part 2
 > (immediate, short session, medium session, long-term, offline) and how they interlock. It *orchestrates*
 > systems owned elsewhere. Station timings live in §5, customer behavior in §8–§10, combat in §11, economy in §22,
 > offline formulas in §17. Values quoted from canon are binding. Example-only values are labelled

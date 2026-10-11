@@ -168,7 +168,7 @@ on hire.
 | ROLE_ASST_MGR | `ANM_240` pace → `ANM_244` at the busiest station | 20 per lap | `ANM_240` |
 
 ##### Customer animation map by anger level
-Anger levels and thresholds are canon §C11.5; escalation logic is A5's (§10).
+Anger levels and thresholds are canon §C11.5; escalation logic lives in §10.
 
 | Anger level | Body | Face (§25) | Voice / SFX | Adaptive music |
 |---|---|---|---|---|
@@ -407,7 +407,7 @@ and must stay inside mobile CPU and memory limits.
 | UI | Master | 0.6 | — | UI, currency, level-up |
 | Ambience | Master | 0.4 | `CompressorSoundEffect` (SideChain = SFX; Threshold −24 dB, Ratio 3) | district beds, emitters, room tone |
 
-The player's settings sliders (0–100 %) multiply each default. A18 persists them (§28). **Alerts floor:** every duck
+The player's settings sliders (0–100 %) multiply each default. §28–§31 persists them (§28). **Alerts floor:** every duck
 in the table below skips Alerts, and the AudioController clamps any scripted Alerts reduction to −6 dB. Only the
 player's own Kitchen Alerts slider can go lower (readability and accessibility).
 
@@ -429,7 +429,7 @@ never pitch-bend.
 | Big event sources (`SFX_176`, `SFX_180`, `SFX_182`) | 20 / 200 (Rat King 30 / 300) | |
 
 **No bleed rule.** The largest max distance is 300 studs, so instanced interiors must sit ≥ 600 studs from every
-city emitter and from each other. This is an A17 layout requirement in §27.
+city emitter and from each other. This is a §27 layout requirement in §27.
 
 ##### Voice budget and stealing
 - Concurrent one-shot and loop voices: **24** (§27 AudioController budget), counting SFX, Alerts, Voice and UI.
@@ -465,7 +465,7 @@ city emitter and from each other. This is an A17 layout requirement in §27.
 - **Sentence synthesis.** Each sentence strings 3–9 grains with 30–60 ms gaps. The proxy's `Seed` attribute (§8)
   fixes a base pitch offset between −2 and +2 semitones, so a given customer always sounds like itself.
   Syllable order uses that seed plus a sentence counter.
-- **Personality tint.** The shared personality data (A5, §9) may carry a voice pitch offset (±2 semitones) and
+- **Personality tint.** The shared personality data (§8–§10, §9) may carry a voice pitch offset (±2 semitones) and
   tempo (0.8–1.25), looked up client-side by `PersonalityId`; for example, PER_006 talks at tempo 0.8. No extra
   attribute is replicated.
 - **Mood pitch shifts** use `Sound.PlaybackSpeed`, which shifts pitch and tempo together for a deliberate cartoon
@@ -482,7 +482,7 @@ city emitter and from each other. This is an A17 layout requirement in §27.
 | EVT_015 Tiny Day / EVT_016 Giant Day | +5 / −5 extra | clamp 0.6–1.6 | — | event modifier |
 
 - **Mouth sync.** On each grain onset, the client opens the MOUTH part's hinged jaw (a `Weld.C0` rotation of 8–20°)
-  or plays a face-decal "talk" frame (§25). Speech bubbles show A5's text; the audio stays gibberish.
+  or plays a face-decal "talk" frame (§25). Speech bubbles show §8–§10's text; the audio stays gibberish.
 - **Caps.** At most 4 customer voices play at once. Priority order: anger ≥ 3 first, then the customer being served
   or targeting you, then the nearest. Each customer waits ≥ 2.5 s between sentences, and an order call (`SFX_048`)
   plays once per order.

@@ -1,6 +1,6 @@
 ## 3. Design Pillars
 
-> **Owner:** A1 Vision & Onboarding. The seven pillars come from brief Part 1.2. Each pillar below states the promise
+> The seven pillars come from brief Part 1.2. Each pillar below states the promise
 > to the player, its verbs, the systems that deliver it, how we measure it, the rules that protect it, the traps to
 > avoid, and the kind of unscripted funny moment it should produce. §3.4 makes the brief's Part 26 requirements
 > enforceable across every system.

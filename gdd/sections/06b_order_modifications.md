@@ -1,6 +1,6 @@
 ### 6.18 Ridiculous Order Modifications
 
-> **Owner:** A2 Cooking. Morph City customers do not just order food; they order *experiences*: "Make my burger upside
+> Morph City customers do not just order food; they order *experiences*: "Make my burger upside
 > down." "Make my drink angry." This subsection defines how modifications ("mods") are generated, how each one is
 > completed with the cooking system of §5, how the server verifies it on the Dish object (§5.6.4), how it affects order
 > accuracy `A` (canon §C11.3) and pay, and lists **93 modifications** (`MOD_001`–`MOD_093`). Golden rule: **no impossible

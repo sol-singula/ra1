@@ -1,6 +1,6 @@
 ## 23. Monetization
 
-> **Owner:** A14 Social & Economy. **Binding inputs:** canon §C4.1 ("Robux purchases buy cosmetics only … no premium soft
+> **Binding inputs:** canon §C4.1 ("Robux purchases buy cosmetics only … no premium soft
 > currency and no paid random rewards"), §C4.7 (capsules are earnable, never sold), §C17.4 (reward vocabulary).
 > **Implementation anchors in other sections:** receipt processing §28.18 (`ProcessReceipt`, `rbx:<PurchaseId>`,
 > `wallet.receipts`, `MMR_Receipts_v1`), Marketplace screen §24.30, Looks (cosmetic loadouts) §13, restaurant theme

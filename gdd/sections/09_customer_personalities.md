@@ -1,6 +1,6 @@
 ## 9. Customer Personalities
 
-> **Owner:** A5 Customers. This section is the **personality database** (§C1.1): the table in §9.3 defines
+> This section is the **personality database** (§C1.1): the table in §9.3 defines
 > `PER_001`–`PER_032` (names fixed by §C11.1); §9.4 specifies every field for each. Spawning, bodies and the state
 > machine are in §8; the satisfaction, anger and chaos math these parameters feed is in §10.
 
@@ -22,7 +22,7 @@ mechanic that creates a funny situation on its own, without a script.
 2. **Behavior parameters** (§9.3) plug into the formulas of §8 and §10. Nothing in a personality bypasses those
    formulas; personalities only change inputs, thresholds and which special hooks fire.
 3. **Animation set.** Each personality has a locomotion/idle variant set built on the core library (§C21); new
-   variants are listed in words and receive IDs from A16 in §36.14.
+   variants are listed in words and receive IDs from §25–§26 in §36.14.
 4. **Dialogue.** Bubble lines are chosen client-side from the personality's pools keyed by emote code (`ORDER`,
    `DELIGHT`, `HAPPY`, `MEH`, `UNHAPPY`, `FURIOUS`, `HOSTILE`, `CALM`, `APOLOGY`, `LEAVE`). Launch requires ≥ 3 lines
    per pool per personality; §9.4 lists the canonical ordering / delighted / furious examples. Lines are
@@ -48,10 +48,10 @@ mechanic that creates a funny situation on its own, without a script.
 #### 9.2.3 Combat ability selection
 
 Per §C11.6 a customer may use the **active ability of one of its own visible parts**. Selection and use follow
-§11.8.3 (owned by A6): each customer has at most one **Signature Move**, chosen among its visible parts whose §36.6
+§11.8.3: each customer has at most one **Signature Move**, chosen among its visible parts whose §36.6
 "NPC use" entry lists the customer's style; it is used only at anger level 5 or in a scuffle, never by `PACIFIST`
 customers, and utilities are never used (the only exception is the §36.6 flee entry of `ABL_063`). NPC numbers are
-the §36.6 "NPC use" values. **A5 extension:** when a personality's signature part grants an eligible ability, that
+the §36.6 "NPC use" values. **Extension:** when a personality's signature part grants an eligible ability, that
 ability is chosen before §11.8.3's slot priority, so recurring personalities keep a recognisable move. The §9.4
 "Abilities" lists show, in priority order, the eligible options that personality's signature and commonly rolled
 parts can provide; a customer whose body carries none of them fights with its style's basic attacks only (§11.8.2).
@@ -656,7 +656,7 @@ Hooks.QualityGate = {
 }
 
 function Hooks.pickSignatureMove(c, def, npcUse: (string, string) -> boolean): string?
-	-- A5 extension: signature parts first, then §11.8.3 slot priority (performed by CombatService)
+	-- extension (§9): signature parts first, then §11.8.3 slot priority (performed by CombatService)
 	for _, entry in def.abilities do
 		if c.signatureParts[entry.part] and npcUse(entry.ability, def.style) then return entry.ability end
 	end

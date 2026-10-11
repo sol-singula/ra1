@@ -1,6 +1,6 @@
 ## 13. Morph Customization
 
-> Contributor: A8 (UI/UX + morph customization systems). This section specifies the **Customize Your Morph** screen
+> This section specifies the **Customize Your Morph** screen
 > from the mockup (left category list, center 3D preview on a glowing pedestal, right inventory grid) and every rule
 > behind it: equipping, loadouts, naming, colors (palettes), upgrades, and the doors to Lab fusion and Body Mods. Part data is in
 > §12 / §36.3, combination naming and synergies in §12.9–12.10 / §36.4 / §36.5, abilities in §36.6, and the
@@ -714,7 +714,7 @@ Each code maps to one friendly toast string in the localization table.
 -- per-slot rules in MutationService.ValidateEquip (§12).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Remotes = ReplicatedStorage.Remotes.Mutation
-local MorphRules = require(ReplicatedStorage.Shared.MorphRules) -- A7: SlotAccepts, CheckExclusions, CarryCapacity
+local MorphRules = require(ReplicatedStorage.Shared.MorphRules) -- §12: SlotAccepts, CheckExclusions, CarryCapacity
 
 local BOTH = { ARM_BOTH = { "ARM_L", "ARM_R" }, LEG_BOTH = { "LEG_L", "LEG_R" } }
 

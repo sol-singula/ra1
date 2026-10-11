@@ -1,6 +1,6 @@
 ## 16. Employee Management
 
-> Owner: A11 (Employees). Binding inputs: canon §C14 (roles, statistics, offline caps, `EMP_001`), §C4.8 (rarity
+> Binding inputs: canon §C14 (roles, statistics, offline caps, `EMP_001`), §C4.8 (rarity
 > bands), §C6 (employee cap per tier), §C22 E8 (wages). The offline half of this system is specified in §17; the
 > archetype database is §36.8 and the offline incident database is §36.9. Every value marked **[TUNABLE]** is a
 > balancing assumption that the systems in §17 and §22 already agree on.

@@ -1,6 +1,6 @@
 ### 36.5 Morph Combination Examples
 
-> Contributor: A8. These rows are *examples* of the modular system in §12.9. The game never stores combinations;
+> These rows are *examples* of the modular system in §12.9. The game never stores combinations;
 > it derives them from equipped parts. Parts are canon `MUT_` IDs (details in §36.3), synergies are §36.4 IDs.
 
 **How to read a row.**

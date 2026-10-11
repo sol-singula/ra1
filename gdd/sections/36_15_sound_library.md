@@ -1,6 +1,6 @@
 ### 36.15 Sound Library
 
-Owner: A16 Art & Audio. This appendix is the **only place `SFX_` and `MUS_` ids are defined**. Bus structure,
+This appendix is the **only place `SFX_` and `MUS_` ids are defined**. Bus structure,
 3D rolloff, ducking, the voice budget, adaptive music and accessibility are specified in §26. Other sections describe
 audio in words and reference these ids.
 

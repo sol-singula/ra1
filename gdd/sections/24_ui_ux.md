@@ -1,6 +1,6 @@
 ## 24. UI/UX
 
-> **Owner:** A15 UI. This section specifies every player-facing interface of Mystery Morph Restaurant: the
+> This section specifies every player-facing interface of Mystery Morph Restaurant: the
 > shared design system, input adaptation, scaling and safe areas, the screen stack and the `UIController` state
 > machine, readability-in-chaos rules, accessibility, localization, UI performance, and a wireframe-level spec for
 > every interface in brief Part 17. Rules owned elsewhere are **displayed, never redefined**: morph customization

@@ -1,6 +1,6 @@
 ## 30. Performance Optimization
 
-> **Owner:** A18 Data & Ops. **Binding inputs:** §C3 (8 players/server; customer cap = seats + 4 queue per
+> **Binding inputs:** §C3 (8 players/server; customer cap = seats + 4 queue per
 > restaurant, max 28; server hard cap 160 customer proxies; **SPCV** pattern; ≤ 30 loose props per interior;
 > thrown food = scripted arc; debris client-only, 4 s), §C6 (seats/employee caps per tier), §C13.7 (morph rig
 > & part budgets), §C19 services. The chaos is the product — a level-6 restaurant brawl with 28 mutants must

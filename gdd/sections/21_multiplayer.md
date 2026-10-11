@@ -1,6 +1,6 @@
 ## 21. Multiplayer
 
-> **Owner:** A14 Social & Economy. **Binding inputs:** §C3 (8 players per server, instanced interiors), §C16.4 (Restaurant
+> **Binding inputs:** §C3 (8 players per server, instanced interiors), §C16.4 (Restaurant
 > Row plots, visiting via door or friends list), §C22 E1/E7/E12/E13 (disconnects, shared stations, Co-op Insurance,
 > shutdown), §C12 (combat constants), §C19 (`MultiplayerService`, `CombatService`, `EconomyService`). Economy numbers
 > (guest pay, caps, MS budgets) are defined in §22 and only applied here.
@@ -288,7 +288,7 @@ client for morph LOD (§30); farther players render as impostors.
   (both accept; stats never change; reverts automatically).
 
 #### 21.8.3 Cooperative Quests (parties up to 4)
-§20 flags quests as `coop` (A13 owns the content). Framework:
+§20 flags quests as `coop` (§19–§20 owns the content). Framework:
 - Shared objective counters; all members must be in the same server (Gather).
 - **Every contributing member gets the full reward** of the quest (rewards follow §22.3/§22.13 budgets — no co-op
   multiplier on MB, so parties are not a farming tool); "contributing" = ≥ 15 % of progress or ≥ 3 qualifying actions.

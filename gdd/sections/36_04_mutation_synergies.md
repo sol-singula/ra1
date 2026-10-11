@@ -1,6 +1,6 @@
 ### 36.4 Mutation Synergies Database
 
-> Contributor: A8. Rules for reading, stacking and capping these rows are in §12.10. Parts are referenced by canon
+> Rules for reading, stacking and capping these rows are in §12.10. Parts are referenced by canon
 > `MUT_` IDs (details in §36.3), abilities by `ABL_` (§36.6), statuses by `STS_` (§36.7). All magnitudes are
 > **[TUNABLE]** balancing assumptions.
 

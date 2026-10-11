@@ -1,6 +1,6 @@
 ### 36.10 City Buildings Database
 
-> **Owner:** A12 City. All 22 canon buildings (§C16.2). Districts, travel, secrets and the event system are
+> All 22 canon buildings (§C16.2). Districts, travel, secrets and the event system are
 > specified in §18; events in §36.11. Prices follow §C4 (mutations §C4.5–§C4.6, hiring §C4.8, station
 > upgrades §C4.9, recipe learning 5 × price §C10, taxi §C16.1). Activity MB rewards use the **ERM** unit of
 > §18.8.4 (`MB = round(ERM × NetMBPerHour[tier] / 60)`). Acceptance criteria: `AC-18-30` … `AC-18-49`.

@@ -1,6 +1,6 @@
 ### 36.11 City Events Database
 
-> **Owner:** A12 City. All 32 canon events (§C16.5). The scheduler, cross-server sync, announcements, reward
+> All 32 canon events (§C16.5). The scheduler, cross-server sync, announcements, reward
 > units and restaurant protections are specified in §18.8; this appendix holds the per-event rows.
 > Acceptance criteria: `AC-18-50` … `AC-18-69`.
 

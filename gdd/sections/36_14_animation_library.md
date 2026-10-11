@@ -1,6 +1,6 @@
 ### 36.14 Animation Library
 
-Owner: A16 Art & Audio. This appendix is the **only place `ANM_` ids are defined**. Numbers 001–300 are the
+This appendix is the **only place `ANM_` ids are defined**. Numbers 001–300 are the
 general library; `ANM_301`–`ANM_370` are the ability animations, mapped 1:1 to `ABL_001`–`ABL_070` (same last two
 digits, canon §C21). The 52 canon core ids keep their canon names verbatim. Playback rules (priorities, blending,
 gait classes, LOD, employee cycles) are specified in §26; art rules in §25.
@@ -249,8 +249,8 @@ Unlisted numbers in the 001–300 general range are reserved for future content 
 
 #### 36.14.12 Ability animations (`ANM_301`–`ANM_370` ↔ `ABL_001`–`ABL_070`)
 
-Names equal the canon ability names (§C12.2). Mutation actives list their source part (§C13.6). A6 owns timing,
-damage and hitboxes in §36.6. Where these durations disagree with §36.6, A6's cast and recovery windows win, and the
+Names equal the canon ability names (§C12.2). Mutation actives list their source part (§C13.6). §11 owns timing,
+damage and hitboxes in §36.6. Where these durations disagree with §36.6, §11's cast and recovery windows win, and the
 track is speed-scaled to fit. Users: P = player, C = customer using the NPC-tuned version (§C11.6).
 
 | ID | Name | Category | Rig / users | Loop? | Duration (s) | Priority | Description | Used by (systems / ability ids) |

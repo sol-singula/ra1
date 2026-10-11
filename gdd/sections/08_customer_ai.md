@@ -1,6 +1,6 @@
 ## 8. Customer AI
 
-> **Owner:** A5 Customers. **Runtime:** `CustomerAIService` (server) with the client-side builder of
+> **Runtime:** `CustomerAIService` (server) with the client-side builder of
 > `MorphAssemblyService`. **Companion sections:** personality data lives in §9; the satisfaction, anger,
 > chain-reaction and chaos math lives in §10. Order generation and dish validation are executed by
 > `OrderService` using the weighting rules defined here. Values marked **[TUNABLE]** are balancing
@@ -301,7 +301,7 @@ combinations; a hit re-rolls the suffix from the same stream (deterministic).
 | 8 | `PLACE_ORDER` | Core | ≤ 30 s × PatienceMult | `ANM_042` Order wave until someone takes the order |
 | 9 | `WAIT` | Core | ≤ Patience (§C11.2) | patience ring drains; eats already-delivered items meanwhile |
 | 10 | `RECEIVE_FOOD` | Core | 0.8 s | reaches for the plate (server plays `ANM_019` on the deliverer) |
-| 11 | `INSPECT_FOOD` | Core | 1.5 s × InspectMult | sniff-and-squint inspect (A16 assigns the ID in §36.14) |
+| 11 | `INSPECT_FOOD` | Core | 1.5 s × InspectMult | sniff-and-squint inspect (§25–§26 assigns the ID in §36.14) |
 | 12 | `EVALUATE` | Core | 0.6 s | computes S for the item (§10); shows the reaction emote |
 | 13 | `EAT` | Core | (10 + 3·D) s × EatMult per item | `ANM_043` Eat |
 | 14 | `PAY` | Core | 1.5 s | `ANM_044` Pay; spawns the Cash Stack (§8.11) |
@@ -536,7 +536,7 @@ If every eligible weight is 0 (e.g. only disliked dishes on the menu), the custo
 highest-weighted neutral-ised dish anyway (Pref treated as 0.25) and its P_offset loses 5 (§10.3). Item count
 follows §8.2.6. E9 applies: if everything is SOLD OUT, `RCP_BRG_001` is auto-added.
 
-**Modifications (§6.18).** `OrderService` rolls modifications per item exactly as §6.18.3 specifies (owned by A2):
+**Modifications (§6.18).** `OrderService` rolls modifications per item exactly as §6.18.3 specifies:
 per-tier probabilities and maximums, joke share, hidden-mod chance, conflict groups, and the personality
 `ModAffinity` multipliers listed in §9.4. Two rules matter for customers:
 - **Time budget:** a modification is only generated if `EstPrep(item) + Σ ExtraTime(mod) ≤ 0.6 × Patience(item)`,

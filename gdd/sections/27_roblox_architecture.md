@@ -1,6 +1,6 @@
 ## 27. Roblox Architecture
 
-> **Owner:** A17 Architecture. This section is the build plan for the game: the source tree, toolchain, content
+> This section is the build plan for the game: the source tree, toolchain, content
 > pipeline, service framework, networking layer, the 20 canon services (§C19) and the client controllers, startup
 > and join flows, tick budgets, scaling and remote configuration. It **places and connects** systems; their rules
 > live in their own sections (cooking §5, customers §8–§10, combat §11, mutations §12, offline §17, economy §22, UI

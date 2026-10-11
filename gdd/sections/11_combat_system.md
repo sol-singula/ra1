@@ -34,7 +34,7 @@ Apology Payment (40 %), which is always worse than a happy customer's payment.
 **Combatant kinds:** *Player*, *Customer* (SPCV proxy, canon C3), *Employee* (SPCV proxy), and *Event boss*
 (city events in §18 reuse this framework with boss-scaled numbers).
 
-#### 11.2.1 Anger level → combat behavior (A5 owns escalation triggers; this table owns the fight)
+#### 11.2.1 Anger level → combat behavior (§8–§10 owns escalation triggers; this table owns the fight)
 
 | Anger level (canon C11.5) | Hostile flag | Combat behavior |
 |---|---|---|
@@ -287,7 +287,7 @@ casualties, which keeps fights funny and ties combat back into repair (§15) and
 #### 11.6.1 Props table
 
 Throw damage uses the §11.5.1 formula with the Base below. Durability values are percentages of the object's
-maximum durability (A10 converts to its own units in §15); canon C6 damage states apply. `PropClass` is the
+maximum durability (§15 converts it to its own units); canon C6 damage states apply. `PropClass` is the
 attribute `CombatService` reads on the object's model.
 
 | Prop class (`PropClass`) | Weight · pickup time | Who can lift | Throw Base dmg · range | Effect on hit | Self-damage to the prop | Damage to objects it hits | NPC users |
@@ -494,7 +494,7 @@ ragdolled; KO uses an authored animation (`ANM_062`).
   Kangaroo Leg → `ABL_011`, Octopus Arm → `ABL_012`, Rhino Horn → `ABL_013`, Electric Eel Skin → `ABL_014`,
   Porcupine Spines → `ABL_015`, Frog Tongue → `ABL_016`, Crab Claw Arm → `ABL_017`, Dragon Head → `ABL_018`.
 - **Power curve:** part upgrade level raises LevelScale (+5 % damage/level) and lowers cooldown (−2 %/level);
-  CC durations never scale with level (no lock-down creep). Passives and stat budgets are §12 (A7).
+  CC durations never scale with level (no lock-down creep). Passives and stat budgets are §12.
 - **Synergies** (§12, §36.4) may modify combat numbers but `CombatService` clamps the totals: damage +25 %,
   cooldown −20 %, CC duration +20 %, knockback +30 %.
 - **Swapping (canon E4):** blocked while In Combat; otherwise a loadout swap is a 3 s channel interrupted by

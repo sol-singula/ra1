@@ -1,6 +1,6 @@
 ## 17. Offline Restaurant Simulation
 
-> Owner: A11 (Employees). Binding inputs: canon §C15 (model, persistence, idempotency), §C14.3 (caps), §C4.4 (active
+> Binding inputs: canon §C15 (model, persistence, idempotency), §C14.3 (caps), §C4.4 (active
 > net per hour), §C22 E5 / E8 / E11. Staff, traits and management live in §16; archetypes in §36.8; incidents in §36.9.
 > The reference implementation is `gdd/tools/offline_sim_examples.py` (Python 3 stdlib), which produced every number
 > in §17.9 and is the golden source for the Luau `OfflineEarningsService` tests.
@@ -118,7 +118,7 @@ flowchart TD
 | `CLAIMED_RING` | 20 (canon) | idempotency ring buffer |
 | `WELCOME_BACK_CRATE_DAYS` | 7 (canon E5) | absence for the crate |
 
-### 17.4 The model in detail (A11 elaborations of canon §C15) [TUNABLE]
+### 17.4 The model in detail (elaborations of canon §C15) [TUNABLE]
 
 **Snapshot.** Everything is read from the profile as saved at `lastSimAt`: tier, reputation ★, Atmosphere, station
 levels, menu (or Night Menu), special stock, roster with stats/Energy/Morale/shift/training, auto-buy budget, player
@@ -229,7 +229,7 @@ total value (Examples C–E: 8 h ≈ 2.0, 12 h ≈ 2.5, 24 h ≈ 3.1 active hour
 
 ### 17.7 Persistence and idempotency (canon §C15, E11)
 
-**Profile fields** (schema owned by §28; A11 defines the contents):
+**Profile fields** (schema owned by §28; §16–§17 defines the contents):
 
 ```lua
 --!strict
@@ -354,7 +354,7 @@ example's **first-2-hour rate** is 35–50 % of the tier's §C4.4 active net/hou
 different progression points plus one deliberately bad roster; every example shows the taper column ("Shift") and the
 value of the whole absence in active hours. Shared assumptions, so each example only lists what differs:
 
-- **Canon §C15 constants unchanged**, plus the long-absence taper (§17.4) and the A11 elaborations exactly as
+- **Canon §C15 constants unchanged**, plus the long-absence taper (§17.4) and the §16–§17 elaborations exactly as
   §17.3–§17.4. Employees use their §36.8 values (trained stats listed under the roster).
 - **Menus** use real recipe IDs from §C10 with prices from the canon curve (§C4.2, no flavor variance). Difficulty D,
   base prep seconds (mains 10 + 7D, desserts/fried/salads 8 + 5D, drinks 4 + 3D, legendary 20 + 10D) and ingredient

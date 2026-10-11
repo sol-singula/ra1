@@ -714,7 +714,7 @@ flowchart LR
 | Asset | Pattern | Example |
 |---|---|---|
 | Mutation part mesh | `mut_<part id>_<Name>_<L/R>_L<0-2>` | `mut_MUT_145_OctopusArm_R_L1` |
-| Furniture | `frn_<Family>_<Name>_<State>` (A10 maps its ids) | `frn_DinerRetro_BoothRed_Cracked` |
+| Furniture | `frn_<Family>_<Name>_<State>` (§15 maps its ids) | `frn_DinerRetro_BoothRed_Cracked` |
 | Appliance body / kit | `stn_<Station>_Body`, `stn_<Station>_Lv<N>Kit` | `stn_Grill_Lv3Kit` |
 | Façade / interior shell | `fac_T<NN>_<Part>`, `int_T<NN>_<Part>` | `fac_T04_Sign` |
 | City | `cty_D<NN>_<Name>` | `cty_D03_CityHallDome` |
