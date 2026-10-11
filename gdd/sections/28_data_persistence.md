@@ -84,8 +84,8 @@ grows with content. Growth is bounded by design:
 |---|---|---|
 | New player after tutorial (L5, TIER_01) | ≈ 9 KB | defaults, 5 starter parts, 12 layout objects |
 | Mid-game (L26, TIER_05, ~15 h) | ≈ 32 KB | ~60 parts, 120 layout objects, 8 staff |
-| Late-game (L80, TIER_10, ~120 h) | ≈ 68 KB | ~200 parts, 300 layout objects, 20 staff |
-| Theoretical worst case (all 280 parts, all rings full) | ≈ 121 KB | §28.10 |
+| Late-game (L80, TIER_10, ~120 h) | ≈ 69 KB | ~200 parts, 300 layout objects, 20 staff |
+| Theoretical worst case (all 280 parts, all rings full) | ≈ 123 KB | §28.10 |
 
 New content is **append-only**: new mutation, recipe, quest or achievement IDs extend the bitsets and maps
 without a migration. Only *representation* changes (renamed/reshaped fields) need a schema migration (§28.12).
@@ -115,8 +115,8 @@ load transform run as the owners' registered pure functions (ownership by code, 
 | `settings` | `PlayerDataService` | `uiSettings` and graphics preferences via validated `PlayerData.UpdateSettings` |
 | `wallet` | **`EconomyService` only** (§C19) | balances, idempotency keys, ledger, Robux receipt ring |
 | `progression` | `ProgressionService` | level, XP, stats, skills, specializations, achievements, milestones, counters, titles, emotes |
-| `mutations` | `MutationService` | owned parts, duplicates, capsules and pity, equipped body, ability bar, loadouts |
-| `morph` | `MorphAssemblyService` | morph name, colors, owned palettes, Morphdex bitsets |
+| `mutations` | `MutationService` | owned parts, duplicates, capsules and pity, equipped body with per-slot palettes, ability bar, 5 functional loadouts (palettes, synergy pins, icon, linked Look) |
+| `morph` | `MorphAssemblyService` | morph name (30 s cooldown, ≤ 10/day), colors, owned palettes, cosmetic Looks, Morphdex bitsets |
 | `restaurant` | `RestaurantService` | tier, plot preference, upgrades (incl. per-station-type levels `UPG_…#n`), reputation, regulars |
 | `layout` | `BuildingService` | packed placed objects — every placed item, appliances included, is a furniture record |
 | `durability` | `RepairService` | sparse durability per placed object |
@@ -338,11 +338,14 @@ export type OwnedPart = {
 	new: boolean,           -- "NEW" badge not yet seen
 }
 
-export type Loadout = {
+export type Loadout = {               -- functional loadout (§13.12)
 	name: string,                     -- player text (<= 20 chars): stored raw, filtered on display, never logged
 	slots: { [string]: string },      -- AnatomySlot -> part ID
 	abilityBar: { string },           -- <= 4 ABL IDs, each from an equipped part (§C12.1)
-	palette: string?,                 -- palette key from morph.palettes
+	palette: { [string]: number },    -- per-slot colors: AnatomySlot -> palette index (§13.14)
+	pins: { string },                 -- <= 5 pinned synergy IDs (SYN_, §12.10.3)
+	icon: string,                     -- loadout icon key (§13.12)
+	look: number?,                    -- linked cosmetic Look index (morph.looks)
 }
 
 export type Mutations = {
@@ -354,8 +357,10 @@ export type Mutations = {
 	keepDuplicates: boolean,          -- false = auto-convert duplicates to MS per §C4.6
 	secretProgress: { [string]: number }, -- e.g. secretProgress["MUT_116"] = PERFECT RCP_PST_008 served
 	equipped: { [string]: string },   -- current body: AnatomySlot -> part ID (FUR/SCALES exclusive, §C13.1)
+	slotPalette: { [string]: number }, -- live body's per-slot colors: AnatomySlot -> palette index (§13.14)
 	abilityBar: { string },
-	loadouts: { Loadout },            -- [1] Chef, [2] Fighter, [3] Repair, [4+] cosmetic extra slots (§23)
+	loadouts: { Loadout },            -- [1] Chef, [2] Fighter, [3] Repair (free); [4]-[5] functional, earned
+	                                  -- via achievements (§13.12) — never cosmetic; cosmetic Looks are morph.looks
 	activeLoadout: number,            -- 0 = unsaved custom body
 	lastLoadoutSwapAt: UnixTime,      -- 10 s swap cooldown (§C22 E4)
 }
@@ -365,7 +370,7 @@ Equipped and loadout parts must exist in `owned`; a part consumed by Lab fusion 
 and every loadout in the same in-memory step. Secrets cannot duplicate (§C4.6): a second Secret grant converts
 to MS, and the validator rejects `copies > 0` on a Secret.
 
-#### 28.9.6 `morph` — name, palettes, Morphdex (writer: `MorphAssemblyService`)
+#### 28.9.6 `morph` — name, palettes, cosmetic Looks, Morphdex (writer: `MorphAssemblyService`)
 
 ```lua
 export type MorphColors = { primary: string, secondary: string, accent: string }  -- "#RRGGBB"
@@ -374,10 +379,20 @@ export type Morphdex = {               -- §12.9 Morphdex (§12b): keyIndex = he
 	worn: string,                     -- base64 bitset, same layout
 	titleBits: number,                -- 32-bit mask of Morphdex titles earned
 }
+export type Look = {                  -- cosmetic Look (§13.12; extra slots purchasable per §23)
+	palette: { [string]: number },    -- per-slot palette indices
+	fx: string?,                      -- cosmetic FX key
+	title: string?,                   -- displayed title key
+	pedestal: string?,                -- showcase pedestal key
+}
 export type Morph = {
 	morphName: string,          -- player text, same rules as Loadout.name (`Morph.SetName`)
+	lastNameChangeAt: UnixTime, -- 30 s cooldown between name changes (§13.13)
+	nameChangeDay: DayStamp,    -- with nameChangesToday: max 10 changes per UTC day (§13.13)
+	nameChangesToday: number,
 	colors: MorphColors,        -- current colors (`Morph.SetPalette`)
 	palettes: { string },       -- owned cosmetic palette keys (rewards §C17.4, Body Mods BLD_02)
+	looks: { Look },            -- 1..10 cosmetic Looks, stored apart from functional loadouts
 	morphdex: Morphdex,
 }
 ```
@@ -679,8 +694,8 @@ Encoded size = `#HttpService:JSONEncode(profile)`, measured before every write.
 | `settings` | 1 KB | 2.5 KB | `uiSettings` ≤ 2 KB (validator) |
 | `wallet` | 7 KB | 13 KB | ledger 50 × ~110 B, keys 64 × ~30 B, receipts 100 × ~60 B |
 | `progression` | 8 KB | 20 KB | one entry per achievement/milestone/skill node; ≤ 60 counters; `xpOnceKeys` bounded by content (expired cycle keys pruned) |
-| `mutations` | 21 KB | 31 KB | ≤ 280 distinct parts × ~95 B (+ ~95 B per future part) + ≤ 8 loadouts |
-| `morph` | 4 KB | 4.5 KB | Morphdex bitsets ≈ 3.4 KB (§12b) + palettes |
+| `mutations` | 22 KB | 32 KB | ≤ 280 distinct parts × ~95 B (+ ~95 B per future part) + 5 loadouts with per-slot palettes and pins |
+| `morph` | 4.5 KB | 5.5 KB | Morphdex bitsets ≈ 3.4 KB (§12b) + palettes + ≤ 10 Looks |
 | `restaurant` | 3 KB | 4 KB | regulars ≤ 20 × ~120 B + upgrade entries |
 | `layout` | 4 KB | 6 KB | ≤ 400 objects × ~14 chars |
 | `durability` | 0.5 KB | 6 KB | sparse; worst = every object damaged × ~14 B |
@@ -691,7 +706,7 @@ Encoded size = `#HttpService:JSONEncode(profile)`, measured before every write.
 | `quests` | 3 KB | 5 KB | bitsets + ≤ 25 active quests + cycles |
 | `city` | 2 KB | 4 KB | event-claim ring 50, secrets list, season track |
 | `social` | 0.8 KB | 2 KB | §21.10 caps: overrides 20, Co-Chefs 10, ban list 50 |
-| **Total** | **≈ 68 KB (1.7 %)** | **≈ 121 KB (3.0 %)** | |
+| **Total** | **≈ 69 KB (1.7 %)** | **≈ 123 KB (3.0 %)** | |
 
 **Guards.** `> SIZE_WARN` (512 KB) logs `profile_size_warn` with the per-block breakdown; `> SIZE_SOFT`
 (1 MB) halves every ring buffer before encoding and raises a P1 alert; `> SIZE_HARD` (3.5 MB) refuses the
@@ -982,8 +997,11 @@ sequenceDiagram
    seeded function (`Seed = hash(UserId, lastSimAt, SIM_VERSION)`) that builds or merges `pendingOfflineReport`,
    applies offline side effects through the owners' registered pure functions (special-stock consumption in
    `inventory`, offline damage in `durability`, staff energy/morale in `employees`) and sets `lastSimAt = toTs`
-   (§C15) and, when `now` minus the *stored* `lastSimAt` is ≥ 7 days, sets the report's `welcomeBackCrate`
-   flag (§C22 E5; the crate is granted at Collect, §17.7) → returns `(data, {UserId}, metadata)`. This is exactly the canon "one session-locked
+   (§C15). The simulation rules — including no report for absences under 300 s and the long-absence taper
+   (hours 0–2 ×1.0, 2–8 ×0.5, 8–24 ×0.2) — are §17's. When the absence measured from `offline.lastLogoutAt` is
+   ≥ 7 days, the transform only sets the report's `welcomeBackCrate` flag (§C22 E5): the crate (1 Morph Capsule +
+   50 MS) is granted **at Collect**, idempotent by `reportId` exactly like the earnings (§17.7, §28.17); nothing is
+   granted at load time → returns `(data, {UserId}, metadata)`. This is exactly the canon "one session-locked
    `UpdateAsync`": the report and `lastSimAt` commit together or not at all (§C22 E11). A transform that throws
    is skipped and logged without blocking the load; for the offline transform that leaves `lastSimAt` unchanged,
    so the next session simulates the same interval — no loss, no duplicate (§27.8.11).
@@ -1221,7 +1239,7 @@ the same profile key as the reward — so no ordering of reconnects, retries or 
 | **Offline earnings** (§C15) | `pendingOfflineReport.reportId`, `claimedReportIds` (ring 20) | request's `reportId == pending.reportId` **and** `∉ claimedReportIds`; then credit via key `offline:<reportId>`, append id, clear pending — one step |
 | Merged offline intervals | new deterministic `reportId` for the merged span | the superseded id was never claimable once replaced |
 | Offline Morph Capsule | `offline.lastOfflineCapsuleDay` | ≤ 1 per real day, decided at simulation time (§C15) |
-| Welcome Back Crate (E5) | report flag `welcomeBackCrate` set in the load write | granted once with the report's Collect |
+| Welcome Back Crate (E5) | report flag `welcomeBackCrate` set in the load write (absence from `lastLogoutAt` ≥ 7 days) | granted only at the report's Collect, once per `reportId` |
 | Achievements / milestones | `progression.achievements.unlocked[id]` / `progression.achievements.milestones[id]` | key absent |
 | One-time XP grants | `progression.xpOnceKeys` (§14) | key absent |
 | Tutorial gifts (QST_TUT_010 part, `EMP_001` via QST_TUT_012) | `quests.tutorial.choice`, `quests.tutorial.step` | choice unset / step below the granting step |

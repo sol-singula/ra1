@@ -1263,8 +1263,13 @@ Technician, Robot Cashier, Sloth Dishwasher, Dragon Chef.
 ## C15. Offline Simulation — Canonical Model (A11 elaborates with worked examples)
 
 **Principles:** server-authoritative; timestamp-based (`os.time()` on the server only); deterministic (seeded RNG);
-capped; idempotent claims; offline net/hour targets **35–50 %** of active net/hour at the same tier for a
-well-staffed restaurant, never above 60 % [TUNABLE].
+capped; idempotent claims. **Rate target:** during the first 2 offline hours a well-staffed restaurant nets
+**35–50 %** of the active net/hour at the same tier (hard ceiling 60 %) [TUNABLE]. **Long-absence taper:** offline
+hours 0–2 run at ×1.0, hours 2–8 at ×0.5, hours 8–24 at ×0.2 of that rate (applied to customers, revenue, tips,
+ingredients and wages alike), so a full 24 h interval equals **8.2 effective hours ≈ 3 active hours** at that tier
+[TUNABLE]. **Guardrail KPI:** the median player's offline share of MB income ≤ 60 % at D7 and ≤ 70 % at D30 — if
+exceeded, lower the taper factors first. Absences under 300 s produce no report. §17 holds the full model and the
+worked examples.
 
 ```
 H_elapsed = max(0, now − lastSimAt) / 3600            -- server clock; negative → 0, flagged
@@ -1293,9 +1298,11 @@ Incidents    = count = floor(H × 0.6 × (1 − SecurityMitigation)) + seeded ex
 Repairs      = offline damage points × cost/pt; auto-paid at −(RepairSkill/200) discount if a Repair Tech exists,
                else left as damaged objects for the player to fix (cheaper than replacing; atmosphere −)
 Net_step     = Revenue + Tips − IngredientCost − Wages − AutoRepairs ± Incidents
-Rule         = if Net_step < 0 the Manager "closes early": simulation stops, that step's wages are not charged
+Rule         = if a step's operating result (before incidents) is < 0 the Manager "closes early": simulation stops,
+               that step's wages are not charged
 Energy       = −8 %/h per employee (−5 %/h with a Manager); Efficiency uses Energy each step; Morale −1/h offline
-Discoveries  = per hour: 8 % chance of 1–3 MS; 1 % chance of a rare ingredient crate; ≤ 1 Morph Capsule per real day
+Discoveries  = per effective hour: 8 % chance of 1–3 MS; 1 % chance of a rare ingredient crate; ≤ 1 Morph Capsule per report and per UTC day
+Taper        = each step's volume × TaperFactor(h): 1.0 for h < 2, 0.5 for 2 ≤ h < 8, 0.2 for 8 ≤ h < 24
 Net          = max(0, Σ Net_step)
 ```
 **Requirement to run:** ≥ 1 `ROLE_CHEF` assigned. Without one the report shows 0 customers and a hint.

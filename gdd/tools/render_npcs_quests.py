@@ -45,6 +45,21 @@ CANON = GDD / "canon.md"
 INC = {1: 630, 2: 1080, 3: 1730, 4: 3100, 5: 5400, 6: 9600, 7: 17400, 8: 32800, 9: 63700, 10: 120500}
 
 
+# Tier pacing factors [TUNABLE] (§20.6): early tiers are short (1–7 h) but carry many teaching quests, late tiers are long.
+P_MB = {1: 0.3, 2: 0.3, 3: 0.35, 4: 0.5, 5: 0.7, 6: 1.2, 7: 2.0, 8: 2.8, 9: 3.8, 10: 5.0}
+P_XP = {1: 0.15, 2: 0.14, 3: 0.18, 4: 0.21, 5: 0.33, 6: 0.6, 7: 1.0, 8: 1.4, 9: 1.7, 10: 2.8}
+
+
+def fixed_mb(q: dict) -> int:
+    f = q["rw"].get("mb", 0)
+    return nice(f * INC[q["t"]] * P_MB[q["t"]]) if f else 0
+
+
+def fixed_xp(q: dict) -> int:
+    f = q["rw"].get("xp", 0)
+    return nice(f * xprate(q["l"]) * P_XP[q["t"]]) if f else 0
+
+
 def xprate(level: int) -> float:
     return 900 * 1.045 ** (level - 1)
 
@@ -121,9 +136,9 @@ def render_rewards(q: dict) -> str:
         parts.append(f"{rw['XP']:,} XP")
     else:
         if rw.get("mb"):
-            parts.append(f"{nice(rw['mb'] * INC[q['t']]):,} MB")
+            parts.append(f"{fixed_mb(q):,} MB")
         if rw.get("xp"):
-            parts.append(f"{nice(rw['xp'] * xprate(q['l'])):,} XP")
+            parts.append(f"{fixed_xp(q):,} XP")
     if rw.get("ms"):
         parts.append(f"{rw['ms']} MS")
     if rw.get("rt"):
@@ -156,8 +171,8 @@ def scale_table() -> str:
 
 
 def budget_table(quests: list[dict]) -> str:
-    rows = ["| Tier | Hours in tier | Income in tier (MB) | One-time quests | Quest MB | MB share | "
-            "XP to cross band | Quest XP | XP share |", "|---|---|---|---|---|---|---|---|---|"]
+    rows = ["| Tier | P_MB | P_XP | Hours in tier | Income in tier (MB) | One-time quests | Quest MB | MB share | "
+            "XP to cross band | Quest XP | XP share |", "|---|---|---|---|---|---|---|---|---|---|---|"]
     for t in range(1, 11):
         hours = CUM_H[t + 1] - CUM_H[t]
         income = INC[t] * hours
@@ -170,9 +185,9 @@ def budget_table(quests: list[dict]) -> str:
             if "MB" in rw:
                 mb += rw["MB"]; xp += rw["XP"]
             else:
-                mb += nice(rw.get("mb", 0) * INC[t]) if rw.get("mb") else 0
-                xp += nice(rw.get("xp", 0) * xprate(q["l"])) if rw.get("xp") else 0
-        rows.append(f"| `TIER_{t:02d}` | {hours} | {income:,} | {len(qs)} | {mb:,} | {100 * mb / income:.1f} % | "
+                mb += fixed_mb(q)
+                xp += fixed_xp(q)
+        rows.append(f"| `TIER_{t:02d}` | ×{P_MB[t]} | ×{P_XP[t]} | {hours} | {income:,} | {len(qs)} | {mb:,} | {100 * mb / income:.1f} % | "
                     f"{xpband:,} | {xp:,} | {100 * xp / xpband:.1f} % |")
     return "\n".join(rows)
 
@@ -226,7 +241,8 @@ def main() -> int:
             loc = tick(dst) + (" · " + tick(n["bld"]) if n.get("bld") else "")
             if n.get("at"):
                 loc += f" ({n['at']})"
-            dlg = " / ".join(f"“{d}”" for d in n["d"])
+            lines = n["d"] if n["b"].startswith(("[STORY]", "[BOSS]")) else n["d"][:2]
+            dlg = " / ".join(f"“{d}”" for d in lines)
             ql = ", ".join(sorted(links[n["id"]]))
             out.append("| " + " | ".join(cell(x) for x in [
                 tick(n["id"]), f"**{n['n']}**", n["m"], n["p"], loc, n["r"], dlg, ql, n["b"]]) + " |")

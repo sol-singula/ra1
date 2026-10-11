@@ -55,7 +55,7 @@ dashboards of §31.14 (built from the optional export). The settings screen show
 |---|---|---|
 | First 15 min | Where do new players stop? | onboarding funnel (tutorial steps 1–12), `mmr_first_*` moments |
 | First hour | Do they reach TIER_02 and hire Ollie? | `RestaurantTier` progression, `mmr_first_employee_hire`, economy flows |
-| First day | Do they come back to a Welcome Back report? | `mmr_session_start`, `mmr_offline_report_shown`, `mmr_offline_collected` |
+| First day | Do they come back to a Welcome Back report? | `mmr_session_start`, `mmr_offline_report_viewed`, `mmr_offline_collected` |
 | First week | Are mutations pulling them forward? | `mmr_mutation_acquired`, capsule funnel, collection KPIs |
 | First month+ | Is the mid-game paced to §C4.4? Is offline replacing play? | tier-reach times, offline share, session length, events, arena |
 
@@ -81,14 +81,15 @@ do not identify a person outside Roblox.
 
 | Roblox call | Used for | Rules |
 |---|---|---|
-| `LogOnboardingFunnelStepEvent(player, step, stepName, customFields)` | **the one onboarding funnel**: §32 tutorial steps 1–12, names `mmr_tutorial_step_01` … `mmr_tutorial_step_12` | logged once per player per step, sequentially (AC-32-03); custom field 01 = `skipped` when skipped |
+| `LogOnboardingFunnelStepEvent(player, step, stepName, customFields)` | **the one onboarding funnel**: §32 tutorial steps 1–12 (`mmr_tutorial_step_01` … `_12`) and step 13 = first offline collection (`mmr_first_offline_collect`, §17.12) | logged once per player per step, sequentially (AC-32-03); custom field 01 = `skipped` when skipped |
 | `LogFunnelStepEvent(player, funnelName, funnelSessionId, step, stepName, customFields)` | first-session moments (`mmr_first_session`) and recurring funnels (shop, capsule, hire, offline collect, tier upgrade, §31.11) | recurring funnels use a fresh GUID per attempt; `mmr_first_session` uses the constant session id `"fs"` |
 | `LogEconomyEvent(player, flowType, currencyType, amount, endingBalance, transactionType, itemSku, customFields)` | every MB/MS/RT movement | only inside `EconomyService:TransactWith`; `currencyType` ∈ `MB`, `MS`, `RT`; `transactionType` = an `Enum.AnalyticsEconomyTransactionType` name (§31.12) |
 | `LogProgressionEvent(player, pathName, Enum.AnalyticsProgressionType.Complete, level, levelName, customFields)` | paths `PlayerLevel` (§14), `RestaurantTier` (1–10), `StoryChapter` (1–10) | `Start` is logged for `StoryChapter` when a chapter opens |
 | `LogCustomEvent(player, eventName, value, customFields)` | the budgeted custom events flagged "custom" in §31.10 | `value` is a meaningful number (seconds, MB, count) or 1 |
 
 **Ruling — one onboarding funnel.** Roblox supports a single onboarding funnel per experience. It is the §32
-tutorial (as §1.7 and AC-32-03 define). The first 13 §36.17 milestones (from `MLS_001`, the first-session "firsts") therefore log their
+tutorial (steps 1–12, as §1.7 and AC-32-03 define) followed by step 13, the first Welcome Back collection that §17.12
+asks for — the D1 hook that completes onboarding. The first 13 §36.17 milestones (from `MLS_001`, the first-session "firsts") therefore log their
 events through the recurring funnel `mmr_first_session` (step = milestone order 1–13) rather than through
 `LogOnboardingFunnelStepEvent`; this supersedes the onboarding wording in AC-14-20.
 
@@ -213,7 +214,7 @@ return Events
 
 Legend for the last column — **Onb N**: onboarding funnel step N; **FS N**: `mmr_first_session` funnel step N;
 **Fun `<name>` N**: recurring funnel step; **Custom** (fields CF01/CF02/CF03): `LogCustomEvent` (counts toward
-the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**: `LogEconomyEvent` by
+the 60-name budget, 55 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**: `LogEconomyEvent` by
 `EconomyService`; **Internal**: envelope only. Names already used by other sections are kept verbatim.
 
 #### 31.10.1 Onboarding, tutorial and first moments
@@ -237,7 +238,7 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 | `mmr_first_mutation` | first part equipped (§36.17 #10) | partId (`MUT_145` / `MUT_144` / `MUT_153`) | **FS 10** (CF01 part) |
 | `mmr_first_restaurant_upgrade` | first upgrade or furniture purchase (§36.17 #11) | itemRef | **FS 11** |
 | `mmr_first_employee_hire` | `EMP_001` hired (§36.17 #12) | — | **FS 12** |
-| `mmr_first_offline_collect` | first Welcome Back report collected (§36.17 #17) | hours, net, capped | Custom (value = net) |
+| `mmr_first_offline_collect` | first Welcome Back report collected (§36.17 #17) | hours, net, capped | **Onb 13** (CF01 capped, CF03 hours band) |
 | `mmr_first_city_trip` | first district other than `DST_01` (§36.17 #18) | district, travelMode | Custom (CF01 district) |
 | `mmr_first` | any other once-only first (`mmr_first_level_up`, `mmr_first_stat_allocation`, `mmr_first_skill_node`, `mmr_first_capsule`, `mmr_first_lab_fusion`, `mmr_first_mutation_upgrade`, `mmr_first_synergy`, `mmr_first_perfect_dish`, `mmr_first_recipe_learned`, `mmr_first_station_upgrade`, `mmr_first_quest_complete`, `mmr_first_metro_ride`, `mmr_first_city_event`, `mmr_first_coop_visit`, `mmr_first_arena_match`) | which (the internal name), hoursSinceInstall | Custom grouped (CF01 which) — internal envelope keeps the specific name |
 
@@ -286,8 +287,13 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 
 | Event | Trigger (server) | Properties | AnalyticsService call |
 |---|---|---|---|
-| `mmr_offline_report_shown` | Welcome Back screen opened with a pending report | hours, capHours, capped, customers, net, incidents, segments | **Fun `mmr_offline_collect` 1** (CF01 capped, CF03 hours band) |
-| `mmr_offline_collected` | Collect committed (key `offline:<reportId>`) | hours, net, delaySinceShownS, firstOfDay | Custom (value = net) + **Fun `mmr_offline_collect` 3** |
+| `mmr_offline_report_generated` | after the join `UpdateAsync` commits a new or merged report (§17.12) | reportId-free summary: simVersion, tier, elapsedSec, simulatedSec, effectiveHours, capped, capHours, managerRarity, customers, net, ratioToActive | Custom (value = net; CF01 capped, CF02 manager rarity, CF03 tier) |
+| `mmr_offline_report_viewed` | Welcome Back screen or tab opened (§17.12) | tab, secondsOnScreen, hours band | **Fun `mmr_offline_collect` 1** (CF01 tab, CF03 hours band) |
+| `mmr_offline_collected` | Collect committed (key `offline:<reportId>`) | mb, delaySec, auto (via Continue), alreadyClaimed | Custom (value = mb) + **Fun `mmr_offline_collect` 3** |
+| `mmr_offline_collect_failed` | Collect retries exhausted (§17.12) | reason | Internal |
+| `mmr_offline_suggestion_clicked` | upgrade suggestion tapped (§17.12) | type | Internal |
+| `mmr_offline_ceiling_hit` | a report clamped by a safety ceiling (§17.12; §29.14 E-R7) | amount | Custom (ops) |
+| `mmr_offline_clock_skew` / `mmr_offline_merge` | skew or merge safety paths (§17.12) | skewSec / segments | Internal |
 | `mmr_welcome_back_crate` | E5 crate granted (absence ≥ 7 days) | daysAway | Custom (value = daysAway) |
 
 #### 31.10.6 Quests, progression and achievements
@@ -348,8 +354,9 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 
 ### 31.11 Funnels
 
-**Onboarding funnel** (the only one, §31.8): step N = completion of `QST_TUT_00N`/`QST_TUT_01N`, names
-`mmr_tutorial_step_01` … `_12`. Completion KPI = step 12 ÷ step 1 (§1.7 target ≥ 80 %).
+**Onboarding funnel** (the only one, §31.8): steps 1–12 = completion of `QST_TUT_001` … `QST_TUT_012`, names
+`mmr_tutorial_step_01` … `_12`; step 13 = first offline collection. Tutorial completion KPI = step 12 ÷ step 1
+(§1.7 target ≥ 80 %); step 13 ÷ step 12 measures the next-day hook.
 
 | Step | Quest | Step | Quest |
 |---|---|---|---|
@@ -359,6 +366,7 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 | 4 | `QST_TUT_004` Plate It, Serve It | 10 | `QST_TUT_010` Your First Mutation |
 | 5 | `QST_TUT_005` Happy Customer, Happy Wallet | 11 | `QST_TUT_011` Fancy Upgrades |
 | 6 | `QST_TUT_006` Uh-Oh, Karenosaurus | 12 | `QST_TUT_012` Hire Help |
+| — | — | 13 | first Welcome Back collection (`mmr_first_offline_collect`) |
 
 **First-session funnel** `mmr_first_session` (`LogFunnelStepEvent`, session id `"fs"`): steps 1–13 =
 the first 13 §36.17 milestones (`MLS_001` onward) in ID order (table §31.10.1). Because players can reach some moments out of order (a KO
@@ -372,7 +380,7 @@ strict conversion.
 | `mmr_shop` | shop opened (`BLD_01`, `BLD_03`, `BLD_12`, `BLD_13` …) | item inspected | purchase committed | which shops convert, which items stall at inspection |
 | `mmr_capsule` | capsule earned | reveal started | result shown (rarity, pity) | do players open capsules promptly; are odds observed as disclosed |
 | `mmr_hire` | Recruitment Office (`BLD_04`) opened | candidate inspected | hire committed | does hiring stall on price |
-| `mmr_offline_collect` | Welcome Back shown | Collect pressed | credited | collect rate (§1.7 target ≥ 95 %) |
+| `mmr_offline_collect` | Welcome Back viewed (`mmr_offline_report_viewed`) | Collect pressed | credited (`mmr_offline_collected`) | collect rate (§1.7 target ≥ 95 %) |
 | `mmr_tier_upgrade` | upgrade panel opened with an affordable next tier | confirm pressed | upgrade committed | hesitation at expensive tiers |
 | `mmr_mutation_upgrade` | upgrade panel opened | confirm pressed | upgrade applied | MS/RT bottlenecks |
 
@@ -436,7 +444,7 @@ Targets restate §1.7 [TUNABLE]; this table owns the formulas. "Day N" uses UTC 
 | Mutation collection | distinct parts owned at D7 / D30; share of MB spent on mutations | `mmr_mutation_acquired`, Econ sinks | ≥ 50 % of D7 players own ≥ 15 parts; ≥ 40 % of MB spent on mutations by D30 median |
 | Offline-earnings engagement | collect rate = Fun step 3 ÷ step 1; % of D1 returners whose first screen is Welcome Back; % of reports capped | `mmr_offline_collect` funnel, `mmr_session_start` | collect ≥ 95 %; Welcome-Back-first ≥ 70 % |
 | Offline share of MB income | offline-collect MB ÷ all MB sources, per player, median | Econ | D7 ≤ 60 %, D30 ≤ 70 % (§1.7, §4.5) |
-| Offline rate ratio | (offline net ÷ simulated hours) ÷ (active net per active hour) at the same tier | `mmr_offline_collected`, Econ, `activeS` | 35–50 %, never > 60 % (§C15) |
+| Offline rate ratio | (offline net ÷ simulated hours) ÷ (active net per active hour) at the same tier | `mmr_offline_report_generated.ratioToActive`, cross-checked with Econ and `activeS` | 35–50 %, never > 60 % (§C15) |
 | Chaos health | % of sessions ≥ 10 min with ≥ 1 brawl (anger level ≥ 5) | `mmr_session_end.brawls` | ≥ 70 % |
 | Social reach | % of players who visit or co-op another restaurant by D7 | `mmr_coop_visit_end`, visits | ≥ 20 % |
 | Revenue per active user | ARPDAU = Robux revenue ÷ DAU; payer conversion = payers ÷ MAU; ARPPU | native monetization | [TUNABLE] ARPDAU ≥ 0.5 R$, conversion ≥ 1.5 % by D30 — cosmetics only, never a gameplay lever |
@@ -561,7 +569,7 @@ return { variantFor = variantFor }
 | AE-05 | Custom-field value outside the registry | bucketed to `other` and counted in `mmr_service_error` (registry drift) |
 | AE-06 | Experiment ends mid-session | the player keeps the variant until the session ends; no mid-session flip |
 | AE-07 | Tutorial skipped | steps are still logged in order with `CustomField01 = skipped` (AC-32-03) |
-| AE-08 | Offline report merged across two sessions | one `mmr_offline_report_shown` per showing; `segments` records the merge; collect logged once by `reportId` key |
+| AE-08 | Offline report merged across two sessions | one `mmr_offline_report_generated` per commit and one `mmr_offline_report_viewed` per showing; `segments` records the merge; collect logged once by `reportId` key |
 | AE-09 | Studio play test | `Telemetry` prints envelopes and never calls `AnalyticsService` or the export |
 | AE-10 | Reversal by moderation | `mod_reversal` is excluded from economy dashboards; counted only in the security dashboard |
 
@@ -570,7 +578,7 @@ return { variantFor = variantFor }
 - **AC-31-01:** Every event emitted in code exists in the §31.10 catalog (CI scan of `Telemetry.track` call sites: 0 unregistered names), and the number of distinct `LogCustomEvent` names in production stays ≤ 60.
 - **AC-31-02:** Each brief-required moment — onboarding, tutorial completion, first order, first successful meal, first tantrum, first combat, first mutation, first restaurant upgrade, first employee hire, first offline collection, city exploration, quest completion, session duration, return visits — produces its event in a scripted end-to-end playthrough (14 of 14).
 - **AC-31-03:** Once-only events fire at most once per account across 50 scripted reconnects and server hops (verified on the export and against `firstsBits`).
-- **AC-31-04:** The onboarding funnel contains exactly the 12 tutorial steps, logged sequentially once per player; no other code path calls `LogOnboardingFunnelStepEvent` (static scan).
+- **AC-31-04:** The onboarding funnel contains exactly the 12 tutorial steps plus step 13 (first offline collection), each logged once per player in order; only `TutorialDirector` and the first-collect path call `LogOnboardingFunnelStepEvent` (static scan).
 - **AC-31-05:** For 1,000 randomized transactions, the sum of logged `LogEconomyEvent` amounts per currency equals the net wallet change (sources − sinks), excluding zero-delta and `mod_reversal` transactions.
 - **AC-31-06:** No custom field or export property contains a UserId, display name, chat text or player-written string (automated scan of a 24-hour export sample: 0 hits).
 - **AC-31-07:** Every §31.13 KPI is computable from the catalogued events or Roblox native analytics, and the KPI query suite runs green on soft-launch data.

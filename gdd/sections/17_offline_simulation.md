@@ -249,7 +249,7 @@ export type OfflineReport = {
 -- profile.pendingOfflineReport: OfflineReport?                          profile.claimedReportIds: { string } (≤ 20)
 ```
 
-**Simulate on join** — runs inside the session-locked load (`PlayerDataService`), as a pure function: no yields, no
+**Simulate on join** — `SimulateTransform` runs inside the session-locked load (`PlayerDataService`, §28), as a pure function: no yields, no
 remote calls, no analytics until the write succeeds (an `UpdateAsync` transform may run more than once).
 
 ```lua
@@ -257,8 +257,9 @@ remote calls, no analytics until the write succeeds (an `UpdateAsync` transform 
 local OfflineEarningsService = {}
 local SIM_VERSION, MIN_OFFLINE, RING = 1, 300, 20
 
--- called by PlayerDataService inside DataStore:UpdateAsync(key, function(old) ... end) after the lock is acquired
-function OfflineEarningsService.SimulateOnJoin(data: any, userId: number, now: number): any
+-- registered with PlayerDataService:RegisterLoadTransform (§27, §28): runs inside the session-locked UpdateAsync
+function OfflineEarningsService.SimulateTransform(data: any, ctx: { userId: number, now: number }): any
+    local userId, now = ctx.userId, ctx.now
     if data.lastSimAt == nil then data.lastSimAt = now; return nil end
     local elapsed = now - data.lastSimAt
     if elapsed < 0 then data._flags.clockSkew = elapsed; elapsed = 0 end   -- negative → 0, flagged (canon)

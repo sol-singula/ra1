@@ -112,7 +112,9 @@ def offline(d, t, crew, price):
     if any(role == "asst" for role, _ in members) and mgr:
         hours = min(24, hours + 2)
     drain = 0.05 if mgr else 0.08
-    energy = max(0.0, 1 - drain * hours / 2)  # average energy over the shift
+    energy = max(0.0, 1 - drain * min(hours, 2) / 2)  # average energy over the first 2 h (the rate band is measured there)
+    # Long-absence taper (canon C15): hours 0-2 x1.0, 2-8 x0.5, 8-24 x0.2 -> effective hours for the session total.
+    eff_hours = min(hours, 2) + 0.5 * max(0, min(hours, 8) - 2) + 0.2 * max(0, min(hours, 24) - 8)
     morale = c["morale_assumed"] / 100
 
     def eff(r):
@@ -148,7 +150,7 @@ def offline(d, t, crew, price):
     binding = min((("demand", dem), ("seats", cap_seat), ("kitchen", cap_k), ("service", cap_s)), key=lambda z: z[1])[0]
     return {"H": hours, "E": energy, "dem": dem, "cap_seat": cap_seat, "cap_k": cap_k, "cap_s": cap_s,
             "Q": q_cust, "ticket": ticket, "q": qual, "rev": revenue, "tips": tips, "ingr": ingr,
-            "wages": wages, "net": net, "pct": net / t["net_active"], "session": net * hours,
+            "wages": wages, "net": net, "pct": net / t["net_active"], "session": net * eff_hours, "eff_h": eff_hours,
             "binding": binding, "size": len(members)}
 
 
@@ -300,12 +302,13 @@ def render_36_12(d, econ, items):
           f"{fmt(f['rev'])} | **{fmt(f['net'])}** | {round(100 * f['pct'])} % | {fmt(f['session'])} |")
     a("")
     pf = [round(100 * econ[t["id"]]["crew_full"]["pct"]) for t in d["tiers"]]
-    a(f"**Reading the result.** A well-staffed restaurant returns {min(pf[5:])}\u2013{max(pf[5:])} % of active income per "
-      f"offline hour from `TIER_06` (reaching the canon 35\u201350 % band from `TIER_08`) and never approaches the 60 % "
-      f"ceiling. `TIER_01`\u2013`TIER_05` land at {min(pf[:5])}\u2013{max(pf[:5])} % because canon quality `q` is capped by "
-      "low chef accuracy and, from `TIER_03`, `Cap_service = 80 \u00d7 Eff` per waiter binds while employee caps are "
-      "small. This is intentional early pacing (offline is a teaser until the player can staff properly); \u00a717 owns "
-      "any retuning.")
+    a(f"**Reading the result.** These figures are a deliberately *conservative, crew-only* estimate: they apply the canon "
+      f"\u00a7C15 formula to generic rarity profiles and omit \u00a717's employee-trait, manager-coordination and station-level "
+      f"multipliers, so they land at {min(pf)}\u2013{max(pf)} % of active income per offline hour. \u00a717's worked examples with real "
+      "archetypes (40\u201344 % at `TIER_01`/`03`/`05`/`07`/`10`) are the authoritative balance reference. *Net / h* is the "
+      "rate during the first two offline hours; *Max per session* applies the canon long-absence taper (hours 0\u20132 "
+      "\u00d71.0, 2\u20138 \u00d70.5, 8\u201324 \u00d70.2), i.e. effective hours 2 h \u2192 2, 4 h \u2192 3, 8 h \u2192 5, 12 h \u2192 5.8, "
+      "24 h \u2192 8.2.")
     a("")
     a("#### 36.12.4 Restaurant Upgrades")
     a("")

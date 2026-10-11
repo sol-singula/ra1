@@ -62,8 +62,8 @@ the employee cap is canon §C6. Only one Manager and one Assistant Manager may b
   delivers to the ticket's seat; on a missed modification the customer gets the normal Accuracy penalty (§10).
 - **Security Guard.** Patrols an assigned post (Door / Dining / Kitchen). Never attacks a customer below anger 45.
   Security upgrades bought in §15 (§36.12) shorten the guard's response by 1 s and widen the 30-stud intercept
-  radius by +3 / +4 studs (§16.3.3); while the owner is in the city, escalation past anger level 2 is only possible
-  when a guard is on shift (§16.3.4).
+  radius by +3 / +4 studs (§16.3.3); while the owner is in the city, escalation into anger levels 4–6 is only possible
+  when a guard is on shift (§16.3.4, §18.8.6).
 - **Manager.** Never cooks; while the owner is in the city (Away Mode, §16.3.4) the Manager is the one who flips the sign to "Out to Lunch" if every Chef goes on break or unpaid break.
 
 ### 16.3 Online Work AI
@@ -144,18 +144,18 @@ PERFECT timing (1.00) stays the best cook in the building, by design.
   Rebuild if the object reaches Destroyed; cost is charged once at completion (canon E3).
 - **Co-op.** Guests' actions reserve tasks like the owner's; employees obey the owner's assignments only.
 
-#### 16.3.4 Away Mode (owner online, exploring the city) — consistent with §18
+#### 16.3.4 Away Mode (owner online, exploring the city) — consistent with §18.8.6
 
-Away Mode is **not** the offline simulation. While the owner is online on the same server but outside the interior,
-a **staffed** restaurant (≥ 1 Chef on an Always or Online Only shift) keeps running **live**: the same online AI of
-this section, the same SPCV customers, normal online wages (§16.7.11) and normal income. Two safety rules from §18
-apply while the owner is away: anger escalation beyond level 2 is suppressed unless a Security Guard is on shift
-(customers sulk or leave instead), and heat-station timers pause so unattended items never burn. An **unstaffed**
-restaurant goes "Out to Lunch" / "Event Break": no new customers, no reputation loss, no wages. The §17 offline
-simulation covers **only** time when the player is in no server at all, starting from the `lastSimAt` written by the
-last save (PlayerRemoving / BindToClose, canon E1/E13); an idle player removed by Roblox's idle kick simply becomes
-offline from that save. Staffing therefore pays twice: it lets the player explore Morph City without closing, and it
-earns while they are logged off.
+Away Mode is **not** the offline simulation. It engages when the owner has been outside their own interior for ≥ 20 s
+while still online on the same server. A **staffed** restaurant (≥ 1 `ROLE_CHEF` on an Always or Online Only shift, or
+a co-op guest with Cook permission inside) stays **OPEN** and runs **live**: the online AI of this section, SPCV
+customers, online wages (§16.7.11) and online income; anger escalation into levels 4–6 is suppressed unless a
+`ROLE_SECURITY` is on shift (would-be escalators sulk and leave). An **unstaffed** restaurant goes "Out to Lunch" (or
+"Event Break" while the owner is at a live event): no new customers, rain checks for seated customers without food,
+heat-station timers pause, no reputation loss, no wages. The §17 offline simulation covers **only** time when the
+player is in no server at all, starting from the `lastSimAt` written by the last save (PlayerRemoving / BindToClose,
+canon E1/E13); an idle player removed by Roblox's idle kick simply becomes offline from that save. Staffing therefore
+pays twice: the player can explore Morph City without closing, and the restaurant earns while they are logged off.
 
 ### 16.4 Employee Statistics
 
