@@ -117,7 +117,8 @@ def main():
       "here). An archetype is a *template*: the Recruitment Office (§16) rolls individual candidates from it with "
       "small seeded variance (stats ±3, hire ±10 %%, wage ±10 %%, always clamped inside the rarity band) and a "
       "random quirk line. Formulas that consume these columns (Efficiency, offline contribution, training, "
-      "morale) live in §16 and §17; incidents that reference traits live in §36.9." % len(arch))
+      "morale) live in §16 and §17; incidents that reference traits live in §36.9. All per-archetype numbers are "
+      "**[TUNABLE]** balancing assumptions, always inside the canon bands." % len(arch))
     w("")
     w("**How to read a row**")
     w("")

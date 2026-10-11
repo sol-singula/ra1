@@ -871,6 +871,8 @@ horn, flying, light, heavy, armored, aquatic, robotic, plant, alien, cosmic, glo
 tall, gold, sweet`.
 Synergies (§36.4) are defined against **families** (the `Family` column), **categories**, **slots**, and
 **tags** — never against single IDs only — so new parts automatically participate.
+The plain starter parts (`MUT_117`, `MUT_139`, `MUT_179`) are **neutral**: they are ignored by synergy evaluation and
+morph naming (§12.9–§12.10), so every new player does not start with charm synergies.
 
 ### C13.6 Mutation master list (280 parts — ID, name, slot, category, rarity, family, tags, active ability are fixed)
 A7 adds: unlock requirement, acquisition, visual description, model & animation requirements, stat

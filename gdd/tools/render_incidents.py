@@ -81,7 +81,8 @@ def main():
       "module `ReplicatedStorage.Shared.Data.OfflineIncidents` (golden test, §17).")
     w("")
     w("**%d incidents**: %d drawable by the incident roll plus %d *discovery dressings* (they never use the incident "
-      "count; they narrate the separate Discoveries rolls of §17). Rules that apply to every row:" % (
+      "count; they narrate the separate Discoveries rolls of §17). Weights, effect magnitudes and ranges are **[TUNABLE]**; "
+      "the caps are canon. Rules that apply to every row:" % (
           len(DATA), len(drawable), len(DATA) - len(drawable)))
     w("")
     w("- **Count** (canon §C15): `count = floor(H × 0.6 × (1 − SecurityMitigation)) + seeded extra roll`, where H is "

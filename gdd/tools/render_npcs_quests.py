@@ -136,6 +136,47 @@ def render_rewards(q: dict) -> str:
     return " · ".join(parts)
 
 
+ENTRY_L = {1: 1, 2: 5, 3: 10, 4: 18, 5: 26, 6: 35, 7: 45, 8: 56, 9: 68, 10: 80}
+CUM_H = {1: 0, 2: 1, 3: 3, 4: 7, 5: 14, 6: 25, 7: 40, 8: 60, 9: 85, 10: 120, 11: 200}  # canon C4.4 (+ L100 ≈ 200 h)
+
+
+def xpreq(level: int) -> int:
+    return round((180 + 30 * level) * 1.045 ** (level - 1))
+
+
+def scale_table() -> str:
+    rows = ["| Tier | Entry L | IncH (MB/h) | Daily MB (0.03·IncH) | Daily XP (0.25·XPR) | Daily MS (2+T) | "
+            "Weekly MB (0.12·IncH) | Weekly XP (0.5·XPR) | Weekly MS (5×T) | Weekly RT |",
+            "|---|---|---|---|---|---|---|---|---|---|"]
+    for t in range(1, 11):
+        L = ENTRY_L[t]
+        rows.append(f"| `TIER_{t:02d}` | {L} | {INC[t]:,} | {nice(0.03 * INC[t]):,} | {nice(0.25 * xprate(L)):,} | "
+                    f"{2 + t} | {nice(0.12 * INC[t]):,} | {nice(0.5 * xprate(L)):,} | {5 * t} | {1 + (t - 1) // 4} |")
+    return "\n".join(rows)
+
+
+def budget_table(quests: list[dict]) -> str:
+    rows = ["| Tier | Hours in tier | Income in tier (MB) | One-time quests | Quest MB | MB share | "
+            "XP to cross band | Quest XP | XP share |", "|---|---|---|---|---|---|---|---|---|"]
+    for t in range(1, 11):
+        hours = CUM_H[t + 1] - CUM_H[t]
+        income = INC[t] * hours
+        lo, hi = ENTRY_L[t], (ENTRY_L[t + 1] if t < 10 else 100)
+        xpband = sum(xpreq(L) for L in range(lo, hi))
+        qs = [q for q in quests if q["id"][4:7] not in ("DLY", "WKY") and q.get("t") == t]
+        mb = xp = 0
+        for q in qs:
+            rw = q["rw"]
+            if "MB" in rw:
+                mb += rw["MB"]; xp += rw["XP"]
+            else:
+                mb += nice(rw.get("mb", 0) * INC[t]) if rw.get("mb") else 0
+                xp += nice(rw.get("xp", 0) * xprate(q["l"])) if rw.get("xp") else 0
+        rows.append(f"| `TIER_{t:02d}` | {hours} | {income:,} | {len(qs)} | {mb:,} | {100 * mb / income:.1f} % | "
+                    f"{xpband:,} | {xp:,} | {100 * xp / xpband:.1f} % |")
+    return "\n".join(rows)
+
+
 def main() -> int:
     check = "--check" in sys.argv
     npcs = load_jsonl(DATA / "npcs.jsonl")
@@ -194,7 +235,13 @@ def main() -> int:
     OUT19.write_text("\n".join(out) + "\n", encoding="utf-8")
 
     # ---------- §20 ----------
-    out = [FRAG.joinpath("20_intro.md").read_text(encoding="utf-8").rstrip(), ""]
+    intro20 = FRAG.joinpath("20_intro.md").read_text(encoding="utf-8").rstrip()
+    sp_total = sum(q.get("rw", {}).get("sp", 0) for q in quests)
+    intro20 = (intro20.replace("{{QUEST_TOTAL}}", str(len(quests)))
+               .replace("{{SP_TOTAL}}", str(sp_total))
+               .replace("{{SCALE_TABLE}}", scale_table())
+               .replace("{{BUDGET_TABLE}}", budget_table(quests)))
+    out = [intro20, ""]
     hdr = ("| ID | Name | Description | NPC | Location | Objectives | Prerequisites | "
            "Completion conditions | Rewards | Failure conditions |\n|---|---|---|---|---|---|---|---|---|---|")
     counts = Counter(q["id"][4:7] for q in quests)

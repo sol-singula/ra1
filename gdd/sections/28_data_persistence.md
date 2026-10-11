@@ -877,7 +877,7 @@ atomic `UpdateAsync`. Lock shape: `{jobId, placeId, acquiredAt, refreshedAt, non
 | L1 | `nil` (released or new player) | Acquire. | `lock_acquired` |
 | L2 | `jobId == game.JobId` (rejoin to same server) | Re-acquire with a new `nonce`; the old in-memory session is discarded first. | `lock_reacquired` |
 | L3 | `now − refreshedAt ≥ LOCK_STALE_S` (360 s = 3 missed refreshes) | **Steal.** | `lock_steal_stale` |
-| L4 | Not stale, and `mmr_lock_heartbeat[u<UserId>]` is absent or names a different `jobId`/`nonce` on `HEARTBEAT_DEAD_CONFIRM` reads | **Heartbeat-confirmed steal** (owner is dead: it would refresh its heartbeat every 30 s). | `lock_steal_presence` |
+| L4 | Not stale, and `mmr_lock_heartbeat[u<UserId>]` is absent or names a different `jobId`/`nonce` on `HEARTBEAT_DEAD_CONFIRM` reads | **Heartbeat-confirmed steal** (owner is dead: it would refresh its heartbeat every 30 s). | `lock_steal_heartbeat` |
 | L5 | Not stale and heartbeat alive | Cancel the write (`return nil`), publish `mmr_lock_release`, poll every 3 s up to `RELEASE_WAIT_S`; if `mmr_handoff` shows a release in flight, keep polling. | `lock_wait` |
 | L6 | Still held after the wait | Count as one failed attempt of the E6 backoff (1, 2, 4, 8, 16 s); after the 5th, Safe Mode (§28.16). | `lock_wait_timeout` |
 

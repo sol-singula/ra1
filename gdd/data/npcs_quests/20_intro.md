@@ -106,7 +106,7 @@ Quality qualifiers: `≥GOOD` / `PERFECT` (§C8). `S≥n` means customer satisfa
 | `UpgradeMutation` | part or "any", n | `MutationService.Upgraded` | |
 | `UseAbility` | `ABL_` or "any mutation", n, outcome? | `CombatService.AbilityResolved` | outcome e.g. "blocked a hit", "successful dodge" |
 | `CollectOffline` | n reports, minHours? | `OfflineEarningsService.Claimed` | idempotent by `reportId` (§C15) |
-| `WinArenaMatch` | n, mode? | `MultiplayerService.ArenaResult` | always satisfiable with PvE bot modes, so **PvP is never required** |
+| `WinArenaMatch` | n, mode? | `MultiplayerService.ArenaResult` | every arena objective also accepts the non-PvP **Bash the Bots** (PvE) and **Cook-Off** race modes (§21), so **PvP is never required** |
 | `DeliverOrders` | n, destination? | `OrderService.DeliveryCompleted` | Delivery Depot missions (§18) or quest drop-offs |
 | `ReachLevel` | L | `ProgressionService.LevelUp` | state objective |
 | `MoveTo` | marker | `NPCService.ZoneEntered` | tutorial only |

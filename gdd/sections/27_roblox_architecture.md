@@ -1193,10 +1193,10 @@ offers for Mutation Mart (`BLD_01`) and Mystery Market (`BLD_13`), the starter m
 
 ```lua
 Grant(player: Player, mutationId: ContentId, source: string, txnId: string): PartInstance?
-Equip(player: Player, slot: string, partUid: string): Result; Unequip(player: Player, slot: string): Result
+Equip(player: Player, slot: string, partId: string): Result; Unequip(player: Player, slot: string): Result -- parts keyed by part ID (§28 `owned[partId]`)
 SwapLoadout(player: Player, index: number): Result; SaveLoadout(player: Player, index: number, name: string): Result
-Upgrade(player: Player, partUid: string, dupeUid: string?): Result -- txn "upg:<partUid>:<toLevel>"
-Fuse(player: Player, partUids: { string }): Result -- txn "fuse:<fusionCount>"
+Upgrade(player: Player, partId: string, useDuplicate: boolean): Result -- txn "upg:<partId>:<toLevel>"
+Fuse(player: Player, partIds: { string }, outputId: string): Result -- txn "fuse:<fusionCount>" (route rules §12.5)
 OpenCapsule(player: Player): Result -- { mutationId, rarity, convertedMS? }; dupes "dup:<partId>:<capsulesOpened>"
 SetMorphMeta(player: Player, meta: { name: string?, palette: { [string]: number }? }): () -- MorphAssemblyService only
 GetEquipped(player: Player): { [string]: string }; GetStatContribution(player: Player): StatBlock
@@ -1210,9 +1210,9 @@ PartGranted, EquipChanged, LoadoutSwapped, PartUpgraded, CapsuleOpened: Signal<.
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Mutation.Equip` / `Mutation.Unequip` | RF C2S | `{ slot, partUid? }` | menu |
+| `Mutation.Equip` / `Mutation.Unequip` | RF C2S | `{ slot, partId? }` | menu |
 | `Mutation.SwapLoadout` / `Mutation.SaveLoadout` | RF C2S | `{ index, name? }` | menu |
-| `Mutation.Upgrade` / `Mutation.Fuse` | RF C2S | `{ partUid, dupeUid? }` / `{ partUids }` | transaction |
+| `Mutation.Upgrade` / `Mutation.Fuse` | RF C2S | `{ partId, useDuplicate }` / `{ partIds, outputId }` | transaction |
 | `Mutation.OpenCapsule` | RF C2S | `{}` | transaction |
 | `Mutation.InventoryChanged` | Event S2C | `{ changed: { PartView }, removed: { string } }` | on change |
 
@@ -1243,7 +1243,7 @@ MorphBuilt: Signal<Player>
 
 | Remote | Kind · Dir | Payload | Rate |
 |---|---|---|---|
-| `Morph.SetName` | RF C2S | `{ name: string (≤ 20) }` | menu + 5 s cooldown |
+| `Morph.SetName` | RF C2S | `{ name: string (3–20) }` | menu + 30 s cooldown, max 10 per day (§13) |
 | `Morph.SetPalette` | RF C2S | `{ palette: { [slot]: paletteIndex } }` | menu |
 
 **Validation.** Names filtered with `TextService:FilterStringAsync` + `GetNonChatStringForBroadcastAsync`; palettes

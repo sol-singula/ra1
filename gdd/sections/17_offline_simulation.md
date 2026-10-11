@@ -36,7 +36,7 @@ profile-load `UpdateAsync` transform (no yields); step 13 is the client screen.
 | 5 | Estimate customer throughput | `Q = min(Demand_off, Cap_seat, Cap_kitchen, Cap_service)`; N via fractional accumulator | `Q`, `N_step` |
 | 6 | Calculate revenue | `N × AvgTicket × q` (+ tips, + delivery) on the live menu (skill gate, stations, special stock) | `Revenue`, `Tips` |
 | 7 | Deduct ingredient costs | basic ingredients netted per dish; special stock consumed; Stocker auto-buy inside the step | `IngredientCost` |
-| 8 | Deduct employee wages | `Σ wage × hours worked` (only employees on Always/Offline Only, not training) | `Wages` |
+| 8 | Deduct employee wages | `Σ wage × hours worked × shift factor` (only employees on Always/Offline Only, not training) | `Wages` |
 | 9 | Apply equipment and mutation bonuses | station levels (§C4.9), traits & signatures (§16.5), Manager coordination, Glow-Up decor | elaboration |
 | 10 | Calculate incidents and operational losses | incident count & draws (§36.9), caps, damage → auto-repair or deferred | `Incidents`, `Repairs` |
 | 11 | Determine net profit | `Net = max(0, Σ Net_step)` with close-early rule and the 60 % ceiling | `Net_step`, `Net` |
@@ -118,7 +118,7 @@ flowchart TD
 | `CLAIMED_RING` | 20 (canon) | idempotency ring buffer |
 | `WELCOME_BACK_CRATE_DAYS` | 7 (canon E5) | absence for the crate |
 
-### 17.4 The model in detail (A11 elaborations of canon §C15)
+### 17.4 The model in detail (A11 elaborations of canon §C15) [TUNABLE]
 
 **Snapshot.** Everything is read from the profile as saved at `lastSimAt`: tier, reputation ★, Atmosphere, station
 levels, menu (or Night Menu), special stock, roster with stats/Energy/Morale/shift/training, auto-buy budget, player
@@ -127,7 +127,7 @@ EFFICIENCY. Nothing that happened online after that time can leak in, and the sn
 **Who works.** Employees on *Always* or *Offline Only* shifts and not in training; a course whose `endsAt` falls inside
 the interval adds the employee from the next step. No working `ROLE_CHEF` → zero report with the hint "Hire a Chef!".
 
-**Long-absence taper.** Step k (starting at hour k) runs a shift with factor `S_k` = 1.0 for k < 2, 0.5 for
+**Long-absence taper [TUNABLE].** Step k (starting at hour k) runs a shift with factor `S_k` = 1.0 for k < 2, 0.5 for
 2 ≤ k < 8, 0.2 for k ≥ 8: only that share of the restaurant operates ("Late Shift": half the tables, half the staff on
 the clock; "Skeleton Shift": a fifth). Customers, revenue, tips, delivery, ingredients **and paid wages** all scale
 by `S_k`, so a long absence never flips a step negative and longer caps still add value; Energy and Morale keep
@@ -205,7 +205,7 @@ of later draws within a version. The deterministic economy (steps 4–9, 11) use
 reproduces it to the MB, while its incident/discovery draws use Python's generator with the same seed (different
 numbers, same distribution).
 
-### 17.6 Caps and the tuning plan
+### 17.6 Caps and the tuning plan [TUNABLE]
 
 The cap ladder (canon §C14.3) is the progression spine of management: a Basic Manager doubles a newcomer's offline
 window, an Experienced one covers a school day, an Elite one an evening + night, a Legendary one a full day. With the
@@ -959,7 +959,7 @@ negative lines carry a "−" sign *and* a red-orange color (never color-only).
 - **Mutation Rewards** (after Collect, only if present): MS counter, capsule card with *Open now* (odds disclosed,
   §C4.7), crate card with the ingredient and units; Welcome Back Crate (canon E5) appears here.
 
-#### 17.10.4 Upgrade Suggestions (computed server-side into `report.suggestions`)
+#### 17.10.4 Upgrade Suggestions (computed server-side into `report.suggestions`) [TUNABLE]
 
 | Report fact | Suggestion (deep link) |
 |---|---|
@@ -984,7 +984,7 @@ negative lines carry a "−" sign *and* a red-orange color (never color-only).
 | Upgrade Suggestions links | none / navigation | purchases happen in their own validated screens |
 | Open capsule | `MutationService:OpenCapsule` | capsule owned (granted at Collect), server RNG, odds disclosed |
 
-### 17.11 Offline mutation progression
+### 17.11 Offline mutation progression [TUNABLE]
 
 Offline income feeds the morph economy (Creative Director: "when the player logs off, employees keep that progression
 moving") without replacing it:
