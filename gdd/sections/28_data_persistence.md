@@ -55,7 +55,7 @@ the restaurant, staff, quests, offline reports, purchases — so that:
 | `TX_KEY_RING` / `LEDGER_RING` | 64 (§27.12.5) / 50 [TUNABLE] | `wallet.txKeys` idempotency ring / recent ledger entries. |
 | `CLAIMED_REPORT_RING` | **20** (canon §C15) | `offline.claimedReportIds`. |
 | `RECEIPT_RING` | 100 [TUNABLE] | Robux `PurchaseId`s kept in-profile (global ledger is the backstop). |
-| `REGULARS_CAP` / `ROSTER_BENCH_CAP` | 30 / 10 [TUNABLE] | Repeat customers; benched staff beyond the tier employee cap. |
+| `REGULARS_CAP` / `ROSTER_BENCH_CAP` | 20 (§8) / 10 [TUNABLE] | Regular customers per restaurant; benched staff beyond the tier employee cap. |
 | `PENDING_OPS_CAP` / `MOD_FLAG_RING` | 20 / 25 | Cross-key operation journal; moderation flags. |
 | `SNAPSHOT_SLOTS` | 3 (monthly) + 1 pre-migration | `MMR_ProfileSnap_v1` (§28.20). |
 | `SIZE_WARN` / `SIZE_SOFT` / `SIZE_HARD` | 512 KB / 1 MB / 3.5 MB | Encoded JSON length; DataStore limit is 4 MB per key. |
@@ -84,8 +84,8 @@ grows with content. Growth is bounded by design:
 |---|---|---|
 | New player after tutorial (L5, TIER_01) | ≈ 9 KB | defaults, 5 starter parts, 12 layout objects |
 | Mid-game (L26, TIER_05, ~15 h) | ≈ 32 KB | ~60 parts, 120 layout objects, 8 staff |
-| Late-game (L80, TIER_10, ~120 h) | ≈ 60 KB | ~200 parts, 300 layout objects, 20 staff |
-| Theoretical worst case (all 280 parts, all rings full) | ≈ 110 KB | §28.10 |
+| Late-game (L80, TIER_10, ~120 h) | ≈ 67 KB | ~200 parts, 300 layout objects, 20 staff |
+| Theoretical worst case (all 280 parts, all rings full) | ≈ 118 KB | §28.10 |
 
 New content is **append-only**: new mutation, recipe, quest or achievement IDs extend the bitsets and maps
 without a migration. Only *representation* changes (renamed/reshaped fields) need a schema migration (§28.12).
@@ -124,7 +124,8 @@ load transform run as the owners' registered pure functions (ownership by code, 
 | `recipes` | `RecipeService` | known recipes, menu, tracked perfect counts, courses |
 | `employees` | `EmployeeService` | roster, assignments, candidate board |
 | `offline` | `OfflineEarningsService` | `lastSimAt`, pending report, claimed ring, capsule and welcome-back stamps |
-| `quests` | `QuestService` | quest states and claims, daily/weekly cycles, login streak, tutorial, exploration |
+| `quests` | `QuestService` | quest states and claims, daily/weekly cycles, login streak, tutorial |
+| `city` | `CityEventService` (§27.17 lists no `city` section; added for §18.9.7 — single writer to be confirmed by §27) | discoveries, secrets, event claims, pending event rewards, season track |
 | `social` | `MultiplayerService` | co-op permissions, arena record |
 
 External platform dependencies: `DataStoreService`, `MemoryStoreService`, `MessagingService`,
@@ -188,7 +189,7 @@ The profile is split into the **sections and single writers fixed in §27.17** (
 `progression`, `mutations`, `morph`, `restaurant`, `layout`, `durability`, `inventory`, `recipes`,
 `employees`, `offline`, `quests`, `social`). Types live in `ReplicatedStorage/Shared/Types` (types only, so
 client code can be typed against the replicated view) and are enforced by the server validator (§28.20.4).
-Field names stay readable: the worst case is ~2.7 % of the 4 MB key limit (§28.10), so only structures that
+Field names stay readable: the worst case is ~2.9 % of the 4 MB key limit (§28.10), so only structures that
 grow with content are compacted (§28.11). Fields marked *transient* exist in memory only and are stripped by
 the encoder before every write.
 
@@ -288,10 +289,12 @@ export type Progression = {
 	overtimeXp: number,                -- XP banked past the L100 cap (§14 Overtime)
 	xpOnceKeys: { [string]: boolean }, -- one-time XP grant keys (duplicate-grant prevention, §14);
 	                                   -- expired daily/weekly keys are pruned at load
-	achievements: { [string]: UnixTime }, -- achievement ID (§36.16) -> claimed at
-	milestones: { [string]: UnixTime },   -- milestone ID (§36.17) -> claimed at
-	counters: { [string]: number },    -- shared lifetime counters ("customers_served", "tantrums_calmed",
-	                                   -- "repairs_done", "perfect_dishes", ...) read by achievements & quests
+	achievements: {
+		unlocked: { [string]: UnixTime },   -- achievement ID (§36.16) -> claimed at
+		milestones: { [string]: UnixTime }, -- milestone ID (§36.17) -> claimed at
+		counters: { [string]: number },     -- shared lifetime counters ("customers_served", "tantrums_calmed",
+		                                    -- "repairs_done", "perfect_dishes", ...) read by achievements & quests
+	},
 	titles: { string },                -- cosmetic text titles (§C17.4)
 	equippedTitle: string?,
 	emotes: { string },                -- earnable emote keys
@@ -363,14 +366,20 @@ Equipped and loadout parts must exist in `owned`; a part consumed by Lab fusion 
 and every loadout in the same in-memory step. Secrets cannot duplicate (§C4.6): a second Secret grant converts
 to MS, and the validator rejects `copies > 0` on a Secret.
 
-#### 28.9.6 `morph` — name and palettes (writer: `MorphAssemblyService`)
+#### 28.9.6 `morph` — name, palettes, Morphdex (writer: `MorphAssemblyService`)
 
 ```lua
 export type MorphColors = { primary: string, secondary: string, accent: string }  -- "#RRGGBB"
+export type Morphdex = {               -- §12.9 Morphdex (§12b): keyIndex = headIdx x 256 + domIdx
+	spotted: string,                  -- base64 bitset, 40 x 256 bits = 1,280 bytes
+	worn: string,                     -- base64 bitset, same layout
+	titleBits: number,                -- 32-bit mask of Morphdex titles earned
+}
 export type Morph = {
 	morphName: string,          -- player text, same rules as Loadout.name (`Morph.SetName`)
 	colors: MorphColors,        -- current colors (`Morph.SetPalette`)
 	palettes: { string },       -- owned cosmetic palette keys (rewards §C17.4, Body Mods BLD_02)
+	morphdex: Morphdex,
 }
 ```
 
@@ -384,17 +393,23 @@ export type Reputation = {
 	stormOuts: number,
 	fiveStarStreak: number,           -- consecutive customers at 5.0 stars (MUT_280 discovery, §C13.8)
 }
-export type Regular = {               -- repeat customers (§8 "Returning as a repeat customer")
-	rid: number, per: string,         -- per = personality ID, e.g. "PER_013"
-	look: number,                     -- appearance seed for MorphAssemblyService
-	visits: number, lastAt: UnixTime,
-	fav: string?,                     -- favourite recipe ID
+export type Regular = {               -- repeat customer record defined by §8 (~120 B each)
+	id: number,                       -- stable id within this restaurant
+	name: string,                     -- generated name (§8 name tables; never player text)
+	seed: number,                     -- reproduces the exact body (MorphAssemblyService)
+	personalityId: string,            -- e.g. "PER_013"; PER_032 stores its revealed personality
+	favoriteRecipe: string?,          -- RCP ID of the highest-S visit
+	visits: number,
+	loyalty: number,                  -- 0..100 (§8)
+	grudge: number,                   -- 0..100 (§8)
+	grudgeCause: string?,             -- cause code (§8)
+	lastVisit: UnixTime,
 }
 export type Restaurant = {            -- writer: RestaurantService
 	tier: string,                     -- "TIER_01".."TIER_10"
 	plotPreference: number?,          -- last Restaurant Row plot (non-binding)
 	reputation: Reputation,
-	regulars: { Regular },            -- <= REGULARS_CAP, least-recently-visited evicted
+	regulars: { Regular },            -- <= REGULARS_CAP = 20; replacement rule per §8 (lowest loyalty, newcomer S >= 95)
 }
 
 export type PlacedObject = {          -- decoded in memory from layout.packed (§28.11)
@@ -415,7 +430,8 @@ export type Layout = {                -- writer: BuildingService
 export type Durability = {            -- writer: RepairService
 	damaged: { [string]: number },    -- sparse: tostring(uid) -> durability 0..99 %; absent = 100 % Pristine.
 	                                  -- Damage state is derived (§C6): 75-51 Scuffed, 50-26 Cracked,
-	                                  -- 25-1 Broken, 0 Destroyed (rubble awaiting the auto-rebuild offer)
+	                                  -- 25-1 Broken, 0 Destroyed (rubble awaiting the auto-rebuild offer;
+	                                  -- the entries at 0 are §15's `pendingRebuilds`, exposed as a derived view)
 }
 
 export type Inventory = {             -- writer: InventoryService
@@ -478,7 +494,7 @@ export type Recipes = {
 }
 ```
 
-#### 28.9.10 `quests` — active, completed, daily, weekly, claims, tutorial, exploration (writer: `QuestService`)
+#### 28.9.10 `quests` (writer: `QuestService`) and `city` (writer: `CityEventService`)
 
 ```lua
 export type QuestState = "ACTIVE" | "COMPLETE" | "CLAIMED" | "FAILED"
@@ -503,12 +519,6 @@ export type Tutorial = {               -- = §32.13 TutorialState
 	tipsSeen: number,                 -- bitmask of tutorial tips shown
 	assists: { [string]: number },    -- analytics counters (burn_recovery, auto_flip, ...)
 }
-export type Exploration = {
-	districtBits: number,             -- visited DST_01..DST_10 (bit i-1)
-	metroBits: number,                -- discovered Morph Metro stations (free fast travel, §C16.1)
-	deadPixelBits: number,            -- the 8 hidden dead pixels for MUT_276 (§C13.8)
-	secretSteps: { [string]: number }, -- multi-step secret progress keyed by part ID
-}
 export type Quests = {
 	active: { [string]: QuestProgress }, -- story/challenge quests in progress (<= 25 tracked)
 	doneBits: string,                 -- non-repeatable quests completed AND claimed (bitset by quest index)
@@ -517,7 +527,19 @@ export type Quests = {
 	storyChapter: number,             -- 1..10, one per tier (§C17.3)
 	dailyLogin: { lastClaimDay: DayStamp, streak: number },
 	tutorial: Tutorial,
-	exploration: Exploration,
+}
+
+export type City = {                  -- fields required by §18.9.7
+	discoveredDistricts: number,      -- 10-bit mask, DST_01..DST_10 (bit i-1)
+	discoveredStations: number,       -- 10-bit mask of Morph Metro stations (free fast travel, §C16.1)
+	manholes: number,                 -- 3-bit mask of hidden sewer manholes (DST_09)
+	secrets: { string },              -- found secret keys
+	deadPixels: number,               -- 8-bit mask for MUT_276 (§C13.8)
+	counters: { [string]: number },   -- city counters (§18)
+	flags: { [string]: boolean },     -- city flags (§18)
+	eventClaims: { string },          -- ring of the last 50 event instance keys claimed (dedupe, §28.19)
+	pendingEventRewards: { { key: string, reward: { [string]: any } } }, -- granted at next safe moment
+	seasonTrack: { seasonKey: string, stamps: number },
 }
 ```
 
@@ -558,6 +580,8 @@ export type Offline = {
 export type CoopSettings = {
 	allowGuests: "FRIENDS" | "NOBODY" | "EVERYONE",
 	guestCanCook: boolean, guestCanServe: boolean, guestCanRepair: boolean,   -- `Multiplayer.SetPermissions`
+	guestPayToday: number,            -- MB earned as a guest today; daily cap 1.5 x NetRef (§22.3)
+	guestPayDay: DayStamp,            -- resets guestPayToday when the DayStamp changes
 }
 export type Arena = { optedIn: boolean, season: number, rating: number, wins: number, losses: number }
 export type Social = { coop: CoopSettings, arena: Arena }
@@ -612,6 +636,7 @@ export type Profile = {
 	employees: Employees,
 	offline: Offline,
 	quests: Quests,
+	city: City,
 	social: Social,
 }
 ```
@@ -634,8 +659,8 @@ Encoded size = `#HttpService:JSONEncode(profile)`, measured before every write.
 | `wallet` | 7 KB | 13 KB | ledger 50 × ~110 B, keys 64 × ~30 B, receipts 100 × ~60 B |
 | `progression` | 8 KB | 20 KB | one entry per achievement/milestone/skill node; ≤ 60 counters; `xpOnceKeys` bounded by content (expired cycle keys pruned) |
 | `mutations` | 21 KB | 31 KB | ≤ 280 distinct parts × ~95 B (+ ~95 B per future part) + ≤ 8 loadouts |
-| `morph` | 0.3 KB | 1 KB | palette count |
-| `restaurant` | 3 KB | 3.5 KB | regulars ≤ 30 × ~90 B |
+| `morph` | 4 KB | 4.5 KB | Morphdex bitsets ≈ 3.4 KB (§12b) + palettes |
+| `restaurant` | 2.5 KB | 3 KB | regulars ≤ 20 × ~120 B |
 | `layout` | 4 KB | 6 KB | ≤ 400 objects × ~14 chars + upgrade IDs |
 | `durability` | 0.5 KB | 6 KB | sparse; worst = every object damaged × ~14 B |
 | `inventory` | 2 KB | 4 KB | ≤ 150 unplaced item types, stocked specials, cosmetics |
@@ -643,8 +668,9 @@ Encoded size = `#HttpService:JSONEncode(profile)`, measured before every write.
 | `employees` | 7 KB | 10 KB | ≤ 20 active + 10 bench × ~330 B |
 | `offline` | 1.5 KB | 2.5 KB | one pending report + ring 20 |
 | `quests` | 3 KB | 5 KB | bitsets + ≤ 25 active quests + cycles |
+| `city` | 2 KB | 4 KB | event-claim ring 50, secrets list, season track |
 | `social` | 0.2 KB | 0.2 KB | fixed shape |
-| **Total** | **≈ 62 KB (1.5 %)** | **≈ 110 KB (2.7 %)** | |
+| **Total** | **≈ 67 KB (1.6 %)** | **≈ 118 KB (2.9 %)** | |
 
 **Guards.** `> SIZE_WARN` (512 KB) logs `profile_size_warn` with the per-block breakdown; `> SIZE_SOFT`
 (1 MB) halves every ring buffer before encoding and raises a P1 alert; `> SIZE_HARD` (3.5 MB) refuses the
@@ -1050,7 +1076,7 @@ entry → `MarkDirty(player, "wallet")` → `LogEconomyEvent` (§31.12). Persist
 |---|---|---|
 | Customer payment / tip | `serve:<ticketId>` (§27.12.5) | a ticket settles once (`OrderService`); tickets are never persisted (E1/E13) |
 | Quest reward claim | `quest:<questId>:<cycleStamp>` (0 for non-repeatables) | quest state `COMPLETE → CLAIMED`, `quests.doneBits` |
-| Achievement / milestone claim | `ach:<id>` / `mls:<id>` | `progression.achievements` / `progression.milestones` |
+| Achievement / milestone claim | `ach:<id>` / `mls:<id>` | `progression.achievements.unlocked` / `.milestones` |
 | Offline collect | `offline:<reportId>` (§27.8.11) | `claimedReportIds` ring + pending-equality check (§28.19) |
 | Daily login reward | `login:<DayStamp>` | `quests.dailyLogin.lastClaimDay` |
 | Welcome Back Crate | `wb:<lastSimAt>` | granted in the same write that advances `lastSimAt` |
@@ -1061,7 +1087,9 @@ entry → `MarkDirty(player, "wallet")` → `LogEconomyEvent` (§31.12). Persist
 | Duplicate → MS conversion | `dup:<partId>:<capsulesOpened>` | `copies` decremented in the same step |
 | Hourly wage tick | `wage:<hourStamp>` | `employees.lastWageTickAt` |
 | Repair charge (E3) | `repair:<jobId>` (§27.16) | the job completes once |
-| Event / co-op rewards | `evt:<instanceId>` / `coop:<visitId>` (server-granted at event/visit end) | events and visits last ≤ hours |
+| City event reward | `evt:<instanceId>` | `city.eventClaims` ring of 50 (§18.9.7) |
+| Co-op guest pay | `coop:<visitId>:<checkpointNo>` (§22) | visit record closed at settlement; `social.coop.guestPayToday` daily cap |
+| Arena season reward | `arenaseason:<seasonId>` (§22) | `social.arena.season` ≥ reward season |
 
 Luau runs one script at a time without preemption, so a transaction and its grant cannot interleave with another
 request for the same player; the only requirement is that nothing inside the critical section yields (asserted in
@@ -1174,7 +1202,7 @@ the same profile key as the reward — so no ordering of reconnects, retries or 
 | Merged offline intervals | new deterministic `reportId` for the merged span | the superseded id was never claimable once replaced |
 | Offline Morph Capsule | `offline.lastCapsuleDay` | ≤ 1 per real day, decided at simulation time (§C15) |
 | Welcome Back Crate (E5) | granted in the load write that advances `lastSimAt` | absence measured against the stored `lastSimAt` |
-| Achievements / milestones | `progression.achievements[id]` / `progression.milestones[id]` | key absent |
+| Achievements / milestones | `progression.achievements.unlocked[id]` / `progression.achievements.milestones[id]` | key absent |
 | One-time XP grants | `progression.xpOnceKeys` (§14) | key absent |
 | Tutorial gifts (QST_TUT_010 part, `EMP_001` via QST_TUT_012) | `quests.tutorial.choice`, `quests.tutorial.step` | choice unset / step below the granting step |
 | Capsule results | result committed to `mutations` before the reveal plays | disconnecting mid-reveal cannot re-roll: the leave save persists it |
@@ -1182,6 +1210,7 @@ the same profile key as the reward — so no ordering of reconnects, retries or 
 | Robux receipts | `wallet.receipts` + `MMR_Receipts_v1` | §28.18 |
 | Secret parts | `mutations.owned[id]` | not owned (a repeat converts to MS per §C4.6 rules) |
 | Arena season rewards | `social.arena.season` | reward season > stored season |
+| City event rewards | `city.eventClaims` (ring 50) | instance key absent |
 
 The Collect button is disabled client-side after one press, but correctness never depends on it.
 
@@ -1446,7 +1475,7 @@ player's data.
 - **AC-28-09:** A profile with `schemaVersion` above the build's `SCHEMA_VERSION` is never written by that build (store unchanged, verified by version listing) and the player is teleported or messaged within 5 s.
 - **AC-28-10:** During a full DataStore outage, retries follow 1, 2, 4, 8, 16 s (±10 %), the Safe Mode banner appears within 1 s of the last failure, the kick occurs at 60 s ± 2 s, and 0 writes reach the store from Safe Mode sessions.
 - **AC-28-11:** `BindToClose` with 8 loaded players commits and releases all 8 profiles within 25 s at p99 in a throttled-store test.
-- **AC-28-12:** The worst-case fixture profile (all 280 parts, all rings full, 400 layout objects) encodes to ≤ 120 KB; layout and bitset codecs round-trip 10,000 random fixtures with 0 differences.
+- **AC-28-12:** The worst-case fixture profile (all 280 parts, all rings full, 400 layout objects) encodes to ≤ 150 KB; layout and bitset codecs round-trip 10,000 random fixtures with 0 differences.
 - **AC-28-13:** The erasure procedure leaves 0 keys under `u<UserId>/` in every per-player store and 0 entries in every `MMR_LB_` store for a test user, verified by prefix listing.
 - **AC-28-14:** Daily login claims at 23:59:59 and 00:00:01 UTC grant two rewards on two DayStamps; two claims within one DayStamp grant one; changing the client device clock has no effect.
 - **AC-28-15:** The rollback tool restores a chosen version only when the lock is free or stale, re-applies all receipts newer than that version, appends a `ROLLBACK_SUPPORT_` flag, and writes an audit entry (100 % of 50 scripted restores).

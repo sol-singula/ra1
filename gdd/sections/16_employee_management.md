@@ -113,6 +113,12 @@ employees round-robin plus any employee whose task just finished or failed; inte
 | Chop grade | Clean cut chance 0.2 + 0.7·Acc/100, else yellow (0.8) | never MUSHY |
 | Order mistake (waiter/cashier) | `0.10 × (1 − Acc/100) × (1.5 − Rel/100)` per order | wrong table or a dropped modification |
 | Wander-off (Reliability) | `0.2 × (1 − Rel/100)` per online hour: 2 min idle "daydream" | shown as a thought bubble |
+| Order-modification success (chef, per mod, §6.18) | `P = clamp(0.5 + (Skill − 10 × difficulty) / 100, 0.30, 0.98)`; Skill = Accuracy, or (Accuracy + Cooking) / 2 for `DONENESS` and `TEMP` mods; difficulty from §6.18.2 (OMIT/EXTRA 1, most categories 2, JOKE 3) | rolled once per mod when the employee finishes the item; a failed mod counts as missed for order accuracy A (§10); JOKE mods always use the Play Along action on success, otherwise the Straight Answer (never anger) |
+
+Examples: Ollie (Accuracy 28) succeeds on an OMIT 68 % of the time and on a JOKE 48 %; a Legendary chef (Accuracy 90)
+hits 98 % / 98 %. A ticket whose mod needs a TAIL actor or another morph condition (§6.18) is only auto-claimed by an
+employee who satisfies it. **Offline, modifications are not simulated per order:** their effect is already folded
+into the aggregate quality q (avg chef Accuracy) and order-accuracy assumptions of canon §C15 (§17.4).
 
 A typical Uncommon chef produces Food Quality around 0.75–0.80 and a Legendary one around 0.92 — a skilled player at
 PERFECT timing (1.00) stays the best cook in the building, by design.
@@ -548,3 +554,193 @@ flowchart TD
     O --> A
 ```
 
+### 16.8 Variables [TUNABLE]
+
+| Variable | Default | Used in |
+|---|---|---|
+| `UnfamiliarPenalty` | ×0.85 RoleStatAvg | off-native role |
+| `BrainHz` / `BrainMaxPerTick` | 4 Hz / 5 employees | scheduler |
+| `ZoneBonus` / `SwitchPenalty` / `DistanceCost` | 1.3 / 15 / 0.02 per stud | utility |
+| `PoolWindowSeconds` | 14,400 (4 h) | candidate pool |
+| `PoolSize[tier]` | 3,3,4,4,5,5,6,6,7,8 | candidate pool |
+| `RerollBase` | 50 × tier MB, doubling, 3 paid per window | rerolls |
+| `HoldFee` | 5 % of hire | hold |
+| `PityRareWindows` / `PityEpicWindows` | 12 (T5+) / 24 (T8+) | pity |
+| `HotlineFee` | +10 %, from `TIER_06` | remote hiring |
+| `TrainGainBase` / `TrainCostFactor` / `TrainCostGrowth` | 4 / 0.04 × hire / 1.08 per point | training |
+| `TrainMinutes` | min(240, 20 + 3 × points above band min) | training |
+| `CrossTrainCost` | 0.10 × hire, 60 min | training |
+| `RaiseStep` / `MaxRaises` | +10 % / 3 | raises |
+| `StarHours` / `StarFee` | 10 / 40 / 120 h · 25 / 50 / 75 % of hire | promotions |
+| `ProbationMinutes` / `ProbationRefund` / `Severance` | 15 / 50 % / 2 h wage | firing |
+| `MoraleDrift` / `MoraleBaseline` | 4 /h / 60 + modifiers | morale |
+| `EnergyDrainBase` / `BreakThreshold` / `BreakRecovery` | 10 %/h / 25 % / +6 %/min for 4 min | energy |
+| `WageTickSeconds` | 60 | wages |
+| `RepairMaterialDiscount` | Repair / 400 | repairs |
+| `GuardCalmBase` / `GuardCalmPerCombat` | 0.25 / 0.6 | interception |
+| `StaffHP` / `StaffKOSeconds` | 60 + Combat / 8 s | combat |
+
+The Employee Management skill tree (`SKL_MGMT_01`–`SKL_MGMT_10`, §14) may only modify the variables above, within
+±25 %, and never the canon offline caps or bands.
+
+### 16.9 Progression and return on investment
+
+| Tier band | What opens up | Typical staff (cap) | Offline cap |
+|---|---|---|---|
+| `TIER_01`–`TIER_02` | Ollie (tutorial), Commons; Manager & Repair at T2 | Chef + Cashier/Prep (2–3) | 2 h → 4 h with a Basic Manager |
+| `TIER_03`–`TIER_04` | Waiters & Security (table service), first Rares; Delivery & Stocker at T4 | Chef, 2 Waiters, Manager (4–6) | 4 h |
+| `TIER_05`–`TIER_06` | Assistant Manager, first Epics, Hotline at T6, Rare pity | 2 Chefs, 3 Waiters, Dish, Cleaner, Rare Manager (8–10) | 8 h (+2 h) |
+| `TIER_07`–`TIER_08` | first Legendaries, Epic pity | full line, Elite Manager (12–14) | 12 h (+2 h) |
+| `TIER_09`–`TIER_10` | Legendary pool 12–20 % | 16–20 specialists, Legendary Manager | 24 h |
+
+**Employee ROI.** `Payback hours = HireCost ÷ (ΔNet_offline/h + ΔNet_online/h)`. The table measures the offline part
+with the §17 reference model by removing one employee from a §17.9 example roster (base economy, no incidents):
+
+| Example roster | Employee | Hire (MB) | Wage (MB/h) | Δ offline net / h | Offline payback |
+|---|---|---|---|---|---|
+| B (`TIER_03`) | Benny Bun, Common Waiter | 400 | 18 | +316 | 1.3 h |
+| B (`TIER_03`) | Skates McGee, Uncommon Waiter | 2,300 | 55 | +434 | 5.3 h |
+| C (`TIER_05`) | Octavia, Uncommon Chef (trained) | 2,100 | 50 | +1,217 | 1.7 h |
+| C (`TIER_05`) | Sloane, Common Dishwasher | 200 | 10 | +288 | 0.7 h |
+| C (`TIER_05`) | Dusty, Common Cleaner | 400 | 18 | +191 | 2.1 h |
+| C (`TIER_05`) | Chet Speedwell, Rare Waiter | 12,000 | 165 | +812 | 14.8 h |
+| D (`TIER_07`) | Rocco, Rare Security Guard | 12,500 | 170 | −170 (not a bottleneck) | online / insurance only |
+| E (`TIER_10`) | Tractor Trixie, Epic Stocker | 57,000 | 440 | +4,764 (auto-buy keeps special dishes live) | 12 h |
+| E (`TIER_10`) | Comet Carla, Epic Courier | 61,000 | 465 | +492 | 124 h |
+
+Lessons the UI teaches through the Forecast and the Upgrade Suggestions: hire into the **bottleneck** (cheap
+presence roles like Dishwasher and Cleaner pay back in minutes once their penalty applies), Security Guards earn their
+wage online (brawls, reputation) and as offline insurance, and luxury hires are mutation-collection flexes rather
+than economic necessities — which is exactly where we want the late-game sink.
+
+### 16.10 Player interactions
+
+- **Owner only** can hire, fire, train, raise, promote and change settings; co-op guests (§21) see the staff, may
+  work alongside them and can *Praise* (cosmetic emote, no Morale effect) but cannot change anything.
+- Employees greet the owner (`ANM_042` wave) on entry, celebrate milestones, and appear in friends' visits.
+- Employee management challenges (quest type EMP, §20) and achievements (§36.16) may read the analytics events
+  of §16.12 (e.g. "train an employee to their potential cap").
+
+### 16.11 Dependencies
+
+`EmployeeService` (owner of this section) depends on `PlayerDataService` (profile, session lock), `EconomyService`
+(all MB movements, idempotency keys), `OrderService`, `CookingService`, `CustomerAIService`, `RepairService`,
+`InventoryService` (task producers), `MorphAssemblyService` (client visuals), `RestaurantService` (tier, cap, open
+state), `OfflineEarningsService` (§17, reads roster/settings and writes Energy/Morale/KPIs), `QuestService`
+(`QST_TUT_012`), `UIController`. Data: §36.8 archetypes, §36.9 incidents, §C6 caps, §C4.8 bands.
+
+### 16.12 Roblox implementation
+
+**Modules.** `ServerScriptService/Services/EmployeeService/` → `init.lua` (public API), `CandidatePool.lua`
+(deterministic generation), `TaskBoard.lua`, `EmployeeBrain.lua` (utility AI), `WageLedger.lua`, `MoraleEnergy.lua`,
+`Reviews.lua`, `ProxyController.lua` (SPCV). Static data `ReplicatedStorage/Shared/Data/EmployeeArchetypes.lua`,
+`EmployeeTraits.lua`, `OfflineIncidents.lua` are generated from `gdd/data/*.json` by the build pipeline.
+
+```lua
+--!strict
+export type EmployeeRecord = {
+    uid: string, archetype: string, role: string, nativeRole: string,
+    stats: { cook: number, svc: number, acc: number, rep: number, cmb: number, rel: number },
+    energy: number, morale: number, wage: number, raises: number, stars: number,
+    hoursWorked: number, hiredAt: number, shift: "Always" | "OnlineOnly" | "OfflineOnly" | "OffDuty",
+    station: string?, zone: string?, crossTrained: { [string]: boolean },
+    training: { stat: string, endsAt: number }?, kpi24h: { [string]: number }, quirk: number,
+}
+-- profile.staff = { employees = {[uid]=EmployeeRecord}, wagePriority = {uid}, nightMenu = {string}?,
+--                   autoBuyBudget = number, recruit = { windowIndex = number, rerolls = number,
+--                   hiredSlots = {number}, held = string?, pityRare = number, pityEpic = number } }
+
+local EmployeeService = {}
+function EmployeeService:Hire(player: Player, candidateId: string, role: string, replaceUid: string?): (boolean, string)
+function EmployeeService:Fire(player: Player, uid: string, confirmToken: string): (boolean, string)
+function EmployeeService:Assign(player: Player, uid: string, role: string, station: string?): (boolean, string)
+function EmployeeService:Forecast(player: Player): { mbPerHour: number, capHours: number, bottleneck: string }
+```
+
+**Remotes** (`<Domain>.<Action>`; every handler checks profile loaded, owner of the restaurant, not Safe Mode):
+
+| Remote | Kind | Payload | Server validation | Rate limit |
+|---|---|---|---|---|
+| `Recruit.GetPool` | RemoteFunction | — | regenerates the pool from the seed | 2/s |
+| `Recruit.Reroll` | RemoteFunction | — | price from server counter; `TrySpend`; window unchanged | 1/s |
+| `Recruit.Hold` | RemoteFunction | slot | one hold per window; fee via `TrySpend` | 1/s |
+| `Recruit.Hire` | RemoteFunction | candidateId, role, replaceUid? | §16.6.4 checklist | 1 per 2 s |
+| `Employee.GetRoster` | RemoteFunction | — | — | 2/s |
+| `Employee.Assign` | RemoteFunction | uid, role, station? | role unlocked, uniqueness, 60 s cooldown | 4/s |
+| `Employee.SetShift` | RemoteFunction | uid, mode | enum | 4/s |
+| `Employee.Train` / `Employee.CancelTraining` | RemoteFunction | uid, stat | below cap, trainee slots, `TrySpend` | 1/s |
+| `Employee.Raise` / `Employee.Promote` | RemoteFunction | uid | max raises; hours + grade + fee | 1/s |
+| `Employee.Fire` | RemoteFunction | uid, confirmToken | token issued by a prior confirm call (10 s TTL); not training | 1 per 2 s |
+| `Employee.ReviewAction` | RemoteFunction | uid, action | daily limits, cooldowns | 2/s |
+| `Employee.SetWagePriority` / `SetNightMenu` / `SetAutoBuyBudget` | RemoteFunction | list / list / number | known uids; known recipes, ≥ 1 cookable; 0 ≤ budget ≤ 2 × active net | 1/s |
+| `Employee.Forecast` | RemoteFunction | — | §17 model, expected values | 1/s |
+
+**SPCV staff.** Each employee is a server proxy (anchored, invisible, 2 × 5 × 1 studs, CanCollide false) with
+attributes `EmpUid`, `Archetype`, `Role`, `State`, `AnimKey`, `CarryItem`, `MoveFrom`, `MoveTo`, `MoveT0`, `MoveSpeed`.
+The server moves the proxy logically along a **precomputed navigation graph** of the interior (nodes at stations,
+tables, doors; rebuilt by `BuildingService` on layout change; A* over ≤ 200 nodes) and only writes segment
+attributes; clients interpolate and build the morph from §36.8 parts (cached per archetype, LOD impostor beyond 60
+studs). Work animations reuse core IDs: `ANM_010` chop, `ANM_011` grill, `ANM_012` fryer, `ANM_017` assemble,
+`ANM_018` plate, `ANM_019` serve, `ANM_007` tray, `ANM_021` wash, `ANM_022` mop, `ANM_060`/`ANM_061` repair,
+`ANM_066` register, `ANM_030` extinguish, `ANM_054` flee, `ANM_062` Seeing Stars, `ANM_008` wobbly gait for
+mismatched legs. Budget: ≤ 20 staff per restaurant, ≤ 160 per server, brain cost ≤ 0.05 ms per employee per tick.
+
+**Analytics** (`AnalyticsService` + internal `mmr_` events): `mmr_employee_hired` {archetype, rarity, role, cost,
+tier, source pool/hotline/tutorial, slot}, `mmr_candidate_reroll` {n, cost}, `mmr_candidate_hold`,
+`mmr_employee_fired` {tenure_h, stars, probation}, `mmr_employee_trained` {stat, gain, cost}, `mmr_employee_promoted`,
+`mmr_employee_raise`, `mmr_unpaid_break` {employees, minutes}, `mmr_review_action`; hire/train/raise/wage spends via
+`LogEconomyEvent` (sink). First hire is an onboarding funnel step owned by §31.
+
+### 16.13 Edge cases
+
+| # | Situation | Expected behavior |
+|---|---|---|
+| 1 | Pool window rolls over while the Recruitment UI is open | `Recruit.Hire` with a stale `candidateId` returns "This candidate took another job!"; UI refreshes; a held candidate stays valid |
+| 2 | Player rejoins or server-hops to get a new pool | Seed = (UserId, windowIndex, rerollIndex) and `rerolls` is persisted → identical pool |
+| 3 | Hire request retried after a timeout | Idempotency key `hire:<UserId>:<window>:<slot>`; the slot is already hired → returns the existing employee, no second charge |
+| 4 | At employee cap | Hire buttons switch to "Replace…"; hire + fire are one atomic transaction (§16.7.7) |
+| 5 | Firing the only Chef | Warning "No Chef = no offline income and Away Mode closes"; allowed after confirm |
+| 6 | Manager fired while an offline report is pending | The report was computed at join with the old cap and stays valid; the next interval uses the new cap (§17) |
+| 7 | Training finishes during offline time | The course `endsAt` is checked per simulated step; the employee works from the following step (§17.4) |
+| 8 | Employee KO'd while carrying a plate | Plate drops unless Sticky Grip; the dish is remade (ticket re-posted); employee back after 8 s |
+| 9 | Station destroyed mid-task / object repaired by player mid-job | Task fails and is released; repair cost charged once (canon E3) |
+| 10 | Wage tick with insufficient MB | Priority payment, Unpaid Break for the rest, balance never negative (canon E8) |
+| 11 | Fire/Train during combat | Full-screen menus blocked while In Combat (canon E2); quick actions queue until combat ends |
+| 12 | Co-op guest calls an Employee remote | Rejected: owner only |
+| 13 | Archetype removed or rebalanced in a patch | IDs are never reused; existing employees keep their stored stats; missing data falls back to the archetype's last shipped values |
+| 14 | Employee cap lowered by a future tuning patch | Excess employees go "On Leave" (no work, no wage) until slots free; nobody is deleted |
+| 15 | Two employees target the same station slot | Slot locks are per slot (canon E7); the loser re-scores tasks next tick |
+
+### 16.14 Acceptance criteria
+
+- **AC-16-01:** A new player completing `QST_TUT_012` owns exactly one employee, `EMP_001` Ollie, with Cooking 30,
+  Service 15, Accuracy 28, Reliability 40, wage 12 MB/h and hire cost 0, and the screen shows an Offline Forecast.
+- **AC-16-02:** The candidate pool size equals `PoolSize[tier]`, refreshes exactly at 4-hour UTC boundaries, and two
+  sessions in the same window (any server) show identical candidates and prices.
+- **AC-16-03:** Over 10,000 simulated pool rolls per tier, each rarity's frequency is within ±1 percentage point of the
+  §16.6.1 odds table, and the odds are reachable from the UI in one tap.
+- **AC-16-04:** Every generated candidate's hire cost, wage and six stats lie inside its rarity band (§C4.8);
+  validated in a unit test over all archetypes × 1,000 seeds.
+- **AC-16-05:** `Recruit.Hire` rejects (no MB moved, no record created) each of: stale window, already-hired slot,
+  cap reached without replace, locked role, insufficient MB, In Combat, distance > 12 studs without Hotline.
+- **AC-16-06:** Firing within 15 min refunds exactly 50 % of the hire cost; afterwards exactly 2 h of wage is paid as
+  severance and every coworker's Morale drops by 3 (8 for a 2-star or 7-day employee).
+- **AC-16-07:** A training course raises the chosen stat by `round(4 × GradeMult)` capped at the effective cap, costs
+  and lasts exactly per §16.7.4, and completes while the player is offline.
+- **AC-16-08:** With Morale 80 and Energy 100, an employee's displayed Efficiency equals the §16.4 formula to 0.1, and
+  an off-native assignment shows the ×0.85 penalty until cross-trained.
+- **AC-16-09:** A wage tick that cannot be fully covered pays employees in wage-priority order, puts the rest on Unpaid
+  Break (Morale −5/h) and leaves the MB balance ≥ 0; they resume on the first payable tick.
+- **AC-16-10:** A Security Guard reaches and starts Calm Talk on a level-3 customer within 30 studs in ≤ 4 s, and the
+  measured calm success rate over 500 trials is within ±3 pp of the formula.
+- **AC-16-11:** An employee never takes a station slot or ticket reserved by a player; when a player claims an
+  employee's task the employee releases it within 0.25 s.
+- **AC-16-12:** With 8 restaurants × 20 employees on a test server, `EmployeeBrain` uses ≤ 1.5 ms per frame on
+  average (MicroProfiler) and staff visuals stay within 24 MeshParts / 6,000 triangles each.
+- **AC-16-13:** Each derived trait listed in §36.8 is reproduced by the derivation rule from the employee's canon part
+  families/tags (`render_employees.py` validation passes with 0 errors).
+- **AC-16-14:** While the owner is in the city, a staffed restaurant keeps serving with live AI and pays online wages;
+  an unstaffed one shows "Out to Lunch", takes no new customers and loses no reputation; no offline report is created
+  for that time.
+- **AC-16-15:** All employee remotes enforce their rate limits (excess calls return `RateLimited` and change nothing)
+  and reject calls from non-owners.

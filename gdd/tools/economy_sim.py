@@ -113,6 +113,9 @@ P = {
     "luck_stat":  [2, 5, 10, 16, 22, 30, 38, 46, 54, 60],
     "quest_share": [0.25, 0.22, 0.19, 0.17, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15],
     "repair_rate": [0.030, 0.030, 0.028, 0.026, 0.024, 0.022, 0.020, 0.018, 0.016, 0.015],
+    # satisfied order-modification pay bonus (section 6.18: +5-25 % per mod, cap +40 %/item; tips unaffected),
+    # as a share of item payments
+    "mod_bonus":  [0.010, 0.010, 0.010, 0.020, 0.025, 0.030, 0.035, 0.050, 0.050, 0.050],
 }
 VISIT_SEC_ACTIVE = 225          # [TUNABLE] active seat turnover -> seat cap = seats x 16 / h
 MENU_MIX = 1.10                 # [TUNABLE] menu-weighted difficulty x category factor
@@ -214,7 +217,8 @@ def income(tier, level, wages=None):
     ticket = 1.4 * menu_price(level)
     pf, tip = sat_mix(tier, level)
     icr = tier_param("icr_base", tier, level) * (1 - 0.0015 * tier_param("eff_stat", tier, level))
-    revenue = n * ticket * pf
+    mod_bonus = n * ticket * pf * tier_param("mod_bonus", tier, level)
+    revenue = n * ticket * pf + mod_bonus
     tips = n * ticket * tip
     ingredients = n * ticket * icr
     if wages is None:
@@ -225,7 +229,7 @@ def income(tier, level, wages=None):
     return {"demand": demand, "seat_cap": seat_cap, "customers": n, "ticket": ticket, "pf": pf, "tip": tip,
             "icr": icr, "revenue": revenue, "tips": tips, "ingredients": ingredients, "wages": wages,
             "service": service, "other": other, "net": service + other, "stars": stars, "atm": atm,
-            "rep_mult": rep_mult, "decor_mult": decor_mult, "quest_share": qs,
+            "rep_mult": rep_mult, "decor_mult": decor_mult, "quest_share": qs, "mod_bonus": mod_bonus,
             "repairs": tier_param("repair_rate", tier, level) * (revenue + tips)}
 
 

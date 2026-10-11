@@ -37,7 +37,7 @@
    No real brands, no copyrighted characters, no real people. No mean-spirited humor about real groups.
 8. **Cross references:** refer to other sections as `§N` (section number only) — you cannot know other
    contributors' subsection numbers, except the fixed allocations in §C1.2 (e.g. `§36.6` Ability Database).
-9. **Numbers:** use the canon economy (§C4). Use thousands separators (12,500). Currency abbreviations:
+9. **Numbers:** use the canon economy (§C4). **Rounding:** currency costs/prices round half-up to whole MB (MS/RT likewise); stat budgets round to the nearest whole point and are distributed across stats by largest remainder; simulations keep fractions internally and round only for display/payout. Use thousands separators (12,500). Currency abbreviations:
    **MB** (Morph Bucks), **MS** (Mutation Shards), **RT** (Research Tokens). Time in seconds `s`,
    minutes `min`, hours `h`. Distances in Roblox studs.
 10. **Do not silently omit.** If a list requires N items, deliver ≥ N complete rows. If you run long,
@@ -691,7 +691,7 @@ Unhappy 30–49 · Furious < 30.**
   hostile and are calmed by combat pay an **Apology Payment of 40 %** (no tip); customers who storm out pay 0.
 - **Tip** = Σ prices × TipRate(S) × PersonalityTipMult; TipRate: S < 70 → 0; 70–79 → 5 %; 80–89 → 10 %;
   90–97 → 18 %; 98–100 → 25 % ("Chef's Kiss"). Target: competent play averages ≈ 10 % tips.
-- **Jackpot Tip:** chance `0.5 % + 0.1 %·LUCK` on S ≥ 90 for ×5 tip (capped at 500 MB below TIER_05, 5,000 MB above).
+- **Jackpot Tip:** chance `0.5 % + 0.1 %·LUCK` on S ≥ 90 for ×5 tip (capped at 500 MB at TIER_01–TIER_04 and 5,000 MB at TIER_05+).
 - **Reputation** (★ 1.0–5.0): after each customer `Stars += 0.02 × (S/20 − Stars)`; `RepMult = 0.5 + 0.25 × Stars`
   (1 ★ ×0.75 … 5 ★ ×1.75). Storm-outs apply an extra −0.03 ★. Offline uses the same Stars.
 - **DecorMult** = `0.9 + 0.003 × Atmosphere` (Atmosphere 0–100 → ×0.9–×1.2).
@@ -1237,6 +1237,7 @@ all `STARTER` acquisition.
 `Cooking Skill, Service Speed, Accuracy, Repair Skill, Combat Strength, Reliability, Energy (0–100 %, drains
 while working), Morale (0–100), Salary (= wage MB/h), Efficiency (derived), Special Abilities (traits)`.
 **Efficiency** = `RoleStatAvg × (0.6 + 0.4 × Morale/100) × (0.7 + 0.3 × Energy/100) × (1 + 0.001 × player EFFICIENCY)`.
+In formulas that multiply by an efficiency (e.g. `Eff_chef` in §C15), use the normalized value `Eff = Efficiency / 100` (0–1+).
 
 ### C14.3 Offline time caps (from the best assigned Manager)
 | Manager | Cap |
@@ -1551,7 +1552,7 @@ Sound IDs `SFX_001`+ and music `MUS_001`+ are defined only by A16; other section
 ## C22. Edge-Case Rulings (all sections must agree with these)
 | # | Situation | Ruling |
 |---|---|---|
-| E1 | Owner disconnects while cooking | Restaurant enters **Closing**: online employees finish current tickets; otherwise seated customers leave paying 0 with a "Closed for the day!" sign (no reputation loss). In-progress basic food is discarded (no charge); special ingredients in stations return to stock. Profile saves on PlayerRemoving; `lastSimAt` = save time. Guests are moved to the street. |
+| E1 | Owner disconnects while cooking | Restaurant enters **Closing**: online employees finish current tickets; otherwise seated customers leave paying 0 with a "Closed for the day!" sign (no reputation loss). In-progress basic food is discarded (no charge); special ingredients in stations return to stock. Profile saves on PlayerRemoving; `lastSimAt` = save time. Tickets finished during Closing (after that save) earn reputation only, never currency — nothing is written after the final save. Guests are moved to the street. |
 | E2 | Customer attacks while player is in a menu | Full-screen menus cannot be opened while In Combat or while a level-5 customer targets you ("Can't shop during a brawl!"). If a customer turns hostile while a full-screen menu is open, the menu auto-closes and the player gets 1.5 s of invulnerability. Overlay panels (order queue, map) stay usable. |
 | E3 | Restaurant damaged while an employee repairs it | The repair job absorbs new damage (remaining work grows); if the object reaches Destroyed, the job converts to Rebuild. Cost is charged once at completion for damage actually repaired — never double. |
 | E4 | Changing mutations during combat | Blocked while In Combat (6 s). Otherwise a loadout swap is a 3 s channel (interrupted by damage) with a 10 s cooldown; single-part equips in the Morph menu are instant (menu itself unavailable in combat). |

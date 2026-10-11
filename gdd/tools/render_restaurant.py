@@ -298,12 +298,13 @@ def render_36_12(d, econ, items):
         a(f"| {n} | `{t['id']}` | {crew_text(d, t['crew_lean'])} | {f['H']} | {fmt(f['Q'], 1)} ({f['binding']}) | "
           f"{fmt(f['rev'])} | **{fmt(f['net'])}** | {round(100 * f['pct'])} % | {fmt(f['session'])} |")
     a("")
-    a("**Reading the result.** From `TIER_06` up a well-staffed restaurant lands at roughly a third to two-fifths of "
-      "active income per offline hour, inside the canon 35\u201350 % target and far below the 60 % ceiling. "
-      "`TIER_01`\u2013`TIER_05` land lower (about 15\u201330 %) because canon quality `q` is capped by low chef accuracy "
-      "and, from `TIER_03`, `Cap_service = 80 \u00d7 Eff` per waiter is the binding limit while employee caps are "
-      "small. This is intentional early pacing (offline is a teaser until the player can staff properly); "
-      "\u00a717 owns any retuning.")
+    pf = [round(100 * econ[t["id"]]["crew_full"]["pct"]) for t in d["tiers"]]
+    a(f"**Reading the result.** A well-staffed restaurant returns {min(pf[5:])}\u2013{max(pf[5:])} % of active income per "
+      f"offline hour from `TIER_06` (reaching the canon 35\u201350 % band from `TIER_08`) and never approaches the 60 % "
+      f"ceiling. `TIER_01`\u2013`TIER_05` land at {min(pf[:5])}\u2013{max(pf[:5])} % because canon quality `q` is capped by "
+      "low chef accuracy and, from `TIER_03`, `Cap_service = 80 \u00d7 Eff` per waiter binds while employee caps are "
+      "small. This is intentional early pacing (offline is a teaser until the player can staff properly); \u00a717 owns "
+      "any retuning.")
     a("")
     a("#### 36.12.4 Restaurant Upgrades")
     a("")

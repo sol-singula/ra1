@@ -83,7 +83,7 @@ Assumptions per tier **[TUNABLE]**: typical reputation (Stars) and Atmosphere; `
 | 9 | `TIER_09` | 1×Chef (E), 1×Waiter (E) | 2 | 28.0 (kitchen) | 6,321 | **3,969** | 6 % | 7,939 |
 | 10 | `TIER_10` | 1×Chef (E), 1×Waiter (E) | 2 | 26.6 (kitchen) | 9,205 | **6,183** | 5 % | 12,365 |
 
-**Reading the result.** From `TIER_06` up a well-staffed restaurant lands at roughly a third to two-fifths of active income per offline hour, inside the canon 35–50 % target and far below the 60 % ceiling. `TIER_01`–`TIER_05` land lower (about 15–30 %) because canon quality `q` is capped by low chef accuracy and, from `TIER_03`, `Cap_service = 80 × Eff` per waiter is the binding limit while employee caps are small. This is intentional early pacing (offline is a teaser until the player can staff properly); §17 owns any retuning.
+**Reading the result.** A well-staffed restaurant returns 32–39 % of active income per offline hour from `TIER_06` (reaching the canon 35–50 % band from `TIER_08`) and never approaches the 60 % ceiling. `TIER_01`–`TIER_05` land at 24–29 % because canon quality `q` is capped by low chef accuracy and, from `TIER_03`, `Cap_service = 80 × Eff` per waiter binds while employee caps are small. This is intentional early pacing (offline is a teaser until the player can staff properly); §17 owns any retuning.
 
 #### 36.12.4 Restaurant Upgrades
 

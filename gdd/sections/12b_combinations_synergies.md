@@ -130,23 +130,23 @@ in front ("Golden Rat", "Frosty Penguin", "Dragon Cat").
 
 | Signature title | Rule (grammar) | Example | Why it is special |
 |---|---|---|---|
-| Kitchen Kaiju | `family:dragon@HEAD AND family:kraken@ARM>=2` | {{Kitchen Kaiju}} | Chef Supreme Omnivora's look (`NPC_029`); copying it is a rite of passage |
-| The Full Kraken | `family:kraken>=3` | {{The Full Kraken}} | three Legendary kraken pieces at once |
-| His Royal Snackness | `family:burger@HEAD AND family:gold>=2` | {{His Royal Snackness}} | Mythic burger head dripping in gold |
-| Accidental Platypus | `family:duck@MOUTH AND family:beaver@TAIL` | {{Accidental Platypus}} | nature already did this one |
-| Turtducken | `family:turtle>=1 AND family:duck>=1 AND family:chicken>=1` | {{Turtducken}} | three animals, one questionable sandwich |
-| Kitchen Chimera | `family:cat@HEAD AND family:goat>=1 AND family:snake@TAIL` | {{Kitchen Chimera}} | the classic myth, with an apron |
-| Discount Griffin | `family:cat@HEAD AND family:eagle>=1 AND tag:flying@WINGS` | {{Discount Griffin}} | close enough |
-| Ninetail Maître d' | `family:fox_spirit@TAIL AND family:fox@EARS` | {{Ninetail Maître d'}} | matching fox set |
-| Sir Hoots-a-Lot | `family:owl@HEAD AND family:owl@EYES AND family:mustache@FACE` | {{Sir Hoots-a-Lot}} | a very distinguished owl |
-| Ceiling Inspector | `tag:tall>=4` | {{Ceiling Inspector}} | doorframes fear this morph |
-| Literally a Hot Dog | `family:dog@HEAD AND tag:fire@SKIN` | {{Literally a Hot Dog}} | the pun was mandatory |
-| Sewer Royalty | `family:rat@HEAD AND family:crab@ARM>=2` | {{Sewer Royalty}} | King Ratbeard's look (`NPC_020`) |
-| Le Fancy Fin | `family:shark@HEAD AND family:peacock@TAIL` | {{Le Fancy Fin}} | Baron Von Bistro's look (`NPC_003`) |
-| Mer-Waiter | `family:mermaid@TAIL AND family:human@TORSO` | {{Mer-Waiter}} | classic silhouette, now taking orders |
-| Absolute Mystery | `distinct:category>=10` | {{Absolute Mystery}} | ten categories on one body |
-| Beep Boop Supreme | `category:ROBOT>=8` | {{Beep Boop Supreme}} | more robot than robot |
-| Walking Salad Bar | `category:PLANT>=6` | {{Walking Salad Bar}} | customers keep asking for dressing |
+| Kitchen Kaiju | `family:dragon@HEAD AND family:kraken@ARM>=2` | `CMB_012` | Chef Supreme Omnivora's look (`NPC_029`); copying it is a rite of passage |
+| The Full Kraken | `family:kraken>=3` | `CMB_122` | three Legendary kraken pieces at once |
+| His Royal Snackness | `family:burger@HEAD AND family:gold>=2` | `CMB_040` | Mythic burger head dripping in gold |
+| Accidental Platypus | `family:duck@MOUTH AND family:beaver@TAIL` | `CMB_061` | nature already did this one |
+| Turtducken | `family:turtle>=1 AND family:duck>=1 AND family:chicken>=1` | `CMB_062` | three animals, one questionable sandwich |
+| Kitchen Chimera | `family:cat@HEAD AND family:goat>=1 AND family:snake@TAIL` | `CMB_063` | the classic myth, with an apron |
+| Discount Griffin | `family:cat@HEAD AND family:eagle>=1 AND tag:flying@WINGS` | `CMB_064` | close enough |
+| Ninetail Maître d' | `family:fox_spirit@TAIL AND family:fox@EARS` | `CMB_115` | matching fox set |
+| Sir Hoots-a-Lot | `family:owl@HEAD AND family:owl@EYES AND family:mustache@FACE` | `CMB_026` | a very distinguished owl |
+| Ceiling Inspector | `tag:tall>=4` | `CMB_066` | doorframes fear this morph |
+| Literally a Hot Dog | `family:dog@HEAD AND tag:fire@SKIN` | `CMB_118` | the pun was mandatory |
+| Sewer Royalty | `family:rat@HEAD AND family:crab@ARM>=2` | `CMB_017` | King Ratbeard's look (`NPC_020`) |
+| Le Fancy Fin | `family:shark@HEAD AND family:peacock@TAIL` | `CMB_013` | Baron Von Bistro's look (`NPC_003`) |
+| Mer-Waiter | `family:mermaid@TAIL AND family:human@TORSO` | `CMB_065` | classic silhouette, now taking orders |
+| Absolute Mystery | `distinct:category>=10` | `CMB_124` | ten categories on one body |
+| Beep Boop Supreme | `category:ROBOT>=8` | `CMB_022` | more robot than robot |
+| Walking Salad Bar | `category:PLANT>=6` | `CMB_125` | customers keep asking for dressing |
 
 **Variables [TUNABLE].** Slot dominance, rarity bonus, loud-prefix flags and the signature list are data
 (`ReplicatedStorage/Shared/Morph/NamingRules`). Tuning goal: across live customer spawns, ≥ 90 % of keys should name
@@ -159,7 +159,7 @@ the part a playtester points at first when asked "what is that creature?" (sampl
    automatically.
 2. **Identity.** Key, display name and title are computed from family, slot and rarity (12.9.2).
 3. **Behavior.** Synergies (12.10) are written against families, tags, categories and slots, never against a single
-   part ID. A new tentacle part counts toward Tentacle Tango ([[Tentacle Tango]]) the day it ships.
+   part ID. A new tentacle part counts toward Tentacle Tango (`SYN_031`) the day it ships.
 4. **Content pipeline.** Adding a part means adding one data row (§36.3) plus its mesh and icon. Its family word
    defaults to Title Case. If its family is new, the family registry appends one index, which creates 40 new
    Morphdex keys with no further work.
@@ -344,7 +344,7 @@ Secret parts count normally.
 
 1. **Stacking groups.** Every synergy belongs to one stacking group (`SG_…`) and has a rank r1–r3 inside it. Only
    the highest-ranked qualifying synergy of a group is active; on equal rank, the lower ID wins. Example: Dragon
-   Head + Fireproof Skin qualifies for both [[Dragon's Own Kitchen]] (r3) and [[Oven Mitts Optional]] (r1) in `SG_HEATCOOK`, so only [[Dragon's Own Kitchen]]
+   Head + Fireproof Skin qualifies for both `SYN_004` Dragon's Own Kitchen (r3) and `SYN_006` Oven Mitts Optional (r1) in `SG_HEATCOOK`, so only `SYN_004` Dragon's Own Kitchen
    applies.
 2. **At most 5 active synergies** [TUNABLE]. If more than 5 groups have a winner, the player's pinned synergies
    (up to 5, chosen in §13) go first, then higher rank, then lower ID. The rest are listed as *suppressed* (grey).
@@ -355,7 +355,7 @@ Secret parts count normally.
    applies per target. Example: `PROC_TIME` −12 % (all stations) + −10 % (`STN_GRILL`) = −22 % on the grill. Flat
    effects have the caps in the table below. The capped synergy layer then multiplies with stats, skill nodes and
    station levels in the owning system's formula (§5, §11, §15).
-5. **Drawbacks** (e.g. the +10 % damage taken of [[Glass Cannon]]) are fixed, never capped and never cancelled by other
+5. **Drawbacks** (e.g. the +10 % damage taken of `SYN_060` Glass Cannon) are fixed, never capped and never cancelled by other
    synergies, so a trade-off stays a trade-off.
 6. **No scaling with upgrades.** Synergy magnitudes do not grow with part upgrade level, which keeps them easy to
    read. Upgrades raise part stat budgets instead (canon C13.4).

@@ -49,23 +49,23 @@ flowchart LR
   C --> E["Stats, passives, actives"]
   E --> F["Faster cooking, calmer customers, easier brawls, quicker repairs"]
   F --> A
-  C --> G["Morphdex & Museum progress"]
+  C --> G["Catalog, Morphdex & Museum progress"]
   G --> D
   H["Employees offline"] --> B
 ```
 
-**Collection meta — the Morphdex.** Every part has a Morphdex entry with four states: **Unknown** (silhouette) →
-**Seen** (name, sources and odds revealed) → **Owned** → **Mastered** (max level). *Seen* is granted server-side when you
-serve a customer wearing the part, hire or interview an employee wearing it, talk to a named NPC whose morph uses it,
-or use *Inspect* on another player — so watching the weird customers in your own dining room is how you learn what to
-chase next. Collection milestones pay out only in canon reward types:
+**Collection meta — the Mutation Catalog.** Every part has a Catalog entry with four states: **Unknown** (silhouette)
+→ **Seen** (name, sources and odds revealed) → **Owned** → **Mastered** (max level). *Seen* is granted server-side when you
+serve, fight or calm a customer wearing the part, hire or interview an employee wearing it, talk to a named NPC whose
+morph uses it, or *Inspect* another player — so watching the weird customers in your own dining room is how you learn
+what to chase next. (The combination-level **Morphdex** of head-family × dominant-family keys, with its own Museum
+rewards, is §12.9.4; the Catalog tracks individual parts.) Catalog milestones pay out only in canon reward types and
+deliberately skip the 10- and 50-part thresholds that §14's achievements already reward, so nothing pays twice:
 
-| Milestone (distinct parts owned) | Reward |
+| Catalog milestone (distinct parts owned) | Reward |
 |---|---|
-| 10 | 1 Morph Capsule |
 | 25 | `MUT_272` Sparkle Aura |
-| 50 | `MUT_277` Orbiting Meatballs |
-| 75 | 2 Morph Capsules + 150 MS |
+| 75 | `MUT_277` Orbiting Meatballs |
 | 100 | the Morph Museum's "Empty Exhibit" becomes inspectable (the `MUT_048` condition) + title "Morphologist" |
 | 150 | `MUT_279` Tiny Moons |
 | 200 | `MUT_258` Golden Skin |
@@ -75,11 +75,10 @@ chase next. Collection milestones pay out only in canon reward types:
 | 10 / 50 parts Mastered | 300 MS / 5 RT |
 
 The **Morph Museum** (`BLD_16`, curator `NPC_018`) displays every part you own on rotating mannequins grouped by
-category, shows your featured morph to visiting players, and hosts the Empty Exhibit. §14 may mirror these milestones as
-achievements in §36.16; the rewards above are granted once, whichever system fires first.
+category, shows your featured morph to visiting players, hosts the Empty Exhibit and pays the Morphdex rewards of §12.9.4.
 
 **UI.** All interaction happens in the Morph screen (§13): slot groups, inventory, stat preview with MAXED markers,
-upgrade and fusion buttons, Morphdex tab and the always-visible capsule odds panel.
+upgrade and fusion buttons, the Catalog tab and the always-visible capsule odds panel.
 
 **Dependencies.** §14 stats and levels · §10 satisfaction (MutationBonus cap) · §11 and §36.6 combat and actives · §15
 furniture repair states · §16 employees (generated morphs) · §18 shops and Lab · §22 economy · §23 cosmetics-only
@@ -427,7 +426,7 @@ color **and** shape (§24 accessibility).
   is on; copies beyond what max level needs always convert.
 - **Quests / events / arena / achievements:** Job Board quests (`BLD_10`) grant Uncommons; district chains grant Rares;
   story chapters grant the Legendaries and Mythics named in §36.3; each city event features 3–8 parts on its reward track
-  and in its capsule pool; Arena seasons (§21) grant fighter parts; Morphdex milestones (§12.1) grant FX and `MUT_258`.
+  and in its capsule pool; Arena seasons (§21) grant fighter parts; Catalog milestones (§12.1) grant FX and `MUT_258`.
 - **Tutorial & starter:** every profile starts with `MUT_117`, `MUT_139` (both arms), `MUT_179` (both legs) and one random
   starter head; `QST_TUT_010` grants one of `MUT_145` (Chef), `MUT_144` (Fighter), `MUT_153` (Repair), equippable at Lv1.
 
@@ -470,7 +469,7 @@ pay the substitute.
 - **Passive growth:** numeric magnitudes scale ×(1 + 0.05 × (L − 1)) — Common Lv5 ×1.20, Mythic Lv10 ×1.45 — while ICDs,
   durations, radii, counts (carry +1, +1 target) and flat triggers never scale; combined caps (§12.8) never move.
 - **Active growth:** `MutationService` passes the part level to `CombatService`; potency per level is defined in §36.6.
-- Levels are permanent (no downgrade, no refund). A part at max level is **Mastered** (gold frame, Morphdex milestone).
+- Levels are permanent (no downgrade, no refund). A part at max level is **Mastered** (gold frame, Catalog milestone).
 - Example: `MUT_031` Dragon Head Lv1 → 8 costs 96,516 MB + 420 MS + 10 RT + 7 copies (or 1,120 MS) and grows its budget
   from 16 to 29 points.
 
@@ -573,7 +572,7 @@ so the city never runs out of new weirdos and art never authors a whole creature
 | T9–10 | 22 | 28 | 28 | 16 | 5 | 1 |
 
 Rarer customers are a visible sign of progress — and since serving them marks their parts as *Seen*, they double as a
-shop window for the Morphdex.
+shop window for the Mutation Catalog.
 
 **The combination space.** The counts below are computed by the renderer from the canon slot counts and flags:
 
@@ -768,7 +767,7 @@ return MutationService
 | 1 | A faceLocked head is equipped over FACE/NOSE/MOUTH/EYES parts | Those meshes are not built; stats, passives and actives stay; toast "Face parts hidden — still working!"; their VFX spawn from the screen. |
 | 2 | WINGS equipped while a blocksWings BACK is worn (or FUR over SCALES) | Swap prompt in the UI; a crafted remote with both is rejected (`CONFLICT_WINGS` / `CONFLICT_COVERING`) and logged (§29). |
 | 3 | A saved loadout references a part later consumed by fusion | The slot loads as Plain Human (core) or empty (optional) with a "missing part" badge; nothing else changes. |
-| 4 | Capsule grants a part above the player's equip level | Owned and upgradable, shows "Unlocks at LvX", cannot be equipped; counts for the Morphdex immediately. |
+| 4 | Capsule grants a part above the player's equip level | Owned and upgradable, shows "Unlocks at LvX", cannot be equipped; counts for the Catalog immediately. |
 | 5 | Unequipping a carry part while holding 3 items | Rejected (`PUT_SOMETHING_DOWN`) until the hands hold no more than the new capacity; items are never dropped by an equip. |
 | 6 | Station timers running when stats change (loadout swap mid-cook) | Remaining time is rescaled `remaining × oldMult / newMult` at the moment of change — never retroactive, never instant-complete. |
 | 7 | Mismatched legs with different LegLength | HipHeight follows the longer leg; the shorter dangles; `ANM_008` plays; stats unaffected. |
@@ -808,7 +807,7 @@ return MutationService
 - **AC-12-13:** The same MorphCode renders the same parts, palette and scale on the server proxy and on 3 clients
   (screenshot hash per slot); 10,000 generated customers show 0 rule violations and 0 Secret parts.
 - **AC-12-14:** Equips are refused while In Combat; a loadout swap takes 3 s, is cancelled by damage, and starts a 10 s cooldown.
-- **AC-12-15:** Serving a customer whose MorphCode contains an unseen part flips it to *Seen* in the Morphdex within 1 s;
+- **AC-12-15:** Serving a customer whose MorphCode contains an unseen part flips it to *Seen* in the Mutation Catalog within 1 s;
   reaching 100 owned parts makes the Museum's Empty Exhibit inspectable.
 - **AC-12-16:** Lab fusion with 3 same-category inputs always yields the chosen output (0 random outcomes in 1,000 tests) and
   refuses equipped inputs and last copies above Lv1.

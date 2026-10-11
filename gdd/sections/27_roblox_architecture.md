@@ -2294,7 +2294,7 @@ instance creation and pathfinding stay serial (they are either async already or 
 | `parallelAi` | false | Enables the Actor path (§27.13). |
 | `remotes.disabled` | `{}` | Per-remote kill switch by name. |
 | `content.disabled` | `{}` | Content IDs treated as unavailable everywhere (e.g. a buggy ability `ABL_018` greys out; a recipe leaves menus). |
-| `tunables.aiThinkHz` / `tunables.batchHz` / `tunables.spawnScale` | 10 / 10 / 1.0 | Live performance tuning within validated ranges. |
+| `tunables.aiIntervalScale` / `tunables.spawnScale` / `tunables.cosmeticHz` | 1.0 / 1.0 / 10 | Live performance tuning within validated ranges (the same knobs as the §27.13 degrade ladder). |
 
 **Backend.** Durable flags, experiments and kill switches live in §28's live-config DataStore (`MMR_LiveConfig_v1`),
 read at boot, every 300 s, and immediately on its `MMR_ConfigBump` MessagingService topic. **Emergency overrides** go

@@ -84,9 +84,14 @@ def fnv1a32(s):
     return h
 
 
+def half_up(x):
+    """canon C0: round half-up (away from zero for negatives) for display/payout only"""
+    return int(math.floor(abs(x) + 0.5)) * (1 if x >= 0 else -1)
+
+
 def fmt(x, d=0):
     if d == 0:
-        v = int(round(x))
+        v = half_up(x)
         return ("−" if v < 0 else "") + "{:,}".format(abs(v))
     return ("−" if x < 0 else "") + ("{:,.%df}" % d).format(abs(x))
 
@@ -546,13 +551,14 @@ def simulate(ex):
     ceiling = OFFLINE_CEILING_SHARE * T["active_net"] * H_op
     clamped = net > ceiling
     net = max(0.0, min(net, ceiling)) if H_op > 0 else 0.0
+    payout = half_up(net)  # the only rounding of money in the whole simulation (canon C0)
     return dict(ex=ex, T=T, staff=staff, cap=cap, H=H, H_el=H_el, steps=steps, seed=seed, demand=demand,
                 rep_mult=rep_mult, decor_mult=decor_mult, cap_seat=cap_seat, menu=menu, dmax=dmax,
                 best_cook=best_cook, rows=rows, tot=tot, closed_at=closed_at, R_total=R_total, Rh=Rh, sm=sm,
                 lam=lam, count=count, drawn=drawn, neg_scale=neg_scale, pos_scale=pos_scale, inc_mb=inc_mb,
                 dmg_val=dmg_val, rep_disc=rep_disc, auto_rep=auto_rep, deferred=deferred, dmg_points=dmg_points,
                 ms=ms, ms_events=ms_events, crates=crates, capsules=capsules, base_net=base_net, net=net,
-                clamped=clamped, ceiling=ceiling, stock_used=stock_used, sold_out=sold_out,
+                clamped=clamped, ceiling=ceiling, payout=payout, stock_used=stock_used, sold_out=sold_out,
                 prep_count=prep_count, cashier_count=cashier_count, autobuy_log=autobuy_log, stock_end=stock, stock0=stock0, dish_factor=dish_factor,
                 clean_factor=clean_factor, q_adj=q_adj, tip_trait=tip_trait, headroom=headroom,
                 disc_boost=disc_boost, H_op=H_op, pool_size=pool_size)

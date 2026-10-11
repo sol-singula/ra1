@@ -606,3 +606,232 @@ hosts their UI and shows the result on the pedestal.
   loadout from the parts you own, listing the missing ones with where-to-get.
 - **Showcase Stage (`BLD_22`):** the Morph screen's current loadout is what struts the runway. Legendary-rarity
   synergies such as [[Museum Piece]] add the special entrance.
+
+### 13.18 Accessibility
+
+| Need | Implementation |
+|---|---|
+| Text size | Settings → Text Scale 100 / 125 / 150 % drives the `TextScale` `UIScale` on text containers. Body text ≥ 14 px on phones, ≥ 24 px at 1080p on console (`UITextSizeConstraint`). Layout reflows; grid columns drop by one at 150 %. |
+| Reduced motion | No idle spin, inertia, eased camera framing, pedestal pulse or animated Mythic borders. Slides become 0.15 s fades; toasts are static banners. |
+| Color-independent status | Rarity = color + glyph + frame pattern + name (13.9). Stat deltas = arrow + sign + number (13.10). Synergy states = icon + word (§12.10.4). Missing currency = red + ✗ glyph + "need 120 more". |
+| Colorblind modes | Deuteranopia / protanopia / tritanopia presets swap delta colors to blue/orange and raise frame-pattern contrast. Rarity hues stay canon, but the glyphs carry the meaning. |
+| Motor | Touch targets ≥ 48 × 48 px with 8 px spacing. Every drag has a button alternative (rotate ◀ ▶ buttons, zoom slider). "Tap twice instead of hold" for confirmations. No timed inputs on this screen. |
+| Cognitive | Recommended sort + Synergy Hunt guide choices. Plain-language ability text. Every number has a tooltip with its formula. |
+| Audio | Equip / upgrade / rename cues are described to §26 as sounds (not specified here) and are never the only feedback. |
+| Haptics | `HapticService` small-motor pulse (0.3 for 60 ms) on equip and on upgrade, where the gamepad supports it. |
+| Screen readers | Roblox has no screen-reader API. All icons have text labels or tooltips, and no information exists only in images. |
+
+### 13.19 Controller Navigation Map
+
+- Focus uses `GuiService.SelectedObject`. While the screen is open `GuiService.AutoSelectGuiEnabled` is `false`, so
+  the screen controls focus. Each panel is a `SelectionGroup` with `SelectionBehaviorLeft/Right/Up/Down = Stop` at
+  its outer edges, and cross-panel moves are wired with `NextSelectionLeft/Right`. The focus ring is a custom
+  `SelectionImageObject` (4 px rarity-neutral white glow).
+- Bindings use `ContextActionService:BindActionAtPriority` (priority 3,000) while the screen is open and are
+  unbound on close. Glyphs come from `UserInputService:GetImageForKeyCode`, so Xbox and PlayStation layouts both read
+  correctly.
+
+| Button | Action |
+|---|---|
+| Left stick / D-pad | move focus (grid, chips, tabs, detail buttons) |
+| `A` | select / confirm |
+| `B` | back: close modal → close drawer → close screen; hold 0.5 s = Undo |
+| `X` | quick-equip (Both for arms/legs) |
+| `Y` | open the detail drawer / toggle Compare |
+| `LB` / `RB` | previous / next category |
+| `LT` / `RT` | zoom out / in (analog) |
+| Right stick | rotate preview |
+| `R3` | reset camera |
+| `L3` | toggle Stats ↔ Synergies |
+| View | jump to the Loadouts bar |
+| Menu | cycle right tabs (Parts → Equipped → Loadouts → Style → Upgrade) |
+| D-pad down (HUD, outside the screen) | show synergy tooltips; hold D-pad up = loadout wheel |
+
+```text
+Focus graph (left/right moves between panels; up/down inside a panel)
+ [CategoryRail] <-> [SubSlotChips] <-> [InventoryGrid] <-> [DetailDrawer buttons]
+       |                                     |                       |
+ [LoadoutBar] <------------------------ [TabBar] <-------------> [Stats/Synergy panel]
+ Entering the grid restores the last focused card; entering the drawer focuses its primary button (EQUIP BOTH).
+```
+
+### 13.20 Remotes & Server Validation
+
+Remotes are named `Mutation.<Action>` (canon C2) and live in `ReplicatedStorage/Remotes/Mutation`. Every request
+carries a `reqId` (string ≤ 36 chars). The server keeps the last 50 `reqId`s per player and replays the stored
+response for duplicates (idempotent retries). Payloads are type-checked with `typeof`, unknown keys are rejected,
+and strings are length-bounded. `MutationService` is the only writer of morph data, and `EconomyService` performs
+every currency debit.
+
+| Remote | Type | Payload (client → server) | Server validation | Response | Rate limit [TUNABLE] |
+|---|---|---|---|---|---|
+| `Mutation.OpenSession` | RemoteFunction | `{}` | not In Combat, not targeted by a level-5 customer, not KO'd, not in an Arena match, not Safe Mode (E2/E4/E6) | snapshot: equipped, inventory version, loadouts, cooldowns, pins | 1 / s |
+| `Mutation.CloseSession` | RemoteEvent | `{}` | — | — | 1 / s |
+| `Mutation.Equip` | RemoteFunction | `{reqId, partId, target}`; `target` = slot instance, `"ARM_BOTH"` or `"LEG_BOTH"` | session open; part owned; level requirement; slot code fits; FUR⊕SCALES swap; ability bar; carry capacity; no loadout channel running | `{ok, code, delta, stats, synergies}` | 10 / s burst, 60 / 10 s |
+| `Mutation.Unequip` | RemoteFunction | `{reqId, slot}` | session open; slot not `HEAD`; mandatory slots revert to default; carry capacity | same as Equip | as Equip |
+| `Mutation.SetAbilityBar` | RemoteFunction | `{reqId, abilities = {ABL ×≤4}}` | each ability comes from an equipped part; no duplicates; not In Combat | `{ok, code, bar}` | 4 / s |
+| `Mutation.SaveLoadout` | RemoteFunction | `{reqId, slot 1–5, name?, icon?}` (contents = current morph) | slot unlocked; name passes 13.13 rules + filter; payload ≤ 2 KB | `{ok, code, loadout}` | 1 / 2 s |
+| `Mutation.ApplyLoadout` | RemoteFunction | `{reqId, slot}` | not In Combat; cooldown elapsed; carry capacity; starts the 3 s **server-timed** channel | `{ok, code, channelEndsAt}`, then `Mutation.LoadoutChannel` events | 1 / s |
+| `Mutation.LoadoutChannel` | RemoteEvent (server → client) | `{state = "started" \| "interrupted" \| "completed", reason?}` | server interrupts on damage, attack or interaction | — | — |
+| `Mutation.ApplyLook` | RemoteFunction | `{reqId, look 1–10}` | Look slot owned; not In Combat | `{ok, code}` | 2 / s |
+| `Mutation.SetTints` | RemoteEvent | `{reqId, target = "current" \| slot, entries = {{slot, primary, accent}} ×≤22}` | palette owned; swatch index in range | ack via `Mutation.StateChanged` | 2 / s (client batches) |
+| `Mutation.RenameMorph` | RemoteFunction | `{reqId, text, loadout?}` | 13.13 rules, `CanUserChatAsync`, filter | `{ok, code, filteredName}` | 1 / 30 s, 10 / 24 h |
+| `Mutation.Upgrade` | RemoteFunction | `{reqId, partId, useDuplicate, expectedLevel}` | owned; `level == expectedLevel < max`; atomic debit of MB+MS(+RT) and the duplicate or substitute MS | `{ok, code, level, wallet}` | 2 / s |
+| `Mutation.ConvertDuplicates` | RemoteFunction | `{reqId, partId, count}` | `count ≤ duplicates`; not Secret | `{ok, code, msGained}` | 2 / s |
+| `Mutation.SetKeepDuplicates` | RemoteEvent | `{partId, keep}` | owned | — | 5 / s |
+| `Mutation.PinSynergies` | RemoteFunction | `{reqId, ids = {SYN ×≤5}}` | valid IDs | `{ok, code, synergies}` | 2 / s |
+| `Mutation.StateChanged` | RemoteEvent (server → client) | delta: equipped, stats, synergies, wallet, cooldowns | — | — | — |
+| `Mutation.SessionClosed` | RemoteEvent (server → client) | `{reason = "HOSTILE" \| "COMBAT" \| "SAFE_MODE"}` | sent on E2 auto-close | — | — |
+
+**Response codes:** `OK`, `BAD_REQUEST`, `SESSION_CLOSED`, `IN_COMBAT`, `NOT_OWNED`, `LEVEL_LOCKED`,
+`SLOT_MISMATCH`, `HEAD_REQUIRED`, `ABILITY_BAR_FULL`, `CARRY_OVER`, `CHANNEL_ACTIVE`, `COOLDOWN`,
+`INSUFFICIENT_FUNDS`, `MAX_LEVEL`, `STALE_LEVEL`, `RATE_LIMITED`, `FILTER_REJECTED`, `FILTER_UNAVAILABLE`,
+`CHAT_DISABLED`, `SAFE_MODE`. Each code maps to one friendly toast string in the localization table.
+
+```lua
+--!strict
+-- ServerScriptService/Services/MutationService/EquipHandler.lua (excerpt)
+local Remotes = game:GetService("ReplicatedStorage").Remotes.Mutation
+local PartDefs = require(game:GetService("ReplicatedStorage").Shared.Morph.PartDefs)
+
+local TARGETS = { ARM_BOTH = { "ARM_L", "ARM_R" }, LEG_BOTH = { "LEG_L", "LEG_R" } }
+local LEVEL_REQ = { Common = 1, Uncommon = 5, Rare = 12, Epic = 25, Legendary = 40, Mythic = 60 }
+
+Remotes.Equip.OnServerInvoke = function(player: Player, payload: any)
+	if typeof(payload) ~= "table" or typeof(payload.reqId) ~= "string" or #payload.reqId > 36
+		or typeof(payload.partId) ~= "string" or typeof(payload.target) ~= "string" then
+		return { ok = false, code = "BAD_REQUEST" }
+	end
+	local cached = RequestLedger.Get(player, payload.reqId)
+	if cached then return cached end -- idempotent retry
+	if not RateLimiter.Take(player, "Mutation.Equip") then return { ok = false, code = "RATE_LIMITED" } end
+	local session = Sessions[player]
+	if not session then return { ok = false, code = "SESSION_CLOSED" } end
+	if CombatService:IsInCombat(player) then return { ok = false, code = "IN_COMBAT" } end
+
+	local profile = PlayerDataService:GetProfile(player)
+	local part = PartDefs[payload.partId]
+	if not part or not profile.mutations.owned[payload.partId] then return { ok = false, code = "NOT_OWNED" } end
+	local req = part.secretLevelReq or LEVEL_REQ[part.rarity]
+	if profile.level < req then return { ok = false, code = "LEVEL_LOCKED" } end
+
+	local slots = TARGETS[payload.target] or { payload.target }
+	for _, slot in slots do
+		if not MorphRules.SlotFits(part.slot, slot) then return { ok = false, code = "SLOT_MISMATCH" } end
+	end
+	local nextLoadout = MorphRules.WithParts(profile.morph.equipped, slots, payload.partId) -- applies FUR/SCALES swap
+	local barOk, barCode = MorphRules.CheckAbilityBar(profile.morph, nextLoadout)
+	if not barOk then return { ok = false, code = barCode } end
+	if MorphRules.CarryCapacity(nextLoadout) < CarryService:Count(player) then return { ok = false, code = "CARRY_OVER" } end
+
+	profile.morph.equipped = nextLoadout
+	MorphAssemblyService:Rebuild(player, nextLoadout) -- swaps only changed slots; re-seats HipHeight
+	MutationService:_refreshSynergies(player, profile) -- §12.10.7
+	local response = { ok = true, code = "OK", delta = MorphRules.Diff(session.lastSent, nextLoadout),
+		stats = StatCalc.Effective(player, profile), synergies = player:GetAttribute("ActiveSynergies") }
+	RequestLedger.Put(player, payload.reqId, response)
+	Analytics.Custom(player, "mmr_mutation_equip", { part = payload.partId, target = payload.target })
+	return response
+end
+```
+
+### 13.21 Data Model (morph sub-schema; persistence rules in §28)
+
+```lua
+--!strict
+export type MorphProfile = {
+	equipped: { [string]: string },          -- slot instance -> "MUT_###" (mandatory slots always present)
+	abilityBar: { string },                  -- up to 4 ABL ids, order = bar order
+	pinnedSynergies: { string },             -- up to 5 SYN ids (active loadout copy)
+	tints: { [string]: { p: number, a: number } }, -- slot -> swatch codes
+	name: { raw: string?, filtered: string? },
+	loadouts: { [number]: {                  -- 1..5
+		name: string, icon: string, equipped: { [string]: string }, abilityBar: { string },
+		pins: { string }, tints: { [string]: { p: number, a: number } }, look: number?, morphName: string?,
+	} },
+	looks: { [number]: { tints: { [string]: { p: number, a: number } }, fx: boolean, title: string?, pedestal: string } },
+	activeLoadout: number?, lastSwapAt: number, -- server os.time() of the last completed channel
+	keepDuplicates: { [string]: boolean },
+	morphdex: { spotted: string, worn: string, titles: number }, -- base64 bitsets (§12.9.4)
+}
+```
+
+Estimated size: about 1.6 KB for equipped + 5 loadouts + 10 Looks, plus ≈ 3.4 KB Morphdex, so ≈ 5 KB of a
+profile's 4 MB DataStore budget. The morph is saved on autosave and with any upgrade purchase ≥ 10,000 MB (canon C3).
+
+### 13.22 Performance
+
+| Item | Budget / technique |
+|---|---|
+| 3D preview | one ViewportFrame; rig ≤ 40 MeshParts / 15,000 triangles (C13.7); animations paused while hidden; `WorldModel` cleared 30 s after close; Static-mode fallback (13.5) |
+| Part icons | pre-rendered **icon atlases**: 128 × 128 px icons on 1,024 × 1,024 sheets (64 per sheet → 5 sheets for 280 parts, plus 1 UI-glyph sheet). Cards use `ImageRectOffset`/`ImageRectSize`. Low-memory phones get a 64 px set (512 px sheets). The visible sheets are preloaded with `ContentProvider:PreloadAsync` on open, with shimmer placeholders until ready. No per-card ViewportFrames, ever. |
+| Grid | 40 pooled cards with manual virtualization (13.7); no layout recalculation per scroll frame |
+| Previews | stats and synergy previews are computed on selection change only (results cached by hypothetical-loadout hash) |
+| Network | equip request ≈ 120 bytes; responses are deltas; tints batched every 0.5 s |
+| Targets | open-to-interactive ≤ 400 ms on a mid-tier phone; ≤ 25 MB texture memory on mobile while open; stable 60 fps desktop / 30 fps mobile with the preview animating |
+
+### 13.23 Dependencies
+
+§5 (station effects of synergies), §11 (In Combat flag, abilities, Arena), §12 / §36.3 (part data, passives,
+acquisition, fusion recipes), §12.9–12.10 / §36.4–36.5 (naming, Morphdex, synergies), §14 (stats, level
+requirements, respec), §16 (employee looks), §18 (`BLD_01`, `BLD_02`, `BLD_11`, `BLD_13`, `BLD_16`, `BLD_22`),
+§21 (Arena locking), §22 (MB/MS/RT sinks), §23 (cosmetic Look slots and palettes), §24 (UI framework, HUD wheel),
+§25 (rig, tint masks, icons), §26 (animations `ANM_001`, `ANM_008`, `ANM_010`, `ANM_011`, `ANM_051`, `ANM_065`,
+`ANM_301`–`ANM_370`; sound cues), §27 (`MutationService`, `MorphAssemblyService`, `EconomyService`, `UIController`),
+§28 (persistence), §29 (remote security), §30 (performance budgets), §31 (`mmr_mutation_equip`,
+`mmr_loadout_apply`, `mmr_mutation_upgrade`, `mmr_morph_rename`, `mmr_photo_taken`).
+
+### 13.24 Edge Cases
+
+| # | Situation | Expected behavior |
+|---|---|---|
+| 1 | A customer turns hostile while the screen is open (E2) | The screen closes, 1.5 s invulnerability, `Mutation.SessionClosed {HOSTILE}`. Accepted equips persist; unsent tints and name drafts are restored next open. |
+| 2 | Player is damaged during the 3 s loadout channel | The channel is interrupted, the loadout is unchanged, no cooldown is consumed, toast "Costume change interrupted!". |
+| 3 | Two devices or tabs send conflicting equips (exploit or lag) | Requests are serialized per player on the server; the second applies to the state the first produced. `reqId` replay prevents doubles. |
+| 4 | Network drops after Upgrade was sent | On reconnect the client resends the same `reqId`. The server replays the stored response or, if the upgrade never committed, `expectedLevel` guarantees at most one level-up. |
+| 5 | A loadout references a part that was converted to MS | That slot keeps its current part; the card shows "1 part missing" plus a fix-up shortcut. The saved loadout is not silently rewritten. |
+| 6 | The equip would push the ability bar past 4 | `ReplaceAbilityModal`; if dismissed, the new ability goes to the bench and the equip still succeeds. |
+| 7 | Removing a carry part while carrying more than the new capacity | Refused with `CARRY_OVER` ("Put something down first!"); nothing changes. |
+| 8 | New legs or neck make the morph taller than an indoor ceiling | The server nudges the character ≤ 2 studs to open space. If none exists, the equip still applies and the camera uses its collision offset; no damage, no stuck state (Restaurant Row ceilings ≥ 12 studs per §15). |
+| 9 | The filter service is down during rename | `FILTER_UNAVAILABLE`, the old name is kept, the attempt is not counted. If filtering also fails at join, the generated name is shown until it succeeds. |
+| 10 | Profile loaded in Safe Mode (E6) | The screen opens read-only (preview, rotate, photo); every write button is disabled with "Saving is paused — your stuff is safe!". |
+| 11 | Equipping FUR while SCALES is worn on a saved loadout | The current morph swaps with a 5 s Undo; saved loadouts change only when the player saves. |
+| 12 | Player levels up while the screen is open (E14) | Level-locked cards unlock live with a "Now equippable!" sparkle. Stat allocation still waits for the level-up menu. |
+| 13 | A part's data is hot-fixed (tags, ability) while equipped | On the version broadcast the screen refreshes cards, stats and synergies within 5 s. Equipped state is untouched. |
+| 14 | Device rotates mid-drag in portrait support | The drag is cancelled, the layout re-profiles in ≤ 1 frame, and selection and scroll position are preserved. |
+| 15 | Opening the screen as a guest in a friend's restaurant | Allowed. Combat rules are identical, and changes affect only the guest's own morph. |
+
+### 13.25 Acceptance Criteria
+
+- **AC-13-01:** From the closed state, any owned, equippable, single-slot part can be equipped with ≤ 2
+  clicks/taps after opening (select → Equip, or double-click). An ARM/LEG pair takes ≤ 2 (select → EQUIP BOTH).
+- **AC-13-02:** The screen is interactive ≤ 400 ms after pressing Morph on the mid-tier reference phone, with the
+  preview rig built and the visible icon atlas loaded (or placeholders shown) within that time.
+- **AC-13-03:** The preview responds on all input types: mouse drag, one-finger drag, right stick (dead zone 0.15).
+  Zoom works by wheel, pinch and triggers. Pitch never leaves −10° to +35°, and distance stays 6–18 studs.
+- **AC-13-04:** Every equip preview shows stat deltas as arrow + sign + number (never color alone), and the
+  post-equip server stats equal the previewed values in 100 % of 1,000 automated random equips.
+- **AC-13-05:** The synergy preview lists exactly the activations, deactivations, replacements and suppressions
+  that the server applies after the equip (verified on the 130 §36.5 loadouts with one random part swap each).
+- **AC-13-06:** Equipping an ARM or LEG part offers Left / Right / Both. "Both" applies the matched-pair bonus
+  (+25 % to that pair's stats), and mismatched legs show the "Wobbly gait (no penalty)" note.
+- **AC-13-07:** Equipping FUR while SCALES is worn (or the reverse) leaves exactly one covering equipped and offers
+  a 5 s Undo. `HEAD` can never be emptied, and other mandatory slots revert to Plain Human.
+- **AC-13-08:** Loadout apply always takes a 3.0 s (± 0.1 s) server-timed channel, is blocked while In Combat, is
+  interrupted by damage without consuming the cooldown, and enforces a 10 s cooldown after completion (canon E4).
+- **AC-13-09:** Photo mode hides 100 % of UI elements and offers ≥ 4 poses and ≥ 4 backdrops. The pedestal glow
+  shows the best equipped rarity's canon color.
+- **AC-13-10:** Names outside 3–20 characters, or containing disallowed characters, are rejected client- and
+  server-side. Every accepted name passed `TextService:FilterStringAsync` + `GetNonChatStringForBroadcastAsync`.
+  Rename attempts are limited to 1 per 30 s and 10 per 24 h.
+- **AC-13-11:** Every action on the screen can be done with a gamepad alone (no virtual cursor), with touch alone,
+  and with mouse alone. Focus never escapes the screen while it is open.
+- **AC-13-12:** A modified client that sends `Mutation.Equip` for an unowned part, a wrong slot, a level-locked part,
+  during combat, or 100 times per second gets the matching error code, and the profile is unchanged (automated
+  exploit suite, §35).
+- **AC-13-13:** An upgrade debits exactly the canon C4.6 costs (e.g. Epic Lv4→5 = 10,125 MB + 60 MS + 1 RT + one
+  duplicate or 160 MS). A duplicated `reqId` or a stale `expectedLevel` never upgrades twice.
+- **AC-13-14:** Looks (cosmetic loadouts) change no stat, synergy or ability. The stat snapshot before and after
+  applying any Look is identical.
+- **AC-13-15:** With reduced motion on, the screen shows no auto-rotation, inertia, pulsing glow or sliding
+  transitions. At 150 % text scale, no text is clipped at 1280 × 720 or 844 × 390.

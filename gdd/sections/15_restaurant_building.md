@@ -126,12 +126,15 @@ level-6 chaos (canon E2: "Can't renovate during a brawl!"); (5) no Edit Mode ses
    by (no reputation effect), customers already eating finish, unserved customers leave paying 0 with **no
    reputation loss** behind a "Closed for renovation!" sign (same courtesy as E1). The modal shows a countdown;
    "Skip Last Call" ends it immediately with the same no-penalty rule. Station timers freeze (nothing burns).
-2. **Commit.** One `EconomyService.TransactWith` call deducts the MB, writes `restaurant.tier`, clears
-   `pendingRebuilds`, restores every object to 100 % durability and stamps `layoutMigratedFor = newTier = false`,
-   all inside the profile's session-locked update (idempotency key from the client, §28). Nothing is charged if
-   any later step fails; a crash after commit simply re-runs migration on next load (deterministic).
-3. **Mutant Builders sequence (10.0 s; 3.0 s short version after the first view; skippable for others).**
-4. **Migration** of the layout into the new shell (below), Grand Opening Kit added to storage.
+2. **Commit.** The server first computes the migrated layout (pure grid math, below — no instances needed), then
+   one `EconomyService.TransactWith` call deducts the MB and writes `restaurant.tier`, the new `layoutPacked`
+   (every object at 100 %), the updated `storage` (Grand Opening Kit + "Needs a home" items) and an empty
+   `pendingRebuilds`, all in the profile's session-locked update with the client's idempotency key (§28). Either
+   everything is written or nothing is charged.
+3. **Mutant Builders sequence (10.0 s; 3.0 s short version after the first view; skippable for others).** Purely
+   presentational: during it `RestaurantService` swaps the shell and façade and `BuildingService` spawns the
+   already-committed layout.
+4. **Migration result** shown as a toast and in the storage tab.
 5. **Grand Opening.** Doors reopen in `OPEN`; a confetti burst, an XP grant per §14, and the prompt "New space!
    Arrange it now?" (enters Edit Mode, optional).
 
@@ -141,11 +144,11 @@ flowchart TD
     A["Upgrades screen: hold 0.8 s"] --> B{"Level, MB, permit (T4+), not in combat?"}
     B -- "no" --> X["Padlock chips show exact gap"]
     B -- "yes" --> C["RENOVATING: Last Call up to 45 s"]
-    C --> D["TransactWith: charge MB + write tier + restore durability"]
-    D -- "fails" --> R["Refund nothing needed: nothing charged, back to OPEN"]
+    C --> D["Compute migrated layout, then TransactWith: MB + tier + layout + storage"]
+    D -- "fails" --> R["Nothing charged, back to OPEN"]
     D -- "ok" --> E["Mutant Builders sequence 10 s"]
     E --> F["Swap shell and facade"]
-    F --> G["Migrate layout, validate, store leftovers"]
+    F --> G["Spawn committed layout, toast moved and stored items"]
     G --> H["Grand Opening: OPEN + optional Edit Mode prompt"]
 ```
 
@@ -267,7 +270,7 @@ Checked in this order (cheapest first) for every Place/Move/Rotate; the first fa
 | R2 | Item's tier ≤ current tier; station's canon unlock level ≤ player level (§C7.1) | `TIER_LOCKED` / `LEVEL_LOCKED` |
 | R3 | Footprint inside the shell, entirely in an accepting zone (or socket of the right type) | `OUT_OF_BOUNDS` / `WRONG_ZONE` |
 | R4 | No overlap with other FLOOR footprints, walls, fixed features or clearance cells | `OVERLAP` / `KEEP_CLEAR` |
-| R5 | Access cells free: chair front cell, station operator cell(s), door swing, window pickup side | `ACCESS_BLOCKED` |
+| R5 | Access cells free: ≥ 1 free side/rear neighbour per chair (its access cell), station operator cell(s), door swing, window pickup side | `ACCESS_BLOCKED` |
 | R6 | Appliance slots used ≤ tier slots (canon §C6); serving windows ≤ 1/2/3 (`UPG_029`/`UPG_030`) | `SLOTS_FULL` / `WINDOWS_FULL` |
 | R7 | Attached seats ≤ tier Seats (§15.5.6) | `SEAT_CAP` |
 | R8 | Placed items ≤ tier Max placed items (60 → 400, §36.12.2; trophies, rugs and finishes exempt) and per-item max counts (catalog notes) | `ITEM_CAP` |
@@ -290,9 +293,9 @@ they are nudged 2 studs out on commit.
 
 #### 15.5.6 Seats and surfaces
 
-- A **chair** is a seat only if its front cell is adjacent to a **surface** (table, counter, booth table) cell and
-  that surface still has capacity ("serves N"). Unattached chairs are allowed only in the LOBBY as waiting
-  benches (0 seats, decor).
+- A **chair** is a seat only if the cell it faces belongs to a **surface** (table, counter, booth table) that
+  still has capacity ("serves N"); its **access cell** is any free side or rear neighbour (the §8.7
+  seat-approach node). Unattached chairs are allowed only in the LOBBY as waiting benches (0 seats, decor).
 - A **booth** provides its built-in seats and table. **Counters** take stools along their long side(s).
 - **Counter service (T1–T2):** the counter line forms on the dining side of the serving window: as many cells as
   Seats must be free in a straight or L-shaped line from the window front (§8.6).
@@ -325,7 +328,7 @@ walkable by customers and staff. Aisles may be 1 cell (2 studs); routes narrower
 
 | Check | Sources | Every one of these must be reachable |
 |---|---|---|
-| C1 Customers | front door cell | the access cell of every attached seat (the cell in front of the chair / booth opening) |
+| C1 Customers | front door cell | an access cell of every attached seat (chair side/rear neighbour, booth opening) |
 | C2 Ordering | front door cell | podium wait spots (T3+) or the full counter line (T1–T2); patio door if a patio exists |
 | C3 Kitchen | staff spawn + staff door(s) | every station operator cell and the kitchen side of every serving window |
 | C4 Service (T3+) | staff door(s) | every seat access cell and every window pickup side (waiters) |
@@ -845,7 +848,7 @@ purchases, repairs, rebuilds and upgrades (§31).
 | 5 | Tier upgrade with damaged or Destroyed items | Mutant Builders restore all to Pristine and rebuild rubble for free; active repair jobs are cancelled with no charge |
 | 6 | Tier upgrade requested mid-brawl or during chaos | refused ("Can't renovate during a brawl!"), nothing charged |
 | 7 | Owner disconnects during Edit Mode | every committed op was already valid; restaurant goes to E1 Closing; next session opens normally |
-| 8 | Server dies after the tier transaction but before migration | profile says new tier, `layoutMigratedFor` false → deterministic migration runs on next load; no double charge (idempotency key) |
+| 8 | Server dies during the builders sequence | tier, migrated layout and charge were one transaction: on rejoin the new shell loads with the migrated layout; a retried request with the same idempotency key is a no-op (no double charge) |
 | 9 | Player tries to store/sell the last Pantry (or the podium at T3+) | `ESSENTIAL`; sell is storage-only anyway |
 | 10 | A station breaks mid-cook / is destroyed | Broken → PAUSED, timers frozen; Destroyed → contents ejected per §5; no burn, no charge |
 | 11 | Wallet too low to rebuild | Elbow Grease: free manual rebuild at ×2 time |

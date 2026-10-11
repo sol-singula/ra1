@@ -61,8 +61,8 @@ switching tasks never desynchronizes anything.
 #### 4.1.3 Worked example: Cheeseburger + Fizzy Soda at TIER_01
 
 **Setup.** A new player (Level 1, CHARM 0, starter morph, carry capacity 1) is running the Broken Burger Shack.
-Reputation is 2.5 ★ (start, canon C3). Atmosphere is 20 *(example; §15 sets the shack's base)*. One leftover
-plate makes cleanliness 90. The customer's personality multipliers are 1.0 and offsets 0 *(example; real values in
+Reputation is 2.5 ★ (start, canon C3). Atmosphere is 42, the repaired shack after the tutorial (§15 worked
+example). One leftover plate makes cleanliness 90. The customer's personality multipliers are 1.0 and offsets 0 *(example; real values in
 §9)*.
 
 **Prices (canon C4.2), shown with 0 % flavor variance.** §6 holds the final prices. Difficulties are *(example)*
@@ -76,21 +76,22 @@ until §6 fixes them:
 **Patience.** Items = 2 and ΣDifficulty = 3, so `(70 + 20 × 1 + 5 × 3) × 1.0 × 1.0` = **105 s**. W = 1.0 until 52.5 s
 and reaches 0 at 105 s.
 
-**Timeline** (t = 0 when the order is taken; the patty's `T_ready` = 10 s is *(example)*, §5 owns it):
+**Timeline** (t = 0 when the order is taken; the patty's `T_ready` is 8 s at Lv1, with one flip due at 0.40–0.75 × `T_ready`, §5):
 
 | t (s) | Event |
 |---|---|
 | 0.0 | Order taken (E). Ticket "Cheeseburger + Fizzy Soda" appears; patience ring starts at 105 s |
 | 2.5 | Bun from the Pantry onto the Assembly Counter (`ANM_006`) |
 | 5.5 | Patty from the Fridge |
-| 8.0 | Patty placed on the Grill (`ANM_011`). Ready at 18.0, Perfect until 20.0, burns at 24.0, fire at 28.0 |
-| 9.0–13.0 | Fizzy Soda poured at the Drink Dispenser (`ANM_020`) and left on the counter (hands are full of soda, so it waits) |
-| 14.0–20.5 | The next customer waves (`ANM_042`); the player takes that order (a realistic distraction) |
-| 21.1 | Patty removed 3.1 s after `T_ready` (past the 2.0 s Perfect window) → **GOOD 0.80** |
-| 22.0–26.5 | Assembled bun → patty → cheese → bun in the correct order (`ANM_017`) → order factor 1.0 |
-| 26.5–27.0 | Plated (`ANM_018`) out of habit (no penalty for skipping at TIER_01) |
-| 30.5 | Burger handed over at the Serving Window (`ANM_019`) |
-| 31.0–57.5 | Second trip for the soda, interrupted by a spill clean-up near the door |
+| 8.0 | Patty placed on the Grill. Flip window 11.2–14.0, ready at 16.0, Perfect until 18.0, burns at 22.0, fire at 26.0 (§5) |
+| 9.0–11.0 | Fizzy Soda poured at the Drink Dispenser (`ANM_020`) and left on the counter (hands are full of soda, so it waits) |
+| 12.0 | Patty flipped (`ANM_011` Grill flip) |
+| 13.0–18.5 | The next customer waves (`ANM_042`); the player takes that order (a realistic distraction) |
+| 19.1 | Patty removed at cookSec 11.1, 3.1 s after `T_ready` (past the 2.0 s Perfect window, inside GOOD) → **GOOD 0.80** |
+| 20.0–24.5 | Assembled bun → patty → cheese → bun in the correct order (`ANM_017`) → order factor 1.0 |
+| 24.5–25.0 | Plated (`ANM_018`) out of habit (no penalty for skipping at TIER_01) |
+| 28.5 | Burger handed over at the Serving Window (`ANM_019`) |
+| 29.0–57.5 | Second trip for the soda, interrupted by a spill clean-up near the door |
 | **58.0** | Soda handed over. The wait is measured at the **last** item |
 
 **Satisfaction (canon C11.3).**
@@ -99,10 +100,10 @@ and reaches 0 at 105 s.
   (unprocessed components score 1.00, the convention used here and confirmed in §5/§10). Soda = 1.00. Q = **0.967**.
 - C (cooking accuracy, heat-cooked components) = patty **0.80**.
 - W = 1 − (58.0 − 52.5) / 52.5 = **0.895**.
-- K = 90 / 100 = **0.90**; M = 20 / 100 = **0.20**.
+- K = 90 / 100 = **0.90**; M = 42 / 100 = **0.42**.
 
-`S_base = 100 × (0.25·1.00 + 0.20·0.967 + 0.15·0.80 + 0.20·0.895 + 0.10·0.90 + 0.10·0.20)`
-`= 100 × (0.2500 + 0.1933 + 0.1200 + 0.1790 + 0.0900 + 0.0200) = 85.2` → **Happy** (70–89).
+`S_base = 100 × (0.25·1.00 + 0.20·0.967 + 0.15·0.80 + 0.20·0.895 + 0.10·0.90 + 0.10·0.42)`
+`= 100 × (0.2500 + 0.1933 + 0.1200 + 0.1790 + 0.0900 + 0.0420) = 87.4` → **Happy** (70–89).
 
 **Money.**
 - Pay = (10 + 6) × 1.0 = **16 MB**.
@@ -111,14 +112,15 @@ and reaches 0 at 105 s.
   §6 lists the costs)*.
 - **Net to wallet: 16 + 2 − 5 = 13 MB.**
 
-**Reputation.** Stars += 0.02 × (85.2 / 20 − 2.5) = +0.0352, giving 2.535 ★. **XP:** the per-serve amount in §14 (about
+**Reputation.** Stars += 0.02 × (87.4 / 20 − 2.5) = +0.0374, giving 2.537 ★. **XP:** the per-serve amount in §14 (about
 0.015 × XPRate(1) ≈ 13 XP *(example)*).
 
 **The perfect variant.** If the patty comes off inside the Perfect window and the soda is handed over by 31 s,
-then Q = 1.00, C = 1.00, W = 1.00 and S = 91.0 → **Delighted**. The tip becomes 18 % (2.88 → 3 MB), so net is 14 MB and
-Stars +0.041. **Design insight:** at TIER_01 with Atmosphere 20 and perfect cleanliness, the best possible
-`S_base` is 92. Reaching "Chef's Kiss" (98+, 25 % tip) needs decor (higher M), a mutation satisfaction bonus
-(≤ +10), or an event modifier. That is a deliberate early hook into the Build and Morph pillars.
+then Q = 1.00, C = 1.00, W = 1.00 and S = 93.2 → **Delighted**. The tip becomes 18 % (2.88 → 3 MB), so net is 14 MB and
+Stars +0.043. **Design insight:** at TIER_01, Atmosphere is capped at 55 (§15 TierCap), so with perfect
+cleanliness the best possible `S_base` is 95.5. Reaching "Chef's Kiss" (98+, 25 % tip) needs a mutation
+satisfaction bonus (≤ +10) or an event modifier, and higher tiers raise the decor cap. That is a deliberate early
+hook into the Morph and Build pillars.
 
 #### 4.1.4 The angry branch
 
@@ -127,8 +129,8 @@ Cheeseburger and counts as the wrong dish (A = 0.5 across the 2 items; the per-i
 confirmed in §10). It was served at 96 s.
 - Q = mean(burger-as-served mean(1.00, 0.15, 1.00) = 0.717, soda 1.00) = 0.858; C = 0.15;
   W = 1 − (96 − 52.5) / 52.5 = 0.171.
-- `S_base = 100 × (0.125 + 0.1717 + 0.0225 + 0.0343 + 0.09 + 0.02) = 46.3` → **Unhappy**.
-- Pay = 16 × 0.8 = 12.8 → 13 MB; no tip; net ≈ 8 MB; Stars −0.0037.
+- `S_base = 100 × (0.125 + 0.1717 + 0.0225 + 0.0343 + 0.09 + 0.042) = 48.5` → **Unhappy**.
+- Pay = 16 × 0.8 = 12.8 → 13 MB; no tip; net ≈ 8 MB; Stars −0.0015.
 - While waiting past 50 % of patience the customer's anger meter climbed (`ANM_046` Impatient foot tap, rate in
   §10). The Unhappy result pushes it further.
 
@@ -376,7 +378,7 @@ short play windows keep progressing. Formulas, incidents, the report screen and 
 
 | # | Tier | Active net MB/h (canon C4.4) | Offline net MB/h (35–50 %) | Typical cap | One capped report |
 |---|---|---|---|---|---|
-| 1 | TIER_01 | 630 | 220–315 (Ollie alone ≈ 175, §32) | 2 h | 440–630 (≈ 350 with Ollie alone) |
+| 1 | TIER_01 | 630 | 220–315 (Ollie alone ≈ 158, §32) | 2 h | 440–630 (≈ 316 with Ollie alone) |
 | 2 | TIER_02 | 1,080 | 378–540 | 2 h | 756–1,080 |
 | 3 | TIER_03 | 1,730 | 606–865 | 4 h | 2,424–3,460 |
 | 4 | TIER_04 | 3,100 | 1,085–1,550 | 4 h | 4,340–6,200 |
@@ -483,8 +485,8 @@ flowchart LR
 ### 4.8 Acceptance Criteria
 
 - **AC-04-01:** Every step of the §4.1.1 table is server-validated by the listed service. A modified client that sends a forged serve, grade or amount gets no MB, XP or reputation (§29 test).
-- **AC-04-02:** For the §4.1.3 fixture (prices 10 / 6 MB, patience 105 s, patty GOOD, served at 58 s, K 90, M 20, multipliers 1.0), the server computes S = 85.2 ± 0.1, Pay = 16 MB, Tip = 2 MB, net 13 MB (with the §6 ingredient costs 3 + 2), and Stars +0.0352 ± 0.0001.
-- **AC-04-03:** For the §4.1.4 fixture (A 0.5, BURNED, served at 96 s), S = 46.3 ± 0.1 and Pay = 13 MB with no tip.
+- **AC-04-02:** For the §4.1.3 fixture (prices 10 / 6 MB, patience 105 s, patty GOOD, served at 58 s, K 90, M 42, multipliers 1.0), the server computes S = 87.4 ± 0.1, Pay = 16 MB, Tip = 2 MB, net 13 MB (with the §6 ingredient costs 3 + 2), and Stars +0.0374 ± 0.0001.
+- **AC-04-03:** For the §4.1.4 fixture (A 0.5, BURNED, served at 96 s, M 42), S = 48.5 ± 0.1 and Pay = 13 MB with no tip.
 - **AC-04-04:** A single-item TIER_01 ticket can be completed by a first-time tester in ≤ 45 s on phone, PC and controller (median of 10 testers per device) [TUNABLE].
 - **AC-04-05:** In a scripted 12-minute TIER_02 bot session using the §4.2.1 starting state, active net income is 216 MB ± 15 %, and the session log contains ≥ 1 purchase, ≥ 1 repair, ≥ 1 anger ≥ 3 event and a mutation-goal delta.
 - **AC-04-06:** The `core-gameplay-loop` diagram renders in the build, contains the nodes Cook/Earn, Morph, Become More Powerful, Run a Better Restaurant, Earn More, Discover Rarer Morphs and the offline branch.

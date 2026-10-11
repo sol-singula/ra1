@@ -363,3 +363,168 @@ contestant's equipped parts' categories, slots and §C13.5 tags. Rewards: every 
 wins a show; offensive combinations can be reported from the results card (hidden after 3 reports pending review);
 contestants are live characters (no copies) and must stay on the runway; the stage is a no-combat zone.
 
+### 21.9 Arena PvP (strictly opt-in)
+
+**Purpose.** Give players who *want* to test their morphs against each other a fair, funny, kid-safe arena — without ever
+pressuring anyone who just wants to cook. Combat rules and arena normalization are owned by **§11.11** (adopted here
+unchanged); this subsection owns opt-in, modes, matchmaking, rating, rewards and seasons.
+
+#### 21.9.1 Opt-in and the "Never Forced" Guarantee
+- **Opt-in:** at the Opt-In Desk of the Morph Arena (`BLD_08`, `DST_10`, unlocks at L12) Rex Rumbleton (`NPC_011`) shows an
+  explicit consent dialog ("I want to food-fight other players. I can stop any time.") that sets `social.arena.optedIn`.
+  Opting out is one tap, anywhere, instant and penalty-free (a queued ticket is cancelled).
+- **Only inside the arena:** player-vs-player damage exists only in arena matches (rated reserved servers or the local
+  `BLD_08` pits). Everywhere else `CombatService` rejects it (§11.2.2); players who are not opted in can never be targeted
+  (collision group + `CombatService` check, §36.10).
+- **Guarantees (requirements):**
+  1. No story chapter, tier, recipe, employee, offline or tutorial feature needs the arena.
+  2. Every arena quest in §20 accepts **Cook-Off** (non-violent) or **Bash the Bots** (PvE) as an alternative.
+  3. PvP-only rewards are cosmetic (titles, palettes, plinth fame) or exist through a non-PvP path: MS/RT also come from
+     quests and events (§22.13); any `ARENA`-acquisition part (§C13.8) must also be obtainable from the Cook-Off ladder,
+     an event or Lab fusion.
+  4. Events with PvP (`EVT_025`) always run a PvE path in parallel (§21.8.4).
+  5. Restaurant customers remain NPCs; players never become customers, invaders or targets in anyone's restaurant.
+
+#### 21.9.2 Modes
+
+| Mode | Players | Format [TUNABLE] | Win condition | Rated |
+|---|---|---|---|---|
+| Food Fight Duel | 1v1 | best of 3 rounds, 75 s each, in the Sauce Pit (arena props only: pie and tomato crates for `ABL_005`) | opponent "Seeing Stars" (eliminated, §11.11) or higher HP % at time-out; tied → sudden-death Pie Rain (30 s) | yes |
+| Tag-Team | 2v2 | best of 3 rounds, 120 s; one fighter per team in the ring, partner on the apron; tag at the corner post (1.0 s swap, 4 s cooldown); apron partner regenerates 2 % HP/s | a team loses the round when both members are eliminated; at time-out, higher total HP % | yes |
+| Brawl Pit | 4-player free-for-all | 3 rounds of last-morph-standing, 90 s each; falling into the gravy moat counts as elimination ("Splashed!") | round placement points 4 / 2 / 1 / 0; most points after 3 rounds (ties → fewer moat falls) | yes |
+| Cook-Off (non-violent) | 2–4 | mirrored kitchens, 5 orders from a fixed Cook-Off recipe pool (recipes are lent for the match), 4 min cap; no combat abilities | score = Σ order quality × 100 + time bonus (2 per second under par) | yes (separate Chef Rating) |
+| Friendly Spar | 1v1, same server | Duel rules in the local `BLD_08` pits; both players accept a challenge | as Duel | no |
+| Bash the Bots (PvE) | 1–4 | waves of arena bots in the local pits; **no opt-in needed** | survive / clear waves | no |
+
+Eliminated players take the "Seeing Stars" pose and spectate the rest of the round (no `STS_WOOZY`, no loss — §11.11).
+Kid-safe vocabulary throughout: "Seeing Stars", "Splashed!", "Bonked out" — never "kill" or "die".
+
+#### 21.9.3 Normalization (adopted from §11.11)
+Every arena player uses the §11.11 template: **HP 300, STR 60, DEF 60, MOVE 50, all other stats ignored; every equipped
+part treated as its rarity's Lv3; damage ×0.7, CC duration ×0.6, knockback ×0.8 (final per-ability values in §36.6's
+"PvP tuning" column); Guard meter 80; hard-CC diminishing returns 100 % → 40 % → immune 5 s; `ABL_060` cooldown 60 s;
+utilities disabled except `ABL_063` and `ABL_070`; `ABL_006` becomes the harmless "Hug it out" emote; arena props only.**
+Level allocations, skill-tree bonuses and upgrade grinding therefore never decide a match. Additions owned here:
+- **Standard hurtboxes:** every arena combatant uses the standard R15 capsule (5.5 studs) regardless of necks, wings or
+  paid cosmetic skins (§23), so looks never change hit area.
+- **Cook-Off template:** COOK_SPD 60, COOK_QLT 60, every station at Lv3 (§C4.9), same recipe pool and ingredients for all;
+  the accessibility Auto-Rhythm setting is allowed and scores yellow (0.8) exactly as in §C8.
+- **Season ban/adjust list:** live-ops may disable up to 5 abilities per season for the arena only (published at season
+  start on the Season Board).
+
+#### 21.9.4 Matchmaking
+
+**Queueing.** `Multiplayer.ArenaQueue {mode, join}` (§27.8.16) is accepted when the player is L12+, opted in (combat modes),
+not In Combat, party size fits the mode (Duel 1, Tag-Team 1–2, Brawl 1, Cook-Off 1–4) and no leaver cooldown is active.
+Queueing from inside one's own open restaurant shows: "Your restaurant will close while you battle — staff keep earning
+offline (§17)." Accounts younger than 3 days play **unranked** queues only (§29.16).
+
+**Tickets** live in a `MemoryStoreService` **sorted map** `ArenaQueue_<mode>`: key = ticket id, value
+`{members, ar, power, level, region, jobId, enqueuedAt}`, **sortKey = rating**; expiration 120 s, refreshed every 30 s by
+the origin server (an abandoned ticket disappears by itself). `power` is the **Arena Power Index** = mean rarity rank of the
+four equipped ability parts (Common 1 … Mythic 6, Secret 5) — §14 brackets matchmaking by level band and mutation power.
+`region` comes from `LocalizationService:GetCountryRegionForPlayerAsync` grouped into five coarse regions.
+
+**Matchmaker election.** One server per mode holds a 10-s lease in the hash map `ArenaLease` (`UpdateAsync` succeeds only
+if the lease is empty or expired; renewed every 5 s). The holder runs a matching pass every 2 s; if it shuts down, the lease
+lapses and another server takes over within ≤ 10 s.
+
+**Matching pass [TUNABLE].** Oldest ticket first; candidates fetched with `GetRangeAsync` between `rating ± window`:
+
+| Waited | Rating window | Level band (§14) | Power window | Region |
+|---|---|---|---|---|
+| 0–29 s | ±(50 + 25 per 10 s waited) | ±10 levels | ±1.0 | same region |
+| 30–59 s | widening, ≤ ±400 | ±25 levels | ±2.0 | same region until 45 s, then any |
+| 60–89 s | same bracket | any | any | any |
+| 90–120 s | any rating | any | any | any |
+| > 120 s | ticket expires: "No match right now — try Cook-Off or Bash the Bots!" (re-queue one tap) | | | |
+
+Tickets are **claimed atomically** with `UpdateAsync` (sets `claimedBy = matchId`; aborts if already claimed) and removed
+once the match record exists, so two matchmakers can never use the same ticket.
+
+**Match creation.** `TeleportService:ReserveServer(ARENA_PLACE_ID)` → access code; the hash map `ArenaMatches` stores
+`{mode, tickets, accessCode, state, createdAt}` (TTL 15 min); origin servers are notified on MessagingService topic
+`arena/match` and also poll `ArenaTickets` (ticket → matchId, TTL 60 s) every 2 s as a fallback.
+
+**Ready check.** 10 s *Ready / Not now*. A decline or timeout re-queues everyone else at the front (original
+`enqueuedAt`); the decliner gets a 2 / 5 / 15 min cooldown for repeats within an hour. A player who is In Combat or has just
+opted out declines automatically **without** penalty.
+
+**Teleport.** `TeleportService:TeleportAsync(ARENA_PLACE_ID, players, options)` with
+`TeleportOptions.ReservedServerAccessCode` and `SetTeleportData({matchId = …})`; `TeleportInitFailed` retries 3 times (2 s
+apart), then the match is cancelled and the others re-queued. The arena server loads profiles under the session lock like
+any server (§28), **validates every arrival against `ArenaMatches`** (teleport data is client-visible), waits ≤ 30 s, then:
+Duel/Cook-Off with a no-show → the present player wins with half rating gain; Tag-Team missing a player → cancelled, no
+rating change; Brawl with 3 present → plays on, with 2 → cancelled.
+
+**Return.** After the results card (15 s) players teleport back to their origin server
+(`TeleportOptions.ServerInstanceId = originJobId`) if it is alive and has room (`Presence` map), otherwise to a fresh public
+server; parties travel together.
+
+```mermaid
+%% diagram: arena-matchmaking
+sequenceDiagram
+    participant P as Player server
+    participant Q as MemoryStore ArenaQueue_mode
+    participant M as Matchmaker (lease holder)
+    participant T as TeleportService
+    participant A as Arena reserved server
+    P->>Q: SetAsync(ticket, value, 120 s, sortKey = rating)
+    loop every 2 s
+        M->>Q: GetRangeAsync(rating ± window)
+        M->>Q: UpdateAsync(ticket, claimedBy = matchId)
+    end
+    M->>T: ReserveServer(ARENA_PLACE_ID)
+    M-->>P: MessagingService "arena/match" (+ polling fallback)
+    P->>P: 10 s ready check
+    P->>T: TeleportAsync(players, ReservedServerAccessCode)
+    T->>A: players arrive with TeleportData{matchId}
+    A->>A: validate roster, play rounds, grant rewards, save
+    A->>T: TeleportAsync back (ServerInstanceId = origin)
+```
+
+#### 21.9.5 Rating and Brackets
+- Separate ratings for Duel, Tag-Team, Brawl Pit and Cook-Off (`social.arena.ratings`), start 1,000, floor 0, no decay.
+- Elo-like update: `E = 1 / (1 + 10^((Rb − Ra)/400))`, `ΔR = K × (S − E)`; K = 40 for the first 10 matches of a mode, 24 up
+  to 30 matches, 16 afterwards, halved above 1,900. Tag-Team uses team-mean ratings and gives both members the same ΔR.
+  Brawl Pit and multi-player Cook-Off apply pairwise Elo with K/3 per opponent (S = 1 placed higher, 0.5 tie, 0 lower).
+- Brackets (shown as name + icon + number, never colour alone): Rookie Rumbler < 1,100 · Bronze Ladle 1,100–1,299 ·
+  Silver Spatula 1,300–1,499 · Gold Whisk 1,500–1,699 · Platinum Platter 1,700–1,899 · Morph Master ≥ 1,900.
+- Season leaderboards use `MMR_LB_Arena_S<Season>` (OrderedDataStore, §28) per rated mode.
+
+#### 21.9.6 Rewards (MS, RT, XP, cosmetics — never MB, never a new currency)
+
+| Reward | Value [TUNABLE] | Rules |
+|---|---|---|
+| MS per rated match | win 8 · draw 6 · loss 4; Brawl/Cook-Off placements 8 / 6 / 5 / 4 | **soft cap 80 MS/day** from the arena, ×0.25 beyond, hard stop 120 MS/day; also counts toward the 150/250 repeatable-MS caps (§22.14.2); reason `arena_reward`, key `arena:<matchId>` |
+| First win of the day | +10 MS | inside the caps |
+| XP | per §14 `ARENA` row (4, +4 on a win, first 10 matches per UTC day) | Friendly Spar and Bash the Bots count toward the same 10 |
+| Season end (≥ 10 rated matches) | by peak bracket: Rookie 5 RT + 40 MS · Bronze 10 RT + 70 MS · Silver 15 RT + 100 MS · Gold 20 RT + 130 MS · Platinum 30 RT + 160 MS · Morph Master 40 RT + 200 MS | within the §29.14 `arena_reward` ceilings (≤ 200 MS, ≤ 50 RT per transaction); key `arenaseason:<seasonId>` |
+| Season cosmetics | bracket title (e.g. "Season 3 Gold Whisk"), bracket palette at Silver+, Champions Walk plinth (§18) for the server's weekly top 8 | cosmetic only |
+| Achievements | `ACH_035` Arena Rookie, `ACH_036` Arena Champion (grants `FRN_904` Arena Champion Belt Case) per §36.16 | trophy repeats → 100 MS (§18.8.4) |
+
+The Cook-Off ladder pays the identical table, so a player who never fights can earn every arena reward type.
+
+#### 21.9.7 Seasons
+Six weeks, starting Monday 00:00 UTC. Soft reset at season start: `R_new = 1,000 + 0.5 × (R_old − 1,000)`; the first 5
+matches of a season use K = 40. The Season Board in `BLD_08` lists the ban/adjust list, bracket thresholds, rewards and the
+end time. Season rewards are granted on the first login after the season ends (guard `social.arena.season`, §28).
+
+#### 21.9.8 Anti-Cheat and Fair Play
+- **Server authority:** clients send intents only (ability id, aim vector, timestamp); `CombatService` resolves hits with
+  the §11.16 pipeline (server shapecasts, ≤ 200 ms rewind, +2 stud range tolerance, line of sight, cooldowns from the server
+  clock) and computes all damage from §11 formulas; plus the per-match damage audit of §11.11/§29.
+- **Rate limits:** attack inputs ≤ 12/s, ability casts never faster than their cooldown, `Multiplayer.ArenaQueue` 0.5/s
+  (§27); payload type/size validation on every remote.
+- **Movement validation:** `MovementSanity` (§29) against MOVE 50 plus dash allowances; violations rubber-band and flag.
+- **Win-trading & alts (§29.16):** at most 3 rated matches per opponent pair per UTC day (further pairings are unrated);
+  > 6 alternating results between a pair per day raise `pair_farming`; accounts < 3 days play unranked.
+- **AFK and leavers:** no input for 20 s → warning; 40 s → AFK loss with no rewards. Leaving mid-match = loss + leaver strike;
+  strikes in 24 h give 2 / 5 / 15 min queue locks. A disconnect gets a 20-s grace to rejoin via the stored access code.
+- **Reporting:** the in-match *Report* button opens the Roblox report flow and attaches the last 30 s of the server combat
+  log to an internal `mmr_report_submitted` record for moderators (§29.17).
+
+#### 21.9.9 Spectating
+Up to 4 friends or party members of a participant may join a rated match as spectators (reserved server, no collision,
+`SpectateHUD`); anyone can watch the local pits from the `BLD_08` stands.
+
