@@ -14,7 +14,7 @@
   (~4 for `EVT_003`); M pool = 8 events over 12 windows → ~1.5/day each.
 - **Rewards** are listed as **P / S / T** totals (Participation / Success / Top, §18.8.4). **ERM** → MB scaled by
   restaurant tier (`round(ERM × NetMBPerHour[tier] / 60)`); **XPF** → XP = XPF × XPRate(level); MS and RT are
-  flat. Daily caps, capsule cap (3/day) and the trophy rule (each `FRN_9xx` once, repeats → 100 MS) apply.
+  flat. Daily caps, capsule cap (3/day) and the trophy rule (each of `FRN_901`–`FRN_910` once, repeats → 100 MS) apply.
   Seasonal track rewards are one-time milestones and are exempt from the daily capsule cap.
 - **Scope:** *city-wide*, *district* (named), *restaurant* (owner-present restaurants per §18.8.6).
 - **Participation:** solo · co-op (party/guests) · server (everyone on the server shares the objective) ·
