@@ -22,7 +22,9 @@ index below — each link opens that section's source file, which renders normal
 | 3. Design Pillars | [`03_design_pillars.md`](gdd/sections/03_design_pillars.md) | 25 KB |
 | 4. Core Gameplay Loops | [`04_core_gameplay_loops.md`](gdd/sections/04_core_gameplay_loops.md) | 43 KB |
 | 5. Cooking Mechanics | [`05_cooking_mechanics.md`](gdd/sections/05_cooking_mechanics.md) | 112 KB |
+| 6. Recipe Database | [`06_recipe_database.md`](gdd/sections/06_recipe_database.md) | 343 KB |
 | 6.18 Ridiculous Order Modifications | [`06b_order_modifications.md`](gdd/sections/06b_order_modifications.md) | 46 KB |
+| 7. Ingredient Database | [`07_ingredient_database.md`](gdd/sections/07_ingredient_database.md) | 62 KB |
 | 8. Customer AI | [`08_customer_ai.md`](gdd/sections/08_customer_ai.md) | 59 KB |
 | 9. Customer Personalities | [`09_customer_personalities.md`](gdd/sections/09_customer_personalities.md) | 82 KB |
 | 10. Satisfaction and Tantrum Systems | [`10_satisfaction_tantrum.md`](gdd/sections/10_satisfaction_tantrum.md) | 50 KB |
@@ -53,6 +55,7 @@ index below — each link opens that section's source file, which renders normal
 | 34. Development Roadmap | [`34_development_roadmap.md`](gdd/sections/34_development_roadmap.md) | 57 KB |
 | 35. Testing and QA | [`35_testing_qa.md`](gdd/sections/35_testing_qa.md) | 69 KB |
 | 36. Content Database Appendices | [`36_00_index.md`](gdd/sections/36_00_index.md) | 12 KB |
+| 36.2 Recipe Quick Reference | [`36_02_recipe_quick_reference.md`](gdd/sections/36_02_recipe_quick_reference.md) | 35 KB |
 | 36.3 Mutation Parts Database | [`36_03_mutation_parts.md`](gdd/sections/36_03_mutation_parts.md) | 140 KB |
 | 36.4 Mutation Synergies Database | [`36_04_mutation_synergies.md`](gdd/sections/36_04_mutation_synergies.md) | 41 KB |
 | 36.5 Morph Combination Examples | [`36_05_morph_combinations.md`](gdd/sections/36_05_morph_combinations.md) | 31 KB |

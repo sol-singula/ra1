@@ -27,14 +27,14 @@
 
 Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the counts below are counted from this document and are never typed by hand.
 
-**Automated validation:** ⚠️ ISSUES FOUND — 2,389 defined identifiers, 14,973 identifier references, **173 unresolved**, 150 canonical-name mismatches, 39 Mermaid diagrams. Re-run with `python3 gdd/tools/validate_gdd.py`.
+**Automated validation:** ✅ PASS — 2,693 defined identifiers, 25,263 identifier references, **0 unresolved**, 0 canonical-name mismatches, 40 Mermaid diagrams. Re-run with `python3 gdd/tools/validate_gdd.py`.
 
 #### Content counts
 
 | Requirement | Minimum | Delivered | Status | Location |
 |---|---|---|---|---|
-| Recipes (≥150 across ≥15 categories) | 150 | 13 | ❌ | §6, §36.2 |
-| Ingredients (complete; all canon core IDs) | 48 | 0 | ❌ | §7 |
+| Recipes (≥150 across ≥15 categories) | 150 | 150 | ✅ | §6, §36.2 |
+| Ingredients (complete; all canon core IDs) | 48 | 167 | ✅ | §7 |
 | Order modifications (≥75) | 75 | 93 | ✅ | §6.18 |
 | Kitchen stations (all 22 brief stations + 2 late-game) | 24 | 24 | ✅ | §5 |
 | Customer personalities (≥30) | 30 | 32 | ✅ | §9 |
@@ -65,7 +65,7 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | Music tracks | 10 | 36 | ✅ | §36.15 |
 | Achievements | 50 | 88 | ✅ | §36.16 |
 | Progression milestones | 30 | 54 | ✅ | §36.17 |
-| Recipe categories (≥15) | 15 | 10 | ❌ | §6 |
+| Recipe categories (≥15) | 15 | 15 | ✅ | §6 |
 
 #### Required diagrams
 
@@ -90,8 +90,8 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | 3 | Design Pillars | ✅ |
 | 4 | Core Gameplay Loops | ✅ |
 | 5 | Cooking Mechanics | ✅ |
-| 6 | Recipe Database | ❌ |
-| 7 | Ingredient Database | ❌ |
+| 6 | Recipe Database | ✅ |
+| 7 | Ingredient Database | ✅ |
 | 8 | Customer AI | ✅ |
 | 9 | Customer Personalities | ✅ |
 | 10 | Satisfaction and Tantrum Systems | ✅ |
@@ -135,7 +135,9 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | `gdd/sections/03_design_pillars.md` | 25 | 5 | 17 |
 | `gdd/sections/04_core_gameplay_loops.md` | 43 | 10 | 12 |
 | `gdd/sections/05_cooking_mechanics.md` | 112 | 26 | 2 |
+| `gdd/sections/06_recipe_database.md` | 343 | 12 | 6 |
 | `gdd/sections/06b_order_modifications.md` | 46 | 16 | 2 |
+| `gdd/sections/07_ingredient_database.md` | 62 | 8 | 8 |
 | `gdd/sections/08_customer_ai.md` | 59 | 16 | 14 |
 | `gdd/sections/09_customer_personalities.md` | 82 | 14 | 1 |
 | `gdd/sections/10_satisfaction_tantrum.md` | 50 | 16 | 6 |
@@ -166,6 +168,7 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | `gdd/sections/34_development_roadmap.md` | 57 | 38 | 5 |
 | `gdd/sections/35_testing_qa.md` | 69 | 12 | 6 |
 | `gdd/sections/36_00_index.md` | 12 | 0 | 0 |
+| `gdd/sections/36_02_recipe_quick_reference.md` | 35 | 0 | 0 |
 | `gdd/sections/36_03_mutation_parts.md` | 140 | 0 | 1 |
 | `gdd/sections/36_04_mutation_synergies.md` | 41 | 0 | 8 |
 | `gdd/sections/36_05_morph_combinations.md` | 31 | 0 | 0 |
@@ -185,11 +188,9 @@ Generated automatically by `gdd/tools/build_gdd.py` from the validator, so the c
 | `gdd/sections/38_open_design_decisions.md` | 12 | 3 | 0 |
 | `gdd/sections/39_balancing_assumptions.md` | 33 | 6 | 2 |
 | `gdd/sections/40_definition_of_done.md` | 14 | 13 | 2 |
-| **Total** | **2902** | **679** | **284** |
+| **Total** | **3342** | **699** | **298** |
 
 </details>
-
-Unresolved identifiers: `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLICE`, `ING_BUG_CRUNCH`, `ING_BUN`, `ING_BUTTER`, `ING_CHEESE`, `ING_CHOCOLATE`, `ING_DOUGH`, `ING_EGG`, `ING_GOLDEN_PATTY`, `ING_GUMMY_EYEBALL`, `ING_HAM`, `ING_HOT_SAUCE`, `ING_ICE`, `ING_ICE_CREAM_BASE`, `ING_KETCHUP`, `ING_LAVA_PEPPER`, `ING_LEMON`, `ING_LETTUCE`, `ING_MOON_CHEESE`, `ING_MOZZARELLA`, `ING_MUSTARD`, `ING_MUTAGEN_GOO`, `ING_ONION`, `ING_PASTA`, `ING_PEPPERONI`, `ING_PICKLE`, `ING_POTATO`, `ING_SHRIMP`, `ING_SODA_SYRUP`, `ING_STARDUST`, `ING_SUGAR`, `ING_TAPIOCA`, `ING_TOMATO`, `ING_TOMATO_SAUCE`, `RCP_ALN_001`, `RCP_ALN_002`, `RCP_ALN_003`, `RCP_ALN_005`, `RCP_ALN_006`, `RCP_ALN_007`, `RCP_ALN_008`, `RCP_ALN_009`, `RCP_ALN_010`, `RCP_BRG_002`, `RCP_BRG_003`, `RCP_BRG_004`, `RCP_BRG_005`, `RCP_BRG_006`
 
 ## Brief Coverage Map
 
@@ -275,7 +276,29 @@ Unresolved identifiers: `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLICE`, `ING_B
   - [5.10 Roblox Implementation](#510-roblox-implementation)
   - [5.11 Edge Cases](#511-edge-cases)
   - [5.12 Acceptance Criteria](#512-acceptance-criteria)
+- [6. Recipe Database](#6-recipe-database)
+  - [6.1 Recipe System Rules](#61-recipe-system-rules)
+  - [6.2 Pricing & Profitability](#62-pricing--profitability)
+  - [6.3 Burgers (15)](#63-burgers-15)
+  - [6.4 Pizza (15)](#64-pizza-15)
+  - [6.5 Tacos & Mexican-Inspired (10)](#65-tacos--mexican-inspired-10)
+  - [6.6 Sandwiches (10)](#66-sandwiches-10)
+  - [6.7 Soups (10)](#67-soups-10)
+  - [6.8 Pasta (10)](#68-pasta-10)
+  - [6.9 Breakfast (10)](#69-breakfast-10)
+  - [6.10 Desserts (15)](#610-desserts-15)
+  - [6.11 Drinks & Smoothies (15)](#611-drinks--smoothies-15)
+  - [6.12 Seafood (10)](#612-seafood-10)
+  - [6.13 Salads (5)](#613-salads-5)
+  - [6.14 Fried Foods (5)](#614-fried-foods-5)
+  - [6.15 Alien Cuisine (10)](#615-alien-cuisine-10)
+  - [6.16 Mutation Cuisine (5)](#616-mutation-cuisine-5)
+  - [6.17 Legendary Dishes (5)](#617-legendary-dishes-5)
   - [6.18 Ridiculous Order Modifications](#618-ridiculous-order-modifications)
+- [7. Ingredient Database](#7-ingredient-database)
+  - [7.1 Ingredient System Rules](#71-ingredient-system-rules)
+  - [7.2 Ingredient Tables](#72-ingredient-tables)
+  - [7.3 Tag Index](#73-tag-index)
 - [8. Customer AI](#8-customer-ai)
   - [8.1 Purpose](#81-purpose)
   - [8.2 Rules & Mechanics — Spawning and Arrival](#82-rules--mechanics--spawning-and-arrival)
@@ -755,6 +778,7 @@ Unresolved identifiers: `ING_BACON`, `ING_BEEF_PATTY`, `ING_BREAD_SLICE`, `ING_B
   - [35.14 Acceptance Criteria](#3514-acceptance-criteria)
 - [36. Content Database Appendices](#36-content-database-appendices)
   - [36.1 Database Index and Identifier Conventions](#361-database-index-and-identifier-conventions)
+  - [36.2 Recipe Quick Reference](#362-recipe-quick-reference)
   - [36.3 Mutation Parts Database](#363-mutation-parts-database)
   - [36.4 Mutation Synergies Database](#364-mutation-synergies-database)
   - [36.5 Morph Combination Examples](#365-morph-combination-examples)

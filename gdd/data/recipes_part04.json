@@ -47,7 +47,7 @@
 "mut":"`ABL_067` Freeze Touch skips the freezer; `MUT_125` Penguin Body and `MUT_207` Ice Skates (ice) cut freeze time (Cold Snap)."},
 {"id":"RCP_SOP_004","name":"Alphabet Grumble Soup","unlock":16,"d":3,"var":0.85,"prep":55,
 "desc":"Tomato-vegetable soup with letter pasta that grumbles complaints while it cooks. Read the bowl: it's usually 'HOT' or 'EAT ME' or 'WHY'.",
-"ing":[["ING_ALPHABET_PASTA",2,"BOILED"],["ING_TOMATO",2,"BOILED"],["ING_BROTH",1,"BOILED"],["ING_CARROT",1,"BOILED"],["ING_CELERY",1,"BOILED"],["ING_ONION",1,"BOILED"],["ING_CROUTON",1,"RAW"]],
+"ing":[["ING_ALPHABET_PASTA",2,"BOILED"],["ING_TOMATO",2,"BOILED"],["ING_BROTH",1,"BOILED"],["ING_CARROT",1,"BOILED"],["ING_CELERY",1,"BOILED"],["ING_ONION",1,"BOILED"],["ING_CROUTON",2,"RAW"]],
 "steps":[["CHOP","STN_CUT","Dice ING_TOMATO, ING_CARROT, ING_CELERY and ING_ONION."],
 ["BOIL","STN_SOUP_POT","Simmer ING_TOMATO, ING_CARROT, ING_CELERY, ING_ONION in ING_BROTH.",15],
 ["BOIL","STN_STOVE","Boil ING_ALPHABET_PASTA; the letters mutter until done.",7],

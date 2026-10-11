@@ -447,21 +447,21 @@ def report(recs):
 # Mutation affinity hooks (recipe-side; see 6.1.9)
 # --------------------------------------------------------------------------------------------
 HOOKS = [
-    ("Hot Hands", "`fire`", "GRILL / FRY / BAKE / SAUTE steps", "T_ready x0.92 per part", "2 parts (x0.85)"),
-    ("Cold Snap", "`ice`", "FREEZE steps", "freeze time x0.6; `ABL_067` Freeze Touch completes one FREEZE "
+    ("Hot Hands", "`fire`", "GRILL / FRY / BAKE / SAUTE steps", "T_ready ×0.92 per part", "2 parts (×0.85)"),
+    ("Cold Snap", "`ice`", "FREEZE steps", "freeze time ×0.6; `ABL_067` Freeze Touch completes one FREEZE "
      "step instantly", "1 part"),
     ("Zap-Cook", "`ABL_066` (`MUT_036`)", "any one running heat component", "finishes it instantly at GOOD "
      "(forfeits Perfect Plate)", "cooldown per §36.6"),
     ("Many Hands", "`tentacle` or `multi`", "ASSEMBLE steps", "each input places 2 layers; `ABL_061` Extra "
      "Hands runs 2 stations", "1 part"),
     ("Kitchen Pro", "`chef`", "all heat components", "Perfect window +0.2 s per part", "3 parts (+0.6 s)"),
-    ("Spark Blend", "`electric`", "BLEND / MIX steps", "process time x0.85", "1 part"),
-    ("Steam Team", "`water`", "BOIL / STEAM steps", "T_ready x0.9; `ANM_030` extinguish 50 % faster", "1 part"),
+    ("Spark Blend", "`electric`", "BLEND / MIX steps", "process time ×0.85", "1 part"),
+    ("Steam Team", "`water`", "BOIL / STEAM steps", "T_ready ×0.9; `ANM_030` extinguish 50 % faster", "1 part"),
     ("Pincer Prep", "`claw`", "CHOP of meat / poultry / seafood / tentacle items", "taps -1 (min 2)", "1 part"),
     ("Green Thumb", "`plant`", "CHOP of veg / fruit / plant items", "green timing zone +20 % width", "1 part"),
     ("Space Chef", "`alien` or `cosmic`", "INFUSE / FLOAT steps; CHOP of alien items",
      "Perfect window +0.5 s; alien CHOP taps -1", "1 part"),
-    ("Sweet Tooth", "`sweet`", "SCOOP / POUR / MIX on dishes with a sweet item", "process time x0.85", "1 part"),
+    ("Sweet Tooth", "`sweet`", "SCOOP / POUR / MIX on dishes with a sweet item", "process time ×0.85", "1 part"),
     ("Sticky Grip", "`sticky`", "carrying a soup or drink", "never SPILLED when bumped", "1 part"),
     ("Sea Legs", "`aquatic`", "seafood / tentacle heat components", "T_burn +1 s", "1 part"),
     ("Glow Guide", "`glow`", "glowing-item components", "Perfect window +0.25 s", "1 part"),
@@ -534,30 +534,28 @@ def stars(d):
 
 def heat_line(h):
     label, a, stn, t, opts = h
-    lab = "`%s`" % label if label.startswith("ING_") else label
     w = opts.get("w", W_PERFECT)
     t_burn = t + BURN_AFTER
-    extra = []
+    extra = ""
     if a == "GRILL":
-        extra.append("flip %s–%s s" % (fmt_mb(round(0.40 * t, 1)), fmt_mb(round(0.75 * t, 1))) if opts.get("flip")
-                     else "no flip")
+        extra = "flip %s–%s" % (fmt_mb(round(0.40 * t, 1)), fmt_mb(round(0.75 * t, 1))) if opts.get("flip") \
+            else "no flip"
     elif a == "FRY":
-        extra.append("shake %s–%s s" % (fmt_mb(round(0.45 * t, 1)), fmt_mb(round(0.70 * t, 1))))
+        extra = "shake %s–%s" % (fmt_mb(round(0.45 * t, 1)), fmt_mb(round(0.70 * t, 1)))
     elif a == "BAKE":
-        extra.append("dial %s" % opts["dial"] if stn == "STN_OVEN" else
-                     "spin %s–%s s" % (fmt_mb(round(0.40 * t, 1)), fmt_mb(round(0.70 * t, 1))))
+        extra = ("dial " + opts["dial"]) if stn == "STN_OVEN" else \
+            "spin %s–%s" % (fmt_mb(round(0.40 * t, 1)), fmt_mb(round(0.70 * t, 1)))
     elif a == "SAUTE":
-        extra.append("tosses at %s s & %s s" % (fmt_mb(round(t / 3, 1)), fmt_mb(round(2 * t / 3, 1))))
+        extra = "toss %s/%s" % (fmt_mb(round(t / 3, 1)), fmt_mb(round(2 * t / 3, 1)))
     elif a == "BOIL" and stn == "STN_SOUP_POT":
-        extra.append("stir every 5 s")
+        extra = "stir/5 s"
     elif a == "INFUSE":
-        extra.append("pressure 50–75")
+        extra = "pressure 50–75"
     elif a == "FLOAT":
-        extra.append("nudge before drift-out")
-    tail = ("ON_FIRE %s s" % fmt_mb(t_burn + FIRE_AFTER)) if a in FIRE_RISK else \
-        ("boil-over %s s" % fmt_mb(t_burn + FIRE_AFTER))
-    return "%s %s @ `%s`: T_ready %s s · Perfect %s–%s s · burns %s s · %s · %s" % (
-        lab, a, stn, fmt_mb(t), fmt_mb(t), fmt_mb(t + w), fmt_mb(t_burn), tail, ", ".join(extra) or "auto")
+        extra = "nudge"
+    tail = ("fire %s" if a in FIRE_RISK else "boil-over %s") % fmt_mb(t_burn + FIRE_AFTER)
+    return "%s %s %s s (Perfect %s–%s, burn %s, %s%s)" % (
+        label, a, fmt_mb(t), fmt_mb(t), fmt_mb(t + w), fmt_mb(t_burn), tail, ("; " + extra) if extra else "")
 
 
 def countables(r, ib):
@@ -565,103 +563,63 @@ def countables(r, ib):
     for iid, q, st in r["ing"]:
         ov = r.get("counts", {}).get(iid)
         if ov:
-            out.append("`%s` %s %s" % (iid, ov[0], ov[1]))
+            out.append("%s %s %s" % (iid, ov[0], ov[1]))
             continue
         c = ib[iid].get("count")
         if c and (len(c) < 3 or c[2] == st):
-            out.append("`%s` %s %s" % (iid, fmt_mb(q * c[0]), c[1]))
+            out.append("%s %s %s" % (iid, fmt_mb(q * c[0]), c[1]))
     return out
 
 
 def learn_text(r):
     if r["unlock"] == 1:
-        return "known from start"
-    base = "%s MB at Cooking Academy `BLD_06` (5 × price) or quest grant" % thousands(r["learn"])
-    if r["cat"] == "ALN":
-        return base + "; needs the Alien Cuisine course (story chapter 5)"
-    if r["cat"] == "MUT":
-        return base + "; needs an owned `STN_INFUSER`"
+        return "known"
     if r["cat"] == "LEG":
-        return "granted only by its Legendary Recipe quest (see §20)"
-    return base
+        # Legendary Recipe quests in §20: RCP_LEG_00n is granted by QST_CHF_01(n+0) ... QST_CHF_015
+        return "Legendary Recipe quest `QST_CHF_%03d` only" % (10 + int(r["id"][-3:]))
+    return "%s MB%s" % (thousands(r["learn"]), {"ALN": " + Alien Cuisine course (`QST_STY_017`)", "MUT": " + owned STN_INFUSER"}
+                        .get(r["cat"], ""))
 
 
 def render_detail(r, c, ib):
-    o = []
-    o.append("#### %s — %s" % (r["id"], r["name"]))
-    o.append("")
-    o.append("> %s" % r["desc"])
-    o.append("")
-    o.append("- **Category:** %s %s · **Unlock:** L%d · **Difficulty:** %d/5 · **Base prep time:** %d s · "
-             "**Learn:** %s" % (r["cat"], CAT_NAME[r["cat"]], r["unlock"], r["d"], r["prep"], learn_text(r)))
-    o.append("- **Base selling price:** %s MB · **Ingredient cost:** %s MB · **Profit margin:** %s "
-             "(cost ratio %s; variance ×%.2f)" % (thousands(r["price"]), fmt_mb(r["cost"]), pct(r["margin"]),
-                                                  pct(r["ratio"]), r["var"]))
-    parts = []
-    for iid, q, st in r["ing"]:
-        sp = "★" if ib[iid]["supply"] == "SPECIAL" else ""
-        parts.append("`%s`%s ×%s (%s)" % (iid, sp, fmt_mb(q), st))
-    o.append("- **Ingredients:** " + " · ".join(parts))
-    o.append("- **Stations:** " + ", ".join("`%s`" % s for s in r["stations"]))
+    o = ["#### %s — %s" % (r["id"], r["name"]), "", "> %s" % r["desc"], ""]
+    o.append("- **Spec:** %s · unlock L%d · D%d · prep %d s · **%s MB** · cost %s MB · margin %s · learn %s" % (
+        r["cat"], r["unlock"], r["d"], r["prep"], thousands(r["price"]), fmt_mb(r["cost"]), pct(r["margin"]),
+        learn_text(r)))
+    o.append("- **Ingredients:** " + ", ".join("%s%s×%s %s" % (i, "★" if ib[i]["supply"] == "SPECIAL" else "",
+                                                             fmt_mb(q), st) for i, q, st in r["ing"]))
+    o.append("- **Stations:** " + ", ".join(x for x in r["stations"] if x not in STORAGE and x != "STN_WINDOW"))
     o.append("- **Steps:**")
-    o.append("  1. Fetch from storage: " + "; ".join(
-        "`%s` ← %s" % (stn, ", ".join("`%s`" % i for i, _q, _s in r["ing"] if ib[i]["storage"] == stn))
-        for stn in STORAGE if any(ib[i]["storage"] == stn for i, _q, _s in r["ing"])) + ".")
-    for s in r["steps"]:
-        extra = " *(T_ready %s s)*" % fmt_mb(s[3]) if s[0] in HEAT else ""
-        if s[0] == "MIX":
-            extra = " *(sequence: %s)*" % " → ".join("`%s`" % m for m in mentions(s[2]))
-        o.append("  1. **%s** @ `%s` — %s%s" % (s[0], s[1], s[2], extra))
-    o.append("  1. **SERVE** @ `STN_WINDOW` — %s" % r.get("serve", "ticket rail hand-off (T1–T2) or "
-                                                           "table delivery (T3+)."))
-    if r["stack"]:
-        st = r["stack"]
-        lay = []
-        for n, m in enumerate(st):
-            tag = ""
-            if st.count(m) > 1 and n == st.index(m):
-                tag = " (bottom)"
-            elif st.count(m) > 1 and n == len(st) - 1 - st[::-1].index(m):
-                tag = " (top)"
-            lay.append("`%s`%s" % (m, tag))
-        o.append("- **Stack (bottom → top):** " + " → ".join(lay))
-    else:
-        o.append("- **Stack:** unordered (set match, §5.4.9)")
+    for n, s_ in enumerate(r["steps"], 1):
+        o.append("  %d. %s @ %s: %s" % (n, s_[0], s_[1], s_[2]))
+    o.append("  %d. SERVE @ STN_WINDOW." % (len(r["steps"]) + 1))
+    o.append("- **Cook times:** " + (" · ".join(heat_line(h) for h in r["heat"]) if r["heat"] else
+                                      "none (no heat component)"))
     cnt = countables(r, ib)
-    o.append("- **Core components:** %s · **Container:** %s%s" % (
-        ", ".join("`%s`" % x for x in r["core"]), r["container"],
-        (" · **Countables (default):** " + ", ".join(cnt)) if cnt else ""))
-    if r["heat"]:
-        o.append("- **Ideal cooking time:** " + " ‖ ".join(heat_line(h) for h in r["heat"]))
-    else:
-        o.append("- **Ideal cooking time:** no heat component (graded on chop/blend/pour/scoop quality only).")
-    sat = ["+%d Perfect Plate (every graded component PERFECT)" % PERFECT_PLATE]
+    o.append("- **Build:** core %s · %s · %s%s" % (
+        ", ".join(r["core"]), r["container"], "ordered stack" if r["stack"] else "set match",
+        (" · counts " + ", ".join(cnt)) if cnt else ""))
+    sat = []
     if r["cat"] == "MUT":
-        sat.append("+10 \"Whoa!\" MutationBonus + 60 s cosmetic mutation part (C10 rule)")
+        sat.append("Whoa! +10 + 60 s cosmetic part")
     if r.get("loves"):
-        sat.append("Loves (+%d): %s" % (LOVE_PTS, ", ".join("`%s` %s" % (p, c["per"][p]) for p in r["loves"])))
+        sat.append("loves " + ", ".join(r["loves"]))
     if r.get("hates"):
-        sat.append("Hates (%d): %s" % (HATE_PTS, ", ".join("`%s` %s" % (p, c["per"][p]) for p in r["hates"])))
+        sat.append("hates " + ", ".join(r["hates"]))
     if r.get("sat"):
         sat.append(r["sat"])
-    o.append("- **Satisfaction modifiers:** " + "; ".join(sat) + ".")
+    o.append("- **Satisfaction:** " + " · ".join(sat))
     o.append("- **Complaints:** " + " · ".join("\"%s\"" % q for q in r["cx"]))
-    o.append("- **Visual:** %s" % r["look"])
+    o.append("- **Visual:** %s **FX:** %s" % (r["look"], r["vfx"]))
     anms = []
-    for s in r["steps"]:
-        a = ACTION_ANM.get(s[0])
-        if s[0] == "BAKE" and s[1] == "STN_PIZZA_OVEN":
+    for s_ in r["steps"]:
+        a = ACTION_ANM.get(s_[0])
+        if s_[0] == "BAKE" and s_[1] == "STN_PIZZA_OVEN":
             a = "ANM_026"
         if a and a not in anms:
             anms.append(a)
-    for a in ("ANM_019", "ANM_043"):
-        if a not in anms:
-            anms.append(a)
-    if any(h[1] in FIRE_RISK for h in r["heat"]):
-        anms.append("ANM_030")
-    o.append("- **Animation:** %s. %s" % (", ".join("`%s` %s" % (a, c["anm"][a]) for a in anms), r["anim"]))
-    o.append("- **Special effects:** %s" % r["vfx"])
-    o.append("- **Mutation interactions:** %s *Hooks:* %s." % (r["mut"], ", ".join(recipe_hooks(r, ib))))
+    o.append("- **Animation:** %s — %s" % (", ".join(anms), r["anim"]))
+    o.append("- **Mutations:** %s Hooks: %s." % (r["mut"], ", ".join(recipe_hooks(r, ib))))
     o.append("")
     return "\n".join(o)
 
@@ -686,7 +644,7 @@ def render_rules(c, recs, ib, ings):
     A = o.append
     A("## 6. Recipe Database")
     A("")
-    A("> **Owner:** A3 Recipes. **Data-backed:** every table and number in §6, §7 and §36.2 is generated by "
+    A("> **Data-backed:** every table and number in §6, §7 and §36.2 is generated by "
       "`python3 gdd/tools/render_recipes.py` from `gdd/data/ingredients*.json` and `gdd/data/recipes*.json`, "
       "which validates the data against the canon (150 recipes with fixed IDs, names and unlock levels; C9 tag "
       "vocabulary and core ingredient IDs; C7.1 station availability; C8 actions and states; C4.2 price curve). "
@@ -758,7 +716,7 @@ def render_rules(c, recs, ib, ings):
                                                                 max(r["unlock"] for r in by_cat[k])),
          {"ALN": "Alien Cuisine course — story chapter 5 (Zorp `NPC_027`); no ALN recipe can be bought before it",
           "MUT": "must own an `STN_INFUSER` (L40, TIER_06) before learning; every MUT dish INFUSEs",
-          "LEG": "a Legendary Recipe quest (see §20) per dish; never sold at the Academy"}.get(k, "—")]
+          "LEG": "a Legendary Recipe quest per dish (`QST_CHF_011`–`QST_CHF_015`, §20); never sold at the Academy"}.get(k, "—")]
         for k in CAT_ORDER]))
     A("")
     A("##### 6.1.3 Menu slots")
@@ -769,9 +727,9 @@ def render_rules(c, recs, ib, ings):
     A("")
     rows = []
     for t in c["tiers"]:
-        rows.append(["`%s`" % t["id"], t["name"], "L%d" % t["level"], t["menu"],
+        rows.append(["L%d" % t["level"], "`%s` %s" % (t["id"], t["name"]), t["menu"],
                      sum(1 for r in recs if r["unlock"] <= t["level"])])
-    A(md_table(["Tier", "Name", "Entry level", "Menu slots", "Recipes learnable at entry level"], rows))
+    A(md_table(["Entry level", "Tier", "Menu slots", "Recipes learnable at entry level"], rows))
     A("")
     A("##### 6.1.4 From recipe to ticket to dish to validation")
     A("")
@@ -816,19 +774,22 @@ def render_rules(c, recs, ib, ings):
     A("##### 6.1.5 Difficulty model")
     A("")
     rows = []
-    prec = {1: "≤3 ordered layers; chop N = 4 taps; one heat component at most",
-            2: "≤4 ordered layers; one or two heat components",
-            3: "5–6 ordered layers or a two-stage state chain; 2 heat components in parallel",
-            4: "≥3 parallel heat components across ≥2 stations; ≥6 ordered layers or 3-stage chains",
-            5: "≥4 heat components, multi-stage chains (e.g. CHOP → FRY → INFUSE), long ordered stacks"}
+    prec = {1: "short stacks; chop N = 4 taps; heat steps never need to overlap",
+            2: "short ordered stacks or one MIX sequence; two heat steps may overlap",
+            3: "longer stacks or a two-stage chain (e.g. BOIL → BLEND → FREEZE); overlapping timers",
+            4: "three or more stations busy at once; multi-stage chains; tight ordered builds",
+            5: "four or more stations, long chains (e.g. CHOP → FRY → INFUSE), big ordered builds, 4+ timers"}
     for d in range(1, 6):
         rs = [r for r in recs if r["d"] == d]
         lo, hi = DIFF[d]["ratio"]
-        rows.append(["D%d" % d, "%d–%d" % DIFF[d]["steps"], prec[d], "%d–%d" % DIFF[d]["prep"],
+        hc = [len(r["heat"]) for r in rs]
+        rows.append(["D%d" % d, "%d–%d" % DIFF[d]["steps"], "%d–%d" % (min(hc), max(hc)), prec[d],
+                     "%d–%d" % DIFF[d]["prep"],
                      "+%d s" % (5 * d), "%.0f–%.0f %%" % (100 * lo, 100 * hi), len(rs),
                      "%.0f s" % (sum(r["prep"] for r in rs) / max(1, len(rs))),
                      pct(sum(r["ratio"] for r in rs) / max(1, len(rs)))])
-    A(md_table(["Diff", "Numbered steps", "Precision demands", "Prep band s", "Patience (C11.2)",
+    A(md_table(["Diff", "Numbered steps", "Heat components (data)", "Precision demands", "Prep band s",
+                "Patience (C11.2)",
                 "Cost-ratio target", "Recipes", "Avg prep", "Avg cost ratio"], rows))
     A("")
     A("Legendary dishes ignore the step band (they are multi-station showpieces of 9–13 steps) and use a "
@@ -839,9 +800,9 @@ def render_rules(c, recs, ib, ings):
     A("")
     A("Each heat step (GRILL, FRY, BAKE, SAUTE, BOIL, STEAM, FLOAT, INFUSE) is a graded component with an "
       "authored `T_ready` at Lv1 with no stats. Canon C8 then fixes: **Perfect** `[T_ready, T_ready + 2.0 s]`, "
-      "**Good** until `T_burn = T_ready + 6 s`, **BURNED** after, **ON_FIRE** at `T_burn + 4 s` on open-heat "
-      "stations (GRILL, FRY, BAKE, SAUTE, FLOAT; BOIL/STEAM boil dry and INFUSE over-infuses to a BURNED grade "
-      "instead), UNDERCOOKED before `T_ready`. Effective values: `T_ready_eff = T_ready × StationTimeMult "
+      "**Good** until `T_burn = T_ready + 6 s`, **BURNED** after, **ON_FIRE** at `T_burn + 4 s` on fire-capable "
+      "stations (GRILL, FRY, BAKE, SAUTE, FLOAT and INFUSE — the infuser's cartoon green fire); pots and the "
+      "steamer (BOIL, STEAM) boil over instead (§5.4.2). UNDERCOOKED before `T_ready`. Effective values: `T_ready_eff = T_ready × StationTimeMult "
       "(C4.9) / (1 + 0.006 × COOK_SPD)` and `W_eff = 2.0 × StationWindowMult × (1 + 0.005 × COOK_QLT)`; §5.4.2 "
       "owns the full stack (burn grace, mutation affinity multipliers, RARE/WELL_DONE/SCREAMING sub-bands). Each "
       "detail block also lists the input the station expects: GRILL flip window `[0.40, 0.75] × T_ready` (or *no "
@@ -864,10 +825,10 @@ def render_rules(c, recs, ib, ings):
     A("")
     A("Dish modifiers are added inside the `P_offset` term of the C11.3 satisfaction formula as a **dish offset**, "
       "clamped to −15…+15 in total: **Perfect Plate +%d** when every graded component is PERFECT; **Loves +%d** and "
-      "**Hates %d** for the listed personalities (C11.1; §9 may list further preferences, which stack inside the "
+      "**Hates −%d** for the listed personalities (C11.1; §9 may list further preferences, which stack inside the "
       "same clamp). Mutation Cuisine applies the C10 rule: +10 \"Whoa!\" as the `MutationBonus` term plus a 60 s "
       "client-only cosmetic mutation part. Complaint lines are barks played at *Inspect food* (§8) when a "
-      "component grades below GOOD or a *hates* modifier fires." % (PERFECT_PLATE, LOVE_PTS, HATE_PTS))
+      "component grades below GOOD or a *hates* modifier fires." % (PERFECT_PLATE, LOVE_PTS, -HATE_PTS))
     A("")
     A("##### 6.1.9 Mutation affinity hooks")
     A("")
@@ -878,6 +839,41 @@ def render_rules(c, recs, ib, ings):
     A("")
     A(md_table(["Hook", "Part tag / ability", "Applies to", "Default effect [TUNABLE]", "Stack cap"],
                [list(h) for h in HOOKS]))
+    A("")
+    A("##### 6.1.10 How to read a recipe block (6.3–6.17)")
+    A("")
+    A(md_table(["Line", "Contents"], [
+        ["quote", "description (flavour text shown in the Recipe Book)"],
+        ["Spec", "category · unlock level · difficulty D1–D5 · base prep time · **base selling price** · ingredient "
+         "cost · profit margin · learn cost (5 × price; ALN/MUT/LEG gates per 6.1.2)"],
+        ["Ingredients", "ID ×qty and the state required at assembly; ★ = SPECIAL stock (6.1.7)"],
+        ["Stations", "processing and assembly stations in step order; the storage fixture of each ingredient (§7) and "
+         "`STN_WINDOW` (SERVE) are always implied"],
+        ["Steps", "numbered canon actions at canon stations. MIX steps name ingredients in their canonical insertion "
+         "sequence (§5.4.6). The **final ASSEMBLE step names the layers bottom → top: that order is the canonical "
+         "stack** graded by the assembly-order factor (a repeated bread is the bottom/top halves). Ingredients are "
+         "fetched from storage before their first step"],
+        ["Cook times", "per heat component: T_ready, Perfect window, burn and fire/boil-over times at Lv1 with no "
+         "stats, plus the station input (flip window, shake window, oven dial, pizza spin, tosses, stirs, pressure, "
+         "nudges) — 6.1.6"],
+        ["Build", "core components (omission = wrong dish, §6.18.4) · container · ordered stack or set match · "
+         "default counts of countable components"],
+        ["Satisfaction", "dish offsets: Perfect Plate +%d always applies; loves +%d / hates −%d by personality ID; "
+         "Mutation Cuisine Whoa! bonus" % (PERFECT_PLATE, LOVE_PTS, -HATE_PTS)],
+        ["Complaints", "barks used at Inspect food (§8) on a sub-GOOD component or a *hates* match"],
+        ["Visual / FX", "blocky Roblox look of the plated dish and its kid-safe effects (Reduced Effects variant noted "
+         "where it matters)"],
+        ["Animation", "core animation IDs (C21) for the station actions, then dish-specific notes. Every dish also "
+         "uses `ANM_019` Serve (hand-off) and `ANM_043` Eat; dishes with open-heat steps add `ANM_030` Extinguish "
+         "fire as their failure recovery; FREEZE uses `ANM_006` Carry item"],
+        ["Mutations", "signature mutation interaction (canon `MUT_`/`ABL_` IDs), then the 6.1.9 hooks that apply"],
+    ]))
+    A("")
+    used = sorted({p for r in recs for p in r.get("loves", []) + r.get("hates", [])})
+    A("**Personality legend (C11.1):** " + " · ".join("`%s` %s" % (p, c["per"][p]) for p in used) + ".")
+    A("")
+    anms = sorted(set(ACTION_ANM.values()) | {"ANM_026"})
+    A("**Animation legend (C21):** " + " · ".join("`%s` %s" % (a, c["anm"][a]) for a in anms) + ".")
     A("")
     return "\n".join(o)
 
@@ -892,7 +888,7 @@ def render_rules2(c, recs, ib, ings):
         ["Perfect window `W_perfect`", "2.0 s [canon TUNABLE]", "per heat component, Lv1"],
         ["Burn offset", "T_ready + 6 s [canon TUNABLE]", "ON_FIRE 4 s later on open heat"],
         ["Perfect Plate bonus", "+%d [TUNABLE]" % PERFECT_PLATE, "dish offset"],
-        ["Love / hate modifier", "+%d / %d [TUNABLE]" % (LOVE_PTS, HATE_PTS), "dish offset"],
+        ["Love / hate modifier", "+%d / −%d [TUNABLE]" % (LOVE_PTS, -HATE_PTS), "dish offset"],
         ["Dish offset clamp", "−15…+15 [TUNABLE]", "inside `P_offset`"],
         ["Order weight love / hate", "×2.0 / ×0.25 [TUNABLE]", "menu draw"],
         ["Hand-mix penalty", "1.5 × MIX time [canon]", "MIX at `STN_PREP` before `STN_MIXER`"],
@@ -1080,6 +1076,9 @@ def render_pricing(c, recs, ib, meta):
                [[L, "%.2f" % (10 * 1.05 ** (L - 1)), "≈ %d" % ref,
                  ", ".join("`%s`" % r["id"] for r in recs if r["unlock"] == L) or "—"] for L, ref in refs]))
     A("")
+    A("The formula is authoritative: canon's rounded reference values drift by up to 0.7 % at L80+ "
+      "(e.g. L80 ≈ 469 vs 472.01 computed).")
+    A("")
     A("#### 6.2.2 Worked examples")
     A("")
     for rid in meta.get("worked_examples", []):
@@ -1133,9 +1132,9 @@ def render_pricing(c, recs, ib, meta):
     rows = []
     for rid in meta.get("payback_examples", []):
         r = rb[rid]
-        rows.append(["`%s`" % rid, r["name"], thousands(r["learn"]), "%.2f" % (r["price"] - r["cost"]),
+        rows.append([r["name"], "`%s`" % rid, thousands(r["learn"]), "%.2f" % (r["price"] - r["cost"]),
                      "%.1f" % (r["learn"] / (r["price"] - r["cost"]))])
-    A(md_table(["ID", "Name", "Learn MB", "Profit per serving MB", "Servings to repay"], rows))
+    A(md_table(["Recipe", "ID", "Learn MB", "Profit per serving MB", "Servings to repay"], rows))
     A("")
     A("#### 6.2.6 Economy hooks")
     A("")
@@ -1173,7 +1172,7 @@ def render_s7(c, recs, ings, meta):
     n_s = [i for i in ings if i["supply"] == "SPECIAL"]
     A("## 7. Ingredient Database")
     A("")
-    A("> **Owner:** A3 Recipes. Generated by `python3 gdd/tools/render_recipes.py` from "
+    A("> Generated by `python3 gdd/tools/render_recipes.py` from "
       "`gdd/data/ingredients*.json`; the *Compatible recipes* column is computed from §6. All %d canon core "
       "ingredient IDs (C9) are defined here, plus every other ingredient the 150 recipes need: **%d ingredients** "
       "(%d BASIC, %d SPECIAL)." % (len(c["core"]), len(ings), len(n_b), len(n_s)))
@@ -1192,8 +1191,8 @@ def render_s7(c, recs, ings, meta):
     for line in meta["ingredient_rules"]:
         A(line)
     A("")
-    A(md_table(["Storage station", "Holds", "SPECIAL stock capacity per fixture (units)", "Available"], [
-        ["`%s`" % s, {"STN_PANTRY": "dry goods, sauces in jars, candy", "STN_FRIDGE": "chilled: meat, dairy, "
+    A(md_table(["Fixture", "Station", "Holds", "SPECIAL stock capacity per fixture (units)", "Available"], [
+        [c["stations"][s], "`%s`" % s, {"STN_PANTRY": "dry goods, sauces in jars, candy", "STN_FRIDGE": "chilled: meat, dairy, "
                       "produce, ice, ice-cream base", "STN_FREEZER": "frozen-tag stock and anything that must "
                       "stay solid"}[s], STORE_CAP[s], "L%d, %s" % c["avail"][s]] for s in STORAGE]))
     A("")
@@ -1201,7 +1200,7 @@ def render_s7(c, recs, ings, meta):
     A("")
     A(md_table(["Variable", "Value", "Notes"], [
         ["Basic unit cost", "0.5–6 MB [TUNABLE]", "netted at serve"],
-        ["Special unit cost", "≥ 6 MB; legendary 30–320 MB [TUNABLE]", "paid at crate purchase"],
+        ["Special unit cost", "≥ 5 MB; legendary 30–320 MB [TUNABLE]", "paid at crate purchase"],
         ["Crate price", "crate size × unit cost [TUNABLE]", "no bulk discount; stocker discount applies"],
         ["Stock capacity", "Pantry 60 · Fridge 40 · Freezer 30 units per fixture [TUNABLE]", "SPECIAL only"],
         ["Delivery time", "30 s online, instant on login for offline orders [TUNABLE]", "`STN_DELIVERY`"],
@@ -1225,6 +1224,14 @@ def render_s7(c, recs, ings, meta):
         ["L%d–L%d" % (lo, hi), sum(1 for i in ings if lo <= i["unlock"] <= hi),
          sum(1 for i in n_b if lo <= i["unlock"] <= hi), sum(1 for i in n_s if lo <= i["unlock"] <= hi)]
         for lo, hi in bands]))
+    A("")
+    A("#### Player Interactions")
+    A("")
+    A("- **Co-op (§21):** any co-op player can carry and unpack the owner's crates and take stock for tickets; guests "
+      "can never buy crates or spend the owner's currency (C22 E12).")
+    A("- **Employees:** the Ingredient Stocker buys, carries and unpacks crates; Prep Cooks take BASIC items from "
+      "storage for CHOP/MIX steps; Chefs consume stock exactly like players.")
+    A("- **Customers:** never touch storage; SOLD OUT simply removes a dish from what they can order.")
     A("")
     A("#### Dependencies")
     A("")
@@ -1359,6 +1366,11 @@ def main(argv):
         "36_02_recipe_quick_reference.md": render_s362(recs),
     }
     known = c["tokens"] | set(ib) | set(c["recipes"])
+    # Quest IDs are defined in §20 (generated from gdd/data/quests.jsonl); accept the ones that exist there.
+    qpath = os.path.join(OUT, "20_quests.md")
+    if os.path.exists(qpath):
+        with open(qpath, encoding="utf-8") as fq:
+            known |= set(re.findall(r"^\| `(QST_[A-Z]{3}_\d{3})` \|", fq.read(), re.M))
     bad = set()
     for name, text in outs.items():
         for tok in ID_RE.findall(text):
