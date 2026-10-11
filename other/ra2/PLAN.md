@@ -1,6 +1,6 @@
-# ra2 plan: Steal a Dragon (working title)
+# ra2 plan: Steal a Dragon
 
-Status: planning. Nothing is built yet.
+Status: built. See [README.md](README.md) for how to run and play it; this is the original plan.
 
 ## 1. What's trending (October 2026)
 
