@@ -641,7 +641,7 @@ EXAMPLES = [
                  M("RCP_TAC_010", 4), M("RCP_MUT_002", 4, special="ING_MUTAGEN_GOO"), M("RCP_PST_010", 3),
                  M("RCP_DES_014", 3), M("RCP_SAN_010", 3), M("RCP_ALN_006", 3, special="ING_STARDUST")],
         "stock": {"ING_GOLDEN_PATTY": 700, "ING_MUTAGEN_GOO": 900, "ING_STARDUST": 900},
-        "stocker_budget": 120000,
+        "stocker_budget": 20000,
         "roster": [{"id": "EMP_076", "morale": 85, "energy": 95},
                    {"id": "EMP_097", "morale": 85, "energy": 95},
                    {"id": "EMP_011", "morale": 85, "energy": 95, "trained": {"cook": 100}},
@@ -657,6 +657,7 @@ EXAMPLES = [
                    {"id": "EMP_052", "morale": 80, "energy": 95},
                    {"id": "EMP_060", "morale": 80, "energy": 95},
                    {"id": "EMP_068", "morale": 80, "energy": 95},
+                   {"id": "EMP_069", "morale": 85, "energy": 95},
                    {"id": "EMP_083", "morale": 80, "energy": 95},
                    {"id": "EMP_090", "morale": 80, "energy": 95}],
     },
@@ -831,13 +832,21 @@ def render_example(r, idx):
     if r["closed_at"]:
         w("Step %d would have lost money (Net_step < 0), so the Manager **closed early**: that step is voided (no customers, no wages) and the simulation stops." % r["closed_at"])
         w("")
-    if r["sold_out"]:
-        so = {}
+    if r["stock_used"]:
+        by_step = {}
         for rc, stp in r["sold_out"]:
-            so.setdefault(rc, stp)
-        w("Special stock: %s used; %s went **SOLD OUT** after step %s, so later steps recompute PrepSec_avg and AvgTicket without it." % (
-            ", ".join("`%s` %.0f units" % kv for kv in r["stock_used"].items()),
-            ", ".join("`%s`" % k for k in so), ", ".join(str(v) for v in so.values())))
+            by_step.setdefault(stp, []).append("`%s`" % rc)
+        txt = "Special stock used: %s (left: %s)." % (
+            ", ".join("`%s` %s" % (k, fmt(v)) for k, v in sorted(r["stock_used"].items())),
+            ", ".join("%s" % fmt(v) for k, v in sorted(r["stock_end"].items())))
+        if r["autobuy_log"]:
+            txt += " Stocker auto-buy: %d top-ups in steps %d–%d costing %s MB (charged inside those steps' Ingredients) until the %s MB budget ran out." % (
+                len(r["autobuy_log"]), r["autobuy_log"][0][0], r["autobuy_log"][-1][0],
+                fmt(sum(a[3] for a in r["autobuy_log"])), fmt(ex.get("stocker_budget", 0)))
+        if by_step:
+            txt += " **SOLD OUT** from " + "; ".join("step %d: %s" % (k, ", ".join(v)) for k, v in sorted(by_step.items())) + \
+                " — later steps recompute PrepSec_avg and AvgTicket without those dishes."
+        w(txt)
         w("")
     if compact:
         w("Incidents: λ = %.2f → %d drawn (%s MB net, within caps); discoveries: %s." % (
