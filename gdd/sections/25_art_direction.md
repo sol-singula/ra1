@@ -233,7 +233,7 @@ attachments. The table below adds the art envelope and per-slot budgets. These p
 4. **Skinned parts** (tails, long necks, tentacles, wings, antennae) use an armature of 2–6 bones with unique names
    and ≤ 4 weights per vertex. Bones arrive as `Bone` instances, which SecondaryMotion drives (§26).
 5. **LODs.** Export `_L0` and `_L1` (≈ 40 % of L0 tris). HEAD parts also export an `_L2` silhouette (≤ 300 tris),
-   which the §30 impostor swaps in. Body impostors are authored once per body-plan class (§25.3.8), not per part.
+   which the §30 impostor swaps in. Body impostors are authored once per body-plan class (§25.3.9), not per part.
 6. The pre-export validator script checks tri counts against §25.3.1, envelope fit, required sockets, UVs inside
    the 0–1 atlas space, and the 0.25-stud pivot grid.
 7. **Studio settings,** applied by the Asset Validator plugin on the templates (these cannot be changed at
@@ -401,7 +401,24 @@ inspection, from `ItemS` using the canon §C11.3 thresholds. It sets `Decal.Text
   - **Balance:** scythes, spatulas and whisks; the item balances on the flat side.
   - **Hover:** fallback; the item floats 0.25 stud off the attachment with a 1 Hz bob.
 
-#### 25.3.8 Budgets, LOD and impostors
+#### 25.3.8 NPC signature meshes
+
+Some named NPCs (§19) need body pieces that are not in the mutation catalogue (§36.3), so key characters stay
+unique. These **signature meshes** are NPC-only: never obtainable, stat-free, and listed in §19 as plain words with
+no ID. They are authored like mutation parts: same R15 attachment contract (§C13.7), same 0.25-stud grid and palette
+rules, and they count toward the 24-MeshPart / 6,000-triangle NPC budget.
+
+| Group | Signature meshes (from the canon key NPCs, §C16.3) | Attachment slot |
+|---|---|---|
+| Heads | moose head (`NPC_002`), tortoise head (`NPC_001`), hagfish head (`NPC_015`), snail head (`NPC_017`), train-engine head (`NPC_019`), giant rat head with crown (`NPC_020`), mole head (`NPC_022`), anglerfish head (`NPC_030`) | HEAD |
+| Torsos | toaster torso (`NPC_001`), vending-machine torso (`NPC_004`), filing-cabinet torso (`NPC_007`), tweed torso (`NPC_009`), corkboard torso (`NPC_012`), grandfather-clock torso (`NPC_018`), boombox torso (`NPC_024`), traffic-cone body (`NPC_026`), tour-bus torso (`NPC_027`), news-desk body (`NPC_030`), centipede body (`NPC_019`) | TORSO |
+| Limbs and hands | forklift legs (`NPC_006`), escalator legs (`NPC_014`), microphone hand (`NPC_011`), clipboard hands (`NPC_022`), mop arm (`NPC_028`) | LEG / ARM / HANDS |
+| Props worn as parts | monocle (`NPC_003`), lab coat (`NPC_013`), mysterious cloak (`NPC_015`), smartphone face (`NPC_021`) | FACE / BACK / SKIN layer |
+
+Rules: budget ≈ 30 signature meshes at launch (one art-week per ~6 meshes, §34); NPC_031+ use catalogue parts first
+and add a signature mesh only when §19 names one; each mesh ships with an impostor silhouette like any part (§25.3.9).
+
+#### 25.3.9 Budgets, LOD and impostors
 - **Player (L0):** ≤ 40 MeshParts, ≤ 15,000 tris (canon), guaranteed by §25.3.1. Other players' morphs render at
   L0 within 40 studs, at L1 beyond that, and as impostors beyond 100 studs. This is a client choice, stricter than
   canon.
@@ -772,7 +789,7 @@ with impostors.
    hidden interpenetration is accepted; visible clipping > 0.1 stud fails review.
 2. **Horns plus toque.** Resolved by the HatMode and HORNS rules in §25.3.7. `MUT_102` suppresses the toque.
 3. **Faceless and screen heads.** Front sticker cards or Screen-style faces (§25.3.6).
-4. **NPC over the MeshPart budget.** Deterministic drop order (§25.3.8), so every client renders the same customer.
+4. **NPC over the MeshPart budget.** Deterministic drop order (§25.3.9), so every client renders the same customer.
 5. **Neon pink signage next to a Mythic item.** Signage pink `#FF4FD8` is offset from Mythic `#FF3EA5`, and rarity
    always carries its shape glyph.
 6. **Low-end devices without Future lighting quality.** Neon self-illumination and painted glows keep signage

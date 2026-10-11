@@ -54,7 +54,7 @@ words with no ID.
 | STORY | 9 | yes (chapter-aware position) | scripted | campaign cast; may appear in the player's restaurant during set pieces |
 | QUEST | 80 | while the district is loaded | short wander ≤ 12 studs (PATROL/RIDE NPCs: fixed loops) | gives or is involved in ≥ 1 quest |
 | AMBIENT | 7 | district loaded | full schedule | color, barks, hints; still involved in ≥ 1 quest |
-| BOSS | 1 | event-driven | event script | King Ratbeard during `EVT_007` (A6/A12 define the fight) |
+| BOSS | 1 | event-driven | event script | King Ratbeard during `EVT_007` (§11 and §36.11 define the fight) |
 
 ### 19.3 Dialogue trees (conditions, variables, effects)
 
@@ -204,10 +204,10 @@ stats, recipes, mutations or services.
 - **Movement:** server tweens proxy CFrames along precomputed district waypoint graphs at 4 Hz, and clients
   interpolate. Named NPCs never use runtime `PathfindingService`. If a waypoint is blocked > 3 s, the NPC
   waits, then "poofs" to the next node (cartoon puff, "Pardon my morph!").
-- **Services:** an `NPCService` module inside `QuestService`'s domain (§27 may host it as a submodule of
-  `QuestService`) owns proxies, schedules and dialogue evaluation. Remotes: `NPC.Interact(npcId)`,
-  `NPC.Choose(npcId, nodeId, choiceIndex)`, `NPC.Gift(npcId, recipeId)`. Server→client: `NPC.Dialogue(node)`,
-  `NPC.Bark(npcId, key)`.
+- **Services:** the `Dialogue` submodule of `QuestService` (§27) owns named-NPC proxies, schedules and dialogue
+  evaluation; city discovery state lives in its `Discovery` submodule. Remotes (catalogued in §27):
+  `Quest.Interact {npcId}`, `Quest.DialogueChoice {npcId, nodeId, choice}`, `Quest.Gift {npcId, recipeId}`;
+  server→client `Quest.Dialogue {node}` and `Quest.Bark {npcId, key}`.
 - **Persistence (§28):** `profile.npc = { hearts = {[npcId] = points}, lastChatDay = {[npcId] = dayIndex},
   lastGiftDay = {...}, flags = {...} }`. Days are UTC day indices computed from server `os.time()`.
 
@@ -401,7 +401,7 @@ involved in. **Interaction behavior** gives the behavior class (§19.5), what th
 | # | Situation | Ruling |
 |---|---|---|
 | N1 | A quest needs an NPC in a district with no players loaded | The proxy spawns when the player enters the district (QUEST/AMBIENT spawn rule), and quest markers on the map always show the anchor position. |
-| N2 | Story NPC "visits" the player's restaurant (Grimewell in `QST_STY_003`, Zorp in `QST_STY_014`, Baron in Ch. 9) | `NPCService` spawns a temporary proxy inside the owner's instanced interior. Co-op guests see it, but only the owner's quest advances. Guests get a "witness" bark. The proxy despawns when the beat ends or after 10 min. |
+| N2 | Story NPC "visits" the player's restaurant (Grimewell in `QST_STY_003`, Zorp in `QST_STY_014`, Baron in Ch. 9) | `QuestService.Dialogue` spawns a temporary proxy inside the owner's instanced interior. Co-op guests see it, but only the owner's quest advances. Guests get a "witness" bark. The proxy despawns when the beat ends or after 10 min. |
 | N3 | Two players with different quest states talk to the same NPC | Dialogue is per player. The NPC faces the latest speaker, and neither conversation blocks the other. |
 | N4 | Player disconnects mid-dialogue | No effect is applied until the server has processed the choice. `TurnIn` is a single atomic `QuestService` transaction (§20.7), so a half-finished conversation can never pay out. |
 | N5 | NPC is moved by an event override (§19.5) while holding a quest marker | The marker and waypoint follow the NPC. Turn-in works at the override location, and the NPC returns to its anchor when the event ends. |
@@ -419,7 +419,7 @@ involved in. **Interaction behavior** gives the behavior class (§19.5), what th
 - **§18 / §36.10 / §36.11:** building interiors, anchors, waypoint graphs and event schedules (`EVT_` overrides).
 - **§20:** quest IDs, states and markers. Dialogue effects call `QuestService` (`OfferQuest`, `TurnIn`, `TalkObjective`).
 - **§12 / §36.3 / §13:** mutation parts used in NPC morphs; `MorphAssemblyService` builds the visuals.
-- **§25 / §26 / §36.14 / §36.15:** signature meshes, idle animations, blip voices and bark SFX (A16 assigns IDs).
+- **§25 / §26 / §36.14 / §36.15:** signature meshes, idle animations, blip voices and bark SFX (§36.14/§36.15 assign IDs).
 - **§24:** dialogue box, heart row, quest markers and the "Friends of Morph City" journal tab.
 - **§27 / §28 / §29:** service hosting, the `profile.npc` schema, and remote rate limits.
 - **§31:** analytics events `mmr_npc_talk {npcId, nodeId}`, `mmr_npc_gift {npcId, recipeId, fav}`, `mmr_npc_heart_up {npcId, hearts}`,

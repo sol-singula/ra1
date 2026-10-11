@@ -300,7 +300,35 @@ Each block gives **Phases** (minute:second from T0), **Mechanics**, **Success / 
   clamped to −15…+15 (§C11.3).
 - `EVT_009` forces night for its duration; a concurrent modifier keeps its rules but uses night lighting.
 
-#### 36.11.5 Acceptance Criteria
+#### 36.11.5 Story Replay mode
+
+The story campaign must never wait on the live calendar (§20). When a story step needs an event that is not running
+within 60 minutes of the player starting that step, `QuestService` asks `CityEventService:StartReplay(questId,
+eventId, party)` for a **Story Replay** — a private copy of the event's script.
+
+| Event | Story steps that may replay | Replay arena | Replay script (shortened) | Duration cap |
+|---|---|---|---|---|
+| `EVT_005` Legendary Chef Tournament | `QST_STY_031`, `QST_STY_032` | private copy of the tournament kitchen in the `Interiors` region | qualifier round, then the finale cook-off judged by `NPC_029` | 15 min |
+| `EVT_007` Giant Rat King Attack | `QST_STY_019` | private copy of the Sewer King's Throne Room (`BLD_21`) | street defence wave, then the boss fight with `NPC_020` | 12 min |
+| `EVT_008` Food Critic Convention | `QST_STY_022` | private convention hall built from the `BLD_14` interior kit | three critic tastings scored by `NPC_016` | 12 min |
+
+Rules:
+- **Party:** solo or a party of up to 4 (the quest owner plus friends); difficulty scales with party size exactly as
+  the live event's per-player scaling. Joining friends do not need the quest themselves.
+- **Rewards:** a replay grants only the story objective and the normal XP for actions performed. It never grants the
+  event's Participation/Success/Top bands, Morph Capsules, trophies or global-goal contributions, so replays cannot be
+  farmed in place of the live event.
+- **Failure:** failing a replay costs nothing; the player may restart it at once. Leaving mid-replay keeps quest
+  progress at the start of the step.
+- **Restaurant:** while the owner is inside a replay, the restaurant follows the Away Mode rules (§18).
+- **Implementation:** the replay reuses the live event's script module with a `replay = true` flag that disables reward
+  and global-goal hooks. It runs in a reserved slot of the `Interiors` region (≥ 2,000 studs from other interiors,
+  §27) and is torn down when the party leaves or the cap expires.
+
+#### 36.11.6 Acceptance Criteria
+- **AC-18-62:** Starting `QST_STY_019`, `QST_STY_022`, `QST_STY_031` or `QST_STY_032` while the required event is more
+  than 60 minutes away offers a Story Replay; completing it advances the quest and grants no event rewards, capsules,
+  trophies or global-goal progress.
 
 - **AC-18-50:** All 32 events `EVT_001`–`EVT_032` are schedulable and runnable from a debug console, and each
   starts, resolves and pays rewards without errors.

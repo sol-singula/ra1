@@ -75,7 +75,7 @@
 "look":"Spaghetti twisted into a spiralling cone with meatballs orbiting on noodle strands.",
 "anim":"The cone keeps spinning on the plate for 3 s (prop rotation tween); meatballs orbit.",
 "vfx":"Swirl lines and a few flying parmesan flakes (Reduced Effects: static swirl decal).",
-"mut":"`MUT_197` Cloud Leg and `MUT_044`... `ABL_044` Gust Kick is combat-only; wind-themed customers cheer. `MUT_277` Orbiting Meatballs chefs get a free extra orbit (cosmetic)."},
+"mut":"Customers wearing `MUT_197` Cloud Leg or `MUT_274` Storm Cloud Hat cheer the weather (bark); `MUT_277` Orbiting Meatballs chefs get a free extra orbit (cosmetic)."},
 {"id":"RCP_PST_006","name":"Tentacle Carbonara","unlock":31,"d":4,"var":1.0,"prep":75,
 "desc":"Creamy egg-and-parmesan carbonara with sautéed tentacle rings and crispy bacon. Silky, squishy, and slightly cephalopod.",
 "ing":[["ING_PASTA",2,"BOILED"],["ING_TENTACLE",2,"SAUTEED"],["ING_EGG",2,"MIXED"],["ING_PARMESAN",1,"MIXED"],["ING_BACON",1,"SAUTEED"]],

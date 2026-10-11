@@ -22,7 +22,7 @@
 | STY | Story | no | chapter cast; turn in to the giver | no (can untrack) | one chapter at a time, quests in order |
 | DLY | Daily | daily pool | Job Board poster NPC (portrait only); auto-claim in journal | no; **reroll** instead | 3 slots |
 | WKY | Weekly | weekly pool | Job Board poster NPC; auto-claim | no; weekly reroll | 5 slots |
-| CHF | Cooking challenge | no | giver NPC | yes | up to 10 non-story quests active in total |
+| CHF | Cooking challenge | no | giver NPC | yes | up to 10 non-story quests active in total [TUNABLE] |
 | CBT | Combat challenge | no | giver NPC | yes | shared cap of 10 |
 | RPR | Repair challenge | no | giver NPC | yes | shared cap of 10 |
 | EXP | Exploration challenge | no | giver NPC | yes | shared cap of 10 |
@@ -84,11 +84,11 @@ Quality qualifiers: `≥GOOD` / `PERFECT` (§C8). `S≥n` means customer satisfa
 | `DefeatHostiles` | n, location/event? | `CombatService.TargetDizzied` | hostile customers, event hostiles, training dummies when stated |
 | `RepairObjects` | n, state/grade/location? | `RepairService.RepairCompleted` | an object counts once per damage instance (E3 rebuild counts once) |
 | `MaintainCleanliness` | value, duration | `RestaurantService.CleanlinessTick` | timer resets if K < value |
-| `VisitBuilding` | `BLD_` or "any distinct k" | `NPCService.ZoneEntered` | interior volume trigger, server-checked position |
-| `DiscoverSecret` | secret key | `CityService.SecretFound` | secret keys are listed in §18 (story props) or by canon §C13.8 |
-| `DiscoverLocation` | kind, n | `CityService.LocationDiscovered` | metro stations, landmarks, exhibits, collectibles |
-| `Travel` | mode (Metro / Pigeon Taxi), n distinct districts | `CityService.TravelCompleted` | |
-| `TalkToNPC` | `NPC_` or "distinct k" | `NPCService.TalkObjective` | dialogue node must be reached server-side |
+| `VisitBuilding` | `BLD_` or "any distinct k" | `QuestService.Dialogue.ZoneEntered` | interior volume trigger, server-checked position |
+| `DiscoverSecret` | secret key | `QuestService.Discovery.SecretFound` | secret keys are listed in §18 (story props) or by canon §C13.8 |
+| `DiscoverLocation` | kind, n | `QuestService.Discovery.LocationDiscovered` | metro stations, landmarks, exhibits, collectibles |
+| `Travel` | mode (Metro / Pigeon Taxi), n distinct districts | `QuestService.Discovery.TravelCompleted` | |
+| `TalkToNPC` | `NPC_` or "distinct k" | `QuestService.Dialogue.TalkObjective` | dialogue node must be reached server-side |
 | `CompleteEvent` | `EVT_` or "any", stage/score? | `CityEventService.ParticipationAwarded` | Bronze participation or better unless stated |
 | `HireEmployee` | role or `EMP_001`, n | `EmployeeService.Hired` | |
 | `AssignRole` | role or "distinct k" | `EmployeeService.Assigned` | |
@@ -109,7 +109,7 @@ Quality qualifiers: `≥GOOD` / `PERFECT` (§C8). `S≥n` means customer satisfa
 | `WinArenaMatch` | n, mode? | `MultiplayerService.ArenaResult` | every arena objective also accepts the non-PvP **Bash the Bots** (PvE) and **Cook-Off** race modes (§21), so **PvP is never required** |
 | `DeliverOrders` | n, destination? | `OrderService.DeliveryCompleted` | Delivery Depot missions (§18) or quest drop-offs |
 | `ReachLevel` | L | `ProgressionService.LevelUp` | state objective |
-| `MoveTo` | marker | `NPCService.ZoneEntered` | tutorial only |
+| `MoveTo` | marker | `QuestService.Dialogue.ZoneEntered` | tutorial only |
 
 ### 20.4 UI — journal, tracking, markers
 
@@ -119,7 +119,7 @@ Quality qualifiers: `≥GOOD` / `PERFECT` (§C8). `S≥n` means customer satisfa
   **Friends of Morph City** (§19.6).
 - **Quest card:** name, giver portrait, short description, objective checklist with progress bars ("7/10"), timer chip
   for timed quests, rewards row (currency icons + item thumbnails with rarity shape), Track toggle, Abandon (where allowed).
-- **HUD tracker:** up to **3** tracked quests (story auto-tracked first). Each shows the current step only. Tapping it
+- **HUD tracker:** up to **3** tracked quests [TUNABLE] (story auto-tracked first). Each shows the current step only. Tapping it
   sets a **waypoint** that draws an arrow-trail on the ground (client-only) and pins the map.
 - **Markers:** ! ? ↻ ★ … above NPCs and on the minimap (§19.4). Completed objective = check + chime + a small confetti
   burst (reduced-FX: chime only).
@@ -217,11 +217,11 @@ the final Legendary Recipe quest.
   the journal or at the NPC, not on accept, so accepting and walking away is never punished.
 - The timer runs only while the player is online and inside the required location (their restaurant, a district, an
   event zone). Leaving pauses it for up to 60 s; staying away longer fails the attempt.
-- **Fail** → state `Failed` → 60 s cooldown → `Available`. There is **no currency, item or XP penalty, ever**. Only the
+- **Fail** → state `Failed` → 60 s cooldown [TUNABLE] → `Available`. There is **no currency, item or XP penalty, ever**. Only the
   timed attempt's progress resets; untimed steps already completed in the same quest stay completed.
 - **Disconnect / server shutdown** during a timed attempt voids the attempt (no fail count, no cooldown).
 - **Story Assist:** after 3 failed attempts of the same STY or TUT step, the player may toggle Story Assist for that step
-  (+50 % time, −20 % count targets rounded up, same rewards). The story can always be finished (§26.4).
+  (+50 % time, −20 % count targets rounded up, same rewards) [TUNABLE]. The story can always be finished (§26.4).
 
 **Event-dependent quests**
 
@@ -229,7 +229,7 @@ the final Legendary Recipe quest.
   next 24 h. Progress **persists across event occurrences** and they never fail.
 - Story quests that need an event (`QST_STY_019`, `QST_STY_022`, `QST_STY_031`, `QST_STY_032`) open a **Story Replay**
   instance if the live event isn't running within 60 min of the player starting the step. Story Replay is a solo or
-  party instance of the event's script that grants only the quest objective, not the event's own rewards. A12 provides
+  party instance of the event's script that grants only the quest objective, not the event's own rewards. §36.11 provides
   the replay mode per event (§36.11).
 
 **Abandon / retry**

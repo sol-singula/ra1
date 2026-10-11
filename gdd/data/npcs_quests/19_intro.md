@@ -54,7 +54,7 @@ words with no ID.
 | STORY | 9 | yes (chapter-aware position) | scripted | campaign cast; may appear in the player's restaurant during set pieces |
 | QUEST | 80 | while the district is loaded | short wander ≤ 12 studs (PATROL/RIDE NPCs: fixed loops) | gives or is involved in ≥ 1 quest |
 | AMBIENT | 7 | district loaded | full schedule | color, barks, hints; still involved in ≥ 1 quest |
-| BOSS | 1 | event-driven | event script | King Ratbeard during `EVT_007` (A6/A12 define the fight) |
+| BOSS | 1 | event-driven | event script | King Ratbeard during `EVT_007` (§11 and §36.11 define the fight) |
 
 ### 19.3 Dialogue trees (conditions, variables, effects)
 
@@ -204,10 +204,10 @@ stats, recipes, mutations or services.
 - **Movement:** server tweens proxy CFrames along precomputed district waypoint graphs at 4 Hz, and clients
   interpolate. Named NPCs never use runtime `PathfindingService`. If a waypoint is blocked > 3 s, the NPC
   waits, then "poofs" to the next node (cartoon puff, "Pardon my morph!").
-- **Services:** an `NPCService` module inside `QuestService`'s domain (§27 may host it as a submodule of
-  `QuestService`) owns proxies, schedules and dialogue evaluation. Remotes: `NPC.Interact(npcId)`,
-  `NPC.Choose(npcId, nodeId, choiceIndex)`, `NPC.Gift(npcId, recipeId)`. Server→client: `NPC.Dialogue(node)`,
-  `NPC.Bark(npcId, key)`.
+- **Services:** the `Dialogue` submodule of `QuestService` (§27) owns named-NPC proxies, schedules and dialogue
+  evaluation; city discovery state lives in its `Discovery` submodule. Remotes (catalogued in §27):
+  `Quest.Interact {npcId}`, `Quest.DialogueChoice {npcId, nodeId, choice}`, `Quest.Gift {npcId, recipeId}`;
+  server→client `Quest.Dialogue {node}` and `Quest.Bark {npcId, key}`.
 - **Persistence (§28):** `profile.npc = { hearts = {[npcId] = points}, lastChatDay = {[npcId] = dayIndex},
   lastGiftDay = {...}, flags = {...} }`. Days are UTC day indices computed from server `os.time()`.
 

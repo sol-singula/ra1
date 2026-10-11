@@ -1291,7 +1291,7 @@ EmployeeHired, EmployeeFired, AssignmentChanged, UnpaidBreakChanged: Signal<...>
 transform, so the report, `pendingOfflineReport`, `lastSimAt = toTs`, the offline side effects (special-stock
 consumption, durability damage, staff energy/morale — each applied by its owner's registered pure function) and the
 Welcome Back Crate (E5, txn `wb:<lastSimAt>`) commit in the **same** session-locked `UpdateAsync` (E11); merges into an
-existing pending report; idempotent Collect (`claimedReportIds` ring of 20, txn `off:<reportId>`); discoveries
+existing pending report; idempotent Collect (`claimedReportIds` ring of 20, txn `offline:<reportId>`); discoveries
 (≤ 1 capsule per real day); negative elapsed time → 0 and flagged.
 
 ```lua
@@ -1407,6 +1407,9 @@ QuestAccepted, ObjectiveProgress, QuestCompleted, QuestClaimed: Signal<...>
 | `Quest.Claim` | RF C2S | `{ questId }` | transaction |
 | `Quest.Track` | Event C2S | `{ questId? }` | menu |
 | `Quest.DialogueChoice` | Event C2S | `{ npcId, nodeId, choice: 1..4 }` | interact |
+| `Quest.Interact` | Event C2S | `{ npcId }` | interact |
+| `Quest.Gift` | RF C2S | `{ npcId, recipeId }` | transaction |
+| `Quest.Dialogue` / `Quest.Bark` | Event S2C / Unrel S2C | `{ node }` / `{ npcId, key }` | — |
 | `Quest.Progress` | Batch S2C | `{ questId, objective, value }` | 20 Hz |
 
 **Validation.** No client "complete" remote exists; the dialogue node must be the player's current node with that NPC,
