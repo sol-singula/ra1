@@ -170,7 +170,7 @@
 "look":"Smooth glazed crust dome on top, toppings peeking out underneath, a tiny backwards clock decal.",
 "anim":"Customer eats it starting from the crust edge with a reversed ANM_043 (played backwards).",
 "vfx":"Rewind swirl particles spinning counter-clockwise.",
-"mut":"`MUT_024`... no — `MUT_040` Glitch Head customers love it (glitch flavour bark); Many Hands builds the inverted stack faster."},
+"mut":"Customers wearing `MUT_040` Glitch Head love it (glitch-flavour bark); Many Hands builds the inverted stack faster."},
 {"id":"RCP_PIZ_013","name":"Pizza Inside Another Pizza","unlock":45,"d":5,"var":0.95,"prep":120,
 "desc":"A baked mini pepperoni pizza sealed inside a larger fancy-cheese pizza. Cut it open to reveal the pizza within. Pizza-ception is now a word.",
 "ing":[["ING_DOUGH",2,"BAKED"],["ING_TOMATO_SAUCE",2,"BAKED"],["ING_MOZZARELLA",4,"BAKED"],["ING_PEPPERONI",3,"BAKED"],["ING_FANCY_FROMAGE",2,"BAKED"],["ING_MUSHROOM",1,"BAKED"],["ING_BELL_PEPPER",1,"BAKED"]],

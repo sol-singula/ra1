@@ -549,30 +549,34 @@ export type City = {                  -- fields required by §18.9.7
 #### 28.9.11 `offline` — simulation state (writer: `OfflineEarningsService`)
 
 ```lua
-export type IncidentLine = { inc: string, count: number, delta: number }  -- incident ID (§36.9), MB effect
+export type OfflineSegment = {        -- one simulated interval; each capped separately (§C15)
+	fromTs: UnixTime, toTs: UnixTime, simulatedSec: number, capHours: number,
+	capped: boolean, tier: number, closedEarlyStep: number?,
+}
 
-export type OfflineReport = {
-	reportId: string,                 -- deterministic: hash(UserId, fromTs, toTs, SIM_VERSION)
-	fromTs: UnixTime, toTs: UnixTime,
-	hours: number,                    -- simulated hours after cap
-	capHours: number,                 -- manager cap applied (§C14.3)
-	capped: boolean,                  -- "capped" label (§C22 E5)
-	segments: number,                 -- intervals merged into this report (each capped separately, §C15)
-	customers: number,
-	revenue: number, tips: number, ingredients: number, wages: number, repairs: number,
-	incidents: { IncidentLine },
-	discoveries: { ms: number, crates: { [string]: number }, capsules: number },  -- never RT (§C4.1)
-	net: number,                      -- max(0, sum of Net_step) (§C15)
+export type OfflineReport = {         -- contents defined by §17.7 (A11); fractions kept until payout
+	reportId: string,                 -- "<UserId>:<firstFromTs>:<lastToTs>:v<SIM_VERSION>" (§17.7)
 	simVersion: number,
+	segments: { OfflineSegment },
+	customers: number, revenue: number, tips: number, delivery: number, ingredients: number,
+	wages: number, autoRepairs: number, incidentNet: number, net: number,
+	ms: number, capsules: number,     -- discoveries; never RT (§C4.1)
+	crates: { { ing: string, units: number } },
+	damage: { { objectId: string, points: number } }, deferredRepairMB: number,
+	incidents: { { id: string, step: number, mb: number, employeeUid: string?, n: number } }, -- <= 20 kept
+	employeeLines: { { uid: string, kpi: { [string]: number } } },
+	soldOut: { { rcp: string, step: number } },
+	suggestions: { string },
+	welcomeBackCrate: boolean,        -- E5 crate (absence >= 7 days), granted at Collect (§17.7)
 }
 
 export type Offline = {
 	lastSimAt: UnixTime,              -- §C15; advanced by online saves and set to leave time (E1)
+	lastLogoutAt: UnixTime,           -- §17.7
 	simVersion: number,
 	pendingOfflineReport: OfflineReport?,
 	claimedReportIds: { string },     -- ring of CLAIMED_REPORT_RING = 20 (§C15)
-	lastCapsuleDay: DayStamp,         -- at most 1 offline Morph Capsule per real day (§C15)
-	lastWelcomeBackAt: UnixTime,      -- Welcome Back Crate idempotency (§C22 E5)
+	lastOfflineCapsuleDay: DayStamp,  -- at most 1 offline Morph Capsule per real day (§C15)
 	clockFlags: number,               -- loads where now < lastSimAt beyond tolerance (flagged, §C15)
 }
 ```
@@ -978,10 +982,8 @@ sequenceDiagram
    seeded function (`Seed = hash(UserId, lastSimAt, SIM_VERSION)`) that builds or merges `pendingOfflineReport`,
    applies offline side effects through the owners' registered pure functions (special-stock consumption in
    `inventory`, offline damage in `durability`, staff energy/morale in `employees`) and sets `lastSimAt = toTs`
-   (§C15) → grants the **Welcome Back Crate** when `now` minus the *stored* `lastSimAt` (read before the
-   simulation advanced it) is ≥ 7 days — 1 Morph Capsule + 50 MS, key `wb:<previous lastSimAt>`, applied through
-   `EconomyService`'s registered pure load-time grant (ownership by code, §27.17; §C22 E5) → returns
-   `(data, {UserId}, metadata)`. This is exactly the canon "one session-locked
+   (§C15) and, when `now` minus the *stored* `lastSimAt` is ≥ 7 days, sets the report's `welcomeBackCrate`
+   flag (§C22 E5; the crate is granted at Collect, §17.7) → returns `(data, {UserId}, metadata)`. This is exactly the canon "one session-locked
    `UpdateAsync`": the report and `lastSimAt` commit together or not at all (§C22 E11). A transform that throws
    is skipped and logged without blocking the load; for the offline transform that leaves `lastSimAt` unchanged,
    so the next session simulates the same interval — no loss, no duplicate (§27.8.11).
@@ -1092,9 +1094,9 @@ entry → `MarkDirty(player, "wallet")` → `LogEconomyEvent` (§31.12). Persist
 | Customer payment / tip | `serve:<ticketId>` (§27.12.5) | a ticket settles once (`OrderService`); tickets are never persisted (E1/E13) |
 | Quest reward claim | `quest:<questId>:<cycleStamp>` (0 for non-repeatables) | quest state `COMPLETE → CLAIMED`, `quests.doneBits` |
 | Achievement / milestone claim | `ach:<id>` / `mls:<id>` | `progression.achievements.unlocked` / `.milestones` |
-| Offline collect | `offline:<reportId>` (§27.8.11) | `claimedReportIds` ring + pending-equality check (§28.19) |
+| Offline collect | `offline:<reportId>` (MB), `offline:<reportId>:ms` (§27.8.11, §17.7) | `claimedReportIds` ring + pending-equality check (§28.19) |
 | Daily login reward | `login:<DayStamp>` | `quests.dailyLogin.lastClaimDay` |
-| Welcome Back Crate | `wb:<lastSimAt>` | granted in the same write that advances `lastSimAt` |
+| Welcome Back Crate | `offline:<reportId>:wb` | `welcomeBackCrate` flag on the report, cleared with the report at Collect (§17.7) |
 | Robux cosmetic grant | `rbx:<PurchaseId>` | `wallet.receipts` + `MMR_Receipts_v1` (§28.18) |
 | Tier upgrade | `tier:<TIER_NN>` | `restaurant.tier` already ≥ target |
 | Shop purchase (MB/MS/RT) | client-generated GUID per purchase attempt (§27.12.5); price always read from the server catalog | none needed: a new GUID is a new, paid purchase |
@@ -1218,8 +1220,8 @@ the same profile key as the reward — so no ordering of reconnects, retries or 
 | Daily login streak | `dailyLogin.lastClaimDay` (DayStamp, server clock) | `today > lastClaimDay`; streak continues only if `today == lastClaimDay + 1` |
 | **Offline earnings** (§C15) | `pendingOfflineReport.reportId`, `claimedReportIds` (ring 20) | request's `reportId == pending.reportId` **and** `∉ claimedReportIds`; then credit via key `offline:<reportId>`, append id, clear pending — one step |
 | Merged offline intervals | new deterministic `reportId` for the merged span | the superseded id was never claimable once replaced |
-| Offline Morph Capsule | `offline.lastCapsuleDay` | ≤ 1 per real day, decided at simulation time (§C15) |
-| Welcome Back Crate (E5) | granted in the load write that advances `lastSimAt` | absence measured against the stored `lastSimAt` |
+| Offline Morph Capsule | `offline.lastOfflineCapsuleDay` | ≤ 1 per real day, decided at simulation time (§C15) |
+| Welcome Back Crate (E5) | report flag `welcomeBackCrate` set in the load write | granted once with the report's Collect |
 | Achievements / milestones | `progression.achievements.unlocked[id]` / `progression.achievements.milestones[id]` | key absent |
 | One-time XP grants | `progression.xpOnceKeys` (§14) | key absent |
 | Tutorial gifts (QST_TUT_010 part, `EMP_001` via QST_TUT_012) | `quests.tutorial.choice`, `quests.tutorial.step` | choice unset / step below the granting step |
@@ -1473,7 +1475,7 @@ and drops any ID that no longer resolves to an account.
 | DP-06 | DataStore outage at join (§C22 E6) | Backoff 1/2/4/8/16 s → Safe Mode (never saved) → silent retry at 30 s → kick at 60 s with the friendly message. |
 | DP-07 | DataStore outage at leave | Session stays in memory retrying until success or `BindToClose`; the lock prevents any other server from loading older data meanwhile. |
 | DP-08 | Server clock is behind the stored `lastSimAt` | `H = 0`; beyond 120 s of skew, `clockFlags += 1` and a `clock_skew` flag (§C15). No negative earnings, no wage charge. |
-| DP-09 | Return after 30 days (§C22 E5) | Offline hours capped at the manager cap ("capped" label); Welcome Back Crate granted in the load write; no decay of anything stored. |
+| DP-09 | Return after 30 days (§C22 E5) | Offline hours capped at the manager cap ("capped" label); the report carries the Welcome Back Crate flag (granted at Collect); no decay of anything stored. |
 | DP-10 | Robux purchase while saves are failing | Grant is applied in memory but `NotProcessedYet` is returned until a save commits; Roblox re-delivers; the player keeps the item visibly in-session and it becomes durable on the next commit. |
 | DP-11 | An old build loads a profile written by a newer build | `future_schema` → refuse, no write, "fresher version" message, teleport to an updated server. |
 | DP-12 | Shutdown during heavy throttling (§C22 E13) | Parallel final saves within 25 s; unsaved sessions keep their lock (no other server loads stale data) and are logged; worst-case loss = autosave window. |
