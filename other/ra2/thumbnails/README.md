@@ -19,6 +19,13 @@ those models and to add nothing else. So every image shows:
 The text is vague on purpose: the game name **STEAL A DRAGON**, a single **?**, or nothing. None of them promise a
 reward, an event or an effect.
 
+## Bold style (new)
+
+`bold_01_carry_dragon.jpg`: the real dragon and avatar models (a red dragon sitting on an avatar's head, the
+wooden bat with the yellow end) on a plain, very saturated blue background with light rays, and the title in big
+yellow letters. The background shows no place and no objects, so there is nothing in it that could misrepresent
+the game, and the bright colours stand out in a grid of thumbnails.
+
 ## The 25
 
 | # | File | Text | What it shows | In the game |
