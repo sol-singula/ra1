@@ -73,6 +73,9 @@ ID_PATTERNS: dict[str, str] = {
     "ANM": r"ANM_\d{3}",
     "SFX": r"SFX_\d{3}",
     "MUS": r"MUS_\d{3}",
+    "CSEC": r"CSEC_\d{2}",
+    "CPROP": r"CPROP_\d{2}",
+    "CPIX": r"CPIX_\d{2}",
 }
 
 ANY_ID_RE = re.compile(r"(?<![A-Za-z0-9_])(?:" + "|".join(f"(?:{p})" for p in ID_PATTERNS.values()) + r")(?![A-Za-z0-9_])")

@@ -155,7 +155,7 @@ RoleStatAvg uses the role weights of §16 (e.g. Chef = 0.6 Cook + 0.3 Accuracy +
 | ▲ Uncommon | 47.9 | 0.44 | 2,090 | 50 | 23 |
 | ■ Rare | 62.7 | 0.58 | 10,890 | 152 | 22 |
 | ⬟ Epic | 77.7 | 0.72 | 63,460 | 483 | 13 |
-| ★ Legendary | 93.3 | 0.86 | 415,380 | 1397 | 13 |
+| ★ Legendary | 93.3 | 0.86 | 415,380 | 1,397 | 13 |
 
 #### 36.8.3 Content notes
 

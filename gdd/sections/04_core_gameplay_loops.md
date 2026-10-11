@@ -374,18 +374,18 @@ short play windows keep progressing. Formulas, incidents, the report screen and 
 
 #### 4.5.3 How much offline is worth (canon C15 target: 35–50 % of active net/h for a well-staffed restaurant)
 
-| Tier | Active net MB/h (canon C4.4) | Offline net MB/h (35–50 %) | Typical cap | One capped report |
-|---|---|---|---|---|
-| TIER_01 | 630 | 220–315 (Ollie alone ≈ 175, §32) | 2 h | 440–630 (≈ 350 with Ollie alone) |
-| TIER_02 | 1,080 | 378–540 | 2 h | 756–1,080 |
-| TIER_03 | 1,730 | 606–865 | 4 h | 2,424–3,460 |
-| TIER_04 | 3,100 | 1,085–1,550 | 4 h | 4,340–6,200 |
-| TIER_05 | 5,400 | 1,890–2,700 | 10 h | 18,900–27,000 |
-| TIER_06 | 9,600 | 3,360–4,800 | 10 h | 33,600–48,000 |
-| TIER_07 | 17,400 | 6,090–8,700 | 14 h | 85,260–121,800 |
-| TIER_08 | 32,800 | 11,480–16,400 | 14 h | 160,720–229,600 |
-| TIER_09 | 63,700 | 22,295–31,850 | 24 h | 535,080–764,400 |
-| TIER_10 | 120,500 | 42,175–60,250 | 24 h | 1,012,200–1,446,000 |
+| # | Tier | Active net MB/h (canon C4.4) | Offline net MB/h (35–50 %) | Typical cap | One capped report |
+|---|---|---|---|---|---|
+| 1 | TIER_01 | 630 | 220–315 (Ollie alone ≈ 175, §32) | 2 h | 440–630 (≈ 350 with Ollie alone) |
+| 2 | TIER_02 | 1,080 | 378–540 | 2 h | 756–1,080 |
+| 3 | TIER_03 | 1,730 | 606–865 | 4 h | 2,424–3,460 |
+| 4 | TIER_04 | 3,100 | 1,085–1,550 | 4 h | 4,340–6,200 |
+| 5 | TIER_05 | 5,400 | 1,890–2,700 | 10 h | 18,900–27,000 |
+| 6 | TIER_06 | 9,600 | 3,360–4,800 | 10 h | 33,600–48,000 |
+| 7 | TIER_07 | 17,400 | 6,090–8,700 | 14 h | 85,260–121,800 |
+| 8 | TIER_08 | 32,800 | 11,480–16,400 | 14 h | 160,720–229,600 |
+| 9 | TIER_09 | 63,700 | 22,295–31,850 | 24 h | 535,080–764,400 |
+| 10 | TIER_10 | 120,500 | 42,175–60,250 | 24 h | 1,012,200–1,446,000 |
 
 #### 4.5.4 How offline complements active play (and the guardrail)
 

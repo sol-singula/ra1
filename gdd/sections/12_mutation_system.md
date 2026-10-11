@@ -224,7 +224,7 @@ Motor6D clips; ears and antennae use 1–2-bone springs; prehensile tails and te
 | **Full 22-slot total** | **39** (+1 for a held utensil) | **15,000** | **5,200** | **1,440** |
 
 NPC Lo assets merge paired meshes that share a host (eyes, ears, horns, wings) into one MeshPart, so a fully filled NPC
-needs exactly 24; the generator's fill rates (§12.7) average 15–19.
+needs exactly 24; the generator's fill rates (§12.7) average 14–16 per NPC.
 
 ```lua
 --!strict
@@ -331,3 +331,355 @@ return MorphBuilder
 from `MorphParts/_Placeholder` and retries via `ContentProvider:PreloadAsync` after 5 s; stats are unaffected because the
 server never reads visuals. Server builds are rate-limited to one per player per 0.5 s (rapid equips coalesce into the
 latest loadout). A rebuild during an ability keeps the old Motor6D until the clip ends (≤ 1.5 s), then swaps.
+
+### 12.4 The 16 Mutation Categories
+
+Categories give art a shared visual language and give synergies (§36.4) and Lab fusion (§12.5) something to group by.
+Stat leanings come from each part's tags plus a small category bias, so a FOOD arm still leans "chef".
+
+| Category | Visual language | Stat leanings | Typical passives |
+|---|---|---|---|
+| MAMMAL | soft fur, round cartoon shapes, big friendly eyes | STR, DEF, CHARM | knockback resist, tips, patience, jump |
+| BIRD | feathers, beaks, bright plumage, constant bobbing | MOVE, LUCK, CHARM | glide, reveal, rare-drop weight |
+| REPTILE | glossy scales, frills, slit pupils, lazy blinks | DEF, MOVE | status resist, directional damage reduction |
+| AMPHIBIAN | wet gloss, bulging eyes, stretchy limbs | MOVE, EFFICIENCY | jump, long-tongue reach, sticky resist |
+| FISH | fins, iridescent scales, bubble eyes | MOVE, DEF (seafood COOK_QLT) | sewer swimming, soaked resist |
+| INSECT | chitin plates, antennae, compound eyes, buzzing | MOVE, EFFICIENCY | dodge, action-flow speed, jump |
+| ARACHNID | fuzzy multi-limbs, eight bead eyes, webs | REPAIR, EFFICIENCY, STR | sticky procs, repair speed, sticky-floor immunity |
+| MARINE | tentacles, suckers, barnacles, shells | COOK_SPD, DEF, EFFICIENCY | carry, reach, seafood speed, max HP |
+| DINOSAUR | chunky silhouettes, plates, frills, tiny arms | STR, DEF | knockback, thrown-damage reduction, intimidation |
+| MYTHOLOGICAL | glow, gold trim, flame-shaped (never burning) feathers | LUCK, CHARM (+ fire) | revive, jackpot, auras, calm |
+| ROBOT | tin plates, bolts, Neon lights, visor screens | REPAIR, EFFICIENCY | repair speed/cost, information HUDs |
+| OBJECT | household objects with cartoon faces; chrome/plastic SurfaceAppearance, never furred | EFFICIENCY, REPAIR, cooking | station-specific cooking, fire safety, cleanup |
+| FOOD | glossy edible-looking (no sauce drips on skin) | COOK_QLT, CHARM | dish quality, noodle speed, jackpot |
+| PLANT | leaves, bark, petals, gentle sway | EFFICIENCY, DEF, CHARM | regeneration, reach, thorns |
+| ALIEN | smooth grey/green skin, glow, cosmic scrolling textures | LUCK, EFFICIENCY | forecasts, beam reach, auto-clean |
+| ELEMENTAL | emissive crystal, lava, storm and cloud materials | STR, COOK_SPD | status procs and immunities, temperature stations |
+
+<!-- BEGIN GENERATED: category-counts -->
+<!-- END GENERATED: category-counts -->
+
+### 12.5 Rarities and Acquisition
+
+**Rules & Mechanics.** Rarity sets the stat budget, price, equip level, max level and sources. Rarity is always shown as
+color **and** shape (§24 accessibility).
+
+| Rarity | Parts | Equip Lv | Shop price (MB) + extra | Capsule odds | Max Lv | Sources (codes) |
+|---|---|---|---|---|---|---|
+| ● Common (gray) | 63 | 1 | 150–400 | 55 % | 5 | STARTER, SHOP_MART, CAPSULE, OFFLINE_FIND, EVENT |
+| ▲ Uncommon (green) | 84 | 5 | 800–2,000 | 27 % | 6 | SHOP_MART, CAPSULE, QUEST (Job Board, tutorial), EVENT, ARENA, OFFLINE_FIND |
+| ■ Rare (blue) | 75 | 12 | 4,000–10,000 + 20 MS | 12 % | 7 | SHOP_MART rotation, CAPSULE, QUEST, LAB_FUSION, EVENT, ARENA |
+| ⬟ Epic (purple) | 36 | 25 | 25,000–60,000 + 80 MS | 4.5 % | 8 | SHOP_ROTATION, LAB_FUSION, EVENT, ARENA, CAPSULE |
+| ★ Legendary (orange) | 10 | 40 | 150,000–400,000 + 250 MS + 10 RT | 1.3 % | 9 | SHOP_ROTATION weekly, LAB_FUSION, QUEST (story ch. 6–9), EVENT, CAPSULE |
+| ⬢ Mythic (magenta) | 5 | 60 | not sold | 0.2 % | 10 | LAB_FUSION route, QUEST (story finale), EVENT top rewards, CAPSULE |
+| ? Secret (rainbow on black) | 7 | on discovery | not sold | 0 % | 10 | SECRET conditions only (listed in §36.3) |
+
+**Prices.** Within the canon range, `Price = Min + (Max − Min) × PriceFactor`, PriceFactor = 0.2 (minor slot), 0.7
+(major slot), +0.3 if the part has an active (max 1.0), 0.0 for FX; rounded to 10 MB (Common/Uncommon), 100 (Rare), 500
+(Epic), 5,000 (Legendary). Resulting price points [TUNABLE]:
+
+<!-- BEGIN GENERATED: price-points -->
+<!-- END GENERATED: price-points -->
+
+**Sources in detail.**
+- **Mutation Mart** (`BLD_01`, `DST_02`; opens at `QST_TUT_010`): every Common and Uncommon whose equip level ≤ player
+  level + 5 is always in stock; **Rare rotation** of 6 slots (visible from Lv10) refreshes every 4 h at 00/04/08/12/16/20 UTC.
+- **Mystery Market** (`BLD_13`, `DST_09`, Lv20): 4 Epic slots refresh daily at 00:00 UTC; 1 Legendary slot weekly (Monday
+  00:00 UTC). Stock is **personal** (seeded by UserId + date) and the weekly Legendary is always one you do not own while
+  any remain; `EVT_024` adds 2 Epic slots. Prices never discount below the canon range.
+- **Lab fusion** (`BLD_11`, `DST_06`, Lv15): 3 parts of one rarity **from the same category** + cost → **one part of the
+  next rarity that you choose** from that category (falls back to next-rarity parts sharing a tag with an input when the
+  category has none). Inputs must be unequipped; a last copy above Lv1 cannot be consumed. Recipes [TUNABLE]: Rare ← 3
+  Uncommon + 40 MS + 1,000 MB; Epic ← 3 Rare + 150 MS + 5,000 MB; Legendary ← 3 Epic + 400 MS + 8 RT + 20,000 MB; Mythic ←
+  3 Legendary + 600 MS + 40 RT (canon) via the routes below. Fusion is deterministic: no random outcome.
+- **Morph Capsules** (earned only; odds printed on every capsule): rarity is rolled with the disclosed odds; the part
+  is uniform within the tier with **×2 weight for parts you do not own**, ×3 for the featured parts of a running event,
+  ×3 for OFFLINE_FIND parts in offline-discovery capsules. **Pity:** an Epic-or-better is guaranteed on the 40th capsule
+  without one (counter persists, shown in the UI). Duplicates auto-convert to MS (§12.6) unless "Keep copies for upgrades"
+  is on; copies beyond what max level needs always convert.
+- **Quests / events / arena / achievements:** Job Board quests (`BLD_10`) grant Uncommons; district chains grant Rares;
+  story chapters grant the Legendaries and Mythics named in §36.3; each city event features 3–8 parts on its reward track
+  and in its capsule pool; Arena seasons (§21) grant fighter parts; Morphdex milestones (§12.1) grant FX and `MUT_258`.
+- **Tutorial & starter:** every profile starts with `MUT_117`, `MUT_139` (both arms), `MUT_179` (both legs) and one random
+  starter head; `QST_TUT_010` grants one of `MUT_145` (Chef), `MUT_144` (Fighter), `MUT_153` (Repair), equippable at Lv1.
+
+**Mythic fusion routes.** Canon requires 3 Legendary parts of the same category, but only MYTHOLOGICAL, MARINE and
+OBJECT have Legendary parts, and the Mythics belong to FOOD, ALIEN and MYTHOLOGICAL. The route table resolves this; the
+player chooses the output:
+
+| Route | Inputs (any 3 copies, duplicates allowed) + 600 MS + 40 RT | Output choices |
+|---|---|---|
+| Mythological route | `MUT_037`, `MUT_084`, `MUT_108`, `MUT_200`, `MUT_229` | `MUT_242` Phoenix Wings or `MUT_138` Cosmic Nebula Body |
+| Marine route | `MUT_038`, `MUT_137`, `MUT_165` | `MUT_070` Black Hole Mouth or `MUT_168` Cosmic Chef Arm |
+| Object route | `MUT_178`, `MUT_258` | `MUT_039` Golden Burger Head |
+
+**Progression requirements.** Mart from `QST_TUT_010`; Arena rewards from Lv12 (`DST_10`); Lab and Museum from Lv15
+(`DST_06`); Mystery Market from Lv20 (`DST_09`). Parts may be *owned* below their equip level (a lucky capsule shows
+"Unlocks at Lv25") and may be upgraded early, but not equipped.
+
+**Anti-predatory rules (binding, §23).**
+1. Robux never buys parts (FX included), stats, MS, RT, capsules, upgrades, fusions, pity progress, shop refreshes or
+   rerolls. Robux cosmetics may only recolor parts the player already owns.
+2. No paid random rewards; capsules are earned only, and their odds and pity counter are always one tap away.
+3. Duplicates are always useful: upgrade copies, MS conversion, or fusion inputs.
+4. No permanent exclusivity: every event, arena or achievement part stays capsule-eligible at its tier, and event parts
+   return to the Mystery Market rotation within 90 days.
+5. No energy, timers-to-skip or losses: KO never removes parts (§11), and absence never decays them (§17).
+6. No near-miss theatrics: the capsule reveal shows the result directly and is skippable; no countdown pop-ups on shops.
+7. No trading or gifting of parts (removes scam and pressure vectors); parts are profile-bound.
+
+### 12.6 Upgrades
+
+**Rules & Mechanics.** Upgrades happen instantly from the Morph screen (§13) anywhere outside combat, or at the Lab.
+Upgrading a part from level `L` to `L + 1` costs (canon): `MB = BaseMB[r] × 1.5^(L−1)`, `MS = BaseMS[r] × L`,
+`RT = RTBase[r] × (L − 3)` for Epic and above when `L ≥ 4` (Secret counts as Epic-and-above), **plus one duplicate copy**
+of the part or `DupeSubstituteMS[r]`. MB results are rounded half up to whole MB. Secret parts never duplicate and always
+pay the substitute.
+
+- **Stat growth:** `Budget(L) = round(BaseBudget[r] × SlotWeight × (1 + 0.12 × (L − 1)))`, distributed over the part's Lv1
+  stat split by largest remainder (ties in canon stat order), so a part never changes identity as it grows.
+- **Passive growth:** numeric magnitudes scale ×(1 + 0.05 × (L − 1)) — Common Lv5 ×1.20, Mythic Lv10 ×1.45 — while ICDs,
+  durations, radii, counts (carry +1, +1 target) and flat triggers never scale; combined caps (§12.8) never move.
+- **Active growth:** `MutationService` passes the part level to `CombatService`; potency per level is defined in §36.6.
+- Levels are permanent (no downgrade, no refund). A part at max level is **Mastered** (gold frame, Morphdex milestone).
+- Example: `MUT_031` Dragon Head Lv1 → 8 costs 96,516 MB + 420 MS + 10 RT + 7 copies (or 1,120 MS) and grows its budget
+  from 16 to 29 points.
+
+**Stat budget by level [TUNABLE]:**
+
+<!-- BEGIN GENERATED: budget-growth -->
+<!-- END GENERATED: budget-growth -->
+
+**Upgrade cost tables (computed from the canon formula):**
+
+<!-- BEGIN GENERATED: upgrade-costs -->
+<!-- END GENERATED: upgrade-costs -->
+
+### 12.7 Procedural Generation and the Combination System
+
+**Purpose.** Every customer, employee and background citizen is assembled from the same 280 parts by one seeded generator,
+so the city never runs out of new weirdos and art never authors a whole creature.
+
+**Generator** (`MorphGenerator.Generate(seed, context) → plan`, server-side; output encoded as a MorphCode):
+1. `rng = Random.new(seed)` with `seed = hash(restaurantId, customerSerial, utcDay)` for customers,
+   `hash(UserId, candidateIndex, utcDay)` for recruitment candidates (§16) and `hash(npcId)` for city extras.
+   Named NPCs and `EMP_` archetypes may pin slots (e.g. `PER_010` always wears `MUT_004`; signature looks per §9 and §36.8).
+2. **Families:** family A = a family drawn by rarity weight for the HEAD; family B = a second family with parts in ≥ 3
+   slots (robot, bear, fish, frog, dragon, plant, chicken, spider, octopus …). Each filled slot draws from A (35 %),
+   B (35 %) or any family (30 %) when A/B has a part there — this yields readable two-family hybrids like the mockup's
+   Giraffe-Squid, Shark-Spider and Axolotl-Cow.
+3. **Slot fill and rarity** by restaurant tier band (tables below). Core slots always fill; arms match 60 % of the time,
+   legs 75 %. If the drawn rarity has no part in that slot, step down one rarity (then up). Secret parts never generate.
+4. **Compatibility solver** (`MorphRules`): fill in build order; reject a candidate that breaks FUR ⊕ SCALES, blocksWings,
+   the huge limit, the height clamp or the NPC 24-MeshPart budget, and redraw (max 8 tries, then leave the slot empty).
+   Face slots are skipped under faceLocked heads.
+5. **Palette:** one of 24 palettes (primary/secondary/accent triplets) weighted by HEAD category (MAMMAL earthy, ALIEN neon,
+   ROBOT metallic …).
+6. **Context hooks:** role biases for employees (`ROLE_CHEF` ×3 weight on chef-tag parts, `ROLE_SECURITY` on fighter/tank,
+   `ROLE_REPAIR` on repair, `ROLE_WAITER` on speed/charm); event weight overrides published by §18 (e.g. `EVT_018` ALIEN
+   ×3, `EVT_032` INSECT ×3, `EVT_015`/`EVT_016` whole-body scale ×0.6/×1.4, cosmetic only).
+7. **Name hook:** `MorphNames.Generate(plan, rng)` (rules in §12.9) turns the dominant families into the display name.
+8. **Encode** the plan as a 49-character **MorphCode**: `M1` + 22 slots × 2 base-36 digits in canon slot order (`00` = empty,
+   else the part number) + palette (2 digits) + scale flag (`n`/`t`/`g`). Example Giraffe-Squid (`MUT_015` head, `MUT_075`
+   eyes, `MUT_110` neck, `MUT_117` torso, `MUT_146` both arms, `MUT_179` both legs, palette 7):
+   `M10F00000023000032394242004Z4Z000000000000000007n`. The server stores it on the SPCV proxy; clients only decode it,
+   so every client shows the identical creature. A customer may use the active of one of its *visible* parts (§36.6).
+
+| Optional slot fill % by tier band [TUNABLE] | T1–2 | T3–4 | T5–6 | T7–8 | T9–10 |
+|---|---|---|---|---|---|
+| FACE / HORNS | 15 | 20 | 25 | 30 | 35 |
+| NOSE / MOUTH / FEET | 30 | 35 | 40 | 45 | 50 |
+| EYES | 50 | 55 | 60 | 65 | 70 |
+| EARS / TAIL | 40 | 45 | 50 | 55 | 60 |
+| HANDS | 25 | 30 | 35 | 40 | 45 |
+| NECK / WINGS / BACK | 10 | 12 | 15 | 18 | 20 |
+| SKIN | 15 | 20 | 25 | 30 | 35 |
+| Covering (FUR or SCALES) | 20 | 22 | 25 | 28 | 30 |
+| FX | 0 | 3 | 5 | 8 | 10 |
+
+| Rarity weights by tier band [TUNABLE] | Common | Uncommon | Rare | Epic | Legendary | Mythic |
+|---|---|---|---|---|---|---|
+| T1–2 | 70 | 25 | 5 | 0 | 0 | 0 |
+| T3–4 | 55 | 30 | 12 | 3 | 0 | 0 |
+| T5–6 | 40 | 32 | 20 | 7 | 1 | 0 |
+| T7–8 | 30 | 30 | 25 | 12 | 3 | 0 |
+| T9–10 | 22 | 28 | 28 | 16 | 5 | 1 |
+
+Rarer customers are a visible sign of progress — and since serving them marks their parts as *Seen*, they double as a
+shop window for the Morphdex.
+
+**The combination space.** The counts below are computed by the renderer from the canon slot counts and flags:
+
+<!-- BEGIN GENERATED: combination-math -->
+<!-- END GENERATED: combination-math -->
+
+### 12.8 Balance Limits
+
+**Stat caps** (formulas in §14). Effective stat = level-up allocation + skill nodes + Σ mutation points (pairs ×1.25),
+rounded, then capped; the Morph screen shows the overflow as wasted "MAXED" points so players can rebalance.
+
+| Stat | COOK_SPD | COOK_QLT | STR | DEF | REPAIR | MOVE | LUCK | CHARM | EFFICIENCY |
+|---|---|---|---|---|---|---|---|---|---|
+| Cap | 150 | 150 | 150 | 200 | 150 | 100 | 150 | 150 | 150 |
+| At cap | process ×0.526 | Perfect ×1.75 | damage ×2.2 | damage taken ×0.333 | repair ×2.5 | WalkSpeed 20.8 | rare drops ×1.6 | patience ×1.6 | ingredients ×0.775 |
+
+**Structural rules.**
+- One part per slot; **at most one passive and one active per part** (canon). A passive applies once per character even
+  if its part fills both slots of a pair.
+- **Ability bar:** 4 mutation actives plus the fixed base kit (§11). Parts with actives beyond four keep their stats and
+  passives; the player picks which four are slotted. Hidden parts' actives count toward the four.
+- **Synergies** add on top of passives but are capped separately — synergy caps and stacking live in §12.10 and §36.4.
+- **Loadouts** (§13): equips are blocked while In Combat (6 s); a saved-loadout swap is a 3 s channel interrupted by
+  damage, then a 10 s cooldown; single-part equips in the Morph screen are instant.
+- **Movement & carry:** WalkSpeed is clamped to 21 studs/s outside active abilities (server check every 0.5 s, §29);
+  airtime ≤ 1.5 s outside `ABL_022`/`ABL_069`, no part gains altitude while gliding, max one extra jump; carry capacity
+  is 1 + one per distinct carry part (`MUT_145`, `MUT_217`, `MUT_249`), hard max **3**; reach never works through walls
+  (server line-of-sight raycast) and stays within the server's +2-stud tolerance.
+- **Passive caps** — every passive maps to one key; equipped sources of the same key add up to the cap below
+  (Lv-scaled values included, synergies excluded):
+
+<!-- BEGIN GENERATED: passive-caps -->
+<!-- END GENERATED: passive-caps -->
+
+**PvP normalization (Arena, §21).** Inside Arena matches every equipped part's stats are recomputed as if it were **Rare
+at Lv4** (`round(11 × SlotWeight × 1.36)`), keeping its own stat split; passives use Lv1 magnitudes; status immunities
+become −60 % duration; on-hit status durations are halved; `MUT_216`'s stun becomes `STS_SLOW`; revive passives are off in
+ranked and once per match in casual; `MUT_237` gliding is off. Collection breadth matters in the Arena, grinding does not.
+
+**Banned interactions.**
+1. No proc chains: passives trigger only from player actions or incoming hits, never from another passive or synergy.
+2. Thorns never reflect thorns; damage reflection never triggers on-hit procs.
+3. Currency-finding passives obey their server-side hourly caps (`MUT_004`: 30 MB/h); `MUT_040` never duplicates MB, RT or parts.
+4. `drop_luck` and LUCK never change Morph Capsule odds, pity or Lab fusion outcomes.
+5. Mutation passives are online-only; the offline simulation (§17) reads only the EFFICIENCY stat through its canon formula.
+6. Customer-facing passives cannot make a PACIFIST customer attack, push anger below 0, or force a storm-out.
+7. Damage dealt to customers never exceeds their Huff Points path (§11): bonuses speed up "Dizzy", they never skip Apologizing.
+
+```lua
+--!strict
+-- ServerScriptService/Services/MutationService (excerpt): equip validation and stat computation
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Defs = require(ReplicatedStorage.Shared.MutationDefs) -- generated from gdd/data/mutations.json
+local MorphRules = require(ReplicatedStorage.Shared.MorphRules)
+local CombatService = require(script.Parent.CombatService)
+
+local STAT_CAP = { COOK_SPD = 150, COOK_QLT = 150, STR = 150, DEF = 200, REPAIR = 150, MOVE = 100, LUCK = 150, CHARM = 150, EFFICIENCY = 150 }
+local BASE_BUDGET = { Common = 4, Uncommon = 7, Rare = 11, Epic = 16, Legendary = 22, Mythic = 28, Secret = 24 }
+local STAT_ORDER = { "COOK_SPD", "COOK_QLT", "STR", "DEF", "REPAIR", "MOVE", "LUCK", "CHARM", "EFFICIENCY" }
+
+local MutationService = {}
+
+function MutationService.ValidateEquip(player: Player, profile, slot: string, partId: string): (boolean, string?)
+	local def = Defs[partId]
+	if def == nil then return false, "UNKNOWN_PART" end
+	local owned = profile.Mutations.Owned[partId]
+	if owned == nil then return false, "NOT_OWNED" end
+	if not MorphRules.SlotAccepts(slot, def.slot) then return false, "WRONG_SLOT" end -- ARM fits ARM_L/ARM_R, LEG fits LEG_L/LEG_R
+	local required = if owned.tutorialCopy then 1 else def.equipLevel
+	if required ~= nil and profile.Level < required then return false, "LEVEL_TOO_LOW" end
+	if CombatService.IsInCombat(player) then return false, "IN_COMBAT" end
+	local proposed = table.clone(profile.Mutations.Equipped)
+	proposed[slot] = partId
+	local ok, conflict = MorphRules.CheckExclusions(proposed) -- CONFLICT_WINGS, CONFLICT_COVERING
+	if not ok then return false, conflict end
+	if MorphRules.CarryCapacity(proposed) < profile.Runtime.carriedCount then return false, "PUT_SOMETHING_DOWN" end
+	return true, nil
+end
+
+-- Points of one part at a level: canon budget, distributed over the Lv1 split by largest remainder.
+function MutationService.PartStats(def, level: number): { [string]: number }
+	local lv1 = 0
+	for _, v in def.stats do lv1 += v end
+	if lv1 == 0 then return {} end
+	local target = math.floor(BASE_BUDGET[def.rarity] * def.slotWeight * (1 + 0.12 * (level - 1)) + 0.5)
+	local out, rema, given = {}, {}, 0
+	for _, s in STAT_ORDER do
+		local v = def.stats[s]
+		if v then
+			local exact = v * target / lv1
+			out[s] = math.floor(exact)
+			given += out[s]
+			table.insert(rema, { s = s, r = exact - out[s] })
+		end
+	end
+	table.sort(rema, function(a, b) return a.r > b.r end) -- stable enough: STAT_ORDER insertion breaks ties upstream
+	for i = 1, target - given do out[rema[i].s] += 1 end
+	return out
+end
+
+function MutationService.ComputeStats(profile): ({ [string]: number }, { [string]: number })
+	local raw: { [string]: number } = {}
+	for s, v in profile.Stats.Allocated do raw[s] = v end
+	for s, v in profile.Stats.FromSkills do raw[s] = (raw[s] or 0) + v end
+	local eq = profile.Mutations.Equipped
+	for slot, partId in eq do
+		local pts = MutationService.PartStats(Defs[partId], profile.Mutations.Owned[partId].level)
+		local pair = ((slot == "ARM_L" or slot == "ARM_R") and eq.ARM_L == eq.ARM_R)
+			or ((slot == "LEG_L" or slot == "LEG_R") and eq.LEG_L == eq.LEG_R)
+		local mult = if pair then 1.25 else 1
+		for s, v in pts do raw[s] = (raw[s] or 0) + v * mult end
+	end
+	local eff, wasted = {}, {}
+	for _, s in STAT_ORDER do
+		local v = math.floor((raw[s] or 0) + 0.5)
+		eff[s] = math.min(v, STAT_CAP[s])
+		wasted[s] = math.max(0, v - STAT_CAP[s]) -- shown as MAXED in the Morph screen
+	end
+	return eff, wasted
+end
+
+return MutationService
+```
+
+**Edge Cases.**
+
+| # | Situation | Ruling |
+|---|---|---|
+| 1 | A faceLocked head is equipped over FACE/NOSE/MOUTH/EYES parts | Those meshes are not built; stats, passives and actives stay; toast "Face parts hidden — still working!"; their VFX spawn from the screen. |
+| 2 | WINGS equipped while a blocksWings BACK is worn (or FUR over SCALES) | Swap prompt in the UI; a crafted remote with both is rejected (`CONFLICT_WINGS` / `CONFLICT_COVERING`) and logged (§29). |
+| 3 | A saved loadout references a part later consumed by fusion | The slot loads as Plain Human (core) or empty (optional) with a "missing part" badge; nothing else changes. |
+| 4 | Capsule grants a part above the player's equip level | Owned and upgradable, shows "Unlocks at LvX", cannot be equipped; counts for the Morphdex immediately. |
+| 5 | Unequipping a carry part while holding 3 items | Rejected (`PUT_SOMETHING_DOWN`) until the hands hold no more than the new capacity; items are never dropped by an equip. |
+| 6 | Station timers running when stats change (loadout swap mid-cook) | Remaining time is rescaled `remaining × oldMult / newMult` at the moment of change — never retroactive, never instant-complete. |
+| 7 | Mismatched legs with different LegLength | HipHeight follows the longer leg; the shorter dangles; `ANM_008` plays; stats unaffected. |
+| 8 | Ostrich legs + Brachiosaurus neck + antlers exceed 9.5 studs | NeckLength compresses to fit, then horns sink ≤ 0.5 stud; stats and reach bonuses unchanged. |
+| 9 | A Secret condition is completed again | "Already discovered" — no duplicate, no reward (Secrets cannot duplicate; prevents farming). |
+| 10 | Duplicate arrives while the part is Mastered | Auto-converts to MS regardless of the "keep copies" toggle. |
+| 11 | Client asset fails to load | Grey placeholder mesh + retry after 5 s; server stats unaffected. |
+| 12 | Generated NPC would exceed 24 MeshParts | Solver redraws; at build time the lowest-priority slots (FX, shells, horns, face) are trimmed and logged. |
+| 13 | Player enters the Arena with Mythic Lv10 parts | Stats normalized to Rare Lv4 equivalents on entry, restored on exit (§21). |
+| 14 | A part ID is retired in a future update | It stays owned and equippable, shown as "Retired"; IDs are never reused (§36.1). |
+
+**Acceptance Criteria.**
+- **AC-12-01:** `python3 gdd/tools/render_mutations.py` exits 0 with 280 parts; every part's Lv1 stat sum equals
+  `round(BaseBudget × SlotWeight)`, and the generated `MutationDefs` module has the same 280 entries.
+- **AC-12-02:** With `MUT_021` and `MUT_078` equipped, no EYES mesh exists under `MMR_Visual`, the TV screen shows an emote,
+  the stat panel includes `MUT_078`'s points, and `ABL_032` fires from the screen origin.
+- **AC-12-03:** The server rejects 100 % of loadouts containing a blocksWings BACK part with any WINGS part, or FUR with
+  SCALES (fuzz test: 10,000 random remote payloads, 0 accepted).
+- **AC-12-04:** A full 22-slot player morph builds with ≤ 40 MeshParts and ≤ 15,000 triangles in ≤ 8 ms server time (p95,
+  reference server); an NPC visual builds with ≤ 24 MeshParts / ≤ 6,000 tris and swaps to an impostor of ≤ 1,500 tris
+  beyond 60 studs.
+- **AC-12-05:** Every `MMR_Visual` descendant BasePart has CanCollide, CanTouch and CanQuery false and Massless true, and
+  the HumanoidRootPart size is identical for all 280 parts (automated scan).
+- **AC-12-06:** `Humanoid.HipHeight = 2.0 + (max LegLength − 2.0)` ± 0.01 for all 22 LEG parts, and a downward raycast from
+  each visible foot sole finds the floor within 0.15 stud while idle.
+- **AC-12-07:** Upgrade charges match the §12.6 tables for all 49 rarity × level steps, and post-upgrade stats match the
+  budget-by-level table (unit tests).
+- **AC-12-08:** 1,000,000 simulated capsule openings land within ±0.1 percentage point of the disclosed odds, and no
+  sequence of 40 capsules lacks an Epic-or-better.
+- **AC-12-09:** The Robux catalog audit finds 0 developer products or passes that grant parts, stats, MS, RT, capsules,
+  upgrades or fusions.
+- **AC-12-10:** No effective stat exceeds its cap; excess appears as MAXED; MOVE at cap gives WalkSpeed 20.8, and no part
+  combination yields WalkSpeed > 21 outside an active ability.
+- **AC-12-11:** Equipping `MUT_145` on both arms with `MUT_217` and `MUT_249` gives carry capacity exactly 3; any two of
+  them give 3; one gives 2.
+- **AC-12-12:** Four `station_speed` sources totalling −37 % at one station apply −25 %; two `revive` parts trigger at
+  most once per KO and once per 180 s.
+- **AC-12-13:** The same MorphCode renders the same parts, palette and scale on the server proxy and on 3 clients
+  (screenshot hash per slot); 10,000 generated customers show 0 rule violations and 0 Secret parts.
+- **AC-12-14:** Equips are refused while In Combat; a loadout swap takes 3 s, is cancelled by damage, and starts a 10 s cooldown.
+- **AC-12-15:** Serving a customer whose MorphCode contains an unseen part flips it to *Seen* in the Morphdex within 1 s;
+  reaching 100 owned parts makes the Museum's Empty Exhibit inspectable.
+- **AC-12-16:** Lab fusion with 3 same-category inputs always yields the chosen output (0 random outcomes in 1,000 tests) and
+  refuses equipped inputs and last copies above Lv1.

@@ -35,7 +35,7 @@ Owner roles refer to the team in §34.1: Producer (PM/QA lead), Lead Engineer, D
 | OD-11 | Arena at launch: casual or ranked? | (a) casual opt-in 1v1/2v2; (b) ranked seasons; (c) none | (a); ranked seasons in Live Ops month 3 (§34.10.2); (c) only via cut list (§34.13) | Designer | G3 | scope, RT inflow |
 | OD-12 | Private-server pricing? | (a) free; (b) low Robux price; (c) disabled | (a) free, so families and friends can co-op without strangers | Producer | G4 | safety, social play |
 | OD-13 | Server fill and friend slots? | (a) Roblox-optimized fill; (b) reserve 1 slot for friends; (c) maximum fill | (b) reserve 1 slot so a friend can always join (a free plot exists) | Lead Engineer | G4 | social joins vs matchmaking density |
-| OD-14 | Persistence implementation? | (a) proven open-source session-locking profile library behind our wrapper; (b) fully custom | (a), with our wrapper handling migrations and the atomic offline write of §C15; code audited | Lead Engineer | G1 | data safety, schedule |
+| OD-14 | Persistence implementation: build §28's locking design in-house, or adopt an open-source profile library? | (a) implement §28's design (lock in the profile, stale steal, presence-confirmed steal, teleport hand-off) in-house; (b) adopt a library and adapt it | (a); a library may be used only if it reproduces §28 exactly, including the atomic offline write of §C15 | Lead Engineer | G1 | data safety, schedule |
 | OD-15 | Leaderboards? | (a) none; (b) friends-only; (c) friends + weekly global boards | (c) in Live Ops (Feb 2028); rank by reputation, dishes served, Legendary dishes — never by spending | Designer | G4 | social competition, DataStore load |
 | OD-16 | Ship on console at launch? | (a) yes; (b) Live Ops month 2 | (a) if TC-UI-08 and the D5 column of §35.10 pass at G4, else (b) | Producer | G4 | reach, QA load |
 | OD-17 | Cooking assists beyond Auto-Rhythm? | (a) none; (b) cue-only "Timer Assist" (audio + haptic tick at `T_ready`, no rule change); (c) wider windows capped at GOOD (0.80) | (b) at launch; (c) as a post-launch accessibility option | Designer | G3 | accessibility, fairness of rewards |
@@ -67,7 +67,7 @@ Owner roles refer to the team in §34.1: Producer (PM/QA lead), Lead Engineer, D
 | OD-11 | arena engineering estimate vs Beta capacity (F4.9) | cut-list item 1 (§34.13) |
 | OD-12 | private-server usage in closed beta | experience settings |
 | OD-13 | friend-join failure rate in closed beta | server-fill setting |
-| OD-14 | library code audit; failure-injection results (TC-EDGE-10, TC-EDGE-11) | `PlayerDataService` v0 |
+| OD-14 | prototype of the §28 lock under failure injection (TC-EDGE-10, TC-EDGE-11); library audit if (b) is proposed | `PlayerDataService` v0 |
 | OD-15 | OrderedDataStore budget estimate; social KPI targets | leaderboard UI |
 | OD-16 | D5 column of §35.10; TC-UI-08 results | device list in §37.4.1 |
 | OD-17 | accessibility playtest results (R6, R7 in §35.8) | settings screen |

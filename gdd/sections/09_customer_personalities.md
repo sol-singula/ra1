@@ -62,43 +62,45 @@ Personalities unlock by restaurant tier and stay eligible forever after; weights
 
 ### 9.3 Personality Summary Table
 
-Thresholds are Delighted / Happy / Meh / Unhappy lower bounds (canon default 90 / 70 / 50 / 30). PER_032 copies
-every value from the personality it reveals (pre-reveal values in brackets).
+Thresholds are Delighted / Happy / Meh / Unhappy lower bounds (canon default 90 / 70 / 50 / 30). DEF = `PersonalityDEF`
+(0–40) and Dmg× = `PersonalityDamageMult` as consumed by the §11.5.1 damage formula ("—" = never attacks). Huff
+values sit inside the §11.5.2 recommended band of each style, except the PER_016 minis (three small bodies, 150
+total). PER_032 copies every value from the personality it reveals (pre-reveal values in brackets).
 
-| ID | Name | Patience× | P_mult | P_offset | Thresholds D/H/M/U | AngerP | Sens | Style | Huff | Items | Tip× | Unlock | Base wt |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `PER_001` | The Karenosaurus | 0.85 | 0.85 | −5 | 95/80/60/40 | 0.45 | 1.3 | `INSTIGATOR` | 140 | 1–2 | 0.6 | `TIER_01` | 6 |
-| `PER_002` | The Hungry Hippo-Spider | 1.20 | 1.00 | +5 | 90/70/50/30 | 0.30 | 0.8 | `TANK` | 260 | 3–5 | 0.9 | `TIER_02` | 5 |
-| `PER_003` | The Polite Demon | 1.15 | 1.05 | +5 | 88/65/45/25 | 0.12 (0.90 provoked) | 1.0 (1.8 provoked) | `BRAWLER` | 180 | 1–2 | 1.3 | `TIER_01` | 6 |
-| `PER_004` | The Food Critic | 1.00 | 0.90 | 0 | 95/80/60/40 | 0.05 | 0.6 | `PACIFIST` | 60 | 2 | 1.0 | `TIER_03` | 2 |
-| `PER_005` | The Impatient Goblin | 0.55 | 1.00 | 0 | 90/70/50/30 | 0.40 | 1.2 | `TRICKSTER` | 70 | 1 | 0.8 | `TIER_01` | 7 |
-| `PER_006` | The Sleepy Sloth-Rocket | 1.80 | 1.05 | +5 | 85/65/45/25 | 0.15 | 0.7 | `CHARGER` | 120 | 1–2 | 1.1 | `TIER_01` | 6 |
-| `PER_007` | The Chaos Gremlin | 0.90 | 1.00 | 0 | 90/70/50/30 | 0.50 | 1.2 | `TRICKSTER` | 80 | 1–2 | 1.0 | `TIER_02` | 5 |
-| `PER_008` | The Rich Mutant | 0.90 | 0.90 | 0 | 96/85/65/45 | 0.20 | 1.0 | `PACIFIST` | 90 | 1–3 | 2.5 | `TIER_03` | 3 |
-| `PER_009` | The Influencer | 0.80 | 1.00 | 0 | 92/75/55/35 | 0.30 | 1.1 | `INSTIGATOR` | 75 | 1–2 | 1.2 | `TIER_02` | 3 |
-| `PER_010` | The Bodybuilder Pigeon | 0.90 | 1.00 | 0 | 90/70/50/30 | 0.55 | 1.6 | `BRAWLER` | 220 | 1–3 | 1.0 | `TIER_02` | 5 |
-| `PER_011` | The Conspiracy Moth | 1.00 | 0.95 | 0 | 90/70/50/30 | 0.30 | 1.0 | `TRICKSTER` | 70 | 1–2 | 0.9 | `TIER_03` | 4 |
-| `PER_012` | The Nervous Newt | 1.10 | 1.10 | 0 | 85/65/45/25 | 0.05 | 1.5 | `PACIFIST` | 40 | 1 | 1.2 | `TIER_01` | 5 |
-| `PER_013` | The Grandma Golem | 1.40 | 1.05 | +5 | 85/60/40/20 | 0.10 | 0.5 | `TANK` | 300 | 1–2 | 1.5 | `TIER_01` | 5 |
-| `PER_014` | The Picky Platypus | 1.00 | 0.90 | −5 | 92/75/55/35 | 0.35 | 1.1 | `THROWER` | 90 | 1–2 | 1.0 | `TIER_01` | 6 |
-| `PER_015` | The Robot Accountant | 1.00 | 1.00 | 0 | 90/70/50/30 | 0.25 | 0.9 | `TANK` | 200 | 1–2 | 1.0 | `TIER_02` | 4 |
-| `PER_016` | The Party Pack | 0.90 | 1.00 | 0 | 90/70/50/30 | 0.35 | 1.2 | `BRAWLER` | 50 ×3 | 1 each ×3 | 1.1 | `TIER_03` | 3 |
-| `PER_017` | The Pirate Crab | 1.00 | 1.00 | 0 | 90/70/50/30 | 0.40 | 1.1 | `THROWER` | 130 | 1–2 | 1.0 | `TIER_02` | 4 |
-| `PER_018` | The Drama Llama | 0.90 | 0.95 | 0 | 92/72/52/32 | 0.35 | 1.4 | `INSTIGATOR` | 110 | 1–2 | 1.0 | `TIER_02` | 4 |
-| `PER_019` | The Mime Mantis | 1.10 | 1.00 | 0 | 90/70/50/30 | 0.25 | 1.0 | `TRICKSTER` | 100 | 1–2 | 1.2 | `TIER_03` | 3 |
-| `PER_020` | The Toddler Titan | 0.70 | 1.00 | 0 | 85/65/45/25 | 0.45 | 1.3 | `THROWER` | 160 | 1–2 | 0.8 | `TIER_02` | 4 |
-| `PER_021` | The Health Nut Hamster | 1.00 | 0.95 | 0 | 90/70/50/30 | 0.25 | 1.0 | `CHARGER` | 110 | 1–2 | 1.1 | `TIER_02` | 4 |
-| `PER_022` | The Spicy Salamander | 1.00 | 1.00 | 0 | 90/70/50/30 | 0.35 | 1.0 | `THROWER` | 120 | 1–2 | 1.0 | `TIER_03` | 4 |
-| `PER_023` | The Frozen Yeti-Fish | 1.10 | 1.00 | 0 | 90/70/50/30 | 0.25 | 0.9 | `CHARGER` | 170 | 1–2 | 1.0 | `TIER_03` | 4 |
-| `PER_024` | The Time-Traveler Tortoise | 1.50 | 1.00 | +5 | 85/65/45/25 | 0.10 | 0.6 | `PACIFIST` | 150 | 1–2 | 1.3 | `TIER_04` | 2 |
-| `PER_025` | The Undercover Inspector | 1.00 | 1.00 | 0 | 90/70/50/30 | 0.00 | 0.5 | `PACIFIST` | 80 | 1 | 1.0 | `TIER_03` | 2 |
-| `PER_026` | The Speedrunner Squirrel | 0.60 | 1.00 | 0 | 90/70/50/30 | 0.40 | 1.2 | `CHARGER` | 80 | 1 | 1.0 | `TIER_04` | 3 |
-| `PER_027` | The Lovebird Jellyfish Couple | 1.30 | 1.05 | +5 | 88/68/48/28 | 0.10 | 1.2 | `PACIFIST` | 70 ×2 | 1–2 each ×2 | 1.3 | `TIER_03` | 3 |
-| `PER_028` | The Haunted Toaster | 1.00 | 1.00 | 0 | 90/70/50/30 | 0.35 | 1.0 | `THROWER` | 100 | 1–2 | 1.0 | `TIER_04` | 3 |
-| `PER_029` | The Alien Tourist | 1.20 | 1.05 | +5 | 85/65/45/25 | 0.20 | 1.0 | `TRICKSTER` | 100 | 1–3 | 1.2 | `TIER_05` | 3 |
-| `PER_030` | The Retired Wrestler Walrus | 1.00 | 1.00 | 0 | 90/70/50/30 | 0.40 | 1.3 | `BRAWLER` | 280 | 1–3 | 1.1 | `TIER_05` | 3 |
-| `PER_031` | The Birthday Beast | 1.00 | 1.10 | +5 | 92/72/52/32 | 0.40 | 1.5 | `THROWER` | 120 | 2 | 1.5 | `TIER_03` | 3 |
-| `PER_032` | The Mystery Mutant | [1.00] | [1.00] | [0] | [90/70/50/30] | as revealed | as revealed | as revealed | as revealed | as revealed [1–2] | revealed × 1.2 | `TIER_06` | 2 |
+| ID | Name | Patience× | P_mult | P_offset | Thresholds D/H/M/U | AngerP | Sens | Style | Huff | DEF | Dmg× | Items | Tip× | Unlock | Base wt |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `PER_001` | The Karenosaurus | 0.85 | 0.85 | −5 | 95/80/60/40 | 0.45 | 1.3 | `INSTIGATOR` | 100 | 10 | 0.8 | 1–2 | 0.6 | `TIER_01` | 6 |
+| `PER_002` | The Hungry Hippo-Spider | 1.20 | 1.00 | +5 | 90/70/50/30 | 0.30 | 0.8 | `TANK` | 260 | 30 | 1.0 | 3–5 | 0.9 | `TIER_02` | 5 |
+| `PER_003` | The Polite Demon | 1.15 | 1.05 | +5 | 88/65/45/25 | 0.12 (0.90 provoked) | 1.0 (1.8 provoked) | `BRAWLER` | 180 | 15 | 1.2 | 1–2 | 1.3 | `TIER_01` | 6 |
+| `PER_004` | The Food Critic | 1.00 | 0.90 | 0 | 95/80/60/40 | 0.05 | 0.6 | `PACIFIST` | 60 | 0 | — | 2 | 1.0 | `TIER_03` | 2 |
+| `PER_005` | The Impatient Goblin | 0.55 | 1.00 | 0 | 90/70/50/30 | 0.40 | 1.2 | `TRICKSTER` | 70 | 5 | 0.8 | 1 | 0.8 | `TIER_01` | 7 |
+| `PER_006` | The Sleepy Sloth-Rocket | 1.80 | 1.05 | +5 | 85/65/45/25 | 0.15 | 0.7 | `CHARGER` | 120 | 20 | 1.1 | 1–2 | 1.1 | `TIER_01` | 6 |
+| `PER_007` | The Chaos Gremlin | 0.90 | 1.00 | 0 | 90/70/50/30 | 0.50 | 1.2 | `TRICKSTER` | 80 | 5 | 0.9 | 1–2 | 1.0 | `TIER_02` | 5 |
+| `PER_008` | The Rich Mutant | 0.90 | 0.90 | 0 | 96/85/65/45 | 0.20 | 1.0 | `PACIFIST` | 80 | 10 | — | 1–3 | 2.5 | `TIER_03` | 3 |
+| `PER_009` | The Influencer | 0.80 | 1.00 | 0 | 92/75/55/35 | 0.30 | 1.1 | `INSTIGATOR` | 75 | 5 | 0.7 | 1–2 | 1.2 | `TIER_02` | 3 |
+| `PER_010` | The Bodybuilder Pigeon | 0.90 | 1.00 | 0 | 90/70/50/30 | 0.55 | 1.6 | `BRAWLER` | 180 | 30 | 1.25 | 1–3 | 1.0 | `TIER_02` | 5 |
+| `PER_011` | The Conspiracy Moth | 1.00 | 0.95 | 0 | 90/70/50/30 | 0.30 | 1.0 | `TRICKSTER` | 70 | 5 | 0.8 | 1–2 | 0.9 | `TIER_03` | 4 |
+| `PER_012` | The Nervous Newt | 1.10 | 1.10 | 0 | 85/65/45/25 | 0.05 | 1.5 | `PACIFIST` | 40 | 0 | — | 1 | 1.2 | `TIER_01` | 5 |
+| `PER_013` | The Grandma Golem | 1.40 | 1.05 | +5 | 85/60/40/20 | 0.10 | 0.5 | `TANK` | 300 | 40 | 0.9 | 1–2 | 1.5 | `TIER_01` | 5 |
+| `PER_014` | The Picky Platypus | 1.00 | 0.90 | −5 | 92/75/55/35 | 0.35 | 1.1 | `THROWER` | 90 | 10 | 1.0 | 1–2 | 1.0 | `TIER_01` | 6 |
+| `PER_015` | The Robot Accountant | 1.00 | 1.00 | 0 | 90/70/50/30 | 0.25 | 0.9 | `TANK` | 200 | 35 | 1.0 | 1–2 | 1.0 | `TIER_02` | 4 |
+| `PER_016` | The Party Pack | 0.90 | 1.00 | 0 | 90/70/50/30 | 0.35 | 1.2 | `BRAWLER` | 50 ×3 | 0 | 0.5 | 1 each ×3 | 1.1 | `TIER_03` | 3 |
+| `PER_017` | The Pirate Crab | 1.00 | 1.00 | 0 | 90/70/50/30 | 0.40 | 1.1 | `THROWER` | 120 | 15 | 1.0 | 1–2 | 1.0 | `TIER_02` | 4 |
+| `PER_018` | The Drama Llama | 0.90 | 0.95 | 0 | 92/72/52/32 | 0.35 | 1.4 | `INSTIGATOR` | 100 | 10 | 0.8 | 1–2 | 1.0 | `TIER_02` | 4 |
+| `PER_019` | The Mime Mantis | 1.10 | 1.00 | 0 | 90/70/50/30 | 0.25 | 1.0 | `TRICKSTER` | 100 | 10 | 0.9 | 1–2 | 1.2 | `TIER_03` | 3 |
+| `PER_020` | The Toddler Titan | 0.70 | 1.00 | 0 | 85/65/45/25 | 0.45 | 1.3 | `THROWER` | 120 | 20 | 0.9 | 1–2 | 0.8 | `TIER_02` | 4 |
+| `PER_021` | The Health Nut Hamster | 1.00 | 0.95 | 0 | 90/70/50/30 | 0.25 | 1.0 | `CHARGER` | 110 | 15 | 1.0 | 1–2 | 1.1 | `TIER_02` | 4 |
+| `PER_022` | The Spicy Salamander | 1.00 | 1.00 | 0 | 90/70/50/30 | 0.35 | 1.0 | `THROWER` | 120 | 15 | 1.1 | 1–2 | 1.0 | `TIER_03` | 4 |
+| `PER_023` | The Frozen Yeti-Fish | 1.10 | 1.00 | 0 | 90/70/50/30 | 0.25 | 0.9 | `CHARGER` | 170 | 25 | 1.0 | 1–2 | 1.0 | `TIER_03` | 4 |
+| `PER_024` | The Time-Traveler Tortoise | 1.50 | 1.00 | +5 | 85/65/45/25 | 0.10 | 0.6 | `PACIFIST` | 80 | 40 | — | 1–2 | 1.3 | `TIER_04` | 2 |
+| `PER_025` | The Undercover Inspector | 1.00 | 1.00 | 0 | 90/70/50/30 | 0.00 | 0.5 | `PACIFIST` | 80 | 10 | — | 1 | 1.0 | `TIER_03` | 2 |
+| `PER_026` | The Speedrunner Squirrel | 0.60 | 1.00 | 0 | 90/70/50/30 | 0.40 | 1.2 | `CHARGER` | 110 | 5 | 0.9 | 1 | 1.0 | `TIER_04` | 3 |
+| `PER_027` | The Lovebird Jellyfish Couple | 1.30 | 1.05 | +5 | 88/68/48/28 | 0.10 | 1.2 | `PACIFIST` | 70 ×2 | 0 | — | 1–2 each ×2 | 1.3 | `TIER_03` | 3 |
+| `PER_028` | The Haunted Toaster | 1.00 | 1.00 | 0 | 90/70/50/30 | 0.35 | 1.0 | `THROWER` | 100 | 15 | 1.0 | 1–2 | 1.0 | `TIER_04` | 3 |
+| `PER_029` | The Alien Tourist | 1.20 | 1.05 | +5 | 85/65/45/25 | 0.20 | 1.0 | `TRICKSTER` | 100 | 15 | 0.9 | 1–3 | 1.2 | `TIER_05` | 3 |
+| `PER_030` | The Retired Wrestler Walrus | 1.00 | 1.00 | 0 | 90/70/50/30 | 0.40 | 1.3 | `BRAWLER` | 180 | 35 | 1.2 | 1–3 | 1.1 | `TIER_05` | 3 |
+| `PER_031` | The Birthday Beast | 1.00 | 1.10 | +5 | 92/72/52/32 | 0.40 | 1.5 | `THROWER` | 120 | 10 | 1.0 | 2 | 1.5 | `TIER_03` | 3 |
+| `PER_032` | The Mystery Mutant | [1.00] | [1.00] | [0] | [90/70/50/30] | as revealed | as revealed | as revealed | as revealed | as revealed | as revealed | as revealed [1–2] | revealed × 1.2 | `TIER_06` | 2 |
 
 **Style distribution:** `PACIFIST` 6 · `THROWER` 6 · `TRICKSTER` 5 · `BRAWLER` 4 · `CHARGER` 4 · `TANK` 3 ·
 `INSTIGATOR` 3 · inherited 1 = 32. Weighted by band-C spawn weights (party members counted), ≈ 15 % of arrivals can never attack

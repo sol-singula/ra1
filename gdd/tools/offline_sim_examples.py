@@ -348,6 +348,10 @@ def simulate(ex):
         if net < 0:
             closed_at = i + 1
             row["voided"] = True
+            for (stp, ingr, units, cost) in [x for x in autobuy_log if x[0] == i + 1]:  # roll back this step's purchases
+                stock[ingr] -= units
+                budget += cost
+            autobuy_log = [x for x in autobuy_log if x[0] != i + 1]
             rows.append(row)
             break
         rows.append(row)

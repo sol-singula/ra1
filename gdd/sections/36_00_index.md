@@ -36,6 +36,7 @@ modules described in §27, so the GDD and the game share one content source.
 | + | Morph combination examples | `CMB_<NNN>` | §36.5 (rules in §12.9) | `MorphAssemblyService` presets |
 | + | Skill-tree nodes | `SKL_<TREE>_<NN>` | §14 | `ProgressionService` |
 | + | Offline incidents | `INC_<NNN>` | §36.9 | `OfflineEarningsService` |
+| + | City secrets, interactive props, dead pixels | `CSEC_<NN>`, `CPROP_<NN>`, `CPIX_<NN>` | §18 | city controllers, `QuestService` |
 
 #### 36.1.2 Identifier rules
 
@@ -57,6 +58,7 @@ modules described in §27, so the GDD and the game share one content source.
 | `DST_<NN>` / `BLD_<NN>` / `NPC_<NNN>` / `EVT_<NNN>` | District / building / named NPC / city event | |
 | `QST_<TYPE>_<NNN>` | Quest | TYPE ∈ TUT, STY, DLY, WKY, CHF, CBT, RPR, EXP, EMP, RST |
 | `ANM_<NNN>` / `SFX_<NNN>` / `MUS_<NNN>` | Animation / sound effect / music | `ANM_301`–`ANM_370` mirror `ABL_001`–`ABL_070` |
+| `CSEC_<NN>` / `CPROP_<NN>` / `CPIX_<NN>` | City secret / interactive city prop or vehicle / hidden "dead pixel" | Defined in §18 |
 
 Rules: identifiers are upper-snake ASCII, never reused, never renumbered; retired content keeps its ID with a
 `deprecated` flag in data. New content continues each sequence (the next mutation part is the first unused

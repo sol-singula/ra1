@@ -146,7 +146,7 @@ test IDs point to the verification. Counts come from canon and are minimums unle
 
 - [ ] **P3** Single-server prototype of `EVT_003`.
 - [ ] **P4** Cross-server schedule via MemoryStore + MessagingService announcements; per-server fallback.
-- [ ] **P4** The 20 launch events of §34.12; once-per-user reward claims (TC-ECON-11); mid-event join (TC-EDGE-43).
+- [ ] **P4** All 32 events in the §18.8 rotation decks (seasonal events date-gated per §36.11); once-per-user reward claims (TC-ECON-11); mid-event join (TC-EDGE-43).
 
 #### 37.2.16 `MultiplayerService` (§21)
 
@@ -212,7 +212,7 @@ test IDs point to the verification. Counts come from canon and are minimums unle
 - [ ] **22 buildings** (§36.10): `BLD_01`–`BLD_22`, each with exterior, interior, NPCs, services and UI.
 - [ ] **100+ named NPCs** (§19): `NPC_001`–`NPC_030` fixed + ≥ 70 more.
 - [ ] **100+ quests** (§20): `QST_TUT_001`–`QST_TUT_012` + story (10 chapters) + daily + weekly + CHF, CBT, RPR, EXP, EMP, RST challenges.
-- [ ] **32 city events** (§36.11): `EVT_001`–`EVT_032` designed; 20 live at launch (§34.12).
+- [ ] **32 city events** (§36.11): `EVT_001`–`EVT_032`, all live at launch (seasonal events in their months).
 - [ ] **150+ animations** (§36.14) incl. the 52 fixed core IDs of §C21, plus the 70 ability animations (one per `ABL_` row).
 - [ ] **150+ sounds** (§36.15): kitchen, customer voice blips, creature noises, combat, destruction, repair, currency, level-up, mutation unlock, city ambience, restaurant music.
 - [ ] **100+ furniture & equipment items** (§36.13) + 10 trophies `FRN_901`–`FRN_910` (non-purchasable).

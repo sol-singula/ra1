@@ -385,7 +385,7 @@ Targets are defined in the matrix of §35.10; these cases are the gate checks ru
 | TC-UI-01 | Each input mode | Inspect HUD | Level, XP bar, HP, MB, MS, current objective, order queue, patience indicators, equipped abilities, restaurant condition and quick menu all present | P0 |
 | TC-UI-02 | Touch active | Switch to gamepad, then keyboard/mouse | Prompts and glyphs update within 0.5 s; no input dead-end | P0 |
 | TC-UI-03 | Colorblind simulation (protan, deutan, tritan) | Review rarity, anger and patience indicators | Every status readable by shape/icon/text alone (§C13.3 shapes) | P0 |
-| TC-UI-04 | Phone with notch | Inspect all screens | No interactive element under the notch or home indicator; touch targets ≥ 44 pt [TUNABLE] | P1 |
+| TC-UI-04 | Phone with notch | Inspect all screens | No interactive element under the notch or home indicator; touch targets ≥ 44×44 rendered px with ≥ 8 px spacing (§24) | P1 |
 | TC-UI-05 | Pseudo-localization (+40 % length, accented glyphs) | Visit all ≈ 36 screens | No clipping, overlap or truncated numbers | P1 |
 | TC-UI-06 | Large values | Display 12500, 1500000 MB | Shown as 12,500 and 1,500,000 (or the §24 abbreviation); MB/MS/RT codes; s/min/h units | P2 |
 | TC-UI-07 | Capsule in inventory | Open the capsule screen | Odds (§C4.7) and pity progress visible before opening | P0 |

@@ -405,3 +405,241 @@ never block.
 | Sell-back | 50 % (100 % within 5 min, never placed) |
 | Client path preview rate | ≤ 10 Hz |
 | Server op rate | 4 ops/s, burst 8 (§27.8.17) |
+
+### 15.6 Atmosphere Score (feeds `M` and `DecorMult`)
+
+`Atmosphere` is an integer 0–100 per restaurant, recomputed by `BuildingService` on every layout op, durability
+state change or light change (debounced 1 s), and replicated as the restaurant attribute `Atmosphere`. It feeds
+canon §C11: `M = Atmosphere / 100` in satisfaction (weight 0.10) and `DecorMult = 0.9 + 0.003 × Atmosphere`
+in demand (online and offline; offline uses the value saved at logout).
+
+```text
+Eff_i       = AtmospherePts_i × StateFactor_i × ZoneFactor_i × DupFactor_i
+              StateFactor: Pristine 1.0 · Scuffed 0.75 · Cracked 0.5 · Broken 0 · Destroyed 0
+              ZoneFactor:  Dining/Lobby/Outside/Wall 1.0 · Kitchen 0.25 (seen through the pass) · Curb 0.5
+              DupFactor:   k-th copy of the same FRN item counts max(0.3, 0.85^(k−1))
+              Zone finishes count once per zone; shelved trophies ×1.2
+A_furn      = 55 × min(1, Σ Eff_i / PtsTarget[tier])                     -- 0..55
+A_variety   = min(15, 1.5 × #categories with Σ Eff ≥ 1)                 -- 0..15 (10 categories max it)
+A_theme     = min(15, Σ sets: complete (≥ 6 countable pieces) first +10, others +5; partial (3–5) +3)
+A_light     = 15 × Coverage                                              -- 0..15
+              Coverage = share of DINING+LOBBY+OUTSIDE cells within radius r of a working light
+              (Pristine/Scuffed lights count fully; windows count at 0.5 unless Broken; OUTSIDE is always lit;
+               UPG_035 Mood Lighting Dimmer: all radii ×1.25)
+A_penalty   = min(40, 1 × Cracked + 3 × Broken + 5 × Destroyed)          -- customer-side objects; kitchen ×0.5
+Atmosphere  = clamp(round(A_furn + A_variety + A_theme + A_light − A_penalty), 0, TierCap[tier])
+```
+
+| Tier | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| PtsTarget (Σ Eff for full A_furn) | 30 | 50 | 75 | 100 | 130 | 170 | 215 | 265 | 320 | 400 |
+| TierCap (max Atmosphere) | 55 | 60 | 65 | 70 | 75 | 80 | 85 | 90 | 95 | 100 |
+
+**Worked example — the starter shack.** Pre-damaged starter layout: Σ Eff = 6.3 → A_furn 11.5; categories
+with ≥ 1 pt: chairs, tables → A_variety 3; Greasy Spoon Classic is already a complete set (7 countable pieces —
+"Congratulations, consistently shabby!") → +10; the Cracked bulb gives no light, Cracked windows give 0.25
+coverage → 3.8; penalty 3 Cracked + 1 Broken = 6. **Atmosphere 22** (DecorMult ×0.966). After the tutorial
+repairs (`QST_TUT_008`) the bulb lights (+0.45 coverage), penalties vanish and variety grows: **Atmosphere 42**
+(×1.026) — the first lesson that fixing things pays.
+
+**Local atmosphere** (host scoring term in §8.6): `LocalAtmosphere(table) = clamp(Atmosphere + 20 × (D_t −
+D_avg) / max(D_avg, 1), 0, 100)` where `D_t` is Σ Eff of decor within 12 studs of the table centre and `D_avg`
+the mean over all tables. **UI:** Build Mode top bar "Atmosphere 41 (+3)" previews the delta of the ghost before
+placing (§24.23); the restaurant panel shows the five terms as bars with labels and numbers.
+
+### 15.7 Cleanliness (`K`)
+
+`RepairService` owns messes (§27.8.18) and computes `K` (0–100) event-driven on every mess spawn/clean or
+object state change; customers sample it when they evaluate satisfaction (`K/100`, weight 0.10, canon §C11.3).
+
+```text
+K = clamp(100 − 4·Trash − 6·Spills − 3·DirtyTables − 4·BrokenDishes
+              − 2·Cracked − 5·Broken − 8·Destroyed − 10·KitchenFires, 0, 100)
+    Trash/Spills/BrokenDishes/DirtyTables: counted in DINING, LOBBY and OUTSIDE (kitchen messes count ×0.5)
+    Cracked/Broken/Destroyed: customer-side destructible objects; KitchenFires: stations currently ON_FIRE (smoke)
+```
+
+| Mitigation | Effect |
+|---|---|
+| `FRN_431` Wet Floor Sign | spills within 6 studs count half |
+| `FRN_437` Dining Trash Bin | 30 % of trash spawned within 8 studs is auto-binned |
+| `UPG_056`/`UPG_057` Robo-Mop | removes 1 mess per 30 s / 15 s |
+| `UPG_058` Bus-Bot | clears one dirty table per 25 s |
+| `FRN_185` Lab Rubber Tiles, `FRN_190` Anti-Slip Mats | spills in that zone dry faster |
+| `ROLE_CLEANER`, `UPG_040` Janitor Closet Pro, `SKL_RPR_03` | faster cleaning (§16, §14) |
+
+The HUD shows K as "Condition 82" next to Atmosphere (§24). K is not part of the offline formula (canon §C15).
+
+### 15.8 Themes and Sets
+
+Nine earnable theme sets (members and counts in §36.13): **Greasy Spoon Classic** (T1, Basic), **Chrome Comet
+Diner** (T2, Expand), **Swamp Bistro** (T3), **Tentacle Tavern** (T4, nautical + fish tanks), **Neon Monster**
+and **Mad Lab Lunchroom** (T6, Go Wild), **Space Saucer** (T7), **Royal Ridiculous** (T8) and **Legendary
+Menagerie** (T9–T10, aquariums and kraken arms). Rules:
+
+- A set piece counts if placed, distinct, and Pristine or Scuffed. ≥ 6 pieces = complete, 3–5 = partial
+  (A_theme above). Mixing is allowed and encouraged: the theme term caps at 15.
+- Completing a set unlocks its façade skin for `UPG_060` Facade Facelift; the façade then matches the inside.
+- Premium kitchen variants belong to sets, so a themed kitchen also counts (at its ZoneFactor for points, fully
+  for set counting).
+- Robux restaurant themes (§23) are **re-skins** of earnable items with identical stats; they never add
+  atmosphere, slots or durability (no pay-for-income).
+
+### 15.9 Damage and Repair
+
+**Purpose.** Brawls (§11), kitchen fires (§5), offline incidents (§36.9) and events break things in loud,
+cartoon ways; fixing them is a satisfying 3–15 s beat and a modest MB sink — never a progress loss.
+
+#### 15.9.1 Durability model and damage intake
+
+Every destructible object (tag `MMR_Destructible`) has **MaxDur** points (§36.13: chairs 40–120, tables 60–300,
+booths 140–340, appliances 120–420, aquariums 40–400) and a saved durability **percentage** 0–100 (§28 codec);
+the canon state is derived from the percentage. Floors, wall finishes, curb items, rugs and trophies are
+indestructible.
+
+**Conversion of quoted damage.** §5, §11, §36.9 and event rules quote damage as "% durability" calibrated for a
+**100-point reference object**. `RepairService` converts:
+`ΔPct = Quoted × (100 / MaxDur_eff) × Protect`, where `MaxDur_eff` includes Reinforced upgrades and `Protect` is the
+product of applicable damage multipliers (§15.9.11). Sturdy pieces therefore shrug off hits that wreck a folding
+chair. Bounds: combined combat protection is never below **0.5 × the unprotected ΔPct** (`FurnitureCombatDamageMult
+≥ 0.5`, §11.10.5); one combat hit lowers an object by **at most one state** (§11.6.3); fire burns 2 quoted %/s but
+never below 26 % (§5).
+
+| `PropClass` for §11 | Catalog items |
+|---|---|
+| `Chair` | all chairs (`FRN_100`–`FRN_111`) |
+| `TableSmall` | tables that serve ≤ 2 (incl. `FRN_460`) |
+| `TableLarge` | tables serving ≥ 4, counters, booths (fixed; can be flipped unless `UPG_033`) |
+| `DecorSmall` (Throwable) | 2×2 plants, accessories, 2×2 sculptures, chalkboard sign |
+| `DecorLarge` | aquariums, larger sculptures, interactive pieces, floor lamps, wall and ceiling items |
+| `Station` | all appliances and utility fixtures (collateral ×0.5, §11) |
+| `TrashCan` | `FRN_437` Dining Trash Bin |
+
+#### 15.9.2 Damage states and gameplay effects (canon §C6 bands)
+
+| State | Durability | Seats & surfaces | Appliances & fixtures | Lights · windows · doors | Atmosphere factor | K | Look |
+|---|---|---|---|---|---|---|---|
+| Pristine | 100–76 % | normal | normal | normal | 1.0 | 0 | clean |
+| Scuffed | 75–51 % | normal | normal | normal | 0.75 | 0 | scuff decals, a "fix me?" sticky note |
+| Cracked | 50–26 % | usable (wobble emote, no penalty beyond K/M) | normal (§5) | lights stop counting for coverage; windows still do | 0.5 | −2 | crack decals, 3° tilt, bandage |
+| Broken | 25–1 % | **unusable**; a Broken surface disables its attached seats (canon) | **PAUSED**: timers frozen, nothing burns (§5) | light off · window boarded with cartoon planks · door hangs from one hinge (still passable) | 0 | −5 | slumped "broken pose" (artist-authored per model, fallback 12° tilt + popped leg) |
+| Destroyed | 0 % | rubble pile on the same footprint; seats gone until rebuilt | contents ejected (basic food free, specials to stock, §5) | rubble / empty frame | 0 | −8 | poof into a tinted rubble pile; rebuild offer |
+
+```mermaid
+%% diagram: object-damage-states
+stateDiagram-v2
+    [*] --> Pristine
+    Pristine --> Scuffed: damage
+    Scuffed --> Cracked: damage
+    Cracked --> Broken: damage
+    Broken --> Destroyed: damage
+    Scuffed --> Pristine: repair 4 %
+    Cracked --> Pristine: repair 8 %
+    Broken --> Pristine: repair 15 %
+    Destroyed --> Pristine: rebuild 25 % or Elbow Grease
+    Destroyed --> Pristine: tier upgrade or Co-op Insurance (free)
+```
+
+#### 15.9.3 Repair requirements, costs and durations
+
+A repair always restores to **Pristine 100 %**. Requirements: an actor within 7 (+2) studs (player with repair
+permission, or `ROLE_REPAIR`), the object not on fire, and MB charged **once at completion** for the worst state
+reached during the job (canon E3). If charging fails, the object is still repaired and the cost becomes a
+debt-free "owner pays later" entry (§27.8.18) — never a negative balance.
+
+| Worst state | Cost (% of price) [TUNABLE] | Diner Two-Top (120) | Sizzle Grill (400) | Grand Aquarium Wall (300,000) |
+|---|---|---|---|---|
+| Scuffed | 4 % | 5 MB | 16 MB | 12,000 MB |
+| Cracked | 8 % | 10 MB | 32 MB | 24,000 MB |
+| Broken | 15 % | 18 MB | 60 MB | 45,000 MB |
+| Destroyed (Rebuild) | 25 % (canon cap) | 30 MB | 100 MB | 75,000 MB |
+
+Discounts: player `REPAIR` −0.2 %/pt (max −30 %, canon §C5) plus `SKL_RPR_02` (combined cap −45 %, §14);
+`SKL_RPR_08` makes rebuilds 15 %; `ROLE_REPAIR` jobs use the technician discount `RepairSkill / 200` instead
+(canon §C15, max −50 %). Minimum 1 MB. **Elbow Grease:** when the wallet cannot cover a rebuild, the owner may
+rebuild for 0 MB by hand at ×2 duration — nobody is ever stuck with rubble.
+
+**Size classes** (footprint cells; wall items use wall-studs / 2) and **base durations** at `REPAIR` 0, divided by
+`1 + 0.01 × REPAIR` (cap ×2.5):
+
+| Class | Cells | Examples | Scuffed | Cracked | Broken | Rebuild |
+|---|---|---|---|---|---|---|
+| S | ≤ 2 | chair (1), plant (1), cutting board (2), 4-stud window (2) | 2.0 s | 3.5 s | 5.0 s | 8 s |
+| M | 3–6 | two-top (4), grill (4), 8×2 counter (4), pizza oven (6) | 3.0 s | 5.0 s | 7.5 s | 11 s |
+| L | 7–15 | booth (9), four-top (9), long table (10), karaoke stage (12) | 4.0 s | 6.5 s | 10.0 s | 15 s |
+| XL | ≥ 16 | 8×8 tables (16), Grand Aquarium Wall (8 × 2 = 16), Grand Tentacle Booth (20) | 5.0 s | 8.0 s | 12.5 s | 19 s |
+
+`SKL_RPR_18` (appliances −25 %), `SKL_RPR_08` (rebuild −30 %) and `SKL_RPR_07` (Multi-Fix) stack
+multiplicatively. A typical post-brawl cleanup (a Cracked chair, a Scuffed table, a Cracked booth, a Scuffed
+grill) is ≈ 18 s of hands-on time with the starter stat — inside §4's ≤ 60 s target.
+
+```lua
+--!strict
+-- ServerScriptService/Server/Services/RepairService/RepairMath.lua
+local RATE = { Scuffed = 0.04, Cracked = 0.08, Broken = 0.15, Destroyed = 0.25 }
+local BASE = { S = { 2, 3.5, 5, 8 }, M = { 3, 5, 7.5, 11 }, L = { 4, 6.5, 10, 15 }, XL = { 5, 8, 12.5, 19 } }
+local COL = { Scuffed = 1, Cracked = 2, Broken = 3, Destroyed = 4 }
+local FLOOR = { Pristine = 51, Scuffed = 26, Cracked = 1, Broken = 0, Destroyed = 0 } -- step limit targets
+
+local RepairMath = {}
+
+function RepairMath.state(pct: number): string
+	if pct >= 76 then return "Pristine" elseif pct >= 51 then return "Scuffed"
+	elseif pct >= 26 then return "Cracked" elseif pct >= 1 then return "Broken" end
+	return "Destroyed"
+end
+
+-- quoted: "% durability" from §5/§11/§36.9 (100-point reference); protect already floored at 0.5 for combat
+function RepairMath.applyDamage(pct: number, quoted: number, maxDurEff: number, protect: number, isCombatHit: boolean): number
+	local new = pct - quoted * (100 / maxDurEff) * protect
+	if isCombatHit then new = math.max(new, FLOOR[RepairMath.state(pct)]) end -- one state per hit
+	return math.clamp(math.floor(new + 0.5), 0, 100)
+end
+
+function RepairMath.cost(price: number, worst: string, discount: number, rebuildRate: number?): number
+	local rate = if worst == "Destroyed" then (rebuildRate or RATE.Destroyed) else RATE[worst]
+	if rate == nil then return 0 end
+	return math.max(1, math.floor(price * rate * (1 - math.clamp(discount, 0, 0.5)) + 0.5))
+end
+
+function RepairMath.duration(sizeClass: string, worst: string, repairStat: number): number
+	local col = COL[worst]
+	return if col then BASE[sizeClass][col] / (1 + 0.01 * math.min(repairStat, 150)) else 0
+end
+
+return RepairMath
+```
+
+#### 15.9.4 The repair minigame: "Fix-It Ring"
+
+Rendered by the §24.24 widget; `RepairService` picks the mode and the values below.
+
+| | **Whack** (furniture, decor, windows: `ANM_060` hammer) | **Hold** (appliances, fixtures, aquariums: `ANM_061` weld/bolt) |
+|---|---|---|
+| Base progress | ring fills passively at 0.6 × base rate while the player stays in range | holding the button fills at 1.0 × base rate |
+| Rhythm | a sweet-spot pip crosses the target every 0.9 s; tap: **Perfect** (±0.12 s) +0.9 s of progress, **Good** (±0.22 s) +0.5 s, Miss 0 (cartoon thumb-bonk, no penalty) | every 25 % of progress a "Tighten!" pip appears; re-press inside 0.35 s: +8 % progress |
+| Result range | all Perfect ≈ 0.62 × base time · all Good ≈ 0.86 × · no taps ≈ 1.67 × | all pips ≈ 0.76 × base time · none 1.0 × |
+
+- **Never fails.** Leaving range or being hit pauses the job; progress is kept 30 s (`SKL_RPR_21` ignores small hits).
+- **Mobile:** one large FIX button above Interact (≥ 96 × 96 px), pips sized ≥ 44 px; **controller** X/A; **keyboard**
+  E or Space. **Auto-Fix** accessibility toggle turns every job into Hold with automatic Good pips.
+- `SKL_RPR_09` widens timing windows 15 % per rank; `ABL_062` Repair Burst calls `RepairService` to add its
+  instant percentage (§36.6). Two players may **Team Fix** one object (second player at 60 % contribution).
+- **XP:** `XPRate(L) / 3600` per second of base repair time (canon §C5.1 relative rule), ×1.25 if ≥ 80 % Perfect.
+- **Server validation:** pip schedule is seeded per `jobId`; `Repair.Input` tap times are checked against
+  `workspace:GetServerTimeNow()` with latency tolerance (as §27.8.5 chopping); a job can never complete faster than
+  0.6 × its base time.
+
+#### 15.9.5 Destruction and restoration presentation
+
+All debris is client-only and despawns within 4 s (canon §C3); reduced-VFX settings halve particles and drop
+screen shake.
+
+| Event | Animation and effects (kid-safe) |
+|---|---|
+| Damaged (any hit) | object jiggles 0.2 s, "CRACK!"/"BONK!" comic text, 6–10 cartoon stars or feathers, sauce splat decal if food hit it |
+| Becomes Broken | slumps into its broken pose, a leg or knob pops off and bounces, soot puff for appliances, appliance face (if any) gets dizzy spirals |
+| Destroyed | "poof": dust cloud, bouncing bolts and springs, then a tinted rubble pile with a tiny white flag; aquariums drop their fish into a bucket ("We're fine!"); goldfish Chef gives a thumbs-up fin |
+| Restored ("Good as new!") | sparkle burst (30 particles), scale tween 0.9 → 1.1 → 1.0 over 0.4 s (`TweenService`), a shine sweep across the model, floating text "Good as new!", ding |
+| Co-op Insurance sweep | a sparkle wave travels from the front door through every insured object (1.5 s) |
+| Tier upgrade | Mutant Builders sequence (§15.3) |

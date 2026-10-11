@@ -432,7 +432,6 @@ progress fields), §30 (streaming).
 ```lua
 --!strict
 -- ServerScriptService/City/CityTravel.lua (module hosted with CityEventService's city package, §18.9)
-local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local Config = require(game.ReplicatedStorage.Shared.Config.CityTravel)
 
@@ -461,7 +460,7 @@ local function travel(player: Player, mode: "Metro" | "Taxi" | "ReturnDoor" | "E
 	end
 	CityTravel.AfterArrival(player, mode, dest)                         -- cooldowns, analytics mmr_city_travel
 	task.delay(Config.ArrivalAnchorMax, function() if root.Parent then root.Anchored = false end end)
-	CityRemotes.TravelEnd:FireClient(player, destKey)                  -- client unanchors early on floor raycast hit
+	CityRemotes.TravelEnd:FireClient(player, destKey)                  -- client reports floor hit via City.ArrivalReady; server unanchors
 	return true
 end
 ```
@@ -469,8 +468,8 @@ end
 Notes: the client requests `City.RequestTravel(mode, destKey)`; the server never trusts a client CFrame.
 Client unanchoring is done by a server-owned request (`City.ArrivalReady`) after a downward raycast hits the
 streamed floor, or automatically after 3 s. Taxi charge happens after a successful pivot, so aborted rides are
-never charged. The Return Door teleports into the Interiors region and is implemented by `RestaurantService`'s
-door handler with the same pre-stream call.
+never charged. The Return Door moves the character into the Interiors region (a `PivotTo`, not TeleportService)
+through `RestaurantService`'s door handler with the same pre-stream call.
 
 **Edge Cases.** §18.10 rows 1–5. **Acceptance Criteria.** AC-18-01 … AC-18-06.
 

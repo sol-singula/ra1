@@ -174,6 +174,7 @@ All IDs are UPPER_SNAKE, ASCII, stable forever (never re-used; deprecated IDs st
 | `QST_<TYPE>_<NNN>` | Quest; TYPE ∈ TUT, STY, DLY, WKY, CHF, CBT, RPR, EXP, EMP, RST | A13 (TUT IDs fixed §C17) | `QST_TUT_003` |
 | `EVT_<NNN>` | City event | Canon §C16.5; A12 details | `EVT_007` |
 | `ANM_<NNN>` | Animation | A16 (core set fixed §C21) | `ANM_010` |
+| `CSEC_<NN>` / `CPROP_<NN>` / `CPIX_<NN>` | City secret / interactive prop / dead pixel | A12 | `CSEC_01` |
 | `SFX_<NNN>` / `MUS_<NNN>` | Sound effect / music track | A16 | `SFX_101` |
 
 Non-database names: Roblox services use PascalCase (`CookingService`); remotes use
@@ -1199,7 +1200,7 @@ MeshParts and ≤ 6,000 triangles (LOD swap beyond 60 studs to a 1,500-triangle 
 | `MUT_116` Noodle Neck | Serve `RCP_PST_008` The Infinite Noodle 10 times at PERFECT quality. |
 | `MUT_237` Paper Airplane Wings | From the roof of City Hall (`BLD_09`), throw a paper menu (`ABL_005`) so it lands in the Downtown fountain. |
 | `MUT_276` Pixel Glitch | Find all 8 hidden "dead pixels" (one each in DST_01–DST_08). |
-| `MUT_280` Mystery Fog | Hold 5.0 ★ reputation for 50 consecutive customers, then visit the Mystery Market (`BLD_13`) during the city night cycle. |
+| `MUT_280` Mystery Fog | Hold a displayed 5.0 ★ reputation (Stars ≥ 4.95) for 50 consecutive customers, then visit the Mystery Market (`BLD_13`) during the city night cycle. |
 
 **Tutorial first mutation** (QST_TUT_010): choose one of `MUT_145` Octopus Arm (Chef), `MUT_144` Crab Claw
 Arm (Fighter), `MUT_153` Wrench Claw Arm (Repair) — granted free at Lv1 regardless of rarity requirement.

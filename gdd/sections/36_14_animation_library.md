@@ -272,7 +272,7 @@ track is speed-scaled to fit. Users: P = player, C = customer using the NPC-tune
 | `ANM_315` | Spine Burst | Ability | R15 · P, C | No | 0.7 | Action2 | Crouch-and-puff, spines flare out in a ring, recovery shake. | `ABL_015` · MUT_243 |
 | `ANM_316` | Tongue Yank | Ability | R15 · P, C | No | 0.9 | Action2 | Mouth opens, a tongue Beam lashes out and reels the target in. | `ABL_016` · MUT_061 |
 | `ANM_317` | Claw Grab & Toss | Ability | R15 · P, C | No | 1.2 | Action2 | Claw snaps onto the target or prop, a spin, an overhand toss. | `ABL_017` · MUT_144 |
-| `ANM_318` | Dragon Breath | Ability | R15 · P, C | Yes | 1.0 | Action2 | Rear back, then a breath cone of orange sparkles and soot. Never flames on bodies. | `ABL_018` · MUT_031 |
+| `ANM_318` | Dragon Breath | Ability | R15 · P, C | Seg | 1.5 | Action2 | 0.3 s rear-back, a looping breath segment held for the whole 1.5 s channel (orange sparkles and soot cone), 0.2 s exit. Never flames on bodies. | `ABL_018` · MUT_031 |
 | `ANM_319` | Shark Chomp | Ability | R15 · P, C | No | 0.6 | Action2 | Lunge with jaws wide, comic CHOMP freeze-frame (2 frames held). | `ABL_019` · MUT_062 |
 | `ANM_320` | Web Shot | Ability | R15 · P, C | No | 0.6 | Action2 | Head-thrust spit of a web glob. | `ABL_020` · MUT_028 |
 | `ANM_321` | Ground Pound | Ability | R15 · P, C | No | 1.1 | Action2 | Knuckle hop and a double-fist pound with a shockwave ring. | `ABL_021` · MUT_148 |
@@ -314,7 +314,7 @@ track is speed-scaled to fit. Users: P = player, C = customer using the NPC-tune
 | `ANM_357` | Firefly Flash | Ability | R15 · P, C | No | 0.6 | Action2 | Eyes squint, then a single soft glow pulse (no strobe). | `ABL_057` · MUT_083 |
 | `ANM_358` | Goat Headbutt | Ability | R15 · P, C | No | 0.8 | Action2 | Back-up hop and a running headbutt. | `ABL_058` · MUT_097 |
 | `ANM_359` | Ghost Phase | Ability | R15 · P, C | No | 1.0 | Action2 | Sheet flutter while the body fades to Transparency 0.6 (client), floaty drift. Silly, not spooky. | `ABL_059` · MUT_252 |
-| `ANM_360` | Kraken Grasp | Ability | R15 · P, C | No | 2.2 | Action2 | Ultimate: rears up, giant tentacle wrap, squeeze-shake, toss. Small camera nudge. | `ABL_060` · MUT_165 |
+| `ANM_360` | Kraken Grasp | Ability | R15 · P, C | Seg | 3.3 | Action2 | Ultimate: 0.8 s rear-up wind-up, then a 2.5 s looping wrap-and-squeeze-shake segment, then a toss exit. Small camera nudge. | `ABL_060` · MUT_165 |
 | `ANM_361` | Extra Hands | Ability | R15 · P | No | 0.8 | Action | Backpack arms unfold with a mechanical flourish. | `ABL_061` · MUT_249 |
 | `ANM_362` | Repair Burst | Ability | R15 · P | No | 1.0 | Action | Wrench claw spins overhead and sends out a sparkle repair ring. | `ABL_062` · MUT_153 |
 | `ANM_363` | Cheetah Dash | Ability | R15 · P | Seg | 0.8 | Action2 | Low sprint lean with speed lines, overlaid on run. | `ABL_063` · MUT_186 |

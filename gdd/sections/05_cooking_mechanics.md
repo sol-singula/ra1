@@ -72,7 +72,10 @@ We studied the *mechanics* (never the assets, names, levels or art) of the genre
 #### 5.2.1 Carrying
 
 - **Capacity** (canon §C3): 1 item. +1 per equipped carry part — `MUT_145` Octopus Arm (per arm), `MUT_217` Monkey Tail,
-  `MUT_249` Extra Arm Backpack — and +1 while `ABL_061` Extra Hands is active. **Hard max 3.**
+  `MUT_249` Extra Arm Backpack — and +1 while `ABL_061` Extra Hands is active (stacks with the Extra Arm Backpack
+  passive). **Hard max 3.** While `ABL_061` is active the player may also **operate 2 stations**: a hold-type channel
+  (blend, mix, pour, wash, swirl, agitate, scrub) started on one station keeps running hands-free while the player works a
+  second station, as long as both stay within 7 + 2 studs (max 2 concurrent channels; duration per §36.6).
 - **Carry stack.** Carried items form an ordered stack; the **active item** is the one shown in front of the character and is
   the one placed/thrown/served. **Swap** rotates the stack (active → back). The HUD carry widget shows all held items as
   icons, active item enlarged.
@@ -311,7 +314,7 @@ Durations are Lv1 values before stats/KA; all heat items use `W_perfect` 2.0 s, 
 | Failure | Left > 20 s after FROZEN → **ICE-BLOCKED**: unusable until chipped (2 taps at `STN_CUT` or hold Use 1.5 s here). No quality loss. |
 | VFX & audio | Frost climbs the door as progress; ice-crackle ticks; "ding-ding" on frozen; an ice-blocked item is a cartoon cube with the food's face squished against it ("mmf!"). |
 | Co-op | 2 independent slots. |
-| Mutations | KA `ice`: −10 % time per part (`MUT_125`, `MUT_162`, `MUT_262`…). `MUT_176` Frost Fingers → `ABL_067` Freeze Touch: instant FREEZE of the held item or a freezer slot. |
+| Mutations | KA `ice`: −10 % time per part (`MUT_125`, `MUT_162`, `MUT_262`…). `MUT_176` Frost Fingers → `ABL_067` Freeze Touch: instantly FREEZEs one item (held or in a slot) at GOOD quality — the FREEZE step is recorded with grade 0.80 (§5.5), the trade-off for skipping the timer. |
 | Roblox | Non-heat slot timer; `frozenUntil` stored on the Dish. |
 
 ##### `STN_CUT` — Cutting Board
@@ -407,7 +410,7 @@ Durations are Lv1 values before stats/KA; all heat items use `W_perfect` 2.0 s, 
 | Upgrades | **Lv5 Bottomless Ladle:** 6 servings per pot and no simmer decay. |
 | VFX & audio | Bubbles and steam; spoon icon for stir prompts; the pot hums a little tune while simmering; *glorp* on boil-over. |
 | Co-op | One slot; anyone may stir or ladle (lock only during input). |
-| Mutations | KA `water`: +6 % window/part. `MUT_018` Pumpkin Head: stir windows +0.5 s. `ABL_066` can rush the whole pot to GOOD. |
+| Mutations | KA `water`: +6 % window/part. `MUT_018` Pumpkin Head: stir windows +0.5 s. `ABL_066` Microwave Zap-Cook finishes the whole pot instantly at GOOD (treated as simmered at GOOD). |
 | Roblox | Heat slot + `S1_Servings` attribute. |
 
 ##### `STN_STEAMER` — Steamer
@@ -581,7 +584,7 @@ Every canon §C8 verb, at Lv1 with 0 stats. "Mobile" = adaptation on touch; ever
 | SAUTE | `STN_STOVE` (pan) | 2 Toss prompts (or 1 Flip) | 33 % / 66 % of `T_ready`, 1.0 s each | heat bands, cap per missed toss | tap | pan fire |
 | BOIL | `STN_STOVE` (pot), `STN_SOUP_POT` | auto; soup: Stir + Simmer | stir every 5 s (1.5 s window) | heat bands; simmer holds 60 s | tap | boil-over SPILLED |
 | STEAM | `STN_STEAMER` | auto; optional peek | — | heat bands | — | soggy, boil-dry |
-| FREEZE | `STN_FREEZER`, `ABL_067` | auto | 5 / 8 / 10 s | no grade change (state only) | — | ICE-BLOCKED |
+| FREEZE | `STN_FREEZER`, `ABL_067` | auto | 5 / 8 / 10 s; ability instant | freezer: no grade (state only); `ABL_067`: graded GOOD 0.80 | — | ICE-BLOCKED |
 | MIX | `STN_MIXER`, `STN_PREP` (hand) | ordered inserts + hold whisk | green [0.9·T, T + 2 s], T = 6 s | zone score × sequence factor | hold button | under-mixed / tough |
 | BLEND | `STN_BLENDER` | hold meter | smooth [4.25, 7.0] s | zone score | hold button | LUMPY, MUSHY, lid pop |
 | POUR | `STN_DRINK` | hold fill + optional Agitate | fill band 90–100 % | fill score | hold; Lv5 one-tap | overflow SPILLED |
@@ -759,7 +762,8 @@ Cleaning actions are specified with the hazards in §5.7.
 
 ```
 Graded steps: every heat step (band grade, capped, mod-mapped per §6.18), chop (mean tap score / MUSHY 0.35),
-              mix / blend / pour / scoop / swirl (zone score). FREEZE, CHILL, combine, plating: no grade.
+              mix / blend / pour / scoop / swirl (zone score), FREEZE by `ABL_067` (GOOD 0.80) and heat steps finished
+              by `ABL_066` (GOOD 0.80). Freezer FREEZE, CHILL, combine, plating: no grade.
 score(c)  = mean of the graded steps component c went through; components never processed (bun, cheese slice,
             raw garnish) are pass-through and excluded. If a dish has no graded component, meanScore = 1.0.
             MELTY / simmer decay lower a component one grade step (1.00 → 0.80 → 0.60 → 0.35).
@@ -873,7 +877,7 @@ icons + counts, temp, mood, Q stars and mod check states for the pinned ticket.
 
 | Hazard | Trigger | Effect | Clear method | Clear time (Lv1) | Cleanliness input (§10/§15 aggregate) | Caps |
 |---|---|---|---|---|---|---|
-| **Station fire** (ON_FIRE) | heat item reaches `T_fire`; fryer OilHeat 100 | item RUINED; station −2 % durability/s (floor 26 %); after 10 s spreads to one adjacent heat appliance/counter within 4 studs every 8 s; customer patience drains × 1.25 while any fire burns; touching flames → `STS_TOASTY` (soot, §36.7) | **Fire extinguisher** prop (hold Use, 6-stud cone), `ABL_028` Trunk Spray, `ABL_041` Frost Blast, `ABL_067` Freeze Touch, `STN_FREEZER` Lv5, employees | FireHP 100 (+10/s while burning, max 200); extinguish 50 HP/s → 2–4 s | smoke −10 while any fire burns | ≤ 3 simultaneous fires per restaurant; never spreads to utility fixtures except PREP/ASSEMBLY counters |
+| **Station fire** (ON_FIRE) | heat item reaches `T_fire`; fryer OilHeat 100 | item RUINED; station −2 % durability/s (floor 26 %); after 10 s spreads to one adjacent heat appliance/counter within 4 studs every 8 s; customer patience drains × 1.25 while any fire burns; touching flames → `STS_TOASTY` (soot, §36.7) | **Fire extinguisher** prop (hold Use, 6-stud cone), `ABL_028` Trunk Spray, `ABL_067` Freeze Touch (each instantly extinguishes one ON_FIRE station, §36.6), `STN_FREEZER` Lv5, employees | FireHP 100 (+10/s while burning, max 200); extinguish 50 HP/s → 2–4 s | smoke −10 while any fire burns | ≤ 3 simultaneous fires per restaurant; never spreads to utility fixtures except PREP/ASSEMBLY counters |
 | **Spill** | overflow, boil-over, exploded drink, dropped soup, goo geyser | 2-stud puddle; anyone *running* across: 35 % slip (slide 3 studs, drop active item, involuntary); walking (< 50 % stick / < 8 studs/s) never slips; soda & goo apply `STS_STICKY` instead of slip; customers slip comically (+5 anger) | **Mop** prop (hold Use), `ABL_068` Web Sweep, `STN_DISHWASH` Lv5 bubbles, `ROLE_CLEANER` | 1.5 s | −6 dining / −3 kitchen | evaporates after 120 s; ≤ 8 puddles |
 | **Grease spot** | fryer basket lifted: 10 % (30 % at OilHeat ≥ 70) | `STS_GREASY` (§36.7) on walkers + 35 % slip | Mop | 1.0 s | −2 kitchen | ≤ 4 spots |
 | **Broken plate** | dropped/thrown plated dish, customer throws (§11) | shard decal: crunch sound, `STS_SLOW` 1 s; plate pool −1 (spare plate restocked free after 60 s) | Mop, `MUT_066` Vacuum Mouth, `ABL_068` | 1.0 s | −5 dining / −2 kitchen | ≤ 10 shard decals |
@@ -1027,6 +1031,10 @@ time are baked into the slot's timings (co-op partners do not retime a cooking i
    the meter run into its failure zone (lid pop, overflow) — never into a better result.
 7. Throws: the arc starts at the server HRP position; the client contributes only an aim direction.
 8. Movement plausibility (teleport/speed) is owned by §29; a flagged player's cooking inputs are paused, not punished.
+9. Kitchen effects of abilities (`ABL_028` and `ABL_067` extinguish, `ABL_066` finish at GOOD, `ABL_067` FREEZE at GOOD,
+   `ABL_068` clean, `ABL_061` second station channel) are applied **server-side**: `CombatService` validates the cast
+   (§36.6) and calls `CookingService.ApplyAbilityEffect(player, abilityId, targetUid)`, which re-checks range, slot state
+   and legality (e.g. X12). No client ever reports an ability's kitchen result.
 
 #### 5.10.5 `CookingService` core (server, excerpt)
 
@@ -1286,7 +1294,7 @@ back and plays a soft "bonk" with the reason ("Busy!", "Too far!").
 | X9 | Station upgrade purchased mid-cook | Upgrade queued until every slot idles (§5.3.1); no timing changes mid-item. |
 | X10 | Moving or storing a station with items in it (build mode, §15) | Blocked with "Empty it first!" — `BuildingService` checks `CookingService.IsIdle(stationUid)`. |
 | X11 | Carry capacity drops while holding extra items (part unequipped, `ABL_061` expires) | Excess items (from the back of the stack) are placed on the nearest free hold within 7 studs, else dropped (involuntary, uncharged), within 1 s. |
-| X12 | `ABL_066` Microwave Zap-Cook timing | Valid only while the item is UNDERCOOKED or RARE: sets `cookSec = T_pe + 0.01` (GOOD) and the item keeps cooking (it can still burn). Used on PERFECT or later, non-heat items or ON_FIRE slots → rejected with no cooldown consumed. |
+| X12 | `ABL_066` Microwave Zap-Cook timing | Instantly **finishes** one heat item at GOOD (0.80): its heat step is recorded at GOOD, the slot's rate drops to 0 (it can no longer burn) and it waits for pickup. Valid only while the item is UNDERCOOKED or RARE (it would never improve a PERFECT item); used on PERFECT or later, non-heat items or ON_FIRE slots it is rejected with no cooldown consumed. A finished-at-GOOD item never satisfies a band-specific doneness mod (RARE, WELL_DONE, SCREAMING, BURNED — §6.18). |
 | X13 | Server hitch (frame gap > 0.5 s) | Stamps of all active slots shift forward by `gap − 0.5 s` (§5.10.5): no food burns during a server freeze. |
 | X14 | Player levels up or changes stats mid-cook (canon E14) | Toast only; items already on stations keep the placer's timings from placement time. |
 | X15 | Thrown item lands on an occupied slot or a burning station | Occupied → bounces to the floor (Five-Second Rule). Burning → item RUINED (charged as waste only if thrown by the owner; guest waste is never charged). |

@@ -201,9 +201,9 @@ def main():
         rows = [a for a in arch if a["rarity"] == r and a["id"] != "EMP_001"]
         rsa = [sum(a["stats"][k] * v for k, v in rw[a["role"]].items()) for a in rows]
         m = sum(rsa) / len(rsa)
-        w("| %s %s | %.1f | %.2f | %s | %d | %d |" % (
+        w("| %s %s | %.1f | %.2f | %s | %s | %d |" % (
             ICON[r], r, m, m * 0.92 / 100, money(int(round(sum(a["hire"] for a in rows) / len(rows), -1))),
-            round(sum(a["wage"] for a in rows) / len(rows)), len(rows)))
+            money(int(round(sum(a["wage"] for a in rows) / len(rows)))), len(rows)))
     w("")
     w("#### 36.8.3 Content notes")
     w("")

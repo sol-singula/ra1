@@ -402,3 +402,402 @@ status attributes on each proxy. It sets `Decal.Texture` from the preloaded list
   It keeps the L2 HEAD, TORSO, one mesh per arm and per leg, TAIL and combined WINGS, plus the 3-state face decal. No
   FX and no secondary motion; the uniform color shows through the TORSO palette.
 - **Texture memory per morph:** ≤ 2 palette atlases (256²), ≤ 4 SurfaceAppearance sets (512²), and the face sheet.
+
+### 25.4 Restaurant Art
+
+#### 25.4.1 Tier art progression ("Basic → Expand → Go Wild")
+Names are canon §C6. Footprints, seats and slots belong to §15 and §36.12. Art follows them.
+
+| Tier | Exterior façade | Interior look | Signature set piece | Façade / interior-shell tris |
+|---|---|---|---|---|
+| TIER_01 Broken Burger Shack | Lopsided plywood shack, patched tin roof, boarded window, flickering "BURG R" neon (the E is missing), burger-shaped mailbox | Worn warm wood, mismatched crate stools, duct-taped counter, one bare bulb plus string lights | Nana Gristle's cranky hologram menu board (NPC_001) | 6k / 8k |
+| TIER_02 Tiny Mutation Diner | Chrome-trimmed diner box, red-and-white awning, pink "DINER" neon with a green DNA swirl | Checkerboard floor, red vinyl stools, pie case, counter service window | Spinning pie-case carousel | 8k / 10k |
+| TIER_03 Neighborhood Freak Café | Two-story brick café, planters of eyeball sunflowers, chalkboard "SOUP THAT STARES BACK" | Cozy tables, bookshelves, potted flytraps, warm pendants; first table service | Chalkboard menu that doodles itself (flipbook) | 10k / 12k |
+| TIER_04 Morph City Grill | Industrial brick and steel, giant rotating burger sign, chimney puffing heart-shaped smoke | Open kitchen under a steel hood, booths, Edison bulbs, cartoon grill glow | Rotating rooftop burger | 12k / 15k |
+| TIER_05 Mutant Family Restaurant | Pastel family restaurant, mascot statue (a generic mutant holding a spatula), kids' corner slide | Pastel booths, balloons, crayon-art walls, birthday corner | Mascot statue that waves at passers-by | 14k / 18k |
+| TIER_06 Monster Food Court | Wide glass-front pavilion with several kiosk neons | Multi-counter food-court stalls, molded seats, central fountain, **first aquarium column**, purple neon begins | Aquarium column with cartoon fish | 16k / 22k |
+| TIER_07 Mutation Megadiner | Huge retro-futurist chrome diner, roof-mounted spinning milkshake, cyan and pink neon tubes | Two-level mezzanine, cosmetic plate conveyor, jukebox, neon edge lights | Giant milkshake with a bendy straw | 18k / 26k |
+| TIER_08 Luxury Freak Restaurant | Art-deco façade, velvet rope, red carpet, sweeping spotlights | Purple velvet booths, fork chandeliers, wall aquariums with jellyfish, robot pianist decor | Jellyfish aquarium wall | 20k / 30k |
+| TIER_09 Morph City Food Palace | Palace with cloche-shaped domes, banners, soda fountains | Grand hall, stylized marble, balconies, gold chandeliers, giant aquarium wall | Soda-fountain plaza | 22k / 35k |
+| TIER_10 Legendary Mutation Restaurant | Mutant-organic tower: tentacle columns, blinking eyeball windows, purple-neon crown, rooftop hologram of a spinning golden dish | Purple-neon monster restaurant: **360° aquarium tunnel ceiling**, glowing mutagen pipes, stage, floating-dish decor (cosmetic, anchored) | Aquarium tunnel ceiling with a friendly kraken (`FRN_908` vibe) | 25k / 40k |
+
+**Façade rules.**
+- Fit the plot volume in §15. Height ≤ 40 studs including the sign; the TIER_10 hologram may extend 10 studs more as
+  non-colliding `Beam` and Neon.
+- The door is centered, ≥ 10 studs tall, with a glowing frame while the restaurant is open. During Closing (canon
+  E1) it shows a "Closed for the day!" sign.
+- Name-sign cap height runs from 3 studs (T1) to 5 studs (T10), legible at 80 studs on 1080p. The custom
+  restaurant name renders through a SurfaceGui after the text filter (§21, §29).
+- Façade LOD1 (≤ 30 % tris) applies beyond 120 studs, and neon stays at every LOD.
+- Façades have no damage states; damage lives indoors (canon §C6).
+
+#### 25.4.2 Interior lighting presets
+The client applies these on door entry with a `TweenService` tween of ≤ 1.0 s. `Lighting.Technology` never changes.
+
+| Tier | Ambient | Brightness | ColorShift_Top | Bloom (Int / Size / Thr) | ColorCorrection (Sat / Con / Tint) | Atmosphere Density | Key lights |
+|---|---|---|---|---|---|---|---|
+| TIER_01 | `#6B4A36` | 1.6 | `#FFD7A8` | 0.4 / 24 / 1.8 | 0.10 / 0.05 / `#FFE9CC` | 0.05 | bare bulb, string lights |
+| TIER_02 | `#6E5048` | 1.8 | `#FFE1B8` | 0.5 / 24 / 1.6 | 0.15 / 0.08 / `#FFF0DC` | 0.05 | 3 chrome pendants, pink neon |
+| TIER_03 | `#5E4B3A` | 1.7 | `#FFD9A0` | 0.5 / 24 / 1.6 | 0.15 / 0.05 / `#FFEBD1` | 0.05 | warm pendants |
+| TIER_04 | `#4F4A4A` | 1.8 | `#FFD2A0` | 0.6 / 26 / 1.5 | 0.15 / 0.10 / `#FFF0E0` | 0.06 | Edison bulbs, grill glow |
+| TIER_05 | `#6F6A80` | 2.0 | `#FFF0D8` | 0.5 / 24 / 1.6 | 0.25 / 0.05 / `#FFF6F0` | 0.04 | bright pastel panels |
+| TIER_06 | `#4A3F66` | 1.9 | `#E8D8FF` | 0.8 / 28 / 1.3 | 0.25 / 0.10 / `#F4ECFF` | 0.06 | kiosk neons, aquarium glow |
+| TIER_07 | `#3D3566` | 1.8 | `#D8E8FF` | 0.9 / 30 / 1.2 | 0.30 / 0.12 / `#EEF4FF` | 0.07 | cyan and pink neon tubes |
+| TIER_08 | `#3A2550` | 1.6 | `#FFD6F0` | 0.8 / 28 / 1.3 | 0.25 / 0.15 / `#FFEFF8` | 0.08 | fork chandeliers, jellyfish tanks |
+| TIER_09 | `#4A3A5E` | 1.9 | `#FFE8C0` | 0.8 / 30 / 1.3 | 0.25 / 0.12 / `#FFF5E6` | 0.06 | gold chandeliers, aquarium wall |
+| TIER_10 | `#3A1E5C` | 1.7 | `#E6CCFF` | 1.0 / 32 / 1.1 | 0.30 / 0.15 / `#F1DEFF` | 0.08 | purple neon, mutagen pipes, aquarium tunnel |
+
+#### 25.4.3 Kitchen equipment style sheet
+Every appliance follows the same rules:
+1. **Chunky and rounded,** like a kitchen toy.
+2. **Status dome lamp** on top that shows state by icon *and* color: idle (off), working (spinning), Perfect (lime
+   ✓), about to burn (yolk "!"), fire (tomato flame icon).
+3. **A cartoon face** whose expression follows the damage state: smile, grimace, X-eyes when Broken.
+4. **Upgrade kits** add ≤ 3 MeshParts per station level (canon §C4.9) instead of replacing the model:
+   - Lv1 Stock: plain.
+   - Lv2 Tuned: chrome trim.
+   - Lv3 Pro: racing stripes plus an extra dial.
+   - Lv4 Mutant: organic bits (tentacle handle, eyeball dial, green glow).
+   - Lv5 Ridiculous: rockets, a crown, rainbow neon, a floating gizmo.
+
+Budget: ≤ 2,000 tris at L0, plus ≤ 500 for the Lv5 kit, ≤ 6 MeshParts, and the shared 1024² kitchen atlas.
+
+| Station | Shape language | Signature detail | Working VFX |
+|---|---|---|---|
+| STN_PANTRY | wooden shelf of goofy-labeled jars | jars wobble when grabbed | dust puff |
+| STN_FRIDGE | rounded retro fridge (mint) | magnet face | frost puff on open |
+| STN_FREEZER | chest freezer | icicle "teeth" lid | frost breath |
+| STN_CUT | thick butcher block | timing ring appears above (§24) | veg chips |
+| STN_PREP | steel counter with 3 tray inlays | hold-slot glow | — |
+| STN_GRILL | flat-top with a grill-grate smile | grill marks appear on food | sizzle steam, heat shimmer |
+| STN_FRYER | boxy fryer whose basket handles look like ears | cartoon golden oil | bubble bursts |
+| STN_OVEN | porthole-window oven "face" | interior glow while baking | warm glow pulse |
+| STN_PIZZA_OVEN | brick dome with an arch "mouth" | cartoon ember glow | embers (no flames outside) |
+| STN_STOVE | 2-burner top with knob eyes | pan rattle | steam |
+| STN_SOUP_POT | giant pot on a stand | bubbles form a smiley at Perfect | bubbles |
+| STN_STEAMER | stacked basket tower | lid hops | steam puffs |
+| STN_BLENDER | tall swirl jar on a dial base | jar shakes with progress | swirl |
+| STN_MIXER | stand mixer with a curious head tilt | whisk spin | batter flecks |
+| STN_DRINK | rainbow 3-nozzle soda fountain | fizz sparkles | bubbles |
+| STN_ICECREAM | swirl machine with a cone crown | soft-serve curl | sprinkles |
+| STN_ASSEMBLY | counter with 2 boards and squeeze bottles | ingredient stack ghost preview | — |
+| STN_PLATING | stylized marble counter, garnish jars, spotlight lamp | spotlight on the finished plate | sparkle |
+| STN_WINDOW | pass-through window, ticket rail, bell | tickets flutter | — |
+| STN_DISHWASH | sink plus rack | suds bubbles | bubbles |
+| STN_TRASH | bin with a "chomping" flip lid | lid burps | — |
+| STN_DELIVERY | loading-dock door and crate chute | a cartoon delivery truck honks | crate thump dust |
+| STN_INFUSER | lab rig with glowing green tubes and bellows | goo pulses down the tubes | green glow |
+| STN_ANTIGRAV | wok floating over a ring emitter | orbiting sparkles | float sparkles |
+
+#### 25.4.4 Furniture style
+- **Style families by tier:** Shack Junk (T1), Diner Retro (T2), Café Cozy (T3), Grill Industrial (T4), Family Pastel
+  (T5), Food Court Plastic (T6), Megadiner Chrome (T7), Luxury Velvet (T8), Palace Gold (T9), Legendary Mutant
+  (T10: tentacle table legs, eyeball lamps, aquarium tables).
+- **Animation contract** for `ANM_040`: seat height 1.5 studs, tabletop 2.75 studs, and a 0.25-stud seat-edge bevel.
+  §15 items keep these heights so every morph sits correctly.
+- **Budgets:**
+
+  | Item | Tris (max) |
+  |---|---|
+  | Chair | 400 |
+  | Table | 600 |
+  | Booth | 1,200 |
+  | Small decor | 300 |
+  | Large decor | 1,500 |
+  | Aquarium | 2,500, plus ≤ 6 fish at 150 each (client sine-swim) |
+  | Trophies `FRN_901`–`FRN_910` | 1,200 (one SurfaceAppearance set allowed) |
+
+- **Destructible items** ship a Pristine mesh, a Cracked variant, a Broken variant and ≤ 3 damage decals. Rubble is
+  shared per size class (S, M, L) and tinted with the item's primary color, plus one recognizable fragment (the
+  fryer basket, a booth cushion).
+- Interactive decor (jukebox, arcade cabinet, fish tank) idles with `TweenService` loops. No physics.
+
+#### 25.4.5 Damage-state visuals
+**Purpose.** Show durability at a glance and make breaking things funny, never sad. Objects are never lost (canon
+§C6).
+
+**Rules & Mechanics.** States and ranges are canon. Visuals:
+
+| State (durability) | Wood furniture | Metal appliances | Soft goods | Jelly-glass decor (aquariums) | Icon (shape-coded) |
+|---|---|---|---|---|---|
+| Pristine (100–76 %) | clean, slight sheen | face smiling, lamp normal | plump | crystal clear, fish happy | none |
+| Scuffed (75–51 %) | 2 scuff decals, 2° wobble tilt | dent decal, peeling sticker | food-stain splat decal | smudges | 1 crack line |
+| Cracked (50–26 %) | Cracked mesh: a plank sticks out, 5° tilt, periodic creak | loose flapping panel, gray smoke puff every 4 s, grimace face | torn seam with a stuffing tuft | tape "X" over the crack, slow drip | 2 crack lines |
+| Broken (25–1 %, unusable) | Broken mesh: split in half, propped on a sad brick | door hangs open, springs boing out, star sparks every 3 s, X-eyes | flattened, feathers out | water at half, fish in tiny snorkels | X badge |
+| Destroyed (0 %) | rubble pile plus a dust cloud on the transition | rubble pile with its signature fragment | fluff pile | rubble plus puddle decal, fish in a bowl | rubble icon plus "Rebuild" price badge (≤ 25 %) |
+
+**Variables [TUNABLE].**
+- ≤ 3 decals per item.
+- Tilt: 2° Scuffed, 5° Cracked.
+- Smoke period 4 s; spark period 3 s.
+- Debris: ≤ 12 pieces per event, 4 s life (canon).
+- Transition wobble 0.3 s.
+- Minimum 0.3 s between visual transitions of the same item.
+
+**UI.** The shape-coded icon appears on hover or focus and in repair mode (§24). States are never color-only.
+
+**Progression.** Higher-tier furniture breaks with more panache (more confetti, fancier rubble fragments) within the
+same budgets.
+
+**Player interactions.** Customers seated next to a Broken item show the Meh face (broken objects already lower cleanliness K, canon §C11.3).
+Broken seats show the X badge and cannot be used (canon).
+
+**Dependencies.** §15 and RepairService (durability, costs), §11 (damage sources), §36.13 (item list).
+
+**Roblox implementation.** `MeshPart.MeshId` cannot be changed at runtime, so every state mesh is pre-parented
+inside the item model. The client toggles visibility from the replicated `DamageState` attribute (via
+`LocalTransparencyModifier`), so no clones are made. Debris is pooled and client-only.
+
+**Edge cases.**
+- A big hit that skips states (Pristine → Broken) plays the intermediate VFX in fast succession (0.1 s each).
+- Rapid damage and repair ping-pong is throttled to 0.3 s per transition.
+- Trophies (`FRN_901`–`FRN_910`) only wobble unless §15 marks them destructible.
+
+#### 25.4.6 Repair effects
+- **Progress.** Every 25 % of repair removes one damage decal or snaps a plank back with a boing (`SFX_122`). The
+  repairer plays `ANM_060` (furniture) or `ANM_061` (appliances).
+- **Completion.** A sparkle burst, "GOOD AS NEW!" comic text, and a 0.3 s white `Highlight` outline flash
+  (`SFX_123`).
+- **Rebuild from Destroyed.** `ANM_180` sweep, then `ANM_181`: 6–10 rubble pieces tween back into the object over
+  1.2 s in a reverse explosion (`SFX_124`). `ABL_062` uses the same visuals in a ring (`ANM_362`).
+- **Offline auto-repairs** (canon §C15) show small "fixed while you were away" sparkle tags on first entry.
+
+#### 25.4.7 Upgrade and construction animation
+Tier upgrade sequence: 8 s total, skippable after 1 s (a skip jumps to 6.5 s). The façade sequence plays locally on
+every client on Restaurant Row when the plot's tier attribute changes.
+
+| Time (s) | Façade | Audio |
+|---|---|---|
+| 0.0–1.0 | A tarp printed with the restaurant logo drops over the façade; the crew arrives (`ANM_183`) | `MUS_034` starts |
+| 1.0–5.0 | Hammering, dust clouds (≤ 40 particles), "BANG!", "WHIRR!", "OOPS!" texts, a crane swings the next tier's set piece. The new façade streams in hidden. | hammer hits |
+| 5.0–6.5 | Tarp yank and pop-up-book unfold (`ANM_185`), confetti, spotlights sweep | — |
+| 6.5–8.0 | Ribbon cutting (`ANM_184`) by the owner, with NPC_002 present for TIER_04+ permits. The sign lights up letter by letter. | `SFX_197` |
+
+- **Inside the restaurant during an upgrade:** a 3 s "renovation curtain" ScreenGui wipe hides the interior swap.
+- **Furniture and appliance purchases** drop in from above in a gift box that unboxes in 0.6 s with a dust puff.
+
+### 25.5 City Art
+
+#### 25.5.1 City-wide rules
+- **Modular kit** on an 8-stud module grid. Streets are 24 studs wide with 8-stud sidewalks and rounded curbs.
+  Rooflines are bubbly and rounded, with crooked chimneys. Decorative leans are ≤ 3° (walls stay square for
+  collision).
+- **Signs** are 1–3 words, icon first, in 0.25-stud Neon tubes. Each district has its own neon color triad. A block
+  face carries at most 2 animated signs.
+- **Streaming.** `StreamingEnabled` (§30). Landmarks use `ModelStreamingMode.Atomic` and
+  `Model.LevelOfDetail = StreamingMesh`, so distant districts still read on the skyline.
+- **Client-only cosmetics** (canon §C3): crowds of ≤ 30 visible pedestrians (L2 meshes, `ANM_262`, `ANM_263`) and
+  ≤ 6 food-shaped vehicles on splines (hot-dog car, toaster van, sushi scooter).
+- **Animated billboards** use a SurfaceGui `ImageLabel` flipbook (`ImageRectOffset` steps through a 1024² sheet at
+  ≤ 8 fps, ≤ 2 Hz for any brightness flash). At most 6 animate at once per client; the rest show a static frame.
+
+#### 25.5.2 Districts
+
+| District | Architecture | Signage & palette | Lighting | Props & ambient animation | Billboards / absurd ads |
+|---|---|---|---|---|---|
+| DST_01 Restaurant Row | 8 player façades (§25.4.1), BLD_03 warehouse with a giant whisk sign, BLD_10 corkboard kiosk, the Baron's snooty "Le Fancy Fin" | Pink, cyan and mustard neon | String lights across the street, warm windows | Steam vents, delivery toots, pigeons on the Job Board | "EAT HERE. OR THERE. WE'RE NOT YOUR MOM." · "Le Fancy Fin: You Can't Afford It" |
+| DST_02 Mutation Market | Bazaar stalls under DNA-helix arches, BLD_01 supermarket with a giant capsule sign, BLD_02 salon with a tentacle barber pole, BLD_20 under a giant mushroom umbrella | Neon green, magenta-free pink, teal | Glowing specimen jars, lantern strings | Bubbling jars, awnings flapping, capsule-sign wobble | "Mutation Mart: Fresh Limbs Daily!" · "Tired of one head? Body Mods can help." |
+| DST_03 Downtown Morph City | Rounded-top skyscrapers, the giant MORPH CITY sign from the mockup, BLD_09 City Hall with a cloche dome, BLD_18 Metro, BLD_04, BLD_06 with a toque dome, the Downtown fountain | Cyan, white and yellow neon wall | Plaza floodlights, billboard glow at night | Fountain, metro arrivals, NPC_030 news ticker | "Mayor Moosington: He's a Moose. Vote Moose." · "Morph Metro: Now With Doors!" |
+| DST_04 Industrial | Factories whose smokestacks puff pastel "flavor clouds", cranes, conveyors, BLD_07, BLD_15 | Yellow-black hazard stripes, orange | Sodium-orange lamps | Conveyor crates, crane swing, steam whistles | "Bottled Air (Used) — Now 20 % Airier" |
+| DST_05 Monster Mall | Giant glass mall, BLD_12, escalators, kiosk carts | Pastel plus neon trim | Bright atrium skylights | Escalators, fountain show, mall cop on a unicycle | "SALE! Everything Must Go (Including the Floor)" |
+| DST_06 Mutation Research | Sleek white labs, green glowing tubes, BLD_11 bubbling dome, BLD_16 with a "Burgersaurus" skeleton | Cool white, cyan, lab green | Clean cool light, tube glow | Bubbling tubes, sliding doors, robot couriers | "Science! (Results May Vary)" |
+| DST_07 Entertainment | Theater marquees, BLD_14 giant fork-and-monocle tower, BLD_22 stage, arcades, busker corners | Pink, purple and gold bulbs | Chaser bulbs, spotlights | Busker loops (`ANM_264`), marquee chasers | "Tonight: Interpretive Soup" · "Vlogzilla LIVE (Probably)" |
+| DST_08 Residential | Pastel houses (shoe house, teapot house), picket fences, BLD_19 park fountain | Soft pastels, low neon | Warm porch lights | Sprinklers, laundry lines, NPC_025 feeding pigeons | "Lost: One Kraken. Answers to 'Kevin'." |
+| DST_09 Underground Sewers | Friendly cartoon sewers: mint-glow water, mushrooms, cheerful murals, BLD_13 lantern market, BLD_21 junk-treasure throne | Bioluminescent teal and purple | Lantern pools, glowing water | Dripping (musical), rat-sized boats, lantern sway | "Sewer King Approved™-free Cheese" · "Rent: Cheap. Smell: Free." |
+| DST_10 Arena District | BLD_08 stadium with a crossed-spatulas crest, BLD_05 gym with hot-dog dumbbells | Red-blue team banners, white | Stadium floodlights | Crowd-wave lights, banners flapping | "Pigeon Taxi: We Probably Won't Drop You" |
+
+#### 25.5.3 Absurd ad library
+All brands are fictional and contain no real-world parody of trademarks. Any billboard can use these:
+"SPLORP! The Soda That Drinks Back" · "Gary's Discount Teeth" · "NEW! Pre-Chewed Gum" · "Socks for Tentacles (8-Pack)"
+· "Lose 5 Legs in 5 Days!" · "Do You Smell Purple? Call 555-NOSE" · "Rent-a-Grandma Golem" · "Professor
+Saucington's Night Classes: Boiling for Beginners" · "Is Your Fridge Running? Catch It!" · "Upside-Down Day Insurance"
+· "Invisible Burgers: Now Even More Invisible". Ads rotate every 45 s and localize through §24 string tables.
+
+### 25.6 VFX Guidelines
+
+#### 25.6.1 VFX vocabulary
+
+| Effect | Used for | Look | Max particles / lifetime | Texture |
+|---|---|---|---|---|
+| Impact stars | hits, bonks | yellow 5-point stars plus a white ring | 8 / 0.4 s | 128², `FlipbookLayout` Grid2x2 |
+| Sauce splat | thrown food | splat decal (5 sauce colors) plus droplets | 6 / 0.5 s; decal fades over 6 s | 256² decal sheet |
+| Soot puff | BURNED, STS_TOASTY | round charcoal puffs with a dark outline | 10 / 0.8 s | 128² Grid2x2 |
+| Sparkles | Perfect, repair complete, rarity | 4-point twinkles | 12 / 0.6 s | 64² |
+| Confetti | level-up, Delighted, tier upgrade | brand-color rectangles | 40 / 1.5 s (single burst) | 64² |
+| Steam puffs | anger 2–4, cooking steam | white cartoon clouds | 6 / 1.0 s | 128² |
+| Sweat drop / rage scribble | anger 1 / anger 5–6 | drop billboard / black scribble cloud (4 frames, 8 fps) | 1 billboard | 64² / 128² |
+| Hearts | Delighted, STS_CHARMED | pink hearts | 6 / 0.8 s | 64² |
+| Coin burst | payment, tips | gold coin arc | 12 / 0.7 s | 64² |
+| Dust cloud | stomps, construction, scuffle (`ANM_104`) | tan puffs | 16 / 0.8 s | 128² Grid2x2 |
+| Cartoon fire | ON_FIRE stations only | orange flame cards with a soot top | 20 / 0.6 s | 128² Grid4x4 |
+| Foam | extinguisher | white blobs | 30 / 0.5 s | 64² |
+| Zaps | STS_SHOCKED, `ABL_014` | zig-zag `Beam` plus sparks | 2 Beams + 6 | 128² |
+| Frost | STS_FROZEN, freeze | snowflakes plus an ice-block mesh | 10 / 0.8 s | 64² |
+| Stink lines | STS_STINKY, `ABL_024` | green wavy lines | 8 / 1.2 s | 128² |
+| Speed lines | dashes, `ABL_063`, `ABL_046` | white `Trail` on root | Trail 0.25 s | 64² |
+| Music notes | `ABL_065`, `ABL_006` | lavender notes | 6 / 1.2 s | 64² |
+| Rarity beam | capsule reveal | vertical Beam in rarity color plus the shape glyph | 1 Beam + 20 | 256² |
+| Debris | destruction | real mesh chunks (planks, cookie shards) | ≤ 12 meshes, 4 s | — |
+
+#### 25.6.2 Particle budgets
+- **Per client:** ≤ 60 active ParticleEmitters on desktop and 30 on mobile; ≤ 1,500 and 600 live particles
+  respectively; ≤ 20 Beams; ≤ 16 Trails.
+- **Per character** (`MMR_FXRoot`): ≤ 2 emitters and ≤ 40 particles. NPC FX emitters are off at LOD1 and beyond.
+- **Emission:** `Rate` ≤ 30/s. Bursts use `:Emit(n)` with n ≤ 40.
+- **Settings:** `LightInfluence` 0 and `LightEmission` ≤ 0.5. Flipbooks use `FlipbookMode.OneShot`.
+- **Quality scaling.** Rates and bursts scale by
+  `UserSettings():GetService("UserGameSettings").SavedQualityLevel`: levels 1–3 → × 0.4, 4–7 → × 0.7, 8–10 → × 1.0.
+- **Pooling.** Emitters are pre-created per effect type and re-parented, never instanced mid-fight.
+
+#### 25.6.3 Comic impact text
+- **Vocabulary:** "BONK!", "SPLAT!", "CRASH!", "WRONG ORDER?!", "THIS TASTES LIKE GARBAGE!!!", "OOF!", "BOING!",
+  "CHEF'S KISS!", "KA-CHING!", "GOOD AS NEW!", "CHAOS!!!".
+- **Rendering:** BillboardGui `TextLabel` with `Enum.Font.LuckiestGuy` for impacts and `Enum.Font.Bangers` for
+  customer shouts. White or tinted fill (impact `#FFF35C`, complaint white on a tomato burst, reward `#B6FF3B`) with
+  a 3-px `UIStroke` in `#1B1035`.
+- **Motion:** ±8° random rotation, a 0 → 1.2 → 1.0 pop over 0.18 s, 1.2 s life.
+- **Limits:** ≤ 3 on screen. All strings are localized (§24).
+
+#### 25.6.4 Reduced-VFX mode
+An Accessibility toggle (§24), suggested automatically when `SavedQualityLevel` ≤ 2. It changes:
+- Particle counts × 0.3 and debris ≤ 4 pieces.
+- No camera shake or nudge, no full-screen flashes, Bloom intensity capped at 0.2.
+- Every pulse ≤ 2 Hz. Comic text fades without the pop.
+- `ABL_057` Firefly Flash shows a ring outline instead of a glow pulse. The rage scribble is static.
+
+**Gameplay information is never removed.** Fire, burning and hostile states keep their icons and outlines.
+
+### 25.7 Asset Pipeline
+
+```mermaid
+%% diagram: art-asset-pipeline
+flowchart LR
+    A["Concept (mockup-style sheet)"] --> B["Blender template: model on 0.25-stud grid"]
+    B --> C["Sockets (skt. markers), LOD0/1/2, palette UVs"]
+    C --> D["Pre-export validator (tris, envelope, sockets)"]
+    D --> E["FBX export (template preset)"]
+    E --> F["Studio 3D Importer -> MeshPart"]
+    F --> G["Socket Baker + Asset Validator plugins"]
+    G --> H["Art review checklist"]
+    H --> I["Publish under group; register id"]
+```
+
+#### 25.7.1 Naming conventions
+
+| Asset | Pattern | Example |
+|---|---|---|
+| Mutation part mesh | `mut_<part id>_<Name>_<L/R>_L<0-2>` | `mut_MUT_145_OctopusArm_R_L1` |
+| Furniture | `frn_<Family>_<Name>_<State>` (A10 maps its ids) | `frn_DinerRetro_BoothRed_Cracked` |
+| Appliance body / kit | `stn_<Station>_Body`, `stn_<Station>_Lv<N>Kit` | `stn_Grill_Lv3Kit` |
+| Façade / interior shell | `fac_T<NN>_<Part>`, `int_T<NN>_<Part>` | `fac_T04_Sign` |
+| City | `cty_D<NN>_<Name>` | `cty_D03_CityHallDome` |
+| Prop / debris | `prp_<Name>`, `deb_<Material>_<Size>` | `deb_Wood_M` |
+| Atlas / face sheet | `atl_<Category>_<Size>`, `face_<Style>_<Expression>_<Size>` | `atl_Marine_256`, `face_Toon_Furious_256` |
+| VFX texture | `vfx_<Effect>_<Size>` | `vfx_ImpactStars_128` |
+| Animation / sound | `anim_<ANM id>_<Name>`, `snd_<SFX or MUS id>_<Name>_<take>` | `anim_ANM_010_Chop`, `snd_SFX_001_ChopClean_03` |
+
+#### 25.7.2 Texture atlases
+- **Characters:** 16 category palette atlases (256²) plus 16 detail atlases (1024²). Cosmetic palettes are
+  alternate palette atlases with identical UV layout.
+- **Restaurant:** one 1024² atlas per tier style family, a shared 1024² kitchen atlas, and furniture-family
+  atlases.
+- **City:** a 1024² atlas per district, a shared 1024² sign and neon alpha atlas, and a 1024² billboard flipbook
+  sheet per animated ad.
+- **Memory target** on the reference mobile device in a TIER_10 interior:
+  `Stats:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.GraphicsTexture)` plus `GraphicsTextureCharacter` ≤ 300 MB.
+
+#### 25.7.3 Triangle and texture budgets by asset class
+
+| Asset class | Tris L0 | LOD | MeshParts | Textures | SurfaceAppearance |
+|---|---|---|---|---|---|
+| Mutation part | per slot (§25.3.1) | L1 ≈ 40 %, L2 ≈ 10 % | per slot | palette 256² + detail 1024² (shared) | Legendary+ player parts, 512² |
+| Toque / apron | 250 each | L1 100 | 1 each | palette | no |
+| Kitchen appliance | 2,000 (+500 Lv5 kit) | RenderFidelity | ≤ 6 | kitchen atlas | no |
+| Chair / table / booth / small decor | 400 / 600 / 1,200 / 300 | — | ≤ 4 | family atlas | no |
+| Aquarium | 2,500 + 6 × 150 fish | — | ≤ 10 | family atlas + 1 Glass pane | no |
+| Trophy `FRN_901`–`FRN_910` | 1,200 | — | ≤ 4 | 512² | 1 set |
+| Façade TIER_01 → TIER_10 | 6k → 25k | LOD1 30 % beyond 120 studs | ≤ 120 | tier atlas | TIER_09–10 sign only |
+| Interior shell TIER_01 → TIER_10 | 8k → 40k | — | ≤ 200 | tier atlas | no |
+| City building generic / landmark | 6k / 20k | StreamingMesh | ≤ 80 / ≤ 200 | district atlas | landmark sign only |
+| Street prop / vehicle | 500 / 1,500 | — | ≤ 3 / ≤ 5 | shared | no |
+
+**Scene target.** A TIER_10 interior in a full rush renders ≤ 600k triangles at high quality and ≤ 300k at
+`SavedQualityLevel` ≤ 3 (impostors at 35 studs). Worst case: 28 customers and 20 employees at L1 (≈ 281k), 8
+players (≤ 120k), shell plus furniture plus 24 appliances (≈ 140k).
+
+#### 25.7.4 Review checklist (every asset, before merge)
+1. Matches the mockup style: blocky, bevelled, saturated, friendly.
+2. Passes the silhouette test (parts) or the grayscale state test (stations, furniture states).
+3. Pivot and sockets on the 0.25-stud grid; sockets named exactly as canon `MMR_*` attachments.
+4. Tris, MeshParts and textures are within the §25.3.1 or §25.7.3 budgets, including all LODs.
+5. Fits its envelope and clears neighbors by ≤ 0.1 stud overlap in `ANM_210`.
+6. Studio settings applied (CollisionFidelity, RenderFidelity, Massless, no collision or queries).
+7. Palette atlas UVs; no rarity hex reused; Neon and SurfaceAppearance within limits.
+8. Damage variants present (destructibles) and face sheets present (HEAD parts).
+9. Toque and apron fit verified in the fit-test place (HEAD and TORSO parts).
+10. Kid-safety: no gore or blood-like colors on characters, no sharp tips, no real brands or likenesses, no flashing
+    above 2 Hz.
+11. Published under the experience group, with the asset id registered under its naming-convention name.
+
+### 25.8 Edge Cases
+1. **Absurd scale clashes** (a giant head on Stubby legs). Socket overrides plus envelopes keep parts attached. Minor
+   hidden interpenetration is accepted; visible clipping > 0.1 stud fails review.
+2. **Horns plus toque.** Resolved by the HatMode and HORNS rules in §25.3.7. `MUT_102` suppresses the toque.
+3. **Faceless and screen heads.** Front sticker cards or Screen-style faces (§25.3.6).
+4. **NPC over the MeshPart budget.** Deterministic drop order (§25.3.8), so every client renders the same customer.
+5. **Neon pink signage next to a Mythic item.** Signage pink `#FF4FD8` is offset from Mythic `#FF3EA5`, and rarity
+   always carries its shape glyph.
+6. **Low-end devices without Future lighting quality.** Neon self-illumination and painted glows keep signage
+   readable. Bloom absence is acceptable.
+7. **Reduced-VFX with fire.** The fire flipbook drops to 6 particles, but the station lamp icon and outline remain
+   (§25.6.4).
+8. **City night cycle versus interiors.** Interiors keep their tier preset regardless of the city clock (§25.2.8).
+9. **Owner inside during a tier upgrade.** The renovation curtain hides the interior swap (§25.4.7). The façade
+   sequence still plays for people outside.
+10. **Debris storms in level-6 chaos.** The canon cap of 30 loose physics props is unaffected, because debris is
+    client-only mesh (≤ 12 per event). Pools recycle the oldest pieces first.
+11. **Temporary mutation from MUT dishes** (60 s, canon §C10). It is built at L1 with the normal sockets and pops in
+    and out with `SFX_147`.
+12. **Customer partly hidden by a booth.** The hostile outline (`Highlight` AlwaysOnTop) keeps level-5 customers
+    visible through furniture within 40 studs.
+
+### 25.9 Acceptance Criteria
+- **AC-25-01:** Every mutation part is identified from its black silhouette at 120 px height by ≥ 8 of 10 testers.
+- **AC-25-02:** For every legal combination of parts, including toque and apron, a player morph is ≤ 40 MeshParts and
+  ≤ 15,000 triangles. The asset validator proves this by summing per-slot maxima.
+- **AC-25-03:** Customer and employee visuals are ≤ 24 MeshParts and ≤ 6,000 triangles. Beyond 60 studs (35 at
+  `SavedQualityLevel` ≤ 3) they swap to an impostor of ≤ 1,500 triangles within 0.5 s.
+- **AC-25-04:** 100 % of imported parts carry a `Mount` attachment and only canon-named `MMR_*` sockets. The
+  validator fails any mismatch.
+- **AC-25-05:** A customer's face expression updates ≤ 0.3 s after its Mood or Anger attribute changes (within 30
+  studs), masked by a blink frame.
+- **AC-25-06:** Anger levels 1–6 are each distinguishable in a grayscale capture by brow shape and FX shape alone.
+  No face is ever tinted red.
+- **AC-25-07:** In all 10 tier interiors, interactables measure ≥ 3:1 luminance contrast against their immediate
+  background.
+- **AC-25-08:** Every destructible shows 5 visually distinct canon states. Testers order shuffled state captures
+  correctly ≥ 90 % of the time.
+- **AC-25-09:** A Destroyed object always leaves a rubble pile with a Rebuild badge priced ≤ 25 % of the item. No
+  destructible ever disappears.
+- **AC-25-10:** Destruction debris is client-only, ≤ 12 pieces per event, and despawns ≤ 4 s after spawning.
+- **AC-25-11:** During TIER_10 level-6 chaos with 24 customers, live particles stay ≤ 600 on mobile and ≤ 1,500 on
+  desktop, and active Highlights stay ≤ 31.
+- **AC-25-12:** With Reduced-VFX on, particle counts are ≤ 30 % of default, camera shake is 0, Bloom intensity is
+  ≤ 0.2, and nothing pulses above 2 Hz.
+- **AC-25-13:** Entering a restaurant applies the tier lighting preset within 1.0 s. `Lighting.Technology` is never
+  modified at runtime.
+- **AC-25-14:** Each tier's name sign is legible at 80 studs on a 1080p display (cap height ≥ 3 studs).
+- **AC-25-15:** The tier-upgrade sequence lasts ≤ 8 s, is skippable after 1 s, and shows no façade pop-in outside
+  the tarp.
+- **AC-25-16:** No texture exceeds 1024². SurfaceAppearance maps are ≤ 512² and appear only on the asset classes
+  allowed by §25.3.4.
+- **AC-25-17:** All 10 districts contain ≥ 3 ambient animated elements and ≥ 2 absurd billboards from §25.5.
+- **AC-25-18:** A legal review finds 0 real brands, logos or likenesses in shipped art.
+- **AC-25-19:** A kid-safety scan finds 0 gore or blood assets. No VFX places flames on a character body (STS_TOASTY
+  shows soot only).
+- **AC-25-20:** In the fit-test place, the toque and apron fit all 40 HEAD and 22 TORSO parts with no visible
+  clipping > 0.1 stud.
+- **AC-25-21:** The palette lint finds 0 non-rarity UI or highlight colors within ΔE 10 of a rarity color.
+- **AC-25-22:** 100 % of merged assets have a completed §25.7.4 checklist.
+- **AC-25-23:** On the low-end reference mobile device (`SavedQualityLevel` ≤ 3), a TIER_10 rush holds ≥ 30 FPS
+  with texture memory ≤ 300 MB (§25.7.2).

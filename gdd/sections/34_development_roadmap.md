@@ -45,9 +45,9 @@ unless the "Contract" column says otherwise.
 | 1 Core Prototype | 11 (+1 holiday) | 86 | 99 | 87 % | 0 |
 | 2 Vertical Slice | 13 | 103 | 117 | 88 % | 21 |
 | 3 Alpha | 16 | 129 | 144 | 90 % | 72 |
-| 4 Beta | 14 | 115.5 | 126 | 92 % | 89 |
+| 4 Beta | 14 | 115.5 | 126 | 92 % | 95 |
 | 5 Launch | 6 | 44.5 | 54 | 82 % | 15 |
-| **Total to launch** | **60 (+1 holiday)** | **478** | **540** | **89 %** | **197** |
+| **Total to launch** | **60 (+1 holiday)** | **478** | **540** | **89 %** | **203** |
 
 Live Operations (Phase 6) runs at steady-state capacity (≈ 39 core pw per month) — see §34.10.
 
@@ -79,7 +79,7 @@ Calendar assumes kickoff on **Monday 2026-11-02** (week W1) [TUNABLE]; dates shi
 | M5b Closed beta | W57 | 2027-12-03 | Invite-only test (group members), telemetry live. |
 | M5c Soft launch | W58 | 2027-12-07 | Public, unpromoted; capped sponsored traffic; telemetry gates watched. |
 | M5 Global launch | W59 | Tue 2027-12-14 | Promotion on; on-call rota active. |
-| M6a First seasonal | W60 | 2027-12-21 | `EVT_030` Snowmorph Holiday live through 2028-01-03. |
+| M6a Hypercare exit | W61 | 2027-12-31 | ≤ 3 open S1, patch train ready; `EVT_030` Snowmorph Holiday has run since launch day (season Dec 1–31, §36.11). |
 | M6 Live-ops steady state | W62 | 2028-01-04 | Biweekly patch train running; first monthly content drop scheduled. |
 
 ```mermaid
@@ -179,11 +179,11 @@ inside Phase 2 and is the fallback "smallest shippable game" if the schedule col
 | Base abilities | `ABL_001`–`ABL_006` | 6 | Utensils `ABL_007`/`ABL_008` arrive in the Vertical Slice. |
 | Mutation abilities | `ABL_010`, `ABL_012`, `ABL_017`, `ABL_034`, `ABL_058`, `ABL_062` | 6 | From `MUT_140`, `MUT_145`, `MUT_144`, `MUT_010`, `MUT_097`, `MUT_153`; bar max 4 (§C12.1). |
 | Status effects | `STS_STUN`, `STS_DIZZY`, `STS_WOOZY`, `STS_KNOCKDOWN` + any applied by the 6 MVP abilities (§36.6) | 4–8 | |
-| Mutation parts | Starter: `MUT_117`, `MUT_139`, `MUT_179`, `MUT_001`, `MUT_002`, `MUT_003`, `MUT_004`, `MUT_005`, `MUT_006`, `MUT_008`. Tutorial choice: `MUT_145`, `MUT_144`, `MUT_153`. Ability Commons: `MUT_010`, `MUT_097`, `MUT_140`. Variety Commons: `MUT_050`, `MUT_059`, `MUT_071`, `MUT_072`, `MUT_085`, `MUT_086`, `MUT_118`, `MUT_121`, `MUT_180`, `MUT_201`, `MUT_211`, `MUT_212`, `MUT_235`, `MUT_259` | 30 | 27 Common, 2 Uncommon, 1 Rare; covers all 7 UI groups (Head, Ears, Eyes, Arms, Legs, Tails, Extras). Acquisition: STARTER, QUEST, SHOP_MART. Upgrades Lv1→Lv3; capsules off. |
+| Mutation parts | Starter: `MUT_117`, `MUT_139`, `MUT_179`, `MUT_001`, `MUT_002`, `MUT_003`, `MUT_004`, `MUT_005`, `MUT_006`, `MUT_008`. Tutorial choice: `MUT_145`, `MUT_144`, `MUT_153`. Ability Commons: `MUT_010`, `MUT_097`, `MUT_140`. Variety Commons: `MUT_050`, `MUT_059`, `MUT_071`, `MUT_072`, `MUT_085`, `MUT_086`, `MUT_118`, `MUT_121`, `MUT_180`, `MUT_201`, `MUT_211`, `MUT_212`, `MUT_235`, `MUT_259` | 30 | 27 Common, 2 Uncommon, 1 Rare; covers all 7 UI groups (Head, Ears, Eyes, Arms, Legs, Tails, Extras). Acquisition: STARTER, QUEST, SHOP_MART, CAPSULE (`QST_TUT_012` grants one, §32); MVP capsule pool limited to these 30 parts. Upgrades Lv1→Lv3. |
 | Employees | `EMP_001` (via `QST_TUT_012`) + ≥ 3 Common archetypes from §36.8 | ≥ 4 | Roles `ROLE_CHEF`, `ROLE_PREP`, `ROLE_DISH`, `ROLE_MANAGER`; employee cap 2 (`TIER_01`) / 3 (`TIER_02`). |
 | Offline simulation | full §C15 model; caps 2 h (no manager) and 4 h (Basic manager) | — | ≥ 8 incidents from §36.9; discoveries on; Welcome Back screen with all 6 buttons. |
 | Quests | `QST_TUT_001`–`QST_TUT_012` + 3 daily quests from §20 | 15 | No story chapters yet. |
-| City | `DST_01` (`BLD_17` ×8 plots, `BLD_03`); slice of `DST_02` (`BLD_01`); slice of `DST_03` (`BLD_04`, `BLD_06`) | 3 districts (2 partial) | Walking + Return Door; no Metro/Taxi. |
+| City | `DST_01` (`BLD_17` ×8 plots, `BLD_03`); slice of `DST_02` (`BLD_01`); slice of `DST_03` (`BLD_04`, `BLD_06`) | 3 districts (2 partial) | Walking, Return Door and the tutorial's free Pigeon Taxi fallback (§32); no Metro. |
 | Named NPCs | `NPC_001`, `NPC_004`, `NPC_006`, `NPC_007`, `NPC_009` | 5 | `NPC_003` optional cameo. |
 | Furniture | 12 regular items from §36.13 (2 tables, 2 chairs, stool, 2 lights, 2 decor, floor, wall, sign) | 12 | All five damage states (§C6). |
 | Repairs | manual repair of all states + `ABL_062` | — | No Repair Technician yet. |
@@ -195,8 +195,8 @@ inside Phase 2 and is the fallback "smallest shippable game" if the schedule col
 | Audio | ≥ 40 SFX + 2 music loops | 42 | Final-quality mix not required. |
 | Analytics | onboarding funnel (12 tutorial steps + first offline collect) | 13 steps | §31 event schema. |
 
-**Out of MVP (by design):** city events, co-op, arena, skill trees, Lab fusion, capsules, special
-ingredients, table service (`TIER_03`+), Mystery Market, RT.
+**Out of MVP (by design):** city events, co-op, arena, skill trees, Lab fusion, special ingredients,
+table service (`TIER_03`+), Mystery Market, Morph Metro, RT.
 
 ### 34.5 Phase 1 — Core Prototype (W1–W12)
 
@@ -290,7 +290,7 @@ city district and the complete tutorial. The MVP (§34.4) is reached at **W19** 
 | F2.5 | `EmployeeService` v1: 7 roles, `EMP_001` + 9 archetypes, online work AI, wages, morale/energy | L | 4.5 | 3 | 2 | 1.5 | 0 | 11 | — |
 | F2.6 | `OfflineEarningsService` v1: canon §C15 model, golden tests, idempotent claims, Welcome Back screen | L | 4 | 1 | 0 | 1 | 1 | 7 | — |
 | F2.7 | Morph customization (§13): preview, slots, inventory, 3 loadouts, upgrades, capsules + pity, Mutation Mart; 42 new parts | XL | 3.5 | 3 | 1 | 1 | 0 | 8.5 | 14 |
-| F2.8 | City: `DST_01` art-complete; tutorial-path slice of `DST_02`/`DST_03` (`BLD_01`, `BLD_04`, `BLD_06` functional, blockout exteriors) | L | 2 | 7 | 0 | 1 | 0 | 10 | — |
+| F2.8 | City: `DST_01` art-complete; tutorial-path slice of `DST_02`/`DST_03` (`BLD_01`, `BLD_04`, `BLD_06` functional, blockout exteriors); Return Door; Pigeon Taxi (tutorial fallback, §32) | L | 2 | 7 | 0 | 1 | 0 | 10 | — |
 | F2.9 | `QuestService` v1: `QST_TUT_001`–`QST_TUT_012`, story chapter 1, 6 daily quests | L | 2.5 | 1 | 1 | 2 | 0.5 | 7 | — |
 | F2.10 | Persistence v1: migrations, backoff + Safe Mode (E6), BindToClose, transaction log | M | 2 | 0 | 0 | 0 | 0 | 2 | — |
 | F2.11 | UI pass 2: 18 screens, phone/tablet layouts, controller navigation | L | 1.5 | 3 | 0 | 0 | 0 | 4.5 | — |
@@ -449,12 +449,12 @@ becomes the launch candidate.
 |---|---|---|---|---|---|---|---|---|---|
 | F4.1 | Full employee management: training, promotion, salary, reviews, ≥ 75 archetypes | L | 3.5 | 2 | 2 | 1.5 | 0 | 9 | 10 |
 | F4.2 | Expanded offline simulation: ≥ 50 incidents, discoveries, all manager caps, damage report, upgrade suggestions | L | 3 | 1 | 0 | 1.5 | 0 | 5.5 | 3 |
-| F4.3 | `CityEventService`: cross-server schedule (MemoryStore), 20 launch events, rewards | XL | 5 | 6 | 2 | 2 | 0 | 15 | 6 |
+| F4.3 | `CityEventService`: cross-server schedule (MemoryStore), all 32 events in the §18.8 decks (seasonal ones date-gated), rewards | XL | 5 | 6 | 2 | 2 | 0 | 15 | 13 |
 | F4.4 | Advanced combat: abilities to 70, chaos level 6 polish, environmental combat, protective upgrades | L | 4 | 2 | 4 | 1 | 0 | 11 | 2 |
 | F4.5 | `TIER_07`–`TIER_10`, furniture to 110, station Lv5, `STN_ANTIGRAV`, `STN_INFUSER` | L | 2.5 | 7 | 0 | 1 | 0 | 10.5 | 8 |
 | F4.6 | Content complete: 150 recipes, 280 parts, 32 personalities | XL | 1.5 | 5 | 1 | 1.5 | 0 | 9 | 29 |
 | F4.7 | Districts art-complete (remaining 5), all 22 buildings, secret discovery hooks | L | 1 | 8 | 0 | 0.5 | 0 | 9.5 | 6 |
-| F4.8 | Story chapters 7–10, quests to ≥ 100, achievements, milestones, skill trees | L | 2 | 0 | 0 | 1.5 | 0 | 3.5 | 5 |
+| F4.8 | Story chapters 7–10, quests to ≥ 100, achievements, milestones, skill trees | L | 2 | 0 | 0 | 1.5 | 0 | 3.5 | 4 |
 | F4.9 | Arena (casual, opt-in 1v1/2v2), matchmaking, rules | L | 3 | 1 | 1 | 0.5 | 0 | 5.5 | — |
 | F4.10 | Analytics complete + live dashboards | M | 2 | 0 | 0 | 0.5 | 0 | 2.5 | — |
 | F4.11 | Performance optimization to the §35 device matrix | L | 4.5 | 2 | 0 | 0 | 0 | 6.5 | — |
@@ -463,12 +463,12 @@ becomes the launch candidate.
 | F4.14 | Localization pipeline + accessibility options complete | M | 1.5 | 1 | 0 | 0.5 | 0 | 3 | — |
 | F4.15 | Animation library ≥ 150 general + 70 ability; emotes | M | 0 | 0 | 3 | 0 | 0 | 3 | — |
 | F4.16 | QA: full regression, perf matrix, economy sims, 3 external playtests, closed beta | L | 0 | 0 | 0 | 0.5 | 12 | 12.5 | 20 |
-| | **Total** | | **38.5** | **38** | **13** | **13** | **13** | **115.5** | **89** |
+| | **Total** | | **38.5** | **38** | **13** | **13** | **13** | **115.5** | **95** |
 | | Capacity (14 wk) | | 42 | 42 | 14 | 14 | 14 | 126 | |
 | | Utilization | | 92 % | 90 % | 93 % | 93 % | 93 % | 92 % | |
 
-Contract column in Beta = outsourced art (F4.1 8, F4.3 4, F4.5 8, F4.6 27, F4.7 6 pw), outsourced
-ability animation (F4.4 2 pw), the contract content designer (F4.1 2, F4.2 3, F4.3 2, F4.6 2, F4.8 5 pw =
+Contract column in Beta = outsourced art (F4.1 8, F4.3 10, F4.5 8, F4.6 27, F4.7 6 pw), outsourced
+ability animation (F4.4 2 pw), the contract content designer (F4.1 2, F4.2 3, F4.3 3, F4.6 2, F4.8 4 pw =
 14 pw) and 2 contract QA testers × 10 weeks (F4.16 20 pw).
 
 #### 34.8.2 Dependencies
@@ -484,7 +484,7 @@ ability animation (F4.4 2 pw), the contract content designer (F4.1 2, F4.2 3, F4
 
 Mutation parts +100 (→ 280) · recipe dishes +50 (→ 150) · furniture +35 (→ ≥ 110 incl. `FRN_901`–`FRN_910`)
 · tier kits `TIER_07`–`TIER_10` · districts: remaining 5 final · buildings: all 22 · NPCs +40 (→ ≥ 100) ·
-employee archetypes +35 (→ ≥ 75) · events: 20 launch set · general animations +40 (→ ≥ 150) · ability
+employee archetypes +35 (→ ≥ 75) · events: all 32 (seasonal ones date-gated) · general animations +40 (→ ≥ 150) · ability
 animations +20 (→ 70) · SFX +30 (→ ≥ 150) · music +2 (→ ≥ 8) · UI screens +6 (→ ≈ 36) · store-page key art.
 
 #### 34.8.4 Testing requirements
@@ -497,7 +497,7 @@ animations +20 (→ 70) · SFX +30 (→ ≥ 150) · music +2 (→ ≥ 8) · UI s
 
 - **AC-34-25:** Content complete per §34.11 Beta column: 150 recipes, 280 parts, 70 abilities, 20 status
   effects, 32 personalities, 10 tiers, ≥ 110 furniture, ≥ 100 quests, ≥ 100 named NPCs, ≥ 75 employee
-  archetypes, ≥ 50 offline incidents, 20 launch events, ≥ 150 general + 70 ability animations, ≥ 150 SFX.
+  archetypes, ≥ 50 offline incidents, all 32 city events, ≥ 150 general + 70 ability animations, ≥ 150 SFX.
 - **AC-34-26:** The §35.10 performance matrix targets are met on all 7 device classes for scenarios
   P-01…P-08.
 - **AC-34-27:** Economy simulation pacing to L5, L10, L26, L45 and L80 is within ±15 % of §C5.1; offline
@@ -527,7 +527,7 @@ safely and hold steady through the holiday peak.
 | | Capacity (6 wk) | | 18 | 18 | 6 | 6 | 6 | 54 | |
 | | Utilization | | 89 % | 78 % | 67 % | 92 % | 83 % | 82 % | |
 
-Contract column = seasonal art for `EVT_030` (3 pw) and 2 contract QA testers × 6 weeks.
+Contract column = seasonal dressing for `EVT_030` (3 pw; event logic is complete in Beta, and the season is live from soft launch because §36.11 runs it Dec 1–31) and 2 contract QA testers × 6 weeks.
 
 #### 34.9.2 Launch sequence
 
@@ -536,8 +536,8 @@ Contract column = seasonal art for `EVT_030` (3 pw) and 2 contract QA testers ×
 | W56 | RC1 cut; compliance & experience settings (§37.4); store page; final loc import | Producer | Checklist §37.4 complete except "Public" |
 | W57 | Closed beta on RC2 (group-gated); balance hotfix via LiveConfig | Designer | No S0; crash-free ≥ 99 % |
 | W58 | Soft launch: public, unpromoted, capped sponsored traffic | Producer + Lead Eng | AC-34-32 trending green after 72 h |
-| W59 | Global launch Tue 2027-12-14; promotion on | Producer | AC-34-33 met on soft-launch cohort |
-| W60–W61 | Hypercare: daily triage, hotfix window 24 h, `EVT_030` live | Lead Eng (on-call) | AC-34-34 |
+| W59 | Global launch Tue 2027-12-14; promotion on; `EVT_030` seasonal month already active (§36.11) | Producer | AC-34-33 met on soft-launch cohort |
+| W60–W61 | Hypercare: daily triage, hotfix window 24 h; holiday code freeze except S0/S1 | Lead Eng (on-call) | AC-34-34 |
 
 #### 34.9.3 Completion criteria
 
@@ -567,17 +567,21 @@ Contract column = seasonal art for `EVT_030` (3 pw) and 2 contract QA testers ×
 Steady-state allocation [TUNABLE]: 40 % new content, 20 % events, 25 % fixes & tech debt, 15 % balance,
 analytics and experiments.
 
-#### 34.10.2 First six months (staging of launch-deferred content)
+#### 34.10.2 First year beats (staging inside Live Ops)
 
-| Month | Planned content (already designed, deferred from launch) | Telemetry question it answers |
+All 32 events ship at launch, so the first months focus on tuning, social features and the §33 content
+plan. Seasonal events are already built and switch on by date (§36.11).
+
+| Month | Planned beat | Telemetry question it answers |
 |---|---|---|
-| Jan 2028 | `EVT_013`, `EVT_017`; economy/offline balance patch #1 | Are offline ratios inside 35–50 % for real players? |
-| Feb 2028 | `EVT_027`, `EVT_028`; leaderboards if OD-15 approves | Does social competition lift D7? |
-| Mar 2028 | Ranked arena season 1 + `EVT_025` | How many players opt into PvP; RT inflow vs sinks |
-| Apr 2028 | `EVT_031` (seasonal, April), `EVT_015` | Seasonal return rate of lapsed players |
-| May 2028 | `EVT_016`; cosmetic season pass if OD-07 approves | Cosmetic engagement without power creep |
-| Jun 2028 | `EVT_021`, `EVT_022`; first §33 expansion beat | Late-game retention (L60+) |
-| Oct 2028 | `EVT_029` (seasonal, October) | Year-1 seasonal baseline |
+| Jan 2028 | economy/offline balance patch #1; any §34.13 cut items restored; first monthly content drop (§33) | Are offline ratios inside 35–50 % for real players? |
+| Feb 2028 | leaderboards if OD-15 approves; event-deck retune from telemetry | Does social competition lift D7? |
+| Mar 2028 | ranked arena season 1 (OD-11) | How many players opt into PvP; RT inflow vs sinks |
+| Apr 2028 | `EVT_031` Spring Sprout Bloom season (date-gated, §36.11) + spring cosmetic drop | Seasonal return rate of lapsed players |
+| May 2028 | cosmetic season pass if OD-07 approves | Cosmetic engagement without power creep |
+| Jun 2028 | first §33 quarterly expansion beat | Late-game retention (L60+) |
+| Jul 2028 | `EVT_028` Founders' Glow Week edition (§36.11) | Anniversary-style re-engagement |
+| Oct 2028 | `EVT_029` Haunted Kitchen Night season (§36.11) | Year-1 seasonal baseline |
 
 #### 34.10.3 Live-ops KPIs and completion criteria [TUNABLE targets]
 
@@ -614,7 +618,7 @@ analytics and experiments.
 | `EconomyService` | MB wallet, transaction log | MS, sink/source dashboard, never-negative rule | RT, anomaly detector (MB/h > 3× tier target) | full sink/source telemetry, price validator | LiveConfig price tuning |
 | `InventoryService` | furniture stub | furniture inventory, basic special stock | special crates, delivery station | cosmetics, trophies `FRN_901`–`FRN_910` | — |
 | `QuestService` | — | `QST_TUT_001`–`QST_TUT_012`, dailies, 00:00 UTC reset | story ch. 1–6, weeklies, challenges, permits | story ch. 7–10, ≥ 100 quests, achievement hooks | seasonal quest lines |
-| `CityEventService` | — | — | `EVT_003` single-server prototype | MemoryStore schedule, 20 launch events, once-per-user claims | 12 deferred events |
+| `CityEventService` | — | — | `EVT_003` single-server prototype | MemoryStore schedule, all 32 events in §18.8 decks, once-per-user claims | deck retunes; new events (§33) |
 | `MultiplayerService` | 8-player server | owner-only interiors, friend-join | co-op visits, permissions, guest rewards, Co-op Insurance (E12) | casual arena matchmaking, opt-in | ranked arena |
 | `BuildingService` | fixed layout | grid placement, path validation (E10), `TIER_01`–`TIER_03` | `TIER_04`–`TIER_06`, decor score | `TIER_07`–`TIER_10`, permit flow | themes (§33) |
 | `RepairService` | damage stub | 5 states, repair minigame, rebuild ≤ 25 % | employee repair jobs (E3), co-op repair | offline auto-repair, protective upgrades | — |
@@ -637,7 +641,7 @@ analytics and experiments.
 | Customer personalities (§9) | 32 | 8 | 12 | 24 | 32 | 32 |
 | Employee archetypes (§36.8) | ≥ 75 | 0 | 10 | 40 | ≥ 75 | ≥ 75 |
 | Quests (§20) | ≥ 100 | 0 | ≈ 22 | ≈ 60 | ≥ 100 | ≥ 100 |
-| City events (§36.11) | 32 designed / 20 live | 0 | 0 | 1 prototype | 20 | 20 + `EVT_030` ready |
+| City events (§36.11) | 32 | 0 | 0 | 1 prototype | 32 | 32 (seasonal date-gated) |
 | Offline incidents (§36.9) | ≥ 50 | 0 | ≥ 15 | ≥ 25 | ≥ 50 | ≥ 50 |
 | General animations (§36.14) | ≥ 150 | ≈ 30 | ≈ 60 | ≈ 110 | ≥ 150 | ≥ 150 |
 | Ability animations (one per `ABL_` row) | 70 | 12 | 22 | 50 | 70 | 70 |
@@ -668,7 +672,7 @@ outsourced); Commons and Uncommons are scheduled first because they reuse family
 | Employees & offline (§16, §17) | 12 roles, ≥ 75 archetypes, full §C15 model, ≥ 50 incidents, Welcome Back | new professions; tuning only for the model | "critical feature" per brief Part 2.5 |
 | Morph City (§18) | 10 districts, 22 buildings, Metro, Taxi, Return Door, secrets | additional districts (§33) | exploration pillar |
 | NPCs & quests (§19, §20) | ≥ 100 NPCs, ≥ 100 quests incl. story chapters 1–10, dailies, weeklies | seasonal quest lines | story arc spans all 10 tiers |
-| City events (§36.11) | 20: `EVT_001`–`EVT_012`, `EVT_014`, `EVT_018`, `EVT_019`, `EVT_020`, `EVT_023`, `EVT_024`, `EVT_026`, `EVT_032` | 12: `EVT_013`, `EVT_015`, `EVT_016`, `EVT_017`, `EVT_021`, `EVT_022`, `EVT_025`, `EVT_027`, `EVT_028`, `EVT_029`, `EVT_030`, `EVT_031` | launch set includes story finale `EVT_005`, boss `EVT_007` and `EVT_009` (needed for `MUT_040`); deferred set holds scale-changing (`EVT_015`, `EVT_016`), morph-swapping (`EVT_021`), arena (`EVT_025`) and seasonal events |
+| City events (§36.11) | all 32 (`EVT_001`–`EVT_032`) in the §18.8 rotation decks; seasonal events active in their §36.11 months (`EVT_030` from launch day) | new events (§33); deck retunes | §36.11 frequencies assume the full decks; story finale `EVT_005`, boss `EVT_007` and `EVT_009` (needed for `MUT_040`) are never cut |
 | Multiplayer (§21) | shared city, co-op visits, permissions, Co-op Insurance, friend-join | co-op cooking tournaments | social pillar |
 | Arena (§21) | casual opt-in 1v1 / 2v2 | ranked seasons, season rewards, new arenas | PvP never forced; RT has other sources |
 | Monetization (§23) | cosmetic shop, cosmetic game passes, extra cosmetic loadout slots | cosmetic season pass (OD-07), theme packs | cosmetics only (§C4.1) |
@@ -685,11 +689,11 @@ If a gate is missed by > 2 weeks, cut from the top until the plan fits; nothing 
 | Order | Candidate | Saving | Consequence |
 |---|---|---|---|
 | 1 | Casual arena → Live Ops month 3 | ≈ 5.5 pw (F4.9) | arena-season RT source absent; RT still from weeklies, story, events, achievements |
-| 2 | 4 launch events (`EVT_011`, `EVT_012`, `EVT_019`, `EVT_020`) → post-launch | ≈ 4 pw | 16 events in rotation at launch |
+| 2 | Up to 8 rotation events (`EVT_013`, `EVT_015`, `EVT_016`, `EVT_017`, `EVT_021`, `EVT_022`, `EVT_025`, `EVT_027`) → Live Ops months 1–3 | ≈ 5 pw | removed from the §18.8 decks with weights renormalized; seasonal and story events never cut |
 | 3 | Employee promotion & reviews → simplified training only | ≈ 3 pw | depth arrives in Live Ops month 1 |
 | 4 | Mystery Market rotation → fixed weekly stock table | ≈ 1.5 pw | less variety at `BLD_13` |
 | 5 | SVC/MGMT specialization trees → post-launch | ≈ 2 pw | primary trees unaffected |
-| 6 | Pigeon Taxi → post-launch (Metro + Return Door remain) | ≈ 1 pw | slightly slower travel |
+| 6 | Morph Museum (`BLD_16`) exhibits → secret "Empty Exhibit" plus lore boards only | ≈ 1 pw | fewer collection displays; `MUT_048` discovery unaffected |
 | 7 | Up to 40 non-secret Uncommon/Rare parts' art → first two monthly drops | ≈ 13 contract pw | data rows ship; parts flagged "Coming Soon" in Mart |
 | — | **Never cut:** tutorial, offline earnings + Welcome Back, persistence & security, 10 tiers, 150 recipes, accessibility, kid-safety review | | |
 
@@ -697,7 +701,7 @@ If a gate is missed by > 2 weeks, cut from the top until the plan fits; nothing 
 
 | Risk | Likelihood | Impact | Mitigation | Owner | Early signal |
 |---|---|---|---|---|---|
-| R-01 Art volume (280 parts, 150 dishes, 110 furniture, 10 districts) exceeds 3 artists | High | High | family kits; dishes composed from ingredient meshes; 197 contract pw; cut item 7 | Producer | outsourced batch acceptance < 80 % on time |
+| R-01 Art volume (280 parts, 150 dishes, 110 furniture, 10 districts) exceeds 3 artists | High | High | family kits; dishes composed from ingredient meshes; 203 contract pw; cut item 7 | Producer | outsourced batch acceptance < 80 % on time |
 | R-02 Single designer bottleneck | High | Medium | contract content designer from Alpha; producer owns data entry tooling; spreadsheet → JSON pipeline | Producer | design utilization > 95 % two sprints running |
 | R-03 Mobile performance with 8 restaurants and up to 160 proxies | Medium | High | SPCV, impostors at 60 studs, interior streaming, Phase 3 perf pass, matrix every 2 weeks in Beta | Lead Eng | low-phone FPS p50 < 30 in any matrix run |
 | R-04 Data loss or currency duplication | Low | Critical | session locking, atomic offline writes (§C15), idempotent receipts, chaos tests (§35.11) | Systems Eng | any duplicate `reportId` or receipt in logs |
