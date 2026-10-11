@@ -64,7 +64,8 @@ def pol(text):
     """Typographic polish for JSON-sourced prose: section refs, multiplication signs, minus signs."""
     if not text:
         return text
-    text = re.sub(r"\bsections? (\d+(?:\.\d+)*)", "\u00a7\\1", text)
+    text = re.sub(r"\bsections? (\d+)((?:\.\d+)*)",
+                  lambda m: "\u00a7" + m.group(1) + (m.group(2) if m.group(1) in ("15", "36") else ""), text)
     text = re.sub(r"(^|[\s(])x(\d)", "\\1\u00d7\\2", text)
     text = re.sub(r"(^|[\s(])-(\d)", "\\1\u2212\\2", text)
     text = text.replace(" -> ", " \u2192 ").replace(">=", "\u2265")
@@ -413,11 +414,15 @@ def render_36_13(d, items_by_id):
     for r in zone_rows:
         a("| " + " | ".join(r) + " |")
     a("")
-    a("**Price bands** (canon \u00a7C4.4 income per active hour in brackets): T1 25\u2013750 (630) \u00b7 T2 140\u20131,400 "
-      "(1,080) \u00b7 T3 200\u20132,400 (1,730) \u00b7 T4 450\u20132,500 (3,100) \u00b7 T5 1,800\u201312,000 (5,400) \u00b7 "
-      "T6 1,500\u201324,000 (9,600) \u00b7 T7 3,600\u201360,000 (17,400) \u00b7 T8 7,500\u2013110,000 (32,800) \u00b7 "
-      "T9 16,000\u201375,000 (63,700) \u00b7 T10 120,000\u2013300,000 (120,500). Rule of thumb: everyday pieces cost "
-      "\u2248 0.05\u20130.3 h of tier income, set signatures 0.5\u20132 h, showpieces 2\u20135 h.")
+    bands = []
+    for t in d["tiers"]:
+        n = tnum(t["id"])
+        ps = [it[5] for g in groups for it in g["items"] if it[4] == n]
+        if ps:
+            bands.append(f"T{n} {fmt(min(ps))}\u2013{fmt(max(ps))} ({fmt(t['net_active'])})")
+    a("**Price bands** by required tier (canon \u00a7C4.4 net income per active hour in brackets): " + " \u00b7 ".join(bands)
+      + ". Rule of thumb: everyday pieces cost \u2248 0.05\u20130.3 h of tier income, set signatures 0.5\u20132 h, "
+      "showpieces 2\u20135 h; early stations (e.g. `STN_BLENDER`, `STN_STEAMER`) are deliberate 1\u20132 h choices.")
     a("")
     head = ("| ID | Name | Category | Station | Req tier | Price (MB) | Footprint (studs) | Seats / capacity | "
             "Atmosphere pts | Durability | Theme / set | Interactive / notes |")

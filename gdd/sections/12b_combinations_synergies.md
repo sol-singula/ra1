@@ -274,7 +274,7 @@ morph economy: a build is worth more than the sum of its parts, but only a littl
 3. **Count index.** One pass over the ≤ 21 occupied non-FX slot instances (FX is indexed separately) builds counts
    per family, tag, category and rarity-rank for every slot instance.
 4. **Match.** Each synergy's requirement was compiled into a predicate tree at server start (§36.4 data →
-   `SynergyDefs`). All 132 are evaluated: ≤ 132 × 5 atoms × 21 slots ≈ 14k cheap checks, under 0.2 ms on a server
+   `SynergyDefs`). All 141 are evaluated: ≤ 141 × 5 atoms × 21 slots ≈ 15k cheap checks, under 0.2 ms on a server
    core.
 5. **Resolve.** Stacking groups and the 5-slot limit (12.10.3) produce `active` and `suppressed` lists.
 6. **Apply.** Active effects are pushed into the player's `ModifierStack`, keyed by effect type × target, which
@@ -293,7 +293,7 @@ flowchart LR
   C --> D{"Hash in LRU cache?"}
   D -- yes --> G["Cached active / suppressed"]
   D -- no --> E["Count index: family / tag / category / rarity per slot"]
-  E --> F["Evaluate 132 compiled predicates"]
+  E --> F["Evaluate 141 compiled predicates"]
   F --> H["Resolve: best rank per stacking group, then top 5 (pins first)"]
   H --> G
   G --> I["ModifierStack: sum per effect type x target, apply caps"]
@@ -355,7 +355,7 @@ Secret parts count normally.
    applies per target. Example: `PROC_TIME` −12 % (all stations) + −10 % (`STN_GRILL`) = −22 % on the grill. Flat
    effects have the caps in the table below. The capped synergy layer then multiplies with stats, skill nodes and
    station levels in the owning system's formula (§5, §11, §15).
-5. **Drawbacks** (e.g. the +10 % damage taken of `SYN_060` Glass Cannon) are fixed, never capped and never cancelled by other
+5. **Drawbacks** (e.g. the +10 % damage taken of `SYN_060` Glass-Jaw Slugger) are fixed, never capped and never cancelled by other
    synergies, so a trade-off stays a trade-off.
 6. **No scaling with upgrades.** Synergy magnitudes do not grow with part upgrade level, which keeps them easy to
    read. Upgrades raise part stat budgets instead (canon C13.4).

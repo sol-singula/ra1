@@ -74,19 +74,21 @@ Baseline character height is **5.5 studs**. All parts are authored on a **0.25-s
 | Soot Gray | `#4A4A55` | soot, smoke, burnt food |
 | Sky Day / Dusk | `#8FD8FF` / `#FF9E7A` | sky gradients |
 
-**Reserved gameplay colors.** Each is always paired with a shape or icon, so no state is color-only.
+**In-world gameplay colors** use §24's status tokens, so world highlights and HUD agree and both follow the player's
+colorblind palette. Each is paired with a shape or icon, so no state is color-only.
 
-| Meaning | Hex | Shape / icon partner |
+| Meaning | Token (default hex, §24) | Shape / icon partner |
 |---|---|---|
-| Interactable focus | `#FFF6D6` warm white | outline plus hand-tap icon |
-| Ready / Perfect | `#B6FF3B` lime | ✓ check |
-| Warning (patience, about to burn) | `#FFD23F` yolk | "!" in a burst bubble |
-| Danger / hostile | `#FF4D3D` tomato | jagged burst, fist icon, scribble cloud |
-| Calm / de-escalated | `#7FD3FF` sky | peace-dove icon |
-| Repair needed | `#8FB3C9` steel | wrench icon |
+| Interactable focus | `brand.mustard` (`#FFC531`) | outline plus hand-tap icon |
+| Ready / Perfect | `state.good` (`#48D16B`) | ✓ check |
+| Warning (patience, about to burn) | `state.warn` (`#FFC531`) | ◆ diamond / hourglass |
+| Rising anger (steam) | `state.alert` (`#FF8A1F`) | ▲ steam puff |
+| Danger / hostile / fire | `state.danger` (`#FF4B3E`) | "!" burst, ✕, scribble cloud |
+| Info / calm | `state.info` (`#3A8DFF`) | "i" bubble, peace-dove icon |
+| Repair needed (in-world only) | steel `#8FB3C9` | wrench icon |
 
-**Rarity colors** (canon §C13.3) are reserved for rarity frames, beams and glyphs. A palette lint rejects any
-non-rarity UI or highlight color within ΔE 10 of them.
+**Rarity colors** (canon §C13.3) appear in world art only on rarity frames, beams and glyphs. In-world art (signage,
+props, part palettes) stays ≥ ΔE 5 away from them. UI tokens are governed by §24.
 
 **Value contrast.** Interactables are ≥ 3:1 relative-luminance contrast against their immediate background. Floors
 sit in mid value (L* 35–60). Interactables are L* ≥ 65 or saturated. Background walls carry ≤ 60 % of foreground
@@ -95,7 +97,7 @@ saturation. On any character, the face region has the highest value.
 #### 25.2.5 Readability rules
 1. **Silhouette and grayscale tests** for every part, station and state (§25.2.2, §25.3.6).
 2. **Gameplay highlighting** uses Roblox `Highlight`. The engine renders at most 31 at once, so the budget is:
-   1 focus target (warm-white outline, `FillTransparency` 1), ≤ 8 hostile customers (tomato outline,
+   1 focus target (`brand.mustard` outline, `FillTransparency` 1), ≤ 8 hostile customers (`state.danger` outline,
    `DepthMode.AlwaysOnTop` within 40 studs, ≤ 2 Hz pulse), and ≤ 6 station alerts (burning or fire). The rest is
    reserved. Anything beyond the budget uses BillboardGui icons.
 3. **Overhead stack:** at most 2 rows per customer. Row 1 is the patience or anger icon; row 2 is the Huff Points
@@ -126,7 +128,8 @@ saturation. On any character, the face region has the highest value.
 | Food | splat decals (ketchup, mustard, cream, slime green, chocolate) with seeds and chunks so they read as food | splat ring, drips | blood-like red on characters |
 | Characters | **never break**: stars, birds, swirls, soot, food splats (≤ 2 s) | per §25.6 | wounds, bruises, detached limbs |
 
-Debris pieces are client-only, ≤ 12 per event, and despawn in 4 s (canon §C3). Rubble piles from Destroyed items
+Debris pieces are client-only, capped per event by the §30 quality tier (LOW 8 / MID 12 / HIGH 16), and
+despawn in 4 s (canon §C3). Rubble piles from Destroyed items
 are persistent props until rebuilt (§25.4.6).
 
 #### 25.2.8 Neon city lighting and stylized interiors
@@ -145,7 +148,10 @@ are persistent props until rebuilt (§25.4.6).
 
 - **Sky:** a custom stylized skybox (1024² faces) with puffy clouds; at night a giant moon wearing a monocle.
 - **Light budget:** per streamed city chunk, ≤ 40 active lights (PointLight, SpotLight, SurfaceLight) and ≤ 6
-  with `Shadows = true`. Hero signs get a PointLight (Range 12–16, Brightness 1.5); most neon uses no light at all.
+  with `Shadows = true`. Hero signs get a PointLight (Range 12–16, Brightness 1.5); most neon uses no light at all. §30
+  caps neon SurfaceLights in view at 8 / 16 / 32 (LOW / MID / HIGH).
+- **Post-processing is tiered** (§30): LOW has no Bloom or ColorCorrection, and MID has Bloom only. Palettes, neon
+  and interior moods must read with every post effect off; the values below are HIGH-tier polish.
 - **Interiors** ignore the city clock. On entry the client tweens to the tier preset (§25.4.3) in ≤ 1.0 s.
 
 #### 25.2.9 What to avoid
@@ -197,8 +203,9 @@ attachments. The table below adds the art envelope and per-slot budgets. These p
 
 #### 25.3.2 Scale and attachment guidelines
 1. **Mount frame.** Each part is modeled with its mount point at the origin, +Y up and −Z forward (Roblox
-   `LookVector`). Its `Mount` attachment sits at the origin. The builder welds `Mount` to the rig's `MMR_*`
-   attachment (`Weld.C0` = rig attachment CFrame, `C1` = mount CFrame).
+   `LookVector`). Its `Mount` attachment sits at the origin. The builder places the part so `Mount` coincides with the rig's
+   `MMR_*` attachment, then welds it with a `WeldConstraint` (§30). The only exceptions are animated sub-parts (jaw
+   hinge, pupils), which use a `Weld` whose `C0` the client rotates.
 2. **Socket overrides.** Anatomy differs wildly: a shark's eyes are on its sides, and a TV head's "mouth" is its
    screen. So a HEAD part carries child attachments named exactly like the face sockets (`MMR_FaceFront`,
    `MMR_Nose`, `MMR_Mouth`, `MMR_Eyes`, `MMR_EarL`, `MMR_EarR`, `MMR_HeadTop`), and the builder moves the rig
@@ -225,8 +232,8 @@ attachments. The table below adds the art envelope and per-slot budgets. These p
    CFrame, then deletes the marker.
 4. **Skinned parts** (tails, long necks, tentacles, wings, antennae) use an armature of 2–6 bones with unique names
    and ≤ 4 weights per vertex. Bones arrive as `Bone` instances, which SecondaryMotion drives (§26).
-5. **LODs.** Export `_L0`, `_L1` (≈ 40 % of L0 tris) and, for HEAD, TORSO, ARM, LEG, TAIL and WINGS, `_L2`
-   (≈ 10 %) for the impostor.
+5. **LODs.** Export `_L0` and `_L1` (≈ 40 % of L0 tris). HEAD parts also export an `_L2` silhouette (≤ 300 tris),
+   which the §30 impostor swaps in. Body impostors are authored once per body-plan class (§25.3.8), not per part.
 6. The pre-export validator script checks tri counts against §25.3.1, envelope fit, required sockets, UVs inside
    the 0–1 atlas space, and the 0.25-stud pivot grid.
 7. **Studio settings,** applied by the Asset Validator plugin on the templates (these cannot be changed at
@@ -245,7 +252,9 @@ attachments. The table below adds the art envelope and per-slot budgets. These p
   Legendary, Mythic and Secret player parts (≤ 4 per player morph), trophies `FRN_901`–`FRN_910`, and TIER_09–10
   hero signage. Normals are soft painted bevels, roughness sits at 0.4–0.8, and metalness is used only on robots
   and gold. `AlphaMode = Overlay` lets the part's `Color` show through transparent ColorMap areas for tintable hero
-  parts. NPC L1 and L2 meshes never use SurfaceAppearance.
+  parts. SurfaceAppearance renders only at the HIGH graphics tier (§30). On LOW and MID the client removes it, so every
+  hero part must also carry a complete palette-atlas `TextureID` fallback. NPC L1 meshes and impostors never
+  use SurfaceAppearance.
 - **SKIN / FUR / SCALES** apply a `MaterialVariant` from `MaterialService` (ToonFur on a Fabric base, ToonScales,
   ToonSlime, ToonRubber, ToonGold, ToonRock) plus a palette swap across all visual parts.
 - **Never on characters:** Glass, ForceField, and realistic stock materials. Ghost Phase (`ANM_359`) fades with
@@ -279,7 +288,7 @@ whether they are about to throw the soup) before any UI does.
 
 **Rules & Mechanics.**
 - **Layers.**
-  1. **EYES parts:** 3D eyeballs with pupil sub-meshes. Pupils look at the `Target` attribute by offsetting their
+  1. **EYES parts:** 3D eyeballs with pupil sub-meshes. Pupils look at the nearest player within 10 studs, or at the plate while eating, by offsetting their
      `Weld.C0` by up to 0.08 stud.
   2. **Expression sheet:** a `Decal` on the HEAD's face card showing brows, the mouth (only when no MOUTH part is
      equipped) and cheeks.
@@ -337,8 +346,10 @@ whether they are about to throw the soup) before any UI does.
 
 **Dependencies.** §8 and §10 (Mood, Anger attributes), §36.7 (statuses), §26 (mouth sync).
 
-**Roblox implementation.** A client FaceController listens to `GetAttributeChangedSignal("Mood")`, `"Anger"` and
-status attributes on each proxy. It sets `Decal.Texture` from the preloaded list and drives pupils within 30 studs.
+**Roblox implementation.** Face logic runs inside `MorphVisualController` (§27), which listens to the proxy's
+`AngerLevel`, `State` and `ItemS` attributes (§8) and to status changes. Mood is derived client-side: before
+the food arrives, from the locally computed patience fraction (≥ 50 % Happy, 25–50 % Meh, < 25 % Unhappy); after
+inspection, from `ItemS` using the canon §C11.3 thresholds. It sets `Decal.Texture` from the preloaded list and drives pupils within 30 studs.
 
 **Edge cases.**
 - A FACE mask covers the face card: the sheet renders on the mask's own face card.
@@ -398,9 +409,12 @@ status attributes on each proxy. It sets `Decal.Texture` from the preloaded list
   the jaw into the mouth. If a generated morph still exceeds 24 MeshParts, the client builder drops slots in this
   fixed order: FX → FACE → FEET → BACK → NOSE → HORNS → EARS → NECK. The order is deterministic, so every client
   shows the same customer. Employees never drop their uniform.
-- **Impostor (L2), beyond 60 studs** (canon; 35 studs at `SavedQualityLevel` ≤ 3): ≤ 8 MeshParts, ≤ 1,500 tris.
-  It keeps the L2 HEAD, TORSO, one mesh per arm and per leg, TAIL and combined WINGS, plus the 3-state face decal. No
-  FX and no secondary motion; the uniform color shows through the TORSO palette.
+- **Impostor beyond 60 studs** (canon, as implemented in §30). Art authors one pre-baked 1,200-triangle impostor
+  per **body-plan class**: biped, tall-neck, hopper, multi-leg (skitter), tentacle-leg, winged, wheeled, bulky-shell.
+  Each impostor is tinted with the morph's three dominant colors and topped with the HEAD part's ≤ 300-triangle
+  `_L2` silhouette, so a Shark-Spider still reads as a shark at 80 studs (≤ 1,500 tris total). It carries the 3-state
+  face decal (Happy, Meh, Angry); no FX, no secondary motion. When more NPC visuals are in range than the quality
+  tier's full-detail cap (§30: 12 / 24 / 40), the farthest ones use impostors even inside 60 studs.
 - **Texture memory per morph:** ≤ 2 palette atlases (256²), ≤ 4 SurfaceAppearance sets (512²), and the face sheet.
 
 ### 25.4 Restaurant Art
@@ -434,6 +448,8 @@ the art treatment of those briefs.
 
 #### 25.4.2 Interior lighting presets
 The client applies these on door entry with a `TweenService` tween of ≤ 1.0 s. `Lighting.Technology` never changes.
+Bloom and ColorCorrection apply only on the tiers where §30 enables them; Ambient, Brightness and the lights carry
+the mood alone on LOW.
 
 | Tier | Ambient | Brightness | ColorShift_Top | Bloom (Int / Size / Thr) | ColorCorrection (Sat / Con / Tint) | Atmosphere Density | Key lights |
 |---|---|---|---|---|---|---|---|
@@ -593,7 +609,7 @@ appliance purchases** drop in from above in a gift box that unboxes in 0.6 s wit
   face carries at most 2 animated signs.
 - **Streaming.** `StreamingEnabled` (§30). Landmarks use `ModelStreamingMode.Atomic` and
   `Model.LevelOfDetail = StreamingMesh`, so distant districts still read on the skyline.
-- **Client-only cosmetics** (canon §C3): crowds of ≤ 30 visible pedestrians (L2 meshes, `ANM_262`, `ANM_263`) and
+- **Client-only cosmetics** (canon §C3): crowds of 10 / 20 / 36 walkers by §30 tier (impostor meshes, `ANM_262`, `ANM_263`) and
   ≤ 6 food-shaped vehicles on splines (hot-dog car, toaster van, sushi scooter).
 - **Animated billboards** use a SurfaceGui `ImageLabel` flipbook (`ImageRectOffset` steps through a 1024² sheet at
   ≤ 8 fps, ≤ 2 Hz for any brightness flash). At most 6 animate at once per client; the rest show a static frame.
@@ -610,7 +626,7 @@ appliance purchases** drop in from above in a gift box that unboxes in 0.6 s wit
 | DST_06 Mutation Research | Sleek white labs, green glowing tubes, BLD_11 bubbling dome, BLD_16 with a "Burgersaurus" skeleton | Cool white, cyan, lab green | Clean cool light, tube glow | Bubbling tubes, sliding doors, robot couriers | "Science! (Results May Vary)" |
 | DST_07 Entertainment | Theater marquees, BLD_14 giant fork-and-monocle tower, BLD_22 stage, arcades, busker corners | Pink, purple and gold bulbs | Chaser bulbs, spotlights | Busker loops (`ANM_264`), marquee chasers | "Tonight: Interpretive Soup" · "Vlogzilla LIVE (Probably)" |
 | DST_08 Residential | Pastel houses (shoe house, teapot house), picket fences, BLD_19 park fountain | Soft pastels, low neon | Warm porch lights | Sprinklers, laundry lines, NPC_025 feeding pigeons | "Lost: One Kraken. Answers to 'Kevin'." |
-| DST_09 Underground Sewers | Friendly cartoon sewers: mint-glow water, mushrooms, cheerful murals, BLD_13 lantern market, BLD_21 junk-treasure throne | Bioluminescent teal and purple | Lantern pools, glowing water | Dripping (musical), rat-sized boats, lantern sway | "Sewer King Approved™-free Cheese" · "Rent: Cheap. Smell: Free." |
+| DST_09 Underground Sewers | Friendly cartoon sewers: mint-glow water, mushrooms, cheerful murals, BLD_13 lantern market, BLD_21 junk-treasure throne | Bioluminescent teal and purple | Lantern pools, glowing water | Dripping (musical), rat-sized boats, lantern sway | "Sewer King Approved Cheese (Mostly)" · "Rent: Cheap. Smell: Free." |
 | DST_10 Arena District | BLD_08 stadium with a crossed-spatulas crest, BLD_05 gym with hot-dog dumbbells | Red-blue team banners, white | Stadium floodlights | Crowd-wave lights, banners flapping | "Pigeon Taxi: We Probably Won't Drop You" |
 
 #### 25.5.3 Absurd ad library
@@ -644,34 +660,38 @@ Saucington's Night Classes: Boiling for Beginners" · "Is Your Fridge Running? C
 | Speed lines | dashes, `ABL_063`, `ABL_046` | white `Trail` on root | Trail 0.25 s | 64² |
 | Music notes | `ABL_065`, `ABL_006` | lavender notes | 6 / 1.2 s | 64² |
 | Rarity beam | capsule reveal | vertical Beam in rarity color plus the shape glyph | 1 Beam + 20 | 256² |
-| Debris | destruction | real mesh chunks (planks, cookie shards) | ≤ 12 meshes, 4 s | — |
+| Debris | destruction | real mesh chunks (planks, cookie shards) | 8 / 12 / 16 meshes by tier, 4 s | — |
 
 #### 25.6.2 Particle budgets
-- **Per client:** ≤ 60 active ParticleEmitters on desktop and 30 on mobile; ≤ 1,500 and 600 live particles
-  respectively; ≤ 20 Beams; ≤ 16 Trails.
+- **Per client,** per §30 quality tier (LOW / MID / HIGH): ≤ 400 / 1,000 / 2,000 live particles; ≤ 24 / 32 / 48
+  pooled VFX emitter attachments; ≤ 20 Beams; ≤ 16 Trails.
 - **Per character** (`MMR_FXRoot`): ≤ 2 emitters and ≤ 40 particles. NPC FX emitters are off at LOD1 and beyond.
 - **Emission:** `Rate` ≤ 30/s. Bursts use `:Emit(n)` with n ≤ 40.
 - **Settings:** `LightInfluence` 0 and `LightEmission` ≤ 0.5. Flipbooks use `FlipbookMode.OneShot`.
-- **Quality scaling.** Rates and bursts scale by
-  `UserSettings():GetService("UserGameSettings").SavedQualityLevel`: levels 1–3 → × 0.4, 4–7 → × 0.7, 8–10 → × 1.0.
+- **Quality scaling.** Rates and bursts scale with the §30 graphics tier (LOW × 0.4, MID × 0.7, HIGH × 1.0), then
+  by the Reduced VFX setting (§25.6.4).
 - **Pooling.** Emitters are pre-created per effect type and re-parented, never instanced mid-fight.
 
 #### 25.6.3 Comic impact text
 - **Vocabulary:** "BONK!", "SPLAT!", "CRASH!", "WRONG ORDER?!", "THIS TASTES LIKE GARBAGE!!!", "OOF!", "BOING!",
   "CHEF'S KISS!", "KA-CHING!", "GOOD AS NEW!", "CHAOS!!!".
 - **Rendering:** BillboardGui `TextLabel` with `Enum.Font.LuckiestGuy` for impacts and `Enum.Font.Bangers` for
-  customer shouts. White or tinted fill (impact `#FFF35C`, complaint white on a tomato burst, reward `#B6FF3B`) with
-  a 3-px `UIStroke` in `#1B1035`.
+  customer shouts. White or tinted fill (impact `#FFF35C`, complaint white on a `state.danger` burst, reward `state.good`)
+  with a 3-px `UIStroke` in `#1B1035`.
 - **Motion:** ±8° random rotation, a 0 → 1.2 → 1.0 pop over 0.18 s, 1.2 s life.
 - **Limits:** ≤ 3 on screen. All strings are localized (§24).
 
 #### 25.6.4 Reduced-VFX mode
-An Accessibility toggle (§24), suggested automatically when `SavedQualityLevel` ≤ 2. It changes:
-- Particle counts × 0.3 and debris ≤ 4 pieces.
-- No camera shake or nudge, no full-screen flashes, Bloom intensity capped at 0.2.
-- Every pulse ≤ 2 Hz. Comic text fades without the pop.
-- `ABL_057` Firefly Flash shows a ring outline instead of a glow pulse. The rage scribble is static.
+The setting lives in §24: **Reduced VFX** Full / Low / Minimal, plus separate **Screen Shake** and **Reduced Flash**
+toggles. Art behavior per level:
 
+| Level | Particles and debris | Presentation |
+|---|---|---|
+| Full | × 1 | — |
+| Low | × 0.5 (matches §30's halving) | no `BlurEffect`; no full-screen flashes |
+| Minimal | × 0.2 (fire VFX at 30 %) | as Low, plus comic text fades without the pop, a static rage scribble, `ABL_057` shown as a ring outline, Bloom intensity capped at 0.2 |
+
+At every level, nothing flashes more than 3 times per second (§24 photosensitivity); art pulses are ≤ 2 Hz.
 **Gameplay information is never removed.** Fire, burning and hostile states keep their icons and outlines.
 
 ### 25.7 Asset Pipeline
@@ -717,7 +737,7 @@ flowchart LR
 
 | Asset class | Tris L0 | LOD | MeshParts | Textures | SurfaceAppearance |
 |---|---|---|---|---|---|
-| Mutation part | per slot (§25.3.1) | L1 ≈ 40 %, L2 ≈ 10 % | per slot | palette 256² + detail 1024² (shared) | Legendary+ player parts, 512² |
+| Mutation part | per slot (§25.3.1) | L1 ≈ 40 %; HEAD `_L2` ≤ 300 | per slot | palette 256² + detail 1024² (shared) | Legendary+ player parts, 512² |
 | Toque / apron | 250 each | L1 100 | 1 each | palette | no |
 | Kitchen appliance | 2,000 (+500 Lv5 kit) | RenderFidelity | ≤ 6 | kitchen atlas | no |
 | Chair / table / booth / small decor | 400 / 600 / 1,200 / 300 | — | ≤ 4 | family atlas | no |
@@ -728,9 +748,10 @@ flowchart LR
 | City building generic / landmark | 6k / 20k | StreamingMesh | ≤ 80 / ≤ 200 | district atlas | landmark sign only |
 | Street prop / vehicle | 500 / 1,500 | — | ≤ 3 / ≤ 5 | shared | no |
 
-**Scene target.** A TIER_10 interior in a full rush renders ≤ 600k triangles at high quality and ≤ 300k at
-`SavedQualityLevel` ≤ 3 (impostors at 35 studs). Worst case: 28 customers and 20 employees at L1 (≈ 281k), 8
-players (≤ 120k), shell plus furniture plus 24 appliances (≈ 140k).
+**Scene target** (§30 caps: LOW 250k / MID 500k / HIGH 1M rendered triangles). Uncapped worst case for a TIER_10
+rush: 28 customers and 20 employees at L1 (≈ 281k), 8 players (≤ 120k), shell plus furniture plus 24 appliances
+(≈ 140k), about 541k in total. HIGH fits. MID and LOW reach their caps through §30's full-detail NPC caps (24 / 12)
+with impostors.
 
 #### 25.7.4 Review checklist (every asset, before merge)
 1. Matches the mockup style: blocky, bevelled, saturated, friendly.
@@ -756,13 +777,13 @@ players (≤ 120k), shell plus furniture plus 24 appliances (≈ 140k).
    always carries its shape glyph.
 6. **Low-end devices without Future lighting quality.** Neon self-illumination and painted glows keep signage
    readable. Bloom absence is acceptable.
-7. **Reduced-VFX with fire.** The fire flipbook drops to 6 particles, but the station lamp icon and outline remain
+7. **Reduced VFX Minimal with fire.** The fire flipbook drops to 30 %, but the station lamp icon and outline remain
    (§25.6.4).
 8. **City night cycle versus interiors.** Interiors keep their tier preset regardless of the city clock (§25.2.8).
 9. **Owner inside during a tier upgrade.** §15 cuts the camera to the exterior for the sequence and fades back
    inside afterwards, so nobody sees the interior swap.
 10. **Debris storms in level-6 chaos.** The canon cap of 30 loose physics props is unaffected, because debris is
-    client-only mesh (≤ 12 per event). Pools recycle the oldest pieces first.
+    client-only mesh (8–16 per event by tier). Pools recycle the oldest pieces first.
 11. **Temporary mutation from MUT dishes** (60 s, canon §C10). It is built at L1 with the normal sockets and pops in
     and out with `SFX_147`.
 12. **Customer partly hidden by a booth.** The hostile outline (`Highlight` AlwaysOnTop) keeps level-5 customers
@@ -772,12 +793,13 @@ players (≤ 120k), shell plus furniture plus 24 appliances (≈ 140k).
 - **AC-25-01:** Every mutation part is identified from its black silhouette at 120 px height by ≥ 8 of 10 testers.
 - **AC-25-02:** For every legal combination of parts, including toque and apron, a player morph is ≤ 40 MeshParts and
   ≤ 15,000 triangles. The asset validator proves this by summing per-slot maxima.
-- **AC-25-03:** Customer and employee visuals are ≤ 24 MeshParts and ≤ 6,000 triangles. Beyond 60 studs (35 at
-  `SavedQualityLevel` ≤ 3) they swap to an impostor of ≤ 1,500 triangles within 0.5 s.
+- **AC-25-03:** Customer and employee visuals are ≤ 24 MeshParts and ≤ 6,000 triangles. Beyond 60 studs, or beyond
+  the §30 full-detail cap, they swap to a body-plan impostor of ≤ 1,500 triangles within 0.5 s, with the HEAD
+  silhouette intact.
 - **AC-25-04:** 100 % of imported parts carry a `Mount` attachment and only canon-named `MMR_*` sockets. The
   validator fails any mismatch.
-- **AC-25-05:** A customer's face expression updates ≤ 0.3 s after its Mood or Anger attribute changes (within 30
-  studs), masked by a blink frame.
+- **AC-25-05:** A customer's face expression updates ≤ 0.3 s after its `AngerLevel` or derived mood changes
+  (within 30 studs), masked by a blink frame.
 - **AC-25-06:** Anger levels 1–6 are each distinguishable in a grayscale capture by brow shape and FX shape alone.
   No face is ever tinted red.
 - **AC-25-07:** In all 10 tier interiors, interactables measure ≥ 3:1 luminance contrast against their immediate
@@ -786,11 +808,12 @@ players (≤ 120k), shell plus furniture plus 24 appliances (≈ 140k).
   correctly ≥ 90 % of the time.
 - **AC-25-09:** A Destroyed object always leaves a rubble pile with a Rebuild badge priced ≤ 25 % of the item. No
   destructible ever disappears.
-- **AC-25-10:** Destruction debris is client-only, ≤ 12 pieces per event, and despawns ≤ 4 s after spawning.
-- **AC-25-11:** During TIER_10 level-6 chaos with 24 customers, live particles stay ≤ 600 on mobile and ≤ 1,500 on
-  desktop, and active Highlights stay ≤ 31.
-- **AC-25-12:** With Reduced-VFX on, particle counts are ≤ 30 % of default, camera shake is 0, Bloom intensity is
-  ≤ 0.2, and nothing pulses above 2 Hz.
+- **AC-25-10:** Destruction debris is client-only, ≤ 8 / 12 / 16 pieces per event (LOW / MID / HIGH), and
+  despawns ≤ 4 s after spawning.
+- **AC-25-11:** During TIER_10 level-6 chaos with 24 customers, live particles stay ≤ 400 / 1,000 / 2,000 (LOW /
+  MID / HIGH), and active Highlights stay ≤ 31.
+- **AC-25-12:** Reduced VFX Low and Minimal cut particle and debris counts to ≤ 50 % and ≤ 20 % of Full
+  respectively. At Minimal, Bloom intensity is ≤ 0.2. At every level, no art element pulses above 2 Hz.
 - **AC-25-13:** Entering a restaurant applies the tier lighting preset within 1.0 s. `Lighting.Technology` is never
   modified at runtime.
 - **AC-25-14:** Each tier's name sign is legible at 80 studs on a 1080p display (cap height ≥ 3 studs).
@@ -804,7 +827,8 @@ players (≤ 120k), shell plus furniture plus 24 appliances (≈ 140k).
   shows soot only).
 - **AC-25-20:** In the fit-test place, the toque and apron fit all 40 HEAD and 22 TORSO parts with no visible
   clipping > 0.1 stud.
-- **AC-25-21:** The palette lint finds 0 non-rarity UI or highlight colors within ΔE 10 of a rarity color.
+- **AC-25-21:** The palette lint finds 0 in-world highlight colors that are not §24 status tokens, and 0 signage or
+  part-palette colors within ΔE 5 of a rarity color.
 - **AC-25-22:** 100 % of merged assets have a completed §25.7.4 checklist.
-- **AC-25-23:** On the low-end reference mobile device (`SavedQualityLevel` ≤ 3), a TIER_10 rush holds ≥ 30 FPS
-  with texture memory ≤ 300 MB (§25.7.2).
+- **AC-25-23:** On the LOW-tier reference phone, a TIER_10 rush meets §30's 30 FPS p50 target with texture memory
+  ≤ 300 MB (§25.7.2) and ≤ 250k rendered triangles.

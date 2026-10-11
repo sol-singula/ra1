@@ -100,12 +100,12 @@ Abilities are referenced by canon `ABL_` ID (balance details in §36.6); statuse
 | `SYN_052` | Cat-titude | `family:cat>=3` | `ABILITY_MOD` Dodge Roll invulnerability window is longer (0.25 s → 0.30 s); always lands on its feet. | +0.05 s i-frames | SG_DODGE (r1) | +1 tgt/proj · +2 hits · ±0.5 s | `MUT_002`, `MUT_041`, `MUT_211` | combat |
 | `SYN_053` | Afterburner Roll | `tag:speed+fire@LEG>=2` | `ABILITY_MOD` Dodge Roll travels farther and leaves a harmless soot puff. | +20 % distance | SG_DODGE (r3) | +1 tgt/proj · +2 hits · ±0.5 s | `MUT_198` ×2 | combat, move |
 | `SYN_054` | Kangaroo Court | `family:kangaroo>=2` | `ABILITY_DMG` + `COOLDOWN` `ABL_011` Kangaroo Kick hits harder and recharges faster. | +15 % damage; −10 % cooldown | SG_KICK (r2) | +30 %/ability; −30 %/ability | `MUT_149`, `MUT_184` | combat |
-| `SYN_055` | Shark Week | `family:shark>=2` | `ABILITY_DMG` `ABL_019` Shark Chomp hits harder. | +15 % damage | SG_BITE (r2) | +30 %/ability | `MUT_011`, `MUT_062` | combat |
+| `SYN_055` | Chomp Champ | `family:shark>=2` | `ABILITY_DMG` `ABL_019` Shark Chomp hits harder. | +15 % damage | SG_BITE (r2) | +30 %/ability | `MUT_011`, `MUT_062` | combat |
 | `SYN_056` | Tank Engine | `tag:tank>=5` | `STAT` + `HP` Sturdier body. | +10 DEF; +20 HP | SG_TANKSTAT (r2) | +25/stat; +40 HP | `MUT_001`, `MUT_086`, `MUT_118`, `MUT_182` ×2 | combat |
 | `SYN_057` | Absolute Unit | `tag:tank>=8` | `STAT` + `HP` + `KB_RESIST` Very sturdy body; harder to launch. | +15 DEF; +40 HP; −25 % knockback taken | SG_TANKSTAT (r3) | +25/stat; +40 HP; −30 % | `MUT_001`, `MUT_086`, `MUT_109`, `MUT_118`, `MUT_169`, `MUT_182` ×2, `MUT_205` | combat |
 | `SYN_058` | Shell Shocked | `tag:armored>=4` | `DMG_TAKEN` Less damage taken. | −10 % damage taken | SG_ARMOR (r2) | −30 % | `MUT_023`, `MUT_122`, `MUT_244`, `MUT_267` | combat |
 | `SYN_059` | Living Fortress | `tag:armored>=6 AND tag:heavy>=1` | `DMG_TAKEN` + `STATUS_RESIST` Much less damage taken; `STS_KNOCKDOWN` on you is shorter. | −15 %; −50 % knockdown | SG_ARMOR (r3) | −30 %; −50 %/status | `MUT_034`, `MUT_104`, `MUT_109`, `MUT_135`, `MUT_243`, `MUT_269` | combat |
-| `SYN_060` | Glass Cannon | `tag:fighter>=5 AND tag:armored<=0` | `MELEE_DMG` + `DMG_TAKEN` Melee hits harder, but you take more damage (shown as a red ▼ drawback). | +12 % melee; +10 % taken | SG_MELEE (r2) | +30 %; −30 % | `MUT_012`, `MUT_062`, `MUT_151` ×2, `MUT_216` | combat |
+| `SYN_060` | Glass-Jaw Slugger | `tag:fighter>=5 AND tag:armored<=0` | `MELEE_DMG` + `DMG_TAKEN` Melee hits harder, but you take more damage (shown as a red ▼ drawback). | +12 % melee; +10 % taken | SG_MELEE (r2) | +30 %; −30 % | `MUT_012`, `MUT_062`, `MUT_151` ×2, `MUT_216` | combat |
 | `SYN_061` | Brawler's Instinct | `tag:fighter>=4` | `STAT` Flat stat points. | +6 STR | SG_FIGHTSTAT (r1) | +25/stat | `MUT_001`, `MUT_118`, `MUT_140` ×2 | combat |
 | `SYN_062` | Final Boss Energy | `tag:fighter>=8` | `STAT` Flat stat points. | +12 STR, +6 DEF | SG_FIGHTSTAT (r3) | +25/stat | `MUT_032`, `MUT_067`, `MUT_076`, `MUT_108`, `MUT_163`, `MUT_164`, `MUT_227`, `MUT_194` | combat |
 | `SYN_063` | Tongue Twister | `family:frog@MOUTH AND tag:sticky>=3` | `ABILITY_RANGE` `ABL_016` Tongue Yank reaches farther. | +20 % range | SG_YANK (r2) | +30 %/ability | `MUT_061`, `MUT_005`, `MUT_256` | combat |
@@ -122,7 +122,7 @@ Abilities are referenced by canon `ABL_` ID (balance details in §36.6); statuse
 | `SYN_074` | Roll With It | `family:armadillo@TORSO AND tag:armored>=3` | `STATUS_DUR` + `DMG_TAKEN` `ABL_027` Armadillo Roll lasts longer; less damage taken while rolling. | +25 % duration; −10 % | SG_ROLL (r2) | +30 %/status; −30 % | `MUT_128`, `MUT_244`, `MUT_269` | combat |
 | `SYN_075` | Boo-Fet Line | `family:ghost@BACK AND tag:light>=3` | `ABILITY_MOD` `ABL_059` Ghost Phase lasts longer. | +0.5 s | SG_PHASE (r2) | +1 tgt/proj · +2 hits · ±0.5 s | `MUT_252`, `MUT_233`, `MUT_180` | combat, move |
 | `SYN_076` | Venus Fly-Snap | `family:flytrap@HEAD AND tag:grabby>=3` | `ABILITY_RANGE` `ABL_039` Flytrap Snap reaches farther. | +20 % range | SG_SNAP (r2) | +30 %/ability | `MUT_035`, `MUT_158`, `MUT_170` | combat |
-| `SYN_077` | Big Banana Energy | `family:gorilla>=2` | `ABILITY_RANGE` `ABL_021` Ground Pound shockwave is wider. | +20 % radius | SG_POUND (r2) | +30 %/ability | `MUT_024`, `MUT_148` | combat |
+| `SYN_077` | Banana Quake | `family:gorilla>=2` | `ABILITY_RANGE` `ABL_021` Ground Pound shockwave is wider. | +20 % radius | SG_POUND (r2) | +30 %/ability | `MUT_024`, `MUT_148` | combat |
 | `SYN_078` | Spore-ts Fan | `family:mushroom@BACK AND category:PLANT>=3` | `STATUS_DUR` `STS_SLEEPY` from `ABL_040` Spore Puff lasts longer. | +20 % duration | SG_SPORE (r2) | +30 %/status | `MUT_248`, `MUT_093`, `MUT_177` | combat |
 | `SYN_079` | Phoenix Rising | `family:phoenix>=2 AND tag:regen>=2` | `REVIVE` After a Seeing Stars KO you respawn at 80 % HP (not 60 %) and `STS_WOOZY` lasts 5 s (not 10 s). | +20 % respawn HP | SG_REVIVE (r3) | unique | `MUT_037`, `MUT_200` | combat |
 | `SYN_080` | Lizard Brain Regrowth | `tag:regen>=3` | `REGEN` Heal over time once the In Combat flag clears. | +1.5 HP/s | SG_REGEN (r2) | 3 HP/s | `MUT_014`, `MUT_215`, `MUT_256` | combat |
@@ -155,7 +155,7 @@ Walking, jumping, gliding and carrying. The hard WalkSpeed ceiling of 21 studs/s
 
 | ID | Name | Requirement (§12.10 grammar) | Effect | Magnitude [TUNABLE] | Stacking group (rank) | Cap (synergy layer) | Example qualifying parts | Context |
 |---|---|---|---|---|---|---|---|---|
-| `SYN_096` | Gotta Go Fast-Food | `tag:speed@LEG>=2 AND tag:speed@FEET` | `MOVE_CTX` WalkSpeed bonus at all times. | +6 % WalkSpeed | SG_SPEED (r2) | +30 %; ≤ 21 studs/s | `MUT_186` ×2, `MUT_204` | move |
+| `SYN_096` | Fast Food, Faster Feet | `tag:speed@LEG>=2 AND tag:speed@FEET` | `MOVE_CTX` WalkSpeed bonus at all times. | +6 % WalkSpeed | SG_SPEED (r2) | +30 %; ≤ 21 studs/s | `MUT_186` ×2, `MUT_204` | move |
 | `SYN_097` | Zoomies | `tag:speed>=6` | `STAT` Flat stat points. | +8 MOVE | SG_SPEEDSTAT (r2) | +25/stat | `MUT_002`, `MUT_085`, `MUT_186` ×2, `MUT_204`, `MUT_226` | move |
 | `SYN_098` | Glide Waiter | `tag:flying@WINGS AND tag:light>=2` | `GLIDE` Fall speed is lower and a carried plate never spills while you are airborne. | −40 % fall speed | SG_GLIDE (r2) | −40 % | `MUT_235`, `MUT_121`, `MUT_180` | move |
 | `SYN_099` | Jetpack Jockey | `tag:flying+speed@BACK AND tag:speed@LEG>=2` | `COOLDOWN` `ABL_069` Hover Serve recharges faster. | −15 % cooldown | SG_HOVER (r3) | −30 %/ability | `MUT_245`, `MUT_198` ×2 | move |
@@ -200,7 +200,23 @@ Charm, patience, tips, luck and pure flexing. `SOCIAL` effects are cosmetic only
 | `SYN_131` | Glitch in the Kitchen | `family:glitch@HEAD AND family:glitch@FX` | `SOCIAL` Your morph occasionally "lags" a few frames (cosmetic only); Morphdex photo gets a corrupted frame. | cosmetic | SG_GLITCH (r3) | cosmetic | `MUT_040`, `MUT_276` | social |
 | `SYN_132` | Sparkle Motion | `family:sparkle@FX AND tag:charm>=4` | `SOCIAL` Emotes burst into sparkles; Morphdex photos get the "Sparkle" filter. | cosmetic | SG_SPARKLE (r1) | cosmetic | `MUT_272`, `MUT_002`, `MUT_085`, `MUT_202`, `MUT_211` | social |
 
-#### 36.4.7 Stacking Group Index
+#### 36.4.7 Category Synergies
+
+One synergy per canon category that the families above do not already reward directly, so a pile of any one kind of creature always pays off a little.
+
+| ID | Name | Requirement (§12.10 grammar) | Effect | Magnitude [TUNABLE] | Stacking group (rank) | Cap (synergy layer) | Example qualifying parts | Context |
+|---|---|---|---|---|---|---|---|---|
+| `SYN_133` | Bug Buffet | `category:INSECT>=3 AND tag:chef>=1` | `PERFECT_WIN` Wider Perfect window on dishes containing a `bug`-tagged ingredient (Bug Crunch & friends). | +10 % window | SG_BUGCOOK (r2) | +30 %/station | `MUT_026`, `MUT_126`, `MUT_236` | cook |
+| `SYN_134` | Probe-ably Delicious | `tag:alien>=2 AND tag:chef>=1` | `PERFECT_WIN` Wider Perfect window on `ALN` recipes. | +8 % window | SG_ALIENCOOK (r1) | +30 %/station | `MUT_033`, `MUT_103`, `MUT_156` | cook |
+| `SYN_135` | Warm-Blooded Workforce | `category:MAMMAL>=6` | `STAT` Flat stat points. | +4 EFFICIENCY, +4 CHARM | SG_MAMMAL (r1) | +25/stat | `MUT_001`, `MUT_086`, `MUT_118`, `MUT_140` ×2, `MUT_211` | cook, social |
+| `SYN_136` | Arachnophile | `category:ARACHNID>=3` | `STATUS_DUR` `STS_STICKY` from `ABL_020` Web Shot lasts longer. | +20 % duration | SG_WEBSHOT (r2) | +30 %/status | `MUT_028`, `MUT_076`, `MUT_216` | combat |
+| `SYN_137` | Cold-Blooded Calm | `category:REPTILE>=4` | `STATUS_RESIST` `STS_SLOW` and `STS_FROZEN` on you wear off sooner. | −30 % duration | SG_REPTILE (r2) | −50 %/status | `MUT_017`, `MUT_109`, `MUT_122`, `MUT_215` | combat |
+| `SYN_138` | Kitchen Appliance Uprising | `category:OBJECT>=5` | `STAT` Flat stat points (you speak fluent toaster). | +6 REPAIR | SG_OBJECT (r2) | +25/stat | `MUT_010`, `MUT_047`, `MUT_066`, `MUT_156`, `MUT_171` | repair |
+| `SYN_139` | Low Tide Hustle | `category:MARINE>=4` | `STATUS_IMMUNE` + `MOVE_CTX` Immune to `STS_SOAKED`; slightly faster on wet floors (spills, `EVT_013` Sewer Flood). | +4 % WalkSpeed | SG_AMPHIB (r1) | —; +30 %; ≤ 21 studs/s | `MUT_029`, `MUT_145` ×2, `MUT_206` | move |
+| `SYN_140` | Fish Out of Water | `category:FISH>=4` | `STAT` Flat stat points (the flop is surprisingly fast). | +6 MOVE | SG_FISH (r2) | +25/stat | `MUT_009`, `MUT_046`, `MUT_119`, `MUT_214` | move |
+| `SYN_141` | Legend Has It | `category:MYTHOLOGICAL>=4` | `STAT` Flat stat points; customers whisper about you. | +4 LUCK, +4 CHARM | SG_MYTH (r2) | +25/stat | `MUT_101`, `MUT_241`, `MUT_229`, `MUT_262` | social |
+
+#### 36.4.8 Stacking Group Index
 
 Groups with more than one member. Every other group has a single member and always stacks with the rest.
 
@@ -217,7 +233,7 @@ Groups with more than one member. Every other group has a single member and alwa
 | `SG_SWEET` | `SYN_021` Hive-Five Bakery (r2) > `SYN_022` Sugar Rush Hour (r1) | dessert bonuses |
 | `SG_CLEAN` | `SYN_089` Fire Marshal (r3) > `SYN_023` Self-Rinsing Kitchen (r2) > `SYN_090` Vacuum Sealed (r1) | cleaning & extinguishing |
 | `SG_EFFICIENCY` | `SYN_027` Robot Accountant Mode (r3) > `SYN_026` Udderly Efficient (r2) | flat EFFICIENCY |
-| `SG_ALIENCOOK` | `SYN_029` Galaxy Brain Gourmet (r3) > `SYN_028` Cosmic Cuisine (r2) | alien & legendary recipes |
+| `SG_ALIENCOOK` | `SYN_029` Galaxy Brain Gourmet (r3) > `SYN_028` Cosmic Cuisine (r2) > `SYN_134` Probe-ably Delicious (r1) | alien & legendary recipes |
 | `SG_STUN` | `SYN_035` Sting Operation (r2) > `SYN_036` Nailed It (r1) | stun duration |
 | `SG_THORNS` | `SYN_040` Spiky Balloon (r3) > `SYN_039` Spiky Situation (r2) > `SYN_041` Prickly Personality (r1) | retaliation pokes |
 | `SG_ZAP` | `SYN_043` Eel Be Back (r3) > `SYN_044` Lightning Rod (r2) > `SYN_042` Static Cling (r1) | electric shocks |
@@ -230,6 +246,7 @@ Groups with more than one member. Every other group has a single member and alwa
 | `SG_REPAIRSTAT` | `SYN_087` Chief Engineer (r3) > `SYN_086` Mr. Fix-It-Bits (r2) | flat REPAIR |
 | `SG_JUMP` | `SYN_101` Cloud Nine (r3) > `SYN_100` Pogo Panic (r2) | jumping |
 | `SG_CARRYMOVE` | `SYN_104` Wheel Deal (r2) > `SYN_103` Bee-Line Delivery (r1) | speed while carrying |
+| `SG_AMPHIB` | `SYN_105` Bog Standard (r2) > `SYN_139` Low Tide Hustle (r1) | wet-floor movement |
 | `SG_LUCKSTAT` | `SYN_108` Jackpot Junkie (r3) > `SYN_107` Four-Leaf Overload (r2) | flat LUCK |
 | `SG_DAZZLE` | `SYN_111` Peacock Strut (r2) > `SYN_112` Snake Charmer (r1) | charm status |
 | `SG_CHARMSTAT` | `SYN_113` Heartthrob Hybrid (r2) > `SYN_114` Oh Deer (r1) | flat CHARM |
@@ -237,11 +254,11 @@ Groups with more than one member. Every other group has a single member and alwa
 | `SG_PATIENCE` | `SYN_121` Majestic Pointy Friend (r3) > `SYN_122` Too Cute to Yell At (r2) > `SYN_123` Tall Order (r1) | customer patience |
 | `SG_SHOW` | `SYN_128` Museum Piece (r2) > `SYN_127` Main Character Energy (r1) | rarity flexing |
 
-#### 36.4.8 Coverage Summary
+#### 36.4.9 Coverage Summary
 
 | Measure | Value |
 |---|---|
-| Synergies | 132 (minimum required: 75 brief / 80 canon target) |
-| By context (a synergy may list several) | cook 35 · combat 56 · repair 16 · move 17 · social 33 |
-| Stacking groups | 93 (30 with several ranked members) |
+| Synergies | 141 (minimum required: 75 brief / 80 canon target) |
+| By context (a synergy may list several) | cook 38 · combat 58 · repair 17 · move 19 · social 35 |
+| Stacking groups | 100 (31 with several ranked members) |
 | Requirement styles | family-in-slot, tag counts, combined tags (`+`), category counts, rarity counts, slot counts, distinct families/categories, `<=` drawback gates, OR-alternatives |

@@ -104,7 +104,8 @@ while a player is within 150 studs (otherwise dormant, state frozen). City crowd
 
 **Server proxy** = one anchored, invisible `Part` (§27.12.3: 2.5 × 5.5 × 2.5 studs, Transparency 1,
 `CanCollide = false`, `CanTouch = false`, `CanQuery = true` for hit queries and tap targeting, collision group
-`Proxies`, tag `MMR_Proxy`) with the §27 attributes, written **only on change**:
+`Proxies`, tag `MMR_Proxy`) with the §8 attribute names — all keys centralized in `Shared/Npc/ProxyAttributes`, never
+abbreviated — written **only on change**:
 
 | Attribute | Content | Update rate |
 |---|---|---|
@@ -115,15 +116,17 @@ while a player is within 150 studs (otherwise dormant, state frozen). City crowd
 
 Patience and order details reach clients through `Order.TicketsChanged` (batched, occupants only, ≤ 10 Hz).
 
-**Movement replication:** the server writes proxy `CFrame`s at the 10 Hz simulation rate (§27.7.1) and only
-while a proxy moves; each client lerps its visual toward the proxy and moves all visual roots with one
-`workspace:BulkMoveTo` per frame (§27.12.4), so visuals stay smooth at any frame rate.
+**Movement replication** (integrator ruling): proxy `CFrame`s replicate at **10 Hz while a customer is moving or
+fighting**, **2 Hz while seated or stationary**, and **1 Hz when no player is inside that interior**; each client
+lerps its visual toward the proxy and moves all visual roots with one `workspace:BulkMoveTo` per frame
+(§27.12.4), so visuals stay smooth at any frame rate.
 
-**Server tick rates and budgets** (§27.13 values, confirmed here as the §30 thresholds): customer AI 10 Hz per
-customer, round-robin (avg 2.0 ms, p95 3.0 ms); employee work AI 5 Hz (1.0 / 1.5 ms); `CombatService` event-driven
-+ 10 Hz status sweep (0.8 / 2.5 ms); `CookingService` 4 Hz sweep + exact wake-ups (0.4 / 0.8 ms); everything
-combined ≤ 8 ms average and ≤ 12 ms p95. Over budget, §27.13's degrade ladder steps in (cosmetic streams
-10 → 5 Hz, customer think rate 10 → 7 Hz, arrivals × 0.8) and never touches economy, saves or validation.
+**Server tick rates and budgets** (the §30 thresholds): the customer state machine evaluates at a **4 Hz
+baseline** per customer, round-robin; **`CustomerAIService` ≤ 1.5 ms average and ≤ 3.0 ms p95 per server frame
+across all 8 restaurants**; employee work AI 5 Hz (1.0 / 1.5 ms); `CombatService` event-driven + 10 Hz status
+sweep (0.8 / 2.5 ms); `CookingService` 4 Hz sweep + exact wake-ups (0.4 / 0.8 ms); all gameplay scripts combined
+≤ 8 ms average and ≤ 12 ms p95. Over budget, §27.13's degrade ladder steps in (cosmetic streams halve, customer
+evaluation slows, arrivals × 0.8) and never touches economy, saves or validation.
 
 **Client visual decimation (distance from camera):**
 
@@ -222,7 +225,7 @@ are in range than the tier's full-detail cap, the farthest beyond the cap use im
 | Data | Mechanism | Why |
 |---|---|---|
 | Slow-changing NPC/object state | **Attributes** on proxies/objects (`State`, `AngerLevel`, `Seat`, damage state) | replicate only to clients that have the instance streamed in; free interest management |
-| Reliable state and events (tickets, station state, hits, destruction) | **§27.7 `Batcher`**: per player and remote, coalesced by key, flushed every 100 ms as one fire | one packet per flush instead of dozens |
+| Reliable state and events (tickets, station state, hits, destruction) | **`Shared/Net/` `Batcher`** (§27.7): per player and remote, coalesced by key, flushed every 100 ms as one fire | one packet per flush instead of dozens |
 | Cosmetic streams (emotes, VFX triggers, patience-bar shimmer, footsteps) | **`UnreliableRemoteEvent`**, payload ≤ 900 bytes (Roblox drops unreliable payloads above ~1 KB) | loss is harmless; no resend cost |
 | Numeric bulk (arrays above 32 entries) | `Codec` packs them into a Luau `buffer` (§27.7.1) with the quantization below | 3–6× smaller than tables |
 | Profile read model | `PlayerData.ProfileReady` once (≤ 64 KB), then `PlayerData.Delta` (≤ 10 Hz) | never resend the whole profile |
@@ -240,10 +243,10 @@ ledger, candidates) are pulled page by page when a menu opens, never pushed (§2
 `Workspace.FallenPartsDestroyHeight = −1,200` because the Underground Mutation Sewers (`DST_09`) sit at
 Y ≈ −700 (§18); the default (−500) would delete players and props there.
 
-**Interiors region** (§27.1): origin X = 8,000 studs, interior slots 1,200 studs apart — more than
-`StreamingTargetRadius` (384) plus an interior's half-extent, so a client never streams two interiors or the city
-while inside one — all within ±20,000 studs of the origin to avoid floating-point jitter. Any change to the
-target radius must keep `radius + interior half-extent < 1,200`.
+**Interiors region:** interior regions are spaced **≥ 2,000 studs apart** (integrator ruling; §27 places the region
+far from the city) — far more than `StreamingTargetRadius` (384) plus an interior's half-extent, so a client never
+streams two interiors or the city while inside one — and all lie within ±20,000 studs of the origin to avoid
+floating-point jitter. Any change to the target radius must keep `radius + interior half-extent < 2,000`.
 
 | Model type | `ModelStreamingMode` | Extra |
 |---|---|---|

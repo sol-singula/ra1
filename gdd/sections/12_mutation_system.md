@@ -11,7 +11,7 @@ models) — interfaces in §27, persistence in §28.
 ### 12.1 Overview
 
 **Purpose.** The restaurant is how players earn; mutations are what they want to spend it on. A restaurant has a finite
-list of meaningful upgrades, but the slot system below produces more than 10^25 distinct loadouts from 280 authored parts
+list of meaningful upgrades, but the slot system below produces more than 2 × 10^24 distinct loadouts from 280 authored parts
 (§12.7). Every part does something useful in the kitchen, the dining room, a brawl or a repair job, so the core loop the
 Creative Director asked for is mechanically true: **Cook → Earn → Morph → Become More Powerful → Run a Better Restaurant
 → Earn More → Discover Rarer Morphs**, while employees keep earning (and occasionally finding capsules, §17) offline.
@@ -126,7 +126,7 @@ Only two rules are mechanical exclusions (marked ✱).
 | handsLocked | 19 arms: `MUT_141`, `MUT_144`–`MUT_146`, `MUT_150`–`MUT_159`, `MUT_163`–`MUT_167` | The HANDS mesh on that side is not built; the arm supplies its own `MMR_Grip` attachment for plates, trays and the pan/tray utensils (`ABL_007`, `ABL_008`). |
 | ✱ blocksWings | `MUT_244`, `MUT_245`, `MUT_246`, `MUT_249`, `MUT_251` | Cannot be worn with any WINGS part. Equipping one prompts "Swap out your wings?"; the server rejects loadouts containing both (`CONFLICT_WINGS`). Capes (`MUT_252`) and spines do not block. |
 | ✱ FUR ⊕ SCALES | all FUR and SCALES parts | One covering at a time (`CONFLICT_COVERING`); SKIN stays underneath. |
-| Size class | huge: 18 parts (e.g. `MUT_032`, `MUT_135`, `MUT_238`); tiny: `MUT_161`, `MUT_213`, `MUT_231` | At most **2 huge** parts render huge; a third renders at ×0.7 scale with the toast "Squished to fit!". Size never changes collision. |
+| Size class | huge: 17 parts (e.g. `MUT_032`, `MUT_135`, `MUT_238`); tiny: `MUT_161`, `MUT_213`, `MUT_231` | At most **2 huge** parts render huge; a third renders at ×0.7 scale with the toast "Squished to fit!". Size never changes collision. |
 | Length & height | NECK `NeckLength`, LEG `LegLength`, HORNS height | Morph height (sole to top) ≤ **9.5 studs** so every door works: NeckLength compresses first, then HORNS sink up to 0.5 stud. |
 | Matched pair | identical part in ARM_L+ARM_R or LEG_L+LEG_R | +25 % to that pair's stats; the part's active gains its paired bonus (§36.6); its passive still applies once. |
 
@@ -149,14 +149,14 @@ list, on any device, inside fixed budgets (the "skin-over-rig" contract).
 canon attachments (`MMR_HeadCore` … `MMR_FXRoot`, plus `MMR_Grip` in each hand) once, and stores every leg/neck
 Motor6D's original `C0`/`C1` as CFrame attributes (`BaseC0`, `BaseC1`) so builds are repeatable.
 
-**Asset format.** `ReplicatedStorage/MorphParts/<SLOT>/<PartId>` (e.g. `MorphParts/HEAD/MUT_031`) is a Model with three LOD folders — `Hi` (players),
-`Lo` (customers/employees within 60 studs) and `L2` (impostor silhouette pieces: HEAD, TORSO, ARMS, LEGS, TAIL, WINGS,
-BACK, EARS, HORNS only). Each MeshPart has a child Attachment `Mount` and attributes `Host` (canon attachment name),
+**Asset format.** `ReplicatedStorage/MorphParts/<SLOT>/<PartId>` (e.g. `MorphParts/HEAD/MUT_031`) is a Model with LOD folders `Hi` (players) and
+`Lo` (customers/employees within 60 studs); HEAD parts add an `L2` folder with a ≤ 300-triangle head silhouette that is
+combined with the pre-baked body-plan impostor beyond 60 studs (§30.13). Each MeshPart has a child Attachment `Mount` and attributes `Host` (canon attachment name),
 `Side` (`L`/`R`/nil — Roblox cannot mirror meshes at runtime, so paired parts ship authored L and R meshes), `Tris`,
 optional `JointName` (animatable sub-part) and `MMR_Skin = true` on organic surfaces. Model attributes mirror the JSON:
 `Slot`, `LegLength`, `NeckLength`, `SizeClass`, `FaceLocked`, `HandsLocked`, `Hides`, `BlocksWings`, `Motion`. Parts are
-authored on a 0.25-stud grid at R15 standard scale; organic surfaces use uniform texel density so tiling covering
-materials line up across parts. The generated `MutationDefs` module (from `gdd/data/mutations.json`) is the only place
+authored on a 0.25-stud grid at R15 standard scale, textures ≤ 512² (§30.13), imported with `CollisionFidelity = Box`
+(not settable at runtime); organic surfaces use uniform texel density so tiling covering materials line up across parts. The generated `MutationDefs` module (from `gdd/data/mutations.json`) is the only place
 code reads part data.
 
 **Assembly algorithm** (`MorphAssemblyService.Build(rig, loadout, opts)`; identical shared code builds NPC visuals on clients):
@@ -177,8 +177,9 @@ code reads part data.
 6. **Neck**: `Neck.C0 = BaseC0 * CFrame.new(0, NeckLength_clamped, 0)`; the neck mesh spans the gap; long necks are bone chains.
 7. **Surface pass**: on every MeshPart with `MMR_Skin`, SKIN sets `Color` and `Material`/`MaterialVariant`; FUR or SCALES
    then override the `MaterialVariant` (e.g. `MMR_Fur_Shaggy`, `MMR_Scales_Dragon`; 18 variants total in MaterialService);
-   FUR adds ≤ 3 alpha shell meshes on Hi LOD only. Object/robot parts use SurfaceAppearance and are never furred
-   ("toasters don't grow fur"); only `MUT_258` tints them through `SurfaceAppearance.Color`.
+   FUR adds ≤ 3 alpha shell meshes on Hi LOD only. On LOW/MID graphics and on NPC visuals the covering falls back to
+   `Color` + base `Material` over the category atlas (§30.13). Object/robot parts use SurfaceAppearance and are never
+   furred ("toasters don't grow fur"); only `MUT_258` tints them through `SurfaceAppearance.Color`.
 8. **Palette pass**: primary color → `MeshPart.Color` under SurfaceAppearance `AlphaMode = Overlay` regions and skin;
    secondary/accent → texture-variant index (4 variants per part).
 9. **FX**: clone emitters/trails under `MMR_FXRoot`; `Rate × QualityFactor`, ×0.5 under "Reduced Effects"; NPC Lo FX at
@@ -196,31 +197,33 @@ code reads part data.
 
 **Who builds what.** Player characters are built **on the server** (welds replicate; all clients see the same body; the
 hit rig is unchanged). Customers, employees and named NPCs follow SPCV: the server owns an anchored, invisible proxy with
-the attribute `MMR_MorphCode`, and **each client builds the visual locally** for proxies in its interior or within
-120 studs (streamed), reusing pooled MeshParts. NPC visuals swap to the `L2` impostor beyond 60 studs and are culled
-beyond 150 studs. After a rebuild, the client re-loads ability animation tracks so new Motor6Ds bind.
+the attribute `MMR_MorphCode`, and **each client's `MorphVisualController` builds the visual locally** (≤ 1 build per
+frame, ≤ 2 ms each, pooled MeshParts) for proxies in its interior or within 120 studs. Beyond 60 studs a visual becomes
+its body-plan impostor (biped, tall-neck, winged, tentacle-leg … — `MorphRules` derives the class from the flags) tinted
+with the morph's three dominant colors plus the head's `L2` silhouette; beyond 120 studs it is culled (§30). After a rebuild, the client re-loads ability animation tracks so new Motor6Ds bind.
 
 **Procedural secondary motion (client only).** `SecondaryMotionController` simulates tagged Bone chains with damped
-springs (stiffness/damping per part attribute): 30 Hz within 40 studs, 15 Hz to 80 studs, frozen beyond; at most 40
-chains per client (nearest first); own character always simulated. Wings idle-flutter procedurally and flap through
+springs (stiffness/damping per part attribute): player characters at 30 Hz within 40 studs and 15 Hz to 80 studs; NPC
+chains only within 30 studs (beyond that NPCs play primary tracks only, §30); at most 40 chains per client, nearest
+first; your own character is always simulated. Wings idle-flutter procedurally and flap through
 Motor6D clips; ears and antennae use 1–2-bone springs; prehensile tails and tentacles lerp bone angles toward
 `MMR_Grip` targets to "hold" carried items. The server never simulates cosmetic motion.
 
 **Budgets** (per part; totals equal the canon limits — player ≤ 40 MeshParts / 15,000 tris, NPC ≤ 24 / 6,000, impostor ≤ 1,500):
 
-| Slot | Max MP (player) | Hi tris | NPC Lo tris | Impostor tris |
-|---|---|---|---|---|
-| HEAD (incl. built-in features) | 3 | 1,500 | 600 | 250 |
-| FACE / NOSE / MOUTH / EYES | 1 / 1 / 1 / 2 | 300 / 250 / 350 / 300 | 100 / 80 / 120 / 100 | — |
-| EARS / HORNS / NECK | 2 / 2 / 1 | 400 / 400 / 500 | 150 / 150 / 180 | 60 / 60 / — |
-| TORSO | 2 | 2,000 | 800 | 300 |
-| ARM (each side) | 3 | 1,100 | 400 | 100 |
-| HANDS (pair) / FEET (pair) | 2 / 2 | 600 / 500 | 150 / 150 | — |
-| LEG (each side) | 2 | 1,000 | 350 | 100 |
-| TAIL / WINGS (pair) / BACK | 1 / 2 / 3 | 900 / 1,200 / 900 | 350 / 450 / 320 | 120 / 150 / 100 |
-| FUR or SCALES shells | 3 | 500 | 0 (material only) | — |
-| FX | 1 | 200 | 0 | — |
-| **Full 22-slot total** | **39** (+1 for a held utensil) | **15,000** | **5,200** | **1,440** |
+| Slot | Max MP (player) | Hi tris | NPC Lo tris |
+|---|---|---|---|
+| HEAD (incl. built-in features) | 3 | 1,500 | 600 (+ `L2` silhouette ≤ 300) |
+| FACE / NOSE / MOUTH / EYES | 1 / 1 / 1 / 2 | 300 / 250 / 350 / 300 | 100 / 80 / 120 / 100 |
+| EARS / HORNS / NECK | 2 / 2 / 1 | 400 / 400 / 500 | 150 / 150 / 180 |
+| TORSO | 2 | 2,000 | 800 |
+| ARM (each side) | 3 | 1,100 | 400 |
+| HANDS (pair) / FEET (pair) | 2 / 2 | 600 / 500 | 150 / 150 |
+| LEG (each side) | 2 | 1,000 | 350 |
+| TAIL / WINGS (pair) / BACK | 1 / 2 / 3 | 900 / 1,200 / 900 | 350 / 450 / 320 |
+| FUR or SCALES shells | 3 | 500 | 0 (material only) |
+| FX | 1 | 200 | 0 |
+| **Full 22-slot total** | **39** (+1 for a held utensil) | **15,000** | **5,200**; impostor = body plan ≤ 1,200 + head ≤ 300 |
 
 NPC Lo assets merge paired meshes that share a host (eyes, ears, horns, wings) into one MeshPart, so a fully filled NPC
 needs exactly 24; the generator's fill rates (§12.7) average 14–16 per NPC.
@@ -235,7 +238,7 @@ local PartLib = ReplicatedStorage:WaitForChild("MorphParts")
 
 export type BuildOpts = { lod: "Hi" | "Lo" | "L2", pool: any? }
 local BASE_HIP_HEIGHT = 2.0 -- MMR_BaseRig at LegLength 2.0 [TUNABLE]
-local BUDGET = { Hi = { mp = 40, tris = 15000 }, Lo = { mp = 24, tris = 6000 }, L2 = { mp = 12, tris = 1500 } }
+local BUDGET = { Hi = { mp = 40, tris = 15000 }, Lo = { mp = 24, tris = 6000 }, L2 = { mp = 2, tris = 1500 } }
 
 local MorphBuilder = {}
 
@@ -284,10 +287,14 @@ function MorphBuilder.Build(rig: Model, loadout: { [string]: string }, opts: Bui
 	local visual = Instance.new("Folder")
 	visual.Name = "MMR_Visual"
 	local mp, tris, budget = 0, 0, BUDGET[opts.lod]
+	if opts.lod == "L2" then -- body-plan impostor (≤ 1,200 tris, §30.13); only the HEAD contributes an L2 mesh below
+		MorphBuilder.AttachImpostor(rig, visual, plan.bodyPlan, plan.palette)
+		mp, tris = 1, 1200
+	end
 	for _, e in plan.order do
 		if not e.visible then continue end
 		local lodFolder = PartLib[e.slotCode][e.id]:FindFirstChild(opts.lod)
-		if not lodFolder then continue end -- e.g. no L2 piece for FACE
+		if not lodFolder then continue end -- only HEAD parts ship an L2 silhouette
 		for _, src in lodFolder:GetChildren() do
 			if not src:IsA("MeshPart") then continue end
 			local side = src:GetAttribute("Side")
@@ -355,27 +362,7 @@ Stat leanings come from each part's tags plus a small category bias, so a FOOD a
 | ALIEN | smooth grey/green skin, glow, cosmic scrolling textures | LUCK, EFFICIENCY | forecasts, beam reach, auto-clean |
 | ELEMENTAL | emissive crystal, lava, storm and cloud materials | STR, COOK_SPD | status procs and immunities, temperature stations |
 
-<!-- BEGIN GENERATED: category-counts -->
-| Category | Common | Uncommon | Rare | Epic | Legendary | Mythic | Secret | Total |
-|---|---|---|---|---|---|---|---|---|
-| MAMMAL | 31 | 23 | 9 | 1 | · | · | · | **64** |
-| BIRD | 9 | 7 | 2 | · | · | · | · | **18** |
-| REPTILE | 4 | 9 | 4 | · | · | · | · | **17** |
-| AMPHIBIAN | 5 | 2 | · | · | · | · | · | **7** |
-| FISH | 5 | 4 | 6 | · | · | · | · | **15** |
-| INSECT | · | 6 | 7 | · | · | · | · | **13** |
-| ARACHNID | 1 | 3 | 2 | · | · | · | · | **6** |
-| MARINE | 1 | 6 | 6 | 1 | 3 | · | · | **17** |
-| DINOSAUR | · | 1 | 2 | 5 | · | · | · | **8** |
-| MYTHOLOGICAL | · | 1 | 2 | 8 | 5 | 1 | · | **17** |
-| ROBOT | · | 4 | 11 | 3 | · | · | 1 | **19** |
-| OBJECT | 5 | 8 | 10 | 3 | 2 | · | 2 | **30** |
-| FOOD | 1 | 2 | 2 | 1 | · | 1 | 1 | **8** |
-| PLANT | 1 | 6 | 4 | 1 | · | · | · | **12** |
-| ALIEN | · | 1 | 2 | 6 | · | 3 | 3 | **15** |
-| ELEMENTAL | · | 1 | 6 | 7 | · | · | · | **14** |
-| **Total** | **63** | **84** | **75** | **36** | **10** | **5** | **7** | **280** |
-<!-- END GENERATED: category-counts -->
+Part counts by category × rarity are tabulated in §36.3.2; MAMMAL (64) and OBJECT (30) are the broad "everyday" pools, while MYTHOLOGICAL and ALIEN hold most Legendary, Mythic and Secret parts.
 
 ### 12.5 Rarities and Acquisition
 
@@ -460,10 +447,11 @@ player chooses the output:
 **Rules & Mechanics.** Upgrades happen instantly from the Morph screen (§13) anywhere outside combat, or at the Lab.
 Upgrading a part from level `L` to `L + 1` costs (canon): `MB = BaseMB[r] × 1.5^(L−1)`, `MS = BaseMS[r] × L`,
 `RT = RTBase[r] × (L − 3)` for Epic and above when `L ≥ 4` (Secret counts as Epic-and-above), **plus one duplicate copy**
-of the part or `DupeSubstituteMS[r]`. MB results are rounded half up to whole MB. Secret parts never duplicate and always
+of the part or `DupeSubstituteMS[r]`. MB results round half-up to whole MB (MS and RT are whole by construction). Secret parts never duplicate and always
 pay the substitute.
 
-- **Stat growth:** `Budget(L) = round(BaseBudget[r] × SlotWeight × (1 + 0.12 × (L − 1)))`, distributed over the part's Lv1
+- **Stat growth:** `Budget(L) = round(BaseBudget[r] × SlotWeight × (1 + 0.12 × (L − 1)))` to the nearest point (the only
+  exact ties, Lv1 Uncommon/Rare minor budgets of 3.5 and 5.5, round up to 4 and 6), distributed over the part's Lv1
   stat split by largest remainder (ties in canon stat order), so a part never changes identity as it grows. Small
   budgets grow in steps (a Common minor part reaches its 3rd point at Lv4), so their passive growth carries more weight.
 - **Passive growth:** numeric magnitudes scale ×(1 + 0.05 × (L − 1)) — Common Lv5 ×1.20, Mythic Lv10 ×1.45 — while ICDs,
@@ -586,7 +574,7 @@ shop window for the Mutation Catalog.
 | Visually distinct | full loadout, collapsing face-group choices under the 5 faceLocked heads | 2,079,206,695,151,348,450,688,000 (≈ 2.08e+24) |
 | With palettes | visually distinct × 24 palettes (§12.7) | ≈ 4.99e+25 |
 
-Art builds **280** parts (of which 10 are emitter-only FX and 18 are surface swaps), yet the matched core alone yields 0.6 million bodies and the full space exceeds 10^24. No combination is ever authored by hand.
+Art builds **280** parts (of which 8 are emitter-only FX and 18 are surface swaps), yet matched pairs alone yield 580,800 core bodies, free pairing 383,328,000, and the full space exceeds 2 × 10^24. No combination is ever authored by hand.
 <!-- END GENERATED: combination-math -->
 
 ### 12.8 Balance Limits
@@ -666,6 +654,16 @@ rounded, then capped; the Morph screen shows the overflow as wasted "MAXED" poin
 | `jackpot` (luck) | Jackpot Tip chance +pp | +2.0 pp | 4 |
 | `cosmetic` (cosmetic) | FX flavor only | no stats, no gameplay effect | 10 |
 <!-- END GENERATED: passive-caps -->
+
+**Where passive keys plug in.** `MutationService` publishes one `PassiveTotals` table per character (keys summed, capped,
+level-scaled) and each consumer reads only its keys: **CombatService** multiplies `damage_bonus` into §11's AbilityMult as
+`PassiveMult = 1 + Σ damage_bonus` (the AbilityMult ×2.0 ceiling still holds), applies `damage_reduction` as
+`× (1 − Σ, ≥ 0.65)` before the DEF term, and shortens incoming statuses by `status_resist` after §36.7's own rules;
+**CustomerAIService** applies `patience` after CHARM and adds `satisfaction` into §10's MutationBonus pool (+10 cap);
+**CookingService** multiplies `station_speed` with COOK_SPD and station level and adds `perfect_window`/`burn_grace`
+seconds after all multipliers; **RepairService** multiplies `repair_speed` with REPAIR; movement keys set Humanoid
+properties server-side (WalkSpeed from MOVE + `sprint`, JumpHeight from `jump`), with glides simulated client-side and
+validated by the server's movement checks (§29).
 
 **PvP normalization (Arena, §21).** Inside Arena matches every equipped part's stats are recomputed as if it were **Rare
 at Lv4** (`round(11 × SlotWeight × 1.36)`), keeping its own stat split; passives use Lv1 magnitudes; status immunities
@@ -785,14 +783,14 @@ return MutationService
   the stat panel includes `MUT_078`'s points, and `ABL_032` fires from the screen origin.
 - **AC-12-03:** The server rejects 100 % of loadouts containing a blocksWings BACK part with any WINGS part, or FUR with
   SCALES (fuzz test: 10,000 random remote payloads, 0 accepted).
-- **AC-12-04:** A full 22-slot player morph builds with ≤ 40 MeshParts and ≤ 15,000 triangles in ≤ 8 ms server time (p95,
-  reference server); an NPC visual builds with ≤ 24 MeshParts / ≤ 6,000 tris and swaps to an impostor of ≤ 1,500 tris
-  beyond 60 studs.
+- **AC-12-04:** A full 22-slot player morph builds with ≤ 40 MeshParts and ≤ 15,000 triangles in ≤ 2 ms (p95, reference
+  hardware, §30); an NPC visual builds with ≤ 24 MeshParts / ≤ 6,000 tris, at most one build per frame, and swaps to its
+  body-plan impostor + head silhouette (≤ 1,500 tris) beyond 60 studs.
 - **AC-12-05:** Every `MMR_Visual` descendant BasePart has CanCollide, CanTouch and CanQuery false and Massless true, and
   the HumanoidRootPart size is identical for all 280 parts (automated scan).
 - **AC-12-06:** `Humanoid.HipHeight = 2.0 + (max LegLength − 2.0)` ± 0.01 for all 22 LEG parts, and a downward raycast from
   each visible foot sole finds the floor within 0.15 stud while idle.
-- **AC-12-07:** Upgrade charges match the §12.6 tables for all 49 rarity × level steps, and post-upgrade stats match the
+- **AC-12-07:** Upgrade charges match the §12.6 tables for all 48 rarity × level steps, and post-upgrade stats match the
   budget-by-level table (unit tests).
 - **AC-12-08:** 1,000,000 simulated capsule openings land within ±0.1 percentage point of the disclosed odds, and no
   sequence of 40 capsules lacks an Epic-or-better.

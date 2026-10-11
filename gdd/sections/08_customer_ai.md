@@ -18,8 +18,9 @@ door, and every memorable brawl starts with one losing their temper. The custome
    hand-built models.
 3. **Rigor under the silliness.** Server-authoritative, seed-deterministic and replayable for QA: the same
    session seed reproduces the same arrivals, bodies, names, orders and rolls.
-4. **Cheapness.** Up to 160 customer proxies per server, ticked at 4 Hz, inside a 1.5 ms/frame server budget,
-   with visuals built only by clients standing inside that interior.
+4. **Cheapness.** Up to 160 customer proxies per server, brains ticked at 4 Hz, inside a server budget of
+   ≤ 1.5 ms average / ≤ 3.0 ms p95 per frame across all 8 restaurants, with visuals built only by clients standing
+   inside that interior.
 5. **Emergence.** The state machine exposes hooks (thrown-food hits, splash, auras, furniture knock-ons) that
    §10 uses to turn one bad burger into a restaurant-wide brawl — within strict fairness caps.
 
@@ -109,7 +110,9 @@ first-come-first-served; PER_005 may cut the line (§9). The HUD shows a `Queue 
 
 **Server fair share.** Hard cap 160 proxies per server (§C3). Each restaurant's cap is `Seats + 4`; if the sum
 across open restaurants exceeds 160, each cap becomes `floor(160 × (Seats_r + 4) / Σ(Seats + 4))`, removing queue
-spots first. Example: 8 restaurants at `TIER_10` → 20 proxies each (16 seated + 4 queued).
+spots first, **and every restaurant's arrival rate is throttled by the same factor**
+`f = 160 / Σ(Seats + 4)` (MeanInterval ÷ f), so no plot starves while another floods. Example: 8 restaurants at
+`TIER_10` → Σ = 224, f = 0.714, 20 proxies each (16 seated + 4 queued) and arrivals at 71 % of demand.
 
 #### 8.2.4 Party size by tier band
 
@@ -372,9 +375,10 @@ Anger thresholds and escalation rolls are specified in §10.7.
 | `FIGHTING` | anger drops to 60–74 | `ENRAGED` | — | |
 | `FIGHTING` | Huff Points reach 0 | `CALMING_DOWN` | 3 s Dizzy + 2.5 s | defeated (§11.10.1) |
 | `FIGHTING` | its target is KO'd, no chaos active | `LEAVE` | — | `ANM_051` Victory dance; pays 0 (§C12.1) |
-| `FIGHTING` | talked down: `ABL_006`/`ABL_065` or Security talk-down succeeds (§11.10.1) | `CALMING_DOWN` | — | drops to level 2, returns to its seat; pays by S − 10 |
-| `CALMING_DOWN` | defeated (Huff Points reached 0) | `APOLOGIZING` | 2.5 s | |
-| `CALMING_DOWN` | calmed or talked down (not defeated) | `resumeState` | 2.5 s | "Sheepish" 30 s (§10.10) |
+| `FIGHTING` | talked down by `ABL_006` / `ABL_065` (§11.10.1) | `CALMING_DOWN` | — | drops to level 2 |
+| Hostile (C4–C8) | Security intercept / talk-down succeeds (§11.10.6) | `CALMING_DOWN` | — | always counts as calmed by combat |
+| `CALMING_DOWN` | calmed by combat: Huff reached 0, took player/employee damage this episode, or stopped by Security | `APOLOGIZING` | 2.5 s | |
+| `CALMING_DOWN` | calmed without combat (no damage taken this episode) | `resumeState` | 2.5 s | returns to its seat; "Sheepish" 30 s; pays & tips by S (§10.5) |
 | `APOLOGIZING` | bow done | `ESCORTED_OUT` | 2 s | Apology Payment 40 %, no tip |
 | `ESCORTED_OUT` | crossed the door | despawn | — | |
 | Any | chaos starts and the customer's chaos roll = flee | `FLEEING` | — | §10.9 |
@@ -428,8 +432,8 @@ stateDiagram-v2
     Fighting --> CalmingDown: Huff Points zero
     Angry --> CalmingDown: anger below 45
     Enraged --> CalmingDown: anger below 45
-    CalmingDown --> Wait: calmed or talked down
-    CalmingDown --> Apologizing: defeated
+    CalmingDown --> Wait: calmed without combat
+    CalmingDown --> Apologizing: calmed by combat
     Apologizing --> EscortedOut
     EscortedOut --> [*]
     Fighting --> Leave: target knocked out
@@ -527,21 +531,14 @@ If every eligible weight is 0 (e.g. only disliked dishes on the menu), the custo
 highest-weighted neutral-ised dish anyway (Pref treated as 0.25) and its P_offset loses 5 (§10.3). Item count
 follows §8.2.6. E9 applies: if everything is SOLD OUT, `RCP_BRG_001` is auto-added.
 
-**Modifications (§6.18).** Each item rolls modifications from the §6.18 list filtered by recipe compatibility
-and the tier caps below. Joke modifications use the alternative satisfaction mechanic defined in §6.18.
-
-| Band / tier | Chance an item has ≥ 1 mod | Max mods per item | Max mods per ticket |
-|---|---|---|---|
-| `TIER_01` | 15 % | 1 | 1 |
-| `TIER_02` | 25 % | 1 | 1 |
-| `TIER_03`–`TIER_04` | 35 % / 45 % | 1 / 2 | 2 / 3 |
-| `TIER_05`–`TIER_06` | 50 % / 55 % | 2 | 3 |
-| `TIER_07`–`TIER_08` | 60 % / 65 % | 3 | 4 |
-| `TIER_09`–`TIER_10` | 70 % / 75 % | 3 | 5 |
-
-A second mod on the same item rolls at half the first chance. Personality overrides: PER_014 always ≥ 1 mod on
-the main; PER_001 +50 % chance; PER_019 receives the same mods but displays them as pictograms; PER_012 and
-PER_015 roll at half chance. All values [TUNABLE].
+**Modifications (§6.18).** `OrderService` rolls modifications per item exactly as §6.18.3 specifies (owned by A2):
+per-tier probabilities and maximums, joke share, hidden-mod chance, conflict groups, and the personality
+`ModAffinity` multipliers listed in §9.4. Two rules matter for customers:
+- **Time budget:** a modification is only generated if `EstPrep(item) + Σ ExtraTime(mod) ≤ 0.6 × Patience(item)`,
+  so patience (§C11.2) needs no per-modification term and no customer ever asks for something that cannot be made
+  in time.
+- **Achievability:** every station a modification needs must be owned, placed and usable now; PER_019 shows its
+  modifications as pictogram chips only.
 
 ### 8.9 Rules & Mechanics — Waiting and Patience
 
@@ -621,6 +618,7 @@ Regulars are named repeat customers who remember you. Unlocks at `TIER_02`.
 | Variable | Value [TUNABLE] | Where used |
 |---|---|---|
 | Brain tick rate | 4 Hz (0.25 s) | §8.18 |
+| Proxy movement replication | 10 Hz moving/fighting · 2 Hz seated/stationary · 1 Hz when no player is inside the interior | §8.18 |
 | Arrival jitter band | 0.65–1.35 × mean | §8.2.2 |
 | Rush wave | ±20 %, 360 s period | §8.2.2 |
 | Lull guarantee | 20 s idle → arrival in 3 s | §8.2.2 |
@@ -681,7 +679,12 @@ demand uses the same Stars/DecorMult), §21 (co-op permissions), §24 (HUD), §2
 `CollectionService`. Interiors sit ≥ 2,000 studs apart with `Workspace.StreamingEnabled = true`, so only clients
 near that interior receive its proxies and attribute changes.
 
-**Replicated Attributes** (written only when the value changes):
+**Rates.** Brains (state machine, patience, anger) evaluate at a 4 Hz baseline. Proxy **movement** is flushed
+separately: 10 Hz while the customer is walking, fleeing or fighting, 2 Hz while seated or otherwise stationary,
+and 1 Hz for every proxy of an interior with no player inside. Clients interpolate between flushes.
+
+**Replicated Attributes** (written only when the value changes; the names below are canonical and centralized in
+`ReplicatedStorage/Shared/Npc/ProxyAttributes`, which §27 also references):
 
 | Attribute | Type | Purpose on the client |
 |---|---|---|
@@ -756,29 +759,38 @@ return StateMachine
 
 ```lua
 --!strict
--- ServerScriptService/CustomerAI/Tick.server.lua : 4 Hz brains, spread evenly across frames
+-- ServerScriptService/CustomerAI/Tick.server.lua : 4 Hz brains spread across frames + rate-limited movement flush
 local RunService = game:GetService("RunService")
-local Brain = require(script.Parent.Brain)      -- interruptions → anger (§10) → StateMachine.step → movement
-local TICK = 0.25
+local Brain = require(script.Parent.Brain)      -- interruptions → anger (§10) → StateMachine.step → path advance
+local BRAIN_TICK = 0.25
+local MOVE_INTERVAL = { moving = 0.1, stationary = 0.5, emptyInterior = 1.0 } -- 10 / 2 / 1 Hz (§27 ruling)
 local customers: { any } = {}
 local cursor = 1
+
+local function moveInterval(c): number
+	if not c.restaurant.hasPlayerInside then return MOVE_INTERVAL.emptyInterior end
+	return if c.isMoving or c.isFighting then MOVE_INTERVAL.moving else MOVE_INTERVAL.stationary
+end
 
 RunService.Heartbeat:Connect(function(dt: number)
 	local n = #customers
 	if n == 0 then return end
 	local now = workspace:GetServerTimeNow()
-	local budget = math.min(n, math.ceil(n * dt / TICK)) -- each customer ≈ every 0.25 s
-	local parts, cframes = {}, {}
+	local budget = math.min(n, math.ceil(n * dt / BRAIN_TICK)) -- each brain ≈ every 0.25 s
 	for _ = 1, budget do
 		if cursor > n then cursor = 1 end
 		local c = customers[cursor]
 		cursor += 1
 		Brain.step(c, now, now - (c.lastStep or now))
 		c.lastStep = now
-		if c.cfDirty then
+	end
+	local parts, cframes = {}, {}
+	for _, c in customers do                        -- cheap check; only due, dirty proxies are moved
+		if c.cfDirty and now >= (c.nextMoveAt or 0) then
 			table.insert(parts, c.proxy)
 			table.insert(cframes, c.cf)
 			c.cfDirty = false
+			c.nextMoveAt = now + moveInterval(c)
 		end
 	end
 	if #parts > 0 then
@@ -823,8 +835,8 @@ end)
 | Budget | Limit |
 |---|---|
 | Customer proxies | seats (≤ 24) + 4 queue per restaurant; 160 per server (fair share §8.2.3) |
-| Server brain time | ≤ 1.5 ms/frame p95 at 160 proxies; rebake ≤ 8 ms, debounced 0.5 s |
-| Network | CFrame moves at 4 Hz via `BulkMoveTo`; ≤ 2 attribute writes per customer per second on average |
+| Server time | `CustomerAIService` ≤ 1.5 ms average and ≤ 3.0 ms p95 per frame across all 8 restaurants at 160 proxies; rebake ≤ 8 ms, debounced 0.5 s |
+| Network | proxy CFrames flushed via `BulkMoveTo` at 10 Hz moving/fighting, 2 Hz stationary, 1 Hz in empty interiors; ≤ 2 attribute writes per customer per second on average |
 | Client visuals | built only inside the interior (street visuals for the queue); pooled rigs; ≤ 24 MeshParts / 6,000 triangles each; 1,500-triangle impostor beyond 60 studs; rigs beyond 40 studs stop non-locomotion tracks |
 | Thrown food | scripted arcs per §11.6.2, ≤ 12 concurrent projectiles per restaurant (§11.7); debris client-only, despawns in 4 s |
 
@@ -869,8 +881,9 @@ end)
   frame and the player takes 0 damage for 1.5 s.
 - **AC-08-13:** On owner disconnect every seated customer enters `LEAVE` within 0.25 s, with no payment and no
   reputation change recorded.
-- **AC-08-14:** `CustomerAIService` uses ≤ 1.5 ms/frame (p95) with 160 proxies, and attribute writes average
-  ≤ 2 per customer per second.
+- **AC-08-14:** With 160 proxies across 8 restaurants, `CustomerAIService` averages ≤ 1.5 ms and stays ≤ 3.0 ms at
+  p95 per server frame; attribute writes average ≤ 2 per customer per second; moving proxies flush at 10 Hz,
+  seated ones at 2 Hz and proxies of empty interiors at 1 Hz (± 10 %).
 - **AC-08-15:** A Regular renders identically on every visit, and a profile never stores more than 20 Regulars.
 - **AC-08-16:** In counter service, W stops at the server timestamp when the plate touches the pickup spot, even if
   the customer needs 8 s to walk to the window.

@@ -153,7 +153,7 @@ Upgrades are permanent, per-restaurant purchases made in Build Mode → Upgrades
 | `UPG_052` | Reinforced Appliances I | safety | Max durability of appliances and utility fixtures +25 % | 7,000 | T4 / L18 | — | — |
 | `UPG_053` | Reinforced Appliances II | safety | +50 % (replaces I) | 75,000 | T7 / L45 | `UPG_052` | — |
 | `UPG_054` | Bumper Pads | safety | Characters knocked into objects deal −50 % object damage; corners get comedy boing pads | 2,600 | T3 / L10 | — | Knockback itself is unchanged (§11). |
-| `UPG_055` | Nap Nook Respawn Pad | safety | Players respawning after Seeing Stars wake on a comfy pad: STS_WOOZY duration ×0.6 (WoozyDurationMult, §11.10.5, floor 0.3) | 4,500 | T4 / L18 | — | Occupies no floor cell; the pad appears at the kitchen spawn. |
+| `UPG_055` | Nap Nook Respawn Pad | safety | Players respawning after Seeing Stars wake on a comfy pad: STS_WOOZY duration ×0.6 (WoozyDurationMult, §11, floor 0.3) | 4,500 | T4 / L18 | — | Occupies no floor cell; the pad appears at the kitchen spawn. |
 | `UPG_056` | Robo-Mop Mk I | automation | A mop robot removes 1 trash item or spill in DINING/LOBBY every 30 s (no wage, not an employee) | 9,000 | T4 / L18 | — | Destroyable? No: it hides under the counter during brawls. |
 | `UPG_057` | Robo-Mop Mk II | automation | Every 15 s, also covers OUTSIDE | 70,000 | T7 / L45 | `UPG_056` | — |
 | `UPG_058` | Bus-Bot | automation | Clears one dirty table every 25 s and drops the plates at STN_DISHWASH | 16,000 | T5 / L26 | — | Removes the DirtyTables cleanliness term faster. |

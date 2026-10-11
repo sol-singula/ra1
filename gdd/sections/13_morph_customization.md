@@ -605,7 +605,7 @@ hosts their UI and shows the result on the pedestal.
   active synergies, and the **Morphdex Spotted** credit (§12.9.4). For players, **Copy look** builds a preview
   loadout from the parts you own, listing the missing ones with where-to-get.
 - **Showcase Stage (`BLD_22`):** the Morph screen's current loadout is what struts the runway. Legendary-rarity
-  synergies such as [[Museum Piece]] add the special entrance.
+  synergies such as `SYN_128` Museum Piece add the special entrance.
 
 ### 13.18 Accessibility
 

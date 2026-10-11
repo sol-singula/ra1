@@ -249,7 +249,7 @@ Level 100 ≈ 200 active hours.
 | Rare | 4,000–10,000 | 20 MS | 12 | Mart (rotating), capsules, quests, Lab fusion |
 | Epic | 25,000–60,000 | 80 MS | 25 | Mystery Market rotation, Lab fusion, events, arena |
 | Legendary | 150,000–400,000 | 250 MS + 10 RT | 40 | Mystery Market (weekly), Lab fusion, story/events |
-| Mythic | not sold | Lab fusion: 3 Legendary of same category + 600 MS + 40 RT | 60 | fusion, story finale, top event rewards |
+| Mythic | not sold | Lab fusion: 3 Legendary parts from one fusion route (MYTHOLOGICAL / MARINE / OBJECT routes, see §12.5) + 600 MS + 40 RT | 60 | fusion, story finale, top event rewards |
 | Secret | not sold | hidden discovery condition | special | secret conditions only |
 
 ### C4.6 Mutation upgrade costs [TUNABLE]

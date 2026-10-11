@@ -112,8 +112,9 @@ and reaches 0 at 105 s.
   §6 lists the costs)*.
 - **Net to wallet: 16 + 2 − 5 = 13 MB.**
 
-**Reputation.** Stars += 0.02 × (87.4 / 20 − 2.5) = +0.0374, giving 2.537 ★. **XP:** the per-serve amount in §14 (about
-0.015 × XPRate(1) ≈ 13 XP *(example)*).
+**Reputation.** Stars += 0.02 × (87.4 / 20 − 2.5) = +0.0374, giving 2.537 ★. **XP** (§14 formulas, XPU(1) = 9): Cheeseburger
+`DISH` 1.4 × 1.0 × 1.0 × 1.0 = 1.40 XPU, soda `DISH` 1.4 × 0.75 × 1.0 × 1.25 = 1.31 XPU, `SERVE` 0.5 XPU (Happy) → 3.21 XPU ≈
+**29 XP**.
 
 **The perfect variant.** If the patty comes off inside the Perfect window and the soda is handed over by 31 s,
 then Q = 1.00, C = 1.00, W = 1.00 and S = 93.2 → **Delighted**. The tip becomes 18 % (2.88 → 3 MB), so net is 14 MB and

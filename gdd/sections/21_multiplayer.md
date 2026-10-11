@@ -119,6 +119,14 @@ GuestXP(action)   = 0.9 × XP the same action grants in the guest's own restaura
 Generated examples (orders/h credited assumes the guest handles 30 % of the restaurant's customers):
 
 <!-- sim:coop -->
+| Owner tier | Owner L | Guest L | Guest's own tier | Avg order base value | Level scale | Guest MB / order (50 %) | Orders/h credited (30 %) | Guest MB/h | Daily guest MB cap | Guest MB/h ÷ own-tier net/h | Hours to reach cap |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `TIER_02` | 5 | 5 | `TIER_02` | 17.8 | 1.00 | 8.9 | 22 | 193 | 1,620 | 17.9 % | 8.4 h |
+| `TIER_05` | 26 | 26 | `TIER_05` | 41.4 | 1.00 | 20.7 | 47 | 979 | 8,100 | 18.1 % | 8.3 h |
+| `TIER_05` | 26 | 10 | `TIER_03` | 41.4 | 0.57 | 11.7 | 47 | 555 | 2,595 | 32.1 % | 4.7 h |
+| `TIER_08` | 56 | 56 | `TIER_08` | 138.4 | 1.00 | 69.2 | 79 | 5,442 | 49,200 | 16.6 % | 9.0 h |
+| `TIER_10` | 80 | 30 | `TIER_05` | 363.6 | 0.17 | 31.1 | 106 | 3,296 | 8,100 | 61.0 % | 2.5 h |
+| `TIER_03` | 10 | 80 | `TIER_10` | 21.7 | 1.00 | 10.9 | 30 | 321 | 180,750 | 0.3 % | never (> 24 h) |
 <!-- /sim:coop -->
 
 Same-tier helpers earn ≈ 17–19 % of their own hourly net from guest pay (on top of their own restaurant's away/offline
@@ -210,7 +218,8 @@ Text shown to players (restaurant names, morph names) goes through `TextService:
 
 #### 21.7.2 Different Server — Friends List / Join & Help
 1. The Social panel lists online friends using `Player:GetFriendsOnline()`; entries whose `PlaceId` is this experience show
-   their tier, server fullness and **Join & Help**.
+   their tier, server fullness and **Join & Help**. On press the server re-confirms the friend's current server with
+   `TeleportService:GetPlayerPlaceInstanceAsync(friendId)` (§27.8.16), falling back to the `Presence` map.
 2. On press, the origin server creates a visit token (`MemoryStore` hash map `VisitTokens`, TTL 120 s) and calls
    `TeleportService:TeleportAsync(game.PlaceId, {player}, options)` with `TeleportOptions.ServerInstanceId = friend.GameId`
    and `options:SetTeleportData({intent = "visit", ownerId = friendId, token = token})`.
@@ -528,3 +537,157 @@ end time. Season rewards are granted on the first login after the season ends (g
 Up to 4 friends or party members of a participant may join a rated match as spectators (reserved server, no collision,
 `SpectateHUD`); anyone can watch the local pits from the `BLD_08` stands.
 
+### 21.10 Roblox Implementation
+
+**Service.** `MultiplayerService` (§C19; spec §27.8.16) is the single permission policy point. This section extends its
+`GetPermission` action set to the full matrix of §21.3: `"Cook" | "Serve" | "Clean" | "Fight" | "Repair" | "Build" |
+"UseSpecialStock" | "AssignStaff" | "ChangeMenu" | "KickGuest" | "Invite" | "Spend"` (`Spend` and furniture
+store/sell/delete always return `false` for non-owners). Other services call it before acting for a non-owner; the client
+copy is cosmetic only.
+
+**Additional remotes** (beyond §27.8.16's `SetPermissions`, `Invite`, `RespondInvite`, `VisitFriend`, `ArenaQueue`,
+`InviteReceived`, `Emote`, `EmotePlayed`; all server-validated, rate in calls/s with burst):
+
+| Remote | Kind · Dir | Payload | Rate |
+|---|---|---|---|
+| `Multiplayer.SetDoorPolicy` | RF C2S | `{ policy: "OPEN" \| "FRIENDS" \| "INVITE" \| "CLOSED" }` | 0.5/s b2 |
+| `Multiplayer.SetRole` | RF C2S | `{ userId, role: "COCHEF" \| "GUEST" }` (target must be a friend for Co-Chef) | 1/s b2 |
+| `Multiplayer.ModerateVisitor` | RF C2S | `{ userId, action: "PAUSE" \| "RESTORE" \| "KICK" \| "BAN" \| "UNBAN" }` | 2/s b4 |
+| `Multiplayer.Party` | RF C2S | `{ op: "CREATE" \| "INVITE" \| "LEAVE" \| "GATHER", userId? }` | 0.5/s b2 |
+| `Multiplayer.ArenaOptIn` | RF C2S | `{ optIn: boolean }` (opt-in only accepted at the `BLD_08` desk) | 0.2/s b1 |
+| `Multiplayer.ArenaReady` | Event C2S | `{ matchId, ready: boolean }` | 1/s b2 |
+| `Multiplayer.VisitStarted` / `VisitEnded` | Event S2C | `{ ownerId, role, perms }` / `{ reason }` | on event |
+| `Multiplayer.GuestPaid` | Event S2C | `{ mb, capLeft }` | on settlement |
+| `Multiplayer.MatchFound` | Event S2C | `{ matchId, mode, readyDeadline }` | on event |
+| `Stage.Vote` | RF C2S | `{ showId, contestantUserId, value 1–5 }` (§36.10) | 1/s b6 |
+
+**Persistent data** — extends the minimal `social` section of §28.9.12 (writer `MultiplayerService`, ≤ 2 KB):
+
+```lua
+export type CoopSettings = {
+	doorPolicy: "OPEN" | "FRIENDS" | "INVITE" | "CLOSED",   -- default "FRIENDS" (§28 allowGuests maps onto it)
+	rolePerms: { CoChef: { [string]: boolean }, Guest: { [string]: boolean } }, -- §21.3 toggles
+	playerOverrides: { [string]: "COCHEF" | "GUEST" },     -- keyed by tostring(UserId), max 20
+	coChefs: { number },                                     -- max 10 UserIds (friends at promotion time)
+	banList: { number },                                     -- max 50 UserIds
+	acceptInvitesFrom: "FRIENDS" | "NOBODY",
+	guestPayDay: number, guestPayToday: number,              -- daily guest-pay cap counter (§21.4.1, §22.16)
+}
+export type Arena = {
+	optedIn: boolean, season: number,
+	ratings: { duel: number, tag: number, brawl: number, cookoff: number },
+	matchesThisSeason: number, peakBracket: number, wins: number, losses: number,
+	leaverStrikes: { number },                               -- timestamps of strikes in the last 24 h
+}
+export type Social = { coop: CoopSettings, arena: Arena, emoteWheel: { string }, titleEquipped: string? }
+```
+
+Owned emotes and titles live in `inventory.cosmetics` (§28) and are granted only through `EconomyService:TransactWith`
+zero-delta grants or reward pipelines — never by client request.
+
+**Cross-server structures** (MemoryStore footprint ≈ 0.4 KB per online player, well inside the 64 KB + 1 KB × users quota):
+
+| Name | Type | Key → value | TTL / refresh | Purpose |
+|---|---|---|---|---|
+| `Presence` | hash map | `userId → {placeId, jobId, inInterior, ownerOpen}` | 120 s / every 60 s | find a friend's server, return-from-arena routing |
+| `VisitTokens` | hash map | `token/inviteId → {ownerId, jobId, invitee}` | 120 s | validate teleport arrivals (teleport data is client-visible) |
+| `Parties` | hash map | `partyId → {leader, members, createdAt}` | 15 min / 60 s | parties of up to 4 |
+| `ArenaQueue_<mode>` | sorted map | `ticketId → ticket`, sortKey = rating | 120 s / 30 s | rating-window search |
+| `ArenaLease` | hash map | `mode → {jobId, until}` | 10 s / 5 s | one matchmaker per mode |
+| `ArenaMatches` | hash map | `matchId → {mode, tickets, accessCode, state}` | 15 min | arrival validation, reward idempotency |
+| `ArenaTickets` | hash map | `ticketId → matchId` | 60 s | fallback notification by polling |
+
+MessagingService topics: `inv/<userId>` (invites), `slot/<jobId>` (a slot opened), `arena/match` (match found),
+`party/<partyId>` (gather). Payloads ≤ 1 KB; per-server subscriptions stay below 5 + 2 × players; publishes below
+150 + 60 × players per minute. Every MemoryStore/MessagingService call is wrapped in `pcall` with exponential backoff
+(0.5, 1, 2 s); on outage, same-server visits keep working, cross-server joins show "Friends service busy — try again" and
+arena queues pause with a banner.
+
+```lua
+--!strict
+-- Matchmaker: atomically claim a ticket so two lease holders can never use the same one (§21.9.4).
+local function claimTicket(queue: MemoryStoreSortedMap, ticketId: string, matchId: string): boolean
+	local ok, claimed = pcall(function()
+		return queue:UpdateAsync(ticketId, function(ticket: any, sortKey: any)
+			if ticket == nil or ticket.claimedBy ~= nil then return nil end -- gone or taken: abort, no write
+			ticket.claimedBy = matchId
+			return ticket, sortKey
+		end, 60)
+	end)
+	return ok and claimed ~= nil
+end
+```
+
+**Performance.** At most 4 players per interior (owner + 3) keeps morph rendering within §C13.7 budgets; visitors' morphs
+replicate like any player; customer proxies stay under the §C3 caps (Busy Kitchen raises arrivals, never the seat cap).
+Arena servers host ≤ 4 fighters + 4 spectators. Showcase rounds and Emote Circles are server-authoritative state machines
+with client-only VFX (§30).
+
+### 21.11 Edge Cases
+
+| # | Situation | Expected behaviour |
+|---|---|---|
+| 1 | Owner disconnects while friends are cooking | E1 Closing; visitors get "The chef went home!" and are moved to the street; guest pay settles immediately; Co-op Insurance repairs session damage before the restaurant state is saved. |
+| 2 | Visitor disconnects mid-carry | Held items are set down on the nearest counter (special stock to the Pantry); their guest pay settles on `PlayerRemoving`; soft claims clear. |
+| 3 | Owner kicks a visitor mid-chop | The action is cancelled, items are set down, anything broken is insured; 10-min re-entry block. |
+| 4 | Friend's server is full when joining | `TeleportResult.GameFull` → slot watch on `slot/<jobId>` for 5 min with a one-tap re-join toast. |
+| 5 | A Co-Chef arrives when 3 visitors are already inside | Door shows "Full (3/3)"; the arrival joins a 2-min door waiting list and is pinged when a slot frees; the owner may kick to make room. |
+| 6 | Invite accepted after it expired or the owner left the server | Token invalid → "The party moved on!" toast; the player lands on Restaurant Row normally. |
+| 7 | Owner bans a player who is mid-teleport to them | The destination door check reads the ban list and refuses entry; the player stays on the street with a neutral message. |
+| 8 | Permission revoked while a visitor is mid-action | The started action finishes; no new action of that type can start; held items are set down. |
+| 9 | Two visitors grab the same station slot | E7 per-slot lock: first interactor wins; the second sees a "Busy!" bubble and the next free slot is highlighted. |
+| 10 | Guest hits the daily guest-pay cap mid-visit | Toast "Guest pay maxed for today — thanks for helping! XP keeps coming"; Busy Kitchen still applies for the owner. |
+| 11 | Server shutdown during co-op (E13) | `BindToClose` settles guest pay and insurance, saves, teleports everyone; visitors get a "Rejoin <owner>" button using `Presence`. |
+| 12 | Arena fighter disconnects mid-match | 20-s grace to rejoin via the stored access code; otherwise forfeit (loss + leaver strike); opponents win with half rating gain if the match was < 30 s old. |
+| 13 | Matchmaker server crashes | Its lease expires within 10 s and another server takes over; tickets survive (refreshed by origin servers); tickets claimed for a match whose record never appeared are released after 15 s. |
+| 14 | `ReserveServer` or teleport fails | Three retries 2 s apart, then the match is cancelled and the others are re-queued at the front with no penalty. |
+| 15 | Player opts out while queued or during the ready check | Ticket removed at once; the ready check declines automatically; opting out is never penalised. |
+| 16 | Match found while the player is fighting a customer in their restaurant | Ready check waits up to 10 s; if still In Combat it auto-declines without penalty. |
+| 17 | Two friends farm rating against each other | After 3 rated matches per pair per UTC day further pairings are unrated and pay no MS; alternating patterns raise `pair_farming` (§29.16). |
+| 18 | Showcase contestant leaves mid-show | Removed from the show; votes for them are voided; others continue. |
+| 19 | Friends/presence lookup fails (`GetFriendsOnline` or MemoryStore error) | Cached list shown; "Join & Help" disabled with retry; same-server door visits still work. |
+| 20 | Chat-restricted or under-13 accounts | Roblox chat settings are respected by TextChatService; co-op, invites (no free text) and showcases still work. |
+
+### 21.12 Acceptance Criteria
+
+- **AC-21-01:** No more than 3 visitors can be inside one restaurant at any time (100 % of 1,000 randomized join attempts
+  with 6 players).
+- **AC-21-02:** With default settings a non-friend cannot enter (policy *Friends only*), and a banned or blocked player is
+  refused under every door policy.
+- **AC-21-03:** For every action in the §21.3 matrix, `MultiplayerService.GetPermission` returns the documented default for
+  Owner, Co-Chef and Guest, and owner toggles change the result within 1 server frame.
+- **AC-21-04:** Locked actions (spend owner currency, store/sell/delete furniture, hire, tier upgrade, collect offline report)
+  are rejected for non-owners even when a forged remote is sent (penetration test, 0 successes).
+- **AC-21-05:** Over a 30-min scripted co-op session with griefing bots, the owner's wallet, furniture count and Stars never
+  decrease because of visitor actions, and all session damage is repaired within 5 s after the last visitor leaves.
+- **AC-21-06:** Guest pay equals `0.5 × GuestValue × CreditShare` per order (±1 MB rounding), is never debited from the owner,
+  and stops at `1.5 × NetRef(guest tier)` per UTC day.
+- **AC-21-07:** Busy Kitchen applies +5 % tips/XP and +8 % arrivals per active visitor (max 3) and ignores visitors with
+  account age < 7 days or without ≥ 3 qualifying actions in the last 5 min.
+- **AC-21-08:** Player attacks never damage, knock back, stun or pull another player outside an arena match (automated test
+  of every ability `ABL_001`–`ABL_070` against a teammate: 0 effects).
+- **AC-21-09:** Severe grief signals remove a visitor within 1 s of the threshold and notify the owner; kicked visitors
+  cannot re-enter for 10 min.
+- **AC-21-10:** A same-server door visit completes (prompt → inside interior) in ≤ 2.0 s on a mid-range mobile device.
+- **AC-21-11:** A cross-server "Join & Help" lands the player inside the friend's restaurant in ≤ 20 s at p90, and a forged
+  or expired visit token is rejected 100 % of the time.
+- **AC-21-12:** Invites are rate-limited to 5 per minute and 30 per hour per player and never contain free text.
+- **AC-21-13:** PvP damage is impossible for a player whose `social.arena.optedIn` is false; opting out takes effect
+  immediately and removes any queued ticket.
+- **AC-21-14:** Arena stats match §11.11 exactly (HP 300, STR 60, DEF 60, MOVE 50, parts at Lv3, ×0.7 / ×0.6 / ×0.8) for
+  any loadout, verified by comparing two maximal and minimal profiles.
+- **AC-21-15:** 95 % of Duel queue entries with ≥ 50 players queued are matched within 60 s; no ticket is ever used in two
+  matches (soak test with two concurrent matchmakers).
+- **AC-21-16:** Rating updates follow the §21.9.5 Elo formula exactly (unit tests incl. K schedule and pairwise FFA).
+- **AC-21-17:** Arena rewards never include MB; arena MS stops at 120 per UTC day and pays ×0.25 between 80 and 120;
+  season rewards respect the §29.14 `arena_reward` ceilings.
+- **AC-21-18:** Every arena quest in §20 has a Cook-Off or Bash the Bots alternative, and every `ARENA`-acquisition part has
+  a second, non-PvP source (validator check).
+- **AC-21-19:** A rated pair is limited to 3 rated matches per UTC day; accounts younger than 3 days cannot enter rated queues.
+- **AC-21-20:** Leaving a rated match counts as a loss and applies 2 / 5 / 15 min queue locks for strikes within 24 h.
+- **AC-21-21:** Showcase votes cannot target the voter, are limited to one per contestant, and friend/party votes weigh
+  exactly 0.5 (shared with AC-18-42); paid cosmetic overlays do not change the theme-match score.
+- **AC-21-22:** Every player-authored text shown to others (morph names, restaurant names) passes
+  `TextService:FilterStringAsync` + `GetNonChatStringForBroadcastAsync`; unfiltered text never replicates.
+- **AC-21-23:** All 26 emotes in §21.8.5 are obtainable without Robux, and seasonal emotes are re-offered at their next yearly event.
+- **AC-21-24:** No UI, remote or API in §21 transfers currency, parts, capsules, staff or furniture between players.

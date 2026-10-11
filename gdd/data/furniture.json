@@ -240,7 +240,7 @@
       ["FRN_211", "Diner Chrome Stripes", "Wall finish", "", 2, 450, "zone", "zone finish", 4, null, "CHROME_COMET", ""],
       ["FRN_212", "Swamp Reed Wallpaper", "Wall finish", "", 3, 900, "zone", "zone finish", 5, null, "SWAMP_BISTRO", ""],
       ["FRN_213", "Porthole Wood Paneling", "Wall finish", "", 4, 1700, "zone", "zone finish", 6, null, "TENTACLE_TAVERN", ""],
-      ["FRN_214", "Soothing Seafoam Paint", "Wall finish", "", 3, 1100, "zone", "zone finish", 3, null, "", "Weak Chill Aura over the whole zone: anger gain -5 %."],
+      ["FRN_214", "Soothing Seafoam Paint", "Wall finish", "", 3, 1100, "zone", "zone finish", 3, null, "", "Zone-wide calm: escalation dampening 0.05 (EscalationDampener hook, section 10). Does not stack with other paints."],
       ["FRN_215", "Living Vine Wall", "Wall finish", "", 5, 3600, "zone", "zone finish", 8, null, "", "Vines wave at customers."],
       ["FRN_216", "Neon Doodle Murals", "Wall finish", "", 6, 7000, "zone", "zone finish", 10, null, "NEON_MONSTER", "Friendly monster doodles."],
       ["FRN_217", "Lab Tile and Pipes", "Wall finish", "", 6, 6200, "zone", "zone finish", 9, null, "MAD_LAB", "Pipes gurgle."],

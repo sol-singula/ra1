@@ -249,7 +249,7 @@ export type AnalyticsState = {
 	lastSessionDay: DayStamp,
 	sessions: number,
 	daysPlayed: number,
-	firstsBits: number,           -- one bit per once-only "first X" event (§31.10)
+	firstsBits: { number },       -- 32-bit words; one bit per once-only "first X" event (§31.10)
 	onboardingStep: number,       -- highest onboarding funnel step logged (§31.11)
 }
 

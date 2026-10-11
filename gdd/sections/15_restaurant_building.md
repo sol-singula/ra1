@@ -23,7 +23,7 @@ collection as the long-term chase.
 | G2 | Destruction is funny, never devastating (brief 26.4) | Objects are **never permanently lost** (canon §C6): rubble piles, cheap rebuilds, a free "Elbow Grease" rebuild when broke, free full restore on every tier upgrade, Co-op Insurance (E12). |
 | G3 | The layout is a light puzzle | PlateUp-style "distance = seconds" in the kitchen, seat placement vs. atmosphere in the dining room — but validation makes it impossible to save a broken layout (E10). |
 | G4 | Mobile-first building | 2-stud grid, 90° rotations, drag-to-place with an offset ghost, every action reachable with one thumb. |
-| G5 | Server-authoritative and cheap | One occupancy grid per restaurant is the single truth for placement, connectivity, customer pathing (§8.7) and repair access; BFS < 1 ms. |
+| G5 | Server-authoritative and cheap | One occupancy grid per restaurant is the single truth for placement, connectivity, customer pathing (§8) and repair access; BFS < 1 ms. |
 | G6 | Atmosphere matters, but cooking matters more | Atmosphere feeds only `M` (10 % of satisfaction) and `DecorMult` (×0.9–×1.2 demand), per canon §C11. |
 
 ### 15.2 Restaurant Tier Progression
@@ -49,7 +49,7 @@ defined here. Online throughput is the planning estimate `min(BaseDemand × RepM
 <!-- AUTO:render_restaurant:tier-summary END -->
 
 **Service style.** `TIER_01`–`TIER_02` are counter service: customers order at the Serving Window's dining
-side and sit on attached stools/booth seats (§8.6). From `TIER_03` the restaurant is table service: a Host
+side and sit on attached stools/booth seats (§8). From `TIER_03` the restaurant is table service: a Host
 Podium (`FRN_396`, granted free with `TIER_03`) is the party wait node and waiters become useful.
 
 **Seats are a hard cap.** A layout may contain at most the tier's canon Seats in *attached* seats (§15.5.6);
@@ -115,12 +115,12 @@ waiters bind `Cap_service` while staff caps are tiny — offline is a teaser unt
 ### 15.3 Tier Upgrade Flow
 
 **Requirements** (checked server-side by `BuildingService.UpgradeTier`; target = current + 1 only; each failure
-shows a padlock chip with the exact gap, §24.22): (1) player level ≥ the tier's canon level ("Reach Level 18");
+shows a padlock chip with the exact gap, §24): (1) player level ≥ the tier's canon level ("Reach Level 18");
 (2) wallet ≥ canon cost ("Need 1,230 more MB"); (3) `TIER_04`+: the City Hall Expansion Permit for that tier — a
 quest-gated formality with `NPC_002` at `BLD_09`, fee included in the canon price (§20); (4) not In Combat, no
 level-6 chaos (canon E2: "Can't renovate during a brawl!"); (5) no Edit Mode session or blueprint swap running.
 
-**Flow.** The Upgrades screen uses hold-to-confirm 0.8 s (§24.22). Then:
+**Flow.** The Upgrades screen uses hold-to-confirm 0.8 s (§24). Then:
 
 1. **Last Call (≤ 45 s [TUNABLE]).** The restaurant enters `RENOVATING`: arrivals stop, the outside queue walks
    by (no reputation effect), customers already eating finish, unserved customers leave paying 0 with **no
@@ -184,7 +184,7 @@ progress, restaurant name. Damage does **not** carry over: Mutant Builders "fix 
 **Restaurant Row (`DST_01`, `BLD_17`).** 8 plots per server (canon §C3), one per player. A plot is a 120 × 90-stud
 lot: the façade footprint grows per tier (§15.2.1, from 28×18 to 104×50; heights 16 → 70 studs) behind a
 120 × 14-stud **curb strip** that holds curb sockets (4 → 16 by tier), the door approach lane (6 studs wide,
-always clear) and the **outside queue** of 4 velvet-rope spots by the door (§8.2.3). Curb items are cosmetic,
+always clear) and the **outside queue** of 4 velvet-rope spots by the door (§8). Curb items are cosmetic,
 indestructible and visible to everyone walking the Row; they count at ×0.5 for atmosphere.
 
 **Instanced interior (canon §C3, §C16.4).** The playable restaurant is an interior shell spawned by
@@ -218,7 +218,7 @@ every saved layout is cookable, servable, repairable and walkable.
 | Option | Pros | Cons | Verdict |
 |---|---|---|---|
 | 1-stud grid, free rotation | maximum freedom | fiddly on touch; nav grid mismatch; float drift in saves | rejected |
-| **2-stud grid, 90° rotation** | matches the 2×2-stud nav cells of §8.7, integer saves, chair = 1 cell, thumb-friendly | less freedom for decorators | **chosen** |
+| **2-stud grid, 90° rotation** | matches the 2×2-stud nav cells of §8, integer saves, chair = 1 cell, thumb-friendly | less freedom for decorators | **chosen** |
 | 4-stud grid | trivial on mobile | chairs and aisles too coarse; small interiors waste space | rejected |
 
 Every footprint is an even number of studs; rotation is 0/90/180/270 (stored 0–3). Ceiling and wall items
@@ -288,17 +288,17 @@ ago and never placed ("Changed my mind") [TUNABLE]; trophies cannot be sold. Sta
 Placement uses the server's integer **occupancy grid**, never physics. Placed models are `Anchored`; tables,
 counters, booths and appliances use collision group `MMR_Furniture` (collides with players); chairs and decor
 are `CanCollide = false` for players so nobody gets wedged. NPC proxies are anchored and follow grid paths
-(§8.7), so furniture never shoves them. A player standing inside a target footprint does not block placement:
+(§8), so furniture never shoves them. A player standing inside a target footprint does not block placement:
 they are nudged 2 studs out on commit.
 
 #### 15.5.6 Seats and surfaces
 
 - A **chair** is a seat only if the cell it faces belongs to a **surface** (table, counter, booth table) that
-  still has capacity ("serves N"); its **access cell** is any free side or rear neighbour (the §8.7
+  still has capacity ("serves N"); its **access cell** is any free side or rear neighbour (the §8
   seat-approach node). Unattached chairs are allowed only in the LOBBY as waiting benches (0 seats, decor).
 - A **booth** provides its built-in seats and table. **Counters** take stools along their long side(s).
 - **Counter service (T1–T2):** the counter line forms on the dining side of the serving window: as many cells as
-  Seats must be free in a straight or L-shaped line from the window front (§8.6).
+  Seats must be free in a straight or L-shaped line from the window front (§8).
 - Seat count shown live in Build Mode ("Seats 6/6"); a surface with a Broken/Destroyed state disables its
   attached seats until repaired.
 
@@ -322,7 +322,7 @@ menu recipe asks for confirmation and flags those recipes "Missing station" (§6
 #### 15.5.9 Path connectivity validation (canon E10)
 
 Validation runs a 4-neighbour flood fill on the occupancy grid (free floor and WALKABLE cells are passable).
-4-neighbour reachability is stricter than the 8-neighbour A* customers use (§8.7), so any layout that passes is
+4-neighbour reachability is stricter than the 8-neighbour A* customers use (§8), so any layout that passes is
 walkable by customers and staff. Aisles may be 1 cell (2 studs); routes narrower than 2 cells show an amber
 "Tight squeeze" hint but are legal.
 
@@ -392,7 +392,7 @@ return Connectivity
 ```
 
 **Runtime fallback (canon E10).** If a customer's path fails twice or they are stuck > 6 s, they poof to the seat
-(§8.7). Rubble keeps its object's footprint, so destruction never changes connectivity mid-shift; Broken doors
+(§8). Rubble keeps its object's footprint, so destruction never changes connectivity mid-shift; Broken doors
 never block.
 
 | Variable | Value [TUNABLE] |
@@ -404,7 +404,7 @@ never block.
 | Edit Mode auto-exit | 10 min idle |
 | Sell-back | 50 % (100 % within 5 min, never placed) |
 | Client path preview rate | ≤ 10 Hz |
-| Server op rate | 4 ops/s, burst 8 (§27.8.17) |
+| Server op rate | 4 ops/s, burst 8 (§27) |
 
 ### 15.6 Atmosphere Score (feeds `M` and `DecorMult`)
 
@@ -444,14 +444,14 @@ Cracked bulb gives no light, the windows ≈ 0.25 coverage → ≈ 3.8; penalty 
 first one): Σ Eff ≈ 8.8 → 16, variety 6, theme 10, light ≈ 0.55 coverage → 8, no penalty: **Atmosphere ≈ 40**
 (×1.02) — the first lesson that fixing things pays.
 
-**Local atmosphere** (host scoring term in §8.6): `LocalAtmosphere(table) = clamp(Atmosphere + 20 × (D_t −
+**Local atmosphere** (host scoring term in §8): `LocalAtmosphere(table) = clamp(Atmosphere + 20 × (D_t −
 D_avg) / max(D_avg, 1), 0, 100)` where `D_t` is Σ Eff of decor within 12 studs of the table centre and `D_avg`
 the mean over all tables. **UI:** Build Mode top bar "Atmosphere 41 (+3)" previews the delta of the ghost before
-placing (§24.23); the restaurant panel shows the five terms as bars with labels and numbers.
+placing (§24); the restaurant panel shows the five terms as bars with labels and numbers.
 
 ### 15.7 Cleanliness (`K`)
 
-`RepairService` owns messes (§27.8.18) and computes `K` (0–100) event-driven on every mess spawn/clean or
+`RepairService` owns messes (§27) and computes `K` (0–100) event-driven on every mess spawn/clean or
 object state change; customers sample it when they evaluate satisfaction (`K/100`, weight 0.10, canon §C11.3).
 
 ```text
@@ -502,9 +502,9 @@ indestructible.
 **Conversion of quoted damage.** §5, §11, §36.9 and event rules quote damage as "% durability" calibrated for a
 **100-point reference object**. `RepairService` converts:
 `ΔPct = Quoted × (100 / MaxDur_eff) × Protect`, where `MaxDur_eff` includes Reinforced upgrades and `Protect` is the
-product of applicable damage multipliers (§15.9.11). Sturdy pieces therefore shrug off hits that wreck a folding
+product of applicable damage multipliers (§15.9.10). Sturdy pieces therefore shrug off hits that wreck a folding
 chair. Bounds: combined combat protection is never below **0.5 × the unprotected ΔPct** (`FurnitureCombatDamageMult
-≥ 0.5`, §11.10.5); one combat hit lowers an object by **at most one state** (§11.6.3); fire burns 2 quoted %/s but
+≥ 0.5`, §11); one combat hit lowers an object by **at most one state** (§11); fire burns 2 quoted %/s but
 never below 26 % (§5).
 
 | `PropClass` for §11 | Catalog items |
@@ -547,7 +547,7 @@ stateDiagram-v2
 A repair always restores to **Pristine 100 %**. Requirements: an actor within 7 (+2) studs (player with repair
 permission, or `ROLE_REPAIR`), the object not on fire, and MB charged **once at completion** for the worst state
 reached during the job (canon E3). If charging fails, the object is still repaired and the cost becomes a
-debt-free "owner pays later" entry (§27.8.18) — never a negative balance.
+debt-free "owner pays later" entry (§27) — never a negative balance.
 
 | Worst state | Cost (% of price) [TUNABLE] | Diner Two-Top (120) | Sizzle Grill (400) | Grand Aquarium Wall (300,000) |
 |---|---|---|---|---|
@@ -573,7 +573,7 @@ rebuild for 0 MB by hand at ×2 duration — nobody is ever stuck with rubble.
 
 `SKL_RPR_18` (appliances −25 %), `SKL_RPR_08` (rebuild −30 %) and `SKL_RPR_07` (Multi-Fix) stack
 multiplicatively. A typical post-brawl cleanup (a Cracked chair, a Scuffed table, a Cracked booth, a Scuffed
-grill) is ≈ 18 s of hands-on time with the starter stat — inside §4's ≤ 60 s target.
+grill) is ≈ 16 s of hands-on time with the starter stat — inside §4's ≤ 60 s target.
 
 ```lua
 --!strict
@@ -602,7 +602,7 @@ return RepairMath
 
 #### 15.9.4 The repair minigame: "Fix-It Ring"
 
-Rendered by the §24.24 widget; `RepairService` picks the mode and the values below.
+Rendered by the repair widget of §24; `RepairService` picks the mode and the values below.
 
 | | **Whack** (furniture, decor, windows: `ANM_060` hammer) | **Hold** (appliances, fixtures, aquariums: `ANM_061` weld/bolt) |
 |---|---|---|
@@ -617,7 +617,7 @@ Rendered by the §24.24 widget; `RepairService` picks the mode and the values be
   instant percentage (§36.6). Two players may **Team Fix** one object (second player at 60 % contribution).
 - **XP:** `XPRate(L) / 3600` per second of base repair time (canon §C5.1 relative rule), ×1.25 if ≥ 80 % Perfect.
 - **Server validation:** pip schedule is seeded per `jobId`; `Repair.Input` tap times are checked against
-  `workspace:GetServerTimeNow()` with latency tolerance (as §27.8.5 chopping); a job can never complete faster than
+  `workspace:GetServerTimeNow()` with latency tolerance (the same scheme §27 uses for chopping); a job can never complete faster than
   0.6 × its base time.
 
 #### 15.9.5 Destruction and restoration presentation
@@ -680,7 +680,7 @@ repair (if allowed) but can never sell, move or store owner furniture or spend o
 |---|---|---|
 | `UPG_049`–`UPG_051` Reinforced Furniture | seating/surface MaxDur +25/50/100 % | MaxDur_eff (counts toward the 0.5 floor) |
 | `UPG_052`/`UPG_053` Reinforced Appliances | appliance MaxDur +25/50 % | MaxDur_eff |
-| `UPG_033` Booth Bolt-Downs | no flips; tables/booths ×0.6 damage | `FurnitureCombatDamageMult` (§11.10.5) |
+| `UPG_033` Booth Bolt-Downs | no flips; tables/booths ×0.6 damage | `FurnitureCombatDamageMult` (§11) |
 | `UPG_054` Bumper Pads | wall-splat damage ×0.5 | `FurnitureCombatDamageMult` |
 | `UPG_044` Riot-Proof Ribbon | ×0.7 during level-6 chaos | `FurnitureCombatDamageMult` |
 | `UPG_048` Shatterproof Glass | glass ×0.4 | Protect (glass) |
@@ -691,7 +691,7 @@ repair (if allowed) but can never sell, move or store owner furniture or spend o
 | `FRN_146`, `FRN_434` Chill Aura items | anger gain −10 % / −15 % in radius (strongest only) | canon §C11.5 Chill Aura, §10 |
 | `FRN_214` Soothing Seafoam Paint | zone-wide escalation dampening 0.05 | `EscalationDampener` (§10) |
 | `UPG_055` Nap Nook Respawn Pad | `STS_WOOZY` ×0.6 | `WoozyDurationMult` (≥ 0.3) |
-| `FRN_433` Bouncer Rope, `UPG_034` Curbside Benches | queue patience ×1.15 / ×1.2 (cap ×1.4), no line-cutting | `QueuePatienceMult` (§8.2.3) |
+| `FRN_433` Bouncer Rope, `UPG_034` Curbside Benches | queue patience ×1.15 / ×1.2 (cap ×1.4), no line-cutting | `QueuePatienceMult` (§8) |
 
 ### 15.10 Station Upgrades (canon §C4.9)
 
@@ -706,7 +706,7 @@ is `PROCESSING` is queued and applied as each instance idles (§5). No recipe ev
 
 ### 15.11 UI
 
-Screens are specified in §24 (Upgrades §24.22, Build Mode §24.23, Repair widget §24.24); §15 supplies their data
+Screens are specified in §24 (Restaurant Upgrades screen, Building Placement Mode, Repair Minigame); §15 supplies their data
 and rules. Build Mode additions: zone tint overlay (pattern + label per zone, not colour alone), live counters
 "Slots 6/8 · Seats 6/6 · Items 54/60", the red route preview to the first unreachable target, an amber "Tight
 squeeze" hint, and a "Needs a home" storage tab after migrations. Every rejection shows ✕ + one of these texts:
@@ -722,17 +722,17 @@ squeeze" hint, and a "Needs a home" storage tab after migrations. Every rejectio
 | `PATH_BLOCKED_SEAT` | "Blocks the path to a seat!" | `OCCUPIED` | "Someone's sitting there!" |
 | `PATH_BLOCKED_STATION` | "Your cooks can't reach that station!" | `DAMAGED_STORE` | "Repair it before storing it." |
 
-Inputs follow §24.23 (KB/M: mouse ghost, R rotate, LMB/E place, X store, Ctrl+Z undo, Ctrl+Y redo · gamepad: stick
+Inputs follow §24 (KB/M: mouse ghost, R rotate, LMB/E place, X store, Ctrl+Z undo, Ctrl+Y redo · gamepad: stick
 cursor 8 cells/s, LB/RB rotate, A place, Y move, X store, B exit · touch: drag ghost drawn 1.5 cells above the
 finger, Rotate/Place/Store/Undo buttons ≥ 56 u).
 
 ### 15.12 Roblox Implementation
 
-#### 15.12.1 Services (names fixed by canon §C19; APIs per §27.8.17–18)
+#### 15.12.1 Services (names fixed by canon §C19; APIs per §27)
 
 | Service | §15 responsibilities |
 |---|---|
-| `BuildingService` | occupancy grid per interior; rules R1–R11; connectivity C1–C6; Place/Move/Store/Rotate ops; blueprints; atmosphere and local atmosphere; tier upgrade validation, Mutant Builders cue, layout migration; Grand Opening Kits; `LayoutChanged`, `TierUpgraded`, `AtmosphereChanged` signals; publishes nav-blocked cells to `CustomerAIService` (§8.7 rebake) |
+| `BuildingService` | occupancy grid per interior; rules R1–R11; connectivity C1–C6; Place/Move/Store/Rotate ops; blueprints; atmosphere and local atmosphere; tier upgrade validation, Mutant Builders cue, layout migration; Grand Opening Kits; `LayoutChanged`, `TierUpgraded`, `AtmosphereChanged` signals; publishes nav-blocked cells to `CustomerAIService` (§8 rebake) |
 | `RepairService` | durability attributes `Durability`/`DamageState`; damage intake and conversion; repair jobs (Fix-It Ring sessions, technician jobs, E3 merging); costs via `EconomyService`; rebuild/Elbow Grease; insurance ledger; offline damage application; messes and K |
 | `RestaurantService` | interior lifecycle and operating state (table below), shell spawning per tier, plot façade swap |
 | `InventoryService` / `EconomyService` | storage counts and purchases (`Inventory.BuyFurniture`), the only currency mutations |
@@ -749,7 +749,7 @@ finger, Rotate/Place/Store/Undo buttons ≥ 56 u).
 #### 15.12.2 Layout serialization (DataStore)
 
 Logical record per placed object: **`{itemId, x, z, rot, durability}`** plus the restaurant-unique `uid`
-(home cell for §11 Furniture Homing). Physical encoding is §28.11's 10-byte packed record
+(home cell for §11 Furniture Homing). Physical encoding is §28's 10-byte packed record
 (`kind, num, uid, x, z, rotLvl, dur`, Base64): every A10 item uses `kind = 0` (FRN, `num` = numeric ID, so
 `FRN_006` → 6); appliances are FRN items whose station type comes from the catalog; `rotLvl = rot + 4 × (typeLevel
 − 1)` mirrors the station-type level. `x`/`z` are **2-stud cell indices** (§15.5.1). Non-floor layers use reserved
@@ -766,7 +766,7 @@ Logical record per placed object: **`{itemId, x, z, rot, durability}`** plus the
 
 Budget: 400 objects × 14 Base64 chars ≈ 5.6 KB (§28 allots 9 KB to `restaurant`). Storage = `{FRN → count}` of
 Pristine items only (§15.5.4), so counts suffice. On load, a record that fails validation (content change) is
-moved to storage and logged (§27.8.17); connectivity repair follows §15.3 step 5.
+moved to storage and logged (§27); connectivity repair follows §15.3 step 5.
 
 #### 15.12.3 Server validation and client ghost
 
@@ -815,7 +815,7 @@ extra models); rubble uses 6 shared meshes; animated decor (fish, fireflies, mur
 
 `render_restaurant.py` validates the catalog (unique IDs, all 24 canon stations covered, trophies exactly
 `FRN_901`–`FRN_910` with canon names, every set ≥ 6 pieces, sequential `UPG_` IDs and prereqs) and the
-generated read-only `Furniture`/`Tiers`/`Upgrades` Luau modules (§27.5) are built from the same JSON. Each tier
+generated read-only `Furniture`/`Tiers`/`Upgrades` Luau modules (§27) are built from the same JSON. Each tier
 ships a **template layout** (the Grand Opening default) that must pass R1–R11 with every slot filled — the proof
 that each kitchen fits its canon slot count.
 
@@ -836,7 +836,7 @@ purchases, repairs, rebuilds and upgrades (§31).
 | §11 | combat damage events, PropClass use | §11 | PropClass mapping, durability conversion, protective multipliers |
 | §14 | REPAIR stat, `SKL_RPR_` nodes | §16 / §17 | repair jobs for `ROLE_REPAIR`, offline damage rules, capacity check per tier |
 | §16 / §17 | technicians, offline report | §20 | City Hall permit gate (`TIER_04`+), repair objectives |
-| §21 | co-op permissions, guests | §24 | data for §24.22–24 screens, reason texts |
+| §21 | co-op permissions, guests | §24 | data for §24 screens, reason texts |
 | §27 / §28 | services, codec | §27 / §28 | layout record meaning, reserved z ranges |
 
 ### 15.14 Edge Cases
@@ -844,7 +844,7 @@ purchases, repairs, rebuilds and upgrades (§31).
 | # | Situation | Ruling |
 |---|---|---|
 | 1 | Damage lands on an object while an employee or player repairs it (canon **E3**) | job absorbs it (remaining work grows, ring drops, "More damage!"); Destroyed converts the job to Rebuild; cost charged once at completion at the worst state reached |
-| 2 | A layout would disconnect the door from a seat (canon **E10**) | the op is rejected with `PATH_BLOCKED_SEAT` and the route preview; at runtime, stuck customers poof (§8.7) |
+| 2 | A layout would disconnect the door from a seat (canon **E10**) | the op is rejected with `PATH_BLOCKED_SEAT` and the route preview; at runtime, stuck customers poof (§8) |
 | 3 | A guest (or a customer during co-op) breaks the owner's furniture (canon **E12**) | insured share repaired free at visit end; guests can't sell/move/store or spend |
 | 4 | Owner tries to place furniture while a customer is seated | Edit Mode cannot open while customers are inside (Pause Service/Last Call first); an occupied seat can never be moved or stored (`OCCUPIED`) |
 | 5 | Tier upgrade with damaged or Destroyed items | Mutant Builders restore all to Pristine and rebuild rubble for free; active repair jobs are cancelled with no charge |

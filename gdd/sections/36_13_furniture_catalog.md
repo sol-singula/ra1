@@ -23,7 +23,7 @@
 | Patio | O (curb items C) | yes | curb items indestructible |
 | Trophy | D, L, W | yes | indestructible, unsellable |
 
-**Price bands** (canon §C4.4 income per active hour in brackets): T1 25–750 (630) · T2 140–1,400 (1,080) · T3 200–2,400 (1,730) · T4 450–2,500 (3,100) · T5 1,800–12,000 (5,400) · T6 1,500–24,000 (9,600) · T7 3,600–60,000 (17,400) · T8 7,500–110,000 (32,800) · T9 16,000–75,000 (63,700) · T10 120,000–300,000 (120,500). Rule of thumb: everyday pieces cost ≈ 0.05–0.3 h of tier income, set signatures 0.5–2 h, showpieces 2–5 h.
+**Price bands** by required tier (canon §C4.4 net income per active hour in brackets): T1 25–1,300 (630) · T2 140–2,500 (1,080) · T3 200–2,400 (1,730) · T4 450–2,500 (3,100) · T5 1,800–10,000 (5,400) · T6 1,500–20,000 (9,600) · T7 3,600–60,000 (17,400) · T8 7,500–110,000 (32,800) · T9 16,000–75,000 (63,700) · T10 120,000–300,000 (120,500). Rule of thumb: everyday pieces cost ≈ 0.05–0.3 h of tier income, set signatures 0.5–2 h, showpieces 2–5 h; early stations (e.g. `STN_BLENDER`, `STN_STEAMER`) are deliberate 1–2 h choices.
 
 #### 36.13.1 Kitchen Appliances and Utility Fixtures (Stock, one per canon station)
 
@@ -173,7 +173,7 @@
 | `FRN_211` | Diner Chrome Stripes | Wall finish | — | T2 | 450 | zone | zone finish | 4 | — | Chrome Comet Diner | — |
 | `FRN_212` | Swamp Reed Wallpaper | Wall finish | — | T3 | 900 | zone | zone finish | 5 | — | Swamp Bistro | — |
 | `FRN_213` | Porthole Wood Paneling | Wall finish | — | T4 | 1,700 | zone | zone finish | 6 | — | Tentacle Tavern | — |
-| `FRN_214` | Soothing Seafoam Paint | Wall finish | — | T3 | 1,100 | zone | zone finish | 3 | — | — | Weak Chill Aura over the whole zone: anger gain −5 %. |
+| `FRN_214` | Soothing Seafoam Paint | Wall finish | — | T3 | 1,100 | zone | zone finish | 3 | — | — | Zone-wide calm: escalation dampening 0.05 (EscalationDampener hook, §10). Does not stack with other paints. |
 | `FRN_215` | Living Vine Wall | Wall finish | — | T5 | 3,600 | zone | zone finish | 8 | — | — | Vines wave at customers. |
 | `FRN_216` | Neon Doodle Murals | Wall finish | — | T6 | 7,000 | zone | zone finish | 10 | — | Neon Monster | Friendly monster doodles. |
 | `FRN_217` | Lab Tile and Pipes | Wall finish | — | T6 | 6,200 | zone | zone finish | 9 | — | Mad Lab Lunchroom | Pipes gurgle. |
@@ -258,7 +258,7 @@
 | `FRN_393` | Burger Blaster Arcade Cabinet | Interactive | — | T5 | 3,500 | 2×2 | 1 player | 7 | 90 | — | 30-s cosmetic mini-game with a local high-score board; no rewards. |
 | `FRN_394` | Gumball Globe | Interactive | — | T2 | 300 | 2×2 | free confetti | 3 | 40 | — | Free; pops a confetti gumball effect. No items, no paid or random rewards. |
 | `FRN_395` | Player Piano | Interactive | — | T5 | 4,000 | 4×2 | 8-key pad | 8 | 100 | — | Anyone can play notes; customers sway. |
-| `FRN_396` | Host Podium | Interactive | — | T3 | 1,200 | 2×2 | party wait node | 2 | 80 | — | Essential from TIER_03: the §8.6 party wait node inside the door. One is granted free with the TIER_03 upgrade. Max 1. |
+| `FRN_396` | Host Podium | Interactive | — | T3 | 1,200 | 2×2 | party wait node | 2 | 80 | — | Essential from TIER_03: the §8 party wait node inside the door. One is granted free with the TIER_03 upgrade. Max 1. |
 | `FRN_397` | Trophy Shelf | Interactive | — | T3 | 700 | wall 4 | holds 3 trophies | 2 | — | — | Displays up to 3 of FRN_901-910 in one socket; shelved trophies give +20 % atmosphere. |
 | `FRN_398` | Morph Showcase Pedestal | Interactive | — | T5 | 5,000 | 4×4 | 1 loadout hologram | 8 | 120 | — | Spinning hologram of a saved loadout; guests can Inspect the part list. |
 | `FRN_399` | Bubble Machine | Interactive | — | T4 | 1,600 | 2×2 | toggle | 5 | 50 | — | Soap bubbles drift across the room (reduced-VFX aware). |
@@ -273,7 +273,7 @@
 | `FRN_430` | Fire Extinguisher Cabinet | Safety | — | T1 | 100 | wall 2 | radius 12 | 0 | 60 | — | Extinguish time −50 % for stations within 12 studs (§5 ON_FIRE). |
 | `FRN_431` | Wet Floor Sign | Safety | — | T1 | 40 | 2×2 | radius 6 | 0 | 30 | — | Spills within 6 studs count half toward the cleanliness penalty. |
 | `FRN_432` | Smoke Detector Pigeon | Safety | — | T2 | 350 | ceiling 2×2 | radius 16 | 1 | 30 | — | Squawks 2 s before any station within 16 studs reaches ON_FIRE. |
-| `FRN_433` | Bouncer Rope | Security | — | T2 | 500 | curb 6 | outside queue, 4 spots | 2 | — | — | Curb. Lines the 4 outside queue spots (§8.2.3): queue patience ×1.15 and no line-cutting. Indestructible. |
+| `FRN_433` | Bouncer Rope | Security | — | T2 | 500 | curb 6 | outside queue, 4 spots | 2 | — | — | Curb. Lines the 4 outside queue spots (§8): queue patience ×1.15 and no line-cutting. Indestructible. |
 | `FRN_434` | Chill-Out Beanbag Corner | Security | — | T3 | 900 | 4×4 | Chill Aura r 8 | 4 | 80 | — | Chill Aura: anger gain −15 % within 8 studs. Auras never stack; the strongest applies. |
 | `FRN_435` | Owl Security Camera | Security | — | T4 | 2,400 | wall 2 | radius 20 | 1 | 50 | — | Customers at anger ≥ 3 within 20 studs get a warning-triangle marker for all staff; ROLE_SECURITY there reacts 1 s faster. |
 | `FRN_436` | Security Booth | Security | — | T6 | 9,000 | 4×4 | 1 guard post | 3 | 220 | — | A posted ROLE_SECURITY employee gains +4 studs intercept radius. Max 2. |

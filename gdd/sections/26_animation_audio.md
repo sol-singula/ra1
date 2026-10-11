@@ -14,8 +14,10 @@ and **§36.15 Sound Library** (`SFX_`/`MUS_` ids). Visual rules (rig contract, f
 | SoundGroups, 3D rolloff, voice budget, ducking, gibberish voices, adaptive music, ambience zones, loudness | §26.3 | §36.15 | every gameplay section |
 | Accessibility for audio and motion (captions, visual cues, reduced motion) | §26.2, §26.3 | — | §24 (renders the settings and caption UI) |
 
-Two client modules carry these systems: **AnimationDirector** and **AudioDirector**, plus a small **SecondaryMotion**
-helper. A17 places them in the project tree (§27). Neither module owns any gameplay state. Each reads replicated state
+These systems run in the client pieces named in §27: the `Animate` and `CarryPose` LocalScripts (player locomotion
+and carry layer), `MorphVisualController` (SPCV visuals, faces, NPC state animation), the `AnimCache` module (track
+loading and caching, shown in §26.2.8), and `AudioController` (§26.3.8). This section adds one module,
+**SecondaryMotion**, for the client `Modules` folder. Neither module owns any gameplay state. Each reads replicated state
 (Humanoid state, proxy Attributes, existing domain remotes) and turns it into motion and sound. **The server never
 waits on an animation or sound.** Hit timing, cooking timers and AI transitions are server-side (§5, §8, §11).
 
@@ -29,14 +31,15 @@ budget even with 24 customers, 20 employees and 8 players in one interior.
 #### 26.2.2 Rules & Mechanics
 
 ##### Rig and Animator setup
-- **Players.** R15 `Humanoid` with its `Animator`. The default `Animate` script is replaced by AnimationDirector,
-  which picks locomotion from `Humanoid:GetState()` and root velocity. Tracks played by the client on its own
+- **Players.** R15 `Humanoid` with its `Animator`. The replacement `Animate` LocalScript (§27) picks locomotion
+  from `Humanoid:GetState()`, root velocity and the character attribute `WobblyGait`. `CarryPose` layers
+  `ANM_006`/`ANM_007` from the `CarryKind` attribute. Tracks played by the client on its own
   character replicate to other clients automatically.
 - **SPCV visuals** (customers, employees, named NPCs, canon §C3). The client clones an R15 joint skeleton with
   `Motor6D`s plus `AnimationController` → `Animator`, with no `Humanoid`, which is cheaper. Each server proxy
-  replicates `AnimState` (string), `MoveSpeed` (number), `Mood`, `Anger` and `Target` as Attributes. The client
-  maps those to tracks.
-- **Mutation visuals** are welded (`Weld`, Massless, no collision) to the rig parts through the canon `MMR_*`
+  replicates `State`/`StateT0`, `MoveSpeed`, `AngerLevel`, `ItemS` and `Emote` as Attributes (§8), plus the
+  `Customer.Emote` remote for one-off `ANM_` ids (§27). `MorphVisualController` maps them to tracks.
+- **Mutation visuals** are welded (`WeldConstraint` per §30; the jaw and pupils use an animated `Weld`; Massless, no collision) to the rig parts through the canon `MMR_*`
   attachments (§C13.7), so the shared R15 animation drives every part. Nothing is retargeted per part.
 - **Leg length.** The LEG part's `LegLength` attribute (canon) sets `Humanoid.HipHeight`. MorphAssemblyService also
   moves the hip, knee and ankle rig attachments proportionally and calls `Humanoid:BuildRigFromAttachments()`. SPCV
@@ -62,7 +65,8 @@ Rules:
 1. Starting an Action4 track stops every playing Action–Action3 track with `Stop(0.1)`, so a wallop never blends
    into a KO.
 2. When two tracks share a priority, the newest wins and the older one fades out with its own fade-out time.
-3. A character has at most **6 playing tracks**: one Idle, one Movement, and four Action layers.
+3. Playing-track caps (§30): a player character has at most **6** (one Idle, one Movement, four Action layers). An
+   NPC visual has at most **4** (2 on the LOW graphics tier).
 
 ##### Blending and layering
 - **Upper-body carry over locomotion.** UB tracks (`ANM_006`, `ANM_007`, `ANM_075`, `ANM_076`, most service
@@ -128,19 +132,19 @@ Family flavor beyond these assets is procedural and costs no extra tracks: robot
 - **Budget.** At most 16 chains run at full rate within 30 studs, and chains at 30–60 studs update every second
   frame. Nothing updates beyond 60 studs. The total is ≤ 96 bones per frame and ≤ 0.6 ms on the reference mobile
   device, measured with `debug.profilebegin("mmrSecondaryMotion")`.
-- **Reduced Motion** setting: amplitude × 0.3, flaps ≤ 2 Hz, IK head tracking off.
+- **Reduced Motion** setting (§24): amplitude × 0.3, flaps ≤ 2 Hz, IK head tracking off.
 
 ##### Animation LOD by distance
 
 | Band | Distance from camera (studs) | Tracks per NPC | Secondary motion | Face | Notes |
 |---|---|---|---|---|---|
-| LOD0 Near | 0–30 | up to 6 | full rate | instant swaps plus blink mask | IKControl on |
-| LOD1 Mid | 30–60 | 2 (base + one Action) | half rate | swaps on Mood or Anger change only | Footstep SFX off beyond 40 |
-| LOD2 Impostor | > 60 (canon); > 35 when `SavedQualityLevel` ≤ 3 | 1 (idle, walk or sit) | off | 3-state decal (§25) | 1,500-triangle impostor (canon §C13.7) |
-| Culled | not in the current interior, or not streamed in | 0 | off | — | Tracks stopped, model parented to nil |
+| LOD0 Near | 0–30 | up to 4 (LOW 2) | full rate | instant swaps plus blink mask | IKControl on |
+| LOD1 Mid | 30–60 | primary track only (§30) | half rate | swaps on `AngerLevel` or mood change only | footstep SFX off beyond 40 |
+| Impostor | > 60 (canon), or beyond the tier's full-detail cap (§30: 12 / 24 / 40) | one loop or none | off | 3-state decal (§25) | body-plan impostor, 1,500 tris |
+| Paused / culled | off-screen beyond 30 studs; outside the current interior; > 120 studs in the city | 0 (`AdjustSpeed(0)` while off-screen) | off | — | resumes when visible |
 
-Population caps per client: 28 customer visuals (24 seated + 4 queue), 20 employees, and all players in the
-interior. City crowds (client-only, §18) use `ANM_262`/`ANM_263` with LOD1 rules at every distance.
+Population caps per client follow §30 (total NPC visuals 40 / 56 / 80 by tier; interior worst case 28 customers
+plus 20 staff). City crowds (client-only, §18) use `ANM_262`/`ANM_263` with LOD1 rules at every distance.
 
 ##### Employee work cycles per role
 EmployeeService (§16) replicates the employee's task state. The client plays the matching cycle. Cycle lengths
@@ -193,10 +197,10 @@ Anger levels and thresholds are canon §C11.5; escalation logic is A5's (§10).
 |---|---|---|
 | `WalkRunThreshold` | 12 studs/s (± 1 hysteresis) | walk ↔ run swap |
 | Authored gait speeds | walk 8, run 16 studs/s at LegLength 2.0 | stride scales with LegLength |
-| `MaxPlayingTracksPerCharacter` | 6 | §26.2.2 rule 3 |
+| Max playing tracks | player 6; NPC 4 (LOW 2) | §26.2.2 rule 3, §30 |
 | `MaxLoadedTracksPerPlayerAnimator` | 64 | engine hard limit is 256 per Animator |
 | `MaxLoadedTracksPerNpcAnimator` | 24 | crowd ≤ 4 |
-| LOD distances | 30 / 60 studs (impostor at 35 on `SavedQualityLevel` ≤ 3) | canon minimum 60 for the impostor swap |
+| LOD distances | 30 / 60 studs; full-detail caps 12 / 24 / 40 by tier | §30 decimation |
 | Secondary motion | 16 chains full rate, ≤ 96 bones/frame, ≤ 0.6 ms | half rate at 30–60 studs |
 | Wobble hip roll | 12° + 4° per 0.5 stud ΔLegLength, max 20° | `ANM_008` |
 | Idle fidget interval | 6–14 s random | `ANM_001` markers |
@@ -207,8 +211,9 @@ Anger levels and thresholds are canon §C11.5; escalation logic is A5's (§10).
   these tracks.
 - The Morph customization viewport (§13) plays `ANM_211`. Selecting a slot group blends in a focus pose (the arm
   raise or tail swish from the same track), and equipping a part plays `ANM_065`.
-- Accessibility settings (§24) include **Reduced Motion** (secondary motion × 0.3, no camera nudges, no squash
-  overshoot on UI-triggered animations).
+- Accessibility settings (§24) include **Reduced Motion**, seeded from `GuiService.ReducedMotionEnabled`: secondary
+  motion × 0.3 and no squash overshoot on UI-triggered animations. Camera nudges follow §24's separate **Screen
+  Shake** toggle.
 
 #### 26.2.5 Progression
 Ability tracks unlock with their mutation parts. Emotes unlock through rewards. Employee uniforms and cycle flavor
@@ -231,12 +236,12 @@ variants improve with rarity: Epic and Legendary employees play cycles at speed 
 
 ```lua
 --!strict
--- AnimationDirector (client). Loads, caches and plays ANM_ tracks on any Animator.
+-- AnimCache (client module, §27). Loads, caches and plays ANM_ tracks on any Animator.
 local AnimationIds = require(script.Parent.AnimationIds)
 -- AnimationIds["ANM_010"] = { id = "rbxassetid://...", priority = Enum.AnimationPriority.Action,
 --                             looped = true, fadeIn = 0.1, fadeOut = 0.15 }
 
-local AnimationDirector = {}
+local AnimCache = {}
 local cache: { [Animator]: { [string]: AnimationTrack } } = setmetatable({}, { __mode = "k" }) :: any
 
 local function getTrack(animator: Animator, anmId: string): AnimationTrack?
@@ -269,7 +274,7 @@ local HARD = Enum.AnimationPriority.Action4
 local KEEP = { [Enum.AnimationPriority.Core] = true, [Enum.AnimationPriority.Idle] = true,
 	[Enum.AnimationPriority.Movement] = true }
 
-function AnimationDirector.play(animator: Animator, anmId: string, speed: number?): AnimationTrack?
+function AnimCache.play(animator: Animator, anmId: string, speed: number?): AnimationTrack?
 	local def, track = AnimationIds[anmId], getTrack(animator, anmId)
 	if not (def and track) then
 		return nil
@@ -286,7 +291,7 @@ function AnimationDirector.play(animator: Animator, anmId: string, speed: number
 end
 
 -- Seg tracks: wrap between LoopStart and LoopEnd while the state holds.
-function AnimationDirector.holdSegment(track: AnimationTrack, isHeld: () -> boolean)
+function AnimCache.holdSegment(track: AnimationTrack, isHeld: () -> boolean)
 	local loopStart = 0
 	local startConn = track:GetMarkerReachedSignal("LoopStart"):Connect(function()
 		loopStart = track.TimePosition
@@ -302,7 +307,7 @@ function AnimationDirector.holdSegment(track: AnimationTrack, isHeld: () -> bool
 	end)
 end
 
-return AnimationDirector
+return AnimCache
 ```
 
 ```lua
@@ -345,7 +350,7 @@ current loadout's ability tracks are preloaded with `ContentProvider:PreloadAsyn
 
 #### 26.2.9 Edge Cases
 1. **Part equip mid-animation.** Visual parts are welds, so tracks keep playing. A LEG swap that changes
-   `LegLength` rebuilds joints. AnimationDirector then restarts the gait track at the same normalized phase.
+   `LegLength` rebuilds joints. `Animate` then restarts the gait track at the same normalized phase.
 2. **KO while carrying.** The carry track stops and the item drops per §5/§11. `ANM_062` takes over at Action4.
 3. **Level-up during a station interaction.** `ANM_064` is queued and plays on the next idle moment, or in the
    stats menu preview (canon E14).
@@ -368,12 +373,13 @@ current loadout's ability tracks are preloaded with `ContentProvider:PreloadAsyn
   gait. Foot slide is ≤ 0.2 stud per stride, measured on the test rig at LegLength 1.25, 2.0 and 3.5.
 - **AC-26-03:** For a morph with mismatched legs, `ANM_008` replaces the gait within 1 frame of the morph rebuild.
   WalkSpeed is identical (± 0.01) to the matched-legs control.
-- **AC-26-04:** Starting any Action4 track stops all Action–Action3 tracks within 0.1 s. No character exceeds 6
-  playing tracks (lint on `GetPlayingAnimationTracks`).
+- **AC-26-04:** Starting any Action4 track stops all Action–Action3 tracks within 0.1 s. No player exceeds 6
+  playing tracks, and no NPC visual exceeds 4 (2 on LOW), checked by lint on `GetPlayingAnimationTracks`.
 - **AC-26-05:** With 24 customers, 20 employees and 8 players in a TIER_10 interior, SecondaryMotion costs ≤ 0.6 ms
   per frame on the reference mobile device, and no more than 16 chains run at full rate.
-- **AC-26-06:** NPC visuals switch to LOD1 at 30 studs and to the impostor at 60 studs (35 at `SavedQualityLevel`
-  ≤ 3), within 0.5 s of crossing. Impostors play exactly 1 track.
+- **AC-26-06:** NPC visuals switch to LOD1 (primary track only) at 30 studs, and to the impostor at 60 studs or
+  beyond the tier's full-detail cap, within 0.5 s of crossing. Impostors play at most 1 track, and off-screen visuals
+  beyond 30 studs are paused.
 - **AC-26-07:** Each role's cycle matches the §26.2.2 table, and the visual task changes within 0.5 s of the
   replicated task state changing.
 - **AC-26-08:** Every NPC combat style plays its listed tracks. The CHARGER and TANK attack tells are ≥ 0.6 s and
@@ -402,7 +408,7 @@ and must stay inside mobile CPU and memory limits.
 | Ambience | Master | 0.4 | `CompressorSoundEffect` (SideChain = SFX; Threshold −24 dB, Ratio 3) | district beds, emitters, room tone |
 
 The player's settings sliders (0–100 %) multiply each default. A18 persists them (§28). **Alerts floor:** every duck
-in the table below skips Alerts, and the AudioDirector clamps any scripted Alerts reduction to −6 dB. Only the
+in the table below skips Alerts, and the AudioController clamps any scripted Alerts reduction to −6 dB. Only the
 player's own Kitchen Alerts slider can go lower (readability and accessibility).
 
 ##### 3D rolloff
@@ -426,15 +432,16 @@ never pitch-bend.
 city emitter and from each other. This is an A17 layout requirement in §27.
 
 ##### Voice budget and stealing
-- Concurrent one-shot and loop voices: **48 on mobile, 64 on desktop and console**. Beds are excluded (≤ 4 music
-  stems + 3 ambience beds).
-- Per-category caps: customer Voice 4, footsteps 8, kitchen loops 10, combat 16, destruction 8, UI 6. Each id has
+- Concurrent one-shot and loop voices: **24** (§27 AudioController budget), counting SFX, Alerts, Voice and UI.
+  Music stems and ambience beds are managed separately (≤ 4 stems + 3 beds).
+- Per-category caps (maxima inside the 24): customer Voice 4, footsteps 4, kitchen loops 6, combat 8, destruction 4,
+  UI 3. Alerts are never capped below their P1/P2 needs. Each id has
   an instance cap of 4 by default, and a retrigger of the same id within 50 ms merges into the playing instance.
 - **Stealing order** when full: lowest priority first (P4 → P3 → P2), then farthest, then oldest. **P1 is never
   stolen.** If only P1 sounds are playing, a new P2–P4 sound is dropped.
-- Pools: AudioDirector keeps up to 4 pre-created `Sound` instances per id, created on first use and reused, so it
+- Pools: AudioController keeps up to 4 pre-created `Sound` instances per id, created on first use and reused, so it
   never calls `Instance.new` on the hot path.
-- If the client's FPS stays below 30 for 5 s, the limit drops to 32 voices and footsteps turn off. Both return
+- If the client's FPS stays below 30 for 5 s, the limit drops to 16 voices and footsteps turn off. Both return
   after 30 s above 40 FPS.
 
 ##### Mixing and ducking
@@ -455,11 +462,12 @@ city emitter and from each other. This is an A17 layout requirement in §27.
   DINOSAUR → `SFX_043`. AMPHIBIAN → `SFX_039`. FISH and MARINE → `SFX_040`. INSECT and ARACHNID → `SFX_045`.
   ROBOT and OBJECT → `SFX_044`. FOOD and PLANT → `SFX_046`. ALIEN → `SFX_047`. MYTHOLOGICAL and ELEMENTAL →
   `SFX_036`.
-- **Sentence synthesis.** Each sentence strings 3–9 grains with 30–60 ms gaps. A per-customer seed (hash of the
-  proxy id) fixes a base pitch offset between −2 and +2 semitones, so a given customer always sounds like itself.
+- **Sentence synthesis.** Each sentence strings 3–9 grains with 30–60 ms gaps. The proxy's `Seed` attribute (§8)
+  fixes a base pitch offset between −2 and +2 semitones, so a given customer always sounds like itself.
   Syllable order uses that seed plus a sentence counter.
-- **Personality tint.** A5 may set `VoicePitch` (±2 semitones) and `VoiceTempo` (0.8–1.25) Attributes per
-  personality; for example, PER_006 talks at tempo 0.8.
+- **Personality tint.** The shared personality data (A5, §9) may carry a voice pitch offset (±2 semitones) and
+  tempo (0.8–1.25), looked up client-side by `PersonalityId`; for example, PER_006 talks at tempo 0.8. No extra
+  attribute is replicated.
 - **Mood pitch shifts** use `Sound.PlaybackSpeed`, which shifts pitch and tempo together for a deliberate cartoon
   "chipmunk/grumble" effect:
 
@@ -545,24 +553,27 @@ city clock is at or after 19:00, or before 05:00.
 Delivery format: OGG, 44.1 kHz, mono for 3D sounds and stereo for 2D beds and music, within Roblox upload limits
 (≤ 7 min, ≤ 20 MB per file).
 
-##### Accessibility (§24 renders the UI)
-- **Captions** (Off / Important / All). Every P1 and P2 sound has caption text in the localization table, for
-  example `SFX_030` "[Sizzling – about to burn!]", `SFX_032` "[Fire!]", `SFX_157` "[Customer getting
-  impatient]", `SFX_158` "[Customer wants to fight!]", `SFX_053` "[Angry gibberish]", `SFX_190` "[WRONG ORDER!]".
-  A caption appears ≤ 100 ms after its sound and includes a direction arrow.
-- **Visual sound cues.** Off-screen P1 sounds show an edge-of-screen ring segment, with an icon, pointing at the
-  source for 2 s. It uses shape plus icon, never color alone (canon §C13.3 principle).
-- **Haptics** (gamepad). For P1 cues, `HapticService:SetMotor(Enum.UserInputType.Gamepad1,
-  Enum.VibrationMotor.Large, 0.5)` runs for 0.15 s when "Visual & haptic cues" is on.
-- **Settings.** Per-bus sliders, including the separate **Kitchen Alerts** slider (the `Alerts` group). "Reduce sudden loud sounds" (Master compressor: Ratio 8, Threshold −18 dB).
-  "Customer voices: Gibberish / Soft chimes / Off" (chimes replace grains with one soft tone per sentence). "Kitchen
-  music: On / Off". "Captions". "Visual sound cues".
+##### Accessibility (§24 owns the settings and renders the UI)
+- **Captions.** When §24's **Subtitles** setting is on (default on), every P1 and P2 sound also produces caption text
+  from the localization table, for example `SFX_030` "[Sizzling – about to burn!]", `SFX_032` "[Fire!]",
+  `SFX_157` "[Customer getting impatient]", `SFX_158` "[Customer wants to fight!]", `SFX_053` "[Angry
+  gibberish]", `SFX_190` "[WRONG ORDER!]". A caption appears ≤ 100 ms after its sound and includes a direction
+  arrow. Customer barks and NPC lines are already subtitled by §24.
+- **Visual sound cues.** Off-screen P1 sounds show §24's edge-of-screen marker, with an icon, pointing at the source
+  for 2 s. Shape plus icon, never color alone.
+- **Haptics.** §24's Vibration setting drives `HapticService:SetMotor(Enum.UserInputType.Gamepad1,
+  Enum.VibrationMotor.Large, intensity)` on big hits and PERFECT (§24) and for 0.15 s on each P1 alert.
+- **Sliders** (§24 defaults): Master 80, Music 60, SFX 80, Voice 70, UI 70, Ambience 60, and **Kitchen Alerts** 80
+  for the `Alerts` group. A slider at 0 mutes its bus, and Voice at 0 silences all gibberish.
+- **Reduced Motion** is seeded from `GuiService.ReducedMotionEnabled` (§24) and applies the secondary-motion limits in
+  §26.2.2.
+- **Proposed for §24's list:** "Reduce sudden loud sounds" (Master compressor: Ratio 8, Threshold −18 dB).
 
 #### 26.3.3 Variables
 
 | Variable | Value [TUNABLE] | Notes |
 |---|---|---|
-| Max concurrent voices | 48 mobile / 64 desktop & console | 32 in low-FPS fallback |
+| Max concurrent voices | 24 (§27) | 16 in low-FPS fallback |
 | Customer voice cap | 4 concurrent; 2.5 s per-customer cooldown | |
 | Stinger cooldown | 4 s per id; `SFX_194` once per chaos episode | |
 | Adaptive music thresholds | Rush: 75 % seats / 4 tickets / 25 % patience; Chaos: anger ≥ 4 or 2 at ≥ 3 | hysteresis 12 s / 8 s |
@@ -583,7 +594,7 @@ music plays as each district unlocks. Unlocks get audible punctuation: tier fanf
 `SFX_197` and `SFX_174` on the beats listed in §25.4.7.
 
 #### 26.3.6 Player Interactions
-Each client runs its own AudioDirector. Your own actions play at P2 (2D for cues). Other players' kitchen actions
+Each client runs its own AudioController. Your own actions play at P2 (2D for cues). Other players' kitchen actions
 play at P4 in 3D, so co-op kitchens stay readable. Guests hear the host's music and room tone. In the arena,
 `MUS_025` adds its second stem at match point.
 
@@ -596,16 +607,14 @@ play at P4 in 3D, so co-op kitchens stay readable. Guests hear the host's music 
 
 ```lua
 --!strict
--- AudioDirector (client): pooled playback, priority-based voice stealing, gibberish speech.
+-- AudioController (client, §27): pooled playback, priority-based voice stealing, gibberish speech.
 local SoundService = game:GetService("SoundService")
-local UserInputService = game:GetService("UserInputService")
 local SoundIds = require(script.Parent.SoundIds)
 -- SoundIds["SFX_079"] = { assets = { "rbxassetid://..." }, group = "SFX", priority = 2,
 --                         is3D = true, minD = 10, maxD = 90, maxInstances = 4 }
 
 type Live = { sound: Sound, priority: number, startedAt: number }
-local MOBILE = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-local maxVoices = if MOBILE then 48 else 64
+local maxVoices = 24 -- §27 budget; 16 in the low-FPS fallback
 local live: { Live } = {}
 local rng = Random.new()
 
@@ -627,9 +636,9 @@ local function steal(newPriority: number): boolean
 	return false
 end
 
-local AudioDirector = {}
+local AudioController = {}
 
-function AudioDirector.play(id: string, emitter: Instance?, speed: number?, take: number?): Sound?
+function AudioController.play(id: string, emitter: Instance?, speed: number?, take: number?): Sound?
 	local def = SoundIds[id]
 	if not def then
 		return nil
@@ -662,14 +671,14 @@ end
 
 local moodSemitones = { Delighted = 3, Happy = 1, Meh = 0, Unhappy = -2, Furious = -4 }
 
-function AudioDirector.speak(mouth: Attachment, bankId: string, mood: string, seed: number, sentence: number)
+function AudioController.speak(mouth: Attachment, bankId: string, mood: string, seed: number, sentence: number)
 	local base = Random.new(seed):NextInteger(-2, 2) -- stable per customer
 	local syl = Random.new(seed * 31 + sentence) -- new syllable order per sentence
 	local speed = 2 ^ (((moodSemitones[mood] or 0) + base) / 12)
 	local gap = if mood == "Furious" then 0.02 elseif mood == "Unhappy" then 0.06 else 0.04
 	task.spawn(function()
 		for _ = 1, syl:NextInteger(3, 9) do
-			local s = AudioDirector.play(bankId, mouth, speed, syl:NextInteger(1, 28))
+			local s = AudioController.play(bankId, mouth, speed, syl:NextInteger(1, 28))
 			if not s then
 				return
 			end
@@ -678,7 +687,7 @@ function AudioDirector.speak(mouth: Attachment, bankId: string, mood: string, se
 	end)
 end
 
-return AudioDirector
+return AudioController
 ```
 
 **Production rules.** All audio is uploaded under the group that owns the experience, with experience-use permission
@@ -716,15 +725,15 @@ loading. District music streams on demand.
 - **AC-26-13:** Crossing a district boundary crossfades the bed and music in 2.0 ± 0.2 s, with no silent gap
   > 0.5 s.
 - **AC-26-14:** A scripted TIER_06 rush capture measures −16 ± 1 LUFS-I with true peak ≤ −1 dBTP.
-- **AC-26-15:** In a TIER_10 level-6 chaos test, concurrent voices never exceed 48 on mobile or 64 on desktop. No P1
-  sound is ever stolen or dropped (instrumented log).
-- **AC-26-16:** With captions on, 100 % of P1 and P2 sounds produce a caption ≤ 100 ms after playback. Off-screen
+- **AC-26-15:** In a TIER_10 level-6 chaos test, concurrent voices never exceed 24 (16 in the low-FPS fallback).
+  No P1 sound is ever stolen or dropped (instrumented log).
+- **AC-26-16:** With Subtitles on, 100 % of P1 and P2 sounds produce a caption ≤ 100 ms after playback. Off-screen
   P1 sources show a direction cue for 2 s.
 - **AC-26-17:** All `SFX_` and `MUS_` assets are group-owned and permissioned. A 30-minute soak across all 10
   districts logs 0 `mmr_audio_load_fail` events.
 - **AC-26-18:** Inside any interior, every city emitter measures ≤ −60 dB relative to its source level.
-- **AC-26-19:** With Reduced Motion on, secondary-motion amplitude is ≤ 30 % of default, camera nudges are 0, and
-  no wing flap exceeds 2 Hz.
+- **AC-26-19:** With Reduced Motion on, secondary-motion amplitude is ≤ 30 % of default and no wing flap exceeds
+  2 Hz. With Screen Shake off, camera nudges are 0.
 - **AC-26-20:** During a level-6 chaos capture with the player KO'd, the Alerts bus (`SFX_009`, `SFX_022`, `SFX_029`,
   `SFX_030`, `SFX_032`, `SFX_157`) never measures more than 6 dB below its undiminished level, unless the player's
   Kitchen Alerts slider is set lower.

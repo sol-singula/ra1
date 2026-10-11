@@ -530,7 +530,8 @@ def render_db(canon: Canon, parts: list[dict]) -> str:
         "family, tags, active ability) are canon-fixed; everything else is defined here by the Mutation System owner. "
         "Rules that govern these rows (slots, compatibility, rig assembly, rarities, upgrades, generation, balance caps) "
         "live in §12. Synergies between parts are in §36.4, example combinations in §36.5, abilities in §36.6 and "
-        "status effects in §36.7.\n")
+        "status effects in §36.7. Every non-canon number in the rows (stat splits, passive magnitudes, prices, triangle "
+        "budgets) is a [TUNABLE] balancing assumption kept inside the canon constraints that the renderer checks.\n")
     o.append(
         "> **Data-backed table.** Source of truth: `gdd/data/mutations.json`. Rendered by "
         "`python3 gdd/tools/render_mutations.py`, which also validates canon fidelity, stat budgets, prices, enums, rig "
@@ -553,8 +554,10 @@ def render_db(canon: Canon, parts: list[dict]) -> str:
     for a, b in legend:
         o.append(f"| {a} | {esc(b)} |")
     o.append("")
-    o.append("#### 36.3.2 Counts by slot and rarity\n")
+    o.append("#### 36.3.2 Counts by slot, category and rarity\n")
     o.append(count_table(parts, "slot", "Part slot code", SLOT_ORDER))
+    o.append("")
+    o.append(gen_counts(parts))
     o.append("")
     o.append("Totals by rarity: " + " · ".join(f"{RARITY_ICON[r]} {r} {sum(1 for p in parts if p['rarity'] == r)}" for r in RARITIES)
              + f" · parts with an active ability: {sum(1 for p in parts if p['active'])} · faceLocked heads: "
@@ -704,9 +707,10 @@ def gen_combo(parts) -> str:
          f"| Visually distinct | full loadout, collapsing face-group choices under the {face_locked} faceLocked heads | {fmt(visible)} (≈ {visible:.2e}) |",
          f"| With palettes | visually distinct × 24 palettes (§12.7) | ≈ {visible * 24:.2e} |"]
     o.append("")
-    o.append(f"Art builds **{len(parts)}** parts (of which {cnt['FX']} are emitter-only FX and {cnt['SKIN'] + cnt['FUR'] + cnt['SCALES']} are surface swaps), "
-             f"yet the matched core alone yields {sym_core / 1e6:.1f} million bodies and the full space exceeds 10^{int(math.log10(full))}. "
-             "No combination is ever authored by hand.")
+    fx_only = sum(1 for p in parts if p["slot"] == "FX" and p["model"]["meshParts"] == 0)
+    o.append(f"Art builds **{len(parts)}** parts (of which {fx_only} are emitter-only FX and {cnt['SKIN'] + cnt['FUR'] + cnt['SCALES']} are surface swaps), "
+             f"yet matched pairs alone yield {fmt(sym_core)} core bodies, free pairing {fmt(core)}, and the full space exceeds "
+             f"{int(full / 10 ** int(math.log10(full)))} × 10^{int(math.log10(full))}. No combination is ever authored by hand.")
     return "\n".join(o)
 
 
@@ -731,7 +735,7 @@ def main() -> int:
         if OUT_SYS.exists():
             txt = OUT_SYS.read_text(encoding="utf-8")
             regions = {"budget-growth": gen_budget_growth(canon), "upgrade-costs": gen_upgrade_costs(canon),
-                       "price-points": gen_prices(canon, parts), "category-counts": gen_counts(parts),
+                       "price-points": gen_prices(canon, parts),
                        "combination-math": gen_combo(parts), "passive-caps": passive_table(parts)}
             missing = []
             for k, body in regions.items():

@@ -121,8 +121,9 @@ and §36.17 (milestones) must express MB rewards as these fractions (rounded to 
 
 | Source | Currency | Formula / budget [TUNABLE] | Defined in | Share of active net (T1 → T10) |
 |---|---|---|---|---|
-| Customer payments | MB | `Σ item price × PayFactor(S)` — PayFactor 1.0 (S ≥ 50), 0.8 (30–49), Apology 0.4, storm-out 0 (§C11.4) | §10 | 119 % → 113 % of net (before costs) |
-| Tips | MB | `Σ price × TipRate(S) × PersonalityTipMult`; Jackpot ×5 at `0.5 % + 0.1 %·LUCK` on S ≥ 90 (cap 500 / 5,000 MB) | §10 | 10 % → 16 % of net |
+| Customer payments | MB | `Σ item price × PayFactor(S)` — PayFactor 1.0 (S ≥ 50), 0.8 (30–49), Apology 0.4, storm-out 0 (§C11.4) | §10 | 118 % → 112 % of net (before costs) |
+| Tips | MB | `Σ price × TipRate(S) × PersonalityTipMult`; Jackpot ×5 at `0.5 % + 0.1 %·LUCK` on S ≥ 90 (cap 500 / 5,000 MB) | §10 | 10 % → 13 % of net |
+| Order-modification bonus | MB | satisfied §6.18 modifications pay +5–25 % per mod (cap +40 % per item; tips unaffected) — ≈ +1 % of item payments at T1–T3 rising to +5 % at T8+ | §6.18 | 1 % → 5 % of net |
 | Quests | MB, MS, RT | MB: daily 2 % NetRef each (3/day), weekly 4 % (5/week), challenge (CHF/CBT/RPR/EXP/EMP/RST) 2 %, story quest 3 %, chapter finale 15 %; tutorial chain `QST_TUT_001`–`012` total **400 MB** one-time | §20 | 12 % → 8 % |
 | Milestones & achievements | MB, MS, RT, capsules | one-time; MB 10–50 % NetRef each; aggregate ≈ 5 % of net early → 1 % late | §36.16, §36.17 | 5 % → 1 % |
 | City events | MB, MS, RT, capsules | MB in **ERM** (Event Reward Minute = NetRef ÷ 60, §18.8.4) by band Participation / Success / Top (typically 3–15 ERM); +25 % MB if the cross-server goal is met; MS/RT flat per §36.11; full rewards for the first 16 events (8 M objectives) per UTC day, then ×0.5 MB and MS; ≤ 3 event capsules/day (extras → 25 MS); ≤ 10 event RT/week (`EVT_005` exempt); repeat trophies (`FRN_901`–`FRN_910`) → 100 MS | §18, §36.11 | 1 % → 3 % (net uplift) |
@@ -134,6 +135,10 @@ and §36.17 (milestones) must express MB rewards as these fractions (rounded to 
 **Events are mostly a time-for-reward swap for MB:** an event of D minutes pays about D ERM, i.e. roughly the restaurant
 income of the minutes spent away (§18.8.5 worked example), so its *net* MB uplift per active hour is small (≈ 3 %,
 from Post-Event Rush, global bonuses and staffed restaurants); the real event rewards are MS, RT, capsules and trophies.
+
+The modification bonus is modelled explicitly in §22.5 (`ModBonus`) and **absorbed by the menu-price fit**, not added on
+top: the two menu constants were refitted with it included, so the §C4.4 targets still hold within ±3.4 %. §6 must
+therefore keep base prices on the §C4.2 curve and never price modifications into the base price as well.
 
 The recurring "quests/events/other" share is **25 % of service net at T1, 22 % at T2, 19 % at T3, 17 % at T4 and 15 % from
 T5** (front-loaded by onboarding, first-time milestones and story pacing), matching §C4.4's "~15 % quests/events".
@@ -169,10 +174,10 @@ DecorMult   = 0.9 + 0.003 × Atmosphere                   -- §C11.4
 Demand      = BaseDemand[T] × RepMult × DecorMult        -- §C6 (EventMult averages 1.0; events sit in "other")
 SeatCap     = Seats[T] × 3600 / VISIT_SEC_ACTIVE         -- 225 s active seat turnover → 16 customers/seat/h
 Customers N = min(Demand, SeatCap) × ServeRate           -- ServeRate: share who are served (not storm-outs)
-MenuLevel   = 1 + 0.835 × (L − 1)                        -- the menu trails the player as it broadens
-ItemPrice   = 1.10 × BasePrice(MenuLevel)                -- §C4.2 curve; 1.10 = menu-weighted difficulty × category mix
+MenuLevel   = 1 + 0.825 × (L − 1)                        -- the menu trails the player as it broadens
+ItemPrice   = 1.08 × BasePrice(MenuLevel)                -- §C4.2 curve; 1.08 = menu-weighted difficulty × category mix
 Ticket      = 1.4 × ItemPrice                            -- §C4.3
-Payments    = N × Ticket × PayFactor                     -- PayFactor from the satisfaction mix (§C11.4)
+Payments    = N × Ticket × PayFactor × (1 + ModBonus)    -- PayFactor from the satisfaction mix (§C11.4); ModBonus §6.18
 Tips        = N × Ticket × TipRate                       -- TipRate from the satisfaction mix + Jackpot Tips
 Ingredients = N × Ticket × ICR × (1 − 0.0015 × EFFICIENCY)
 ServiceNet  = Payments + Tips − Ingredients − OnlineWages(roster)
@@ -181,37 +186,37 @@ Net         = ServiceNet × (1 + QuestShare[T])           -- quests, milestones,
 
 **Variables [TUNABLE]** — reference state at tier entry; between tiers every value is interpolated linearly by level.
 
-| Tier | Stars | Atmosphere | ServeRate | ICR (before EFFICIENCY) | EFFICIENCY stat | LUCK stat | QuestShare | Repairs (% of gross) |
-|---|---|---|---|---|---|---|---|---|
-| `TIER_01` | 2.60 | 10 | 0.920 | 38 % | 0 | 2 | 25 % | 3.0 % |
-| `TIER_02` | 3.00 | 20 | 0.930 | 37 % | 3 | 5 | 22 % | 3.0 % |
-| `TIER_03` | 3.30 | 30 | 0.940 | 36 % | 8 | 10 | 19 % | 2.8 % |
-| `TIER_04` | 3.55 | 40 | 0.945 | 35 % | 15 | 16 | 17 % | 2.6 % |
-| `TIER_05` | 3.75 | 50 | 0.950 | 34 % | 22 | 22 | 15 % | 2.4 % |
-| `TIER_06` | 3.95 | 58 | 0.955 | 33 % | 30 | 30 | 15 % | 2.2 % |
-| `TIER_07` | 4.10 | 66 | 0.960 | 32 % | 38 | 38 | 15 % | 2.0 % |
-| `TIER_08` | 4.25 | 74 | 0.965 | 31 % | 46 | 46 | 15 % | 1.8 % |
-| `TIER_09` | 4.40 | 82 | 0.970 | 30 % | 54 | 54 | 15 % | 1.6 % |
-| `TIER_10` | 4.55 | 90 | 0.970 | 30 % | 60 | 60 | 15 % | 1.5 % |
+| Tier | Stars | Atmosphere | ServeRate | ICR (before EFFICIENCY) | EFFICIENCY stat | LUCK stat | QuestShare | Repairs (% of gross) | ModBonus (§6.18) |
+|---|---|---|---|---|---|---|---|---|---|
+| `TIER_01` | 2.60 | 10 | 0.920 | 38 % | 0 | 2 | 25 % | 3.0 % | 1.0 % |
+| `TIER_02` | 3.00 | 20 | 0.930 | 37 % | 3 | 5 | 22 % | 3.0 % | 1.0 % |
+| `TIER_03` | 3.30 | 30 | 0.940 | 36 % | 8 | 10 | 19 % | 2.8 % | 1.0 % |
+| `TIER_04` | 3.55 | 40 | 0.945 | 35 % | 15 | 16 | 17 % | 2.6 % | 2.0 % |
+| `TIER_05` | 3.75 | 50 | 0.950 | 34 % | 22 | 22 | 15 % | 2.4 % | 2.5 % |
+| `TIER_06` | 3.95 | 58 | 0.955 | 33 % | 30 | 30 | 15 % | 2.2 % | 3.0 % |
+| `TIER_07` | 4.10 | 66 | 0.960 | 32 % | 38 | 38 | 15 % | 2.0 % | 3.5 % |
+| `TIER_08` | 4.25 | 74 | 0.965 | 31 % | 46 | 46 | 15 % | 1.8 % | 5.0 % |
+| `TIER_09` | 4.40 | 82 | 0.970 | 30 % | 54 | 54 | 15 % | 1.6 % | 5.0 % |
+| `TIER_10` | 4.55 | 90 | 0.970 | 30 % | 60 | 60 | 15 % | 1.5 % | 5.0 % |
 
 Online wages use the reference roster of §22.8. A one-time **onboarding grant of 400 MB** (the tutorial chain) is paid in
 the first 15 minutes and is *not* part of the hourly rate.
 
-**Calibration result (generated).** The model lands within **±3.7 %** of every §C4.4 value with no per-tier fudge factor:
+**Calibration result (generated).** The model lands within **±3.4 %** of every §C4.4 value with no per-tier fudge factor:
 
 <!-- sim:calib -->
 | Tier | Entry L | Stars / Atmos. | Customers/h | Avg ticket | Payments | Tips | Ingredients | Online wages | Quests/events/other | Model net/h | Canon C4.4 | Δ |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `TIER_01` | 1 | 2.60 ★ / 10 | 49 | 15.4 | 733 | 61 | 288 | 12 | 124 | 618 | 630 | -1.9 % |
-| `TIER_02` | 5 | 3.00 ★ / 20 | 73 | 18.1 | 1,273 | 106 | 484 | 30 | 190 | 1,055 | 1,080 | -2.3 % |
-| `TIER_03` | 10 | 3.30 ★ / 30 | 99 | 22.2 | 2,122 | 179 | 780 | 98 | 270 | 1,693 | 1,730 | -2.1 % |
-| `TIER_04` | 18 | 3.55 ★ / 40 | 127 | 30.8 | 3,825 | 402 | 1,338 | 148 | 466 | 3,207 | 3,100 | +3.5 % |
-| `TIER_05` | 26 | 3.75 ★ / 50 | 158 | 42.6 | 6,578 | 701 | 2,211 | 370 | 705 | 5,402 | 5,400 | +0.0 % |
-| `TIER_06` | 35 | 3.95 ★ / 58 | 191 | 61.5 | 11,476 | 1,244 | 3,698 | 682 | 1,251 | 9,591 | 9,600 | -0.1 % |
-| `TIER_07` | 45 | 4.10 ★ / 66 | 225 | 92.5 | 20,478 | 2,477 | 6,280 | 1,740 | 2,240 | 17,175 | 17,400 | -1.3 % |
-| `TIER_08` | 56 | 4.25 ★ / 74 | 262 | 144.8 | 37,351 | 4,596 | 10,955 | 3,040 | 4,193 | 32,145 | 32,800 | -2.0 % |
-| `TIER_09` | 68 | 4.40 ★ / 82 | 302 | 236.0 | 70,223 | 8,787 | 19,675 | 5,980 | 8,003 | 61,358 | 63,700 | -3.7 % |
-| `TIER_10` | 80 | 4.55 ★ / 90 | 353 | 384.8 | 133,709 | 16,940 | 37,096 | 10,260 | 15,494 | 118,787 | 120,500 | -1.4 % |
+| `TIER_01` | 1 | 2.60 ★ / 10 | 49 | 15.1 | 727 | 60 | 283 | 12 | 123 | 615 | 630 | -2.3 % |
+| `TIER_02` | 5 | 3.00 ★ / 20 | 73 | 17.8 | 1,260 | 104 | 475 | 30 | 189 | 1,048 | 1,080 | -3.0 % |
+| `TIER_03` | 10 | 3.30 ★ / 30 | 99 | 21.7 | 2,095 | 175 | 762 | 98 | 268 | 1,677 | 1,730 | -3.1 % |
+| `TIER_04` | 18 | 3.55 ★ / 40 | 127 | 30.0 | 3,799 | 392 | 1,303 | 148 | 466 | 3,206 | 3,100 | +3.4 % |
+| `TIER_05` | 26 | 3.75 ★ / 50 | 158 | 41.4 | 6,540 | 680 | 2,145 | 370 | 706 | 5,410 | 5,400 | +0.2 % |
+| `TIER_06` | 35 | 3.95 ★ / 58 | 191 | 59.4 | 11,415 | 1,201 | 3,571 | 682 | 1,254 | 9,617 | 9,600 | +0.2 % |
+| `TIER_07` | 45 | 4.10 ★ / 66 | 225 | 88.9 | 20,367 | 2,380 | 6,035 | 1,740 | 2,246 | 17,219 | 17,400 | -1.0 % |
+| `TIER_08` | 56 | 4.25 ★ / 74 | 262 | 138.4 | 37,486 | 4,393 | 10,471 | 3,040 | 4,255 | 32,623 | 32,800 | -0.5 % |
+| `TIER_09` | 68 | 4.40 ★ / 82 | 302 | 224.3 | 70,065 | 8,350 | 18,696 | 5,980 | 8,061 | 61,799 | 63,700 | -3.0 % |
+| `TIER_10` | 80 | 4.55 ★ / 90 | 353 | 363.6 | 132,630 | 16,003 | 35,044 | 10,260 | 15,499 | 118,828 | 120,500 | -1.4 % |
 <!-- /sim:calib -->
 
 #### 22.5.1 Customer Spending
@@ -223,16 +228,16 @@ career (8 % early, 10–11 % mid, 12–13 % late including Jackpot Tips). Genera
 <!-- sim:customer -->
 | Tier | Entry L | Menu-weighted item price | Avg ticket (×1.4) | Satisfaction mix % (98+/90/80/70/50/30/<30) | Pay factor | Tip rate (incl. Jackpot) | Ingredient ratio | Net per customer (MB) |
 |---|---|---|---|---|---|---|---|---|
-| `TIER_01` | 1 | 11.0 | 15.4 | 3 / 15 / 25 / 25 / 22 / 7 / 3 | 0.968 | 8.0 % | 38.0 % | 10.3 |
-| `TIER_02` | 5 | 12.9 | 18.1 | 3 / 15 / 25 / 25 / 22 / 7 / 3 | 0.968 | 8.1 % | 36.8 % | 12.3 |
-| `TIER_03` | 10 | 15.9 | 22.2 | 3 / 15 / 25 / 25 / 22 / 7 / 3 | 0.968 | 8.1 % | 35.6 % | 15.4 |
-| `TIER_04` | 18 | 22.0 | 30.8 | 5 / 21 / 28 / 22 / 17 / 5 / 2 | 0.978 | 10.3 % | 34.2 % | 22.7 |
-| `TIER_05` | 26 | 30.5 | 42.6 | 5 / 21 / 28 / 22 / 17 / 5 / 2 | 0.978 | 10.4 % | 32.9 % | 32.1 |
-| `TIER_06` | 35 | 43.9 | 61.5 | 5 / 21 / 28 / 22 / 17 / 5 / 2 | 0.978 | 10.6 % | 31.5 % | 47.3 |
-| `TIER_07` | 45 | 66.1 | 92.5 | 6 / 24 / 30 / 20 / 14 / 5 / 1 | 0.984 | 11.9 % | 30.2 % | 74.1 |
-| `TIER_08` | 56 | 103.4 | 144.8 | 6 / 24 / 30 / 20 / 14 / 5 / 1 | 0.984 | 12.1 % | 28.9 % | 118.2 |
-| `TIER_09` | 68 | 168.6 | 236.0 | 6 / 24 / 30 / 20 / 14 / 5 / 1 | 0.984 | 12.3 % | 27.6 % | 196.2 |
-| `TIER_10` | 80 | 274.9 | 384.8 | 6 / 24 / 30 / 20 / 14 / 5 / 1 | 0.984 | 12.5 % | 27.3 % | 321.6 |
+| `TIER_01` | 1 | 10.8 | 15.1 | 3 / 15 / 25 / 25 / 22 / 7 / 3 | 0.968 | 8.0 % | 38.0 % | 10.1 |
+| `TIER_02` | 5 | 12.7 | 17.8 | 3 / 15 / 25 / 25 / 22 / 7 / 3 | 0.968 | 8.1 % | 36.8 % | 12.1 |
+| `TIER_03` | 10 | 15.5 | 21.7 | 3 / 15 / 25 / 25 / 22 / 7 / 3 | 0.968 | 8.1 % | 35.6 % | 15.1 |
+| `TIER_04` | 18 | 21.4 | 30.0 | 5 / 21 / 28 / 22 / 17 / 5 / 2 | 0.978 | 10.3 % | 34.2 % | 22.1 |
+| `TIER_05` | 26 | 29.5 | 41.4 | 5 / 21 / 28 / 22 / 17 / 5 / 2 | 0.978 | 10.4 % | 32.9 % | 31.2 |
+| `TIER_06` | 35 | 42.4 | 59.4 | 5 / 21 / 28 / 22 / 17 / 5 / 2 | 0.978 | 10.6 % | 31.5 % | 45.7 |
+| `TIER_07` | 45 | 63.5 | 88.9 | 6 / 24 / 30 / 20 / 14 / 5 / 1 | 0.984 | 11.9 % | 30.2 % | 71.2 |
+| `TIER_08` | 56 | 98.8 | 138.4 | 6 / 24 / 30 / 20 / 14 / 5 / 1 | 0.984 | 12.1 % | 28.9 % | 113.0 |
+| `TIER_09` | 68 | 160.2 | 224.3 | 6 / 24 / 30 / 20 / 14 / 5 / 1 | 0.984 | 12.3 % | 27.6 % | 186.5 |
+| `TIER_10` | 80 | 259.7 | 363.6 | 6 / 24 / 30 / 20 / 14 / 5 / 1 | 0.984 | 12.5 % | 27.3 % | 303.8 |
 <!-- /sim:customer -->
 
 #### 22.5.2 Expected Per-Hour Flows by Tier
@@ -243,16 +248,16 @@ Revenue sources and costs per active hour at tier entry (generated). "Operating 
 <!-- sim:flows -->
 | Tier (at entry) | Customer payments | Tips | Quests | Milestones & achievements | Events | Deliveries | − Ingredients | − Online wages | = Net/h (C4.4 basis) | Repairs (from net) | Operating margin |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| `TIER_01` | 733 | 61 | 74 | 33 | 9 | 7 | 288 | 12 | 618 | 24 | 59 % |
-| `TIER_02` | 1,273 | 106 | 114 | 51 | 13 | 11 | 484 | 30 | 1,055 | 41 | 60 % |
-| `TIER_03` | 2,122 | 179 | 162 | 73 | 19 | 16 | 780 | 98 | 1,693 | 64 | 59 % |
-| `TIER_04` | 3,825 | 402 | 280 | 61 | 79 | 47 | 1,338 | 148 | 3,207 | 110 | 62 % |
-| `TIER_05` | 6,578 | 701 | 423 | 92 | 120 | 70 | 2,211 | 370 | 5,402 | 175 | 62 % |
-| `TIER_06` | 11,476 | 1,244 | 751 | 163 | 213 | 125 | 3,698 | 682 | 9,591 | 280 | 63 % |
-| `TIER_07` | 20,478 | 2,477 | 1,299 | 224 | 448 | 269 | 6,280 | 1,740 | 17,175 | 459 | 63 % |
-| `TIER_08` | 37,351 | 4,596 | 2,432 | 419 | 839 | 503 | 10,955 | 3,040 | 32,145 | 755 | 65 % |
-| `TIER_09` | 70,223 | 8,787 | 4,642 | 800 | 1,601 | 960 | 19,675 | 5,980 | 61,358 | 1,264 | 66 % |
-| `TIER_10` | 133,709 | 16,940 | 8,986 | 1,549 | 3,099 | 1,859 | 37,096 | 10,260 | 118,787 | 2,260 | 67 % |
+| `TIER_01` | 727 | 60 | 74 | 33 | 9 | 7 | 283 | 12 | 615 | 24 | 60 % |
+| `TIER_02` | 1,260 | 104 | 113 | 51 | 13 | 11 | 475 | 30 | 1,048 | 41 | 60 % |
+| `TIER_03` | 2,095 | 175 | 161 | 72 | 19 | 16 | 762 | 98 | 1,677 | 64 | 59 % |
+| `TIER_04` | 3,799 | 392 | 279 | 61 | 79 | 47 | 1,303 | 148 | 3,206 | 109 | 63 % |
+| `TIER_05` | 6,540 | 680 | 423 | 92 | 120 | 71 | 2,145 | 370 | 5,410 | 173 | 63 % |
+| `TIER_06` | 11,415 | 1,201 | 753 | 163 | 213 | 125 | 3,571 | 682 | 9,617 | 278 | 64 % |
+| `TIER_07` | 20,367 | 2,380 | 1,303 | 225 | 449 | 270 | 6,035 | 1,740 | 17,219 | 455 | 64 % |
+| `TIER_08` | 37,486 | 4,393 | 2,468 | 426 | 851 | 511 | 10,471 | 3,040 | 32,623 | 754 | 66 % |
+| `TIER_09` | 70,065 | 8,350 | 4,675 | 806 | 1,612 | 967 | 18,696 | 5,980 | 61,799 | 1,255 | 67 % |
+| `TIER_10` | 132,630 | 16,003 | 8,990 | 1,550 | 3,100 | 1,860 | 35,044 | 10,260 | 118,828 | 2,229 | 68 % |
 <!-- /sim:flows -->
 
 ### 22.6 Recipe Profitability
@@ -290,7 +295,8 @@ Generated examples (D is an assumption for illustration; §6 is authoritative fo
 
 **Design rules for §6 / §7 (binding on this economy):**
 1. For any level L, the menu-weighted average item price of a sensible menu (the player's best `MenuSlots[T]` recipes)
-   must lie within ±10 % of `1.10 × BasePrice(1 + 0.835 (L − 1))`; the build validator (§35) recomputes this from §6.
+   must lie within ±10 % of `1.08 × BasePrice(1 + 0.825 (L − 1))` (before modification bonuses); the build validator (§35)
+   recomputes this from §6.
 2. Margin (price − ingredients) ÷ price stays in 60–75 %; higher difficulty must never be *less* profitable per item.
 3. Legendary dishes (`RCP_LEG_*`, ×2.5) are the highest profit per item but consume stocked special ingredients and
    long prep, so their profit per kitchen-minute stays within 1.5× of a same-level standard dish.
@@ -298,7 +304,7 @@ Generated examples (D is an assumption for illustration; §6 is authoritative fo
 
 ### 22.7 Operating Margins
 
-Operating margin *rises* gently with tier (59–60 % at T1–T3, 62–63 % at T4–T7, 65–67 % at T8–T10, see §22.5.2) because
+Operating margin *rises* gently with tier (59–60 % at T1–T3, 63–64 % at T4–T7, 66–68 % at T8–T10, see §22.5.2) because
 better ingredient ratios (difficulty, EFFICIENCY, Stocker) and tips outpace rising wages. Guard-rails [TUNABLE]:
 
 | Metric | Formula | Healthy band | Alarm (§22.15) |
@@ -345,11 +351,11 @@ shows "Over-staffed: this hire adds ≈ 0 MB/h" when the new hire would exceed d
 <!-- sim:emp_roi -->
 | Chef rarity | Typical tier | Cooking stat | Efficiency (C14.2; morale 80, energy 80) | PrepSec_avg (assumed) | Customers/h added | Net per customer | Wage/h | Marginal net/h | Hire cost | Payback (operating h) | Operating h/day (ref. player) | Payback (days) |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Common | `TIER_02` | 28 | 0.242 | 40 s | 15.6 | 11.3 | 18 | 157 | 400 | 2.5 h | 9.5 h | 0.3 d |
-| Uncommon | `TIER_04` | 42 | 0.363 | 50 s | 18.7 | 19.9 | 50 | 323 | 2,100 | 6.5 h | 9.5 h | 0.7 d |
-| Rare | `TIER_06` | 57 | 0.493 | 60 s | 21.1 | 41.5 | 140 | 737 | 10,500 | 14.2 h | 17.5 h | 0.8 d |
-| Epic | `TIER_08` | 72 | 0.623 | 75 s | 21.3 | 101.5 | 420 | 1,748 | 55,000 | 31.5 h | 24.0 h | 1.3 d |
-| Legendary | `TIER_10` | 88 | 0.761 | 90 s | 21.7 | 275.9 | 1,100 | 4,900 | 315,000 | 64.3 h | 24.0 h | 2.7 d |
+| Common | `TIER_02` | 28 | 0.242 | 40 s | 15.6 | 11.0 | 18 | 154 | 400 | 2.6 h | 9.5 h | 0.3 d |
+| Uncommon | `TIER_04` | 42 | 0.363 | 50 s | 18.7 | 19.4 | 50 | 313 | 2,100 | 6.7 h | 9.5 h | 0.7 d |
+| Rare | `TIER_06` | 57 | 0.493 | 60 s | 21.1 | 40.1 | 140 | 707 | 10,500 | 14.8 h | 17.5 h | 0.8 d |
+| Epic | `TIER_08` | 72 | 0.623 | 75 s | 21.3 | 97.0 | 420 | 1,652 | 55,000 | 33.3 h | 24.0 h | 1.4 d |
+| Legendary | `TIER_10` | 88 | 0.761 | 90 s | 21.7 | 260.7 | 1,100 | 4,568 | 315,000 | 69.0 h | 24.0 h | 2.9 d |
 <!-- /sim:emp_roi -->
 
 Rarer staff are long-term investments (2.5 operating hours for a Common, ~64 for a Legendary) but, because they also
@@ -374,16 +380,16 @@ upgrades worthwhile):
 |---|---|---|---|---|---|---|---|---|---|---|
 | Starter (e.g. `STN_GRILL`) | 150 | 35 % | Lv1→Lv2 | ×1.5 | 225 | +11.1 % | `TIER_02` | 26 | 8.7 h | `TIER_02` (8.7 h) |
 | Starter (e.g. `STN_GRILL`) | 150 | 35 % | Lv2→Lv3 | ×4 | 600 | +12.5 % | `TIER_04` | 89 | 6.8 h | `TIER_04` (6.8 h) |
-| Starter (e.g. `STN_GRILL`) | 150 | 35 % | Lv3→Lv4 | ×10 | 1,500 | +14.3 % | `TIER_06` | 296 | 5.1 h | `TIER_06` (5.1 h) |
-| Starter (e.g. `STN_GRILL`) | 150 | 35 % | Lv4→Lv5 | ×25 | 3,750 | +16.7 % | `TIER_08` | 1,109 | 3.4 h | `TIER_08` (3.4 h) |
-| Mid (e.g. `STN_MIXER`) | 400 | 25 % | Lv1→Lv2 | ×1.5 | 600 | +11.1 % | `TIER_02` | 18 | 32.4 h | `TIER_05` (6.0 h) |
-| Mid (e.g. `STN_MIXER`) | 400 | 25 % | Lv2→Lv3 | ×4 | 1,600 | +12.5 % | `TIER_04` | 63 | 25.2 h | `TIER_06` (8.3 h) |
-| Mid (e.g. `STN_MIXER`) | 400 | 25 % | Lv3→Lv4 | ×10 | 4,000 | +14.3 % | `TIER_06` | 211 | 18.9 h | `TIER_08` (5.6 h) |
-| Mid (e.g. `STN_MIXER`) | 400 | 25 % | Lv4→Lv5 | ×25 | 10,000 | +16.7 % | `TIER_08` | 792 | 12.6 h | `TIER_09` (6.6 h) |
-| Late (e.g. `STN_INFUSER`) | 2,000 | 15 % | Lv1→Lv2 | ×1.5 | 3,000 | +11.1 % | `TIER_06` | 107 | 28.0 h | `TIER_08` (8.4 h) |
-| Late (e.g. `STN_INFUSER`) | 2,000 | 15 % | Lv2→Lv3 | ×4 | 8,000 | +12.5 % | `TIER_06` | 116 | 69.1 h | `TIER_10` (5.6 h) |
-| Late (e.g. `STN_INFUSER`) | 2,000 | 15 % | Lv3→Lv4 | ×10 | 20,000 | +14.3 % | `TIER_06` | 127 | 157.6 h | — |
-| Late (e.g. `STN_INFUSER`) | 2,000 | 15 % | Lv4→Lv5 | ×25 | 50,000 | +16.7 % | `TIER_08` | 475 | 105.2 h | — |
+| Starter (e.g. `STN_GRILL`) | 150 | 35 % | Lv3→Lv4 | ×10 | 1,500 | +14.3 % | `TIER_06` | 297 | 5.1 h | `TIER_06` (5.1 h) |
+| Starter (e.g. `STN_GRILL`) | 150 | 35 % | Lv4→Lv5 | ×25 | 3,750 | +16.7 % | `TIER_08` | 1,125 | 3.3 h | `TIER_08` (3.3 h) |
+| Mid (e.g. `STN_MIXER`) | 400 | 25 % | Lv1→Lv2 | ×1.5 | 600 | +11.1 % | `TIER_02` | 18 | 32.7 h | `TIER_05` (6.0 h) |
+| Mid (e.g. `STN_MIXER`) | 400 | 25 % | Lv2→Lv3 | ×4 | 1,600 | +12.5 % | `TIER_04` | 63 | 25.3 h | `TIER_06` (8.3 h) |
+| Mid (e.g. `STN_MIXER`) | 400 | 25 % | Lv3→Lv4 | ×10 | 4,000 | +14.3 % | `TIER_06` | 212 | 18.9 h | `TIER_08` (5.6 h) |
+| Mid (e.g. `STN_MIXER`) | 400 | 25 % | Lv4→Lv5 | ×25 | 10,000 | +16.7 % | `TIER_08` | 804 | 12.4 h | `TIER_09` (6.6 h) |
+| Late (e.g. `STN_INFUSER`) | 2,000 | 15 % | Lv1→Lv2 | ×1.5 | 3,000 | +11.1 % | `TIER_06` | 107 | 28.0 h | `TIER_08` (8.2 h) |
+| Late (e.g. `STN_INFUSER`) | 2,000 | 15 % | Lv2→Lv3 | ×4 | 8,000 | +12.5 % | `TIER_06` | 116 | 68.9 h | `TIER_10` (5.6 h) |
+| Late (e.g. `STN_INFUSER`) | 2,000 | 15 % | Lv3→Lv4 | ×10 | 20,000 | +14.3 % | `TIER_06` | 127 | 157.2 h | — |
+| Late (e.g. `STN_INFUSER`) | 2,000 | 15 % | Lv4→Lv5 | ×25 | 50,000 | +16.7 % | `TIER_08` | 482 | 103.7 h | — |
 <!-- /sim:stations -->
 
 **Rules for §36.13:** core starter stations must keep every upgrade's payback ≤ 10 active hours at the tier where it
@@ -399,16 +405,16 @@ should equal `10 × 0.003 × ServiceNet / DecorMult`** at the tier where the ite
 <!-- sim:decor -->
 | Tier | Typical atmosphere | DecorMult (C11.4) | Service net/h | ΔNet/h per +10 atmosphere | Target MB per atmosphere point (10 h payback) | Cost of +10 points |
 |---|---|---|---|---|---|---|
-| `TIER_01` | 10 | ×0.930 | 494 | 16 | 16 | 159 |
-| `TIER_02` | 20 | ×0.960 | 865 | 27 | 27 | 270 |
-| `TIER_03` | 30 | ×0.990 | 1,423 | 43 | 43 | 431 |
-| `TIER_04` | 40 | ×1.020 | 2,741 | 81 | 81 | 806 |
-| `TIER_05` | 50 | ×1.050 | 4,698 | 134 | 134 | 1,342 |
-| `TIER_06` | 58 | ×1.074 | 8,340 | 233 | 233 | 2,330 |
-| `TIER_07` | 66 | ×1.098 | 14,935 | 408 | 408 | 4,081 |
-| `TIER_08` | 74 | ×1.122 | 27,952 | 747 | 747 | 7,474 |
-| `TIER_09` | 82 | ×1.146 | 53,354 | 1,397 | 1,397 | 13,967 |
-| `TIER_10` | 90 | ×1.170 | 103,293 | 2,649 | 2,649 | 26,485 |
+| `TIER_01` | 10 | ×0.930 | 492 | 16 | 16 | 159 |
+| `TIER_02` | 20 | ×0.960 | 859 | 27 | 27 | 268 |
+| `TIER_03` | 30 | ×0.990 | 1,409 | 43 | 43 | 427 |
+| `TIER_04` | 40 | ×1.020 | 2,740 | 81 | 81 | 806 |
+| `TIER_05` | 50 | ×1.050 | 4,705 | 134 | 134 | 1,344 |
+| `TIER_06` | 58 | ×1.074 | 8,362 | 234 | 234 | 2,336 |
+| `TIER_07` | 66 | ×1.098 | 14,973 | 409 | 409 | 4,091 |
+| `TIER_08` | 74 | ×1.122 | 28,368 | 759 | 759 | 7,585 |
+| `TIER_09` | 82 | ×1.146 | 53,738 | 1,407 | 1,407 | 14,068 |
+| `TIER_10` | 90 | ×1.170 | 103,328 | 2,649 | 2,649 | 26,494 |
 <!-- /sim:decor -->
 
 Atmosphere is capped at 100 (DecorMult ×1.2), so decor beyond the cap is purely cosmetic and is priced as a prestige
@@ -423,15 +429,15 @@ why the tier fund absorbs ≈ 50 % of income (generated):
 <!-- sim:expansion -->
 | Tier | Name | Cost (C6) | Req. L | Seats | Base demand | Staff cap | Menu slots | Net/h before (at req. L) | Net/h after | Step | Payback of the seat/demand step | Cost ÷ prev. canon net/h |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `TIER_02` | Tiny Mutation Diner | 1,000 | 5 | 4→6 | 50→65 | 2→3 | 4→5 | 825 | 1,055 | +27.9 % | 4.3 h | 1.6 h |
-| `TIER_03` | Neighborhood Freak Café | 2,000 | 10 | 6→8 | 65→80 | 3→4 | 5→6 | 1,435 | 1,693 | +18.0 % | 7.7 h | 1.9 h |
-| `TIER_04` | Morph City Grill | 5,000 | 18 | 8→10 | 80→95 | 4→6 | 6→8 | 2,615 | 3,207 | +22.7 % | 8.4 h | 2.9 h |
-| `TIER_05` | Mutant Family Restaurant | 15,000 | 26 | 10→12 | 95→110 | 6→8 | 8→10 | 4,863 | 5,402 | +11.1 % | 27.8 h | 4.8 h |
-| `TIER_06` | Monster Food Court | 40,000 | 35 | 12→14 | 110→125 | 8→10 | 10→12 | 8,704 | 9,591 | +10.2 % | 45.1 h | 7.4 h |
-| `TIER_07` | Mutation Megadiner | 100,000 | 45 | 14→16 | 125→140 | 10→12 | 12→14 | 15,968 | 17,175 | +7.6 % | 82.8 h | 10.4 h |
-| `TIER_08` | Luxury Freak Restaurant | 225,000 | 56 | 16→18 | 140→155 | 12→14 | 14→16 | 30,191 | 32,145 | +6.5 % | 115.1 h | 12.9 h |
-| `TIER_09` | Morph City Food Palace | 525,000 | 68 | 18→20 | 155→170 | 14→16 | 16→20 | 58,718 | 61,358 | +4.5 % | 198.9 h | 16.0 h |
-| `TIER_10` | Legendary Mutation Restaurant | 1,500,000 | 80 | 20→24 | 170→190 | 16→20 | 20→24 | 107,918 | 118,787 | +10.1 % | 138.0 h | 23.5 h |
+| `TIER_02` | Tiny Mutation Diner | 1,000 | 5 | 4→6 | 50→65 | 2→3 | 4→5 | 820 | 1,048 | +27.9 % | 4.4 h | 1.6 h |
+| `TIER_03` | Neighborhood Freak Café | 2,000 | 10 | 6→8 | 65→80 | 3→4 | 5→6 | 1,422 | 1,677 | +18.0 % | 7.8 h | 1.9 h |
+| `TIER_04` | Morph City Grill | 5,000 | 18 | 8→10 | 80→95 | 4→6 | 6→8 | 2,615 | 3,206 | +22.6 % | 8.5 h | 2.9 h |
+| `TIER_05` | Mutant Family Restaurant | 15,000 | 26 | 10→12 | 95→110 | 6→8 | 8→10 | 4,870 | 5,410 | +11.1 % | 27.8 h | 4.8 h |
+| `TIER_06` | Monster Food Court | 40,000 | 35 | 12→14 | 110→125 | 8→10 | 10→12 | 8,727 | 9,617 | +10.2 % | 45.0 h | 7.4 h |
+| `TIER_07` | Mutation Megadiner | 100,000 | 45 | 14→16 | 125→140 | 10→12 | 12→14 | 16,017 | 17,219 | +7.5 % | 83.2 h | 10.4 h |
+| `TIER_08` | Luxury Freak Restaurant | 225,000 | 56 | 16→18 | 140→155 | 12→14 | 14→16 | 30,623 | 32,623 | +6.5 % | 112.5 h | 12.9 h |
+| `TIER_09` | Morph City Food Palace | 525,000 | 68 | 18→20 | 155→170 | 14→16 | 16→20 | 59,121 | 61,799 | +4.5 % | 196.0 h | 16.0 h |
+| `TIER_10` | Legendary Mutation Restaurant | 1,500,000 | 80 | 20→24 | 170→190 | 16→20 | 20→24 | 107,954 | 118,828 | +10.1 % | 138.0 h | 23.5 h |
 <!-- /sim:expansion -->
 
 ### 22.10 Mutation Acquisition Pacing
@@ -472,14 +478,14 @@ duplicates excluded; generated):
 | 1 | 0.0–10.5 | 2.8 | 3.9 | 1.4 | 0.1 | 0.0 | 0.0 | 2 | 0 | 8 |
 | 2 | 10.5–21.0 | 1.4 | 0.7 | 1.3 | 0.1 | 0.0 | 0.0 | 0 | 4 | 12 |
 | 3 | 21.0–31.5 | 1.4 | 0.7 | 2.3 | 1.1 | 0.0 | 0.0 | 2 | 6 | 17 |
-| 4 | 31.5–42.0 | 1.4 | 0.7 | 2.3 | 0.1 | 0.0 | 0.0 | 2 | 9 | 22 |
-| 5 | 42.0–52.5 | 0.8 | 0.4 | 1.2 | 1.1 | 0.0 | 0.0 | 1 | 9 | 25 |
+| 4 | 31.5–42.0 | 1.4 | 0.7 | 3.3 | 0.1 | 0.0 | 0.0 | 3 | 10 | 23 |
+| 5 | 42.0–52.5 | 0.8 | 0.4 | 0.2 | 1.1 | 0.0 | 0.0 | 0 | 8 | 25 |
 | 6 | 52.5–63.0 | 0.8 | 0.4 | 0.2 | 2.1 | 0.0 | 0.0 | 1 | 9 | 29 |
 | 7 | 63.0–73.5 | 0.8 | 0.4 | 0.2 | 1.1 | 0.0 | 0.0 | 1 | 10 | 31 |
 | 8 | 73.5–84.0 | 0.8 | 0.4 | 0.2 | 1.1 | 0.0 | 0.0 | 1 | 9 | 33 |
 | 9 | 84.0–94.5 | 0.8 | 0.4 | 0.2 | 0.1 | 1.0 | 0.0 | 0 | 10 | 36 |
-| 10 | 94.5–105.0 | 0.8 | 0.4 | 0.2 | 0.1 | 1.0 | 0.0 | 1 | 6 | 38 |
-| 11 | 105.0–115.5 | 0.8 | 0.4 | 0.2 | 0.1 | 0.0 | 0.0 | 0 | 7 | 39 |
+| 10 | 94.5–105.0 | 0.8 | 0.4 | 0.2 | 0.1 | 1.0 | 0.0 | 1 | 7 | 38 |
+| 11 | 105.0–115.5 | 0.8 | 0.4 | 0.2 | 0.1 | 0.0 | 0.0 | 0 | 6 | 39 |
 | 12 | 115.5–126.0 | 0.8 | 0.4 | 0.2 | 0.1 | 2.0 | 0.0 | 1 | 7 | 43 |
 | 13 | 126.0–136.5 | 0.8 | 0.4 | 0.2 | 7.1 | 0.0 | 1.0 | 7 | 2 | 52 |
 | 14 | 136.5–140.0 | 0.3 | 0.1 | 0.1 | 5.0 | 0.0 | 0.0 | 5 | 1 | 58 |
@@ -543,15 +549,15 @@ requirement is met. Spending policy [TUNABLE]:
 <!-- sim:pacing -->
 | Tier | Cost | Canon h (C4.4) | Level gate h (C5.1) | A: money-ready h | Δ money | A: reached h | Δ reach | A: binding | B: money-ready h | B: reached h | B: play day |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| `TIER_02` | 1,000 | 1 | 1.13 | 1.02 | +2 % | 1.15 | +15 % | level (C5.1) | 1.02 | 1.15 | 1 |
+| `TIER_02` | 1,000 | 1 | 1.13 | 1.03 | +3 % | 1.15 | +15 % | level (C5.1) | 1.03 | 1.15 | 1 |
 | `TIER_03` | 2,000 | 3 | 3.30 | 3.32 | +11 % | 3.32 | +11 % | level (C5.1) | 1.50 | 3.32 | 3 |
-| `TIER_04` | 5,000 | 7 | 8.50 | 7.63 | +9 % | 8.52 | +22 % | level (C5.1) | 4.50 | 8.52 | 6 |
+| `TIER_04` | 5,000 | 7 | 8.50 | 7.65 | +9 % | 8.52 | +22 % | level (C5.1) | 4.50 | 8.52 | 6 |
 | `TIER_05` | 15,000 | 14 | 15.83 | 16.05 | +15 % | 16.05 | +15 % | money | 10.50 | 15.85 | 11 |
-| `TIER_06` | 40,000 | 25 | 26.63 | 27.27 | +9 % | 27.27 | +9 % | money | 18.00 | 26.65 | 18 |
-| `TIER_07` | 100,000 | 40 | 41.80 | 42.70 | +7 % | 42.70 | +7 % | money | 30.00 | 41.82 | 28 |
-| `TIER_08` | 225,000 | 60 | 62.33 | 62.23 | +4 % | 62.35 | +4 % | level (C5.1) | 45.00 | 62.35 | 42 |
-| `TIER_09` | 525,000 | 85 | 89.33 | 87.15 | +3 % | 89.35 | +5 % | level (C5.1) | 66.00 | 89.35 | 60 |
-| `TIER_10` | 1,500,000 | 120 | 121.13 | 123.90 | +3 % | 123.90 | +3 % | money | 94.50 | 121.15 | 81 |
+| `TIER_06` | 40,000 | 25 | 26.63 | 27.25 | +9 % | 27.25 | +9 % | money | 18.00 | 26.65 | 18 |
+| `TIER_07` | 100,000 | 40 | 41.80 | 42.65 | +7 % | 42.65 | +7 % | money | 30.00 | 41.82 | 28 |
+| `TIER_08` | 225,000 | 60 | 62.33 | 62.08 | +3 % | 62.35 | +4 % | level (C5.1) | 45.00 | 62.35 | 42 |
+| `TIER_09` | 525,000 | 85 | 89.33 | 86.95 | +2 % | 89.35 | +5 % | level (C5.1) | 66.00 | 89.35 | 60 |
+| `TIER_10` | 1,500,000 | 120 | 121.13 | 123.82 | +3 % | 123.82 | +3 % | money | 94.50 | 121.15 | 81 |
 <!-- /sim:pacing -->
 
 Scenario A reaches the tier fund within **+2 % to +15 %** of every §C4.4 time and every tier within ±15 %, except
@@ -565,24 +571,24 @@ yet every tier lands exactly on its level gate: offline MB accelerates morphs an
 | # | Active h | Lvl (end) | Tier (end) | Net income | Tier upgrade | Mutations | Staff (hire/train) | Stations & equip. | Furniture & decor | Repairs | Recipes | Cosmetics & misc | Balance (end) | Staff/ref. | Events |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 1 | 0.00–0.25 | 2 | `TIER_01` | 554 | 0 | 0 | 0 | 7 | 5 | 6 | 0 | 1 | 535 | 1/1 | — |
-| 2 | 0.25–0.50 | 2 | `TIER_01` | 166 | 0 | 0 | 0 | 2 | 1 | 6 | 0 | 0 | 693 | 1/1 | — |
-| 3 | 0.50–0.75 | 3 | `TIER_01` | 178 | 0 | 0 | 0 | 2 | 1 | 7 | 0 | 0 | 861 | 1/1 | — |
-| 4 | 0.75–1.00 | 4 | `TIER_01` | 188 | 0 | 0 | 0 | 2 | 1 | 7 | 0 | 0 | 1,039 | 1/1 | — |
-| 5 | 1.00–1.25 | 5 | `TIER_02` | 219 | 1,000 | 0 | 0 | 18 | 12 | 8 | 0 | 2 | 217 | 1/2 | → `TIER_02` |
-| 6 | 1.25–1.50 | 5 | `TIER_02` | 269 | 0 | 0 | 0 | 8 | 6 | 10 | 0 | 1 | 461 | 1/2 | — |
-| 7 | 1.50–1.75 | 6 | `TIER_02` | 285 | 0 | 0 | 0 | 9 | 6 | 11 | 0 | 1 | 719 | 1/2 | — |
-| 8 | 1.75–2.00 | 7 | `TIER_02` | 292 | 0 | 0 | 0 | 9 | 6 | 11 | 0 | 1 | 984 | 1/2 | — |
-| 9 | 2.00–2.25 | 7 | `TIER_02` | 304 | 0 | 275 | 0 | 9 | 6 | 11 | 0 | 1 | 984 | 1/2 | — |
-| 10 | 2.25–2.50 | 8 | `TIER_02` | 315 | 0 | 0 | 0 | 10 | 7 | 12 | 0 | 1 | 1,270 | 1/2 | — |
-| 11 | 2.50–2.75 | 8 | `TIER_02` | 323 | 0 | 0 | 0 | 10 | 7 | 12 | 0 | 1 | 1,563 | 1/2 | — |
-| 12 | 2.75–3.00 | 9 | `TIER_02` | 338 | 0 | 0 | 0 | 11 | 7 | 12 | 0 | 1 | 1,869 | 1/2 | — |
-| 13 | 3.00–3.25 | 9 | `TIER_02` | 343 | 0 | 0 | 0 | 11 | 7 | 12 | 0 | 1 | 2,180 | 1/2 | — |
-| 14 | 3.25–3.50 | 10 | `TIER_03` | 415 | 2,000 | 0 | 0 | 22 | 15 | 15 | 0 | 3 | 541 | 1/4 | → `TIER_03` |
+| 2 | 0.25–0.50 | 2 | `TIER_01` | 165 | 0 | 0 | 0 | 1 | 1 | 6 | 0 | 0 | 691 | 1/1 | — |
+| 3 | 0.50–0.75 | 3 | `TIER_01` | 177 | 0 | 0 | 0 | 2 | 1 | 7 | 0 | 0 | 859 | 1/1 | — |
+| 4 | 0.75–1.00 | 4 | `TIER_01` | 187 | 0 | 0 | 0 | 2 | 1 | 7 | 0 | 0 | 1,036 | 1/1 | — |
+| 5 | 1.00–1.25 | 5 | `TIER_02` | 217 | 1,000 | 0 | 0 | 16 | 11 | 8 | 0 | 2 | 216 | 1/2 | → `TIER_02` |
+| 6 | 1.25–1.50 | 5 | `TIER_02` | 268 | 0 | 0 | 0 | 8 | 6 | 10 | 0 | 1 | 459 | 1/2 | — |
+| 7 | 1.50–1.75 | 6 | `TIER_02` | 283 | 0 | 0 | 0 | 9 | 6 | 11 | 0 | 1 | 715 | 1/2 | — |
+| 8 | 1.75–2.00 | 7 | `TIER_02` | 290 | 0 | 0 | 0 | 9 | 6 | 11 | 0 | 1 | 978 | 1/2 | — |
+| 9 | 2.00–2.25 | 7 | `TIER_02` | 302 | 0 | 275 | 0 | 9 | 6 | 11 | 0 | 1 | 976 | 1/2 | — |
+| 10 | 2.25–2.50 | 8 | `TIER_02` | 313 | 0 | 0 | 0 | 10 | 7 | 12 | 0 | 1 | 1,260 | 1/2 | — |
+| 11 | 2.50–2.75 | 8 | `TIER_02` | 320 | 0 | 0 | 0 | 10 | 7 | 12 | 0 | 1 | 1,550 | 1/2 | — |
+| 12 | 2.75–3.00 | 9 | `TIER_02` | 335 | 0 | 0 | 0 | 11 | 7 | 12 | 0 | 1 | 1,854 | 1/2 | — |
+| 13 | 3.00–3.25 | 9 | `TIER_02` | 340 | 0 | 0 | 0 | 11 | 7 | 12 | 0 | 1 | 2,162 | 1/2 | — |
+| 14 | 3.25–3.50 | 10 | `TIER_03` | 411 | 2,000 | 0 | 0 | 22 | 14 | 15 | 0 | 3 | 520 | 1/4 | → `TIER_03` |
 <!-- /sim:sim_early -->
 
 The tutorial grant buys nothing yet — it is saved, with 90 % of T1 income, into `TIER_02` at 1.15 h (the instant L5 is
 reached). The first Mutation Mart purchase (a Common) lands in the 2.00–2.25 h session. In `TIER_03` the player first buys
-an Uncommon part, then hires the Common Manager (≈ 5.9 h, offline cap 2 h → 4 h) and fills the `TIER_03` roster by
+an Uncommon part, then hires the Common Manager (≈ 6.0 h, offline cap 2 h → 4 h) and fills the `TIER_03` roster by
 8.4 h. Discretionary MB is thin by design: canon tier costs take ≈ 80 % of the first 3 h of income, so early morph
 variety comes from the tutorial part, story chapter 1 and capsules.
 
@@ -591,59 +597,59 @@ variety comes from the tutorial part, story chapter 1 and capsules.
 <!-- sim:sim_mid -->
 | # | Active h | Lvl (end) | Tier (end) | Net income | Tier upgrade | Mutations | Staff (hire/train) | Stations & equip. | Furniture & decor | Repairs | Recipes | Cosmetics & misc | Balance (end) | Staff/ref. | Events |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 14.00–15.50 | 25 | `TIER_04` | 6,739 | 0 | 1,350 | 404 | 433 | 402 | 213 | 120 | 63 | 17,317 | 5/5 | — |
-| 2 | 15.50–17.00 | 27 | `TIER_05` | 7,976 | 15,000 | 0 | 155 | 513 | 477 | 247 | 360 | 75 | 8,465 | 5/7 | → `TIER_05` |
-| 3 | 17.00–18.50 | 28 | `TIER_05` | 9,083 | 0 | 900 | 2,100 | 585 | 543 | 276 | 155 | 85 | 12,904 | 6/7 | — |
-| 4 | 18.50–20.00 | 29 | `TIER_05` | 9,599 | 0 | 1,350 | 0 | 619 | 575 | 289 | 355 | 90 | 19,225 | 6/7 | — |
-| 5 | 20.00–21.50 | 30 | `TIER_05` | 10,214 | 0 | 0 | 2,100 | 659 | 612 | 303 | 405 | 96 | 25,264 | 7/7 | — |
-| 6 | 21.50–23.00 | 32 | `TIER_05` | 10,883 | 0 | 7,900 | 0 | 703 | 653 | 319 | 415 | 102 | 26,055 | 7/7 | — |
-| 7 | 23.00–24.50 | 33 | `TIER_05` | 11,561 | 0 | 1,350 | 0 | 747 | 694 | 334 | 185 | 109 | 34,197 | 7/7 | — |
-| 8 | 24.50–26.00 | 34 | `TIER_05` | 12,258 | 0 | 1,700 | 0 | 793 | 736 | 349 | 260 | 116 | 42,501 | 7/7 | — |
-| 9 | 26.00–27.50 | 35 | `TIER_06` | 13,236 | 40,000 | 0 | 2,100 | 857 | 796 | 371 | 0 | 125 | 11,489 | 8/9 | → `TIER_06` |
-| 10 | 27.50–29.00 | 36 | `TIER_06` | 15,550 | 0 | 2,025 | 0 | 1,008 | 936 | 430 | 305 | 147 | 22,188 | 8/9 | — |
-| 11 | 29.00–30.50 | 37 | `TIER_06` | 16,393 | 0 | 9,250 | 0 | 1,063 | 987 | 447 | 610 | 155 | 26,069 | 8/9 | — |
-| 12 | 30.50–32.00 | 38 | `TIER_06` | 17,261 | 0 | 0 | 0 | 1,120 | 1,040 | 465 | 335 | 163 | 40,206 | 8/9 | — |
-| 13 | 32.00–33.50 | 39 | `TIER_06` | 18,116 | 0 | 2,025 | 10,500 | 1,177 | 1,092 | 483 | 0 | 172 | 42,874 | 9/9 | — |
-| 14 | 33.50–35.00 | 40 | `TIER_06` | 18,829 | 0 | 9,925 | 0 | 1,223 | 1,136 | 501 | 0 | 178 | 48,740 | 9/9 | — |
-| 15 | 35.00–36.50 | 41 | `TIER_06` | 19,768 | 0 | 1,350 | 0 | 1,285 | 1,193 | 519 | 0 | 187 | 63,974 | 9/9 | — |
-| 16 | 36.50–38.00 | 42 | `TIER_06` | 20,730 | 0 | 2,025 | 0 | 1,348 | 1,252 | 537 | 0 | 197 | 79,344 | 9/9 | — |
-| 17 | 38.00–39.50 | 43 | `TIER_06` | 21,712 | 0 | 9,250 | 0 | 1,413 | 1,312 | 556 | 0 | 206 | 88,319 | 9/9 | — |
-| 18 | 39.50–41.00 | 44 | `TIER_06` | 22,585 | 0 | 2,025 | 10,500 | 1,471 | 1,365 | 575 | 0 | 214 | 94,755 | 10/9 | — |
+| 1 | 14.00–15.50 | 25 | `TIER_04` | 6,746 | 0 | 1,350 | 405 | 434 | 403 | 211 | 175 | 63 | 17,214 | 5/5 | — |
+| 2 | 15.50–17.00 | 27 | `TIER_05` | 7,987 | 15,000 | 0 | 156 | 514 | 478 | 245 | 185 | 75 | 8,548 | 5/7 | → `TIER_05` |
+| 3 | 17.00–18.50 | 28 | `TIER_05` | 9,098 | 0 | 900 | 2,100 | 587 | 545 | 274 | 360 | 86 | 12,796 | 6/7 | — |
+| 4 | 18.50–20.00 | 29 | `TIER_05` | 9,617 | 0 | 1,350 | 0 | 620 | 576 | 287 | 150 | 90 | 19,339 | 6/7 | — |
+| 5 | 20.00–21.50 | 30 | `TIER_05` | 10,233 | 0 | 0 | 2,100 | 661 | 614 | 301 | 440 | 96 | 25,361 | 7/7 | — |
+| 6 | 21.50–23.00 | 32 | `TIER_05` | 10,906 | 0 | 7,900 | 0 | 705 | 654 | 317 | 415 | 103 | 26,174 | 7/7 | — |
+| 7 | 23.00–24.50 | 33 | `TIER_05` | 11,588 | 0 | 1,350 | 0 | 749 | 696 | 331 | 250 | 109 | 34,275 | 7/7 | — |
+| 8 | 24.50–26.00 | 34 | `TIER_05` | 12,287 | 0 | 1,700 | 0 | 795 | 739 | 346 | 405 | 116 | 42,462 | 7/7 | — |
+| 9 | 26.00–27.50 | 35 | `TIER_06` | 13,290 | 40,000 | 0 | 2,100 | 861 | 800 | 368 | 0 | 126 | 11,497 | 8/9 | → `TIER_06` |
+| 10 | 27.50–29.00 | 36 | `TIER_06` | 15,591 | 0 | 2,025 | 0 | 1,011 | 939 | 427 | 305 | 147 | 22,235 | 8/9 | — |
+| 11 | 29.00–30.50 | 37 | `TIER_06` | 16,437 | 0 | 9,250 | 0 | 1,067 | 991 | 444 | 610 | 155 | 26,155 | 8/9 | — |
+| 12 | 30.50–32.00 | 38 | `TIER_06` | 17,308 | 0 | 0 | 0 | 1,124 | 1,044 | 461 | 320 | 164 | 40,351 | 8/9 | — |
+| 13 | 32.00–33.50 | 39 | `TIER_06` | 18,159 | 0 | 2,025 | 10,500 | 1,180 | 1,096 | 479 | 0 | 172 | 43,058 | 9/9 | — |
+| 14 | 33.50–35.00 | 40 | `TIER_06` | 18,882 | 0 | 9,925 | 0 | 1,227 | 1,140 | 497 | 0 | 179 | 48,973 | 9/9 | — |
+| 15 | 35.00–36.50 | 41 | `TIER_06` | 19,825 | 0 | 1,350 | 0 | 1,289 | 1,197 | 515 | 0 | 188 | 64,259 | 9/9 | — |
+| 16 | 36.50–38.00 | 42 | `TIER_06` | 20,790 | 0 | 2,025 | 0 | 1,353 | 1,256 | 533 | 0 | 197 | 79,685 | 9/9 | — |
+| 17 | 38.00–39.50 | 43 | `TIER_06` | 21,776 | 0 | 9,250 | 0 | 1,418 | 1,317 | 551 | 0 | 207 | 88,718 | 9/9 | — |
+| 18 | 39.50–41.00 | 44 | `TIER_06` | 22,645 | 0 | 2,025 | 10,500 | 1,475 | 1,370 | 570 | 0 | 215 | 95,208 | 10/9 | — |
 <!-- /sim:sim_mid -->
 
 Mid-game sessions each buy something meaningful (a Rare part ≈ every 3 sessions, a hire or an upgrade most sessions)
-while the tier fund rebuilds; `TIER_06` arrives at 27.3 h (+9 %).
+while the tier fund rebuilds; `TIER_06` arrives at 27.25 h (+9 %).
 
 #### 22.12.3 Late Game — `TIER_09` to post-`TIER_10` (85 h → 135 h), 2.5-hour sessions (generated)
 
 <!-- sim:sim_late -->
 | # | Active h | Lvl (end) | Tier (end) | Net income | Tier upgrade | Mutations | Staff (hire/train) | Stations & equip. | Furniture & decor | Repairs | Recipes | Cosmetics & misc | Balance (end) | Staff/ref. | Events |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 85.00–87.50 | 67 | `TIER_08` | 137,700 | 0 | 20,503 | 55,000 | 7,646 | 9,175 | 2,710 | 0 | 1,560 | 622,555 | 14/13 | — |
-| 2 | 87.50–90.00 | 68 | `TIER_09` | 147,377 | 525,000 | 26,959 | 0 | 12,127 | 14,553 | 2,880 | 1,135 | 2,475 | 184,803 | 14/15 | → `TIER_09` |
-| 3 | 90.00–92.50 | 69 | `TIER_09` | 165,969 | 0 | 10,125 | 0 | 7,819 | 9,383 | 3,195 | 4,725 | 1,596 | 313,929 | 14/15 | — |
-| 4 | 92.50–95.00 | 70 | `TIER_09` | 172,783 | 0 | 20,250 | 55,000 | 8,141 | 9,769 | 3,323 | 600 | 1,661 | 387,968 | 15/15 | — |
-| 5 | 95.00–97.50 | 71 | `TIER_09` | 180,859 | 0 | 20,250 | 0 | 8,524 | 10,228 | 3,454 | 0 | 1,739 | 524,631 | 15/15 | — |
-| 6 | 97.50–100.00 | 72 | `TIER_09` | 188,773 | 0 | 15,000 | 55,000 | 8,898 | 10,678 | 3,589 | 0 | 1,816 | 618,423 | 16/15 | — |
-| 7 | 100.00–102.50 | 73 | `TIER_09` | 196,743 | 0 | 30,375 | 0 | 9,275 | 11,130 | 3,727 | 0 | 1,893 | 758,767 | 16/15 | — |
-| 8 | 102.50–105.00 | 74 | `TIER_09` | 205,492 | 0 | 290,188 | 55,000 | 9,690 | 11,628 | 3,867 | 0 | 1,978 | 591,909 | 16/15 | — |
-| 9 | 105.00–107.50 | 75 | `TIER_09` | 213,765 | 0 | 25,000 | 0 | 10,081 | 12,098 | 4,011 | 0 | 2,057 | 752,426 | 16/15 | — |
-| 10 | 107.50–110.00 | 75 | `TIER_09` | 223,142 | 0 | 30,375 | 55,000 | 10,526 | 12,632 | 4,159 | 0 | 2,148 | 860,728 | 16/15 | — |
-| 11 | 110.00–112.50 | 76 | `TIER_09` | 232,056 | 0 | 15,188 | 0 | 10,948 | 13,138 | 4,310 | 0 | 2,234 | 1,046,965 | 16/15 | — |
-| 12 | 112.50–115.00 | 77 | `TIER_09` | 241,328 | 0 | 22,500 | 0 | 11,389 | 13,667 | 4,451 | 0 | 2,324 | 1,233,963 | 16/15 | — |
-| 13 | 115.00–117.50 | 78 | `TIER_09` | 250,807 | 0 | 22,500 | 0 | 11,839 | 14,207 | 4,594 | 0 | 2,416 | 1,429,213 | 16/15 | — |
-| 14 | 117.50–120.00 | 79 | `TIER_09` | 260,488 | 0 | 45,562 | 0 | 12,299 | 14,759 | 4,740 | 0 | 2,510 | 1,609,830 | 16/15 | — |
-| 15 | 120.00–122.50 | 80 | `TIER_09` | 270,366 | 0 | 22,781 | 0 | 12,769 | 15,323 | 4,887 | 0 | 2,606 | 1,821,831 | 16/15 | — |
-| 16 | 122.50–125.00 | 81 | `TIER_10` | 296,566 | 1,500,000 | 322,781 | 165,000 | 20,884 | 25,060 | 5,355 | 4,665 | 4,262 | 70,389 | 19/19 | → `TIER_10` |
-| 17 | 125.00–127.50 | 82 | `TIER_10` | 328,417 | 0 | 25,000 | 0 | 31,603 | 37,923 | 5,941 | 0 | 6,450 | 291,890 | 19/19 | — |
-| 18 | 127.50–130.00 | 83 | `TIER_10` | 340,140 | 0 | 65,000 | 0 | 32,732 | 39,278 | 6,144 | 0 | 6,680 | 482,196 | 19/19 | — |
-| 19 | 130.00–132.50 | 83 | `TIER_10` | 353,984 | 0 | 85,000 | 0 | 34,065 | 40,878 | 6,384 | 0 | 6,952 | 662,902 | 19/19 | — |
-| 20 | 132.50–135.00 | 84 | `TIER_10` | 364,682 | 0 | 85,000 | 315,000 | 35,090 | 42,109 | 6,616 | 0 | 7,161 | 536,608 | 20/19 | — |
+| 1 | 85.00–87.50 | 67 | `TIER_08` | 138,640 | 0 | 20,503 | 55,000 | 8,237 | 9,885 | 2,692 | 0 | 1,681 | 634,864 | 14/13 | — |
+| 2 | 87.50–90.00 | 68 | `TIER_09` | 148,438 | 525,000 | 27,084 | 0 | 12,219 | 14,663 | 2,859 | 1,135 | 2,494 | 197,847 | 14/15 | → `TIER_09` |
+| 3 | 90.00–92.50 | 69 | `TIER_09` | 166,901 | 0 | 20,125 | 55,000 | 7,867 | 9,441 | 3,171 | 4,725 | 1,606 | 262,814 | 15/15 | — |
+| 4 | 92.50–95.00 | 70 | `TIER_09` | 173,736 | 0 | 10,125 | 0 | 8,190 | 9,828 | 3,296 | 600 | 1,671 | 402,840 | 15/15 | — |
+| 5 | 95.00–97.50 | 71 | `TIER_09` | 181,861 | 0 | 20,250 | 0 | 8,576 | 10,291 | 3,425 | 0 | 1,750 | 540,409 | 15/15 | — |
+| 6 | 97.50–100.00 | 72 | `TIER_09` | 189,471 | 0 | 30,188 | 55,000 | 8,936 | 10,723 | 3,556 | 0 | 1,824 | 619,655 | 16/15 | — |
+| 7 | 100.00–102.50 | 73 | `TIER_09` | 197,631 | 0 | 15,188 | 0 | 9,322 | 11,187 | 3,691 | 0 | 1,902 | 775,997 | 16/15 | — |
+| 8 | 102.50–105.00 | 74 | `TIER_09` | 206,102 | 0 | 300,188 | 55,000 | 9,724 | 11,669 | 3,828 | 0 | 1,984 | 599,706 | 16/15 | — |
+| 9 | 105.00–107.50 | 75 | `TIER_09` | 214,516 | 0 | 15,000 | 0 | 10,122 | 12,147 | 3,969 | 0 | 2,066 | 770,917 | 16/15 | — |
+| 10 | 107.50–110.00 | 75 | `TIER_09` | 223,614 | 0 | 30,375 | 55,000 | 10,554 | 12,665 | 4,113 | 0 | 2,154 | 879,671 | 16/15 | — |
+| 11 | 110.00–112.50 | 76 | `TIER_09` | 232,632 | 0 | 15,188 | 0 | 10,981 | 13,178 | 4,261 | 0 | 2,241 | 1,066,454 | 16/15 | — |
+| 12 | 112.50–115.00 | 77 | `TIER_09` | 241,808 | 0 | 22,500 | 0 | 11,418 | 13,701 | 4,398 | 0 | 2,330 | 1,253,915 | 16/15 | — |
+| 13 | 115.00–117.50 | 78 | `TIER_09` | 251,185 | 0 | 45,281 | 0 | 11,863 | 14,236 | 4,538 | 0 | 2,421 | 1,426,760 | 16/15 | — |
+| 14 | 117.50–120.00 | 79 | `TIER_09` | 260,757 | 0 | 22,781 | 0 | 12,319 | 14,782 | 4,679 | 0 | 2,514 | 1,630,442 | 16/15 | — |
+| 15 | 120.00–122.50 | 80 | `TIER_09` | 270,519 | 0 | 22,781 | 0 | 12,783 | 15,339 | 4,823 | 0 | 2,609 | 1,842,627 | 16/15 | — |
+| 16 | 122.50–125.00 | 81 | `TIER_10` | 297,793 | 1,500,000 | 322,781 | 165,000 | 21,457 | 25,748 | 5,304 | 4,665 | 4,379 | 91,085 | 19/19 | → `TIER_10` |
+| 17 | 125.00–127.50 | 82 | `TIER_10` | 328,317 | 0 | 25,000 | 0 | 31,601 | 37,921 | 5,858 | 0 | 6,449 | 312,572 | 19/19 | — |
+| 18 | 127.50–130.00 | 83 | `TIER_10` | 339,895 | 0 | 65,000 | 0 | 32,716 | 39,259 | 6,056 | 0 | 6,677 | 502,759 | 19/19 | — |
+| 19 | 130.00–132.50 | 83 | `TIER_10` | 353,560 | 0 | 85,000 | 0 | 34,033 | 40,839 | 6,289 | 0 | 6,945 | 683,212 | 19/19 | — |
+| 20 | 132.50–135.00 | 84 | `TIER_10` | 363,847 | 0 | 85,000 | 315,000 | 35,019 | 42,022 | 6,515 | 0 | 7,147 | 556,357 | 20/19 | — |
 <!-- /sim:sim_late -->
 
 In `TIER_09` sessions alternate Epic staff hires (replacing surplus low-rarity staff at the cap) and Epic part upgrades
 while the mutation budget saves for a Legendary part (bought in the 102.5–105 h session) and the tier fund builds the
-1,500,000 MB for `TIER_10`. After `TIER_10` (123.9 h, +3 %) the released fund buys another Legendary part and three Epic
+1,500,000 MB for `TIER_10`. After `TIER_10` (123.8 h, +3 %) the released fund buys another Legendary part and three Epic
 hires, Legendary staff follow, and the binding constraint becomes MS (§22.13).
 
 #### 22.12.4 Where the Money Goes (share of net income per tier phase, generated)
@@ -653,16 +659,16 @@ Scenario A (active only):
 <!-- sim:phase_mix -->
 | Tier phase | Net income in phase | of which offline | Tier fund | Mutations | Staff | Stations & equip. | Furniture & decor | Repairs | Recipes & misc | Cosmetics & prestige | Held (Δ balance) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| `TIER_01` | 1,216 | 0 | 82 % | 0 % | 0 % | 2 % | 1 % | 3 % | 0 % | 0 % | 11 % |
-| `TIER_02` | 2,674 | 0 | 75 % | 10 % | 0 % | 3 % | 2 % | 4 % | 0 % | 0 % | 5 % |
-| `TIER_03` | 11,336 | 0 | 44 % | 12 % | 26 % | 8 % | 5 % | 3 % | 3 % | 0 % | -1 % |
-| `TIER_04` | 30,025 | 0 | 50 % | 7 % | 9 % | 6 % | 6 % | 3 % | 4 % | 0 % | 14 % |
-| `TIER_05` | 79,967 | 0 | 50 % | 17 % | 8 % | 6 % | 6 % | 3 % | 3 % | 0 % | 7 % |
-| `TIER_06` | 200,097 | 0 | 50 % | 25 % | 10 % | 6 % | 6 % | 3 % | 2 % | 0 % | -2 % |
-| `TIER_07` | 472,142 | 0 | 48 % | 20 % | 9 % | 5 % | 6 % | 2 % | 1 % | 0 % | 9 % |
-| `TIER_08` | 1,219,131 | 0 | 43 % | 19 % | 14 % | 5 % | 6 % | 2 % | 1 % | 0 % | 9 % |
-| `TIER_09` | 3,000,301 | 0 | 50 % | 20 % | 13 % | 5 % | 6 % | 2 % | 1 % | 0 % | 4 % |
-| `TIER_10` | 2,294,276 | 0 | 0 % | 38 % | 14 % | 10 % | 12 % | 2 % | 2 % | 0 % | 23 % |
+| `TIER_01` | 1,212 | 0 | 83 % | 0 % | 0 % | 2 % | 1 % | 3 % | 0 % | 0 % | 10 % |
+| `TIER_02` | 2,654 | 0 | 75 % | 10 % | 0 % | 3 % | 2 % | 4 % | 0 % | 0 % | 5 % |
+| `TIER_03` | 11,292 | 0 | 44 % | 12 % | 26 % | 8 % | 5 % | 3 % | 3 % | 0 % | -2 % |
+| `TIER_04` | 30,040 | 0 | 50 % | 7 % | 9 % | 6 % | 6 % | 3 % | 4 % | 0 % | 14 % |
+| `TIER_05` | 79,985 | 0 | 50 % | 17 % | 8 % | 6 % | 6 % | 3 % | 4 % | 0 % | 7 % |
+| `TIER_06` | 200,015 | 0 | 50 % | 25 % | 10 % | 7 % | 6 % | 3 % | 2 % | 0 % | -2 % |
+| `TIER_07` | 477,095 | 0 | 47 % | 20 % | 9 % | 5 % | 6 % | 2 % | 1 % | 0 % | 9 % |
+| `TIER_08` | 1,231,110 | 0 | 43 % | 20 % | 13 % | 5 % | 7 % | 2 % | 1 % | 0 % | 9 % |
+| `TIER_09` | 2,999,600 | 0 | 50 % | 20 % | 13 % | 5 % | 6 % | 2 % | 1 % | 0 % | 4 % |
+| `TIER_10` | 2,301,304 | 0 | 0 % | 38 % | 14 % | 10 % | 12 % | 2 % | 2 % | 0 % | 23 % |
 <!-- /sim:phase_mix -->
 
 Scenario B (with offline earnings):
@@ -670,20 +676,20 @@ Scenario B (with offline earnings):
 <!-- sim:phase_mix_offline -->
 | Tier phase | Net income in phase | of which offline | Tier fund | Mutations | Staff | Stations & equip. | Furniture & decor | Repairs | Recipes & misc | Cosmetics & prestige | Held (Δ balance) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| `TIER_01` | 1,216 | 0 | 82 % | 0 % | 0 % | 2 % | 1 % | 3 % | 0 % | 0 % | 11 % |
-| `TIER_02` | 10,800 | 8,154 | 28 % | 44 % | 4 % | 11 % | 7 % | 1 % | 7 % | 0 % | -1 % |
-| `TIER_03` | 32,900 | 21,793 | 15 % | 37 % | 15 % | 12 % | 8 % | 1 % | 2 % | 0 % | 9 % |
-| `TIER_04` | 94,306 | 65,551 | 16 % | 32 % | 17 % | 11 % | 11 % | 1 % | 2 % | 0 % | 10 % |
-| `TIER_05` | 387,592 | 314,150 | 11 % | 36 % | 2 % | 12 % | 11 % | 1 % | 2 % | 18 % | 8 % |
-| `TIER_06` | 1,009,198 | 822,179 | 12 % | 24 % | 3 % | 12 % | 11 % | 1 % | 2 % | 32 % | 3 % |
-| `TIER_07` | 3,480,121 | 3,008,913 | 8 % | 17 % | 4 % | 9 % | 11 % | 0 % | 2 % | 46 % | 3 % |
-| `TIER_08` | 8,611,076 | 7,431,737 | 6 % | 15 % | 3 % | 9 % | 11 % | 0 % | 2 % | 52 % | 2 % |
-| `TIER_09` | 19,285,800 | 16,608,799 | 7 % | 11 % | 1 % | 9 % | 11 % | 0 % | 2 % | 58 % | 1 % |
-| `TIER_10` | 19,407,272 | 16,836,045 | 0 % | 6 % | 9 % | 10 % | 12 % | 0 % | 2 % | 59 % | 2 % |
+| `TIER_01` | 1,212 | 0 | 83 % | 0 % | 0 % | 2 % | 1 % | 3 % | 0 % | 0 % | 10 % |
+| `TIER_02` | 10,719 | 8,093 | 28 % | 38 % | 4 % | 10 % | 7 % | 1 % | 7 % | 0 % | 5 % |
+| `TIER_03` | 32,761 | 21,703 | 15 % | 38 % | 15 % | 12 % | 8 % | 1 % | 2 % | 0 % | 8 % |
+| `TIER_04` | 94,349 | 65,581 | 16 % | 32 % | 17 % | 11 % | 11 % | 1 % | 2 % | 0 % | 9 % |
+| `TIER_05` | 388,396 | 314,799 | 11 % | 41 % | 7 % | 12 % | 11 % | 1 % | 2 % | 13 % | 2 % |
+| `TIER_06` | 1,008,848 | 821,599 | 12 % | 25 % | 1 % | 12 % | 11 % | 0 % | 2 % | 32 % | 5 % |
+| `TIER_07` | 3,519,798 | 3,043,094 | 8 % | 16 % | 4 % | 9 % | 11 % | 0 % | 2 % | 47 % | 3 % |
+| `TIER_08` | 8,701,916 | 7,510,134 | 6 % | 14 % | 3 % | 9 % | 11 % | 0 % | 2 % | 53 % | 2 % |
+| `TIER_09` | 19,354,133 | 16,667,822 | 7 % | 11 % | 1 % | 9 % | 11 % | 0 % | 2 % | 58 % | 2 % |
+| `TIER_10` | 19,436,072 | 16,860,770 | 0 % | 7 % | 9 % | 10 % | 12 % | 0 % | 2 % | 59 % | 1 % |
 <!-- /sim:phase_mix_offline -->
 
 Scenario A confirms the §C4.4 design intent (≈ 50 % of income to tiers in T3–T9, ≈ 50 % to mutations, staff, stations,
-decor and repairs). Scenario B shows the size of the late MB surplus that prestige sinks must absorb (18 % of income at
+decor and repairs). Scenario B shows the size of the late MB surplus that prestige sinks must absorb (13 % of income at
 `TIER_05`, rising to ≈ 58–59 % at `TIER_09`–`TIER_10`) — the quantitative basis for §22.14.3.
 
 ### 22.13 Mutation Shard and Research Token Flows
@@ -712,17 +718,17 @@ mid = `TIER_04`–`06`, late = `TIER_07`–`10`.
 | 1 | 266 | 350 | 22 | 638 | 0 | 638 | 5 | 3 | 0 | 0 | 8 | 0 | 8 |
 | 2 | 420 | 350 | 34 | 804 | 216 | 1,227 | 5 | 3 | 5 | 0 | 13 | 0 | 21 |
 | 3 | 420 | 350 | 34 | 804 | 326 | 1,705 | 5 | 3 | 8 | 0 | 16 | 0 | 37 |
-| 4 | 420 | 350 | 34 | 804 | 586 | 1,923 | 5 | 3 | 0 | 0 | 8 | 0 | 45 |
-| 5 | 616 | 550 | 52 | 1,218 | 744 | 2,397 | 10 | 5 | 10 | 0 | 25 | 0 | 70 |
-| 6 | 630 | 550 | 53 | 1,233 | 1,064 | 2,567 | 10 | 5 | 12 | 0 | 27 | 0 | 97 |
-| 7 | 630 | 550 | 53 | 1,233 | 1,140 | 2,660 | 10 | 5 | 0 | 0 | 15 | 0 | 112 |
-| 8 | 630 | 550 | 53 | 1,233 | 1,314 | 2,580 | 10 | 5 | 0 | 1 | 16 | 0 | 128 |
-| 9 | 630 | 550 | 53 | 1,233 | 1,448 | 2,365 | 10 | 5 | 15 | 5 | 35 | 4 | 159 |
-| 10 | 630 | 550 | 53 | 1,233 | 1,495 | 2,104 | 10 | 5 | 0 | 5 | 20 | 18 | 161 |
-| 11 | 630 | 550 | 53 | 1,233 | 1,951 | 1,386 | 10 | 5 | 0 | 5 | 20 | 6 | 176 |
-| 12 | 630 | 550 | 53 | 1,233 | 2,018 | 602 | 10 | 5 | 20 | 5 | 40 | 22 | 194 |
-| 13 | 630 | 550 | 53 | 1,233 | 1,270 | 565 | 10 | 5 | 25 | 5 | 45 | 0 | 239 |
-| 14 | 210 | 0 | 18 | 228 | 770 | 23 | 0 | 0 | 0 | 2 | 2 | 0 | 241 |
+| 4 | 420 | 350 | 34 | 804 | 656 | 1,853 | 5 | 3 | 0 | 0 | 8 | 0 | 45 |
+| 5 | 617 | 550 | 52 | 1,219 | 674 | 2,398 | 10 | 5 | 10 | 0 | 25 | 0 | 70 |
+| 6 | 630 | 550 | 53 | 1,233 | 1,064 | 2,568 | 10 | 5 | 12 | 0 | 27 | 0 | 97 |
+| 7 | 630 | 550 | 53 | 1,233 | 1,140 | 2,661 | 10 | 5 | 0 | 0 | 15 | 0 | 112 |
+| 8 | 630 | 550 | 53 | 1,233 | 1,314 | 2,581 | 10 | 5 | 0 | 1 | 16 | 0 | 128 |
+| 9 | 630 | 550 | 53 | 1,233 | 1,448 | 2,366 | 10 | 5 | 15 | 5 | 35 | 4 | 159 |
+| 10 | 630 | 550 | 53 | 1,233 | 1,805 | 1,795 | 10 | 5 | 0 | 5 | 20 | 18 | 161 |
+| 11 | 630 | 550 | 53 | 1,233 | 1,641 | 1,387 | 10 | 5 | 0 | 5 | 20 | 6 | 176 |
+| 12 | 630 | 550 | 53 | 1,233 | 2,018 | 603 | 10 | 5 | 20 | 5 | 40 | 22 | 194 |
+| 13 | 630 | 550 | 53 | 1,233 | 1,270 | 566 | 10 | 5 | 25 | 5 | 45 | 0 | 239 |
+| 14 | 210 | 0 | 18 | 228 | 770 | 24 | 0 | 0 | 0 | 2 | 2 | 0 | 241 |
 <!-- /sim:ms_rt -->
 
 MS accumulates through the mid-game (a ≈ 2,600 MS reserve by week 7 lets players afford Rare/Epic purchases and the
@@ -909,7 +915,7 @@ end
 ### 22.18 Acceptance Criteria
 
 - **AC-22-01:** `python3 gdd/tools/economy_sim.py --check` exits 0: the model's net MB/active hour at every tier entry is
-  within ±5 % of §C4.4 (current max deviation 3.7 %).
+  within ±5 % of §C4.4 (current max deviation 3.4 %).
 - **AC-22-02:** In the scenario-A simulation every tier's money-ready time is within ±20 % of §C4.4 and every reach time is
   within ±20 % or equals its §C5.1 level gate (±0.05 h).
 - **AC-22-03:** In the scenario-B simulation (with offline earnings) no tier is reached before its §C5.1 level gate.
@@ -936,4 +942,4 @@ end
   and the pity rule grants Epic-or-better on the 40th dry capsule in 100 % of cases.
 - **AC-22-19:** There is no UI, remote or API that moves currency, parts, capsules, staff or furniture between two players.
 - **AC-22-20:** The menu-weighted average item price of the best `MenuSlots[T]` recipes in §6 stays within ±10 % of
-  `1.10 × BasePrice(1 + 0.835 (L − 1))` for every level 1–100 (validator recomputation).
+  `1.08 × BasePrice(1 + 0.825 (L − 1))` for every level 1–100 (validator recomputation).

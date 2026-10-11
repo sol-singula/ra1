@@ -1,6 +1,6 @@
 ### 36.3 Mutation Parts Database
 
-All **280** mutation parts with their full specification. Identity columns (ID, name, slot, category, rarity, family, tags, active ability) are canon-fixed; everything else is defined here by the Mutation System owner. Rules that govern these rows (slots, compatibility, rig assembly, rarities, upgrades, generation, balance caps) live in §12. Synergies between parts are in §36.4, example combinations in §36.5, abilities in §36.6 and status effects in §36.7.
+All **280** mutation parts with their full specification. Identity columns (ID, name, slot, category, rarity, family, tags, active ability) are canon-fixed; everything else is defined here by the Mutation System owner. Rules that govern these rows (slots, compatibility, rig assembly, rarities, upgrades, generation, balance caps) live in §12. Synergies between parts are in §36.4, example combinations in §36.5, abilities in §36.6 and status effects in §36.7. Every non-canon number in the rows (stat splits, passive magnitudes, prices, triangle budgets) is a [TUNABLE] balancing assumption kept inside the canon constraints that the renderer checks.
 
 > **Data-backed table.** Source of truth: `gdd/data/mutations.json`. Rendered by `python3 gdd/tools/render_mutations.py`, which also validates canon fidelity, stat budgets, prices, enums, rig flags and triangle budgets. Never edit this file by hand; edit the JSON and re-render. The same JSON feeds the generated `MutationDefs` Luau module (§27).
 
@@ -19,7 +19,7 @@ All **280** mutation parts with their full specification. Identity columns (ID, 
 | Model & animation requirements | MP = MeshParts in the part (player Hi LOD); tris = player Hi LOD budget; NPC = Lo LOD tris used for customers/employees (§12.3). Flags: **faceLocked** (hides FACE/NOSE/MOUTH/EYES visuals and shows a screen-emote; those parts stay active), **handsLocked** (hides the HANDS part on that side; the arm supplies its own grip point), **blocksWings** (cannot be worn with WINGS), `hides` (visual only), size class, LegLength / NeckLength (studs), procedural motion type, then part-specific rig notes. Named Motor6D joints are used by the ability clips in §36.14. |
 | Balance limitation | Part-specific limits on top of the global caps in §12.8 (stacking, PvP conversion, scope). |
 
-#### 36.3.2 Counts by slot and rarity
+#### 36.3.2 Counts by slot, category and rarity
 
 | Part slot code | Common | Uncommon | Rare | Epic | Legendary | Mythic | Secret | Total |
 |---|---|---|---|---|---|---|---|---|
@@ -43,6 +43,26 @@ All **280** mutation parts with their full specification. Identity columns (ID, 
 | FUR | 2 | 2 | 2 | · | · | · | · | **6** |
 | SCALES | 2 | 1 | 2 | 1 | · | · | · | **6** |
 | FX | 2 | 2 | 3 | 1 | · | · | 2 | **10** |
+| **Total** | **63** | **84** | **75** | **36** | **10** | **5** | **7** | **280** |
+
+| Category | Common | Uncommon | Rare | Epic | Legendary | Mythic | Secret | Total |
+|---|---|---|---|---|---|---|---|---|
+| MAMMAL | 31 | 23 | 9 | 1 | · | · | · | **64** |
+| BIRD | 9 | 7 | 2 | · | · | · | · | **18** |
+| REPTILE | 4 | 9 | 4 | · | · | · | · | **17** |
+| AMPHIBIAN | 5 | 2 | · | · | · | · | · | **7** |
+| FISH | 5 | 4 | 6 | · | · | · | · | **15** |
+| INSECT | · | 6 | 7 | · | · | · | · | **13** |
+| ARACHNID | 1 | 3 | 2 | · | · | · | · | **6** |
+| MARINE | 1 | 6 | 6 | 1 | 3 | · | · | **17** |
+| DINOSAUR | · | 1 | 2 | 5 | · | · | · | **8** |
+| MYTHOLOGICAL | · | 1 | 2 | 8 | 5 | 1 | · | **17** |
+| ROBOT | · | 4 | 11 | 3 | · | · | 1 | **19** |
+| OBJECT | 5 | 8 | 10 | 3 | 2 | · | 2 | **30** |
+| FOOD | 1 | 2 | 2 | 1 | · | 1 | 1 | **8** |
+| PLANT | 1 | 6 | 4 | 1 | · | · | · | **12** |
+| ALIEN | · | 1 | 2 | 6 | · | 3 | 3 | **15** |
+| ELEMENTAL | · | 1 | 6 | 7 | · | · | · | **14** |
 | **Total** | **63** | **84** | **75** | **36** | **10** | **5** | **7** | **280** |
 
 Totals by rarity: ● Common 63 · ▲ Uncommon 84 · ■ Rare 75 · ⬟ Epic 36 · ★ Legendary 10 · ⬢ Mythic 5 · ? Secret 7 · parts with an active ability: 62 · faceLocked heads: 5 · handsLocked arms: 19 · wing-blocking back parts: 5.

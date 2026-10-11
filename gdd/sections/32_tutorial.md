@@ -66,10 +66,10 @@ always skip once they've cooked their first burger.
 | Auto-Flip assist | after 3 BURNED patties in one step, the next patty auto-removes at GOOD | the only auto-complete assist |
 | Assembly ghost | shown after 2 wrong-order attempts | |
 | Karenosaurus anger beats | 32 → 48 → 63 → 78, 4.0 s apart after serve (or 30 s after ordering if unserved) | escalation rolls bypassed (scripted) |
-| Karenosaurus combat | Huff Points 48; 4 damage per hit; wind-up 1.0 s (1.5 s after 2 missed blocks); ≥ 3.0 s between attacks; walk speed 10 | canon defaults in §11 apply after the tutorial |
+| Karenosaurus combat | Huff Points 48; 4 damage per hit (§11's tutorial incoming-damage ×0.5 on her 8-damage swipe); wind-up 1.0 s (1.5 s after 2 missed blocks); ≥ 3.0 s between attacks; walk speed 10 | canon defaults in §11 apply after the tutorial |
 | Player "Plot Armor" | HP cannot drop below 1 during step 7 | no KO in the tutorial |
 | Polite Demon splash | anger set to 35 (Complaining) when hit by the scripted throw | demonstrates +25 × sensitivity |
-| First repair | free | §15 prices apply afterwards |
+| Tutorial repairs | free; the first uses the full 3-point minigame, the rest are 1-point quick repairs | §15 prices and minigame apply afterwards |
 | Pigeon Taxi assist | offered free after 40 s of walking in step 10, or if the player is > 60 studs off the trail for 10 s | canon fare 25 MB × tier otherwise |
 | Idle handling | nudge at 30 s; pause (timers frozen, "Paused – press any key") at 90 s | |
 | Guidance escalation | L1 at step start; L2 after 8 s without progress; L3 after 20 s; L4 per-step trigger | |
@@ -89,29 +89,29 @@ per-serve values apply).
 | 00:40–01:20 | 2 `QST_TUT_002` | Grandma Golem walks in, reads the menu and waves; the player takes the order; ticket and patience ring explained | 2 | 0 | 0 |
 | 01:20–01:45 | 3 `QST_TUT_003` | Bun from the Pantry to the Assembly Counter | 3 | 0 | 0 |
 | 01:45–02:10 | 3 | Patty from the Fridge onto the Grill | 3 | 0 | 0 |
-| 02:10–02:40 | 3 | Grill timing ring; remove at PERFECT or GOOD | 3 | 0 | 0 |
+| 02:10–02:40 | 3 | Flip at the arrow, then take it off in the green (PERFECT) or amber (GOOD) | 3 | 0 | 0 |
 | 02:40–03:20 | 3 | Assemble bun → patty → bun; **skip becomes available** | 3 | 50 | 60 |
-| 03:20–04:00 | 4 `QST_TUT_004` | Plate, then serve at the Serving Window; Grandma eats | 3, 4 | 75 | ≈ 103 |
-| 04:00–04:30 | 5 `QST_TUT_005` | Satisfaction reaction card; pay + tip; MB counter appears | 5, 9 | ≈ 83 | ≈ 103 |
-| 04:30–06:00 | 5 | Polite Demon orders Cheeseburger + Fizzy Soda; the player cooks with fewer hints (two trips: carry 1) | 2–5 | ≈ 171 | ≈ 146 |
-| 06:00–06:25 | 6 `QST_TUT_006` | Lights flicker; the Karenosaurus storms in and orders the impossible | 6 | ≈ 171 | ≈ 146 |
-| 06:25–07:05 | 6 | The player serves a Cheeseburger | 6 | ≈ 171 | ≈ 160 |
-| 07:05–07:30 | 6 | Escalation: complain → soggy pickle → **table flip** → she turns on the player | 6 | ≈ 196 | ≈ 180 |
-| 07:30–07:55 | 7 `QST_TUT_007` | Block ×2 | 7 | ≈ 196 | ≈ 180 |
-| 07:55–08:15 | 7 | Dodge Roll; the thrown soda splashes the Polite Demon (chain reaction) | 6, 7 | ≈ 196 | ≈ 180 |
-| 08:15–08:40 | 7 | Swipe Combo ×2 → Dizzy → apology → Apology Payment → escorted out | 7 | ≈ 197 | ≈ 180 |
-| 08:40–09:00 | 7 | Calm Down! on the Polite Demon; "dinner theater" tip; **Level 2** | 6, 7 | ≈ 275 | ≈ 230 |
-| 09:00–09:50 | 8 `QST_TUT_008` | Repair the broken table; mop the pickle puddle | 8 | ≈ 325 | ≈ 270 |
-| 09:50–10:20 | 9 `QST_TUT_009` | Register cha-ching; Shift Receipt; Nana's Inheritance Envelope | 9 | ≈ 475 | ≈ 290 |
-| 10:20–11:05 | 10 `QST_TUT_010` | Footprint trail to the Mutation Mart (free Pigeon Taxi if slow) | 10 | ≈ 475 | ≈ 290 |
-| 11:05–11:50 | 10 | Starter Pod ceremony: try on and choose `MUT_145` / `MUT_144` / `MUT_153` | 10 | ≈ 475 | ≈ 290 |
-| 11:50–12:20 | 10 | Equip in the Morph menu, try the ability on the Complaint Dummy; Downtown gate opens | 10 | ≈ 525 | ≈ 330 |
-| 12:20–12:40 | 11 `QST_TUT_011` | Return Door home | 11 | ≈ 525 | ≈ 330 |
-| 12:40–13:20 | 11 | Restaurant Hub → Upgrades → buy the circled upgrade; Bolt installs it | 11 | ≈ 375 | ≈ 360 |
-| 13:20–13:50 | 12 `QST_TUT_012` | Ollie at the door; hire (0 MB); assign as Chef to the Grill | 12 | ≈ 375 | ≈ 360 |
-| 13:50–14:20 | 12 | Ollie cooks two patties at once for a walk-in (bonus pickle) | 12 | ≈ 382 | ≈ 360 |
-| 14:20–14:40 | 12 | **Offline Income Preview** card (≈ 350 MB in 2 h) | 12 | ≈ 382 | ≈ 360 |
-| 14:40–15:00 | graduation | Nana's speech; title, graduation capsule; next goal "Save 1,000 MB for Tiny Mutation Diner" | — | ≈ 432 | ≈ 400 |
+| 03:20–04:00 | 4 `QST_TUT_004` | Plate, then serve at the Serving Window; Grandma eats | 3, 4 | 75 | ≈ 102 |
+| 04:00–04:30 | 5 `QST_TUT_005` | Satisfaction reaction card; pay + tip; MB counter appears | 5, 9 | ≈ 83 | ≈ 109 |
+| 04:30–06:00 | 5 | Polite Demon orders Cheeseburger + Fizzy Soda; the player cooks with fewer hints (two trips: carry 1) | 2–5 | ≈ 171 | ≈ 168 |
+| 06:00–06:25 | 6 `QST_TUT_006` | Lights flicker; the Karenosaurus storms in and orders the impossible | 6 | ≈ 171 | ≈ 168 |
+| 06:25–07:05 | 6 | The player serves a Cheeseburger | 6 | ≈ 171 | ≈ 181 |
+| 07:05–07:30 | 6 | Escalation: complain → soggy pickle → **table flip** → she turns on the player | 6 | ≈ 196 | ≈ 201 |
+| 07:30–07:55 | 7 `QST_TUT_007` | Block ×2 | 7 | ≈ 196 | ≈ 201 |
+| 07:55–08:15 | 7 | Dodge Roll; the thrown soda splashes the Polite Demon (chain reaction) | 6, 7 | ≈ 196 | ≈ 201 |
+| 08:15–08:40 | 7 | Swipe Combo ×2 → Dizzy → apology → Apology Payment → escorted out | 7 | ≈ 197 | ≈ 215 |
+| 08:40–09:00 | 7 | Calm Down! on the Polite Demon; "dinner theater" tip; **Level 2** | 6, 7 | ≈ 275 | ≈ 272 |
+| 09:00–10:05 | 8 `QST_TUT_008` | Repair the flipped table, quick-fix the bulb and windows (Atmosphere 22 → 42), mop the puddle | 8 | ≈ 325 | ≈ 322 |
+| 10:05–10:30 | 9 `QST_TUT_009` | Register cha-ching; Shift Receipt; Nana's Inheritance Envelope | 9 | ≈ 475 | ≈ 342 |
+| 10:30–11:10 | 10 `QST_TUT_010` | Footprint trail to the Mutation Mart (free Pigeon Taxi if slow) | 10 | ≈ 475 | ≈ 342 |
+| 11:10–11:55 | 10 | Starter Pedestal ceremony: try on and choose `MUT_145` / `MUT_144` / `MUT_153` | 10 | ≈ 475 | ≈ 342 |
+| 11:55–12:25 | 10 | Equip in the Morph menu, try the ability on the Complaint Dummy; Downtown gate opens | 10 | ≈ 525 | ≈ 382 |
+| 12:25–12:40 | 11 `QST_TUT_011` | Return Door home | 11 | ≈ 525 | ≈ 382 |
+| 12:40–13:20 | 11 | Restaurant Hub → Upgrades → buy the circled upgrade; Bolt installs it | 11 | ≈ 375 | ≈ 412 |
+| 13:20–13:50 | 12 `QST_TUT_012` | Ollie at the door; hire (0 MB); assign as Chef to the Grill | 12 | ≈ 375 | ≈ 412 |
+| 13:50–14:20 | 12 | Ollie cooks two patties at once for a walk-in (bonus pickle) | 12 | ≈ 382 | ≈ 412 |
+| 14:20–14:40 | 12 | **Offline Income Preview** card (≈ 315 MB in 2 h) | 12 | ≈ 382 | ≈ 412 |
+| 14:40–15:00 | graduation | Nana's speech; title, graduation capsule; next goal "Save 1,000 MB for Tiny Mutation Diner" | — | ≈ 432 | ≈ 452 |
 
 ### 32.5 Reward Ledger
 
@@ -135,12 +135,22 @@ customer income, so the 150–250 MB first upgrade is always affordable. Totals 
 | 12 | `QST_TUT_012` Hire Help | 50 | 40 | `EMP_001` Ollie (hire cost 0, canon C14.4); 1 Morph Capsule; Title "Restaurant Owner (Probably)" |
 | | **Total** | **600** | **≈ 360–380** | |
 
+Hands-on `DISH`, `SERVE` and `CALM` XP (§14 formulas, XPU(1) = 9) adds ≈ 90 XP, so players finish at ≈ 450 XP: Level 2,
+just short of Level 3 (461).
+
 Customer income during the tutorial *(example values; prices per §4.1.3)*:
 - Grandma: Basic Burger 9 + tip 2 − ingredients 3 = +8.
 - Polite Demon: 16 + 2 − 5 = +13, plus a scripted +3 "dinner theater" tip.
 - Karenosaurus: Apology Payment 40 % of 10 = 4, minus 3 ingredients = +1.
 - Ollie's demo walk-in: ≈ +7.
 - Total ≈ **+32 MB**.
+
+**Economy reconciliation (§22).** §22 models the tutorial as a one-time ≈ 400 MB grant that is saved toward
+TIER_02 (reached at ≈ 1.15 h). The tutorial pays 600 MB but requires the ≈ 200 MB first-upgrade purchase in
+`QST_TUT_011`, so the player leaves with ≈ 400 MB of quest money plus ≈ 32 MB of customer income, and §22's TIER_02
+timing holds. **Invariant [TUNABLE]:** (Σ tutorial quest MB) − (tutorial upgrade price) = 400 ± 50 MB. If the
+upgrade price moves within its 150–250 MB band, the Inheritance Envelope (`QST_TUT_009`) is adjusted to keep the
+invariant.
 
 ### 32.6 Step Scripts
 
@@ -221,8 +231,8 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
 - **Trigger:** the ticket opens.
 - **Objective:** build `RCP_BRG_001` from §6's recipe data. Sub-objectives are generated from the recipe's step
   list, so the tutorial always matches §6. Baseline: (a) bun from Pantry (`STN_PANTRY`) to the Assembly Counter
-  (`STN_ASSEMBLY`); (b) patty from Fridge (`STN_FRIDGE`) onto the Grill (`STN_GRILL`); (c) remove the patty at
-  PERFECT or GOOD; (d) assemble in recipe order. If §6 adds components (e.g. ketchup), extra sub-objectives use the
+  (`STN_ASSEMBLY`); (b) patty from Fridge (`STN_FRIDGE`) onto the Grill (`STN_GRILL`); (c) flip it when the flip
+  arrow shows (0.40–0.75 × `T_ready`, §5) and remove it at PERFECT or GOOD; (d) assemble in recipe order. If §6 adds components (e.g. ketchup), extra sub-objectives use the
   same prompt patterns. If it includes a CHOP component, the chop lesson and the Auto-Rhythm hint (§32.12) are
   taught here.
 - **Timing:** 1:20–3:20.
@@ -232,7 +242,9 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
   - N1 [B]: "Burger 101. Lesson one: a burger is a sandwich that went to college."
   - N2: "Grab a bun from the pantry shelf. Bun goes on the assembly counter."
   - N3: "Now a patty from the fridge. Patty goes on the grill. The grill is the hot thing. Don't lick the hot thing."
-  - N4 (patty placed): "Watch the ring. When it hits the green, that's PERFECT. Grab it then."
+  - N4 (patty placed): "See the arrow? FLIP it! Patties have two sides. Like arguments."
+  - N4b (after the flip): "Now watch the ring. When it hits the green, that's PERFECT. Grab it then."
+  - Missed flip: "Forgot to flip? One-sided patty. Still edible. Can't be better than GOOD, though." (canon grade cap, §5)
   - PERFECT: "PERFECT! I'd cry, but I'm a toaster. I'd short-circuit."
   - GOOD: "Good! Not perfect. Good. I'll allow it."
   - Early grab (UNDERCOOKED): "Still mooing. Put it back on." (it may return to the grill)
@@ -246,6 +258,7 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
 |---|---|---|---|
 | Grab ingredient | E "Grab" | X "Grab" | **GRAB** |
 | Place on station | E "Place" | X "Place" | **PLACE** |
+| Flip | E "Flip" (arrow showing) | X "Flip" | tap the **flip arrow** on the patty (big target) or **FLIP** |
 | Take off grill | E "Take" (in green) | X "Take" | **TAKE** (button rim shows the ring) |
 | Add to stack | E "Add" | X "Add" | **ADD** |
 | Drop held item | G | B | **Drop** |
@@ -297,7 +310,7 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
   `RCP_BRG_002` Cheeseburger + `RCP_DRK_001` Fizzy Soda, with lighter guidance.
 - **Timing:** 4:00–6:00.
 - **Setup:** Grandma's S is computed by the normal formula (canon C11.3) under Tutorial Assist. A typical result is
-  Delighted at ≈ 92 (W 1.0, K 1.0, M 0.20). The **reaction card** shows a face icon, the number, and the top two
+  Delighted at ≈ 92 (W 1.0, K 1.0, M 0.22: the pre-repair shack's Atmosphere of 22, §15). The **reaction card** shows a face icon, the number, and the top two
   factors ("Perfect patty! ▲", "Shack is a bit shabby ▼"). The MB counter is revealed and counts up from 0 to the
   accumulated quest MB plus her payment. The Demon spawns with patience ×2; his eating is slowed to 40 s so he is
   still seated for step 7.
@@ -398,7 +411,9 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
     - N6 [B]: "Your turn for the gentle approach. Calm Down! works best BEFORE things get flippy."
     - On use: the Demon's anger drops to Happy. Demon: "My apologies for the outburst. Most unbecoming. Please accept this gratuity for the… dinner theater." (+3 MB tip)
     - N7: "THAT is how you handle a customer. Talk first, bonk second."
-  - **Level-up** (guaranteed here by the XP formula in §32.5): `ANM_064` Level-up celebrate and a toast.
+  - **Level-up** (guaranteed here by the XP formula in §32.5): `ANM_064` Level-up celebrate and a toast. If combat XP
+    already pushed the player past 210 XP during the fight, the celebration is held until this moment (toast only
+    while In Combat, canon E14).
     - N8: "Level 2! From surviving a DINOSAUR. Put that on your résumé."
     - N9: "You got stat points. Spend them later in your Profile. I'm not your accountant." (Allocation is deferred, canon E14.)
 - **Prompts:**
@@ -425,18 +440,24 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
 #### 32.6.8 Step 8: `QST_TUT_008` Fix It Up
 
 - **Trigger:** the Karenosaurus exits the door.
-- **Objective:** (a) repair the Broken table back to Pristine; (b) mop the pickle and soda puddle.
-- **Timing:** 9:00–9:50.
+- **Objective:** (a) repair the table the Karenosaurus flipped (Broken → Pristine); (b) quick-repair the rest of the
+  §15 starter damage (the flickering bulb, both Cracked windows, and the pre-Broken card table if §15 ships one);
+  (c) mop the pickle and soda puddle.
+- **Timing:** 9:00–10:05.
 - **Setup:** restaurant-condition widget revealed (§24). The table shows "BROKEN – seats unusable" (canon C6) with a
   cartoon crack overlay. The repair interaction uses the §15 repair minigame. In the tutorial it has 3 hammer
-  points, each with a timing ring like chopping. A missed tap repairs at half speed, and it never fails. The first
-  repair is free.
+  points, each with a timing ring like chopping. A missed tap repairs at half speed, and it never fails. The
+  remaining objects are 1-point quick repairs (Tutorial Assist). All tutorial repairs are free. As the penalties
+  disappear and the bulb lights up, Atmosphere climbs from 22 to 42 (§15 worked example), and the condition widget
+  shows it rising.
 - **Dialogue:**
   - N1 [B]: "My poor table. Broken things seat nobody, and they scare off customers."
   - N2: "Walk up and hold Interact. Your arms know what to do."
   - N3 (during): "Tap when the nail glows. Tap. Tap. Like you mean it."
   - On completion: "Good as new! Better, honestly. Don't tell the table."
   - N4 [B]: "First repair's on me. After this, you pay. Fixing is WAY cheaper than replacing. Remember that."
+  - N4b: "While you've got the hammer: that bulb. Those windows. This shack's been broken since before you were assembled."
+  - On the last fix: "Atmosphere up! Fixed things look nicer, and nicer places get happier customers."
   - N5: "And mop that pickle juice. It's ruining the vibe. Clean floors make happy customers."
 - **Prompts:**
 
@@ -459,7 +480,7 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
 - **Trigger:** both step-8 objectives are done.
 - **Objective:** (a) interact with the cash register on the counter to print the **Shift Receipt**; (b) claim
   Nana's Inheritance Envelope.
-- **Timing:** 9:50–10:20.
+- **Timing:** 10:05–10:30.
 - **Setup:** the receipt is a diegetic paper UI that unrolls from the register. It shows the day's real values
   *(example)*:
   - Customers 3 · Sales 25 MB · Tips 7 MB · Apology Payments 4 MB · Ingredients −11 MB.
@@ -490,19 +511,20 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
 
 - **Trigger:** N5 of step 9 ends.
 - **Objective:** (a) travel to the Mutation Mart (`BLD_01`) in Mutation Market (`DST_02`); (b) choose one starter
-  part in the Starter Pod ceremony; (c) equip it from the Morph menu; (d) *(optional, 15 s)* try its ability on the
-  Complaint Dummy. Leaving the Mart unlocks Downtown (`DST_03`, canon C16.1).
-- **Timing:** 10:20–12:20.
+  part in the Starter Pedestal ceremony; (c) equip it from the Morph menu; (d) *(optional, 15 s)* try its ability on the
+  Complaint Dummy. Completing the step, which happens as the player walks out of the Mart, unlocks Downtown
+  (`DST_03`, canon C16.1, §18).
+- **Timing:** 10:30–12:25.
 - **Setup:**
   - The shack sign flips to "Back in 5 Minutes!" (no chef yet, §4.3.2), and the tutorial lock lifts.
   - A footprint Beam runs from the door along Restaurant Row (`DST_01`) to the Mart. The target walk is ≤ 45 s
     (district distances in §18). A free Pigeon Taxi is offered per §32.3.
-  - At the Mart, Mutty McMutface (`NPC_004`) waits beside the **Starter Pod**: three glass tubes in the floor, and a
+  - At the Mart, Mutty McMutface (`NPC_004`) waits beside the **Starter Pedestal** (§36.10): a podium with three glass tubes set into the floor, and a
     "Complaint Dummy" (a punching bag shaped like a grumpy customer) next to the counter.
 - **Dialogue (travel):**
   - N1: "To the Mutation Mart! Follow the footprints. I'll flip the sign."
   - Taxi offer (if slow): "Lost? Take a Pigeon Taxi. Tutorial fare: FREE. I'm paying. Grudgingly."
-- **The Starter Pod ceremony.**
+- **The Starter Pedestal ceremony.**
   1. Mutty: "WELCOME to Mutation Mart, where you're one purchase away from being someone else! Nana called ahead. You get a freebie."
   2. N2 [B] (on the Mart's price board): "Every menu board in town is my menu board now. Pick one. Choose wisely. Or funnily."
   3. The three tubes rise with a drumroll. Each holds a slowly rotating part above a card (rarity is always
@@ -548,7 +570,7 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
 - **Rewards:** the chosen part (granted at the choice, acquisition `QUEST`, equip-level requirement waived per canon
   C13.8), 50 MB, 40 XP, 10 MS (the MS counter appears).
 - **Failure & auto-recovery:**
-  - Closing the choice modal leaves the Pod waiting; the tracker offers "Choose your mutation" (opens the modal from
+  - Closing the choice modal leaves the Pedestal waiting; the tracker offers "Choose your mutation" (opens the modal from
     anywhere).
   - The step cannot complete without a choice.
   - Disconnecting after choosing keeps the part (it was granted at the choice); resume starts at the equip lesson.
@@ -562,7 +584,7 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
 - **Objective:** (a) use the Return Door button to go home (free, 10 s cooldown, canon C16.1); (b) open the Restaurant
   Hub → Upgrades; (c) buy a restaurant upgrade (the circled one is recommended; any upgrade counts); (d) watch it get
   installed.
-- **Timing:** 12:20–13:20.
+- **Timing:** 12:25–13:20.
 - **The tutorial upgrade (selection rule, data-driven):** the cheapest §36.12 restaurant upgrade that requires
   TIER_01 and is flagged tutorial-eligible. It must cost 150–250 MB and have an immediate visible effect,
   preferably on Atmosphere (which feeds M and DecorMult, canon C11.3–C11.4). If no upgrade qualifies, use the
@@ -628,13 +650,14 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
 
 **The Offline Income Preview card.** The card is rendered from `OfflineEarningsService:PreviewAsync(player)`, which
 is the *same* pure function §17 uses for real reports, run with the live state, the cap, and incidents as an
-expected range. The main view shows the big number: **"≈ 350 MB if you're away 2 h"**. It also shows a range
-(≈ 290–440 MB), "Max 2 h without a Manager → hire a Manager for 4 h", and the tip "More ★ and more decor = more
-customers". A **Show the math** expander shows the canon C15 computation. The reference fixture below is also
+expected range. The main view shows the big number: **"≈ 315 MB if you're away 2 h"**. It also shows a range
+(≈ 260–400 MB), "Max 2 h without a Manager → hire a Manager for 4 h", and a bottleneck tip: "Ollie can't cook for
+everyone who'd visit. A Prep Cook or a second chef would serve more!" A **Show the math** expander shows the canon C15 computation. The reference fixture below is also
 acceptance test AC-32-09.
 
-*Fixture inputs:* TIER_01 (seats 4, BaseDemand 50/h, canon C6). Stars 2.50 and Atmosphere 20 *(live values in game)*.
-Ollie with canon stats, Morale 80 % and Energy 100 % at hire *(starting morale per §16)*. Player EFFICIENCY 0. Menu =
+*Fixture inputs:* TIER_01 (seats 4, BaseDemand 50/h, canon C6). Stars 2.50 and Atmosphere 42 (the repaired shack, §15;
+the purchased upgrade's Atmosphere is excluded from the fixture; the game uses live values). Ollie with canon stats,
+Morale 90 and Energy 100 % (the §16.4 Ollie example), Multi-Tasker trait ×1.25 (§16.5). Player EFFICIENCY 0. Menu =
 the four L1 recipes priced 9 / 10 / 6 / 6 MB (§4.1.3) with order weights 0.357 / 0.357 / 0.143 / 0.143. Base prep
 times 35 / 40 / 25 / 8 s and per-customer ingredient cost 3.80 MB are *(§6 values; fixture only)*. No Manager, so the
 cap is 2 h (canon C14.3).
@@ -642,29 +665,30 @@ cap is 2 h (canon C14.3).
 | # | Quantity | Computation | Value |
 |---|---|---|---|
 | 1 | RepMult | 0.5 + 0.25 × 2.50 | 1.125 |
-| 2 | DecorMult | 0.9 + 0.003 × 20 | 0.96 |
-| 3 | `Demand_off` | 50 × 1.125 × 0.96 × 0.6 | **32.4 customers/h** |
+| 2 | DecorMult | 0.9 + 0.003 × 42 | 1.026 |
+| 3 | `Demand_off` | 50 × 1.125 × 1.026 × 0.6 | **34.6 customers/h** |
 | 4 | `Cap_seat` | 4 × 3600 / 300 | 48.0 /h |
 | 5 | `PrepSec_avg` | 0.357·35 + 0.357·40 + 0.143·25 + 0.143·8 | 31.5 s |
-| 6 | Ollie's efficiency | (29 / 100) × (0.6 + 0.4 × 0.80) × (0.7 + 0.3 × 1.00) × (1 + 0.001 × 0); chef RoleStatAvg = mean(Cooking 30, Accuracy 28) = 29, expressed as a 0–1 fraction | 0.2668 |
-| 7 | `Cap_kitchen` | (3600 / 31.5) × 0.2668 / 1.4 × 2 (trait: 2 parallel items) × (1 + 0.15 × 0) × 1 | 43.6 /h |
-| 8 | `Cap_service` | tier ≤ 2 → `Cap_kitchen` | 43.6 /h |
-| 9 | Q | min(32.4, 48.0, 43.6, 43.6) | **32.4 /h (demand-bound)** |
+| 6 | Ollie's Contribution (§16.4) | RoleStatAvg = 0.6 × 30 + 0.3 × 28 + 0.1 × 40 = 30.4; Efficiency = 30.4 × (0.6 + 0.4 × 0.90) × (0.7 + 0.3 × 1.00) × (1 + 0.001 × 0) = 29.18; Eff 0.2918 × 1.25 (Multi-Tasker) | 0.3648 |
+| 7 | `Cap_kitchen` | (3600 / 31.5) × 0.3648 / 1.4 × (1 + 0.15 × 0) × 1 | 29.8 /h |
+| 8 | `Cap_service` | tier ≤ 2 → `Cap_kitchen` | 29.8 /h |
+| 9 | Q | min(34.6, 48.0, 29.8, 29.8) | **29.8 /h (kitchen-bound: Ollie is the bottleneck)** |
 | 10 | AvgTicket · quality q | 1.4 × 8.50 = 11.90 MB · min(0.95, 0.70 + 0.25 × 0.28) = 0.77 | — |
-| 11 | Revenue / h | 32.4 × 11.90 × 0.77 | 296.9 MB |
-| 12 | Tips / h | 296.9 × (0.04 + 0.04 × 15 / 100) × (1 + 0); Ollie's Service stands in for waiter service at counter tiers | 13.7 MB |
-| 13 | Ingredients / h · wages / h | 32.4 × 3.80 · 12 × 1 | 123.1 · 12.0 MB |
-| 14 | Net, hour 1 | 296.9 + 13.7 − 123.1 − 12.0 | 175.4 MB |
-| 15 | Net, hour 2 | Energy 92 % → efficiency 0.2604 → `Cap_kitchen` 42.5 /h, still above demand → same Q | 175.4 MB |
-| 16 | **2 h total (before incidents)** | 65 customers · revenue 594 · tips 27 · ingredients −246 · wages −24 | **≈ 351 MB** |
-| 17 | Incidents | count = floor(2 × 0.6 × 1) = 1 + seeded roll; bounded −10 % / +15 % of (revenue + tips) = −62 / +93 MB | range ≈ 290–440 MB |
+| 11 | Revenue / h | 29.8 × 11.90 × 0.77 | 272.9 MB |
+| 12 | Tips / h | 272.9 × (0.04 + 0.04 × 15 / 100) × (1 + 0); Ollie's Service stands in for waiter service at counter tiers | 12.6 MB |
+| 13 | Ingredients / h · wages / h | 29.8 × 3.80 · 12 × 1 | 113.2 · 12.0 MB |
+| 14 | Net, hour 1 | 272.9 + 12.6 − 113.2 − 12.0 | 160.3 MB |
+| 15 | Net, hour 2 | Morale 89 (−1/h), Energy 92 % → Contribution 0.3546 → `Cap_kitchen` 28.9 /h → revenue 265.2, tips 12.2, ingredients 110.0, wages 12.0 | 155.4 MB |
+| 16 | **2 h total (before incidents)** | 59 customers · revenue 538 · tips 25 · ingredients −223 · wages −24 | **≈ 316 MB** |
+| 17 | Incidents | count = floor(2 × 0.6 × 1) = 1 + seeded roll; bounded −10 % / +15 % of (revenue + tips) = −56 / +84 MB | range ≈ 259–400 MB |
 | 18 | Discoveries | 8 %/h chance of 1–3 MS → expected ≈ 0.3 MS | "maybe a few Shards!" |
 
-**Robustness note.** Hour 1 stays demand-bound for any trait multiplier ≥ 1.5. With no trait at all (×1.0) the card
-would show ≈ 225 MB. §36.8 is authoritative for how the trait applies offline, and the card simply displays what
-§17's function returns. For comparison, an hour of active play at TIER_01 nets ≈ 630 MB (canon C4.4). Ollie alone
-earns ≈ 28 % of that per hour, which sits *below* the 35–50 % band for a well-staffed restaurant and leaves visible
-room to grow ("Hire more staff and a Manager to earn more while you're away!").
+**Reading the result.** Ollie is the bottleneck. The shack would attract ≈ 34.6 customers/h offline, but he can cook
+for ≈ 29.8, and the card turns that gap into the next goal. §16 and §17 own the formulas (Contribution, Multi-Tasker
+×1.25, tips at counter tiers), and the card displays whatever §17's function returns. These numbers are the
+acceptance fixture. For comparison, an hour of active play at TIER_01 nets ≈ 630 MB (canon C4.4). Ollie alone earns
+≈ 158 MB/h offline, about 25 % of that, which sits *below* the 35–50 % band for a well-staffed restaurant and leaves
+visible room to grow ("Hire more staff and a Manager to earn more while you're away!").
 
 - **Rewards:** 50 MB, 40 XP, `EMP_001` (hired and assigned), 1 Morph Capsule (earnable capsule, canon C4.7 odds;
   opened from the inventory any time), title "Restaurant Owner (Probably)".
@@ -693,7 +717,7 @@ All tutorial UI lives in `UIController`'s overlay layer (§24.5). It is input-ad
 | Screen-edge arrow | Points to an off-screen target, with a distance label | Only one at a time |
 | Reaction card (step 5) | Face icon, number, top 2 factors with ▲/▼ icons | Shown 3 s, then shrinks into the customer's bubble |
 | Shift Receipt (step 9) | Diegetic paper receipt | Also opens as a 2D panel on phone for legibility |
-| Starter Pod cards (step 10) | Three cards: rarity color + shape, role, ability, stats, Try On | Gamepad: D-pad cycles cards; touch: swipe between cards on phone |
+| Starter Pedestal cards (step 10) | Three cards: rarity color + shape, role, ability, stats, Try On | Gamepad: D-pad cycles cards; touch: swipe between cards on phone |
 | Offline Income Preview (step 12) | Big number, range, cap line, tip, **Show the math** expander | Expander text is selectable; numbers use thousands separators |
 
 ### 32.8 Player Interactions (multiplayer)
@@ -701,7 +725,7 @@ All tutorial UI lives in `UIController`'s overlay layer (§24.5). It is input-ad
 - **Steps 1–9 are solo.** The interior rejects visitors ("Under Renovation"). Friends can see the player's façade on
   Restaurant Row, and their join invites are queued with "Finish Nana's lessons first!" until step 12 completes or
   the tutorial is skipped.
-- **Steps 10–12 are social.** The player walks through the shared city. Others see the Starter Pod confetti, and
+- **Steps 10–12 are social.** The player walks through the shared city. Others see the Starter Pedestal confetti, and
   friends can follow them into the Mart.
 - **Server moves.** If the player follows a friend to another server (TeleportService) mid-tutorial, they land at
   their plot in the new server and resume the current step (§32.14).
@@ -927,7 +951,7 @@ return TutorialDirector
   (`mmr_tutorial_assist`, `mmr_tutorial_skip`, `mmr_tutorial_resume`, `mmr_tutorial_complete`) go through
   `LogCustomEvent` with custom field 01 carrying the sub-type. The schema and dashboards are in §31.
 - Performance: scripted customers are SPCV proxies like any other customer (canon C3). The tutorial adds ≤ 3 active
-  customers, 1 Pod model and 1 dummy, which is well within §30 budgets.
+  customers, 1 Pedestal model and 1 dummy, which is well within §30 budgets.
 
 ### 32.14 Edge Cases and Resume
 
@@ -969,7 +993,7 @@ step-12 hire), which are checked first. Every resume logs `mmr_tutorial_resume` 
 - **AC-32-06:** Fault injection that disconnects at 3 points inside each of the 12 steps always resumes at the first incomplete step with the documented re-setup, with 0 duplicate grants and 0 lost grants.
 - **AC-32-07:** Level 2 is reached at the completion of `QST_TUT_007` in 100 % of runs where it had not been reached earlier.
 - **AC-32-08:** The Karenosaurus set piece plays all four beats (`ANM_047`, `ANM_048`, `ANM_049` + `ANM_050`, then the fight), and the soda splash on the Polite Demon (anger 35) occurs in 100 % of runs, whether or not the player dodges.
-- **AC-32-09:** With the §32.6.12 fixture inputs, `OfflineEarningsService:PreviewAsync` returns `Demand_off` 32.4 ± 0.1 /h, Q 32.4 /h, 2-hour net 351 ± 2 MB and a displayed range of 289–444 ± 2 MB.
+- **AC-32-09:** With the §32.6.12 fixture inputs, `OfflineEarningsService:PreviewAsync` returns `Demand_off` 34.6 ± 0.1 /h, hour-1 Q 29.8 ± 0.1 /h (kitchen-bound), 2-hour net 316 ± 2 MB and a displayed range of 259–400 ± 2 MB.
 - **AC-32-10:** The skip link is absent before `QST_TUT_003` completes. Skipping grants a reward ledger identical to playing (except the optional purchase). The skip-path choice modal cannot be dismissed without choosing.
 - **AC-32-11:** The full tutorial can be completed using only keyboard and mouse, only an Xbox controller, only a PlayStation controller, or only touch. Prompts show the correct glyphs and update within 0.25 s of an input-mode change.
 - **AC-32-12:** With Reduced Motion on, there is no fly-by, camera orbit, shake, full-screen splat or pulse faster than 1 Hz, and no effect anywhere in the tutorial flashes faster than 3 Hz.
