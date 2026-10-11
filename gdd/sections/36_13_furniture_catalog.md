@@ -46,7 +46,7 @@
 | `FRN_015` | Soda Spout Dispenser | Appliance | `STN_DRINK` | T1 | 350 | 2×4 | 1 nozzle | 1 | 150 | — | Starter kit. Lv1 base price for UPG_015. |
 | `FRN_016` | Swirl-O-Matic Ice Cream Machine | Appliance | `STN_ICECREAM` | T1 | 1,100 | 4×4 | 1 cone | 2 | 180 | — | From L4. Lv1 base price for UPG_016. |
 | `FRN_017` | Stack Shack Assembly Counter | Utility fixture | `STN_ASSEMBLY` | T1 | 300 | 4×4 | 2 boards | 0 | 180 | — | Starter kit. Essential. Doubles as plating at TIER_01-02. Lv1 base price for UPG_017. |
-| `FRN_018` | Fancy-Pants Plating Station | Utility fixture | `STN_PLATING` | T2 | 1,500 | 4×4 | 2 plates | 2 | 160 | — | From L5. Required for the plated factor at TIER_03+ (section 5). Lv1 base price for UPG_018. |
+| `FRN_018` | Fancy-Pants Plating Station | Utility fixture | `STN_PLATING` | T2 | 1,500 | 4×4 | 2 plates | 2 | 160 | — | From L5. Required for the plated factor at TIER_03+ (§5). Lv1 base price for UPG_018. |
 | `FRN_019` | Ding! Serving Window | Utility fixture | `STN_WINDOW` | T1 | 500 | 4×2 divider | 4 pickup spots | 1 | 200 | — | Starter kit. Essential. Mounts on the kitchen/dining divider; max 1 (2 with UPG_029, 3 with UPG_030). Lv1 base price for UPG_019. |
 | `FRN_020` | Sudsy Dish Station | Utility fixture | `STN_DISHWASH` | T1 | 400 | 4×4 | 1 rack = 4 plates | 0 | 180 | — | Starter kit. Essential. Lv1 base price for UPG_020. |
 | `FRN_021` | Hungry Trash Can | Utility fixture | `STN_TRASH` | T1 | 100 | 2×2 | unlimited | 0 | 80 | — | Starter kit. Essential. Burps politely. Lv1 base price for UPG_021. |
@@ -59,9 +59,9 @@
 | ID | Name | Category | Station | Req tier | Price (MB) | Footprint (studs) | Seats / capacity | Atmosphere pts | Durability | Theme / set | Interactive / notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | `FRN_025` | Chrome Comet Grill | Appliance | `STN_GRILL` | T3 | 2,400 | 4×4 | 2 items | 4 | 300 | Chrome Comet Diner | Chrome flame decals; Perfect flips go ding. |
-| `FRN_026` | Dragon-Mouth Grill | Appliance | `STN_GRILL` | T6 | 16,000 | 6×4 | 2 items | 8 | 380 | Neon Monster | Built-in fire resistance: fire damage to itself -50 %. Roars on Perfect. |
+| `FRN_026` | Dragon-Mouth Grill | Appliance | `STN_GRILL` | T6 | 16,000 | 6×4 | 2 items | 8 | 380 | Neon Monster | Built-in fire resistance: fire damage to itself −50 %. Roars on Perfect. |
 | `FRN_027` | Bubble-Bath Fryer | Appliance | `STN_FRYER` | T3 | 2,200 | 4×4 | 1 basket | 4 | 280 | Swamp Bistro | A rubber duck floats on the oil and never gets fried. |
-| `FRN_028` | Lava-Lamp Fryer | Appliance | `STN_FRYER` | T7 | 30,000 | 4×4 | 1 basket | 9 | 360 | Neon Monster | Oil blobs rise and fall. Built-in fire resistance: fire damage to itself -50 %. |
+| `FRN_028` | Lava-Lamp Fryer | Appliance | `STN_FRYER` | T7 | 30,000 | 4×4 | 1 basket | 9 | 360 | Neon Monster | Oil blobs rise and fall. Built-in fire resistance: fire damage to itself −50 %. |
 | `FRN_029` | Retro Rocket Oven | Appliance | `STN_OVEN` | T7 | 26,000 | 4×4 | 2 items | 8 | 340 | Space Saucer | Counts down 3-2-1-BAKE on every load. |
 | `FRN_030` | Volcano Pizza Oven | Appliance | `STN_PIZZA_OVEN` | T6 | 18,000 | 6×4 | 1 pizza | 8 | 380 | Mad Lab Lunchroom | Puffs pizza-shaped smoke rings. |
 | `FRN_031` | Octo-Burner Stove | Appliance | `STN_STOVE` | T5 | 7,500 | 4×4 | 2 burners | 6 | 300 | Tentacle Tavern | Tentacle knobs wave hello. |
@@ -145,7 +145,7 @@
 | `FRN_143` | Firefly Jar Lantern | Lighting | — | T3 | 420 | ceiling 2×2 | light r 9 | 4 | 35 | Swamp Bistro | The fireflies wave. |
 | `FRN_144` | Ship Lantern | Lighting | — | T4 | 700 | wall 2 | light r 10 | 4 | 50 | Tentacle Tavern | — |
 | `FRN_145` | Jellyfish Chandelier | Lighting | — | T5 | 3,000 | ceiling 4×4 | light r 14 | 9 | 60 | Tentacle Tavern | Tentacles drift in slow motion. |
-| `FRN_146` | Lava Lamp Floor Lamp | Lighting | — | T5 | 1,800 | 2×2 | light r 8; Chill Aura r 6 | 5 | 50 | Neon Monster | Chill Aura: anger gain -10 % within 6 studs (section 10). |
+| `FRN_146` | Lava Lamp Floor Lamp | Lighting | — | T5 | 1,800 | 2×2 | light r 8; Chill Aura r 6 | 5 | 50 | Neon Monster | Chill Aura: anger gain −10 % within 6 studs (§10). |
 | `FRN_147` | Neon Tube Squiggle | Lighting | — | T6 | 3,400 | wall 4 | light r 12 | 9 | 40 | Neon Monster | — |
 | `FRN_148` | Plasma Globe Lamp | Lighting | — | T6 | 3,000 | 2×2 | light r 10 | 8 | 45 | Mad Lab Lunchroom | Touch it and your fur stands up (cosmetic). |
 | `FRN_149` | UFO Beam Light | Lighting | — | T7 | 6,500 | ceiling 4×4 | light r 14 | 12 | 60 | Space Saucer | — |
@@ -173,7 +173,7 @@
 | `FRN_211` | Diner Chrome Stripes | Wall finish | — | T2 | 450 | zone | zone finish | 4 | — | Chrome Comet Diner | — |
 | `FRN_212` | Swamp Reed Wallpaper | Wall finish | — | T3 | 900 | zone | zone finish | 5 | — | Swamp Bistro | — |
 | `FRN_213` | Porthole Wood Paneling | Wall finish | — | T4 | 1,700 | zone | zone finish | 6 | — | Tentacle Tavern | — |
-| `FRN_214` | Soothing Seafoam Paint | Wall finish | — | T3 | 1,100 | zone | zone finish | 3 | — | — | Weak Chill Aura over the whole zone: anger gain -5 %. |
+| `FRN_214` | Soothing Seafoam Paint | Wall finish | — | T3 | 1,100 | zone | zone finish | 3 | — | — | Weak Chill Aura over the whole zone: anger gain −5 %. |
 | `FRN_215` | Living Vine Wall | Wall finish | — | T5 | 3,600 | zone | zone finish | 8 | — | — | Vines wave at customers. |
 | `FRN_216` | Neon Doodle Murals | Wall finish | — | T6 | 7,000 | zone | zone finish | 10 | — | Neon Monster | Friendly monster doodles. |
 | `FRN_217` | Lab Tile and Pipes | Wall finish | — | T6 | 6,200 | zone | zone finish | 9 | — | Mad Lab Lunchroom | Pipes gurgle. |
@@ -212,7 +212,7 @@
 | `FRN_284` | Monster Marquee | Sign | — | T6 | 9,000 | curb 8 | curb sign | 10 | — | Neon Monster | Curb. Your restaurant name in chasing lights. |
 | `FRN_285` | Hologram Menu Board | Sign | — | T7 | 12,000 | wall 4 | live menu | 12 | 60 | Space Saucer | Shows the live menu with SOLD OUT tags. |
 | `FRN_286` | Royal Crest Banner | Sign | — | T8 | 20,000 | wall 4 | banner | 14 | 50 | Royal Ridiculous | Crest: a crowned spatula. |
-| `FRN_287` | Employee of the Month Frame | Sign | — | T3 | 600 | wall 2 | shows top employee | 3 | 30 | — | Auto-shows your best employee by section 16 performance score. |
+| `FRN_287` | Employee of the Month Frame | Sign | — | T3 | 600 | wall 2 | shows top employee | 3 | 30 | — | Auto-shows your best employee by §16 performance score. |
 | `FRN_288` | Legendary Neon Monster Sign | Sign | — | T10 | 250,000 | curb 12 | rooftop sign | 30 | — | Legendary Menagerie | Curb rooftop. A giant neon monster waving tentacles. Max 1. |
 | `FRN_310` | Sad Little Cactus | Plant | — | T1 | 30 | 2×2 | decor | 1 | 25 | Greasy Spoon Classic | Sighs audibly. |
 | `FRN_311` | Potted Fern | Plant | — | T1 | 70 | 2×2 | decor | 2 | 30 | — | — |
@@ -234,7 +234,7 @@
 | `FRN_342` | Jellyfish Column Tank | Aquarium | — | T6 | 9,000 | 2×2 | light r 6 | 12 | 120 | — | — |
 | `FRN_343` | Kraken Viewing Tank | Aquarium | — | T8 | 34,000 | 6×4 | 1 shy kraken | 20 | 220 | — | A shy cartoon kraken peeks out at Delighted customers. |
 | `FRN_344` | Moray Mood Tank | Aquarium | — | T9 | 75,000 | 8×2 | wall-hugging tank | 22 | 220 | Legendary Menagerie | — |
-| `FRN_345` | Grand Aquarium Wall | Aquarium | — | T10 | 300,000 | wall 16, 4 deep | aquarium wall | 45 | 400 | Legendary Menagerie | The mockup's Go Wild aquarium. Built-in Shatterproof (-60 % damage). Max 1; uses 4 wall sockets. |
+| `FRN_345` | Grand Aquarium Wall | Aquarium | — | T10 | 300,000 | wall 16, 4 deep | aquarium wall | 45 | 400 | Legendary Menagerie | The mockup's Go Wild aquarium. Built-in Shatterproof (−60 % damage). Max 1; uses 4 wall sockets. |
 | `FRN_360` | Duct-Tape Burger Statue | Sculpture | — | T1 | 120 | 2×2 | decor | 2 | 50 | Greasy Spoon Classic | Nana's proudest craft project. |
 | `FRN_361` | Framed Mutant Portrait | Wall art | — | T2 | 180 | wall 2 | decor | 2 | 25 | — | Eyes follow you around the room. |
 | `FRN_362` | Abstract Spaghetti Art | Wall art | — | T3 | 450 | wall 2 | decor | 3 | 25 | — | Titled Untitled Noodle No. 7. |
@@ -253,12 +253,12 @@
 | ID | Name | Category | Station | Req tier | Price (MB) | Footprint (studs) | Seats / capacity | Atmosphere pts | Durability | Theme / set | Interactive / notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | `FRN_390` | Morph Mirror | Interactive | — | T3 | 1,500 | wall 2 | loadout swap point | 4 | 60 | — | Swap to a saved loadout without the Morph menu: E4 rules apply (3 s channel broken by damage, 10 s cooldown shared with the menu, blocked In Combat). Max 2. |
-| `FRN_391` | Jukebox of Weird Tunes | Interactive | — | T2 | 800 | 2×2 | track picker | 6 | 80 | Chrome Comet Diner | Anyone picks the restaurant track from the section 26 playlist; 20 s per-player cooldown. Max 1. |
+| `FRN_391` | Jukebox of Weird Tunes | Interactive | — | T2 | 800 | 2×2 | track picker | 6 | 80 | Chrome Comet Diner | Anyone picks the restaurant track from the §26 playlist; 20 s per-player cooldown. Max 1. |
 | `FRN_392` | Mutant Photo Booth | Interactive | — | T4 | 2,500 | 4×4 | up to 4 posers | 8 | 100 | — | Player-initiated photo card via CaptureService with restaurant-branded frames. |
 | `FRN_393` | Burger Blaster Arcade Cabinet | Interactive | — | T5 | 3,500 | 2×2 | 1 player | 7 | 90 | — | 30-s cosmetic mini-game with a local high-score board; no rewards. |
 | `FRN_394` | Gumball Globe | Interactive | — | T2 | 300 | 2×2 | free confetti | 3 | 40 | — | Free; pops a confetti gumball effect. No items, no paid or random rewards. |
 | `FRN_395` | Player Piano | Interactive | — | T5 | 4,000 | 4×2 | 8-key pad | 8 | 100 | — | Anyone can play notes; customers sway. |
-| `FRN_396` | Host Podium | Interactive | — | T3 | 1,200 | 2×2 | party wait node | 2 | 80 | — | Essential from TIER_03: the section 8.6 party wait node inside the door. One is granted free with the TIER_03 upgrade. Max 1. |
+| `FRN_396` | Host Podium | Interactive | — | T3 | 1,200 | 2×2 | party wait node | 2 | 80 | — | Essential from TIER_03: the §8.6 party wait node inside the door. One is granted free with the TIER_03 upgrade. Max 1. |
 | `FRN_397` | Trophy Shelf | Interactive | — | T3 | 700 | wall 4 | holds 3 trophies | 2 | — | — | Displays up to 3 of FRN_901-910 in one socket; shelved trophies give +20 % atmosphere. |
 | `FRN_398` | Morph Showcase Pedestal | Interactive | — | T5 | 5,000 | 4×4 | 1 loadout hologram | 8 | 120 | — | Spinning hologram of a saved loadout; guests can Inspect the part list. |
 | `FRN_399` | Bubble Machine | Interactive | — | T4 | 1,600 | 2×2 | toggle | 5 | 50 | — | Soap bubbles drift across the room (reduced-VFX aware). |
@@ -270,12 +270,12 @@
 
 | ID | Name | Category | Station | Req tier | Price (MB) | Footprint (studs) | Seats / capacity | Atmosphere pts | Durability | Theme / set | Interactive / notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| `FRN_430` | Fire Extinguisher Cabinet | Safety | — | T1 | 100 | wall 2 | radius 12 | 0 | 60 | — | Extinguish time -50 % for stations within 12 studs (section 5 ON_FIRE). |
+| `FRN_430` | Fire Extinguisher Cabinet | Safety | — | T1 | 100 | wall 2 | radius 12 | 0 | 60 | — | Extinguish time −50 % for stations within 12 studs (§5 ON_FIRE). |
 | `FRN_431` | Wet Floor Sign | Safety | — | T1 | 40 | 2×2 | radius 6 | 0 | 30 | — | Spills within 6 studs count half toward the cleanliness penalty. |
 | `FRN_432` | Smoke Detector Pigeon | Safety | — | T2 | 350 | ceiling 2×2 | radius 16 | 1 | 30 | — | Squawks 2 s before any station within 16 studs reaches ON_FIRE. |
-| `FRN_433` | Bouncer Rope | Security | — | T2 | 500 | curb 6 | outside queue, 4 spots | 2 | — | — | Curb. Lines the 4 outside queue spots (section 8.2.3): queue patience x1.15 and no line-cutting. Indestructible. |
-| `FRN_434` | Chill-Out Beanbag Corner | Security | — | T3 | 900 | 4×4 | Chill Aura r 8 | 4 | 80 | — | Chill Aura: anger gain -15 % within 8 studs. Auras never stack; the strongest applies. |
-| `FRN_435` | Owl Security Camera | Security | — | T4 | 2,400 | wall 2 | radius 20 | 1 | 50 | — | Customers at anger >= 3 within 20 studs get a warning-triangle marker for all staff; ROLE_SECURITY there reacts 1 s faster. |
+| `FRN_433` | Bouncer Rope | Security | — | T2 | 500 | curb 6 | outside queue, 4 spots | 2 | — | — | Curb. Lines the 4 outside queue spots (§8.2.3): queue patience ×1.15 and no line-cutting. Indestructible. |
+| `FRN_434` | Chill-Out Beanbag Corner | Security | — | T3 | 900 | 4×4 | Chill Aura r 8 | 4 | 80 | — | Chill Aura: anger gain −15 % within 8 studs. Auras never stack; the strongest applies. |
+| `FRN_435` | Owl Security Camera | Security | — | T4 | 2,400 | wall 2 | radius 20 | 1 | 50 | — | Customers at anger ≥ 3 within 20 studs get a warning-triangle marker for all staff; ROLE_SECURITY there reacts 1 s faster. |
 | `FRN_436` | Security Booth | Security | — | T6 | 9,000 | 4×4 | 1 guard post | 3 | 220 | — | A posted ROLE_SECURITY employee gains +4 studs intercept radius. Max 2. |
 | `FRN_437` | Dining Trash Bin | Safety | — | T1 | 80 | 2×2 | radius 8 | 1 | 40 | — | 30 % of trash spawned within 8 studs goes straight in (customers self-bus). |
 
@@ -310,11 +310,11 @@ Trophies are granted only by quests, story chapters and events (canon §C17.4 re
 
 | ID | Name | Category | Station | Req tier | Price (MB) | Footprint (studs) | Seats / capacity | Atmosphere pts | Durability | Theme / set | Interactive / notes |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| `FRN_901` | Golden Spatula Trophy | Trophy | — | — | — (not sold) | 2×2 | display | 12 | — | — | Quest reward: cooking-challenge line (section 20). Not sold; cannot be sold. |
+| `FRN_901` | Golden Spatula Trophy | Trophy | — | — | — (not sold) | 2×2 | display | 12 | — | — | Quest reward: cooking-challenge line (§20). Not sold; cannot be sold. |
 | `FRN_902` | Rat King's Crown Display | Trophy | — | — | — (not sold) | 2×2 | display | 15 | — | — | Event reward: EVT_007 Giant Rat King Attack (NPC_020). |
 | `FRN_903` | Critic's Five-Star Plaque | Trophy | — | — | — (not sold) | wall 2 | display | 15 | — | — | Quest reward: Food Critic HQ (BLD_14) rating challenge with NPC_016. |
-| `FRN_904` | Arena Champion Belt Case | Trophy | — | — | — (not sold) | 2×2 | display | 14 | — | — | Arena season reward: Morph Arena (BLD_08), opt-in PvP (section 21). |
-| `FRN_905` | Baron's Defeated Mustache Portrait | Trophy | — | — | — (not sold) | wall 2 | display | 18 | — | — | Story reward: Baron Von Bistro (NPC_003) storyline finale (section 20). |
+| `FRN_904` | Arena Champion Belt Case | Trophy | — | — | — (not sold) | 2×2 | display | 14 | — | — | Arena season reward: Morph Arena (BLD_08), opt-in PvP (§21). |
+| `FRN_905` | Baron's Defeated Mustache Portrait | Trophy | — | — | — (not sold) | wall 2 | display | 18 | — | — | Story reward: Baron Von Bistro (NPC_003) storyline finale (§20). |
 | `FRN_906` | Meteor Chunk Lamp | Trophy | — | — | — (not sold) | 2×2 | light r 8 | 14 | — | — | Event reward: EVT_006 Mutation Meteor Shower. |
 | `FRN_907` | Parade Float Mini | Trophy | — | — | — (not sold) | 4×2 | display | 14 | — | — | Event reward: EVT_002 Mutation Parade. |
 | `FRN_908` | Kraken Plush | Trophy | — | — | — (not sold) | 2×2 | display | 12 | — | — | Event reward: EVT_022 Lost Pet Kraken. |

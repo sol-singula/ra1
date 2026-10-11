@@ -362,3 +362,320 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
   fail.
 - **Analytics:** step 6. Custom field 03 = served (yes/no).
 
+#### 32.6.7 Step 7: `QST_TUT_007` Defend the Diner
+
+- **Trigger:** Beat D of step 6.
+- **Objective (in order):** (a) Block 2 attacks (`ABL_003`); (b) Dodge Roll 1 throw (`ABL_004`); (c) land Swipe
+  Combo hits (`ABL_001`) until the Karenosaurus is Dizzy; (d) use Calm Down! (`ABL_006`) on the splashed Polite
+  Demon.
+- **Timing:** 7:30–9:00.
+- **Setup:**
+  - Combat HUD revealed: HP bar, guard meter, base combat buttons, a hostile health bar showing her Huff Points.
+  - The Karenosaurus uses the §32.3 tutorial combat values. Plot Armor keeps the player at ≥ 1 HP.
+  - The In-Combat flag (canon C12.1) is live, so full-screen menus are blocked ("Can't shop during a brawl!", canon E2).
+- **Dialogue and beats:**
+  - **(a) Block.** She winds up a "Handbag Wallop": 1.0 s wind-up, glowing handbag, "!" plus a whoosh cue.
+    - N1 [B]: "Purse incoming! HOLD Block before it lands!"
+    - On a block (feathers burst, "BLOCKED!"): "Ha! Like a brick wall. A brick wall with an apron."
+    - On a miss: "That's called 'getting walloped'. Hold Block BEFORE the purse lands." After 2 misses the wind-up slows to 1.5 s.
+  - **(b) Dodge.** She snatches the Polite Demon's Fizzy Soda ("MINE NOW!") and hurls it in a scripted arc with a
+    0.6 s ground marker.
+    - N2: "Incoming soda! DODGE ROLL!"
+    - On a dodge: the soda sails past and **splashes the Polite Demon**. His anger is set to 35 (Complaining), and
+      small cartoon steam puffs come from his ears. Demon: "Pardon me… but I appear to be WEARING my beverage."
+    - N3: "Nice dodge! …Terrible aim. Hers, I mean. Now we've got TWO problems. That's how chain reactions start in this town."
+    - If the player fails to dodge twice, her third throw veers into the Demon anyway. N: "She missed you and hit HIM. Happens constantly." **The chain-reaction lesson always plays.**
+  - **(c) Swipe.** She is winded and bent over for 4 s windows (repeats until she's done).
+    - N4: "Now! Bonk her! Gently! It's a family restaurant!"
+    - Each 3-hit combo deals 8 × 3 = 24 Huff Points (canon C12.1 at STR 0). Two combos take her from 48 to 0. Hits show
+      feathers, "BONK!" letters, and her sunglasses spinning.
+    - On a combo: "That's a combo! Do it again!"
+    - At 0 Huff: `STS_DIZZY` 3 s with `ANM_052` Dizzy stars. N5: "She's seeing stars. Good. Now she'll calm down… eventually."
+    - She recovers into `ANM_053` Apologize bow: "I… may have overreacted. Here. For the table." She pays the
+      **Apology Payment** of 40 % of 10 MB = 4 MB, with no tip (canon C11.4), then `ANM_055` Escorted out:
+      "I'm STILL leaving a review."
+  - **(d) Calm Down!**
+    - N6 [B]: "Your turn for the gentle approach. Calm Down! works best BEFORE things get flippy."
+    - On use: the Demon's anger drops to Happy. Demon: "My apologies for the outburst. Most unbecoming. Please accept this gratuity for the… dinner theater." (+3 MB tip)
+    - N7: "THAT is how you handle a customer. Talk first, bonk second."
+  - **Level-up** (guaranteed here by the XP formula in §32.5): `ANM_064` Level-up celebrate and a toast.
+    - N8: "Level 2! From surviving a DINOSAUR. Put that on your résumé."
+    - N9: "You got stat points. Spend them later in your Profile. I'm not your accountant." (Allocation is deferred, canon E14.)
+- **Prompts:**
+
+| Beat | KB/M | Controller | Touch |
+|---|---|---|---|
+| Block | hold F (toggle option shown) | hold LT | hold **Block** |
+| Dodge Roll | C (+ WASD for direction) | RB (+ left stick) | **Dodge** (stick sets direction) |
+| Swipe Combo | LMB ×3 | RT ×3 | **Attack** ×3 |
+| Calm Down! | R | Y | **Calm** |
+
+- **Highlights:** each combat button pulses only when it's needed. A threat arrow points at her during wind-ups.
+  Calm Down! auto-targets the Demon (10 studs).
+- **Animations:** customer `ANM_048` (soda throw), `ANM_052`, `ANM_053`, `ANM_055`. Player: the ability animations
+  of `ABL_001`, `ABL_003`, `ABL_004` and `ABL_006` (§36.14 per the canon C21 mapping), plus `ANM_064`.
+- **Rewards:** 75 MB, XP = max(50, 210 − current XP), emote "Phew!" (a wipes-brow emote).
+- **Failure & auto-recovery:**
+  - The player cannot be KO'd (Plot Armor).
+  - Running away → she follows at walk speed 10, and N: "You can't outrun a dinosaur. Well, you can. But don't."
+  - 20 s idle in combat → the needed prompt re-pulses with an N line.
+  - Using Calm Down! on the Karenosaurus during (a)–(c): "She's past talking. That's level five. Calm Down! works on grumblers, not brawlers." No cooldown is consumed in the tutorial.
+- **Analytics:** step 7. Custom field 03 = blocks missed (0, 1–2, 3+).
+
+#### 32.6.8 Step 8: `QST_TUT_008` Fix It Up
+
+- **Trigger:** the Karenosaurus exits the door.
+- **Objective:** (a) repair the Broken table back to Pristine; (b) mop the pickle and soda puddle.
+- **Timing:** 9:00–9:50.
+- **Setup:** restaurant-condition widget revealed (§24). The table shows "BROKEN – seats unusable" (canon C6) with a
+  cartoon crack overlay. The repair interaction uses the §15 repair minigame. In the tutorial it has 3 hammer
+  points, each with a timing ring like chopping. A missed tap repairs at half speed, and it never fails. The first
+  repair is free.
+- **Dialogue:**
+  - N1 [B]: "My poor table. Broken things seat nobody, and they scare off customers."
+  - N2: "Walk up and hold Interact. Your arms know what to do."
+  - N3 (during): "Tap when the nail glows. Tap. Tap. Like you mean it."
+  - On completion: "Good as new! Better, honestly. Don't tell the table."
+  - N4 [B]: "First repair's on me. After this, you pay. Fixing is WAY cheaper than replacing. Remember that."
+  - N5: "And mop that pickle juice. It's ruining the vibe. Clean floors make happy customers."
+- **Prompts:**
+
+| Beat | KB/M | Controller | Touch |
+|---|---|---|---|
+| Start repair | hold E "Repair" | hold X | hold **REPAIR** |
+| Hammer point | E on glow | X on glow | tap **REPAIR** on glow |
+| Mop | hold E "Mop" | hold X | hold **MOP** |
+
+- **Highlights:** the broken table, then the puddle decal. A durability bar animates from 20 % to 100 %, and the
+  state labels change Broken → Cracked → Scuffed → Pristine, each with a matching icon.
+- **Animations:** player `ANM_060` Hammer repair, `ANM_022` Mop / clean.
+- **Rewards:** 50 MB, 40 XP.
+- **Failure & auto-recovery:** walking away mid-repair keeps the progress (the job persists, as in canon E3). Missed
+  taps only slow it down. The puddle can't be missed because the mop prompt appears within 7 studs.
+- **Analytics:** step 8.
+
+#### 32.6.9 Step 9: `QST_TUT_009` Cash In
+
+- **Trigger:** both step-8 objectives are done.
+- **Objective:** (a) interact with the cash register on the counter to print the **Shift Receipt**; (b) claim
+  Nana's Inheritance Envelope.
+- **Timing:** 9:50–10:20.
+- **Setup:** the receipt is a diegetic paper UI that unrolls from the register. It shows the day's real values
+  *(example)*:
+  - Customers 3 · Sales 25 MB · Tips 7 MB · Apology Payments 4 MB · Ingredients −11 MB.
+  - Net kept: 25 MB.
+  - Footer: "1 table flipped (repaired) · 1 soda incident".
+- **Dialogue:**
+  - N1: "Let's count the money. My favorite part. Walk to the register."
+  - N2 [B] (receipt prints, `ANM_066` Cash register cha-ching): "Payments go straight into your wallet, up top. Ingredients come out when you serve, so this is what you actually KEPT."
+  - N3 [B]: "Three customers. One apology. One soda incident. Not bad for a first day."
+  - N4 [B] (an envelope pops out of the till): "And this is from me. My inheritance. It was going to be bigger, but… cruise buffet."
+  - N5 [B]: "Now. Want to know what Morph Bucks are REALLY for? Not furniture. Not rent. YOU."
+- **Prompts:**
+
+| Beat | KB/M | Controller | Touch |
+|---|---|---|---|
+| Use register | E "Cash Up" | X | **CASH UP** |
+| Claim envelope | E / click **CLAIM** | A on **CLAIM** | tap **CLAIM** |
+
+- **Highlights:** the register, then the MB counter (a coach-mark line from the envelope to the counter as it
+  counts up).
+- **Animations:** player `ANM_066` Cash register cha-ching.
+- **Rewards:** 150 MB (the envelope), 20 XP.
+- **Failure & auto-recovery:** if the player ignores the register for 20 s, it rings by itself (a bell bark) and
+  L2 guidance starts.
+- **Analytics:** step 9.
+
+#### 32.6.10 Step 10: `QST_TUT_010` Your First Mutation
+
+- **Trigger:** N5 of step 9 ends.
+- **Objective:** (a) travel to the Mutation Mart (`BLD_01`) in Mutation Market (`DST_02`); (b) choose one starter
+  part in the Starter Pod ceremony; (c) equip it from the Morph menu; (d) *(optional, 15 s)* try its ability on the
+  Complaint Dummy. Leaving the Mart unlocks Downtown (`DST_03`, canon C16.1).
+- **Timing:** 10:20–12:20.
+- **Setup:**
+  - The shack sign flips to "Back in 5 Minutes!" (no chef yet, §4.3.2), and the tutorial lock lifts.
+  - A footprint Beam runs from the door along Restaurant Row (`DST_01`) to the Mart. The target walk is ≤ 45 s
+    (district distances in §18). A free Pigeon Taxi is offered per §32.3.
+  - At the Mart, Mutty McMutface (`NPC_004`) waits beside the **Starter Pod**: three glass tubes in the floor, and a
+    "Complaint Dummy" (a punching bag shaped like a grumpy customer) next to the counter.
+- **Dialogue (travel):**
+  - N1: "To the Mutation Mart! Follow the footprints. I'll flip the sign."
+  - Taxi offer (if slow): "Lost? Take a Pigeon Taxi. Tutorial fare: FREE. I'm paying. Grudgingly."
+- **The Starter Pod ceremony.**
+  1. Mutty: "WELCOME to Mutation Mart, where you're one purchase away from being someone else! Nana called ahead. You get a freebie."
+  2. N2 [B] (on the Mart's price board): "Every menu board in town is my menu board now. Pick one. Choose wisely. Or funnily."
+  3. The three tubes rise with a drumroll. Each holds a slowly rotating part above a card (rarity is always
+     color *and* shape, canon C13.3; stats from §36.3):
+
+| Choice | Part | Rarity | Playstyle | Active ability | Card callout |
+|---|---|---|---|---|---|
+| A | `MUT_145` Octopus Arm | Uncommon ▲ (green) | **Chef** | `ABL_012` Octo-Flurry | "+1 carry: hold two things at once!" (canon C3) |
+| B | `MUT_144` Crab Claw Arm | Uncommon ▲ (green) | **Fighter** | `ABL_017` Claw Grab & Toss | "Grab it. Toss it. Problem solved." |
+| C | `MUT_153` Wrench Claw Arm | Rare ■ (blue) | **Repair** | `ABL_062` Repair Burst | "Fix things in a burst of bolts." |
+
+  4. **Try On:** each card has a Try On button. A `ViewportFrame` shows the player's current morph wearing that part
+     and doing `ANM_065` Mutation equip flex. The player can try all three, as often as they like.
+  5. **Choose →** confirm modal. N: "This one? The other two are sold right here later, so no take-backsies on the freebie." [Choose] [Look again]
+  6. **Reveal:** the chosen tube pops open with confetti and a rising chord. The part flies to the player and *clicks* on at the right arm
+     (canon C13.1; ARM parts can be moved to the left arm later). The player does `ANM_065`, and the camera orbits for
+     3 s (static with Reduced Motion). Banner: "NEW MUTATION! OCTOPUS ARM ▲ UNCOMMON". Other players nearby see
+     the confetti too.
+  7. Mutty: "Ooh, it SUITS you. Everything suits everybody here. That's the beauty of Morph City."
+  8. Nana, depending on the choice:
+     - Octopus: "Eight arms! Well. One arm with eight bits. You can carry two things now. FINALLY."
+     - Crab: "Pinchy! Good for grabbing things. And grumpy dinosaurs."
+     - Wrench: "A wrench for a hand. My table would like a word. A thank-you word."
+- **Equip lesson:** the ability bar, Morph menu entry and MS counter appear (§24). N3: "Open your Morph menu.
+  That's where you'll spend… most of your life." The menu opens on the Arms group with the new part. Equipping is
+  instant out of combat (canon E4). The part is already worn from the reveal, so this beat teaches *where* parts
+  live and how to switch sides or unequip. It is complete when the menu has been opened and closed with the part
+  equipped.
+- **Try it:** "Press 1 and try it on the dummy. It's had worse." The ability fires on the Complaint Dummy (it wobbles
+  and goes "Hmph!").
+- **Downtown unlock:** when the player walks out of the Mart, the arch between Mutation Market and Downtown lifts
+  with a brass fanfare: "DOWNTOWN MORPH CITY IS NOW OPEN!" A map pin is added.
+- **Prompts:**
+
+| Beat | KB/M | Controller | Touch |
+|---|---|---|---|
+| Choose card | click card / 1–3 | D-pad / left stick + A | tap card |
+| Try On | click **Try On** | X | tap **Try On** |
+| Open Morph menu | N | radial (Select) | **≡** → Morph |
+| Ability 1 | 1 | D-pad Up | ability arc slot 1 (tap = auto-target) |
+
+- **Animations:** player `ANM_002`, `ANM_003`, `ANM_065`; Mutty idle loop from §36.14.
+- **Rewards:** the chosen part (granted at the choice, acquisition `QUEST`, equip-level requirement waived per canon
+  C13.8), 50 MB, 40 XP, 10 MS (the MS counter appears).
+- **Failure & auto-recovery:**
+  - Closing the choice modal leaves the Pod waiting; the tracker offers "Choose your mutation" (opens the modal from
+    anywhere).
+  - The step cannot complete without a choice.
+  - Disconnecting after choosing keeps the part (it was granted at the choice); resume starts at the equip lesson.
+  - Wandering off the trail triggers L2/L3 guidance and then the taxi offer.
+- **Analytics:** step 10. Custom field 03 = choice (`octopus` / `crab` / `wrench`). The choice split is a key §31
+  dashboard; target: no option chosen by < 15 % of players [TUNABLE].
+
+#### 32.6.11 Step 11: `QST_TUT_011` Fancy Upgrades
+
+- **Trigger:** the Downtown fanfare ends.
+- **Objective:** (a) use the Return Door button to go home (free, 10 s cooldown, canon C16.1); (b) open the Restaurant
+  Hub → Upgrades; (c) buy a restaurant upgrade (the circled one is recommended; any upgrade counts); (d) watch it get
+  installed.
+- **Timing:** 12:20–13:20.
+- **The tutorial upgrade (selection rule, data-driven):** the cheapest §36.12 restaurant upgrade that requires
+  TIER_01 and is flagged tutorial-eligible. It must cost 150–250 MB and have an immediate visible effect,
+  preferably on Atmosphere (which feeds M and DecorMult, canon C11.3–C11.4). If no upgrade qualifies, use the
+  cheapest TIER_01 decor item in §36.13 with Atmosphere > 0. **Affordability guard:** the wallet here is
+  ≥ 500 MB + customer income by construction (§32.5). If a balance change ever leaves the player short, the quest
+  grants the shortfall as "Nana's Loan Forgiveness" (server-side, logged).
+- **Dialogue:**
+  - N1: "Back home. Hit the Return Door button. Works anywhere in the city. Free! Unlike me."
+  - N2 [B]: "Open the Restaurant Hub. Upgrades. This is where Morph Bucks become a better restaurant."
+  - N3: "I circled one for you. It's cheap, and it makes the place less… shack-y."
+  - Bolt Butterworth (`NPC_006`) zips in on forklift legs: "Delivery for the shack! Installed! Signed! Gone!" He
+    installs it with one comically oversized wrench (`ANM_061` Weld / bolt repair).
+  - N4 [B]: "Look at that. Atmosphere went up. Customers notice. Happier customers, bigger tips."
+  - N5: "Tiers, stations, decor, it all adds up. Save 1,000 Morph Bucks and we can call this place a DINER."
+- **Prompts:**
+
+| Beat | KB/M | Controller | Touch |
+|---|---|---|---|
+| Return Door | HUD 🏠 button or quick radial (Q) | radial (Select) → Return | 🏠 button |
+| Restaurant Hub | H | radial → Hub | **≡** → Hub |
+| Buy | click **Buy** | A on **Buy** | tap **Buy** |
+
+- **Highlights:** the Return button, then the Hub entry, the Upgrades tab and the circled card ("Recommended" ribbon,
+  never color-only). The before/after Atmosphere value is shown on the card.
+- **Animations:** Bolt `ANM_002`, `ANM_061`.
+- **Rewards:** 50 MB, 30 XP.
+- **Failure & auto-recovery:** closing the Hub re-highlights the entry after 5 s. Buying a different upgrade
+  completes the step. Return Door on cooldown shows the remaining seconds.
+- **Analytics:** step 11. Custom field 03 = recommended (yes/no).
+
+#### 32.6.12 Step 12: `QST_TUT_012` Hire Help
+
+- **Trigger:** 2 s after the install finishes.
+- **Objective:** (a) open the Employee panel; (b) hire Ollie (`EMP_001`) for 0 MB; (c) assign him as Chef to the
+  Grill; (d) watch him cook one order; (e) read the Offline Income Preview card.
+- **Timing:** 13:20–14:40, then graduation until 15:00.
+- **Setup:**
+  - Doorbell. Ollie the Octopus Intern waits at the door holding a soggy résumé.
+  - Ms. Hirewell (`NPC_007`) appears split-screen on Nana's board: "Recruitment Office, Downtown. I sent you a candidate. He's… enthusiastic."
+  - The Employees entry and the offline preview chip are revealed (§24).
+  - A walk-in customer (patience ×2) arrives once Ollie is assigned and orders 2 × `RCP_BRG_001`.
+- **Dialogue:**
+  - Ollie: "Hi! I'm Ollie! I have eight arms and one brain cell! The brain cell is VERY excited!"
+  - Ollie: "I cook two things at once! Sometimes I put a pickle on stuff. I don't know why. Nobody knows why."
+  - N1 [B]: "An octopus intern. Wage: 12 Morph Bucks an hour. Cheaper than me, and I'm a hologram."
+  - N2: "Hire him, then put him on the grill. Chefs need a station."
+  - Demo (Ollie grills two patties at once; the scripted trait gag adds a pickle): walk-in "Ooh, bonus pickle!"; N: "See? Two at once. One brain cell. Zero explanations."
+  - N3 [B] (preview card opens): "Here's the best part. When you log off, Ollie keeps cooking."
+  - N4: "Two hours without a Manager. Hire a Manager later and he'll work longer. Come back and collect. Money while you nap!"
+- **Hire card (canon C14.4):** `ROLE_CHEF` · Common ● · hire cost **0 MB** (tutorial gift) · wage 12 MB/h · Cooking 30 ·
+  Service 15 · Accuracy 28 · Reliability 40 · trait **"Eight Arms, One Brain Cell"** (cooks 2 items at once; 5 %
+  chance to put a pickle on everything).
+- **Prompts:**
+
+| Beat | KB/M | Controller | Touch |
+|---|---|---|---|
+| Employees | P | radial → Employees | **≡** → Employees |
+| Hire | click **Hire (0 MB)** | A | tap **Hire** |
+| Assign station | click Role ▸ Chef, Station ▸ Grill | A / D-pad | tap Role, tap Station |
+| Close preview | click **Got it!** | A | tap **Got it!** |
+
+- **Animations:** Ollie `ANM_002` Walk, `ANM_011` Grill flip, `ANM_017` Assemble stack; customer `ANM_043`, `ANM_044`.
+
+**The Offline Income Preview card.** The card is rendered from `OfflineEarningsService:PreviewAsync(player)`, which
+is the *same* pure function §17 uses for real reports, run with the live state, the cap, and incidents as an
+expected range. The main view shows the big number: **"≈ 350 MB if you're away 2 h"**. It also shows a range
+(≈ 290–440 MB), "Max 2 h without a Manager → hire a Manager for 4 h", and the tip "More ★ and more decor = more
+customers". A **Show the math** expander shows the canon C15 computation. The reference fixture below is also
+acceptance test AC-32-09.
+
+*Fixture inputs:* TIER_01 (seats 4, BaseDemand 50/h, canon C6). Stars 2.50 and Atmosphere 20 *(live values in game)*.
+Ollie with canon stats, Morale 80 % and Energy 100 % at hire *(starting morale per §16)*. Player EFFICIENCY 0. Menu =
+the four L1 recipes priced 9 / 10 / 6 / 6 MB (§4.1.3) with order weights 0.357 / 0.357 / 0.143 / 0.143. Base prep
+times 35 / 40 / 25 / 8 s and per-customer ingredient cost 3.80 MB are *(§6 values; fixture only)*. No Manager, so the
+cap is 2 h (canon C14.3).
+
+| # | Quantity | Computation | Value |
+|---|---|---|---|
+| 1 | RepMult | 0.5 + 0.25 × 2.50 | 1.125 |
+| 2 | DecorMult | 0.9 + 0.003 × 20 | 0.96 |
+| 3 | `Demand_off` | 50 × 1.125 × 0.96 × 0.6 | **32.4 customers/h** |
+| 4 | `Cap_seat` | 4 × 3600 / 300 | 48.0 /h |
+| 5 | `PrepSec_avg` | 0.357·35 + 0.357·40 + 0.143·25 + 0.143·8 | 31.5 s |
+| 6 | Ollie's efficiency | (29 / 100) × (0.6 + 0.4 × 0.80) × (0.7 + 0.3 × 1.00) × (1 + 0.001 × 0); chef RoleStatAvg = mean(Cooking 30, Accuracy 28) = 29, expressed as a 0–1 fraction | 0.2668 |
+| 7 | `Cap_kitchen` | (3600 / 31.5) × 0.2668 / 1.4 × 2 (trait: 2 parallel items) × (1 + 0.15 × 0) × 1 | 43.6 /h |
+| 8 | `Cap_service` | tier ≤ 2 → `Cap_kitchen` | 43.6 /h |
+| 9 | Q | min(32.4, 48.0, 43.6, 43.6) | **32.4 /h (demand-bound)** |
+| 10 | AvgTicket · quality q | 1.4 × 8.50 = 11.90 MB · min(0.95, 0.70 + 0.25 × 0.28) = 0.77 | — |
+| 11 | Revenue / h | 32.4 × 11.90 × 0.77 | 296.9 MB |
+| 12 | Tips / h | 296.9 × (0.04 + 0.04 × 15 / 100) × (1 + 0); Ollie's Service stands in for waiter service at counter tiers | 13.7 MB |
+| 13 | Ingredients / h · wages / h | 32.4 × 3.80 · 12 × 1 | 123.1 · 12.0 MB |
+| 14 | Net, hour 1 | 296.9 + 13.7 − 123.1 − 12.0 | 175.4 MB |
+| 15 | Net, hour 2 | Energy 92 % → efficiency 0.2604 → `Cap_kitchen` 42.5 /h, still above demand → same Q | 175.4 MB |
+| 16 | **2 h total (before incidents)** | 65 customers · revenue 594 · tips 27 · ingredients −246 · wages −24 | **≈ 351 MB** |
+| 17 | Incidents | count = floor(2 × 0.6 × 1) = 1 + seeded roll; bounded −10 % / +15 % of (revenue + tips) = −62 / +93 MB | range ≈ 290–440 MB |
+| 18 | Discoveries | 8 %/h chance of 1–3 MS → expected ≈ 0.3 MS | "maybe a few Shards!" |
+
+**Robustness note.** Hour 1 stays demand-bound for any trait multiplier ≥ 1.5. With no trait at all (×1.0) the card
+would show ≈ 225 MB. §36.8 is authoritative for how the trait applies offline, and the card simply displays what
+§17's function returns. For comparison, an hour of active play at TIER_01 nets ≈ 630 MB (canon C4.4). Ollie alone
+earns ≈ 28 % of that per hour, which sits *below* the 35–50 % band for a well-staffed restaurant and leaves visible
+room to grow ("Hire more staff and a Manager to earn more while you're away!").
+
+- **Rewards:** 50 MB, 40 XP, `EMP_001` (hired and assigned), 1 Morph Capsule (earnable capsule, canon C4.7 odds;
+  opened from the inventory any time), title "Restaurant Owner (Probably)".
+- **Graduation (14:40–15:00):** N [B]: "Well. You took an order, cooked a burger, survived a dinosaur, fixed a table,
+  grew a new arm and hired an octopus. I've never been prouder. Of anyone. Don't let it go to your head. Your new
+  head. Whatever head you've got." Confetti. The objective chip changes to **"Save 1,000 MB for Tiny Mutation
+  Diner"**, story chapter 1 begins (§20), daily quests unlock, and the full HUD is now visible.
+- **Failure & auto-recovery:** "Not now" on the hire card → Ollie waits at the door indefinitely; the Employees entry
+  pulses and N reminds every 60 s ("He's still there. Dripping."). The step and graduation stay pending. Assigning
+  Ollie to a non-grill station is allowed if it's a cooking station. The demo order then uses that station's
+  recipe, falling back to `STN_GRILL` via auto-reassign with a line.
+- **Analytics:** step 12 (= tutorial complete). `LogCustomEvent "mmr_tutorial_complete"` with total duration
+  (seconds) as the value.
+

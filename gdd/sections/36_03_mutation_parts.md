@@ -312,7 +312,7 @@ Slot weight **0.5 (Minor)** · Lv1 stat budget by rarity ● 2 / ▲ 4 / ■ 6 /
 | `MUT_180` | Chicken Leg | LEG | BIRD | ● Common | Lv1 | SHOP_MART 200 MB · CAPSULE 55 % | MOVE +2 | *Scurry:* Dodge Roll distance +10 %. | — | 5 | A skinny scaly yellow chicken leg with three splayed toes. | 2 MP · ≤ 700 tris (NPC 240) · LegLength 2.4 · Reversed knee (Knee joint C0 flipped). | Dodge-distance cap +25 %. |
 | `MUT_181` | Frog Leg | LEG | AMPHIBIAN | ● Common | Lv1 | SHOP_MART 200 MB · CAPSULE 55 % | MOVE +2 | *Spring Thighs:* jump height +12 %. | — | 5 | A long bent green frog leg with webbed toes. | 2 MP · ≤ 700 tris (NPC 240) · LegLength 1.8 · Crouched stance; jump squash pose layer. | Jump cap +40 %. |
 | `MUT_182` | Bear Leg | LEG | MAMMAL | ● Common | Lv1 | SHOP_MART 200 MB · CAPSULE 55 % | DEF +2 | *Planted:* knockback received −8 %. | — | 5 | A short thick furry bear leg with a padded foot. | 2 MP · ≤ 700 tris (NPC 240) · LegLength 1.6 · Fur shell on Hi. | Knockback-resist cap 60 %. |
-| `MUT_183` | Fish Tail Hopper | LEG | FISH | ● Common | Lv1 | SHOP_MART 200 MB · EVENT EVT_013 · CAPSULE 55 % | MOVE +1, CHARM +1 | *Hop-Swim:* sewer-water speed +20 %. | — | 5 | A fish tail where a leg should be, hopping everywhere with a splash. | 2 MP · ≤ 700 tris (NPC 240) · LegLength 1.5 · motion: jiggle · Hop gait layer replaces that leg's walk cycle; mismatched pairs play ANM_008 Wobbly gait. | Swim cap +30 %. |
+| `MUT_183` | Fish Tail Hopper | LEG | FISH | ● Common | Lv1 | SHOP_MART 200 MB · EVENT EVT_013 · CAPSULE 55 % | MOVE +1, CHARM +1 | *Hop-Swim:* sewer-water speed +20 %. | — | 5 | A fish tail where a leg should be, hopping everywhere with a splash. | 2 MP · ≤ 700 tris (NPC 240) · hides FEET · LegLength 1.5 · motion: jiggle · Hop gait layer replaces that leg's walk cycle; mismatched pairs play ANM_008 Wobbly gait. | Swim cap +30 %. |
 | `MUT_184` | Kangaroo Leg | LEG | MAMMAL | ▲ Uncommon | Lv5 | SHOP_MART 1,400 MB · QUEST (Job Board) · ARENA · CAPSULE 27 % | STR +2, MOVE +2 | *Roo Spring:* jump height +15 %. | `ABL_011` Kangaroo Kick | 6 | A huge powerful tan kangaroo leg with a long foot. | 2 MP · ≤ 750 tris (NPC 260) · LegLength 2.2 · Long foot extends 0.75 stud back. | Jump cap +40 %. |
 | `MUT_185` | Spider Leg Cluster | LEG | ARACHNID | ▲ Uncommon | Lv5 | SHOP_MART 1,040 MB · QUEST (Job Board) · EVENT EVT_032 · CAPSULE 27 % | REPAIR +2, MOVE +2 | *Skitter:* no slowdown on sticky floors (webs, syrup). | — | 6 | Three hairy spider legs bunched together, tapping rhythmically. | 2 MP · ≤ 750 tris (NPC 260) · LegLength 2.0 · 3 legs skinned to Upper/Lower with a phase-offset tap layer. | Terrain immunity only; doesn't cleanse STS_STICKY from attacks. |
 | `MUT_186` | Cheetah Leg | LEG | MAMMAL | ■ Rare | Lv12 | SHOP_MART rotation 7,000 MB + 20 MS · LAB_FUSION · QUEST (district chains) · EVENT EVT_023 · CAPSULE 12 % | STR +1, MOVE +4, CHARM +1 | *Burst Sprinter:* after 2 s of running, +5 MOVE. | `ABL_063` Cheetah Dash | 7 | A sleek spotted cheetah leg built for speed. | 2 MP · ≤ 800 tris (NPC 280) · LegLength 2.3 · Spot texture; no bones. | Sprint cap +8 MOVE; WalkSpeed ≤ 21. |
@@ -320,13 +320,13 @@ Slot weight **0.5 (Minor)** · Lv1 stat budget by rarity ● 2 / ▲ 4 / ■ 6 /
 | `MUT_188` | Ostrich Leg | LEG | BIRD | ▲ Uncommon | Lv5 | SHOP_MART 1,040 MB · QUEST (Job Board) · CAPSULE 27 % | MOVE +3, LUCK +1 | *Big Stride:* Dodge Roll distance +15 %. | — | 6 | A super-long pink ostrich leg with a knobbly knee. | 2 MP · ≤ 750 tris (NPC 260) · LegLength 3.0 · Reversed knee; maximum LegLength. | Dodge-distance cap +25 %; height clamp applies. |
 | `MUT_189` | Elephant Leg | LEG | MAMMAL | ▲ Uncommon | Lv5 | SHOP_MART 1,040 MB · QUEST (Job Board) · CAPSULE 27 % | STR +1, DEF +3 | *Stomp Solid:* knockback received −12 %. | — | 6 | A thick grey elephant leg like a tree stump, with toenails. | 2 MP · ≤ 950 tris (NPC 330) · size huge · LegLength 1.7 · Wide footprint. | Knockback-resist cap 60 %. |
 | `MUT_190` | Grasshopper Leg | LEG | INSECT | ■ Rare | Lv12 | SHOP_MART rotation 5,200 MB + 20 MS · LAB_FUSION · QUEST (district chains) · EVENT EVT_032 · CAPSULE 12 % | MOVE +5, EFFICIENCY +1 | *Mega Hop:* jump height +20 %. | — | 7 | A spiky green grasshopper leg folded like a spring. | 2 MP · ≤ 800 tris (NPC 280) · LegLength 2.4 · Fold pose layer on jump. | Jump cap +40 %. |
-| `MUT_191` | Pogo Stick Leg | LEG | OBJECT | ■ Rare | Lv12 | SHOP_MART rotation 5,200 MB + 20 MS · LAB_FUSION · QUEST (district chains) · EVENT EVT_027 · CAPSULE 12 % | STR +1, MOVE +4, CHARM +1 | *Boing-Boing:* jump height +18 %. | — | 7 | A pogo stick with a rubber foot replacing your leg, boinging constantly. | 2 MP · ≤ 800 tris (NPC 280) · LegLength 2.6 · motion: jiggle · Spring compress tween on landing. | Jump cap +40 %. |
-| `MUT_192` | Unicycle Wheel Leg | LEG | ROBOT | ■ Rare | Lv12 | SHOP_MART rotation 5,200 MB + 20 MS · LAB_FUSION · QUEST (district chains) · EVENT EVT_017 · CAPSULE 12 % | REPAIR +1, MOVE +3, EFFICIENCY +2 | *Rolling Start:* +4 MOVE on indoor floors. | — | 7 | A single unicycle wheel with a pedal where your leg used to be. | 2 MP · ≤ 800 tris (NPC 280) · LegLength 2.2 · motion: wheel spin · Wheel spin driven by velocity (client). | Sprint cap +8 MOVE. |
+| `MUT_191` | Pogo Stick Leg | LEG | OBJECT | ■ Rare | Lv12 | SHOP_MART rotation 5,200 MB + 20 MS · LAB_FUSION · QUEST (district chains) · EVENT EVT_027 · CAPSULE 12 % | STR +1, MOVE +4, CHARM +1 | *Boing-Boing:* jump height +18 %. | — | 7 | A pogo stick with a rubber foot replacing your leg, boinging constantly. | 2 MP · ≤ 800 tris (NPC 280) · hides FEET · LegLength 2.6 · motion: jiggle · Spring compress tween on landing. | Jump cap +40 %. |
+| `MUT_192` | Unicycle Wheel Leg | LEG | ROBOT | ■ Rare | Lv12 | SHOP_MART rotation 5,200 MB + 20 MS · LAB_FUSION · QUEST (district chains) · EVENT EVT_017 · CAPSULE 12 % | REPAIR +1, MOVE +3, EFFICIENCY +2 | *Rolling Start:* +4 MOVE on indoor floors. | — | 7 | A single unicycle wheel with a pedal where your leg used to be. | 2 MP · ≤ 800 tris (NPC 280) · hides FEET · LegLength 2.2 · motion: wheel spin · Wheel spin driven by velocity (client). | Sprint cap +8 MOVE. |
 | `MUT_193` | Tree Trunk Leg | LEG | PLANT | ■ Rare | Lv12 | SHOP_MART rotation 5,200 MB + 20 MS · LAB_FUSION · QUEST (district chains) · EVENT EVT_031 · CAPSULE 12 % | DEF +4, CHARM +1, EFFICIENCY +1 | *Rooted:* standing still ≥ 1 s makes you immune to knockback. | — | 7 | A barky tree-trunk leg with roots for toes and a small mushroom. | 2 MP · ≤ 800 tris (NPC 280) · LegLength 1.8 · Root spread tween on stand-still (client). | The only knockback immunity; ends the moment you move; Arena converts it to −60 %. |
 | `MUT_194` | Raptor Leg | LEG | DINOSAUR | ⬟ Epic | Lv25 | SHOP_ROTATION 32,000 MB + 80 MS · LAB_FUSION · EVENT EVT_016 · ARENA · CAPSULE 4.5 % | STR +3, DEF +1, MOVE +4 | *Pounce Ready:* Dodge Roll cooldown −0.2 s. | — | 8 | A feathered raptor leg with a big blunt sickle toe. | 2 MP · ≤ 900 tris (NPC 320) · LegLength 2.3 · Reversed knee; toe rounded. | Dodge cooldown floor 0.9 s. |
-| `MUT_195` | Octopus Tentacle Legs | LEG | MARINE | ⬟ Epic | Lv25 | SHOP_ROTATION 32,000 MB + 80 MS · LAB_FUSION · EVENT EVT_022 · CAPSULE 4.5 % | COOK_SPD +2, STR +2, EFFICIENCY +4 | *Suction Slither:* immune to slowdowns from spills, sticky and greasy floors. | — | 8 | A cluster of purple tentacles slithering where a leg should be. | 2 MP · ≤ 900 tris (NPC 320) · LegLength 1.6 · motion: spring chain · 4 spring chains with procedural ground contact (client raycast). | Terrain only; STS_STICKY from attacks still applies. |
+| `MUT_195` | Octopus Tentacle Legs | LEG | MARINE | ⬟ Epic | Lv25 | SHOP_ROTATION 32,000 MB + 80 MS · LAB_FUSION · EVENT EVT_022 · CAPSULE 4.5 % | COOK_SPD +2, STR +2, EFFICIENCY +4 | *Suction Slither:* immune to slowdowns from spills, sticky and greasy floors. | — | 8 | A cluster of purple tentacles slithering where a leg should be. | 2 MP · ≤ 900 tris (NPC 320) · hides FEET · LegLength 1.6 · motion: spring chain · 4 spring chains with procedural ground contact (client raycast). | Terrain only; STS_STICKY from attacks still applies. |
 | `MUT_196` | Mole Digger Leg | LEG | MAMMAL | ■ Rare | Lv12 | SHOP_MART rotation 7,000 MB + 20 MS · LAB_FUSION · QUEST (district chains) · EVENT EVT_010 · CAPSULE 12 % | STR +1, REPAIR +2, MOVE +3 | *Underground Know-How:* floor and plumbing repairs (flooring, sinks, dishwashers) +15 % speed. | `ABL_055` Mole Burrow | 7 | A stubby pink mole leg with a big shovel claw. | 2 MP · ≤ 800 tris (NPC 280) · LegLength 1.5 · Dig pose for ABL_055. | Repair-speed cap +40 %. |
-| `MUT_197` | Cloud Leg | LEG | ELEMENTAL | ⬟ Epic | Lv25 | SHOP_ROTATION 42,500 MB + 80 MS · LAB_FUSION · EVENT EVT_002 · CAPSULE 4.5 % | MOVE +5, LUCK +2, CHARM +1 | *Fluffy Float:* fall speed −40 %; hover 0.5 s at jump apex. | `ABL_044` Gust Kick | 8 | A puffy white cloud leg that drifts a little off the ground. | 2 MP · ≤ 900 tris (NPC 320) · LegLength 2.0 · motion: hover bob · Floats 0.3 stud (visual offset only, collision unchanged); vapor emitter on Hi. | Glide cap −60 %; the hover can't chain with a Jetpack double jump. |
+| `MUT_197` | Cloud Leg | LEG | ELEMENTAL | ⬟ Epic | Lv25 | SHOP_ROTATION 42,500 MB + 80 MS · LAB_FUSION · EVENT EVT_002 · CAPSULE 4.5 % | MOVE +5, LUCK +2, CHARM +1 | *Fluffy Float:* fall speed −40 %; hover 0.5 s at jump apex. | `ABL_044` Gust Kick | 8 | A puffy white cloud leg that drifts a little off the ground. | 2 MP · ≤ 900 tris (NPC 320) · hides FEET · LegLength 2.0 · motion: hover bob · Floats 0.3 stud (visual offset only, collision unchanged); vapor emitter on Hi. | Glide cap −60 %; the hover can't chain with a Jetpack double jump. |
 | `MUT_198` | Rocket Booster Leg | LEG | ROBOT | ⬟ Epic | Lv25 | SHOP_ROTATION 32,000 MB + 80 MS · LAB_FUSION · EVENT EVT_017 · CAPSULE 4.5 % | COOK_SPD +2, STR +1, MOVE +5 | *Afterburner:* after 2 s of running, +6 MOVE. | — | 8 | A red-and-white rocket leg with a cartoon exhaust puff. | 2 MP · ≤ 900 tris (NPC 320) · LegLength 2.1 · Exhaust puff scales with speed (never flames on the body). | Sprint cap +8 MOVE; WalkSpeed ≤ 21. |
 | `MUT_199` | Goat Hoof Leg | LEG | MAMMAL | ● Common | Lv1 | SHOP_MART 200 MB · CAPSULE 55 % | STR +1, MOVE +1 | *Mountain Goat:* jump height +8 %. | — | 5 | A shaggy white goat leg with a cloven hoof. | 2 MP · ≤ 700 tris (NPC 240) · LegLength 2.0 · Standard 2-segment leg. | Jump cap +40 %. |
 | `MUT_200` | Phoenix Talon Leg | LEG | MYTHOLOGICAL | ★ Legendary | Lv40 | SHOP_ROTATION weekly 200,000 MB + 250 MS + 10 RT · LAB_FUSION · QUEST Story ch.8 reward · EVENT EVT_002 · CAPSULE 1.3 % | COOK_SPD +2, DEF +3, MOVE +6 | *Ember Stride:* regenerate 1.5 HP/s while running out of combat. | — | 9 | A red-gold feathered leg with blunt glowing talons that leave a spark trail. | 2 MP · ≤ 1,000 tris (NPC 350) · LegLength 2.5 · Spark Trail on Hi, never on skin. | Regen cap 3 HP/s. |
@@ -467,58 +467,5 @@ Slot weight **0.0 (Cosmetic)** · Lv1 stat budget by rarity ● 0 / ▲ 0 / ■ 
 | `MUT_279` | Tiny Moons | FX | ALIEN | ⬟ Epic | Lv25 | SHOP_ROTATION 25,000 MB + 80 MS · LAB_FUSION · EVENT EVT_006 · ACHIEVEMENT Morphdex 150 parts owned · CAPSULE 4.5 % | — (FX: no stats) | *Lunar Orbit:* two tiny moons orbit your head, their phases following the real lunar cycle (UTC). | — | 8 | Two little cratered moons circling above your head. | 1 MP · ≤ 200 tris (NPC: skipped) · motion: orbit · 1 MeshPart (2 moons, ≤ 200 tris) spun client-side; phase by texture swap. | FX rule: no stats. |
 | `MUT_280` | Mystery Fog | FX | ALIEN | ? Secret | On discovery | **SECRET:** Hold 5.0 ★ reputation for 50 consecutive customers, then visit the Mystery Market (`BLD_13`) during the city night cycle. | — (FX: no stats) | *Who Goes There:* knee-high purple fog follows you; your name tag shows "???" for 3 s when you enter a building. | — | 10 | A creeping low purple fog with occasional question-mark sparkles. | emitters only, 0 MP · 2 emitters (rate 6); Reduced Effects → 1. | FX rule: no stats; the player list always shows the real name. |
 
-#### 36.3.23 Passive effect keys used in this database
-
-Every passive above maps to one engineering key; the combined caps are enforced by `MutationService` (§12.8).
-
-| Passive key | Group | Effect | Combined cap / stacking [TUNABLE] | Parts |
-|---|---|---|---|---|
-| `station_speed` | Cooking | Process/action time −X % at named stations, tagged ingredients or recipe categories | −25 % per station (multiplies with COOK_SPD and station level) | 15 |
-| `perfect_window` | Cooking | Perfect window +X s | +0.8 s per station | 3 |
-| `burn_grace` | Cooking | Burn delay +X s | +2.0 s per station | 1 |
-| `chop` | Cooking | Fewer chop taps | −2 taps; minimum 2 taps; timing ring always kept | 1 |
-| `ingredient_save` | Cooking | Chance an ingredient is not consumed / cost refunded | 15 % | 2 |
-| `dish_quality` | Cooking | +Food Quality on matching dishes, Golden-dish chance | +0.10 Q (Q ≤ 1.00) | 4 |
-| `plating` | Cooking | Plating & garnish time | −40 % time | 1 |
-| `cleanup` | Cooking | Trash / spill / debris cleaning speed or auto-clean | −40 % time; auto-clean interval ≥ 2 s | 4 |
-| `fire_safety` | Cooking | Station-fire extinguish speed / range | −60 % extinguish time | 3 |
-| `service_speed` | Service | Order-taking and hand-off time | −40 % time | 2 |
-| `patience` | Service | Customer patience +X % (after CHARM) | +25 % | 8 |
-| `tip_bonus` | Service | Tips × (1 + X) | +30 % | 5 |
-| `satisfaction` | Service | +N satisfaction on serve | shares the MutationBonus cap of +10 (§10) | 6 |
-| `reputation` | Service | Reputation gain multiplier | +50 % | 1 |
-| `anger_resist` | Service | Anger gain / escalation-roll multiplier | combined multiplier floor ×0.70 | 3 |
-| `calm_bonus` | Service | Calm Down! range/cooldown/targets; passive anger removal | range +3 studs; cooldown −20 %; +1 target; 1 removal per customer per 30 s | 6 |
-| `reveal` | Service | Information & telegraphs (UI only) | binary; telegraph leads never stack (longest wins) | 17 |
-| `employee_boost` | Service | Efficiency of nearby employees | +10 %; online only | 1 |
-| `damage_bonus` | Combat | +X % damage (often conditional) | +30 % combined, applied before STR | 13 |
-| `attack_speed` | Combat | Swipe Combo hit interval | −10 % | 1 |
-| `cleave` | Combat | Extra targets on a hit | +1 target | 1 |
-| `damage_reduction` | Combat | −X % damage taken (typed or directional) | 35 % combined, applied before DEF | 12 |
-| `knockback_resist` | Combat | Knockback received −X % | 60 %; immunity only from conditional parts | 9 |
-| `knockback_bonus` | Combat | Knockback dealt +X % | +40 % | 8 |
-| `throw_power` | Combat | Grab & Throw range / damage / knockback | +30 % | 3 |
-| `on_hit_status` | Combat | Status applied on hit (chance or conditional) | max 2 proc sources active; each ICD ≥ 4 s | 9 |
-| `thorns` | Combat | Damage or status returned to melee attackers | 8 damage per hit; ICD ≥ 1.5 s; status thorns use an on-hit proc slot | 7 |
-| `status_resist` | Combat | Status duration −X % or immunity | −60 % per status; immunity only where listed | 17 |
-| `guard` | Combat | Block guard meter / block reduction | +20 guard; block reduction ≤ 80 % | 3 |
-| `dodge` | Combat | Dodge cooldown / i-frames / distance; projectile miss | cooldown ≥ 0.9 s; i-frames ≤ 0.40 s; distance +25 %; miss 25 % | 8 |
-| `regen` | Combat | HP regeneration | 3 HP/s combined | 10 |
-| `max_hp` | Combat | +max HP | +60 | 4 |
-| `revive` | Combat | KO prevention / faster KO recovery | one trigger per KO; 180 s shared cooldown; off in ranked Arena | 2 |
-| `aggro` | Combat | Targeting priority / stealth | binary | 2 |
-| `aura` | Combat | Area effect on hostile customers | same-type auras never stack (strongest wins) | 3 |
-| `repair_speed` | Repair | Repair speed +X % | +40 % (multiplies with REPAIR) | 10 |
-| `repair_cost` | Repair | Repair material cost −X % | −15 % (≤ −40 % together with REPAIR) | 2 |
-| `sprint` | Movement | +MOVE while running or under a condition | +8 MOVE; MOVE cap 100; WalkSpeed ≤ 21 | 8 |
-| `jump` | Movement | Jump height / extra jump | +40 % height; max 1 extra jump | 9 |
-| `glide` | Movement | Fall-speed reduction, glide, apex hover | −60 % fall speed; no sustained flight | 10 |
-| `swim` | Movement | Sewer-water speed / soaked penalty | +30 % | 5 |
-| `move_terrain` | Movement | Immunity to floor slowdowns (spills, sticky, greasy) | binary per terrain | 5 |
-| `reach` | Movement | +studs interaction or pickup range | +2 studs stations/customers; +4 studs pickup; server re-validates | 9 |
-| `grip` | Movement | Keep carried item when knocked back | 100 %; KO always drops | 2 |
-| `carry` | Movement | +1 carry capacity | hard max 3 items (§12.8) | 3 |
-| `drop_luck` | Luck | Rare-drop weight / finds | +30 %; never changes Morph Capsule odds | 8 |
-| `jackpot` | Luck | Jackpot Tip chance +pp | +2.0 pp | 4 |
-| `cosmetic` | Cosmetic | FX flavor only | no stats, no gameplay effect | 10 |
+Every passive above maps to one engineering key (`passive.key`); the key vocabulary and its combined caps are listed in §12.8 and enforced by `MutationService`.
 

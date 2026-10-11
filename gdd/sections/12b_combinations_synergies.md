@@ -147,7 +147,6 @@ in front ("Golden Rat", "Frosty Penguin", "Dragon Cat").
 | Absolute Mystery | `distinct:category>=10` | {{Absolute Mystery}} | ten categories on one body |
 | Beep Boop Supreme | `category:ROBOT>=8` | {{Beep Boop Supreme}} | more robot than robot |
 | Walking Salad Bar | `category:PLANT>=6` | {{Walking Salad Bar}} | customers keep asking for dressing |
-| Gilded Everything | `tag:gold>=3` | {{Gilded Everything}} | every gold piece at once |
 
 **Variables [TUNABLE].** Slot dominance, rarity bonus, loud-prefix flags and the signature list are data
 (`ReplicatedStorage/Shared/Morph/NamingRules`). Tuning goal: across live customer spawns, ≥ 90 % of keys should name
@@ -179,7 +178,7 @@ progress and gives players a reason to try odd builds.
     2 s within 12 studs. City crowds are client-only cosmetics (§18) and never give credit.
   - **Worn.** You wore the key for ≥ 60 s outside the Morph menu, or completed one order, fight or repair while
     wearing it. This stops players registering keys by flicking parts in the menu.
-- Signature titles have their own page (18 at launch). The first time you **wear** a title, it is also added as a
+- Signature titles have their own page (17 at launch). The first time you **wear** a title, it is also added as a
   selectable nameplate title (titles are part of the C17.4 reward vocabulary).
 - The Morphdex screen is a grid with one row per head family (40) and one cell per dominant family. Unseen cells show
   a "?" silhouette; Spotted cells show a gray silhouette plus "Spotted at <place>"; Worn cells show a full-color

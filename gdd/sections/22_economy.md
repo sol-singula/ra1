@@ -294,8 +294,8 @@ Generated examples (D is an assumption for illustration; §6 is authoritative fo
 
 ### 22.7 Operating Margins
 
-Operating margin falls only slightly with tier (59–60 % at T1–T3 → 63–66 % mid/late, see §22.5.2) because rising wages
-are offset by better ingredient ratios (difficulty, EFFICIENCY, Stocker) and tips. Guard-rails [TUNABLE]:
+Operating margin *rises* gently with tier (59–60 % at T1–T3, 62–63 % at T4–T7, 65–67 % at T8–T10, see §22.5.2) because
+better ingredient ratios (difficulty, EFFICIENCY, Stocker) and tips outpace rising wages. Guard-rails [TUNABLE]:
 
 | Metric | Formula | Healthy band | Alarm (§22.15) |
 |---|---|---|---|
@@ -481,7 +481,7 @@ duplicates excluded; generated):
 | 14 | 136.5–140.0 | 0.3 | 0.1 | 0.1 | 5.0 | 0.0 | 0.0 | 5 | 1 | 58 |
 <!-- /sim:mut_weekly -->
 
-Reading the table: ~8 new parts in week 1 (tutorial part, story, capsules, first Mart buys), a steady 3–5 per week through
+Reading the table: ~8 new parts in week 1 (tutorial part, story, capsules, first Mart buys), a steady 2–5 per week through
 the mid-game with the first Epic from story chapter 5 (week 3), the first MB-bought Legendary around week 10 (`TIER_09`)
 and the first Mythic from the story finale (week 13). Collecting all 280 parts is a multi-month goal by design; Mythic
 fusion (3 Legendary of one category + 600 MS + 40 RT) is the long-tail aspiration.
@@ -577,9 +577,10 @@ yet every tier lands exactly on its level gate: offline MB accelerates morphs an
 <!-- /sim:sim_early -->
 
 The tutorial grant buys nothing yet — it is saved, with 90 % of T1 income, into `TIER_02` at 1.15 h (the instant L5 is
-reached). The first Mutation Mart purchase (a Common) lands in the 2.00–2.25 h session; the Common Manager (4 h offline
-cap) comes right after `TIER_03`. Discretionary MB is thin by design: canon tier costs take ≈ 80 % of the first 3 h of
-income, so early morph variety comes from the tutorial part, story chapter 1 and capsules.
+reached). The first Mutation Mart purchase (a Common) lands in the 2.00–2.25 h session. In `TIER_03` the player first buys
+an Uncommon part, then hires the Common Manager (≈ 5.9 h, offline cap 2 h → 4 h) and fills the `TIER_03` roster by
+8.4 h. Discretionary MB is thin by design: canon tier costs take ≈ 80 % of the first 3 h of income, so early morph
+variety comes from the tutorial part, story chapter 1 and capsules.
 
 #### 22.12.2 Mid Game — `TIER_05` to `TIER_07` entry (14 h → 41 h), 1.5-hour sessions (generated)
 
@@ -636,8 +637,10 @@ while the tier fund rebuilds; `TIER_06` arrives at 27.3 h (+9 %).
 | 20 | 132.50–135.00 | 84 | `TIER_10` | 364,682 | 0 | 85,000 | 315,000 | 35,090 | 42,109 | 6,616 | 0 | 7,161 | 536,608 | 20/19 | — |
 <!-- /sim:sim_late -->
 
-Late sessions alternate Epic buys, Legendary saves and Epic/Legendary hires; after `TIER_10` (123.9 h, +3 %) the tier fund
-is released and the binding constraint becomes MS (§22.13).
+In `TIER_09` sessions alternate Epic staff hires (replacing surplus low-rarity staff at the cap) and Epic part upgrades
+while the mutation budget saves for a Legendary part (bought in the 102.5–105 h session) and the tier fund builds the
+1,500,000 MB for `TIER_10`. After `TIER_10` (123.9 h, +3 %) the released fund buys another Legendary part and three Epic
+hires, Legendary staff follow, and the binding constraint becomes MS (§22.13).
 
 #### 22.12.4 Where the Money Goes (share of net income per tier phase, generated)
 
@@ -676,8 +679,8 @@ Scenario B (with offline earnings):
 <!-- /sim:phase_mix_offline -->
 
 Scenario A confirms the §C4.4 design intent (≈ 50 % of income to tiers in T3–T9, ≈ 50 % to mutations, staff, stations,
-decor and repairs). Scenario B shows the size of the late MB surplus that prestige sinks must absorb (19 % of income at
-`TIER_05`, rising to ≈ 60 % at `TIER_09`–`TIER_10`) — the quantitative basis for §22.14.3.
+decor and repairs). Scenario B shows the size of the late MB surplus that prestige sinks must absorb (18 % of income at
+`TIER_05`, rising to ≈ 58–59 % at `TIER_09`–`TIER_10`) — the quantitative basis for §22.14.3.
 
 ### 22.13 Mutation Shard and Research Token Flows
 

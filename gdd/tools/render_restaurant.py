@@ -60,6 +60,17 @@ def fmt(n, dec=0):
     return f"{int(round(n)):,}"
 
 
+def pol(text):
+    """Typographic polish for JSON-sourced prose: section refs, multiplication signs, minus signs."""
+    if not text:
+        return text
+    text = re.sub(r"\bsections? (\d+(?:\.\d+)*)", "\u00a7\\1", text)
+    text = re.sub(r"(^|[\s(])x(\d)", "\\1\u00d7\\2", text)
+    text = re.sub(r"(^|[\s(])-(\d)", "\\1\u2212\\2", text)
+    text = text.replace(" -> ", " \u2192 ").replace(">=", "\u2265")
+    return text
+
+
 def fp(s):
     return re.sub(r"(\d)x(\d)", "\\1\u00d7\\2", s)
 
@@ -203,10 +214,10 @@ def render_36_12(d, econ, items):
         if n == 1:
             req = "Start (Level 1); granted by the story intro (Nana Gristle's shack)"
         else:
-            req = f"Level {t['level']} \u00b7 {fmt(t['cost'])} MB \u00b7 owns `{prev}`"
+            req = f"L{t['level']} \u00b7 {fmt(t['cost'])} MB \u00b7 owns `{prev}`"
             if t["permit"]:
-                req += " \u00b7 City Hall Expansion Permit (permit quest, \u00a720; fee included)"
-            req += " \u00b7 restaurant empty (Renovation, \u00a715.3)"
+                req += " \u00b7 City Hall Expansion Permit (\u00a720)"
+            req += " \u00b7 empty dining room (\u00a715.3)"
         area = t["W"] * t["D"]
         fa = f"{t['W']}\u00d7{t['D']} = {fmt(area)}"
         if t["patio"][0]:
@@ -219,7 +230,7 @@ def render_36_12(d, econ, items):
         off = (f"{fmt(lean['net'])}\u2013{fmt(f['net'])} MB/h \u00b7 cap {f['H']} h \u2192 \u2264 {fmt(f['session'])} MB "
                f"per session ({round(100 * f['pct'])} % of active)")
         a(f"| `{t['id']}` | {t['name']} | {fmt(t['cost'])} | {req} | {fa} | {t['seats']} seats "
-          f"({t['service']} service) | {kc} | {t['menu']} | {thr} | {t['equipment']} | {t['decor']} | "
+          f"({t['service']} service) | {kc} | {t['menu']} | {thr} | {pol(t['equipment'])} | {pol(t['decor'])} | "
           f"{t['emp']} | {off} |")
         prev = t["id"]
     a("")
@@ -279,15 +290,13 @@ def render_36_12(d, econ, items):
     a("")
     a("**Lean crew (minimum viable):**")
     a("")
-    a("| # | Tier | Crew | Cap H | Q (binding) | Revenue | Tips | Ingredients | Wages | Net / h | % of active | "
-      "Max per session |")
-    a("|---|---|---|---|---|---|---|---|---|---|---|---|")
+    a("| # | Tier | Crew | Cap H | Q (binding) | Revenue | Net / h | % of active | Max per session |")
+    a("|---|---|---|---|---|---|---|---|---|")
     for t in d["tiers"]:
         f = econ[t["id"]]["crew_lean"]
         n = tnum(t["id"])
         a(f"| {n} | `{t['id']}` | {crew_text(d, t['crew_lean'])} | {f['H']} | {fmt(f['Q'], 1)} ({f['binding']}) | "
-          f"{fmt(f['rev'])} | {fmt(f['tips'])} | {fmt(f['ingr'])} | {fmt(f['wages'])} | **{fmt(f['net'])}** | "
-          f"{round(100 * f['pct'])} % | {fmt(f['session'])} |")
+          f"{fmt(f['rev'])} | **{fmt(f['net'])}** | {round(100 * f['pct'])} % | {fmt(f['session'])} |")
     a("")
     a("**Reading the result.** From `TIER_06` up a well-staffed restaurant lands at roughly a third to two-fifths of "
       "active income per offline hour, inside the canon 35\u201350 % target and far below the 60 % ceiling. "
@@ -326,12 +335,12 @@ def render_36_12(d, econ, items):
             path_total += sum(costs)
             path_costs[u["path_station"]] = sum(costs)
             pre = f"owns \u2265 1 `{u['path_station']}`; previous level"
-            a(f"| `{u['id']}` | {u['name']} | {u['cat']} | {effect} | {cost} | {req} | {pre} | {u['notes'] or '\u2014'} |")
+            a(f"| `{u['id']}` | {u['name']} | {u['cat']} | {effect} | {cost} | {req} | {pre} | {pol(u['notes']) or '\u2014'} |")
         else:
             other_total += u["cost"]
             pre = f"`{u['prereq']}`" if u["prereq"] else "\u2014"
-            a(f"| `{u['id']}` | {u['name']} | {u['cat']} | {u['effect']} | {fmt(u['cost'])} | T{u['tier']} / L{u['level']} | "
-              f"{pre} | {u['notes'] or '\u2014'} |")
+            a(f"| `{u['id']}` | {u['name']} | {u['cat']} | {pol(u['effect'])} | {fmt(u['cost'])} | T{u['tier']} / L{u['level']} | "
+              f"{pre} | {pol(u['notes']) or '\u2014'} |")
     a("")
     a("#### 36.12.5 Upgrade Economy Summary")
     a("")
@@ -419,8 +428,8 @@ def render_36_13(d, items_by_id):
         tier_s = f"T{tier}" if tier else "\u2014"
         price_s = fmt(price) if price is not None else "\u2014 (not sold)"
         set_s = sets[st]["name"] if st else "\u2014"
-        return (f"| `{iid}` | {name} | {cat} | {stn_s} | {tier_s} | {price_s} | {fp(foot)} | {cap} | {atm} | "
-                f"{fmt(dur) if dur is not None else '\u2014'} | {set_s} | {notes or '\u2014'} |")
+        return (f"| `{iid}` | {name} | {cat} | {stn_s} | {tier_s} | {price_s} | {fp(foot)} | {pol(cap)} | {atm} | "
+                f"{fmt(dur) if dur is not None else '\u2014'} | {set_s} | {pol(notes) or '\u2014'} |")
 
     for gi, g in enumerate(groups, 1):
         a(f"#### 36.13.{gi} {g['title']}")

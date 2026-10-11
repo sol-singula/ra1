@@ -4,8 +4,10 @@
 > shared design system, input adaptation, scaling and safe areas, the screen stack and the `UIController` state
 > machine, readability-in-chaos rules, accessibility, localization, UI performance, and a wireframe-level spec for
 > every interface in brief Part 17. Rules owned elsewhere are **displayed, never redefined**: morph customization
-> behavior (§13), the offline report and Welcome Back flow (§17), cooking timing and scoring (§5), combat (§11),
-> customers (§8–§10), prices (§22, §23), the tutorial script (§32). Where a screen shows a canon value, canon wins.
+> behavior (§13), the offline report and Welcome Back flow (§17), stat allocation and the Level panel (§14), cooking
+> timing and scoring (§5), combat and targeting (§11), travel rules (§18), customers (§8–§10), prices (§22, §23), the
+> tutorial script (§32). Where a screen shows a canon value, canon wins. The cooking (§5) and combat (§11) control
+> schemes are merged into one default binding map in §24.3.
 > UI internals (ScreenGui names, instance trees, localization keys, design tokens) are defined here; they are not
 > database IDs.
 
@@ -168,8 +170,8 @@ brightest district lighting (§25).
 - **Unique silhouettes** for every status family: patience (4 bands), anger (levels 1–6), satisfaction (5 bands),
   station state (idle / cooking / perfect / burning / on fire / broken), damage state (Pristine sparkle, Scuffed
   scratch, Cracked crack, Broken snapped leg, Destroyed rubble pile), rarity (7 shapes), the 9 stats (stopwatch-
-  spatula `COOK_SPD`, chef's-kiss star `COOK_QLT`, flexing arm `STR`, tray shield `DEF`, wrench `REPAIR`, sneaker
-  `MOVE`, four-leaf pickle `LUCK`, heart bow `CHARM`, gear-coin `EFFICIENCY`).
+  spatula `COOK_SPD`, chef's-kiss star `COOK_QLT`, fist `STR`, tray shield `DEF`, wrench `REPAIR`, sneaker `MOVE`,
+  four-leaf clover `LUCK`, heart bow `CHARM`, gear-coin `EFFICIENCY`; frying pan for the combined Cooking row, §14).
 - **Food icons** come one per recipe and ingredient from the art atlases (§25); modification chips use a small,
   separate glyph set (upside-down arrow, snowflake, "no circles" sign, number badge, etc., mapped by §6.18 data).
 - **No baked-in text** in icons. Keyboard keycaps render `UserInputService:GetStringForKeyCode` (respects AZERTY);
@@ -655,7 +657,7 @@ opening a menu.
 ```text
 Regular 1920x1080 (inside CoreUISafeInsets)
 +------------------------------------------------------------------------------------------------+
-| [Roblox][Chat] [Lv 12 |=====XP====-------|   512/876   +2]   [MB 12,450][MS 85][v]  [Map][=]   |
+| [Roblox][Chat] [Lv 12 |======XP====------|   612/876   +2]   [MB 12,450][MS 85][v]  [Map][=]   |
 |                [HP |==================    | 118/122] [WOOZY 7s]          [3.7 ***-][K 82][W 2] |
 | +-ORDERS (5)-------------------+                                     +-OBJECTIVE--------------+ |
 | | T3 [BRG][SODA]   (o) 42s  :) |                                     | Serve 3 PERFECT dishes | |
@@ -1203,29 +1205,33 @@ sliders and choices; A toggles; Y resets one option. *Compact:* rows 56 u tall, 
 binding conflict shows both actions in a warning chip and refuses until resolved; reserved keys (Esc, ButtonStart)
 cannot be bound.
 
-### 24.32 Stats & Level-Up Panel
+### 24.32 Stats & Level-Up Panel ("Level Up & Get Stronger") — summary; full spec in §14
 
-**Purpose & class.** Full-screen menu (K / Level badge), matching the mockup's "Level 12" panel. Allocation is
-deferred here by canon E14.
+**Purpose & class.** Full-screen menu (K / Level badge) matching the mockup's "Level 12" panel. **§14 owns the
+allocation rules, layout and component names**; this entry fixes shell and platform behavior. Allocation is deferred
+here by canon E14.
 
 ```text
-+-- LEVEL 12 --------------- XP 512 / 876 --------------- Points to spend: 2 ------------ [X] -+
-| [stopwatch] Cooking   Speed 22 | Quality 21   next: Quality                   [ + ]         |
-| [arm]       Strength  30                                                       [ + ]         |
-| [wrench]    Repair    12                                                       [ + ]         |
-| [pickle]    Luck      18  (allocated 6/50)                                     [ + ]         |
-| [More Stats v]  Defense . Movement Speed . Customer Charm . Restaurant Efficiency            |
-| [Confirm] [Undo]     Respec: free in 3h 10m (or 6,000 MB)               [Skill Trees >]      |
-+---------------------------------------------------------------------------------------------+
++------------------- LEVEL UP & GET STRONGER -------------------+
+|  LEVEL 12            [##############..........]  612 / 876 XP |
+|  Stat points: 2                        Skill points: 1  (+)   |
+|  [pan]    Cooking    24  (SPD 26 | QLT 22)        [ + ]       |
+|  [fist]   Strength    9                           [ + ]       |
+|  [wrench] Repair      7                           [ + ]       |
+|  [clover] Luck        5                           [ + ]       |
+|  v More Stats (9)                                              |
+|  [Skill Trees]     [Respec: free in 03:12:44]     [Apply]     |
++---------------------------------------------------------------+
 ```
-`StatsMenu ─ Header{LevelText, XpBar, PointsChip} · StatRows (MmrStatRow ×4: Cooking, Strength, Repair, Luck) ·
-MoreStatsExpander (all 9, C5) · Footer{Confirm, Undo, RespecButton, SkillTreeButton}`. **States.** Viewing → Staging (pending "+") → Confirming (Loading) → Viewing; RespecConfirm modal. **Rules surfaced (C5):** 2 points
-per level; max 50 allocated per stat (shown "50/50"); effective values above the cap show "MAXED"; the Cooking "+"
-alternates `COOK_SPD` and `COOK_QLT` and labels which comes next; respec free once per 24 h, otherwise 500 MB × level
-(L12 = 6,000 MB) behind a Danger hold-to-confirm modal. Tooltips preview effects with the C5 formulas (display only).
-Points are staged locally and sent as one batch on Confirm; `ProgressionService` validates. **Input:** "+" by click/tap,
-A on focused row, keys 1–4; Undo = X. *Compact:* rows 64 u, More Stats as a drill-down. **Edge:** opened while combat
-locked → refused per E2; points earned while open update the chip live.
+`LevelPanel ─ Header (level, XP bar) · PointsRow · HeadlineStats (4 × MmrStatRow: icon, label, value, MAXED badge, "+",
+formula tooltip) · MoreStats (collapsible, all 9, C5) · Footer (Skill Trees, Respec, Apply)` (names per §14).
+**States.** Viewing → Staging (pending "+") → Applying (Loading) → Viewing; RespecConfirm modal (Danger, hold-to-confirm).
+**Canon surfaced (C5):** 2 points per level; a stat at 50 allocated shows "50/50" and its "+" disables; effective values
+over the cap show "MAXED"; the Cooking "+" feeds whichever of `COOK_SPD`/`COOK_QLT` has fewer allocated points (§14);
+respec free once per 24 h, else 500 MB × level (L12 = 6,000 MB). **Data:** `ProgressionService` (staged edits commit on
+Apply or close; the server validates). **Input:** click/tap "+"; gamepad D-pad moves rows, A = "+", X = Apply; touch
+targets 64 u. *Compact:* rows full-width, More Stats as a drill-down. *TenFoot:* footer glyph bar. **Edge:** opening while
+combat locked is refused (E2); points earned while open update the chip live.
 
 ### 24.33 Offline Earnings Report and Welcome Back Screen — summary; full spec in §17
 
@@ -1276,7 +1282,7 @@ per-input interactions, Compact (mobile) and TenFoot (console) notes, and edge c
 | Mutation research (Lab fusion) | 17.6 | 24.29 | Menu |
 | Marketplace (cosmetic only) | 17.6 | 24.30 | Menu |
 | Settings | 17.6 | 24.31 | Overlay |
-| Stats & Level-Up panel (mockup "Level 12") | 9.1 | 24.32 | Menu |
+| Stats & Level-Up panel (mockup "Level 12"; summary → §14) | 9.1 | 24.32 | Menu |
 | Offline earnings / Welcome Back (summary → §17) | 17.6, 11.10 | 24.33 | Menu |
 
 ### 24.35 Acceptance Criteria

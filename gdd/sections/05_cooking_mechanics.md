@@ -453,7 +453,7 @@ Durations are Lv1 values before stats/KA; all heat items use `W_perfect` 2.0 s, 
 | Failure | Overfill > 110 % → SPILLED (sticky puddle); agitation > 95 → EXPLODED (confetti-foam, SPILLED). |
 | VFX & audio | Liquid level line with target band; fizz hiss; ice clinks; shaking rattles; the drink's tiny face reacts to its mood. |
 | Co-op | 1 nozzle (2 at Lv5); cup on the nozzle is locked to the pourer. |
-| Mutations | KA `fizzy`-friendly tags `water`: −5 % pour time per part. `MUT_120` Cow Body: dairy pours and shakes 20 % faster. `MUT_053` Elephant Trunk: ice taps add 2 cubes (hold-free). |
+| Mutations | KA `water`: −5 % pour time per part. `MUT_120` Cow Body: dairy pours and shakes 20 % faster. `MUT_053` Elephant Trunk: ice taps add 2 cubes (hold-free). |
 | Roblox | Non-heat hold meter; agitation meter value/peak and history stored on the Dish. |
 
 ##### `STN_ICECREAM` — Ice Cream Machine
@@ -1264,3 +1264,86 @@ back and plays a soft "bonk" with the reason ("Busy!", "Too far!").
 - Analytics (§31): `mmr_dish_served` {recipeId, Q, C, A, modIds, tier}, `mmr_station_fire` {stationType},
   `mmr_mod_result` {modId, satisfied}, `mmr_wrong_order` {recipeId}, `mmr_chop_result` {avgScore, autoRhythm}.
 
+---
+
+### 5.11 Edge Cases
+
+| # | Situation | Ruling |
+|---|---|---|
+| E1 | Owner disconnects while cooking | Canon E1: the restaurant enters **Closing** — online employees finish current tickets; otherwise seated customers leave paying 0 ("Closed for the day!", no reputation loss). `CookingService.CloseRestaurant` stops every heat slot, extinguishes fires, clears hazards; in-progress basic food is discarded at no charge; special ingredients in stations and reserved stock return to stock; guests' carry stacks are cleared and guests are moved to the street. |
+| E7 | Two players use the same station | Canon E7: locks are per slot (§5.3.1, §5.8); multi-slot stations serve several players; items are restaurant-owned and anyone may finish them. |
+| E9 | No ingredients | Canon E9: basic ingredients are unlimited (cost netted at serve); special-ingredient recipes go SOLD OUT and are not ordered; stock is reserved at order time so accepted orders stay completable; if every menu item is sold out, `RCP_BRG_001` is auto-added (starter stations only). |
+| X1 | Guest disconnects mid-cook | Their locks are released; their carried items are placed on the nearest free hold within 7 studs, else dropped (involuntary, never charged); their items on stations keep cooking. |
+| X2 | Station becomes Broken mid-cook | Slots go `PAUSED` (rate 0): nothing burns; repairing resumes exactly where it stopped. A station that breaks while ON_FIRE goes out with a soot puff. |
+| X3 | Station Destroyed mid-cook | Items are ejected: basic food discarded free, special ingredients returned to stock; tickets stay open; §6.18 mods that need that station are waived (no penalty, no bonus). |
+| X4 | Fire starts while a player is in a full-screen menu | FIRE banner + "Go!" button + alarm above the menu; no auto-close (canon E2 covers hostile customers); fire is capped (§5.7) and cannot break stations. |
+| X5 | Carrying items when KO'd ("Seeing Stars") | All carried items drop at the KO spot as involuntary drops (never charged). Plated dishes do **not** shatter: they rest intact for 5 s (a teammate may grab them), then the food is SPILLED and the plate returns to the dirty pool. Tools return to their mounts; crates return to the dock. |
+| X6 | Two players grab the same finished item in the same frame | First request processed wins; the other gets "Too slow!" and nothing else changes. |
+| X7 | Customer leaves while their dish is cooking or bound | Items become `VOID`; dishes become orphans that may be bound/served to any open item they match (mods re-evaluated for the new item); binning an orphan is never charged. |
+| X8 | Dish served to the wrong customer | §5.6.5 step 5: soft reject if it fits another customer, "Wrong Order?!" if it fits nobody; the dish always returns to the player. |
+| X9 | Station upgrade purchased mid-cook | Upgrade queued until every slot idles (§5.3.1); no timing changes mid-item. |
+| X10 | Moving or storing a station with items in it (build mode, §15) | Blocked with "Empty it first!" — `BuildingService` checks `CookingService.IsIdle(stationUid)`. |
+| X11 | Carry capacity drops while holding extra items (part unequipped, `ABL_061` expires) | Excess items (from the back of the stack) are placed on the nearest free hold within 7 studs, else dropped (involuntary, uncharged), within 1 s. |
+| X12 | `ABL_066` Microwave Zap-Cook timing | Valid only while the item is UNDERCOOKED or RARE: sets `cookSec = T_pe + 0.01` (GOOD) and the item keeps cooking (it can still burn). Used on PERFECT or later, non-heat items or ON_FIRE slots → rejected with no cooldown consumed. |
+| X13 | Server hitch (frame gap > 0.5 s) | Stamps of all active slots shift forward by `gap − 0.5 s` (§5.10.5): no food burns during a server freeze. |
+| X14 | Player levels up or changes stats mid-cook (canon E14) | Toast only; items already on stations keep the placer's timings from placement time. |
+| X15 | Thrown item lands on an occupied slot or a burning station | Occupied → bounces to the floor (Five-Second Rule). Burning → item RUINED (charged as waste only if thrown by the owner; guest waste is never charged). |
+| X16 | Loose-prop cap (30 per interior) reached | Oldest floor item despawns; basic food uncharged, special ingredients returned to stock. |
+| X17 | Player walks out of the restaurant door holding food | Food cannot leave the interior: carried food is placed on the nearest free counter inside (or binned, uncharged); tools return to mounts. |
+| X18 | A player is KO'd while holding a chop lock | Lock released; the item stays on the board with its taps so far and anyone may continue the chop. |
+| X19 | `EVT_009` Blackout Night | Station rings, meters and ticket rail remain self-illuminated (readability); `glow`-tagged parts light up a 10-stud radius as a bonus. |
+
+---
+
+### 5.12 Acceptance Criteria
+
+- **AC-05-01** — All 24 station types in §5.3.2 exist as `StationDefs` entries with server state machines; an automated test
+  places a valid item in every slot type and observes the documented state sequence with no unhandled states.
+- **AC-05-02** — At Lv1 with `COOK_QLT` 0, every heat item's PERFECT window measures 2.0 s ± 0.1 s of server time and is shown
+  with a green ring plus ✓ glyph; `T_burn = T_ready + 6.0 s` ± 0.1 s; ignition at `T_burn + 4.0 s` ± 0.1 s (fryer at
+  OilHeat ≥ 90: + 2.0 s).
+- **AC-05-03** — A beef patty's `T_ready` measures 8.0 / 7.2 / 6.4 / 5.6 / 4.8 s at station Lv1–Lv5 (stats 0) ± 0.1 s; each Lv5
+  gimmick activates only at Lv5 in a TIER_08+ restaurant.
+- **AC-05-04** — Fuzz test over 10,000 random loadouts (stats, upgrades, KA parts): no `T_ready` below 0.25 × base and no
+  `W_perfect` above 6.0 s.
+- **AC-05-05** — Chopping: N = 4 counted taps; taps < 0.12 s apart are ignored; the (N + 4)th tap yields MUSHY (0.35);
+  green/yellow/miss score 1.0/0.8/0.6 and are averaged; with Auto-Rhythm every tap scores 0.8.
+- **AC-05-06** — Under a simulated 200 ms RTT, a tap pressed on the client exactly at the ring's hit moment is graded green in
+  ≥ 95 % of 1,000 trials.
+- **AC-05-07** — Station interactions are rejected beyond 9.0 studs and accepted within 9.0 studs (no reach parts); serving is
+  accepted within 12.0 studs of the customer.
+- **AC-05-08** — Two players operate grill slots 1 and 2 simultaneously without rejection; an input on a slot locked by another
+  player is rejected with "Busy!" within 250 ms; a passively cooking slot accepts flips/removal from any co-op player.
+- **AC-05-09** — No Cooking remote accepts a grade, quality, result, price or item-content argument; a fuzzing client sending
+  forged or extra arguments cannot change any Dish field (penetration test log clean).
+- **AC-05-10** — Every action in §5.2.5 is bound for keyboard + mouse, controller and touch (automated
+  `ContextActionService` binding audit); primary touch buttons ≥ 88 dp, all others ≥ 48 dp.
+- **AC-05-11** — Every verb in §5.4 can be completed using only Use and Grab (plus movement) on all three input types
+  (scripted playtest checklist, 19/19 verbs).
+- **AC-05-12** — The highlighted slot is the slot the server acts on in 100 % of accepted interactions; standing still between
+  two equidistant slots causes ≤ 1 target switch per second.
+- **AC-05-13** — Server-computed `Q` and `C` reproduce §5.5 worked examples 1–4 to ± 0.001 in unit tests.
+- **AC-05-14** — Serving a non-matching dish never removes it from the player's hands; "Wrong Order?!" fires only when the dish
+  matches no open item in the restaurant.
+- **AC-05-15** — Fire: ignition is always preceded by the three warnings of §5.4.2; ≤ 3 simultaneous fires per restaurant;
+  fire alone never lowers durability below 26 %; one extinguisher clears a fresh fire in 2.0 s ± 0.1 s.
+- **AC-05-16** — Pots and steamers reaching `T_burn + 4 s` produce a boil-over (SPILLED) or boil-dry (`NEEDS_WATER`), never
+  ON_FIRE.
+- **AC-05-17** — Food picked up ≤ 5.0 s after a drop keeps all components and grades; after 5.0 s it is SPILLED; involuntary
+  drops are never charged (economy log shows 0 MB).
+- **AC-05-18** — Carry capacity never exceeds 3 for any part/ability combination; reducing capacity places or drops the excess
+  within 1 s.
+- **AC-05-19** — Canon E1: within 2 s of the owner disconnecting mid-cook, all heat slots stop, special ingredients in stations
+  return to stock (inventory delta verified) and basic food is discarded with a 0 MB charge.
+- **AC-05-20** — Canon E9: a simulation of 10,000 orders with random special-stock depletion produces 0 impossible tickets.
+- **AC-05-21** — ≤ 8 attribute publishes per cooked item lifetime; client progress rings stay within 0.1 s of server state at
+  250 ms RTT.
+- **AC-05-22** — `CookingService` sweep costs ≤ 0.3 ms per interior per tick with 24 stations and 40 active slots
+  (MicroProfiler capture on the reference server profile).
+- **AC-05-23** — Injecting a 2.0 s server freeze advances no slot's `cookSec` by more than 0.5 s.
+- **AC-05-24** — Lv1 patty classification: removal at 7.5 s → RARE, 9.0 s → PERFECT, 11.5 s → GOOD (WELL_DONE), 13.0 s → GOOD
+  (SCREAMING), 15.0 s → BURNED.
+- **AC-05-25** — The eight scripted agitation profiles of §5.4.8 (including EXPLODED) yield the documented drink mood in 100 %
+  of runs.
+- **AC-05-26** — Every station status is conveyed by colour + shape + text or sound; with each colour-blind palette ≥ 95 % of
+  test players correctly identify PERFECT, BURNED and ON_FIRE from screenshots.

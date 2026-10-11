@@ -383,7 +383,7 @@ def validate(canon: Canon, parts: list[dict]) -> list[str]:
         if m.get("blocksWings") and slot != "BACK":
             err.append(f"{where}: blocksWings only on BACK parts")
         for h in m.get("hides", []):
-            if h not in ("FACE", "NOSE", "MOUTH", "EYES", "HANDS", "EARS"):
+            if h not in ("FACE", "NOSE", "MOUTH", "EYES", "HANDS", "FEET"):
                 err.append(f"{where}: cannot hide slot {h}")
         ll, nl = m.get("legLength"), m.get("neckLength")
         if (slot == "LEG") != (ll is not None) or (ll is not None and not 1.4 <= ll <= 3.0):
@@ -577,10 +577,8 @@ def render_db(canon: Canon, parts: list[dict]) -> str:
             o.append(row(p, canon))
         o.append("")
         n += 1
-    o.append(f"#### 36.3.{n} Passive effect keys used in this database\n")
-    o.append("Every passive above maps to one engineering key; the combined caps are enforced by `MutationService` (§12.8).\n")
-    o.append(passive_table(parts))
-    o.append("")
+    o.append("Every passive above maps to one engineering key (`passive.key`); the key vocabulary and its combined caps are "
+             "listed in §12.8 and enforced by `MutationService`.\n")
     return "\n".join(o) + "\n"
 
 
@@ -628,34 +626,36 @@ def upgrade_steps(canon: Canon, r: str):
 
 def gen_upgrade_costs(canon: Canon) -> str:
     o = []
-    o.append("| Rarity | Max Lv | Total MB to max | Total MS to max | Total RT to max | Copies used (or extra MS) | Dupe → MS value |")
+    o.append("| Rarity | Max Lv | Total MB to max | Total MS to max | Total RT to max | Copies used (or extra MS) | Spare copy → MS |")
     o.append("|---|---|---|---|---|---|---|")
     for r in RARITIES:
         st = upgrade_steps(canon, r)
         u = canon.upg[r]
         n = len(st)
         dup = "— (cannot duplicate)" if u["conv"] is None else f"{u['conv']} MS"
-        copies = f"{n} copies or {fmt(n * u['sub'])} MS" if u["conv"] is not None else f"— → {fmt(n * u['sub'])} MS"
+        copies = f"{n} copies or {fmt(n * u['sub'])} MS" if u["conv"] is not None else f"no copies: {fmt(n * u['sub'])} MS"
         o.append(f"| {RARITY_ICON[r]} {r} | {u['max']} | {fmt(sum(s[1] for s in st))} | {fmt(sum(s[2] for s in st))} | "
-                 f"{fmt(sum(s[3] for s in st))} | {copies} | {dup} |")
+                 f"{fmt(sum(s[3] for s in st)) if sum(s[3] for s in st) else '—'} | {copies} | {dup} |")
     o.append("")
+    o.append("Per-step cost of upgrading **Lv L → L+1** (cell = MB · MS · RT; every step also consumes the duplicate shown in the last row):\n")
+    o.append("| Step | " + " | ".join(f"{RARITY_ICON[r]} {r}" for r in RARITIES) + " |")
+    o.append("|---|" + "---|" * len(RARITIES))
+    steps = {r: {L: (mb, ms, rt) for L, mb, ms, rt in upgrade_steps(canon, r)} for r in RARITIES}
+    for L in range(1, 10):
+        cells = []
+        for r in RARITIES:
+            if L in steps[r]:
+                mb, ms, rt = steps[r][L]
+                cells.append(f"{fmt(mb)} MB · {ms} MS" + (f" · {rt} RT" if rt else ""))
+            else:
+                cells.append("—")
+        o.append(f"| Lv{L} → {L + 1} | " + " | ".join(cells) + " |")
+    dupe = []
     for r in RARITIES:
         u = canon.upg[r]
-        st = upgrade_steps(canon, r)
-        dupe = f"1 copy or {fmt(u['sub'])} MS" if u["conv"] is not None else f"{fmt(u['sub'])} MS (no copies exist)"
-        o.append(f"**{RARITY_ICON[r]} {r}** (BaseMB {fmt(u['mb'])}, BaseMS {u['ms']}, RTBase {u['rt'] or '—'}; duplicate per step: {dupe})\n")
-        o.append("| Step | MB | MS | RT | Duplicate | Stat budget after (major / minor) | Cum. MB | Cum. MS | Cum. RT |")
-        o.append("|---|---|---|---|---|---|---|---|---|")
-        cmb = cms = crt = 0
-        for L, mb, ms, rt in st:
-            cmb += mb
-            cms += ms
-            crt += rt
-            maj = rhu(canon.base_budget[r] * 1.0 * (1 + 0.12 * L))
-            mnr = rhu(canon.base_budget[r] * 0.5 * (1 + 0.12 * L))
-            o.append(f"| Lv{L} → Lv{L + 1} | {fmt(mb)} | {ms} | {rt or '—'} | {dupe} | {maj} / {mnr} | {fmt(cmb)} | {fmt(cms)} | {crt or '—'} |")
-        o.append("")
-    return "\n".join(o).rstrip()
+        dupe.append(f"1 copy or {fmt(u['sub'])} MS" if u["conv"] is not None else f"{fmt(u['sub'])} MS (no copies)")
+    o.append("| **Duplicate per step** | " + " | ".join(dupe) + " |")
+    return "\n".join(o)
 
 
 def gen_prices(canon: Canon, parts) -> str:

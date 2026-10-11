@@ -65,21 +65,21 @@ Apology Payment (40 %), which is always worse than a happy customer's payment.
 All bindings are rebindable (§24 Settings). Input mode switches automatically on the last input type
 (`UserInputService.LastInputTypeChanged`); HUD glyphs update instantly.
 
-| Action | Keyboard & Mouse | Controller | Touch (phone / tablet) |
-|---|---|---|---|
-| Move / camera | WASD / mouse (Shift Lock recommended; one toggle in Settings) | Left stick / right stick | Dynamic thumbstick (left half) / drag right half |
-| `ABL_001` Swipe Combo | LMB tap (each tap = next hit) | RT tap | ATTACK button tap (auto-target) |
-| `ABL_002` Wallop | Hold LMB ≥ 0.6 s, release | Hold RT, release | Hold ATTACK (charge ring fills), release |
-| `ABL_003` Block | Hold F (or RMB while Shift Lock is on) | Hold LT | Hold BLOCK (Settings: tap-to-toggle) |
-| `ABL_004` Dodge Roll | Q (direction = WASD; none = backward) | B | DODGE button (direction = thumbstick) |
-| `ABL_005` Grab (lift prop) | E (ProximityPrompt) | X | Contextual INTERACT bubble |
-| Throw carried prop | LMB tap = quick throw at lock/cursor; hold = arc preview, release | RT tap / hold | ATTACK becomes THROW: tap = auto-target; drag = aim arc |
-| Drop carried item | G | D-pad Down | Long-press INTERACT |
-| `ABL_006` Calm Down! | R | Y | CALM button (heart icon) |
-| Mutation slots 1–4 | 1 / 2 / 3 / 4 | Hold LB + X / Y / B / A (radial overlay shows icons on face-button glyphs) | Four buttons in an arc around ATTACK; tap = auto-aim, drag = manual aim, drag back to centre = cancel |
-| Lock-on / cycle | MMB or Z toggles; mouse wheel cycles while locked | RB tap; flick right stick to cycle | Tap an enemy; tap again to release |
-| Jump | Space | A | JUMP button |
-| Revive ally (Smelling Salts) | Hold E 2 s | Hold X 2 s | Hold INTERACT 2 s |
+| Action | Ability | Keyboard & Mouse | Controller | Touch (phone / tablet) |
+|---|---|---|---|---|
+| Move / camera | — | WASD / mouse (Shift Lock recommended; one toggle in Settings) | Left stick / right stick | Dynamic thumbstick (left half) / drag right half |
+| Swipe Combo | `ABL_001` | LMB tap (each tap = next hit) | RT tap | ATTACK button tap (auto-target) |
+| Wallop | `ABL_002` | Hold LMB ≥ 0.6 s, release | Hold RT, release | Hold ATTACK (charge ring fills), release |
+| Block | `ABL_003` | Hold F (or RMB while Shift Lock is on) | Hold LT | Hold BLOCK (Settings: tap-to-toggle) |
+| Dodge Roll | `ABL_004` | Q (direction = WASD; none = backward) | B | DODGE button (direction = thumbstick) |
+| Grab (lift prop) | `ABL_005` | E (ProximityPrompt) | X | Contextual INTERACT bubble |
+| Throw carried prop | — | LMB tap = quick throw at lock/cursor; hold = arc preview, release | RT tap / hold | ATTACK becomes THROW: tap = auto-target; drag = aim arc |
+| Drop carried item | — | G | D-pad Down | Long-press INTERACT |
+| Calm Down! | `ABL_006` | R | Y | CALM button (heart icon) |
+| Mutation slots 1–4 | — | 1 / 2 / 3 / 4 | Hold LB + X / Y / B / A (radial overlay shows icons on face-button glyphs) | Four buttons in an arc around ATTACK; tap = auto-aim, drag = manual aim, drag back to centre = cancel |
+| Lock-on / cycle | — | MMB or Z toggles; mouse wheel cycles while locked | RB tap; flick right stick to cycle | Tap an enemy; tap again to release |
+| Jump | — | Space | A | JUMP button |
+| Revive ally (Smelling Salts) | — | Hold E 2 s | Hold X 2 s | Hold INTERACT 2 s |
 
 **Contextual swaps.** Holding a frying pan replaces Swipe/Wallop with `ABL_007` Pan Bonk; holding an empty
 tray replaces Block with `ABL_008` Tray Shield. Carrying any prop turns ATTACK into THROW. Hold-type
@@ -130,13 +130,13 @@ DEF_target (customer) = PersonalityDEF (§9, 0–40) + 8 × (TierIndex − 1)
 Customer Huff Points stay inside the canon 40–300 band at every tier; tier toughness comes from the DEF term,
 and tier threat comes from TierScale. Rounding is half-up after all multipliers.
 
-| Worked example | Calculation | Result |
-|---|---|---|
-| A — L1 player (STR 0), Swipe hit 1 (Base 8) vs TIER_01 customer with PersonalityDEF 10 | 8 × 1.00 × 1.00 × 100/110 | **7** (combo 7 + 7 + 11 = 25) |
-| B — L40 player, STR 60, `ABL_010` Bear Slam (Base 22) at part Lv3, vs TIER_06 customer PersonalityDEF 30 (DEF 70) | 22 × 1.48 × 1.10 × 100/170 | **21** |
-| C — TIER_06 BRAWLER combo hit (NPC Base 4) vs player DEF 30 | 4 × 2.25 × 1.0 × 100/130 | **7** |
-| D — Same as C but blocked | 6.92 × 0.30 (rounded once at the end) | **2**, guard −9 (4 × 2.25) |
-| E — PvP: `ABL_019` Shark Chomp (Base 16), arena template STR 60, part treated as Lv3, DEF 60 | 16 × 1.48 × (1.10 × 0.7) × 100/160 | **11** (§36.6 shows the arena Base 16 × 0.7 ≈ 11; ModeMult is applied once) |
+| # | Scenario | Calculation | Result |
+|---|---|---|---|
+| A | L1 player (STR 0), Swipe hit 1 (Base 8) vs TIER_01 customer with PersonalityDEF 10 | 8 × 1.00 × 1.00 × 100/110 | **7** (combo 7 + 7 + 11 = 25) |
+| B | L40 player, STR 60, `ABL_010` Bear Slam (Base 22) at part Lv3, vs TIER_06 customer PersonalityDEF 30 (DEF 70) | 22 × 1.48 × 1.10 × 100/170 | **21** |
+| C | TIER_06 BRAWLER combo hit (NPC Base 4) vs player DEF 30 | 4 × 2.25 × 1.0 × 100/130 | **7** |
+| D | Same as C but blocked | 6.92 × 0.30 (rounded once at the end) | **2**, guard −9 (4 × 2.25) |
+| E | PvP: `ABL_019` Shark Chomp (Base 16), arena template STR 60, part treated as Lv3, DEF 60 | 16 × 1.48 × (1.10 × 0.7) × 100/160 | **11** (§36.6 shows the arena Base 16 × 0.7 ≈ 11; ModeMult is applied once) |
 
 #### 11.5.2 Health, Huff Points and time-to-calm targets
 
@@ -171,11 +171,11 @@ for the travel time; the server verifies displacement, §29). NPC proxies are mo
 
 | Rule | Value [TUNABLE] |
 |---|---|
-| Block `ABL_003` | −70 % damage from a frontal 120° arc; move speed ×0.5; cannot block while carrying a Heavy prop |
+| Block (base kit) | `ABL_003`: −70 % damage from a frontal 120° arc; move speed ×0.5; cannot block while carrying a Heavy prop |
 | Guard meter | 60 (Arena 80). Guard damage = Base × StrMult × GuardMult (default 1.0; heavy attacks 1.5; CHARGER rush 2.0), before DEF. Regenerates 20/s after 2 s without guard damage |
 | Guard break | Guard reaches 0 → `STS_STUN` 1.0 s; guard refills to 30 afterwards |
 | Perfect Block | Block raised ≤ 0.15 s before the hit lands → 0 damage, 0 guard damage, "TINK!" sparkle |
-| Dodge `ABL_004` | 0.4 s roll, 8 studs, invulnerable 0.05–0.30 s (0.25 s), 1.2 s cooldown. Projectiles pass through and **keep flying** |
+| Dodge Roll (base kit) | `ABL_004`: 0.4 s roll, 8 studs, invulnerable 0.05–0.30 s (0.25 s), 1.2 s cooldown. Projectiles pass through and **keep flying** |
 | Flinch (hitstun) | Light hits 0.3 s, heavy hits 0.5 s; interrupts wind-ups and channels; not a status, not DR-counted. TANK NPCs ignore light-hit flinch |
 | Hard-CC diminishing returns | `STS_STUN`, `STS_FROZEN`, `STS_SLEEPY`, `STS_CHARMED`, `STS_KNOCKDOWN`, `STS_FLOATING`, non-defeat `STS_DIZZY` on the same target within 8 s: 100 % → 50 % → 25 % → 4 s immunity ("Not again!" shield icon) |
 | Player CC protection | Any single NPC-applied hard CC on a player ≤ 1.5 s (≤ 1.0 s at TIER_01–02). ≥ 2.5 s of hard CC within 6 s → 3 s "Shake-Off" immunity |
@@ -220,21 +220,21 @@ auto-close 1.5 s · respawn protection 3.0 s (ends early if you attack) · Smell
 
 #### 11.5.7 Status-effect interactions
 
-| Combination | Trigger | Result |
-|---|---|---|
-| `STS_SOAKED` + `STS_SHOCKED` | Shock applied to a soaked target | **Zap Combo:** `STS_STUN` 1.0 s, the triggering hit ×1.5, SOAKED consumed, giant "ZZAP!" text |
-| `STS_SOAKED` vs `STS_TOASTY` | Soak applied | TOASTY cleansed; while SOAKED, TOASTY cannot apply (a harmless steam puff plays instead) |
-| `STS_SOAKED` + `STS_FROZEN` | Freeze applied to a soaked target | FROZEN duration ×1.5; SOAKED consumed |
-| `STS_TOASTY` ↔ `STS_FROZEN` | Either applied while the other is active | "Thaw": the older one is removed and the new one lasts half as long |
-| `STS_FROZEN` + heavy hit | `ABL_002`, `ABL_007` Big Bonk, `ABL_010`, `ABL_021` centre, `ABL_054` | "Shatter": FROZEN ends, hit ×1.5, ice-cube confetti |
-| `STS_STICKY` ↔ `STS_GREASY` | Either applied while the other is active | Both removed ("Slick-n-Stick") |
-| `STS_GREASY` + knockback | Any knockback | Distance ×1.3 |
-| `STS_SLEEPY` + damage | Any damage | Target wakes; that hit ×1.25 |
-| `STS_FLOATING` | Knockback / ground effects | Knockback ×1.5; immune to ground-only effects (`ABL_021`, `ABL_043`, `ABL_048`, `ABL_039`) |
-| `STS_STINKY` + `STS_CHARMED` | Charm applied to a stinky target | Charm fails ("Ew, no.") |
-| `STS_CONFUSED` (NPC) | Each 0.2 s decision tick | 40 % chance to target the nearest other combatant — can start NPC scuffles (§11.6.4) |
-| `STS_SHIELDED` | Any damage | Shield absorbs first; `ABL_026` and `ABL_015` quills deal ×1.5 to shields |
-| `STS_HYPED` + `STS_SLOW` | Movement | Multiplicative (e.g. 1.15 × 0.7) |
+| Interaction | Statuses | Trigger | Result |
+|---|---|---|---|
+| Zap Combo | `STS_SOAKED` + `STS_SHOCKED` | Shock applied to a soaked target | **Zap Combo:** `STS_STUN` 1.0 s, the triggering hit ×1.5, SOAKED consumed, giant "ZZAP!" text |
+| Steam-off | `STS_SOAKED` vs `STS_TOASTY` | Soak applied | TOASTY cleansed; while SOAKED, TOASTY cannot apply (a harmless steam puff plays instead) |
+| Deep Freeze | `STS_SOAKED` + `STS_FROZEN` | Freeze applied to a soaked target | FROZEN duration ×1.5; SOAKED consumed |
+| Thaw | `STS_TOASTY` ↔ `STS_FROZEN` | Either applied while the other is active | "Thaw": the older one is removed and the new one lasts half as long |
+| Shatter | `STS_FROZEN` + heavy hit | `ABL_002`, `ABL_007` Big Bonk, `ABL_010`, `ABL_021` centre, `ABL_054` | "Shatter": FROZEN ends, hit ×1.5, ice-cube confetti |
+| Slick-n-Stick | `STS_STICKY` ↔ `STS_GREASY` | Either applied while the other is active | Both removed ("Slick-n-Stick") |
+| Butter Slide | `STS_GREASY` + knockback | Any knockback | Distance ×1.3 |
+| Wake-up Bonk | `STS_SLEEPY` + damage | Any damage | Target wakes; that hit ×1.25 |
+| Up and Away | `STS_FLOATING` | Knockback / ground effects | Knockback ×1.5; immune to ground-only effects (`ABL_021`, `ABL_043`, `ABL_048`, `ABL_039`) |
+| "Ew, no." | `STS_STINKY` + `STS_CHARMED` | Charm applied to a stinky target | Charm fails ("Ew, no.") |
+| Mix-up | `STS_CONFUSED` (NPC) | Each 0.2 s decision tick | 40 % chance to target the nearest other combatant — can start NPC scuffles (§11.6.4) |
+| Bubble Guard | `STS_SHIELDED` | Any damage | Shield absorbs first; `ABL_026` and `ABL_015` quills deal ×1.5 to shields |
+| Speed vs Slow | `STS_HYPED` + `STS_SLOW` | Movement | Multiplicative (e.g. 1.15 × 0.7) |
 
 #### 11.5.8 "In Combat" flag and menus (canon C12.1, E2, E4)
 
@@ -338,7 +338,7 @@ attribute `CombatService` reads on the object's model.
 | Thrown prop impact | per §11.6.1 "Damage to objects" column |
 | `CHARGER` rush through an object | 18 % per object (max 3 objects per rush) |
 | Level-4 smash: `BRAWLER` / `TANK` slam / `CHARGER` crash | 10 % per hit every 1.5 s / 20 % every 3 s / 18 % per crash |
-| Table flip (`ANM_049`) | 15 % + everything on top spills |
+| Table flip | 15 % + everything on top spills (`ANM_049`) |
 | Player abilities | Only the abilities that say so in §36.6 (e.g. `ABL_013` Rhino Charge: 15 % per object; `ABL_027`: 5 % per bump) |
 | Appliances (`"Station"`) | ×0.5 of the above; an appliance at **Broken** stops processing (canon C6) |
 
@@ -391,19 +391,19 @@ Setting: a TIER_03 table-service café, 7 seated customers, one player cooking. 
 ```mermaid
 %% diagram: combat-chain-reaction
 sequenceDiagram
-    participant A as "Customer A (Thrower)"
-    participant P as "Player"
-    participant B as "Customer B (Brawler)"
-    participant T as "Two-seat table"
-    A->>P: "lobs hamburger (0.5 s telegraph)"
-    P-->>P: "Dodge Roll (i-frames)"
-    A->>B: "burger keeps flying and hits B (+35 anger)"
-    B->>A: "grudge, scuffle starts"
-    B->>A: "heavy swing, 7 stud knockback"
-    A->>T: "wall splat (table to Broken)"
-    P->>A: "Calm Down! (A sits back down)"
-    P->>B: "Swipe to 0 Huff, Apology Payment"
-    P->>T: "repair after All Clear"
+    participant A as Customer A (Thrower)
+    participant P as Player
+    participant B as Customer B (Brawler)
+    participant T as Two-seat table
+    A->>P: lobs hamburger (0.5 s telegraph)
+    P-->>P: Dodge Roll (i-frames)
+    A->>B: burger keeps flying and hits B (+35 anger)
+    B->>A: grudge, scuffle starts
+    B->>A: heavy swing, 7 stud knockback
+    A->>T: wall splat (table to Broken)
+    P->>A: Calm Down! (A sits back down)
+    P->>B: Swipe to 0 Huff, Apology Payment
+    P->>T: repair after All Clear
 ```
 
 ---
@@ -744,14 +744,19 @@ and streaming clients render them without extra traffic.
 --!strict
 -- ServerScriptService/Services/CombatService (excerpt): request validation + damage pipeline
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
-local Shared = ReplicatedStorage:WaitForChild("Shared")
-local AbilityDefs = require(Shared.Combat.AbilityDefs) -- generated from §36.6
-local Config = require(Shared.Combat.CombatConfig)     -- §11.5.9 values
-local Remotes = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Combat")
-local AntiExploit = require(script.Parent.Parent.Security.AntiExploit) -- §29 strike counter
+local CombatShared = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Combat")
+local AbilityDefs = require(CombatShared:WaitForChild("AbilityDefs") :: ModuleScript) -- generated from §36.6
+local Config = require(CombatShared:WaitForChild("CombatConfig") :: ModuleScript)     -- §11.5.9 values
+local AntiExploit = require(ServerScriptService:WaitForChild("Services"):WaitForChild("AntiExploit") :: ModuleScript) -- §29
+
+local RemoteFolder = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Combat") -- "Combat.<Action>"
+local UseAbilityRemote = RemoteFolder:WaitForChild("UseAbility") :: RemoteEvent
+local CooldownSyncRemote = RemoteFolder:WaitForChild("CooldownSync") :: RemoteEvent
+local KnockbackRemote = RemoteFolder:WaitForChild("Knockback") :: RemoteEvent
 
 export type Combatant = {
 	id: string, kind: "Player" | "Customer" | "Employee", player: Player?,
@@ -770,6 +775,9 @@ local combatants: {[string]: Combatant} = {}
 local buckets: {[Player]: {tokens: number, t: number}} = {}
 local losCache: {[Model]: RaycastParams} = {}
 local MutationService: any, CustomerAIService: any, RepairService: any -- injected by Init()
+-- Helpers defined elsewhere in this module (not shown): CanAct, EffectiveCooldown, IsFacing, InteractionMult,
+-- AbsorbShield, ApplyStatus (hard-CC DR + player caps), Confirm (batched HitConfirm), KO, DefeatCustomer,
+-- KbMultiplier (§11.5.3 terms), SweepParams (per-interior RaycastParams: StaticGeometry + Furniture).
 
 local function now(): number
 	return Workspace:GetServerTimeNow()
@@ -798,7 +806,7 @@ local function hasLineOfSight(interior: Model, from: Vector3, to: Vector3): bool
 end
 
 local function reject(plr: Player, seq: number, reason: string, readyAt: number?)
-	Remotes.CooldownSync:FireClient(plr, seq, reason, readyAt) -- client un-predicts
+	CooldownSyncRemote:FireClient(plr, seq, reason, readyAt) -- client un-predicts
 	AntiExploit.Strike(plr, "combat_" .. reason)                -- silent; thresholds in §29
 end
 
@@ -816,8 +824,9 @@ local function onUseAbility(plr: Player, abilityId: unknown, seq: unknown, aim: 
 	local readyAt = c.readyAt[def.id] or 0
 	if t < readyAt - Config.cooldownTolerance then return reject(plr, s, "cooldown", readyAt) end
 	local dir = aim :: Vector3
-	if math.abs(dir.Magnitude - 1) > 0.1 then return reject(plr, s, "aim") end
-	dir = (dir * Vector3.new(1, 0, 1)).Unit
+	local flatAim = dir * Vector3.new(1, 0, 1)
+	if math.abs(dir.Magnitude - 1) > 0.1 or flatAim.Magnitude < 0.1 then return reject(plr, s, "aim") end
+	dir = flatAim.Unit
 	local target = if typeof(targetId) == "string" then combatants[targetId :: string] else nil
 	if target then
 		local reach = def.range + target.proxy.Size.X * 0.5 + Config.rangeTolerance
@@ -915,7 +924,7 @@ function CombatService.Knockback(a: Combatant, v: Combatant, baseKb: number)
 	local flat = (v.proxy.Position - a.proxy.Position) * Vector3.new(1, 0, 1)
 	local dir = if flat.Magnitude > 0.01 then flat.Unit else a.proxy.CFrame.LookVector
 	if v.kind == "Player" then -- players own their physics: the victim client drives a LinearVelocity
-		Remotes.Knockback:FireClient(v.player :: Player, dir * dist, 0.15 + 0.02 * dist)
+		KnockbackRemote:FireClient(v.player :: Player, dir * dist, 0.15 + 0.02 * dist)
 		return
 	end
 	local p = CombatService.SweepParams(v.interior) -- Include StaticGeometry + Furniture
@@ -936,7 +945,7 @@ function CombatService.Knockback(a: Combatant, v: Combatant, baseKb: number)
 	end
 end
 
-Remotes.UseAbility.OnServerEvent:Connect(onUseAbility)
+UseAbilityRemote.OnServerEvent:Connect(onUseAbility)
 return CombatService
 ```
 

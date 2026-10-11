@@ -246,7 +246,10 @@ def simulate(ex):
     stock_used = {}
     sold_out = []
     first_ctx = None
+    budget = float(ex.get("stocker_budget", 0))
+    autobuy_log = []
     for i, hstep in enumerate(steps):
+        autobuy_step = 0.0
         eff = {s.id: efficiency(s, Mo[s.id], E[s.id], eff_stat) for s in staff}
         contrib = {s.id: eff[s.id] / 100 * s.trait_mult(ctx) for s in staff}
         coord = 0.0
@@ -259,7 +262,30 @@ def simulate(ex):
             ba = max(assts, key=lambda a: contrib[a.id])
             coord += min(0.05, 0.02 + 0.03 * contrib[ba.id])
         coord = min(0.15, coord)
+        # Stocker auto-buy (section 17.4): top up each special pool to this step's expected need, within budget
+        if stockers and budget > 0:
+            cand = [m for m in menu if m["cookable"]]
+            q_est = rows[-1]["Q"] if rows else demand
+            for ingr in sorted(set(m["special"] for m in cand if m.get("special"))):
+                users = [m for m in cand if m.get("special") == ingr]
+                need = q_est * hstep * ITEMS_PER_CUSTOMER * len(users) / len(cand)
+                short = math.ceil(max(0.0, need - stock.get(ingr, 0)))
+                if short <= 0:
+                    continue
+                unit = sum(m["price"] * ING_RATIO[m["d"]] * (1 - SPECIAL_BASIC_SHARE) for m in users) / len(users)
+                bs0 = max(stockers, key=lambda x: x.role_stat_avg())
+                disc0 = min(0.15, 0.05 + 0.10 * min(1, bs0.role_stat_avg() / 100) + (0.02 if bs0.id in ("EMP_088", "EMP_090") else 0))
+                units = min(short, int(budget // (unit * (1 - disc0))))
+                if units > 0:
+                    cost = units * unit * (1 - disc0)
+                    budget -= cost
+                    stock[ingr] = stock.get(ingr, 0) + units
+                    autobuy_step += cost
+                    autobuy_log.append((i + 1, ingr, units, cost))
         live = [m for m in menu if m["cookable"] and (not m.get("special") or stock.get(m["special"], 0) >= 1)]
+        for m in menu:
+            if m["cookable"] and m not in live and m["rcp"] not in [x[0] for x in sold_out]:
+                sold_out.append((m["rcp"], i + 1))
         prep_avg = sum(m["prep_eff"] for m in live) / len(live)
         ticket = ITEMS_PER_CUSTOMER * sum(m["price"] for m in live) / len(live)
         ing_avg = ITEMS_PER_CUSTOMER * sum(m["ing"] for m in live) / len(live)
@@ -300,7 +326,7 @@ def simulate(ex):
             if any(s.id in ("EMP_088", "EMP_090") for s in stockers):
                 sdisc += 0.02
             sdisc = min(0.15, sdisc)
-        ing = (N + n_del) * ing_avg * (1 - sdisc) * (1 - 0.0015 * eff_stat)
+        ing = (N + n_del) * ing_avg * (1 - sdisc) * (1 - 0.0015 * eff_stat) + autobuy_step
         wages = sum(s.wage for s in staff) * hstep
         net = rev + tips + deliv - ing - wages
         # special stock consumption
@@ -310,14 +336,12 @@ def simulate(ex):
                 use = min(stock[m["special"]], want)
                 stock[m["special"]] -= use
                 stock_used[m["special"]] = stock_used.get(m["special"], 0) + use
-        for m in live:
-            if m.get("special") and stock[m["special"]] < 1:
-                sold_out.append((m["rcp"], i + 1))
+
         row = dict(step=i + 1, h=hstep, E=sum(E.values()) / len(E), M=sum(Mo.values()) / len(Mo),
                    chef_contrib=sum(contrib[c.id] for c in chefs), prep_avg=prep_avg, ticket=ticket,
                    cap_k=cap_k, cap_s=cap_s, Q=Q, lim=lim, N=N, q=q, rev=rev, tips=tips, deliv=deliv,
                    ing=ing, wages=wages, net=net, coord=coord, live=len(live), sdisc=sdisc, dpct=dpct,
-                   eff=eff, contrib=contrib)
+                   eff=eff, contrib=contrib, autobuy=autobuy_step)
         if first_ctx is None:
             first_ctx = row
         if net < 0:
@@ -520,7 +544,7 @@ def simulate(ex):
                 dmg_val=dmg_val, rep_disc=rep_disc, auto_rep=auto_rep, deferred=deferred, dmg_points=dmg_points,
                 ms=ms, ms_events=ms_events, crates=crates, capsules=capsules, base_net=base_net, net=net,
                 clamped=clamped, ceiling=ceiling, stock_used=stock_used, sold_out=sold_out,
-                prep_count=prep_count, cashier_count=cashier_count, dish_factor=dish_factor,
+                prep_count=prep_count, cashier_count=cashier_count, autobuy_log=autobuy_log, stock_end=stock, stock0=stock0, dish_factor=dish_factor,
                 clean_factor=clean_factor, q_adj=q_adj, tip_trait=tip_trait, headroom=headroom,
                 disc_boost=disc_boost, H_op=H_op, pool_size=len(pool))
 
@@ -581,9 +605,10 @@ EXAMPLES = [
                      "STN_INFUSER"],
         "menu": [M("RCP_BRG_012", 4), M("RCP_PIZ_013", 4), M("RCP_TAC_010", 4), M("RCP_SAN_010", 3),
                  M("RCP_PST_009", 3), M("RCP_SEA_009", 3), M("RCP_BRK_010", 3), M("RCP_DES_014", 3),
-                 M("RCP_DRK_013", 3), M("RCP_SOP_009", 3), M("RCP_FRI_005", 3), M("RCP_MUT_001", 3),
-                 M("RCP_ALN_004", 3), M("RCP_ALN_001", 2, special="ING_MOON_CHEESE")],
-        "stock": {"ING_MOON_CHEESE": 60},
+                 M("RCP_DRK_013", 3, special="ING_MUTAGEN_GOO"), M("RCP_SOP_009", 3), M("RCP_FRI_005", 3),
+                 M("RCP_MUT_001", 3, special="ING_MUTAGEN_GOO"), M("RCP_ALN_004", 3, special="ING_MOON_CHEESE"),
+                 M("RCP_ALN_001", 2, special="ING_MOON_CHEESE")],
+        "stock": {"ING_MOON_CHEESE": 70, "ING_MUTAGEN_GOO": 400},
         "roster": [{"id": "EMP_075", "morale": 80, "energy": 95},
                    {"id": "EMP_009", "morale": 75, "energy": 90},
                    {"id": "EMP_007", "morale": 80, "energy": 92},
@@ -607,13 +632,16 @@ EXAMPLES = [
                      "STN_INFUSER"],
         "menu": [M("RCP_LEG_001", 5, special="ING_GOLDEN_PATTY"), M("RCP_LEG_002", 5, special="ING_GOLDEN_PATTY"),
                  M("RCP_LEG_003", 5, special="ING_GOLDEN_PATTY"),
-                 M("RCP_MUT_004", 4), M("RCP_MUT_005", 4), M("RCP_ALN_010", 4), M("RCP_ALN_009", 4),
+                 M("RCP_MUT_004", 4, special="ING_MUTAGEN_GOO"), M("RCP_MUT_005", 4, special="ING_MUTAGEN_GOO"),
+                 M("RCP_ALN_010", 4, special="ING_STARDUST"), M("RCP_ALN_009", 4, special="ING_STARDUST"),
                  M("RCP_BRG_015", 4), M("RCP_PIZ_015", 4), M("RCP_SEA_010", 4), M("RCP_DES_015", 4),
-                 M("RCP_SOP_010", 4), M("RCP_MUT_003", 4), M("RCP_ALN_008", 4), M("RCP_PIZ_013", 4),
-                 M("RCP_BRG_014", 4), M("RCP_ALN_007", 4), M("RCP_DRK_015", 4),
-                 M("RCP_TAC_010", 4), M("RCP_MUT_002", 4), M("RCP_PST_010", 3), M("RCP_DES_014", 3),
-                 M("RCP_SAN_010", 3), M("RCP_ALN_006", 3)],
-        "stock": {"ING_GOLDEN_PATTY": 700},
+                 M("RCP_SOP_010", 4), M("RCP_MUT_003", 4, special="ING_MUTAGEN_GOO"),
+                 M("RCP_ALN_008", 4, special="ING_STARDUST"), M("RCP_PIZ_013", 4),
+                 M("RCP_BRG_014", 4), M("RCP_ALN_007", 4, special="ING_STARDUST"), M("RCP_DRK_015", 4),
+                 M("RCP_TAC_010", 4), M("RCP_MUT_002", 4, special="ING_MUTAGEN_GOO"), M("RCP_PST_010", 3),
+                 M("RCP_DES_014", 3), M("RCP_SAN_010", 3), M("RCP_ALN_006", 3, special="ING_STARDUST")],
+        "stock": {"ING_GOLDEN_PATTY": 700, "ING_MUTAGEN_GOO": 900, "ING_STARDUST": 900},
+        "stocker_budget": 120000,
         "roster": [{"id": "EMP_076", "morale": 85, "energy": 95},
                    {"id": "EMP_097", "morale": 85, "energy": 95},
                    {"id": "EMP_011", "morale": 85, "energy": 95, "trained": {"cook": 100}},
@@ -631,6 +659,20 @@ EXAMPLES = [
                    {"id": "EMP_068", "morale": 80, "energy": 95},
                    {"id": "EMP_083", "morale": 80, "energy": 95},
                    {"id": "EMP_090", "morale": 80, "energy": 95}],
+    },
+    {
+        "key": "F", "title": "what goes wrong — TIER_04, one weak chef carrying an expensive floor team (closes early)",
+        "negative_example": True,
+        "tier": 4, "player_level": 19, "player_eff": 10, "stars": 3.4, "atmosphere": 40, "station_mult": 0.9,
+        "station_note": "all Lv2 Tuned", "user_id": 81234567, "last_sim_at": 1760650200, "elapsed_h": 6.0,
+        "stations": ["STN_CUT", "STN_GRILL", "STN_FRYER", "STN_DRINK", "STN_STOVE", "STN_OVEN"],
+        "menu": [M("RCP_BRG_013", 2), M("RCP_PST_004", 2), M("RCP_DRK_009", 2), M("RCP_SEA_004", 2),
+                 M("RCP_PIZ_014", 2), M("RCP_BRK_006", 2), M("RCP_SAL_003", 2), M("RCP_TAC_006", 2)],
+        "roster": [{"id": "EMP_071", "morale": 70, "energy": 80},
+                   {"id": "EMP_003", "morale": 70, "energy": 80},
+                   {"id": "EMP_028", "morale": 70, "energy": 80},
+                   {"id": "EMP_066", "morale": 70, "energy": 80},
+                   {"id": "EMP_026", "morale": 70, "energy": 80}],
     },
 ]
 
@@ -735,7 +777,7 @@ def render_example(r, idx):
     if ex.get("stock"):
         w("| Special stock at logout | %s | consumed 1 unit per special dish |" % ", ".join("`%s` × %d" % kv for kv in ex["stock"].items()))
     w("")
-    w("**Roster** (stats are the archetype's §36.8 values unless marked trained)")
+    w("**Roster**")
     w("")
     w("| Employee | Archetype | Role | Rarity | Role stats | RoleStatAvg | Morale₀ / Energy₀ | Efficiency (step 1) | Trait mult | Contribution | Wage (MB/h) |")
     w("|---|---|---|---|---|---|---|---|---|---|---|")
@@ -749,15 +791,17 @@ def render_example(r, idx):
             s.short, s.id, ROLE_SHORT[s.role], s.a["rarity"], rs, s.role_stat_avg(), s.morale0, s.energy0,
             row1["eff"][s.id], tm, row1["contrib"][s.id], fmt(s.wage)))
     w("")
-    w("\\* trained above the archetype value (within the potential cap, §16.6).")
-    w("")
-    w("**Menu** (D = difficulty assumed for this example; live values come from §6. Price = C4.2 curve without flavor variance; "
-      "ingredient cost = price × ratio(D) [D1 36 %%, D2 33 %%, D3 30 %%, D4 28 %%, D5 26 %%], special recipes net only their 60 %% basic share; "
-      "skill gate D ≤ 1 + floor(%d / 25) = %d)" % (r["best_cook"], r["dmax"]))
-    w("")
-    w("| Recipe | ID | L | D | Price (MB) | Ingredients/item (MB) | PrepSec base → eff (s) | Offline? |")
-    w("|---|---|---|---|---|---|---|---|")
-    for m in r["menu"]:
+    if any(sp.get("trained") for sp in ex["roster"]):
+        w("\\* trained above the archetype value (within the potential cap, §16.6).")
+        w("")
+    compact = ex.get("negative_example")
+    if not compact:
+        w("**Menu** (skill gate: D ≤ 1 + floor(%d / 25) = %d)" % (r["best_cook"], r["dmax"]))
+        w("")
+    if not compact:
+        w("| Recipe | ID | L | D | Price (MB) | Ingredients/item (MB) | PrepSec base → eff (s) | Offline? |")
+        w("|---|---|---|---|---|---|---|---|")
+    for m in ([] if compact else r["menu"]):
         w("| %s | `%s` | %d | %d | %s | %.2f | %d → %.1f | %s |" % (
             m["name"], m["rcp"], m["level"], m["d"], fmt(m["price"]), m["ing"], m["prep"], m["prep_eff"],
             ("yes" if m["cookable"] else "no (skill gate)") + (" · stock `%s`" % m["special"] if m.get("special") else "")))
@@ -771,7 +815,7 @@ def render_example(r, idx):
     w("- Preps counted %.2f (+%.0f %%), cashiers counted %d, DishFactor %.2f, Manager/Assistant coordination %+.1f %%, stocker discount %.1f %%, delivery share %.1f %%, tip trait multiplier ×%.2f." % (
         r["prep_count"], 100 * PREP_BONUS * r["prep_count"], r["cashier_count"], r["dish_factor"], 100 * row1["coord"], 100 * row1["sdisc"], 100 * row1["dpct"], r["tip_trait"]))
     w("")
-    w("**Hourly steps** (Energy/Morale decay each step; N uses the deterministic fractional accumulator)")
+    w("**Hourly steps**")
     w("")
     w("| Step | h | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |")
     w("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
@@ -795,48 +839,53 @@ def render_example(r, idx):
             ", ".join("`%s` %.0f units" % kv for kv in r["stock_used"].items()),
             ", ".join("`%s`" % k for k in so), ", ".join(str(v) for v in so.values())))
         w("")
-    w("**Incidents & discoveries** (Python reference draw; Luau draws differ, distribution identical)")
-    w("")
-    w("- Security Mitigation SM = %.3f; λ = %.2f h × 0.6 × (1 − SM) = %.3f → count = floor(λ) + roll(%.3f) = **%d**; eligible pool %d incidents; Rh = %s MB/h." % (
-        r["sm"], r["H_op"], r["lam"], r["lam"] - math.floor(r["lam"]), r["count"], r["pool_size"], fmt(r["Rh"])))
-    neg = -sum(d["mb"] for d in r["drawn"] if d["mb"] < 0) + r["dmg_val"]
-    pos = sum(d["mb"] for d in r["drawn"] if d["mb"] > 0)
-    w("- Caps: negatives %s ≤ 10 %% of R (%s) → scale ×%.2f; positives %s ≤ 15 %% of R (%s) → scale ×%.2f." % (
-        fmt(neg), fmt(0.10 * r["R_total"]), r["neg_scale"], fmt(pos), fmt(0.15 * r["R_total"]), r["pos_scale"]))
-    if r["drawn"]:
+    if compact:
+        w("Incidents: λ = %.2f → %d drawn (%s MB net, within caps); discoveries: %s." % (
+            r["lam"], r["count"], fmt(r["inc_mb"]), "none" if not (r["ms_events"] or r["crates"] or r["capsules"]) else "see report"))
         w("")
-        w("| # | Step | Incident | MB effect | Damage value | Report line |")
-        w("|---|---|---|---|---|---|")
-        for j, d in enumerate(r["drawn"], 1):
-            w("| %d | %d | `%s` %s%s | %s | %s | %s |" % (j, d["step"], d["inc"]["id"], d["inc"]["name"], " (cancelled by `INC_052`)" if d.get("cancelled") else "",
-                                                fmt(d["mb"]) if d["mb"] else "0", fmt(d["dmg"]) if d["dmg"] else "—", report_line(r, d)))
+    w("**Incidents & discoveries**" if not compact else "")
     w("")
-    if r["dmg_val"] > 0:
-        if r["auto_rep"] > 0:
-            w("- Damage value %s MB (%d damage points at %s MB/pt) auto-repaired by the Repair Technician at −%.0f %% → **%s MB**." % (
-                fmt(r["dmg_val"]), r["dmg_points"], fmt(COST_PER_DAMAGE_POINT[ex["tier"]], 1), 100 * r["rep_disc"], fmt(r["auto_rep"])))
-        else:
-            w("- Damage value %s MB (%d damage points) is **left for the player** (no Repair Technician): shown in the Restaurant Damage tab, not deducted." % (
-                fmt(r["dmg_val"]), r["dmg_points"]))
-    disc = []
-    for stp, amt in r["ms_events"]:
-        disc.append("step %d: +%d MS" % (stp, amt))
-    for stp, units in r["crates"]:
-        disc.append("step %d: rare crate (%d units)" % (stp, units))
-    if r["capsules"]:
-        disc.append("%d Morph Capsule" % r["capsules"])
-    w("- Discoveries (MS chance %.1f %%/h after trait boost ×%.2f; crate 1 %%/h; capsule 5 %%/h, ≤ 1 per UTC day): %s." % (
-        100 * MS_CHANCE * r["disc_boost"], r["disc_boost"], "; ".join(disc) if disc else "none this time"))
-    w("")
-    nph = r["net"] / r["H_op"]
-    bph = r["base_net"] / r["H_op"]
+    if not compact:
+        w("- Security Mitigation SM = %.3f; λ = %.2f h × 0.6 × (1 − SM) = %.3f → count = floor(λ) + roll(%.3f) = **%d**; eligible pool %d incidents; Rh = %s MB/h." % (
+            r["sm"], r["H_op"], r["lam"], r["lam"] - math.floor(r["lam"]), r["count"], r["pool_size"], fmt(r["Rh"])))
+        neg = -sum(d["mb"] for d in r["drawn"] if d["mb"] < 0) + r["dmg_val"]
+        pos = sum(d["mb"] for d in r["drawn"] if d["mb"] > 0)
+        w("- Caps: negatives %s ≤ 10 %% of R (%s) → scale ×%.2f; positives %s ≤ 15 %% of R (%s) → scale ×%.2f." % (
+            fmt(neg), fmt(0.10 * r["R_total"]), r["neg_scale"], fmt(pos), fmt(0.15 * r["R_total"]), r["pos_scale"]))
+        if r["drawn"]:
+            w("")
+            w("| # | Step | Incident | MB effect | Damage value | Report line |")
+            w("|---|---|---|---|---|---|")
+            for j, d in enumerate(r["drawn"], 1):
+                w("| %d | %d | `%s` %s%s | %s | %s | %s |" % (j, d["step"], d["inc"]["id"], d["inc"]["name"], " (cancelled by `INC_052`)" if d.get("cancelled") else "",
+                                                    fmt(d["mb"]) if d["mb"] else "0", fmt(d["dmg"]) if d["dmg"] else "—", report_line(r, d)))
+        w("")
+        if r["dmg_val"] > 0:
+            if r["auto_rep"] > 0:
+                w("- Damage value %s MB (%d damage points at %s MB/pt) auto-repaired by the Repair Technician at −%.0f %% → **%s MB**." % (
+                    fmt(r["dmg_val"]), r["dmg_points"], fmt(COST_PER_DAMAGE_POINT[ex["tier"]], 1), 100 * r["rep_disc"], fmt(r["auto_rep"])))
+            else:
+                w("- Damage value %s MB (%d damage points) is **left for the player** (no Repair Technician): shown in the Restaurant Damage tab, not deducted." % (
+                    fmt(r["dmg_val"]), r["dmg_points"]))
+        disc = []
+        for stp, amt in r["ms_events"]:
+            disc.append("step %d: +%d MS" % (stp, amt))
+        for stp, units in r["crates"]:
+            disc.append("step %d: rare crate (%d units)" % (stp, units))
+        if r["capsules"]:
+            disc.append("%d Morph Capsule" % r["capsules"])
+        w("- Discoveries (MS chance %.1f %%/h after trait boost ×%.2f; crate 1 %%/h; capsule 5 %%/h, ≤ 1 per UTC day): %s." % (
+            100 * MS_CHANCE * r["disc_boost"], r["disc_boost"], "; ".join(disc) if disc else "none this time"))
+        w("")
+    nph = r["net"] / r["H_op"] if r["H_op"] else 0
+    bph = r["base_net"] / r["H_op"] if r["H_op"] else 0
     w("**Result**")
     w("")
     w("| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | Net / h | C4.4 active net / h | Offline ÷ active |")
     w("|---|---|---|---|---|---|---|---|---|---|---|---|")
     w("| %s | %s | %s | %s | −%s | −%s | −%s | %s | **%s** | %s | %s | **%.1f %%** (base economy %.1f %%) |" % (
         fmt(tot["N"]), fmt(tot["rev"]), fmt(tot["tips"]), fmt(tot["deliv"]), fmt(tot["ing"]), fmt(tot["wages"]),
-        fmt(r["auto_rep"]), ("+" if r["inc_mb"] >= 0 else "") + fmt(r["inc_mb"]), fmt(r["net"]), fmt(nph), fmt(n_active),
+        fmt(r["auto_rep"]).replace("−", ""), ("+" if r["inc_mb"] >= 0 else "") + fmt(r["inc_mb"]), fmt(r["net"]), fmt(nph), fmt(n_active),
         100 * nph / n_active, 100 * bph / n_active))
     w("")
     return "\n".join(L)
@@ -873,7 +922,7 @@ if __name__ == "__main__":
         ok = True
         for r in results:
             s = summary_line(r)
-            band = 35 <= s["pct"] <= 50 and 35 <= s["bpct"] <= 50
+            band = (35 <= s["pct"] <= 50 and 35 <= s["bpct"] <= 50) or bool(r["ex"].get("negative_example"))
             ok &= band
             print("%s %s H=%.2f net=%s net/h=%s (base %s) active=%s -> %.1f%% (base %.1f%%) %s" % (
                 s["key"], s["tier"], s["H"], fmt(s["net"]), fmt(s["nph"]), fmt(s["bph"]), fmt(s["active"]),

@@ -710,7 +710,7 @@ def main(argv):
         errors.append("CMB ids must be sequential CMB_001..CMB_%03d in table order" % len(combos))
     if len(combos) < MIN_COMBOS:
         errors.append("only %d combos (< %d)" % (len(combos), MIN_COMBOS))
-    keys_seen, names_seen = set(), set()
+    keys_seen, names_seen, sigs_seen = set(), set(), set()
     trig_count = collections.Counter()
     for r in combos:
         cid = clean(r[0])
@@ -734,6 +734,8 @@ def main(argv):
                 errors.append("%s: generated name should be '%s' (cell: '%s' / %s)" % (cid, spoken, clean(disp), m.group(1)))
         keys_seen.add(key)
         names_seen.add(clean(disp))
+        if sig:
+            sigs_seen.add(sig)
         trig = triggered_by(lo, synergies)
         for t in trig:
             trig_count[t] += 1
@@ -745,6 +747,10 @@ def main(argv):
                           % (cid, active, suppressed, listed_active, listed_supp))
         if verbose:
             print("%s %-28s key=%-22s active=%s supp=%s" % (cid, clean(disp), key, active, suppressed))
+
+    for title, _text, _tree in rules.signatures:
+        if title not in sigs_seen:
+            errors.append("signature '%s' has no §36.5 example (unreachable or shadowed rule?)" % title)
 
     # ---------------- brief / mockup coverage
     for k in ["Bear-Scorpion", "Shark-Spider", "Giraffe-Squid", "TV-Moth", "Frog-Robot", "Cat-Fish", "Axolotl-Cow",
