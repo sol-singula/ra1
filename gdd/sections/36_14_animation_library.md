@@ -1,6 +1,6 @@
 ### 36.14 Animation Library
 
-Owner: A16 Art & Audio. This appendix is the **only place `ANM_` ids are defined**. `ANM_001`–`ANM_300` is the
+Owner: A16 Art & Audio. This appendix is the **only place `ANM_` ids are defined**. numbers 001–300 are the
 general library; `ANM_301`–`ANM_370` are the ability animations, mapped 1:1 to `ABL_001`–`ABL_070` (same last two
 digits, canon §C21). The 52 canon core ids keep their canon names verbatim. Playback rules (priorities, blending,
 gait classes, LOD, employee cycles) are specified in §26; art rules in §25.
@@ -30,7 +30,7 @@ gait classes, LOD, employee cycles) are specified in §26; art rules in §25.
 | Ability animations | `ANM_301`–`ANM_370` | 70 |
 | **Total** | | **235** |
 
-Unlisted numbers in `ANM_001`–`ANM_300` are reserved for future content and must not be referenced.
+Unlisted numbers in the 001–300 general range are reserved for future content and must not be referenced.
 
 #### 36.14.2 Locomotion and carry
 

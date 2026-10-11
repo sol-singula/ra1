@@ -643,3 +643,73 @@ screen shake.
 | Restored ("Good as new!") | sparkle burst (30 particles), scale tween 0.9 → 1.1 → 1.0 over 0.4 s (`TweenService`), a shine sweep across the model, floating text "Good as new!", ding |
 | Co-op Insurance sweep | a sparkle wave travels from the front door through every insured object (1.5 s) |
 | Tier upgrade | Mutant Builders sequence (§15.3) |
+
+#### 15.9.6 Employee repair (`ROLE_REPAIR`)
+
+Players can always delegate: every damaged object's prompt has **Assign to Repair Tech**, and the Repair panel
+has **Repair All** (queues every damaged object). Technicians skip the minigame and work from a priority queue:
+(1) Broken appliance needed by an open ticket · (2) Broken seat/surface while customers wait · (3) Destroyed
+objects if the owner's "Auto-rebuild" toggle is on (default off) · (4) other Broken · (5) Cracked customer-side ·
+(6) Cracked kitchen · (7) Scuffed, only if "Polish scuffs" is on. Duration = base × `(1.5 − RepairSkill / 200)`
+× trait multipliers (§36.8, e.g. *Live Wire* appliance ×1.3 speed); cost uses the technician discount and an
+owner-set hourly repair budget (default 10 % of last hour's income). Canon E3 applies: new damage during a job
+grows its remaining work, Destroyed converts the job to Rebuild, the cost is charged once at completion.
+
+#### 15.9.7 Offline damage (canon §C15)
+
+`OfflineEarningsService` passes the report's damage events (from §36.9 incidents) to `RepairService`, which picks
+targets with the report's seeded RNG (customer-side furniture 60 %, appliances 25 %, decor 15 %) and applies them
+with the §15.9.1 conversion. Fairness rules [TUNABLE]: offline damage **never Destroys** (floor 1 %, Broken); at
+most `min(6, 1 + floor(H / 2))` objects per report; trophies, finishes, curb items and rugs are immune. With a
+Repair Tech, each technician repairs up to 4 objects per simulated hour inside the sim at the state cost ×
+`(1 − RepairSkill / 200)`, shown as **Repairs** in the report, and those objects come back Pristine. Without one,
+objects wait for the player (cheaper than replacing; atmosphere lower next session) and the Welcome Back screen's
+**Restaurant Damage** button lists them with a Repair All total. `SKL_RPR_17` speeds those repairs for 10 min.
+
+#### 15.9.8 Co-op Insurance (canon E12)
+
+Every damage event is tagged with its source. Damage dealt by **guests**, and by **customers while at least one
+guest is present**, accrues as `insuredPct` on the object (owner-alone sessions are not insured). When the visit
+ends (`MultiplayerService.GuestLeft` with no guests left, or the owner leaving), the insurance sweep restores each
+object by its insured share for free (insured share ≥ the damage → Pristine; mixed damage → only the uninsured
+part remains to pay). Repairs done during the visit on insured damage cost 0 MB and still award XP. Guests may
+repair (if allowed) but can never sell, move or store owner furniture or spend owner currency.
+
+#### 15.9.9 "Never permanently lost" rules
+
+1. Destroyed objects stay placed as rubble (`restaurant.pendingRebuilds`, §28) with a rebuild offer of ≤ 25 %.
+2. Elbow Grease rebuilds for free when the wallet cannot pay.
+3. Every tier upgrade restores everything to Pristine for free.
+4. Migration and content changes move items to storage, never delete them; sells are always player-initiated.
+5. Trophies (`FRN_901`–`FRN_910`) are indestructible and unsellable.
+6. Offline damage cannot Destroy; Co-op Insurance repays guest-time damage.
+
+#### 15.9.10 Protective upgrades and combat hooks
+
+| Upgrade / item | Effect | Hook it feeds |
+|---|---|---|
+| `UPG_049`–`UPG_051` Reinforced Furniture | seating/surface MaxDur +25/50/100 % | MaxDur_eff (counts toward the 0.5 floor) |
+| `UPG_052`/`UPG_053` Reinforced Appliances | appliance MaxDur +25/50 % | MaxDur_eff |
+| `UPG_033` Booth Bolt-Downs | no flips; tables/booths ×0.6 damage | `FurnitureCombatDamageMult` (§11.10.5) |
+| `UPG_054` Bumper Pads | wall-splat damage ×0.5 | `FurnitureCombatDamageMult` |
+| `UPG_044` Riot-Proof Ribbon | ×0.7 during level-6 chaos | `FurnitureCombatDamageMult` |
+| `UPG_048` Shatterproof Glass | glass ×0.4 | Protect (glass) |
+| `UPG_042` Anti-Throw Netting | wall items/glass immune to thrown food | Protect |
+| `UPG_045`/`UPG_046` Sprinklers, `UPG_047` Fire-Retardant | auto-extinguish 3 s / 1 s; fire ×0.5 | §5 fire |
+| `FRN_430` Extinguisher Cabinet, `FRN_432` Smoke Detector Pigeon | extinguish −50 % in 12 studs; 2 s fire warning | §5 fire |
+| `FRN_435` Owl Camera, `UPG_041` Owl Eye Network, `FRN_436` Security Booth, `UPG_043` Training Mats | warning markers; guard −1 s, −1 s; +4 / +3 studs radius | `SecurityResponseMult` (≥ 0.5), §16 |
+| `FRN_146`, `FRN_434` Chill Aura items | anger gain −10 % / −15 % in radius (strongest only) | canon §C11.5 Chill Aura, §10 |
+| `FRN_214` Soothing Seafoam Paint | zone-wide escalation dampening 0.05 | `EscalationDampener` (§10) |
+| `UPG_055` Nap Nook Respawn Pad | `STS_WOOZY` ×0.6 | `WoozyDurationMult` (≥ 0.3) |
+| `FRN_433` Bouncer Rope, `UPG_034` Curbside Benches | queue patience ×1.15 / ×1.2 (cap ×1.4), no line-cutting | `QueuePatienceMult` (§8.2.3) |
+
+### 15.10 Station Upgrades (canon §C4.9)
+
+The 24 path rows `UPG_001`–`UPG_024` (§36.12) implement canon §C4.9 for every station, with §5's heat /
+process / utility interpretation and Lv5 gimmicks. **Scope decision: levels belong to the station type**, not
+to individual instances: buying Grill Lv3 upgrades every grill you own now or later, premium variants included,
+priced from the stock item (`cost = multiplier × stock FRN price`). This keeps storage simple (no hidden levels
+on stored items), makes second copies immediately useful, and is generous on purpose — station levels are a
+side sink beside mutations. Persistence: `restaurant.upgrades` holds `"UPG_006#3"`-style entries (path + level);
+the §28 codec's per-object `lvl` mirrors the type level for `CookingService`. A purchase made while any instance
+is `PROCESSING` is queued and applied as each instance idles (§5). No recipe ever requires above Lv1.

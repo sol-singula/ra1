@@ -791,7 +791,7 @@ can never push a player up the restaurant ladder faster than canon pacing (scena
 **Events.** Every committed transaction calls `AnalyticsService:LogEconomyEvent(player, flowType, currencyType, amount,
 endingBalance, transactionType, itemSKU)` with `flowType` = `Enum.AnalyticsEconomyFlowType.Source/Sink`, `currencyType`
 = `"MB"`, `"MS"` or `"RT"`, `transactionType` from `Enum.AnalyticsEconomyTransactionType` (`Gameplay`, `Shop`,
-`TimedReward`, `Onboarding`) and `itemSKU` = the reason key. High-frequency customer payments are aggregated per 60 s per
+`TimedReward`, `Onboarding`) and `itemSKU` = the content id when present (e.g. `MUT_216`). High-frequency customer payments are aggregated per 60 s per
 player into one event. Internal events (registered in §31): `mmr_currency_tx`, `mmr_tier_upgraded`,
 `mmr_offline_collected`, `mmr_economy_cap_hit`, `mmr_ms_softcap_hit`, `mmr_purchase_failed_insufficient`,
 `mmr_unpaid_break`, `mmr_wallet_snapshot` (daily per player: balances, NetRef, tier, level, active and offline hours).
@@ -816,73 +816,69 @@ player into one event. Internal events (registered in §31): `mmr_currency_tx`, 
 
 ### 22.16 Exploit Prevention and `EconomyService`
 
+The transaction primitive, its reference implementation and the persistence guarantees are fixed by §27.8.12,
+§27.12.5 and §28.17; anomaly rules and per-reason ceilings by §29.14. This section states the economy rules they
+enforce and the keys for the flows this section and §21 own.
+
 **Rules.**
-1. `EconomyService` (§C19) is the **sole writer** of `wallet.*`; other services request transactions through its API.
-   A server-side lint (§35) fails the build if any other module writes `wallet` fields.
-2. **Server-derived amounts only.** Clients send intents (`Economy.RequestPurchase(sku, qty, requestId)`), never amounts
-   or prices. Prices come from server config tables; the client copy in `ReplicatedStorage` is display-only.
-3. **Idempotency keys** are deterministic per logical transaction and checked before applying:
+1. `EconomyService` (§C19) is the **sole writer** of `wallet` through `Transact(player, req)` /
+   `TransactWith(player, req, apply)`; every other service requests a transaction. A CI lint (Selene rule, §27) fails the
+   build on any other wallet write.
+2. **Server-derived amounts only.** Clients send intents (item id, quantity ≤ 99, a client GUID), never amounts or prices.
+   Prices come from frozen server catalogs; the `ReplicatedStorage` copy is display-only.
+3. **Registered reason codes** (§31.12) with per-transaction ceilings (§29.14): e.g. `serve_payment`, `serve_tip`,
+   `quest_reward`, `event_reward`, `delivery_reward`, `offline_collect`, `coop_guest_pay`, `arena_reward`,
+   `tier_upgrade`, `mutation_purchase`, `mutation_upgrade`, `lab_fusion`, `hire`, `wages`, `repair`, `recipe_learn`,
+   `cosmetic_mb`. This section adds `furniture_sellback` (source, ceiling 0.5 × catalog price) and `fountain_wish`
+   (sink, 1 MB, §21.8.1) for registration in §31.12.
+4. **Idempotency keys** follow §28.17 (`serve:<ticketId>`, `quest:<questId>:<cycleStamp>`, `offline:<reportId>`,
+   `tier:<TIER_NN>`, `hire:<recruitSeed>:<candidateIdx>`, `wage:<hourStamp>`, `repair:<jobId>`, client GUID per shop
+   purchase). Keys for the flows owned here:
 
-| Flow | Idempotency key pattern | Stored in `appliedKeys`? |
+| Flow | Idempotency key | Long-horizon guard |
 |---|---|---|
-| Customer payment / tip | `ord:<restaurantSessionId>:<ticketId>` | session memory only (server-generated, not replayable) |
-| Quest reward | `qst:<questInstanceId>` | yes (persisted) |
-| Offline claim | `off:<reportId>` | yes (§C15 `claimedReportIds`) |
-| Tier upgrade | `tier:<userId>:<toTier>` | yes |
-| Shop purchase | `buy:<userId>:<requestId>` (client UUID, server-scoped to user) | yes, 7 days |
-| Co-op guest pay | `coop:<visitId>:<ticketId>:<guestUserId>` | yes, 24 h |
-| Arena reward | `arena:<matchId>:<userId>` | yes |
-| Event reward | `evt:<eventInstanceId>:<rewardTier>:<userId>` | yes |
+| Co-op guest pay (checkpoint every 10 min and at settlement) | `coop:<visitId>:<checkpointNo>` (refines §28.17 `coop:<visitId>`) | visit record closed at settlement; daily cap counter `social.coop.guestPayToday` |
+| Arena match reward | `arena:<matchId>` | match record in `ArenaMatches` (§21.10) marked paid |
+| Arena season reward | `arenaseason:<seasonId>` | `social.arena.season` ≥ reward season (§28) |
+| Showcase podium reward | `showcase:<roundId>` | round record closed; daily round counter |
+| Furniture sell-back | `sell:<placedItemUid>` | item removed in the same `TransactWith` |
 
-4. **Transaction log.** Profile ring buffer of the last 200 transactions (`key, currency, delta, reason, ts, balanceAfter`)
-   for the Wallet panel and support; `appliedKeys` keeps the last 2,000 keys or 7 days. An audit copy is appended in
-   batches at each autosave to the DataStore `EconomyLedger_v1` under key `<userId>/<yyyymmdd>` (≤ 2,000 entries per day,
-   overflow aggregated by reason) for rollback investigations (§28).
-5. **Atomic purchases.** Debit and the item/state change are applied in one in-memory mutation and saved together under
-   the session lock (§28); a crash before the save loses both, never one.
-6. **Rate limits.** Purchase intents ≤ 5 per second per player; repeated failures (≥ 20 per minute) silently throttle for 30 s
-   and log `mmr_purchase_failed_insufficient`.
-7. **Plausibility checks.** Per-session MB earned is compared with `customersServed × expectedTicket × 1.6`; excess flags the
-   session (§29). No currency is ever granted from a client-reported value.
+5. **Ledger.** `wallet.ledger` (ring of 50, §28.9.4) feeds the Wallet panel (last 20); `wallet.txKeys` (ring of 64)
+   dedupes retries; the full stream goes to analytics via `LogEconomyEvent`. Support and rollbacks use the ledger,
+   the receipt ring and DataStore versions (§28).
+6. **Atomic purchases.** Debit and grant run in one `TransactWith` critical section and are saved in the same write
+   (§28.17): no state exists in which money moved but the item did not.
+7. **Rate limits.** Purchase intents ≤ 5 per second per player (§27 remote budgets); ≥ 20 failed purchases per minute
+   silently throttle for 30 s and log `mmr_purchase_failed_insufficient`.
+8. **Plausibility.** §29.14 `AnomalyMonitor` flags active net income above 3 × §C4.4 and holds earnings above 6 ×; the model in
+   §22.5 is the reference for those thresholds. No currency is ever granted from a client-reported value.
+
+**Example — co-op guest pay checkpoint (server, `MultiplayerService` calling `EconomyService`):**
 
 ```lua
 --!strict
--- EconomyService (server): the only module allowed to change wallet balances.
-export type Currency = "MB" | "MS" | "RT"
-export type Tx = { currency: Currency, delta: number, reason: string, key: string, ref: string? }
-
-local EconomyService = {}
-local CAPS: { [Currency]: number } = { MB = 1e12, MS = 1e7, RT = 1e6 }
-
-function EconomyService.Apply(player: Player, txs: { Tx }): (boolean, string?)
-	local profile = PlayerDataService.GetProfile(player)
-	if not profile or profile.safeMode then return false, "SAFE_MODE" end
-	-- 1) idempotency: a batch with an already-applied key is a successful no-op
-	for _, tx in txs do
-		if profile.appliedKeys[tx.key] then return true, "DUPLICATE" end
+-- Pays a guest the accrued, level-scaled guest pay for one visit checkpoint (§21.4.1), respecting the daily cap.
+local function settleGuestPay(guest: Player, visit: VisitRecord, checkpointNo: number): ()
+	local social = PlayerData:GetSection(guest, "social")
+	local netRef = Economy.NetRef(guest)                         -- §C4.4 net MB/h of the guest's own tier
+	local cap = math.floor(1.5 * netRef)                         -- daily guest-pay cap (§21.4.1)
+	local today = Time.DayStamp()                                -- server UTC day (§C3)
+	if social.coop.guestPayDay ~= today then
+		social.coop.guestPayDay, social.coop.guestPayToday = today, 0
 	end
-	-- 2) validate the whole batch first (all-or-nothing)
-	local after: { [Currency]: number } = table.clone(profile.wallet)
-	for _, tx in txs do
-		assert(tx.delta == math.floor(tx.delta), "integer amounts only")
-		after[tx.currency] += tx.delta
-		if after[tx.currency] < 0 then return false, "INSUFFICIENT_" .. tx.currency end
-	end
-	-- 3) commit, clamp to sanity caps, log
-	for _, tx in txs do
-		local c = tx.currency
-		profile.wallet[c] = math.min(CAPS[c], profile.wallet[c] + tx.delta)
-		profile.appliedKeys[tx.key] = os.time()
-		LedgerBuffer.Append(player.UserId, tx, profile.wallet[c])
-		AnalyticsService:LogEconomyEvent(player,
-			if tx.delta >= 0 then Enum.AnalyticsEconomyFlowType.Source else Enum.AnalyticsEconomyFlowType.Sink,
-			c, math.abs(tx.delta), profile.wallet[c], Enum.AnalyticsEconomyTransactionType.Gameplay.Name, tx.reason)
-	end
-	Remotes.Economy.WalletChanged:FireClient(player, profile.wallet)
-	return true, nil
+	local accrued = math.floor(visit.accruedGuestMB[guest.UserId] or 0)
+	local pay = math.clamp(accrued, 0, cap - social.coop.guestPayToday)
+	visit.accruedGuestMB[guest.UserId] = 0                       -- surplus beyond the cap is dropped (XP only)
+	if pay <= 0 then return end
+	local result = EconomyService:TransactWith(guest, {
+		deltas = { MB = pay },
+		reason = "coop_guest_pay",
+		idempotencyKey = string.format("coop:%s:%d", visit.visitId, checkpointNo),
+	}, function()
+		social.coop.guestPayToday += pay                         -- same critical section, same save (§28.17)
+	end)
+	if result.ok then Remotes.Multiplayer.GuestPaid:FireClient(guest, pay, cap - social.coop.guestPayToday) end
 end
-
-return EconomyService
 ```
 
 ### 22.17 Edge Cases
@@ -891,19 +887,19 @@ return EconomyService
 |---|---|---|
 | 1 | A wage tick exceeds the balance | E8: Unpaid Break, Morale −5/h, balance stays ≥ 0; resumes automatically when funds exist. |
 | 2 | Two purchases race for the last MB (double-tap, two remotes in one frame) | Per-player transaction queue serialises them; the second fails `INSUFFICIENT_MB`; UI shows the real balance. |
-| 3 | Client replays a purchase remote | Same `requestId` → same key → no-op returning the original result. |
+| 3 | Client replays a purchase remote | Same client GUID → same idempotency key → `DUPLICATE`, balance unchanged (§28.17). |
 | 4 | Profile failed to load (Safe Mode, E6) | All earn/spend calls return `SAFE_MODE`; customers are not spawned, so no income is lost silently. |
 | 5 | Offline report collected twice after reconnect | E11: `reportId` already in `claimedReportIds` → no-op. |
 | 6 | Server crashes after a debit but before saving | Debit and item were one in-memory mutation; the last saved state has neither; idempotency prevents double grants on retry. |
 | 7 | Grant would exceed a sanity cap | Clamped to the cap, `mmr_economy_cap_hit` logged and reviewed (legitimately unreachable). |
 | 8 | Price changed by live tuning while a purchase dialog is open | Server validates against the current price, returns `PRICE_CHANGED` with the new price; the player re-confirms. |
-| 9 | Quest completed during a teleport between servers | Session lock prevents two servers holding the profile; `qst:` key prevents double reward. |
+| 9 | Quest completed during a teleport between servers | Session lock prevents two servers holding the profile; `quest:<questId>:<cycleStamp>` key and quest state `CLAIMED` prevent a double reward. |
 | 10 | Every menu item is SOLD OUT (no special stock) | E9: `RCP_BRG_001` auto-added; income continues at basic-menu rates; a hint links to Restaurant Supplies (`BLD_03`). |
 | 11 | Event multiplies demand (e.g. `EVT_003` Citywide Restaurant Rush) | Demand rises but customers stay ≤ seat capacity; event MB rewards limited to 2 per event per day. |
 | 12 | Player sets the device clock forward | Ignored: dailies, weeklies, offline time and soft caps use server UTC (`os.time()` on the server, §C3). |
 | 13 | Duplicate converted to MS while an upgrade wants it | `MutationService` locks the part stack; the upgrade re-checks and falls back to DupeSubstituteMS with a confirm prompt. |
 | 14 | Player hoards 100 × NetRef | Allowed; telemetry alarm only. No decay, no tax — hoarding is never punished, sinks are added instead. |
-| 15 | Furniture sell-back used as a loop (buy → place → sell) | Sell-back (if offered by §15) is processed as a Source with reason `FURNITURE_SELLBACK`, capped at ≤ 50 % of the paid price, so loops always lose MB. |
+| 15 | Furniture sell-back used as a loop (buy → place → sell) | Sell-back (if offered by §15) is processed as a Source with reason `furniture_sellback`, capped at ≤ 50 % of the paid price, so loops always lose MB. |
 | 16 | Respec at high level | Free once per 24 h (§C5); otherwise `500 × level` (50,000 MB at L100) — shown before confirming. |
 
 ### 22.18 Acceptance Criteria
@@ -915,7 +911,7 @@ return EconomyService
 - **AC-22-03:** In the scenario-B simulation (with offline earnings) no tier is reached before its §C5.1 level gate.
 - **AC-22-04:** A telemetry cohort of ≥ 1,000 new players reaches `TIER_05` in a median of 14 ± 2.8 active hours (§C4.4 ±20 %).
 - **AC-22-05:** No code path outside `EconomyService` writes `wallet.MB`, `wallet.MS` or `wallet.RT` (static lint in CI).
-- **AC-22-06:** Replaying any economy remote 100 times with the same `requestId` changes the balance exactly once.
+- **AC-22-06:** Replaying any economy remote 100 times with the same client GUID / idempotency key changes the balance exactly once.
 - **AC-22-07:** Balances never go below 0 across a 10,000-session soak test with random purchases, wages and repairs.
 - **AC-22-08:** A purchase interrupted by a forced server shutdown results in either both the debit and the item or neither
   (100 of 100 fault-injection trials).

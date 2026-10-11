@@ -19,7 +19,7 @@ tests that catch regressions before players do.
 | R1 | **Server simulates, client decorates.** The server holds cheap invisible proxies and state; every morph visual, animation, debris piece and crowd walker is client-side (SPCV, §C3). |
 | R2 | **Anchored by default.** Physics is the exception: only ≤ 30 loose props per interior, briefly, server-owned. |
 | R3 | **Compute once, replay everywhere.** Paths are baked; movement is replicated as segments clients interpolate with the shared server clock, not as per-frame CFrames. |
-| R4 | **Budgets are per device tier** and enforced at runtime by the `QualityManager` (§30.19). |
+| R4 | **Budgets are per device tier** and enforced at runtime by the client `QualityManager` module (§30.19). |
 | R5 | **Pool everything that spawns repeatedly** (§30.18). No `Instance.new`/`Destroy` churn in hot paths. |
 | R6 | **Only replicate what the client renders**: interest is the player's current interior or district (StreamingEnabled + event filtering). |
 | R7 | **Measure in the field**: performance telemetry from real sessions (§30.20, §31) is the source of truth, not Studio on a gaming PC. |
@@ -37,17 +37,18 @@ tests that catch regressions before players do.
 | Concurrent particles | 400 | 1,000 | 2,000 | sum of live particles |
 | Debris pool / per event | 24 / 8 | 48 / 12 | 96 / 16 | 4 s lifetime (§C3) |
 | Server Heartbeat | **≥ 45 Hz** sustained (target 60) | | | `1000 / Stats.HeartbeatTimeMs` |
-| Server frame script time (p95) | ≤ 12 ms total | | | per-service split in §30.9 |
+| Server gameplay script time | ≤ 8 ms avg, ≤ 12 ms p95 per Heartbeat | | | per-system split confirmed from §27.13 (§30.9) |
 | Server memory | ≤ 3,500 MB | | | alarm 4,500 MB |
 | Network server → client per player | ≤ **40 KB/s** avg, ≤ 80 KB/s 2-s burst | | | `Stats.DataReceiveKbps` on client |
 | Network client → server per player | ≤ 6 KB/s avg, ≤ 12 KB/s burst | | | |
-| Join to playable (LOW, 4G) | ≤ 20 s cold, ≤ 10 s warm | | | load screen to first input |
+| Join → `UI.Ready` (reference LOW phone) | p50 ≤ 10 s, p95 ≤ 20 s | | | §27.11 join budget |
 | Server-wide moving primitives | ≤ 120 | | | `Stats.MovingPrimitivesCount` |
 
 ### 30.4 UI
 
 - **Settings → Graphics:** `Auto` (default) / `Low` / `Medium` / `High`, persisted in `settings.graphicsTier`
-  (§28.9.13); "Reduced Motion" and "Reduced Flashing" also lower particle and screen-shake budgets.
+  (§28.9.13); the `uiSettings.reducedVfx` toggle halves particle and debris budgets and `screenShakeOff`
+  removes camera shake, independent of the tier.
 - When auto-scaling drops a tier, a 3 s toast: *"Kitchen got crowded — simplifying the view to keep things
   smooth."* (once per session; never during combat).
 - **Developer overlay** (ops/QA allowlist only, toggled by a chat-free keybind): FPS, frame ms, memory by tag,
@@ -58,8 +59,10 @@ tests that catch regressions before players do.
 Load grows with the player's tier, so performance is specified against the **worst case per tier** from §C6:
 TIER_10 = 24 seats + 4 queue = 28 customers and 20 employees in one interior. The server worst case is 8
 TIER_10 restaurants: 8 × 28 = 224 desired customers, clipped by the **160-proxy server hard cap** (§C3), plus
-up to 8 × 20 = 160 employee proxies. When the cap binds, `CustomerAIService` distributes arrivals so each
-restaurant gets at least `seats × 0.6` customers before any restaurant gets its queue filled [TUNABLE].
+up to 8 × 20 = 160 employees. When the cap binds, §27.14's fair-share allocator applies
+(`cap_i = min(seats_i + 4, floor(160 × w_i / Σw))`, queues shrink before seats: eight TIER_10 restaurants get 20
+customers each); on-floor employee proxies have a server soft cap of 120, beyond which extra staff work "in the
+back room" with identical outputs (§27.14).
 
 ### 30.6 Player Interactions
 
@@ -72,12 +75,13 @@ budgets above HIGH. Co-op guests render the host interior with their *own* tier 
 |---|---|
 | `CustomerAIService` | proxy lifecycle, arrival distribution under the 160 cap, path following, attribute replication |
 | `EmployeeService` | employee proxies, work AI at decimated tick rates |
-| `MorphAssemblyService` (client builder) | visual assembly, impostors, rig pooling |
+| `MorphAssemblyService` | player morph builds (server), shared `MorphBuilder` code path |
+| `MorphVisualController` (client, §27.9) | SPCV visual builds (≤ 1 per frame), impostors, interpolation, rig and part pools |
 | `BuildingService` | nav-grid bake on layout commit (E10 connectivity) |
 | `CombatService` | hit queries against proxies, projectile arcs |
 | `RepairService` | damage-state swaps; destruction events → client debris |
 | `UIController` | virtualized lists, pooled UI elements, `QualityManager` settings UI |
-| Client `QualityManager`, pools | shared client libraries (placed by §27) |
+| Client modules `VisualPool`, `AnimCache`, `BillboardPool` (§27.4.3) + `QualityManager` (new, `Client/Modules`) | pooling, track caching, quality tiers |
 
 ### 30.8 Performance Budgets by Platform
 
@@ -98,29 +102,28 @@ UI ≤ 1.5, input/camera ≤ 1, misc ≤ 1), physics ≤ 3 ms, headroom ≥ 6 ms
 per server**; employees ≤ the tier employee cap (§C6, max 20). Named city NPCs have server proxies only
 while a player is within 150 studs (otherwise dormant, state frozen). City crowds are client-only cosmetic.
 
-**Server proxy** = one anchored, invisible `Part` (Transparency 1, `CanCollide = false`, `CanTouch = false`,
-`CanQuery = true` for hit queries, collision group `Proxies`) sized by body-plan class (S/M/L), plus
-attributes:
+**Server proxy** = one anchored, invisible `Part` (§27.12.3: 2.5 × 5.5 × 2.5 studs, Transparency 1,
+`CanCollide = false`, `CanTouch = false`, `CanQuery = true` for hit queries and tap targeting, collision group
+`Proxies`, tag `MMR_Proxy`) with the §27 attributes, written **only on change**:
 
-| Attribute | Type / encoding | Update rate |
+| Attribute | Content | Update rate |
 |---|---|---|
-| `St` | number (state enum, §8) | on change |
-| `Per`, `Look` | personality index; appearance seed | once |
-| `Ang` | anger level 0–6 (§C11.5) | on change |
-| `Pat` | patience 0–255 quantized | ≤ 2 Hz |
-| `Mv` | string: packed waypoint list + start time (`workspace:GetServerTimeNow()`) + speed | on each new path segment |
-| `Tgt` | target proxy/seat id | on change |
+| `Kind`, `PersonalityId`, `Parts` | customer/employee/NPC; personality ID; ≤ 24 part IDs (comma list) | once |
+| `State` | state-machine state (§8) | on change |
+| `AngerLevel` | 0–6 (§C11.5) | on change |
+| `Seat`, `TempPart` | assigned seat; temporary cosmetic part (Mutation Cuisine, §C10) | on change |
 
-**Movement replication:** the server writes `Mv` once per segment; every client computes the visual position
-as `f(path, startTime, speed, GetServerTimeNow())`, so visuals are smooth at any frame rate with ~0 bandwidth
-while walking. The server moves the proxy `CFrame` itself at **5 Hz** while walking (for hit validation and
-late joiners), 0 Hz while seated.
+Patience and order details reach clients through `Order.TicketsChanged` (batched, occupants only, ≤ 10 Hz).
 
-**Server tick decimation** (AI decisions, not movement): customers within an interior that contains a player
-tick at 10 Hz; interiors with no player present (owner in the city, employees working) tick at 2 Hz; queued
-customers tick at 1 Hz. Per-frame server budget (p95): `CustomerAIService` ≤ 3.0 ms, `EmployeeService` ≤
-1.5 ms, `CombatService` ≤ 1.5 ms, `CookingService` ≤ 1.0 ms, everything else ≤ 5.0 ms. AI ticks are
-round-robin-scheduled so no frame processes more than 1/N of the population.
+**Movement replication:** the server writes proxy `CFrame`s at the 10 Hz simulation rate (§27.7.1) and only
+while a proxy moves; each client lerps its visual toward the proxy and moves all visual roots with one
+`workspace:BulkMoveTo` per frame (§27.12.4), so visuals stay smooth at any frame rate.
+
+**Server tick rates and budgets** (§27.13 values, confirmed here as the §30 thresholds): customer AI 10 Hz per
+customer, round-robin (avg 2.0 ms, p95 3.0 ms); employee work AI 5 Hz (1.0 / 1.5 ms); `CombatService` event-driven
++ 10 Hz status sweep (0.8 / 2.5 ms); `CookingService` 4 Hz sweep + exact wake-ups (0.4 / 0.8 ms); everything
+combined ≤ 8 ms average and ≤ 12 ms p95. Over budget, §27.13's degrade ladder steps in (cosmetic streams
+10 → 5 Hz, customer think rate 10 → 7 Hz, arrivals × 0.8) and never touches economy, saves or validation.
 
 **Client visual decimation (distance from camera):**
 
@@ -190,12 +193,13 @@ are in range than the tier's full-detail cap, the farthest beyond the cap use im
 | Texture per part | ≤ 512² (Legendary+ may use 1024² on HIGH only) | shared category atlases (one 1024² atlas per §C13.2 category) |
 | Materials | `SurfaceAppearance` allowed on HIGH; LOW/MID use the atlas color map only | atlas color map only |
 | Physics flags | `Massless`, `CanCollide`/`CanTouch`/`CanQuery = false` (canon), `CollisionFidelity = Box` | same |
-| Assembly cost | ≤ 2 ms per morph, max 2 assemblies per frame (others queue) | same |
+| Assembly cost | ≤ 2 ms per morph; ≤ 1 visual build per frame (§27.9), others queue | same |
 
 - **Impostors** are pre-baked per body-plan class (biped, tall-neck, quadruped-leg, winged, tentacle-leg …) at
   1,500 triangles, tinted with the morph's three dominant colors, with a ≤ 300-triangle simplified head
   silhouette swapped in from the head part's LOD mesh so a Shark-Spider still *reads* as a shark at 80 studs.
-- The client builder clones parts from a **part template cache** (LRU; LOW 120 distinct parts, MID 220, HIGH
+- `MorphVisualController` clones parts from per-ID part pools (cap 6 per ID, §27.12.4) backed by a **template
+  cache** (LRU of distinct part IDs; LOW 120, MID 220, HIGH
   all) and welds them with `WeldConstraint`s to the pooled R15 rig's host parts at the canon `MMR_*`
   attachments. FX-slot emitters are disabled on impostors and on LOW beyond 30 studs.
 - Player morphs (`MorphAssemblyService` on the server for players) are built once per equip change; a loadout
@@ -210,60 +214,23 @@ are in range than the tier's full-detail cap, the farthest beyond the cap use im
 - **Decimation:** beyond 30 studs secondary tracks stop; impostors play one loop or none; off-screen far
   visuals pause. Ability animations `ANM_301`–`ANM_370` load on demand when the ability is first equipped.
 - **Zero server animation for NPCs:** proxies have no `Animator`, so NPC animation costs no bandwidth.
-  State changes (`St`) drive the client's animation state machine (e.g. `ANM_040` sit, `ANM_043` eat,
+  `State` attribute changes drive the client's animation state machine (e.g. `ANM_040` sit, `ANM_043` eat,
   `ANM_050` tantrum stomp, `ANM_052` dizzy stars).
 
 ### 30.15 Network Replication
 
 | Data | Mechanism | Why |
 |---|---|---|
-| Slow-changing NPC/object state | **Attributes** on proxies/objects (`St`, `Ang`, `Pat`, `dur`) | replicate only to clients that have the instance streamed in; free interest management |
-| Gameplay events (order taken, dish served, damage numbers, destruction) | **batched `RemoteEvent`**: the `Net` module queues per player and flushes at 20 Hz as one call | one packet per flush instead of dozens |
+| Slow-changing NPC/object state | **Attributes** on proxies/objects (`State`, `AngerLevel`, `Seat`, damage state) | replicate only to clients that have the instance streamed in; free interest management |
+| Reliable state and events (tickets, station state, hits, destruction) | **§27.7 `Batcher`**: per player and remote, coalesced by key, flushed every 100 ms as one fire | one packet per flush instead of dozens |
 | Cosmetic streams (emotes, VFX triggers, patience-bar shimmer, footsteps) | **`UnreliableRemoteEvent`**, payload ≤ 900 bytes (Roblox drops unreliable payloads above ~1 KB) | loss is harmless; no resend cost |
-| Numeric bulk (layout diffs, roster stats) | Luau `buffer` payloads with quantization | 3–6× smaller than tables |
-| Profile read model | one snapshot at join (≤ 64 KB), then field deltas | never resend the whole profile |
+| Numeric bulk (arrays above 32 entries) | `Codec` packs them into a Luau `buffer` (§27.7.1) with the quantization below | 3–6× smaller than tables |
+| Profile read model | `PlayerData.ProfileReady` once (≤ 64 KB), then `PlayerData.Delta` (≤ 10 Hz) | never resend the whole profile |
 
 **Delta and quantization rules:** send only changed fields; positions relative to the interior origin as
 int16 at 0.1 stud; angles as uint8; patience/anger as uint8. **Interest filter:** the server tracks each
-player's zone (interior uid or district) and the `Net` module drops events for other zones.
-
-```lua
---!strict
--- ReplicatedStorage/Shared/Net.lua (server side excerpt): per-player batching at 20 Hz
-local RunService = game:GetService("RunService")
-
-local Net = {}
-local FLUSH_S = 1 / 20
-local queues: { [Player]: { any } } = {}
-local accumulator = 0
-local batchRemote: RemoteEvent = script:WaitForChild("Batch") :: RemoteEvent
-
-function Net.send(player: Player, kind: number, payload: any)
-	local q = queues[player]
-	if q == nil then
-		q = {}
-		queues[player] = q
-	end
-	table.insert(q, kind)
-	table.insert(q, payload)
-end
-
-RunService.Heartbeat:Connect(function(dt: number)
-	accumulator += dt
-	if accumulator < FLUSH_S then
-		return
-	end
-	accumulator = 0
-	for player, q in queues do
-		if #q > 0 then
-			batchRemote:FireClient(player, q)   -- one remote call per player per flush
-			queues[player] = {}
-		end
-	end
-end)
-
-return Net
-```
+player's zone (interior or district); the `Batcher` drops events for other zones, and large lists (inventory,
+ledger, candidates) are pulled page by page when a menu opens, never pushed (§27.7.1).
 
 ### 30.16 Asset Streaming
 
@@ -271,9 +238,10 @@ return Net
 [TUNABLE] (Roblox further lowers the effective radius on memory-constrained devices),
 `StreamOutBehavior = Opportunistic`, `StreamingIntegrityMode = MinimumRadiusPause`.
 
-**Interiors region:** instanced interiors (§C3) sit ≥ 3,000 studs from the city and ≥ 1,000 studs apart —
-beyond twice the target radius, so a client never streams another player's interior — and within ±20,000
-studs of the origin to avoid floating-point jitter.
+**Interiors region** (§27.1): origin X = 8,000 studs, interior slots 1,200 studs apart — more than
+`StreamingTargetRadius` (384) plus an interior's half-extent, so a client never streams two interiors or the city
+while inside one — all within ±20,000 studs of the origin to avoid floating-point jitter. Any change to the
+target radius must keep `radius + interior half-extent < 1,200`.
 
 | Model type | `ModelStreamingMode` | Extra |
 |---|---|---|
@@ -314,8 +282,9 @@ adjacent district's boundary trigger; mutation meshes load on first need into th
 | Thrown-food projectile visuals | 16 / 32 / 48 | hide, park at the pool origin |
 | VFX attachments (emitters) | 24 / 32 / 48 | `Enabled = false`, clear emitted particles |
 | Debris pieces | 24 / 48 / 96 | anchor, hide |
-| NPC rigs (R15 + `AnimationController`) | 16 / 28 / 40 | strip part welds, stop tracks |
-| Floating text (MB pops, star hits, damage numbers) | 20 / 30 / 40 | reset tween and text |
+| NPC rigs (R15 + `AnimationController`) | 32 (§27.9); tier caps limit how many are full-detail at once | strip part welds, stop tracks |
+| Part instances per part ID | 6 (§27.12.4) | unweld, park |
+| Floating text (MB pops, star hits, damage numbers) — `BillboardPool` | 20 / 30 / 40 | reset tween and text |
 | UI list cells (mutation inventory 280+, recipe book 150, roster, achievements) | ~24 visible cells per list | rebind data (virtualized scrolling) |
 
 ```lua
@@ -364,7 +333,7 @@ An exhausted pool **skips** the cosmetic effect rather than allocating — under
 
 **Initial guess:** touch device with a short screen side < 900 px → LOW; touch otherwise → MID; keyboard/console
 → MID; the client's `UserGameSettings.SavedQualityLevel` (when not Automatic) nudges one tier.
-**Controller** (client `QualityManager`, sampled every 1 s):
+**Controller** (client `QualityManager` module, sampled every 1 s):
 
 ```mermaid
 %% diagram: quality-autoscale
@@ -400,7 +369,7 @@ In Combat (§C12.1) — the change waits until combat ends.
 
 | ID | Scenario | Device / setup | Pass threshold |
 |---|---|---|---|
-| PT-01 | Cold join → tutorial `QST_TUT_001` playable | LOW Android on throttled 4G | ≤ 20 s to first input; ≤ 600 MB memory |
+| PT-01 | Cold join → tutorial `QST_TUT_001` playable | LOW Android on throttled 4G | join → `UI.Ready` p50 ≤ 10 s, p95 ≤ 20 s; ≤ 600 MB memory |
 | PT-02 | 8 TIER_10 restaurants at capacity (160-proxy cap binding) + 160 employees + chaos in 2 interiors | live server, 8 clients (dev flag can fill restaurants with synthetic load) | Heartbeat ≥ 45 Hz p95; server memory ≤ 3,500 MB |
 | PT-03 | Level-6 chaos brawl, 28 customers + 20 staff, debris and VFX maxed | LOW iPhone 8 class | ≥ 30 FPS p50, ≥ 25 FPS p5; no frame > 100 ms |
 | PT-04 | Downtown during `EVT_002` Mutation Parade with 8 players | LOW Android | ≥ 30 FPS p50 |
@@ -415,7 +384,7 @@ In Combat (§C12.1) — the change waits until combat ends.
 
 | # | Situation | Behavior |
 |---|---|---|
-| PE-01 | Server proxy cap (160) binds | arrivals queue at the street per §30.5 distribution; no restaurant starves; seated customers are never despawned |
+| PE-01 | Server proxy cap (160) binds | §27.14 allocator shrinks queues before seats; no restaurant starves; seated customers are never despawned |
 | PE-02 | Client exceeds memory budget mid-rush | auto-scaler drops a tier; part LRU evicts; streaming radius shrinks (Roblox-managed) |
 | PE-03 | Pool exhausted during chaos | effect skipped, never allocated |
 | PE-04 | Streaming pause (integrity mode) at a door | iris-wipe holds until `RequestStreamAroundAsync` completes or times out (3 s), then proceeds |

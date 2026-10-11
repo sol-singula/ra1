@@ -109,8 +109,8 @@ DailyCap          = 1.5 × NetRef(guest's own tier) MB per UTC day; beyond the c
 GuestXP(action)   = 0.9 × XP the same action grants in the guest's own restaurant (level-relative, §C5.1) × BusyKitchenXP
 ```
 
-- Paid by `EconomyService` as a Source with reason `COOP_GUEST_PAY` and key `coop:<visitId>:<ticketId>:<guestUserId>`,
-  batched every 60 s and at settlement. **Nothing is ever debited from the owner.**
+- Accrued per order in the visit record and paid by `EconomyService` (reason `coop_guest_pay`, key
+  `coop:<visitId>:<checkpointNo>`) every 10 min and at settlement (§22.16). **Nothing is ever debited from the owner.**
 - Valuing orders at the guest's level stops a low-level friend from farming a `TIER_10` kitchen's prices; the daily cap
   bounds co-op income to ≈ 1.5 h of the guest's own play.
 - No MS or RT per order (those come from co-op quests and events, §21.8.3). Helper titles and emotes unlock at co-op

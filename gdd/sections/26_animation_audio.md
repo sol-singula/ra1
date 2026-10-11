@@ -659,12 +659,12 @@ function AudioDirector.play(id: string, emitter: Instance?, speed: number?, take
 	return s
 end
 
-local MOOD_SEMITONES = { Delighted = 3, Happy = 1, Meh = 0, Unhappy = -2, Furious = -4 }
+local moodSemitones = { Delighted = 3, Happy = 1, Meh = 0, Unhappy = -2, Furious = -4 }
 
 function AudioDirector.speak(mouth: Attachment, bankId: string, mood: string, seed: number, sentence: number)
 	local base = Random.new(seed):NextInteger(-2, 2) -- stable per customer
 	local syl = Random.new(seed * 31 + sentence) -- new syllable order per sentence
-	local speed = 2 ^ (((MOOD_SEMITONES[mood] or 0) + base) / 12)
+	local speed = 2 ^ (((moodSemitones[mood] or 0) + base) / 12)
 	local gap = if mood == "Furious" then 0.02 elseif mood == "Unhappy" then 0.06 else 0.04
 	task.spawn(function()
 		for _ = 1, syl:NextInteger(3, 9) do

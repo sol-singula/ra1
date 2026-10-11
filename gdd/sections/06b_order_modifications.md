@@ -267,3 +267,134 @@ be owned). *Favored by* personalities pick that mod with × 3 weight. The seven 
 | `MOD_092` | "Blend my burger. I want to drink it." | JOKE | BRG items | Play Along: put every finished component of the burger into STN_BLENDER and blend to SMOOTH ("Burger Smoothie") | kind = MYSTERY and sourceRecipeId = ordered recipe and blend grade ≥ GOOD | 20 % | 5 | PER_007, PER_002 | Yes — Straight Answer: the normal burger → 0.75 |
 | `MOD_093` | "Add a little chaos. A smidge of mutation." | JOKE | any non-MUT item with a cooked component | Play Along: INFUSE one cooked component at STN_INFUSER with ING_MUTAGEN_GOO (the canon Mutation Cuisine effect applies: 60 s cosmetic part) | any component state = INFUSED | 25 % | 40 | PER_032, PER_007 | Yes — Straight Answer: the normal dish → 0.75 |
 
+#### 6.18.7 UI
+
+- **Taking the order:** the customer's speech bubble shows the quote (2.5 s + 0.05 s per character, gibberish voice in the
+  personality's register); chips then fly onto the ticket.
+- **Chips** (ticket rail, HUD ticket strip, held-dish checklist): category icon + ≤ 14-character text. Icons are
+  shape-coded so colour is never required: OMIT slashed circle, EXTRA plus, COUNT hash with the number, DONENESS flame
+  gauge, TEMP thermometer/snowflake, SHAPE outline (square/heart/arrow), PRESENT sparkle, SEQUENCE stacked arrows, MOOD
+  tiny drink face, JOKE jester hat with a dashed chip border. Hidden mods: "???" with an ear icon ("Ask Again").
+- **Station hints for the pinned ticket:** target bands drawn on meters (purple striped SCREAM band, RARE and WELL_DONE
+  bands on heat bars, the ANGRY/HAPPY band on the shake meter), the count chip at `STN_ASSEMBLY`, a snowflake badge on
+  `STN_FREEZER`, a box badge on the box stack.
+- **Held-dish checklist:** chips float above the carried dish with ✓ (satisfied), ✗ (broken), ○ (pending) — distinct
+  shapes; predicted on the client from the replicated `DishSummary`, confirmed by the server at serve.
+- **Serve result:** pop-up over the customer with quality stars, each mod's ✓/✗, and "+18 % Weird Bonus!" when earned.
+- **Jokes:** the first time a player meets each joke mod, a one-time tooltip explains Play Along vs Straight Answer; with
+  "Fewer Weird Requests" the hint is always shown. `MOD_085`'s **Offer** prompt appears when holding a sauce bottle within
+  10 studs of that customer.
+- **Weird Request Journal** (Restaurant menu → Orders tab): lists every mod met and satisfied at least once (93 entries,
+  silhouettes until met) — a light collection hook that §14 may tie to achievements.
+
+#### 6.18.8 Roblox implementation
+
+| Location | Module | Contents |
+|---|---|---|
+| `ReplicatedStorage/Shared/Data/ModDefs` | shared data | per mod: `Id`, `Quote`, `Chip`, `Icon`, `Category`, `AppliesTo` (categories/tags/ids), `RequiredStations`, `Unlock`, `Bonus`, `ExtraTime`, `ConflictGroups`, `FavoredBy`, `IsJoke`, `ReplacesDish` |
+| `ServerScriptService/Services/OrderService/ModGenerator` | server | §6.18.3 eligibility + seeded selection (`Random.new(seed)`) |
+| `ServerScriptService/Services/OrderService/ModPredicates` | server only | one predicate per mod returning `sat_j` |
+| boot validator (`TestService`/CI) | server | asserts every `ModDefs` entry has a predicate, every required station's canon §C7.1 level ≤ `Unlock`, and every referenced `PER_`/`RCP_`/`ING_` id exists in `RecipeService`/`CustomerAIService` data |
+
+```lua
+--!strict
+-- ServerScriptService/Services/OrderService/ModPredicates.lua (excerpt)
+local Dishes = require(script.Parent.Parent.CookingService.Dishes)
+local ModDefs = require(game:GetService("ReplicatedStorage").Shared.Data.ModDefs)
+
+export type Ctx = {
+	dish: Dishes.Dish, recipe: any, servedRecipeId: string, dishMatchesItem: boolean,
+	serve: { flourish: boolean, airborne: boolean, now: number }, offered: string?, carried: { string },
+	waived: { [string]: boolean },
+}
+
+local function count(d: Dishes.Dish, ing: string): number
+	local n = 0
+	for _, c in d.components do
+		if c.ing == ing then n += c.count end
+	end
+	return n
+end
+
+local P: { [string]: (Ctx) -> number } = {}
+P.MOD_001 = function(x) return if count(x.dish, "ING_PICKLE") == 0 then 1 else 0 end
+P.MOD_020 = function(x)
+	local d = math.abs(count(x.dish, "ING_PICKLE") - 17)
+	return if d == 0 then 1 elseif d == 1 then 0.5 else 0
+end
+P.MOD_029 = function(x) return if Dishes.ProteinBand(x.dish, x.recipe) == "SCREAMING" then 1 else 0 end
+P.MOD_043 = function(x) return if x.dish.temp == "FROZEN" then 1 else 0 end
+P.MOD_051 = function(x) return if Dishes.IsReverseOf(x.dish, x.recipe.CanonicalStack) then 1 else 0 end
+P.MOD_052 = function(x)
+	if x.servedRecipeId == "RCP_PIZ_014" then return 1 end
+	return if Dishes.AllTaggedHaveShape(x.dish, "round", "SQUARE") then 1 else 0
+end
+P.MOD_076 = function(x) return if x.dish.mood == "ANGRY" or x.dish.mood == "FURIOUS" then 1 else 0 end
+P.MOD_082 = function(x)
+	if x.dish.kind == "EMPTY_BOX" and x.dish.boxType == "PIZZA" then return 1 end
+	return if x.dishMatchesItem then 0.75 else 0 -- Straight Answer
+end
+
+-- Returns ModScore, bonus fraction (capped), per-mod results. Called by OrderService at serve (§5.6.5 step 7).
+local function Evaluate(ctx: Ctx, mods: { string }): (number, number, { [string]: number })
+	local sum, bonus, results = 0, 0, {}
+	for _, id in mods do
+		local waived = ctx.waived[id] == true
+		local sat = if waived then 1 else P[id](ctx)
+		results[id] = sat
+		sum += sat
+		if sat == 1 and not waived then bonus += ModDefs[id].Bonus end
+	end
+	return (1 + sum) / (1 + #mods), math.min(0.40, bonus), results
+end
+
+return { Predicates = P, Evaluate = Evaluate }
+```
+Analytics (§31): `mmr_mod_generated` {modId, tier, personalityId, hidden}, `mmr_mod_result` {modId, sat, waived, bonusPct}.
+
+#### 6.18.9 Edge cases
+
+| # | Situation | Ruling |
+|---|---|---|
+| M1 | A required station breaks or is destroyed after the order was placed | The mod is **waived** (sat 1, no bonus, chip shows "WAIVED"); the customer shrugs ("Eh, forget the frozen thing."). |
+| M2 | `EMP_001` Ollie's 5 % stray-pickle trait hits a modded order | The pickle is real: `MOD_001` fails, `MOD_020` becomes a near miss; the ticket shows "Ollie strikes again!" — canon trait, pure comedy. |
+| M3 | Same recipe ordered twice with different mods (one customer or a party) | The dish is assigned to the open item where it scores the highest `A` (§5.6.5 step 6); window binding does the same across tickets. |
+| M4 | Customer leaves; their modded dish is reused (orphan) | Mods are re-evaluated against the new item's mods; the orphan's extra work earns nothing unless it matches. |
+| M5 | A hidden mod is never revealed and fails | Verified normally, but §10 applies no anger bump for unrevealed hidden mods; the complaint line reveals it ("I SAID no onions! …I think I said it."). |
+| M6 | `ABL_066` used on a component that has a doneness mod | Finished-at-GOOD never satisfies a band-specific doneness mod (§5.11 X12); TEMP "extra hot" is still satisfiable (the item is HOT). |
+| M7 | Temperature mods at TIER_03+ table service (long walks) | A heat-lamp spot pauses the HOT clock; FROZEN lasts 45 s outside; `ABL_069` Hover Serve shortens trips; the time-budget filter already accounts for the walk via EstPrep. |
+| M8 | Dish-replacing joke (empty box, bun sandwich, empty plate) | Pays full price + bonus; only ingredients actually used are netted; the reserved special stock is released. |
+| M9 | Recipe data changes so an omitted ingredient is no longer in the recipe | New orders filter the mod out (eligibility rule 2); an existing OMIT for an absent ingredient auto-passes. |
+| M10 | `MOD_087` (tail) and the player unequips their tail mid-order | Straight Answer (0.75) remains; eligibility is checked only at order time. |
+| M11 | Counter service: an empty pizza box is placed on a window spot | It binds only to an open item carrying `MOD_082`; otherwise the spot shows "?". |
+| M12 | Mods that need several steps in sequence (FREEZE then Flip Out) | Allowed; only the final Dish state is verified, so step order matters only where the predicate says so. |
+| M13 | Offline and employee handling | Offline simulation ignores individual mods (§17 uses aggregate quality). Online employee chefs attempt mods with a success chance defined in §16 from their Accuracy and the category difficulty (§6.18.2). |
+| M14 | "Fewer Weird Requests" toggled mid-service | Applies to orders placed after the change only. |
+| M15 | Co-op | Any player may perform any mod step (canon E7); the bonus is part of the restaurant's pay as usual. |
+
+#### 6.18.10 Acceptance criteria
+
+- **AC-06-81** — `ModDefs` contains `MOD_001`–`MOD_093` (93 entries), each with a server predicate; the boot validator fails the
+  build if any predicate, station reference or `PER_`/`RCP_`/`ING_` reference is missing.
+- **AC-06-82** — In 100,000 simulated orders over all tiers with randomised kitchens, 0 mods are generated whose required
+  stations are not owned, placed and usable.
+- **AC-06-83** — Max mods per item (1 at TIER_01–03, 2 at TIER_04–07, 3 at TIER_08+) is never exceeded, and the observed
+  P(item has ≥ 1 mod) per tier is within ± 1.5 percentage points of `min(0.85, P1 × Aff)` (with eligible mods available).
+- **AC-06-84** — No item ever carries two mods from the same conflict group (100,000-order simulation).
+- **AC-06-85** — For 100 % of generated items, `EstPrep + Σ ExtraTime ≤ 0.6 × Patience`.
+- **AC-06-86** — Regenerating an order from the same `orderId` seed reproduces exactly the same mods.
+- **AC-06-87** — A scripted bot completes each of the seven brief examples (`MOD_020`, `MOD_029`, `MOD_043`, `MOD_051`, `MOD_052`,
+  `MOD_076`, `MOD_082`) in a test restaurant at the mod's unlock level using only stations available at that level, and the
+  server returns sat = 1 for each.
+- **AC-06-88** — A joke Straight Answer yields sat 0.75, no bonus and no anger change.
+- **AC-06-89** — COUNT mods: exact → 1; off by 1 → 0.5; off by ≥ 2 → 0.
+- **AC-06-90** — Pay: bonuses apply only to satisfied, non-waived mods, are capped at 40 % per item, and tips are computed from
+  menu prices only; the §6.18.5 example pays exactly 12 MB.
+- **AC-06-91** — `A_item` reproduces the §6.18.4 examples (0.5, 0.75, 0.875) to ± 0.001.
+- **AC-06-92** — Every mod chip shows a shape-coded icon plus ≤ 14 characters of text on the ticket rail, HUD strip and held
+  dish; ✓ / ✗ / ○ states are distinguishable in greyscale.
+- **AC-06-93** — Hidden mods are never COUNT or JOKE; Ask Again reveals them in 1.5 s; `ABL_064` reveals all hidden mods within
+  its radius instantly.
+- **AC-06-94** — Breaking a required station after ordering marks the mod "WAIVED" with sat 1 and 0 bonus.
+- **AC-06-95** — No mods appear during `QST_TUT_001`–`QST_TUT_005`; the first mod afterwards is `MOD_001`.
+- **AC-06-96** — In a 10-hour simulated TIER_05 session, mod bonuses add between +2 % and +5 % to item revenue.
