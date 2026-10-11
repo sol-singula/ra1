@@ -1,0 +1,3256 @@
+{
+ "_doc": "A11 employee data (source of truth for section 36.8 and the offline simulator). Rendered by gdd/tools/render_employees.py.",
+ "role_weights": {
+  "ROLE_CHEF": {
+   "cook": 0.6,
+   "acc": 0.3,
+   "rel": 0.1
+  },
+  "ROLE_PREP": {
+   "cook": 0.4,
+   "svc": 0.4,
+   "acc": 0.2
+  },
+  "ROLE_WAITER": {
+   "svc": 0.6,
+   "acc": 0.3,
+   "rel": 0.1
+  },
+  "ROLE_CASHIER": {
+   "acc": 0.5,
+   "svc": 0.4,
+   "rel": 0.1
+  },
+  "ROLE_DISH": {
+   "svc": 0.5,
+   "rel": 0.5
+  },
+  "ROLE_CLEANER": {
+   "svc": 0.5,
+   "rel": 0.3,
+   "acc": 0.2
+  },
+  "ROLE_REPAIR": {
+   "rep": 0.7,
+   "rel": 0.2,
+   "svc": 0.1
+  },
+  "ROLE_SECURITY": {
+   "cmb": 0.6,
+   "rel": 0.2,
+   "svc": 0.2
+  },
+  "ROLE_MANAGER": {
+   "rel": 0.4,
+   "svc": 0.3,
+   "acc": 0.3
+  },
+  "ROLE_DELIVERY": {
+   "svc": 0.6,
+   "rel": 0.3,
+   "cmb": 0.1
+  },
+  "ROLE_STOCKER": {
+   "acc": 0.5,
+   "rel": 0.3,
+   "svc": 0.2
+  },
+  "ROLE_ASST_MGR": {
+   "rel": 0.4,
+   "svc": 0.3,
+   "acc": 0.3
+  }
+ },
+ "role_unlock_tier": {
+  "ROLE_CHEF": 1,
+  "ROLE_PREP": 1,
+  "ROLE_CLEANER": 1,
+  "ROLE_DISH": 1,
+  "ROLE_CASHIER": 1,
+  "ROLE_MANAGER": 2,
+  "ROLE_REPAIR": 2,
+  "ROLE_WAITER": 3,
+  "ROLE_SECURITY": 3,
+  "ROLE_DELIVERY": 4,
+  "ROLE_STOCKER": 4,
+  "ROLE_ASST_MGR": 5
+ },
+ "rarity_min_tier": {
+  "Common": 1,
+  "Uncommon": 2,
+  "Rare": 3,
+  "Epic": 5,
+  "Legendary": 7
+ },
+ "potential_grade_mult": {
+  "S": 1.5,
+  "A": 1.3,
+  "B": 1.15,
+  "C": 1.0,
+  "D": 0.75
+ },
+ "traits": {
+  "Multi-Tasker": {
+   "families": [
+    "octopus",
+    "kraken",
+    "squid"
+   ],
+   "slot_tag": [
+    [
+     "ARM",
+     "BACK"
+    ],
+    "multi"
+   ]
+  },
+  "Speedster": {
+   "families": [
+    "cheetah",
+    "ostrich",
+    "raptor",
+    "wheel",
+    "skate",
+    "grasshopper",
+    "kangaroo"
+   ],
+   "tag": "speed",
+   "min": 2
+  },
+  "Bouncer": {
+   "families": [
+    "rhino",
+    "bull",
+    "triceratops"
+   ],
+   "tag": "horn",
+   "min": 2
+  },
+  "Wall Crawler": {
+   "families": [
+    "spider",
+    "gecko"
+   ]
+  },
+  "Calculator Brain": {
+   "families": [
+    "robot"
+   ],
+   "tag": "robotic",
+   "min": 2
+  },
+  "Unhurried": {
+   "families": [
+    "turtle"
+   ],
+   "tag": "tank",
+   "min": 2,
+   "no_tag": "speed"
+  },
+  "Grill Master": {
+   "families": [
+    "dragon",
+    "lava",
+    "phoenix"
+   ],
+   "tag": "fire",
+   "min": 2
+  },
+  "Ice Hands": {
+   "families": [
+    "ice",
+    "yeti",
+    "penguin"
+   ],
+   "tag": "ice",
+   "min": 2
+  },
+  "Charmer": {
+   "tag": "charm",
+   "min": 2
+  },
+  "Loudmouth": {
+   "tag": "loud",
+   "min": 2
+  },
+  "Sniffer": {
+   "families": [
+    "pig",
+    "dog",
+    "mole",
+    "rat"
+   ]
+  },
+  "Lucky Charm": {
+   "tag": "luck",
+   "min": 2
+  },
+  "Tough Shell": {
+   "tag": "armored",
+   "min": 2
+  },
+  "Heavyweight": {
+   "families": [
+    "bear",
+    "gorilla",
+    "golem",
+    "elephant",
+    "muscle"
+   ],
+   "tag": "heavy",
+   "min": 2
+  },
+  "Grabby": {
+   "tag": "grabby",
+   "min": 2
+  },
+  "Glow-Up": {
+   "tag": "glow",
+   "min": 2
+  },
+  "Splash Zone": {
+   "families": [
+    "elephant",
+    "faucet",
+    "hydrant",
+    "extinguisher"
+   ],
+   "tag2": [
+    "water",
+    "aquatic"
+   ],
+   "min": 2
+  },
+  "Sticky Grip": {
+   "tag": "sticky",
+   "min": 2
+  },
+  "Regenerator": {
+   "tag": "regen",
+   "min": 2
+  },
+  "Electric": {
+   "tag": "electric",
+   "min": 2
+  },
+  "Flying": {
+   "any_tag": "flying"
+  },
+  "Golden Touch": {
+   "any_tag": "gold"
+  },
+  "Chef's Instinct": {
+   "tag": "chef",
+   "min": 2
+  },
+  "Cosmic Intuition": {
+   "tag": "cosmic",
+   "min": 2
+  }
+ },
+ "archetypes": [
+  {
+   "id": "EMP_001",
+   "name": "\"Ollie\" the Octopus Intern",
+   "role": "ROLE_CHEF",
+   "rarity": "Common",
+   "parts": [
+    "MUT_029",
+    "MUT_145",
+    "MUT_145",
+    "MUT_117",
+    "MUT_179",
+    "MUT_179"
+   ],
+   "hire": 0,
+   "wage": 12,
+   "stats": {
+    "cook": 30,
+    "svc": 15,
+    "acc": 28,
+    "rep": 15,
+    "cmb": 15,
+    "rel": 40
+   },
+   "traits": [
+    "Multi-Tasker"
+   ],
+   "signature": "Eight Arms, One Brain Cell: cooks 2 items at once; 5 % chance to put a pickle on everything",
+   "personality": "Eager Beaver",
+   "potential_grade": "B",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_002",
+   "name": "\"Patty\" the Pig-Snout Line Cook",
+   "role": "ROLE_CHEF",
+   "rarity": "Common",
+   "parts": [
+    "MUT_050",
+    "MUT_120",
+    "MUT_156",
+    "MUT_171"
+   ],
+   "hire": 400,
+   "wage": 18,
+   "stats": {
+    "cook": 32,
+    "svc": 21,
+    "acc": 27,
+    "rep": 20,
+    "cmb": 19,
+    "rel": 25
+   },
+   "traits": [
+    "Chef's Instinct",
+    "Sniffer"
+   ],
+   "signature": "Smells Done-ness: never serves an UNDERCOOKED patty",
+   "personality": "Perfectionist",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_003",
+   "name": "\"Toastmaster Tim\" the Toaster Chef",
+   "role": "ROLE_CHEF",
+   "rarity": "Common",
+   "parts": [
+    "MUT_010",
+    "MUT_171",
+    "MUT_117",
+    "MUT_141"
+   ],
+   "hire": 350,
+   "wage": 15,
+   "stats": {
+    "cook": 33,
+    "svc": 20,
+    "acc": 31,
+    "rep": 22,
+    "cmb": 21,
+    "rel": 25
+   },
+   "traits": [
+    "Grill Master",
+    "Chef's Instinct"
+   ],
+   "signature": "Pop-Up Timer: dings 1 s before a burn (online burn chance halved for him)",
+   "personality": "Chatterbox",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_004",
+   "name": "\"Chef Clucksworth\" the Chicken Fry Cook",
+   "role": "ROLE_CHEF",
+   "rarity": "Common",
+   "parts": [
+    "MUT_008",
+    "MUT_121",
+    "MUT_141",
+    "MUT_201"
+   ],
+   "hire": 450,
+   "wage": 19,
+   "stats": {
+    "cook": 37,
+    "svc": 18,
+    "acc": 26,
+    "rep": 21,
+    "cmb": 22,
+    "rel": 24
+   },
+   "traits": [
+    "Chef's Instinct",
+    "Loudmouth"
+   ],
+   "signature": "Fry-Day Every Day: FRY handling ×0.8",
+   "personality": "Show-Off",
+   "potential_grade": "D",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_005",
+   "name": "\"Octavia\" the Octopus Chef",
+   "role": "ROLE_CHEF",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_029",
+    "MUT_145",
+    "MUT_145",
+    "MUT_206",
+    "MUT_117"
+   ],
+   "hire": 2100,
+   "wage": 50,
+   "stats": {
+    "cook": 52,
+    "svc": 35,
+    "acc": 46,
+    "rep": 36,
+    "cmb": 35,
+    "rel": 42
+   },
+   "traits": [
+    "Multi-Tasker"
+   ],
+   "signature": "Tentacle Tornado: plates 3 dishes at once at the assembly counter",
+   "personality": "Overachiever",
+   "potential_grade": "A",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_006",
+   "name": "\"Sir Florets\" the Broccoli Sous-Chef",
+   "role": "ROLE_CHEF",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_030",
+    "MUT_177",
+    "MUT_263",
+    "MUT_167"
+   ],
+   "hire": 2000,
+   "wage": 48,
+   "stats": {
+    "cook": 52,
+    "svc": 33,
+    "acc": 45,
+    "rep": 35,
+    "cmb": 34,
+    "rel": 41
+   },
+   "traits": [
+    "Chef's Instinct",
+    "Regenerator"
+   ],
+   "signature": "Photosynthesis Break: recovers Energy twice as fast near windows",
+   "personality": "Zen Noodle",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_007",
+   "name": "\"Frostina\" the Yeti Pastry Chef",
+   "role": "ROLE_CHEF",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_262",
+    "MUT_176",
+    "MUT_125",
+    "MUT_013"
+   ],
+   "hire": 9500,
+   "wage": 135,
+   "stats": {
+    "cook": 63,
+    "svc": 49,
+    "acc": 55,
+    "rep": 50,
+    "cmb": 52,
+    "rel": 53
+   },
+   "traits": [
+    "Ice Hands"
+   ],
+   "signature": "Brain-Freeze Precision: frozen desserts always grade GOOD or better",
+   "personality": "Shy Genius",
+   "potential_grade": "B",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_008",
+   "name": "\"Sir Loin\" the Microwave Chef",
+   "role": "ROLE_CHEF",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_036",
+    "MUT_123",
+    "MUT_173"
+   ],
+   "hire": 11500,
+   "wage": 160,
+   "stats": {
+    "cook": 67,
+    "svc": 49,
+    "acc": 62,
+    "rep": 52,
+    "cmb": 49,
+    "rel": 56
+   },
+   "traits": [
+    "Calculator Brain",
+    "Chef's Instinct"
+   ],
+   "signature": "Zap-Cook: once per 10 min instantly finishes one cooking item at GOOD (uses ABL_066 rules)",
+   "personality": "Perfectionist",
+   "potential_grade": "B",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_009",
+   "name": "\"Ember\" the Dragon Chef",
+   "role": "ROLE_CHEF",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_031",
+    "MUT_164",
+    "MUT_268",
+    "MUT_227"
+   ],
+   "hire": 68000,
+   "wage": 515,
+   "stats": {
+    "cook": 84,
+    "svc": 65,
+    "acc": 62,
+    "rep": 67,
+    "cmb": 66,
+    "rel": 74
+   },
+   "traits": [
+    "Grill Master"
+   ],
+   "signature": "Flame-Kissed: GRILL handling ×0.7 and Perfect +15 %, but 6 % chance per heat item to burn it",
+   "personality": "Drama Royalty",
+   "potential_grade": "A",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_010",
+   "name": "\"Lava Lou\" the Lava-Fist Grill Cook",
+   "role": "ROLE_CHEF",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_034",
+    "MUT_163",
+    "MUT_254"
+   ],
+   "hire": 57000,
+   "wage": 435,
+   "stats": {
+    "cook": 79,
+    "svc": 65,
+    "acc": 75,
+    "rep": 64,
+    "cmb": 66,
+    "rel": 72
+   },
+   "traits": [
+    "Grill Master",
+    "Tough Shell"
+   ],
+   "signature": "Hot Hands: grills without a grill when every grill slot is busy (1 extra virtual slot)",
+   "personality": "Grump",
+   "potential_grade": "B",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_011",
+   "name": "\"Captain Calamari\" the Kraken Head Chef",
+   "role": "ROLE_CHEF",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_038",
+    "MUT_165",
+    "MUT_165",
+    "MUT_137",
+    "MUT_102",
+    "MUT_171"
+   ],
+   "hire": 445000,
+   "wage": 1480,
+   "stats": {
+    "cook": 96,
+    "svc": 82,
+    "acc": 90,
+    "rep": 81,
+    "cmb": 82,
+    "rel": 88
+   },
+   "traits": [
+    "Multi-Tasker",
+    "Chef's Instinct"
+   ],
+   "signature": "Eight-Station Symphony: works up to 4 station slots at once; offline Multi-Tasker ×1.35",
+   "personality": "Overachiever",
+   "potential_grade": "S",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  },
+  {
+   "id": "EMP_012",
+   "name": "\"Goldie Gourmand\" the Golden-Handed Grand Chef",
+   "role": "ROLE_CHEF",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_178",
+    "MUT_047",
+    "MUT_013",
+    "MUT_120"
+   ],
+   "hire": 395000,
+   "wage": 1340,
+   "stats": {
+    "cook": 97,
+    "svc": 82,
+    "acc": 87,
+    "rep": 79,
+    "cmb": 81,
+    "rel": 90
+   },
+   "traits": [
+    "Golden Touch",
+    "Chef's Instinct"
+   ],
+   "signature": "Midas Plating: every dish she plates counts as plated + garnished (Q plating factor 1.0) and +5 % tip",
+   "personality": "Show-Off",
+   "potential_grade": "A",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  },
+  {
+   "id": "EMP_013",
+   "name": "\"Chopsy\" the Beaver Prep Cook",
+   "role": "ROLE_PREP",
+   "rarity": "Common",
+   "parts": [
+    "MUT_060",
+    "MUT_218",
+    "MUT_117",
+    "MUT_139"
+   ],
+   "hire": 350,
+   "wage": 15,
+   "stats": {
+    "cook": 33,
+    "svc": 34,
+    "acc": 28,
+    "rep": 22,
+    "cmb": 19,
+    "rel": 22
+   },
+   "traits": [],
+   "signature": "Teeth Chopper: CHOP needs 1 fewer tap",
+   "personality": "Eager Beaver",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_014",
+   "name": "\"Nibbles\" the Rat Prep Cook",
+   "role": "ROLE_PREP",
+   "rarity": "Common",
+   "parts": [
+    "MUT_006",
+    "MUT_049",
+    "MUT_217",
+    "MUT_179"
+   ],
+   "hire": 300,
+   "wage": 15,
+   "stats": {
+    "cook": 32,
+    "svc": 32,
+    "acc": 28,
+    "rep": 21,
+    "cmb": 21,
+    "rel": 19
+   },
+   "traits": [
+    "Sniffer"
+   ],
+   "signature": "Pantry Radar: fetches ingredients 25 % faster",
+   "personality": "Snack Goblin",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_015",
+   "name": "\"Shelly Shucks\" the Crab Prep Cook",
+   "role": "ROLE_PREP",
+   "rarity": "Common",
+   "parts": [
+    "MUT_144",
+    "MUT_246",
+    "MUT_201",
+    "MUT_127"
+   ],
+   "hire": 400,
+   "wage": 17,
+   "stats": {
+    "cook": 31,
+    "svc": 34,
+    "acc": 26,
+    "rep": 19,
+    "cmb": 22,
+    "rel": 19
+   },
+   "traits": [
+    "Tough Shell"
+   ],
+   "signature": "Claw Peeler: shrimp and seafood prep ×0.75",
+   "personality": "Grump",
+   "potential_grade": "D",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_016",
+   "name": "\"Tentacle Terry\" the Squid Prep",
+   "role": "ROLE_PREP",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_146",
+    "MUT_146",
+    "MUT_009",
+    "MUT_266",
+    "MUT_119"
+   ],
+   "hire": 2100,
+   "wage": 50,
+   "stats": {
+    "cook": 51,
+    "svc": 50,
+    "acc": 47,
+    "rep": 37,
+    "cmb": 36,
+    "rel": 37
+   },
+   "traits": [
+    "Multi-Tasker"
+   ],
+   "signature": "Ink-Credible Focus: prep queue holds 4 components instead of 3",
+   "personality": "Daydreamer",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_017",
+   "name": "\"Whiskers McWhisk\" the Batter Cat",
+   "role": "ROLE_PREP",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_002",
+    "MUT_041",
+    "MUT_167",
+    "MUT_173"
+   ],
+   "hire": 2000,
+   "wage": 48,
+   "stats": {
+    "cook": 48,
+    "svc": 52,
+    "acc": 41,
+    "rep": 35,
+    "cmb": 34,
+    "rel": 36
+   },
+   "traits": [
+    "Chef's Instinct",
+    "Charmer"
+   ],
+   "signature": "Whisk Wizard: hand-MIX at STN_PREP is no slower than a mixer",
+   "personality": "Chatterbox",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_018",
+   "name": "\"Bea Busy\" the Bee Prep Cook",
+   "role": "ROLE_PREP",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_126",
+    "MUT_236",
+    "MUT_073"
+   ],
+   "hire": 2250,
+   "wage": 53,
+   "stats": {
+    "cook": 53,
+    "svc": 52,
+    "acc": 43,
+    "rep": 33,
+    "cmb": 35,
+    "rel": 37
+   },
+   "traits": [
+    "Speedster"
+   ],
+   "signature": "Buzz Bustle: sprints between pantry and board (+20 % fetch speed)",
+   "personality": "Overachiever",
+   "potential_grade": "C",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_019",
+   "name": "\"Mantis Mandy\" the Scythe Chopper",
+   "role": "ROLE_PREP",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_026",
+    "MUT_151",
+    "MUT_151",
+    "MUT_190",
+    "MUT_190"
+   ],
+   "hire": 11000,
+   "wage": 155,
+   "stats": {
+    "cook": 65,
+    "svc": 66,
+    "acc": 57,
+    "rep": 50,
+    "cmb": 49,
+    "rel": 51
+   },
+   "traits": [
+    "Speedster"
+   ],
+   "signature": "Scythe Slice: every CHOP tap counts double",
+   "personality": "Perfectionist",
+   "potential_grade": "A",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_020",
+   "name": "\"Gigi Gecko\" the Sticky Prep Cook",
+   "role": "ROLE_PREP",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_017",
+    "MUT_170",
+    "MUT_203"
+   ],
+   "hire": 10000,
+   "wage": 140,
+   "stats": {
+    "cook": 61,
+    "svc": 61,
+    "acc": 60,
+    "rep": 49,
+    "cmb": 49,
+    "rel": 50
+   },
+   "traits": [
+    "Wall Crawler",
+    "Sticky Grip"
+   ],
+   "signature": "Ceiling Storage: keeps 2 extra components stuck to the ceiling",
+   "personality": "Zen Noodle",
+   "potential_grade": "B",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_021",
+   "name": "\"Professor Dice\" the Extra-Arm Prep Master",
+   "role": "ROLE_PREP",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_249",
+    "MUT_022",
+    "MUT_147",
+    "MUT_187"
+   ],
+   "hire": 66000,
+   "wage": 500,
+   "stats": {
+    "cook": 83,
+    "svc": 77,
+    "acc": 73,
+    "rep": 66,
+    "cmb": 67,
+    "rel": 66
+   },
+   "traits": [
+    "Multi-Tasker",
+    "Calculator Brain"
+   ],
+   "signature": "Mise-en-Place Mode: feeds two chefs at once (counts as 1.5 preps offline, still within the 3-prep max)",
+   "personality": "Shy Genius",
+   "potential_grade": "A",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_022",
+   "name": "\"Kraken Kiko\" the Tentacle Mise Master",
+   "role": "ROLE_PREP",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_165",
+    "MUT_195",
+    "MUT_029"
+   ],
+   "hire": 385000,
+   "wage": 1310,
+   "stats": {
+    "cook": 96,
+    "svc": 96,
+    "acc": 91,
+    "rep": 79,
+    "cmb": 79,
+    "rel": 80
+   },
+   "traits": [
+    "Multi-Tasker"
+   ],
+   "signature": "Infinite Prep: prepped components never go stale or MUSHY",
+   "personality": "Zen Noodle",
+   "potential_grade": "S",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  },
+  {
+   "id": "EMP_023",
+   "name": "\"Benny Bun\" the Bunny Busboy",
+   "role": "ROLE_WAITER",
+   "rarity": "Common",
+   "parts": [
+    "MUT_085",
+    "MUT_202",
+    "MUT_117",
+    "MUT_139"
+   ],
+   "hire": 400,
+   "wage": 18,
+   "stats": {
+    "cook": 22,
+    "svc": 38,
+    "acc": 26,
+    "rep": 21,
+    "cmb": 18,
+    "rel": 23
+   },
+   "traits": [
+    "Speedster",
+    "Charmer"
+   ],
+   "signature": "Hop-Along: hops over spilled food instead of slipping",
+   "personality": "Eager Beaver",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_024",
+   "name": "\"Penny Pigeon\" the Pigeon Waiter",
+   "role": "ROLE_WAITER",
+   "rarity": "Common",
+   "parts": [
+    "MUT_004",
+    "MUT_235",
+    "MUT_180"
+   ],
+   "hire": 400,
+   "wage": 17,
+   "stats": {
+    "cook": 22,
+    "svc": 37,
+    "acc": 27,
+    "rep": 18,
+    "cmb": 18,
+    "rel": 24
+   },
+   "traits": [
+    "Flying",
+    "Lucky Charm"
+   ],
+   "signature": "Coo-rteous: +1 satisfaction on every delivery",
+   "personality": "Chatterbox",
+   "potential_grade": "D",
+   "potential_cap": 55,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_025",
+   "name": "\"Gerald\" the Giraffe Waiter",
+   "role": "ROLE_WAITER",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_015",
+    "MUT_110",
+    "MUT_117"
+   ],
+   "hire": 1900,
+   "wage": 46,
+   "stats": {
+    "cook": 37,
+    "svc": 50,
+    "acc": 44,
+    "rep": 33,
+    "cmb": 37,
+    "rel": 42
+   },
+   "traits": [
+    "Charmer"
+   ],
+   "signature": "Tall Order: delivers over other tables (path length ×0.85)",
+   "personality": "Zen Noodle",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_026",
+   "name": "\"Skates McGee\" the Roller Waiter",
+   "role": "ROLE_WAITER",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_204",
+    "MUT_003",
+    "MUT_212"
+   ],
+   "hire": 2300,
+   "wage": 55,
+   "stats": {
+    "cook": 33,
+    "svc": 53,
+    "acc": 43,
+    "rep": 36,
+    "cmb": 37,
+    "rel": 39
+   },
+   "traits": [
+    "Speedster",
+    "Charmer"
+   ],
+   "signature": "Grind Rail: slides along counters with a tray (+10 % delivery speed)",
+   "personality": "Show-Off",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_027",
+   "name": "\"Axel\" the Axolotl Host",
+   "role": "ROLE_WAITER",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_014",
+    "MUT_119",
+    "MUT_183"
+   ],
+   "hire": 1850,
+   "wage": 44,
+   "stats": {
+    "cook": 34,
+    "svc": 50,
+    "acc": 43,
+    "rep": 35,
+    "cmb": 35,
+    "rel": 37
+   },
+   "traits": [
+    "Charmer",
+    "Splash Zone"
+   ],
+   "signature": "Gill-ty Smile: Delighted customers he serves tip +2 %",
+   "personality": "Clumsy Sweetheart",
+   "potential_grade": "C",
+   "potential_cap": 70,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_028",
+   "name": "\"Chet Speedwell\" the Cheetah Waiter",
+   "role": "ROLE_WAITER",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_186",
+    "MUT_186",
+    "MUT_002",
+    "MUT_261"
+   ],
+   "hire": 12000,
+   "wage": 165,
+   "stats": {
+    "cook": 52,
+    "svc": 68,
+    "acc": 58,
+    "rep": 52,
+    "cmb": 52,
+    "rel": 53
+   },
+   "traits": [
+    "Speedster"
+   ],
+   "signature": "Zoomies: Cheetah Dash (ABL_063 rules) whenever a plate is hot; deliveries ×1.3 faster",
+   "personality": "Show-Off",
+   "potential_grade": "A",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_029",
+   "name": "\"Ozzie\" the Ostrich Runner",
+   "role": "ROLE_WAITER",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_188",
+    "MUT_188",
+    "MUT_111",
+    "MUT_008"
+   ],
+   "hire": 9500,
+   "wage": 135,
+   "stats": {
+    "cook": 51,
+    "svc": 65,
+    "acc": 57,
+    "rep": 52,
+    "cmb": 51,
+    "rel": 55
+   },
+   "traits": [
+    "Speedster"
+   ],
+   "signature": "Head-in-the-Sand: ignores taunts (cannot be made Annoyed by customers)",
+   "personality": "Daydreamer",
+   "potential_grade": "C",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_030",
+   "name": "\"Twinkle Thistlewing\" the Fairy Server",
+   "role": "ROLE_WAITER",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_241",
+    "MUT_272",
+    "MUT_013",
+    "MUT_080"
+   ],
+   "hire": 66000,
+   "wage": 500,
+   "stats": {
+    "cook": 67,
+    "svc": 82,
+    "acc": 77,
+    "rep": 64,
+    "cmb": 65,
+    "rel": 71
+   },
+   "traits": [
+    "Charmer",
+    "Glow-Up"
+   ],
+   "signature": "Soothing Song: once per 3 min calms customers in 12 studs (ABL_065 rules)",
+   "personality": "Zen Noodle",
+   "potential_grade": "A",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_031",
+   "name": "\"Hoverina\" the Jetpack Waiter",
+   "role": "ROLE_WAITER",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_245",
+    "MUT_021",
+    "MUT_219",
+    "MUT_258"
+   ],
+   "hire": 420000,
+   "wage": 1410,
+   "stats": {
+    "cook": 78,
+    "svc": 94,
+    "acc": 91,
+    "rep": 82,
+    "cmb": 80,
+    "rel": 88
+   },
+   "traits": [
+    "Flying",
+    "Golden Touch"
+   ],
+   "signature": "Hover Serve: flies over tables while carrying 3 plates (ABL_069 rules)",
+   "personality": "Show-Off",
+   "potential_grade": "S",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  },
+  {
+   "id": "EMP_032",
+   "name": "\"Coinsworth\" the Raccoon Cashier",
+   "role": "ROLE_CASHIER",
+   "rarity": "Common",
+   "parts": [
+    "MUT_042",
+    "MUT_087",
+    "MUT_117"
+   ],
+   "hire": 350,
+   "wage": 16,
+   "stats": {
+    "cook": 20,
+    "svc": 36,
+    "acc": 33,
+    "rep": 18,
+    "cmb": 22,
+    "rel": 24
+   },
+   "traits": [
+    "Lucky Charm"
+   ],
+   "signature": "Exact Change Enthusiast: counts every coin twice, out loud, happily",
+   "personality": "Perfectionist",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_033",
+   "name": "\"Tilly Toucan\" the Chatty Cashier",
+   "role": "ROLE_CASHIER",
+   "rarity": "Common",
+   "parts": [
+    "MUT_063",
+    "MUT_232",
+    "MUT_117"
+   ],
+   "hire": 300,
+   "wage": 15,
+   "stats": {
+    "cook": 21,
+    "svc": 36,
+    "acc": 32,
+    "rep": 19,
+    "cmb": 20,
+    "rel": 22
+   },
+   "traits": [
+    "Charmer"
+   ],
+   "signature": "Beak Banter: tip rate +1 % at her register",
+   "personality": "Chatterbox",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_034",
+   "name": "\"Beep-Boop Barb\" the Robot Cashier",
+   "role": "ROLE_CASHIER",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_022",
+    "MUT_123",
+    "MUT_147"
+   ],
+   "hire": 2250,
+   "wage": 53,
+   "stats": {
+    "cook": 37,
+    "svc": 48,
+    "acc": 54,
+    "rep": 36,
+    "cmb": 36,
+    "rel": 40
+   },
+   "traits": [
+    "Calculator Brain"
+   ],
+   "signature": "Instant Receipt: payment processing takes 0.5 s",
+   "personality": "Perfectionist",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_035",
+   "name": "\"Abacus Al\" the Alien Accountant",
+   "role": "ROLE_CASHIER",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_082",
+    "MUT_103",
+    "MUT_117"
+   ],
+   "hire": 10000,
+   "wage": 140,
+   "stats": {
+    "cook": 51,
+    "svc": 62,
+    "acc": 67,
+    "rep": 51,
+    "cmb": 50,
+    "rel": 57
+   },
+   "traits": [],
+   "signature": "Triple-Check: three eye-stalks, zero billing mistakes",
+   "personality": "Shy Genius",
+   "potential_grade": "B",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_036",
+   "name": "\"Cassie Cassette\" the TV-Head Cashier",
+   "role": "ROLE_CASHIER",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_021",
+    "MUT_123",
+    "MUT_095"
+   ],
+   "hire": 11500,
+   "wage": 160,
+   "stats": {
+    "cook": 51,
+    "svc": 66,
+    "acc": 63,
+    "rep": 51,
+    "cmb": 49,
+    "rel": 59
+   },
+   "traits": [
+    "Calculator Brain",
+    "Charmer"
+   ],
+   "signature": "Commercial Break: shows a cartoon ad while you pay (waiting customers lose patience 20 % slower)",
+   "personality": "Show-Off",
+   "potential_grade": "A",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_037",
+   "name": "\"Sterling Silverfin\" the Golden Cashier",
+   "role": "ROLE_CASHIER",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_225",
+    "MUT_047",
+    "MUT_258"
+   ],
+   "hire": 66000,
+   "wage": 500,
+   "stats": {
+    "cook": 67,
+    "svc": 77,
+    "acc": 80,
+    "rep": 65,
+    "cmb": 65,
+    "rel": 71
+   },
+   "traits": [
+    "Golden Touch",
+    "Charmer"
+   ],
+   "signature": "Shiny Service: Jackpot Tip chance +1 % on his transactions",
+   "personality": "Show-Off",
+   "potential_grade": "A",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_038",
+   "name": "\"Mister Megabyte\" the Mainframe Cashier",
+   "role": "ROLE_CASHIER",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_022",
+    "MUT_078",
+    "MUT_092",
+    "MUT_044",
+    "MUT_123"
+   ],
+   "hire": 420000,
+   "wage": 1410,
+   "stats": {
+    "cook": 81,
+    "svc": 97,
+    "acc": 97,
+    "rep": 79,
+    "cmb": 81,
+    "rel": 86
+   },
+   "traits": [
+    "Calculator Brain",
+    "Lucky Charm"
+   ],
+   "signature": "Laser Scanner: scans whole tables at once; counts as 2 cashiers for the service bonus",
+   "personality": "Perfectionist",
+   "potential_grade": "S",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  },
+  {
+   "id": "EMP_039",
+   "name": "\"Sloane\" the Sloth Dishwasher",
+   "role": "ROLE_DISH",
+   "rarity": "Common",
+   "parts": [
+    "MUT_001",
+    "MUT_263",
+    "MUT_169",
+    "MUT_109"
+   ],
+   "hire": 200,
+   "wage": 10,
+   "stats": {
+    "cook": 21,
+    "svc": 15,
+    "acc": 20,
+    "rep": 22,
+    "cmb": 21,
+    "rel": 40
+   },
+   "traits": [
+    "Unhurried"
+   ],
+   "signature": "Majestic Pace: works at 0.6× speed, drains Energy at 0.5×, costs the minimum wage",
+   "personality": "Zen Noodle",
+   "potential_grade": "D",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_040",
+   "name": "\"Sudsy\" the Frog Dishwasher",
+   "role": "ROLE_DISH",
+   "rarity": "Common",
+   "parts": [
+    "MUT_005",
+    "MUT_142",
+    "MUT_256"
+   ],
+   "hire": 350,
+   "wage": 16,
+   "stats": {
+    "cook": 22,
+    "svc": 35,
+    "acc": 19,
+    "rep": 22,
+    "cmb": 21,
+    "rel": 37
+   },
+   "traits": [
+    "Sticky Grip"
+   ],
+   "signature": "Bubble Croak: rinses a rack 15 % faster while croaking",
+   "personality": "Eager Beaver",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_041",
+   "name": "\"Splashley\" the Elephant Dishwasher",
+   "role": "ROLE_DISH",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_053",
+    "MUT_088",
+    "MUT_189"
+   ],
+   "hire": 2150,
+   "wage": 51,
+   "stats": {
+    "cook": 35,
+    "svc": 47,
+    "acc": 35,
+    "rep": 36,
+    "cmb": 34,
+    "rel": 52
+   },
+   "traits": [
+    "Splash Zone",
+    "Heavyweight"
+   ],
+   "signature": "Trunk Rinse: rinses 2 racks at once (ABL_028 rules for fires)",
+   "personality": "Loyal Lump",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_042",
+   "name": "\"Octo-Scrub Olga\" the Eight-Armed Scrubber",
+   "role": "ROLE_DISH",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_145",
+    "MUT_145",
+    "MUT_206",
+    "MUT_009",
+    "MUT_256"
+   ],
+   "hire": 2150,
+   "wage": 51,
+   "stats": {
+    "cook": 35,
+    "svc": 52,
+    "acc": 35,
+    "rep": 33,
+    "cmb": 36,
+    "rel": 49
+   },
+   "traits": [
+    "Multi-Tasker",
+    "Sticky Grip"
+   ],
+   "signature": "Scrub-a-Dub ×8: washes 2 racks at once",
+   "personality": "Grump",
+   "potential_grade": "C",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_043",
+   "name": "\"Drippy\" the Faucet-Nose Scrubber",
+   "role": "ROLE_DISH",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_056",
+    "MUT_019",
+    "MUT_157"
+   ],
+   "hire": 10500,
+   "wage": 145,
+   "stats": {
+    "cook": 52,
+    "svc": 64,
+    "acc": 51,
+    "rep": 49,
+    "cmb": 49,
+    "rel": 62
+   },
+   "traits": [
+    "Splash Zone"
+   ],
+   "signature": "Self-Rinsing: never needs to walk to the sink",
+   "personality": "Clumsy Sweetheart",
+   "potential_grade": "B",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_044",
+   "name": "\"Puffington\" the Pufferfish Dishwasher",
+   "role": "ROLE_DISH",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_129",
+    "MUT_275",
+    "MUT_046"
+   ],
+   "hire": 9500,
+   "wage": 135,
+   "stats": {
+    "cook": 48,
+    "svc": 67,
+    "acc": 52,
+    "rep": 49,
+    "cmb": 51,
+    "rel": 63
+   },
+   "traits": [
+    "Splash Zone"
+   ],
+   "signature": "Puff Polish: puffs up to dry plates instantly",
+   "personality": "Drama Royalty",
+   "potential_grade": "C",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_045",
+   "name": "\"The Rinse-o-Tron 3000\" the Robot Dishwasher",
+   "role": "ROLE_DISH",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_249",
+    "MUT_187",
+    "MUT_123",
+    "MUT_044"
+   ],
+   "hire": 66000,
+   "wage": 500,
+   "stats": {
+    "cook": 64,
+    "svc": 83,
+    "acc": 67,
+    "rep": 65,
+    "cmb": 65,
+    "rel": 81
+   },
+   "traits": [
+    "Multi-Tasker",
+    "Calculator Brain"
+   ],
+   "signature": "Industrial Cycle: rack size 8 plates instead of 4",
+   "personality": "Perfectionist",
+   "potential_grade": "A",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_046",
+   "name": "\"Lambert Mopworth\" the Woolly Mop",
+   "role": "ROLE_CLEANER",
+   "rarity": "Common",
+   "parts": [
+    "MUT_260",
+    "MUT_143",
+    "MUT_117"
+   ],
+   "hire": 350,
+   "wage": 15,
+   "stats": {
+    "cook": 19,
+    "svc": 32,
+    "acc": 30,
+    "rep": 19,
+    "cmb": 20,
+    "rel": 28
+   },
+   "traits": [],
+   "signature": "Wool Mop: his fleece mops floors as he walks (spills cleaned on contact)",
+   "personality": "Loyal Lump",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_047",
+   "name": "\"Quackers\" the Duck Cleaner",
+   "role": "ROLE_CLEANER",
+   "rarity": "Common",
+   "parts": [
+    "MUT_059",
+    "MUT_201",
+    "MUT_183"
+   ],
+   "hire": 400,
+   "wage": 17,
+   "stats": {
+    "cook": 21,
+    "svc": 34,
+    "acc": 28,
+    "rep": 22,
+    "cmb": 21,
+    "rel": 31
+   },
+   "traits": [
+    "Splash Zone",
+    "Loudmouth"
+   ],
+   "signature": "Puddle Patrol: cleans liquid spills 2× faster",
+   "personality": "Chatterbox",
+   "potential_grade": "D",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_048",
+   "name": "\"Dusty\" the Raccoon Night Janitor",
+   "role": "ROLE_CLEANER",
+   "rarity": "Common",
+   "parts": [
+    "MUT_042",
+    "MUT_226",
+    "MUT_090"
+   ],
+   "hire": 400,
+   "wage": 18,
+   "stats": {
+    "cook": 20,
+    "svc": 37,
+    "acc": 31,
+    "rep": 19,
+    "cmb": 21,
+    "rel": 26
+   },
+   "traits": [
+    "Speedster",
+    "Lucky Charm"
+   ],
+   "signature": "Tail Sweep: sweeps trash with his tail while walking",
+   "personality": "Night Owl",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 1,
+   "min_level": 1
+  },
+  {
+   "id": "EMP_049",
+   "name": "\"Webster\" the Spider Janitor",
+   "role": "ROLE_CLEANER",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_150",
+    "MUT_185",
+    "MUT_076"
+   ],
+   "hire": 2150,
+   "wage": 51,
+   "stats": {
+    "cook": 37,
+    "svc": 49,
+    "acc": 46,
+    "rep": 35,
+    "cmb": 34,
+    "rel": 43
+   },
+   "traits": [
+    "Wall Crawler",
+    "Multi-Tasker"
+   ],
+   "signature": "Web Sweep: cleans all trash in a 6-stud radius (ABL_068 rules)",
+   "personality": "Shy Genius",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_050",
+   "name": "\"Lily Pad\" the Frog-Tongue Cleaner",
+   "role": "ROLE_CLEANER",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_061",
+    "MUT_005",
+    "MUT_203"
+   ],
+   "hire": 1900,
+   "wage": 46,
+   "stats": {
+    "cook": 35,
+    "svc": 47,
+    "acc": 44,
+    "rep": 34,
+    "cmb": 34,
+    "rel": 46
+   },
+   "traits": [
+    "Sticky Grip"
+   ],
+   "signature": "Tongue Grab: yanks trash from 8 studs away (ABL_016 rules)",
+   "personality": "Clumsy Sweetheart",
+   "potential_grade": "C",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_051",
+   "name": "\"Vacuuma Vera\" the Vacuum Cleaner",
+   "role": "ROLE_CLEANER",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_066",
+    "MUT_123",
+    "MUT_192"
+   ],
+   "hire": 11000,
+   "wage": 155,
+   "stats": {
+    "cook": 51,
+    "svc": 65,
+    "acc": 58,
+    "rep": 49,
+    "cmb": 49,
+    "rel": 60
+   },
+   "traits": [
+    "Speedster"
+   ],
+   "signature": "Big Suck: clears a whole table zone in 2 s (ABL_035 rules)",
+   "personality": "Overachiever",
+   "potential_grade": "A",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_052",
+   "name": "\"Gale Force\" the Cloud Cleaner",
+   "role": "ROLE_CLEANER",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_197",
+    "MUT_274",
+    "MUT_232"
+   ],
+   "hire": 59000,
+   "wage": 455,
+   "stats": {
+    "cook": 66,
+    "svc": 83,
+    "acc": 77,
+    "rep": 66,
+    "cmb": 63,
+    "rel": 75
+   },
+   "traits": [
+    "Flying"
+   ],
+   "signature": "Gust Sweep: blows every loose napkin into the bin once per 2 min (ABL_044 rules)",
+   "personality": "Drama Royalty",
+   "potential_grade": "B",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_053",
+   "name": "\"Duchess Dustbunny\" the Spotless Sovereign",
+   "role": "ROLE_CLEANER",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_085",
+    "MUT_272",
+    "MUT_258",
+    "MUT_202"
+   ],
+   "hire": 395000,
+   "wage": 1340,
+   "stats": {
+    "cook": 79,
+    "svc": 93,
+    "acc": 90,
+    "rep": 80,
+    "cmb": 79,
+    "rel": 88
+   },
+   "traits": [
+    "Golden Touch",
+    "Speedster"
+   ],
+   "signature": "Royal Decree of Tidiness: cleanliness K never drops below 90 while she is on shift",
+   "personality": "Perfectionist",
+   "potential_grade": "S",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  },
+  {
+   "id": "EMP_054",
+   "name": "\"Buckminster\" the Beaver Handyman",
+   "role": "ROLE_REPAIR",
+   "rarity": "Common",
+   "parts": [
+    "MUT_060",
+    "MUT_218",
+    "MUT_006"
+   ],
+   "hire": 400,
+   "wage": 17,
+   "stats": {
+    "cook": 21,
+    "svc": 22,
+    "acc": 20,
+    "rep": 31,
+    "cmb": 21,
+    "rel": 27
+   },
+   "traits": [
+    "Sniffer"
+   ],
+   "signature": "Dam Good Work: +15 % repair speed on wooden furniture",
+   "personality": "Eager Beaver",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_055",
+   "name": "\"Patchy\" the Gecko Patcher",
+   "role": "ROLE_REPAIR",
+   "rarity": "Common",
+   "parts": [
+    "MUT_203",
+    "MUT_017",
+    "MUT_215"
+   ],
+   "hire": 300,
+   "wage": 15,
+   "stats": {
+    "cook": 20,
+    "svc": 28,
+    "acc": 22,
+    "rep": 35,
+    "cmb": 18,
+    "rel": 30
+   },
+   "traits": [
+    "Wall Crawler"
+   ],
+   "signature": "Tape Everything: Scuffed objects repair in half the time",
+   "personality": "Clumsy Sweetheart",
+   "potential_grade": "D",
+   "potential_cap": 55,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_056",
+   "name": "\"Sparky\" the Extension-Cord Electrician",
+   "role": "ROLE_REPAIR",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_224",
+    "MUT_103",
+    "MUT_264"
+   ],
+   "hire": 2100,
+   "wage": 50,
+   "stats": {
+    "cook": 37,
+    "svc": 43,
+    "acc": 34,
+    "rep": 50,
+    "cmb": 34,
+    "rel": 41
+   },
+   "traits": [
+    "Electric"
+   ],
+   "signature": "Live Wire: appliance repairs ×1.3",
+   "personality": "Chatterbox",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_057",
+   "name": "\"Moley Fixit\" the Mole Plumber",
+   "role": "ROLE_REPAIR",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_054",
+    "MUT_196",
+    "MUT_196",
+    "MUT_169"
+   ],
+   "hire": 2000,
+   "wage": 48,
+   "stats": {
+    "cook": 36,
+    "svc": 42,
+    "acc": 34,
+    "rep": 48,
+    "cmb": 34,
+    "rel": 45
+   },
+   "traits": [
+    "Sniffer",
+    "Speedster"
+   ],
+   "signature": "Under-Floor Shortcut: burrows between repair jobs (ABL_055 rules)",
+   "personality": "Grump",
+   "potential_grade": "C",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_058",
+   "name": "\"Wendell Wrenchlegs\" the Spider Repair Technician",
+   "role": "ROLE_REPAIR",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_028",
+    "MUT_150",
+    "MUT_185",
+    "MUT_174"
+   ],
+   "hire": 12500,
+   "wage": 170,
+   "stats": {
+    "cook": 52,
+    "svc": 57,
+    "acc": 50,
+    "rep": 68,
+    "cmb": 49,
+    "rel": 57
+   },
+   "traits": [
+    "Wall Crawler",
+    "Multi-Tasker"
+   ],
+   "signature": "Eight-Leg Climb: repairs walls and ceilings with no ladder; travel between jobs ×0.6",
+   "personality": "Overachiever",
+   "potential_grade": "A",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_059",
+   "name": "\"Clanky\" the Wrench-Claw Robot",
+   "role": "ROLE_REPAIR",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_153",
+    "MUT_022",
+    "MUT_187"
+   ],
+   "hire": 10500,
+   "wage": 145,
+   "stats": {
+    "cook": 48,
+    "svc": 57,
+    "acc": 51,
+    "rep": 67,
+    "cmb": 50,
+    "rel": 61
+   },
+   "traits": [
+    "Calculator Brain"
+   ],
+   "signature": "Repair Burst: instantly restores 25 % durability once per 2 min (ABL_062 rules)",
+   "personality": "Perfectionist",
+   "potential_grade": "B",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_060",
+   "name": "\"Gearhart\" the Many-Handed Mechanic",
+   "role": "ROLE_REPAIR",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_153",
+    "MUT_174",
+    "MUT_249",
+    "MUT_044"
+   ],
+   "hire": 66000,
+   "wage": 500,
+   "stats": {
+    "cook": 65,
+    "svc": 68,
+    "acc": 65,
+    "rep": 79,
+    "cmb": 66,
+    "rel": 75
+   },
+   "traits": [
+    "Multi-Tasker",
+    "Calculator Brain"
+   ],
+   "signature": "Two Jobs at Once: repairs 2 objects simultaneously at 80 % speed each",
+   "personality": "Overachiever",
+   "potential_grade": "A",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_061",
+   "name": "\"Phoebe Phoenix\" the Rebuild Specialist",
+   "role": "ROLE_REPAIR",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_037",
+    "MUT_200",
+    "MUT_250",
+    "MUT_174"
+   ],
+   "hire": 420000,
+   "wage": 1410,
+   "stats": {
+    "cook": 80,
+    "svc": 88,
+    "acc": 81,
+    "rep": 98,
+    "cmb": 80,
+    "rel": 93
+   },
+   "traits": [
+    "Grill Master",
+    "Regenerator"
+   ],
+   "signature": "Rise From the Rubble: rebuilds Destroyed objects with no rebuild premium",
+   "personality": "Zen Noodle",
+   "potential_grade": "S",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  },
+  {
+   "id": "EMP_062",
+   "name": "\"Bruno\" the Bear Bouncer",
+   "role": "ROLE_SECURITY",
+   "rarity": "Common",
+   "parts": [
+    "MUT_001",
+    "MUT_118",
+    "MUT_140"
+   ],
+   "hire": 400,
+   "wage": 17,
+   "stats": {
+    "cook": 21,
+    "svc": 26,
+    "acc": 18,
+    "rep": 21,
+    "cmb": 35,
+    "rel": 26
+   },
+   "traits": [
+    "Heavyweight"
+   ],
+   "signature": "Bear Hug of Calm: first intercept of each hour always succeeds",
+   "personality": "Loyal Lump",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_063",
+   "name": "\"Shelldon\" the Turtle Guard",
+   "role": "ROLE_SECURITY",
+   "rarity": "Common",
+   "parts": [
+    "MUT_122",
+    "MUT_109",
+    "MUT_244"
+   ],
+   "hire": 300,
+   "wage": 14,
+   "stats": {
+    "cook": 18,
+    "svc": 26,
+    "acc": 18,
+    "rep": 20,
+    "cmb": 33,
+    "rel": 30
+   },
+   "traits": [
+    "Tough Shell",
+    "Unhurried"
+   ],
+   "signature": "Shell Wall: blocks thrown food for anyone behind him",
+   "personality": "Zen Noodle",
+   "potential_grade": "D",
+   "potential_cap": 55,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_064",
+   "name": "\"Butterscotch\" the Goat Bouncer",
+   "role": "ROLE_SECURITY",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_007",
+    "MUT_097",
+    "MUT_199"
+   ],
+   "hire": 1900,
+   "wage": 46,
+   "stats": {
+    "cook": 35,
+    "svc": 46,
+    "acc": 34,
+    "rep": 37,
+    "cmb": 51,
+    "rel": 41
+   },
+   "traits": [
+    "Bouncer"
+   ],
+   "signature": "Polite Headbutt: knocks a hostile customer back 4 studs, no damage (ABL_058 rules)",
+   "personality": "Grump",
+   "potential_grade": "C",
+   "potential_cap": 70,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_065",
+   "name": "\"Sir Charge-a-Lot\" the Bull Knight",
+   "role": "ROLE_SECURITY",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_100",
+    "MUT_124",
+    "MUT_189"
+   ],
+   "hire": 2300,
+   "wage": 55,
+   "stats": {
+    "cook": 35,
+    "svc": 41,
+    "acc": 34,
+    "rep": 36,
+    "cmb": 49,
+    "rel": 47
+   },
+   "traits": [
+    "Bouncer",
+    "Heavyweight"
+   ],
+   "signature": "Chivalrous Charge: escorts a level-4 customer out in one move",
+   "personality": "Show-Off",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_066",
+   "name": "\"Rocco\" the Rhino Security Guard",
+   "role": "ROLE_SECURITY",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_099",
+    "MUT_124",
+    "MUT_182",
+    "MUT_259"
+   ],
+   "hire": 12500,
+   "wage": 170,
+   "stats": {
+    "cook": 49,
+    "svc": 56,
+    "acc": 49,
+    "rep": 52,
+    "cmb": 70,
+    "rel": 62
+   },
+   "traits": [
+    "Bouncer",
+    "Heavyweight"
+   ],
+   "signature": "Stern Eyebrow: stops level 3–4 customers before they act (calm chance +25 %)",
+   "personality": "Loyal Lump",
+   "potential_grade": "A",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_067",
+   "name": "\"Gorilla Gloria\" the Gorilla Guard",
+   "role": "ROLE_SECURITY",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_024",
+    "MUT_148",
+    "MUT_175"
+   ],
+   "hire": 10500,
+   "wage": 145,
+   "stats": {
+    "cook": 50,
+    "svc": 61,
+    "acc": 50,
+    "rep": 50,
+    "cmb": 66,
+    "rel": 60
+   },
+   "traits": [
+    "Heavyweight"
+   ],
+   "signature": "Ground Pound Warning: one slam stuns every brawler in 6 studs (ABL_021 rules)",
+   "personality": "Drama Royalty",
+   "potential_grade": "B",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_068",
+   "name": "\"Steggy\" the Stegosaurus Guard",
+   "role": "ROLE_SECURITY",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_133",
+    "MUT_223",
+    "MUT_104"
+   ],
+   "hire": 61000,
+   "wage": 465,
+   "stats": {
+    "cook": 66,
+    "svc": 74,
+    "acc": 66,
+    "rep": 67,
+    "cmb": 77,
+    "rel": 77
+   },
+   "traits": [
+    "Bouncer",
+    "Tough Shell"
+   ],
+   "signature": "Spiky Perimeter: thrown food aimed at staff bounces off",
+   "personality": "Zen Noodle",
+   "potential_grade": "A",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_069",
+   "name": "\"Golem Gary\" the Rock-Solid Guard",
+   "role": "ROLE_SECURITY",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_135",
+    "MUT_034",
+    "MUT_163",
+    "MUT_269"
+   ],
+   "hire": 420000,
+   "wage": 1410,
+   "stats": {
+    "cook": 80,
+    "svc": 90,
+    "acc": 80,
+    "rep": 79,
+    "cmb": 93,
+    "rel": 91
+   },
+   "traits": [
+    "Heavyweight",
+    "Tough Shell"
+   ],
+   "signature": "Immovable Object: level-6 chaos cannot start while he is on shift; offline chaos incidents disabled",
+   "personality": "Loyal Lump",
+   "potential_grade": "S",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  },
+  {
+   "id": "EMP_070",
+   "name": "\"Barnaby Hoot\" the Owl Shift Lead",
+   "role": "ROLE_MANAGER",
+   "rarity": "Common",
+   "parts": [
+    "MUT_016",
+    "MUT_074",
+    "MUT_117"
+   ],
+   "hire": 400,
+   "wage": 17,
+   "stats": {
+    "cook": 22,
+    "svc": 30,
+    "acc": 31,
+    "rep": 19,
+    "cmb": 20,
+    "rel": 31
+   },
+   "traits": [
+    "Lucky Charm"
+   ],
+   "signature": "Night Shift Wisdom: offline Energy decay −1 %/h on top of the Manager rule",
+   "personality": "Night Owl",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_071",
+   "name": "\"Gus\" the Dog Shift Manager",
+   "role": "ROLE_MANAGER",
+   "rarity": "Common",
+   "parts": [
+    "MUT_003",
+    "MUT_212",
+    "MUT_052"
+   ],
+   "hire": 400,
+   "wage": 17,
+   "stats": {
+    "cook": 22,
+    "svc": 26,
+    "acc": 27,
+    "rep": 19,
+    "cmb": 19,
+    "rel": 34
+   },
+   "traits": [
+    "Sniffer",
+    "Charmer"
+   ],
+   "signature": "Good Boy Energy: team Morale +5 at shift start",
+   "personality": "Eager Beaver",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_072",
+   "name": "\"Clipboard Clara\" the Giraffe Supervisor",
+   "role": "ROLE_MANAGER",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_015",
+    "MUT_110",
+    "MUT_047"
+   ],
+   "hire": 2250,
+   "wage": 53,
+   "stats": {
+    "cook": 37,
+    "svc": 41,
+    "acc": 46,
+    "rep": 33,
+    "cmb": 36,
+    "rel": 53
+   },
+   "traits": [
+    "Charmer"
+   ],
+   "signature": "Overseer: sees the whole floor; coordination bonus +2 %",
+   "personality": "Perfectionist",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 2,
+   "min_level": 5
+  },
+  {
+   "id": "EMP_073",
+   "name": "\"Mister Mustache\" the Experienced Manager",
+   "role": "ROLE_MANAGER",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_016",
+    "MUT_074",
+    "MUT_047",
+    "MUT_095"
+   ],
+   "hire": 11500,
+   "wage": 160,
+   "stats": {
+    "cook": 50,
+    "svc": 61,
+    "acc": 59,
+    "rep": 49,
+    "cmb": 52,
+    "rel": 68
+   },
+   "traits": [
+    "Charmer",
+    "Lucky Charm"
+   ],
+   "signature": "Twirl of Authority: settles one staff argument per hour",
+   "personality": "Zen Noodle",
+   "potential_grade": "B",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_074",
+   "name": "\"Captain Clockwork\" the Robot Manager",
+   "role": "ROLE_MANAGER",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_022",
+    "MUT_113",
+    "MUT_123"
+   ],
+   "hire": 12000,
+   "wage": 165,
+   "stats": {
+    "cook": 49,
+    "svc": 56,
+    "acc": 59,
+    "rep": 49,
+    "cmb": 51,
+    "rel": 64
+   },
+   "traits": [
+    "Calculator Brain"
+   ],
+   "signature": "Shift Optimizer: schedules breaks so Energy never drops below 20 % online",
+   "personality": "Perfectionist",
+   "potential_grade": "A",
+   "potential_cap": 82,
+   "min_tier": 3,
+   "min_level": 10
+  },
+  {
+   "id": "EMP_075",
+   "name": "\"Megaphone Maxine\" the Elite Manager",
+   "role": "ROLE_MANAGER",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_068",
+    "MUT_021",
+    "MUT_095"
+   ],
+   "hire": 66000,
+   "wage": 500,
+   "stats": {
+    "cook": 66,
+    "svc": 77,
+    "acc": 72,
+    "rep": 64,
+    "cmb": 65,
+    "rel": 79
+   },
+   "traits": [
+    "Loudmouth",
+    "Charmer"
+   ],
+   "signature": "ATTENTION PLEASE: team Service Speed +5 while she is on shift",
+   "personality": "Drama Royalty",
+   "potential_grade": "A",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_076",
+   "name": "\"The Oracle of Orders\" the Legendary Manager",
+   "role": "ROLE_MANAGER",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_084",
+    "MUT_229",
+    "MUT_101",
+    "MUT_272"
+   ],
+   "hire": 445000,
+   "wage": 1480,
+   "stats": {
+    "cook": 80,
+    "svc": 88,
+    "acc": 90,
+    "rep": 79,
+    "cmb": 80,
+    "rel": 95
+   },
+   "traits": [
+    "Lucky Charm",
+    "Glow-Up"
+   ],
+   "signature": "Foresight: negative incident weights ×0.8 (offline)",
+   "personality": "Zen Noodle",
+   "potential_grade": "S",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  },
+  {
+   "id": "EMP_077",
+   "name": "\"Madame Peacockle\" the Grand Hostess",
+   "role": "ROLE_MANAGER",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_219",
+    "MUT_013",
+    "MUT_258"
+   ],
+   "hire": 395000,
+   "wage": 1340,
+   "stats": {
+    "cook": 82,
+    "svc": 88,
+    "acc": 87,
+    "rep": 82,
+    "cmb": 79,
+    "rel": 94
+   },
+   "traits": [
+    "Golden Touch",
+    "Charmer"
+   ],
+   "signature": "Red Carpet: celebrity incidents weight ×2",
+   "personality": "Show-Off",
+   "potential_grade": "A",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  },
+  {
+   "id": "EMP_078",
+   "name": "\"Zippy Featherwheels\" the Roller-Pigeon Courier",
+   "role": "ROLE_DELIVERY",
+   "rarity": "Common",
+   "parts": [
+    "MUT_004",
+    "MUT_204",
+    "MUT_235"
+   ],
+   "hire": 400,
+   "wage": 18,
+   "stats": {
+    "cook": 21,
+    "svc": 35,
+    "acc": 21,
+    "rep": 21,
+    "cmb": 28,
+    "rel": 29
+   },
+   "traits": [
+    "Speedster",
+    "Flying"
+   ],
+   "signature": "Rooftop Route: ignores city traffic",
+   "personality": "Chatterbox",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 4,
+   "min_level": 18
+  },
+  {
+   "id": "EMP_079",
+   "name": "\"Camel Carl\" the Cargo Courier",
+   "role": "ROLE_DELIVERY",
+   "rarity": "Common",
+   "parts": [
+    "MUT_247",
+    "MUT_182",
+    "MUT_117"
+   ],
+   "hire": 300,
+   "wage": 15,
+   "stats": {
+    "cook": 22,
+    "svc": 35,
+    "acc": 21,
+    "rep": 21,
+    "cmb": 25,
+    "rel": 26
+   },
+   "traits": [
+    "Heavyweight"
+   ],
+   "signature": "Hump Storage: carries 3 delivery bags at once",
+   "personality": "Grump",
+   "potential_grade": "D",
+   "potential_cap": 55,
+   "min_tier": 4,
+   "min_level": 18
+  },
+  {
+   "id": "EMP_080",
+   "name": "\"Kangaroo Kip\" the Hop Courier",
+   "role": "ROLE_DELIVERY",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_184",
+    "MUT_184",
+    "MUT_149",
+    "MUT_247"
+   ],
+   "hire": 2100,
+   "wage": 50,
+   "stats": {
+    "cook": 35,
+    "svc": 52,
+    "acc": 37,
+    "rep": 34,
+    "cmb": 40,
+    "rel": 41
+   },
+   "traits": [
+    "Speedster"
+   ],
+   "signature": "Pouch Pocket: deliveries never spill",
+   "personality": "Eager Beaver",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 4,
+   "min_level": 18
+  },
+  {
+   "id": "EMP_081",
+   "name": "\"Wheelie Wanda\" the Unicycle Courier",
+   "role": "ROLE_DELIVERY",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_192",
+    "MUT_192",
+    "MUT_113",
+    "MUT_022"
+   ],
+   "hire": 11500,
+   "wage": 160,
+   "stats": {
+    "cook": 49,
+    "svc": 63,
+    "acc": 52,
+    "rep": 51,
+    "cmb": 56,
+    "rel": 60
+   },
+   "traits": [
+    "Speedster",
+    "Calculator Brain"
+   ],
+   "signature": "Balance Bonus: +5 % delivery tips",
+   "personality": "Show-Off",
+   "potential_grade": "B",
+   "potential_cap": 82,
+   "min_tier": 4,
+   "min_level": 18
+  },
+  {
+   "id": "EMP_082",
+   "name": "\"Grasshopper Greta\" the Leaping Courier",
+   "role": "ROLE_DELIVERY",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_190",
+    "MUT_190",
+    "MUT_027"
+   ],
+   "hire": 9500,
+   "wage": 135,
+   "stats": {
+    "cook": 51,
+    "svc": 61,
+    "acc": 49,
+    "rep": 51,
+    "cmb": 56,
+    "rel": 59
+   },
+   "traits": [
+    "Speedster"
+   ],
+   "signature": "Long Jump: crosses districts in 3 hops",
+   "personality": "Daydreamer",
+   "potential_grade": "C",
+   "potential_cap": 82,
+   "min_tier": 4,
+   "min_level": 18
+  },
+  {
+   "id": "EMP_083",
+   "name": "\"Comet Carla\" the Cosmic Courier",
+   "role": "ROLE_DELIVERY",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_228",
+    "MUT_210",
+    "MUT_279",
+    "MUT_265"
+   ],
+   "hire": 61000,
+   "wage": 465,
+   "stats": {
+    "cook": 63,
+    "svc": 81,
+    "acc": 64,
+    "rep": 66,
+    "cmb": 72,
+    "rel": 71
+   },
+   "traits": [
+    "Speedster",
+    "Cosmic Intuition"
+   ],
+   "signature": "Comet Blink: teleports the last 20 studs of a delivery (ABL_046 rules)",
+   "personality": "Daydreamer",
+   "potential_grade": "A",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_084",
+   "name": "\"Jetstream Juno\" the Rocket Courier",
+   "role": "ROLE_DELIVERY",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_245",
+    "MUT_198",
+    "MUT_198",
+    "MUT_239"
+   ],
+   "hire": 420000,
+   "wage": 1410,
+   "stats": {
+    "cook": 80,
+    "svc": 96,
+    "acc": 81,
+    "rep": 81,
+    "cmb": 86,
+    "rel": 92
+   },
+   "traits": [
+    "Flying",
+    "Speedster"
+   ],
+   "signature": "Sonic Snack: delivery revenue counts +2 percentage points above the normal delivery cap",
+   "personality": "Overachiever",
+   "potential_grade": "S",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  },
+  {
+   "id": "EMP_085",
+   "name": "\"Squeaks\" the Mouse Stockboy",
+   "role": "ROLE_STOCKER",
+   "rarity": "Common",
+   "parts": [
+    "MUT_087",
+    "MUT_049",
+    "MUT_006"
+   ],
+   "hire": 350,
+   "wage": 16,
+   "stats": {
+    "cook": 21,
+    "svc": 30,
+    "acc": 34,
+    "rep": 22,
+    "cmb": 21,
+    "rel": 31
+   },
+   "traits": [
+    "Sniffer"
+   ],
+   "signature": "Crumb Census: knows exact stock counts (no surprise SOLD OUT)",
+   "personality": "Snack Goblin",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 4,
+   "min_level": 18
+  },
+  {
+   "id": "EMP_086",
+   "name": "\"Mo\" the Monkey-Tail Shelver",
+   "role": "ROLE_STOCKER",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_217",
+    "MUT_170",
+    "MUT_085"
+   ],
+   "hire": 2100,
+   "wage": 50,
+   "stats": {
+    "cook": 36,
+    "svc": 42,
+    "acc": 49,
+    "rep": 36,
+    "cmb": 35,
+    "rel": 44
+   },
+   "traits": [
+    "Grabby"
+   ],
+   "signature": "Top-Shelf Swing: restocks 2 shelves per trip",
+   "personality": "Eager Beaver",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 4,
+   "min_level": 18
+  },
+  {
+   "id": "EMP_087",
+   "name": "\"Coldwell\" the Fridge-Body Stocker",
+   "role": "ROLE_STOCKER",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_131",
+    "MUT_176",
+    "MUT_207"
+   ],
+   "hire": 1900,
+   "wage": 46,
+   "stats": {
+    "cook": 37,
+    "svc": 42,
+    "acc": 50,
+    "rep": 36,
+    "cmb": 34,
+    "rel": 46
+   },
+   "traits": [
+    "Ice Hands"
+   ],
+   "signature": "Walk-In Body: special stock in her care never spoils",
+   "personality": "Zen Noodle",
+   "potential_grade": "C",
+   "potential_cap": 70,
+   "min_tier": 4,
+   "min_level": 18
+  },
+  {
+   "id": "EMP_088",
+   "name": "\"Truffles\" the Truffle-Pig Forager",
+   "role": "ROLE_STOCKER",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_058",
+    "MUT_213",
+    "MUT_120"
+   ],
+   "hire": 11500,
+   "wage": 160,
+   "stats": {
+    "cook": 48,
+    "svc": 59,
+    "acc": 66,
+    "rep": 49,
+    "cmb": 51,
+    "rel": 56
+   },
+   "traits": [
+    "Sniffer",
+    "Lucky Charm"
+   ],
+   "signature": "Deal Snout: stocker discount +2 percentage points (within the 15 % cap)",
+   "personality": "Snack Goblin",
+   "potential_grade": "A",
+   "potential_cap": 82,
+   "min_tier": 4,
+   "min_level": 18
+  },
+  {
+   "id": "EMP_089",
+   "name": "\"Magnetta\" the Magnet Stocker",
+   "role": "ROLE_STOCKER",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_155",
+    "MUT_224",
+    "MUT_022"
+   ],
+   "hire": 10500,
+   "wage": 145,
+   "stats": {
+    "cook": 50,
+    "svc": 60,
+    "acc": 65,
+    "rep": 51,
+    "cmb": 51,
+    "rel": 60
+   },
+   "traits": [
+    "Electric"
+   ],
+   "signature": "Magnetic Pull: unloads a delivery crate in 1 s (ABL_033 rules)",
+   "personality": "Perfectionist",
+   "potential_grade": "B",
+   "potential_cap": 82,
+   "min_tier": 4,
+   "min_level": 18
+  },
+  {
+   "id": "EMP_090",
+   "name": "\"Tractor Trixie\" the Alien Stocker",
+   "role": "ROLE_STOCKER",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_166",
+    "MUT_033",
+    "MUT_082"
+   ],
+   "hire": 57000,
+   "wage": 440,
+   "stats": {
+    "cook": 66,
+    "svc": 71,
+    "acc": 83,
+    "rep": 66,
+    "cmb": 64,
+    "rel": 71
+   },
+   "traits": [],
+   "signature": "Beam Me Your Crates: auto-buys special stock 10 % cheaper (counts toward the stocker discount cap)",
+   "personality": "Daydreamer",
+   "potential_grade": "A",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_091",
+   "name": "\"Granny Gatherwell\" the Legendary Forager",
+   "role": "ROLE_STOCKER",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_052",
+    "MUT_217",
+    "MUT_249",
+    "MUT_258"
+   ],
+   "hire": 420000,
+   "wage": 1410,
+   "stats": {
+    "cook": 79,
+    "svc": 90,
+    "acc": 99,
+    "rep": 81,
+    "cmb": 81,
+    "rel": 93
+   },
+   "traits": [
+    "Sniffer",
+    "Golden Touch"
+   ],
+   "signature": "Grandma Knows a Guy: rare-ingredient crate chance ×1.5 offline",
+   "personality": "Loyal Lump",
+   "potential_grade": "S",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  },
+  {
+   "id": "EMP_092",
+   "name": "\"Major Waddles\" the Penguin Deputy",
+   "role": "ROLE_ASST_MGR",
+   "rarity": "Common",
+   "parts": [
+    "MUT_125",
+    "MUT_201",
+    "MUT_059"
+   ],
+   "hire": 400,
+   "wage": 17,
+   "stats": {
+    "cook": 19,
+    "svc": 28,
+    "acc": 30,
+    "rep": 19,
+    "cmb": 22,
+    "rel": 31
+   },
+   "traits": [
+    "Splash Zone",
+    "Ice Hands"
+   ],
+   "signature": "Waddle Roll Call: the first staff mistake each hour is undone",
+   "personality": "Perfectionist",
+   "potential_grade": "C",
+   "potential_cap": 55,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_093",
+   "name": "\"Assistant Owlbert\" the Clipboard Owl",
+   "role": "ROLE_ASST_MGR",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_016",
+    "MUT_074",
+    "MUT_044"
+   ],
+   "hire": 2100,
+   "wage": 50,
+   "stats": {
+    "cook": 35,
+    "svc": 43,
+    "acc": 42,
+    "rep": 33,
+    "cmb": 35,
+    "rel": 49
+   },
+   "traits": [
+    "Lucky Charm"
+   ],
+   "signature": "Paperwork Wizard: offline report includes a free bottleneck forecast",
+   "personality": "Night Owl",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_094",
+   "name": "\"Roxanne Rushtail\" the Fox Deputy",
+   "role": "ROLE_ASST_MGR",
+   "rarity": "Uncommon",
+   "parts": [
+    "MUT_090",
+    "MUT_226",
+    "MUT_002"
+   ],
+   "hire": 2150,
+   "wage": 51,
+   "stats": {
+    "cook": 36,
+    "svc": 45,
+    "acc": 45,
+    "rep": 37,
+    "cmb": 35,
+    "rel": 48
+   },
+   "traits": [
+    "Lucky Charm",
+    "Speedster"
+   ],
+   "signature": "Quick Cover: steps into any empty role for 10 min online",
+   "personality": "Overachiever",
+   "potential_grade": "B",
+   "potential_cap": 70,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_095",
+   "name": "\"Captain Antlers\" the Deer Deputy",
+   "role": "ROLE_ASST_MGR",
+   "rarity": "Rare",
+   "parts": [
+    "MUT_098",
+    "MUT_013",
+    "MUT_093"
+   ],
+   "hire": 11000,
+   "wage": 155,
+   "stats": {
+    "cook": 50,
+    "svc": 58,
+    "acc": 60,
+    "rep": 51,
+    "cmb": 50,
+    "rel": 63
+   },
+   "traits": [
+    "Charmer"
+   ],
+   "signature": "Calm Clearing: team Morale never drops below 40 while he is on shift",
+   "personality": "Zen Noodle",
+   "potential_grade": "B",
+   "potential_cap": 82,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_096",
+   "name": "\"VP Vortex\" the Cosmic Deputy",
+   "role": "ROLE_ASST_MGR",
+   "rarity": "Epic",
+   "parts": [
+    "MUT_033",
+    "MUT_082",
+    "MUT_138",
+    "MUT_279"
+   ],
+   "hire": 66000,
+   "wage": 500,
+   "stats": {
+    "cook": 66,
+    "svc": 73,
+    "acc": 76,
+    "rep": 64,
+    "cmb": 67,
+    "rel": 78
+   },
+   "traits": [
+    "Cosmic Intuition",
+    "Lucky Charm"
+   ],
+   "signature": "Mind Buzz Memo: positive incident weights ×1.15 (ABL_047 flavor, no combat)",
+   "personality": "Shy Genius",
+   "potential_grade": "A",
+   "potential_cap": 92,
+   "min_tier": 5,
+   "min_level": 26
+  },
+  {
+   "id": "EMP_097",
+   "name": "\"Lady Luckfeather\" the Legendary Deputy",
+   "role": "ROLE_ASST_MGR",
+   "rarity": "Legendary",
+   "parts": [
+    "MUT_241",
+    "MUT_101",
+    "MUT_084"
+   ],
+   "hire": 420000,
+   "wage": 1410,
+   "stats": {
+    "cook": 82,
+    "svc": 91,
+    "acc": 89,
+    "rep": 79,
+    "cmb": 82,
+    "rel": 97
+   },
+   "traits": [
+    "Charmer",
+    "Glow-Up"
+   ],
+   "signature": "Second Wind: offline Energy decay −1 %/h for all staff (stacks with the Manager rule, floor −3 %/h)",
+   "personality": "Zen Noodle",
+   "potential_grade": "S",
+   "potential_cap": 100,
+   "min_tier": 7,
+   "min_level": 45
+  }
+ ]
+}

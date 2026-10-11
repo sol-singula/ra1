@@ -187,7 +187,7 @@ Non-database names: Roblox services use PascalCase (`CookingService`); remotes u
 |---|---|---|
 | Max players per server | **8** [TUNABLE] | 8 restaurant plots on Restaurant Row per server |
 | Restaurant model | Exterior façade on a plot in `DST_01`; **instanced interior** in a far-off `Interiors` region; entering the door moves the player/guest into the interior | One restaurant per player at launch |
-| Player WalkSpeed | 16 base → 21 max from stats (MOVE cap) | Abilities may exceed briefly (dash) |
+| Player WalkSpeed | 16 base → 20.8 max from stats (MOVE cap) | Abilities may exceed briefly (dash) |
 | Carry capacity | 1 item (ingredient, plate, tray, prop) | +1 per carry-boosting part (Octopus Arm, Monkey Tail, Extra Arm Backpack); hard max **3** |
 | Interaction range | 7 studs (stations), 10 studs (customers) | Server re-validates with +2 stud tolerance |
 | Autosave interval | 120 s [TUNABLE] | Plus save on purchase ≥ 10,000 MB, on PlayerRemoving, on BindToClose |

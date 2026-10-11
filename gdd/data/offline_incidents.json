@@ -1,0 +1,1610 @@
+{
+ "_doc": "A11 offline incident data (source of truth for section 36.9 and the offline simulator). Rendered by gdd/tools/render_incidents.py.",
+ "incidents": [
+  {
+   "id": "INC_001",
+   "name": "Karenosaurus Manager Marathon",
+   "cat": "customer",
+   "weight": 10,
+   "trigger": "Always eligible (a `PER_001` visit)",
+   "mitig_text": [
+    "ROLE_SECURITY",
+    "ROLE_MANAGER"
+   ],
+   "text": "{employee} was asked for the manager {n} times by a Karenosaurus and has now memorized her opinion on napkin texture.",
+   "sign": "-",
+   "mb": -0.05,
+   "morale": [
+    -2,
+    "subject"
+   ],
+   "subject": "ROLE_MANAGER",
+   "n": [
+    3,
+    9
+   ],
+   "mitig": [
+    "ROLE_SECURITY",
+    "ROLE_MANAGER"
+   ]
+  },
+  {
+   "id": "INC_002",
+   "name": "Meatball Food Fight",
+   "cat": "customer",
+   "weight": 7,
+   "trigger": "Tier ≥ 3; table service",
+   "mitig_text": [
+    "ROLE_SECURITY",
+    "ROLE_CLEANER"
+   ],
+   "text": "One meatball was thrown. Then {n} meatballs were thrown. {employee} is still finding them.",
+   "sign": "-",
+   "mb": -0.04,
+   "dmg": 0.04,
+   "subject": "ROLE_CLEANER",
+   "n": [
+    12,
+    40
+   ],
+   "mitig": [
+    "ROLE_SECURITY",
+    "ROLE_CLEANER"
+   ],
+   "tier_min": 3,
+   "tags": [
+    "chaos"
+   ]
+  },
+  {
+   "id": "INC_003",
+   "name": "Goblin Dine-and-Dash",
+   "cat": "customer",
+   "weight": 6,
+   "trigger": "Always eligible (`PER_005` visits)",
+   "mitig_text": [
+    "ROLE_SECURITY",
+    "Speedster waiter (weight ×0.5)"
+   ],
+   "text": "{n} Impatient Goblins sprinted out before paying. {employee} chased them to the corner, then waved.",
+   "sign": "-",
+   "mb": -0.04,
+   "subject": "ROLE_WAITER",
+   "n": [
+    1,
+    3
+   ],
+   "mitig": [
+    "ROLE_SECURITY"
+   ],
+   "trait_mult": {
+    "Speedster": 0.5
+   }
+  },
+  {
+   "id": "INC_004",
+   "name": "Chaos Gremlin Glitter Bomb",
+   "cat": "customer",
+   "weight": 5,
+   "trigger": "Always eligible (`PER_007` visits)",
+   "mitig_text": [
+    "ROLE_CLEANER",
+    "ROLE_SECURITY"
+   ],
+   "text": "A perfectly happy Chaos Gremlin set off a glitter bomb anyway. {employee} sparkles now. Permanently.",
+   "sign": "-",
+   "mb": -0.02,
+   "dmg": 0.03,
+   "subject": "ROLE_CLEANER",
+   "n": [
+    1,
+    1
+   ],
+   "mitig": [
+    "ROLE_CLEANER",
+    "ROLE_SECURITY"
+   ],
+   "tags": [
+    "chaos"
+   ]
+  },
+  {
+   "id": "INC_005",
+   "name": "Pigeon Flex Incident",
+   "cat": "customer",
+   "weight": 5,
+   "trigger": "Always eligible (`PER_010` visits)",
+   "mitig_text": [
+    "ROLE_SECURITY",
+    "ROLE_REPAIR"
+   ],
+   "text": "A Bodybuilder Pigeon flexed so hard {n} table(s) gave up. Nobody was hurt; the tables were embarrassed.",
+   "sign": "-",
+   "dmg": 0.06,
+   "subject": "ROLE_SECURITY",
+   "n": [
+    1,
+    2
+   ],
+   "mitig": [
+    "ROLE_SECURITY",
+    "ROLE_REPAIR"
+   ],
+   "tags": [
+    "breakage"
+   ]
+  },
+  {
+   "id": "INC_006",
+   "name": "Drama Llama Monologue",
+   "cat": "customer",
+   "weight": 6,
+   "trigger": "Always eligible (`PER_018` visits)",
+   "mitig_text": [
+    "ROLE_MANAGER"
+   ],
+   "text": "A Drama Llama performed a monologue about lukewarm soup. {n} customers left before the second act.",
+   "sign": "-",
+   "mb": -0.03,
+   "morale": [
+    -2,
+    "all"
+   ],
+   "subject": "ROLE_MANAGER",
+   "n": [
+    2,
+    6
+   ],
+   "mitig": [
+    "ROLE_MANAGER"
+   ]
+  },
+  {
+   "id": "INC_007",
+   "name": "Toddler Titan Stomp",
+   "cat": "customer",
+   "weight": 4,
+   "trigger": "Tier ≥ 4 (`PER_020` visits)",
+   "mitig_text": [
+    "ROLE_SECURITY",
+    "ROLE_CLEANER"
+   ],
+   "text": "A Toddler Titan wanted the blue cup. There was no blue cup. {n} chairs were stomped flat (they bounced back, mostly).",
+   "sign": "-",
+   "dmg": 0.05,
+   "subject": "ROLE_SECURITY",
+   "n": [
+    2,
+    5
+   ],
+   "mitig": [
+    "ROLE_SECURITY",
+    "ROLE_CLEANER"
+   ],
+   "tier_min": 4,
+   "tags": [
+    "breakage",
+    "chaos"
+   ]
+  },
+  {
+   "id": "INC_008",
+   "name": "Wrong Table Waltz",
+   "cat": "customer",
+   "weight": 6,
+   "trigger": "Tier ≥ 3 and ≥ 1 Waiter; weight ×(1.5 − avg waiter Accuracy/100)",
+   "mitig_text": [
+    "ROLE_MANAGER",
+    "waiter Accuracy"
+   ],
+   "text": "{employee} delivered {n} orders to the wrong table. The wrong tables said thank you.",
+   "sign": "-",
+   "mb": -0.03,
+   "subject": "ROLE_WAITER",
+   "n": [
+    3,
+    11
+   ],
+   "mitig": [
+    "ROLE_MANAGER"
+   ],
+   "tier_min": 3,
+   "req_roles": [
+    "ROLE_WAITER"
+   ],
+   "acc_scaled": true
+  },
+  {
+   "id": "INC_009",
+   "name": "Polite Demon, Provoked",
+   "cat": "customer",
+   "weight": 4,
+   "trigger": "Always eligible (`PER_003` visits)",
+   "mitig_text": [
+    "ROLE_SECURITY"
+   ],
+   "text": "A Polite Demon stayed polite until someone took the last ketchup. {employee} apologised {n} times; the ninth one worked.",
+   "sign": "-",
+   "mb": -0.03,
+   "dmg": 0.02,
+   "subject": "ROLE_SECURITY",
+   "n": [
+    9,
+    9
+   ],
+   "mitig": [
+    "ROLE_SECURITY"
+   ],
+   "tags": [
+    "chaos"
+   ]
+  },
+  {
+   "id": "INC_010",
+   "name": "Chair Domino Effect",
+   "cat": "damage",
+   "weight": 6,
+   "trigger": "Always eligible",
+   "mitig_text": [
+    "ROLE_REPAIR"
+   ],
+   "text": "{n} chairs fell over like dominoes. {employee} called it modern art and left them for later.",
+   "sign": "-",
+   "dmg": 0.05,
+   "subject": "ROLE_REPAIR",
+   "n": [
+    3,
+    8
+   ],
+   "mitig": [
+    "ROLE_REPAIR"
+   ],
+   "tags": [
+    "breakage"
+   ]
+  },
+  {
+   "id": "INC_011",
+   "name": "Wobbly Table Uprising",
+   "cat": "damage",
+   "weight": 5,
+   "trigger": "Always eligible",
+   "mitig_text": [
+    "ROLE_REPAIR"
+   ],
+   "text": "Every table started wobbling at once. {employee} fixed {n} of them with folded napkins.",
+   "sign": "-",
+   "dmg": 0.04,
+   "subject": "ROLE_REPAIR",
+   "n": [
+    2,
+    6
+   ],
+   "mitig": [
+    "ROLE_REPAIR"
+   ],
+   "tags": [
+    "breakage"
+   ]
+  },
+  {
+   "id": "INC_012",
+   "name": "Sauce on the Ceiling",
+   "cat": "damage",
+   "weight": 4,
+   "trigger": "Always eligible",
+   "mitig_text": [
+    "ROLE_CLEANER",
+    "ROLE_REPAIR",
+    "Wall Crawler (weight ×0.5)"
+   ],
+   "text": "Nobody knows how the sauce reached the ceiling. {employee} has {n} theories.",
+   "sign": "-",
+   "dmg": 0.03,
+   "subject": "ROLE_CLEANER",
+   "n": [
+    3,
+    7
+   ],
+   "mitig": [
+    "ROLE_CLEANER",
+    "ROLE_REPAIR"
+   ],
+   "trait_mult": {
+    "Wall Crawler": 0.5
+   }
+  },
+  {
+   "id": "INC_013",
+   "name": "Booth Cushion Blowout",
+   "cat": "damage",
+   "weight": 3,
+   "trigger": "Tier ≥ 4",
+   "mitig_text": [
+    "ROLE_REPAIR"
+   ],
+   "text": "A booth cushion exploded into {n} feathers. The customer sitting on it gave us five stars.",
+   "sign": "-",
+   "dmg": 0.04,
+   "subject": "ROLE_REPAIR",
+   "n": [
+    200,
+    900
+   ],
+   "mitig": [
+    "ROLE_REPAIR"
+   ],
+   "tier_min": 4,
+   "tags": [
+    "breakage"
+   ]
+  },
+  {
+   "id": "INC_014",
+   "name": "Grill Soot Sneeze",
+   "cat": "equipment",
+   "weight": 6,
+   "trigger": "Menu uses `STN_GRILL`; weight ×1.5 if a Grill Master cooks",
+   "mitig_text": [
+    "ROLE_REPAIR",
+    "Splash Zone (weight ×0.3)"
+   ],
+   "text": "The grill sneezed a soot cloud. {employee} now has a cartoon soot mustache and {n} extra-crispy patties.",
+   "sign": "-",
+   "mb": -0.03,
+   "dmg": 0.03,
+   "subject": "ROLE_CHEF",
+   "n": [
+    3,
+    12
+   ],
+   "mitig": [
+    "ROLE_REPAIR"
+   ],
+   "tags": [
+    "fire",
+    "equipment"
+   ],
+   "station": "STN_GRILL",
+   "trait_mult": {
+    "Grill Master": 1.5
+   }
+  },
+  {
+   "id": "INC_015",
+   "name": "Fryer Bubble Volcano",
+   "cat": "equipment",
+   "weight": 5,
+   "trigger": "Menu uses `STN_FRYER`",
+   "mitig_text": [
+    "ROLE_REPAIR",
+    "Splash Zone (weight ×0.3)"
+   ],
+   "text": "The fryer bubbled over like a tiny volcano. {employee} rescued {n} baskets of fries.",
+   "sign": "-",
+   "mb": -0.03,
+   "dmg": 0.02,
+   "subject": "ROLE_CHEF",
+   "n": [
+    2,
+    6
+   ],
+   "mitig": [
+    "ROLE_REPAIR"
+   ],
+   "tags": [
+    "fire",
+    "equipment"
+   ],
+   "station": "STN_FRYER"
+  },
+  {
+   "id": "INC_016",
+   "name": "Fridge Door Left Ajar",
+   "cat": "equipment",
+   "weight": 4,
+   "trigger": "Menu has ≥ 1 special-stock recipe",
+   "mitig_text": [
+    "ROLE_STOCKER",
+    "ROLE_REPAIR"
+   ],
+   "text": "Someone left the fridge open. {n} units of special stock got chilly feelings and had to go.",
+   "sign": "-",
+   "mb": -0.01,
+   "stock": -0.05,
+   "subject": "ROLE_STOCKER",
+   "n": [
+    1,
+    1
+   ],
+   "mitig": [
+    "ROLE_STOCKER",
+    "ROLE_REPAIR"
+   ],
+   "tags": [
+    "equipment"
+   ],
+   "cond": "special_menu"
+  },
+  {
+   "id": "INC_017",
+   "name": "Blender Rebellion",
+   "cat": "equipment",
+   "weight": 3,
+   "trigger": "Menu uses `STN_BLENDER`",
+   "mitig_text": [
+    "ROLE_REPAIR",
+    "Electric repair tech (weight ×0.7)"
+   ],
+   "text": "The blender refused to blend and started a slow clap instead. {employee} unplugged it {n} times.",
+   "sign": "-",
+   "dmg": 0.03,
+   "subject": "ROLE_REPAIR",
+   "n": [
+    2,
+    5
+   ],
+   "mitig": [
+    "ROLE_REPAIR"
+   ],
+   "tags": [
+    "equipment"
+   ],
+   "station": "STN_BLENDER"
+  },
+  {
+   "id": "INC_018",
+   "name": "Ice Cream Machine \"Cleaning Cycle\"",
+   "cat": "equipment",
+   "weight": 4,
+   "trigger": "Menu uses `STN_ICECREAM`",
+   "mitig_text": [
+    "ROLE_REPAIR",
+    "Electric repair tech (weight ×0.7)"
+   ],
+   "text": "The ice cream machine announced a cleaning cycle lasting {n} hours. Nobody believed it.",
+   "sign": "-",
+   "mb": -0.04,
+   "subject": "ROLE_REPAIR",
+   "n": [
+    2,
+    3
+   ],
+   "mitig": [
+    "ROLE_REPAIR"
+   ],
+   "tags": [
+    "equipment"
+   ],
+   "station": "STN_ICECREAM"
+  },
+  {
+   "id": "INC_019",
+   "name": "Dish Station Foam Party",
+   "cat": "equipment",
+   "weight": 3,
+   "trigger": "Tier ≥ 2",
+   "mitig_text": [
+    "ROLE_DISH",
+    "ROLE_CLEANER"
+   ],
+   "text": "The dishwasher made {n} cubic studs of foam. Three customers asked if it was dessert.",
+   "sign": "-",
+   "mb": -0.02,
+   "subject": "ROLE_DISH",
+   "n": [
+    40,
+    300
+   ],
+   "mitig": [
+    "ROLE_DISH",
+    "ROLE_CLEANER"
+   ],
+   "tier_min": 2
+  },
+  {
+   "id": "INC_020",
+   "name": "Power Flicker",
+   "cat": "equipment",
+   "weight": 3,
+   "trigger": "Tier ≥ 3",
+   "mitig_text": [
+    "ROLE_REPAIR",
+    "Electric repair tech (weight ×0.7)"
+   ],
+   "text": "The lights flickered {n} times. {employee} kept cooking by the glow of a Jellyfish customer.",
+   "sign": "-",
+   "mb": -0.04,
+   "subject": "ROLE_CHEF",
+   "n": [
+    3,
+    9
+   ],
+   "mitig": [
+    "ROLE_REPAIR"
+   ],
+   "tier_min": 3,
+   "tags": [
+    "equipment"
+   ]
+  },
+  {
+   "id": "INC_021",
+   "name": "Pickle Avalanche",
+   "cat": "staff",
+   "weight": 10,
+   "trigger": "`EMP_001` Ollie is working (signature \"Eight Arms, One Brain Cell\")",
+   "mitig_text": [
+    "— (it is a feature)"
+   ],
+   "text": "{employee} put a pickle on {n} milkshakes. Two customers ordered seconds.",
+   "sign": "0",
+   "subject": "ROLE_CHEF",
+   "n": [
+    3,
+    17
+   ],
+   "req_archetype": "EMP_001"
+  },
+  {
+   "id": "INC_022",
+   "name": "Dropped Tray Symphony",
+   "cat": "staff",
+   "weight": 5,
+   "trigger": "≥ 1 Waiter; tagged breakage",
+   "mitig_text": [
+    "Sticky Grip / Grabby waiter (weight ×0.3)"
+   ],
+   "text": "{employee} dropped a tray. It played {n} distinct musical notes. A Mime Mantis applauded silently.",
+   "sign": "-",
+   "mb": -0.01,
+   "dmg": 0.01,
+   "subject": "ROLE_WAITER",
+   "n": [
+    4,
+    8
+   ],
+   "req_roles": [
+    "ROLE_WAITER"
+   ],
+   "tags": [
+    "breakage"
+   ],
+   "trait_mult": {
+    "Sticky Grip": 0.3,
+    "Grabby": 0.3
+   }
+  },
+  {
+   "id": "INC_023",
+   "name": "Unscheduled Nap",
+   "cat": "staff",
+   "weight": 5,
+   "trigger": "Any employee's Energy < 40 % during a step",
+   "mitig_text": [
+    "ROLE_MANAGER"
+   ],
+   "text": "{employee} took a {n}-minute nap in the pantry, hugging a bag of buns.",
+   "sign": "-",
+   "mb": -0.03,
+   "subject": "lowest_energy",
+   "n": [
+    10,
+    40
+   ],
+   "mitig": [
+    "ROLE_MANAGER"
+   ],
+   "cond": "low_energy"
+  },
+  {
+   "id": "INC_024",
+   "name": "Snack Break Became a Picnic",
+   "cat": "staff",
+   "weight": 4,
+   "trigger": "A Snack Goblin is working",
+   "mitig_text": [
+    "ROLE_MANAGER"
+   ],
+   "text": "{employee}'s snack break turned into a picnic for {n}. There were tiny sandwiches.",
+   "sign": "-",
+   "mb": -0.02,
+   "subject": "personality:Snack Goblin",
+   "n": [
+    3,
+    8
+   ],
+   "mitig": [
+    "ROLE_MANAGER"
+   ],
+   "req_personality": "Snack Goblin"
+  },
+  {
+   "id": "INC_025",
+   "name": "Wrong Recipe, Right Vibes",
+   "cat": "staff",
+   "weight": 5,
+   "trigger": "Average chef Accuracy < 50",
+   "mitig_text": [
+    "ROLE_PREP",
+    "ROLE_MANAGER"
+   ],
+   "text": "{employee} cooked the wrong recipe {n} times. Customers called it the special.",
+   "sign": "-",
+   "mb": -0.02,
+   "subject": "ROLE_CHEF",
+   "n": [
+    2,
+    7
+   ],
+   "mitig": [
+    "ROLE_PREP",
+    "ROLE_MANAGER"
+   ],
+   "cond": "low_chef_acc"
+  },
+  {
+   "id": "INC_026",
+   "name": "Flame-Kissed Batch",
+   "cat": "staff",
+   "weight": 6,
+   "trigger": "A Grill Master chef is working",
+   "mitig_text": [
+    "Splash Zone (weight ×0.3)"
+   ],
+   "text": "{employee} got a little too excited with the flames. {n} burgers are now extra smoky.",
+   "sign": "-",
+   "mb": -0.02,
+   "subject": "trait:Grill Master",
+   "n": [
+    4,
+    15
+   ],
+   "req_any_trait": [
+    "Grill Master"
+   ],
+   "tags": [
+    "fire"
+   ]
+  },
+  {
+   "id": "INC_027",
+   "name": "Pineapple Pizza Debate",
+   "cat": "staff",
+   "weight": 3,
+   "trigger": "≥ 4 employees working",
+   "mitig_text": [
+    "ROLE_MANAGER",
+    "ROLE_ASST_MGR"
+   ],
+   "text": "The staff argued about Pineapple Pizza (Controversial) for {n} minutes. No winner. Several sulks.",
+   "sign": "-",
+   "mb": -0.01,
+   "morale": [
+    -3,
+    "all"
+   ],
+   "subject": "ROLE_MANAGER",
+   "n": [
+    15,
+    55
+   ],
+   "mitig": [
+    "ROLE_MANAGER",
+    "ROLE_ASST_MGR"
+   ],
+   "cond": "staff_ge_4"
+  },
+  {
+   "id": "INC_028",
+   "name": "Majestic Pace Personal Best",
+   "cat": "staff",
+   "weight": 8,
+   "trigger": "An Unhurried employee is working",
+   "mitig_text": [
+    "— (celebrated, not fixed)"
+   ],
+   "text": "{employee} washed exactly {n} plates. Personal best! Everyone clapped. Slowly.",
+   "sign": "0",
+   "subject": "trait:Unhurried",
+   "n": [
+    3,
+    6
+   ],
+   "req_any_trait": [
+    "Unhurried"
+   ]
+  },
+  {
+   "id": "INC_029",
+   "name": "Grumbly Shift",
+   "cat": "staff",
+   "weight": 6,
+   "trigger": "Average Morale < 50 during a step",
+   "mitig_text": [
+    "ROLE_MANAGER"
+   ],
+   "text": "The team grumbled through the shift. {employee} sighed {n} times per order.",
+   "sign": "-",
+   "mb": -0.02,
+   "morale": [
+    -2,
+    "all"
+   ],
+   "subject": "ROLE_CHEF",
+   "n": [
+    2,
+    5
+   ],
+   "mitig": [
+    "ROLE_MANAGER"
+   ],
+   "cond": "low_morale"
+  },
+  {
+   "id": "INC_030",
+   "name": "Delivery Truck Took the Scenic Route",
+   "cat": "supply",
+   "weight": 5,
+   "trigger": "Tier ≥ 2",
+   "mitig_text": [
+    "ROLE_STOCKER"
+   ],
+   "text": "The ingredient truck detoured through the Sewers. {n} dishes were SOLD OUT for an hour.",
+   "sign": "-",
+   "mb": -0.03,
+   "subject": "ROLE_STOCKER",
+   "n": [
+    1,
+    3
+   ],
+   "mitig": [
+    "ROLE_STOCKER"
+   ],
+   "tier_min": 2
+  },
+  {
+   "id": "INC_031",
+   "name": "Ratbeard's \"Borrowing\"",
+   "cat": "supply",
+   "weight": 4,
+   "trigger": "Tier ≥ 3; special stock on menu (else −0.02·Rh instead)",
+   "mitig_text": [
+    "ROLE_SECURITY",
+    "ROLE_STOCKER"
+   ],
+   "text": "King Ratbeard's minions borrowed {n} crates and left an IOU written in cheese.",
+   "sign": "-",
+   "mb": -0.01,
+   "stock": -0.08,
+   "subject": "ROLE_SECURITY",
+   "n": [
+    1,
+    4
+   ],
+   "mitig": [
+    "ROLE_SECURITY",
+    "ROLE_STOCKER"
+   ],
+   "tier_min": 3
+  },
+  {
+   "id": "INC_032",
+   "name": "Bun Shortage",
+   "cat": "supply",
+   "weight": 4,
+   "trigger": "Menu has a bread recipe (BRG/SAN)",
+   "mitig_text": [
+    "ROLE_STOCKER"
+   ],
+   "text": "We ran out of buns. {employee} served {n} burgers between two slices of pizza. Reviews: mixed.",
+   "sign": "-",
+   "mb": -0.03,
+   "subject": "ROLE_CHEF",
+   "n": [
+    5,
+    20
+   ],
+   "mitig": [
+    "ROLE_STOCKER"
+   ]
+  },
+  {
+   "id": "INC_033",
+   "name": "Supplier Discount Day",
+   "cat": "supply",
+   "weight": 4,
+   "trigger": "≥ 1 Stocker working",
+   "mitig_text": [
+    "requires `ROLE_STOCKER`"
+   ],
+   "text": "{employee} haggled the supplier down {n} %. The supplier is still confused about how.",
+   "sign": "+",
+   "mb": 0.03,
+   "subject": "ROLE_STOCKER",
+   "n": [
+    5,
+    15
+   ],
+   "req_roles": [
+    "ROLE_STOCKER"
+   ],
+   "hero": true
+  },
+  {
+   "id": "INC_034",
+   "name": "Surprise Lunch Rush",
+   "cat": "demand",
+   "weight": 8,
+   "trigger": "Capacity headroom ≥ 10 % (min(Cap_seat, Cap_kitchen, Cap_service) ≥ 1.10 × Q)",
+   "mitig_text": [
+    "more capacity = more rush income"
+   ],
+   "text": "A surprise rush of {n} hungry mutants arrived at once. {employee} handled it like a pro.",
+   "sign": "+",
+   "mb": 0.08,
+   "subject": "ROLE_CHEF",
+   "n": [
+    8,
+    25
+   ],
+   "cond": "headroom_ge_10"
+  },
+  {
+   "id": "INC_035",
+   "name": "Rush Overwhelm",
+   "cat": "demand",
+   "weight": 8,
+   "trigger": "Capacity headroom < 10 %",
+   "mitig_text": [
+    "ROLE_MANAGER",
+    "ROLE_ASST_MGR"
+   ],
+   "text": "A rush of {n} customers hit a full house. Some waited outside, practicing their complaints.",
+   "sign": "-",
+   "mb": -0.03,
+   "subject": "ROLE_MANAGER",
+   "n": [
+    8,
+    25
+   ],
+   "mitig": [
+    "ROLE_MANAGER",
+    "ROLE_ASST_MGR"
+   ],
+   "cond": "headroom_lt_10"
+  },
+  {
+   "id": "INC_036",
+   "name": "Alien Tour Bus",
+   "cat": "demand",
+   "weight": 4,
+   "trigger": "Tier ≥ 4, headroom ≥ 10 %; weight ×3 if `EVT_018` overlaps the interval",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "Zorp's tour bus parked outside. {n} Alien Tourists ordered one of everything, in Earth sizes.",
+   "sign": "+",
+   "mb": 0.07,
+   "subject": "ROLE_WAITER",
+   "n": [
+    6,
+    14
+   ],
+   "tier_min": 4,
+   "cond": "headroom_ge_10",
+   "event_mult": {
+    "EVT_018": 3
+   }
+  },
+  {
+   "id": "INC_037",
+   "name": "Birthday Beast Party",
+   "cat": "demand",
+   "weight": 5,
+   "trigger": "Tier ≥ 3 (`PER_031` + `PER_016`)",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "A Birthday Beast brought {n} friends. Cake eaten, confetti everywhere, tips huge.",
+   "sign": "+",
+   "mb": 0.05,
+   "dmg": 0.01,
+   "subject": "ROLE_WAITER",
+   "n": [
+    5,
+    12
+   ],
+   "tier_min": 3
+  },
+  {
+   "id": "INC_038",
+   "name": "Rainy-Day Lull",
+   "cat": "demand",
+   "weight": 5,
+   "trigger": "Always eligible",
+   "mitig_text": [
+    "Glow-Up staff (weight ×0.7)"
+   ],
+   "text": "It rained {n} different flavors of weather. Customers stayed home.",
+   "sign": "-",
+   "mb": -0.03,
+   "subject": "ROLE_MANAGER",
+   "n": [
+    2,
+    4
+   ],
+   "trait_mult": {
+    "Glow-Up": 0.7
+   }
+  },
+  {
+   "id": "INC_039",
+   "name": "Accidentally Viral Patty Flip",
+   "cat": "demand",
+   "weight": 4,
+   "trigger": "Tier ≥ 2 (`PER_009` visits)",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "An Influencer filmed {employee} flipping a patty. {n} thousand views, mostly from her mom.",
+   "sign": "+",
+   "mb": 0.05,
+   "subject": "ROLE_CHEF",
+   "n": [
+    2,
+    40
+   ],
+   "tier_min": 2
+  },
+  {
+   "id": "INC_040",
+   "name": "Baron's Coupon Blitz",
+   "cat": "demand",
+   "weight": 4,
+   "trigger": "Tier ≥ 3 (`NPC_003` rivalry)",
+   "mitig_text": [
+    "ROLE_MANAGER"
+   ],
+   "text": "Baron Von Bistro handed out {n} coupons for Le Fancy Fin right outside our door. Rude. Effective.",
+   "sign": "-",
+   "mb": -0.04,
+   "subject": "ROLE_MANAGER",
+   "n": [
+    20,
+    90
+   ],
+   "mitig": [
+    "ROLE_MANAGER"
+   ],
+   "tier_min": 3
+  },
+  {
+   "id": "INC_041",
+   "name": "Midnight Pancake Crowd",
+   "cat": "demand",
+   "weight": 4,
+   "trigger": "Interval covers 00:00–04:00 UTC; weight ×1.5 per Night Owl working",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "At midnight {n} sleepy mutants shuffled in for pancakes. {employee} served them in pajamas.",
+   "sign": "+",
+   "mb": 0.04,
+   "subject": "ROLE_CHEF",
+   "n": [
+    4,
+    12
+   ],
+   "cond": "night",
+   "personality_mult": {
+    "Night Owl": 1.5
+   }
+  },
+  {
+   "id": "INC_042",
+   "name": "Inspection: Sparkling!",
+   "cat": "inspection",
+   "weight": 4,
+   "trigger": "Tier ≥ 3, ≥ 1 Cleaner, no Broken objects (`NPC_022`)",
+   "mitig_text": [
+    "requires `ROLE_CLEANER`"
+   ],
+   "text": "Inspector Grimewell ran a white glove over {n} surfaces and found nothing. He looked disappointed. We got a gold star.",
+   "sign": "+",
+   "mb": 0.04,
+   "rep": 0.02,
+   "subject": "ROLE_CLEANER",
+   "n": [
+    20,
+    60
+   ],
+   "tier_min": 3,
+   "cond": "cleaner_ok",
+   "hero": true
+  },
+  {
+   "id": "INC_043",
+   "name": "Inspection: Sticky Situation",
+   "cat": "inspection",
+   "weight": 4,
+   "trigger": "Tier ≥ 3 and no Cleaner working (`NPC_022`)",
+   "mitig_text": [
+    "hire a `ROLE_CLEANER`"
+   ],
+   "text": "Inspector Grimewell's shoe stuck to the floor for {n} seconds. He wrote a very long note.",
+   "sign": "-",
+   "mb": -0.03,
+   "rep": -0.01,
+   "subject": "ROLE_MANAGER",
+   "n": [
+    3,
+    12
+   ],
+   "tier_min": 3,
+   "cond": "no_cleaner"
+  },
+  {
+   "id": "INC_044",
+   "name": "Undercover Taster Approves",
+   "cat": "inspection",
+   "weight": 3,
+   "trigger": "Tier ≥ 4 and offline quality q ≥ 0.85 (`PER_025`)",
+   "mitig_text": [
+    "chef Accuracy (training)"
+   ],
+   "text": "An Undercover Inspector in a very obvious fake mustache loved dish number {n}.",
+   "sign": "+",
+   "mb": 0.04,
+   "rep": 0.02,
+   "subject": "ROLE_CHEF",
+   "n": [
+    1,
+    40
+   ],
+   "tier_min": 4,
+   "cond": "q_ge_085"
+  },
+  {
+   "id": "INC_045",
+   "name": "Undercover Taster Unimpressed",
+   "cat": "inspection",
+   "weight": 3,
+   "trigger": "Tier ≥ 4 and q < 0.85 (`PER_025`)",
+   "mitig_text": [
+    "chef Accuracy (training)"
+   ],
+   "text": "An Undercover Inspector called our food fine. {employee} has stared at a wall for {n} minutes.",
+   "sign": "-",
+   "mb": -0.02,
+   "rep": -0.01,
+   "subject": "ROLE_CHEF",
+   "n": [
+    5,
+    30
+   ],
+   "tier_min": 4,
+   "cond": "q_lt_085"
+  },
+  {
+   "id": "INC_046",
+   "name": "Vlogzilla Drops In",
+   "cat": "celebrity",
+   "weight": 3,
+   "trigger": "Tier ≥ 4, ★ ≥ 4.0 (`NPC_021`)",
+   "mitig_text": [
+    "Madame Peacockle (weight ×2)"
+   ],
+   "text": "Vlogzilla livestreamed lunch here. {n} thousand viewers are now hungry.",
+   "sign": "+",
+   "mb": 0.07,
+   "rep": 0.02,
+   "subject": "ROLE_WAITER",
+   "n": [
+    5,
+    90
+   ],
+   "tier_min": 4,
+   "rep_min": 4.0,
+   "tags": [
+    "celebrity"
+   ]
+  },
+  {
+   "id": "INC_047",
+   "name": "Madame Fourchette's Secret Visit",
+   "cat": "celebrity",
+   "weight": 2,
+   "trigger": "Tier ≥ 6, ★ ≥ 4.3 (`NPC_016`)",
+   "mitig_text": [
+    "Madame Peacockle (weight ×2)"
+   ],
+   "text": "Madame Fourchette visited in disguise (a giraffe in a trench coat is not a disguise). She wrote {n} words. Most were nice.",
+   "sign": "+",
+   "mb": 0.05,
+   "rep": 0.03,
+   "subject": "ROLE_CHEF",
+   "n": [
+    30,
+    120
+   ],
+   "tier_min": 6,
+   "rep_min": 4.3,
+   "tags": [
+    "celebrity"
+   ]
+  },
+  {
+   "id": "INC_048",
+   "name": "Wrestler Walrus Fan Meetup",
+   "cat": "celebrity",
+   "weight": 3,
+   "trigger": "Tier ≥ 3 (`PER_030`)",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "A Retired Wrestler Walrus signed {n} napkins and one very surprised chair.",
+   "sign": "+",
+   "mb": 0.04,
+   "dmg": 0.01,
+   "subject": "ROLE_WAITER",
+   "n": [
+    10,
+    50
+   ],
+   "tier_min": 3,
+   "tags": [
+    "celebrity"
+   ]
+  },
+  {
+   "id": "INC_049",
+   "name": "Rich Mutant Big Tipper",
+   "cat": "celebrity",
+   "weight": 4,
+   "trigger": "Tier ≥ 3 (`PER_008`)",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "A Rich Mutant tipped {n} shiny coins and a monocle. We kept the coins.",
+   "sign": "+",
+   "mb": 0.05,
+   "subject": "ROLE_WAITER",
+   "n": [
+    50,
+    500
+   ],
+   "tier_min": 3,
+   "tags": [
+    "celebrity"
+   ]
+  },
+  {
+   "id": "INC_050",
+   "name": "Omnivora Sniffs the Air",
+   "cat": "celebrity",
+   "weight": 1,
+   "trigger": "Tier ≥ 8, ★ ≥ 4.5 (`NPC_029`)",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "Chef Supreme Omnivora walked past, sniffed, and nodded {n} times. The kitchen hasn't stopped grinning.",
+   "sign": "+",
+   "mb": 0.06,
+   "morale": [
+    5,
+    "chefs"
+   ],
+   "subject": "ROLE_CHEF",
+   "n": [
+    2,
+    3
+   ],
+   "tier_min": 8,
+   "rep_min": 4.5,
+   "tags": [
+    "celebrity"
+   ]
+  },
+  {
+   "id": "INC_051",
+   "name": "Brawl Stopped Cold",
+   "cat": "hero",
+   "weight": 6,
+   "trigger": "≥ 1 Security Guard working",
+   "mitig_text": [
+    "requires `ROLE_SECURITY`"
+   ],
+   "text": "{employee} stopped {n} angry customers with one very stern eyebrow.",
+   "sign": "+",
+   "mb": 0.05,
+   "subject": "ROLE_SECURITY",
+   "n": [
+    2,
+    6
+   ],
+   "req_roles": [
+    "ROLE_SECURITY"
+   ],
+   "hero": true
+  },
+  {
+   "id": "INC_052",
+   "name": "Grill Saved Mid-Sizzle",
+   "cat": "hero",
+   "weight": 4,
+   "trigger": "≥ 1 Repair Technician working; also cancels one equipment incident in the same report",
+   "mitig_text": [
+    "requires `ROLE_REPAIR`"
+   ],
+   "text": "{employee} fixed the grill mid-sizzle. {n} patties were saved and are grateful.",
+   "sign": "+",
+   "mb": 0.03,
+   "subject": "ROLE_REPAIR",
+   "n": [
+    4,
+    16
+   ],
+   "req_roles": [
+    "ROLE_REPAIR"
+   ],
+   "hero": true,
+   "cancels": "equipment"
+  },
+  {
+   "id": "INC_053",
+   "name": "Cake Catch of the Century",
+   "cat": "hero",
+   "weight": 4,
+   "trigger": "A Waiter with Speedster, Grabby or Flying is working",
+   "mitig_text": [
+    "requires `ROLE_WAITER`"
+   ],
+   "text": "{employee} caught a falling birthday cake {n} centimeters from the floor. Standing ovation.",
+   "sign": "+",
+   "mb": 0.03,
+   "subject": "ROLE_WAITER",
+   "n": [
+    1,
+    9
+   ],
+   "req_roles": [
+    "ROLE_WAITER"
+   ],
+   "req_any_trait": [
+    "Speedster",
+    "Grabby",
+    "Flying"
+   ],
+   "hero": true
+  },
+  {
+   "id": "INC_054",
+   "name": "Accidental Masterpiece",
+   "cat": "hero",
+   "weight": 4,
+   "trigger": "A Chef with Cooking ≥ 60 is working",
+   "mitig_text": [
+    "requires `ROLE_CHEF`"
+   ],
+   "text": "{employee} invented a new special by accident: {n} burgers stacked sideways. It sold out.",
+   "sign": "+",
+   "mb": 0.05,
+   "subject": "ROLE_CHEF",
+   "n": [
+    3,
+    7
+   ],
+   "cond": "chef_cook_ge_60",
+   "hero": true
+  },
+  {
+   "id": "INC_055",
+   "name": "Manager Pep Talk",
+   "cat": "hero",
+   "weight": 4,
+   "trigger": "≥ 1 Manager working",
+   "mitig_text": [
+    "requires `ROLE_MANAGER`"
+   ],
+   "text": "{employee} gave a pep talk so inspiring that {n} staff high-fived the fryer (carefully).",
+   "sign": "+",
+   "mb": 0.02,
+   "morale": [
+    5,
+    "all"
+   ],
+   "subject": "ROLE_MANAGER",
+   "n": [
+    2,
+    9
+   ],
+   "req_roles": [
+    "ROLE_MANAGER"
+   ],
+   "hero": true
+  },
+  {
+   "id": "INC_056",
+   "name": "Plate Mountain Conquered",
+   "cat": "hero",
+   "weight": 4,
+   "trigger": "≥ 1 Dishwasher working",
+   "mitig_text": [
+    "requires `ROLE_DISH`"
+   ],
+   "text": "{employee} washed a mountain of {n} plates. There is a tiny flag on top now.",
+   "sign": "+",
+   "mb": 0.02,
+   "subject": "ROLE_DISH",
+   "n": [
+    80,
+    400
+   ],
+   "req_roles": [
+    "ROLE_DISH"
+   ],
+   "hero": true
+  },
+  {
+   "id": "INC_057",
+   "name": "Slip-Apocalypse Averted",
+   "cat": "hero",
+   "weight": 4,
+   "trigger": "≥ 1 Cleaner working",
+   "mitig_text": [
+    "requires `ROLE_CLEANER`"
+   ],
+   "text": "{employee} mopped a soup spill seconds before {n} customers walked through it.",
+   "sign": "+",
+   "mb": 0.02,
+   "subject": "ROLE_CLEANER",
+   "n": [
+    3,
+    12
+   ],
+   "req_roles": [
+    "ROLE_CLEANER"
+   ],
+   "hero": true
+  },
+  {
+   "id": "INC_058",
+   "name": "Delivery Speedrun",
+   "cat": "hero",
+   "weight": 4,
+   "trigger": "≥ 1 Delivery Worker working",
+   "mitig_text": [
+    "requires `ROLE_DELIVERY`"
+   ],
+   "text": "{employee} delivered {n} orders before the food realized it had left.",
+   "sign": "+",
+   "mb": 0.04,
+   "subject": "ROLE_DELIVERY",
+   "n": [
+    5,
+    20
+   ],
+   "req_roles": [
+    "ROLE_DELIVERY"
+   ],
+   "hero": true
+  },
+  {
+   "id": "INC_059",
+   "name": "Secret Pantry Stash",
+   "cat": "hero",
+   "weight": 3,
+   "trigger": "≥ 1 Stocker working; special stock +3 units (or +0.02·Rh if no special recipe)",
+   "mitig_text": [
+    "requires `ROLE_STOCKER`"
+   ],
+   "text": "{employee} found {n} forgotten crates behind the pantry. One was labeled Nana's Emergency Stardust.",
+   "sign": "+",
+   "stock_units": 3,
+   "subject": "ROLE_STOCKER",
+   "n": [
+    2,
+    4
+   ],
+   "req_roles": [
+    "ROLE_STOCKER"
+   ],
+   "hero": true
+  },
+  {
+   "id": "INC_060",
+   "name": "Shards in the Couch",
+   "cat": "discovery",
+   "weight": 5,
+   "trigger": "Discoveries MS roll succeeded (8 %/h)",
+   "mitig_text": [
+    "Sniffer / Lucky Charm (chance ×1.1–1.25)"
+   ],
+   "text": "{employee} found {n} Mutation Shards in the booth cushions.",
+   "sign": "+",
+   "ms": [
+    1,
+    3
+   ],
+   "subject": "any",
+   "n": "ms",
+   "discovery": "ms"
+  },
+  {
+   "id": "INC_061",
+   "name": "Glowing Puddle",
+   "cat": "discovery",
+   "weight": 3,
+   "trigger": "Discoveries MS roll succeeded",
+   "mitig_text": [
+    "Sniffer / Lucky Charm"
+   ],
+   "text": "A puddle in the alley glowed. {employee} scooped out {n} Mutation Shards (and a sock).",
+   "sign": "+",
+   "ms": [
+    1,
+    3
+   ],
+   "subject": "any",
+   "n": "ms",
+   "discovery": "ms"
+  },
+  {
+   "id": "INC_062",
+   "name": "Mystery Crate on the Doorstep",
+   "cat": "discovery",
+   "weight": 1,
+   "trigger": "Discoveries crate roll succeeded (1 %/h)",
+   "mitig_text": [
+    "Granny Gatherwell (chance ×1.5)"
+   ],
+   "text": "A crate appeared on the doorstep with a note: From a fan. Inside: {n} units of something rare.",
+   "sign": "+",
+   "crate": [
+    5,
+    15
+   ],
+   "subject": "any",
+   "n": "crate",
+   "discovery": "crate"
+  },
+  {
+   "id": "INC_063",
+   "name": "Capsule in the Lost & Found",
+   "cat": "discovery",
+   "weight": 1,
+   "trigger": "Capsule roll succeeded (≤ 1 per UTC day)",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "{employee} found a Morph Capsule in the Lost & Found. Nobody claimed it, so it's yours!",
+   "sign": "+",
+   "capsule": 1,
+   "subject": "any",
+   "n": "capsule",
+   "discovery": "capsule"
+  },
+  {
+   "id": "INC_064",
+   "name": "Upside-Down Hour",
+   "cat": "weird",
+   "weight": 2,
+   "trigger": "Always eligible; weight ×5 if `EVT_011` overlaps",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "For {n} minutes gravity got confused. {employee} served soup to the ceiling. The ceiling was satisfied.",
+   "sign": "0",
+   "subject": "ROLE_WAITER",
+   "n": [
+    5,
+    30
+   ],
+   "event_mult": {
+    "EVT_011": 5
+   }
+  },
+  {
+   "id": "INC_065",
+   "name": "Haunted Toaster Order",
+   "cat": "weird",
+   "weight": 3,
+   "trigger": "Always eligible (`PER_028` visits)",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "A Haunted Toaster ordered {n} slices of toast. It was very awkward for everyone.",
+   "sign": "-",
+   "mb": -0.01,
+   "subject": "ROLE_CHEF",
+   "n": [
+    2,
+    8
+   ]
+  },
+  {
+   "id": "INC_066",
+   "name": "Time-Traveler Tip",
+   "cat": "weird",
+   "weight": 2,
+   "trigger": "Always eligible (`PER_024` visits)",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "A Time-Traveler Tortoise paid with money from {n} years in the future. The bank says it's fine. Somehow.",
+   "sign": "+",
+   "mb": 0.02,
+   "subject": "any",
+   "n": [
+    3,
+    300
+   ]
+  },
+  {
+   "id": "INC_067",
+   "name": "Pigeon Parliament",
+   "cat": "weird",
+   "weight": 3,
+   "trigger": "Always eligible",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "{n} pigeons held a meeting on the roof. They voted to like us.",
+   "sign": "0",
+   "morale": [
+    2,
+    "all"
+   ],
+   "subject": "any",
+   "n": [
+    7,
+    31
+   ]
+  },
+  {
+   "id": "INC_068",
+   "name": "Lost Pet Kraken",
+   "cat": "weird",
+   "weight": 1,
+   "trigger": "Tier ≥ 5; weight ×5 if `EVT_022` overlaps",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "A lost baby kraken wandered in, hugged {n} tables and tipped generously (in fish).",
+   "sign": "+",
+   "mb": 0.03,
+   "dmg": 0.02,
+   "subject": "any",
+   "n": [
+    3,
+    8
+   ],
+   "tier_min": 5,
+   "event_mult": {
+    "EVT_022": 5
+   }
+  },
+  {
+   "id": "INC_069",
+   "name": "Pickle Rain Windfall",
+   "cat": "weird",
+   "weight": 1,
+   "trigger": "Weight ×8 if `EVT_012` overlaps",
+   "mitig_text": [
+    "—"
+   ],
+   "text": "It rained pickles. {employee} caught {n} in a bucket. Pickle Mountain Burger is free for staff today.",
+   "sign": "+",
+   "mb": 0.03,
+   "subject": "any",
+   "n": [
+    40,
+    400
+   ],
+   "event_mult": {
+    "EVT_012": 8
+   }
+  }
+ ]
+}
