@@ -1,0 +1,32 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: "Luckiest Guy"; src: url("FONTDIR/luckiest-guy/files/luckiest-guy-latin-400-normal.woff2"); }
+@font-face { font-family: "Fredoka"; font-weight: 400; src: url("FONTDIR/fredoka/files/fredoka-latin-400-normal.woff2"); }
+@font-face { font-family: "Fredoka"; font-weight: 500; src: url("FONTDIR/fredoka/files/fredoka-latin-500-normal.woff2"); }
+@font-face { font-family: "Fredoka"; font-weight: 600; src: url("FONTDIR/fredoka/files/fredoka-latin-600-normal.woff2"); }
+@font-face { font-family: "Fredoka"; font-weight: 700; src: url("FONTDIR/fredoka/files/fredoka-latin-700-normal.woff2"); }
+html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+#world, #overlay { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+#overlay { pointer-events: none; }
+.gui { box-sizing: border-box; }
+.txt { display: block; max-width: 100%; }
+/* Roblox's built-in ProximityPrompt look */
+.prompt { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 10px;
+  background: rgba(20, 22, 28, 0.72); border-radius: 12px; padding: 8px 16px 8px 8px; min-width: 120px;
+  font-family: "Fredoka", Arial, sans-serif; color: #fff; }
+.prompt .key { width: 40px; height: 40px; border-radius: 9px; background: #f2f2f2; color: #16181d; display: flex;
+  align-items: center; justify-content: center; font: 700 22px Arial, sans-serif; flex: none; }
+.prompt .key.hold { box-shadow: 0 0 0 3px rgba(255,255,255,0.45); }
+.prompt .obj { font: 500 15px "Fredoka", Arial, sans-serif; color: #c9ccd6; white-space: nowrap; }
+.prompt .act { font: 600 21px "Fredoka", Arial, sans-serif; white-space: nowrap; }
+/* Roblox top bar (menu and chat buttons) */
+.topbar { position: absolute; top: 12px; left: 12px; display: flex; gap: 10px; }
+.topbar div { width: 44px; height: 44px; border-radius: 22px; background: rgba(18, 20, 26, 0.6); display: flex;
+  align-items: center; justify-content: center; color: #fff; font: 700 20px Arial, sans-serif; }
+</style></head>
+<body><div id="world"></div><div id="overlay"></div>
+<div class="topbar"><div>≡</div><div>💬</div></div>
+<script src="THREEJS"></script>
+<script src="RENDERER"></script>
+</body></html>

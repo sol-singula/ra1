@@ -5,6 +5,13 @@ built as a [Rojo](https://rojo.space) project. You run a greybox restaurant on R
 cook them at real stations, serve customers, deal with the angry ones, earn Morph Bucks, level up and upgrade.
 Every model is primitive parts, so it runs in a blank Baseplate with no uploaded assets.
 
+## Screenshots
+
+[`screenshots/`](screenshots/README.md) has 20 frames from a real play session. The game's own server and client
+scripts ran on the mock engine while a bot cooked, served, fought and upgraded through the real prompts and UI.
+`tools/gameplay/` has the session script and the three.js renderer that drew them. The renderer and the avatar
+are stand-ins for Roblox's.
+
 ## Run it in Roblox Studio
 
 1. Install the tools. With [Rokit](https://github.com/rojo-rbx/rokit): open a terminal in this `game/` folder and

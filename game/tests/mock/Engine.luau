@@ -584,7 +584,7 @@ function methods.FireClient(inst, player, ...)
 		Engine.clientLog,
 		{ at = clock, player = player, name = rawget(inst, "_props").Name, args = table.pack(...) }
 	)
-	if Engine.side == "client" then
+	if Engine.side == "client" or Engine.clientEnabled then
 		rawget(inst, "_signals").OnClientEvent:Fire(...)
 	end
 end
@@ -593,7 +593,7 @@ function methods.FireAllClients(inst, ...)
 		Engine.clientLog,
 		{ at = clock, player = "all", name = rawget(inst, "_props").Name, args = table.pack(...) }
 	)
-	if Engine.side == "client" then
+	if Engine.side == "client" or Engine.clientEnabled then
 		rawget(inst, "_signals").OnClientEvent:Fire(...)
 	end
 end
@@ -689,6 +689,16 @@ INST.__index = function(inst, k)
 	return nil -- GUI and misc classes: unset properties read as nil in the mock
 end
 INST.__newindex = function(inst, k, v)
+	if (k == "Part0" or k == "Part1") and rawget(inst, "_class") == "WeldConstraint" then
+		local props = rawget(inst, "_props")
+		props[k] = v
+		-- a WeldConstraint keeps the parts' relative offset from the moment both are set
+		if props.Part0 and props.Part1 and not rawget(inst, "_offset") then
+			rawset(inst, "_offset", props.Part0.CFrame:Inverse() * props.Part1.CFrame)
+			table.insert(Engine.welds, inst)
+		end
+		return
+	end
 	if k == "Parent" then
 		setParent(inst, v)
 	elseif k == "Position" and rawget(inst, "_props").CFrame and rawget(inst, "_class") ~= "Attachment" then
@@ -1003,16 +1013,48 @@ rawset(UserInputService, "_signals", { InputBegan = newSignal(), InputEnded = ne
 
 -- Players helpers ---------------------------------------------------------------------------------------------
 local nextUserId = 1000
+-- A blocky stand-in avatar (Roblox would load the player's own avatar). Body parts are welded to the root.
+local AVATAR = {
+	{ "Head", v3(1.25, 1.25, 1.25), v3(0, 1.65, 0), "skin" },
+	{ "UpperTorso", v3(2, 2, 1), v3(0, 0, 0), "shirt" },
+	{ "LeftUpperArm", v3(1, 1.6, 1), v3(-1.5, 0.2, 0), "shirt" },
+	{ "RightUpperArm", v3(1, 1.6, 1), v3(1.5, 0.2, 0), "shirt" },
+	{ "LeftHand", v3(0.9, 0.5, 0.9), v3(-1.5, -0.85, 0), "skin" },
+	{ "RightHand", v3(0.9, 0.5, 0.9), v3(1.5, -0.85, 0), "skin" },
+	{ "LeftUpperLeg", v3(0.95, 2, 1), v3(-0.5, -2, 0), "pants" },
+	{ "RightUpperLeg", v3(0.95, 2, 1), v3(0.5, -2, 0), "pants" },
+	{ "EyeL", v3(0.18, 0.28, 0.05), v3(-0.25, 1.75, -0.64), "ink" },
+	{ "EyeR", v3(0.18, 0.28, 0.05), v3(0.25, 1.75, -0.64), "ink" },
+	{ "Smile", v3(0.5, 0.1, 0.05), v3(0, 1.38, -0.64), "ink" },
+}
+local AVATAR_COLORS = {
+	skin = { 234, 184, 146 },
+	shirt = { 58, 128, 214 },
+	pants = { 44, 48, 66 },
+	ink = { 27, 29, 43 },
+}
+
 function Engine.makeCharacter(player)
 	local character = Instance.new("Model")
 	character.Name = player.Name
 	local hrp = Instance.new("Part", character)
 	hrp.Name = "HumanoidRootPart"
 	hrp.Size = v3(2, 2, 1)
+	hrp.Transparency = 1
 	hrp.CFrame = CFrame.new(0, 3, 0)
-	local hand = Instance.new("Part", character)
-	hand.Name = "LeftHand"
-	hand.CFrame = CFrame.new(-1.5, 2, 0)
+	for _, spec in AVATAR do
+		local part = Instance.new("Part", character)
+		part.Name = spec[1]
+		part.Size = spec[2]
+		part.CFrame = hrp.CFrame * CFrame.new(spec[3])
+		local c = AVATAR_COLORS[spec[4]]
+		part.Color = Color3.fromRGB(c[1], c[2], c[3])
+		part.Material = Enum.Material.SmoothPlastic
+		local w = Instance.new("WeldConstraint")
+		w.Part0 = hrp
+		w.Part1 = part
+		w.Parent = part
+	end
 	local hum = Instance.new("Humanoid", character)
 	hum.Name = "Humanoid"
 	character.PrimaryPart = hrp
@@ -1040,9 +1082,28 @@ function Engine.removePlayer(p)
 	p.Parent = nil
 end
 
-function Engine.moveTo(player, position)
+function Engine.moveTo(player, position, lookAt)
 	local hrp = player.Character.HumanoidRootPart
-	hrp.CFrame = CFrame.new(position)
+	if lookAt then
+		hrp.CFrame = CFrame.lookAt(position, v3(lookAt.X, position.Y, lookAt.Z))
+	else
+		hrp.CFrame = CFrame.new(position)
+	end
+	Engine.resolveWelds()
+end
+
+-- Move every welded part to keep its offset from Part0 (what the physics engine does in Roblox).
+Engine.welds = {}
+function Engine.resolveWelds()
+	local keep = {}
+	for _, w in Engine.welds do
+		local p0, p1 = rawget(w, "_props").Part0, rawget(w, "_props").Part1
+		if not rawget(w, "_destroyed") and not rawget(p1, "_destroyed") and not rawget(p0, "_destroyed") then
+			rawget(p1, "_props").CFrame = p0.CFrame * rawget(w, "_offset")
+			table.insert(keep, w)
+		end
+	end
+	Engine.welds = keep
 end
 
 -- Time --------------------------------------------------------------------------------------------------------
@@ -1056,7 +1117,7 @@ function Engine.advance(seconds, step)
 	while clock < target - 1e-9 do
 		clock = math.min(target, clock + step)
 		RunService.Heartbeat:Fire(step)
-		if Engine.side == "client" then
+		if Engine.side == "client" or Engine.clientEnabled then
 			RunService.RenderStepped:Fire(step)
 		end
 		local guard = 0

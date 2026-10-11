@@ -1,6 +1,6 @@
 // Minimal Luau runner for tests outside Roblox.
 //   luaurun <script.luau> [args...]
-// Globals: loadModule(path) -> value, readFile(path) -> string, listDir(path) -> {names}, isDir(path) -> bool,
+// Globals: loadModule(path) -> value, readFile(path) -> string, writeFile(path, string), listDir(path) -> {names}, isDir(path) -> bool,
 //          loadChunk(code, chunkName, envTable) -> function, ARGS = {args...}
 use mlua::{Function, Lua, Result, Table, Value};
 fn main() -> Result<()> {
@@ -14,6 +14,9 @@ fn main() -> Result<()> {
     })?)?;
     g.set("readFile", lua.create_function(|_, p: String| {
         std::fs::read_to_string(&p).map_err(|e| mlua::Error::external(format!("{p}: {e}")))
+    })?)?;
+    g.set("writeFile", lua.create_function(|_, (p, data): (String, String)| {
+        std::fs::write(&p, data).map_err(|e| mlua::Error::external(format!("{p}: {e}")))
     })?)?;
     g.set("isDir", lua.create_function(|_, p: String| Ok(std::path::Path::new(&p).is_dir()))?)?;
     g.set("listDir", lua.create_function(|lua, p: String| {
