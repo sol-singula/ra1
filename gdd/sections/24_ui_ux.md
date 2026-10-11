@@ -270,11 +270,11 @@ except the Regular touch floor.
 
 #### 24.3.2 Unified default bindings
 
-§5 (cooking) and §11 (combat) were written in parallel and collide on several keys. Because §11 routes
+§5 (cooking) and §11 (combat) were drafted in parallel and originally collided on several keys. Because §11 routes
 rebinding to §24 Settings and `InputController` needs exactly one table, this is the **single default map the UI
-ships and renders glyphs for**. It keeps §5 as the base (it is the complete scheme and already avoids Roblox's
+ships and renders glyphs for**; §5 and §11 have been aligned to it. It keeps §5 as the base (it is the complete scheme and already avoids Roblox's
 reserved keys: Esc, Tab player list, `/` chat), keeps every non-colliding §11 entry, and resolves the collisions as
-listed in §24.3.3 (flagged for §38). Everything is rebindable in Settings → Controls.
+listed in §24.3.3. Everything is rebindable in Settings → Controls.
 
 | Action | Keyboard / Mouse | Gamepad | Touch |
 |---|---|---|---|
@@ -308,7 +308,7 @@ Calm Down! `ABL_006`; a held pan or tray swaps in `ABL_007`/`ABL_008` and the AT
 selection itself, §24.8). Shift Lock is disabled (`StarterPlayer.EnableMouseLockOption = false`, per §5) so
 LeftShift can be Dodge; MMB lock-on gives combat framing instead.
 
-#### 24.3.3 Binding reconciliation (§5 vs §11, flagged for §38)
+#### 24.3.3 Binding reconciliation log (§5 vs §11, resolved)
 
 | Action | §5 | §11 | Shipped default | Reason |
 |---|---|---|---|---|
@@ -496,7 +496,8 @@ All settings persist in the profile (`PlayerDataService`, §28, one `uiSettings`
 | Panel opacity | 0–100 % (seeded from `GuiService.PreferredTransparency`) | panel background transparency |
 | HUD Scale | 85–115 % (100 %) | multiplies UIScale; result is re-clamped to the class minimum and touch floor |
 | Numeric patience | Off / On (Off) | seconds next to every patience ring (HUD + billboards) |
-| Audio sliders | Master, Music, SFX, Voice, UI, Ambience: 0–100 % (80 / 60 / 80 / 70 / 70 / 60) + Kitchen Alerts (80) | sets `SoundGroup.Volume` by name (§26 / §36.15 own the tree; Kitchen Alerts, requested by §5, needs a child group under SFX) |
+| Audio sliders | Master, Music, SFX, Voice, UI, Ambience: 0–100 % (80 / 60 / 80 / 70 / 70 / 60) + Kitchen Alerts (80) | sets `SoundGroup.Volume` by name (§26 / §36.15 own the tree; Kitchen Alerts drives the `Alerts` SoundGroup, a sibling of SFX under Master that is never ducked below −6 dB) |
+| Reduce sudden loud sounds | Off / On (default Off) | applies a gentle limiter to stingers, crashes and explosions (Master-bus `CompressorSoundEffect`, Threshold −18 dB, Ratio 6) and lowers impact one-shots by 4 dB |
 | Subtitles | Off / On (On), size S / M / L, backplate 0–100 % | customer barks and NPC lines as text, with speaker name |
 | Auto-Rhythm | Off / On (Off) | every chop / pump / polish tap counts as yellow 0.8 (canon C8, §5) |
 | Large Meter mode | Off / On (Off) | station meters +50 % and always mirrored in `MinigameHost` (§5) |

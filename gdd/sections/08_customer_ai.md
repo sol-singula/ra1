@@ -58,9 +58,9 @@ MeanInterval = 3600 ÷ Parties/h   (seconds between party arrivals)
 
 | Example | BaseDemand | Stars → RepMult | Atmosphere → DecorMult | Customers/h | E[party] | Mean party interval |
 |---|---|---|---|---|---|---|
-| New shack, `TIER_01` | 50 | 2.5 → 1.125 | 30 → 0.99 | 55.7 | 1.15 | 74.3 s |
-| Mid game, `TIER_05` | 110 | 3.6 → 1.40 | 60 → 1.08 | 166.3 | 1.82 | 39.4 s |
-| Late game, `TIER_10` | 190 | 4.6 → 1.65 | 90 → 1.17 | 366.8 | 2.02 | 19.8 s |
+| New shack, tier 1 | 50 | 2.5 → 1.125 | 30 → 0.99 | 55.7 | 1.15 | 74.3 s |
+| Mid game, tier 5 | 110 | 3.6 → 1.40 | 60 → 1.08 | 166.3 | 1.82 | 39.4 s |
+| Late game, tier 10 | 190 | 4.6 → 1.65 | 90 → 1.17 | 366.8 | 2.02 | 19.8 s |
 
 Seats cap concurrency (§C6), so demand above seat throughput turns into a fuller outside queue and more
 walk-bys, never into extra customers inside.
@@ -214,8 +214,10 @@ Attributes, §8.18) using a shared deterministic module, so no part list is ever
    part uniformly among canon parts of that slot code and rarity (re-roll one rarity step down if empty).
 4. Enforce compatibility: `FUR` and `SCALES` are mutually exclusive over `SKIN`; `ARM` rolls 70 % matched pair /
    30 % mismatched; `LEG` 80 % matched / 20 % mismatched (mismatched legs play `ANM_008` Wobbly gait).
-5. Enforce budgets (§C13.7): ≤ 24 MeshParts and ≤ 6,000 triangles; when exceeded, drop optional slots in reverse
-   table order (FX first) until within budget. Impostor LOD beyond 60 studs.
+5. Enforce budgets (§C13.7): ≤ 24 MeshParts and ≤ 6,000 triangles. When exceeded, drop filled slots in this fixed
+   order until within budget: FX → FUR/SCALES shell meshes → FACE → NOSE → EARS → HORNS → HANDS → FEET → NECK →
+   BACK → WINGS. HEAD, TORSO, ARMS, LEGS and TAIL are never dropped, and signature slots are skipped. The order is
+   fixed so every client renders the identical customer from the same seed. Impostor LOD beyond 60 studs.
 6. Body scale: 1.0 (PER_016 minis 0.6; PER_020 1.35). Height follows the LEG `LegLength` attribute.
 
 | Slot | Fill chance | Slot | Fill chance | Slot | Fill chance |
@@ -565,9 +567,9 @@ per-tier probabilities and maximums, joke share, hidden-mod chance, conflict gro
 
 | Example | Items | ΣD | Mult | CHARM | Patience |
 |---|---|---|---|---|---|
-| PER_012, one easy burger | 1 | 1 | 1.1 | 0 | 82.5 s |
-| PER_005, one easy burger | 1 | 1 | 0.55 | 0 | 41.3 s |
-| PER_002, 4 items | 4 | 10 | 1.2 | 40 | 278.4 s |
+| Nervous Newt, one easy burger | 1 | 1 | 1.1 | 0 | 82.5 s |
+| Impatient Goblin, one easy burger | 1 | 1 | 0.55 | 0 | 41.3 s |
+| Hungry Hippo-Spider, 4 items | 4 | 10 | 1.2 | 40 | 278.4 s |
 
 ### 8.10 Rules & Mechanics — Receiving, Inspecting, Eating
 
@@ -653,16 +655,21 @@ Regulars are named repeat customers who remember you. Unlocks at `TIER_02`.
   itemized A/Q/C/W/K/M receipt (§9.4) — the in-game satisfaction tutor.
 - **Door chips:** `Queue 2/4`, `Walk-bys: 3` (last 5 min) and `AwayPaused` banner. Eagle Eye (`ABL_070`) shows all
   patience and anger meters through walls for its duration.
+- **Face and voice mood** are derived client-side (no extra replication): while the customer's anger level is ≥ 2
+  the face follows the anger level; otherwise, before food arrives, from the patience fraction (< 50 % content,
+  50–75 % impatient, > 75 % grumpy) and, after an item is evaluated, from `ItemS` using the canon §C11.3 bands
+  (Delighted ≥ 90 · Happy 70–89 · Meh 50–69 · Unhappy 30–49 · Furious < 30). The reaction pop-up text uses the
+  personality's own bands (§10.2); faces use the canon bands so art states stay uniform across personalities.
 - All widgets respect the reduced-effects setting (no pulsing; static outlines).
 
 ### 8.15 Progression
 
 | Band | What customers add |
 |---|---|
-| A (`TIER_01`–`TIER_02`) | counter service, 1–2 customers per party, 7 → 16 personalities, ≤ 1 mod per ticket, mostly Common bodies, Regulars from `TIER_02` |
-| B (`TIER_03`–`TIER_04`) | table service + host podium, parties up to 4, critics/inspectors/couples/mimes, up to 3 mods per ticket |
-| C (`TIER_05`–`TIER_06`) | aliens, wrestlers, the Mystery Mutant, FX auras on bodies, Legendary parts begin to appear |
-| D–E (`TIER_07`+) | Mythic parts, larger parties, 4–5 mods per ticket, higher hostile caps (§10.11) |
+| A (tiers 1–2) | counter service, 1–2 customers per party, 7 → 16 personalities, ≤ 1 mod per ticket, mostly Common bodies, Regulars from `TIER_02` |
+| B (tiers 3–4) | table service + host podium, parties up to 4, critics/inspectors/couples/mimes, up to 3 mods per ticket |
+| C (tiers 5–6) | aliens, wrestlers, the Mystery Mutant, FX auras on bodies, Legendary parts begin to appear |
+| D–E (tiers 7–10) | Mythic parts, larger parties, 4–5 mods per ticket, higher hostile caps (§10.11) |
 
 ### 8.16 Player Interactions
 

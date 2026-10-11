@@ -118,19 +118,19 @@ hooks (e.g. PER_008 Perfectionist −10, PER_031 Sing +8), clamped to [−20, +1
 
 **MutationBonus** (≤ +10 total per item; evaluated on the deliverer — the player or employee who delivered it):
 
-| Source | Bonus | Condition |
-|---|---|---|
-| Charm-tagged parts | +1 each, max +4 | equipped parts carrying the `charm` tag (§C13.5) |
-| `MUT_047` Mustache of Destiny | +2 | "dashing service" (stacks with its charm tag) |
-| `MUT_102` Chef Hat Crest | +1 | looks professional |
-| `MUT_272` Sparkle Aura | +1 | |
-| `MUT_229` Nine Fox Tails | +2 | |
-| `MUT_039` Golden Burger Head | +3 | |
-| `MUT_258` Golden Skin | +2 | customer is PER_008 |
-| `MUT_021` TV Head | +2 | customer is PER_009 ("on camera") |
-| Family Resemblance | +2 | deliverer wears a part of the same family as the customer's HEAD |
-| Mutation Cuisine "Whoa!" | +10 | the item is a MUT recipe (§C10) |
-| §12 part passives | as defined in §12 | add into this same pool; the +10 cap always holds |
+| Source | Part | Bonus | Condition |
+|---|---|---|---|
+| Charm-tagged parts | any | +1 each, max +4 | equipped parts carrying the `charm` tag (§C13.5) |
+| Mustache of Destiny | `MUT_047` | +2 | "dashing service" (stacks with its charm tag) |
+| Chef Hat Crest | `MUT_102` | +1 | looks professional |
+| Sparkle Aura | `MUT_272` | +1 | |
+| Nine Fox Tails | `MUT_229` | +2 | |
+| Golden Burger Head | `MUT_039` | +3 | |
+| Golden Skin | `MUT_258` | +2 | customer is PER_008 |
+| TV Head | `MUT_021` | +2 | customer is PER_009 ("on camera") |
+| Family Resemblance | any | +2 | deliverer wears a part of the same family as the customer's HEAD |
+| Mutation Cuisine "Whoa!" | — | +10 | the item is a MUT recipe (§C10) |
+| §12 part passives | as defined in §12 | as defined | add into this same pool; the +10 cap always holds |
 
 **EventModifier** (sum of active events, clamped to −15..+15 per §C11.3 and §36.11). Event schedules and rules are
 owned by §36.11; where §36.11 states an EventModifier (marked **§36.11**) that value is repeated here, the other
@@ -240,7 +240,7 @@ then personality hooks (PER_004, PER_009, PER_025), clamped to [1.0, 5.0]. `RepM
 | Hostile, calmed **without** combat (Calm Down!, Peace Offering, aura) | per S | per S | S | — |
 | Hostile, calmed **by** combat (Huff 0, Security intercept, or took damage this episode) | 40 % Apology Payment | 0 | min(S, 40); 30 if never evaluated | — |
 | Storm-out (fallback leave, ordering or patience expiry with nothing delivered, KO'd a player) | 0 | 0 | 20 [TUNABLE] | −0.03 |
-| Fled during chaos (PER_012 pays eaten items) | 0 | 0 | not counted | — |
+| Fled during chaos (the Nervous Newt pays eaten items) | 0 | 0 | not counted | — |
 | Walk-by (never entered) | — | — | not counted | — |
 | Closed (E1, E13, Away Mode) | 0 | 0 | not counted | — |
 
@@ -292,13 +292,13 @@ sensitivity, so a crowded room escalates quickly but never instantly.
 | Player melee or area contact while not hostile (0 damage, 0.3 s flinch) | +8 | §11.2.2 |
 | `PACIFIST` hit by anything (cries and flees 8 studs) | +10 extra | §11.8.2 |
 | Watching a scuffle hit within 10 studs | +3 per hit | §11.6.4 |
-| Instigator Yell (12 studs; PER_009 20 studs) | +4 every 2 s, max +20 per customer per yelling session | §11.8.2 |
-| NPC `ABL_023` Bat Screech / `ABL_047` Mind Buzz (INSTIGATOR versions) | +10 to each affected customer | §36.6 |
+| Instigator Yell (12 studs; the Influencer 20 studs) | +4 every 2 s, max +20 per customer per yelling session | §11.8.2 |
+| INSTIGATOR Bat Screech / Mind Buzz (NPC versions) | +10 to each affected customer | §36.6 (`ABL_023`, `ABL_047`) |
 | Plate stolen from its table (theft, food grab, tractor beam) | +15 | §11.6.4 |
 | A table within 6 studs flipped / its own table flipped | +10 / +25 | A5 (flip execution §11.6.3) |
 | Its seat or table becomes Broken under it | +15 | A5 |
 | Its reserved seat taken | +10 | A5 |
-| Personality hooks (PER_001 ignored "Manager!" +10, PER_006 woken +10, PER_012 startle +15, PER_031 "No Cake?!" +20) | as listed | §9.4 |
+| Personality hooks (Karenosaurus ignored "Manager!" +10, Sloth-Rocket woken +10, Newt startle +15, Birthday Beast "No Cake?!" +20) | as listed | §9.4 |
 | Regular with a grudge | starts at 15 × Grudge | §8.12 |
 
 **Decay and resets**
@@ -482,3 +482,267 @@ Only two customers ever reached level 3, so chaos never ignited — with one mor
 - **Afterwards:** the 3-minute cooldown starts; "Calm Afterglow" halves anger gains for the next 5 arrivals;
   Aftermath (Furniture Homing, repair markers) runs per §11.6.3.
 
+### 10.10 Rules & Mechanics — De-escalation and Recovery
+
+| Method | Effect | Defined in |
+|---|---|---|
+| Calm Down! | anger −(20 + 0.1 × CHARM), max −35; at level ≤ 4 drops at least one level; at level 5 works only on a Winded or ≤ 50 % Huff customer (`TRICKSTER` ≤ 25 %) and then **talks it down** to level 2; ×2 against `INSTIGATOR` and inside PER_001's "Manager!" window (never more than ×2) | §36.6 (`ABL_006`), §11.10.1 |
+| Soothing Song | −15 (−25 at level ≤ 2) within 12 studs; talks down level-5 hostiles at ≤ 70 % Huff; silences `INSTIGATOR` 8 s | §36.6 (`ABL_065`) |
+| **Peace Offering** | serve any off-ticket DES or DRK dish to a customer at level ≥ 1 — the only thing that can be handed to a hostile customer: −35 anger (PER_020: −2 full levels); a second offering in the same visit −10; free for the customer, ingredient cost charged; at level 0 it is simply nice (P_offset +3) | A5 |
+| Chill décor | `FRN_146` Lava Lamp Floor Lamp: anger **gains** ×0.90 within 6 studs · `FRN_434` Chill-Out Beanbag Corner: ×0.85 within 8 studs; the strongest applies, never stacked | §15 |
+| Chill auras (customers) | PER_013 Grandma Golem and Superfan Regulars: +0.3 /s decay within 8 studs | §9.4, §8.12 |
+| One-off personality calms | PER_030 Tag Team −25 · PER_027 Anniversary −20 (15 studs) · PER_008 Round for the house −15 · PER_010 Spotter −10 · PER_018 Standing Ovation −10 | §9.4 |
+| Security Guard employee | interpose, Bouncer Hug, talk-down every 4 s; a Security stop always counts as calmed by combat | §11.10.6 (`ROLE_SECURITY`) |
+| Perfect Recovery | finishing the whole order Perfect at level ≤ 2 → anger 0 | §C11.5 |
+| Angry Customer Invasion: Perfect dish | instantly calms an invader | §36.11 (`EVT_004`) |
+
+**Recovery rules**
+- Anger falling below 45 (or a level-5 talk-down) sends a hostile customer through `CALMING_DOWN` (2.5 s).
+  **Calmed without combat** — it took no player or employee damage during this hostile episode — it returns to its
+  seat (`resumeState`), its patience clock resumes, and it pays and tips by S. **Calmed by combat** — it took damage,
+  reached 0 Huff, or was stopped by Security — it apologizes and pays the 40 % Apology Payment with no tip (§10.5,
+  §11.10.1).
+- **Sheepish** (30 s after any calm): anger gains ×0.5 and escalation rolls ×0.5, so customers do not ping-pong
+  between calm and furious.
+- A calmed customer is served normally again; later items are evaluated with the normal formula (anger never
+  enters S).
+
+### 10.11 Rules & Mechanics — Consequences and Fairness Safeguards
+
+| Consequence | Rule |
+|---|---|
+| Money | pay/tip per the §10.5 outcome table; storm-outs and fleeing customers pay 0 |
+| Reputation | storm-out −0.03 ★ extra; a fizzled chaos loses at most −0.10 ★ extra in total; PER_004/PER_009/PER_025 hooks |
+| Damage | durability per §11.6.3 (throws, smashes, flips, charges, wall splats); repaired through `RepairService` (§15); nothing is ever permanently lost (§C6) |
+| Cleanliness | splats, spills and trash lower K for every diner (§10.2.5) until cleaned |
+| Time | hostile customers' patience is paused, but every other ticket keeps running |
+| Player KO | §11.10.2: no loss of anything; the KO'er dances and leaves without paying (storm-out) |
+
+**Fairness safeguards** (failure must be funny, not devastating — Part 26.4):
+1. **Chaos cooldown:** 3 min between chaos events; Calm Afterglow afterwards (§10.9).
+2. **Caps:** per-tier hostile and fighter caps (§10.8) inside §11.7's absolute limits; escalations beyond a cap are
+   deferred, never converted into something worse.
+3. **New-player protection:** owner below level 5 → no level 5, no chaos, level-3 cap ≤ 2, damage budget halved
+   (scripted tutorial excepted).
+4. **Damage budget:** the repair-cost value of customer-caused durability damage in any rolling 10 min is capped at
+   15 % of the tier's NetMB/h (§C4.4) — 95 MB at `TIER_01`, 260 MB at `TIER_03`, 1,440 MB at `TIER_06`, 18,075 MB at
+   `TIER_10`. Beyond it, customer hits on furniture are cosmetic (splats still appear but auto-clean after 20 s).
+   §11.10.5 `FurnitureCombatDamageMult` upgrades apply before the budget.
+5. **Essential-station floor:** customer actions cannot push the last usable instance of any station a menu recipe
+   needs — or the last `STN_WINDOW` / `STN_ASSEMBLY` — below Cracked (26 %). Cooking never becomes impossible
+   because of customers.
+6. **Rough Patch:** ≥ 3 storm-outs within 5 min → for 2 min `PACIFIST` spawn weights ×2, escalation rolls ×0.5, and
+   the next 3 arrivals get patience ×1.2.
+7. **Bad-Luck Breaker:** if 2 escalation rolls succeeded in this restaurant within 60 s, the next roll is ×0.5.
+8. **Sheepish**, the **chain-depth limit** (§10.8 rule 5) and the **anti-farm** chaos reward rule (§10.9).
+9. Combat-side protections, restated: Mercy Rule after 3 KOs in 10 min (§11.10.2), reduced damage while the owner is
+   KO'd (§11.10.3), the leash when every player leaves (§11.8.1), and menu safety (§C22 E2).
+
+### 10.12 Variables
+
+| Variable | Value [TUNABLE] | Section |
+|---|---|---|
+| Satisfaction weights | 0.25 / 0.20 / 0.15 / 0.20 / 0.10 / 0.10 (canon, fixed) | §10.2 |
+| PayFactor below S 30 (customer stays) | 0.6 | §10.5 |
+| Storm-out S_rep | 20 | §10.5 |
+| Patience pressure | +0.6 /s (50–75 %), +1.0 /s (75–100 %) | §10.6 |
+| Aura cap | +2.0 /s before sensitivity | §10.6 |
+| Calm decay / eating / fatigue | −0.5 /s / −1.0 /s / −0.2 /s | §10.6 |
+| Evaluation deltas | −25 / −12 / +6 / +18 / +32 | §10.6 |
+| Splash radius / mob radius | 4 studs / 15 studs | §10.8 |
+| Escalation adds | mob +0.10, retaliation +0.10, chaos +0.15; max p 0.95 | §10.7 |
+| ModeTick | 6 s (`THROWER`, `TRICKSTER` 4 s) | §10.7 |
+| Chaos | ignition 2 ticks; 45 s max; resolve < 2 hostiles for 8 s; cooldown 3 min | §10.9 |
+| Brawl Survived | 0.03 × XPRate(L) XP; 0.02 × NetMB/h MB; 1 per 15 min | §10.9 |
+| Peace Offering | −35, second −10 | §10.10 |
+| Damage budget | 15 % of NetMB/h per rolling 10 min | §10.11 |
+
+### 10.13 UI — Color-Independent Indicators
+
+Every status uses **shape + glyph + text**, with color only as reinforcement; ≥ 3 levels also add a fill pattern.
+
+| Anger level | Shape | Glyph | Text label | Color (secondary) | Pattern / motion |
+|---|---|---|---|---|---|
+| 0 Happy | circle | smile | "Happy" | green | none |
+| 1 Annoyed | triangle | single steam puff | "Annoyed" | yellow | none |
+| 2 Complaining | square | speech bubble with "!" | "Complaining" | orange | slow wobble |
+| 3 Throwing food | pentagon | flying plate | "Throwing!" | red-orange | diagonal stripes |
+| 4 Destroying furniture | hexagon | broken chair | "Smashing!" | red | cross-hatch |
+| 5 Fighting | octagon (stop-sign) | boxing glove | "Fighting!" | crimson | double border, pulse |
+| 6 Chaos | star burst | "!!" | "CHAOS!" | magenta | screen-edge banner |
+
+| Satisfaction band | Glyph | Text | Notes |
+|---|---|---|---|
+| Delighted | heart | "WOW!" | Chef's Kiss (S ≥ 98) adds a sparkle burst and "CHEF'S KISS!" |
+| Happy | thumbs-up | "Nice!" | |
+| Meh | flat wavy line | "Meh" | |
+| Unhappy | down arrow | "Ugh" | |
+| Furious | storm cloud | "FURIOUS" | |
+
+- The **anger icon** sits beside the patience ring (§8.14) and shows the level numeral (0–6) inside the shape.
+- **Chaos Meter** (top-center while chaos is active): star-burst icon, "CHAOS" label, a hatched bar with the CM
+  percentage as text, and a 45-second countdown ring with seconds ("0:32"). The Ringleader wears a crown glyph.
+  Resolution shows "BRAWL SURVIVED!" with the reward lines; a fizzle shows "The chaos fizzled out…" with a summary
+  (storm-outs, objects damaged, Apology Payments).
+- **Reduced effects:** no pulsing or screen-edge flashing (static outlines instead), no camera shake; the banner
+  becomes a static strip. Audio cues for level changes are described in §26 and always have a visual twin.
+- `ABL_070` Eagle Eye shows every customer's anger icon and patience ring through walls; the Robot Accountant's
+  itemized receipt (§9.4) shows the full satisfaction breakdown.
+
+### 10.14 Progression
+
+- Below owner level 5: tantrums up to level 4 only (learning phase). From level 5 (`TIER_02` entry) fights and,
+  from three simultaneous hostiles, chaos become possible.
+- Caps, party sizes, modification counts and personalities scale with tier (§10.8, §8, §9); chaos rewards scale
+  with NetMB/h.
+- Players counter escalation with CHARM (longer patience, lower roll chance), Customer Service specialization
+  skill nodes (§14, which may modify these values within the caps here), calm décor and security upgrades (§15),
+  and `ROLE_SECURITY` employees (§16).
+
+### 10.15 Player Interactions
+
+Serve accurately and fast (S) · keep the room clean (K) and pretty (M) · equip charm parts (MutationBonus) · read
+anger icons and act early · Calm Down! grumblers before they throw · Peace Offerings for hostile customers · dodge
+or block thrown food (and mind who stands behind you) · defend until Winded, then talk (no Apology loss) · break up
+mobs by calming the loudest member · go after the Ringleader first during chaos · mop splats and repair afterwards.
+
+### 10.16 Dependencies
+
+§C11 (formulas), §5 (component grades, cleaning verb), §6/§6.18 (prices, A, ModBonusPct, mod generation), §8
+(states, patience, hostile pauses), §9 (personality parameters and hooks), §11 (fight execution, projectiles,
+furniture damage, caps, talk-down, Security), §14 (Customer Service specialization, XPRate), §15 (Atmosphere, LocalAtmosphere, Chill
+décor, EscalationDampener, repairs), §16 (Security, Cashier, Cleaner), §21 (guest rewards), §22 (economy), §24
+(HUD), §26 (audio stings), §36.6/§36.7 (calm abilities, statuses), §36.11 (event effects).
+
+### 10.17 Roblox Implementation
+
+`CustomerAIService` owns `Satisfaction` (pure functions, unit-tested against §10.4) and `Anger` (below). Both run on
+the server only; clients receive `Anger`, `AngerLevel` and `ItemS` attributes (§8.18).
+
+```lua
+--!strict
+-- ServerScriptService/CustomerAI/Anger.lua : per-tick anger update, escalation rolls, level-6 gate
+local Anger = {}
+local THRESH = { [3] = 45, [4] = 60, [5] = 75 }
+
+function Anger.levelOf(a: number): number
+	if a >= 90 then return 6 elseif a >= 75 then return 5 elseif a >= 60 then return 4
+	elseif a >= 45 then return 3 elseif a >= 30 then return 2 elseif a >= 15 then return 1 end
+	return 0
+end
+
+local function rollEscalation(c, level: number, ctx): (boolean, boolean) -- (passed, deferred)
+	if ctx.capReached(level) or (level == 5 and ctx.ownerLevel < 5 and not c.scripted) then
+		return false, true                                     -- deferred: no attempt spent
+	end
+	local tries = c.rollTries[level] or 0
+	c.rollTries[level] = tries + 1
+	if tries >= 2 then ctx.forceLeave(c) return false, false end  -- nobody sulks forever
+	if c.forcedNextRoll then c.forcedNextRoll = false return true, false end
+	if c.chainDepth >= 3 then return false, false end           -- cascade limit (§10.8)
+	local p = c.def.angerP * 100 / (100 + ctx.charm) * ctx.eventMul
+	p += (ctx.inMob(c) and 0.10 or 0) + (c.retaliateUntil > ctx.now and 0.10 or 0) + (ctx.chaos and 0.15 or 0)
+	p = math.clamp(p - ctx.escalationDampener, 0, 0.95)
+	if tries == 1 then p *= 0.75 end
+	if c.sheepishUntil > ctx.now then p *= 0.5 end
+	if ctx.roughPatch then p *= 0.5 end
+	if ctx.badLuckBreaker then p *= 0.5 end
+	return c.rng:NextNumber() < p, false
+end
+
+function Anger.update(c, dt: number, ctx)
+	local sens = c.def.sens
+	local gainMult = (c.sheepishUntil > ctx.now and 0.5 or 1) * ctx.chillDecorMult(c) -- 0.85 / 0.90 / 1.0
+	local burst = 0
+	for _, ev in c.angerEvents do                               -- hits, defects, evaluation deltas
+		burst += if ev.amount > 0 then ev.amount * sens * gainMult else ev.amount
+		c.chainDepth = math.max(c.chainDepth, ev.depth)
+	end
+	table.clear(c.angerEvents)
+	local rate = ctx.patienceRate(c) + ctx.orderRate(c) + ctx.seatRate(c)
+		+ 0.005 * math.max(0, 60 - ctx.K(c)) + ctx.fireRate(c) + math.min(2.0, ctx.auraRate(c))
+	local gain = rate * sens * gainMult * dt
+	if gain > 0 or burst > 0 then c.lastGainAt = ctx.now end
+	local decay = math.min(3.0, ctx.decayRate(c)) * dt         -- calm / eating / fatigue + chill auras
+	local a = math.clamp(c.anger + burst + gain - decay, 0, 100)
+
+	local old, new = Anger.levelOf(c.anger), Anger.levelOf(a)
+	for L = old + 1, math.min(new, 5) do
+		if L >= 3 then
+			local passed, deferred = rollEscalation(c, L, ctx)
+			if not passed then
+				a = THRESH[L] - 1
+				if not deferred then ctx.fallback(c, L) end        -- sulk / complain / leave table
+				break
+			end
+		end
+	end
+	if a >= 90 and not ctx.chaos then a = 89 end              -- level 6 exists only during chaos
+	c.anger = a
+	c.proxy:SetAttribute("Anger", math.floor(a))              -- engine skips unchanged values; §8.18 writes on change
+	local lvl = Anger.levelOf(a)
+	if lvl ~= c.level then
+		c.level = lvl
+		c.proxy:SetAttribute("AngerLevel", lvl)
+		ctx.onLevelChanged(c, old, lvl)                       -- state machine, modes, analytics
+	end
+end
+
+return Anger
+```
+
+Mob detection uses a 15-stud spatial hash rebuilt once per brain tick per interior (≤ 28 customers, O(n)); chaos
+is a per-restaurant controller holding `ChaosStartedAt`, `CM0`, `RingleaderId` and the cooldown timestamp, replicated
+to clients as interior attributes (`ChaosActive`, `ChaosPercent`, `ChaosEndsAt`). Analytics: `mmr_first_tantrum`,
+`mmr_customer_escalated`, `mmr_customer_storm_out`, `mmr_chaos_start`, `mmr_chaos_end` (§31).
+
+### 10.18 Edge Cases
+
+| # | Situation | Ruling |
+|---|---|---|
+| 1 | Anger crosses two thresholds in one tick (e.g. 40 → 70) | Rolls run in ascending order; a failure or deferral stops at that threshold − 1 |
+| 2 | S lands exactly on a boundary (50.0, 70.0, 98.0) | Lower bounds are inclusive: PayFactor 1.0, TipRate 5 %, 25 % respectively |
+| 3 | A projectile is in flight when its target despawns | It keeps flying along its arc and may hit someone else (§11.6.2) |
+| 4 | Peace Offering to a level-0 customer | Free gift: P_offset +3, no anger change; counts as that visit's one full-strength offering |
+| 5 | Owner disconnects during chaos | §C22 E1: chaos ends at once, no reward, no reputation loss, everyone leaves "closed" |
+| 6 | A second chaos trigger during chaos | Ignored; one chaos per restaurant at a time |
+| 7 | The player is KO'd during chaos | The KO'er stays in the fight (§C12.1); the 45 s cap still applies |
+| 8 | A forced roll (PER_010) meets a full cap | The cap wins: the escalation is deferred |
+| 9 | A player-thrown object misses a hostile and hits a bystander | +25 × sens to the bystander; counts as player-caused for the chaos anti-farm rule |
+| 10 | Damage budget exhausted mid-brawl | Durability stops dropping; splats auto-clean after 20 s; anger rules continue normally |
+| 11 | A customer calmed without combat is hit again within its Sheepish window | Gains ×0.5; if it turns hostile again and then takes damage, the Apology Payment applies |
+| 12 | All items undelivered when patience expires but the customer already ate one | It pays for the eaten item by S (failed items included at A = Q = C = W = 0) — not a storm-out |
+| 13 | Two players calm the same customer in one tick | Both effects apply (max −35 each per §36.6); calm credit is shared |
+| 14 | A hostile customer is offered a normal (on-ticket) plate | Refused: "Can't serve an angry customer!" — only Peace Offerings are accepted |
+
+### 10.19 Acceptance Criteria
+
+- **AC-10-01:** For the five §10.4 examples, the server's S values match to ± 0.01 and pay/tip match exactly.
+- **AC-10-02:** Item S is always clamped to 0–100; final S equals the price-weighted mean of item S.
+- **AC-10-03:** MutationBonus never exceeds +10 per item and EventModifier never leaves −15..+15, in 100,000 random
+  combinations.
+- **AC-10-04:** K equals 100 minus the §10.2.5 deductions (with 1.5× local weighting and category caps) in 50 scripted
+  mess layouts.
+- **AC-10-05:** Reputation after each outcome type in §10.5 matches the formula to 4 decimals, including the −0.03 ★
+  storm-out extra and the [1.0, 5.0] clamp.
+- **AC-10-06:** Jackpot tips are capped at 500 MB in `TIER_01`–`TIER_04` and 5,000 MB in `TIER_05`+, and never occur
+  for PER_015.
+- **AC-10-07:** Over 10,000 simulated crossings, escalation success rates match p from §10.7.1 within ± 1 percentage
+  point for each style, and no `PACIFIST` ever deals damage.
+- **AC-10-08:** After 2 failed rolls at a threshold, the next crossing produces a storm-out 100 % of the time.
+- **AC-10-09:** The number of customers at level ≥ 3 and at level 5 never exceeds the §10.8 caps (outside chaos) or
+  the chaos caps (during chaos), and never exceeds §11.7's absolute limits.
+- **AC-10-10:** With the owner below level 5 (non-tutorial), no customer reaches level 5 and chaos never ignites in
+  1,000 simulated hours.
+- **AC-10-11:** Chaos ignites within 0.5 s of a third simultaneous level-3 customer (owner ≥ level 5, no cooldown),
+  never lasts more than 45 s, resolves after 8 s with fewer than 2 hostiles, and cannot re-ignite within 3 min.
+- **AC-10-12:** "Brawl Survived" grants exactly round(0.03 × XPRate(L)) XP per participant and round(0.02 × NetMB/h)
+  MB, at most once per 15 min, and nothing when ≥ 50 % of the triggering anger was player-caused.
+- **AC-10-13:** Customers calmed without taking damage pay and tip by S; customers that took damage, hit 0 Huff or
+  were stopped by Security pay exactly 40 % with no tip.
+- **AC-10-14:** Every anger level and satisfaction band is distinguishable in grayscale screenshots (shape + glyph +
+  text), verified by an accessibility review.
+- **AC-10-15:** Customer-caused durability damage per rolling 10 min never exceeds the damage budget, and no customer
+  action reduces the last required station below Cracked.
+- **AC-10-16:** In the §10.8 worked chain reaction, a scripted replay reproduces every anger value in the table to
+  ± 0.1.

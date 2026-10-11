@@ -2,8 +2,8 @@
 
 These are the decisions the design deliberately leaves open, each with options, a recommendation and a
 deadline tied to the phase gates of §34. Until a decision is recorded, teams build to the
-**recommendation**. Items OD-23…OD-27 are canon clarifications found while writing the test plan (§35):
-they need a one-line ruling, not a redesign.
+**recommendation**. Items OD-23…OD-27 were canon clarifications found while writing the test plan (§35);
+all five have since been **resolved** in the Design Canon (Appendix A) and are kept here as a decision log.
 
 ### 38.1 Decision Process
 
@@ -44,11 +44,11 @@ Owner roles refer to the team in §34.1: Producer (PM/QA lead), Lead Engineer, D
 | OD-20 | Mystery Market (`BLD_13`) rotation scope? | (a) global weekly stock (same for everyone); (b) per-player stock | (a), seeded by week number, so players talk about "this week's Market" | Designer | G3 | social buzz, exploit surface |
 | OD-21 | Roblox Premium benefits? | (a) none; (b) small cosmetic perk; (c) MB bonus | (b) only; no currency bonus (avoids pay-to-earn) | Producer | G4 | policy, fairness |
 | OD-22 | Analytics pipeline? | (a) `AnalyticsService` only; (b) + internal aggregates for live dashboards; (c) + external warehouse | (b); external storage only for aggregated, anonymous data | Lead Engineer | G3 | privacy, tuning speed |
-| OD-23 | (Canon E1) Are tickets finished by online employees during Closing credited after PlayerRemoving? | (a) hold the session lock; Closing ≤ 30 s; final save after Closing; (b) void those tickets; (c) credit them into the next offline interval | (a); (c) as fallback under BindToClose pressure; never double-credit (TC-EDGE-02) | Lead Engineer + Designer | G2 | E1 behavior, data safety |
-| OD-24 | (Canon §C14.2 vs §C15) Scale of `Eff_chef` / `Eff_waiter` in the offline formula | (a) Efficiency / 100 (0–1); (b) raw 1–100 | (a), otherwise capacities are 100× too large | Designer | G2 (before offline goldens) | offline economy |
-| OD-25 | (Canon §C3 vs §C5) Max WalkSpeed 21 or 20.8? | (a) 20.8 from the MOVE formula; (b) 21 | (a); "21" is a rounded label | Designer | G1 | movement validation thresholds |
-| OD-26 | (Canon §C11.4) Jackpot cap at exactly `TIER_05` | (a) `TIER_01`–`TIER_04` 500 MB, `TIER_05`+ 5,000 MB; (b) `TIER_05` still 500 MB | (a) (TC-SAT-09) | Designer | G2 | tip economy |
-| OD-27 | (Canon §C4.6, §C13.4) Rounding of fractional costs and budgets (e.g. 337.5 MB, 18.92 points) | (a) costs round half-up to whole MB; budgets kept to 1 decimal internally, distributed so stats sum exactly; (b) floor everything | (a) | Designer | G2 | data validators, UI display |
+| OD-23 | (Canon E1) Are tickets finished by online employees during Closing credited after PlayerRemoving? | (a) hold the session lock; Closing ≤ 30 s; final save after Closing; (b) void those tickets; (c) credit them into the next offline interval | **Resolved (canon E1):** (b) — tickets finished during Closing earn reputation only, never currency; nothing is written after the final PlayerRemoving save, so double-credit is impossible (TC-EDGE-02) | Lead Engineer + Designer | Resolved | E1 behavior, data safety |
+| OD-24 | (Canon §C14.2 vs §C15) Scale of `Eff_chef` / `Eff_waiter` in the offline formula | (a) Efficiency / 100 (0–1); (b) raw 1–100 | **Resolved (canon C14.2):** (a) — formulas use `Eff = Efficiency / 100` | Designer | Resolved | offline economy |
+| OD-25 | (Canon §C3 vs §C5) Max WalkSpeed 21 or 20.8? | (a) 20.8 from the MOVE formula; (b) 21 | **Resolved (canon C3):** (a) — max WalkSpeed is 20.8 everywhere, including movement validation | Designer | Resolved | movement validation thresholds |
+| OD-26 | (Canon §C11.4) Jackpot cap at exactly `TIER_05` | (a) `TIER_01`–`TIER_04` 500 MB, `TIER_05`+ 5,000 MB; (b) `TIER_05` still 500 MB | **Resolved (canon C11.4):** (a) — 500 MB at `TIER_01`–`TIER_04`, 5,000 MB at `TIER_05`+ | Designer | Resolved | tip economy |
+| OD-27 | (Canon §C4.6, §C13.4) Rounding of fractional costs and budgets (e.g. 337.5 MB, 18.92 points) | (a) costs round half-up to whole MB; budgets kept to 1 decimal internally, distributed so stats sum exactly; (b) floor everything | **Resolved (canon C0 rounding rule):** (a) — currency rounds half-up to whole MB/MS/RT; stat budgets round to whole points distributed by largest remainder; simulations round only for display/payout | Designer | Resolved | data validators, UI display |
 
 ### 38.3 Evidence Needed and Work Blocked
 

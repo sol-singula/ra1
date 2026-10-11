@@ -587,7 +587,8 @@ logs `AnalyticsService:LogOnboardingFunnelStepEvent(player, N, "mmr_tutorial_ste
 - **Timing:** 12:25–13:20.
 - **The tutorial upgrade (selection rule, data-driven):** the cheapest §36.12 restaurant upgrade that requires
   TIER_01 and is flagged tutorial-eligible. It must cost 150–250 MB and have an immediate visible effect,
-  preferably on Atmosphere (which feeds M and DecorMult, canon C11.3–C11.4). If no upgrade qualifies, use the
+  preferably on Atmosphere (which feeds M and DecorMult, canon C11.3–C11.4). At launch this is `UPG_073` Shack
+  Spruce-Up Kit (200 MB, +6 Atmosphere, §36.12). If no upgrade qualifies, use the
   cheapest TIER_01 decor item in §36.13 with Atmosphere > 0. **Affordability guard:** the wallet here is
   ≥ 500 MB + customer income by construction (§32.5). If a balance change ever leaves the player short, the quest
   grants the shortfall as "Nana's Loan Forgiveness" (server-side, logged).

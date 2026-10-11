@@ -24,17 +24,22 @@ named combinations, and any part added later joins in automatically.
 **Scale (computed by `gdd/tools/check_synergies.py --stats`):** 40 head families × 132 nameable families
 (families with at least one non-head, non-FX part, minus the neutral `human`) give **5,292 Morphdex keys**
 (5,252 two-word keys plus 40 "Just a …" keys). The number of legal loadouts from the 280 parts is about
-**4.1 × 10²⁴**. A combination is *derived*, never stored. The only per-combination data that exists is the
+**2.4 × 10²⁴**. The checker reproduces exactly the 2,376,218,638,994,599,919,520,000 that §12.7 derives once the
+blocksWings and FUR ⊕ SCALES exclusions are applied. A combination is *derived*, never stored. The only per-combination data that exists is the
 Morphdex bitset (12.9.4).
 
 #### 12.9.2 Naming Rules (the "Name-o-Matic")
 
-**Rules & Mechanics.** `MorphNaming.Compute(loadout)` is deterministic and runs in the shared module on both the
-server (authoritative, for Morphdex and nameplates) and the client (for previews):
+**Rules & Mechanics.** `MorphNames.Generate(loadout)` (the "name hook" called by the §12.7 generator) is
+deterministic. It runs in the shared module on both the server (authoritative, for Morphdex and nameplates) and the
+client (for previews). It ignores any RNG argument, so a body always gets the same name.
 
 1. **Lead** = family of the `HEAD` part.
-2. For every other equipped part except `FX`: skip it if its family equals the lead family or is neutral (`human`).
-   Otherwise add `NameDominance[slot] + NameBonus[rarity]` to that family's score. Two arms of the same family
+2. For every other **visible** equipped part except `FX`: skip it if its family equals the lead family or is
+   neutral (`human`). Otherwise add `NameDominance[slot] + NameBonus[rarity]` to that family's score. "Visible"
+   follows the §12 compatibility flags: faceLocked heads hide FACE/NOSE/MOUTH/EYES, `MUT_044`/`MUT_048` hide face
+   slots, HANDS are hidden when both arms are handsLocked, and FEET when both legs are footless. Hidden parts keep
+   their stats and synergies, but you cannot name what you cannot see. Two arms of the same family
    therefore score twice, which is why squid tentacle arms out-shout a giraffe neck.
 3. **Dominant** = the highest-scoring family. Ties go to the family with the rarer single part (higher
    `NameBonus`), then to the earliest slot in the tie-break order, then to the alphabetically first family id.
@@ -43,7 +48,7 @@ server (authoritative, for Morphdex and nameplates) and the client (for previews
 5. **Display name** = "<Lead word> <Dominant word>", unless the dominant family is a **Loud Prefix** family and the
    lead family is not. Then the dominant word goes first: Bear-Scorpion is spoken "Scorpion Bear", Pigeon-Muscle
    is spoken "Muscle Pigeon".
-6. **Signature override:** the signature rules below are checked top to bottom. The first match replaces the display
+6. **Signature override:** the signature rules below are checked top to bottom on the visible parts. The first match replaces the display
    name with its title. The key does not change, and the title is also logged in the Morphdex.
 7. A player's **custom morph name** (§13) replaces the display name on their own nameplate only. The generated name
    stays visible as a subtitle and is what the Morphdex records.
@@ -121,7 +126,7 @@ in front ("Golden Rat", "Frosty Penguin", "Dragon Cat").
 | Bear Head `MUT_001` + Scorpion Tail `MUT_216` | scorpion 4 + 1 = 5 | Bear-Scorpion | Scorpion Bear (scorpion is loud) |
 | Shark Head `MUT_011` + Spider Leg Cluster `MUT_185` ×2 | spider 2 × (2 + 0.5) = 5 | Shark-Spider | Shark Spider |
 | Giraffe Head `MUT_015` + Giraffe Neck `MUT_110` + Squid Tentacle Arm `MUT_146` ×2 | neck skipped (lead family); squid 2 × 3.5 = 7 | Giraffe-Squid | Giraffe Squid |
-| TV Head `MUT_021` + Moth Fuzz Face `MUT_045` + Moth Wings `MUT_233` | moth 1.5 + 5.5 = 7 | TV-Moth | TV Moth |
+| TV Head `MUT_021` + Moth Feather Antennae `MUT_094` + Moth Wings `MUT_233` | moth 2 + 5.5 = 7.5 (a moth *face* would be hidden by the faceLocked TV head) | TV-Moth | TV Moth |
 | Pigeon Head `MUT_004` + Bodybuilder Arm `MUT_160` ×2 | muscle 2 × 4 = 8 | Pigeon-Muscle | Muscle Pigeon |
 | Snake Head `MUT_020` + Bunny Ears `MUT_085` + Bunny Slippers `MUT_202` | rabbit 1 + 1 = 2 | Snake-Rabbit | Snake Rabbit |
 
@@ -203,7 +208,7 @@ progress and gives players a reason to try odd builds.
 | Signature | First time wearing each signature title | 25 MS · that title |
 
 **Pacing check.** A TIER_03–05 restaurant serves about 80–110 customers per active hour (canon demand table). With
-4–7 visible parts per customer (12.9.5), about 35 % of a session's customers show a key the player hasn't spotted
+the §12.7 slot-fill rates, about 35 % of a session's customers show a key the player hasn't spotted
 yet in the first 10 hours, falling to about 8 % by 60 hours. Tier 4 (100 Spotted) therefore arrives around 6–9
 active hours, and tier 7 (1,000 Spotted) is a 150+ hour collector goal.
 
@@ -211,30 +216,17 @@ active hours, and tier 7 (1,000 Spotted) is a 150+ hour collector goal.
 toast per 5 s; extras are queued into the Morphdex badge counter). Friends can open each other's Morphdex
 read-only from the profile card.
 
-**Dependencies.** §8 (customer spawns call `MorphNaming`), §16 (hire screen badge), §18 (Museum building), §28
+**Dependencies.** §8 and §12.7 (customer spawns call `MorphNames`), §16 (hire screen badge), §18 (Museum building), §28
 (bitset persistence), §31 (analytics `mmr_morphdex_spotted`, `mmr_morphdex_worn`, `mmr_signature_unlocked`).
 
 #### 12.9.5 How Customers, NPCs, Employees and Players Display Combos
 
-**Customer morph recipe** (used by `CustomerAIService` when it spawns a proxy; visuals are built client-side under
-the SPCV pattern):
-
-1. **Head:** drawn from the personality's family weights. §9 may lock a signature look; for example `PER_010` The
-   Bodybuilder Pigeon always has a pigeon head.
-2. **Dominant feature:** exactly one of TORSO, an ARM pair, WINGS, TAIL or a LEG pair, from a family other than the
-   head's. This guarantees a readable two-word key.
-3. **Accents:** 0–4 extra parts in other slots, picked from the tier pool below. Plain Human defaults fill the rest.
-4. **Budget:** ≤ 9 non-default parts, ≤ 24 MeshParts and ≤ 6,000 triangles (canon C13.7). Secret parts never
-   appear on customers, so secrets stay secret.
-5. **Seed:** `hash(restaurantId, customerSerial)`. A repeat customer (§8) re-uses their seed and so their look.
-
-| Restaurant tier band | Common | Uncommon | Rare | Epic | Legendary | Mythic | Non-default parts |
-|---|---|---|---|---|---|---|---|
-| `TIER_01`–`TIER_02` | 70 % | 25 % | 5 % | 0 % | 0 % | 0 % | 3–5 |
-| `TIER_03`–`TIER_04` | 55 % | 30 % | 12 % | 3 % | 0 % | 0 % | 4–6 |
-| `TIER_05`–`TIER_06` | 40 % | 32 % | 18 % | 8 % | 2 % | 0 % | 4–7 |
-| `TIER_07`–`TIER_08` | 30 % | 30 % | 24 % | 12 % | 3.5 % | 0.5 % | 5–8 |
-| `TIER_09`–`TIER_10` | 22 % | 28 % | 26 % | 16 % | 6 % | 2 % | 5–9 |
+**Assembly.** Customers, recruitment candidates and city extras are built by the seeded §12.7 generator
+(`MorphGenerator`, MorphCode on the SPCV proxy), which already guarantees a readable two-family hybrid (family A
+on the head, family B in ≥ 3 slots). This section only adds what happens *after* assembly: the generator's name hook
+calls `MorphNames.Generate`, the server stores the resulting key on the proxy (`MorphKey` attribute), and serving,
+fighting or calming that customer credits the Morphdex (12.9.4). Secret parts never generate on NPCs (§12.7), so
+secrets stay secret.
 
 **Display rules.**
 
@@ -333,6 +325,7 @@ Count       := 0..21
 | `FX` | the FX slot only |
 
 **Counting rules.** Every slot instance counts once, so two octopus arms give `family:octopus@ARM` a count of 2.
+Parts hidden by the §12 visibility flags still count, because hidden ≠ disabled.
 **Plain Human defaults are neutral filler.** `MUT_117`/`MUT_139`/`MUT_179` are ignored by every atom (tags,
 categories, rarity, `slot`, `distinct`, `pair`) except an explicit `family:human` atom, and they are never named.
 Canon gives them the `charm` tag, so without this rule every starter morph would already hold five charm parts and
@@ -444,16 +437,18 @@ in §16, not here.
 
 #### 12.10.7 Roblox Implementation
 
-**Modules.** `ReplicatedStorage/Shared/Morph/` holds `PartDefs` (generated from §36.3), `SynergyDefs` (generated
-from §36.4; requirements are pre-compiled into the node tables below by the build script), `NamingRules`,
-`MorphNaming` and `SynergyEvaluator`. `ServerScriptService/Services/MutationService` calls the evaluator, owns the
+**Modules.** `ReplicatedStorage/Shared/MutationDefs` (A7, generated from §36.3) and
+`ReplicatedStorage/Shared/MorphRules` (A7: slot fit, exclusions, visibility) are reused. A8 adds, in
+`ReplicatedStorage/Shared/Morph/`: `SynergyDefs` (generated from §36.4; requirements are pre-compiled into the node
+tables below by the build script), `NamingRules`, `MorphNames` and `SynergyEvaluator`. `ServerScriptService/Services/MutationService` calls the evaluator, owns the
 `ModifierStack`, and sets the `ActiveSynergies` attribute. The client UI requires the same modules for previews only.
 
 ```lua
 --!strict
 -- ReplicatedStorage/Shared/Morph/SynergyEvaluator.lua
 -- Shared: authoritative on the server (MutationService), preview-only on the client (Morph menu).
-local PartDefs = require(script.Parent.PartDefs)       -- id -> { family, category, rarityRank, tagSet }
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local PartDefs = require(ReplicatedStorage.Shared.MutationDefs) -- A7: id -> { family, category, rarityRank, tagSet, ... }
 local SynergyDefs = require(script.Parent.SynergyDefs) -- array of { id, group, rank, req: Node }
 
 export type Loadout = { [string]: string }             -- slot instance ("ARM_L") -> part id ("MUT_145")
@@ -653,7 +648,7 @@ service at 4 Hz with 0.5 s hysteresis, not by the evaluator.
 
 #### 12.10.9 Acceptance Criteria (12.9 and 12.10)
 
-- **AC-12-80:** `MorphNaming.Compute` gives identical key, display name and title on the server and on every client
+- **AC-12-80:** `MorphNames.Generate` gives identical key, display name and title on the server and on every client
   for 100 % of the §36.5 combinations and of 10,000 random legal loadouts in the test harness.
 - **AC-12-81:** `python3 gdd/tools/check_synergies.py` exits with code 0 ("RESULT: CLEAN"). It proves every
   synergy (and every OR-branch) satisfiable, every example valid, and every §36.5 combination slot-valid, correctly
@@ -662,8 +657,9 @@ service at 4 Hz with 0.5 s hysteresis, not by the evaluator.
 - **AC-12-83:** Worn credit is never granted for a loadout kept < 60 s outside the menu without a completed order,
   fight or repair, and is always granted otherwise (20 scripted test cases).
 - **AC-12-84:** A profile with all 5,292 keys Spotted and Worn serializes its Morphdex in ≤ 4 KB.
-- **AC-12-85:** In 100,000 simulated customer spawns, `TIER_01`–`TIER_02` customers have 0 Epic+ parts, and no
-  customer at any tier has a Secret part.
+- **AC-12-85:** In 100,000 simulated customer spawns, every proxy's `MorphKey` attribute equals
+  `MorphNames.Generate` of its decoded MorphCode (§12.7). Serving the customer credits Spotted exactly once per
+  visit, and a city-crowd inspect never credits.
 - **AC-12-86:** A synergy cache miss takes ≤ 0.5 ms (p99) on a live server, and the evaluator runs 0 times during a
   10-minute session with no loadout changes.
 - **AC-12-87:** With more than 5 qualifying stacking groups, exactly 5 synergies are active, chosen pinned → rank →

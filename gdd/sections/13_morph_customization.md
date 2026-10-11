@@ -222,8 +222,9 @@ MorphScreen (ScreenGui: IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=20
    │  │                  EquippedBadge (L/R/both), NewDot, LockOverlay, AbilityIcon, DupeCount
    │  ├─ EquippedPage └─ SlotRow_<SLOT> x22 (grouped by UI group headers)
    │  ├─ LoadoutsPage └─ LoadoutCard_1..5, LookCard_1..10, SaveButton, ApplyButton
-   │  ├─ StylePage └─ ChannelToggle (Primary/Accent), SwatchGrid, PaletteTabs, ApplyScope, Randomize, Reset
-   │  └─ UpgradePage └─ LevelBar, BudgetPreview, CostBreakdown, DupeToggle, UpgradeButton, ConvertDupes, FusionButton
+   │  ├─ StylePage └─ PaletteGrid, PaletteTabs (owned / shop / locked), ApplyScope, Match, Randomize, ResetNatural
+   │  └─ UpgradePage └─ LevelBar, BudgetPreview, CostBreakdown, DupeToggle, UpgradeButton, ConvertDupes,
+│                    KeepDuplicatesToggle, FavoriteButton, FusionButton
    ├─ DetailDrawer (docked or bottom sheet)
    │  └─ PartIcon, NameLabel, RarityBadge, MetaLine, StatDeltaList, AbilityCard, PassiveCard,
    │     SynergyPreviewList, EquipBothButton, EquipLeftButton, EquipRightButton, UnequipButton, UpgradeShortcut
@@ -237,10 +238,11 @@ MorphScreen (ScreenGui: IgnoreGuiInset=true, ResetOnSpawn=false, DisplayOrder=20
 ### 13.5 Rotatable 3D Preview (ViewportFrame + WorldModel)
 
 **Rules & Mechanics.**
-- **Build.** On open, the client-side builder of `MorphAssemblyService` clones `ReplicatedStorage/MorphRigs/R15Base`
-  into `WorldModel` and welds the equipped mutation MeshParts to the canon attachments (`MMR_HeadCore`,
-  `MMR_ArmL_Upper`, …). This is the same code that builds SPCV customer visuals, so the preview always matches the
-  in-world morph. The `WorldModel` is what lets the `Humanoid`'s `Animator` play animations inside a ViewportFrame.
+- **Build.** On open, the shared `Shared/Morph/MorphBuilder` (§27) clones `ReplicatedStorage/MorphRigs/R15Base` into
+  `WorldModel` and attaches the equipped mutation MeshParts to the canon attachments (`MMR_HeadCore`,
+  `MMR_ArmL_Upper`, …) after `MorphRules.Resolve` applies the §12 visibility flags, huge-part limit and 9.5-stud
+  height clamp. This is the same code that builds the real character and SPCV customer visuals, so the preview
+  always matches the in-world morph. The `WorldModel` is what lets the `Humanoid`'s `Animator` play animations inside a ViewportFrame.
   A preview equip swaps only the affected slot's MeshParts (≤ 4 instances), never the whole rig.
 - **Camera.** `PreviewCamera` (FieldOfView 30°) orbits the rig's bounding-box center (`Model:GetBoundingBox()`).
   Yaw is free over 360°, pitch is clamped −10° to +35°, and distance runs 6–18 studs. Auto-fit sets distance
@@ -374,22 +376,29 @@ fuel or MS conversion (13.15). The starter morph's "×2" arms and legs are one o
    ability bonus (§36.6).
 3. **Legs.** Same as arms. If the legs end up mismatched, the drawer shows "Wobbly gait (no penalty)" and plays
    `ANM_008` in the preview once, with a "Make a pair (+25 %)" shortcut.
-4. **Fur ⊕ Scales.** Equipping a `FUR` part while `SCALES` is worn, or the reverse, removes the other and shows
-   "Swapped Scales for Fur" with a 5 s Undo. `SKIN` is independent and stays under either covering.
+4. **Exclusions (§12 ✱ flags).** Equipping a `FUR` part while `SCALES` is worn (or the reverse), or `WINGS` while a
+   blocksWings `BACK` part is worn (`MUT_244`, `MUT_245`, `MUT_246`, `MUT_249`, `MUT_251`, or the reverse), opens
+   the one-tap prompt "Swap out your wings?" / "Swap Scales for Fur?". Confirming sends the equip with
+   `swap = true` and the server removes the conflicting part. Without it, the server answers `CONFLICT_WINGS` /
+   `CONFLICT_COVERING`. `SKIN` is independent and stays under either covering.
 5. **Mandatory slots.** Unequipping a torso, arm or leg reverts it to the Plain Human default. `HEAD` can only be
    swapped; its Unequip button is disabled with the tooltip "Every morph needs a head. Probably."
 6. **Level requirement.** Parts above the player's level (canon C13.3 / C4.5: Common 1, Uncommon 5, Rare 12,
    Epic 25, Legendary 40, Mythic 60, Secret by condition) show the lock overlay and "Reach Lv 25 to equip". They
-   can still be previewed on the pedestal ("Try on") but not equipped.
+   can still be previewed on the pedestal ("Try on") but not equipped. The tutorial starter arm (`QST_TUT_010`) is
+   exempt (canon C13.8).
 7. **Ability bar (max 4 active abilities, canon C12.1).** If a new part brings an active ability and the bar is
    full, `ReplaceAbilityModal` asks which ability to drop, or "Keep on bench". Benched abilities are inactive until
    swapped onto the bar.
 8. **Carry capacity (canon C3).** If the change would leave you carrying more items than your new capacity
    (e.g. removing an Octopus Arm while holding 2 plates), the equip is refused with "Put something down first!"
-   (code `CARRY_OVER`).
-9. **Height changes.** `LEG` and `NECK` parts change `Humanoid.HipHeight` and head offset (C13.7). The server
-   re-seats the character on the floor and, indoors, ensures the new height does not clip through a ceiling; if it
-   would, the character is nudged ≤ 2 studs to open space.
+   (code `PUT_SOMETHING_DOWN`).
+9. **Size and height.** `LEG` and `NECK` parts change `Humanoid.HipHeight` and head offset (C13.7). The §12 height
+   clamp (≤ 9.5 studs, so every door works) and the huge-part limit (a third huge part renders at ×0.7) are applied
+   by `MorphRules`. The preview shows the same "Squished to fit!" badge the world shows. Collision never changes.
+10. **Hidden is not disabled.** Face parts under a faceLocked head (e.g. TV Head `MUT_021`), HANDS under handsLocked
+   arms, and FEET under footless legs are not built, but keep their stats, passives, abilities and synergies. The
+   card shows "Hidden — still working!" and the preview shows the head's screen-emote.
 
 **Instant, optimistic, authoritative.** Single-part equips are instant (canon E4). The client applies the change
 to the preview right away and sends `Mutation.Equip`. On rejection, the preview reverts and a toast explains why.
@@ -488,7 +497,7 @@ expands all nine plus a derived block in plain numbers:
 | Situation | Rule [TUNABLE values from canon] |
 |---|---|
 | Single-part equip inside the Morph screen | instant |
-| Applying a whole loadout (from the screen, or from the HUD quick-swap wheel: hold `Q`, long-press the mobile Morph button, or hold D-pad up) | **3 s channel**, then a **10 s cooldown** that starts when the channel completes |
+| Applying a whole loadout (`Mutation.SwapLoadout`, from the screen or the HUD quick-swap wheel: hold `Q`, long-press the mobile Morph button, or hold D-pad up) | **3 s channel**, then a **10 s cooldown** that starts when the channel completes |
 | During the channel | walk at 50 % speed; interacting, attacking, or taking damage **interrupts** it (no cooldown consumed). A cartoon "costume-change" dust cloud plays (client FX), with `ANM_065` on completion |
 | In Combat (6 s flag), Seeing Stars, a level-5 customer targeting you | channel cannot start; the wheel shows "Can't change outfits during a brawl!" |
 | Arena (`BLD_08`) | the loadout is locked when the match is accepted; it can be changed in the lobby under the same channel rules |
@@ -503,7 +512,7 @@ expands all nine plus a derived block in plain numbers:
   spaces collapse to one. An empty name means "use the generated display name" (§12.9.2).
 - **Input.** `RenameModal` has a `TextBox` (`ClearTextOnFocus = false`) with a live counter ("12/20"). Over-long
   input is trimmed on `GetPropertyChangedSignal("Text")`, because Roblox TextBoxes have no max-length property.
-- **Server flow (`Mutation.RenameMorph`).**
+- **Server flow (`Morph.SetName`, §27; the design limits below are stricter than the 5 s transport limit there).**
   1. Validate type, length and character set.
   2. Rate limit: 1 attempt per 30 s and 10 per 24 h per player [TUNABLE]. Every attempt counts, so the filter
      cannot be brute-forced.
@@ -523,27 +532,30 @@ expands all nine plus a derived block in plain numbers:
 
 ### 13.14 Cosmetic Color Selection (Style tab)
 
-- **Channels.** Each mutation part has a **Primary** tint (its `MeshPart.Color`, shown through the
-  `SurfaceAppearance` color map's alpha, `AlphaMode = Overlay`) and an **Accent** tint (the `Color` of its `Accent`
-  child MeshPart). Coverings (`SKIN` / `FUR` / `SCALES`) have one tint applied to the covering shell. Untintable
-  details (eyes' pupils, Secret shimmer) are masked out.
-- **Palettes.**
+- **What a color is.** A **palette** is a named primary / secondary / accent triplet (the 24 base palettes of §12.7
+  plus reward palettes). Recoloring a part means pointing it at that palette's 16 × 16-swatch atlas (§25 "palette
+  atlases"). Tintable hero parts (Legendary+, `SurfaceAppearance` with `AlphaMode = Overlay`) also take the
+  palette's primary color as `MeshPart.Color`. Coverings (`SKIN` / `FUR` / `SCALES`) recolor their surface swap.
+  Untintable details (pupils, Secret shimmer) are masked out.
+- **Per-part choice.** Every equipped slot can use a different palette, and palette 0 means the part's authored
+  "Natural" colors. The choice is a map `{ [slot] = paletteIndex }`, sent with `Morph.SetPalette` (§27) and stored
+  per loadout (§28).
+- **Palette sources.**
 
-| Palette source | Examples | How to get |
+| Source | Examples | How to get |
 |---|---|---|
-| Starter (16 swatches) | Ketchup Red, Mustard, Pickle, Blueberry, Cream, Charcoal… | free |
-| Earnable (canon C17.4 reward type) | "Museum Pastels", "Fossil Tones", "Neon Specimen" (§12.9.4); quest, achievement, milestone and event palettes from §14, §18, §20 | rewards |
+| Natural + 7 starter base palettes | Ketchup & Mustard, Pickle Jar, Blueberry Jam, Diner Chrome… | free |
+| Remaining 16 base palettes (§12.7) | Neon Alien, Metallic Bot, Earthy Mammal… | unlock by first owning a part of the matching head category, or buy at Body Mods |
+| Reward palettes (canon C17.4) | "Museum Pastels", "Fossil Tones", "Neon Specimen" (§12.9.4); quest, achievement, milestone and event palettes (§14, §18, §20) | rewards |
 | Body Mods shop (earnable cosmetics, canon C4.1) | "Sewer Chic", "Diner Neon", "Critic's Choice" | 2,500–25,000 MB each at `BLD_02` [TUNABLE] |
 | Cosmetic packs | themed palettes | §23 (Robux, cosmetic only) |
 
-- **Controls.** Swatch grid (8 per row), Primary/Accent toggle, and an **apply scope**: this part / this category /
-  everything. Also **Match** (copy another part's tint), **Randomize** (undoable) and **Reset to natural**.
-  Changes preview instantly and are batched to the server after 0.5 s of inactivity (`Mutation.SetTints`, ≤ 22
-  entries per call).
-- **Readability rules.** The rainbow shimmer stays reserved for Secret parts (never offered as a tint). Tints never
-  touch UI rarity frames. Tints are stored per loadout and slot as compact swatch codes
-  (`paletteId × 32 + swatchIndex`), and the server checks palette ownership. With **Keep colors** on (default), a
-  part swapped into a slot inherits that slot's tint.
+- **Controls.** A palette grid of swatch triplets with an **apply scope**: this part / this category / everything.
+  Also **Match** (copy another slot's palette), **Randomize** (undoable) and **Reset to Natural**. Changes preview
+  instantly and are sent after 0.5 s of inactivity (one `Morph.SetPalette` call with all changed slots).
+- **Readability rules.** The rainbow shimmer stays reserved for Secret parts (never offered as a palette), and
+  palettes never touch UI rarity frames. With **Keep colors** on (default), a part swapped into a slot inherits
+  that slot's palette. The server rejects palettes the player does not own.
 
 ### 13.15 Mutation Upgrade Controls (Upgrade tab)
 
@@ -559,9 +571,10 @@ expands all nine plus a derived block in plain numbers:
 - **Confirmation.** Every upgrade opens `ConfirmUpgradeModal` with the exact costs. Costs ≥ 10,000 MB or any RT need
   **hold to confirm** for 0.8 s (accessibility option: "tap twice instead"). The request carries `expectedLevel`,
   so a double-tap or a network retry can never upgrade twice.
-- **Duplicates.** The duplicates list shows each part with spare copies, **Convert to MS** at the canon rate
-  (Common 5, Uncommon 12, Rare 30, Epic 80, Legendary 200, Mythic 500), and a **Keep for upgrades** toggle.
-  Capsule duplicates auto-convert unless it is on (canon C4.7).
+- **Duplicates.** The duplicates list shows each part with spare copies and **Convert to MS** at the canon rate
+  (Common 5, Uncommon 12, Rare 30, Epic 80, Legendary 200, Mythic 500). One global **Keep duplicates for upgrades**
+  toggle (§28 `keepDuplicates`) decides whether capsule duplicates auto-convert (canon C4.7). A per-part
+  **Favorite** star (§28 `fav`) protects a part from auto-conversion and from fusion pickers.
 - **Max level** shows "MAX" with a sparkle, and the button becomes "Fully upgraded!".
 
 **Upgrade cost per step (MB / MS / RT; plus one duplicate or the substitute MS) [TUNABLE, from canon C4.6]:**
@@ -667,68 +680,88 @@ every currency debit.
 |---|---|---|---|---|---|
 | `Mutation.OpenSession` | RemoteFunction | `{}` | not In Combat, not targeted by a level-5 customer, not KO'd, not in an Arena match, not Safe Mode (E2/E4/E6) | snapshot: equipped, inventory version, loadouts, cooldowns, pins | 1 / s |
 | `Mutation.CloseSession` | RemoteEvent | `{}` | — | — | 1 / s |
-| `Mutation.Equip` | RemoteFunction | `{reqId, partId, target}`; `target` = slot instance, `"ARM_BOTH"` or `"LEG_BOTH"` | session open; part owned; level requirement; slot code fits; FUR⊕SCALES swap; ability bar; carry capacity; no loadout channel running | `{ok, code, delta, stats, synergies}` | 10 / s burst, 60 / 10 s |
+| `Mutation.Equip` | RemoteFunction | `{reqId, partId, target, swap?}`; `target` = slot instance, `"ARM_BOTH"` or `"LEG_BOTH"` | session open; part owned (§28 entries are per part ID); level requirement (tutorial copy exempt); slot code fits; `MorphRules.CheckExclusions` (FUR ⊕ SCALES, blocksWings; resolved only if `swap`); ability bar; carry capacity; no loadout channel running | `{ok, code, delta, stats, synergies}` | 10 / s burst, 60 / 10 s |
 | `Mutation.Unequip` | RemoteFunction | `{reqId, slot}` | session open; slot not `HEAD`; mandatory slots revert to default; carry capacity | same as Equip | as Equip |
 | `Mutation.SetAbilityBar` | RemoteFunction | `{reqId, abilities = {ABL ×≤4}}` | each ability comes from an equipped part; no duplicates; not In Combat | `{ok, code, bar}` | 4 / s |
 | `Mutation.SaveLoadout` | RemoteFunction | `{reqId, slot 1–5, name?, icon?}` (contents = current morph) | slot unlocked; name passes 13.13 rules + filter; payload ≤ 2 KB | `{ok, code, loadout}` | 1 / 2 s |
-| `Mutation.ApplyLoadout` | RemoteFunction | `{reqId, slot}` | not In Combat; cooldown elapsed; carry capacity; starts the 3 s **server-timed** channel | `{ok, code, channelEndsAt}`, then `Mutation.LoadoutChannel` events | 1 / s |
+| `Mutation.SwapLoadout` | RemoteFunction | `{reqId, slot}` | not In Combat; cooldown elapsed; carry capacity; exclusions; starts the 3 s **server-timed** channel | `{ok, code, channelEndsAt}`, then `Mutation.LoadoutChannel` events | 1 / s |
 | `Mutation.LoadoutChannel` | RemoteEvent (server → client) | `{state = "started" \| "interrupted" \| "completed", reason?}` | server interrupts on damage, attack or interaction | — | — |
-| `Mutation.ApplyLook` | RemoteFunction | `{reqId, look 1–10}` | Look slot owned; not In Combat | `{ok, code}` | 2 / s |
-| `Mutation.SetTints` | RemoteEvent | `{reqId, target = "current" \| slot, entries = {{slot, primary, accent}} ×≤22}` | palette owned; swatch index in range | ack via `Mutation.StateChanged` | 2 / s (client batches) |
-| `Mutation.RenameMorph` | RemoteFunction | `{reqId, text, loadout?}` | 13.13 rules, `CanUserChatAsync`, filter | `{ok, code, filteredName}` | 1 / 30 s, 10 / 24 h |
+| `Morph.ApplyLook` | RemoteFunction | `{reqId, look 1–10}` | Look slot owned; not In Combat | `{ok, code}` | 2 / s |
+| `Morph.SetPalette` | RemoteFunction | `{reqId, loadout?, palette = { [slot] = paletteIndex }}` (§27) | every palette owned; slots valid | `{ok, code}` | 2 / s (client batches) |
+| `Morph.SetName` | RemoteFunction | `{reqId, name, loadout?}` (§27) | 13.13 rules, `CanUserChatAsync`, filter | `{ok, code, filteredName}` | 1 / 30 s, 10 / 24 h |
 | `Mutation.Upgrade` | RemoteFunction | `{reqId, partId, useDuplicate, expectedLevel}` | owned; `level == expectedLevel < max`; atomic debit of MB+MS(+RT) and the duplicate or substitute MS | `{ok, code, level, wallet}` | 2 / s |
 | `Mutation.ConvertDuplicates` | RemoteFunction | `{reqId, partId, count}` | `count ≤ duplicates`; not Secret | `{ok, code, msGained}` | 2 / s |
-| `Mutation.SetKeepDuplicates` | RemoteEvent | `{partId, keep}` | owned | — | 5 / s |
+| `Mutation.SetKeepDuplicates` | RemoteEvent | `{keep}` (global, §28) | boolean | — | 1 / s |
+| `Mutation.SetFavorite` | RemoteEvent | `{partId, fav}` | owned | — | 5 / s |
+| `Mutation.Fuse` | RemoteFunction | per §12 / §27 (Lab mode only) | the player is inside `BLD_11`; recipe rules in §12 | per §27 | transaction |
 | `Mutation.PinSynergies` | RemoteFunction | `{reqId, ids = {SYN ×≤5}}` | valid IDs | `{ok, code, synergies}` | 2 / s |
-| `Mutation.StateChanged` | RemoteEvent (server → client) | delta: equipped, stats, synergies, wallet, cooldowns | — | — | — |
+| `Mutation.InventoryChanged` | RemoteEvent (server → client, §27) | changed / removed part views (new parts, levels, duplicates) | — | — | — |
 | `Mutation.SessionClosed` | RemoteEvent (server → client) | `{reason = "HOSTILE" \| "COMBAT" \| "SAFE_MODE"}` | sent on E2 auto-close | — | — |
 
-**Response codes:** `OK`, `BAD_REQUEST`, `SESSION_CLOSED`, `IN_COMBAT`, `NOT_OWNED`, `LEVEL_LOCKED`,
-`SLOT_MISMATCH`, `HEAD_REQUIRED`, `ABILITY_BAR_FULL`, `CARRY_OVER`, `CHANNEL_ACTIVE`, `COOLDOWN`,
-`INSUFFICIENT_FUNDS`, `MAX_LEVEL`, `STALE_LEVEL`, `RATE_LIMITED`, `FILTER_REJECTED`, `FILTER_UNAVAILABLE`,
-`CHAT_DISABLED`, `SAFE_MODE`. Each code maps to one friendly toast string in the localization table.
+**Response codes** (shared with the §12 `MutationService.ValidateEquip` codes): `OK`, `BAD_REQUEST`, `UNKNOWN_PART`,
+`SESSION_CLOSED`, `IN_COMBAT`, `NOT_OWNED`, `LEVEL_TOO_LOW`, `WRONG_SLOT`, `CONFLICT_WINGS`, `CONFLICT_COVERING`,
+`HEAD_REQUIRED`, `ABILITY_BAR_FULL`, `PUT_SOMETHING_DOWN`, `CHANNEL_ACTIVE`, `COOLDOWN`, `INSUFFICIENT_FUNDS`,
+`MAX_LEVEL`, `STALE_LEVEL`, `RATE_LIMITED`, `FILTER_REJECTED`, `FILTER_UNAVAILABLE`, `CHAT_DISABLED`, `SAFE_MODE`.
+Each code maps to one friendly toast string in the localization table.
 
 ```lua
 --!strict
 -- ServerScriptService/Services/MutationService/EquipHandler.lua (excerpt)
-local Remotes = game:GetService("ReplicatedStorage").Remotes.Mutation
-local PartDefs = require(game:GetService("ReplicatedStorage").Shared.Morph.PartDefs)
+-- Adds the Morph-screen layer (session, idempotency, rate limit, both-sides, swap prompt) on top of the
+-- per-slot rules in MutationService.ValidateEquip (§12).
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Remotes = ReplicatedStorage.Remotes.Mutation
+local MorphRules = require(ReplicatedStorage.Shared.MorphRules) -- A7: SlotAccepts, CheckExclusions, CarryCapacity
 
-local TARGETS = { ARM_BOTH = { "ARM_L", "ARM_R" }, LEG_BOTH = { "LEG_L", "LEG_R" } }
-local LEVEL_REQ = { Common = 1, Uncommon = 5, Rare = 12, Epic = 25, Legendary = 40, Mythic = 60 }
+local BOTH = { ARM_BOTH = { "ARM_L", "ARM_R" }, LEG_BOTH = { "LEG_L", "LEG_R" } }
 
 Remotes.Equip.OnServerInvoke = function(player: Player, payload: any)
 	if typeof(payload) ~= "table" or typeof(payload.reqId) ~= "string" or #payload.reqId > 36
-		or typeof(payload.partId) ~= "string" or typeof(payload.target) ~= "string" then
+		or typeof(payload.partId) ~= "string" or typeof(payload.target) ~= "string"
+		or (payload.swap ~= nil and typeof(payload.swap) ~= "boolean") then
 		return { ok = false, code = "BAD_REQUEST" }
 	end
 	local cached = RequestLedger.Get(player, payload.reqId)
-	if cached then return cached end -- idempotent retry
-	if not RateLimiter.Take(player, "Mutation.Equip") then return { ok = false, code = "RATE_LIMITED" } end
-	local session = Sessions[player]
-	if not session then return { ok = false, code = "SESSION_CLOSED" } end
-	if CombatService:IsInCombat(player) then return { ok = false, code = "IN_COMBAT" } end
+	if cached then
+		return cached -- idempotent retry: replay the stored answer
+	end
+	if not RateLimiter.Take(player, "Mutation.Equip") then
+		return { ok = false, code = "RATE_LIMITED" }
+	end
+	if not Sessions.IsOpen(player) then
+		return { ok = false, code = "SESSION_CLOSED" }
+	end
 
 	local profile = PlayerDataService:GetProfile(player)
-	local part = PartDefs[payload.partId]
-	if not part or not profile.mutations.owned[payload.partId] then return { ok = false, code = "NOT_OWNED" } end
-	local req = part.secretLevelReq or LEVEL_REQ[part.rarity]
-	if profile.level < req then return { ok = false, code = "LEVEL_LOCKED" } end
-
-	local slots = TARGETS[payload.target] or { payload.target }
+	local slots = BOTH[payload.target] or { payload.target }
+	local proposed = table.clone(profile.mutations.equipped)
 	for _, slot in slots do
-		if not MorphRules.SlotFits(part.slot, slot) then return { ok = false, code = "SLOT_MISMATCH" } end
+		local ok, code = MutationService.ValidateEquip(player, profile, slot, payload.partId) -- §12 rules
+		if not ok and not (payload.swap and (code == "CONFLICT_WINGS" or code == "CONFLICT_COVERING")) then
+			return { ok = false, code = code }
+		end
+		proposed[slot] = payload.partId
 	end
-	local nextLoadout = MorphRules.WithParts(profile.morph.equipped, slots, payload.partId) -- applies FUR/SCALES swap
-	local barOk, barCode = MorphRules.CheckAbilityBar(profile.morph, nextLoadout)
-	if not barOk then return { ok = false, code = barCode } end
-	if MorphRules.CarryCapacity(nextLoadout) < CarryService:Count(player) then return { ok = false, code = "CARRY_OVER" } end
+	if payload.swap then
+		proposed = MorphRules.RemoveConflicts(proposed, slots) -- drops the blocking wings/back or other covering
+	end
+	local ok, conflict = MorphRules.CheckExclusions(proposed)
+	if not ok then
+		return { ok = false, code = conflict }
+	end
+	local barOk, barCode = AbilityBar.Check(profile, proposed) -- may bench a 5th active (13.8 rule 7)
+	if not barOk then
+		return { ok = false, code = barCode }
+	end
 
-	profile.morph.equipped = nextLoadout
-	MorphAssemblyService:Rebuild(player, nextLoadout) -- swaps only changed slots; re-seats HipHeight
+	MutationService:CommitEquipped(player, profile, proposed) -- fires EquipChanged -> MorphAssemblyService rebuild
 	MutationService:_refreshSynergies(player, profile) -- §12.10.7
-	local response = { ok = true, code = "OK", delta = MorphRules.Diff(session.lastSent, nextLoadout),
-		stats = StatCalc.Effective(player, profile), synergies = player:GetAttribute("ActiveSynergies") }
+	local response = {
+		ok = true, code = "OK",
+		delta = MorphRules.Diff(Sessions.LastSent(player), proposed),
+		stats = StatCalc.Effective(player, profile),
+		synergies = player:GetAttribute("ActiveSynergies"),
+	}
 	RequestLedger.Put(player, payload.reqId, response)
 	Analytics.Custom(player, "mmr_mutation_equip", { part = payload.partId, target = payload.target })
 	return response

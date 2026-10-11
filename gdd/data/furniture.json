@@ -95,7 +95,8 @@
     {"id": "UPG_069", "name": "Trash Compactor", "cat": "utility", "effect": "Wasted-food charges at STN_TRASH -25 %", "cost": 2400, "tier": 3, "level": 10, "prereq": "", "notes": "Never makes waste free."},
     {"id": "UPG_070", "name": "Layout Blueprints I", "cat": "utility", "effect": "Save 2 alternate layouts and swap between them in Edit Mode (each must validate)", "cost": 800, "tier": 2, "level": 5, "prereq": "", "notes": "Blueprints store positions only; items must be owned."},
     {"id": "UPG_071", "name": "Layout Blueprints II", "cat": "utility", "effect": "+2 more blueprint slots (4 total)", "cost": 10000, "tier": 5, "level": 26, "prereq": "UPG_070", "notes": ""},
-    {"id": "UPG_072", "name": "Express Delivery Dock", "cat": "utility", "effect": "Special-ingredient crate deliveries arrive in 50 % of the normal time", "cost": 12000, "tier": 5, "level": 26, "prereq": "", "notes": "Delivery timing itself is defined with stock in section 7."}
+    {"id": "UPG_072", "name": "Express Delivery Dock", "cat": "utility", "effect": "Special-ingredient crate deliveries arrive in 50 % of the normal time", "cost": 12000, "tier": 5, "level": 26, "prereq": "", "notes": "Delivery timing itself is defined with stock in section 7."},
+    {"id": "UPG_073", "name": "Shack Spruce-Up Kit", "cat": "dining", "effect": "One-time +6 Atmosphere bonus (patched walls, a fresh OPEN sign, the menu board finally hung straight); counts toward the tier cap", "cost": 200, "tier": 1, "level": 1, "prereq": "", "notes": "Tutorial-eligible: the circled upgrade bought in QST_TUT_011 (section 32). Installed instantly by Bolt Butterworth."}
   ],
   "sets": {
     "GREASY_SPOON": {"name": "Greasy Spoon Classic", "tier": 1, "vibe": "Basic: shabby diner, duct tape, flickering bulbs", "skin": "patched plywood"},

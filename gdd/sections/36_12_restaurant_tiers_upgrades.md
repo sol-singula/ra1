@@ -171,6 +171,7 @@ Upgrades are permanent, per-restaurant purchases made in Build Mode → Upgrades
 | `UPG_070` | Layout Blueprints I | utility | Save 2 alternate layouts and swap between them in Edit Mode (each must validate) | 800 | T2 / L5 | — | Blueprints store positions only; items must be owned. |
 | `UPG_071` | Layout Blueprints II | utility | +2 more blueprint slots (4 total) | 10,000 | T5 / L26 | `UPG_070` | — |
 | `UPG_072` | Express Delivery Dock | utility | Special-ingredient crate deliveries arrive in 50 % of the normal time | 12,000 | T5 / L26 | — | Delivery timing itself is defined with stock in §7. |
+| `UPG_073` | Shack Spruce-Up Kit | dining | One-time +6 Atmosphere bonus (patched walls, a fresh OPEN sign, the menu board finally hung straight); counts toward the tier cap | 200 | T1 / L1 | — | Tutorial-eligible: the circled upgrade bought in QST_TUT_011 (§32). Installed instantly by Bolt Butterworth. |
 
 #### 36.12.5 Upgrade Economy Summary
 
@@ -178,7 +179,7 @@ Upgrades are permanent, per-restaurant purchases made in Build Mode → Upgrades
 |---|---|---|
 | station upgrade path | 24 | cost = canon §C4.9 multiplier × stock FRN price |
 | kitchen expansion | 6 | flat MB |
-| dining | 6 | flat MB |
+| dining | 7 | flat MB |
 | service | 4 | flat MB |
 | security | 4 | flat MB |
 | safety | 11 | flat MB |
@@ -186,5 +187,5 @@ Upgrades are permanent, per-restaurant purchases made in Build Mode → Upgrades
 | exterior | 6 | flat MB |
 | utility | 7 | flat MB |
 
-Total MB to buy every station level on all 24 paths: **1,946,025 MB**; all other upgrades: **1,146,100 MB**. For scale, the canon tier costs sum to 2,413,000 MB. Upgrades sit in the "~50 % to mutations, furniture, staff and upgrades" half of canon §C4.4, and are deliberately optional: the Infuser and Anti-Gravity Wok paths alone are 62 % of the station-path total, and no recipe requires any level above Lv1.
+Total MB to buy every station level on all 24 paths: **1,946,025 MB**; all other upgrades: **1,146,300 MB**. For scale, the canon tier costs sum to 2,413,000 MB. Upgrades sit in the "~50 % to mutations, furniture, staff and upgrades" half of canon §C4.4, and are deliberately optional: the Infuser and Anti-Gravity Wok paths alone are 62 % of the station-path total, and no recipe requires any level above Lv1.
 

@@ -88,7 +88,7 @@ do not identify a person outside Roblox.
 | `LogCustomEvent(player, eventName, value, customFields)` | the budgeted custom events flagged "custom" in §31.10 | `value` is a meaningful number (seconds, MB, count) or 1 |
 
 **Ruling — one onboarding funnel.** Roblox supports a single onboarding funnel per experience. It is the §32
-tutorial (as §1.7 and AC-32-03 define). The §36.17 milestones `MLS_001`–`MLS_013` therefore log their
+tutorial (as §1.7 and AC-32-03 define). The first 13 §36.17 milestones (from `MLS_001`, the first-session "firsts") therefore log their
 events through the recurring funnel `mmr_first_session` (step = milestone order 1–13) rather than through
 `LogOnboardingFunnelStepEvent`; this supersedes the onboarding wording in AC-14-20.
 
@@ -224,21 +224,21 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 | `mmr_tutorial_assist` | a §32 tutorial assist fires | step, assist (`burn_recovery`, `auto_flip`, `assembly_ghost`, …) | Custom (CF01 assist, CF03 step) |
 | `mmr_tutorial_skip` | player confirms the skip | atStep | Custom (CF03 step) |
 | `mmr_tutorial_resume` | a session resumes an unfinished tutorial | atStep, hoursSinceLast | Custom (CF03 step) |
-| `mmr_tutorial_complete` | `QST_TUT_012` done (also `MLS_013`) | totalDurationS, skipped, assistsUsed | Custom (value = totalDurationS) + **FS 13** |
-| `mmr_onboarding_enter_restaurant` | first interior entry (`MLS_001`) | secondsSinceJoin | **FS 1** |
-| `mmr_first_order` | first order taken (`MLS_002`) | tier, secondsSinceInstall | **FS 2** |
-| `mmr_first_successful_meal` | first dish served with S ≥ 50 (`MLS_003`) | satisfaction band, quality grade | **FS 3** |
-| `mmr_first_tip` | first tip (`MLS_004`) | tipBand | **FS 4** |
-| `mmr_first_tantrum` | first customer reaches anger level 3 (`MLS_005`) | personalityId (scripted `PER_001` in tutorial) | **FS 5** |
-| `mmr_first_combat` | first damage dealt to a hostile customer (`MLS_006`) | abilityId | **FS 6** |
-| `mmr_first_calm_down` | first hostile customer reaches Apologizing (`MLS_007`) | method | **FS 7** |
-| `mmr_first_repair` | first object repaired (`MLS_008`) | objectRef | **FS 8** |
-| `mmr_first_ko` | first Seeing Stars (`MLS_009`) | killerStyle | **FS 9** |
-| `mmr_first_mutation` | first part equipped (`MLS_010`) | partId (`MUT_145` / `MUT_144` / `MUT_153`) | **FS 10** (CF01 part) |
-| `mmr_first_restaurant_upgrade` | first upgrade or furniture purchase (`MLS_011`) | itemRef | **FS 11** |
-| `mmr_first_employee_hire` | `EMP_001` hired (`MLS_012`) | — | **FS 12** |
-| `mmr_first_offline_collect` | first Welcome Back report collected (`MLS_017`) | hours, net, capped | Custom (value = net) |
-| `mmr_first_city_trip` | first district other than `DST_01` (`MLS_018`) | district, travelMode | Custom (CF01 district) |
+| `mmr_tutorial_complete` | `QST_TUT_012` done (also §36.17 milestone #13) | totalDurationS, skipped, assistsUsed | Custom (value = totalDurationS) + **FS 13** |
+| `mmr_onboarding_enter_restaurant` | first interior entry (`MLS_001`, §36.17 #1) | secondsSinceJoin | **FS 1** |
+| `mmr_first_order` | first order taken (§36.17 #2) | tier, secondsSinceInstall | **FS 2** |
+| `mmr_first_successful_meal` | first dish served with S ≥ 50 (§36.17 #3) | satisfaction band, quality grade | **FS 3** |
+| `mmr_first_tip` | first tip (§36.17 #4) | tipBand | **FS 4** |
+| `mmr_first_tantrum` | first customer reaches anger level 3 (§36.17 #5) | personalityId (scripted `PER_001` in tutorial) | **FS 5** |
+| `mmr_first_combat` | first damage dealt to a hostile customer (§36.17 #6) | abilityId | **FS 6** |
+| `mmr_first_calm_down` | first hostile customer reaches Apologizing (§36.17 #7) | method | **FS 7** |
+| `mmr_first_repair` | first object repaired (§36.17 #8) | objectRef | **FS 8** |
+| `mmr_first_ko` | first Seeing Stars (§36.17 #9) | killerStyle | **FS 9** |
+| `mmr_first_mutation` | first part equipped (§36.17 #10) | partId (`MUT_145` / `MUT_144` / `MUT_153`) | **FS 10** (CF01 part) |
+| `mmr_first_restaurant_upgrade` | first upgrade or furniture purchase (§36.17 #11) | itemRef | **FS 11** |
+| `mmr_first_employee_hire` | `EMP_001` hired (§36.17 #12) | — | **FS 12** |
+| `mmr_first_offline_collect` | first Welcome Back report collected (§36.17 #17) | hours, net, capped | Custom (value = net) |
+| `mmr_first_city_trip` | first district other than `DST_01` (§36.17 #18) | district, travelMode | Custom (CF01 district) |
 | `mmr_first` | any other once-only first (`mmr_first_level_up`, `mmr_first_stat_allocation`, `mmr_first_skill_node`, `mmr_first_capsule`, `mmr_first_lab_fusion`, `mmr_first_mutation_upgrade`, `mmr_first_synergy`, `mmr_first_perfect_dish`, `mmr_first_recipe_learned`, `mmr_first_station_upgrade`, `mmr_first_quest_complete`, `mmr_first_metro_ride`, `mmr_first_city_event`, `mmr_first_coop_visit`, `mmr_first_arena_match`) | which (the internal name), hoursSinceInstall | Custom grouped (CF01 which) — internal envelope keeps the specific name |
 
 #### 31.10.2 Sessions and retention
@@ -248,7 +248,7 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 | `mmr_session_start` | profile loaded (§28.14) | sessionIndex, daysSinceInstall, daysSinceLastSession, platform, deviceTier, offlineReportPending | Custom (value = daysSinceLastSession; CF01 platform, CF02 input mode) |
 | `mmr_join_ready` | `UI.Ready` received (§27.11) | loadMs, deviceTier | Custom (value = loadMs; CF01 device tier) |
 | `mmr_daily_return` | first session of a new UTC day for a returning player | dayIndex (days since install), streak | Custom (value = dayIndex) |
-| `mmr_return_visit` | first session on a second distinct UTC day — once (`MLS_031`) | daysSinceInstall | Custom |
+| `mmr_return_visit` | first session on a second distinct UTC day — once (§36.17 "Came Back!" milestone) | daysSinceInstall | Custom |
 | `mmr_session_end` | `PlayerRemoving` / shutdown | durationS, activeS, endReason, ordersServed, perfectRate, avgSatisfaction, tantrums, brawls, kos, mbNet, partsGained | Custom (value = durationS; CF01 end reason, CF02 input mode, CF03 length band) |
 
 #### 31.10.3 Restaurant, customers and combat
@@ -264,7 +264,7 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 | `mmr_customer_calmed` | hostile reaches Apologizing (§11) | method, personalityId | Custom (CF01 method, CF02 personality) |
 | `mmr_ability_used` | ability activation accepted (10 % sampled, §11) | abilityId, context | Custom (CF01 ability, CF02 context) |
 | `mmr_prop_thrown` | prop thrown (10 % sampled, §11) | propClass, hitKind | Custom (CF01 prop class) |
-| `mmr_restaurant_tier_up` | tier upgrade completed (`MLS_046`+; §22 calls it `mmr_tier_upgraded`) | tier, activeHoursSinceInstall, level | **Prog `RestaurantTier`** (level = tier number) |
+| `mmr_restaurant_tier_up` | tier upgrade completed (§36.17 tier milestones; §22 calls it `mmr_tier_upgraded`) | tier, activeHoursSinceInstall, level | **Prog `RestaurantTier`** (level = tier number) |
 | `mmr_station_upgraded` | station level purchased | stationRef, newLevel | Internal |
 | `mmr_employee_hired` | hire committed (`EmployeeService`) | archetype, rarity, role, cost | Custom (CF01 rarity, CF02 role) + **Fun `mmr_hire` 3** |
 | `mmr_unpaid_break` | wage tick uncovered (E8, §22) | staffCount, deficit | Custom (CF03 tier) |
@@ -307,7 +307,7 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 | `mmr_xp_anomaly` | > 180 XPU in a rolling hour (§14) | rate, tag | Custom (ops) |
 | `mmr_achievement_unlocked` | achievement claimed (§36.16) | achievementId | Custom (CF01 ID) |
 | `mmr_milestone_reached` | milestone claimed (§36.17) | milestoneId | Custom (CF01 ID) |
-| `mmr_overtime_bar` | Overtime bar filled (`MLS_045`) | barIndex | Custom (value = barIndex) |
+| `mmr_overtime_bar` | Overtime bar filled (§36.17 Overtime milestone) | barIndex | Custom (value = barIndex) |
 | `mmr_journal_opened` | quest/achievement journal opened (§36.16) | tab | Internal |
 
 #### 31.10.7 City exploration, social and events
@@ -361,7 +361,7 @@ the 60-name budget, 53 used); **Prog `<path>`**: `LogProgressionEvent`; **Econ**
 | 6 | `QST_TUT_006` Uh-Oh, Karenosaurus | 12 | `QST_TUT_012` Hire Help |
 
 **First-session funnel** `mmr_first_session` (`LogFunnelStepEvent`, session id `"fs"`): steps 1–13 =
-`MLS_001` … `MLS_013` in ID order (table §31.10.1). Because players can reach some moments out of order (a KO
+the first 13 §36.17 milestones (`MLS_001` onward) in ID order (table §31.10.1). Because players can reach some moments out of order (a KO
 before the first calm-down), dashboards read it as "% of new players who reached step N within 60 min", not as
 strict conversion.
 
@@ -376,3 +376,206 @@ strict conversion.
 | `mmr_tier_upgrade` | upgrade panel opened with an affordable next tier | confirm pressed | upgrade committed | hesitation at expensive tiers |
 | `mmr_mutation_upgrade` | upgrade panel opened | confirm pressed | upgrade applied | MS/RT bottlenecks |
 
+### 31.12 Economy Telemetry (reason codes)
+
+`EconomyService:TransactWith` logs one `LogEconomyEvent` per currency moved, with `flowType` Source/Sink,
+`currencyType` = `MB`/`MS`/`RT`, `endingBalance` = the post-transaction balance, `transactionType` from the table
+and `itemSku` = the content ID when one exists. These codes are the registry §22.2 rule 3 refers to; their
+per-transaction ceilings are in §29.14. Zero-delta transactions log nothing.
+
+| Reason code | Flow | Currencies | `transactionType` | `itemSku` |
+|---|---|---|---|---|
+| `serve_payment` | Source | MB | `Gameplay` | recipe ID (`RCP_…`) |
+| `serve_tip` | Source | MB | `Gameplay` | recipe ID |
+| `quest_reward` | Source | MB, MS, RT | `Onboarding` for `QST_TUT_…`, else `Gameplay` | quest ID |
+| `achievement_reward` / `milestone_reward` | Source | MB, MS, RT | `Gameplay` | achievement / milestone ID |
+| `event_reward` | Source | MB, MS, RT | `Gameplay` | event ID (`EVT_…`) |
+| `delivery_reward` | Source | MB | `Gameplay` | `BLD_15` |
+| `daily_login` | Source | MB, MS | `TimedReward` | streak day bucket |
+| `offline_collect` | Source | MB, MS | `TimedReward` | `offline` |
+| `welcome_back` | Source | MS | `TimedReward` | `welcome_back` |
+| `coop_guest_pay` | Source | MB | `Gameplay` | `coop` |
+| `arena_reward` | Source | MS, RT | `Gameplay` | `arena` |
+| `showcase_reward` | Source | MS | `Gameplay` | `BLD_22` |
+| `dupe_conversion` | Source | MS | `Gameplay` | part ID |
+| `furniture_sellback` | Source | MB | `Shop` | furniture ID (§22) |
+| `ingredient_cost` | Sink | MB | `Gameplay` | recipe ID or ingredient ID |
+| `wages` | Sink | MB | `Gameplay` | `wages` |
+| `repair` | Sink | MB | `Gameplay` | furniture ID |
+| `tier_upgrade` | Sink | MB | `Shop` | tier ID |
+| `station_purchase` / `station_upgrade` / `furniture_purchase` | Sink | MB | `Shop` | furniture or upgrade ID |
+| `mutation_purchase` | Sink | MB, MS, RT | `Shop` | part ID |
+| `mutation_upgrade` | Sink | MB, MS, RT | `Shop` | part ID |
+| `lab_fusion` | Sink | MB, MS, RT | `Shop` | result rarity |
+| `hire` | Sink | MB | `Shop` | archetype ID (`EMP_…`) |
+| `recipe_learn` | Sink | MB | `Shop` | recipe ID |
+| `respec` | Sink | MB | `Shop` | `stat` / `skill` |
+| `pigeon_taxi` | Sink | MB | `ContextualPurchase` | destination district |
+| `cosmetic_mb` | Sink | MB | `Shop` | cosmetic key |
+| `robux_cosmetic` | — (zero delta) | — | not logged (Roblox monetization dashboards) | — |
+| `mod_reversal` | Sink | any | not logged to `AnalyticsService` (internal only, keeps dashboards clean) | case reference |
+
+Robux is never a currency in these events: Robux buys cosmetics only (§C4.1), and Robux revenue is read from
+Roblox's native monetization analytics.
+
+### 31.13 KPI Definitions and Targets
+
+Targets restate §1.7 [TUNABLE]; this table owns the formulas. "Day N" uses UTC days, install day = day 0.
+
+| KPI | Definition | Source | Target |
+|---|---|---|---|
+| CCU | concurrent players, sampled per minute | Creator Hub (native) | tracked; launch-month peak goal [TUNABLE] 5,000 |
+| Peak CCU | max per-minute CCU in a UTC day | native | rising week-over-week during live events |
+| DAU | unique players with ≥ 1 session in a UTC day | native + `mmr_session_start` | tracked |
+| D1 / D7 / D30 retention | % of a day-0 cohort with a session on day 1 / 7 / 30 | native retention; cross-check `mmr_session_start.daysSinceInstall` | **≥ 35 % / ≥ 15 % / ≥ 6 %** |
+| Average session length | mean `mmr_session_end.durationS` (sessions ≥ 30 s) | custom | **≥ 22 min** |
+| Sessions per DAU | sessions ÷ DAU | `mmr_session_start` | **≥ 2.0** |
+| Tutorial completion | onboarding step 12 ÷ step 1 | onboarding funnel | **≥ 80 %**; skip rate ≤ 15 % |
+| First hire in session 1 / first mutation in session 1 | % of new players reaching FS 12 / FS 10 in their first session | `mmr_first_session` | ≥ 75 % / ≥ 85 % |
+| Restaurant progression distribution | median and p25/p75 cumulative active hours to reach each tier vs §C4.4; % of players at each tier by day 1/7/30 | `RestaurantTier` progression + `mmr_session_end.activeS` | medians within ± 25 % of §C4.4; median TIER_02 ≤ 90 min |
+| Mutation collection | distinct parts owned at D7 / D30; share of MB spent on mutations | `mmr_mutation_acquired`, Econ sinks | ≥ 50 % of D7 players own ≥ 15 parts; ≥ 40 % of MB spent on mutations by D30 median |
+| Offline-earnings engagement | collect rate = Fun step 3 ÷ step 1; % of D1 returners whose first screen is Welcome Back; % of reports capped | `mmr_offline_collect` funnel, `mmr_session_start` | collect ≥ 95 %; Welcome-Back-first ≥ 70 % |
+| Offline share of MB income | offline-collect MB ÷ all MB sources, per player, median | Econ | D7 ≤ 60 %, D30 ≤ 70 % (§1.7, §4.5) |
+| Offline rate ratio | (offline net ÷ simulated hours) ÷ (active net per active hour) at the same tier | `mmr_offline_collected`, Econ, `activeS` | 35–50 %, never > 60 % (§C15) |
+| Chaos health | % of sessions ≥ 10 min with ≥ 1 brawl (anger level ≥ 5) | `mmr_session_end.brawls` | ≥ 70 % |
+| Social reach | % of players who visit or co-op another restaurant by D7 | `mmr_coop_visit_end`, visits | ≥ 20 % |
+| Revenue per active user | ARPDAU = Robux revenue ÷ DAU; payer conversion = payers ÷ MAU; ARPPU | native monetization | [TUNABLE] ARPDAU ≥ 0.5 R$, conversion ≥ 1.5 % by D30 — cosmetics only, never a gameplay lever |
+| Technical quality | crash-free sessions; join → `UI.Ready` p95; FPS p5 on LOW | native + `mmr_join_ready`, `mmr_perf_sample` | ≥ 99.5 %; ≤ 20 s; ≥ 25 FPS |
+
+### 31.14 Dashboards
+
+| Dashboard | Audience · refresh | Panels |
+|---|---|---|
+| Live Ops | on-call · 1 min (native) / 5 min (export) | CCU, joins/min, `mmr_safe_mode_entered`, `mmr_save_failed`, `mmr_service_error`, server Heartbeat p95, lock steals |
+| Onboarding | design · daily | step 1–12 drop-off, time per step, skips, assists, starter-part split (`MUT_145` / `MUT_144` / `MUT_153`), FS 1–13 reach within 60 min |
+| Retention | leads · daily | D1/D7/D30 by cohort and platform, sessions per DAU, session-length histogram, daily returns, Welcome-Back-first share |
+| Economy | economy · daily | sources and sinks per currency and tier, net MB per active hour vs §C4.4, balance percentiles, cap and soft-cap hits, failed purchases |
+| Pacing | progression · weekly | tier and level reach times vs §C4.4 / §C5.1, story chapter progression, stuck-at-tier cohorts |
+| Offline | economy · daily | collect rate, hours and cap distribution, offline share D7/D30, offline rate ratio by tier, manager-cap mix, incident mix |
+| Morph | design · weekly | parts owned D7/D30, capsule rarity observed vs disclosed odds, pity rate, top-part usage share, fusion/upgrade funnels, Morphdex fill |
+| Chaos & Combat | design · weekly | tantrums/brawls/KOs per session, encounter duration, calmed-by mix, KO-heavy first sessions vs D1, poofs by layout |
+| City & Social | design · weekly | district reach, travel modes, secrets found, event participation and result bands, co-op visits, arena |
+| Monetization | leads · weekly | native Robux dashboards, cosmetic categories (`mmr_cosmetic_purchase`), payer conversion, ARPDAU |
+| Performance | engineering · daily | FPS p50/p5, memory and bandwidth by device tier, join time, auto-scaler tier distribution |
+| Security | ops · daily | flags by code and severity, earnings holds, reversals, bans (counts only) |
+
+### 31.15 Data-Driven Balancing (decision rules)
+
+A rule fires only with ≥ `MIN_COHORT` players in the measured cohort for ≥ 7 days. **Release path:** canon economy
+formulas, offline coefficients and `SIM_VERSION` are *never* remotely tunable (§27.15) — they change only through a
+content release (with a `SIM_VERSION` bump for offline). Presentation and onboarding levers may use remote flags.
+
+| Signal | Threshold | Tuning lever (first → last) | Owner | Release path |
+|---|---|---|---|---|
+| Median cumulative active hours to reach tier T vs §C4.4 | > +25 % (too slow) | raise early quest MB (within §22 budgets) → reduce `TIER_` cost for T (canon amendment) | §22, §15 | content release |
+| Same | < −25 % (too fast) | trim quest/event MB shares → raise tier cost (canon amendment) | §22 | content release |
+| Median time to `TIER_02` | > 90 min | tutorial MB rewards → TIER_01 income levers | §32, §22 | content release |
+| Offline share of MB income | D7 median > 60 % or D30 > 70 % | `OFFLINE_DEMAND_FACTOR` 0.6 → ≈ 0.35 (§4.5.4 order) → cap semantics (§17) → manager caps (§C14.3) | §17 | content release + `SIM_VERSION` bump |
+| Offline rate ratio at any tier | > 50 % (target band) or > 60 % (canon violation) | fix §17 coefficients; > 60 % is a hotfix | §17 | hotfix + `SIM_VERSION` bump |
+| Reports capped | > 60 % of reports capped while D1 < 35 % | make Rare/Epic Managers easier to reach (hire price, §36.8) before touching caps | §16 | content release |
+| Offline collect rate | < 95 % | Welcome Back clarity (§24) | §24 | remote flag (UI variant) |
+| Tantrum vs churn | players with ≥ 3 KOs in their first 30 min show D1 ≥ 10 points below cohort | lower T1–T3 `AngerProbability` (§10) → earlier `ABL_006` coaching | §10, §32 | content release |
+| Brawl rate | < 70 % of sessions ≥ 10 min have a brawl | raise escalation probabilities at T2+ (§10) | §10 | content release |
+| Brawl overload | median encounter duration > 90 s or > 4 encounters per 10 min | lower escalation, shorten Huff Points (§11) | §10, §11 | content release |
+| Tutorial step drop-off | any single step loses > 8 % | redesign that step (§32); temporary assist via flag | §32 | remote flag, then content |
+| Mutation spend share | < 40 % of MB on mutations by D30 | Mart rotations and "Next Morph" prompts (§4, §12) | §12, §22 | content release |
+| Part dominance | any part equipped in > 60 % of active loadouts at its rarity | rebalance that part (§36.3) | §12 | content release |
+| Capsule pity | observed pity-trigger rate deviates > 2 points from the expected ≈ 9 % of 40-capsule windows (0.94^39, §C4.7 Epic-or-better = 6 %) | RNG audit; odds must match disclosure | §12 | hotfix |
+| Session length | < 22 min average | medium-session activity menu (§4.3), event cadence (§18) | §4, §18 | content / remote schedule |
+| Economy flags | `econ_rate_3x` on > 0.5 % of DAU | investigate exploit vs mis-tuned threshold (§29.14) | §29 | hotfix |
+| Customer poofs | > 1 poof per 30 customers on a layout hash | fix placement validation (§15) | §15 | content release |
+| Safe Mode | > 0.1 % of sessions | DataStore incident response (§28.16) | §28 | ops |
+
+### 31.16 Experimentation and Feature Flags
+
+- **Platform.** Flags and experiments live in §27.15's `RemoteConfig` (`mmr_remote_config` sorted map, 60 s poll,
+  `mmr_config` fast path). An experiment is a key `exp.<name>` = `{ variants, weights, salt, startDay, endDay,
+  eligibility = { minLevel, maxLevel, platforms }, guardrails }`, validated against defaults; the safe default
+  is always variant A.
+- **Assignment** is deterministic and sticky — the same player gets the same variant on every server — with no
+  storage needed; exposure is logged once per session (`mmr_exp_exposure`) at the moment the variant first
+  changes what the player sees.
+- **Allowed:** UI layouts and copy, tutorial pacing within §32's rules, tooltip timing, shop/menu presentation,
+  event schedule within approved ranges, performance tunables (`tunables.aiThinkHz`, `batchHz`, §27.15).
+- **Never:** canon economy formulas, prices, rewards, offline coefficients, `SIM_VERSION` (§27.15); capsule odds
+  or pity (disclosed odds must be true for everyone, §C4.7); anything that changes combat fairness or PvP;
+  anything targeted by age; Robux prices.
+- **Readout:** pre-registered primary metric and guardrails (D1, session length, crash-free sessions, collect
+  rate); ≥ `MIN_COHORT` per arm; minimum 7 days; stop early only for guardrail breaches.
+
+```lua
+--!strict
+-- ServerScriptService/Server/Framework/Experiments.lua (excerpt)
+-- FNV-1a over "userId:experiment:salt", computed with exact 32-bit arithmetic.
+local function hash32(key: string): number
+	local h = 2166136261
+	for i = 1, #key do
+		h = bit32.bxor(h, string.byte(key, i))
+		h = (bit32.lshift(h, 24) + h * 403) % 4294967296   -- h * 16777619 mod 2^32 without precision loss
+	end
+	return h
+end
+
+local function variantFor(userId: number, name: string, salt: string, weights: { number }): number
+	local total = 0
+	for _, w in weights do
+		total += w
+	end
+	local roll = hash32(string.format("%d:%s:%s", userId, name, salt)) % total
+	for i, w in weights do
+		if roll < w then
+			return i                                          -- 1 = control (variant A)
+		end
+		roll -= w
+	end
+	return 1
+end
+
+return { variantFor = variantFor }
+```
+
+### 31.17 Privacy and Compliance
+
+- **No PII.** No names, display names, emails, ages, locations, device identifiers or IP addresses are collected.
+  `AnalyticsService` data is processed by Roblox under its own policies; the optional export replaces the UserId
+  with a salted pseudonymous id at ingest and never stores the raw id.
+- **No chat logging.** Chat is never read, stored or analyzed by our code; moderation of chat is Roblox's. Player
+  free text (morph names, loadout names) never enters analytics or logs.
+- **Under-13 players.** The game treats every player as potentially under 13: no behavioral advertising, no
+  third-party ad or analytics SDKs, no fingerprinting, no social-media links, no data sold or shared. Features
+  that vary by region or policy (e.g. paid random items — which this game never sells) are gated with
+  `PolicyService:GetPolicyInfoForPlayerAsync`.
+- **Minimization and retention.** Only catalogued properties are recorded; the export keeps 13 months of events,
+  then aggregates; DAU-level aggregates may be kept indefinitely.
+- **Erasure.** Right-to-erasure requests remove export rows by pseudonymous id within the §28.24 procedure.
+- **Transparency.** The settings privacy line (§31.4) states what is counted.
+
+### 31.18 Edge Cases
+
+| # | Situation | Behavior |
+|---|---|---|
+| AE-01 | Player hops servers mid-session | `firstsBits` and `onboardingStep` travel with the profile, so firsts and funnel steps never repeat; the new server starts a new analytics session |
+| AE-02 | Server shuts down (E13) | `BindToClose` emits `mmr_session_end` (`endReason = shutdown`) before saves; if the budget runs out the event is dropped, never the save |
+| AE-03 | Safe Mode session | only `mmr_session_start`, `mmr_safe_mode_entered` and `mmr_session_end` are logged; gameplay events are impossible, and firsts are not set (the profile is not saved) |
+| AE-04 | `AnalyticsService` throttling | `Telemetry` drops lowest-priority events first (sampled → internal-only → custom), never economy or onboarding events |
+| AE-05 | Custom-field value outside the registry | bucketed to `other` and counted in `mmr_service_error` (registry drift) |
+| AE-06 | Experiment ends mid-session | the player keeps the variant until the session ends; no mid-session flip |
+| AE-07 | Tutorial skipped | steps are still logged in order with `CustomField01 = skipped` (AC-32-03) |
+| AE-08 | Offline report merged across two sessions | one `mmr_offline_report_shown` per showing; `segments` records the merge; collect logged once by `reportId` key |
+| AE-09 | Studio play test | `Telemetry` prints envelopes and never calls `AnalyticsService` or the export |
+| AE-10 | Reversal by moderation | `mod_reversal` is excluded from economy dashboards; counted only in the security dashboard |
+
+### 31.19 Acceptance Criteria
+
+- **AC-31-01:** Every event emitted in code exists in the §31.10 catalog (CI scan of `Telemetry.track` call sites: 0 unregistered names), and the number of distinct `LogCustomEvent` names in production stays ≤ 60.
+- **AC-31-02:** Each brief-required moment — onboarding, tutorial completion, first order, first successful meal, first tantrum, first combat, first mutation, first restaurant upgrade, first employee hire, first offline collection, city exploration, quest completion, session duration, return visits — produces its event in a scripted end-to-end playthrough (14 of 14).
+- **AC-31-03:** Once-only events fire at most once per account across 50 scripted reconnects and server hops (verified on the export and against `firstsBits`).
+- **AC-31-04:** The onboarding funnel contains exactly the 12 tutorial steps, logged sequentially once per player; no other code path calls `LogOnboardingFunnelStepEvent` (static scan).
+- **AC-31-05:** For 1,000 randomized transactions, the sum of logged `LogEconomyEvent` amounts per currency equals the net wallet change (sources − sinks), excluding zero-delta and `mod_reversal` transactions.
+- **AC-31-06:** No custom field or export property contains a UserId, display name, chat text or player-written string (automated scan of a 24-hour export sample: 0 hits).
+- **AC-31-07:** Every §31.13 KPI is computable from the catalogued events or Roblox native analytics, and the KPI query suite runs green on soft-launch data.
+- **AC-31-08:** Experiment assignment is identical for the same UserId across 3 servers and 10 sessions (100 % stickiness), and arms split within ± 1 percentage point of their weights over 100,000 simulated UserIds.
+- **AC-31-09:** Telemetry keeps `AnalyticsService` calls ≤ 1 per 2 s per player on average during a 30-minute level-6 chaos session (sampling and aggregation verified).
+- **AC-31-10:** Every §31.15 rule has a dashboard panel that shows its signal with the threshold drawn, and the weekly KPI review records each fired rule with its decision.
+- **AC-31-11:** No experiment definition in `RemoteConfig` references an economy formula, price, reward, capsule odds, offline coefficient or `SIM_VERSION` key (validator rejects them).
+- **AC-31-12:** Observed capsule rarity frequencies over ≥ 100,000 opens fall within 99 % confidence intervals of the disclosed §C4.7 odds.

@@ -121,8 +121,12 @@ VISIT_SEC_ACTIVE = 225          # [TUNABLE] active seat turnover -> seat cap = s
 MENU_MIX = 1.08                 # [TUNABLE] menu-weighted difficulty x category factor
 MENU_LEVEL_RATIO = 0.825        # [TUNABLE] menu level Lm = 1 + 0.825 (L - 1)
 PERSONALITY_TIP_MULT = 1.10     # [TUNABLE] order-weighted mean PersonalityTipMult
-OFFLINE_RATIO = 0.42            # [TUNABLE] offline net/h as share of active net/h (canon 35-50 %)
-ONBOARDING_GRANT = 400          # [TUNABLE] one-time MB budget across QST_TUT_001-012 (paid in first 0.25 h)
+OFFLINE_RATIO = 0.42            # [TUNABLE] offline net/h as share of active net/h in the first 2 h (canon 35-50 %)
+# long-absence taper (section 17): hours 0-2 at the full offline rate, 2-8 at 50 % of it, 8-24 at 20 % of it
+OFFLINE_TAPER = ((2.0, 1.0), (8.0, 0.5), (24.0, 0.2))
+OFFLINE_WINDOWS_PER_DAY = 1     # reference player: one daily session, one offline interval between sessions
+ONBOARDING_GRANT = 400          # [TUNABLE] tutorial pays 600 MB gross (section 32); ~200 MB goes to the forced
+                                # QST_TUT_011 upgrade, so the simulation credits the ~400 MB net in the first 0.25 h
 ONBOARDING_HOURS = 0.25
 
 # Satisfaction distribution of served customers (shares sum to 1) by tier band.
@@ -167,6 +171,24 @@ def roster_wages(counts):
     if counts.get("Common", 0) >= 1:
         w -= EMP_WAGE_MID["Common"] - OLLIE_WAGE  # one of the Commons is Ollie (12 MB/h)
     return w
+
+
+def taper_hours(hours):
+    """Active-rate-equivalent offline hours for one offline interval of `hours` (after the manager cap)."""
+    eff, prev = 0.0, 0.0
+    for edge, mult in OFFLINE_TAPER:
+        span = max(0.0, min(hours, edge) - prev)
+        eff += span * mult
+        prev = edge
+    return eff
+
+
+def offline_window_hours(tier):
+    """Hours one offline interval actually accrues: the gap between daily sessions, capped by the manager (C14.3)."""
+    return min(24.0 - HOURS_PER_DAY_REF, roster_cap(tier))
+
+
+HOURS_PER_DAY_REF = 1.5
 
 
 def roster_cap(tier):
@@ -401,10 +423,13 @@ class Sim:
         self.n += 1
 
     def offline_day(self, bucket, wk):
-        """Two offline windows per day (overnight + school/work), each capped by the roster manager."""
-        hours = min(22.5, 2 * roster_cap(self.tier))
+        """OFFLINE_WINDOWS_PER_DAY capped offline intervals per day, each with the section-17 long-absence taper."""
+        gap = (24.0 - HOURS_PER_DAY) / OFFLINE_WINDOWS_PER_DAY
+        hours_raw = min(gap, roster_cap(self.tier))
+        eff = taper_hours(hours_raw) * OFFLINE_WINDOWS_PER_DAY
+        hours = hours_raw * OFFLINE_WINDOWS_PER_DAY
         inc = income(self.tier, self.level, self.wages())
-        off = OFFLINE_RATIO * inc["net"] * hours
+        off = OFFLINE_RATIO * inc["net"] * eff
         self.add(bucket, "offline", off)
         self.add(bucket, "net", off)
         self.add(wk, "net", off)
@@ -720,13 +745,13 @@ def t_emp_roi():
     for r, t, ps in cases:
         eff, cust, per, marg = emp_marginal(r, t, ps)
         hire = EMP_HIRE_MID[r]
-        op_h = HOURS_PER_DAY + min(22.5, 2 * roster_cap(t))
+        op_h = HOURS_PER_DAY + taper_hours(min(24.0 - HOURS_PER_DAY, roster_cap(t)))
         rows.append([r, f"`TIER_{t:02d}`", EMP_STAT_MID[r], f"{eff:.3f}", f"{ps} s", f"{cust:.1f}", f"{per:.1f}",
                      fm(EMP_WAGE_MID[r]), fm(marg), fm(hire), f"{hire / marg:.1f} h", f"{op_h:.1f} h",
                      f"{hire / (marg * op_h):.1f} d"])
     return md(["Chef rarity", "Typical tier", "Cooking stat", "Efficiency (C14.2; morale 80, energy 80)",
                "PrepSec_avg (assumed)", "Customers/h added", "Net per customer", "Wage/h",
-               "Marginal net/h", "Hire cost", "Payback (operating h)", "Operating h/day (ref. player)",
+               "Marginal net/h", "Hire cost", "Payback (operating h)", "Full-rate h/day (active + tapered offline)",
                "Payback (days)"], rows)
 
 
@@ -799,14 +824,18 @@ def t_offline():
         cap = roster_cap(t)
         on = CANON_NET[t]
         off = OFFLINE_RATIO * on
-        hrs = min(22.5, 2 * cap)
-        day = off * hrs
+        h1 = min(24.0 - HOURS_PER_DAY, cap)
+        e1 = taper_hours(h1)
+        day1 = off * e1
+        h2 = min((24.0 - HOURS_PER_DAY) / 2, cap)
+        day2 = off * 2 * taper_hours(h2)
         act = on * HOURS_PER_DAY
-        rows.append([f"`TIER_{t:02d}`", fm(on), f"{fm(0.35 * on)}–{fm(0.50 * on)}", fm(off), f"{cap} h",
-                     fm(off * cap), f"{hrs:g} h", fm(day), fm(act), f"{day / (day + act) * 100:.0f} %"])
-    return md(["Tier", "Active net/h (C4.4)", "Offline net/h band (35–50 %)", "Model offline net/h (42 %)",
-               "Ref. cap", "Per capped window", "Offline h/day (2 check-ins)", "Offline MB/day",
-               "Active MB/day (1.5 h)", "Offline share of daily MB"], rows)
+        rows.append([f"`TIER_{t:02d}`", fm(on), f"{fm(0.35 * on)}–{fm(0.50 * on)}", f"{cap} h", f"{h1:g} h",
+                     f"{e1:.1f} h", fm(day1), fm(act), f"{day1 / (day1 + act) * 100:.0f} %",
+                     f"{day2 / (day2 + act) * 100:.0f} %"])
+    return md(["Tier", "Active net/h (C4.4)", "Offline net/h, first 2 h (35–50 %)", "Ref. manager cap",
+               "Hours accrued (1 interval/day)", "Full-rate equivalent after taper", "Offline MB/day (42 % rate)",
+               "Active MB/day (1.5 h)", "Offline share (1 interval/day)", "Offline share (2 check-ins/day)"], rows)
 
 
 def sim_table(wi, offline=False):
@@ -957,7 +986,7 @@ def t_mut_costs():
         rt = sum(rtb * (L - 3) for L in range(4, mx)) if epic_plus else 0
         buy = {"Common": "150–400", "Uncommon": "800–2,000", "Rare": "4,000–10,000 + 20 MS",
                "Epic": "25,000–60,000 + 80 MS", "Legendary": "150,000–400,000 + 250 MS + 10 RT",
-               "Mythic": "fusion: 3 Legendary + 600 MS + 40 RT", "Secret": "discovery only"}[r]
+               "Mythic": "Lab fusion (§12.5): 3 Legendary parts from one fusion route + 600 MS + 40 RT", "Secret": "discovery only"}[r]
         hours_ref = {"Common": 1, "Uncommon": 5, "Rare": 12, "Epic": 25, "Legendary": 40, "Mythic": 60, "Secret": 40}[r]
         t_eq = max(t for t in TIERS if TIER_REQ_LVL[t] <= max(hours_ref, 1))
         rows.append([r, buy, mx, fm(mb), fm(ms), mx - 1, fm((mx - 1) * sub) if r != "Secret" else fm((mx - 1) * 600),

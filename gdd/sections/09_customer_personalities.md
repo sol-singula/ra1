@@ -562,9 +562,9 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 | Inspection | K_min ≥ 80 → +0.05 ★; K_min < 50 → −0.05 ★ | PER_025 |
 | Mystery Bonus | Tip× × 1.2 | PER_032 |
 | Hook chances | Seconds 30 % · Happy Prank 15 % · Nap 20 % (≤ 15 s) · Anniversary 5 % · Treasure Map 5 % | per visit |
-| Remake window (PER_001) | 60 s | |
-| Quality gate (PER_014) | Q < 0.60 = rejected | |
-| Sing bonus (PER_031) | P_offset +8, anger −15; +2 per extra singer, max +12 | |
+| Remake window (Karenosaurus) | 60 s | |
+| Quality gate (Picky Platypus) | Q < 0.60 = rejected | |
+| Sing bonus (Birthday Beast) | P_offset +8, anger −15; +2 per extra singer, max +12 | |
 
 ### 9.6 UI
 
@@ -581,14 +581,14 @@ Each block lists every brief field. "Ref. spend" uses the `TIER_03` reference av
 
 ### 9.7 Progression
 
-| Tier | New personalities | Total eligible |
+| Tier # | New personalities | Total eligible |
 |---|---|---|
-| `TIER_01` | PER_001, PER_003, PER_005, PER_006, PER_012, PER_013, PER_014 | 7 |
-| `TIER_02` | PER_002, PER_007, PER_009, PER_010, PER_015, PER_017, PER_018, PER_020, PER_021 | 16 |
-| `TIER_03` | PER_004, PER_008, PER_011, PER_016, PER_019, PER_022, PER_023, PER_025, PER_027, PER_031 | 26 |
-| `TIER_04` | PER_024, PER_026, PER_028 | 29 |
-| `TIER_05` | PER_029, PER_030 | 31 |
-| `TIER_06` | PER_032 | 32 |
+| 1 | PER_001, PER_003, PER_005, PER_006, PER_012, PER_013, PER_014 | 7 |
+| 2 | PER_002, PER_007, PER_009, PER_010, PER_015, PER_017, PER_018, PER_020, PER_021 | 16 |
+| 3 | PER_004, PER_008, PER_011, PER_016, PER_019, PER_022, PER_023, PER_025, PER_027, PER_031 | 26 |
+| 4 | PER_024, PER_026, PER_028 | 29 |
+| 5 | PER_029, PER_030 | 31 |
+| 6 | PER_032 | 32 |
 
 Codex completion (all 32 served) is a natural achievement hook for §36.16.
 

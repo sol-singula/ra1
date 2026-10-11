@@ -56,7 +56,7 @@ the restaurant, staff, quests, offline reports, purchases — so that:
 | `CLAIMED_REPORT_RING` | **20** (canon §C15) | `offline.claimedReportIds`. |
 | `RECEIPT_RING` | 100 [TUNABLE] | Robux `PurchaseId`s kept in-profile (global ledger is the backstop). |
 | `REGULARS_CAP` / `ROSTER_BENCH_CAP` | 20 (§8) / 10 [TUNABLE] | Regular customers per restaurant; benched staff beyond the tier employee cap. |
-| `PENDING_OPS_CAP` / `MOD_FLAG_RING` | 20 / 25 | Cross-key operation journal; moderation flags. |
+| `PENDING_OPS_CAP` / `MODERATION_FLAG_RING` | 20 / 25 | Cross-key operation journal; moderation flags. |
 | `SNAPSHOT_SLOTS` | 3 (monthly) + 1 pre-migration | `MMR_ProfileSnap_v1` (§28.20). |
 | `SIZE_WARN` / `SIZE_SOFT` / `SIZE_HARD` | 512 KB / 1 MB / 3.5 MB | Encoded JSON length; DataStore limit is 4 MB per key. |
 | `BUDGET_RESERVE_NONCRITICAL` | 20 requests | Below this, leaderboards/snapshots/mod-logs are deferred. |
@@ -227,7 +227,7 @@ export type SessionLock = {
 	nonce: string,          -- per-session GUID: distinguishes a rejoin on the same JobId
 }
 
-export type PendingOpKind = "RECEIPT_LEDGER" | "LEADERBOARD" | "SNAPSHOT" | "MOD_LOG"
+export type PendingOpKind = "RECEIPT_LEDGER" | "LEADERBOARD" | "SNAPSHOT" | "MODERATION_LOG"
 export type PendingOp = {
 	opId: string,                 -- GUID; the external write is keyed by it (idempotent replay)
 	kind: PendingOpKind,
@@ -239,7 +239,7 @@ export type PendingOp = {
 export type ModFlag = { t: UnixTime, code: string, sev: number }    -- codes in §29.17
 export type Moderation = {
 	strikes: number,
-	flags: { ModFlag },           -- ring of MOD_FLAG_RING
+	flags: { ModFlag },           -- ring of MODERATION_FLAG_RING
 	econHold: boolean,            -- earning frozen pending review (§29.14)
 	lastReviewAt: UnixTime,
 }
@@ -409,7 +409,7 @@ export type Restaurant = {            -- writer: RestaurantService
 	tier: string,                     -- "TIER_01".."TIER_10"
 	plotPreference: number?,          -- last Restaurant Row plot (non-binding)
 	upgrades: { string },             -- purchased restaurant upgrades (§36.12): plain "UPG_012" for one-offs,
-	                                  -- "UPG_006#3" for leveled ones; station upgrade levels are per station
+	                                  -- "UPG_012#3" for leveled ones; station upgrade levels are per station
 	                                  -- TYPE and live here (§15) — any per-object level only mirrors them
 	reputation: Reputation,
 	regulars: { Regular },            -- <= REGULARS_CAP = 20; replacement rule per §8 (lowest loyalty, newcomer S >= 95)
@@ -658,7 +658,7 @@ Encoded size = `#HttpService:JSONEncode(profile)`, measured before every write.
 
 | Section | Typical late-game (L80, TIER_10) | Worst case | Bound that guarantees the worst case |
 |---|---|---|---|
-| `meta` (incl. pending ops, moderation, analytics) | 2 KB | 5 KB | `PENDING_OPS_CAP` 20, `MOD_FLAG_RING` 25 |
+| `meta` (incl. pending ops, moderation, analytics) | 2 KB | 5 KB | `PENDING_OPS_CAP` 20, `MODERATION_FLAG_RING` 25 |
 | `settings` | 1 KB | 2.5 KB | `uiSettings` ≤ 2 KB (validator) |
 | `wallet` | 7 KB | 13 KB | ledger 50 × ~110 B, keys 64 × ~30 B, receipts 100 × ~60 B |
 | `progression` | 8 KB | 20 KB | one entry per achievement/milestone/skill node; ≤ 60 counters; `xpOnceKeys` bounded by content (expired cycle keys pruned) |
@@ -803,6 +803,7 @@ local LIST: { Migration } = {
 			local objects = d.restaurant.layout or {}
 			local damaged: { [string]: number } = {}
 			for _, o in ipairs(objects) do
+				o.lvl = o.lvl or 1                       -- v2 decor rows carried no level
 				if (o.dur or 100) < 100 then
 					damaged[tostring(o.uid)] = math.clamp(o.dur, 0, 99)
 				end
@@ -1461,6 +1462,7 @@ player's data.
 | DP-15 | Erasure request while the player is online | Kick first, wait for lock release, then delete; the save transform refuses to recreate a key that vanished mid-session. |
 | DP-16 | Lab fusion consumes a part used in saved loadouts | The same in-memory step unequips it from the body and replaces it in every loadout with the slot's previous part or empty; validator would otherwise flag "equipped not owned". |
 | DP-17 | New offline interval while a report is still pending | Merged per §C15 (each interval capped separately) under a new deterministic `reportId`; only the merged report is claimable. |
+| DP-18 | Player tries to store a damaged item to "heal" it | `Building.Store` is refused unless durability is 100 % (storage keeps counts only, §15); the item must be repaired first, so storing never erases damage. |
 
 ### 28.26 Acceptance Criteria
 

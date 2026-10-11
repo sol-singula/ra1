@@ -43,7 +43,7 @@ Apology Payment (40 %), which is always worse than a happy customer's payment.
 | 4 Destroying furniture | Yes | Smashes nearby furniture (values §11.6.3); flips tables (TANK/CHARGER, `ANM_049`); does not chase players |
 | 5 Fighting the player | Yes | Full style AI (§11.8) including its Signature Move (§11.8.3); entering level 5 plays a 0.4 s "Rage Puff" roar (morph visual swells 1.15×, steam puffs from ears — cosmetic) |
 | 6 Restaurant-wide chaos | Yes, for every customer at level ≥ 3 | Caps raised (§11.8.1), "CHAOS!" banner, chaos music sting (§26) |
-| Any level, style `PACIFIST` | Never | Sulks, cries dramatically (`ANM_047`), flees (`ANM_054`) or storms out per §10 |
+| Any level, style `PACIFIST` | Never | Sulks, cries dramatically (`ANM_056`), flees (`ANM_054`) or storms out per §10 |
 
 #### 11.2.2 Damage relationship matrix
 
@@ -460,7 +460,7 @@ ragdolled; KO uses an authored animation (`ANM_062`).
 
 | Style | Priority-ordered decisions (condition → action · telegraph · cooldown) | Retreat / special rules |
 |---|---|---|
-| `PACIFIST` | 1 Hit by anything → cry dramatically (`ANM_047`) and flee 8 studs (`ANM_054`), +10 anger · — · — 2 Level 3–5 → sulk, cry or storm out (§10) 3 Chaos → hide under the nearest table (crouch) | Never attacks, never holds tokens, never targeted by soft lock |
+| `PACIFIST` | 1 Hit by anything → cry dramatically (`ANM_056`) and flee 8 studs (`ANM_054`), +10 anger · — · — 2 Level 3–5 → sulk, cry or storm out (§10) 3 Chaos → hide under the nearest table (crouch) | Never attacks, never holds tokens, never targeted by soft lock |
 | `THROWER` | 1 Player within 6 studs → backpedal to 12 studs; if cornered, slap (NPC Base 3, 0.4 s) 2 Holding a throwable + token + line of sight → lob (`ANM_048`; NPC Base food 6 / plate 6 / cup 4) · 0.5 s "!" + landing reticle · 2.5 s 3 Signature Move ready (§11.8.3) → use it 4 No throwable → fetch the nearest food/plate/cup within 15 studs (may steal from another table, §11.6.4-5) | Keeps 12–18 studs; below 30 % Huff hides behind furniture for 4 s. Aim error ±10 % of distance; never homing |
 | `BRAWLER` | 1 In 4 studs + token → 3-hit combo (NPC Base 4 / 4 / 6) · 0.4 s "!" · 1.5 s 2 Every 6 s → heavy swing (NPC Base 12, 6-stud knockback) · 0.7 s "!" — or Signature Move 3 Pan/chair within 6 studs and empty-handed → 50 % pick it up (pan: `ABL_007` NPC version) 4 Otherwise chase target | Below 30 % Huff: 35 % chance per 3 s to back off and taunt for 3 s |
 | `CHARGER` | 1 Target 8–20 studs + line of sight + token → rush (30 studs/s, 20 studs; NPC Base 12, 10-stud knockback, guard damage ×2, smashes up to 3 objects 18 % each) · 0.8 s hoof-scrape + red "!!" + lane decal · 5 s 2 Rush ends in a wall → self `STS_STUN` 1.2 s ("Dazed": takes ×1.25) 3 In 4 studs → shove (NPC Base 6, 5-stud knockback) · 0.5 s "!" · 2 s 4 Otherwise reposition to 10–14 studs | Never retreats while a rush is ready; otherwise as shared rule |
@@ -732,7 +732,7 @@ stateDiagram-v2
 
 | Remote | Kind · direction | Payload | Server validation |
 |---|---|---|---|
-| `Combat.UseAbility` | RemoteEvent · C→S | abilityId, seq, aimDir, targetId? | token bucket (8 burst, 6/s), types, ownership via `MutationService`, state, cooldown (−0.1 s tolerance), range + LOS |
+| `Combat.UseAbility` | RemoteEvent · C→S | abilityId, seq, aimDir, targetId? | token bucket (§29 combat class: 12 burst, 8/s), types, ownership via `MutationService`, state, cooldown (−0.1 s tolerance), range + LOS |
 | `Combat.BlockState` | RemoteEvent · C→S | isBlocking, seq | ≤ 10/s; block start = receive time − min(ping/2, 0.1 s) |
 | `Combat.Dodge` | RemoteEvent · C→S | dir, seq | cooldown 1.1 s minimum; invulnerability starts at receive − min(ping/2, 0.15 s) ("dodge grace") |
 | `Combat.Grab` / `Combat.Throw` | RemoteEvent · C→S | propId / aimDir, charge | range 6 + 2 studs, `Throwable`, carry capacity; throw cooldown 0.8 s |
@@ -993,7 +993,7 @@ had_security) · `mmr_customer_calmed` (method, personality) · `mmr_ability_use
 | 16 | Guest breaks the owner's furniture (canon E12) | Damage repaired free by Co-op Insurance after the visit; guests can throw props but cannot store, sell or move them permanently (Furniture Homing returns them). |
 | 17 | Area ability used next to calm diners (e.g. `ABL_024`) | Diners take 0 damage but receive bystander anger and cleanliness effects listed in §36.6 — a deliberate risk the player controls. |
 | 18 | Prop thrown through the front door or out of the interior | Despawns in a poof and homes to its cell immediately; it never appears in the city. |
-| 19 | Tutorial `QST_TUT_007` | Incoming damage ×0.5, player HP floor 1 (no KO possible), Winded after 2 misses so Calm Down! is learned. |
+| 19 | Tutorial `QST_TUT_007` | Incoming damage ×0.5, player HP floor 1 (no KO possible); the scripted Karenosaurus refuses Calm Down! (it is taught on the splashed Polite Demon `PER_003`, per §32), and Winded triggers after 2 misses. |
 | 20 | Customer defeated while holding a stolen dish | Dish drops with the Plate Save rule; its original owner's anger −10 when it is re-served. |
 
 ---

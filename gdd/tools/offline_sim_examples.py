@@ -53,6 +53,15 @@ OFF_ROLE_PENALTY = 0.85
 TRAIT_MULT_CAP = 1.5
 OFFLINE_CEILING_SHARE = 0.60         # canon C15 "never above 60 %" -> hard clamp
 MAX_SAME_INCIDENT = 2                # an incident ID appears at most twice per report
+TAPER_BANDS = [(2, 1.0), (8, 0.5), (24, 0.2)]  # long-absence taper: hours 0-2 x1.0, 2-8 x0.5, 8-24 x0.2
+
+
+def taper(hour_start):
+    """Shift factor for the step that starts at hour_start (steps start on whole hours)."""
+    for end, f in TAPER_BANDS:
+        if hour_start < end - 1e-9:
+            return f
+    return TAPER_BANDS[-1][1]
 CAP_HOURS = {None: 2, "Common": 4, "Uncommon": 4, "Rare": 8, "Epic": 12, "Legendary": 24}
 ASST_CAP_BONUS, ABS_CAP = 2, 24
 COST_PER_DAMAGE_POINT = {1: 1, 2: 1.5, 3: 2.5, 4: 4, 5: 7, 6: 12, 7: 20, 8: 35, 9: 60, 10: 100}
@@ -248,13 +257,14 @@ def simulate(ex):
     rows = []
     carry = 0.0
     closed_at = None
-    tot = dict(N=0, rev=0.0, tips=0.0, deliv=0.0, ing=0.0, wages=0.0, hours=0.0)
+    tot = dict(N=0, rev=0.0, tips=0.0, deliv=0.0, ing=0.0, wages=0.0, hours=0.0, eff_hours=0.0)
     stock_used = {}
     sold_out = []
     first_ctx = None
     budget = float(ex.get("stocker_budget", 0))
     autobuy_log = []
     for i, hstep in enumerate(steps):
+        tp = taper(i)
         autobuy_step = 0.0
         eff = {s.id: efficiency(s, Mo[s.id], E[s.id], eff_stat) for s in staff}
         contrib = {s.id: eff[s.id] / 100 * s.trait_mult(ctx) for s in staff}
@@ -274,7 +284,7 @@ def simulate(ex):
             q_est = rows[-1]["Q"] if rows else demand
             for ingr in sorted(set(m["special"] for m in cand if m.get("special"))):
                 users = [m for m in cand if m.get("special") == ingr]
-                need = q_est * hstep * ITEMS_PER_CUSTOMER * len(users) / len(cand)
+                need = q_est * hstep * tp * ITEMS_PER_CUSTOMER * len(users) / len(cand)
                 short = math.ceil(max(0.0, need - stock.get(ingr, 0)))
                 if short <= 0:
                     continue
@@ -306,7 +316,7 @@ def simulate(ex):
             cap_s = NO_WAITER_FACTOR * cap_k
         Q = min(demand, cap_seat, cap_k, cap_s)
         lim = min([("Demand", demand), ("Seats", cap_seat), ("Kitchen", cap_k), ("Service", cap_s)], key=lambda x: x[1])[0]
-        x = Q * hstep + carry
+        x = Q * hstep * tp + carry
         N = math.floor(x + 1e-9)
         carry = x - N
         avg_acc = sum(c.stats["acc"] for c in chefs) / len(chefs)
@@ -333,7 +343,7 @@ def simulate(ex):
                 sdisc += 0.02
             sdisc = min(0.15, sdisc)
         ing = (N + n_del) * ing_avg * (1 - sdisc) * (1 - 0.0015 * eff_stat) + autobuy_step
-        wages = sum(s.wage for s in staff) * hstep
+        wages = sum(s.wage for s in staff) * hstep * tp
         net = rev + tips + deliv - ing - wages
         # special stock consumption
         for m in live:
@@ -343,7 +353,7 @@ def simulate(ex):
                 stock[m["special"]] -= use
                 stock_used[m["special"]] = stock_used.get(m["special"], 0) + use
 
-        row = dict(step=i + 1, h=hstep, E=sum(E.values()) / len(E), M=sum(Mo.values()) / len(Mo),
+        row = dict(step=i + 1, h=hstep, tp=tp, E=sum(E.values()) / len(E), M=sum(Mo.values()) / len(Mo),
                    chef_contrib=sum(contrib[c.id] for c in chefs), prep_avg=prep_avg, ticket=ticket,
                    cap_k=cap_k, cap_s=cap_s, Q=Q, lim=lim, N=N, q=q, rev=rev, tips=tips, deliv=deliv,
                    ing=ing, wages=wages, net=net, coord=coord, live=len(live), sdisc=sdisc, dpct=dpct,
@@ -364,12 +374,14 @@ def simulate(ex):
             tot[kk] += row[kk]
         tot["N"] += N
         tot["hours"] += hstep
+        tot["eff_hours"] += hstep * tp
         for s in staff:
             E[s.id] = max(0.0, E[s.id] - s.decay(has_mgr, mgr_bonus_decay) * hstep)
             Mo[s.id] = max(0.0, Mo[s.id] - MORALE_DECAY * hstep * (0.5 if s.pers == "Zen Noodle" else 1))
     H_op = tot["hours"]
+    H_eff = tot["eff_hours"]
     R_total = tot["rev"] + tot["tips"] + tot["deliv"]
-    Rh = R_total / H_op if H_op else 0
+    Rh = R_total / H_eff if H_eff else 0
 
     # ---------------- incidents (count over operated hours, canon C15)
     sm = 0.0
@@ -377,7 +389,7 @@ def simulate(ex):
         c = first_ctx["contrib"][g.id]
         sm += 0.25 * c + (0.10 if "Bouncer" in g.traits else 0) + (0.05 if "Heavyweight" in g.traits else 0)
     sm = min(0.60, sm)
-    lam = H_op * INCIDENT_RATE * (1 - sm)
+    lam = H_eff * INCIDENT_RATE * (1 - sm)
     count = math.floor(lam) + (1 if rng.random() < (lam - math.floor(lam)) else 0)
     if H_op <= 0:
         count = 0  # nothing operated -> nothing happened (the roll is still consumed to keep the draw order fixed)
@@ -535,20 +547,22 @@ def simulate(ex):
     capsules = 0
     day_of_last = ex.get("last_capsule_day", -1)
     for r in op_steps:
-        if rng.random() < MS_CHANCE * disc_boost * r["h"]:
+        if rng.random() < MS_CHANCE * disc_boost * r["h"] * r["tp"]:
             amt = rng.randint(1, 3)
             ms += amt
             ms_events.append((r["step"], amt))
-        if rng.random() < CRATE_CHANCE * crate_boost * r["h"]:
+        if rng.random() < CRATE_CHANCE * crate_boost * r["h"] * r["tp"]:
             crates.append((r["step"], rng.randint(5, 15)))
         step_day = (ex["last_sim_at"] + int((r["step"] - 1) * 3600)) // 86400
-        if rng.random() < CAPSULE_CHANCE * r["h"] and step_day > day_of_last and capsules < 1:
+        if rng.random() < CAPSULE_CHANCE * r["h"] * r["tp"] and step_day > day_of_last and capsules < 1:
             capsules += 1
             day_of_last = step_day
 
     base_net = tot["rev"] + tot["tips"] + tot["deliv"] - tot["ing"] - tot["wages"]
     net = base_net + inc_mb - auto_rep
-    ceiling = OFFLINE_CEILING_SHARE * T["active_net"] * H_op
+    ceiling = OFFLINE_CEILING_SHARE * T["active_net"] * H_eff
+    first = [r for r in op_steps if r["step"] <= 2]
+    first2_rate = (sum(r["net"] for r in first) / sum(r["h"] for r in first)) if first else 0.0
     clamped = net > ceiling
     net = max(0.0, min(net, ceiling)) if H_op > 0 else 0.0
     payout = half_up(net)  # the only rounding of money in the whole simulation (canon C0)
@@ -561,7 +575,7 @@ def simulate(ex):
                 clamped=clamped, ceiling=ceiling, payout=payout, stock_used=stock_used, sold_out=sold_out,
                 prep_count=prep_count, cashier_count=cashier_count, autobuy_log=autobuy_log, stock_end=stock, stock0=stock0, dish_factor=dish_factor,
                 clean_factor=clean_factor, q_adj=q_adj, tip_trait=tip_trait, headroom=headroom,
-                disc_boost=disc_boost, H_op=H_op, pool_size=pool_size)
+                disc_boost=disc_boost, H_op=H_op, H_eff=H_eff, first2_rate=first2_rate, pool_size=pool_size)
 
 
 # ---------------------------------------------------------------- the five worked examples
@@ -645,7 +659,7 @@ EXAMPLES = [
         "stations": ["STN_CUT", "STN_GRILL", "STN_FRYER", "STN_DRINK", "STN_STOVE", "STN_OVEN", "STN_PIZZA_OVEN",
                      "STN_BLENDER", "STN_ICECREAM", "STN_SOUP_POT", "STN_MIXER", "STN_STEAMER", "STN_ANTIGRAV",
                      "STN_INFUSER"],
-        "menu": [M("RCP_LEG_001", 5, special="ING_GOLDEN_PATTY"), M("RCP_LEG_002", 5, special="ING_GOLDEN_PATTY"),
+        "menu": [M("RCP_LEG_001", 5, special="ING_GOLDEN_PATTY"), M("RCP_PST_008", 4),
                  M("RCP_LEG_003", 5, special="ING_GOLDEN_PATTY"),
                  M("RCP_MUT_004", 4, special="ING_MUTAGEN_GOO"), M("RCP_MUT_005", 4, special="ING_MUTAGEN_GOO"),
                  M("RCP_ALN_010", 4, special="ING_STARDUST"), M("RCP_ALN_009", 4, special="ING_STARDUST"),
@@ -655,8 +669,8 @@ EXAMPLES = [
                  M("RCP_BRG_014", 4), M("RCP_ALN_007", 4, special="ING_STARDUST"), M("RCP_DRK_015", 4),
                  M("RCP_TAC_010", 4), M("RCP_MUT_002", 4, special="ING_MUTAGEN_GOO"), M("RCP_PST_010", 3),
                  M("RCP_DES_014", 3), M("RCP_SAN_010", 3), M("RCP_ALN_006", 3, special="ING_STARDUST")],
-        "stock": {"ING_GOLDEN_PATTY": 700, "ING_MUTAGEN_GOO": 900, "ING_STARDUST": 900},
-        "stocker_budget": 20000,
+        "stock": {"ING_GOLDEN_PATTY": 200, "ING_MUTAGEN_GOO": 300, "ING_STARDUST": 300},
+        "stocker_budget": 6000,
         "roster": [{"id": "EMP_076", "morale": 85, "energy": 95},
                    {"id": "EMP_097", "morale": 85, "energy": 95},
                    {"id": "EMP_011", "morale": 85, "energy": 95, "trained": {"cook": 100}},
@@ -789,6 +803,7 @@ def render_example(r, idx):
         mtxt += " (+2 h Assistant, absolute max 24 h)"
     w("| Offline cap | %d h | %s |" % (r["cap"], mtxt))
     w("| Elapsed / simulated | %s / **%s**%s | H = min(H_elapsed, cap) |" % (hm(r["H_el"]), hm(r["H"]), " (capped)" if r["H_el"] > r["cap"] else ""))
+    w("| Long-absence taper | %.2f effective h | Full Shift h0–2 ×1.0 · Late Shift h2–8 ×0.5 · Skeleton Shift h8–24 ×0.2 |" % r["H_eff"])
     w("| Seed | `0x%08X` | FNV-1a-32(\"%d:%d:%d\") |" % (r["seed"], ex["user_id"], ex["last_sim_at"], SIM_VERSION))
     if ex.get("stock"):
         w("| Special stock at logout | %s | consumed 1 unit per special dish |" % ", ".join("`%s` × %d" % kv for kv in ex["stock"].items()))
@@ -833,16 +848,16 @@ def render_example(r, idx):
     w("")
     w("**Hourly steps**")
     w("")
-    w("| Step | h | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |")
-    w("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    w("| Step | h | Shift | Avg Energy % | Σ chef contrib | Cap_kitchen | Cap_service | Q | Limit | N | Revenue | Tips | Delivery | Ingredients | Wages | Net_step |")
+    w("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for row in r["rows"]:
-        w("| %d%s | %.2f | %.1f | %.3f | %.1f | %.1f | %.1f | %s | %d | %s | %s | %s | %s | %s | %s |" % (
-            row["step"], " (voided)" if row.get("voided") else "", row["h"], row["E"], row["chef_contrib"], row["cap_k"], row["cap_s"],
+        w("| %d%s | %.2f | ×%.1f | %.1f | %.3f | %.1f | %.1f | %.1f | %s | %d | %s | %s | %s | %s | %s | %s |" % (
+            row["step"], " (voided)" if row.get("voided") else "", row["h"], row["tp"], row["E"], row["chef_contrib"], row["cap_k"], row["cap_s"],
             row["Q"], row["lim"], row["N"], fmt(row["rev"]), fmt(row["tips"]), fmt(row["deliv"]), fmt(row["ing"]),
             fmt(row["wages"]), fmt(row["net"])))
     tot = r["tot"]
-    w("| **Σ** | %.2f | | | | | | | **%s** | **%s** | **%s** | **%s** | **%s** | **%s** | **%s** |" % (
-        r["H_op"], fmt(tot["N"]), fmt(tot["rev"]), fmt(tot["tips"]), fmt(tot["deliv"]), fmt(tot["ing"]), fmt(tot["wages"]), fmt(r["base_net"])))
+    w("| **Σ** | %.2f | %.2f eff. | | | | | | | **%s** | **%s** | **%s** | **%s** | **%s** | **%s** | **%s** |" % (
+        r["H_op"], r["H_eff"], fmt(tot["N"]), fmt(tot["rev"]), fmt(tot["tips"]), fmt(tot["deliv"]), fmt(tot["ing"]), fmt(tot["wages"]), fmt(r["base_net"])))
     w("")
     if r["closed_at"]:
         w("Step %d would have lost money (Net_step < 0), so the Manager **closed early**: that step is voided (no customers, no wages) and the simulation stops." % r["closed_at"])
@@ -871,8 +886,8 @@ def render_example(r, idx):
         w("**Incidents & discoveries**")
         w("")
     if not compact:
-        w("- Security Mitigation SM = %.3f; λ = %.2f h × 0.6 × (1 − SM) = %.3f → count = floor(λ) + roll(%.3f) = **%d**; eligible pool %d incidents; Rh = %s MB/h." % (
-            r["sm"], r["H_op"], r["lam"], r["lam"] - math.floor(r["lam"]), r["count"], r["pool_size"], fmt(r["Rh"])))
+        w("- Security Mitigation SM = %.3f; λ = %.2f effective h × 0.6 × (1 − SM) = %.3f → count = floor(λ) + roll(%.3f) = **%d**; eligible pool %d incidents; Rh = %s MB per effective hour." % (
+            r["sm"], r["H_eff"], r["lam"], r["lam"] - math.floor(r["lam"]), r["count"], r["pool_size"], fmt(r["Rh"])))
         neg = -sum(d["mb"] for d in r["drawn"] if d["mb"] < 0) + r["dmg_val"]
         pos = sum(d["mb"] for d in r["drawn"] if d["mb"] > 0)
         w("- Caps: negatives %s ≤ 10 %% of R (%s) → scale ×%.2f; positives %s ≤ 15 %% of R (%s) → scale ×%.2f." % (
@@ -906,13 +921,13 @@ def render_example(r, idx):
     bph = r["base_net"] / r["H_op"] if r["H_op"] else 0
     w("**Result**")
     w("")
-    w("| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | Net / h | C4.4 active net / h | Offline ÷ active |")
-    w("|---|---|---|---|---|---|---|---|---|---|---|---|")
+    w("| Customers | Revenue | Tips | Delivery | Ingredients | Wages | Auto-repairs | Incidents | **Net** | First-2-h rate (MB/h) | C4.4 active net / h | First-2-h ÷ active | Interval worth |")
+    w("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     neg_s = lambda v: ("−" + fmt(v)) if half_up(v) else "0"
-    w("| %s | %s | %s | %s | %s | %s | %s | %s | **%s** | %s | %s | **%.1f %%** (base economy %.1f %%) |" % (
+    w("| %s | %s | %s | %s | %s | %s | %s | %s | **%s** | %s | %s | **%.1f %%** | %.2f active h |" % (
         fmt(tot["N"]), fmt(tot["rev"]), fmt(tot["tips"]), fmt(tot["deliv"]), neg_s(tot["ing"]), neg_s(tot["wages"]),
-        neg_s(r["auto_rep"]), ("+" if r["inc_mb"] >= 0 else "") + fmt(r["inc_mb"]), fmt(r["net"]), fmt(nph), fmt(n_active),
-        100 * nph / n_active, 100 * bph / n_active))
+        neg_s(r["auto_rep"]), ("+" if r["inc_mb"] >= 0 else "") + fmt(r["inc_mb"]), fmt(r["payout"]), fmt(r["first2_rate"]), fmt(n_active),
+        100 * r["first2_rate"] / n_active, r["payout"] / n_active))
     w("")
     return "\n".join(L)
 
@@ -923,13 +938,13 @@ def render_all(results):
         L.append(render_example(r, i))
     L.append("#### 17.9.%d Summary of the worked examples" % (len(results) + 1))
     L.append("")
-    L.append("| Example | Tier | Staff | Simulated | Customers | Net | Net / h | Active net / h (C4.4) | Offline ÷ active | Band 35–50 % |")
-    L.append("|---|---|---|---|---|---|---|---|---|---|")
+    L.append("| Example | Tier | Staff | Simulated (effective) | Customers | Net | First-2-h rate | Active net / h (C4.4) | First-2-h ÷ active | Band 35–50 % | Interval worth (active hours) |")
+    L.append("|---|---|---|---|---|---|---|---|---|---|---|")
     for r in results:
         s = summary_line(r)
-        L.append("| %s | `%s` | %d | %s | %s | %s | %s | %s | %.1f %% | %s |" % (
-            s["key"], s["tier"], len(r["staff"]), hm(r["H_op"]), fmt(r["tot"]["N"]), fmt(r["net"]), fmt(s["nph"]), fmt(s["active"]),
-            s["pct"], "✓" if 35 <= s["pct"] <= 50 else ("✗ (intentional)" if r["ex"].get("negative_example") else "✗")))
+        L.append("| %s | `%s` | %d | %s (%.2f h) | %s | %s | %s | %s | %.1f %% | %s | %.2f |" % (
+            s["key"], s["tier"], len(r["staff"]), hm(r["H_op"]), r["H_eff"], fmt(r["tot"]["N"]), fmt(r["payout"]), fmt(s["f2"]), fmt(s["active"]),
+            s["f2pct"], "✓" if 35 <= s["f2pct"] <= 50 else ("✗ (intentional)" if r["ex"].get("negative_example") else "✗"), s["worth"]))
     L.append("")
     return "\n".join(L)
 
@@ -939,7 +954,9 @@ def summary_line(r):
     nph = r["net"] / r["H_op"] if r["H_op"] else 0
     bph = r["base_net"] / r["H_op"] if r["H_op"] else 0
     return dict(key=r["ex"]["key"], tier=T["id"], H=r["H_op"], net=r["net"], nph=nph, bph=bph,
-                active=T["active_net"], pct=100 * nph / T["active_net"], bpct=100 * bph / T["active_net"])
+                active=T["active_net"], pct=100 * nph / T["active_net"], bpct=100 * bph / T["active_net"],
+                f2=r["first2_rate"], f2pct=100 * r["first2_rate"] / T["active_net"],
+                worth=r["net"] / T["active_net"])
 
 
 if __name__ == "__main__":
@@ -948,10 +965,10 @@ if __name__ == "__main__":
         ok = True
         for r in results:
             s = summary_line(r)
-            band = (35 <= s["pct"] <= 50 and 35 <= s["bpct"] <= 50) or bool(r["ex"].get("negative_example"))
+            band = (35 <= s["f2pct"] <= 50) or bool(r["ex"].get("negative_example"))
             ok &= band
-            print("%s %s H=%.2f net=%s net/h=%s (base %s) active=%s -> %.1f%% (base %.1f%%) %s" % (
-                s["key"], s["tier"], s["H"], fmt(s["net"]), fmt(s["nph"]), fmt(s["bph"]), fmt(s["active"]),
-                s["pct"], s["bpct"], "OK" if band else "OUT OF BAND"))
+            print("%s %s H=%.2f Heff=%.2f net=%s first-2h rate=%s (%.1f%% of active %s) whole-interval %.1f%%/h, worth %.2f active h %s" % (
+                s["key"], s["tier"], s["H"], r["H_eff"], fmt(s["net"]), fmt(s["f2"]), s["f2pct"], fmt(s["active"]),
+                s["pct"], s["worth"], "OK" if band else "OUT OF BAND"))
         sys.exit(0 if ok else 1)
     print(render_all(results))

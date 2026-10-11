@@ -98,6 +98,7 @@ Quality qualifiers: `≥GOOD` / `PERFECT` (§C8). `S≥n` means customer satisfa
 | `UpgradeTier` | `TIER_` | `BuildingService.TierUpgraded` | state objective |
 | `UpgradeStation` | level, n | `BuildingService.StationUpgraded` | |
 | `PlaceFurniture` | n, category? | `BuildingService.Placed` | placing, removing and re-placing the same item counts once |
+| `FillMenu` | n slots, min distinct categories? | `RecipeService.MenuChanged` | state objective; counts only recipes the player can currently cook (not SOLD OUT) |
 | `ReachAtmosphere` | value | `RestaurantService.AtmosphereChanged` | state objective |
 | `ReachReputation` | stars | `RestaurantService.ReputationChanged` | state objective |
 | `PurchaseStock` | `ING_`, crates | `InventoryService.StockPurchased` | special stock only |

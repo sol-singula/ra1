@@ -269,7 +269,7 @@ Workspace                         -- StreamingEnabled (radii per §30); FallenPa
 ├─ SpawnLocations/                -- street fallback spawns (kitchen spawns live inside each interior)
 └─ ClientOnly (runtime, per client, never replicated) -- NPC visuals, debris (despawn 4 s), city crowds, VFX
 SoundService                      -- RespectFilteringEnabled = true
-├─ SoundGroups: Master ▸ Music, Sfx, Ui, Ambience, Voice   -- volumes bound to player settings (§26)
+├─ SoundGroups: Master ▸ Music, SFX, Alerts, Voice ▸ Announce, UI, Ambience   -- volumes bound to player settings (§24, §26)
 └─ Library/                       -- preloaded templates for the 20 most frequent sounds; others built on demand
 Lighting                          -- Technology per §30 quality tiers
 ├─ Atmosphere, Sky, ColorCorrection, Bloom, SunRays (single instances, values tweened by LightingCycle)

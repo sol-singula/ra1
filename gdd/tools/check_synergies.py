@@ -63,6 +63,14 @@ SCOPES.update({
 })
 RARITY_RANK = {"Common": 1, "Uncommon": 2, "Rare": 3, "Epic": 4, "Legendary": 5, "Mythic": 6, "Secret": 5}
 NEUTRAL_FAMILIES = {"human"}
+# Visual / exclusion flags owned by A7 (§12 "Compatibility flags"); mirrored here for validation.
+BLOCKS_WINGS = {"MUT_244", "MUT_245", "MUT_246", "MUT_249", "MUT_251"}          # mechanical exclusion
+FACE_LOCKED = {"MUT_018", "MUT_021", "MUT_022", "MUT_036", "MUT_040"}           # hide FACE/NOSE/MOUTH/EYES
+HIDES = {"MUT_044": {"EYES"}, "MUT_048": {"NOSE", "MOUTH", "EYES"}}
+HANDS_LOCKED = {"MUT_141", "MUT_144", "MUT_145", "MUT_146", "MUT_150", "MUT_151", "MUT_152", "MUT_153", "MUT_154",
+                "MUT_155", "MUT_156", "MUT_157", "MUT_158", "MUT_159", "MUT_163", "MUT_164", "MUT_165", "MUT_166",
+                "MUT_167"}
+FOOTLESS = {"MUT_183", "MUT_191", "MUT_192", "MUT_195", "MUT_197"}
 CONTEXTS = {"cook", "combat", "repair", "move", "social"}
 ID_PREFIXES = ("MUT", "SYN", "CMB", "ABL", "STS", "STN", "PER", "BLD", "DST", "NPC", "EVT", "RCP", "ING", "QST",
                "EMP", "FRN", "ANM", "SFX", "MUS", "TIER", "ROLE", "SKL", "ACH", "MLS", "UPG", "INC", "MOD")
@@ -75,6 +83,34 @@ def slot_code_fits(code: str, inst: str) -> bool:
     if code == "LEG":
         return inst in ("LEG_L", "LEG_R")
     return code == inst
+
+
+def visible_loadout(lo):
+    """Loadout minus parts hidden by the §12 visibility rules (hidden != disabled: synergies still count them)."""
+    hidden = set()
+    head = lo.get("HEAD")
+    if head is not None and head.id in FACE_LOCKED:
+        hidden |= {"FACE", "NOSE", "MOUTH", "EYES"}
+    for inst in ("FACE", "NOSE", "MOUTH", "EYES"):
+        p = lo.get(inst)
+        if p is not None and inst not in hidden and p.id in HIDES:
+            hidden |= HIDES[p.id]
+    arms = [lo.get("ARM_L"), lo.get("ARM_R")]
+    if all(a is not None and a.id in HANDS_LOCKED for a in arms):
+        hidden.add("HANDS")
+    legs = [lo.get("LEG_L"), lo.get("LEG_R")]
+    if all(g is not None and g.id in FOOTLESS for g in legs):
+        hidden.add("FEET")
+    return {k: v for k, v in lo.items() if k not in hidden}
+
+
+def exclusion_errors(lo):
+    errs = []
+    if "FUR" in lo and "SCALES" in lo:
+        errs.append("FUR and SCALES are mutually exclusive (CONFLICT_COVERING)")
+    if "WINGS" in lo and lo.get("BACK") is not None and lo["BACK"].id in BLOCKS_WINGS:
+        errs.append("%s blocks WINGS (CONFLICT_WINGS)" % lo["BACK"].id)
+    return errs
 
 
 # ----------------------------------------------------------------------------- markdown helpers
@@ -323,7 +359,10 @@ def solve(clause, parts, node_limit=400000):
     for inst in SLOTS:
         if inst in ("ARM_R", "LEG_R"):
             continue
-        if inst in ("FUR", "SCALES"):
+        if inst in ("FUR", "SCALES", "BACK"):
+            continue
+        if inst == "WINGS":
+            virtual.append(("WINGS", "BACK"))
             continue
         if inst == "ARM_L":
             virtual += [("ARM_L", "ARM_R")] if "ARM" in pairs else [("ARM_L",), ("ARM_R",)]
@@ -338,6 +377,9 @@ def solve(clause, parts, node_limit=400000):
         insts = v
         if v == ("COVER2",):
             opts = [None] + [("FUR", p) for p in by_code["FUR"]] + [("SCALES", p) for p in by_code["SCALES"]]
+        elif v == ("WINGS", "BACK"):
+            opts = [None] + [("WINGS", p) for p in by_code["WINGS"]] + [("BACK", p) for p in by_code["BACK"]]
+            opts += [("WB", (w, b)) for w in by_code["WINGS"] for b in by_code["BACK"] if b.id not in BLOCKS_WINGS]
         else:
             code = insts[0] if insts[0] not in ("ARM_L", "ARM_R", "LEG_L", "LEG_R") else insts[0][:3]
             opts = [(None, p) for p in by_code[code]]
@@ -350,13 +392,18 @@ def solve(clause, parts, node_limit=400000):
                 groups.setdefault(("none",), None)
                 continue
             real, p = o
-            reals = (real,) if real else insts
+            if real == "WB":
+                pl = [("WINGS", p[0]), ("BACK", p[1])]
+            elif real:
+                pl = [(real, p)]
+            else:
+                pl = [(r, p) for r in insts]
             sig = []
             for a in clause:
-                sig.append(tuple(a.contributes(p, r) for r in reals))
+                sig.append(tuple(a.contributes(pp, r) for r, pp in pl))
                 if a.kind == "distinct":
-                    sig.append(p.cat if a.values[0] == "category" else p.fam)
-            groups.setdefault(tuple(sig), (reals, p))
+                    sig.append(tuple(pp.cat if a.values[0] == "category" else pp.fam for _r, pp in pl))
+            groups.setdefault(tuple(sig), tuple(pl))
         return list(groups.values())
 
     opt_lists = [options(v) for v in virtual]
@@ -364,8 +411,7 @@ def solve(clause, parts, node_limit=400000):
     def contrib_score(o):
         if o is None:
             return 0
-        reals, p = o
-        return sum(1 for a in clause if a.cmp == ">=" for r in reals if a.contributes(p, r))
+        return sum(1 for a in clause if a.cmp == ">=" for r, p in o if a.contributes(p, r))
 
     for ol in opt_lists:
         ol.sort(key=lambda o: -contrib_score(o))
@@ -393,8 +439,7 @@ def solve(clause, parts, node_limit=400000):
                 for o in ol:
                     if o is None:
                         continue
-                    reals, p = o
-                    best = max(best, sum(1 for r in reals if a.contributes(p, r)))
+                    best = max(best, sum(1 for r, p in o if a.contributes(p, r)))
                 remaining += best
             if a.kind == "pair":
                 remaining = 1 if remaining else 0
@@ -417,8 +462,7 @@ def solve(clause, parts, node_limit=400000):
         for o in opt_lists[idx]:
             placed = []
             if o is not None:
-                reals, p = o
-                for r in reals:
+                for r, p in o:
                     lo[r] = p
                     placed.append(r)
             if dfs(idx + 1):
@@ -464,8 +508,8 @@ def auto_assign(plist, errors, where):
             errors.append("%s: no free slot for %s (%s)" % (where, p.id, p.slot))
             continue
         lo[free[0]] = p
-    if "FUR" in lo and "SCALES" in lo:
-        errors.append("%s: FUR and SCALES are mutually exclusive" % where)
+    for e in exclusion_errors(lo):
+        errors.append("%s: %s" % (where, e))
     return lo
 
 
@@ -508,8 +552,8 @@ def parse_combo_parts(cell, parts, errors, where):
                 errors.append("%s: slot %s filled twice" % (where, t))
                 continue
             lo[t] = p
-    if "FUR" in lo and "SCALES" in lo:
-        errors.append("%s: FUR and SCALES are mutually exclusive" % where)
+    for e in exclusion_errors(lo):
+        errors.append("%s: %s" % (where, e))
     if "HEAD" not in lo:
         errors.append("%s: HEAD must be listed" % where)
     return with_defaults(lo, parts)
@@ -547,7 +591,8 @@ class Rules:
 
 
 def morph_name(lo, rules: Rules):
-    """Returns (key, spoken_generated, signature_title_or_None)."""
+    """Returns (key, spoken_generated, signature_title_or_None). Uses only visible parts (§12 visibility rules)."""
+    lo = visible_loadout(lo)
     lead = lo["HEAD"].fam
     score = collections.defaultdict(float)
     best = collections.defaultdict(float)
@@ -820,11 +865,13 @@ def print_stats(parts, rules, synergies, combos, trig_count):
     total = 1
     for inst in SLOTS:
         code = inst[:3] if inst[:4] in ("ARM_", "LEG_") else inst
-        if inst in ("FUR", "SCALES"):
+        if inst in ("FUR", "SCALES", "WINGS", "BACK"):
             continue
         n = per_slot[code] + (0 if inst in MANDATORY else 1)
         total *= n
     total *= (1 + per_slot["FUR"] + per_slot["SCALES"])
+    wb = (1 + per_slot["WINGS"]) * (1 + per_slot["BACK"]) - per_slot["WINGS"] * len(BLOCKS_WINGS)
+    total *= wb
     print("raw legal loadouts: %.3e" % total)
     print("synergies never triggered by a §36.5 combo: %d" % sum(1 for s in synergies if trig_count[s.id] == 0))
 

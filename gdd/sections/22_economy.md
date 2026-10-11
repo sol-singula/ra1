@@ -101,7 +101,7 @@ source (customer, quest board, report). Colour is never the only cue: each curre
 Tapping a currency opens the **Wallet panel**: balance, last 20 transactions (reason text, signed amount, time) and a
 "Where do I get this?" list linking to the sources above.
 
-**Progression.** MB is visible from the first second; MS appears at tutorial step `QST_TUT_010` (first mutation);
+**Progression.** The MB counter is revealed at tutorial step 5 (§24, §32); MS appears at tutorial step `QST_TUT_010` (first mutation);
 RT appears the first time the player can spend it (first Epic part reaching Lv4, or first Legendary offer) with a one-time
 explainer from Dr. Splice (`NPC_013`).
 
@@ -124,7 +124,7 @@ and §36.17 (milestones) must express MB rewards as these fractions (rounded to 
 | Customer payments | MB | `Σ item price × PayFactor(S)` — PayFactor 1.0 (S ≥ 50), 0.8 (30–49), Apology 0.4, storm-out 0 (§C11.4) | §10 | 118 % → 112 % of net (before costs) |
 | Tips | MB | `Σ price × TipRate(S) × PersonalityTipMult`; Jackpot ×5 at `0.5 % + 0.1 %·LUCK` on S ≥ 90 (cap 500 / 5,000 MB) | §10 | 10 % → 13 % of net |
 | Order-modification bonus | MB | satisfied §6.18 modifications pay +5–25 % per mod (cap +40 % per item; tips unaffected) — ≈ +1 % of item payments at T1–T3 rising to +5 % at T8+ | §6.18 | 1 % → 5 % of net |
-| Quests | MB, MS, RT | MB: daily 2 % NetRef each (3/day), weekly 4 % (5/week), challenge (CHF/CBT/RPR/EXP/EMP/RST) 2 %, story quest 3 %, chapter finale 15 %; tutorial chain `QST_TUT_001`–`012` total **400 MB** one-time | §20 | 12 % → 8 % |
+| Quests | MB, MS, RT | MB: daily 2 % NetRef each (3/day), weekly 4 % (5/week), challenge (CHF/CBT/RPR/EXP/EMP/RST) 2 %, story quest 3 %, chapter finale 15 %; tutorial chain `QST_TUT_001`–`012` pays **600 MB gross** (§32), of which ≈ 200 MB is spent on the forced first upgrade in `QST_TUT_011` (≈ **400 MB net**), one-time | §20 | 12 % → 8 % |
 | Milestones & achievements | MB, MS, RT, capsules | one-time; MB 10–50 % NetRef each; aggregate ≈ 5 % of net early → 1 % late | §36.16, §36.17 | 5 % → 1 % |
 | City events | MB, MS, RT, capsules | MB in **ERM** (Event Reward Minute = NetRef ÷ 60, §18.8.4) by band Participation / Success / Top (typically 3–15 ERM); +25 % MB if the cross-server goal is met; MS/RT flat per §36.11; full rewards for the first 16 events (8 M objectives) per UTC day, then ×0.5 MB and MS; ≤ 3 event capsules/day (extras → 25 MS); ≤ 10 event RT/week (`EVT_005` exempt); repeat trophies (`FRN_901`–`FRN_910`) → 100 MS | §18, §36.11 | 1 % → 3 % (net uplift) |
 | Deliveries | MB | Delivery Depot (`BLD_15`) run = 1.5 % NetRef (≤ 10 runs/day); `ROLE_DELIVERY` revenue stream per §16 | §16, §18 | 1 % → 2 % |
@@ -155,7 +155,7 @@ T5** (front-loaded by onboarding, first-time milestones and story pacing), match
 | Hiring & training | MB | §C4.8 hire bands; training/promotions per §16 | rarity | §16 | reference roster §22.8 |
 | Tier expansion | MB | §C6 (includes the City Hall permit from `TIER_04`) | tier | §15, §C6 | ≈ 50 % of income in T3–T9 |
 | Mutation purchases | MB (+MS, RT) | §C4.5 | rarity | §12 | Mart, Mystery Market rotation |
-| Mutation upgrades & fusion | MB, MS, RT | §C4.6; Mythic fusion = 3 Legendary + 600 MS + 40 RT | rarity × level (×1.5/level) | §12 | §22.10 |
+| Mutation upgrades & fusion | MB, MS, RT | §C4.6; Mythic Lab fusion = 3 Legendary parts from one fusion route + 600 MS + 40 RT (§12.5) | rarity × level (×1.5/level) | §12 | §22.10 |
 | Recipe learning | MB | `5 × price` at Cooking Academy (`BLD_06`); `RCP_LEG_*` quest-granted | recipe price | §6 | repays in ≈ 6 servings (§22.6) |
 | Earnable cosmetics & prestige | MB | Body Mods (`BLD_02`) palettes, Monster Mall (`BLD_12`) decor beyond the atmosphere cap, façade flair | tier | §13, §15, §18 | absorbs late-game surplus (§22.14.3) |
 | Misc | MB | Pigeon Taxi `25 × tier` per ride, charged on arrival (§18); stat respec `500 × level` after the free daily one (§C5) | tier / level | §18, §14 | ≈ 2 % of discretionary spend |
@@ -199,7 +199,8 @@ Net         = ServiceNet × (1 + QuestShare[T])           -- quests, milestones,
 | `TIER_09` | 4.40 | 82 | 0.970 | 30 % | 54 | 54 | 15 % | 1.6 % | 5.0 % |
 | `TIER_10` | 4.55 | 90 | 0.970 | 30 % | 60 | 60 | 15 % | 1.5 % | 5.0 % |
 
-Online wages use the reference roster of §22.8. A one-time **onboarding grant of 400 MB** (the tutorial chain) is paid in
+Online wages use the reference roster of §22.8. The tutorial chain pays **600 MB gross / ≈ 400 MB net** of the forced
+`QST_TUT_011` upgrade; the simulation credits the ≈ 400 MB net in
 the first 15 minutes and is *not* part of the hourly rate.
 
 **Calibration result (generated).** The model lands within **±3.4 %** of every §C4.4 value with no per-tier fudge factor:
@@ -313,7 +314,7 @@ better ingredient ratios (difficulty, EFFICIENCY, Stocker) and tips outpace risi
 | Wage ratio (online) | Online wages ÷ (Payments + Tips) | 1.5–8 % | > 12 % (over-staffing) |
 | Repair ratio | Repairs ÷ (Payments + Tips) | 1.5–3 % | > 6 % (chaos too punishing) |
 | Operating margin | (ServiceNet − Repairs) ÷ (Payments + Tips) | 55–68 % | < 45 % |
-| Offline ratio | Offline net/h ÷ active net/h (same state) | 35–50 % (§C15) | > 60 % or < 25 % |
+| Offline ratio | Offline net/h ÷ active net/h (same state), first 2 offline hours; long-absence taper per §17 | 35–50 % (§C15) | > 60 % or < 25 % |
 
 ### 22.8 Employee Return on Investment
 
@@ -349,18 +350,18 @@ shows "Over-staffed: this hire adds ≈ 0 MB/h" when the new hire would exceed d
 (PrepSec_avg is an assumption; §5/§6 define real prep times):
 
 <!-- sim:emp_roi -->
-| Chef rarity | Typical tier | Cooking stat | Efficiency (C14.2; morale 80, energy 80) | PrepSec_avg (assumed) | Customers/h added | Net per customer | Wage/h | Marginal net/h | Hire cost | Payback (operating h) | Operating h/day (ref. player) | Payback (days) |
+| Chef rarity | Typical tier | Cooking stat | Efficiency (C14.2; morale 80, energy 80) | PrepSec_avg (assumed) | Customers/h added | Net per customer | Wage/h | Marginal net/h | Hire cost | Payback (operating h) | Full-rate h/day (active + tapered offline) | Payback (days) |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Common | `TIER_02` | 28 | 0.242 | 40 s | 15.6 | 11.0 | 18 | 154 | 400 | 2.6 h | 9.5 h | 0.3 d |
-| Uncommon | `TIER_04` | 42 | 0.363 | 50 s | 18.7 | 19.4 | 50 | 313 | 2,100 | 6.7 h | 9.5 h | 0.7 d |
-| Rare | `TIER_06` | 57 | 0.493 | 60 s | 21.1 | 40.1 | 140 | 707 | 10,500 | 14.8 h | 17.5 h | 0.8 d |
-| Epic | `TIER_08` | 72 | 0.623 | 75 s | 21.3 | 97.0 | 420 | 1,652 | 55,000 | 33.3 h | 24.0 h | 1.4 d |
-| Legendary | `TIER_10` | 88 | 0.761 | 90 s | 21.7 | 260.7 | 1,100 | 4,568 | 315,000 | 69.0 h | 24.0 h | 2.9 d |
+| Common | `TIER_02` | 28 | 0.242 | 40 s | 15.6 | 11.0 | 18 | 154 | 400 | 2.6 h | 4.5 h | 0.6 d |
+| Uncommon | `TIER_04` | 42 | 0.363 | 50 s | 18.7 | 19.4 | 50 | 313 | 2,100 | 6.7 h | 4.5 h | 1.5 d |
+| Rare | `TIER_06` | 57 | 0.493 | 60 s | 21.1 | 40.1 | 140 | 707 | 10,500 | 14.8 h | 6.5 h | 2.3 d |
+| Epic | `TIER_08` | 72 | 0.623 | 75 s | 21.3 | 97.0 | 420 | 1,652 | 55,000 | 33.3 h | 7.7 h | 4.3 d |
+| Legendary | `TIER_10` | 88 | 0.761 | 90 s | 21.7 | 260.7 | 1,100 | 4,568 | 315,000 | 69.0 h | 9.4 h | 7.3 d |
 <!-- /sim:emp_roi -->
 
-Rarer staff are long-term investments (2.5 operating hours for a Common, ~64 for a Legendary) but, because they also
-run offline under higher caps, every rarity repays within ≈ 3 real days for the reference player — the "hire, log off,
-come back richer" fantasy holds at every stage.
+Rarer staff are long-term investments (≈ 2.6 operating hours for a Common, ≈ 69 for a Legendary) but, because they also
+run offline under higher caps, every rarity repays within about a week of real time for the reference player (a
+Common in under a day, a Legendary in ≈ 7 days) — the "hire, log off, come back richer" fantasy holds at every stage.
 
 ### 22.9 Upgrade Payback Periods
 
@@ -458,7 +459,7 @@ auto-conversion) or, for Common/Uncommon, from simply buying a second copy:
 | Rare | 4,000–10,000 + 20 MS | 7 | 18,703 | 168 | 6 | 360 | 0 | 10.8 h @ `TIER_03` |
 | Epic | 25,000–60,000 + 80 MS | 8 | 96,516 | 420 | 7 | 1,120 | 10 | 31.1 h @ `TIER_04` |
 | Legendary | 150,000–400,000 + 250 MS + 10 RT | 9 | 492,578 | 1,080 | 8 | 3,200 | 30 | 51.3 h @ `TIER_06` |
-| Mythic | fusion: 3 Legendary + 600 MS + 40 RT | 10 | 2,246,602 | 2,250 | 9 | 9,000 | 84 | 68.5 h @ `TIER_08` |
+| Mythic | Lab fusion (§12.5): 3 Legendary parts from one fusion route + 600 MS + 40 RT | 10 | 2,246,602 | 2,250 | 9 | 9,000 | 84 | 68.5 h @ `TIER_08` |
 | Secret | discovery only | 10 | 1,123,301 | 1,800 | 9 | 5,400 | 63 | 117.0 h @ `TIER_06` |
 <!-- /sim:mut_costs -->
 
@@ -494,36 +495,39 @@ duplicates excluded; generated):
 Reading the table: ~8 new parts in week 1 (tutorial part, story, capsules, first Mart buys), a steady 2–5 per week through
 the mid-game with the first Epic from story chapter 5 (week 3), the first MB-bought Legendary around week 10 (`TIER_09`)
 and the first Mythic from the story finale (week 13). Collecting all 280 parts is a multi-month goal by design; Mythic
-fusion (3 Legendary of one category + 600 MS + 40 RT) is the long-tail aspiration.
+Lab fusion (3 Legendary parts from one fusion route + 600 MS + 40 RT, §12.5) is the long-tail aspiration.
 
 ### 22.11 Offline Earnings Summary (refer §17)
 
 §17 owns the simulation (§C15): deterministic, server-time, capped by the best manager (§C14.3), idempotent claims (E11),
-offline net/h 35–50 % of active net/h for a well-staffed restaurant (never > 60 %), no RT ever, MS only as rare
-discoveries (8 %/h chance of 1–3 MS) and ≤ 1 Morph Capsule per real day. Economy view for the reference player who checks
-in twice a day (generated):
+offline net/h 35–50 % of active net/h for a well-staffed restaurant (never > 60 %) during the first 2 offline hours, then
+the **long-absence taper** — hours 2–8 at 50 % of that rate, hours 8–24 at 20 % [TUNABLE; constants in §17] — so a full
+24 h interval is worth ≈ 3 active hours at that tier; no RT ever, MS only as rare discoveries (8 %/h chance of 1–3 MS)
+and ≤ 1 Morph Capsule per real day. Economy view for the reference player (one daily session, so one offline interval
+per day; the last column shows a player who also checks in once more per day; generated):
 
 <!-- sim:offline -->
-| Tier | Active net/h (C4.4) | Offline net/h band (35–50 %) | Model offline net/h (42 %) | Ref. cap | Per capped window | Offline h/day (2 check-ins) | Offline MB/day | Active MB/day (1.5 h) | Offline share of daily MB |
+| Tier | Active net/h (C4.4) | Offline net/h, first 2 h (35–50 %) | Ref. manager cap | Hours accrued (1 interval/day) | Full-rate equivalent after taper | Offline MB/day (42 % rate) | Active MB/day (1.5 h) | Offline share (1 interval/day) | Offline share (2 check-ins/day) |
 |---|---|---|---|---|---|---|---|---|---|
-| `TIER_01` | 630 | 220–315 | 265 | 2 h | 529 | 4 h | 1,058 | 945 | 53 % |
-| `TIER_02` | 1,080 | 378–540 | 454 | 4 h | 1,814 | 8 h | 3,629 | 1,620 | 69 % |
-| `TIER_03` | 1,730 | 606–865 | 727 | 4 h | 2,906 | 8 h | 5,813 | 2,595 | 69 % |
-| `TIER_04` | 3,100 | 1,085–1,550 | 1,302 | 4 h | 5,208 | 8 h | 10,416 | 4,650 | 69 % |
-| `TIER_05` | 5,400 | 1,890–2,700 | 2,268 | 8 h | 18,144 | 16 h | 36,288 | 8,100 | 82 % |
-| `TIER_06` | 9,600 | 3,360–4,800 | 4,032 | 8 h | 32,256 | 16 h | 64,512 | 14,400 | 82 % |
-| `TIER_07` | 17,400 | 6,090–8,700 | 7,308 | 12 h | 87,696 | 22.5 h | 164,430 | 26,100 | 86 % |
-| `TIER_08` | 32,800 | 11,480–16,400 | 13,776 | 14 h | 192,864 | 22.5 h | 309,960 | 49,200 | 86 % |
-| `TIER_09` | 63,700 | 22,295–31,850 | 26,754 | 24 h | 642,096 | 22.5 h | 601,965 | 95,550 | 86 % |
-| `TIER_10` | 120,500 | 42,175–60,250 | 50,610 | 24 h | 1,214,640 | 22.5 h | 1,138,725 | 180,750 | 86 % |
+| `TIER_01` | 630 | 220–315 | 2 h | 2 h | 2.0 h | 529 | 945 | 36 % | 53 % |
+| `TIER_02` | 1,080 | 378–540 | 4 h | 4 h | 3.0 h | 1,361 | 1,620 | 46 % | 63 % |
+| `TIER_03` | 1,730 | 606–865 | 4 h | 4 h | 3.0 h | 2,180 | 2,595 | 46 % | 63 % |
+| `TIER_04` | 3,100 | 1,085–1,550 | 4 h | 4 h | 3.0 h | 3,906 | 4,650 | 46 % | 63 % |
+| `TIER_05` | 5,400 | 1,890–2,700 | 8 h | 8 h | 5.0 h | 11,340 | 8,100 | 58 % | 74 % |
+| `TIER_06` | 9,600 | 3,360–4,800 | 8 h | 8 h | 5.0 h | 20,160 | 14,400 | 58 % | 74 % |
+| `TIER_07` | 17,400 | 6,090–8,700 | 12 h | 12 h | 5.8 h | 42,386 | 26,100 | 62 % | 76 % |
+| `TIER_08` | 32,800 | 11,480–16,400 | 14 h | 14 h | 6.2 h | 85,411 | 49,200 | 63 % | 76 % |
+| `TIER_09` | 63,700 | 22,295–31,850 | 24 h | 22.5 h | 7.9 h | 211,357 | 95,550 | 69 % | 76 % |
+| `TIER_10` | 120,500 | 42,175–60,250 | 24 h | 22.5 h | 7.9 h | 399,819 | 180,750 | 69 % | 76 % |
 <!-- /sim:offline -->
 
-**Finding (accepted by design, monitored):** with §C14.3 caps and two check-ins a day, offline earnings become the
-majority of a casual player's MB from day 1 (53 %) and ≈ 86 % from `TIER_07`. This is acceptable because (1) tiers are
-level-gated (scenario B in §22.12 reaches every tier exactly at its §C5.1 level gate, never earlier), (2) Rare+ morph
-power needs MS/RT which are active-play currencies, and (3) surplus MB is absorbed by prestige sinks (§22.14.3). The
-alarm thresholds in §22.15 watch the offline share and MB hoarding; §38 lists the open question of offline diminishing
-returns beyond 8 h.
+**Finding.** With the taper, the reference player's offline share of MB is 36 % at `TIER_01`, 46 % at `TIER_02`–`04`
+(≈ day 7), 58–63 % at `TIER_05`–`08` (≈ day 30 is `TIER_07`, 62 %) and 69 % at `TIER_09`–`10` — inside the guardrail
+(**median offline share ≤ 60 % at D7 and ≤ 70 % at D30**, §22.15). Players who check in twice a day reach 63 % / 76 %:
+allowed (checking in is a healthy return reason) but watched by the guardrail. Offline income stays safe for pacing
+because (1) tiers are level-gated (scenario B in §22.12 reaches every tier exactly at its §C5.1 gate, never earlier),
+(2) Rare+ morph power needs MS/RT, which are active-play currencies, and (3) surplus MB is absorbed by prestige sinks
+(§22.14.3).
 
 ### 22.12 Economy Simulations
 
@@ -542,7 +546,7 @@ requirement is met. Spending policy [TUNABLE]:
 | Calendar | 1.5 active h = one play day (dailies, events, capsules); weeklies credited every 7 play days |
 
 **Scenario A — active-only reference (validates §C4.4).** No offline income, so the money pacing is purely active.
-**Scenario B — typical daily player.** Same play, plus two capped offline windows per day (§22.11).
+**Scenario B — typical daily player.** Same play, plus one capped, tapered offline interval per day (§22.11).
 
 **Tier pacing (generated):**
 
@@ -550,14 +554,14 @@ requirement is met. Spending policy [TUNABLE]:
 | Tier | Cost | Canon h (C4.4) | Level gate h (C5.1) | A: money-ready h | Δ money | A: reached h | Δ reach | A: binding | B: money-ready h | B: reached h | B: play day |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | `TIER_02` | 1,000 | 1 | 1.13 | 1.03 | +3 % | 1.15 | +15 % | level (C5.1) | 1.03 | 1.15 | 1 |
-| `TIER_03` | 2,000 | 3 | 3.30 | 3.32 | +11 % | 3.32 | +11 % | level (C5.1) | 1.50 | 3.32 | 3 |
-| `TIER_04` | 5,000 | 7 | 8.50 | 7.65 | +9 % | 8.52 | +22 % | level (C5.1) | 4.50 | 8.52 | 6 |
-| `TIER_05` | 15,000 | 14 | 15.83 | 16.05 | +15 % | 16.05 | +15 % | money | 10.50 | 15.85 | 11 |
-| `TIER_06` | 40,000 | 25 | 26.63 | 27.25 | +9 % | 27.25 | +9 % | money | 18.00 | 26.65 | 18 |
-| `TIER_07` | 100,000 | 40 | 41.80 | 42.65 | +7 % | 42.65 | +7 % | money | 30.00 | 41.82 | 28 |
-| `TIER_08` | 225,000 | 60 | 62.33 | 62.08 | +3 % | 62.35 | +4 % | level (C5.1) | 45.00 | 62.35 | 42 |
-| `TIER_09` | 525,000 | 85 | 89.33 | 86.95 | +2 % | 89.35 | +5 % | level (C5.1) | 66.00 | 89.35 | 60 |
-| `TIER_10` | 1,500,000 | 120 | 121.13 | 123.82 | +3 % | 123.82 | +3 % | money | 94.50 | 121.15 | 81 |
+| `TIER_03` | 2,000 | 3 | 3.30 | 3.32 | +11 % | 3.32 | +11 % | level (C5.1) | 2.30 | 3.32 | 3 |
+| `TIER_04` | 5,000 | 7 | 8.50 | 7.65 | +9 % | 8.52 | +22 % | level (C5.1) | 6.00 | 8.52 | 6 |
+| `TIER_05` | 15,000 | 14 | 15.83 | 16.05 | +15 % | 16.05 | +15 % | money | 12.65 | 15.85 | 11 |
+| `TIER_06` | 40,000 | 25 | 26.63 | 27.25 | +9 % | 27.25 | +9 % | money | 21.00 | 26.65 | 18 |
+| `TIER_07` | 100,000 | 40 | 41.80 | 42.65 | +7 % | 42.65 | +7 % | money | 34.42 | 41.82 | 28 |
+| `TIER_08` | 225,000 | 60 | 62.33 | 62.08 | +3 % | 62.35 | +4 % | level (C5.1) | 50.98 | 62.35 | 42 |
+| `TIER_09` | 525,000 | 85 | 89.33 | 86.95 | +2 % | 89.35 | +5 % | level (C5.1) | 72.95 | 89.35 | 60 |
+| `TIER_10` | 1,500,000 | 120 | 121.13 | 123.82 | +3 % | 123.82 | +3 % | money | 102.00 | 121.15 | 81 |
 <!-- /sim:pacing -->
 
 Scenario A reaches the tier fund within **+2 % to +15 %** of every §C4.4 time and every tier within ±15 %, except
@@ -586,7 +590,8 @@ yet every tier lands exactly on its level gate: offline MB accelerates morphs an
 | 14 | 3.25–3.50 | 10 | `TIER_03` | 411 | 2,000 | 0 | 0 | 22 | 14 | 15 | 0 | 3 | 520 | 1/4 | → `TIER_03` |
 <!-- /sim:sim_early -->
 
-The tutorial grant buys nothing yet — it is saved, with 90 % of T1 income, into `TIER_02` at 1.15 h (the instant L5 is
+Of the tutorial's 600 MB, ≈ 200 MB goes into the forced first upgrade (`QST_TUT_011`); the remaining ≈ 400 MB is saved,
+with 90 % of T1 income, into `TIER_02` at 1.15 h (the instant L5 is
 reached). The first Mutation Mart purchase (a Common) lands in the 2.00–2.25 h session. In `TIER_03` the player first buys
 an Uncommon part, then hires the Common Manager (≈ 6.0 h, offline cap 2 h → 4 h) and fills the `TIER_03` roster by
 8.4 h. Discretionary MB is thin by design: canon tier costs take ≈ 80 % of the first 3 h of income, so early morph
@@ -677,20 +682,20 @@ Scenario B (with offline earnings):
 | Tier phase | Net income in phase | of which offline | Tier fund | Mutations | Staff | Stations & equip. | Furniture & decor | Repairs | Recipes & misc | Cosmetics & prestige | Held (Δ balance) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | `TIER_01` | 1,212 | 0 | 83 % | 0 % | 0 % | 2 % | 1 % | 3 % | 0 % | 0 % | 10 % |
-| `TIER_02` | 10,719 | 8,093 | 28 % | 38 % | 4 % | 10 % | 7 % | 1 % | 7 % | 0 % | 5 % |
-| `TIER_03` | 32,761 | 21,703 | 15 % | 38 % | 15 % | 12 % | 8 % | 1 % | 2 % | 0 % | 8 % |
-| `TIER_04` | 94,349 | 65,581 | 16 % | 32 % | 17 % | 11 % | 11 % | 1 % | 2 % | 0 % | 9 % |
-| `TIER_05` | 388,396 | 314,799 | 11 % | 41 % | 7 % | 12 % | 11 % | 1 % | 2 % | 13 % | 2 % |
-| `TIER_06` | 1,008,848 | 821,599 | 12 % | 25 % | 1 % | 12 % | 11 % | 0 % | 2 % | 32 % | 5 % |
-| `TIER_07` | 3,519,798 | 3,043,094 | 8 % | 16 % | 4 % | 9 % | 11 % | 0 % | 2 % | 47 % | 3 % |
-| `TIER_08` | 8,701,916 | 7,510,134 | 6 % | 14 % | 3 % | 9 % | 11 % | 0 % | 2 % | 53 % | 2 % |
-| `TIER_09` | 19,354,133 | 16,667,822 | 7 % | 11 % | 1 % | 9 % | 11 % | 0 % | 2 % | 58 % | 2 % |
-| `TIER_10` | 19,436,072 | 16,860,770 | 0 % | 7 % | 9 % | 10 % | 12 % | 0 % | 2 % | 59 % | 1 % |
+| `TIER_02` | 5,673 | 3,035 | 35 % | 28 % | 7 % | 9 % | 6 % | 2 % | 13 % | 0 % | -0 % |
+| `TIER_03` | 19,231 | 8,138 | 30 % | 35 % | 13 % | 10 % | 7 % | 2 % | 2 % | 0 % | 1 % |
+| `TIER_04` | 53,672 | 24,740 | 27 % | 28 % | 14 % | 10 % | 9 % | 2 % | 2 % | 0 % | 9 % |
+| `TIER_05` | 174,153 | 99,727 | 24 % | 36 % | 15 % | 10 % | 10 % | 1 % | 2 % | 0 % | 3 % |
+| `TIER_06` | 444,495 | 257,044 | 22 % | 28 % | 9 % | 11 % | 10 % | 1 % | 2 % | 4 % | 13 % |
+| `TIER_07` | 1,272,337 | 790,549 | 18 % | 25 % | 4 % | 8 % | 10 % | 1 % | 2 % | 25 % | 8 % |
+| `TIER_08` | 3,364,893 | 2,134,166 | 16 % | 24 % | 7 % | 8 % | 10 % | 1 % | 2 % | 31 % | 3 % |
+| `TIER_09` | 8,543,223 | 5,855,463 | 18 % | 17 % | 1 % | 8 % | 10 % | 1 % | 2 % | 40 % | 4 % |
+| `TIER_10` | 8,710,243 | 6,066,031 | 0 % | 14 % | 2 % | 10 % | 12 % | 1 % | 2 % | 56 % | 4 % |
 <!-- /sim:phase_mix_offline -->
 
 Scenario A confirms the §C4.4 design intent (≈ 50 % of income to tiers in T3–T9, ≈ 50 % to mutations, staff, stations,
-decor and repairs). Scenario B shows the size of the late MB surplus that prestige sinks must absorb (13 % of income at
-`TIER_05`, rising to ≈ 58–59 % at `TIER_09`–`TIER_10`) — the quantitative basis for §22.14.3.
+decor and repairs). Scenario B shows the size of the late MB surplus that prestige sinks must absorb (≈ 0 % until `TIER_05`, 4 % at
+`TIER_06`, 25–31 % at `TIER_07`–`08`, 40 % at `TIER_09` and 56 % at `TIER_10`) — the quantitative basis for §22.14.3.
 
 ### 22.13 Mutation Shard and Research Token Flows
 
@@ -753,7 +758,7 @@ but never required, and the soft cap keeps win-trading worthless.
 | Cap | Value | Source |
 |---|---|---|
 | Customers per hour | ≤ seats × 3600 / visit time; demand ≤ BaseDemand × 1.75 × 1.2 × EventMult | §C6, §C11.4 |
-| Offline time per window | 2 / 4 / 8 / 12 / 24 h by manager (+2 h Assistant, ≤ 24 h) | §C14.3 |
+| Offline time per interval | 2 / 4 / 8 / 12 / 24 h by manager (+2 h Assistant, ≤ 24 h); taper after 2 h and 8 h | §C14.3, §17 |
 | Offline incidents | negative ≤ 10 %, positive ≤ 15 % of offline revenue | §C15 |
 | Offline capsules | ≤ 1 per real day | §C15 |
 | Jackpot Tip | 500 MB below `TIER_05`, 5,000 MB from `TIER_05` | §C11.4 |
@@ -767,7 +772,7 @@ but never required, and the soft cap keeps win-trading worthless.
 | Sanity hard caps | MB 10^12, MS 10^7, RT 10^6 | §22.2 |
 
 #### 22.14.3 Late-Game MB Surplus and Prestige Sinks
-Scenario B (§22.12.4) shows a typical player accumulates far more MB than power purchases can absorb from `TIER_05`. That
+Scenario B (§22.12.4) shows a typical player accumulates more MB than power purchases can absorb from `TIER_06`–`07`. That
 is the intended "Earn" fantasy, but unchecked hoarding makes prices meaningless. Requirements:
 1. **Prestige MB catalogue** at Body Mods (`BLD_02`) and Monster Mall (`BLD_12`): earnable cosmetic palettes, animated
    façade flair, luxury decor beyond the atmosphere cap, sign effects — **MB-priced, earnable, never stats**, priced
@@ -813,7 +818,7 @@ player into one event. Internal events (registered in §31): `mmr_currency_tx`, 
 |---|---|---|---|---|
 | Hours to tier | active hours from tier N to N+1 | §C4.4 ± 15 % | ± 20 % | ± 30 % → retune tier cost / QuestShare |
 | Net MB per active hour | MB earned while active ÷ active hours | §C4.4 ± 10 % | ± 15 % | ± 25 % → check prices (§6), demand, wages |
-| Offline share of MB | offline ÷ total MB, `TIER_05`+ | ≤ 86 % | > 90 % | > 94 % → propose offline diminishing returns (§38) |
+| Offline share of MB (guardrail) | offline ÷ total MB per player, median by account age | ≤ 60 % at D7, ≤ 70 % at D30 | > 60 / 70 % | > 65 / 75 % → retune the §17 taper or caps |
 | MB hoarding | balance ÷ NetRef, `TIER_07`+ | ≤ 12 h | > 24 h | > 48 h → add prestige sinks (§22.14.3) |
 | MS starvation | weekly MS earned ÷ MS needed for next planned upgrade, `TIER_08`+ | 0.6–1.2 | < 0.4 | < 0.25 → raise weekly MS budget |
 | MS glut | MS balance, `TIER_08`+ | ≤ 3,000 | > 6,000 | > 10,000 → lower MS budgets / add Lab sinks |
@@ -927,7 +932,8 @@ end
   (100 of 100 fault-injection trials).
 - **AC-22-09:** Every MB reward in §20, §36.16 and §36.17 is expressed as a NetRef fraction, and every event MB reward in
   §36.11 in ERM (= NetRef ÷ 60), within the §22.3 budgets (validator check).
-- **AC-22-10:** The tutorial chain `QST_TUT_001`–`012` grants exactly 400 MB in total.
+- **AC-22-10:** The tutorial chain `QST_TUT_001`–`012` grants 600 MB gross and the forced `QST_TUT_011` upgrade costs
+  ≈ 200 MB, leaving 400 ± 50 MB net after the tutorial.
 - **AC-22-11:** No source grants RT while the player is offline; no Robux product grants MB, MS, RT, capsules or parts
   (validator + §23 catalog audit).
 - **AC-22-12:** Repeatable MS stops at 250 MS per UTC day per player and pays ×0.25 between 150 and 250.
