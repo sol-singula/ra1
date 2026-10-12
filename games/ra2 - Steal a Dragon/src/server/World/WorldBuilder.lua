@@ -728,16 +728,28 @@ local function buildBase(parent, index, cf)
 		Material = Enum.Material.Marble,
 		Parent = model,
 	})
-	local levelPlate = part({
-		Name = "LevelPlate",
-		Size = Vector3.new(7, 0.5, 3.6),
-		CFrame = at(0, 0.6, -5),
-		Color = rgb(120, 220, 110),
+	-- LEVEL ALL: a podium beside the egg with a hold-to-use prompt (ShopService), so it's never set off by just
+	-- walking past
+	local podium = part({
+		Name = "LevelPodium",
+		Size = Vector3.new(2.4, 2.6, 2.4),
+		CFrame = at(5.5, 1.7, eggZ),
+		Color = rgb(250, 245, 235),
+		Material = Enum.Material.Marble,
 		Parent = model,
 	})
-	billboard(levelPlate, 9, 3.6, Vector3.new(0, 3.5, 0), {
+	local levelPlate = part({
+		Name = "LevelPlate",
+		Size = Vector3.new(2.8, 0.4, 2.8),
+		CFrame = at(5.5, 3.2, eggZ),
+		Color = rgb(120, 220, 110),
+		Material = Enum.Material.Neon,
+		Parent = model,
+	})
+	podium.Parent = model
+	billboard(levelPlate, 9, 3.6, Vector3.new(0, 3, 0), {
 		{ text = "⬆️ LEVEL ALL", h = 0.55, y = 0, font = Enum.Font.LuckiestGuy },
-		{ text = "every dragon", h = 0.45, y = 0.55, color = rgb(210, 255, 200) },
+		{ text = "every dragon, with coins", h = 0.45, y = 0.55, color = rgb(210, 255, 200) },
 	}, 60)
 	part({
 		Name = "EggTrim",
@@ -1280,7 +1292,8 @@ function WorldBuilder.build()
 			{ wx0, -wz, 10, 25 },
 			{ wx1, wz, 6, 20 },
 			{ wx1, -wz, 6, 20 },
-			{ wx0, 0, 8, 22 },
+			{ wx0, -30, 8, 22 }, -- (not in the middle of the west wall: that would hide the keep's name)
+			{ wx0, 30, 8, 22 },
 			{ -125, -wz - 0.5, 7, 21 }, -- halfway along the south walls, either side of the Practice Base gap
 			{ -179, -wz - 0.5, 7, 21 },
 		}
@@ -1391,12 +1404,13 @@ function WorldBuilder.build()
 		Font = Enum.Font.LuckiestGuy,
 	})
 
-	-- Inside the courtyard: planters with trees in the corners and flowers along the walls
-	for _, c in { { L.x0 + 6, L.z1 - 6 }, { L.x0 + 6, L.z0 + 6 }, { L.x1 - 6, L.z1 - 6 } } do
+	-- Inside the courtyard: planters with trees in the south corners (the north wall is for the leaderboards) and
+	-- flowers along the walls
+	for _, c in { { L.x0 + 6, L.z0 + 6 }, { L.x1 - 6, L.z0 + 6 } } do
 		Scenery.disc(lobby, "Planter", Vector3.new(c[1], 1.2, c[2]), 7, 1.8, STONE_DARK, Enum.Material.Cobblestone)
 		Scenery.roundTree(lobby, Vector3.new(c[1], 2.1, c[2]), 0.9, rng)
 	end
-	for _, f in { { -190, 20 }, { -190, -20 }, { -168, -40 }, { -128, 40 } } do
+	for _, f in { { -190, 20 }, { -190, -20 }, { -168, -40 } } do
 		Scenery.flowers(lobby, Vector3.new(f[1], 0.6, f[2]), 6, rng)
 	end
 	local spawn = Instance.new("SpawnLocation")

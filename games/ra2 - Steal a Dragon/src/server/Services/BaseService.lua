@@ -16,7 +16,7 @@ local BaseService = {
 	Dependencies = { "PlayerDataService", "EconomyService", "TeamService" },
 	Locked = Signal.new("BaseService.Locked"), -- (player)
 	Collected = Signal.new("BaseService.Collected"), -- (player, amount)
-	PlateStepped = Signal.new("BaseService.PlateStepped"), -- (player, "auto" | "lock" | "levelall") owner stepped on a plate
+	PlateStepped = Signal.new("BaseService.PlateStepped"), -- (player, "auto" | "lock") owner stepped on a plate
 	CastleGrew = Signal.new("BaseService.CastleGrew"), -- (player, level)
 	FeverStarted = Signal.new("BaseService.FeverStarted"), -- (player) pressed the DISCO FEVER button
 }
@@ -421,8 +421,7 @@ function BaseService:_step()
 				-- buy plates fire once each time you step on, not every frame you stand there
 				local was = onPlates[player] or {}
 				local now2 = {}
-				local plates =
-					{ auto = mine.world.autoPlate, lock = mine.world.lockPlate, levelall = mine.world.levelPlate }
+				local plates = { auto = mine.world.autoPlate, lock = mine.world.lockPlate }
 				plates.lockpad = mine.world.lockPad
 				for name, plate in plates do
 					if plate and onPad(plate, pos) then

@@ -95,6 +95,7 @@ local lastRefresh = -math.huge
 local period = 0 -- the daily period the boards are showing
 local liveDaily = {} -- this server's daily rows at the last redraw (to pick a winner without DataStores)
 local topThree = {} -- [boardKey] = { [rank] = userId } at the last redraw, to announce new top-3 players
+local onBoard = {} -- [boardKey] = { [userId] = rank } everyone on the board at the last redraw
 local BOARD_NAMES =
 	{ coins = "TOP COINS", daily = "TODAY'S TOP EARNERS", income = "BEST DRAGONS", steals = "TOP THIEVES" }
 
@@ -206,6 +207,7 @@ function LeaderboardService:Redraw()
 end
 
 -- Someone in this server just took #1, #2 or #3 on a board (and has something on it): tell everyone.
+-- Also: someone in this server just made the board at all (into the top 10 from off it).
 function LeaderboardService:_announceTop(board, rows)
 	local before = topThree[board.key]
 	local now3 = {}
@@ -214,8 +216,27 @@ function LeaderboardService:_announceTop(board, rows)
 		now3[rank] = r and r.value > 0 and r.id or nil
 	end
 	topThree[board.key] = now3
+	local beforeOn = onBoard[board.key]
+	local nowOn = {}
+	for rank = 1, Constants.LEADERBOARD_SIZE do
+		local r = rows[rank]
+		if r and r.value > 0 then
+			nowOn[r.id] = rank
+		end
+	end
+	onBoard[board.key] = nowOn
 	if not before then
 		return -- the first draw: nothing has changed yet
+	end
+	for id, rank in nowOn do
+		local p = rank > 3 and not beforeOn[id] and Players:GetPlayerByUserId(id)
+		if p then
+			Net.fireAll(
+				"Announce",
+				`📋 {p.DisplayName} made the {BOARD_NAMES[board.key]} board! (#{rank})`,
+				Color3.fromRGB(120, 220, 255)
+			)
+		end
 	end
 	for rank = 1, 3 do
 		local id = now3[rank]

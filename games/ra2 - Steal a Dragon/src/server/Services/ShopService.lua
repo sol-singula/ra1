@@ -14,6 +14,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local Skins = require(ReplicatedStorage.Shared.Data.Skins)
+local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
 local ShopService = {
 	Name = "ShopService",
@@ -79,19 +80,26 @@ function ShopService:Init(registry)
 			end
 		elseif plate == "lock" then
 			self:PromptProduct(player, "LOCK5")
-		elseif plate == "levelall" then
-			local bought, spent = dragons:LevelAll(player)
-			if bought > 0 then
-				Net.fire(player, "Toast", `⬆️ {bought} level-ups for {Format.num(spent)} coins!`, "good")
-				Net.fire(player, "Sfx", "levelup")
-			elseif dragons:CanLevelAny(player) then
-				-- can't afford a single level: offer the +5 Levels for ALL boost
-				self:PromptProduct(player, "LEVELALL")
-			else
-				Net.fire(player, "Toast", "Put dragons in your nests first!", "info")
-			end
 		end
 	end)
+	-- LEVEL ALL podiums: hold to spend coins on level-ups across all your nests (coins only, never Robux)
+	for _, world in WorldBuilder.layout.bases do
+		local p = Instance.new("ProximityPrompt")
+		p.Name = "Prompt_levelall"
+		p.ActionText = "Level up all (coins)"
+		p.ObjectText = "LEVEL ALL"
+		p.HoldDuration = 0.5
+		p.MaxActivationDistance = 9
+		p.RequiresLineOfSight = false
+		p.Parent = world.levelPlate
+		p.Triggered:Connect(function(player)
+			if baseService:Get(player) and baseService:Get(player).world == world then
+				self:LevelAllWithCoins(player)
+			else
+				Net.fire(player, "Toast", "That's not your base!", "info")
+			end
+		end)
+	end
 	-- skins: coin skins are bought here, Robux skins through their product
 	Net.on("BuySkin", function(player, key)
 		self:BuySkin(player, key)
@@ -157,6 +165,18 @@ function ShopService:PromptProduct(player, key, target)
 		return
 	end
 	MarketplaceService:PromptProductPurchase(player, product.id)
+end
+
+function ShopService:LevelAllWithCoins(player)
+	local bought, spent = dragons:LevelAll(player)
+	if bought > 0 then
+		Net.fire(player, "Toast", `⬆️ {bought} level-ups for {Format.num(spent)} coins!`, "good")
+		Net.fire(player, "Sfx", "levelup")
+	elseif dragons:CanLevelAny(player) then
+		Net.fire(player, "Toast", "Not enough coins for a level-up yet. Collect your coins!", "info")
+	else
+		Net.fire(player, "Toast", "Put dragons in your nests first!", "info")
+	end
 end
 
 -- Give what a product buys. Returns true when granted.

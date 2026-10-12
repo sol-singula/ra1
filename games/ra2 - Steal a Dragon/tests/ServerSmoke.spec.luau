@@ -558,24 +558,26 @@ local function totalLevels()
 	end
 	return sum
 end
-check("LEVEL ALL plate built", world.levelPlate ~= nil)
+check("LEVEL ALL podium built", world.levelPlate ~= nil and world.levelPlate:FindFirstChild("Prompt_levelall") ~= nil)
 local levelsBefore = totalLevels()
 pa.coins += 1e7
 local coinsBeforeAll = pa.coins
 go(a, world.levelPlate.Position)
+check("LEVEL ALL isn't set off by walking onto it", totalLevels() == levelsBefore)
+world.levelPlate.Prompt_levelall.Triggered:Fire(a)
 check("LEVEL ALL buys levels", totalLevels() > levelsBefore + 1, totalLevels() - levelsBefore)
 check("LEVEL ALL spends coins", pa.coins < coinsBeforeAll)
 goHome(a)
 pa.coins = 0
 levelsBefore = totalLevels()
-go(a, world.levelPlate.Position) -- no coins: offers +5 Levels for ALL (free in Studio)
-local nestCount = 0
-for _, r in pa.dragons do
-	if r.slot and Formulas.level(r, Engine.globals.os.time()) < Constants.MAX_LEVEL then
-		nestCount += 1
-	end
-end
-check("+5 Levels for ALL levels every dragon", totalLevels() >= levelsBefore + 5 * math.max(1, nestCount - 1))
+world.levelPlate.Prompt_levelall.Triggered:Fire(a) -- no coins: just says so, never asks for Robux
+local noCoinsNote = Engine.lastClientEvent("Toast", a)
+check(
+	"LEVEL ALL with no coins doesn't charge Robux",
+	totalLevels() == levelsBefore
+		and noCoinsNote
+		and tostring(noCoinsNote.args[1]):find("Not enough coins", 1, true) ~= nil
+)
 goHome(a)
 pa.coins = coinsBeforeAll
 
@@ -853,6 +855,21 @@ check(
 	topNote and topNote.args[1]:find("Ben is now #1 on TOP COINS", 1, true) ~= nil,
 	topNote and topNote.args[1]
 )
+-- making a board at all (not top 3) gets a banner too
+local fakeRows = {}
+for i = 1, 4 do
+	table.insert(fakeRows, { id = 900000 + i, name = "Far Away " .. i, value = 1e12 - i })
+end
+Leaderboard:_announceTop({ key = "steals" }, fakeRows)
+table.insert(fakeRows, { id = b.UserId, name = "Ben", value = 1 })
+Leaderboard:_announceTop({ key = "steals" }, fakeRows)
+local madeNote = Engine.lastClientEvent("Announce", a)
+check(
+	"a banner when someone makes a board at all",
+	madeNote and tostring(madeNote.args[1]):find("Ben made the TOP THIEVES board", 1, true) ~= nil,
+	madeNote and madeNote.args[1]
+)
+Leaderboard:Redraw()
 -- BEST DRAGONS is each player's best dragon right now: lose it and lose the spot
 local galaxy = Dragon:Grant(b, "OMNI") -- the best dragon there is
 Leaderboard:Redraw()
