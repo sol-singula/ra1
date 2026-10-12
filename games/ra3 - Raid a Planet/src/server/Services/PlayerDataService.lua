@@ -47,6 +47,8 @@ local function defaults()
 		pets = {}, -- { uid, id }
 		petsOut = {}, -- uids of the pets out (1, or 2 with the pass)
 		rebirths = 0, -- stars
+		dailyRaid = { period = nil, damage = 0 }, -- raid damage in the current TOP RAIDERS period
+		prizes = {}, -- [period] = true: daily TOP RAIDER prizes already given
 		quests = nil, -- { day, start = stats at the start of the day, done = { [i] = true } }
 		callout = nil, -- a bought Raid Callout waiting for the next raid
 		passes = {},

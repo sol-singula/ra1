@@ -160,6 +160,48 @@ function Formulas.day(t)
 	return math.floor(t / 86400)
 end
 
+-- Days since 1970-01-01 for a calendar date, and back (proleptic Gregorian; pure maths, no time zone).
+local function daysFromCivil(y, m, d)
+	y = m <= 2 and y - 1 or y
+	local era = math.floor(y / 400)
+	local yoe = y - era * 400
+	local doy = math.floor((153 * (m + (m > 2 and -3 or 9)) + 2) / 5) + d - 1
+	local doe = yoe * 365 + math.floor(yoe / 4) - math.floor(yoe / 100) + doy
+	return era * 146097 + doe - 719468
+end
+local function yearOf(days)
+	local z = days + 719468
+	local era = math.floor(z / 146097)
+	local doe = z - era * 146097
+	local yoe = math.floor((doe - math.floor(doe / 1460) + math.floor(doe / 36524) - math.floor(doe / 146096)) / 365)
+	local doy = doe - (365 * yoe + math.floor(yoe / 4) - math.floor(yoe / 100))
+	local mp = math.floor((5 * doy + 2) / 153)
+	local m = mp < 10 and mp + 3 or mp - 9
+	return era * 400 + yoe + (m <= 2 and 1 or 0)
+end
+-- The day (since 1970) of the n-th Sunday of a month.
+local function nthSunday(y, m, n)
+	local first = daysFromCivil(y, m, 1)
+	local weekday = (first + 4) % 7 -- 0 = Sunday (1970-01-01 was a Thursday)
+	return first + (7 - weekday) % 7 + (n - 1) * 7
+end
+
+-- US Eastern time's offset from UTC in hours at a UTC time: -4 during daylight saving time (2am on the second
+-- Sunday of March to 2am on the first Sunday of November), -5 otherwise.
+function Formulas.easternOffset(utc)
+	local y = yearOf(math.floor(utc / 86400))
+	local dstStart = nthSunday(y, 3, 2) * 86400 + 7 * 3600 -- 2am EST
+	local dstEnd = nthSunday(y, 11, 1) * 86400 + 6 * 3600 -- 2am EDT
+	return (utc >= dstStart and utc < dstEnd) and -4 or -5
+end
+
+-- The daily leaderboard runs from 7pm Eastern to 7pm Eastern. Returns the period number and when it ends (UTC).
+function Formulas.dailyPeriod(utc)
+	local shift = (Formulas.easternOffset(utc) - Constants.DAILY_RESET_HOUR_ET) * 3600
+	local period = math.floor((utc + shift) / 86400)
+	return period, (period + 1) * 86400 - shift
+end
+
 -- Text for a count of ore
 function Formulas.oreText(planet, n)
 	return `{Format.num(n)} {planet.ore}`

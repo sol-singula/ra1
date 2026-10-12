@@ -172,6 +172,15 @@ Engine.advance(0.5)
 Planet:Travel(player, "HUB")
 walk(V3.new(0, 0.5, 30), V3.new(0, 48, 0))
 shot("raid_board", V3.new(0, 20, 60), V3.new(0, 46, 0), 70)
+-- 8b. the Board Deck, the Egg Machine and SQUAD RAID pad, the Trade Plaza and Booth Street
+walk(V3.new(-56, 0.5, 0), V3.new(-70, 0, 0))
+shot("board_deck", V3.new(-30, 14, 34), V3.new(-74, 9, 0), 62)
+walk(V3.new(0, 0.5, -4), V3.new(0, 0, -16))
+shot("hub_pads", V3.new(0, 12, 14), V3.new(0, 3, -16), 60)
+walk(V3.new(0, 0.5, 90), V3.new(0, 0, 118))
+shot("trade_plaza", V3.new(0, 22, 62), V3.new(0, 4, 118), 65)
+walk(V3.new(0, 0.5, -90), V3.new(0, 0, -118))
+shot("booth_street", V3.new(0, 22, -62), V3.new(0, 4, -118), 65)
 -- 9. the whole ring from above
 shot("world", V3.new(0, 420, 520), V3.new(0, 0, 0), 60)
 

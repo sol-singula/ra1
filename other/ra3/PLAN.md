@@ -1,6 +1,7 @@
 # ra3 plan: Raid a Planet
 
-Status: planned, not built yet. Every word a player sees is at a 3rd grade reading level. This doc is for us.
+Status: **built (all 9 steps), waiting on a Roblox experience to publish to.** See [README](README.md) for how to
+run and play it. Every word a player sees is at a 3rd grade reading level. This doc is for us.
 
 ## 1. What's trending (October 2026)
 
@@ -219,7 +220,7 @@ New:
 8. **Squad twists, squad raids.**
 9. **Audio, thumbnails, icon, Discord log, publish.**
 
-Each step ships to the live place when it's green, like ra2.
+All nine steps are built and green (`tools/run_tests.sh`). It ships to the live place once the experience exists.
 
 ## 13. Thumbnails and icon
 

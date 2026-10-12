@@ -188,4 +188,16 @@ Constants.RAID_MUSIC_VOLUME = 0.45
 
 Constants.CAMERA_MAX_ZOOM = 60
 
+-- Leaderboards (the Board Deck off the west edge of the Hub)
+Constants.LEADERBOARD_SIZE = 10
+Constants.LEADERBOARD_LIVE_SECONDS = 2 -- how often the boards redraw with this server's live numbers
+Constants.LEADERBOARD_READ_SECONDS = 60 -- global rows from the OrderedDataStores
+Constants.LEADERBOARD_WRITE_SECONDS = 120
+Constants.DAILY_RESET_HOUR_ET = 19 -- TODAY'S TOP RAIDERS resets at 7pm US Eastern; #1 wins an ULTRA blaster
+
+-- The game log (Discord, through the roblox-game-log function; the key is the 'discord_log' secret)
+Constants.GAME_LOG_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-game-log"
+Constants.GAME_LOG_IN_STUDIO = false
+Constants.GAME_LOG_FLUSH_SECONDS = 5
+
 return Constants

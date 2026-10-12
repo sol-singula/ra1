@@ -8,6 +8,7 @@ local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Constants = require(ReplicatedStorage.Shared.Constants)
 local Planets = require(ReplicatedStorage.Shared.Data.Planets)
 local Scenery = require(script.Parent.Scenery)
 local Themes = require(script.Parent.Themes)
@@ -73,6 +74,115 @@ local function lighting()
 	sky.Parent = Lighting
 end
 
+local WHITE = rgb(255, 255, 255)
+local function label(parent, props)
+	local t = Instance.new("TextLabel")
+	t.BackgroundTransparency = 1
+	t.Font = Enum.Font.FredokaOne
+	t.TextScaled = true
+	t.TextColor3 = WHITE
+	t.TextStrokeTransparency = 0
+	t.TextStrokeColor3 = INK
+	for k, v in props do
+		t[k] = v
+	end
+	t.Parent = parent
+	return t
+end
+
+-- A leaderboard: a big board with a title, a line under it and 10 rows (LeaderboardService fills them).
+-- cf is the middle of its base on the floor; the board faces cf's look direction.
+local function leaderboard(parent, cf, title, color)
+	local board = part({
+		Name = "Leaderboard",
+		Size = Vector3.new(16, 20, 1),
+		CFrame = cf * CFrame.new(0, 12, 0),
+		Color = rgb(35, 38, 58),
+		Parent = parent,
+	})
+	part({
+		Name = "Frame",
+		Size = Vector3.new(17, 21, 0.8),
+		CFrame = board.CFrame * CFrame.new(0, 0, 0.3),
+		Color = color,
+		Parent = parent,
+	})
+	for _, x in { -6, 6 } do
+		part({
+			Name = "Post",
+			Size = Vector3.new(1, 2, 1),
+			CFrame = cf * CFrame.new(x, 1, 0),
+			Color = INK,
+			Parent = parent,
+		})
+	end
+	local gui = Instance.new("SurfaceGui")
+	gui.Name = "Board"
+	gui.Face = Enum.NormalId.Front
+	gui.CanvasSize = Vector2.new(480, 640)
+	gui.LightInfluence = 0
+	gui.Parent = board
+	label(gui, {
+		Name = "Title",
+		Size = UDim2.new(1, -20, 0, 70),
+		Position = UDim2.new(0, 10, 0, 8),
+		Text = title,
+		TextColor3 = color,
+		Font = Enum.Font.LuckiestGuy,
+	})
+	local sub = label(gui, {
+		Name = "Sub",
+		Size = UDim2.new(1, -20, 0, 26),
+		Position = UDim2.new(0, 10, 0, 76),
+		Text = "Loading...",
+		TextColor3 = rgb(200, 200, 215),
+	})
+	local rows = {}
+	for i = 1, Constants.LEADERBOARD_SIZE do
+		local y = 108 + (i - 1) * 46
+		local bg = Instance.new("Frame")
+		bg.Name = "Row" .. i
+		bg.Size = UDim2.new(1, -24, 0, 40)
+		bg.Position = UDim2.new(0, 12, 0, y)
+		bg.BackgroundColor3 = i % 2 == 0 and rgb(48, 52, 78) or rgb(58, 62, 92)
+		bg.BorderSizePixel = 0
+		bg.Parent = gui
+		local medal = ({ rgb(255, 205, 60), rgb(210, 215, 230), rgb(225, 150, 90) })[i] or WHITE
+		rows[i] = {
+			rank = label(bg, {
+				Name = "Rank",
+				Size = UDim2.new(0, 56, 1, -6),
+				Position = UDim2.new(0, 4, 0, 3),
+				Text = "#" .. i,
+				TextColor3 = medal,
+			}),
+			name = label(bg, {
+				Name = "Name",
+				Size = UDim2.new(0.58, -60, 1, -8),
+				Position = UDim2.new(0, 64, 0, 4),
+				Text = "",
+				TextXAlignment = Enum.TextXAlignment.Left,
+			}),
+			value = label(bg, {
+				Name = "Value",
+				Size = UDim2.new(0.42, -12, 1, -8),
+				Position = UDim2.new(0.58, 0, 0, 4),
+				Text = "",
+				TextColor3 = color,
+				TextXAlignment = Enum.TextXAlignment.Right,
+			}),
+		}
+	end
+	local timer = label(gui, {
+		Name = "Timer",
+		Size = UDim2.new(1, -20, 0, 28),
+		Position = UDim2.new(0, 10, 0, 572),
+		Text = "",
+		TextColor3 = rgb(200, 200, 215),
+	})
+	return { rows = rows, sub = sub, timer = timer, part = board }
+end
+
 local function hub(map, rng)
 	local model = Instance.new("Model")
 	model.Name = "Hub"
@@ -85,6 +195,9 @@ local function hub(map, rng)
 	Scenery.ring(model, "Edge", Vector3.new(0, 0.05, 0), R * 2 - 1, HUB_TRIM, { Transparency = 0.2 })
 	disc(model, "EdgeHole", Vector3.new(0, 0.06, 0), R * 2 - 4, 0.32, HUB_COLOR, Enum.Material.Plastic)
 	for i = 0, 15 do
+		if i == 8 then
+			continue -- (the bridge to the Board Deck goes here)
+		end
 		local a = i / 16 * math.pi * 2
 		local p = Vector3.new(math.cos(a) * (R - 3), 0, math.sin(a) * (R - 3))
 		part({
@@ -399,6 +512,44 @@ local function hub(map, rng)
 		{ text = "🏠 LEAVE", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy, color = HUB_TRIM },
 		{ text = "back to the Hub", h = 0.4, y = 0.6 },
 	})
+	-- the Board Deck: a round platform off the west edge with the three leaderboards in an arc, facing the Hub
+	local deck = Instance.new("Model")
+	deck.Name = "BoardDeck"
+	deck.Parent = model
+	local dc = Vector3.new(-(R + 24), 0, 0)
+	disc(deck, "Floor", dc + Vector3.new(0, -1, 0), 52, 2, HUB_COLOR, Enum.Material.Plastic)
+	disc(deck, "Under", dc + Vector3.new(0, -4, 0), 44, 4, HUB_COLOR:Lerp(INK, 0.4))
+	Scenery.ring(deck, "Edge", dc + Vector3.new(0, 0.05, 0), 51, HUB_TRIM, { Transparency = 0.2 })
+	part({
+		Name = "Bridge",
+		Size = Vector3.new(14, 1, 10),
+		CFrame = CFrame.new(-(R + 1), -0.5, 0),
+		Color = HUB_TRIM,
+		Parent = deck,
+	})
+	local function boardAt(deg)
+		local a = math.rad(deg)
+		local p = dc + Vector3.new(math.cos(a) * 20, 0.6, math.sin(a) * 20)
+		return CFrame.lookAt(p, Vector3.new(dc.X, 0.6, dc.Z))
+	end
+	local boards = {
+		raid = leaderboard(deck, boardAt(180), "TODAY'S TOP RAIDERS", rgb(255, 120, 200)),
+		damage = leaderboard(deck, boardAt(130), "BEST BLASTERS", rgb(120, 200, 255)),
+		stars = leaderboard(deck, boardAt(230), "MOST STARS", rgb(255, 215, 60)),
+	}
+	local deckSign = part({
+		Name = "DeckSignPost",
+		Size = Vector3.new(1, 1, 1),
+		CFrame = CFrame.new(dc + Vector3.new(10, 19, 0)),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		Parent = deck,
+	})
+	Scenery.sign(deckSign, 24, 5, Vector3.new(0, 0, 0), {
+		{ text = "🏆 TOP PLAYERS", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy, color = HUB_TRIM },
+		{ text = "Today's #1 raider wins an ULTRA blaster at 7pm ET", h = 0.4, y = 0.6 },
+	}, 160)
 	local boardPost = part({
 		Name = "SkyBoardPost",
 		Size = Vector3.new(1, 1, 1),
@@ -449,6 +600,7 @@ local function hub(map, rng)
 			exitCenter = Vector3.new(0, ay, ar - 6),
 		},
 		skyBoardPost = boardPost,
+		boards = boards,
 	}
 end
 

@@ -39,6 +39,24 @@ local Forge = service("ForgeService")
 local Goal = service("GoalService")
 local Playtime = service("PlaytimeService")
 local Raid = service("RaidService")
+local Leaderboard = service("LeaderboardService")
+-- game log posts are captured here instead of going to Discord
+local GameLog = service("GameLogService")
+local gameLogs = {} -- every event sent, flattened
+GameLog.send = function(payload)
+	for _, e in payload.events do
+		table.insert(gameLogs, e)
+	end
+	return true
+end
+local function logged(text)
+	for _, e in gameLogs do
+		if tostring(e.title):find(text, 1, true) then
+			return e
+		end
+	end
+	return nil
+end
 local ShopData = Engine.require(tree.shared.Data.Shop)
 local Formulas = Engine.require(tree.shared.Formulas)
 local Constants = Engine.require(tree.shared.Constants)
@@ -846,6 +864,76 @@ do
 	Engine.removePlayer(cat)
 	Engine.removePlayer(b)
 	Engine.advance(0.3)
+end
+
+-- Leaderboards and the game log ------------------------------------------------------------------------------
+do
+	local boards = layout.hub.boards
+	Leaderboard:Write(a)
+	Leaderboard:Refresh()
+	check("the boards fill", boards.damage.rows[1].name.Text ~= "", boards.damage.rows[1].name.Text)
+	check(
+		"BEST BLASTERS names the blaster",
+		boards.damage.rows[1].name.Text:find("Ava · ", 1, true) ~= nil,
+		boards.damage.rows[1].name.Text
+	)
+	check(
+		"TOP RAIDERS counts today's raid damage",
+		boards.raid.rows[1].value.Text ~= "",
+		boards.raid.rows[1].value.Text
+	)
+	check("the prize timer runs", boards.raid.timer.Text:find("ULTRA", 1, true) ~= nil)
+	-- MOST STARS: Ava rebirthed earlier
+	check("MOST STARS shows Ava", boards.stars.rows[1].name.Text == "Ava", boards.stars.rows[1].name.Text)
+	-- BEST BLASTERS is live: a stronger blaster shows at once
+	local b2 = join("Ben", 1002)
+	local pb2 = Data:Get(b2)
+	Blaster:Grant(b2, {
+		rarity = "Secret",
+		planet = "SUN",
+		roll = { dmg = "god", spd = "plain", luck = "plain", gem = "plain" },
+		lv = 0,
+	}, "test")
+	Leaderboard:Redraw()
+	check(
+		"a stronger blaster takes #1 live",
+		boards.damage.rows[1].name.Text:find("Ben", 1, true) ~= nil,
+		boards.damage.rows[1].name.Text
+	)
+	local note = Engine.lastClientEvent("Announce", a)
+	check(
+		"a banner when someone takes #1",
+		note and tostring(note.args[1]):find("Ben is now #1 on BEST BLASTERS", 1, true) ~= nil,
+		note and note.args[1]
+	)
+	pb2.blasters = { pb2.blasters[1] }
+	Leaderboard:Redraw()
+	check("sell it and lose the spot", boards.damage.rows[1].name.Text:find("Ava", 1, true) ~= nil)
+	Engine.removePlayer(b2)
+	Engine.advance(0.3)
+	-- the daily prize: #1 when the period ends wins an ULTRA blaster
+	local period = Leaderboard:Period()
+	pa.dailyRaid = { period = period, damage = 1e9 }
+	Leaderboard:Redraw()
+	local n = #pa.blasters
+	Leaderboard:_rollover(period)
+	check(
+		"the daily TOP RAIDER wins an ULTRA blaster",
+		#pa.blasters == n + 1 and pa.blasters[#pa.blasters].rarity == "Ultra" and pa.prizes[tostring(period)] == true,
+		#pa.blasters - n
+	)
+	check("only once per day", not Leaderboard:GivePrize(a, period))
+	-- the game log
+	GameLog.flush()
+	check("the log saw the server start", logged("Server started") ~= nil)
+	check("the log saw Ava join", logged("Ava joined") ~= nil or logged("@Ava joined") ~= nil)
+	check("the log saw the raid", logged("Raid won") ~= nil, gameLogs[#gameLogs] and gameLogs[#gameLogs].title)
+	check("the log saw the squad raid", logged("Squad raid won") ~= nil)
+	check("the log saw the trade", logged("bought @Ava's") ~= nil or logged("bought @Ben's") ~= nil)
+	check("the log saw the prize", logged("TOP RAIDER prize") ~= nil)
+	check("the log saw Ben leave with stats", logged("@Ben left") ~= nil and #logged("@Ben left").fields >= 10)
+	local stats = GameLog:SessionStats(a, pa)
+	check("session stats", stats ~= nil and stats[1].name == "Time played" and stats[7].name == "Raids joined")
 end
 
 -- Leaving --------------------------------------------------------------------------------------------------------------
