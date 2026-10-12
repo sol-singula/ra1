@@ -23,6 +23,19 @@ Passes and products belong to a published experience, so publish once before cre
 While an item's ID is `0`, Studio gives it free for testing and the live game shows "Coming soon". Each item
 needs a real ID before it can earn.
 
+### The quick way: let the script make all 20
+
+`tools/setup_shop.py` creates every pass and product below through Roblox's Open Cloud API, uploads the pass icons
+from `other/ra2/icon/passes/`, and writes each new ID into `Shop.lua`. It needs two environment variables:
+
+- `ROBLOX_UNIVERSE_ID`: on the Creator Dashboard, open the experience's **⋯** menu → **Copy Universe ID**.
+- `ROBLOX_API_KEY`: on the Creator Dashboard, go to **Open Cloud → API Keys → Create API Key**. Add **game-pass**
+  and **developer-product** (read and write) for this experience, and give it a short expiry. Never paste a key into
+  a chat; store it as an environment variable or secret.
+
+Run `python3 tools/setup_shop.py --dry-run` first, then `python3 tools/setup_shop.py`. Running it again won't create
+duplicates. Or create them by hand as below.
+
 ### Game passes (bought once, kept forever)
 
 Creator Dashboard → **Creations** → Steal a Dragon → **Monetization → Passes → Create a Pass**. Upload a square
