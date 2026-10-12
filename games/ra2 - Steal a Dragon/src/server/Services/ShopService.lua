@@ -12,6 +12,7 @@ local Format = require(ReplicatedStorage.Shared.Format)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
+local Signal = require(ReplicatedStorage.Shared.Signal)
 local Skins = require(ReplicatedStorage.Shared.Data.Skins)
 
 local ShopService = {
@@ -25,6 +26,7 @@ local ShopService = {
 		"RewardService",
 		"ToolService",
 	},
+	Purchased = Signal.new("ShopService.Purchased"), -- (player, name, robux) a real Robux purchase went through
 }
 
 local data, economy, dragons, baseService, road, reward, tools
@@ -106,6 +108,7 @@ function ShopService:Init(registry)
 		if purchased and pass then
 			economy:GrantPass(player, pass.key)
 			Net.fire(player, "Alert", `Thank you! {pass.name} is yours! {pass.icon}`, Color3.fromRGB(80, 220, 120))
+			self.Purchased:Fire(player, pass.name, pass.price)
 		end
 	end)
 	MarketplaceService.ProcessReceipt = function(info)
@@ -287,6 +290,7 @@ function ShopService:ProcessReceipt(info)
 		table.remove(profile.receipts, 1)
 	end
 	data:Save(player)
+	self.Purchased:Fire(player, product.name, info.CurrencySpent or product.price)
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
 

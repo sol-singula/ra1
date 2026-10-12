@@ -40,6 +40,13 @@ local Team = service("TeamService")
 local Tutorial = service("TutorialService")
 local Leaderboard = service("LeaderboardService")
 local Tools = service("ToolService")
+-- game log posts are captured here instead of going to Discord
+local GameLog = service("GameLogService")
+local gameLogs = {}
+GameLog.post = function(payload)
+	table.insert(gameLogs, payload)
+	return true
+end
 local ShopData = Engine.require(tree.shared.Data.Shop)
 -- every real item has its own Roblox ID (set by tools/setup_shop.py)
 do
@@ -914,6 +921,38 @@ for _, d in Engine.workspace.Map:FindFirstChild("Disco", true):GetChildren() do
 	end
 end
 check("a line of lights leads from the road to the disco", guideDots > 10 and nearRoad)
+
+-- Discord game log: a join message, and a leave message with the session's stats
+local function logFor(event, userId)
+	for _, l in gameLogs do
+		if l.event == event and l.player.userId == userId then
+			return l
+		end
+	end
+end
+local joinLog = logFor("join", 1001)
+check("game log: join", joinLog ~= nil and joinLog.player.name == "Ava")
+local leaver = Engine.Players:GetPlayers()[1]
+local leaverProfile = Data:Get(leaver)
+leaverProfile.stats.bought += 2
+local stats = GameLog:SessionStats(leaver, leaverProfile)
+local function stat(name)
+	for _, st in stats do
+		if st.name == name then
+			return st.value
+		end
+	end
+end
+check(
+	"leave stats: time, coins, dragons",
+	stat("Time played") ~= nil and stat("Coins earned") ~= nil and (stat("Dragons bought") or 0) >= 2
+)
+check("leave stats: best dragon and robux", stat("Best dragon") ~= nil and stat("Robux spent") ~= nil)
+local leaverId = leaver.UserId
+Engine.removePlayer(leaver)
+Engine.advance(0.1)
+local leaveLog = logFor("leave", leaverId)
+check("game log: leave with stats", leaveLog ~= nil and #leaveLog.stats >= 10, leaveLog and #leaveLog.stats)
 
 -- Shutdown ----------------------------------------------------------------------------------------------------
 for _, fn in Engine.closeHandlers do
