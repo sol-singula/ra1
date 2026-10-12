@@ -789,7 +789,7 @@ function DragonBuilder.place(model, feetCFrame)
 end
 
 -- A floating name tag: line 1 in the rarity colour, line 2 underneath.
-function DragonBuilder.label(model, line1, color, line2)
+function DragonBuilder.label(model, line1, color, line2, color2)
 	local root = model.PrimaryPart
 	local s = model:GetAttribute("Scale") or 1
 	local gui = root:FindFirstChild("Tag")
@@ -806,9 +806,10 @@ function DragonBuilder.label(model, line1, color, line2)
 			local t = Instance.new("TextLabel")
 			t.Name = name
 			t.BackgroundTransparency = 1
-			t.Size = UDim2.new(1, 0, 0.5, 0)
-			t.Position = UDim2.new(0, 0, (i - 1) * 0.5, 0)
-			t.Font = Enum.Font.FredokaOne
+			-- the top line (a nest dragon's level) a bit bigger than the second
+			t.Size = UDim2.new(1, 0, i == 1 and 0.56 or 0.44, 0)
+			t.Position = UDim2.new(0, 0, (i - 1) * 0.56, 0)
+			t.Font = i == 1 and Enum.Font.LuckiestGuy or Enum.Font.FredokaOne
 			t.TextScaled = true
 			t.TextStrokeTransparency = 0
 			t.TextStrokeColor3 = INK
@@ -819,6 +820,7 @@ function DragonBuilder.label(model, line1, color, line2)
 	gui.Line1.Text = line1
 	gui.Line1.TextColor3 = color or WHITE
 	gui.Line2.Text = line2 or ""
+	gui.Line2.TextColor3 = color2 or WHITE
 	return gui
 end
 

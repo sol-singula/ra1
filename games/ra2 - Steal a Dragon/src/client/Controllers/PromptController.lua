@@ -26,7 +26,7 @@ function PromptController.shouldShow(prompt)
 	local carrying = s.carrying ~= nil and s.carrying ~= false
 	if kind == "steal" then
 		return not mine and not carrying and not isTeam(owner)
-	elseif kind == "sell" or kind == "grow" or kind == "levelup" or kind == "combine" then
+	elseif kind == "sell" or kind == "levelup" then
 		return mine and not carrying
 	elseif kind == "nest" or kind == "hatch" or kind == "levelall" then
 		return mine

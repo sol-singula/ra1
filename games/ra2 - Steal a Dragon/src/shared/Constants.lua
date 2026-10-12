@@ -196,7 +196,7 @@ Constants.LEVEL_COST_GROWTH = 1.12 -- ...times this to the power of (level - 1)
 Constants.GROW_PRODUCT_LEVELS = 10 -- the +10 Levels product
 Constants.STAGE_NAMES = { "Baby", "Kid", "Big", "Giant" }
 Constants.STAGE_LEVELS = { 1, 8, 18, 49 }
-Constants.STAGE_SCALE = { 1, 1.3, 1.65, 2.1 }
+Constants.STAGE_SCALE = { 1, 1.12, 1.25, 1.4 } -- kept modest: a base full of giants hid everything
 
 -- Egg and daily gift
 Constants.EGG_HATCH_SECONDS = 2 * 3600 -- a new egg every 2 hours

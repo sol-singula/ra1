@@ -519,7 +519,8 @@ for _, r in pa.dragons do
 	end
 end
 local lv0 = Formulas.level(grown, Engine.globals.os.time())
-trigger(a, gm, "grow")
+Dragon.GrowRequested:Fire(a, guid) -- (offered when Level Up costs more than you have)
+Engine.advance(0.1)
 check("+10 Levels adds 10 levels", Formulas.level(grown, Engine.globals.os.time()) == lv0 + 10)
 local function modelOf(uid)
 	for _, m in Engine.workspace.Dragons:GetChildren() do
@@ -530,9 +531,13 @@ local function modelOf(uid)
 end
 gm = modelOf(guid) -- reaching Kid size rebuilds the model
 check(
-	"tag shows the level",
-	gm.PrimaryPart.Tag.Line2.Text:find("Lv " .. (lv0 + 10)) ~= nil,
-	gm.PrimaryPart.Tag.Line2.Text
+	"tag shows the level big on top",
+	gm.PrimaryPart.Tag.Line1.Text == "LV " .. (lv0 + 10),
+	gm.PrimaryPart.Tag.Line1.Text
+)
+check(
+	"owners get just Level Up and Sell",
+	gm.PrimaryPart:FindFirstChild("Prompt_combine") == nil and gm.PrimaryPart:FindFirstChild("Prompt_grow") == nil
 )
 local cost = Formulas.levelUpCost(grown, Engine.globals.os.time())
 pa.coins += cost
@@ -552,7 +557,12 @@ check(
 local poor = pa.coins
 pa.coins = 0
 trigger(a, gm, "levelup")
-check("no Level Up without coins", Formulas.level(grown, Engine.globals.os.time()) == lv0 + 11)
+Engine.advance(0.1)
+check(
+	"no coins: Level Up offers +10 Levels (Robux; free in Studio)",
+	pa.coins == 0 and Formulas.level(grown, Engine.globals.os.time()) == lv0 + 21,
+	Formulas.level(grown, Engine.globals.os.time()) - lv0
+)
 pa.coins = poor
 
 -- Buy plates in the base

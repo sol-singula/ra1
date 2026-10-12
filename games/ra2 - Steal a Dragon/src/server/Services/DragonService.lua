@@ -22,7 +22,7 @@ local DragonService = {
 	CarryChanged = Signal.new("DragonService.CarryChanged"), -- (player)
 	Placed = Signal.new("DragonService.Placed"), -- (player, rec, kind, fromPlayer)
 	StealStarted = Signal.new("DragonService.StealStarted"), -- (thief, victim, rec)
-	GrowRequested = Signal.new("DragonService.GrowRequested"), -- (player, uid) owner tapped "+10 Levels" on a dragon
+	GrowRequested = Signal.new("DragonService.GrowRequested"), -- (player, uid) offer +10 Levels (Robux) for a dragon
 	DragonsChanged = Signal.new("DragonService.DragonsChanged"), -- (player)
 }
 
@@ -238,10 +238,8 @@ end
 -- Screen offset (pixels) of each prompt kind, so the owner's three prompts (and Buy / Buy with Robux on the road)
 -- stack neatly: +10 Levels on top, Level Up in the middle, Sell below.
 local PROMPT_OFFSETS = {
-	grow = Vector2.new(0, -84),
 	levelup = Vector2.zero,
 	sell = Vector2.new(0, 84),
-	combine = Vector2.new(0, 168),
 	buy = Vector2.zero,
 	buynow = Vector2.new(0, 84),
 }
@@ -278,6 +276,22 @@ local function tagText(rec)
 end
 DragonService.tagText = tagText
 
+-- A nest dragon's tag: its level big on top, then name and coins (the size shows its stage).
+local LEVEL_GOLD = Color3.fromRGB(255, 215, 60)
+local function nestTag(model, rec)
+	local d = Dragons.byId[rec.id]
+	local name = (rec.sp and Dragons.Specials[rec.sp].name .. " " or "") .. d.name
+	local level = levelOf(rec)
+	local boost = (rec.mx or 1) > 1.005 and string.format(" ⚡x%.1f", rec.mx) or ""
+	DragonBuilder.label(
+		model,
+		level >= Constants.MAX_LEVEL and "LV MAX" or `LV {level}`,
+		LEVEL_GOLD,
+		`{name} · {Format.num(Formulas.dragonIncome(rec, os.time()))}/s{boost}`,
+		Dragons.RarityColor[d.rarity]
+	)
+end
+
 local function levelUpText(rec)
 	local cost = Formulas.levelUpCost(rec, os.time())
 	return cost and "Level Up 💰" .. Format.num(cost) or "MAX LEVEL"
@@ -295,8 +309,8 @@ function DragonService:_spawnNestModel(player, rec)
 	local stage = stageOf(rec)
 	local model = DragonBuilder.build(rec.id, rec.sp, stage, nil, skinOf(player))
 	DragonBuilder.place(model, base.world.nests[rec.slot].feet)
-	local name, color, line2 = tagText(rec)
-	DragonBuilder.label(model, name, color, line2)
+	local name = tagText(rec)
+	nestTag(model, rec)
 	model:SetAttribute("OwnerUserId", player.UserId)
 	model:SetAttribute("Uid", rec.uid)
 	model:SetAttribute("Slot", rec.slot)
@@ -318,21 +332,11 @@ function DragonService:_spawnNestModel(player, rec)
 	sell.Triggered:Connect(function(who)
 		self:TrySell(who, model)
 	end)
+	-- (just two for the owner: combining happens by itself when the nests are full, and +10 Levels for Robux is
+	-- offered when Level Up costs more coins than you have)
 	local levelUp = prompt(root, "levelup", levelUpText(rec), name, 0.3, player.UserId)
 	levelUp.Triggered:Connect(function(who)
 		self:TryLevelUp(who, model)
-	end)
-	local combine = prompt(root, "combine", "Combine into best", name, 0.6, player.UserId, Enum.KeyCode.C)
-	combine.Triggered:Connect(function(who)
-		if who == player then
-			self:CombineIntoBest(player, rec.uid)
-		end
-	end)
-	local grow = prompt(root, "grow", "+10 Levels", name, 0, player.UserId, Enum.KeyCode.G)
-	grow.Triggered:Connect(function(who)
-		if who == player then
-			self.GrowRequested:Fire(player, rec.uid)
-		end
 	end)
 	model.Parent = folder
 	models[rec.slot] = model
@@ -350,8 +354,7 @@ function DragonService:_refreshNestModel(player, rec)
 		return
 	end
 	model:SetAttribute("Level", levelOf(rec))
-	local name, color, line2 = tagText(rec)
-	DragonBuilder.label(model, name, color, line2)
+	nestTag(model, rec)
 	local root = model.PrimaryPart
 	local sell, levelUp = root:FindFirstChild("Prompt_sell"), root:FindFirstChild("Prompt_levelup")
 	if sell then
@@ -631,6 +634,7 @@ function DragonService:TryLevelUp(player, model)
 	end
 	if not economy:Spend(player, cost) then
 		Net.fire(player, "Toast", `You need {Format.num(cost)} coins to level up.`, "bad")
+		self.GrowRequested:Fire(player, rec.uid) -- offers +10 Levels for Robux instead
 		return
 	end
 	rec.lv = (rec.lv or 0) + 1

@@ -69,8 +69,10 @@ landscape on its own.
    slower: level 8 after 10 minutes, 18 after an hour, 50 after 8 hours, up to level 100). Each level adds 15% to
    its coins. Tap **Level Up** on your dragon to buy a level with coins (each one costs a bit more), or use
    the **LEVEL ALL** podium (hold its prompt) to spend your coins on the cheapest level-ups across all your
-   nests. **Combine** (C) folds a dragon into your best one and keeps the income (it shows ⚡x). Dragons grow
-   in size at levels 8, 18 and 49 (Kid, Big, Giant) and stay Giant after that. A high-level dragon is a big prize
+   nests. Your dragons have just two prompts: **Level Up** (E) and **Sell** (F); without enough coins, Level Up
+   offers **+10 Levels** for Robux. When your nests are full, your weakest dragon folds into your best one and
+   the income is kept (it shows ⚡x). Each tag shows the level big on top. Dragons grow
+   a little at levels 8, 18 and 49 (Kid, Big, Giant: at most 1.4x a Baby) and stay Giant after that. A high-level dragon is a big prize
    for thieves.
 7. **Your base** is a dragon gallery: 24 nests on stepped stands along both side walls and a trophy stand at the
    back, all facing an open middle you can walk around in, with the egg on a pedestal in the centre (4 nests to
