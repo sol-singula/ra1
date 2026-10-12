@@ -13,6 +13,8 @@ globals:
   Color3: { any: true }
   ColorSequence: { any: true }
   ColorSequenceKeypoint: { any: true }
+  NumberSequence: { any: true }
+  NumberRange: { any: true }
   UDim: { any: true }
   UDim2: { any: true }
   Enum: { any: true }
