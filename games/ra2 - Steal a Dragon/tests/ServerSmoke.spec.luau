@@ -40,6 +40,27 @@ local Team = service("TeamService")
 local Tutorial = service("TutorialService")
 local Leaderboard = service("LeaderboardService")
 local ShopData = Engine.require(tree.shared.Data.Shop)
+-- every real item has its own Roblox ID (set by tools/setup_shop.py)
+do
+	local ids, ok = {}, true
+	for _, list in { ShopData.Passes, ShopData.Products } do
+		for _, item in list do
+			if item.id == 0 or ids[item.id] then
+				ok = false
+			end
+			ids[item.id] = true
+		end
+	end
+	check("all 20 shop items have unique Roblox IDs", ok)
+end
+-- the rest of this test plays as Studio does with unset IDs: purchases are granted for free
+for _, list in { ShopData.Passes, ShopData.Products } do
+	for _, item in list do
+		item.id = 0
+	end
+end
+table.clear(ShopData.passById)
+table.clear(ShopData.productById)
 local Formulas = Engine.require(tree.shared.Formulas)
 local Format = Engine.require(tree.shared.Format)
 local Constants = Engine.require(tree.shared.Constants)
