@@ -146,6 +146,12 @@ Constants.DAILY_GIFTS = {
 Constants.SQUAD_DAMAGE_PER_FRIEND = 0.1
 Constants.SQUAD_DAMAGE_MAX = 0.3
 Constants.SQUAD_ORE_MULT = 2 -- a friend on your planet: bosses drop double ore for both of you
+Constants.TAG_TEAM_WINDOW = 1.5 -- the Void Eye (Shadow): two players hitting it within this many seconds...
+Constants.TAG_TEAM_OPEN = 4 -- ...opens full damage for this long; otherwise it only takes half
+Constants.TAG_TEAM_WEAK = 0.5
+Constants.LEND_SHARE = 0.5 -- a lender gets this share of the gems the borrower earns in the raid
+Constants.SQUAD_RAID_EVERY = 60 * 60 -- a player can open a private squad raid this often
+Constants.SQUAD_RAID_MIN = 2 -- friends in the hub, you included
 
 -- Sound ----------------------------------------------------------------------------------------------------
 Constants.SOUNDS = {

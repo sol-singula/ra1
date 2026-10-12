@@ -68,10 +68,32 @@ function BossService:_spawn(i)
 	})
 	entry.fill, entry.text, entry.label = MobBuilder.healthBar(model, 26, `👑 {planet.boss}`)
 	mobs.setBar(entry)
-	entry.onHit = function()
+	entry.lastHitter, entry.lastHitAt, entry.tagOpenUntil = nil, 0, 0
+	entry.onHit = function(player)
 		if entry.state == "waiting" then
 			entry.state = "fighting"
 		end
+		if planet.key ~= "SHADOW" then
+			return nil
+		end
+		-- the Void Eye: ghostly (half damage) unless two players hit it within a moment: TAG TEAM opens it up
+		local t = os.clock()
+		if t < entry.tagOpenUntil then
+			return 1
+		end
+		if entry.lastHitter and entry.lastHitter ~= player and t - entry.lastHitAt <= Constants.TAG_TEAM_WINDOW then
+			entry.tagOpenUntil = t + Constants.TAG_TEAM_OPEN
+			Net.fireAll(
+				"Popup",
+				entry.pos + Vector3.new(0, 9, 0),
+				"👊 TAG TEAM! FULL DAMAGE!",
+				Color3.fromRGB(255, 215, 60)
+			)
+			Net.fireAll("Sfx", "win", entry.pos)
+			return 1
+		end
+		entry.lastHitter, entry.lastHitAt = player, t
+		return Constants.TAG_TEAM_WEAK
 	end
 	entry.onDeath = function(killer)
 		self:_beaten(entry, killer)

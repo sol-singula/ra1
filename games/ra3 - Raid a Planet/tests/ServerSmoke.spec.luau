@@ -585,6 +585,8 @@ end
 local Trade = service("TradeService")
 do
 	-- Ben is back with a blaster to sell
+	Engine.removePlayer(b)
+	Engine.advance(0.5)
 	b = join("Ben", 1002)
 	pb = Data:Get(b)
 	Engine.advance(0.5)
@@ -758,6 +760,92 @@ do
 	check("restricted players see no eggs", Pet:View(d).canRandom == false)
 	Engine.policy = { IsPaidItemTradingAllowed = true, ArePaidRandomItemsRestricted = false }
 	Engine.removePlayer(d)
+end
+
+-- Squad twists ----------------------------------------------------------------------------------------------------
+local Team = service("TeamService")
+do
+	-- the Void Eye (Shadow boss): half damage alone, full damage when two players TAG TEAM it
+	local eye = Boss:_spawn(7)
+	check("the Void Eye spawns", eye ~= nil and eye.planet.key == "SHADOW")
+	local hp0 = eye.hp
+	Mob:Hit(a, eye.id, 100)
+	check("the Void Eye only takes half damage alone", eye.hp == hp0 - 50, hp0 - eye.hp)
+	-- a friend joins (friends before Ben's profile loads, so TeamService sees it)
+	Engine.makeFriends(a, { UserId = 1002 })
+	b = join("Ben", 1002)
+	pb = Data:Get(b)
+	check("friends are a team", Team:AreTeam(a, b) and Team:DamageMult(a) > 1, Team:DamageMult(a))
+	hp0 = eye.hp
+	Mob:Hit(a, eye.id, 100)
+	Mob:Hit(b, eye.id, 100)
+	check("TAG TEAM: the second hit opens full damage", eye.hp == hp0 - 150, hp0 - eye.hp)
+	Mob:Hit(a, eye.id, 100)
+	check("...and it stays open for a bit", eye.hp == hp0 - 250, hp0 - eye.hp)
+	Mob:Unregister(eye)
+	Boss.bosses[7] = nil
+
+	-- lend a blaster to a friend for one raid
+	local best = Blaster:Best(a)
+	local nB = #pb.blasters
+	Engine.fireServer(a, "Lend", best.uid, 1002)
+	Engine.advance(0.2)
+	local lent
+	for _, r in pb.blasters do
+		lent = lent or (r.lentBy == 1001 and r)
+	end
+	check("lent a blaster to a friend", #pb.blasters == nB + 1 and lent ~= nil, #pb.blasters - nB)
+	check("the friend holds it", pb.equipped == lent.uid)
+	check("you keep yours", Blaster:Best(a).uid == best.uid)
+	check("a lent blaster can't be sold", not Blaster:Sell(b, lent.uid) and #pb.blasters == nB + 1)
+	check("...or put on a stall", not Trade:List(b, 1, lent.uid, Constants.STALL_PRICES[1]) and #pb.blasters == nB + 1)
+	local cat = join("Cat", 1003)
+	check("can't lend to a stranger", not Blaster:Lend(a, best.uid, cat, Team:AreTeam(a, cat)))
+
+	-- a squad raid: you and your friends in the Hub, once an hour
+	Planet:Travel(a, "HUB")
+	Planet:Travel(b, "HUB")
+	Planet:Travel(cat, "HUB")
+	Engine.advance(0.3)
+	check("no friends here: no squad raid", not Raid:SquadRaid(cat) and Raid.state == "waiting")
+	local publicAt = Raid:NextAt()
+	Engine.fireServer(a, "SquadRaid")
+	Engine.advance(0.3)
+	check(
+		"SQUAD RAID: a private raid starts and pulls the friends in",
+		Raid.state == "fighting" and Raid:IsSquad() and Planet:Where(a) == "RAID" and Planet:Where(b) == "RAID"
+	)
+	check("a stranger can't join it", not Raid:Join(cat) and Planet:Where(cat) == "HUB")
+	check("the public raid clock keeps running", Raid:NextAt() == publicAt)
+	local star
+	for _, e in Mob.targets do
+		if e.raid then
+			star = e
+		end
+	end
+	star.hp = 1
+	local gemsA = pa.gems
+	Mob:Hit(b, star.id, 5)
+	Engine.advance(0.3)
+	check("the squad raid ends", Raid.state == "waiting" and not Raid:IsSquad())
+	check("the lender gets a share of the borrower's raid gems", pa.gems > gemsA, pa.gems - gemsA)
+	local stillLent = false
+	for _, r in pb.blasters do
+		stillLent = stillLent or r.lentBy ~= nil
+	end
+	check("the lent blaster goes back after the raid (the raid prize stays)", not stillLent and #pb.blasters == nB + 1)
+	local board = layout.hub.skyBoardPost:FindFirstChild("SkyBoard")
+	local title = false
+	for _, d in board and board:GetDescendants() or {} do
+		if d:IsA("TextLabel") and d.Text:find("SQUAD RAID WON") then
+			title = true
+		end
+	end
+	check("the sky board says SQUAD RAID WON", title)
+	check("squad raids are once an hour", not Raid:SquadRaid(a) and Raid.state == "waiting")
+	Engine.removePlayer(cat)
+	Engine.removePlayer(b)
+	Engine.advance(0.3)
 end
 
 -- Leaving --------------------------------------------------------------------------------------------------------------

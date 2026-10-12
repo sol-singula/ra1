@@ -54,6 +54,8 @@ local shieldTimer = 0
 local joined = {} -- [player] = true this raid
 local lastRanking = {}
 local sinceRobotShot = 0
+local squad -- the players of a private squad raid, or nil for the public one
+local lastSquadRaid = {} -- [player] = os.time()
 
 local STAR_EATER = {
 	key = "RAID",
@@ -136,6 +138,10 @@ end
 
 -- Join and leave -------------------------------------------------------------------------------------------------
 function RaidService:Join(player)
+	if squad and not table.find(squad, player) then
+		Net.fire(player, "Toast", "That's a private squad raid. Yours opens soon!", "info")
+		return false
+	end
 	if self.state ~= "fighting" or not boss then
 		Net.fire(
 			player,
@@ -208,11 +214,12 @@ function RaidService:_clearRobots()
 end
 
 -- Start and end --------------------------------------------------------------------------------------------------
-function RaidService:Start_()
+function RaidService:Start_(squadList)
 	if self.state == "fighting" then
 		return
 	end
 	self.state = "fighting"
+	squad = squadList
 	joined = {}
 	endsAt = workspace:GetServerTimeNow() + Constants.RAID_SECONDS
 	-- the boss
@@ -259,8 +266,8 @@ function RaidService:Start_()
 	layout.hub.raidPad.Transparency = 0.2
 	layout.hub.raidPad.Sign.Enabled = true
 	layout.hub.ring.Transparency = 0.1
-	-- robots when it's quiet
-	if #Players:GetPlayers() < Constants.RAID_ROBOTS_BELOW then
+	-- robots when it's quiet (a squad raid gets them too if the squad is small)
+	if (squad and #squad or #Players:GetPlayers()) < Constants.RAID_ROBOTS_BELOW then
 		self:_spawnRobots(4)
 	end
 	-- callouts: players who bought one get their name in gold across every screen
@@ -272,9 +279,16 @@ function RaidService:Start_()
 			table.insert(callers, p.DisplayName)
 		end
 	end
-	Net.fireAll("Alert", "☄️ THE RAID IS OPEN! Jump in at the Hub!", STAR_EATER.color)
-	Net.fireAll("Sfx", "portal")
-	if #callers > 0 then
+	if squad then
+		for _, p in squad do
+			Net.fire(p, "Alert", "🤝 SQUAD RAID! Jump in at the Hub!", STAR_EATER.color)
+			Net.fire(p, "Sfx", "portal")
+		end
+	else
+		Net.fireAll("Alert", "☄️ THE RAID IS OPEN! Jump in at the Hub!", STAR_EATER.color)
+		Net.fireAll("Sfx", "portal")
+	end
+	if #callers > 0 and not squad then
 		Net.fireAll(
 			"Announce",
 			`✨ {table.concat(callers, ", ")} {#callers > 1 and "are" or "is"} raiding! Join them!`,
@@ -307,7 +321,8 @@ function RaidService:_skyBoard(ranking, won)
 	end
 	local lines = {
 		{
-			text = won and "☄️ STAR EATER BEATEN! TOP 5" or "☄️ THE STAR EATER GOT AWAY",
+			text = won and (squad and "🤝 SQUAD RAID WON!" or "☄️ STAR EATER BEATEN! TOP 5")
+				or "☄️ THE STAR EATER GOT AWAY",
 			h = 0.2,
 			y = 0,
 			font = Enum.Font.LuckiestGuy,
@@ -364,7 +379,26 @@ function RaidService:_finish(won)
 				or rng:NextInteger(Constants.RAID_GEMS[1], Constants.RAID_GEMS[2])
 			economy:AddOre(p, top.key, ore)
 			economy:AddCoins(p, coins)
-			economy:AddGems(p, math.max(1, math.floor(gems * share)), true)
+			local gotGems = math.max(1, math.floor(gems * share))
+			economy:AddGems(p, gotGems, true)
+			-- the friend who lent this player a blaster gets a share of the gems
+			local lentRec
+			for _, rec2 in profile.blasters do
+				lentRec = lentRec or (rec2.lentBy and rec2)
+			end
+			if lentRec then
+				local lender = Players:GetPlayerByUserId(lentRec.lentBy)
+				local cut = math.floor(gotGems * Constants.LEND_SHARE)
+				if lender and cut > 0 then
+					economy:AddGems(lender, cut, false)
+					Net.fire(
+						lender,
+						"Alert",
+						`🤝 {p.DisplayName} raided with your blaster: +{cut} 💎`,
+						Color3.fromRGB(120, 220, 255)
+					)
+				end
+			end
 			local extra = ""
 			if won and i <= Constants.RAID_TOP then
 				local rolled
@@ -433,11 +467,58 @@ function RaidService:_finish(won)
 			end
 		end)
 	end
-	nextAt = workspace:GetServerTimeNow() + Constants.RAID_EVERY
+	for _, p in Players:GetPlayers() do
+		blasters:ClearLent(p)
+	end
+	if not squad then
+		nextAt = workspace:GetServerTimeNow() + Constants.RAID_EVERY
+	end
+	local wasSquad = squad
+	squad = nil
 	self.state = "waiting"
 	broadcastEvent("raid")
 	Net.fireAll("Event", { kind = "raidEnd" })
-	self.Ended:Fire(won, ranking)
+	self.Ended:Fire(won, ranking, wasSquad)
+end
+
+function RaidService:IsSquad()
+	return squad ~= nil
+end
+
+-- A private squad raid: you and your friends in the hub, right now. Once an hour per player, and only while
+-- the public raid is waiting. Everyone in the squad is pulled into the arena.
+function RaidService:SquadRaid(player)
+	if self.state ~= "waiting" then
+		Net.fire(player, "Toast", "A raid is already on! Jump in.", "info")
+		return false
+	end
+	local last = lastSquadRaid[player] or 0
+	local left = Constants.SQUAD_RAID_EVERY - (os.time() - last)
+	if left > 0 then
+		Net.fire(player, "Toast", `Your next squad raid is in {Format.time(left)}.`, "info")
+		return false
+	end
+	local list = { player }
+	for _, friend in team:Teammates(player) do
+		if WorldBuilder.inHub(position(friend) or Vector3.zero) then
+			table.insert(list, friend)
+		end
+	end
+	if #list < Constants.SQUAD_RAID_MIN then
+		Net.fire(player, "Toast", "Bring a friend to the Hub to start a squad raid!", "info")
+		return false
+	end
+	lastSquadRaid[player] = os.time()
+	self:Start_(list)
+	for _, p in list do
+		self:Join(p)
+	end
+	local names = {}
+	for _, p in list do
+		table.insert(names, p.DisplayName)
+	end
+	Net.fireAll("Announce", `🤝 SQUAD RAID: {table.concat(names, ", ")} vs the Star Eater!`, STAR_EATER.color)
+	return true
 end
 
 function RaidService:LastRanking()
@@ -523,14 +604,14 @@ function RaidService:_step(dt)
 				boss.shieldDone = true
 				self:_setPlates(false)
 				-- a squad break: four friends did it alone
-				local squad = #people >= 4 and team:AllTeam(people)
+				local friendsOnly = #people >= 4 and team:AllTeam(people)
 				Net.fireAll(
 					"Alert",
-					squad and "💥 SQUAD BREAK! Shields down!" or "💥 SHIELDS DOWN! BLAST IT!",
+					friendsOnly and "💥 SQUAD BREAK! Shields down!" or "💥 SHIELDS DOWN! BLAST IT!",
 					Color3.fromRGB(120, 255, 140)
 				)
 				Net.fireAll("Sfx", "win", boss.pos)
-				if squad then
+				if friendsOnly then
 					boss.squadBreak = true
 				end
 			end
@@ -640,6 +721,37 @@ function RaidService:Init(registry)
 	layout = WorldBuilder.layout
 	arena = layout.arena
 	nextAt = workspace:GetServerTimeNow() + Constants.RAID_EVERY
+	Net.on("SquadRaid", function(player)
+		self:SquadRaid(player)
+	end)
+	-- the SQUAD RAID pad in the Hub: a teal ring with a prompt
+	local hub = layout.hub.model
+	local pos = Vector3.new(-16, 0, -16)
+	local ring = Scenery.ring(hub, "SquadPad", pos + Vector3.new(0, 0.2, 0), 9, Color3.fromRGB(80, 230, 200))
+	ring:SetAttribute("TurnSpeed", 0.4)
+	game:GetService("CollectionService"):AddTag(ring, "Turn")
+	local sign = Scenery.sign(ring, 12, 4, Vector3.new(0, 4.5, 0), {
+		{
+			text = "🤝 SQUAD RAID",
+			h = 0.55,
+			y = 0,
+			font = Enum.Font.LuckiestGuy,
+			color = Color3.fromRGB(80, 230, 200),
+		},
+		{ text = "You + friends vs the Star Eater", h = 0.45, y = 0.55 },
+	}, 90)
+	sign.Size = UDim2.fromOffset(190, 52)
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Name = "Prompt_squad"
+	prompt.ActionText = "Start a squad raid"
+	prompt.ObjectText = "SQUAD RAID"
+	prompt.HoldDuration = 0.5
+	prompt.MaxActivationDistance = 10
+	prompt.RequiresLineOfSight = false
+	prompt.Parent = ring
+	prompt.Triggered:Connect(function(player)
+		self:SquadRaid(player)
+	end)
 	planetService.PadStepped:Connect(function(player, pad)
 		if pad == "RAID" then
 			self:Join(player)
@@ -660,6 +772,7 @@ end
 
 function RaidService:OnPlayerLeaving(player)
 	joined[player] = nil
+	lastSquadRaid[player] = nil
 	if boss then
 		boss.damage[player] = nil
 	end

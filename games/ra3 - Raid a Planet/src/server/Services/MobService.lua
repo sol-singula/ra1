@@ -169,8 +169,13 @@ function MobService:Hit(player, id, damage)
 	if not entry or entry.hp <= 0 then
 		return 0
 	end
-	if entry.onHit and entry.onHit(player, damage) == false then
-		return 0 -- (shielded)
+	if entry.onHit then
+		local r = entry.onHit(player, damage)
+		if r == false then
+			return 0 -- (shielded)
+		elseif type(r) == "number" then
+			damage = math.floor(damage * r * 10 + 0.5) / 10
+		end
 	end
 	entry.hp -= damage
 	entry.hitters[player] = true

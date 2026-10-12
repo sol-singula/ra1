@@ -302,7 +302,7 @@ builders.Bag = function()
 			Parent = r,
 		})
 		Theme.text({
-			Text = `{b.rarity} · 💥 {Format.num(b.damage)} · Power {b.lv}`,
+			Text = `{b.rarity} · 💥 {Format.num(b.damage)} · Power {b.lv}{b.lent and ` · 🤝 lent by {b.lent}` or ""}`,
 			TextSize = 16,
 			TextScaled = false,
 			TextColor3 = C.white,
@@ -358,6 +358,43 @@ builders.Bag = function()
 			btn.Activated:Connect(function()
 				Net.send("Reroll", b.uid, stat)
 			end)
+		end
+		-- lend it to a friend in the server for one raid
+		local friends = {}
+		for _, id in s.team or {} do
+			local f = Players:GetPlayerByUserId(id)
+			if f then
+				table.insert(friends, f)
+			end
+		end
+		if #friends > 0 and not b.lent then
+			local lr = new("Frame", {
+				Name = "Lend" .. b.uid,
+				LayoutOrder = i,
+				Size = UDim2.new(1, -8, 0, 40),
+				BackgroundTransparency = 1,
+				Parent = body,
+			})
+			new("UIListLayout", {
+				FillDirection = Enum.FillDirection.Horizontal,
+				Padding = UDim.new(0, 6),
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				Parent = lr,
+			})
+			for _, f in friends do
+				local btn = Theme.button({
+					Name = "Lend_" .. f.UserId,
+					Text = `🤝 Lend to {f.DisplayName}`,
+					BackgroundColor3 = C.teal or C.good,
+					TextSize = 14,
+					TextScaled = false,
+					Size = UDim2.fromOffset(170, 34),
+					Parent = lr,
+				})
+				btn.Activated:Connect(function()
+					Net.send("Lend", b.uid, f.UserId)
+				end)
+			end
 		end
 	end
 end

@@ -375,29 +375,26 @@ idBox.Text = "123456"
 click(panels, "SHOW IT")
 check("SHOW IT sends SetBooth with the ID", sent("SetBooth") ~= nil and sent("SetBooth").args[2] == 123456)
 Panels.close()
-serverSends(
-	"Profile",
-	{
-		petView = {
-			pets = {
-				{ uid = 9, id = "MOONPUP", name = "Moon Pup", rarity = "Common", dmg = 0.03, luck = 0.02, out = false },
-			},
-			eggs = {
-				{
-					key = "STAR",
-					name = "Star Egg",
-					gems = 25,
-					emoji = "🥚",
-					odds = { "Common: 75%", "Rare: 22%", "Epic: 3%" },
-				},
-			},
-			slots = 1,
-			canRandom = true,
-			bonusDmg = 0,
-			bonusLuck = 0,
+serverSends("Profile", {
+	petView = {
+		pets = {
+			{ uid = 9, id = "MOONPUP", name = "Moon Pup", rarity = "Common", dmg = 0.03, luck = 0.02, out = false },
 		},
-	}
-)
+		eggs = {
+			{
+				key = "STAR",
+				name = "Star Egg",
+				gems = 25,
+				emoji = "🥚",
+				odds = { "Common: 75%", "Rare: 22%", "Epic: 3%" },
+			},
+		},
+		slots = 1,
+		canRandom = true,
+		bonusDmg = 0,
+		bonusLuck = 0,
+	},
+})
 Engine.advance(0.1)
 click(hud, "PETS")
 click(panels, "TAKE OUT")

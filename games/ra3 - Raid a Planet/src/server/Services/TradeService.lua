@@ -107,6 +107,10 @@ function TradeService:List(player, index, uid, price)
 		Net.fire(player, "Toast", "Ultra blasters can't be sold. They're yours!", "info")
 		return false
 	end
+	if rec.lentBy then
+		Net.fire(player, "Toast", "That one's lent to you.", "bad")
+		return false
+	end
 	-- one stall per player
 	for _, s in self.stalls do
 		if s.seller == player then
