@@ -28,6 +28,10 @@ Net.ClientEvents = {
 	SetBooth = 1, -- (boothIndex, assetId, message)
 	LeaveBooth = 2, -- (boothIndex)
 	BuyBooth = 2, -- (boothIndex) opens Roblox's purchase prompt for the item
+	BuyEgg = 2, -- (eggKey) an egg for gems
+	EquipPet = 4, -- (uid, out)
+	Lend = 2, -- (uid, friendUserId) lend a blaster to a friend for one raid
+	SquadRaid = 1, -- open a private squad raid (friends only, once an hour)
 }
 
 -- Server → client.

@@ -57,6 +57,26 @@ local function turn(t)
 	end
 end
 
+-- Pets float beside their owner: slot 1 at the left shoulder, slot 2 at the right, bobbing, facing forward.
+local function pets(t)
+	local folder = workspace:FindFirstChild("Pets")
+	if not folder then
+		return
+	end
+	local cam = cameraPos()
+	for _, model in folder:GetChildren() do
+		local owner = Players:GetPlayerByUserId(model:GetAttribute("OwnerUserId") or 0)
+		local hrp = owner and owner.Character and owner.Character:FindFirstChild("HumanoidRootPart")
+		local root = model.PrimaryPart
+		if hrp and root and (hrp.Position - cam).Magnitude < RANGE then
+			local slot = model:GetAttribute("Slot") or 1
+			local side = slot == 1 and -1 or 1
+			local target = hrp.CFrame * CFrame.new(side * 2.6, 1.2 + math.sin(t * 2.5 + slot) * 0.3, 1.2)
+			root.CFrame = root.CFrame:Lerp(target, 0.15)
+		end
+	end
+end
+
 function FxController:init()
 	Net.listen("Down", function()
 		shakeUntil = os.clock() + 0.5
@@ -68,6 +88,7 @@ function FxController:init()
 		end
 		flapWings(t)
 		turn(t)
+		pets(t)
 		if t < shakeUntil then
 			local cam = workspace.CurrentCamera
 			if cam and cam.CFrame then

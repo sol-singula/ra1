@@ -36,7 +36,10 @@ local HEADER_COLORS = {
 	Quests = C.sky,
 	Stall = C.teal,
 	Booth = C.pink,
+	Pets = C.pink,
+	Eggs = C.pink,
 }
+local Pets = require(ReplicatedStorage.Shared.Data.Pets)
 local stallPrice = 25 -- the gem price picked in the Stall panel
 
 local function clearBody()
@@ -482,6 +485,98 @@ builders.Shop = function()
 	end
 end
 
+-- Pets and eggs --------------------------------------------------------------------------------------------------------
+builders.Pets = function()
+	titleLabel.Text = "🐾 MY PETS"
+	list(8)
+	local v = Store.state.petView or { pets = {}, slots = 1 }
+	line(
+		`{#v.pets} pets · {v.slots} out at a time · +{math.floor((v.bonusDmg or 0) * 100)}% damage, +{math.floor(
+			(v.bonusLuck or 0) * 100
+		)}% luck`,
+		{ TextColor3 = C.muted, LayoutOrder = 0 }
+	)
+	local eggs = Theme.button({
+		Name = "OpenEggs",
+		Text = "🥚 GET EGGS",
+		BackgroundColor3 = C.pink,
+		Size = UDim2.fromOffset(240, 50),
+		round = true,
+		LayoutOrder = 1,
+		Parent = body,
+	})
+	eggs.Activated:Connect(function()
+		PanelController.open("Eggs")
+	end)
+	for i, p in v.pets do
+		local r = row("Pet" .. p.uid, Pets.RarityColor[p.rarity] or C.muted, 10 + i)
+		Theme.title({
+			Text = `{p.out and "👉 " or ""}{p.name}`,
+			TextSize = 20,
+			TextScaled = false,
+			Size = UDim2.new(1, -150, 0, 30),
+			Position = UDim2.fromOffset(12, 4),
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = r,
+		})
+		Theme.text({
+			Text = `{p.rarity} · +{math.floor(p.dmg * 100)}% damage · +{math.floor(p.luck * 100)}% luck`,
+			TextSize = 16,
+			TextScaled = false,
+			TextColor3 = C.white,
+			outline = 1.5,
+			Size = UDim2.new(1, -150, 0, 22),
+			Position = UDim2.fromOffset(12, 40),
+			Parent = r,
+		})
+		rowButton(r, "Toggle", p.out and "PUT AWAY" or "TAKE OUT", p.out and C.orange or C.good, -10, 130, function()
+			Net.send("EquipPet", p.uid, not p.out)
+		end)
+	end
+end
+
+builders.Eggs = function()
+	titleLabel.Text = "🥚 EGG MACHINE"
+	list(8)
+	local v = Store.state.petView or { eggs = {} }
+	if v.canRandom == false then
+		line("Eggs aren't allowed on your account.", { TextColor3 = C.red })
+		return
+	end
+	line(
+		`You have 💎 {Format.num(Store.state.gems or 0)}. Every egg shows its odds.`,
+		{ TextColor3 = C.muted, LayoutOrder = 0 }
+	)
+	for i, e in v.eggs or {} do
+		local r = row("Egg" .. e.key, C.pink, 10 + i)
+		Theme.title({
+			Text = `{e.emoji} {e.name}`,
+			TextSize = 22,
+			TextScaled = false,
+			Size = UDim2.new(1, -250, 0, 32),
+			Position = UDim2.fromOffset(14, 4),
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = r,
+		})
+		Theme.text({
+			Text = table.concat(e.odds, " · "),
+			TextSize = 15,
+			TextScaled = false,
+			TextColor3 = C.white,
+			outline = 1.5,
+			Size = UDim2.new(1, -250, 0, 24),
+			Position = UDim2.fromOffset(14, 40),
+			Parent = r,
+		})
+		rowButton(r, "Odds", "ℹ️ Odds", C.sky, -124, 90, function()
+			HudController.toast(`{e.name} odds: ` .. table.concat(e.odds, " · "), "info")
+		end)
+		rowButton(r, "Buy", `💎 {e.gems}`, C.good, -10, 106, function()
+			Net.send("BuyEgg", e.key)
+		end)
+	end
+end
+
 -- Trade Plaza stall -------------------------------------------------------------------------------------------------
 builders.Stall = function(index)
 	local s = Store.state
@@ -795,6 +890,8 @@ function PanelController:init()
 				or partial.daily
 				or partial.stalls
 				or partial.booths
+				or partial.petView
+				or partial.gems
 				or partial.equipped ~= nil
 			)
 		then
@@ -813,6 +910,8 @@ function PanelController:init()
 				PanelController.open("Stall", tonumber(string.match(prompt.ObjectText, "%d+")))
 			elseif prompt.Name == "Prompt_booth" then
 				PanelController.open("Booth", tonumber(string.match(prompt.ObjectText, "%d+")))
+			elseif prompt.Name == "Prompt_eggs" then
+				PanelController.open("Eggs")
 			end
 		end)
 	end)

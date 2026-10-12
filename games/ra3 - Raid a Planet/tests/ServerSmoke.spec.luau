@@ -588,16 +588,12 @@ do
 	b = join("Ben", 1002)
 	pb = Data:Get(b)
 	Engine.advance(0.5)
-	local extra = Blaster:Grant(
-		b,
-		{
-			rarity = "Rare",
-			planet = "DUST",
-			roll = { dmg = "shiny", spd = "plain", luck = "plain", gem = "plain" },
-			lv = 0,
-		},
-		"test"
-	)
+	local extra = Blaster:Grant(b, {
+		rarity = "Rare",
+		planet = "DUST",
+		roll = { dmg = "shiny", spd = "plain", luck = "plain", gem = "plain" },
+		lv = 0,
+	}, "test")
 	local nBen = #pb.blasters
 	Engine.fireServer(b, "ListStall", 3, extra.uid, 25)
 	Engine.advance(0.1)
@@ -630,16 +626,12 @@ do
 	)
 	check("everyone hears about the sale", Engine.lastClientEvent("Announce") ~= nil)
 	-- take back
-	local extra2 = Blaster:Grant(
-		b,
-		{
-			rarity = "Common",
-			planet = "DUST",
-			roll = { dmg = "plain", spd = "plain", luck = "plain", gem = "plain" },
-			lv = 0,
-		},
-		"test"
-	)
+	local extra2 = Blaster:Grant(b, {
+		rarity = "Common",
+		planet = "DUST",
+		roll = { dmg = "plain", spd = "plain", luck = "plain", gem = "plain" },
+		lv = 0,
+	}, "test")
 	Engine.advance(1)
 	Engine.fireServer(b, "ListStall", 5, extra2.uid, 5)
 	Engine.advance(0.1)
@@ -714,6 +706,58 @@ do
 	Engine.removePlayer(b)
 	Engine.advance(0.3)
 	check("leaving frees the booth", Booth.booths[9] == nil and layout.booths[9].lines[1].Text == "EMPTY BOOTH")
+end
+
+-- Pets and eggs ------------------------------------------------------------------------------------------------------
+local Pet = service("PetService")
+do
+	local PetsData = Engine.require(tree.shared.Data.Pets)
+	for _, e in PetsData.Eggs do
+		local sum = 0
+		for _, row in e.odds do
+			sum += row[2]
+		end
+		check(`{e.name} odds add to 100`, math.abs(sum - 100) < 1e-6)
+	end
+	pa.gems = 0
+	Economy:PushAll(a)
+	Engine.fireServer(a, "BuyEgg", "STAR")
+	Engine.advance(0.1)
+	check("no egg without gems", #pa.pets == 0)
+	pa.gems = 25
+	Economy:PushAll(a)
+	Engine.advance(1)
+	local plain = {
+		rarity = "Common",
+		planet = "DUST",
+		roll = { dmg = "plain", spd = "plain", luck = "plain", gem = "plain" },
+		lv = 0,
+	}
+	local dmgNoPet = Combat:Damage(a, plain)
+	Engine.fireServer(a, "BuyEgg", "STAR")
+	Engine.advance(0.3)
+	check("an egg hatches a pet, out at once", #pa.pets == 1 and #pa.petsOut == 1 and pa.gems == 0)
+	check("the pet floats in the world", Engine.workspace.Pets:FindFirstChildOfClass("Model") ~= nil)
+	check("a pet adds damage", Combat:Damage(a, plain) > dmgNoPet)
+	Engine.fireServer(a, "EquipPet", pa.pets[1].uid, false)
+	Engine.advance(0.1)
+	check("put away", #pa.petsOut == 0 and Engine.workspace.Pets:FindFirstChildOfClass("Model") == nil)
+	Engine.fireServer(a, "EquipPet", pa.pets[1].uid, true)
+	Engine.advance(0.1)
+	Pet:Grant(a, PetsData.byId.SUNFOX, "test")
+	check("one slot: the newest pet waits in the bag", #pa.petsOut == 1)
+	Engine.advance(1)
+	Engine.fireServer(a, "Purchase", "pass", "PETSLOT")
+	Engine.advance(0.2)
+	Engine.fireServer(a, "EquipPet", pa.pets[2].uid, true)
+	Engine.advance(0.1)
+	check("Pet Slot pass: two out", #pa.petsOut == 2)
+	Engine.policy = { IsPaidItemTradingAllowed = true, ArePaidRandomItemsRestricted = true }
+	local d = join("Dan", 1004)
+	Engine.advance(0.5)
+	check("restricted players see no eggs", Pet:View(d).canRandom == false)
+	Engine.policy = { IsPaidItemTradingAllowed = true, ArePaidRandomItemsRestricted = false }
+	Engine.removePlayer(d)
 end
 
 -- Leaving --------------------------------------------------------------------------------------------------------------

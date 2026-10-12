@@ -13,13 +13,20 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local ForgeService = {
 	Name = "ForgeService",
-	Dependencies = { "PlayerDataService", "EconomyService", "BlasterService", "PlanetService", "RebirthService" },
+	Dependencies = {
+		"PlayerDataService",
+		"EconomyService",
+		"BlasterService",
+		"PlanetService",
+		"RebirthService",
+		"PetService",
+	},
 	Started = Signal.new("ForgeService.Started"), -- (player, tierKey, planetKey)
 	Claimed = Signal.new("ForgeService.Claimed"), -- (player, rec)
 	FinishNowRequested = Signal.new("ForgeService.FinishNowRequested"), -- (player, slot, price)
 }
 
-local data, economy, blasters, planetService, rebirth
+local data, economy, blasters, planetService, rebirth, pets
 local rng = Random.new()
 
 function ForgeService:Slots(player)
@@ -32,6 +39,8 @@ function ForgeService:Luck(player)
 	if rebirth:IsNightmare(player) then
 		luck *= Constants.NIGHTMARE_LUCK
 	end
+	local _, petLuck = pets:Bonus(player)
+	luck *= 1 + petLuck
 	return luck
 end
 
@@ -178,6 +187,7 @@ function ForgeService:Init(registry)
 	blasters = registry.BlasterService
 	planetService = registry.PlanetService
 	rebirth = registry.RebirthService
+	pets = registry.PetService
 	Net.on("Forge", function(player, tierKey, planetKey)
 		if type(tierKey) == "string" and type(planetKey) == "string" then
 			self:Start_(player, tierKey, planetKey)

@@ -44,6 +44,8 @@ local function defaults()
 		forge = {}, -- [slot] = { tier, planet, readyAt, total, rec } cooking blasters
 		goal = 1,
 		stats = { bugs = 0, bosses = 0, forged = 0, powerUps = 0, raids = 0, friendPlay = 0, bestDamage = 0, sold = 0 },
+		pets = {}, -- { uid, id }
+		petsOut = {}, -- uids of the pets out (1, or 2 with the pass)
 		rebirths = 0, -- stars
 		quests = nil, -- { day, start = stats at the start of the day, done = { [i] = true } }
 		callout = nil, -- a bought Raid Callout waiting for the next raid

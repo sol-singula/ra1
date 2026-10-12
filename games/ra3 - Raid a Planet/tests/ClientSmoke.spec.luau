@@ -375,6 +375,37 @@ idBox.Text = "123456"
 click(panels, "SHOW IT")
 check("SHOW IT sends SetBooth with the ID", sent("SetBooth") ~= nil and sent("SetBooth").args[2] == 123456)
 Panels.close()
+serverSends(
+	"Profile",
+	{
+		petView = {
+			pets = {
+				{ uid = 9, id = "MOONPUP", name = "Moon Pup", rarity = "Common", dmg = 0.03, luck = 0.02, out = false },
+			},
+			eggs = {
+				{
+					key = "STAR",
+					name = "Star Egg",
+					gems = 25,
+					emoji = "🥚",
+					odds = { "Common: 75%", "Rare: 22%", "Epic: 3%" },
+				},
+			},
+			slots = 1,
+			canRandom = true,
+			bonusDmg = 0,
+			bonusLuck = 0,
+		},
+	}
+)
+Engine.advance(0.1)
+click(hud, "PETS")
+click(panels, "TAKE OUT")
+check("TAKE OUT sends EquipPet", sent("EquipPet") ~= nil and sent("EquipPet").args[1] == 9)
+click(panels, "GET EGGS")
+click(panels, "💎 25")
+check("an egg buy sends BuyEgg", sent("BuyEgg") ~= nil and sent("BuyEgg").args[1] == "STAR")
+Panels.close()
 click(hud, "SHOP")
 check("Shop panel", findButton(panels, "Auto Blast") ~= nil or findButton(panels, "R$ 249") ~= nil)
 click(panels, "R$ 249")

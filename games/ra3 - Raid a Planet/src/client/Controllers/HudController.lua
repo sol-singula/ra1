@@ -267,8 +267,9 @@ local function buildMenu()
 		{ "Bag", "🎒", "BAG", C.purple, 96, 176 },
 		{ "Shop", "🛒", "SHOP", C.mustard, 14, 266 },
 		{ "Quests", "📜", "QUESTS", C.sky, 96, 266 },
-		{ "Home", "🏠", "HUB", C.teal, 14, 356 },
-		{ "Nightmare", "🌑", "NIGHT", Color3.fromRGB(120, 70, 170), 96, 356 },
+		{ "Pets", "🐾", "PETS", C.pink, 14, 356 },
+		{ "Home", "🏠", "HUB", C.teal, 96, 356 },
+		{ "Nightmare", "🌑", "NIGHT", Color3.fromRGB(120, 70, 170), 14, 446 },
 	}
 	for _, it in items do
 		local button, dot = Theme.iconButton({
