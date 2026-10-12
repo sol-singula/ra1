@@ -151,14 +151,11 @@ check("boost pill", hud.Boost.Visible and string.find(hud.Boost.Text, "2x", 1, t
 serverSends("Event", { kind = "raid", at = Engine.workspace:GetServerTimeNow() + 600 })
 Engine.advance(0.1)
 check("raid countdown", hud.Raid.Visible and string.find(hud.Raid.Text, "RAID IN", 1, true) ~= nil, hud.Raid.Text)
-serverSends(
-	"Event",
-	{
-		kind = "raidOpen",
-		at = Engine.workspace:GetServerTimeNow() + 900,
-		endsAt = Engine.workspace:GetServerTimeNow() + 180,
-	}
-)
+serverSends("Event", {
+	kind = "raidOpen",
+	at = Engine.workspace:GetServerTimeNow() + 900,
+	endsAt = Engine.workspace:GetServerTimeNow() + 180,
+})
 Engine.advance(0.1)
 check("raid open pill", string.find(hud.Raid.Text, "RAID OPEN", 1, true) ~= nil, hud.Raid.Text)
 serverSends("Profile", { planet = "RAID" })
@@ -328,6 +325,56 @@ panels.Dim.Card.Close.Activated:Fire()
 Engine.advance(0.05)
 click(hud, "NIGHT")
 check("the Nightmare button sends Nightmare", sent("Nightmare") ~= nil)
+-- stalls and booths
+serverSends("Profile", {
+	stalls = {
+		false,
+		{
+			seller = "Ben",
+			sellerId = 99,
+			name = "Dust Blaster",
+			stars = "✨",
+			rarity = "Rare",
+			damage = 15,
+			price = 25,
+		},
+	},
+	booths = {
+		false,
+		{ owner = "Ben", ownerId = 99, assetId = 777001, name = "Cool Shirt", price = 5, message = "hi" },
+		{ owner = "Ava", ownerId = 7 },
+	},
+	canTrade = true,
+})
+Engine.advance(0.1)
+local Panels = Engine.require(tree.client.Controllers.PanelController)
+Panels.open("Stall", 1)
+check("an empty stall offers your blasters at a price", findButton(panels, "SELL 💎") ~= nil)
+click(panels, "💎50")
+check("a price can be picked", findButton(panels, "SELL 💎50") ~= nil)
+click(panels, "SELL 💎50")
+check("listing sends ListStall", sent("ListStall") ~= nil and sent("ListStall").args[3] == 50)
+Panels.open("Stall", 2)
+click(panels, "BUY for 25")
+check("buying sends BuyStall", sent("BuyStall") ~= nil and sent("BuyStall").args[1] == 2)
+Panels.open("Booth", 1)
+click(panels, "CLAIM THIS BOOTH")
+check("claiming sends ClaimBooth", sent("ClaimBooth") ~= nil)
+Panels.open("Booth", 2)
+click(panels, "BUY for R$")
+check("a booth buy sends BuyBooth", sent("BuyBooth") ~= nil and sent("BuyBooth").args[1] == 2)
+Panels.open("Booth", 3)
+local idBox
+for _, d in panels:GetDescendants() do
+	if d.Name == "AssetId" then
+		idBox = d
+	end
+end
+check("my booth has an ID box", idBox ~= nil)
+idBox.Text = "123456"
+click(panels, "SHOW IT")
+check("SHOW IT sends SetBooth with the ID", sent("SetBooth") ~= nil and sent("SetBooth").args[2] == 123456)
+Panels.close()
 click(hud, "SHOP")
 check("Shop panel", findButton(panels, "Auto Blast") ~= nil or findButton(panels, "R$ 249") ~= nil)
 click(panels, "R$ 249")

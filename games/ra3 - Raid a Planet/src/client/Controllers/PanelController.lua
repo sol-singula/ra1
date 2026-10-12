@@ -23,12 +23,21 @@ local player = Players.LocalPlayer
 local PanelController = { Name = "PanelController", Order = 20 }
 
 local gui, dim, card, titleLabel, body, header
-local current
+local current, currentArg
 local builders = {}
 local forgePlanet -- planet key picked in the Forge panel
 local forgeReceived
 
-local HEADER_COLORS = { Forge = C.orange, Bag = C.purple, Shop = C.mustard, Forged = C.good, Quests = C.sky }
+local HEADER_COLORS = {
+	Forge = C.orange,
+	Bag = C.purple,
+	Shop = C.mustard,
+	Forged = C.good,
+	Quests = C.sky,
+	Stall = C.teal,
+	Booth = C.pink,
+}
+local stallPrice = 25 -- the gem price picked in the Stall panel
 
 local function clearBody()
 	for _, c in body:GetChildren() do
@@ -53,6 +62,7 @@ function PanelController.open(name, arg)
 		return
 	end
 	current = name
+	currentArg = arg
 	dim.Visible = true
 	header.BackgroundColor3 = HEADER_COLORS[name] or C.purple
 	clearBody()
@@ -71,7 +81,7 @@ end
 local function refreshOpen()
 	if current and current ~= "Forged" then
 		clearBody()
-		builders[current]()
+		builders[current](currentArg)
 	end
 end
 
@@ -472,6 +482,218 @@ builders.Shop = function()
 	end
 end
 
+-- Trade Plaza stall -------------------------------------------------------------------------------------------------
+builders.Stall = function(index)
+	local s = Store.state
+	local stall = (s.stalls or {})[index]
+	titleLabel.Text = `🏪 STALL {index}`
+	list(8)
+	if s.canTrade == false then
+		line("Trading isn't allowed on your account.", { TextColor3 = C.red })
+		return
+	end
+	if stall and stall ~= false then
+		local mine = stall.sellerId == player.UserId
+		local rarity = Blasters.byRarity[stall.rarity]
+		headline(`{stall.name} {stall.stars}`, 30, rarity and rarity.color or C.white)
+		line(`{stall.rarity} · 💥 {Format.num(stall.damage)} damage · by {stall.seller}`, { TextColor3 = C.muted })
+		headline(`💎 {stall.price} gems`, 34, Color3.fromRGB(150, 230, 255))
+		local b = Theme.button({
+			Name = mine and "TakeBack" or "BuyStall",
+			Text = mine and "TAKE IT BACK" or `BUY for {stall.price} 💎`,
+			BackgroundColor3 = mine and C.orange or C.good,
+			Size = UDim2.fromOffset(300, 60),
+			round = true,
+			Parent = body,
+		})
+		b.Activated:Connect(function()
+			Net.send(mine and "Unlist" or "BuyStall", index)
+			PanelController.close()
+		end)
+		if not mine then
+			line(
+				`You have 💎 {Format.num(s.gems or 0)}. The seller gets {math.floor(
+					stall.price * (1 - Constants.TRADE_TAX) + 0.5
+				)} (10% goes to the Plaza).`,
+				{ TextColor3 = C.muted, TextSize = 16 }
+			)
+		end
+		return
+	end
+	line(
+		"Pick a blaster and a gem price. Buyers pay you in gems (minus 10%).",
+		{ TextColor3 = C.muted, LayoutOrder = 0 }
+	)
+	local picker = new(
+		"Frame",
+		{ Name = "Prices", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 40), LayoutOrder = 1, Parent = body }
+	)
+	new("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		Padding = UDim.new(0, 4),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		Parent = picker,
+	})
+	for _, price in Constants.STALL_PRICES do
+		local pb = Theme.button({
+			Name = "Price" .. price,
+			Text = `💎{price}`,
+			BackgroundColor3 = price == stallPrice and C.teal or C.muted,
+			TextSize = 15,
+			TextScaled = false,
+			Size = UDim2.fromOffset(66, 36),
+			Parent = picker,
+		})
+		pb.Activated:Connect(function()
+			stallPrice = price
+			refreshOpen()
+		end)
+	end
+	for i, b in s.blasters or {} do
+		if b.rarity ~= "Ultra" then
+			local rarity = Blasters.byRarity[b.rarity]
+			local r = row("Sell" .. b.uid, rarity.color, 10 + i)
+			Theme.title({
+				Text = `{b.name} {b.stars}`,
+				TextSize = 20,
+				TextScaled = false,
+				Size = UDim2.new(1, -170, 0, 30),
+				Position = UDim2.fromOffset(12, 4),
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Parent = r,
+			})
+			Theme.text({
+				Text = `{b.rarity} · 💥 {Format.num(b.damage)}`,
+				TextSize = 16,
+				TextScaled = false,
+				TextColor3 = C.white,
+				outline = 1.5,
+				Size = UDim2.new(1, -170, 0, 22),
+				Position = UDim2.fromOffset(12, 40),
+				Parent = r,
+			})
+			rowButton(r, "List", `SELL 💎{stallPrice}`, C.good, -10, 150, function()
+				Net.send("ListStall", index, b.uid, stallPrice)
+				PanelController.close()
+			end)
+		end
+	end
+end
+
+-- Booth Street booth -------------------------------------------------------------------------------------------------
+builders.Booth = function(index)
+	local s = Store.state
+	local booth = (s.booths or {})[index]
+	titleLabel.Text = `🛍️ BOOTH {index}`
+	list(8)
+	local mine = booth and booth ~= false and booth.ownerId == player.UserId
+	if booth and booth ~= false and not mine then
+		headline(booth.name or (booth.owner .. "'s booth"), 28, C.white)
+		if booth.assetId then
+			line(booth.message or "", { TextColor3 = C.muted })
+			headline(`R$ {booth.price}`, 34, C.good)
+			local b = Theme.button({
+				Name = "BuyBooth",
+				Text = `BUY for R$ {booth.price}`,
+				BackgroundColor3 = C.good,
+				Size = UDim2.fromOffset(300, 60),
+				round = true,
+				Parent = body,
+			})
+			b.Activated:Connect(function()
+				Net.send("BuyBooth", index)
+				PanelController.close()
+			end)
+			line(`Made by {booth.owner}. Roblox's own buy window opens next.`, { TextColor3 = C.muted, TextSize = 16 })
+		else
+			line(`{booth.owner} is setting up.`, { TextColor3 = C.muted })
+		end
+		return
+	end
+	if not mine then
+		line(
+			"Claim this booth to show one of your own clothes or accessories. Other players can buy it here!",
+			{ TextColor3 = C.muted }
+		)
+		local b = Theme.button({
+			Name = "ClaimBooth",
+			Text = "CLAIM THIS BOOTH",
+			BackgroundColor3 = C.pink,
+			Size = UDim2.fromOffset(320, 60),
+			round = true,
+			Parent = body,
+		})
+		b.Activated:Connect(function()
+			Net.send("ClaimBooth", index)
+		end)
+		if index <= 4 then
+			line("Front booths (1 to 4) need the Booth Rank pass.", { TextColor3 = C.muted, TextSize = 16 })
+		end
+		return
+	end
+	line(
+		"Your booth! Paste the ID of a shirt, pants, hat or accessory YOU made, and a short message.",
+		{ TextColor3 = C.muted }
+	)
+	local idBox = new("TextBox", {
+		Name = "AssetId",
+		PlaceholderText = "Item ID (numbers)",
+		Text = booth.assetId and tostring(booth.assetId) or "",
+		Font = Theme.Body,
+		TextSize = 22,
+		TextColor3 = C.ink,
+		BackgroundColor3 = C.white,
+		Size = UDim2.fromOffset(420, 46),
+		ClearTextOnFocus = false,
+		Parent = body,
+	}, { Theme.corner(12), Theme.stroke(3) })
+	local msgBox = new("TextBox", {
+		Name = "Message",
+		PlaceholderText = "Your message (optional)",
+		Text = booth.message or "",
+		Font = Theme.Body,
+		TextSize = 20,
+		TextColor3 = C.ink,
+		BackgroundColor3 = C.white,
+		Size = UDim2.fromOffset(420, 46),
+		ClearTextOnFocus = false,
+		Parent = body,
+	}, { Theme.corner(12), Theme.stroke(3) })
+	local setB = Theme.button({
+		Name = "SetBooth",
+		Text = "SHOW IT!",
+		BackgroundColor3 = C.good,
+		Size = UDim2.fromOffset(260, 56),
+		round = true,
+		Parent = body,
+	})
+	setB.Activated:Connect(function()
+		local id = tonumber(string.match(idBox.Text or "", "%d+"))
+		if id then
+			Net.send("SetBooth", index, id, msgBox.Text)
+		else
+			HudController.toast("Type the item's ID number first.", "bad")
+		end
+	end)
+	if booth.assetId then
+		line(`Showing: {booth.name} · R$ {booth.price}`, { TextColor3 = C.good })
+	end
+	local leave = Theme.button({
+		Name = "LeaveBooth",
+		Text = "Give the booth up",
+		BackgroundColor3 = C.red,
+		TextSize = 18,
+		TextScaled = false,
+		Size = UDim2.fromOffset(240, 44),
+		round = true,
+		Parent = body,
+	})
+	leave.Activated:Connect(function()
+		Net.send("LeaveBooth", index)
+		PanelController.close()
+	end)
+end
+
 -- Forged reveal -------------------------------------------------------------------------------------------------
 builders.Forged = function(b)
 	titleLabel.Text = "⚒️ YOU FORGED..."
@@ -571,6 +793,8 @@ function PanelController:init()
 				or partial.unlocked
 				or partial.quests
 				or partial.daily
+				or partial.stalls
+				or partial.booths
 				or partial.equipped ~= nil
 			)
 		then
@@ -585,6 +809,10 @@ function PanelController:init()
 		ProximityPromptService.PromptTriggered:Connect(function(prompt)
 			if prompt.Name == "Prompt_forge" then
 				PanelController.open("Forge")
+			elseif prompt.Name == "Prompt_stall" then
+				PanelController.open("Stall", tonumber(string.match(prompt.ObjectText, "%d+")))
+			elseif prompt.Name == "Prompt_booth" then
+				PanelController.open("Booth", tonumber(string.match(prompt.ObjectText, "%d+")))
 			end
 		end)
 	end)

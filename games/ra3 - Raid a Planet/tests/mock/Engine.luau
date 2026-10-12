@@ -1212,6 +1212,33 @@ end
 function methods.PromptProductPurchase(_, player, id)
 	table.insert(Engine.prompted, { player = player, kind = "product", id = id })
 end
+function methods.PromptPurchase(_, player, assetId)
+	table.insert(Engine.prompted, { player = player, kind = "asset", id = assetId })
+end
+-- product info for booth items: tests set Engine.assets[id] = { Name, AssetTypeId, PriceInRobux, Creator = { Id } }
+Engine.assets = {}
+function methods.GetProductInfo(_, assetId)
+	local info = Engine.assets[assetId]
+	if not info then
+		error("asset not found")
+	end
+	return info
+end
+local PolicyService = service("PolicyService")
+Engine.policy = { IsPaidItemTradingAllowed = true, ArePaidRandomItemsRestricted = false }
+function methods.GetPolicyInfoForPlayerAsync(_, _player)
+	return Engine.policy
+end
+_ = PolicyService
+local TextService = service("TextService")
+function methods.FilterStringAsync(_, text)
+	return {
+		GetNonChatStringForBroadcastAsync = function()
+			return (string.gsub(text, "badword", "####"))
+		end,
+	}
+end
+_ = TextService
 local SocialService = service("SocialService")
 Engine.invites = 0
 function methods.PromptGameInvite()

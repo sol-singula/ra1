@@ -7,6 +7,14 @@ Shop.Passes = {
 	{ key = "TRIPLE", name = "Triple Forge", price = 449, id = 0, desc = "3 blasters cooking at once" },
 	{ key = "GEMS2", name = "2x Gems", price = 299, id = 0, desc = "Double gems from raids and quests" },
 	{ key = "VIP", name = "VIP", price = 449, id = 0, desc = "+25% damage, gold name" },
+	{
+		key = "BOOTHRANK",
+		name = "Booth Rank",
+		price = 199,
+		id = 0,
+		desc = "Your booth goes to the front of the street",
+	},
+	{ key = "PETSLOT", name = "Pet Slot +1", price = 199, id = 0, desc = "Two pets out at once" },
 }
 
 Shop.Products = {

@@ -99,6 +99,34 @@ Constants.NIGHTMARE_MULT = 10 -- Nightmare mode: bugs take 10x the shots, drop 1
 Constants.NIGHTMARE_LUCK = 1.3 -- and forges roll a little better while it's on
 Constants.NIGHTMARE_STARS = 5 -- stars shown over your head, at most
 
+-- Trade Plaza: stalls where blasters sell for gems. We keep a cut of every gem sale.
+Constants.TRADE_TAX = 0.10
+Constants.STALL_PRICES = { 5, 10, 25, 50, 100, 250, 500, 1000 } -- the gem prices a seller can pick
+-- Booth Street: players show their own clothing and UGC; buying it in-game gives the game a commission.
+Constants.BOOTH_ASSET_TYPES = {
+	[2] = true,
+	[8] = true,
+	[11] = true,
+	[12] = true,
+	[41] = true,
+	[42] = true,
+	[43] = true,
+	[44] = true,
+	[45] = true,
+	[46] = true,
+	[47] = true,
+	[64] = true,
+	[65] = true,
+	[66] = true,
+	[67] = true,
+	[68] = true,
+	[69] = true,
+	[70] = true,
+	[71] = true,
+	[72] = true,
+}
+Constants.BOOTH_MESSAGE_MAX = 60
+
 -- Gems: what they buy
 Constants.REROLL_GEMS = 15 -- reroll one stat on a blaster (the odds are the normal roll odds)
 -- Daily quests: 3 a day, each pays gems

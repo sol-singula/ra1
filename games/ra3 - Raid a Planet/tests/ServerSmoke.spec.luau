@@ -581,7 +581,143 @@ do
 	check("no reroll without gems", pa.gems == 0)
 end
 
+-- The Trade Plaza -----------------------------------------------------------------------------------------------------
+local Trade = service("TradeService")
+do
+	-- Ben is back with a blaster to sell
+	b = join("Ben", 1002)
+	pb = Data:Get(b)
+	Engine.advance(0.5)
+	local extra = Blaster:Grant(
+		b,
+		{
+			rarity = "Rare",
+			planet = "DUST",
+			roll = { dmg = "shiny", spd = "plain", luck = "plain", gem = "plain" },
+			lv = 0,
+		},
+		"test"
+	)
+	local nBen = #pb.blasters
+	Engine.fireServer(b, "ListStall", 3, extra.uid, 25)
+	Engine.advance(0.1)
+	check(
+		"a blaster goes on the stall and out of the bag",
+		Trade.stalls[3] ~= nil and Trade.stalls[3].seller == b and #pb.blasters == nBen - 1
+	)
+	check("the stall sign shows it", layout.stalls[3].lines[2].Text:find("25 gems", 1, true) ~= nil)
+	check("everyone sees the stalls", Trade:View()[3].price == 25 and Trade:View()[3].seller == "Ben")
+	Engine.fireServer(b, "ListStall", 4, pb.blasters[1].uid, 25)
+	Engine.advance(0.1)
+	check("one stall per player", Trade.stalls[4] == nil)
+	-- Ava buys it
+	pa.gems = 10
+	Economy:PushAll(a)
+	Engine.fireServer(a, "BuyStall", 3)
+	Engine.advance(0.1)
+	check("no gems, no sale", Trade.stalls[3] ~= nil and pa.gems == 10)
+	pa.gems = 30
+	Economy:PushAll(a)
+	local gemsBen, nAva = pb.gems, #pa.blasters
+	Engine.advance(1)
+	Engine.fireServer(a, "BuyStall", 3)
+	Engine.advance(0.1)
+	check("the sale: buyer pays, blaster moves", Trade.stalls[3] == nil and pa.gems == 5 and #pa.blasters == nAva + 1)
+	check(
+		"the seller gets 90%, the Plaza keeps 10%",
+		pb.gems == gemsBen + 22 or pb.gems == gemsBen + 23,
+		pb.gems - gemsBen
+	)
+	check("everyone hears about the sale", Engine.lastClientEvent("Announce") ~= nil)
+	-- take back
+	local extra2 = Blaster:Grant(
+		b,
+		{
+			rarity = "Common",
+			planet = "DUST",
+			roll = { dmg = "plain", spd = "plain", luck = "plain", gem = "plain" },
+			lv = 0,
+		},
+		"test"
+	)
+	Engine.advance(1)
+	Engine.fireServer(b, "ListStall", 5, extra2.uid, 5)
+	Engine.advance(0.1)
+	local nB2 = #pb.blasters
+	Engine.advance(1)
+	Engine.fireServer(b, "Unlist", 5)
+	Engine.advance(0.1)
+	check("take it back", Trade.stalls[5] == nil and #pb.blasters == nB2 + 1)
+	-- policy: a player who may not trade can't list
+	Engine.policy = { IsPaidItemTradingAllowed = false }
+	local cPlayer = join("Cat", 1003)
+	Engine.advance(0.5)
+	local pc = Data:Get(cPlayer)
+	Engine.fireServer(cPlayer, "ListStall", 6, pc.blasters[1].uid, 5)
+	Engine.advance(0.1)
+	check("no trading for players whose policy says no", Trade.stalls[6] == nil and not Trade:CanTrade(cPlayer))
+	Engine.policy = { IsPaidItemTradingAllowed = true }
+	-- a listed blaster comes home when the seller leaves
+	Engine.advance(1)
+	Engine.fireServer(b, "ListStall", 7, extra2.uid, 5)
+	Engine.advance(0.1)
+	local keep = #pb.blasters
+	Engine.removePlayer(b)
+	Engine.advance(0.3)
+	check("leaving returns the listed blaster to the bag", Trade.stalls[7] == nil and #pb.blasters == keep + 1)
+	Engine.removePlayer(cPlayer)
+	Engine.advance(0.3)
+end
+
+-- Booth Street ----------------------------------------------------------------------------------------------------------
+local Booth = service("BoothService")
+do
+	b = join("Ben", 1002)
+	pb = Data:Get(b)
+	Engine.advance(0.5)
+	Engine.fireServer(b, "ClaimBooth", 2)
+	Engine.advance(0.1)
+	check("front booths need Booth Rank", Booth.booths[2] == nil)
+	Engine.advance(1)
+	Engine.fireServer(b, "ClaimBooth", 9)
+	Engine.advance(0.1)
+	check("claim a booth", Booth.booths[9] ~= nil and Booth.booths[9].owner == b)
+	Engine.assets[777001] = { Name = "Cool Shirt", AssetTypeId = 11, PriceInRobux = 5, Creator = { Id = 1002 } }
+	Engine.assets[777002] = { Name = "Someone else's hat", AssetTypeId = 8, PriceInRobux = 50, Creator = { Id = 999 } }
+	Engine.assets[777003] = { Name = "A gamepass", AssetTypeId = 34, PriceInRobux = 50, Creator = { Id = 1002 } }
+	Engine.fireServer(b, "SetBooth", 9, 777002, "hi")
+	Engine.advance(0.1)
+	check("only your own items", Booth.booths[9].assetId == nil)
+	Engine.advance(1.1)
+	Engine.fireServer(b, "SetBooth", 9, 777003, "hi")
+	Engine.advance(0.1)
+	check("only clothes and accessories", Booth.booths[9].assetId == nil)
+	Engine.advance(1.1)
+	Engine.fireServer(b, "SetBooth", 9, 777001, "buy my badword shirt")
+	Engine.advance(0.1)
+	check(
+		"the booth shows your shirt, message filtered",
+		Booth.booths[9].assetId == 777001
+			and Booth.booths[9].message == "buy my #### shirt"
+			and layout.booths[9].lines[1].Text == "Cool Shirt"
+	)
+	Engine.fireServer(a, "BuyBooth", 9)
+	Engine.advance(0.1)
+	local last = Engine.prompted[#Engine.prompted]
+	check(
+		"buying opens Roblox's purchase prompt for the item",
+		last and last.kind == "asset" and last.id == 777001 and last.player == a
+	)
+	Engine.fireServer(b, "BuyBooth", 9)
+	Engine.advance(0.1)
+	check("you can't buy from your own booth", Engine.prompted[#Engine.prompted] == last)
+	Engine.removePlayer(b)
+	Engine.advance(0.3)
+	check("leaving frees the booth", Booth.booths[9] == nil and layout.booths[9].lines[1].Text == "EMPTY BOOTH")
+end
+
 -- Leaving --------------------------------------------------------------------------------------------------------------
+b = join("Ben", 1002)
 Planet:Travel(a, "DUST")
 Planet:Travel(b, "DUST")
 Engine.advance(1.5)

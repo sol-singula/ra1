@@ -21,6 +21,13 @@ Net.ClientEvents = {
 	Nightmare = 2, -- toggle Nightmare mode (after a rebirth)
 	ClaimDaily = 1, -- the daily gift
 	Reroll = 3, -- (uid, stat) reroll one stat on a blaster for gems
+	ListStall = 2, -- (stallIndex, uid, gems) put a blaster on a Trade Plaza stall
+	Unlist = 2, -- (stallIndex) take it back
+	BuyStall = 2, -- (stallIndex) buy with gems
+	ClaimBooth = 2, -- (boothIndex)
+	SetBooth = 1, -- (boothIndex, assetId, message)
+	LeaveBooth = 2, -- (boothIndex)
+	BuyBooth = 2, -- (boothIndex) opens Roblox's purchase prompt for the item
 }
 
 -- Server → client.
