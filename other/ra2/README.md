@@ -79,6 +79,14 @@ The FREE dragon waits on the south side, near the spawn. The camera can't zoom o
 
 **Rarities:** Common, Rare, Epic, Legend and Secret. **Specials:** Fire and Ice ×2, Gold ×3, Rainbow ×5.
 
+**✨ Custom dragons:** 200 more in 40 themes (candy, inferno, glacier, robot, ghost, pirate, knight, cosmic, void,
+phoenix, glitch and more): 62 Rare, 72 Epic, 42 Legend, 24 Secret. Each has its own look: materials like lava,
+ice, neon, glass or metal, butterfly, bat, feather or crystal wings, unicorn horns or antlers, crowns, manes, fins,
+armor, stripes and spots, plus particle effects. Legends add an aura and big wings; Secrets add spinning orbs or a
+halo. They earn more than regular dragons of the same rarity. About 1 road spawn in 5 is one, and if none is on
+the road the next spawn always is, so there's nearly always one walking. Edit or add themes in
+`tools/gen_dragons.py` and run it to rewrite `src/shared/Data/FancyDragons.lua`.
+
 ## What keeps players coming back
 
 | Roblox signal | In the game |
@@ -121,7 +129,7 @@ games/ra2 - Steal a Dragon/
 ├─ default.project.json        Rojo project
 ├─ StealADragon.rbxl           prebuilt place
 ├─ src/shared/                 Constants (every number), Formulas (game math), Format, Net, Signal,
-│                              Data/ (Dragons, Shop, Goals)
+│                              Data/ (Dragons, FancyDragons (generated), Shop, Skins, Goals)
 ├─ src/server/
 │  ├─ Main.server.lua, Loader.lua
 │  ├─ World/                   WorldBuilder (castle-courtyard lobby, road, 8 castle bases that grow in 5

@@ -140,11 +140,13 @@ function Formulas.pick(entries, r)
 end
 
 -- Roll a road dragon. rng returns numbers in [0, 1). lucky = Server Luck active. minRarity forces Legend+ etc.
-function Formulas.rollDragon(rng, lucky, minRarity)
+-- fancy = true rolls one of the custom dragons instead (their own rarity weights; no Commons).
+function Formulas.rollDragon(rng, lucky, minRarity, fancy)
 	local entries = {}
+	local weights = fancy and Constants.FANCY_RARITY_WEIGHTS or Constants.RARITY_WEIGHTS
 	for _, rarity in Dragons.Rarities do
-		if not minRarity or Dragons.RarityRank[rarity] >= Dragons.RarityRank[minRarity] then
-			local w = Constants.RARITY_WEIGHTS[rarity]
+		if weights[rarity] and (not minRarity or Dragons.RarityRank[rarity] >= Dragons.RarityRank[minRarity]) then
+			local w = weights[rarity]
 			if lucky then
 				w *= Constants.LUCK_RARITY_MULT[rarity]
 			end
@@ -153,7 +155,7 @@ function Formulas.rollDragon(rng, lucky, minRarity)
 	end
 	local rarity = Formulas.pick(entries, rng())
 	local species = {}
-	for _, d in Dragons.byRarity[rarity] do
+	for _, d in (fancy and Dragons.fancyByRarity or Dragons.byRarity)[rarity] do
 		table.insert(species, { d.id, d.weight })
 	end
 	local id = Formulas.pick(species, rng())

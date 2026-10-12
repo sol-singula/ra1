@@ -753,6 +753,44 @@ if not noDataStore then
 	check("respawns in their base", Base:InOwnBase(a2))
 end
 
+-- Custom dragons ----------------------------------------------------------------------------------------------
+local DragonBuilder = Engine.require(tree.server.World.DragonBuilder)
+local DragonsData = Engine.require(tree.shared.Data.Dragons)
+local built, plain, spinners = 0, nil, 0
+for _, d in DragonsData.list do
+	if d.fancy then
+		local m = DragonBuilder.build(d.id, nil, 3)
+		built += 1
+		-- more parts than a regular dragon (extras), or effects on the body
+		local parts, effects = 0, 0
+		for _, x in m:GetDescendants() do
+			if x:IsA("BasePart") then
+				parts += 1
+			elseif x.ClassName == "ParticleEmitter" or x.ClassName == "Fire" or x.ClassName == "Sparkles" then
+				effects += 1
+			elseif x.Name == "Spin" then
+				spinners += 1
+			end
+		end
+		if parts <= 25 or effects == 0 then
+			plain = d.id
+		end
+		m:Destroy()
+	end
+end
+check("all 200 custom dragons build, each with extras and effects", built == 200 and plain == nil, plain)
+check("some custom dragons have spinning halos, orbs or rings", spinners > 50, spinners)
+-- the road nearly always has one walking
+local withFancy, samples = 0, 0
+for _ = 1, 90 do
+	Engine.advance(1)
+	samples += 1
+	if Road:FancyOnRoad() then
+		withFancy += 1
+	end
+end
+check("a custom dragon is on the road almost all the time", withFancy / samples >= 0.9, withFancy .. "/" .. samples)
+
 -- Shutdown ----------------------------------------------------------------------------------------------------
 for _, fn in Engine.closeHandlers do
 	fn()

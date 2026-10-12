@@ -210,12 +210,21 @@ Dragons.Specials = {
 }
 Dragons.SpecialOrder = { "RAINBOW", "GOLD", "ICE", "FIRE" } -- rarest first when rolling
 
+-- The 200 custom dragons (Data/FancyDragons.lua, made by tools/gen_dragons.py): special looks and effects. They
+-- roll from their own pool (Formulas.rollDragon), so byRarity holds only the regular ones above.
+for _, d in require(script.Parent.FancyDragons) do
+	d.fancy = true
+	table.insert(Dragons.list, d)
+end
+
 Dragons.byId = {}
 Dragons.byRarity = {}
+Dragons.fancyByRarity = {}
 for _, d in Dragons.list do
 	Dragons.byId[d.id] = d
-	Dragons.byRarity[d.rarity] = Dragons.byRarity[d.rarity] or {}
-	table.insert(Dragons.byRarity[d.rarity], d)
+	local pool = d.fancy and Dragons.fancyByRarity or Dragons.byRarity
+	pool[d.rarity] = pool[d.rarity] or {}
+	table.insert(pool[d.rarity], d)
 end
 
 return Dragons

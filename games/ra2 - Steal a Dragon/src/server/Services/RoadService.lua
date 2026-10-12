@@ -65,10 +65,25 @@ function RoadService:AddLuck(seconds, byName)
 end
 
 -- Road dragons -----------------------------------------------------------------------------------------------
-function RoadService:Spawn(minRarity)
+-- Is one of the custom dragons walking the road (and still buyable)?
+function RoadService:FancyOnRoad()
+	for _, e in road do
+		if not e.leaving and Dragons.byId[e.id].fancy then
+			return true
+		end
+	end
+	return false
+end
+
+-- Spawn a road dragon. A custom dragon comes FANCY_CHANCE of the time, and always when none is on the road.
+-- `fancy` forces one (true) or a regular dragon (false).
+function RoadService:Spawn(minRarity, fancy)
+	if fancy == nil then
+		fancy = not self:FancyOnRoad() or rng:NextNumber() < Constants.FANCY_CHANCE
+	end
 	local id, special = Formulas.rollDragon(function()
 		return rng:NextNumber()
-	end, self:IsLucky(), minRarity)
+	end, self:IsLucky(), minRarity, fancy)
 	local d = Dragons.byId[id]
 	local roadId = nextRoadId
 	nextRoadId += 1
@@ -84,7 +99,12 @@ function RoadService:Spawn(minRarity)
 		price = price,
 	}
 	local name = (special and Dragons.Specials[special].name .. " " or "") .. d.name
-	DragonBuilder.label(model, name, Dragons.RarityColor[d.rarity], "💰 " .. Format.num(price))
+	DragonBuilder.label(
+		model,
+		(d.fancy and "✨ " or "") .. name,
+		Dragons.RarityColor[d.rarity],
+		"💰 " .. Format.num(price)
+	)
 	model:SetAttribute("RoadId", roadId)
 	local buy = dragons.prompt(model.PrimaryPart, "buy", "Buy " .. Format.num(price), name, 0.25, 0)
 	buy.Triggered:Connect(function(player)
@@ -100,7 +120,7 @@ function RoadService:Spawn(minRarity)
 	model.Parent = folder
 	road[roadId] = entry
 	if Dragons.RarityRank[d.rarity] >= Dragons.RarityRank.Legend then
-		Net.fireAll("Toast", `⭐ A {d.rarity} dragon is on the road: {name}!`, "good")
+		Net.fireAll("Toast", `⭐ A {d.fancy and "✨ " or ""}{d.rarity} dragon is on the road: {name}!`, "good")
 	end
 	return entry
 end

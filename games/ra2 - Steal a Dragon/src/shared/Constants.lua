@@ -75,6 +75,10 @@ Constants.LEGEND_WARNING = 30
 Constants.RARITY_WEIGHTS = { Common = 68, Rare = 24, Epic = 6.5, Legend = 1.3, Secret = 0.2 }
 Constants.LUCK_RARITY_MULT = { Common = 1, Rare = 1.5, Epic = 3, Legend = 3, Secret = 3 }
 Constants.LUCK_SPECIAL_MULT = 2
+-- Custom dragons (Data/FancyDragons.lua): the chance a road spawn is one, and how their rarities are picked. If
+-- none is walking the road, the next spawn always is one, so there's nearly always one in line.
+Constants.FANCY_CHANCE = 0.18
+Constants.FANCY_RARITY_WEIGHTS = { Rare = 46, Epic = 34, Legend = 15, Secret = 5 }
 Constants.LUCK_SECONDS = 15 * 60
 
 -- Money

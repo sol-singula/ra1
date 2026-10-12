@@ -125,9 +125,54 @@ check("time m:ss", Format.time(65) == "1:05")
 check("time hours", Format.time(3 * 3600 + 300) == "3h 5m")
 
 -- Data sanity
+local badDragon
 for _, d in Dragons.list do
-	check("price > 0 " .. d.id, d.price > 0 and d.cps > 0 and Dragons.RarityColor[d.rarity] ~= nil)
+	if not (d.price > 0 and d.cps > 0 and Dragons.RarityColor[d.rarity] ~= nil and d.body and d.wing and d.belly) then
+		badDragon = d.id
+	end
 end
+check("every dragon has a price, coins and colours", badDragon == nil, badDragon)
+
+-- Custom dragons
+local fancyCount, fancyCommon, regularFancy = 0, false, false
+for _, d in Dragons.list do
+	if d.fancy then
+		fancyCount += 1
+		fancyCommon = fancyCommon or d.rarity == "Common"
+	end
+end
+for _, list in Dragons.byRarity do
+	for _, d in list do
+		regularFancy = regularFancy or d.fancy == true
+	end
+end
+check("200 custom dragons", fancyCount == 200, fancyCount)
+check("no Common custom dragons", not fancyCommon)
+check("custom dragons stay out of the regular pools", not regularFancy)
+local allFancy, rarities = true, {}
+local state = 5
+local function nextNumber()
+	state = (state * 48271) % 2147483647
+	return state / 2147483647
+end
+for _ = 1, 400 do
+	local fid = Formulas.rollDragon(nextNumber, false, nil, true)
+	allFancy = allFancy and Dragons.byId[fid].fancy == true
+	rarities[Dragons.byId[fid].rarity] = true
+end
+check("a fancy roll always gives a custom dragon", allFancy)
+check("fancy rolls reach every rarity", rarities.Rare and rarities.Epic and rarities.Legend and rarities.Secret)
+local beats = true
+for _, d in Dragons.list do
+	if d.fancy then
+		local best = 0
+		for _, reg in Dragons.byRarity[d.rarity] do
+			best = math.max(best, reg.cps)
+		end
+		beats = beats and d.cps >= best * 0.85
+	end
+end
+check("custom dragons earn about as much as the best regular dragon of their rarity, or more", beats)
 for i, g in Goals do
 	check("goal " .. i .. " has a known kind", ({
 		coins = 1,

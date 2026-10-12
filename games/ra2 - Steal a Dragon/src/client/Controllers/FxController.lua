@@ -1,4 +1,4 @@
--- Look and feel: rainbow dragons, dragons circling in the sky, the "YOUR BASE" marker that is always visible,
+-- Look and feel: rainbow dragons, the custom dragons' spinning halos, orbs and rings and their pulsing glow, dragons circling in the sky, the "YOUR BASE" marker that is always visible,
 -- camera shake when you get bonked, and the bonk and lock keys. (The bat itself is a hotbar tool: ToolService.)
 local CollectionService = game:GetService("CollectionService")
 local ContextActionService = game:GetService("ContextActionService")
@@ -17,6 +17,7 @@ local player = Players.LocalPlayer
 local FxController = { Name = "FxController", Order = 50 }
 
 local homeMarker
+local SPIN_RANGE = 140 -- studs from the camera
 
 -- Home marker ----------------------------------------------------------------------------------------------
 local function updateHome()
@@ -110,6 +111,27 @@ function FxController:init()
 			d:PivotTo(
 				CFrame.lookAt(p, Vector3.new(ahead.X, p.Y, ahead.Z)) * CFrame.Angles(0, 0, math.sin(t + a) * 0.15)
 			)
+		end
+		-- custom dragons: spinning pieces (same maths as DragonBuilder.spinC0) and pulsing glow, near the camera only
+		local cam = workspace.CurrentCamera
+		local camPos = cam and cam.CFrame and cam.CFrame.Position
+		if camPos and not Theme.reducedMotion() then
+			for _, w in CollectionService:GetTagged("DragonSpin") do
+				local p0 = w.Part0
+				if p0 and (p0.Position - camPos).Magnitude < SPIN_RANGE then
+					local a = (w:GetAttribute("A") or 0) + t * (w:GetAttribute("Speed") or 1)
+					w.C0 = CFrame.new(0, w:GetAttribute("Y") or 0, w:GetAttribute("Z") or 0)
+						* CFrame.Angles(w:GetAttribute("Tilt") or 0, 0, 0)
+						* CFrame.Angles(0, a, 0)
+						* CFrame.new(w:GetAttribute("R") or 0, 0, 0)
+				end
+			end
+			local glow = 0.35 + 0.35 * math.sin(t * 4)
+			for _, p in CollectionService:GetTagged("DragonPulse") do
+				if (p.Position - camPos).Magnitude < SPIN_RANGE then
+					p.Transparency = glow
+				end
+			end
 		end
 		-- rainbow dragons, 10 times a second
 		acc += dt
