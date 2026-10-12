@@ -1,0 +1,8 @@
+cargo:rerun-if-changed=build
+cargo:rustc-link-search=native=/home/user/ra1/games/ra3 - Raid a Planet/tools/luaurun/target/release/build/mlua-sys-417d2e13b4c771c4/out/luau-build/lib
+cargo:rustc-link-lib=static=luauvm
+cargo:rustc-link-lib=static=luaucompiler
+cargo:rustc-link-lib=static=luauast
+cargo:rustc-link-lib=static=luaucustom
+cargo:rustc-link-lib=stdc++
+cargo:rustc-env=LUAU_VERSION=0.663

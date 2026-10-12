@@ -1,0 +1,140 @@
+-- The 8 planets, in the order they open. Each is 8x harder than the last, and its ore forges blasters 8x stronger,
+-- so a blaster from the planet you're on always beats its bugs in a few shots.
+local function rgb(r, g, b)
+	return Color3.fromRGB(r, g, b)
+end
+
+local Planets = {}
+
+Planets.list = {
+	{
+		key = "DUST",
+		name = "Dust",
+		adjective = "Dust",
+		color = rgb(215, 170, 110),
+		dark = rgb(150, 110, 70),
+		sky = rgb(255, 220, 160),
+		bug = "Dust Mite",
+		boss = "Dust King",
+		ore = "Dust Ore",
+		bugHealth = 30,
+		bugCoins = 5,
+		bugOre = 1,
+		emoji = "🟤",
+	},
+	{
+		key = "ICE",
+		name = "Ice",
+		adjective = "Frost",
+		color = rgb(160, 225, 255),
+		dark = rgb(90, 160, 210),
+		sky = rgb(200, 240, 255),
+		bug = "Ice Beetle",
+		boss = "Frost Queen",
+		ore = "Ice Ore",
+		bugHealth = 240,
+		bugCoins = 30,
+		bugOre = 1,
+		emoji = "🧊",
+	},
+	{
+		key = "LAVA",
+		name = "Lava",
+		adjective = "Magma",
+		color = rgb(255, 110, 40),
+		dark = rgb(150, 40, 20),
+		sky = rgb(255, 150, 90),
+		bug = "Lava Hopper",
+		boss = "Magma Worm",
+		ore = "Lava Ore",
+		bugHealth = 1900,
+		bugCoins = 180,
+		bugOre = 1,
+		emoji = "🌋",
+	},
+	{
+		key = "JUNGLE",
+		name = "Jungle",
+		adjective = "Vine",
+		color = rgb(90, 200, 90),
+		dark = rgb(40, 110, 50),
+		sky = rgb(170, 240, 170),
+		bug = "Leaf Crawler",
+		boss = "Vine Titan",
+		ore = "Jungle Ore",
+		bugHealth = 15000,
+		bugCoins = 1100,
+		bugOre = 1,
+		emoji = "🌿",
+	},
+	{
+		key = "CRYSTAL",
+		name = "Crystal",
+		adjective = "Prism",
+		color = rgb(230, 130, 255),
+		dark = rgb(120, 60, 150),
+		sky = rgb(240, 200, 255),
+		bug = "Shard Spider",
+		boss = "Prism Golem",
+		ore = "Crystal Ore",
+		bugHealth = 120000,
+		bugCoins = 6500,
+		bugOre = 1,
+		emoji = "💎",
+	},
+	{
+		key = "STORM",
+		name = "Storm",
+		adjective = "Thunder",
+		color = rgb(120, 140, 255),
+		dark = rgb(50, 55, 130),
+		sky = rgb(160, 170, 220),
+		bug = "Zap Wasp",
+		boss = "Thunder Bird",
+		ore = "Storm Ore",
+		bugHealth = 1000000,
+		bugCoins = 40000,
+		bugOre = 1,
+		emoji = "⚡",
+	},
+	{
+		key = "SHADOW",
+		name = "Shadow",
+		adjective = "Void",
+		color = rgb(110, 70, 160),
+		dark = rgb(35, 20, 60),
+		sky = rgb(90, 70, 130),
+		bug = "Shade Bat",
+		boss = "Void Eye",
+		ore = "Shadow Ore",
+		bugHealth = 8000000,
+		bugCoins = 240000,
+		bugOre = 1,
+		emoji = "🌑",
+	},
+	{
+		key = "SUN",
+		name = "Sun",
+		adjective = "Solar",
+		color = rgb(255, 225, 70),
+		dark = rgb(220, 140, 20),
+		sky = rgb(255, 245, 190),
+		bug = "Flare Fly",
+		boss = "Solar Dragon",
+		ore = "Sun Ore",
+		bugHealth = 65000000,
+		bugCoins = 1500000,
+		bugOre = 1,
+		emoji = "☀️",
+	},
+}
+
+Planets.byKey = {}
+Planets.indexOf = {}
+for i, p in Planets.list do
+	p.index = i
+	Planets.byKey[p.key] = p
+	Planets.indexOf[p.key] = i
+end
+
+return Planets
