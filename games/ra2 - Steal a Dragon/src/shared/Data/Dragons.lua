@@ -236,7 +236,7 @@ table.insert(Dragons.list, {
 	belly = rgb(255, 240, 160),
 	wing = rgb(140, 220, 255),
 	accent = rgb(255, 120, 240),
-	mat = "Glass",
+	mat = "Foil",
 	wingMat = "Neon",
 	accentMat = "Neon",
 	wings = "crystal",

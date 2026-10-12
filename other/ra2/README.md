@@ -43,9 +43,10 @@ landscape on its own.
 | Lock your door | step on the red pad (stepping on again resets the timer), or the **LOCK** button | same, or **L** | Y |
 | Collect coins | step on the gold pad | same | same |
 
-1. **First time:** an 8-step tutorial with a bouncing **HERE** arrow. You grab a free dragon, run it home,
-   collect coins, lock your door, steal Frosty from the Practice Base, and buy a dragon on the road. At the end
-   you get an egg that **hatches tomorrow**.
+1. **First time:** 4 numbered goals with a glowing path on the ground: **1** grab the FREE dragon, **2** take it
+   to your base, **3** step on the glowing coin pad, **4** buy another dragon on the road (you start with 100
+   coins) and bring it home. Then you get an egg that hatches in **2 hours**, and the goal card keeps guiding you
+   (lock your door, steal...). New players get bases zigzag from the lobby: left, right, left, right.
 2. **Dragons** walk down the Dragon Road. Tap **Buy** and carry the dragon home. Carrying slows you down, and
    rarer and bigger dragons slow you more. Reach your base and the dragon jumps into a free nest.
 3. **Nests** make coins every second. Step on the gold pad to collect them. Buy more nests at your base: every
@@ -57,11 +58,13 @@ landscape on its own.
 6. **Level up:** dragons level up by themselves over real time, even while you're offline (fast at first, then
    slower: level 8 after 10 minutes, 18 after an hour, 50 after 8 hours, up to level 100). Each level adds 15% to
    its coins. Tap **Level Up** on your dragon to buy a level with coins (each one costs a bit more), or step on
-   the **LEVEL ALL** plate at the back of your base to spend your coins on the cheapest level-ups across all your
+   the **LEVEL ALL** plate in the middle of your base to spend your coins on the cheapest level-ups across all your
    nests (with no coins it offers **+5 Levels for ALL** for Robux). Dragons grow
    in size at levels 8, 18 and 49 (Kid, Big, Giant) and stay Giant after that. A high-level dragon is a big prize
    for thieves.
-7. **Your base** has 24 nests (4 to start, buy up to 20 with coins, +4 with the Extra Nests pass). Just inside the
+7. **Your base** is a dragon gallery: 24 nests on stepped stands along both side walls and a trophy stand at the
+   back, all facing an open middle you can walk around in, with the egg on a pedestal in the centre (4 nests to
+   start, buy up to 20 with coins, +4 with the Extra Nests pass). Just inside the
    gate: the gold **coin pad**, the blue **Auto Collect** plate (step on it to buy the pass), the red **lock pad**
    and the orange **+5 MIN** plate (step on it to buy 5 more minutes of lock).
 8. **Skins:** the Shop's **Skins** tab repaints the wings and belly of all your dragons. Midnight, Candy and Ocean
@@ -72,7 +75,15 @@ landscape on its own.
 10. **Hotbar:** slot 1 is the bonk bat (a big hammer with Mega Bonk). Slot 2 is the **Speed Potion**: 50% faster
     for 30 seconds; you start with 3, and 5 more cost Robux. Slot 3 is **Dragon Wings** (a pass): click to jump
     high, then glide where you steer. Wings can't lift a carried dragon.
-11. **Secret:** walk to the very end of the exit tunnel. There's a door. 🪩
+11. **Secret:** follow the line of coloured lights from the end of the road into the exit tunnel. There's a door. 🪩
+    Inside, the **DISCO FEVER** button gives everyone in the server 1.25x coins for 15 minutes (once every 30).
+12. **The egg** hatches every 2 hours into a dragon better than your best, with a special (Fire, Ice, Gold or
+    Rainbow). If you get a better dragon while it waits, the egg upgrades. A hatch sets off fireworks and tells the
+    whole server.
+13. **Daily gifts** grow with you: coin gifts are minutes of your own income, dragon gifts are measured against
+    your best dragon (day 7 beats it).
+14. **Sound:** fantasy adventure music (disco music in the disco) and sound effects for coins, buying, levels,
+    locks, steals, an alarm when someone steals from you, bonks, potions, wings and hatches.
 
 The lobby is the courtyard of a castle: walls with towers, a keep, and a fountain with the golden dragon statue.
 The FREE dragon waits on the south side, near the spawn. The camera can't zoom out past 45 studs.
@@ -93,10 +104,10 @@ the road the next spawn always is, so there's nearly always one walking. Edit or
 |---|---|
 | First minute | You hold a dragon within seconds, with an arrow showing every step |
 | Playtime | Coins tick up, a new dragon every 2.5 s, a **Legend dragon every 5 minutes** with a countdown, goals with rewards |
-| Day 2 return | The egg hatches tomorrow (then a new one starts), dragons level up overnight, coins earned while away (up to 8 hours), daily gift streak (day 2 = a Rare dragon, day 7 = a Legend) |
+| Day 2 return | A new egg every 2 hours, dragons level up overnight, coins earned while away (up to 8 hours), daily gift streak sized to your progress (day 7 beats your best dragon) |
 | Playing with friends | Friends in the server are a team: +10% coins each (up to +30%), they can enter your locked base, and a **TEAM STEAL** bonus when a friend is nearby |
 | Inviting friends | **FRIENDS** button opens Roblox's invite. A brand-new friend who joins from your invite gives you a free Coral dragon and them 200 coins. Check Roblox's current rules on invite rewards before going live (switch: `INVITE_REWARDS` in `Constants.lua`). |
-| Leaderboards | Three boards in the lobby: **TOP COINS** (lifetime coins), **TOP THIEVES** (steals) and **BEST DRAGONS** (best coins per second). Global, merged with the live players in the server. |
+| Leaderboards | Four boards in the lobby, live for everyone in the server: **TOP COINS** (coins right now), **TODAY'S TOP EARNERS** (since 7pm Eastern, with a countdown; the #1 when it resets wins **Omni Prism**, an ULTRA dragon that never comes down the road, on show in front of the board), **BEST DRAGONS** (each player's best dragon right now) and **TOP THIEVES**. A banner drops in when someone joins or takes a top-3 spot. |
 
 ## Making money
 

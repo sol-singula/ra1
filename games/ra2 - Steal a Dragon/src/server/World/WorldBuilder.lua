@@ -1474,16 +1474,18 @@ function WorldBuilder.build()
 		local p = Vector3.new(x, 0.6, L.z1 - 3)
 		return CFrame.lookAt(p, p - Vector3.zAxis)
 	end
+	-- (seen from the courtyard, facing north, +X is on the left: so they read COINS, TODAY, BEST, THIEVES)
+	local DAILY_X = cx + 11
 	local boards = {
-		coins = leaderboard(lobby, boardAt(cx - 33), "TOP COINS", rgb(255, 205, 50)),
-		daily = leaderboard(lobby, boardAt(cx - 11), "TODAY'S TOP EARNERS", rgb(120, 255, 240)),
-		income = leaderboard(lobby, boardAt(cx + 11), "BEST DRAGONS", rgb(110, 200, 255)),
-		steals = leaderboard(lobby, boardAt(cx + 33), "TOP THIEVES", rgb(255, 90, 90)),
+		coins = leaderboard(lobby, boardAt(cx + 33), "TOP COINS", rgb(255, 205, 50)),
+		daily = leaderboard(lobby, boardAt(DAILY_X), "TODAY'S TOP EARNERS", rgb(120, 255, 240)),
+		income = leaderboard(lobby, boardAt(cx - 11), "BEST DRAGONS", rgb(110, 200, 255)),
+		steals = leaderboard(lobby, boardAt(cx - 33), "TOP THIEVES", rgb(255, 90, 90)),
 	}
 	local prizeSign = part({
 		Name = "PrizeSign",
 		Size = Vector3.new(17, 4.6, 0.8),
-		CFrame = boardAt(cx - 11) * CFrame.new(0, 25, 0),
+		CFrame = boardAt(DAILY_X) * CFrame.new(0, 25, 0),
 		Color = rgb(30, 34, 60),
 		Parent = lobby,
 	})
@@ -1516,7 +1518,7 @@ function WorldBuilder.build()
 		Text = "⏰ Ends in --",
 		TextColor3 = rgb(120, 255, 240),
 	})
-	local prizePos = (boardAt(cx - 11) * CFrame.new(0, 0, 8)).Position
+	local prizePos = (boardAt(DAILY_X) * CFrame.new(0, 0, 8)).Position
 	Scenery.disc(
 		lobby,
 		"PrizePedestal",

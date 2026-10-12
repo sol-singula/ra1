@@ -6,7 +6,7 @@ Do these in order. Paths are relative to `games/ra2 - Steal a Dragon/`.
 
 - **Universe ID:** 10770473232
 - **Place ID:** 118904155814967
-- **Shop items:** all 23 created and on sale; their IDs are in `src/shared/Data/Shop.lua`.
+- **Shop items:** all 23 created and on sale; hotbar icons and sound effects are uploaded too (IDs in `Constants.lua`); their IDs are in `src/shared/Data/Shop.lua`.
 - **Publish a new build** (needs `ROBLOX_API_KEY` with universe-places write access), from the game folder:
 
   ```bash
