@@ -402,6 +402,54 @@ do
 	hum.MoveDirection = Vector3.zero
 end
 
+-- The secret disco comes alive when you're near it
+do
+	local Instance = Engine.Instance
+	local map = Engine.workspace:FindFirstChild("Map") or Instance.new("Folder")
+	map.Name = "Map"
+	map.Parent = Engine.workspace
+	local disco = Instance.new("Model")
+	disco.Name = "Disco"
+	local tile = Instance.new("Part")
+	tile.Name = "DanceTile"
+	tile:SetAttribute("DiscoTile", 3)
+	tile.Parent = disco
+	local ball = Instance.new("Part")
+	ball.Name = "DiscoBall"
+	ball.CFrame = CFrame.new(165, 12, 20)
+	ball:SetAttribute("DiscoBall", true)
+	ball.Parent = disco
+	local laser = Instance.new("Part")
+	laser.Name = "Laser"
+	laser.Size = Vector3.new(0.15, 0.15, 34)
+	laser.CFrame = CFrame.lookAt(Vector3.new(151, 15, 6), Vector3.new(165, 1, 20)) * CFrame.new(0, 0, -17)
+	laser:SetAttribute("DiscoLaser", 1)
+	laser:SetAttribute("Origin", Vector3.new(151, 15, 6))
+	laser.Parent = disco
+	local dancer = Instance.new("Model")
+	local body = Instance.new("Part")
+	body.Parent = dancer
+	dancer.PrimaryPart = body
+	dancer:SetAttribute("DiscoDancer", 2)
+	dancer:SetAttribute("Home", CFrame.new(160, 2, 15))
+	dancer.Parent = disco
+	disco.Parent = map
+	Engine.moveTo(player, Vector3.new(158, 3, 18))
+	Engine.advance(2.5)
+	local c1, laser1, ball1, dancer1 = tile.Color, laser.CFrame, ball.CFrame, dancer:GetPivot()
+	Engine.advance(0.6)
+	check("disco floor changes colour", tile.Color ~= c1)
+	check("mirror ball spins", ball.CFrame ~= ball1)
+	check("lasers sweep", laser.CFrame ~= laser1)
+	check("dragons dance", dancer:GetPivot() ~= dancer1)
+	Engine.moveTo(player, Vector3.new(0, 3, 0))
+	Engine.advance(0.1)
+	local c2 = ball.CFrame
+	Engine.advance(0.6)
+	check("disco sleeps when you're far away", ball.CFrame == c2)
+	disco:Destroy()
+end
+
 -- Rotating to a bigger screen rescales
 Engine.workspace.CurrentCamera.ViewportSize = Vector2.new(1920, 1080)
 Engine.advance(1.2)

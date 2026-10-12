@@ -135,6 +135,99 @@ check("no Baseplate template left", Engine.workspace:FindFirstChild("Baseplate")
 check("base plates: auto collect and lock time", World.bases[1].autoPlate ~= nil and World.bases[1].lockPlate ~= nil)
 check("24 nests per base", #World.bases[1].nests == Constants.MAX_NESTS)
 
+-- The secret disco at the end of the tunnel: there, and hidden from outside
+local disco = Engine.workspace.Map:FindFirstChild("Disco", true)
+check("secret disco built", disco ~= nil)
+local discoTiles, discoBall, discoLasers, discoDancers = 0, nil, 0, 0
+for _, d in disco:GetDescendants() do
+	if d.Name == "DanceTile" then
+		discoTiles += 1
+	elseif d.Name == "DiscoBall" then
+		discoBall = d
+	elseif d.Name == "Laser" then
+		discoLasers += 1
+	elseif d:GetAttribute("DiscoDancer") then
+		discoDancers += 1
+	end
+end
+check(
+	"disco: dance floor, mirror ball, lasers, dancers",
+	discoTiles == 36 and discoBall and discoLasers == 8 and discoDancers == 3
+)
+-- does any solid, visible part block the straight line from a to b?
+local solids = {}
+for _, p in Engine.workspace.Map:GetDescendants() do
+	-- (the mirror ball is a target below, so it can't block itself; round rocks are left out, since a box would
+	-- block more than they do)
+	if
+		p:IsA("BasePart")
+		and p ~= discoBall
+		and p.Shape ~= Engine.Enum.PartType.Ball
+		and p.Transparency < 0.5
+		and p.Size.X > 0.5
+		and p.Size.Y > 0.5
+		and p.Size.Z > 0.5
+	then
+		table.insert(solids, p)
+	end
+end
+local function blocked(a, b)
+	for _, p in solids do
+		local la, lb = p.CFrame:PointToObjectSpace(a), p.CFrame:PointToObjectSpace(b)
+		local half = p.Size / 2
+		local t0, t1 = 0, 1
+		local hit = true
+		for _, axis in { "X", "Y", "Z" } do
+			local d = lb[axis] - la[axis]
+			if math.abs(d) < 1e-9 then
+				if math.abs(la[axis]) > half[axis] then
+					hit = false
+					break
+				end
+			else
+				local u, v = (-half[axis] - la[axis]) / d, (half[axis] - la[axis]) / d
+				t0, t1 = math.max(t0, math.min(u, v)), math.min(t1, math.max(u, v))
+				if t0 > t1 then
+					hit = false
+					break
+				end
+			end
+		end
+		if hit and t1 > 0.001 and t0 < 0.999 then
+			return p
+		end
+	end
+	return nil
+end
+local seen
+local targets = { discoBall.Position }
+for _, d in disco:GetDescendants() do
+	if d.Name == "DanceTile" then
+		table.insert(targets, d.Position + Vector3.new(0, 0.3, 0))
+	end
+end
+for _, ex in { 95, 105, 113, 120 } do
+	for _, ez in { -6, 0, 6 } do
+		for _, ey in { 2, 5, 9 } do
+			for _, target in targets do
+				if not seen and not blocked(Vector3.new(ex, ey, ez), target) then
+					seen = Vector3.new(ex, ey, ez)
+				end
+			end
+		end
+	end
+end
+for _, eye in { Vector3.new(165, 80, 20), Vector3.new(120, 40, 60), Vector3.new(220, 30, 20) } do
+	if not seen and not blocked(eye, discoBall.Position) then
+		seen = eye
+	end
+end
+check("the disco can't be seen from the tunnel mouth or outside", seen == nil, seen)
+check("door from the tunnel into the disco corridor", blocked(Vector3.new(139, 3, 0), Vector3.new(139, 3, 15)) == nil)
+local ctl = blocked(Vector3.new(158, 4, 12), discoBall.Position)
+check("(control) the ball is visible from the dance floor", ctl == nil, ctl and ctl:GetFullName())
+check("corridor leads into the room", blocked(Vector3.new(139, 3, 19.5), Vector3.new(158, 3, 19.5)) == nil)
+
 -- Join and tutorial ----------------------------------------------------------------------------------------
 local a = join("Ava", 1001)
 local pa = Data:Get(a)

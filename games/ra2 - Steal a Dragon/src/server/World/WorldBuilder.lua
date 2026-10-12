@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local DragonBuilder = require(script.Parent.DragonBuilder)
+local Disco = require(script.Parent.Disco)
 local Scenery = require(script.Parent.Scenery)
 
 local WorldBuilder = {}
@@ -696,24 +697,35 @@ local function exitTunnel(parent, x)
 		Color = dark,
 		Parent = parent,
 	})
+	-- the north wall stops at the secret disco's door near the far end (see Disco.lua)
+	local door = Disco.DOOR
 	for _, z in { -1, 1 } do
+		local x1 = z > 0 and door.x0 or x + len
+		local x1rock = z > 0 and door.x0 - 0.8 or x + len
 		part({
 			Name = "TunnelWall",
-			Size = Vector3.new(len, height, 0.4),
-			CFrame = CFrame.new(mid, height / 2, z * (inner / 2 + 0.2)),
+			Size = Vector3.new(x1 - x, height, 0.4),
+			CFrame = CFrame.new((x + x1) / 2, height / 2, z * (inner / 2 + 0.2)),
 			Color = dark,
 			Parent = parent,
 		})
 		-- the rock hill around it
 		part({
 			Name = "TunnelRock",
-			Size = Vector3.new(len, height + 6, 14),
-			CFrame = CFrame.new(mid, (height + 6) / 2, z * (inner / 2 + 7.4)),
+			Size = Vector3.new(x1rock - x, height + 6, 14),
+			CFrame = CFrame.new((x + x1rock) / 2, (height + 6) / 2, z * (inner / 2 + 7.4)),
 			Color = rock,
 			Material = Enum.Material.Slate,
 			Parent = parent,
 		})
 	end
+	part({
+		Name = "TunnelWall", -- over the door
+		Size = Vector3.new(x + len - door.x0, height - 9.6, 0.4),
+		CFrame = CFrame.new((door.x0 + x + len) / 2, 9.6 + (height - 9.6) / 2, inner / 2 + 0.2),
+		Color = dark,
+		Parent = parent,
+	})
 	part({
 		Name = "TunnelCeiling",
 		Size = Vector3.new(len, 0.4, inner + 0.8),
@@ -767,7 +779,8 @@ local function exitTunnel(parent, x)
 	})
 	-- a snowy mountain behind and around the tunnel (kept clear of the mouth)
 	local rng = Random.new(11)
-	for _, m in { { 28, 14, 0, 46 }, { 14, 8, -30, 34 }, { 14, 8, 30, 34 }, { 40, 20, -18, 40 }, { 40, 20, 18, 40 } } do
+	-- (kept clear of the secret disco's room too, north-east of the tunnel's end)
+	for _, m in { { 60, 14, 0, 46 }, { 14, 8, -30, 34 }, { 50, 8, 52, 30 }, { 40, 20, -18, 40 }, { 62, 20, 22, 40 } } do
 		Scenery.ball(
 			parent,
 			"MountainRock",
@@ -777,7 +790,8 @@ local function exitTunnel(parent, x)
 			Enum.Material.Slate
 		)
 	end
-	Scenery.ball(parent, "Snow", Vector3.new(x + len + 22, 30, 0), 20, rgb(245, 248, 255), Enum.Material.Snow)
+	Scenery.ball(parent, "Snow", Vector3.new(x + len + 62, 34, 0), 20, rgb(245, 248, 255), Enum.Material.Snow)
+	Disco.build(parent)
 	billboard(parent:FindFirstChild("TunnelArch"), 18, 3, Vector3.new(0, 3.5, 0), {
 		{ text = "EXIT", h = 1, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(150, 230, 255) },
 	}, 160)
