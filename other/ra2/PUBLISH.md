@@ -2,6 +2,20 @@
 
 Do these in order. Paths are relative to `games/ra2 - Steal a Dragon/`.
 
+## This experience
+
+- **Universe ID:** 10770473232
+- **Place ID:** 118904155814967
+- **Shop items:** all 20 created and on sale; their IDs are in `src/shared/Data/Shop.lua`.
+- **Publish a new build** (needs `ROBLOX_API_KEY` with universe-places write access), from the game folder:
+
+  ```bash
+  rojo build default.project.json -o StealADragon.rbxl
+  curl -X POST -H "x-api-key: $ROBLOX_API_KEY" -H "Content-Type: application/octet-stream" \
+    --data-binary @StealADragon.rbxl \
+    "https://apis.roblox.com/universes/v1/10770473232/places/118904155814967/versions?versionType=Published"
+  ```
+
 ## 1. Publish a private first version
 
 Passes and products belong to a published experience, so publish once before creating them.
