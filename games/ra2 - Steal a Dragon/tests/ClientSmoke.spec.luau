@@ -156,7 +156,57 @@ check("tutorial hides the goal", hud.Goal.Visible == false)
 check("tutorial arrow", gui:FindFirstChild("TutorialArrow") and gui.TutorialArrow.Adornee == target)
 click(tut, "Skip")
 check("skip sent", sent("SkipTutorial") ~= nil)
+-- Glowing path to the target
+local function litChevrons()
+	local lit = {}
+	for _, c in Engine.workspace.GuidePath:GetChildren() do
+		if c.Transparency < 1 then
+			table.insert(lit, c)
+		end
+	end
+	return lit
+end
+target.CFrame = CFrame.new(60, 1, 0)
+Engine.advance(0.3)
+check("glowing path to the tutorial target", #litChevrons() > 10, #litChevrons())
+-- a target inside a base: the path goes in through the gate, not through the wall
+local bases = Engine.workspace:FindFirstChild("Bases") or Instance.new("Folder", Engine.workspace)
+bases.Name = "Bases"
+local fakeBase = Instance.new("Model", bases)
+fakeBase.Name = "Base3"
+local baseCf = CFrame.lookAt(Vector3.new(100, 0, 48), Vector3.new(100, 0, 0))
+local floor = Instance.new("Part", fakeBase)
+floor.Name = "Floor"
+floor.Size = Vector3.new(46, 0.4, 60)
+floor.CFrame = baseCf
+local laser = Instance.new("Part", fakeBase)
+laser.Name = "Laser"
+laser.Size = Vector3.new(15, 10, 0.4)
+laser.CFrame = baseCf * CFrame.new(0, 5.6, -30)
+local pad = Instance.new("Part", fakeBase)
+pad.Name = "LockPad"
+pad.CFrame = baseCf * CFrame.new(10, 0.6, -24)
+serverSends("Tutorial", { step = 4, total = 8, text = "Lock your door", target = pad })
+Engine.advance(0.3)
+local throughGate = false
+for _, c in litChevrons() do
+	local d = Vector3.new(c.Position.X - laser.Position.X, 0, c.Position.Z - laser.Position.Z).Magnitude
+	if d < 4 then
+		throughGate = true
+	end
+end
+check("path enters the base through its gate", throughGate)
 serverSends("Tutorial", false)
+Engine.advance(0.3)
+check("path gone with the tutorial", #litChevrons() == 0, #litChevrons())
+-- carrying a dragon: the path leads home
+serverSends("Profile", { baseIndex = 3, carrying = { kind = "bought", id = "PUFF" } })
+Engine.advance(0.3)
+check("carrying: glowing path home", #litChevrons() > 10, #litChevrons())
+serverSends("Profile", { carrying = false })
+Engine.advance(0.3)
+check("path gone once home", #litChevrons() == 0)
+fakeBase:Destroy()
 check("tutorial gone", tut.Card.Visible == false and gui:FindFirstChild("TutorialArrow") == nil)
 
 -- Toasts, alerts, popups, bonked, events

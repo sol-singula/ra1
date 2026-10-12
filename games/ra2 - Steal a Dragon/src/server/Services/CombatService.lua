@@ -31,6 +31,7 @@ function CombatService:Init(registry)
 	baseService = registry.BaseService
 	dragons.CarryChanged:Connect(function(player)
 		self:RefreshSpeed(player)
+		self:_vipTag(player)
 	end)
 	economy.PassesChanged:Connect(function(player)
 		self:RefreshSpeed(player)
@@ -77,14 +78,21 @@ end
 function CombatService:_vipTag(player)
 	local character = player.Character
 	local head = character and character:FindFirstChild("Head")
-	if not head or head:FindFirstChild("VIPTag") or not economy:HasPass(player, "VIP") then
+	if not head or not economy:HasPass(player, "VIP") then
+		return
+	end
+	local existing = head:FindFirstChild("VIPTag")
+	if existing then
+		-- a carried dragon sits on your head and has its own name tag: hide the VIP tag so they don't overlap
+		existing.Enabled = dragons:Carrying(player) == nil
 		return
 	end
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "VIPTag"
-	gui.Size = UDim2.new(4, 0, 1, 0)
-	gui.StudsOffset = Vector3.new(0, 2.2, 0)
-	gui.MaxDistance = 80
+	gui.Size = UDim2.new(2.6, 0, 0.7, 0)
+	gui.StudsOffset = Vector3.new(0, 1.6, 0)
+	gui.MaxDistance = 40
+	gui.Enabled = dragons:Carrying(player) == nil
 	local t = Instance.new("TextLabel")
 	t.BackgroundTransparency = 1
 	t.Size = UDim2.fromScale(1, 1)

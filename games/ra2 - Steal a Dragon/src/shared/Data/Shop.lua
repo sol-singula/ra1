@@ -89,6 +89,14 @@ Shop.Products = {
 		icon = "⏱️",
 	},
 	{
+		key = "LEVELALL",
+		name = "+5 Levels for ALL",
+		text = "Every dragon in your nests gets 5 levels!",
+		price = 99,
+		id = 3718101840,
+		icon = "⬆️",
+	},
+	{
 		key = "COINS_S",
 		name = "Coin Bag",
 		text = "10 minutes of coins (at least 1,000).",

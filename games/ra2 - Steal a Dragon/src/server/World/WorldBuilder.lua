@@ -28,8 +28,8 @@ local BASE_COLORS = {
 WorldBuilder.BASE_COLORS = BASE_COLORS
 
 local BASE_W, BASE_D = 46, 60 -- width (x) and depth (z)
-local BASE_XS = { -81, -27, 27, 81 } -- base centres along the road; 4 on each side
-local BASE_Z = 48 -- distance of each base centre from the road
+local BASE_XS = { -87, -29, 29, 87 } -- base centres along the road; 4 on each side, with room between them
+local BASE_Z = 62 -- distance of each base centre from the road (leaves room for a front lawn)
 WorldBuilder.BASE_HALF = Vector3.new(BASE_W / 2, 30, BASE_D / 2)
 
 local part = Scenery.part
@@ -179,6 +179,15 @@ local function buildBase(parent, index, cf)
 	local function pos(x, y, z)
 		return (cf * CFrame.new(x, y, z)).Position
 	end
+	-- The castle grows with its owner's dragon power (BaseService picks the level, WorldBuilder.setCastleLevel
+	-- shows it): level 1 is a plain low wall; each higher level's pieces live in their own model.
+	local levels = {}
+	for level = 2, #Constants.CASTLE_LEVEL_POWER do
+		local m = Instance.new("Model")
+		m.Name = "CastleLevel" .. level
+		m.Parent = model
+		levels[level] = m
+	end
 	part({
 		Name = "Floor",
 		Size = Vector3.new(BASE_W, 0.4, BASE_D),
@@ -212,15 +221,24 @@ local function buildBase(parent, index, cf)
 			end
 		end
 	end
-	-- stone walls with a coloured band and battlements; the front has a 16-stud gate
+	-- Stone walls: a low wall at level 1; from level 2 they rise to full height with a coloured band and
+	-- battlements. The front has a 16-stud gate.
 	local function wall(name, size, cframe)
-		local w = part({
+		local low = part({
 			Name = name,
-			Size = size,
-			CFrame = cframe,
+			Size = Vector3.new(size.X, 5, size.Z),
+			CFrame = cframe * CFrame.new(0, -2, 0),
 			Color = STONE,
 			Material = Enum.Material.Cobblestone,
 			Parent = model,
+		})
+		part({
+			Name = name .. "Upper",
+			Size = Vector3.new(size.X, size.Y - 5, size.Z),
+			CFrame = cframe * CFrame.new(0, 2.5, 0),
+			Color = STONE,
+			Material = Enum.Material.Cobblestone,
+			Parent = levels[2],
 		})
 		part({
 			Name = "Band",
@@ -228,7 +246,16 @@ local function buildBase(parent, index, cf)
 			CFrame = cframe * CFrame.new(0, size.Y / 2 - 1.6, 0),
 			Color = color,
 			CastShadow = false,
-			Parent = model,
+			Parent = levels[2],
+		})
+		part({
+			Name = "GoldTrim",
+			Size = Vector3.new(size.X + 0.25, 0.5, size.Z + 0.25),
+			CFrame = cframe * CFrame.new(0, size.Y / 2 - 0.7, 0),
+			Color = rgb(255, 200, 60),
+			Material = Enum.Material.Foil,
+			CastShadow = false,
+			Parent = levels[5],
 		})
 		-- battlements along the top
 		local long = size.X > size.Z and "X" or "Z"
@@ -245,11 +272,11 @@ local function buildBase(parent, index, cf)
 					Color = STONE,
 					Material = Enum.Material.Cobblestone,
 					CastShadow = false,
-					Parent = model,
+					Parent = levels[2],
 				})
 			end
 		end
-		return w
+		return low
 	end
 	wall("WallBack", Vector3.new(BASE_W, 9, 1.4), at(0, 4.9, BASE_D / 2))
 	wall("WallL", Vector3.new(1.4, 9, BASE_D), at(-BASE_W / 2, 4.9, 0))
@@ -257,11 +284,22 @@ local function buildBase(parent, index, cf)
 	local sideW = BASE_W / 2 - 8 -- the gate is 16 wide
 	wall("WallFL", Vector3.new(sideW, 9, 1.4), at(-8 - sideW / 2, 4.9, -BASE_D / 2))
 	wall("WallFR", Vector3.new(sideW, 9, 1.4), at(8 + sideW / 2, 4.9, -BASE_D / 2))
-	-- towers: two at the back corners, two guarding the gate
-	Scenery.tower(model, pos(-BASE_W / 2, 0, BASE_D / 2), 6, 13, STONE, color, color)
-	Scenery.tower(model, pos(BASE_W / 2, 0, BASE_D / 2), 6, 13, STONE, color, color)
-	Scenery.tower(model, pos(-9.5, 0, -BASE_D / 2), 4.4, 12, STONE, color, color)
-	Scenery.tower(model, pos(9.5, 0, -BASE_D / 2), 4.4, 12, STONE, color, color)
+	-- gate posts hold up the gate arch (and its name sign) at every level
+	for _, side in { -1, 1 } do
+		part({
+			Name = "GatePost",
+			Size = Vector3.new(1.6, 10.4, 1.6),
+			CFrame = at(side * 8.6, 5.6, -BASE_D / 2),
+			Color = STONE_DARK,
+			Material = Enum.Material.Cobblestone,
+			Parent = model,
+		})
+	end
+	-- towers: two at the back corners (level 2), two guarding the gate (level 3)
+	Scenery.tower(levels[2], pos(-BASE_W / 2, 0, BASE_D / 2), 6, 13, STONE, color, color)
+	Scenery.tower(levels[2], pos(BASE_W / 2, 0, BASE_D / 2), 6, 13, STONE, color, color)
+	Scenery.tower(levels[3], pos(-9.5, 0, -BASE_D / 2), 4.4, 12, STONE, color, color)
+	Scenery.tower(levels[3], pos(9.5, 0, -BASE_D / 2), 4.4, 12, STONE, color, color)
 	local gateTop = part({
 		Name = "GateTop",
 		Size = Vector3.new(16, 2, 2),
@@ -289,18 +327,128 @@ local function buildBase(parent, index, cf)
 		CanQuery = false,
 		Parent = model,
 	})
-	-- welcome mat outside the gate and a lantern on each side
+	-- Front lawn between the sidewalk and the gate: real grass, a stone path to the gate, flower beds and two
+	-- round bushes (no lamps: the road has enough)
+	local rng = Random.new(index * 7)
+	local lawnD = BASE_Z - BASE_D / 2 - 1.5 - 19 -- from the sidewalk's edge to the castle's rim
+	local lawnZ = -BASE_D / 2 - 1.5 - lawnD / 2
+	local lawn = part({
+		Name = "Lawn",
+		Size = Vector3.new(BASE_W + 6, 0.2, lawnD),
+		CFrame = at(0, 0.1, lawnZ),
+		Color = rgb(96, 176, 82),
+		Parent = model,
+	})
+	lawn.Material = Enum.Material.Grass
+	lawn.TopSurface = Enum.SurfaceType.Smooth
+	part({
+		Name = "Path",
+		Size = Vector3.new(10, 0.3, lawnD + 1),
+		CFrame = at(0, 0.15, lawnZ),
+		Color = rgb(172, 165, 155),
+		Material = Enum.Material.Cobblestone,
+		Parent = model,
+	})
 	part({
 		Name = "Mat",
-		Size = Vector3.new(12, 0.1, 6),
-		CFrame = at(0, 0.05, -BASE_D / 2 - 4),
+		Size = Vector3.new(12, 0.1, 4),
+		CFrame = at(0, 0.32, -BASE_D / 2 - 3),
 		Color = color:Lerp(rgb(160, 150, 140), 0.35),
 		CastShadow = false,
 		CanCollide = false,
 		Parent = model,
 	})
-	Scenery.lantern(model, pos(-15, 0, -BASE_D / 2 - 3), 6)
-	Scenery.lantern(model, pos(15, 0, -BASE_D / 2 - 3), 6)
+	for _, side in { -1, 1 } do
+		-- a flower bed edged in the base colour, and a round bush at the outer corner
+		part({
+			Name = "FlowerBed",
+			Size = Vector3.new(10, 0.5, 5),
+			CFrame = at(side * 12, 0.25, lawnZ),
+			Color = rgb(110, 80, 55),
+			Parent = model,
+		})
+		part({
+			Name = "BedTrim",
+			Size = Vector3.new(10.6, 0.3, 5.6),
+			CFrame = at(side * 12, 0.15, lawnZ),
+			Color = color,
+			Parent = model,
+		})
+		Scenery.flowers(model, pos(side * 12, 0.3, lawnZ), 8, rng)
+		Scenery.roundTree(model, pos(side * (BASE_W / 2 + 0.5), 0, lawnZ), 0.55, rng)
+	end
+	-- Castle details by level: arrow slits, front-wall banners and a portcullis (3), a tall keep behind the back
+	-- wall (4), and a golden dragon over the gate (5)
+	local slit = rgb(45, 40, 50)
+	for z = -BASE_D / 2 + 6, BASE_D / 2 - 6, 8 do
+		for _, side in { -1, 1 } do
+			part({
+				Name = "ArrowSlit",
+				Size = Vector3.new(0.2, 2.2, 0.6),
+				CFrame = at(side * (BASE_W / 2 + 0.72), 6.6, z),
+				Color = slit,
+				CastShadow = false,
+				CanCollide = false,
+				Parent = levels[3],
+			})
+		end
+	end
+	for x = -BASE_W / 2 + 7, BASE_W / 2 - 7, 8 do
+		part({
+			Name = "ArrowSlit",
+			Size = Vector3.new(0.6, 2.2, 0.2),
+			CFrame = at(x, 6.6, BASE_D / 2 + 0.72),
+			Color = slit,
+			CastShadow = false,
+			CanCollide = false,
+			Parent = levels[3],
+		})
+	end
+	for _, side in { -1, 1 } do
+		local bx = side * (8 + sideW / 2)
+		part({
+			Name = "WallBanner",
+			Size = Vector3.new(3.4, 5, 0.2),
+			CFrame = at(bx, 5.2, -BASE_D / 2 - 0.82),
+			Color = color,
+			CastShadow = false,
+			CanCollide = false,
+			Parent = levels[3],
+		})
+		part({
+			Name = "WallBannerTrim",
+			Size = Vector3.new(3.8, 0.5, 0.25),
+			CFrame = at(bx, 7.8, -BASE_D / 2 - 0.85),
+			Color = rgb(240, 185, 55),
+			CastShadow = false,
+			CanCollide = false,
+			Parent = levels[3],
+		})
+	end
+	for x = -6, 6, 2 do
+		part({
+			Name = "Portcullis",
+			Size = Vector3.new(0.3, 1.6, 0.3),
+			CFrame = at(x, 9.6, -BASE_D / 2),
+			Color = rgb(60, 55, 65),
+			CanCollide = false,
+			Parent = levels[3],
+		})
+	end
+	Scenery.tower(levels[4], pos(0, 0, BASE_D / 2 + 7), 10, 20, STONE, color, color)
+	local golden = DragonBuilder.build("GOLDIE", "GOLD", 3, 0.9)
+	for _, d in golden:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+			d.CanCollide = false
+			d.CanQuery = false
+		elseif d:IsA("Sparkles") or d:IsA("PointLight") then
+			d:Destroy()
+		end
+	end
+	golden.Name = "GoldenDragon"
+	DragonBuilder.place(golden, at(0, 12.4, -BASE_D / 2) * CFrame.Angles(0, math.pi, 0))
+	golden.Parent = levels[5]
 	-- sign over the gate: owner name and lock state
 	local _, lines = billboard(gateTop, 18, 5, Vector3.new(0, 4, 0), {
 		{ text = "EMPTY BASE", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy },
@@ -420,6 +568,17 @@ local function buildBase(parent, index, cf)
 		Material = Enum.Material.Marble,
 		Parent = model,
 	})
+	local levelPlate = part({
+		Name = "LevelPlate",
+		Size = Vector3.new(7, 0.5, 3.6),
+		CFrame = at(12, 0.6, eggZ),
+		Color = rgb(120, 220, 110),
+		Parent = model,
+	})
+	billboard(levelPlate, 9, 3.6, Vector3.new(0, 3.5, 0), {
+		{ text = "⬆️ LEVEL ALL", h = 0.55, y = 0, font = Enum.Font.LuckiestGuy },
+		{ text = "every dragon", h = 0.45, y = 0.55, color = rgb(210, 255, 200) },
+	}, 60)
 	part({
 		Name = "EggTrim",
 		Size = Vector3.new(4.4, 0.4, 4.4),
@@ -438,7 +597,7 @@ local function buildBase(parent, index, cf)
 			Color = rgb(255, 200, 90),
 			Material = Enum.Material.Neon,
 			CastShadow = false,
-			Parent = model,
+			Parent = levels[4],
 		})
 	end
 	return {
@@ -453,6 +612,8 @@ local function buildBase(parent, index, cf)
 		lockPad = lockPad,
 		lockPlate = lockPlate,
 		autoPlate = autoPlate,
+		levelPlate = levelPlate,
+		levels = levels,
 		collectPad = collectPad,
 		collectLines = collectLines,
 		eggStand = eggStand,
@@ -507,7 +668,7 @@ local function clear(x, z)
 		return false -- the exit tunnel and its hill
 	end
 	for _, bx in BASE_XS do
-		if math.abs(x - bx) < BASE_W / 2 + 6 and math.abs(z) > 12 and math.abs(z) < BASE_Z + BASE_D / 2 + 6 then
+		if math.abs(x - bx) < BASE_W / 2 + 6 and math.abs(z) > 12 and math.abs(z) < BASE_Z + BASE_D / 2 + 16 then
 			return false
 		end
 	end
@@ -673,6 +834,25 @@ local function dragonGate(parent, x)
 	return top
 end
 
+-- Show a base's castle at a level (1 .. #CASTLE_LEVEL_POWER): the pieces of every level up to it appear, the
+-- rest hide. Each part remembers how it looked when built.
+function WorldBuilder.setCastleLevel(world, level)
+	for l, m in world.levels do
+		local show = l <= level
+		for _, p in m:GetDescendants() do
+			if p:IsA("BasePart") then
+				if p:GetAttribute("ShownTransparency") == nil then
+					p:SetAttribute("ShownTransparency", p.Transparency)
+					p:SetAttribute("ShownCollide", p.CanCollide)
+				end
+				p.Transparency = show and p:GetAttribute("ShownTransparency") or 1
+				p.CanCollide = show and p:GetAttribute("ShownCollide") or false
+			end
+		end
+	end
+	world.castleLevel = level
+end
+
 function WorldBuilder.build()
 	-- remove what Studio's Baseplate template puts in a new place (the grey baseplate and its spawn pad)
 	for _, child in workspace:GetChildren() do
@@ -770,7 +950,7 @@ function WorldBuilder.build()
 		end
 	end
 	local banner = 0
-	for x = Constants.ROAD_START_X + 14, Constants.ROAD_END_X - 6, 24 do
+	for x = Constants.ROAD_START_X + 14, Constants.ROAD_END_X - 6, 48 do
 		for _, z in { -9.6, 9.6 } do
 			Scenery.lantern(road, Vector3.new(x, 0.3, z), 8)
 			banner += 1
@@ -916,6 +1096,7 @@ function WorldBuilder.build()
 		local z = north and BASE_Z or -BASE_Z
 		local cf = CFrame.lookAt(Vector3.new(x, 0, z), Vector3.new(x, 0, 0))
 		bases[i] = buildBase(basesFolder, i, cf)
+		WorldBuilder.setCastleLevel(bases[i], 1)
 	end
 
 	-- Practice Base: a small open camp, always unlocked, for the tutorial steal

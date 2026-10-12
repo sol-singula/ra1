@@ -431,6 +431,8 @@ local DEFAULTS = {
 			CFrame = cf(v3()),
 			Transparency = 0,
 			Anchored = false,
+			CanCollide = true,
+			CanQuery = true,
 			AssemblyLinearVelocity = v3(),
 			Shape = Enum.PartType.Block,
 		}

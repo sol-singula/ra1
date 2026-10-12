@@ -42,16 +42,17 @@ local Leaderboard = service("LeaderboardService")
 local ShopData = Engine.require(tree.shared.Data.Shop)
 -- every real item has its own Roblox ID (set by tools/setup_shop.py)
 do
-	local ids, ok = {}, true
+	local ids, ok, count = {}, true, 0
 	for _, list in { ShopData.Passes, ShopData.Products } do
 		for _, item in list do
 			if item.id == 0 or ids[item.id] then
 				ok = false
 			end
 			ids[item.id] = true
+			count += 1
 		end
 	end
-	check("all 20 shop items have unique Roblox IDs", ok)
+	check("every shop item (" .. count .. ") has a unique Roblox ID", ok and count >= 21)
 end
 -- the rest of this test plays as Studio does with unset IDs: purchases are granted for free
 for _, list in { ShopData.Passes, ShopData.Products } do
@@ -149,7 +150,7 @@ leaving.x = Constants.ROAD_EXIT_X + 1
 Engine.advance(0.1)
 check("dragon gone deep in the tunnel", Road:Entry(leaving.roadId) == nil)
 check("leaderstats", a:FindFirstChild("leaderstats") and a.leaderstats:FindFirstChild("Coins") ~= nil)
-check("base sign shows owner", Base:Get(a).world.signLines[1].Text == "AVA")
+check("base sign shows owner", Base:Get(a).world.signLines[1].Text:find("AVA", 1, true) == 1)
 Leaderboard:Refresh()
 check(
 	"boards show players even in a brand-new game",
@@ -418,6 +419,59 @@ check("standing on the plate doesn't buy again", Base:Get(a).lockUntil == lockAf
 Base:Get(a).lockUntil = 0 -- open again for the stealing tests below
 goHome(a)
 
+-- LEVEL ALL plate: spends coins on the cheapest level-ups across every nest
+local function totalLevels()
+	local sum, now = 0, Engine.globals.os.time()
+	for _, r in pa.dragons do
+		if r.slot then
+			sum += Formulas.level(r, now)
+		end
+	end
+	return sum
+end
+check("LEVEL ALL plate built", world.levelPlate ~= nil)
+local levelsBefore = totalLevels()
+pa.coins += 1e7
+local coinsBeforeAll = pa.coins
+go(a, world.levelPlate.Position)
+check("LEVEL ALL buys levels", totalLevels() > levelsBefore + 1, totalLevels() - levelsBefore)
+check("LEVEL ALL spends coins", pa.coins < coinsBeforeAll)
+goHome(a)
+pa.coins = 0
+levelsBefore = totalLevels()
+go(a, world.levelPlate.Position) -- no coins: offers +5 Levels for ALL (free in Studio)
+local nestCount = 0
+for _, r in pa.dragons do
+	if r.slot and Formulas.level(r, Engine.globals.os.time()) < Constants.MAX_LEVEL then
+		nestCount += 1
+	end
+end
+check("+5 Levels for ALL levels every dragon", totalLevels() >= levelsBefore + 5 * math.max(1, nestCount - 1))
+goHome(a)
+pa.coins = coinsBeforeAll
+
+-- Castle levels grow with dragon power
+local myBase = Base:Get(a)
+check(
+	"castle level thresholds",
+	Base.castleLevelFor(0) == 1 and Base.castleLevelFor(30) == 2 and Base.castleLevelFor(1e9) == 5
+)
+local trim = world.levels[5]:FindFirstChild("GoldTrim", true)
+local realPower = Base.DragonPower
+Base.DragonPower = function()
+	return 1e9
+end
+Base:UpdateCastle(myBase)
+check("castle grows to level 5", world.castleLevel == 5 and trim ~= nil and trim.Transparency < 1)
+check("sign shows the castle level", world.signLines[1].Text:find("🏰5", 1, true) ~= nil)
+Base.DragonPower = function()
+	return 0
+end
+Base:UpdateCastle(myBase)
+check("castle shrinks back", world.castleLevel == 1 and trim.Transparency == 1 and trim.CanCollide == false)
+Base.DragonPower = realPower
+Base:UpdateCastle(myBase)
+
 -- Skins
 check("starts with Classic", pa.skins.CLASSIC and pa.skin == "CLASSIC")
 pa.coins += 5000
@@ -483,6 +537,7 @@ check("friends can enter a locked base", Base:IsInside(Base:Get(a), cPlayer.Char
 
 -- Growth ------------------------------------------------------------------------------------------------------
 local rec = pa.dragons[1]
+rec.lv = 0 -- age alone decides the stage here
 rec.born -= 4000
 Engine.advance(1.2)
 local model = nestModel(a, rec.slot)

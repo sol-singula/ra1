@@ -140,6 +140,16 @@ function DragonService:PushWaiting(player)
 end
 
 -- Nest models ------------------------------------------------------------------------------------------------
+-- Screen offset (pixels) of each prompt kind, so the owner's three prompts (and Buy / Buy with Robux on the road)
+-- stack neatly: +10 Levels on top, Level Up in the middle, Sell below.
+local PROMPT_OFFSETS = {
+	grow = Vector2.new(0, -84),
+	levelup = Vector2.zero,
+	sell = Vector2.new(0, 84),
+	buy = Vector2.zero,
+	buynow = Vector2.new(0, 84),
+}
+
 local function prompt(parent, kind, action, object, hold, ownerId, key)
 	local p = Instance.new("ProximityPrompt")
 	p.Name = "Prompt_" .. kind
@@ -149,6 +159,8 @@ local function prompt(parent, kind, action, object, hold, ownerId, key)
 	p.MaxActivationDistance = 11
 	p.RequiresLineOfSight = false
 	p.KeyboardKeyCode = key or Enum.KeyCode.E
+	-- prompts on the same dragon sit in a column instead of on top of each other
+	p.UIOffset = PROMPT_OFFSETS[kind] or Vector2.zero
 	p:SetAttribute("Kind", kind)
 	p:SetAttribute("OwnerUserId", ownerId)
 	p.Parent = parent
@@ -551,6 +563,72 @@ function DragonService:AddLevels(player, uid, count)
 	Net.fire(player, "Toast", `{Dragons.byId[rec.id].name} is now level {levelOf(rec)}! ⭐`, "good")
 	self.DragonsChanged:Fire(player)
 	return true
+end
+
+-- Level up every nest dragon with coins (the LEVEL ALL plate): keep buying the cheapest next level until the
+-- coins run out. Returns how many levels were bought and the coins spent.
+function DragonService:LevelAll(player)
+	local profile = data:Get(player)
+	if not profile then
+		return 0, 0
+	end
+	local now = os.time()
+	local bought, spent, changed = 0, 0, {}
+	for _ = 1, 2000 do
+		local best, bestCost
+		for _, rec in profile.dragons do
+			local cost = rec.slot and Formulas.levelUpCost(rec, now)
+			if cost and (not bestCost or cost < bestCost) then
+				best, bestCost = rec, cost
+			end
+		end
+		if not best or profile.coins < bestCost or not economy:Spend(player, bestCost) then
+			break
+		end
+		best.lv = (best.lv or 0) + 1
+		bought += 1
+		spent += bestCost
+		changed[best] = true
+	end
+	for rec in changed do
+		self:_refreshNestModel(player, rec)
+	end
+	if bought > 0 then
+		baseService:PushIncome(player)
+		self.DragonsChanged:Fire(player)
+	end
+	return bought, spent
+end
+
+-- Whether the player has a nest dragon below MAX level.
+function DragonService:CanLevelAny(player)
+	local profile = data:Get(player)
+	for _, rec in profile and profile.dragons or {} do
+		if rec.slot and levelOf(rec) < Constants.MAX_LEVEL then
+			return true
+		end
+	end
+	return false
+end
+
+-- Add levels to every nest dragon (the +5 Levels for ALL purchase). Returns how many dragons got levels.
+function DragonService:AddLevelsAll(player, count)
+	local profile = data:Get(player)
+	local n = 0
+	for _, rec in profile and profile.dragons or {} do
+		local room = Constants.MAX_LEVEL - levelOf(rec)
+		if rec.slot and room > 0 then
+			rec.lv = (rec.lv or 0) + math.min(count, room)
+			self:_refreshNestModel(player, rec)
+			n += 1
+		end
+	end
+	if n > 0 then
+		baseService:PushIncome(player)
+		Net.fire(player, "Toast", `{n} dragons got +{count} levels! ⭐`, "good")
+		self.DragonsChanged:Fire(player)
+	end
+	return n
 end
 
 -- Repaint all of a player's dragons after they changed skin.

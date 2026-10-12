@@ -72,6 +72,16 @@ function ShopService:Init(registry)
 			end
 		elseif plate == "lock" then
 			self:PromptProduct(player, "LOCK5")
+		elseif plate == "levelall" then
+			local bought, spent = dragons:LevelAll(player)
+			if bought > 0 then
+				Net.fire(player, "Toast", `⬆️ {bought} level-ups for {Format.num(spent)} coins!`, "good")
+			elseif dragons:CanLevelAny(player) then
+				-- can't afford a single level: offer the +5 Levels for ALL boost
+				self:PromptProduct(player, "LEVELALL")
+			else
+				Net.fire(player, "Toast", "Put dragons in your nests first!", "info")
+			end
 		end
 	end)
 	-- skins: coin skins are bought here, Robux skins through their product
@@ -169,6 +179,10 @@ function ShopService:Grant(player, key, target)
 	elseif key == "GROW" then
 		if not dragons:AddLevels(player, target, Constants.GROW_PRODUCT_LEVELS) then
 			economy:Add(player, math.max(1000, math.floor(income * 600)), false) -- no dragon below MAX: coins instead
+		end
+	elseif key == "LEVELALL" then
+		if dragons:AddLevelsAll(player, Constants.LEVEL_ALL_PRODUCT_LEVELS) == 0 then
+			economy:Add(player, math.max(1000, math.floor(income * 600)), false) -- nothing to level: coins instead
 		end
 	elseif Skins.byProduct[key] then
 		self:GiveSkin(player, Skins.byProduct[key].key)

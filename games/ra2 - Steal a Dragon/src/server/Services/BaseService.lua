@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Constants = require(ReplicatedStorage.Shared.Constants)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -15,7 +16,8 @@ local BaseService = {
 	Dependencies = { "PlayerDataService", "EconomyService", "TeamService" },
 	Locked = Signal.new("BaseService.Locked"), -- (player)
 	Collected = Signal.new("BaseService.Collected"), -- (player, amount)
-	PlateStepped = Signal.new("BaseService.PlateStepped"), -- (player, "auto" | "lock") owner stepped on a buy plate
+	PlateStepped = Signal.new("BaseService.PlateStepped"), -- (player, "auto" | "lock" | "levelall") owner stepped on a plate
+	CastleGrew = Signal.new("BaseService.CastleGrew"), -- (player, level)
 }
 
 local data, economy, team
@@ -59,7 +61,7 @@ function BaseService:OnPlayerReady(player)
 			base.lockUntil = 0
 			base.bank = 0
 			byPlayer[player] = base
-			base.world.signLines[1].Text = string.upper(player.DisplayName)
+			base.world.signLines[1].Text = string.upper(player.DisplayName) .. "  🏰" .. (base.world.castleLevel or 1)
 			base.world.beacon.Transparency = 0.35
 			base.world.model:SetAttribute("OwnerUserId", player.UserId)
 			player:SetAttribute("BaseIndex", base.index)
@@ -100,6 +102,8 @@ function BaseService:OnPlayerLeaving(player)
 	base.bank = 0
 	base.lockUntil = 0
 	base.world.signLines[1].Text = "EMPTY BASE"
+	base.castleChecked = false
+	WorldBuilder.setCastleLevel(base.world, 1)
 	base.world.signLines[2].Text = ""
 	base.world.collectLines[2].Text = "0"
 	base.world.laser.Transparency = 1
@@ -226,6 +230,41 @@ function BaseService:Income(player)
 	return sum * mult, mult
 end
 
+-- Dragon power: the coins per second of the dragons in a player's nests, before passes and friend bonuses.
+function BaseService:DragonPower(player)
+	local income, mult = self:Income(player)
+	return income / mult
+end
+
+-- Castle level for an amount of dragon power (1 .. #CASTLE_LEVEL_POWER).
+function BaseService.castleLevelFor(power)
+	local level = 1
+	for l, need in Constants.CASTLE_LEVEL_POWER do
+		if power >= need then
+			level = l
+		end
+	end
+	return level
+end
+
+-- Grow (or shrink) a base's castle to match its owner's dragon power. The first check after joining is silent.
+function BaseService:UpdateCastle(base)
+	local player = base.owner
+	local level = player and BaseService.castleLevelFor(self:DragonPower(player)) or 1
+	if level == base.world.castleLevel then
+		return
+	end
+	local grew = base.world.castleLevel and level > base.world.castleLevel and base.castleChecked
+	WorldBuilder.setCastleLevel(base.world, level)
+	if player then
+		base.world.signLines[1].Text = string.upper(player.DisplayName) .. "  🏰" .. level
+		if grew then
+			Net.fire(player, "Alert", `🏰 Your castle grew! Castle level {level}`, Color3.fromRGB(255, 205, 50))
+			self.CastleGrew:Fire(player, level)
+		end
+	end
+end
+
 function BaseService:PushIncome(player)
 	local income, mult = self:Income(player)
 	data:Push(player, { cps = income, mult = mult })
@@ -287,7 +326,9 @@ function BaseService:_step()
 				-- buy plates fire once each time you step on, not every frame you stand there
 				local was = onPlates[player] or {}
 				local now2 = {}
-				for name, plate in { auto = mine.world.autoPlate, lock = mine.world.lockPlate } do
+				local plates =
+					{ auto = mine.world.autoPlate, lock = mine.world.lockPlate, levelall = mine.world.levelPlate }
+				for name, plate in plates do
 					if plate and onPad(plate, pos) then
 						now2[name] = true
 						if not was[name] then
@@ -321,6 +362,8 @@ function BaseService:_tick()
 				end
 				data:Push(player, { cps = income })
 			end
+			self:UpdateCastle(base)
+			base.castleChecked = true
 			local wasLocked = base.world.laser.Transparency < 1
 			self:_drawLock(base)
 			if wasLocked and not self:IsLocked(base) then

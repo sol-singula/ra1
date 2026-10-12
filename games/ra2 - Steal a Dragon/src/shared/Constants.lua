@@ -28,6 +28,11 @@ Constants.NEST_PRICES = {
 	[20] = 75000000,
 }
 
+-- Castle: a base grows with its owner's dragon power (the coins per second of the dragons in its nests,
+-- before passes and friend bonuses). Level 1 is a low wall; each level needs this much power.
+Constants.CASTLE_LEVEL_POWER = { 0, 25, 250, 2500, 25000 }
+Constants.LEVEL_ALL_PRODUCT_LEVELS = 5 -- the +5 Levels for ALL product
+
 -- Lock
 Constants.LOCK_SECONDS = 60
 Constants.LOCK_SECONDS_LONG = 120 -- Long Lock pass
