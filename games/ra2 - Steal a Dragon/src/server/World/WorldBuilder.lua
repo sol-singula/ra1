@@ -935,8 +935,14 @@ local function lighting()
 	effect("SunRaysEffect", { Intensity = 0.02, Spread = 0.6 })
 end
 
--- Places where scenery must not go: the lobby, the road and its sidewalks, the bases, the Practice Base.
+-- The cliff wall around the map: an ellipse (centre x, radii) at the cliffs' foot.
+local CLIFF_CX, CLIFF_RX, CLIFF_RZ = -25, 300, 212
+
+-- Places where scenery must not go: the lobby, the road and its sidewalks, the bases, the Practice Base, the cliffs.
 local function clear(x, z)
+	if ((x - CLIFF_CX) / (CLIFF_RX - 14)) ^ 2 + (z / (CLIFF_RZ - 14)) ^ 2 > 1 then
+		return false -- at the foot of the cliffs
+	end
 	if x > -238 and x < -108 and math.abs(z) < 58 then
 		return false -- the castle courtyard and its keep
 	end
@@ -1792,14 +1798,15 @@ function WorldBuilder.build()
 			rng:NextNumber(150, 220)
 		)
 	end
-	for i = 0, 17 do
-		local a = i / 18 * math.pi * 2
-		Scenery.mountain(
-			deco,
-			Vector3.new(-25 + math.cos(a) * 300, -12, math.sin(a) * 210),
-			rng:NextNumber(90, 140),
-			rng
-		)
+	-- a tall cliff wall all the way around, with trees along its top and a couple of waterfalls
+	local cliffs = folder("Cliffs", deco)
+	local CLIFF_SEGMENTS = 44
+	for i = 0, CLIFF_SEGMENTS - 1 do
+		local a = i / CLIFF_SEGMENTS * math.pi * 2
+		local p = Vector3.new(CLIFF_CX + math.cos(a) * CLIFF_RX, 0, math.sin(a) * CLIFF_RZ)
+		local inward = -Vector3.new(math.cos(a) / CLIFF_RX, 0, math.sin(a) / CLIFF_RZ).Unit
+		local height = 64 + 16 * math.sin(a * 3 + 1) + rng:NextNumber(0, 10)
+		Scenery.cliff(cliffs, CFrame.lookAt(p, p + inward), 40, height, rng, i == 9 or i == 31)
 	end
 	for _ = 1, 9 do
 		Scenery.cloud(

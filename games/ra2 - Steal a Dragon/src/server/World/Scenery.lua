@@ -1,4 +1,4 @@
--- Scenery pieces built from plain parts: trees, rocks, flowers, mountains, clouds, lanterns, castle towers,
+-- Scenery pieces built from plain parts: trees, rocks, flowers, cliffs, far mountains, clouds, lanterns, castle towers,
 -- flags and the lobby's golden dragon statue. Small decorations don't cast shadows, to keep phones fast.
 --
 -- Brick style (Constants.BRICK_STYLE): like most top Roblox games, the world is made of shiny plastic bricks with
@@ -313,70 +313,135 @@ function Scenery.flowers(parent, pos, count, rng)
 	Scenery.bush(parent, pos + Vector3.new(0, -0.3, 0), 0.75, rng)
 end
 
--- A mountain: a main peak with two rocky shoulders and green foothills, a snow cap with snow running down its
--- ridges, and pines around its foot.
-function Scenery.mountain(parent, pos, size, rng)
-	local rock = rgb(125, 130, 140):Lerp(rgb(105, 120, 110), rng:NextNumber())
+-- One stretch of the tall cliff wall around the map. cf: on the ground at the middle of its foot, looking at the
+-- map. Rock strata stepping back as they go up, a grassy top with a mossy lip, boulders jutting out of the face,
+-- scree at the foot and trees along the top edge. waterfall: true for a waterfall down the face.
+function Scenery.cliff(parent, cf, width, height, rng, waterfall)
+	local tones = { rgb(150, 124, 98), rgb(126, 116, 106), rgb(164, 142, 112), rgb(112, 104, 98), rgb(140, 120, 96) }
+	local depth = 46
 	local quiet = { CastShadow = false }
-	ball(parent, "Mountain", pos, size, rock, Enum.Material.Slate, quiet)
-	for _, sh in
-		{ { 0.32, -0.12, 0.1, 0.75, 0.08 }, { -0.3, -0.16, -0.12, 0.68, -0.06 }, { 0.05, -0.2, 0.34, 0.6, 0.12 } }
-	do
+	local layers = 4
+	local y, inset, topFront = 0, 0, 0
+	for i = 1, layers do
+		local h = height / layers * rng:NextNumber(0.85, 1.15)
+		if i == layers then
+			h = height - y
+		end
+		local w = width + rng:NextNumber(-2, 3)
+		local layerCf = cf
+			* CFrame.new(rng:NextNumber(-1.5, 1.5), y + h / 2, depth / 2 + inset)
+			* CFrame.Angles(0, math.rad(rng:NextNumber(-4, 4)), 0)
+		part({
+			Name = "Cliff",
+			Size = Vector3.new(w, h, depth),
+			CFrame = layerCf,
+			Color = tones[rng:NextInteger(1, #tones)],
+			Material = Enum.Material.Slate,
+			CastShadow = false,
+			Parent = parent,
+		})
+		-- a thin darker band where two strata meet
+		part({
+			Name = "Strata",
+			Size = Vector3.new(w + 0.4, 0.8, 1),
+			CFrame = cf * CFrame.new(0, y + h - 0.4, inset + 0.2),
+			Color = rgb(92, 84, 80),
+			Material = Enum.Material.Slate,
+			CastShadow = false,
+			CanCollide = false,
+			Parent = parent,
+		})
+		y += h
+		topFront = inset
+		inset += rng:NextNumber(1.5, 3.5)
+	end
+	-- grassy top, overhanging a little, with moss hanging over the edge
+	part({
+		Name = "CliffTop",
+		Size = Vector3.new(width + 3, 2.4, depth + 4),
+		CFrame = cf * CFrame.new(0, height + 1.2, depth / 2 + topFront),
+		Color = rgb(92, 165, 78),
+		Material = Enum.Material.Grass,
+		Parent = parent,
+	})
+	part({
+		Name = "Moss",
+		Size = Vector3.new(width + 2, rng:NextNumber(2.5, 4.5), 0.8),
+		CFrame = cf * CFrame.new(0, height - 1.2, topFront - 2.4),
+		Color = rgb(70, 135, 65),
+		Material = Enum.Material.Grass,
+		CastShadow = false,
+		CanCollide = false,
+		Parent = parent,
+	})
+	-- boulders jutting out of the face
+	for _ = 1, 2 do
+		local by = rng:NextNumber(0.2, 0.8) * height
 		ball(
 			parent,
-			"Mountain",
-			pos + Vector3.new(sh[1], sh[2], sh[3]) * size,
-			size * sh[4],
-			sh[5] >= 0 and rock:Lerp(rgb(0, 0, 0), sh[5]) or rock:Lerp(rgb(255, 255, 255), -sh[5]),
+			"Boulder",
+			(cf * CFrame.new(rng:NextNumber(-0.4, 0.4) * width, by, inset * by / height)).Position,
+			rng:NextNumber(5, 9),
+			tones[rng:NextInteger(1, #tones)]:Lerp(rgb(0, 0, 0), 0.08),
 			Enum.Material.Slate,
 			quiet
 		)
 	end
-	-- green foothills
-	for k = 1, 4 do
-		local a = rng:NextNumber(0, math.pi * 2)
-		ball(
-			parent,
-			"Foothill",
-			pos + Vector3.new(math.cos(a) * size * 0.45, -size * 0.05, math.sin(a) * size * 0.45),
-			size * rng:NextNumber(0.4, 0.55),
-			rgb(90, 160, 85):Lerp(rgb(70, 130, 75), k / 4),
-			Enum.Material.Grass,
-			quiet
-		)
-	end
-	-- snow cap and streaks down the ridges
-	ball(
+	-- scree and bushes at the foot
+	Scenery.rock(
 		parent,
-		"Snow",
-		pos + Vector3.new(0, size * 0.38, 0),
-		size * 0.36,
-		rgb(245, 248, 255),
-		Enum.Material.Snow,
-		quiet
+		(cf * CFrame.new(rng:NextNumber(-0.4, 0.4) * width, 0, -3)).Position,
+		rng:NextNumber(3, 6),
+		rng
 	)
-	for _, st in { { 0.12, 0.3, 0.1 }, { -0.1, 0.28, -0.08 }, { 0.02, 0.27, 0.15 } } do
-		ball(
-			parent,
-			"Snow",
-			pos + Vector3.new(st[1], st[2], st[3]) * size,
-			size * 0.2,
-			rgb(235, 242, 255),
-			Enum.Material.Snow,
-			quiet
-		)
-	end
-	-- a few pines at its sides (not on the side facing the middle of the map, where they'd crowd the play area)
-	local out = math.atan2(pos.Z, pos.X + 25)
+	Scenery.bush(parent, (cf * CFrame.new(rng:NextNumber(-0.4, 0.4) * width, 0, -2)).Position, 1.3, rng)
+	-- trees along the top edge
 	for k = 1, 3 do
-		local a = out + (k % 2 == 0 and 1 or -1) * rng:NextNumber(1.2, 1.9)
-		local r = size * rng:NextNumber(0.72, 0.85)
-		Scenery.pineTree(
+		local pos = (cf * CFrame.new(
+			(k - 2) * width * 0.3 + rng:NextNumber(-3, 3),
+			height + 2.4,
+			topFront + rng:NextNumber(3, 10)
+		)).Position
+		if rng:NextNumber() < 0.55 then
+			Scenery.pineTree(parent, pos, rng:NextNumber(1.5, 2.3), false)
+		else
+			Scenery.roundTree(parent, pos, rng:NextNumber(1.6, 2.3), rng)
+		end
+	end
+	if waterfall then
+		local water = rgb(120, 200, 245)
+		part({
+			Name = "Waterfall",
+			Size = Vector3.new(7, height + 1, 1),
+			CFrame = cf * CFrame.new(0, height / 2 + 0.5, -0.6),
+			Color = water,
+			Material = Enum.Material.Glass,
+			Transparency = 0.15,
+			CastShadow = false,
+			CanCollide = false,
+			Parent = parent,
+		})
+		disc(
 			parent,
-			Vector3.new(pos.X + math.cos(a) * r, 0, pos.Z + math.sin(a) * r),
-			rng:NextNumber(1.4, 2.2),
-			rng:NextNumber() < 0.4
+			"Pool",
+			(cf * CFrame.new(0, 0.1, -6)).Position,
+			16,
+			0.3,
+			water,
+			Enum.Material.Glass,
+			{ CastShadow = false, CanCollide = false, Transparency = 0.1 }
 		)
+		for f = -1, 1 do
+			ball(
+				parent,
+				"Foam",
+				(cf * CFrame.new(f * 2.5, 0.6, -2.5)).Position,
+				3.5,
+				rgb(240, 250, 255),
+				Enum.Material.SmoothPlastic,
+				{ CastShadow = false, CanCollide = false }
+			)
+		end
 	end
 end
 
