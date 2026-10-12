@@ -1,4 +1,4 @@
--- Reasons to come back and keep playing: the daily gift, the overnight egg, goals, coins earned while away,
+-- Reasons to come back and keep playing: the daily gift, the 2-hour egg, goals, coins earned while away,
 -- the friend bonus goal and invite rewards.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27,6 +27,7 @@ local RewardService = {
 local data, economy, dragons, baseService, team, road
 local pendingOffline = {} -- [player] = coins waiting to be claimed
 local eggModels = {} -- [player] = model on the base's egg stand
+local rng = Random.new(os.time())
 
 function RewardService:Init(registry)
 	data = registry.PlayerDataService
@@ -68,6 +69,18 @@ function RewardService:ClaimOffline(player, double)
 end
 
 -- Daily gift -------------------------------------------------------------------------------------------------
+-- The gift for a streak day, sized for this player right now (their income and best dragon).
+function RewardService:GiftFor(player, streakDay)
+	local profile = data:Get(player)
+	local today = Formulas.day(os.time())
+	return Formulas.dailyGift(
+		streakDay,
+		baseService:Income(player),
+		Formulas.bestSpecies(profile.dragons),
+		today + streakDay
+	)
+end
+
 function RewardService:DailyView(player)
 	local profile = data:Get(player)
 	local today = Formulas.day(os.time())
@@ -77,11 +90,19 @@ function RewardService:DailyView(player)
 	if not canClaim then
 		nextStreak = d.streak + 1
 	end
+	-- the whole week, so the gift panel shows what each day gives this player
+	local week = {}
+	local first = math.floor((nextStreak - 1) / #Formulas.DAILY_GIFTS) * #Formulas.DAILY_GIFTS
+	for i = 1, #Formulas.DAILY_GIFTS do
+		local g = self:GiftFor(player, first + i)
+		week[i] = { kind = g.kind, amount = g.amount, text = g.text }
+	end
 	return {
 		streak = d.streak,
 		canClaim = canClaim,
 		nextDay = nextStreak,
-		gift = Formulas.dailyGift(nextStreak).text,
+		gift = self:GiftFor(player, nextStreak).text,
+		gifts = week,
 		secondsToNext = (today + 1) * 86400 - os.time(),
 	}
 end
@@ -97,9 +118,10 @@ function RewardService:ClaimDaily(player)
 		Net.fire(player, "Toast", "Come back tomorrow for the next gift!", "info")
 		return
 	end
-	d.streak = (d.lastDay == today - 1) and d.streak + 1 or 1
+	local streak = (d.lastDay == today - 1) and d.streak + 1 or 1
+	local gift = self:GiftFor(player, streak) -- sized before the streak changes, the same as the panel showed
+	d.streak = streak
 	d.lastDay = today
-	local gift = Formulas.dailyGift(d.streak)
 	if gift.kind == "coins" then
 		economy:Add(player, gift.amount)
 	elseif gift.kind == "dragon" then
@@ -118,9 +140,35 @@ function RewardService:GiveEgg(player)
 		return
 	end
 	profile.eggsGiven += 1
-	profile.egg = { id = Formulas.eggDragon(profile.eggsGiven), readyAt = os.time() + Constants.EGG_HATCH_SECONDS }
+	local special = Formulas.pick(Formulas.EGG_SPECIALS, rng:NextNumber())
+	profile.egg = {
+		id = Formulas.eggDragon(Formulas.bestSpecies(profile.dragons), profile.eggsGiven),
+		sp = special,
+		readyAt = os.time() + Constants.EGG_HATCH_SECONDS,
+	}
 	self:_drawEgg(player)
 	self:PushEgg(player)
+end
+
+-- Keep the egg better than the player's best dragon: if they got a better one while it waited, it upgrades.
+function RewardService:_upgradeEgg(player)
+	local profile = data:Get(player)
+	local egg = profile and profile.egg
+	if not egg then
+		return
+	end
+	local best = Formulas.bestSpecies(profile.dragons)
+	local d = Dragons.byId[egg.id]
+	if d and d.cps * Formulas.specialMult(egg.sp) > best then
+		return
+	end
+	local better = Formulas.eggDragon(best, profile.eggsGiven)
+	if better ~= egg.id and Dragons.byId[better].cps > (d and d.cps or 0) then
+		egg.id = better
+		self:_drawEgg(player)
+		self:PushEgg(player)
+		Net.fire(player, "Toast", `🥚 Your egg got better: {Dragons.byId[better].name}!`, "good")
+	end
 end
 
 function RewardService:HatchNow(player)
@@ -143,11 +191,53 @@ function RewardService:Hatch(player)
 		return
 	end
 	profile.egg = nil
-	dragons:Grant(player, egg.id)
+	dragons:Grant(player, egg.id, egg.sp)
 	local d = Dragons.byId[egg.id]
-	Net.fire(player, "Alert", `Your egg hatched: {d.name} ({d.rarity})! 🐣`, Dragons.RarityColor[d.rarity])
-	-- a new egg starts right away: come back tomorrow for the next one
+	local name = (egg.sp and Dragons.Specials[egg.sp].name .. " " or "") .. d.name
+	-- an event for the whole server: an alert for everyone and fireworks over the egg stand
+	Net.fireAll("Alert", `🐣 EGG HATCH! {player.DisplayName} got {name} ({d.rarity})!`, Dragons.RarityColor[d.rarity])
+	local base = baseService:Get(player)
+	if base then
+		self:_fireworks(base.world.eggStand, d)
+	end
+	-- a new egg starts right away: back in 2 hours for the next one
 	self:GiveEgg(player)
+end
+
+-- A short burst of coloured sparks and a beam of light over the egg stand.
+function RewardService:_fireworks(stand, d)
+	local burst = Instance.new("Part")
+	burst.Name = "HatchFireworks"
+	burst.Anchored = true
+	burst.CanCollide = false
+	burst.CanQuery = false
+	burst.Transparency = 1
+	burst.Size = Vector3.new(1, 1, 1)
+	burst.CFrame = stand.CFrame * CFrame.new(0, 6, 0)
+	for i, color in { d.body, d.wing, d.accent or d.belly, Dragons.RarityColor[d.rarity] } do
+		local e = Instance.new("ParticleEmitter")
+		e.Name = "Sparks" .. i
+		e.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		e.Color = ColorSequence.new(color)
+		e.LightEmission = 1
+		e.Size = NumberSequence.new(1.2, 0)
+		e.Speed = NumberRange.new(14, 24)
+		e.SpreadAngle = Vector2.new(180, 180)
+		e.Lifetime = NumberRange.new(1, 1.8)
+		e.Acceleration = Vector3.new(0, -12, 0)
+		e.Rate = 0
+		e.Parent = burst
+		e:Emit(40)
+	end
+	local light = Instance.new("PointLight")
+	light.Color = Dragons.RarityColor[d.rarity]
+	light.Range = 30
+	light.Brightness = 4
+	light.Parent = burst
+	burst.Parent = stand.Parent
+	task.delay(3, function()
+		burst:Destroy()
+	end)
 end
 
 function RewardService:PushEgg(player)
@@ -158,7 +248,7 @@ function RewardService:PushEgg(player)
 		data:Push(player, {
 			egg = {
 				id = egg.id,
-				name = d.name,
+				name = (egg.sp and Dragons.Specials[egg.sp].name .. " " or "") .. d.name,
 				rarity = d.rarity,
 				secondsLeft = math.max(0, egg.readyAt - os.time()),
 			},
@@ -180,6 +270,7 @@ function RewardService:_drawEgg(player)
 		return
 	end
 	local d = Dragons.byId[profile.egg.id]
+	local eggData = profile.egg
 	local stand = base.world.eggStand
 	local egg = Instance.new("Part")
 	egg.Name = "Egg"
@@ -192,6 +283,17 @@ function RewardService:_drawEgg(player)
 	local mesh = Instance.new("SpecialMesh")
 	mesh.MeshType = Enum.MeshType.Sphere
 	mesh.Parent = egg
+	-- it glows in its rarity's colour and sparkles with its special
+	local glow = Instance.new("PointLight")
+	glow.Color = Dragons.RarityColor[d.rarity]
+	glow.Range = 12
+	glow.Brightness = 2
+	glow.Parent = egg
+	if eggData.sp then
+		local sp = Instance.new("Sparkles")
+		sp.SparkleColor = Dragons.Specials[eggData.sp].color
+		sp.Parent = egg
+	end
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "Tag"
 	gui.Size = UDim2.new(9, 0, 2.6, 0)
@@ -209,7 +311,7 @@ function RewardService:_drawEgg(player)
 		t.TextScaled = true
 		t.TextStrokeTransparency = 0
 		t.TextColor3 = i == 1 and Dragons.RarityColor[d.rarity] or Color3.fromRGB(255, 255, 255)
-		t.Text = i == 1 and `🥚 {d.name} egg` or ""
+		t.Text = i == 1 and `🥚 {eggData.sp and Dragons.Specials[eggData.sp].name .. " " or ""}{d.name} egg` or ""
 		t.Parent = gui
 	end
 	local hatch = dragons.prompt(egg, "hatch", "Hatch!", d.name .. " egg", 0.5, player.UserId)
@@ -374,6 +476,7 @@ function RewardService:Start()
 		for _, player in Players:GetPlayers() do
 			if data:Get(player) then
 				self:_checkGoal(player)
+				self:_upgradeEgg(player)
 				self:_updateEggText(player)
 			end
 		end

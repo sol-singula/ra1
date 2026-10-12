@@ -101,8 +101,23 @@ function EconomyService:Add(player, amount, countsAsEarned)
 	profile.coins += amount
 	if countsAsEarned ~= false then
 		profile.earned += amount
+		EconomyService.addDaily(profile, amount)
 	end
 	self:PushCoins(player)
+end
+
+-- Coins earned in today's period (the daily TOP EARNERS board); starts over when a new period begins.
+function EconomyService.addDaily(profile, amount)
+	local period = Formulas.dailyPeriod(os.time())
+	if profile.dailyPeriod ~= period then
+		profile.dailyPeriod = period
+		profile.dailyEarned = 0
+	end
+	profile.dailyEarned += amount
+end
+
+function EconomyService.dailyEarned(profile)
+	return profile.dailyPeriod == Formulas.dailyPeriod(os.time()) and profile.dailyEarned or 0
 end
 
 function EconomyService:Spend(player, amount)

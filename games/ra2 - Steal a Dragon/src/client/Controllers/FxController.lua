@@ -19,6 +19,67 @@ local FxController = { Name = "FxController", Order = 50 }
 local homeMarker
 local SPIN_RANGE = 140 -- studs from the camera
 
+-- Lobby showpieces that turn slowly (TurnSpeed attribute): the golden statue (which also flaps, Flap attribute)
+-- and the daily prize dragon.
+local turners = {} -- [model] = { home, speed, flap, scale, parts = { { part, rel, side } } }
+local nextTurnerScan = 0
+
+local function scanTurners()
+	local map = workspace:FindFirstChild("Map")
+	local lobby = map and map:FindFirstChild("Lobby")
+	if not lobby then
+		return
+	end
+	for _, m in lobby:GetChildren() do
+		if m:IsA("Model") and m:GetAttribute("TurnSpeed") and not turners[m] then
+			local home = m:GetPivot()
+			local entry = {
+				home = home,
+				speed = m:GetAttribute("TurnSpeed"),
+				flap = m:GetAttribute("Flap") == true,
+				scale = m:GetAttribute("Scale") or 1,
+				parts = {},
+			}
+			if entry.flap then
+				for _, p in m:GetDescendants() do
+					if p:IsA("BasePart") then
+						local rel = home:ToObjectSpace(p.CFrame)
+						local isWing = p.Name:sub(1, 4) == "Wing" or p.Name:sub(1, 7) == "Feather"
+						local side = isWing and (rel.Position.X < 0 and -1 or 1) or 0
+						table.insert(entry.parts, { p, rel, side })
+					end
+				end
+			end
+			turners[m] = entry
+		end
+	end
+end
+
+-- One frame of the showpieces at time t (exposed for tests).
+function FxController.turn(t)
+	for m, e in turners do
+		if not m.Parent then
+			turners[m] = nil
+		else
+			local pivot = e.home * CFrame.Angles(0, t * e.speed, 0)
+			if e.flap then
+				-- anchored statue: place every part, swinging the wings about the shoulders
+				local flap = math.sin(t * 1.3) * 0.3
+				for _, entry in e.parts do
+					local p, rel, side = entry[1], entry[2], entry[3]
+					if side ~= 0 then
+						local hinge = Vector3.new(side * 1.1 * e.scale, 1 * e.scale, 0)
+						rel = CFrame.new(hinge) * CFrame.Angles(0, 0, side * flap) * CFrame.new(-hinge) * rel
+					end
+					p.CFrame = pivot * rel
+				end
+			else
+				m:PivotTo(pivot)
+			end
+		end
+	end
+end
+
 -- Home marker ----------------------------------------------------------------------------------------------
 local function updateHome()
 	local index = Store.state.baseIndex
@@ -111,6 +172,16 @@ function FxController:init()
 			d:PivotTo(
 				CFrame.lookAt(p, Vector3.new(ahead.X, p.Y, ahead.Z)) * CFrame.Angles(0, 0, math.sin(t + a) * 0.15)
 			)
+		end
+		-- lobby showpieces
+		if t >= nextTurnerScan then
+			nextTurnerScan = t + 3
+			scanTurners()
+		end
+		local cam0 = workspace.CurrentCamera
+		local camPos0 = cam0 and cam0.CFrame and cam0.CFrame.Position
+		if not Theme.reducedMotion() and (not camPos0 or (camPos0 - Vector3.new(-160, 10, 0)).Magnitude < 260) then
+			FxController.turn(t)
 		end
 		-- custom dragons: spinning pieces (same maths as DragonBuilder.spinC0) and pulsing glow, near the camera only
 		local cam = workspace.CurrentCamera

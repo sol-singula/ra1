@@ -1,5 +1,5 @@
 -- First-time tutorial: 8 short steps with an arrow on the next thing to touch. Progress is read from the
--- game state every quarter second, so it never gets stuck on a missed event. Ends with the overnight egg.
+-- game state every quarter second, so it never gets stuck on a missed event. Ends with the first egg.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -156,7 +156,7 @@ function TutorialService:_finish(player, skipped)
 	reward:GiveEgg(player)
 	reward:PushAll(player)
 	if not skipped then
-		Net.fire(player, "Alert", "Here is a gift EGG! It hatches TOMORROW! 🥚", Color3.fromRGB(255, 205, 50))
+		Net.fire(player, "Alert", "Here is a gift EGG! It hatches in 2 HOURS! 🥚", Color3.fromRGB(255, 205, 50))
 	end
 end
 

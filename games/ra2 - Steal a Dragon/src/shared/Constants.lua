@@ -115,7 +115,7 @@ Constants.STAGE_LEVELS = { 1, 8, 18, 49 }
 Constants.STAGE_SCALE = { 1, 1.3, 1.65, 2.1 }
 
 -- Egg and daily gift
-Constants.EGG_HATCH_SECONDS = 20 * 3600 -- "hatches tomorrow"
+Constants.EGG_HATCH_SECONDS = 2 * 3600 -- a new egg every 2 hours
 Constants.DAILY_STREAK_BREAK_DAYS = 2
 
 -- Invites (check Roblox's current rules on invite rewards before turning this on in a live game)
@@ -127,5 +127,7 @@ Constants.AUTOSAVE_SECONDS = 120
 Constants.LEADERBOARD_WRITE_SECONDS = 120
 Constants.LEADERBOARD_READ_SECONDS = 60
 Constants.LEADERBOARD_SIZE = 10
+Constants.LEADERBOARD_LIVE_SECONDS = 2 -- how often the boards redraw with this server's live numbers
+Constants.DAILY_RESET_HOUR_ET = 19 -- the daily TOP EARNERS board resets at 7pm US Eastern
 
 return Constants

@@ -703,6 +703,7 @@ function methods.GetPlayerFromCharacter(_, character)
 	end
 	return nil
 end
+function methods.Emit() end
 function methods.Kick(inst, msg)
 	rawset(inst, "_kicked", msg or true)
 	print("KICK " .. rawget(inst, "_props").Name .. ": " .. tostring(msg))

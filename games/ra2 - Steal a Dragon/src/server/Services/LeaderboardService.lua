@@ -1,50 +1,118 @@
--- The three lobby leaderboards: TOP COINS (lifetime coins earned), TOP THIEVES (steals) and BEST DRAGONS
--- (best coins per second). Global boards use OrderedDataStores; if those are unavailable (Studio without API
--- access) the boards show the players in this server instead.
+-- The four lobby leaderboards:
+--   TOP COINS            coins each player has right now
+--   TODAY'S TOP EARNERS  coins earned since the last 7pm Eastern; #1 when it resets wins the Ultra prize dragon
+--   BEST DRAGONS         the coins per second of each player's best dragon right now (lose it, lose the spot)
+--   TOP THIEVES          lifetime steals
+-- Global rows come from OrderedDataStores (read every minute, written every two); on top of those, the players in
+-- this server always show their live numbers, redrawn every couple of seconds. Without DataStores (Studio
+-- without API access) the boards show this server only.
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Dragons = require(ReplicatedStorage.Shared.Data.Dragons)
 local Format = require(ReplicatedStorage.Shared.Format)
+local Formulas = require(ReplicatedStorage.Shared.Formulas)
+local Net = require(ReplicatedStorage.Shared.Net)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
 local LeaderboardService = {
 	Name = "LeaderboardService",
-	Dependencies = { "PlayerDataService" },
+	Dependencies = { "PlayerDataService", "EconomyService", "DragonService" },
 }
 
+local data, economy, dragons
+
+-- The best dragon a profile owns right now: its coins per second and its record.
+local function bestDragon(profile)
+	local best, bestRec = 0, nil
+	local now = os.time()
+	for _, rec in profile.dragons do
+		local cps = Formulas.dragonIncome(rec, now)
+		if cps > best then
+			best, bestRec = cps, rec
+		end
+	end
+	return best, bestRec
+end
+
 local BOARDS = {
-	{ key = "coins", store = "SAD_LB_Earned_v1", field = "earned", fmt = Format.num },
 	{
-		key = "steals",
-		store = "SAD_LB_Steals_v1",
-		field = "steals",
-		fmt = function(v)
-			return Format.commas(v)
+		key = "coins",
+		store = "SAD_LB_Coins_v1",
+		value = function(profile)
+			return profile.coins
 		end,
+		fmt = Format.num,
+		sub = "Coins right now",
+	},
+	{
+		key = "daily",
+		store = "SAD_LB_Daily_v1_", -- + the period number: a fresh board every day
+		daily = true,
+		value = function(profile)
+			return economy.dailyEarned(profile)
+		end,
+		fmt = Format.num,
+		sub = "Coins earned today",
 	},
 	{
 		key = "income",
-		store = "SAD_LB_Income_v1",
-		field = "bestIncome",
+		store = "SAD_LB_BestDragon_v1",
+		value = function(profile)
+			return (bestDragon(profile))
+		end,
+		label = function(player, profile)
+			local _, rec = bestDragon(profile)
+			return rec and `{player.DisplayName} · {Dragons.byId[rec.id].name}` or player.DisplayName
+		end,
 		fmt = function(v)
 			return Format.num(v) .. "/s"
 		end,
+		sub = "Best dragon each player owns right now",
+	},
+	{
+		key = "steals",
+		store = "SAD_LB_Steals_v1",
+		value = function(profile)
+			return profile.steals
+		end,
+		fmt = function(v)
+			return Format.commas(v)
+		end,
+		sub = "Dragons stolen, all time",
 	},
 }
 
-local data
-local stores = {} -- [key] = OrderedDataStore or false
+local stores = {} -- [key] = OrderedDataStore or false (the daily store is opened per period)
+local globalRows = {} -- [key] = rows from the last global read
+local globalOk = {} -- [key] = true if the last read worked
 local names = {} -- [userId] = name
 local lastRefresh = -math.huge
+local period = 0 -- the daily period the boards are showing
+local liveDaily = {} -- this server's daily rows at the last redraw (to pick a winner without DataStores)
+
+local function store(board)
+	if board.daily then
+		local ok, s = pcall(DataStoreService.GetOrderedDataStore, DataStoreService, board.store .. period)
+		return ok and s or false
+	end
+	return stores[board.key]
+end
 
 function LeaderboardService:Init(registry)
 	data = registry.PlayerDataService
+	economy = registry.EconomyService
+	dragons = registry.DragonService
 	for _, b in BOARDS do
-		local ok, store = pcall(DataStoreService.GetOrderedDataStore, DataStoreService, b.store)
-		stores[b.key] = ok and store or false
+		if not b.daily then
+			local ok, s = pcall(DataStoreService.GetOrderedDataStore, DataStoreService, b.store)
+			stores[b.key] = ok and s or false
+		end
+		globalRows[b.key] = {}
 	end
+	period = Formulas.dailyPeriod(os.time())
 end
 
 local function nameOf(userId)
@@ -67,47 +135,35 @@ function LeaderboardService:Write(player)
 		return
 	end
 	for _, b in BOARDS do
-		local store = stores[b.key]
-		if store then
-			local value = math.floor(profile[b.field] or 0)
-			pcall(store.SetAsync, store, "u_" .. player.UserId, value)
+		local s = store(b)
+		if s then
+			pcall(s.SetAsync, s, "u_" .. player.UserId, math.floor(b.value(profile)))
 		end
 	end
 end
 
-local function draw(board, rows, sub)
-	local view = WorldBuilder.layout.boards[board.key]
-	view.sub.Text = sub
-	for i, row in view.rows do
-		local r = rows[i]
-		row.name.Text = r and r.name or ""
-		row.value.Text = r and board.fmt(r.value) or ""
-	end
-end
-
--- Merge the global rows with the live numbers of everyone in this server (the store only updates every few
--- minutes, and is empty in a brand-new game), keeping each player's highest value.
-local function withServerPlayers(board, rows)
+-- The global rows with everyone in this server replaced by their live number (coins can go down, a best dragon
+-- can be stolen, so the live number wins even when it's lower).
+local function merged(board)
 	local byId = {}
-	for _, r in rows do
-		byId[r.id] = r
+	for _, r in globalRows[board.key] do
+		byId[r.id] = { id = r.id, name = r.name, value = r.value }
 	end
 	for _, p in Players:GetPlayers() do
 		local profile = data:Get(p)
 		if profile then
-			local value = math.floor(profile[board.field] or 0)
-			local r = byId[p.UserId]
-			if r then
-				r.value = math.max(r.value, value)
-				r.name = p.DisplayName
-			else
-				byId[p.UserId] = { id = p.UserId, name = p.DisplayName, value = value }
-			end
+			byId[p.UserId] = {
+				id = p.UserId,
+				name = board.label and board.label(p, profile) or p.DisplayName,
+				value = math.floor(board.value(profile)),
+			}
 		end
 	end
 	local out = {}
 	for _, r in byId do
-		table.insert(out, r)
+		if r.value > 0 or board.key ~= "daily" then
+			table.insert(out, r)
+		end
 	end
 	table.sort(out, function(a, b)
 		return a.value > b.value
@@ -115,14 +171,43 @@ local function withServerPlayers(board, rows)
 	return out
 end
 
+-- Redraw every board from the cached global rows and the live numbers here (no DataStore calls).
+function LeaderboardService:Redraw()
+	local now = os.time()
+	local newPeriod, endsAt = Formulas.dailyPeriod(now)
+	if newPeriod ~= period then
+		self:_rollover(period)
+		period = newPeriod
+		globalRows.daily = {}
+	end
+	for _, board in BOARDS do
+		local view = WorldBuilder.layout.boards[board.key]
+		local rows = merged(board)
+		if board.daily then
+			liveDaily = rows
+		end
+		view.sub.Text = board.sub .. (globalOk[board.key] and " · all players" or " · this server")
+		for i, row in view.rows do
+			local r = rows[i]
+			row.name.Text = r and r.name or ""
+			row.value.Text = r and board.fmt(r.value) or ""
+		end
+	end
+	local timer = WorldBuilder.layout.boards.daily.timer
+	if timer then
+		timer.Text = "⏰ Ends in " .. Format.time(math.max(0, endsAt - now))
+	end
+end
+
+-- Read the global rows (every minute), then redraw.
 function LeaderboardService:Refresh()
 	lastRefresh = os.clock()
 	for _, board in BOARDS do
-		local store = stores[board.key]
+		local s = store(board)
 		local ok, rows = false, nil
-		if store then
+		if s then
 			ok, rows = pcall(function()
-				local pages = store:GetSortedAsync(false, Constants.LEADERBOARD_SIZE)
+				local pages = s:GetSortedAsync(false, Constants.LEADERBOARD_SIZE)
 				local out = {}
 				for _, entry in pages:GetCurrentPage() do
 					local id = tonumber(string.match(entry.key, "^u_(%d+)$"))
@@ -133,15 +218,85 @@ function LeaderboardService:Refresh()
 				return out
 			end)
 		end
+		globalOk[board.key] = ok and rows ~= nil
 		if ok and rows then
-			draw(board, withServerPlayers(board, rows), "All players · updates every minute")
-		else
-			draw(board, withServerPlayers(board, {}), "This server (turn on API access to go global)")
+			globalRows[board.key] = rows
 		end
+	end
+	self:Redraw()
+end
+
+-- Daily prize ---------------------------------------------------------------------------------------------------
+-- Give the Ultra prize dragon to the winner of a period (once per period, even across servers and rejoins).
+function LeaderboardService:GivePrize(player, forPeriod)
+	local profile = data:Get(player)
+	local key = tostring(forPeriod)
+	if not profile or profile.prizes[key] then
+		return false
+	end
+	profile.prizes[key] = true
+	dragons:Grant(player, Dragons.PRIZE)
+	local d = Dragons.byId[Dragons.PRIZE]
+	Net.fireAll(
+		"Alert",
+		`👑 {player.DisplayName} was today's TOP EARNER and won {d.name} (ULTRA)!`,
+		Dragons.RarityColor.Ultra
+	)
+	return true
+end
+
+-- The user id at #1 of a finished period: from the global store, or from this server's last live rows.
+function LeaderboardService:WinnerOf(forPeriod)
+	local daily
+	for _, b in BOARDS do
+		if b.daily then
+			daily = b
+		end
+	end
+	local ok, s = pcall(DataStoreService.GetOrderedDataStore, DataStoreService, daily.store .. forPeriod)
+	if ok and s then
+		local okRead, top = pcall(function()
+			local entries = s:GetSortedAsync(false, 1):GetCurrentPage()
+			return entries[1] and tonumber(string.match(entries[1].key, "^u_(%d+)$"))
+		end)
+		if okRead and top then
+			return top
+		end
+	end
+	if forPeriod == period and liveDaily[1] and liveDaily[1].value > 0 then
+		return liveDaily[1].id
+	end
+	return nil
+end
+
+-- A period just ended: save everyone's final numbers, then crown the winner if they're in this server.
+function LeaderboardService:_rollover(ended)
+	for _, p in Players:GetPlayers() do
+		local profile = data:Get(p)
+		if profile and not profile._noSave then
+			local ok, s = pcall(DataStoreService.GetOrderedDataStore, DataStoreService, "SAD_LB_Daily_v1_" .. ended)
+			if ok and s then
+				-- the period is over, so this is the coins earned in it (dailyEarned resets on the next coin)
+				local earned = profile.dailyPeriod == ended and profile.dailyEarned or 0
+				pcall(s.SetAsync, s, "u_" .. p.UserId, math.floor(earned))
+			end
+		end
+	end
+	local winner = self:WinnerOf(ended)
+	local p = winner and Players:GetPlayerByUserId(winner)
+	if p then
+		self:GivePrize(p, ended)
 	end
 end
 
-function LeaderboardService:OnPlayerReady()
+function LeaderboardService:OnPlayerReady(player)
+	-- won yesterday's board while away? (one store read)
+	task.defer(function()
+		local last = period - 1
+		if self:WinnerOf(last) == player.UserId then
+			self:GivePrize(player, last)
+		end
+	end)
 	if os.clock() - lastRefresh > 15 then -- stay inside the DataStore read budget
 		task.defer(function()
 			self:Refresh()
@@ -155,17 +310,23 @@ end
 
 function LeaderboardService:Start()
 	self:Refresh()
-	local sinceWrite = 0
+	local sinceWrite, sinceRead = 0, 0
 	while true do
-		task.wait(Constants.LEADERBOARD_READ_SECONDS)
-		sinceWrite += Constants.LEADERBOARD_READ_SECONDS
+		task.wait(Constants.LEADERBOARD_LIVE_SECONDS)
+		sinceWrite += Constants.LEADERBOARD_LIVE_SECONDS
+		sinceRead += Constants.LEADERBOARD_LIVE_SECONDS
 		if sinceWrite >= Constants.LEADERBOARD_WRITE_SECONDS then
 			sinceWrite = 0
 			for _, p in Players:GetPlayers() do
 				self:Write(p)
 			end
 		end
-		self:Refresh()
+		if sinceRead >= Constants.LEADERBOARD_READ_SECONDS then
+			sinceRead = 0
+			self:Refresh()
+		else
+			self:Redraw()
+		end
 	end
 end
 

@@ -377,7 +377,8 @@ builders.Gift = function()
 		HorizontalAlignment = Enum.HorizontalAlignment.Center,
 		Parent = row,
 	})
-	for i, gift in Formulas.DAILY_GIFTS do
+	for i = 1, #Formulas.DAILY_GIFTS do
+		local gift = (d.gifts and d.gifts[i]) or { kind = "coins", amount = 0, text = "" }
 		local isNext = i == ((d.nextDay - 1) % #Formulas.DAILY_GIFTS + 1)
 		local done = i <= d.streak and not isNext
 		local tile = Theme.card({

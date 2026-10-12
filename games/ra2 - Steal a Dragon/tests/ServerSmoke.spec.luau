@@ -656,20 +656,49 @@ check("can't wear a skin you don't own", pa.skin == "CLASSIC")
 
 -- Daily gift and egg ---------------------------------------------------------------------------------------
 local c0 = pa.coins
+local FormulasG = Engine.require(tree.shared.Formulas)
+local expectGift = math.max(500, math.floor(Base:Income(a) * 600))
+check(
+	"day 1 gift is sized to the player's income",
+	Reward:DailyView(a).gifts[1].amount == expectGift,
+	Reward:DailyView(a).gifts[1].amount
+)
 Engine.fireServer(a, "ClaimDaily")
 Engine.advance(0.1)
-check("daily day 1 = 500 coins", pa.daily.streak == 1 and pa.coins == c0 + 500)
+local gained = pa.coins - c0
+-- (auto-collect may add a second or two of income on top)
+check(
+	"daily day 1 pays it",
+	pa.daily.streak == 1 and gained >= expectGift and gained < expectGift + Base:Income(a) * 3,
+	gained
+)
 local c1 = pa.coins
 Engine.fireServer(a, "ClaimDaily")
 Engine.advance(0.1)
--- (auto-collect may add a second of income in between, but never another 500)
-check("daily only once a day", pa.daily.streak == 1 and pa.coins - c1 < 500, pa.coins - c1)
+check("daily only once a day", pa.daily.streak == 1 and pa.coins - c1 < expectGift, pa.coins - c1)
+-- the egg: better than your best dragon, with a special, and a hatch is an event for the whole server
+local DragonsE = Engine.require(tree.shared.Data.Dragons)
+local bestNow = FormulasG.bestSpecies(pa.dragons)
+check("egg beats the best dragon", DragonsE.byId[pa.egg.id].cps * FormulasG.specialMult(pa.egg.sp) > bestNow, pa.egg.id)
+check("egg has a special", pa.egg.sp ~= nil)
+check("egg hatches in 2 hours", pa.egg.readyAt - Engine.globals.os.time() <= 2 * 3600)
+-- getting a much better dragon upgrades the waiting egg
+Dragon:Grant(a, "REX")
+Engine.advance(1.1)
+check("egg upgrades past a new best dragon", DragonsE.byId[pa.egg.id].cps > DragonsE.byId.REX.cps, pa.egg.id)
 local eggId = pa.egg.id
 local count0 = countRec(pa, eggId)
 local egg = Base:Get(a).world.model:FindFirstChild("Egg")
+local alertsB = 0
+local remote = Engine.game:GetService("ReplicatedStorage").Net.Alert
+local conn = remote.OnClientEvent:Connect(function()
+	alertsB += 1
+end)
 trigger(a, egg, "hatch") -- not ready: opens Hatch Now (free in Studio)
 check("egg hatched into the shown dragon", countRec(pa, eggId) == count0 + 1)
+check("hatch fireworks over the stand", Base:Get(a).world.model:FindFirstChild("HatchFireworks", true) ~= nil)
 check("next egg started", pa.egg ~= nil and pa.eggsGiven == 2)
+conn:Disconnect()
 
 -- Friends and invites ----------------------------------------------------------------------------------------
 local friendLaunch = "invite:" .. a.UserId
@@ -714,6 +743,60 @@ local rows = World.boards.steals.rows
 check("leaderboard filled", rows[1].name.Text ~= "", rows[1].name.Text)
 check("top thief is Ben", rows[1].name.Text == "Ben", rows[1].name.Text)
 check("coins board has values", World.boards.coins.rows[1].value.Text ~= "")
+-- TOP COINS is the coins right now
+pa.coins, pb.coins = 9e6, 5e6
+Leaderboard:Redraw()
+check("top coins is whoever has the most right now", World.boards.coins.rows[1].name.Text == "Ava")
+pb.coins = 2e7
+Leaderboard:Redraw()
+check("top coins changes live", World.boards.coins.rows[1].name.Text == "Ben")
+-- BEST DRAGONS is each player's best dragon right now: lose it and lose the spot
+local galaxy = Dragon:Grant(b, "OMNI") -- the best dragon there is
+Leaderboard:Redraw()
+local bestRow = World.boards.income.rows[1].name.Text
+check(
+	"best dragons shows the owner and the dragon",
+	bestRow:find("Ben", 1, true) == 1 and bestRow:find("Omni", 1, true) ~= nil,
+	bestRow
+)
+for i, r in pb.dragons do
+	if r == galaxy then
+		table.remove(pb.dragons, i) -- as if it was stolen
+	end
+end
+Leaderboard:Redraw()
+check("losing the best dragon loses the spot", World.boards.income.rows[1].name.Text:find("Ben", 1, true) == nil)
+-- TODAY'S TOP EARNERS, the countdown and the Ultra prize
+local Economy = service("EconomyService")
+Economy:Add(a, 123456)
+Leaderboard:Redraw()
+check(
+	"daily board shows today's earners",
+	World.boards.daily.rows[1].name.Text == "Ava",
+	World.boards.daily.rows[1].name.Text
+)
+check("daily board has a countdown", World.boards.daily.timer.Text:find("Ends in", 1, true) ~= nil)
+local DragonsD = Engine.require(tree.shared.Data.Dragons)
+local function countOmni(pp)
+	local n = 0
+	for _, r in pp.dragons do
+		if r.id == DragonsD.PRIZE then
+			n += 1
+		end
+	end
+	for _, r in pp.waiting or {} do
+		if r.id == DragonsD.PRIZE then
+			n += 1
+		end
+	end
+	return n
+end
+local Formulas2 = Engine.require(tree.shared.Formulas)
+local today = Formulas2.dailyPeriod(Engine.globals.os.time())
+Leaderboard:_rollover(today)
+check("the daily #1 wins the Ultra dragon when the day ends", countOmni(pa) == 1 and pa.prizes[tostring(today)] == true)
+check("only once per day", Leaderboard:GivePrize(a, today) == false and countOmni(pa) == 1)
+check("the prize is on show in the lobby", Engine.workspace.Map.Lobby:FindFirstChild("PrizeDragon") ~= nil)
 
 -- Leaving mid-steal: the thief keeps it ---------------------------------------------------------------------
 Engine.advance(130)
@@ -758,7 +841,7 @@ local DragonBuilder = Engine.require(tree.server.World.DragonBuilder)
 local DragonsData = Engine.require(tree.shared.Data.Dragons)
 local built, plain, spinners = 0, nil, 0
 for _, d in DragonsData.list do
-	if d.fancy then
+	if d.fancy and not d.ultra then
 		local m = DragonBuilder.build(d.id, nil, 3)
 		built += 1
 		-- more parts than a regular dragon (extras), or effects on the body

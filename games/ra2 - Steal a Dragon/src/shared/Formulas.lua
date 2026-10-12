@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Dragons = require(ReplicatedStorage.Shared.Data.Dragons)
+local Format = require(ReplicatedStorage.Shared.Format)
 
 local Formulas = {}
 
@@ -123,6 +124,48 @@ function Formulas.day(now)
 	return math.floor(now / 86400)
 end
 
+-- Days since 1970-01-01 for a calendar date, and back (proleptic Gregorian; pure maths, no time zone).
+local function daysFromCivil(y, m, d)
+	y = m <= 2 and y - 1 or y
+	local era = math.floor(y / 400)
+	local yoe = y - era * 400
+	local doy = math.floor((153 * (m + (m > 2 and -3 or 9)) + 2) / 5) + d - 1
+	local doe = yoe * 365 + math.floor(yoe / 4) - math.floor(yoe / 100) + doy
+	return era * 146097 + doe - 719468
+end
+local function yearOf(days)
+	local z = days + 719468
+	local era = math.floor(z / 146097)
+	local doe = z - era * 146097
+	local yoe = math.floor((doe - math.floor(doe / 1460) + math.floor(doe / 36524) - math.floor(doe / 146096)) / 365)
+	local doy = doe - (365 * yoe + math.floor(yoe / 4) - math.floor(yoe / 100))
+	local mp = math.floor((5 * doy + 2) / 153)
+	local m = mp < 10 and mp + 3 or mp - 9
+	return era * 400 + yoe + (m <= 2 and 1 or 0)
+end
+-- The day (since 1970) of the n-th Sunday of a month.
+local function nthSunday(y, m, n)
+	local first = daysFromCivil(y, m, 1)
+	local weekday = (first + 4) % 7 -- 0 = Sunday (1970-01-01 was a Thursday)
+	return first + (7 - weekday) % 7 + (n - 1) * 7
+end
+
+-- US Eastern time's offset from UTC in hours at a UTC time: -4 during daylight saving time (2am on the second
+-- Sunday of March to 2am on the first Sunday of November), -5 otherwise.
+function Formulas.easternOffset(utc)
+	local y = yearOf(math.floor(utc / 86400))
+	local dstStart = nthSunday(y, 3, 2) * 86400 + 7 * 3600 -- 2am EST
+	local dstEnd = nthSunday(y, 11, 1) * 86400 + 6 * 3600 -- 2am EDT
+	return (utc >= dstStart and utc < dstEnd) and -4 or -5
+end
+
+-- The daily leaderboard runs from 7pm Eastern to 7pm Eastern. Returns the period number and when it ends (UTC).
+function Formulas.dailyPeriod(utc)
+	local shift = (Formulas.easternOffset(utc) - Constants.DAILY_RESET_HOUR_ET) * 3600
+	local period = math.floor((utc + shift) / 86400)
+	return period, (period + 1) * 86400 - shift
+end
+
 -- Weighted pick helper: list of { item, weight }, r in [0, 1).
 function Formulas.pick(entries, r)
 	local total = 0
@@ -182,24 +225,86 @@ function Formulas.dailyDeal(day)
 	return pool[(day * 7 + 3) % #pool + 1]
 end
 
--- Daily gift for streak day n (1..7, then repeats).
-Formulas.DAILY_GIFTS = {
-	{ kind = "coins", amount = 500, text = "500 coins" },
-	{ kind = "dragon", id = "FROSTY", text = "Frosty (Rare)" },
-	{ kind = "coins", amount = 2500, text = "2,500 coins" },
-	{ kind = "dragon", id = "BLAZE", text = "Blaze (Epic)" },
-	{ kind = "coins", amount = 15000, text = "15,000 coins" },
-	{ kind = "luck", text = "Server Luck (15 min)" },
-	{ kind = "dragon", id = "GOLDIE", text = "King Goldie (Legend)" },
-}
-function Formulas.dailyGift(streakDay)
-	return Formulas.DAILY_GIFTS[(streakDay - 1) % #Formulas.DAILY_GIFTS + 1]
+-- How good a player's dragons are: the coins per second of their best species (with its special, before
+-- levels). Daily gifts and eggs are sized from this, so they stay worth having at every stage of the game.
+function Formulas.bestSpecies(records)
+	local best = 0
+	for _, rec in records do
+		local d = Dragons.byId[rec.id]
+		if d then
+			best = math.max(best, d.cps * Formulas.specialMult(rec.sp))
+		end
+	end
+	return best
 end
 
--- The overnight egg always hatches into this list's entry for the player's egg count (shown up front, no gamble).
-Formulas.EGG_DRAGONS = { "CORAL", "STORM", "LEAFY", "JELLY", "SPARKY", "BLAZE" }
-function Formulas.eggDragon(eggNumber)
-	return Formulas.EGG_DRAGONS[(eggNumber - 1) % #Formulas.EGG_DRAGONS + 1]
+-- A dragon about this good: one of the road-able dragons (not the Ultra prize) earning between `target` and 1.6x
+-- that, picked by `seed`; if none earns that much, one of the five best. Custom dragons come first when there's a
+-- choice of both.
+function Formulas.dragonForPower(target, seed)
+	local fancy, regular, all = {}, {}, {}
+	for _, d in Dragons.list do
+		if not d.ultra then
+			table.insert(all, d)
+			if d.cps >= target and d.cps <= target * 1.6 then
+				table.insert(d.fancy and fancy or regular, d.id)
+			end
+		end
+	end
+	local pool = #fancy > 0 and fancy or regular
+	if #pool == 0 then
+		table.sort(all, function(a, b)
+			return a.cps > b.cps
+		end)
+		local above = {}
+		for _, d in all do
+			if d.cps >= target then
+				table.insert(above, d)
+			end
+		end
+		if #above > 0 then
+			return above[#above].id -- the cheapest dragon that's still good enough
+		end
+		for i = 1, math.min(5, #all) do
+			table.insert(pool, all[i].id)
+		end
+	end
+	table.sort(pool)
+	return pool[(math.floor(seed) * 7 + 3) % #pool + 1]
 end
+
+-- Daily gift for streak day n (1..7, then repeats). Coins are minutes of the player's own income (at least
+-- `amount`); dragons are a multiple of their best dragon (at least as good as `min`).
+Formulas.DAILY_GIFTS = {
+	{ kind = "coins", seconds = 600, amount = 500 },
+	{ kind = "dragon", mult = 0.7, min = "FROSTY" },
+	{ kind = "coins", seconds = 1800, amount = 2500 },
+	{ kind = "dragon", mult = 1.2, min = "BLAZE" },
+	{ kind = "coins", seconds = 3600, amount = 15000 },
+	{ kind = "luck" },
+	{ kind = "dragon", mult = 2.5, min = "GOLDIE" },
+}
+
+-- The gift for streak day n, sized for a player with this income (coins per second) and best dragon
+-- (Formulas.bestSpecies). seed varies which dragon. Returns { kind, amount | id, text }.
+function Formulas.dailyGift(streakDay, income, best, seed)
+	local g = Formulas.DAILY_GIFTS[(streakDay - 1) % #Formulas.DAILY_GIFTS + 1]
+	if g.kind == "coins" then
+		local amount = math.max(g.amount, math.floor((income or 0) * g.seconds))
+		return { kind = "coins", amount = amount, text = Format.num(amount) .. " coins" }
+	elseif g.kind == "dragon" then
+		local target = math.max(Dragons.byId[g.min].cps, (best or 0) * g.mult)
+		local id = Formulas.dragonForPower(target, seed or streakDay)
+		local d = Dragons.byId[id]
+		return { kind = "dragon", id = id, text = `{d.name} ({d.rarity})` }
+	end
+	return { kind = "luck", text = "Server Luck (15 min)" }
+end
+
+-- The egg hatches a dragon better than the player's best (eggNumber varies which), with a special.
+function Formulas.eggDragon(best, eggNumber)
+	return Formulas.dragonForPower(math.max(4, (best or 0) * 1.5), eggNumber)
+end
+Formulas.EGG_SPECIALS = { { "FIRE", 50 }, { "ICE", 30 }, { "GOLD", 15 }, { "RAINBOW", 5 } }
 
 return Formulas

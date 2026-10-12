@@ -5,17 +5,19 @@ end
 
 local Dragons = {}
 
-Dragons.Rarities = { "Common", "Rare", "Epic", "Legend", "Secret" }
-Dragons.RarityRank = { Common = 1, Rare = 2, Epic = 3, Legend = 4, Secret = 5 }
+-- Ultra dragons never walk the road: the daily TOP EARNER wins one (LeaderboardService).
+Dragons.Rarities = { "Common", "Rare", "Epic", "Legend", "Secret", "Ultra" }
+Dragons.RarityRank = { Common = 1, Rare = 2, Epic = 3, Legend = 4, Secret = 5, Ultra = 6 }
 Dragons.RarityColor = {
 	Common = rgb(200, 205, 215),
 	Rare = rgb(70, 160, 255),
 	Epic = rgb(185, 90, 255),
 	Legend = rgb(255, 190, 40),
 	Secret = rgb(255, 70, 140),
+	Ultra = rgb(120, 255, 240),
 }
 -- Carrying a heavier (rarer) dragon slows you down.
-Dragons.CarrySpeed = { Common = 0.9, Rare = 0.85, Epic = 0.78, Legend = 0.7, Secret = 0.62 }
+Dragons.CarrySpeed = { Common = 0.9, Rare = 0.85, Epic = 0.78, Legend = 0.7, Secret = 0.62, Ultra = 0.55 }
 
 Dragons.list = {
 	-- Common
@@ -216,6 +218,33 @@ for _, d in require(script.Parent.FancyDragons) do
 	d.fancy = true
 	table.insert(Dragons.list, d)
 end
+
+-- The daily TOP EARNER prize: every theme in one dragon (fire, ice, lightning, stars, a crown, a halo, orbs, a
+-- ring, crystal wings and a unicorn horn) in shifting rainbow colours. It never comes down the road.
+Dragons.PRIZE = "OMNI"
+table.insert(Dragons.list, {
+	id = "OMNI",
+	name = "Omni Prism",
+	rarity = "Ultra",
+	cps = 25000,
+	price = 6000000,
+	weight = 0,
+	fancy = true,
+	ultra = true,
+	theme = "omni",
+	body = rgb(255, 255, 255),
+	belly = rgb(255, 240, 160),
+	wing = rgb(140, 220, 255),
+	accent = rgb(255, 120, 240),
+	mat = "Glass",
+	wingMat = "Neon",
+	accentMat = "Neon",
+	wings = "crystal",
+	horns = "unicorn",
+	eyes = rgb(255, 255, 255),
+	extras = { "crown", "halo", "orbs", "ring", "mane", "tailflame", "backflame", "gem", "icicles" },
+	fx = { "fire", "snow", "lightning", "stars", "aura", "glow", "rainbow", "pulse", "trail" },
+})
 
 Dragons.byId = {}
 Dragons.byRarity = {}

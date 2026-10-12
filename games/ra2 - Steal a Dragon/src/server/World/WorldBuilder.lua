@@ -5,6 +5,7 @@ local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Dragons = require(ReplicatedStorage.Shared.Data.Dragons)
 local DragonBuilder = require(script.Parent.DragonBuilder)
 local Disco = require(script.Parent.Disco)
 local Scenery = require(script.Parent.Scenery)
@@ -1096,19 +1097,20 @@ function WorldBuilder.build()
 		Parent = lobby,
 	})
 	-- paving pattern: a gold ring around the fountain and a marble cross of paths
-	Scenery.disc(lobby, "PlazaRing", Vector3.new(cx, 0.62, 0), 40, 0.06, rgb(232, 180, 70), nil, {
+	-- (each layer sits a clear step above the one below, so they never flicker)
+	Scenery.disc(lobby, "PlazaRing", Vector3.new(cx, 0.67, 0), 40, 0.06, rgb(232, 180, 70), nil, {
 		CastShadow = false,
 		CanCollide = false,
 	})
-	Scenery.disc(lobby, "PlazaInner", Vector3.new(cx, 0.66, 0), 37, 0.06, rgb(210, 202, 188), Enum.Material.Marble, {
+	Scenery.disc(lobby, "PlazaInner", Vector3.new(cx, 0.73, 0), 37, 0.06, rgb(210, 202, 188), Enum.Material.Marble, {
 		CastShadow = false,
 		CanCollide = false,
 	})
 	for _, p in { { cx, 0, L.x1 - L.x0, 7 }, { cx, 0, 7, L.z1 - L.z0 } } do
 		part({
 			Name = "PlazaPath",
-			Size = Vector3.new(p[3], 0.05, p[4]),
-			CFrame = CFrame.new(p[1], 0.63, p[2]),
+			Size = Vector3.new(p[3], 0.04, p[4]),
+			CFrame = CFrame.new(p[1], 0.62, p[2]),
 			Color = rgb(214, 206, 192),
 			Material = Enum.Material.Marble,
 			CastShadow = false,
@@ -1118,9 +1120,11 @@ function WorldBuilder.build()
 	end
 
 	-- Castle walls: a walkway on top with battlements on the outer edge and banners on the inner face
-	local WALL_H, WALL_T = 11, 3
+	local WALL_H, WALL_T = 11, 3 -- the east walls by the gate; the sides and back stand taller
+	local TALL_H = 16
 	local wallStone = rgb(176, 168, 158)
-	local function castleWall(x0, z0, x1, z1, inward)
+	local function castleWall(x0, z0, x1, z1, inward, height)
+		local WALL_H = height or WALL_H
 		local along = x1 ~= x0 and Vector3.xAxis or Vector3.zAxis
 		local len = (x1 - x0) + (z1 - z0)
 		local mid = Vector3.new((x0 + x1) / 2, 0, (z0 + z1) / 2)
@@ -1198,21 +1202,23 @@ function WorldBuilder.build()
 		end
 	end
 	local wx0, wx1, wz = L.x0 - WALL_T / 2, L.x1 + WALL_T / 2 - 0.5, L.z1 + WALL_T / 2
-	castleWall(wx0, wz, wx1, wz, -Vector3.zAxis) -- north
-	castleWall(wx0, -wz, -153, -wz, Vector3.zAxis) -- south, west of the Practice Base gap
-	castleWall(-137, -wz, wx1, -wz, Vector3.zAxis) -- south, east of the gap
-	castleWall(wx0, -wz, wx0, wz, Vector3.xAxis) -- west
+	castleWall(wx0, wz, wx1, wz, -Vector3.zAxis, TALL_H) -- north
+	castleWall(wx0, -wz, -153, -wz, Vector3.zAxis, TALL_H) -- south, west of the Practice Base gap
+	castleWall(-137, -wz, wx1, -wz, Vector3.zAxis, TALL_H) -- south, east of the gap
+	castleWall(wx0, -wz, wx0, wz, Vector3.xAxis, TALL_H) -- west
 	-- the east walls run up to the Dragon Gate's pillars (z = +-11.5)
 	castleWall(wx1, 11.5, wx1, wz, -Vector3.xAxis) -- east, north of the road
 	castleWall(wx1, -wz, wx1, -11.5, -Vector3.xAxis) -- east, south of the road
 	-- towers at the corners (the east ones slim, next to the first bases) and in the middle of the west wall
 	for _, t in
 		{
-			{ wx0, wz, 9, 19 },
-			{ wx0, -wz, 9, 19 },
-			{ wx1, wz, 6, 16 },
-			{ wx1, -wz, 6, 16 },
-			{ wx0, 0, 7, 15 },
+			{ wx0, wz, 10, 25 },
+			{ wx0, -wz, 10, 25 },
+			{ wx1, wz, 6, 20 },
+			{ wx1, -wz, 6, 20 },
+			{ wx0, 0, 8, 22 },
+			{ -125, -wz - 0.5, 7, 21 }, -- halfway along the south walls, either side of the Practice Base gap
+			{ -179, -wz - 0.5, 7, 21 },
 		}
 	do
 		Scenery.tower(lobby, Vector3.new(t[1], 0, t[2]), t[3], t[4], wallStone, rgb(70, 95, 190), rgb(255, 205, 60))
@@ -1221,7 +1227,7 @@ function WorldBuilder.build()
 	part({
 		Name = "PracticeArch",
 		Size = Vector3.new(16 + 2, 2.4, WALL_T + 0.6),
-		CFrame = CFrame.new(-145, WALL_H - 1.2, -wz),
+		CFrame = CFrame.new(-145, TALL_H - 1.2, -wz),
 		Color = wallStone,
 		Material = Enum.Material.Cobblestone,
 		Parent = lobby,
@@ -1290,17 +1296,36 @@ function WorldBuilder.build()
 		Material = Enum.Material.WoodPlanks,
 		Parent = lobby,
 	})
-	local keepSign = part({
-		Name = "KeepSign",
-		Size = Vector3.new(0.4, 0.4, 0.4),
-		CFrame = CFrame.new(keepX + 13, 26, 0),
-		Transparency = 1,
-		CanCollide = false,
+	-- the name on a board fixed flat to the keep's front (a floating sign would sink into the towers)
+	part({
+		Name = "KeepSignFrame",
+		Size = Vector3.new(0.3, 4.6, 27),
+		CFrame = CFrame.new(keepX + 12.15, 27.9, 0),
+		Color = rgb(255, 200, 60),
+		Material = Enum.Material.Foil,
 		Parent = lobby,
 	})
-	billboard(keepSign, 26, 4, Vector3.new(0, 0, 0), {
-		{ text = "STEAL A DRAGON", h = 1, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(255, 215, 70) },
-	}, 400)
+	local keepSign = part({
+		Name = "KeepSign",
+		Size = Vector3.new(0.3, 3.8, 26),
+		CFrame = CFrame.new(keepX + 12.35, 27.9, 0),
+		Color = rgb(40, 46, 110),
+		Parent = lobby,
+	})
+	local keepGui = Instance.new("SurfaceGui")
+	keepGui.Name = "Sign"
+	keepGui.Face = Enum.NormalId.Right
+	keepGui.CanvasSize = Vector2.new(780, 114)
+	keepGui.LightInfluence = 0
+	keepGui.Parent = keepSign
+	label(keepGui, {
+		Name = "Title",
+		Size = UDim2.new(1, -20, 1, -12),
+		Position = UDim2.new(0, 10, 0, 6),
+		Text = "STEAL A DRAGON",
+		TextColor3 = rgb(255, 215, 70),
+		Font = Enum.Font.LuckiestGuy,
+	})
 
 	-- Inside the courtyard: planters with trees in the corners and flowers along the walls
 	for _, c in { { L.x0 + 6, L.z1 - 6 }, { L.x0 + 6, L.z0 + 6 }, { L.x1 - 6, L.z1 - 6 } } do
@@ -1323,34 +1348,38 @@ function WorldBuilder.build()
 	spawn.Parent = lobby
 	-- the fountain in the middle with the golden dragon statue on its pedestal
 	local statueBase = Vector3.new(cx, 0.6, 0)
+	-- the basin, then the water a little lower than the gold rim stones that ring it (nothing shares a surface)
 	Scenery.disc(
 		lobby,
 		"Fountain",
-		statueBase + Vector3.new(0, 0.9, 0),
+		statueBase + Vector3.new(0, 0.6, 0),
 		22,
-		1.8,
+		1.2,
 		rgb(200, 192, 180),
 		Enum.Material.Marble
 	)
 	Scenery.disc(
 		lobby,
-		"FountainRim",
-		statueBase + Vector3.new(0, 1.85, 0),
-		22.6,
-		0.3,
-		rgb(255, 200, 60),
-		Enum.Material.Foil
-	)
-	Scenery.disc(
-		lobby,
 		"FountainWater",
-		statueBase + Vector3.new(0, 1.9, 0),
-		20.4,
-		0.2,
+		statueBase + Vector3.new(0, 1.35, 0),
+		20,
+		0.3,
 		rgb(90, 180, 255),
 		Enum.Material.Glass,
-		{ Transparency = 0.25, CanCollide = false, CastShadow = false }
+		{ Transparency = 0.2, CanCollide = false, CastShadow = false }
 	)
+	for i = 1, 20 do
+		local a = (i - 0.5) / 20 * math.pi * 2
+		part({
+			Name = "FountainRim",
+			Size = Vector3.new(3.5, 0.9, 1.2),
+			CFrame = CFrame.new(statueBase + Vector3.new(math.cos(a) * 10.6, 1.65, math.sin(a) * 10.6))
+				* CFrame.Angles(0, -a + math.pi / 2, 0),
+			Color = rgb(255, 200, 60),
+			Material = Enum.Material.Foil,
+			Parent = lobby,
+		})
+	end
 	Scenery.disc(lobby, "Pedestal", statueBase + Vector3.new(0, 2.5, 0), 9, 5, rgb(215, 208, 195), Enum.Material.Marble)
 	Scenery.disc(
 		lobby,
@@ -1371,18 +1400,89 @@ function WorldBuilder.build()
 		end
 	end
 	statue.Name = "DragonStatue"
+	statue:SetAttribute("TurnSpeed", 0.12) -- FxController turns it slowly
+	statue:SetAttribute("Flap", true) -- and slowly flaps its wings
 	DragonBuilder.place(statue, CFrame.new(statueBase + Vector3.new(0, 5.3, 0)) * CFrame.Angles(0, math.rad(-90), 0))
 	statue.Parent = lobby
-	-- the three leaderboards side by side against the north wall, facing south into the courtyard
+	-- the four leaderboards side by side against the north wall, facing south into the courtyard. The daily
+	-- TOP EARNERS board has the prize on show in front of it: the Ultra dragon on a pedestal, slowly turning.
 	local function boardAt(x)
 		local p = Vector3.new(x, 0.6, L.z1 - 3)
 		return CFrame.lookAt(p, p - Vector3.zAxis)
 	end
 	local boards = {
-		coins = leaderboard(lobby, boardAt(cx - 22), "TOP COINS", rgb(255, 205, 50)),
-		steals = leaderboard(lobby, boardAt(cx), "TOP THIEVES", rgb(255, 90, 90)),
-		income = leaderboard(lobby, boardAt(cx + 22), "BEST DRAGONS", rgb(110, 200, 255)),
+		coins = leaderboard(lobby, boardAt(cx - 33), "TOP COINS", rgb(255, 205, 50)),
+		daily = leaderboard(lobby, boardAt(cx - 11), "TODAY'S TOP EARNERS", rgb(120, 255, 240)),
+		income = leaderboard(lobby, boardAt(cx + 11), "BEST DRAGONS", rgb(110, 200, 255)),
+		steals = leaderboard(lobby, boardAt(cx + 33), "TOP THIEVES", rgb(255, 90, 90)),
 	}
+	local prizeSign = part({
+		Name = "PrizeSign",
+		Size = Vector3.new(17, 4.6, 0.8),
+		CFrame = boardAt(cx - 11) * CFrame.new(0, 25, 0),
+		Color = rgb(30, 34, 60),
+		Parent = lobby,
+	})
+	part({
+		Name = "PrizeSignFrame",
+		Size = Vector3.new(17.8, 5.4, 0.6),
+		CFrame = prizeSign.CFrame * CFrame.new(0, 0, 0.3),
+		Color = rgb(120, 255, 240),
+		Material = Enum.Material.Neon,
+		Parent = lobby,
+	})
+	local prizeGui = Instance.new("SurfaceGui")
+	prizeGui.Name = "Prize"
+	prizeGui.Face = Enum.NormalId.Front
+	prizeGui.CanvasSize = Vector2.new(520, 140)
+	prizeGui.LightInfluence = 0
+	prizeGui.Parent = prizeSign
+	label(prizeGui, {
+		Name = "Prize",
+		Size = UDim2.new(1, -16, 0.56, 0),
+		Position = UDim2.new(0, 8, 0, 4),
+		Text = "👑 #1 WINS OMNI PRISM · ULTRA RARE",
+		TextColor3 = rgb(255, 230, 120),
+		Font = Enum.Font.LuckiestGuy,
+	})
+	boards.daily.timer = label(prizeGui, {
+		Name = "Timer",
+		Size = UDim2.new(1, -16, 0.38, 0),
+		Position = UDim2.new(0, 8, 0.58, 0),
+		Text = "⏰ Ends in --",
+		TextColor3 = rgb(120, 255, 240),
+	})
+	local prizePos = (boardAt(cx - 11) * CFrame.new(0, 0, 8)).Position
+	Scenery.disc(
+		lobby,
+		"PrizePedestal",
+		prizePos + Vector3.new(0, 1.2, 0),
+		6,
+		2.4,
+		rgb(40, 44, 70),
+		Enum.Material.Marble
+	)
+	Scenery.disc(
+		lobby,
+		"PrizeRing",
+		prizePos + Vector3.new(0, 2.45, 0),
+		6.6,
+		0.25,
+		rgb(120, 255, 240),
+		Enum.Material.Neon,
+		{ CanCollide = false }
+	)
+	local prize = DragonBuilder.build(Dragons.PRIZE, nil, 3)
+	for _, d in prize:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.CanCollide = false
+		end
+	end
+	prize.Name = "PrizeDragon"
+	DragonBuilder.place(prize, CFrame.new(prizePos + Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, math.rad(180), 0))
+	DragonBuilder.label(prize, "👑 Omni Prism", Dragons.RarityColor.Ultra, "ULTRA · daily #1 prize")
+	prize:SetAttribute("TurnSpeed", 0.35)
+	prize.Parent = lobby
 	-- the FREE dragon stand for new players: off to the south side of the spawn, out of the way of the road
 	local freePos = WorldBuilder.FREE_PAD
 	local freePad = part({

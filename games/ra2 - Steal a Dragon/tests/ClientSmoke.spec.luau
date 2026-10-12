@@ -489,6 +489,40 @@ do
 	disco:Destroy()
 end
 
+-- The lobby statue turns slowly and flaps; the prize dragon turns
+do
+	local Instance = Engine.Instance
+	local map = Engine.workspace:FindFirstChild("Map") or Instance.new("Folder")
+	map.Name = "Map"
+	map.Parent = Engine.workspace
+	local lobby = map:FindFirstChild("Lobby") or Instance.new("Model")
+	lobby.Name = "Lobby"
+	lobby.Parent = map
+	local statue = Instance.new("Model")
+	local body = Instance.new("Part")
+	body.Name = "Body"
+	body.Anchored = true
+	body.CFrame = CFrame.new(-160, 5, 0)
+	body.Parent = statue
+	local wing = Instance.new("Part")
+	wing.Name = "WingL"
+	wing.Anchored = true
+	wing.CFrame = CFrame.new(-162, 6, 0)
+	wing.Parent = statue
+	statue.PrimaryPart = body
+	statue:SetAttribute("TurnSpeed", 0.12)
+	statue:SetAttribute("Flap", true)
+	statue.Parent = lobby
+	Engine.advance(3.2)
+	local fx = Engine.require(tree.client.Controllers.FxController)
+	fx.turn(1)
+	local b1, w1 = body.CFrame, wing.CFrame
+	fx.turn(5)
+	check("statue turns", (body.CFrame.LookVector - b1.LookVector).Magnitude > 0.1)
+	check("statue's wings flap", (wing.CFrame.Position - w1.Position).Magnitude > 0.05)
+	statue:Destroy()
+end
+
 -- Rotating to a bigger screen rescales
 Engine.workspace.CurrentCamera.ViewportSize = Vector2.new(1920, 1080)
 Engine.advance(1.2)

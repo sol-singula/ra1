@@ -105,14 +105,24 @@ end
 check("server luck gives more rare dragons", lucky > normal * 1.2, `{normal} vs {lucky}`)
 
 -- Daily, deal, egg
-check(
-	"day 2 gift is a Rare dragon",
-	Formulas.dailyGift(2).kind == "dragon" and Dragons.byId[Formulas.dailyGift(2).id].rarity == "Rare"
-)
-check("day 7 gift is a Legend", Dragons.byId[Formulas.dailyGift(7).id].rarity == "Legend")
-check("gifts repeat after a week", Formulas.dailyGift(8).text == Formulas.dailyGift(1).text)
+-- new player: small gifts
+local g2 = Formulas.dailyGift(2, 1, 1, 1)
+check("day 2 for a new player: at least a Frosty-class dragon", g2.kind == "dragon" and Dragons.byId[g2.id].cps >= 8)
+check("day 1 for a new player: 500 coins", Formulas.dailyGift(1, 0, 0).amount == 500)
+-- rich player: gifts grow with them
+local rich = Formulas.dailyGift(1, 50000, 3000)
+check("coin gifts scale with income", rich.amount == 50000 * 600, rich.amount)
+local richDragon = Formulas.dailyGift(2, 50000, 3000, 4)
+check("dragon gifts scale with the best dragon", Dragons.byId[richDragon.id].cps >= 3000 * 0.7, richDragon.text)
+local day7 = Formulas.dailyGift(7, 50000, 3000, 4)
+check("day 7 beats the best dragon", Dragons.byId[day7.id].cps > 3000, day7.text)
+check("gifts repeat after a week", Formulas.dailyGift(8, 10, 10).text == Formulas.dailyGift(1, 10, 10).text)
 check("daily deal is Rare or Epic", Dragons.RarityRank[Dragons.byId[Formulas.dailyDeal(20000)].rarity] >= 2)
-check("egg dragons exist", Dragons.byId[Formulas.eggDragon(1)] ~= nil and Dragons.byId[Formulas.eggDragon(99)] ~= nil)
+local eggNew = Formulas.eggDragon(8, 1)
+check("an egg beats the best dragon", Dragons.byId[eggNew].cps > 8, eggNew)
+local eggTop = Formulas.eggDragon(1e9, 3)
+check("an egg for the very best players is still a top dragon", Dragons.byId[eggTop].rarity == "Secret", eggTop)
+check("never the Ultra prize", not Dragons.byId[Formulas.eggDragon(30000, 1)].ultra)
 
 -- Format
 check("format small", Format.num(999) == "999")
@@ -123,6 +133,24 @@ check("format 100+", Format.num(250000) == "250K", Format.num(250000))
 check("commas", Format.commas(1234567) == "1,234,567")
 check("time m:ss", Format.time(65) == "1:05")
 check("time hours", Format.time(3 * 3600 + 300) == "3h 5m")
+
+-- Daily periods: 7pm Eastern, with daylight saving
+check("EDT in July", Formulas.easternOffset(1783000000) == -4) -- 2026-07-02
+check("EST in January", Formulas.easternOffset(1768000000) == -5) -- 2026-01-09
+check(
+	"DST starts 2026-03-08 7:00 UTC",
+	Formulas.easternOffset(1772953199) == -5 and Formulas.easternOffset(1772953200) == -4
+)
+check(
+	"DST ends 2026-11-01 6:00 UTC",
+	Formulas.easternOffset(1793512799) == -4 and Formulas.easternOffset(1793512800) == -5
+)
+-- 2026-10-12 22:59:59 UTC is 6:59:59pm EDT; a second later the new period starts
+local p1, end1 = Formulas.dailyPeriod(1791845999)
+local p2 = Formulas.dailyPeriod(1791846000)
+check("daily period flips at 7pm ET", p2 == p1 + 1 and end1 == 1791846000, end1)
+local p3, end3 = Formulas.dailyPeriod(1768000000) -- January: 7pm EST = midnight UTC
+check("winter reset is midnight UTC", end3 % 86400 == 0 and p3 > 0)
 
 -- Data sanity
 local badDragon
@@ -136,7 +164,7 @@ check("every dragon has a price, coins and colours", badDragon == nil, badDragon
 -- Custom dragons
 local fancyCount, fancyCommon, regularFancy = 0, false, false
 for _, d in Dragons.list do
-	if d.fancy then
+	if d.fancy and not d.ultra then
 		fancyCount += 1
 		fancyCommon = fancyCommon or d.rarity == "Common"
 	end
@@ -161,10 +189,14 @@ for _ = 1, 400 do
 	rarities[Dragons.byId[fid].rarity] = true
 end
 check("a fancy roll always gives a custom dragon", allFancy)
+check(
+	"the Ultra prize dragon exists and never rolls",
+	Dragons.byId[Dragons.PRIZE].rarity == "Ultra" and not rarities.Ultra
+)
 check("fancy rolls reach every rarity", rarities.Rare and rarities.Epic and rarities.Legend and rarities.Secret)
 local beats = true
 for _, d in Dragons.list do
-	if d.fancy then
+	if d.fancy and not d.ultra then
 		local best = 0
 		for _, reg in Dragons.byRarity[d.rarity] do
 			best = math.max(best, reg.cps)
