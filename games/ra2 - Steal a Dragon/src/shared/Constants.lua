@@ -52,6 +52,16 @@ Constants.BONK_RANGE = 9
 Constants.BONK_COOLDOWN = 1.0
 Constants.STUN_SECONDS = 1.5
 Constants.STUN_SECONDS_MEGA = 2.5
+
+-- Hotbar tools
+Constants.FREE_POTIONS = 3 -- Speed Potions every new player starts with
+Constants.POTION_PACK = 5 -- Speed Potions in the 5 Speed Potions product
+Constants.POTION_SECONDS = 30
+Constants.POTION_SPEED_MULT = 1.5
+Constants.WINGS_LAUNCH = 60 -- upward speed of a wing jump (studs per second)
+Constants.GLIDE_FALL = 6 -- fastest fall while gliding
+Constants.GLIDE_SPEED = 34 -- forward speed while gliding
+Constants.CAMERA_MAX_ZOOM = 45
 Constants.DROP_GRAB_SECONDS = 8 -- a dropped dragon can be grabbed by anyone, then it flies home
 
 -- Road

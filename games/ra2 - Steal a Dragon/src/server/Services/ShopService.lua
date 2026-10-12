@@ -23,10 +23,11 @@ local ShopService = {
 		"BaseService",
 		"RoadService",
 		"RewardService",
+		"ToolService",
 	},
 }
 
-local data, economy, dragons, baseService, road, reward
+local data, economy, dragons, baseService, road, reward, tools
 local targets = {} -- [player] = { [productKey] = target } remembered between prompt and receipt
 local MAX_RECEIPTS = 60
 
@@ -37,6 +38,7 @@ function ShopService:Init(registry)
 	baseService = registry.BaseService
 	road = registry.RoadService
 	reward = registry.RewardService
+	tools = registry.ToolService
 
 	Net.on("Purchase", function(player, kind, key, target)
 		if type(key) ~= "string" then
@@ -61,6 +63,9 @@ function ShopService:Init(registry)
 	end)
 	reward.HatchNowRequested:Connect(function(player)
 		self:PromptProduct(player, "HATCH")
+	end)
+	tools.PotionsRequested:Connect(function(player)
+		self:PromptProduct(player, "POTIONS")
 	end)
 	-- the plates in each base: Auto Collect (next to the coin pad) and 5-Minute Lock (next to the lock pad)
 	baseService.PlateStepped:Connect(function(player, plate)
@@ -184,6 +189,8 @@ function ShopService:Grant(player, key, target)
 		if dragons:AddLevelsAll(player, Constants.LEVEL_ALL_PRODUCT_LEVELS) == 0 then
 			economy:Add(player, math.max(1000, math.floor(income * 600)), false) -- nothing to level: coins instead
 		end
+	elseif key == "POTIONS" then
+		tools:AddPotions(player, Constants.POTION_PACK)
 	elseif Skins.byProduct[key] then
 		self:GiveSkin(player, Skins.byProduct[key].key)
 	elseif key == "HATCH" then

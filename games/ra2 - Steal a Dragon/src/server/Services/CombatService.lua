@@ -12,11 +12,13 @@ local CombatService = {
 	Name = "CombatService",
 	Dependencies = { "PlayerDataService", "EconomyService", "DragonService", "TeamService", "BaseService" },
 	Bonked = Signal.new("CombatService.Bonked"), -- (attacker, victim, wasCarrying)
+	Swung = Signal.new("CombatService.Swung"), -- (attacker) every bonk swing, hit or miss
 }
 
 local data, economy, dragons, team, baseService
 local lastBonk = {}
 local stunnedUntil = {}
+local boostUntil = {} -- Speed Potion
 
 local function humanoid(player)
 	local character = player.Character
@@ -55,6 +57,42 @@ end
 function CombatService:OnPlayerLeaving(player)
 	lastBonk[player] = nil
 	stunnedUntil[player] = nil
+	boostUntil[player] = nil
+end
+
+function CombatService:IsBoosted(player)
+	return (boostUntil[player] or 0) > os.clock()
+end
+
+-- Speed Potion: run faster for a while (drinking another adds the time on top).
+function CombatService:Boost(player, seconds)
+	boostUntil[player] = math.max(boostUntil[player] or 0, os.clock()) + seconds
+	self:RefreshSpeed(player)
+	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if hrp and not hrp:FindFirstChild("SpeedFx") then
+		local fx = Instance.new("ParticleEmitter")
+		fx.Name = "SpeedFx"
+		fx.Color = ColorSequence.new(Color3.fromRGB(90, 230, 255))
+		fx.LightEmission = 0.8
+		fx.Size = NumberSequence.new(0.5, 0)
+		fx.Lifetime = NumberRange.new(0.3, 0.5)
+		fx.Rate = 40
+		fx.Speed = NumberRange.new(1, 2)
+		fx.Parent = hrp
+	end
+	local untilTime = boostUntil[player]
+	task.delay(seconds + 0.05, function()
+		if boostUntil[player] == untilTime then
+			boostUntil[player] = nil
+			if player.Parent then
+				self:RefreshSpeed(player)
+			end
+			local old = hrp and hrp:FindFirstChild("SpeedFx")
+			if old then
+				old:Destroy()
+			end
+		end
+	end)
 end
 
 function CombatService:IsStunned(player)
@@ -72,7 +110,8 @@ function CombatService:RefreshSpeed(player)
 		return
 	end
 	local c = dragons:Carrying(player)
-	hum.WalkSpeed = Formulas.walkSpeed(profile.speedLevel, c and c.rec, os.time(), economy:Passes(player))
+	local speed = Formulas.walkSpeed(profile.speedLevel, c and c.rec, os.time(), economy:Passes(player))
+	hum.WalkSpeed = self:IsBoosted(player) and speed * Constants.POTION_SPEED_MULT or speed
 end
 
 function CombatService:_vipTag(player)
@@ -134,7 +173,7 @@ function CombatService:Bonk(attacker)
 		return
 	end
 	lastBonk[attacker] = os.clock()
-	Net.fireAll("Swing", attacker)
+	self.Swung:Fire(attacker)
 	local victim = self:_target(attacker, pos)
 	if not victim then
 		return

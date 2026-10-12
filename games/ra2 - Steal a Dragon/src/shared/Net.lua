@@ -26,7 +26,6 @@ Net.ServerEvents = {
 	"Alert", -- big centre message: text, color, targetInstance?
 	"Popup", -- worldPosition, text, color
 	"Bonked", -- stunSeconds
-	"Swing", -- player (someone swung a bat, for effects)
 	"Event", -- { kind = "legend", at = serverTime } | { kind = "luck", untilTime, by }
 	"Offline", -- { coins, seconds } welcome-back gift
 	"Tutorial", -- { step, total, text, target } or false

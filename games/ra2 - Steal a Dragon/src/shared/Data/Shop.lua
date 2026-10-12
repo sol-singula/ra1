@@ -55,10 +55,18 @@ Shop.Passes = {
 	{
 		key = "MEGABONK",
 		name = "Mega Bonk",
-		text = "Bonked thieves are stuck longer.",
+		text = "Swap the bat for a big hammer: bonked thieves are stuck longer.",
 		price = 149,
 		id = 2028350681,
 		icon = "🔨",
+	},
+	{
+		key = "WINGS",
+		name = "Dragon Wings",
+		text = "Wings in your hotbar: jump high and glide over the map!",
+		price = 299,
+		id = 2026479096,
+		icon = "🪽",
 	},
 }
 
@@ -95,6 +103,14 @@ Shop.Products = {
 		price = 99,
 		id = 3718101840,
 		icon = "⬆️",
+	},
+	{
+		key = "POTIONS",
+		name = "5 Speed Potions",
+		text = "Drink one to run 50% faster for 30 seconds!",
+		price = 29,
+		id = 3718103709,
+		icon = "🧪",
 	},
 	{
 		key = "COINS_S",

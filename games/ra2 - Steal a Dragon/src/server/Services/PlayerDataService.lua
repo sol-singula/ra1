@@ -47,6 +47,7 @@ local function defaults()
 		invited = {}, -- user ids of friends whose first join already paid an invite reward
 		skins = { CLASSIC = true }, -- owned dragon skins (Data/Skins.lua)
 		skin = "CLASSIC", -- the skin all your dragons wear
+		potions = Constants.FREE_POTIONS, -- Speed Potions in the hotbar
 		meta = { createdAt = os.time(), lastSeen = os.time(), lock = nil },
 	}
 end

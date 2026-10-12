@@ -282,8 +282,8 @@ function DragonService:_drawLockedNests(player)
 		if old then
 			old:Destroy()
 		end
-		-- only the next nest in line can be bought, so the price is clear
-		if i == max + 1 and i <= Constants.BUYABLE_NESTS + (economy:HasPass(player, "NESTS") and 4 or 0) then
+		-- every locked nest sells the next nest in line, so you can buy from whichever one you stand by
+		if i > max and i <= Constants.BUYABLE_NESTS + (economy:HasPass(player, "NESTS") and 4 or 0) then
 			local price = Constants.NEST_PRICES[profile.nestsBought + 1]
 			if price then
 				local p = prompt(nest.pad, "nest", "Buy nest " .. Format.num(price), "New nest", 0.4, player.UserId)

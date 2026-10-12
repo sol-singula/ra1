@@ -325,6 +325,19 @@ local ColorSequenceKeypoint = {
 	end,
 }
 
+local NumberSequence = {
+	new = function(a, b)
+		return setmetatable({ Keypoints = { { Time = 0, Value = a }, { Time = 1, Value = b or a } } }, {
+			__type = "NumberSequence",
+		})
+	end,
+}
+local NumberRange = {
+	new = function(a, b)
+		return setmetatable({ Min = a, Max = b or a }, { __type = "NumberRange" })
+	end,
+}
+
 local function dataType(name, fields)
 	return setmetatable(fields, { __type = name })
 end
@@ -422,6 +435,7 @@ local SIGNALS = {
 	ProximityPrompt = { "Triggered" },
 	Players = { "PlayerAdded", "PlayerRemoving" },
 	Player = { "CharacterAdded" },
+	Tool = { "Activated", "Equipped", "Unequipped" },
 	TextButton = { "Activated", "MouseButton1Click", "MouseButton1Down", "MouseButton1Up", "MouseEnter", "MouseLeave" },
 }
 local DEFAULTS = {
@@ -651,6 +665,44 @@ function methods.TweenPosition() end
 -- Humanoid
 function methods.SetStateEnabled() end
 -- Player
+-- Tools: equipping moves the tool into the character, unequipping back to the Backpack.
+local playersService -- set once the Players service exists (below)
+function methods.EquipTool(hum, tool)
+	local character = hum.Parent
+	for _, t in methods.GetChildren(character) do
+		if t.ClassName == "Tool" and t ~= tool then
+			methods.UnequipTools(hum)
+			break
+		end
+	end
+	if tool.Parent ~= character then
+		tool.Parent = character
+		tool.Equipped:Fire()
+	end
+end
+function methods.UnequipTools(hum)
+	local character = hum.Parent
+	local owner
+	for _, p in methods.GetChildren(playersService) do
+		if p.Character == character then
+			owner = p
+		end
+	end
+	for _, t in methods.GetChildren(character) do
+		if t.ClassName == "Tool" then
+			t.Parent = owner and owner:FindFirstChild("Backpack") or nil
+			t.Unequipped:Fire()
+		end
+	end
+end
+function methods.GetPlayerFromCharacter(_, character)
+	for _, p in methods.GetChildren(playersService) do
+		if p.Character == character then
+			return p
+		end
+	end
+	return nil
+end
 function methods.Kick(inst, msg)
 	rawset(inst, "_kicked", msg or true)
 	print("KICK " .. rawget(inst, "_props").Name .. ": " .. tostring(msg))
@@ -866,6 +918,7 @@ function methods.GetServerTimeNow()
 	return clock
 end
 local Players = service("Players")
+playersService = Players
 service("ReplicatedStorage", "Folder")
 service("ServerScriptService", "Folder")
 service("ServerStorage", "Folder")
@@ -1269,6 +1322,8 @@ function Engine.addPlayer(name, userId, launchData)
 	p._launchData = launchData
 	local pg = Instance.new("Folder", p)
 	pg.Name = "PlayerGui"
+	local backpack = Instance.new("Backpack", p)
+	backpack.Name = "Backpack"
 	p.Parent = Players
 	Players.PlayerAdded:Fire(p)
 	return p
@@ -1388,6 +1443,8 @@ globals = setmetatable({
 	Color3 = Color3,
 	ColorSequence = ColorSequence,
 	ColorSequenceKeypoint = ColorSequenceKeypoint,
+	NumberSequence = NumberSequence,
+	NumberRange = NumberRange,
 	UDim = UDim,
 	UDim2 = UDim2,
 	TweenInfo = TweenInfo,

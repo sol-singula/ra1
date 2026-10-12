@@ -2,7 +2,7 @@
 --   top-left: coins and coins per second, egg timer and waiting dragons
 --   left: 2 x 2 menu buttons (Shop, Speed, Gift, Invite), above the thumbstick
 --   top-centre: the goal card, carry banner and event banners
---   bottom-right: big BONK and LOCK buttons, left of the jump button
+--   bottom-right: the LOCK button, left of the jump button (bonking is the bat in the hotbar)
 --   plus toasts, big alerts, floating world popups and the BONKED overlay.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,7 +24,7 @@ local gui
 local coinsLabel, cpsLabel, eggLabel, waitingLabel
 local goalCard, goalText, goalFill, goalReward, goalCount
 local carryBanner, eventBanner, luckBanner
-local lockButton, bonkButton
+local lockButton
 local giftDot
 local toastHolder, alertLabel, bonkedLabel
 local events = { legendAt = nil, luckUntil = nil, luckBy = nil }
@@ -259,44 +259,13 @@ local function buildMenu()
 end
 
 local function buildActions()
-	bonkButton = Theme.button({
-		Name = "BonkButton",
-		Text = "",
-		BackgroundColor3 = C.red,
-		AnchorPoint = Vector2.new(1, 1),
-		Size = UDim2.fromOffset(112, 112),
-		Position = UDim2.new(1, -170, 1, -20),
-		round = true,
-		Parent = gui,
-	})
-	bonkButton.UIStroke.Thickness = 4
-	Theme.text({
-		Name = "Icon",
-		Text = "🔨",
-		Size = UDim2.new(1, 0, 0.58, 0),
-		Position = UDim2.fromScale(0, 0.04),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Parent = bonkButton,
-	})
-	Theme.title({
-		Name = "Label",
-		Text = "BONK",
-		Size = UDim2.new(1, 0, 0.3, 0),
-		Position = UDim2.new(0, 0, 0.6, 0),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Parent = bonkButton,
-	})
-	bonkButton.Activated:Connect(function()
-		Net.send("Bonk")
-	end)
-	table.insert(hints, Theme.keyHint(bonkButton, "Q", "R2"))
 	lockButton = Theme.button({
 		Name = "LockButton",
 		Text = "🔓 LOCK",
 		BackgroundColor3 = C.orange,
 		AnchorPoint = Vector2.new(1, 1),
 		Size = UDim2.fromOffset(150, 54),
-		Position = UDim2.new(1, -152, 1, -146),
+		Position = UDim2.new(1, -160, 1, -40),
 		round = true,
 		Parent = gui,
 	})

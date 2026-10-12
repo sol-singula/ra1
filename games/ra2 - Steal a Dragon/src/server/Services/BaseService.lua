@@ -170,7 +170,8 @@ function BaseService:IsLocked(base)
 end
 
 -- Lock the door. With extraSeconds (the 5-Minute Lock product) that much time is added on top of any lock that
--- is already running; otherwise it locks for the normal time (never shortening a longer lock).
+-- is already running; otherwise it locks for the normal time, which also resets a running lock back to full
+-- (never shortening a longer lock). Stepping on the lock pad does this, so you never need the L key.
 function BaseService:Lock(player, extraSeconds)
 	local base = byPlayer[player]
 	local profile = data:Get(player)
@@ -190,6 +191,8 @@ function BaseService:Lock(player, extraSeconds)
 		profile.stats.locks += 1
 		Net.fire(player, "Toast", "Door locked! 🔒", "good")
 		self.Locked:Fire(player)
+	elseif not extraSeconds then
+		Net.fire(player, "Toast", `Lock reset! 🔒 {Format.time(base.lockUntil - now())}`, "good")
 	end
 end
 
@@ -317,9 +320,6 @@ function BaseService:_step()
 				end
 			end
 			if mine then
-				if onPad(mine.world.lockPad, pos) and not self:IsLocked(mine) then
-					self:Lock(player)
-				end
 				if onPad(mine.world.collectPad, pos) then
 					self:Collect(player)
 				end
@@ -328,11 +328,16 @@ function BaseService:_step()
 				local now2 = {}
 				local plates =
 					{ auto = mine.world.autoPlate, lock = mine.world.lockPlate, levelall = mine.world.levelPlate }
+				plates.lockpad = mine.world.lockPad
 				for name, plate in plates do
 					if plate and onPad(plate, pos) then
 						now2[name] = true
 						if not was[name] then
-							self.PlateStepped:Fire(player, name)
+							if name == "lockpad" then
+								self:Lock(player) -- locks, or resets a running lock to the full time
+							else
+								self.PlateStepped:Fire(player, name)
+							end
 						end
 					end
 				end

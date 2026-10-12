@@ -22,6 +22,7 @@ end
 
 local tree = Engine.mountProject(".")
 local Net = Engine.require(tree.shared.Net)
+local Constants = Engine.require(tree.shared.Constants)
 Net.init() -- the server normally creates the remotes
 Engine.side = "client"
 -- a phone in landscape: 844 x 390
@@ -232,24 +233,21 @@ Engine.advance(0.3)
 check("lock button counts down", string.find(hud.LockButton.Text, "0:4", 1, true) ~= nil, hud.LockButton.Text)
 
 -- Action buttons
-hud.BonkButton.Activated:Fire()
-Engine.advance(0.05)
-check("bonk button", sent("Bonk") ~= nil)
+check("no BONK button (the bat is in the hotbar)", hud:FindFirstChild("BonkButton") == nil)
 hud.LockButton.Activated:Fire()
 Engine.advance(0.05)
 check("lock button", sent("Lock") ~= nil)
 Engine.actions.Bonk(nil, Engine.Enum.UserInputState.Begin)
-check("bonk key", countSent("Bonk") == 2)
+check("bonk key", countSent("Bonk") == 1)
 Engine.actions.Lock(nil, Engine.Enum.UserInputState.Begin)
 check("lock key", countSent("Lock") == 2)
 
 -- Key hints follow the input in use
-check("no key hints on a touch screen", hud.BonkButton.KeyHint.Visible == false)
+check("no key hints on a touch screen", hud.LockButton.KeyHint.Visible == false)
 Engine.setInput(Engine.Enum.UserInputType.Keyboard)
-check("keyboard hint Q on BONK", hud.BonkButton.KeyHint.Visible and hud.BonkButton.KeyHint.Text == "Q")
-check("keyboard hint L on LOCK", hud.LockButton.KeyHint.Text == "L")
+check("keyboard hint L on LOCK", hud.LockButton.KeyHint.Visible and hud.LockButton.KeyHint.Text == "L")
 Engine.setInput(Engine.Enum.UserInputType.Gamepad1)
-check("gamepad hint R2 on BONK", hud.BonkButton.KeyHint.Text == "R2")
+check("gamepad hint Y on LOCK", hud.LockButton.KeyHint.Text == "Y")
 
 -- Panels
 local panels = gui.Panels
@@ -370,6 +368,39 @@ GuiService.ReducedMotionEnabled = true
 serverSends("Profile", { coins = 777 })
 check("reduced motion: numbers snap", hud.Coins.Value.Text == "777", hud.Coins.Value.Text)
 GuiService.ReducedMotionEnabled = false
+
+-- Dragon Wings: click to jump high, glide in the air, not while carrying
+do
+	local character = player.Character
+	local hum = character.Humanoid
+	local hrp = character.HumanoidRootPart
+	local wingsTool = Engine.Instance.new("Tool")
+	wingsTool.Name = "Dragon Wings"
+	wingsTool:SetAttribute("Kind", "wings")
+	wingsTool.Parent = character
+	Engine.advance(0.05)
+	hum.FloorMaterial = Engine.Enum.Material.Grass
+	hum.MoveDirection = Vector3.new(1, 0, 0)
+	hrp.AssemblyLinearVelocity = Vector3.zero
+	wingsTool.Activated:Fire()
+	check("wings launch you up", hrp.AssemblyLinearVelocity.Y == Constants.WINGS_LAUNCH, hrp.AssemblyLinearVelocity.Y)
+	hum.FloorMaterial = Engine.Enum.Material.Air
+	hrp.AssemblyLinearVelocity = Vector3.new(0, -40, 0)
+	Engine.advance(0.05)
+	local v = hrp.AssemblyLinearVelocity
+	check("gliding: slow fall", v.Y == -Constants.GLIDE_FALL, v.Y)
+	check("gliding: fly where you steer", math.abs(v.X - Constants.GLIDE_SPEED) < 0.01, v.X)
+	serverSends("Profile", { carrying = { id = "PUFF", name = "Puff", rarity = "Common", kind = "bought" } })
+	Engine.advance(0.05)
+	hrp.AssemblyLinearVelocity = Vector3.new(0, -40, 0)
+	Engine.advance(0.05)
+	check("no gliding with a dragon", hrp.AssemblyLinearVelocity.Y == -40)
+	serverSends("Profile", { carrying = false })
+	Engine.advance(0.05)
+	wingsTool:Destroy()
+	hum.FloorMaterial = Engine.Enum.Material.Grass
+	hum.MoveDirection = Vector3.zero
+end
 
 -- Rotating to a bigger screen rescales
 Engine.workspace.CurrentCamera.ViewportSize = Vector2.new(1920, 1080)

@@ -39,6 +39,7 @@ local Shop = service("ShopService")
 local Team = service("TeamService")
 local Tutorial = service("TutorialService")
 local Leaderboard = service("LeaderboardService")
+local Tools = service("ToolService")
 local ShopData = Engine.require(tree.shared.Data.Shop)
 -- every real item has its own Roblox ID (set by tools/setup_shop.py)
 do
@@ -184,6 +185,15 @@ check("tutorial step 4: lock", lastTutorial(a).step == 4)
 go(a, Base:Get(a).world.lockPad.Position)
 check("base locked", Base:IsLocked(Base:Get(a)))
 check("laser visible", Base:Get(a).world.laser.Transparency < 1)
+Engine.advance(10)
+local lockLeft = Base:Get(a).lockUntil
+go(a, Base:Get(a).world.collectPad.Position)
+go(a, Base:Get(a).world.lockPad.Position)
+check(
+	"stepping on the lock pad again resets the timer",
+	Base:Get(a).lockUntil >= lockLeft + 9,
+	Base:Get(a).lockUntil - lockLeft
+)
 Engine.advance(0.5)
 check("tutorial step 5: practice steal", lastTutorial(a).step == 5)
 go(a, Road.practiceModel.PrimaryPart.Position)
@@ -321,9 +331,11 @@ check("sold for coins", pb.coins > coins0 and #pb.dragons == 0)
 pa.coins += 1000
 local nest5 = Base:Get(a).world.nests[5].pad
 check("next nest has a buy prompt", nest5:FindFirstChild("Prompt_nest") ~= nil)
-nest5.Prompt_nest.Triggered:Fire(a)
+local nest9 = Base:Get(a).world.nests[9].pad
+check("any locked nest has a buy prompt", nest9:FindFirstChild("Prompt_nest") ~= nil)
+nest9.Prompt_nest.Triggered:Fire(a)
 Engine.advance(0.1)
-check("bought nest 5", pa.nestsBought == 5)
+check("buying from a far nest opens the next one", pa.nestsBought == 5 and Dragon:MaxNests(a) == 5)
 Engine.fireServer(a, "BuySpeed")
 Engine.advance(0.1)
 check("speed level 2", pa.speedLevel == 2 and a.Character.Humanoid.WalkSpeed == 19.5, a.Character.Humanoid.WalkSpeed)
@@ -472,6 +484,58 @@ check("castle shrinks back", world.castleLevel == 1 and trim.Transparency == 1 a
 Base.DragonPower = realPower
 Base:UpdateCastle(myBase)
 
+-- Hotbar tools ------------------------------------------------------------------------------------------------
+local function toolOf(p, kind)
+	return Tools:Find(p, kind)
+end
+local hand = a.Character:FindFirstChildOfClass("Tool")
+check("the bat is in your hand", hand ~= nil and hand:GetAttribute("Kind") == "bonk")
+check("hotbar has a Speed Potion", toolOf(a, "potion") ~= nil and toolOf(a, "potion").Parent == a.Backpack)
+check("starts with free potions", pa.potions == Constants.FREE_POTIONS)
+check("potion count on the tool", toolOf(a, "potion").Name == "Speed Potion x" .. Constants.FREE_POTIONS)
+check("camera zoom is capped", a.CameraMaxZoomDistance == Constants.CAMERA_MAX_ZOOM)
+Engine.advance(1.2)
+hand.Activated:Fire()
+Engine.advance(0.05)
+check("clicking with the bat swings it", hand:FindFirstChild("toolanim") ~= nil)
+Engine.advance(1.2)
+-- Q bonks too, and puts the bat back in your hand
+local hum = a.Character.Humanoid
+hum:EquipTool(toolOf(a, "potion"))
+Engine.fireServer(a, "Bonk")
+Engine.advance(0.05)
+check("Q switches back to the bat", toolOf(a, "bonk").Parent == a.Character)
+-- Speed Potion
+local walk = hum.WalkSpeed
+toolOf(a, "potion").Activated:Fire()
+Engine.advance(0.05)
+check("potion makes you faster", math.abs(hum.WalkSpeed - walk * Constants.POTION_SPEED_MULT) < 0.01, hum.WalkSpeed)
+check(
+	"potion used up",
+	pa.potions == Constants.FREE_POTIONS - 1 and toolOf(a, "potion").Name:find("x" .. pa.potions, 1, true) ~= nil
+)
+check("speed sparkles", a.Character.HumanoidRootPart:FindFirstChild("SpeedFx") ~= nil)
+Engine.advance(Constants.POTION_SECONDS + 0.5)
+check("potion wears off", math.abs(hum.WalkSpeed - walk) < 0.01, hum.WalkSpeed)
+pa.potions = 0
+toolOf(a, "potion").Activated:Fire() -- out of potions: offers the pack (free in Studio)
+Engine.advance(0.1)
+check("out of potions offers 5 more", pa.potions == Constants.POTION_PACK, pa.potions)
+-- passes change the hotbar
+check("no wings without the pass", toolOf(a, "wings") == nil)
+Engine.fireServer(a, "Purchase", "pass", "MEGABONK")
+Engine.advance(0.1)
+check("Mega Bonk swaps the bat for a hammer", toolOf(a, "bonk").Name == "Mega Hammer")
+Engine.fireServer(a, "Purchase", "pass", "WINGS")
+Engine.advance(0.1)
+local wingsTool = toolOf(a, "wings")
+check("Dragon Wings in the hotbar", wingsTool ~= nil)
+hum:EquipTool(wingsTool)
+check("wings on your back", a.Character:FindFirstChild("WingsModel") ~= nil)
+hum:EquipTool(toolOf(a, "bonk"))
+check("wings come off when put away", a.Character:FindFirstChild("WingsModel") == nil)
+check("potions kept when the hotbar is rebuilt", pa.potions == Constants.POTION_PACK)
+
 -- Skins
 check("starts with Classic", pa.skins.CLASSIC and pa.skin == "CLASSIC")
 pa.coins += 5000
@@ -502,9 +566,11 @@ local c0 = pa.coins
 Engine.fireServer(a, "ClaimDaily")
 Engine.advance(0.1)
 check("daily day 1 = 500 coins", pa.daily.streak == 1 and pa.coins == c0 + 500)
+local c1 = pa.coins
 Engine.fireServer(a, "ClaimDaily")
 Engine.advance(0.1)
-check("daily only once a day", pa.coins == c0 + 500)
+-- (auto-collect may add a second of income in between, but never another 500)
+check("daily only once a day", pa.daily.streak == 1 and pa.coins - c1 < 500, pa.coins - c1)
 local eggId = pa.egg.id
 local count0 = countRec(pa, eggId)
 local egg = Base:Get(a).world.model:FindFirstChild("Egg")
