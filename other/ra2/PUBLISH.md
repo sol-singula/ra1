@@ -6,7 +6,7 @@ Do these in order. Paths are relative to `games/ra2 - Steal a Dragon/`.
 
 - **Universe ID:** 10770473232
 - **Place ID:** 118904155814967
-- **Shop items:** all 20 created and on sale; their IDs are in `src/shared/Data/Shop.lua`.
+- **Shop items:** all 23 created and on sale; their IDs are in `src/shared/Data/Shop.lua`.
 - **Publish a new build** (needs `ROBLOX_API_KEY` with universe-places write access), from the game folder:
 
   ```bash
@@ -37,7 +37,7 @@ Passes and products belong to a published experience, so publish once before cre
 While an item's ID is `0`, Studio gives it free for testing and the live game shows "Coming soon". Each item
 needs a real ID before it can earn.
 
-### The quick way: let the script make all 20
+### The quick way: let the script make them all
 
 `tools/setup_shop.py` creates every pass and product below through Roblox's Open Cloud API, uploads the pass icons
 from `other/ra2/icon/passes/`, and writes each new ID into `Shop.lua`. It needs two environment variables:
@@ -64,7 +64,8 @@ for Sale**, set the price and save. Copy its ID from the **⋯** menu (**Copy As
 | `NESTS` | Extra Nests | 249 | +4 nests for more dragons. |
 | `AUTO` | Auto Collect | 149 | Coins go right to you. (Also sold by the blue plate next to the coin pad.) |
 | `LONGLOCK` | Long Lock | 199 | Your door locks for 2 minutes. |
-| `MEGABONK` | Mega Bonk | 149 | Bonked thieves are stuck longer. |
+| `MEGABONK` | Mega Bonk | 149 | Swap the bat for a big hammer: bonked thieves are stuck longer. |
+| `WINGS` | Dragon Wings | 299 | Wings in your hotbar: jump high and glide over the map! |
 
 ### Developer products (can be bought again and again)
 
@@ -76,6 +77,8 @@ the name, description and price and save. An icon is optional. Copy the **Produc
 | `LUCK` | Server Luck | 99 | Shop |
 | `LOCKNOW` | Lock Now | 19 | Shop |
 | `LOCK5` | 5-Minute Lock | 35 | Shop, and the **+5 MIN** plate next to the lock pad in each base |
+| `LEVELALL` | +5 Levels for ALL | 99 | Shop, and the **LEVEL ALL** plate when you have no coins |
+| `POTIONS` | 5 Speed Potions | 29 | Shop, and using the Speed Potion with none left |
 | `COINS_S` | Coin Bag | 49 | Shop |
 | `COINS_L` | Coin Chest | 299 | Shop |
 | `DEAL` | Daily Deal | 25 | Shop |
@@ -94,7 +97,7 @@ change it in that file too, because the shop shows the price from the file.
 
 Open `src/shared/Data/Shop.lua` and replace each `id = 0` with the item's ID, for example `id = 1234567890`.
 
-You can also send me the 20 IDs and I'll paste them in, re-test and push.
+You can also send me the IDs and I'll paste them in, re-test and push.
 
 ### Getting paid
 
