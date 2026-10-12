@@ -471,7 +471,8 @@ local function buildBase(parent, index, cf)
 			Parent = model,
 		})
 		Scenery.flowers(model, pos(side * 12, 0.3, lawnZ), 8, rng)
-		Scenery.roundTree(model, pos(side * (BASE_W / 2 + 0.5), 0, lawnZ), 0.55, rng)
+		Scenery.bush(model, pos(side * (BASE_W / 2 + 0.5), 0.1, lawnZ), 1.25, rng, color)
+		Scenery.bush(model, pos(side * (BASE_W / 2 - 2.6), 0.1, lawnZ + 2.4), 0.8, rng)
 	end
 	-- Castle details by level: arrow slits, front-wall banners and a portcullis (3), a tall keep behind the back
 	-- wall (4), and a golden dragon over the gate (5)
@@ -563,42 +564,104 @@ local function buildBase(parent, index, cf)
 		CastShadow = false,
 		Parent = model,
 	})
-	-- nests: 4 x 6 on a raised wooden dais, front row first
-	part({
-		Name = "Dais",
-		Size = Vector3.new(36, 0.4, 44),
-		CFrame = at(0, 0.6, 3.5),
-		Color = rgb(196, 160, 112),
-		Material = Enum.Material.WoodPlanks,
-		Parent = model,
-	})
-	local nests = {}
-	local xs, zs = { -13.5, -4.5, 4.5, 13.5 }, { -14, -7, 0, 7, 14, 21 }
-	for row = 1, #zs do
-		for col = 1, 4 do
-			local i = (row - 1) * 4 + col
-			local pad = part({
-				Name = "Nest" .. i,
-				Shape = Enum.PartType.Cylinder,
-				Size = Vector3.new(0.8, 6.2, 6.2),
-				CFrame = at(xs[col], 1.1, zs[row]) * CFrame.Angles(0, 0, math.rad(90)),
-				Color = rgb(150, 105, 65),
-				Material = Enum.Material.WoodPlanks,
-				Parent = model,
-			})
-			part({
-				Name = "Straw",
-				Shape = Enum.PartType.Cylinder,
-				Size = Vector3.new(0.3, 5, 5),
-				CFrame = at(xs[col], 1.55, zs[row]) * CFrame.Angles(0, 0, math.rad(90)),
-				Color = rgb(245, 215, 125),
-				Material = Enum.Material.Fabric,
-				CastShadow = false,
-				Parent = pad,
-			})
-			nests[i] = { pad = pad, feet = at(xs[col], 1.7, zs[row]) }
+	-- Nests: a dragon gallery, not a grid. Stepped stands along both side walls (a low front row and a raised back
+	-- row, staggered so every dragon can be seen, all facing the middle) and a two-step trophy stand across the back
+	-- facing the gate. The middle stays open to walk around in, with the egg on its pedestal in the centre.
+	local STAND = rgb(214, 204, 188)
+	local trim = color:Lerp(rgb(255, 255, 255), 0.15)
+	local function stand(name, x0, z0, x1, z1, top)
+		part({
+			Name = name,
+			Size = Vector3.new(x1 - x0, top - 0.4, z1 - z0),
+			CFrame = at((x0 + x1) / 2, 0.4 + (top - 0.4) / 2, (z0 + z1) / 2),
+			Color = STAND,
+			Material = Enum.Material.Marble,
+			Parent = model,
+		})
+		-- a coloured edge along the front lip
+		part({
+			Name = name .. "Trim",
+			Size = Vector3.new(x1 - x0 + 0.1, 0.3, z1 - z0 + 0.1),
+			CFrame = at((x0 + x1) / 2, top - 0.15, (z0 + z1) / 2),
+			Color = trim,
+			CastShadow = false,
+			Parent = model,
+		})
+	end
+	local LOW, HIGH = 1.4, 3.6 -- stand tops
+	for _, side in { -1, 1 } do
+		local function xs(a, b)
+			return math.min(side * a, side * b), math.max(side * a, side * b)
+		end
+		local a0, a1 = xs(11, 17)
+		stand("StandLow", a0, -15.5, a1, 18, LOW)
+		local b0, b1 = xs(17, BASE_W / 2 - 0.7)
+		stand("StandHigh", b0, -11, b1, 23.2, HIGH)
+	end
+	stand("TrophyLow", -13.8, 18, 13.8, 23.8, LOW)
+	stand("TrophyHigh", -13.8, 23.8, 13.8, BASE_D / 2 - 0.7, HIGH)
+	-- the 24 spots, in the order nests open: the low side rows first, then the trophy stand, then the high rows
+	local spots = {}
+	for _, z in { -12, -3, 6, 15 } do
+		for _, side in { -1, 1 } do
+			table.insert(spots, { side * 14, LOW, z, side })
 		end
 	end
+	for _, x in { -10.5, -3.5, 3.5, 10.5 } do
+		table.insert(spots, { x, LOW, 20.9, 0 })
+	end
+	for _, z in { -7.5, 1.5, 10.5, 19.5 } do
+		for _, side in { -1, 1 } do
+			table.insert(spots, { side * 19.6, HIGH, z, side })
+		end
+	end
+	for _, x in { -10.5, -3.5, 3.5, 10.5 } do
+		table.insert(spots, { x, HIGH, 26.6, 0 })
+	end
+	local nests = {}
+	for i, spot in ipairs(spots) do
+		local x, top, z, side = spot[1], spot[2], spot[3], spot[4]
+		-- side rows face the middle aisle; the trophy stand faces the gate
+		local facing = side == 0 and CFrame.new() or CFrame.Angles(0, side < 0 and -math.pi / 2 or math.pi / 2, 0)
+		local pad = part({
+			Name = "Nest" .. i,
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(0.8, 5.4, 5.4),
+			CFrame = at(x, top + 0.4, z) * CFrame.Angles(0, 0, math.rad(90)),
+			Color = rgb(150, 105, 65),
+			Material = Enum.Material.WoodPlanks,
+			Parent = model,
+		})
+		part({
+			Name = "Straw",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(0.3, 4.4, 4.4),
+			CFrame = at(x, top + 0.85, z) * CFrame.Angles(0, 0, math.rad(90)),
+			Color = rgb(245, 215, 125),
+			Material = Enum.Material.Fabric,
+			CastShadow = false,
+			Parent = pad,
+		})
+		nests[i] = { pad = pad, feet = at(x, top + 1, z) * facing }
+	end
+	-- a rug down the middle aisle
+	part({
+		Name = "Rug",
+		Size = Vector3.new(8, 0.06, 30),
+		CFrame = at(0, 0.43, 1),
+		Color = color:Lerp(rgb(60, 30, 30), 0.35),
+		Material = Enum.Material.Fabric,
+		CastShadow = false,
+		Parent = model,
+	})
+	part({
+		Name = "RugTrim",
+		Size = Vector3.new(9, 0.04, 31),
+		CFrame = at(0, 0.42, 1),
+		Color = rgb(255, 200, 60),
+		CastShadow = false,
+		Parent = model,
+	})
 	-- Front row, just inside the gate: the coin pad (with the treasure chest) and the Auto Collect plate on the
 	-- left, the lock pad and the 5-Minute Lock plate on the right. The egg stand is at the back.
 	local padZ = -BASE_D / 2 + 6
@@ -655,11 +718,12 @@ local function buildBase(parent, index, cf)
 			{ CastShadow = false, CanCollide = false }
 		)
 	end
-	local eggZ = BASE_D / 2 - 2.6
+	-- the egg on a pedestal in the middle of the gallery, and the LEVEL ALL plate in front of it
+	local eggZ = 6
 	local eggStand = part({
 		Name = "EggStand",
 		Size = Vector3.new(4, 1.6, 4),
-		CFrame = at(-13, 0.8, eggZ),
+		CFrame = at(0, 0.8, eggZ),
 		Color = rgb(250, 245, 235),
 		Material = Enum.Material.Marble,
 		Parent = model,
@@ -667,7 +731,7 @@ local function buildBase(parent, index, cf)
 	local levelPlate = part({
 		Name = "LevelPlate",
 		Size = Vector3.new(7, 0.5, 3.6),
-		CFrame = at(12, 0.6, eggZ),
+		CFrame = at(0, 0.6, -5),
 		Color = rgb(120, 220, 110),
 		Parent = model,
 	})
@@ -678,7 +742,7 @@ local function buildBase(parent, index, cf)
 	part({
 		Name = "EggTrim",
 		Size = Vector3.new(4.4, 0.4, 4.4),
-		CFrame = at(-13, 1.5, eggZ),
+		CFrame = at(0, 1.5, eggZ),
 		Color = rgb(255, 200, 60),
 		Material = Enum.Material.Foil,
 		CastShadow = false,
@@ -1124,21 +1188,21 @@ function WorldBuilder.build()
 	local TALL_H = 16
 	local wallStone = rgb(176, 168, 158)
 	local function castleWall(x0, z0, x1, z1, inward, height)
-		local WALL_H = height or WALL_H
+		local wallH = height or WALL_H
 		local along = x1 ~= x0 and Vector3.xAxis or Vector3.zAxis
 		local len = (x1 - x0) + (z1 - z0)
 		local mid = Vector3.new((x0 + x1) / 2, 0, (z0 + z1) / 2)
-		local size = along == Vector3.xAxis and Vector3.new(len, WALL_H, WALL_T) or Vector3.new(WALL_T, WALL_H, len)
+		local size = along == Vector3.xAxis and Vector3.new(len, wallH, WALL_T) or Vector3.new(WALL_T, wallH, len)
 		part({
 			Name = "CastleWall",
 			Size = size,
-			CFrame = CFrame.new(mid + Vector3.new(0, WALL_H / 2, 0)),
+			CFrame = CFrame.new(mid + Vector3.new(0, wallH / 2, 0)),
 			Color = wallStone,
 			Material = Enum.Material.Cobblestone,
 			Parent = lobby,
 		})
 		-- a darker plinth along the bottom and a capping band along the top
-		for _, band in { { 1.2, 0.6, STONE_DARK }, { 0.8, WALL_H - 0.4, rgb(196, 188, 178) } } do
+		for _, band in { { 1.2, 0.6, STONE_DARK }, { 0.8, wallH - 0.4, rgb(196, 188, 178) } } do
 			local grow = along == Vector3.xAxis and Vector3.new(0, 0, 0.6) or Vector3.new(0.6, 0, 0)
 			part({
 				Name = "WallBand",
@@ -1157,7 +1221,7 @@ function WorldBuilder.build()
 				Name = "Merlon",
 				Size = along == Vector3.xAxis and Vector3.new(2, 2, 0.9) or Vector3.new(0.9, 2, 2),
 				CFrame = CFrame.new(
-					mid + along * (t * len) + outward * (WALL_T / 2 - 0.45) + Vector3.new(0, WALL_H + 1, 0)
+					mid + along * (t * len) + outward * (WALL_T / 2 - 0.45) + Vector3.new(0, wallH + 1, 0)
 				),
 				Color = wallStone,
 				Material = Enum.Material.Cobblestone,
@@ -1595,6 +1659,15 @@ function WorldBuilder.build()
 				Scenery.flowers(deco, Vector3.new(x, 0, z), 6, rng)
 			end
 		end
+	end
+	-- a hazy ring of far mountains on the horizon, for depth
+	for i = 0, 13 do
+		local a = (i + 0.5) / 14 * math.pi * 2
+		Scenery.farMountain(
+			deco,
+			Vector3.new(-25 + math.cos(a) * 470, -30, math.sin(a) * 360),
+			rng:NextNumber(150, 220)
+		)
 	end
 	for i = 0, 17 do
 		local a = i / 18 * math.pi * 2

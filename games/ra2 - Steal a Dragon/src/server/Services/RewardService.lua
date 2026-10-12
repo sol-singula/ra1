@@ -278,7 +278,9 @@ function RewardService:_drawEgg(player)
 	egg.CanCollide = false
 	egg.Size = Vector3.new(2.6, 3.4, 2.6)
 	egg.CFrame = stand.CFrame * CFrame.new(0, stand.Size.Y / 2 + 1.7, 0)
-	egg.Color = d.body
+	-- the dragon's colour (or its accent, if the dragon is too dark to show)
+	local b = d.body
+	egg.Color = (b.R * 0.3 + b.G * 0.59 + b.B * 0.11) < 0.2 and (d.accent or d.wing) or b
 	egg.Material = Enum.Material.SmoothPlastic
 	local mesh = Instance.new("SpecialMesh")
 	mesh.MeshType = Enum.MeshType.Sphere
