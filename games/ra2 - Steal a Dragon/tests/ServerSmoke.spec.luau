@@ -338,6 +338,13 @@ check("goal 1 done (lock your door)", pa.goal >= 2, pa.goal)
 -- Second player, locks and stealing ------------------------------------------------------------------------
 local b = join("Ben", 1002)
 check("bases go zigzag: left, then right", Base:Get(a).index == 1 and Base:Get(b).index == 5, Base:Get(b).index)
+local heardJoin = false
+for _, e in Engine.clientLog do
+	if e.name == "Announce" and e.player == a and tostring(e.args[1]):find("Ben joined", 1, true) then
+		heardJoin = true
+	end
+end
+check("everyone hears when someone joins", heardJoin)
 local pb = Data:Get(b)
 Engine.fireServer(b, "SkipTutorial")
 Engine.advance(0.5)
@@ -752,6 +759,12 @@ check("top coins is whoever has the most right now", World.boards.coins.rows[1].
 pb.coins = 2e7
 Leaderboard:Redraw()
 check("top coins changes live", World.boards.coins.rows[1].name.Text == "Ben")
+local topNote = Engine.lastClientEvent("Announce", a)
+check(
+	"a banner when someone takes #1",
+	topNote and topNote.args[1]:find("Ben is now #1 on TOP COINS", 1, true) ~= nil,
+	topNote and topNote.args[1]
+)
 -- BEST DRAGONS is each player's best dragon right now: lose it and lose the spot
 local galaxy = Dragon:Grant(b, "OMNI") -- the best dragon there is
 Leaderboard:Redraw()

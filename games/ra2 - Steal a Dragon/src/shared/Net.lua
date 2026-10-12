@@ -30,6 +30,7 @@ Net.ServerEvents = {
 	"Offline", -- { coins, seconds } welcome-back gift
 	"Tutorial", -- { step, total, text, target } or false
 	"Owned", -- { passKey = true } after a purchase
+	"Announce", -- text, color: a banner across the top (someone joined, someone took a top-3 spot)
 }
 
 local folder

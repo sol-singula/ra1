@@ -101,6 +101,57 @@ function HudController.alert(text, color)
 	end)
 end
 
+-- Announcements: a banner that drops in at the top of the screen for a few seconds (someone joined, someone took
+-- a top-3 spot on a leaderboard). Several in a row wait their turn.
+local announceQueue, announcing = {}, false
+
+local function nextAnnouncement()
+	local item = table.remove(announceQueue, 1)
+	if not item then
+		announcing = false
+		return
+	end
+	announcing = true
+	local bannerFrame = new("Frame", {
+		Name = "Announce",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, -70),
+		Size = UDim2.fromOffset(520, 52),
+		BackgroundColor3 = C.slate,
+		BorderSizePixel = 0,
+		ZIndex = 20,
+		Parent = gui,
+	}, { Theme.corner("round"), Theme.stroke(3, item.color) })
+	Theme.text({
+		Name = "Text",
+		Text = item.text,
+		TextColor3 = C.white,
+		Size = UDim2.new(1, -24, 1, -10),
+		Position = UDim2.fromOffset(12, 5),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		ZIndex = 21,
+		Parent = bannerFrame,
+	})
+	Theme.tween(bannerFrame, 0.35, { Position = UDim2.new(0.5, 0, 0, 8) }, Enum.EasingStyle.Back)
+	task.delay(3.2, function()
+		Theme.tween(bannerFrame, 0.3, { Position = UDim2.new(0.5, 0, 0, -70) })
+		task.delay(0.35, function()
+			bannerFrame:Destroy()
+			nextAnnouncement()
+		end)
+	end)
+end
+
+function HudController.announce(text, color)
+	if #announceQueue >= 4 then
+		table.remove(announceQueue, 1) -- don't fall far behind
+	end
+	table.insert(announceQueue, { text = text, color = color or C.mustard })
+	if not announcing then
+		nextAnnouncement()
+	end
+end
+
 -- A number or word that floats up from a spot in the world.
 function HudController.popup(position, text, color)
 	local anchor = new("Part", {
@@ -561,6 +612,7 @@ function HudController:init()
 		HudController.alert(text, color)
 	end)
 	Net.listen("Popup", HudController.popup)
+	Net.listen("Announce", HudController.announce)
 	Net.listen("Event", function(e)
 		if e.kind == "legend" then
 			events.legendAt = e.at

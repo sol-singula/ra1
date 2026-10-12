@@ -92,6 +92,9 @@ local names = {} -- [userId] = name
 local lastRefresh = -math.huge
 local period = 0 -- the daily period the boards are showing
 local liveDaily = {} -- this server's daily rows at the last redraw (to pick a winner without DataStores)
+local topThree = {} -- [boardKey] = { [rank] = userId } at the last redraw, to announce new top-3 players
+local BOARD_NAMES =
+	{ coins = "TOP COINS", daily = "TODAY'S TOP EARNERS", income = "BEST DRAGONS", steals = "TOP THIEVES" }
 
 local function store(board)
 	if board.daily then
@@ -187,6 +190,7 @@ function LeaderboardService:Redraw()
 			liveDaily = rows
 		end
 		view.sub.Text = board.sub .. (globalOk[board.key] and " · all players" or " · this server")
+		self:_announceTop(board, rows)
 		for i, row in view.rows do
 			local r = rows[i]
 			row.name.Text = r and r.name or ""
@@ -196,6 +200,38 @@ function LeaderboardService:Redraw()
 	local timer = WorldBuilder.layout.boards.daily.timer
 	if timer then
 		timer.Text = "⏰ Ends in " .. Format.time(math.max(0, endsAt - now))
+	end
+end
+
+-- Someone in this server just took #1, #2 or #3 on a board (and has something on it): tell everyone.
+function LeaderboardService:_announceTop(board, rows)
+	local before = topThree[board.key]
+	local now3 = {}
+	for rank = 1, 3 do
+		local r = rows[rank]
+		now3[rank] = r and r.value > 0 and r.id or nil
+	end
+	topThree[board.key] = now3
+	if not before then
+		return -- the first draw: nothing has changed yet
+	end
+	for rank = 1, 3 do
+		local id = now3[rank]
+		local wasRank
+		for k = 1, 3 do
+			if before[k] == id then
+				wasRank = k
+			end
+		end
+		local p = id and Players:GetPlayerByUserId(id)
+		if p and (not wasRank or rank < wasRank) then
+			local medal = ({ "🥇", "🥈", "🥉" })[rank]
+			Net.fireAll(
+				"Announce",
+				`{medal} {p.DisplayName} is now #{rank} on {BOARD_NAMES[board.key]}!`,
+				({ Color3.fromRGB(255, 205, 60), Color3.fromRGB(210, 215, 230), Color3.fromRGB(225, 150, 90) })[rank]
+			)
+		end
 	end
 end
 
@@ -290,6 +326,11 @@ function LeaderboardService:_rollover(ended)
 end
 
 function LeaderboardService:OnPlayerReady(player)
+	for _, other in Players:GetPlayers() do
+		if other ~= player then
+			Net.fire(other, "Announce", `👋 {player.DisplayName} joined the game!`, Color3.fromRGB(120, 220, 255))
+		end
+	end
 	-- won yesterday's board while away? (one store read)
 	task.defer(function()
 		local last = period - 1

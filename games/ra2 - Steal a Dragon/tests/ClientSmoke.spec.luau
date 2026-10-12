@@ -528,6 +528,16 @@ do
 	statue:Destroy()
 end
 
+-- Announcements drop in at the top
+serverSends("Announce", "👋 Zed joined the game!", Engine.globals.Color3.fromRGB(120, 220, 255))
+Engine.advance(0.5)
+check(
+	"join banner at the top",
+	hud:FindFirstChild("Announce") ~= nil and hud.Announce.Text.Text:find("Zed", 1, true) ~= nil
+)
+Engine.advance(4.5)
+check("banner goes away", hud:FindFirstChild("Announce") == nil)
+
 -- Rotating to a bigger screen rescales
 Engine.workspace.CurrentCamera.ViewportSize = Vector2.new(1920, 1080)
 Engine.advance(1.2)
