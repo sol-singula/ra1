@@ -22,6 +22,7 @@ local RewardService = {
 		"RoadService",
 	},
 	HatchNowRequested = Signal.new("RewardService.HatchNowRequested"), -- (player)
+	Hatched = Signal.new("RewardService.Hatched"), -- (player, dragonId, special) an egg hatched
 }
 
 local data, economy, dragons, baseService, team, road
@@ -192,6 +193,7 @@ function RewardService:Hatch(player)
 	end
 	profile.egg = nil
 	dragons:Grant(player, egg.id, egg.sp)
+	self.Hatched:Fire(player, egg.id, egg.sp)
 	local d = Dragons.byId[egg.id]
 	local name = (egg.sp and Dragons.Specials[egg.sp].name .. " " or "") .. d.name
 	-- an event for the whole server: an alert for everyone and fireworks over the egg stand

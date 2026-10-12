@@ -42,9 +42,15 @@ local Leaderboard = service("LeaderboardService")
 local Tools = service("ToolService")
 -- game log posts are captured here instead of going to Discord
 local GameLog = service("GameLogService")
-local gameLogs = {}
-GameLog.post = function(payload)
-	table.insert(gameLogs, payload)
+local gameLogs = {} -- every event sent, flattened
+local chatLogs = {}
+GameLog.send = function(payload)
+	for _, e in payload.events do
+		table.insert(gameLogs, e)
+	end
+	for _, c in payload.chat do
+		table.insert(chatLogs, c)
+	end
 	return true
 end
 local ShopData = Engine.require(tree.shared.Data.Shop)
@@ -922,17 +928,28 @@ for _, d in Engine.workspace.Map:FindFirstChild("Disco", true):GetChildren() do
 end
 check("a line of lights leads from the road to the disco", guideDots > 10 and nearRoad)
 
--- Discord game log: a join message, and a leave message with the session's stats
-local function logFor(event, userId)
-	for _, l in gameLogs do
-		if l.event == event and l.player.userId == userId then
-			return l
+-- Discord game log: joins, leaves with session stats, chat, steals, purchases... batched every few seconds
+Engine.advance(Constants.GAME_LOG_FLUSH_SECONDS + 0.5)
+local function logWith(text)
+	for _, e in gameLogs do
+		if e.title:find(text, 1, true) then
+			return e
 		end
 	end
 end
-local joinLog = logFor("join", 1001)
-check("game log: join", joinLog ~= nil and joinLog.player.name == "Ava")
+check("game log: server started", logWith("Server started") ~= nil)
+check("game log: join", logWith("@Ava joined") ~= nil)
+check("game log: a completed steal", logWith(" stole ") ~= nil)
+check("game log: an egg hatch", logWith("egg hatched") ~= nil)
+check("game log: a daily prize win", logWith("TOP EARNER") ~= nil)
 local leaver = Engine.Players:GetPlayers()[1]
+leaver.Chatted:Fire("hello dragons")
+Engine.advance(Constants.GAME_LOG_FLUSH_SECONDS + 0.5)
+local heardChat = false
+for _, c in chatLogs do
+	heardChat = heardChat or (c.text == "hello dragons" and c.name == leaver.DisplayName)
+end
+check("game log: chat", heardChat)
 local leaverProfile = Data:Get(leaver)
 leaverProfile.stats.bought += 2
 local stats = GameLog:SessionStats(leaver, leaverProfile)
@@ -948,11 +965,10 @@ check(
 	stat("Time played") ~= nil and stat("Coins earned") ~= nil and (stat("Dragons bought") or 0) >= 2
 )
 check("leave stats: best dragon and robux", stat("Best dragon") ~= nil and stat("Robux spent") ~= nil)
-local leaverId = leaver.UserId
 Engine.removePlayer(leaver)
-Engine.advance(0.1)
-local leaveLog = logFor("leave", leaverId)
-check("game log: leave with stats", leaveLog ~= nil and #leaveLog.stats >= 10, leaveLog and #leaveLog.stats)
+Engine.advance(Constants.GAME_LOG_FLUSH_SECONDS + 0.5)
+local leaveLog = logWith(" left")
+check("game log: leave with stats", leaveLog ~= nil and #leaveLog.fields >= 10, leaveLog and #leaveLog.fields)
 
 -- Shutdown ----------------------------------------------------------------------------------------------------
 for _, fn in Engine.closeHandlers do

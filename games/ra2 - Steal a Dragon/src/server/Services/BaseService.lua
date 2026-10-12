@@ -18,6 +18,7 @@ local BaseService = {
 	Collected = Signal.new("BaseService.Collected"), -- (player, amount)
 	PlateStepped = Signal.new("BaseService.PlateStepped"), -- (player, "auto" | "lock" | "levelall") owner stepped on a plate
 	CastleGrew = Signal.new("BaseService.CastleGrew"), -- (player, level)
+	FeverStarted = Signal.new("BaseService.FeverStarted"), -- (player) pressed the DISCO FEVER button
 }
 
 local data, economy, team
@@ -205,6 +206,7 @@ function BaseService:StartFever(player)
 	end
 	feverUntil = t + Constants.FEVER_SECONDS
 	feverReadyAt = t + Constants.FEVER_COOLDOWN
+	self.FeverStarted:Fire(player)
 	Net.fireAll("Event", { kind = "fever", untilTime = feverUntil, by = player.DisplayName })
 	Net.fireAll(
 		"Alert",

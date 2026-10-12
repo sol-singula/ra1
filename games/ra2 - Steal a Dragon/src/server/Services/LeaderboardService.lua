@@ -15,11 +15,13 @@ local Dragons = require(ReplicatedStorage.Shared.Data.Dragons)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Signal = require(ReplicatedStorage.Shared.Signal)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
 local LeaderboardService = {
 	Name = "LeaderboardService",
 	Dependencies = { "PlayerDataService", "EconomyService", "DragonService" },
+	PrizeWon = Signal.new("LeaderboardService.PrizeWon"), -- (player, period) won the daily TOP EARNER prize
 }
 
 local data, economy, dragons
@@ -272,6 +274,7 @@ function LeaderboardService:GivePrize(player, forPeriod)
 	end
 	profile.prizes[key] = true
 	dragons:Grant(player, Dragons.PRIZE)
+	self.PrizeWon:Fire(player, forPeriod)
 	local d = Dragons.byId[Dragons.PRIZE]
 	Net.fireAll(
 		"Alert",

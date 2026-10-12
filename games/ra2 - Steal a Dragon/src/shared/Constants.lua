@@ -66,6 +66,7 @@ Constants.CAMERA_MAX_ZOOM = 45
 -- Discord game log (GameLogService): joins, and leaves with session stats
 Constants.GAME_LOG_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-game-log"
 Constants.GAME_LOG_IN_STUDIO = false
+Constants.GAME_LOG_FLUSH_SECONDS = 5 -- events and chat go out together this often
 -- Audio. Sound effects are our own uploads (files in other/ra2/audio/); the music is Roblox's licensed APM
 -- library, free to use in any experience.
 Constants.SOUNDS = {
