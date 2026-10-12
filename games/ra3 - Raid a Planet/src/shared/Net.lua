@@ -17,6 +17,10 @@ Net.ClientEvents = {
 	FinishNow = 2, -- (slot) open the Finish Forge Now purchase
 	Travel = 2, -- (planetKey | "HUB") teleport to a planet you've unlocked (also what the pads do)
 	Purchase = 2, -- (kind "pass"|"product", key) the server opens Roblox's purchase prompt
+	Rebirth = 1, -- start over with a star (after all 8 bosses)
+	Nightmare = 2, -- toggle Nightmare mode (after a rebirth)
+	ClaimDaily = 1, -- the daily gift
+	Reroll = 3, -- (uid, stat) reroll one stat on a blaster for gems
 }
 
 -- Server → client.

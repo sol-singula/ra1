@@ -154,6 +154,7 @@ function BlasterService:Sell(player, uid)
 	end
 	local value = Formulas.sellValue(rec)
 	table.remove(profile.blasters, i)
+	profile.stats.sold += 1
 	economy:AddCoins(player, value, false)
 	if profile.equipped == uid then
 		local best = self:Best(player)

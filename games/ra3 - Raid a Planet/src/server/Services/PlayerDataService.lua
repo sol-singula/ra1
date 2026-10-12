@@ -43,7 +43,10 @@ local function defaults()
 		beaten = {}, -- [planetKey] = times its boss was beaten (planet 2 opens when planet 1's boss is beaten)
 		forge = {}, -- [slot] = { tier, planet, readyAt, total, rec } cooking blasters
 		goal = 1,
-		stats = { bugs = 0, bosses = 0, forged = 0, powerUps = 0, raids = 0, friendPlay = 0, bestDamage = 0 },
+		stats = { bugs = 0, bosses = 0, forged = 0, powerUps = 0, raids = 0, friendPlay = 0, bestDamage = 0, sold = 0 },
+		rebirths = 0, -- stars
+		quests = nil, -- { day, start = stats at the start of the day, done = { [i] = true } }
+		callout = nil, -- a bought Raid Callout waiting for the next raid
 		passes = {},
 		receipts = {},
 		daily = { streak = 0, lastDay = nil },

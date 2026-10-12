@@ -20,11 +20,12 @@ local CombatService = {
 		"MobService",
 		"BossService",
 		"TeamService",
+		"RebirthService",
 	},
 	Blasted = Signal.new("CombatService.Blasted"), -- (player, entry, damage)
 }
 
-local data, economy, blasters, mobs, boss, team
+local data, economy, blasters, mobs, boss, team, rebirth
 local lastShot = {}
 
 local function parts(player)
@@ -42,6 +43,7 @@ function CombatService:Damage(player, rec)
 	mult *= team:DamageMult(player)
 	local profile = data:Get(player)
 	mult *= 1 + Constants.REBIRTH_DAMAGE * (profile and profile.rebirths or 0)
+	mult /= rebirth:NightmareMult(player) -- Nightmare: bugs take 10x the shots for you
 	return Formulas.blasterDamage(rec, mult)
 end
 
@@ -110,6 +112,7 @@ function CombatService:Init(registry)
 	mobs = registry.MobService
 	boss = registry.BossService
 	team = registry.TeamService
+	rebirth = registry.RebirthService
 	Net.on("Blast", function(player, targetId)
 		if type(targetId) == "number" then
 			self:Blast(player, targetId)

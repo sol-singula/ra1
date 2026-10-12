@@ -411,13 +411,19 @@ do
 	end
 	Raid.Start_(Raid)
 	Engine.advance(0.2)
-	check("the raid opens: beam, pad, boss, event", hubPad.Transparency < 1 and Raid.state == "fighting" and Engine.lastClientEvent("Event") ~= nil)
+	check(
+		"the raid opens: beam, pad, boss, event",
+		hubPad.Transparency < 1 and Raid.state == "fighting" and Engine.lastClientEvent("Event") ~= nil
+	)
 	check("everyone is told", Engine.lastClientEvent("Alert", b) ~= nil)
 	check("robots fill a quiet raid", Engine.workspace.Map.Hub.Arena:FindFirstChild("Robot_1") ~= nil)
 	-- step on the RAID pad
 	go(a, Vector3.new(0, 7, 0))
 	Engine.advance(0.3)
-	check("the RAID pad takes you to the arena", Planet:Where(a) == "RAID" and World.inArena(a.Character.HumanoidRootPart.Position))
+	check(
+		"the RAID pad takes you to the arena",
+		Planet:Where(a) == "RAID" and World.inArena(a.Character.HumanoidRootPart.Position)
+	)
 	check("joining counts", pa.stats.raids == 1)
 	Engine.fireServer(b, "Travel", "RAID")
 	Engine.advance(0.3)
@@ -440,7 +446,10 @@ do
 	-- phase 2: shields
 	star.hp = math.floor(star.maxHp * 0.6)
 	Engine.advance(0.3)
-	check("below 66%: shields up, plates lit", star.shielded == true and layout.arena.plates[1].lines[2].Text == "STAND HERE!")
+	check(
+		"below 66%: shields up, plates lit",
+		star.shielded == true and layout.arena.plates[1].lines[2].Text == "STAND HERE!"
+	)
 	local hpS = star.hp
 	Engine.advance(Constants.BLAST_COOLDOWN + 0.1)
 	Engine.fireServer(a, "Blast", star.id)
@@ -490,6 +499,86 @@ do
 	Engine.advance(Constants.RAID_SECONDS + 1)
 	check("the clock runs out: it flies away, half loot", Raid.state == "waiting" and pa.gems >= gemsT + 1)
 	_ = nowT
+end
+
+-- Rebirth and Nightmare -------------------------------------------------------------------------------------------
+local Rebirth = service("RebirthService")
+do
+	check("no rebirth before all 8 bosses", not Rebirth:CanRebirth(a))
+	Engine.fireServer(a, "Rebirth")
+	Engine.advance(0.1)
+	check("the pad says no", pa.rebirths == 0)
+	for _, p in Planets.list do
+		pa.beaten[p.key] = 1
+	end
+	check("all 8 beaten: rebirth is open", Rebirth:CanRebirth(a) and Planet:Unlocked(a) == 8)
+	local nB = #pa.blasters
+	local plain = {
+		rarity = "Common",
+		planet = "DUST",
+		roll = { dmg = "plain", spd = "plain", luck = "plain", gem = "plain" },
+		lv = 0,
+	}
+	local dmg0 = Combat:Damage(a, plain)
+	Engine.advance(1.1) -- (the Rebirth event allows one a second)
+	Engine.fireServer(a, "Rebirth")
+	Engine.advance(0.2)
+	check(
+		"reborn: a star, planets locked again, blasters kept",
+		pa.rebirths == 1 and Planet:Unlocked(a) == 1 and #pa.blasters == nB
+	)
+	check("a star means more damage", Combat:Damage(a, plain) > dmg0 * 1.2)
+	check("stars over your head", a.Character.Head:FindFirstChild("StarTag") ~= nil)
+	check("everyone hears", Engine.lastClientEvent("Announce") ~= nil)
+	Engine.advance(1)
+	Engine.fireServer(a, "Nightmare")
+	Engine.advance(0.1)
+	check("Nightmare on: damage divided by 10", Rebirth:IsNightmare(a) and Combat:Damage(a, plain) < dmg0 * 0.2)
+	check("Nightmare: better forge luck", Forge:Luck(a) >= Constants.NIGHTMARE_LUCK)
+	Engine.advance(1)
+	Engine.fireServer(a, "Nightmare")
+	Engine.advance(0.1)
+	check("Nightmare off again", not Rebirth:IsNightmare(a))
+end
+
+-- Daily quests, the daily gift, rerolls ----------------------------------------------------------------------------
+local Quest = service("QuestService")
+do
+	local view = Quest:View(a)
+	check("three daily quests", #view == 3 and view[1].gems > 0)
+	check(
+		"the same three in every server",
+		Quest.todays(123)[1].text == Quest.todays(123)[1].text and #Quest.todays(123) == 3
+	)
+	-- finish one by hand: find a bugs quest, or make the first one done
+	local gemsQ = pa.gems
+	local q = pa.quests
+	local first = Quest.todays(q.day)[1]
+	pa.stats[first.kind] = (q.start[first.kind] or 0) + first.target
+	Engine.advance(2.5)
+	check("a finished quest pays gems", pa.gems == gemsQ + first.gems and Quest:View(a)[1].done == true)
+	-- the daily gift
+	local dv = Quest:DailyView(a)
+	check("the daily gift is waiting on day 1", dv.canClaim and dv.nextDay == 1 and #dv.gifts == 7)
+	local coinsD = pa.coins
+	Engine.fireServer(a, "ClaimDaily")
+	Engine.advance(0.1)
+	check("day 1 gift: coins", pa.daily.streak == 1 and pa.coins > coinsD)
+	Engine.advance(1.1)
+	Engine.fireServer(a, "ClaimDaily")
+	Engine.advance(0.1)
+	check("only one gift a day", pa.daily.streak == 1)
+	-- reroll a stat
+	local rec = pa.blasters[1]
+	pa.gems = Constants.REROLL_GEMS
+	Economy:PushAll(a)
+	Engine.fireServer(a, "Reroll", rec.uid, "dmg")
+	Engine.advance(0.1)
+	check("a reroll costs gems and sets a grade", pa.gems == 0 and Constants.ROLL_MULT[rec.roll.dmg] ~= nil)
+	Engine.advance(1)
+	Engine.fireServer(a, "Reroll", rec.uid, "dmg")
+	Engine.advance(0.1)
+	check("no reroll without gems", pa.gems == 0)
 end
 
 -- Leaving --------------------------------------------------------------------------------------------------------------

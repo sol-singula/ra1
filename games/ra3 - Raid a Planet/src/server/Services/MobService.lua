@@ -17,12 +17,19 @@ local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
 local MobService = {
 	Name = "MobService",
-	Dependencies = { "PlayerDataService", "EconomyService", "PlanetService", "BlasterService", "TeamService" },
+	Dependencies = {
+		"PlayerDataService",
+		"EconomyService",
+		"PlanetService",
+		"BlasterService",
+		"TeamService",
+		"RebirthService",
+	},
 	Died = Signal.new("MobService.Died"), -- (killer, planetKey, mob)
 	targets = {}, -- [id] = { id, model, pos, hp, maxHp, planet (data), boss?, hit = fn, ... }
 }
 
-local data, economy, blasters, team
+local data, economy, blasters, team, rebirth
 local folder
 local nextId = 1
 local rng = Random.new()
@@ -116,7 +123,7 @@ function MobService:_die(entry, killer)
 		if hitter.Parent then
 			local rec = blasters:Equipped(hitter)
 			local ore, coins = Formulas.bugLoot(planet, rec)
-			local mult = entry.boss and Constants.BOSS_LOOT_ORE_MULT or 1
+			local mult = (entry.boss and Constants.BOSS_LOOT_ORE_MULT or 1) * rebirth:NightmareMult(hitter)
 			-- squad ore: a friend who hit it too doubles a boss's ore for you
 			if entry.boss and team then
 				for other in entry.hitters do
@@ -258,6 +265,7 @@ function MobService:Init(registry)
 	economy = registry.EconomyService
 	blasters = registry.BlasterService
 	team = registry.TeamService
+	rebirth = registry.RebirthService
 	layout = WorldBuilder.layout
 	folder = workspace:FindFirstChild("Mobs") or Instance.new("Folder", workspace)
 	folder.Name = "Mobs"

@@ -95,7 +95,24 @@ Constants.SKY_BOARD_SECONDS = 60
 
 -- Rebirth: after all 8 bosses, start over with a star: +25% damage for ever, and Nightmare planets (10x)
 Constants.REBIRTH_DAMAGE = 0.25
-Constants.NIGHTMARE_MULT = 10
+Constants.NIGHTMARE_MULT = 10 -- Nightmare mode: bugs take 10x the shots, drop 10x the ore and coins
+Constants.NIGHTMARE_LUCK = 1.3 -- and forges roll a little better while it's on
+Constants.NIGHTMARE_STARS = 5 -- stars shown over your head, at most
+
+-- Gems: what they buy
+Constants.REROLL_GEMS = 15 -- reroll one stat on a blaster (the odds are the normal roll odds)
+-- Daily quests: 3 a day, each pays gems
+Constants.DAILY_QUESTS = 3
+-- Daily gift streak (day 1..7, then it loops); coins and ore are scaled to your top planet
+Constants.DAILY_GIFTS = {
+	{ kind = "coins", bugs = 40 },
+	{ kind = "ore", amount = 30 },
+	{ kind = "gems", amount = 3 },
+	{ kind = "blaster", tier = "big" },
+	{ kind = "gems", amount = 5 },
+	{ kind = "ore", amount = 120 },
+	{ kind = "blaster", tier = "mega" },
+}
 
 -- Squads: friends in the server give each other damage
 Constants.SQUAD_DAMAGE_PER_FRIEND = 0.1

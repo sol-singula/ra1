@@ -28,7 +28,7 @@ local builders = {}
 local forgePlanet -- planet key picked in the Forge panel
 local forgeReceived
 
-local HEADER_COLORS = { Forge = C.orange, Bag = C.purple, Shop = C.mustard, Forged = C.good }
+local HEADER_COLORS = { Forge = C.orange, Bag = C.purple, Shop = C.mustard, Forged = C.good, Quests = C.sky }
 
 local function clearBody()
 	for _, c in body:GetChildren() do
@@ -317,6 +317,98 @@ builders.Bag = function()
 				Net.send("Equip", b.uid)
 			end)
 		end
+		-- reroll a stat for gems
+		local rr = new("Frame", {
+			Name = "Reroll" .. b.uid,
+			LayoutOrder = i,
+			Size = UDim2.new(1, -8, 0, 40),
+			BackgroundTransparency = 1,
+			Parent = body,
+		})
+		new("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			Padding = UDim.new(0, 6),
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			Parent = rr,
+		})
+		for _, stat in Constants.ROLL_STATS do
+			local g = b.roll[stat]
+			local btn = Theme.button({
+				Name = "Reroll_" .. stat,
+				Text = `{Blasters.StatEmoji[stat]} {string.upper(g)} 🎲{Constants.REROLL_GEMS}💎`,
+				BackgroundColor3 = g == "god" and C.mustard or (g == "shiny" and C.sky or C.muted),
+				TextSize = 14,
+				TextScaled = false,
+				Size = UDim2.fromOffset(140, 34),
+				Parent = rr,
+			})
+			btn.Activated:Connect(function()
+				Net.send("Reroll", b.uid, stat)
+			end)
+		end
+	end
+end
+
+-- Quests and the daily gift --------------------------------------------------------------------------------------
+builders.Quests = function()
+	titleLabel.Text = "📜 DAILY QUESTS"
+	list(8)
+	local s = Store.state
+	local d = s.daily
+	if d then
+		local r = row("Daily", d.canClaim and C.pink or C.muted, 0)
+		Theme.title({
+			Text = d.canClaim and `🎁 Day {d.nextDay} gift: {d.gift}`
+				or `🎁 Day {d.streak} claimed · next in {Format.time(d.secondsToNext)}`,
+			TextSize = 20,
+			TextScaled = false,
+			Size = UDim2.new(1, -160, 1, 0),
+			Position = UDim2.fromOffset(12, 0),
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = r,
+		})
+		if d.canClaim then
+			rowButton(r, "Claim", "CLAIM!", C.good, -10, 130, function()
+				Net.send("ClaimDaily")
+			end)
+		end
+	end
+	line("Three new quests every day. Each one pays gems. 💎", { TextColor3 = C.muted, LayoutOrder = 1 })
+	for i, q in s.quests or {} do
+		local r = row("Quest" .. i, q.done and C.muted or C.sky, 10 + i)
+		Theme.title({
+			Text = (q.done and "✅ " or "") .. q.text,
+			TextSize = 21,
+			TextScaled = false,
+			Size = UDim2.new(1, -150, 0, 32),
+			Position = UDim2.fromOffset(12, 4),
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Parent = r,
+		})
+		local bar, fill = Theme.bar(
+			{ Name = "Bar", Size = UDim2.new(1, -170, 0, 18), Position = UDim2.fromOffset(12, 44), Parent = r },
+			C.good
+		)
+		fill.Size = UDim2.new(math.clamp(q.progress / q.target, 0, 1), 0, 1, 0)
+		Theme.title({
+			Text = `{q.progress} / {q.target}`,
+			Size = UDim2.fromScale(1, 1),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			outline = 1.5,
+			ZIndex = 3,
+			Parent = bar,
+		})
+		Theme.title({
+			Text = `+{q.gems} 💎`,
+			TextSize = 24,
+			TextScaled = false,
+			TextColor3 = Color3.fromRGB(150, 230, 255),
+			AnchorPoint = Vector2.new(1, 0.5),
+			Size = UDim2.fromOffset(120, 40),
+			Position = UDim2.new(1, -10, 0.5, 0),
+			TextXAlignment = Enum.TextXAlignment.Right,
+			Parent = r,
+		})
 	end
 end
 
@@ -477,6 +569,8 @@ function PanelController:init()
 				or partial.ore
 				or partial.passes
 				or partial.unlocked
+				or partial.quests
+				or partial.daily
 				or partial.equipped ~= nil
 			)
 		then

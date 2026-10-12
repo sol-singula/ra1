@@ -13,13 +13,13 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local ForgeService = {
 	Name = "ForgeService",
-	Dependencies = { "PlayerDataService", "EconomyService", "BlasterService", "PlanetService" },
+	Dependencies = { "PlayerDataService", "EconomyService", "BlasterService", "PlanetService", "RebirthService" },
 	Started = Signal.new("ForgeService.Started"), -- (player, tierKey, planetKey)
 	Claimed = Signal.new("ForgeService.Claimed"), -- (player, rec)
 	FinishNowRequested = Signal.new("ForgeService.FinishNowRequested"), -- (player, slot, price)
 }
 
-local data, economy, blasters, planetService
+local data, economy, blasters, planetService, rebirth
 local rng = Random.new()
 
 function ForgeService:Slots(player)
@@ -28,7 +28,11 @@ end
 
 function ForgeService:Luck(player)
 	local profile = data:Get(player)
-	return profile and (profile.luckUntil or 0) > os.time() and 1.6 or 1
+	local luck = profile and (profile.luckUntil or 0) > os.time() and 1.6 or 1
+	if rebirth:IsNightmare(player) then
+		luck *= Constants.NIGHTMARE_LUCK
+	end
+	return luck
 end
 
 -- The view the panel shows: every slot, what's cooking and how long is left.
@@ -173,6 +177,7 @@ function ForgeService:Init(registry)
 	economy = registry.EconomyService
 	blasters = registry.BlasterService
 	planetService = registry.PlanetService
+	rebirth = registry.RebirthService
 	Net.on("Forge", function(player, tierKey, planetKey)
 		if type(tierKey) == "string" and type(planetKey) == "string" then
 			self:Start_(player, tierKey, planetKey)

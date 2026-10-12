@@ -26,7 +26,7 @@ local gui
 local coinsLabel, gemsLabel, oreLabel, planetLabel
 local goalCard, goalText, goalFill, goalReward, goalCount
 local forgePill, raidPill, giftPill, boostPill
-local blastButton
+local blastButton, questDot, nightmareButton
 local toastHolder, alertLabel, downLabel
 local raidAt, raidEndsAt, raidOpen
 local playtimeReceived, forgeReceived
@@ -266,10 +266,12 @@ local function buildMenu()
 		{ "Forge", "⚒️", "FORGE", C.orange, 14, 176 },
 		{ "Bag", "🎒", "BAG", C.purple, 96, 176 },
 		{ "Shop", "🛒", "SHOP", C.mustard, 14, 266 },
-		{ "Home", "🏠", "HUB", C.teal, 96, 266 },
+		{ "Quests", "📜", "QUESTS", C.sky, 96, 266 },
+		{ "Home", "🏠", "HUB", C.teal, 14, 356 },
+		{ "Nightmare", "🌑", "NIGHT", Color3.fromRGB(120, 70, 170), 96, 356 },
 	}
 	for _, it in items do
-		local button = Theme.iconButton({
+		local button, dot = Theme.iconButton({
 			Name = it[1] .. "Button",
 			icon = it[2],
 			label = it[3],
@@ -277,9 +279,17 @@ local function buildMenu()
 			Position = UDim2.fromOffset(it[5], it[6]),
 			Parent = gui,
 		})
+		if it[1] == "Quests" then
+			questDot = dot
+		elseif it[1] == "Nightmare" then
+			nightmareButton = button
+			button.Visible = false
+		end
 		button.Activated:Connect(function()
 			if it[1] == "Home" then
 				Net.send("Travel", "HUB")
+			elseif it[1] == "Nightmare" then
+				Net.send("Nightmare")
 			elseif HudController.openPanel then
 				HudController.openPanel(it[1])
 			end
@@ -441,6 +451,16 @@ local function refresh()
 		planetLabel.TextColor3 = C.white
 	end
 	planetLabel.Visible = true
+	-- quests: a dot when there's a gift to claim; the Nightmare button after a rebirth
+	local questsLeft = false
+	for _, q in s.quests or {} do
+		if q.progress >= q.target and not q.done then
+			questsLeft = true
+		end
+	end
+	questDot.Visible = (s.daily ~= nil and s.daily.canClaim == true) or questsLeft
+	nightmareButton.Visible = (s.rebirths or 0) > 0
+	nightmareButton.BackgroundColor3 = s.nightmare and Color3.fromRGB(190, 120, 255) or Color3.fromRGB(120, 70, 170)
 	local g = s.goal
 	if g and g ~= false then
 		goalCard.Visible = true

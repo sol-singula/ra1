@@ -151,12 +151,22 @@ check("boost pill", hud.Boost.Visible and string.find(hud.Boost.Text, "2x", 1, t
 serverSends("Event", { kind = "raid", at = Engine.workspace:GetServerTimeNow() + 600 })
 Engine.advance(0.1)
 check("raid countdown", hud.Raid.Visible and string.find(hud.Raid.Text, "RAID IN", 1, true) ~= nil, hud.Raid.Text)
-serverSends("Event", { kind = "raidOpen", at = Engine.workspace:GetServerTimeNow() + 900, endsAt = Engine.workspace:GetServerTimeNow() + 180 })
+serverSends(
+	"Event",
+	{
+		kind = "raidOpen",
+		at = Engine.workspace:GetServerTimeNow() + 900,
+		endsAt = Engine.workspace:GetServerTimeNow() + 180,
+	}
+)
 Engine.advance(0.1)
 check("raid open pill", string.find(hud.Raid.Text, "RAID OPEN", 1, true) ~= nil, hud.Raid.Text)
 serverSends("Profile", { planet = "RAID" })
 Engine.advance(0.1)
-check("in the arena: the fight clock and the place", string.find(hud.Raid.Text, "left", 1, true) ~= nil and string.find(hud.Planet.Text, "Arena", 1, true) ~= nil)
+check(
+	"in the arena: the fight clock and the place",
+	string.find(hud.Raid.Text, "left", 1, true) ~= nil and string.find(hud.Planet.Text, "Arena", 1, true) ~= nil
+)
 serverSends("Event", { kind = "raidEnd" })
 serverSends("Profile", { planet = "DUST" })
 
@@ -283,6 +293,41 @@ click(panels, "⬆️")
 check("Power Up sends PowerUp", sent("PowerUp") ~= nil)
 click(panels, "💰")
 check("Sell sends Sell", sent("Sell") ~= nil)
+serverSends("Profile", {
+	quests = {
+		{ text = "Blast 100 bugs", progress = 40, target = 100, gems = 3, done = false },
+		{ text = "Join a raid", progress = 1, target = 1, gems = 5, done = true },
+	},
+	daily = {
+		streak = 0,
+		canClaim = true,
+		nextDay = 1,
+		gift = "200 coins",
+		gifts = { "200 coins", "30 Dust Ore" },
+		secondsToNext = 3600,
+	},
+	rebirths = 1,
+	nightmare = false,
+})
+Engine.advance(0.1)
+check("quest dot when a gift waits", hud.QuestsButton.Dot.Visible == true)
+check("Nightmare button after a rebirth", hud.NightmareButton.Visible == true)
+click(hud, "QUESTS")
+check(
+	"Quests panel lists quests and the gift",
+	findButton(panels, "CLAIM") ~= nil and string.find(panels.Dim.Card.Header.Title.Text, "QUEST", 1, true) ~= nil
+)
+click(panels, "CLAIM")
+check("CLAIM sends ClaimDaily", sent("ClaimDaily") ~= nil)
+panels.Dim.Card.Close.Activated:Fire()
+Engine.advance(0.05)
+click(hud, "BAG")
+click(panels, "🎲")
+check("a reroll button sends Reroll", sent("Reroll") ~= nil and sent("Reroll").args[2] ~= nil)
+panels.Dim.Card.Close.Activated:Fire()
+Engine.advance(0.05)
+click(hud, "NIGHT")
+check("the Nightmare button sends Nightmare", sent("Nightmare") ~= nil)
 click(hud, "SHOP")
 check("Shop panel", findButton(panels, "Auto Blast") ~= nil or findButton(panels, "R$ 249") ~= nil)
 click(panels, "R$ 249")
