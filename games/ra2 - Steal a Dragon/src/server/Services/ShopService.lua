@@ -1,6 +1,7 @@
 -- Robux purchases: opens Roblox's purchase prompts, grants game passes, and handles developer product
 -- receipts exactly once (receipt ids are remembered in the profile and saved right away).
 -- Products and passes whose ID is still 0 are granted for free in Studio so everything can be tested.
+local CollectionService = game:GetService("CollectionService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -91,7 +92,11 @@ function ShopService:Init(registry)
 		p.HoldDuration = 0.5
 		p.MaxActivationDistance = 9
 		p.RequiresLineOfSight = false
+		-- only the owner sees it (PromptController), so it never hides a thief's Steal prompt on the same key
+		p:SetAttribute("Kind", "levelall")
+		p:SetAttribute("OwnerUserId", 0)
 		p.Parent = world.levelPlate
+		CollectionService:AddTag(p, "DragonPrompt")
 		p.Triggered:Connect(function(player)
 			if baseService:Get(player) and baseService:Get(player).world == world then
 				self:LevelAllWithCoins(player)
@@ -124,8 +129,24 @@ function ShopService:Init(registry)
 	end
 end
 
+local function levelPrompt(player)
+	local base = baseService:Get(player)
+	return base and base.world.levelPlate and base.world.levelPlate:FindFirstChild("Prompt_levelall")
+end
+
+function ShopService:OnPlayerReady(player)
+	local p = levelPrompt(player)
+	if p then
+		p:SetAttribute("OwnerUserId", player.UserId)
+	end
+end
+
 function ShopService:OnPlayerLeaving(player)
 	targets[player] = nil
+	local p = levelPrompt(player)
+	if p then
+		p:SetAttribute("OwnerUserId", 0)
+	end
 end
 
 local function studioFree(player, item)

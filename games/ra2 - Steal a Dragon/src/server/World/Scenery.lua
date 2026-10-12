@@ -327,10 +327,10 @@ function Scenery.cliff(parent, cf, width, height, rng, waterfall)
 		if i == layers then
 			h = height - y
 		end
-		local w = width + rng:NextNumber(-2, 3)
+		local w = width + rng:NextNumber(0, 3)
 		local layerCf = cf
-			* CFrame.new(rng:NextNumber(-1.5, 1.5), y + h / 2, depth / 2 + inset)
-			* CFrame.Angles(0, math.rad(rng:NextNumber(-4, 4)), 0)
+			* CFrame.new(rng:NextNumber(-1, 1), y + h / 2, depth / 2 + inset)
+			* CFrame.Angles(0, math.rad(rng:NextNumber(-1.5, 1.5)), 0)
 		part({
 			Name = "Cliff",
 			Size = Vector3.new(w, h, depth),

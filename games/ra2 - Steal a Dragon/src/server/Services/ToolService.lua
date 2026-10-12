@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local DragonBuilder = require(script.Parent.Parent.World.DragonBuilder)
 
 local ToolService = {
 	Name = "ToolService",
@@ -224,9 +225,7 @@ local function bonker(level, mega)
 		glow.Range = 8
 		glow.Brightness = 2
 		glow.Parent = handle
-		local sp = Instance.new("Sparkles")
-		sp.SparkleColor = GOLD
-		sp.Parent = handle
+		DragonBuilder.twinkle(handle, GOLD, 0.8)
 	end
 	tool.Grip = CFrame.new(0, w.key == "blade" and -0.2 or -0.8, 0)
 	return tool

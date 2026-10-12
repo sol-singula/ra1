@@ -154,9 +154,7 @@ function DragonBuilder.build(id, special, stage, sizeMult, skin)
 		fire.Heat = 3
 		fire.Parent = body
 	elseif special == "ICE" or special == "GOLD" or special == "RAINBOW" then
-		local sp = Instance.new("Sparkles")
-		sp.SparkleColor = Dragons.Specials[special].color
-		sp.Parent = body
+		DragonBuilder.twinkle(body, Dragons.Specials[special].color, s)
 	end
 	if special == "RAINBOW" or id == "REX" or (d.fancy and table.find(d.fx, "rainbow")) then
 		CollectionService:AddTag(model, "RainbowDragon")
@@ -188,6 +186,24 @@ local TEX = {
 	glow = "rbxasset://textures/particles/forcefield_glow_main.dds",
 	vortex = "rbxasset://textures/particles/forcefield_vortex_main.dds",
 }
+
+-- A few soft twinkles: used instead of Roblox's Sparkles, whose big stars swamp the screen when many dragons
+-- stand together.
+function DragonBuilder.twinkle(parent, color, scale)
+	scale = scale or 1
+	local e = Instance.new("ParticleEmitter")
+	e.Name = "Twinkle"
+	e.Texture = TEX.sparkle
+	e.Color = ColorSequence.new(color)
+	e.LightEmission = 0.6
+	e.Rate = 2
+	e.Size = NumberSequence.new(0.35 * scale, 0)
+	e.Speed = NumberRange.new(0.3 * scale, 0.8 * scale)
+	e.Lifetime = NumberRange.new(0.6, 1)
+	e.SpreadAngle = Vector2.new(180, 180)
+	e.Parent = parent
+	return e
+end
 
 -- Particle effects: texture, colour (a colours key or a Color3), rate, size, speed, lifetime, acceleration, extras
 local FX = {
@@ -697,7 +713,7 @@ function DragonBuilder._decorate(model, root, d, s, colors)
 			e.Texture = TEX[spec[1]]
 			local c = color(spec[2])
 			e.Color = ColorSequence.new(c)
-			e.Rate = spec[3]
+			e.Rate = math.max(1, spec[3] * 0.5) -- (kept low: a base full of dragons adds up)
 			e.Size = NumberSequence.new(spec[4] * s, 0)
 			e.Speed = NumberRange.new(spec[5] * s * 0.5, spec[5] * s)
 			e.Lifetime = NumberRange.new(spec[6] * 0.7, spec[6])
@@ -729,9 +745,7 @@ function DragonBuilder._decorate(model, root, d, s, colors)
 			smoke.Size = 1.5 * s
 			smoke.Parent = body
 		elseif fx == "sparkles" then
-			local sp = Instance.new("Sparkles")
-			sp.SparkleColor = accent
-			sp.Parent = body
+			DragonBuilder.twinkle(body, accent, s)
 		elseif fx == "glow" then
 			local light = Instance.new("PointLight")
 			light.Name = "FancyGlow"
@@ -782,9 +796,10 @@ function DragonBuilder.label(model, line1, color, line2)
 	if not gui then
 		gui = Instance.new("BillboardGui")
 		gui.Name = "Tag"
-		gui.Size = UDim2.new(8, 0, 2.6, 0)
+		-- small and only when you're close: a base full of dragons would otherwise be a wall of names
+		gui.Size = UDim2.new(5, 0, 1.7, 0)
 		gui.StudsOffset = Vector3.new(0, 2.4 * s + 1.2, 0)
-		gui.MaxDistance = 50
+		gui.MaxDistance = 30
 		gui.LightInfluence = 0
 		gui.Parent = root
 		for i, name in { "Line1", "Line2" } do

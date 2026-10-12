@@ -423,20 +423,18 @@ local function buildBase(parent, index, cf)
 		CanQuery = false,
 		Parent = model,
 	})
-	-- Front lawn between the sidewalk and the gate: real grass, a stone path to the gate, flower beds and two
+	-- Front lawn between the sidewalk and the gate: green studs, a stone path to the gate, flower beds and two
 	-- round bushes (no lamps: the road has enough)
 	local rng = Random.new(index * 7)
 	local lawnD = BASE_Z - BASE_D / 2 - 1.5 - 19 -- from the sidewalk's edge to the castle's rim
 	local lawnZ = -BASE_D / 2 - 1.5 - lawnD / 2
-	local lawn = part({
+	part({
 		Name = "Lawn",
 		Size = Vector3.new(BASE_W + 6, 0.2, lawnD),
 		CFrame = at(0, 0.1, lawnZ),
 		Color = rgb(96, 176, 82),
 		Parent = model,
 	})
-	lawn.Material = Enum.Material.Grass
-	lawn.TopSurface = Enum.SurfaceType.Smooth
 	part({
 		Name = "Path",
 		Size = Vector3.new(10, 0.3, lawnD + 1),
@@ -539,7 +537,7 @@ local function buildBase(parent, index, cf)
 			d.Anchored = true
 			d.CanCollide = false
 			d.CanQuery = false
-		elseif d:IsA("Sparkles") or d:IsA("PointLight") then
+		elseif d:IsA("ParticleEmitter") or d:IsA("PointLight") then
 			d:Destroy()
 		end
 	end
@@ -780,7 +778,9 @@ local function buildBase(parent, index, cf)
 			Color = padColor,
 			Parent = model,
 		})
-		local _, padLines = billboard(p, signW, #signLines * 1.6 + 0.4, Vector3.new(0, 3.5, 0), signLines, 60)
+		-- a small label in screen pixels, so it never fills the view when you stand next to it
+		local gui, padLines = billboard(p, signW, #signLines * 1.6 + 0.4, Vector3.new(0, 2.4, 0), signLines, 28)
+		gui.Size = UDim2.fromOffset(signW * 10, #signLines * 17 + 4)
 		return p, padLines
 	end
 	local collectPad, collectLines = pad("CollectPad", -14, Vector3.new(7, 0.5, 6), rgb(245, 190, 40), {
@@ -854,10 +854,11 @@ local function buildBase(parent, index, cf)
 		Parent = model,
 	})
 	podium.Parent = model
-	billboard(levelPlate, 9, 3.6, Vector3.new(0, 3, 0), {
+	local levelSign = billboard(levelPlate, 9, 3.6, Vector3.new(0, 2.6, 0), {
 		{ text = "⬆️ LEVEL ALL", h = 0.55, y = 0, font = Enum.Font.LuckiestGuy },
 		{ text = "every dragon, with coins", h = 0.45, y = 0.55, color = rgb(210, 255, 200) },
-	}, 60)
+	}, 28)
+	levelSign.Size = UDim2.fromOffset(104, 38)
 	part({
 		Name = "EggTrim",
 		Size = Vector3.new(4.4, 0.4, 4.4),
@@ -1161,32 +1162,29 @@ function WorldBuilder.build()
 	lighting()
 	local rng = Random.new(42)
 	local map = folder("Map", workspace)
-	-- real grass, not studded plastic: a studded green slab looks exactly like the default baseplate
-	local ground = part({
+	-- green studded plastic, like a LEGO baseplate (Scenery.brick turns grass into studded plastic)
+	part({
 		Name = "Ground",
 		Size = Vector3.new(1600, 2, 1600),
 		CFrame = CFrame.new(0, -1, 0),
 		Color = rgb(88, 162, 76),
 		Parent = map,
 	})
-	ground.Material = Enum.Material.Grass
-	ground.TopSurface = Enum.SurfaceType.Smooth
-	-- lighter meadow patches so the grass isn't one flat colour
+	-- lighter green plates laid on top here and there, so the ground isn't one flat colour
 	local deco = folder("Decor", map)
 	for _ = 1, 26 do
 		local x, z = rng:NextNumber(-260, 220), rng:NextNumber(-150, 150)
 		if clear(x, z) then
-			local meadow = Scenery.disc(
-				deco,
-				"Meadow",
-				Vector3.new(x, 0.02, z),
-				rng:NextNumber(18, 40),
-				0.04,
-				rgb(104, 178, 86):Lerp(rgb(80, 150, 72), rng:NextNumber()),
-				Enum.Material.Grass,
-				{ CastShadow = false, CanCollide = false }
-			)
-			meadow.Material = Enum.Material.Grass
+			-- (whole studs, so the plate's studs line up with the ground's)
+			part({
+				Name = "Meadow",
+				Size = Vector3.new(rng:NextInteger(8, 20) * 2, 0.4, rng:NextInteger(8, 20) * 2),
+				CFrame = CFrame.new(math.floor(x), 0.2, math.floor(z)),
+				Color = rgb(104, 178, 86):Lerp(rgb(80, 150, 72), rng:NextNumber()),
+				Material = Enum.Material.Grass,
+				CastShadow = false,
+				Parent = deco,
+			})
 		end
 	end
 
@@ -1586,7 +1584,7 @@ function WorldBuilder.build()
 		if d:IsA("BasePart") then
 			d.Anchored = true
 			d.CanCollide = false
-		elseif d:IsA("Sparkles") or d:IsA("PointLight") then
+		elseif d:IsA("ParticleEmitter") or d:IsA("PointLight") then
 			d:Destroy()
 		end
 	end
@@ -1806,7 +1804,12 @@ function WorldBuilder.build()
 		local p = Vector3.new(CLIFF_CX + math.cos(a) * CLIFF_RX, 0, math.sin(a) * CLIFF_RZ)
 		local inward = -Vector3.new(math.cos(a) / CLIFF_RX, 0, math.sin(a) / CLIFF_RZ).Unit
 		local height = 64 + 16 * math.sin(a * 3 + 1) + rng:NextNumber(0, 10)
-		Scenery.cliff(cliffs, CFrame.lookAt(p, p + inward), 40, height, rng, i == 9 or i == 31)
+		-- wide enough to overlap the next stretch everywhere around the ellipse (no gaps)
+		local arc = math.sqrt((CLIFF_RX * math.sin(a)) ^ 2 + (CLIFF_RZ * math.cos(a)) ^ 2)
+			* math.pi
+			* 2
+			/ CLIFF_SEGMENTS
+		Scenery.cliff(cliffs, CFrame.lookAt(p, p + inward), arc * 1.35 + 4, height, rng, i == 9 or i == 31)
 	end
 	for _ = 1, 9 do
 		Scenery.cloud(

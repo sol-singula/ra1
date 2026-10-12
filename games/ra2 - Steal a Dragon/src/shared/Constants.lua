@@ -102,7 +102,7 @@ Constants.POTION_SPEED_MULT = 1.5
 Constants.WINGS_LAUNCH = 60 -- upward speed of a wing jump (studs per second)
 Constants.GLIDE_FALL = 6 -- fastest fall while gliding
 Constants.GLIDE_SPEED = 34 -- forward speed while gliding
-Constants.CAMERA_MAX_ZOOM = 45
+Constants.CAMERA_MAX_ZOOM = 70
 -- Discord game log (GameLogService): joins, and leaves with session stats
 Constants.GAME_LOG_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-game-log"
 Constants.GAME_LOG_IN_STUDIO = false

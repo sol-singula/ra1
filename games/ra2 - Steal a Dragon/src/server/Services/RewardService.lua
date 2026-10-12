@@ -10,6 +10,7 @@ local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Goals = require(ReplicatedStorage.Shared.Data.Goals)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local DragonBuilder = require(script.Parent.Parent.World.DragonBuilder)
 
 local RewardService = {
 	Name = "RewardService",
@@ -295,9 +296,7 @@ function RewardService:_drawEgg(player)
 	glow.Brightness = 2
 	glow.Parent = egg
 	if eggData.sp then
-		local sp = Instance.new("Sparkles")
-		sp.SparkleColor = Dragons.Specials[eggData.sp].color
-		sp.Parent = egg
+		DragonBuilder.twinkle(egg, Dragons.Specials[eggData.sp].color, 1.5)
 	end
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "Tag"

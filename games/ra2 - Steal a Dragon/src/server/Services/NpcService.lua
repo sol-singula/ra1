@@ -226,13 +226,55 @@ local function despawn(npc)
 	npc.model:Destroy()
 end
 
--- Walk via the road: off a lawn onto the road, along it, then to the target.
+-- Bases are walked through like a player would: in at the gate, down the middle aisle, then across to the
+-- front of a nest (never through walls or stands). Points are in the base's own space (x across, z from the gate
+-- at -34 to the back wall at +30).
+local ENTRY_Z, GATE_Z = -26, -34
+local function basePoint(base, x, z)
+	local p = base.world.cf:PointToWorldSpace(Vector3.new(x, 0, z))
+	return Vector3.new(p.X, 0.5, p.Z)
+end
+
+-- The way out of the base the raider is standing in (empty when it's not in one).
+local function exitPath(npc)
+	local base = baseService:BaseAt(npc.pos)
+	if not base then
+		return {}
+	end
+	local p = base.world.cf:PointToObjectSpace(npc.pos)
+	local path = {}
+	if math.abs(p.X) > 2 then
+		table.insert(path, basePoint(base, 0, math.clamp(p.Z, ENTRY_Z, 17)))
+	end
+	table.insert(path, basePoint(base, 0, ENTRY_Z))
+	table.insert(path, basePoint(base, 0, GATE_Z))
+	return path
+end
+
+-- From the gate to the floor in front of a nest.
+local function nestPath(base, slot)
+	local f = base.world.cf:PointToObjectSpace(base.world.nests[slot].feet.Position)
+	local aisleZ, front
+	if math.abs(f.X) > 11 then
+		aisleZ, front = f.Z, Vector3.new(math.sign(f.X) * 9.5, 0, f.Z) -- a side row
+	else
+		aisleZ, front = 15, Vector3.new(f.X, 0, 16.8) -- the trophy stand at the back
+	end
+	return {
+		basePoint(base, 0, ENTRY_Z),
+		basePoint(base, 0, aisleZ),
+		basePoint(base, front.X, front.Z),
+	}
+end
+
+-- Walk via the road: out of any base by its gate, off the lawn onto the road, along it, then to the target.
 local function routeTo(npc, target)
 	local lane = laneZ()
-	local path = {}
-	if math.abs(npc.pos.Z) > 10 then
-		table.insert(path, Vector3.new(npc.pos.X, 0.5, npc.pos.Z * 0.5))
-		table.insert(path, Vector3.new(npc.pos.X, 0.5, lane))
+	local path = exitPath(npc)
+	local from = path[#path] or npc.pos
+	if math.abs(from.Z) > 10 then
+		table.insert(path, Vector3.new(from.X, 0.5, from.Z * 0.5))
+		table.insert(path, Vector3.new(from.X, 0.5, lane))
 	end
 	if math.abs(target.Z) > 10 then
 		table.insert(path, Vector3.new(target.X, 0.5, lane))
@@ -302,7 +344,7 @@ local function stroll(npc)
 	npc.state = "stroll"
 	npc.victim, npc.targetRec = nil, nil
 	local x = Constants.ROAD_START_X + 12 + math.random() * (Constants.ROAD_END_X - Constants.ROAD_START_X - 16)
-	npc.path = { Vector3.new(x, 0.5, laneZ()) }
+	routeTo(npc, Vector3.new(x, 0.5, laneZ()))
 end
 
 -- The raider reached its nest: take the dragon (if it's still there and the base is still open).
@@ -336,12 +378,7 @@ function NpcService:_grab(npc)
 	self.Raided:Fire(npc, owner, rec)
 	-- back out through the gate, then run for the tunnel along the road
 	npc.state = "flee"
-	local lane = laneZ()
-	npc.path = {
-		npc.gate,
-		Vector3.new(npc.gate.X, 0.5, lane),
-		Vector3.new(TUNNEL_X, 0.5, lane),
-	}
+	routeTo(npc, Vector3.new(TUNNEL_X, 0.5, laneZ()))
 end
 
 -- Reached the tunnel: vanish (a carried dragon flies home).
@@ -406,8 +443,19 @@ function NpcService:_step(dt)
 				tag.Say.Text = ""
 			end
 		end
+		-- a base that locks while a raider is inside throws it out, like a player (unless it already has a dragon)
+		local inBase = baseService:BaseAt(npc.pos)
+		if inBase and not npc.carrying and baseService:IsLocked(inBase) and npc.state ~= "stunned" then
+			npc.pos = basePoint(inBase, 0, GATE_Z - 3)
+			say(npc, pick(LINES.locked))
+			stroll(npc)
+		end
 		if npc.state == "stunned" then
-			npc.pos += npc.knock * dt
+			-- knocked back, but never through a base wall
+			local pushed = npc.pos + npc.knock * dt
+			if baseService:BaseAt(pushed) == inBase then
+				npc.pos = pushed
+			end
 			npc.knock *= math.max(0, 1 - dt * 6)
 			if t >= npc.stunUntil then
 				-- shaken: head home (raiders who lost their dragon give up)
@@ -444,11 +492,7 @@ function NpcService:_step(dt)
 						say(npc, pick(LINES.locked))
 						stroll(npc)
 					else
-						-- stand on the floor just in front of the nest
-						local f = base.world.nests[rec.slot].feet.Position
-						local toGate = flat(npc.gate - f)
-						local side = toGate.Magnitude > 0.1 and toGate.Unit or Vector3.zAxis
-						npc.path = { Vector3.new(f.X, 0.5, f.Z) + side * 3.5 }
+						npc.path = nestPath(base, rec.slot)
 						npc.state = "toNest"
 					end
 				elseif npc.state == "toNest" then

@@ -578,6 +578,15 @@ end
 function methods.GetAttribute(inst, k)
 	return rawget(inst, "_attrs")[k]
 end
+function methods.GetAttributeChangedSignal(inst, name)
+	local sig = newSignal()
+	rawget(inst, "_attrChanged"):Connect(function(k)
+		if k == name then
+			sig:Fire()
+		end
+	end)
+	return sig
+end
 function methods.GetAttributes(inst)
 	return table.clone(rawget(inst, "_attrs"))
 end

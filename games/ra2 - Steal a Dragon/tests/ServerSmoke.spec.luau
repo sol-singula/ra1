@@ -249,6 +249,10 @@ local pa = Data:Get(a)
 check("profile loaded", pa ~= nil)
 check("unsaved only without DataStore", (pa._noSave == true) == noDataStore)
 check("base assigned", Base:Get(a) ~= nil and Base:Get(a).owner == a)
+check(
+	"LEVEL ALL prompt belongs to the owner (others never see it over Steal)",
+	Base:Get(a).world.levelPlate.Prompt_levelall:GetAttribute("OwnerUserId") == a.UserId
+)
 -- first minutes: new players earn double, and the HUD knows the next playtime gift
 check("new players get the 2x boost", pa.newBoostLeft == Constants.NEW_PLAYER_BOOST_SECONDS)
 check("the boost doubles income", select(2, Base:Income(a)) == Constants.NEW_PLAYER_BOOST_MULT)
@@ -668,7 +672,7 @@ Engine.advance(0.1)
 do
 	local bonkTool = toolOf(a, "bonk")
 	local handle = bonkTool and bonkTool:FindFirstChild("Handle")
-	check("Mega Bonk gilds the weapon", handle ~= nil and handle:FindFirstChildOfClass("Sparkles") ~= nil)
+	check("Mega Bonk gilds the weapon", handle ~= nil and handle:FindFirstChild("Twinkle") ~= nil)
 	check("the weapon keeps its tier name", bonkTool.Name == Constants.WEAPONS[pa.weaponLevel or 1].name)
 end
 -- weapon upgrades: coins buy the next tier, and the hotbar gets the new weapon
@@ -1153,6 +1157,17 @@ do
 	Engine.advance(1.5)
 	check("a raider that gets away vanishes", table.find(Npc.npcs, npc2) == nil)
 	check("its dragon flies home", slotted() == before)
+	-- a raider inside a base that locks is thrown out at the gate
+	do
+		local npc3 = Npc:Spawn()
+		local vb = Base:Get(victim)
+		npc3.pos = (vb.world.cf * CFrame.new(0, 0.5, 5)).Position
+		npc3.path = {}
+		Base:Lock(victim)
+		Engine.advance(0.2)
+		check("a locked base throws raiders out", Base:BaseAt(npc3.pos) == nil)
+		vb.lockUntil = 0
+	end
 	-- busy servers send them home
 	Npc.active = false
 	for _ = 1, 120 do

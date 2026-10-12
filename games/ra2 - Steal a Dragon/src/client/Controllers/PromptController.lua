@@ -28,7 +28,7 @@ function PromptController.shouldShow(prompt)
 		return not mine and not carrying and not isTeam(owner)
 	elseif kind == "sell" or kind == "grow" or kind == "levelup" or kind == "combine" then
 		return mine and not carrying
-	elseif kind == "nest" or kind == "hatch" then
+	elseif kind == "nest" or kind == "hatch" or kind == "levelall" then
 		return mine
 	elseif kind == "buy" or kind == "buynow" or kind == "grab" then
 		return not carrying
@@ -46,7 +46,14 @@ local function apply(prompt)
 end
 
 function PromptController:init()
-	CollectionService:GetInstanceAddedSignal("DragonPrompt"):Connect(apply)
+	local function watch(prompt)
+		apply(prompt)
+		-- (a base's LEVEL ALL prompt changes owner when players come and go)
+		prompt:GetAttributeChangedSignal("OwnerUserId"):Connect(function()
+			apply(prompt)
+		end)
+	end
+	CollectionService:GetInstanceAddedSignal("DragonPrompt"):Connect(watch)
 	Store.Changed:Connect(function(partial)
 		if partial.carrying ~= nil or partial.team ~= nil or partial.tutorialDone ~= nil then
 			for _, prompt in CollectionService:GetTagged("DragonPrompt") do
@@ -55,7 +62,7 @@ function PromptController:init()
 		end
 	end)
 	for _, prompt in CollectionService:GetTagged("DragonPrompt") do
-		apply(prompt)
+		watch(prompt)
 	end
 end
 

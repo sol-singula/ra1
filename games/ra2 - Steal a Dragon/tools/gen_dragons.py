@@ -14,6 +14,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(os.path.dirname(HERE), "src", "shared", "Data", "FancyDragons.lua")
 
 # rarity patterns for the five dragons of a theme
+ID_KEEP = {"Code Wyrm": "ERROR404"}  # renamed dragons keep their old ids
+
 TIERS = {
     1: ["Rare", "Rare", "Rare", "Epic", "Epic"],
     2: ["Rare", "Rare", "Epic", "Epic", "Legend"],
@@ -222,7 +224,7 @@ THEMES = [
       ("1f3a5f", "a0d0ff", "c9a227", "ffffff"), ("4f1f6b", "e0b8ff", "ffd700", "8ff7ff"),
       ("14143a", "8f8fff", "ffd700", "ffffff")],
      "Foil", "Glass", "crystal", "normal", ["gem", "antenna"], ["stars"], {"eyes": "8ff7ff", "accentMat": "Neon", "top": "ring", "pulse": True}),
-    ("glitch", 4, ["Pixel", "Glitch", "Hologram", "Neon Byte", "Error 404"],
+    ("glitch", 4, ["Pixel", "Glitch", "Hologram", "Neon Byte", "Code Wyrm"],
      [("1fffb0", "0f3a2a", "ff1fd0", "1fffff"), ("ff1fd0", "3a0f2f", "1fffff", "fff21f"),
       ("1fd0ff", "0f2a3a", "ff1f6a", "1fff6a"), ("b01fff", "2a0f3a", "1fffb0", "ffffff"),
       ("ffffff", "1a1a1a", "ff1f1f", "1fff1f")],
@@ -256,7 +258,8 @@ def main():
         for i, (name, rarity) in enumerate(zip(names, TIERS[tier])):
             assert name not in seen_names, name
             seen_names.add(name)
-            did = re.sub(r"[^A-Z0-9]", "", name.upper())
+            # (a renamed dragon keeps its old id, so saves that hold it still load)
+            did = ID_KEEP.get(name) or re.sub(r"[^A-Z0-9]", "", name.upper())
             assert did not in seen_ids, did
             seen_ids.add(did)
             n = counters.get(rarity, 0)
