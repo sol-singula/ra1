@@ -19,6 +19,22 @@ those models and to add nothing else. So every image shows:
 The text is vague on purpose: the game name **STEAL A DRAGON**, a single **?**, or nothing. None of them promise a
 reward, an event or an effect.
 
+## Mystery set (5): variants of the best performer
+
+![All mystery thumbnails](_mystery_all.jpg)
+
+`bold_06_secret_dragon` had the highest CTR (1.6%). These five keep what works in it: a dark silhouette of a real
+game dragon with glowing square eyes, one bright energy burst behind it, a giant white **?** with a black outline,
+and nothing else. Each one changes the colour, pose or framing so they can be A/B tested against it.
+
+| # | File | What changes | Colour |
+|---|---|---|---|
+| 1 | `mystery_01_teal.jpg` | Low angle, wings raised, ? on the right | Emerald / teal |
+| 2 | `mystery_02_crimson.jpg` | Leaning in to pounce, ? top left | Crimson / orange |
+| 3 | `mystery_03_golden_egg.jpg` | Rising out of a cracked glowing egg (the 2-hour egg) | Gold on navy |
+| 4 | `mystery_04_shadow_eyes.jpg` | Huge head close-up, almost all shadow: just the eyes | Indigo / electric blue |
+| 5 | `mystery_05_looming.jpg` | A player with the bat facing a giant silhouette | Magenta / purple |
+
 ## Bold set (26)
 
 ![All bold thumbnails](_bold_all.jpg)
