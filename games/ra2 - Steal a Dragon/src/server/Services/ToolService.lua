@@ -1,6 +1,6 @@
 -- The hotbar: real Roblox tools in each player's backpack, so the standard hotbar (keys 1-3, a click or a tap to
 -- use) works on every device.
---   1. Bonk Bat (the Mega Hammer with the Mega Bonk pass): click to bonk. In your hand when you spawn.
+--   1. Your weapon (Bonk Bat up to Inferno Blade; the Mega Bonk pass gilds it): click to bonk.
 --   2. Speed Potion: drink one to run faster for a while. New players get a few; more come in a product.
 --   3. Dragon Wings (Dragon Wings pass): wings on your back. Click to jump high, then glide. ToolController does
 --      the flying, because your character's physics run on your own device.
@@ -64,22 +64,47 @@ local function newTool(name, kind, tip, icon)
 	return tool
 end
 
-local function bonker(mega)
-	local tool = newTool(
-		mega and "Mega Hammer" or "Bonk Bat",
-		"bonk",
-		"Click to bonk thieves!",
-		mega and Constants.TOOL_ICONS.hammer or Constants.TOOL_ICONS.bat
-	)
+-- The weapon in slot 1, by tier (Constants.WEAPONS): bat, spiked club, war hammer, dragon mace, inferno blade.
+-- Mega Bonk makes it glow gold.
+local function bonker(level, mega)
+	local w = Constants.WEAPONS[level] or Constants.WEAPONS[1]
+	local tool =
+		newTool(w.name, "bonk", "Click to bonk thieves!", Constants.TOOL_ICONS[w.key] or Constants.TOOL_ICONS.bat)
+	tool:SetAttribute("Weapon", w.key)
 	local handle = part({
 		Name = "Handle",
-		Size = Vector3.new(0.35, 2.4, 0.35),
-		Color = WOOD,
-		Material = Enum.Material.Wood,
+		Size = Vector3.new(0.35, w.key == "blade" and 1.2 or 2.4, 0.35),
+		Color = w.key == "mace" and GOLD or WOOD,
+		Material = w.key == "mace" and Enum.Material.Metal or Enum.Material.Wood,
 		Parent = tool,
 	})
-	if mega then
-		attach(handle, {
+	local pieces
+	if w.key == "club" then
+		pieces = {
+			{
+				props = {
+					Name = "ClubHead",
+					Size = Vector3.new(0.9, 1.5, 0.9),
+					Color = WOOD:Lerp(Color3.new(0, 0, 0), 0.2),
+					Material = Enum.Material.Wood,
+				},
+				at = CFrame.new(0, 1.7, 0),
+			},
+		}
+		for k = 0, 5 do
+			local a = k / 6 * math.pi * 2
+			table.insert(pieces, {
+				props = {
+					Name = "Spike",
+					Size = Vector3.new(0.18, 0.18, 0.5),
+					Color = IRON,
+					Material = Enum.Material.Metal,
+				},
+				at = CFrame.new(0, 1.5 + (k % 2) * 0.45, 0) * CFrame.Angles(0, a, 0) * CFrame.new(0, 0, 0.6),
+			})
+		end
+	elseif w.key == "hammer" then
+		pieces = {
 			{
 				props = {
 					Name = "HammerHead",
@@ -107,9 +132,75 @@ local function bonker(mega)
 				},
 				at = CFrame.new(0.6, 1.55, 0),
 			},
-		})
+		}
+	elseif w.key == "mace" then
+		pieces = {
+			{
+				props = {
+					Name = "MaceHead",
+					Shape = Enum.PartType.Ball,
+					Size = Vector3.new(1.3, 1.3, 1.3),
+					Color = Color3.fromRGB(45, 42, 55),
+					Material = Enum.Material.Metal,
+				},
+				at = CFrame.new(0, 1.7, 0),
+			},
+			{
+				props = {
+					Name = "MaceCore",
+					Shape = Enum.PartType.Ball,
+					Size = Vector3.new(0.7, 0.7, 0.7),
+					Color = Color3.fromRGB(180, 90, 255),
+					Material = Enum.Material.Neon,
+				},
+				at = CFrame.new(0, 1.7, 0),
+			},
+		}
+		for k = 0, 7 do
+			local a = k / 8 * math.pi * 2
+			table.insert(pieces, {
+				props = {
+					Name = "Spike",
+					Size = Vector3.new(0.2, 0.2, 0.6),
+					Color = Color3.fromRGB(70, 66, 80),
+					Material = Enum.Material.Metal,
+				},
+				at = CFrame.new(0, 1.7 + ((k % 2) - 0.5) * 0.5, 0) * CFrame.Angles(0, a, 0) * CFrame.new(0, 0, 0.75),
+			})
+		end
+	elseif w.key == "blade" then
+		pieces = {
+			{
+				props = {
+					Name = "Guard",
+					Size = Vector3.new(1.4, 0.25, 0.45),
+					Color = GOLD,
+					Material = Enum.Material.Foil,
+				},
+				at = CFrame.new(0, 0.65, 0),
+			},
+			{
+				props = {
+					Name = "Blade",
+					Size = Vector3.new(0.55, 3.2, 0.15),
+					Color = Color3.fromRGB(255, 120, 30),
+					Material = Enum.Material.Neon,
+				},
+				at = CFrame.new(0, 2.35, 0),
+			},
+			{
+				props = {
+					Name = "Edge",
+					Size = Vector3.new(0.65, 3.0, 0.08),
+					Color = Color3.fromRGB(255, 220, 120),
+					Material = Enum.Material.Neon,
+					Transparency = 0.3,
+				},
+				at = CFrame.new(0, 2.3, 0),
+			},
+		}
 	else
-		attach(handle, {
+		pieces = {
 			{
 				props = { Name = "BatHead", Size = Vector3.new(0.75, 1.4, 0.75), Color = GOLD },
 				at = CFrame.new(0, 1.7, 0),
@@ -118,9 +209,26 @@ local function bonker(mega)
 				props = { Name = "Grip", Size = Vector3.new(0.42, 0.7, 0.42), Color = Color3.fromRGB(40, 40, 50) },
 				at = CFrame.new(0, -0.8, 0),
 			},
-		})
+		}
 	end
-	tool.Grip = CFrame.new(0, -0.8, 0)
+	attach(handle, pieces)
+	if w.key == "blade" then
+		local fire = Instance.new("Fire")
+		fire.Size = 2
+		fire.Heat = 4
+		fire.Parent = tool:FindFirstChild("Blade")
+	end
+	if mega then
+		local glow = Instance.new("PointLight")
+		glow.Color = GOLD
+		glow.Range = 8
+		glow.Brightness = 2
+		glow.Parent = handle
+		local sp = Instance.new("Sparkles")
+		sp.SparkleColor = GOLD
+		sp.Parent = handle
+	end
+	tool.Grip = CFrame.new(0, w.key == "blade" and -0.2 or -0.8, 0)
 	return tool
 end
 
@@ -227,6 +335,9 @@ function ToolService:Init(registry)
 	economy.PassesChanged:Connect(function(player)
 		self:Give(player)
 	end)
+	combat.WeaponChanged:Connect(function(player)
+		self:Give(player)
+	end)
 	-- every swing (a click with the bat, or the Q key) shows in the bonk tool: switch to it and swing it
 	combat.Swung:Connect(function(player)
 		local tool = self:Equip(player, "bonk")
@@ -294,7 +405,7 @@ function ToolService:Give(player)
 		wingsModel:Destroy()
 	end
 
-	local bat = bonker(economy:HasPass(player, "MEGABONK"))
+	local bat = bonker(data:Get(player).weaponLevel or 1, economy:HasPass(player, "MEGABONK"))
 	bat.Activated:Connect(function()
 		combat:Bonk(player)
 	end)

@@ -48,6 +48,7 @@ local function defaults()
 		skins = { CLASSIC = true }, -- owned dragon skins (Data/Skins.lua)
 		skin = "CLASSIC", -- the skin all your dragons wear
 		potions = Constants.FREE_POTIONS, -- Speed Potions in the hotbar
+		weaponLevel = 1, -- Constants.WEAPONS
 		dailyEarned = 0, -- coins earned in the current daily period (7pm to 7pm Eastern)
 		dailyPeriod = 0, -- which period dailyEarned belongs to (Formulas.dailyPeriod)
 		prizes = {}, -- [tostring(period)] = true for each daily TOP EARNER prize already given

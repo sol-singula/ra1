@@ -20,7 +20,12 @@ function EconomyService:Init(registry)
 	data = registry.PlayerDataService
 	data.ClientReady:Connect(function(player)
 		self:PushCoins(player)
-		data:Push(player, { passes = self:Passes(player), speedLevel = self:SpeedLevel(player) })
+		local profile = data:Get(player)
+		data:Push(player, {
+			passes = self:Passes(player),
+			speedLevel = self:SpeedLevel(player),
+			weaponLevel = profile and profile.weaponLevel or 1,
+		})
 	end)
 end
 

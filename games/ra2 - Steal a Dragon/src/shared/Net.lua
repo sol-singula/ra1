@@ -11,6 +11,7 @@ Net.ClientEvents = {
 	Bonk = 4,
 	Lock = 2,
 	BuySpeed = 4,
+	BuyWeapon = 2,
 	ClaimDaily = 1,
 	ClaimOffline = 1,
 	SkipTutorial = 1,

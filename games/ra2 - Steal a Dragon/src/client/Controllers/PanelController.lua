@@ -300,7 +300,7 @@ end
 
 -- Speed ------------------------------------------------------------------------------------------------------
 builders.Speed = function()
-	titleLabel.Text = "👟 SPEED"
+	titleLabel.Text = "👟 SPEED & ⚔️ WEAPONS"
 	list(12)
 	local s = Store.state
 	local level = s.speedLevel or 1
@@ -355,6 +355,31 @@ builders.Speed = function()
 	fast.Activated:Connect(function()
 		if Theme.busy(fast) then
 			Net.send("Purchase", "pass", "FAST")
+		end
+	end)
+	-- weapon: bigger weapons bonk farther, stun longer and knock thieves flying
+	local wl = math.clamp(s.weaponLevel or 1, 1, #Constants.WEAPONS)
+	local w, nextW = Constants.WEAPONS[wl], Constants.WEAPONS[wl + 1]
+	headline(`⚔️ {string.upper(w.name)}`, 28, C.orange)
+	line(
+		`Reach {w.range} · Stun {w.stun}s · Knockback {w.knock}`
+			.. (
+				nextW and `\nNext: {nextW.name} (reach {nextW.range}, stun {nextW.stun}s)`
+				or "\nThe best weapon there is!"
+			),
+		{ TextColor3 = C.muted, TextSize = 18 }
+	)
+	local upgrade = Theme.button({
+		Name = "BuyWeapon",
+		Text = nextW and `UPGRADE ⚔️  💰 {Format.num(nextW.price)}` or "BEST WEAPON!",
+		BackgroundColor3 = nextW and C.orange or C.mustard,
+		Size = UDim2.fromOffset(330, 62),
+		round = true,
+		Parent = body,
+	})
+	upgrade.Activated:Connect(function()
+		if nextW then
+			Net.send("BuyWeapon")
 		end
 	end)
 	line(
@@ -582,6 +607,7 @@ function PanelController:init()
 			and (
 				partial.passes
 				or partial.speedLevel
+				or partial.weaponLevel
 				or partial.daily
 				or partial.nests
 				or partial.skins

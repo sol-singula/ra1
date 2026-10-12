@@ -283,7 +283,7 @@ end
 local function buildMenu()
 	local items = {
 		{ "Shop", "🛒", "SHOP", C.mustard, 14, 156 },
-		{ "Speed", "👟", "SPEED", C.sky, 96, 156 },
+		{ "Speed", "⚔️", "GEAR", C.sky, 96, 156 },
 		{ "Gift", "🎁", "GIFT", C.pink, 14, 246 },
 		{ "Invite", "👥", "FRIENDS", C.teal, 96, 246 },
 	}

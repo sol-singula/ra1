@@ -56,7 +56,23 @@ Constants.FAST_FEET_MULT = 1.25 -- while carrying
 Constants.BONK_RANGE = 9
 Constants.BONK_COOLDOWN = 1.0
 Constants.STUN_SECONDS = 1.5
-Constants.STUN_SECONDS_MEGA = 2.5
+Constants.STUN_SECONDS_MEGA = 2.5 -- (no longer used directly: Mega Bonk adds MEGA_STUN_BONUS to any weapon)
+
+-- Weapons, bought with coins (the SPEED panel): each tier reaches further, stuns longer and knocks harder.
+Constants.WEAPONS = {
+	{ key = "bat", name = "Bonk Bat", price = 0, range = 9, stun = 1.5, knock = 45 },
+	{ key = "club", name = "Spiked Club", price = 2500, range = 10, stun = 1.8, knock = 55 },
+	{ key = "hammer", name = "War Hammer", price = 40000, range = 11, stun = 2.1, knock = 65 },
+	{ key = "mace", name = "Dragon Mace", price = 750000, range = 12.5, stun = 2.5, knock = 80 },
+	{ key = "blade", name = "Inferno Blade", price = 20000000, range = 14, stun = 3, knock = 95 },
+}
+Constants.MEGA_STUN_BONUS = 1 -- Mega Bonk pass: bonked players stay stunned this much longer
+Constants.HOME_DEFENSE_STUN = 1.5 -- bonks inside your own base stun this much longer...
+Constants.HOME_DEFENSE_RANGE = 2 -- ...and reach this much further
+Constants.BOUNTY_SECONDS = 60 -- bonking a thief pays this many seconds of the stolen dragon's income
+Constants.BOUNTY_MIN = 100
+Constants.STREAK_WINDOW = 40 -- seconds between hits to keep a bonk streak going
+Constants.STREAK_ANNOUNCE = { [3] = true, [5] = true, [10] = true, [20] = true }
 
 -- Hotbar tools
 Constants.FREE_POTIONS = 3 -- Speed Potions every new player starts with
@@ -113,6 +129,9 @@ Constants.TOOL_ICONS = {
 	hammer = "rbxassetid://90101203047877",
 	potion = "rbxassetid://123480021870564",
 	wings = "rbxassetid://80479736534280",
+	club = "rbxassetid://101157335646275",
+	mace = "rbxassetid://101917213176970",
+	blade = "rbxassetid://134761226317836",
 }
 Constants.DROP_GRAB_SECONDS = 8 -- a dropped dragon can be grabbed by anyone, then it flies home
 

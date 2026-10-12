@@ -384,10 +384,21 @@ local outside = (Base:Get(a).world.cf * CFrame.new(0, 0, -36)).Position
 go(b, outside)
 check("thief outside the base still carrying", Dragon:Carrying(b) ~= nil)
 
+check("thieves wear a THIEF tag", b.Character.Head:FindFirstChild("ThiefTag") ~= nil)
+check("thieves glow red", b.Character:FindFirstChild("ThiefGlow") ~= nil)
+local bounty = Combat:Bounty(b)
+check("thieves carry a bounty", bounty >= Constants.BOUNTY_MIN, bounty)
+
 -- Ava bonks Ben, grabs her dragon back
 go(a, b.Character.HumanoidRootPart.Position + Vector3.new(3, 0, 0))
+local coinsBeforeBonk = pa.coins
 Engine.fireServer(a, "Bonk")
 Engine.advance(0.1)
+check("bonking a thief pays the bounty", pa.coins >= coinsBeforeBonk + bounty, pa.coins - coinsBeforeBonk)
+check("everyone hears about the bounty", Engine.lastClientEvent("Announce", b) ~= nil)
+check("the THIEF tag comes off", b.Character.Head:FindFirstChild("ThiefTag") == nil)
+check("bonked players flash", b.Character:FindFirstChild("HitFlash") ~= nil)
+check("bonked players see stars", b.Character.Head:FindFirstChild("Dizzy") ~= nil)
 check("Ben stunned", b.Character.Humanoid.WalkSpeed == 0)
 check("Ben dropped it", Dragon:Carrying(b) == nil)
 check("bonk counted", pa.stats.bonks == 1)
@@ -644,7 +655,27 @@ check("out of potions offers 5 more", pa.potions == Constants.POTION_PACK, pa.po
 check("no wings without the pass", toolOf(a, "wings") == nil)
 Engine.fireServer(a, "Purchase", "pass", "MEGABONK")
 Engine.advance(0.1)
-check("Mega Bonk swaps the bat for a hammer", toolOf(a, "bonk").Name == "Mega Hammer")
+do
+	local bonkTool = toolOf(a, "bonk")
+	local handle = bonkTool and bonkTool:FindFirstChild("Handle")
+	check("Mega Bonk gilds the weapon", handle ~= nil and handle:FindFirstChildOfClass("Sparkles") ~= nil)
+	check("the weapon keeps its tier name", bonkTool.Name == Constants.WEAPONS[pa.weaponLevel or 1].name)
+end
+-- weapon upgrades: coins buy the next tier, and the hotbar gets the new weapon
+do
+	local nextW = Constants.WEAPONS[2]
+	pa.coins = 0
+	Engine.fireServer(a, "BuyWeapon")
+	Engine.advance(0.1)
+	check("no weapon without the coins", pa.weaponLevel == 1)
+	pa.coins = nextW.price
+	Engine.advance(1)
+	Engine.fireServer(a, "BuyWeapon")
+	Engine.advance(0.1)
+	check("buying the next weapon", pa.weaponLevel == 2 and pa.coins < nextW.price, pa.weaponLevel)
+	check("new weapon in the hotbar", toolOf(a, "bonk").Name == nextW.name)
+	check("bigger weapon, longer reach", Combat:Weapon(a).range > Constants.WEAPONS[1].range)
+end
 Engine.fireServer(a, "Purchase", "pass", "WINGS")
 Engine.advance(0.1)
 local wingsTool = toolOf(a, "wings")
