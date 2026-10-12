@@ -40,7 +40,8 @@ function ShopService:GrantProduct(player, item)
 		pendingFinish[player] = nil
 		forge:CompleteSlot(player, slot)
 	elseif item.key == "CALLOUT" then
-		Net.fire(player, "Toast", "Your Raid Callout is ready for the next raid!", "good")
+		data:Get(player).callout = true
+		Net.fire(player, "Toast", "Your Raid Callout is ready: your name goes up in gold at the next raid!", "good")
 	end
 	Net.fire(player, "Sfx", "buy")
 end

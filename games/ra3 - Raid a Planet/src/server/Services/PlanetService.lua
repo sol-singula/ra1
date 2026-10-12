@@ -12,6 +12,7 @@ local PlanetService = {
 	Name = "PlanetService",
 	Dependencies = { "PlayerDataService" },
 	Arrived = Signal.new("PlanetService.Arrived"), -- (player, planetKey | "HUB")
+	PadStepped = Signal.new("PlanetService.PadStepped"), -- (player, "RAID" | "EXIT") the raid pads (RaidService)
 	PlanetOpened = Signal.new("PlanetService.PlanetOpened"), -- (player, planetKey)
 }
 
@@ -50,7 +51,17 @@ function PlanetService:CanVisit(player, planetKey)
 end
 
 function PlanetService:Where(player)
+	local pos = position(player)
+	if pos and WorldBuilder.inArena(pos) then
+		return "RAID"
+	end
 	return where[player] or "HUB"
+end
+
+function PlanetService:SetWhere(player, target)
+	where[player] = target
+	self:PushPlanet(player)
+	self.Arrived:Fire(player, target)
 end
 
 function PlanetService:PushPlanet(player)
@@ -65,6 +76,10 @@ function PlanetService:Travel(player, target)
 		return false
 	end
 	local pos
+	if target == "RAID" then
+		self.PadStepped:Fire(player, "RAID")
+		return true
+	end
 	if target == "HUB" then
 		pos = layout.spawn.Position + Vector3.new(0, 3, 0)
 	else
@@ -139,6 +154,21 @@ function PlanetService:_step()
 						end
 					end
 				end
+				-- the raid pads: into the arena when the portal is open, and back out
+				local raidPad = layout.hub.raidPad
+				if raidPad.Transparency < 1 and onDisc(Vector3.new(0, 7, 0), WorldBuilder.PAD_RADIUS, pos) then
+					standing = raidPad
+					if onPad[player] ~= raidPad then
+						self.PadStepped:Fire(player, "RAID")
+					end
+				end
+				local exitCenter = layout.arena.exitCenter
+				if onDisc(exitCenter, WorldBuilder.PAD_RADIUS, pos) then
+					standing = layout.arena.exitPad
+					if onPad[player] ~= layout.arena.exitPad then
+						self.PadStepped:Fire(player, "EXIT")
+					end
+				end
 				onPad[player] = standing
 			end
 		end
@@ -149,7 +179,7 @@ function PlanetService:Init(registry)
 	data = registry.PlayerDataService
 	layout = WorldBuilder.layout
 	Net.on("Travel", function(player, target)
-		if target == "HUB" or (typeof(target) == "string" and Planets.byKey[target]) then
+		if target == "HUB" or target == "RAID" or (typeof(target) == "string" and Planets.byKey[target]) then
 			self:Travel(player, target)
 		end
 	end)

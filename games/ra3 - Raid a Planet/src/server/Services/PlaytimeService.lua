@@ -1,6 +1,5 @@
 -- Reasons to keep playing in the first minutes: playtime gifts (coins, ore, gems and blasters at 1, 3, 5, 10...
 -- minutes played today; the HUD counts down to the next one) and the new-player 2x coins boost for 10 minutes.
--- Also the raid countdown (the raid itself comes in a later step; the clock already runs so the Hub has a beat).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
@@ -19,7 +18,6 @@ local PlaytimeService = {
 local data, economy, blasters, planetService
 local online = {}
 local rng = Random.new()
-local nextRaidAt
 
 local function today(profile)
 	local day = Formulas.day(os.time())
@@ -114,20 +112,14 @@ function PlaytimeService:_tick()
 	end
 end
 
-function PlaytimeService:RaidAt()
-	return nextRaidAt
-end
-
 function PlaytimeService:Init(registry)
 	data = registry.PlayerDataService
 	economy = registry.EconomyService
 	blasters = registry.BlasterService
 	planetService = registry.PlanetService
-	nextRaidAt = workspace:GetServerTimeNow() + Constants.RAID_EVERY
 	data.ClientReady:Connect(function(player)
 		if data:Get(player) then
 			self:Push(player)
-			Net.fire(player, "Event", { kind = "raid", at = nextRaidAt })
 		end
 	end)
 end
@@ -148,10 +140,6 @@ function PlaytimeService:Start()
 	while true do
 		task.wait(1)
 		self:_tick()
-		if workspace:GetServerTimeNow() >= nextRaidAt then
-			nextRaidAt += Constants.RAID_EVERY
-			Net.fireAll("Event", { kind = "raid", at = nextRaidAt })
-		end
 	end
 end
 

@@ -143,7 +143,36 @@ end
 Engine.advance(0.2)
 follow("bag_panel", 18, 9, 16)
 panels.Dim.Card.Close.Activated:Fire()
--- 8. the whole ring from above
+-- 8. the raid: the portal opens, we jump in, shields, the sky board
+local Raid = service("RaidService")
+Planet:Travel(player, "HUB")
+walk(V3.new(0, 0.5, 14), V3.new(0, 0, 0))
+Raid.Start_(Raid)
+Engine.advance(0.3)
+follow("raid_portal", 20, 10, 14)
+Engine.fireServer(player, "Travel", "RAID")
+Engine.advance(0.4)
+local star
+for _, e in Mob.targets do
+	if e.raid then
+		star = e
+	end
+end
+walk(star.pos + V3.new(18, 0, 6), star.pos)
+Engine.advance(0.3)
+Engine.fireServer(player, "Blast", star.id)
+Engine.advance(0.05)
+follow("raid_fight", 22, 11, 18)
+star.hp = math.floor(star.maxHp * 0.6)
+Engine.advance(3)
+shot("raid_shields", layout.arena.center + V3.new(0, 40, 70), layout.arena.center + V3.new(0, 4, -10), 70)
+star.hp = 1
+Engine.fireServer(player, "Blast", star.id)
+Engine.advance(0.5)
+Planet:Travel(player, "HUB")
+walk(V3.new(0, 0.5, 30), V3.new(0, 48, 0))
+shot("raid_board", V3.new(0, 20, 60), V3.new(0, 46, 0), 70)
+-- 9. the whole ring from above
 shot("world", V3.new(0, 420, 520), V3.new(0, 0, 0), 60)
 
 writeFile(outDir .. "/index.json", Engine.game:GetService("HttpService"):JSONEncode(shots))

@@ -75,8 +75,23 @@ Constants.PLAYTIME_GIFTS = {
 	{ at = 3600, kind = "blaster", tier = "mega" },
 }
 
--- Raids (step 3; the countdown already runs so the hub never feels still) --------------------------------------
+-- The raid: every 15 minutes the portal opens over the Hub and the whole server fights the Star Eater ----------
 Constants.RAID_EVERY = 15 * 60
+Constants.RAID_SECONDS = 180 -- the fight; when it runs out the boss flies away (half loot)
+Constants.RAID_JOIN_UNTIL = 0.5 -- you can still jump in until the boss is at half health
+Constants.RAID_HEALTH_SECONDS = 75 -- boss health = everyone's damage per second x this (so ~75 s of all blasting)
+Constants.RAID_MIN_HEALTH = 2000
+Constants.RAID_SHIELD_AT = 0.66 -- below this the shields go up: stand on all 4 plates to break them
+Constants.RAID_RAGE_AT = 0.33 -- below this it fires slow glowing balls
+Constants.RAID_BALL_EVERY = 1.8
+Constants.RAID_LOOT_ORE_BUGS = 30 -- everyone who hit it gets this many bugs' worth of their top planet's ore
+Constants.RAID_LOOT_COINS_BUGS = 30
+Constants.RAID_GEMS = { 1, 3 } -- random gems for everyone; the top 5 get the max
+Constants.RAID_TOP = 5 -- the sky board and the extra roll
+Constants.RAID_ULTRA_CHANCE = 0.02 -- the #1 damage dealer's extra roll is an Ultra this often (shown on the board)
+Constants.RAID_ROBOTS_BELOW = 10 -- fewer real players than this: robot knights fill the plates
+Constants.RAID_ROBOT_DAMAGE = 0.04 -- each robot does this much of the boss's health per 10 seconds
+Constants.SKY_BOARD_SECONDS = 60
 
 -- Rebirth: after all 8 bosses, start over with a star: +25% damage for ever, and Nightmare planets (10x)
 Constants.REBIRTH_DAMAGE = 0.25

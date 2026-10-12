@@ -38,6 +38,7 @@ local Combat = service("CombatService")
 local Forge = service("ForgeService")
 local Goal = service("GoalService")
 local Playtime = service("PlaytimeService")
+local Raid = service("RaidService")
 local ShopData = Engine.require(tree.shared.Data.Shop)
 local Formulas = Engine.require(tree.shared.Formulas)
 local Constants = Engine.require(tree.shared.Constants)
@@ -94,7 +95,7 @@ check("new players get the 2x boost", pa.newBoostLeft == Constants.NEW_PLAYER_BO
 check("in the hub", Planet:Where(a) == "HUB")
 check("only Dust is open", Planet:Unlocked(a) == 1)
 check("goal 1 is blast 5 bugs", Goal:View(a).index == 1 and Goal:View(a).text:find("Blast 5"))
-check("a raid countdown is running", Playtime:RaidAt() > Engine.workspace:GetServerTimeNow())
+check("a raid countdown is running", Raid:NextAt() > Engine.workspace:GetServerTimeNow())
 check("leaderstats", a:FindFirstChild("leaderstats") ~= nil)
 
 -- GO pad to Dust ----------------------------------------------------------------------------------------------
@@ -391,7 +392,110 @@ pa.newBoostLeft = 2
 Engine.advance(3)
 check("the boost runs out", pa.newBoostLeft == 0 and Economy:CoinMult(a) == 1)
 
+-- The raid --------------------------------------------------------------------------------------------------------
+do
+	local hubPad = layout.hub.raidPad
+	check("the portal is shut between raids", hubPad.Transparency == 1 and Raid.state == "waiting")
+	check("can't jump in while it's shut", not Raid:Join(a))
+	-- open it now
+	Raid.state = "waiting"
+	local RaidC = Engine.require(tree.server.Services.RaidService)
+	_ = RaidC
+	Planet:Travel(a, "HUB")
+	Planet:Travel(b, "HUB")
+	Engine.advance(0.2)
+	-- (force the clock)
+	local nowT = Engine.workspace:GetServerTimeNow()
+	for _ = 1, 3 do
+		Engine.advance(0.1)
+	end
+	Raid.Start_(Raid)
+	Engine.advance(0.2)
+	check("the raid opens: beam, pad, boss, event", hubPad.Transparency < 1 and Raid.state == "fighting" and Engine.lastClientEvent("Event") ~= nil)
+	check("everyone is told", Engine.lastClientEvent("Alert", b) ~= nil)
+	check("robots fill a quiet raid", Engine.workspace.Map.Hub.Arena:FindFirstChild("Robot_1") ~= nil)
+	-- step on the RAID pad
+	go(a, Vector3.new(0, 7, 0))
+	Engine.advance(0.3)
+	check("the RAID pad takes you to the arena", Planet:Where(a) == "RAID" and World.inArena(a.Character.HumanoidRootPart.Position))
+	check("joining counts", pa.stats.raids == 1)
+	Engine.fireServer(b, "Travel", "RAID")
+	Engine.advance(0.3)
+	check("Travel RAID works too", Planet:Where(b) == "RAID")
+	local star
+	for _, e in Mob.targets do
+		if e.raid then
+			star = e
+		end
+	end
+	check("the Star Eater is there with a health bar", star ~= nil and star.fill ~= nil)
+	local hpStart = star.hp
+	-- phase 1: blast
+	go(a, star.pos + Vector3.new(16, 0, 0))
+	face(a, star.pos)
+	Engine.advance(Constants.BLAST_COOLDOWN + 0.1)
+	Engine.fireServer(a, "Blast", star.id)
+	Engine.advance(0.1)
+	check("blasting the Star Eater hurts it and counts your damage", star.hp < hpStart and (star.damage[a] or 0) > 0)
+	-- phase 2: shields
+	star.hp = math.floor(star.maxHp * 0.6)
+	Engine.advance(0.3)
+	check("below 66%: shields up, plates lit", star.shielded == true and layout.arena.plates[1].lines[2].Text == "STAND HERE!")
+	local hpS = star.hp
+	Engine.advance(Constants.BLAST_COOLDOWN + 0.1)
+	Engine.fireServer(a, "Blast", star.id)
+	Engine.advance(0.1)
+	check("a shielded boss takes no damage", star.hp == hpS)
+	-- the robots walk to the plates and hold them; a second later the shield breaks
+	Engine.advance(8)
+	check("robots on the plates break the shield", star.shielded == false and star.shieldDone == true)
+	-- phase 3: rage
+	star.hp = math.floor(star.maxHp * 0.3)
+	star.lastBall = 0
+	go(a, star.pos + Vector3.new(14, 0, 0))
+	Engine.advance(0.3)
+	check("below 33%: balls", Engine.workspace.Fx:FindFirstChild("RaidBall") ~= nil)
+	check("too late to join at half health", not Raid:IsOpen())
+	-- finish it
+	star.hp = 1
+	local gemsR, nR = pa.gems, #pa.blasters
+	Engine.advance(Constants.BLAST_COOLDOWN + 0.1)
+	face(a, star.pos)
+	Engine.fireServer(a, "Blast", star.id)
+	Engine.advance(0.3)
+	check("the Star Eater falls", Raid.state == "waiting")
+	check("raid loot: gems and a top-5 blaster", pa.gems > gemsR and #pa.blasters == nR + 1)
+	check("the sky board goes up", layout.hub.skyBoardPost:FindFirstChild("SkyBoard") ~= nil)
+	check("the server hears about the MVP", Engine.lastClientEvent("Announce") ~= nil)
+	check("the portal shuts", hubPad.Transparency == 1 and Raid:NextAt() > Engine.workspace:GetServerTimeNow())
+	Engine.advance(4.5)
+	check("players are sent home after", Planet:Where(a) == "HUB")
+	-- the timeout path: it flies away with half loot
+	Raid.Start_(Raid)
+	Engine.advance(0.2)
+	Engine.fireServer(a, "Travel", "RAID")
+	Engine.advance(0.3)
+	for _, e in Mob.targets do
+		if e.raid then
+			star = e
+		end
+	end
+	go(a, star.pos + Vector3.new(16, 0, 0))
+	face(a, star.pos)
+	Engine.advance(Constants.BLAST_COOLDOWN + 0.1)
+	Engine.fireServer(a, "Blast", star.id)
+	Engine.advance(0.1)
+	local gemsT = pa.gems
+	-- (pull the clock forward)
+	Engine.advance(Constants.RAID_SECONDS + 1)
+	check("the clock runs out: it flies away, half loot", Raid.state == "waiting" and pa.gems >= gemsT + 1)
+	_ = nowT
+end
+
 -- Leaving --------------------------------------------------------------------------------------------------------------
+Planet:Travel(a, "DUST")
+Planet:Travel(b, "DUST")
+Engine.advance(1.5)
 Engine.removePlayer(b)
 Engine.advance(0.5)
 check("Ben's bugs stay for Ava", nearestBug(a) ~= nil)

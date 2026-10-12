@@ -151,6 +151,14 @@ check("boost pill", hud.Boost.Visible and string.find(hud.Boost.Text, "2x", 1, t
 serverSends("Event", { kind = "raid", at = Engine.workspace:GetServerTimeNow() + 600 })
 Engine.advance(0.1)
 check("raid countdown", hud.Raid.Visible and string.find(hud.Raid.Text, "RAID IN", 1, true) ~= nil, hud.Raid.Text)
+serverSends("Event", { kind = "raidOpen", at = Engine.workspace:GetServerTimeNow() + 900, endsAt = Engine.workspace:GetServerTimeNow() + 180 })
+Engine.advance(0.1)
+check("raid open pill", string.find(hud.Raid.Text, "RAID OPEN", 1, true) ~= nil, hud.Raid.Text)
+serverSends("Profile", { planet = "RAID" })
+Engine.advance(0.1)
+check("in the arena: the fight clock and the place", string.find(hud.Raid.Text, "left", 1, true) ~= nil and string.find(hud.Planet.Text, "Arena", 1, true) ~= nil)
+serverSends("Event", { kind = "raidEnd" })
+serverSends("Profile", { planet = "DUST" })
 
 -- Blasting: a fake bug in front, a blaster in hand
 local tool = Instance.new("Tool")

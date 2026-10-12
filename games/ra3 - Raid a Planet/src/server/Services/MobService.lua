@@ -162,8 +162,8 @@ function MobService:Hit(player, id, damage)
 	if not entry or entry.hp <= 0 then
 		return 0
 	end
-	if entry.boss and entry.onHit then
-		entry.onHit(player)
+	if entry.onHit and entry.onHit(player, damage) == false then
+		return 0 -- (shielded)
 	end
 	entry.hp -= damage
 	entry.hitters[player] = true

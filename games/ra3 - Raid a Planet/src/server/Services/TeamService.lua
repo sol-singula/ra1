@@ -91,6 +91,18 @@ function TeamService:Teammates(player)
 	return out
 end
 
+-- True when every player in the list is friends with every other (a squad on its own).
+function TeamService:AllTeam(list)
+	for i = 1, #list do
+		for j = i + 1, #list do
+			if not self:AreTeam(list[i], list[j]) then
+				return false
+			end
+		end
+	end
+	return #list > 0
+end
+
 -- The squad damage multiplier: 1 + 10% per friend here, up to +30%.
 function TeamService:DamageMult(player)
 	return 1 + math.min(Constants.SQUAD_DAMAGE_MAX, Constants.SQUAD_DAMAGE_PER_FRIEND * self:FriendsHere(player))

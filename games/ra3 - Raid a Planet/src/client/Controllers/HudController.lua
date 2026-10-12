@@ -28,7 +28,7 @@ local goalCard, goalText, goalFill, goalReward, goalCount
 local forgePill, raidPill, giftPill, boostPill
 local blastButton
 local toastHolder, alertLabel, downLabel
-local raidAt
+local raidAt, raidEndsAt, raidOpen
 local playtimeReceived, forgeReceived
 local coinsShown, coinsTarget = nil, 0
 
@@ -422,14 +422,17 @@ local function refresh()
 	local s = Store.state
 	coinsTarget = s.coins or 0
 	gemsLabel.Text = Format.num(s.gems or 0)
-	local planetKey = s.planet ~= "HUB" and s.planet or nil
+	local planetKey = s.planet ~= "HUB" and s.planet ~= "RAID" and s.planet or nil
 	local top = Planets.list[math.min(#Planets.list, s.unlocked or 1)]
 	local showOre = planetKey and Planets.byKey[planetKey] or top
 	if showOre and s.ore then
 		oreLabel.Text = `🪨 {Format.num(s.ore[showOre.key] or 0)} {showOre.ore}`
 		oreLabel.Visible = true
 	end
-	if planetKey then
+	if s.planet == "RAID" then
+		planetLabel.Text = "☄️ The Arena"
+		planetLabel.TextColor3 = Color3.fromRGB(200, 160, 255)
+	elseif planetKey then
 		local p = Planets.byKey[planetKey]
 		planetLabel.Text = `{p.emoji} {p.name} planet`
 		planetLabel.TextColor3 = p.color
@@ -486,8 +489,13 @@ local function tick()
 	end
 	forgePill.Text = text or ""
 	forgePill.Visible = text ~= nil
-	-- raid countdown
-	if raidAt then
+	-- raid countdown, or the fight clock
+	if raidOpen and raidEndsAt then
+		local left = raidEndsAt - serverNow()
+		raidPill.Text = s.planet == "RAID" and `☄️ RAID: {Format.time(left)} left`
+			or `☄️ RAID OPEN! Jump in at the Hub ({Format.time(left)})`
+		raidPill.Visible = true
+	elseif raidAt then
 		local left = raidAt - serverNow()
 		raidPill.Text = left > 0 and `☄️ RAID IN {Format.time(left)}` or "☄️ RAID!"
 		raidPill.Visible = true
@@ -529,8 +537,18 @@ function HudController:init()
 	Net.listen("Announce", HudController.announce)
 	Net.listen("Popup", HudController.popup)
 	Net.listen("Event", function(e)
-		if e and e.kind == "raid" then
+		if not e then
+			return
+		end
+		if e.kind == "raid" then
 			raidAt = e.at
+			raidOpen = false
+		elseif e.kind == "raidOpen" or e.kind == "raidStart" then
+			raidOpen = true
+			raidEndsAt = e.endsAt
+			raidAt = e.at
+		elseif e.kind == "raidEnd" then
+			raidOpen = false
 		end
 	end)
 	Net.listen("Down", function(seconds)

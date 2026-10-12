@@ -118,7 +118,7 @@ function BossService:IsDown(player)
 	return (downUntil[player] or 0) > os.clock()
 end
 
-function BossService:_down(player)
+function BossService:Down(player)
 	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	if not hum then
 		return
@@ -244,7 +244,7 @@ function BossService:_step(dt)
 		for _, p in playersInYard(b.pl) do
 			local pp = position(p)
 			if pp and (pp - b.pos).Magnitude < 4 and not self:IsDown(p) then
-				self:_down(p)
+				self:Down(p)
 				gone = true
 			end
 		end
