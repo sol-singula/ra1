@@ -19,12 +19,51 @@ those models and to add nothing else. So every image shows:
 The text is vague on purpose: the game name **STEAL A DRAGON**, a single **?**, or nothing. None of them promise a
 reward, an event or an effect.
 
-## Bold style (new)
+## Bold set (26)
 
-`bold_01_gold_dragon_chase.jpg`: a thief sprinting at the camera with a gold dragon (the real model, with the Gold
-special's sparkles) sitting on their head, while the owner chases behind with the game's wooden bat. The background
-is only colour: a saturated purple and orange burst with speed lines, so it shows no place or object that isn't in
-the game.
+![All bold thumbnails](_bold_all.jpg)
+
+Real game models (the box dragons, the special looks, the wooden bat with the yellow end, the nests, the red laser
+door, a carried dragon sitting on the head) on **plain, very saturated backgrounds**: colour bursts, light rays
+and speed lines, with no place or object in them. Each one has a different scene and a different background
+colour, so they're easy to tell apart when you test them.
+
+Every image went through the same check against the game code: the Fire, Ice and Gold looks are what those specials
+really do; Legend dragons get a gold light and Secret dragons a pink one; and every person is a plain human
+avatar. Three first drafts were redone because an avatar looked like a dragon. Rainbow dragons are left out because
+in the game they change colour over time and can't be shown in one still picture.
+
+| # | File | Scene | Background |
+|---|---|---|---|
+| 01 | `bold_01_gold_dragon_chase.jpg` | Thief with a gold dragon, owner chasing with the bat | Purple / orange |
+| 02 | `bold_02_ice_dragon_slide.jpg` | Sliding with an Ice dragon (glass + sparkles) | Cyan |
+| 03 | `bold_03_fire_dragon_run.jpg` | Running with a Fire dragon (flame on its back) | Red / orange |
+| 04 | `bold_04_friends_run.jpg` | Two friends, each with a dragon | Lime green |
+| 05 | `bold_05_bonk_drop.jpg` | Bonked: the dragon pops off the thief | Hot pink |
+| 06 | `bold_06_secret_dragon.jpg` | Navy Secret dragon with its pink light, "?" | Navy / pink |
+| 07 | `bold_07_giant_dragon_sneak.jpg` | Sneaking up on a giant dragon | Yellow / orange |
+| 08 | `bold_08_five_dragons_burst.jpg` | Five dragons flying out | Rainbow |
+| 09 | `bold_09_gold_dragon_sneak.jpg` | Tiptoeing to a gold dragon on a nest | Teal / violet |
+| 10 | `bold_10_lock_bounce.jpg` | Thief bounces off the red laser door | Red / purple |
+| 11 | `bold_11_shadow_dragon.jpg` | Shadow (Legend) with its gold light | Purple / gold |
+| 12 | `bold_12_three_rarities.jpg` | Common, Epic and Legend side by side | Yellow / lime |
+| 13 | `bold_13_ice_dragon_portrait_notext.jpg` | Ice dragon close-up, no text | Blue |
+| 14 | `bold_14_pink_dragon_run.jpg` | Running with a pink dragon | Pink / purple |
+| 15 | `bold_15_speed_run.jpg` | Side-on sprint with a purple dragon | Blue / violet |
+| 16 | `bold_16_chased_by_three.jpg` | Three owners chasing one thief | Orange / pink |
+| 17 | `bold_17_grab_dropped_dragon.jpg` | Two players dive for a dropped dragon | Red vs blue |
+| 18 | `bold_18_wink_thumbs_up.jpg` | Wink and thumbs up with a dragon on the head | Yellow |
+| 19 | `bold_19_team_celebrate.jpg` | Three friends celebrating a steal | Turquoise / violet |
+| 20 | `bold_20_getaway.jpg` | Getting away from a reaching hand | Green / gold |
+| 21 | `bold_21_dodge_bonk.jpg` | Ducking under a bat swing | Coral / violet |
+| 22 | `bold_22_red_dragon_closeup.jpg` | Huge red dragon face, small sneaky thief | Crimson / magenta |
+| 23 | `bold_23_grow_three_sizes.jpg` | The same dragon at three sizes | Sky blue |
+| 24 | `bold_24_defender.jpg` | Owner guarding two dragons with the bat | Blue / orange |
+| 25 | `bold_25_gold_dragon_portrait.jpg` | Gold dragon close-up | Ruby red |
+| 26 | `bold_26_secret_dragon_leap.jpg` | Leaping with the Secret dragon | Orange / navy |
+
+A first test set with five very different ones: **01, 05, 08, 16, 25** (chase, bonk, collection, crowd chase,
+rare dragon).
 
 ## The 25
 
