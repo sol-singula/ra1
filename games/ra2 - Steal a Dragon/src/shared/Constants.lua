@@ -37,6 +37,10 @@ Constants.LEVEL_ALL_PRODUCT_LEVELS = 5 -- the +5 Levels for ALL product
 -- Lock
 Constants.LOCK_SECONDS = 60
 Constants.LOCK_SECONDS_LONG = 120 -- Long Lock pass
+-- Resetting a running lock (stepping on the pad again) can keep a door shut for at most this many lock lengths in a
+-- row; then it opens and can't lock again for LOCK_COOLDOWN, so thieves always get a chance.
+Constants.LOCK_CHAIN_MAX = 3
+Constants.LOCK_COOLDOWN = 20
 Constants.LOCK_VIP_BONUS = 15
 Constants.LOCK_BOOST_SECONDS = 300 -- the 5-Minute Lock product (the plate next to the lock pad)
 

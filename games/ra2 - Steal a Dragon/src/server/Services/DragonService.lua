@@ -119,8 +119,103 @@ function DragonService:FreeSlot(player)
 	return nil
 end
 
+-- Room for one more dragon: a free nest, or two nest dragons that can be combined to free one.
 function DragonService:HasRoom(player)
-	return self:FreeSlot(player) ~= nil
+	if self:FreeSlot(player) then
+		return true
+	end
+	local profile = data:Get(player)
+	local inNests = 0
+	for _, rec in profile and profile.dragons or {} do
+		if rec.slot then
+			inNests += 1
+		end
+	end
+	return inNests >= 2
+end
+
+-- Combining ---------------------------------------------------------------------------------------------------
+-- Fold one dragon into another: `from` leaves, and `into` gets a boost so it earns what both earned. Returns the
+-- dragon that was kept.
+function DragonService:Combine(player, into, from)
+	local profile = data:Get(player)
+	if not profile or into == from then
+		return nil
+	end
+	into.mx = Formulas.combinedBoost(into, from, os.time())
+	if from.slot then
+		self:_removeNestModel(player, from.slot)
+	end
+	removeRec(profile, from)
+	if into.slot then
+		self:_refreshNestModel(player, into, true)
+	end
+	baseService:PushIncome(player)
+	self.DragonsChanged:Fire(player)
+	return into
+end
+
+local function nestDragonsByIncome(profile)
+	local list = {}
+	local now = os.time()
+	for _, rec in profile.dragons do
+		if rec.slot then
+			table.insert(list, rec)
+		end
+	end
+	table.sort(list, function(a, b)
+		return Formulas.dragonIncome(a, now) > Formulas.dragonIncome(b, now)
+	end)
+	return list
+end
+
+-- The owner's "Combine into best" prompt: this dragon folds into their best nest dragon (income kept).
+function DragonService:CombineIntoBest(player, uid)
+	local profile = data:Get(player)
+	local rec = profile and findRec(profile, uid)
+	if not rec or not rec.slot then
+		return
+	end
+	-- the best of the other nest dragons; if this one beats them all, it's the one to combine into
+	local best
+	for _, other in nestDragonsByIncome(profile) do
+		if other ~= rec then
+			best = other
+			break
+		end
+	end
+	local now = os.time()
+	if not best or Formulas.dragonIncome(rec, now) > Formulas.dragonIncome(best, now) then
+		Net.fire(player, "Toast", "That's your best dragon: combine the others into it!", "info")
+		return
+	end
+	local fromName = Dragons.byId[rec.id].name
+	self:Combine(player, best, rec)
+	Net.fire(
+		player,
+		"Toast",
+		`⚡ {fromName} combined into {Dragons.byId[best.id].name}! Same income, one nest free.`,
+		"good"
+	)
+	Net.fire(player, "Sfx", "levelup")
+	self:FillWaiting(player)
+end
+
+-- Nests full: fold the weakest nest dragon into the best one so a nest frees up (income kept). Returns the slot.
+function DragonService:MakeRoom(player)
+	local profile = data:Get(player)
+	if not profile then
+		return nil
+	end
+	local list = nestDragonsByIncome(profile)
+	if #list < 2 then
+		return nil
+	end
+	local weakest, best = list[#list], list[1]
+	local name = Dragons.byId[weakest.id].name
+	self:Combine(player, best, weakest)
+	Net.fire(player, "Toast", `⚡ Nests full: {name} combined into {Dragons.byId[best.id].name} (income kept)`, "info")
+	return self:FreeSlot(player)
 end
 
 -- Dragons that belong to the player but have no nest yet (gifts, eggs, deals while the base was full).
@@ -146,6 +241,7 @@ local PROMPT_OFFSETS = {
 	grow = Vector2.new(0, -84),
 	levelup = Vector2.zero,
 	sell = Vector2.new(0, 84),
+	combine = Vector2.new(0, 168),
 	buy = Vector2.zero,
 	buynow = Vector2.new(0, 84),
 }
@@ -175,9 +271,10 @@ local function tagText(rec)
 	local name = (rec.sp and Dragons.Specials[rec.sp].name .. " " or "") .. d.name
 	local level = levelOf(rec)
 	local lv = level >= Constants.MAX_LEVEL and "MAX" or tostring(level)
+	local boost = (rec.mx or 1) > 1.005 and string.format(" · ⚡x%.1f", rec.mx) or ""
 	return name,
 		Dragons.RarityColor[d.rarity],
-		`Lv {lv} {Constants.STAGE_NAMES[stage]} · {Format.num(Formulas.dragonIncome(rec, os.time()))}/s`
+		`Lv {lv} {Constants.STAGE_NAMES[stage]} · {Format.num(Formulas.dragonIncome(rec, os.time()))}/s{boost}`
 end
 DragonService.tagText = tagText
 
@@ -224,6 +321,12 @@ function DragonService:_spawnNestModel(player, rec)
 	local levelUp = prompt(root, "levelup", levelUpText(rec), name, 0.3, player.UserId)
 	levelUp.Triggered:Connect(function(who)
 		self:TryLevelUp(who, model)
+	end)
+	local combine = prompt(root, "combine", "Combine into best", name, 0.6, player.UserId, Enum.KeyCode.C)
+	combine.Triggered:Connect(function(who)
+		if who == player then
+			self:CombineIntoBest(player, rec.uid)
+		end
 	end)
 	local grow = prompt(root, "grow", "+10 Levels", name, 0, player.UserId, Enum.KeyCode.G)
 	grow.Triggered:Connect(function(who)
@@ -329,7 +432,7 @@ end
 
 -- Put a record (already in the player's profile, no slot) into a free nest. Returns true if it fit.
 function DragonService:AddToBase(player, rec)
-	local slot = self:FreeSlot(player)
+	local slot = self:FreeSlot(player) or self:MakeRoom(player)
 	if not slot then
 		return false
 	end
@@ -692,7 +795,7 @@ function DragonService:_place(player)
 	if not c or not profile then
 		return
 	end
-	local slot = self:FreeSlot(player)
+	local slot = self:FreeSlot(player) or self:MakeRoom(player)
 	if not slot then
 		if (lastRoomToast[player] or -99) < os.clock() - 3 then
 			lastRoomToast[player] = os.clock()

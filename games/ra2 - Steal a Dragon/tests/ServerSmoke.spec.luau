@@ -653,6 +653,79 @@ hum:EquipTool(toolOf(a, "bonk"))
 check("wings come off when put away", a.Character:FindFirstChild("WingsModel") == nil)
 check("potions kept when the hotbar is rebuilt", pa.potions == Constants.POTION_PACK)
 
+-- Combining: fold a dragon into your best one, income kept; full nests combine by themselves, so you can always
+-- steal or buy
+do
+	local FormulasC = Engine.require(tree.shared.Formulas)
+	local function income(pp)
+		local sum, now = 0, Engine.globals.os.time()
+		for _, r in pp.dragons do
+			if r.slot then
+				sum += FormulasC.dragonIncome(r, now)
+			end
+		end
+		return sum
+	end
+	local before, count = income(pa), #pa.dragons
+	local weakest
+	for _, r in pa.dragons do
+		if
+			r.slot
+			and (
+				not weakest
+				or FormulasC.dragonIncome(r, Engine.globals.os.time())
+					< FormulasC.dragonIncome(weakest, Engine.globals.os.time())
+			)
+		then
+			weakest = r
+		end
+	end
+	Dragon:CombineIntoBest(a, weakest.uid)
+	check("combining keeps the income", math.abs(income(pa) - before) < before * 0.001, income(pa) - before)
+	check("combining frees a nest", #pa.dragons == count - 1)
+	local boosted = false
+	for _, r in pa.dragons do
+		boosted = boosted or (r.mx or 1) > 1
+	end
+	check("the best dragon carries the boost", boosted)
+	-- fill every nest, then a new dragon still fits (the weakest combine)
+	local maxN = Dragon:MaxNests(a)
+	while true do
+		local slots = 0
+		for _, r in pa.dragons do
+			if r.slot then
+				slots += 1
+			end
+		end
+		if slots >= maxN then
+			break
+		end
+		Dragon:Grant(a, "PUFF")
+	end
+	check("full nests still have room (by combining)", Dragon:HasRoom(a))
+	local fullIncome = income(pa)
+	Dragon:Grant(a, "EMBER")
+	check(
+		"a new dragon into full nests combines the weakest, income kept",
+		income(pa) > fullIncome and Dragon:WaitingCount(a) == 0
+	)
+end
+-- the lock can be reset by stepping on the pad, but only so far; then it opens and recharges
+do
+	local myBase = Base:Get(a)
+	myBase.lockUntil = 0
+	Base:Lock(a)
+	local first = myBase.lockUntil
+	check("lock pad locks", Base:IsLocked(myBase))
+	myBase.lockChainStart -= Constants.LOCK_SECONDS * Constants.LOCK_CHAIN_MAX
+	Base:Lock(a)
+	check("a lock can't be reset forever", myBase.lockUntil == first)
+	myBase.lockUntil = Engine.workspace:GetServerTimeNow() - 1 -- it just ran out
+	Base:Lock(a)
+	check("then it recharges before it can lock again", not Base:IsLocked(myBase))
+	myBase.lockUntil = 0
+end
+
 -- Skins
 check("starts with Classic", pa.skins.CLASSIC and pa.skin == "CLASSIC")
 pa.coins += 5000

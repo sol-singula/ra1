@@ -255,11 +255,25 @@ function BaseService:Lock(player, extraSeconds)
 		return
 	end
 	local wasLocked = self:IsLocked(base)
+	local t = now()
 	if extraSeconds then
-		base.lockUntil = math.max(base.lockUntil, now()) + extraSeconds
-		Net.fire(player, "Toast", `Locked for {Format.time(base.lockUntil - now())}! ⏱️`, "good")
+		-- the 5-Minute Lock product: always works, on top of whatever is running
+		base.lockUntil = math.max(base.lockUntil, t) + extraSeconds
+		Net.fire(player, "Toast", `Locked for {Format.time(base.lockUntil - t)}! ⏱️`, "good")
 	else
-		base.lockUntil = math.max(base.lockUntil, now() + Formulas.lockSeconds(economy:Passes(player)))
+		local length = Formulas.lockSeconds(economy:Passes(player))
+		if not wasLocked and base.lockUntil > 0 and t < base.lockUntil + Constants.LOCK_COOLDOWN then
+			local wait = base.lockUntil + Constants.LOCK_COOLDOWN - t
+			Net.fire(player, "Toast", `🔓 The lock is recharging: {Format.time(wait)}`, "info")
+			return
+		end
+		if not wasLocked then
+			base.lockChainStart = t
+		elseif t + length - (base.lockChainStart or t) > length * Constants.LOCK_CHAIN_MAX then
+			Net.fire(player, "Toast", "🔒 Your lock is at its limit: it opens soon!", "info")
+			return
+		end
+		base.lockUntil = math.max(base.lockUntil, t + length)
 	end
 	self:_drawLock(base)
 	self:PushBase(player)

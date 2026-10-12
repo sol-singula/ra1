@@ -42,7 +42,7 @@ function Formulas.levelUpCost(rec, now)
 	if level >= Constants.MAX_LEVEL then
 		return nil
 	end
-	local base = Dragons.byId[rec.id].cps * Formulas.specialMult(rec.sp)
+	local base = Dragons.byId[rec.id].cps * Formulas.specialMult(rec.sp) * (rec.mx or 1)
 	return math.floor(base * Constants.LEVEL_COST_SECONDS * Constants.LEVEL_COST_GROWTH ^ (level - 1))
 end
 
@@ -51,9 +51,16 @@ function Formulas.specialMult(special)
 end
 
 -- Coins per second of one dragon record { id, sp, born, lv } before player bonuses.
+-- rec.mx: the boost from dragons combined into this one (DragonService:Combine), so combining keeps the income.
 function Formulas.dragonIncome(rec, now)
 	local d = Dragons.byId[rec.id]
-	return d.cps * Formulas.levelMult(Formulas.level(rec, now)) * Formulas.specialMult(rec.sp)
+	return d.cps * Formulas.levelMult(Formulas.level(rec, now)) * Formulas.specialMult(rec.sp) * (rec.mx or 1)
+end
+
+-- The boost to give `into` so it earns what it and `from` earned together.
+function Formulas.combinedBoost(into, from, now)
+	local a, b = Formulas.dragonIncome(into, now), Formulas.dragonIncome(from, now)
+	return (into.mx or 1) * (a + b) / math.max(a, 1e-9)
 end
 
 function Formulas.roadPrice(id, special)
@@ -61,7 +68,7 @@ function Formulas.roadPrice(id, special)
 end
 
 function Formulas.sellValue(rec, now)
-	local mult = Formulas.levelMult(Formulas.level(rec, now))
+	local mult = Formulas.levelMult(Formulas.level(rec, now)) * (rec.mx or 1)
 	return math.floor(Formulas.roadPrice(rec.id, rec.sp) * Constants.SELL_FRACTION * mult)
 end
 
