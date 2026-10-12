@@ -874,6 +874,30 @@ for _ = 1, 90 do
 end
 check("a custom dragon is on the road almost all the time", withFancy / samples >= 0.9, withFancy .. "/" .. samples)
 
+-- DISCO FEVER: the button in the disco gives everyone 1.25x coins for 15 minutes, again 30 minutes after a press
+local feverButton = World.feverButton
+check("disco has the fever button", feverButton ~= nil and feverButton:FindFirstChild("Prompt_fever") ~= nil)
+local here = Engine.Players:GetPlayers()[1]
+local _, multBefore = Base:Income(here)
+feverButton.Prompt_fever.Triggered:Fire(here)
+Engine.advance(1.1)
+local _, multAfter = Base:Income(here)
+check(
+	"fever gives everyone 1.25x",
+	math.abs(multAfter - multBefore * Constants.FEVER_MULT) < 0.001,
+	multAfter / multBefore
+)
+check("fever prompt shows it's on", feverButton.Prompt_fever.ActionText:find("FEVER ON", 1, true) ~= nil)
+check("can't press again right away", Base:StartFever(here) == false)
+local guideDots, nearRoad = 0, false
+for _, d in Engine.workspace.Map:FindFirstChild("Disco", true):GetChildren() do
+	if d.Name == "GuideLine" then
+		guideDots += 1
+		nearRoad = nearRoad or d.Position.X < 106
+	end
+end
+check("a line of lights leads from the road to the disco", guideDots > 10 and nearRoad)
+
 -- Shutdown ----------------------------------------------------------------------------------------------------
 for _, fn in Engine.closeHandlers do
 	fn()

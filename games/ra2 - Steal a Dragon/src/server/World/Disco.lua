@@ -99,6 +99,37 @@ function Disco.build(parent)
 		dot:SetAttribute("DiscoTile", i)
 	end
 
+	-- A dotted line of lights from the middle of the road, down the tunnel's centre and through the door, so you
+	-- can follow it to the party. (Only the line shows from outside; the room stays hidden.)
+	local doorX = (D.x0 + D.x1) / 2
+	local n = 0
+	for x = 104, doorX, 2.2 do
+		n += 1
+		part({
+			Name = "GuideLine",
+			Size = Vector3.new(1.2, 0.12, 0.5),
+			CFrame = CFrame.new(x, FLOOR_Y + 0.06, 0),
+			Color = Disco.COLORS[n % #Disco.COLORS + 1],
+			Material = Enum.Material.Neon,
+			CanCollide = false,
+			CastShadow = false,
+			Parent = model,
+		}):SetAttribute("DiscoTile", 100 + n)
+	end
+	for z = 1.6, 7, 2.2 do
+		n += 1
+		part({
+			Name = "GuideLine",
+			Size = Vector3.new(0.5, 0.12, 1.2),
+			CFrame = CFrame.new(doorX, FLOOR_Y + 0.06, z),
+			Color = Disco.COLORS[n % #Disco.COLORS + 1],
+			Material = Enum.Material.Neon,
+			CanCollide = false,
+			CastShadow = false,
+			Parent = model,
+		}):SetAttribute("DiscoTile", 100 + n)
+	end
+
 	-- The room: walls (the west one has the doorway), a rock roof and a rock hill around it all.
 	wall(model, "RoomWall", R.x0, R.z0, R.x1, R.z0, R.h, 1) -- south
 	wall(model, "RoomWall", R.x0, R.z1, R.x1, R.z1, R.h, 1) -- north
@@ -351,6 +382,47 @@ function Disco.build(parent)
 		t.TextColor3 = line[3]
 		t.TextStrokeTransparency = 0
 		t.Parent = gui
+	end
+
+	-- The DISCO FEVER button on a stand in front of the booth: everyone in the server gets more coins for a while
+	-- (BaseService runs it).
+	local buttonPos = Vector3.new(R.x1 - 8.5, FLOOR_Y, (R.z0 + R.z1) / 2 + 9)
+	part({
+		Name = "FeverStand",
+		Size = Vector3.new(2.6, 3.2, 2.6),
+		CFrame = CFrame.new(buttonPos + Vector3.new(0, 1.6, 0)),
+		Color = rgb(30, 28, 44),
+		Parent = model,
+	})
+	local button = Scenery.disc(
+		model,
+		"FeverButton",
+		buttonPos + Vector3.new(0, 3.45, 0),
+		2.2,
+		0.5,
+		Disco.COLORS[1],
+		Enum.Material.Neon
+	)
+	button:SetAttribute("DiscoTile", 77)
+	local buttonGui = Instance.new("BillboardGui")
+	buttonGui.Name = "Sign"
+	buttonGui.Size = UDim2.new(9, 0, 2.6, 0)
+	buttonGui.StudsOffset = Vector3.new(0, 3, 0)
+	buttonGui.MaxDistance = 40
+	buttonGui.LightInfluence = 0
+	buttonGui.Parent = button
+	for i, line in { { "🪩 DISCO FEVER", rgb(255, 120, 220) }, { "1.25x coins for everyone!", rgb(150, 230, 255) } } do
+		local t = Instance.new("TextLabel")
+		t.Name = "Line" .. i
+		t.BackgroundTransparency = 1
+		t.Size = UDim2.new(1, 0, 0.5, 0)
+		t.Position = UDim2.new(0, 0, (i - 1) * 0.5, 0)
+		t.Text = line[1]
+		t.Font = Enum.Font.LuckiestGuy
+		t.TextScaled = true
+		t.TextColor3 = line[2]
+		t.TextStrokeTransparency = 0
+		t.Parent = buttonGui
 	end
 
 	-- Dancing dragons (a DJ behind the booth and two on the floor)

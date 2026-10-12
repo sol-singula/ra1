@@ -21,6 +21,7 @@ local BaseService = {
 }
 
 local data, economy, team
+local feverUntil, feverReadyAt = 0, 0 -- DISCO FEVER (server time)
 local bases = {} -- [i] = { world, owner, lockUntil, bank }
 local byPlayer = {} -- [player] = base
 local lastBounceToast = {}
@@ -40,7 +41,25 @@ function BaseService:Init(registry)
 	end
 	data.ClientReady:Connect(function(player)
 		self:PushBase(player)
+		if feverUntil > now() then
+			Net.fire(player, "Event", { kind = "fever", untilTime = feverUntil })
+		end
 	end)
+	-- the DISCO FEVER button in the secret disco
+	local button = WorldBuilder.layout.feverButton
+	if button then
+		local prompt = Instance.new("ProximityPrompt")
+		prompt.Name = "Prompt_fever"
+		prompt.ObjectText = "DISCO FEVER"
+		prompt.ActionText = "Start DISCO FEVER!"
+		prompt.HoldDuration = 0.6
+		prompt.MaxActivationDistance = 10
+		prompt.RequiresLineOfSight = false
+		prompt.Parent = button
+		prompt.Triggered:Connect(function(player)
+			self:StartFever(player)
+		end)
+	end
 	Net.on("Lock", function(player)
 		local base = byPlayer[player]
 		if base and self:IsInside(base, self:Position(player)) then
@@ -165,6 +184,56 @@ function BaseService:BaseAt(pos)
 	return nil
 end
 
+-- DISCO FEVER --------------------------------------------------------------------------------------------------
+
+function BaseService:FeverLeft()
+	return math.max(0, feverUntil - now())
+end
+
+-- Press the disco's button: everyone here earns FEVER_MULT for FEVER_SECONDS; it can be pressed again
+-- FEVER_COOLDOWN after the last press.
+function BaseService:StartFever(player)
+	local t = now()
+	if t < feverReadyAt then
+		Net.fire(player, "Toast", `🪩 The disco needs to cool down: {Format.time(feverReadyAt - t)}`, "info")
+		return false
+	end
+	feverUntil = t + Constants.FEVER_SECONDS
+	feverReadyAt = t + Constants.FEVER_COOLDOWN
+	Net.fireAll("Event", { kind = "fever", untilTime = feverUntil, by = player.DisplayName })
+	Net.fireAll(
+		"Alert",
+		`🪩 {player.DisplayName} started DISCO FEVER! 1.25x coins for everyone!`,
+		Color3.fromRGB(255, 120, 220)
+	)
+	for _, p in Players:GetPlayers() do
+		self:PushIncome(p)
+	end
+	task.delay(Constants.FEVER_SECONDS + 0.1, function()
+		for _, p in Players:GetPlayers() do
+			self:PushIncome(p)
+		end
+	end)
+	self:_drawFever()
+	return true
+end
+
+function BaseService:_drawFever()
+	local button = WorldBuilder.layout.feverButton
+	local prompt = button and button:FindFirstChild("Prompt_fever")
+	if not prompt then
+		return
+	end
+	local t = now()
+	if feverUntil > t then
+		prompt.ActionText = "FEVER ON " .. Format.time(feverUntil - t)
+	elseif feverReadyAt > t then
+		prompt.ActionText = "Ready in " .. Format.time(feverReadyAt - t)
+	else
+		prompt.ActionText = "Start DISCO FEVER!"
+	end
+end
+
 function BaseService:IsLocked(base)
 	return base.lockUntil > now()
 end
@@ -230,6 +299,9 @@ function BaseService:Income(player)
 		end
 	end
 	local mult = Formulas.playerMult(economy:Passes(player), team:FriendsHere(player))
+	if self:FeverLeft() > 0 then
+		mult *= Constants.FEVER_MULT
+	end
 	return sum * mult, mult
 end
 
@@ -349,6 +421,7 @@ end
 
 -- Every second: fill banks, update signs, track best income.
 function BaseService:_tick()
+	self:_drawFever()
 	for _, base in bases do
 		local player = base.owner
 		if player then

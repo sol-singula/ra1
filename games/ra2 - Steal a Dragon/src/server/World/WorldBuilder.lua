@@ -950,7 +950,7 @@ local function exitTunnel(parent, x)
 		)
 	end
 	Scenery.ball(parent, "Snow", Vector3.new(x + len + 62, 34, 0), 20, rgb(245, 248, 255), Enum.Material.Snow)
-	Disco.build(parent)
+	WorldBuilder.discoModel = Disco.build(parent)
 	billboard(parent:FindFirstChild("TunnelArch"), 18, 3, Vector3.new(0, 3.5, 0), {
 		{ text = "EXIT", h = 1, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(150, 230, 255) },
 	}, 160)
@@ -1716,6 +1716,7 @@ function WorldBuilder.build()
 		practiceFeet = pcf * CFrame.new(0, 1.2, 2),
 		practiceNest = practiceNest,
 		practiceCenter = pcf.Position,
+		feverButton = WorldBuilder.discoModel and WorldBuilder.discoModel:FindFirstChild("FeverButton"),
 		spawn = spawn,
 		roadZ = 0,
 		roadY = 0.5,

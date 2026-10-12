@@ -23,11 +23,11 @@ local HudController = { Name = "HudController", Order = 10 }
 local gui
 local coinsLabel, cpsLabel, eggLabel, waitingLabel
 local goalCard, goalText, goalFill, goalReward, goalCount
-local carryBanner, eventBanner, luckBanner
+local carryBanner, eventBanner, luckBanner, feverBanner
 local lockButton
 local giftDot
 local toastHolder, alertLabel, bonkedLabel
-local events = { legendAt = nil, luckUntil = nil, luckBy = nil }
+local events = { legendAt = nil, luckUntil = nil, luckBy = nil, feverUntil = nil }
 local eggReceived -- os.clock() when the egg view arrived
 local coinsShown, coinsTarget = nil, 0 -- the number on screen eases toward the real coin count
 local hints = {} -- key hint badges, shown for keyboard and gamepad players
@@ -381,6 +381,7 @@ local function buildCenter()
 	carryBanner.Text.Text = "🏠 RUN HOME!"
 	eventBanner = banner("Event", UDim2.fromOffset(390, 44), UDim2.new(0.5, 10, 0, 146), C.purple)
 	luckBanner = banner("Luck", UDim2.fromOffset(230, 44), UDim2.new(1, -12, 0, 10), C.good, Vector2.new(1, 0))
+	feverBanner = banner("Fever", UDim2.fromOffset(260, 44), UDim2.new(1, -12, 0, 60), C.pink, Vector2.new(1, 0))
 
 	toastHolder = new("Frame", {
 		Name = "Toasts",
@@ -492,6 +493,11 @@ local function tick()
 	else
 		eventBanner.Visible = false
 	end
+	local feverLeft = events.feverUntil and events.feverUntil - serverNow()
+	feverBanner.Visible = feverLeft ~= nil and feverLeft > 0
+	if feverBanner.Visible then
+		feverBanner.Text.Text = "🪩 FEVER 1.25x " .. Format.time(feverLeft)
+	end
 	local luckLeft = events.luckUntil and events.luckUntil - serverNow()
 	if luckLeft and luckLeft > 0 then
 		luckBanner.Visible = true
@@ -558,6 +564,8 @@ function HudController:init()
 	Net.listen("Event", function(e)
 		if e.kind == "legend" then
 			events.legendAt = e.at
+		elseif e.kind == "fever" then
+			events.feverUntil = e.untilTime
 		elseif e.kind == "luck" then
 			events.luckUntil = e.untilTime
 			events.luckBy = e.by

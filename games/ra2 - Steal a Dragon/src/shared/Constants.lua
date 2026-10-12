@@ -62,6 +62,10 @@ Constants.WINGS_LAUNCH = 60 -- upward speed of a wing jump (studs per second)
 Constants.GLIDE_FALL = 6 -- fastest fall while gliding
 Constants.GLIDE_SPEED = 34 -- forward speed while gliding
 Constants.CAMERA_MAX_ZOOM = 45
+-- DISCO FEVER (the button in the secret disco): more coins for everyone in the server for a while
+Constants.FEVER_MULT = 1.25
+Constants.FEVER_SECONDS = 15 * 60
+Constants.FEVER_COOLDOWN = 30 * 60 -- from when it was pressed
 -- hotbar pictures (uploaded Images; the files are in other/ra2/icon/tools/)
 Constants.TOOL_ICONS = {
 	bat = "rbxassetid://124721099262846",
