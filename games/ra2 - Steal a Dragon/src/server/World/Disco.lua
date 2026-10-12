@@ -102,32 +102,32 @@ function Disco.build(parent)
 	-- A dotted line of lights from the middle of the road, down the tunnel's centre and through the door, so you
 	-- can follow it to the party. (Only the line shows from outside; the room stays hidden.)
 	local doorX = (D.x0 + D.x1) / 2
-	local n = 0
+	local dots = 0
 	for x = 104, doorX, 2.2 do
-		n += 1
+		dots += 1
 		part({
 			Name = "GuideLine",
 			Size = Vector3.new(1.2, 0.12, 0.5),
 			CFrame = CFrame.new(x, FLOOR_Y + 0.06, 0),
-			Color = Disco.COLORS[n % #Disco.COLORS + 1],
+			Color = Disco.COLORS[dots % #Disco.COLORS + 1],
 			Material = Enum.Material.Neon,
 			CanCollide = false,
 			CastShadow = false,
 			Parent = model,
-		}):SetAttribute("DiscoTile", 100 + n)
+		}):SetAttribute("DiscoTile", 100 + dots)
 	end
 	for z = 1.6, 7, 2.2 do
-		n += 1
+		dots += 1
 		part({
 			Name = "GuideLine",
 			Size = Vector3.new(0.5, 0.12, 1.2),
 			CFrame = CFrame.new(doorX, FLOOR_Y + 0.06, z),
-			Color = Disco.COLORS[n % #Disco.COLORS + 1],
+			Color = Disco.COLORS[dots % #Disco.COLORS + 1],
 			Material = Enum.Material.Neon,
 			CanCollide = false,
 			CastShadow = false,
 			Parent = model,
-		}):SetAttribute("DiscoTile", 100 + n)
+		}):SetAttribute("DiscoTile", 100 + dots)
 	end
 
 	-- The room: walls (the west one has the doorway), a rock roof and a rock hill around it all.

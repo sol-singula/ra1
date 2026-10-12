@@ -13,6 +13,28 @@ local TutorialService = {
 local data, dragons, baseService, road, reward
 local state = {} -- [player] = { step, sent, doneAt, collected, glowing }
 
+-- Light up a part for the current goal (and put out the last one).
+local function setGlow(s, part)
+	if s.glowing and s.glowing ~= part then
+		local old = s.glowing:FindFirstChild("TutorialGlow")
+		if old then
+			old:Destroy()
+		end
+		s.glowing.Material = s.glowMaterial or s.glowing.Material
+		s.glowing = nil
+	end
+	if part and not part:FindFirstChild("TutorialGlow") then
+		s.glowing, s.glowMaterial = part, part.Material
+		part.Material = Enum.Material.Neon
+		local h = Instance.new("Highlight")
+		h.Name = "TutorialGlow"
+		h.FillColor = Color3.fromRGB(255, 220, 80)
+		h.FillTransparency = 0.35
+		h.OutlineColor = Color3.fromRGB(255, 255, 255)
+		h.Parent = part
+	end
+end
+
 local function hasNestDragon(profile)
 	for _, rec in profile.dragons do
 		if rec.slot then
@@ -58,7 +80,7 @@ local STEPS = {
 			local base = myBase(player)
 			return base and base.world.collectPad
 		end,
-		done = function(_, profile, s)
+		done = function(_, _profile, s)
 			return s.collected
 		end,
 	},
@@ -116,28 +138,6 @@ end
 
 function TutorialService:Step(player)
 	return state[player] and state[player].step
-end
-
--- Light up a part for the current goal (and put out the last one).
-local function setGlow(s, part)
-	if s.glowing and s.glowing ~= part then
-		local old = s.glowing:FindFirstChild("TutorialGlow")
-		if old then
-			old:Destroy()
-		end
-		s.glowing.Material = s.glowMaterial or s.glowing.Material
-		s.glowing = nil
-	end
-	if part and not part:FindFirstChild("TutorialGlow") then
-		s.glowing, s.glowMaterial = part, part.Material
-		part.Material = Enum.Material.Neon
-		local h = Instance.new("Highlight")
-		h.Name = "TutorialGlow"
-		h.FillColor = Color3.fromRGB(255, 220, 80)
-		h.FillTransparency = 0.35
-		h.OutlineColor = Color3.fromRGB(255, 255, 255)
-		h.Parent = part
-	end
 end
 
 function TutorialService:_finish(player, skipped)
