@@ -227,6 +227,21 @@ p = sent("Purchase")
 check("buy 2x Coins", p and p.args[1] == "pass" and p.args[2] == "DOUBLE")
 serverSends("Profile", { passes = { DOUBLE = true } })
 check("owned pass shows OWNED", findButton(panels.Dim.Card.Body.DOUBLE, "OWNED") ~= nil)
+Engine.advance(2)
+click(panels.Dim.Card.Tabs, "SKINS")
+check(
+	"skin cards",
+	panels.Dim.Card.Body:FindFirstChild("MIDNIGHT") ~= nil and panels.Dim.Card.Body:FindFirstChild("LAVA") ~= nil
+)
+check("Classic is worn at first", findButton(panels.Dim.Card.Body.CLASSIC, "EQUIPPED") ~= nil)
+check("coin skin shows its price", findButton(panels.Dim.Card.Body.MIDNIGHT, "5K") ~= nil)
+check("Robux skin shows its price", findButton(panels.Dim.Card.Body.LAVA, "R$ 99") ~= nil)
+click(panels.Dim.Card.Body.MIDNIGHT, "5K")
+p = sent("BuySkin")
+check("buy a skin", p and p.args[1] == "MIDNIGHT")
+serverSends("Profile", { skins = { CLASSIC = true, MIDNIGHT = true }, skin = "MIDNIGHT" })
+check("bought skin shows EQUIPPED", findButton(panels.Dim.Card.Body.MIDNIGHT, "EQUIPPED") ~= nil)
+check("Classic can be put back on", findButton(panels.Dim.Card.Body.CLASSIC, "EQUIP") ~= nil)
 click(panels.Dim.Card, "✕")
 check("panel closes", panels.Dim.Visible == false)
 

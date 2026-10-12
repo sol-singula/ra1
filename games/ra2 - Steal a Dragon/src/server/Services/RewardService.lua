@@ -259,7 +259,7 @@ function RewardService:ProgressOf(player, kind)
 		local best = 0
 		for _, rec in profile.dragons do
 			local v = kind == "rarity" and Dragons.RarityRank[Dragons.byId[rec.id].rarity]
-				or Formulas.stage(rec.born, os.time())
+				or Formulas.stage(rec, os.time())
 			best = math.max(best, v)
 		end
 		return best

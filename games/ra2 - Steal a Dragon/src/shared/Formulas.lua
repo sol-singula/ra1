@@ -6,33 +6,53 @@ local Dragons = require(ReplicatedStorage.Shared.Data.Dragons)
 
 local Formulas = {}
 
--- Growth stage 1..4 from a birth time.
-function Formulas.stage(born, now)
-	local age = now - born
+-- A dragon's level: it levels up by itself over time (fast at first, then slower), plus the levels its owner
+-- bought (rec.lv). Capped at MAX_LEVEL.
+function Formulas.level(rec, now)
+	local minutes = math.max(0, now - rec.born) / 60
+	local natural = 1 + math.floor(Constants.LEVEL_RATE * math.sqrt(minutes))
+	return math.min(Constants.MAX_LEVEL, natural + (rec.lv or 0))
+end
+
+-- Size step 1..4 (Baby, Kid, Big, Giant) for a level. Giant is the last size; levels keep going.
+function Formulas.stageForLevel(level)
 	local stage = 1
-	for i, need in Constants.STAGE_AGES do
-		if age >= need then
+	for i, need in Constants.STAGE_LEVELS do
+		if level >= need then
 			stage = i
 		end
 	end
 	return stage
 end
 
--- Seconds until the next stage, or nil at Giant.
-function Formulas.timeToNextStage(born, now)
-	local s = Formulas.stage(born, now)
-	local need = Constants.STAGE_AGES[s + 1]
-	return need and math.max(0, born + need - now) or nil
+function Formulas.stage(rec, now)
+	return Formulas.stageForLevel(Formulas.level(rec, now))
+end
+
+-- Coin multiplier for a level: +LEVEL_STEP per level.
+function Formulas.levelMult(level)
+	return 1 + Constants.LEVEL_STEP * (level - 1)
+end
+
+-- Coins to buy one more level (nil at MAX_LEVEL). Grows by LEVEL_COST_GROWTH per level, so early levels are a
+-- few minutes of income and high levels take a long time to pay back.
+function Formulas.levelUpCost(rec, now)
+	local level = Formulas.level(rec, now)
+	if level >= Constants.MAX_LEVEL then
+		return nil
+	end
+	local base = Dragons.byId[rec.id].cps * Formulas.specialMult(rec.sp)
+	return math.floor(base * Constants.LEVEL_COST_SECONDS * Constants.LEVEL_COST_GROWTH ^ (level - 1))
 end
 
 function Formulas.specialMult(special)
 	return special and Dragons.Specials[special] and Dragons.Specials[special].mult or 1
 end
 
--- Coins per second of one dragon record { id, sp, born } before player bonuses.
+-- Coins per second of one dragon record { id, sp, born, lv } before player bonuses.
 function Formulas.dragonIncome(rec, now)
 	local d = Dragons.byId[rec.id]
-	return d.cps * Constants.STAGE_MULT[Formulas.stage(rec.born, now)] * Formulas.specialMult(rec.sp)
+	return d.cps * Formulas.levelMult(Formulas.level(rec, now)) * Formulas.specialMult(rec.sp)
 end
 
 function Formulas.roadPrice(id, special)
@@ -40,8 +60,8 @@ function Formulas.roadPrice(id, special)
 end
 
 function Formulas.sellValue(rec, now)
-	local stage = Formulas.stage(rec.born, now)
-	return math.floor(Formulas.roadPrice(rec.id, rec.sp) * Constants.SELL_FRACTION * Constants.STAGE_MULT[stage])
+	local mult = Formulas.levelMult(Formulas.level(rec, now))
+	return math.floor(Formulas.roadPrice(rec.id, rec.sp) * Constants.SELL_FRACTION * mult)
 end
 
 -- Player-wide coin multiplier.
@@ -61,7 +81,7 @@ function Formulas.walkSpeed(speedLevel, carryingRec, now, passes)
 	local speed = Constants.BASE_WALK_SPEED + Constants.SPEED_PER_LEVEL * (speedLevel - 1)
 	if carryingRec then
 		local d = Dragons.byId[carryingRec.id]
-		local stage = Formulas.stage(carryingRec.born, now)
+		local stage = Formulas.stage(carryingRec, now)
 		speed *= Dragons.CarrySpeed[d.rarity] * (1 - 0.04 * (stage - 1))
 		if passes and passes.FAST then
 			speed *= Constants.FAST_FEET_MULT

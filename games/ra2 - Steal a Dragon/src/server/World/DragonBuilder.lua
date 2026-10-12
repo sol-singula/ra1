@@ -51,9 +51,10 @@ function DragonBuilder.rootHeight(scale)
 	return ROOT_HALF * scale
 end
 
--- build(id, special, stage, sizeMult) -> Model. Position it with DragonBuilder.place(model, feetCFrame).
--- sizeMult shrinks a dragon you carry so it doesn't block your view.
-function DragonBuilder.build(id, special, stage, sizeMult)
+-- build(id, special, stage, sizeMult, skin) -> Model. Position it with DragonBuilder.place(model, feetCFrame).
+-- sizeMult shrinks a dragon you carry so it doesn't block your view. skin (an entry of Data/Skins) repaints the
+-- wings, horns, spikes and belly.
+function DragonBuilder.build(id, special, stage, sizeMult, skin)
 	local d = Dragons.byId[id]
 	local s = DragonBuilder.scaleFor(stage or 1) * (sizeMult or 1)
 	local model = Instance.new("Model")
@@ -74,6 +75,10 @@ function DragonBuilder.build(id, special, stage, sizeMult)
 	elseif special == "ICE" then
 		colors.body, colors.wing = Color3.fromRGB(185, 235, 255), Color3.fromRGB(120, 200, 255)
 	end
+	if skin then
+		colors.wing = skin.wing or colors.wing
+		colors.belly = skin.belly or colors.belly
+	end
 	for _, spec in PARTS do
 		local p = Instance.new("Part")
 		p.Name = spec[1]
@@ -86,6 +91,9 @@ function DragonBuilder.build(id, special, stage, sizeMult)
 		p.Material = special == "ICE" and spec[4] ~= "ink" and Enum.Material.Glass or Enum.Material.SmoothPlastic
 		if special == "GOLD" and (spec[4] == "body" or spec[4] == "wing") then
 			p.Material = Enum.Material.Foil
+		end
+		if skin and skin.wingMaterial and spec[4] == "wing" then
+			p.Material = skin.wingMaterial
 		end
 		p.Anchored = false
 		p.CanCollide = false
@@ -125,6 +133,7 @@ function DragonBuilder.build(id, special, stage, sizeMult)
 	model:SetAttribute("DragonId", id)
 	model:SetAttribute("Special", special)
 	model:SetAttribute("Stage", stage or 1)
+	model:SetAttribute("Skin", skin and skin.key or nil)
 	model:SetAttribute("Scale", s)
 	return model
 end

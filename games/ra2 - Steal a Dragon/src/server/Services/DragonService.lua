@@ -13,6 +13,7 @@ local Format = require(ReplicatedStorage.Shared.Format)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local Skins = require(ReplicatedStorage.Shared.Data.Skins)
 local DragonBuilder = require(script.Parent.Parent.World.DragonBuilder)
 
 local DragonService = {
@@ -21,7 +22,7 @@ local DragonService = {
 	CarryChanged = Signal.new("DragonService.CarryChanged"), -- (player)
 	Placed = Signal.new("DragonService.Placed"), -- (player, rec, kind, fromPlayer)
 	StealStarted = Signal.new("DragonService.StealStarted"), -- (thief, victim, rec)
-	GrowRequested = Signal.new("DragonService.GrowRequested"), -- (player, uid) owner tapped "Grow" on a nest dragon
+	GrowRequested = Signal.new("DragonService.GrowRequested"), -- (player, uid) owner tapped "+10 Levels" on a dragon
 	DragonsChanged = Signal.new("DragonService.DragonsChanged"), -- (player)
 }
 
@@ -34,7 +35,18 @@ local inTransit = {} -- [rec] = true while carried or dropped
 local lastRoomToast = {}
 
 local function stageOf(rec)
-	return Formulas.stage(rec.born, os.time())
+	return Formulas.stage(rec, os.time())
+end
+
+local function levelOf(rec)
+	return Formulas.level(rec, os.time())
+end
+
+-- The skin a player's dragons wear (nil for Classic).
+local function skinOf(player)
+	local profile = player and data:Get(player)
+	local skin = profile and Skins.byKey[profile.skin]
+	return skin and skin.key ~= Skins.DEFAULT and skin or nil
 end
 
 function DragonService:Init(registry)
@@ -149,11 +161,18 @@ local function tagText(rec)
 	local d = Dragons.byId[rec.id]
 	local stage = stageOf(rec)
 	local name = (rec.sp and Dragons.Specials[rec.sp].name .. " " or "") .. d.name
+	local level = levelOf(rec)
+	local lv = level >= Constants.MAX_LEVEL and "MAX" or tostring(level)
 	return name,
 		Dragons.RarityColor[d.rarity],
-		`{Constants.STAGE_NAMES[stage]} · {Format.num(Formulas.dragonIncome(rec, os.time()))}/s`
+		`Lv {lv} {Constants.STAGE_NAMES[stage]} · {Format.num(Formulas.dragonIncome(rec, os.time()))}/s`
 end
 DragonService.tagText = tagText
+
+local function levelUpText(rec)
+	local cost = Formulas.levelUpCost(rec, os.time())
+	return cost and "Level Up 💰" .. Format.num(cost) or "MAX LEVEL"
+end
 
 function DragonService:_spawnNestModel(player, rec)
 	local base = baseService:Get(player)
@@ -165,13 +184,14 @@ function DragonService:_spawnNestModel(player, rec)
 		models[rec.slot]:Destroy()
 	end
 	local stage = stageOf(rec)
-	local model = DragonBuilder.build(rec.id, rec.sp, stage)
+	local model = DragonBuilder.build(rec.id, rec.sp, stage, nil, skinOf(player))
 	DragonBuilder.place(model, base.world.nests[rec.slot].feet)
 	local name, color, line2 = tagText(rec)
 	DragonBuilder.label(model, name, color, line2)
 	model:SetAttribute("OwnerUserId", player.UserId)
 	model:SetAttribute("Uid", rec.uid)
 	model:SetAttribute("Slot", rec.slot)
+	model:SetAttribute("Level", levelOf(rec))
 	local root = model.PrimaryPart
 	local steal = prompt(root, "steal", "Steal", name, 1.2, player.UserId)
 	steal.Triggered:Connect(function(thief)
@@ -189,16 +209,42 @@ function DragonService:_spawnNestModel(player, rec)
 	sell.Triggered:Connect(function(who)
 		self:TrySell(who, model)
 	end)
-	if stage < #Constants.STAGE_NAMES then
-		local grow = prompt(root, "grow", "Grow Now", name, 0, player.UserId, Enum.KeyCode.G)
-		grow.Triggered:Connect(function(who)
-			if who == player then
-				self.GrowRequested:Fire(player, rec.uid)
-			end
-		end)
-	end
+	local levelUp = prompt(root, "levelup", levelUpText(rec), name, 0.3, player.UserId)
+	levelUp.Triggered:Connect(function(who)
+		self:TryLevelUp(who, model)
+	end)
+	local grow = prompt(root, "grow", "+10 Levels", name, 0, player.UserId, Enum.KeyCode.G)
+	grow.Triggered:Connect(function(who)
+		if who == player then
+			self.GrowRequested:Fire(player, rec.uid)
+		end
+	end)
 	model.Parent = folder
 	models[rec.slot] = model
+end
+
+-- Refresh a nest dragon after its level changed: a new model when it reached a new size, otherwise just the name
+-- tag and prompt texts (so a thief holding Steal isn't interrupted).
+function DragonService:_refreshNestModel(player, rec)
+	local model = rec.slot and nestModels[player] and nestModels[player][rec.slot]
+	if not model then
+		return
+	end
+	if model:GetAttribute("Stage") ~= stageOf(rec) then
+		self:_spawnNestModel(player, rec)
+		return
+	end
+	model:SetAttribute("Level", levelOf(rec))
+	local name, color, line2 = tagText(rec)
+	DragonBuilder.label(model, name, color, line2)
+	local root = model.PrimaryPart
+	local sell, levelUp = root:FindFirstChild("Prompt_sell"), root:FindFirstChild("Prompt_levelup")
+	if sell then
+		sell.ActionText = "Sell " .. Format.num(Formulas.sellValue(rec, os.time()))
+	end
+	if levelUp then
+		levelUp.ActionText = levelUpText(rec)
+	end
 end
 
 function DragonService:_removeNestModel(player, slot)
@@ -332,7 +378,7 @@ function DragonService:StartCarry(player, rec, owner, kind)
 		return false
 	end
 	inTransit[rec] = true
-	local model = DragonBuilder.build(rec.id, rec.sp, stageOf(rec), 0.6)
+	local model = DragonBuilder.build(rec.id, rec.sp, stageOf(rec), 0.6, skinOf(owner))
 	local name, color = tagText(rec)
 	DragonBuilder.label(model, name, color, "")
 	DragonBuilder.place(model, hrp.CFrame * CFrame.new(0, 2.4, 0.4))
@@ -451,16 +497,44 @@ function DragonService:TrySell(player, model)
 	self.DragonsChanged:Fire(player)
 end
 
--- Grow a dragon one stage (Grow Now purchase) by moving its birth time back.
-function DragonService:GrowOne(player, uid)
+-- Buy one level with coins (the owner's "Level Up" prompt on a nest dragon).
+function DragonService:TryLevelUp(player, model)
+	local profile = data:Get(player)
+	if not profile or model:GetAttribute("OwnerUserId") ~= player.UserId then
+		return
+	end
+	local rec = findRec(profile, model:GetAttribute("Uid"))
+	if not rec or not rec.slot or not near(player, model.PrimaryPart, 14) then
+		return
+	end
+	local cost = Formulas.levelUpCost(rec, os.time())
+	if not cost then
+		Net.fire(player, "Toast", "That dragon is MAX level! ⭐", "info")
+		return
+	end
+	if not economy:Spend(player, cost) then
+		Net.fire(player, "Toast", `You need {Format.num(cost)} coins to level up.`, "bad")
+		return
+	end
+	rec.lv = (rec.lv or 0) + 1
+	self:_refreshNestModel(player, rec)
+	baseService:PushIncome(player)
+	Net.fire(player, "Popup", model.PrimaryPart.Position, `Lv {levelOf(rec)}!`, Color3.fromRGB(120, 230, 120))
+	self.DragonsChanged:Fire(player)
+end
+
+-- Add levels to a dragon (the +10 Levels purchase). Without a valid uid, the best dragon below MAX gets them.
+function DragonService:AddLevels(player, uid, count)
 	local profile = data:Get(player)
 	local rec = profile and findRec(profile, uid)
+	if rec and levelOf(rec) >= Constants.MAX_LEVEL then
+		rec = nil
+	end
 	if not rec then
-		-- fall back to the best dragon that can still grow
 		local best
 		for _, r in profile and profile.dragons or {} do
 			if
-				stageOf(r) < #Constants.STAGE_NAMES
+				levelOf(r) < Constants.MAX_LEVEL
 				and (not best or Formulas.dragonIncome(r, os.time()) > Formulas.dragonIncome(best, os.time()))
 			then
 				best = r
@@ -471,18 +545,22 @@ function DragonService:GrowOne(player, uid)
 	if not rec then
 		return false
 	end
-	local wait = Formulas.timeToNextStage(rec.born, os.time())
-	if not wait then
-		return false
-	end
-	rec.born -= wait + 1
-	if rec.slot then
-		self:_spawnNestModel(player, rec)
-	end
+	rec.lv = (rec.lv or 0) + math.min(count, Constants.MAX_LEVEL - levelOf(rec))
+	self:_refreshNestModel(player, rec)
 	baseService:PushIncome(player)
-	Net.fire(player, "Toast", `{Dragons.byId[rec.id].name} grew to {Constants.STAGE_NAMES[stageOf(rec)]}! 🌱`, "good")
+	Net.fire(player, "Toast", `{Dragons.byId[rec.id].name} is now level {levelOf(rec)}! ⭐`, "good")
 	self.DragonsChanged:Fire(player)
 	return true
+end
+
+-- Repaint all of a player's dragons after they changed skin.
+function DragonService:RefreshSkin(player)
+	local profile = data:Get(player)
+	for _, rec in profile and profile.dragons or {} do
+		if rec.slot and nestModels[player] and nestModels[player][rec.slot] then
+			self:_spawnNestModel(player, rec)
+		end
+	end
 end
 
 -- Dropping (bonked) and grabbing -----------------------------------------------------------------------------
@@ -494,7 +572,7 @@ function DragonService:Drop(player)
 	self:PushCarry(player)
 	self.CarryChanged:Fire(player)
 	local pos = baseService:Position(player) or Vector3.new(0, 3, 0)
-	local model = DragonBuilder.build(c.rec.id, c.rec.sp, stageOf(c.rec))
+	local model = DragonBuilder.build(c.rec.id, c.rec.sp, stageOf(c.rec), nil, skinOf(c.owner))
 	DragonBuilder.place(model, CFrame.new(pos.X, 0.5, pos.Z))
 	local name, color = tagText(c.rec)
 	DragonBuilder.label(model, name, color, "GRAB IT!")
@@ -681,21 +759,28 @@ function DragonService:_tick()
 			end
 		end
 	end
-	-- dragons that grew get a bigger model
+	-- dragons level up over time: new size -> bigger model and a toast, otherwise just new tag text
 	for player, models in nestModels do
 		local profile = data:Get(player)
+		local changed = false
 		for _, rec in profile and profile.dragons or {} do
 			local model = rec.slot and models[rec.slot]
-			if model and model:GetAttribute("Stage") ~= stageOf(rec) then
-				self:_spawnNestModel(player, rec)
-				Net.fire(
-					player,
-					"Toast",
-					`{Dragons.byId[rec.id].name} grew to {Constants.STAGE_NAMES[stageOf(rec)]}! 🌱`,
-					"good"
-				)
-				baseService:PushIncome(player)
+			if model and model:GetAttribute("Level") ~= levelOf(rec) then
+				local grew = model:GetAttribute("Stage") ~= stageOf(rec)
+				self:_refreshNestModel(player, rec)
+				changed = true
+				if grew then
+					Net.fire(
+						player,
+						"Toast",
+						`{Dragons.byId[rec.id].name} grew to {Constants.STAGE_NAMES[stageOf(rec)]}! 🌱`,
+						"good"
+					)
+				end
 			end
+		end
+		if changed then
+			baseService:PushIncome(player)
 		end
 	end
 end

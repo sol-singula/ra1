@@ -127,7 +127,7 @@ end
 
 -- Checks shared by coin and Robux buys. Returns an error text, or nil if the player can take it.
 function RoadService:CanTake(player, entry)
-	if not entry then
+	if not entry or entry.x > Constants.ROAD_END_X then
 		return "Too late, it's gone!"
 	end
 	if dragons:Carrying(player) then
@@ -238,9 +238,18 @@ function RoadService:Start()
 		end
 		for roadId, entry in road do
 			entry.x += Constants.ROAD_SPEED * dt
-			if entry.x > Constants.ROAD_END_X then
-				self:_remove(roadId)
+			if entry.x > Constants.ROAD_EXIT_X then
+				self:_remove(roadId) -- deep in the dark tunnel
 			else
+				if entry.x > Constants.ROAD_END_X and not entry.leaving then
+					-- walking into the exit tunnel: no more buying, no floating name tag in the dark
+					entry.leaving = true
+					for _, child in entry.model.PrimaryPart:GetChildren() do
+						if child:IsA("ProximityPrompt") or child.Name == "Tag" then
+							child:Destroy()
+						end
+					end
+				end
 				self:_move(entry, t)
 			end
 		end

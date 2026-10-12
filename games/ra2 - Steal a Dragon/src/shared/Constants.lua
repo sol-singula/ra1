@@ -7,15 +7,32 @@ Constants.BRICK_STYLE = true
 -- Players and bases
 Constants.MAX_BASES = 8 -- set Max Players to 8 in Game Settings
 Constants.START_NESTS = 4
-Constants.MAX_NESTS = 16 -- includes the 4 from the Extra Nests pass
-Constants.BUYABLE_NESTS = 12 -- nests 5..12 can be bought with coins
-Constants.NEST_PRICES =
-	{ [5] = 100, [6] = 250, [7] = 600, [8] = 1500, [9] = 4000, [10] = 10000, [11] = 25000, [12] = 60000 }
+Constants.MAX_NESTS = 24 -- includes the 4 from the Extra Nests pass
+Constants.BUYABLE_NESTS = 20 -- nests 5..20 can be bought with coins
+Constants.NEST_PRICES = {
+	[5] = 100,
+	[6] = 250,
+	[7] = 600,
+	[8] = 1500,
+	[9] = 4000,
+	[10] = 10000,
+	[11] = 25000,
+	[12] = 60000,
+	[13] = 150000,
+	[14] = 350000,
+	[15] = 800000,
+	[16] = 2000000,
+	[17] = 5000000,
+	[18] = 12000000,
+	[19] = 30000000,
+	[20] = 75000000,
+}
 
 -- Lock
 Constants.LOCK_SECONDS = 60
 Constants.LOCK_SECONDS_LONG = 120 -- Long Lock pass
 Constants.LOCK_VIP_BONUS = 15
+Constants.LOCK_BOOST_SECONDS = 300 -- the 5-Minute Lock product (the plate next to the lock pad)
 
 -- Movement
 Constants.BASE_WALK_SPEED = 18
@@ -34,7 +51,8 @@ Constants.DROP_GRAB_SECONDS = 8 -- a dropped dragon can be grabbed by anyone, th
 
 -- Road
 Constants.ROAD_START_X = -110
-Constants.ROAD_END_X = 110
+Constants.ROAD_END_X = 110 -- past here a road dragon can't be bought and walks into the exit tunnel
+Constants.ROAD_EXIT_X = 132 -- deep in the dark tunnel, where it disappears
 Constants.ROAD_SPEED = 7 -- studs per second
 Constants.SPAWN_EVERY = 2.5
 Constants.LEGEND_EVENT_EVERY = 300 -- a guaranteed Legend (or better) every 5 minutes
@@ -56,10 +74,18 @@ Constants.DOUBLE_COINS_MULT = 2
 Constants.TEAM_STEAL_RANGE = 40 -- a friend this close when you steal gives a bonus
 Constants.TEAM_STEAL_BONUS_SECONDS = 60 -- bonus = this many seconds of the stolen dragon's income
 
--- Growth: seconds of age for each stage (Baby, Kid, Big, Giant), and the coin multiplier
+-- Levels: a dragon levels up by itself over time (fast at first, then slower: level = 1 + LEVEL_RATE x the square
+-- root of its age in minutes), and its owner can buy more levels with coins. Each level adds LEVEL_STEP to its
+-- coin multiplier, up to MAX_LEVEL. Its size grows in four steps (Baby, Kid, Big, Giant) at STAGE_LEVELS, then
+-- stays Giant: levels keep going, size doesn't.
+Constants.MAX_LEVEL = 100
+Constants.LEVEL_RATE = 2.25 -- level 8 (Kid) after 10 minutes, 18 (Big) after an hour, 50 (Giant) after 8 hours
+Constants.LEVEL_STEP = 0.15 -- coin multiplier = 1 + 0.15 x (level - 1): level 49 makes about 8x
+Constants.LEVEL_COST_SECONDS = 60 -- buying a level costs this many seconds of the dragon's base income...
+Constants.LEVEL_COST_GROWTH = 1.12 -- ...times this to the power of (level - 1)
+Constants.GROW_PRODUCT_LEVELS = 10 -- the +10 Levels product
 Constants.STAGE_NAMES = { "Baby", "Kid", "Big", "Giant" }
-Constants.STAGE_AGES = { 0, 10 * 60, 60 * 60, 8 * 60 * 60 }
-Constants.STAGE_MULT = { 1, 2, 4, 8 }
+Constants.STAGE_LEVELS = { 1, 8, 18, 49 }
 Constants.STAGE_SCALE = { 1, 1.3, 1.65, 2.1 }
 
 -- Egg and daily gift

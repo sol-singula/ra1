@@ -15,6 +15,7 @@ local BaseService = {
 	Dependencies = { "PlayerDataService", "EconomyService", "TeamService" },
 	Locked = Signal.new("BaseService.Locked"), -- (player)
 	Collected = Signal.new("BaseService.Collected"), -- (player, amount)
+	PlateStepped = Signal.new("BaseService.PlateStepped"), -- (player, "auto" | "lock") owner stepped on a buy plate
 }
 
 local data, economy, team
@@ -22,6 +23,7 @@ local bases = {} -- [i] = { world, owner, lockUntil, bank }
 local byPlayer = {} -- [player] = base
 local lastBounceToast = {}
 local homeConns = {} -- [player] = CharacterAdded connection
+local onPlates = {} -- [player] = { [plateName] = true } plates the player is standing on right now
 
 local function now()
 	return workspace:GetServerTimeNow()
@@ -105,6 +107,7 @@ function BaseService:OnPlayerLeaving(player)
 	base.world.model:SetAttribute("OwnerUserId", nil)
 	byPlayer[player] = nil
 	lastBounceToast[player] = nil
+	onPlates[player] = nil
 end
 
 -- Put the player just inside their own gate, facing the road.
@@ -162,14 +165,21 @@ function BaseService:IsLocked(base)
 	return base.lockUntil > now()
 end
 
-function BaseService:Lock(player)
+-- Lock the door. With extraSeconds (the 5-Minute Lock product) that much time is added on top of any lock that
+-- is already running; otherwise it locks for the normal time (never shortening a longer lock).
+function BaseService:Lock(player, extraSeconds)
 	local base = byPlayer[player]
 	local profile = data:Get(player)
 	if not base or not profile then
 		return
 	end
 	local wasLocked = self:IsLocked(base)
-	base.lockUntil = now() + Formulas.lockSeconds(economy:Passes(player))
+	if extraSeconds then
+		base.lockUntil = math.max(base.lockUntil, now()) + extraSeconds
+		Net.fire(player, "Toast", `Locked for {Format.time(base.lockUntil - now())}! ⏱️`, "good")
+	else
+		base.lockUntil = math.max(base.lockUntil, now() + Formulas.lockSeconds(economy:Passes(player)))
+	end
 	self:_drawLock(base)
 	self:PushBase(player)
 	if not wasLocked then
@@ -274,6 +284,18 @@ function BaseService:_step()
 				if onPad(mine.world.collectPad, pos) then
 					self:Collect(player)
 				end
+				-- buy plates fire once each time you step on, not every frame you stand there
+				local was = onPlates[player] or {}
+				local now2 = {}
+				for name, plate in { auto = mine.world.autoPlate, lock = mine.world.lockPlate } do
+					if plate and onPad(plate, pos) then
+						now2[name] = true
+						if not was[name] then
+							self.PlateStepped:Fire(player, name)
+						end
+					end
+				end
+				onPlates[player] = now2
 			end
 		end
 	end

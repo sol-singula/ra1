@@ -19,22 +19,35 @@ local function check(name, cond, detail)
 	end
 end
 
--- Growth
-check("baby at birth", Formulas.stage(1000, 1000) == 1)
-check("kid at 10 min", Formulas.stage(0, 600) == 2)
-check("big at 1 h", Formulas.stage(0, 3600) == 3)
-check("giant at 8 h", Formulas.stage(0, 8 * 3600) == 4)
-check("time to kid", Formulas.timeToNextStage(0, 100) == 500)
-check("no next stage at giant", Formulas.timeToNextStage(0, 9 * 3600) == nil)
+-- Levels and size
+local function rec(t)
+	t.id = t.id or "PUFF"
+	t.born = t.born or 0
+	return t
+end
+check("level 1 at birth", Formulas.level(rec({ born = 1000 }), 1000) == 1)
+check("baby at birth", Formulas.stage(rec({ born = 1000 }), 1000) == 1)
+check("kid at 10 min", Formulas.level(rec({}), 600) == 8 and Formulas.stage(rec({}), 600) == 2)
+check("big at 1 h", Formulas.level(rec({}), 3600) == 18 and Formulas.stage(rec({}), 3600) == 3)
+check("giant at 8 h", Formulas.level(rec({}), 8 * 3600) == 50 and Formulas.stage(rec({}), 8 * 3600) == 4)
+check("levels slow down", Formulas.level(rec({}), 24 * 3600) - Formulas.level(rec({}), 23 * 3600) <= 2)
+check("bought levels add up", Formulas.level(rec({ lv = 5 }), 0) == 6)
+check("level cap", Formulas.level(rec({ lv = 500 }), 0) == Constants.MAX_LEVEL)
+check("size stays Giant past level 49", Formulas.stage(rec({ lv = 90 }), 0) == 4)
+check("level multiplier", Formulas.levelMult(1) == 1 and math.abs(Formulas.levelMult(49) - 8.2) < 1e-9)
+check("level up costs a minute of income", Formulas.levelUpCost(rec({}), 0) == 60)
+check("level up gets pricier", Formulas.levelUpCost(rec({ lv = 1 }), 0) == 67)
+check("special makes levels pricier", Formulas.levelUpCost(rec({ id = "BLAZE", sp = "GOLD" }), 0) == 7200)
+check("no level up at max", Formulas.levelUpCost(rec({ lv = 500 }), 0) == nil)
 
 -- Income and prices
 check("puff baby = 1/s", Formulas.dragonIncome({ id = "PUFF", born = 0 }, 0) == 1)
-check("giant x8", Formulas.dragonIncome({ id = "PUFF", born = 0 }, 9 * 3600) == 8)
+check("level 50 x8.35", math.abs(Formulas.dragonIncome({ id = "PUFF", born = 0 }, 8 * 3600) - 8.35) < 1e-9)
 check("gold special x3", Formulas.dragonIncome({ id = "BLAZE", sp = "GOLD", born = 0 }, 0) == 120)
 check("road price with special", Formulas.roadPrice("FROSTY", "FIRE") == 700)
 check(
-	"sell value is half, grows with stage",
-	Formulas.sellValue({ id = "PUFF", born = 0 }, 0) == 12 and Formulas.sellValue({ id = "PUFF", born = 0 }, 3600) == 50
+	"sell value is half, grows with level",
+	Formulas.sellValue({ id = "PUFF", born = 0 }, 0) == 12 and Formulas.sellValue({ id = "PUFF", born = 0 }, 3600) == 44
 )
 
 -- Player multiplier

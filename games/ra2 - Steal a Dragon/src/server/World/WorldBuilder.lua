@@ -27,7 +27,9 @@ local BASE_COLORS = {
 }
 WorldBuilder.BASE_COLORS = BASE_COLORS
 
-local BASE_W, BASE_D = 40, 44 -- width (x) and depth (z)
+local BASE_W, BASE_D = 46, 60 -- width (x) and depth (z)
+local BASE_XS = { -81, -27, 27, 81 } -- base centres along the road; 4 on each side
+local BASE_Z = 48 -- distance of each base centre from the road
 WorldBuilder.BASE_HALF = Vector3.new(BASE_W / 2, 30, BASE_D / 2)
 
 local part = Scenery.part
@@ -194,13 +196,14 @@ local function buildBase(parent, index, cf)
 	})
 	-- checker tiles in two soft shades of the base colour
 	local soft = color:Lerp(rgb(175, 166, 156), 0.55)
+	local tw, td = BASE_W / 5, BASE_D / 6
 	for ix = 0, 4 do
 		for iz = 0, 5 do
 			if (ix + iz) % 2 == 0 then
 				part({
 					Name = "Tile",
-					Size = Vector3.new(8, 0.05, 7.33),
-					CFrame = at(-16 + ix * 8, 0.42, -18.33 + iz * 7.33),
+					Size = Vector3.new(tw, 0.05, td),
+					CFrame = at(-BASE_W / 2 + tw * (ix + 0.5), 0.42, -BASE_D / 2 + td * (iz + 0.5)),
 					Color = soft,
 					CastShadow = false,
 					CanCollide = false,
@@ -251,8 +254,9 @@ local function buildBase(parent, index, cf)
 	wall("WallBack", Vector3.new(BASE_W, 9, 1.4), at(0, 4.9, BASE_D / 2))
 	wall("WallL", Vector3.new(1.4, 9, BASE_D), at(-BASE_W / 2, 4.9, 0))
 	wall("WallR", Vector3.new(1.4, 9, BASE_D), at(BASE_W / 2, 4.9, 0))
-	wall("WallFL", Vector3.new(12, 9, 1.4), at(-14, 4.9, -BASE_D / 2))
-	wall("WallFR", Vector3.new(12, 9, 1.4), at(14, 4.9, -BASE_D / 2))
+	local sideW = BASE_W / 2 - 8 -- the gate is 16 wide
+	wall("WallFL", Vector3.new(sideW, 9, 1.4), at(-8 - sideW / 2, 4.9, -BASE_D / 2))
+	wall("WallFR", Vector3.new(sideW, 9, 1.4), at(8 + sideW / 2, 4.9, -BASE_D / 2))
 	-- towers: two at the back corners, two guarding the gate
 	Scenery.tower(model, pos(-BASE_W / 2, 0, BASE_D / 2), 6, 13, STONE, color, color)
 	Scenery.tower(model, pos(BASE_W / 2, 0, BASE_D / 2), 6, 13, STONE, color, color)
@@ -295,8 +299,8 @@ local function buildBase(parent, index, cf)
 		CanCollide = false,
 		Parent = model,
 	})
-	Scenery.lantern(model, pos(-13.5, 0, -BASE_D / 2 - 3), 6)
-	Scenery.lantern(model, pos(13.5, 0, -BASE_D / 2 - 3), 6)
+	Scenery.lantern(model, pos(-15, 0, -BASE_D / 2 - 3), 6)
+	Scenery.lantern(model, pos(15, 0, -BASE_D / 2 - 3), 6)
 	-- sign over the gate: owner name and lock state
 	local _, lines = billboard(gateTop, 18, 5, Vector3.new(0, 4, 0), {
 		{ text = "EMPTY BASE", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy },
@@ -315,18 +319,18 @@ local function buildBase(parent, index, cf)
 		CastShadow = false,
 		Parent = model,
 	})
-	-- nests: 4 x 4 on a raised wooden dais, front row first
+	-- nests: 4 x 6 on a raised wooden dais, front row first
 	part({
 		Name = "Dais",
-		Size = Vector3.new(36, 0.4, 28),
-		CFrame = at(0, 0.6, 2.5),
+		Size = Vector3.new(36, 0.4, 44),
+		CFrame = at(0, 0.6, 3.5),
 		Color = rgb(196, 160, 112),
 		Material = Enum.Material.WoodPlanks,
 		Parent = model,
 	})
 	local nests = {}
-	local xs, zs = { -13.5, -4.5, 4.5, 13.5 }, { -8, -1, 6, 13 }
-	for row = 1, 4 do
+	local xs, zs = { -13.5, -4.5, 4.5, 13.5 }, { -14, -7, 0, 7, 14, 21 }
+	for row = 1, #zs do
 		for col = 1, 4 do
 			local i = (row - 1) * 4 + col
 			local pad = part({
@@ -351,37 +355,39 @@ local function buildBase(parent, index, cf)
 			nests[i] = { pad = pad, feet = at(xs[col], 1.7, zs[row]) }
 		end
 	end
-	-- lock pad at the back, collect pad front-left with a treasure chest, egg stand front-right
-	local lockPad = part({
-		Name = "LockPad",
-		Size = Vector3.new(7, 0.5, 4),
-		CFrame = at(0, 0.6, 19.5),
-		Color = rgb(230, 60, 60),
-		Parent = model,
-	})
-	billboard(
-		lockPad,
-		8,
-		2.5,
-		Vector3.new(0, 3, 0),
-		{ { text = "🔒 LOCK", h = 1, y = 0, font = Enum.Font.LuckiestGuy } },
-		60
-	)
-	local collectPad = part({
-		Name = "CollectPad",
-		Size = Vector3.new(7, 0.5, 6),
-		CFrame = at(-13, 0.6, -17),
-		Color = rgb(245, 190, 40),
-		Parent = model,
-	})
-	local _, collectLines = billboard(collectPad, 9, 3.5, Vector3.new(0, 3.5, 0), {
+	-- Front row, just inside the gate: the coin pad (with the treasure chest) and the Auto Collect plate on the
+	-- left, the lock pad and the 5-Minute Lock plate on the right. The egg stand is at the back.
+	local padZ = -BASE_D / 2 + 6
+	local function pad(name, x, size, padColor, signLines, signW)
+		local p = part({
+			Name = name,
+			Size = size,
+			CFrame = at(x, 0.6, padZ),
+			Color = padColor,
+			Parent = model,
+		})
+		local _, padLines = billboard(p, signW, #signLines * 1.6 + 0.4, Vector3.new(0, 3.5, 0), signLines, 60)
+		return p, padLines
+	end
+	local collectPad, collectLines = pad("CollectPad", -14, Vector3.new(7, 0.5, 6), rgb(245, 190, 40), {
 		{ text = "💰 COINS", h = 0.5, y = 0, font = Enum.Font.LuckiestGuy },
 		{ text = "0", h = 0.5, y = 0.5, color = rgb(255, 230, 120) },
-	}, 60)
+	}, 9)
+	local autoPlate = pad("AutoPlate", -6.5, Vector3.new(5, 0.5, 5), rgb(90, 200, 255), {
+		{ text = "🧲 AUTO", h = 0.55, y = 0, font = Enum.Font.LuckiestGuy },
+		{ text = "collect coins", h = 0.45, y = 0.55, color = rgb(200, 240, 255) },
+	}, 8)
+	local lockPad = pad("LockPad", 10, Vector3.new(7, 0.5, 5), rgb(230, 60, 60), {
+		{ text = "🔒 LOCK", h = 1, y = 0, font = Enum.Font.LuckiestGuy },
+	}, 8)
+	local lockPlate = pad("LockPlate", 17.5, Vector3.new(5, 0.5, 5), rgb(255, 150, 60), {
+		{ text = "⏱️ +5 MIN", h = 0.55, y = 0, font = Enum.Font.LuckiestGuy },
+		{ text = "lock time", h = 0.45, y = 0.55, color = rgb(255, 225, 190) },
+	}, 8)
 	part({
 		Name = "Chest",
 		Size = Vector3.new(3.4, 2, 2.2),
-		CFrame = at(-18, 1.4, -17),
+		CFrame = at(-20.2, 1.4, padZ + 1),
 		Color = rgb(140, 90, 50),
 		Material = Enum.Material.Wood,
 		Parent = model,
@@ -389,12 +395,12 @@ local function buildBase(parent, index, cf)
 	part({
 		Name = "ChestLid",
 		Size = Vector3.new(3.6, 0.8, 2.4),
-		CFrame = at(-18, 2.7, -17),
+		CFrame = at(-20.2, 2.7, padZ + 1),
 		Color = rgb(255, 200, 60),
 		Material = Enum.Material.Foil,
 		Parent = model,
 	})
-	for _, c in { { -16.5, 0.7, -15.4 }, { -17.2, 0.7, -18.8 }, { -16.2, 1.2, -18.2 } } do
+	for _, c in { { -19, 0.7, padZ - 1.2 }, { -21, 0.7, padZ - 1.6 }, { -20.2, 1.2, padZ - 0.8 } } do
 		Scenery.ball(
 			model,
 			"Coin",
@@ -405,10 +411,11 @@ local function buildBase(parent, index, cf)
 			{ CastShadow = false, CanCollide = false }
 		)
 	end
+	local eggZ = BASE_D / 2 - 2.6
 	local eggStand = part({
 		Name = "EggStand",
 		Size = Vector3.new(4, 1.6, 4),
-		CFrame = at(13, 0.8, -17),
+		CFrame = at(-13, 0.8, eggZ),
 		Color = rgb(250, 245, 235),
 		Material = Enum.Material.Marble,
 		Parent = model,
@@ -416,18 +423,18 @@ local function buildBase(parent, index, cf)
 	part({
 		Name = "EggTrim",
 		Size = Vector3.new(4.4, 0.4, 4.4),
-		CFrame = at(13, 1.5, -17),
+		CFrame = at(-13, 1.5, eggZ),
 		Color = rgb(255, 200, 60),
 		Material = Enum.Material.Foil,
 		CastShadow = false,
 		Parent = model,
 	})
 	-- wall lanterns inside
-	for _, x in { -19, 19 } do
+	for _, x in { -1, 1 } do
 		part({
 			Name = "WallLamp",
 			Size = Vector3.new(0.8, 1.2, 0.8),
-			CFrame = at(x * 0.95, 6.5, 0),
+			CFrame = at(x * (BASE_W / 2 - 1.2), 6.5, 0),
 			Color = rgb(255, 200, 90),
 			Material = Enum.Material.Neon,
 			CastShadow = false,
@@ -444,12 +451,14 @@ local function buildBase(parent, index, cf)
 		beacon = beacon,
 		nests = nests,
 		lockPad = lockPad,
+		lockPlate = lockPlate,
+		autoPlate = autoPlate,
 		collectPad = collectPad,
 		collectLines = collectLines,
 		eggStand = eggStand,
 		gateCf = at(0, 0.5, -BASE_D / 2 - 4),
 		-- where the owner spawns: just inside the gate, facing the road
-		homeCf = at(0, 3, -BASE_D / 2 + 6),
+		homeCf = at(0, 3, -BASE_D / 2 + 5),
 	}
 end
 
@@ -494,8 +503,11 @@ local function clear(x, z)
 	if math.abs(z) < 20 and x > -130 and x < 128 then
 		return false
 	end
-	for _, bx in { -75, -25, 25, 75 } do
-		if math.abs(x - bx) < 28 and math.abs(z) > 12 and math.abs(z) < 70 then
+	if x > 105 and x < 200 and math.abs(z) < 45 then
+		return false -- the exit tunnel and its hill
+	end
+	for _, bx in BASE_XS do
+		if math.abs(x - bx) < BASE_W / 2 + 6 and math.abs(z) > 12 and math.abs(z) < BASE_Z + BASE_D / 2 + 6 then
 			return false
 		end
 	end
@@ -506,106 +518,108 @@ local function clear(x, z)
 end
 WorldBuilder.isClear = clear
 
--- A rocky cave mouth facing along the road, at the far (east) end where dragons leave: dir = +1, with a whole
--- mountain behind it when mountain is true.
-local function caveMountain(parent, x, dir, glow, mountain)
-	local rock = rgb(120, 112, 128)
-	local mouth = x + dir * 2
-	for _, z in { -10.5, 10.5 } do
+-- The exit tunnel at the far end of the road: a rock hill with a dark tunnel straight through its middle. Road
+-- dragons walk in and disappear in the dark (RoadService removes them at ROAD_EXIT_X), so they never walk into
+-- rock. x = the tunnel mouth; the tunnel runs east (+X).
+local function exitTunnel(parent, x)
+	local rock = rgb(112, 104, 120)
+	local dark = rgb(10, 9, 16)
+	local len = Constants.ROAD_EXIT_X + 10 - x
+	local mid = x + len / 2
+	local inner, height = 14, 12
+	-- black inside: floor, walls, ceiling and the far end
+	part({
+		Name = "TunnelFloor",
+		Size = Vector3.new(len, 0.6, inner),
+		CFrame = CFrame.new(mid, 0.3, 0),
+		Color = dark,
+		Parent = parent,
+	})
+	for _, z in { -1, 1 } do
 		part({
-			Name = "CavePillar",
-			Size = Vector3.new(8, 16, 6),
-			CFrame = CFrame.new(mouth, 8, z) * CFrame.Angles(0, 0, math.rad(dir * 4)),
+			Name = "TunnelWall",
+			Size = Vector3.new(len, height, 0.4),
+			CFrame = CFrame.new(mid, height / 2, z * (inner / 2 + 0.2)),
+			Color = dark,
+			Parent = parent,
+		})
+		-- the rock hill around it
+		part({
+			Name = "TunnelRock",
+			Size = Vector3.new(len, height + 6, 14),
+			CFrame = CFrame.new(mid, (height + 6) / 2, z * (inner / 2 + 7.4)),
 			Color = rock,
 			Material = Enum.Material.Slate,
 			Parent = parent,
 		})
 	end
 	part({
-		Name = "CaveTop",
-		Size = Vector3.new(8, 5, 27),
-		CFrame = CFrame.new(mouth, 17, 0),
+		Name = "TunnelCeiling",
+		Size = Vector3.new(len, 0.4, inner + 0.8),
+		CFrame = CFrame.new(mid, height + 0.2, 0),
+		Color = dark,
+		Parent = parent,
+	})
+	part({
+		Name = "TunnelRoof",
+		Size = Vector3.new(len, 5.6, inner + 0.8),
+		CFrame = CFrame.new(mid, height + 3.2, 0),
 		Color = rock,
 		Material = Enum.Material.Slate,
 		Parent = parent,
 	})
 	part({
-		Name = "CaveDark",
-		Size = Vector3.new(1, 15, 15),
-		CFrame = CFrame.new(mouth + dir * 3.5, 7.5, 0),
-		Color = rgb(18, 15, 28),
+		Name = "TunnelEnd",
+		Size = Vector3.new(0.4, height, inner),
+		CFrame = CFrame.new(x + len, height / 2, 0),
+		Color = dark,
 		Parent = parent,
 	})
-	local glowPart = part({
-		Name = "CaveGlow",
-		Size = Vector3.new(6, 0.2, 13),
-		CFrame = CFrame.new(mouth + dir * 1, 0.6, 0),
-		Color = glow,
-		Material = Enum.Material.Neon,
-		CastShadow = false,
+	-- stone arch around the mouth, with the road's glow strip running in
+	part({
+		Name = "TunnelArch",
+		Size = Vector3.new(3, 3, inner + 8),
+		CFrame = CFrame.new(x - 1, height + 1.5, 0),
+		Color = rgb(150, 142, 158),
+		Material = Enum.Material.Slate,
 		Parent = parent,
 	})
-	-- rocks piled on top of and behind the arch, so the lobby side looks like a rocky hill too
-	local rng = Random.new(x > 0 and 11 or 7)
-	for _, m in { { -9, 13 }, { 0, 15.5 }, { 9, 13 } } do
-		Scenery.ball(
-			parent,
-			"CaveRock",
-			Vector3.new(mouth + dir * 7.5, m[2] * 0.36, m[1]),
-			m[2],
-			rock:Lerp(rgb(150, 140, 155), rng:NextNumber() * 0.5),
-			Enum.Material.Slate
-		)
-	end
-	for _, m in { { 0, 21, -8, 9 }, { 1, 22.5, 3, 11 }, { -1, 20.5, 10, 8 } } do
-		Scenery.ball(
-			parent,
-			"CaveRock",
-			Vector3.new(mouth + m[1], m[2], m[3]),
-			m[4],
-			rock:Lerp(rgb(90, 85, 100), rng:NextNumber()),
-			Enum.Material.Slate
-		)
-	end
-	for _, m in
-		(mountain and {
-			{ 14, 18, 0, 44 },
-			{ 10, 8, -22, 30 },
-			{ 10, 8, 22, 30 },
-			{ 26, 22, 12, 40 },
-			{ 24, 20, -14, 38 },
-		} or {})
-	do
-		Scenery.ball(
-			parent,
-			"CaveRock",
-			Vector3.new(x + dir * m[1], m[2] - 6, m[3]),
-			m[4],
-			rock:Lerp(rgb(90, 85, 100), rng:NextNumber()),
-			Enum.Material.Slate
-		)
-	end
-	if mountain then
-		Scenery.ball(parent, "Snow", Vector3.new(x + dir * 18, 30, 4), 18, rgb(245, 248, 255), Enum.Material.Snow)
-	end
-	-- glowing crystals by the mouth
-	for i, c in { { -14, 3, 30 }, { -16, 2.2, -25 }, { 14, 2.6, 20 }, { 15, 3.4, -30 } } do
+	for _, z in { -1, 1 } do
 		part({
-			Name = "Crystal",
-			Size = Vector3.new(1.6, c[2] * 2, 1.6),
-			CFrame = CFrame.new(mouth - dir * 1, c[2], c[1]) * CFrame.Angles(math.rad(c[3]), 0, math.rad(i * 9)),
-			Color = glow,
-			Material = Enum.Material.Neon,
-			CastShadow = false,
-			CanCollide = false,
+			Name = "TunnelPillar",
+			Size = Vector3.new(3, height, 3),
+			CFrame = CFrame.new(x - 1, height / 2, z * (inner / 2 + 1.5)),
+			Color = rgb(150, 142, 158),
+			Material = Enum.Material.Slate,
 			Parent = parent,
 		})
 	end
-	local light = Instance.new("PointLight")
-	light.Color = glow
-	light.Range = 22
-	light.Brightness = 2
-	light.Parent = glowPart
+	part({
+		Name = "TunnelGlow",
+		Size = Vector3.new(8, 0.2, 0.5),
+		CFrame = CFrame.new(x + 2, 0.66, 0),
+		Color = rgb(110, 220, 255),
+		Material = Enum.Material.Neon,
+		CastShadow = false,
+		CanCollide = false,
+		Parent = parent,
+	})
+	-- a snowy mountain behind and around the tunnel (kept clear of the mouth)
+	local rng = Random.new(11)
+	for _, m in { { 28, 14, 0, 46 }, { 14, 8, -30, 34 }, { 14, 8, 30, 34 }, { 40, 20, -18, 40 }, { 40, 20, 18, 40 } } do
+		Scenery.ball(
+			parent,
+			"MountainRock",
+			Vector3.new(x + len + m[1] + 2, m[2] - 6, m[3]),
+			m[4],
+			rock:Lerp(rgb(90, 85, 100), rng:NextNumber()),
+			Enum.Material.Slate
+		)
+	end
+	Scenery.ball(parent, "Snow", Vector3.new(x + len + 22, 30, 0), 20, rgb(245, 248, 255), Enum.Material.Snow)
+	billboard(parent:FindFirstChild("TunnelArch"), 18, 3, Vector3.new(0, 3.5, 0), {
+		{ text = "EXIT", h = 1, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(150, 230, 255) },
+	}, 160)
 end
 
 -- The Dragon Gate at the start of the road: an open stone arch with a glowing lava pool where new dragons
@@ -660,27 +674,31 @@ local function dragonGate(parent, x)
 end
 
 function WorldBuilder.build()
-	local old = workspace:FindFirstChild("Baseplate")
-	if old then
-		old:Destroy()
+	-- remove what Studio's Baseplate template puts in a new place (the grey baseplate and its spawn pad)
+	for _, child in workspace:GetChildren() do
+		if child.Name == "Baseplate" or (child:IsA("SpawnLocation") and child.Name == "SpawnLocation") then
+			child:Destroy()
+		end
 	end
 	lighting()
 	local rng = Random.new(42)
 	local map = folder("Map", workspace)
-	part({
+	-- real grass, not studded plastic: a studded green slab looks exactly like the default baseplate
+	local ground = part({
 		Name = "Ground",
-		Size = Vector3.new(800, 2, 800),
+		Size = Vector3.new(1600, 2, 1600),
 		CFrame = CFrame.new(0, -1, 0),
 		Color = rgb(88, 162, 76),
-		Material = Enum.Material.Grass,
 		Parent = map,
 	})
+	ground.Material = Enum.Material.Grass
+	ground.TopSurface = Enum.SurfaceType.Smooth
 	-- lighter meadow patches so the grass isn't one flat colour
 	local deco = folder("Decor", map)
 	for _ = 1, 26 do
 		local x, z = rng:NextNumber(-260, 220), rng:NextNumber(-150, 150)
 		if clear(x, z) then
-			Scenery.disc(
+			local meadow = Scenery.disc(
 				deco,
 				"Meadow",
 				Vector3.new(x, 0.02, z),
@@ -690,6 +708,7 @@ function WorldBuilder.build()
 				Enum.Material.Grass,
 				{ CastShadow = false, CanCollide = false }
 			)
+			meadow.Material = Enum.Material.Grass
 		end
 	end
 
@@ -740,6 +759,7 @@ function WorldBuilder.build()
 				Name = "Arrow",
 				Size = Vector3.new(1.2, 0.1, 5),
 				CFrame = CFrame.new(x, 0.55, 0)
+					* CFrame.Angles(0, math.pi, 0) -- flip: the chevron's tip points +X, the way dragons walk
 					* CFrame.Angles(0, math.rad(a), 0)
 					* CFrame.new(0, 0, a < 0 and -1.6 or 1.6),
 				Color = rgb(255, 225, 120),
@@ -764,23 +784,10 @@ function WorldBuilder.build()
 			})
 		end
 	end
-	-- paths from the sidewalk to each base gate
-	for _, bx in { -75, -25, 25, 75 } do
-		for _, z in { -20, 20 } do
-			part({
-				Name = "Path",
-				Size = Vector3.new(12, 0.3, 4),
-				CFrame = CFrame.new(bx, 0.15, z),
-				Color = rgb(172, 165, 155),
-				Material = Enum.Material.Cobblestone,
-				Parent = road,
-			})
-		end
-	end
 	-- New dragons appear at the Dragon Gate next to the lobby (an open arch, so the spawn looks straight down the
-	-- road) and leave through the crystal cave at the far end.
+	-- road) and leave through the dark exit tunnel at the far end.
 	dragonGate(road, Constants.ROAD_START_X - 3)
-	caveMountain(road, Constants.ROAD_END_X + 4, 1, rgb(110, 220, 255), true)
+	exitTunnel(road, Constants.ROAD_END_X + 3)
 
 	-- Lobby: a plaza at the start of the road. New players spawn on its east side looking down the road, with the
 	-- free dragon right in front of them. The three leaderboards stand side by side along the north edge, facing
@@ -903,11 +910,10 @@ function WorldBuilder.build()
 	-- Bases: 4 north of the road facing south, 4 south facing north
 	local basesFolder = folder("Bases", workspace)
 	local bases = {}
-	local xs = { -75, -25, 25, 75 }
 	for i = 1, Constants.MAX_BASES do
 		local north = i <= 4
-		local x = xs[(i - 1) % 4 + 1]
-		local z = north and 40 or -40
+		local x = BASE_XS[(i - 1) % 4 + 1]
+		local z = north and BASE_Z or -BASE_Z
 		local cf = CFrame.lookAt(Vector3.new(x, 0, z), Vector3.new(x, 0, 0))
 		bases[i] = buildBase(basesFolder, i, cf)
 	end

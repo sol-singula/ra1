@@ -34,7 +34,7 @@ local function defaults()
 		bestIncome = 0, -- best coins per second ever (leaderboard)
 		nestsBought = Constants.START_NESTS,
 		speedLevel = 1,
-		dragons = {}, -- { uid, id, sp, born, slot } ; slot = nest index, nil while carried or waiting
+		dragons = {}, -- { uid, id, sp, born, lv, slot } ; lv = bought levels, slot = nest index (nil while carried)
 		nextUid = 1,
 		egg = nil, -- { id, readyAt }
 		eggsGiven = 0,
@@ -45,6 +45,8 @@ local function defaults()
 		passes = {}, -- passes granted in Studio tests or remembered after purchase
 		receipts = {}, -- recent purchase ids, so a product is never granted twice
 		invited = {}, -- user ids of friends whose first join already paid an invite reward
+		skins = { CLASSIC = true }, -- owned dragon skins (Data/Skins.lua)
+		skin = "CLASSIC", -- the skin all your dragons wear
 		meta = { createdAt = os.time(), lastSeen = os.time(), lock = nil },
 	}
 end

@@ -6,7 +6,7 @@ The game lives in [`games/ra2 - Steal a Dragon/`](<../../games/ra2 - Steal a Dra
 this README, the [publish checklist](PUBLISH.md), the [plan](PLAN.md), the [screenshots](screenshots/README.md) and the [thumbnails](thumbnails/README.md). Every command and path below is
 relative to the game folder.
 
-Everything is built from plain parts, so it runs in a blank Baseplate with no uploaded assets. The map: a cobblestone lobby with a golden dragon statue and the three leaderboards in a row, the Dragon Road (a royal carpet with lanterns and banners) running from the open Dragon Gate next to the lobby to a crystal mountain, 8 little castles with towers and flags, forests, rocks, flowers, a ring of snowy mountains, clouds, and three dragons circling in the sky.
+Everything is built from plain parts, so it runs in a blank Baseplate with no uploaded assets. The map: a cobblestone lobby with a golden dragon statue and the three leaderboards in a row, the Dragon Road (a royal carpet with lanterns and banners) running from the open Dragon Gate next to the lobby to a dark exit tunnel under a snowy mountain, 8 castles with towers and flags, forests, rocks, flowers, a ring of snowy mountains, clouds, and three dragons circling in the sky.
 
 **Spawning:** new players spawn in the lobby looking straight down the Dragon Road, with the free dragon right in front of them. Once the tutorial is done, players spawn (and respawn) inside their own base, facing the road.
 
@@ -52,8 +52,16 @@ landscape on its own.
    your friends.
 5. **Steal:** walk into an open base and hold **Steal** on a dragon. Run home. The owner gets an alert. If they
    **bonk** you, you drop the dragon, and anyone can grab it for 8 seconds before it flies home.
-6. **Grow:** dragons grow over real time, even while you're offline: Baby, Kid (10 minutes), Big (1 hour),
-   Giant (8 hours). Each size doubles the coins. A big dragon is a big prize for thieves.
+6. **Level up:** dragons level up by themselves over real time, even while you're offline (fast at first, then
+   slower: level 8 after 10 minutes, 18 after an hour, 50 after 8 hours, up to level 100). Each level adds 15% to
+   its coins. Tap **Level Up** on your dragon to buy a level with coins (each one costs a bit more). Dragons grow
+   in size at levels 8, 18 and 49 (Kid, Big, Giant) and stay Giant after that. A high-level dragon is a big prize
+   for thieves.
+7. **Your base** has 24 nests (4 to start, buy up to 20 with coins, +4 with the Extra Nests pass). Just inside the
+   gate: the gold **coin pad**, the blue **Auto Collect** plate (step on it to buy the pass), the red **lock pad**
+   and the orange **+5 MIN** plate (step on it to buy 5 more minutes of lock).
+8. **Skins:** the Shop's **Skins** tab repaints the wings and belly of all your dragons. Midnight, Candy and Ocean
+   cost coins; Lava, Royal Gold and Neon cost Robux.
 
 **Rarities:** Common, Rare, Epic, Legend and Secret. **Specials:** Fire and Ice ×2, Gold ×3, Rainbow ×5.
 
@@ -63,7 +71,7 @@ landscape on its own.
 |---|---|
 | First minute | You hold a dragon within seconds, with an arrow showing every step |
 | Playtime | Coins tick up, a new dragon every 2.5 s, a **Legend dragon every 5 minutes** with a countdown, goals with rewards |
-| Day 2 return | The egg hatches tomorrow (then a new one starts), dragons grow overnight, coins earned while away (up to 8 hours), daily gift streak (day 2 = a Rare dragon, day 7 = a Legend) |
+| Day 2 return | The egg hatches tomorrow (then a new one starts), dragons level up overnight, coins earned while away (up to 8 hours), daily gift streak (day 2 = a Rare dragon, day 7 = a Legend) |
 | Playing with friends | Friends in the server are a team: +10% coins each (up to +30%), they can enter your locked base, and a **TEAM STEAL** bonus when a friend is nearby |
 | Inviting friends | **FRIENDS** button opens Roblox's invite. A brand-new friend who joins from your invite gives you a free Coral dragon and them 200 coins. Check Roblox's current rules on invite rewards before going live (switch: `INVITE_REWARDS` in `Constants.lua`). |
 | Leaderboards | Three boards in the lobby: **TOP COINS** (lifetime coins), **TOP THIEVES** (steals) and **BEST DRAGONS** (best coins per second). Global, merged with the live players in the server. |
@@ -78,7 +86,7 @@ Mega Bonk (149).
 
 **Developer products:** Server Luck (99, rarer dragons for everyone in the server for 15 minutes, with your name
 on it), Lock Now (19), Coin Bag (49), Coin Chest (299), Daily Deal (25). These are bought from the world: Grow
-Now (39, tap **Grow Now** on your dragon), Hatch Now (49, tap the egg), Buy Now (199, **Buy with Robux** on Epic
+5-Minute Lock (35, also the **+5 MIN** plate in your base), +10 Levels (39, tap **+10 Levels** on your dragon), Hatch Now (49, tap the egg), Buy Now (199, **Buy with Robux** on Epic
 and better road dragons) and Double It (25, on the welcome-back screen).
 
 ### Hooking up the real items
@@ -131,12 +139,12 @@ again.
 
 This needs Rust (`cargo`) once, to build the small Luau runner. It runs:
 
-- **Formula unit tests:** 99 checks.
-- **Client smoke test:** a phone-sized screen, every event, button and panel; 66 checks.
+- **Formula unit tests:** 119 checks.
+- **Client smoke test:** a phone-sized screen, every event, button and panel, including the Skins tab; 90 checks.
 - **Server smoke test:** 3 players through the tutorial, buying, stealing, bonking, grabbing, locks, selling,
   nests, speed, passes and receipts, daily gift, egg, goals, friends and invites, leaderboards, offline coins
-  and leaving mid-steal, and returning players spawning in their own base; 100 checks, plus a run with DataStores
-  turned off.
+  and leaving mid-steal, returning players spawning in their own base, levels, the base plates, skins and the exit tunnel; 121 checks,
+  plus a run with DataStores turned off.
 
 The mock engine is not Roblox: it catches script errors and broken logic, not physics or rendering. Always
 play-test in Studio too.

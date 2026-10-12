@@ -35,7 +35,7 @@ for Sale**, set the price and save. Copy its ID from the **⋯** menu (**Copy As
 | `VIP` | VIP | 449 | +50% coins, longer lock, gold name. |
 | `FAST` | Fast Feet | 199 | Run 25% faster with a dragon. |
 | `NESTS` | Extra Nests | 249 | +4 nests for more dragons. |
-| `AUTO` | Auto Collect | 149 | Coins go right to you. |
+| `AUTO` | Auto Collect | 149 | Coins go right to you. (Also sold by the blue plate next to the coin pad.) |
 | `LONGLOCK` | Long Lock | 199 | Your door locks for 2 minutes. |
 | `MEGABONK` | Mega Bonk | 149 | Bonked thieves are stuck longer. |
 
@@ -48,13 +48,17 @@ the name, description and price and save. An icon is optional. Copy the **Produc
 |---|---|---|---|
 | `LUCK` | Server Luck | 99 | Shop |
 | `LOCKNOW` | Lock Now | 19 | Shop |
+| `LOCK5` | 5-Minute Lock | 35 | Shop, and the **+5 MIN** plate next to the lock pad in each base |
 | `COINS_S` | Coin Bag | 49 | Shop |
 | `COINS_L` | Coin Chest | 299 | Shop |
 | `DEAL` | Daily Deal | 25 | Shop |
-| `GROW` | Grow Now | 39 | Tapping **Grow Now** on one of your dragons |
+| `GROW` | +10 Levels | 39 | Tapping **+10 Levels** on one of your dragons |
 | `HATCH` | Hatch Now | 49 | Tapping the egg |
 | `BUYNOW` | Buy Now | 199 | **Buy with Robux** on Epic and rarer road dragons |
 | `OFFLINE2X` | Double It | 25 | The welcome-back screen |
+| `SKIN_LAVA` | Lava Skin | 99 | Shop → Skins |
+| `SKIN_ROYAL` | Royal Gold Skin | 149 | Shop → Skins |
+| `SKIN_NEON` | Neon Skin | 199 | Shop → Skins |
 
 Names, prices and descriptions above match `src/shared/Data/Shop.lua`. If you change a price on the dashboard,
 change it in that file too, because the shop shows the price from the file.
@@ -63,7 +67,7 @@ change it in that file too, because the shop shows the price from the file.
 
 Open `src/shared/Data/Shop.lua` and replace each `id = 0` with the item's ID, for example `id = 1234567890`.
 
-You can also send me the 16 IDs and I'll paste them in, re-test and push.
+You can also send me the 20 IDs and I'll paste them in, re-test and push.
 
 ### Getting paid
 
@@ -81,7 +85,7 @@ You can also send me the 16 IDs and I'll paste them in, re-test and push.
 3. Test a purchase in Studio. Studio purchase prompts are test purchases and don't charge you.
 4. On the Creator Dashboard, fill in:
    - **Basic info:** description and genre (Adventure or Simulation).
-   - **Icon:** 512 × 512.
+   - **Icon:** `other/ra2/icon/icon_red_dragon.png` (512 × 512; an alternate is in the same folder).
    - **Thumbnails:** from `other/ra2/thumbnails/`.
    - **Devices:** Phone, Tablet, Computer and Console.
 5. Fill in the **Maturity & Compliance** questionnaire. A game can't be made public without it.

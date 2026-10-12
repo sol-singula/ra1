@@ -41,6 +41,8 @@ local Tutorial = service("TutorialService")
 local Leaderboard = service("LeaderboardService")
 local ShopData = Engine.require(tree.shared.Data.Shop)
 local Formulas = Engine.require(tree.shared.Formulas)
+local Format = Engine.require(tree.shared.Format)
+local Constants = Engine.require(tree.shared.Constants)
 local World = Engine.require(tree.server.World.WorldBuilder).layout
 local Players = Engine.Players
 local MarketplaceService = Engine.game:GetService("MarketplaceService")
@@ -106,6 +108,9 @@ end
 check("8 bases built", #World.bases == 8)
 check("3 lobby leaderboards", World.boards.coins and World.boards.steals and World.boards.income)
 check("spawn in the lobby", World.spawn.Position.X < -120)
+check("no Baseplate template left", Engine.workspace:FindFirstChild("Baseplate") == nil)
+check("base plates: auto collect and lock time", World.bases[1].autoPlate ~= nil and World.bases[1].lockPlate ~= nil)
+check("24 nests per base", #World.bases[1].nests == Constants.MAX_NESTS)
 
 -- Join and tutorial ----------------------------------------------------------------------------------------
 local a = join("Ava", 1001)
@@ -113,6 +118,15 @@ local pa = Data:Get(a)
 check("profile loaded", pa ~= nil)
 check("unsaved only without DataStore", (pa._noSave == true) == noDataStore)
 check("base assigned", Base:Get(a) ~= nil and Base:Get(a).owner == a)
+-- road dragons walk into the exit tunnel: unbuyable once inside, removed deep in the dark
+local leaving = Road:Spawn()
+leaving.x = Constants.ROAD_END_X + 1
+Engine.advance(0.1)
+check("dragon in the tunnel can't be bought", leaving.model.PrimaryPart:FindFirstChild("Prompt_buy") == nil)
+check("dragon keeps walking into the tunnel", Road:Entry(leaving.roadId) ~= nil)
+leaving.x = Constants.ROAD_EXIT_X + 1
+Engine.advance(0.1)
+check("dragon gone deep in the tunnel", Road:Entry(leaving.roadId) == nil)
 check("leaderstats", a:FindFirstChild("leaderstats") and a.leaderstats:FindFirstChild("Coins") ~= nil)
 check("base sign shows owner", Base:Get(a).world.signLines[1].Text == "AVA")
 Leaderboard:Refresh()
@@ -319,17 +333,94 @@ check(
 	"unknown player waits",
 	MarketplaceService.ProcessReceipt({ PlayerId = 5, ProductId = 777, PurchaseId = "R2" }).Name == "NotProcessedYet"
 )
--- Grow Now on a nest dragon
+-- Levels: +10 Levels (Robux) and Level Up (coins) on a nest dragon
 local gm = anyNestModel(a)
 local guid = gm:GetAttribute("Uid")
-trigger(a, gm, "grow")
 local grown
 for _, r in pa.dragons do
 	if r.uid == guid then
 		grown = r
 	end
 end
-check("Grow Now grows one stage", grown and Formulas.stage(grown.born, Engine.globals.os.time()) == 2)
+local lv0 = Formulas.level(grown, Engine.globals.os.time())
+trigger(a, gm, "grow")
+check("+10 Levels adds 10 levels", Formulas.level(grown, Engine.globals.os.time()) == lv0 + 10)
+local function modelOf(uid)
+	for _, m in Engine.workspace.Dragons:GetChildren() do
+		if m:GetAttribute("Uid") == uid then
+			return m
+		end
+	end
+end
+gm = modelOf(guid) -- reaching Kid size rebuilds the model
+check(
+	"tag shows the level",
+	gm.PrimaryPart.Tag.Line2.Text:find("Lv " .. (lv0 + 10)) ~= nil,
+	gm.PrimaryPart.Tag.Line2.Text
+)
+local cost = Formulas.levelUpCost(grown, Engine.globals.os.time())
+pa.coins += cost
+local coinsBefore = pa.coins
+go(a, gm.PrimaryPart.Position)
+trigger(a, gm, "levelup")
+check("Level Up costs coins", pa.coins == coinsBefore - cost, pa.coins - coinsBefore)
+check("Level Up adds a level", Formulas.level(grown, Engine.globals.os.time()) == lv0 + 11)
+check(
+	"Level Up prompt shows the next price",
+	gm.PrimaryPart.Prompt_levelup.ActionText:find(
+		Format.num(Formulas.levelUpCost(grown, Engine.globals.os.time())),
+		1,
+		true
+	) ~= nil
+)
+local poor = pa.coins
+pa.coins = 0
+trigger(a, gm, "levelup")
+check("no Level Up without coins", Formulas.level(grown, Engine.globals.os.time()) == lv0 + 11)
+pa.coins = poor
+
+-- Buy plates in the base
+local world = Base:Get(a).world
+check("plates built", world.autoPlate ~= nil and world.lockPlate ~= nil)
+go(a, world.autoPlate.Position)
+check("Auto Collect plate sells the pass", pa.passes.AUTO == true)
+local lockBefore = Base:Get(a).lockUntil
+go(a, world.lockPlate.Position)
+check(
+	"lock plate adds 5 minutes",
+	Base:Get(a).lockUntil
+		>= math.max(lockBefore, Engine.workspace:GetServerTimeNow()) + Constants.LOCK_BOOST_SECONDS - 1
+)
+local lockAfter = Base:Get(a).lockUntil
+Engine.advance(0.5)
+check("standing on the plate doesn't buy again", Base:Get(a).lockUntil == lockAfter)
+Base:Get(a).lockUntil = 0 -- open again for the stealing tests below
+goHome(a)
+
+-- Skins
+check("starts with Classic", pa.skins.CLASSIC and pa.skin == "CLASSIC")
+pa.coins += 5000
+local beforeSkin = pa.coins
+Engine.fireServer(a, "BuySkin", "MIDNIGHT")
+Engine.advance(0.1)
+check(
+	"coin skin bought and worn",
+	pa.skins.MIDNIGHT and pa.skin == "MIDNIGHT" and pa.coins <= beforeSkin - 5000 + Base:Income(a),
+	`{tostring(pa.skins.MIDNIGHT)} {pa.skin} {pa.coins - beforeSkin}`
+)
+check("nest dragons repainted", anyNestModel(a):GetAttribute("Skin") == "MIDNIGHT")
+Engine.advance(0.6)
+Engine.fireServer(a, "BuySkin", "LAVA")
+Engine.advance(0.1)
+check("Robux skin (Studio test) bought and worn", pa.skins.LAVA and pa.skin == "LAVA")
+Engine.advance(0.6)
+Engine.fireServer(a, "EquipSkin", "CLASSIC")
+Engine.advance(0.1)
+check("equip an owned skin", pa.skin == "CLASSIC" and anyNestModel(a):GetAttribute("Skin") == nil)
+Engine.advance(0.6)
+Engine.fireServer(a, "EquipSkin", "NEON")
+Engine.advance(0.1)
+check("can't wear a skin you don't own", pa.skin == "CLASSIC")
 
 -- Daily gift and egg ---------------------------------------------------------------------------------------
 local c0 = pa.coins

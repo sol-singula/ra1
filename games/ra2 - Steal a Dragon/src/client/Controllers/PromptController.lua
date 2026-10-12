@@ -1,5 +1,5 @@
--- Shows each player only the prompts that make sense for them: Steal on other players' dragons, Sell and Grow
--- on your own, Buy on the road when your hands are free, and so on. (The server checks everything again.)
+-- Shows each player only the prompts that make sense for them: Steal on other players' dragons, Sell, Level Up
+-- and +10 Levels on your own, Buy on the road when your hands are free, and so on. (The server checks everything again.)
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 
@@ -26,7 +26,7 @@ function PromptController.shouldShow(prompt)
 	local carrying = s.carrying ~= nil and s.carrying ~= false
 	if kind == "steal" then
 		return not mine and not carrying and not isTeam(owner)
-	elseif kind == "sell" or kind == "grow" then
+	elseif kind == "sell" or kind == "grow" or kind == "levelup" then
 		return mine and not carrying
 	elseif kind == "nest" or kind == "hatch" then
 		return mine

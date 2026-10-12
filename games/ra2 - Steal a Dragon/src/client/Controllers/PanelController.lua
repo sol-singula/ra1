@@ -1,4 +1,4 @@
--- Pop-up panels: Shop (boosts and passes), Speed (upgrades), Gift (daily streak) and Welcome Back (coins
+-- Pop-up panels: Shop (boosts, passes and dragon skins), Speed (upgrades), Gift (daily streak) and Welcome Back (coins
 -- earned while away). One panel at a time: a coloured header, a round close button on the corner, big glossy
 -- buttons, and a little pop when it opens. Sized to fit a phone in landscape.
 local ContextActionService = game:GetService("ContextActionService")
@@ -11,6 +11,7 @@ local Format = require(ReplicatedStorage.Shared.Format)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
+local Skins = require(ReplicatedStorage.Shared.Data.Skins)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local HudController = require(script.Parent.HudController)
@@ -188,6 +189,81 @@ local function shopCard(item, kind, order)
 	end)
 end
 
+-- A skin card: a swatch of the wing and belly colours, the name, and Buy / Equip / Equipped.
+local function skinCard(skin, order)
+	local owned = (Store.state.skins or { CLASSIC = true })[skin.key]
+	local equipped = (Store.state.skin or Skins.DEFAULT) == skin.key
+	local cell = Theme.card({ Name = skin.key, LayoutOrder = order, BackgroundColor3 = C.white, Parent = body })
+	cell.ClipsDescendants = true
+	local top = new("Frame", {
+		Name = "Top",
+		Size = UDim2.new(1, 0, 0, 84),
+		BackgroundColor3 = skin.wing or C.purple,
+		BorderSizePixel = 0,
+		Parent = cell,
+	}, { Theme.corner(16), Theme.gloss(Color3.fromRGB(255, 255, 255), Color3.fromRGB(190, 190, 190)) })
+	new("Frame", {
+		Name = "Belly",
+		Size = UDim2.fromOffset(46, 46),
+		Position = UDim2.new(1, -54, 0, 30),
+		BackgroundColor3 = skin.belly or C.mustard,
+		BorderSizePixel = 0,
+		Parent = top,
+	}, { Theme.corner(10), Theme.stroke(2) })
+	Theme.text({
+		Text = skin.icon,
+		Size = UDim2.new(1, -60, 0, 58),
+		Position = UDim2.fromOffset(4, 12),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = top,
+	})
+	Theme.text({
+		Text = skin.name,
+		Font = Theme.Display,
+		Size = UDim2.new(1, -12, 0, 24),
+		Position = UDim2.fromOffset(6, 90),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = cell,
+	})
+	Theme.text({
+		Text = skin.text,
+		TextSize = 16,
+		TextScaled = false,
+		TextColor3 = C.muted,
+		Size = UDim2.new(1, -14, 0, 56),
+		Position = UDim2.fromOffset(7, 114),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Parent = cell,
+	})
+	local text, color
+	if equipped then
+		text, color = "EQUIPPED ✓", Color3.fromRGB(150, 150, 165)
+	elseif owned then
+		text, color = "EQUIP", C.sky
+	elseif skin.product then
+		local product = Shop.productByKey[skin.product]
+		text, color = "R$ " .. (product and product.price or "?"), C.good
+	else
+		text, color = "💰 " .. Format.num(skin.coins), C.mustard
+	end
+	local button = Theme.button({
+		Name = "Buy",
+		Text = text,
+		BackgroundColor3 = color,
+		Size = UDim2.new(1, -18, 0, 42),
+		Position = UDim2.new(0, 9, 1, -50),
+		round = true,
+		Parent = cell,
+	})
+	button.Activated:Connect(function()
+		if equipped or not Theme.busy(button) then
+			return
+		end
+		Net.send(owned and "EquipSkin" or "BuySkin", skin.key)
+	end)
+end
+
 builders.Shop = function()
 	titleLabel.Text = "🛒 SHOP"
 	tabs.Visible = true
@@ -210,6 +286,10 @@ builders.Shop = function()
 			if not p.hidden then
 				shopCard(p, "product", i)
 			end
+		end
+	elseif shopTab == "skins" then
+		for i, skin in Skins.list do
+			skinCard(skin, i)
 		end
 	else
 		for i, p in Shop.Passes do
@@ -476,13 +556,15 @@ function PanelController:init()
 		Visible = false,
 		Parent = card,
 	})
-	for i, t in { { "boosts", "⚡ BOOSTS" }, { "passes", "👑 PASSES" } } do
+	local tabList = { { "boosts", "⚡ BOOSTS" }, { "passes", "👑 PASSES" }, { "skins", "🎨 SKINS" } }
+	for i, t in tabList do
+		local w = 1 / #tabList
 		local b = Theme.button({
 			Name = t[1],
 			Text = t[2],
 			BackgroundColor3 = C.mustard,
-			Size = UDim2.new(0.5, -6, 1, 0),
-			Position = UDim2.new((i - 1) * 0.5, (i - 1) * 6, 0, 0),
+			Size = UDim2.new(w, -6, 1, 0),
+			Position = UDim2.new((i - 1) * w, 3, 0, 0),
 			round = true,
 			Parent = tabs,
 		})
@@ -496,7 +578,14 @@ function PanelController:init()
 		if
 			current
 			and current ~= "Offline"
-			and (partial.passes or partial.speedLevel or partial.daily or partial.nests)
+			and (
+				partial.passes
+				or partial.speedLevel
+				or partial.daily
+				or partial.nests
+				or partial.skins
+				or partial.skin
+			)
 		then
 			refreshOpen()
 		end

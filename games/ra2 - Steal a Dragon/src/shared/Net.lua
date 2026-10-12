@@ -15,6 +15,8 @@ Net.ClientEvents = {
 	ClaimOffline = 1,
 	SkipTutorial = 1,
 	Purchase = 2, -- (kind "pass"|"product", key, target?) the server opens Roblox's purchase prompt
+	BuySkin = 2, -- (skinKey) coin skins are bought, Robux skins open their purchase prompt
+	EquipSkin = 2, -- (skinKey)
 }
 
 -- Server → client.

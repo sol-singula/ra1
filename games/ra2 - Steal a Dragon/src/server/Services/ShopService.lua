@@ -12,6 +12,7 @@ local Format = require(ReplicatedStorage.Shared.Format)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
+local Skins = require(ReplicatedStorage.Shared.Data.Skins)
 
 local ShopService = {
 	Name = "ShopService",
@@ -60,6 +61,28 @@ function ShopService:Init(registry)
 	end)
 	reward.HatchNowRequested:Connect(function(player)
 		self:PromptProduct(player, "HATCH")
+	end)
+	-- the plates in each base: Auto Collect (next to the coin pad) and 5-Minute Lock (next to the lock pad)
+	baseService.PlateStepped:Connect(function(player, plate)
+		if plate == "auto" then
+			if economy:HasPass(player, "AUTO") then
+				Net.fire(player, "Toast", "Auto Collect is ON: coins come right to you! 🧲", "good")
+			else
+				self:PromptPass(player, "AUTO")
+			end
+		elseif plate == "lock" then
+			self:PromptProduct(player, "LOCK5")
+		end
+	end)
+	-- skins: coin skins are bought here, Robux skins through their product
+	Net.on("BuySkin", function(player, key)
+		self:BuySkin(player, key)
+	end)
+	Net.on("EquipSkin", function(player, key)
+		self:EquipSkin(player, key)
+	end)
+	data.ClientReady:Connect(function(player)
+		self:PushSkins(player)
 	end)
 
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, purchased)
@@ -133,6 +156,8 @@ function ShopService:Grant(player, key, target)
 		)
 	elseif key == "LOCKNOW" then
 		baseService:Lock(player)
+	elseif key == "LOCK5" then
+		baseService:Lock(player, Constants.LOCK_BOOST_SECONDS)
 	elseif key == "COINS_S" then
 		economy:Add(player, math.max(1000, math.floor(income * 600)))
 	elseif key == "COINS_L" then
@@ -142,7 +167,11 @@ function ShopService:Grant(player, key, target)
 		dragons:Grant(player, id)
 		Net.fire(player, "Alert", `Daily Deal: {Dragons.byId[id].name}! 🎁`, Color3.fromRGB(255, 205, 50))
 	elseif key == "GROW" then
-		dragons:GrowOne(player, target)
+		if not dragons:AddLevels(player, target, Constants.GROW_PRODUCT_LEVELS) then
+			economy:Add(player, math.max(1000, math.floor(income * 600)), false) -- no dragon below MAX: coins instead
+		end
+	elseif Skins.byProduct[key] then
+		self:GiveSkin(player, Skins.byProduct[key].key)
 	elseif key == "HATCH" then
 		reward:HatchNow(player)
 		reward:Hatch(player)
@@ -164,6 +193,50 @@ function ShopService:Grant(player, key, target)
 		return false
 	end
 	return true
+end
+
+-- Skins --------------------------------------------------------------------------------------------------------
+function ShopService:PushSkins(player)
+	local profile = data:Get(player)
+	if profile then
+		data:Push(player, { skins = profile.skins, skin = profile.skin })
+	end
+end
+
+function ShopService:GiveSkin(player, key)
+	local profile = data:Get(player)
+	local skin = Skins.byKey[key]
+	if not profile or not skin then
+		return
+	end
+	profile.skins[key] = true
+	self:EquipSkin(player, key)
+	Net.fire(player, "Alert", `New skin: {skin.name}! {skin.icon}`, Color3.fromRGB(80, 220, 120))
+end
+
+function ShopService:BuySkin(player, key)
+	local profile = data:Get(player)
+	local skin = type(key) == "string" and Skins.byKey[key]
+	if not profile or not skin or profile.skins[key] then
+		return
+	end
+	if skin.product then
+		self:PromptProduct(player, skin.product)
+	elseif economy:Spend(player, skin.coins) then
+		self:GiveSkin(player, key)
+	else
+		Net.fire(player, "Toast", `You need {Format.num(skin.coins)} coins for {skin.name}.`, "bad")
+	end
+end
+
+function ShopService:EquipSkin(player, key)
+	local profile = data:Get(player)
+	if not profile or type(key) ~= "string" or not profile.skins[key] or not Skins.byKey[key] then
+		return
+	end
+	profile.skin = key
+	dragons:RefreshSkin(player)
+	self:PushSkins(player)
 end
 
 function ShopService:ProcessReceipt(info)
