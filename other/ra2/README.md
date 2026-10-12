@@ -6,7 +6,7 @@ The game lives in [`games/ra2 - Steal a Dragon/`](<../../games/ra2 - Steal a Dra
 this README, the [publish checklist](PUBLISH.md), the [plan](PLAN.md), the [screenshots](screenshots/README.md) and the [thumbnails](thumbnails/README.md). Every command and path below is
 relative to the game folder.
 
-Everything is built from plain parts, so it runs in a blank Baseplate with no uploaded assets. The map: a cobblestone lobby with a golden dragon statue and the three leaderboards in a row, the Dragon Road (a royal carpet with lanterns and banners) running from the open Dragon Gate next to the lobby to a dark exit tunnel under a snowy mountain, 8 castles with towers and flags, forests, rocks, flowers, a ring of snowy mountains, clouds, and three dragons circling in the sky.
+Everything is built from plain parts, so it runs in a blank Baseplate with no uploaded assets. The map: a cobblestone lobby with a golden dragon statue and the three leaderboards in a row, the Dragon Road (a royal carpet with lanterns and banners) running from the open Dragon Gate next to the lobby to a dark exit tunnel under a snowy mountain, 8 castles with towers and flags, forests, rocks, flowers, a tall cliff wall all around with trees along its top and two waterfalls, far mountains, clouds, and three dragons circling in the sky.
 
 **Spawning:** new players spawn in the lobby looking straight down the Dragon Road, with the free dragon right in front of them. Once the tutorial is done, players spawn (and respawn) inside their own base, facing the road.
 
@@ -54,12 +54,22 @@ landscape on its own.
 4. **Lock** your door for 60 seconds by stepping on the red pad; step on it again any time to reset the timer to
    full. While it's locked, nobody can get in, except your friends.
 5. **Steal:** walk into an open base and hold **Steal** on a dragon. Run home. The owner gets an alert. If they
-   **bonk** you, you drop the dragon, and anyone can grab it for 8 seconds before it flies home.
+   **bonk** you, you drop the dragon, and anyone can grab it for 8 seconds before it flies home. Full nests don't
+   stop you: your weakest dragon folds into your best (same income) to make room.
+   - **Fighting:** anyone carrying a stolen dragon wears a red **THIEF** tag with a **bounty** (a minute of that
+     dragon's coins); bonk them to collect it. Bonks stun, knock back, flash red and leave dizzy stars. Better
+     weapons cost coins (GEAR button): Bonk Bat, Spiked Club (2.5K), War Hammer (40K), Dragon Mace (750K) and
+     Inferno Blade (20M), each with more reach, stun and knockback. Bonks in your own base hit harder (home
+     defense), Mega Bonk adds stun and a gold glow, and 3, 5, 10 and 20-bonk streaks are announced.
+   - **Raiders:** when the server is quiet, goblin NPC raiders (clearly tagged, not players) come out of the exit
+     tunnel. They stroll the road and now and then sneak into an open base, grab a dragon and run for the tunnel,
+     slower than you. Bonk one for its bounty and grab your dragon; if it gets away, the dragon flies home having
+     earned nothing while it was gone. Never a locked base, a player in the tutorial or anyone with under 2 dragons.
 6. **Level up:** dragons level up by themselves over real time, even while you're offline (fast at first, then
    slower: level 8 after 10 minutes, 18 after an hour, 50 after 8 hours, up to level 100). Each level adds 15% to
-   its coins. Tap **Level Up** on your dragon to buy a level with coins (each one costs a bit more), or step on
-   the **LEVEL ALL** plate in the middle of your base to spend your coins on the cheapest level-ups across all your
-   nests (with no coins it offers **+5 Levels for ALL** for Robux). Dragons grow
+   its coins. Tap **Level Up** on your dragon to buy a level with coins (each one costs a bit more), or use
+   the **LEVEL ALL** podium (hold its prompt) to spend your coins on the cheapest level-ups across all your
+   nests. **Combine** (C) folds a dragon into your best one and keeps the income (it shows ⚡x). Dragons grow
    in size at levels 8, 18 and 49 (Kid, Big, Giant) and stay Giant after that. A high-level dragon is a big prize
    for thieves.
 7. **Your base** is a dragon gallery: 24 nests on stepped stands along both side walls and a trophy stand at the
@@ -71,8 +81,9 @@ landscape on its own.
    cost coins; Lava, Royal Gold and Neon cost Robux.
 9. **Your castle grows** with your dragon power (the coins per second of your nest dragons, before passes): a
    plain low wall at the start, then tall walls and back towers (25/s), gate towers, buttresses and ivy (250/s),
-   a keep and corner turrets (2,500/s), and gold trim with a golden dragon over the gate (25,000/s).
-10. **Hotbar:** slot 1 is the bonk bat (a big hammer with Mega Bonk). Slot 2 is the **Speed Potion**: 50% faster
+   a keep and corner turrets (2,500/s), gold trim with a golden dragon over the gate (25,000/s), a great arch
+   (250K/s), a grand hall with a crystal crown (2.5M/s) and a golden dome with a floating crystal (25M/s).
+10. **Hotbar:** slot 1 is your weapon. Slot 2 is the **Speed Potion**: 50% faster
     for 30 seconds; you start with 3, and 5 more cost Robux. Slot 3 is **Dragon Wings** (a pass): click to jump
     high, then glide where you steer. Wings can't lift a carried dragon.
 11. **Secret:** follow the line of coloured lights from the end of the road into the exit tunnel. There's a door. 🪩
@@ -103,11 +114,12 @@ the road the next spawn always is, so there's nearly always one walking. Edit or
 | Roblox signal | In the game |
 |---|---|
 | First minute | You hold a dragon within seconds, with an arrow showing every step |
-| Playtime | Coins tick up, a new dragon every 2.5 s, a **Legend dragon every 5 minutes** with a countdown, goals with rewards |
+| First minutes | **2x coins for a brand-new player's first 10 minutes** (banner with a countdown), and **playtime gifts** that arrive by themselves: coins at 1 minute, potions at 3, a dragon at 5, then 10, 15, 20, 30, 45 and 60 minutes (sized to your progress; the HUD counts down to the next one and says what it is; resets daily) |
+| Playtime | Coins tick up, a new dragon every 2.5 s, a **Legend dragon every 5 minutes** with a countdown, goals with rewards, raiders to bonk |
 | Day 2 return | A new egg every 2 hours, dragons level up overnight, coins earned while away (up to 8 hours), daily gift streak sized to your progress (day 7 beats your best dragon) |
 | Playing with friends | Friends in the server are a team: +10% coins each (up to +30%), they can enter your locked base, and a **TEAM STEAL** bonus when a friend is nearby |
 | Inviting friends | **FRIENDS** button opens Roblox's invite. A brand-new friend who joins from your invite gives you a free Coral dragon and them 200 coins. Check Roblox's current rules on invite rewards before going live (switch: `INVITE_REWARDS` in `Constants.lua`). |
-| Leaderboards | Four boards in the lobby, live for everyone in the server: **TOP COINS** (coins right now), **TODAY'S TOP EARNERS** (since 7pm Eastern, with a countdown; the #1 when it resets wins **Omni Prism**, an ULTRA dragon that never comes down the road, on show in front of the board), **BEST DRAGONS** (each player's best dragon right now) and **TOP THIEVES**. A banner drops in when someone joins or takes a top-3 spot. |
+| Leaderboards | Four boards in the lobby, live for everyone in the server: **TOP COINS** (coins right now), **TODAY'S TOP EARNERS** (since 7pm Eastern, with a countdown; the #1 when it resets wins **Omni Prism**, an ULTRA dragon that never comes down the road, on show in front of the board), **BEST DRAGONS** (each player's best dragon right now) and **TOP THIEVES**. A banner drops in when someone joins, takes a top-3 spot, or makes any board. |
 
 ## Making money
 
@@ -143,12 +155,14 @@ games/ra2 - Steal a Dragon/
 │                              Data/ (Dragons, FancyDragons (generated), Shop, Skins, Goals)
 ├─ src/server/
 │  ├─ Main.server.lua, Loader.lua
-│  ├─ World/                   WorldBuilder (castle-courtyard lobby, road, 8 castle bases that grow in 5
+│  ├─ World/                   WorldBuilder (castle-courtyard lobby, road, 8 castle bases that grow in 8
 │  │                           levels, Practice Base), Disco (the secret room), Scenery (trees, rocks,
-│  │                           mountains, lanterns, towers, clouds), DragonBuilder (dragon models)
+│  │                           cliffs, far mountains, lanterns, towers, clouds), DragonBuilder (dragon models)
 │  └─ Services/                PlayerData (saving), Economy (coins, passes, leaderstats), Team (friends),
 │                              Base (locks, banks, pads), Dragon (nests, carry, steal, drop, place),
-│                              Road (spawns, Legend event, luck, free and practice stands), Combat (bonk, speed),
+│                              Road (spawns, Legend event, luck, free and practice stands), Combat (bonk, weapons,
+│                              bounties, streaks, speed), Npc (goblin raiders), Playtime (playtime gifts, new-player
+│                              boost), GameLog (Discord logs),
 │                              Tool (hotbar: bat, potions, wings; camera zoom cap),
 │                              Reward (daily, egg, goals, offline, invites), Shop (purchases), Leaderboard,
 │                              Tutorial
@@ -181,7 +195,8 @@ This needs Rust (`cargo`) once, to build the small Luau runner. It runs:
 - **Client smoke test:** a phone-sized screen, every event, button and panel, including the Skins tab; 90 checks.
 - **Server smoke test:** 3 players through the tutorial, buying, stealing, bonking, grabbing, locks, selling,
   nests, speed, passes and receipts, daily gift, egg, goals, friends and invites, leaderboards, offline coins
-  and leaving mid-steal, returning players spawning in their own base, levels, the base plates, skins and the exit tunnel; 121 checks,
+  and leaving mid-steal, returning players spawning in their own base, levels, the base plates, skins, the exit tunnel, weapons, bounties, combining, playtime gifts, the
+  new-player boost, raiders and the Discord game log; 241 checks,
   plus a run with DataStores turned off.
 
 The mock engine is not Roblox: it catches script errors and broken logic, not physics or rendering. Always

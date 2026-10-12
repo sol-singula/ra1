@@ -73,6 +73,9 @@ Constants.BOUNTY_SECONDS = 60 -- bonking a thief pays this many seconds of the s
 Constants.BOUNTY_MIN = 100
 Constants.STREAK_WINDOW = 40 -- seconds between hits to keep a bonk streak going
 Constants.STREAK_ANNOUNCE = { [3] = true, [5] = true, [10] = true, [20] = true }
+-- First minutes: brand-new players earn double for their first 10 minutes of play
+Constants.NEW_PLAYER_BOOST_SECONDS = 10 * 60
+Constants.NEW_PLAYER_BOOST_MULT = 2
 -- NPC raiders (NpcService): goblins from the exit tunnel that keep quiet servers busy. They walk the road and
 -- raid bases; bonk one carrying a dragon for the bounty, or it gets away (the dragon flies home, minus its coins).
 Constants.NPC_FILL_TO = 5 -- with fewer players than this, raiders make up the difference

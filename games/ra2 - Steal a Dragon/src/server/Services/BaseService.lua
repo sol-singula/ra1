@@ -307,7 +307,7 @@ function BaseService:PushBase(player)
 	self:PushIncome(player)
 end
 
--- Coins per second of everything in this player's nests, with passes and friend bonus.
+-- Coins per second of everything in this player's nests, with passes, friend bonus, fever and new-player boost.
 function BaseService:Income(player)
 	local profile = data:Get(player)
 	if not profile then
@@ -323,6 +323,9 @@ function BaseService:Income(player)
 	local mult = Formulas.playerMult(economy:Passes(player), team:FriendsHere(player))
 	if self:FeverLeft() > 0 then
 		mult *= Constants.FEVER_MULT
+	end
+	if (profile.newBoostLeft or 0) > 0 then
+		mult *= Constants.NEW_PLAYER_BOOST_MULT -- (PlaytimeService counts it down)
 	end
 	return sum * mult, mult
 end

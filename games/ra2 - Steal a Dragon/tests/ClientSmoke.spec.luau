@@ -130,6 +130,18 @@ check(
 check("egg timer", string.find(hud.Egg.Text, "Storm egg", 1, true) ~= nil, hud.Egg.Text)
 check("waiting dragons", string.find(hud.Waiting.Text, "2 dragons", 1, true) ~= nil)
 check("gift dot", hud.GiftButton.Dot.Visible == true)
+-- playtime gift countdown and the new-player boost
+serverSends("Profile", { playtime = { nextIn = 90, nextText = "150 coins", given = 0, total = 9, boostLeft = 600 } })
+Engine.advance(1.2)
+check(
+	"next playtime gift counts down",
+	hud.PlaytimeGift.Visible and string.find(hud.PlaytimeGift.Text.Text, "150 coins", 1, true) ~= nil,
+	hud.PlaytimeGift.Text.Text
+)
+check("new-player boost shown", hud.NewBoost.Visible and string.find(hud.NewBoost.Text.Text, "2x", 1, true) ~= nil)
+serverSends("Profile", { playtime = { given = 9, total = 9, boostLeft = 0 } })
+Engine.advance(1.2)
+check("no banners once it's all done", not hud.PlaytimeGift.Visible and not hud.NewBoost.Visible)
 check("home marker on my base", gui:FindFirstChild("HomeMarker") and gui.HomeMarker.Adornee == laser)
 
 -- Carry banner

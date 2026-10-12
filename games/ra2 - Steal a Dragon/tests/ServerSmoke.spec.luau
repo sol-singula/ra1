@@ -249,6 +249,14 @@ local pa = Data:Get(a)
 check("profile loaded", pa ~= nil)
 check("unsaved only without DataStore", (pa._noSave == true) == noDataStore)
 check("base assigned", Base:Get(a) ~= nil and Base:Get(a).owner == a)
+-- first minutes: new players earn double, and the HUD knows the next playtime gift
+check("new players get the 2x boost", pa.newBoostLeft == Constants.NEW_PLAYER_BOOST_SECONDS)
+check("the boost doubles income", select(2, Base:Income(a)) == Constants.NEW_PLAYER_BOOST_MULT)
+local Playtime = service("PlaytimeService")
+check("the HUD shows the next playtime gift", Playtime:View(a).nextIn ~= nil and Playtime:View(a).nextText ~= nil)
+-- (both off for the rest of the test, so they don't change its numbers; playtime gifts are tested later)
+pa.newBoostLeft = 0
+pa.playtime.given = #Formulas.PLAYTIME_GIFTS
 -- road dragons walk into the exit tunnel: unbuyable once inside, removed deep in the dark
 local leaving = Road:Spawn()
 leaving.x = Constants.ROAD_END_X + 1
@@ -1051,8 +1059,37 @@ for _, d in Engine.workspace.Map:FindFirstChild("Disco", true):GetChildren() do
 end
 check("a line of lights leads from the road to the disco", guideDots > 10 and nearRoad)
 
+-- Playtime gifts: they arrive by themselves as minutes played today add up
+do
+	local who = Engine.Players:GetPlayers()[1]
+	local pw = Data:Get(who)
+	pw.playtime = { day = Formulas.day(Engine.globals.os.time()), seconds = 55, given = 0 }
+	local coins = pw.coins
+	Engine.advance(6)
+	check("1 minute playtime gift: coins", pw.playtime.given == 1 and pw.coins >= coins + 150, pw.playtime.given)
+	check("the gift is announced", Engine.lastClientEvent("Alert", who) ~= nil)
+	local potions = pw.potions
+	pw.playtime.seconds = 178
+	Engine.advance(3)
+	check("3 minute playtime gift: potions", pw.playtime.given == 2 and pw.potions == potions + 2, pw.potions - potions)
+	pw.playtime.seconds = 298
+	local count = #pw.dragons
+	Engine.advance(3)
+	check("5 minute playtime gift: a dragon", pw.playtime.given == 3 and #pw.dragons == count + 1)
+	pw.playtime.day -= 1
+	Engine.advance(1.1)
+	check("playtime gifts start over each day", pw.playtime.given == 0 and pw.playtime.seconds <= 2)
+	pw.playtime.given = #Formulas.PLAYTIME_GIFTS
+	-- the boost runs out
+	pw.newBoostLeft = 2
+	Engine.advance(3)
+	check("the new-player boost runs out", pw.newBoostLeft == 0 and select(2, Base:Income(who)) < 2)
+end
+
 -- Raiders: goblin NPCs fill quiet servers, raid open bases, drop the dragon when bonked, or get away
 do
+	local raidEvery = Constants.NPC_RAID_EVERY
+	Constants.NPC_RAID_EVERY = { 9999, 9999 } -- no raids of their own during the test: it sends them
 	Npc.active = true
 	for _ = 1, 4 do
 		Engine.advance(4.1)
@@ -1125,6 +1162,7 @@ do
 		end
 	end
 	check("raiders leave when not wanted", #Npc.npcs == 0, #Npc.npcs)
+	Constants.NPC_RAID_EVERY = raidEvery
 end
 
 -- Discord game log: joins, leaves with session stats, chat, steals, purchases... batched every few seconds

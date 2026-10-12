@@ -23,12 +23,13 @@ local HudController = { Name = "HudController", Order = 10 }
 local gui
 local coinsLabel, cpsLabel, eggLabel, waitingLabel
 local goalCard, goalText, goalFill, goalReward, goalCount
-local carryBanner, eventBanner, luckBanner, feverBanner
+local carryBanner, eventBanner, luckBanner, feverBanner, giftBanner, boostBanner
 local lockButton
 local giftDot
 local toastHolder, alertLabel, bonkedLabel
 local events = { legendAt = nil, luckUntil = nil, luckBy = nil, feverUntil = nil }
 local eggReceived -- os.clock() when the egg view arrived
+local playtimeReceived -- os.clock() when the playtime view arrived
 local coinsShown, coinsTarget = nil, 0 -- the number on screen eases toward the real coin count
 local hints = {} -- key hint badges, shown for keyboard and gamepad players
 local tutorialActive = false
@@ -433,6 +434,10 @@ local function buildCenter()
 	eventBanner = banner("Event", UDim2.fromOffset(390, 44), UDim2.new(0.5, 10, 0, 146), C.purple)
 	luckBanner = banner("Luck", UDim2.fromOffset(230, 44), UDim2.new(1, -12, 0, 10), C.good, Vector2.new(1, 0))
 	feverBanner = banner("Fever", UDim2.fromOffset(260, 44), UDim2.new(1, -12, 0, 60), C.pink, Vector2.new(1, 0))
+	-- the next playtime gift and the new-player boost (PlaytimeService)
+	giftBanner =
+		banner("PlaytimeGift", UDim2.fromOffset(300, 40), UDim2.new(1, -12, 0, 110), C.purple, Vector2.new(1, 0))
+	boostBanner = banner("NewBoost", UDim2.fromOffset(300, 40), UDim2.new(1, -12, 0, 156), C.orange, Vector2.new(1, 0))
 
 	toastHolder = new("Frame", {
 		Name = "Toasts",
@@ -549,6 +554,19 @@ local function tick()
 	if feverBanner.Visible then
 		feverBanner.Text.Text = "🪩 FEVER 1.25x " .. Format.time(feverLeft)
 	end
+	-- playtime gift countdown and the new-player boost
+	local pt = s.playtime
+	local since = playtimeReceived and os.clock() - playtimeReceived or 0
+	giftBanner.Visible = pt ~= nil and pt.nextIn ~= nil and pt.nextText ~= nil
+	if giftBanner.Visible then
+		local left = math.max(0, pt.nextIn - since)
+		giftBanner.Text.Text = left > 0 and `🎁 {pt.nextText} in {Format.time(left)}` or `🎁 {pt.nextText}!`
+	end
+	local boostLeft = pt and (pt.boostLeft or 0) - since or 0
+	boostBanner.Visible = boostLeft > 0
+	if boostBanner.Visible then
+		boostBanner.Text.Text = `🚀 2x COINS · NEW PLAYER {Format.time(boostLeft)}`
+	end
 	local luckLeft = events.luckUntil and events.luckUntil - serverNow()
 	if luckLeft and luckLeft > 0 then
 		luckBanner.Visible = true
@@ -604,6 +622,9 @@ function HudController:init()
 	Store.Changed:Connect(function(partial)
 		if partial.egg ~= nil then
 			eggReceived = os.clock()
+		end
+		if partial.playtime ~= nil then
+			playtimeReceived = os.clock()
 		end
 		refresh()
 	end)

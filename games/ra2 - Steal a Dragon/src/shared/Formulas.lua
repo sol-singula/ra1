@@ -293,9 +293,10 @@ Formulas.DAILY_GIFTS = {
 }
 
 -- The gift for streak day n, sized for a player with this income (coins per second) and best dragon
--- (Formulas.bestSpecies). seed varies which dragon. Returns { kind, amount | id, text }.
-function Formulas.dailyGift(streakDay, income, best, seed)
-	local g = Formulas.DAILY_GIFTS[(streakDay - 1) % #Formulas.DAILY_GIFTS + 1]
+-- (Formulas.bestSpecies). seed varies which dragon; gift: another gift spec to size instead (playtime gifts).
+-- Returns { kind, amount | id, text }.
+function Formulas.dailyGift(streakDay, income, best, seed, gift)
+	local g = gift or Formulas.DAILY_GIFTS[(streakDay - 1) % #Formulas.DAILY_GIFTS + 1]
 	if g.kind == "coins" then
 		local amount = math.max(g.amount, math.floor((income or 0) * g.seconds))
 		return { kind = "coins", amount = amount, text = Format.num(amount) .. " coins" }
@@ -306,6 +307,28 @@ function Formulas.dailyGift(streakDay, income, best, seed)
 		return { kind = "dragon", id = id, text = `{d.name} ({d.rarity})` }
 	end
 	return { kind = "luck", text = "Server Luck (15 min)" }
+end
+
+-- Playtime gifts: each day, the longer you play the better they get (PlaytimeService). at = seconds played today.
+Formulas.PLAYTIME_GIFTS = {
+	{ at = 60, kind = "coins", seconds = 60, amount = 150 },
+	{ at = 180, kind = "potion", count = 2 },
+	{ at = 300, kind = "dragon", mult = 0.6, min = "FROSTY" },
+	{ at = 600, kind = "coins", seconds = 240, amount = 1000 },
+	{ at = 900, kind = "luck" },
+	{ at = 1200, kind = "coins", seconds = 480, amount = 4000 },
+	{ at = 1800, kind = "dragon", mult = 1.3, min = "BLAZE" },
+	{ at = 2700, kind = "coins", seconds = 900, amount = 15000 },
+	{ at = 3600, kind = "dragon", mult = 2, min = "GOLDIE" },
+}
+
+-- Playtime gift n, sized for this player's income and best dragon. Returns { kind, amount | id | count, text }.
+function Formulas.playtimeGift(n, income, best, seed)
+	local g = Formulas.PLAYTIME_GIFTS[n]
+	if g.kind == "potion" then
+		return { kind = "potion", count = g.count, text = `{g.count} Speed Potions` }
+	end
+	return Formulas.dailyGift(1, income, best, seed, g)
 end
 
 -- The egg hatches a dragon better than the player's best (eggNumber varies which), with a special.
