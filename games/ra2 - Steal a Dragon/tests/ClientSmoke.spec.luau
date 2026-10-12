@@ -369,6 +369,45 @@ serverSends("Profile", { coins = 777 })
 check("reduced motion: numbers snap", hud.Coins.Value.Text == "777", hud.Coins.Value.Text)
 GuiService.ReducedMotionEnabled = false
 
+-- The hotbar: a slot per tool with its picture, key number and count badge; tap or press 1-3 to hold a tool
+do
+	local Instance = Engine.Instance
+	local backpack = player:FindFirstChild("Backpack") or Instance.new("Backpack")
+	backpack.Name = "Backpack"
+	backpack.Parent = player
+	local function tool(name, kind, slotN, icon, count)
+		local t = Instance.new("Tool")
+		t.Name = name
+		t.TextureId = icon
+		t:SetAttribute("Kind", kind)
+		t:SetAttribute("Slot", slotN)
+		t:SetAttribute("Count", count)
+		t.Parent = backpack
+		return t
+	end
+	local potionTool = tool("Speed Potion x3", "potion", 2, "rbxassetid://2", 3)
+	local batTool = tool("Bonk Bat", "bonk", 1, "rbxassetid://1")
+	Engine.advance(0.3)
+	local hotbar = gui.Hotbar.Bar
+	check(
+		"hotbar slots in order",
+		hotbar.Slot1.Icon.Image == "rbxassetid://1" and hotbar.Slot2.Icon.Image == "rbxassetid://2"
+	)
+	check("hotbar shows pictures, not names", hotbar.Slot1.Icon.Visible and hotbar.Slot1.Label.Text == "")
+	check("potion count badge", hotbar.Slot2.Count.Visible and hotbar.Slot2.Count.Text == "x3")
+	check("key numbers", hotbar.Slot1.Key.Text == "1" and hotbar.Slot2.Key.Text == "2")
+	Engine.actions.HotbarKeys(nil, Engine.Enum.UserInputState.Begin, { KeyCode = Engine.Enum.KeyCode.Two })
+	check("key 2 holds the potion", potionTool.Parent == player.Character)
+	hotbar.Slot1.Activated:Fire()
+	Engine.advance(0.05)
+	check("tapping slot 1 holds the bat", batTool.Parent == player.Character and potionTool.Parent == backpack)
+	hotbar.Slot1.Activated:Fire()
+	check("tapping it again puts it away", batTool.Parent == backpack)
+	potionTool:Destroy()
+	batTool:Destroy()
+	Engine.advance(0.3)
+end
+
 -- Dragon Wings: click to jump high, glide in the air, not while carrying
 do
 	local character = player.Character

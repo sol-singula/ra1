@@ -51,17 +51,26 @@ local function attach(handle, pieces)
 	end
 end
 
-local function newTool(name, kind, tip)
+local SLOTS = { bonk = 1, potion = 2, wings = 3 } -- hotbar order (HotbarController)
+
+local function newTool(name, kind, tip, icon)
 	local tool = Instance.new("Tool")
 	tool.Name = name
 	tool.ToolTip = tip
 	tool.CanBeDropped = false
+	tool.TextureId = icon
 	tool:SetAttribute("Kind", kind)
+	tool:SetAttribute("Slot", SLOTS[kind])
 	return tool
 end
 
 local function bonker(mega)
-	local tool = newTool(mega and "Mega Hammer" or "Bonk Bat", "bonk", "Click to bonk thieves!")
+	local tool = newTool(
+		mega and "Mega Hammer" or "Bonk Bat",
+		"bonk",
+		"Click to bonk thieves!",
+		mega and Constants.TOOL_ICONS.hammer or Constants.TOOL_ICONS.bat
+	)
 	local handle = part({
 		Name = "Handle",
 		Size = Vector3.new(0.35, 2.4, 0.35),
@@ -116,7 +125,7 @@ local function bonker(mega)
 end
 
 local function potion()
-	local tool = newTool("Speed Potion", "potion", "Drink to run faster for 30 seconds!")
+	local tool = newTool("Speed Potion", "potion", "Drink to run faster for 30 seconds!", Constants.TOOL_ICONS.potion)
 	local handle = part({
 		Name = "Handle",
 		Shape = Enum.PartType.Ball,
@@ -157,7 +166,7 @@ local function potion()
 end
 
 local function wings()
-	local tool = newTool("Dragon Wings", "wings", "Click to jump high, then glide!")
+	local tool = newTool("Dragon Wings", "wings", "Click to jump high, then glide!", Constants.TOOL_ICONS.wings)
 	tool.RequiresHandle = false
 	return tool
 end
@@ -321,6 +330,7 @@ function ToolService:_potionLabel(player)
 	local tool = self:Find(player, "potion")
 	if tool and profile then
 		tool.Name = "Speed Potion x" .. profile.potions
+		tool:SetAttribute("Count", profile.potions) -- the hotbar's count badge
 	end
 end
 

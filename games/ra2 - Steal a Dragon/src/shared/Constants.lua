@@ -62,6 +62,13 @@ Constants.WINGS_LAUNCH = 60 -- upward speed of a wing jump (studs per second)
 Constants.GLIDE_FALL = 6 -- fastest fall while gliding
 Constants.GLIDE_SPEED = 34 -- forward speed while gliding
 Constants.CAMERA_MAX_ZOOM = 45
+-- hotbar pictures (uploaded Images; the files are in other/ra2/icon/tools/)
+Constants.TOOL_ICONS = {
+	bat = "rbxassetid://124721099262846",
+	hammer = "rbxassetid://90101203047877",
+	potion = "rbxassetid://123480021870564",
+	wings = "rbxassetid://80479736534280",
+}
 Constants.DROP_GRAB_SECONDS = 8 -- a dropped dragon can be grabbed by anyone, then it flies home
 
 -- Road
