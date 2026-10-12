@@ -1,5 +1,6 @@
 -- The glowing path: a trail of gold chevrons on the ground from you to where you need to go. It shows the way to
--- each tutorial step's target and, whenever you carry a dragon, the way home. To a target inside a base it goes
+-- each tutorial step's target and, whenever you're outside your base, the way home (brightest while you carry a
+-- dragon). To a target inside a base it goes
 -- through that base's gate, not through the walls. Only you see it (the parts are made on your client).
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -91,17 +92,23 @@ local function myBaseGate()
 	return base and base:FindFirstChild("Laser")
 end
 
--- Where to lead the player now: the tutorial target, or their own gate while carrying a dragon.
-local function goal()
+-- Where to lead the player now: the tutorial target, or else their own gate whenever they're outside their base.
+-- Returns the part and whether to show the path at full strength (tutorial, or carrying a dragon).
+local function goal(from)
 	local part = partOf(tutorialTarget)
 	if part then
-		return part
+		return part, true
+	end
+	local gate = myBaseGate()
+	if not gate then
+		return nil
+	end
+	local base = baseOf(gate)
+	if base and from and inside(base, from) then
+		return nil -- already home
 	end
 	local carrying = Store.state.carrying
-	if carrying ~= nil and carrying ~= false then
-		return myBaseGate()
-	end
-	return nil
+	return gate, carrying ~= nil and carrying ~= false
 end
 
 -- The route: from the player, through the gate of the target's base (when the player is outside it), to the target.
@@ -163,7 +170,7 @@ function GuideController:init()
 		acc += dt
 		local character = player.Character
 		local hrp = character and character:FindFirstChild("HumanoidRootPart")
-		local part = goal()
+		local part, strong = goal(hrp and hrp.Position)
 		if not hrp or not part or (hrp.Position - part.Position).Magnitude < 10 then
 			hide(1)
 			return
@@ -177,7 +184,7 @@ function GuideController:init()
 		for _, c in pool do
 			if not c.hidden then
 				local wave = 0.5 + 0.5 * math.sin(c.dist * 0.55 - t)
-				local alpha = 0.1 + 0.5 * (1 - wave)
+				local alpha = 0.1 + 0.5 * (1 - wave) + (strong and 0 or 0.25)
 				c.a.Transparency = alpha
 				c.b.Transparency = alpha
 			end

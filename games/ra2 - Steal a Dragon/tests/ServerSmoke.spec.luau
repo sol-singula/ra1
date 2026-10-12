@@ -253,7 +253,12 @@ check(
 )
 Engine.advance(0.5)
 local t = lastTutorial(a)
-check("tutorial step 1", t and t.step == 1 and t.target == Road.freeModel, t and t.step)
+check(
+	"tutorial goal 1: the free dragon",
+	t and t.step == 1 and t.target == Road.freeModel and t.total == 4,
+	t and t.step
+)
+check("new players start with 100 coins", pa.coins == Constants.START_COINS)
 
 trigger(a, Road.freeModel, "free")
 check("carrying the free Puff", Dragon:Carrying(a) and Dragon:Carrying(a).rec.id == "PUFF")
@@ -262,19 +267,21 @@ check("carried model on the character", a.Character:FindFirstChild("CarriedDrago
 trigger(a, Road.freeModel, "free") -- second grab refused
 check("free dragon only once", #pa.dragons == 1)
 Engine.advance(0.5)
-check("tutorial step 2: run home", lastTutorial(a).step == 2)
+check("tutorial goal 2: your base", lastTutorial(a).step == 2)
 goHome(a)
 check("placed in nest 1", pa.dragons[1].slot == 1 and Dragon:Carrying(a) == nil)
 check("nest model built", nestModel(a, 1) ~= nil)
 check("walk speed back to normal", a.Character.Humanoid.WalkSpeed == 18)
 Engine.advance(0.5)
-check("tutorial step 3: collect", lastTutorial(a).step == 3)
+check("tutorial goal 3: collect", lastTutorial(a).step == 3)
+check("the coin pad glows for goal 3", Base:Get(a).world.collectPad:FindFirstChild("TutorialGlow") ~= nil)
 Engine.advance(5)
 check("bank fills", Base:Get(a).bank >= 4, Base:Get(a).bank)
 go(a, Base:Get(a).world.collectPad.Position)
-check("coins collected", pa.coins >= 4 and Base:Get(a).bank < 1, pa.coins)
+check("coins collected", pa.coins >= Constants.START_COINS + 4 and Base:Get(a).bank < 1, pa.coins)
 Engine.advance(0.5)
-check("tutorial step 4: lock", lastTutorial(a).step == 4)
+check("tutorial goal 4: buy a dragon", lastTutorial(a).step == 4)
+check("the glow moves on", Base:Get(a).world.collectPad:FindFirstChild("TutorialGlow") == nil)
 go(a, Base:Get(a).world.lockPad.Position)
 check("base locked", Base:IsLocked(Base:Get(a)))
 check("laser visible", Base:Get(a).world.laser.Transparency < 1)
@@ -287,18 +294,12 @@ check(
 	Base:Get(a).lockUntil >= lockLeft + 9,
 	Base:Get(a).lockUntil - lockLeft
 )
-Engine.advance(0.5)
-check("tutorial step 5: practice steal", lastTutorial(a).step == 5)
 go(a, Road.practiceModel.PrimaryPart.Position)
 trigger(a, Road.practiceModel, "practice")
 check("carrying practice Frosty", Dragon:Carrying(a) and Dragon:Carrying(a).rec.id == "FROSTY")
-Engine.advance(0.5)
-check("tutorial step 6: run home", lastTutorial(a).step == 6)
 goHome(a)
 check("Frosty in a nest", countRec(pa, "FROSTY") == 1 and Dragon:Carrying(a) == nil)
 check("practice steal is not a real steal", pa.steals == 0)
-Engine.advance(0.5)
-check("tutorial step 7: buy", lastTutorial(a).step == 7)
 
 -- Buy from the road
 Engine.advance(8) -- earn enough and let dragons walk out
@@ -332,10 +333,11 @@ check("egg model on the stand", Base:Get(a).world.model:FindFirstChild("Egg") ~=
 -- Goals ----------------------------------------------------------------------------------------------------
 pa.coins = math.max(pa.coins, 120)
 Engine.advance(1.2)
-check("goal 1 done (100 coins)", pa.goal >= 2, pa.goal)
+check("goal 1 done (lock your door)", pa.goal >= 2, pa.goal)
 
 -- Second player, locks and stealing ------------------------------------------------------------------------
 local b = join("Ben", 1002)
+check("bases go zigzag: left, then right", Base:Get(a).index == 1 and Base:Get(b).index == 5, Base:Get(b).index)
 local pb = Data:Get(b)
 Engine.fireServer(b, "SkipTutorial")
 Engine.advance(0.5)

@@ -73,9 +73,14 @@ function BaseService:Init(registry)
 	end)
 end
 
+-- Free bases are handed out zigzag from the lobby: left, right, left, right... (bases 1-4 are the north row,
+-- 5-8 the south row, each from the lobby outward).
+local ASSIGN_ORDER = { 1, 5, 2, 6, 3, 7, 4, 8 }
+
 function BaseService:OnPlayerReady(player)
-	for _, base in bases do
-		if not base.owner then
+	for _, index in ASSIGN_ORDER do
+		local base = bases[index]
+		if base and not base.owner then
 			base.owner = player
 			base.lockUntil = 0
 			base.bank = 0

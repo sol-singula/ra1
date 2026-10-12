@@ -206,7 +206,12 @@ Engine.advance(0.3)
 check("carrying: glowing path home", #litChevrons() > 10, #litChevrons())
 serverSends("Profile", { carrying = false })
 Engine.advance(0.3)
-check("path gone once home", #litChevrons() == 0)
+check("outside your base the path home stays (dimmer)", #litChevrons() > 10, #litChevrons())
+local homeSpot = player.Character.HumanoidRootPart.CFrame
+Engine.moveTo(player, (baseCf * CFrame.new(0, 3, 5)).Position)
+Engine.advance(0.3)
+check("path gone once home", #litChevrons() == 0, #litChevrons())
+Engine.moveTo(player, homeSpot.Position)
 fakeBase:Destroy()
 check("tutorial gone", tut.Card.Visible == false and gui:FindFirstChild("TutorialArrow") == nil)
 

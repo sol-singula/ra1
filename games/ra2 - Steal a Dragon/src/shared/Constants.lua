@@ -7,6 +7,7 @@ Constants.BRICK_STYLE = true
 -- Players and bases
 Constants.MAX_BASES = 8 -- set Max Players to 8 in Game Settings
 Constants.START_NESTS = 4
+Constants.START_COINS = 100
 Constants.MAX_NESTS = 24 -- includes the 4 from the Extra Nests pass
 Constants.BUYABLE_NESTS = 20 -- nests 5..20 can be bought with coins
 Constants.NEST_PRICES = {

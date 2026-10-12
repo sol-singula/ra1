@@ -28,7 +28,7 @@ local jobId = game.JobId ~= "" and game.JobId or "studio"
 local function defaults()
 	return {
 		schemaVersion = SCHEMA_VERSION,
-		coins = 0,
+		coins = Constants.START_COINS, -- enough for a second small dragon right away
 		earned = 0, -- lifetime coins earned (leaderboard)
 		steals = 0, -- dragons stolen from real players (leaderboard)
 		bestIncome = 0, -- best coins per second ever (leaderboard)

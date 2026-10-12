@@ -84,7 +84,7 @@ local function show(info)
 		return
 	end
 	card.Visible = true
-	stepLabel.Text = `STEP {info.step} OF {info.total}`
+	stepLabel.Text = `GOAL {info.step} OF {info.total}`
 	textLabel.Text = info.text
 	mark(info.target)
 end

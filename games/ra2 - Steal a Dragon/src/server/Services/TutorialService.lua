@@ -1,4 +1,4 @@
--- First-time tutorial: 8 short steps with an arrow on the next thing to touch. Progress is read from the
+-- First-time tutorial: 4 short numbered GOALS with a glowing path to the next thing to touch. Progress is read from the
 -- game state every quarter second, so it never gets stuck on a missed event. Ends with the first egg.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,7 +11,7 @@ local TutorialService = {
 }
 
 local data, dragons, baseService, road, reward
-local state = {} -- [player] = { step, sent, doneAt, collected }
+local state = {} -- [player] = { step, sent, doneAt, collected, glowing }
 
 local function hasNestDragon(profile)
 	for _, rec in profile.dragons do
@@ -22,10 +22,15 @@ local function hasNestDragon(profile)
 	return false
 end
 
--- Each step: text, target (instance to point at), done(player, profile, s) -> bool
+-- Each step is a numbered GOAL: text, target (instance to point at), done(player, profile, s) -> bool, and
+-- optionally glow (a part of the player's base that lights up while the goal is open).
+local function myBase(player)
+	return baseService:Get(player)
+end
+
 local STEPS = {
 	{
-		text = "Grab the FREE dragon! Walk up to it and tap GRAB.",
+		text = "Grab the FREE dragon! 🐉",
 		target = function()
 			return road.freeModel
 		end,
@@ -34,9 +39,9 @@ local STEPS = {
 		end,
 	},
 	{
-		text = "Run to your base! Follow the arrow. 🏠",
+		text = "Take it to YOUR BASE! Follow the glowing path. 🏠",
 		target = function(player)
-			local base = baseService:Get(player)
+			local base = myBase(player)
 			return base and base.world.laser
 		end,
 		done = function(_, profile)
@@ -44,63 +49,28 @@ local STEPS = {
 		end,
 	},
 	{
-		text = "Your dragon makes coins! Step on the GOLD pad to grab them. 💰",
+		text = "Step on the GLOWING coin pad to collect your coins! 💰",
 		target = function(player)
-			local base = baseService:Get(player)
+			local base = myBase(player)
+			return base and base.world.collectPad
+		end,
+		glow = function(player)
+			local base = myBase(player)
 			return base and base.world.collectPad
 		end,
 		done = function(_, profile, s)
-			return s.collected or profile.earned > 0
+			return s.collected
 		end,
 	},
 	{
-		text = "Step on the RED pad to LOCK your door. Then no one can steal! 🔒",
-		target = function(player)
-			local base = baseService:Get(player)
-			return base and base.world.lockPad
-		end,
-		done = function(_, profile)
-			return profile.stats.locks > 0
-		end,
-	},
-	{
-		text = "Now YOU steal! Go to the Practice Base and steal Frosty. 😈",
-		target = function()
-			return road.practiceModel
-		end,
-		done = function(_, profile)
-			return profile.stats.practice > 0
-		end,
-	},
-	{
-		text = "Run home with Frosty! Don't get bonked! 🏃",
-		target = function(player)
-			local base = baseService:Get(player)
-			return base and base.world.laser
-		end,
-		done = function(player)
-			return dragons:Carrying(player) == nil
-		end,
-	},
-	{
-		text = "Buy a dragon on the Dragon Road! Puff costs 25 coins.",
+		text = "Buy another dragon on the Dragon Road and bring it home! 🛒",
 		target = function()
 			local map = workspace:FindFirstChild("Map")
 			local roadModel = map and map:FindFirstChild("DragonRoad")
 			return roadModel and roadModel:FindFirstChild("Road")
 		end,
-		done = function(_, profile)
-			return profile.stats.bought > 0
-		end,
-	},
-	{
-		text = "Take it home! You're ready: steal, lock your door and get rich! 🐉",
-		target = function(player)
-			local base = baseService:Get(player)
-			return base and base.world.laser
-		end,
-		done = function(player)
-			return dragons:Carrying(player) == nil
+		done = function(player, profile)
+			return profile.stats.bought > 0 and dragons:Carrying(player) == nil
 		end,
 	},
 }
@@ -138,6 +108,9 @@ function TutorialService:OnPlayerReady(player, profile)
 end
 
 function TutorialService:OnPlayerLeaving(player)
+	if state[player] then
+		setGlow(state[player], nil)
+	end
 	state[player] = nil
 end
 
@@ -145,8 +118,33 @@ function TutorialService:Step(player)
 	return state[player] and state[player].step
 end
 
+-- Light up a part for the current goal (and put out the last one).
+local function setGlow(s, part)
+	if s.glowing and s.glowing ~= part then
+		local old = s.glowing:FindFirstChild("TutorialGlow")
+		if old then
+			old:Destroy()
+		end
+		s.glowing.Material = s.glowMaterial or s.glowing.Material
+		s.glowing = nil
+	end
+	if part and not part:FindFirstChild("TutorialGlow") then
+		s.glowing, s.glowMaterial = part, part.Material
+		part.Material = Enum.Material.Neon
+		local h = Instance.new("Highlight")
+		h.Name = "TutorialGlow"
+		h.FillColor = Color3.fromRGB(255, 220, 80)
+		h.FillTransparency = 0.35
+		h.OutlineColor = Color3.fromRGB(255, 255, 255)
+		h.Parent = part
+	end
+end
+
 function TutorialService:_finish(player, skipped)
 	local profile = data:Get(player)
+	if state[player] then
+		setGlow(state[player], nil)
+	end
 	state[player] = nil
 	if not profile then
 		return
@@ -156,7 +154,13 @@ function TutorialService:_finish(player, skipped)
 	reward:GiveEgg(player)
 	reward:PushAll(player)
 	if not skipped then
-		Net.fire(player, "Alert", "Here is a gift EGG! It hatches in 2 HOURS! 🥚", Color3.fromRGB(255, 205, 50))
+		Net.fire(
+			player,
+			"Alert",
+			"You did it! Here's a gift EGG: it hatches in 2 HOURS! 🥚",
+			Color3.fromRGB(255, 205, 50)
+		)
+		Net.fire(player, "Toast", "Tip: step on the RED pad to lock your door, then go steal! 😈", "info")
 	end
 end
 
@@ -178,6 +182,7 @@ function TutorialService:_tick(player)
 	end
 	if s.sent ~= s.step then
 		s.sent = s.step
+		setGlow(s, step.glow and step.glow(player) or nil)
 		Net.fire(player, "Tutorial", { step = s.step, total = #STEPS, text = step.text, target = step.target(player) })
 	end
 end

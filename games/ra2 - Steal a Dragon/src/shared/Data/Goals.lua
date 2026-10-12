@@ -1,7 +1,7 @@
 -- Goals shown at the top of the screen after the tutorial, one at a time.
 -- kind names a number the server tracks (see RewardService.progressOf).
 return {
-	{ text = "Get 100 coins", kind = "coins", target = 100, reward = 50 },
+	{ text = "Lock your door: step on the RED pad", kind = "locks", target = 1, reward = 50 },
 	{ text = "Buy 2 dragons on the road", kind = "bought", target = 2, reward = 100 },
 	{ text = "Steal a dragon from a player", kind = "steals", target = 1, reward = 250 },
 	{ text = "Buy a new nest", kind = "nests", target = 5, reward = 300 },
