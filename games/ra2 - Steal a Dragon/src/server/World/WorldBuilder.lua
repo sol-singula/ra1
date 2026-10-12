@@ -546,6 +546,113 @@ local function buildBase(parent, index, cf)
 	golden.Name = "GoldenDragon"
 	DragonBuilder.place(golden, at(0, 12.4, -BASE_D / 2) * CFrame.Angles(0, math.pi, 0))
 	golden.Parent = levels[5]
+	-- Level 6: the back towers rise into tall spires, and a great arch with banners stands over the gate
+	for _, side in { -1, 1 } do
+		Scenery.tower(levels[6], pos(side * BASE_W / 2, 0, BASE_D / 2), 5, 22, STONE, color, rgb(255, 205, 60))
+	end
+	part({
+		Name = "GreatArch",
+		Size = Vector3.new(26, 3, 3),
+		CFrame = at(0, 15.5, -BASE_D / 2),
+		Color = STONE_DARK,
+		Material = Enum.Material.Cobblestone,
+		Parent = levels[6],
+	})
+	for _, side in { -1, 1 } do
+		part({
+			Name = "ArchPillar",
+			Size = Vector3.new(3, 15, 3),
+			CFrame = at(side * 13, 7.5, -BASE_D / 2 - 0.5),
+			Color = STONE_DARK,
+			Material = Enum.Material.Cobblestone,
+			Parent = levels[6],
+		})
+		part({
+			Name = "GateBannerTall",
+			Size = Vector3.new(3.4, 8, 0.2),
+			CFrame = at(side * 13, 9, -BASE_D / 2 - 2.1),
+			Color = color,
+			Material = Enum.Material.Fabric,
+			CastShadow = false,
+			CanCollide = false,
+			Parent = levels[6],
+		})
+	end
+	-- Level 7: a grand hall behind the castle with twin spires and a glowing crystal crown
+	part({
+		Name = "GrandHall",
+		Size = Vector3.new(30, 18, 10),
+		CFrame = at(0, 9, BASE_D / 2 + 6),
+		Color = STONE,
+		Material = Enum.Material.Cobblestone,
+		Parent = levels[7],
+	})
+	part({
+		Name = "GrandHallRoof",
+		Size = Vector3.new(32, 1.6, 12),
+		CFrame = at(0, 18.8, BASE_D / 2 + 6),
+		Color = color,
+		Parent = levels[7],
+	})
+	for _, side in { -1, 1 } do
+		Scenery.tower(levels[7], pos(side * 12, 0, BASE_D / 2 + 9), 6, 30, STONE, color, rgb(255, 205, 60))
+	end
+	for i = -3, 3 do
+		part({
+			Name = "HallWindow",
+			Size = Vector3.new(1.6, 4, 0.2),
+			CFrame = at(i * 4, 10, BASE_D / 2 + 0.95),
+			Color = rgb(255, 200, 110),
+			Material = Enum.Material.Neon,
+			CastShadow = false,
+			Parent = levels[7],
+		})
+	end
+	part({
+		Name = "CrystalCrown",
+		Size = Vector3.new(3, 6, 3),
+		CFrame = at(0, 26, BASE_D / 2 + 6) * CFrame.Angles(0, math.rad(45), 0),
+		Color = color:Lerp(rgb(255, 255, 255), 0.3),
+		Material = Enum.Material.Neon,
+		Transparency = 0.2,
+		CastShadow = false,
+		CanCollide = false,
+		Parent = levels[7],
+	})
+	-- Level 8: everything turns to legend: golden spires on the gate, a golden dome on the hall and floating
+	-- crystals in a ring above the castle
+	part({
+		Name = "GoldenDome",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(14, 14, 14),
+		CFrame = at(0, 19, BASE_D / 2 + 6),
+		Color = rgb(255, 200, 60),
+		Material = Enum.Material.Foil,
+		Parent = levels[8],
+	})
+	for _, side in { -1, 1 } do
+		part({
+			Name = "GoldSpire",
+			Size = Vector3.new(1.4, 9, 1.4),
+			CFrame = at(side * 13, 21.5, -BASE_D / 2 - 0.5),
+			Color = rgb(255, 200, 60),
+			Material = Enum.Material.Foil,
+			Parent = levels[8],
+		})
+	end
+	for i = 1, 8 do
+		local a = i / 8 * math.pi * 2
+		part({
+			Name = "FloatingCrystal",
+			Size = Vector3.new(1.6, 3.4, 1.6),
+			CFrame = at(math.cos(a) * 18, 30 + (i % 2) * 2, math.sin(a) * 22) * CFrame.Angles(0, a, math.rad(15)),
+			Color = BASE_COLORS[(index + i - 2) % #BASE_COLORS + 1],
+			Material = Enum.Material.Neon,
+			CastShadow = false,
+			CanCollide = false,
+			Parent = levels[8],
+		})
+	end
 	-- sign over the gate: owner name and lock state
 	local _, lines = billboard(gateTop, 18, 5, Vector3.new(0, 4, 0), {
 		{ text = "EMPTY BASE", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy },

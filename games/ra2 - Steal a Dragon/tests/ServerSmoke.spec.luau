@@ -585,7 +585,7 @@ pa.coins = coinsBeforeAll
 local myBase = Base:Get(a)
 check(
 	"castle level thresholds",
-	Base.castleLevelFor(0) == 1 and Base.castleLevelFor(30) == 2 and Base.castleLevelFor(1e9) == 5
+	Base.castleLevelFor(0) == 1 and Base.castleLevelFor(30) == 2 and Base.castleLevelFor(1e9) == 8
 )
 local trim = world.levels[5]:FindFirstChild("GoldTrim", true)
 local realPower = Base.DragonPower
@@ -593,8 +593,8 @@ Base.DragonPower = function()
 	return 1e9
 end
 Base:UpdateCastle(myBase)
-check("castle grows to level 5", world.castleLevel == 5 and trim ~= nil and trim.Transparency < 1)
-check("sign shows the castle level", world.signLines[1].Text:find("🏰5", 1, true) ~= nil)
+check("castle grows to the top level", world.castleLevel == 8 and trim ~= nil and trim.Transparency < 1)
+check("sign shows the castle level", world.signLines[1].Text:find("🏰8", 1, true) ~= nil)
 Base.DragonPower = function()
 	return 0
 end
