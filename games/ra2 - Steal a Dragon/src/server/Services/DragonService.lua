@@ -487,6 +487,8 @@ function DragonService:TrySteal(thief, model)
 		thief.Character
 	)
 	Net.fire(thief, "Toast", "You got it! Run home! 🏠", "good")
+	Net.fire(thief, "Sfx", "steal")
+	Net.fire(victim, "Sfx", "alarm")
 	self.StealStarted:Fire(thief, victim, rec)
 end
 
@@ -532,6 +534,7 @@ function DragonService:TryLevelUp(player, model)
 	self:_refreshNestModel(player, rec)
 	baseService:PushIncome(player)
 	Net.fire(player, "Popup", model.PrimaryPart.Position, `Lv {levelOf(rec)}!`, Color3.fromRGB(120, 230, 120))
+	Net.fire(player, "Sfx", "levelup")
 	self.DragonsChanged:Fire(player)
 end
 

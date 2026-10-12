@@ -538,6 +538,28 @@ check(
 Engine.advance(4.5)
 check("banner goes away", hud:FindFirstChild("Announce") == nil)
 
+-- Audio: music plays, effects play, the disco has its own music
+do
+	local SoundService = Engine.game:GetService("SoundService")
+	local musicSound = SoundService:FindFirstChild("Music")
+	check("background music playing", musicSound ~= nil and table.find(Constants.MUSIC, musicSound.SoundId) ~= nil)
+	local before = #(Engine.soundsPlayed or {})
+	serverSends("Sfx", "coin")
+	Engine.advance(0.05)
+	check(
+		"coin sound plays",
+		Engine.soundsPlayed[#Engine.soundsPlayed] == Constants.SOUNDS.coin and #Engine.soundsPlayed > before
+	)
+	local audio = Engine.require(tree.client.Controllers.AudioController)
+	local spot = player.Character.HumanoidRootPart.CFrame
+	Engine.moveTo(player, Vector3.new(165, 3, 20))
+	Engine.advance(1.2)
+	check("disco music inside the disco", audio.musicKind() == "disco")
+	Engine.moveTo(player, spot.Position)
+	Engine.advance(1.2)
+	check("back to the adventure music outside", audio.musicKind() == "world")
+end
+
 -- Rotating to a bigger screen rescales
 Engine.workspace.CurrentCamera.ViewportSize = Vector2.new(1920, 1080)
 Engine.advance(1.2)

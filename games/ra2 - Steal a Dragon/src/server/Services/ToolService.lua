@@ -349,6 +349,7 @@ function ToolService:Drink(player)
 	end
 	profile.potions -= 1
 	combat:Boost(player, Constants.POTION_SECONDS)
+	Net.fire(player, "Sfx", "potion")
 	self:_potionLabel(player)
 	Net.fire(player, "Toast", `⚡ SPEED BOOST! {Constants.POTION_SECONDS}s ({profile.potions} potions left)`, "good")
 end

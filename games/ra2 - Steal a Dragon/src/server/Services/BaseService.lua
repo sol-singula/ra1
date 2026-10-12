@@ -261,6 +261,7 @@ function BaseService:Lock(player, extraSeconds)
 	end
 	self:_drawLock(base)
 	self:PushBase(player)
+	Net.fire(player, "Sfx", "lock")
 	if not wasLocked then
 		profile.stats.locks += 1
 		Net.fire(player, "Toast", "Door locked! 🔒", "good")
@@ -367,6 +368,7 @@ function BaseService:Collect(player)
 	)
 	base.world.collectLines[2].Text = Format.num(base.bank)
 	data:Push(player, { bank = 0 })
+	Net.fire(player, "Sfx", "coin")
 	self.Collected:Fire(player, amount)
 end
 

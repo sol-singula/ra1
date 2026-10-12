@@ -81,6 +81,7 @@ function ShopService:Init(registry)
 			local bought, spent = dragons:LevelAll(player)
 			if bought > 0 then
 				Net.fire(player, "Toast", `⬆️ {bought} level-ups for {Format.num(spent)} coins!`, "good")
+				Net.fire(player, "Sfx", "levelup")
 			elseif dragons:CanLevelAny(player) then
 				-- can't afford a single level: offer the +5 Levels for ALL boost
 				self:PromptProduct(player, "LEVELALL")
@@ -161,6 +162,7 @@ function ShopService:Grant(player, key, target)
 	if not profile then
 		return false
 	end
+	Net.fire(player, "Sfx", "buy")
 	local income = baseService:Income(player)
 	if key == "LUCK" then
 		road:AddLuck(Constants.LUCK_SECONDS, player.DisplayName)

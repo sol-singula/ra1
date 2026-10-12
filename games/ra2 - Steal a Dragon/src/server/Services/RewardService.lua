@@ -199,6 +199,7 @@ function RewardService:Hatch(player)
 	local base = baseService:Get(player)
 	if base then
 		self:_fireworks(base.world.eggStand, d)
+		Net.fireAll("Sfx", "hatch", base.world.eggStand.Position)
 	end
 	-- a new egg starts right away: back in 2 hours for the next one
 	self:GiveEgg(player)
@@ -396,6 +397,7 @@ function RewardService:_checkGoal(player)
 	if goal and self:ProgressOf(player, goal.kind) >= goal.target then
 		profile.goal += 1
 		economy:Add(player, goal.reward)
+		Net.fire(player, "Sfx", "levelup")
 		Net.fire(
 			player,
 			"Alert",

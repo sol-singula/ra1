@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Audio = require(script.Parent.AudioController)
 local Hud = require(script.Parent.HudController)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -61,6 +62,7 @@ function ToolController.launch()
 	end
 	local v = hrp.AssemblyLinearVelocity
 	hrp.AssemblyLinearVelocity = Vector3.new(v.X, Constants.WINGS_LAUNCH, v.Z)
+	Audio.play("wings")
 end
 
 -- One physics step of gliding (only with the wings in hand, in the air, and not carrying).

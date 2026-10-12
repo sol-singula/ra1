@@ -185,6 +185,7 @@ function RoadService:_give(player, entry)
 	local profile = data:Get(player)
 	profile.stats.bought += 1
 	Net.fire(player, "Toast", "Got it! Run to your base! 🏠", "good")
+	Net.fire(player, "Sfx", "buy")
 	self.Bought:Fire(player, entry.id)
 end
 

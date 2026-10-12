@@ -63,6 +63,38 @@ Constants.WINGS_LAUNCH = 60 -- upward speed of a wing jump (studs per second)
 Constants.GLIDE_FALL = 6 -- fastest fall while gliding
 Constants.GLIDE_SPEED = 34 -- forward speed while gliding
 Constants.CAMERA_MAX_ZOOM = 45
+-- Audio. Sound effects are our own uploads (files in other/ra2/audio/); the music is Roblox's licensed APM
+-- library, free to use in any experience.
+Constants.SOUNDS = {
+	coin = "rbxassetid://118634876996683",
+	buy = "rbxassetid://105104330819150",
+	levelup = "rbxassetid://106516156393061",
+	notify = "rbxassetid://115604569854725",
+	potion = "rbxassetid://83557110540525",
+	wings = "rbxassetid://109983444504089",
+	steal = "rbxassetid://87517281723734",
+	lock = "rbxassetid://96391581866585",
+	swing = "rbxassetid://95486565209148",
+	bonk = "rbxassetid://105444665436909",
+	alarm = "rbxassetid://88832672717864",
+	hatch = "rbxassetid://119933432712786",
+}
+Constants.SOUND_VOLUME = { swing = 0.35, coin = 0.55, notify = 0.45, alarm = 0.7 } -- the rest play at 0.6
+Constants.MUSIC = { -- whimsical fantasy adventure, played in turn
+	"rbxassetid://1841593944", -- Enchanted Kingdom
+	"rbxassetid://1841594035", -- Mischievous Elves
+	"rbxassetid://1848093905", -- Fancytale
+	"rbxassetid://1839906422", -- Medieval Castle
+	"rbxassetid://1841595081", -- Magic and Mayhem
+}
+Constants.DISCO_MUSIC = {
+	"rbxassetid://9038367768", -- Funky Disco Beats
+	"rbxassetid://1843468464", -- Celebrate
+	"rbxassetid://1846063338", -- Fun Pop
+}
+Constants.MUSIC_VOLUME = 0.28
+Constants.DISCO_MUSIC_VOLUME = 0.55
+
 -- DISCO FEVER (the button in the secret disco): more coins for everyone in the server for a while
 Constants.FEVER_MULT = 1.25
 Constants.FEVER_SECONDS = 15 * 60

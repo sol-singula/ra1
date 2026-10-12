@@ -174,6 +174,7 @@ function CombatService:Bonk(attacker)
 	end
 	lastBonk[attacker] = os.clock()
 	self.Swung:Fire(attacker)
+	Net.fireAll("Sfx", "swing", pos)
 	local victim = self:_target(attacker, pos)
 	if not victim then
 		return
@@ -199,6 +200,7 @@ function CombatService:Bonk(attacker)
 	end
 	Net.fire(victim, "Bonked", seconds)
 	Net.fireAll("Popup", (vp or pos) + Vector3.new(0, 5, 0), "BONK!", Color3.fromRGB(255, 220, 60))
+	Net.fireAll("Sfx", "bonk", vp or pos)
 	if wasCarrying then
 		Net.fire(attacker, "Toast", "BONK! They dropped the dragon. Grab it! 🐉", "good")
 	end

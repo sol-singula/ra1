@@ -31,6 +31,7 @@ Net.ServerEvents = {
 	"Tutorial", -- { step, total, text, target } or false
 	"Owned", -- { passKey = true } after a purchase
 	"Announce", -- text, color: a banner across the top (someone joined, someone took a top-3 spot)
+	"Sfx", -- soundName, worldPosition?: a sound effect (AudioController); with a position it plays there in 3D
 }
 
 local folder

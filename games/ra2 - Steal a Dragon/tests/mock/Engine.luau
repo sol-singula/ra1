@@ -436,6 +436,7 @@ local SIGNALS = {
 	Players = { "PlayerAdded", "PlayerRemoving" },
 	Player = { "CharacterAdded" },
 	Tool = { "Activated", "Equipped", "Unequipped" },
+	Sound = { "Ended" },
 	TextButton = { "Activated", "MouseButton1Click", "MouseButton1Down", "MouseButton1Up", "MouseEnter", "MouseLeave" },
 }
 local DEFAULTS = {
@@ -704,6 +705,14 @@ function methods.GetPlayerFromCharacter(_, character)
 	return nil
 end
 function methods.Emit() end
+function methods.Play(inst)
+	inst.IsPlaying = true
+	Engine.soundsPlayed = Engine.soundsPlayed or {}
+	table.insert(Engine.soundsPlayed, inst.SoundId)
+end
+function methods.Stop(inst)
+	inst.IsPlaying = false
+end
 function methods.Kick(inst, msg)
 	rawset(inst, "_kicked", msg or true)
 	print("KICK " .. rawget(inst, "_props").Name .. ": " .. tostring(msg))
