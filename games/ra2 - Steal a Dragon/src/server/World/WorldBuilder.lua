@@ -163,8 +163,8 @@ local function leaderboard(parent, cf, title, color)
 end
 
 -- One player base: a little castle. cf: centre of the floor; its -Z (look vector) points at the road.
-local STONE = rgb(214, 205, 190)
-local STONE_DARK = rgb(170, 160, 148)
+local STONE = rgb(188, 180, 168)
+local STONE_DARK = rgb(140, 132, 124)
 
 local function buildBase(parent, index, cf)
 	local color = BASE_COLORS[index]
@@ -181,7 +181,7 @@ local function buildBase(parent, index, cf)
 		Name = "Floor",
 		Size = Vector3.new(BASE_W, 0.4, BASE_D),
 		CFrame = at(0, 0.2, 0),
-		Color = color:Lerp(WHITE, 0.75),
+		Color = color:Lerp(rgb(150, 142, 134), 0.68),
 		Parent = model,
 	})
 	part({
@@ -193,7 +193,7 @@ local function buildBase(parent, index, cf)
 		Parent = model,
 	})
 	-- checker tiles in two soft shades of the base colour
-	local soft = color:Lerp(WHITE, 0.62)
+	local soft = color:Lerp(rgb(175, 166, 156), 0.55)
 	for ix = 0, 4 do
 		for iz = 0, 5 do
 			if (ix + iz) % 2 == 0 then
@@ -290,7 +290,7 @@ local function buildBase(parent, index, cf)
 		Name = "Mat",
 		Size = Vector3.new(12, 0.1, 6),
 		CFrame = at(0, 0.05, -BASE_D / 2 - 4),
-		Color = color:Lerp(WHITE, 0.3),
+		Color = color:Lerp(rgb(160, 150, 140), 0.35),
 		CastShadow = false,
 		CanCollide = false,
 		Parent = model,
@@ -301,7 +301,7 @@ local function buildBase(parent, index, cf)
 	local _, lines = billboard(gateTop, 18, 5, Vector3.new(0, 4, 0), {
 		{ text = "EMPTY BASE", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy },
 		{ text = "", h = 0.4, y = 0.6, color = rgb(255, 230, 120) },
-	})
+	}, 110)
 	-- beacon so you can find your base: a glowing crystal over the back-left tower
 	local beacon = part({
 		Name = "Beacon",
@@ -356,8 +356,7 @@ local function buildBase(parent, index, cf)
 		Name = "LockPad",
 		Size = Vector3.new(7, 0.5, 4),
 		CFrame = at(0, 0.6, 19.5),
-		Color = rgb(255, 70, 70),
-		Material = Enum.Material.Neon,
+		Color = rgb(230, 60, 60),
 		Parent = model,
 	})
 	billboard(
@@ -372,8 +371,7 @@ local function buildBase(parent, index, cf)
 		Name = "CollectPad",
 		Size = Vector3.new(7, 0.5, 6),
 		CFrame = at(-13, 0.6, -17),
-		Color = rgb(255, 205, 50),
-		Material = Enum.Material.Neon,
+		Color = rgb(245, 190, 40),
 		Parent = model,
 	})
 	local _, collectLines = billboard(collectPad, 9, 3.5, Vector3.new(0, 3.5, 0), {
@@ -450,17 +448,22 @@ local function buildBase(parent, index, cf)
 		collectLines = collectLines,
 		eggStand = eggStand,
 		gateCf = at(0, 0.5, -BASE_D / 2 - 4),
+		-- where the owner spawns: just inside the gate, facing the road
+		homeCf = at(0, 3, -BASE_D / 2 + 6),
 	}
 end
 
 local function lighting()
+	-- Late-afternoon sun, toned down: plastic bricks look washed out under strong light, so brightness, ambient
+	-- and exposure stay low, and colour comes from saturation instead.
 	Lighting.ClockTime = 15.2
-	Lighting.Brightness = 2.6
-	Lighting.Ambient = rgb(115, 110, 125)
-	Lighting.OutdoorAmbient = rgb(155, 150, 165)
+	Lighting.Brightness = 1.8
+	Lighting.ExposureCompensation = -0.25
+	Lighting.Ambient = rgb(80, 78, 92)
+	Lighting.OutdoorAmbient = rgb(118, 116, 132)
 	Lighting.GlobalShadows = true
-	Lighting.EnvironmentDiffuseScale = 0.5
-	Lighting.EnvironmentSpecularScale = 0.5
+	Lighting.EnvironmentDiffuseScale = 0.35
+	Lighting.EnvironmentSpecularScale = 0.3
 	local function effect(className, values)
 		if Lighting:FindFirstChildOfClass(className) then
 			return
@@ -473,14 +476,14 @@ local function lighting()
 	end
 	effect(
 		"Atmosphere",
-		{ Density = 0.3, Haze = 1.2, Glare = 0.2, Color = rgb(210, 225, 255), Decay = rgb(140, 150, 200) }
+		{ Density = 0.28, Haze = 0.5, Glare = 0, Color = rgb(190, 205, 235), Decay = rgb(120, 130, 175) }
 	)
 	effect(
 		"ColorCorrectionEffect",
-		{ Saturation = 0.2, Contrast = 0.1, Brightness = 0.02, TintColor = rgb(255, 250, 240) }
+		{ Saturation = 0.15, Contrast = 0.18, Brightness = -0.04, TintColor = rgb(255, 246, 236) }
 	)
-	effect("BloomEffect", { Intensity = 0.6, Size = 28, Threshold = 1.5 })
-	effect("SunRaysEffect", { Intensity = 0.05, Spread = 0.8 })
+	effect("BloomEffect", { Intensity = 0.25, Size = 20, Threshold = 2.2 })
+	effect("SunRaysEffect", { Intensity = 0.02, Spread = 0.6 })
 end
 
 -- Places where scenery must not go: the lobby, the road and its sidewalks, the bases, the Practice Base.
@@ -503,8 +506,8 @@ local function clear(x, z)
 end
 WorldBuilder.isClear = clear
 
--- A rocky cave mouth facing along the road. dir = -1 for the start (west, next to the lobby: just a rocky arch),
--- +1 for the end (a whole mountain behind it).
+-- A rocky cave mouth facing along the road, at the far (east) end where dragons leave: dir = +1, with a whole
+-- mountain behind it when mountain is true.
 local function caveMountain(parent, x, dir, glow, mountain)
 	local rock = rgb(120, 112, 128)
 	local mouth = x + dir * 2
@@ -605,6 +608,57 @@ local function caveMountain(parent, x, dir, glow, mountain)
 	light.Parent = glowPart
 end
 
+-- The Dragon Gate at the start of the road: an open stone arch with a glowing lava pool where new dragons
+-- appear, and the road's name on top. Open, so the lobby can see straight down the road through it.
+local function dragonGate(parent, x)
+	local rock = rgb(112, 104, 120)
+	for _, z in { -9.5, 9.5 } do
+		part({
+			Name = "GatePillar",
+			Size = Vector3.new(4, 16, 4),
+			CFrame = CFrame.new(x, 8, z),
+			Color = rock,
+			Material = Enum.Material.Slate,
+			Parent = parent,
+		})
+		part({
+			Name = "GatePillarCap",
+			Size = Vector3.new(5, 1.2, 5),
+			CFrame = CFrame.new(x, 16.6, z),
+			Color = rgb(240, 185, 55),
+			Parent = parent,
+		})
+	end
+	local top = part({
+		Name = "GateTop",
+		Size = Vector3.new(4, 3, 24),
+		CFrame = CFrame.new(x, 18.7, 0),
+		Color = rock,
+		Material = Enum.Material.Slate,
+		Parent = parent,
+	})
+	local pool = part({
+		Name = "GateGlow",
+		Size = Vector3.new(6, 0.2, 12),
+		CFrame = CFrame.new(x + 1, 0.62, 0),
+		Color = rgb(255, 120, 40),
+		Material = Enum.Material.Neon,
+		CastShadow = false,
+		CanCollide = false,
+		Parent = parent,
+	})
+	local light = Instance.new("PointLight")
+	light.Color = rgb(255, 130, 50)
+	light.Range = 16
+	light.Brightness = 1.2
+	light.Parent = pool
+	billboard(top, 26, 4.5, Vector3.new(0, 4.5, 0), {
+		{ text = "🐉 DRAGON ROAD", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(255, 215, 70) },
+		{ text = "Grab a dragon! Run home!", h = 0.4, y = 0.6 },
+	})
+	return top
+end
+
 function WorldBuilder.build()
 	local old = workspace:FindFirstChild("Baseplate")
 	if old then
@@ -617,7 +671,7 @@ function WorldBuilder.build()
 		Name = "Ground",
 		Size = Vector3.new(800, 2, 800),
 		CFrame = CFrame.new(0, -1, 0),
-		Color = rgb(105, 190, 90),
+		Color = rgb(88, 162, 76),
 		Material = Enum.Material.Grass,
 		Parent = map,
 	})
@@ -632,7 +686,7 @@ function WorldBuilder.build()
 				Vector3.new(x, 0.02, z),
 				rng:NextNumber(18, 40),
 				0.04,
-				rgb(125, 205, 100):Lerp(rgb(95, 175, 85), rng:NextNumber()),
+				rgb(104, 178, 86):Lerp(rgb(80, 150, 72), rng:NextNumber()),
 				Enum.Material.Grass,
 				{ CastShadow = false, CanCollide = false }
 			)
@@ -665,8 +719,7 @@ function WorldBuilder.build()
 			Name = "Edge",
 			Size = Vector3.new(roadLen, 0.62, 0.7),
 			CFrame = CFrame.new(0, 0.31, z),
-			Color = rgb(255, 210, 60),
-			Material = Enum.Material.Neon,
+			Color = rgb(240, 190, 50),
 			CastShadow = false,
 			Parent = road,
 		})
@@ -676,7 +729,7 @@ function WorldBuilder.build()
 			Name = "Sidewalk",
 			Size = Vector3.new(roadLen + 20, 0.3, 10),
 			CFrame = CFrame.new(-4, 0.15, z),
-			Color = rgb(205, 198, 185),
+			Color = rgb(172, 165, 155),
 			Material = Enum.Material.Cobblestone,
 			Parent = road,
 		})
@@ -718,22 +771,20 @@ function WorldBuilder.build()
 				Name = "Path",
 				Size = Vector3.new(12, 0.3, 4),
 				CFrame = CFrame.new(bx, 0.15, z),
-				Color = rgb(205, 198, 185),
+				Color = rgb(172, 165, 155),
 				Material = Enum.Material.Cobblestone,
 				Parent = road,
 			})
 		end
 	end
-	-- the volcano cave the dragons walk out of, and the crystal cave they leave through
-	caveMountain(road, Constants.ROAD_START_X - 4, -1, rgb(255, 120, 40), false)
+	-- New dragons appear at the Dragon Gate next to the lobby (an open arch, so the spawn looks straight down the
+	-- road) and leave through the crystal cave at the far end.
+	dragonGate(road, Constants.ROAD_START_X - 3)
 	caveMountain(road, Constants.ROAD_END_X + 4, 1, rgb(110, 220, 255), true)
-	local startCave = road:FindFirstChild("CaveTop")
-	billboard(startCave, 26, 4.5, Vector3.new(0, 5, 0), {
-		{ text = "🐉 DRAGON ROAD", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(255, 215, 70) },
-		{ text = "Grab a dragon! Run home!", h = 0.4, y = 0.6 },
-	})
 
-	-- Lobby
+	-- Lobby: a plaza at the start of the road. New players spawn on its east side looking down the road, with the
+	-- free dragon right in front of them. The three leaderboards stand side by side along the north edge, facing
+	-- in; the golden statue stands on the south side.
 	local lobby = Instance.new("Model")
 	lobby.Name = "Lobby"
 	lobby.Parent = map
@@ -741,7 +792,7 @@ function WorldBuilder.build()
 		Name = "Plaza",
 		Size = Vector3.new(62, 0.6, 76),
 		CFrame = CFrame.new(-145, 0.3, 0),
-		Color = rgb(225, 215, 198),
+		Color = rgb(196, 186, 170),
 		Material = Enum.Material.Cobblestone,
 		Parent = lobby,
 	})
@@ -751,7 +802,7 @@ function WorldBuilder.build()
 		Vector3.new(-145, 0.62, 0),
 		40,
 		0.06,
-		rgb(255, 205, 90),
+		rgb(232, 180, 70),
 		nil,
 		{ CastShadow = false, CanCollide = false }
 	)
@@ -761,7 +812,7 @@ function WorldBuilder.build()
 		Vector3.new(-145, 0.66, 0),
 		37,
 		0.06,
-		rgb(240, 232, 218),
+		rgb(210, 202, 188),
 		Enum.Material.Marble,
 		{ CastShadow = false, CanCollide = false }
 	)
@@ -771,7 +822,7 @@ function WorldBuilder.build()
 			Name = "Hedge",
 			Size = Vector3.new(h[3], 2.6, h[4]),
 			CFrame = CFrame.new(h[1], 1.3, h[2]),
-			Color = rgb(60, 145, 70),
+			Color = rgb(55, 128, 62),
 			Material = Enum.Material.Grass,
 			Parent = lobby,
 		})
@@ -779,28 +830,29 @@ function WorldBuilder.build()
 	for _, c in { { -174, 36 }, { -174, -36 }, { -116, 36 }, { -116, -36 } } do
 		Scenery.lantern(lobby, Vector3.new(c[1], 0.6, c[2]), 9)
 	end
-	for _, f in { { -170, 30 }, { -170, -30 }, { -158, 34 }, { -158, -34 } } do
+	for _, f in { { -170, -30 }, { -132, -32 }, { -170, 12 }, { -170, -12 } } do
 		Scenery.flowers(lobby, Vector3.new(f[1], 0.6, f[2]), 7, rng)
 	end
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "Spawn"
 	spawn.Anchored = true
 	spawn.Size = Vector3.new(10, 1, 10)
-	spawn.CFrame = CFrame.new(-162, 0.6, 0) * CFrame.Angles(0, math.rad(-90), 0)
-	spawn.Color = rgb(255, 205, 50)
-	spawn.Material = Enum.Material.Neon
+	-- faces +X: straight down the Dragon Road
+	spawn.CFrame = CFrame.new(-130, 0.6, 0) * CFrame.Angles(0, math.rad(-90), 0)
+	spawn.Color = rgb(240, 190, 50)
+	spawn.Material = Enum.Material.SmoothPlastic
 	spawn.Duration = 0
 	Scenery.brick(spawn)
 	spawn.Parent = lobby
 	-- the golden dragon statue
-	local statueBase = Vector3.new(-146, 0.6, -20)
+	local statueBase = Vector3.new(-150, 0.6, -20)
 	Scenery.disc(
 		lobby,
 		"Pedestal",
 		statueBase + Vector3.new(0, 1.5, 0),
 		11,
 		3,
-		rgb(235, 228, 215),
+		rgb(215, 208, 195),
 		Enum.Material.Marble
 	)
 	Scenery.disc(
@@ -822,48 +874,32 @@ function WorldBuilder.build()
 		end
 	end
 	statue.Name = "DragonStatue"
-	DragonBuilder.place(statue, CFrame.new(statueBase + Vector3.new(0, 3.3, 0)) * CFrame.Angles(0, math.rad(-120), 0))
+	DragonBuilder.place(statue, CFrame.new(statueBase + Vector3.new(0, 3.3, 0)) * CFrame.Angles(0, math.rad(30), 0))
 	statue.Parent = lobby
-	-- three leaderboards in a row on the right of the spawn, each turned to face it
-	local facing = Vector3.new(-162, 0.6, 0)
+	-- the three leaderboards in one straight row along the north edge, all facing south into the plaza
+	local function boardAt(x)
+		local p = Vector3.new(x, 0.6, 29)
+		return CFrame.lookAt(p, p - Vector3.zAxis)
+	end
 	local boards = {
-		coins = leaderboard(lobby, CFrame.lookAt(Vector3.new(-150, 0.6, 27), facing), "TOP COINS", rgb(255, 205, 50)),
-		steals = leaderboard(lobby, CFrame.lookAt(Vector3.new(-132, 0.6, 30), facing), "TOP THIEVES", rgb(255, 90, 90)),
-		income = leaderboard(
-			lobby,
-			CFrame.lookAt(Vector3.new(-114, 0.6, 30), facing),
-			"BEST DRAGONS",
-			rgb(110, 200, 255)
-		),
+		coins = leaderboard(lobby, boardAt(-164), "TOP COINS", rgb(255, 205, 50)),
+		steals = leaderboard(lobby, boardAt(-145), "TOP THIEVES", rgb(255, 90, 90)),
+		income = leaderboard(lobby, boardAt(-126), "BEST DRAGONS", rgb(110, 200, 255)),
 	}
-	-- the FREE dragon stand for new players
+	-- the FREE dragon stand for new players, just ahead of the spawn
+	local freePos = Vector3.new(-121, 1.2, -6)
 	local freePad = part({
 		Name = "FreePad",
 		Shape = Enum.PartType.Cylinder,
 		Size = Vector3.new(1.2, 8, 8),
-		CFrame = CFrame.new(-140, 1.2, 8) * CFrame.Angles(0, 0, math.rad(90)),
-		Color = rgb(255, 205, 50),
-		Material = Enum.Material.Neon,
+		CFrame = CFrame.new(freePos) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = rgb(245, 190, 40),
 		Parent = lobby,
 	})
 	billboard(freePad, 14, 3, Vector3.new(0, 8.5, 0), {
 		{ text = "FREE DRAGON!", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(255, 215, 70) },
 		{ text = "for new players", h = 0.4, y = 0.6 },
 	})
-	-- welcome sign
-	local welcome = part({
-		Name = "Welcome",
-		Size = Vector3.new(1, 1, 1),
-		CFrame = CFrame.new(-113, 30, 0),
-		Transparency = 1,
-		CanCollide = false,
-		Parent = lobby,
-	})
-	billboard(welcome, 40, 9, Vector3.zero, {
-		{ text = "STEAL A DRAGON", h = 0.62, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(255, 120, 60) },
-		{ text = "Grab. Run home. Lock. Steal!", h = 0.38, y = 0.62 },
-	})
-
 	-- Bases: 4 north of the road facing south, 4 south facing north
 	local basesFolder = folder("Bases", workspace)
 	local bases = {}
@@ -1005,7 +1041,7 @@ function WorldBuilder.build()
 		bases = bases,
 		boards = boards,
 		freePad = freePad,
-		freeFeet = CFrame.new(-140, 1.8, 8) * CFrame.Angles(0, math.rad(-90), 0),
+		freeFeet = CFrame.new(-121, 1.8, -6) * CFrame.Angles(0, math.rad(90), 0),
 		practiceFeet = pcf * CFrame.new(0, 1.2, 2),
 		practiceNest = practiceNest,
 		practiceCenter = pcf.Position,

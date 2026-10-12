@@ -3,10 +3,12 @@
 Grab a dragon. Run home. Lock your door. Steal from everyone else.
 
 The game lives in [`games/ra2 - Steal a Dragon/`](<../../games/ra2 - Steal a Dragon>). This folder holds the docs:
-this README, the [plan](PLAN.md), the [screenshots](screenshots/README.md) and the [thumbnails](thumbnails/README.md). Every command and path below is
+this README, the [publish checklist](PUBLISH.md), the [plan](PLAN.md), the [screenshots](screenshots/README.md) and the [thumbnails](thumbnails/README.md). Every command and path below is
 relative to the game folder.
 
-Everything is built from plain parts, so it runs in a blank Baseplate with no uploaded assets. The map: a cobblestone lobby with a golden dragon statue and the leaderboards, the Dragon Road (a royal carpet with lanterns and banners) running from a lava cave to a crystal mountain, 8 little castles with towers and flags, forests, rocks, flowers, a ring of snowy mountains, clouds, and three dragons circling in the sky.
+Everything is built from plain parts, so it runs in a blank Baseplate with no uploaded assets. The map: a cobblestone lobby with a golden dragon statue and the three leaderboards in a row, the Dragon Road (a royal carpet with lanterns and banners) running from the open Dragon Gate next to the lobby to a crystal mountain, 8 little castles with towers and flags, forests, rocks, flowers, a ring of snowy mountains, clouds, and three dragons circling in the sky.
+
+**Spawning:** new players spawn in the lobby looking straight down the Dragon Road, with the free dragon right in front of them. Once the tutorial is done, players spawn (and respawn) inside their own base, facing the road.
 
 **Brick look:** like most top Roblox games, the world is shiny plastic bricks with Roblox's classic studs on top
 (built in, no uploads). To switch back to smooth stone, wood and grass, set `BRICK_STYLE = false` in
@@ -20,7 +22,8 @@ Everything is built from plain parts, so it runs in a blank Baseplate with no up
 2. **Game Settings → Places:** set **Max Players** to **8**. There are 8 bases.
 3. **Game Settings → Security:** turn on **Enable Studio Access to API Services**. Without it the game still
    runs, but progress doesn't save, and the leaderboards only show the players in the server.
-4. For the best look: in the Explorer, select **Lighting** and set **Technology** to **Future**.
+4. The place uses **Future** lighting (set by the project file). If you synced into an older Baseplate, select
+   **Lighting** in the Explorer and set **Technology** to **Future**.
 5. Press **Play**. To test stealing, use **Test → Clients and Servers** with 2 or 3 players.
 
 ### Test on a phone
@@ -80,9 +83,9 @@ and better road dragons) and Double It (25, on the welcome-back screen).
 
 ### Hooking up the real items
 
-1. On the Creator Dashboard, open your experience, then **Monetization → Passes** and **Developer Products**.
-2. Create each item with the name and price from `src/shared/Data/Shop.lua`.
-3. Paste each ID into that file in place of `id = 0`.
+Step-by-step, with every item's name, price and description, in the [publish checklist](PUBLISH.md#2-set-up-the-paid-items).
+In short: create each item on the Creator Dashboard (**Monetization → Passes** and **Developer Products**), then
+paste each ID into `src/shared/Data/Shop.lua` in place of `id = 0`.
 
 While an ID is 0, buying it in Studio gives it for free so you can test, and in a live game the button says
 "Coming soon". Product receipts are granted once and saved right away.
@@ -132,7 +135,8 @@ This needs Rust (`cargo`) once, to build the small Luau runner. It runs:
 - **Client smoke test:** a phone-sized screen, every event, button and panel; 66 checks.
 - **Server smoke test:** 3 players through the tutorial, buying, stealing, bonking, grabbing, locks, selling,
   nests, speed, passes and receipts, daily gift, egg, goals, friends and invites, leaderboards, offline coins
-  and leaving mid-steal; 98 checks, plus a run with DataStores turned off.
+  and leaving mid-steal, and returning players spawning in their own base; 100 checks, plus a run with DataStores
+  turned off.
 
 The mock engine is not Roblox: it catches script errors and broken logic, not physics or rendering. Always
 play-test in Studio too.

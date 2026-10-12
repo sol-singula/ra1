@@ -21,6 +21,7 @@ local data, economy, team
 local bases = {} -- [i] = { world, owner, lockUntil, bank }
 local byPlayer = {} -- [player] = base
 local lastBounceToast = {}
+local homeConns = {} -- [player] = CharacterAdded connection
 
 local function now()
 	return workspace:GetServerTimeNow()
@@ -61,6 +62,20 @@ function BaseService:OnPlayerReady(player)
 			base.world.model:SetAttribute("OwnerUserId", player.UserId)
 			player:SetAttribute("BaseIndex", base.index)
 			self:PushBase(player)
+			-- once the tutorial is done, players spawn (and respawn) right in their own base
+			local profile = data:Get(player)
+			if profile and profile.tutorialDone then
+				self:SendHome(player)
+			end
+			homeConns[player] = player.CharacterAdded:Connect(function(character)
+				character:WaitForChild("HumanoidRootPart", 5)
+				task.defer(function()
+					local p = data:Get(player)
+					if p and p.tutorialDone and character.Parent then
+						self:SendHome(player)
+					end
+				end)
+			end)
 			return
 		end
 	end
@@ -68,6 +83,10 @@ function BaseService:OnPlayerReady(player)
 end
 
 function BaseService:OnPlayerLeaving(player)
+	if homeConns[player] then
+		homeConns[player]:Disconnect()
+		homeConns[player] = nil
+	end
 	local base = byPlayer[player]
 	if not base then
 		return
@@ -86,6 +105,15 @@ function BaseService:OnPlayerLeaving(player)
 	base.world.model:SetAttribute("OwnerUserId", nil)
 	byPlayer[player] = nil
 	lastBounceToast[player] = nil
+end
+
+-- Put the player just inside their own gate, facing the road.
+function BaseService:SendHome(player)
+	local base = byPlayer[player]
+	local character = player.Character
+	if base and character and character:FindFirstChild("HumanoidRootPart") then
+		character:PivotTo(base.world.homeCf)
+	end
 end
 
 function BaseService:Get(player)

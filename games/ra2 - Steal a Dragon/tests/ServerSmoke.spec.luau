@@ -421,6 +421,10 @@ if not noDataStore then
 	check("away coins claimed", pa2.coins > before2)
 	check("dragons back in nests", #pa2.dragons == avaCount - 1 and anyNestModel(a2) ~= nil)
 	check("no tutorial for returning players", pa2.tutorialDone and Engine.lastClientEvent("Tutorial", a2) == nil)
+	check("returning player spawns in their base", Base:InOwnBase(a2))
+	Engine.makeCharacter(a2)
+	Engine.advance(0.2)
+	check("respawns in their base", Base:InOwnBase(a2))
 end
 
 -- Shutdown ----------------------------------------------------------------------------------------------------

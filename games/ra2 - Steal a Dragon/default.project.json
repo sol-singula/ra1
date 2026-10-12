@@ -2,6 +2,16 @@
   "name": "StealADragon",
   "tree": {
     "$className": "DataModel",
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future"
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false
+      }
+    },
     "ReplicatedStorage": {
       "Shared": {
         "$path": "src/shared"
