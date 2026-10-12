@@ -1,4 +1,4 @@
--- Fighting. A bonk hits the nearest player (or NPC rival) in range: they're stunned, knocked back, flash red with
+-- Fighting. A bonk hits the nearest player (or NPC raider) in range: they're stunned, knocked back, flash red with
 -- dizzy stars, and drop any dragon they carry. Your weapon tier (Constants.WEAPONS, bought with coins) sets the
 -- range, stun and knockback; Mega Bonk stuns longer; bonks inside your own base are stronger (home defense).
 -- Anyone carrying a stolen dragon wears a THIEF tag with a bounty that the player who bonks them collects, and
@@ -19,7 +19,7 @@ local CombatService = {
 	Bonked = Signal.new("CombatService.Bonked"), -- (attacker, victim, wasCarrying)
 	Swung = Signal.new("CombatService.Swung"), -- (attacker) every bonk swing, hit or miss
 	WeaponChanged = Signal.new("CombatService.WeaponChanged"), -- (player) bought a better weapon
-	-- NPC rivals (NpcService) register here: fn() -> list of { position, carrying, bonk = fn(attacker, seconds,
+	-- NPC raiders (NpcService) register here: fn() -> list of { position, carrying, model, bonk = fn(attacker, seconds,
 	-- push) }, so bonks hit them like players
 	npcTargets = {},
 }
@@ -354,6 +354,7 @@ function CombatService:Bonk(attacker)
 		push = Vector3.new(push.X, 0, push.Z)
 		push = push.Magnitude > 0.1 and push.Unit or Vector3.new(0, 0, 1)
 		victim.bonk(attacker, seconds, push * knock)
+		hitFx(victim.model, seconds)
 		Net.fireAll("Popup", victim.position + Vector3.new(0, 5, 0), "BONK!", Color3.fromRGB(255, 220, 60))
 		Net.fireAll("Sfx", "bonk", victim.position)
 		return

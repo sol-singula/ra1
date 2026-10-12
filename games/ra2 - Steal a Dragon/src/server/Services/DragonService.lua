@@ -755,10 +755,15 @@ function DragonService:Drop(player)
 	end
 	self:PushCarry(player)
 	self.CarryChanged:Fire(player)
-	local pos = baseService:Position(player) or Vector3.new(0, 3, 0)
-	local model = DragonBuilder.build(c.rec.id, c.rec.sp, stageOf(c.rec), nil, skinOf(c.owner))
+	self:DropAt(c.rec, c.owner, baseService:Position(player) or Vector3.new(0, 3, 0))
+end
+
+-- Put a dragon on the ground: anyone can grab it for a few seconds, then it flies home.
+function DragonService:DropAt(rec, owner, pos)
+	inTransit[rec] = true
+	local model = DragonBuilder.build(rec.id, rec.sp, stageOf(rec), nil, skinOf(owner))
 	DragonBuilder.place(model, CFrame.new(pos.X, 0.5, pos.Z))
-	local name, color = tagText(c.rec)
+	local name, color = tagText(rec)
 	DragonBuilder.label(model, name, color, "GRAB IT!")
 	model.Name = "DroppedDragon"
 	local grab = prompt(model.PrimaryPart, "grab", "Grab", name, 0.3, 0)
@@ -766,7 +771,31 @@ function DragonService:Drop(player)
 		self:TryGrab(who, model)
 	end)
 	model.Parent = folder
-	dropped[model] = { rec = c.rec, owner = c.owner, expires = os.clock() + Constants.DROP_GRAB_SECONDS }
+	dropped[model] = { rec = rec, owner = owner, expires = os.clock() + Constants.DROP_GRAB_SECONDS }
+end
+
+-- Raiders (NpcService) ---------------------------------------------------------------------------------------
+-- Lift a dragon out of its owner's nest for a raider to carry. Returns the small carried model, or nil.
+function DragonService:LiftForNpc(owner, rec)
+	local profile = data:Get(owner)
+	if not rec.slot or inTransit[rec] or not profile or not table.find(profile.dragons, rec) then
+		return nil
+	end
+	local slot = rec.slot
+	rec.slot = nil
+	inTransit[rec] = true
+	self:_removeNestModel(owner, slot)
+	baseService:PushIncome(owner)
+	local model = DragonBuilder.build(rec.id, rec.sp, stageOf(rec), 0.6, skinOf(owner))
+	local name, color = tagText(rec)
+	DragonBuilder.label(model, name, color, "")
+	model.Name = "CarriedDragon"
+	return model
+end
+
+-- A raider's dragon whose owner left: it stays in their save and is back in their base next time.
+function DragonService:ReleaseNpc(rec)
+	inTransit[rec] = nil
 end
 
 function DragonService:TryGrab(player, model)

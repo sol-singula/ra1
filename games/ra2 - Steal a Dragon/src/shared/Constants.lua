@@ -73,6 +73,23 @@ Constants.BOUNTY_SECONDS = 60 -- bonking a thief pays this many seconds of the s
 Constants.BOUNTY_MIN = 100
 Constants.STREAK_WINDOW = 40 -- seconds between hits to keep a bonk streak going
 Constants.STREAK_ANNOUNCE = { [3] = true, [5] = true, [10] = true, [20] = true }
+-- NPC raiders (NpcService): goblins from the exit tunnel that keep quiet servers busy. They walk the road and
+-- raid bases; bonk one carrying a dragon for the bounty, or it gets away (the dragon flies home, minus its coins).
+Constants.NPC_FILL_TO = 5 -- with fewer players than this, raiders make up the difference
+Constants.NPC_MAX = 3
+Constants.NPC_SPEED = 13 -- slower than players (BASE_WALK_SPEED), so they can be caught
+Constants.NPC_CARRY_SPEED = 10
+Constants.NPC_RAID_EVERY = { 25, 55 } -- seconds between one raider's raids
+Constants.NPC_VICTIM_COOLDOWN = 90 -- a player is not raided again this soon
+Constants.NPC_STEAL_SECONDS = 1.5
+Constants.NPC_IN_STUDIO = true
+Constants.NPC_NAMES = { "Goblin Gus", "Sneaky Sid", "Grub", "Nibbles", "Snatch", "Zig", "Grizzle", "Pockets" }
+Constants.NPC_COLORS = {
+	Color3.fromRGB(120, 190, 80),
+	Color3.fromRGB(95, 165, 120),
+	Color3.fromRGB(150, 185, 70),
+	Color3.fromRGB(110, 150, 190),
+}
 
 -- Hotbar tools
 Constants.FREE_POTIONS = 3 -- Speed Potions every new player starts with

@@ -40,6 +40,8 @@ local Team = service("TeamService")
 local Tutorial = service("TutorialService")
 local Leaderboard = service("LeaderboardService")
 local Tools = service("ToolService")
+local Npc = service("NpcService")
+Npc.active = false -- raiders are tested on their own near the end
 -- game log posts are captured here instead of going to Discord
 local GameLog = service("GameLogService")
 local gameLogs = {} -- every event sent, flattened
@@ -1048,6 +1050,82 @@ for _, d in Engine.workspace.Map:FindFirstChild("Disco", true):GetChildren() do
 	end
 end
 check("a line of lights leads from the road to the disco", guideDots > 10 and nearRoad)
+
+-- Raiders: goblin NPCs fill quiet servers, raid open bases, drop the dragon when bonked, or get away
+do
+	Npc.active = true
+	for _ = 1, 4 do
+		Engine.advance(4.1)
+	end
+	local players = Engine.Players:GetPlayers()
+	check("raiders fill a quiet server", #Npc.npcs == Npc:Wanted() and #Npc.npcs > 0, #Npc.npcs)
+	check("raiders aren't players", #Engine.Players:GetPlayers() == #players)
+	check("raiders in the world", Engine.workspace.Raiders:FindFirstChildOfClass("Model") ~= nil)
+	local victim = players[1]
+	local vp = Data:Get(victim)
+	vp.tutorialDone = true
+	Base:Get(victim).lockUntil = 0
+	local DragonsData = Engine.require(tree.shared.Data.Dragons)
+	while #vp.dragons < 3 do
+		Dragon:Grant(victim, DragonsData.list[1].id)
+	end
+	Engine.advance(0.2)
+	local function slotted()
+		local n = 0
+		for _, r in vp.dragons do
+			n += r.slot and 1 or 0
+		end
+		return n
+	end
+	local function raidUntilCarrying(npc)
+		check("a raider heads for a base", Npc:Raid(npc, victim))
+		for _ = 1, 400 do
+			Engine.advance(0.25)
+			if npc.carrying then
+				break
+			end
+		end
+		return npc.carrying ~= nil
+	end
+	local npc = Npc.npcs[1]
+	local before = slotted()
+	check("a raider steals a dragon", raidUntilCarrying(npc))
+	check("the nest empties", slotted() == before - 1)
+	check("the owner is alerted", Engine.lastClientEvent("Alert", victim) ~= nil)
+	check("raiders carrying a dragon are thieves", npc.model:FindFirstChild("ThiefGlow") ~= nil)
+	-- bonk it
+	local hunter = players[#players]
+	local hp = Data:Get(hunter)
+	Engine.advance(Constants.BONK_COOLDOWN + 0.1)
+	go(hunter, npc.pos)
+	local coins = hp.coins
+	local bounty = Npc:Bounty(npc)
+	Engine.fireServer(hunter, "Bonk")
+	Engine.advance(0.1)
+	check("bonked raider drops the dragon", npc.carrying == nil and npc.state == "stunned")
+	check("bonking a raider pays the bounty", hp.coins >= coins + bounty, hp.coins - coins)
+	check("the raider's dragon is on the ground", Engine.workspace.Dragons:FindFirstChild("DroppedDragon") ~= nil)
+	Engine.advance(Constants.DROP_GRAB_SECONDS + 1.5)
+	check("unclaimed, it flies home", slotted() == before)
+	-- one that gets away: the dragon still comes home
+	local npc2 = Npc.npcs[2] or Npc:Spawn()
+	vp.tutorialDone = true
+	check("a second raid", raidUntilCarrying(npc2))
+	npc2.pos = Vector3.new(Constants.ROAD_END_X + 10, 0.5, 0)
+	npc2.path = { Vector3.new(Constants.ROAD_END_X + 14, 0.5, 0) }
+	Engine.advance(1.5)
+	check("a raider that gets away vanishes", table.find(Npc.npcs, npc2) == nil)
+	check("its dragon flies home", slotted() == before)
+	-- busy servers send them home
+	Npc.active = false
+	for _ = 1, 120 do
+		Engine.advance(0.5)
+		if #Npc.npcs == 0 then
+			break
+		end
+	end
+	check("raiders leave when not wanted", #Npc.npcs == 0, #Npc.npcs)
+end
 
 -- Discord game log: joins, leaves with session stats, chat, steals, purchases... batched every few seconds
 Engine.advance(Constants.GAME_LOG_FLUSH_SECONDS + 0.5)
