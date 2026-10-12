@@ -1,10 +1,16 @@
 -- Bugs and bosses from plain boxes, in the planet's colours. A bug is a body, a head with two square eyes, six
--- stubby legs and two little wings. A boss is the same shape, 4x bigger, with a crown and a bigger glow.
--- All parts are anchored; MobService moves the whole model with PivotTo.
+-- stubby legs and two little wings, plus the planet's own touch (ice spikes, a flame, leaf wings...). A boss is
+-- the same shape, 4x bigger, with a crown, red eyes and a bigger glow. All parts are anchored; MobService moves
+-- the whole model with PivotTo. Wings are tagged so the client flaps them.
+local CollectionService = game:GetService("CollectionService")
+
+local Themes = require(script.Parent.Themes)
+
 local MobBuilder = {}
 
 local WHITE = Color3.fromRGB(255, 255, 255)
 local INK = Color3.fromRGB(30, 30, 40)
+local RED = Color3.fromRGB(255, 60, 60)
 
 local function box(parent, name, size, cf, color, material, extra)
 	local p = Instance.new("Part")
@@ -24,7 +30,7 @@ local function box(parent, name, size, cf, color, material, extra)
 	return p
 end
 
--- scale 1 is a bug about 3 studs long. Faces -Z. Returns the model; its PrimaryPart "Root" sits at the body centre.
+-- scale 1 is a bug about 3 studs long. Faces -Z. The model's PrimaryPart "Root" sits at the body centre.
 function MobBuilder.build(planet, scale, isBoss)
 	local s = scale or 1
 	local model = Instance.new("Model")
@@ -40,9 +46,23 @@ function MobBuilder.build(planet, scale, isBoss)
 		box(model, "Stripe", Vector3.new(2.3, 0.3, 0.3) * s, CFrame.new(0, 1.3 * s, (-0.6 + i * 0.5) * s), dark)
 	end
 	box(model, "Head", Vector3.new(1.6, 1.2, 1.2) * s, CFrame.new(0, 1.5 * s, -1.7 * s), body)
+	local eye = Themes.eyes[planet.key] or WHITE
 	for _, side in { -1, 1 } do
-		box(model, "Eye", Vector3.new(0.45, 0.45, 0.1) * s, CFrame.new(side * 0.4 * s, 1.65 * s, -2.32 * s), WHITE)
-		box(model, "Pupil", Vector3.new(0.2, 0.2, 0.08) * s, CFrame.new(side * 0.4 * s, 1.6 * s, -2.38 * s), INK)
+		box(
+			model,
+			"Eye",
+			Vector3.new(0.45, 0.45, 0.1) * s,
+			CFrame.new(side * 0.4 * s, 1.65 * s, -2.32 * s),
+			eye,
+			Enum.Material.Neon
+		)
+		box(
+			model,
+			"Pupil",
+			Vector3.new(0.2, 0.2, 0.08) * s,
+			CFrame.new(side * 0.4 * s, 1.6 * s, -2.38 * s),
+			isBoss and RED or INK
+		)
 		box(
 			model,
 			"Feeler",
@@ -59,7 +79,7 @@ function MobBuilder.build(planet, scale, isBoss)
 				dark
 			)
 		end
-		box(
+		local wing = box(
 			model,
 			"Wing",
 			Vector3.new(1.4, 0.08, 1.8) * s,
@@ -68,22 +88,35 @@ function MobBuilder.build(planet, scale, isBoss)
 			Enum.Material.Glass,
 			{ Transparency = 0.35 }
 		)
+		wing:SetAttribute("Side", side)
+		CollectionService:AddTag(wing, "MobWing")
+	end
+	local touch = Themes.mob[planet.key]
+	if touch then
+		touch(model, s, planet, isBoss, box)
 	end
 	if isBoss then
-		box(
-			model,
-			"Crown",
-			Vector3.new(1.4, 0.4, 1.2) * s,
-			CFrame.new(0, 2.3 * s, -1.7 * s),
-			Color3.fromRGB(255, 215, 60)
-		)
+		local gold = Color3.fromRGB(255, 215, 60)
+		box(model, "Crown", Vector3.new(1.4, 0.4, 1.2) * s, CFrame.new(0, 2.3 * s, -1.7 * s), gold, Enum.Material.Metal)
 		for i = -1, 1 do
 			box(
 				model,
 				"Spike",
 				Vector3.new(0.3, 0.6, 0.3) * s,
 				CFrame.new(i * 0.45 * s, 2.75 * s, -1.7 * s),
-				Color3.fromRGB(255, 215, 60)
+				gold,
+				Enum.Material.Metal
+			)
+		end
+		-- armour plates down the back
+		for i = 1, 3 do
+			box(
+				model,
+				"Plate",
+				Vector3.new(1.2, 0.5, 0.5) * s,
+				CFrame.new(0, 2.15 * s, (-0.5 + i * 0.5) * s),
+				dark:Lerp(gold, 0.3),
+				Enum.Material.Metal
 			)
 		end
 		local light = Instance.new("PointLight")
@@ -145,8 +178,29 @@ function MobBuilder.healthBar(model, width, name)
 	text.TextColor3 = WHITE
 	text.TextStrokeTransparency = 0
 	text.ZIndex = 3
-	text.Parent = bar
+	text.Parent = gui
 	return fill, text, label
+end
+
+-- A burst of bits when a mob pops (parts fly out and fade; the server makes them, Debris cleans up).
+function MobBuilder.burst(pos, color, count)
+	local rng = Random.new()
+	for _ = 1, count or 8 do
+		local p = Instance.new("Part")
+		p.Name = "Bit"
+		p.Size = Vector3.new(0.6, 0.6, 0.6)
+		p.Color = color
+		p.Material = Enum.Material.Neon
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CastShadow = false
+		p.CFrame = CFrame.new(pos + Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(0, 1.5), rng:NextNumber(-1, 1)))
+		p.AssemblyLinearVelocity = Vector3.new(rng:NextNumber(-14, 14), rng:NextNumber(10, 24), rng:NextNumber(-14, 14))
+		p.Parent = workspace:FindFirstChild("Fx") or workspace
+		task.delay(1.2, function()
+			p:Destroy()
+		end)
+	end
 end
 
 return MobBuilder

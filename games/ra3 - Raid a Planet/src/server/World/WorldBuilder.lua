@@ -4,11 +4,13 @@
 --   The 8 planets: floating islands in a ring around the Hub, each in its own colour, with rocks, crystals, a
 --     HOME pad back to the Hub, and a Boss Gate at the far end leading to the boss yard.
 -- Space: a dark sky with stars and far planets; players can't fall off (invisible walls).
+local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Planets = require(ReplicatedStorage.Shared.Data.Planets)
 local Scenery = require(script.Parent.Scenery)
+local Themes = require(script.Parent.Themes)
 
 local part, disc, ball, rgb = Scenery.part, Scenery.disc, Scenery.ball, Scenery.rgb
 
@@ -19,6 +21,12 @@ WorldBuilder.PLANET_RING = 300 -- distance from the hub to each planet's centre
 WorldBuilder.PLANET_RADIUS = 58
 WorldBuilder.BOSS_YARD = 40 -- the boss yard disc, past the boss gate
 WorldBuilder.PAD_RADIUS = 5
+WorldBuilder.WING_Z = 118 -- the Trade Plaza (north) and Booth Street (south) wings
+WorldBuilder.WING_RADIUS = 40
+WorldBuilder.ARENA_Y = 140 -- the raid arena floats high over the hub
+WorldBuilder.ARENA_RADIUS = 64
+WorldBuilder.STALLS = 12
+WorldBuilder.BOOTHS = 16
 
 local INK = rgb(30, 30, 44)
 local HUB_COLOR = rgb(70, 75, 110)
@@ -170,10 +178,235 @@ local function hub(map, rng)
 		p:SetAttribute("Planet", planet.key)
 		goPads[i] = { part = p, labels = labels, center = center, planet = planet }
 	end
-	-- the raid portal ring high over the hub (step 3 opens it); for now it hangs there and glows faintly
-	disc(model, "PortalRing", Vector3.new(0, 42, 0), 26, 1.5, rgb(140, 90, 255), Enum.Material.Neon, {
+	-- the raid portal: a ring over the hub that turns slowly; when the raid opens it glows and a beam comes down
+	-- to the RAID pad (RaidService). Jumping into the pad takes you to the arena.
+	local ring = disc(model, "PortalRing", Vector3.new(0, 30, 0), 22, 1.5, rgb(140, 90, 255), Enum.Material.Neon, {
 		CanCollide = false,
-		Transparency = 0.5,
+		Transparency = 0.45,
+	})
+	ring:SetAttribute("TurnSpeed", 0.4)
+	CollectionService:AddTag(ring, "Turn")
+	local beam = part({
+		Name = "PortalBeam",
+		Size = Vector3.new(6, 30, 6),
+		CFrame = CFrame.new(0, 15, 0),
+		Color = rgb(170, 120, 255),
+		Material = Enum.Material.Neon,
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		Parent = model,
+	})
+	local raidPad = Scenery.ring(model, "RaidPad", Vector3.new(0, 7.2, 0), 10, rgb(170, 120, 255), { Transparency = 1 })
+	Scenery.sign(raidPad, 12, 3.5, Vector3.new(0, 5, 0), {
+		{ text = "☄️ RAID", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(200, 160, 255) },
+		{ text = "Jump in!", h = 0.4, y = 0.6 },
+	}, 80).Enabled =
+		false
+	-- the big title over the forge and a gallery of planet orbs on pedestals around it
+	local titlePost = part({
+		Name = "TitlePost",
+		Size = Vector3.new(1, 1, 1),
+		CFrame = CFrame.new(0, 22, -8),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		Parent = model,
+	})
+	Scenery.sign(titlePost, 40, 8, Vector3.new(0, 0, 0), {
+		{ text = "☄️ RAID A PLANET", h = 0.62, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(255, 215, 60) },
+		{ text = "Blast bugs. Forge blasters. Beat the boss.", h = 0.38, y = 0.62 },
+	}, 220)
+	for i, planet in Planets.list do
+		local a = (i - 0.5) / #Planets.list * math.pi * 2
+		local p = Vector3.new(math.cos(a) * 22, 0, math.sin(a) * 22)
+		_ = planet.key
+		part({
+			Name = "Pedestal",
+			Size = Vector3.new(2.5, 3, 2.5),
+			CFrame = CFrame.new(p + Vector3.new(0, 1.5, 0)),
+			Color = HUB_COLOR:Lerp(INK, 0.3),
+			Parent = model,
+		})
+		local orb =
+			ball(model, "Orb", p + Vector3.new(0, 5, 0), 3, planet.color, Enum.Material.Neon, { CanCollide = false })
+		orb:SetAttribute("TurnSpeed", 0.8)
+		orb:SetAttribute("Bob", 0.4)
+		CollectionService:AddTag(orb, "Turn")
+		local orbLight = Instance.new("PointLight")
+		orbLight.Color = planet.color
+		orbLight.Range = 9
+		orbLight.Parent = orb
+	end
+	-- the two wings: Trade Plaza (north) and Booth Street (south), each on its own disc with a bridge
+	local stalls, booths = {}, {}
+	for _, side in { -1, 1 } do
+		local wz = side * WorldBuilder.WING_Z
+		local wr = WorldBuilder.WING_RADIUS
+		local wing = Instance.new("Model")
+		wing.Name = side < 0 and "TradePlaza" or "BoothStreet"
+		wing.Parent = model
+		local wcolor = side < 0 and rgb(60, 90, 120) or rgb(110, 70, 110)
+		disc(wing, "Floor", Vector3.new(0, -1, wz), wr * 2, 2, wcolor, Enum.Material.Plastic)
+		disc(wing, "Under", Vector3.new(0, -5, wz), wr * 1.6, 6, wcolor:Lerp(INK, 0.5))
+		part({
+			Name = "Bridge",
+			Size = Vector3.new(10, 1, WorldBuilder.WING_Z - wr - R + 4),
+			CFrame = CFrame.new(0, -0.5, side * (R + (WorldBuilder.WING_Z - wr - R) / 2)),
+			Color = HUB_COLOR,
+			Parent = wing,
+		})
+		for _, bx in { -5.5, 5.5 } do
+			part({
+				Name = "Rail",
+				Size = Vector3.new(0.5, 2, WorldBuilder.WING_Z - wr - R + 4),
+				CFrame = CFrame.new(bx, 0.8, side * (R + (WorldBuilder.WING_Z - wr - R) / 2)),
+				Color = HUB_TRIM,
+				Parent = wing,
+			})
+		end
+		local post = part({
+			Name = "WingSignPost",
+			Size = Vector3.new(1, 1, 1),
+			CFrame = CFrame.new(0, 16, wz),
+			Transparency = 1,
+			CanCollide = false,
+			CanQuery = false,
+			Parent = wing,
+		})
+		Scenery.sign(post, 30, 6, Vector3.new(0, 0, 0), side < 0 and {
+			{ text = "🏪 TRADE PLAZA", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(120, 220, 255) },
+			{ text = "Sell blasters for gems. Buy with gems.", h = 0.4, y = 0.6 },
+		} or {
+			{ text = "🛍️ BOOTH STREET", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(255, 150, 220) },
+			{ text = "Show your own clothes. Others can buy them!", h = 0.4, y = 0.6 },
+		}, 200)
+		local count = side < 0 and WorldBuilder.STALLS or WorldBuilder.BOOTHS
+		for i = 1, count do
+			local a = (i - 0.5) / count * math.pi * 2
+			local center = Vector3.new(math.cos(a) * (wr - 9), 0, wz + math.sin(a) * (wr - 9))
+			local cf = CFrame.lookAt(center, Vector3.new(0, 0, wz))
+			local stand = Instance.new("Model")
+			stand.Name = (side < 0 and "Stall" or "Booth") .. i
+			stand.Parent = wing
+			part({
+				Name = "Counter",
+				Size = Vector3.new(7, 2.6, 2.5),
+				CFrame = cf * CFrame.new(0, 1.3, 0),
+				Color = side < 0 and rgb(90, 140, 200) or rgb(200, 110, 170),
+				Parent = stand,
+			})
+			part({
+				Name = "Top",
+				Size = Vector3.new(7.4, 0.4, 2.9),
+				CFrame = cf * CFrame.new(0, 2.8, 0),
+				Color = HUB_TRIM,
+				Parent = stand,
+			})
+			for _, px in { -3.2, 3.2 } do
+				part({
+					Name = "Pole",
+					Size = Vector3.new(0.4, 6, 0.4),
+					CFrame = cf * CFrame.new(px, 3, 1),
+					Color = INK,
+					Parent = stand,
+				})
+			end
+			part({
+				Name = "Awning",
+				Size = Vector3.new(7.6, 0.4, 3.4),
+				CFrame = cf * CFrame.new(0, 6.2, 0.6) * CFrame.Angles(math.rad(12), 0, 0),
+				Color = side < 0 and rgb(120, 200, 255) or rgb(255, 170, 220),
+				Parent = stand,
+			})
+			local show = part({
+				Name = "Show",
+				Size = Vector3.new(1, 1, 1),
+				CFrame = cf * CFrame.new(0, 3.8, 0),
+				Transparency = 1,
+				CanCollide = false,
+				CanQuery = false,
+				Parent = stand,
+			})
+			local _, lines = Scenery.sign(show, 9, 4, Vector3.new(0, 2.6, 0), {
+				{
+					text = side < 0 and "EMPTY STALL" or "EMPTY BOOTH",
+					h = 0.4,
+					y = 0,
+					font = Enum.Font.LuckiestGuy,
+					color = rgb(220, 220, 230),
+				},
+				{ text = side < 0 and "Put a blaster here" or "Claim it: show your clothes", h = 0.3, y = 0.4 },
+				{ text = "", h = 0.3, y = 0.7, color = rgb(150, 230, 255) },
+			}, 70)
+			local standPrompt = Instance.new("ProximityPrompt")
+			standPrompt.Name = side < 0 and "Prompt_stall" or "Prompt_booth"
+			standPrompt.ActionText = side < 0 and "Use stall" or "Use booth"
+			standPrompt.ObjectText = stand.Name
+			standPrompt.HoldDuration = 0
+			standPrompt.MaxActivationDistance = 9
+			standPrompt.RequiresLineOfSight = false
+			standPrompt.Parent = stand.Counter
+			local entry = { index = i, model = stand, cf = cf, show = show, lines = lines, prompt = standPrompt }
+			if side < 0 then
+				stalls[i] = entry
+			else
+				booths[i] = entry
+			end
+		end
+	end
+	-- the raid arena: a big disc high over the hub with four shield plates and an invisible wall
+	local arena = Instance.new("Model")
+	arena.Name = "Arena"
+	arena.Parent = model
+	local ay, ar = WorldBuilder.ARENA_Y, WorldBuilder.ARENA_RADIUS
+	disc(arena, "Floor", Vector3.new(0, ay - 1, 0), ar * 2, 2, rgb(50, 40, 80), Enum.Material.Plastic)
+	disc(arena, "Under", Vector3.new(0, ay - 5, 0), ar * 1.6, 6, rgb(35, 28, 60))
+	Scenery.ring(arena, "Edge", Vector3.new(0, ay + 0.05, 0), ar * 2 - 2, rgb(170, 120, 255), { Transparency = 0.3 })
+	for k = 0, 23 do
+		local a = k / 24 * math.pi * 2
+		local p = Vector3.new(math.cos(a) * (ar + 1), ay + 10, math.sin(a) * (ar + 1))
+		part({
+			Name = "Wall",
+			Size = Vector3.new(ar * 2 * math.pi / 24 + 1, 22, 1),
+			CFrame = CFrame.lookAt(p, Vector3.new(0, ay + 10, 0)),
+			Transparency = 1,
+			CanQuery = false,
+			Parent = arena,
+		})
+	end
+	local plates = {}
+	for k = 1, 4 do
+		local a = (k - 0.5) / 4 * math.pi * 2
+		local p = Vector3.new(math.cos(a) * (ar - 14), ay, math.sin(a) * (ar - 14))
+		local plate = Scenery.ring(
+			arena,
+			"Plate" .. k,
+			p + Vector3.new(0, 0.25, 0),
+			11,
+			rgb(120, 120, 140),
+			{ Transparency = 0.6 }
+		)
+		disc(arena, "PlateBase", p + Vector3.new(0, 0.1, 0), 12.5, 0.2, INK)
+		local _, plateLines = Scenery.sign(plate, 10, 3, Vector3.new(0, 4, 0), {
+			{ text = `PLATE {k}`, h = 0.55, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(220, 220, 240) },
+			{ text = "", h = 0.45, y = 0.55 },
+		}, 100)
+		plates[k] = { part = plate, center = p, lines = plateLines }
+	end
+	local arenaSpawn = Vector3.new(0, ay, ar - 12)
+	local exitPad = pad(arena, "ExitPad", Vector3.new(0, ay, ar - 6), HUB_TRIM, {
+		{ text = "🏠 LEAVE", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy, color = HUB_TRIM },
+		{ text = "back to the Hub", h = 0.4, y = 0.6 },
+	})
+	local boardPost = part({
+		Name = "SkyBoardPost",
+		Size = Vector3.new(1, 1, 1),
+		CFrame = CFrame.new(0, 48, 0),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		Parent = model,
 	})
 	-- spawn: on the east side, facing the forge
 	local spawn = Instance.new("SpawnLocation")
@@ -196,7 +429,27 @@ local function hub(map, rng)
 	Scenery.farPlanet(sky, Vector3.new(-600, 220, -500), 140, rgb(255, 150, 90), true)
 	Scenery.farPlanet(sky, Vector3.new(650, 140, 400), 90, rgb(120, 180, 255), false)
 	Scenery.farPlanet(sky, Vector3.new(100, 320, 800), 60, rgb(200, 120, 255), true)
-	return { model = model, goPads = goPads, forge = fire, spawn = spawn }
+	return {
+		model = model,
+		goPads = goPads,
+		forge = fire,
+		spawn = spawn,
+		ring = ring,
+		beam = beam,
+		raidPad = raidPad,
+		stalls = stalls,
+		booths = booths,
+		arena = {
+			model = arena,
+			center = Vector3.new(0, ay, 0),
+			radius = ar,
+			plates = plates,
+			spawn = arenaSpawn,
+			exitPad = exitPad,
+			exitCenter = Vector3.new(0, ay, ar - 6),
+		},
+		skyBoardPost = boardPost,
+	}
 end
 
 -- One planet island. Returns its layout: centre, the spawn point (near the HOME pad), the boss gate and yard.
@@ -309,10 +562,11 @@ local function planetIsland(map, i, planet, rng)
 		local a, r = rng:NextNumber(0, math.pi * 2), rng:NextNumber(18, R - 8)
 		local p = center + Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
 		if (p - homeCenter).Magnitude > 14 and (p - gateCenter).Magnitude > 14 then
-			if rng:NextNumber() < 0.55 then
-				Scenery.rock(deco, p, rng:NextNumber(3, 6), planet.dark, rng)
+			local theme = Themes.scenery[planet.key]
+			if theme then
+				theme(deco, p, planet, rng)
 			else
-				Scenery.crystal(deco, p, rng:NextNumber(4, 9), planet.color, rng)
+				Scenery.rock(deco, p, rng:NextNumber(3, 6), planet.dark, rng)
 			end
 		end
 	end
@@ -381,6 +635,9 @@ function WorldBuilder.build()
 		hub = h,
 		planets = planets,
 		spawn = h.spawn,
+		arena = h.arena,
+		stalls = h.stalls,
+		booths = h.booths,
 	}
 	return WorldBuilder.layout
 end
@@ -406,7 +663,11 @@ function WorldBuilder.planetAt(pos)
 end
 
 function WorldBuilder.inHub(pos)
-	return Vector3.new(pos.X, 0, pos.Z).Magnitude <= WorldBuilder.HUB_RADIUS + 2
+	return Vector3.new(pos.X, 0, pos.Z).Magnitude <= WorldBuilder.HUB_RADIUS + 2 and pos.Y < 40
+end
+
+function WorldBuilder.inArena(pos)
+	return pos.Y > WorldBuilder.ARENA_Y - 10 and Vector3.new(pos.X, 0, pos.Z).Magnitude <= WorldBuilder.ARENA_RADIUS + 2
 end
 
 return WorldBuilder

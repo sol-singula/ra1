@@ -13,11 +13,18 @@ local Blasters = require(ReplicatedStorage.Shared.Data.Blasters)
 
 local CombatService = {
 	Name = "CombatService",
-	Dependencies = { "PlayerDataService", "EconomyService", "BlasterService", "MobService", "BossService" },
+	Dependencies = {
+		"PlayerDataService",
+		"EconomyService",
+		"BlasterService",
+		"MobService",
+		"BossService",
+		"TeamService",
+	},
 	Blasted = Signal.new("CombatService.Blasted"), -- (player, entry, damage)
 }
 
-local data, economy, blasters, mobs, boss
+local data, economy, blasters, mobs, boss, team
 local lastShot = {}
 
 local function parts(player)
@@ -32,6 +39,9 @@ function CombatService:Damage(player, rec)
 	if economy:HasPass(player, "VIP") then
 		mult *= 1.25
 	end
+	mult *= team:DamageMult(player)
+	local profile = data:Get(player)
+	mult *= 1 + Constants.REBIRTH_DAMAGE * (profile and profile.rebirths or 0)
 	return Formulas.blasterDamage(rec, mult)
 end
 
@@ -99,6 +109,7 @@ function CombatService:Init(registry)
 	blasters = registry.BlasterService
 	mobs = registry.MobService
 	boss = registry.BossService
+	team = registry.TeamService
 	Net.on("Blast", function(player, targetId)
 		if type(targetId) == "number" then
 			self:Blast(player, targetId)

@@ -78,6 +78,48 @@ Constants.PLAYTIME_GIFTS = {
 -- Raids (step 3; the countdown already runs so the hub never feels still) --------------------------------------
 Constants.RAID_EVERY = 15 * 60
 
+-- Rebirth: after all 8 bosses, start over with a star: +25% damage for ever, and Nightmare planets (10x)
+Constants.REBIRTH_DAMAGE = 0.25
+Constants.NIGHTMARE_MULT = 10
+
+-- Squads: friends in the server give each other damage
+Constants.SQUAD_DAMAGE_PER_FRIEND = 0.1
+Constants.SQUAD_DAMAGE_MAX = 0.3
+Constants.SQUAD_ORE_MULT = 2 -- a friend on your planet: bosses drop double ore for both of you
+
+-- Sound ----------------------------------------------------------------------------------------------------
+Constants.SOUNDS = {
+	blast = "rbxassetid://95486565209148",
+	pop = "rbxassetid://105444665436909",
+	hit = "rbxassetid://105444665436909",
+	coin = "rbxassetid://118634876996683",
+	buy = "rbxassetid://105104330819150",
+	levelup = "rbxassetid://106516156393061",
+	goal = "rbxassetid://106516156393061",
+	notify = "rbxassetid://115604569854725",
+	ready = "rbxassetid://115604569854725",
+	equip = "rbxassetid://83557110540525",
+	forge = "rbxassetid://96391581866585",
+	win = "rbxassetid://119933432712786",
+	gift = "rbxassetid://105104330819150",
+	boss = "rbxassetid://88832672717864",
+	portal = "rbxassetid://109983444504089",
+	hatch = "rbxassetid://119933432712786",
+}
+Constants.SOUND_VOLUME = { blast = 0.25, pop = 0.4, hit = 0.5, coin = 0.5, notify = 0.45, boss = 0.6 }
+Constants.MUSIC = { -- space adventure, played in turn
+	"rbxassetid://74189412399190", -- Space Adventure
+	"rbxassetid://137158553055103", -- Out Of Orbit
+	"rbxassetid://73341720345819", -- Satellite Flyby
+	"rbxassetid://1844643755", -- Space Adventures
+}
+Constants.RAID_MUSIC = {
+	"rbxassetid://135990877378159", -- Space Boss Fight
+	"rbxassetid://1837768013", -- Rise to the Top
+}
+Constants.MUSIC_VOLUME = 0.28
+Constants.RAID_MUSIC_VOLUME = 0.45
+
 Constants.CAMERA_MAX_ZOOM = 60
 
 return Constants
