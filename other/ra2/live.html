@@ -260,10 +260,22 @@
           </tbody></table>
         </div>
         <div class="vcard">
+          <div class="k">Why 👎</div>
+          ${(() => {
+            const names = { bonk: "😵 Too much bonking", robbed: "😡 Got robbed a lot", lag: "🐢 Laggy", popups: "💸 Too many Robux pop-ups", boring: "😴 Not much to do", confusing: "🤔 Don't get it" };
+            const entries = Object.entries(fb.reasons || {}).sort((a, b) => b[1] - a[1]);
+            const n = fb.dislikes_with_reason || 0;
+            if (!entries.length) return `<div class="empty" style="margin-top:8px">No reasons yet. Players pick them after tapping 👎.</div>`;
+            return `<div class="mini">${n} 👎 answer${n === 1 ? "" : "s"} with a reason (players can pick more than one)</div>` + entries.map(([k, v]) => `
+              <div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(names[k] || k)}</span><b>${v} <span class="mini">(${pctTxt(n ? Math.round(1000 * v / n) / 10 : null)})</span></b></div>
+              <div class="bar" style="background:var(--panel-2)"><div style="width:${n ? Math.round(100 * v / n) : 0}%;background:var(--bad)"></div></div></div>`).join("");
+          })()}
+        </div>
+        <div class="vcard" style="grid-column: 1 / -1">
           <div class="k">What players said</div>
           ${fb.recent.length ? `<div class="answers">${fb.recent.map((r) => `<div class="ans">
             <div style="font-size:20px">${r.liked ? "👍" : "👎"}</div>
-            <div><div class="t">${esc(r.display_name || r.username || r.user_id)}${r.text ? ` <span style="font-weight:500">“${esc(r.text)}”</span>` : ` <span class="mini">(no comment)</span>`}</div>
+            <div><div class="t">${esc(r.display_name || r.username || r.user_id)}${Array.isArray(r.reasons) && r.reasons.length ? " " + r.reasons.map((k) => `<span class="chip">${esc(k)}</span>`).join(" ") : ""}${r.text ? ` <span style="font-weight:500">“${esc(r.text)}”</span>` : ` <span class="mini">(no comment)</span>`}</div>
               <div class="m">played ${num(r.minutes)} min · bonked ${num(r.bonked)} · robbed ${num(r.robbed)} · ${r.device === "touch" ? "📱 phone" : r.device === "gamepad" ? "🎮 console" : "💻 computer"} · v${r.place_version ?? "?"}</div></div>
             <div class="mini" style="white-space:nowrap">${dur(ago(r.at))} ago</div></div>`).join("")}</div>` : `<div class="empty" style="margin-top:8px">No answers yet. The card shows after 7 minutes of play.</div>`}
         </div>
