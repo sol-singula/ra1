@@ -16,6 +16,7 @@ local BaseService = {
 	Dependencies = { "PlayerDataService", "EconomyService", "TeamService" },
 	Locked = Signal.new("BaseService.Locked"), -- (player)
 	Collected = Signal.new("BaseService.Collected"), -- (player, amount)
+	Intruded = Signal.new("BaseService.Intruded"), -- (player, base) was inside a locked base (pushed out; anti-cheat)
 	PlateStepped = Signal.new("BaseService.PlateStepped"), -- (player, "auto" | "lock") owner stepped on a plate
 	CastleGrew = Signal.new("BaseService.CastleGrew"), -- (player, level)
 	FeverStarted = Signal.new("BaseService.FeverStarted"), -- (player) pressed the DISCO FEVER button
@@ -144,6 +145,7 @@ function BaseService:SendHome(player)
 	local base = byPlayer[player]
 	local character = player.Character
 	if base and character and character:FindFirstChild("HumanoidRootPart") then
+		player:SetAttribute("AcGrace", os.clock() + 1.5)
 		character:PivotTo(base.world.homeCf)
 	end
 end
@@ -173,6 +175,16 @@ function BaseService:IsInside(base, pos)
 	local half = WorldBuilder.BASE_HALF
 	local p = base.world.cf:PointToObjectSpace(pos)
 	return math.abs(p.X) <= half.X + 0.5 and math.abs(p.Z) <= half.Z + 0.5 and p.Y < half.Y
+end
+
+-- Inside a base or flying above it (wings can't get over a locked base's walls).
+function BaseService:IsInsideOrAbove(base, pos)
+	if not pos then
+		return false
+	end
+	local half = WorldBuilder.BASE_HALF
+	local p = base.world.cf:PointToObjectSpace(pos)
+	return math.abs(p.X) <= half.X + 1 and math.abs(p.Z) <= half.Z + 1 and p.Y < half.Y + 80
 end
 
 function BaseService:InOwnBase(player)
@@ -269,6 +281,7 @@ function BaseService:Lock(player, extraSeconds, quiet)
 	end
 	Net.fire(player, "Sfx", "lock")
 	if not wasLocked then
+		base.lockedAt = now()
 		profile.stats.locks += 1
 		Net.fire(player, "Toast", "Door locked! 🔒 Stand on the pad to keep it locked.", "good")
 		self.Locked:Fire(player)
@@ -277,14 +290,30 @@ function BaseService:Lock(player, extraSeconds, quiet)
 	end
 end
 
+-- The red laser across the gate: solid while locked (nobody walks through), except for the owner and their friends
+-- (their own screens let them through: LockDoorController reads the AllowedUsers attribute).
 function BaseService:_drawLock(base)
 	local left = base.lockUntil - now()
+	local laser = base.world.laser
 	if left > 0 then
-		base.world.laser.Transparency = 0.35
+		laser.Transparency = 0.35
+		laser.CanCollide = true
 		base.world.signLines[2].Text = "🔒 LOCKED " .. Format.time(left)
 	elseif base.owner then
-		base.world.laser.Transparency = 1
+		laser.Transparency = 1
+		laser.CanCollide = false
 		base.world.signLines[2].Text = "🔓 OPEN"
+	end
+	local allowed = {}
+	if base.owner then
+		table.insert(allowed, tostring(base.owner.UserId))
+		for _, mate in team:Teammates(base.owner) do
+			table.insert(allowed, tostring(mate.UserId))
+		end
+	end
+	local list = "," .. table.concat(allowed, ",") .. ","
+	if laser:GetAttribute("AllowedUsers") ~= list then
+		laser:SetAttribute("AllowedUsers", list)
 	end
 end
 
@@ -436,8 +465,10 @@ function BaseService:_step()
 			local mine = byPlayer[player]
 			for _, base in bases do
 				if base.owner and base ~= mine and self:IsLocked(base) and not team:AreTeam(player, base.owner) then
-					if self:IsInside(base, pos) then
+					if self:IsInsideOrAbove(base, pos) then
+						self.Intruded:Fire(player, base)
 						local hrp = player.Character.HumanoidRootPart
+						player:SetAttribute("AcGrace", os.clock() + 1.5) -- our own teleport, not a cheat
 						hrp.CFrame = base.world.gateCf * CFrame.new(0, 3, -2) * CFrame.Angles(0, math.pi, 0)
 						if (lastBounceToast[player] or -99) < os.clock() - 2 then
 							lastBounceToast[player] = os.clock()

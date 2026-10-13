@@ -449,6 +449,23 @@ Base:Lock(a)
 go(b, Base:Get(a).world.cf.Position)
 Engine.advance(0.3)
 check("locked base bounces thieves", not Base:IsInside(Base:Get(a), b.Character.HumanoidRootPart.Position))
+check("locked gate laser is solid", Base:Get(a).world.laser.CanCollide == true)
+check(
+	"owner may pass their own laser",
+	string.find(Base:Get(a).world.laser:GetAttribute("AllowedUsers") or "", "," .. a.UserId .. ",", 1, true) ~= nil
+)
+do
+	local intruded = 0
+	local conn = Base.Intruded:Connect(function(p)
+		if p == b then
+			intruded += 1
+		end
+	end)
+	go(b, Base:Get(a).world.cf.Position + Vector3.new(0, 60, 0))
+	Engine.advance(0.3)
+	check("flying over a locked base bounces too", intruded > 0)
+	conn:Disconnect()
+end
 local m1 = nestModel(a, 1)
 go(b, Base:Get(a).world.gateCf.Position)
 trigger(b, m1, "steal")
@@ -1726,6 +1743,73 @@ do
 	check("portal: already the busiest server", not Fill:UsePortal(newcomer, false))
 	Fill.testMode = false
 	Engine.removePlayer(newcomer)
+	Engine.advance(0.5)
+end
+
+-- Anti-cheat ---------------------------------------------------------------------------------------------------
+do
+	local AC = service("AntiCheatService")
+	local flags = {}
+	local conn = AC.Flagged:Connect(function(p, kind, detail)
+		table.insert(flags, { p = p, kind = kind })
+	end)
+	local function flagged(p, kind)
+		for _, f in flags do
+			if f.p == p and f.kind == kind then
+				return true
+			end
+		end
+		return false
+	end
+	local cheater = join("Speedy", 7001)
+	local hrp = cheater.Character.HumanoidRootPart
+	Engine.moveTo(cheater, Vector3.new(0, 3, 0))
+	Engine.advance(3)
+	-- walking normally (16 studs a second) is fine
+	for _ = 1, 16 do
+		hrp.CFrame = hrp.CFrame + Vector3.new(4, 0, 0)
+		Engine.advance(0.25)
+	end
+	check("anti-cheat: walking is fine", not flagged(cheater, "speed") and not flagged(cheater, "teleport"))
+	-- a teleport hack: pulled back and flagged
+	local before = hrp.Position
+	hrp.CFrame = hrp.CFrame + Vector3.new(0, 0, 200)
+	Engine.advance(2.5)
+	check("anti-cheat: teleport flagged", flagged(cheater, "teleport"))
+	check("anti-cheat: pulled back", hrp.Position.Z < 20 and hrp.Position.X <= before.X, tostring(hrp.Position))
+	-- flying without wings
+	local ground = AC.groundDistance
+	AC.groundDistance = function()
+		return 40
+	end
+	Engine.advance(3.5)
+	AC.groundDistance = ground
+	check("anti-cheat: flying without wings flagged", flagged(cheater, "flying"))
+	-- spamming the server
+	for _ = 1, 120 do
+		Engine.fireServer(cheater, "Bonk")
+	end
+	Engine.advance(0.2)
+	check("anti-cheat: remote spam flagged", flagged(cheater, "spam"))
+	-- inside a locked base (noclip)
+	local owner = join("Lockie", 7002)
+	local ob = Base:Get(owner)
+	Base:Lock(owner)
+	ob.lockedAt = Engine.workspace:GetServerTimeNow() - 10
+	Engine.moveTo(cheater, ob.world.cf.Position + Vector3.new(0, 3, 0))
+	Engine.advance(0.3)
+	check("anti-cheat: noclip into a locked base flagged", flagged(cheater, "noclip"))
+	check("anti-cheat: honest owner clean", not flagged(owner, "speed") and not flagged(owner, "noclip"))
+	Engine.removePlayer(owner)
+	-- keep teleporting: kicked
+	for _ = 1, 6 do
+		Engine.advance(2.5)
+		hrp.CFrame = hrp.CFrame + Vector3.new(0, 0, 150)
+	end
+	Engine.advance(2.5)
+	check("anti-cheat: repeat cheater kicked", rawget(cheater, "_kicked") ~= nil)
+	conn:Disconnect()
+	Engine.removePlayer(cheater)
 	Engine.advance(0.5)
 end
 

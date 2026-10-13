@@ -79,6 +79,7 @@ end
 
 -- Server API -----------------------------------------------------------------------------------------------
 local buckets = {} -- [player][name] = { tokens, last }
+local dropHook -- fn(player, name): a client sent an event faster than its rate (the anti-cheat counts these)
 
 local function allow(player, name)
 	local rate = Net.ClientEvents[name]
@@ -116,6 +117,9 @@ function Net.on(name, handler)
 	assert(Net.ClientEvents[name], `not a client event: {name}`)
 	remote(name).OnServerEvent:Connect(function(player, ...)
 		if not allow(player, name) then
+			if dropHook then
+				pcall(dropHook, player, name)
+			end
 			return
 		end
 		local ok, err = xpcall(handler, debug.traceback, player, ...)
@@ -123,6 +127,11 @@ function Net.on(name, handler)
 			warn(`[Net {name}] {err}`)
 		end
 	end)
+end
+
+-- Called for every client event dropped for coming too fast (remote spam).
+function Net.onDrop(fn)
+	dropHook = fn
 end
 
 -- Watch every client → server event (analytics): fn(player, name, ...) runs for each one the client sends,

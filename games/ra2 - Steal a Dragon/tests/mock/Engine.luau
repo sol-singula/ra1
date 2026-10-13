@@ -1383,6 +1383,8 @@ end
 
 function Engine.moveTo(player, position, lookAt)
 	local hrp = player.Character.HumanoidRootPart
+	-- a test teleport is like one of the server's own: the anti-cheat lets it pass
+	player:SetAttribute("AcGrace", clock + 2.5)
 	if lookAt then
 		hrp.CFrame = CFrame.lookAt(position, v3(lookAt.X, position.Y, lookAt.Z))
 	else

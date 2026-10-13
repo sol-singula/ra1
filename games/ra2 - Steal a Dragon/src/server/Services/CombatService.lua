@@ -420,6 +420,7 @@ function CombatService:Bonk(attacker)
 		local push = (vp - pos)
 		push = Vector3.new(push.X, 0, push.Z)
 		push = push.Magnitude > 0.1 and push.Unit or Vector3.new(0, 0, 1)
+		victim:SetAttribute("AcGrace", os.clock() + 2.5) -- knocked flying: not speed hacking
 		hrp.AssemblyLinearVelocity = push * knock + Vector3.new(0, 20 + knock * 0.15, 0)
 	end
 	hitFx(victim.Character, seconds)

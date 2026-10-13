@@ -31,6 +31,7 @@ local GameLogService = {
 		"RewardService",
 		"RoadService",
 		"ServerFillService",
+		"AntiCheatService",
 	},
 }
 
@@ -213,6 +214,33 @@ function GameLogService:Init(registry)
 				url = profileUrl(player),
 			})
 		end
+	end)
+	-- the anti-cheat: each kind of flag at most once a minute per player, and every kick
+	local lastFlag = {}
+	registry.AntiCheatService.Flagged:Connect(function(player, kind, detail, strikes)
+		local key = player.UserId .. kind
+		if (lastFlag[key] or -99) > os.clock() - 60 then
+			return
+		end
+		lastFlag[key] = os.clock()
+		GameLogService.log({
+			emoji = "🚨",
+			title = `Anti-cheat: {who(player)} flagged for {kind}`,
+			color = COLORS.leave,
+			url = profileUrl(player),
+			fields = {
+				{ name = "What", value = tostring(detail) },
+				{ name = "Strikes", value = `{strikes} / {Constants.AC_KICK_STRIKES}` },
+			},
+		})
+	end)
+	registry.AntiCheatService.Kicked:Connect(function(player, reason)
+		GameLogService.log({
+			emoji = "⛔",
+			title = `Anti-cheat KICKED {who(player)}: {reason}`,
+			color = COLORS.leave,
+			url = profileUrl(player),
+		})
 	end)
 	baseService.FeverStarted:Connect(function(player)
 		GameLogService.log({ emoji = "🪩", title = `{who(player)} started DISCO FEVER`, color = COLORS.event })

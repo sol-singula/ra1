@@ -48,6 +48,7 @@ local AnalyticsService = {
 		"LeaderboardService",
 		"NpcService",
 		"ToolService",
+		"AntiCheatService",
 		"ServerFillService",
 	},
 }
@@ -327,6 +328,12 @@ function AnalyticsService:Init(registry)
 	fill = registry.ServerFillService
 	local shop = registry.ShopService
 	local combat = registry.CombatService
+	registry.AntiCheatService.Flagged:Connect(function(player, kind, detail, strikes)
+		track(player, "cheat_" .. kind, { detail = detail, strikes = strikes })
+	end)
+	registry.AntiCheatService.Kicked:Connect(function(player, reason)
+		track(player, "cheat_kicked", { reason = reason })
+	end)
 
 	Players.PlayerAdded:Connect(begin)
 	for _, p in Players:GetPlayers() do

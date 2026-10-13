@@ -289,4 +289,15 @@ Constants.ARENA_RESPAWN_SECONDS = 1.5 -- bonked: back in after this long
 Constants.ARENA_SPAWN_SAFE = 2.5 -- a shield after respawning, so nobody gets bonked the moment they land
 Constants.ARENA_RADIUS = 70
 
+-- Anti-cheat (AntiCheatService): strikes for impossible movement, flying without wings, getting inside a locked
+-- base and spamming the server; strikes fade over time and too many in a row gets you kicked.
+Constants.AC_KICK_STRIKES = 12 -- strikes that get you kicked
+Constants.AC_DECAY_SECONDS = 20 -- one strike fades every this many seconds
+Constants.AC_WINDOW = 2 -- movement is judged over this many seconds (smooths out lag)
+Constants.AC_SPEED_SLACK = 1.35 -- allowed speed = the fastest you can legitimately go x this ...
+Constants.AC_SPEED_EXTRA = 8 -- ... + this (studs per second)
+Constants.AC_AIR_SECONDS = 2.5 -- hovering high off the ground without wings this long = flying
+Constants.AC_AIR_HEIGHT = 14 -- studs above the ground that count as "high"
+Constants.AC_SPAM_DROPS = 25 -- dropped (too fast) server requests per strike
+
 return Constants

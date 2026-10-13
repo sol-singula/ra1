@@ -379,7 +379,7 @@ local function buildBase(parent, index, cf)
 		})
 	end
 	for _, side in { -1, 1 } do
-		Scenery.tower(levels[4], pos(side * BASE_W / 2, 0, -BASE_D / 2), 4, 12, STONE, color, color)
+		Scenery.tower(levels[4], pos(side * BASE_W / 2, 0, -BASE_D / 2), 5.5, 18, STONE, color, color)
 	end
 	-- gate posts hold up the gate arch (and its name sign) at every level
 	for _, side in { -1, 1 } do
@@ -415,7 +415,7 @@ local function buildBase(parent, index, cf)
 	})
 	local laser = part({
 		Name = "Laser",
-		Size = Vector3.new(15, 10.4, 0.4),
+		Size = Vector3.new(15.6, 10.4, 2), -- thick enough that nobody slips through it
 		CFrame = at(0, 5.6, -BASE_D / 2),
 		Color = rgb(255, 50, 60),
 		Material = Enum.Material.Neon,
@@ -531,7 +531,6 @@ local function buildBase(parent, index, cf)
 			Parent = levels[3],
 		})
 	end
-	Scenery.tower(levels[4], pos(0, 0, BASE_D / 2 + 7), 10, 20, STONE, color, color)
 	-- Level 5: the side and back walls rise a whole storey, with a coloured band and their own battlements
 	local UPPER = 4.5
 	for _, w in
@@ -574,7 +573,7 @@ local function buildBase(parent, index, cf)
 	end
 	-- Level 6: the back towers rise into tall spires, and a great arch with banners stands over the gate
 	for _, side in { -1, 1 } do
-		Scenery.tower(levels[6], pos(side * BASE_W / 2, 0, BASE_D / 2), 5, 22, STONE, color, rgb(255, 205, 60))
+		Scenery.tower(levels[6], pos(side * BASE_W / 2, 0, BASE_D / 2), 7.5, 34, STONE, color, rgb(255, 205, 60))
 	end
 	part({
 		Name = "GreatArch",
@@ -604,81 +603,145 @@ local function buildBase(parent, index, cf)
 			Parent = levels[6],
 		})
 	end
-	-- Level 7: a grand hall behind the castle with twin spires and a glowing crystal crown
-	part({
-		Name = "GrandHall",
-		Size = Vector3.new(30, 18, 10),
-		CFrame = at(0, 9, BASE_D / 2 + 6),
-		Color = STONE,
-		Material = Enum.Material.Cobblestone,
-		Parent = levels[7],
-	})
-	part({
-		Name = "GrandHallRoof",
-		Size = Vector3.new(32, 1.6, 12),
-		CFrame = at(0, 18.8, BASE_D / 2 + 6),
-		Color = color,
-		Parent = levels[7],
-	})
-	for _, side in { -1, 1 } do
-		Scenery.tower(levels[7], pos(side * 12, 0, BASE_D / 2 + 9), 6, 30, STONE, color, rgb(255, 205, 60))
-	end
-	for i = -3, 3 do
+	-- The GREAT KEEP behind the courtyard: it rises one huge tier per castle level from level 3 (a two-storey hall)
+	-- to level 7 (five tiers, ~65 studs), and at level 8 gets a golden roof, a crown spire and a glowing gem at ~100
+	-- studs, so a strong player's castle towers over the map. Each tier is narrower than the one below, with a
+	-- coloured band, battlements along its ledge, glowing windows and turrets on its front corners.
+	local KEEP_Z = BASE_D / 2 + 12.5
+	local TIERS = { -- { level, width, depth, height }
+		{ 3, 40, 23, 14 },
+		{ 4, 32, 19, 13 },
+		{ 5, 25, 16, 13 },
+		{ 6, 19, 13, 12 },
+		{ 7, 14, 10, 12 },
+	}
+	local GOLD = rgb(255, 200, 60)
+	local keepY = 0
+	for t, tier in TIERS do
+		local lv, w, d, h = tier[1], tier[2], tier[3], tier[4]
+		local m = levels[lv]
+		local cy = keepY + h / 2
 		part({
-			Name = "HallWindow",
-			Size = Vector3.new(1.6, 4, 0.2),
-			CFrame = at(i * 4, 10, BASE_D / 2 + 0.95),
-			Color = rgb(255, 200, 110),
-			Material = Enum.Material.Neon,
+			Name = "KeepTier",
+			Size = Vector3.new(w, h, d),
+			CFrame = at(0, cy, KEEP_Z),
+			Color = STONE,
+			Material = Enum.Material.Cobblestone,
+			Parent = m,
+		})
+		part({
+			Name = "KeepPlinth",
+			Size = Vector3.new(w + 0.6, 1.4, d + 0.6),
+			CFrame = at(0, keepY + 0.7, KEEP_Z),
+			Color = STONE_DARK,
+			Material = Enum.Material.Cobblestone,
 			CastShadow = false,
+			Parent = m,
+		})
+		part({
+			Name = "KeepBand",
+			Size = Vector3.new(w + 0.3, 1.6, d + 0.3),
+			CFrame = at(0, keepY + h - 1.6, KEEP_Z),
+			Color = color,
+			CastShadow = false,
+			Parent = m,
+		})
+		part({
+			Name = "KeepTrim",
+			Size = Vector3.new(w + 0.5, 0.5, d + 0.5),
+			CFrame = at(0, keepY + h - 0.45, KEEP_Z),
+			Color = GOLD,
+			Material = Enum.Material.Foil,
+			CastShadow = false,
+			Parent = m,
+		})
+		-- battlements along the front and side edges of the ledge
+		local top = keepY + h + 0.8
+		for x = -w / 2 + 1, w / 2 - 1, 4 do
+			part({
+				Name = "KeepMerlon",
+				Size = Vector3.new(1.8, 1.6, 1.4),
+				CFrame = at(x, top, KEEP_Z - d / 2 + 0.7),
+				Color = STONE,
+				Material = Enum.Material.Cobblestone,
+				CastShadow = false,
+				Parent = m,
+			})
+		end
+		for _, side in { -1, 1 } do
+			for z = -d / 2 + 4, d / 2 - 1, 4 do
+				part({
+					Name = "KeepMerlon",
+					Size = Vector3.new(1.4, 1.6, 1.8),
+					CFrame = at(side * (w / 2 - 0.7), top, KEEP_Z + z),
+					Color = STONE,
+					Material = Enum.Material.Cobblestone,
+					CastShadow = false,
+					Parent = m,
+				})
+			end
+		end
+		-- tall glowing windows on the face that looks over the courtyard (arched with a dark frame)
+		local n = math.max(2, math.floor(w / 7))
+		for i = 1, n do
+			local x = -w / 2 + w * (i - 0.5) / n
+			part({
+				Name = "KeepWindowFrame",
+				Size = Vector3.new(2.6, h * 0.5 + 0.6, 0.3),
+				CFrame = at(x, keepY + h * 0.55, KEEP_Z - d / 2 - 0.1),
+				Color = STONE_DARK,
+				CastShadow = false,
+				CanCollide = false,
+				Parent = m,
+			})
+			part({
+				Name = "KeepWindow",
+				Size = Vector3.new(1.8, h * 0.5, 0.3),
+				CFrame = at(x, keepY + h * 0.55, KEEP_Z - d / 2 - 0.2),
+				Color = rgb(255, 205, 120),
+				Material = Enum.Material.Neon,
+				CastShadow = false,
+				CanCollide = false,
+				Parent = m,
+			})
+		end
+		-- turrets on the front corners of the odd tiers (they stand on the ledge the next tier leaves free)
+		if t % 2 == 1 then
+			for _, side in { -1, 1 } do
+				Scenery.tower(m, pos(side * (w / 2 - 1.8), keepY + h, KEEP_Z - d / 2 + 1.8), 3.4, 5, STONE, color, GOLD)
+			end
+		end
+		keepY += h
+	end
+	-- Level 7: two great spires rise beside the keep, taller than anything on the road
+	for _, side in { -1, 1 } do
+		Scenery.tower(levels[7], pos(side * 18, 0, KEEP_Z + 4), 7, 50, STONE, color, GOLD)
+		part({
+			Name = "SpireBanner",
+			Size = Vector3.new(4.5, 12, 0.3),
+			CFrame = at(side * 18, 34, KEEP_Z + 4 - 3.8),
+			Color = color,
+			Material = Enum.Material.Fabric,
+			CastShadow = false,
+			CanCollide = false,
 			Parent = levels[7],
 		})
 	end
-	part({
-		Name = "CrystalCrown",
-		Size = Vector3.new(3, 6, 3),
-		CFrame = at(0, 26, BASE_D / 2 + 6) * CFrame.Angles(0, math.rad(45), 0),
-		Color = color:Lerp(rgb(255, 255, 255), 0.3),
-		Material = Enum.Material.Neon,
-		Transparency = 0.2,
-		CastShadow = false,
-		CanCollide = false,
-		Parent = levels[7],
-	})
-	-- Level 8: everything turns to legend: golden spires on the gate, a golden dome on the hall with a crown
-	-- spire and gem on top, and great banners
-	part({
-		Name = "GoldenDome",
-		Shape = Enum.PartType.Ball,
-		Size = Vector3.new(14, 14, 14),
-		CFrame = at(0, 19, BASE_D / 2 + 6),
-		Color = rgb(255, 200, 60),
-		Material = Enum.Material.Foil,
-		Parent = levels[8],
-	})
-	for _, side in { -1, 1 } do
-		part({
-			Name = "GoldSpire",
-			Size = Vector3.new(1.4, 9, 1.4),
-			CFrame = at(side * 13, 21.5, -BASE_D / 2 - 0.5),
-			Color = rgb(255, 200, 60),
-			Material = Enum.Material.Foil,
-			Parent = levels[8],
-		})
-	end
-	-- the crown: a tall golden spire on the dome with a glowing gem, and great banners on the hall towers
+	-- Level 8: LEGEND. A golden pyramid roof on the keep, a crown spire with a huge glowing gem on top, golden
+	-- spires on the gate arch and great banners down the keep's face
+	Scenery.cone(levels[8], "GoldRoof", pos(0, keepY, KEEP_Z), 15, 12, GOLD, 5, Enum.Material.Foil)
 	part({
 		Name = "CrownSpire",
-		Size = Vector3.new(2, 14, 2),
-		CFrame = at(0, 32, BASE_D / 2 + 6),
-		Color = rgb(255, 200, 60),
+		Size = Vector3.new(2, 18, 2),
+		CFrame = at(0, keepY + 18, KEEP_Z),
+		Color = GOLD,
 		Material = Enum.Material.Foil,
 		Parent = levels[8],
 	})
 	part({
 		Name = "CrownGem",
-		Size = Vector3.new(3.2, 3.2, 3.2),
-		CFrame = at(0, 40.5, BASE_D / 2 + 6) * CFrame.Angles(math.rad(45), math.rad(45), 0),
+		Size = Vector3.new(5, 5, 5),
+		CFrame = at(0, keepY + 29, KEEP_Z) * CFrame.Angles(math.rad(45), math.rad(45), 0),
 		Color = color:Lerp(rgb(255, 255, 255), 0.25),
 		Material = Enum.Material.Neon,
 		CastShadow = false,
@@ -687,9 +750,17 @@ local function buildBase(parent, index, cf)
 	})
 	for _, side in { -1, 1 } do
 		part({
+			Name = "GoldSpire",
+			Size = Vector3.new(1.4, 9, 1.4),
+			CFrame = at(side * 13, 21.5, -BASE_D / 2 - 0.5),
+			Color = GOLD,
+			Material = Enum.Material.Foil,
+			Parent = levels[8],
+		})
+		part({
 			Name = "GreatBanner",
-			Size = Vector3.new(0.3, 9, 4.5),
-			CFrame = at(side * 12, 22, BASE_D / 2 + 3.3) * CFrame.Angles(0, math.rad(90), 0),
+			Size = Vector3.new(5, 26, 0.3),
+			CFrame = at(side * 9, 30, KEEP_Z - 23 / 2 + 2.2),
 			Color = color,
 			Material = Enum.Material.Fabric,
 			CastShadow = false,
@@ -702,11 +773,11 @@ local function buildBase(parent, index, cf)
 		{ text = "EMPTY BASE", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy },
 		{ text = "", h = 0.4, y = 0.6, color = rgb(255, 230, 120) },
 	}, 110)
-	-- beacon so you can find your base: a glowing crystal over the back-left tower
+	-- beacon so you can find your base: a glowing crystal high over the back-left tower
 	local beacon = part({
 		Name = "Beacon",
 		Size = Vector3.new(2.2, 3.6, 2.2),
-		CFrame = at(-BASE_W / 2, 26, BASE_D / 2) * CFrame.Angles(0, math.rad(45), 0),
+		CFrame = at(-BASE_W / 2, 52, BASE_D / 2) * CFrame.Angles(0, math.rad(45), 0),
 		Color = color,
 		Material = Enum.Material.Neon,
 		Transparency = 0.6,
@@ -1049,7 +1120,7 @@ local function clear(x, z)
 		return false -- the exit tunnel and its hill
 	end
 	for _, bx in BASE_XS do
-		if math.abs(x - bx) < BASE_W / 2 + 6 and math.abs(z) > 12 and math.abs(z) < BASE_Z + BASE_D / 2 + 16 then
+		if math.abs(x - bx) < BASE_W / 2 + 6 and math.abs(z) > 12 and math.abs(z) < BASE_Z + BASE_D / 2 + 34 then -- (and the keep behind)
 			return false
 		end
 	end

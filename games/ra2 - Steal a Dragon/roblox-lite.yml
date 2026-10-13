@@ -20,6 +20,7 @@ globals:
   Enum: { any: true }
   Random: { any: true }
   TweenInfo: { any: true }
+  RaycastParams: { any: true }
   task: { any: true }
   typeof: { any: true }
   warn: { any: true }
