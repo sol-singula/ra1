@@ -1,0 +1,4 @@
+tools/luaurun/target/*
+!tools/luaurun/target/release/
+tools/luaurun/target/release/*
+!tools/luaurun/target/release/luaurun
