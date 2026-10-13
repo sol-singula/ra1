@@ -24,5 +24,6 @@ globals:
   typeof: { any: true }
   warn: { any: true }
   tick: { any: true }
+  UserSettings: { any: true }
   loadModule: { any: true }
   ARGS: { any: true }

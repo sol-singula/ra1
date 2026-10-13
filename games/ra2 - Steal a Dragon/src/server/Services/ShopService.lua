@@ -29,6 +29,7 @@ local ShopService = {
 		"ToolService",
 	},
 	Purchased = Signal.new("ShopService.Purchased"), -- (player, name, robux) a real Robux purchase went through
+	Prompted = Signal.new("ShopService.Prompted"), -- (player, kind "pass"|"product", key) a purchase prompt opened
 }
 
 local data, economy, dragons, baseService, road, reward, tools
@@ -169,6 +170,7 @@ function ShopService:PromptPass(player, key)
 		end
 		return
 	end
+	self.Prompted:Fire(player, "pass", key)
 	MarketplaceService:PromptGamePassPurchase(player, pass.id)
 end
 
@@ -185,6 +187,7 @@ function ShopService:PromptProduct(player, key, target)
 		end
 		return
 	end
+	self.Prompted:Fire(player, "product", key)
 	MarketplaceService:PromptProductPurchase(player, product.id)
 end
 

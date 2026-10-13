@@ -186,7 +186,7 @@ function RoadService:_give(player, entry)
 	profile.stats.bought += 1
 	Net.fire(player, "Toast", "Got it! Run to your base! 🏠", "good")
 	Net.fire(player, "Sfx", "buy")
-	self.Bought:Fire(player, entry.id)
+	self.Bought:Fire(player, entry.id, entry.price, entry.sp)
 end
 
 -- Robux "Buy Now": returns true if the dragon was still there.

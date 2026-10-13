@@ -4,10 +4,13 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Net = require(ReplicatedStorage.Shared.Net)
+local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local TutorialService = {
 	Name = "TutorialService",
 	Dependencies = { "PlayerDataService", "DragonService", "BaseService", "RoadService", "RewardService" },
+	StepShown = Signal.new("TutorialService.StepShown"), -- (player, step, total, text) a goal appeared
+	Finished = Signal.new("TutorialService.Finished"), -- (player, skipped)
 }
 
 local data, dragons, baseService, road, reward
@@ -150,6 +153,7 @@ function TutorialService:_finish(player, skipped)
 		return
 	end
 	profile.tutorialDone = true
+	self.Finished:Fire(player, skipped == true)
 	Net.fire(player, "Tutorial", false)
 	reward:GiveEgg(player)
 	reward:PushAll(player)
@@ -184,6 +188,7 @@ function TutorialService:_tick(player)
 		s.sent = s.step
 		setGlow(s, step.glow and step.glow(player) or nil)
 		Net.fire(player, "Tutorial", { step = s.step, total = #STEPS, text = step.text, target = step.target(player) })
+		self.StepShown:Fire(player, s.step, #STEPS, step.text)
 	end
 end
 

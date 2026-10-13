@@ -18,6 +18,7 @@ Net.ClientEvents = {
 	Purchase = 2, -- (kind "pass"|"product", key, target?) the server opens Roblox's purchase prompt
 	BuySkin = 2, -- (skinKey) coin skins are bought, Robux skins open their purchase prompt
 	EquipSkin = 2, -- (skinKey)
+	Analytics = 4, -- (kind, data) device info, button taps, frame rate, window focus (AnalyticsService)
 }
 
 -- Server → client.
@@ -113,6 +114,16 @@ function Net.on(name, handler)
 			warn(`[Net {name}] {err}`)
 		end
 	end)
+end
+
+-- Watch every client → server event (analytics): fn(player, name, ...) runs for each one the client sends,
+-- alongside the real handler. Never changes what the handlers do.
+function Net.tap(fn)
+	for name in Net.ClientEvents do
+		remote(name).OnServerEvent:Connect(function(player, ...)
+			pcall(fn, player, name, ...)
+		end)
+	end
 end
 
 function Net.fire(player, name, ...)

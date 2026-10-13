@@ -992,8 +992,18 @@ function Engine.untagAll(inst)
 end
 _ = CollectionService
 
+-- ProximityPromptService (tests fire PromptTriggered themselves)
+local ProximityPromptService = service("ProximityPromptService")
+rawset(ProximityPromptService, "_signals", { PromptTriggered = newSignal() })
+_ = ProximityPromptService
+
 -- HttpService (JSON)
 local HttpService = service("HttpService")
+local guidN = 0
+function methods.GenerateGUID()
+	guidN += 1
+	return string.format("00000000-0000-4000-8000-%012d", guidN)
+end
 local function encode(v)
 	local t = type(v)
 	if t == "nil" then

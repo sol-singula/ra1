@@ -55,6 +55,22 @@ GameLog.send = function(payload)
 	end
 	return true
 end
+-- analytics batches are captured here instead of going to Supabase
+local Analytics = service("AnalyticsService")
+local aEvents, aSessions = {}, {} -- every event; session rows merged by id
+Analytics.send = function(payload)
+	for _, e in payload.events do
+		table.insert(aEvents, e)
+	end
+	for _, row in payload.sessions do
+		local merged = aSessions[row.session_id] or {}
+		for k, v in row do
+			merged[k] = v
+		end
+		aSessions[row.session_id] = merged
+	end
+	return true
+end
 local ShopData = Engine.require(tree.shared.Data.Shop)
 -- every real item has its own Roblox ID (set by tools/setup_shop.py)
 do
@@ -1231,6 +1247,69 @@ Engine.removePlayer(leaver)
 Engine.advance(Constants.GAME_LOG_FLUSH_SECONDS + 0.5)
 local leaveLog = logWith(" left")
 check("game log: leave with stats", leaveLog ~= nil and #leaveLog.fields >= 10, leaveLog and #leaveLog.fields)
+
+-- Analytics: sessions and everything players did ---------------------------------------------------------------
+Engine.advance(Constants.ANALYTICS_FLUSH_SECONDS + 1)
+local function eventsOf(kind)
+	local out = {}
+	for _, e in aEvents do
+		if e.kind == kind then
+			table.insert(out, e)
+		end
+	end
+	return out
+end
+check("analytics: joins", #eventsOf("join") >= 3)
+check("analytics: save loaded, with load time", #eventsOf("loaded") >= 3 and eventsOf("loaded")[1].data.seconds ~= nil)
+check("analytics: tutorial goals", #eventsOf("tutorial_step") >= 2 and eventsOf("tutorial_step")[1].data.step == 1)
+check(
+	"analytics: dragons bought, with rarity and price",
+	#eventsOf("buy_dragon") >= 1 and eventsOf("buy_dragon")[1].data.price ~= nil
+)
+check("analytics: steals and the robbed side", #eventsOf("placed_stolen") >= 1 and #eventsOf("got_robbed") >= 1)
+check("analytics: client requests", #eventsOf("req_lock") + #eventsOf("req_bonk") + #eventsOf("req_purchase") >= 1)
+check("analytics: minute snapshots", #eventsOf("snapshot") >= 1 and eventsOf("snapshot")[1].data.coins ~= nil)
+local leaveRow
+for _, row in aSessions do
+	if row.end_reason == "left" then
+		leaveRow = row
+	end
+end
+check(
+	"analytics: a session row ends with a summary",
+	leaveRow ~= nil and leaveRow.duration_s ~= nil and leaveRow.summary ~= nil
+)
+check(
+	"analytics: the summary has the last actions and counts",
+	leaveRow and #leaveRow.summary.last_actions >= 1 and leaveRow.summary.counts ~= nil
+)
+local firstRow
+for _, row in aSessions do
+	if row.session_no == 1 then
+		firstRow = row
+	end
+end
+check(
+	"analytics: session number and start progress",
+	firstRow ~= nil and firstRow.start ~= nil and firstRow.is_new ~= nil
+)
+-- the client's device info and button taps arrive through the Analytics remote
+local someone = Engine.Players:GetPlayers()[1]
+Engine.fireServer(someone, "Analytics", "client_info", { device = "touch", screen = "844x390" })
+Engine.fireServer(someone, "Analytics", "ui", { taps = { ShopButton = 3 } })
+Engine.advance(Constants.ANALYTICS_FLUSH_SECONDS + 1)
+check(
+	"analytics: device on the session row",
+	(function()
+		for _, row in aSessions do
+			if row.device == "touch" and row.screen == "844x390" then
+				return true
+			end
+		end
+		return false
+	end)()
+)
+check("analytics: button taps", #eventsOf("ui") >= 1 and eventsOf("ui")[1].data.taps.ShopButton == 3)
 
 -- Shutdown ----------------------------------------------------------------------------------------------------
 for _, fn in Engine.closeHandlers do
