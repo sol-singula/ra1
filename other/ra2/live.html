@@ -154,7 +154,8 @@
   function render() {
     if (!state) { app.innerHTML = `<div class="empty">Loading…${error ? `<br><span class="err">${esc(error)}</span>` : ""}</div>`; return; }
     const servers = state.servers || [];
-    const online = servers.reduce((a, s) => a + s.players.length, 0);
+    const countOf = (s) => Math.max(s.players.length, s.reported_players || 0);
+    const online = servers.reduce((a, s) => a + countOf(s), 0);
     const t = state.today || {};
     const stale = Date.now() - lastOk > REFRESH_MS * 3;
     app.innerHTML = `
@@ -171,10 +172,13 @@
       <h2>Servers <span class="count">${servers.length}</span></h2>
       ${servers.length ? `<div class="servers">${servers.map((s) => `
         <div class="server"><div class="server-head"><span class="name">${s.server_no != null ? "Server " + s.server_no : "Server ?"}</span>
-          <span class="chip">${s.players.length} / ${MAX_PLAYERS}</span>${s.version ? `<span class="chip">v${s.version}</span>` : ""}
+          <span class="chip">${countOf(s)} / ${MAX_PLAYERS}</span>${s.version ? `<span class="chip">v${s.version}</span>` : ""}
           <span class="spacer"></span><span class="mini" title="${esc(s.job_id)}">${esc(String(s.job_id).slice(0, 8))}</span></div>
-          <div class="fill"><div style="width:${Math.min(100, s.players.length / MAX_PLAYERS * 100)}%"></div></div>
-          <div class="players">${s.players.sort((a, b) => new Date(a.started_at) - new Date(b.started_at)).map(playerRow).join("")}</div></div>`).join("")}</div>`
+          <div class="fill"><div style="width:${Math.min(100, countOf(s) / MAX_PLAYERS * 100)}%"></div></div>
+          <div class="players">${s.players.sort((a, b) => new Date(a.started_at) - new Date(b.started_at)).map(playerRow).join("")}
+            ${countOf(s) > s.players.length ? `<div class="p"><div class="avatar"></div><div class="who"><div class="dn">${countOf(s) - s.players.length} more player${countOf(s) - s.players.length > 1 ? "s" : ""}</div>
+              <div class="un">This server runs an older version${s.version ? " (v" + s.version + ")" : ""}, so names aren't sent. They show once it restarts.</div></div><div></div></div>` : ""}
+            ${s.last_seen ? `<div class="p" style="grid-template-columns:1fr"><div class="mini">Last heard from ${dur(ago(s.last_seen))} ago</div></div>` : ""}</div></div>`).join("")}</div>`
         : `<div class="empty">Nobody is playing right now.</div>`}
       <h2>Just left</h2>
       ${(state.recent || []).length ? `<div class="scroll"><table><thead><tr><th>Player</th><th>Server</th><th>Played</th><th>Earned</th><th>Left</th><th>Last things they did</th></tr></thead><tbody>
