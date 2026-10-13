@@ -17,6 +17,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local MapBuilder = require(script.Parent.Parent.World.MapBuilder)
+local AvatarStatue = require(script.Parent.Parent.World.AvatarStatue)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
 local isRobot = Fighter.isRobot
@@ -58,6 +59,16 @@ local function realPlayers()
 		end
 	end
 	return n
+end
+
+local function statueFolder()
+	local f = workspace:FindFirstChild("Statues")
+	if not f then
+		f = Instance.new("Folder")
+		f.Name = "Statues"
+		f.Parent = workspace
+	end
+	return f
 end
 
 local function color3(t)
@@ -510,21 +521,25 @@ function RoundService:EndRound()
 	if registryRef.RobotService then
 		registryRef.RobotService:Clear()
 	end
-	-- everyone back to the lobby; the podium players on their steps
+	-- everyone back to the lobby, in front of the podium, where the top 3's avatars dance (until the next round
+	-- ends, so everyone who joins later sees the last winners too)
 	local spots = WorldBuilder.layout.podium.spots
-	local onPodium = {}
-	for i, r in podium do
-		onPodium[r.fighter] = i
+	for i = 1, 3 do
+		local r = podium[i]
+		local s = spots[i]
+		local emote = r and loadout:Emote(r.fighter)
+		AvatarStatue.place(
+			statueFolder(),
+			"Podium" .. i,
+			r and r.userId or nil,
+			CFrame.lookAt(s, s + Vector3.new(0, 0, 10)),
+			emote and emote.anim or AvatarStatue.DANCES[i]
+		)
 	end
 	for _, p in Players:GetPlayers() do
 		if combat.zone(p) == "arena" then
-			local i = onPodium[p]
-			if i then
-				local s = spots[i]
-				toLobby(p, CFrame.lookAt(s + Vector3.new(0, 3, 0), s + Vector3.new(0, 3, 10)))
-			else
-				toLobby(p, CFrame.new(math.random(-12, 12), 3, -28 + math.random(-4, 4)))
-			end
+			local at = Vector3.new(math.random(-12, 12), 3, -30 + math.random(-4, 4))
+			toLobby(p, CFrame.lookAt(at, Vector3.new(0, 3, -52)))
 		end
 		p:SetAttribute("Crown", nil)
 	end
@@ -536,9 +551,6 @@ function RoundService:EndRound()
 	local list = {}
 	for i, r in podium do
 		table.insert(list, { name = r.name, userId = r.userId, pops = r.pops, rank = i })
-		if not r.robot then
-			self:_playEmote(r.fighter)
-		end
 	end
 	crownHolder = nil
 	self.state = "podium"
@@ -554,26 +566,6 @@ end
 
 function RoundService:LastRanking()
 	return lastRanking
-end
-
--- The podium emote (Roblox's own emote animations; the animation replicates from the server).
-function RoundService:_playEmote(player)
-	local emote = loadout:Emote(player)
-	local c = player.Character
-	local hum = c and c:FindFirstChildOfClass("Humanoid")
-	local animator = hum and hum:FindFirstChildOfClass("Animator")
-	if not animator or not emote then
-		return
-	end
-	pcall(function()
-		local anim = Instance.new("Animation")
-		anim.AnimationId = emote.anim
-		local track = animator:LoadAnimation(anim)
-		track:Play()
-		task.delay(Constants.PODIUM_SECONDS, function()
-			track:Stop()
-		end)
-	end)
 end
 
 function RoundService:_wait()

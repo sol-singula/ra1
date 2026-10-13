@@ -190,7 +190,15 @@ local function leaderboard(parent, cf, title, color)
 		Text = "",
 		TextColor3 = rgb(200, 200, 215),
 	})
-	return { rows = rows, sub = sub, timer = timer, part = board }
+	-- a little stage on top, where the board's #1 dances
+	part({
+		Name = "Stage",
+		Size = Vector3.new(8, 0.8, 5),
+		CFrame = cf * CFrame.new(0, 22.9, 0),
+		Color = color,
+		Parent = parent,
+	})
+	return { rows = rows, sub = sub, timer = timer, part = board, top = cf * CFrame.new(0, 23.3, 0) }
 end
 
 -- A kiosk: a counter with an awning, a big sign, and a prompt. Faces `facing`.

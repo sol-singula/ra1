@@ -16,6 +16,7 @@ local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local AvatarStatue = require(script.Parent.Parent.World.AvatarStatue)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
 local LeaderboardService = {
@@ -87,6 +88,17 @@ local lastRefresh = -math.huge
 local liveDaily = {} -- this server's daily rows at the last redraw (to pick a winner without DataStores)
 local topThree = {} -- [boardKey] = { [rank] = userId } at the last redraw, to announce new top-3 players
 local onBoard = {} -- [boardKey] = { [userId] = rank } everyone on the board at the last redraw
+local statueOf = {} -- [boardKey] = userId dancing on top of the board
+
+local function statueFolder()
+	local f = workspace:FindFirstChild("Statues")
+	if not f then
+		f = Instance.new("Folder")
+		f.Name = "Statues"
+		f.Parent = workspace
+	end
+	return f
+end
 
 local function store(board)
 	if board.daily then
@@ -176,6 +188,19 @@ function LeaderboardService:Redraw()
 			local r = rows[i]
 			row.name.Text = r and r.name or ""
 			row.value.Text = r and board.fmt(r.value) or ""
+		end
+		-- the #1 dances on top of the board
+		local first = rows[1]
+		local topId = first and first.value > 0 and first.id or nil
+		if view.top and topId ~= statueOf[board.key] then
+			statueOf[board.key] = topId
+			AvatarStatue.place(
+				statueFolder(),
+				"Top_" .. board.key,
+				topId,
+				view.top,
+				AvatarStatue.DANCES[(#board.key % 3) + 1]
+			)
 		end
 	end
 	local timer = WorldBuilder.layout.boards.daily.timer

@@ -1493,6 +1493,35 @@ function Engine.makeCharacter(player)
 	return character
 end
 
+-- Players:CreateHumanoidModelFromUserId: a stand-in avatar (the same blocky body), not parented
+function methods.CreateHumanoidModelFromUserId(_, userId)
+	local character = Instance.new("Model")
+	character.Name = "Avatar" .. tostring(userId)
+	local hrp = Instance.new("Part", character)
+	hrp.Name = "HumanoidRootPart"
+	hrp.Size = v3(2, 2, 1)
+	hrp.Transparency = 1
+	hrp.CFrame = CFrame.new(0, 3, 0)
+	for _, spec in AVATAR do
+		local part = Instance.new("Part", character)
+		part.Name = spec[1]
+		part.Size = spec[2]
+		part.CFrame = hrp.CFrame * CFrame.new(spec[3])
+		local c = AVATAR_COLORS[spec[4]]
+		part.Color = Color3.fromRGB(c[1], c[2], c[3])
+		part.Material = Enum.Material.SmoothPlastic
+		local w = Instance.new("WeldConstraint")
+		w.Part0 = hrp
+		w.Part1 = part
+		w.Parent = part
+	end
+	local hum = Instance.new("Humanoid", character)
+	hum.Name = "Humanoid"
+	hum.HipHeight = 2
+	character.PrimaryPart = hrp
+	return character
+end
+
 function Engine.addPlayer(name, userId, launchData)
 	nextUserId += 1
 	local p = Instance.new("Player")

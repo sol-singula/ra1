@@ -153,8 +153,42 @@ function LoadoutService:Push(player)
 	end
 end
 
--- The rifle in your hands, everywhere (the lobby too, so you can carry it to the Range). It only fires on the
--- Range, in a round and in a duel.
+-- The rifle: in your hands where you can shoot (the Range, a round, a duel), on your back everywhere else, so in
+-- the lobby your mouse is free for the shop and the camera turns with the right button like normal.
+local FIGHT_ZONES = { arena = true, duel = true, range = true }
+
+local function slingOnBack(character, model)
+	local torso = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
+	local handle = model.PrimaryPart
+	if not torso or not handle then
+		model:Destroy()
+		return
+	end
+	for _, p in model:GetDescendants() do
+		if p:IsA("BasePart") then
+			p.Anchored = false
+			p.CanCollide = false
+			p.CanQuery = false
+			p.CanTouch = false
+			p.Massless = true
+		end
+	end
+	-- across the back, barrel up over the shoulder
+	model:PivotTo(
+		torso.CFrame
+			* CFrame.new(0, 0.2, 0.75) -- just behind the back
+			* CFrame.Angles(0, 0, math.rad(35)) -- slanted across it
+			* CFrame.Angles(math.rad(90), 0, 0) -- barrel up
+			* CFrame.new(0, 0, 0.8)
+			* RifleModel.HANDLE_OFFSET
+	)
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = torso
+	weld.Part1 = handle
+	weld.Parent = handle
+	model.Name = "RifleBack"
+	model.Parent = character
+end
 
 function LoadoutService:GiveTool(player)
 	local c = player.Character
@@ -163,10 +197,16 @@ function LoadoutService:GiveTool(player)
 		return
 	end
 	for _, holder in { c, player:FindFirstChildOfClass("Backpack") } do
-		local old = holder and holder:FindFirstChild("Rifle")
-		if old then
-			old:Destroy()
+		for _, name in { "Rifle", "RifleBack" } do
+			local old = holder and holder:FindFirstChild(name)
+			if old then
+				old:Destroy()
+			end
 		end
+	end
+	if not FIGHT_ZONES[player:GetAttribute("Zone") or ""] then
+		slingOnBack(c, RifleModel.build(profile.rifle, self:SkinId(player), self:MasteryTier(player)))
+		return
 	end
 	local tool = RifleModel.tool(profile.rifle, self:SkinId(player), self:MasteryTier(player))
 	tool.Parent = c
@@ -499,6 +539,14 @@ function LoadoutService:OnPlayerReady(player, profile)
 	if player.Character then
 		spawned(player.Character)
 	end
+	-- walking onto the range, joining a round or going back to the lobby: hands <-> back
+	player:GetAttributeChangedSignal("Zone"):Connect(function()
+		local c = player.Character
+		local inHands = c and c:FindFirstChild("Rifle") ~= nil
+		if FIGHT_ZONES[player:GetAttribute("Zone") or ""] ~= inHands then
+			self:GiveTool(player)
+		end
+	end)
 	_ = Players
 end
 

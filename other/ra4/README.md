@@ -28,8 +28,8 @@ experience for it and the place/universe IDs on the API key (see [Publish](#publ
 
 ### The round loop
 
-1. **The lobby.** You join here: a walled courtyard with towers, so nobody wanders off. You carry your rifle here; it
-   fires on the Range, in a round and in a duel. The sign over the PLAY pad says what's happening. With one player it waits
+1. **The lobby.** You join here: a walled courtyard with towers, so nobody wanders off. Your rifle is on your back here,
+   so the mouse is free for the shop; it's in your hands on the Range, in a round and in a duel. The sign over the PLAY pad says what's happening. With one player it waits
    (try the **Range** in the south-west corner, or the leaderboards on the west side).
 2. **2 players is enough.** The 15-second countdown starts and a **vote card** shows three maps: tap one. Alone,
    you practice on the Range while you wait.
@@ -43,8 +43,8 @@ experience for it and the place/universe IDs on the API key (see [Publish](#publ
    you see your hands work the bolt (Twin drops its mag and reloads).
 5. **Popped?** You see who got you (their level, rifle and skin) from their side for 5 seconds, then you're back
    at the spawn farthest from everyone. **⚡ BACK NOW** (9 Robux) skips the wait.
-6. **The podium.** The top 3 real players stand on the podium in the lobby with their emote for 8 seconds,
-   then the next countdown.
+6. **The podium.** Everyone comes back to the lobby facing the podium, where the top 3's real avatars dance
+   (their emote, or a dance) until the next round ends. Each leaderboard's #1 also dances on top of their board.
 
 ### In a round
 

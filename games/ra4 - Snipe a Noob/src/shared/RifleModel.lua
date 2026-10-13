@@ -239,6 +239,10 @@ end
 -- Build -------------------------------------------------------------------------------------------------------------
 -- Returns a Model whose PrimaryPart is "Handle" (the grip), every other part welded to it, and a "Muzzle"
 -- attachment at the end of the barrel. at: where to build it.
+-- Where the Handle (the grip, the model's PrimaryPart) sits in the rifle's own frame (the barrel along -Z): it is
+-- tilted like a real pistol grip, so anything that places the rifle by its Handle must undo this.
+RifleModel.HANDLE_OFFSET = CFrame.new(0, -0.4, 0.15) * CFrame.Angles(math.rad(-15), 0, 0)
+
 function RifleModel.build(rifleKey, skinId, masteryTier, at)
 	local rifle = Rifles.byKey[rifleKey] or Rifles.list[1]
 	local look = RifleModel.look(rifleKey, skinId, masteryTier)
@@ -251,14 +255,8 @@ function RifleModel.build(rifleKey, skinId, masteryTier, at)
 	local scopeLen = rifle.key == "EAGLE" and 2.1 or (rifle.key == "SWIFT" and 1.3 or 1.7)
 	local scopeD = rifle.key == "EAGLE" and 0.42 or 0.36
 
-	local handle = part(
-		model,
-		"Handle",
-		Vector3.new(0.38, 0.85, 0.5),
-		at * CFrame.new(0, -0.4, 0.15) * CFrame.Angles(math.rad(-15), 0, 0),
-		stockColor,
-		stockMat
-	)
+	local handle =
+		part(model, "Handle", Vector3.new(0.38, 0.85, 0.5), at * RifleModel.HANDLE_OFFSET, stockColor, stockMat)
 	model.PrimaryPart = handle
 	local pieces = {}
 	local function add(p)

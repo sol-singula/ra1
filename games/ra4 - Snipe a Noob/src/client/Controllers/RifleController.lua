@@ -450,7 +450,9 @@ local function updateViewModel(dt)
 		* CFrame.Angles(recoil * 0.18 - dip * 0.35, swayX * 0.4, roll)
 	-- smoothing: ease toward the target every frame
 	vmOffset = vmOffset:Lerp(target, 1 - math.exp(-dt * 20))
-	local where = show and (cam.CFrame * vmOffset) or CFrame.new(0, -1000, 0)
+	-- place the rifle's own frame (not its tilted grip), turned a touch inward so the barrel meets the crosshair
+	local aimIn = CFrame.Angles(math.rad(0.6), math.rad(1.6), 0)
+	local where = show and (cam.CFrame * vmOffset * aimIn * RifleModel.HANDLE_OFFSET) or CFrame.new(0, -1000, 0)
 	viewModel:PivotTo(where)
 	-- move the bolt and the mag on top of the pivot
 	local handle = viewModel.PrimaryPart
@@ -593,6 +595,13 @@ local function applyCamera()
 	else
 		player.CameraMode = Enum.CameraMode.Classic
 		player.CameraMaxZoomDistance = Constants.CAMERA_MAX_ZOOM
+		if RifleController._wasFight then
+			-- pull the camera back out of first person (Classic alone keeps you zoomed in with the mouse locked)
+			player.CameraMinZoomDistance = 12
+			task.delay(0.1, function()
+				player.CameraMinZoomDistance = 0.5
+			end)
+		end
 		if scoped then
 			RifleController.setScope(false)
 		end

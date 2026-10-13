@@ -87,7 +87,10 @@ local pa = Data:Get(a)
 check("profile loaded", pa ~= nil)
 check("leaderstats", a:FindFirstChild("leaderstats") ~= nil and a.leaderstats:FindFirstChild("Pops") ~= nil)
 check("starts in the lobby", a:GetAttribute("Zone") == "lobby")
-check("holds a rifle in the lobby", a.Character:FindFirstChild("Rifle") ~= nil)
+check(
+	"rifle on your back in the lobby",
+	a.Character:FindFirstChild("Rifle") == nil and a.Character:FindFirstChild("RifleBack") ~= nil
+)
 check("starts with the Bolt", pa.rifles.BOLT == true and pa.rifle == "BOLT")
 check("alone: waiting", Round.state == "waiting")
 check("the lobby sign says waiting", layout.status[1].Text:find("STARTING", 1, true) ~= nil, layout.status[1].Text)
@@ -346,11 +349,13 @@ check(
 	pod and #pod.args[1] >= 2 and pod.args[1][1].name == "Ava",
 	pod and pod.args[1][1] and pod.args[1][1].name
 )
-check(
-	"the winner stands on the top step",
-	(root(a).Position - (layout.podium.spots[1] + Vector3.new(0, 3, 0))).Magnitude < 1
-)
+check("everyone watches the podium from the lobby", a:GetAttribute("Zone") == "lobby" and root(a).Position.Z > -40)
 check("the podium sign shows the names", layout.podium.names[1][1].Text == "Ava")
+local statue = Engine.workspace.Statues:FindFirstChild("Podium1")
+check(
+	"the winner's avatar dances on the top step",
+	statue ~= nil and math.abs(statue.PrimaryPart.Position.X - layout.podium.spots[1].X) < 0.5
+)
 check("a round and a win counted", pa.stats.rounds == roundsBefore + 1 and pa.stats.wins == winsBefore + 1)
 check("podium counted", pa.stats.podiums == 1)
 check("the arena is cleared", Engine.workspace.Arena:FindFirstChildOfClass("Model") == nil and Round.map == nil)
@@ -428,6 +433,7 @@ do
 	check("buy the Swift at level 5", Loadout:BuyRifle(a, "SWIFT") and pa.rifles.SWIFT and pa.rifle == "SWIFT")
 	check("it costs coins", pa.coins == 100000 - Rifles.byKey.SWIFT.price)
 	Combat.setZone(a, "range") -- (no time passes: the range would send a back to the lobby)
+	check("in your hands on the range, not on your back", a.Character:FindFirstChild("RifleBack") == nil)
 	check("the Swift is in your hands on the range", a.Character.Rifle:GetAttribute("Rifle") == "SWIFT")
 	Combat.setZone(a, "lobby")
 	check("the Swift fires faster", Loadout:Rifle(a).bolt < Rifles.byKey.BOLT.bolt)
