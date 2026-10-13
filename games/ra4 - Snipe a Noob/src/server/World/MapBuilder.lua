@@ -147,18 +147,18 @@ end
 -- Theme looks ----------------------------------------------------------------------------------------------------
 local LOOK = {
 	town = {
-		wall = { rgb(240, 225, 190), rgb(170, 210, 240), rgb(250, 200, 150), rgb(210, 235, 200) },
+		wall = { rgb(255, 240, 205), rgb(190, 225, 250), rgb(255, 215, 175), rgb(220, 245, 210) },
 		wallMat = Enum.Material.Plastic,
 		trim = WHITE,
-		roof = rgb(200, 70, 60),
-		floor = rgb(190, 150, 110),
+		roof = rgb(240, 110, 95),
+		floor = rgb(225, 195, 155),
 		cover = rgb(205, 190, 140), -- sandbags
 		fence = WHITE,
 		metal = rgb(70, 75, 90),
 		light = rgb(255, 240, 180),
 	},
 	candy = {
-		wall = { rgb(180, 120, 70), rgb(160, 100, 60) }, -- gingerbread
+		wall = { rgb(215, 160, 105), rgb(200, 145, 95) }, -- gingerbread
 		wallMat = Enum.Material.Plastic,
 		trim = WHITE, -- icing
 		roof = rgb(255, 130, 190),
@@ -169,22 +169,22 @@ local LOOK = {
 		light = rgb(255, 120, 200),
 	},
 	dock = {
-		wall = { rgb(120, 125, 150), rgb(95, 100, 125) },
+		wall = { rgb(205, 215, 235), rgb(180, 195, 225) },
 		wallMat = Enum.Material.DiamondPlate,
 		trim = rgb(120, 220, 255),
-		roof = rgb(60, 64, 85),
-		floor = rgb(85, 90, 115),
+		roof = rgb(120, 200, 245),
+		floor = rgb(170, 185, 215),
 		cover = rgb(255, 200, 40), -- barriers
 		fence = rgb(255, 200, 40),
-		metal = rgb(150, 160, 190),
+		metal = rgb(200, 210, 230),
 		light = rgb(120, 220, 255),
 	},
 	castle = {
-		wall = { rgb(188, 180, 168), rgb(170, 162, 150) },
+		wall = { rgb(232, 226, 214), rgb(215, 208, 196) },
 		wallMat = Enum.Material.Slate,
-		trim = rgb(150, 142, 134),
-		roof = rgb(70, 90, 170),
-		floor = rgb(140, 100, 70),
+		trim = rgb(200, 192, 182),
+		roof = rgb(100, 140, 230),
+		floor = rgb(200, 160, 120),
 		cover = rgb(220, 190, 90), -- hay
 		fence = rgb(140, 95, 55), -- palisade
 		metal = rgb(90, 80, 70),

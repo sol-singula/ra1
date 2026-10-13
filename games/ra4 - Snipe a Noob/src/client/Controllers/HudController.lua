@@ -674,9 +674,14 @@ local function drawRound()
 	local left = math.max(0, (round.endsAt or 0) - now)
 	local state = round.state
 	if state == "waiting" then
-		roundClock.Text = "⏳ STARTING " .. Format.time(math.max(0, (round.soloAt or now) - now))
 		roundClock.TextColor3 = C.mustard
-		roundTitle.Text = "Waiting for friends. Robots will play too!"
+		if round.soloAt then
+			roundClock.Text = "⏳ STARTING " .. Format.time(math.max(0, round.soloAt - now))
+			roundTitle.Text = "Waiting for friends..."
+		else
+			roundClock.Text = "⏳ WAITING FOR 1 MORE"
+			roundTitle.Text = "Practice on the Range while you wait!"
+		end
 	elseif state == "lobby" then
 		roundClock.Text = "NEXT ROUND " .. Format.time(left)
 		roundClock.TextColor3 = C.mustard

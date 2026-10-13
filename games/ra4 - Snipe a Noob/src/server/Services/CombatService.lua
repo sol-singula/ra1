@@ -384,7 +384,7 @@ function CombatService:Respawn(f, noShield)
 			r.CFrame = cf
 			r.AssemblyLinearVelocity = Vector3.zero
 		end
-		if not noShield then
+		if not noShield and Constants.SHIELD_SECONDS > 0 then
 			f:SetAttribute("ShieldUntil", serverNow() + Constants.SHIELD_SECONDS)
 			local c = f.Character
 			if c and not c:FindFirstChild("SpawnShield") then

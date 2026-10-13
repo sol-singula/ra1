@@ -31,17 +31,18 @@ experience for it and the place/universe IDs on the API key (see [Publish](#publ
 1. **The lobby.** You join here: a walled courtyard with towers, so nobody wanders off. You carry your rifle here; it
    fires on the Range, in a round and in a duel. The sign over the PLAY pad says what's happening. With one player it waits
    (try the **Range** in the south-west corner, or the leaderboards on the west side).
-2. **2 players is enough, and 1 is fine too.** With 2 players the 15-second countdown starts right away; alone,
-   it waits 20 seconds for friends and then starts anyway with robots. A **vote card** shows three maps: tap one.
+2. **2 players is enough.** The 15-second countdown starts and a **vote card** shows three maps: tap one. Alone,
+   you practice on the Range while you wait.
 3. **The round: 5 minutes in an arena.** Everyone in the lobby goes in. Latecomers press PLAY. The arena size
-   fits the crowd: small for 2 to 8 players, medium to 16, large to 24. Fewer than 4 fighters? Robot noobs
-   (tagged 🤖, yellow and blue, they miss a lot) fill in. Every map is built the same way on both halves, so
+   fits the crowd: small for 2 to 8 players, medium to 16, large to 24. Every map is built the same way on both halves, so
    it's fair: walk-in houses with roof decks and ramps, sniper towers, sandbags, crates and cars for cover, a
    big centerpiece, and bridges between the towers on the large size.
-4. **First person, one shot, one pop.** The dot is your aim. From the hip the shot wobbles; scoped it's dead
-   steady after a moment. Every hit pops anyone into bricks. Then the bolt (a little bar under the dot).
+4. **First person, one shot, one pop.** The crosshair is your aim. From the hip the shot wobbles a little; scoped
+   it's dead steady after a moment, with slower mouse speed. Light aim help pulls a near miss onto the target
+   (more on phones and gamepads). Every hit pops anyone into bricks. Each shot kicks the view up and back; then
+   you see your hands work the bolt (Twin drops its mag and reloads).
 5. **Popped?** You see who got you (their level, rifle and skin) from their side for 5 seconds, then you're back
-   at the spawn farthest from everyone, with a 2-second shield. **⚡ BACK NOW** (9 Robux) skips the wait.
+   at the spawn farthest from everyone. **⚡ BACK NOW** (9 Robux) skips the wait.
 6. **The podium.** The top 3 real players stand on the podium in the lobby with their emote for 8 seconds,
    then the next countdown.
 
@@ -80,7 +81,8 @@ the **podium**. That's why skins are worth it.
   day for 300 coins.
 - **Daily gift:** a 7-day streak of coins and keys.
 - **Playtime gifts:** 1, 3, 5, 10, 15, 20, 30, 45 and 60 minutes.
-- **New players:** 2x coins and XP for 10 minutes, and robots in your first round.
+- **New players:** 2x coins and XP for 10 minutes. (Robots can fill quiet rounds: set `ROBOTS_FILL_TO` in
+  Constants; they are off.)
 - **Season (2 weeks):** XP fills 50 tiers. Free rewards for everyone; the Season Pass (399 Robux) adds
   season-only skins, effects, emotes and keys.
 - **Leaderboards** on the west side: **TODAY'S TOP SNIPERS** (#1 at 7pm ET wins the Champion skin, never sold),

@@ -74,7 +74,7 @@ function RoundService:Info()
 		size = self.map and self.map.size or nil,
 		lastMinute = self.state == "round" and self.endsAt - serverNow() <= Constants.LAST_MINUTE,
 		minPlayers = Constants.MIN_PLAYERS,
-		soloAt = self.state == "waiting" and waitingSince + Constants.SOLO_WAIT or nil,
+		soloAt = self.state == "waiting" and Constants.SOLO_WAIT and waitingSince + Constants.SOLO_WAIT or nil,
 		players = realPlayers(),
 	}
 end
@@ -88,9 +88,14 @@ function RoundService:_drawStatus()
 	local lines = WorldBuilder.layout.status
 	local left = math.max(0, (self.state == "round" and self.endsAt or stateEndsAt) - serverNow())
 	if self.state == "waiting" then
-		local soloIn = math.max(0, waitingSince + Constants.SOLO_WAIT - serverNow())
-		lines[1].Text = `STARTING IN {Format.time(soloIn)}`
-		lines[2].Text = "Waiting for friends. Robots will play too!"
+		if Constants.SOLO_WAIT then
+			local soloIn = math.max(0, waitingSince + Constants.SOLO_WAIT - serverNow())
+			lines[1].Text = `STARTING IN {Format.time(soloIn)}`
+			lines[2].Text = "Waiting for friends..."
+		else
+			lines[1].Text = "WAITING FOR 1 MORE PLAYER"
+			lines[2].Text = "Practice on the Range while you wait!"
+		end
 	elseif self.state == "lobby" then
 		lines[1].Text = "NEXT ROUND IN " .. Format.time(left)
 		lines[2].Text = "Vote for the next map!"
@@ -583,17 +588,17 @@ function RoundService:_step()
 	if self.state == "waiting" then
 		if n == 0 then
 			waitingSince = now
-		elseif n >= Constants.MIN_PLAYERS or now - waitingSince >= Constants.SOLO_WAIT then
+		elseif n >= Constants.MIN_PLAYERS or (Constants.SOLO_WAIT and now - waitingSince >= Constants.SOLO_WAIT) then
 			self:StartLobby()
 		end
 	elseif self.state == "lobby" then
-		if n == 0 then
+		if n == 0 or (n < Constants.MIN_PLAYERS and not Constants.SOLO_WAIT) then
 			self:_wait()
 		elseif now >= stateEndsAt then
 			self:StartRound()
 		end
 	elseif self.state == "round" then
-		if now >= self.endsAt or n == 0 then
+		if now >= self.endsAt or n == 0 or (n < Constants.MIN_PLAYERS and not Constants.SOLO_WAIT) then
 			self:EndRound()
 			return
 		end

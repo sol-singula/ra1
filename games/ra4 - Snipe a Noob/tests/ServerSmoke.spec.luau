@@ -75,8 +75,11 @@ local function waitBolt(p)
 end
 
 -- (alone the server waits SOLO_WAIT seconds, then plays with robots: off until the solo test near the end)
-local SOLO_WAIT = Constants.SOLO_WAIT
 Constants.SOLO_WAIT = 1e9
+-- the spawn shield and robots are off in the live game; these tests turn them on to keep them working
+local LIVE_SHIELD, LIVE_ROBOTS = Constants.SHIELD_SECONDS, Constants.ROBOTS_FILL_TO
+Constants.SHIELD_SECONDS = 2
+Constants.ROBOTS_FILL_TO = 4
 
 -- Join ------------------------------------------------------------------------------------------------------
 local a = join("Ava", 1001)
@@ -867,6 +870,7 @@ end
 
 -- Alone: after the solo wait the countdown starts anyway and robots fill the round
 do
+	local SOLO_WAIT = 20
 	Constants.SOLO_WAIT = SOLO_WAIT
 	Robots.Wanted = robotWanted
 	Round:_wait()
@@ -879,6 +883,17 @@ do
 	check("robots join a solo round", #Robots.robots == 3, #Robots.robots)
 	Round.endsAt = Engine.workspace:GetServerTimeNow()
 	Engine.advance(0.5)
+end
+
+-- The live settings: no spawn shield (every hit pops) and no robots
+do
+	Constants.SHIELD_SECONDS, Constants.ROBOTS_FILL_TO = LIVE_SHIELD, LIVE_ROBOTS
+	check("live: no spawn shield", LIVE_SHIELD == 0)
+	check("live: no robots", Robots:Wanted() == 0)
+	Constants.SOLO_WAIT = false
+	Round:_wait()
+	Engine.advance(30)
+	check("live: alone, the round waits for a 2nd player", Round.state == "waiting")
 end
 
 -- Leaving --------------------------------------------------------------------------------------------------------

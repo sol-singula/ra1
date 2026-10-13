@@ -42,8 +42,8 @@ function RobotService:Wanted()
 			end
 		end
 	end
-	if real == 0 then
-		return 0
+	if real == 0 or Constants.ROBOTS_FILL_TO <= 0 then
+		return 0 -- robots are off
 	end
 	local fill = fresh and math.max(Constants.ROBOTS_FILL_TO, Constants.ROBOT_FIRST_ROUND) or Constants.ROBOTS_FILL_TO
 	return math.max(0, fill - real)

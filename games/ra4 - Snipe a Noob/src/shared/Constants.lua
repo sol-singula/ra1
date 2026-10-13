@@ -9,7 +9,7 @@ Constants.JUMP_POWER = 50
 
 -- The round loop ------------------------------------------------------------------------------------------
 Constants.MIN_PLAYERS = 2 -- a round countdown starts as soon as this many players are in the server
-Constants.SOLO_WAIT = 20 -- alone: wait this long for a friend, then start anyway (robots fill in)
+Constants.SOLO_WAIT = false -- alone: seconds to wait, then start anyway; false = rounds need 2 players
 Constants.LOBBY_SECONDS = 15 -- the countdown in the lobby (map vote) before a round
 Constants.ROUND_SECONDS = 300 -- 5 minutes
 Constants.PODIUM_SECONDS = 8 -- the top 3 on the podium after a round
@@ -24,7 +24,7 @@ Constants.MAP_SIZES = {
 
 -- Popping and respawning ----------------------------------------------------------------------------------
 Constants.RESPAWN_SECONDS = 5
-Constants.SHIELD_SECONDS = 2 -- spawn shield (breaks early when you fire)
+Constants.SHIELD_SECONDS = 0 -- spawn shield seconds (0 = off: every hit always pops)
 Constants.FALL_Y = -40 -- below the map floor by this much: back to a spawn, no pop given
 
 -- The shot ------------------------------------------------------------------------------------------------
@@ -35,16 +35,20 @@ Constants.ORIGIN_TOLERANCE = 9 -- the shot must start this close to the shooter'
 Constants.FIRE_RATE_SLACK = 0.12 -- seconds of slack on the bolt time (network jitter)
 -- hit shapes, relative to the HumanoidRootPart: a head ball and a body capsule
 Constants.HEAD_OFFSET = 1.6
-Constants.HEAD_RADIUS = 0.85
-Constants.BODY_TOP = 0.9
-Constants.BODY_BOTTOM = -2.6
-Constants.BODY_RADIUS = 1.05
+Constants.HEAD_RADIUS = 1.15
+Constants.BODY_TOP = 1.2
+Constants.BODY_BOTTOM = -3
+Constants.BODY_RADIUS = 1.45
 Constants.HIP_FOV = 70
-Constants.HIP_SPREAD = 3.5 -- degrees of random spread when not scoped
-Constants.SCOPE_SETTLE = 0.3 -- seconds after scoping in before the shot is dead steady
-Constants.SCOPE_SPREAD = 0.9 -- degrees of spread while the scope is still settling
+Constants.MOUSE_SENSITIVITY = 0.7 -- in first person (times the player's own setting)
+Constants.SCOPE_SENSITIVITY = 0.55 -- extra slow-down while scoped (times the zoom)
+Constants.HIP_SPREAD = 1.8 -- degrees of random spread when not scoped
+Constants.SCOPE_SETTLE = 0.2 -- seconds after scoping in before the shot is dead steady
+Constants.SCOPE_SPREAD = 0.5 -- degrees of spread while the scope is still settling
 -- light aim help on phones and gamepads, only while scoped: a shot this close to a target bends onto it
-Constants.AIM_ASSIST_DEGREES = 1.6
+Constants.AIM_ASSIST_DEGREES = 3 -- phones and gamepads
+Constants.AIM_ASSIST_MOUSE = 1.5 -- mouse: lighter
+Constants.AIM_ASSIST_HIP = 0.6 -- share of the help when not scoped
 
 -- Coins and XP --------------------------------------------------------------------------------------------
 Constants.COINS = {
@@ -82,7 +86,7 @@ Constants.CROWN_REVEAL_SECONDS = 2
 Constants.DOUBLE_TAP_WINDOW = 3
 
 -- Robots --------------------------------------------------------------------------------------------------
-Constants.ROBOTS_FILL_TO = 4 -- a round with fewer fighters than this gets robots (tagged ROBOT)
+Constants.ROBOTS_FILL_TO = 0 -- robots are off (set to 4 to fill quiet rounds with robots tagged ROBOT)
 Constants.ROBOT_FIRST_ROUND = 4 -- a brand-new player's first round always has this many fighters
 Constants.ROBOT_REACTION = 1.6 -- seconds from seeing you to firing
 Constants.ROBOT_ACCURACY = 0.35 -- chance a robot's shot hits

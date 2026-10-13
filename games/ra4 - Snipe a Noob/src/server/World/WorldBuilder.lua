@@ -36,22 +36,30 @@ local function folder(name, parent)
 end
 
 local function lighting()
-	Lighting.ClockTime = 14 -- bright afternoon
-	Lighting.Brightness = 2.4
-	Lighting.Ambient = rgb(120, 120, 135)
-	Lighting.OutdoorAmbient = rgb(140, 140, 150)
-	Lighting.FogEnd = 2500
-	Lighting.FogColor = rgb(190, 220, 255)
+	Lighting.ClockTime = 13.5 -- bright midday
+	Lighting.Brightness = 3
+	Lighting.Ambient = rgb(165, 165, 175)
+	Lighting.OutdoorAmbient = rgb(185, 185, 195)
+	Lighting.EnvironmentDiffuseScale = 0.6
+	Lighting.EnvironmentSpecularScale = 0.3
+	Lighting.FogEnd = 3000
+	Lighting.FogColor = rgb(205, 230, 255)
 	for _, child in Lighting:GetChildren() do
-		if child:IsA("Sky") or child:IsA("Atmosphere") then
+		if child:IsA("Sky") or child:IsA("Atmosphere") or child:IsA("ColorCorrectionEffect") then
 			child:Destroy()
 		end
 	end
 	local atmosphere = Instance.new("Atmosphere")
-	atmosphere.Density = 0.25
-	atmosphere.Haze = 0.6
-	atmosphere.Color = rgb(200, 225, 255)
+	atmosphere.Density = 0.18
+	atmosphere.Haze = 0.3
+	atmosphere.Color = rgb(215, 235, 255)
 	atmosphere.Parent = Lighting
+	-- a little brighter and more colourful everywhere
+	local cc = Instance.new("ColorCorrectionEffect")
+	cc.Brightness = 0.04
+	cc.Contrast = 0.05
+	cc.Saturation = 0.18
+	cc.Parent = Lighting
 end
 
 -- A glowing pad on the floor with a sign (services watch who stands on it).
@@ -511,7 +519,7 @@ local function lobby(map)
 	})
 	local statusGui, statusLines = Scenery.sign(statusPost, 30, 6, Vector3.new(0, 0, 0), {
 		{ text = "WAITING FOR PLAYERS", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy, color = TRIM },
-		{ text = "Rounds start soon. Robots play too!", h = 0.4, y = 0.6 },
+		{ text = "A round starts with 2 players", h = 0.4, y = 0.6 },
 	}, 220)
 	statusGui.Name = "Status"
 
