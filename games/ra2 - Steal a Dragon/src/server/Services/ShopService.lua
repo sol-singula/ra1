@@ -28,7 +28,7 @@ local ShopService = {
 		"RewardService",
 		"ToolService",
 	},
-	Purchased = Signal.new("ShopService.Purchased"), -- (player, name, robux) a real Robux purchase went through
+	Purchased = Signal.new("ShopService.Purchased"), -- (player, name, robux, passKey?) a real Robux purchase went through
 	Prompted = Signal.new("ShopService.Prompted"), -- (player, kind "pass"|"product", key) a purchase prompt opened
 	CardShown = Signal.new("ShopService.CardShown"), -- (player, key, why) an offer card popped up
 	MysteryOpened = Signal.new("ShopService.MysteryOpened"), -- (player, rarity, dragonId)
@@ -145,10 +145,28 @@ function ShopService:Init(registry)
 		end)
 	end
 	-- every real Robux purchase counts toward the TOP SPENDERS board
-	self.Purchased:Connect(function(player, _, robux)
+	self.Purchased:Connect(function(player, _, robux, passKey)
 		local profile = data:Get(player)
 		if profile then
 			profile.robuxSpent = (profile.robuxSpent or 0) + (tonumber(robux) or 0)
+			if passKey then
+				profile.spentPasses[passKey] = true -- counted (never again from the ownership check below)
+			end
+		end
+	end)
+	-- and every game pass the account owns counts too, wherever and whenever it was bought (the game page,
+	-- or before the board existed). Admins own every pass as the game's creators, so theirs don't count.
+	economy.PassesLoaded:Connect(function(player, fromRoblox)
+		local profile = data:Get(player)
+		if not profile or Constants.ADMINS[player.UserId] then
+			return
+		end
+		for key in fromRoblox do
+			local pass = Shop.passByKey[key]
+			if pass and not profile.spentPasses[key] then
+				profile.spentPasses[key] = true
+				profile.robuxSpent = (profile.robuxSpent or 0) + pass.price
+			end
 		end
 	end)
 	if registry.TutorialService and registry.TutorialService.Finished then
@@ -194,7 +212,7 @@ function ShopService:Init(registry)
 		if purchased and pass then
 			economy:GrantPass(player, pass.key)
 			Net.fire(player, "Alert", `Thank you! {pass.name} is yours! {pass.icon}`, Color3.fromRGB(80, 220, 120))
-			self.Purchased:Fire(player, pass.name, pass.price)
+			self.Purchased:Fire(player, pass.name, pass.price, pass.key)
 		end
 	end)
 	MarketplaceService.ProcessReceipt = function(info)

@@ -11,6 +11,7 @@ local EconomyService = {
 	Name = "EconomyService",
 	Dependencies = { "PlayerDataService" },
 	PassesChanged = Signal.new("EconomyService.PassesChanged"), -- (player)
+	PassesLoaded = Signal.new("EconomyService.PassesLoaded"), -- (player, { [key] = true } owned on Roblox)
 }
 
 local data
@@ -44,17 +45,20 @@ function EconomyService:OnPlayerReady(player, profile)
 	stats.Parent = player
 	-- ask Roblox which passes this player owns (in the background; a failure just means "not owned")
 	task.spawn(function()
+		local fromRoblox = {} -- the passes Roblox says this account owns (bought here or on the game page)
 		for _, pass in Shop.Passes do
 			if pass.id ~= 0 then
 				local ok, has =
 					pcall(MarketplaceService.UserOwnsGamePassAsync, MarketplaceService, player.UserId, pass.id)
 				if ok and has and owned[player] then
 					owned[player][pass.key] = true
+					fromRoblox[pass.key] = true
 				end
 			end
 		end
 		if player.Parent then
 			self.PassesChanged:Fire(player)
+			self.PassesLoaded:Fire(player, fromRoblox)
 			data:Push(player, { passes = self:Passes(player) })
 		end
 	end)

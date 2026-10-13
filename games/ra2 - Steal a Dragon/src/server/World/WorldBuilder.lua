@@ -474,7 +474,7 @@ local function buildBase(parent, index, cf)
 		Scenery.bush(model, pos(side * (BASE_W / 2 - 2.6), 0.1, lawnZ + 2.4), 0.8, rng)
 	end
 	-- Castle details by level: arrow slits, front-wall banners and a portcullis (3), a tall keep behind the back
-	-- wall (4), and a golden dragon over the gate (5)
+	-- wall (4), the walls rising a storey (5)
 	local slit = rgb(45, 40, 50)
 	for z = -BASE_D / 2 + 6, BASE_D / 2 - 6, 8 do
 		for _, side in { -1, 1 } do
@@ -532,6 +532,46 @@ local function buildBase(parent, index, cf)
 		})
 	end
 	Scenery.tower(levels[4], pos(0, 0, BASE_D / 2 + 7), 10, 20, STONE, color, color)
+	-- Level 5: the side and back walls rise a whole storey, with a coloured band and their own battlements
+	local UPPER = 4.5
+	for _, w in
+		{
+			{ Vector3.new(BASE_W, UPPER, 1.6), at(0, 9.4 + UPPER / 2, BASE_D / 2), "X" },
+			{ Vector3.new(1.6, UPPER, BASE_D), at(-BASE_W / 2, 9.4 + UPPER / 2, 0), "Z" },
+			{ Vector3.new(1.6, UPPER, BASE_D), at(BASE_W / 2, 9.4 + UPPER / 2, 0), "Z" },
+		}
+	do
+		local size, cframe, long = w[1], w[2], w[3]
+		part({
+			Name = "WallStorey",
+			Size = size,
+			CFrame = cframe,
+			Color = STONE,
+			Material = Enum.Material.Cobblestone,
+			Parent = levels[5],
+		})
+		part({
+			Name = "StoreyBand",
+			Size = size + Vector3.new(0.2, -UPPER + 1, 0.2),
+			CFrame = cframe * CFrame.new(0, UPPER / 2 - 1, 0),
+			Color = color,
+			CastShadow = false,
+			Parent = levels[5],
+		})
+		local len = long == "X" and size.X or size.Z
+		for i = 0, math.floor(len / 4) - 1, 2 do
+			local offset = -len / 2 + 2 + i * 4
+			part({
+				Name = "StoreyMerlon",
+				Size = long == "X" and Vector3.new(2, 1.6, 1.9) or Vector3.new(1.9, 1.6, 2),
+				CFrame = cframe * CFrame.new(long == "X" and offset or 0, UPPER / 2 + 0.8, long == "Z" and offset or 0),
+				Color = STONE,
+				Material = Enum.Material.Cobblestone,
+				CastShadow = false,
+				Parent = levels[5],
+			})
+		end
+	end
 	-- Level 6: the back towers rise into tall spires, and a great arch with banners stands over the gate
 	for _, side in { -1, 1 } do
 		Scenery.tower(levels[6], pos(side * BASE_W / 2, 0, BASE_D / 2), 5, 22, STONE, color, rgb(255, 205, 60))
@@ -605,8 +645,8 @@ local function buildBase(parent, index, cf)
 		CanCollide = false,
 		Parent = levels[7],
 	})
-	-- Level 8: everything turns to legend: golden spires on the gate, a golden dome on the hall and floating
-	-- crystals in a ring above the castle
+	-- Level 8: everything turns to legend: golden spires on the gate, a golden dome on the hall with a crown
+	-- spire and gem on top, and great banners
 	part({
 		Name = "GoldenDome",
 		Shape = Enum.PartType.Ball,
@@ -626,14 +666,32 @@ local function buildBase(parent, index, cf)
 			Parent = levels[8],
 		})
 	end
-	for i = 1, 8 do
-		local a = i / 8 * math.pi * 2
+	-- the crown: a tall golden spire on the dome with a glowing gem, and great banners on the hall towers
+	part({
+		Name = "CrownSpire",
+		Size = Vector3.new(2, 14, 2),
+		CFrame = at(0, 32, BASE_D / 2 + 6),
+		Color = rgb(255, 200, 60),
+		Material = Enum.Material.Foil,
+		Parent = levels[8],
+	})
+	part({
+		Name = "CrownGem",
+		Size = Vector3.new(3.2, 3.2, 3.2),
+		CFrame = at(0, 40.5, BASE_D / 2 + 6) * CFrame.Angles(math.rad(45), math.rad(45), 0),
+		Color = color:Lerp(rgb(255, 255, 255), 0.25),
+		Material = Enum.Material.Neon,
+		CastShadow = false,
+		CanCollide = false,
+		Parent = levels[8],
+	})
+	for _, side in { -1, 1 } do
 		part({
-			Name = "FloatingCrystal",
-			Size = Vector3.new(1.6, 3.4, 1.6),
-			CFrame = at(math.cos(a) * 18, 30 + (i % 2) * 2, math.sin(a) * 22) * CFrame.Angles(0, a, math.rad(15)),
-			Color = BASE_COLORS[(index + i - 2) % #BASE_COLORS + 1],
-			Material = Enum.Material.Neon,
+			Name = "GreatBanner",
+			Size = Vector3.new(0.3, 9, 4.5),
+			CFrame = at(side * 12, 22, BASE_D / 2 + 3.3) * CFrame.Angles(0, math.rad(90), 0),
+			Color = color,
+			Material = Enum.Material.Fabric,
 			CastShadow = false,
 			CanCollide = false,
 			Parent = levels[8],

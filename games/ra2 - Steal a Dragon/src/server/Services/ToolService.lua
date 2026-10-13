@@ -69,8 +69,12 @@ end
 -- Mega Bonk makes it glow gold.
 local function bonker(level, mega)
 	local w = Constants.WEAPONS[level] or Constants.WEAPONS[1]
-	local tool =
-		newTool(w.name, "bonk", "Click to bonk thieves!", Constants.TOOL_ICONS[w.key] or Constants.TOOL_ICONS.bat)
+	local tool = newTool(
+		w.name,
+		"bonk",
+		Constants.WEAPONS[level + 1] and "Click to bonk! Better swords: tap SWORDS" or "Click to bonk thieves!",
+		Constants.TOOL_ICONS[w.key] or Constants.TOOL_ICONS.bat
+	)
 	tool:SetAttribute("Weapon", w.key)
 	local handle = part({
 		Name = "Handle",

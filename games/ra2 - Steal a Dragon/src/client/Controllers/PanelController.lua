@@ -312,7 +312,7 @@ end
 
 -- Speed ------------------------------------------------------------------------------------------------------
 builders.Speed = function()
-	titleLabel.Text = "👟 SPEED & ⚔️ WEAPONS"
+	titleLabel.Text = "⚔️ SWORDS & 👟 SPEED"
 	list(12)
 	local s = Store.state
 	local level = s.speedLevel or 1

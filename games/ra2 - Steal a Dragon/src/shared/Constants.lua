@@ -32,6 +32,7 @@ Constants.NEST_PRICES = {
 -- Castle: a base grows with its owner's dragon power (the coins per second of the dragons in its nests,
 -- before passes and friend bonuses). Level 1 is a low wall; each level needs this much power.
 Constants.CASTLE_LEVEL_POWER = { 0, 25, 250, 2500, 25000, 250000, 2500000, 25000000 }
+Constants.CASTLE_LEVEL_BONUS = 0.05 -- each castle level above 1: +5% coins (level 8 = +35%)
 Constants.LEVEL_ALL_PRODUCT_LEVELS = 5 -- the +5 Levels for ALL product
 
 -- Lock

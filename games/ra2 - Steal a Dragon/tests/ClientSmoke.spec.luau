@@ -597,6 +597,19 @@ do
 	statue:Destroy()
 end
 
+-- Castle level and progress
+serverSends("Profile", { castle = { level = 3, power = 600, need = 250, next = 2500, bonus = 10 } })
+Engine.advance(0.05)
+check(
+	"castle card shows level and bonus",
+	hud.Castle.Visible and string.find(hud.Castle.Text.Text, "LEVEL 3", 1, true) ~= nil
+)
+check(
+	"castle progress toward the next level",
+	string.find(hud.Castle.Bar.Count.Text, "2.5K", 1, true) ~= nil,
+	hud.Castle.Bar.Count.Text
+)
+
 -- Admin button and panel (only when the server says you're an admin)
 check("no admin button for players", hud.AdminButton.Visible == false)
 serverSends("Profile", { admin = true })

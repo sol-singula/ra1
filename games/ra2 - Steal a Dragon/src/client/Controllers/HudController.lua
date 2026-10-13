@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local SocialService = game:GetService("SocialService")
 
+local Constants = require(ReplicatedStorage.Shared.Constants)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Store = require(script.Parent.Parent.Store)
@@ -26,6 +27,9 @@ local goalCard, goalText, goalFill, goalReward, goalCount
 local carryBanner, eventBanner, luckBanner, feverBanner, giftBanner, boostBanner
 local lockButton
 local giftDot
+local castleCard, castleText, castleFill, castleCount
+local gearDot
+local swordToldFor = {} -- [weapon level] = true once we've said the next sword is affordable
 local toastHolder, alertLabel, bonkedLabel
 local events = { legendAt = nil, luckUntil = nil, luckBy = nil, feverUntil = nil }
 local eggReceived -- os.clock() when the egg view arrived
@@ -284,7 +288,7 @@ end
 local function buildMenu()
 	local items = {
 		{ "Shop", "🛒", "SHOP", C.mustard, 14, 156 },
-		{ "Speed", "⚔️", "GEAR", C.sky, 96, 156 },
+		{ "Speed", "⚔️", "SWORDS", C.sky, 96, 156 },
 		{ "Gift", "🎁", "GIFT", C.pink, 14, 246 },
 		{ "Invite", "👥", "FRIENDS", C.teal, 96, 246 },
 		{ "Admin", "🛡️", "ADMIN", C.red, 14, 336 }, -- admins only (shown when the server says so)
@@ -300,6 +304,8 @@ local function buildMenu()
 		})
 		if it[1] == "Gift" then
 			giftDot = dot
+		elseif it[1] == "Speed" then
+			gearDot = dot
 		end
 		if it[1] == "Admin" then
 			button.Visible = Store.state.admin == true
@@ -447,6 +453,40 @@ local function buildCenter()
 	giftBanner =
 		banner("PlaytimeGift", UDim2.fromOffset(300, 40), UDim2.new(1, -12, 0, 110), C.purple, Vector2.new(1, 0))
 	boostBanner = banner("NewBoost", UDim2.fromOffset(300, 40), UDim2.new(1, -12, 0, 156), C.orange, Vector2.new(1, 0))
+	-- castle level, its coin bonus, and a bar toward the next level (BaseService.PushCastle)
+	castleCard = Theme.slab({
+		Name = "Castle",
+		AnchorPoint = Vector2.new(1, 0),
+		Size = UDim2.fromOffset(300, 54),
+		Position = UDim2.new(1, -12, 0, 204),
+		Visible = false,
+		round = true,
+		Parent = gui,
+	})
+	castleText = Theme.title({
+		Name = "Text",
+		Text = "",
+		Size = UDim2.new(1, -24, 0, 22),
+		Position = UDim2.fromOffset(12, 4),
+		outline = 2,
+		Parent = castleCard,
+	})
+	local cbar
+	cbar, castleFill = Theme.bar({
+		Name = "Bar",
+		Size = UDim2.new(1, -24, 0, 16),
+		Position = UDim2.fromOffset(12, 30),
+		Parent = castleCard,
+	}, C.mustard)
+	castleCount = Theme.title({
+		Name = "Count",
+		Text = "",
+		Size = UDim2.fromScale(1, 1),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		outline = 1.5,
+		ZIndex = 3,
+		Parent = cbar,
+	})
 
 	toastHolder = new("Frame", {
 		Name = "Toasts",
@@ -523,6 +563,31 @@ local function refresh()
 	waitingLabel.Text = waiting > 0 and `🪺 {waiting} dragon{waiting > 1 and "s" or ""} waiting for a nest` or ""
 	waitingLabel.Visible = waiting > 0
 	giftDot.Visible = s.daily ~= nil and s.daily.canClaim == true
+	local castle = s.castle
+	castleCard.Visible = castle ~= nil and s.tutorialDone ~= false
+	if castle then
+		local bonus = (castle.bonus or 0) > 0 and `  +{castle.bonus}% coins` or ""
+		castleText.Text = `🏰 CASTLE LEVEL {castle.level}{bonus}`
+		if castle.next then
+			local span = math.max(1, castle.next - (castle.need or 0))
+			castleFill.Size = UDim2.fromScale(math.clamp((castle.power - (castle.need or 0)) / span, 0, 1), 1)
+			castleCount.Text = `{Format.num(castle.power)} / {Format.num(castle.next)} dragon power`
+		else
+			castleFill.Size = UDim2.fromScale(1, 1)
+			castleCount.Text = "MAX LEVEL! 👑"
+		end
+	end
+	-- a better sword you can afford: a red dot on SWORDS, and once per sword a message saying where to get it
+	local wl = s.weaponLevel or 1
+	local nextW = Constants.WEAPONS[wl + 1]
+	local canBuy = nextW ~= nil and (s.coins or 0) >= nextW.price and s.tutorialDone ~= false
+	if gearDot then
+		gearDot.Visible = canBuy
+	end
+	if canBuy and not swordToldFor[wl] then
+		swordToldFor[wl] = true
+		HudController.toast(`⚔️ You can get the {nextW.name}! Tap SWORDS to upgrade.`, "good")
+	end
 end
 
 local function tick()

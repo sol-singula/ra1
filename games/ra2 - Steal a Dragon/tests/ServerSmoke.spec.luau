@@ -1000,7 +1000,12 @@ Engine.fireServer(cPlayer, "Ready")
 Engine.advance(0.5)
 local pc = Data:Get(cPlayer)
 check("friends are a team", Team:AreTeam(a, cPlayer) and Team:FriendsHere(a) == 1)
-check("friend bonus in income", Base:Income(a) > 0 and select(2, Base:Income(a)) == 2 * 1.1)
+do
+	local castleMult = 1 + Constants.CASTLE_LEVEL_BONUS * (Base.castleLevelFor(Base:DragonPower(a)) - 1)
+	local mult = select(2, Base:Income(a))
+	check("friend bonus in income", Base:Income(a) > 0 and math.abs(mult - 2 * 1.1 * castleMult) < 1e-9, mult)
+	check("castle levels add coins", castleMult > 1 or Base.castleLevelFor(Base:DragonPower(a)) == 1)
+end
 check("inviter got a Coral", countRec(pa, "CORAL") >= 1)
 check("new friend got 200 coins", pc.coins >= 200)
 check("play with a friend counted", pa.stats.friendPlay == 1)
@@ -1532,6 +1537,14 @@ do
 	Shop.Purchased:Fire(buyer, "Mystery Box", 99) -- (a real receipt; Studio-style test grants skip it)
 	check("TOP SPENDERS: Robux spent is counted", bp.robuxSpent == spentBefore + 99)
 	check("TOP SPENDERS: a board in the lobby", World.boards.spent ~= nil)
+	-- passes bought on the game page (or before the board) count once, from Roblox's ownership check
+	local EconomyS = service("EconomyService")
+	local s0 = bp.robuxSpent
+	bp.spentPasses = {}
+	EconomyS.PassesLoaded:Fire(buyer, { DOUBLE = true })
+	check("TOP SPENDERS: an owned pass counts", bp.robuxSpent == s0 + ShopData.passByKey.DOUBLE.price)
+	EconomyS.PassesLoaded:Fire(buyer, { DOUBLE = true })
+	check("TOP SPENDERS: never counted twice", bp.robuxSpent == s0 + ShopData.passByKey.DOUBLE.price)
 end
 
 -- Feedback card, vote reminder, notifications ----------------------------------------------------------------

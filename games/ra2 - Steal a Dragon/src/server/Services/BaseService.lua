@@ -311,6 +311,8 @@ function BaseService:Income(player)
 		end
 	end
 	local mult = Formulas.playerMult(economy:Passes(player), team:FriendsHere(player))
+	-- every castle level above 1 adds CASTLE_LEVEL_BONUS (the castle level comes from raw dragon power)
+	mult *= 1 + Constants.CASTLE_LEVEL_BONUS * (BaseService.castleLevelFor(sum) - 1)
 	if self:FeverLeft() > 0 then
 		mult *= Constants.FEVER_MULT
 	end
@@ -349,10 +351,47 @@ function BaseService:UpdateCastle(base)
 	if player then
 		base.world.signLines[1].Text = string.upper(player.DisplayName) .. "  🏰" .. level
 		if grew then
-			Net.fire(player, "Alert", `🏰 Your castle grew! Castle level {level}`, Color3.fromRGB(255, 205, 50))
+			Net.fire(
+				player,
+				"Alert",
+				`🏰 Castle level {level}! Your dragons make +{math.floor(
+					Constants.CASTLE_LEVEL_BONUS * (level - 1) * 100 + 0.5
+				)}% coins`,
+				Color3.fromRGB(255, 205, 50)
+			)
+			Net.fire(player, "Sfx", "levelup")
+			if level >= 6 then
+				Net.fireAll(
+					"Announce",
+					`🏰 {player.DisplayName}'s castle reached level {level}!`,
+					Color3.fromRGB(255, 205, 50)
+				)
+			end
 			self.CastleGrew:Fire(player, level)
 		end
 	end
+end
+
+-- The castle line on the player's screen: level, dragon power, and how much power the next level needs.
+local lastCastlePush = {}
+function BaseService:PushCastle(player)
+	local power = math.floor(self:DragonPower(player))
+	local level = BaseService.castleLevelFor(power)
+	local nextNeed = Constants.CASTLE_LEVEL_POWER[level + 1]
+	local key = `{level}:{power}`
+	if lastCastlePush[player] == key then
+		return
+	end
+	lastCastlePush[player] = key
+	data:Push(player, {
+		castle = {
+			level = level,
+			power = power,
+			need = Constants.CASTLE_LEVEL_POWER[level],
+			next = nextNeed,
+			bonus = math.floor(Constants.CASTLE_LEVEL_BONUS * (level - 1) * 100 + 0.5),
+		},
+	})
 end
 
 function BaseService:PushIncome(player)
@@ -457,6 +496,7 @@ function BaseService:_tick()
 				data:Push(player, { cps = income })
 			end
 			self:UpdateCastle(base)
+			self:PushCastle(player)
 			base.castleChecked = true
 			local wasLocked = base.world.laser.Transparency < 1
 			self:_drawLock(base)

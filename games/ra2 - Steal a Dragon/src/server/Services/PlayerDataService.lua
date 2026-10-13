@@ -46,6 +46,7 @@ local function defaults()
 		starterOffered = false, -- its card was shown (only ever once)
 		vipUntil = 0, -- gifted VIP lasts until this time (os.time); the Admin panel gives it
 		robuxSpent = 0, -- Robux spent in the game, all time (the TOP SPENDERS board)
+		spentPasses = {}, -- [passKey] = true once that pass's price is in robuxSpent
 		feedback = { asks = 0 }, -- the "Do you like the game?" card: { asks, at, like } (FeedbackService)
 		notify = {}, -- Experience Notifications: { on, askedAt, shown, votedNudgeAt } (FeedbackService)
 		passes = {}, -- passes granted in Studio tests or remembered after purchase
