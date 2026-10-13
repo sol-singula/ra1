@@ -370,6 +370,7 @@ function AnalyticsService:Init(registry)
 			s.lastInputAt = now()
 			local payload = clean(b)
 			if a == "client_info" and type(payload) == "table" then
+				s.device = payload.device
 				upsertSession(s, { device = payload.device, screen = payload.screen })
 				track(s, "client_info", payload)
 			elseif a == "ui" and type(payload) == "table" then

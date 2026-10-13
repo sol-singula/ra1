@@ -83,6 +83,17 @@
   tr:last-child td { border-bottom: 0; }
   td .avatar { width: 28px; height: 28px; border-radius: 8px; vertical-align: middle; margin-right: 8px; }
   .scroll { overflow-x: auto; }
+  .voice { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr) minmax(360px, 2fr); gap: 12px; margin-bottom: 18px; }
+  @media (max-width: 1100px) { .voice { grid-template-columns: 1fr; } }
+  .vcard { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 14px 16px; }
+  .vcard .big { font-size: 34px; font-weight: 800; letter-spacing: -.02em; }
+  .vcard .k { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .vcard table { box-shadow: none; border: 0; margin-top: 8px; }
+  .bar { height: 10px; border-radius: 999px; background: var(--bad-soft); overflow: hidden; margin: 8px 0 4px; }
+  .bar > div { height: 100%; background: var(--good); }
+  .answers { max-height: 330px; overflow-y: auto; margin-top: 6px; }
+  .ans { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; }
+  .ans .t { font-weight: 600; } .ans .m { font-size: 12px; color: var(--muted); }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); }
   .seg button { border: 0; border-radius: 0; padding: 6px 12px; background: transparent; color: var(--muted); }
   .seg button.on { background: var(--accent-soft); color: var(--accent); }
@@ -214,6 +225,51 @@
         <div class="mini">${num(l.income)}/s · 🐉 ${l.dragons ?? "–"} · 🏰 ${l.castle ?? "–"}</div></div></div>`;
   }
 
+  // Player voice: the in-game "Do you like the game?" card and the update-alerts list
+  function voiceHtml() {
+    const st = state.stats || {};
+    const fb = st.feedback, nt = st.notify;
+    if (!fb || !nt) return "";
+    const pctTxt = (x) => x == null ? "–" : x + "%";
+    const row = (label, a, b, fmt, lowerIsBetter) => `<tr><td>${label}</td><td class="num">${fmt(a)}</td><td class="num">${fmt(b)}</td></tr>`;
+    const num = (x) => x == null ? "–" : x;
+    return `<h2>Player voice</h2>
+      <div class="voice">
+        <div class="vcard">
+          <div class="k">🔔 On the update-alerts list</div>
+          <div class="big">${nt.on_list}</div>
+          <div class="mini">players we can send a Roblox notification to</div>
+          <table><tbody>
+            <tr><td>Offered the alerts</td><td class="num">${nt.shown_players}</td></tr>
+            <tr><td>Said yes</td><td class="num">${nt.ever_opted} <span class="mini">(${pctTxt(nt.accept_pct)})</span></td></tr>
+            <tr><td>Joined in the last 24 h</td><td class="num">${nt.opted_24h}</td></tr>
+            <tr><td>Turned them off later</td><td class="num">${nt.left_list}</td></tr>
+          </tbody></table>
+        </div>
+        <div class="vcard">
+          <div class="k">👍 Do you like the game?</div>
+          <div class="big">${pctTxt(fb.all.like_pct)} <span class="mini" style="font-size:13px;font-weight:600">say yes</span></div>
+          <div class="bar"><div style="width:${fb.all.like_pct ?? 0}%"></div></div>
+          <div class="mini">${fb.all.likes} 👍 · ${fb.all.dislikes} 👎 all time · last 24 h: ${fb.day.likes} 👍 · ${fb.day.dislikes} 👎</div>
+          <table><thead><tr><th></th><th class="num">👍 players</th><th class="num">👎 players</th></tr></thead><tbody>
+            ${row("Minutes played when asked", fb.liked.minutes, fb.disliked.minutes, num)}
+            ${row("Times bonked", fb.liked.bonked, fb.disliked.bonked, num)}
+            ${row("Times robbed", fb.liked.robbed, fb.disliked.robbed, num)}
+            ${row("On a phone", fb.liked.phone_pct, fb.disliked.phone_pct, pctTxt)}
+            ${row("First visit", fb.liked.new_pct, fb.disliked.new_pct, pctTxt)}
+          </tbody></table>
+        </div>
+        <div class="vcard">
+          <div class="k">What players said</div>
+          ${fb.recent.length ? `<div class="answers">${fb.recent.map((r) => `<div class="ans">
+            <div style="font-size:20px">${r.liked ? "👍" : "👎"}</div>
+            <div><div class="t">${esc(r.display_name || r.username || r.user_id)}${r.text ? ` <span style="font-weight:500">“${esc(r.text)}”</span>` : ` <span class="mini">(no comment)</span>`}</div>
+              <div class="m">played ${num(r.minutes)} min · bonked ${num(r.bonked)} · robbed ${num(r.robbed)} · ${r.device === "touch" ? "📱 phone" : r.device === "gamepad" ? "🎮 console" : "💻 computer"} · v${r.place_version ?? "?"}</div></div>
+            <div class="mini" style="white-space:nowrap">${dur(ago(r.at))} ago</div></div>`).join("")}</div>` : `<div class="empty" style="margin-top:8px">No answers yet. The card shows after 7 minutes of play.</div>`}
+        </div>
+      </div>`;
+  }
+
   function render() {
     if (!state) { app.innerHTML = `<div class="empty">Loading…${error ? `<br><span class="err">${esc(error)}</span>` : ""}</div>`; return; }
     const servers = state.servers || [];
@@ -242,8 +298,9 @@
         ${hourlyChart("ch1", "New players per hour", "last 48 hours · dashed lines = a new version went live", "new_players", (v) => v ?? 0)}
         ${hourlyChart("ch2", "New players who quit in under a minute", "% per hour · lower is better", "quick_quit_pct", (v) => v == null ? "–" : v + "%")}
       </div>
+      ${voiceHtml()}
       <h2>By update</h2>
-      ${(state.stats && state.stats.versions.length) ? `<div class="scroll"><table><thead><tr><th>Version</th><th>Live since</th><th class="num">Sessions</th><th class="num">New players</th><th class="num">Avg session</th><th class="num">New quit &lt; 1 min</th><th class="num">New stay 3+ min</th><th class="num">Finish tutorial</th><th class="num">Robux buys</th><th class="num">Phone fps</th><th class="num">Phone choppy (&lt;30 fps)</th></tr></thead><tbody>
+      ${(state.stats && state.stats.versions.length) ? `<div class="scroll"><table><thead><tr><th>Version</th><th>Live since</th><th class="num">Sessions</th><th class="num">New players</th><th class="num">Avg session</th><th class="num">New quit &lt; 1 min</th><th class="num">New stay 3+ min</th><th class="num">Finish tutorial</th><th class="num">Robux buys</th><th class="num">Phone fps</th><th class="num">Phone choppy (&lt;30 fps)</th><th class="num">Like it 👍</th></tr></thead><tbody>
         ${state.stats.versions.map((v, i, all) => {
           const older = all[i + 1];
           const cell = (key, fmt, good) => `<td class="num">${fmt(v[key])}${older ? deltaHtml(v[key], older[key], good).replace("delta", "delta mini") : ""}</td>`;
@@ -253,7 +310,8 @@
             ${cell("avg_min", (x) => x == null ? "–" : x + "m", 1)}${cell("quick_quit_pct", (x) => x == null ? "–" : x + "%", -1)}
             ${cell("stay3_pct", (x) => x == null ? "–" : x + "%", 1)}${cell("tutorial_pct", (x) => x == null ? "–" : x + "%", 1)}
             <td class="num">${v.robux}</td>
-            ${cell("phone_fps", (x) => x == null ? "–" : x, 1)}${cell("phone_under30_pct", (x) => x == null ? "–" : x + "%", -1)}</tr>`;
+            ${cell("phone_fps", (x) => x == null ? "–" : x, 1)}${cell("phone_under30_pct", (x) => x == null ? "–" : x + "%", -1)}
+            ${cell("like_pct", (x) => x == null ? "–" : x + "%", 1)}</tr>`;
         }).join("")}
       </tbody></table></div><div class="mini" style="margin-top:6px">Each version is compared with the one before it. Small samples (a few dozen new players) swing a lot.</div>` : `<div class="empty">No versions yet.</div>`}
       <div class="layout"><div class="main">

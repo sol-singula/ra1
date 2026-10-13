@@ -232,4 +232,13 @@ Constants.STARTER_AFTER_SECONDS = 480 -- the Starter Pack card shows once a sess
 Constants.STARTER_COINS_SECONDS = 600 -- Starter Pack coins: 10 minutes of income (at least STARTER_COINS_MIN)
 Constants.STARTER_COINS_MIN = 5000
 
+-- Asking players (FeedbackService)
+Constants.FEEDBACK_AFTER = 420 -- "Do you like the game?" after 7 minutes of play (tutorial done)
+Constants.FEEDBACK_MAX_ASKS = 2 -- at most twice (closed without answering), never again once answered
+Constants.FEEDBACK_MAX_CHARS = 200 -- the "What should we add?" box
+Constants.NOTIFY_AFTER = 900 -- the notifications offer after 15 minutes (also on the thank-you card)
+Constants.NOTIFY_ASK_EVERY = 3 * 86400 -- and at most every 3 days
+Constants.VOTE_NUDGE_AFTER = 1500 -- "Tap 👍 on the game page!" after 25 minutes (or right after a 👍 answer)
+Constants.VOTE_NUDGE_EVERY = 3 * 86400
+
 return Constants

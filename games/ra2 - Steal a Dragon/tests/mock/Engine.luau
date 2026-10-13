@@ -943,6 +943,15 @@ service("ServerScriptService", "Folder")
 service("ServerStorage", "Folder")
 service("StarterPlayer", "Folder")
 service("Lighting")
+-- TextService: the filter turns "badword" into hashes, like Roblox's
+service("TextService")
+function methods.FilterStringAsync(_, text)
+	return {
+		GetNonChatStringForBroadcastAsync = function()
+			return (string.gsub(text, "badword", "#######"))
+		end,
+	}
+end
 service("SoundService")
 
 -- RunService

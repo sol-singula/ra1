@@ -18,6 +18,8 @@ Net.ClientEvents = {
 	Purchase = 2, -- (kind "pass"|"product", key, target?) the server opens Roblox's purchase prompt
 	BuySkin = 2, -- (skinKey) coin skins are bought, Robux skins open their purchase prompt
 	EquipSkin = 2, -- (skinKey)
+	Feedback = 1, -- (like: boolean, text?: string) the "Do you like the game?" card (FeedbackService)
+	Notify = 2, -- ("shown" | "on" | "off" | "status", canAsk?) Experience Notifications opt-in results
 	Analytics = 4, -- (kind, data) device info, button taps, frame rate, window focus (AnalyticsService)
 }
 
@@ -33,6 +35,7 @@ Net.ServerEvents = {
 	"Tutorial", -- { step, total, text, target } or false
 	"Owned", -- { passKey = true } after a purchase
 	"Announce", -- text, color: a banner across the top (someone joined, someone took a top-3 spot)
+	"Ask", -- { kind = "feedback" | "thanks" | "vote" | "notify", like? }: FeedbackService cards
 	"Offer", -- { key, title, text, icon, price, target? }: a Robux offer card (Buy / No thanks)
 	"Sfx", -- soundName, worldPosition?: a sound effect (AudioController); with a position it plays there in 3D
 }

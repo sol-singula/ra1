@@ -36,6 +36,10 @@ Discord game log. Rows are tagged `game = 'ra2'`.
 | `snapshot` | every minute: coins, income, dragons, castle, zone, idle, carrying, ping, tutorial step |
 | `went_idle`, `came_back_from_idle` | no moving and no input for 45 seconds |
 | `ui` (`taps`), `perf` (`fps`, `mem_mb`), `focus` (`on`), `client_info` | from the device |
+| `feedback_asked`, `feedback` (`like`, `text` (filtered), `minutes`, `bonked`, `robbed`, `device`) | the "Do you like the game?" card (FeedbackService) |
+| `vote_nudge` | "Tap 👍 on the game page" reminder shown |
+| `notify_shown`, `notify_opt_in` (`on`), `notify_status` (`can_ask`, `on`, `left_list`) | Experience Notifications opt-in |
+| `offer_card` (`key`, `why`) | a Robux offer card popped up |
 | `leave` | the end (`reason`, `last` actions, `zone`, `idle`) |
 
 ## Reports (views)
@@ -48,6 +52,10 @@ Discord game log. Rows are tagged `game = 'ra2'`.
 | `roblox_first_session_drivers` | for each thing a player can do in their first session: % of those players who came back vs overall |
 | `roblox_session_lengths` | session length buckets, new vs returning |
 | `roblox_ui_taps` | which buttons get tapped, new vs returning |
+| `roblox_phone_fps` | phone frame rate per game version (avg, % of samples under 30 fps) |
+| `roblox_feedback` | every in-game feedback answer with its session (version, device, minutes, bonks, robberies) |
+| `roblox_notify_list` | each player's latest notification state; `on_list = true` is who we can notify |
+| `roblox_notify_summary` | how many are on the list, offered, said yes, left |
 
 ## Questions to ask
 

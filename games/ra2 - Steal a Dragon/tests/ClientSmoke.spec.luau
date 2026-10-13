@@ -333,6 +333,26 @@ local buyOffer = sent("Purchase")
 check("offer card buys", buyOffer and buyOffer.args[1] == "product" and buyOffer.args[2] == "LOCK30")
 check("offer card closes", not panels.Dim.Visible)
 
+serverSends("Ask", { kind = "feedback" })
+Engine.advance(0.1)
+check("feedback card", panels.Dim.Visible and string.find(panels.Dim.Card.Title.Text, "LIKE THE GAME", 1, true) ~= nil)
+local fbBody = panels.Dim.Card.Body
+fbBody.Buttons.Like.Activated:Fire()
+Engine.advance(0.05)
+fbBody.Idea.Text = "more dragons"
+click(fbBody, "SEND")
+local fbSent = sent("Feedback")
+check("feedback sends 👍 and the idea", fbSent and fbSent.args[1] == true and fbSent.args[2] == "more dragons")
+check("feedback card closes", not panels.Dim.Visible)
+serverSends("Ask", { kind = "thanks", like = true })
+Engine.advance(0.1)
+check(
+	"thank-you card asks for a 👍 on the game page",
+	panels.Dim.Visible and string.find(panels.Dim.Card.Title.Text, "THANK", 1, true) ~= nil
+)
+panels.Dim.Card.Close.Activated:Fire()
+Engine.advance(0.05)
+
 hud.InviteButton.Activated:Fire()
 Engine.advance(0.05)
 check("invite prompt", Engine.invites == 1)

@@ -1407,6 +1407,55 @@ check(
 )
 check("analytics: button taps", #eventsOf("ui") >= 1 and eventsOf("ui")[1].data.taps.ShopButton == 3)
 
+-- Feedback card, vote reminder, notifications ----------------------------------------------------------------
+local Feedback = service("FeedbackService")
+local fp = Data:Get(someone)
+fp.tutorialDone = true
+fp.feedback = { asks = 0 }
+fp.notify = {}
+local function lastAsk()
+	local e = Engine.lastClientEvent("Ask", someone)
+	return e and e.args[1]
+end
+check("feedback: the card is asked", Feedback:Ask(someone) and lastAsk().kind == "feedback")
+check("feedback: asked at most twice", Feedback:Ask(someone) and not Feedback:Ask(someone))
+Engine.fireServer(someone, "Feedback", true, "  more dragons and a badword  ")
+Engine.advance(0.1)
+check("feedback: the answer is saved", fp.feedback.like == true and fp.feedback.at ~= nil)
+check("feedback: thank-you card after a 👍", lastAsk().kind == "thanks" and lastAsk().like == true)
+check("feedback: never asked again once answered", not Feedback:Ask(someone))
+check("feedback: no second answer", not Feedback:Answer(someone, false, "x"))
+check("feedback: the 👍 card counts as the vote reminder", not Feedback:NudgeVote(someone))
+fp.notify.votedNudgeAt = Engine.globals.os.time() - Constants.VOTE_NUDGE_EVERY - 1
+check("vote reminder after a while", Feedback:NudgeVote(someone) and lastAsk().kind == "vote")
+check("notifications: offered", Feedback:OfferNotify(someone) and lastAsk().kind == "notify")
+check("notifications: not again for a few days", not Feedback:OfferNotify(someone))
+Engine.fireServer(someone, "Notify", "shown")
+Engine.fireServer(someone, "Notify", "on")
+Engine.advance(0.1)
+check("notifications: opted in is remembered", fp.notify.on == true)
+check("notifications: never offered once on the list", not Feedback:OfferNotify(someone))
+Engine.advance(Constants.ANALYTICS_FLUSH_SECONDS + 1)
+local fbRow = eventsOf("feedback")[1]
+check(
+	"analytics: feedback with the filtered text, play time, bonks, robberies, device",
+	fbRow
+		and fbRow.data.like == true
+		and fbRow.data.text == "more dragons and a #######"
+		and fbRow.data.minutes ~= nil
+		and fbRow.data.bonked ~= nil
+		and fbRow.data.robbed ~= nil
+		and fbRow.data.device == "touch",
+	fbRow and Engine.globals.game:GetService("HttpService"):JSONEncode(fbRow.data)
+)
+check(
+	"analytics: notification opt-in logged",
+	#eventsOf("notify_shown") >= 1 and #eventsOf("notify_opt_in") >= 1 and eventsOf("notify_opt_in")[1].data.on == true
+)
+Engine.fireServer(someone, "Notify", "status", true)
+Engine.advance(0.1)
+check("notifications: turned off later drops off the list", fp.notify.on == false)
+
 -- Fill the first servers first --------------------------------------------------------------------------------
 do
 	local Fill = service("ServerFillService")

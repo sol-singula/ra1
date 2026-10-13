@@ -15,6 +15,7 @@ local Skins = require(ReplicatedStorage.Shared.Data.Skins)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local HudController = require(script.Parent.HudController)
+local NotifyController = require(script.Parent.NotifyController)
 
 local C = Theme.Color
 local new = Theme.new
@@ -40,7 +41,16 @@ local function clearBody()
 	body.Size = UDim2.new(1, -28, 1, -94)
 end
 
-local HEADER_COLORS = { Shop = C.purple, Speed = C.sky, Gift = C.pink, Offline = C.good, Offer = C.ketchup }
+local HEADER_COLORS = {
+	Shop = C.purple,
+	Speed = C.sky,
+	Gift = C.pink,
+	Offline = C.good,
+	Offer = C.ketchup,
+	Feedback = C.sky,
+	Thanks = C.good,
+	Notify = C.purple,
+}
 
 function PanelController.close()
 	current = nil
@@ -529,6 +539,161 @@ builders.Offer = function()
 	no.Activated:Connect(PanelController.close)
 end
 
+-- "Do you like the game?" (FeedbackService) ---------------------------------------------------------------------
+local function buttonRow(height)
+	return new(
+		"Frame",
+		{ Name = "Buttons", BackgroundTransparency = 1, Size = UDim2.fromOffset(460, height or 64), Parent = body }
+	)
+end
+
+builders.Feedback = function()
+	titleLabel.Text = "DO YOU LIKE THE GAME?"
+	list(12)
+	local choice
+	local row = buttonRow(84)
+	local up = Theme.button({
+		Name = "Like",
+		Text = "👍",
+		BackgroundColor3 = C.white,
+		Size = UDim2.new(0.5, -8, 1, 0),
+		round = true,
+		Parent = row,
+	})
+	local down = Theme.button({
+		Name = "Dislike",
+		Text = "👎",
+		BackgroundColor3 = C.white,
+		Size = UDim2.new(0.5, -8, 1, 0),
+		Position = UDim2.new(0.5, 8, 0, 0),
+		round = true,
+		Parent = row,
+	})
+	local box = new("TextBox", {
+		Name = "Idea",
+		Text = "",
+		PlaceholderText = "What should we add? (you can skip this)",
+		ClearTextOnFocus = false,
+		TextWrapped = true,
+		Font = Theme.Body,
+		TextSize = 20,
+		TextColor3 = C.ink,
+		PlaceholderColor3 = C.muted,
+		BackgroundColor3 = C.paper,
+		Size = UDim2.fromOffset(460, 70),
+		Parent = body,
+	}, { Theme.corner(12), Theme.stroke(2) })
+	box:GetPropertyChangedSignal("Text"):Connect(function()
+		if #box.Text > Constants.FEEDBACK_MAX_CHARS then
+			box.Text = string.sub(box.Text, 1, Constants.FEEDBACK_MAX_CHARS)
+		end
+	end)
+	local send = Theme.button({
+		Name = "Send",
+		Text = "PICK 👍 OR 👎",
+		BackgroundColor3 = C.muted,
+		Size = UDim2.fromOffset(300, 58),
+		round = true,
+		Parent = body,
+	})
+	local function pick(like)
+		choice = like
+		up.BackgroundColor3 = like and C.good or C.white
+		down.BackgroundColor3 = like and C.white or C.ketchup
+		send.Text = "SEND"
+		send.BackgroundColor3 = C.good
+	end
+	up.Activated:Connect(function()
+		pick(true)
+	end)
+	down.Activated:Connect(function()
+		pick(false)
+	end)
+	send.Activated:Connect(function()
+		if choice == nil then
+			return
+		end
+		Net.send("Feedback", choice, box.Text)
+		PanelController.close()
+	end)
+end
+
+-- the thank-you card, with the vote reminder (👍) and the update-alerts button (when Roblox can ask)
+local asked = {}
+local function notifyButton(parent, size)
+	local b = Theme.button({
+		Name = "Alerts",
+		Text = "🔔 GET UPDATE ALERTS",
+		BackgroundColor3 = C.purple,
+		Size = size or UDim2.fromOffset(380, 58),
+		round = true,
+		Parent = parent or body,
+	})
+	b.Activated:Connect(function()
+		NotifyController.prompt()
+		PanelController.close()
+	end)
+	Net.send("Notify", "shown")
+	return b
+end
+
+builders.Thanks = function()
+	titleLabel.Text = "THANK YOU! 💛"
+	list(14)
+	if asked.like then
+		headline("Tap 👍 on the game page!", 30, C.mustard)
+		line("It helps more players find Steal a Dragon.", { TextColor3 = C.muted })
+	else
+		line("We read every answer and fix things fast.", { TextSize = 24 })
+	end
+	if asked.canNotify then
+		line("Want a message when we add new dragons?", { TextColor3 = C.muted, TextSize = 20 })
+		notifyButton()
+	else
+		local ok = Theme.button({
+			Name = "Ok",
+			Text = "OK",
+			BackgroundColor3 = C.good,
+			Size = UDim2.fromOffset(220, 58),
+			round = true,
+			Parent = body,
+		})
+		ok.Activated:Connect(PanelController.close)
+	end
+end
+
+builders.Notify = function()
+	titleLabel.Text = "🔔 UPDATE ALERTS"
+	list(14)
+	headline("🐉", 56)
+	line("Get a message when new dragons and events come out!", { TextSize = 24 })
+	local row = buttonRow()
+	notifyButton(row, UDim2.new(0.62, -6, 1, 0))
+	local later = Theme.button({
+		Name = "Later",
+		Text = "NOT NOW",
+		BackgroundColor3 = C.muted,
+		Size = UDim2.new(0.38, -6, 1, 0),
+		Position = UDim2.new(0.62, 6, 0, 0),
+		round = true,
+		Parent = row,
+	})
+	later.Activated:Connect(PanelController.close)
+end
+
+-- Open a card when nothing else is open (wait up to 2 minutes for the player to close what they have open).
+local function openWhenFree(name)
+	task.spawn(function()
+		for _ = 1, 24 do
+			if not current then
+				PanelController.open(name)
+				return
+			end
+			task.wait(5)
+		end
+	end)
+end
+
 function PanelController:init()
 	gui = Theme.screen("Panels", 5, player:WaitForChild("PlayerGui"))
 	dim = new("Frame", {
@@ -639,6 +804,9 @@ function PanelController:init()
 			current
 			and current ~= "Offline"
 			and current ~= "Offer"
+			and current ~= "Feedback"
+			and current ~= "Thanks"
+			and current ~= "Notify"
 			and (
 				partial.passes
 				or partial.speedLevel
@@ -650,6 +818,25 @@ function PanelController:init()
 			)
 		then
 			refreshOpen()
+		end
+	end)
+	-- FeedbackService cards
+	Net.listen("Ask", function(info)
+		if type(info) ~= "table" then
+			return
+		end
+		if info.kind == "feedback" then
+			openWhenFree("Feedback")
+		elseif info.kind == "thanks" then
+			asked.like = info.like == true
+			asked.canNotify = NotifyController.canAsk()
+			openWhenFree("Thanks")
+		elseif info.kind == "notify" then
+			if NotifyController.canAsk() then
+				openWhenFree("Notify")
+			end
+		elseif info.kind == "vote" then
+			HudController.announce("💛 Like the game? Tap 👍 on the game page!", C.mustard)
 		end
 	end)
 	-- an offer never covers another panel the player opened
