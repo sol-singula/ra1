@@ -5,10 +5,13 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Fighter = require(ReplicatedStorage.Shared.Fighter)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local RobotBuilder = require(script.Parent.Parent.World.RobotBuilder)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
+
+local isRobot = Fighter.isRobot
 
 local RangeService = {
 	Name = "RangeService",
@@ -29,13 +32,13 @@ function RangeService:Init(registry)
 			return { layout.model }
 		end,
 		spawn = function(f)
-			if f.robot then
+			if isRobot(f) then
 				return CFrame.lookAt(f.home, f.home - Vector3.zAxis)
 			end
 			return CFrame.new(layout.range.spawn + Vector3.new(0, 3, 0))
 		end,
 		onPop = function(killer, victim, info)
-			if killer and not killer.robot and victim.robot then
+			if killer and not isRobot(killer) and isRobot(victim) then
 				Net.fire(killer, "Toast", info.headshot and "🎯 Bullseye!" or "Nice shot!", "good")
 				self.TargetPopped:Fire(killer, info.headshot)
 			end

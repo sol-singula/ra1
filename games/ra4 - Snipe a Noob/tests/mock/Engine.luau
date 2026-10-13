@@ -874,7 +874,15 @@ INST.__index = function(inst, k)
 	if child then
 		return child
 	end
-	if rawget(inst, "_class") == "Folder" or rawget(inst, "_class") == "Model" or isA(inst, "BasePart") then
+	-- real Roblox errors on any name that isn't a property or child; Roblox properties are PascalCase, so a
+	-- lowercase name (like a Lua table field: f.robot, f.zone) is never valid on an Instance
+	local first = string.sub(tostring(k), 1, 1)
+	if
+		first ~= string.upper(first)
+		or rawget(inst, "_class") == "Folder"
+		or rawget(inst, "_class") == "Model"
+		or isA(inst, "BasePart")
+	then
 		error(k .. " is not a valid member of " .. rawget(inst, "_class") .. ' "' .. props.Name .. '"', 2)
 	end
 	return nil -- GUI and misc classes: unset properties read as nil in the mock

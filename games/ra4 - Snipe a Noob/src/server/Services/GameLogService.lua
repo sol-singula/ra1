@@ -15,12 +15,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local ScriptContext = game:GetService("ScriptContext")
 
+local Fighter = require(ReplicatedStorage.Shared.Fighter)
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rifles = require(ReplicatedStorage.Shared.Data.Rifles)
+
+local isRobot = Fighter.isRobot
 
 local GameLogService = {
 	Name = "GameLogService",
@@ -174,7 +177,7 @@ function GameLogService:Init(registry)
 		})
 	end)
 	registry.CombatService.Popped:Connect(function(killer, victim)
-		if not killer or killer.robot or victim.robot then
+		if not killer or isRobot(killer) or isRobot(victim) then
 			return
 		end
 		-- a cheat check: more than 12 real pops in 20 seconds

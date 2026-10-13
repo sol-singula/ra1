@@ -153,9 +153,8 @@ function LoadoutService:Push(player)
 	end
 end
 
--- The rifle in your hands: only where you can shoot (the arena, a duel, the range). In the lobby your hands are
--- free.
-local FIGHT_ZONES = { arena = true, duel = true, range = true }
+-- The rifle in your hands, everywhere (the lobby too, so you can carry it to the Range). It only fires on the
+-- Range, in a round and in a duel.
 
 function LoadoutService:GiveTool(player)
 	local c = player.Character
@@ -168,9 +167,6 @@ function LoadoutService:GiveTool(player)
 		if old then
 			old:Destroy()
 		end
-	end
-	if not FIGHT_ZONES[player:GetAttribute("Zone") or ""] then
-		return
 	end
 	local tool = RifleModel.tool(profile.rifle, self:SkinId(player), self:MasteryTier(player))
 	tool.Parent = c
@@ -503,13 +499,6 @@ function LoadoutService:OnPlayerReady(player, profile)
 	if player.Character then
 		spawned(player.Character)
 	end
-	-- walking onto the range, joining a round or going back to the lobby swaps the rifle in or out
-	player:GetAttributeChangedSignal("Zone"):Connect(function()
-		local tool = player.Character and player.Character:FindFirstChild("Rifle")
-		if FIGHT_ZONES[player:GetAttribute("Zone") or ""] ~= (tool ~= nil) then
-			self:GiveTool(player)
-		end
-	end)
 	_ = Players
 end
 

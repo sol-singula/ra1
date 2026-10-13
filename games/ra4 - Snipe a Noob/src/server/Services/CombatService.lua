@@ -14,12 +14,15 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Fighter = require(ReplicatedStorage.Shared.Fighter)
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rifles = require(ReplicatedStorage.Shared.Data.Rifles)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
+
+local isRobot = Fighter.isRobot
 
 local CombatService = {
 	Name = "CombatService",
@@ -42,7 +45,7 @@ end
 
 -- Fighter helpers ------------------------------------------------------------------------------------------
 function CombatService.root(f)
-	if f.robot then
+	if isRobot(f) then
 		return f.root
 	end
 	local c = f.Character
@@ -51,14 +54,14 @@ end
 local root = CombatService.root
 
 function CombatService.zone(f)
-	if f.robot then
+	if isRobot(f) then
 		return f.zone
 	end
 	return f:GetAttribute("Zone")
 end
 
 function CombatService.isPopped(f)
-	if f.robot then
+	if isRobot(f) then
 		return f.popped == true
 	end
 	return f:GetAttribute("Popped") == true
@@ -66,7 +69,7 @@ end
 
 function CombatService.shielded(f)
 	local untilT
-	if f.robot then
+	if isRobot(f) then
 		untilT = f.shieldUntil
 	else
 		untilT = f:GetAttribute("ShieldUntil")
@@ -75,7 +78,7 @@ function CombatService.shielded(f)
 end
 
 function CombatService.name(f)
-	return f.robot and f.name or f.DisplayName
+	return isRobot(f) and f.name or f.DisplayName
 end
 
 function CombatService.setZone(player, zone)
@@ -177,7 +180,7 @@ function CombatService:Trace(shooter, zoneName, origin, dir, at)
 	local targetsOnly = zone and zone.targetsOnly
 	local best, bestDist, bestHead
 	for _, f in self:Fighters(zoneName) do
-		if f ~= shooter and not self.isPopped(f) and (not targetsOnly or f.robot) then
+		if f ~= shooter and not self.isPopped(f) and (not targetsOnly or isRobot(f)) then
 			local pos = self:PositionAt(f, at)
 			if pos then
 				local d, head = Formulas.hitTarget(origin, dir, pos, wallDist)
@@ -194,7 +197,7 @@ function CombatService:Trace(shooter, zoneName, origin, dir, at)
 end
 
 local function breakShield(f)
-	if f.robot then
+	if isRobot(f) then
 		f.shieldUntil = nil
 		return
 	end
@@ -207,7 +210,7 @@ local function breakShield(f)
 end
 
 local function muzzleOf(f, fallback)
-	local c = f.robot and f.model or f.Character
+	local c = isRobot(f) and f.model or f.Character
 	local tool = c and c:FindFirstChild("Rifle")
 	local handle = tool and tool:FindFirstChild("Handle")
 	local m = handle and handle:FindFirstChild("Muzzle")
@@ -308,11 +311,11 @@ function CombatService:Pop(killer, victim, headshot, how)
 	popToken[victim] = (popToken[victim] or 0) + 1
 	local token = popToken[victim]
 	-- the burst everyone sees, in the killer's pop effect
-	local effect = (killer and not killer.robot) and loadout:Effect(killer) or "BRICKS"
+	local effect = (killer and not isRobot(killer)) and loadout:Effect(killer) or "BRICKS"
 	Net.fireAll("Pop", pos, effect)
 	Net.fireAll("Sfx", "pop", pos)
 	-- out of sight until the respawn
-	if victim.robot then
+	if isRobot(victim) then
 		victim.popped = true
 		victim.model:PivotTo(CFrame.new(WorldBuilder.POP_BOX + Vector3.new(math.random(-8, 8), 0, math.random(-8, 8))))
 	else
@@ -325,7 +328,7 @@ function CombatService:Pop(killer, victim, headshot, how)
 	end
 	history[victim] = nil
 	local info = { headshot = headshot == true, how = how or "shot", at = pos, zone = zoneName }
-	if killer and not killer.robot then
+	if killer and not isRobot(killer) then
 		Net.fire(killer, "Hit", headshot == true)
 		Net.fire(killer, "Sfx", headshot and "headshot" or "hit")
 	end
@@ -333,15 +336,15 @@ function CombatService:Pop(killer, victim, headshot, how)
 		zone.onPop(killer, victim, info)
 	end
 	self.Popped:Fire(killer, victim, info)
-	if not victim.robot then
+	if not isRobot(victim) then
 		local backAt = serverNow() + Constants.RESPAWN_SECONDS
 		Net.fire(victim, "Popped", {
 			by = killer and self.name(killer) or "",
-			userId = (killer and not killer.robot) and killer.UserId or 0,
-			robot = (killer and killer.robot) and killer.model.Name or nil,
-			level = killer and (killer.robot and 1 or (killer:GetAttribute("Level") or 1)) or 1,
-			rifle = killer and not killer.robot and loadout:Rifle(killer).name or "Bolt",
-			skin = killer and not killer.robot and loadout:SkinName(killer) or nil,
+			userId = (killer and not isRobot(killer)) and killer.UserId or 0,
+			robot = (killer and isRobot(killer)) and killer.model.Name or nil,
+			level = killer and (isRobot(killer) and 1 or (killer:GetAttribute("Level") or 1)) or 1,
+			rifle = killer and not isRobot(killer) and loadout:Rifle(killer).name or "Bolt",
+			skin = killer and not isRobot(killer) and loadout:SkinName(killer) or nil,
 			effect = effect,
 			headshot = headshot == true,
 			back = backAt,
@@ -366,7 +369,7 @@ function CombatService:Respawn(f, noShield)
 	local cf = zone and zone.spawn and zone.spawn(f)
 	popToken[f] = (popToken[f] or 0) + 1
 	history[f] = nil
-	if f.robot then
+	if isRobot(f) then
 		f.popped = false
 		if cf then
 			f.model:PivotTo(cf)
@@ -405,7 +408,7 @@ function CombatService:Release(f)
 	popToken[f] = (popToken[f] or 0) + 1
 	history[f] = nil
 	lastShot[f] = nil
-	if f.robot then
+	if isRobot(f) then
 		f.popped = false
 		return
 	end

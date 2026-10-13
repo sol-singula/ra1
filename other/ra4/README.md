@@ -28,8 +28,8 @@ experience for it and the place/universe IDs on the API key (see [Publish](#publ
 
 ### The round loop
 
-1. **The lobby.** You join here: a walled courtyard with towers, so nobody wanders off. Your hands are free here;
-   the rifle comes out on the Range, in a round and in a duel. The sign over the PLAY pad says what's happening. With one player it waits
+1. **The lobby.** You join here: a walled courtyard with towers, so nobody wanders off. You carry your rifle here; it
+   fires on the Range, in a round and in a duel. The sign over the PLAY pad says what's happening. With one player it waits
    (try the **Range** in the south-west corner, or the leaderboards on the west side).
 2. **2 players is enough, and 1 is fine too.** With 2 players the 15-second countdown starts right away; alone,
    it waits 20 seconds for friends and then starts anyway with robots. A **vote card** shows three maps: tap one.

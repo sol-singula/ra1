@@ -5,11 +5,14 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Fighter = require(ReplicatedStorage.Shared.Fighter)
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local MapBuilder = require(script.Parent.Parent.World.MapBuilder)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
+
+local isRobot = Fighter.isRobot
 
 local DuelService = {
 	Name = "DuelService",
@@ -107,7 +110,7 @@ function DuelService:Init(registry)
 		end,
 		onPop = function(killer, victim)
 			local d = self.duel
-			if not d or not killer or killer.robot or not d.score[killer] then
+			if not d or not killer or isRobot(killer) or not d.score[killer] then
 				return
 			end
 			d.score[killer] += 1

@@ -9,6 +9,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Fighter = require(ReplicatedStorage.Shared.Fighter)
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
@@ -17,6 +18,8 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local MapBuilder = require(script.Parent.Parent.World.MapBuilder)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
+
+local isRobot = Fighter.isRobot
 
 local RoundService = {
 	Name = "RoundService",
@@ -105,13 +108,13 @@ end
 function RoundService:Ranking()
 	local list = {}
 	for f, s in self.scores do
-		local alive = f.robot and combat.robots[f] or (not f.robot and f.Parent ~= nil)
+		local alive = isRobot(f) and combat.robots[f] or (not isRobot(f) and f.Parent ~= nil)
 		if alive then
 			table.insert(list, {
 				fighter = f,
 				name = combat.name(f),
-				userId = f.robot and 0 or f.UserId,
-				robot = f.robot == true,
+				userId = isRobot(f) and 0 or f.UserId,
+				robot = isRobot(f),
 				pops = s.pops,
 				deaths = s.deaths,
 				best = s.best,
@@ -158,14 +161,14 @@ local function updateCrown()
 	if holder == crownHolder then
 		return
 	end
-	if crownHolder and not crownHolder.robot and crownHolder.Parent then
+	if crownHolder and not isRobot(crownHolder) and crownHolder.Parent then
 		crownHolder:SetAttribute("Crown", nil)
-	elseif crownHolder and crownHolder.robot and crownHolder.model then
+	elseif crownHolder and isRobot(crownHolder) and crownHolder.model then
 		crownHolder.model:SetAttribute("Crown", nil)
 	end
 	crownHolder = holder
 	if holder then
-		if holder.robot then
+		if isRobot(holder) then
 			holder.model:SetAttribute("Crown", true)
 		else
 			holder:SetAttribute("Crown", true)
@@ -191,7 +194,7 @@ function RoundService:PickSpawn(f)
 			if r then
 				table.insert(
 					enemies,
-					{ pos = r.Position, friend = not f.robot and not other.robot and team:AreTeam(f, other) }
+					{ pos = r.Position, friend = not isRobot(f) and not isRobot(other) and team:AreTeam(f, other) }
 				)
 			end
 		end
@@ -275,7 +278,7 @@ function RoundService:_onPop(killer, victim, info)
 	vs.deaths += 1
 	vs.streak = 0
 	local victimWasCrown = victim == crownHolder and vs.pops > 0
-	if not victim.robot then
+	if not isRobot(victim) then
 		local vp = data:Get(victim)
 		if vp then
 			vp.stats.deaths += 1
@@ -296,10 +299,10 @@ function RoundService:_onPop(killer, victim, info)
 			streak = ks.streak,
 			revenge = revenge,
 			crown = victimWasCrown,
-			robot = victim.robot == true,
+			robot = isRobot(victim),
 			lastMinute = self.endsAt - serverNow() <= Constants.LAST_MINUTE,
 		}
-		if not killer.robot then
+		if not isRobot(killer) then
 			self:_reward(killer, victim, popInfo)
 		end
 		-- streak banners
@@ -307,7 +310,7 @@ function RoundService:_onPop(killer, victim, info)
 			if ks.streak == st.at then
 				Net.fireAll("Streak", combat.name(killer), st.text, color3(st.color))
 				Net.fireAll("Sfx", "streak")
-				if not killer.robot and st.at == 5 then
+				if not isRobot(killer) and st.at == 5 then
 					local kp = data:Get(killer)
 					if kp then
 						kp.stats.streak5 += 1
@@ -319,13 +322,13 @@ function RoundService:_onPop(killer, victim, info)
 			killer = combat.name(killer),
 			victim = combat.name(victim),
 			headshot = info.headshot,
-			killerColor = killer.robot and Color3.fromRGB(255, 120, 120) or loadout:NameColor(killer),
-			victimColor = victim.robot and Color3.fromRGB(255, 120, 120) or loadout:NameColor(victim),
-			skin = not killer.robot and loadout:SkinName(killer) or nil,
-			rifle = not killer.robot and loadout:Rifle(killer).name or "Robot",
+			killerColor = isRobot(killer) and Color3.fromRGB(255, 120, 120) or loadout:NameColor(killer),
+			victimColor = isRobot(victim) and Color3.fromRGB(255, 120, 120) or loadout:NameColor(victim),
+			skin = not isRobot(killer) and loadout:SkinName(killer) or nil,
+			rifle = not isRobot(killer) and loadout:Rifle(killer).name or "Robot",
 			tag = revenge and "😤 REVENGE" or (victimWasCrown and "👑 CROWN") or nil,
 		})
-		if not killer.robot then
+		if not isRobot(killer) then
 			local stats = killer:FindFirstChild("leaderstats")
 			if stats then
 				stats.Pops.Value = ks.pops
