@@ -272,7 +272,7 @@ Shop.Products = {
 		price = 150,
 		id = 3718322494,
 		icon = "🛡️",
-		hidden = true, -- bought from a dragon in your nests (hold its Shield button)
+		hidden = true, -- offered for your best dragon right after you get robbed (ShopService:OfferShieldAfterRobbed)
 	},
 	{
 		key = "OFFLINE2X",

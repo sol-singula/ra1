@@ -214,6 +214,21 @@ function RoadService:GiveFromRoad(player, roadId)
 end
 
 -- FREE dragon and Practice Base ------------------------------------------------------------------------------
+-- A new player's first dragon (Puff), straight onto their head: from the FREE pad, or by itself a few seconds after
+-- they arrive (TutorialService). Returns true if they got it.
+function RoadService:GiveFree(player)
+	local profile = data:Get(player)
+	if not profile or profile.tutorialDone or #profile.dragons > 0 or dragons:Carrying(player) then
+		return false
+	end
+	local rec = dragons:NewRecord(player, "PUFF", nil)
+	if not dragons:StartCarry(player, rec, player, "free") then
+		return false
+	end
+	Net.fire(player, "Toast", "Your first dragon! Run it home before someone steals it! 🏠", "good")
+	return true
+end
+
 function RoadService:_buildStands()
 	local layout = WorldBuilder.layout
 	local free = DragonBuilder.build("PUFF", nil, 1)
@@ -221,14 +236,9 @@ function RoadService:_buildStands()
 	DragonBuilder.label(free, "Puff", Dragons.RarityColor.Common, "FREE")
 	local fp = dragons.prompt(free.PrimaryPart, "free", "Grab FREE", "Puff", 0.2, 0)
 	fp.Triggered:Connect(function(player)
-		local profile = data:Get(player)
-		if not profile or profile.tutorialDone or #profile.dragons > 0 or dragons:Carrying(player) then
+		if not self:GiveFree(player) then
 			Net.fire(player, "Toast", "The free dragon is for new players!", "info")
-			return
 		end
-		local rec = dragons:NewRecord(player, "PUFF", nil)
-		dragons:StartCarry(player, rec, player, "free")
-		Net.fire(player, "Toast", "Your first dragon! Run to your base! 🏠", "good")
 	end)
 	free.Parent = folder
 	self.freeModel = free

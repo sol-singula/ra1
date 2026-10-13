@@ -79,6 +79,17 @@ function PlaytimeService:_give(player, n)
 	local minutes = math.floor(Formulas.PLAYTIME_GIFTS[n].at / 60)
 	Net.fire(player, "Alert", `🎁 {minutes} min playtime gift: {gift.text}!`, Color3.fromRGB(255, 205, 50))
 	Net.fire(player, "Sfx", "buy")
+	-- and straight away, the next thing to stay for
+	local nextGift = Formulas.PLAYTIME_GIFTS[n + 1]
+	if nextGift then
+		local wait = math.max(1, math.ceil((nextGift.at - Formulas.PLAYTIME_GIFTS[n].at) / 60))
+		local nextText = self:GiftFor(player, n + 1).text
+		task.delay(3, function()
+			if player.Parent then
+				Net.fire(player, "Toast", `🎁 Next gift in {wait} min: {nextText}! Keep playing!`, "good")
+			end
+		end)
+	end
 	self.GiftGiven:Fire(player, n, gift)
 end
 

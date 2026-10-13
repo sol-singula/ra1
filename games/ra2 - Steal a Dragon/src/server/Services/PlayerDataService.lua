@@ -43,7 +43,7 @@ local function defaults()
 		stats = { bought = 0, locks = 0, bonks = 0, friendPlay = 0, practice = 0 },
 		tutorialDone = false,
 		starterBought = false, -- the one-time Starter Pack
-		starterOffered = false, -- its card was shown (only ever once)
+		starterOffered = false, -- its card was shown (starterOffers times, last at starterOfferedAt)
 		castleSkins = {}, -- castle skins owned (Data/CastleSkins.lua); castleSkin = the one worn (nil = normal)
 		vipUntil = 0, -- gifted VIP lasts until this time (os.time); the Admin panel gives it
 		robuxSpent = 0, -- Robux spent in the game, all time (the TOP SPENDERS board)

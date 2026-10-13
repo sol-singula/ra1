@@ -303,8 +303,11 @@ check(
 )
 check("new players start with 100 coins", pa.coins == Constants.START_COINS)
 
-trigger(a, Road.freeModel, "free")
-check("carrying the free Puff", Dragon:Carrying(a) and Dragon:Carrying(a).rec.id == "PUFF")
+Engine.advance(Constants.FREE_DRAGON_AFTER + 0.3)
+check(
+	"carrying the free Puff (it lands on your head by itself)",
+	Dragon:Carrying(a) and Dragon:Carrying(a).rec.id == "PUFF"
+)
 check("carry slows you down", a.Character.Humanoid.WalkSpeed < 18)
 check("carried model on the character", a.Character:FindFirstChild("CarriedDragon") ~= nil)
 trigger(a, Road.freeModel, "free") -- second grab refused
@@ -698,6 +701,20 @@ check("robbed: not again right away", not Shop:OfferLockAfterRobbed(a))
 Shop:ResetOffers(a)
 Base:Get(a).lockUntil = Engine.workspace:GetServerTimeNow() + 60
 check("robbed: no lock card while already locked", not Shop:OfferLockAfterRobbed(a))
+do
+	local uid = Dragon:BestUnshielded(a)
+	check(
+		"robbed while locked: the Dragon Shield card for your best dragon instead",
+		uid ~= nil and Shop:OfferShieldAfterRobbed(a) and lastOffer().key == "PROTECT" and lastOffer().target == uid
+	)
+	local nestHasShield = false
+	for _, m in Engine.workspace.Dragons:GetChildren() do
+		if m.PrimaryPart and m.PrimaryPart:FindFirstChild("Prompt_shield") then
+			nestHasShield = true
+		end
+	end
+	check("no Shield button on nests any more", not nestHasShield)
+end
 Base:Get(a).lockUntil = 0
 local rich = Road:Spawn("Epic")
 check(
@@ -706,7 +723,13 @@ check(
 )
 check("Starter Pack card shows once", Shop:OfferStarter(a) and not Shop:OfferStarter(a))
 Shop:ResetOffers(a)
-check("Starter Pack card never again, even in another server", not Shop:OfferStarter(a))
+check("Starter Pack card not again within 3 days, even in another server", not Shop:OfferStarter(a))
+pa.starterOffers, pa.starterOfferedAt = 1, pa.starterOfferedAt - Constants.STARTER_EVERY - 1 -- (server clock)
+Shop:ResetOffers(a)
+check("Starter Pack card again after 3 days", Shop:OfferStarter(a))
+pa.starterOffers, pa.starterOfferedAt = Constants.STARTER_MAX_OFFERS, 0
+Shop:ResetOffers(a)
+check("Starter Pack card at most 3 times ever", not Shop:OfferStarter(a))
 pa.starterOffered = false
 local potions0, dragons0, coins0 = pa.potions, #pa.dragons, pa.coins
 Shop:Grant(a, "STARTER")
@@ -1799,6 +1822,17 @@ do
 	Engine.moveTo(cheater, ob.world.cf.Position + Vector3.new(0, 3, 0))
 	Engine.advance(0.3)
 	check("anti-cheat: noclip into a locked base flagged", flagged(cheater, "noclip"))
+	Engine.moveTo(cheater, ob.world.cf.Position + Vector3.new(4, 3, 0)) -- straight back in
+	Engine.advance(0.3)
+	do
+		local n = 0
+		for _, f in flags do
+			if f.p == cheater and f.kind == "noclip" then
+				n += 1
+			end
+		end
+		check("anti-cheat: noclip counted once per entry", n == 1, tostring(n))
+	end
 	check("anti-cheat: honest owner clean", not flagged(owner, "speed") and not flagged(owner, "noclip"))
 	Engine.removePlayer(owner)
 	-- keep teleporting: kicked

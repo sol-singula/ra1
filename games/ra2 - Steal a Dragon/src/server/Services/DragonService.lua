@@ -344,20 +344,6 @@ function DragonService:_spawnNestModel(player, rec)
 		steal.Triggered:Connect(function(thief)
 			self:TrySteal(thief, model)
 		end)
-		local shield = prompt(
-			root,
-			"shield",
-			"🛡️ Shield " .. Format.robux(Constants.SHIELD_PRICE_SHOWN),
-			name,
-			0.6,
-			player.UserId,
-			Enum.KeyCode.R
-		)
-		shield.Triggered:Connect(function(who)
-			if who == player then
-				self.ShieldRequested:Fire(player, rec.uid)
-			end
-		end)
 	end
 	local sell = prompt(
 		root,
@@ -379,6 +365,21 @@ function DragonService:_spawnNestModel(player, rec)
 	end)
 	model.Parent = folder
 	models[rec.slot] = model
+end
+
+-- The best dragon in this player's nests that has no Dragon Shield yet: uid, name (or nil).
+function DragonService:BestUnshielded(player)
+	local profile = data:Get(player)
+	local best, bestIncome
+	for _, rec in profile and profile.dragons or {} do
+		if rec.slot and not rec.protected then
+			local income = Formulas.dragonIncome(rec, os.time())
+			if not best or income > bestIncome then
+				best, bestIncome = rec, income
+			end
+		end
+	end
+	return best and best.uid, best and Dragons.byId[best.id].name
 end
 
 -- A Dragon Shield was bought for this dragon: it can never be stolen again.

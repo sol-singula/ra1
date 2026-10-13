@@ -28,6 +28,7 @@ local ShopService = {
 		"RoadService",
 		"RewardService",
 		"ToolService",
+		"PlaytimeService",
 	},
 	Purchased = Signal.new("ShopService.Purchased"), -- (player, name, robux, passKey?) a real Robux purchase went through
 	Prompted = Signal.new("ShopService.Prompted"), -- (player, kind "pass"|"product", key) a purchase prompt opened
@@ -87,7 +88,18 @@ function ShopService:Init(registry)
 	-- the moments a player wants something: right after being robbed, and an Epic+ road dragon they can't afford
 	dragons.Placed:Connect(function(thief, _, kind, from)
 		if kind == "stolen" and from and from ~= thief and from.Parent then
-			self:OfferLockAfterRobbed(from)
+			if not self:OfferLockAfterRobbed(from) then
+				self:OfferShieldAfterRobbed(from)
+			end
+		end
+	end)
+	registry.PlaytimeService.GiftGiven:Connect(function(player, n)
+		if n >= Constants.STARTER_AFTER_GIFT then
+			task.delay(2.5, function() -- after the gift's own alert
+				if player.Parent then
+					self:OfferStarter(player)
+				end
+			end)
 		end
 	end)
 	road.CantAfford:Connect(function(player, roadId)
@@ -247,13 +259,18 @@ function ShopService:RefreshPlates(player)
 	end
 end
 
--- May the world show this player Robux offers right now? Not during the tutorial or a new player's first minutes.
-function ShopService:OffersAllowed(player)
+-- May the world show this player Robux offers right now? Not during the tutorial or a new player's first minutes
+-- (`allowNew`: offers made for new players, like the Starter Pack, skip that second rule).
+function ShopService:OffersAllowed(player, allowNew)
 	local profile = data:Get(player)
 	if not profile or not profile.tutorialDone then
 		return false
 	end
-	if profile._isNew and os.time() - (profile._joinedAt or 0) < Constants.OFFER_NEW_PLAYER_SECONDS then
+	if
+		not allowNew
+		and profile._isNew
+		and os.time() - (profile._joinedAt or 0) < Constants.OFFER_NEW_PLAYER_SECONDS
+	then
 		return false
 	end
 	return true
@@ -281,9 +298,9 @@ end
 
 -- An offer card (a small panel with Buy and No thanks) instead of opening Roblox's prompt straight away. Same
 -- rules as Offer; cooldown defaults to OFFER_COOLDOWN. Returns true if the card was shown.
-function ShopService:OfferCard(player, key, why, card, cooldown)
+function ShopService:OfferCard(player, key, why, card, cooldown, allowNew)
 	local product = Shop.productByKey[key]
-	if not product or not self:OffersAllowed(player) then
+	if not product or not self:OffersAllowed(player, allowNew) then
 		return false
 	end
 	local mine = offeredAt[player] or {}
@@ -317,6 +334,21 @@ function ShopService:OfferLockAfterRobbed(player)
 	}, Constants.OFFER_ROBBED_COOLDOWN)
 end
 
+-- "Never lose a dragon again": right after being robbed (when the lock offer didn't show), shield your best
+-- dragon that isn't shielded yet. (Shields used to be a button on every nest; phone players hit it by accident.)
+function ShopService:OfferShieldAfterRobbed(player)
+	local uid, name = dragons:BestUnshielded(player)
+	if not uid then
+		return false
+	end
+	return self:OfferCard(player, "PROTECT", "robbed", {
+		title = "🛡️ NEVER LOSE IT AGAIN",
+		text = `Shield your {name} forever. Nobody can ever steal it!`,
+		icon = "🛡️",
+		target = uid,
+	}, Constants.OFFER_ROBBED_COOLDOWN)
+end
+
 -- Tried to buy an Epic (or better) road dragon without enough coins: offer to take it now.
 function ShopService:OfferBuyNow(player, roadId)
 	local entry = road:Entry(roadId)
@@ -332,21 +364,30 @@ function ShopService:OfferBuyNow(player, roadId)
 	})
 end
 
--- The Starter Pack card: once ever, after STARTER_AFTER_SECONDS of play (it stays in the shop after that).
+-- The Starter Pack card: right after a playtime gift (3 minutes in, the moment players tend to leave), at most
+-- once a session, once every STARTER_EVERY seconds and STARTER_MAX_OFFERS times ever (it stays in the shop).
 function ShopService:OfferStarter(player)
 	local profile = data:Get(player)
-	-- once ever (not once per server): profile.starterOffered is saved
-	if not profile or profile.starterBought or profile.starterOffered or starterShown[player] then
+	if not profile or profile.starterBought or starterShown[player] then
+		return false
+	end
+	local count = profile.starterOffers or (profile.starterOffered and 1 or 0)
+	if count >= Constants.STARTER_MAX_OFFERS then
+		return false
+	end
+	if profile.starterOfferedAt and os.time() - profile.starterOfferedAt < Constants.STARTER_EVERY then
 		return false
 	end
 	if
 		self:OfferCard(player, "STARTER", "starter", {
 			title = "🎒 STARTER PACK",
-			text = "1 Epic dragon + 5 speed potions + a bag of coins. One time only!",
-		})
+			text = "1 Epic dragon + 5 speed potions + a bag of coins. Only for new players!",
+		}, nil, true)
 	then
 		starterShown[player] = true
 		profile.starterOffered = true
+		profile.starterOffers = count + 1
+		profile.starterOfferedAt = os.time()
 		return true
 	end
 	return false
@@ -412,6 +453,7 @@ function ShopService:OnPlayerReady(player)
 		p:SetAttribute("OwnerUserId", player.UserId)
 	end
 	self:RefreshPlates(player)
+	-- (and a fallback for players who skip past the gifts)
 	task.delay(Constants.STARTER_AFTER_SECONDS, function()
 		-- busy (carrying, a panel open on their side)? try again a little later, a few times
 		for _ = 1, 5 do

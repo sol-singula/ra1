@@ -8,7 +8,7 @@
 --              ceiling with them): dropped back to the ground, + 2 strikes
 --   noclip     standing inside someone's locked base (walls and the red laser are solid, and flyers are bounced
 --              before they land): BaseService bounces you out, + 2 strikes
---   spam       firing server requests far faster than the game ever does: + a strike per AC_SPAM_DROPS
+--   spam       firing server requests at auto-clicker rates (AC_SPAM_DROPS dropped in AC_SPAM_WINDOW s): + a strike
 -- Strikes fade (one every AC_DECAY_SECONDS); at AC_KICK_STRIKES you're kicked. Every flag goes to the Discord game
 -- log and analytics (Flagged / Kicked). Our own teleports and knockbacks set the player's "AcGrace" attribute (an
 -- os.clock() time) so they never count. Admins are logged but never kicked.
@@ -202,14 +202,26 @@ function AntiCheatService:Init(registry)
 		local lockedFor = base.lockedAt and (workspace:GetServerTimeNow() - base.lockedAt) or 0
 		local low = base.world.cf:PointToObjectSpace(pos).Y < 8
 		if lockedFor > 3 and low and baseService:IsInside(base, pos) then
-			self:Flag(player, "noclip", `inside {base.owner.Name}'s locked base`, 2)
+			-- once per time they get in (BaseService reports it every tick until they're out)
+			local s = st(player)
+			s.inside = s.inside or {}
+			local last = s.inside[base]
+			s.inside[base] = os.clock()
+			if not last or os.clock() - last > 5 then
+				self:Flag(player, "noclip", `inside {base.owner.Name}'s locked base`, 2)
+			end
 		end
 	end)
+	-- mashing or holding a button drops a few requests now and then; only auto-clicker rates count
 	Net.onDrop(function(player)
 		local s = st(player)
+		local now = os.clock()
+		if now - (s.dropsSince or 0) > Constants.AC_SPAM_WINDOW then
+			s.dropsSince, s.drops = now, 0
+		end
 		s.drops += 1
-		if s.drops % Constants.AC_SPAM_DROPS == 0 then
-			self:Flag(player, "spam", `{s.drops} requests dropped`, 1)
+		if s.drops == Constants.AC_SPAM_DROPS then
+			self:Flag(player, "spam", `{s.drops} requests dropped in {Constants.AC_SPAM_WINDOW}s`, 1)
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)

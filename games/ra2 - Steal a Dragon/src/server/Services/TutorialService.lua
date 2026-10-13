@@ -3,6 +3,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Constants = require(ReplicatedStorage.Shared.Constants)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 
@@ -55,7 +56,7 @@ end
 
 local STEPS = {
 	{
-		text = "Grab the FREE dragon! 🐉",
+		text = "Here comes your FREE dragon! 🐉",
 		target = function()
 			return road.freeModel
 		end,
@@ -130,6 +131,16 @@ function TutorialService:OnPlayerReady(player, profile)
 	end
 	-- someone who already has a dragon in a nest skips the first two steps
 	state[player] = { step = hasNestDragon(profile) and 3 or 1 }
+	-- Brand new: the free dragon lands on your head a few seconds in, so the first thing you do is run it home
+	-- (41% of new players never walked over to grab it). The FREE pad still works if you're quicker.
+	if state[player].step == 1 then
+		task.delay(Constants.FREE_DRAGON_AFTER, function()
+			local s = state[player]
+			if s and s.step == 1 and player.Parent and player.Character then
+				road:GiveFree(player)
+			end
+		end)
+	end
 end
 
 function TutorialService:OnPlayerLeaving(player)

@@ -231,7 +231,11 @@ Constants.DAILY_RESET_HOUR_ET = 19 -- the daily TOP EARNERS board resets at 7pm 
 
 -- Robux offer cards (ShopService:OfferCard): shown at the moment a player wants something
 Constants.OFFER_ROBBED_COOLDOWN = 300 -- "Lock for 30 min?" after you get robbed, at most every 5 minutes
-Constants.STARTER_AFTER_SECONDS = 480 -- the Starter Pack card shows once a session, after 8 minutes of play
+Constants.FREE_DRAGON_AFTER = 3 -- seconds after a brand-new player arrives that the free dragon lands on their head
+Constants.STARTER_AFTER_SECONDS = 480 -- the Starter Pack card: a fallback if no playtime gift brought it up first
+Constants.STARTER_AFTER_GIFT = 2 -- shown right after this playtime gift (3 minutes in, when players tend to leave)
+Constants.STARTER_EVERY = 3 * 86400 -- at most once every 3 days ...
+Constants.STARTER_MAX_OFFERS = 3 -- ... and 3 times ever
 Constants.STARTER_COINS_SECONDS = 600 -- Starter Pack coins: 10 minutes of income (at least STARTER_COINS_MIN)
 Constants.STARTER_COINS_MIN = 5000
 
@@ -294,10 +298,11 @@ Constants.ARENA_RADIUS = 70
 Constants.AC_KICK_STRIKES = 12 -- strikes that get you kicked
 Constants.AC_DECAY_SECONDS = 20 -- one strike fades every this many seconds
 Constants.AC_WINDOW = 2 -- movement is judged over this many seconds (smooths out lag)
-Constants.AC_SPEED_SLACK = 1.35 -- allowed speed = the fastest you can legitimately go x this ...
-Constants.AC_SPEED_EXTRA = 8 -- ... + this (studs per second)
+Constants.AC_SPEED_SLACK = 1.6 -- allowed speed = the fastest you can legitimately go x this ...
+Constants.AC_SPEED_EXTRA = 14 -- ... + this (studs per second)
 Constants.AC_AIR_SECONDS = 2.5 -- hovering high off the ground without wings this long = flying
 Constants.AC_AIR_HEIGHT = 14 -- studs above the ground that count as "high"
-Constants.AC_SPAM_DROPS = 25 -- dropped (too fast) server requests per strike
+Constants.AC_SPAM_DROPS = 80 -- dropped (too fast) server requests within AC_SPAM_WINDOW seconds = a strike
+Constants.AC_SPAM_WINDOW = 10
 
 return Constants
