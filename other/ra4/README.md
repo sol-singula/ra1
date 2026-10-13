@@ -114,13 +114,25 @@ leaves with session stats, chat, purchases, round results, Legend+ crate skins, 
 
 ## Publish
 
-1. Create the experience (name: Snipe a Noob; **24 players per server**; Avatar type **R15**).
-2. Add its universe and place to the Open Cloud API key used for ra2 and ra3.
-3. `rojo build -o SnipeANoob.rbxl`, then POST it to
-   `https://apis.roblox.com/universes/v1/{universeId}/places/{placeId}/versions?versionType=Published`.
-4. Create the passes and products and put their IDs in `src/shared/Data/Shop.lua`.
-5. Add the `discord_log` secret; upload the icon and thumbnails from `other/ra4/thumbnails/`.
-6. Fill the Content Maturity questionnaire: blocky, no blood, players pop into bricks (Mild violence).
+- **Universe ID:** 10770612850 · **Place ID:** 80402814719145
+- **Done through the API:** name and description, 24 players per server, the live build, and all 3 passes and 6
+  products (IDs in `src/shared/Data/Shop.lua`; pass icons in `other/ra4/icon/passes/`). To rerun:
+  `python3 tools/setup_shop.py` (it won't make duplicates).
+- **Publish a new build** (from the game folder):
+
+  ```bash
+  rojo build -o SnipeANoob.rbxl
+  curl -X POST -H "x-api-key: $ROBLOX_API_KEY" -H "Content-Type: application/octet-stream" \
+    --data-binary @SnipeANoob.rbxl \
+    "https://apis.roblox.com/universes/v1/10770612850/places/80402814719145/versions?versionType=Published"
+  ```
+
+- **Still by hand on the Creator Dashboard** (the API can't do these, or the key isn't allowed to):
+  1. **Secrets:** add `discord_log` (same value as ra2/ra3), domain `kvedatksqkcsgivntskb.supabase.co`.
+  2. **Icon** `other/ra4/icon/icon_noob_scope.png` and **thumbnails** from `other/ra4/thumbnails/`.
+  3. **Avatar:** R15. **Genre:** Shooter. **Maturity questionnaire:** blocky, no blood, players pop into bricks
+     (Mild violence).
+  4. **Make it Public** when you're happy with it.
 
 ## Code layout
 

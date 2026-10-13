@@ -1319,11 +1319,24 @@ Engine.prompted = {}
 function methods.UserOwnsGamePassAsync(_, userId, passId)
 	return Engine.ownedPasses ~= nil and Engine.ownedPasses[userId .. ":" .. passId] == true
 end
-function methods.PromptGamePassPurchase(_, player, id)
+-- With autoBuy on (the default), every prompt is bought at once, like a player pressing Buy.
+Engine.autoBuy = true
+local receiptCount = 0
+function methods.PromptGamePassPurchase(self, player, id)
 	table.insert(Engine.prompted, { player = player, kind = "pass", id = id })
+	if Engine.autoBuy then
+		Engine.ownedPasses = Engine.ownedPasses or {}
+		Engine.ownedPasses[player.UserId .. ":" .. id] = true
+		rawget(self, "_signals").PromptGamePassPurchaseFinished:Fire(player, id, true)
+	end
 end
-function methods.PromptProductPurchase(_, player, id)
+function methods.PromptProductPurchase(self, player, id)
 	table.insert(Engine.prompted, { player = player, kind = "product", id = id })
+	local process = self.ProcessReceipt
+	if Engine.autoBuy and process then
+		receiptCount += 1
+		process({ PlayerId = player.UserId, ProductId = id, PurchaseId = "R" .. receiptCount, CurrencySpent = 0 })
+	end
 end
 function methods.PromptPurchase(_, player, assetId)
 	table.insert(Engine.prompted, { player = player, kind = "asset", id = assetId })
