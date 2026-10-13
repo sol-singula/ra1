@@ -28,13 +28,15 @@ experience for it and the place/universe IDs on the API key (see [Publish](#publ
 
 ### The round loop
 
-1. **The lobby.** You join here. The sign over the PLAY pad says what's happening. With one player it waits
+1. **The lobby.** You join here: a walled courtyard with towers, so nobody wanders off. The sign over the PLAY pad says what's happening. With one player it waits
    (try the **Range** in the south-west corner, or the leaderboards on the west side).
 2. **2 players is enough.** The 15-second countdown starts and three **vote pads** show the next maps
    (stand on one, or tap its button at the top).
 3. **The round: 5 minutes in an arena.** Everyone in the lobby goes in. Latecomers press PLAY. The arena size
    fits the crowd: small for 2 to 8 players, medium to 16, large to 24. Fewer than 4 fighters? Robot noobs
-   (tagged 🤖, yellow and blue, they miss a lot) fill in.
+   (tagged 🤖, yellow and blue, they miss a lot) fill in. Every map is built the same way on both halves, so
+   it's fair: walk-in houses with roof decks and ramps, sniper towers, sandbags, crates and cars for cover, a
+   big centerpiece, and bridges between the towers on the large size.
 4. **First person, one shot, one pop.** The dot is your aim. From the hip the shot wobbles; scoped it's dead
    steady after a moment. Every hit pops anyone into bricks. Then the bolt (a little bar under the dot).
 5. **Popped?** You see who got you (their level, rifle and skin) from their side for 5 seconds, then you're back
@@ -61,8 +63,11 @@ and 100 / 60 / 30 for the podium. A normal round pays about 150 to 300. They buy
 - **🛒 Daily Shop:** 6 skins, 2 pop effects, 2 emotes, new every day at 7pm ET.
 - **🎁 Crates:** the Coin Crate (2,000 coins) or the Key Crate (1 key). Odds always shown.
 - **🔫 Rifles:** Bolt, Swift (fast bolt, small zoom), Eagle (huge zoom, slow), Ghost (no tracer), Twin (two
-  quick shots). They unlock by level and all pop in one hit.
+  quick shots). They unlock by level and all pop in one hit. Each has its own look: Bolt is wood and steel,
+  Swift has racing stripes, Eagle is desert camo, Ghost is snow camo with a silencer, Twin is red tiger.
 - **✨ Style:** crosshairs and kill-feed name colours; pick your pop effect and podium emote.
+- **Skins** paint the whole rifle with a pattern: camo, stripes, dots, tiger, scales, stars, gems, neon lines and
+  more (see the skins picture below).
 - **Mastery:** 100 / 500 / 2,000 pops with a rifle turn it Gold, Diamond, Rainbow.
 
 You're seen in the **pop cam** (when you pop someone, they see your rifle and skin), the **kill feed** and on
@@ -155,3 +160,5 @@ robots, the vote, the range, duels and the game log.
 | ![Crates](screenshots/panel_crates.jpg) | ![Rifles](screenshots/panel_rifles.jpg) |
 | ![Block Town](screenshots/map_town.jpg) | ![Candy Canyon](screenshots/map_candy.jpg) |
 | ![Space Dock](screenshots/map_dock.jpg) | ![Castle Court](screenshots/map_castle.jpg) |
+| ![Block Town on the ground](screenshots/map_town_ground.jpg) | ![Castle Court on the ground](screenshots/map_castle_ground.jpg) |
+| ![The 5 rifles](screenshots/rifles.jpg) | ![Every skin on the Bolt](screenshots/skins.jpg) |

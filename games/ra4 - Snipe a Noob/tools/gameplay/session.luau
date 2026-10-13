@@ -202,13 +202,64 @@ if bot then
 	Robots.paused = false
 end
 
+-- no HUD and no held rifle in the map and gallery shots
+for _, sg in player.PlayerGui:GetChildren() do
+	sg.Enabled = false
+end
+local function clearCam()
+	for _, child in cam:GetChildren() do
+		child:Destroy()
+	end
+end
+
 -- 7. every map from above (medium size)
 for _, m in Maps.list do
 	local built = MapBuilder.build(m.key, "medium", Engine.workspace, V3.new(0, 0, 3000))
+	clearCam()
 	shot("map_" .. string.lower(m.key), V3.new(70, 95, 3000 + 110), V3.new(0, 0, 3000), 60)
-	shot("map_" .. string.lower(m.key) .. "_ground", V3.new(-40, 6, 3000 + 50), V3.new(10, 4, 3000 - 10), 70)
+	shot("map_" .. string.lower(m.key) .. "_ground", V3.new(14, 7, 3000 + 54), V3.new(0, 6, 3000), 70)
 	built.model:Destroy()
 end
+
+-- 8. the rifles and the skins, on a gallery wall
+local RifleModel = Engine.require(tree.shared.RifleModel)
+local Rifles = Engine.require(tree.shared.Data.Rifles)
+local Cosmetics = Engine.require(tree.shared.Data.Cosmetics)
+local G = V3.new(0, 400, 6000)
+local gallery = Engine.Instance.new("Model")
+gallery.Parent = Engine.workspace
+local back = Engine.Instance.new("Part")
+back.Size = V3.new(140, 80, 1)
+back.CFrame = CF.new(G + V3.new(0, 0, -3))
+back.Color = Engine.globals.Color3.fromRGB(235, 238, 245)
+back.Anchored = true
+back.Parent = gallery
+local function hang(rifleKey, skinId, tier, pos)
+	local m = RifleModel.build(rifleKey, skinId, tier, CF.new(pos) * CF.Angles(0, -math.pi / 2, 0))
+	m.Parent = gallery
+end
+for i, r in Rifles.list do
+	hang(r.key, nil, nil, G + V3.new(-3, 13 - i * 3.6, 0))
+end
+clearCam()
+shot("rifles", G + V3.new(1, 2.2, 16), G + V3.new(1, 2.2, 0), 55)
+local skins = {}
+for _, sk in Cosmetics.Skins do
+	table.insert(skins, sk.id)
+end
+for _, m in gallery:GetChildren() do
+	if m:IsA("Model") then
+		m:Destroy()
+	end
+end
+local cols = 4
+for i, id in skins do
+	local col, row = (i - 1) % cols, math.floor((i - 1) / cols)
+	hang("BOLT", id, nil, G + V3.new(-27 + col * 15, 17 - row * 4.2, 0))
+end
+clearCam()
+shot("skins", G + V3.new(0, 4.5, 33), G + V3.new(0, 4.5, 0), 60)
+gallery:Destroy()
 
 writeFile(outDir .. "/index.json", Engine.game:GetService("HttpService"):JSONEncode(shots))
 print(`{#shots} shots, {#Engine.errors} script errors`)

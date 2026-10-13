@@ -681,11 +681,11 @@ do
 		Combat:Respawn(a, true)
 	end
 	for _, other in Robots.robots do
-		other.model:PivotTo(CFrame.new(Round.map.center + Vector3.new(60, 40, 60)))
+		other.model:PivotTo(CFrame.new(Round.map.center + Vector3.new(60, 90, 60)))
 	end
 	local c2 = Round.map.center
-	place(a, c2 + Vector3.new(0, 40, 30), c2 + Vector3.new(0, 40, -30))
-	bot.model:PivotTo(CFrame.new(c2 + Vector3.new(0, 40, -30)))
+	place(a, c2 + Vector3.new(0, 90, 30), c2 + Vector3.new(0, 90, -30))
+	bot.model:PivotTo(CFrame.new(c2 + Vector3.new(0, 90, -30)))
 	Engine.advance(0.05)
 	local coinsR = pa.coins
 	local robotsBefore = pa.stats.robots
@@ -706,15 +706,15 @@ do
 	-- a robot pops a player
 	Engine.advance(2)
 	Robots.paused = true
-	place(a, c2 + Vector3.new(0, 40, 30), c2 + Vector3.new(0, 40, -30))
 	if a:GetAttribute("Popped") then
 		Engine.advance(Constants.RESPAWN_SECONDS + Constants.SHIELD_SECONDS + 0.5)
 	end
+	place(a, c2 + Vector3.new(0, 90, 30), c2 + Vector3.new(0, 90, -30))
 	a:SetAttribute("ShieldUntil", nil)
 	if bot.popped then
 		Combat:Respawn(bot, true)
 	end
-	bot.model:PivotTo(CFrame.new(c2 + Vector3.new(0, 40, -30)))
+	bot.model:PivotTo(CFrame.new(c2 + Vector3.new(0, 90, -30)))
 	Combat:RobotFire(bot, a, true)
 	check("a robot can pop you", a:GetAttribute("Popped") == true)
 	local popped = Engine.lastClientEvent("Popped", a)

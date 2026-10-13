@@ -173,8 +173,46 @@ C.Skins = {
 		source = "prize",
 	},
 }
+-- How each skin is painted on a rifle: a pattern over the stock and the handguard (camo patches, stripes, tiger
+-- stripes, dots, glowing lines, gems, stars...) in these colours, and the stock's own colour and material.
+local SKIN_STYLE = {
+	SAND = { pattern = "camo", colors = { rgb(180, 150, 100), rgb(140, 110, 70), rgb(230, 210, 170) } },
+	OLIVE = { pattern = "camo", colors = { rgb(70, 90, 45), rgb(140, 125, 80), rgb(40, 45, 30) } },
+	SNOW = { pattern = "camo", colors = { rgb(200, 215, 230), rgb(150, 165, 185), rgb(255, 255, 255) } },
+	NIGHT = { pattern = "dots", colors = { rgb(120, 130, 170), rgb(70, 75, 100) } },
+	BRICK = { pattern = "stripes", colors = { rgb(230, 220, 200), rgb(150, 60, 45) } },
+	MINT = { pattern = "stripes", colors = { rgb(255, 255, 255), rgb(90, 170, 140) } },
+	BUBBLEGUM = { pattern = "dots", colors = { rgb(255, 255, 255), rgb(255, 90, 170) } },
+	OCEAN = { pattern = "stripes", colors = { rgb(120, 230, 255), rgb(20, 70, 160) } },
+	LIME = { pattern = "tiger", colors = { rgb(30, 30, 40) } },
+	TIGER = { pattern = "tiger", colors = { rgb(30, 30, 30) } },
+	GRAPE = { pattern = "dots", colors = { rgb(230, 200, 255), rgb(90, 40, 150) } },
+	CHERRY = { pattern = "dots", colors = { rgb(255, 230, 230), rgb(60, 160, 60) } },
+	NEON = { pattern = "neon", colors = { rgb(0, 255, 200), rgb(255, 0, 200) } },
+	LAVA = { pattern = "cracks", colors = { rgb(255, 120, 20), rgb(255, 220, 60) } },
+	FROST = { pattern = "gems", colors = { rgb(255, 255, 255), rgb(140, 220, 255) } },
+	CANDY = { pattern = "candy", colors = { rgb(230, 30, 50) } },
+	TOXIC = { pattern = "cracks", colors = { rgb(150, 255, 60), rgb(220, 255, 120) } },
+	GOLD = { pattern = "trim", colors = { rgb(255, 240, 170), rgb(200, 140, 30) } },
+	DIAMOND = { pattern = "gems", colors = { rgb(255, 255, 255), rgb(120, 220, 255), rgb(200, 160, 255) } },
+	DRAGON = { pattern = "scales", colors = { rgb(255, 200, 40), rgb(200, 40, 40) } },
+	GALAXY = { pattern = "stars", colors = { rgb(255, 255, 255), rgb(255, 100, 220), rgb(120, 200, 255) } },
+	RAINBOW = { pattern = "stripes", colors = { rgb(255, 230, 80), rgb(80, 220, 120) } },
+	S_COMET = { pattern = "stars", colors = { rgb(255, 230, 120), rgb(255, 255, 255) } },
+	S_ROYAL = { pattern = "trim", colors = { rgb(255, 215, 60), rgb(255, 255, 255) } },
+	S_ARCTIC = { pattern = "camo", colors = { rgb(255, 255, 255), rgb(170, 210, 255), rgb(80, 180, 255) } },
+	S_JUNGLE = { pattern = "tiger", colors = { rgb(255, 210, 60) } },
+	S_STORM = { pattern = "cracks", colors = { rgb(120, 200, 255), rgb(255, 255, 255) } },
+	P_CROWN = { pattern = "gems", colors = { rgb(255, 80, 160), rgb(255, 255, 255) } },
+}
+
 C.skinById = {}
 for _, s in C.Skins do
+	local style = SKIN_STYLE[s.id]
+	if style then
+		s.pattern = style.pattern
+		s.colors = style.colors
+	end
 	s.source = s.source or "crate"
 	C.skinById[s.id] = s
 end

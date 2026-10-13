@@ -22,6 +22,15 @@ Rifles.list = {
 		color = rgb(70, 75, 95),
 		accent = rgb(255, 200, 40),
 		barrel = 4.2,
+		look = { -- classic: a wooden stock, dark steel, brass trim
+			stock = rgb(150, 95, 50),
+			stockMaterial = "Wood",
+			body = rgb(60, 64, 80),
+			metal = rgb(40, 42, 52),
+			accent = rgb(220, 170, 60),
+			pattern = "wood",
+			colors = { rgb(120, 70, 35) },
+		},
 	},
 	{
 		key = "SWIFT",
@@ -36,6 +45,14 @@ Rifles.list = {
 		color = rgb(40, 160, 230),
 		accent = rgb(255, 255, 255),
 		barrel = 3.4,
+		look = { -- racing: white and sky blue with stripes
+			stock = rgb(245, 248, 255),
+			body = rgb(40, 160, 230),
+			metal = rgb(50, 55, 70),
+			accent = rgb(255, 255, 255),
+			pattern = "stripes",
+			colors = { rgb(40, 160, 230), rgb(255, 80, 80) },
+		},
 	},
 	{
 		key = "EAGLE",
@@ -50,9 +67,18 @@ Rifles.list = {
 		color = rgb(120, 80, 50),
 		accent = rgb(255, 215, 60),
 		barrel = 5.4,
+		look = { -- desert camo
+			stock = rgb(190, 160, 110),
+			body = rgb(150, 120, 80),
+			metal = rgb(70, 60, 50),
+			accent = rgb(255, 215, 60),
+			pattern = "camo",
+			colors = { rgb(120, 95, 60), rgb(220, 195, 145), rgb(90, 100, 60) },
+		},
 	},
 	{
 		key = "GHOST",
+		silencer = true,
 		name = "Ghost",
 		level = 20,
 		price = 30000,
@@ -64,6 +90,14 @@ Rifles.list = {
 		color = rgb(230, 235, 245),
 		accent = rgb(120, 220, 255),
 		barrel = 4.4,
+		look = { -- arctic camo, with a silencer
+			stock = rgb(235, 240, 248),
+			body = rgb(210, 220, 235),
+			metal = rgb(120, 130, 150),
+			accent = rgb(120, 220, 255),
+			pattern = "camo",
+			colors = { rgb(180, 195, 215), rgb(150, 170, 195), rgb(255, 255, 255) },
+		},
 	},
 	{
 		key = "TWIN",
@@ -79,6 +113,14 @@ Rifles.list = {
 		color = rgb(200, 60, 70),
 		accent = rgb(40, 40, 50),
 		barrel = 4,
+		look = { -- red and black tiger
+			stock = rgb(200, 50, 60),
+			body = rgb(40, 40, 50),
+			metal = rgb(30, 30, 36),
+			accent = rgb(255, 200, 40),
+			pattern = "tiger",
+			colors = { rgb(30, 30, 36) },
+		},
 	},
 }
 Rifles.byKey = {}

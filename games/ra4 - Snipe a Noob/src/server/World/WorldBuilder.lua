@@ -238,6 +238,218 @@ local function kiosk(parent, name, at, facing, color, title, sub, promptName, ac
 	return { model = m, counter = counter, lines = lines, prompt = p, cf = cf }
 end
 
+-- The lobby is a closed courtyard: tall brick walls with a walkway trim, battlements, lit pillars, banners,
+-- a big corner tower at each corner and trees peeking over from outside. Nobody can leave it.
+local WALL = rgb(205, 120, 90)
+local STONE = rgb(225, 220, 210)
+local BANNERS = { rgb(255, 80, 80), rgb(40, 160, 230), rgb(255, 200, 40), rgb(90, 200, 110) }
+local WALL_H = 30
+
+local function walls(model, H)
+	local R = H + 4 -- wall middle
+	local len = R * 2
+	for _, s in { -1, 1 } do
+		for _, axis in { "x", "z" } do
+			local function at(along, y, out)
+				out = out or 0
+				if axis == "x" then
+					return Vector3.new(along, y, s * (R + out))
+				end
+				return Vector3.new(s * (R + out), y, along)
+			end
+			local function size(alongLen, h, thick)
+				if axis == "x" then
+					return Vector3.new(alongLen, h, thick)
+				end
+				return Vector3.new(thick, h, alongLen)
+			end
+			part({
+				Name = "Wall",
+				Size = size(len + 4, WALL_H, 4),
+				CFrame = CFrame.new(at(0, WALL_H / 2)),
+				Color = WALL,
+				Material = Enum.Material.Brick,
+				Parent = model,
+			})
+			-- stone base and top trim on the inside
+			part({
+				Name = "WallBase",
+				Size = size(len, 3, 1.2),
+				CFrame = CFrame.new(at(0, 1.5, -2.4)),
+				Color = STONE,
+				Material = Enum.Material.Slate,
+				Parent = model,
+			})
+			part({
+				Name = "WallTrim",
+				Size = size(len + 6, 1.5, 6),
+				CFrame = CFrame.new(at(0, WALL_H + 0.75)),
+				Color = STONE,
+				Material = Enum.Material.Slate,
+				Parent = model,
+			})
+			-- battlements
+			for i = -R + 3, R - 3, 6 do
+				part({
+					Name = "Battlement",
+					Size = size(3, 3, 5),
+					CFrame = CFrame.new(at(i, WALL_H + 3)),
+					Color = STONE,
+					Material = Enum.Material.Slate,
+					Parent = model,
+				})
+			end
+			-- pillars with lamps, and banners between them
+			for i = -R + 20, R - 20, 24 do
+				part({
+					Name = "Pillar",
+					Size = size(4, WALL_H + 2, 2.5),
+					CFrame = CFrame.new(at(i, (WALL_H + 2) / 2, -3)),
+					Color = STONE,
+					Material = Enum.Material.Slate,
+					Parent = model,
+				})
+				local lamp = part({
+					Name = "Lamp",
+					Size = size(2.2, 2.2, 1.6),
+					CFrame = CFrame.new(at(i, 18, -4.6)),
+					Color = rgb(255, 230, 160),
+					Material = Enum.Material.Neon,
+					CanCollide = false,
+					Parent = model,
+				})
+				local light = Instance.new("PointLight")
+				light.Range = 18
+				light.Brightness = 1.2
+				light.Color = rgb(255, 220, 150)
+				light.Parent = lamp
+				local mid = i + 12
+				if mid < R - 12 then
+					local color = BANNERS[(math.floor((mid + R) / 24) % #BANNERS) + 1]
+					part({
+						Name = "Banner",
+						Size = size(6, 14, 0.3),
+						CFrame = CFrame.new(at(mid, WALL_H - 9, -2.2)),
+						Color = color,
+						CanCollide = false,
+						Parent = model,
+					})
+					part({
+						Name = "BannerStripe",
+						Size = size(6.2, 1.2, 0.4),
+						CFrame = CFrame.new(at(mid, WALL_H - 13, -2.25)),
+						Color = TRIM,
+						CanCollide = false,
+						Parent = model,
+					})
+					part({
+						Name = "BannerRod",
+						Size = size(7.5, 0.6, 0.6),
+						CFrame = CFrame.new(at(mid, WALL_H - 1.8, -2.4)),
+						Color = INK,
+						Material = Enum.Material.Metal,
+						CanCollide = false,
+						Parent = model,
+					})
+				end
+			end
+		end
+	end
+	-- corner towers with pointed roofs and flags
+	for _, sx in { -1, 1 } do
+		for _, sz in { -1, 1 } do
+			local c = Vector3.new(sx * R, 0, sz * R)
+			disc(model, "Tower", c + Vector3.new(0, (WALL_H + 10) / 2, 0), 16, WALL_H + 10, WALL, Enum.Material.Brick)
+			disc(model, "TowerTop", c + Vector3.new(0, WALL_H + 10.75, 0), 18, 1.5, STONE, Enum.Material.Slate)
+			for k = 1, 8 do
+				local a = k / 8 * math.pi * 2
+				part({
+					Name = "Battlement",
+					Size = Vector3.new(3, 3, 3),
+					CFrame = CFrame.new(c + Vector3.new(math.cos(a) * 7.8, WALL_H + 13, math.sin(a) * 7.8)),
+					Color = STONE,
+					Material = Enum.Material.Slate,
+					Parent = model,
+				})
+			end
+			for k = 0, 5 do -- a stepped roof
+				disc(
+					model,
+					"Roof",
+					c + Vector3.new(0, WALL_H + 13 + k * 2.2, 0),
+					14 - k * 2.3,
+					2.2,
+					rgb(70, 90, 170),
+					Enum.Material.Plastic
+				)
+			end
+			part({
+				Name = "FlagPole",
+				Size = Vector3.new(0.5, 8, 0.5),
+				CFrame = CFrame.new(c + Vector3.new(0, WALL_H + 30, 0)),
+				Color = INK,
+				Material = Enum.Material.Metal,
+				Parent = model,
+			})
+			part({
+				Name = "Flag",
+				Size = Vector3.new(4.5, 2.8, 0.2),
+				CFrame = CFrame.new(c + Vector3.new(2.4, WALL_H + 32.5, 0)),
+				Color = BANNERS[(sx + 1) + (sz + 1) / 2 + 1],
+				CanCollide = false,
+				Parent = model,
+			})
+			local lamp = part({
+				Name = "Lamp",
+				Size = Vector3.new(2, 2, 2),
+				CFrame = CFrame.new(c + Vector3.new(-sx * 6.5, 18, -sz * 6.5)),
+				Color = rgb(255, 230, 160),
+				Material = Enum.Material.Neon,
+				CanCollide = false,
+				Parent = model,
+			})
+			local light = Instance.new("PointLight")
+			light.Range = 20
+			light.Brightness = 1.2
+			light.Color = rgb(255, 220, 150)
+			light.Parent = lamp
+		end
+	end
+	-- an invisible lid so nobody can jump the walls
+	part({
+		Name = "Lid",
+		Size = Vector3.new(len + 8, 1, len + 8),
+		CFrame = CFrame.new(0, 80, 0),
+		Transparency = 1,
+		CanQuery = false,
+		Parent = model,
+	})
+	-- tall trees outside, peeking over the walls
+	local rng = Random.new(4)
+	for i = 1, 32 do
+		local a = i / 32 * math.pi * 2
+		local r = R + 14 + rng:NextNumber(0, 14)
+		local p = Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+		local h = rng:NextInteger(24, 34)
+		part({
+			Name = "Trunk",
+			Size = Vector3.new(2.4, h, 2.4),
+			CFrame = CFrame.new(p + Vector3.new(0, h / 2, 0)),
+			Color = rgb(120, 80, 50),
+			Material = Enum.Material.Wood,
+			Parent = model,
+		})
+		ball(
+			model,
+			"Leaves",
+			p + Vector3.new(0, h + 4, 0),
+			rng:NextInteger(14, 19),
+			rgb(70, 170, 70),
+			Enum.Material.Plastic
+		)
+	end
+end
+
 local function lobby(map)
 	local model = Instance.new("Model")
 	model.Name = "Lobby"
@@ -271,62 +483,7 @@ local function lobby(map)
 		})
 	end
 	disc(model, "Plaza", Vector3.new(0, 0.15, 0), 40, 0.3, PATH, Enum.Material.Plastic, { CanCollide = false })
-	-- a low fence with posts, and trees outside it
-	for _, s in { -1, 1 } do
-		part({
-			Name = "Fence",
-			Size = Vector3.new(H * 2 + 8, 3, 1.5),
-			CFrame = CFrame.new(0, 1.5, s * (H + 3.25)),
-			Color = rgb(255, 255, 255),
-			Parent = model,
-		})
-		part({
-			Name = "Fence",
-			Size = Vector3.new(1.5, 3, H * 2 + 8),
-			CFrame = CFrame.new(s * (H + 3.25), 1.5, 0),
-			Color = rgb(255, 255, 255),
-			Parent = model,
-		})
-		part({
-			Name = "Wall",
-			Size = Vector3.new(H * 2 + 8, 40, 1),
-			CFrame = CFrame.new(0, 20, s * (H + 4.5)),
-			Transparency = 1,
-			CanQuery = false,
-			Parent = model,
-		})
-		part({
-			Name = "Wall",
-			Size = Vector3.new(1, 40, H * 2 + 8),
-			CFrame = CFrame.new(s * (H + 4.5), 20, 0),
-			Transparency = 1,
-			CanQuery = false,
-			Parent = model,
-		})
-	end
-	local rng = Random.new(4)
-	for i = 1, 28 do
-		local a = i / 28 * math.pi * 2
-		local r = H + 14 + rng:NextNumber(0, 10)
-		local p = Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
-		local h = rng:NextInteger(6, 10)
-		part({
-			Name = "Trunk",
-			Size = Vector3.new(1.6, h, 1.6),
-			CFrame = CFrame.new(p + Vector3.new(0, h / 2, 0)),
-			Color = rgb(120, 80, 50),
-			Material = Enum.Material.Wood,
-			Parent = model,
-		})
-		ball(
-			model,
-			"Leaves",
-			p + Vector3.new(0, h + 3, 0),
-			rng:NextInteger(8, 11),
-			rgb(70, 170, 70),
-			Enum.Material.Plastic
-		)
-	end
+	walls(model, H)
 	-- spawn
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "Spawn"
