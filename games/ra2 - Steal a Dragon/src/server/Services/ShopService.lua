@@ -34,6 +34,7 @@ local ShopService = {
 
 local data, economy, dragons, baseService, road, reward, tools
 local targets = {} -- [player] = { [productKey] = target } remembered between prompt and receipt
+local offeredAt = {} -- [player] = { [key] = os.clock() } when a world offer was last shown
 local MAX_RECEIPTS = 60
 
 function ShopService:Init(registry)
@@ -56,7 +57,7 @@ function ShopService:Init(registry)
 		end
 	end)
 	dragons.GrowRequested:Connect(function(player, uid)
-		self:PromptProduct(player, "GROW", uid)
+		self:Offer(player, "product", "GROW", uid)
 	end)
 	road.BuyNowRequested:Connect(function(player, roadId)
 		local err = road:CanTake(player, road:Entry(roadId))
@@ -64,26 +65,63 @@ function ShopService:Init(registry)
 			Net.fire(player, "Toast", err, "bad")
 			return
 		end
-		self:PromptProduct(player, "BUYNOW", roadId)
-	end)
-	reward.HatchNowRequested:Connect(function(player)
-		self:PromptProduct(player, "HATCH")
-	end)
-	tools.PotionsRequested:Connect(function(player)
-		self:PromptProduct(player, "POTIONS")
-	end)
-	-- the plates in each base: Auto Collect (next to the coin pad) and 5-Minute Lock (next to the lock pad)
-	baseService.PlateStepped:Connect(function(player, plate)
-		if plate == "auto" then
-			if economy:HasPass(player, "AUTO") then
-				Net.fire(player, "Toast", "Auto Collect is ON: coins come right to you! 🧲", "good")
-			else
-				self:PromptPass(player, "AUTO")
-			end
-		elseif plate == "lock" then
-			self:PromptProduct(player, "LOCK5")
+		if not self:Offer(player, "product", "BUYNOW", roadId) and not self:OffersAllowed(player) then
+			Net.fire(player, "Toast", "Buy dragons with coins for now! 🪙", "info")
 		end
 	end)
+	reward.HatchNowRequested:Connect(function(player)
+		self:Offer(player, "product", "HATCH")
+	end)
+	tools.PotionsRequested:Connect(function(player)
+		self:Offer(player, "product", "POTIONS")
+	end)
+	-- the plates in each base: Auto Collect (next to the coin pad) and 5-Minute Lock (next to the lock pad).
+	-- Stepping on one never opens a purchase (players walk over them collecting coins): you hold its button,
+	-- and the buttons only show for the owner once their tutorial is done.
+	baseService.PlateStepped:Connect(function(player, plate)
+		if plate == "auto" and economy:HasPass(player, "AUTO") then
+			Net.fire(player, "Toast", "Auto Collect is ON: coins come right to you! 🧲", "good")
+		end
+	end)
+	for _, world in WorldBuilder.layout.bases do
+		for _, spec in
+			{
+				{ world.autoPlate, "Prompt_auto", "Get Auto Collect", "pass", "AUTO" },
+				{ world.lockPlate, "Prompt_lock5", "+5 min lock", "product", "LOCK5" },
+			}
+		do
+			if spec[1] then
+				local p = Instance.new("ProximityPrompt")
+				p.Name = spec[2]
+				p.ActionText = spec[3]
+				p.ObjectText = "Robux"
+				p.HoldDuration = 0.5
+				p.MaxActivationDistance = 7
+				p.RequiresLineOfSight = false
+				p.Enabled = false
+				p.Parent = spec[1]
+				p.Triggered:Connect(function(player)
+					local base = baseService:Get(player)
+					if not base or base.world ~= world then
+						Net.fire(player, "Toast", "That's not your base!", "info")
+					elseif spec[4] == "pass" then
+						if economy:HasPass(player, spec[5]) then
+							Net.fire(player, "Toast", "Auto Collect is ON: coins come right to you! 🧲", "good")
+						else
+							self:PromptPass(player, spec[5])
+						end
+					else
+						self:PromptProduct(player, spec[5])
+					end
+				end)
+			end
+		end
+	end
+	if registry.TutorialService and registry.TutorialService.Finished then
+		registry.TutorialService.Finished:Connect(function(player)
+			self:RefreshPlates(player)
+		end)
+	end
 	-- LEVEL ALL podiums: hold to spend coins on level-ups across all your nests (coins only, never Robux)
 	for _, world in WorldBuilder.layout.bases do
 		local p = Instance.new("ProximityPrompt")
@@ -135,15 +173,78 @@ local function levelPrompt(player)
 	return base and base.world.levelPlate and base.world.levelPlate:FindFirstChild("Prompt_levelall")
 end
 
+-- The plate buttons in a player's base show once their tutorial is done.
+function ShopService:RefreshPlates(player)
+	local base = baseService:Get(player)
+	local profile = data:Get(player)
+	if not base then
+		return
+	end
+	for _, plate in { base.world.autoPlate, base.world.lockPlate } do
+		for _, p in plate and plate:GetChildren() or {} do
+			if p:IsA("ProximityPrompt") then
+				p.Enabled = profile ~= nil and profile.tutorialDone == true
+			end
+		end
+	end
+end
+
+-- May the world show this player Robux offers right now? Not during the tutorial or a new player's first minutes.
+function ShopService:OffersAllowed(player)
+	local profile = data:Get(player)
+	if not profile or not profile.tutorialDone then
+		return false
+	end
+	if profile._isNew and os.time() - (profile._joinedAt or 0) < Constants.OFFER_NEW_PLAYER_SECONDS then
+		return false
+	end
+	return true
+end
+
+-- A Robux offer from the world (not the Shop): only when allowed, and the same one at most once a minute.
+-- Returns true if the purchase prompt opened.
+function ShopService:Offer(player, kind, key, target)
+	if not self:OffersAllowed(player) then
+		return false
+	end
+	local mine = offeredAt[player] or {}
+	offeredAt[player] = mine
+	if mine[key] and os.clock() - mine[key] < Constants.OFFER_COOLDOWN then
+		return false
+	end
+	mine[key] = os.clock()
+	if kind == "pass" then
+		self:PromptPass(player, key)
+	else
+		self:PromptProduct(player, key, target)
+	end
+	return true
+end
+
+-- (tests) forget when offers were last shown
+function ShopService:ResetOffers(player)
+	offeredAt[player] = nil
+end
+
 function ShopService:OnPlayerReady(player)
 	local p = levelPrompt(player)
 	if p then
 		p:SetAttribute("OwnerUserId", player.UserId)
 	end
+	self:RefreshPlates(player)
 end
 
 function ShopService:OnPlayerLeaving(player)
 	targets[player] = nil
+	offeredAt[player] = nil
+	local base = baseService:Get(player)
+	for _, plate in base and { base.world.autoPlate, base.world.lockPlate } or {} do
+		for _, p in plate and plate:GetChildren() or {} do
+			if p:IsA("ProximityPrompt") then
+				p.Enabled = false
+			end
+		end
+	end
 	local p = levelPrompt(player)
 	if p then
 		p:SetAttribute("OwnerUserId", 0)

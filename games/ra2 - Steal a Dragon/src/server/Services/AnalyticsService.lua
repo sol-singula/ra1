@@ -560,6 +560,7 @@ function AnalyticsService:_watch()
 	for player, s in sessions do
 		local pos = baseService:Position(player)
 		if pos then
+			s.zone = zoneOf(player) -- remembered: the character is often gone by the time they leave
 			if s.lastPos and (pos - s.lastPos).Magnitude > 1 then
 				s.lastMoveAt = now()
 			end
@@ -658,7 +659,8 @@ function AnalyticsService:_end(player, profile, reason)
 	sessions[player] = nil
 	local duration = math.floor(now() - s.t0)
 	local summary = progress(player, profile)
-	summary.zone = zoneOf(player)
+	local zoneNow = zoneOf(player)
+	summary.zone = zoneNow ~= "none" and zoneNow or s.zone
 	summary.idle_at_leave = s.idle == true
 	summary.idle_seconds = s.idleSeconds
 	summary.seconds_since_action = math.floor(now() - s.lastActionAt)

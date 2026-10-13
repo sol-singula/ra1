@@ -104,6 +104,10 @@ Constants.GLIDE_FALL = 6 -- fastest fall while gliding
 Constants.GLIDE_SPEED = 34 -- forward speed while gliding
 Constants.CAMERA_MAX_ZOOM = 70
 -- Discord game log (GameLogService): joins, and leaves with session stats
+-- Robux offers the world shows (plates, Buy Now, +10 Levels, Hatch Now, potions): never during the tutorial or a
+-- new player's first minutes, and the same offer at most once a minute (the Shop always works)
+Constants.OFFER_NEW_PLAYER_SECONDS = 300
+Constants.OFFER_COOLDOWN = 60
 Constants.GAME_LOG_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-game-log"
 Constants.GAME_LOG_IN_STUDIO = false
 Constants.GAME_LOG_FLUSH_SECONDS = 5 -- events and chat go out together this often

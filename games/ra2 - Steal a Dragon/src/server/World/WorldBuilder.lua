@@ -32,7 +32,7 @@ WorldBuilder.BASE_COLORS = BASE_COLORS
 local BASE_W, BASE_D = 46, 60 -- width (x) and depth (z)
 -- The lobby courtyard's floor (its walls stand just outside) and the FREE dragon stand inside it.
 WorldBuilder.LOBBY = { x0 = -204, x1 = -114.5, z0 = -46, z1 = 46 }
-WorldBuilder.FREE_PAD = Vector3.new(-128, 1.2, -24)
+WorldBuilder.FREE_PAD = Vector3.new(-120, 1.2, -9) -- right in front of the spawn, beside the path
 local BASE_XS = { -87, -29, 29, 87 } -- base centres along the road; 4 on each side, with room between them
 local BASE_Z = 62 -- distance of each base centre from the road (leaves room for a front lawn)
 WorldBuilder.BASE_HALF = Vector3.new(BASE_W / 2, 30, BASE_D / 2)
@@ -1269,7 +1269,7 @@ function WorldBuilder.build()
 	-- keep looks over it from the west; on the east side the Dragon Gate is the courtyard's gate onto the road.
 	-- New players spawn on the east side looking down the road. A fountain with the golden dragon statue stands
 	-- in the middle, the three leaderboards stand against the north wall, the FREE dragon waits off to the south
-	-- side (out of the way), and a gap in the south wall leads to the Practice Base.
+	-- right in front of the spawn, and a gap in the south wall leads to the Practice Base.
 	local lobby = Instance.new("Model")
 	lobby.Name = "Lobby"
 	lobby.Parent = map
@@ -1674,7 +1674,7 @@ function WorldBuilder.build()
 	DragonBuilder.label(prize, "👑 Omni Prism", Dragons.RarityColor.Ultra, "ULTRA · daily #1 prize")
 	prize:SetAttribute("TurnSpeed", 0.35)
 	prize.Parent = lobby
-	-- the FREE dragon stand for new players: off to the south side of the spawn, out of the way of the road
+	-- the FREE dragon stand for new players: right in front of where they spawn, beside the path to the road
 	local freePos = WorldBuilder.FREE_PAD
 	local freePad = part({
 		Name = "FreePad",

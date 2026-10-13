@@ -289,7 +289,10 @@ function CombatService:_target(attacker, pos, range)
 		end
 	end
 	for _, other in Players:GetPlayers() do
-		if other ~= attacker and not team:AreTeam(attacker, other) then
+		-- players still doing the tutorial can't be bonked
+		local profile = data and data:Get(other)
+		local learning = profile ~= nil and not profile.tutorialDone
+		if other ~= attacker and not learning and not team:AreTeam(attacker, other) then
 			local op = baseService:Position(other)
 			if op then
 				consider(other, op, dragons:Carrying(other) ~= nil)

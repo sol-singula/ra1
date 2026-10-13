@@ -390,6 +390,16 @@ for _, e in Engine.clientLog do
 	end
 end
 check("everyone hears when someone joins", heardJoin)
+do -- players still doing the tutorial can't be bonked
+	local pb = Data:Get(b)
+	local saved = pb.tutorialDone
+	pb.tutorialDone = false
+	local bp = Base:Position(b)
+	check("no bonking players in the tutorial", bp == nil or Combat:_target(a, bp, 6) ~= b)
+	pb.tutorialDone = true
+	check("bonkable once the tutorial is done", bp == nil or Combat:_target(a, bp, 6) == b)
+	pb.tutorialDone = saved
+end
 local pb = Data:Get(b)
 Engine.fireServer(b, "SkipTutorial")
 Engine.advance(0.5)
@@ -525,6 +535,21 @@ check(
 	"unknown player waits",
 	MarketplaceService.ProcessReceipt({ PlayerId = 5, ProductId = 777, PurchaseId = "R2" }).Name == "NotProcessedYet"
 )
+-- Robux offers from the world (not the Shop): never during the tutorial or a new player's first minutes, and the
+-- same offer at most once a minute
+local savedNew, savedTut = pa._isNew, pa.tutorialDone
+pa._isNew, pa.tutorialDone = true, false
+Shop:ResetOffers(a)
+check("no world offers during the tutorial", not Shop:Offer(a, "product", "HATCH"))
+pa.tutorialDone = true
+check("no world offers in a new player's first minutes", not Shop:Offer(a, "product", "HATCH"))
+pa._isNew = false
+check("world offers once they've settled in", Shop:OffersAllowed(a))
+Shop:ResetOffers(a)
+Shop.Offer(Shop, a, "product", "LOCKNOW")
+check("the same offer at most once a minute", not Shop:Offer(a, "product", "LOCKNOW"))
+Shop:ResetOffers(a)
+pa._isNew, pa.tutorialDone = false, true -- (the rest of these tests buy from the world)
 -- Levels: +10 Levels (Robux) and Level Up (coins) on a nest dragon
 local gm = anyNestModel(a)
 local guid = gm:GetAttribute("Uid")
@@ -572,6 +597,7 @@ check(
 )
 local poor = pa.coins
 pa.coins = 0
+Shop:ResetOffers(a)
 trigger(a, gm, "levelup")
 Engine.advance(0.1)
 check(
@@ -584,10 +610,16 @@ pa.coins = poor
 -- Buy plates in the base
 local world = Base:Get(a).world
 check("plates built", world.autoPlate ~= nil and world.lockPlate ~= nil)
+Shop:RefreshPlates(a)
 go(a, world.autoPlate.Position)
-check("Auto Collect plate sells the pass", pa.passes.AUTO == true)
+check("stepping on a plate never opens a purchase", pa.passes.AUTO ~= true)
+check("plate buttons show once the tutorial is done", world.autoPlate.Prompt_auto.Enabled == true)
+world.autoPlate.Prompt_auto.Triggered:Fire(a)
+Engine.advance(0.1)
+check("holding the Auto Collect button sells the pass", pa.passes.AUTO == true)
 local lockBefore = Base:Get(a).lockUntil
-go(a, world.lockPlate.Position)
+world.lockPlate.Prompt_lock5.Triggered:Fire(a)
+Engine.advance(0.1)
 check(
 	"lock plate adds 5 minutes",
 	Base:Get(a).lockUntil
@@ -688,6 +720,7 @@ check("speed sparkles", a.Character.HumanoidRootPart:FindFirstChild("SpeedFx") ~
 Engine.advance(Constants.POTION_SECONDS + 0.5)
 check("potion wears off", math.abs(hum.WalkSpeed - walk) < 0.01, hum.WalkSpeed)
 pa.potions = 0
+Shop:ResetOffers(a)
 toolOf(a, "potion").Activated:Fire() -- out of potions: offers the pack (free in Studio)
 Engine.advance(0.1)
 check("out of potions offers 5 more", pa.potions == Constants.POTION_PACK, pa.potions)
@@ -864,6 +897,7 @@ local remote = Engine.game:GetService("ReplicatedStorage").Net.Alert
 local conn = remote.OnClientEvent:Connect(function()
 	alertsB += 1
 end)
+Shop:ResetOffers(a)
 trigger(a, egg, "hatch") -- not ready: opens Hatch Now (free in Studio)
 check("egg hatched into the shown dragon", countRec(pa, eggId) == count0 + 1)
 check("hatch fireworks over the stand", Base:Get(a).world.model:FindFirstChild("HatchFireworks", true) ~= nil)
