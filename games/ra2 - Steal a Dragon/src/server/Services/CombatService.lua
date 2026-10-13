@@ -138,31 +138,40 @@ function CombatService:RefreshSpeed(player)
 	hum.WalkSpeed = self:IsBoosted(player) and speed * Constants.POTION_SPEED_MULT or speed
 end
 
+-- The name tag over your head: a red ADMIN for admins, a gold VIP for VIPs (gone when gifted VIP runs out).
 function CombatService:_vipTag(player)
 	local character = player.Character
 	local head = character and character:FindFirstChild("Head")
-	if not head or not economy:HasPass(player, "VIP") then
+	if not head then
 		return
 	end
+	local admin = Constants.ADMINS[player.UserId] == true
+	local vip = economy:HasPass(player, "VIP")
 	local existing = head:FindFirstChild("VIPTag")
+	if not admin and not vip then
+		if existing then
+			existing:Destroy()
+		end
+		return
+	end
 	if existing then
-		-- a carried dragon sits on your head and has its own name tag: hide the VIP tag so they don't overlap
+		-- a carried dragon sits on your head and has its own name tag: hide this one so they don't overlap
 		existing.Enabled = dragons:Carrying(player) == nil
 		return
 	end
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "VIPTag"
-	gui.Size = UDim2.new(2.6, 0, 0.7, 0)
+	gui.Size = UDim2.new(admin and 3.4 or 2.6, 0, 0.7, 0)
 	gui.StudsOffset = Vector3.new(0, 1.6, 0)
 	gui.MaxDistance = 40
 	gui.Enabled = dragons:Carrying(player) == nil
 	local t = Instance.new("TextLabel")
 	t.BackgroundTransparency = 1
 	t.Size = UDim2.fromScale(1, 1)
-	t.Text = "👑 VIP"
+	t.Text = admin and "🛡️ ADMIN" or "👑 VIP"
 	t.Font = Enum.Font.LuckiestGuy
 	t.TextScaled = true
-	t.TextColor3 = Color3.fromRGB(255, 205, 50)
+	t.TextColor3 = admin and Color3.fromRGB(255, 60, 60) or Color3.fromRGB(255, 205, 50)
 	t.TextStrokeTransparency = 0
 	t.Parent = gui
 	gui.Parent = head
@@ -284,12 +293,20 @@ local function hitFx(character, seconds)
 	end
 end
 
--- Nearest valid target in range (players and NPC rivals); ones carrying a dragon come first.
-function CombatService:_target(attacker, pos, range)
+-- The best target in range (players and NPC rivals): ones carrying a dragon first, then whoever is most in front
+-- of you and closest. Anyone more than a few studs behind you is out (you swing forward, not backward).
+function CombatService:_target(attacker, pos, range, look)
 	local best, bestDist, bestCarry
 	local function consider(target, p, carry)
-		local dist = (p - pos).Magnitude
-		if dist <= range then
+		local d = p - pos
+		local flat = Vector3.new(d.X, 0, d.Z)
+		local dist = d.Magnitude
+		local front = (look and flat.Magnitude > 0.1) and flat.Unit:Dot(look) or 1
+		if dist > Constants.BONK_BEHIND_OK and front < -0.15 then
+			return -- behind you
+		end
+		dist -= front * 2.5 -- in front counts as closer
+		if d.Magnitude <= range then
 			if not best or (carry and not bestCarry) or (carry == bestCarry and dist < bestDist) then
 				best, bestDist, bestCarry = target, dist, carry
 			end
@@ -346,11 +363,21 @@ function CombatService:Bonk(attacker)
 	end
 	lastBonk[attacker] = os.clock()
 	self.Swung:Fire(attacker)
-	Net.fireAll("Sfx", "swing", pos)
+	-- everyone else sees and hears the swing (the attacker's own client already played it)
+	for _, other in Players:GetPlayers() do
+		if other ~= attacker then
+			Net.fire(other, "Swing", attacker)
+			Net.fire(other, "Sfx", "swing", pos)
+		end
+	end
 	local weapon = self:Weapon(attacker)
 	local home = baseService:InOwnBase(attacker)
 	local range = weapon.range + (home and Constants.HOME_DEFENSE_RANGE or 0)
-	local victim = self:_target(attacker, pos, range)
+	local hrp0 = attacker.Character and attacker.Character:FindFirstChild("HumanoidRootPart")
+	local look = hrp0 and hrp0.CFrame.LookVector
+	look = look and Vector3.new(look.X, 0, look.Z)
+	look = look and look.Magnitude > 0.1 and look.Unit or nil
+	local victim = self:_target(attacker, pos, range, look)
 	if not victim then
 		return
 	end

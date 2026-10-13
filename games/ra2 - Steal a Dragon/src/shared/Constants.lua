@@ -37,10 +37,7 @@ Constants.LEVEL_ALL_PRODUCT_LEVELS = 5 -- the +5 Levels for ALL product
 -- Lock
 Constants.LOCK_SECONDS = 60
 Constants.LOCK_SECONDS_LONG = 120 -- Long Lock pass
--- Resetting a running lock (stepping on the pad again) can keep a door shut for at most this many lock lengths in a
--- row; then it opens and can't lock again for LOCK_COOLDOWN, so thieves always get a chance.
-Constants.LOCK_CHAIN_MAX = 3
-Constants.LOCK_COOLDOWN = 20
+-- No recharge: the lock pad locks any time, and standing on it keeps the door locked (BaseService.Lock).
 Constants.LOCK_VIP_BONUS = 15
 Constants.LOCK_BOOST_SECONDS = 1800 -- the 30-Minute Lock product (the plate next to the lock pad); no recharge after it
 
@@ -55,6 +52,7 @@ Constants.FAST_FEET_MULT = 1.25 -- while carrying
 -- Bonk
 Constants.BONK_RANGE = 9
 Constants.BONK_COOLDOWN = 2.0 -- seconds between swings (no spamming)
+Constants.BONK_BEHIND_OK = 3.5 -- a bonk reaches someone behind you only this close (otherwise it swings forward)
 Constants.BONK_IMMUNE_SECONDS = 3 -- after a stun wears off, nobody can bonk you again for this long (no stunlock)
 Constants.STUN_SECONDS = 1.5
 Constants.STUN_SECONDS_MEGA = 2.5 -- (no longer used directly: Mega Bonk adds MEGA_STUN_BONUS to any weapon)
@@ -87,6 +85,7 @@ Constants.NPC_RAID_EVERY = { 25, 55 } -- seconds between one raider's raids
 Constants.NPC_VICTIM_COOLDOWN = 90 -- a player is not raided again this soon
 Constants.NPC_STEAL_SECONDS = 1.5
 Constants.NPC_IN_STUDIO = true
+Constants.NPC_ENABLED = false -- goblin raiders are off (players asked); the code stays for later
 Constants.NPC_NAMES = { "Goblin Gus", "Sneaky Sid", "Grub", "Nibbles", "Snatch", "Zig", "Grizzle", "Pockets" }
 Constants.NPC_COLORS = {
 	Color3.fromRGB(120, 190, 80),
@@ -100,7 +99,10 @@ Constants.FREE_POTIONS = 3 -- Speed Potions every new player starts with
 Constants.POTION_PACK = 5 -- Speed Potions in the 5 Speed Potions product
 Constants.POTION_SECONDS = 30
 Constants.POTION_SPEED_MULT = 1.5
-Constants.WINGS_LAUNCH = 60 -- upward speed of a wing jump (studs per second)
+Constants.WINGS_LAUNCH = 60 -- (old) upward speed of a wing jump
+Constants.FLY_SPEED = 30 -- flying with the wings: forward speed
+Constants.FLY_UP_SPEED = 22 -- rising / sinking speed
+Constants.FLY_MAX_HEIGHT = 70 -- the sky's ceiling (studs above the map's ground)
 Constants.GLIDE_FALL = 6 -- fastest fall while gliding
 Constants.GLIDE_SPEED = 34 -- forward speed while gliding
 Constants.CAMERA_MAX_ZOOM = 70
@@ -235,6 +237,7 @@ Constants.STARTER_COINS_MIN = 5000
 -- Asking players (FeedbackService)
 Constants.FEEDBACK_AFTER = 420 -- "Do you like the game?" after 7 minutes of play (tutorial done)
 Constants.FEEDBACK_MAX_ASKS = 2 -- at most twice (closed without answering), never again once answered
+Constants.FEEDBACK_ASK_EVERY = 3 * 86400 -- and never twice within 3 days
 Constants.FEEDBACK_MAX_CHARS = 200 -- the "What should we add?" box
 Constants.NOTIFY_AFTER = 900 -- the notifications offer after 15 minutes (also on the thank-you card)
 Constants.NOTIFY_ASK_EVERY = 3 * 86400 -- and at most every 3 days
@@ -253,6 +256,22 @@ Constants.DISLIKE_REASONS = {
 	{ "popups", "💸 Too many Robux pop-ups" },
 	{ "boring", "😴 Not much to do" },
 	{ "confusing", "🤔 I don't get it" },
+}
+
+-- Practice Base: after the tutorial, stealing Frosty is a practice run (race home, beat your best time)
+Constants.PRACTICE_PRIZE_EVERY = 180 -- a small coin prize at most this often
+Constants.PRACTICE_PRIZE_MIN = 50 -- the prize: 20 seconds of income, at least this
+
+-- Admins (by Roblox user id): red ADMIN name tag and the admin panel (AdminService)
+Constants.ADMINS = {
+	[11787294097] = true, -- xthirtysix
+}
+-- how long an admin can gift VIP for: { seconds, button text }
+Constants.ADMIN_VIP_TIMES = {
+	{ 3600, "1H" },
+	{ 86400, "1D" },
+	{ 7 * 86400, "7D" },
+	{ 30 * 86400, "30D" },
 }
 
 return Constants

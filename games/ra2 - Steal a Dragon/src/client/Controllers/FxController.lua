@@ -10,6 +10,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local PerformanceController = require(script.Parent.PerformanceController)
+local BonkController = require(script.Parent.BonkController)
 
 local C = Theme.Color
 local new = Theme.new
@@ -133,7 +134,7 @@ function FxController:init()
 	-- bonk: a click or tap with the bat in your hand (it's a hotbar tool), or Q / R2 whatever you hold
 	-- (gamepad X is left alone: Roblox uses it for proximity prompts)
 	ContextActionService:BindAction("Bonk", function(_, state)
-		if state == Enum.UserInputState.Begin then
+		if state == Enum.UserInputState.Begin and BonkController.localSwing() then
 			Net.send("Bonk")
 		end
 		return Enum.ContextActionResult.Sink

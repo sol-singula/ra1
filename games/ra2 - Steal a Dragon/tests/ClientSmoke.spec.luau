@@ -275,19 +275,19 @@ check("boost cards", panels.Dim.Card.Body:FindFirstChild("LUCK") ~= nil)
 check("hidden products not listed", panels.Dim.Card.Body:FindFirstChild("GROW") == nil)
 check("gamepad: the first panel button is selected", Engine.game:GetService("GuiService").SelectedObject ~= nil)
 Engine.setInput(Engine.Enum.UserInputType.Touch)
-local luckBuy = findButton(panels.Dim.Card.Body.LUCK, "R$ 99")
-click(panels.Dim.Card.Body.LUCK, "R$ 99")
+local luckBuy = findButton(panels.Dim.Card.Body.LUCK, "\u{E002} 99")
+click(panels.Dim.Card.Body.LUCK, "\u{E002} 99")
 check("purchase button shows it's busy", luckBuy.Text == "...")
 luckBuy.Activated:Fire()
 Engine.advance(0.05)
 check("double tap doesn't buy twice", countSent("Purchase") == 1)
 Engine.advance(2)
-check("button comes back", luckBuy.Text == "R$ 99")
+check("button comes back", luckBuy.Text == "\u{E002} 99")
 local p = sent("Purchase")
 check("buy Server Luck", p and p.args[1] == "product" and p.args[2] == "LUCK")
 click(panels.Dim.Card.Tabs, "PASSES")
 check("pass cards", panels.Dim.Card.Body:FindFirstChild("DOUBLE") ~= nil)
-click(panels.Dim.Card.Body.DOUBLE, "R$ 129")
+click(panels.Dim.Card.Body.DOUBLE, "\u{E002} 129")
 p = sent("Purchase")
 check("buy 2x Coins", p and p.args[1] == "pass" and p.args[2] == "DOUBLE")
 serverSends("Profile", { passes = { DOUBLE = true } })
@@ -300,7 +300,7 @@ check(
 )
 check("Classic is worn at first", findButton(panels.Dim.Card.Body.CLASSIC, "EQUIPPED") ~= nil)
 check("coin skin shows its price", findButton(panels.Dim.Card.Body.MIDNIGHT, "5K") ~= nil)
-check("Robux skin shows its price", findButton(panels.Dim.Card.Body.LAVA, "R$ 99") ~= nil)
+check("Robux skin shows its price", findButton(panels.Dim.Card.Body.LAVA, "\u{E002} 99") ~= nil)
 click(panels.Dim.Card.Body.MIDNIGHT, "5K")
 p = sent("BuySkin")
 check("buy a skin", p and p.args[1] == "MIDNIGHT")
@@ -328,7 +328,7 @@ check("claim offline", sent("ClaimOffline") ~= nil)
 
 serverSends("Offer", { key = "LOCK30", title = "😱 YOU GOT ROBBED!", text = "Lock it", icon = "🔒", price = 49 })
 check("offer card", panels.Dim.Visible and string.find(panels.Dim.Card.Title.Text, "ROBBED", 1, true) ~= nil)
-click(panels.Dim.Card.Body, "BUY  R$ 49")
+click(panels.Dim.Card.Body, "BUY  \u{E002} 49")
 local buyOffer = sent("Purchase")
 check("offer card buys", buyOffer and buyOffer.args[1] == "product" and buyOffer.args[2] == "LOCK30")
 check("offer card closes", not panels.Dim.Visible)
@@ -456,7 +456,7 @@ do
 	Engine.advance(0.3)
 end
 
--- Dragon Wings: click to jump high, glide in the air, not while carrying
+-- Dragon Wings: real flight. Hold jump to rise, let go to hover, a ceiling, no flying with a dragon
 do
 	local character = player.Character
 	local hum = character.Humanoid
@@ -470,18 +470,44 @@ do
 	hum.MoveDirection = Vector3.new(1, 0, 0)
 	hrp.AssemblyLinearVelocity = Vector3.zero
 	wingsTool.Activated:Fire()
-	check("wings launch you up", hrp.AssemblyLinearVelocity.Y == Constants.WINGS_LAUNCH, hrp.AssemblyLinearVelocity.Y)
+	check(
+		"wings: a hop into the air",
+		hrp.AssemblyLinearVelocity.Y == Constants.FLY_UP_SPEED,
+		hrp.AssemblyLinearVelocity.Y
+	)
 	hum.FloorMaterial = Engine.Enum.Material.Air
+	hum.Jump = true
+	Engine.advance(0.05)
+	check(
+		"flying: hold jump to rise",
+		hrp.AssemblyLinearVelocity.Y == Constants.FLY_UP_SPEED,
+		hrp.AssemblyLinearVelocity.Y
+	)
+	check("flying: fly where you steer", math.abs(hrp.AssemblyLinearVelocity.X - Constants.FLY_SPEED) < 0.01)
+	hum.Jump = false
+	Engine.advance(0.05)
+	check("flying: let go to hover", hrp.AssemblyLinearVelocity.Y == 0, hrp.AssemblyLinearVelocity.Y)
+	local home = hrp.CFrame
+	hrp.CFrame = Engine.CFrame.new(0, Constants.FLY_MAX_HEIGHT + 0.5, 0)
+	hum.Jump = true
+	Engine.advance(0.05)
+	check("flying: the sky has a ceiling", hrp.AssemblyLinearVelocity.Y <= 0, hrp.AssemblyLinearVelocity.Y)
+	hum.Jump = false
+	hrp.CFrame = home
+	wingsTool.Parent = nil
 	hrp.AssemblyLinearVelocity = Vector3.new(0, -40, 0)
 	Engine.advance(0.05)
-	local v = hrp.AssemblyLinearVelocity
-	check("gliding: slow fall", v.Y == -Constants.GLIDE_FALL, v.Y)
-	check("gliding: fly where you steer", math.abs(v.X - Constants.GLIDE_SPEED) < 0.01, v.X)
+	check(
+		"wings put away in the air: glide down",
+		hrp.AssemblyLinearVelocity.Y == -Constants.GLIDE_FALL,
+		hrp.AssemblyLinearVelocity.Y
+	)
+	wingsTool.Parent = character
 	serverSends("Profile", { carrying = { id = "PUFF", name = "Puff", rarity = "Common", kind = "bought" } })
 	Engine.advance(0.05)
 	hrp.AssemblyLinearVelocity = Vector3.new(0, -40, 0)
 	Engine.advance(0.05)
-	check("no gliding with a dragon", hrp.AssemblyLinearVelocity.Y == -40)
+	check("no flying with a dragon", hrp.AssemblyLinearVelocity.Y == -40)
 	serverSends("Profile", { carrying = false })
 	Engine.advance(0.05)
 	wingsTool:Destroy()
@@ -569,6 +595,32 @@ do
 	check("statue turns", (body.CFrame.LookVector - b1.LookVector).Magnitude > 0.1)
 	check("statue's wings flap", (wing.CFrame.Position - w1.Position).Magnitude > 0.05)
 	statue:Destroy()
+end
+
+-- Admin button and panel (only when the server says you're an admin)
+check("no admin button for players", hud.AdminButton.Visible == false)
+serverSends("Profile", { admin = true })
+Engine.advance(0.05)
+check("admin button for admins", hud.AdminButton.Visible == true)
+hud.AdminButton.Activated:Fire()
+Engine.advance(0.1)
+check("admin panel opens", panels.Dim.Visible and string.find(panels.Dim.Card.Title.Text, "ADMIN", 1, true) ~= nil)
+local adminRow = panels.Dim.Card.Body:FindFirstChild("Player_" .. player.UserId)
+check("admin panel lists the players", adminRow ~= nil)
+adminRow.Gift1D.Activated:Fire()
+Engine.advance(0.05)
+local adminSent = sent("Admin")
+check("gift VIP for a day", adminSent and adminSent.args[1] == "giftvip" and adminSent.args[3] == 86400)
+panels.Dim.Card.Close.Activated:Fire()
+Engine.advance(0.05)
+
+-- Bonk swing: plays right away on your own screen, then waits out the cooldown
+do
+	local bonk = Engine.require(tree.client.Controllers.BonkController)
+	Engine.advance(Constants.BONK_COOLDOWN + 0.1)
+	check("bonk: your swing plays at once", bonk.localSwing() == true)
+	check("bonk: no swing spam", bonk.localSwing() == false)
+	Engine.advance(1)
 end
 
 -- Announcements drop in at the top

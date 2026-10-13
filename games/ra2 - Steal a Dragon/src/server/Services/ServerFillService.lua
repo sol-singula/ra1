@@ -6,14 +6,19 @@
 -- who were just moved (no ping-pong), private servers, Studio.
 --
 -- The server's number (1, 2, 3...) is the smallest one no live server is using; the Discord log shows it.
+-- The BUSY SERVER PORTAL in the lobby sends anyone who walks in to the busiest server with room (UsePortal).
 local MemoryStoreService = game:GetService("MemoryStoreService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TeleportService = game:GetService("TeleportService")
+
+local Net = require(ReplicatedStorage.Shared.Net)
+local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
 local ServerFillService = {
 	Name = "ServerFillService",
-	Dependencies = {},
+	Dependencies = { "DragonService" },
 	number = nil, -- this server's number once claimed
 	servers = {}, -- the other live servers: { jobId, n, players, max, version }
 }
@@ -112,6 +117,43 @@ function ServerFillService:TargetFor(player)
 	return nil
 end
 
+-- The BUSY SERVER PORTAL: the server (same game version) with the most players that still has room, and more
+-- players than this one. Nil if this is already the busiest.
+function ServerFillService:Busiest()
+	local here = #Players:GetPlayers()
+	local best
+	for _, s in self.servers do
+		if s.version == game.PlaceVersion and s.players + KEEP_FREE < s.max and s.players > here then
+			if not best or s.players > best.players then
+				best = s
+			end
+		end
+	end
+	return best
+end
+
+local portalAt = {} -- [player] = os.clock() of their last portal use
+function ServerFillService:UsePortal(player, carrying)
+	if (portalAt[player] or -99) > os.clock() - 8 or player:GetAttribute("FillMove") then
+		return false
+	end
+	portalAt[player] = os.clock()
+	if carrying then
+		Net.fire(player, "Toast", "Take your dragon home first, then use the portal! 🐉", "info")
+		return false
+	end
+	local target = self:Busiest()
+	if not target then
+		Net.fire(player, "Toast", "You're already in the busiest server! 🎉", "good")
+		return false
+	end
+	Net.fire(player, "Toast", `🌀 Off to a server with {target.players} players...`, "good")
+	if not self:Move(player, target) then
+		Net.fire(player, "Toast", "The portal fizzled. Try again in a moment!", "info")
+	end
+	return true -- (found a busier server and tried)
+end
+
 -- Send the player to that server. Returns true if the teleport started.
 function ServerFillService:Move(player, target)
 	player:SetAttribute("FillMove", target.n)
@@ -128,7 +170,7 @@ function ServerFillService:Move(player, target)
 	return ok
 end
 
-function ServerFillService:Init()
+function ServerFillService:Init(registry)
 	pcall(function()
 		map = MemoryStoreService:GetSortedMap(MAP_NAME)
 	end)
@@ -140,7 +182,21 @@ function ServerFillService:Init()
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		arrivedByMove[player] = nil
+		portalAt[player] = nil
 	end)
+	-- walking into the portal
+	local portal = WorldBuilder.layout and WorldBuilder.layout.portal
+	if portal then
+		local dragons = registry.DragonService
+		pcall(function() -- (no Touched in the test engine)
+			portal.Touched:Connect(function(hit)
+				local player = hit.Parent and Players:GetPlayerFromCharacter(hit.Parent)
+				if player then
+					self:UsePortal(player, dragons:Carrying(player) ~= nil)
+				end
+			end)
+		end)
+	end
 end
 
 function ServerFillService:Start()

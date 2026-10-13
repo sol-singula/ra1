@@ -287,6 +287,7 @@ local function buildMenu()
 		{ "Speed", "⚔️", "GEAR", C.sky, 96, 156 },
 		{ "Gift", "🎁", "GIFT", C.pink, 14, 246 },
 		{ "Invite", "👥", "FRIENDS", C.teal, 96, 246 },
+		{ "Admin", "🛡️", "ADMIN", C.red, 14, 336 }, -- admins only (shown when the server says so)
 	}
 	for _, it in items do
 		local button, dot = Theme.iconButton({
@@ -299,6 +300,14 @@ local function buildMenu()
 		})
 		if it[1] == "Gift" then
 			giftDot = dot
+		end
+		if it[1] == "Admin" then
+			button.Visible = Store.state.admin == true
+			Store.Changed:Connect(function(partial)
+				if partial.admin ~= nil then
+					button.Visible = partial.admin == true
+				end
+			end)
 		end
 		button.Activated:Connect(function()
 			if it[1] == "Invite" then

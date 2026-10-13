@@ -22,7 +22,7 @@ local NpcService = {
 	Dependencies = { "PlayerDataService", "EconomyService", "BaseService", "DragonService", "CombatService" },
 	Raided = Signal.new("NpcService.Raided"), -- (npc, owner, rec)
 	Escaped = Signal.new("NpcService.Escaped"), -- (npc, owner, rec)
-	active = not RunService:IsStudio() or Constants.NPC_IN_STUDIO, -- (tests switch this off and on)
+	active = Constants.NPC_ENABLED, -- raiders are switched off for now (players didn't like them); tests switch this on
 	npcs = {},
 }
 

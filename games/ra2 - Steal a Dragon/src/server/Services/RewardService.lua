@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Dragons = require(ReplicatedStorage.Shared.Data.Dragons)
 local Format = require(ReplicatedStorage.Shared.Format)
+local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Goals = require(ReplicatedStorage.Shared.Data.Goals)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -343,7 +344,7 @@ function RewardService:_updateEggText(player)
 	end
 	local left = profile.egg.readyAt - os.time()
 	egg.Tag.Line2.Text = left > 0 and "Hatches in " .. Format.time(left) or "READY! Hatch it!"
-	egg.Prompt_hatch.ActionText = left > 0 and "Hatch Now (Robux)" or "Hatch!"
+	egg.Prompt_hatch.ActionText = left > 0 and "Hatch Now " .. Format.robux(Shop.productByKey.HATCH.price) or "Hatch!"
 end
 
 -- Goals ------------------------------------------------------------------------------------------------------

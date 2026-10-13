@@ -15,7 +15,7 @@ Shop.Passes = {
 	{
 		key = "VIP",
 		name = "VIP",
-		text = "+50% coins, longer lock, gold name.",
+		text = "+50% coins, Dragon Wings (fly!), longer lock, gold name.",
 		price = 449,
 		id = 2025453129,
 		icon = "👑",
@@ -67,6 +67,7 @@ Shop.Passes = {
 		price = 299,
 		id = 2026479096,
 		icon = "🪽",
+		hidden = true, -- wings are part of VIP now
 	},
 }
 

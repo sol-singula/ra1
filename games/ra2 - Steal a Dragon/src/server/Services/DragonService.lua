@@ -22,6 +22,7 @@ local DragonService = {
 	CarryChanged = Signal.new("DragonService.CarryChanged"), -- (player)
 	Placed = Signal.new("DragonService.Placed"), -- (player, rec, kind, fromPlayer)
 	StealStarted = Signal.new("DragonService.StealStarted"), -- (thief, victim, rec)
+	DrillDone = Signal.new("DragonService.DrillDone"), -- (player, seconds) a practice run reached home
 	GrowRequested = Signal.new("DragonService.GrowRequested"), -- (player, uid) offer +10 Levels (Robux) for a dragon
 	DragonsChanged = Signal.new("DragonService.DragonsChanged"), -- (player)
 }
@@ -488,7 +489,7 @@ function DragonService:PushCarry(player)
 	end
 end
 
--- kind: "bought" | "stolen" | "own" | "practice" | "free"
+-- kind: "bought" | "stolen" | "own" | "practice" | "free" | "drill" (a practice run: not a real dragon)
 function DragonService:StartCarry(player, rec, owner, kind)
 	local character = player.Character
 	local hrp = character and character:FindFirstChild("HumanoidRootPart")
@@ -509,7 +510,7 @@ function DragonService:StartCarry(player, rec, owner, kind)
 	weld.Parent = root
 	model.Name = "CarriedDragon"
 	model.Parent = character
-	carrying[player] = { rec = rec, owner = owner, kind = kind, model = model }
+	carrying[player] = { rec = rec, owner = owner, kind = kind, model = model, startedAt = os.clock() }
 	player:SetAttribute("Carrying", rec.id)
 	self:PushCarry(player)
 	self.CarryChanged:Fire(player)
@@ -759,6 +760,10 @@ function DragonService:Drop(player)
 	end
 	self:PushCarry(player)
 	self.CarryChanged:Fire(player)
+	if c.kind == "drill" then
+		Net.fire(player, "Toast", "Practice dragon dropped! Try again at the Practice Base.", "info")
+		return -- a practice run's dragon isn't real: it just poofs
+	end
 	self:DropAt(c.rec, c.owner, baseService:Position(player) or Vector3.new(0, 3, 0))
 end
 
@@ -826,6 +831,14 @@ function DragonService:_place(player)
 	local c = carrying[player]
 	local profile = data:Get(player)
 	if not c or not profile then
+		return
+	end
+	if c.kind == "drill" then
+		-- a practice run made it home: no dragon (it isn't real), a small coin prize and your time
+		endCarry(player)
+		self:PushCarry(player)
+		self.CarryChanged:Fire(player)
+		self.DrillDone:Fire(player, c.startedAt and os.clock() - c.startedAt or nil)
 		return
 	end
 	local slot = self:FreeSlot(player) or self:MakeRoom(player)

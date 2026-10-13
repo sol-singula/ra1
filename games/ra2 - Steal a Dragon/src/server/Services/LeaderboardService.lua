@@ -93,7 +93,7 @@ local BOARDS = {
 			return profile.robuxSpent or 0
 		end,
 		fmt = function(v)
-			return "R$ " .. Format.commas(v)
+			return Format.ROBUX .. " " .. Format.commas(v)
 		end,
 		sub = "Robux spent in the game, all time",
 	},

@@ -64,12 +64,45 @@ function EconomyService:OnPlayerLeaving(player)
 	owned[player] = nil
 end
 
+-- VIP can also be a gift for a while (the Admin panel): profile.vipUntil (os.time). Gifted VIP counts as the pass.
+local function giftedVip(player)
+	local profile = data and data:Get(player)
+	return profile ~= nil and (profile.vipUntil or 0) > os.time()
+end
+
 function EconomyService:Passes(player)
-	return owned[player] or {}
+	local list = owned[player] or {}
+	if not list.VIP and giftedVip(player) then
+		list = table.clone(list)
+		list.VIP = true
+	end
+	return list
 end
 
 function EconomyService:HasPass(player, key)
+	if key == "VIP" and giftedVip(player) then
+		return true
+	end
 	return (owned[player] or {})[key] == true
+end
+
+-- Give VIP for a number of seconds (on top of any gifted time left). The admin panel uses this.
+function EconomyService:GiftVip(player, seconds)
+	local profile = data:Get(player)
+	if not profile then
+		return false
+	end
+	profile.vipUntil = math.max(profile.vipUntil or 0, os.time()) + seconds
+	self.PassesChanged:Fire(player)
+	data:Push(player, { passes = self:Passes(player), vipUntil = profile.vipUntil })
+	-- when it runs out, everything that depends on VIP updates (wings, the name tag, coins)
+	task.delay(seconds + 1, function()
+		if player.Parent and not giftedVip(player) then
+			self.PassesChanged:Fire(player)
+			data:Push(player, { passes = self:Passes(player), vipUntil = 0 })
+		end
+	end)
+	return true
 end
 
 -- Record a pass (after a purchase, or a free Studio test grant).

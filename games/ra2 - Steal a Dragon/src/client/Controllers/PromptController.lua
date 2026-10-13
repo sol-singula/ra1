@@ -32,7 +32,9 @@ function PromptController.shouldShow(prompt)
 		return mine
 	elseif kind == "buy" or kind == "buynow" or kind == "grab" then
 		return not carrying
-	elseif kind == "free" or kind == "practice" then
+	elseif kind == "practice" then
+		return not carrying -- practice runs are for everyone
+	elseif kind == "free" then
 		return s.tutorialDone == false
 	end
 	return true

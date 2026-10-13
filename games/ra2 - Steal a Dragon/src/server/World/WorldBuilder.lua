@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Dragons = require(ReplicatedStorage.Shared.Data.Dragons)
+local Format = require(ReplicatedStorage.Shared.Format)
 local DragonBuilder = require(script.Parent.DragonBuilder)
 local Disco = require(script.Parent.Disco)
 local Scenery = require(script.Parent.Scenery)
@@ -531,19 +532,6 @@ local function buildBase(parent, index, cf)
 		})
 	end
 	Scenery.tower(levels[4], pos(0, 0, BASE_D / 2 + 7), 10, 20, STONE, color, color)
-	local golden = DragonBuilder.build("GOLDIE", "GOLD", 3, 0.9)
-	for _, d in golden:GetDescendants() do
-		if d:IsA("BasePart") then
-			d.Anchored = true
-			d.CanCollide = false
-			d.CanQuery = false
-		elseif d:IsA("ParticleEmitter") or d:IsA("PointLight") then
-			d:Destroy()
-		end
-	end
-	golden.Name = "GoldenDragon"
-	DragonBuilder.place(golden, at(0, 12.4, -BASE_D / 2) * CFrame.Angles(0, math.pi, 0))
-	golden.Parent = levels[5]
 	-- Level 6: the back towers rise into tall spires, and a great arch with banners stands over the gate
 	for _, side in { -1, 1 } do
 		Scenery.tower(levels[6], pos(side * BASE_W / 2, 0, BASE_D / 2), 5, 22, STONE, color, rgb(255, 205, 60))
@@ -792,8 +780,10 @@ local function buildBase(parent, index, cf)
 		{ text = "collect coins", h = 0.45, y = 0.55, color = rgb(200, 240, 255) },
 	}, 8)
 	local lockPad = pad("LockPad", 10, Vector3.new(7, 0.5, 5), rgb(230, 60, 60), {
-		{ text = "🔒 LOCK", h = 1, y = 0, font = Enum.Font.LuckiestGuy },
-	}, 8)
+		{ text = "🔒 LOCK", h = 0.4, y = 0, font = Enum.Font.LuckiestGuy },
+		{ text = "Stand here = stays locked", h = 0.3, y = 0.4, color = rgb(255, 225, 190) },
+		{ text = "💰 coins still pile up (AFK ok)", h = 0.3, y = 0.7, color = rgb(255, 230, 120) },
+	}, 16)
 	local lockPlate = pad("LockPlate", 17.5, Vector3.new(5, 0.5, 5), rgb(255, 150, 60), {
 		{ text = "🔒 30 MIN", h = 0.55, y = 0, font = Enum.Font.LuckiestGuy },
 		{ text = "lock time", h = 0.45, y = 0.55, color = rgb(255, 225, 190) },
@@ -1675,6 +1665,72 @@ function WorldBuilder.build()
 	DragonBuilder.label(prize, "👑 Omni Prism", Dragons.RarityColor.Ultra, "ULTRA · daily #1 prize")
 	prize:SetAttribute("TurnSpeed", 0.35)
 	prize.Parent = lobby
+	-- The BUSY SERVER PORTAL in front of the keep door: walk in and you join a server with more players
+	-- (ServerFillService.UsePortal). Two stone pillars, an arch and a swirling purple disc facing the courtyard.
+	local portalAt = Vector3.new(-197, 0.6, 0)
+	local PORTAL = rgb(170, 90, 255)
+	for _, side in { -1, 1 } do
+		part({
+			Name = "PortalPillar",
+			Size = Vector3.new(2.4, 13, 2.4),
+			CFrame = CFrame.new(portalAt + Vector3.new(0, 6.5, side * 5.6)),
+			Color = rgb(186, 178, 168),
+			Material = Enum.Material.Cobblestone,
+			Parent = lobby,
+		})
+	end
+	part({
+		Name = "PortalArch",
+		Size = Vector3.new(2.8, 2, 14.4),
+		CFrame = CFrame.new(portalAt + Vector3.new(0, 13.5, 0)),
+		Color = rgb(70, 95, 190),
+		Material = Enum.Material.Cobblestone,
+		Parent = lobby,
+	})
+	local swirl = part({
+		Name = "PortalSwirl",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.6, 11, 11),
+		CFrame = CFrame.new(portalAt + Vector3.new(0, 6.4, 0)),
+		Color = PORTAL,
+		Material = Enum.Material.Neon,
+		Transparency = 0.25,
+		CanCollide = false,
+		CastShadow = false,
+		Parent = lobby,
+	})
+	part({
+		Name = "PortalCore",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.7, 6, 6),
+		CFrame = swirl.CFrame,
+		Color = rgb(240, 220, 255),
+		Material = Enum.Material.Neon,
+		Transparency = 0.35,
+		CanCollide = false,
+		CastShadow = false,
+		Parent = lobby,
+	})
+	local sparks = Instance.new("ParticleEmitter")
+	sparks.Name = "PortalSparks"
+	sparks.Color = ColorSequence.new(PORTAL, rgb(255, 255, 255))
+	sparks.LightEmission = 0.8
+	sparks.Size = NumberSequence.new(0.6, 0)
+	sparks.Lifetime = NumberRange.new(0.8, 1.4)
+	sparks.Rate = 18
+	sparks.Speed = NumberRange.new(1, 3)
+	sparks.SpreadAngle = Vector2.new(180, 180)
+	sparks.Parent = swirl
+	local portalLight = Instance.new("PointLight")
+	portalLight.Color = PORTAL
+	portalLight.Range = 16
+	portalLight.Brightness = 1.6
+	portalLight.Parent = swirl
+	billboard(swirl, 16, 3.6, Vector3.new(0, 9.5, 0), {
+		{ text = "🌀 BUSY SERVER PORTAL", h = 0.55, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(220, 180, 255) },
+		{ text = "Walk in to join a server with more players!", h = 0.45, y = 0.55 },
+	}, 120)
+
 	-- The south-east corner, near the spawn: the TOP SPENDERS board (angled toward the courtyard) and the
 	-- Mystery Box beside it, on a round gold-and-purple platform of their own
 	local PURPLE = rgb(150, 90, 240)
@@ -1785,7 +1841,7 @@ function WorldBuilder.build()
 		{ text = "🎁 MYSTERY BOX", h = 0.4, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(255, 215, 70) },
 		{ text = "Always a Legend or better!", h = 0.22, y = 0.4 },
 		{ text = "Legend 85% · Secret 14% · Ultra 1%", h = 0.2, y = 0.62, color = rgb(210, 180, 255) },
-		{ text = "R$ 99", h = 0.18, y = 0.82, color = rgb(120, 255, 160) },
+		{ text = Format.robux(99), h = 0.18, y = 0.82, color = rgb(120, 255, 160) },
 	}, 80)
 
 	-- the FREE dragon stand for new players: right in front of where they spawn, beside the path to the road
@@ -1976,6 +2032,7 @@ function WorldBuilder.build()
 		bases = bases,
 		boards = boards,
 		mysteryBox = core,
+		portal = swirl,
 		freePad = freePad,
 		-- (facing the spawn)
 		freeFeet = CFrame.lookAt(WorldBuilder.FREE_PAD + Vector3.new(0, 0.6, 0), Vector3.new(-130, 1.8, 0)),

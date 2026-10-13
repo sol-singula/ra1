@@ -2,7 +2,7 @@
 -- use) works on every device.
 --   1. Your weapon (Bonk Bat up to Inferno Blade; the Mega Bonk pass gilds it): click to bonk.
 --   2. Speed Potion: drink one to run faster for a while. New players get a few; more come in a product.
---   3. Dragon Wings (Dragon Wings pass): wings on your back. Click to jump high, then glide. ToolController does
+--   3. Dragon Wings (VIP only): wings on your back; with them in hand you fly (hold jump to rise, hover). ToolController does
 --      the flying, because your character's physics run on your own device.
 -- Also caps how far players can zoom the camera out.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -273,7 +273,7 @@ local function potion()
 end
 
 local function wings()
-	local tool = newTool("Dragon Wings", "wings", "Click to jump high, then glide!", Constants.TOOL_ICONS.wings)
+	local tool = newTool("Dragon Wings", "wings", "Hold jump to fly up, let go to hover!", Constants.TOOL_ICONS.wings)
 	tool.RequiresHandle = false
 	return tool
 end
@@ -417,7 +417,7 @@ function ToolService:Give(player)
 	flask.Parent = backpack
 	self:_potionLabel(player)
 
-	if economy:HasPass(player, "WINGS") then
+	if economy:HasPass(player, "VIP") then -- wings are VIP only
 		local w = wings()
 		w.Equipped:Connect(function()
 			if player.Character then

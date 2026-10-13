@@ -70,7 +70,11 @@ function FeedbackService:Ask(player)
 	if not fb or fb.at or (fb.asks or 0) >= Constants.FEEDBACK_MAX_ASKS or not profile.tutorialDone then
 		return false
 	end
+	if fb.askedAt and os.time() - fb.askedAt < Constants.FEEDBACK_ASK_EVERY then
+		return false -- at most once every few days, whatever server they join
+	end
 	fb.asks = (fb.asks or 0) + 1
+	fb.askedAt = os.time()
 	Net.fire(player, "Ask", { kind = "feedback" })
 	analytics.track(player, "feedback_asked", { ask = fb.asks, minutes = minutesPlayed(player) })
 	return true

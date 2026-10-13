@@ -43,6 +43,8 @@ local function defaults()
 		stats = { bought = 0, locks = 0, bonks = 0, friendPlay = 0, practice = 0 },
 		tutorialDone = false,
 		starterBought = false, -- the one-time Starter Pack
+		starterOffered = false, -- its card was shown (only ever once)
+		vipUntil = 0, -- gifted VIP lasts until this time (os.time); the Admin panel gives it
 		robuxSpent = 0, -- Robux spent in the game, all time (the TOP SPENDERS board)
 		feedback = { asks = 0 }, -- the "Do you like the game?" card: { asks, at, like } (FeedbackService)
 		notify = {}, -- Experience Notifications: { on, askedAt, shown, votedNudgeAt } (FeedbackService)

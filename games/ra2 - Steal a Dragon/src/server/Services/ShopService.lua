@@ -134,7 +134,7 @@ function ShopService:Init(registry)
 	if boxPart then
 		local p = Instance.new("ProximityPrompt")
 		p.Name = "Prompt_mystery"
-		p.ActionText = "Open (R$ " .. Shop.productByKey.MYSTERY.price .. ")"
+		p.ActionText = "Open (" .. Format.robux(Shop.productByKey.MYSTERY.price) .. ")"
 		p.ObjectText = "Mystery Box"
 		p.HoldDuration = 0.4
 		p.MaxActivationDistance = 10
@@ -308,10 +308,11 @@ function ShopService:OfferBuyNow(player, roadId)
 	})
 end
 
--- The Starter Pack card: once a session, after STARTER_AFTER_SECONDS of play, until it is bought.
+-- The Starter Pack card: once ever, after STARTER_AFTER_SECONDS of play (it stays in the shop after that).
 function ShopService:OfferStarter(player)
 	local profile = data:Get(player)
-	if not profile or profile.starterBought or starterShown[player] then
+	-- once ever (not once per server): profile.starterOffered is saved
+	if not profile or profile.starterBought or profile.starterOffered or starterShown[player] then
 		return false
 	end
 	if
@@ -321,6 +322,7 @@ function ShopService:OfferStarter(player)
 		})
 	then
 		starterShown[player] = true
+		profile.starterOffered = true
 		return true
 	end
 	return false

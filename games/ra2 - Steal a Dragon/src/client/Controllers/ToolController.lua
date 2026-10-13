@@ -1,7 +1,9 @@
--- Dragon Wings: with the wings in your hand, a click (or tap) on the ground launches you up, and while you're
--- in the air you glide: a slow fall and a fast forward drift in the direction you steer. Your character's physics
--- run on your device, so this lives on the client. Wings can't lift a carried dragon.
--- Also flaps every character's wings (ToolService puts them on the back).
+-- Dragon Wings (VIP): with the wings in your hand you really fly. Hold jump (space, or the jump button) to rise,
+-- let go to hover in place, hold C / Ctrl (or the ⬇ button on a phone) to sink, and steer with the normal
+-- controls. You can't fly higher than Constants.FLY_MAX_HEIGHT above the ground level of the map, and you can't
+-- fly with a dragon (too heavy). Put the wings away and you glide down gently. Your character's physics run on
+-- your device, so this lives on the client.
+-- Also flaps every character's wings (ToolService puts them on the back): fast while flying, slow on the ground.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -44,10 +46,28 @@ local function wingsInHand()
 	return nil
 end
 
+local function UserInputServiceTouch()
+	local UIS = game:GetService("UserInputService")
+	return UIS.TouchEnabled == true
+end
+
 local function airborne(hum)
 	return hum.FloorMaterial == Enum.Material.Air
 end
 
+local downButton
+
+local function sinking()
+	local UIS = game:GetService("UserInputService")
+	local ok, held = pcall(function()
+		return UIS:IsKeyDown(Enum.KeyCode.C)
+			or UIS:IsKeyDown(Enum.KeyCode.LeftControl)
+			or UIS:IsKeyDown(Enum.KeyCode.ButtonB)
+	end)
+	return (ok and held) or (downButton ~= nil and downButton:GetAttribute("Held") == true)
+end
+
+-- Clicking with the wings in hand gives a hop into the air (then hold jump to keep rising).
 function ToolController.launch()
 	local _, hum, hrp = parts()
 	if not hum or not hrp then
@@ -57,30 +77,50 @@ function ToolController.launch()
 		Hud.toast("Too heavy to fly with a dragon! Run! 🏃", "bad")
 		return
 	end
-	if airborne(hum) then
-		return -- already flying: you glide by just holding the wings
-	end
 	local v = hrp.AssemblyLinearVelocity
-	hrp.AssemblyLinearVelocity = Vector3.new(v.X, Constants.WINGS_LAUNCH, v.Z)
+	hrp.AssemblyLinearVelocity = Vector3.new(v.X, Constants.FLY_UP_SPEED, v.Z)
 	Audio.play("wings")
 end
 
--- One physics step of gliding (only with the wings in hand, in the air, and not carrying).
+-- One physics step of flying. Returns "fly" while flying, "glide" when gliding down without wings in hand.
 function ToolController.glide()
 	local _, hum, hrp = parts()
-	if not hum or not hrp or not wingsInHand() or carrying() or not airborne(hum) then
+	if not hum or not hrp or carrying() then
+		return false
+	end
+	local inHand = wingsInHand()
+	if not inHand and not hrp:GetAttribute("WasFlying") then
 		return false
 	end
 	local v = hrp.AssemblyLinearVelocity
-	local dir = hum.MoveDirection
-	local flat
-	if dir.Magnitude > 0.1 then
-		flat = Vector3.new(dir.X, 0, dir.Z).Unit * Constants.GLIDE_SPEED
-	else
-		flat = Vector3.new(v.X, 0, v.Z) * 0.98
+	local dir = hum.MoveDirection or Vector3.zero
+	local flat = dir.Magnitude > 0.1 and Vector3.new(dir.X, 0, dir.Z).Unit * Constants.FLY_SPEED or Vector3.zero
+	if inHand then
+		local up = 0
+		if hum.Jump then
+			up = Constants.FLY_UP_SPEED
+		elseif sinking() then
+			up = -Constants.FLY_UP_SPEED
+		end
+		local y = hrp.Position.Y
+		if not airborne(hum) and up <= 0 then
+			return false -- standing on the ground: walk normally
+		end
+		if y >= Constants.FLY_MAX_HEIGHT and up > 0 then
+			up = 0 -- the sky has a ceiling
+		elseif y > Constants.FLY_MAX_HEIGHT + 1 then
+			up = -Constants.FLY_UP_SPEED * 0.5
+		end
+		hrp.AssemblyLinearVelocity = Vector3.new(flat.X, up, flat.Z)
+		return "fly"
+	elseif airborne(hum) and hrp:GetAttribute("WasFlying") then
+		-- wings put away in the air: glide down instead of dropping like a rock
+		local f = dir.Magnitude > 0.1 and flat * (Constants.GLIDE_SPEED / Constants.FLY_SPEED)
+			or Vector3.new(v.X, 0, v.Z) * 0.98
+		hrp.AssemblyLinearVelocity = Vector3.new(f.X, math.max(v.Y, -Constants.GLIDE_FALL), f.Z)
+		return "glide"
 	end
-	hrp.AssemblyLinearVelocity = Vector3.new(flat.X, math.max(v.Y, -Constants.GLIDE_FALL), flat.Z)
-	return true
+	return false
 end
 
 local function hook(tool)
@@ -109,8 +149,41 @@ function ToolController:init()
 	end
 	player.CharacterAdded:Connect(watch)
 	RunService.Heartbeat:Connect(function()
-		ToolController.glide()
+		local mode = ToolController.glide()
+		local _, _, hrp = parts()
+		if hrp then
+			hrp:SetAttribute("WasFlying", mode == "fly" or (mode == "glide" and true) or nil)
+		end
+		-- the ⬇ button for phones while flying
+		if downButton then
+			downButton.Visible = mode == "fly"
+		end
 	end)
+	if UserInputServiceTouch() then
+		local gui = Instance.new("ScreenGui")
+		gui.Name = "FlyControls"
+		gui.ResetOnSpawn = false
+		gui.Parent = player:WaitForChild("PlayerGui")
+		downButton = Theme.button({
+			Name = "FlyDown",
+			Text = "⬇",
+			BackgroundColor3 = Theme.Color.sky,
+			AnchorPoint = Vector2.new(1, 1),
+			Size = UDim2.fromOffset(64, 64),
+			Position = UDim2.new(1, -150, 1, -40),
+			Visible = false,
+			round = true,
+			Parent = gui,
+		})
+		pcall(function()
+			downButton.InputBegan:Connect(function()
+				downButton:SetAttribute("Held", true)
+			end)
+			downButton.InputEnded:Connect(function()
+				downButton:SetAttribute("Held", false)
+			end)
+		end)
+	end
 	RunService.RenderStepped:Connect(function()
 		local t = os.clock()
 		local still = Theme.reducedMotion()

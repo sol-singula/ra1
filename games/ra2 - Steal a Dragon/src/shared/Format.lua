@@ -1,6 +1,14 @@
 -- Short number and time text: 1.2K, 3.4M, 0:42, 3h 5m.
 local Format = {}
 
+-- Roblox draws this private-use character as the Robux symbol in its fonts.
+Format.ROBUX = utf8.char(0xE002)
+
+-- A Robux price with the real Robux symbol (never "R$").
+function Format.robux(n)
+	return Format.ROBUX .. " " .. tostring(n)
+end
+
 local SUFFIXES = { "", "K", "M", "B", "T", "Qd", "Qn" }
 
 function Format.num(n)

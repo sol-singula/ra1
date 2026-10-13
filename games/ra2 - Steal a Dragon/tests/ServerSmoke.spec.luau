@@ -331,8 +331,14 @@ go(a, Base:Get(a).world.lockPad.Position)
 check("base locked", Base:IsLocked(Base:Get(a)))
 check("laser visible", Base:Get(a).world.laser.Transparency < 1)
 Engine.advance(10)
-local lockLeft = Base:Get(a).lockUntil
+check(
+	"standing on the lock pad keeps the timer full",
+	Base:Get(a).lockUntil >= Engine.workspace:GetServerTimeNow() + Constants.LOCK_SECONDS - 1,
+	Base:Get(a).lockUntil - Engine.workspace:GetServerTimeNow()
+)
 go(a, Base:Get(a).world.collectPad.Position)
+Engine.advance(10)
+local lockLeft = Base:Get(a).lockUntil
 go(a, Base:Get(a).world.lockPad.Position)
 check(
 	"stepping on the lock pad again resets the timer",
@@ -423,6 +429,15 @@ do -- no stunlock: a bonked player can't be hit again while stunned, nor for a f
 	check("a bubble shows they're safe", b.Character:FindFirstChild("BonkSafe") ~= nil)
 	Engine.advance(Constants.BONK_IMMUNE_SECONDS + 0.2)
 	check("bonkable again after the safe time", not Combat:IsSafe(b) and Combat:_target(a, Base:Position(b), 9) == b)
+	-- you swing forward: someone a few studs behind you isn't hit, someone in front is
+	local ap = Base:Position(a)
+	go(b, ap + Vector3.new(-6, 0, 0))
+	check("a bonk doesn't reach behind you", Combat:_target(a, ap, 9, Vector3.new(1, 0, 0)) ~= b)
+	check("a bonk hits who you face", Combat:_target(a, ap, 9, Vector3.new(-1, 0, 0)) == b)
+	local swings = Engine.countClientEvents("Swing")
+	Engine.advance(Constants.BONK_COOLDOWN + 0.1)
+	Combat:Bonk(a)
+	check("others see the swing", Engine.countClientEvents("Swing") > swings)
 	Data:Get(a).tutorialDone, Data:Get(b).tutorialDone = pa0, pb0
 end
 local pb = Data:Get(b)
@@ -653,11 +668,6 @@ check(
 local lockAfter = Base:Get(a).lockUntil
 Engine.advance(0.5)
 check("standing on the plate doesn't buy again", Base:Get(a).lockUntil == lockAfter)
--- a bought lock never leaves the door recharging when it runs out
-Base:Get(a).lockUntil = Engine.workspace:GetServerTimeNow() - 1
-Base:Lock(a)
-check("the free lock works right after a bought lock ends (no recharge)", Base:IsLocked(Base:Get(a)))
-check("a fresh free lock clears the bought-lock flag", Base:Get(a).paidLock == nil)
 Base:Get(a).lockUntil = 0 -- open again for the stealing tests below
 
 -- Offer cards: at the moment a player wants something
@@ -677,7 +687,10 @@ check(
 	"can't afford an Epic: the Buy Now card shows",
 	Shop:OfferBuyNow(a, rich.roadId) and lastOffer().target == rich.roadId
 )
-check("Starter Pack card shows once a session", Shop:OfferStarter(a) and not Shop:OfferStarter(a))
+check("Starter Pack card shows once", Shop:OfferStarter(a) and not Shop:OfferStarter(a))
+Shop:ResetOffers(a)
+check("Starter Pack card never again, even in another server", not Shop:OfferStarter(a))
+pa.starterOffered = false
 local potions0, dragons0, coins0 = pa.potions, #pa.dragons, pa.coins
 Shop:Grant(a, "STARTER")
 check(
@@ -811,15 +824,21 @@ do
 	check("new weapon in the hotbar", toolOf(a, "bonk").Name == nextW.name)
 	check("bigger weapon, longer reach", Combat:Weapon(a).range > Constants.WEAPONS[1].range)
 end
-Engine.fireServer(a, "Purchase", "pass", "WINGS")
+check("no wings without VIP", toolOf(a, "wings") == nil)
+local Economy = service("EconomyService")
+Economy:GiftVip(a, 3600) -- (a gift from the admin panel; wings are VIP only)
 Engine.advance(0.1)
 local wingsTool = toolOf(a, "wings")
-check("Dragon Wings in the hotbar", wingsTool ~= nil)
+check("VIP: Dragon Wings in the hotbar", wingsTool ~= nil)
 hum:EquipTool(wingsTool)
 check("wings on your back", a.Character:FindFirstChild("WingsModel") ~= nil)
 hum:EquipTool(toolOf(a, "bonk"))
 check("wings come off when put away", a.Character:FindFirstChild("WingsModel") == nil)
 check("potions kept when the hotbar is rebuilt", pa.potions == Constants.POTION_PACK)
+pa.vipUntil = 0 -- the gift runs out
+Economy.PassesChanged:Fire(a)
+Engine.advance(0.1)
+check("gifted VIP ends: wings go away", toolOf(a, "wings") == nil and not Economy:HasPass(a, "VIP"))
 
 -- Combining: fold a dragon into your best one, income kept; full nests combine by themselves, so you can always
 -- steal or buy
@@ -878,19 +897,23 @@ do
 		income(pa) > fullIncome and Dragon:WaitingCount(a) == 0
 	)
 end
--- the lock can be reset by stepping on the pad, but only so far; then it opens and recharges
+-- the lock pad: no recharge, and standing on it keeps the door locked
 do
 	local myBase = Base:Get(a)
 	myBase.lockUntil = 0
 	Base:Lock(a)
-	local first = myBase.lockUntil
 	check("lock pad locks", Base:IsLocked(myBase))
-	myBase.lockChainStart -= Constants.LOCK_SECONDS * Constants.LOCK_CHAIN_MAX
-	Base:Lock(a)
-	check("a lock can't be reset forever", myBase.lockUntil == first)
 	myBase.lockUntil = Engine.workspace:GetServerTimeNow() - 1 -- it just ran out
 	Base:Lock(a)
-	check("then it recharges before it can lock again", not Base:IsLocked(myBase))
+	check("no recharge: it locks again right away", Base:IsLocked(myBase))
+	myBase.lockUntil = Engine.workspace:GetServerTimeNow() + 5
+	go(a, myBase.world.lockPad.Position)
+	Engine.advance(0.3)
+	check(
+		"standing on the lock pad keeps it at the full time",
+		myBase.lockUntil >= Engine.workspace:GetServerTimeNow() + Constants.LOCK_SECONDS - 1
+	)
+	goHome(a)
 	myBase.lockUntil = 0
 end
 
@@ -1407,6 +1430,63 @@ check(
 )
 check("analytics: button taps", #eventsOf("ui") >= 1 and eventsOf("ui")[1].data.taps.ShopButton == 3)
 
+-- Admins: red tag, admin panel actions, gifting timed VIP; nobody else can use it
+do
+	local Admin = service("AdminService")
+	local EconomyA = service("EconomyService")
+	local boss = Engine.addPlayer("xthirtysix", 11787294097)
+	Engine.makeCharacter(boss)
+	Engine.advance(1)
+	local fan = Engine.Players:GetPlayers()[1]
+	check("admin: recognized", Admin.isAdmin(boss) and not Admin.isAdmin(fan))
+	check("admin: others can't use the panel", not Admin:Do(fan, "giftvip", fan.UserId, 3600))
+	check("admin: can't gift odd lengths", not Admin:Do(boss, "giftvip", fan.UserId, 5))
+	local hadVip = EconomyA:HasPass(fan, "VIP")
+	check("admin: gift VIP for a day", Admin:Do(boss, "giftvip", fan.UserId, 86400) and EconomyA:HasPass(fan, "VIP"))
+	local fp2 = Data:Get(fan)
+	check("admin: the gift lasts a day", math.abs(fp2.vipUntil - (Engine.globals.os.time() + 86400)) <= 2)
+	check("admin: server luck", Admin:Do(boss, "luck") and Road:IsLucky())
+	check("admin: spawn a Legend", Admin:Do(boss, "legend"))
+	local head = boss.Character:FindFirstChild("Head")
+	local tag = head and head:FindFirstChild("VIPTag")
+	check(
+		"admin: red ADMIN tag",
+		tag ~= nil and string.find(tag:FindFirstChildOfClass("TextLabel").Text, "ADMIN", 1, true) ~= nil
+	)
+	if not hadVip then
+		fp2.vipUntil = 0
+		EconomyA.PassesChanged:Fire(fan)
+	end
+	Engine.removePlayer(boss)
+	Engine.advance(0.5)
+end
+
+-- Practice Base: a practice run for anyone after the tutorial (not a real dragon)
+do
+	local runner = Engine.Players:GetPlayers()[1]
+	local rp = Data:Get(runner)
+	if Dragon:Carrying(runner) then
+		Dragon:Drop(runner)
+	end
+	local dragonsBefore, coinsBefore = #rp.dragons, rp.coins
+	rp.tutorialDone = true
+	go(runner, Road.practiceModel.PrimaryPart.Position)
+	Road.practiceModel.PrimaryPart.Prompt_practice.Triggered:Fire(runner)
+	Engine.advance(0.2)
+	local c = Dragon:Carrying(runner)
+	check("practice run: you carry a practice Frosty", c ~= nil and c.kind == "drill")
+	goHome(runner)
+	Engine.advance(0.5)
+	check(
+		"practice run: home gives a time and a prize, no dragon",
+		Dragon:Carrying(runner) == nil
+			and #rp.dragons == dragonsBefore
+			and rp.coins > coinsBefore
+			and rp.stats.practiceBest ~= nil
+	)
+	rp.coins = coinsBefore
+end
+
 -- Mystery Box and TOP SPENDERS ---------------------------------------------------------------------------------
 do
 	local Dragons = Engine.require(tree.shared.Data.Dragons)
@@ -1465,7 +1545,11 @@ local function lastAsk()
 	return e and e.args[1]
 end
 check("feedback: the card is asked", Feedback:Ask(someone) and lastAsk().kind == "feedback")
-check("feedback: asked at most twice", Feedback:Ask(someone) and not Feedback:Ask(someone))
+check("feedback: not again within 3 days", not Feedback:Ask(someone))
+fp.feedback.askedAt = Engine.globals.os.time() - Constants.FEEDBACK_ASK_EVERY - 1
+check("feedback: asked at most twice", Feedback:Ask(someone))
+fp.feedback.askedAt = 0
+check("feedback: never a third time", not Feedback:Ask(someone))
 Engine.fireServer(someone, "Feedback", true, "  more dragons and a badword  ")
 Engine.advance(0.1)
 check("feedback: the answer is saved", fp.feedback.like == true and fp.feedback.at ~= nil)
@@ -1543,6 +1627,23 @@ do
 	Fill.servers[2].players = 3
 	Fill.number = 1
 	check("fill: server 1 never sends anyone away", Fill:TargetFor(newcomer) == nil)
+	-- the BUSY SERVER PORTAL: to the busiest same-version server with room, never a quieter one
+	check("portal: in the lobby", World.portal ~= nil)
+	Fill.servers = {
+		{ jobId = "quiet", n = 2, players = 1, max = 8, version = Engine.game.PlaceVersion },
+		{ jobId = "busy", n = 3, players = 6, max = 8, version = Engine.game.PlaceVersion },
+		{ jobId = "full", n = 4, players = 8, max = 8, version = Engine.game.PlaceVersion },
+		{ jobId = "old", n = 5, players = 7, max = 8, version = -1 },
+	}
+	local busiest = Fill:Busiest()
+	check("portal: picks the busiest server with room", busiest and busiest.jobId == "busy", busiest and busiest.jobId)
+	check("portal: not while carrying a dragon", not Fill:UsePortal(newcomer, true))
+	Engine.advance(9)
+	check("portal: sends you there", Fill:UsePortal(newcomer, false))
+	newcomer:SetAttribute("FillMove", nil)
+	Fill.servers = { { jobId = "quiet", n = 2, players = 1, max = 8, version = Engine.game.PlaceVersion } }
+	Engine.advance(9)
+	check("portal: already the busiest server", not Fill:UsePortal(newcomer, false))
 	Fill.testMode = false
 	Engine.removePlayer(newcomer)
 	Engine.advance(0.5)

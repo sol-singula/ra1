@@ -185,7 +185,7 @@ local function shopCard(item, kind, order)
 	})
 	local buy = Theme.button({
 		Name = "Buy",
-		Text = owned and "OWNED ✓" or ("R$ " .. item.price),
+		Text = owned and "OWNED ✓" or Format.robux(item.price),
 		BackgroundColor3 = owned and Color3.fromRGB(150, 150, 165) or C.good,
 		Size = UDim2.new(1, -18, 0, 42),
 		Position = UDim2.new(0, 9, 1, -50),
@@ -253,7 +253,7 @@ local function skinCard(skin, order)
 		text, color = "EQUIP", C.sky
 	elseif skin.product then
 		local product = Shop.productByKey[skin.product]
-		text, color = "R$ " .. (product and product.price or "?"), C.good
+		text, color = Format.robux(product and product.price or "?"), C.good
 	else
 		text, color = "💰 " .. Format.num(skin.coins), C.mustard
 	end
@@ -303,7 +303,9 @@ builders.Shop = function()
 		end
 	else
 		for i, p in Shop.Passes do
-			shopCard(p, "pass", i)
+			if not p.hidden then
+				shopCard(p, "pass", i)
+			end
 		end
 	end
 end
@@ -354,7 +356,8 @@ builders.Speed = function()
 	end)
 	local fast = Theme.button({
 		Name = "FastFeet",
-		Text = (s.passes or {}).FAST and "👟 FAST FEET: OWNED" or "👟 FAST FEET  R$ 199  (+25% with a dragon)",
+		Text = (s.passes or {}).FAST and "👟 FAST FEET: OWNED"
+			or "👟 FAST FEET  " .. Format.robux(199) .. "  (+25% with a dragon)",
 		BackgroundColor3 = C.purple,
 		TextSize = 19,
 		TextScaled = false,
@@ -492,7 +495,7 @@ builders.Offline = function()
 	end)
 	local double = Theme.button({
 		Name = "Double",
-		Text = "x2 DOUBLE IT! R$ " .. Shop.productByKey.OFFLINE2X.price,
+		Text = "x2 DOUBLE IT! " .. Format.robux(Shop.productByKey.OFFLINE2X.price),
 		BackgroundColor3 = C.purple,
 		round = true,
 		Size = UDim2.new(0.5, -6, 1, 0),
@@ -517,7 +520,7 @@ builders.Offer = function()
 		new("Frame", { Name = "Buttons", BackgroundTransparency = 1, Size = UDim2.fromOffset(460, 64), Parent = body })
 	local buy = Theme.button({
 		Name = "OfferBuy",
-		Text = "BUY  R$ " .. tostring(o.price or "?"),
+		Text = "BUY  " .. Format.robux(o.price or "?"),
 		BackgroundColor3 = C.good,
 		Size = UDim2.new(0.5, -6, 1, 0),
 		round = true,
@@ -725,6 +728,79 @@ builders.Notify = function()
 	later.Activated:Connect(PanelController.close)
 end
 
+-- Admin panel (AdminService checks everything on the server) ---------------------------------------------------
+local function adminButton(parent, name, text, color, size, action, a, b)
+	local btn = Theme.button({
+		Name = name,
+		Text = text,
+		BackgroundColor3 = color,
+		Size = size,
+		round = true,
+		Parent = parent,
+	})
+	btn.Activated:Connect(function()
+		Net.send("Admin", action, a, b)
+	end)
+	return btn
+end
+
+builders.Admin = function()
+	titleLabel.Text = "🛡️ ADMIN"
+	list(10)
+	headline("THIS SERVER", 22, C.muted)
+	local lobby =
+		new("Frame", { Name = "Lobby", BackgroundTransparency = 1, Size = UDim2.fromOffset(560, 104), Parent = body })
+	new("UIGridLayout", {
+		CellSize = UDim2.fromOffset(104, 46),
+		CellPadding = UDim2.fromOffset(8, 8),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = lobby,
+	})
+	for i, it in
+		{
+			{ "Day", "☀️ DAY", C.mustard, "day" },
+			{ "Night", "🌙 NIGHT", C.slate, "night" },
+			{ "Luck", "🍀 LUCK", C.good, "luck" },
+			{ "Legend", "⭐ LEGEND", C.orange, "legend" },
+			{ "Secret", "💎 SECRET", C.purple, "secret" },
+		}
+	do
+		adminButton(lobby, it[1], it[2], it[3], UDim2.fromOffset(104, 46), it[4]).LayoutOrder = i
+	end
+	headline("GIFT VIP (wings, +50% coins)", 22, C.muted)
+	for _, p in Players:GetPlayers() do
+		local row = new("Frame", {
+			Name = "Player_" .. p.UserId,
+			BackgroundColor3 = C.paper,
+			Size = UDim2.fromOffset(560, 50),
+			Parent = body,
+		}, { Theme.corner(12) })
+		Theme.text({
+			Name = "Who",
+			Text = p.DisplayName,
+			TextColor3 = C.ink,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			Size = UDim2.new(0, 210, 1, -10),
+			Position = UDim2.fromOffset(12, 5),
+			Parent = row,
+		})
+		for i, g in Constants.ADMIN_VIP_TIMES do
+			adminButton(
+				row,
+				"Gift" .. g[2],
+				"👑 " .. g[2],
+				C.mustard,
+				UDim2.fromOffset(78, 40),
+				"giftvip",
+				p.UserId,
+				g[1]
+			).Position =
+				UDim2.fromOffset(230 + (i - 1) * 82, 5)
+		end
+	end
+end
+
 -- Open a card when nothing else is open (wait up to 2 minutes for the player to close what they have open).
 local function openWhenFree(name)
 	task.spawn(function()
@@ -851,6 +927,7 @@ function PanelController:init()
 			and current ~= "Feedback"
 			and current ~= "Thanks"
 			and current ~= "Notify"
+			and current ~= "Admin"
 			and (
 				partial.passes
 				or partial.speedLevel

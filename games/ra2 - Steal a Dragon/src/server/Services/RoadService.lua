@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Dragons = require(ReplicatedStorage.Shared.Data.Dragons)
 local Format = require(ReplicatedStorage.Shared.Format)
+local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
@@ -46,6 +47,9 @@ function RoadService:Init(registry)
 	folder.Parent = workspace:FindFirstChild("Dragons") or workspace
 	nextLegendAt = now() + Constants.LEGEND_EVENT_EVERY
 	self:_buildStands()
+	dragons.DrillDone:Connect(function(player, seconds)
+		self:_drillDone(player, seconds)
+	end)
 	data.ClientReady:Connect(function(player)
 		Net.fire(player, "Event", { kind = "legend", at = nextLegendAt })
 		if luckUntil > now() then
@@ -112,7 +116,15 @@ function RoadService:Spawn(minRarity, fancy)
 		self:TryBuy(player, roadId)
 	end)
 	if Dragons.RarityRank[d.rarity] >= Dragons.RarityRank.Epic then
-		local now2 = dragons.prompt(model.PrimaryPart, "buynow", "Buy with Robux", name, 0, 0, Enum.KeyCode.F)
+		local now2 = dragons.prompt(
+			model.PrimaryPart,
+			"buynow",
+			"Buy now " .. Format.robux(Shop.productByKey.BUYNOW.price),
+			name,
+			0,
+			0,
+			Enum.KeyCode.F
+		)
 		now2.Triggered:Connect(function(player)
 			self.BuyNowRequested:Fire(player, roadId)
 		end)
@@ -230,21 +242,60 @@ function RoadService:_buildStands()
 		if not profile then
 			return
 		end
-		if profile.tutorialDone or profile.stats.practice > 0 then
-			Net.fire(player, "Toast", "Practice is only for new players. Steal from real players!", "info")
-			return
-		end
-		if dragons:Carrying(player) or not dragons:HasRoom(player) then
+		if dragons:Carrying(player) then
 			Net.fire(player, "Toast", "Your hands are full!", "bad")
 			return
 		end
+		if not profile.tutorialDone and profile.stats.practice == 0 then
+			-- the tutorial's practice steal: Frosty is yours to keep
+			if not dragons:HasRoom(player) then
+				Net.fire(player, "Toast", "Your hands are full!", "bad")
+				return
+			end
+			profile.stats.practice += 1
+			local rec = dragons:NewRecord(player, "FROSTY", nil)
+			dragons:StartCarry(player, rec, player, "practice")
+			Net.fire(player, "Toast", "Nice steal! Now run home! 🏠", "good")
+			return
+		end
+		-- anyone else: a practice run. Race a pretend Frosty home (it isn't kept); beat your best time.
 		profile.stats.practice += 1
-		local rec = dragons:NewRecord(player, "FROSTY", nil)
-		dragons:StartCarry(player, rec, player, "practice")
-		Net.fire(player, "Toast", "Nice steal! Now run home! 🏠", "good")
+		local rec = { uid = -1, id = "FROSTY", born = os.time() }
+		dragons:StartCarry(player, rec, nil, "drill")
+		Net.fire(player, "Toast", "⏱️ Practice run! Race it home as fast as you can!", "good")
 	end)
 	practice.Parent = folder
 	self.practiceModel = practice
+end
+
+-- A practice run reached home: your time, your best, and a small prize (at most every few minutes).
+function RoadService:_drillDone(player, seconds)
+	local profile = data:Get(player)
+	if not profile or not seconds then
+		return
+	end
+	local best = profile.stats.practiceBest
+	local isBest = not best or seconds < best
+	if isBest then
+		profile.stats.practiceBest = seconds
+	end
+	local prize = 0
+	if os.time() - (profile.stats.practicePrizeAt or 0) >= Constants.PRACTICE_PRIZE_EVERY then
+		profile.stats.practicePrizeAt = os.time()
+		prize = math.max(Constants.PRACTICE_PRIZE_MIN, math.floor(baseService:Income(player) * 20))
+		economy:Add(player, prize)
+	end
+	Net.fire(
+		player,
+		"Alert",
+		string.format(
+			"⏱️ %.1f s%s%s",
+			seconds,
+			isBest and " · NEW BEST!" or string.format(" · best %.1f s", best),
+			prize > 0 and ` · +{Format.num(prize)} coins` or ""
+		),
+		Color3.fromRGB(120, 220, 255)
+	)
 end
 
 function RoadService:Start()
