@@ -1,5 +1,6 @@
 -- Dragon Wings (VIP): with the wings in your hand you really fly. Hold jump (space, or the jump button) to rise,
--- let go to hover in place, hold C / Ctrl (or the ⬇ button on a phone) to sink, and steer with the normal
+-- let go to hover in place, hold Shift (or C / Ctrl; L2 on a controller; the ⬇ button on a phone or
+-- tablet) to fly down, and steer with the normal
 -- controls. You can't fly higher than Constants.FLY_MAX_HEIGHT above the ground level of the map, and you can't
 -- fly with a dragon (too heavy). Put the wings away and you glide down gently. Your character's physics run on
 -- your device, so this lives on the client.
@@ -56,12 +57,16 @@ local function airborne(hum)
 end
 
 local downButton
+local toldControls = false
 
 local function sinking()
 	local UIS = game:GetService("UserInputService")
 	local ok, held = pcall(function()
-		return UIS:IsKeyDown(Enum.KeyCode.C)
+		return UIS:IsKeyDown(Enum.KeyCode.LeftShift)
+			or UIS:IsKeyDown(Enum.KeyCode.RightShift)
+			or UIS:IsKeyDown(Enum.KeyCode.C)
 			or UIS:IsKeyDown(Enum.KeyCode.LeftControl)
+			or UIS:IsKeyDown(Enum.KeyCode.ButtonL2)
 			or UIS:IsKeyDown(Enum.KeyCode.ButtonB)
 	end)
 	return (ok and held) or (downButton ~= nil and downButton:GetAttribute("Held") == true)
@@ -157,6 +162,16 @@ function ToolController:init()
 		-- the ⬇ button for phones while flying
 		if downButton then
 			downButton.Visible = mode == "fly"
+		end
+		if mode == "fly" and not toldControls then
+			toldControls = true
+			local kind = Theme.inputKind()
+			Hud.toast(
+				kind == "touch" and "🪽 Flying! Jump = up · ⬇ = down"
+					or kind == "gamepad" and "🪽 Flying! A = up · L2 = down"
+					or "🪽 Flying! Space = up · Shift = down",
+				"good"
+			)
 		end
 	end)
 	if UserInputServiceTouch() then

@@ -147,6 +147,9 @@ function CombatService:_vipTag(player)
 	end
 	local admin = Constants.ADMINS[player.UserId] == true
 	local vip = economy:HasPass(player, "VIP")
+	-- (the chat tags read these: ChatController)
+	player:SetAttribute("Admin", admin or nil)
+	player:SetAttribute("VIP", vip or nil)
 	local existing = head:FindFirstChild("VIPTag")
 	if not admin and not vip then
 		if existing then

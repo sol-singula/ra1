@@ -176,6 +176,105 @@ Shop.Products = {
 		hidden = true,
 	},
 	{
+		key = "CASTLE_RAINBOW",
+		name = "Rainbow Castle",
+		text = "Every wall a different colour!",
+		price = 249,
+		id = 3718322454,
+		icon = "🌈",
+		hidden = true, -- (the Shop's CASTLES tab; Data/CastleSkins.lua)
+	},
+	{
+		key = "CASTLE_GLITTER",
+		name = "Glitter Castle",
+		text = "Sparkly pink and pearl.",
+		price = 199,
+		id = 3718322457,
+		icon = "✨",
+		hidden = true, -- (the Shop's CASTLES tab; Data/CastleSkins.lua)
+	},
+	{
+		key = "CASTLE_GOLD",
+		name = "Golden Castle",
+		text = "Solid gold, top to bottom.",
+		price = 299,
+		id = 3718322460,
+		icon = "👑",
+		hidden = true, -- (the Shop's CASTLES tab; Data/CastleSkins.lua)
+	},
+	{
+		key = "CASTLE_ICE",
+		name = "Ice Palace",
+		text = "Frozen walls and falling snow.",
+		price = 199,
+		id = 3718322461,
+		icon = "❄️",
+		hidden = true, -- (the Shop's CASTLES tab; Data/CastleSkins.lua)
+	},
+	{
+		key = "CASTLE_LAVA",
+		name = "Lava Fortress",
+		text = "Black rock and glowing lava.",
+		price = 199,
+		id = 3718322465,
+		icon = "🌋",
+		hidden = true, -- (the Shop's CASTLES tab; Data/CastleSkins.lua)
+	},
+	{
+		key = "CASTLE_CANDY",
+		name = "Candy Castle",
+		text = "Pastel pink and mint, like sweets.",
+		price = 149,
+		id = 3718322468,
+		icon = "🍭",
+		hidden = true, -- (the Shop's CASTLES tab; Data/CastleSkins.lua)
+	},
+	{
+		key = "CASTLE_GALAXY",
+		name = "Galaxy Castle",
+		text = "Deep space with glowing stars.",
+		price = 249,
+		id = 3718322472,
+		icon = "🌌",
+		hidden = true, -- (the Shop's CASTLES tab; Data/CastleSkins.lua)
+	},
+	{
+		key = "CASTLE_JUNGLE",
+		name = "Jungle Temple",
+		text = "Mossy stone and vines.",
+		price = 149,
+		id = 3718322474,
+		icon = "🌿",
+		hidden = true, -- (the Shop's CASTLES tab; Data/CastleSkins.lua)
+	},
+	{
+		key = "CASTLE_CHOCOLATE",
+		name = "Chocolate Castle",
+		text = "Milk chocolate with pistachio and gold.",
+		price = 199,
+		id = 3718322475,
+		icon = "🍫",
+		hidden = true, -- (the Shop's CASTLES tab; Data/CastleSkins.lua)
+	},
+	{
+		key = "CASTLE_NEON",
+		name = "Neon Night",
+		text = "Dark walls with bright neon lines.",
+		price = 199,
+		id = 3718322478,
+		icon = "⚡",
+		hidden = true, -- (the Shop's CASTLES tab; Data/CastleSkins.lua)
+	},
+	{
+		key = "PROTECT",
+		name = "Dragon Shield",
+		text = "Protect one dragon forever. Nobody can ever steal it!",
+		price = 150,
+		id = 3718322494,
+		icon = "🛡️",
+		hidden = true, -- bought from a dragon in your nests (hold its Shield button)
+	},
+	{
 		key = "OFFLINE2X",
 		name = "Double It",
 		text = "Double your away coins.",

@@ -82,6 +82,61 @@ function FxController.turn(t)
 	end
 end
 
+-- Road dragons flap their wings as they walk (client only; near the camera). Each wing piece is welded to the
+-- dragon's root, so we briefly let go of its weld, swing it about the shoulder, and weld it again.
+local roadWings = setmetatable({}, { __mode = "k" }) -- [model] = { root, scale, phase, pieces = { part, rel, side, weld } }
+local function wingsOf(model)
+	local e = roadWings[model]
+	if e then
+		return e
+	end
+	local root = model.PrimaryPart
+	if not root then
+		return nil
+	end
+	e = { root = root, scale = model:GetAttribute("Scale") or 1, phase = math.random() * 6, pieces = {} }
+	for _, p in model:GetDescendants() do
+		if p:IsA("BasePart") and p ~= root and (p.Name:sub(1, 4) == "Wing" or p.Name:sub(1, 7) == "Feather") then
+			local weld = p:FindFirstChildOfClass("WeldConstraint")
+			if weld then
+				local rel = root.CFrame:ToObjectSpace(p.CFrame)
+				table.insert(e.pieces, { p, rel, rel.Position.X < 0 and -1 or 1, weld })
+			end
+		end
+	end
+	roadWings[model] = e
+	return e
+end
+
+function FxController.flapRoad(t, camPos)
+	local road = workspace:FindFirstChild("Dragons")
+	road = road and road:FindFirstChild("Road")
+	if not road then
+		return
+	end
+	for _, model in road:GetChildren() do
+		local root = model:IsA("Model") and model.PrimaryPart
+		if root and (not camPos or (root.Position - camPos).Magnitude < 160) then
+			local e = wingsOf(model)
+			if e and #e.pieces > 0 then
+				local flap = math.sin(t * 7 + e.phase) * 0.45
+				for _, piece in e.pieces do
+					local p, rel, side, weld = piece[1], piece[2], piece[3], piece[4]
+					local hinge = Vector3.new(side * 1.1 * e.scale, 1 * e.scale, 0)
+					local target = root.CFrame
+						* CFrame.new(hinge)
+						* CFrame.Angles(0, 0, side * flap)
+						* CFrame.new(-hinge)
+						* rel
+					weld.Enabled = false
+					p.CFrame = target
+					weld.Enabled = true
+				end
+			end
+		end
+	end
+end
+
 -- Home marker ----------------------------------------------------------------------------------------------
 local function updateHome()
 	local index = Store.state.baseIndex
@@ -147,7 +202,7 @@ function FxController:init()
 		return Enum.ContextActionResult.Sink
 	end, false, Enum.KeyCode.L, Enum.KeyCode.ButtonY)
 
-	local acc, spinAcc = 0, 0
+	local acc, spinAcc, flapAcc = 0, 0, 0
 	RunService.RenderStepped:Connect(function(dt)
 		local t = os.clock()
 		-- camera shake
@@ -211,6 +266,12 @@ function FxController:init()
 					p.Transparency = glow
 				end
 			end
+		end
+		-- road dragons flap (30 times a second, 15 in lite mode)
+		flapAcc += dt
+		if flapAcc >= (PerformanceController.lite and 1 / 15 or 1 / 30) and not Theme.reducedMotion() then
+			flapAcc = 0
+			FxController.flapRoad(t, camPos)
 		end
 		-- rainbow dragons, 10 times a second
 		acc += dt

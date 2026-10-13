@@ -219,6 +219,77 @@ for _, d in require(script.Parent.FancyDragons) do
 	table.insert(Dragons.list, d)
 end
 
+-- Hand-made specials (not from gen_dragons.py): they walk the road like the custom dragons.
+for _, d in
+	{
+		{
+			id = "DUBAICHOC",
+			name = "Dubai Chocolate",
+			rarity = "Legend",
+			cps = 1120,
+			price = 145600,
+			weight = 10,
+			theme = "chocolate",
+			body = rgb(96, 56, 32),
+			belly = rgb(168, 204, 96), -- pistachio filling
+			wing = rgb(122, 74, 42),
+			accent = rgb(255, 205, 80), -- gold leaf
+			mat = "SmoothPlastic",
+			wingMat = "SmoothPlastic",
+			accentMat = "Foil",
+			wings = "normal",
+			horns = "normal",
+			eyes = rgb(255, 230, 160),
+			extras = { "drips", "crown" },
+			fx = { "coins", "sparkles" },
+		},
+		{
+			id = "COOLKID",
+			name = "Coolkid",
+			rarity = "Legend",
+			cps = 1060,
+			price = 137800,
+			weight = 10,
+			theme = "coolkid",
+			body = rgb(220, 40, 40),
+			belly = rgb(30, 30, 36),
+			wing = rgb(25, 25, 30),
+			accent = rgb(255, 120, 30),
+			mat = "SmoothPlastic",
+			wingMat = "SmoothPlastic",
+			accentMat = "Neon",
+			wings = "bat",
+			horns = "big",
+			eyes = rgb(255, 60, 60),
+			extras = { "shades", "spikes_big" },
+			fx = { "embers", "smoke" },
+		},
+		{
+			id = "OZZY",
+			name = "Ozzy",
+			rarity = "Secret",
+			cps = 7200,
+			price = 1440000,
+			weight = 3, -- very rare, even for a Secret
+			theme = "pug",
+			body = rgb(222, 188, 138), -- fawn
+			belly = rgb(240, 218, 182),
+			wing = rgb(200, 164, 112),
+			accent = rgb(40, 32, 30), -- black mask and ears
+			mat = "SmoothPlastic",
+			wingMat = "Fabric",
+			wings = "butterfly",
+			horns = "none",
+			eyes = rgb(30, 24, 22),
+			extras = { "mask", "ears", "halo" },
+			fx = { "stars", "aura" },
+		},
+	}
+do
+	d.fancy = true
+	table.insert(Dragons.list, d)
+end
+
 -- The daily TOP EARNER prize: every theme in one dragon (fire, ice, lightning, stars, a crown, a halo, orbs, a
 -- ring, crystal wings and a unicorn horn) in shifting rainbow colours. It never comes down the road.
 Dragons.PRIZE = "OMNI"

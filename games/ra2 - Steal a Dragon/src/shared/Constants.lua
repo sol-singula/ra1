@@ -275,4 +275,7 @@ Constants.ADMIN_VIP_TIMES = {
 	{ 30 * 86400, "30D" },
 }
 
+-- Dragon Shield (the PROTECT product): this dragon can never be stolen. The price shown on its button:
+Constants.SHIELD_PRICE_SHOWN = 150
+
 return Constants

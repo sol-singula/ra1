@@ -293,14 +293,27 @@ check("buy 2x Coins", p and p.args[1] == "pass" and p.args[2] == "DOUBLE")
 serverSends("Profile", { passes = { DOUBLE = true } })
 check("owned pass shows OWNED", findButton(panels.Dim.Card.Body.DOUBLE, "OWNED") ~= nil)
 Engine.advance(2)
-click(panels.Dim.Card.Tabs, "SKINS")
+click(panels.Dim.Card.Tabs, "CASTLES")
+local castleBody = panels.Dim.Card.Body
 check(
-	"skin cards",
-	panels.Dim.Card.Body:FindFirstChild("MIDNIGHT") ~= nil and panels.Dim.Card.Body:FindFirstChild("LAVA") ~= nil
+	"castle skins tab: many castle skins",
+	castleBody:FindFirstChild("Castle_RAINBOW") ~= nil and castleBody:FindFirstChild("Castle_GALAXY") ~= nil
+)
+check("castle skin shows its Robux price", findButton(castleBody.Castle_RAINBOW, "\u{E002} 249") ~= nil)
+click(castleBody.Castle_RAINBOW, "\u{E002} 249")
+local cs = sent("BuyCastleSkin")
+check("buy a castle skin", cs and cs.args[1] == "RAINBOW")
+serverSends("Profile", { castleSkins = { RAINBOW = true }, castleSkin = "RAINBOW" })
+Engine.advance(0.05)
+check("worn castle skin can be taken off", findButton(panels.Dim.Card.Body.Castle_RAINBOW, "TAKE OFF") ~= nil)
+Engine.advance(2)
+click(panels.Dim.Card.Tabs, "PAINT")
+check(
+	"dragon paint cards (coins only now)",
+	panels.Dim.Card.Body:FindFirstChild("MIDNIGHT") ~= nil and panels.Dim.Card.Body:FindFirstChild("LAVA") == nil
 )
 check("Classic is worn at first", findButton(panels.Dim.Card.Body.CLASSIC, "EQUIPPED") ~= nil)
 check("coin skin shows its price", findButton(panels.Dim.Card.Body.MIDNIGHT, "5K") ~= nil)
-check("Robux skin shows its price", findButton(panels.Dim.Card.Body.LAVA, "\u{E002} 99") ~= nil)
 click(panels.Dim.Card.Body.MIDNIGHT, "5K")
 p = sent("BuySkin")
 check("buy a skin", p and p.args[1] == "MIDNIGHT")
@@ -596,6 +609,29 @@ do
 	check("statue's wings flap", (wing.CFrame.Position - w1.Position).Magnitude > 0.05)
 	statue:Destroy()
 end
+
+-- Chat tags: admin red, #1 spender purple, VIP gold, everyone else light green
+do
+	local chat = Engine.require(tree.client.Controllers.ChatController)
+	check("chat: everyone else is light green", string.find(chat.prefix(player, "Ava:"), "9CFF9C", 1, true) ~= nil)
+	player:SetAttribute("VIP", true)
+	check("chat: VIP gold tag", string.find(chat.prefix(player, "Ava:"), "[VIP]", 1, true) ~= nil)
+	player:SetAttribute("TopSpender", true)
+	check("chat: top spender beats VIP", string.find(chat.prefix(player, "Ava:"), "TOP SPENDER", 1, true) ~= nil)
+	player:SetAttribute("Admin", true)
+	check("chat: admin beats everything", string.find(chat.prefix(player, "Ava:"), "[ADMIN]", 1, true) ~= nil)
+	player:SetAttribute("Admin", nil)
+	player:SetAttribute("TopSpender", nil)
+	player:SetAttribute("VIP", nil)
+end
+
+-- Standing on the lock pad: a big LOCKED banner
+serverSends("Profile", { holdingLock = true })
+Engine.advance(0.05)
+check("lock pad: big LOCKED banner", hud.HoldLock.Visible == true)
+serverSends("Profile", { holdingLock = false })
+Engine.advance(0.05)
+check("lock pad: banner goes when you step off", hud.HoldLock.Visible == false)
 
 -- Castle level and progress
 serverSends("Profile", { castle = { level = 3, power = 600, need = 250, next = 2500, bonus = 10 } })

@@ -15,6 +15,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local Skins = require(ReplicatedStorage.Shared.Data.Skins)
+local CastleSkins = require(ReplicatedStorage.Shared.Data.CastleSkins)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
 local ShopService = {
@@ -35,12 +36,14 @@ local ShopService = {
 }
 
 local data, economy, dragons, baseService, road, reward, tools
+local registryRef -- (CastleSkinService depends on this service, so it's looked up when a skin is bought)
 local targets = {} -- [player] = { [productKey] = target } remembered between prompt and receipt
 local offeredAt = {} -- [player] = { [key] = os.clock() } when a world offer was last shown
 local starterShown = {} -- [player] = true once the Starter Pack card showed this session
 local MAX_RECEIPTS = 60
 
 function ShopService:Init(registry)
+	registryRef = registry
 	data = registry.PlayerDataService
 	economy = registry.EconomyService
 	dragons = registry.DragonService
@@ -58,6 +61,9 @@ function ShopService:Init(registry)
 		elseif kind == "product" then
 			self:PromptProduct(player, key, target)
 		end
+	end)
+	dragons.ShieldRequested:Connect(function(player, uid)
+		self:PromptProduct(player, "PROTECT", uid)
 	end)
 	dragons.GrowRequested:Connect(function(player, uid)
 		self:Offer(player, "product", "GROW", uid)
@@ -505,6 +511,15 @@ function ShopService:Grant(player, key, target)
 		)
 	elseif key == "LOCKNOW" then
 		baseService:Lock(player)
+	elseif key == "PROTECT" then
+		if not dragons:Protect(player, target) then
+			economy:Add(player, math.max(5000, math.floor(income * 600)), false) -- that dragon is gone: coins instead
+		end
+	elseif CastleSkins.byProduct[key] then
+		local skins = registryRef and registryRef.CastleSkinService
+		if not skins or not skins:Give(player, CastleSkins.byProduct[key].key) then
+			return false
+		end
 	elseif key == "MYSTERY" then
 		local rarity, id = self:RollMystery()
 		dragons:Grant(player, id)

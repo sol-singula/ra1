@@ -28,6 +28,7 @@ local carryBanner, eventBanner, luckBanner, feverBanner, giftBanner, boostBanner
 local lockButton
 local giftDot
 local castleCard, castleText, castleFill, castleCount
+local holdBanner, holdSub
 local gearDot
 local swordToldFor = {} -- [weapon level] = true once we've said the next sword is affordable
 local toastHolder, alertLabel, bonkedLabel
@@ -453,6 +454,18 @@ local function buildCenter()
 	giftBanner =
 		banner("PlaytimeGift", UDim2.fromOffset(300, 40), UDim2.new(1, -12, 0, 110), C.purple, Vector2.new(1, 0))
 	boostBanner = banner("NewBoost", UDim2.fromOffset(300, 40), UDim2.new(1, -12, 0, 156), C.orange, Vector2.new(1, 0))
+	-- standing on your lock pad: a big banner so it's clear the base stays locked the whole time
+	holdBanner = banner("HoldLock", UDim2.fromOffset(520, 64), UDim2.new(0.5, 10, 0, 84), C.red)
+	holdBanner.Text.Text = "🔒 BASE LOCKED while you stand here"
+	holdSub = Theme.text({
+		Name = "Sub",
+		Text = "Nobody can get in · your coins keep piling up (AFK is fine)",
+		TextColor3 = C.white,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Size = UDim2.new(1, 0, 0, 22),
+		Position = UDim2.new(0, 0, 1, 4),
+		Parent = holdBanner,
+	})
 	-- castle level, its coin bonus, and a bar toward the next level (BaseService.PushCastle)
 	castleCard = Theme.slab({
 		Name = "Castle",
@@ -563,6 +576,10 @@ local function refresh()
 	waitingLabel.Text = waiting > 0 and `🪺 {waiting} dragon{waiting > 1 and "s" or ""} waiting for a nest` or ""
 	waitingLabel.Visible = waiting > 0
 	giftDot.Visible = s.daily ~= nil and s.daily.canClaim == true
+	holdBanner.Visible = s.holdingLock == true
+	if holdBanner.Visible then
+		carryBanner.Visible = false
+	end
 	local castle = s.castle
 	castleCard.Visible = castle ~= nil and s.tutorialDone ~= false
 	if castle then

@@ -665,6 +665,43 @@ function DragonBuilder._decorate(model, root, d, s, colors)
 			end
 		elseif extra == "mask" then
 			add("Mask", Vector3.new(1.75, 0.42, 0.06), Vector3.new(0, 3.13, -2.52), "accent")
+		elseif extra == "shades" then
+			-- cool sunglasses: a black bar with two shiny lenses
+			add("Shades", Vector3.new(1.9, 0.36, 0.08), Vector3.new(0, 3.3, -2.56), Color3.fromRGB(20, 20, 26))
+			for _, side in { -1, 1 } do
+				add(
+					"Lens",
+					Vector3.new(0.62, 0.3, 0.04),
+					Vector3.new(side * 0.45, 3.3, -2.62),
+					Color3.fromRGB(60, 70, 110),
+					nil,
+					Enum.Material.Glass
+				)
+			end
+		elseif extra == "ears" then
+			-- floppy pug ears
+			for _, side in { -1, 1 } do
+				add("Ear", Vector3.new(0.55, 0.75, 0.14), Vector3.new(side * 0.85, 3.45, -1.75), "accent", {
+					0,
+					0,
+					side * 35,
+				})
+			end
+		elseif extra == "drips" then
+			-- pistachio filling dripping down the sides, with gold-leaf flakes on the back
+			for i, spec in { { -0.95, 0.6 }, { -0.95, -0.4 }, { 0.95, 0.2 }, { 0.95, -0.7 }, { -0.95, 1.4 } } do
+				add("Drip" .. i, Vector3.new(0.12, 0.55, 0.3), Vector3.new(spec[1], 1.35, spec[2]), "belly")
+			end
+			for i, z in { -0.6, 0.4, 1.3 } do
+				add(
+					"GoldLeaf" .. i,
+					Vector3.new(0.45, 0.06, 0.4),
+					Vector3.new((i % 2 == 0) and 0.2 or -0.25, 2.36, z),
+					Color3.fromRGB(255, 205, 80),
+					{ 0, i * 25, 0 },
+					Enum.Material.Foil
+				)
+			end
 		elseif extra == "spikes_big" then
 			for i, z in { -0.8, 0.2, 1.2, 2.2 } do
 				add(

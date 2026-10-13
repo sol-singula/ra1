@@ -211,6 +211,16 @@ function LeaderboardService:Redraw()
 		end
 		view.sub.Text = board.sub .. (globalOk[board.key] and " · all players" or " · this server")
 		self:_announceTop(board, rows)
+		if board.key == "spent" then
+			-- the #1 spender (across all servers) gets the purple TOP SPENDER chat tag, if they're here
+			local topId = rows[1] and rows[1].value > 0 and rows[1].id or nil
+			for _, p in Players:GetPlayers() do
+				local isTop = p.UserId == topId
+				if (p:GetAttribute("TopSpender") == true) ~= isTop then
+					p:SetAttribute("TopSpender", isTop or nil)
+				end
+			end
+		end
 		for i, row in view.rows do
 			local r = rows[i]
 			row.name.Text = r and r.name or ""

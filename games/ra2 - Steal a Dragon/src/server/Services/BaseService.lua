@@ -468,6 +468,10 @@ function BaseService:_step()
 						end
 					end
 				end
+				-- tell the player's screen when they start or stop holding the lock (the big LOCKED banner)
+				if (now2.lockpad == true) ~= (was.lockpad == true) then
+					data:Push(player, { holdingLock = now2.lockpad == true })
+				end
 				onPlates[player] = now2
 			end
 		end

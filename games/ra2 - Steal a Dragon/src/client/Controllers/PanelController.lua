@@ -12,6 +12,7 @@ local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Skins = require(ReplicatedStorage.Shared.Data.Skins)
+local CastleSkins = require(ReplicatedStorage.Shared.Data.CastleSkins)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local HudController = require(script.Parent.HudController)
@@ -274,6 +275,95 @@ local function skinCard(skin, order)
 	end)
 end
 
+-- A castle skin card: a swatch of its wall and accent colours, the name, and Buy (Robux) / Wear / Wearing.
+local function castleCard(skin, order)
+	local owned = (Store.state.castleSkins or {})[skin.key]
+	local worn = Store.state.castleSkin == skin.key
+	local cell =
+		Theme.card({ Name = "Castle_" .. skin.key, LayoutOrder = order, BackgroundColor3 = C.white, Parent = body })
+	cell.ClipsDescendants = true
+	local top = new("Frame", {
+		Name = "Top",
+		Size = UDim2.new(1, 0, 0, 84),
+		BackgroundColor3 = skin.stone,
+		BorderSizePixel = 0,
+		Parent = cell,
+	}, { Theme.corner(16), Theme.gloss(Color3.fromRGB(255, 255, 255), Color3.fromRGB(190, 190, 190)) })
+	if skin.rainbow then
+		new("UIGradient", {
+			Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 90, 90)),
+				ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 230, 90)),
+				ColorSequenceKeypoint.new(0.66, Color3.fromRGB(90, 220, 140)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(110, 140, 255)),
+			}),
+			Parent = top,
+		})
+	end
+	new("Frame", {
+		Name = "Accent",
+		Size = UDim2.fromOffset(46, 46),
+		Position = UDim2.new(1, -54, 0, 30),
+		BackgroundColor3 = skin.accent,
+		BorderSizePixel = 0,
+		Parent = top,
+	}, { Theme.corner(10), Theme.stroke(2) })
+	Theme.text({
+		Text = skin.icon .. "🏰",
+		Size = UDim2.new(1, -60, 0, 58),
+		Position = UDim2.fromOffset(4, 12),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = top,
+	})
+	Theme.text({
+		Text = skin.name,
+		Font = Theme.Display,
+		Size = UDim2.new(1, -12, 0, 24),
+		Position = UDim2.fromOffset(6, 90),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = cell,
+	})
+	Theme.text({
+		Text = skin.text,
+		TextSize = 16,
+		TextScaled = false,
+		TextColor3 = C.muted,
+		Size = UDim2.new(1, -14, 0, 56),
+		Position = UDim2.fromOffset(7, 114),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		Parent = cell,
+	})
+	local text, color
+	if worn then
+		text, color = "TAKE OFF", Color3.fromRGB(150, 150, 165)
+	elseif owned then
+		text, color = "WEAR", C.sky
+	else
+		local product = Shop.productByKey[skin.product]
+		text, color = Format.robux(product and product.price or skin.price), C.good
+	end
+	local button = Theme.button({
+		Name = "Buy",
+		Text = text,
+		BackgroundColor3 = color,
+		Size = UDim2.new(1, -18, 0, 42),
+		Position = UDim2.new(0, 9, 1, -50),
+		round = true,
+		Parent = cell,
+	})
+	button.Activated:Connect(function()
+		if not Theme.busy(button) then
+			return
+		end
+		if worn then
+			Net.send("EquipCastleSkin", "NONE")
+		else
+			Net.send("BuyCastleSkin", skin.key)
+		end
+	end)
+end
+
 builders.Shop = function()
 	titleLabel.Text = "🛒 SHOP"
 	tabs.Visible = true
@@ -298,8 +388,15 @@ builders.Shop = function()
 			end
 		end
 	elseif shopTab == "skins" then
+		-- dragon paint, bought with coins (the Robux skins are castle skins now: CASTLES tab)
 		for i, skin in Skins.list do
-			skinCard(skin, i)
+			if not skin.product then
+				skinCard(skin, i)
+			end
+		end
+	elseif shopTab == "castles" then
+		for i, skin in CastleSkins.list do
+			castleCard(skin, i)
 		end
 	else
 		for i, p in Shop.Passes do
@@ -901,7 +998,12 @@ function PanelController:init()
 		Visible = false,
 		Parent = card,
 	})
-	local tabList = { { "boosts", "⚡ BOOSTS" }, { "passes", "👑 PASSES" }, { "skins", "🎨 SKINS" } }
+	local tabList = {
+		{ "boosts", "⚡ BOOSTS" },
+		{ "passes", "👑 PASSES" },
+		{ "castles", "🏰 CASTLES" },
+		{ "skins", "🎨 PAINT" },
+	}
 	for i, t in tabList do
 		local w = 1 / #tabList
 		local b = Theme.button({
@@ -936,6 +1038,8 @@ function PanelController:init()
 				or partial.nests
 				or partial.skins
 				or partial.skin
+				or partial.castleSkins
+				or partial.castleSkin ~= nil
 			)
 		then
 			refreshOpen()

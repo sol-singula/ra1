@@ -1176,7 +1176,11 @@ for _, d in DragonsData.list do
 		m:Destroy()
 	end
 end
-check("all 200 custom dragons build, each with extras and effects", built == 200 and plain == nil, plain)
+check(
+	"all 203 custom dragons (200 + Dubai Chocolate, Coolkid, Ozzy) build, each with extras and effects",
+	built == 203 and plain == nil,
+	plain
+)
 check("some custom dragons have spinning halos, orbs or rings", spinners > 50, spinners)
 -- the road nearly always has one walking
 local withFancy, samples = 0, 0
@@ -1545,6 +1549,63 @@ do
 	check("TOP SPENDERS: an owned pass counts", bp.robuxSpent == s0 + ShopData.passByKey.DOUBLE.price)
 	EconomyS.PassesLoaded:Fire(buyer, { DOUBLE = true })
 	check("TOP SPENDERS: never counted twice", bp.robuxSpent == s0 + ShopData.passByKey.DOUBLE.price)
+	Leaderboard:Redraw()
+	local tops = 0
+	for _, p in Engine.Players:GetPlayers() do
+		tops += p:GetAttribute("TopSpender") and 1 or 0
+	end
+	check("chat tag: only the #1 spender is TOP SPENDER", buyer:GetAttribute("TopSpender") == true and tops == 1)
+end
+
+-- Castle skins (Robux) and the Dragon Shield
+do
+	local Skin = service("CastleSkinService")
+	local owner = Engine.Players:GetPlayers()[1]
+	local op = Data:Get(owner)
+	local world = Base:Get(owner).world
+	local wall
+	for _, e in world.skinParts do
+		if e.role == "stone" then
+			wall = e
+			break
+		end
+	end
+	check("castle skins: the castle's stone parts are known", wall ~= nil and #world.skinParts > 50, #world.skinParts)
+	Shop:Grant(owner, "CASTLE_GOLD")
+	check("castle skin bought and worn", op.castleSkins.GOLD and op.castleSkin == "GOLD")
+	check("castle skin restyles the walls", wall.part.Color ~= wall.color and wall.part.Material == Engine.Enum.Material.Foil)
+	Shop:Grant(owner, "CASTLE_RAINBOW")
+	check("rainbow castle", op.castleSkin == "RAINBOW" and wall.part.Color ~= wall.color)
+	check("can't wear a skin you don't own", not Skin:Equip(owner, "LAVA"))
+	Skin:Equip(owner, "NONE")
+	check(
+		"take the skin off: the castle is back to normal",
+		wall.part.Color == wall.color and wall.part.Material == wall.material
+	)
+	-- Dragon Shield
+	local rec
+	for _, r in op.dragons do
+		if r.slot then
+			rec = r
+			break
+		end
+	end
+	if rec then
+		Shop:Grant(owner, "PROTECT", rec.uid)
+		check("shield: the dragon is protected", rec.protected == true)
+		local model
+		for _, m in Engine.workspace.Dragons:GetChildren() do
+			if m:GetAttribute("Uid") == rec.uid and m:GetAttribute("OwnerUserId") == owner.UserId then
+				model = m
+			end
+		end
+		check(
+			"shield: a bubble and no Steal button",
+			model and model:FindFirstChild("ShieldBubble") and model.PrimaryPart:FindFirstChild("Prompt_steal") == nil
+		)
+		rec.protected = nil
+		Dragon:_spawnNestModel(owner, rec)
+	end
 end
 
 -- Feedback card, vote reminder, notifications ----------------------------------------------------------------

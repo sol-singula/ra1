@@ -174,7 +174,7 @@ for _, list in Dragons.byRarity do
 		regularFancy = regularFancy or d.fancy == true
 	end
 end
-check("200 custom dragons", fancyCount == 200, fancyCount)
+check("203 custom dragons (200 generated + 3 specials)", fancyCount == 203, fancyCount)
 check("no Common custom dragons", not fancyCommon)
 check("custom dragons stay out of the regular pools", not regularFancy)
 local allFancy, rarities = true, {}

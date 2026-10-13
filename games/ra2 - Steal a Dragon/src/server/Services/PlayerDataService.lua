@@ -44,6 +44,7 @@ local function defaults()
 		tutorialDone = false,
 		starterBought = false, -- the one-time Starter Pack
 		starterOffered = false, -- its card was shown (only ever once)
+		castleSkins = {}, -- castle skins owned (Data/CastleSkins.lua); castleSkin = the one worn (nil = normal)
 		vipUntil = 0, -- gifted VIP lasts until this time (os.time); the Admin panel gives it
 		robuxSpent = 0, -- Robux spent in the game, all time (the TOP SPENDERS board)
 		spentPasses = {}, -- [passKey] = true once that pass's price is in robuxSpent

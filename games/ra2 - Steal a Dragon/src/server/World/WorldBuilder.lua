@@ -928,7 +928,54 @@ local function buildBase(parent, index, cf)
 			Parent = levels[4],
 		})
 	end
+	-- castle skins (WorldBuilder.applyCastleSkin): remember which castle parts are stone, dark stone, the base
+	-- colour or gold trim, and their own colour and material, so a skin can restyle them and put them back
+	local skinParts = {}
+	local GOLDS = { rgb(255, 200, 60), rgb(255, 205, 60), rgb(240, 185, 55), rgb(255, 205, 50) }
+	local SKIP = {
+		Floor = true,
+		Rim = true,
+		Tile = true,
+		Lawn = true,
+		Path = true,
+		Mat = true,
+		FlowerBed = true,
+		BedTrim = true,
+		Laser = true,
+		Beacon = true,
+		CollectPad = true,
+		LockPad = true,
+		LockPlate = true,
+		AutoPlate = true,
+		LevelPlate = true,
+		Chest = true,
+		ChestLid = true,
+		Coin = true,
+	}
+	for _, p in model:GetDescendants() do
+		if p:IsA("BasePart") and not SKIP[p.Name] and not p.Name:find("Nest") and not p.Name:find("Rug") then
+			local c = p.Color
+			local role
+			if c == STONE then
+				role = "stone"
+			elseif c == STONE_DARK then
+				role = "dark"
+			elseif c == color then
+				role = "accent"
+			else
+				for _, g in GOLDS do
+					if c == g then
+						role = "trim"
+					end
+				end
+			end
+			if role then
+				table.insert(skinParts, { part = p, role = role, color = c, material = p.Material })
+			end
+		end
+	end
 	return {
+		skinParts = skinParts,
 		index = index,
 		cf = cf,
 		color = color,
@@ -1183,6 +1230,56 @@ end
 
 -- Show a base's castle at a level (1 .. #CASTLE_LEVEL_POWER): the pieces of every level up to it appear, the
 -- rest hide. Each part remembers how it looked when built.
+-- Restyle a castle with a skin (Data/CastleSkins.lua), or put it back with nil.
+local SKIN_FX = {
+	glitter = { Color3.fromRGB(255, 255, 255), 14, 0.35, "rbxasset://textures/particles/sparkles_main.dds" },
+	stars = { Color3.fromRGB(200, 220, 255), 10, 0.4, "rbxasset://textures/particles/sparkles_main.dds" },
+	snow = { Color3.fromRGB(240, 250, 255), 18, 0.3, "rbxasset://textures/particles/sparkles_main.dds" },
+	embers = { Color3.fromRGB(255, 140, 40), 14, 0.3, "rbxasset://textures/particles/fire_main.dds" },
+	leaves = { Color3.fromRGB(110, 190, 80), 6, 0.45, "rbxasset://textures/particles/sparkles_main.dds" },
+}
+function WorldBuilder.applyCastleSkin(world, skin)
+	for _, e in world.skinParts or {} do
+		local p = e.part
+		if not skin then
+			p.Color, p.Material = e.color, e.material
+		else
+			local c = skin[e.role] or e.color
+			if skin.rainbow and (e.role == "stone" or e.role == "dark") then
+				local pos = p.Position
+				c = Color3.fromHSV((pos.Y * 0.035 + (pos.X + pos.Z) * 0.012) % 1, e.role == "dark" and 0.75 or 0.5, 1)
+			end
+			p.Color = c
+			local m = (e.role == "stone" or e.role == "dark") and skin.material
+				or (e.role == "accent" and skin.accentMaterial)
+				or nil
+			p.Material = m or e.material
+		end
+	end
+	-- a particle effect drifting over the castle
+	local floor = world.model:FindFirstChild("Floor")
+	local old = floor and floor:FindFirstChild("SkinFx")
+	if old then
+		old:Destroy()
+	end
+	local fx = skin and skin.fx and SKIN_FX[skin.fx]
+	if floor and fx then
+		local e = Instance.new("ParticleEmitter")
+		e.Name = "SkinFx"
+		e.Texture = fx[4]
+		e.Color = ColorSequence.new(fx[1])
+		e.Rate = fx[2]
+		e.Size = NumberSequence.new(fx[3], 0)
+		e.Lifetime = NumberRange.new(2.5, 4)
+		e.Speed = NumberRange.new(1, 3)
+		e.SpreadAngle = Vector2.new(30, 30)
+		e.EmissionDirection = Enum.NormalId.Top
+		e.LightEmission = 0.6
+		e.Parent = floor
+	end
+	world.castleSkin = skin and skin.key or nil
+end
+
 function WorldBuilder.setCastleLevel(world, level)
 	for l, m in world.levels do
 		local show = l <= level

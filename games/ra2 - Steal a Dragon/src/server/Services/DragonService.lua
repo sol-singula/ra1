@@ -22,6 +22,7 @@ local DragonService = {
 	CarryChanged = Signal.new("DragonService.CarryChanged"), -- (player)
 	Placed = Signal.new("DragonService.Placed"), -- (player, rec, kind, fromPlayer)
 	StealStarted = Signal.new("DragonService.StealStarted"), -- (thief, victim, rec)
+	ShieldRequested = Signal.new("DragonService.ShieldRequested"), -- (player, uid) wants a Dragon Shield (Robux)
 	DrillDone = Signal.new("DragonService.DrillDone"), -- (player, seconds) a practice run reached home
 	GrowRequested = Signal.new("DragonService.GrowRequested"), -- (player, uid) offer +10 Levels (Robux) for a dragon
 	DragonsChanged = Signal.new("DragonService.DragonsChanged"), -- (player)
@@ -317,10 +318,47 @@ function DragonService:_spawnNestModel(player, rec)
 	model:SetAttribute("Slot", rec.slot)
 	model:SetAttribute("Level", levelOf(rec))
 	local root = model.PrimaryPart
-	local steal = prompt(root, "steal", "Steal", name, 1.2, player.UserId)
-	steal.Triggered:Connect(function(thief)
-		self:TrySteal(thief, model)
-	end)
+	if rec.protected then
+		-- a Dragon Shield: a shimmering bubble, and no Steal button at all
+		model:SetAttribute("Protected", true)
+		local bubble = Instance.new("Part")
+		bubble.Name = "ShieldBubble"
+		bubble.Shape = Enum.PartType.Ball
+		local size = math.max(root.Size.X, root.Size.Z) * 3.2
+		bubble.Size = Vector3.new(size, size, size)
+		bubble.CFrame = root.CFrame
+		bubble.Material = Enum.Material.ForceField
+		bubble.Color = Color3.fromRGB(120, 200, 255)
+		bubble.Transparency = 0.2
+		bubble.CanCollide = false
+		bubble.CanQuery = false
+		bubble.CastShadow = false
+		bubble.Massless = true
+		bubble.Anchored = false
+		local w = Instance.new("WeldConstraint")
+		w.Part0, w.Part1 = root, bubble
+		w.Parent = bubble
+		bubble.Parent = model
+	else
+		local steal = prompt(root, "steal", "Steal", name, 1.2, player.UserId)
+		steal.Triggered:Connect(function(thief)
+			self:TrySteal(thief, model)
+		end)
+		local shield = prompt(
+			root,
+			"shield",
+			"🛡️ Shield " .. Format.robux(Constants.SHIELD_PRICE_SHOWN),
+			name,
+			0.6,
+			player.UserId,
+			Enum.KeyCode.R
+		)
+		shield.Triggered:Connect(function(who)
+			if who == player then
+				self.ShieldRequested:Fire(player, rec.uid)
+			end
+		end)
+	end
 	local sell = prompt(
 		root,
 		"sell",
@@ -341,6 +379,26 @@ function DragonService:_spawnNestModel(player, rec)
 	end)
 	model.Parent = folder
 	models[rec.slot] = model
+end
+
+-- A Dragon Shield was bought for this dragon: it can never be stolen again.
+function DragonService:Protect(player, uid)
+	local profile = data:Get(player)
+	local rec = profile and findRec(profile, uid)
+	if not rec then
+		return false
+	end
+	rec.protected = true
+	if rec.slot then
+		self:_spawnNestModel(player, rec)
+	end
+	Net.fire(
+		player,
+		"Alert",
+		`🛡️ {Dragons.byId[rec.id].name} is protected forever!`,
+		Color3.fromRGB(120, 200, 255)
+	)
+	return true
 end
 
 -- Refresh a nest dragon after its level changed: a new model when it reached a new size, otherwise just the name
@@ -555,6 +613,10 @@ function DragonService:TrySteal(thief, model)
 	end
 	local base = baseService:Get(victim)
 	if thief == victim then
+		return
+	end
+	if rec.protected then
+		Net.fire(thief, "Toast", "That dragon has a Dragon Shield. It can't be stolen! 🛡️", "info")
 		return
 	end
 	if team:AreTeam(thief, victim) then
