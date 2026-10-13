@@ -1,5 +1,5 @@
 -- The round loop:
---   waiting  fewer than 2 players: the lobby sign says so (the Range and the Duel pad still work)
+--   waiting  alone: 20 s to wait for a friend, then the countdown starts anyway and robots fill in
 --   lobby    15 s countdown in the lobby, map vote
 --   round    5 minutes in the arena: everyone in the lobby goes in, latecomers jump in with PLAY
 --   podium   8 s: back in the lobby, the top 3 stand on the podium
@@ -34,6 +34,7 @@ local RoundService = {
 local data, economy, combat, loadout, team
 local registryRef
 local stateEndsAt = 0
+local waitingSince = 0 -- serverNow() when the server last started waiting
 local lastKiller = {} -- [victim] = killer (for revenge)
 local lastPopAt = {} -- [player] = os.clock() of their last pop (for DOUBLE TAP)
 local crownHolder
@@ -70,6 +71,7 @@ function RoundService:Info()
 		size = self.map and self.map.size or nil,
 		lastMinute = self.state == "round" and self.endsAt - serverNow() <= Constants.LAST_MINUTE,
 		minPlayers = Constants.MIN_PLAYERS,
+		soloAt = self.state == "waiting" and waitingSince + Constants.SOLO_WAIT or nil,
 		players = realPlayers(),
 	}
 end
@@ -83,9 +85,9 @@ function RoundService:_drawStatus()
 	local lines = WorldBuilder.layout.status
 	local left = math.max(0, (self.state == "round" and self.endsAt or stateEndsAt) - serverNow())
 	if self.state == "waiting" then
-		local need = Constants.MIN_PLAYERS - realPlayers()
-		lines[1].Text = need <= 1 and "WAITING FOR 1 MORE PLAYER" or `WAITING FOR {math.max(1, need)} PLAYERS`
-		lines[2].Text = "A round starts with 2 players. Try the Range!"
+		local soloIn = math.max(0, waitingSince + Constants.SOLO_WAIT - serverNow())
+		lines[1].Text = `STARTING IN {Format.time(soloIn)}`
+		lines[2].Text = "Waiting for friends. Robots will play too!"
 	elseif self.state == "lobby" then
 		lines[1].Text = "NEXT ROUND IN " .. Format.time(left)
 		lines[2].Text = "Vote for the next map!"
@@ -566,22 +568,29 @@ function RoundService:_playEmote(player)
 	end)
 end
 
+function RoundService:_wait()
+	self.state = "waiting"
+	waitingSince = serverNow()
+	self:Broadcast()
+end
+
 function RoundService:_step()
 	local now = serverNow()
 	local n = realPlayers()
 	if self.state == "waiting" then
-		if n >= Constants.MIN_PLAYERS then
+		if n == 0 then
+			waitingSince = now
+		elseif n >= Constants.MIN_PLAYERS or now - waitingSince >= Constants.SOLO_WAIT then
 			self:StartLobby()
 		end
 	elseif self.state == "lobby" then
-		if n < Constants.MIN_PLAYERS then
-			self.state = "waiting"
-			self:Broadcast()
+		if n == 0 then
+			self:_wait()
 		elseif now >= stateEndsAt then
 			self:StartRound()
 		end
 	elseif self.state == "round" then
-		if now >= self.endsAt or n < Constants.MIN_PLAYERS then
+		if now >= self.endsAt or n == 0 then
 			self:EndRound()
 			return
 		end
@@ -603,8 +612,7 @@ function RoundService:_step()
 			if n >= Constants.MIN_PLAYERS then
 				self:StartLobby()
 			else
-				self.state = "waiting"
-				self:Broadcast()
+				self:_wait() -- alone: another short wait for friends, then a solo round again
 			end
 		end
 	end
@@ -648,6 +656,7 @@ function RoundService:Init(registry)
 end
 
 function RoundService:Start()
+	waitingSince = serverNow()
 	local acc, statusAcc = 0, 0
 	RunService.Heartbeat:Connect(function(dt)
 		acc += dt

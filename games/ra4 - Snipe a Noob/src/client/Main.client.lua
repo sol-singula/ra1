@@ -10,7 +10,26 @@ Net.init()
 Store.init()
 Theme.watchScale()
 pcall(function()
+	-- no backpack bar: the rifle comes and goes by itself
+	game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+end)
+pcall(function()
 	Players.LocalPlayer:WaitForChild("PlayerGui").ScreenOrientation = Enum.ScreenOrientation.LandscapeSensor
+end)
+
+-- script errors on this device go to the game log (a few per session, each message once)
+local sentErrors, errorCount = {}, 0
+local function report(message, trace)
+	message = tostring(message)
+	if sentErrors[message] or errorCount >= 10 then
+		return
+	end
+	sentErrors[message] = true
+	errorCount += 1
+	Net.send("ClientError", message, tostring(trace or ""))
+end
+pcall(function()
+	game:GetService("ScriptContext").Error:Connect(report)
 end)
 
 local controllers = {}
@@ -26,6 +45,7 @@ for _, controller in controllers do
 	local ok, err = xpcall(controller.init, debug.traceback, controller)
 	if not ok then
 		warn(`[Client] {controller.Name} failed to start: {err}`)
+		report(`{controller.Name} failed to start`, err)
 	end
 end
 

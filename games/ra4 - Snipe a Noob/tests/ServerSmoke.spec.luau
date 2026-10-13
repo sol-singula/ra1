@@ -74,17 +74,20 @@ local function waitBolt(p)
 	Engine.advance(Loadout:Rifle(p).bolt + 0.05)
 end
 
+-- (alone the server waits SOLO_WAIT seconds, then plays with robots: off until the solo test near the end)
+local SOLO_WAIT = Constants.SOLO_WAIT
+Constants.SOLO_WAIT = 1e9
+
 -- Join ------------------------------------------------------------------------------------------------------
 local a = join("Ava", 1001)
 local pa = Data:Get(a)
 check("profile loaded", pa ~= nil)
 check("leaderstats", a:FindFirstChild("leaderstats") ~= nil and a.leaderstats:FindFirstChild("Pops") ~= nil)
 check("starts in the lobby", a:GetAttribute("Zone") == "lobby")
-check("holds a rifle", a.Character:FindFirstChild("Rifle") ~= nil)
-check("the rifle has a muzzle", a.Character.Rifle.Handle:FindFirstChild("Muzzle") ~= nil)
+check("hands free in the lobby", a.Character:FindFirstChild("Rifle") == nil)
 check("starts with the Bolt", pa.rifles.BOLT == true and pa.rifle == "BOLT")
 check("alone: waiting", Round.state == "waiting")
-check("the lobby sign says waiting", layout.status[1].Text:find("WAITING", 1, true) ~= nil, layout.status[1].Text)
+check("the lobby sign says waiting", layout.status[1].Text:find("STARTING", 1, true) ~= nil, layout.status[1].Text)
 check("the client hears the round state", Engine.lastClientEvent("Round", a) ~= nil)
 check("no shooting in the lobby", select(2, shoot(a, Vector3.new(0, 3, -20))) == "zone")
 
@@ -96,6 +99,8 @@ check("2 players: the lobby countdown starts", Round.state == "lobby")
 check("the sign counts down", layout.status[1].Text:find("NEXT ROUND", 1, true) ~= nil, layout.status[1].Text)
 Engine.advance(Constants.LOBBY_SECONDS + 0.5)
 check("the round starts", Round.state == "round" and Round.map ~= nil)
+check("holds a rifle in the round", a.Character:FindFirstChild("Rifle") ~= nil)
+check("the rifle has a muzzle", a.Character.Rifle.Handle:FindFirstChild("Muzzle") ~= nil)
 check("the arena is built", Engine.workspace.Arena:FindFirstChildOfClass("Model") ~= nil)
 check("2 players get the small map", Round.map.size == "small")
 check("both go in", a:GetAttribute("Zone") == "arena" and b:GetAttribute("Zone") == "arena")
@@ -360,7 +365,9 @@ Engine.removePlayer(cat)
 Engine.removePlayer(dan)
 Engine.removePlayer(b)
 Engine.advance(0.5)
-check("1 player left: the round ends", Round.state ~= "round")
+check("1 player left: the round keeps going", Round.state == "round")
+Round.endsAt = Engine.workspace:GetServerTimeNow()
+Engine.advance(0.5)
 Engine.advance(Constants.PODIUM_SECONDS + 0.5)
 check("and it waits again", Round.state == "waiting")
 
@@ -417,7 +424,10 @@ do
 	check("level 5", Economy:Level(a) == 5)
 	check("buy the Swift at level 5", Loadout:BuyRifle(a, "SWIFT") and pa.rifles.SWIFT and pa.rifle == "SWIFT")
 	check("it costs coins", pa.coins == 100000 - Rifles.byKey.SWIFT.price)
-	check("the Swift is in your hands", a.Character.Rifle:GetAttribute("Rifle") == "SWIFT")
+	Combat.setZone(a, "range") -- (no time passes: the range would send a back to the lobby)
+	check("the Swift is in your hands on the range", a.Character.Rifle:GetAttribute("Rifle") == "SWIFT")
+	Combat.setZone(a, "lobby")
+	check("and put away in the lobby", a.Character:FindFirstChild("Rifle") == nil)
 	check("the Swift fires faster", Loadout:Rifle(a).bolt < Rifles.byKey.BOLT.bolt)
 	check("hold the Bolt again", Loadout:EquipRifle(a, "BOLT") and pa.rifle == "BOLT")
 	check("swapping needs the Extra Loadout pass", not Loadout:SwapRifle(a))
@@ -449,7 +459,9 @@ do
 	-- skins on rifles
 	local uid = pa.skins[1].uid
 	check("put a skin on the Bolt", Loadout:EquipSkin(a, "BOLT", uid) and Loadout:SkinId(a, "BOLT") == pa.skins[1].id)
+	Combat.setZone(a, "range")
 	check("the Tool shows the skin", a.Character.Rifle:GetAttribute("Skin") == pa.skins[1].id)
+	Combat.setZone(a, "lobby")
 	check("a skin is on one rifle at a time", Loadout:EquipSkin(a, "SWIFT", uid) and Loadout:SkinId(a, "BOLT") == nil)
 	check("take it off", Loadout:EquipSkin(a, "SWIFT", nil) and Loadout:SkinId(a, "SWIFT") == nil)
 	-- mastery
@@ -681,11 +693,15 @@ do
 		Combat:Respawn(a, true)
 	end
 	for _, other in Robots.robots do
-		other.model:PivotTo(CFrame.new(Round.map.center + Vector3.new(60, 90, 60)))
+		other.model:PivotTo(CFrame.new(Round.map.center + Vector3.new(60, 150, 60)))
 	end
 	local c2 = Round.map.center
-	place(a, c2 + Vector3.new(0, 90, 30), c2 + Vector3.new(0, 90, -30))
-	bot.model:PivotTo(CFrame.new(c2 + Vector3.new(0, 90, -30)))
+	if bot.popped then
+		Combat:Respawn(bot, true)
+	end
+	bot.shieldUntil = nil
+	place(a, c2 + Vector3.new(0, 150, 30), c2 + Vector3.new(0, 150, -30))
+	bot.model:PivotTo(CFrame.new(c2 + Vector3.new(0, 150, -30)))
 	Engine.advance(0.05)
 	local coinsR = pa.coins
 	local robotsBefore = pa.stats.robots
@@ -709,12 +725,12 @@ do
 	if a:GetAttribute("Popped") then
 		Engine.advance(Constants.RESPAWN_SECONDS + Constants.SHIELD_SECONDS + 0.5)
 	end
-	place(a, c2 + Vector3.new(0, 90, 30), c2 + Vector3.new(0, 90, -30))
+	place(a, c2 + Vector3.new(0, 150, 30), c2 + Vector3.new(0, 150, -30))
 	a:SetAttribute("ShieldUntil", nil)
 	if bot.popped then
 		Combat:Respawn(bot, true)
 	end
-	bot.model:PivotTo(CFrame.new(c2 + Vector3.new(0, 90, -30)))
+	bot.model:PivotTo(CFrame.new(c2 + Vector3.new(0, 150, -30)))
 	Combat:RobotFire(bot, a, true)
 	check("a robot can pop you", a:GetAttribute("Popped") == true)
 	local popped = Engine.lastClientEvent("Popped", a)
@@ -739,12 +755,13 @@ do
 	Engine.advance(Constants.PODIUM_SECONDS + 0.5)
 	-- the map vote
 	check("the vote opens in the lobby", Round.state == "lobby" and Vote.open and #Vote.options == 3)
-	check("the vote pads show map names", layout.votePads[1].labels[1].Text ~= "VOTE")
+	local view = Engine.lastClientEvent("Profile", a)
+	check("the vote card gets the maps", view and view.args[1].vote and #view.args[1].vote.options == 3)
 	local pick = Vote.options[2]
-	place(a, layout.votePads[2].center + Vector3.new(0, 3, 0))
+	Engine.fireServer(a, "Vote", pick)
 	Engine.fireServer(b4, "Vote", pick)
 	Engine.advance(0.5)
-	check("standing on a pad votes", Vote.votes[a] == pick)
+	check("tapping a map votes", Vote.votes[a] == pick)
 	check("votes counted", Vote:Counts()[pick] == 2)
 	Engine.advance(Constants.LOBBY_SECONDS + 1)
 	check("the most votes wins", Round.map and Round.map.key == pick, Round.map and Round.map.key)
@@ -847,6 +864,22 @@ for _, m in Engine.require(tree.shared.Data.Maps).list do
 		check(`{m.name} {s.key}: spawns are clear`, inside == 0, inside)
 		built.model:Destroy()
 	end
+end
+
+-- Alone: after the solo wait the countdown starts anyway and robots fill the round
+do
+	Constants.SOLO_WAIT = SOLO_WAIT
+	Robots.Wanted = robotWanted
+	Round:_wait()
+	Engine.advance(1)
+	check("alone: waiting for friends", Round.state == "waiting")
+	Engine.advance(SOLO_WAIT + 0.5)
+	check("alone: the countdown starts anyway", Round.state == "lobby")
+	Engine.advance(Constants.LOBBY_SECONDS + 1)
+	check("a solo round", Round.state == "round" and a:GetAttribute("Zone") == "arena")
+	check("robots join a solo round", #Robots.robots == 3, #Robots.robots)
+	Round.endsAt = Engine.workspace:GetServerTimeNow()
+	Engine.advance(0.5)
 end
 
 -- Leaving --------------------------------------------------------------------------------------------------------

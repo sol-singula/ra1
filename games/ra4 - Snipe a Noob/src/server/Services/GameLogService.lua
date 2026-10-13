@@ -19,6 +19,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
+local Net = require(ReplicatedStorage.Shared.Net)
 local Rifles = require(ReplicatedStorage.Shared.Data.Rifles)
 
 local GameLogService = {
@@ -92,6 +93,7 @@ local function server()
 		jobId = game.JobId ~= "" and game.JobId or nil,
 		version = game.PlaceVersion,
 		studio = RunService:IsStudio(),
+		game = "Snipe a Noob",
 	}
 end
 
@@ -257,6 +259,28 @@ function GameLogService:Init(registry)
 				description = "```" .. string.sub(tostring(message) .. "\n" .. tostring(trace or ""), 1, 1500) .. "```",
 			})
 		end)
+	end)
+	-- script errors on players' devices (sent by the client; each distinct message at most once every 10 minutes)
+	Net.on("ClientError", function(player, message, trace)
+		if type(message) ~= "string" then
+			return
+		end
+		message = string.sub(message, 1, 500)
+		local last = errorsSeen["c:" .. message]
+		if last and os.clock() - last < 600 then
+			return
+		end
+		errorsSeen["c:" .. message] = os.clock()
+		GameLogService.log({
+			emoji = "📱",
+			title = `Client error ({player.Name})`,
+			color = COLORS.error,
+			description = "```"
+				.. message
+				.. "\n"
+				.. string.sub(type(trace) == "string" and trace or "", 1, 900)
+				.. "```",
+		})
 	end)
 	-- the last batch goes out before the server closes
 	pcall(function()

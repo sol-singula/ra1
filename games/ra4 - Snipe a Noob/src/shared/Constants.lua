@@ -8,7 +8,8 @@ Constants.WALK_SPEED = 18
 Constants.JUMP_POWER = 50
 
 -- The round loop ------------------------------------------------------------------------------------------
-Constants.MIN_PLAYERS = 2 -- a round starts as soon as this many players are in the server
+Constants.MIN_PLAYERS = 2 -- a round countdown starts as soon as this many players are in the server
+Constants.SOLO_WAIT = 20 -- alone: wait this long for a friend, then start anyway (robots fill in)
 Constants.LOBBY_SECONDS = 15 -- the countdown in the lobby (map vote) before a round
 Constants.ROUND_SECONDS = 300 -- 5 minutes
 Constants.PODIUM_SECONDS = 8 -- the top 3 on the podium after a round

@@ -365,28 +365,45 @@ local function buildButtons()
 	Theme.keyHint(swapButton, "Q", "Y")
 end
 
+-- Mouse and gamepad go through ContextActionService at a high priority, so the left and right mouse buttons always
+-- reach the rifle in a fight zone (nothing else can eat the click), and pass through untouched everywhere else.
 local function bindInput()
+	local PRIORITY = Enum.ContextActionPriority.High.Value + 10
+	ContextActionService:BindActionAtPriority("RifleFire", function(_, state)
+		if not inFight() then
+			return Enum.ContextActionResult.Pass
+		end
+		if state == Enum.UserInputState.Begin then
+			RifleController.fire()
+		end
+		return Enum.ContextActionResult.Sink
+	end, false, PRIORITY, Enum.UserInputType.MouseButton1, Enum.KeyCode.ButtonR2)
+	ContextActionService:BindActionAtPriority("RifleScope", function(_, state, input)
+		if not inFight() then
+			if scoped then
+				RifleController.setScope(false)
+			end
+			return Enum.ContextActionResult.Pass
+		end
+		if input.KeyCode == Enum.KeyCode.ButtonL2 then
+			if state == Enum.UserInputState.Begin then
+				RifleController.setScope(not scoped)
+			end
+		elseif state == Enum.UserInputState.Begin then
+			RifleController.setScope(true) -- hold right mouse to scope
+		elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
+			RifleController.setScope(false)
+		end
+		return Enum.ContextActionResult.Sink
+	end, false, PRIORITY, Enum.UserInputType.MouseButton2, Enum.KeyCode.ButtonL2)
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if processed then
 			return
 		end
-		local t = input.UserInputType
-		if t == Enum.UserInputType.MouseButton1 or input.KeyCode == Enum.KeyCode.ButtonR2 then
-			RifleController.fire()
-		elseif t == Enum.UserInputType.MouseButton2 then
-			RifleController.setScope(true)
-		elseif input.KeyCode == Enum.KeyCode.ButtonL2 then
-			RifleController.setScope(not scoped)
-		elseif input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.ButtonY then
+		if input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.ButtonY then
 			Net.send("SwapRifle")
 		end
 	end)
-	UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton2 then
-			RifleController.setScope(false)
-		end
-	end)
-	_ = ContextActionService
 end
 
 -- Hit marker -------------------------------------------------------------------------------------------------------

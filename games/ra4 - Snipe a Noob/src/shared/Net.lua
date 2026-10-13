@@ -27,6 +27,7 @@ Net.ClientEvents = {
 	ListStall = 2, -- (stallIndex, skinUid, coins) put a skin on a Trade Plaza stall
 	Unlist = 2, -- (stallIndex)
 	BuyStall = 2, -- (stallIndex)
+	ClientError = 2, -- (message, trace) a script error on the player's device, for the game log
 }
 
 -- Server → client.

@@ -1,23 +1,18 @@
--- The map vote in the lobby: three glowing pads by the PLAY pad each show a map (three of the four, never the one
--- just played). Stand on a pad (or tap its name on screen) to vote. The map with the most votes is next; a tie
--- or no votes picks at random among the three.
-local Players = game:GetService("Players")
+-- The map vote in the lobby countdown: a card on screen shows three maps (three of the four, never the one just
+-- played). Tap one to vote. The map with the most votes is next; a tie or no votes picks at random among the three.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Net = require(ReplicatedStorage.Shared.Net)
-local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
 local VoteService = {
 	Name = "VoteService",
-	Dependencies = { "PlayerDataService", "CombatService", "RoundService" },
-	options = {}, -- map keys on the three pads
+	Dependencies = { "PlayerDataService" },
+	options = {}, -- the three map keys
 	votes = {}, -- [player] = map key
 	open = false,
 }
 
-local combat, round
 local lastPlayed
 
 function VoteService:Open()
@@ -33,7 +28,6 @@ function VoteService:Open()
 	end
 	self.votes = {}
 	self.open = true
-	self:_draw()
 	self:Push()
 end
 
@@ -58,7 +52,6 @@ function VoteService:Vote(player, key)
 		return true
 	end
 	self.votes[player] = key
-	self:_draw()
 	self:Push()
 	return true
 end
@@ -81,27 +74,8 @@ function VoteService:Winner()
 	local pick = best[math.random(1, #best)]
 	self.open = false
 	lastPlayed = pick
-	self:_draw()
 	self:Push()
 	return pick
-end
-
-function VoteService:_draw()
-	local counts = self:Counts()
-	for i, padInfo in WorldBuilder.layout.votePads do
-		local key = self.options[i]
-		local m = key and Maps.byKey[key]
-		local sign = padInfo.part:FindFirstChild("Sign")
-		if sign then
-			sign.Enabled = self.open and m ~= nil
-		end
-		if m then
-			padInfo.labels[1].Text = `{m.emoji} {string.upper(m.name)}`
-			padInfo.labels[1].TextColor3 = m.accent
-			local n = counts[key] or 0
-			padInfo.labels[2].Text = `{n} vote{n == 1 and "" or "s"}`
-		end
-	end
 end
 
 function VoteService:View()
@@ -109,7 +83,7 @@ function VoteService:View()
 	local list = {}
 	for _, key in self.options do
 		local m = Maps.byKey[key]
-		table.insert(list, { key = key, name = m.name, emoji = m.emoji, votes = counts[key] })
+		table.insert(list, { key = key, name = m.name, emoji = m.emoji, votes = counts[key], color = m.accent })
 	end
 	return { open = self.open, options = list }
 end
@@ -118,43 +92,18 @@ function VoteService:Push()
 	Net.fireAll("Profile", { vote = self:View() })
 end
 
-function VoteService:Init(registry)
-	combat = registry.CombatService
-	round = registry.RoundService
+function VoteService:Init()
 	Net.on("Vote", function(player, key)
 		if type(key) == "string" then
 			self:Vote(player, key)
 		end
 	end)
-	self:_draw()
-end
-
-function VoteService:Start()
-	local acc = 0
-	RunService.Heartbeat:Connect(function(dt)
-		acc += dt
-		if acc < 0.3 or not self.open then
-			return
-		end
-		acc = 0
-		for _, p in Players:GetPlayers() do
-			local r = combat.root(p)
-			if r and combat.zone(p) == "lobby" then
-				for i, padInfo in WorldBuilder.layout.votePads do
-					if self.options[i] and WorldBuilder.onPad(padInfo, r.Position) then
-						self:Vote(p, self.options[i])
-					end
-				end
-			end
-		end
-	end)
-	_ = round
 end
 
 function VoteService:OnPlayerLeaving(player)
 	if self.votes[player] then
 		self.votes[player] = nil
-		self:_draw()
+		self:Push()
 	end
 end
 

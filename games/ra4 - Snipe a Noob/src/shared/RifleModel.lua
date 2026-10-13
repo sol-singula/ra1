@@ -404,8 +404,8 @@ function RifleModel.tool(rifleKey, skinId, masteryTier)
 	tool.CanBeDropped = false
 	tool.RequiresHandle = true
 	tool.ManualActivationOnly = true
-	-- the barrel points along the hand's forward when the arm is raised
-	tool.Grip = CFrame.new(0, -0.1, 0.35) * CFrame.Angles(math.rad(90), 0, 0)
+	-- no turn: the barrel (the Handle's -Z) points out along the raised arm, the scope on top
+	tool.Grip = CFrame.new(0, -0.15, 0)
 	tool:SetAttribute("Rifle", rifleKey)
 	tool:SetAttribute("Skin", skinId or "")
 	for _, child in model:GetChildren() do

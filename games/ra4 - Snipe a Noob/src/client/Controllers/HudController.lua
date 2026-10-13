@@ -381,20 +381,41 @@ local function buildRoundCard()
 	})
 	myLine = pill("Mine", C.white, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 84) })
 	giftPill = pill("Gift", C.pink, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10) })
+	-- the map vote: a card under the round card during the lobby countdown, three big map buttons
 	voteBar = new("Frame", {
 		Name = "VoteBar",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 84),
-		Size = UDim2.fromOffset(480, 40),
-		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(470, 120),
+		BackgroundColor3 = C.slate,
+		BackgroundTransparency = 0.1,
+		BorderSizePixel = 0,
 		Visible = false,
 		Parent = gui,
+	}, { Theme.corner(16), Theme.stroke(3) })
+	Theme.title({
+		Name = "Title",
+		Text = "🗳️ VOTE FOR THE NEXT MAP",
+		TextSize = 18,
+		TextScaled = false,
+		Size = UDim2.new(1, 0, 0, 26),
+		Position = UDim2.fromOffset(0, 4),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		outline = 1.5,
+		Parent = voteBar,
+	})
+	local row = new("Frame", {
+		Name = "Row",
+		Size = UDim2.new(1, -16, 0, 80),
+		Position = UDim2.fromOffset(8, 32),
+		BackgroundTransparency = 1,
+		Parent = voteBar,
 	})
 	new("UIListLayout", {
 		FillDirection = Enum.FillDirection.Horizontal,
-		Padding = UDim.new(0, 6),
+		Padding = UDim.new(0, 8),
 		HorizontalAlignment = Enum.HorizontalAlignment.Center,
-		Parent = voteBar,
+		Parent = row,
 	})
 	lastMinutePill = pill("LastMinute", C.orange, {
 		AnchorPoint = Vector2.new(0.5, 0),
@@ -653,13 +674,13 @@ local function drawRound()
 	local left = math.max(0, (round.endsAt or 0) - now)
 	local state = round.state
 	if state == "waiting" then
-		roundClock.Text = "⏳ WAITING"
+		roundClock.Text = "⏳ STARTING " .. Format.time(math.max(0, (round.soloAt or now) - now))
 		roundClock.TextColor3 = C.mustard
-		roundTitle.Text = "A round starts with 2 players"
+		roundTitle.Text = "Waiting for friends. Robots will play too!"
 	elseif state == "lobby" then
 		roundClock.Text = "NEXT ROUND " .. Format.time(left)
 		roundClock.TextColor3 = C.mustard
-		roundTitle.Text = "Vote for a map on the pads!"
+		roundTitle.Text = "Vote for the next map!"
 	elseif state == "round" then
 		roundClock.Text = "⏱ " .. Format.time(left)
 		roundClock.TextColor3 = left <= Constants.LAST_MINUTE and C.orange or C.white
@@ -726,22 +747,28 @@ local function drawProfile(partial)
 		HudController._ptAt = os.clock()
 	end
 	if partial.vote then
-		for _, c in voteBar:GetChildren() do
+		local row = voteBar.Row
+		for _, c in row:GetChildren() do
 			if c:IsA("TextButton") then
 				c:Destroy()
 			end
 		end
-		for _, o in s.vote.options or {} do
+		if not (s.vote and s.vote.open) then
+			HudController.myVote = nil
+		end
+		for _, o in s.vote and s.vote.options or {} do
+			local mine = HudController.myVote == o.key
 			local b = Theme.button({
 				Name = "Vote_" .. o.key,
-				Text = `{o.emoji} {o.name} ({o.votes})`,
-				BackgroundColor3 = C.sky,
-				TextSize = 15,
-				TextScaled = false,
-				Size = UDim2.fromOffset(150, 38),
-				Parent = voteBar,
+				Text = `{mine and "✅ " or o.emoji .. " "}{o.name}\n{o.votes} vote{o.votes == 1 and "" or "s"}`,
+				BackgroundColor3 = o.color or C.sky,
+				TextSize = 16,
+				TextWrapped = true,
+				Size = UDim2.fromOffset(144, 80),
+				Parent = row,
 			})
 			b.Activated:Connect(function()
+				HudController.myVote = o.key
 				Net.send("Vote", o.key)
 			end)
 		end

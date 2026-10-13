@@ -137,9 +137,16 @@ check("level shown", hud.Level.Value.Text == "LV 4")
 check("level bar fill", math.abs(hud.LevelBar.Fill.Size.X.Scale - 0.25) < 0.01)
 
 -- Round states ----------------------------------------------------------------------------------------------------
-serverSends("Round", { state = "waiting", endsAt = 0, minPlayers = 2, players = 1 })
+serverSends(
+	"Round",
+	{ state = "waiting", endsAt = 0, minPlayers = 2, players = 1, soloAt = Engine.workspace:GetServerTimeNow() + 15 }
+)
 Engine.advance(0.3)
-check("waiting shown", hud.Round.Clock.Text:find("WAITING", 1, true) ~= nil, hud.Round.Clock.Text)
+check(
+	"waiting shown with the solo start",
+	hud.Round.Clock.Text:find("STARTING 0:1", 1, true) ~= nil,
+	hud.Round.Clock.Text
+)
 check("lobby menu visible", hud.Menu.Visible == true)
 check("no PLAY button while waiting", hud.PlayButton.Visible == false)
 local now = Engine.workspace:GetServerTimeNow()
@@ -189,6 +196,19 @@ check("the bolt: no second shot right away", sentCount("Fire") == firesBefore + 
 check("the bolt ring shows", rifleGui.Crosshair.Bolt.Visible == true)
 Engine.advance(1.3)
 check("the bolt ring hides when ready", rifleGui.Crosshair.Bolt.Visible == false)
+-- the mouse: left click fires and right mouse scopes, through ContextActionService
+local fireAction, scopeAction = Engine.actions.RifleFire, Engine.actions.RifleScope
+check("left click is bound", fireAction ~= nil and scopeAction ~= nil)
+local sink = fireAction("RifleFire", Engine.Enum.UserInputState.Begin, { KeyCode = Engine.Enum.KeyCode.Unknown })
+Engine.advance(0.05)
+check("left click fires", sentCount("Fire") == firesBefore + 2)
+check("the click is the rifle's", sink == Engine.Enum.ContextActionResult.Sink)
+local mouse2 = { UserInputType = Engine.Enum.UserInputType.MouseButton2, KeyCode = Engine.Enum.KeyCode.Unknown }
+scopeAction("RifleScope", Engine.Enum.UserInputState.Begin, mouse2)
+check("hold right mouse to scope", rifleGui.Scope.Visible == true)
+scopeAction("RifleScope", Engine.Enum.UserInputState.End, mouse2)
+check("let go to unscope", rifleGui.Scope.Visible == false)
+Engine.advance(1.3)
 -- scope
 click(rifleGui, "SCOPE")
 check("the scope overlay shows", rifleGui.Scope.Visible == true)
@@ -357,8 +377,8 @@ serverSends("Profile", {
 player:SetAttribute("Zone", "lobby")
 serverSends("Round", { state = "lobby", endsAt = Engine.workspace:GetServerTimeNow() + 10 })
 Engine.advance(0.4)
-check("vote buttons in the lobby", hud.VoteBar.Visible and hud.VoteBar:FindFirstChild("Vote_TOWN") ~= nil)
-click(hud.VoteBar, "Candy Canyon")
+check("vote card in the lobby", hud.VoteBar.Visible and hud.VoteBar.Row:FindFirstChild("Vote_TOWN") ~= nil)
+click(hud.VoteBar.Row, "Candy Canyon")
 check("vote sends Vote", lastSent("Vote") and lastSent("Vote").args[1] == "CANDY")
 check("next gift pill", hud.Gift.Visible and hud.Gift.Text:find("150 coins", 1, true) ~= nil)
 check("quest dot when the daily gift is ready", hud.Menu.QuestsButton.Dot.Visible == true)

@@ -1,7 +1,7 @@
 -- Builds the lobby (the arenas are built per round by MapBuilder):
 --   the PLAY pad in the middle, the podium to the north, the leaderboards on the west side, the Shop, Crates and
 --   Rifles counters on the east, the shooting range in the south-west, the Duel pad in the south-east, the map
---   vote pads by the PLAY pad, and the Trade Plaza stalls along the south.
+--   the Trade Plaza stalls along the south.
 -- Also the pop box (where popped players wait out of sight) and the duel arena.
 local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
@@ -511,20 +511,9 @@ local function lobby(map)
 	})
 	local statusGui, statusLines = Scenery.sign(statusPost, 30, 6, Vector3.new(0, 0, 0), {
 		{ text = "WAITING FOR PLAYERS", h = 0.6, y = 0, font = Enum.Font.LuckiestGuy, color = TRIM },
-		{ text = "A round starts with 2 players", h = 0.4, y = 0.6 },
+		{ text = "Rounds start soon. Robots play too!", h = 0.4, y = 0.6 },
 	}, 220)
 	statusGui.Name = "Status"
-
-	-- map vote pads
-	local votePads = {}
-	for i, x in { -28, 0, 28 } do
-		local z = i == 2 and -30 or -6
-		local p, labels = pad(model, "VotePad" .. i, Vector3.new(x, 0, z), rgb(120, 200, 255), {
-			{ text = "VOTE", h = 0.55, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(150, 220, 255) },
-			{ text = "", h = 0.45, y = 0.55 },
-		}, 4.5)
-		votePads[i] = { part = p, labels = labels, center = Vector3.new(x, 0, z), radius = 4.5 }
-	end
 
 	-- the podium (north), with the title over it
 	local podium = Instance.new("Model")
@@ -826,7 +815,6 @@ local function lobby(map)
 		spawn = spawn,
 		playPad = { part = playPad, labels = playLabels, center = Vector3.new(0, 0, 4), radius = 7 },
 		status = statusLines,
-		votePads = votePads,
 		podium = { spots = spots, names = podiumNames, camera = Vector3.new(0, 11, -26), look = Vector3.new(0, 6, -52) },
 		boards = boards,
 		kiosks = kiosks,
