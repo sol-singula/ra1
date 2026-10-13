@@ -36,6 +36,7 @@ local AnalyticsService = {
 	Name = "AnalyticsService",
 	Dependencies = {
 		"PlayerDataService",
+		"EconomyService",
 		"BaseService",
 		"DragonService",
 		"ShopService",
@@ -51,7 +52,7 @@ local AnalyticsService = {
 	},
 }
 
-local data, baseService, dragons, tutorial, fill
+local data, economy, baseService, dragons, tutorial, fill
 local sessions = {} -- [player] = session
 local queue = { sessions = {}, events = {} }
 local secret -- the key from the Secrets Store, or false if there isn't one
@@ -224,10 +225,15 @@ local function progress(player, profile)
 		egg = profile.egg ~= nil,
 		daily_streak = profile.daily and profile.daily.streak or 0,
 		passes = (function()
-			local list = {}
-			for k, v in profile.passes or {} do
-				if v then
-					table.insert(list, k)
+			-- every pass Roblox says they own (bought in game, on the website Store tab, or the game's creator)
+			local list, seen = {}, {}
+			local owned = economy and economy:Passes(player) or {}
+			for _, set in { profile.passes or {}, owned } do
+				for k, v in set do
+					if v and not seen[k] then
+						seen[k] = true
+						table.insert(list, k)
+					end
 				end
 			end
 			return list
@@ -314,6 +320,7 @@ end
 
 function AnalyticsService:Init(registry)
 	data = registry.PlayerDataService
+	economy = registry.EconomyService
 	baseService = registry.BaseService
 	dragons = registry.DragonService
 	tutorial = registry.TutorialService
