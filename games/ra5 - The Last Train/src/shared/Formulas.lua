@@ -28,7 +28,11 @@ end
 
 -- Fuel cans at a stop for this many players.
 function Formulas.fuelCans(players)
-	return math.clamp(Constants.FUEL_CANS_MIN + math.floor((players or 1) / 3), Constants.FUEL_CANS_MIN, Constants.FUEL_CANS_MAX)
+	return math.clamp(
+		Constants.FUEL_CANS_MIN + math.floor((players or 1) / 3),
+		Constants.FUEL_CANS_MIN,
+		Constants.FUEL_CANS_MAX
+	)
 end
 
 -- Milestones passed at this distance (10 km = 1).

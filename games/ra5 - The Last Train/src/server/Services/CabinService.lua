@@ -7,7 +7,6 @@
 --   SetColor(player, key)        the cabin colour (door sign, blanket, curtains, cushions): free, the first thing
 --                                a new player changes
 --   Salvage(player)              at your workbench: SALVAGE_SCRAP scrap -> 1 part
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CabinBuilder = require(ReplicatedStorage.Shared.World.CabinBuilder)
@@ -112,11 +111,16 @@ function CabinService:Draw(index)
 			for _, s in Stops.list do
 				table.insert(seen, (profile.visited[s.key] and "✔ " or "· ") .. s.name)
 			end
-			Kit.text(part, Enum.NormalId.Back, `MY JOURNEY\n{table.concat(seen, "\n")}\nBEST: {Formulas.round1(profile.best or 0)} km`, {
-				color = Kit.C.black,
-				ppu = 40,
-				font = Enum.Font.Oswald,
-			})
+			Kit.text(
+				part,
+				Enum.NormalId.Back,
+				`MY JOURNEY\n{table.concat(seen, "\n")}\nBEST: {Formulas.round1(profile.best or 0)} km`,
+				{
+					color = Kit.C.black,
+					ppu = 40,
+					font = Enum.Font.Oswald,
+				}
+			)
 		end
 	end
 	h.plate.Text = player and `{index} · {string.upper(player.DisplayName)}` or `{index} · VACANT`
@@ -269,12 +273,20 @@ function CabinService:Init(registry)
 	for i, cabin in Layout.cabins do
 		local h = handle(i)
 		if h then
-			local spot = Kit.box(h.model, "BuildSpot", cabin.cf * CFrame.new(0, 3.5, 0), Vector3.new(1, 1, 1), Kit.C.black, Kit.M.SmoothPlastic, {
-				Transparency = 1,
-				CanCollide = false,
-				CanQuery = false,
-				CastShadow = false,
-			})
+			local spot = Kit.box(
+				h.model,
+				"BuildSpot",
+				cabin.cf * CFrame.new(0, 3.5, 0),
+				Vector3.new(1, 1, 1),
+				Kit.C.black,
+				Kit.M.SmoothPlastic,
+				{
+					Transparency = 1,
+					CanCollide = false,
+					CanQuery = false,
+					CastShadow = false,
+				}
+			)
 			local build = Instance.new("ProximityPrompt")
 			build.Name = "Prompt_build"
 			build.ActionText = "Build"

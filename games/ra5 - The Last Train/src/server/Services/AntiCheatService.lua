@@ -81,7 +81,12 @@ function AntiCheatService:Flag(player, kind, detail, strikes)
 		end)
 	elseif s.strikes >= Constants.AC_KICK_STRIKES / 2 and not s.warned then
 		s.warned = true
-		Net.fire(player, "Alert", "⚠️ The anti-cheat noticed something odd. Keep cheating and you'll be kicked.", Color3.fromRGB(255, 110, 90))
+		Net.fire(
+			player,
+			"Alert",
+			"⚠️ The anti-cheat noticed something odd. Keep cheating and you'll be kicked.",
+			Color3.fromRGB(255, 110, 90)
+		)
 	end
 end
 
@@ -116,7 +121,12 @@ function AntiCheatService:_checkMovement(player, s, hrp, now)
 				hrp.CFrame = CFrame.new(first[2]) * (hrp.CFrame - hrp.CFrame.Position)
 			end)
 			s.samples = { { now, first[2] } }
-			self:Flag(player, teleport and "teleport" or "speed", `{math.floor(flat)} studs in {math.floor(dt * 10) / 10}s (max {math.floor(allowed)})`, teleport and 3 or 1)
+			self:Flag(
+				player,
+				teleport and "teleport" or "speed",
+				`{math.floor(flat)} studs in {math.floor(dt * 10) / 10}s (max {math.floor(allowed)})`,
+				teleport and 3 or 1
+			)
 			return
 		end
 	end

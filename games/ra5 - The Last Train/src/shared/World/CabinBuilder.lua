@@ -15,11 +15,31 @@ local C, M = Kit.C, Kit.M
 
 -- Interior finishes: floor and wall colour/material (the bare cabin is "bare").
 CabinBuilder.FINISHES = {
-	bare = { floor = Kit.rgb(104, 88, 72), floorMat = M.WoodPlanks, wall = Kit.rgb(146, 136, 118), wallMat = M.SmoothPlastic },
+	bare = {
+		floor = Kit.rgb(104, 88, 72),
+		floorMat = M.WoodPlanks,
+		wall = Kit.rgb(146, 136, 118),
+		wallMat = M.SmoothPlastic,
+	},
 	oak = { floor = Kit.rgb(150, 100, 60), floorMat = M.WoodPlanks, wall = Kit.rgb(168, 116, 70), wallMat = M.Wood },
-	forest = { floor = Kit.rgb(88, 60, 40), floorMat = M.WoodPlanks, wall = Kit.rgb(52, 92, 66), wallMat = M.SmoothPlastic },
-	midnight = { floor = Kit.rgb(58, 50, 60), floorMat = M.WoodPlanks, wall = Kit.rgb(38, 52, 92), wallMat = M.SmoothPlastic },
-	rose = { floor = Kit.rgb(168, 128, 98), floorMat = M.WoodPlanks, wall = Kit.rgb(178, 124, 124), wallMat = M.SmoothPlastic },
+	forest = {
+		floor = Kit.rgb(88, 60, 40),
+		floorMat = M.WoodPlanks,
+		wall = Kit.rgb(52, 92, 66),
+		wallMat = M.SmoothPlastic,
+	},
+	midnight = {
+		floor = Kit.rgb(58, 50, 60),
+		floorMat = M.WoodPlanks,
+		wall = Kit.rgb(38, 52, 92),
+		wallMat = M.SmoothPlastic,
+	},
+	rose = {
+		floor = Kit.rgb(168, 128, 98),
+		floorMat = M.WoodPlanks,
+		wall = Kit.rgb(178, 124, 124),
+		wallMat = M.SmoothPlastic,
+	},
 }
 
 function CabinBuilder.applyFinish(cabin, variant)
@@ -63,7 +83,9 @@ local function maker(parent, cf, ghost)
 	end
 	local b = {}
 	function b.box(name, lx, ly, lz, sx, sy, sz, color, material, extra)
-		return finish(Kit.box(parent, name, cf * CFrame.new(lx, ly, lz), Vector3.new(sx, sy, sz), color, material, extra))
+		return finish(
+			Kit.box(parent, name, cf * CFrame.new(lx, ly, lz), Vector3.new(sx, sy, sz), color, material, extra)
+		)
 	end
 	function b.cf(name, lcf, size, color, material, extra)
 		return finish(Kit.box(parent, name, cf * lcf, size, color, material, extra))
@@ -98,7 +120,14 @@ function SPECIALIST.explorer(b)
 	b.disc("GlobeStand", 5.1, 3, -1.2, 0.8, 0.5, C.brassDark, M.Metal)
 	b.ball("Globe", 5.1, 3.9, -1.2, 1.5, Kit.rgb(70, 120, 170), M.SmoothPlastic)
 	for i = 0, 2 do
-		b.cyl("Map", CFrame.new(5.0, 2.9 + i * 0.25, 1 + i * 0.3) * CFrame.Angles(0, math.rad(90), 0), 2.2, 0.35, Kit.rgb(222, 206, 160), M.SmoothPlastic)
+		b.cyl(
+			"Map",
+			CFrame.new(5.0, 2.9 + i * 0.25, 1 + i * 0.3) * CFrame.Angles(0, math.rad(90), 0),
+			2.2,
+			0.35,
+			Kit.rgb(222, 206, 160),
+			M.SmoothPlastic
+		)
 	end
 	b.disc("Compass", 4.8, 2.85, 0.1, 0.9, 0.12, C.brass, M.Metal)
 end
@@ -158,7 +187,18 @@ function CabinBuilder.item(parent, cabinCf, key, opts)
 		b.box("Quilt", 6.42, 2.4, 2, 0.15, 4, 12, quilt, M.Fabric)
 		b.box("Quilt", 0, 2.35, 8.3, 12.6, 4.2, 0.15, quilt, M.Fabric)
 		for i = -3, 3 do
-			b.box("QuiltSeam", -6.35, 2.4, i * 2.2, 0.12, 4, 0.1, quilt:Lerp(C.black, 0.2), M.Fabric, { CastShadow = false })
+			b.box(
+				"QuiltSeam",
+				-6.35,
+				2.4,
+				i * 2.2,
+				0.12,
+				4,
+				0.1,
+				quilt:Lerp(C.black, 0.2),
+				M.Fabric,
+				{ CastShadow = false }
+			)
 		end
 	elseif key == "shelf" then
 		b.box("ShelfPlank", -6.05, 6.2, -1, 0.9, 0.2, 5, C.wood, M.Wood)
@@ -169,7 +209,16 @@ function CabinBuilder.item(parent, cabinCf, key, opts)
 		b.disc("ChandelierRing", 0, 11.3, 0, 3, 0.25, C.brass, M.Metal, { CastShadow = false })
 		for i = 0, 2 do
 			local a = i * math.pi * 2 / 3
-			local bulb = b.ball("ChandelierBulb", math.cos(a) * 1.3, 10.9, math.sin(a) * 1.3, 0.55, C.warm, M.Neon, { CastShadow = false })
+			local bulb = b.ball(
+				"ChandelierBulb",
+				math.cos(a) * 1.3,
+				10.9,
+				math.sin(a) * 1.3,
+				0.55,
+				C.warm,
+				M.Neon,
+				{ CastShadow = false }
+			)
 			if i == 0 then
 				b.light(bulb, 24, 1.5)
 			end
@@ -178,12 +227,32 @@ function CabinBuilder.item(parent, cabinCf, key, opts)
 		b.box("MapBoard", 4.4, 6.4, -8.42, 4.5, 3.2, 0.2, Kit.rgb(176, 136, 96), M.SmoothPlastic)
 		b.box("MapFrame", 4.4, 6.4, -8.5, 4.9, 3.6, 0.1, C.woodDark, M.Wood, { CastShadow = false })
 		for i, p in { { 3.2, 7.2 }, { 4.6, 6.1 }, { 5.6, 7.0 }, { 3.9, 5.6 } } do
-			b.ball("MapPin", p[1], p[2], -8.3, 0.25, i % 2 == 0 and C.red or C.blueprint, M.Neon, { CastShadow = false })
+			b.ball(
+				"MapPin",
+				p[1],
+				p[2],
+				-8.3,
+				0.25,
+				i % 2 == 0 and C.red or C.blueprint,
+				M.Neon,
+				{ CastShadow = false }
+			)
 		end
 	elseif key == "toolrack" then
 		b.box("Pegboard", 6.45, 6.2, -6.2, 0.2, 2.6, 4.4, C.woodLight, M.WoodPlanks)
 		for i = -2, 2 do
-			b.box("RackTool", 6.3, 6.2, -6.2 + i * 0.85, 0.15, 1.8, 0.22, i % 2 == 0 and C.steel or C.wheel, M.Metal, { CastShadow = false })
+			b.box(
+				"RackTool",
+				6.3,
+				6.2,
+				-6.2 + i * 0.85,
+				0.15,
+				1.8,
+				0.22,
+				i % 2 == 0 and C.steel or C.wheel,
+				M.Metal,
+				{ CastShadow = false }
+			)
 		end
 	elseif key == "locker" then
 		b.box("Locker", -5.55, 3.5, 6.85, 1.8, 7, 3, Kit.rgb(70, 96, 78), M.Metal)

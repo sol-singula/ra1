@@ -52,17 +52,48 @@ function HallBuilder.statue(parent, cf, member)
 	local bronze = Kit.rgb(150, 112, 66)
 	-- a small plinth, then a blocky figure in bronze with a coloured sash
 	box(model, "Plinth", cf * CFrame.new(0, 0.3, 0), Vector3.new(2.8, 0.6, 2.2), C.woodDark, M.Wood)
-	box(model, "PlinthTrim", cf * CFrame.new(0, 0.62, 0), Vector3.new(2.9, 0.06, 2.3), C.brass, M.Metal, { CastShadow = false })
+	box(
+		model,
+		"PlinthTrim",
+		cf * CFrame.new(0, 0.62, 0),
+		Vector3.new(2.9, 0.06, 2.3),
+		C.brass,
+		M.Metal,
+		{ CastShadow = false }
+	)
 	local base = cf * CFrame.new(0, 0.6, 0)
 	box(model, "LegL", base * CFrame.new(-0.42, 1, 0), Vector3.new(0.75, 2, 0.8), bronze, M.Metal)
 	box(model, "LegR", base * CFrame.new(0.42, 1, 0), Vector3.new(0.75, 2, 0.8), bronze, M.Metal)
 	box(model, "Body", base * CFrame.new(0, 3, 0), Vector3.new(1.9, 2, 1), bronze, M.Metal)
-	box(model, "Sash", base * CFrame.new(0, 3.1, -0.52) * CFrame.Angles(0, 0, math.rad(35)), Vector3.new(0.45, 2.5, 0.06), shirt, M.Fabric, { CastShadow = false })
+	box(
+		model,
+		"Sash",
+		base * CFrame.new(0, 3.1, -0.52) * CFrame.Angles(0, 0, math.rad(35)),
+		Vector3.new(0.45, 2.5, 0.06),
+		shirt,
+		M.Fabric,
+		{ CastShadow = false }
+	)
 	box(model, "ArmL", base * CFrame.new(-1.3, 3, 0), Vector3.new(0.7, 1.9, 0.8), bronze, M.Metal)
-	box(model, "ArmR", base * CFrame.new(1.3, 3.2, 0) * CFrame.Angles(0, 0, math.rad(-20)), Vector3.new(0.7, 1.9, 0.8), bronze, M.Metal)
+	box(
+		model,
+		"ArmR",
+		base * CFrame.new(1.3, 3.2, 0) * CFrame.Angles(0, 0, math.rad(-20)),
+		Vector3.new(0.7, 1.9, 0.8),
+		bronze,
+		M.Metal
+	)
 	local head = box(model, "Head", base * CFrame.new(0, 4.75, 0), Vector3.new(1.25, 1.25, 1.25), bronze, M.Metal)
 	-- the player's headshot on a little framed portrait above the head
-	local frame = box(model, "Portrait", base * CFrame.new(0, 6.5, 0), Vector3.new(1.6, 1.6, 0.12), C.brass, M.Metal, { CastShadow = false })
+	local frame = box(
+		model,
+		"Portrait",
+		base * CFrame.new(0, 6.5, 0),
+		Vector3.new(1.6, 1.6, 0.12),
+		C.brass,
+		M.Metal,
+		{ CastShadow = false }
+	)
 	local gui = Instance.new("SurfaceGui")
 	gui.Name = "Headshot"
 	gui.Face = Enum.NormalId.Front
@@ -79,8 +110,21 @@ function HallBuilder.statue(parent, cf, member)
 	img.Image = `rbxthumb://type=AvatarHeadShot&id={tonumber(member.userId) or 1}&w=150&h=150`
 	img.Parent = gui
 	-- the name on the plinth's front
-	local plate = box(model, "NamePlate", cf * CFrame.new(0, 0.32, -1.12), Vector3.new(2.7, 0.5, 0.06), C.black, M.SmoothPlastic, { CastShadow = false })
-	Kit.text(plate, Enum.NormalId.Front, string.upper(tostring(member.display or member.name or "?")), { color = C.brass, ppu = 40 })
+	local plate = box(
+		model,
+		"NamePlate",
+		cf * CFrame.new(0, 0.32, -1.12),
+		Vector3.new(2.7, 0.5, 0.06),
+		C.black,
+		M.SmoothPlastic,
+		{ CastShadow = false }
+	)
+	Kit.text(
+		plate,
+		Enum.NormalId.Front,
+		string.upper(tostring(member.display or member.name or "?")),
+		{ color = C.brass, ppu = 40 }
+	)
 	model.PrimaryPart = head
 	model:SetAttribute("UserId", tonumber(member.userId) or 0)
 	return model
@@ -98,7 +142,15 @@ function HallBuilder.miniTrain(parent, cf, train)
 	end
 	box(model, "Track", cf * CFrame.new(0, 0.1, 0), Vector3.new(total + 1.5, 0.2, 1.4), C.woodDark, M.Wood)
 	for _, z in { -0.45, 0.45 } do
-		box(model, "Rail", cf * CFrame.new(0, 0.27, z), Vector3.new(total + 1.5, 0.14, 0.12), C.steel, M.Metal, { CastShadow = false })
+		box(
+			model,
+			"Rail",
+			cf * CFrame.new(0, 0.27, z),
+			Vector3.new(total + 1.5, 0.14, 0.12),
+			C.steel,
+			M.Metal,
+			{ CastShadow = false }
+		)
 	end
 	local x = total / 2
 	for i, l in lengths do
@@ -108,32 +160,124 @@ function HallBuilder.miniTrain(parent, cf, train)
 		local h, w = 1.15, 1.55
 		if i == 1 then
 			-- the locomotive: boiler, cab, chimney, and its upgrades
-			box(model, "Cab", carCf * CFrame.new(-len * 0.28, h * 0.62, 0), Vector3.new(len * 0.42, h * 1.15, w), C.green, M.SmoothPlastic)
-			box(model, "CabRoof", carCf * CFrame.new(-len * 0.28, h * 1.24, 0), Vector3.new(len * 0.48, 0.1, w + 0.15), C.roof, M.Metal)
-			Kit.cyl(model, "Boiler", carCf * CFrame.new(len * 0.18, h * 0.55, 0), len * 0.56, w * 0.82, (train.engine or 0) >= 3 and C.brass or C.iron, M.Metal)
-			Kit.cyl(model, "Chimney", carCf * CFrame.new(len * 0.36, h * 1.1, 0) * CFrame.Angles(0, 0, math.rad(90)), 0.5, 0.34, C.iron, M.Metal)
+			box(
+				model,
+				"Cab",
+				carCf * CFrame.new(-len * 0.28, h * 0.62, 0),
+				Vector3.new(len * 0.42, h * 1.15, w),
+				C.green,
+				M.SmoothPlastic
+			)
+			box(
+				model,
+				"CabRoof",
+				carCf * CFrame.new(-len * 0.28, h * 1.24, 0),
+				Vector3.new(len * 0.48, 0.1, w + 0.15),
+				C.roof,
+				M.Metal
+			)
+			Kit.cyl(
+				model,
+				"Boiler",
+				carCf * CFrame.new(len * 0.18, h * 0.55, 0),
+				len * 0.56,
+				w * 0.82,
+				(train.engine or 0) >= 3 and C.brass or C.iron,
+				M.Metal
+			)
+			Kit.cyl(
+				model,
+				"Chimney",
+				carCf * CFrame.new(len * 0.36, h * 1.1, 0) * CFrame.Angles(0, 0, math.rad(90)),
+				0.5,
+				0.34,
+				C.iron,
+				M.Metal
+			)
 			box(model, "Buffer", carCf * CFrame.new(len / 2, h * 0.28, 0), Vector3.new(0.12, 0.3, w), C.wheel, M.Metal)
 			if (train.lamp or 0) >= 1 then
-				Kit.bulb(model, "Searchlight", (carCf * CFrame.new(len / 2 + 0.05, h * 0.75, 0)).Position, 0.32, Kit.rgb(255, 236, 190), 6, 1.2)
+				Kit.bulb(
+					model,
+					"Searchlight",
+					(carCf * CFrame.new(len / 2 + 0.05, h * 0.75, 0)).Position,
+					0.32,
+					Kit.rgb(255, 236, 190),
+					6,
+					1.2
+				)
 			end
 			if (train.lamp or 0) >= 2 then
-				box(model, "Mast", carCf * CFrame.new(-len * 0.28, h * 1.9, 0), Vector3.new(0.08, 1.3, 0.08), C.steel, M.Metal, { CastShadow = false })
-				Kit.ball(model, "MastLamp", (carCf * CFrame.new(-len * 0.28, h * 2.6, 0)).Position, 0.18, C.signal, M.Neon, { CastShadow = false })
+				box(
+					model,
+					"Mast",
+					carCf * CFrame.new(-len * 0.28, h * 1.9, 0),
+					Vector3.new(0.08, 1.3, 0.08),
+					C.steel,
+					M.Metal,
+					{ CastShadow = false }
+				)
+				Kit.ball(
+					model,
+					"MastLamp",
+					(carCf * CFrame.new(-len * 0.28, h * 2.6, 0)).Position,
+					0.18,
+					C.signal,
+					M.Neon,
+					{ CastShadow = false }
+				)
 			end
 		else
-			box(model, "Car", carCf * CFrame.new(0, h * 0.62, 0), Vector3.new(len, h, w), i == 2 and C.greenDark or C.green, M.SmoothPlastic)
-			box(model, "Roof", carCf * CFrame.new(0, h * 1.17, 0), Vector3.new(len + 0.05, 0.12, w + 0.12), C.roof, M.Metal)
-			box(model, "Stripe", carCf * CFrame.new(0, h * 0.5, -w / 2 - 0.01), Vector3.new(len - 0.1, 0.06, 0.02), C.brass, M.Metal, { CastShadow = false })
+			box(
+				model,
+				"Car",
+				carCf * CFrame.new(0, h * 0.62, 0),
+				Vector3.new(len, h, w),
+				i == 2 and C.greenDark or C.green,
+				M.SmoothPlastic
+			)
+			box(
+				model,
+				"Roof",
+				carCf * CFrame.new(0, h * 1.17, 0),
+				Vector3.new(len + 0.05, 0.12, w + 0.12),
+				C.roof,
+				M.Metal
+			)
+			box(
+				model,
+				"Stripe",
+				carCf * CFrame.new(0, h * 0.5, -w / 2 - 0.01),
+				Vector3.new(len - 0.1, 0.06, 0.02),
+				C.brass,
+				M.Metal,
+				{ CastShadow = false }
+			)
 			-- lit windows
 			for k = 1, 5 do
 				local wx = -len / 2 + k * len / 6
-				box(model, "Window", carCf * CFrame.new(wx, h * 0.78, -w / 2 - 0.01), Vector3.new(len / 9, 0.32, 0.02), C.warm, M.Neon, { CastShadow = false })
+				box(
+					model,
+					"Window",
+					carCf * CFrame.new(wx, h * 0.78, -w / 2 - 0.01),
+					Vector3.new(len / 9, 0.32, 0.02),
+					C.warm,
+					M.Neon,
+					{ CastShadow = false }
+				)
 			end
 		end
 		-- wheels
 		for _, wx in { -len * 0.32, len * 0.32 } do
 			for _, wz in { -w / 2, w / 2 } do
-				Kit.cyl(model, "Wheel", carCf * CFrame.new(wx, 0.12, wz) * CFrame.Angles(0, math.rad(90), 0), 0.08, 0.36, C.wheel, M.Metal)
+				Kit.cyl(
+					model,
+					"Wheel",
+					carCf * CFrame.new(wx, 0.12, wz) * CFrame.Angles(0, math.rad(90), 0),
+					0.08,
+					0.36,
+					C.wheel,
+					M.Metal
+				)
 			end
 		end
 		x -= len + 0.25
@@ -181,14 +325,21 @@ end
 
 function HallBuilder.topText(record)
 	local live = record.live and " · STILL ON THE LINE" or ""
-	return `THE LONGEST JOURNEY{live}\n{string.format("%.1f", record.km or 0)} KM\nEXPEDITION #{record.code or "?"} · {HallBuilder.date(record.endedAt or record.updatedAt)}\n{record.stops or 0} STOPS · {HallBuilder.duration(record.seconds)} · {#(record.crew or {})} CREW\n{names(record, 6)}`
+	return `THE LONGEST JOURNEY{live}\n{string.format("%.1f", record.km or 0)} KM\nEXPEDITION #{record.code or "?"} · {HallBuilder.date(
+		record.endedAt or record.updatedAt
+	)}\n{record.stops or 0} STOPS · {HallBuilder.duration(record.seconds)} · {#(record.crew or {})} CREW\n{names(
+		record,
+		6
+	)}`
 end
 
 function HallBuilder.plaqueText(rank, record)
 	if not record then
 		return `#{rank}\n—`
 	end
-	return `#{rank} · {string.format("%.1f", record.km or 0)} KM\n#{record.code or "?"} · {HallBuilder.date(record.endedAt or record.updatedAt)}\n{record.stops or 0} stops · {#(record.crew or {})} crew\n{names(record, 3)}`
+	return `#{rank} · {string.format("%.1f", record.km or 0)} KM\n#{record.code or "?"} · {HallBuilder.date(
+		record.endedAt or record.updatedAt
+	)}\n{record.stops or 0} stops · {#(record.crew or {})} crew\n{names(record, 3)}`
 end
 
 return HallBuilder

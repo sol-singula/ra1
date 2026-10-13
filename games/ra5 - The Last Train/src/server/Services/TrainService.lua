@@ -65,7 +65,11 @@ end
 function TrainService:Goal()
 	local fuel, cost = expedition:Fuel(), expedition:FuelCost()
 	if expedition:IsAtStop() and fuel + 1e-6 < cost then
-		return { key = "fuel", text = `Find fuel cans! Fuel {fuel} · next trip needs {cost}`, progress = cost > 0 and fuel / cost or 0 }
+		return {
+			key = "fuel",
+			text = `Find fuel cans! Fuel {fuel} · next trip needs {cost}`,
+			progress = cost > 0 and fuel / cost or 0,
+		}
 	end
 	for _, u in TrainUpgrades.list do
 		local n = stages[u.key] or 0
@@ -75,7 +79,10 @@ function TrainService:Goal()
 			for _, key in Resources.MATERIALS do
 				local need = stage.cost[key]
 				if need then
-					table.insert(parts, `{math.min(need, (given[u.key] or {})[key] or 0)}/{need} {Resources.byKey[key].icon}`)
+					table.insert(
+						parts,
+						`{math.min(need, (given[u.key] or {})[key] or 0)}/{need} {Resources.byKey[key].icon}`
+					)
 				end
 			end
 			if stage.plans then
@@ -194,7 +201,10 @@ function TrainService:_board()
 		local n = stages[u.key] or 0
 		local stage = u.stages[n + 1]
 		if stage then
-			table.insert(lines, `{u.icon} {u.name}: next {stage.name} ({math.floor(Formulas.stageProgress(stage, given[u.key]) * 100)}%)`)
+			table.insert(
+				lines,
+				`{u.icon} {u.name}: next {stage.name} ({math.floor(Formulas.stageProgress(stage, given[u.key]) * 100)}%)`
+			)
 		else
 			table.insert(lines, `{u.icon} {u.name}: COMPLETE`)
 		end
@@ -232,7 +242,12 @@ function TrainService:Deposit(player, key, resource, amount)
 			return false, "notneeded"
 		end
 		if (profile.blueprints[stage.plans] or 0) < 1 then
-			Net.fire(player, "Toast", `You need {Resources.BLUEPRINTS[stage.plans].name}: find them at a stop's landmark.`, "bad")
+			Net.fire(
+				player,
+				"Toast",
+				`You need {Resources.BLUEPRINTS[stage.plans].name}: find them at a stop's landmark.`,
+				"bad"
+			)
 			return false, "noplans"
 		end
 		profile.blueprints[stage.plans] -= 1

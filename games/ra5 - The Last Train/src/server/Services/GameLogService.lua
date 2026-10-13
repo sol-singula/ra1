@@ -19,7 +19,14 @@ local TrainUpgrades = require(ReplicatedStorage.Shared.Data.TrainUpgrades)
 
 local GameLogService = {
 	Name = "GameLogService",
-	Dependencies = { "PlayerDataService", "ExpeditionService", "TrainService", "RecordService", "RecoveryService", "AntiCheatService" },
+	Dependencies = {
+		"PlayerDataService",
+		"ExpeditionService",
+		"TrainService",
+		"RecordService",
+		"RecoveryService",
+		"AntiCheatService",
+	},
 }
 
 local COLORS = {
@@ -138,7 +145,12 @@ function GameLogService:Init(registry)
 			fields = {
 				{ name = "Stops", value = exp.stops },
 				{ name = "Crew aboard", value = crew },
-				{ name = "Why", value = exp.reason == "fuel" and "out of fuel" or exp.reason == "empty" and "everyone left" or tostring(exp.reason) },
+				{
+					name = "Why",
+					value = exp.reason == "fuel" and "out of fuel"
+						or exp.reason == "empty" and "everyone left"
+						or tostring(exp.reason),
+				},
 				{ name = "Time", value = exp.startedAt and Format.time(os.time() - exp.startedAt) or "—" },
 			},
 		})
@@ -146,7 +158,11 @@ function GameLogService:Init(registry)
 	expedition.Milestone:Connect(function(km)
 		if km >= 20 then
 			local exp = expedition:State()
-			GameLogService.log({ emoji = "🏁", title = `Expedition #{exp and exp.code or "?"} passed {km} km`, color = COLORS.journey })
+			GameLogService.log({
+				emoji = "🏁",
+				title = `Expedition #{exp and exp.code or "?"} passed {km} km`,
+				color = COLORS.journey,
+			})
 		end
 	end)
 	train.Upgraded:Connect(function(key, stage, by)
@@ -189,7 +205,12 @@ function GameLogService:Init(registry)
 		})
 	end)
 	registry.AntiCheatService.Kicked:Connect(function(player, reason)
-		GameLogService.log({ emoji = "⛔", title = `Anti-cheat KICKED {who(player)}: {reason}`, color = COLORS.leave, url = profileUrl(player) })
+		GameLogService.log({
+			emoji = "⛔",
+			title = `Anti-cheat KICKED {who(player)}: {reason}`,
+			color = COLORS.leave,
+			url = profileUrl(player),
+		})
 	end)
 	pcall(function()
 		ScriptContext.Error:Connect(function(message, trace)
@@ -271,7 +292,12 @@ function GameLogService:SessionStats(player, profile)
 		{ name = "Collected", value = gained("collected") },
 		{ name = "Banked", value = gained("banked") },
 		{ name = "Lost (left behind)", value = `{gained("lost")} ({gained("stranded")}x left behind)` },
-		{ name = "Cabin upgrades", value = `+{Formulas.cabinCount(profile.cabin.built) - s.cabin} (now {Formulas.cabinCount(profile.cabin.built)}/15)` },
+		{
+			name = "Cabin upgrades",
+			value = `+{Formulas.cabinCount(profile.cabin.built) - s.cabin} (now {Formulas.cabinCount(
+				profile.cabin.built
+			)}/15)`,
+		},
 		{ name = "Given to the train", value = gained("deposited") + gained("fuel") },
 		{ name = "Best distance", value = `{profile.best or 0} km` },
 	}

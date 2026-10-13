@@ -19,7 +19,15 @@ function RecoveryBuilder.build(parent)
 		return origin * CFrame.new(x, y, z)
 	end
 	box(model, "Ground", at(0, -1, 0), Vector3.new(260, 2, 260), C.grassDark, M.Grass)
-	box(model, "Clearing", at(0, 0.02, 0), Vector3.new(70, 0.06, 70), C.dirt:Lerp(C.grassDark, 0.4), M.Ground, { CastShadow = false })
+	box(
+		model,
+		"Clearing",
+		at(0, 0.02, 0),
+		Vector3.new(70, 0.06, 70),
+		C.dirt:Lerp(C.grassDark, 0.4),
+		M.Ground,
+		{ CastShadow = false }
+	)
 	-- a disused spur of track running into the trees
 	Kit.track(model, at(0, 0.1, 30), 200)
 	-- the hut
@@ -28,13 +36,28 @@ function RecoveryBuilder.build(parent)
 	box(hut, "HutBack", at(0, 6, -19.6), Vector3.new(16, 10, 0.8), C.woodDark, M.WoodPlanks)
 	box(hut, "HutSide", at(-7.6, 6, -14), Vector3.new(0.8, 10, 12), C.woodDark, M.WoodPlanks)
 	box(hut, "HutSide", at(7.6, 6, -14), Vector3.new(0.8, 10, 12), C.woodDark, M.WoodPlanks)
-	box(hut, "HutRoof", at(0, 11.4, -14) * CFrame.Angles(math.rad(10), 0, 0), Vector3.new(18, 0.6, 14), C.rust, M.CorrodedMetal)
+	box(
+		hut,
+		"HutRoof",
+		at(0, 11.4, -14) * CFrame.Angles(math.rad(10), 0, 0),
+		Vector3.new(18, 0.6, 14),
+		C.rust,
+		M.CorrodedMetal
+	)
 	local lamp = Kit.bulb(hut, "HutLamp", (at(0, 9.6, -15)).Position, 0.7, C.warm, 26, 1.6)
 	_ = lamp
 	-- the fuse box (on the back wall) and the lever
 	local fuseBox = box(hut, "FuseBox", at(-3, 5, -19), Vector3.new(3, 4, 0.8), C.iron, M.Metal)
-	local fuseLamp = box(hut, "FuseLamp", at(-3, 7.4, -18.55), Vector3.new(1.6, 0.4, 0.2), C.signal, M.Neon, { CastShadow = false })
-	local lever = box(hut, "Lever", at(3, 4.5, -18.8) * CFrame.Angles(math.rad(-30), 0, 0), Vector3.new(0.5, 3.2, 0.5), C.red, M.Metal)
+	local fuseLamp =
+		box(hut, "FuseLamp", at(-3, 7.4, -18.55), Vector3.new(1.6, 0.4, 0.2), C.signal, M.Neon, { CastShadow = false })
+	local lever = box(
+		hut,
+		"Lever",
+		at(3, 4.5, -18.8) * CFrame.Angles(math.rad(-30), 0, 0),
+		Vector3.new(0.5, 3.2, 0.5),
+		C.red,
+		M.Metal
+	)
 	box(hut, "LeverBase", at(3, 3.2, -19.1), Vector3.new(1.6, 1.2, 0.6), C.iron, M.Metal)
 	-- generator and a jerrycan
 	box(hut, "Generator", at(5, 2.4, -9), Vector3.new(4, 3.4, 3), Kit.rgb(70, 96, 78), M.Metal)

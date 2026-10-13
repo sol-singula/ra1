@@ -87,6 +87,30 @@ Constants.DISLIKE_REASONS = {
 -- Movement
 Constants.WALK_SPEED = 18
 
+-- Sound (AudioController). These are the studio's uploaded effects shared with the other games; train-specific
+-- recordings (whistle, horn, brakes, door chime, wheel rumble) can replace them later by changing the ids here.
+Constants.SOUNDS = {
+	pickup = "rbxassetid://118634876996683",
+	bank = "rbxassetid://105104330819150",
+	build = "rbxassetid://106516156393061",
+	deposit = "rbxassetid://96391581866585",
+	upgrade = "rbxassetid://119933432712786",
+	chime = "rbxassetid://115604569854725",
+	warning = "rbxassetid://88832672717864",
+	horn = "rbxassetid://88832672717864",
+	whistle = "rbxassetid://109983444504089",
+	depart = "rbxassetid://109983444504089",
+	brakes = "rbxassetid://95486565209148",
+	doors = "rbxassetid://96391581866585",
+	flare = "rbxassetid://95486565209148",
+}
+Constants.SOUND_VOLUME = { pickup = 0.5, chime = 0.45, warning = 0.6, horn = 0.75, brakes = 0.4, doors = 0.45 }
+Constants.MUSIC = { -- calm, wide ambient tracks for the journey (the station and stops stay quieter)
+	"rbxassetid://73341720345819", -- Satellite Flyby
+	"rbxassetid://74189412399190", -- Space Adventure
+}
+Constants.MUSIC_VOLUME = 0.18
+
 -- Admins (by Roblox user id): logged by the anti-cheat but never kicked
 Constants.ADMINS = {
 	[11787294097] = true, -- xthirtysix

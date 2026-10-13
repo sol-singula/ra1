@@ -4,7 +4,6 @@
 -- fuse box, pull the signal lever: a flare goes up and a maintenance trolley brings you back to the train
 -- (RECOVERY_PICKUP_WAIT seconds later, or right away with the Radio Mast). If the expedition ends first, you're
 -- brought back to the station with everyone else. All of it is server-owned state.
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
@@ -141,7 +140,13 @@ function RecoveryService:PullLever(player)
 	local fast = train:Stage("lamp") >= 2
 	s.pickupAt = now() + (fast and Constants.RECOVERY_PICKUP_FAST or Constants.RECOVERY_PICKUP_WAIT)
 	Net.fire(player, "Sfx", "flare", rec.flare.Position)
-	Net.fire(player, "Popup", rec.flare.Position + Vector3.new(0, 6, 0), "🚨 SIGNAL SENT", Color3.fromRGB(255, 90, 70))
+	Net.fire(
+		player,
+		"Popup",
+		rec.flare.Position + Vector3.new(0, 6, 0),
+		"🚨 SIGNAL SENT",
+		Color3.fromRGB(255, 90, 70)
+	)
 	self.Step:Fire(player, "waiting")
 	self:_push(player)
 	return true
@@ -177,10 +182,18 @@ function RecoveryService:Init(registry)
 	local rec = WorldBuilder.layout.recovery
 	-- the fuses: glowing yellow cartridges in the grass (each stranded player takes their own)
 	for i, cf in rec.fuseSpots do
-		local fuse = Kit.box(rec.model, "Fuse", cf * CFrame.new(0, 0.5, 0), Vector3.new(0.8, 1, 0.8), Color3.fromRGB(255, 210, 60), Kit.M.Neon, {
-			CastShadow = false,
-			CanCollide = false,
-		})
+		local fuse = Kit.box(
+			rec.model,
+			"Fuse",
+			cf * CFrame.new(0, 0.5, 0),
+			Vector3.new(0.8, 1, 0.8),
+			Color3.fromRGB(255, 210, 60),
+			Kit.M.Neon,
+			{
+				CastShadow = false,
+				CanCollide = false,
+			}
+		)
 		Kit.light(fuse, "PointLight", { Range = 10, Brightness = 1.4, Color = Color3.fromRGB(255, 210, 80) })
 		fuse:SetAttribute("Fuse", i)
 		local p = Instance.new("ProximityPrompt")

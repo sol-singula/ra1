@@ -64,7 +64,11 @@ end
 
 function ResourceService:PushBag(player)
 	local bag = bagOf(player)
-	Net.fire(player, "Bag", { items = bag.items, plans = bag.plans, count = self:BagCount(player), cap = self:Capacity(player) })
+	Net.fire(
+		player,
+		"Bag",
+		{ items = bag.items, plans = bag.plans, count = self:BagCount(player), cap = self:Capacity(player) }
+	)
 end
 
 -- Piles ------------------------------------------------------------------------------------------------------------------
@@ -77,7 +81,7 @@ local OBJECT = {
 	blueprint = "Blueprint",
 }
 
-function ResourceService:_setup(stop, model)
+function ResourceService:_setup(_stop, model)
 	nodes = {}
 	fuelTaken = {}
 	for p in taken do
@@ -109,11 +113,19 @@ function ResourceService:_setup(stop, model)
 			if root then
 				m:SetAttribute("NodeId", id)
 				local amount = m:GetAttribute("Amount") or 1
-				nodes[id] = { model = m, kind = kind, amount = amount, root = root, far = m:GetAttribute("Far") == true, fuel = kind == "fuel" }
+				nodes[id] = {
+					model = m,
+					kind = kind,
+					amount = amount,
+					root = root,
+					far = m:GetAttribute("Far") == true,
+					fuel = kind == "fuel",
+				}
 				local prompt = Instance.new("ProximityPrompt")
 				prompt.Name = "Prompt_node"
 				prompt.ActionText = kind == "blueprint" and "Take" or "Collect"
-				prompt.ObjectText = kind == "blueprint" and "Blueprint" or (amount > 1 and `{OBJECT[kind]} ×{amount}` or OBJECT[kind])
+				prompt.ObjectText = kind == "blueprint" and "Blueprint"
+					or (amount > 1 and `{OBJECT[kind]} ×{amount}` or OBJECT[kind])
 				prompt.HoldDuration = kind == "blueprint" and 1.6 or Constants.COLLECT_HOLD
 				prompt.MaxActivationDistance = 10
 				prompt.RequiresLineOfSight = false
@@ -174,9 +186,19 @@ function ResourceService:Collect(player, id)
 	end
 	local bag = bagOf(player)
 	if node.kind == "blueprint" then
-		local key = Formulas.blueprintFor(expedition:State().stop or { plans = { "map" } }, profile.blueprints, profile.cabin.built)
+		local key = Formulas.blueprintFor(
+			expedition:State().stop or { plans = { "map" } },
+			profile.blueprints,
+			profile.cabin.built
+		)
 		bag.plans[key] = (bag.plans[key] or 0) + 1
-		Net.fire(player, "Popup", node.root.Position + Vector3.new(0, 4, 0), `+1 {Resources.BLUEPRINTS[key].icon} {Resources.BLUEPRINTS[key].name}`, Color3.fromRGB(140, 190, 255))
+		Net.fire(
+			player,
+			"Popup",
+			node.root.Position + Vector3.new(0, 4, 0),
+			`+1 {Resources.BLUEPRINTS[key].icon} {Resources.BLUEPRINTS[key].name}`,
+			Color3.fromRGB(140, 190, 255)
+		)
 		Net.fire(player, "Toast", `Found: {Resources.BLUEPRINTS[key].name}! Bank it on the train.`, "good")
 	else
 		bag.items[node.kind] = (bag.items[node.kind] or 0) + amount

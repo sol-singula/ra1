@@ -161,8 +161,14 @@ local function analyticsFor(p, kind)
 end
 
 -- World ----------------------------------------------------------------------------------------------------
-check("the train: 7 cars, 20 cabins, 13 outside doors", #Layout.CARS == 7 and #World.train.cabins == 20 and #World.train.doors == 13)
-check("4 stops built as templates", World.stops.ranger and World.stops.timber and World.stops.signal and World.stops.platform)
+check(
+	"the train: 7 cars, 20 cabins, 13 outside doors",
+	#Layout.CARS == 7 and #World.train.cabins == 20 and #World.train.doors == 13
+)
+check(
+	"4 stops built as templates",
+	World.stops.ranger and World.stops.timber and World.stops.signal and World.stops.platform
+)
 check("the station is beside the train in the lobby", World.station.model.Parent == World.scenery)
 check("lobby phase, no countdown until someone's here", phase() == "lobby" and (ws:GetAttribute("PhaseEnds") or 0) == 0)
 check("lighting preset: station", ws:GetAttribute("LightPreset") == "station")
@@ -179,7 +185,10 @@ check("Ava's profile loaded, new", pa ~= nil and pa._isNew == true)
 check("starter kit: half a bunk", pa.storage.scrap == 2 and pa.storage.cloth == 1)
 check("Ava gets cabin 1", Cabins:IndexOf(ava) == 1 and ava:GetAttribute("Cabin") == 1)
 check("cabin 1's door sign has her name", string.find(World.train.cabins[1].plate.Text, "AVA", 1, true) ~= nil)
-check("cabin prompts are hers", World.train.cabins[1].model:FindFirstChild("BuildSpot").Prompt_build:GetAttribute("OwnerUserId") == 101)
+check(
+	"cabin prompts are hers",
+	World.train.cabins[1].model:FindFirstChild("BuildSpot").Prompt_build:GetAttribute("OwnerUserId") == 101
+)
 check("spawned on the station platform", not Layout.inTrain(pos(ava)) and pos(ava).Z > 40)
 check("the countdown starts once someone's here", (ws:GetAttribute("PhaseEnds") or 0) > 0)
 local view = lastEvent("Expedition", ava)
@@ -201,11 +210,17 @@ Engine.fireServer(ava, "SetColor", "teal")
 Engine.advance(0.5)
 check("colour saved", pa.cabin.color == "teal")
 tut = lastEvent("Tutorial", ava)
-check("guide step 3: collect (waiting for the first stop)", tut and tut.key == "collect" and string.find(tut.text, "stops soon", 1, true) ~= nil)
+check(
+	"guide step 3: collect (waiting for the first stop)",
+	tut and tut.key == "collect" and string.find(tut.text, "stops soon", 1, true) ~= nil
+)
 -- building without enough materials says what's missing
 Engine.fireServer(ava, "Build", "bunk")
 Engine.advance(0.1)
-check("bunk: not enough materials", pa.cabin.built.bunk == nil and string.find(lastToast(ava), "Not enough", 1, true) ~= nil)
+check(
+	"bunk: not enough materials",
+	pa.cabin.built.bunk == nil and string.find(lastToast(ava), "Not enough", 1, true) ~= nil
+)
 Engine.fireServer(ava, "Build", "lamp")
 Engine.advance(0.1)
 check("lamp needs the bunk first", pa.cabin.built.lamp == nil and string.find(lastToast(ava), "first", 1, true) ~= nil)
@@ -223,24 +238,36 @@ check("lobby -> departing", skip() == "departing")
 check("doors closing at the station", ws:GetAttribute("Doors") == "closing")
 Engine.advance(Constants.DOORS_SHUT_AT + 0.3)
 check("doors shut", ws:GetAttribute("Doors") == "closed")
-check("left on the platform at the station = brought aboard, not stranded", Layout.inTrain(pos(ava)) and not Recovery:IsStranded(ava))
+check(
+	"left on the platform at the station = brought aboard, not stranded",
+	Layout.inTrain(pos(ava)) and not Recovery:IsStranded(ava)
+)
 Engine.advance(Constants.DOORS_SECONDS - Constants.DOORS_SHUT_AT + 0.4)
 check("departing -> traveling", phase() == "traveling")
 local exp = Expedition:State()
 check("the first trip used fuel", exp.fuel == Formulas.round1(Constants.START_FUEL - Formulas.fuelCost(0, 0)))
-check("the station is gone, travel lighting", World.station.model.Parent ~= World.scenery and ws:GetAttribute("LightPreset") == "travel")
+check(
+	"the station is gone, travel lighting",
+	World.station.model.Parent ~= World.scenery and ws:GetAttribute("LightPreset") == "travel"
+)
 check("the next stop is chosen", exp.nextStop ~= nil)
 local d0 = Expedition:Distance()
 Engine.advance(4)
 check("distance grows while travelling", Expedition:Distance() > d0)
 Engine.advance(Constants.TRAVEL_SECONDS / 2)
-check("next stop announced half way", exp.announcedNext == true and (lastEvent("Announce", ava) or ""):find("Next stop", 1, true) ~= nil)
+check(
+	"next stop announced half way",
+	exp.announcedNext == true and (lastEvent("Announce", ava) or ""):find("Next stop", 1, true) ~= nil
+)
 
 -- Arriving at the first stop -------------------------------------------------------------------------------
 check("traveling -> arriving", skip() == "arriving")
 check("distance: one trip", exp.distance == Constants.SEGMENT_KM)
 check("arriving -> scavenging", skipTo("scavenging", 3))
-check("a stop beside the train", Expedition:Placed() ~= nil and Expedition:Placed().Parent == World.scenery and exp.stop ~= nil)
+check(
+	"a stop beside the train",
+	Expedition:Placed() ~= nil and Expedition:Placed().Parent == World.scenery and exp.stop ~= nil
+)
 check("stop lighting", ws:GetAttribute("LightPreset") == exp.stop.light)
 check("doors open", ws:GetAttribute("Doors") == "open")
 check("stop counted: crew and profile", exp.stops == 1 and pa.stats.stops == 1 and pa.visited[exp.stop.key] == true)
@@ -249,7 +276,10 @@ check("piles have prompts", #nodesOf("scrap") > 0 and #nodesOf("cloth") > 0)
 check("fuel cans: as many as the crew needs", #nodesOf("fuel") == Formulas.fuelCans(1), tostring(#nodesOf("fuel")))
 check("a blueprint at the landmark", #nodesOf("blueprint") == 1)
 tut = lastEvent("Tutorial", ava)
-check("guide: step outside and collect, with an arrow to a pile", tut and tut.key == "collect" and tut.target ~= nil and string.find(tut.text, "doors are open", 1, true) ~= nil)
+check(
+	"guide: step outside and collect, with an arrow to a pile",
+	tut and tut.key == "collect" and tut.target ~= nil and string.find(tut.text, "doors are open", 1, true) ~= nil
+)
 local timeLeft = (ws:GetAttribute("PhaseEnds") or 0) - Engine.now()
 check("doors open for the scavenging window", math.abs(timeLeft - Formulas.scavengeSeconds(0)) < 1, tostring(timeLeft))
 
@@ -259,7 +289,10 @@ Engine.moveTo(ava, scrap[1].node.root.Position + Vector3.new(60, 3, 0))
 Engine.advance(0.1)
 check("too far from the pile: nothing", Resources:Collect(ava, scrap[1].id) == false and Resources:BagCount(ava) == 0)
 collect(ava, scrap[1])
-check("collected scrap into the bag", Resources:BagCount(ava) == scrap[1].node.amount and (lastEvent("Bag", ava) or {}).count == scrap[1].node.amount)
+check(
+	"collected scrap into the bag",
+	Resources:BagCount(ava) == scrap[1].node.amount and (lastEvent("Bag", ava) or {}).count == scrap[1].node.amount
+)
 check("can't take the same pile twice", Resources:Collect(ava, scrap[1].id) == false)
 local got = Resources:BagCount(ava)
 -- just what the bunk needs (the bag only holds 12): then a fuel can and the blueprint
@@ -275,7 +308,11 @@ for _, c in nodesOf("cloth") do
 end
 check("more scrap and cloth", Resources:BagCount(ava) > got)
 local bag = Resources:Bag(ava)
-check("enough for the bunk in the bag", (bag.items.scrap or 0) + pa.storage.scrap >= 4 and (bag.items.cloth or 0) + pa.storage.cloth >= 2, `{bag.items.scrap} {bag.items.cloth}`)
+check(
+	"enough for the bunk in the bag",
+	(bag.items.scrap or 0) + pa.storage.scrap >= 4 and (bag.items.cloth or 0) + pa.storage.cloth >= 2,
+	`{bag.items.scrap} {bag.items.cloth}`
+)
 -- a fuel can is the crew's: gone for everyone once someone takes it
 local cans = nodesOf("fuel")
 collect(ava, cans[1])
@@ -327,7 +364,10 @@ local before = pa.storage.scrap
 Engine.fireServer(ava, "Deposit", "engine", "scrap", 999)
 Engine.advance(0.2)
 local gave = before - pa.storage.scrap
-check("gave scrap to the engine (only what she had and what it needs)", gave > 0 and gave <= need.scrap and Train:Given("engine").scrap == gave)
+check(
+	"gave scrap to the engine (only what she had and what it needs)",
+	gave > 0 and gave <= need.scrap and Train:Given("engine").scrap == gave
+)
 check("crew notes: materials", exp.crew[101].materials == gave)
 Engine.fireServer(ava, "Deposit", "engine", "scrap", 1)
 Engine.advance(0.2)
@@ -353,7 +393,10 @@ local pb = Data:Get(ben)
 check("Ben gets cabin 2", Cabins:IndexOf(ben) == 2)
 Engine.advance(0.5)
 local summary = lastEvent("Summary", ben)
-check("late join: a summary of the crew", summary and summary.stop ~= nil and summary.distance == exp.distance and summary.timeLeft ~= nil)
+check(
+	"late join: a summary of the crew",
+	summary and summary.stop ~= nil and summary.distance == exp.distance and summary.timeLeft ~= nil
+)
 check("late joiner arrives aboard (entry seats, no bunk yet)", Layout.inTrain(pos(ben)))
 check("Ben is crew", exp.crew[102] ~= nil and exp.crew[102].present)
 check("fuel cans on the next stop scale with the crew", Formulas.fuelCans(2) >= Formulas.fuelCans(1))
@@ -409,7 +452,10 @@ check("fuses fitted: pull the lever", Recovery:State(ben).step == "lever")
 go(ben, World.recovery.lever.Position)
 World.recovery.lever.Prompt_lever.Triggered:Fire(ben)
 Engine.advance(0.1)
-check("signal sent: waiting for the trolley", Recovery:State(ben).step == "waiting" and Recovery:State(ben).pickupAt ~= nil)
+check(
+	"signal sent: waiting for the trolley",
+	Recovery:State(ben).step == "waiting" and Recovery:State(ben).pickupAt ~= nil
+)
 -- a stranded player can't bank or give to the train from out there
 Engine.fireServer(ben, "Deposit", "engine", "scrap", 1)
 Engine.advance(0.1)
@@ -441,9 +487,17 @@ while phase() ~= "ended" and guard < 80 do
 		sawMilestone = true
 	end
 end
-check("the expedition ends (out of fuel)", phase() == "ended" and exp.reason == "fuel", `{phase()} {exp.reason} after {guard}`)
+check(
+	"the expedition ends (out of fuel)",
+	phase() == "ended" and exp.reason == "fuel",
+	`{phase()} {exp.reason} after {guard}`
+)
 check("several stops", exp.stops >= 3, tostring(exp.stops))
-check("a milestone along the way (10 km)", sawMilestone or exp.distance < Constants.MILESTONE_KM, tostring(exp.distance))
+check(
+	"a milestone along the way (10 km)",
+	sawMilestone or exp.distance < Constants.MILESTONE_KM,
+	tostring(exp.distance)
+)
 if exp.distance >= Constants.MILESTONE_KM then
 	check("milestone parts for the crew", pa.storage.parts >= Constants.MILESTONE_PARTS)
 end
@@ -455,8 +509,15 @@ local ranking = Engine.orderedStores[Constants.RECORD_STORE]
 if not noDataStore then
 	check("record ranked", ranking and ranking[exp.id] == math.floor(exp.distance * 10 + 0.5))
 	local detail = Engine.dataStores[Constants.RECORD_DETAILS] and Engine.dataStores[Constants.RECORD_DETAILS][exp.id]
-	check("record details: final, crew, recognition", detail and detail.live == false and #detail.crew >= 1 and detail.recognition.fuel ~= nil, detail and Engine.game:GetService("HttpService"):JSONEncode(detail))
-	check("record crew: Ava and Ben by name", detail and detail.crew[1].userId == 101 or detail.crew[2] and detail.crew[2].userId == 101)
+	check(
+		"record details: final, crew, recognition",
+		detail and detail.live == false and #detail.crew >= 1 and detail.recognition.fuel ~= nil,
+		detail and Engine.game:GetService("HttpService"):JSONEncode(detail)
+	)
+	check(
+		"record crew: Ava and Ben by name",
+		detail and detail.crew[1].userId == 101 or detail.crew[2] and detail.crew[2].userId == 101
+	)
 end
 check("hall: the top record is up", string.find(World.station.hall.top.plaque.Text, "KM", 1, true) ~= nil)
 check("hall: statues of the crew", #World.station.hall.top.crew:GetChildren() >= 1)
@@ -479,7 +540,10 @@ if not noDataStore then
 	copy.km = 1
 	copy.live = true
 	Records:Save(copy)
-	check("a shorter or live rewrite doesn't replace a final record", Engine.dataStores[Constants.RECORD_DETAILS][oldId].km == r.km)
+	check(
+		"a shorter or live rewrite doesn't replace a final record",
+		Engine.dataStores[Constants.RECORD_DETAILS][oldId].km == r.km
+	)
 	local n = 0
 	for _ in ranking do
 		n += 1
@@ -503,17 +567,24 @@ local zed = { id = 555 }
 Engine.makeFriends(ava, { UserId = zed.id })
 Engine.friendPlaces[555] = { Engine.game.PlaceId, "job-zed" }
 Engine.memory.LT_Trains = Engine.memory.LT_Trains or {}
-Engine.memory.LT_Trains["job-zed"] = { phase = "traveling", km = 12.5, crew = 5, max = 20, code = "ZED1", exp = "exp-zed" }
+Engine.memory.LT_Trains["job-zed"] =
+	{ phase = "traveling", km = 12.5, crew = 5, max = 20, code = "ZED1", exp = "exp-zed" }
 Engine.fireServer(ava, "Friends", { { userId = 555, jobId = "job-zed" }, { userId = 102, jobId = "" } })
 Engine.advance(0.3)
 local friends = lastEvent("Friends", ava)
-check("friends panel: Zed's train status (no access code)", friends and friends[1].km == 12.5 and friends[1].crew == 5 and friends[1].access == nil)
+check(
+	"friends panel: Zed's train status (no access code)",
+	friends and friends[1].km == 12.5 and friends[1].crew == 5 and friends[1].access == nil
+)
 check("friends panel: Ben is here", friends and friends[2].here == true)
 local tp0 = #Engine.teleports
 Engine.advance(1.1)
 Engine.fireServer(ava, "JoinFriend", 555, "Zed")
 Engine.advance(0.5)
-check("teleport to Zed's exact server", #Engine.teleports == tp0 + 1 and Engine.teleports[#Engine.teleports].options.ServerInstanceId == "job-zed")
+check(
+	"teleport to Zed's exact server",
+	#Engine.teleports == tp0 + 1 and Engine.teleports[#Engine.teleports].options.ServerInstanceId == "job-zed"
+)
 check("teleporting shown", (lastEvent("FriendResult", ava) or {}).kind == "teleporting")
 -- full: the server says so up front
 Engine.memory.LT_Trains["job-zed"].crew = 20
@@ -591,12 +662,19 @@ do
 	local start = hrp.Position
 	hrp.CFrame = hrp.CFrame + Vector3.new(400, 0, 0)
 	Engine.advance(1)
-	check("teleport cheat pulled back", (hrp.Position - start).Magnitude < 50, tostring((hrp.Position - start).Magnitude))
+	check(
+		"teleport cheat pulled back",
+		(hrp.Position - start).Magnitude < 50,
+		tostring((hrp.Position - start).Magnitude)
+	)
 	check("teleport cheat flagged", (AntiCheat.state[ben] and AntiCheat.state[ben].strikes or 0) >= 3)
 	local hrp2 = ava.Character.HumanoidRootPart
 	local a0 = hrp2.Position
 	Engine.advance(3)
-	check("honest player clean", (AntiCheat.state[ava] and AntiCheat.state[ava].strikes or 0) == 0 and (hrp2.Position - a0).Magnitude < 1)
+	check(
+		"honest player clean",
+		(AntiCheat.state[ava] and AntiCheat.state[ava].strikes or 0) == 0 and (hrp2.Position - a0).Magnitude < 1
+	)
 end
 
 -- Leaving and analytics ---------------------------------------------------------------------------------------
@@ -612,7 +690,27 @@ local function kinds(p)
 	return set
 end
 local ka = kinds(ava)
-for _, k in { "join", "loaded", "ui_ready", "color", "collect", "bank", "built", "deposit", "stop_reached", "tutorial_step", "tutorial_done", "expedition_end", "record", "friend_friend", "friend_result", "feedback", "stepped_out" } do
+for _, k in
+	{
+		"join",
+		"loaded",
+		"ui_ready",
+		"color",
+		"collect",
+		"bank",
+		"built",
+		"deposit",
+		"stop_reached",
+		"tutorial_step",
+		"tutorial_done",
+		"expedition_end",
+		"record",
+		"friend_friend",
+		"friend_result",
+		"feedback",
+		"stepped_out",
+	}
+do
 	check("analytics: Ava " .. k, ka[k] ~= nil)
 end
 local kb = kinds(ben)
@@ -625,14 +723,20 @@ for _, row in aSessions do
 		benSession = row
 	end
 end
-check("Ben's session ended with a summary", benSession and benSession.summary and benSession.summary.stranded_gained == 1 and benSession.duration_s > 0)
+check(
+	"Ben's session ended with a summary",
+	benSession and benSession.summary and benSession.summary.stranded_gained == 1 and benSession.duration_s > 0
+)
 local live
 for _, row in aSessions do
 	if row.user_id == 101 and row.live then
 		live = row.live
 	end
 end
-check("live row for the dashboard: zone, phase, bag, cabin, distance, stops", live and live.zone and live.phase and live.bag and live.cabin == 1 and live.distance and live.stops)
+check(
+	"live row for the dashboard: zone, phase, bag, cabin, distance, stops",
+	live and live.zone and live.phase and live.bag and live.cabin == 1 and live.distance and live.stops
+)
 
 -- game log
 Engine.advance(Constants.GAME_LOG_FLUSH_SECONDS + 1)

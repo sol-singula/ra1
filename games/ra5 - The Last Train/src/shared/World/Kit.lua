@@ -72,7 +72,14 @@ local part = Kit.part
 
 -- A box from its CFrame and size, with colour and material (the most common call).
 function Kit.box(parent, name, cf, size, color, material, extra)
-	local props = { Name = name, CFrame = cf, Size = size, Color = color, Material = material or M.SmoothPlastic, Parent = parent }
+	local props = {
+		Name = name,
+		CFrame = cf,
+		Size = size,
+		Color = color,
+		Material = material or M.SmoothPlastic,
+		Parent = parent,
+	}
 	for k, v in extra or {} do
 		props[k] = v
 	end
@@ -152,7 +159,16 @@ function Kit.cone(parent, name, base, diameter, height, color, steps, material, 
 	for i = 1, steps do
 		local t = (i - 1) / steps
 		local h = height / steps
-		local d = Kit.disc(parent, name, base + Vector3.new(0, h * (i - 0.5), 0), diameter * (1 - t * 0.85), h, color, material, extra)
+		local d = Kit.disc(
+			parent,
+			name,
+			base + Vector3.new(0, h * (i - 0.5), 0),
+			diameter * (1 - t * 0.85),
+			h,
+			color,
+			material,
+			extra
+		)
 		d.CastShadow = i == 1 and (extra == nil or extra.CastShadow ~= false)
 		first = first or d
 	end
@@ -186,7 +202,8 @@ end
 
 -- A warm glowing bulb (neon) with a point light.
 function Kit.bulb(parent, name, center, diameter, color, range, brightness)
-	local b = Kit.ball(parent, name, center, diameter, color or C.warm, M.Neon, { CastShadow = false, CanCollide = false })
+	local b =
+		Kit.ball(parent, name, center, diameter, color or C.warm, M.Neon, { CastShadow = false, CanCollide = false })
 	Kit.light(b, "PointLight", { Color = color or C.warm, Range = range or 16, Brightness = brightness or 1.6 })
 	return b
 end
@@ -226,7 +243,15 @@ end
 function Kit.sign(parent, cf, w, h, text, opts)
 	opts = opts or {}
 	local board = Kit.box(parent, opts.name or "Sign", cf, Vector3.new(w, h, 0.4), opts.color or C.greenDark, M.Wood)
-	Kit.box(parent, "SignFrame", cf * CFrame.new(0, 0, 0.12), Vector3.new(w + 0.5, h + 0.5, 0.3), opts.frame or C.brassDark, M.Metal, { CastShadow = false })
+	Kit.box(
+		parent,
+		"SignFrame",
+		cf * CFrame.new(0, 0, 0.12),
+		Vector3.new(w + 0.5, h + 0.5, 0.3),
+		opts.frame or C.brassDark,
+		M.Metal,
+		{ CastShadow = false }
+	)
 	Kit.text(board, Enum.NormalId.Front, text, { color = opts.textColor or C.cream, font = opts.font, ppu = opts.ppu })
 	return board
 end
@@ -263,7 +288,15 @@ function Kit.pine(parent, pos, h, rng, color)
 			{ CastShadow = i < 2, CanCollide = false }
 		)
 	end
-	Kit.ellipsoid(m, "Top", pos + Vector3.new(0, h * 0.93, 0), Vector3.new(h * 0.1, h * 0.2, h * 0.1), col, M.Grass, { CastShadow = false, CanCollide = false })
+	Kit.ellipsoid(
+		m,
+		"Top",
+		pos + Vector3.new(0, h * 0.93, 0),
+		Vector3.new(h * 0.1, h * 0.2, h * 0.1),
+		col,
+		M.Grass,
+		{ CastShadow = false, CanCollide = false }
+	)
 	return m
 end
 
@@ -312,13 +345,20 @@ function Kit.rock(parent, pos, size, rng)
 	size = size or rng:NextNumber(2, 6)
 	local cf = CFrame.new(pos + Vector3.new(0, size * 0.3, 0))
 		* CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, math.pi), rng:NextNumber(-0.3, 0.3))
-	return Kit.box(parent, "Rock", cf, Vector3.new(size, size * 0.7, size * 0.85), C.rock:Lerp(C.moss, rng:NextNumber(0, 0.25)), M.Slate)
+	return Kit.box(
+		parent,
+		"Rock",
+		cf,
+		Vector3.new(size, size * 0.7, size * 0.85),
+		C.rock:Lerp(C.moss, rng:NextNumber(0, 0.25)),
+		M.Slate
+	)
 end
 
 -- A tall grass tuft / fern (thin wedges), no collision.
 function Kit.fern(parent, pos, rng)
 	rng = rng or Random.new()
-	for i = 1, 3 do
+	for _ = 1, 3 do
 		local a = rng:NextNumber(0, math.pi * 2)
 		Kit.wedge(
 			parent,
@@ -339,7 +379,8 @@ function Kit.lampPost(parent, pos, h, color)
 	Kit.disc(m, "Post", pos + Vector3.new(0, h / 2, 0), 0.5, h, C.iron, M.Metal)
 	Kit.box(m, "Arm", CFrame.new(pos + Vector3.new(0.9, h - 0.4, 0)), Vector3.new(2, 0.3, 0.3), C.iron, M.Metal)
 	Kit.box(m, "Hood", CFrame.new(pos + Vector3.new(1.7, h - 0.6, 0)), Vector3.new(1.4, 0.4, 1.4), C.iron, M.Metal)
-	local bulb = Kit.ball(m, "Lantern", pos + Vector3.new(1.7, h - 1.2, 0), 0.9, color or C.warm, M.Neon, { CastShadow = false })
+	local bulb =
+		Kit.ball(m, "Lantern", pos + Vector3.new(1.7, h - 1.2, 0), 0.9, color or C.warm, M.Neon, { CastShadow = false })
 	Kit.light(bulb, "PointLight", { Color = color or C.warm, Range = 22, Brightness = 1.8 })
 	return m, bulb
 end
@@ -350,7 +391,15 @@ function Kit.crate(parent, cf, size, color)
 	Kit.box(m, "Box", cf, size, color or C.woodLight, M.WoodPlanks)
 	local t = 0.25
 	for _, y in { -1, 1 } do
-		Kit.box(m, "Band", cf * CFrame.new(0, y * (size.Y / 2 - t), 0), size + Vector3.new(0.12, -size.Y + t * 2, 0.12), C.woodDark, M.Wood, { CastShadow = false })
+		Kit.box(
+			m,
+			"Band",
+			cf * CFrame.new(0, y * (size.Y / 2 - t), 0),
+			size + Vector3.new(0.12, -size.Y + t * 2, 0.12),
+			C.woodDark,
+			M.Wood,
+			{ CastShadow = false }
+		)
 	end
 	return m
 end
@@ -373,12 +422,27 @@ function Kit.fence(parent, a, b, color)
 	local n = math.max(1, math.floor(len / 6))
 	for i = 0, n do
 		local p = a + dir * (i / n)
-		Kit.box(m, "Post", CFrame.new(p + Vector3.new(0, 1.6, 0)), Vector3.new(0.5, 3.2, 0.5), color or C.woodDark, M.Wood)
+		Kit.box(
+			m,
+			"Post",
+			CFrame.new(p + Vector3.new(0, 1.6, 0)),
+			Vector3.new(0.5, 3.2, 0.5),
+			color or C.woodDark,
+			M.Wood
+		)
 	end
 	local mid = a + dir / 2
 	local look = CFrame.lookAt(mid, b)
 	for _, y in { 1.2, 2.5 } do
-		Kit.box(m, "Rail", look + Vector3.new(0, y, 0), Vector3.new(0.25, 0.4, len), color or C.woodDark, M.Wood, { CastShadow = false })
+		Kit.box(
+			m,
+			"Rail",
+			look + Vector3.new(0, y, 0),
+			Vector3.new(0.25, 0.4, len),
+			color or C.woodDark,
+			M.Wood,
+			{ CastShadow = false }
+		)
 	end
 	return m
 end
@@ -392,7 +456,15 @@ function Kit.logs(parent, cf, length, rows)
 		local count = rows - r + 1
 		for i = 0, count - 1 do
 			local z = (i - (count - 1) / 2) * d
-			Kit.cyl(m, "Log", cf * CFrame.new(0, d / 2 + r * d * 0.86, z), length, d, C.bark:Lerp(C.woodLight, 0.25), M.Wood)
+			Kit.cyl(
+				m,
+				"Log",
+				cf * CFrame.new(0, d / 2 + r * d * 0.86, z),
+				length,
+				d,
+				C.bark:Lerp(C.woodLight, 0.25),
+				M.Wood
+			)
 		end
 	end
 	return m
@@ -403,18 +475,42 @@ function Kit.track(parent, cf, length)
 	local m = Kit.model("Track", parent)
 	Kit.box(m, "Ballast", cf * CFrame.new(0, -0.35, 0), Vector3.new(length, 0.7, 14), C.gravel, M.Pebble)
 	for _, z in { -2.9, 2.9 } do
-		Kit.box(m, "Rail", cf * CFrame.new(0, 0.35, z), Vector3.new(length, 0.5, 0.5), C.steel, M.Metal, { CastShadow = false })
+		Kit.box(
+			m,
+			"Rail",
+			cf * CFrame.new(0, 0.35, z),
+			Vector3.new(length, 0.5, 0.5),
+			C.steel,
+			M.Metal,
+			{ CastShadow = false }
+		)
 	end
 	local n = math.floor(length / 3)
 	for i = 0, n - 1 do
-		Kit.box(m, "Sleeper", cf * CFrame.new(-length / 2 + 1.5 + i * 3, 0.05, 0), Vector3.new(1.2, 0.3, 9), C.woodDark, M.Wood, { CastShadow = false })
+		Kit.box(
+			m,
+			"Sleeper",
+			cf * CFrame.new(-length / 2 + 1.5 + i * 3, 0.05, 0),
+			Vector3.new(1.2, 0.3, 9),
+			C.woodDark,
+			M.Wood,
+			{ CastShadow = false }
+		)
 	end
 	return m
 end
 
 -- Invisible wall that keeps players inside an area.
 function Kit.wall(parent, cf, size)
-	return Kit.box(parent, "Boundary", cf, size, C.black, M.SmoothPlastic, { Transparency = 1, CanQuery = false, CastShadow = false })
+	return Kit.box(
+		parent,
+		"Boundary",
+		cf,
+		size,
+		C.black,
+		M.SmoothPlastic,
+		{ Transparency = 1, CanQuery = false, CastShadow = false }
+	)
 end
 
 return Kit

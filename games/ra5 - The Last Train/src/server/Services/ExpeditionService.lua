@@ -182,7 +182,15 @@ function ExpeditionService:View()
 	end
 	local t = train()
 	local lampStage = t and t:Stage("lamp") or 0
-	local stopInfo = exp.stop and { key = exp.stop.key, name = exp.stop.name, text = exp.stop.text, landmark = exp.stop.landmark, rich = exp.stop.rich } or nil
+	local stopInfo = exp.stop
+			and {
+				key = exp.stop.key,
+				name = exp.stop.name,
+				text = exp.stop.text,
+				landmark = exp.stop.landmark,
+				rich = exp.stop.rich,
+			}
+		or nil
 	local nextInfo = nil
 	if exp.nextStop and (exp.announcedNext or lampStage >= 1) then
 		nextInfo = { key = exp.nextStop.key, name = exp.nextStop.name, text = exp.nextStop.text }
@@ -241,7 +249,10 @@ function ExpeditionService:_boards()
 	if phase == "lobby" then
 		table.insert(lines, "BOARDING AT THE STATION")
 	elseif phase == "traveling" then
-		table.insert(lines, exp.nextStop and exp.announcedNext and `NEXT STOP: {string.upper(exp.nextStop.name)}` or "ON THE LINE")
+		table.insert(
+			lines,
+			exp.nextStop and exp.announcedNext and `NEXT STOP: {string.upper(exp.nextStop.name)}` or "ON THE LINE"
+		)
 	elseif phase == "arriving" then
 		table.insert(lines, `ARRIVING: {string.upper(exp.nextStop and exp.nextStop.name or "")}`)
 	elseif phase == "ended" then
@@ -249,7 +260,10 @@ function ExpeditionService:_boards()
 	elseif exp.stop then
 		table.insert(lines, `AT: {string.upper(exp.stop.name)}`)
 	end
-	table.insert(lines, `DISTANCE  {Formulas.round1(self:Distance())} km   ·   NEXT MILESTONE {Formulas.nextMilestone(self:Distance())} km`)
+	table.insert(
+		lines,
+		`DISTANCE  {Formulas.round1(self:Distance())} km   ·   NEXT MILESTONE {Formulas.nextMilestone(self:Distance())} km`
+	)
 	table.insert(lines, `FUEL  {exp.fuel}   ·   NEXT TRIP NEEDS {self:FuelCost()}`)
 	local goal = t and t:Goal()
 	if goal then
@@ -262,7 +276,8 @@ function ExpeditionService:_boards()
 	if station and station.board then
 		local left = exp.phaseEnds and math.max(0, exp.phaseEnds - now()) or nil
 		if phase == "lobby" then
-			station.board.Text = left and `THE LAST TRAIN · {string.upper(Stops.REGION)}\nBOARDING · DEPARTS IN {Format.time(left)}`
+			station.board.Text = left
+					and `THE LAST TRAIN · {string.upper(Stops.REGION)}\nBOARDING · DEPARTS IN {Format.time(left)}`
 				or `THE LAST TRAIN · {string.upper(Stops.REGION)}\nWAITING FOR THE CREW`
 			station.board2.Text = left and `DEPARTS IN {Format.time(left)}` or "BOARDING"
 		else
@@ -462,7 +477,10 @@ function ExpeditionService:_scavenge()
 		t:Doors("open")
 	end
 	local warnText = exp.fuel + 1e-6 < self:FuelCost() and " Fuel is low: bring back fuel cans!" or ""
-	announce(`{exp.stop.name}. The doors are open for {Format.time(exp.phaseEnds - now())}. Be back before they close!{warnText}`, "chime")
+	announce(
+		`{exp.stop.name}. The doors are open for {Format.time(exp.phaseEnds - now())}. Be back before they close!{warnText}`,
+		"chime"
+	)
 	Net.fireAll("Sfx", "doors")
 end
 
@@ -508,7 +526,11 @@ function ExpeditionService:_end(reason)
 			profile.best = math.max(profile.best or 0, exp.distance)
 			profile.stats.expeditions += 1
 			-- your own journeys (the HALL panel lists them)
-			table.insert(profile.records, 1, { id = exp.id, code = exp.code, km = exp.distance, stops = exp.stops, at = os.time() })
+			table.insert(
+				profile.records,
+				1,
+				{ id = exp.id, code = exp.code, km = exp.distance, stops = exp.stops, at = os.time() }
+			)
 			while #profile.records > 10 do
 				table.remove(profile.records)
 			end

@@ -273,7 +273,10 @@ function RecordService:View()
 end
 
 function RecordService:Push(player)
-	local view = { records = self:View(), rule = `Full crew: aboard for {Constants.CREW_MIN_STOPS} stops or {math.floor(Constants.CREW_MIN_SECONDS / 60)} minutes.` }
+	local view = {
+		records = self:View(),
+		rule = `Full crew: aboard for {Constants.CREW_MIN_STOPS} stops or {math.floor(Constants.CREW_MIN_SECONDS / 60)} minutes.`,
+	}
 	if player then
 		Net.fire(player, "Hall", view)
 	else
@@ -337,7 +340,11 @@ function RecordService:Init(registry)
 		local record = self:Finish(exp)
 		if record then
 			-- a short summary for everyone aboard, and the place it took (if it made the Hall)
-			Net.fireAll("Toast", `Expedition #{record.code} is in the records: {record.km} km, {record.stops} stops, {#record.crew} crew.`, "good")
+			Net.fireAll(
+				"Toast",
+				`Expedition #{record.code} is in the records: {record.km} km, {record.stops} stops, {#record.crew} crew.`,
+				"good"
+			)
 		end
 	end)
 	data.ClientReady:Connect(function(player)

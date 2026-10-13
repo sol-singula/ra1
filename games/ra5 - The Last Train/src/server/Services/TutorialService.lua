@@ -22,7 +22,14 @@ local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
 local TutorialService = {
 	Name = "TutorialService",
-	Dependencies = { "PlayerDataService", "ExpeditionService", "CabinService", "ResourceService", "TrainService", "RecoveryService" },
+	Dependencies = {
+		"PlayerDataService",
+		"ExpeditionService",
+		"CabinService",
+		"ResourceService",
+		"TrainService",
+		"RecoveryService",
+	},
 	StepShown = Signal.new("TutorialService.StepShown"), -- (player, step, total, key, text)
 	StepDone = Signal.new("TutorialService.StepDone"), -- (player, step, key, seconds)
 	Finished = Signal.new("TutorialService.Finished"), -- (player, skipped)
@@ -166,7 +173,8 @@ local STEPS = {
 	{
 		key = "build",
 		text = function(_, profile)
-			local ok = Formulas.canBuild(CabinItems.byKey.bunk, profile.cabin.built, profile.storage, profile.blueprints)
+			local ok =
+				Formulas.canBuild(CabinItems.byKey.bunk, profile.cabin.built, profile.storage, profile.blueprints)
 			if ok then
 				return "You have enough! Go to your cabin and tap BUILD to make your bunk. 🛏"
 			end
@@ -174,7 +182,10 @@ local STEPS = {
 		end,
 		target = function(player)
 			local profile = data:Get(player)
-			if profile and Formulas.canBuild(CabinItems.byKey.bunk, profile.cabin.built, profile.storage, profile.blueprints) then
+			if
+				profile
+				and Formulas.canBuild(CabinItems.byKey.bunk, profile.cabin.built, profile.storage, profile.blueprints)
+			then
 				return buildSpot(player)
 			end
 			return nil
@@ -238,7 +249,12 @@ function TutorialService:_finish(player, skipped)
 	Net.fire(player, "Tutorial", false)
 	self.Finished:Fire(player, skipped == true)
 	if not skipped then
-		Net.fire(player, "Alert", "You're part of the crew! Keep building your cabin, and see how far this train can go. 🚂", Color3.fromRGB(255, 205, 120))
+		Net.fire(
+			player,
+			"Alert",
+			"You're part of the crew! Keep building your cabin, and see how far this train can go. 🚂",
+			Color3.fromRGB(255, 205, 120)
+		)
 	end
 end
 

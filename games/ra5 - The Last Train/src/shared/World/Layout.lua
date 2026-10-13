@@ -57,7 +57,8 @@ for _, car in Layout.CARS do
 	x = car.x0 - Layout.GAP
 
 	-- outside doors (in the vestibules; the locomotive has one at its rear)
-	local doorXs = car.kind == "loco" and { car.x0 + 4 } or { car.x1 - Layout.VESTIBULE / 2, car.x0 + Layout.VESTIBULE / 2 }
+	local doorXs = car.kind == "loco" and { car.x0 + 4 }
+		or { car.x1 - Layout.VESTIBULE / 2, car.x0 + Layout.VESTIBULE / 2 }
 	for _, dx in doorXs do
 		table.insert(Layout.doors, {
 			car = car.key,
@@ -131,7 +132,12 @@ end
 function Layout.cabinAt(pos)
 	for _, cabin in Layout.cabins do
 		local p = cabin.center
-		if math.abs(pos.X - p.X) <= Layout.CABIN_LEN / 2 and pos.Z >= Layout.CORRIDOR_Z and pos.Z <= Layout.HALF_IN + 0.5 and math.abs(pos.Y - (Layout.FLOOR_Y + 3)) < 6 then
+		if
+			math.abs(pos.X - p.X) <= Layout.CABIN_LEN / 2
+			and pos.Z >= Layout.CORRIDOR_Z
+			and pos.Z <= Layout.HALF_IN + 0.5
+			and math.abs(pos.Y - (Layout.FLOOR_Y + 3)) < 6
+		then
 			return cabin
 		end
 	end

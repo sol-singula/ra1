@@ -335,7 +335,10 @@ function AnalyticsService:Init(registry)
 		local s = sessions[player]
 		if s and not s.ready then
 			track(s, "left_while_loading", { seconds = math.floor(now() - s.t0) })
-			upsertSession(s, { ended_at = iso(os.time()), duration_s = math.floor(now() - s.t0), end_reason = "left_loading" })
+			upsertSession(
+				s,
+				{ ended_at = iso(os.time()), duration_s = math.floor(now() - s.t0), end_reason = "left_loading" }
+			)
 			sessions[player] = nil
 		end
 	end)
@@ -385,7 +388,11 @@ function AnalyticsService:Init(registry)
 		if s then
 			s.lastInputAt = now()
 		end
-		track(player, "prompt", { name = prompt.Name, action = prompt.ActionText, object = prompt.ObjectText, zone = zoneOf(player) })
+		track(
+			player,
+			"prompt",
+			{ name = prompt.Name, action = prompt.ActionText, object = prompt.ObjectText, zone = zoneOf(player) }
+		)
 	end)
 
 	-- the core loop
@@ -395,7 +402,11 @@ function AnalyticsService:Init(registry)
 			s.collected = (s.collected or 0) + amount
 		end
 		local stop = expedition:State() and expedition:State().stop
-		track(player, "collect", { kind = kind, amount = amount, far = far, stop = stop and stop.key, bag = resources:BagCount(player) })
+		track(
+			player,
+			"collect",
+			{ kind = kind, amount = amount, far = far, stop = stop and stop.key, bag = resources:BagCount(player) }
+		)
 	end)
 	resources.BagFull:Connect(function(player)
 		track(player, "bag_full", { cap = resources:Capacity(player) })
@@ -628,7 +639,11 @@ function AnalyticsService:OnPlayerReady(player, profile)
 		days_since_last = (not profile._isNew and previous) and math.floor((os.time() - previous) / 864) / 100 or nil,
 		start = s.start,
 	})
-	track(player, "loaded", { seconds = math.floor((now() - s.t0) * 10) / 10, new = profile._isNew == true, phase = expedition:Phase() })
+	track(
+		player,
+		"loaded",
+		{ seconds = math.floor((now() - s.t0) * 10) / 10, new = profile._isNew == true, phase = expedition:Phase() }
+	)
 	task.delay(3, function()
 		if sessions[player] == s then
 			self:_snapshot(player) -- on the live dashboard right away
@@ -676,7 +691,11 @@ function AnalyticsService:_end(player, profile, reason)
 	summary.counts = s.counts
 	summary.taps = s.taps
 	summary.last_actions = s.last
-	track(s, "leave", { reason = reason, last = s.last, zone = summary.zone, idle = summary.idle_at_leave, phase = summary.phase })
+	track(
+		s,
+		"leave",
+		{ reason = reason, last = s.last, zone = summary.zone, idle = summary.idle_at_leave, phase = summary.phase }
+	)
 	upsertSession(s, {
 		ended_at = iso(os.time()),
 		duration_s = duration,

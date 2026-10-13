@@ -111,7 +111,7 @@ local function public(status, userId, here)
 	}
 end
 
-function JoinService:FriendsView(player, list)
+function JoinService:FriendsView(_player, list)
 	local out = {}
 	if type(list) ~= "table" then
 		return out
@@ -154,14 +154,23 @@ function JoinService:_teleport(player, job, status, ctx)
 		TeleportService:TeleportAsync(game.PlaceId, { player }, options)
 	end)
 	if not ok then
-		self:_result(player, "failed", { name = ctx.name, userId = ctx.userId, text = "Couldn't reach that train. Try again in a moment." })
+		self:_result(
+			player,
+			"failed",
+			{ name = ctx.name, userId = ctx.userId, text = "Couldn't reach that train. Try again in a moment." }
+		)
 	end
 	return ok
 end
 
 function JoinService:_full(player, ctx)
 	ctx.waiting = false
-	self:_result(player, "full", { name = ctx.name, userId = ctx.userId, max = Constants.FRIEND_RETRY_TRIES, every = Constants.FRIEND_RETRY_SECONDS })
+	self:_result(player, "full", {
+		name = ctx.name,
+		userId = ctx.userId,
+		max = Constants.FRIEND_RETRY_TRIES,
+		every = Constants.FRIEND_RETRY_SECONDS,
+	})
 end
 
 function JoinService:Join(player, userId, name)
@@ -173,12 +182,20 @@ function JoinService:Join(player, userId, name)
 	self.Attempted:Fire(player, "friend")
 	local okF, isFriend = pcall(player.IsFriendsWith, player, userId)
 	if not okF or not isFriend then
-		self:_result(player, "failed", { name = name, userId = userId, text = "You can only join your friends' trains." })
+		self:_result(
+			player,
+			"failed",
+			{ name = name, userId = userId, text = "You can only join your friends' trains." }
+		)
 		return false
 	end
 	local friend = Players:GetPlayerByUserId(userId)
 	if friend then
-		self:_result(player, "here", { name = friend.DisplayName, userId = userId, cabin = friend:GetAttribute("Cabin") })
+		self:_result(
+			player,
+			"here",
+			{ name = friend.DisplayName, userId = userId, cabin = friend:GetAttribute("Cabin") }
+		)
 		return true
 	end
 	local okP, _, _, placeId, job = pcall(function()
@@ -223,7 +240,13 @@ function JoinService:Action(player, action)
 		ctx.waiting = true
 		ctx.tries = 0
 		ctx.nextAt = os.clock() + Constants.FRIEND_RETRY_SECONDS
-		self:_result(player, "waiting", { name = ctx.name, userId = ctx.userId, tries = 0, max = Constants.FRIEND_RETRY_TRIES, wait = Constants.FRIEND_RETRY_SECONDS })
+		self:_result(player, "waiting", {
+			name = ctx.name,
+			userId = ctx.userId,
+			tries = 0,
+			max = Constants.FRIEND_RETRY_TRIES,
+			wait = Constants.FRIEND_RETRY_SECONDS,
+		})
 	elseif action == "cancel" then
 		pending[player] = nil
 		rejoinOffer[player] = nil
@@ -273,7 +296,13 @@ function JoinService:_retry(player, ctx)
 		return
 	end
 	ctx.nextAt = os.clock() + Constants.FRIEND_RETRY_SECONDS
-	self:_result(player, "waiting", { name = ctx.name, userId = ctx.userId, tries = ctx.tries, max = Constants.FRIEND_RETRY_TRIES, wait = Constants.FRIEND_RETRY_SECONDS })
+	self:_result(player, "waiting", {
+		name = ctx.name,
+		userId = ctx.userId,
+		tries = ctx.tries,
+		max = Constants.FRIEND_RETRY_TRIES,
+		wait = Constants.FRIEND_RETRY_SECONDS,
+	})
 end
 
 function JoinService:Init(registry)
@@ -304,13 +333,25 @@ function JoinService:Init(registry)
 				if ctx then
 					self:_full(player, ctx)
 				else
-					self:_result(player, "full", { name = name, max = Constants.FRIEND_RETRY_TRIES, every = Constants.FRIEND_RETRY_SECONDS })
+					self:_result(
+						player,
+						"full",
+						{ name = name, max = Constants.FRIEND_RETRY_TRIES, every = Constants.FRIEND_RETRY_SECONDS }
+					)
 				end
-			elseif result == Enum.TeleportResult.GameEnded or result == Enum.TeleportResult.GameNotFound or result == Enum.TeleportResult.Unauthorized then
+			elseif
+				result == Enum.TeleportResult.GameEnded
+				or result == Enum.TeleportResult.GameNotFound
+				or result == Enum.TeleportResult.Unauthorized
+			then
 				pending[player] = nil
 				self:_result(player, "gone", { name = name, userId = ctx and ctx.userId })
 			else
-				self:_result(player, "failed", { name = name, userId = ctx and ctx.userId, text = `Couldn't reach {name}: {tostring(message or "teleport failed")}` })
+				self:_result(player, "failed", {
+					name = name,
+					userId = ctx and ctx.userId,
+					text = `Couldn't reach {name}: {tostring(message or "teleport failed")}`,
+				})
 			end
 		end)
 	end)
@@ -342,10 +383,20 @@ function JoinService:OnPlayerReady(player, profile)
 	if type(last) == "table" and last.job and last.job ~= jobId() and os.time() - (last.at or 0) < REJOIN_SECONDS then
 		task.spawn(function()
 			local status = self:Status(last.job)
-			if status and status.exp == last.exp and status.phase ~= "ended" and status.phase ~= "lobby" and (status.crew or 0) < (status.max or Constants.MAX_PLAYERS) then
+			if
+				status
+				and status.exp == last.exp
+				and status.phase ~= "ended"
+				and status.phase ~= "lobby"
+				and (status.crew or 0) < (status.max or Constants.MAX_PLAYERS)
+			then
 				rejoinOffer[player] = { jobId = last.job, exp = last.exp }
 				data:WhenClientReady(player, function()
-					self:_result(player, "rejoin", { code = status.code, km = status.km, crew = status.crew, max = status.max })
+					self:_result(
+						player,
+						"rejoin",
+						{ code = status.code, km = status.km, crew = status.crew, max = status.max }
+					)
 				end)
 			end
 		end)
