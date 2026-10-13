@@ -35,10 +35,10 @@ Constants.ORIGIN_TOLERANCE = 9 -- the shot must start this close to the shooter'
 Constants.FIRE_RATE_SLACK = 0.12 -- seconds of slack on the bolt time (network jitter)
 -- hit shapes, relative to the HumanoidRootPart: a head ball and a body capsule
 Constants.HEAD_OFFSET = 1.6
-Constants.HEAD_RADIUS = 1.15
-Constants.BODY_TOP = 1.2
-Constants.BODY_BOTTOM = -3
-Constants.BODY_RADIUS = 1.45
+Constants.HEAD_RADIUS = 1.6
+Constants.BODY_TOP = 1.6
+Constants.BODY_BOTTOM = -3.4
+Constants.BODY_RADIUS = 2.1
 Constants.HIP_FOV = 70
 Constants.MOUSE_SENSITIVITY = 0.7 -- in first person (times the player's own setting)
 Constants.SCOPE_SENSITIVITY = 0.55 -- extra slow-down while scoped (times the zoom)
