@@ -1,0 +1,30 @@
+# Minimal Roblox globals for Selene when the full generated `roblox` std is unavailable.
+# With network access, prefer `std = "roblox"` (run `selene generate-roblox-std`).
+base: luau
+name: roblox-lite
+globals:
+  game: { any: true }
+  workspace: { any: true }
+  script: { any: true }
+  Instance: { any: true }
+  Vector3: { any: true }
+  Vector2: { any: true }
+  CFrame: { any: true }
+  Color3: { any: true }
+  ColorSequence: { any: true }
+  ColorSequenceKeypoint: { any: true }
+  NumberSequence: { any: true }
+  NumberRange: { any: true }
+  UDim: { any: true }
+  UDim2: { any: true }
+  Enum: { any: true }
+  Random: { any: true }
+  TweenInfo: { any: true }
+  RaycastParams: { any: true }
+  task: { any: true }
+  typeof: { any: true }
+  warn: { any: true }
+  tick: { any: true }
+  UserSettings: { any: true }
+  loadModule: { any: true }
+  ARGS: { any: true }
