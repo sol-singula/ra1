@@ -76,7 +76,8 @@ the name, description and price and save. An icon is optional. Copy the **Produc
 |---|---|---|---|
 | `LUCK` | Server Luck | 99 | Shop |
 | `LOCKNOW` | Lock Now | 19 | Shop |
-| `LOCK5` | 5-Minute Lock | 35 | Shop, and the **+5 MIN** plate next to the lock pad in each base |
+| `LOCK30` | 30-Minute Lock | 49 | Shop, the **30 MIN** plate next to the lock pad, and the card after you get robbed |
+| `STARTER` | Starter Pack | 49 | One-time card after 8 minutes of play: an Epic dragon, 5 potions, coins |
 | `LEVELALL` | +5 Levels for ALL | 99 | Shop, and the **LEVEL ALL** plate when you have no coins |
 | `POTIONS` | 5 Speed Potions | 29 | Shop, and using the Speed Potion with none left |
 | `COINS_S` | Coin Bag | 49 | Shop |

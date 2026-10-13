@@ -326,6 +326,13 @@ check("welcome back panel", panels.Dim.Visible and string.find(panels.Dim.Card.T
 click(panels.Dim.Card.Body, "CLAIM")
 check("claim offline", sent("ClaimOffline") ~= nil)
 
+serverSends("Offer", { key = "LOCK30", title = "😱 YOU GOT ROBBED!", text = "Lock it", icon = "🔒", price = 49 })
+check("offer card", panels.Dim.Visible and string.find(panels.Dim.Card.Title.Text, "ROBBED", 1, true) ~= nil)
+click(panels.Dim.Card.Body, "BUY  R$ 49")
+local buyOffer = sent("Purchase")
+check("offer card buys", buyOffer and buyOffer.args[1] == "product" and buyOffer.args[2] == "LOCK30")
+check("offer card closes", not panels.Dim.Visible)
+
 hud.InviteButton.Activated:Fire()
 Engine.advance(0.05)
 check("invite prompt", Engine.invites == 1)

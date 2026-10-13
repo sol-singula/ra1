@@ -643,17 +643,52 @@ world.autoPlate.Prompt_auto.Triggered:Fire(a)
 Engine.advance(0.1)
 check("holding the Auto Collect button sells the pass", pa.passes.AUTO == true)
 local lockBefore = Base:Get(a).lockUntil
-world.lockPlate.Prompt_lock5.Triggered:Fire(a)
+world.lockPlate.Prompt_lock30.Triggered:Fire(a)
 Engine.advance(0.1)
 check(
-	"lock plate adds 5 minutes",
+	"lock plate adds 30 minutes",
 	Base:Get(a).lockUntil
 		>= math.max(lockBefore, Engine.workspace:GetServerTimeNow()) + Constants.LOCK_BOOST_SECONDS - 1
 )
 local lockAfter = Base:Get(a).lockUntil
 Engine.advance(0.5)
 check("standing on the plate doesn't buy again", Base:Get(a).lockUntil == lockAfter)
+-- a bought lock never leaves the door recharging when it runs out
+Base:Get(a).lockUntil = Engine.workspace:GetServerTimeNow() - 1
+Base:Lock(a)
+check("the free lock works right after a bought lock ends (no recharge)", Base:IsLocked(Base:Get(a)))
+check("a fresh free lock clears the bought-lock flag", Base:Get(a).paidLock == nil)
 Base:Get(a).lockUntil = 0 -- open again for the stealing tests below
+
+-- Offer cards: at the moment a player wants something
+local function lastOffer()
+	local e = Engine.lastClientEvent("Offer", a)
+	return e and e.args[1]
+end
+Shop:ResetOffers(a)
+check("robbed: the 30-minute lock card shows", Shop:OfferLockAfterRobbed(a) and lastOffer().key == "LOCK30")
+check("robbed: not again right away", not Shop:OfferLockAfterRobbed(a))
+Shop:ResetOffers(a)
+Base:Get(a).lockUntil = Engine.workspace:GetServerTimeNow() + 60
+check("robbed: no lock card while already locked", not Shop:OfferLockAfterRobbed(a))
+Base:Get(a).lockUntil = 0
+local rich = Road:Spawn("Epic")
+check(
+	"can't afford an Epic: the Buy Now card shows",
+	Shop:OfferBuyNow(a, rich.roadId) and lastOffer().target == rich.roadId
+)
+check("Starter Pack card shows once a session", Shop:OfferStarter(a) and not Shop:OfferStarter(a))
+local potions0, dragons0, coins0 = pa.potions, #pa.dragons, pa.coins
+Shop:Grant(a, "STARTER")
+check(
+	"Starter Pack gives an Epic dragon, 5 potions and coins",
+	#pa.dragons == dragons0 + 1 and pa.potions == potions0 + 5 and pa.coins >= coins0 + Constants.STARTER_COINS_MIN,
+	`{#pa.dragons - dragons0} {pa.potions - potions0} {pa.coins - coins0}`
+)
+Shop:ResetOffers(a)
+check("bought Starter Pack never shows again", pa.starterBought and not Shop:OfferStarter(a))
+pa.coins, pa.potions = coins0, potions0
+Tools:AddPotions(a, 0)
 goHome(a)
 
 -- LEVEL ALL plate: spends coins on the cheapest level-ups across every nest

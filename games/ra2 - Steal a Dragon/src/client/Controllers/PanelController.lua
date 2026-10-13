@@ -40,7 +40,7 @@ local function clearBody()
 	body.Size = UDim2.new(1, -28, 1, -94)
 end
 
-local HEADER_COLORS = { Shop = C.purple, Speed = C.sky, Gift = C.pink, Offline = C.good }
+local HEADER_COLORS = { Shop = C.purple, Speed = C.sky, Gift = C.pink, Offline = C.good, Offer = C.ketchup }
 
 function PanelController.close()
 	current = nil
@@ -495,6 +495,40 @@ builders.Offline = function()
 	end)
 end
 
+-- Robux offer card (ShopService:OfferCard) ----------------------------------------------------------------------
+local offer
+builders.Offer = function()
+	local o = offer or {}
+	titleLabel.Text = o.title or "SPECIAL OFFER"
+	list(14)
+	headline(o.icon or "🎁", 64)
+	line(o.text or "", { TextSize = 24 })
+	local row =
+		new("Frame", { Name = "Buttons", BackgroundTransparency = 1, Size = UDim2.fromOffset(460, 64), Parent = body })
+	local buy = Theme.button({
+		Name = "OfferBuy",
+		Text = "BUY  R$ " .. tostring(o.price or "?"),
+		BackgroundColor3 = C.good,
+		Size = UDim2.new(0.5, -6, 1, 0),
+		round = true,
+		Parent = row,
+	})
+	buy.Activated:Connect(function()
+		Net.send("Purchase", "product", o.key, o.target)
+		PanelController.close()
+	end)
+	local no = Theme.button({
+		Name = "OfferNo",
+		Text = "NO THANKS",
+		BackgroundColor3 = C.muted,
+		round = true,
+		Size = UDim2.new(0.5, -6, 1, 0),
+		Position = UDim2.new(0.5, 6, 0, 0),
+		Parent = row,
+	})
+	no.Activated:Connect(PanelController.close)
+end
+
 function PanelController:init()
 	gui = Theme.screen("Panels", 5, player:WaitForChild("PlayerGui"))
 	dim = new("Frame", {
@@ -604,6 +638,7 @@ function PanelController:init()
 		if
 			current
 			and current ~= "Offline"
+			and current ~= "Offer"
 			and (
 				partial.passes
 				or partial.speedLevel
@@ -615,6 +650,13 @@ function PanelController:init()
 			)
 		then
 			refreshOpen()
+		end
+	end)
+	-- an offer never covers another panel the player opened
+	Net.listen("Offer", function(info)
+		if not current and type(info) == "table" and info.key then
+			offer = info
+			PanelController.open("Offer")
 		end
 	end)
 	Net.listen("Offline", function(info)

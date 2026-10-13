@@ -84,6 +84,7 @@ function BaseService:OnPlayerReady(player)
 		if base and not base.owner then
 			base.owner = player
 			base.lockUntil = 0
+			base.paidLock = nil
 			base.bank = 0
 			byPlayer[player] = base
 			base.world.signLines[1].Text = string.upper(player.DisplayName) .. "  🏰" .. (base.world.castleLevel or 1)
@@ -126,6 +127,7 @@ function BaseService:OnPlayerLeaving(player)
 	base.owner = nil
 	base.bank = 0
 	base.lockUntil = 0
+	base.paidLock = nil
 	base.world.signLines[1].Text = "EMPTY BASE"
 	base.castleChecked = false
 	WorldBuilder.setCastleLevel(base.world, 1)
@@ -245,7 +247,7 @@ function BaseService:IsLocked(base)
 	return base.lockUntil > now()
 end
 
--- Lock the door. With extraSeconds (the 5-Minute Lock product) that much time is added on top of any lock that
+-- Lock the door. With extraSeconds (the 30-Minute Lock product) that much time is added on top of any lock that
 -- is already running; otherwise it locks for the normal time, which also resets a running lock back to full
 -- (never shortening a longer lock). Stepping on the lock pad does this, so you never need the L key.
 function BaseService:Lock(player, extraSeconds)
@@ -257,18 +259,28 @@ function BaseService:Lock(player, extraSeconds)
 	local wasLocked = self:IsLocked(base)
 	local t = now()
 	if extraSeconds then
-		-- the 5-Minute Lock product: always works, on top of whatever is running
+		-- the 30-Minute Lock product: always works, on top of whatever is running, and no recharge after it
 		base.lockUntil = math.max(base.lockUntil, t) + extraSeconds
+		base.paidLock = true
 		Net.fire(player, "Toast", `Locked for {Format.time(base.lockUntil - t)}! ⏱️`, "good")
 	else
 		local length = Formulas.lockSeconds(economy:Passes(player))
-		if not wasLocked and base.lockUntil > 0 and t < base.lockUntil + Constants.LOCK_COOLDOWN then
+		if wasLocked and base.paidLock then
+			return -- a bought lock is running: the pad has nothing to add
+		end
+		if
+			not wasLocked
+			and not base.paidLock
+			and base.lockUntil > 0
+			and t < base.lockUntil + Constants.LOCK_COOLDOWN
+		then
 			local wait = base.lockUntil + Constants.LOCK_COOLDOWN - t
 			Net.fire(player, "Toast", `🔓 The lock is recharging: {Format.time(wait)}`, "info")
 			return
 		end
 		if not wasLocked then
 			base.lockChainStart = t
+			base.paidLock = nil
 		elseif t + length - (base.lockChainStart or t) > length * Constants.LOCK_CHAIN_MAX then
 			Net.fire(player, "Toast", "🔒 Your lock is at its limit: it opens soon!", "info")
 			return

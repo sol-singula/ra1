@@ -768,7 +768,7 @@ local function buildBase(parent, index, cf)
 		Parent = model,
 	})
 	-- Front row, just inside the gate: the coin pad (with the treasure chest) and the Auto Collect plate on the
-	-- left, the lock pad and the 5-Minute Lock plate on the right. The egg stand is at the back.
+	-- left, the lock pad and the 30-Minute Lock plate on the right. The egg stand is at the back.
 	local padZ = -BASE_D / 2 + 6
 	local function pad(name, x, size, padColor, signLines, signW)
 		local p = part({
@@ -795,7 +795,7 @@ local function buildBase(parent, index, cf)
 		{ text = "🔒 LOCK", h = 1, y = 0, font = Enum.Font.LuckiestGuy },
 	}, 8)
 	local lockPlate = pad("LockPlate", 17.5, Vector3.new(5, 0.5, 5), rgb(255, 150, 60), {
-		{ text = "⏱️ +5 MIN", h = 0.55, y = 0, font = Enum.Font.LuckiestGuy },
+		{ text = "🔒 30 MIN", h = 0.55, y = 0, font = Enum.Font.LuckiestGuy },
 		{ text = "lock time", h = 0.45, y = 0.55, color = rgb(255, 225, 190) },
 	}, 8)
 	part({

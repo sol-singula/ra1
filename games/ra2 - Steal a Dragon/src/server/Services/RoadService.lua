@@ -18,6 +18,7 @@ local RoadService = {
 	Dependencies = { "PlayerDataService", "EconomyService", "DragonService", "BaseService" },
 	Bought = Signal.new("RoadService.Bought"), -- (player, id)
 	BuyNowRequested = Signal.new("RoadService.BuyNowRequested"), -- (player, roadId)
+	CantAfford = Signal.new("RoadService.CantAfford"), -- (player, roadId) tried to buy without enough coins
 	LuckChanged = Signal.new("RoadService.LuckChanged"),
 }
 
@@ -172,6 +173,7 @@ function RoadService:TryBuy(player, roadId)
 	end
 	if not economy:Spend(player, entry.price) then
 		Net.fire(player, "Toast", `You need {Format.num(entry.price)} coins!`, "bad")
+		self.CantAfford:Fire(player, roadId)
 		return
 	end
 	self:_give(player, entry)

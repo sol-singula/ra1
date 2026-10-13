@@ -30,11 +30,13 @@ local ShopService = {
 	},
 	Purchased = Signal.new("ShopService.Purchased"), -- (player, name, robux) a real Robux purchase went through
 	Prompted = Signal.new("ShopService.Prompted"), -- (player, kind "pass"|"product", key) a purchase prompt opened
+	CardShown = Signal.new("ShopService.CardShown"), -- (player, key, why) an offer card popped up
 }
 
 local data, economy, dragons, baseService, road, reward, tools
 local targets = {} -- [player] = { [productKey] = target } remembered between prompt and receipt
 local offeredAt = {} -- [player] = { [key] = os.clock() } when a world offer was last shown
+local starterShown = {} -- [player] = true once the Starter Pack card showed this session
 local MAX_RECEIPTS = 60
 
 function ShopService:Init(registry)
@@ -75,7 +77,16 @@ function ShopService:Init(registry)
 	tools.PotionsRequested:Connect(function(player)
 		self:Offer(player, "product", "POTIONS")
 	end)
-	-- the plates in each base: Auto Collect (next to the coin pad) and 5-Minute Lock (next to the lock pad).
+	-- the moments a player wants something: right after being robbed, and an Epic+ road dragon they can't afford
+	dragons.Placed:Connect(function(thief, _, kind, from)
+		if kind == "stolen" and from and from ~= thief and from.Parent then
+			self:OfferLockAfterRobbed(from)
+		end
+	end)
+	road.CantAfford:Connect(function(player, roadId)
+		self:OfferBuyNow(player, roadId)
+	end)
+	-- the plates in each base: Auto Collect (next to the coin pad) and 30-Minute Lock (next to the lock pad).
 	-- Stepping on one never opens a purchase (players walk over them collecting coins): you hold its button,
 	-- and the buttons only show for the owner once their tutorial is done.
 	baseService.PlateStepped:Connect(function(player, plate)
@@ -87,7 +98,7 @@ function ShopService:Init(registry)
 		for _, spec in
 			{
 				{ world.autoPlate, "Prompt_auto", "Get Auto Collect", "pass", "AUTO" },
-				{ world.lockPlate, "Prompt_lock5", "+5 min lock", "product", "LOCK5" },
+				{ world.lockPlate, "Prompt_lock30", "Lock 30 min", "product", "LOCK30" },
 			}
 		do
 			if spec[1] then
@@ -221,9 +232,81 @@ function ShopService:Offer(player, kind, key, target)
 	return true
 end
 
+-- An offer card (a small panel with Buy and No thanks) instead of opening Roblox's prompt straight away. Same
+-- rules as Offer; cooldown defaults to OFFER_COOLDOWN. Returns true if the card was shown.
+function ShopService:OfferCard(player, key, why, card, cooldown)
+	local product = Shop.productByKey[key]
+	if not product or not self:OffersAllowed(player) then
+		return false
+	end
+	local mine = offeredAt[player] or {}
+	offeredAt[player] = mine
+	if mine[key] and os.clock() - mine[key] < (cooldown or Constants.OFFER_COOLDOWN) then
+		return false
+	end
+	mine[key] = os.clock()
+	Net.fire(player, "Offer", {
+		key = key,
+		title = card.title,
+		text = card.text,
+		icon = card.icon or product.icon,
+		price = product.price,
+		target = card.target,
+	})
+	self.CardShown:Fire(player, key, why)
+	return true
+end
+
+-- "Someone stole your dragon! Lock your base for 30 minutes?" (not while a lock is already running)
+function ShopService:OfferLockAfterRobbed(player)
+	local base = baseService:Get(player)
+	if not base or baseService:IsLocked(base) then
+		return false
+	end
+	return self:OfferCard(player, "LOCK30", "robbed", {
+		title = "😱 YOU GOT ROBBED!",
+		text = "Lock your base for 30 minutes. No one can steal from you!",
+		icon = "🔒",
+	}, Constants.OFFER_ROBBED_COOLDOWN)
+end
+
+-- Tried to buy an Epic (or better) road dragon without enough coins: offer to take it now.
+function ShopService:OfferBuyNow(player, roadId)
+	local entry = road:Entry(roadId)
+	local d = entry and Dragons.byId[entry.id]
+	if not d or Dragons.RarityRank[d.rarity] < Dragons.RarityRank.Epic or road:CanTake(player, entry) then
+		return false
+	end
+	return self:OfferCard(player, "BUYNOW", "cant_afford", {
+		title = `{d.rarity == "Epic" and "💜" or "⭐"} {string.upper(d.rarity)} DRAGON!`,
+		text = `Not enough coins for {d.name}? Take it right now!`,
+		icon = "⚡",
+		target = roadId,
+	})
+end
+
+-- The Starter Pack card: once a session, after STARTER_AFTER_SECONDS of play, until it is bought.
+function ShopService:OfferStarter(player)
+	local profile = data:Get(player)
+	if not profile or profile.starterBought or starterShown[player] then
+		return false
+	end
+	if
+		self:OfferCard(player, "STARTER", "starter", {
+			title = "🎒 STARTER PACK",
+			text = "1 Epic dragon + 5 speed potions + a bag of coins. One time only!",
+		})
+	then
+		starterShown[player] = true
+		return true
+	end
+	return false
+end
+
 -- (tests) forget when offers were last shown
 function ShopService:ResetOffers(player)
 	offeredAt[player] = nil
+	starterShown[player] = nil
 end
 
 function ShopService:OnPlayerReady(player)
@@ -232,11 +315,21 @@ function ShopService:OnPlayerReady(player)
 		p:SetAttribute("OwnerUserId", player.UserId)
 	end
 	self:RefreshPlates(player)
+	task.delay(Constants.STARTER_AFTER_SECONDS, function()
+		-- busy (carrying, a panel open on their side)? try again a little later, a few times
+		for _ = 1, 5 do
+			if player.Parent == nil or self:OfferStarter(player) or starterShown[player] then
+				return
+			end
+			task.wait(60)
+		end
+	end)
 end
 
 function ShopService:OnPlayerLeaving(player)
 	targets[player] = nil
 	offeredAt[player] = nil
+	starterShown[player] = nil
 	local base = baseService:Get(player)
 	for _, plate in base and { base.world.autoPlate, base.world.lockPlate } or {} do
 		for _, p in plate and plate:GetChildren() or {} do
@@ -321,8 +414,16 @@ function ShopService:Grant(player, key, target)
 		)
 	elseif key == "LOCKNOW" then
 		baseService:Lock(player)
-	elseif key == "LOCK5" then
+	elseif key == "LOCK30" then
 		baseService:Lock(player, Constants.LOCK_BOOST_SECONDS)
+	elseif key == "STARTER" then
+		local epics = Dragons.byRarity.Epic
+		local id = epics[math.random(1, #epics)].id
+		dragons:Grant(player, id)
+		tools:AddPotions(player, 5)
+		economy:Add(player, math.max(Constants.STARTER_COINS_MIN, math.floor(income * Constants.STARTER_COINS_SECONDS)))
+		profile.starterBought = true
+		Net.fire(player, "Alert", `Starter Pack: {Dragons.byId[id].name}! 🎒`, Color3.fromRGB(255, 205, 50))
 	elseif key == "COINS_S" then
 		economy:Add(player, math.max(1000, math.floor(income * 600)))
 	elseif key == "COINS_L" then

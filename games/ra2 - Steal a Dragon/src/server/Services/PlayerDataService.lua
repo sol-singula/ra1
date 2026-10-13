@@ -42,6 +42,7 @@ local function defaults()
 		goal = 1,
 		stats = { bought = 0, locks = 0, bonks = 0, friendPlay = 0, practice = 0 },
 		tutorialDone = false,
+		starterBought = false, -- the one-time Starter Pack
 		passes = {}, -- passes granted in Studio tests or remembered after purchase
 		receipts = {}, -- recent purchase ids, so a product is never granted twice
 		invited = {}, -- user ids of friends whose first join already paid an invite reward

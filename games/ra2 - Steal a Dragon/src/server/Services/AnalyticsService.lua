@@ -514,6 +514,11 @@ function AnalyticsService:Init(registry)
 		end
 		track(player, "purchase_prompt", { kind = kind, key = key })
 	end)
+	if shop.CardShown then
+		shop.CardShown:Connect(function(player, key, why)
+			track(player, "offer_card", { key = key, why = why })
+		end)
+	end
 	shop.Purchased:Connect(function(player, name, robux)
 		track(player, "purchase", { name = name, robux = robux })
 	end)

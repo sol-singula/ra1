@@ -42,7 +42,7 @@ Constants.LOCK_SECONDS_LONG = 120 -- Long Lock pass
 Constants.LOCK_CHAIN_MAX = 3
 Constants.LOCK_COOLDOWN = 20
 Constants.LOCK_VIP_BONUS = 15
-Constants.LOCK_BOOST_SECONDS = 300 -- the 5-Minute Lock product (the plate next to the lock pad)
+Constants.LOCK_BOOST_SECONDS = 1800 -- the 30-Minute Lock product (the plate next to the lock pad); no recharge after it
 
 -- Movement
 Constants.BASE_WALK_SPEED = 18
@@ -225,5 +225,11 @@ Constants.LEADERBOARD_READ_SECONDS = 60
 Constants.LEADERBOARD_SIZE = 10
 Constants.LEADERBOARD_LIVE_SECONDS = 2 -- how often the boards redraw with this server's live numbers
 Constants.DAILY_RESET_HOUR_ET = 19 -- the daily TOP EARNERS board resets at 7pm US Eastern
+
+-- Robux offer cards (ShopService:OfferCard): shown at the moment a player wants something
+Constants.OFFER_ROBBED_COOLDOWN = 300 -- "Lock for 30 min?" after you get robbed, at most every 5 minutes
+Constants.STARTER_AFTER_SECONDS = 480 -- the Starter Pack card shows once a session, after 8 minutes of play
+Constants.STARTER_COINS_SECONDS = 600 -- Starter Pack coins: 10 minutes of income (at least STARTER_COINS_MIN)
+Constants.STARTER_COINS_MIN = 5000
 
 return Constants

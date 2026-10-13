@@ -132,7 +132,7 @@ and bans for some countries and ages) don't apply. Offline bases can't be robbed
 Mega Bonk (149), Dragon Wings (299).
 
 **Developer products:** Server Luck (99, rarer dragons for everyone in the server for 15 minutes, with your name
-on it), Lock Now (19), 5-Minute Lock (35, also the **+5 MIN** plate in your base), +5 Levels for ALL (99, also
+on it), Lock Now (19), 30-Minute Lock (49, also the **30 MIN** plate in your base; no recharge after it), +5 Levels for ALL (99, also
 the **LEVEL ALL** plate when you have no coins), 5 Speed Potions (29, also the empty potion in the hotbar), Coin
 Bag (49), Coin Chest (299), Daily Deal (25) and the Robux skins. These are bought from the world: +10 Levels (39,
 tap **+10 Levels** on your dragon), Hatch Now (49, tap the egg), Buy Now (199, **Buy with Robux** on Epic and
