@@ -29,6 +29,7 @@ Engine.advance(0.2)
 local function service(name)
 	return Engine.require(tree.server.Services[name])
 end
+local os = Engine.globals.os -- the game's clock
 local Data = service("PlayerDataService")
 local Economy = service("EconomyService")
 local Combat = service("CombatService")
@@ -39,6 +40,12 @@ local Formulas = Engine.require(tree.shared.Formulas)
 local World = Engine.require(tree.server.World.WorldBuilder)
 local MapBuilder = Engine.require(tree.server.World.MapBuilder)
 local layout = World.layout
+-- robots are tested on their own near the end; keep them out of the scripted fights
+local Robots = service("RobotService")
+local robotWanted = Robots.Wanted
+Robots.Wanted = function()
+	return 0
+end
 
 local function join(name, id)
 	local p = Engine.addPlayer(name, id)
@@ -356,6 +363,459 @@ Engine.advance(0.5)
 check("1 player left: the round ends", Round.state ~= "round")
 Engine.advance(Constants.PODIUM_SECONDS + 0.5)
 check("and it waits again", Round.state == "waiting")
+
+-- Progression and the lobby ---------------------------------------------------------------------------------------
+local Quest = service("QuestService")
+local Playtime = service("PlaytimeService")
+local Crate = service("CrateService")
+local Season = service("SeasonService")
+local Trade = service("TradeService")
+local Leaderboard = service("LeaderboardService")
+local Vote = service("VoteService")
+local Duel = service("DuelService")
+local Range = service("RangeService")
+local GameLog = service("GameLogService")
+local Cosmetics = Engine.require(tree.shared.Data.Cosmetics)
+local Rifles = Engine.require(tree.shared.Data.Rifles)
+local gameLogs = {}
+GameLog.send = function(payload)
+	for _, e in payload.events do
+		table.insert(gameLogs, e)
+	end
+	return true
+end
+local function logged(text)
+	for _, e in gameLogs do
+		if tostring(e.title):find(text, 1, true) then
+			return e
+		end
+	end
+	return nil
+end
+do
+	-- levels
+	local xp0 = Formulas.levelFromXp(pa.xp)
+	Economy:AddXp(a, Formulas.xpForLevel(xp0) * 3)
+	check("XP levels you up", Formulas.levelFromXp(pa.xp) > xp0)
+	check(
+		"level up banner",
+		Engine.lastClientEvent("Alert", a)
+			and tostring(Engine.lastClientEvent("Alert", a).args[1]):find("LEVEL", 1, true) ~= nil
+	)
+	check("level shows in the player list", a.leaderstats.Level.Value == Formulas.levelFromXp(pa.xp))
+	-- rifles: locked by level, then bought with coins
+	pa.xp = 0
+	Economy:PushAll(a)
+	pa.coins = 100000
+	check("a rifle above your level is locked", not Loadout:BuyRifle(a, "SWIFT") and not pa.rifles.SWIFT)
+	local xpTo5 = 0
+	for l = 1, 4 do
+		xpTo5 += Formulas.xpForLevel(l)
+	end
+	pa.xp = xpTo5
+	Economy:PushAll(a)
+	check("level 5", Economy:Level(a) == 5)
+	check("buy the Swift at level 5", Loadout:BuyRifle(a, "SWIFT") and pa.rifles.SWIFT and pa.rifle == "SWIFT")
+	check("it costs coins", pa.coins == 100000 - Rifles.byKey.SWIFT.price)
+	check("the Swift is in your hands", a.Character.Rifle:GetAttribute("Rifle") == "SWIFT")
+	check("the Swift fires faster", Loadout:Rifle(a).bolt < Rifles.byKey.BOLT.bolt)
+	check("hold the Bolt again", Loadout:EquipRifle(a, "BOLT") and pa.rifle == "BOLT")
+	check("swapping needs the Extra Loadout pass", not Loadout:SwapRifle(a))
+	Engine.advance(1)
+	Engine.fireServer(a, "Purchase", "pass", "LOADOUT")
+	Engine.advance(0.1)
+	Loadout:EquipRifle(a, "SWIFT")
+	check("with the pass: swap mid-round", Loadout:SwapRifle(a) and pa.rifle == "BOLT" and pa.rifle2 == "SWIFT")
+	-- Style counter: crosshairs and name colours
+	check("buy a crosshair", Loadout:BuyStyle(a, "crosshair", "RING") and pa.crosshair == "RING")
+	check("buy a name colour", Loadout:BuyStyle(a, "nameColor", "PINK") and pa.nameColor == "PINK")
+	check("the feed uses your colour", Loadout:NameColor(a) == Cosmetics.nameColorById.PINK.color)
+	check("can't buy a pop effect on the Style counter", not Loadout:BuyStyle(a, "effect", "FIRE"))
+	check("can't equip what you don't own", not Loadout:EquipStyle(a, "effect", "FIRE"))
+	-- the Daily Shop
+	local shop = Formulas.dailyShop(Formulas.dailyPeriod(os.time()))
+	local coinsS = pa.coins
+	local okBuy = Loadout:BuyShop(a, 1)
+	check("buy from the Daily Shop", okBuy and pa.coins == coinsS - shop[1].price)
+	check("only once a day", not Loadout:BuyShop(a, 1))
+	check("the skin is in your bag", #pa.skins >= 1 and pa.skins[#pa.skins].id == shop[1].id)
+	local effectIndex
+	for i, item in shop do
+		if item.kind == "effect" then
+			effectIndex = i
+		end
+	end
+	check("buy a pop effect from the shop", Loadout:BuyShop(a, effectIndex) and pa.effect == shop[effectIndex].id)
+	-- skins on rifles
+	local uid = pa.skins[1].uid
+	check("put a skin on the Bolt", Loadout:EquipSkin(a, "BOLT", uid) and Loadout:SkinId(a, "BOLT") == pa.skins[1].id)
+	check("the Tool shows the skin", a.Character.Rifle:GetAttribute("Skin") == pa.skins[1].id)
+	check("a skin is on one rifle at a time", Loadout:EquipSkin(a, "SWIFT", uid) and Loadout:SkinId(a, "BOLT") == nil)
+	check("take it off", Loadout:EquipSkin(a, "SWIFT", nil) and Loadout:SkinId(a, "SWIFT") == nil)
+	-- mastery
+	pa.mastery.BOLT = Constants.MASTERY[1] - 1
+	Loadout:AddMasteryPop(a)
+	check("100 pops: Gold Bolt", Loadout:MasteryTier(a, "BOLT") == 1)
+	check("mastery banner", tostring(Engine.lastClientEvent("Alert", a).args[1]):find("Gold", 1, true) ~= nil)
+	-- the loadout view the client gets
+	local view = Loadout:View(a)
+	check(
+		"loadout view",
+		#view.rifles == #Rifles.list and #view.shop == Constants.DAILY_SHOP_SIZE and view.shop[1].bought == true
+	)
+end
+
+-- Quests, gifts, boost
+do
+	pa.quests = nil -- a fresh day of quests (the rounds above already finished today's)
+	local qv = Quest:View(a)
+	check("3 daily quests", #qv.list == 3)
+	local q = pa.quests
+	local qi = 1
+	for i = 1, 3 do
+		if not q.done[i] then
+			qi = i
+			break
+		end
+	end
+	local first = Engine.require(tree.shared.Data.Quests)[q.list[qi]]
+	pa.stats[first.kind] = (q.start[first.kind] or 0) + first.target
+	local before = first.keys and pa.keys or pa.coins
+	Quest:Check(a)
+	check("a finished quest pays", (first.keys and pa.keys or pa.coins) > before and pa.quests.done[qi] == true)
+	check("quest alert", tostring(Engine.lastClientEvent("Alert", a).args[1]):find("QUEST DONE", 1, true) ~= nil)
+	local coinsQ = pa.coins
+	local open
+	for i = 1, 3 do
+		if not pa.quests.done[i] then
+			open = i
+		end
+	end
+	check(
+		"swap a quest for coins",
+		open ~= nil and Quest:Swap(a, open) and pa.coins == coinsQ - Constants.QUEST_REROLL_COINS
+	)
+	check("only one swap a day", not Quest:Swap(a, open or 1))
+	check("can't swap a finished quest", not Quest:Swap(a, qi))
+	local coinsD = pa.coins
+	check("claim the daily gift", Quest:ClaimDaily(a) and pa.coins > coinsD and pa.daily.streak >= 1)
+	check("once a day", not Quest:ClaimDaily(a))
+	-- playtime gifts: the first at 1 minute
+	pa.playtime = { day = Formulas.day(os.time()), seconds = 55, given = 0 }
+	local coinsP = pa.coins
+	Engine.advance(6)
+	check("a playtime gift at 1 minute", pa.playtime.given == 1 and pa.coins > coinsP)
+	check("the next gift is shown", Playtime:View(a).nextText ~= nil)
+	-- the new-player boost doubles coins
+	pa.newBoostLeft = 30
+	local m2 = Economy:CoinMult(a)
+	pa.newBoostLeft = 0
+	check("new-player boost doubles coins", math.abs(m2 / Economy:CoinMult(a) - Constants.NEW_PLAYER_BOOST_MULT) < 1e-6)
+end
+
+-- Purchases
+do
+	local keys0 = pa.keys
+	Engine.advance(1)
+	Engine.fireServer(a, "Purchase", "product", "KEYS_5")
+	Engine.advance(0.1)
+	check("5 crate keys", pa.keys == keys0 + 5)
+	Engine.advance(1)
+	Engine.fireServer(a, "Purchase", "product", "CALLOUT")
+	Engine.advance(0.1)
+	check("round callout ready", pa.callout == true)
+	local m0 = Economy:CoinMult(a)
+	Engine.advance(1)
+	Engine.fireServer(a, "Purchase", "pass", "VIP")
+	Engine.advance(0.1)
+	check("VIP: +20% coins", math.abs(Economy:CoinMult(a) / m0 - Constants.VIP_COIN_MULT) < 1e-6)
+	check("VIP: gold name", Loadout:NameColor(a) == Cosmetics.nameColorById.PINK.color)
+	Loadout:EquipStyle(a, "nameColor", "WHITE")
+	check("VIP gold when you wear white", Loadout:NameColor(a) == Cosmetics.nameColorById.GOLD.color)
+	Engine.advance(1)
+	Engine.fireServer(a, "Purchase", "pass", "COINS2")
+	Engine.advance(0.1)
+	check("2x Coins", math.abs(Economy:CoinMult(a) / m0 - Constants.VIP_COIN_MULT * 2) < 1e-6)
+end
+
+-- Crates
+do
+	pa.coins = 50000
+	local n = #pa.skins
+	local id = Crate:Open(a, "COIN")
+	check("open a Coin Crate", id ~= nil and #pa.skins == n + 1 and pa.coins == 50000 - Constants.COIN_CRATE_PRICE)
+	check("the reveal", Engine.lastClientEvent("Crate", a) and Engine.lastClientEvent("Crate", a).args[1].skin == id)
+	local keys = pa.keys
+	id = Crate:Open(a, "KEY")
+	check("open a Key Crate with a key", id ~= nil and pa.keys == keys - 1)
+	check("Key Crates give Rare or better", Cosmetics.RarityRank[Cosmetics.skinById[id].rarity] >= 2)
+	pa.keys = 0
+	check("no key, no crate", Crate:Open(a, "KEY") == nil)
+	pa.coins = 10
+	check("no coins, no crate", Crate:Open(a, "COIN") == nil)
+	Engine.policy = { IsPaidItemTradingAllowed = false, ArePaidRandomItemsRestricted = true }
+	local kid = join("Kid", 1010)
+	Engine.advance(0.3)
+	Data:Get(kid).keys = 3
+	check("restricted accounts can't open Key Crates", Crate:Open(kid, "KEY") == nil and not Crate:CanPaid(kid))
+	check("restricted accounts can't trade", not Trade:CanTrade(kid))
+	Engine.policy = { IsPaidItemTradingAllowed = true, ArePaidRandomItemsRestricted = false }
+	Engine.removePlayer(kid)
+	Engine.advance(0.2)
+end
+
+-- Season
+do
+	local sv = Season:View(a)
+	check("season view", sv.n ~= nil and sv.tier >= 0 and sv.endsAt > os.time())
+	local need = Constants.SEASON_TIER_XP * 5 - pa.season.xp
+	Economy:AddXp(a, need + 1)
+	check("XP fills the season", Season:View(a).tier >= 5)
+	local coinsT = pa.coins
+	check("claim a free tier", Season:Claim(a, 1, "free") and pa.coins > coinsT)
+	check("once", not Season:Claim(a, 1, "free"))
+	check("pass rewards need the pass", not Season:Claim(a, 1, "pass"))
+	check("can't claim a tier you haven't reached", not Season:Claim(a, 40, "free"))
+	Engine.advance(1)
+	Engine.fireServer(a, "Purchase", "product", "SEASON")
+	Engine.advance(0.1)
+	check("the Season Pass", pa.season.pass == true)
+	check("claim a pass tier", Season:Claim(a, 5, "pass") and next(pa.effects) ~= nil)
+	-- tier 10 gives a season skin
+	Economy:AddXp(a, Constants.SEASON_TIER_XP * 6)
+	local skins = #pa.skins
+	check(
+		"tier 10: a season-only skin",
+		Season:Claim(a, 10, "pass")
+			and #pa.skins == skins + 1
+			and Cosmetics.skinById[pa.skins[#pa.skins].id].source == "season"
+	)
+end
+
+-- The Trade Plaza
+do
+	local b2 = join("Ben", 1002)
+	local pb2 = Data:Get(b2)
+	Engine.advance(0.3)
+	local rec = Loadout:GrantSkin(a, "GOLD", "test")
+	check("list a skin on a stall", Trade:List(a, 1, rec.uid, 10000))
+	check(
+		"the skin leaves your bag",
+		(function()
+			for _, s in pa.skins do
+				if s.uid == rec.uid then
+					return false
+				end
+			end
+			return true
+		end)()
+	)
+	check("the stall sign shows it", layout.stalls[1].lines[1].Text:find("Gold", 1, true) ~= nil)
+	check("one stall per player", not Trade:List(a, 2, pa.skins[1].uid, 500))
+	check("a taken stall", not Trade:List(b2, 1, 0, 500))
+	pb2.coins = 20000
+	local sellerCoins = pa.coins
+	check("buy it", Trade:Buy(b2, 1))
+	check("the buyer pays", pb2.coins == 10000)
+	check("the seller gets it minus 10%", pa.coins == sellerCoins + 9000, pa.coins - sellerCoins)
+	check("the buyer has the skin", pb2.skins[#pb2.skins].id == "GOLD")
+	check("the stall is empty again", Trade.stalls[1] == nil and layout.stalls[1].lines[1].Text == "EMPTY STALL")
+	local prize = Loadout:GrantSkin(a, "P_CROWN", "test")
+	check("prize skins can't be sold", not Trade:List(a, 2, prize.uid, 500))
+	local rec2 = Loadout:GrantSkin(a, "MINT", "test")
+	Trade:List(a, 3, rec2.uid, 500)
+	check("take it back", Trade:Unlist(a, 3) and pa.skins[#pa.skins].id == "MINT")
+	Engine.removePlayer(b2)
+	Engine.advance(0.2)
+end
+
+-- Leaderboards and the daily prize
+do
+	local b3 = join("Ben", 1002)
+	Engine.advance(0.3)
+	pa.stats.pops = 77
+	pa.stats.bestStreak = 9
+	Leaderboard:Write(a)
+	Leaderboard:Refresh()
+	local boards = layout.boards
+	check(
+		"MOST POPS board",
+		boards.pops.rows[1].name.Text ~= "" and boards.pops.rows[1].value.Text ~= "",
+		boards.pops.rows[1].name.Text
+	)
+	check(
+		"BEST STREAK board",
+		boards.streak.rows[1].name.Text == "SnipeKid" or boards.streak.rows[1].name.Text == "Ava"
+	)
+	check("HIGHEST LEVEL board", boards.level.rows[1].value.Text:find("LV", 1, true) ~= nil)
+	check("the prize timer", boards.daily.timer.Text:find("Champion", 1, true) ~= nil)
+	local period = Formulas.dailyPeriod(os.time())
+	pa.dailyPops = { period = period, pops = 500 }
+	Leaderboard:Redraw()
+	local n = #pa.skins
+	Leaderboard:_rollover(period)
+	check("the daily TOP SNIPER gets the Champion skin", #pa.skins == n + 1 and pa.skins[#pa.skins].id == "P_CROWN")
+	check("only once a day", not Leaderboard:GivePrize(a, period))
+	Engine.removePlayer(b3)
+	Engine.advance(0.2)
+end
+
+-- Robots: they fill a quiet round, fight, and leave when it ends
+do
+	Robots.Wanted = robotWanted
+	local b4 = join("Ben", 1002)
+	Engine.advance(0.5)
+	Engine.advance(Constants.LOBBY_SECONDS + 1)
+	check("a round with 2 players", Round.state == "round")
+	check("robots fill up to 4 fighters", #Robots.robots == 2, #Robots.robots)
+	local bot = Robots.robots[1]
+	check(
+		"robots are in the arena",
+		bot.zone == "arena" and Engine.workspace.Robots:FindFirstChild(bot.model.Name) ~= nil
+	)
+	check("robots are on the scoreboard", Round.scores[bot] ~= nil)
+	-- a player pops a robot
+	Robots.paused = true
+	Engine.advance(Constants.SHIELD_SECONDS + 0.2)
+	if a:GetAttribute("Popped") then
+		Combat:Respawn(a, true)
+	end
+	for _, other in Robots.robots do
+		other.model:PivotTo(CFrame.new(Round.map.center + Vector3.new(60, 40, 60)))
+	end
+	local c2 = Round.map.center
+	place(a, c2 + Vector3.new(0, 40, 30), c2 + Vector3.new(0, 40, -30))
+	bot.model:PivotTo(CFrame.new(c2 + Vector3.new(0, 40, -30)))
+	Engine.advance(0.05)
+	local coinsR = pa.coins
+	local robotsBefore = pa.stats.robots
+	local v = shoot(a, bot.root.Position)
+	check("pop a robot", v == bot and bot.popped == true)
+	check(
+		"robots pay a few coins",
+		pa.coins > coinsR and pa.coins - coinsR <= math.ceil(Constants.COINS.robot * Economy:CoinMult(a) * 2)
+	)
+	check("robot pops don't count as pops", pa.stats.robots == robotsBefore + 1)
+	Engine.advance(Constants.RESPAWN_SECONDS + 0.2)
+	check("robots respawn", bot.popped == false)
+	-- robots walk and shoot by themselves
+	Robots.paused = false
+	local start = bot.root.Position
+	Engine.advance(3)
+	check("robots move or fight", (bot.root.Position - start).Magnitude > 0.5 or Engine.lastClientEvent("Shot") ~= nil)
+	-- a robot pops a player
+	Engine.advance(2)
+	Robots.paused = true
+	place(a, c2 + Vector3.new(0, 40, 30), c2 + Vector3.new(0, 40, -30))
+	if a:GetAttribute("Popped") then
+		Engine.advance(Constants.RESPAWN_SECONDS + Constants.SHIELD_SECONDS + 0.5)
+	end
+	a:SetAttribute("ShieldUntil", nil)
+	if bot.popped then
+		Combat:Respawn(bot, true)
+	end
+	bot.model:PivotTo(CFrame.new(c2 + Vector3.new(0, 40, -30)))
+	Combat:RobotFire(bot, a, true)
+	check("a robot can pop you", a:GetAttribute("Popped") == true)
+	local popped = Engine.lastClientEvent("Popped", a)
+	check("the pop screen names the robot", popped and popped.args[1].robot ~= nil)
+	Robots.paused = false
+	-- the round ends: robots go, never on the podium
+	Round.endsAt = Engine.workspace:GetServerTimeNow()
+	Engine.advance(0.5)
+	check(
+		"robots leave after the round",
+		#Robots.robots == 0 and #Engine.workspace.Robots:GetChildren() == #Range.targets
+	)
+	local pod = Engine.lastClientEvent("Podium").args[1]
+	local robotOnPodium = false
+	for _, r in pod do
+		robotOnPodium = robotOnPodium or r.name:find("BOT", 1, true) ~= nil or r.name == "BEEP"
+	end
+	check("robots never stand on the podium", not robotOnPodium)
+	Robots.Wanted = function()
+		return 0
+	end
+	Engine.advance(Constants.PODIUM_SECONDS + 0.5)
+	-- the map vote
+	check("the vote opens in the lobby", Round.state == "lobby" and Vote.open and #Vote.options == 3)
+	check("the vote pads show map names", layout.votePads[1].labels[1].Text ~= "VOTE")
+	local pick = Vote.options[2]
+	place(a, layout.votePads[2].center + Vector3.new(0, 3, 0))
+	Engine.fireServer(b4, "Vote", pick)
+	Engine.advance(0.5)
+	check("standing on a pad votes", Vote.votes[a] == pick)
+	check("votes counted", Vote:Counts()[pick] == 2)
+	Engine.advance(Constants.LOBBY_SECONDS + 1)
+	check("the most votes wins", Round.map and Round.map.key == pick, Round.map and Round.map.key)
+	check("the vote closes", not Vote.open)
+	Round.endsAt = Engine.workspace:GetServerTimeNow()
+	Engine.advance(0.5)
+	Engine.removePlayer(b4)
+	Engine.advance(Constants.PODIUM_SECONDS + 0.5)
+end
+
+-- The range
+do
+	place(a, layout.range.spawn + Vector3.new(0, 3, 0))
+	Engine.advance(0.5)
+	check("walking onto the range: first person zone", a:GetAttribute("Zone") == "range")
+	local t = Range.targets[1]
+	local from = headOf(a)
+	local v = Combat:Fire(a, from, (t.root.Position - from).Unit)
+	check("pop a range target", v == t and t.popped)
+	Engine.advance(2.3)
+	check("targets pop back up fast", not t.popped)
+	local friend = join("Fin", 1020)
+	place(friend, layout.range.spawn + Vector3.new(4, 3, 10))
+	Engine.advance(0.5)
+	Engine.advance(1.3)
+	from = headOf(a)
+	v = Combat:Fire(a, from, (root(friend).Position - from).Unit)
+	check("players on the range can't pop each other", v ~= friend and friend:GetAttribute("Popped") == nil)
+	place(a, layout.spawn.Position + Vector3.new(0, 3, 0))
+	place(friend, layout.spawn.Position + Vector3.new(3, 3, 0))
+	Engine.advance(0.5)
+	check("leaving the range: lobby", a:GetAttribute("Zone") == "lobby")
+	-- a duel: both stand on the pad
+	local pad = layout.duelPad.center
+	local wins = pa.stats.duelWins
+	place(a, pad + Vector3.new(1, 3, 0))
+	place(friend, pad + Vector3.new(-1, 3, 0))
+	Engine.advance(2)
+	check(
+		"two on the DUEL pad: a duel",
+		Duel.duel ~= nil and a:GetAttribute("Zone") == "duel" and friend:GetAttribute("Zone") == "duel"
+	)
+	check("in the duel arena", (root(a).Position - World.DUEL_CENTER).Magnitude < 60)
+	Engine.advance(Constants.SHIELD_SECONDS + 0.2)
+	local dc = World.DUEL_CENTER
+	for i = 1, Constants.DUEL_TO do
+		place(a, dc + Vector3.new(0, 40, 20), dc + Vector3.new(0, 40, -20))
+		place(friend, dc + Vector3.new(0, 40, -20), dc + Vector3.new(0, 40, 20))
+		friend:SetAttribute("ShieldUntil", nil)
+		Engine.advance(Loadout:Rifle(a).bolt + 0.05)
+		shoot(a, root(friend).Position)
+		if i < Constants.DUEL_TO then
+			Engine.advance(Constants.RESPAWN_SECONDS + 0.1)
+		end
+	end
+	Engine.advance(0.2)
+	check("first to 5 wins the duel", Duel.duel == nil and pa.stats.duelWins == wins + 1)
+	check("both back in the lobby", a:GetAttribute("Zone") == "lobby" and friend:GetAttribute("Zone") == "lobby")
+	-- the game log
+	GameLog.flush()
+	check("the log saw joins", logged("joined") ~= nil)
+	check("the log saw the round", logged("Round over") ~= nil)
+	check("the log saw a trade", logged("skin for 10000 coins") ~= nil)
+	check("the log saw the prize", logged("TOP SNIPER prize") ~= nil)
+	local stats = GameLog:SessionStats(a, pa)
+	check("session stats", stats and stats[1].name == "Time played" and #stats >= 10)
+	Engine.removePlayer(friend)
+	Engine.advance(0.3)
+	GameLog.flush()
+	check("the log saw a leave with stats", logged("@Fin left") ~= nil and #logged("@Fin left").fields >= 10)
+end
 
 -- Every map and size builds -------------------------------------------------------------------------------------
 for _, m in Engine.require(tree.shared.Data.Maps).list do

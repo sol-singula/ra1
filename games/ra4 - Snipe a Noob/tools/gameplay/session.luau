@@ -99,6 +99,21 @@ shot("lobby_wide", V3.new(60, 55, 95), V3.new(0, 0, -5), 65)
 shot("lobby_boards", V3.new(-30, 14, -20), V3.new(-72, 10, -30), 70)
 shot("lobby_kiosks", V3.new(30, 12, -10), V3.new(68, 6, 0), 70)
 
+-- 1b. the range: robots targets
+walk(player, layout.range.spawn, layout.range.targets[3])
+Engine.advance(0.5)
+eyes("range", layout.range.targets[3] + V3.new(0, 3, 0))
+-- 1c. the Daily Shop and the crates
+walk(player, layout.spawn.Position, V3.new(0, 0, 0))
+local Panel = Engine.require(tree.client.Controllers.PanelController)
+Panel.open("Shop")
+follow("panel_shop", 20, 9, 14)
+Panel.open("Crates")
+follow("panel_crates", 20, 9, 14)
+Panel.open("Rifles")
+follow("panel_rifles", 20, 9, 14)
+Panel.close()
+
 -- 2. friends join: Ben, Cat and Dan (robots of the test: real server-side players)
 local others = {}
 for i, name in { "Ben", "Cat", "Dan" } do
@@ -110,6 +125,7 @@ for i, name in { "Ben", "Cat", "Dan" } do
 end
 Engine.advance(1)
 follow("lobby_countdown", 20, 9, 14)
+shot("lobby_vote", V3.new(0, 22, 30), V3.new(0, 0, -20), 70)
 Engine.advance(Constants.LOBBY_SECONDS + 0.5)
 
 -- 3. the round: first person
@@ -168,6 +184,23 @@ Round.endsAt = Engine.workspace:GetServerTimeNow() + 0.1
 Engine.advance(0.6)
 shot("podium", V3.new(0, 11, -28), V3.new(0, 6, -52), 70)
 Engine.advance(Constants.PODIUM_SECONDS)
+
+-- 6b. robots fill a quiet round: everyone but Ben leaves
+for i = 2, 3 do
+	Engine.removePlayer(others[i])
+end
+Engine.advance(Constants.LOBBY_SECONDS + 1)
+local Robots = service("RobotService")
+Engine.advance(Constants.SHIELD_SECONDS + 2)
+local bot = Robots.robots[1]
+if bot then
+	local bp = bot.root.Position
+	walk(player, bp + bot.root.CFrame.LookVector * 22, bp)
+	Robots.paused = true
+	Engine.advance(0.1)
+	eyes("robots", bot.root.Position + V3.new(0, 0.5, 0))
+	Robots.paused = false
+end
 
 -- 7. every map from above (medium size)
 for _, m in Maps.list do

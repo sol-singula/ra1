@@ -25,7 +25,7 @@ local gui
 local coinsLabel, keysLabel, levelLabel, levelFill, levelText
 local roundTitle, roundClock, roundCard, myLine, lastMinutePill, boostPill, crownPill
 local scoreFrame, feedFrame, streakLabel, alertLabel, toastHolder
-local menu, playButton, lobbyButton, questDot
+local menu, playButton, lobbyButton, questDot, voteBar, giftPill
 local poppedFrame, poppedTitle, poppedSub, poppedCount, reviveButton
 local podiumBanner
 local round = { state = "waiting", endsAt = 0 }
@@ -380,6 +380,22 @@ local function buildRoundCard()
 		Parent = roundCard,
 	})
 	myLine = pill("Mine", C.white, { AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 84) })
+	giftPill = pill("Gift", C.pink, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 10) })
+	voteBar = new("Frame", {
+		Name = "VoteBar",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 84),
+		Size = UDim2.fromOffset(480, 40),
+		BackgroundTransparency = 1,
+		Visible = false,
+		Parent = gui,
+	})
+	new("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		Padding = UDim.new(0, 6),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		Parent = voteBar,
+	})
 	lastMinutePill = pill("LastMinute", C.orange, {
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 152),
@@ -671,6 +687,15 @@ local function drawRound()
 	end
 	crownPill.Visible = player:GetAttribute("Crown") == true and inRound
 	crownPill.Text = "👑 You lead! Everyone sees your crown"
+	-- the next playtime gift (lobby only; the round has the scoreboard there)
+	local pt = Store.state.playtime
+	giftPill.Visible = pt ~= nil and pt.nextIn ~= nil and not inArena() and not scoreFrame.Visible
+	if giftPill.Visible then
+		giftPill.Text = `🎁 {pt.nextText} in {Format.time(
+			math.max(0, pt.nextIn - (os.clock() - (HudController._ptAt or os.clock())))
+		)}`
+	end
+	voteBar.Visible = state == "lobby" and not inArena() and Store.state.vote ~= nil and Store.state.vote.open == true
 	local boost = Store.state.boostLeft or 0
 	boostPill.Visible = boost > 0 and not inArena()
 	boostPill.Text = "🚀 2X COINS " .. Format.time(boost)
@@ -694,13 +719,32 @@ local function drawProfile(partial)
 		levelFill.Size = UDim2.fromScale(math.clamp((s.xpInto or 0) / need, 0, 1), 1)
 		levelText.Text = `LV {s.level or 1}  ·  {Format.num(s.xpInto or 0)} / {Format.num(need)} XP`
 	end
-	if partial.quests and questDot then
-		local q = s.quests
-		local can = false
-		for _, item in q and q.list or {} do
-			can = can or (item.done and not item.claimed)
+	if (partial.quests or partial.daily) and questDot then
+		questDot.Visible = (s.daily and s.daily.canClaim) == true
+	end
+	if partial.playtime then
+		HudController._ptAt = os.clock()
+	end
+	if partial.vote then
+		for _, c in voteBar:GetChildren() do
+			if c:IsA("TextButton") then
+				c:Destroy()
+			end
 		end
-		questDot.Visible = can or (s.daily and s.daily.canClaim) == true
+		for _, o in s.vote.options or {} do
+			local b = Theme.button({
+				Name = "Vote_" .. o.key,
+				Text = `{o.emoji} {o.name} ({o.votes})`,
+				BackgroundColor3 = C.sky,
+				TextSize = 15,
+				TextScaled = false,
+				Size = UDim2.fromOffset(150, 38),
+				Parent = voteBar,
+			})
+			b.Activated:Connect(function()
+				Net.send("Vote", o.key)
+			end)
+		end
 	end
 end
 

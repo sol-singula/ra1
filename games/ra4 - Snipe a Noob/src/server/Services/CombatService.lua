@@ -173,9 +173,11 @@ end
 -- The first fighter a ray hits in a zone (rewound to `at`), and whether it was a headshot. Walls block.
 function CombatService:Trace(shooter, zoneName, origin, dir, at)
 	local wallDist, wallPos = wallHit(zoneName, origin, dir, Constants.MAX_RANGE)
+	local zone = self.zones[zoneName]
+	local targetsOnly = zone and zone.targetsOnly
 	local best, bestDist, bestHead
 	for _, f in self:Fighters(zoneName) do
-		if f ~= shooter and not self.isPopped(f) then
+		if f ~= shooter and not self.isPopped(f) and (not targetsOnly or f.robot) then
 			local pos = self:PositionAt(f, at)
 			if pos then
 				local d, head = Formulas.hitTarget(origin, dir, pos, wallDist)
@@ -347,7 +349,7 @@ function CombatService:Pop(killer, victim, headshot, how)
 		})
 		Net.fire(victim, "Sfx", "popped")
 	end
-	task.delay(Constants.RESPAWN_SECONDS, function()
+	task.delay(zone and zone.respawnSeconds or Constants.RESPAWN_SECONDS, function()
 		if popToken[victim] == token and self.isPopped(victim) and self.zone(victim) == zoneName then
 			self:Respawn(victim)
 		end

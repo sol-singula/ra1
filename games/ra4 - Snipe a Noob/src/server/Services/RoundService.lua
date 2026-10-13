@@ -26,7 +26,7 @@ local RoundService = {
 	endsAt = 0,
 	scores = {}, -- [fighter] = { pops, deaths, streak, best, headshots }
 	RoundStarted = Signal.new("RoundService.RoundStarted"), -- (map)
-	RoundEnded = Signal.new("RoundService.RoundEnded"), -- (ranking, map)
+	RoundEnded = Signal.new("RoundService.RoundEnded"), -- (ranking, { name, key, size })
 	Scored = Signal.new("RoundService.Scored"), -- (player, info) a player popped someone in a round
 	Joined = Signal.new("RoundService.Joined"), -- (player)
 }
@@ -463,6 +463,7 @@ function RoundService:EndRound()
 	end
 	local ranking = self:Ranking()
 	lastRanking = ranking
+	local mapInfo = self.map and { name = self.map.name, key = self.map.key, size = self.map.size }
 	-- rewards: a round for everyone who played, the win and the podium for the top real players
 	local podium = {}
 	for _, r in ranking do
@@ -538,7 +539,7 @@ function RoundService:EndRound()
 		self.map.model:Destroy()
 		self.map = nil
 	end
-	self.RoundEnded:Fire(ranking)
+	self.RoundEnded:Fire(ranking, mapInfo)
 end
 
 function RoundService:LastRanking()
@@ -670,9 +671,11 @@ function RoundService:OnPlayerReady(player)
 			if not player.Parent then
 				return
 			end
-			local wasArena = combat.zone(player) == "arena"
+			local z = combat.zone(player)
+			local duel = registryRef.DuelService and registryRef.DuelService.duel
 			combat:Release(player)
-			if wasArena and self.state == "round" then
+			local backIn = (z == "arena" and self.state == "round") or (z == "duel" and duel and duel.score[player])
+			if backIn then
 				combat:Respawn(player)
 			else
 				combat.setZone(player, "lobby")

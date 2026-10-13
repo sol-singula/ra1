@@ -298,6 +298,140 @@ serverSends("Announce", "⏰ LAST MINUTE! 2X COINS!", Color3.fromRGB(255, 140, 3
 check("announcement", hud:FindFirstChild("Announce") ~= nil)
 serverSends("Sfx", "pop", Vector3.new(0, 3, 0))
 
+-- Panels --------------------------------------------------------------------------------------------------------------
+local panels = gui:FindFirstChild("Panels")
+check("panels built", panels ~= nil)
+serverSends("Profile", {
+	coins = 50000,
+	keys = 2,
+	level = 6,
+	canPaidRandom = true,
+	canTrade = true,
+	passes = {},
+	loadout = {
+		rifle = "BOLT",
+		rifle2 = nil,
+		rifles = {
+			{ key = "BOLT", owned = true, equipped = true, tier = 1, mastery = 120 },
+			{ key = "SWIFT", owned = false, locked = false, tier = 0, mastery = 0 },
+			{ key = "EAGLE", owned = false, locked = true, tier = 0, mastery = 0 },
+		},
+		skins = { { uid = 5, id = "GOLD" }, { uid = 6, id = "MINT", on = "BOLT" } },
+		effects = { BRICKS = true, CONFETTI = true },
+		effect = "BRICKS",
+		emotes = { WAVE = true },
+		emote = "WAVE",
+		crosshairs = { DOT = true },
+		crosshair = "DOT",
+		nameColors = { WHITE = true },
+		nameColor = "WHITE",
+		shop = {
+			{ kind = "skin", id = "TIGER", price = 2000, bought = false },
+			{ kind = "effect", id = "FIRE", price = 22500, bought = true },
+		},
+		shopEndsAt = os.time() + 3600,
+	},
+	quests = {
+		list = { { text = "Pop 15 players", progress = 4, target = 15, reward = "300 💰", done = false } },
+		canSwap = true,
+		swapCoins = 300,
+	},
+	daily = {
+		canClaim = true,
+		nextDay = 2,
+		gifts = { "200 coins", "300 coins", "1 key", "600 coins", "800 coins", "2 keys", "1500 coins + 2 keys" },
+		secondsToNext = 3600,
+		streak = 1,
+	},
+	season = { n = 3, endsAt = os.time() + 86400, xp = 1300, tier = 2, pass = false, claimed = {} },
+	stalls = { { seller = "Ben", sellerId = 8, skin = "GALAXY", price = 25000 }, false, false },
+	vote = {
+		open = true,
+		options = {
+			{ key = "TOWN", name = "Block Town", emoji = "🏘️", votes = 1 },
+			{ key = "CANDY", name = "Candy Canyon", emoji = "🍭", votes = 0 },
+		},
+	},
+	playtime = { nextIn = 120, nextText = "150 coins", given = 1, total = 9 },
+})
+player:SetAttribute("Zone", "lobby")
+serverSends("Round", { state = "lobby", endsAt = Engine.workspace:GetServerTimeNow() + 10 })
+Engine.advance(0.4)
+check("vote buttons in the lobby", hud.VoteBar.Visible and hud.VoteBar:FindFirstChild("Vote_TOWN") ~= nil)
+click(hud.VoteBar, "Candy Canyon")
+check("vote sends Vote", lastSent("Vote") and lastSent("Vote").args[1] == "CANDY")
+check("next gift pill", hud.Gift.Visible and hud.Gift.Text:find("150 coins", 1, true) ~= nil)
+check("quest dot when the daily gift is ready", hud.Menu.QuestsButton.Dot.Visible == true)
+-- Shop
+click(hud.Menu, "SHOP")
+check("shop panel", panels.Dim.Visible and textIn(panels, "DAILY SHOP") ~= nil)
+check("shop shows today's items", textIn(panels, "Tiger") ~= nil and textIn(panels, "BOUGHT") ~= nil)
+click(panels, "2K")
+check("buy sends BuyShop", lastSent("BuyShop") and lastSent("BuyShop").args[1] == 1)
+-- Rifles
+click(hud.Menu, "RIFLES")
+check("rifles panel", textIn(panels, "RIFLES") ~= nil and textIn(panels, "Bolt") ~= nil)
+check("locked rifles show their level", textIn(panels, "LV 12") ~= nil)
+click(panels, "5K")
+check("buy rifle", lastSent("BuyRifle") and lastSent("BuyRifle").args[1] == "SWIFT")
+click(panels, "SKIN")
+check("skin list", textIn(panels, "Gold") ~= nil)
+click(panels, "Gold")
+check("equip skin", lastSent("EquipSkin") and lastSent("EquipSkin").args[2] == 5)
+-- Style
+click(hud.Menu, "STYLE")
+check("style panel", textIn(panels, "STYLE") ~= nil and textIn(panels, "Confetti") ~= nil)
+click(panels, "USE")
+check("use a pop effect", lastSent("EquipStyle") and lastSent("EquipStyle").args[1] == "effect")
+click(panels, "AIM")
+click(panels, "1K")
+check("buy a crosshair", lastSent("BuyStyle") and lastSent("BuyStyle").args[1] == "crosshair")
+-- Quests
+click(hud.Menu, "QUESTS")
+check("quests panel", textIn(panels, "Pop 15 players") ~= nil and textIn(panels, "4 / 15") ~= nil)
+click(panels, "CLAIM")
+check("claim daily", lastSent("ClaimDaily") ~= nil)
+click(panels, "300")
+check("swap quest", lastSent("RerollQuest") and lastSent("RerollQuest").args[1] == 1)
+-- Crates
+click(hud.Menu, "CRATES")
+check(
+	"crates panel with odds",
+	textIn(panels, "Coin Crate") ~= nil and textIn(panels, "Odds") ~= nil and textIn(panels, "70%") ~= nil
+)
+click(panels, "OPEN")
+check("open crate", lastSent("OpenCrate") ~= nil)
+serverSends("Crate", { crate = "COIN", skin = "LAVA" })
+check("crate reveal", textIn(panels, "Lava") ~= nil and textIn(panels, "EPIC SKIN") ~= nil)
+serverSends("Profile", { canPaidRandom = false })
+click(hud.Menu, "CRATES")
+check("key crate hidden when paid random items are restricted", textIn(panels, "Key Crate") == nil)
+-- Season
+click(hud.Menu, "SEASON")
+check("season panel", textIn(panels, "Season 3") ~= nil and textIn(panels, "Tier 2") ~= nil)
+click(panels, "FREE")
+check("claim season tier", lastSent("ClaimSeason") and lastSent("ClaimSeason").args[2] == "free")
+click(panels, "R$ 399")
+check("buy the season pass", lastSent("Purchase") and lastSent("Purchase").args[2] == "SEASON")
+-- Store
+click(hud.Menu, "STORE")
+check("store panel", textIn(panels, "VIP") ~= nil and textIn(panels, "Crate Keys") ~= nil)
+Engine.advance(2)
+-- Stall
+local Panel = Engine.require(tree.client.Controllers.PanelController)
+Panel.open("Stall", 1)
+check("stall with an offer", textIn(panels, "Galaxy") ~= nil and textIn(panels, "by Ben") ~= nil)
+click(panels, "25K")
+check("buy from a stall", lastSent("BuyStall") and lastSent("BuyStall").args[1] == 1)
+Panel.open("Stall", 2)
+check("empty stall: prices and skins", textIn(panels, "SELL") ~= nil)
+click(panels, "SELL")
+check("list a skin", lastSent("ListStall") and lastSent("ListStall").args[1] == 2)
+-- panels close when you go into a round
+player:SetAttribute("Zone", "arena")
+Engine.advance(0.1)
+check("panels close in a round", panels.Dim.Visible == false)
+
 check("no script errors", #Engine.errors == 0, Engine.errors[1])
 print(`{passed} passed, {failed} failed, {#Engine.errors} script errors, {#Engine.warnings} warnings`)
 if failed > 0 or #Engine.errors > 0 then
