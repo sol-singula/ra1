@@ -28,7 +28,8 @@ local jobId = game.JobId ~= "" and game.JobId or "studio"
 local function defaults()
 	return {
 		schemaVersion = SCHEMA_VERSION,
-		storage = { wood = 0, scrap = 0, parts = 0, cloth = 0 }, -- banked materials (Data/Resources)
+		-- banked materials (Data/Resources); a new player starts with half a bunk's worth, so one stop finishes it
+		storage = { wood = 0, scrap = 2, parts = 0, cloth = 1 },
 		blueprints = {}, -- [planKey] = how many you hold (Data/Resources.BLUEPRINTS)
 		cabin = {
 			built = {}, -- [itemKey] = true (Data/CabinItems)

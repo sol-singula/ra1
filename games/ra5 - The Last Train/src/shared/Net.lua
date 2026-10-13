@@ -14,8 +14,9 @@ Net.ClientEvents = {
 	Salvage = 2, -- turn scrap into a part at your workbench (CabinService)
 	GoCabin = 1, -- quick-travel to your cabin while aboard (ExpeditionService)
 	GoCar = 1, -- (carKey) quick-travel to a car while aboard: "engine" | "crew"
+	Friends = 1, -- ({ { userId, jobId }, ... }) friends online in this game: how is each one's train doing? (JoinService)
 	JoinFriend = 1, -- (userId) join a friend's train (JoinService)
-	FriendAction = 1, -- ("retry" | "cancel" | "new") after "Train Full" (JoinService)
+	FriendAction = 1, -- ("retry" | "cancel" | "new" | "rejoin") after "Train Full", or the rejoin card (JoinService)
 	SkipTutorial = 1,
 	Viewed = 2, -- ("build" | "train" | "friends" | "hall") a board was opened (tutorial, analytics)
 	Feedback = 1, -- (like, text?, reasons?) the "Do you like the game?" card (FeedbackService)
@@ -35,7 +36,9 @@ Net.ServerEvents = {
 	"Nodes", -- { reset = true } | { taken = { nodeId, ... } }: piles this player already took at this stop
 	"Tutorial", -- { step, text, target } or false
 	"Summary", -- the late-join card: { stop, phase, timeLeft, distance, nextMilestone, fuel, cost, goal }
-	"FriendResult", -- { kind = "teleporting" | "full" | "failed" | "here" | "gone", name, tries?, wait? }
+	"FriendResult", -- { kind = "teleporting" | "full" | "waiting" | "failed" | "here" | "gone" | "rejoin", name, ... }
+	"Friends", -- { [userId] = { phase, km, crew, max, code, here } }: friends' trains (JoinService)
+	"Hall", -- { records = { ... }, rule }: the Hall of Records (RecordService)
 	"Recovery", -- { step, found, need, text } while left behind, or false
 	"Fade", -- seconds, text?: a short black fade (teleports, arrivals)
 	"Milestone", -- { km }: the crew passed a milestone

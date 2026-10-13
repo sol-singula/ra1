@@ -87,4 +87,21 @@ Constants.DISLIKE_REASONS = {
 -- Movement
 Constants.WALK_SPEED = 18
 
+-- Admins (by Roblox user id): logged by the anti-cheat but never kicked
+Constants.ADMINS = {
+	[11787294097] = true, -- xthirtysix
+}
+
+-- Anti-cheat (AntiCheatService). Everything that matters is decided on the server already; this is about cheating
+-- with your character (speed, teleporting to piles, flying) and spamming requests.
+Constants.AC_KICK_STRIKES = 12 -- strikes that get you kicked
+Constants.AC_DECAY_SECONDS = 20 -- one strike fades every this many seconds
+Constants.AC_WINDOW = 2 -- movement is judged over this many seconds (smooths out lag)
+Constants.AC_SPEED_SLACK = 1.6 -- allowed speed = walk speed x this ...
+Constants.AC_SPEED_EXTRA = 14 -- ... + this (studs per second)
+Constants.AC_AIR_SECONDS = 3 -- hovering high off the ground this long = flying
+Constants.AC_AIR_HEIGHT = 24 -- studs above the ground that count as "high" (the tallest stairs are lower)
+Constants.AC_SPAM_DROPS = 80 -- dropped (too fast) requests within AC_SPAM_WINDOW seconds = a strike
+Constants.AC_SPAM_WINDOW = 10
+
 return Constants

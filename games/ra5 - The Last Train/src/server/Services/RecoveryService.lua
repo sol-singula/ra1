@@ -81,9 +81,8 @@ function RecoveryService:Strand(player)
 	end
 	Net.fire(player, "Fade", 1.2, "The train left without you...")
 	task.delay(0.6, function()
-		local c = player.Character
-		if c and stranded[player] then
-			c:PivotTo(self:SpawnCf())
+		if stranded[player] then
+			expedition:Teleport(player, self:SpawnCf())
 		end
 	end)
 	if lost > 0 then
@@ -159,12 +158,11 @@ function RecoveryService:Return(player)
 	if profile then
 		profile.stats.recovered += 1
 	end
-	expedition:Note(player, "recovered", 0)
+	expedition:Note(player, "recovered", 1) -- found their way back (crew recognition)
 	Net.fire(player, "Fade", 1.2, "Back on the train!")
 	task.delay(0.6, function()
-		local c = player.Character
-		if c and player.Parent then
-			c:PivotTo(expedition:SpawnCf(player))
+		if player.Parent then
+			expedition:Teleport(player, expedition:SpawnCf(player))
 		end
 	end)
 	self:_push(player)

@@ -487,7 +487,8 @@ end
 function ExpeditionService:_end(reason)
 	exp.reason = reason
 	exp.endedAt = os.time()
-	exp.distance = Formulas.round1(self:Distance())
+	-- only whole trips count (a trip cut short by everyone leaving isn't distance the crew safely reached)
+	exp.distance = Formulas.round1(exp.distance)
 	clearPlaced()
 	exp.stop = nil
 	self:_light("travel")
@@ -506,10 +507,12 @@ function ExpeditionService:_end(reason)
 		if profile and c and Formulas.crewEligible(c.stops, now() - c.joinedAt) then
 			profile.best = math.max(profile.best or 0, exp.distance)
 			profile.stats.expeditions += 1
-			table.insert(profile.records, 1, exp.id)
+			-- your own journeys (the HALL panel lists them)
+			table.insert(profile.records, 1, { id = exp.id, code = exp.code, km = exp.distance, stops = exp.stops, at = os.time() })
 			while #profile.records > 10 do
 				table.remove(profile.records)
 			end
+			data:Push(p, { best = profile.best, records = profile.records })
 		end
 	end
 	self.Ended:Fire(exp)
@@ -615,13 +618,19 @@ function ExpeditionService:InRecovery(player)
 	return recovery ~= nil and recovery:IsStranded(player)
 end
 
+-- Every move the server makes goes through here, so the anti-cheat knows it wasn't the player (AcGrace).
 local function pivot(player, cf)
 	local c = player.Character
 	if c and c:FindFirstChild("HumanoidRootPart") then
+		player:SetAttribute("AcGrace", os.clock() + 2.5)
 		c:PivotTo(cf)
 		return true
 	end
 	return false
+end
+
+function ExpeditionService:Teleport(player, cf)
+	return pivot(player, cf)
 end
 
 -- Where someone belongs right now: their cabin (if they have a bunk, or if `cabinAlways`), else the entry seats.
@@ -707,6 +716,7 @@ function ExpeditionService:OnPlayerReady(player)
 		task.defer(function()
 			local hrp = character:WaitForChild("HumanoidRootPart", 5)
 			if hrp and player.Parent then
+				player:SetAttribute("AcGrace", os.clock() + 3)
 				character:PivotTo(self:SpawnCf(player))
 			end
 		end)

@@ -1208,6 +1208,18 @@ function methods.GetDataStore(_, name)
 		error("Studio access to APIs is not allowed")
 	end
 	return {
+		GetAsync = function(_, key)
+			if Engine.dataStoreFails then
+				error("Studio access to APIs is not allowed")
+			end
+			return deepCopy(data[key])
+		end,
+		SetAsync = function(_, key, value)
+			if Engine.dataStoreFails then
+				error("Studio access to APIs is not allowed")
+			end
+			data[key] = deepCopy(value)
+		end,
 		UpdateAsync = function(_, key, fn)
 			if Engine.dataStoreFails then
 				error("Studio access to APIs is not allowed")
@@ -1283,6 +1295,71 @@ function methods.PromptGamePassPurchase(_, player, id)
 end
 function methods.PromptProductPurchase(_, player, id)
 	table.insert(Engine.prompted, { player = player, kind = "product", id = id })
+end
+-- TeleportService: tests set Engine.friendPlaces[userId] = { placeId, jobId } and Engine.teleportResult (an
+-- Enum.TeleportResult name) to make the next teleport fail; every TeleportAsync call is kept in Engine.teleports
+local TeleportService = service("TeleportService")
+rawset(TeleportService, "_signals", { TeleportInitFailed = newSignal() })
+Engine.friendPlaces = {}
+Engine.teleports = {}
+function methods.GetPlayerPlaceInstanceAsync(_, userId)
+	local place = Engine.friendPlaces[userId]
+	if not place then
+		error("user is not in a game")
+	end
+	return false, "", place[1], place[2]
+end
+function methods.TeleportAsync(_, placeId, players, options)
+	table.insert(Engine.teleports, { placeId = placeId, players = players, options = options })
+	if Engine.teleportResult then
+		local result = Enum.TeleportResult[Engine.teleportResult]
+		task.defer(function()
+			for _, p in players do
+				TeleportService.TeleportInitFailed:Fire(p, result, "mock failure", placeId, options)
+			end
+		end)
+	end
+	return {}
+end
+local reserved = 0
+function methods.ReserveServer()
+	reserved += 1
+	return "access-" .. reserved, "private-" .. reserved
+end
+function methods.SetTeleportData(inst, value)
+	rawset(inst, "_teleportData", value)
+end
+function methods.GetTeleportData(inst)
+	return rawget(inst, "_teleportData")
+end
+_ = TeleportService
+-- MemoryStoreService: sorted maps in memory (Engine.memory[name][key] = value)
+local MemoryStoreService = service("MemoryStoreService")
+Engine.memory = {}
+function methods.GetSortedMap(_, name)
+	Engine.memory[name] = Engine.memory[name] or {}
+	local m = Engine.memory[name]
+	return {
+		GetAsync = function(_, key)
+			return deepCopy(m[key])
+		end,
+		SetAsync = function(_, key, value)
+			m[key] = deepCopy(value)
+			return true
+		end,
+	}
+end
+_ = MemoryStoreService
+local LocalizationService = service("LocalizationService")
+function methods.GetCountryRegionForPlayerAsync()
+	return "US"
+end
+_ = LocalizationService
+service("ScriptContext")
+-- a client's friends online (Player:GetFriendsOnline); tests fill Engine.friendsOnline
+Engine.friendsOnline = {}
+function methods.GetFriendsOnline()
+	return Engine.friendsOnline
 end
 local SocialService = service("SocialService")
 Engine.invites = 0
