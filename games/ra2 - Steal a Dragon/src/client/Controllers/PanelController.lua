@@ -569,6 +569,39 @@ builders.Feedback = function()
 		round = true,
 		Parent = row,
 	})
+	-- after 👎: why? (pick any)
+	local reasons, picked = nil, {}
+	reasons = new("Frame", {
+		Name = "Reasons",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(500, 150),
+		Visible = false,
+		Parent = body,
+	})
+	new("UIGridLayout", {
+		CellSize = UDim2.fromOffset(244, 44),
+		CellPadding = UDim2.fromOffset(10, 6),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = reasons,
+	})
+	for i, r in Constants.DISLIKE_REASONS do
+		local b = Theme.button({
+			Name = "Reason_" .. r[1],
+			Text = r[2],
+			Font = Theme.Body,
+			TextColor3 = C.ink,
+			BackgroundColor3 = C.white,
+			LayoutOrder = i,
+			dark = true,
+			round = true,
+			Parent = reasons,
+		})
+		b.Activated:Connect(function()
+			picked[r[1]] = not picked[r[1]] or nil
+			b.BackgroundColor3 = picked[r[1]] and C.mustard or C.white
+		end)
+	end
 	local box = new("TextBox", {
 		Name = "Idea",
 		Text = "",
@@ -602,6 +635,9 @@ builders.Feedback = function()
 		down.BackgroundColor3 = like and C.white or C.ketchup
 		send.Text = "SEND"
 		send.BackgroundColor3 = C.good
+		reasons.Visible = like == false
+		box.PlaceholderText = like and "What should we add? (you can skip this)"
+			or "What should we fix? (you can skip this)"
 	end
 	up.Activated:Connect(function()
 		pick(true)
@@ -613,7 +649,15 @@ builders.Feedback = function()
 		if choice == nil then
 			return
 		end
-		Net.send("Feedback", choice, box.Text)
+		local why = {}
+		if choice == false then
+			for _, r in Constants.DISLIKE_REASONS do
+				if picked[r[1]] then
+					table.insert(why, r[1])
+				end
+			end
+		end
+		Net.send("Feedback", choice, box.Text, why)
 		PanelController.close()
 	end)
 end

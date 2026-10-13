@@ -337,8 +337,12 @@ serverSends("Ask", { kind = "feedback" })
 Engine.advance(0.1)
 check("feedback card", panels.Dim.Visible and string.find(panels.Dim.Card.Title.Text, "LIKE THE GAME", 1, true) ~= nil)
 local fbBody = panels.Dim.Card.Body
+fbBody.Buttons.Dislike.Activated:Fire()
+Engine.advance(0.05)
+check("👎 shows the reasons", fbBody.Reasons.Visible == true)
 fbBody.Buttons.Like.Activated:Fire()
 Engine.advance(0.05)
+check("👍 hides the reasons", fbBody.Reasons.Visible == false)
 fbBody.Idea.Text = "more dragons"
 click(fbBody, "SEND")
 local fbSent = sent("Feedback")

@@ -31,6 +31,7 @@ local ShopService = {
 	Purchased = Signal.new("ShopService.Purchased"), -- (player, name, robux) a real Robux purchase went through
 	Prompted = Signal.new("ShopService.Prompted"), -- (player, kind "pass"|"product", key) a purchase prompt opened
 	CardShown = Signal.new("ShopService.CardShown"), -- (player, key, why) an offer card popped up
+	MysteryOpened = Signal.new("ShopService.MysteryOpened"), -- (player, rarity, dragonId)
 }
 
 local data, economy, dragons, baseService, road, reward, tools
@@ -128,6 +129,28 @@ function ShopService:Init(registry)
 			end
 		end
 	end
+	-- the Mystery Box in the lobby: holding its button shows the odds card first (Buy / No thanks)
+	local boxPart = WorldBuilder.layout.mysteryBox
+	if boxPart then
+		local p = Instance.new("ProximityPrompt")
+		p.Name = "Prompt_mystery"
+		p.ActionText = "Open (R$ " .. Shop.productByKey.MYSTERY.price .. ")"
+		p.ObjectText = "Mystery Box"
+		p.HoldDuration = 0.4
+		p.MaxActivationDistance = 10
+		p.RequiresLineOfSight = false
+		p.Parent = boxPart
+		p.Triggered:Connect(function(player)
+			self:ShowMystery(player)
+		end)
+	end
+	-- every real Robux purchase counts toward the TOP SPENDERS board
+	self.Purchased:Connect(function(player, _, robux)
+		local profile = data:Get(player)
+		if profile then
+			profile.robuxSpent = (profile.robuxSpent or 0) + (tonumber(robux) or 0)
+		end
+	end)
 	if registry.TutorialService and registry.TutorialService.Finished then
 		registry.TutorialService.Finished:Connect(function(player)
 			self:RefreshPlates(player)
@@ -303,6 +326,54 @@ function ShopService:OfferStarter(player)
 	return false
 end
 
+-- The Mystery Box card: what it is, the odds, and Buy. The player asked for it, so no offer rules apply.
+function ShopService:ShowMystery(player)
+	local product = Shop.productByKey.MYSTERY
+	local odds = {}
+	for _, o in Constants.MYSTERY_ODDS do
+		table.insert(odds, `{o[1]} {o[2]}%`)
+	end
+	Net.fire(player, "Offer", {
+		key = "MYSTERY",
+		title = "🎁 MYSTERY BOX",
+		text = "Always a Legend or better dragon!\n" .. table.concat(odds, " · "),
+		icon = product.icon,
+		price = product.price,
+	})
+	self.CardShown:Fire(player, "MYSTERY", "box")
+end
+
+-- Roll the Mystery Box: a rarity by Constants.MYSTERY_ODDS, then any dragon of that rarity (regular or custom).
+function ShopService:RollMystery(random)
+	random = random or math.random
+	local total = 0
+	for _, o in Constants.MYSTERY_ODDS do
+		total += o[2]
+	end
+	local roll, rarity = random() * total, Constants.MYSTERY_ODDS[1][1]
+	for _, o in Constants.MYSTERY_ODDS do
+		roll -= o[2]
+		if roll < 0 then
+			rarity = o[1]
+			break
+		end
+	end
+	local pool = {}
+	for _, d in Dragons.byRarity[rarity] or {} do
+		table.insert(pool, d.id)
+	end
+	for _, d in Dragons.fancyByRarity[rarity] or {} do
+		table.insert(pool, d.id)
+	end
+	if #pool == 0 and rarity == "Ultra" and Dragons.PRIZE then
+		table.insert(pool, Dragons.PRIZE) -- the Omni Prism (if it isn't in the Ultra list already)
+	end
+	if #pool == 0 then
+		return "Legend", Dragons.byRarity.Legend[1].id
+	end
+	return rarity, pool[math.floor(random() * #pool) + 1] or pool[1]
+end
+
 -- (tests) forget when offers were last shown
 function ShopService:ResetOffers(player)
 	offeredAt[player] = nil
@@ -414,6 +485,19 @@ function ShopService:Grant(player, key, target)
 		)
 	elseif key == "LOCKNOW" then
 		baseService:Lock(player)
+	elseif key == "MYSTERY" then
+		local rarity, id = self:RollMystery()
+		dragons:Grant(player, id)
+		local name = Dragons.byId[id].name
+		Net.fire(player, "Alert", `🎁 MYSTERY BOX: {name}! ({rarity})`, Dragons.RarityColor[rarity])
+		if rarity ~= "Legend" then
+			Net.fireAll(
+				"Announce",
+				`🎁 {player.DisplayName} got a {string.upper(rarity)} {name} from the Mystery Box!`,
+				Dragons.RarityColor[rarity]
+			)
+		end
+		self.MysteryOpened:Fire(player, rarity, id)
 	elseif key == "LOCK30" then
 		baseService:Lock(player, Constants.LOCK_BOOST_SECONDS)
 	elseif key == "STARTER" then

@@ -43,6 +43,7 @@ local function defaults()
 		stats = { bought = 0, locks = 0, bonks = 0, friendPlay = 0, practice = 0 },
 		tutorialDone = false,
 		starterBought = false, -- the one-time Starter Pack
+		robuxSpent = 0, -- Robux spent in the game, all time (the TOP SPENDERS board)
 		feedback = { asks = 0 }, -- the "Do you like the game?" card: { asks, at, like } (FeedbackService)
 		notify = {}, -- Experience Notifications: { on, askedAt, shown, votedNudgeAt } (FeedbackService)
 		passes = {}, -- passes granted in Studio tests or remembered after purchase

@@ -1407,6 +1407,53 @@ check(
 )
 check("analytics: button taps", #eventsOf("ui") >= 1 and eventsOf("ui")[1].data.taps.ShopButton == 3)
 
+-- Mystery Box and TOP SPENDERS ---------------------------------------------------------------------------------
+do
+	local Dragons = Engine.require(tree.shared.Data.Dragons)
+	local seen, n = {}, 0
+	local legendary = true
+	for i = 1, 400 do
+		local r = (i - 0.5) / 400
+		local rarity, id = Shop:RollMystery(function()
+			return r
+		end)
+		seen[rarity] = (seen[rarity] or 0) + 1
+		local d = Dragons.byId[id]
+		if not d or d.rarity ~= rarity or Dragons.RarityRank[rarity] < Dragons.RarityRank.Legend then
+			legendary = false
+		end
+		n += 1
+	end
+	check("mystery box: always Legend or better, the right rarity", legendary)
+	check(
+		"mystery box: odds 85 / 14 / 1",
+		seen.Legend == 340 and seen.Secret == 56 and seen.Ultra == 4,
+		`{seen.Legend} {seen.Secret} {seen.Ultra}`
+	)
+	local boxPrompt = World.mysteryBox and World.mysteryBox:FindFirstChild("Prompt_mystery")
+	check("mystery box: in the lobby with a button", boxPrompt ~= nil)
+	local buyer = Engine.Players:GetPlayers()[1]
+	local bp = Data:Get(buyer)
+	boxPrompt.Triggered:Fire(buyer)
+	Engine.advance(0.1)
+	local card = Engine.lastClientEvent("Offer", buyer)
+	check(
+		"mystery box: the card shows the odds before buying",
+		card and card.args[1].key == "MYSTERY" and string.find(card.args[1].text, "Ultra 1%", 1, true) ~= nil
+	)
+	local before, spentBefore = #bp.dragons, bp.robuxSpent or 0
+	Shop:PromptProduct(buyer, "MYSTERY")
+	Engine.advance(0.5)
+	local got = bp.dragons[#bp.dragons]
+	check(
+		"mystery box: buying gives a Legend or better dragon",
+		#bp.dragons == before + 1 and Dragons.RarityRank[Dragons.byId[got.id].rarity] >= Dragons.RarityRank.Legend
+	)
+	Shop.Purchased:Fire(buyer, "Mystery Box", 99) -- (a real receipt; Studio-style test grants skip it)
+	check("TOP SPENDERS: Robux spent is counted", bp.robuxSpent == spentBefore + 99)
+	check("TOP SPENDERS: a board in the lobby", World.boards.spent ~= nil)
+end
+
 -- Feedback card, vote reminder, notifications ----------------------------------------------------------------
 local Feedback = service("FeedbackService")
 local fp = Data:Get(someone)
@@ -1425,6 +1472,13 @@ check("feedback: the answer is saved", fp.feedback.like == true and fp.feedback.
 check("feedback: thank-you card after a 👍", lastAsk().kind == "thanks" and lastAsk().like == true)
 check("feedback: never asked again once answered", not Feedback:Ask(someone))
 check("feedback: no second answer", not Feedback:Answer(someone, false, "x"))
+do -- 👎 with reasons (a second player)
+	local other = Engine.addPlayer("Grumpy", 7777)
+	Engine.makeCharacter(other)
+	Engine.advance(1)
+	Data:Get(other).feedback = { asks = 0 }
+	Feedback:Answer(other, false, "", { "bonk", "lag", "bonk", "hacker" })
+end
 check("feedback: the 👍 card counts as the vote reminder", not Feedback:NudgeVote(someone))
 fp.notify.votedNudgeAt = Engine.globals.os.time() - Constants.VOTE_NUDGE_EVERY - 1
 check("vote reminder after a while", Feedback:NudgeVote(someone) and lastAsk().kind == "vote")
@@ -1447,6 +1501,16 @@ check(
 		and fbRow.data.robbed ~= nil
 		and fbRow.data.device == "touch",
 	fbRow and Engine.globals.game:GetService("HttpService"):JSONEncode(fbRow.data)
+)
+local dislike
+for _, e in eventsOf("feedback") do
+	if e.data.like == false then
+		dislike = e
+	end
+end
+check(
+	"analytics: 👎 reasons (known ones, once each)",
+	dislike and dislike.data.reasons and #dislike.data.reasons == 2 and dislike.data.reasons[1] == "bonk"
 )
 check(
 	"analytics: notification opt-in logged",

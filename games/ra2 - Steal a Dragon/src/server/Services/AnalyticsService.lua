@@ -522,6 +522,11 @@ function AnalyticsService:Init(registry)
 		end
 		track(player, "purchase_prompt", { kind = kind, key = key })
 	end)
+	if shop.MysteryOpened then
+		shop.MysteryOpened:Connect(function(player, rarity, id)
+			track(player, "mystery_box", { rarity = rarity, id = id })
+		end)
+	end
 	if shop.CardShown then
 		shop.CardShown:Connect(function(player, key, why)
 			track(player, "offer_card", { key = key, why = why })

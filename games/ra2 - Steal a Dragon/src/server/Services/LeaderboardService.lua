@@ -1,8 +1,9 @@
--- The four lobby leaderboards:
+-- The lobby leaderboards (TOP SPENDERS has its own corner, next to the Mystery Box):
 --   TOP COINS            coins each player has right now
 --   TODAY'S TOP EARNERS  coins earned since the last 7pm Eastern; #1 when it resets wins the Ultra prize dragon
 --   BEST DRAGONS         the coins per second of each player's best dragon right now (lose it, lose the spot)
 --   TOP THIEVES          lifetime steals
+--   TOP SPENDERS         Robux spent in the game, all time
 -- Global rows come from OrderedDataStores (read every minute, written every two); on top of those, the players in
 -- this server always show their live numbers, redrawn every couple of seconds. Without DataStores (Studio
 -- without API access) the boards show this server only.
@@ -85,6 +86,17 @@ local BOARDS = {
 		end,
 		sub = "Dragons stolen, all time",
 	},
+	{
+		key = "spent",
+		store = "SAD_LB_Spent_v1",
+		value = function(profile)
+			return profile.robuxSpent or 0
+		end,
+		fmt = function(v)
+			return "R$ " .. Format.commas(v)
+		end,
+		sub = "Robux spent in the game, all time",
+	},
 }
 
 local stores = {} -- [key] = OrderedDataStore or false (the daily store is opened per period)
@@ -96,8 +108,13 @@ local period = 0 -- the daily period the boards are showing
 local liveDaily = {} -- this server's daily rows at the last redraw (to pick a winner without DataStores)
 local topThree = {} -- [boardKey] = { [rank] = userId } at the last redraw, to announce new top-3 players
 local onBoard = {} -- [boardKey] = { [userId] = rank } everyone on the board at the last redraw
-local BOARD_NAMES =
-	{ coins = "TOP COINS", daily = "TODAY'S TOP EARNERS", income = "BEST DRAGONS", steals = "TOP THIEVES" }
+local BOARD_NAMES = {
+	coins = "TOP COINS",
+	daily = "TODAY'S TOP EARNERS",
+	income = "BEST DRAGONS",
+	steals = "TOP THIEVES",
+	spent = "TOP SPENDERS",
+}
 
 local function store(board)
 	if board.daily then
@@ -167,7 +184,7 @@ local function merged(board)
 	end
 	local out = {}
 	for _, r in byId do
-		if r.value > 0 or board.key ~= "daily" then
+		if r.value > 0 or (board.key ~= "daily" and board.key ~= "spent") then
 			table.insert(out, r)
 		end
 	end

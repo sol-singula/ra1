@@ -241,4 +241,18 @@ Constants.NOTIFY_ASK_EVERY = 3 * 86400 -- and at most every 3 days
 Constants.VOTE_NUDGE_AFTER = 1500 -- "Tap 👍 on the game page!" after 25 minutes (or right after a 👍 answer)
 Constants.VOTE_NUDGE_EVERY = 3 * 86400
 
+-- The Mystery Box in the lobby (a Robux product): always a Legend or better dragon. The odds show on the box and
+-- on the buy card (Roblox requires odds for paid random items). Each rarity picks any dragon of it, evenly.
+Constants.MYSTERY_ODDS = { { "Legend", 85 }, { "Secret", 14 }, { "Ultra", 1 } }
+
+-- Why a player tapped 👎 on the feedback card (they can pick more than one)
+Constants.DISLIKE_REASONS = {
+	{ "bonk", "😵 Too much bonking" },
+	{ "robbed", "😡 I got robbed a lot" },
+	{ "lag", "🐢 It's laggy" },
+	{ "popups", "💸 Too many Robux pop-ups" },
+	{ "boring", "😴 Not much to do" },
+	{ "confusing", "🤔 I don't get it" },
+}
+
 return Constants

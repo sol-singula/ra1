@@ -1517,7 +1517,8 @@ function WorldBuilder.build()
 
 	-- Inside the courtyard: planters with trees in the south corners (the north wall is for the leaderboards) and
 	-- flowers along the walls
-	for _, c in { { L.x0 + 6, L.z0 + 6 }, { L.x1 - 6, L.z0 + 6 } } do
+	-- (the south-east corner is the TOP SPENDERS board and the Mystery Box)
+	for _, c in { { L.x0 + 6, L.z0 + 6 } } do
 		Scenery.disc(lobby, "Planter", Vector3.new(c[1], 1.2, c[2]), 7, 1.8, STONE_DARK, Enum.Material.Cobblestone)
 		Scenery.roundTree(lobby, Vector3.new(c[1], 2.1, c[2]), 0.9, rng)
 	end
@@ -1643,7 +1644,7 @@ function WorldBuilder.build()
 		Text = "⏰ Ends in --",
 		TextColor3 = rgb(120, 255, 240),
 	})
-	local prizePos = (boardAt(DAILY_X) * CFrame.new(0, 0, 8)).Position
+	local prizePos = (boardAt(DAILY_X) * CFrame.new(0, 0, -8)).Position -- in front of the board (it faces -Z)
 	Scenery.disc(
 		lobby,
 		"PrizePedestal",
@@ -1674,6 +1675,119 @@ function WorldBuilder.build()
 	DragonBuilder.label(prize, "👑 Omni Prism", Dragons.RarityColor.Ultra, "ULTRA · daily #1 prize")
 	prize:SetAttribute("TurnSpeed", 0.35)
 	prize.Parent = lobby
+	-- The south-east corner, near the spawn: the TOP SPENDERS board (angled toward the courtyard) and the
+	-- Mystery Box beside it, on a round gold-and-purple platform of their own
+	local PURPLE = rgb(150, 90, 240)
+	local cornerCenter = Vector3.new(-127, 0.6, -30)
+	Scenery.disc(
+		lobby,
+		"SpenderPlatform",
+		cornerCenter + Vector3.new(0, 0.25, 0),
+		30,
+		0.5,
+		rgb(232, 180, 70),
+		Enum.Material.Marble
+	)
+	Scenery.disc(
+		lobby,
+		"SpenderCarpet",
+		cornerCenter + Vector3.new(0, 0.55, 0),
+		27,
+		0.1,
+		PURPLE,
+		Enum.Material.Fabric,
+		{
+			CastShadow = false,
+			CanCollide = false,
+		}
+	)
+	local spenderAt = Vector3.new(-120.5, 1.1, -31)
+	boards.spent =
+		leaderboard(lobby, CFrame.lookAt(spenderAt, spenderAt + Vector3.new(-1, 0, 1)), "💎 TOP SPENDERS", PURPLE)
+	local box = Instance.new("Model")
+	box.Name = "MysteryBox"
+	local boxAt = Vector3.new(-135.5, 1.1, -28)
+	Scenery.disc(
+		lobby,
+		"MysteryPedestal",
+		boxAt + Vector3.new(0, 0.6, 0),
+		4.2,
+		1.2,
+		rgb(40, 44, 70),
+		Enum.Material.Marble
+	)
+	Scenery.disc(lobby, "MysteryRing", boxAt + Vector3.new(0, 1.25, 0), 4.6, 0.15, PURPLE, Enum.Material.Neon, {
+		CanCollide = false,
+	})
+	local core = part({
+		Name = "Core",
+		Size = Vector3.new(4, 3.6, 4),
+		CFrame = CFrame.new(boxAt + Vector3.new(0, 3.1, 0)),
+		Color = PURPLE,
+		Material = Enum.Material.SmoothPlastic,
+		Parent = box,
+	})
+	part({
+		Name = "Lid",
+		Size = Vector3.new(4.4, 0.9, 4.4),
+		CFrame = core.CFrame * CFrame.new(0, 2.2, 0),
+		Color = rgb(120, 70, 210),
+		Material = Enum.Material.SmoothPlastic,
+		Parent = box,
+	})
+	-- gold ribbon both ways, and a bow on top
+	for _, r in { Vector3.new(4.5, 4.6, 0.7), Vector3.new(0.7, 4.6, 4.5) } do
+		part({
+			Name = "Ribbon",
+			Size = r,
+			CFrame = core.CFrame * CFrame.new(0, 0.45, 0),
+			Color = rgb(255, 205, 60),
+			Material = Enum.Material.SmoothPlastic,
+			CanCollide = false,
+			Parent = box,
+		})
+	end
+	for _, side in { -1, 1 } do
+		part({
+			Name = "Bow",
+			Size = Vector3.new(1.4, 1, 0.5),
+			CFrame = core.CFrame * CFrame.new(side * 0.75, 3.1, 0) * CFrame.Angles(0, 0, math.rad(side * -25)),
+			Color = rgb(255, 205, 60),
+			CanCollide = false,
+			Parent = box,
+		})
+	end
+	-- a big "?" on all four sides
+	for i = 0, 3 do
+		local gui = Instance.new("SurfaceGui")
+		gui.Name = "Mark" .. i
+		gui.Face = ({ Enum.NormalId.Front, Enum.NormalId.Back, Enum.NormalId.Left, Enum.NormalId.Right })[i + 1]
+		gui.CanvasSize = Vector2.new(200, 180)
+		gui.LightInfluence = 0
+		gui.Parent = core
+		label(gui, {
+			Name = "Q",
+			Size = UDim2.fromScale(1, 1),
+			Text = "?",
+			Font = Enum.Font.LuckiestGuy,
+			TextColor3 = rgb(255, 230, 120),
+		})
+	end
+	local glow = Instance.new("PointLight")
+	glow.Color = PURPLE
+	glow.Range = 12
+	glow.Brightness = 1.5
+	glow.Parent = core
+	box.PrimaryPart = core
+	box:SetAttribute("TurnSpeed", 0.6) -- FxController turns it slowly
+	box.Parent = lobby
+	billboard(core, 15, 4.6, Vector3.new(0, 6.2, 0), {
+		{ text = "🎁 MYSTERY BOX", h = 0.4, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(255, 215, 70) },
+		{ text = "Always a Legend or better!", h = 0.22, y = 0.4 },
+		{ text = "Legend 85% · Secret 14% · Ultra 1%", h = 0.2, y = 0.62, color = rgb(210, 180, 255) },
+		{ text = "R$ 99", h = 0.18, y = 0.82, color = rgb(120, 255, 160) },
+	}, 80)
+
 	-- the FREE dragon stand for new players: right in front of where they spawn, beside the path to the road
 	local freePos = WorldBuilder.FREE_PAD
 	local freePad = part({
@@ -1861,6 +1975,7 @@ function WorldBuilder.build()
 	WorldBuilder.layout = {
 		bases = bases,
 		boards = boards,
+		mysteryBox = core,
 		freePad = freePad,
 		-- (facing the spawn)
 		freeFeet = CFrame.lookAt(WorldBuilder.FREE_PAD + Vector3.new(0, 0.6, 0), Vector3.new(-130, 1.8, 0)),

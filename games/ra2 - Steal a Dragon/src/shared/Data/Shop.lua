@@ -166,6 +166,15 @@ Shop.Products = {
 		hidden = true,
 	},
 	{
+		key = "MYSTERY",
+		name = "Mystery Box",
+		text = "A random Legend or better dragon! Legend 85%, Secret 14%, Ultra 1%.",
+		price = 99,
+		id = 3718312731,
+		icon = "🎁",
+		hidden = true,
+	},
+	{
 		key = "OFFLINE2X",
 		name = "Double It",
 		text = "Double your away coins.",

@@ -1,6 +1,7 @@
 -- Asking players what they think, and staying in touch:
 --   * Feedback card: after FEEDBACK_AFTER seconds of play (tutorial done), "Do you like the game? 👍 / 👎" with an
 --     optional "What should we add?" box. Asked at most FEEDBACK_MAX_ASKS times, never again once answered.
+--     Tapping 👎 shows reason buttons (bonking, robbed, laggy, pop-ups, boring, confusing; pick any).
 --     The answer goes to analytics ("feedback") with how long they played, how often they got bonked or robbed,
 --     and their device, so it ties to the session.
 --   * Vote reminder: players who said 👍 (or played VOTE_NUDGE_AFTER seconds) are reminded to tap 👍 on the game
@@ -75,7 +76,25 @@ function FeedbackService:Ask(player)
 	return true
 end
 
-function FeedbackService:Answer(player, like, text)
+-- Only the known reason keys, each once (from the 👎 buttons).
+local function cleanReasons(reasons)
+	if type(reasons) ~= "table" then
+		return nil
+	end
+	local known, out, seen = {}, {}, {}
+	for _, r in Constants.DISLIKE_REASONS do
+		known[r[1]] = true
+	end
+	for _, r in reasons do
+		if type(r) == "string" and known[r] and not seen[r] then
+			seen[r] = true
+			table.insert(out, r)
+		end
+	end
+	return #out > 0 and out or nil
+end
+
+function FeedbackService:Answer(player, like, text, reasons)
 	local profile = data:Get(player)
 	local fb = profile and profile.feedback
 	if not fb or fb.at or type(like) ~= "boolean" then
@@ -87,6 +106,7 @@ function FeedbackService:Answer(player, like, text)
 	local row = context(player)
 	row.like = like
 	row.text = filtered
+	row.reasons = not like and cleanReasons(reasons) or nil
 	row.text_dropped = text ~= nil and filtered == nil or nil
 	analytics.track(player, "feedback", row)
 	self.Answered:Fire(player, like, filtered)
@@ -159,8 +179,8 @@ end
 function FeedbackService:Init(registry)
 	data = registry.PlayerDataService
 	analytics = registry.AnalyticsService
-	Net.on("Feedback", function(player, like, text)
-		self:Answer(player, like, text)
+	Net.on("Feedback", function(player, like, text, reasons)
+		self:Answer(player, like, text, reasons)
 	end)
 	Net.on("Notify", function(player, what, value)
 		self:_notify(player, what, value)
