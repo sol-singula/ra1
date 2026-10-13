@@ -188,6 +188,21 @@
       // emoji as on the game's 👎 card (Constants.DISLIKE_REASONS)
       reasons: { timer: "😰 Train leaves too fast", lost: "🧭 Got lost / left behind", slow: "🐌 Upgrades take too long", lag: "🐢 Laggy", boring: "😴 Not much to do", confusing: "🤔 Don't get it" },
     },
+    ra7: {
+      name: "Hold the Castle", emoji: "🏰", maxPlayers: 24, analytics: "on",
+      // live: team (dwarf | monster), job, phase, shrine (the one the monsters are after, 1-3), built (pieces this
+      // match), beaten (monsters or dwarves beaten this match), hp, idle
+      teams: { dwarf: "🧔 dwarf", monster: "👹 monster" },
+      phases: { intermission: "between matches", build: "build time", plague: "the plague", fight: "the attack", laststand: "last stand", ended: "match over" },
+      chips: (l, g) => [
+        l.team && `<span class="chip ${l.team === "monster" ? "bad" : ""}">${esc(g.teams[l.team] || l.team)}${l.job ? " · " + esc(l.job) : ""}</span>`,
+        l.phase && `<span class="chip ${l.phase === "laststand" ? "idle" : ""}">${esc(g.phases[l.phase] || l.phase)}</span>`,
+      ],
+      stats: (l) => `<div class="mini">🛠 ${l.built ?? "–"} built · ⚔️ ${l.beaten ?? "–"} beaten</div>
+        <div class="mini">🏰 shrine ${l.shrine ?? "–"} · ❤️ ${l.hp ?? "–"}</div>`,
+      // emoji as on the game's 👎 card (Constants.DISLIKE_REASONS)
+      reasons: { doomed: "😩 Dwarves always lose", weak: "😤 Monsters are too weak", boring: "😴 Build time is boring", lag: "🐢 Laggy", confusing: "🤔 Don't get it", unfair: "😠 Teams feel unfair" },
+    },
   };
   const DEFAULTS = {
     zones: {}, phases: {}, zoneChip: {}, reasons: {}, feedbackStats: [], askedAfter: "", showEarned: false,

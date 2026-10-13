@@ -1,7 +1,8 @@
 # Steal a Dragon: analytics
 
 > **Live dashboard for every game:** [`other/live.html`](../live.html) has a game switcher for Steal a Dragon, Raid a
-> Planet, Snipe a Noob and The Last Train (`?game=ra2` to `?game=ra5`; it remembers the last one and the view key).
+> Planet, Snipe a Noob, The Last Train and Hold the Castle (`?game=ra2` to `?game=ra7`; it remembers the last one
+> and the view key).
 > `live.html` in this folder is the older Steal-a-Dragon-only page. Both read the `roblox-live` edge function, whose
 > source is [`other/analytics/roblox-live.ts`](../analytics/roblox-live.ts).
 
