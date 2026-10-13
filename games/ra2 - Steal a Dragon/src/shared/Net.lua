@@ -40,6 +40,7 @@ Net.ServerEvents = {
 	"Announce", -- text, color: a banner across the top (someone joined, someone took a top-3 spot)
 	"Ask", -- { kind = "feedback" | "thanks" | "vote" | "notify", like? }: FeedbackService cards
 	"Offer", -- { key, title, text, icon, price, target? }: a Robux offer card (Buy / No thanks)
+	"ArenaKO", -- { by = name, respawn = seconds } you got bonked in the Bonk Arena
 	"Swing", -- attacker: play their bonk swing (BonkController)
 	"Sfx", -- soundName, worldPosition?: a sound effect (AudioController); with a position it plays there in 3D
 }

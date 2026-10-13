@@ -31,11 +31,12 @@ local function sorted(services)
 	return order
 end
 
--- Returns the registry (name -> service) and the boot order.
-function Loader.boot(folder)
+-- Returns the registry (name -> service) and the boot order. With `only` (a set of names), just those services
+-- (the Bonk Arena runs a small set).
+function Loader.boot(folder, only)
 	local services, registry = {}, {}
 	for _, child in folder:GetChildren() do
-		if child:IsA("ModuleScript") then
+		if child:IsA("ModuleScript") and (not only or only[child.Name]) then
 			local svc = require(child)
 			services[svc.Name] = svc
 			registry[svc.Name] = svc

@@ -1351,6 +1351,15 @@ function Engine.makeCharacter(player)
 	return character
 end
 
+-- Player:LoadCharacter(): a fresh character (the old one is removed)
+function methods.LoadCharacter(player)
+	local old = player.Character
+	if old then
+		old.Parent = nil
+	end
+	Engine.makeCharacter(player)
+end
+
 function Engine.addPlayer(name, userId, launchData)
 	nextUserId += 1
 	local p = Instance.new("Player")

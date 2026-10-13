@@ -13,9 +13,22 @@ pcall(function()
 	Players.LocalPlayer:WaitForChild("PlayerGui").ScreenOrientation = Enum.ScreenOrientation.LandscapeSensor
 end)
 
+-- In the Bonk Arena only a few controllers run (no bases, dragons or shop there)
+local ARENA_ONLY = {
+	AudioController = true,
+	BonkController = true,
+	ChatController = true,
+	PerformanceController = true,
+	ArenaController = true,
+}
+local inArena = workspace:GetAttribute("Arena") == true
 local controllers = {}
 for _, module in script.Parent.Controllers:GetChildren() do
-	if module:IsA("ModuleScript") then
+	if
+		module:IsA("ModuleScript")
+		and (not inArena or ARENA_ONLY[module.Name])
+		and (inArena or module.Name ~= "ArenaController")
+	then
 		table.insert(controllers, require(module))
 	end
 end

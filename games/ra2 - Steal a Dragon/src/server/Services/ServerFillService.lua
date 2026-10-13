@@ -13,6 +13,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TeleportService = game:GetService("TeleportService")
 
+local Constants = require(ReplicatedStorage.Shared.Constants)
 local Net = require(ReplicatedStorage.Shared.Net)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
 
@@ -154,6 +155,50 @@ function ServerFillService:UsePortal(player, carrying)
 	return true -- (found a busier server and tried)
 end
 
+-- The BONK ARENA portal: to the arena place (30 players) once Constants.ARENA_PLACE_ID is set; until then to a
+-- reserved arena server of this place, filling one up before opening another (the ARENA_MAP map).
+function ServerFillService:UseArena(player, carrying)
+	if (portalAt[player] or -99) > os.clock() - 8 or player:GetAttribute("FillMove") then
+		return false
+	end
+	portalAt[player] = os.clock()
+	if carrying then
+		Net.fire(player, "Toast", "Take your dragon home first, then go to the arena! 🐉", "info")
+		return false
+	end
+	Net.fire(player, "Toast", "⚔️ Off to the Bonk Arena...", "good")
+	player:SetAttribute("FillMove", -1)
+	local ok = pcall(function()
+		local options = Instance.new("TeleportOptions")
+		options:SetTeleportData({ arena = true })
+		if Constants.ARENA_PLACE_ID ~= 0 then
+			TeleportService:TeleportAsync(Constants.ARENA_PLACE_ID, { player }, options)
+			return
+		end
+		local arenas = MemoryStoreService:GetSortedMap(Constants.ARENA_MAP)
+		local code
+		for _, row in arenas:GetRangeAsync(Enum.SortDirection.Ascending, 50) do
+			local v = row.value
+			if type(v) == "table" and v.code and (v.players or 0) + 1 < maxPlayers() then
+				code = v.code
+				break
+			end
+		end
+		if not code then
+			local newCode, serverId = TeleportService:ReserveServer(game.PlaceId)
+			arenas:SetAsync(serverId, { code = newCode, players = 0 }, 3600)
+			code = newCode
+		end
+		options.ReservedServerAccessCode = code
+		TeleportService:TeleportAsync(game.PlaceId, { player }, options)
+	end)
+	if not ok then
+		player:SetAttribute("FillMove", nil)
+		Net.fire(player, "Toast", "The arena portal fizzled. Try again in a moment!", "info")
+	end
+	return ok
+end
+
 -- Send the player to that server. Returns true if the teleport started.
 function ServerFillService:Move(player, target)
 	player:SetAttribute("FillMove", target.n)
@@ -188,6 +233,15 @@ function ServerFillService:Init(registry)
 	local portal = WorldBuilder.layout and WorldBuilder.layout.portal
 	if portal then
 		local dragons = registry.DragonService
+		local arenaPortal = WorldBuilder.layout.arenaPortal
+		pcall(function()
+			arenaPortal.Touched:Connect(function(hit)
+				local player = hit.Parent and Players:GetPlayerFromCharacter(hit.Parent)
+				if player then
+					self:UseArena(player, dragons:Carrying(player) ~= nil)
+				end
+			end)
+		end)
 		pcall(function() -- (no Touched in the test engine)
 			portal.Touched:Connect(function(hit)
 				local player = hit.Parent and Players:GetPlayerFromCharacter(hit.Parent)

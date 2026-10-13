@@ -7,6 +7,14 @@ local Loader = require(script.Parent.Loader)
 local WorldBuilder = require(script.Parent.World.WorldBuilder)
 
 Net.init()
+
+-- The Bonk Arena (its own place, or a reserved arena server of this one) runs its own small game: ArenaMain.
+local ArenaMode = require(script.Parent.ArenaMode)
+if ArenaMode.detect() then
+	require(script.Parent.ArenaMain)()
+	return
+end
+
 WorldBuilder.build()
 
 local registry, order = Loader.boot(script.Parent.Services)

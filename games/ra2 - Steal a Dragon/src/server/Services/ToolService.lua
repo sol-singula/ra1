@@ -478,4 +478,5 @@ function ToolService:AddPotions(player, count)
 	Net.fire(player, "Toast", `🧪 +{count} Speed Potions!`, "good")
 end
 
+ToolService.makeWeapon = bonker -- (the Bonk Arena hands out the same weapons)
 return ToolService

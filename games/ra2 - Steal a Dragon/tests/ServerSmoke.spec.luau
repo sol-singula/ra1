@@ -1573,7 +1573,10 @@ do
 	check("castle skins: the castle's stone parts are known", wall ~= nil and #world.skinParts > 50, #world.skinParts)
 	Shop:Grant(owner, "CASTLE_GOLD")
 	check("castle skin bought and worn", op.castleSkins.GOLD and op.castleSkin == "GOLD")
-	check("castle skin restyles the walls", wall.part.Color ~= wall.color and wall.part.Material == Engine.Enum.Material.Foil)
+	check(
+		"castle skin restyles the walls",
+		wall.part.Color ~= wall.color and wall.part.Material == Engine.Enum.Material.Foil
+	)
 	Shop:Grant(owner, "CASTLE_RAINBOW")
 	check("rainbow castle", op.castleSkin == "RAINBOW" and wall.part.Color ~= wall.color)
 	check("can't wear a skin you don't own", not Skin:Equip(owner, "LAVA"))
@@ -1703,6 +1706,9 @@ do
 	check("fill: server 1 never sends anyone away", Fill:TargetFor(newcomer) == nil)
 	-- the BUSY SERVER PORTAL: to the busiest same-version server with room, never a quieter one
 	check("portal: in the lobby", World.portal ~= nil)
+	check("arena portal: in the lobby", World.arenaPortal ~= nil)
+	check("arena portal: not while carrying a dragon", not Fill:UseArena(newcomer, true))
+	Engine.advance(9)
 	Fill.servers = {
 		{ jobId = "quiet", n = 2, players = 1, max = 8, version = Engine.game.PlaceVersion },
 		{ jobId = "busy", n = 3, players = 6, max = 8, version = Engine.game.PlaceVersion },

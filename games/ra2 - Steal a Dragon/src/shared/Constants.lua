@@ -278,4 +278,15 @@ Constants.ADMIN_VIP_TIMES = {
 -- Dragon Shield (the PROTECT product): this dragon can never be stolen. The price shown on its button:
 Constants.SHIELD_PRICE_SHOWN = 150
 
+-- Bonk Arena: PvP with the weapon you own. Its own place when ARENA_PLACE_ID is set (30 players); until then
+-- reserved servers of this place grouped through the ARENA_MAP MemoryStore map.
+Constants.MAIN_PLACE_ID = 118904155814967
+Constants.ARENA_PLACE_ID = 0
+Constants.ARENA_MAP = "BonkArena_v1"
+Constants.ARENA_MAX = 30 -- players per arena server (a reserved server can only hold the main place's size)
+Constants.ARENA_BONK_COOLDOWN = 0.8 -- faster swings than the main game
+Constants.ARENA_RESPAWN_SECONDS = 1.5 -- bonked: back in after this long
+Constants.ARENA_SPAWN_SAFE = 2.5 -- a shield after respawning, so nobody gets bonked the moment they land
+Constants.ARENA_RADIUS = 70
+
 return Constants

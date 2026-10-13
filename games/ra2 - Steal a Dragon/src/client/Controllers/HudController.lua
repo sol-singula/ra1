@@ -28,7 +28,7 @@ local carryBanner, eventBanner, luckBanner, feverBanner, giftBanner, boostBanner
 local lockButton
 local giftDot
 local castleCard, castleText, castleFill, castleCount
-local holdBanner, holdSub
+local holdBanner
 local gearDot
 local swordToldFor = {} -- [weapon level] = true once we've said the next sword is affordable
 local toastHolder, alertLabel, bonkedLabel
@@ -457,7 +457,7 @@ local function buildCenter()
 	-- standing on your lock pad: a big banner so it's clear the base stays locked the whole time
 	holdBanner = banner("HoldLock", UDim2.fromOffset(520, 64), UDim2.new(0.5, 10, 0, 84), C.red)
 	holdBanner.Text.Text = "🔒 BASE LOCKED while you stand here"
-	holdSub = Theme.text({
+	Theme.text({
 		Name = "Sub",
 		Text = "Nobody can get in · your coins keep piling up (AFK is fine)",
 		TextColor3 = C.white,

@@ -1297,6 +1297,145 @@ function WorldBuilder.setCastleLevel(world, level)
 	world.castleLevel = level
 end
 
+-- A portal: two stone pillars with gold caps, a curved arch, a swirling glass disc ringed with lights, sparkles,
+-- and a sign above the arch. `center` is the ground point, `look` the way it faces. Returns the disc (the part you
+-- walk into) and its sign lines.
+local function portalArch(parent, name, center, look, color, title, sub)
+	local cf = CFrame.lookAt(center, center + look)
+	local STONE_P = rgb(196, 188, 176)
+	local model = Instance.new("Model")
+	model.Name = name
+	model.Parent = parent
+	Scenery.disc(
+		model,
+		"PortalPad",
+		center + Vector3.new(0, 0.12, 0),
+		15,
+		0.24,
+		color:Lerp(rgb(40, 40, 60), 0.35),
+		nil,
+		{
+			CanCollide = false,
+			CastShadow = false,
+		}
+	)
+	for _, side in { -1, 1 } do
+		part({
+			Name = "PortalPillar",
+			Size = Vector3.new(2.6, 12, 2.6),
+			CFrame = cf * CFrame.new(side * 6.4, 6, 0),
+			Color = STONE_P,
+			Material = Enum.Material.Cobblestone,
+			Parent = model,
+		})
+		part({
+			Name = "PillarBase",
+			Size = Vector3.new(3.4, 1, 3.4),
+			CFrame = cf * CFrame.new(side * 6.4, 0.5, 0),
+			Color = rgb(150, 142, 132),
+			Material = Enum.Material.Cobblestone,
+			Parent = model,
+		})
+		part({
+			Name = "PillarCap",
+			Size = Vector3.new(3.2, 0.6, 3.2),
+			CFrame = cf * CFrame.new(side * 6.4, 12.3, 0),
+			Color = rgb(255, 200, 60),
+			Material = Enum.Material.Foil,
+			Parent = model,
+		})
+	end
+	-- the arch: stone blocks along a half circle over the pillars
+	for i = 0, 8 do
+		local a = math.rad(180 - i * 22.5)
+		part({
+			Name = "ArchStone",
+			Size = Vector3.new(2.7, 1.8, 2.6),
+			CFrame = cf
+				* CFrame.new(math.cos(a) * 6.4, 12.6 + math.sin(a) * 4.2, 0)
+				* CFrame.Angles(0, 0, a - math.pi / 2),
+			Color = i == 4 and rgb(255, 200, 60) or STONE_P,
+			Material = i == 4 and Enum.Material.Foil or Enum.Material.Cobblestone,
+			Parent = model,
+		})
+	end
+	local disc = part({
+		Name = "PortalDisc",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.4, 10.6, 10.6),
+		CFrame = cf * CFrame.new(0, 6.6, 0) * CFrame.Angles(0, math.rad(90), 0),
+		Color = color,
+		Material = Enum.Material.Glass,
+		Transparency = 0.3,
+		CanCollide = false,
+		CastShadow = false,
+		Parent = model,
+	})
+	-- a swirl inside: a lighter disc and a bright little middle, a touch in front of the main one
+	part({
+		Name = "PortalSwirl",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.3, 6.6, 6.6),
+		CFrame = cf * CFrame.new(0, 6.6, -0.2) * CFrame.Angles(0, math.rad(90), 0),
+		Color = color:Lerp(rgb(255, 255, 255), 0.4),
+		Material = Enum.Material.Glass,
+		Transparency = 0.35,
+		CanCollide = false,
+		CastShadow = false,
+		Parent = model,
+	})
+	part({
+		Name = "PortalEye",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.3, 2.4, 2.4),
+		CFrame = cf * CFrame.new(0, 6.6, -0.35) * CFrame.Angles(0, math.rad(90), 0),
+		Color = rgb(255, 255, 255),
+		Material = Enum.Material.Neon,
+		Transparency = 0.25,
+		CanCollide = false,
+		CastShadow = false,
+		Parent = model,
+	})
+	-- a ring of little lights around the disc
+	for i = 1, 16 do
+		local a = i / 16 * math.pi * 2
+		part({
+			Name = "PortalLight",
+			Size = Vector3.new(0.55, 0.55, 0.55),
+			CFrame = cf * CFrame.new(math.cos(a) * 5.5, 6.6 + math.sin(a) * 5.5, 0),
+			Color = color:Lerp(rgb(255, 255, 255), 0.45),
+			Material = Enum.Material.Neon,
+			CanCollide = false,
+			CastShadow = false,
+			Parent = model,
+		})
+	end
+	local swirl = Instance.new("ParticleEmitter")
+	swirl.Name = "Swirl"
+	swirl.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	swirl.Color = ColorSequence.new(color:Lerp(rgb(255, 255, 255), 0.5), color)
+	swirl.LightEmission = 0.5
+	swirl.Size = NumberSequence.new(0.5, 0)
+	swirl.Lifetime = NumberRange.new(1, 1.6)
+	swirl.Rate = 14
+	swirl.Speed = NumberRange.new(0.5, 1.5)
+	swirl.RotSpeed = NumberRange.new(90, 180)
+	swirl.SpreadAngle = Vector2.new(180, 180)
+	swirl.Parent = disc
+	local light = Instance.new("PointLight")
+	light.Color = color
+	light.Range = 14
+	light.Brightness = 1
+	light.Parent = disc
+	-- the sign sits above the arch so nothing covers it
+	local _, lines = billboard(disc, 13, 3.2, Vector3.new(0, 12.6, 0), {
+		{ text = title, h = 0.6, y = 0, font = Enum.Font.LuckiestGuy, color = color:Lerp(rgb(255, 255, 255), 0.55) },
+		{ text = sub, h = 0.36, y = 0.64 },
+	}, 140)
+	return disc, lines
+end
+WorldBuilder.portalArch = portalArch
+
 function WorldBuilder.build()
 	-- remove what Studio's Baseplate template puts in a new place (the grey baseplate and its spawn pad)
 	for _, child in workspace:GetChildren() do
@@ -1667,7 +1806,7 @@ function WorldBuilder.build()
 		Scenery.disc(lobby, "Planter", Vector3.new(c[1], 1.2, c[2]), 7, 1.8, STONE_DARK, Enum.Material.Cobblestone)
 		Scenery.roundTree(lobby, Vector3.new(c[1], 2.1, c[2]), 0.9, rng)
 	end
-	for _, f in { { -190, 20 }, { -190, -20 }, { -168, -40 } } do
+	for _, f in { { -186, 33 }, { -186, -33 }, { -168, -40 } } do
 		Scenery.flowers(lobby, Vector3.new(f[1], 0.6, f[2]), 6, rng)
 	end
 	local spawn = Instance.new("SpawnLocation")
@@ -1820,71 +1959,26 @@ function WorldBuilder.build()
 	DragonBuilder.label(prize, "👑 Omni Prism", Dragons.RarityColor.Ultra, "ULTRA · daily #1 prize")
 	prize:SetAttribute("TurnSpeed", 0.35)
 	prize.Parent = lobby
-	-- The BUSY SERVER PORTAL in front of the keep door: walk in and you join a server with more players
-	-- (ServerFillService.UsePortal). Two stone pillars, an arch and a swirling purple disc facing the courtyard.
-	local portalAt = Vector3.new(-197, 0.6, 0)
-	local PORTAL = rgb(170, 90, 255)
-	for _, side in { -1, 1 } do
-		part({
-			Name = "PortalPillar",
-			Size = Vector3.new(2.4, 13, 2.4),
-			CFrame = CFrame.new(portalAt + Vector3.new(0, 6.5, side * 5.6)),
-			Color = rgb(186, 178, 168),
-			Material = Enum.Material.Cobblestone,
-			Parent = lobby,
-		})
-	end
-	part({
-		Name = "PortalArch",
-		Size = Vector3.new(2.8, 2, 14.4),
-		CFrame = CFrame.new(portalAt + Vector3.new(0, 13.5, 0)),
-		Color = rgb(70, 95, 190),
-		Material = Enum.Material.Cobblestone,
-		Parent = lobby,
-	})
-	local swirl = part({
-		Name = "PortalSwirl",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.6, 11, 11),
-		CFrame = CFrame.new(portalAt + Vector3.new(0, 6.4, 0)),
-		Color = PORTAL,
-		Material = Enum.Material.Neon,
-		Transparency = 0.25,
-		CanCollide = false,
-		CastShadow = false,
-		Parent = lobby,
-	})
-	part({
-		Name = "PortalCore",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.7, 6, 6),
-		CFrame = swirl.CFrame,
-		Color = rgb(240, 220, 255),
-		Material = Enum.Material.Neon,
-		Transparency = 0.35,
-		CanCollide = false,
-		CastShadow = false,
-		Parent = lobby,
-	})
-	local sparks = Instance.new("ParticleEmitter")
-	sparks.Name = "PortalSparks"
-	sparks.Color = ColorSequence.new(PORTAL, rgb(255, 255, 255))
-	sparks.LightEmission = 0.8
-	sparks.Size = NumberSequence.new(0.6, 0)
-	sparks.Lifetime = NumberRange.new(0.8, 1.4)
-	sparks.Rate = 18
-	sparks.Speed = NumberRange.new(1, 3)
-	sparks.SpreadAngle = Vector2.new(180, 180)
-	sparks.Parent = swirl
-	local portalLight = Instance.new("PointLight")
-	portalLight.Color = PORTAL
-	portalLight.Range = 16
-	portalLight.Brightness = 1.6
-	portalLight.Parent = swirl
-	billboard(swirl, 16, 3.6, Vector3.new(0, 9.5, 0), {
-		{ text = "🌀 BUSY SERVER PORTAL", h = 0.55, y = 0, font = Enum.Font.LuckiestGuy, color = rgb(220, 180, 255) },
-		{ text = "Walk in to join a server with more players!", h = 0.45, y = 0.55 },
-	}, 120)
+	-- Two portals in front of the keep, either side of its door (ServerFillService): the BUSY SERVER PORTAL (a
+	-- server with more players) and the BONK ARENA (a PvP server)
+	local swirl = portalArch(
+		lobby,
+		"BusyPortal",
+		Vector3.new(-196, 0.6, -15),
+		Vector3.xAxis,
+		rgb(170, 90, 255),
+		"🌀 BUSY SERVER",
+		"More players!"
+	)
+	local arenaPortal = portalArch(
+		lobby,
+		"ArenaPortal",
+		Vector3.new(-196, 0.6, 15),
+		Vector3.xAxis,
+		rgb(255, 80, 60),
+		"⚔️ BONK ARENA",
+		"PvP battles!"
+	)
 
 	-- The south-east corner, near the spawn: the TOP SPENDERS board (angled toward the courtyard) and the
 	-- Mystery Box beside it, on a round gold-and-purple platform of their own
@@ -2188,6 +2282,7 @@ function WorldBuilder.build()
 		boards = boards,
 		mysteryBox = core,
 		portal = swirl,
+		arenaPortal = arenaPortal,
 		freePad = freePad,
 		-- (facing the spawn)
 		freeFeet = CFrame.lookAt(WorldBuilder.FREE_PAD + Vector3.new(0, 0.6, 0), Vector3.new(-130, 1.8, 0)),
@@ -2198,6 +2293,165 @@ function WorldBuilder.build()
 		spawn = spawn,
 		roadZ = 0,
 		roadY = 0.5,
+	}
+	return WorldBuilder.layout
+end
+
+-- The Bonk Arena (its own server; ArenaMain): a round colosseum with stone walls and towers, pillars and crates
+-- for cover, a raised middle, spawn pads around the edge, the TOP BONKERS board and a portal back to the game.
+function WorldBuilder.buildArena()
+	for _, child in workspace:GetChildren() do
+		if child.Name == "Baseplate" or (child:IsA("SpawnLocation") and child.Name == "SpawnLocation") then
+			child:Destroy()
+		end
+	end
+	lighting()
+	local map = folder("Map", workspace)
+	local arena = Instance.new("Model")
+	arena.Name = "Arena"
+	arena.Parent = map
+	local R = Constants.ARENA_RADIUS
+	local rng = Random.new(7)
+	-- the ground outside, and the sandy arena floor with a red ring
+	part({
+		Name = "Ground",
+		Size = Vector3.new(R * 4, 1, R * 4),
+		CFrame = CFrame.new(0, -0.5, 0),
+		Color = rgb(96, 176, 82),
+		Material = Enum.Material.Grass,
+		Parent = arena,
+	})
+	Scenery.disc(arena, "ArenaFloor", Vector3.new(0, 0.3, 0), R * 2, 0.6, rgb(222, 198, 150), Enum.Material.Sand)
+	Scenery.disc(arena, "ArenaRing", Vector3.new(0, 0.62, 0), R * 1.3, 0.06, rgb(200, 70, 60), nil, {
+		CanCollide = false,
+		CastShadow = false,
+	})
+	Scenery.disc(arena, "ArenaInner", Vector3.new(0, 0.66, 0), R * 1.24, 0.06, rgb(228, 206, 160), Enum.Material.Sand, {
+		CanCollide = false,
+		CastShadow = false,
+	})
+	-- the wall: 32 stone segments in a ring, a red band, and four towers
+	local SEG = 32
+	for i = 1, SEG do
+		local a = i / SEG * math.pi * 2
+		local p = Vector3.new(math.cos(a) * (R + 1), 0, math.sin(a) * (R + 1))
+		local cf = CFrame.lookAt(p, Vector3.new(0, 0, 0))
+		local len = 2 * math.pi * (R + 1) / SEG + 0.6
+		part({
+			Name = "ArenaWall",
+			Size = Vector3.new(len, 12, 2.4),
+			CFrame = cf * CFrame.new(0, 6, 0),
+			Color = STONE,
+			Material = Enum.Material.Cobblestone,
+			Parent = arena,
+		})
+		part({
+			Name = "WallBand",
+			Size = Vector3.new(len, 1.2, 2.6),
+			CFrame = cf * CFrame.new(0, 10, 0),
+			Color = rgb(200, 60, 55),
+			CastShadow = false,
+			Parent = arena,
+		})
+		if i % 2 == 0 then
+			part({
+				Name = "WallMerlon",
+				Size = Vector3.new(2.4, 1.6, 2.6),
+				CFrame = cf * CFrame.new(0, 12.8, 0),
+				Color = STONE,
+				Material = Enum.Material.Cobblestone,
+				Parent = arena,
+			})
+		end
+	end
+	for i = 1, 4 do
+		local a = (i + 0.5) / 4 * math.pi * 2
+		Scenery.tower(
+			arena,
+			Vector3.new(math.cos(a) * (R + 2), 0, math.sin(a) * (R + 2)),
+			8,
+			22,
+			STONE,
+			rgb(200, 60, 55),
+			rgb(255, 205, 60)
+		)
+	end
+	-- a raised round middle with two ramps
+	Scenery.disc(arena, "Mound", Vector3.new(0, 1.6, 0), 26, 2.6, rgb(200, 180, 140), Enum.Material.Sandstone)
+	for _, side in { -1, 1 } do
+		part({
+			Name = "Ramp",
+			Size = Vector3.new(8, 1, 12),
+			CFrame = CFrame.new(side * 17, 1.3, 0) * CFrame.Angles(0, 0, math.rad(side * 13)),
+			Color = rgb(200, 180, 140),
+			Material = Enum.Material.Sandstone,
+			Parent = arena,
+		})
+	end
+	-- cover: a ring of pillars and some crates
+	for i = 1, 8 do
+		local a = i / 8 * math.pi * 2 + 0.2
+		local p = Vector3.new(math.cos(a) * 36, 0, math.sin(a) * 36)
+		part({
+			Name = "Pillar",
+			Size = Vector3.new(4, 14, 4),
+			CFrame = CFrame.new(p + Vector3.new(0, 7, 0)),
+			Color = STONE_DARK,
+			Material = Enum.Material.Cobblestone,
+			Parent = arena,
+		})
+		part({
+			Name = "PillarCap",
+			Size = Vector3.new(5, 1, 5),
+			CFrame = CFrame.new(p + Vector3.new(0, 14.5, 0)),
+			Color = rgb(255, 200, 60),
+			Material = Enum.Material.Foil,
+			Parent = arena,
+		})
+	end
+	for _ = 1, 10 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local r = rng:NextNumber(20, R - 14)
+		local size = rng:NextNumber(3.5, 5.5)
+		part({
+			Name = "Crate",
+			Size = Vector3.new(size, size, size),
+			CFrame = CFrame.new(math.cos(a) * r, size / 2 + 0.6, math.sin(a) * r)
+				* CFrame.Angles(0, rng:NextNumber(0, 1.5), 0),
+			Color = rgb(150, 105, 60),
+			Material = Enum.Material.WoodPlanks,
+			Parent = arena,
+		})
+	end
+	-- spawn pads around the edge, facing the middle
+	local spawns = {}
+	for i = 1, 12 do
+		local a = i / 12 * math.pi * 2
+		local p = Vector3.new(math.cos(a) * (R - 8), 0.7, math.sin(a) * (R - 8))
+		Scenery.disc(arena, "SpawnPad", p + Vector3.new(0, 0.05, 0), 6, 0.1, rgb(120, 200, 255), Enum.Material.Neon, {
+			CanCollide = false,
+			CastShadow = false,
+			Transparency = 0.3,
+		})
+		table.insert(spawns, CFrame.lookAt(p + Vector3.new(0, 3, 0), Vector3.new(0, 3, 0)))
+	end
+	-- the TOP BONKERS board on the north wall, and the portal back to the game on the south side
+	local boardAt = Vector3.new(0, 0.6, R - 4)
+	local board =
+		leaderboard(arena, CFrame.lookAt(boardAt, boardAt - Vector3.zAxis), "⚔️ TOP BONKERS", rgb(255, 90, 70))
+	local back = portalArch(
+		arena,
+		"BackPortal",
+		Vector3.new(0, 0.6, -(R - 9)),
+		Vector3.zAxis,
+		rgb(120, 220, 120),
+		"🏰 BACK TO GAME",
+		"To your castle"
+	)
+	WorldBuilder.layout = {
+		arena = { spawns = spawns, board = board, backPortal = back, radius = R },
+		bases = {},
+		boards = {},
 	}
 	return WorldBuilder.layout
 end
