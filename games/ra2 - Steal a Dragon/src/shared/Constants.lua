@@ -112,7 +112,7 @@ Constants.GAME_LOG_FLUSH_SECONDS = 5 -- events and chat go out together this oft
 Constants.ANALYTICS_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-analytics"
 Constants.ANALYTICS_GAME = "ra2"
 Constants.ANALYTICS_FLUSH_SECONDS = 10
-Constants.ANALYTICS_SNAPSHOT_SECONDS = 60 -- a progress snapshot of every player this often
+Constants.ANALYTICS_SNAPSHOT_SECONDS = 30 -- a progress snapshot of every player this often (and the live dashboard)
 Constants.ANALYTICS_IDLE_SECONDS = 45 -- no moving and no input for this long counts as idle
 -- Audio. Sound effects are our own uploads (files in other/ra2/audio/); the music is Roblox's licensed APM
 -- library, free to use in any experience.

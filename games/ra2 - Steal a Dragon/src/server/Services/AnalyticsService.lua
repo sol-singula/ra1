@@ -47,10 +47,11 @@ local AnalyticsService = {
 		"LeaderboardService",
 		"NpcService",
 		"ToolService",
+		"ServerFillService",
 	},
 }
 
-local data, baseService, dragons, tutorial
+local data, baseService, dragons, tutorial, fill
 local sessions = {} -- [player] = session
 local queue = { sessions = {}, events = {} }
 local secret -- the key from the Secrets Store, or false if there isn't one
@@ -288,6 +289,9 @@ local function begin(player)
 	sessions[player] = s
 	upsertSession(s, {
 		started_at = iso(s.startedAt),
+		username = player.Name,
+		display_name = player.DisplayName,
+		server_no = fill and fill.number or nil,
 		account_age_days = player.AccountAge,
 		premium = player.MembershipType == Enum.MembershipType.Premium,
 		locale = player.LocaleId,
@@ -313,6 +317,7 @@ function AnalyticsService:Init(registry)
 	baseService = registry.BaseService
 	dragons = registry.DragonService
 	tutorial = registry.TutorialService
+	fill = registry.ServerFillService
 	local shop = registry.ShopService
 	local combat = registry.CombatService
 
@@ -589,6 +594,8 @@ function AnalyticsService:_snapshot(player)
 		snap.ping_ms = math.floor(player:GetNetworkPing() * 1000)
 	end)
 	track(player, "snapshot", snap)
+	-- the live row (the team's live dashboard reads it; a refresh every snapshot keeps the session "on")
+	upsertSession(s, { live = snap, server_no = fill and fill.number or nil })
 end
 
 function AnalyticsService:Start()
@@ -629,6 +636,11 @@ function AnalyticsService:OnPlayerReady(player, profile)
 		start = s.start,
 	})
 	track(player, "loaded", { seconds = math.floor((now() - s.t0) * 10) / 10, new = profile._isNew == true })
+	task.delay(3, function()
+		if sessions[player] == s then
+			self:_snapshot(player) -- on the live dashboard right away
+		end
+	end)
 	task.spawn(function()
 		local n = friendsInServer(player)
 		if sessions[player] == s then

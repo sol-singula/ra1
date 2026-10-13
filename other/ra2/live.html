@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Steal a Dragon Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f5f9; --panel: #ffffff; --panel-2: #f8f9fc; --line: #e4e7ef; --text: #161a26; --muted: #6b7286;
+    --accent: #7c3aed; --accent-soft: #efe7ff; --good: #10b981; --good-soft: #dcfaf0; --warn: #f59e0b;
+    --warn-soft: #fff3d6; --bad: #e11d48; --bad-soft: #ffe1e8; --blue: #2563eb; --blue-soft: #e3ecff;
+    --shadow: 0 1px 2px rgba(20, 24, 40, .06), 0 6px 20px rgba(20, 24, 40, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1018; --panel: #161925; --panel-2: #1b1f2e; --line: #262b3d; --text: #eef0f7; --muted: #9097ad;
+      --accent: #a78bfa; --accent-soft: #2a2145; --good: #34d399; --good-soft: #10302a; --warn: #fbbf24;
+      --warn-soft: #3a2d10; --bad: #fb7185; --bad-soft: #3b1621; --blue: #60a5fa; --blue-soft: #15233f;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1018; --panel: #161925; --panel-2: #1b1f2e; --line: #262b3d; --text: #eef0f7; --muted: #9097ad;
+    --accent: #a78bfa; --accent-soft: #2a2145; --good: #34d399; --good-soft: #10302a; --warn: #fbbf24;
+    --warn-soft: #3a2d10; --bad: #fb7185; --bad-soft: #3b1621; --blue: #60a5fa; --blue-soft: #15233f;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 Inter, system-ui, sans-serif; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 24px 16px 60px; }
+  header { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+  header h1 { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -.02em; }
+  .live { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--muted);
+    background: var(--panel); border: 1px solid var(--line); padding: 5px 10px; border-radius: 999px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 0 var(--good);
+    animation: pulse 2s infinite; }
+  .dot.off { background: var(--bad); animation: none; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.5);} 70% { box-shadow: 0 0 0 8px rgba(16,185,129,0);} 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0);} }
+  .spacer { flex: 1; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--text); padding: 6px 12px;
+    border-radius: 8px; cursor: pointer; font-weight: 600; }
+  button:hover { border-color: var(--accent); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .stat .k { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .stat .v { font-size: 26px; font-weight: 800; margin-top: 4px; letter-spacing: -.02em; }
+  .stat .s { font-size: 12px; color: var(--muted); }
+  h2 { font-size: 15px; font-weight: 700; margin: 26px 0 12px; display: flex; align-items: center; gap: 8px; }
+  h2 .count { color: var(--muted); font-weight: 600; }
+  .servers { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; }
+  @media (max-width: 440px) { .servers { grid-template-columns: 1fr; } }
+  .server { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+  .server-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px; }
+  .server-head .name { font-weight: 800; font-size: 16px; }
+  .chip { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
+  .chip.new { background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .chip.idle { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .chip.vip { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .chip.friend { background: var(--blue-soft); color: var(--blue); border-color: transparent; }
+  .fill { margin: 0 16px 12px; height: 8px; background: var(--panel-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }
+  .fill > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--blue)); border-radius: 999px; transition: width .4s; }
+  .players { border-top: 1px solid var(--line); }
+  .p { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+  .p:last-child { border-bottom: 0; }
+  .avatar { width: 44px; height: 44px; border-radius: 12px; background: var(--panel-2); object-fit: cover; border: 1px solid var(--line); }
+  .who { min-width: 0; }
+  .who .dn { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .who .un { color: var(--muted); font-size: 12px; }
+  .who .chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .right { text-align: right; }
+  .time { font-weight: 800; font-variant-numeric: tabular-nums; }
+  .mini { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .empty { background: var(--panel); border: 1px dashed var(--line); border-radius: 16px; padding: 30px; text-align: center; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+  th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; background: var(--panel-2); }
+  tr:last-child td { border-bottom: 0; }
+  td .avatar { width: 28px; height: 28px; border-radius: 8px; vertical-align: middle; margin-right: 8px; }
+  .scroll { overflow-x: auto; }
+  .key { max-width: 420px; margin: 80px auto; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; box-shadow: var(--shadow); }
+  .key input { width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); margin: 12px 0; }
+  .err { color: var(--bad); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+  const ENDPOINT = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-live";
+  const GAME = "ra2";
+  const MAX_PLAYERS = 8;
+  const REFRESH_MS = 10000;
+  const app = document.getElementById("app");
+  let state = null, lastOk = 0, error = null;
+
+  function getKey() {
+    const fromUrl = new URLSearchParams(location.search).get("key");
+    if (fromUrl) { try { localStorage.setItem("liveKey", fromUrl); } catch (e) {} return fromUrl; }
+    try { return localStorage.getItem("liveKey") || ""; } catch (e) { return ""; }
+  }
+  let KEY = getKey();
+
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const num = (n) => n == null ? "–" : n >= 1e12 ? (n / 1e12).toFixed(1) + "T" : n >= 1e9 ? (n / 1e9).toFixed(1) + "B" : n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
+  const dur = (sec) => { sec = Math.max(0, Math.floor(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60; return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}:${String(s).padStart(2, "0")}`; };
+  const flag = (cc) => cc && cc.length === 2 ? String.fromCodePoint(...[...cc.toUpperCase()].map((c) => 127397 + c.charCodeAt(0))) : "";
+  const deviceIcon = (d) => ({ touch: "📱", keyboard: "💻", gamepad: "🎮", vr: "🥽" }[d] || "❔");
+  const zoneName = (z) => ({ own_base: "at home", other_base: "in a base", road: "on the road", open: "outside" }[z] || "");
+  const ago = (iso) => (Date.now() - new Date(iso).getTime()) / 1000;
+  const avatar = (url) => url ? `<img class="avatar" src="${esc(url)}" alt="" loading="lazy">` : `<div class="avatar"></div>`;
+
+  function keyScreen(msg) {
+    app.innerHTML = `<div class="key"><h1 style="margin:0;font-size:20px">Steal a Dragon Live</h1>
+      <p style="color:var(--muted);margin:6px 0 0">Paste the view key to see who's playing.</p>
+      ${msg ? `<p class="err">${esc(msg)}</p>` : ""}
+      <input id="k" placeholder="live_..." autofocus><button id="go">Open</button></div>`;
+    const go = () => { KEY = document.getElementById("k").value.trim(); try { localStorage.setItem("liveKey", KEY); } catch (e) {} load(); };
+    document.getElementById("go").onclick = go;
+    document.getElementById("k").onkeydown = (e) => { if (e.key === "Enter") go(); };
+  }
+
+  async function load() {
+    if (!KEY) return keyScreen();
+    try {
+      const res = await fetch(`${ENDPOINT}?game=${GAME}`, { headers: { "X-View-Key": KEY } });
+      if (res.status === 401) { try { localStorage.removeItem("liveKey"); } catch (e) {} KEY = ""; return keyScreen("That key didn't work."); }
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      state = await res.json(); lastOk = Date.now(); error = null;
+    } catch (e) { error = e.message; }
+    render();
+  }
+
+  function playerRow(p) {
+    const l = p.live || {};
+    const chips = [];
+    if (p.is_new) chips.push(`<span class="chip new">NEW</span>`);
+    else if (p.session_no) chips.push(`<span class="chip">visit #${p.session_no}</span>`);
+    if (l.idle) chips.push(`<span class="chip idle">idle</span>`);
+    if (p.premium) chips.push(`<span class="chip vip">Premium</span>`);
+    if (p.friends_in_server > 0) chips.push(`<span class="chip friend">${p.friends_in_server} friend${p.friends_in_server > 1 ? "s" : ""}</span>`);
+    if (l.carrying) chips.push(`<span class="chip">carrying</span>`);
+    if (l.zone) chips.push(`<span class="chip">${zoneName(l.zone)}</span>`);
+    const gained = l.coins != null && p.start_coins != null ? l.coins - p.start_coins : null;
+    return `<div class="p">${avatar(p.headshot)}
+      <div class="who"><div class="dn">${esc(p.display_name || p.username || p.user_id)} <span title="${esc(p.device)}">${deviceIcon(p.device)}</span> ${flag(p.country)}</div>
+        <div class="un">@${esc(p.username || p.user_id)}${p.join_source && p.join_source !== "direct" ? " · " + esc(p.join_source) : ""}</div>
+        <div class="chips">${chips.join("")}</div></div>
+      <div class="right"><div class="time" data-since="${esc(p.started_at)}">${dur(ago(p.started_at))}</div>
+        <div class="mini">🪙 ${num(l.coins)}${gained != null && gained > 0 ? ` <span style="color:var(--good)">+${num(gained)}</span>` : ""}</div>
+        <div class="mini">${num(l.income)}/s · 🐉 ${l.dragons ?? "–"} · 🏰 ${l.castle ?? "–"}</div></div></div>`;
+  }
+
+  function render() {
+    if (!state) { app.innerHTML = `<div class="empty">Loading…${error ? `<br><span class="err">${esc(error)}</span>` : ""}</div>`; return; }
+    const servers = state.servers || [];
+    const online = servers.reduce((a, s) => a + s.players.length, 0);
+    const t = state.today || {};
+    const stale = Date.now() - lastOk > REFRESH_MS * 3;
+    app.innerHTML = `
+      <header><h1>🐉 Steal a Dragon Live</h1>
+        <span class="live"><span class="dot ${stale || error ? "off" : ""}"></span>${stale || error ? "Reconnecting…" : "Live · updates every 10 s"}</span>
+        <span class="spacer"></span><button id="refresh">Refresh</button></header>
+      <div class="stats">
+        <div class="stat"><div class="k">Online now</div><div class="v">${online}</div><div class="s">players</div></div>
+        <div class="stat"><div class="k">Servers</div><div class="v">${servers.length}</div><div class="s">open</div></div>
+        <div class="stat"><div class="k">Last 24 h</div><div class="v">${t.players ?? "–"}</div><div class="s">players · ${t.sessions ?? "–"} sessions</div></div>
+        <div class="stat"><div class="k">New players</div><div class="v">${t.new_players ?? "–"}</div><div class="s">in the last 24 h</div></div>
+        <div class="stat"><div class="k">Avg session</div><div class="v">${t.avg_minutes != null ? t.avg_minutes + "m" : "–"}</div><div class="s">last 24 h</div></div>
+      </div>
+      <h2>Servers <span class="count">${servers.length}</span></h2>
+      ${servers.length ? `<div class="servers">${servers.map((s) => `
+        <div class="server"><div class="server-head"><span class="name">${s.server_no != null ? "Server " + s.server_no : "Server ?"}</span>
+          <span class="chip">${s.players.length} / ${MAX_PLAYERS}</span>${s.version ? `<span class="chip">v${s.version}</span>` : ""}
+          <span class="spacer"></span><span class="mini" title="${esc(s.job_id)}">${esc(String(s.job_id).slice(0, 8))}</span></div>
+          <div class="fill"><div style="width:${Math.min(100, s.players.length / MAX_PLAYERS * 100)}%"></div></div>
+          <div class="players">${s.players.sort((a, b) => new Date(a.started_at) - new Date(b.started_at)).map(playerRow).join("")}</div></div>`).join("")}</div>`
+        : `<div class="empty">Nobody is playing right now.</div>`}
+      <h2>Just left</h2>
+      ${(state.recent || []).length ? `<div class="scroll"><table><thead><tr><th>Player</th><th>Server</th><th>Played</th><th>Earned</th><th>Left</th><th>Last things they did</th></tr></thead><tbody>
+        ${state.recent.map((r) => `<tr><td>${avatar(r.headshot)}<b>${esc(r.display_name || r.username || r.user_id)}</b> ${r.is_new ? `<span class="chip new">NEW</span>` : ""} ${deviceIcon(r.device)}</td>
+          <td>${r.server_no ?? "–"}</td><td>${r.duration_s != null ? dur(r.duration_s) : "–"}</td><td>${num(r.earned_gained)}</td>
+          <td>${dur(ago(r.ended_at))} ago${r.end_reason && r.end_reason !== "left" ? `<div class="mini">${esc(r.end_reason)}</div>` : ""}</td>
+          <td class="mini">${esc((r.last_actions || []).slice(-5).join(" → "))}</td></tr>`).join("")}
+      </tbody></table></div>` : `<div class="empty">No sessions have ended yet.</div>`}`;
+    document.getElementById("refresh").onclick = load;
+  }
+
+  // the time-on clocks tick every second between refreshes
+  setInterval(() => {
+    document.querySelectorAll("[data-since]").forEach((el) => { el.textContent = dur(ago(el.dataset.since)); });
+  }, 1000);
+  setInterval(load, REFRESH_MS);
+  load();
+</script>
+</body>
+</html>
