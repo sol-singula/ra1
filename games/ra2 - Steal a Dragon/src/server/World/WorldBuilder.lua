@@ -1840,6 +1840,24 @@ function WorldBuilder.build()
 		d.Parent = sky
 	end
 
+	-- Phones: small parts cast no shadow (no visible difference, a lot less GPU work), and pure decoration is
+	-- tagged "Detail" so PerformanceController can leave it out on phones and low graphics settings.
+	local DETAIL = { Stone = true, Berry = true, Flower = true, Tile = true, Pebble = true, Petal = true, Leaf = true }
+	for _, root in { map, basesFolder } do
+		for _, p in root:GetDescendants() do
+			if p:IsA("BasePart") then
+				local size = p.Size
+				local big, thin = math.max(size.X, size.Y, size.Z), math.min(size.X, size.Y, size.Z)
+				if big < 3 or thin < 0.3 then
+					p.CastShadow = false
+				end
+				if DETAIL[p.Name] or (big < 1.6 and p:IsDescendantOf(deco)) then
+					CollectionService:AddTag(p, "Detail")
+				end
+			end
+		end
+	end
+
 	WorldBuilder.layout = {
 		bases = bases,
 		boards = boards,

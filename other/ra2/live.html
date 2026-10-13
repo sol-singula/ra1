@@ -243,7 +243,7 @@
         ${hourlyChart("ch2", "New players who quit in under a minute", "% per hour · lower is better", "quick_quit_pct", (v) => v == null ? "–" : v + "%")}
       </div>
       <h2>By update</h2>
-      ${(state.stats && state.stats.versions.length) ? `<div class="scroll"><table><thead><tr><th>Version</th><th>Live since</th><th class="num">Sessions</th><th class="num">New players</th><th class="num">Avg session</th><th class="num">New quit &lt; 1 min</th><th class="num">New stay 3+ min</th><th class="num">Finish tutorial</th><th class="num">Robux buys</th></tr></thead><tbody>
+      ${(state.stats && state.stats.versions.length) ? `<div class="scroll"><table><thead><tr><th>Version</th><th>Live since</th><th class="num">Sessions</th><th class="num">New players</th><th class="num">Avg session</th><th class="num">New quit &lt; 1 min</th><th class="num">New stay 3+ min</th><th class="num">Finish tutorial</th><th class="num">Robux buys</th><th class="num">Phone fps</th><th class="num">Phone choppy (&lt;30 fps)</th></tr></thead><tbody>
         ${state.stats.versions.map((v, i, all) => {
           const older = all[i + 1];
           const cell = (key, fmt, good) => `<td class="num">${fmt(v[key])}${older ? deltaHtml(v[key], older[key], good).replace("delta", "delta mini") : ""}</td>`;
@@ -252,7 +252,8 @@
             <td class="num">${v.sessions}</td><td class="num">${v.new_players}</td>
             ${cell("avg_min", (x) => x == null ? "–" : x + "m", 1)}${cell("quick_quit_pct", (x) => x == null ? "–" : x + "%", -1)}
             ${cell("stay3_pct", (x) => x == null ? "–" : x + "%", 1)}${cell("tutorial_pct", (x) => x == null ? "–" : x + "%", 1)}
-            <td class="num">${v.robux}</td></tr>`;
+            <td class="num">${v.robux}</td>
+            ${cell("phone_fps", (x) => x == null ? "–" : x, 1)}${cell("phone_under30_pct", (x) => x == null ? "–" : x + "%", -1)}</tr>`;
         }).join("")}
       </tbody></table></div><div class="mini" style="margin-top:6px">Each version is compared with the one before it. Small samples (a few dozen new players) swing a lot.</div>` : `<div class="empty">No versions yet.</div>`}
       <div class="layout"><div class="main">

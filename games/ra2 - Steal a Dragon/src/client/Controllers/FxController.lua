@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 local Net = require(ReplicatedStorage.Shared.Net)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local PerformanceController = require(script.Parent.PerformanceController)
 
 local C = Theme.Color
 local new = Theme.new
@@ -145,7 +146,7 @@ function FxController:init()
 		return Enum.ContextActionResult.Sink
 	end, false, Enum.KeyCode.L, Enum.KeyCode.ButtonY)
 
-	local acc = 0
+	local acc, spinAcc = 0, 0
 	RunService.RenderStepped:Connect(function(dt)
 		local t = os.clock()
 		-- camera shake
@@ -184,9 +185,15 @@ function FxController:init()
 			FxController.turn(t)
 		end
 		-- custom dragons: spinning pieces (same maths as DragonBuilder.spinC0) and pulsing glow, near the camera only
+		-- (20 times a second in lite mode instead of every frame)
 		local cam = workspace.CurrentCamera
 		local camPos = cam and cam.CFrame and cam.CFrame.Position
-		if camPos and not Theme.reducedMotion() then
+		spinAcc += dt
+		local spinNow = not PerformanceController.lite or spinAcc >= 0.05
+		if spinNow then
+			spinAcc = 0
+		end
+		if spinNow and camPos and not Theme.reducedMotion() then
 			for _, w in CollectionService:GetTagged("DragonSpin") do
 				local p0 = w.Part0
 				if p0 and (p0.Position - camPos).Magnitude < SPIN_RANGE then

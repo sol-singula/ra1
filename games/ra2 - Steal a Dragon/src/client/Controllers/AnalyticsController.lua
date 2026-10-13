@@ -1,7 +1,7 @@
 -- Analytics from the player's device (the server adds everything else, see AnalyticsService):
 --   client_info  once: phone/computer/console, screen size, graphics quality
 --   ui           every 20 s: how many times each button was tapped
---   perf         every minute: frames per second and memory
+--   perf         every minute: frames per second, memory, and whether lite mode is on (PerformanceController)
 --   focus        when the Roblox window loses or gets focus (tabbed out, phone locked)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,6 +10,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local Net = require(ReplicatedStorage.Shared.Net)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local PerformanceController = require(script.Parent.PerformanceController)
 
 local player = Players.LocalPlayer
 
@@ -107,7 +108,11 @@ function AnalyticsController:init()
 				pcall(function()
 					mem = math.floor(game:GetService("Stats"):GetTotalMemoryUsageMb())
 				end)
-				send("perf", { fps = dt > 0 and math.floor((frames - lastFrames) / dt) or nil, mem_mb = mem })
+				send("perf", {
+					fps = dt > 0 and math.floor((frames - lastFrames) / dt) or nil,
+					mem_mb = mem,
+					lite = PerformanceController.lite,
+				})
 				lastFrames, lastClock = frames, os.clock()
 			end
 		end
