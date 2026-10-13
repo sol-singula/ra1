@@ -157,17 +157,20 @@
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.95;
+    renderer.toneMappingExposure = snap.cinematic ? 1.08 : 0.95;
     document.getElementById('world').appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
     scene.background = skyTexture();
     scene.fog = new THREE.Fog(0xcfe4fb, 260, 1100);
-    scene.add(new THREE.HemisphereLight(0xd8ecff, 0x7a7466, 0.75));
+    // cinematic (store thumbnails): a lower, warmer late-afternoon sun with long shadows and a cooler sky fill
+    const cine = !!snap.cinematic;
+    if (cine) scene.fog = new THREE.Fog(0xd6e6f7, 140, 900);
+    scene.add(new THREE.HemisphereLight(cine ? 0xcfe3ff : 0xd8ecff, cine ? 0x8a7a5e : 0x7a7466, cine ? 0.62 : 0.75));
     const cam = snap.camera;
     const target = new THREE.Vector3(...cam.target);
-    const sun = new THREE.DirectionalLight(0xfff1d6, 1.9);
-    sun.position.copy(target).add(new THREE.Vector3(60, 110, -45));
+    const sun = new THREE.DirectionalLight(cine ? 0xffe2b0 : 0xfff1d6, cine ? 2.5 : 1.9);
+    sun.position.copy(target).add(cine ? new THREE.Vector3(95, 75, -60) : new THREE.Vector3(60, 110, -45));
     sun.target.position.copy(target);
     sun.castShadow = true;
     sun.shadow.mapSize.set(4096, 4096);
@@ -226,8 +229,27 @@
     camera.lookAt(target);
     camera.updateMatrixWorld();
     renderer.render(scene, camera);
+    window.__three = { renderer, scene, camera };
     return camera;
   }
+
+  // Depth pass for the post-process depth blur: near = black, far = white (square root, so the near range keeps detail).
+  window.renderDepth = function () {
+    const { renderer, scene, camera } = window.__three;
+    scene.background = new THREE.Color(0xffffff);
+    scene.fog = null;
+    scene.overrideMaterial = new THREE.ShaderMaterial({
+      vertexShader: 'varying float vz; void main() { vec4 mv = modelViewMatrix * vec4(position, 1.0); vz = -mv.z; gl_Position = projectionMatrix * mv; }',
+      fragmentShader: 'varying float vz; void main() { float d = sqrt(clamp(vz / 700.0, 0.0, 1.0)); gl_FragColor = vec4(d, d, d, 1.0); }',
+    });
+    renderer.toneMapping = THREE.NoToneMapping;
+    renderer.outputEncoding = THREE.LinearEncoding;
+    renderer.shadowMap.enabled = false;
+    scene.traverse((o) => { if (o.isMesh && o.material && o.material.transparent && (o.material.opacity ?? 1) < 0.5) o.visible = false; });
+    renderer.render(scene, camera);
+    document.getElementById('overlay').style.display = 'none';
+    return true;
+  };
 
   // ---------- GUI ----------
   const FONTS = {
@@ -506,9 +528,15 @@
     const camera = render3D(snap);
     const overlay = document.getElementById('overlay');
     renderSurfaces(snap, camera, overlay);
-    renderBillboards(snap, camera, overlay);
-    renderPrompts(snap, camera, overlay);
-    renderScreens(snap, overlay);
+    if (snap.cinematic) {
+      // store thumbnails: no HUD, prompts, name tags or Roblox top bar
+      const bar = document.querySelector('.topbar');
+      if (bar) bar.style.display = 'none';
+    } else {
+      renderBillboards(snap, camera, overlay);
+      renderPrompts(snap, camera, overlay);
+      renderScreens(snap, overlay);
+    }
     await document.fonts.ready;
     fitScaledText(overlay);
     return true;

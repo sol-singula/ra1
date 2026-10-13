@@ -31,6 +31,11 @@ const puppeteer = require(path.join(modules, 'puppeteer'));
     await page.goto('file://' + pagePath, { waitUntil: 'load' });
     await page.evaluate((s) => window.renderSnapshot(s), snap);
     await page.screenshot({ path: path.join(outDir, name + '.png') });
+    if (snap.cinematic) {
+      // a depth pass for tools/gameplay/thumbs_post.py (depth blur)
+      await page.evaluate(() => window.renderDepth());
+      await page.screenshot({ path: path.join(outDir, name + '_depth.png') });
+    }
     await page.close();
     console.log('rendered', name);
   }
