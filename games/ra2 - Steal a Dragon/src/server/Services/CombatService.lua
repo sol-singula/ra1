@@ -27,6 +27,7 @@ local CombatService = {
 local data, economy, dragons, team, baseService
 local lastBonk = {}
 local stunnedUntil = {}
+local immuneUntil = {} -- [player] = os.clock() until which nobody can bonk them (stunned, then a short safe time)
 local streaks = {} -- [player] = { count, last }
 local boostUntil = {} -- Speed Potion
 
@@ -73,6 +74,7 @@ end
 function CombatService:OnPlayerLeaving(player)
 	lastBonk[player] = nil
 	stunnedUntil[player] = nil
+	immuneUntil[player] = nil
 	streaks[player] = nil
 	boostUntil[player] = nil
 end
@@ -114,6 +116,11 @@ end
 
 function CombatService:IsStunned(player)
 	return (stunnedUntil[player] or 0) > os.clock()
+end
+
+-- Can't be bonked right now (stunned, or the safe time after a stun)?
+function CombatService:IsSafe(player)
+	return (immuneUntil[player] or 0) > os.clock()
 end
 
 function CombatService:RefreshSpeed(player)
@@ -292,7 +299,9 @@ function CombatService:_target(attacker, pos, range)
 		-- players still doing the tutorial can't be bonked
 		local profile = data and data:Get(other)
 		local learning = profile ~= nil and not profile.tutorialDone
-		if other ~= attacker and not learning and not team:AreTeam(attacker, other) then
+		-- and nobody can be hit again while stunned or just after (no stunlock, even from several players)
+		local safe = (immuneUntil[other] or 0) > os.clock()
+		if other ~= attacker and not learning and not safe and not team:AreTeam(attacker, other) then
 			local op = baseService:Position(other)
 			if op then
 				consider(other, op, dragons:Carrying(other) ~= nil)
@@ -366,6 +375,7 @@ function CombatService:Bonk(attacker)
 	local wasCarrying = dragons:Carrying(victim) ~= nil
 	local bounty = self:Bounty(victim)
 	stunnedUntil[victim] = os.clock() + seconds
+	immuneUntil[victim] = os.clock() + seconds + Constants.BONK_IMMUNE_SECONDS
 	self:RefreshSpeed(victim)
 	if wasCarrying then
 		dragons:Drop(victim)
@@ -404,6 +414,17 @@ function CombatService:Bonk(attacker)
 	task.delay(seconds + 0.05, function()
 		if victim.Parent then
 			self:RefreshSpeed(victim)
+			-- a bubble for the safe time after the stun, so everyone can see they can't be bonked yet
+			local c = victim.Character
+			if c and not c:FindFirstChild("BonkSafe") then
+				local bubble = Instance.new("ForceField")
+				bubble.Name = "BonkSafe"
+				bubble.Visible = true
+				bubble.Parent = c
+				task.delay(Constants.BONK_IMMUNE_SECONDS, function()
+					bubble:Destroy()
+				end)
+			end
 		end
 	end)
 	self.Bonked:Fire(attacker, victim, wasCarrying)

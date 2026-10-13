@@ -54,7 +54,8 @@ Constants.FAST_FEET_MULT = 1.25 -- while carrying
 
 -- Bonk
 Constants.BONK_RANGE = 9
-Constants.BONK_COOLDOWN = 1.0
+Constants.BONK_COOLDOWN = 2.0 -- seconds between swings (no spamming)
+Constants.BONK_IMMUNE_SECONDS = 3 -- after a stun wears off, nobody can bonk you again for this long (no stunlock)
 Constants.STUN_SECONDS = 1.5
 Constants.STUN_SECONDS_MEGA = 2.5 -- (no longer used directly: Mega Bonk adds MEGA_STUN_BONUS to any weapon)
 

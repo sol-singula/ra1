@@ -83,6 +83,18 @@
   tr:last-child td { border-bottom: 0; }
   td .avatar { width: 28px; height: 28px; border-radius: 8px; vertical-align: middle; margin-right: 8px; }
   .scroll { overflow-x: auto; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); }
+  .seg button { border: 0; border-radius: 0; padding: 6px 12px; background: transparent; color: var(--muted); }
+  .seg button.on { background: var(--accent-soft); color: var(--accent); }
+  .delta { font-size: 12px; font-weight: 700; margin-left: 6px; }
+  .delta.up { color: var(--good); } .delta.down { color: var(--bad); } .delta.flat { color: var(--muted); }
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px; }
+  @media (max-width: 480px) { .charts { grid-template-columns: 1fr; } }
+  .chart { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 12px 14px; position: relative; }
+  .chart .title { font-weight: 700; font-size: 13px; } .chart .sub { font-size: 12px; color: var(--muted); }
+  .chart svg { width: 100%; height: 150px; display: block; margin-top: 6px; }
+  .tip { position: absolute; pointer-events: none; background: var(--text); color: var(--bg); font-size: 12px; padding: 5px 8px; border-radius: 8px; white-space: nowrap; display: none; z-index: 5; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .recent { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
   .r { display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); align-items: start; }
   .r:last-child { border-bottom: 0; }
@@ -102,6 +114,48 @@
   const REFRESH_MS = 10000;
   const app = document.getElementById("app");
   let state = null, lastOk = 0, error = null;
+  let period = (() => { try { return localStorage.getItem("livePeriod") || "hour"; } catch (e) { return "hour"; } })();
+  const PERIODS = { hour: ["Last hour", "vs the hour before"], day: ["Last 24 h", "vs the 24 h before"], week: ["Last 7 days", "vs the 7 days before"] };
+  // metric: label, format, which way is good
+  const METRICS = [
+    ["players", "Players", (v) => v ?? "–", 1],
+    ["new_players", "New players", (v) => v ?? "–", 1],
+    ["avg_min", "Avg session", (v) => v == null ? "–" : v + "m", 1],
+    ["quick_quit_pct", "New quit < 1 min", (v) => v == null ? "–" : v + "%", -1],
+    ["stay3_pct", "New stay 3+ min", (v) => v == null ? "–" : v + "%", 1],
+    ["tutorial_pct", "Finish tutorial", (v) => v == null ? "–" : v + "%", 1],
+    ["robux", "Robux buys", (v) => v ?? "–", 1],
+  ];
+  function deltaHtml(now, prev, good) {
+    if (now == null || prev == null) return `<span class="delta flat">no data before</span>`;
+    const d = now - prev;
+    if (Math.abs(d) < 1e-9) return `<span class="delta flat">= same</span>`;
+    const pctChange = prev !== 0 ? Math.round((d / Math.abs(prev)) * 100) : null;
+    const better = d * good > 0;
+    const shown = pctChange == null ? (d > 0 ? "+" : "") + Math.round(d * 10) / 10 : (d > 0 ? "+" : "") + pctChange + "%";
+    return `<span class="delta ${better ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${shown}</span>`;
+  }
+  // a small single-series bar chart of one metric per hour, with lines where a new version went live
+  function hourlyChart(id, title, sub, key, fmt) {
+    const hours = (state.stats && state.stats.hourly) || [];
+    const W = 600, H = 150, padL = 4, padB = 18, bw = (W - padL) / Math.max(1, hours.length);
+    const vals = hours.map((h) => h[key]);
+    const max = Math.max(1, ...vals.filter((v) => v != null));
+    const bars = hours.map((h, i) => {
+      const v = h[key]; if (v == null || v === 0) return "";
+      const bh = Math.max(2, (v / max) * (H - padB - 14));
+      return `<rect x="${padL + i * bw + 1}" y="${H - padB - bh}" width="${Math.max(1, bw - 2)}" height="${bh}" rx="3" fill="var(--accent)"></rect>`;
+    }).join("");
+    const hits = hours.map((h, i) => `<rect data-tip="${esc(new Date(h.t).toLocaleString([], { weekday: "short", hour: "numeric" }))}: ${esc(fmt(h[key]))} (${h.sessions} sessions)" x="${padL + i * bw}" y="0" width="${bw}" height="${H}" fill="transparent"></rect>`).join("");
+    const t0 = hours.length ? Date.parse(hours[0].t) : 0, span = 48 * 3600e3;
+    const marks = ((state.stats && state.stats.versions) || []).filter((v) => v.version && Date.parse(v.first_seen) > t0).map((v) => {
+      const x = padL + ((Date.parse(v.first_seen) - t0) / span) * (W - padL);
+      return `<line x1="${x}" x2="${x}" y1="0" y2="${H - padB}" stroke="var(--muted)" stroke-dasharray="3 3"></line><text x="${x + 3}" y="10" font-size="10" fill="var(--muted)">v${v.version}</text>`;
+    }).join("");
+    const labels = hours.map((h, i) => i % 6 === 0 ? `<text x="${padL + i * bw}" y="${H - 4}" font-size="10" fill="var(--muted)">${new Date(h.t).toLocaleTimeString([], { hour: "numeric" })}</text>` : "").join("");
+    return `<div class="chart" id="${id}"><div class="title">${title}</div><div class="sub">${sub}</div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="0" x2="${W}" y1="${H - padB}" y2="${H - padB}" stroke="var(--line)"></line>${bars}${marks}${labels}${hits}</svg><div class="tip"></div></div>`;
+  }
 
   function getKey() {
     const fromUrl = new URLSearchParams(location.search).get("key");
@@ -171,13 +225,36 @@
       <header><h1>🐉 Steal a Dragon Live</h1>
         <span class="live"><span class="dot ${stale || error ? "off" : ""}"></span>${stale || error ? "Reconnecting…" : "Live · updates every 10 s"}</span>
         <span class="spacer"></span><button id="refresh">Refresh</button></header>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px">
+        <div class="seg">${Object.entries(PERIODS).map(([k, v]) => `<button data-period="${k}" class="${k === period ? "on" : ""}">${v[0]}</button>`).join("")}</div>
+        <span class="mini">${PERIODS[period][1]}</span></div>
       <div class="stats">
-        <div class="stat"><div class="k">Online now</div><div class="v">${online}</div><div class="s">players</div></div>
-        <div class="stat"><div class="k">Servers</div><div class="v">${servers.length}</div><div class="s">open</div></div>
-        <div class="stat"><div class="k">Last 24 h</div><div class="v">${t.players ?? "–"}</div><div class="s">players · ${t.sessions ?? "–"} sessions</div></div>
-        <div class="stat"><div class="k">New players</div><div class="v">${t.new_players ?? "–"}</div><div class="s">in the last 24 h</div></div>
-        <div class="stat"><div class="k">Avg session</div><div class="v">${t.avg_minutes != null ? t.avg_minutes + "m" : "–"}</div><div class="s">last 24 h</div></div>
+        <div class="stat"><div class="k">Online now</div><div class="v">${online}</div><div class="s">players · ${servers.length} servers</div></div>
+        ${METRICS.map(([key, label, fmt, good]) => {
+          const c = state.stats && state.stats.compare[period];
+          const now = c ? c.now[key] : null, prev = c ? c.prev[key] : null;
+          const prevHasData = c && c.prev.sessions > 0;
+          return `<div class="stat"><div class="k">${label}</div><div class="v">${fmt(now)}</div>
+            <div class="s">${prevHasData ? deltaHtml(now, prev, good) + ` <span class="mini">was ${fmt(prev)}</span>` : `<span class="delta flat">no data before</span>`}</div></div>`;
+        }).join("")}
       </div>
+      <div class="charts">
+        ${hourlyChart("ch1", "New players per hour", "last 48 hours · dashed lines = a new version went live", "new_players", (v) => v ?? 0)}
+        ${hourlyChart("ch2", "New players who quit in under a minute", "% per hour · lower is better", "quick_quit_pct", (v) => v == null ? "–" : v + "%")}
+      </div>
+      <h2>By update</h2>
+      ${(state.stats && state.stats.versions.length) ? `<div class="scroll"><table><thead><tr><th>Version</th><th>Live since</th><th class="num">Sessions</th><th class="num">New players</th><th class="num">Avg session</th><th class="num">New quit &lt; 1 min</th><th class="num">New stay 3+ min</th><th class="num">Finish tutorial</th><th class="num">Robux buys</th></tr></thead><tbody>
+        ${state.stats.versions.map((v, i, all) => {
+          const older = all[i + 1];
+          const cell = (key, fmt, good) => `<td class="num">${fmt(v[key])}${older ? deltaHtml(v[key], older[key], good).replace("delta", "delta mini") : ""}</td>`;
+          return `<tr><td><b>v${v.version ?? "?"}</b>${i === 0 ? ` <span class="chip new">newest</span>` : ""}</td>
+            <td class="mini">${new Date(v.first_seen).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</td>
+            <td class="num">${v.sessions}</td><td class="num">${v.new_players}</td>
+            ${cell("avg_min", (x) => x == null ? "–" : x + "m", 1)}${cell("quick_quit_pct", (x) => x == null ? "–" : x + "%", -1)}
+            ${cell("stay3_pct", (x) => x == null ? "–" : x + "%", 1)}${cell("tutorial_pct", (x) => x == null ? "–" : x + "%", 1)}
+            <td class="num">${v.robux}</td></tr>`;
+        }).join("")}
+      </tbody></table></div><div class="mini" style="margin-top:6px">Each version is compared with the one before it. Small samples (a few dozen new players) swing a lot.</div>` : `<div class="empty">No versions yet.</div>`}
       <div class="layout"><div class="main">
       <h2>Servers <span class="count">${servers.length}</span></h2>
       ${servers.length ? `<div class="servers">${servers.map((s) => `
@@ -199,6 +276,21 @@
         <div class="mini" style="white-space:nowrap">${dur(ago(r.ended_at))} ago</div></div>`).join("")}</div>` : `<div class="empty">No sessions have ended yet.</div>`}
       </div></div>`;
     document.getElementById("refresh").onclick = load;
+    document.querySelectorAll("[data-period]").forEach((b) => b.onclick = () => {
+      period = b.dataset.period; try { localStorage.setItem("livePeriod", period); } catch (e) {} render();
+    });
+    document.querySelectorAll(".chart").forEach((chart) => {
+      const tip = chart.querySelector(".tip");
+      chart.querySelectorAll("[data-tip]").forEach((r) => {
+        r.addEventListener("mousemove", (e) => {
+          const box = chart.getBoundingClientRect();
+          tip.textContent = r.dataset.tip; tip.style.display = "block";
+          tip.style.left = Math.min(box.width - tip.offsetWidth - 4, e.clientX - box.left + 10) + "px";
+          tip.style.top = (e.clientY - box.top - 30) + "px";
+        });
+        r.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+      });
+    });
   }
 
   // the time-on clocks tick every second between refreshes

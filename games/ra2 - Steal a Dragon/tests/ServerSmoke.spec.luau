@@ -400,6 +400,31 @@ do -- players still doing the tutorial can't be bonked
 	check("bonkable once the tutorial is done", bp == nil or Combat:_target(a, bp, 6) == b)
 	pb.tutorialDone = saved
 end
+do -- no stunlock: a bonked player can't be hit again while stunned, nor for a few seconds after
+	local pa0, pb0 = Data:Get(a).tutorialDone, Data:Get(b).tutorialDone
+	Data:Get(a).tutorialDone, Data:Get(b).tutorialDone = true, true
+	local spot = Vector3.new(-150, 3, 30)
+	go(a, spot)
+	go(b, spot + Vector3.new(3, 0, 0))
+	Engine.advance(Constants.BONK_COOLDOWN + 0.1)
+	Combat:Bonk(a)
+	Engine.advance(0.05)
+	check("a bonk stuns", Combat:IsStunned(b))
+	check(
+		"can't swing again right away",
+		(function()
+			local before = Combat:IsSafe(b)
+			return before and Combat:_target(a, Base:Position(b), 9) ~= b
+		end)()
+	)
+	local stun = Combat:Weapon(a).stun
+	Engine.advance(stun + 0.3)
+	check("safe for a few seconds after the stun", not Combat:IsStunned(b) and Combat:IsSafe(b))
+	check("a bubble shows they're safe", b.Character:FindFirstChild("BonkSafe") ~= nil)
+	Engine.advance(Constants.BONK_IMMUNE_SECONDS + 0.2)
+	check("bonkable again after the safe time", not Combat:IsSafe(b) and Combat:_target(a, Base:Position(b), 9) == b)
+	Data:Get(a).tutorialDone, Data:Get(b).tutorialDone = pa0, pb0
+end
 local pb = Data:Get(b)
 Engine.fireServer(b, "SkipTutorial")
 Engine.advance(0.5)
@@ -646,7 +671,9 @@ local levelsBefore = totalLevels()
 pa.coins += 1e7
 local coinsBeforeAll = pa.coins
 go(a, world.levelPlate.Position)
-check("LEVEL ALL isn't set off by walking onto it", totalLevels() == levelsBefore)
+-- (dragons also level up with time, so this checks coins: walking onto it spends nothing)
+check("LEVEL ALL isn't set off by walking onto it", pa.coins >= coinsBeforeAll)
+levelsBefore = totalLevels()
 world.levelPlate.Prompt_levelall.Triggered:Fire(a)
 check("LEVEL ALL buys levels", totalLevels() > levelsBefore + 1, totalLevels() - levelsBefore)
 check("LEVEL ALL spends coins", pa.coins < coinsBeforeAll)
@@ -696,11 +723,11 @@ check("hotbar has a Speed Potion", toolOf(a, "potion") ~= nil and toolOf(a, "pot
 check("starts with free potions", pa.potions == Constants.FREE_POTIONS)
 check("potion count on the tool", toolOf(a, "potion").Name == "Speed Potion x" .. Constants.FREE_POTIONS)
 check("camera zoom is capped", a.CameraMaxZoomDistance == Constants.CAMERA_MAX_ZOOM)
-Engine.advance(1.2)
+Engine.advance(Constants.BONK_COOLDOWN + 0.1)
 hand.Activated:Fire()
 Engine.advance(0.05)
 check("clicking with the bat swings it", hand:FindFirstChild("toolanim") ~= nil)
-Engine.advance(1.2)
+Engine.advance(Constants.BONK_COOLDOWN + 0.1)
 -- Q bonks too, and puts the bat back in your hand
 local hum = a.Character.Humanoid
 hum:EquipTool(toolOf(a, "potion"))
