@@ -131,12 +131,12 @@ Constants.TRADE_TAX = 0.10
 Constants.STALL_PRICES = { 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000 }
 
 -- Sound -----------------------------------------------------------------------------------------------------
-Constants.SOUNDS = {
-	shot = "rbxassetid://95486565209148",
-	bolt = "rbxassetid://83557110540525",
-	hit = "rbxassetid://105444665436909",
-	headshot = "rbxassetid://106516156393061",
-	pop = "rbxassetid://105444665436909",
+Constants.SOUNDS = { -- from the Roblox audio library (public, verified creators)
+	shot = "rbxassetid://109306405910383",
+	bolt = "rbxassetid://136556611710738",
+	hit = "rbxassetid://138148057831879",
+	headshot = "rbxassetid://137096881472307",
+	pop = "rbxassetid://109359226723492",
 	popped = "rbxassetid://115604569854725",
 	coin = "rbxassetid://118634876996683",
 	buy = "rbxassetid://105104330819150",
@@ -148,7 +148,7 @@ Constants.SOUNDS = {
 	streak = "rbxassetid://88832672717864",
 	crate = "rbxassetid://96391581866585",
 	gift = "rbxassetid://105104330819150",
-	scope = "rbxassetid://83557110540525",
+	scope = "rbxassetid://122464093213516",
 }
 Constants.SOUND_VOLUME = { shot = 0.5, bolt = 0.35, hit = 0.6, pop = 0.5, coin = 0.4, notify = 0.45, streak = 0.6 }
 Constants.MUSIC = { -- the lobby

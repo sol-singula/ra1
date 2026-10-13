@@ -1,6 +1,7 @@
 # ra4 plan: Snipe a Noob
 
-Status: **plan, decisions made 2026-10-13, not built.** Every word a player sees is at a 3rd grade reading level. This doc is for us.
+Status: **built (every step), waiting on a Roblox experience to publish to.** See the [README](README.md) for how to
+run and play it. Every word a player sees is at a 3rd grade reading level. This doc is for us.
 Decisions are at the bottom ([section 14](#14-decisions)).
 
 ## 1. What's out there (October 2026)
@@ -73,8 +74,8 @@ Words on screen: Pop, Round, Coins, Level, Crate, Skin. A big kill feed on the r
 - **The loop:** 15 s in the lobby (vote the next map on three pads) → 5 min round in the arena → 8 s podium →
   back to the lobby. Coins, crates and the shop all live in the lobby, so every player passes them every 5 minutes.
 - **Join mid-round:** a big PLAY button (and a PLAY pad) drops you into the current round right away.
-- **2 players is enough.** A round starts as soon as 2 players are in the server. With only 1, they shoot robot
-  targets on the range and duel a practice robot while a sign says "Waiting for 1 more player...".
+- **2 players is enough.** A round starts as soon as 2 players are in the server. With only 1, they shoot targets on the
+  range while a sign says "Waiting for 1 more player...".
 - **The map fits the crowd:** 2 to 8 players get a small map, 9 to 16 a medium one, 17 to 24 a big one, so a
   2-player round still finds action in seconds.
 
@@ -173,16 +174,15 @@ Nothing bought shoots better. Everything random shows its odds. Nothing pays Rob
 | Product | Robux |
 |---|---|
 | Crate Keys (1 / 5 / 15) | 49 / 199 / 499 |
-| Credits packs (the premium currency) | 99 to 1,999 |
 | Round Callout: your name in gold when the next round starts | 99 |
 | Revive Now (skip the 5 s respawn wait, once) | 9 |
 | Season Pass (2 weeks): 50 tiers of skins, emotes, pop effects | 399 |
 
 **Tier 3: skins economy**
 
-- **Crates:** Common to Secret skins for rifles, with odds on every crate. Crate keys come from levels and quests
-  too, so free players open some.
-- **Trading skins** at a Trade Plaza (ra3's stalls) for credits, with our 10% credit tax. Policy-checked.
+- **Crates:** the Coin Crate (coins) and the Key Crate (a key). Odds on every crate. Keys come from quests, gifts
+  and the season too, so free players open some.
+- **Trading skins** at a Trade Plaza (ra3's stalls) for coins, with a 10% coin tax. Policy-checked.
 - **Rifles** are unlocked with coins by level (more zoom, faster bolt, quieter shot). They are side-grades:
   every rifle still pops in one.
 
@@ -244,4 +244,4 @@ New:
 | Server size | 24 |
 | Lobby | Yes, with leaderboards |
 | Minimum to start a round | 2 players |
-| Rifles | Side-grades unlocked by level (all one-shot). Not answered yet; this is the default. |
+| Rifles | Side-grades unlocked by level (all one-shot). Not answered; built this way. |
