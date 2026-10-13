@@ -1,5 +1,10 @@
 # Steal a Dragon: analytics
 
+> **Live dashboard for every game:** [`other/live.html`](../live.html) has a game switcher for Steal a Dragon, Raid a
+> Planet, Snipe a Noob and The Last Train (`?game=ra2` to `?game=ra5`; it remembers the last one and the view key).
+> `live.html` in this folder is the older Steal-a-Dragon-only page. Both read the `roblox-live` edge function, whose
+> source is [`other/analytics/roblox-live.ts`](../analytics/roblox-live.ts).
+
 Every play session and everything players do in it is stored in Supabase (the solbuild.net project), so we can
 see **why people leave** and **what keeps the ones who stay**. Code: `src/server/Services/AnalyticsService.lua`
 (server) and `src/client/Controllers/AnalyticsController.lua` (device, taps, frame rate, focus). The game posts a
