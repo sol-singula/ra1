@@ -1311,6 +1311,34 @@ check(
 )
 check("analytics: button taps", #eventsOf("ui") >= 1 and eventsOf("ui")[1].data.taps.ShopButton == 3)
 
+-- Fill the first servers first --------------------------------------------------------------------------------
+do
+	local Fill = service("ServerFillService")
+	Fill.testMode = true
+	Fill.number = 3
+	local version = Engine.game.PlaceVersion
+	Fill.servers = {
+		{ jobId = "one", n = 1, players = 7, max = 8, version = version }, -- full (one slot kept free)
+		{ jobId = "two", n = 2, players = 3, max = 8, version = version },
+		{ jobId = "old", n = 0, players = 1, max = 8, version = -1 }, -- an older version of the game
+	}
+	local newcomer = Engine.addPlayer("Zed", 9001)
+	local target = Fill:TargetFor(newcomer)
+	check(
+		"fill: the lowest-numbered server with room",
+		target ~= nil and target.jobId == "two",
+		target and target.jobId
+	)
+	Fill.servers[2].players = 7
+	check("fill: no room anywhere lower: stay", Fill:TargetFor(newcomer) == nil)
+	Fill.servers[2].players = 3
+	Fill.number = 1
+	check("fill: server 1 never sends anyone away", Fill:TargetFor(newcomer) == nil)
+	Fill.testMode = false
+	Engine.removePlayer(newcomer)
+	Engine.advance(0.5)
+end
+
 -- Shutdown ----------------------------------------------------------------------------------------------------
 for _, fn in Engine.closeHandlers do
 	fn()

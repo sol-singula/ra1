@@ -326,11 +326,16 @@ function AnalyticsService:Init(registry)
 	Players.PlayerRemoving:Connect(function(player)
 		local s = sessions[player]
 		if s and not s.ready then
-			track(s, "left_while_loading", { seconds = math.floor(now() - s.t0) })
+			local moved = player:GetAttribute("FillMove")
+			if moved then
+				track(s, "moved_server", { to = moved })
+			else
+				track(s, "left_while_loading", { seconds = math.floor(now() - s.t0) })
+			end
 			upsertSession(s, {
 				ended_at = iso(os.time()),
 				duration_s = math.floor(now() - s.t0),
-				end_reason = "left_loading",
+				end_reason = moved and "moved_to_fuller_server" or "left_loading",
 			})
 			sessions[player] = nil
 		end

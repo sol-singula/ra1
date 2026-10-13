@@ -13,6 +13,19 @@ local registry, order = Loader.boot(script.Parent.Services)
 local PlayerDataService = registry.PlayerDataService
 
 local function onPlayerAdded(player)
+	-- fill the first servers first: a lower-numbered server with room gets this player, before the save loads
+	local fill = registry.ServerFillService
+	local target = fill and fill:TargetFor(player)
+	if target and fill:Move(player, target) then
+		local waited = 0
+		while player.Parent and player:GetAttribute("FillMove") and waited < 15 do
+			task.wait(0.5)
+			waited += 0.5
+		end
+		if not player.Parent then
+			return -- on their way
+		end
+	end
 	local profile = PlayerDataService:Load(player)
 	if not profile or not player.Parent then
 		return

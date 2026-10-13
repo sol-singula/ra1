@@ -30,6 +30,7 @@ local GameLogService = {
 		"LeaderboardService",
 		"RewardService",
 		"RoadService",
+		"ServerFillService",
 	},
 }
 
@@ -44,7 +45,7 @@ local COLORS = {
 	server = 0x94a3b8,
 }
 
-local baseService, dragons
+local baseService, dragons, fill
 local sessions = {} -- [player] = { start, earned, steals, bought, bonks, robux, items, robbed, tutorialDone }
 local queue, chat = {}, {}
 local secret -- the key from the Secrets Store, or false if there isn't one
@@ -104,6 +105,7 @@ local function server()
 	return {
 		players = #Players:GetPlayers(),
 		jobId = game.JobId ~= "" and game.JobId or nil,
+		number = fill and fill.number or nil, -- "Server 1", "Server 2"... (ServerFillService)
 		version = game.PlaceVersion,
 		studio = RunService:IsStudio(),
 	}
@@ -151,6 +153,7 @@ end
 function GameLogService:Init(registry)
 	baseService = registry.BaseService
 	dragons = registry.DragonService
+	fill = registry.ServerFillService
 	local shop = registry.ShopService
 	shop.Purchased:Connect(function(player, name, robux)
 		local s = sessions[player]
@@ -243,7 +246,7 @@ function GameLogService:Init(registry)
 		game:BindToClose(function()
 			GameLogService.log({
 				emoji = "🛑",
-				title = "Server shutting down",
+				title = fill and fill.number and `Server {fill.number} shutting down` or "Server shutting down",
 				color = COLORS.server,
 				fields = {
 					{ name = "Up for", value = Format.time(os.time() - startedAt) },
@@ -256,7 +259,19 @@ function GameLogService:Init(registry)
 end
 
 function GameLogService:Start()
-	GameLogService.log({ emoji = "🟦", title = "Server started", color = COLORS.server })
+	task.spawn(function()
+		local waited = 0
+		while fill and not fill.number and waited < 8 do -- (the server's number comes with its first heartbeat)
+			task.wait(0.5)
+			waited += 0.5
+		end
+		local n = fill and fill.number
+		GameLogService.log({
+			emoji = "🟦",
+			title = n and `Server {n} started` or "Server started",
+			color = COLORS.server,
+		})
+	end)
 	while true do
 		task.wait(Constants.GAME_LOG_FLUSH_SECONDS)
 		GameLogService.flush()
