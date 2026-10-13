@@ -274,15 +274,18 @@ function Kit.pine(parent, pos, h, rng, color)
 	local trunkH = h * 0.32
 	Kit.disc(m, "Trunk", pos + Vector3.new(0, trunkH / 2, 0), h * 0.055, trunkH, C.bark, M.Wood)
 	local col = color or (rng:NextNumber() < 0.5 and C.pine or C.pineDark)
-	local tiers = 5
+	-- flat, overlapping skirts that taper to a point read as a fir from any side (round layers look like snowmen)
+	-- (each skirt is thicker than the gap to the next, so the outline is one tapering shape with soft scallops)
+	local tiers = 6
+	local gap = h * 0.56 / (tiers - 1)
 	for i = 0, tiers - 1 do
 		local t = i / (tiers - 1)
-		local d = h * (0.56 - 0.4 * t)
+		local d = h * (0.6 - 0.48 * t)
 		Kit.ellipsoid(
 			m,
 			"Needles",
-			pos + Vector3.new(rng:NextNumber(-0.3, 0.3), h * (0.24 + 0.6 * t), rng:NextNumber(-0.3, 0.3)),
-			Vector3.new(d, d * 0.46, d),
+			pos + Vector3.new(rng:NextNumber(-0.3, 0.3), h * (0.26 + 0.56 * t), rng:NextNumber(-0.3, 0.3)),
+			Vector3.new(d, math.max(d * 0.4, gap * 1.7), d),
 			col:Lerp(C.moss, (1 - t) * 0.12),
 			M.Grass,
 			{ CastShadow = i < 2, CanCollide = false }
@@ -291,8 +294,8 @@ function Kit.pine(parent, pos, h, rng, color)
 	Kit.ellipsoid(
 		m,
 		"Top",
-		pos + Vector3.new(0, h * 0.93, 0),
-		Vector3.new(h * 0.1, h * 0.2, h * 0.1),
+		pos + Vector3.new(0, h * 0.92, 0),
+		Vector3.new(h * 0.07, h * 0.22, h * 0.07),
 		col,
 		M.Grass,
 		{ CastShadow = false, CanCollide = false }

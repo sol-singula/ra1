@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""The "shader" pass for store thumbnails rendered by tools/gameplay/thumbs.luau + render.js.
+"""The "shader" pass for store thumbnails and screenshots rendered by tools/gameplay/thumbs.luau + render.js.
 
 For each <name>.png (with <name>_depth.png and <name>.json next to it) writes <out>/<name>.jpg (with the title)
 and <out>/<name>_notext.jpg, 1920x1080:
   colour grade (contrast curve, saturation, warm highlights / cool shadows), bloom on bright areas,
   depth-of-field blur away from the camera's focus point, a warm sun glow, a vignette, then the title.
 
-  python3 tools/gameplay/thumbs_post.py <renderDir> <outDir> --font LuckiestGuy.ttf
+  python3 tools/gameplay/thumbs_post.py <renderDir> <outDir> --font oswald-latin-700-normal.woff
 Needs Pillow and numpy.
 """
 import json
@@ -19,11 +19,17 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 # per-shot caption under the title (None = title only)
 CAPTIONS = {
-    "01_hero_steal": "STEAL THEIR BEST DRAGON!",
-    "02_dragon_road": "RARE DRAGONS EVERY MINUTE!",
-    "03_full_base": "BUILD YOUR DRAGON CASTLE!",
-    "04_map": None,
+    "01_station_boarding": "ALL ABOARD!",
+    "02_hall_of_records": "HOW FAR CAN YOUR CREW GO?",
+    "03_my_cabin": "BUILD YOUR CABIN",
+    "04_ranger_station": "SCAVENGE BEFORE THE TRAIN LEAVES",
+    "05_final_call": "DON'T MISS THE TRAIN!",
+    "06_signal_tower": "FIND THE BLUEPRINTS",
+    "07_on_the_line": None,
+    "09_overgrown_platform": "EVERY STOP IS DIFFERENT",
+    "10_left_behind": "DON'T GET LEFT BEHIND",
 }
+TITLE = "THE LAST TRAIN"
 
 
 def arr(img):
@@ -111,11 +117,12 @@ def outlined_text(img, text, font, cx, y, fill_top, fill_bottom, outline, stroke
 
 def title(img, font_path, caption):
     img = img.convert("RGBA")
-    big = ImageFont.truetype(font_path, 168)
-    bottom = outlined_text(img, "STEAL A DRAGON", big, 960, 40, (255, 236, 90), (255, 150, 20), (30, 18, 40), 14)
+    # brass-gold condensed capitals, like the train's signs
+    big = ImageFont.truetype(font_path, 150)
+    bottom = outlined_text(img, TITLE, big, 960, 34, (255, 226, 150), (214, 150, 60), (24, 18, 14), 10)
     if caption:
-        small = ImageFont.truetype(font_path, 74)
-        outlined_text(img, caption, small, 960, bottom + 36, (255, 255, 255), (215, 235, 255), (30, 18, 40), 9)
+        small = ImageFont.truetype(font_path, 70)
+        outlined_text(img, caption, small, 960, bottom + 30, (255, 248, 232), (236, 222, 196), (24, 18, 14), 7)
     return img.convert("RGB")
 
 

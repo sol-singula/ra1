@@ -1253,7 +1253,19 @@ local function loco(parent, car, out)
 	-- engine room inside: the engine, furnace, fuel gauge and the upgrades board
 	local ex = roomCar.cx + 1
 	local engine = Kit.model("Engine", model)
-	box(engine, "EngineBlock", CFrame.new(ex, FLOOR + 3, 3), Vector3.new(12, 6, 7), C.iron, M.Metal)
+	-- painted in the train's green with brass trim, so it reads as a proud machine, not a black lump
+	box(engine, "EngineBlock", CFrame.new(ex, FLOOR + 3, 3), Vector3.new(12, 6, 7), C.green, M.Metal)
+	box(
+		engine,
+		"EngineTrim",
+		CFrame.new(ex, FLOOR + 5.9, 3),
+		Vector3.new(12.3, 0.3, 7.3),
+		C.brass,
+		M.Metal,
+		{ CastShadow = false }
+	)
+	box(engine, "EngineBase", CFrame.new(ex, FLOOR + 0.35, 3), Vector3.new(13, 0.7, 8), C.iron, M.Metal)
+	Kit.bulb(engine, "EngineLamp", Vector3.new(ex, CEIL - 2.2, 0), 0.8, C.warm, 22, 1.4)
 	for i = -1, 1 do
 		cyl(
 			engine,
@@ -1271,11 +1283,30 @@ local function loco(parent, car, out)
 		CFrame.new(ex - 7.2, FLOOR + 4.5, 3) * CFrame.Angles(0, math.rad(90), 0),
 		0.8,
 		7,
-		C.iron,
+		C.wheel,
 		M.Metal
 	)
-	local furnace = box(engine, "Furnace", CFrame.new(ex + 8, FLOOR + 3, 8), Vector3.new(5, 6, 6), C.black, M.Metal)
+	cyl(
+		engine,
+		"FlywheelHub",
+		CFrame.new(ex - 7.25, FLOOR + 4.5, 3) * CFrame.Angles(0, math.rad(90), 0),
+		1,
+		2,
+		C.brass,
+		M.Metal,
+		{ CastShadow = false }
+	)
+	local furnace = box(engine, "Furnace", CFrame.new(ex + 8, FLOOR + 3, 8), Vector3.new(5, 6, 6), C.iron, M.Metal)
 	_ = furnace
+	box(
+		engine,
+		"FurnaceDoorFrame",
+		CFrame.new(ex + 8, FLOOR + 2.8, 4.95),
+		Vector3.new(3.4, 2.8, 0.15),
+		C.brass,
+		M.Metal,
+		{ CastShadow = false }
+	)
 	local fire = box(
 		engine,
 		"FurnaceGlow",

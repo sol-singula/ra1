@@ -41,6 +41,9 @@ local ExpeditionService = {
 	FuelAdded = Signal.new("ExpeditionService.FuelAdded"), -- (player, amount)
 }
 
+-- the line's moods, one per trip in turn (World/LightingPresets)
+local TRAVEL_LIGHTS = { "travelGold", "travel", "travelMist" }
+
 local data
 local registryRef
 local exp -- the current expedition (see newExpedition)
@@ -431,7 +434,7 @@ function ExpeditionService:_leave()
 	exp.tripFrom = exp.distance
 	exp.nextStop = Formulas.pickStop(exp.distance + Constants.SEGMENT_KM, exp.lastStopKey, math.random())
 	exp.announcedNext = false
-	self:_light("travel")
+	self:_light(TRAVEL_LIGHTS[exp.stops % #TRAVEL_LIGHTS + 1])
 	self.Departed:Fire(from)
 	self:_set("traveling", Constants.TRAVEL_SECONDS)
 	Net.fireAll("Sfx", "depart")

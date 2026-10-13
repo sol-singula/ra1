@@ -248,7 +248,7 @@ local exp = Expedition:State()
 check("the first trip used fuel", exp.fuel == Formulas.round1(Constants.START_FUEL - Formulas.fuelCost(0, 0)))
 check(
 	"the station is gone, travel lighting",
-	World.station.model.Parent ~= World.scenery and ws:GetAttribute("LightPreset") == "travel"
+	World.station.model.Parent ~= World.scenery and string.sub(ws:GetAttribute("LightPreset") or "", 1, 6) == "travel"
 )
 check("the next stop is chosen", exp.nextStop ~= nil)
 local d0 = Expedition:Distance()
