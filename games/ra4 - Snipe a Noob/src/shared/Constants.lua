@@ -32,7 +32,7 @@ Constants.MAX_RANGE = 700 -- studs
 Constants.LAG_COMP_MAX = 0.3 -- the server rewinds targets at most this many seconds to where the shooter saw them
 Constants.HISTORY_SECONDS = 1 -- how much position history the server keeps per target
 Constants.ORIGIN_TOLERANCE = 9 -- the shot must start this close to the shooter's head (server's view)
-Constants.FIRE_RATE_SLACK = 0.12 -- seconds of slack on the bolt time (network jitter)
+Constants.FIRE_RATE_SLACK = 0.3 -- seconds of slack on the bolt time (network jitter: a fair shot is never thrown away)
 -- hit shapes, relative to the HumanoidRootPart: a head ball and a body capsule
 Constants.HEAD_OFFSET = 1.6
 Constants.HEAD_RADIUS = 1.6

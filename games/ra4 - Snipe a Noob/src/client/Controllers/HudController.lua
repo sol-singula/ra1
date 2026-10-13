@@ -8,6 +8,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Format = require(ReplicatedStorage.Shared.Format)
@@ -614,6 +615,7 @@ local function buildMenu()
 	playButton.Activated:Connect(function()
 		Net.send("Play")
 	end)
+	Theme.keyHint(playButton, "P")
 	lobbyButton = Theme.button({
 		Name = "LobbyButton",
 		Text = "🏠 LOBBY",
@@ -625,6 +627,18 @@ local function buildMenu()
 	})
 	lobbyButton.Activated:Connect(function()
 		Net.send("Leave")
+	end)
+	Theme.keyHint(lobbyButton, "L")
+	-- in a round the mouse is hidden (first person), so the buttons have keys on a computer
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if processed then
+			return
+		end
+		if input.KeyCode == Enum.KeyCode.L and lobbyButton.Visible then
+			Net.send("Leave")
+		elseif input.KeyCode == Enum.KeyCode.P and playButton.Visible then
+			Net.send("Play")
+		end
 	end)
 end
 
@@ -721,6 +735,7 @@ local function drawRound()
 			math.max(0, pt.nextIn - (os.clock() - (HudController._ptAt or os.clock())))
 		)}`
 	end
+	Theme.refreshKeyHints()
 	voteBar.Visible = state == "lobby" and not inArena() and Store.state.vote ~= nil and Store.state.vote.open == true
 	local boost = Store.state.boostLeft or 0
 	boostPill.Visible = boost > 0 and not inArena()

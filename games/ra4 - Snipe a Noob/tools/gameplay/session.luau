@@ -137,6 +137,14 @@ walk(player, spot, c)
 walk(ben, c + (spot - c) * -0.35, spot)
 Engine.advance(0.3)
 eyes("round_hip", ben.Character.HumanoidRootPart.Position + V3.new(0, 0.5, 0))
+-- a shot from the hip, then the reload half way through
+do
+	local R = Engine.require(tree.client.Controllers.RifleController)
+	R.fire()
+	Engine.advance(0.55)
+	eyes("round_reload", ben.Character.HumanoidRootPart.Position + V3.new(0, 0.5, 0))
+	Engine.advance(1)
+end
 -- scoped in
 local Rifle = Engine.require(tree.client.Controllers.RifleController)
 Rifle.setScope(true)

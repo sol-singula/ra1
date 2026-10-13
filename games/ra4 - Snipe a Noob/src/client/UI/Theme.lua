@@ -302,7 +302,25 @@ function Theme.keyHint(button, keyboardText, gamepadText)
 	}, { Theme.corner(7), Theme.stroke(2.5) })
 	badge:SetAttribute("Keyboard", keyboardText)
 	badge:SetAttribute("Gamepad", gamepadText)
+	table.insert(Theme._keyHints, badge)
+	Theme.refreshKeyHints()
 	return badge
+end
+
+-- Key badges show on computers (the key) and gamepads (the button), never on phones.
+Theme._keyHints = {}
+function Theme.refreshKeyHints()
+	local kind = Theme.inputKind()
+	for i = #Theme._keyHints, 1, -1 do
+		local badge = Theme._keyHints[i]
+		if not badge.Parent then
+			table.remove(Theme._keyHints, i)
+		else
+			local text = kind == "gamepad" and badge:GetAttribute("Gamepad") or badge:GetAttribute("Keyboard")
+			badge.Visible = kind ~= "touch" and text ~= nil
+			badge.Text = text or ""
+		end
+	end
 end
 
 -- Horizontal bar: returns the frame and its fill.

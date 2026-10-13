@@ -42,6 +42,8 @@ local swayX, swayY = 0, 0
 local bobT = 0
 local equipT = 0 -- 0 when the rifle comes up, 1 when it's ready
 local vmParts = {} -- the bolt and mag parts and their places on the rifle, for the bolt and reload moves
+local reloadLabel
+local ejectShell
 
 RifleController.fired = 0 -- shots sent (tests read it)
 
@@ -226,7 +228,7 @@ local function assist(origin, dir)
 	for _, m in robots and robots:GetChildren() or {} do
 		local r = m:FindFirstChild("Root")
 		if r and m:GetAttribute("Zone") == player:GetAttribute("Zone") then
-			consider(r.Position + Vector3.new(0, 3, 0))
+			consider(r.Position) -- a robot's Root is where a player's HumanoidRootPart is
 		end
 	end
 	return best or dir
@@ -265,7 +267,7 @@ function RifleController.fire()
 	Net.send("Fire", origin, dir, workspace:GetServerTimeNow())
 	RifleController.fired += 1
 	recoil = 1
-	camKick += scoped and 1.4 or 2.6
+	camKick += scoped and 0.3 or 0.5
 	-- my own tracer straight away (the server's echo of my shot is skipped)
 	if RifleController.onLocalShot then
 		RifleController.onLocalShot(muzzleWorld(), origin + dir * 300, r.tracer)
@@ -398,6 +400,41 @@ local function bump(t, a, b)
 	return math.sin((t - a) / (b - a) * math.pi)
 end
 
+-- A brass shell flies out of the rifle's side during the reload.
+ejectShell = function()
+	local handle = viewModel and viewModel.PrimaryPart
+	local knob = viewModel and viewModel:FindFirstChild("BoltKnob")
+	if not handle or not knob then
+		return
+	end
+	local shell = Instance.new("Part")
+	shell.Name = "Shell"
+	shell.Size = Vector3.new(0.12, 0.12, 0.4)
+	shell.Color = Color3.fromRGB(230, 180, 60)
+	shell.Material = Enum.Material.Metal
+	shell.CanCollide = false
+	shell.CanQuery = false
+	shell.CanTouch = false
+	shell.CastShadow = false
+	shell.Anchored = true
+	shell.CFrame = knob.CFrame
+	shell.Parent = workspace.CurrentCamera
+	local right = handle.CFrame.RightVector
+	local up = handle.CFrame.UpVector
+	local start, t0 = shell.CFrame, os.clock()
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		local t = os.clock() - t0
+		if t > 0.6 or not shell.Parent then
+			conn:Disconnect()
+			shell:Destroy()
+			return
+		end
+		local p = start.Position + right * (t * 6) + up * (t * 5 - 9 * t * t)
+		shell.CFrame = CFrame.new(p) * start.Rotation * CFrame.Angles(t * 25, t * 18, 0)
+	end)
+end
+
 local function updateViewModel(dt)
 	local cam = camera()
 	if not viewModel or not cam or not cam.CFrame then
@@ -433,21 +470,34 @@ local function updateViewModel(dt)
 	local t = cd > 0 and left > 0 and (1 - left / cd) or 1
 	local reloading = left > 0 and r.shots > 1 and clipShots >= r.shots
 	local work = left > 0 and r.shots == 1
-	local roll, lift, dip, pull, magDrop = 0, 0, 0, 0, 0
+	local roll, lift, dip, pull, magDrop, tilt = 0, 0, 0, 0, 0, 0
 	if work then
-		roll = bump(t, 0.12, 0.9) * 0.45 -- tip the rifle to work the bolt
-		lift = bump(t, 0.12, 0.9) * 0.15
-		pull = bump(t, 0.3, 0.8) * 0.55 -- bolt back, then forward
+		-- the reload: tip the rifle over, pull the bolt right back (a shell flies out), push it home, level up
+		roll = bump(t, 0.05, 0.95) * 0.85
+		lift = bump(t, 0.05, 0.95) * 0.35
+		tilt = bump(t, 0.05, 0.95) * 0.25
+		pull = bump(t, 0.25, 0.8) * 1.1
+		if t >= 0.45 and not RifleController._shellOut then
+			RifleController._shellOut = true
+			ejectShell()
+		end
 	elseif reloading then
-		dip = bump(t, 0.05, 0.95) * 0.7 -- rifle down
-		roll = bump(t, 0.05, 0.95) * 0.3
-		magDrop = bump(t, 0.2, 0.75) * 1.4 -- old mag out, new mag in
+		dip = bump(t, 0.05, 0.95) * 0.9 -- rifle down
+		roll = bump(t, 0.05, 0.95) * 0.5
+		magDrop = bump(t, 0.15, 0.8) * 1.6 -- old mag out, new mag in
+		pull = bump(t, 0.8, 0.98) * 1.1 -- and a pull of the bolt to finish
+	end
+	if left <= 0 then
+		RifleController._shellOut = false
+	end
+	if reloadLabel then
+		reloadLabel.Visible = left > 0 and fight and (work or reloading)
 	end
 	local base = CFrame.new(1.25, -1.3, -3.0)
 	local target = base
 		* bob
-		* CFrame.new(swayX, swayY + lift - dip - (1 - ease(equipT)) * 1.5, recoil * 0.45)
-		* CFrame.Angles(recoil * 0.18 - dip * 0.35, swayX * 0.4, roll)
+		* CFrame.new(swayX, swayY + lift - dip - (1 - ease(equipT)) * 1.5, recoil * 0.1)
+		* CFrame.Angles(recoil * 0.04 - dip * 0.35 + tilt, swayX * 0.4, roll)
 	-- smoothing: ease toward the target every frame
 	vmOffset = vmOffset:Lerp(target, 1 - math.exp(-dt * 20))
 	-- place the rifle's own frame (not its tilted grip), turned a touch inward so the barrel meets the crosshair
@@ -608,6 +658,10 @@ local function applyCamera()
 	end
 	crosshair.Visible = fight
 	RifleController.applySensitivity()
+	-- no mouse arrow while shooting (the crosshair is your aim)
+	pcall(function()
+		UserInputService.MouseIconEnabled = not fight
+	end)
 	if fight and not RifleController._wasFight then
 		equipT = 0 -- bring the rifle up
 	end
@@ -630,42 +684,95 @@ function RifleController:init()
 		ZIndex = 0,
 		Parent = gui,
 	})
-	-- the scope: dark edges around a round window
-	for _, spec in
-		{
-			{ UDim2.new(0.5, -250, 1, 0), UDim2.fromScale(0, 0) },
-			{ UDim2.new(0.5, -250, 1, 0), UDim2.new(0.5, 250, 0, 0) },
-		}
-	do
-		new("Frame", {
-			Name = "Edge",
-			Size = spec[1],
-			Position = spec[2],
-			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-			BorderSizePixel = 0,
-			Parent = scopeOverlay,
-		})
-	end
-	new("Frame", {
+	-- the scope: a round lens as tall as the screen, everything outside it dark (a huge stroke round the lens fills
+	-- the rest of the screen), a metal ring, thick outer posts with thin lines to the middle, and a red dot
+	local lens = new("Frame", {
 		Name = "Lens",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(500, 500),
+		Size = UDim2.fromScale(0.94, 0.94),
 		BackgroundTransparency = 1,
 		Parent = scopeOverlay,
-	}, { Theme.corner("round"), Theme.stroke(40, Color3.fromRGB(0, 0, 0)) })
-	for _, s in { UDim2.fromOffset(500, 2), UDim2.fromOffset(2, 500) } do
+	}, {
+		new("UIAspectRatioConstraint", { AspectRatio = 1, DominantAxis = Enum.DominantAxis.Height }),
+		Theme.corner("round"),
+	})
+	new("UIStroke", { Thickness = 3000, Color = Color3.fromRGB(8, 10, 14), Parent = lens })
+	local function ring(name, inset, thickness, color, transparency)
+		local f = new("Frame", {
+			Name = name,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.new(1, -inset * 2, 1, -inset * 2),
+			BackgroundTransparency = 1,
+			Parent = lens,
+		}, { Theme.corner("round") })
+		new("UIStroke", { Thickness = thickness, Color = color, Transparency = transparency or 0, Parent = f })
+		return f
+	end
+	ring("Rim", 0, 10, Color3.fromRGB(70, 76, 90)) -- the metal tube
+	ring("RimShine", 6, 2, Color3.fromRGB(150, 160, 180), 0.3)
+	ring("Shade", 14, 22, Color3.fromRGB(0, 0, 0), 0.65) -- soft dark edge inside the glass
+	-- the lines: thin through the middle, thick posts toward the edge
+	local INK_LINE = Color3.fromRGB(15, 15, 20)
+	for _, spec in
+		{
+			{ UDim2.new(0.62, 0, 0, 2), UDim2.fromScale(0.5, 0.5) }, -- thin across
+			{ UDim2.new(0, 2, 0.62, 0), UDim2.fromScale(0.5, 0.5) }, -- thin down
+			{ UDim2.new(0.2, 0, 0, 7), UDim2.fromScale(0.1, 0.5) }, -- posts
+			{ UDim2.new(0.2, 0, 0, 7), UDim2.fromScale(0.9, 0.5) },
+			{ UDim2.new(0, 7, 0.2, 0), UDim2.fromScale(0.5, 0.9) },
+			{ UDim2.new(0, 7, 0.2, 0), UDim2.fromScale(0.5, 0.1) },
+		}
+	do
 		new("Frame", {
 			Name = "Hair",
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.5, 0.5),
-			Size = s,
-			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-			BackgroundTransparency = 0.3,
+			Position = spec[2],
+			Size = spec[1],
+			BackgroundColor3 = INK_LINE,
 			BorderSizePixel = 0,
-			Parent = scopeOverlay,
+			Parent = lens,
 		})
 	end
+	-- range dots on the lines
+	for i = -3, 3 do
+		if i ~= 0 then
+			for _, horizontal in { true, false } do
+				new("Frame", {
+					Name = "MilDot",
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = horizontal and UDim2.fromScale(0.5 + i * 0.05, 0.5)
+						or UDim2.fromScale(0.5, 0.5 + i * 0.05),
+					Size = UDim2.fromOffset(5, 5),
+					BackgroundColor3 = INK_LINE,
+					BorderSizePixel = 0,
+					Parent = lens,
+				}, { Theme.corner("round") })
+			end
+		end
+	end
+	new("Frame", {
+		Name = "RedDot",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(7, 7),
+		BackgroundColor3 = Color3.fromRGB(255, 40, 40),
+		BorderSizePixel = 0,
+		Parent = lens,
+	}, { Theme.corner("round"), Theme.stroke(1, Color3.fromRGB(255, 255, 255)) })
+	-- a faint glare on the glass
+	new("Frame", {
+		Name = "Glare",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.32, 0.28),
+		Size = UDim2.fromScale(0.28, 0.12),
+		Rotation = -35,
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.9,
+		BorderSizePixel = 0,
+		Parent = lens,
+	}, { Theme.corner("round") })
 	hitMarker = Theme.title({
 		Name = "HitMarker",
 		Text = "✖",
@@ -678,6 +785,20 @@ function RifleController:init()
 		Parent = gui,
 	})
 	buildCrosshair()
+	reloadLabel = Theme.title({
+		Name = "Reloading",
+		Text = "RELOADING",
+		TextSize = 16,
+		TextScaled = false,
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0.5, 44),
+		Size = UDim2.fromOffset(160, 22),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = C.mustard,
+		outline = 1.5,
+		Visible = false,
+		Parent = gui,
+	})
 	buildButtons()
 	bindInput()
 	Net.listen("Hit", function(headshot)
@@ -701,7 +822,7 @@ function RifleController:init()
 		updateViewModel(dt)
 		if crosshair.Visible then
 			local s = spreadNow()
-			local gap = 10 + s * 4 + recoil * 10 -- the lines jump out when you fire
+			local gap = 10 + s * 4 + recoil * 3 -- the lines jump out a little when you fire
 			for i, d in { Vector2.new(0, -1), Vector2.new(0, 1), Vector2.new(-1, 0), Vector2.new(1, 0) } do
 				local tick = crosshair:FindFirstChild("Tick" .. i)
 				if tick then

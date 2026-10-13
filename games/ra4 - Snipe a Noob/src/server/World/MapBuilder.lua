@@ -930,6 +930,610 @@ local function overlaps(taken, x, z, hx, hz, pad)
 	return false
 end
 
+-- Dressing ----------------------------------------------------------------------------------------------------------
+-- Everything that makes a map feel like a place: paving, curbs and ground patches, building details (frames,
+-- shutters, awnings, signs, chimneys, flower boxes), street props in the theme, ivy and posters on the walls,
+-- hills and mountains outside, and clouds. Props that stand on the ground are real cover; the rest is decoration
+-- (shots and players pass through it).
+local SIGNS = {
+	town = { "CAFE", "SHOP", "BAKERY", "TOYS", "BOOKS", "PIZZA" },
+	candy = { "SWEETS", "FUDGE", "TAFFY", "GUMMY", "COCOA", "TREATS" },
+	dock = { "HANGAR 1", "FUEL", "CARGO", "LAB", "DOCK 7", "COMMS" },
+	castle = { "INN", "SMITH", "TAVERN", "STABLE", "GUARD", "MARKET" },
+}
+
+local function sign(m, cf, w, h, text, bg, fg)
+	local p = deco(m, "Sign", Vector3.new(w, h, 0.3), cf, bg)
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Front
+	gui.CanvasSize = Vector2.new(w * 40, h * 40)
+	gui.LightInfluence = 0.3
+	gui.Parent = p
+	local t = Instance.new("TextLabel")
+	t.BackgroundTransparency = 1
+	t.Size = UDim2.fromScale(1, 1)
+	t.Text = text
+	t.Font = Enum.Font.LuckiestGuy
+	t.TextScaled = true
+	t.TextColor3 = fg
+	t.Parent = gui
+	return p
+end
+
+local function dressHouse(m, theme, look, h, rng, i)
+	local base, w, d = h.base, h.w, h.d
+	local H = MapBuilder.STOREY
+	local trim = look.trim
+	local accent = theme.cover[(i % #theme.cover) + 1]
+	-- corner posts and a band between the floors
+	for _, sx in { -1, 1 } do
+		for _, sz in { -1, 1 } do
+			deco(m, "CornerTrim", Vector3.new(0.9, H, 0.9), base * CFrame.new(sx * (w / 2), H / 2, sz * (d / 2)), trim)
+		end
+	end
+	for _, sz in { -1, 1 } do
+		deco(m, "Band", Vector3.new(w + 0.4, 0.5, 0.4), base * CFrame.new(0, 2.8, sz * (d / 2 + 0.1)), trim)
+		-- an awning over each door, striped
+		for k = -2, 2 do
+			deco(
+				m,
+				"Awning",
+				Vector3.new(1.2, 0.25, 2.2),
+				base * CFrame.new(k * 1.2, 7.6, sz * (d / 2 + 1)) * CFrame.Angles(sz * math.rad(-14), 0, 0),
+				k % 2 == 0 and accent or WHITE,
+				Enum.Material.Fabric
+			)
+		end
+		-- door frame
+		deco(m, "DoorFrame", Vector3.new(6, 0.5, 0.5), base * CFrame.new(0, 7.2, sz * (d / 2 + 0.15)), trim)
+		for _, dx in { -2.75, 2.75 } do
+			deco(m, "DoorFrame", Vector3.new(0.5, 7, 0.5), base * CFrame.new(dx, 3.5, sz * (d / 2 + 0.15)), trim)
+		end
+	end
+	-- the shop sign over the front door
+	local names = SIGNS[theme.props] or SIGNS.town
+	local s = sign(
+		m,
+		base * CFrame.new(0, 8.6, -(d / 2 + 0.35)) * CFrame.Angles(0, math.rad(180), 0),
+		6,
+		1.4,
+		names[(i % #names) + 1],
+		trim,
+		accent:Lerp(INK, 0.35)
+	)
+	s.Name = "ShopSign"
+	-- window frames, shutters and flower boxes on the sides
+	for _, sx in { -1, 1 } do
+		for _, wz in { -d / 4, d / 4 } do
+			local wcf = base * CFrame.new(sx * (w / 2 + 0.15), 5, wz) * CFrame.Angles(0, math.rad(90 * sx), 0)
+			deco(m, "WindowFrame", Vector3.new(4, 0.4, 0.4), wcf * CFrame.new(0, 1.6, 0), trim)
+			deco(m, "WindowFrame", Vector3.new(4, 0.4, 0.4), wcf * CFrame.new(0, -1.6, 0), trim)
+			for _, dx in { -2.6, 2.6 } do
+				deco(m, "Shutter", Vector3.new(1.2, 3, 0.2), wcf * CFrame.new(dx, 0, 0.1), accent, Enum.Material.Wood)
+			end
+			deco(m, "FlowerBox", Vector3.new(3.4, 0.6, 0.8), wcf * CFrame.new(0, -2.1, -0.4), look.floor:Lerp(INK, 0.3))
+			for f = -1, 1 do
+				ball(
+					m,
+					"Flower",
+					0.6,
+					wcf * CFrame.new(f * 1.1, -1.6, -0.4),
+					theme.cover[rng:NextInteger(1, #theme.cover)],
+					nil,
+					{ CanCollide = false, CanQuery = false, CastShadow = false }
+				)
+			end
+		end
+	end
+	-- something on the roof: a chimney (town, castle), a cherry (candy) or an antenna (dock)
+	local roofTop = base * CFrame.new(w / 2 - 1.6, H + 1, d / 2 - 1.6)
+	if theme.props == "dock" then
+		deco(m, "Antenna", Vector3.new(0.3, 7, 0.3), roofTop * CFrame.new(0, 4.5, 0), look.metal)
+		ball(
+			m,
+			"AntennaLight",
+			0.8,
+			roofTop * CFrame.new(0, 8.2, 0),
+			rgb(255, 60, 60),
+			Enum.Material.Neon,
+			{ CanCollide = false, CanQuery = false }
+		)
+		cyl(
+			m,
+			"Dish",
+			2.6,
+			0.3,
+			roofTop * CFrame.new(-2.5, 2.2, 0) * CFrame.Angles(math.rad(35), 0, 0),
+			WHITE,
+			nil,
+			{ CanCollide = false, CanQuery = false }
+		)
+	elseif theme.props == "candy" then
+		ball(
+			m,
+			"Cherry",
+			1.8,
+			roofTop * CFrame.new(0, 2.2, 0),
+			rgb(230, 30, 50),
+			nil,
+			{ CanCollide = false, CanQuery = false }
+		)
+		deco(
+			m,
+			"Stem",
+			Vector3.new(0.2, 1.6, 0.2),
+			roofTop * CFrame.new(0.2, 3.6, 0) * CFrame.Angles(0, 0, math.rad(20)),
+			rgb(80, 150, 60)
+		)
+	else
+		deco(
+			m,
+			"Chimney",
+			Vector3.new(1.6, 4, 1.6),
+			roofTop * CFrame.new(0, 2.5, 0),
+			look.wall[#look.wall]:Lerp(INK, 0.25),
+			look.wallMat
+		)
+		deco(m, "ChimneyCap", Vector3.new(2, 0.4, 2), roofTop * CFrame.new(0, 4.7, 0), trim)
+	end
+end
+
+-- Props along the lanes, by theme. Each returns its footprint half size (they're real cover).
+local PROPS = {}
+function PROPS.town(m, look, p, rng, theme)
+	local k = rng:NextInteger(1, 4)
+	if k == 1 then -- a bench
+		block(m, "Bench", Vector3.new(4, 0.4, 1.4), p * CFrame.new(0, 1.4, 0), rgb(170, 110, 60), Enum.Material.Wood)
+		block(
+			m,
+			"BenchBack",
+			Vector3.new(4, 1.2, 0.3),
+			p * CFrame.new(0, 2.2, 0.6),
+			rgb(170, 110, 60),
+			Enum.Material.Wood
+		)
+		for _, x in { -1.6, 1.6 } do
+			block(m, "BenchLeg", Vector3.new(0.3, 1.2, 1.2), p * CFrame.new(x, 0.6, 0), look.metal)
+		end
+		return 2, 0.8
+	elseif k == 2 then -- a postbox
+		block(m, "Postbox", Vector3.new(1.4, 2.6, 1.4), p * CFrame.new(0, 1.3, 0), rgb(220, 50, 50))
+		cyl(m, "PostboxTop", 1.4, 0.4, p * CFrame.new(0, 2.8, 0), rgb(220, 50, 50))
+		return 0.8, 0.8
+	elseif k == 3 then -- a hydrant
+		cyl(m, "Hydrant", 1, 1.8, p * CFrame.new(0, 0.9, 0), rgb(240, 60, 50))
+		ball(m, "HydrantTop", 1, p * CFrame.new(0, 1.9, 0), rgb(240, 60, 50))
+		return 0.6, 0.6
+	end
+	-- a market stall
+	block(m, "Stall", Vector3.new(4, 2.4, 2), p * CFrame.new(0, 1.2, 0), rgb(170, 110, 60), Enum.Material.Wood)
+	for k2 = -1, 1 do
+		deco(
+			m,
+			"StallRoof",
+			Vector3.new(1.4, 0.2, 2.6),
+			p * CFrame.new(k2 * 1.35, 4.2, 0),
+			k2 == 0 and WHITE or theme.cover[1],
+			Enum.Material.Fabric
+		)
+	end
+	for _, x in { -1.8, 1.8 } do
+		deco(m, "StallPole", Vector3.new(0.2, 1.8, 0.2), p * CFrame.new(x, 3.3, 0.9), look.metal)
+	end
+	for f = -1, 1 do
+		ball(
+			m,
+			"Fruit",
+			0.6,
+			p * CFrame.new(f * 1.1, 2.7, 0),
+			theme.cover[rng:NextInteger(1, #theme.cover)],
+			nil,
+			{ CanCollide = false }
+		)
+	end
+	return 2.1, 1.1
+end
+function PROPS.candy(m, _look, p, rng, theme)
+	local k = rng:NextInteger(1, 3)
+	if k == 1 then -- a giant lollipop
+		deco(m, "Stick", Vector3.new(0.5, 6, 0.5), p * CFrame.new(0, 3, 0), WHITE, nil, { CanCollide = true })
+		cyl(
+			m,
+			"Lolly",
+			4,
+			0.8,
+			p * CFrame.new(0, 7.5, 0) * CFrame.Angles(math.rad(90), 0, 0),
+			theme.cover[rng:NextInteger(1, #theme.cover)]
+		)
+		cyl(
+			m,
+			"LollySwirl",
+			2.6,
+			0.9,
+			p * CFrame.new(0, 7.5, 0) * CFrame.Angles(math.rad(90), 0, 0),
+			WHITE,
+			nil,
+			{ CanCollide = false, CanQuery = false }
+		)
+		return 0.5, 0.5
+	elseif k == 2 then -- a candy cane
+		for i = 0, 5 do
+			block(
+				m,
+				"Cane",
+				Vector3.new(0.9, 1, 0.9),
+				p * CFrame.new(0, 0.5 + i, 0),
+				i % 2 == 0 and rgb(230, 30, 50) or WHITE
+			)
+		end
+		block(m, "CaneHook", Vector3.new(0.9, 0.9, 2), p * CFrame.new(0, 6.3, 0.6), rgb(230, 30, 50))
+		return 0.6, 0.6
+	end
+	-- a stack of gumdrops
+	for i = 1, 3 do
+		ball(
+			m,
+			"Gumdrop",
+			3 - i * 0.5,
+			p * CFrame.new(0, i * 1.6 - 0.4, 0),
+			theme.cover[rng:NextInteger(1, #theme.cover)]
+		)
+	end
+	return 1.3, 1.3
+end
+function PROPS.dock(m, look, p, rng, theme)
+	local k = rng:NextInteger(1, 3)
+	if k == 1 then -- a cargo container
+		local col = theme.cover[rng:NextInteger(1, #theme.cover)]
+		block(m, "Container", Vector3.new(4, 4, 8), p * CFrame.new(0, 2, 0), col, Enum.Material.CorrodedMetal)
+		for z = -3, 3, 1.5 do
+			deco(m, "Rib", Vector3.new(4.2, 3.6, 0.2), p * CFrame.new(0, 2, z), col:Lerp(INK, 0.2))
+		end
+		return 2.1, 4.1
+	elseif k == 2 then -- a fuel tank
+		cyl(m, "Tank", 3, 4, p * CFrame.new(0, 2, 0), WHITE, Enum.Material.Metal)
+		deco(m, "TankBand", Vector3.new(3.2, 0.4, 3.2), p * CFrame.new(0, 2.6, 0), rgb(255, 200, 40))
+		return 1.6, 1.6
+	end
+	-- a crate of glowing cells
+	block(m, "CellCrate", Vector3.new(3, 2, 3), p * CFrame.new(0, 1, 0), look.metal, Enum.Material.DiamondPlate)
+	for _, q in { { -0.7, -0.7 }, { 0.7, 0.7 }, { -0.7, 0.7 }, { 0.7, -0.7 } } do
+		cyl(
+			m,
+			"Cell",
+			0.8,
+			1.2,
+			p * CFrame.new(q[1], 2.5, q[2]),
+			rgb(120, 230, 255),
+			Enum.Material.Neon,
+			{ CanCollide = false }
+		)
+	end
+	return 1.6, 1.6
+end
+function PROPS.castle(m, look, p, rng, _theme)
+	local k = rng:NextInteger(1, 3)
+	if k == 1 then -- a well
+		cyl(m, "Well", 4, 2.4, p * CFrame.new(0, 1.2, 0), look.wall[1], Enum.Material.Cobblestone)
+		cyl(m, "Water", 3.2, 0.2, p * CFrame.new(0, 2.2, 0), rgb(80, 160, 230), nil, { CanCollide = false })
+		for _, x in { -1.8, 1.8 } do
+			deco(
+				m,
+				"WellPost",
+				Vector3.new(0.4, 3, 0.4),
+				p * CFrame.new(x, 3.6, 0),
+				rgb(120, 80, 50),
+				Enum.Material.Wood
+			)
+		end
+		wedge(m, Vector3.new(4.4, 1.2, 1.4), p * CFrame.new(0, 5.6, 0.7), look.roof).CanQuery = false
+		wedge(
+			m,
+			Vector3.new(4.4, 1.2, 1.4),
+			p * CFrame.new(0, 5.6, -0.7) * CFrame.Angles(0, math.rad(180), 0),
+			look.roof
+		).CanQuery =
+			false
+		return 2.1, 2.1
+	elseif k == 2 then -- a torch post
+		deco(
+			m,
+			"TorchPost",
+			Vector3.new(0.6, 5, 0.6),
+			p * CFrame.new(0, 2.5, 0),
+			rgb(110, 75, 45),
+			Enum.Material.Wood,
+			{ CanCollide = true }
+		)
+		local flame = ball(
+			m,
+			"Flame",
+			1,
+			p * CFrame.new(0, 5.4, 0),
+			rgb(255, 160, 50),
+			Enum.Material.Neon,
+			{ CanCollide = false, CanQuery = false }
+		)
+		local light = Instance.new("PointLight")
+		light.Color = rgb(255, 170, 80)
+		light.Range = 14
+		light.Parent = flame
+		return 0.4, 0.4
+	end
+	-- a weapon rack / barrels of apples
+	block(m, "AppleBarrel", Vector3.new(2, 2, 2), p * CFrame.new(0, 1, 0), rgb(140, 95, 55), Enum.Material.Wood)
+	for _ = 1, 5 do
+		ball(
+			m,
+			"Apple",
+			0.55,
+			p * CFrame.new(rng:NextNumber(-0.6, 0.6), 2.2, rng:NextNumber(-0.6, 0.6)),
+			rgb(210, 40, 40),
+			nil,
+			{ CanCollide = false }
+		)
+	end
+	return 1.1, 1.1
+end
+
+local function dress(m, theme, look, c, H, rank, rng, taken, houses)
+	local props = theme.props
+	-- paving: tiles down the lanes in two shades, and curbs along them
+	for _, u in { -0.55, 0, 0.55 } do
+		local n = math.floor(H * 2 / 4)
+		for i = 0, n - 1 do
+			local z = -H + 2 + i * 4
+			if i % 2 == 0 then
+				deco(
+					m,
+					"Tile",
+					Vector3.new(7.4, 0.06, 3.6),
+					CFrame.new(c + Vector3.new(u * H, 0.23, z)),
+					theme.path:Lerp(INK, 0.06)
+				)
+			end
+		end
+		for _, sx in { -1, 1 } do
+			deco(
+				m,
+				"Curb",
+				Vector3.new(0.6, 0.35, H * 2),
+				CFrame.new(c + Vector3.new(u * H + sx * 4.2, 0.18, 0)),
+				look.trim:Lerp(theme.path, 0.4)
+			)
+		end
+	end
+	-- ground patches: grass tufts, dirt, sprinkles, glowing strips or cobbles
+	for i = 1, 24 + rank * 10 do
+		local x, z = rng:NextNumber(-H + 4, H - 4), rng:NextNumber(-H + 4, H - 4)
+		local p = CFrame.new(c + Vector3.new(x, 0.21, z)) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0)
+		if props == "town" or props == "castle" then
+			local col = theme.floor:Lerp(i % 3 == 0 and rgb(140, 110, 70) or rgb(60, 140, 60), 0.35)
+			cyl(
+				m,
+				"Patch",
+				rng:NextNumber(3, 7),
+				0.05,
+				p,
+				col,
+				nil,
+				{ CanCollide = false, CanQuery = false, CastShadow = false }
+			)
+			if i % 2 == 0 then
+				for t = 1, 3 do
+					deco(
+						m,
+						"Tuft",
+						Vector3.new(0.2, 0.9, 0.2),
+						p * CFrame.new(t * 0.4 - 0.8, 0.45, 0) * CFrame.Angles(0, 0, math.rad(t * 15 - 30)),
+						rgb(70, 160, 60)
+					)
+				end
+			end
+		elseif props == "candy" then
+			for t = 1, 4 do
+				deco(
+					m,
+					"Sprinkle",
+					Vector3.new(0.9, 0.2, 0.25),
+					p * CFrame.new(t - 2.5, 0, (t % 2) * 0.8) * CFrame.Angles(0, t, 0),
+					theme.cover[(t % #theme.cover) + 1],
+					Enum.Material.Neon
+				)
+			end
+		else
+			deco(m, "FloorPanel", Vector3.new(6, 0.05, 6), p, theme.floor:Lerp(WHITE, 0.25), Enum.Material.DiamondPlate)
+			if i % 3 == 0 then
+				deco(
+					m,
+					"GlowStrip",
+					Vector3.new(6, 0.08, 0.4),
+					p * CFrame.new(0, 0.05, 0),
+					rgb(120, 220, 255),
+					Enum.Material.Neon
+				)
+			end
+		end
+	end
+	-- crosswalk stripes where the lanes meet the cross path
+	if props == "town" then
+		for _, u in { -0.55, 0.55 } do
+			for k = -3, 3 do
+				deco(
+					m,
+					"Crosswalk",
+					Vector3.new(0.8, 0.07, 6),
+					CFrame.new(c + Vector3.new(u * H + k * 1.1, 0.25, 0)),
+					WHITE
+				)
+			end
+		end
+	end
+	-- building details
+	for i, h in houses do
+		dressHouse(m, theme, look, h, rng, i)
+	end
+	-- props along the lanes (real cover), mirrored so it stays fair
+	local maker = PROPS[props] or PROPS.town
+	local tries = 10 + rank * 6
+	for _ = 1, tries do
+		local u = ({ -0.55, 0, 0.55 })[rng:NextInteger(1, 3)]
+		local x = u * H + (rng:NextInteger(0, 1) == 0 and -6.5 or 6.5)
+		local z = rng:NextNumber(-H + 10, -6)
+		local yaw = rng:NextInteger(0, 3) * 90
+		local fits = not overlaps(taken, x, z, 2.5, 4.5, 1) and not overlaps(taken, -x, -z, 2.5, 4.5, 1)
+		if fits then
+			local seed = rng:NextInteger(1, 1e6)
+			for _, mirror in { 1, -1 } do
+				local p = CFrame.new(c + Vector3.new(x * mirror, 0, z * mirror))
+					* CFrame.Angles(0, math.rad(yaw + (mirror == -1 and 180 or 0)), 0)
+				local hx, hz = maker(m, look, p, Random.new(seed), theme)
+				table.insert(taken, { x * mirror, z * mirror, math.max(hx, hz), math.max(hx, hz) })
+			end
+		end
+	end
+	-- the walls inside: ivy (town, castle), pipes (dock), icing drips (candy), and posters
+	local WH = MapBuilder.WALL_HEIGHT
+	for _, s in { -1, 1 } do
+		for k = 1, 6 + rank * 2 do
+			local t = rng:NextNumber(-H + 6, H - 6)
+			local alongX = k % 2 == 0
+			local pos = alongX and Vector3.new(t, 0, s * (H - 0.05)) or Vector3.new(s * (H - 0.05), 0, t)
+			local cf = CFrame.new(c + pos)
+				* (
+					alongX and CFrame.Angles(0, s > 0 and 0 or math.pi, 0)
+					or CFrame.Angles(0, s > 0 and math.pi / 2 or -math.pi / 2, 0)
+				)
+			if props == "town" or props == "castle" then
+				local hgt = rng:NextNumber(8, WH - 4)
+				deco(
+					m,
+					"Ivy",
+					Vector3.new(rng:NextNumber(2, 4), hgt, 0.25),
+					cf * CFrame.new(0, hgt / 2, 0),
+					rgb(70, 150, 60),
+					Enum.Material.Grass
+				)
+				for _ = 1, 3 do
+					ball(
+						m,
+						"IvyLeaf",
+						rng:NextNumber(1.2, 2),
+						cf * CFrame.new(rng:NextNumber(-1.5, 1.5), rng:NextNumber(1, hgt), 0),
+						rgb(80, 165, 70),
+						Enum.Material.Grass,
+						{ CanCollide = false, CanQuery = false, CastShadow = false }
+					)
+				end
+			elseif props == "dock" then
+				deco(
+					m,
+					"Pipe",
+					Vector3.new(0.8, WH - 2, 0.8),
+					cf * CFrame.new(0, (WH - 2) / 2, 0.3),
+					look.metal,
+					Enum.Material.Metal
+				)
+				deco(
+					m,
+					"PipeLight",
+					Vector3.new(1, 0.4, 1),
+					cf * CFrame.new(0, WH / 2, 0.3),
+					rgb(120, 220, 255),
+					Enum.Material.Neon
+				)
+			else
+				for dd = 1, 3 do
+					deco(
+						m,
+						"Drip",
+						Vector3.new(1, rng:NextNumber(2, 5), 0.3),
+						cf * CFrame.new(dd * 1.3 - 2.6, WH - 3, 0),
+						WHITE
+					)
+				end
+			end
+			if k % 3 == 0 then
+				local poster = sign(
+					m,
+					cf * CFrame.new(0, 6, -0.1) * CFrame.Angles(0, math.pi, 0),
+					4,
+					5,
+					({ "🎯", "💥", "🏆", "⭐" })[rng:NextInteger(1, 4)],
+					theme.cover[rng:NextInteger(1, #theme.cover)],
+					WHITE
+				)
+				poster.Name = "Poster"
+			end
+		end
+	end
+	-- outside: rolling hills with trees (town, castle, candy), or moons and floating rocks (dock), and clouds
+	for i = 1, 16 do
+		local a = i / 16 * math.pi * 2 + rng:NextNumber(-0.1, 0.1)
+		local dist = H + 80 + rng:NextNumber(0, 60)
+		local p = c + Vector3.new(math.cos(a) * dist, 0, math.sin(a) * dist)
+		if props == "dock" and i % 4 == 0 then
+			-- a few big moons far off and high up
+			ball(
+				m,
+				"Moon",
+				rng:NextNumber(60, 110),
+				CFrame.new(p * 3 - c * 2 + Vector3.new(0, rng:NextNumber(160, 260), 0)),
+				i % 2 == 0 and rgb(220, 225, 240) or rgb(255, 210, 160),
+				nil,
+				{ CanCollide = false, CanQuery = false }
+			)
+		elseif props ~= "dock" then
+			local size = rng:NextNumber(40, 80)
+			ball(
+				m,
+				"Hill",
+				size,
+				CFrame.new(p + Vector3.new(0, -size * 0.25, 0)),
+				theme.floor:Lerp(props == "candy" and WHITE or rgb(60, 130, 60), 0.3),
+				Enum.Material.Grass,
+				{ CanCollide = false, CanQuery = false }
+			)
+			for _ = 1, 2 do
+				local tp = p + Vector3.new(rng:NextNumber(-8, 8), size * 0.2, rng:NextNumber(-8, 8))
+				deco(
+					m,
+					"HillTrunk",
+					Vector3.new(1.4, 6, 1.4),
+					CFrame.new(tp + Vector3.new(0, 3, 0)),
+					rgb(120, 80, 50),
+					Enum.Material.Wood
+				)
+				ball(
+					m,
+					"HillTree",
+					rng:NextNumber(6, 9),
+					CFrame.new(tp + Vector3.new(0, 8, 0)),
+					props == "candy" and theme.cover[rng:NextInteger(1, #theme.cover)] or rgb(70, 160, 70),
+					nil,
+					{ CanCollide = false, CanQuery = false }
+				)
+			end
+		end
+	end
+	for _ = 1, 12 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local dist = rng:NextNumber(H + 40, H + 220)
+		local p = c + Vector3.new(math.cos(a) * dist, rng:NextNumber(110, 170), math.sin(a) * dist)
+		for b = 1, 4 do
+			ball(
+				m,
+				"Cloud",
+				rng:NextNumber(14, 24),
+				CFrame.new(p + Vector3.new(b * 9 - 22, rng:NextNumber(-3, 3), rng:NextNumber(-5, 5))),
+				WHITE,
+				nil,
+				{ CanCollide = false, CanQuery = false, CastShadow = false, Transparency = 0.1 }
+			)
+		end
+	end
+end
+
 -- Build ------------------------------------------------------------------------------------------------------------
 local PIECES = {
 	sandbags = sandbags,
@@ -1094,7 +1698,7 @@ function MapBuilder.build(mapKey, sizeKey, parent, center)
 	)
 
 	-- spawns: along the north and south ends, the corners and the side edges
-	local spawns, taken = {}, {}
+	local spawns, taken, houses = {}, {}, {}
 	local function addSpawn(x, z)
 		for _, q in spawns do
 			if (q - (c + Vector3.new(x, 0, z))).Magnitude < 7 then
@@ -1175,6 +1779,7 @@ function MapBuilder.build(mapKey, sizeKey, parent, center)
 					if not overlaps(taken, x, z, w / 2 + 4, d / 2 + 2, 1) then
 						local hx, hz = building(m, theme, look, base, w, d, rng)
 						table.insert(taken, { x, z, hx, hz })
+						table.insert(houses, { base = base, w = w, d = d })
 						-- a spawn on the roof deck
 						table.insert(spawns, (base * CFrame.new(-w / 4, MapBuilder.STOREY + 1, 0)).Position)
 					end
@@ -1245,6 +1850,7 @@ function MapBuilder.build(mapKey, sizeKey, parent, center)
 	end
 
 	skyline(m, theme, look, c, H, rng)
+	dress(m, theme, look, c, H, rank, rng, taken, houses)
 	m.Parent = parent
 	return {
 		model = m,
