@@ -35,6 +35,7 @@ local TeamService = {
 	Spawned = Signal.new("TeamService.Spawned"), -- (player, character, team)
 	Died = Signal.new("TeamService.Died"), -- (player, killer?, team, killerNpc?)
 	JobChanged = Signal.new("TeamService.JobChanged"), -- (player, jobKey)
+	JobPicked = Signal.new("TeamService.JobPicked"), -- (player, jobKey) a dwarf picked at a Job Board (even the same job)
 	StatAdded = Signal.new("TeamService.StatAdded"), -- (player, key, n)
 	LevelUp = Signal.new("TeamService.LevelUp"), -- (player, monsterLevel)
 }
@@ -617,6 +618,7 @@ function TeamService:SetJob(player, key)
 		if not pos or not nearJobBoard(pos) then
 			return false, "Go to a Job Board to change jobs."
 		end
+		self.JobPicked:Fire(player, key)
 		if s.job == key then
 			return true
 		end

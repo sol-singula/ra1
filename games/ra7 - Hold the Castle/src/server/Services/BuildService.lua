@@ -50,6 +50,7 @@ local stages = { "camp", "camp", "camp" }
 local castleFolder
 local CELL = Constants.CELL
 local stageDecor = {} -- [shrine] = { parts }
+local buildFxOf
 
 local function now()
 	return workspace:GetServerTimeNow()
@@ -228,6 +229,11 @@ local function makeModels(piece)
 	m.Name = "Piece" .. piece.id
 	m:SetAttribute("PieceId", piece.id)
 	m:SetAttribute("Key", piece.key)
+	-- where it sits on the grid (the client's placement ghost checks against these)
+	m:SetAttribute("I", piece.i)
+	m:SetAttribute("J", piece.j)
+	m:SetAttribute("Rot", piece.rot)
+	m:SetAttribute("Shrine", piece.shrine)
 	local blocker = m:FindFirstChild("Blocker")
 	if blocker then
 		Groups.set(blocker, "Gate")
@@ -385,6 +391,12 @@ local function healerNear(player)
 	return false
 end
 
+-- The build effect look this player wears (gold sparkles, hearts...).
+buildFxOf = function(player)
+	local profile = data:Get(player)
+	return profile and profile.looks.equipped.buildFx or "dust"
+end
+
 -- Put materials from a bag into a need/have pair (up to `n` this hit). Returns what went in.
 local function deposit(player, need, have, n)
 	local put = {}
@@ -442,7 +454,13 @@ function BuildService:Hammer(player, id)
 		end
 		piece.contributors[player] = true
 		raise(piece)
-		Net.fireAll("Fx", "hammer", { id = id, position = piece.center, by = player.UserId, progress = piece.progress })
+		Net.fireAll("Fx", "hammer", {
+			id = id,
+			position = piece.center,
+			by = player.UserId,
+			progress = piece.progress,
+			style = buildFxOf(player),
+		})
 		Net.fireAll("Sfx", "hammer", piece.center)
 		if n > 0 then
 			Net.fire(player, "Popup", piece.center + Vector3.new(0, piece.size.Y / 2 + 2, 0), putText(put), "info")

@@ -2,6 +2,8 @@
 -- the render tools): a bright palette, part helpers, and props made from plain parts. Art direction (master plan
 -- §14): bright and full of colour, chunky and friendly, smooth cartoon shapes (not blocks), big readable
 -- silhouettes. Small props don't cast shadows or collide, to keep phones fast.
+local CollectionService = game:GetService("CollectionService")
+
 local Kit = {}
 
 local function rgb(r, g, b)
@@ -395,7 +397,7 @@ function Kit.flowers(parent, pos, rng, n)
 	local colors = { C.flowerPink, C.flowerYellow, C.flowerWhite, C.flowerBlue }
 	for _ = 1, n or 5 do
 		local p = pos + Vector3.new(rng:NextNumber(-3, 3), 0, rng:NextNumber(-3, 3))
-		Kit.box(
+		local stem = Kit.box(
 			parent,
 			"Stem",
 			CFrame.new(p + Vector3.new(0, 0.4, 0)),
@@ -404,7 +406,7 @@ function Kit.flowers(parent, pos, rng, n)
 			M.SmoothPlastic,
 			{ CanCollide = false, CastShadow = false }
 		)
-		Kit.ball(
+		local bloom = Kit.ball(
 			parent,
 			"Flower",
 			p + Vector3.new(0, 0.9, 0),
@@ -413,6 +415,9 @@ function Kit.flowers(parent, pos, rng, n)
 			M.SmoothPlastic,
 			{ CanCollide = false, CastShadow = false }
 		)
+		-- pure decoration: phones in lite mode leave it out (PerformanceController)
+		CollectionService:AddTag(stem, "Detail")
+		CollectionService:AddTag(bloom, "Detail")
 	end
 end
 

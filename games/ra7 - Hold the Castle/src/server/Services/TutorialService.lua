@@ -287,7 +287,7 @@ function TutorialService:Init(reg)
 			self:_advance(player, "build")
 		end
 	end)
-	teams.JobChanged:Connect(function(player)
+	teams.JobPicked:Connect(function(player)
 		self:_advance(player, "job")
 	end)
 	combat.Hit:Connect(function(by, victim)
