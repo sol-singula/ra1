@@ -5,6 +5,59 @@ show, and the player's ScreenGuis. tools/gameplay/render.js draws a snapshot wit
 ]]
 local Capture = {}
 
+-- The terrain's voxels, run-length encoded per chunk (y fastest, then z, then x; each voxel is
+-- material id + occupancy * 256), cached until the terrain changes.
+local voxelCache = { version = -1 }
+local function encodeVoxels(T)
+	if voxelCache.version == T.version then
+		return voxelCache.value
+	end
+	local chunks = {}
+	for _, c in T.voxels do
+		local out, n = {}, 0
+		local data, total = c.data, c.nx * c.ny * c.nz
+		local prev, count = -1, 0
+		for i = 0, total - 1 do
+			local code = buffer.readu16(data, i * 2)
+			if code == prev then
+				count += 1
+			else
+				if count > 0 then
+					n += 1
+					out[n] = count > 1 and (prev .. "*" .. count) or tostring(prev)
+				end
+				prev, count = code, 1
+			end
+		end
+		if count > 0 then
+			n += 1
+			out[n] = count > 1 and (prev .. "*" .. count) or tostring(prev)
+		end
+		table.insert(
+			chunks,
+			{ o = { c.min.X, c.min.Y, c.min.Z }, n = { c.nx, c.ny, c.nz }, rle = table.concat(out, ",") }
+		)
+	end
+	voxelCache = { version = T.version, value = { res = 4, palette = table.clone(T.palette), chunks = chunks } }
+	return voxelCache.value
+end
+
+-- Write a snapshot as <outDir>/<name>.json. The terrain's voxels (big, and the same in every shot) go once into
+-- their own file next to it, which render.js reads back in.
+local written = {}
+function Capture.save(Engine, snap, outDir, name)
+	local http = Engine.game:GetService("HttpService")
+	if snap.terrain and snap.terrain.voxels and not snap.terrain.voxels.file then
+		local file = "terrain_voxels_" .. Engine.terrain.version .. ".json"
+		if not written[outDir .. "/" .. file] then
+			writeFile(outDir .. "/" .. file, http:JSONEncode(snap.terrain.voxels))
+			written[outDir .. "/" .. file] = true
+		end
+		snap.terrain.voxels = { file = file }
+	end
+	writeFile(outDir .. "/" .. name .. ".json", http:JSONEncode(snap))
+end
+
 local function hex(c)
 	return string.format(
 		"#%02x%02x%02x",
@@ -160,8 +213,54 @@ function Capture.snapshot(Engine, camera)
 		bloom = bloom.Intensity or 0,
 	}
 
+	-- the land: every terrain fill in order (render.js voxelizes and meshes them), the material colours, water, clouds
+	local terrainInst = workspace:FindFirstChild("Terrain")
+	if Engine.terrain and (#Engine.terrain.ops > 0 or #(Engine.terrain.voxels or {}) > 0) then
+		local ops = {}
+		for _, o in Engine.terrain.ops do
+			local e = { o = o.op, mat = o.material }
+			if o.cf then
+				local r = o.cf.r
+				e.m = { o.cf.p.X, o.cf.p.Y, o.cf.p.Z, r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9] }
+			end
+			if o.size then
+				e.s = { o.size.X, o.size.Y, o.size.Z }
+			end
+			if o.center then
+				e.c = { o.center.X, o.center.Y, o.center.Z }
+			end
+			e.r = o.radius
+			e.h = o.height
+			table.insert(ops, e)
+		end
+		local colors = {}
+		for name, c in Engine.terrain.colors do
+			colors[name] = hex(c)
+		end
+		local tp = terrainInst and rawget(terrainInst, "_props") or {}
+		local clouds = terrainInst and terrainInst:FindFirstChildOfClass("Clouds")
+		local cp = clouds and rawget(clouds, "_props") or nil
+		snap.terrain = {
+			ops = ops,
+			voxels = #(Engine.terrain.voxels or {}) > 0 and encodeVoxels(Engine.terrain) or nil,
+			colors = colors,
+			water = {
+				color = tp.WaterColor and hex(tp.WaterColor) or "#0c5468",
+				transparency = tp.WaterTransparency or 0.3,
+				reflectance = tp.WaterReflectance or 1,
+				waveSize = tp.WaterWaveSize or 0.15,
+			},
+			decoration = tp.Decoration == true,
+			clouds = cp and cp.Enabled ~= false and {
+				cover = cp.Cover or 0.5,
+				density = cp.Density or 0.7,
+				color = cp.Color and hex(cp.Color) or "#ffffff",
+			} or nil,
+		}
+	end
+
 	for _, d in workspace:GetDescendants() do
-		if d:IsA("BasePart") then
+		if d:IsA("BasePart") and d.ClassName ~= "Terrain" then
 			local p = rawget(d, "_props")
 			local transparency = p.Transparency or 0
 			if transparency < 0.99 then

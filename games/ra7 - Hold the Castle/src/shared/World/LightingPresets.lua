@@ -27,6 +27,7 @@ LightingPresets.list = {
 		},
 		grade = { brightness = 0.02, contrast = 0.08, saturation = 0.22, tint = rgb(255, 250, 240) },
 		bloom = { intensity = 0.35, size = 24, threshold = 1.6 },
+		clouds = { cover = 0.46, density = 0.55, color = rgb(255, 255, 255) },
 	},
 	build = { -- a bright, happy afternoon
 		clock = 13.6,
@@ -44,6 +45,7 @@ LightingPresets.list = {
 		},
 		grade = { brightness = 0.02, contrast = 0.1, saturation = 0.24, tint = rgb(255, 250, 238) },
 		bloom = { intensity = 0.35, size = 24, threshold = 1.6 },
+		clouds = { cover = 0.5, density = 0.6, color = rgb(255, 255, 255) },
 	},
 	scare = { -- the first scare: a cloud over the sun
 		clock = 15.4,
@@ -61,6 +63,7 @@ LightingPresets.list = {
 		},
 		grade = { brightness = 0, contrast = 0.12, saturation = 0.12, tint = rgb(240, 240, 255) },
 		bloom = { intensity = 0.4, size = 24, threshold = 1.5 },
+		clouds = { cover = 0.74, density = 0.78, color = rgb(196, 200, 214) },
 	},
 	plague = { -- the sky turns: a sick purple-green sunset
 		clock = 17.9,
@@ -78,6 +81,7 @@ LightingPresets.list = {
 		},
 		grade = { brightness = 0, contrast = 0.16, saturation = 0.18, tint = rgb(228, 214, 255) },
 		bloom = { intensity = 0.55, size = 28, threshold = 1.4 },
+		clouds = { cover = 0.8, density = 0.82, color = rgb(176, 150, 206) },
 	},
 	fight = { -- the attack: an orange sunset
 		clock = 18.3,
@@ -95,6 +99,7 @@ LightingPresets.list = {
 		},
 		grade = { brightness = 0.01, contrast = 0.14, saturation = 0.2, tint = rgb(255, 228, 206) },
 		bloom = { intensity = 0.5, size = 26, threshold = 1.5 },
+		clouds = { cover = 0.58, density = 0.66, color = rgb(255, 214, 186) },
 	},
 	laststand = { -- the last stand: night, and redder
 		clock = 20.6,
@@ -112,6 +117,7 @@ LightingPresets.list = {
 		},
 		grade = { brightness = 0, contrast = 0.18, saturation = 0.16, tint = rgb(255, 196, 186) },
 		bloom = { intensity = 0.7, size = 30, threshold = 1.2 },
+		clouds = { cover = 0.86, density = 0.9, color = rgb(150, 72, 76) },
 	},
 	ended = { -- the dust settles
 		clock = 19.2,
@@ -129,6 +135,7 @@ LightingPresets.list = {
 		},
 		grade = { brightness = 0.01, contrast = 0.12, saturation = 0.16, tint = rgb(255, 236, 230) },
 		bloom = { intensity = 0.5, size = 26, threshold = 1.4 },
+		clouds = { cover = 0.55, density = 0.62, color = rgb(232, 196, 196) },
 	},
 }
 LightingPresets.list.intermission = LightingPresets.list.hangout
@@ -187,6 +194,11 @@ function LightingPresets.blend(from, to, t)
 			size = lerp(a.bloom.size, b.bloom.size, t),
 			threshold = lerp(a.bloom.threshold, b.bloom.threshold, t),
 		},
+		clouds = {
+			cover = lerp(a.clouds.cover, b.clouds.cover, t),
+			density = lerp(a.clouds.density, b.clouds.density, t),
+			color = c3(a.clouds.color, b.clouds.color),
+		},
 	}
 end
 
@@ -198,8 +210,8 @@ function LightingPresets.apply(preset)
 	Lighting.Ambient = p.ambient
 	Lighting.OutdoorAmbient = p.outdoor
 	Lighting.ExposureCompensation = p.exposure
-	Lighting.EnvironmentDiffuseScale = 0.7
-	Lighting.EnvironmentSpecularScale = 0.5
+	Lighting.EnvironmentDiffuseScale = 1 -- the textured (PBR) materials want the full sky light and reflections
+	Lighting.EnvironmentSpecularScale = 1
 	Lighting.GlobalShadows = true
 	local a = child("Atmosphere", "Atmosphere")
 	a.Density, a.Offset, a.Color, a.Decay, a.Glare, a.Haze =
@@ -214,6 +226,14 @@ function LightingPresets.apply(preset)
 		p.grade.brightness, p.grade.contrast, p.grade.saturation, p.grade.tint
 	local b = child("BloomEffect", "Bloom")
 	b.Intensity, b.Size, b.Threshold = p.bloom.intensity, p.bloom.size, p.bloom.threshold
+	local rays = child("SunRaysEffect", "SunRays")
+	rays.Intensity, rays.Spread = 0.05, 0.7
+	-- the sky's clouds follow the match too (the terrain's Clouds; a local change on each client)
+	local terrain = workspace:FindFirstChildOfClass("Terrain")
+	local clouds = terrain and terrain:FindFirstChildOfClass("Clouds")
+	if clouds and p.clouds then
+		clouds.Cover, clouds.Density, clouds.Color = p.clouds.cover, p.clouds.density, p.clouds.color
+	end
 	return p
 end
 

@@ -59,6 +59,7 @@ Constants.DWARF_WALK = 17
 Constants.MONSTER_WALK = 18
 Constants.DWARF_JUMP = 7.2
 Constants.MONSTER_JUMP = 5 -- low walls still stop monsters (the Jumper is a later job, §9)
+Constants.MAX_SLOPE = 50 -- degrees: steeper terrain (cliffs, ridges, canyon walls) can't be walked up
 Constants.BUILD_RESPAWN = 3 -- a dwarf who falls before the plague gets up again as a dwarf
 Constants.TURN_RESPAWN = 5 -- a dwarf who dies in the fight is a monster this many seconds later
 Constants.MONSTER_RESPAWN = 8 -- monsters come back, but not too fast (§9)

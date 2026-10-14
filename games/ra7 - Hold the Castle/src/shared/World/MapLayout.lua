@@ -81,7 +81,13 @@ MapLayout.CAVE = {
 	mainTunnel = { minX = 228, maxX = 334, minZ = -12, maxZ = 12, height = 22 },
 	sideTunnel = { minX = 228, maxX = 346, minZ = 32, maxZ = 48, height = 18 },
 }
-MapLayout.CREEK = { x = -360, width = 16 }
+-- The creek: a channel across the valley (bed 4 studs down, the water 2 down, so it's wading deep); NPCs wade at
+-- `wade`. The bridges (stone in the middle lane, rope in the north lane) are parts with ramps at their ends.
+MapLayout.CREEK = { x = -360, width = 16, bed = -4.2, water = -2, wade = -3 }
+MapLayout.bridges = {
+	{ key = "stone", x = -360, z = 0, halfX = 18, halfZ = 11, y = 1.2, ramp = 4 },
+	{ key = "rope", x = -360, z = 112, halfX = 17, halfZ = 3.5, y = 1.5, ramp = 4 },
+}
 MapLayout.RIDGE_Z = 206 -- the valley's mountain walls (north and south), until they close in on the canyon
 
 -- Monster spawns: the forest rift first, then each fallen shrine.
@@ -311,20 +317,56 @@ MapLayout.towerSpots = {
 }
 
 -- Ground and walking ------------------------------------------------------------------------------------------
-local function rampAt(x, z)
+-- The ramp up the hill at (x, z), if any: the ramp, how far along it from the hill's centre, and how far to the side.
+function MapLayout.rampAt(x, z, extraWidth)
 	local dx, dz = x - HILL.center.X, z - HILL.center.Y
 	for _, ramp in HILL.ramps do
 		local along = dx * ramp.dir.X + dz * ramp.dir.Y
 		local side = -dx * ramp.dir.Y + dz * ramp.dir.X
-		if math.abs(side) <= HILL.rampWidth / 2 and along >= HILL.top - 2 and along <= HILL.foot then
-			return ramp, along
+		if
+			math.abs(side) <= HILL.rampWidth / 2 + (extraWidth or 0)
+			and along >= HILL.top - 2
+			and along <= HILL.foot
+		then
+			return ramp, along, side
 		end
 	end
 	return nil
 end
+local rampAt = MapLayout.rampAt
 
--- The height of the ground at (x, z).
-function MapLayout.groundY(x, z)
+-- Where the valley ends at the sides (|z|): the ridges, closing in on the canyon's mouth.
+function MapLayout.valleyLimit(x)
+	local t = math.clamp((x + 130) / (MapLayout.CANYON.minX + 130), 0, 1)
+	return MapLayout.RIDGE_Z + (MapLayout.CANYON.halfWidth - MapLayout.RIDGE_Z) * t
+end
+
+local function smooth(e0, e1, v)
+	local t = math.clamp((v - e0) / (e1 - e0), 0, 1)
+	return t * t * (3 - 2 * t)
+end
+
+-- Gentle rolls in the valley floor (studs up or down): flat round the hill, the creek, the forest spawn, the
+-- canyon's mouth and the foot of the ridges, so everything built or standing still is on level ground.
+function MapLayout.roll(x, z)
+	if x < -616 or x > -40 then
+		return 0
+	end
+	local hill = math.sqrt((x - HILL.center.X) ^ 2 + (z - HILL.center.Y) ^ 2)
+	local mask = smooth(HILL.foot + 8, HILL.foot + 44, hill)
+		* smooth(MapLayout.CREEK.width / 2 + 6, MapLayout.CREEK.width / 2 + 30, math.abs(x - MapLayout.CREEK.x))
+		* smooth(4, 30, MapLayout.valleyLimit(x) - math.abs(z))
+		* smooth(40, 72, math.sqrt((x - MapLayout.FOREST_SPAWN.X) ^ 2 + (z - MapLayout.FOREST_SPAWN.Z) ^ 2))
+		* (1 - smooth(-96, -44, x))
+	if mask <= 0 then
+		return 0
+	end
+	return mask * (math.noise(x / 110, z / 110, 0.31) * 2.6 + math.noise(x / 41, z / 41, 2.17) * 0.8)
+end
+
+-- The terrain's own height on the valley side of the map (the hill, its ramps and cliffs, the creek's channel,
+-- the rolls): TerrainBuilder builds the land from this, so it and groundY always agree.
+function MapLayout.floorY(x, z)
 	local dx, dz = x - HILL.center.X, z - HILL.center.Y
 	local r = math.sqrt(dx * dx + dz * dz)
 	if r <= HILL.top then
@@ -334,7 +376,27 @@ function MapLayout.groundY(x, z)
 	if ramp then
 		return HILL.height * math.clamp((HILL.foot - along) / (HILL.foot - HILL.top), 0, 1)
 	end
-	return 0
+	local cr = MapLayout.CREEK
+	local cd = math.abs(x - cr.x)
+	if cd < cr.width / 2 + 2 and math.abs(z) < MapLayout.valleyLimit(x) then
+		return cr.bed * (1 - smooth(cr.width / 2 - 3, cr.width / 2 + 2, cd))
+	end
+	return MapLayout.roll(x, z)
+end
+
+-- The height NPCs walk at, pieces stand on and effects land on at (x, z): the terrain, the bridges' decks, and
+-- the creek's wading depth.
+function MapLayout.groundY(x, z)
+	local cr = MapLayout.CREEK
+	if math.abs(x - cr.x) < 20 then
+		for _, b in MapLayout.bridges do
+			local along = math.abs(x - b.x)
+			if along <= b.halfX and math.abs(z - b.z) <= b.halfZ then
+				return b.y * math.clamp((b.halfX - along) / b.ramp, 0, 1)
+			end
+		end
+	end
+	return math.max(MapLayout.floorY(x, z), cr.wade)
 end
 
 -- Is (x, z) open ground an NPC can stand on (not inside a cliff, the canyon walls, the mountain or the spine)?
@@ -346,9 +408,7 @@ function MapLayout.walkable(x, z)
 	local az = math.abs(z)
 	if x <= MapLayout.CANYON.minX then
 		-- the valley: the ridges close in from RIDGE_Z (west of x = -130) to the canyon's width at its mouth
-		local t = math.clamp((x + 130) / (MapLayout.CANYON.minX + 130), 0, 1)
-		local limit = MapLayout.RIDGE_Z + (MapLayout.CANYON.halfWidth - MapLayout.RIDGE_Z) * t
-		return az <= limit
+		return az <= MapLayout.valleyLimit(x)
 	end
 	if x <= MapLayout.CANYON.maxX - 4 then
 		if az > MapLayout.CANYON.halfWidth - 2 then
@@ -368,6 +428,11 @@ function MapLayout.walkable(x, z)
 		end
 	end
 	return false
+end
+
+-- Things on the valley floor stand on its rolls.
+for _, n in MapLayout.nodes do
+	n.pos = V3(n.pos.X, MapLayout.groundY(n.pos.X, n.pos.Z), n.pos.Z)
 end
 
 -- Which zone (1-3: the shrine that's next in line) a point is in, by its x.

@@ -23,6 +23,7 @@ globals:
   Random: { any: true }
   TweenInfo: { any: true }
   RaycastParams: { any: true }
+  Region3: { any: true }
   task: { any: true }
   typeof: { any: true }
   warn: { any: true }

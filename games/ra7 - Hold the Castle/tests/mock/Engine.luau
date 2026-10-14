@@ -403,6 +403,24 @@ local BrickColor = {
 		return setmetatable({ Name = tostring(name) }, { __type = "BrickColor" })
 	end,
 }
+-- Region3: a box from its min and max corners (terrain voxel reads and writes)
+local Region3 = {}
+function Region3.new(lo, hi)
+	local r = dataType("Region3", {
+		Min = lo,
+		Max = hi,
+		Size = hi - lo,
+		CFrame = CFrame.new((lo + hi) / 2),
+	})
+	r.ExpandToGrid = function(self, res)
+		local a, b = self.Min, self.Max
+		return Region3.new(
+			Vector3.new(math.floor(a.X / res) * res, math.floor(a.Y / res) * res, math.floor(a.Z / res) * res),
+			Vector3.new(math.ceil(b.X / res) * res, math.ceil(b.Y / res) * res, math.ceil(b.Z / res) * res)
+		)
+	end
+	return r
+end
 -- Vector2: the same maths as Vector3 (paths and layouts in (x, z) use it)
 local V2 = {}
 local function v2(x, y)
@@ -539,6 +557,7 @@ local ISA = {
 	ScreenGui = { "LayerCollector", "GuiBase2d" },
 	BillboardGui = { "LayerCollector", "GuiBase2d" },
 	SurfaceGui = { "LayerCollector", "GuiBase2d" },
+	Terrain = { "BasePart", "PVInstance" },
 }
 local SIGNALS = {
 	RemoteEvent = { "OnServerEvent", "OnClientEvent" },
@@ -1159,6 +1178,186 @@ local function service(name, className)
 end
 local workspace = service("Workspace")
 workspace.CurrentCamera = Instance.new("Camera", workspace)
+
+-- Terrain (Roblox smooth terrain). Every fill is kept in order in Engine.terrain.ops, so tests can check the land
+-- and the render tools can draw it; like Roblox, only terrain materials are accepted. Material colours and the
+-- water settings are kept too.
+local TERRAIN_MATERIALS = {
+	Air = true,
+	Water = true,
+	Grass = true,
+	Slate = true,
+	Concrete = true,
+	Brick = true,
+	Sand = true,
+	WoodPlanks = true,
+	Rock = true,
+	Glacier = true,
+	Snow = true,
+	Sandstone = true,
+	Mud = true,
+	Basalt = true,
+	Ground = true,
+	CrackedLava = true,
+	Asphalt = true,
+	Cobblestone = true,
+	Ice = true,
+	LeafyGrass = true,
+	Salt = true,
+	Limestone = true,
+	Pavement = true,
+}
+Engine.TERRAIN_MATERIALS = TERRAIN_MATERIALS
+Engine.terrain = { ops = {}, colors = {} }
+local terrainInst = Instance.new("Terrain", workspace)
+terrainInst.Name = "Terrain"
+local function terrainMaterial(m, what)
+	local mt = type(m) == "table" and getmetatable(m)
+	local name = mt and mt.__type == "EnumItem" and m.EnumType == "Material" and m.Name or nil
+	if not name or not TERRAIN_MATERIALS[name] then
+		error(what .. ": " .. tostring(name or m) .. " is not a terrain material", 3)
+	end
+	return name
+end
+local function positive(v, what)
+	if type(v) == "number" then
+		if not (v > 0) then
+			error(what .. ": size must be positive", 3)
+		end
+	elseif v.X <= 0 or v.Y <= 0 or v.Z <= 0 then
+		error(what .. ": size must be positive", 3)
+	end
+end
+function methods.FillBlock(_, cframe, size, material)
+	positive(size, "FillBlock")
+	table.insert(Engine.terrain.ops, { op = "block", cf = cframe, size = size, material = terrainMaterial(material, "FillBlock") })
+end
+function methods.FillWedge(_, cframe, size, material)
+	positive(size, "FillWedge")
+	table.insert(Engine.terrain.ops, { op = "wedge", cf = cframe, size = size, material = terrainMaterial(material, "FillWedge") })
+end
+function methods.FillBall(_, center, radius, material)
+	positive(radius, "FillBall")
+	table.insert(
+		Engine.terrain.ops,
+		{ op = "ball", center = center, radius = radius, material = terrainMaterial(material, "FillBall") }
+	)
+end
+function methods.FillCylinder(_, cframe, height, radius, material)
+	positive(height, "FillCylinder")
+	positive(radius, "FillCylinder")
+	table.insert(Engine.terrain.ops, {
+		op = "cylinder",
+		cf = cframe,
+		height = height,
+		radius = radius,
+		material = terrainMaterial(material, "FillCylinder"),
+	})
+end
+function methods.SetMaterialColor(_, material, color)
+	local name = terrainMaterial(material, "SetMaterialColor")
+	if name == "Air" or name == "Water" then
+		error("SetMaterialColor: " .. name .. " has no colour", 2)
+	end
+	Engine.terrain.colors[name] = color
+end
+function methods.GetMaterialColor(_, material)
+	return Engine.terrain.colors[terrainMaterial(material, "GetMaterialColor")]
+end
+-- Terrain:WriteVoxels(region, 4, materials, occupancy): the arrays are [x][y][z], one per 4-stud voxel of the
+-- (grid-aligned) region, like Roblox. Kept as chunks in write order (a later chunk overwrites an earlier one where
+-- they overlap), each a buffer of two bytes per voxel (material id, occupancy 0-255), y fastest, then z, then x.
+Engine.terrain.voxels = {}
+Engine.terrain.palette = { "Air" }
+Engine.terrain.version = 0
+local paletteId = { Air = 0 }
+local materialIds = {}
+function methods.WriteVoxels(_, region, resolution, materials, occupancy)
+	if resolution ~= 4 then
+		error("WriteVoxels: resolution must be 4", 2)
+	end
+	local lo, size = region.Min, region.Size
+	for _, v in { lo.X, lo.Y, lo.Z, size.X, size.Y, size.Z } do
+		if v % 4 ~= 0 then
+			error("WriteVoxels: the region must be aligned to the voxel grid (Region3:ExpandToGrid(4))", 2)
+		end
+	end
+	local nx, ny, nz = size.X / 4, size.Y / 4, size.Z / 4
+	if #materials ~= nx or #occupancy ~= nx then
+		error(`WriteVoxels: expected {nx} x-slices, got {#materials} materials and {#occupancy} occupancies`, 2)
+	end
+	local data = buffer.create(nx * ny * nz * 2)
+	for x = 1, nx do
+		local mx, ox = materials[x], occupancy[x]
+		if #mx ~= ny or #ox ~= ny then
+			error(`WriteVoxels: expected {ny} y-rows in x-slice {x}`, 2)
+		end
+		for y = 1, ny do
+			local my, oy = mx[y], ox[y]
+			if #my ~= nz or #oy ~= nz then
+				error(`WriteVoxels: expected {nz} voxels in row ({x}, {y})`, 2)
+			end
+			for z = 1, nz do
+				local m = my[z]
+				local id = materialIds[m]
+				if id == nil then
+					local name = terrainMaterial(m, "WriteVoxels")
+					id = paletteId[name]
+					if id == nil then
+						table.insert(Engine.terrain.palette, name)
+						id = #Engine.terrain.palette - 1
+						paletteId[name] = id
+					end
+					materialIds[m] = id
+				end
+				local o = oy[z]
+				if type(o) ~= "number" or o < 0 or o > 1 then
+					error(`WriteVoxels: occupancy must be 0-1, got {o}`, 2)
+				end
+				local at = (((x - 1) * nz + (z - 1)) * ny + (y - 1)) * 2
+				buffer.writeu8(data, at, id)
+				buffer.writeu8(data, at + 1, id == 0 and 0 or math.floor(o * 255 + 0.5))
+			end
+		end
+	end
+	table.insert(Engine.terrain.voxels, { min = lo, nx = nx, ny = ny, nz = nz, data = data })
+	Engine.terrain.version += 1
+end
+-- The material name and occupancy of the voxel holding a point (the last write that covers it), for tests.
+function Engine.terrainVoxelAt(pos)
+	local list = Engine.terrain.voxels
+	for k = #list, 1, -1 do
+		local c = list[k]
+		local x = math.floor((pos.X - c.min.X) / 4)
+		local y = math.floor((pos.Y - c.min.Y) / 4)
+		local z = math.floor((pos.Z - c.min.Z) / 4)
+		if x >= 0 and y >= 0 and z >= 0 and x < c.nx and y < c.ny and z < c.nz then
+			local at = ((x * c.nz + z) * c.ny + y) * 2
+			return Engine.terrain.palette[buffer.readu8(c.data, at) + 1], buffer.readu8(c.data, at + 1) / 255
+		end
+	end
+	return "Air", 0
+end
+-- The height of the terrain's top surface over (x, z) (nil if there is none), for tests.
+function Engine.terrainTop(x, z, fromY)
+	local y = math.floor((fromY or 400) / 4) * 4 + 2
+	while y > -400 do
+		local m, o = Engine.terrainVoxelAt(Vector3.new(x, y, z))
+		if m ~= "Air" and m ~= "Water" and o > 0 then
+			return y - 2 + 4 * o
+		end
+		y -= 4
+	end
+	return nil
+end
+-- (Terrain:Clear())
+function methods.Clear(inst)
+	if inst == terrainInst then
+		Engine.terrain.ops = {}
+		Engine.terrain.voxels = {}
+		Engine.terrain.version += 1
+	end
+end
 function methods.BulkMoveTo(_, parts, cframes)
 	for i, part in parts do
 		rawget(part, "_props").CFrame = cframes[i]
@@ -1819,6 +2018,7 @@ globals = setmetatable({
 	Vector3 = Vector3,
 	Vector2 = Vector2,
 	BrickColor = BrickColor,
+	Region3 = Region3,
 	CFrame = CFrame,
 	Color3 = Color3,
 	ColorSequence = ColorSequence,

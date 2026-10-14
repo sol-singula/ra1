@@ -32,9 +32,9 @@ local builders = {}
 -- Stone wall: a light stone body on a darker plinth, a walkway ledge and merlons on both sides.
 function builders.stoneWall(m, cf, w, _d, h, opts)
 	local depth = opts.upgraded and 4.2 or 3.4
-	Kit.box(m, "Plinth", cf * CFrame.new(0, 0.7, 0), v(w, 1.4, depth + 0.5), C.castleDark)
-	Kit.box(m, "Body", cf * CFrame.new(0, h * 0.46, 0), v(w, h * 0.92 - 1.4, depth), C.castle)
-	Kit.box(m, "Ledge", cf * CFrame.new(0, h - 1.15, 0), v(w, 0.5, depth + 0.4), C.castleDark)
+	Kit.box(m, "Plinth", cf * CFrame.new(0, 0.7, 0), v(w, 1.4, depth + 0.5), C.castleDark, M.Cobblestone)
+	Kit.box(m, "Body", cf * CFrame.new(0, h * 0.46, 0), v(w, h * 0.92 - 1.4, depth), C.castle, M.Brick)
+	Kit.box(m, "Ledge", cf * CFrame.new(0, h - 1.15, 0), v(w, 0.5, depth + 0.4), C.castleDark, M.Slate)
 	for _, side in { -1, 1 } do
 		for _, x in { -w / 4, w / 4 } do
 			Kit.box(
@@ -43,7 +43,7 @@ function builders.stoneWall(m, cf, w, _d, h, opts)
 				cf * CFrame.new(x, h - 0.1, side * (depth / 2 - 0.4)),
 				v(w * 0.24, 1.6, 0.8),
 				C.castle,
-				M.SmoothPlastic,
+				M.Brick,
 				{ CastShadow = false }
 			)
 		end
@@ -67,7 +67,7 @@ function builders.stoneWall(m, cf, w, _d, h, opts)
 						* CFrame.Angles(0, side > 0 and 0 or math.pi, 0),
 					v(1.2, h * 0.64, 1.4),
 					C.castleDark,
-					M.SmoothPlastic,
+					M.Cobblestone,
 					{ CastShadow = false }
 				)
 			end
@@ -81,8 +81,8 @@ function builders.woodWall(m, cf, w, d, h, opts)
 	local base = 0
 	if opts.upgraded then
 		base = 3.4
-		Kit.box(m, "StoneBase", cf * CFrame.new(0, base / 2, 0), v(w, base, d * 0.9), C.castle)
-		trim(m, "Cap", cf * CFrame.new(0, base, 0), v(w + 0.2, 0.4, d * 0.95), C.castleDark)
+		Kit.box(m, "StoneBase", cf * CFrame.new(0, base / 2, 0), v(w, base, d * 0.9), C.castle, M.Cobblestone)
+		trim(m, "Cap", cf * CFrame.new(0, base, 0), v(w + 0.2, 0.4, d * 0.95), C.castleDark, M.Slate)
 	end
 	for i = 1, logs do
 		local x = -w / 2 + (i - 0.5) * w / logs
@@ -120,17 +120,25 @@ end
 function builders.gate(m, cf, w, d, h, opts)
 	local pillar = 1.7
 	for _, s in { -1, 1 } do
-		Kit.box(m, "Pillar", cf * CFrame.new(s * (w / 2 - pillar / 2), h / 2, 0), v(pillar, h, d * 1.05), C.castle)
+		Kit.box(
+			m,
+			"Pillar",
+			cf * CFrame.new(s * (w / 2 - pillar / 2), h / 2, 0),
+			v(pillar, h, d * 1.05),
+			C.castle,
+			M.Brick
+		)
 		trim(
 			m,
 			"PillarCap",
 			cf * CFrame.new(s * (w / 2 - pillar / 2), h + 0.35, 0),
 			v(pillar + 0.5, 0.7, d * 1.15),
-			opts.upgraded and C.iron or C.castleDark
+			opts.upgraded and C.iron or C.castleDark,
+			opts.upgraded and M.Metal or M.Slate
 		)
 	end
-	Kit.box(m, "Arch", cf * CFrame.new(0, h - 1.2, 0), v(w, 2.4, d * 1.05), C.castleDark)
-	trim(m, "Keystone", cf * CFrame.new(0, h - 1.2, -d * 0.53), v(1.4, 1.8, 0.2), C.gold, M.SmoothPlastic)
+	Kit.box(m, "Arch", cf * CFrame.new(0, h - 1.2, 0), v(w, 2.4, d * 1.05), C.castleDark, M.Cobblestone)
+	trim(m, "Keystone", cf * CFrame.new(0, h - 1.2, -d * 0.53), v(1.4, 1.8, 0.2), C.gold, M.Metal)
 	local doorW = (w - pillar * 2) / 2
 	local doorH = h - 2.4
 	local doorColor = opts.upgraded and C.iron or C.wood
@@ -174,12 +182,12 @@ end
 function builders.tower(m, cf, w, _d, h, opts)
 	local body = opts.upgraded and 8.4 or 7.6
 	local top = h - 6
-	Kit.disc(m, "Base", (cf * CFrame.new(0, 1.2, 0)).Position, body + 1, 2.4, C.castleDark)
-	Kit.disc(m, "Body", (cf * CFrame.new(0, top / 2, 0)).Position, body, top, C.castle)
+	Kit.disc(m, "Base", (cf * CFrame.new(0, 1.2, 0)).Position, body + 1, 2.4, C.castleDark, M.Cobblestone)
+	Kit.disc(m, "Body", (cf * CFrame.new(0, top / 2, 0)).Position, body, top, C.castle, M.Brick)
 	for _, y in { top * 0.4, top * 0.75 } do
 		trim(m, "Window", cf * CFrame.new(0, y, -body / 2 + 0.05), v(0.9, 1.8, 0.2), C.black)
 	end
-	Kit.disc(m, "Platform", (cf * CFrame.new(0, top + 0.5, 0)).Position, w + 2, 1, C.castleDark)
+	Kit.disc(m, "Platform", (cf * CFrame.new(0, top + 0.5, 0)).Position, w + 2, 1, C.castleDark, M.Slate)
 	for k = 0, 9 do
 		local a = k / 10 * math.pi * 2
 		if k % 2 == 0 then
@@ -191,7 +199,7 @@ function builders.tower(m, cf, w, _d, h, opts)
 					* CFrame.Angles(0, -a, 0),
 				v(0.8, 1.6, 1.8),
 				C.castle,
-				M.SmoothPlastic,
+				M.Brick,
 				{ CastShadow = false }
 			)
 		end
@@ -214,8 +222,8 @@ function builders.tower(m, cf, w, _d, h, opts)
 		w + (opts.upgraded and 3.4 or 2.4),
 		opts.upgraded and 9 or 7,
 		roofColor,
-		5,
-		M.SmoothPlastic,
+		7,
+		M.ClayRoofTiles,
 		{ CanCollide = false }
 	)
 	Kit.banner(
@@ -232,7 +240,8 @@ function builders.tower(m, cf, w, _d, h, opts)
 			"GoldRing",
 			cf * CFrame.new(0, top - 0.4, 0) * CFrame.Angles(0, 0, math.rad(90)),
 			v(0.6, body + 0.3, body + 0.3),
-			C.gold
+			C.gold,
+			M.Metal
 		)
 		for _, s in { -1, 1 } do
 			Kit.box(
@@ -378,16 +387,7 @@ function builders.fixStation(m, cf, w, _d, _h, _opts)
 	for _, c in { { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } } do
 		trim(m, "Leg", cf * CFrame.new(c[1] * 1.5, 1.4, c[2] * 1.1), v(0.4, 2.8, 0.4), C.woodDark, M.Wood)
 	end
-	Kit.disc(
-		m,
-		"Gear",
-		(cf * CFrame.new(-0.6, 3.9, 0.2)).Position,
-		2.2,
-		0.5,
-		C.blue,
-		M.SmoothPlastic,
-		{ CanCollide = false }
-	)
+	Kit.disc(m, "Gear", (cf * CFrame.new(-0.6, 3.9, 0.2)).Position, 2.2, 0.5, C.blue, M.Metal, { CanCollide = false })
 	trim(
 		m,
 		"Wrench",
@@ -404,7 +404,7 @@ end
 
 -- Healing station: a stone basin with a glowing green crystal.
 function builders.healStation(m, cf, w, _d, _h, _opts)
-	Kit.disc(m, "Basin", (cf * CFrame.new(0, 0.9, 0)).Position, w - 0.6, 1.8, C.castle)
+	Kit.disc(m, "Basin", (cf * CFrame.new(0, 0.9, 0)).Position, w - 0.6, 1.8, C.castle, M.Marble)
 	Kit.disc(
 		m,
 		"Water",
@@ -424,10 +424,17 @@ end
 
 -- Forge: a stone furnace glowing orange, a chimney and an anvil.
 function builders.forge(m, cf, w, d, h, _opts)
-	Kit.box(m, "Furnace", cf * CFrame.new(-w * 0.18, h * 0.32, 0), v(w * 0.6, h * 0.64, d * 0.85), C.stoneDark)
+	Kit.box(
+		m,
+		"Furnace",
+		cf * CFrame.new(-w * 0.18, h * 0.32, 0),
+		v(w * 0.6, h * 0.64, d * 0.85),
+		C.stoneDark,
+		M.Cobblestone
+	)
 	local glow = trim(m, "Glow", cf * CFrame.new(-w * 0.18, h * 0.22, -d * 0.43), v(2.2, 1.8, 0.2), C.fire, M.Neon)
 	Kit.light(glow, "PointLight", { Color = C.warm, Range = 14, Brightness = 1.6 })
-	Kit.box(m, "Chimney", cf * CFrame.new(-w * 0.28, h * 0.8, 0.4), v(1.6, h * 0.5, 1.6), C.castleDark)
+	Kit.box(m, "Chimney", cf * CFrame.new(-w * 0.28, h * 0.8, 0.4), v(1.6, h * 0.5, 1.6), C.castleDark, M.Brick)
 	Kit.box(m, "AnvilBase", cf * CFrame.new(w * 0.3, 0.9, 0), v(1, 1.8, 1), C.woodDark, M.Wood)
 	Kit.box(m, "Anvil", cf * CFrame.new(w * 0.3, 2.2, 0), v(2.4, 0.8, 1.1), C.iron, M.Metal)
 	trim(
@@ -443,7 +450,7 @@ end
 -- Kitchen: a counter, a big pot of stew on the fire and a striped awning.
 function builders.kitchen(m, cf, w, d, h, _opts)
 	Kit.box(m, "Counter", cf * CFrame.new(w * 0.15, 1.5, 0.4), v(w * 0.6, 3, d * 0.55), C.woodLight, M.WoodPlanks)
-	Kit.box(m, "Hearth", cf * CFrame.new(-w * 0.28, 0.8, 0), v(2.8, 1.6, 2.8), C.stoneDark)
+	Kit.box(m, "Hearth", cf * CFrame.new(-w * 0.28, 0.8, 0), v(2.8, 1.6, 2.8), C.stoneDark, M.Cobblestone)
 	local stew = Kit.ball(m, "Pot", (cf * CFrame.new(-w * 0.28, 2.6, 0)).Position, 2.6, C.black, M.Metal)
 	_ = stew
 	Kit.disc(
@@ -506,15 +513,15 @@ end
 
 -- Banner: a tall flag in the builder's colours.
 function builders.flag(m, cf, _w, _d, h, opts)
-	Kit.disc(m, "Foot", (cf * CFrame.new(0, 0.3, 0)).Position, 2, 0.6, C.castleDark)
+	Kit.disc(m, "Foot", (cf * CFrame.new(0, 0.3, 0)).Position, 2, 0.6, C.castleDark, M.Cobblestone)
 	local look = opts.flag
 	Kit.banner(m, cf, h, look and look.main or C.cloth, look and look.trim or C.gold, "Flag")
 end
 
 -- Shrine ward: a stone obelisk with a glowing crystal on top.
 function builders.shrineWard(m, cf, _w, _d, h, _opts)
-	Kit.box(m, "Foot", cf * CFrame.new(0, 0.5, 0), v(3.4, 1, 3.4), C.castleDark)
-	Kit.box(m, "Pillar", cf * CFrame.new(0, h * 0.42, 0), v(2.2, h * 0.75, 2.2), C.castle)
+	Kit.box(m, "Foot", cf * CFrame.new(0, 0.5, 0), v(3.4, 1, 3.4), C.castleDark, M.Cobblestone)
+	Kit.box(m, "Pillar", cf * CFrame.new(0, h * 0.42, 0), v(2.2, h * 0.75, 2.2), C.castle, M.Marble)
 	for _, y in { h * 0.3, h * 0.55 } do
 		trim(m, "Rune", cf * CFrame.new(0, y, -1.12), v(1, 0.5, 0.1), C.shrine, M.Neon)
 	end

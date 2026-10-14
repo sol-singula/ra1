@@ -1,11 +1,11 @@
 --[[
-Builds the first map (master plan §6) from plain parts, from the coordinates in Shared/World/MapLayout:
-the green valley and its creek, the stone hill under Shrine 1 (cliffs all round, four ramps up), the camp, the
-paths the monsters walk, the mines in the hills on the sides, the rocky canyon with Shrine 2, the mountain with
-its tunnels and the cave of Shrine 3, the dark forest where the monsters spawn, the walls of magic between the
-shrines, and the hangout on the north ridge.
+Builds the first map (master plan §6) from the coordinates in Shared/World/MapLayout. The land is Roblox smooth
+terrain (TerrainBuilder): the green valley and its creek, the stone hill under Shrine 1 (cliffs all round, four
+ramps up), the ridges, the sandstone canyon of Shrine 2, the mountain with its tunnels and the cave of Shrine 3,
+the dark forest where the monsters spawn. On it, from parts: the bridges, the camp, the shrines, the mines, the
+walls of magic, the job boards, the hangout on the north ridge, and the trees, rocks, flowers, ruins and lights.
 
-Bright and full of colour (§14): smooth cartoon shapes, flat bright ground with lighter patches, chunky rock.
+Bright and full of colour (§14), with Roblox's textured materials (cobblestone, wood planks, slate, fabric...).
 Kept to a few thousand parts for phones: decor never collides or casts shadows unless it's big.
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,6 +15,7 @@ local LightingPresets = require(ReplicatedStorage.Shared.World.LightingPresets)
 local MapLayout = require(ReplicatedStorage.Shared.World.MapLayout)
 local Jobs = require(ReplicatedStorage.Shared.Data.Jobs)
 local Groups = require(script.Parent.Groups)
+local TerrainBuilder = require(script.Parent.TerrainBuilder)
 
 local MapBuilder = {
 	shrines = {}, -- [i] = { model, crystal, core, ring = { parts }, bar, label }
@@ -36,105 +37,71 @@ local function decor(extra)
 	return t
 end
 
--- The ground ---------------------------------------------------------------------------------------------------
-local function ground(f, rng)
-	Kit.box(f, "Valley", CFrame.new(-322, -2, 0), V3(596, 4, 480), C.grass)
-	Kit.box(f, "CanyonFloor", CFrame.new(104, -2, 0), V3(256, 4, 240), C.path:Lerp(C.cliffWarm, 0.35))
-	Kit.box(f, "MountainFloor", CFrame.new(396, -2, 0), V3(328, 4, 480), C.cave)
-	-- lighter and darker patches in the grass
-	for _ = 1, 34 do
-		local x, z = rng:NextNumber(-600, -40), rng:NextNumber(-190, 190)
-		local d = math.sqrt((x - HILL.center.X) ^ 2 + (z - HILL.center.Y) ^ 2)
-		if d > HILL.foot + 10 and x > -470 then
-			Kit.disc(
-				f,
-				"Patch",
-				V3(x, 0.05, z),
-				rng:NextNumber(24, 70),
-				0.12,
-				rng:NextNumber() < 0.6 and C.grassLight or C.grassDark,
-				M.SmoothPlastic,
-				decor()
-			)
-		end
-	end
-	-- the canyon floor: sandy, with darker gravel streaks
-	for _ = 1, 10 do
-		Kit.disc(
-			f,
-			"Gravel",
-			V3(rng:NextNumber(-10, 220), 0.05, rng:NextNumber(-48, 48)),
-			rng:NextNumber(14, 30),
-			0.12,
-			C.cliffWarm,
-			M.SmoothPlastic,
-			decor()
-		)
-	end
+-- A point on the walkable ground (the valley's rolls, the hill, the canyon and cave floors).
+local function at(x, z)
+	return V3(x, MapLayout.groundY(x, z), z)
+end
+-- A point on the land anywhere (ridge tops, canyon rims, mountain sides).
+local function onLand(x, z)
+	return V3(x, TerrainBuilder.surfaceY(x, z), z)
 end
 
--- A sandy path along a polyline (x, z points) at the ground's height.
-local function path(f, points, width, color)
-	for k = 1, #points - 1 do
-		local a, b = points[k], points[k + 1]
-		local ya, yb = MapLayout.groundY(a.X, a.Y), MapLayout.groundY(b.X, b.Y)
-		local pa, pb = V3(a.X, ya + 0.08, a.Y), V3(b.X, yb + 0.08, b.Y)
-		local len = (pb - pa).Magnitude
-		if len > 0.5 then
-			Kit.box(
-				f,
-				"Path",
-				CFrame.lookAt((pa + pb) / 2, pb),
-				V3(width, 0.16, len + width * 0.6),
-				color or C.path,
-				M.SmoothPlastic,
-				decor()
-			)
-			Kit.disc(f, "PathJoint", pb, width, 0.16, color or C.path, M.SmoothPlastic, decor())
-		end
-	end
-end
-
--- The stone hill under Shrine 1 -------------------------------------------------------------------------------
+-- The stone hill under Shrine 1 (the land is terrain): stone curbs and torches on the ramps, banners at their tops,
+-- boulders at the foot of the cliffs, and an invisible ring at the cliff edge so the only ways up are the ramps.
 local function hill(f, rng)
 	local cx, cz = HILL.center.X, HILL.center.Y
 	local m = Kit.model("Hill", f)
-	Kit.disc(m, "Rock", V3(cx, (HILL.height - 0.4 - 2) / 2, cz), HILL.top * 2, HILL.height - 0.4 + 2, C.cliff)
-	Kit.disc(m, "Top", V3(cx, HILL.height - 0.2, cz), HILL.top * 2 + 2, 0.4, C.grass)
-	-- chunky rocks round the cliff (not on the ramps)
-	local n = 48
+	-- boulders tumbled at the foot of the cliffs (not on the ramps)
+	local n = 44
 	for k = 1, n do
-		local a = (k + rng:NextNumber(-0.3, 0.3)) / n * math.pi * 2
+		local a = (k + rng:NextNumber(-0.35, 0.35)) / n * math.pi * 2
 		local dir = Vector2.new(math.cos(a), math.sin(a))
 		local onRamp = false
 		for _, ramp in HILL.ramps do
-			if dir:Dot(ramp.dir) > math.cos(math.rad(9)) then
+			if dir:Dot(ramp.dir) > math.cos(math.rad(13)) then
 				onRamp = true
 			end
 		end
 		if not onRamp then
-			local r = HILL.top + rng:NextNumber(-0.5, 1.5)
-			local pos = V3(cx + dir.X * r, rng:NextNumber(2.5, 6), cz + dir.Y * r)
-			local size = V3(rng:NextNumber(9, 15), rng:NextNumber(6, 10), rng:NextNumber(5, 8))
-			Kit.box(
+			local r = HILL.top + rng:NextNumber(3.5, 7)
+			Kit.boulder(
 				m,
-				"Cliff",
-				CFrame.lookAt(pos, pos + V3(dir.X, 0, dir.Y))
-					* CFrame.Angles(rng:NextNumber(-0.15, 0.15), 0, rng:NextNumber(-0.2, 0.2)),
-				size,
-				(rng:NextNumber() < 0.5 and C.cliff or C.cliffDark):Lerp(C.cliffWarm, rng:NextNumber(0, 0.4)),
-				M.SmoothPlastic,
-				{ CastShadow = k % 3 == 0 }
+				at(cx + dir.X * r, cz + dir.Y * r) - V3(0, 0.6, 0),
+				rng:NextNumber(2.5, 6.5),
+				rng,
+				(rng:NextNumber() < 0.5 and C.rock or C.cliffDark),
+				rng:NextNumber() < 0.6 and M.Slate or M.Rock
 			)
 		end
 	end
-	-- the four ramps (path-coloured wedges with stone curbs)
+	-- the invisible ring at the edge (monsters can't jump the cliffs; the ramps are the way up)
+	local ringR = HILL.top + 1.4
+	local segs = 96
+	for k = 0, segs - 1 do
+		local a = (k + 0.5) / segs * math.pi * 2
+		local dir = Vector2.new(math.cos(a), math.sin(a))
+		local onRamp = false
+		for _, ramp in HILL.ramps do
+			if dir:Dot(ramp.dir) > math.cos(math.asin((HILL.rampWidth / 2 + 0.6) / ringR)) then
+				onRamp = true
+			end
+		end
+		if not onRamp then
+			local pos = V3(cx + dir.X * ringR, (HILL.height - 1) / 2, cz + dir.Y * ringR)
+			local wall = Kit.wall(
+				m,
+				CFrame.lookAt(pos, V3(cx, pos.Y, cz)),
+				V3(2 * math.pi * ringR / segs + 0.6, HILL.height + 1, 1)
+			)
+			wall.Name = "CliffEdge"
+		end
+	end
+	-- the four ramps: cobbled terrain, with stone curbs, torches at the top and banners
 	local slope = math.atan2(HILL.height, HILL.foot - HILL.top)
 	for _, ramp in HILL.ramps do
 		local mid = (HILL.top + HILL.foot) / 2
 		local pos = V3(cx + ramp.dir.X * mid, HILL.height / 2, cz + ramp.dir.Y * mid)
 		local cf = CFrame.lookAt(pos, pos + V3(ramp.dir.X, 0, ramp.dir.Y))
-		Kit.wedge(m, "Ramp", cf, V3(HILL.rampWidth, HILL.height, HILL.foot - HILL.top), C.path)
 		for _, side in { -1, 1 } do
 			Kit.box(
 				m,
@@ -142,67 +109,112 @@ local function hill(f, rng)
 				cf
 					* CFrame.new(side * (HILL.rampWidth / 2 + 0.6), 0, 0)
 					* CFrame.Angles(-slope, 0, 0)
-					* CFrame.new(0, 0.9, 0),
+					* CFrame.new(0, 0.7, 0),
 				V3(1.6, 1.8, HILL.foot - HILL.top + 1),
 				C.castleDark,
-				M.SmoothPlastic,
+				M.Cobblestone,
 				{ CastShadow = false }
 			)
 		end
-		-- torches at the top of each ramp
 		for _, side in { -1, 1 } do
 			local t = Vector2.new(-ramp.dir.Y, ramp.dir.X) * side * (HILL.rampWidth / 2 + 2)
-			local at = HILL.center + ramp.dir * (HILL.top - 3) + t
-			Kit.torch(m, V3(at.X, HILL.height, at.Y), 6)
+			local top = HILL.center + ramp.dir * (HILL.top - 3) + t
+			Kit.torch(m, V3(top.X, HILL.height, top.Y), 6)
+			local foot = HILL.center + ramp.dir * (HILL.foot + 3) + t * 1.15
+			Kit.torch(m, at(foot.X, foot.Y), 5.5)
+			local b = HILL.center + ramp.dir * (HILL.top + 6) + t * 1.25
+			local bp = V3(b.X, MapLayout.groundY(b.X, b.Y), b.Y)
+			Kit.banner(
+				m,
+				CFrame.lookAt(bp, bp + V3(ramp.dir.X, 0, ramp.dir.Y)) * CFrame.Angles(0, math.pi, 0),
+				11,
+				side > 0 and C.roofBlue or C.roofRed,
+				C.gold
+			)
 		end
 	end
-	-- a few flowers round the edge of the top (not where the castle goes)
-	for _ = 1, 16 do
+	-- flowers round the edge of the top (not where the castle goes)
+	for _ = 1, 22 do
 		local a = rng:NextNumber(0, math.pi * 2)
-		local r = rng:NextNumber(82, 95)
-		Kit.flowers(m, V3(cx + math.cos(a) * r, HILL.height, cz + math.sin(a) * r), rng, 3)
+		local r = rng:NextNumber(82, 96)
+		Kit.flowers(m, V3(cx + math.cos(a) * r, HILL.height, cz + math.sin(a) * r), rng, 4)
 	end
 	return m
 end
 
--- The creek across the valley, with its bridges -----------------------------------------------------------------
+-- The creek across the valley (its channel and water are terrain): the bridges, stepping stones, reeds and lilies.
 local function creek(f, rng)
 	local m = Kit.model("Creek", f)
 	local x, w = MapLayout.CREEK.x, MapLayout.CREEK.width
-	local len = MapLayout.RIDGE_Z * 2
-	Kit.box(m, "Water", CFrame.new(x, 0.08, 0), V3(w, 0.2, len), C.water, M.SmoothPlastic, { CastShadow = false })
-	for _, side in { -1, 1 } do
-		Kit.box(
-			m,
-			"Bank",
-			CFrame.new(x + side * (w / 2 + 1), 0.1, 0),
-			V3(2.4, 0.22, len),
-			C.path,
-			M.SmoothPlastic,
-			decor()
-		)
+	local water = MapLayout.CREEK.water
+	local stone, rope
+	for _, b in MapLayout.bridges do
+		if b.key == "stone" then
+			stone = b
+		else
+			rope = b
+		end
 	end
-	for _ = 1, 14 do
-		Kit.disc(
-			m,
-			"Lily",
-			V3(x + rng:NextNumber(-5, 5), 0.22, rng:NextNumber(-190, 190)),
-			rng:NextNumber(1.6, 2.6),
-			0.1,
-			C.leafDark,
-			M.SmoothPlastic,
-			decor()
-		)
-	end
-	-- the thin rope bridge (north lane): easy to guard
-	local bz = 112
-	Kit.box(m, "Deck", CFrame.new(x, 1.2, bz), V3(w + 10, 0.6, 7), C.woodLight, M.WoodPlanks)
+	-- the stone bridge (middle lane): wide and open, with a ramp at each end and a pier in the water
+	local deckLen = (stone.halfX - stone.ramp) * 2
+	Kit.box(
+		m,
+		"StoneBridge",
+		CFrame.new(x, stone.y / 2, stone.z),
+		V3(deckLen, stone.y, stone.halfZ * 2),
+		C.castle,
+		M.Cobblestone
+	)
 	for _, s in { -1, 1 } do
 		Kit.wedge(
 			m,
 			"BridgeRamp",
-			CFrame.new(x + s * (w / 2 + 7), 0.75, bz) * CFrame.Angles(0, s > 0 and math.rad(-90) or math.rad(90), 0),
-			V3(7, 1.5, 4),
+			CFrame.new(x + s * (deckLen / 2 + stone.ramp / 2), stone.y / 2, stone.z)
+				* CFrame.Angles(0, s > 0 and math.rad(-90) or math.rad(90), 0),
+			V3(stone.halfZ * 2, stone.y, stone.ramp),
+			C.castle,
+			M.Cobblestone
+		)
+		Kit.box(
+			m,
+			"Parapet",
+			CFrame.new(x, stone.y + 0.8, stone.z + s * (stone.halfZ - 0.5)),
+			V3(deckLen, 1.6, 1),
+			C.castleDark,
+			M.Cobblestone
+		)
+		Kit.box(
+			m,
+			"ParapetCap",
+			CFrame.new(x, stone.y + 1.75, stone.z + s * (stone.halfZ - 0.5)),
+			V3(deckLen + 0.4, 0.3, 1.3),
+			C.stoneDark,
+			M.Slate,
+			{ CastShadow = false }
+		)
+		for _, e in { -1, 1 } do
+			Kit.box(
+				m,
+				"ParapetPost",
+				CFrame.new(x + e * (deckLen / 2 - 0.6), stone.y + 1.2, stone.z + s * (stone.halfZ - 0.5)),
+				V3(1.6, 2.6, 1.6),
+				C.castleDark,
+				M.Cobblestone
+			)
+		end
+	end
+	Kit.box(m, "Pier", CFrame.new(x, -2, stone.z), V3(3, 4.4, stone.halfZ * 2 - 2), C.castleDark, M.Cobblestone)
+	-- the thin rope bridge (north lane): easy to guard
+	local bz = rope.z
+	local span = (rope.halfX - rope.ramp) * 2
+	Kit.box(m, "Deck", CFrame.new(x, rope.y - 0.3, bz), V3(span, 0.6, rope.halfZ * 2), C.woodLight, M.WoodPlanks)
+	for _, s in { -1, 1 } do
+		Kit.wedge(
+			m,
+			"BridgeRamp",
+			CFrame.new(x + s * (span / 2 + rope.ramp / 2), rope.y / 2, bz)
+				* CFrame.Angles(0, s > 0 and math.rad(-90) or math.rad(90), 0),
+			V3(rope.halfZ * 2, rope.y, rope.ramp),
 			C.woodLight,
 			M.WoodPlanks
 		)
@@ -210,391 +222,395 @@ local function creek(f, rng)
 			Kit.box(
 				m,
 				"Post",
-				CFrame.new(x + s * (w / 2 + 4.5), 2.6, bz + zs * 3.6),
+				CFrame.new(x + s * (span / 2 - 0.5), rope.y + 1.6, bz + zs * (rope.halfZ + 0.1)),
 				V3(0.7, 4, 0.7),
 				C.woodDark,
 				M.Wood
 			)
 		end
-		Kit.box(m, "Rope", CFrame.new(x, 3.4, bz + s * 3.6), V3(w + 9, 0.25, 0.25), C.cream, M.Fabric, decor())
+		Kit.box(
+			m,
+			"Rope",
+			CFrame.new(x, rope.y + 2.4, bz + s * (rope.halfZ + 0.1)),
+			V3(span - 1, 0.25, 0.25),
+			C.cream,
+			M.Fabric,
+			decor()
+		)
 	end
-	-- the stone bridge (middle lane): wide open
-	Kit.box(m, "StoneBridge", CFrame.new(x, 0.6, 0), V3(w + 12, 1.2, 22), C.castle)
-	for _, s in { -1, 1 } do
-		Kit.box(m, "Parapet", CFrame.new(x, 1.9, s * 10.6), V3(w + 12, 1.6, 1), C.castleDark)
+	for k = -2, 2 do
+		Kit.box(
+			m,
+			"Plank",
+			CFrame.new(x + k * 3.6, rope.y + 0.02, bz),
+			V3(0.5, 0.06, rope.halfZ * 2 + 0.2),
+			C.woodDark,
+			M.Wood,
+			decor()
+		)
 	end
 	-- stepping stones (south)
 	for k = -2, 2 do
-		Kit.disc(m, "SteppingStone", V3(x + k * 3.2, 0.25, -118 + (k % 2) * 1.5), 2.6, 0.5, C.rock)
+		Kit.disc(m, "SteppingStone", V3(x + k * 3.2, water - 0.4, -118 + (k % 2) * 1.5), 2.8, 2.2, C.rock, M.Slate)
 	end
-	return m
-end
-
--- The mountain walls of the valley (north and south), closing in on the canyon -----------------------------------
-local function ridges(f, rng)
-	local m = Kit.model("Ridges", f)
-	local top = MapLayout.RIDGE_TOP
-	local zr = MapLayout.RIDGE_Z
-	local depth = 34
-	for _, side in { 1, -1 } do
-		-- the straight part, x -620 .. -130
-		for k = 0, 6 do
-			local xc = -620 + 35 + k * 70
-			local cf = CFrame.new(xc, top / 2, side * (zr + depth / 2))
-			if side < 0 then
-				cf = cf * CFrame.Angles(0, math.pi, 0)
-			end
-			Kit.wedge(
+	-- lilies on the water, reeds along the banks
+	for _ = 1, 18 do
+		local z = rng:NextNumber(-196, 196)
+		if math.abs(z - stone.z) > 14 and math.abs(z - bz) > 8 then
+			Kit.disc(
 				m,
-				"Slope",
-				cf,
-				V3(72, top, depth),
-				(k % 2 == 0 and C.grassDark or C.leafDark):Lerp(C.cliff, 0.15)
-			)
-		end
-		Kit.box(m, "RidgeTop", CFrame.new(-375, top / 2, side * (zr + depth + 45)), V3(490, top, 90), C.grassDark)
-		-- the part that closes in on the canyon mouth
-		local a = Vector2.new(-130, side * zr)
-		local b = Vector2.new(MapLayout.CANYON.minX, side * MapLayout.CANYON.halfWidth)
-		local t = (b - a).Unit
-		local tx = V3(t.X, 0, t.Y)
-		local n = tx:Cross(V3(0, 1, 0))
-		if side < 0 then
-			n = -n
-		end
-		local len = (b - a).Magnitude
-		local segs = 3
-		for k = 0, segs - 1 do
-			local p = a + (b - a) * ((k + 0.5) / segs)
-			local pos = V3(p.X, top / 2, p.Y) + n * (depth / 2)
-			local xAxis = side > 0 and tx or -tx
-			Kit.wedge(
-				m,
-				"Slope",
-				CFrame.fromMatrix(pos, xAxis, V3(0, 1, 0)),
-				V3(len / segs + 4, top, depth),
-				C.grassDark:Lerp(C.cliff, 0.2)
-			)
-		end
-		local mid = (a + b) / 2
-		local backPos = V3(mid.X, top / 2, mid.Y) + n * (depth + 60)
-		Kit.box(
-			m,
-			"RidgeBack",
-			CFrame.fromMatrix(backPos, side > 0 and tx or -tx, V3(0, 1, 0)),
-			V3(len + 60, top, 120),
-			C.grassDark
-		)
-		-- invisible walls at the foot (the slopes are steep, but a character could still walk up them)
-		Kit.wall(m, CFrame.new(-375, 40, side * (zr + 1)), V3(490, 80, 2))
-		Kit.wall(m, CFrame.fromMatrix(V3(mid.X, 40, mid.Y) + n * 1, tx, V3(0, 1, 0)), V3(len + 2, 80, 2))
-		-- pines and rocks along the ridge top, and snowy peaks behind
-		for _ = 1, 22 do
-			local x = rng:NextNumber(-610, -150)
-			local z = side * rng:NextNumber(zr + depth + 4, zr + depth + 40)
-			if not (side > 0 and x > -260 and x < -140) then -- the hangout's view stays open
-				Kit.toonPine(m, V3(x, top, z), rng:NextNumber(18, 30), rng)
-			end
-		end
-		for k = 0, 5 do
-			local x = -600 + k * 95 + rng:NextNumber(-20, 20)
-			local base = V3(x, top - 2, side * (zr + depth + 130 + rng:NextNumber(0, 40)))
-			local h = rng:NextNumber(70, 110)
-			local w = rng:NextNumber(120, 160)
-			Kit.ellipsoid(
-				m,
-				"Peak",
-				base,
-				V3(w, h * 2, w * 0.9),
-				C.cliff:Lerp(C.cave, 0.35),
-				M.SmoothPlastic,
-				{ CanCollide = false }
-			)
-			Kit.ellipsoid(
-				m,
-				"Snow",
-				base + V3(0, h * 0.72, 0),
-				V3(w * 0.5, h * 0.62, w * 0.46),
-				C.snow,
-				M.SmoothPlastic,
+				"Lily",
+				V3(x + rng:NextNumber(-3.5, 3.5), water + 0.06, z),
+				rng:NextNumber(1.4, 2.4),
+				0.08,
+				C.leafDark,
+				M.Grass,
 				decor()
 			)
 		end
 	end
+	for _ = 1, 46 do
+		local z = rng:NextNumber(-198, 198)
+		if math.abs(z - stone.z) > 14 and math.abs(z - bz) > 6 and math.abs(z + 118) > 6 then
+			local side = rng:NextNumber() < 0.5 and -1 or 1
+			local rx = x + side * rng:NextNumber(w / 2 - 2.5, w / 2 + 1.5)
+			local base = at(rx, z)
+			for _ = 1, rng:NextInteger(3, 6) do
+				local h = rng:NextNumber(2.2, 4.4)
+				local p = base + V3(rng:NextNumber(-0.8, 0.8), h / 2 - 0.3, rng:NextNumber(-0.8, 0.8))
+				Kit.box(
+					m,
+					"Reed",
+					CFrame.new(p)
+						* CFrame.Angles(rng:NextNumber(-0.15, 0.15), rng:NextNumber(0, 3), rng:NextNumber(-0.15, 0.15)),
+					V3(0.18, h, 0.18),
+					C.leafDark:Lerp(C.dirt, rng:NextNumber(0, 0.35)),
+					M.Grass,
+					decor()
+				)
+				if rng:NextNumber() < 0.35 then
+					Kit.box(
+						m,
+						"Cattail",
+						CFrame.new(p + V3(0, h / 2 + 0.3, 0)),
+						V3(0.32, 0.9, 0.32),
+						C.bark,
+						M.Fabric,
+						decor()
+					)
+				end
+			end
+		end
+	end
 	return m
 end
 
--- The canyon of Shrine 2 -------------------------------------------------------------------------------------------
+-- The valley's mountain walls (north and south, terrain): invisible walls at their foot, and pines on top.
+local function ridges(f, rng)
+	local m = Kit.model("Ridges", f)
+	local zr = MapLayout.RIDGE_Z
+	for _, side in { 1, -1 } do
+		-- invisible walls at the foot (the slopes are steep, but a character could still scramble up them)
+		Kit.wall(m, CFrame.new(-375, 40, side * (zr + 1)), V3(490, 80, 2))
+		local a = Vector2.new(-130, side * zr)
+		local b = Vector2.new(MapLayout.CANYON.minX, side * MapLayout.CANYON.halfWidth)
+		local t = (b - a).Unit
+		local mid = (a + b) / 2
+		local n = V3(t.X, 0, t.Y):Cross(V3(0, 1, 0)) * (side > 0 and 1 or -1)
+		Kit.wall(
+			m,
+			CFrame.fromMatrix(V3(mid.X, 40, mid.Y) + n * 1, V3(t.X, 0, t.Y), V3(0, 1, 0)),
+			V3((b - a).Magnitude + 2, 80, 2)
+		)
+		-- pines along the tops (the hangout's view stays open), thinning out up the mountains
+		local placed = 0
+		for _ = 1, 160 do
+			if placed >= 46 then
+				break
+			end
+			local x = rng:NextNumber(-700, -40)
+			local z = side * rng:NextNumber(MapLayout.valleyLimit(x) + 30, 330)
+			local open = side > 0 and x > -280 and x < -120 and math.abs(z) < 330
+			local p = onLand(x, z)
+			local q = onLand(x + 4, z + 4)
+			if not open and p.Y < 118 and math.abs(q.Y - p.Y) < 3.4 then
+				placed += 1
+				Kit.toonPine(m, p - V3(0, 0.4, 0), rng:NextNumber(18, 32), rng)
+			end
+		end
+	end
+	return m
+end
+
+-- The canyon of Shrine 2 (its floor, walls and rock spine are terrain): invisible walls along its sides, fallen
+-- boulders, dead trees and pines on the rims, and a natural stone arch high over the far end.
 local function canyon(f, rng)
 	local m = Kit.model("Canyon", f)
 	local C0 = MapLayout.CANYON
 	local len = C0.maxX - C0.minX
 	local cx = (C0.minX + C0.maxX) / 2
-	local h = 60
-	local bands = { Kit.rgb(226, 150, 96), Kit.rgb(244, 206, 150), Kit.rgb(206, 116, 80), Kit.rgb(240, 180, 120) }
+	local sand = Kit.rgb(214, 150, 100)
 	for _, side in { 1, -1 } do
-		Kit.box(m, "Wall", CFrame.new(cx, h / 2, side * (C0.halfWidth + 41)), V3(len, h, 82), Kit.rgb(232, 168, 112))
-		-- layered rock (strata) standing out of the inner face
-		for k, y in { 9, 22, 36, 50 } do
-			Kit.box(
-				m,
-				"Strata",
-				CFrame.new(cx, y, side * (C0.halfWidth + 0.6)),
-				V3(len, rng:NextNumber(4, 7), 2),
-				bands[k],
-				M.SmoothPlastic,
-				{ CastShadow = false }
-			)
+		Kit.wall(m, CFrame.new(cx, 40, side * (C0.halfWidth + 0.5)), V3(len, 80, 1))
+		-- boulders along the foot of the walls
+		for _ = 1, 10 do
+			local x = rng:NextNumber(C0.minX + 6, C0.maxX - 6)
+			local z = side * (C0.halfWidth - rng:NextNumber(0, 2.5))
+			Kit.boulder(m, at(x, z) - V3(0, 0.5, 0), rng:NextNumber(4, 9), rng, sand, M.Sandstone)
 		end
-		-- boulders along the foot
-		for _ = 1, 9 do
-			Kit.boulder(
-				m,
-				V3(rng:NextNumber(C0.minX + 6, C0.maxX - 6), 0, side * (C0.halfWidth - rng:NextNumber(0, 2))),
-				rng:NextNumber(5, 9),
-				rng,
-				C.cliffWarm
-			)
-		end
-		-- scrub and pines on top
-		for _ = 1, 8 do
-			Kit.toonPine(
-				m,
-				V3(rng:NextNumber(C0.minX, C0.maxX), h, side * rng:NextNumber(C0.halfWidth + 6, C0.halfWidth + 70)),
-				rng:NextNumber(14, 22),
-				rng
-			)
+		-- pines and dead trees on the rims
+		local placed = 0
+		for _ = 1, 60 do
+			if placed >= 12 then
+				break
+			end
+			local x, z =
+				rng:NextNumber(C0.minX - 10, C0.maxX), side * rng:NextNumber(C0.halfWidth + 10, C0.halfWidth + 80)
+			local p, q = onLand(x, z), onLand(x + 4, z + 4)
+			if math.abs(q.Y - p.Y) < 3 and p.Y > 40 then
+				placed += 1
+				if rng:NextNumber() < 0.75 then
+					Kit.toonPine(m, p - V3(0, 0.4, 0), rng:NextNumber(14, 22), rng)
+				else
+					Kit.deadTree(m, p, rng:NextNumber(8, 12), rng)
+				end
+			end
 		end
 	end
-	-- the rock spine down the middle (two lanes)
+	-- scrub and bones on the floor
+	for _ = 1, 26 do
+		local x, z = rng:NextNumber(C0.minX + 4, C0.maxX - 8), rng:NextNumber(-C0.halfWidth + 3, C0.halfWidth - 3)
+		if MapLayout.walkable(x, z) and not MapLayout.inZone(2, x, z) then
+			local lane = math.min(
+				MapLayout.distToLane(MapLayout.lanes[2][1].points, x, z),
+				MapLayout.distToLane(MapLayout.lanes[2][2].points, x, z)
+			)
+			if lane > 8 then
+				if rng:NextNumber() < 0.7 then
+					Kit.bush(m, at(x, z), rng:NextNumber(1.6, 2.8), rng, Kit.rgb(140, 150, 70))
+				else
+					Kit.boulder(m, at(x, z), rng:NextNumber(1.6, 3), rng, sand, M.Sandstone)
+				end
+			end
+		end
+	end
+	-- the rock spine down the middle (terrain) gets a pine on top
 	local S = MapLayout.SPINE
 	local scx = (S.minX + S.maxX) / 2
-	Kit.box(m, "Spine", CFrame.new(scx, 4, 0), V3(S.maxX - S.minX, 8, S.halfWidth * 2 - 2), C.cliff)
-	for k = 0, 4 do
-		local x = S.minX + 6 + k * (S.maxX - S.minX - 12) / 4
-		local rh = rng:NextNumber(12, S.height + 2)
-		Kit.ellipsoid(
-			m,
-			"SpineRock",
-			V3(x, rh * 0.42, rng:NextNumber(-2, 2)),
-			V3(rng:NextNumber(14, 18), rh, S.halfWidth * 2 + rng:NextNumber(0, 3)),
-			(k % 2 == 0 and C.cliffWarm or C.cliff):Lerp(C.dirt, 0.15),
-			M.SmoothPlastic
-		)
-	end
-	Kit.toonPine(m, V3(scx + 4, S.height - 1, 0), 14, rng)
-	return m
-end
-
--- The mountain: tunnels and the cave of Shrine 3 ------------------------------------------------------------------
-local function mountain(f, rng)
-	local m = Kit.model("Mountain", f)
-	local CV = MapLayout.CAVE
-	local rock, rockDark = C.cave:Lerp(C.cliff, 0.35), C.caveDark
-	local function block(name, x0, x1, z0, z1, y0, y1, color)
+	Kit.toonPine(m, onLand(scx + 4, 0) - V3(0, 0.5, 0), 14, rng)
+	-- a natural arch of sandstone high across the far end (out of reach: just for the view)
+	local ax, ay = 196, 52
+	local seg = 14
+	for k = 0, seg - 1 do
+		local a0, a1 = k / seg * math.pi, (k + 1) / seg * math.pi
+		local p0 = V3(ax, ay + math.sin(a0) * 10, -math.cos(a0) * (C0.halfWidth + 10))
+		local p1 = V3(ax, ay + math.sin(a1) * 10, -math.cos(a1) * (C0.halfWidth + 10))
+		local thick = 6 + math.abs(math.cos((a0 + a1) / 2)) * 5
 		Kit.box(
 			m,
-			name,
-			CFrame.new((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2),
-			V3(x1 - x0, y1 - y0, z1 - z0),
-			color or rock
-		)
-	end
-	local mt, st = CV.mainTunnel, CV.sideTunnel
-	block("RockSouth", 232, mt.maxX - 6, -120, mt.minZ, 0, 70)
-	block("RockMiddle", 232, mt.maxX, mt.maxZ, st.minZ, 0, 70)
-	block("RockNorth", 232, st.maxX, st.maxZ, 120, 0, 70)
-	block("MainRoof", 232, mt.maxX - 6, mt.minZ, mt.maxZ, mt.height, 70, rockDark)
-	block("SideRoof", 232, st.maxX, st.minZ, st.maxZ, st.height, 70, rockDark)
-	-- the cave's walls: a ring of rock with gaps where the tunnels come in
-	local ringN = 22
-	for k = 0, ringN - 1 do
-		local a = k / ringN * math.pi * 2
-		local skip = (k == 11) or (k == 9)
-		if not skip then
-			local r = CV.radius + 10
-			local pos = V3(CV.center.X + math.cos(a) * r, CV.ceiling / 2, CV.center.Y + math.sin(a) * r)
-			Kit.box(
-				m,
-				"CaveWall",
-				CFrame.lookAt(pos, V3(CV.center.X, CV.ceiling / 2, CV.center.Y)),
-				V3(2 * math.pi * r / ringN + 3, CV.ceiling + 2, 20),
-				k % 2 == 0 and rock or rockDark
-			)
-		end
-	end
-	Kit.disc(m, "CaveRoof", V3(CV.center.X, CV.ceiling + 4, CV.center.Y), (CV.radius + 22) * 2, 8, rockDark)
-	block("RockEast", 472, 560, -120, 120, 0, 72)
-	block("RockNorthCave", 330, 476, 90, 120, 0, 72)
-	block("RockSouthCave", 330, 476, -120, -90, 0, 72)
-	-- the outside: a big terraced cartoon mountain with a snowy top
-	local peak = V3(396, 62, 0)
-	Kit.box(m, "MountainTop", CFrame.new(396, 66, 0), V3(260, 8, 240), rock)
-	Kit.ellipsoid(m, "Dome", peak, V3(290, 150, 250), rock:Lerp(C.cliff, 0.2), M.SmoothPlastic, { CanCollide = false })
-	Kit.ellipsoid(
-		m,
-		"Shoulder",
-		peak + V3(-60, 4, 70),
-		V3(150, 110, 120),
-		rock:Lerp(C.cliff, 0.35),
-		M.SmoothPlastic,
-		{ CanCollide = false }
-	)
-	Kit.ellipsoid(
-		m,
-		"Shoulder",
-		peak + V3(-40, 2, -80),
-		V3(160, 100, 120),
-		rock,
-		M.SmoothPlastic,
-		{ CanCollide = false }
-	)
-	Kit.ellipsoid(m, "SnowCap", peak + V3(0, 56, 0), V3(130, 50, 112), C.snow, M.SmoothPlastic, decor())
-	for _ = 1, 10 do
-		local a = rng:NextNumber(0, math.pi * 2)
-		local r = rng:NextNumber(110, 140)
-		local pos = V3(peak.X + math.cos(a) * r, 74, math.sin(a) * r)
-		Kit.ellipsoid(
-			m,
-			"Crag",
-			pos,
-			V3(rng:NextNumber(30, 50), rng:NextNumber(26, 40), rng:NextNumber(26, 44)),
-			rock:Lerp(C.cliff, rng:NextNumber(0, 0.4)),
-			M.SmoothPlastic,
+			"Arch",
+			CFrame.lookAt((p0 + p1) / 2, p1) * CFrame.Angles(0, 0, rng:NextNumber(-0.05, 0.05)),
+			V3(9 + rng:NextNumber(0, 2), thick, (p1 - p0).Magnitude + 1.5),
+			sand:Lerp(Kit.rgb(232, 196, 150), rng:NextNumber(0, 0.4)),
+			M.Sandstone,
 			{ CanCollide = false }
 		)
 	end
+	return m
+end
+
+-- The mountain (terrain, with the tunnels and the cave hollowed out): a stone arch and old mine beams at the
+-- tunnel mouths, and inside, crystals, stalactites and stalagmites, glowing mushrooms and lamps.
+local function mountain(f, rng)
+	local m = Kit.model("Mountain", f)
+	local CV = MapLayout.CAVE
+	local rockDark = C.caveDark
+	local mt, st = CV.mainTunnel, CV.sideTunnel
+	-- the cave's roof height at r from its middle (the dome TerrainBuilder carves)
+	local function roof(r)
+		local t = 1 - (r / CV.radius) ^ 4
+		return t > 0 and CV.ceiling * math.sqrt(t) or 0
+	end
 	-- the tunnel mouths: a stone arch on the main tunnel, old mine beams on the side crack, torches
 	for _, s in { -1, 1 } do
-		Kit.box(m, "ArchPillar", CFrame.new(231, mt.height / 2, s * (mt.maxZ + 1.5)), V3(4, mt.height, 3), C.castleDark)
+		Kit.box(
+			m,
+			"ArchPillar",
+			CFrame.new(230.5, mt.height / 2, s * (mt.maxZ + 1.2)),
+			V3(4, mt.height, 3.4),
+			C.castleDark,
+			M.Cobblestone
+		)
 		Kit.box(
 			m,
 			"Beam",
-			CFrame.new(231, st.height / 2, (st.minZ + st.maxZ) / 2 + s * (st.maxZ - st.minZ) / 2),
+			CFrame.new(230, st.height / 2, (st.minZ + st.maxZ) / 2 + s * ((st.maxZ - st.minZ) / 2 - 0.6)),
 			V3(2, st.height, 1.6),
 			C.woodDark,
 			M.Wood
 		)
-		Kit.torch(m, V3(226, 0, s * (mt.maxZ + 4)), 7)
+		Kit.torch(m, V3(225, 0, s * (mt.maxZ + 4)), 7)
 	end
-	Kit.box(m, "ArchTop", CFrame.new(231, mt.height + 1.2, 0), V3(4, 3, mt.maxZ * 2 + 6), C.castleDark)
+	Kit.box(
+		m,
+		"ArchTop",
+		CFrame.new(230.5, mt.height + 0.6, 0),
+		V3(4.4, 3.4, mt.maxZ * 2 + 6),
+		C.castleDark,
+		M.Cobblestone
+	)
+	Kit.box(
+		m,
+		"Keystone",
+		CFrame.new(228.2, mt.height + 0.4, 0),
+		V3(0.4, 3.2, 3),
+		C.gold,
+		M.Metal,
+		{ CastShadow = false, CanCollide = false }
+	)
 	Kit.box(
 		m,
 		"BeamTop",
-		CFrame.new(231, st.height - 0.6, (st.minZ + st.maxZ) / 2),
-		V3(2, 1.6, st.maxZ - st.minZ + 2),
+		CFrame.new(230, st.height - 1, (st.minZ + st.maxZ) / 2),
+		V3(2, 1.6, st.maxZ - st.minZ),
 		C.woodDark,
 		M.Wood
 	)
-	-- inside: crystals, stalactites, glowing mushrooms, a purple path
-	for k = 0, 13 do
-		local a = k / 14 * math.pi * 2 + 0.2
-		local r = CV.radius - rng:NextNumber(4, 9)
+	-- inside: crystals round the wall, stalactites, stalagmites, glowing mushrooms
+	for k = 0, 17 do
+		local a = k / 18 * math.pi * 2 + 0.2
+		local r = CV.radius - rng:NextNumber(5, 10)
 		local pos = V3(CV.center.X + math.cos(a) * r, 0, CV.center.Y + math.sin(a) * r)
-		if math.abs(math.cos(a) + 1) > 0.08 then
-			local cr = Kit.crystals(m, pos, rng:NextNumber(5, 10), k % 2 == 0 and C.crystal or C.crystalPink, rng, 4)
+		local nearTunnel = pos.X < CV.center.X - 40 and (math.abs(pos.Z) < 18 or math.abs(pos.Z - 40) < 14)
+		if not nearTunnel then
+			local cr = Kit.crystals(m, pos, rng:NextNumber(5, 11), k % 2 == 0 and C.crystal or C.crystalPink, rng, 5)
 			if k % 3 == 0 then
 				Kit.light(
 					cr:FindFirstChildWhichIsA("BasePart"),
 					"PointLight",
-					{ Color = k % 2 == 0 and C.crystal or C.crystalPink, Range = 30, Brightness = 1.3 }
+					{ Color = k % 2 == 0 and C.crystal or C.crystalPink, Range = 30, Brightness = 1.4 }
 				)
 			end
 		end
 	end
-	for _ = 1, 16 do
+	for _ = 1, 26 do
 		local a = rng:NextNumber(0, math.pi * 2)
-		local r = rng:NextNumber(10, CV.radius - 6)
+		local r = rng:NextNumber(8, CV.radius - 14)
+		local top = roof(r)
 		local h = rng:NextNumber(5, 12)
-		Kit.ellipsoid(
+		Kit.cone(
 			m,
 			"Stalactite",
-			V3(CV.center.X + math.cos(a) * r, CV.ceiling - h / 2 + 1, CV.center.Y + math.sin(a) * r),
-			V3(h * 0.4, h, h * 0.4),
+			V3(CV.center.X + math.cos(a) * r, top + 1.5, CV.center.Y + math.sin(a) * r),
+			h * 0.38,
+			-h,
 			rockDark,
-			M.SmoothPlastic,
+			4,
+			M.Slate,
 			decor()
 		)
 	end
-	for _, p in { V3(350, 0, 30), V3(452, 0, -18), V3(424, 0, -54), V3(340, 0, -26) } do
-		Kit.mushroom(m, p, rng:NextNumber(5, 8), C.mushroomPurple, rng)
+	for _ = 1, 14 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local r = rng:NextNumber(CV.radius - 16, CV.radius - 6)
+		local p = V3(CV.center.X + math.cos(a) * r, 0, CV.center.Y + math.sin(a) * r)
+		if p.X > CV.center.X - 30 or math.abs(p.Z) > 20 then
+			Kit.cone(
+				m,
+				"Stalagmite",
+				p - V3(0, 0.3, 0),
+				rng:NextNumber(2.4, 4),
+				rng:NextNumber(4, 9),
+				rockDark,
+				4,
+				M.Slate
+			)
+		end
+	end
+	for _, p in { V3(350, 0, 30), V3(452, 0, -18), V3(424, 0, -54), V3(340, 0, -26), V3(458, 0, 34) } do
+		local mush = Kit.mushroom(m, p, rng:NextNumber(5, 8), C.mushroomPurple, rng)
+		local cap = mush:FindFirstChild("Cap")
+		if cap then
+			Kit.light(cap, "PointLight", { Color = C.mushroomPurple, Range = 16, Brightness = 0.8 })
+		end
 	end
 	for _, t in { mt, st } do
-		Kit.light(
-			Kit.box(
-				m,
-				"TunnelLamp",
-				CFrame.new((t.minX + t.maxX) / 2, t.height - 1.2, (t.minZ + t.maxZ) / 2),
-				V3(1.2, 1.2, 1.2),
-				C.crystal,
-				M.Neon,
-				decor()
-			),
-			"PointLight",
-			{ Color = C.crystal, Range = 30, Brightness = 1.2 }
-		)
+		for _, tx in { t.minX + 18, (t.minX + t.maxX) / 2 + 10 } do
+			Kit.light(
+				Kit.box(
+					m,
+					"TunnelLamp",
+					CFrame.new(tx, t.height - 2.2, (t.minZ + t.maxZ) / 2),
+					V3(1.2, 1.2, 1.2),
+					C.crystal,
+					M.Neon,
+					decor()
+				),
+				"PointLight",
+				{ Color = C.crystal, Range = 30, Brightness = 1.2 }
+			)
+		end
 	end
-	Kit.disc(
-		m,
-		"CavePath",
-		V3(CV.center.X, 0.06, CV.center.Y),
-		(CV.radius - 4) * 2,
-		0.12,
-		C.cave:Lerp(C.magic, 0.15),
-		M.SmoothPlastic,
-		decor()
-	)
 	return m
 end
 
--- The dark forest where the monsters spawn --------------------------------------------------------------------------
+-- The dark forest where the monsters spawn (its floor is terrain) -------------------------------------------------
 local function forest(f, rng)
 	local m = Kit.model("MonsterForest", f)
 	local edge = MapLayout.DWARF_BARRIER_X
-	Kit.box(
-		m,
-		"ForestFloor",
-		CFrame.new((-620 + edge) / 2, 0.06, 0),
-		V3(edge + 620, 0.12, MapLayout.RIDGE_Z * 2),
-		C.forestDark,
-		M.SmoothPlastic,
-		decor()
-	)
 	local spawn = MapLayout.FOREST_SPAWN
-	for _ = 1, 64 do
+	for _ = 1, 90 do
 		local x, z = rng:NextNumber(-612, edge - 6), rng:NextNumber(-200, 200)
 		local clear = (Vector2.new(x, z) - Vector2.new(spawn.X, spawn.Z)).Magnitude > 34
 		local lane = math.huge
 		for _, l in MapLayout.lanes[1] do
 			lane = math.min(lane, MapLayout.distToLane(l.points, x, z))
 		end
-		if clear and lane > 14 then
-			if rng:NextNumber() < 0.75 then
+		if clear and lane > 14 and MapLayout.walkable(x, z) then
+			local r = rng:NextNumber()
+			if r < 0.68 then
 				Kit.toonPine(
 					m,
-					V3(x, 0, z),
-					rng:NextNumber(22, 36),
+					at(x, z),
+					rng:NextNumber(22, 38),
 					rng,
 					rng:NextNumber() < 0.5 and C.forestLeaf or C.forest
 				)
-			else
+			elseif r < 0.86 then
 				Kit.mushroom(
 					m,
-					V3(x, 0, z),
+					at(x, z),
 					rng:NextNumber(6, 11),
 					rng:NextNumber() < 0.5 and C.mushroomPurple or C.forestGlow,
 					rng
 				)
+			else
+				Kit.deadTree(m, at(x, z), rng:NextNumber(9, 14), rng, C.caveDark:Lerp(C.bark, 0.4))
 			end
 		end
 	end
-	for _ = 1, 10 do
+	for _ = 1, 12 do
 		local a = rng:NextNumber(0, math.pi * 2)
 		local r = rng:NextNumber(18, 30)
-		Kit.crystals(m, spawn + V3(math.cos(a) * r, 0, math.sin(a) * r), rng:NextNumber(3, 6), C.forestGlow, rng, 3)
+		local x, z = spawn.X + math.cos(a) * r, spawn.Z + math.sin(a) * r
+		Kit.crystals(m, at(x, z), rng:NextNumber(3, 6), C.forestGlow, rng, 3)
 	end
 	-- the spawn clearing and the rift: a ring of dark stone with a purple glow, facing the valley
-	Kit.disc(m, "SpawnStone", spawn + V3(0, 0.3, 0), 44, 0.6, C.caveDark)
+	Kit.disc(m, "SpawnStone", spawn + V3(0, 0.25, 0), 30, 0.5, C.caveDark, M.Slate)
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2
+		local p = spawn + V3(math.cos(a) * 17, 0, math.sin(a) * 17)
+		if math.cos(a) < 0.7 then -- open toward the valley
+			Kit.box(
+				m,
+				"StandingStone",
+				CFrame.new(p + V3(0, 2.6, 0)) * CFrame.Angles(rng:NextNumber(-0.1, 0.1), -a, rng:NextNumber(-0.1, 0.1)),
+				V3(2.2, 5.6 + rng:NextNumber(0, 2.4), 1.4),
+				C.caveDark,
+				M.Slate
+			)
+		end
+	end
 	local rift = spawn + V3(-10, 11, 0)
 	local seg = 18
 	for k = 0, seg - 1 do
@@ -606,7 +622,7 @@ local function forest(f, rng)
 			CFrame.new(p) * CFrame.Angles(-a, 0, 0),
 			V3(2.4, 2.4, 3.8),
 			C.caveDark:Lerp(C.black, 0.2),
-			M.SmoothPlastic,
+			M.Basalt,
 			{ CastShadow = false }
 		)
 	end
@@ -620,7 +636,7 @@ local function forest(f, rng)
 			rift + V3(4, math.sin(a) * 15, math.cos(a) * 15),
 			V3(2.4, 1.8, 2.2),
 			C.caveDark,
-			M.SmoothPlastic,
+			M.Basalt,
 			decor()
 		)
 	end
@@ -629,8 +645,8 @@ local function forest(f, rng)
 		Kit.box(
 			m,
 			"Rune",
-			CFrame.new(edge, 0.12, z) * CFrame.Angles(0, math.rad(45), 0),
-			V3(2.4, 0.12, 2.4),
+			CFrame.new(at(edge, z) + V3(0, 0.1, 0)) * CFrame.Angles(0, math.rad(45), 0),
+			V3(2.4, 0.2, 2.4),
 			C.forestGlow,
 			M.Neon,
 			decor()
@@ -642,18 +658,28 @@ local function forest(f, rng)
 	return m
 end
 
--- The mines in the hills on the sides ---------------------------------------------------------------------------
+-- The mines in the hills on the sides: a timber-framed mouth dug into the ridge, rails and a cart of gold ----------
 local function mines(f)
 	local m = Kit.model("Mines", f)
 	for _, mine in MapLayout.mines do
 		local p = mine.pos
 		local face = mine.facing -- -1: opens to -z (south)
 		local cf = CFrame.new(p) * CFrame.Angles(0, face < 0 and 0 or math.pi, 0) -- -Z of cf faces the valley
-		Kit.box(m, "MineHead", cf * CFrame.new(0, 8, 6), V3(24, 16, 12), C.cliff)
+		Kit.box(m, "MineHead", cf * CFrame.new(0, 8, 7), V3(26, 16, 14), C.cliffDark, M.Slate)
+		for _, s in { -1, 1 } do
+			Kit.wedge(
+				m,
+				"MineSide",
+				cf * CFrame.new(s * 15, 5, 5) * CFrame.Angles(0, s > 0 and math.rad(-90) or math.rad(90), 0),
+				V3(10, 10, 5),
+				C.cliffDark,
+				M.Slate
+			)
+		end
 		Kit.box(
 			m,
 			"Doorway",
-			cf * CFrame.new(0, 5, 0.05),
+			cf * CFrame.new(0, 5, -0.05),
 			V3(10, 10, 0.3),
 			C.black,
 			M.SmoothPlastic,
@@ -661,6 +687,15 @@ local function mines(f)
 		)
 		for _, s in { -1, 1 } do
 			Kit.box(m, "MinePost", cf * CFrame.new(s * 5.6, 5.2, -0.5), V3(1.3, 10.4, 1.3), C.woodDark, M.Wood)
+			Kit.box(
+				m,
+				"Brace",
+				cf * CFrame.new(s * 4.4, 9.4, -0.5) * CFrame.Angles(0, 0, s * math.rad(45)),
+				V3(0.7, 3, 0.8),
+				C.woodDark,
+				M.Wood,
+				decor()
+			)
 		end
 		Kit.box(m, "MineBeam", cf * CFrame.new(0, 10.6, -0.5), V3(13.5, 1.4, 1.5), C.woodDark, M.Wood)
 		Kit.sign(
@@ -671,20 +706,26 @@ local function mines(f)
 			"GOLD MINE",
 			{ font = Enum.Font.LuckiestGuy, textColor = C.gold, color = C.woodDark }
 		)
-		-- rails and a cart full of gold
+		-- rails on sleepers and a cart full of gold
 		for _, s in { -1, 1 } do
-			Kit.box(m, "Rail", cf * CFrame.new(s * 1.6, 0.2, -6), V3(0.4, 0.3, 12), C.iron, M.Metal, decor())
+			Kit.box(m, "Rail", cf * CFrame.new(s * 1.6, 0.25, -6), V3(0.4, 0.3, 14), C.iron, M.Metal, decor())
+		end
+		for k = 0, 6 do
+			Kit.box(
+				m,
+				"Sleeper",
+				cf * CFrame.new(0, 0.08, -0.5 - k * 2),
+				V3(4.4, 0.25, 0.9),
+				C.woodDark,
+				M.Wood,
+				decor()
+			)
 		end
 		Kit.box(m, "Cart", cf * CFrame.new(5, 1.6, -8), V3(3.6, 2.2, 4.4), C.wood, M.WoodPlanks)
-		Kit.ellipsoid(
-			m,
-			"CartGold",
-			(cf * CFrame.new(5, 2.9, -8)).Position,
-			V3(3.2, 1.4, 4),
-			C.gold,
-			M.SmoothPlastic,
-			decor()
-		)
+		for _, s in { -1, 1 } do
+			Kit.box(m, "CartBand", cf * CFrame.new(5, 1.6, -8 + s * 1.6), V3(3.75, 2.3, 0.3), C.iron, M.Metal, decor())
+		end
+		Kit.ellipsoid(m, "CartGold", (cf * CFrame.new(5, 2.9, -8)).Position, V3(3.2, 1.4, 4), C.gold, M.Foil, decor())
 		Kit.bulb(m, "Lantern", (cf * CFrame.new(-4.4, 9, -1.4)).Position, 0.9, C.warm, 18, 1.5)
 	end
 	return m
@@ -698,19 +739,21 @@ function MapBuilder.nodeModel(node, parent)
 	local p = node.pos
 	if node.kind == "stone" then
 		local colors = { C.stone, C.rock, C.stoneDark }
-		for k = 1, 4 do
-			local a = k / 4 * math.pi * 2 + rng:NextNumber(0, 1)
-			local r = k == 1 and 0 or 2
-			local size = k == 1 and 5 or rng:NextNumber(2.6, 3.6)
-			Kit.ellipsoid(
+		local mats = { M.Slate, M.Rock, M.Slate }
+		for k = 1, 6 do
+			local a = k / 5 * math.pi * 2 + rng:NextNumber(0, 1)
+			local r = k == 1 and 0 or (k <= 4 and 2 or 3.4)
+			local size = k == 1 and 5 or (k <= 4 and rng:NextNumber(2.6, 3.6) or rng:NextNumber(1.2, 1.8))
+			local rock = Kit.ellipsoid(
 				m,
 				"Rock",
-				p + V3(math.cos(a) * r, size * 0.35, math.sin(a) * r),
+				p + V3(math.cos(a) * r, size * 0.32, math.sin(a) * r),
 				V3(size, size * 0.8, size * 0.9),
 				colors[(k - 1) % 3 + 1],
-				M.SmoothPlastic,
+				mats[(k - 1) % 3 + 1],
 				{ CastShadow = k == 1 }
 			)
+			rock.CFrame = rock.CFrame * CFrame.Angles(0, rng:NextNumber(0, math.pi), rng:NextNumber(-0.2, 0.2))
 		end
 		if node.starter then
 			Kit.disc(m, "Glow", p + V3(0, 0.1, 0), 9, 0.12, C.gold, M.Neon, decor({ Transparency = 0.45 }))
@@ -728,7 +771,8 @@ function MapBuilder.nodeModel(node, parent)
 			end
 		end
 	else
-		Kit.ellipsoid(m, "Vein", p + V3(0, 2.2, 0), V3(6, 4.6, 5), C.cliff, M.SmoothPlastic)
+		Kit.ellipsoid(m, "Vein", p + V3(0, 2.2, 0), V3(6, 4.6, 5), C.cliffDark, M.Slate)
+		Kit.ellipsoid(m, "Vein", p + V3(1.8, 1.2, 1.4), V3(3, 2.4, 2.8), C.cliff, M.Rock, { CastShadow = false })
 		for k = 1, 5 do
 			local a = k / 5 * math.pi * 2
 			local cf = CFrame.new(p + V3(math.cos(a) * 1.8, 3.2 + (k % 2), math.sin(a) * 1.8))
@@ -745,13 +789,14 @@ end
 local function shrine(f, s)
 	local m = Kit.model("Shrine" .. s.index, f)
 	local p = s.pos
-	Kit.disc(m, "Step1", p + V3(0, 0.4, 0), 20, 0.8, C.castleDark)
-	Kit.disc(m, "Step2", p + V3(0, 1.2, 0), 14, 0.8, C.castle)
-	Kit.disc(m, "Step3", p + V3(0, 2, 0), 9, 0.8, C.castleDark)
+	Kit.disc(m, "Step1", p + V3(0, 0.4, 0), 20, 0.8, C.castleDark, M.Cobblestone)
+	Kit.disc(m, "Step2", p + V3(0, 1.2, 0), 14, 0.8, C.castle, M.Marble)
+	Kit.disc(m, "Step3", p + V3(0, 2, 0), 9, 0.8, C.castleDark, M.Marble)
 	for k = 0, 3 do
 		local a = k / 4 * math.pi * 2 + math.pi / 4
 		local q = p + V3(math.cos(a) * 8.4, 0, math.sin(a) * 8.4)
-		Kit.box(m, "Pillar", CFrame.new(q + V3(0, 3.6, 0)), V3(1.6, 7.2, 1.6), C.castle)
+		Kit.box(m, "PillarBase", CFrame.new(q + V3(0, 0.9, 0)), V3(2.4, 1, 2.4), C.castleDark, M.Marble)
+		Kit.box(m, "Pillar", CFrame.new(q + V3(0, 3.6, 0)), V3(1.6, 7.2, 1.6), C.castle, M.Marble)
 		Kit.box(
 			m,
 			"PillarCap",
@@ -899,7 +944,7 @@ local function jobBoards(f)
 			cf * CFrame.new(0, 7.8, -0.6),
 			V3(9.6, 1.4, 2.4),
 			C.roofRed,
-			M.SmoothPlastic,
+			M.ClayRoofTiles,
 			{ CastShadow = false }
 		)
 		local icons = {}
@@ -969,9 +1014,56 @@ local function camp(f, rng)
 			CFrame.new(-150 + (k % 3) * 2.3, y + 0.9 + math.floor(k / 3) * 1.8, 18)
 				* CFrame.Angles(0, rng:NextNumber(-0.1, 0.1), 0),
 			V3(2.2, 1.8, 2.2),
-			C.castle
+			C.castle,
+			M.Limestone
 		)
 	end
+	-- a campfire ringed with stones, a cart of stone and a hay bale
+	local fire = V3(-172, y, 22)
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2
+		Kit.boulder(m, fire + V3(math.cos(a) * 2.2, -0.1, math.sin(a) * 2.2), 1.1, rng, C.rockDark, M.Slate)
+	end
+	for k = 0, 2 do
+		Kit.cyl(
+			m,
+			"Firewood",
+			CFrame.new(fire + V3(0, 0.45, 0)) * CFrame.Angles(0, k * math.pi / 3, math.rad(20)),
+			2.6,
+			0.45,
+			C.bark,
+			M.Wood,
+			decor()
+		)
+	end
+	local flame = Kit.ellipsoid(m, "Flame", fire + V3(0, 1.3, 0), V3(1.4, 2, 1.4), C.fire, M.Neon, decor())
+	Kit.light(flame, "PointLight", { Color = C.warm, Range = 20, Brightness = 1.8 })
+	local cart = CFrame.new(-150, y, 34) * CFrame.Angles(0, math.rad(-20), 0)
+	Kit.box(m, "CartBed", cart * CFrame.new(0, 1.9, 0), V3(4, 0.4, 6), C.wood, M.WoodPlanks)
+	for _, s in { -1, 1 } do
+		Kit.box(m, "CartSide", cart * CFrame.new(s * 1.9, 2.6, 0), V3(0.3, 1.2, 6), C.woodDark, M.WoodPlanks)
+		Kit.cyl(m, "Wheel", cart * CFrame.new(s * 2.3, 1.2, 0), 0.5, 2.4, C.woodDark, M.Wood)
+	end
+	for k = 0, 3 do
+		Kit.box(
+			m,
+			"CartStone",
+			cart * CFrame.new((k % 2 - 0.5) * 1.6, 2.7, (math.floor(k / 2) - 0.5) * 2.2) * CFrame.Angles(0, k * 0.3, 0),
+			V3(1.5, 1.2, 1.5),
+			C.castle,
+			M.Limestone,
+			decor()
+		)
+	end
+	Kit.cyl(
+		m,
+		"HayBale",
+		CFrame.new(-182, y + 1.2, 48) * CFrame.Angles(0, 0.6, 0),
+		3,
+		2.4,
+		Kit.rgb(226, 196, 110),
+		M.Fabric
+	)
 	-- a few fences and torches round the shrine
 	Kit.fence(m, V3(-224, y, -16), V3(-224, y, 16))
 	Kit.fence(m, V3(-176, y, -42), V3(-150, y, -42))
@@ -1031,36 +1123,78 @@ local function scenery(f, rng)
 		end
 		return true
 	end
+	-- trees in loose groves (a grove's trees share a kind), lone boulders and fallen logs
 	local placed = 0
-	for _ = 1, 400 do
-		if placed >= 78 then
+	for _ = 1, 600 do
+		if placed >= 104 then
 			break
 		end
 		local x, z = rng:NextNumber(-468, -40), rng:NextNumber(-200, 200)
-		if clear(x, z, 6) then
+		local grove = math.noise(x / 60, z / 60, 4.4)
+		if clear(x, z, 6) and (grove > -0.1 or rng:NextNumber() < 0.25) then
 			placed += 1
 			local r = rng:NextNumber()
-			if r < 0.55 then
-				Kit.toonTree(m, V3(x, 0, z), rng:NextNumber(16, 24), rng, rng:NextNumber() < 0.2 and C.autumn or nil)
-			elseif r < 0.85 then
-				Kit.toonPine(m, V3(x, 0, z), rng:NextNumber(20, 30), rng)
+			if r < 0.84 then
+				if grove > 0.15 then
+					Kit.toonPine(m, at(x, z) - V3(0, 0.3, 0), rng:NextNumber(20, 32), rng)
+				else
+					Kit.toonTree(
+						m,
+						at(x, z) - V3(0, 0.3, 0),
+						rng:NextNumber(16, 25),
+						rng,
+						rng:NextNumber() < 0.18 and C.autumn or nil
+					)
+				end
+			elseif r < 0.93 then
+				Kit.boulder(m, at(x, z) - V3(0, 0.8, 0), rng:NextNumber(5, 10), rng, nil, M.Rock)
 			else
-				Kit.boulder(m, V3(x, 0, z), rng:NextNumber(6, 11), rng)
+				Kit.fallenLog(m, at(x, z), rng:NextNumber(8, 12), rng)
 			end
 		end
 	end
-	for _ = 1, 220 do
+	for _ = 1, 340 do
 		local x, z = rng:NextNumber(-468, -30), rng:NextNumber(-200, 200)
 		if clear(x, z, 1) then
 			local r = rng:NextNumber()
-			if r < 0.4 then
-				Kit.bush(m, V3(x, 0, z), rng:NextNumber(3, 5), rng)
-			elseif r < 0.8 then
-				Kit.flowers(m, V3(x, 0, z), rng, 4)
+			if r < 0.36 then
+				Kit.bush(m, at(x, z), rng:NextNumber(3, 5), rng)
+			elseif r < 0.78 then
+				Kit.flowers(m, at(x, z), rng, 5)
+			elseif r < 0.92 then
+				Kit.boulder(m, at(x, z) - V3(0, 0.3, 0), rng:NextNumber(2, 4.5), rng, nil, M.Slate)
 			else
-				Kit.boulder(m, V3(x, 0, z), rng:NextNumber(2.5, 4.5), rng)
+				Kit.stump(m, at(x, z), rng)
 			end
 		end
+	end
+	-- old dwarf ruins by the creek: broken pillars and a fallen arch, half sunk in the grass
+	local ruins = { V3(-404, 0, 150), V3(-318, 0, -168), V3(-436, 0, -150) }
+	for k, c in ruins do
+		local base = at(c.X, c.Z)
+		for j = 0, 4 do
+			local a = j / 5 * math.pi * 2 + k
+			local p = base + V3(math.cos(a) * 7, 0, math.sin(a) * 7)
+			local h = rng:NextNumber(2, 9)
+			Kit.box(
+				m,
+				"RuinPillar",
+				CFrame.new(p + V3(0, h / 2 - 0.4, 0))
+					* CFrame.Angles(rng:NextNumber(-0.06, 0.06), a, rng:NextNumber(-0.06, 0.06)),
+				V3(2.2, h, 2.2),
+				C.castle:Lerp(C.rock, rng:NextNumber(0.2, 0.6)),
+				M.Cobblestone,
+				{ CastShadow = h > 5 }
+			)
+		end
+		Kit.box(
+			m,
+			"RuinBlock",
+			CFrame.new(base + V3(2, 0.5, -1)) * CFrame.Angles(0.15, rng:NextNumber(0, 3), 0.25),
+			V3(6, 1.6, 2.2),
+			C.castleDark,
+			M.Cobblestone
+		)
 	end
 	return m
 end
@@ -1101,7 +1235,8 @@ local function hangout(f, rng)
 			"Roof",
 			CFrame.new(cx, y + 23, hz + 8 + s * 5) * CFrame.Angles(0, s > 0 and math.pi or 0, 0),
 			V3(76, 10, 10),
-			C.roofRed
+			C.roofRed,
+			M.ClayRoofTiles
 		)
 	end
 	Kit.box(m, "Door", CFrame.new(cx, y + 5, hz - 0.4), V3(8, 10, 0.4), C.woodDark, M.WoodPlanks)
@@ -1233,11 +1368,7 @@ function MapBuilder.build()
 	local f = Kit.folder("Map", workspace)
 	MapBuilder.folder = f
 	local rng = Random.new(7)
-	ground(f, rng)
-	for _, lane in MapLayout.lanes[1] do
-		path(f, lane.points, 10)
-	end
-	path(f, MapLayout.lanes[2][1].points, 9, C.path:Lerp(C.cliffWarm, 0.2))
+	TerrainBuilder.build()
 	hill(f, rng)
 	creek(f, rng)
 	ridges(f, rng)

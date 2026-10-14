@@ -277,7 +277,7 @@ local function shot(name, camPos, camTarget, fov, focus)
 	snap.viewport = { w = 1920, h = 1080, dpr = 1 }
 	focus = focus or camTarget
 	snap.focus = { focus.X, focus.Y, focus.Z }
-	writeFile(outDir .. "/" .. name .. ".json", Engine.game:GetService("HttpService"):JSONEncode(snap))
+	Capture.save(Engine, snap, outDir, name)
 	table.insert(shots, name)
 	print("shot", name, #snap.parts, "parts")
 end

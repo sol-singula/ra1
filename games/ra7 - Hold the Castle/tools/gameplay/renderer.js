@@ -75,15 +75,18 @@
     if (!texCache[mat]) texCache[mat] = detailCanvas(spec, 256);
     return texCache[mat];
   }
-  const PBR = {
+  const SURF = {
     Plastic: [0.42, 0], SmoothPlastic: [0.32, 0], Metal: [0.32, 0.75], CorrodedMetal: [0.75, 0.35], DiamondPlate: [0.4, 0.7],
     Foil: [0.18, 0.95], Glass: [0.05, 0.1], Marble: [0.25, 0], Fabric: [0.95, 0], Carpet: [0.98, 0], Grass: [0.95, 0],
     Wood: [0.7, 0], WoodPlanks: [0.65, 0], Brick: [0.85, 0], Slate: [0.8, 0], Concrete: [0.88, 0], Cobblestone: [0.85, 0],
     Pebble: [0.95, 0], Ground: [0.97, 0], Plaster: [0.9, 0], Leather: [0.6, 0], Rubber: [0.9, 0], Cardboard: [0.9, 0],
   };
+  const TEX = () => window.PBR;
+  const textured = (p) => TEX() && p.mat !== 'Neon' && p.mat !== 'Glass' && p.mat !== 'ForceField' && TEX().has(p.mat);
   function material(p) {
+    if (textured(p)) return TEX().partMaterial(p.mat, p.c, p.t || 0);
     const color = new THREE.Color(p.c);
-    const pbr = PBR[p.mat] || [0.5, 0];
+    const pbr = SURF[p.mat] || [0.5, 0];
     const opts = { color, roughness: pbr[0], metalness: pbr[1], envMapIntensity: 0.55 };
     if (p.mat === 'Neon') return new THREE.MeshBasicMaterial({ color: color.clone().multiplyScalar(1.6), transparent: p.t > 0, opacity: 1 - (p.t || 0), fog: true });
     const canvas = textureFor(p.mat);
@@ -141,7 +144,11 @@
     g.computeVertexNormals();
     return g;
   }
-  function geometry(p) {
+  function geometry(p, i) {
+    const g = baseGeometry(p);
+    return textured(p) ? TEX().worldUV(g, p.s === 'Ellipsoid' ? 'Ball' : p.s, p.size, p.mat, i + 1) : g;
+  }
+  function baseGeometry(p) {
     const [x, y, z] = p.size;
     if (p.s === 'Ball') return new THREE.SphereGeometry(x / 2, 28, 20);
     if (p.s === 'Ellipsoid') { const g = new THREE.SphereGeometry(0.5, 28, 20); g.scale(x, y, z); return g; }
@@ -194,6 +201,51 @@
     return t;
   }
   const mix = (a, b, t) => new THREE.Color(a).lerp(new THREE.Color(b), t);
+  // The sky as a dome round the camera: the same gradient, a soft sun, and Roblox's dynamic clouds (Terrain.Clouds:
+  // Cover, Density, Color) as a layer of fbm noise seen in perspective.
+  function skyDome(top, horizon, ground, sunDir, sunColor, clouds) {
+    const uniforms = {
+      top: { value: new THREE.Color(top) }, horizon: { value: new THREE.Color(horizon) }, ground: { value: new THREE.Color(ground) },
+      sunDir: { value: sunDir.clone().normalize() }, sunColor: { value: new THREE.Color(sunColor) },
+      cover: { value: clouds ? clouds.cover : 0 }, density: { value: clouds ? clouds.density : 0 },
+      cloudColor: { value: new THREE.Color(clouds ? clouds.color : '#ffffff') },
+    };
+    const mat = new THREE.ShaderMaterial({
+      uniforms, side: THREE.BackSide, depthWrite: false, fog: false,
+      vertexShader: `varying vec3 vDir;
+void main() { vDir = normalize(position); vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
+      fragmentShader: `uniform vec3 top; uniform vec3 horizon; uniform vec3 ground; uniform vec3 sunDir; uniform vec3 sunColor;
+uniform float cover; uniform float density; uniform vec3 cloudColor; varying vec3 vDir;
+float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y); }
+float fbm(vec2 p) { float v = 0.0, a = 0.5; for (int i = 0; i < 6; i++) { v += a * vnoise(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; } return v; }
+void main() {
+  vec3 d = normalize(vDir);
+  float h = d.y;
+  vec3 col = h > 0.0 ? mix(horizon, top, pow(clamp(h, 0.0, 1.0), 0.55)) : mix(horizon, ground, pow(clamp(-h * 4.0, 0.0, 1.0), 0.7));
+  float sd = max(dot(d, normalize(sunDir)), 0.0);
+  col += sunColor * (pow(sd, 900.0) * 6.0 + pow(sd, 40.0) * 0.35 + pow(sd, 6.0) * 0.12);
+  if (h > 0.0 && cover > 0.0) {
+    vec2 p = d.xz / (h + 0.06) * 1.6 + vec2(3.1, -1.7);
+    float n = fbm(p) * 0.75 + fbm(p * 3.7 + 11.0) * 0.25;
+    float lo = 0.72 - cover * 0.34;
+    float c = smoothstep(lo, lo + 0.16, n) * smoothstep(0.0, 0.16, h) * clamp(0.45 + density * 0.7, 0.0, 1.0);
+    float shade = 0.72 + 0.28 * smoothstep(lo, lo + 0.3, fbm(p + vec2(0.06, 0.04)));
+    vec3 cc = cloudColor * shade * (0.82 + 0.3 * pow(sd, 3.0)) + sunColor * pow(sd, 12.0) * 0.3;
+    col = mix(col, mix(cc, horizon, smoothstep(0.25, 0.0, h) * 0.55), c);
+  }
+  gl_FragColor = vec4(col, 1.0);
+  #include <tonemapping_fragment>
+  #include <encodings_fragment>
+}`,
+    });
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(2400, 64, 32), mat);
+    mesh.frustumCulled = false;
+    mesh.renderOrder = -10;
+    mesh.name = 'Sky';
+    return mesh;
+  }
 
   function render3D(snap) {
     const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -210,7 +262,8 @@
     const scene = new THREE.Scene();
     // the sun (or moon) from the time of day
     const clock = L.clock ?? 14;
-    const day = clock > 6 && clock < 18;
+    // day runs a little past 6 and 18 (Roblox keeps a low golden sun round sunrise and sunset)
+    const day = clock > 5.4 && clock < 18.8;
     const elev = day ? Math.max(4, Math.sin(((clock - 6) / 12) * Math.PI) * 62) : 32;
     const lowSun = day ? 1 - Math.min(1, elev / 40) : 0;
     const sunColor = day ? mix('#fff2dc', '#ffae66', lowSun) : new THREE.Color('#9fb4ff');
@@ -219,8 +272,9 @@
     const horizon = mix(L.fog, sunColor, day ? lowSun * 0.35 : 0);
     const ground = mix(L.decay, '#000000', 0.6);
     const sky = skyTexture('#' + top.getHexString(), '#' + horizon.getHexString(), '#' + ground.getHexString());
-    scene.background = sky;
-    scene.fog = new THREE.FogExp2(fogColor.clone().multiplyScalar(day ? 1 : 0.85), 0.0018 + (L.density || 0.3) * 0.0075);
+    scene.background = horizon.clone();
+    // Roblox's Atmosphere: Density thickens the haze, Offset pushes it back (the valley stays clear, far peaks fade)
+    scene.fog = new THREE.FogExp2(fogColor.clone().multiplyScalar(day ? 1 : 0.85), 0.0005 + (L.density || 0.3) * 0.0036);
     // environment for reflections: a little sphere of the same sky
     try {
       const envScene = new THREE.Scene();
@@ -247,6 +301,9 @@
     sun.shadow.bias = -0.0004;
     sun.shadow.normalBias = 0.02;
     scene.add(sun, sun.target);
+    const sunDir = new THREE.Vector3(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el));
+    const dome = skyDome(top, horizon, ground, sunDir, day ? sunColor : new THREE.Color('#33405f'), snap.terrain && snap.terrain.clouds);
+    scene.add(dome);
     // practical lights (lamps, lanterns, windows): the closest ones to the camera
     const camPos = new THREE.Vector3(...cam.pos);
     const lights = (snap.lights || []).map((l) => ({ l, d: camPos.distanceTo(new THREE.Vector3(...l.pos)) }))
@@ -279,12 +336,12 @@
         mats[st.index] = face;
         mat = mats;
       }
-      if (p.studs && p.s === 'Block' && !Array.isArray(mat)) {
+      if (p.studs && p.s === 'Block' && !Array.isArray(mat) && !textured(p)) {
         const top = new THREE.MeshStandardMaterial({ color: new THREE.Color(p.c), map: studTexture(p.size[0], p.size[2]), roughness: 0.45 });
         if (p.t > 0) { top.transparent = true; top.opacity = 1 - p.t; }
         mat = [mat, mat, top, mat, mat, mat];
       }
-      const mesh = new THREE.Mesh(geometry(p), mat);
+      const mesh = new THREE.Mesh(geometry(p, i), mat);
       const m = p.m;
       m4.set(m[3], m[4], m[5], m[0], m[6], m[7], m[8], m[1], m[9], m[10], m[11], m[2], 0, 0, 0, 1);
       mesh.matrixAutoUpdate = false;
@@ -316,6 +373,13 @@
     camera.position.set(...cam.pos);
     camera.lookAt(target);
     camera.updateMatrixWorld();
+    dome.position.copy(camera.position);
+    // Roblox's smooth terrain (terrain.js)
+    if (window.buildTerrain && snap.terrain) {
+      const t0 = performance.now();
+      const t = window.buildTerrain(scene, snap.terrain, camera);
+      if (t) console.log(`terrain at ${t.res} studs in ${Math.round(performance.now() - t0)} ms`);
+    }
     renderer.render(scene, camera);
     window.__three = { renderer, scene, camera };
     return camera;
@@ -333,7 +397,10 @@
     renderer.toneMapping = THREE.NoToneMapping;
     renderer.outputEncoding = THREE.LinearEncoding;
     renderer.shadowMap.enabled = false;
-    scene.traverse((o) => { if (o.isMesh && o.material && o.material.transparent && (o.material.opacity ?? 1) < 0.5) o.visible = false; });
+    scene.traverse((o) => {
+      if (o.isInstancedMesh || o.name === 'Water' || o.name === 'Sky') o.visible = false;
+      else if (o.isMesh && o.material && !Array.isArray(o.material) && o.material.transparent && (o.material.opacity ?? 1) < 0.5) o.visible = false;
+    });
     renderer.render(scene, camera);
     document.getElementById('overlay').style.display = 'none';
     return true;
@@ -623,6 +690,15 @@
     await document.fonts.load('600 40px "Oswald"');
     await document.fonts.load('500 40px "Inter"');
     await document.fonts.load('700 40px "Inter"');
+    // the texture sets for every material in view (parts and terrain)
+    if (window.PBR && window.TEXDIR) {
+      const mats = new Set(snap.parts.map((p) => p.mat));
+      if (snap.terrain) {
+        (snap.terrain.ops || []).forEach((o) => mats.add(o.mat));
+        if (snap.terrain.voxels && snap.terrain.voxels.palette) snap.terrain.voxels.palette.forEach((m) => mats.add(m));
+      }
+      await window.PBR.load(window.TEXDIR, [...mats]);
+    }
     const camera = render3D(snap);
     const overlay = document.getElementById('overlay');
     renderSurfaces(snap, camera, overlay);

@@ -133,7 +133,7 @@ local function shot(name, camPos, camTarget, fov, preset)
 	snap.title = name
 	snap.hideGui = true
 	snap.viewport = { w = 1600, h = 900, dpr = 1 }
-	writeFile(outDir .. "/" .. name .. ".json", Engine.game:GetService("HttpService"):JSONEncode(snap))
+	Capture.save(Engine, snap, outDir, name)
 	table.insert(shots, name)
 	print("shot", name, #snap.parts, "parts")
 end

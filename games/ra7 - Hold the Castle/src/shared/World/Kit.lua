@@ -190,13 +190,13 @@ function Kit.cone(parent, name, base, diameter, height, color, steps, material, 
 	local first
 	for i = 1, steps do
 		local t = (i - 1) / steps
-		local h = height / steps
+		local h = height / steps -- a negative height hangs the cone down (stalactites)
 		local d = Kit.disc(
 			parent,
 			name,
 			base + Vector3.new(0, h * (i - 0.5), 0),
 			diameter * (1 - t * 0.85),
-			h,
+			math.abs(h),
 			color,
 			material,
 			extra
@@ -298,67 +298,166 @@ function Kit.ellipsoid(parent, name, center, size, color, material, extra)
 	return p
 end
 
--- A round cartoon tree: a short trunk and three puffy clumps of leaves.
+-- A round cartoon tree: a short trunk with two branches and puffy clumps of leaves (leaf-textured).
 function Kit.toonTree(parent, pos, h, rng, color)
 	rng = rng or Random.new()
 	h = h or rng:NextNumber(16, 24)
 	local m = Kit.model("Tree", parent)
 	Kit.disc(m, "Trunk", pos + Vector3.new(0, h * 0.3, 0), h * 0.11, h * 0.6, C.bark, M.Wood)
+	Kit.disc(m, "Root", pos + Vector3.new(0, h * 0.03, 0), h * 0.17, h * 0.06, C.bark, M.Wood, { CastShadow = false })
+	for k, a in { rng:NextNumber(0, 3), rng:NextNumber(3, 6) } do
+		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+		Kit.box(
+			m,
+			"Branch",
+			CFrame.lookAt(
+				pos + Vector3.new(0, h * (0.42 + k * 0.06), 0),
+				pos + Vector3.new(0, h * (0.62 + k * 0.05), 0) + dir * h * 0.22
+			) * CFrame.new(0, 0, -h * 0.1),
+			Vector3.new(h * 0.045, h * 0.045, h * 0.24),
+			C.bark,
+			M.Wood,
+			{ CastShadow = false, CanCollide = false }
+		)
+	end
 	local col = color or C.leaf
 	local clumps = {
-		{ Vector3.new(0, h * 0.72, 0), 0.62 },
-		{ Vector3.new(h * 0.16, h * 0.6, h * 0.08), 0.44 },
-		{ Vector3.new(-h * 0.14, h * 0.62, -h * 0.1), 0.46 },
+		{ Vector3.new(0, h * 0.74, 0), 0.6 },
+		{ Vector3.new(h * 0.17, h * 0.62, h * 0.08), 0.44 },
+		{ Vector3.new(-h * 0.15, h * 0.64, -h * 0.1), 0.46 },
+		{ Vector3.new(-h * 0.06, h * 0.6, h * 0.18), 0.4 },
+		{ Vector3.new(h * 0.08, h * 0.86, -h * 0.06), 0.38 },
+		{ Vector3.new(h * 0.05, h * 0.55, -h * 0.17), 0.34 },
 	}
 	for i, c in clumps do
-		local d = h * c[2] * rng:NextNumber(0.92, 1.08)
-		Kit.ball(
+		local d = h * c[2] * rng:NextNumber(0.9, 1.1)
+		local leaf = Kit.ball(
 			m,
 			"Leaves",
-			pos + c[1],
+			pos + c[1] + Vector3.new(rng:NextNumber(-0.4, 0.4), 0, rng:NextNumber(-0.4, 0.4)),
 			d,
-			col:Lerp(C.leafLight, rng:NextNumber(0, 0.3)),
-			M.SmoothPlastic,
-			{ CastShadow = i == 1, CanCollide = false }
+			col:Lerp(C.leafLight, rng:NextNumber(0, 0.3)):Lerp(C.leafDark, i > 3 and 0.2 or 0),
+			M.Grass,
+			{ CastShadow = i <= 2, CanCollide = false }
 		)
+		if i > 3 then
+			CollectionService:AddTag(leaf, "Detail")
+		end
 	end
 	return m
 end
 
--- A cartoon pine: a trunk and three stacked cones of soft layers, wide at the bottom.
+-- A cartoon pine: a trunk and stacked soft layers of needles (leaf-textured), wide at the bottom.
 function Kit.toonPine(parent, pos, h, rng, color)
 	rng = rng or Random.new()
 	h = h or rng:NextNumber(22, 34)
 	local m = Kit.model("Pine", parent)
 	Kit.disc(m, "Trunk", pos + Vector3.new(0, h * 0.14, 0), h * 0.08, h * 0.28, C.bark, M.Wood)
 	local col = color or (rng:NextNumber() < 0.5 and C.pine or C.pineDark)
-	for i = 0, 3 do
-		local t = i / 3
-		local d = h * (0.56 - 0.36 * t)
-		Kit.ellipsoid(
+	local tiers = 5
+	for i = 0, tiers - 1 do
+		local t = i / (tiers - 1)
+		local d = h * (0.58 - 0.4 * t)
+		local layer = Kit.ellipsoid(
 			m,
 			"Needles",
-			pos + Vector3.new(0, h * (0.3 + 0.5 * t), 0),
-			Vector3.new(d, h * 0.3, d),
-			col:Lerp(C.leafLight, 0.1 * t),
-			M.SmoothPlastic,
+			pos + Vector3.new(rng:NextNumber(-0.3, 0.3), h * (0.26 + 0.56 * t), rng:NextNumber(-0.3, 0.3)),
+			Vector3.new(d, h * 0.24, d),
+			col:Lerp(C.leafLight, 0.12 * t):Lerp(C.pineDark, (1 - t) * 0.25),
+			M.Grass,
 			{ CastShadow = i < 2, CanCollide = false }
 		)
+		if i % 2 == 1 then
+			CollectionService:AddTag(layer, "Detail")
+		end
 	end
 	Kit.ellipsoid(
 		m,
 		"Top",
-		pos + Vector3.new(0, h * 0.94, 0),
+		pos + Vector3.new(0, h * 0.95, 0),
 		Vector3.new(h * 0.1, h * 0.18, h * 0.1),
 		col,
-		M.SmoothPlastic,
+		M.Grass,
 		{ CastShadow = false, CanCollide = false }
 	)
 	return m
 end
 
+-- A bare dead tree: a crooked trunk and a few forked branches.
+function Kit.deadTree(parent, pos, h, rng, color)
+	rng = rng or Random.new()
+	h = h or rng:NextNumber(8, 12)
+	local m = Kit.model("DeadTree", parent)
+	local col = color or C.bark:Lerp(C.cliffDark, 0.45)
+	Kit.box(
+		m,
+		"Trunk",
+		CFrame.new(pos + Vector3.new(0, h * 0.35, 0))
+			* CFrame.Angles(rng:NextNumber(-0.1, 0.1), 0, rng:NextNumber(-0.1, 0.1)),
+		Vector3.new(h * 0.1, h * 0.7, h * 0.1),
+		col,
+		M.Wood
+	)
+	for k = 1, 4 do
+		local a = k / 4 * math.pi * 2 + rng:NextNumber(-0.4, 0.4)
+		local y = h * rng:NextNumber(0.45, 0.72)
+		local len = h * rng:NextNumber(0.25, 0.42)
+		local from = pos + Vector3.new(0, y, 0)
+		local to = from + Vector3.new(math.cos(a) * len, len * rng:NextNumber(0.5, 0.9), math.sin(a) * len)
+		Kit.box(
+			m,
+			"Branch",
+			CFrame.lookAt((from + to) / 2, to),
+			Vector3.new(h * 0.05, h * 0.05, (to - from).Magnitude),
+			col,
+			M.Wood,
+			{ CastShadow = false, CanCollide = false }
+		)
+	end
+	return m
+end
+
+-- A fallen, mossy log lying on the ground.
+function Kit.fallenLog(parent, pos, len, rng)
+	rng = rng or Random.new()
+	local m = Kit.model("FallenLog", parent)
+	local d = rng:NextNumber(1.6, 2.4)
+	local cf = CFrame.new(pos + Vector3.new(0, d * 0.4, 0)) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0)
+	Kit.cyl(m, "Log", cf, len, d, C.bark:Lerp(C.woodDark, 0.3), M.Wood)
+	Kit.box(
+		m,
+		"Moss",
+		cf * CFrame.new(rng:NextNumber(-len * 0.2, len * 0.2), d * 0.42, 0),
+		Vector3.new(len * 0.45, d * 0.2, d * 0.7),
+		C.leafDark,
+		M.Grass,
+		{ CanCollide = false, CastShadow = false }
+	)
+	return m
+end
+
+-- A tree stump with its rings showing.
+function Kit.stump(parent, pos, rng)
+	rng = rng or Random.new()
+	local m = Kit.model("Stump", parent)
+	local d = rng:NextNumber(1.6, 2.6)
+	local h = rng:NextNumber(0.8, 1.6)
+	Kit.disc(m, "Stump", pos + Vector3.new(0, h / 2 - 0.1, 0), d, h, C.bark, M.Wood)
+	Kit.disc(
+		m,
+		"Rings",
+		pos + Vector3.new(0, h - 0.06, 0),
+		d * 0.82,
+		0.1,
+		C.woodLight,
+		M.WoodPlanks,
+		{ CanCollide = false, CastShadow = false }
+	)
+	return m
+end
+
 -- A smooth rounded boulder (or a few), sat into the ground.
-function Kit.boulder(parent, pos, size, rng, color)
+function Kit.boulder(parent, pos, size, rng, color, material)
 	rng = rng or Random.new()
 	size = size or rng:NextNumber(4, 8)
 	local col = color or C.rock
@@ -368,10 +467,11 @@ function Kit.boulder(parent, pos, size, rng, color)
 		pos + Vector3.new(0, size * 0.28, 0),
 		Vector3.new(size, size * 0.72, size * rng:NextNumber(0.8, 1.1)),
 		col:Lerp(C.rockDark, rng:NextNumber(0, 0.25)),
-		M.SmoothPlastic,
+		material or M.Rock,
 		{ CastShadow = size > 5 }
 	)
-	p.CFrame = p.CFrame * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0)
+	p.CFrame = p.CFrame
+		* CFrame.Angles(rng:NextNumber(-0.15, 0.15), rng:NextNumber(0, math.pi), rng:NextNumber(-0.15, 0.15))
 	return p
 end
 
@@ -385,7 +485,7 @@ function Kit.bush(parent, pos, size, rng, color)
 			pos + Vector3.new(rng:NextNumber(-1, 1) * size * 0.4, size * 0.3, rng:NextNumber(-1, 1) * size * 0.4),
 			size * rng:NextNumber(0.6, 1),
 			(color or C.leafDark):Lerp(C.leaf, rng:NextNumber(0, 0.6)),
-			M.SmoothPlastic,
+			M.Grass,
 			{ CastShadow = false, CanCollide = i == 1 }
 		)
 	end

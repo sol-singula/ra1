@@ -493,6 +493,7 @@ function TeamService:_setup(player, character)
 		hum.WalkSpeed = Constants.DWARF_WALK
 	end
 	hum.BreakJointsOnDeath = s.team ~= "dwarf"
+	hum.MaxSlopeAngle = Constants.MAX_SLOPE -- the cliffs and ridges are terrain: too steep to walk up
 	character:SetAttribute("Team", s.team or "none")
 	character:SetAttribute("Job", s.job)
 	player:SetAttribute("Team", s.team or "none")
