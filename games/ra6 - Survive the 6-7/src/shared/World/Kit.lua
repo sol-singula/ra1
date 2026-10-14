@@ -807,7 +807,9 @@ end
 
 -- The forest ---------------------------------------------------------------------------------------------------------
 -- Trees come from MapLayout.trees(): { x, y, z, kind, h, trunk, seed }. Each is a Model with a colliding Trunk
--- (cover, and what axes hit) and soft, non-colliding foliage. Low part counts: about five parts a tree.
+-- (cover) and soft, non-colliding foliage. Low part counts: about five parts a tree. Each trunk stops a few studs
+-- inside the lowest layer of the crown: the camera fades whatever is between it and you (Invisicam), and a trunk
+-- running up through a faded crown shows as a dark line in the tree.
 local function trunkPart(m, t, height, color, material, diameter)
 	return Kit.disc(
 		m,
@@ -831,7 +833,7 @@ function Kit.pine(parent, t)
 	local rng = Random.new(t.seed)
 	local m = Kit.model("Pine", parent)
 	local h = t.h
-	trunkPart(m, t, h * 0.6, C.bark:Lerp(C.barkDark, rng:NextNumber(0, 0.4)))
+	trunkPart(m, t, h * 0.36, C.bark:Lerp(C.barkDark, rng:NextNumber(0, 0.4)))
 	local col = tint(C.pine, rng, rng:NextNumber() < 0.5 and C.pineDark or C.pineLight, 0.7)
 	local base = Vector3.new(t.x, t.y, t.z)
 	local tiers = {
@@ -869,7 +871,7 @@ function Kit.spruce(parent, t)
 	local rng = Random.new(t.seed)
 	local m = Kit.model("Spruce", parent)
 	local h = t.h
-	trunkPart(m, t, h * 0.5, C.barkDark:Lerp(C.bark, rng:NextNumber(0, 0.5)))
+	trunkPart(m, t, h * 0.3, C.barkDark:Lerp(C.bark, rng:NextNumber(0, 0.5)))
 	local col = tint(C.spruce, rng, C.spruceDark, 0.8)
 	local base = Vector3.new(t.x, t.y, t.z)
 	for i = 0, 3 do
@@ -942,20 +944,23 @@ function Kit.oak(parent, t)
 	return m
 end
 
--- A birch: a slim white trunk with dark marks and small yellow-green crowns.
+-- A birch: a slim white trunk with short dark marks and small yellow-green crowns.
 function Kit.birch(parent, t)
 	local rng = Random.new(t.seed)
 	local m = Kit.model("Birch", parent)
 	local h = t.h
-	trunkPart(m, t, h * 0.78, C.birch, M.SmoothPlastic)
+	trunkPart(m, t, h * 0.6, C.birch, M.SmoothPlastic)
 	local base = Vector3.new(t.x, t.y, t.z)
-	for i = 1, 2 do
-		Kit.disc(
+	-- short dark marks on the bark, here and there round the trunk (full rings read as a seam in the trunk)
+	for _ = 1, 6 do
+		local w = t.trunk * rng:NextNumber(0.7, 1.2)
+		Kit.box(
 			m,
 			"Mark",
-			base + Vector3.new(0, h * (0.18 + 0.2 * i) + rng:NextNumber(-1, 1), 0),
-			t.trunk * 2 + 0.08,
-			rng:NextNumber(0.3, 0.6),
+			CFrame.new(base + Vector3.new(0, h * rng:NextNumber(0.08, 0.45), 0))
+				* CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0)
+				* CFrame.new(0, 0, -(t.trunk - 0.02)),
+			Vector3.new(w, rng:NextNumber(0.12, 0.26), 0.08),
 			C.birchMark,
 			M.SmoothPlastic,
 			{ CanCollide = false, CastShadow = false }
@@ -986,7 +991,7 @@ function Kit.giant(parent, t)
 	local rng = Random.new(t.seed)
 	local m = Kit.model("Giant", parent)
 	local h = t.h
-	trunkPart(m, t, h * 0.7, C.barkRed:Lerp(C.barkDark, rng:NextNumber(0, 0.3)))
+	trunkPart(m, t, h * 0.58, C.barkRed:Lerp(C.barkDark, rng:NextNumber(0, 0.3)))
 	local base = Vector3.new(t.x, t.y, t.z)
 	for k = 0, 2 do
 		local a = k / 3 * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
@@ -1026,7 +1031,7 @@ function Kit.ancientPine(parent, pos, seed)
 	local m = Kit.model("AncientPine", parent)
 	local h = 64
 	local t = { x = pos.X, y = pos.Y, z = pos.Z, trunk = 3.6 }
-	trunkPart(m, t, h * 0.62, C.barkDark:Lerp(C.barkRed, 0.35))
+	trunkPart(m, t, h * 0.42, C.barkDark:Lerp(C.barkRed, 0.35))
 	local base = Vector3.new(pos.X, pos.Y, pos.Z)
 	for k = 0, 3 do
 		local a = k / 4 * math.pi * 2 + rng:NextNumber(-0.2, 0.2)
@@ -1093,7 +1098,7 @@ function Kit.farTree(parent, t)
 	local rng = Random.new(t.seed)
 	local m = Kit.model("FarTree", parent)
 	local h = t.h
-	trunkPart(m, t, h * 0.45, C.barkDark)
+	trunkPart(m, t, h * 0.3, C.barkDark)
 	local col = (t.kind == "spruce" and C.spruce or C.pine):Lerp(C.pineDark, rng:NextNumber(0, 0.6))
 	Kit.ellipsoid(
 		m,

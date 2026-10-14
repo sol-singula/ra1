@@ -50,6 +50,7 @@
         "CameraMaxZoomDistance": 45,
         "CameraMinZoomDistance": 0.5,
         "EnableMouseLockOption": false,
+        "GameSettingsAvatar": "R15",
         "CharacterWalkSpeed": 16,
         "DevCameraOcclusionMode": "Invisicam"
       },
