@@ -57,7 +57,7 @@ Net.ServerEvents = {
 	"Toast", -- text, kind ("info" | "good" | "bad")
 	"Alert", -- big centre message: text, color, seconds?
 	"Callout", -- text, kind: "Night is coming!", "Kermy is hunting!"
-	"Popup", -- worldPosition, text, color: floating "+3 🪵"
+	"Popup", -- worldPosition, text, color: floating "+3 🌳"
 	"Fx", -- kind, data: chop, dust, sparks, projectile, ring, line, trap, flare, heal...
 	"Act", -- { by = userId, item, mode }: everyone animates a survivor's swing
 	"Hurt", -- { amount, by?, dir? } you were hit (flash, shake, damage number)

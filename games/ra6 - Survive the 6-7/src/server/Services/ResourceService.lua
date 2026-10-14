@@ -112,14 +112,15 @@ function ResourceService:CanChop(t)
 	return t ~= nil and not t.felled and t.hp ~= math.huge
 end
 
--- A swing at a tree too big to chop: a thunk, and (now and then) a word on why nothing happened.
+-- A swing at a tree too big to chop (a giant, an Ancient Pine): a thunk, and (now and then) a word on why nothing
+-- happened. `at` is where it stands; `text` what to say.
 local tooBigToast = setmetatable({}, { __mode = "k" }) -- [player] = when it was last said
-function ResourceService:TooBig(player, t)
-	local pos = V3(t.rec.x, t.rec.y + 3, t.rec.z)
-	Net.fireAll("Sfx", "thud", pos)
+function ResourceService:TooBig(player, t, text)
+	local at = typeof(t) == "Vector3" and t or V3(t.rec.x, t.rec.y + 3, t.rec.z)
+	Net.fireAll("Sfx", "thud", at)
 	if (tooBigToast[player] or -100) < now() - 10 then
 		tooBigToast[player] = now()
-		Net.fire(player, "Toast", "🌲 This giant is too big to chop. Try a smaller tree!", "info")
+		Net.fire(player, "Toast", text or "🌲 This giant is too big to chop. Any smaller tree will do!", "info")
 	end
 end
 
@@ -140,7 +141,7 @@ function ResourceService:HitTree(player, t, power)
 	end
 	if wood > 0 then
 		inventory:Give(player, "wood", wood, "tree")
-		Net.fire(player, "Popup", pos, `+{wood} 🪵`, Color3.fromRGB(230, 190, 130))
+		Net.fire(player, "Popup", pos, `+{wood} 🌳`, Color3.fromRGB(230, 190, 130))
 		self.Gathered:Fire(player, "wood", wood, "tree")
 	end
 	return wood
@@ -355,7 +356,7 @@ function ResourceService:HitNode(player, n, power)
 			player,
 			"Popup",
 			pos,
-			`+{got} {spec.item == "stone" and "🪨" or "⚙️"}`,
+			`+{got} {spec.item == "stone" and "⛰️" or "⚙️"}`,
 			Color3.fromRGB(220, 220, 230)
 		)
 		self.Gathered:Fire(player, spec.item, got, n.kind)

@@ -48,11 +48,13 @@ DPad left). There's no Reset Character: you go down and come back by the game's 
 
 ### One run (about 27 minutes)
 
-1. **Day 1** (3:30). Everyone spawns by the fire. The guide walks you through it one step at a time with an
-   arrow and a beam to the target: chop a tree, build the Workbench (hold its glowing blueprint's prompt), open a
-   crate, hold what you found, get back to camp before dark. At 2:30 Kermy shows himself at the edge of the
-   camp. The team picks the difficulty by touching the standing stones; the camp bell calls the night early when
-   everyone rings it. The roster is open all day: friends who join now are in the run.
+1. **Day 1** (3:30). Everyone spawns by the fire, with young trees right there. The guide walks you through it
+   one step at a time with an arrow and a beam to the target (which lights up): chop any tree, build the
+   Workbench (hold its glowing blueprint's prompt), open the crate by the fire, hold the weapon in it. At 0:50
+   Kermy shows himself at the edge of the camp; at 1:00 a Snapcap jumps out at someone (your first fight, by
+   day); then explore for crates and stone, and get back to camp before dark. Each first pays XP. The team picks
+   the difficulty by touching the standing stones; the camp bell calls the night early when everyone rings it.
+   The roster is open all day: friends who join now are in the run.
 2. **Dusk** (12 s): "Night is coming!", the first howls. **The roster locks** at night 1: anyone who joins
    later waits for the next run (they can watch, or find a run that's starting).
 3. **Nights 1-6** (70-110 s, longer each night). Monsters come out of the trees in waves sized to the night, the
@@ -175,7 +177,7 @@ games/ra6 - Survive the 6-7/
 
 ```bash
 cd "games/ra6 - Survive the 6-7"
-sh tools/run_tests.sh   # formulas (95), terrain (23), client smoke (292), server smoke (288, 275 without DataStores)
+sh tools/run_tests.sh   # formulas (96), terrain (23), client smoke (301), server smoke (301, 288 without DataStores)
 ```
 
 The server smoke test plays whole runs on the mock engine: day 1 with the guide, chopping, building, crates and

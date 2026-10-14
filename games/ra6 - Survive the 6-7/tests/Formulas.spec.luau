@@ -481,10 +481,47 @@ check("the forest beyond the camp is walkable", MapLayout.walkable(150, 40))
 check("the world ends", not MapLayout.walkable(MapLayout.WALL_RADIUS + 20, 0))
 check("polar coordinates", near(MapLayout.polar(0, 10).X, 10, 1e-3) and near(MapLayout.polar(90, 10).Z, 10, 1e-3))
 check(
-	"trees keep out of the camp",
+	"saplings by the fire: five young trees, two hits each, clear of every slot, prop and trail",
+	(function()
+		local n = 0
+		for _, t in MapLayout.trees() do
+			if t.sapling then
+				n += 1
+				local r = MapLayout.radius(t.x, t.z)
+				if r < 20 or r > 32 or MapLayout.TREE_KINDS.sapling.hp > 20 then
+					return false
+				end
+				local function dist(p)
+					return math.sqrt((p.X - t.x) ^ 2 + (p.Z - t.z) ^ 2)
+				end
+				for _, s in MapLayout.campSlots do
+					if s.key ~= "wall" and dist(s.pos) < 5.5 then
+						return false
+					end
+				end
+				for _, p in { MapLayout.CAMP_PROPS.board, MapLayout.CAMP_PROPS.bell } do
+					if dist(p) < 8 then
+						return false
+					end
+				end
+				for _, tent in MapLayout.CAMP_PROPS.tents do
+					if dist(tent.pos) < 6 then
+						return false
+					end
+				end
+				if MapLayout.trailDistance(t.x, t.z) < MapLayout.TRAIL_HALF + 2 then
+					return false
+				end
+			end
+		end
+		return n == #MapLayout.SAPLINGS
+	end)()
+)
+check(
+	"trees keep out of the camp (but the saplings by the fire)",
 	(function()
 		for _, t in MapLayout.trees() do
-			if MapLayout.radius(t.x, t.z) < MapLayout.CAMP.clear - 6 then
+			if not t.sapling and MapLayout.radius(t.x, t.z) < MapLayout.CAMP.clear - 6 then
 				return false
 			end
 		end

@@ -333,8 +333,9 @@ check("the blueprint has a Build prompt", buildPrompt and buildPrompt:GetAttribu
 local woodBefore = count(ava, "wood")
 hold(ava, buildPrompt, 2)
 check("holding the prompt built the workbench", bench.state == "built", bench.state)
-check("it took 8 wood", woodBefore - count(ava, "wood") == 8, woodBefore - count(ava, "wood"))
-check("ava's contribution is counted", Camp:Contribution(ava) >= 8)
+local benchWood = CampData.STRUCTURES.workbench.cost.wood
+check("it took the workbench's wood", woodBefore - count(ava, "wood") == benchWood, woodBefore - count(ava, "wood"))
+check("ava's contribution is counted", Camp:Contribution(ava) >= benchWood)
 check(
 	"the guide moved on to a crate",
 	Tutorial:Active(ava) and Tutorial:View(ava).key == "loot",
@@ -360,7 +361,15 @@ end
 local crate, crateD = nearestCrate(MapLayout.CAMP_PROPS.fire, function(c)
 	return c.kind == "crate" and not c.mimic
 end)
-check("a crate close to camp (the first five minutes)", crate and crateD < 120, crateD)
+check("the starter crate is right by the fire", crate and crate.starter and crateD < 16, crateD)
+check(
+	"the saplings: the nearest tree to chop is seconds away",
+	(function()
+		local list = Resources:TreesNear(MapLayout.spawnPoint(1), 40)
+		return list[1] ~= nil and list[1].rec.sapling == true and Resources:CanChop(list[1])
+	end)()
+)
+check("the guide says any tree", string.find(Tutorial.TEXT.chop, "any tree", 1, true) ~= nil)
 standAt(ava, crate.pos.X + 3, crate.pos.Z, crate.pos)
 local invBefore = 0
 for _, s in Inventory:Contents(ava) do
@@ -372,6 +381,13 @@ for _, s in Inventory:Contents(ava) do
 	invAfter += s.n
 end
 check("the crate gave items", invAfter > invBefore, invAfter - invBefore)
+check(
+	"the starter crate: a weapon, a torch and something to eat",
+	(count(ava, "branch_club") + count(ava, "stone_spear")) >= 1
+		and count(ava, "torch") >= 1
+		and count(ava, "berries") >= 2,
+	`{count(ava, "branch_club")} {count(ava, "stone_spear")} {count(ava, "torch")} {count(ava, "berries")}`
+)
 check("a crate can't be opened twice", not Loot:Open(ava, crate.id))
 check("the guide moved on to holding what you found", not Tutorial:Active(ava) or Tutorial:View(ava).key ~= "loot")
 check("collection: found items are saved", next(Data:Get(ava).collection.items) ~= nil)
@@ -461,6 +477,55 @@ check(
 )
 Engine.fireServer(ava, "Select", 1)
 Engine.advance(0.2)
+
+-- 5b. The first minute's hook: Kermy shows himself at 0:50, a Snapcap jumps out at ~1:00 (§4: a first fight by day)
+do
+	local function anyFired(name, player, pred)
+		return firedSince(0, name, player, pred)
+	end
+	for _ = 1, 80 do
+		if Run:Seconds() >= Constants.FIRST_AMBUSH_AT + 1 then
+			break
+		end
+		Engine.advance(1)
+	end
+	check("Kermy's first sighting is in the first minute", Constants.FIRST_SIGHTING_AT <= 60)
+	check("Kermy showed himself", anyFired("Callout", nil, function(args)
+		return string.find(tostring(args[1]), "watching", 1, true) ~= nil
+	end) ~= nil)
+	local snap
+	for _, m in Monsters:All() do
+		if m.ambush then
+			snap = m
+		end
+	end
+	check("a Snapcap jumped out", snap ~= nil and snap.kind == "snapcap" and snap.day == true)
+	check(
+		"near someone",
+		snap and (snap.pos - Survivors:Position(ava)).Magnitude < 40,
+		snap and (snap.pos - Survivors:Position(ava)).Magnitude
+	)
+	check(
+		"the guide says hit it",
+		Tutorial:Active(ava) and Tutorial:View(ava).key == "fight" and Tutorial:View(ava).mob == (snap and snap.id),
+		Tutorial:Active(ava) and Tutorial:View(ava).key
+	)
+	local xp0 = Data:Get(ava).xp
+	if snap then
+		Monsters:Damage(snap.id, 999, ava, {})
+		Engine.advance(0.3)
+	end
+	check("the first fight paid XP", Data:Get(ava).xp - xp0 >= Constants.XP.guide.fight, Data:Get(ava).xp - xp0)
+	check("with a popup", anyFired("Popup", ava, function(args)
+		return args[2] == `+{Constants.XP.guide.fight} XP ✨`
+	end) ~= nil)
+	check(
+		"then: explore (the nearest crate out in the forest)",
+		Tutorial:Active(ava) and Tutorial:View(ava).key == "explore" and Tutorial:View(ava).container ~= nil,
+		Tutorial:Active(ava) and Tutorial:View(ava).key
+	)
+	check("the guide's firsts so far", Data:Get(ava).xp >= 70, Data:Get(ava).xp)
+end
 
 -- 6. Crafting at the workbench ------------------------------------------------------------------------------------------------------
 local axeRecipe = Recipes.byItem.stone_axe
@@ -628,6 +693,14 @@ check("repairs need a Repair Bench", not Camp:Repair(ava, wall))
 safeAtCamp(ava, 1)
 safeAtCamp(ben, 4)
 local m11 = mark()
+-- with 40 s of day left the guide says to get back to camp, whatever you were doing
+holdPhase(Constants.GUIDE_DUSK_WARNING - 5)
+Engine.advance(2.5)
+check(
+	"dusk soon: the guide says get back to camp",
+	not Tutorial:Active(ava) or Tutorial:View(ava).key == "kermy",
+	Tutorial:Active(ava) and Tutorial:View(ava).key
+)
 check("to dusk", skipTo("dusk"))
 check("dusk warns everyone", firedSince(m11, "Callout", nil) ~= nil)
 check("to night 1", skipTo("night"))

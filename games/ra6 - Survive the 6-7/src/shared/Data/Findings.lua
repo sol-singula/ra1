@@ -15,7 +15,7 @@ Findings.list = {
 	{
 		key = "cabin",
 		name = "Abandoned Cabin",
-		icon = "🛖",
+		icon = "🏚️",
 		count = { 2, 3 },
 		zone = { "inner", "middle", "deep" },
 		radius = 18,
@@ -100,7 +100,7 @@ Findings.list = {
 	{
 		key = "hollow_log",
 		name = "Giant Hollow Log",
-		icon = "🪵",
+		icon = "🎍",
 		count = { 1, 1 },
 		zone = { "middle", "deep" },
 		radius = 18,

@@ -101,7 +101,7 @@ Enemies.list = {
 	{
 		key = "stumpy",
 		name = "Stumpy",
-		icon = "🪵",
+		icon = "🌲",
 		role = "Heavy brute",
 		hp = 220,
 		dmg = 26,

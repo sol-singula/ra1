@@ -34,16 +34,19 @@ done, and what comes next. How to run and play it: [README](README.md).
 
 | When | What happens | How |
 |---|---|---|
-| 0:00 | You spawn by the campfire, holding a Rusty Axe, friends around you | `TutorialService` step 1 with the arrow, the beam and the compass marker |
-| 0:15 | Chop a tree: chips fly, "+1 🪵" pops up, the tree tips over | ACT says CHOP next to a tree; aim help turns the swing |
-| 0:45 | Build the Workbench: hold its glowing blueprint's prompt, it goes up in a puff | the camp's tier-1 blueprints are placed at the start of every run |
-| 1:30 | Open a crate (there are always a few by the camp), hold what you found | the hotbar slot glows; the guide moves on when you hold it |
-| 2:30 | Kermy shows himself at the edge of the camp, then slips back into the trees | `MonsterService` "first sighting", his roar, a callout |
-| 3:30 | Dusk: "Get back to camp!" | the horn, the sky turning, the guide's last steps |
-| 3:45 | Night 1: survive, dodge his lunge | the red line on the ground, DODGE, revives |
+| 0:00 | You spawn by the campfire, holding a Rusty Axe, friends around you; five young trees stand right there | `TutorialService` step 1: "Chop any tree", the arrow and the beam to the nearest one (it lights up; whichever tree you walk to becomes the one) |
+| 0:05 | Chop: chips fly, "+1 🌳" pops up, two hits and the sapling tips over, "+10 XP ✨" | `MapLayout.SAPLINGS` (two hits of the Rusty Axe, 4 wood each, back every run); every first the guide asks for pays XP (`Constants.XP.guide`) |
+| 0:20 | Build the Workbench (6 wood): hold its glowing blueprint's prompt, it goes up in a puff | the camp's tier-1 blueprints are placed at the start of every run; the blueprint glows |
+| 0:40 | Open the starter crate by the fire: a club or a spear, a torch and berries; hold the weapon | `LootService` places it 12-15 studs from the fire with those in it; the hotbar slot glows |
+| 0:50 | Kermy shows himself at the edge of the camp, "SIX... SEVEN!", then slips back into the trees | `MonsterService` "first sighting", his roar, a callout (§4 had this at 2:30: the first playtest moved the hook into the first minute) |
+| 1:00 | A Snapcap jumps out of the bushes at someone: "A Snapcap! Hit it!", it glows red; the first kill, "+25 XP" | `MonsterService` "ambush" (one, by day, harmless-ish); the guide shows LOOK OUT! whatever step you're on, then goes back to it |
+| 1:20 | "Explore! Crates and stone are out in the forest": the arrow points at the nearest crate | the Stone Axe and Stone Spear need stone; crates sit clear of the trees' crowns |
+| 2:50 | With 40 s of day left: "Get back to camp before dark!" | `Constants.GUIDE_DUSK_WARNING` |
+| 3:30 | Dusk: the horn, the sky turning | the guide's last steps |
+| 3:42 | Night 1: survive, dodge his lunge | the red line on the ground, DODGE, revives |
 
 Returning players skip the guide; SKIP ends it at any time. Steps the team already did (the Workbench) are
-skipped, so it works alone or with friends.
+skipped, so it works alone or with friends. Swinging at a giant or an Ancient Pine says it's too big to chop.
 
 ## Combat and enemies (§5, §10)
 
@@ -73,9 +76,9 @@ playing (levels and achievements). Paid cosmetics come only after retention is e
 
 ## Tests
 
-`tools/run_tests.sh`: formulas (95 checks), the terrain (23), the client smoke test (292: the real server and
+`tools/run_tests.sh`: formulas (96 checks), the terrain (23), the client smoke test (301: the real server and
 client together on a phone screen, played through the client's own buttons, plus PC clicks, the hold pose and
-which way every swing goes) and the server smoke test (288, and 275 without DataStores: whole runs, the win and the
+which way every swing goes) and the server smoke test (301, and 288 without DataStores: whole runs, the win and the
 wipe, rejoining, friends, leaderboards). The mock DataStore now refuses what Roblox's refuses (lists with gaps,
 mixed keys, NaN). Lint: selene and stylua clean.
 
@@ -88,6 +91,13 @@ look and turns to the tree or rock most in front of you); a rock beside or behin
 tree in front; the guide could point at a giant that can't be chopped; and the guide's arrow spun inside the
 tree's trunk with its beam running into it (now beside the trunk, and the tree glows); trunks ran up inside the
 crowns, so a tree the camera faded (Invisicam) showed its trunk as a line, and birches had full black rings.
+
+The second playtest: the crafting panel's costs read "0/3 2/4" with nothing else, because Roblox draws no emoji
+newer than 2019 (wood 🪵 and stone 🪨 are blank; seven of the game's icons were): every cost now names its
+material, and the icons are ones Roblox has. The guide pointed at one tree (the nearest, refreshed every two
+seconds) and the crate it pointed at could sit under a tree's crown: now "chop any tree", the client picks the
+nearest as you move, and crates, blueprints and the Snapcap light up. And the first minute was a walk: the trees
+were 78 studs away and Kermy came at 2:30 (see the table above for what it is now).
 
 An audit for the rest turned up, also fixed: the menu's Reset Character left you a frozen body for good (the server
 can't stop the client's character dying, and characters don't come back by themselves here); the campfire's Feed

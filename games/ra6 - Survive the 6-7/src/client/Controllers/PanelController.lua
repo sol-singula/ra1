@@ -237,6 +237,7 @@ local function available(key)
 	return countOf(key) + ((Store.get("storage") or {})[key] or 0)
 end
 
+-- What something costs, one chip per material: its icon, its name and have/need (green once you have enough).
 local function costChips(parent, cost, pos)
 	local x = 0
 	local keys = {}
@@ -248,14 +249,18 @@ local function costChips(parent, cost, pos)
 		local item = Items.get(k)
 		local have = available(k)
 		local ok = have >= cost[k]
-		label(parent, `{item and item.icon or k} {math.min(have, cost[k])}/{cost[k]}`, {
-			Name = "Cost_" .. k,
-			Position = UDim2.new(pos.X.Scale, pos.X.Offset + x, pos.Y.Scale, pos.Y.Offset),
-			Size = UDim2.fromOffset(88, 22),
-			TextColor3 = ok and Color3.fromRGB(30, 130, 60) or C.red,
-			Font = Theme.Display,
-		})
-		x += 90
+		local chip =
+			label(parent, `{item and item.icon or ""} {item and item.name or k} {math.min(have, cost[k])}/{cost[k]}`, {
+				Name = "Cost_" .. k,
+				Position = UDim2.new(pos.X.Scale, pos.X.Offset + x, pos.Y.Scale, pos.Y.Offset),
+				Size = UDim2.fromOffset(150, 22),
+				TextSize = 15,
+				TextColor3 = ok and Color3.fromRGB(30, 130, 60) or C.red,
+				Font = Theme.Display,
+			})
+		chip:SetAttribute("Have", have)
+		chip:SetAttribute("Need", cost[k])
+		x += 152
 	end
 end
 

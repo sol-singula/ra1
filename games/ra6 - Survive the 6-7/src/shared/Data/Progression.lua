@@ -46,7 +46,7 @@ Progression.PERKS = {
 	{
 		key = "trapper",
 		name = "Trapper",
-		icon = "🪤",
+		icon = "🕸️",
 		level = 15,
 		desc = "Traps get one extra use; start each run with a Snare.",
 	},
@@ -104,7 +104,7 @@ Progression.KITS = {
 	{
 		key = "trapper",
 		name = "Trapper",
-		icon = "🪤",
+		icon = "🕸️",
 		level = 14,
 		items = { { "rusty_axe", 1 }, { "snare", 2 }, { "bear_trap", 1 } },
 		desc = "A Rusty Axe, 2 snares and a bear trap.",
@@ -259,7 +259,7 @@ Progression.ACHIEVEMENTS = {
 	},
 	{ key = "dodge_100", name = "Slippery", icon = "💨", desc = "Dodge 100 attacks.", stat = "dodged", goal = 100 },
 	{ key = "mimic_5", name = "Not Today, Mimic", icon = "📦", desc = "Defeat 5 mimics.", stat = "mimics", goal = 5 },
-	{ key = "chop_500", name = "Lumberjack", icon = "🪵", desc = "Gather 500 wood.", stat = "wood", goal = 500 },
+	{ key = "chop_500", name = "Lumberjack", icon = "🌳", desc = "Gather 500 wood.", stat = "wood", goal = 500 },
 	{ key = "camp_4", name = "Stronghold", icon = "🏰", desc = "Upgrade the camp to The Stronghold." },
 	{ key = "totem", name = "Totem Raiser", icon = "🗿", desc = "Raise the Totem of the Seventh Night." },
 	{

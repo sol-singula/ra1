@@ -72,7 +72,7 @@ function ObjectiveService:CampGoal()
 	end
 	local stone = camp:Count("wall", true)
 	if stone < 8 then
-		return { key = "stone", text = `Reinforce the walls with stone 🪨 ({stone}/8)`, target = nil }
+		return { key = "stone", text = `Reinforce the walls with stone ⛰️ ({stone}/8)`, target = nil }
 	end
 	if tier < 4 then
 		return { key = "tier4", text = "Upgrade the camp to The Stronghold (Camp Board)", target = board }

@@ -221,6 +221,19 @@ function CombatService:_melee(player, item, aim, opts)
 		end
 		return true
 	end
+	-- the Ancient Pines round the clearing aren't trees to chop (a new player's first swing often lands here)
+	for _, pine in MapLayout.ancientPines do
+		local at = Vector3.new(pine.pos.X, origin.Y, pine.pos.Z)
+		local reach = Constants.GATHER_RANGE + pine.radius + 2
+		if inArc(origin, dir, at, reach, 150) or (facing and inArc(origin, facing, at, reach, 150)) then
+			resources:TooBig(
+				player,
+				pine.pos + Vector3.new(0, 4, 0),
+				"🌲 This Ancient Pine is far too old to chop. The young trees by the fire are the ones!"
+			)
+			return true
+		end
+	end
 	return false
 end
 

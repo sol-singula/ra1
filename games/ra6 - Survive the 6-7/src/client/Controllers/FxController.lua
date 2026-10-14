@@ -6,7 +6,7 @@ dust, arrows and throws fly, firecrackers bang, flares burn red, Kermy vanishes 
 Every monster attack is drawn on the ground while its tell plays (§5: "an attack you can see coming"):
   a red line for a lunge, a dart or a charge (it fills up as the moment comes), a red circle for a slam or where a
   pinecone will land, Mega Kermy's shadow where he'll come down and the shockwave rings you jump over.
-Plus damage numbers, floating "+3 🪵" popups, dizzy stars, a rustling bush where Kermy is about to pop out, the
+Plus damage numbers, floating "+3 🌳" popups, dizzy stars, a rustling bush where Kermy is about to pop out, the
 beacons of your team's pings, and the screen shake (Settings: effects, screen shake; Reduced Motion turns shaking off).
 ]]
 local Players = game:GetService("Players")
@@ -208,7 +208,7 @@ function FxController.shake(strength, seconds)
 	shakeStrength = math.max(shakeStrength * (shakeUntil > os.clock() and 1 or 0), strength)
 end
 
--- Floating text in the world ("+3 🪵", damage numbers): rises and fades.
+-- Floating text in the world ("+3 🌳", damage numbers): rises and fades.
 function FxController.popup(pos, text, color, size, seconds)
 	if typeof(pos) ~= "Vector3" or not near(pos, 140) then
 		return

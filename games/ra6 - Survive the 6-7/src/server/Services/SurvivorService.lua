@@ -480,7 +480,7 @@ function SurvivorService:Down(player, source)
 		s.hp = 50
 		s.protectUntil = now() + 2
 		self:Buff(player, "shield", 0.5, 3)
-		Net.fire(player, "Alert", "🪶 SECOND WIND!", Color3.fromRGB(255, 240, 160), 2)
+		Net.fire(player, "Alert", "🕊️ SECOND WIND!", Color3.fromRGB(255, 240, 160), 2)
 		self.Revived:Fire(player, nil, "charm")
 		self:Push(player)
 		return

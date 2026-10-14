@@ -43,6 +43,7 @@ local ProgressService = {
 		"CombatService",
 		"WorldService",
 		"ObjectiveService",
+		"TutorialService",
 	},
 	LeveledUp = Signal.new("ProgressService.LeveledUp"), -- (player, level)
 	MasteryUp = Signal.new("ProgressService.MasteryUp"), -- (player, class, level)
@@ -947,6 +948,16 @@ function ProgressService:Init(registry)
 	end)
 	monsters.Killed:Connect(function(m, killer, assists)
 		self:_onKilled(m, killer, assists)
+	end)
+	-- the guide's firsts pay (§4: the first minutes should feel like getting somewhere): a popup where you stand
+	registry.TutorialService.StepDone:Connect(function(player, _, key)
+		local amount = Constants.XP.guide[key]
+		if amount and amount > 0 and self:AddXp(player, amount, "guide") > 0 then
+			local pos = survivors:Position(player)
+			if pos then
+				Net.fire(player, "Popup", pos + Vector3.new(0, 4, 0), `+{amount} XP ✨`, Color3.fromRGB(255, 225, 120))
+			end
+		end
 	end)
 	monsters.KermyKO:Connect(function(m, killer, assists)
 		self:_onKermyKO(m, killer, assists)

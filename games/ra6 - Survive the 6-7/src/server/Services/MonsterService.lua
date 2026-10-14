@@ -45,6 +45,7 @@ local MonsterService = {
 	KermyKO = Signal.new("MonsterService.KermyKO"), -- (mob, killer?, assists)
 	KermyWoke = Signal.new("MonsterService.KermyWoke"), -- (player?)
 	Sighting = Signal.new("MonsterService.Sighting"), -- () Kermy's first appearance of the run
+	Ambush = Signal.new("MonsterService.Ambush"), -- (mob) day 1: a Snapcap jumps out at someone (§4: a first fight by day)
 	Learned = Signal.new("MonsterService.Learned"), -- (player, enemyKey, tipKey): a tell read right
 	Seen = Signal.new("MonsterService.Seen"), -- (player, enemyKey, elite)
 }
@@ -61,7 +62,7 @@ local dynamicObstacles = {} -- [tag] = { { x, z, r } }
 local treeCells = {} -- [cell] = { tree record } (reachable trees; ResourceService says which are felled)
 local night = { budget = 0, spent = 0, carry = 0, nextWave = 0, waves = 0 }
 local kermy -- the run's Kermy mob (or nil)
-local kermyState = { sighted = false, nextPeek = 0, koUntil = 0, lair = nil, nightSpawned = false }
+local kermyState = { sighted = false, ambushed = false, nextPeek = 0, koUntil = 0, lair = nil, nightSpawned = false }
 local elitePack
 local sendAcc = 0
 local CELL = 16
@@ -673,6 +674,33 @@ function MonsterService:_sighting()
 	Net.fireAll("Callout", "😨 What was THAT?! Something's watching from the trees...", "bad")
 	Net.fireAll("Sfx", "roar", m.pos)
 	self.Sighting:Fire()
+end
+
+-- Day 1, right after Kermy's sighting: one Snapcap jumps out of the bushes at someone near the camp, so the first
+-- fight (and the first kill) comes by day, with the Rusty Axe, before night 1 asks for it.
+function MonsterService:_ambush()
+	if kermyState.ambushed then
+		return
+	end
+	kermyState.ambushed = true
+	local targets = survivors:Targets()
+	if #targets == 0 then
+		return
+	end
+	local tg = targets[math.random(1, #targets)]
+	local away = flat(tg.pos)
+	-- from the forest side of them (never from the fire)
+	local dir = away.Magnitude > 2 and away.Unit or Vector3.new(1, 0, 0)
+	local spot = flat(tg.pos) + dir * 16
+	if spot.Magnitude < 20 then
+		spot = dir * 20
+	end
+	local m = self:Spawn("snapcap", spot, { day = true, state = "chase" })
+	m.ambush = true
+	m.target = tg
+	Net.fireAll("Callout", "🍄 A Snapcap jumped out of the bushes! Hit it!", "bad")
+	Net.fireAll("Sfx", "howl", m.pos)
+	self.Ambush:Fire(m)
 end
 
 -- By day: Kermy peeks at someone from behind a tree, then ducks away.
@@ -1883,7 +1911,8 @@ function MonsterService:Clear()
 	table.clear(baits)
 	kermy = nil
 	elitePack = nil
-	kermyState = { sighted = false, nextPeek = 0, koUntil = 0, lair = kermyState.lair, nightSpawned = false }
+	kermyState =
+		{ sighted = false, ambushed = false, nextPeek = 0, koUntil = 0, lair = kermyState.lair, nightSpawned = false }
 end
 
 -- Snapshot ----------------------------------------------------------------------------------------------------------------------
@@ -1956,6 +1985,8 @@ function MonsterService:_tick(dt)
 		local run = runs:Get()
 		if run and run.day == 1 and not kermyState.sighted and runs:Seconds() >= Constants.FIRST_SIGHTING_AT then
 			self:_sighting()
+		elseif run and run.day == 1 and not kermyState.ambushed and runs:Seconds() >= Constants.FIRST_AMBUSH_AT then
+			self:_ambush()
 		elseif run and run.day >= 2 and t >= kermyState.nextPeek then
 			kermyState.nextPeek = t + Constants.KERMY_DAY_PEEK_EVERY
 			if not kermy or not mobs[kermy.id] then

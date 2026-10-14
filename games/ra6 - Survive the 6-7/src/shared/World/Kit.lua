@@ -994,6 +994,33 @@ function Kit.birch(parent, t)
 	return m
 end
 
+-- A sapling by the camp: a thin trunk and a few small clumps of fresh leaves (the first thing anyone chops).
+function Kit.sapling(parent, t)
+	local rng = Random.new(t.seed)
+	local m = Kit.model("Sapling", parent)
+	local h = t.h
+	trunkPart(m, t, h * 0.5, C.bark:Lerp(C.barkDark, 0.2))
+	local base = Vector3.new(t.x, t.y, t.z)
+	local col = C.leafLight:Lerp(C.leaf, rng:NextNumber(0, 0.5))
+	local clumps = {
+		{ Vector3.new(0, h * 0.72, 0), 0.5 },
+		{ Vector3.new(h * 0.14, h * 0.58, h * 0.06), 0.38 },
+		{ Vector3.new(-h * 0.12, h * 0.62, -h * 0.1), 0.36 },
+	}
+	for i, c in clumps do
+		Kit.ball(
+			m,
+			"Leaves",
+			base + c[1],
+			h * c[2] * rng:NextNumber(0.9, 1.1),
+			col:Lerp(C.leafDark, (i - 1) * 0.12),
+			M.Grass,
+			{ CastShadow = i == 1, CanCollide = false }
+		)
+	end
+	return m
+end
+
 -- A dead tree for the deep forest: grey, crooked, bare.
 function Kit.snag(parent, t)
 	return Kit.deadTree(parent, Vector3.new(t.x, t.y, t.z), t.h, Random.new(t.seed), C.deadWood)
@@ -1105,6 +1132,7 @@ local TREE_BUILDERS = {
 	birch = Kit.birch,
 	dead = Kit.snag,
 	giant = Kit.giant,
+	sapling = Kit.sapling,
 }
 -- A tree on the boundary hills, out of reach: just a trunk and one tall crown (two parts).
 function Kit.farTree(parent, t)

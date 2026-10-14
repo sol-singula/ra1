@@ -268,6 +268,7 @@ function LootService:Place(kind, cf, opts)
 		extra = opts.extra,
 		finding = opts.finding,
 		onOpen = opts.onOpen,
+		starter = opts.starter == true,
 	}
 	c.model = buildModel(kind, cf, parent)
 	c.model:SetAttribute("ContainerId", c.id)
@@ -392,7 +393,9 @@ function LootService:Scatter(run)
 		for cx = math.floor(x / 16) - 1, math.floor(x / 16) + 1 do
 			for cz = math.floor(z / 16) - 1, math.floor(z / 16) + 1 do
 				for _, t in grid[cx * 1000 + cz] or {} do
-					if (t.x - x) ^ 2 + (t.z - z) ^ 2 < (t.trunk + 4) ^ 2 then
+					-- (out from under the crown, so the crate can be seen and the arrow isn't "in a tree")
+					local keep = math.max(t.trunk + 4, (t.h or 0) * 0.32)
+					if (t.x - x) ^ 2 + (t.z - z) ^ 2 < keep ^ 2 then
 						return false
 					end
 				end
@@ -421,7 +424,28 @@ function LootService:Scatter(run)
 		end
 		return nil
 	end
-	-- by the camp: always something useful for the first minutes (§4: find something exciting)
+	-- the starter crate, right by the fire: always a real weapon, a torch and something to eat (§4: hold
+	-- something exciting in the first minute)
+	for _ = 1, 100 do
+		local angles = { 100, 215, 255 }
+		local a = math.rad(angles[rng:NextInteger(1, #angles)] + rng:NextNumber(-10, 10))
+		local r = rng:NextNumber(12, 15)
+		local x, z = math.cos(a) * r, math.sin(a) * r
+		if free(x, z) then
+			self:Place("crate", CFrame.new(x, MapLayout.floorY(x, z), z) * CFrame.Angles(0, a + math.pi, 0), {
+				zone = "camp",
+				starter = true,
+				add = {
+					{ key = rng:NextNumber() < 0.5 and "branch_club" or "stone_spear", n = 1 },
+					{ key = "torch", n = 1 },
+					{ key = "berries", n = 2 },
+				},
+				extra = -1,
+			})
+			break
+		end
+	end
+	-- more by the camp: something useful for the first minutes
 	local starters = { "stone_spear", "branch_club", "bandage", "sharp_stick" }
 	for i = 1, Constants.CRATES_NEAR_CAMP do
 		place(58, 105, { zone = "camp", add = { { key = starters[(i - 1) % #starters + 1], n = 1 } }, extra = -1 })

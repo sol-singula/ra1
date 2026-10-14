@@ -15,7 +15,10 @@ Constants.DAWN_SECONDS = 6 -- "You survived night 3!" before the next day starts
 Constants.BOSS_ENRAGE_AT = 300 -- seconds into night 7: Mega Kermy gets faster
 Constants.BOSS_MAX_SECONDS = 600 -- night 7 ends at dawn: not beaten by then counts as a loss
 Constants.RESULTS_SECONDS = 25
-Constants.FIRST_SIGHTING_AT = 150 -- seconds into day 1: Kermy shows himself at the edge of the camp (§4: 2:30)
+Constants.FIRST_SIGHTING_AT = 50 -- seconds into day 1: Kermy shows himself at the edge of the camp (the hook is in
+-- the first minute: §4 had this at 2:30, the first playtest moved it up)
+Constants.FIRST_AMBUSH_AT = 62 -- seconds into day 1: a Snapcap jumps out at someone (fighting, taught by day)
+Constants.GUIDE_DUSK_WARNING = 40 -- seconds left in day 1 when the guide says to get back to camp
 Constants.BELL_MIN_LEFT = 20 -- the camp bell can't call the night with less than this left in the day
 Constants.EMPTY_ABORT = 2 -- seconds with nobody left before an abandoned run is thrown away
 
@@ -178,6 +181,7 @@ Constants.XP = {
 	revive = 15,
 	kill = { small = 2, medium = 5, heavy = 14, kermy = 60, boss = 250 },
 	contribution = 0.25, -- per material put into the camp
+	guide = { chop = 10, build = 20, loot = 10, equip = 5, fight = 25, kermy = 5 }, -- each of the guide's firsts
 	cap = 2500, -- from one run
 }
 Constants.MASTERY_GAIN = { hit = 1, kill = 6, use = 4 } -- per hit / kill with that class / support use

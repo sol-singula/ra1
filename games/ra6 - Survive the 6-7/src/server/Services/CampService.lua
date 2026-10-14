@@ -324,7 +324,7 @@ local function label(parent, text)
 	return t
 end
 
-local ICON = { wood = "🪵", stone = "🪨", scrap = "⚙️", fiber = "🧵", glowcap = "🍄", herb = "🌿" }
+local ICON = { wood = "🌳", stone = "⛰️", scrap = "⚙️", fiber = "🧵", glowcap = "🍄", herb = "🌿" }
 local function costLine(have, cost)
 	local parts = {}
 	for _, key in { "wood", "stone", "scrap", "fiber", "glowcap", "herb" } do
@@ -531,7 +531,7 @@ function CampService:_firePrompt(model)
 	end
 	local p = Instance.new("ProximityPrompt")
 	p.Name = "Fuel"
-	p.ActionText = "Feed the fire (🪵)"
+	p.ActionText = "Feed the fire (🌳)"
 	p.ObjectText = "Campfire"
 	p.HoldDuration = 0.4
 	p.MaxActivationDistance = Constants.USE_RANGE

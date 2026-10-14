@@ -43,7 +43,7 @@ Camp.STRUCTURES = {
 		icon = "🛠️",
 		tier = 1,
 		count = 1,
-		cost = { wood = 8 },
+		cost = { wood = 6 }, -- (two of the camp's saplings: built in the first minute)
 		station = "workbench",
 	},
 	storage = { name = "Storage Chest", icon = "🧰", tier = 1, count = 1, cost = { wood = 10 } },

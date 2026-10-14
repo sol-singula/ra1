@@ -526,7 +526,12 @@ MapLayout.TREE_KINDS = {
 	birch = { h = { 18, 26 }, trunk = 0.055, hp = 30, wood = 5 },
 	dead = { h = { 10, 16 }, trunk = 0.1, hp = 20, wood = 3 },
 	giant = { h = { 52, 70 }, trunk = 0.1, hp = math.huge, wood = 0 },
+	sapling = { h = { 10, 13 }, trunk = 0.09, hp = 20, wood = 4 }, -- two hits of the Rusty Axe
 }
+
+-- Young trees right at the camp (master plan §4: the first chop is seconds away, not a walk through the clearing):
+-- between the props and the wall ring, clear of every slot, tent, stone and trail. { degrees, studs from the fire }
+MapLayout.SAPLINGS = { { 30, 22 }, { 125, 31 }, { 148, 30 }, { 210, 22 }, { 250, 22 } }
 
 -- Keep-clear test for trees and props: the camp, the sites, the trails, the water, the outcrop tops.
 function MapLayout.clearOf(x, z, pad)
@@ -646,6 +651,25 @@ function MapLayout.trees()
 				reachable = r < MapLayout.WORLD_RADIUS - 4,
 			})
 		end
+	end
+	for k, sp in MapLayout.SAPLINGS do
+		local p = polar(sp[1], sp[2])
+		local spec = MapLayout.TREE_KINDS.sapling
+		id += 1
+		table.insert(trees, {
+			id = id,
+			x = p.X,
+			z = p.Z,
+			y = MapLayout.floorY(p.X, p.Z),
+			kind = "sapling",
+			h = spec.h[1] + (spec.h[2] - spec.h[1]) * ((k * 7) % 5) / 4,
+			trunk = 0,
+			seed = 6700 + k,
+			reachable = true,
+			sapling = true,
+		})
+		local t = trees[#trees]
+		t.trunk = t.h * spec.trunk / 2
 	end
 	return trees
 end

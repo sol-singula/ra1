@@ -286,7 +286,7 @@ check(
 	card.Visible == true and string.find(card.Step.Text, "STEP 1 OF", 1, true) ~= nil,
 	card.Step.Text
 )
-check("the guide says chop", string.find(card.Text.Text, "Chop", 1, true) ~= nil, card.Text.Text)
+check("the guide says chop any tree", string.find(card.Text.Text, "any tree", 1, true) ~= nil, card.Text.Text)
 check("an arrow over the tree", ws:FindFirstChild("Guide") and ws.Guide:FindFirstChild("GuideArrow") ~= nil)
 check(
 	"a beam to it",
@@ -629,6 +629,46 @@ check(
 press(refs.slots[1].button)
 Engine.advance(0.3)
 
+-- 5b. The first fight by day: a Snapcap jumps out at ~1:00; the guide points at it and lights it up red
+do
+	for _ = 1, 80 do
+		if Run:Seconds() >= Constants.FIRST_AMBUSH_AT + 1 then
+			break
+		end
+		Engine.advance(1)
+	end
+	local snap
+	for _, m in Monsters:All() do
+		if m.ambush then
+			snap = m
+		end
+	end
+	check("a Snapcap jumped out", snap ~= nil)
+	local view = Guide.current()
+	check(
+		"the guide: hit it (a step, or LOOK OUT! in the middle of another)",
+		view and view.key == "fight" and (view.title == "LOOK OUT!" or view.step == 5),
+		view and (view.key .. " " .. tostring(view.title) .. " " .. tostring(view.step))
+	)
+	check("the card says so", string.find(card.Text.Text, "Snapcap", 1, true) ~= nil, card.Text.Text)
+	Engine.advance(0.8)
+	local glow = ws.Guide and ws.Guide:FindFirstChild("GuideGlow")
+	check(
+		"the Snapcap glows red",
+		glow and glow.Adornee and snap and glow.Adornee.Name == "snapcap" .. snap.id,
+		glow and glow.Adornee and glow.Adornee.Name
+	)
+	if snap then
+		Monsters:Damage(snap.id, 999, player, {})
+		Engine.advance(0.4)
+	end
+	local pop = Engine.lastClientEvent("Popup", player)
+	check("the first fight paid XP", pop and pop.args[2] == `+{Constants.XP.guide.fight} XP ✨`, pop and pop.args[2])
+	view = Guide.current()
+	check("then: explore", view == nil or view.key == "explore", view and view.key)
+	Engine.advance(2)
+end
+
 -- 6. The BAG -----------------------------------------------------------------------------------------------------------------------------------
 press(hud.Menu.Menu_inventory)
 Engine.advance(0.1)
@@ -706,6 +746,17 @@ check("using the bench opens CRAFT", craft ~= nil)
 local axeRow = craft and craft:FindFirstChild("Craft_stone_axe", true)
 check("the Stone Axe recipe", axeRow ~= nil)
 check("its cost, counted", craft and craft:FindFirstChild("Cost_wood", true) ~= nil)
+do
+	-- every cost says what it is in words (and with an icon Roblox can draw): never a bare "0/3"
+	local chip = craft and craft:FindFirstChild("Cost_wood", true)
+	check(
+		"a cost chip names the material",
+		chip and string.find(chip.Text, "Wood", 1, true) ~= nil and string.find(chip.Text, "/4", 1, true) ~= nil,
+		chip and chip.Text
+	)
+	local stone = craft and craft:FindFirstChild("Cost_stone", true)
+	check("stone too", stone and string.find(stone.Text, "Stone", 1, true) ~= nil, stone and stone.Text)
+end
 local bowRow = craft and craft:FindFirstChild("Craft_short_bow", true)
 check("tier-2 recipes say what they need", bowRow == nil or textIn(craft, "Needs") ~= nil)
 press(axeRow)
@@ -799,6 +850,14 @@ local fire = MapLayout.CAMP_PROPS.fire
 standAt(fire.X + 10, fire.Z + 4, fire)
 local benSpawn = MapLayout.spawnPoint(3)
 Engine.moveTo(ben, Vector3.new(benSpawn.X, ground(benSpawn.X, benSpawn.Z) + 3, benSpawn.Z))
+do
+	-- with 40 s of day left the guide says to get back to camp
+	local run = Run:Get()
+	run.phaseEnds = Engine.now() + Constants.GUIDE_DUSK_WARNING - 5
+	Engine.advance(2.5)
+	local view = Guide.current()
+	check("dusk soon: get back to camp", view == nil or view.key == "kermy", view and view.key)
+end
 check("to dusk", skipTo("dusk"))
 Engine.advance(0.4)
 check("dusk on the clock", string.find(refs.phase.Text, "DUSK", 1, true) ~= nil, refs.phase.Text)

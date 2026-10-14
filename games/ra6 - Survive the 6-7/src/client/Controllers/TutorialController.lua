@@ -1,9 +1,10 @@
 --[[
 The guide's side on screen (master plan §4: the first five minutes, one clear thing at a time, never a text wall).
 The server sends the step ("Tutorial": { step, total, key, text, target } or false); here it becomes:
-  * a card under the compass: STEP 2 of 6, what to do, and a SKIP button
-  * a bouncing arrow over the target (beside the nearest tree's trunk, the workbench's blueprint, a crate, the
-    campfire), and the tree to chop glows
+  * a card under the compass: STEP 2 of 7 (or LOOK OUT!), what to do, and a SKIP button
+  * a bouncing arrow over the target (beside the nearest tree's trunk, the workbench's blueprint, the crate, the
+    Snapcap, the campfire), and the thing itself lit up: for "chop any tree" this client picks the nearest tree an
+    axe can chop as you move, so whichever tree you walk to is the one
   * a soft light beam from you to it, so you never have to guess where to go
 ]]
 local Players = game:GetService("Players")
@@ -13,6 +14,8 @@ local RunService = game:GetService("RunService")
 local Kit = require(ReplicatedStorage.Shared.World.Kit)
 local MapLayout = require(ReplicatedStorage.Shared.World.MapLayout)
 local Net = require(ReplicatedStorage.Shared.Net)
+local InputController = require(script.Parent.InputController)
+local MonsterController = require(script.Parent.MonsterController)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -24,8 +27,10 @@ local C = Theme.Color
 local gui, card, label, stepLabel
 local arrow, beam, targetAttach, fromAttach, targetPart
 local current -- the step on screen
-local glow, glowTree, glowCheckAt = nil, nil, 0 -- the Highlight on the tree to chop
+local glow, glowKey, glowCheckAt = nil, nil, 0 -- the Highlight on the thing to go to
 local treeById
+local target, targetGlow -- where the arrow is now, and what glows: { kind, id } (per frame, from the step)
+local pickAt = 0
 
 -- The model of a tree (by its id), if it has streamed in: trees live in 128-stud chunks under Map.Forest.
 local function treeModel(id)
@@ -50,43 +55,124 @@ local function treeModel(id)
 	return nil
 end
 
+-- The model with an attribute, among a folder's children (crates by ContainerId, blueprints by Structure).
+local function modelWith(folderName, attribute, value)
+	local folder = workspace:FindFirstChild(folderName)
+	for _, m in folder and folder:GetChildren() or {} do
+		if m:GetAttribute(attribute) == value then
+			return m
+		end
+	end
+	return nil
+end
+
+local function glowModel(g)
+	if g.kind == "tree" then
+		return treeModel(g.id)
+	elseif g.kind == "container" then
+		return modelWith("Loot", "ContainerId", g.id)
+	elseif g.kind == "structure" then
+		return modelWith("Structures", "Structure", g.id)
+	elseif g.kind == "mob" then
+		local m = MonsterController.mobs[g.id]
+		local folder = workspace:FindFirstChild("Monsters")
+		return m and folder and folder:FindFirstChild(m.kind .. g.id) or nil
+	end
+	return nil
+end
+
 local function clearGlow()
 	if glow then
 		glow:Destroy()
 	end
-	glow, glowTree = nil, nil
+	glow, glowKey = nil, nil
 end
 
--- Light up the tree to chop (retried now and then: it may not have streamed in yet).
+-- Light up the thing to go to (retried now and then: it may not have streamed in yet).
 local function updateGlow()
-	local id = current and current.tree
-	if not id then
+	local g = targetGlow
+	if not g then
 		clearGlow()
 		return
 	end
-	if glowTree == id and glow and glow.Parent and glow.Adornee and glow.Adornee.Parent then
+	local key = g.kind .. tostring(g.id)
+	if glowKey == key and glow and glow.Parent and glow.Adornee and glow.Adornee.Parent then
 		return
 	end
 	local t = os.clock()
 	if t < glowCheckAt then
 		return
 	end
-	glowCheckAt = t + 0.5
-	local m = treeModel(id)
+	glowCheckAt = t + 0.4
+	local m = glowModel(g)
 	if not m then
+		clearGlow()
 		return
 	end
 	clearGlow()
+	local color = g.kind == "mob" and C.red or C.mustard
 	glow = Instance.new("Highlight")
 	glow.Name = "GuideGlow"
 	glow.Adornee = m
-	glow.FillColor = C.mustard
-	glow.FillTransparency = 0.8
-	glow.OutlineColor = C.mustard
-	glow.OutlineTransparency = 0.15
+	glow.FillColor = color
+	glow.FillTransparency = g.kind == "mob" and 0.7 or 0.8
+	glow.OutlineColor = color
+	glow.OutlineTransparency = 0.1
 	glow.DepthMode = Enum.HighlightDepthMode.Occluded
 	glow.Parent = workspace:FindFirstChild("Guide") or m
-	glowTree = id
+	glowKey = key
+end
+
+-- Where the arrow goes this frame. "Chop any tree": the nearest tree an axe can chop, from here, so whichever
+-- tree you walk to is the one; the Snapcap: where it's drawn; everything else: what the server said.
+local function pickTarget()
+	if not current then
+		target, targetGlow = nil, nil
+		return
+	end
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if current.key == "chop" and root then
+		local t = os.clock()
+		if t >= pickAt or not target then
+			pickAt = t + 0.2
+			local best, bestD
+			for _, tree in InputController.treesNear(root.Position, 150) do
+				local d = Vector3.new(tree.x - root.Position.X, 0, tree.z - root.Position.Z).Magnitude - tree.trunk
+				if not bestD or d < bestD then
+					best, bestD = tree, d
+				end
+			end
+			if best then
+				local c = Vector3.new(best.x, best.y, best.z)
+				local side = Vector3.new(root.Position.X - c.X, 0, root.Position.Z - c.Z)
+				side = side.Magnitude > 0.1 and side.Unit or Vector3.new(1, 0, 0)
+				target = c + side * (best.trunk + 1.8) + Vector3.new(0, 1.2, 0)
+				targetGlow = { kind = "tree", id = best.id }
+			elseif typeof(current.target) == "Vector3" then
+				target = current.target
+				targetGlow = current.tree and { kind = "tree", id = current.tree } or nil
+			end
+		end
+		return
+	end
+	if current.key == "fight" and current.mob then
+		local p = MonsterController.position(current.mob)
+		if p then
+			target = p + Vector3.new(0, 1, 0)
+			targetGlow = { kind = "mob", id = current.mob }
+			return
+		end
+	end
+	target = typeof(current.target) == "Vector3" and current.target or nil
+	if current.container then
+		targetGlow = { kind = "container", id = current.container }
+	elseif current.structure then
+		targetGlow = { kind = "structure", id = current.structure }
+	elseif current.tree then
+		targetGlow = { kind = "tree", id = current.tree }
+	else
+		targetGlow = nil
+	end
 end
 
 local function ensureWorld()
@@ -170,29 +256,38 @@ local function show(view)
 		return
 	end
 	card.Visible = true
-	stepLabel.Text = `STEP {current.step} OF {current.total}`
+	stepLabel.Text = current.title or `STEP {current.step} OF {current.total}`
+	stepLabel.TextColor3 = current.title and C.red or C.mustard
 	label.Text = current.text or ""
-	if not was or was.step ~= current.step then
+	if not was or was.key ~= current.key then
 		Theme.pop(card) -- (only for a new step: the server refreshes the target every few seconds)
 	end
-	if typeof(current.target) == "Vector3" then
+	pickAt = 0
+	pickTarget()
+	if target then
 		ensureWorld()
-		if not current.tree then
-			clearGlow()
-		end
 	else
 		clearWorld()
 	end
 end
 
 local function step()
-	if not current or typeof(current.target) ~= "Vector3" or not arrow then
+	if not current then
+		return
+	end
+	pickTarget()
+	if not target then
+		clearWorld()
+		return
+	end
+	ensureWorld()
+	if not arrow then
 		return
 	end
 	local t = os.clock()
 	updateGlow()
-	-- (beside a tree the arrow floats low, under the branches)
-	local top = current.target + Vector3.new(0, (current.tree and 2.4 or 4) + math.sin(t * 4) * 0.6, 0)
+	-- (the arrow floats low over what glows, under a tree's branches)
+	local top = target + Vector3.new(0, (targetGlow and 2.4 or 4) + math.sin(t * 4) * 0.6, 0)
 	local spin = CFrame.Angles(0, t * 2, 0)
 	local shaft = arrow:FindFirstChild("Shaft")
 	local head = arrow:FindFirstChild("Head")
@@ -200,7 +295,7 @@ local function step()
 		shaft.CFrame = CFrame.new(top + Vector3.new(0, 1.6, 0)) * spin
 		head.CFrame = CFrame.new(top) * spin * CFrame.Angles(math.rad(180), 0, 0) * CFrame.Angles(0, math.rad(90), 0)
 	end
-	targetPart.CFrame = CFrame.new(current.target)
+	targetPart.CFrame = CFrame.new(target)
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if root and beam then
 		if not fromAttach or fromAttach.Parent ~= root then
@@ -211,7 +306,7 @@ local function step()
 			beam.Attachment0 = fromAttach
 		end
 		-- the beam fades once you're there
-		beam.Enabled = (root.Position - current.target).Magnitude > 10
+		beam.Enabled = (root.Position - target).Magnitude > 10
 	end
 end
 
