@@ -216,6 +216,10 @@ CF.__index = function(c, k)
 		return function(self, other)
 			return self:Inverse() * other
 		end
+	elseif k == "ToWorldSpace" then
+		return function(self, other)
+			return self * other
+		end
 	elseif k == "Lerp" then
 		return function(self, other, t)
 			return cf(self.p + (other.p - self.p) * t, t < 0.5 and self.r or other.r)
@@ -278,6 +282,28 @@ function CFrame.Angles(a, b, c)
 end
 CFrame.fromEulerAnglesXYZ = CFrame.Angles
 CFrame.identity = cf(v3())
+-- columns: the right (X), up (Y) and back (Z) vectors
+function CFrame.fromMatrix(pos, vx, vy, vz)
+	vz = vz or vx:Cross(vy)
+	return cf(pos, { vx.X, vy.X, vz.X, vx.Y, vy.Y, vz.Y, vx.Z, vy.Z, vz.Z })
+end
+function CFrame.fromAxisAngle(axis, angle)
+	local u = axis.Unit
+	local c, sn = math.cos(angle), math.sin(angle)
+	local t = 1 - c
+	local x, y, z = u.X, u.Y, u.Z
+	return cf(v3(), {
+		t * x * x + c,
+		t * x * y - sn * z,
+		t * x * z + sn * y,
+		t * x * y + sn * z,
+		t * y * y + c,
+		t * y * z - sn * x,
+		t * x * z - sn * y,
+		t * y * z + sn * x,
+		t * z * z + c,
+	})
+end
 
 local Color3 = {}
 local C3 = { __type = "Color3" }
@@ -372,10 +398,71 @@ end
 function UDim2.fromOffset(x, y)
 	return UDim2.new(0, x, 0, y)
 end
-local Vector2 = {
-	new = function(x, y)
-		return dataType("Vector2", { X = x or 0, Y = y or 0 })
+local BrickColor = {
+	new = function(name)
+		return setmetatable({ Name = tostring(name) }, { __type = "BrickColor" })
 	end,
+}
+-- Vector2: the same maths as Vector3 (paths and layouts in (x, z) use it)
+local V2 = {}
+local function v2(x, y)
+	return setmetatable({ X = x or 0, Y = y or 0 }, V2)
+end
+V2.__index = function(v, k)
+	if k == "Magnitude" then
+		return math.sqrt(v.X * v.X + v.Y * v.Y)
+	elseif k == "Unit" then
+		local m = math.sqrt(v.X * v.X + v.Y * v.Y)
+		return m > 0 and v2(v.X / m, v.Y / m) or v2(0, 0)
+	elseif k == "Dot" then
+		return function(a, b)
+			return a.X * b.X + a.Y * b.Y
+		end
+	elseif k == "Cross" then
+		return function(a, b)
+			return a.X * b.Y - a.Y * b.X
+		end
+	elseif k == "Lerp" then
+		return function(a, b, t)
+			return a + (b - a) * t
+		end
+	end
+	return nil
+end
+V2.__add = function(a, b)
+	return v2(a.X + b.X, a.Y + b.Y)
+end
+V2.__sub = function(a, b)
+	return v2(a.X - b.X, a.Y - b.Y)
+end
+V2.__mul = function(a, b)
+	if type(a) == "number" then
+		return v2(b.X * a, b.Y * a)
+	elseif type(b) == "number" then
+		return v2(a.X * b, a.Y * b)
+	end
+	return v2(a.X * b.X, a.Y * b.Y)
+end
+V2.__div = function(a, b)
+	if type(b) == "number" then
+		return v2(a.X / b, a.Y / b)
+	end
+	return v2(a.X / b.X, a.Y / b.Y)
+end
+V2.__unm = function(a)
+	return v2(-a.X, -a.Y)
+end
+V2.__eq = function(a, b)
+	return a.X == b.X and a.Y == b.Y
+end
+V2.__tostring = function(a)
+	return string.format("%.2f, %.2f", a.X, a.Y)
+end
+V2.__type = "Vector2"
+local Vector2 = {
+	new = v2,
+	zero = v2(0, 0),
+	one = v2(1, 1),
 }
 local TweenInfo = {
 	new = function(...)
@@ -442,12 +529,22 @@ local ISA = {
 	ImageLabel = { "GuiObject", "GuiBase2d" },
 	ImageButton = { "GuiButton", "GuiObject", "GuiBase2d" },
 	SpawnLocation = { "Part", "BasePart", "PVInstance" },
+	TrussPart = { "BasePart", "PVInstance" },
+	MeshPart = { "BasePart", "PVInstance" },
+	UnreliableRemoteEvent = { "BaseRemoteEvent" },
+	RemoteEvent = { "BaseRemoteEvent" },
+	PointLight = { "Light" },
+	SpotLight = { "Light" },
+	SurfaceLight = { "Light" },
 	ScreenGui = { "LayerCollector", "GuiBase2d" },
 	BillboardGui = { "LayerCollector", "GuiBase2d" },
 	SurfaceGui = { "LayerCollector", "GuiBase2d" },
 }
 local SIGNALS = {
 	RemoteEvent = { "OnServerEvent", "OnClientEvent" },
+	UnreliableRemoteEvent = { "OnServerEvent", "OnClientEvent" },
+	Humanoid = { "Died", "HealthChanged", "StateChanged", "Running" },
+	ClickDetector = { "MouseClick" },
 	ProximityPrompt = { "Triggered" },
 	Players = { "PlayerAdded", "PlayerRemoving" },
 	Player = { "CharacterAdded", "Chatted" },
@@ -491,7 +588,26 @@ local DEFAULTS = {
 		return { Position = v3() }
 	end,
 	Humanoid = function()
-		return { WalkSpeed = 16, Health = 100, MaxHealth = 100 }
+		return {
+			WalkSpeed = 16,
+			Health = 100,
+			MaxHealth = 100,
+			JumpHeight = 7.2,
+			HipHeight = 2,
+			DisplayDistanceType = nil,
+		}
+	end,
+	TrussPart = function()
+		return {
+			Size = v3(2, 2, 2),
+			CFrame = cf(v3()),
+			Transparency = 0,
+			Anchored = false,
+			CanCollide = true,
+			CanQuery = true,
+			AssemblyLinearVelocity = v3(),
+			Shape = Enum.PartType.Block,
+		}
 	end,
 	ProximityPrompt = function()
 		return { Enabled = true, ActionText = "Interact", ObjectText = "", HoldDuration = 0 }
@@ -690,6 +806,32 @@ function methods.ScaleTo() end
 function methods.TweenPosition() end
 -- Humanoid
 function methods.SetStateEnabled() end
+function methods.TakeDamage(hum, amount)
+	if (hum.Health or 0) > 0 then
+		hum.Health = hum.Health - amount
+	end
+end
+function methods.ChangeState(hum, state)
+	rawset(hum, "_state", state)
+end
+function methods.GetState(hum)
+	return rawget(hum, "_state") or Enum.HumanoidStateType.Running
+end
+function methods.ApplyDescription(hum, desc)
+	rawset(hum, "_desc", desc)
+end
+function methods.GetAppliedDescription(hum)
+	return rawget(hum, "_desc") or Instance.new("HumanoidDescription")
+end
+function methods.SetAccessories() end
+function methods.GetAccessories()
+	return {}
+end
+function methods.ApplyImpulse() end
+function methods.SetNetworkOwner() end
+function methods.GetNetworkPing()
+	return 0.05
+end
 -- Player
 -- Tools: equipping moves the tool into the character, unequipping back to the Backpack.
 local playersService -- set once the Players service exists (below)
@@ -782,6 +924,9 @@ end
 function methods.GetNameFromUserIdAsync(_, id)
 	return "User" .. tostring(id)
 end
+function methods.GetHumanoidDescriptionFromUserId()
+	return Instance.new("HumanoidDescription")
+end
 function methods.IsFriendsWith(inst, id)
 	return Engine.friends[rawget(inst, "_props").UserId .. ":" .. id] == true
 end
@@ -829,6 +974,14 @@ local function setParent(inst, parent)
 		if ca then
 			ca:Fire(inst)
 		end
+		local a = parent
+		while a do
+			local da = rawget(a, "_descAdded")
+			if da then
+				da:Fire(inst)
+			end
+			a = rawget(a, "_props").Parent
+		end
 	end
 end
 
@@ -864,6 +1017,14 @@ INST.__index = function(inst, k)
 		local s = rawget(inst, "_childRemoved") or newSignal()
 		rawset(inst, "_childRemoved", s)
 		return s
+	elseif k == "DescendantAdded" then
+		local s = rawget(inst, "_descAdded") or newSignal()
+		rawset(inst, "_descAdded", s)
+		return s
+	elseif k == "DescendantRemoving" then
+		local s = rawget(inst, "_descRemoving") or newSignal()
+		rawset(inst, "_descRemoving", s)
+		return s
 	elseif k == "ClassName" then
 		return rawget(inst, "_class")
 	elseif k == "Parent" or k == "PrimaryPart" or k == "Character" or k == "Adornee" then
@@ -886,6 +1047,19 @@ INST.__newindex = function(inst, k, v)
 		if props.Part0 and props.Part1 and not rawget(inst, "_offset") then
 			rawset(inst, "_offset", props.Part0.CFrame:Inverse() * props.Part1.CFrame)
 			table.insert(Engine.welds, inst)
+		end
+		return
+	end
+	if k == "Health" and rawget(inst, "_class") == "Humanoid" then
+		local props = rawget(inst, "_props")
+		local old = props.Health or 0
+		local new = math.clamp(v, 0, props.MaxHealth or 100)
+		props.Health = new
+		if new ~= old then
+			rawget(inst, "_signals").HealthChanged:Fire(new)
+		end
+		if old > 0 and new <= 0 then
+			rawget(inst, "_signals").Died:Fire()
 		end
 		return
 	end
@@ -962,7 +1136,6 @@ function methods.Clone(inst)
 	return root
 end
 
-
 -- Services ----------------------------------------------------------------------------------------------------
 local game = Instance.new("DataModel")
 game.Name = "Game"
@@ -986,6 +1159,33 @@ local function service(name, className)
 end
 local workspace = service("Workspace")
 workspace.CurrentCamera = Instance.new("Camera", workspace)
+function methods.BulkMoveTo(_, parts, cframes)
+	for i, part in parts do
+		rawget(part, "_props").CFrame = cframes[i]
+	end
+end
+function methods.Raycast()
+	return nil
+end
+function methods.GetPartBoundsInRadius()
+	return {}
+end
+local PhysicsService = service("PhysicsService")
+Engine.collisionGroups = {}
+function methods.RegisterCollisionGroup(_, name)
+	Engine.collisionGroups[name] = Engine.collisionGroups[name] or {}
+end
+function methods.CollisionGroupSetCollidable(_, a, b, on)
+	Engine.collisionGroups[a] = Engine.collisionGroups[a] or {}
+	Engine.collisionGroups[b] = Engine.collisionGroups[b] or {}
+	Engine.collisionGroups[a][b] = on
+	Engine.collisionGroups[b][a] = on
+end
+function methods.IsCollisionGroupRegistered(_, name)
+	return Engine.collisionGroups[name] ~= nil
+end
+_ = PhysicsService
+service("Teams", "Teams")
 function methods.GetServerTimeNow()
 	return clock
 end
@@ -1618,6 +1818,7 @@ globals = setmetatable({
 	Instance = Instance,
 	Vector3 = Vector3,
 	Vector2 = Vector2,
+	BrickColor = BrickColor,
 	CFrame = CFrame,
 	Color3 = Color3,
 	ColorSequence = ColorSequence,

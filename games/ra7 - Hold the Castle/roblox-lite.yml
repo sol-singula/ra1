@@ -9,6 +9,7 @@ globals:
   Instance: { any: true }
   Vector3: { any: true }
   Vector2: { any: true }
+  BrickColor: { any: true }
   CFrame: { any: true }
   Color3: { any: true }
   ColorSequence: { any: true }
