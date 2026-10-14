@@ -188,6 +188,24 @@
       // emoji as on the game's 👎 card (Constants.DISLIKE_REASONS)
       reasons: { timer: "😰 Train leaves too fast", lost: "🧭 Got lost / left behind", slow: "🐌 Upgrades take too long", lag: "🐢 Laggy", boring: "😴 Not much to do", confusing: "🤔 Don't get it" },
     },
+    ra6: {
+      name: "Survive the 6-7", emoji: "🌲", maxPlayers: 6, analytics: "soon",
+      // live: phase (day | dusk | night | boss | results), day (1-7: nights 1-6, then Mega Kermy on night 7), status
+      // (camp | forest | deep | downed | ghost | waiting: joined after the roster locked), hp, camp (tier 1-4),
+      // kills, loot (finds this run), revives, difficulty, level, idle
+      phases: { day: "☀️ day", dusk: "🌆 dusk", night: "🌙 night", boss: "👹 Mega Kermy", results: "🏁 run over", idle: "starting" },
+      statuses: { camp: "🔥 at camp", forest: "🌲 forest", deep: "🌑 deep forest", downed: "🆘 downed", ghost: "👻 ghost", waiting: "⏳ next run" },
+      statusChip: { downed: "bad", ghost: "idle", waiting: "idle" },
+      chips: (l, g) => [
+        l.status && `<span class="chip ${g.statusChip[l.status] || ""}">${esc(g.statuses[l.status] || l.status)}</span>`,
+        l.phase && `<span class="chip ${l.phase === "boss" ? "bad" : l.phase === "night" ? "idle" : ""}">${esc(g.phases[l.phase] || l.phase)}${l.day && l.phase !== "boss" && l.phase !== "results" ? " " + esc(l.day) : ""}</span>`,
+        l.difficulty && l.difficulty !== "normal" && `<span class="chip vip">${esc(l.difficulty)}</span>`,
+      ],
+      stats: (l) => `<div class="mini">❤️ ${l.hp ?? "–"} · 🏕 camp ${l.camp ?? "–"}/4</div>
+        <div class="mini">⚔️ ${l.kills ?? "–"} · 🎁 ${l.loot ?? "–"} · 🤝 ${l.revives ?? "–"}</div>`,
+      // emoji as on the game's 👎 card (Constants.DISLIKE_REASONS)
+      reasons: { scary: "😱 Too scary", hard: "💀 Too hard", long: "🐌 Runs take too long", lag: "🐢 Laggy", boring: "😴 Not much to do", confusing: "🤔 Don't get it" },
+    },
     ra7: {
       name: "Hold the Castle", emoji: "🏰", maxPlayers: 24, analytics: "on",
       // live: team (dwarf | monster), job, phase, shrine (the one the monsters are after, 1-3), built (pieces this

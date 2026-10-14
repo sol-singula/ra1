@@ -1,0 +1,68 @@
+{
+  "name": "SurviveThe67",
+  "tree": {
+    "$className": "DataModel",
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future"
+      }
+    },
+    "HttpService": {
+      "$properties": {
+        "HttpEnabled": true
+      }
+    },
+    "MaterialService": {
+      "$properties": {
+        "Use2022Materials": true
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": true,
+        "StreamingMinRadius": 128,
+        "StreamingTargetRadius": 448
+      },
+      "Terrain": {
+        "$properties": {
+          "Decoration": true
+        }
+      }
+    },
+    "Players": {
+      "$properties": {
+        "CharacterAutoLoads": false,
+        "RespawnTime": 3
+      }
+    },
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "CameraMaxZoomDistance": 45,
+        "CameraMinZoomDistance": 0.5,
+        "EnableMouseLockOption": true,
+        "CharacterWalkSpeed": 16,
+        "DevCameraOcclusionMode": "Invisicam"
+      },
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        }
+      },
+      "StarterCharacterScripts": {
+        "Health": {
+          "$path": "src/character/Health.server.lua"
+        }
+      }
+    }
+  }
+}
