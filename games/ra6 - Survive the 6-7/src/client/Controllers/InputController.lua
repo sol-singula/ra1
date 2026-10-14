@@ -8,11 +8,12 @@ the forest's prompts to interact (hold to build, open crates, revive), and on th
   SPRINT    a toggle on phones; drains stamina (faster than Kermy and the wolves)
   SPECIAL   your weapon class's alternate move at mastery 3 (Whirl Chop, Ground Pound, Lunge Thrust, Triple Shot)
   PING      a quick word for the team
-Keyboard: click = act, Q = dodge, hold Shift = sprint, R = special, 1-6 or the mouse wheel = hotbar, Tab = the
-inventory, G = ping, H = the 6-7. Gamepad: R2 = act, B = dodge, L3 = sprint, L2 = special, L1/R1 = hotbar, Y = the
-inventory, DPad up = ping.
-Aim help on phones and gamepads: a swing turns to the nearest monster in front of you, a bow aims at the nearest
-one in a cone. Your own swing animates the instant you press; knockbacks and dodges move your own character.
+Keyboard: click = act, Q = dodge, hold Shift = sprint, R = special, 1-6 = hotbar, Tab = the inventory, G = ping,
+H = the 6-7 (the mouse wheel stays Roblox's camera zoom). Gamepad: R2 = act, B = dodge, L3 = sprint, L2 = special,
+L1/R1 = hotbar, Y = the inventory, DPad up = ping.
+Aim help: a swing turns to the monster in front of you, or to the tree or rock most in front of you; a bow aims at
+the monster you click (PC) or the nearest one in a cone. Your own swing animates the instant you press; knockbacks
+and dodges move your own character.
 ]]
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
@@ -38,6 +39,8 @@ local new = Theme.new
 local gui
 local refs = {}
 local holding = false
+local holdTouch -- the finger holding ACT (its touch can end anywhere on the screen)
+local lastMash = 0
 local lastAct = 0
 local specialReadyAt = 0
 local dodgeReadyAt = 0
@@ -109,13 +112,13 @@ local function usingMouse()
 	return UserInputService.MouseEnabled and Theme.inputKind() == "keyboard"
 end
 
--- What the mouse points at in the world (PC): the hit position (nil over the sky) and the ray's direction.
+-- What the mouse points at in the world (PC): the hit position (nil over the sky), the ray's direction and origin.
 local function mouseRay()
 	local cam = workspace.CurrentCamera
 	if not cam or not usingMouse() then
-		return nil, nil
+		return nil, nil, nil
 	end
-	local ok, pos, dir = pcall(function()
+	local ok, pos, dir, origin = pcall(function()
 		local m = UserInputService:GetMouseLocation()
 		local ray = cam:ViewportPointToRay(m.X, m.Y)
 		local skip = {}
@@ -130,12 +133,33 @@ local function mouseRay()
 		params.FilterType = Enum.RaycastFilterType.Exclude
 		params.FilterDescendantsInstances = skip
 		local hit = workspace:Raycast(ray.Origin, ray.Direction.Unit * 400, params)
-		return hit and hit.Position or nil, ray.Direction.Unit
+		return hit and hit.Position or nil, ray.Direction.Unit, ray.Origin
 	end)
 	if not ok then
-		return nil, nil
+		return nil, nil, nil
 	end
-	return pos, dir
+	return pos, dir, origin
+end
+
+-- The monster under the mouse: monsters don't take part in raycasts, so the one whose middle is closest to the
+-- mouse's ray (within a few studs), out to range.
+local function monsterOnRay(origin, dir, from, range)
+	if not (origin and dir and from) then
+		return nil
+	end
+	local best, bestOff
+	for _, m in MonsterController.near(from, range) do
+		local c = m.pos + Vector3.new(0, 2, 0)
+		local rel = c - origin
+		local along = rel:Dot(dir)
+		if along > 0 then
+			local off = (rel - dir * along).Magnitude
+			if off < 4 and (not bestOff or off < bestOff) then
+				best, bestOff = c, off
+			end
+		end
+	end
+	return best
 end
 
 --[[ Where the move goes. Forward is where the camera looks (what you see in front of you); on PC, toward what's
@@ -149,11 +173,13 @@ function InputController.aim(item)
 	local facing = r and flatUnit(r.CFrame.LookVector, Vector3.new(0, 0, -1)) or Vector3.new(0, 0, -1)
 	local forward = flatUnit(look, facing)
 	local bow = item and item.class == "bow"
-	local hitPos, rayDir = mouseRay()
+	local hitPos, rayDir, rayOrigin = mouseRay()
 	if bow and (hitPos or rayDir) then
-		if hitPos and r then
-			local d = hitPos - (r.Position + Vector3.new(0, 1.5, 0))
-			if d.Magnitude > 4 then
+		if r then
+			local from = r.Position + Vector3.new(0, 1.5, 0)
+			local target = monsterOnRay(rayOrigin, rayDir, r.Position, 80) or hitPos
+			local d = target and target - from
+			if d and d.Magnitude > 4 then
 				return d.Unit
 			end
 		end
@@ -161,6 +187,14 @@ function InputController.aim(item)
 	end
 	if not r then
 		return bow and look or forward
+	end
+	-- (PC: a monster you click on, if it's in reach)
+	local clicked = monsterOnRay(rayOrigin, rayDir, r.Position, (item and item.range or 5) + 4)
+	if clicked then
+		local f = Vector3.new(clicked.X - r.Position.X, 0, clicked.Z - r.Position.Z)
+		if f.Magnitude > 0.1 then
+			return f.Unit
+		end
 	end
 	if hitPos then
 		local d = Vector3.new(hitPos.X - r.Position.X, 0, hitPos.Z - r.Position.Z)
@@ -222,10 +256,26 @@ local function face(dir)
 	end
 end
 
+-- A menu panel is open (a click on it is for the panel, not a swing).
+local function panelOpen()
+	local panels = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("Panels")
+	for _, c in panels and panels:GetChildren() or {} do
+		if c:IsA("GuiObject") and c.Visible ~= false and string.sub(c.Name, 1, 6) == "Panel_" then
+			return true
+		end
+	end
+	return false
+end
+
 function InputController.act()
 	if cocooned() then
-		Net.send("Mash")
-		Bus.Tap:Fire("mash")
+		-- (taps, not a held button, and never faster than the server takes them)
+		local t = os.clock()
+		if t - lastMash >= 0.09 then
+			lastMash = t
+			Net.send("Mash")
+			Bus.Tap:Fire("mash")
+		end
 		return
 	end
 	if not Store.alive() then
@@ -428,6 +478,11 @@ local function buildButtons()
 	end)
 	act.MouseLeave:Connect(function()
 		holding = false
+	end)
+	act.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch then
+			holdTouch = input
+		end
 	end)
 	local dodge, _, dodgeLabel = roundButton("Dodge", "💨", C.sky, 86, UDim2.new(1, -184, 1, -36), "Q", "B")
 	dodgeLabel.Text = "DODGE"
@@ -651,26 +706,18 @@ function InputController:init()
 		if processed then
 			return
 		end
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if input.UserInputType == Enum.UserInputType.MouseButton1 and not panelOpen() then
 			holding = true
 			InputController.act()
 		end
 	end)
 	UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or (holdTouch and input == holdTouch) then
 			holding = false
+			holdTouch = nil
 		end
 	end)
-	pcall(function()
-		UserInputService.InputChanged:Connect(function(input, processed)
-			if processed or input.UserInputType ~= Enum.UserInputType.MouseWheel then
-				return
-			end
-			local inv = Store.get("inv")
-			local step = input.Position.Z > 0 and -1 or 1
-			InputController.select(((inv.selected or 1) - 1 + step) % Constants.HOTBAR + 1)
-		end)
-	end)
+	-- (the mouse wheel stays Roblox's camera zoom: 1-6 pick a hotbar slot)
 
 	local acc = 0
 	RunService.RenderStepped:Connect(function(dt)
@@ -680,7 +727,7 @@ function InputController:init()
 			updateButtons()
 			updateSpeed()
 		end
-		if holding then
+		if holding and not cocooned() then
 			InputController.act()
 		end
 		if dash then
@@ -693,10 +740,42 @@ function InputController:init()
 			end
 		end
 	end)
-	player.CharacterAdded:Connect(function()
+	local function onCharacter(character)
 		specialReadyAt = 0
 		holding = false
 		sprinting = false
+		-- survivors go down and come back by the game's rules, never by dying (this client owns the character, so
+		-- this is where it has to be turned off)
+		task.spawn(function()
+			local hum = character:WaitForChild("Humanoid", 10)
+			if hum then
+				pcall(hum.SetStateEnabled, hum, Enum.HumanoidStateType.Dead, false)
+			end
+		end)
+		-- your own Revive prompt (it's on you while you're down) is for your teammates
+		local function hideOwnRevive(d)
+			if d:IsA("ProximityPrompt") and d.Name == "Revive" then
+				d.Enabled = false
+			end
+		end
+		character.DescendantAdded:Connect(hideOwnRevive)
+		for _, d in character:GetDescendants() do
+			hideOwnRevive(d)
+		end
+	end
+	player.CharacterAdded:Connect(onCharacter)
+	if player.Character then
+		onCharacter(player.Character)
+	end
+	-- no Reset Character in the menu (it's ready a moment after the game starts)
+	task.spawn(function()
+		local ok, StarterGui = pcall(game.GetService, game, "StarterGui")
+		for _ = 1, 30 do
+			if ok and StarterGui and pcall(StarterGui.SetCore, StarterGui, "ResetButtonCallback", false) then
+				break
+			end
+			task.wait(1)
+		end
 	end)
 end
 

@@ -569,7 +569,19 @@ local SIGNALS = {
 	Player = { "CharacterAdded", "Chatted" },
 	Tool = { "Activated", "Equipped", "Unequipped" },
 	Sound = { "Ended" },
-	TextButton = { "Activated", "MouseButton1Click", "MouseButton1Down", "MouseButton1Up", "MouseEnter", "MouseLeave" },
+	TextButton = {
+		"Activated",
+		"MouseButton1Click",
+		"MouseButton1Down",
+		"MouseButton1Up",
+		"MouseEnter",
+		"MouseLeave",
+		"InputBegan",
+		"InputChanged",
+		"InputEnded",
+	},
+	ImageButton = { "Activated", "MouseButton1Click", "MouseButton1Down", "MouseButton1Up", "InputBegan", "InputEnded" },
+	Frame = { "InputBegan", "InputChanged", "InputEnded" },
 }
 local DEFAULTS = {
 	Part = function()
@@ -1645,6 +1657,48 @@ local function deepCopy(v)
 	end
 	return o
 end
+-- What a DataStore takes (like Roblox): plain data, and every table either a list (keys 1..n, no gaps) or a
+-- dictionary with string keys; no NaN or infinite numbers.
+local function storable(x, path)
+	if type(x) == "table" then
+		if getmetatable(x) then
+			error("non-serializable value in save at " .. path)
+		end
+		local count, numbers, strings = 0, 0, 0
+		for k in x do
+			count += 1
+			if type(k) == "number" then
+				numbers += 1
+			elseif type(k) == "string" then
+				strings += 1
+			else
+				error("a table key that isn't a string or a number in save at " .. path)
+			end
+		end
+		if numbers > 0 then
+			local list = strings == 0
+			for k in x do
+				if type(k) == "number" and (k ~= math.floor(k) or k < 1 or k > count) then
+					list = false
+				end
+			end
+			if not list then
+				error("Cannot convert mixed or non-array tables: keys must be strings (save at " .. path .. ")")
+			end
+		end
+		for k, y in x do
+			storable(y, path .. "." .. tostring(k))
+		end
+	elseif type(x) == "number" then
+		if x ~= x or x == math.huge or x == -math.huge then
+			error("a NaN or infinite number in save at " .. path)
+		end
+	elseif type(x) == "function" or type(x) == "userdata" or type(x) == "vector" then
+		error("non-serializable value in save at " .. path)
+	end
+end
+Engine.storable = storable
+
 function methods.GetDataStore(_, name)
 	Engine.dataStores[name] = Engine.dataStores[name] or {}
 	local data = Engine.dataStores[name]
@@ -1662,6 +1716,7 @@ function methods.GetDataStore(_, name)
 			if Engine.dataStoreFails then
 				error("Studio access to APIs is not allowed")
 			end
+			storable(value, key)
 			data[key] = deepCopy(value)
 		end,
 		UpdateAsync = function(_, key, fn)
@@ -1670,20 +1725,8 @@ function methods.GetDataStore(_, name)
 			end
 			local new = fn(deepCopy(data[key]))
 			if new ~= nil then
-				-- DataStores only take plain data: catch Instances, Color3 etc. sneaking into saves
-				local function check(x, path)
-					if type(x) == "table" then
-						if getmetatable(x) then
-							error("non-serializable value in save at " .. path)
-						end
-						for k, y in x do
-							check(y, path .. "." .. tostring(k))
-						end
-					elseif type(x) == "function" or type(x) == "userdata" then
-						error("non-serializable value in save at " .. path)
-					end
-				end
-				check(new, key)
+				-- DataStores only take plain data: catch Instances, Color3, sparse lists etc. sneaking into saves
+				storable(new, key)
 				data[key] = deepCopy(new)
 			end
 			return new

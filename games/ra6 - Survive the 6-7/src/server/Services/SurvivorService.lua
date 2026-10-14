@@ -217,6 +217,7 @@ local function setupHumanoid(player, character)
 		return
 	end
 	hum.WalkSpeed = Constants.WALK_SPEED
+	hum.UseJumpPower = false -- (JumpHeight, so a downed survivor's 0 holds)
 	hum.JumpHeight = Constants.JUMP_HEIGHT
 	hum.MaxSlopeAngle = Constants.MAX_SLOPE
 	hum.MaxHealth = Constants.MAX_HP
@@ -247,10 +248,17 @@ function SurvivorService:Spawn(player, pos)
 		player:RequestStreamAroundAsync(pos, 8)
 	end)
 	player:SetAttribute("AcGrace", now() + 3)
+	player.ReplicationFocus = nil -- (back to your own character)
 	player:LoadCharacter()
 	local c = player.Character
 	if c then
 		setupHumanoid(player, c)
+		local hum = c:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.Died:Connect(function()
+				self:_characterDied(player, c)
+			end)
+		end
 		local hrp = c:FindFirstChild("HumanoidRootPart")
 		if hrp then
 			hrp.CFrame = CFrame.lookAt(pos, Vector3.new(0, pos.Y, 0))
@@ -269,6 +277,38 @@ local function removeCharacter(player)
 		player.Character = nil
 		c:Destroy()
 	end
+end
+
+--[[ A character that died anyway. The client owns its character, so the server can't stop it dying there (the
+Roblox menu's Reset if the client couldn't turn it off, falling out of the world), and characters don't come back
+by themselves here. Down: what bleeding out would do. Up: back at the camp, with the health you had. ]]
+function SurvivorService:_characterDied(player, c)
+	task.delay(1, function()
+		if not player.Parent or player.Character ~= c or not runs:InRun(player) then
+			return
+		end
+		local s = state(player)
+		if s.status == "downed" then
+			self:Ghost(player)
+		elseif s.status == "alive" then
+			local hp = s.hp
+			self:Spawn(player, MapLayout.spawnPoint(math.random(1, 12)))
+			s.hp = math.clamp(hp, 1, s.maxHp)
+			self:Push(player)
+		end
+	end)
+end
+
+-- Out of the run (a ghost, or waiting): the world streams in round the teammate you watch, not round nothing.
+function SurvivorService:Watch(player, userId)
+	local s = state(player)
+	if s.status == "alive" or s.status == "downed" or player.Character then
+		player.ReplicationFocus = nil
+		return
+	end
+	local target = type(userId) == "number" and Players:GetPlayerByUserId(userId) or nil
+	local hrp = target and target ~= player and target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+	player.ReplicationFocus = hrp or nil
 end
 
 -- Waiting for the next run: no character, the client shows the run and how to get into one.
@@ -420,8 +460,8 @@ function SurvivorService:_makePrompt(player)
 	prompt.MaxActivationDistance = 10
 	prompt.RequiresLineOfSight = false
 	prompt.KeyboardKeyCode = Enum.KeyCode.E
-	prompt.Parent = hrp
 	prompt:SetAttribute("ReviveOf", player.UserId)
+	prompt.Parent = hrp -- (the downed survivor's own client hides it: InputController)
 	prompt.Triggered:Connect(function(reviver)
 		if reviver ~= player then
 			self:Revive(player, reviver, "teammate")
@@ -757,6 +797,9 @@ function SurvivorService:Init(registry)
 	end)
 	Net.on("Dodge", function(player, dir)
 		self:Dodge(player, dir)
+	end)
+	Net.on("Watch", function(player, userId)
+		self:Watch(player, userId)
 	end)
 	inventory.Equipped:Connect(function(player)
 		local s = st[player]

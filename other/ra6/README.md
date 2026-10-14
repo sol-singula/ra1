@@ -31,17 +31,20 @@ your level, weapon mastery, discoveries, achievements and records are yours for 
 | Dodge (a quick roll you can't be hit in) | **💨 DODGE** | Q | B |
 | Sprint (uses stamina) | **🏃 SPRINT** (a toggle) | hold Shift | L3 |
 | Your weapon's special move (mastery 3) | **✨** (its cooldown fills it) | R | L2 |
-| Pick a hotbar slot | tap it | 1-6 or the mouse wheel | L1 / R1 |
+| Pick a hotbar slot | tap it | 1-6 | L1 / R1 |
 | Your bag | **🎒** | Tab | Y |
-| Build, open, revive, vote, ring the bell, feed the fire | the prompts | E | X |
+| Build, open, revive, vote, ring the bell, feed the fire | the prompts | E (F: cook, repair; C: reinforce) | X (DPad) |
 | Ping your team | **📢** | G | DPad up |
 | The 6-7 | **⚙️ MORE** | H | MORE |
 | Your level, the book, the leaderboards, friends, settings | the menu at the top right | same | same |
 
 **Aiming is forgiving.** A swing goes where your camera looks (on PC, toward what the mouse is on, unless that's
-behind you) and turns to the monster in front of you, or with nothing to fight, to the tree or rock most in front of
-you: walk up to a tree and press ACT (or click) and you chop it. The giants of the deep forest are too big to chop
-(the swing says so). Shift Lock is turned off, because Shift sprints.
+behind you, or at the monster you click) and turns to the monster in front of you, or with nothing to fight, to the
+tree or rock most in front of you: walk up to a tree and press ACT (or click) and you chop it. The giants of the deep
+forest are too big to chop (the swing says so). On PC, Shift Lock is off (Shift sprints), the mouse wheel zooms the
+camera (it stays third person), and the buttons show their keys. Where prompts share a spot they have their own keys:
+**E** feeds the fire and uses a station, **F** cooks and repairs, **C** reinforces (on a gamepad X, DPad right and
+DPad left). There's no Reset Character: you go down and come back by the game's rules.
 
 ### One run (about 27 minutes)
 
@@ -172,7 +175,7 @@ games/ra6 - Survive the 6-7/
 
 ```bash
 cd "games/ra6 - Survive the 6-7"
-sh tools/run_tests.sh   # formulas (95), terrain (23), client smoke (277), server smoke (286, 274 without DataStores)
+sh tools/run_tests.sh   # formulas (95), terrain (23), client smoke (292), server smoke (288, 275 without DataStores)
 ```
 
 The server smoke test plays whole runs on the mock engine: day 1 with the guide, chopping, building, crates and
@@ -213,3 +216,6 @@ Secrets), the same key as ra2.
    @SurviveThe67.rbxl "https://apis.roblox.com/universes/v1/{universeId}/places/{placeId}/versions?versionType=Published"`.
 7. **Sounds:** the effects and music reuse the studio's uploaded sounds and Roblox library tracks (ids in
    `Constants.SOUNDS` and `Constants.MUSIC`); a real "SIX... SEVEN!" recording can replace them later by id.
+   Most of the effects are the account's own private uploads (made for Steal a Dragon): they only play if this
+   experience is published by the same account (or group) that owns them. Otherwise they stay silent and the output
+   shows "not authorized" errors; then upload the sounds to the new owner, or share them, and change the ids.

@@ -375,6 +375,31 @@ check("the crate gave items", invAfter > invBefore, invAfter - invBefore)
 check("a crate can't be opened twice", not Loot:Open(ava, crate.id))
 check("the guide moved on to holding what you found", not Tutorial:Active(ava) or Tutorial:View(ava).key ~= "loot")
 check("collection: found items are saved", next(Data:Get(ava).collection.items) ~= nil)
+-- a diary page (page 5 alone: a list with gaps, which a DataStore refuses) still saves
+Progress:FoundPage(ava, 5)
+check("diary page found", Data:Get(ava).collection.pages["5"] == true)
+if not noDataStore then
+	local stored
+	for _, store in Engine.dataStores do
+		local saved = store["u_" .. ava.UserId]
+		if saved then
+			stored = saved
+		end
+	end
+	local before = stored and stored.meta and stored.meta.lastSeen
+	Data:Save(ava)
+	for _, store in Engine.dataStores do
+		local saved = store["u_" .. ava.UserId]
+		if saved then
+			stored = saved
+		end
+	end
+	check(
+		"the save with the page went through",
+		stored and stored.collection and stored.collection.pages["5"] == true,
+		stored and before
+	)
+end
 -- a mimic right here
 local mimicCrate = Loot:Place("crate", CFrame.new(crate.pos + Vector3.new(6, 0, 0)), { mimic = true })
 standAt(ava, mimicCrate.pos.X + 3, mimicCrate.pos.Z, mimicCrate.pos)

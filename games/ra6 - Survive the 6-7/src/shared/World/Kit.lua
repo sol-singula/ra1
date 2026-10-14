@@ -490,7 +490,9 @@ function Kit.stump(parent, pos, rng)
 	return m
 end
 
--- A smooth rounded boulder (or a few), sat into the ground.
+-- A smooth rounded boulder (or a few), sat into the ground. A part with a sphere mesh still collides as its box
+-- (invisible corners to bump into and stand on), so the rock itself doesn't collide: an invisible box inside it
+-- does, about as wide as the rock at your waist.
 function Kit.boulder(parent, pos, size, rng, color, material)
 	rng = rng or Random.new()
 	size = size or rng:NextNumber(4, 8)
@@ -502,10 +504,21 @@ function Kit.boulder(parent, pos, size, rng, color, material)
 		Vector3.new(size, size * 0.72, size * rng:NextNumber(0.8, 1.1)),
 		col:Lerp(C.rockDark, rng:NextNumber(0, 0.25)),
 		material or M.Rock,
-		{ CastShadow = size > 5 }
+		{ CastShadow = size > 5, CanCollide = false }
 	)
 	p.CFrame = p.CFrame
 		* CFrame.Angles(rng:NextNumber(-0.15, 0.15), rng:NextNumber(0, math.pi), rng:NextNumber(-0.15, 0.15))
+	if size >= 2 then
+		Kit.box(
+			parent,
+			"BoulderCollider",
+			p.CFrame,
+			p.Size * Vector3.new(0.72, 0.84, 0.72),
+			col,
+			M.SmoothPlastic,
+			{ Transparency = 1, CastShadow = false }
+		)
+	end
 	return p
 end
 

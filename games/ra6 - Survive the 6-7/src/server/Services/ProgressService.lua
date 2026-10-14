@@ -414,10 +414,12 @@ end
 
 function ProgressService:FoundPage(player, index)
 	local profile = data:Get(player)
-	if not profile or profile.collection.pages[index] then
+	-- (string keys: a DataStore won't save a list with gaps, like only page 5)
+	local key = tostring(index)
+	if not profile or profile.collection.pages[key] then
 		return
 	end
-	profile.collection.pages[index] = true
+	profile.collection.pages[key] = true
 	profile.records.discoveryScore += 15
 	stats(player).firsts += 1
 	self:AddXp(player, Constants.XP.discovery, "page")

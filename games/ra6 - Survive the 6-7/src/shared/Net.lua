@@ -14,6 +14,7 @@ Net.ClientEvents = {
 	Select = 8, -- (slot) hold a hotbar slot (InventoryService)
 	Dodge = 3, -- (dir: Vector3) a dodge with i-frames (SurvivorService)
 	Sprint = 4, -- (on) sprint while you have stamina
+	Watch = 3, -- (userId) out of the run: the teammate you watch (the world streams in round them)
 	Move = 8, -- (from, to) move or swap inventory slots ("h1".."h6", "b1".., "armor" | "pack" | "charm")
 	Drop = 4, -- (slot, count?) drop on the ground for a teammate
 	Use = 4, -- (slot) eat, drink, bandage, read the map

@@ -991,13 +991,17 @@ function HudController.cycleWatch(step)
 			table.insert(list, t.userId)
 		end
 	end
+	local was = spectating
 	if #list == 0 then
 		spectating = nil
-		return
+	else
+		local idx = table.find(list, spectating) or 0
+		idx = ((idx - 1 + (step or 1)) % #list) + 1
+		spectating = list[idx]
 	end
-	local idx = table.find(list, spectating) or 0
-	idx = ((idx - 1 + (step or 1)) % #list) + 1
-	spectating = list[idx]
+	if spectating ~= was then
+		Net.send("Watch", spectating) -- (the world streams in round them)
+	end
 end
 
 local function updateCamera()

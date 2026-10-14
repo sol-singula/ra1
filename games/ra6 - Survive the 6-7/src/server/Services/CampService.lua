@@ -359,6 +359,15 @@ function CampService:_anchor(s)
 	return a
 end
 
+--[[ A structure's prompts share one spot, and Roblox shows only one prompt per key at a time (Exclusivity
+OnePerButton): each gets its own key and sits a little lower, so Use, Repair and Reinforce all show together. (Not
+Q, R, G, H, Tab or 1-6, which the game binds; on a gamepad not Y, the bag.) ]]
+local PROMPT_KEYS = {
+	Repair = { Enum.KeyCode.F, Enum.KeyCode.DPadRight, 1 },
+	Reinforce = { Enum.KeyCode.C, Enum.KeyCode.DPadLeft, 2 },
+}
+CampService.PROMPT_KEYS = PROMPT_KEYS
+
 function CampService:_prompt(s, name, action, hold)
 	local a = self:_anchor(s)
 	local p = a:FindFirstChild(name)
@@ -367,9 +376,15 @@ function CampService:_prompt(s, name, action, hold)
 		p.Name = name
 		p.RequiresLineOfSight = false
 		p.MaxActivationDistance = Constants.USE_RANGE
-		p.Parent = a
+		local keys = PROMPT_KEYS[name]
+		if keys then
+			p.KeyboardKeyCode = keys[1]
+			p.GamepadKeyCode = keys[2]
+			p.UIOffset = Vector2.new(0, 64 * keys[3])
+		end
 		p:SetAttribute("Structure", s.id)
 		p:SetAttribute("Action", name)
+		p.Parent = a
 	end
 	p.ActionText = action
 	p.ObjectText = s.name
@@ -525,6 +540,7 @@ function CampService:_firePrompt(model)
 	p.Triggered:Connect(function(player)
 		self:Fuel_(player, 5)
 	end)
+	-- (its own key: on the same spot as the fuel prompt, it would never show on E; see PROMPT_KEYS)
 	local cook = Instance.new("ProximityPrompt")
 	cook.Name = "Cook"
 	cook.ActionText = "Cook"
@@ -532,9 +548,11 @@ function CampService:_firePrompt(model)
 	cook.HoldDuration = 0
 	cook.MaxActivationDistance = Constants.USE_RANGE
 	cook.RequiresLineOfSight = false
-	cook.UIOffset = Vector2.new(0, 60)
-	cook.Parent = flame
+	cook.KeyboardKeyCode = Enum.KeyCode.F
+	cook.GamepadKeyCode = Enum.KeyCode.DPadRight
+	cook.UIOffset = Vector2.new(0, 64)
 	cook:SetAttribute("Station", "campfire")
+	cook.Parent = flame
 end
 
 -- Building ------------------------------------------------------------------------------------------------------------------

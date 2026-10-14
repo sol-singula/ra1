@@ -164,9 +164,10 @@ function ResourceService:_fell(player, t)
 	end)
 	if stumps then
 		local s = Kit.stump(stumps, V3(t.rec.x, t.rec.y, t.rec.z), Random.new(t.rec.seed))
+		-- (to the trunk's width: a stump is upright cylinders, whose length is X and whose width is Y and Z)
 		for _, part in s:GetDescendants() do
 			if part:IsA("BasePart") then
-				part.Size = part.Size * V3(t.rec.trunk / 1.1, 1, t.rec.trunk / 1.1)
+				part.Size = part.Size * V3(1, t.rec.trunk / 1.1, t.rec.trunk / 1.1)
 			end
 		end
 	end

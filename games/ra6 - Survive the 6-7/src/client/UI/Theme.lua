@@ -163,10 +163,14 @@ function Theme.padding(px)
 	})
 end
 
--- A cream card with a thick outline (the standard panel).
+-- A cream card with a thick outline (the standard panel). Active: a click on it is for the card, not the world
+-- behind it (a plain Frame lets clicks through as if nothing was there: a swing, or the camera turning).
 function Theme.card(props)
 	props.BackgroundColor3 = props.BackgroundColor3 or C.paper
 	props.BorderSizePixel = 0
+	if props.Active == nil then
+		props.Active = true
+	end
 	return new("Frame", props, { Theme.corner(18), Theme.stroke(4) })
 end
 
@@ -178,6 +182,9 @@ function Theme.slab(props)
 	props.BackgroundTransparency = nil
 	props.BackgroundColor3 = props.BackgroundColor3 or C.slate
 	props.BorderSizePixel = 0
+	if props.Active == nil then
+		props.Active = true -- (as for cards)
+	end
 	local slab = new("Frame", props, { Theme.corner(round and "round" or 16), Theme.stroke(3, C.ink) })
 	return Theme.translucent(slab, transparency)
 end
@@ -283,12 +290,23 @@ function Theme.busy(button, seconds)
 	return true
 end
 
--- A small key hint (like "Q" or "R2") in the corner of a button, shown only for keyboard or gamepad players.
+-- A small key hint (like "Q" or "R2") in the corner of a button, shown only for keyboard or gamepad players (and
+-- switching as they switch).
+local hints = setmetatable({}, { __mode = "k" })
+local function showHint(badge)
+	local kind = Theme.inputKind()
+	local text = badge:GetAttribute(kind == "gamepad" and "Gamepad" or "Keyboard")
+	badge.Visible = kind ~= "touch" and type(text) == "string" and text ~= ""
+	if type(text) == "string" then
+		badge.Text = text
+	end
+end
 function Theme.keyHint(button, keyboardText, gamepadText)
 	local badge = new("TextLabel", {
 		Name = "KeyHint",
 		AnchorPoint = Vector2.new(1, 0),
 		Size = UDim2.fromOffset(30, 26),
+		AutomaticSize = Enum.AutomaticSize.X,
 		Position = UDim2.new(1, 6, 0, -8),
 		BackgroundColor3 = C.white,
 		BorderSizePixel = 0,
@@ -299,11 +317,28 @@ function Theme.keyHint(button, keyboardText, gamepadText)
 		ZIndex = 5,
 		Visible = false,
 		Parent = button,
-	}, { Theme.corner(7), Theme.stroke(2.5) })
+	}, {
+		Theme.corner(7),
+		Theme.stroke(2.5),
+		new("UIPadding", { PaddingLeft = UDim.new(0, 5), PaddingRight = UDim.new(0, 5) }),
+	})
 	badge:SetAttribute("Keyboard", keyboardText)
 	badge:SetAttribute("Gamepad", gamepadText)
+	hints[badge] = true
+	showHint(badge)
 	return badge
 end
+pcall(function()
+	UserInputService.LastInputTypeChanged:Connect(function()
+		for badge in hints do
+			if badge.Parent then
+				showHint(badge)
+			else
+				hints[badge] = nil
+			end
+		end
+	end)
+end)
 
 -- Horizontal bar: returns the frame and its fill.
 function Theme.bar(props, fillColor)
@@ -330,9 +365,26 @@ end
 -- Phone scaling -------------------------------------------------------------------------------------------
 Theme.DESIGN = Vector2.new(1000, 560)
 
-function Theme.scaleFactor()
+local scaled = {}
+local scaledGuis = {}
+
+-- The space the screens really get: inside Roblox's top bar and the phone's notch and home bar (CoreUISafeInsets),
+-- which on a phone in landscape is quite a bit less than the whole screen.
+local function safeSize()
+	for _, gui in scaledGuis do
+		local ok, size = pcall(function()
+			return gui.AbsoluteSize
+		end)
+		if ok and typeof(size) == "Vector2" and size.X > 10 and size.Y > 10 then
+			return size
+		end
+	end
 	local camera = workspace.CurrentCamera
-	local size = camera and camera.ViewportSize
+	return camera and camera.ViewportSize
+end
+
+function Theme.scaleFactor()
+	local size = safeSize()
 	if not size or size.X < 10 then
 		return 1
 	end
@@ -344,7 +396,6 @@ function Theme.isTouch()
 	return UserInputService.TouchEnabled == true and UserInputService.KeyboardEnabled ~= true
 end
 
-local scaled = {}
 -- A ScreenGui that keeps its UIScale in step with the screen size.
 function Theme.screen(name, displayOrder, parent)
 	local gui = new("ScreenGui", {
@@ -356,6 +407,7 @@ function Theme.screen(name, displayOrder, parent)
 		DisplayOrder = displayOrder or 0,
 		Parent = parent,
 	})
+	table.insert(scaledGuis, gui)
 	local scale = new("UIScale", { Name = "Scale", Scale = Theme.scaleFactor(), Parent = gui })
 	table.insert(scaled, scale)
 	return gui
@@ -380,8 +432,7 @@ end
 
 -- Size of the scaled canvas in design pixels (useful to keep things on screen).
 function Theme.canvas()
-	local camera = workspace.CurrentCamera
-	local size = camera and camera.ViewportSize
+	local size = safeSize()
 	if not size or size.X < 10 then
 		return Theme.DESIGN
 	end

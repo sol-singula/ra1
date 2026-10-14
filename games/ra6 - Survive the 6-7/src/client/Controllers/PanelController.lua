@@ -117,6 +117,7 @@ end
 local function scroller(parent, props)
 	local s = new("ScrollingFrame", {
 		Name = props.Name or "List",
+		Active = true,
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		Position = props.Position or UDim2.new(),

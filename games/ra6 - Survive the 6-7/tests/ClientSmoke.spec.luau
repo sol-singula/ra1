@@ -100,6 +100,7 @@ local Audio = Engine.require(tree.client.Controllers.AudioController)
 local Perf = Engine.require(tree.client.Controllers.PerformanceController)
 local Guide = Engine.require(tree.client.Controllers.TutorialController)
 local Store = Engine.require(tree.client.Store)
+local Bus = Engine.require(tree.client.UI.Bus)
 local refs = Hud.refs
 
 -- the last event this client sent the server (the server's own events of the same name don't count)
@@ -445,8 +446,62 @@ do
 		check("PC: and chops it", pick.hp < hp0, pick.hp)
 		check("PC: you turn to face it", player.Character.HumanoidRootPart.CFrame.LookVector:Dot(toTree) > 0.9)
 	end
+	-- the key hints show on PC (and hide again on a phone)
+	local hint = actions.Dodge:FindFirstChild("KeyHint")
+	check("PC: key hints show", hint ~= nil and hint.Visible == true and hint.Text == "Q", hint and hint.Text)
+	-- a click on an open panel is for the panel, not a swing
+	Bus.Open:Fire("inventory")
+	Engine.advance(0.7)
+	local acts = countSent("Act")
+	UIS.InputBegan:Fire({ UserInputType = Enum.UserInputType.MouseButton1 }, false)
+	Engine.advance(0.05)
+	UIS.InputEnded:Fire({ UserInputType = Enum.UserInputType.MouseButton1 })
+	check("PC: clicking a panel doesn't swing", countSent("Act") == acts, countSent("Act") - acts)
+	Panels.close()
 	UIS.MouseEnabled, UIS.KeyboardEnabled = false, false
 	Engine.setInput(Enum.UserInputType.Touch)
+	check("phone: no key hints", hint and hint.Visible == false)
+end
+-- phone: holding ACT keeps swinging, and stops when that finger lifts, even off the button
+do
+	Engine.advance(0.7)
+	local touch = { UserInputType = Enum.UserInputType.Touch }
+	actions.Act.InputBegan:Fire(touch)
+	actions.Act.MouseButton1Down:Fire()
+	Engine.advance(1.3)
+	local held = countSent("Act")
+	UIS.InputEnded:Fire(touch)
+	Engine.advance(1.3)
+	check("phone: holding ACT keeps swinging", held >= 2, held)
+	check("phone: lifting the finger anywhere stops it", countSent("Act") == held, countSent("Act") - held)
+end
+-- the camp's prompts that share a spot each have their own key (Roblox shows one prompt per key)
+do
+	local fire = ws.Map.Camp:FindFirstChild("Campfire", true)
+	local cook = fire and fire:FindFirstChild("Cook", true)
+	local fuel = fire and fire:FindFirstChild("Fuel", true)
+	check(
+		"campfire: Feed and Cook on different keys",
+		cook and fuel and cook.KeyboardKeyCode ~= fuel.KeyboardKeyCode,
+		cook and tostring(cook.KeyboardKeyCode)
+	)
+	check(
+		"structures: Repair and Reinforce have their own keys",
+		Camp.PROMPT_KEYS.Repair[1] ~= Camp.PROMPT_KEYS.Reinforce[1]
+	)
+end
+-- felled trees leave round stumps; rocks collide as a box inside them, not their whole box
+do
+	local stumps = ws.Map:FindFirstChild("Stumps")
+	local stump = stumps and stumps:FindFirstChildWhichIsA("Model")
+	local trunk = stump and stump:FindFirstChild("Stump")
+	check("a round stump", trunk ~= nil and math.abs(trunk.Size.Y - trunk.Size.Z) < 1e-3, trunk and trunk.Size)
+	local rock = ws.Nodes:FindFirstChild("rock")
+	local look, collider = rock and rock:FindFirstChild("Rock"), rock and rock:FindFirstChild("BoulderCollider")
+	check(
+		"rocks: the round rock doesn't collide, a box inside it does",
+		look and collider and look.CanCollide == false and collider.CanCollide ~= false and collider.Transparency == 1
+	)
 end
 -- a giant of the deep forest is too big to chop: the swing says so instead of doing nothing
 do
@@ -912,6 +967,11 @@ check("HP says DOWN", refs.hpText.Text == "DOWN")
 check("no ACT while down", actions.Act.Visible == false)
 check("you can still ping", actions.Ping.Visible == true)
 check("you crawl", char.Humanoid.WalkSpeed == Constants.CRAWL_SPEED, char.Humanoid.WalkSpeed)
+check("and can't jump", char.Humanoid.UseJumpPower == false and char.Humanoid.JumpHeight == 0)
+do
+	local own = char.HumanoidRootPart:FindFirstChild("Revive")
+	check("your own Revive prompt is for your teammates", own ~= nil and own.Enabled == false, own and own.Enabled)
+end
 local rootMotor = char.UpperTorso:FindFirstChild("Root")
 check("flat on the ground", rootMotor and (rootMotor.C0.Position - Vector3.new(0, 0.5, 0)).Magnitude > 0.5)
 check("ben sees you down", Engine.lastClientEvent("Team") ~= nil)
@@ -930,6 +990,11 @@ check(
 	ws.CurrentCamera.CameraSubject == (ben.Character and ben.Character:FindFirstChildOfClass("Humanoid"))
 )
 check("no hotbar for ghosts", refs.hotbar.Visible == false)
+check(
+	"the world streams in round the teammate you watch",
+	ben.Character and player.ReplicationFocus == ben.Character:FindFirstChild("HumanoidRootPart"),
+	player.ReplicationFocus
+)
 check("no NEW RUN button for a ghost", refs.newRun.Visible == false)
 check("the run goes on", Run:Phase() == "night")
 check("to dawn", skipTo("dawn"))
@@ -940,6 +1005,20 @@ Engine.advance(2)
 check("back on your feet", Survivors:Status(player) == "alive" and player.Character ~= nil)
 check("the ghost card goes", refs.out.Visible == false)
 check("the camera is yours again", ws.CurrentCamera.CameraSubject == player.Character:FindFirstChildOfClass("Humanoid"))
+check("streaming follows you again", player.ReplicationFocus == nil, player.ReplicationFocus)
+-- the client owns its character, so it can still die there (the menu's Reset, falling out of the world)
+do
+	local old = player.Character
+	local hp0 = Survivors:State(player).hp
+	old.Humanoid.Died:Fire()
+	Engine.advance(1.5)
+	check(
+		"died anyway: back at the camp",
+		player.Character ~= nil and player.Character ~= old and Survivors:Status(player) == "alive",
+		Survivors:Status(player)
+	)
+	check("with the health you had", math.abs(Survivors:State(player).hp - hp0) < 1, Survivors:State(player).hp)
+end
 check("day 2 on the clock", string.find(refs.phase.Text, "DAY 2", 1, true) ~= nil, refs.phase.Text)
 check("pips: night 1 done", refs.pips[2].BackgroundTransparency < 0.5 and refs.pips[3].BackgroundTransparency == 0)
 
@@ -978,7 +1057,12 @@ for _ = 1, 60 do
 	end
 end
 check("he's stuck in the pine", b.state == "faceplant", b.state)
-Engine.advance(0.3)
+for _ = 1, 15 do
+	Engine.advance(0.1)
+	if string.find(refs.bossTag.Text, "WEAK", 1, true) then
+		break
+	end
+end
 check("WEAK! on his bar", string.find(refs.bossTag.Text, "WEAK", 1, true) ~= nil, refs.bossTag.Text)
 -- the goo: MASH
 b.state = "tired"

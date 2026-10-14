@@ -38,7 +38,7 @@ local function defaults()
 			items = {}, -- [itemKey] = true: every item you've ever had
 			findings = {}, -- [findingKey] = times visited
 			trophies = {}, -- [trophyKey] = n
-			pages = {}, -- [pageIndex] = true: Kermy's diary
+			pages = {}, -- [tostring(pageIndex)] = true: Kermy's diary (string keys: DataStores won't save gappy lists)
 		},
 		achievements = {}, -- [key] = os.time() earned
 		looks = { owned = {}, equipped = {} }, -- Data/Progression.LOOKS: earned, never bought (yet)
@@ -93,6 +93,16 @@ local function reconcile(profile)
 				if profile[key][k] == nil then
 					profile[key][k] = v
 				end
+			end
+		end
+	end
+	-- diary pages saved under number keys (they could never save when gappy; fix any that did)
+	local pages = profile.collection and profile.collection.pages
+	if type(pages) == "table" then
+		for k, v in table.clone(pages) do
+			if type(k) == "number" then
+				pages[k] = nil
+				pages[tostring(k)] = v
 			end
 		end
 	end

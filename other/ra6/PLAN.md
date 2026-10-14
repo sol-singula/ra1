@@ -73,10 +73,11 @@ playing (levels and achievements). Paid cosmetics come only after retention is e
 
 ## Tests
 
-`tools/run_tests.sh`: formulas (95 checks), the terrain (23), the client smoke test (277: the real server and
-client together on a phone screen, played through the client's own buttons, plus a PC click, the hold pose and
-which way every swing goes) and the server smoke test (286, and 274 without DataStores: whole runs, the win and the
-wipe, rejoining, friends, leaderboards). Lint: selene and stylua clean.
+`tools/run_tests.sh`: formulas (95 checks), the terrain (23), the client smoke test (292: the real server and
+client together on a phone screen, played through the client's own buttons, plus PC clicks, the hold pose and
+which way every swing goes) and the server smoke test (288, and 275 without DataStores: whole runs, the win and the
+wipe, rejoining, friends, leaderboards). The mock DataStore now refuses what Roblox's refuses (lists with gaps,
+mixed keys, NaN). Lint: selene and stylua clean.
 
 The mock engine has no real physics, rendering or Roblox rigs, so some things only show up in a real play test.
 The first one found these, now fixed: every arm animation was mirrored (on a Roblox shoulder a positive pitch swings
@@ -85,7 +86,19 @@ blade facing back (now a hold pose, a grip at the end of the handle and a per-it
 point on a sphere round the camera, so it often swung backwards and missed the tree (now the swing goes where you
 look and turns to the tree or rock most in front of you); a rock beside or behind you took the swing meant for the
 tree in front; the guide could point at a giant that can't be chopped; and the guide's arrow spun inside the
-tree's trunk with its beam running into it (now beside the trunk, and the tree glows).
+tree's trunk with its beam running into it (now beside the trunk, and the tree glows); trunks ran up inside the
+crowns, so a tree the camera faded (Invisicam) showed its trunk as a line, and birches had full black rings.
+
+An audit for the rest turned up, also fixed: the menu's Reset Character left you a frozen body for good (the server
+can't stop the client's character dying, and characters don't come back by themselves here); the campfire's Feed
+and Cook prompts, and a station's Use, Repair and Reinforce, hid each other (Roblox shows one prompt per key); a
+click on a panel or the HUD went through to the world (a swing, eating the held food); reading a diary page broke
+every save after it (a list with gaps); downed survivors could still jump (the place used JumpPower); ghosts
+watching a teammate saw nothing streamed in round them; the phone HUD was sized for the whole screen, not the
+part inside Roblox's top bar; a downed survivor saw their own Revive prompt; ACT could stay held after a thumb
+slid off it, and held in goo it sent Mash every frame; key hints never showed; stumps were stretched on the wrong
+axis; round rocks collided as their boxes. Still open: most of the sound effects are private uploads that only
+play for the account that owns them (see the README).
 
 ## Next (after the first playtests)
 
