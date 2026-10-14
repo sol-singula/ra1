@@ -602,12 +602,7 @@ function InventoryService:_refreshHeld(player)
 	local weld = Instance.new("Weld")
 	weld.Part0 = hand
 	weld.Part1 = grip
-	local down = hand.Size.Y / 2
-	if item.class then
-		weld.C0 = CFrame.new(0, -down, 0) * CFrame.Angles(math.rad(-90), 0, 0)
-	else
-		weld.C0 = CFrame.new(0, -down - 0.2, -0.3)
-	end
+	weld.C0 = ItemModels.holdCFrame(item, hand)
 	weld.Parent = grip
 	s.heldModel = model
 	c:SetAttribute("Held", key)

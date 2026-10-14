@@ -107,6 +107,22 @@ function ResourceService:TreesNear(pos, radius)
 	return list
 end
 
+-- The giants of the deep forest (and anything else with endless health) can't be chopped.
+function ResourceService:CanChop(t)
+	return t ~= nil and not t.felled and t.hp ~= math.huge
+end
+
+-- A swing at a tree too big to chop: a thunk, and (now and then) a word on why nothing happened.
+local tooBigToast = setmetatable({}, { __mode = "k" }) -- [player] = when it was last said
+function ResourceService:TooBig(player, t)
+	local pos = V3(t.rec.x, t.rec.y + 3, t.rec.z)
+	Net.fireAll("Sfx", "thud", pos)
+	if (tooBigToast[player] or -100) < now() - 10 then
+		tooBigToast[player] = now()
+		Net.fire(player, "Toast", "🌲 This giant is too big to chop. Try a smaller tree!", "info")
+	end
+end
+
 -- An axe (or anything) hits a tree. power = the item's tree power. Returns the wood given.
 function ResourceService:HitTree(player, t, power)
 	if not t or t.felled or t.hp == math.huge then
@@ -275,6 +291,11 @@ ResourceService.nodeModel = nodeModel
 function ResourceService:_buildNode(n)
 	local parent = workspace:FindFirstChild("Nodes") or workspace
 	n.model = nodeModel(n, parent)
+	if NODE[n.kind].hit then
+		-- (for the client's aim help: where it is and how big)
+		n.model:SetAttribute("At", V3(n.x, n.y, n.z))
+		n.model:SetAttribute("Radius", self:NodeRadius(n))
+	end
 	local spec = NODE[n.kind]
 	n.hp = spec.hp and spec.hp * (n.kind == "rock" and math.max(0.6, n.size / 4.5) or 1) or 1
 	n.maxHp = n.hp
@@ -297,13 +318,18 @@ function ResourceService:_deplete(n)
 	n.gone = true
 end
 
--- Hittable nodes (rocks, scrap) whose centre is within radius of pos.
+-- How far a node reaches from its centre (rocks by their size).
+function ResourceService:NodeRadius(n)
+	return n.kind == "rock" and (n.size or 2) * 0.5 or 1.2
+end
+
+-- Hittable nodes (rocks, scrap) whose edge is within radius of pos.
 function ResourceService:NodesNear(pos, radius)
 	return near(nodeGrid, pos, radius + 6, function(n)
 		if n.gone or not NODE[n.kind].hit then
 			return false
 		end
-		local r = n.kind == "rock" and n.size * 0.5 or 1.2
+		local r = self:NodeRadius(n)
 		return (n.x - pos.X) ^ 2 + (n.z - pos.Z) ^ 2 <= (radius + r) ^ 2
 	end)
 end

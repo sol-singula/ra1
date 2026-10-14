@@ -49,7 +49,7 @@
       "$properties": {
         "CameraMaxZoomDistance": 45,
         "CameraMinZoomDistance": 0.5,
-        "EnableMouseLockOption": true,
+        "EnableMouseLockOption": false,
         "CharacterWalkSpeed": 16,
         "DevCameraOcclusionMode": "Invisicam"
       },

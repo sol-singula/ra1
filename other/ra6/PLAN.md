@@ -73,10 +73,19 @@ playing (levels and achievements). Paid cosmetics come only after retention is e
 
 ## Tests
 
-`tools/run_tests.sh`: formulas (95 checks), the terrain (23), the client smoke test (254: the real server and
-client together on a phone screen, played through the client's own buttons) and the server smoke test (286, and
-274 without DataStores: whole runs, the win and the wipe, rejoining, friends, leaderboards). Lint: selene and
-stylua clean.
+`tools/run_tests.sh`: formulas (95 checks), the terrain (23), the client smoke test (277: the real server and
+client together on a phone screen, played through the client's own buttons, plus a PC click, the hold pose and
+which way every swing goes) and the server smoke test (286, and 274 without DataStores: whole runs, the win and the
+wipe, rejoining, friends, leaderboards). Lint: selene and stylua clean.
+
+The mock engine has no real physics, rendering or Roblox rigs, so some things only show up in a real play test.
+The first one found these, now fixed: every arm animation was mirrored (on a Roblox shoulder a positive pitch swings
+the arm forward; chops, thrusts and the 6-7 all went backwards); held items were gripped mid-handle with the axe's
+blade facing back (now a hold pose, a grip at the end of the handle and a per-item hold); on PC a click aimed at a
+point on a sphere round the camera, so it often swung backwards and missed the tree (now the swing goes where you
+look and turns to the tree or rock most in front of you); a rock beside or behind you took the swing meant for the
+tree in front; the guide could point at a giant that can't be chopped; and the guide's arrow spun inside the
+tree's trunk with its beam running into it (now beside the trunk, and the tree glows).
 
 ## Next (after the first playtests)
 

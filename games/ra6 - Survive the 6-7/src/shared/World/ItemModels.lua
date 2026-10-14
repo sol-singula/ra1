@@ -3,8 +3,17 @@ What items look like in the world (master plan §11: loot must stand out from ba
 hand, and the thing on the ground, which glows in its rarity's colour. Built from plain parts by item class or
 kind, so every item in Data/Items has a model without uploading any meshes.
 
-  ItemModels.held(item, parent) -> model, grip     grip: the part to weld to the hand (the handle's end)
+  ItemModels.held(item, parent) -> model, grip     grip: an invisible part where the hand closes round the handle
+  ItemModels.holdCFrame(item, hand) -> CFrame       the weld's C0 from the hand to the grip
   ItemModels.dropped(item, cf, parent) -> model     on the ground, with a rarity glow
+
+How things sit in the hand (Roblox's hand frame: -Y comes out of the bottom of the fist, -Z is the back of the
+fingers; in the hold pose, with the forearm level in front of you, -Y points ahead and -Z points up):
+  axes, clubs    the handle comes up out of the fist and the head stands above it, blade or face forward, so
+                 the overhead chop brings the edge down onto what's in front of you
+  spears         level, pointing ahead
+  bows           limbs up and down, the string toward you
+  torches        upright, the flame on top; lanterns hang from the fist by their handle
 ]]
 local Items = require(script.Parent.Parent.Data.Items)
 local Kit = require(script.Parent.Kit)
@@ -233,11 +242,42 @@ function draw.other(m, item)
 	return blob(m, item, KIND_COLORS[item.kind] or C.white, V3(0.8, 0.8, 0.8))
 end
 
+-- Where the hand closes round each kind of item (model space; nil: the item's own centre).
+local function gripAt(item)
+	if item.class == "axe" or item.class == "club" then
+		return V3(0, 0, -0.35) -- near the end of the handle
+	elseif item.class == "spear" then
+		return V3(0, 0, -1.8) -- a third of the way up the shaft
+	elseif item.class == "bow" then
+		return V3(0, 0, 0)
+	elseif item.kind == "light" then
+		return item.key == "torch" and V3(0, 0.45, 0) or V3(0, 1.5, 0) -- the stick's lower end; a lantern's handle
+	end
+	return nil
+end
+
+-- The weld from the hand to the grip.
+function ItemModels.holdCFrame(item, hand)
+	local down = hand and hand.Size.Y / 2 or 0.15
+	if item.class == "axe" or item.class == "club" then
+		return CFrame.new(0, -down, 0) * CFrame.Angles(0, 0, math.pi)
+	elseif item.class == "spear" or item.class == "bow" or item.kind == "light" then
+		return CFrame.new(0, -down, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+	end
+	return CFrame.new(0, -down - 0.3, 0)
+end
+
 local function build(item)
 	local m = Instance.new("Model")
 	m.Name = item.key
 	local fn = draw[item.class or ""] or (item.kind == "light" and draw.light) or draw.other
-	local grip, glow = fn(m, item)
+	local main, glow = fn(m, item)
+	local grip = main
+	local at = gripAt(item)
+	if at then
+		grip = p(m, "Grip", CFrame.new(at), V3(0.2, 0.2, 0.2), C.woodDark, M.SmoothPlastic)
+		grip.Transparency = 1
+	end
 	-- weld every part to the grip
 	for _, d in m:GetDescendants() do
 		if d:IsA("BasePart") and d ~= grip then
@@ -273,6 +313,11 @@ function ItemModels.dropped(item, cf, parent)
 			d.Anchored = true
 		end
 	end
+	-- (lying where it fell, centred: the grip may be at the end of a handle)
+	pcall(function()
+		local center = m:GetBoundingBox()
+		grip.PivotOffset = grip.CFrame:ToObjectSpace(CFrame.new(center.Position))
+	end)
 	m:PivotTo(cf * CFrame.Angles(0, 0, math.rad(90)))
 	local order = Items.RARITY[item.rarity] and Items.RARITY[item.rarity].order or 1
 	if order >= 3 then

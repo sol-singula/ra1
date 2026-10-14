@@ -65,7 +65,7 @@ end
 local function ready(player, key, seconds)
 	cooldowns[player] = cooldowns[player] or {}
 	local t = now()
-	if t < (cooldowns[player][key] or 0) - 0.05 then
+	if t < (cooldowns[player][key] or 0) - 0.12 then -- (slack for network jitter: a press the client allowed counts)
 		return false
 	end
 	cooldowns[player][key] = t + seconds
@@ -179,20 +179,47 @@ function CombatService:_melee(player, item, aim, opts)
 	if hitSomething or opts.noGather then
 		return hitSomething
 	end
-	-- nothing to fight: chop a tree or break a rock in front of you
-	for _, n in resources:NodesNear(origin, Constants.GATHER_RANGE) do
-		if inArc(origin, dir, Vector3.new(n.x, origin.Y, n.z), Constants.GATHER_RANGE + 3, 150) then
-			resources:HitNode(player, n, item.rock or 0.3)
-			return true
+	-- nothing to fight: chop the tree or break the rock you swing at, the one most in front of you (in a wide arc
+	-- of the aim, or of where the character faces, so a laggy aim still chops; something behind you never counts)
+	local hrp = survivors:Root(player)
+	local facing = hrp and flat(hrp.CFrame.LookVector)
+	facing = facing and facing.Magnitude > 0.01 and facing.Unit or nil
+	local best, bestKind, bestScore
+	local function consider(kind, target, x, z, radius)
+		local rel = flat(Vector3.new(x, origin.Y, z) - origin)
+		local gap = math.max(0, rel.Magnitude - radius) -- to its surface
+		if gap > Constants.GATHER_RANGE then
+			return
+		end
+		local cos = 1
+		if rel.Magnitude > 0.05 then
+			cos = math.max(rel.Unit:Dot(dir), facing and rel.Unit:Dot(facing) or -1)
+		end
+		if cos < math.cos(math.rad(75)) then
+			return
+		end
+		-- straight ahead and close wins; a giant (too big to chop) only when there's nothing else
+		local score = gap + (1 - cos) * 6 + ((kind == "tree" and not resources:CanChop(target)) and 100 or 0)
+		if not bestScore or score < bestScore then
+			best, bestKind, bestScore = target, kind, score
 		end
 	end
+	for _, n in resources:NodesNear(origin, Constants.GATHER_RANGE) do
+		consider("node", n, n.x, n.z, resources:NodeRadius(n))
+	end
 	for _, t in resources:TreesNear(origin, Constants.GATHER_RANGE) do
-		if
-			inArc(origin, dir, Vector3.new(t.rec.x, origin.Y, t.rec.z), Constants.GATHER_RANGE + t.rec.trunk + 2, 150)
-		then
-			resources:HitTree(player, t, item.tree or 0.2)
-			return true
+		consider("tree", t, t.rec.x, t.rec.z, t.rec.trunk)
+	end
+	if bestKind == "node" then
+		resources:HitNode(player, best, item.rock or 0.3)
+		return true
+	elseif bestKind == "tree" then
+		if resources:CanChop(best) then
+			resources:HitTree(player, best, item.tree or 0.2)
+		else
+			resources:TooBig(player, best)
 		end
+		return true
 	end
 	return false
 end

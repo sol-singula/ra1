@@ -60,9 +60,16 @@ end
 function TutorialService:Target(player, key)
 	local pos = survivors:Position(player)
 	if key == "chop" and pos then
-		local list = resources:TreesNear(pos, 140)
-		local t = list[1]
-		return t and Vector3.new(t.rec.x, t.rec.y + 3, t.rec.z) or nil
+		-- the nearest tree an axe can chop; the arrow floats beside its trunk, on your side (not inside the tree)
+		for _, t in resources:TreesNear(pos, 140) do
+			if resources:CanChop(t) then
+				local c = Vector3.new(t.rec.x, t.rec.y, t.rec.z)
+				local side = Vector3.new(pos.X - c.X, 0, pos.Z - c.Z)
+				side = side.Magnitude > 0.1 and side.Unit or Vector3.new(1, 0, 0)
+				return c + side * (t.rec.trunk + 1.8) + Vector3.new(0, 1.2, 0), t.rec.id
+			end
+		end
+		return nil
 	elseif key == "build" then
 		local s = camp:Structure("workbench_1")
 		return s and s.slot.pos + Vector3.new(0, 2, 0) or nil
@@ -93,7 +100,8 @@ function TutorialService:View(player)
 	if key == "chop" then
 		text = `{text} ({math.min(a.wood, 5)}/5)`
 	end
-	return { step = a.step, total = #STEPS, key = key, text = text, target = self:Target(player, key) }
+	local target, tree = self:Target(player, key)
+	return { step = a.step, total = #STEPS, key = key, text = text, target = target, tree = tree }
 end
 
 function TutorialService:_show(player)

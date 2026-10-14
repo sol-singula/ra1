@@ -38,6 +38,11 @@ your level, weapon mastery, discoveries, achievements and records are yours for 
 | The 6-7 | **⚙️ MORE** | H | MORE |
 | Your level, the book, the leaderboards, friends, settings | the menu at the top right | same | same |
 
+**Aiming is forgiving.** A swing goes where your camera looks (on PC, toward what the mouse is on, unless that's
+behind you) and turns to the monster in front of you, or with nothing to fight, to the tree or rock most in front of
+you: walk up to a tree and press ACT (or click) and you chop it. The giants of the deep forest are too big to chop
+(the swing says so). Shift Lock is turned off, because Shift sprints.
+
 ### One run (about 27 minutes)
 
 1. **Day 1** (3:30). Everyone spawns by the fire. The guide walks you through it one step at a time with an
@@ -167,7 +172,7 @@ games/ra6 - Survive the 6-7/
 
 ```bash
 cd "games/ra6 - Survive the 6-7"
-sh tools/run_tests.sh   # formulas (95), terrain (23), client smoke (254), server smoke (286, 274 without DataStores)
+sh tools/run_tests.sh   # formulas (95), terrain (23), client smoke (277), server smoke (286, 274 without DataStores)
 ```
 
 The server smoke test plays whole runs on the mock engine: day 1 with the guide, chopping, building, crates and

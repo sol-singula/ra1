@@ -67,6 +67,7 @@ end
 local Constants = Engine.require(tree.shared.Constants)
 local MapLayout = Engine.require(tree.shared.World.MapLayout)
 local Items = Engine.require(tree.shared.Data.Items)
+local ItemModels = Engine.require(tree.shared.World.ItemModels)
 local Recipes = Engine.require(tree.shared.Data.Recipes)
 local LightingPresets = Engine.require(tree.shared.World.LightingPresets)
 local PPS = Engine.game:GetService("ProximityPromptService")
@@ -291,6 +292,24 @@ check(
 	ws.Guide:FindFirstChild("GuideTarget") and ws.Guide.GuideTarget:FindFirstChild("GuideBeam") ~= nil
 )
 check("the beam starts at you", ws.Guide.GuideTarget.GuideBeam.Attachment0 ~= nil)
+do
+	-- the arrow and the beam end beside the trunk (not inside the tree), and that tree glows
+	local view = Guide.current()
+	local rec = view and view.tree and Resources:Tree(view.tree)
+	check("the guide names the tree to chop", rec ~= nil, view and view.tree)
+	if rec then
+		local off = Vector3.new(view.target.X - rec.rec.x, 0, view.target.Z - rec.rec.z).Magnitude
+		check("the arrow floats beside the trunk", off > rec.rec.trunk + 1, off - rec.rec.trunk)
+		check("a tree an axe can chop", Resources:CanChop(rec))
+		Engine.advance(0.6)
+		local glow = ws.Guide:FindFirstChild("GuideGlow")
+		check(
+			"the tree to chop glows",
+			glow ~= nil and glow.Adornee ~= nil and glow.Adornee:GetAttribute("TreeId") == view.tree,
+			glow and glow.Adornee
+		)
+	end
+end
 -- walk to the nearest tree outside the camp and face it
 local trees = Resources:TreesNear(spawn, 160)
 local target
@@ -338,6 +357,134 @@ check("chopping gave wood", count("wood") > wood0, count("wood") - wood0)
 check("the tree fell", target.felled == true, chops)
 check("chips and popups flew", popups > 0)
 check("your swing animates at once", Anim.recs[player.Character] ~= nil)
+do
+	-- which way things move (R15: a positive pitch at the shoulder or elbow swings forward and up)
+	local rec = Anim.recs[player.Character]
+	-- (the stand-in avatar is welded together: give the pose an R15 rig's joints to aim)
+	for _, name in { "RightShoulder", "LeftShoulder", "RightElbow", "LeftElbow", "Waist", "Neck", "Root" } do
+		rec.motors[name] = rec.motors[name] or { motor = Instance.new("Motor6D"), base = CFrame.new() }
+	end
+	local axe = Items.get("rusty_axe")
+	check("you hold the axe", Anim.heldItem(player.Character) == axe, player.Character:GetAttribute("Held"))
+	rec.item, rec.mode, rec.swingAt, rec.emote = nil, nil, -100, nil
+	local pose = Anim.pose(rec, player.Character, 0)
+	local arm = pose.RightShoulder and pose.RightShoulder.Rotation * Vector3.new(0, -1, 0)
+	check("the arm holding it reaches forward", arm and arm.Z < -0.5, arm)
+	local hand = (pose.RightShoulder or CFrame.new()) * (pose.RightElbow or CFrame.new())
+	local grip = hand.Rotation * ItemModels.holdCFrame(axe, nil).Rotation
+	local handle = grip * Vector3.new(0, 0, -1) -- toward the axe's head
+	local edge = grip * Vector3.new(0, 1, 0) -- the blade
+	check("the axe stands up out of the fist", handle.Y > 0.9, handle)
+	check("its blade faces forward", edge.Z < -0.9, edge)
+	local spear = ItemModels.holdCFrame(Items.get("sharp_stick"), nil).Rotation
+	local tip = (hand.Rotation * spear) * Vector3.new(0, 0, -1)
+	check("a spear points ahead", tip.Z < -0.9, tip)
+	local torch = ItemModels.holdCFrame(Items.get("torch"), nil).Rotation
+	local flame = (hand.Rotation * torch) * Vector3.new(0, 1, 0)
+	check("a torch is held upright", flame.Y > 0.9, flame)
+	-- the chop: up over the head, then down in front of you
+	rec.item, rec.mode, rec.swingAt = "rusty_axe", "main", 100
+	local up = Anim.pose(rec, player.Character, 100.12).RightShoulder.Rotation * Vector3.new(0, -1, 0)
+	check("the chop winds up over your head", up.Y > 0.6, up)
+	local down = Anim.pose(rec, player.Character, 100.24).RightShoulder.Rotation * Vector3.new(0, -1, 0)
+	check("and comes down in front of you", down.Z < 0 and down.Y < -0.8, down)
+	local waist = Anim.pose(rec, player.Character, 100.2).Waist
+	check("leaning into it", waist and (waist.Rotation * Vector3.new(0, 1, 0)).Z < 0, waist)
+	-- the 6-7: forearms out in front
+	rec.item, rec.mode, rec.emote, rec.emoteAt = "emote", "67", "67", 100
+	local fore = Anim.pose(rec, player.Character, 101)
+	local left = (fore.LeftShoulder * fore.LeftElbow).Rotation * Vector3.new(0, -1, 0)
+	check("the 6-7's forearms reach out in front", left.Z < -0.5, left)
+	rec.emote = nil
+	-- an R6 rig has no elbows: the bend goes to the shoulder
+	rec.motors.RightElbow, rec.motors.LeftElbow = nil, nil
+	rec.item, rec.mode, rec.swingAt = nil, nil, -100
+	local r6 = Anim.pose(rec, player.Character, 0)
+	local r6arm = r6.RightShoulder.Rotation * Vector3.new(0, -1, 0)
+	check("R6: the arm holding it reaches forward", r6.RightElbow == nil and r6arm.Z < -0.9, r6arm)
+	for _, name in { "RightShoulder", "LeftShoulder", "RightElbow", "LeftElbow", "Waist", "Neck", "Root" } do
+		rec.motors[name] = nil
+	end
+end
+-- PC: a click swings where the camera looks and turns to the tree in front of you, even with your character
+-- facing away from it
+do
+	UIS.MouseEnabled, UIS.KeyboardEnabled = true, true
+	Engine.setInput(Enum.UserInputType.MouseMovement)
+	local pick
+	for _, t in Resources:TreesNear(pos(), 200) do
+		if Resources:CanChop(t) and MapLayout.radius(t.rec.x, t.rec.z) > MapLayout.CAMP.clear + 4 then
+			pick = t
+			break
+		end
+	end
+	check("PC: another tree to chop", pick ~= nil)
+	if pick then
+		local tp2 = Vector3.new(pick.rec.x, 0, pick.rec.z)
+		local away = Vector3.new(spawn.X, 0, spawn.Z) - tp2
+		away = away.Magnitude > 0.1 and away.Unit or Vector3.new(1, 0, 0)
+		local at = tp2 + away * (pick.rec.trunk + 3)
+		standAt(at.X, at.Z, at + away * 10)
+		local toTree = (tp2 - Vector3.new(at.X, 0, at.Z)).Unit
+		local a = math.rad(40)
+		local off = Vector3.new(
+			toTree.X * math.cos(a) - toTree.Z * math.sin(a),
+			0,
+			toTree.X * math.sin(a) + toTree.Z * math.cos(a)
+		)
+		local here = pos()
+		ws.CurrentCamera.CFrame = CFrame.lookAt(here + Vector3.new(0, 7, 0) - off * 12, here + off * 10)
+		Engine.advance(0.7)
+		local hp0 = pick.hp
+		UIS.InputBegan:Fire({ UserInputType = Enum.UserInputType.MouseButton1 }, false)
+		Engine.advance(0.05)
+		UIS.InputEnded:Fire({ UserInputType = Enum.UserInputType.MouseButton1 })
+		Engine.advance(0.2)
+		local click = sent("Act")
+		check("PC: a click swings at the tree", click and click.args[2]:Dot(toTree) > 0.9, click and click.args[2])
+		check("PC: and chops it", pick.hp < hp0, pick.hp)
+		check("PC: you turn to face it", player.Character.HumanoidRootPart.CFrame.LookVector:Dot(toTree) > 0.9)
+	end
+	UIS.MouseEnabled, UIS.KeyboardEnabled = false, false
+	Engine.setInput(Enum.UserInputType.Touch)
+end
+-- a giant of the deep forest is too big to chop: the swing says so instead of doing nothing
+do
+	local giant, at
+	for _, t in MapLayout.trees() do
+		local g = t.kind == "giant" and t.reachable and Resources:Tree(t.id)
+		if g then
+			for k = 0, 3 do
+				local a = k * math.pi / 2
+				local p = Vector3.new(t.x, 0, t.z) + Vector3.new(math.cos(a), 0, math.sin(a)) * (t.trunk + 2.5)
+				local around = Resources:TreesNear(p, Constants.GATHER_RANGE + 3)
+				if #around == 1 and around[1] == g and MapLayout.clearOf(p.X, p.Z, 0) ~= false then
+					giant, at = g, p
+					break
+				end
+			end
+		end
+		if giant then
+			break
+		end
+	end
+	check("a giant in the forest", giant ~= nil)
+	if giant then
+		standAt(at.X, at.Z, Vector3.new(giant.rec.x, 0, giant.rec.z))
+		Engine.advance(0.7)
+		check("no CHOP by a giant", actions.Act.Label.Text ~= "CHOP", actions.Act.Label.Text)
+		local wood0 = count("wood")
+		pressAct()
+		Engine.advance(0.3)
+		local toast = Engine.lastClientEvent("Toast", player)
+		check(
+			"a giant is too big to chop",
+			toast and string.find(tostring(toast.args[1]), "too big", 1, true) ~= nil,
+			toast and toast.args[1]
+		)
+		check("no wood from a giant", count("wood") == wood0)
+	end
+end
 -- turn round: the camp on the compass, with how far it is
 camLook(pos(), Vector3.new(MapLayout.CAMP_PROPS.fire.X, pos().Y, MapLayout.CAMP_PROPS.fire.Z))
 Engine.advance(0.1)
@@ -657,6 +804,9 @@ check("drawn where it is", p1 and (p1 - snap.pos).Magnitude < 6, p1 and (p1 - sn
 check("near() finds it", #Mobs.near(pos(), 20) == 1)
 check("ACT on a monster", actions.Act.Label.Text == "CHOP" or actions.Act.Label.Text == "SWING", actions.Act.Label.Text)
 -- look 50 degrees off: the aim help on phones still turns the swing to it
+-- (the Snapcap held still for this, 5 studs away: it would leap right onto you)
+snap.state, snap.stateUntil, snap.stunUntil = "stagger", math.huge, math.huge
+standAt(snap.pos.X - 5, snap.pos.Z, Vector3.new(snap.pos.X - 10, 0, snap.pos.Z))
 do
 	local d = Vector3.new(snap.pos.X - pos().X, 0, snap.pos.Z - pos().Z).Unit
 	local a = math.rad(50)
@@ -669,6 +819,7 @@ Engine.advance(0.1)
 local swing = sent("Act")
 local toSnap = Vector3.new(snap.pos.X - pos().X, 0, snap.pos.Z - pos().Z).Unit
 check("aim help turns the swing to the monster", swing and swing.args[2]:Dot(toSnap) > 0.7, swing and swing.args[2])
+snap.stateUntil, snap.stunUntil = 0, 0
 Engine.advance(0.5)
 check("a hit shows its health bar", drawn.barBack and drawn.barBack.Visible == true, snap.hp)
 check("a damage number pops", ws.Fx:FindFirstChild("Part") ~= nil or #Fx.movers > 0)

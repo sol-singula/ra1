@@ -69,12 +69,14 @@ local function cocooned()
 	return player:GetAttribute("Cocooned") == true
 end
 
--- Trees near a point (from the shared layout; the felled ones are remembered from their falls).
+-- Trees near a point that an axe can chop (from the shared layout; the felled ones are remembered from their falls;
+-- the giants of the deep forest are too big to chop).
 local function treesNear(pos, radius)
 	if not treeGrid then
 		treeGrid = {}
 		for _, t in MapLayout.trees() do
-			if t.reachable then
+			local spec = MapLayout.TREE_KINDS[t.kind]
+			if t.reachable and not (spec and spec.hp == math.huge) then
 				local k = math.floor(t.x / 16) * 4096 + math.floor(t.z / 16)
 				treeGrid[k] = treeGrid[k] or {}
 				table.insert(treeGrid[k], t)
@@ -82,10 +84,12 @@ local function treesNear(pos, radius)
 		end
 	end
 	local out = {}
-	local cx, cz = math.floor(pos.X / 16), math.floor(pos.Z / 16)
-	for dx = -1, 1 do
-		for dz = -1, 1 do
-			for _, t in treeGrid[(cx + dx) * 4096 + (cz + dz)] or {} do
+	local reach = radius + 8 -- (the widest trunk)
+	local c0x, c0z = math.floor((pos.X - reach) / 16), math.floor((pos.Z - reach) / 16)
+	local c1x, c1z = math.floor((pos.X + reach) / 16), math.floor((pos.Z + reach) / 16)
+	for cx = c0x, c1x do
+		for cz = c0z, c1z do
+			for _, t in treeGrid[cx * 4096 + cz] or {} do
 				if not felled[t.id] and (Vector2.new(t.x - pos.X, t.z - pos.Z)).Magnitude <= radius + t.trunk then
 					table.insert(out, t)
 				end
@@ -94,46 +98,116 @@ local function treesNear(pos, radius)
 	end
 	return out
 end
+InputController.treesNear = treesNear
 
--- Where the move goes: the mouse (PC) or the camera's look, helped toward a monster on phones and gamepads.
+local function flatUnit(v, fallback)
+	local f = Vector3.new(v.X, 0, v.Z)
+	return f.Magnitude > 0.01 and f.Unit or fallback
+end
+
+local function usingMouse()
+	return UserInputService.MouseEnabled and Theme.inputKind() == "keyboard"
+end
+
+-- What the mouse points at in the world (PC): the hit position (nil over the sky) and the ray's direction.
+local function mouseRay()
+	local cam = workspace.CurrentCamera
+	if not cam or not usingMouse() then
+		return nil, nil
+	end
+	local ok, pos, dir = pcall(function()
+		local m = UserInputService:GetMouseLocation()
+		local ray = cam:ViewportPointToRay(m.X, m.Y)
+		local skip = {}
+		if player.Character then
+			table.insert(skip, player.Character)
+		end
+		local guide = workspace:FindFirstChild("Guide")
+		if guide then
+			table.insert(skip, guide)
+		end
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = skip
+		local hit = workspace:Raycast(ray.Origin, ray.Direction.Unit * 400, params)
+		return hit and hit.Position or nil, ray.Direction.Unit
+	end)
+	if not ok then
+		return nil, nil
+	end
+	return pos, dir
+end
+
+--[[ Where the move goes. Forward is where the camera looks (what you see in front of you); on PC, toward what's
+under the mouse unless that's behind you. Then aim help: a melee swing turns to the nearest monster in front of
+you, or with nothing to fight, to the nearest tree in front of you (so walking up to a tree and pressing CHOP always
+chops it); a bow aims at the mouse on PC, or at the nearest monster in a cone on phones and gamepads. ]]
 function InputController.aim(item)
 	local cam = workspace.CurrentCamera
 	local r = root()
 	local look = cam and cam.CFrame and cam.CFrame.LookVector or Vector3.new(0, 0, -1)
-	local mouse = UserInputService.MouseEnabled and Theme.inputKind() == "keyboard"
-	if mouse and cam then
-		local ok, ray = pcall(function()
-			local m = UserInputService:GetMouseLocation()
-			return cam:ViewportPointToRay(m.X, m.Y)
-		end)
-		if ok and ray then
-			look = ray.Direction.Unit
-			if r and item and item.class ~= "bow" then
-				-- melee: toward the point under the mouse, flat
-				local hit = ray.Origin + ray.Direction * (r.Position - ray.Origin).Magnitude
-				local d = hit - r.Position
-				if Vector3.new(d.X, 0, d.Z).Magnitude > 0.5 then
-					look = Vector3.new(d.X, 0, d.Z).Unit
-				end
+	local facing = r and flatUnit(r.CFrame.LookVector, Vector3.new(0, 0, -1)) or Vector3.new(0, 0, -1)
+	local forward = flatUnit(look, facing)
+	local bow = item and item.class == "bow"
+	local hitPos, rayDir = mouseRay()
+	if bow and (hitPos or rayDir) then
+		if hitPos and r then
+			local d = hitPos - (r.Position + Vector3.new(0, 1.5, 0))
+			if d.Magnitude > 4 then
+				return d.Unit
 			end
 		end
+		return rayDir or look
 	end
-	if r and not mouse then
-		local flat = Vector3.new(look.X, 0, look.Z)
-		flat = flat.Magnitude > 0.01 and flat.Unit or Vector3.new(0, 0, -1)
-		local bow = item and item.class == "bow"
-		local reach = bow and 70 or ((item and item.range or 5) + 4)
-		local cone = bow and math.cos(math.rad(25)) or math.cos(math.rad(70))
-		for _, m in MonsterController.near(r.Position, reach) do
-			local d = m.pos + Vector3.new(0, 2, 0) - r.Position
-			local f = Vector3.new(d.X, 0, d.Z)
-			if f.Magnitude < 0.1 or f.Unit:Dot(flat) >= cone then
-				look = bow and d.Unit or (f.Magnitude > 0.1 and f.Unit or flat)
-				break
-			end
+	if not r then
+		return bow and look or forward
+	end
+	if hitPos then
+		local d = Vector3.new(hitPos.X - r.Position.X, 0, hitPos.Z - r.Position.Z)
+		if d.Magnitude > 1.5 and d.Unit:Dot(forward) > -0.15 then
+			forward = d.Unit
 		end
 	end
-	return look
+	local reach = bow and 70 or ((item and item.range or 5) + 4)
+	local cone = bow and math.cos(math.rad(25)) or math.cos(math.rad(70))
+	for _, m in MonsterController.near(r.Position, reach) do
+		local d = m.pos + Vector3.new(0, 2, 0) - r.Position
+		local f = Vector3.new(d.X, 0, d.Z)
+		if f.Magnitude < 0.1 or f.Unit:Dot(forward) >= cone then
+			return bow and d.Unit or (f.Magnitude > 0.1 and f.Unit or forward)
+		end
+	end
+	if bow then
+		return look
+	end
+	-- nothing to fight: the tree or rock most in front of you (the server picks the same way)
+	local best, bestScore
+	local function consider(x, z, radius)
+		local f = Vector3.new(x - r.Position.X, 0, z - r.Position.Z)
+		local gap = math.max(0, f.Magnitude - radius)
+		if gap > Constants.GATHER_RANGE or f.Magnitude < 0.05 then
+			return
+		end
+		local cos = f.Unit:Dot(forward)
+		if cos < math.cos(math.rad(75)) then
+			return
+		end
+		local score = gap + (1 - cos) * 6
+		if not bestScore or score < bestScore then
+			best, bestScore = f.Unit, score
+		end
+	end
+	for _, t in treesNear(r.Position, Constants.GATHER_RANGE) do
+		consider(t.x, t.z, t.trunk)
+	end
+	local nodes = workspace:FindFirstChild("Nodes")
+	for _, m in nodes and nodes:GetChildren() or {} do
+		local at = m:GetAttribute("At")
+		if typeof(at) == "Vector3" and math.abs(at.X - r.Position.X) < 16 and math.abs(at.Z - r.Position.Z) < 16 then
+			consider(at.X, at.Z, m:GetAttribute("Radius") or 1)
+		end
+	end
+	return best or forward
 end
 
 -- Turn your character to face where you swing.
@@ -164,13 +238,13 @@ function InputController.act()
 		return
 	end
 	lastAct = now
-	local index = tonumber(string.sub(id, 2))
+	local index = type(id) == "string" and tonumber(string.sub(id, 2)) or nil
 	local aim = InputController.aim(item)
 	if item and item.kind == "throw" then
 		local r = root()
 		local target
 		local cam = workspace.CurrentCamera
-		if UserInputService.MouseEnabled and Theme.inputKind() == "keyboard" and cam and r then
+		if usingMouse() and cam and r then
 			local ok, ray = pcall(function()
 				local m = UserInputService:GetMouseLocation()
 				return cam:ViewportPointToRay(m.X, m.Y)

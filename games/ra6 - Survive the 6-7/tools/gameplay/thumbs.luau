@@ -158,11 +158,7 @@ local function survivor(spec)
 			return
 		end
 		local model = ItemModels.held(item, m)
-		if item.class then
-			model:PivotTo(hand * CF.Angles(math.rad(-90), 0, 0))
-		else
-			model:PivotTo(hand * CF.new(0, -0.2, -0.3))
-		end
+		model:PivotTo(hand * ItemModels.holdCFrame(item, nil)) -- (the game's own weld)
 		Engine.resolveWelds()
 	end
 	if spec.hold then

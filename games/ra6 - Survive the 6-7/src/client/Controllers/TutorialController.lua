@@ -2,7 +2,8 @@
 The guide's side on screen (master plan §4: the first five minutes, one clear thing at a time, never a text wall).
 The server sends the step ("Tutorial": { step, total, key, text, target } or false); here it becomes:
   * a card under the compass: STEP 2 of 6, what to do, and a SKIP button
-  * a bouncing arrow over the target (the nearest tree, the workbench's blueprint, a crate, the campfire)
+  * a bouncing arrow over the target (beside the nearest tree's trunk, the workbench's blueprint, a crate, the
+    campfire), and the tree to chop glows
   * a soft light beam from you to it, so you never have to guess where to go
 ]]
 local Players = game:GetService("Players")
@@ -10,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Kit = require(ReplicatedStorage.Shared.World.Kit)
+local MapLayout = require(ReplicatedStorage.Shared.World.MapLayout)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
@@ -22,6 +24,70 @@ local C = Theme.Color
 local gui, card, label, stepLabel
 local arrow, beam, targetAttach, fromAttach, targetPart
 local current -- the step on screen
+local glow, glowTree, glowCheckAt = nil, nil, 0 -- the Highlight on the tree to chop
+local treeById
+
+-- The model of a tree (by its id), if it has streamed in: trees live in 128-stud chunks under Map.Forest.
+local function treeModel(id)
+	if not treeById then
+		treeById = {}
+		for _, t in MapLayout.trees() do
+			treeById[t.id] = t
+		end
+	end
+	local t = treeById[id]
+	local map = workspace:FindFirstChild("Map")
+	local forest = map and map:FindFirstChild("Forest")
+	if not t or not forest then
+		return nil
+	end
+	local chunk = forest:FindFirstChild(`Chunk_{math.floor(t.x / 128)}_{math.floor(t.z / 128)}`)
+	for _, m in chunk and chunk:GetChildren() or {} do
+		if m:GetAttribute("TreeId") == id then
+			return m
+		end
+	end
+	return nil
+end
+
+local function clearGlow()
+	if glow then
+		glow:Destroy()
+	end
+	glow, glowTree = nil, nil
+end
+
+-- Light up the tree to chop (retried now and then: it may not have streamed in yet).
+local function updateGlow()
+	local id = current and current.tree
+	if not id then
+		clearGlow()
+		return
+	end
+	if glowTree == id and glow and glow.Parent and glow.Adornee and glow.Adornee.Parent then
+		return
+	end
+	local t = os.clock()
+	if t < glowCheckAt then
+		return
+	end
+	glowCheckAt = t + 0.5
+	local m = treeModel(id)
+	if not m then
+		return
+	end
+	clearGlow()
+	glow = Instance.new("Highlight")
+	glow.Name = "GuideGlow"
+	glow.Adornee = m
+	glow.FillColor = C.mustard
+	glow.FillTransparency = 0.8
+	glow.OutlineColor = C.mustard
+	glow.OutlineTransparency = 0.15
+	glow.DepthMode = Enum.HighlightDepthMode.Occluded
+	glow.Parent = workspace:FindFirstChild("Guide") or m
+	glowTree = id
+end
 
 local function ensureWorld()
 	if arrow and arrow.Parent then
@@ -83,6 +149,7 @@ local function ensureWorld()
 end
 
 local function clearWorld()
+	clearGlow()
 	if arrow then
 		arrow:Destroy()
 		arrow = nil
@@ -95,6 +162,7 @@ local function clearWorld()
 end
 
 local function show(view)
+	local was = current
 	current = type(view) == "table" and view or nil
 	if not current then
 		card.Visible = false
@@ -104,9 +172,14 @@ local function show(view)
 	card.Visible = true
 	stepLabel.Text = `STEP {current.step} OF {current.total}`
 	label.Text = current.text or ""
-	Theme.pop(card)
+	if not was or was.step ~= current.step then
+		Theme.pop(card) -- (only for a new step: the server refreshes the target every few seconds)
+	end
 	if typeof(current.target) == "Vector3" then
 		ensureWorld()
+		if not current.tree then
+			clearGlow()
+		end
 	else
 		clearWorld()
 	end
@@ -117,7 +190,9 @@ local function step()
 		return
 	end
 	local t = os.clock()
-	local top = current.target + Vector3.new(0, 4 + math.sin(t * 4) * 0.6, 0)
+	updateGlow()
+	-- (beside a tree the arrow floats low, under the branches)
+	local top = current.target + Vector3.new(0, (current.tree and 2.4 or 4) + math.sin(t * 4) * 0.6, 0)
 	local spin = CFrame.Angles(0, t * 2, 0)
 	local shaft = arrow:FindFirstChild("Shaft")
 	local head = arrow:FindFirstChild("Head")
