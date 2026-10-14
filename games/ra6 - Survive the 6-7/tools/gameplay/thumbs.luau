@@ -578,7 +578,9 @@ if wants("04_build") then
 		pose = POSES.stand,
 	})
 	local cam = wp + inward * 19 + along * 1 + V3.new(0, 7.5, 0)
+	clearTrees(cam, 9) -- (the camp's saplings: one stands where the camera is)
 	shot("04_build", cam, wp + inward * 2.5 + along * 1.5 + V3.new(0, 2.4, 0), 52, wp + inward * 3 + V3.new(0, 3, 0))
+	restoreTrees()
 end
 
 -- 5. Loot: a chest bursting open with a legendary bow inside, a teammate holding up a new axe -----------------------------------------
