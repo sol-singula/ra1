@@ -11,7 +11,7 @@ done, and what comes next. How to run and play it: [README](README.md).
 | 2. The core loop | ✅ | `MatchService`: hangout → build → plague → fight → last stand → ended. `TeamService` puts everyone on the dwarves, the plague turns some, dead dwarves come back as monsters. `ShrineService`: three shrines that drain, fall and open the way on. |
 | 3. Building | ✅ | Stone, wood and gold nodes that regrow (`ResourceService`); snap-to-grid shared blueprints that rise as they're hammered, breaking and fixing, traps and stations, upgrades, Camp → Town → Castle (`BuildService`, `Data/Pieces`, `World/PieceModels`). |
 | 4. Jobs | ✅ | 5 dwarf and 5 monster jobs, each a main move, a special and a trait (`Data/Jobs`, `CombatService`); Job Boards for dwarves, a picker at the spawn for monsters; monster levels and a time bonus during the match. |
-| 5. Make it pretty | ✅ | A bright cartoon valley, castle pieces and costumes from plain parts (`World/Kit`, `MapBuilder`, `Costumes`); hand-made animation for players and NPCs; effects for every move; lighting that follows the match; music by phase; phone controls; the first 5 minutes; the big moments (the scare, the plague, a shrine falling, the last stand). |
+| 5. Make it pretty | ✅ | The land is smooth terrain with Roblox's textured materials (`TerrainBuilder`): a rolling valley, the creek, rock cliffs and cobbled ramps, grassy ridges and snowy peaks, a banded sandstone canyon, the mountain with its cave carved out. Brick, cobblestone, slate, clay-tile, wood and marble castle pieces; leafy trees; farm, ruins, lanterns, cacti, crystals (`World/Kit`, `MapBuilder`, `PieceModels`, `Costumes`); hand-made animation for players and NPCs; effects for every move; lighting and clouds that follow the match; music by phase; phone controls; the first 5 minutes; the big moments (the scare, the plague, a shrine falling, the last stand). |
 | 6. Test and launch | 🟡 | Tests, lint, the game picture and icon (3 versions each: building, attack, last stand) are done. Still to do: publish, a small test with real players, a full 24-player server, cheap phones. |
 | 7. Grow | ⏳ | New maps, jobs, seasons, events, clubs: after launch. |
 
@@ -50,7 +50,8 @@ they go in the same shop, never in a pop-up during a match, and never make anyon
 
 ## Tests
 
-`tools/run_tests.sh`: formulas (95 checks), the client smoke test (232: every server event, every HUD, action and
+`tools/run_tests.sh`: formulas (95 checks), the terrain (52: the land matches the game's heights, the cave and
+tunnels are open, nodes and spawns are reachable), the client smoke test (232: every server event, every HUD, action and
 build button, the guide, the horde drawn and interpolated, every effect, the gate opening, the lighting and music
 following the phase, every panel including the shop's 3D preview, the monster picker and the results), and the
 server smoke test (290, and 291 without DataStores: whole matches from the hangout to the next match, both ways to

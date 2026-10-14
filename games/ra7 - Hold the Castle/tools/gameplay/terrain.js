@@ -128,8 +128,17 @@
       uv.needsUpdate = true;
       return g;
     }
-    if (shape === 'Cylinder') { const d = Math.min(y, z); su = Math.PI * d / tile; sv = x / tile; }
-    else { const d = (x + z) / 2; su = Math.PI * d / tile; sv = Math.PI * y / 2 / tile; }
+    if (shape === 'Cylinder') {
+      // the side wraps round (circumference x length); the end caps get their own square mapping
+      const d = Math.min(y, z), nrm = g.attributes.normal;
+      for (let i = 0; i < uv.count; i++) {
+        if (Math.abs(nrm.getX(i)) > 0.9) uv.setXY(i, uv.getX(i) * d / tile + ou, uv.getY(i) * d / tile + ov);
+        else uv.setXY(i, uv.getX(i) * Math.PI * d / tile + ou, uv.getY(i) * x / tile + ov);
+      }
+      uv.needsUpdate = true;
+      return g;
+    }
+    const d = (x + z) / 2; su = Math.PI * d / tile; sv = Math.PI * y / 2 / tile;
     for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * su + ou, uv.getY(i) * sv + ov);
     uv.needsUpdate = true;
     return g;
@@ -856,7 +865,7 @@ diffuseColor.rgb *= sCol;`);
             const bx = ax + (pb[0] - ax) * u + (pc[0] - ax) * w;
             const by = ay + (pb[1] - ay) * u + (pc[1] - ay) * w;
             const bz = az + (pb[2] - az) * u + (pc[2] - az) * w;
-            blades.push(bx, by, bz, rnd() * Math.PI * 2, 0.6 + rnd() * 0.75, rnd());
+            blades.push(bx, by, bz, rnd() * Math.PI * 2, 0.45 + rnd() * 0.55, rnd());
           }
           if (blades.length > 6 * 420000) break;
         }

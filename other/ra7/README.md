@@ -120,16 +120,31 @@ out? If your match is still going you're offered to go back.
 games/ra7 - Hold the Castle/
   src/shared/   Constants (every tunable), Net (rate-limited remotes), Formulas (all game math),
                 Data/ (Jobs, Pieces, Looks, Tasks), World/ (MapLayout, Kit, PieceModels, Costumes, LightingPresets)
-  src/server/   World/ (MapBuilder, Groups)
+  src/server/   World/ (TerrainBuilder: the land as smooth terrain; MapBuilder: everything on it; Groups)
                 Services/ MatchService (the phases), TeamService, ResourceService, BuildService, HordeService,
                 ShrineService, CombatService, CraftService, ProgressService, PingService, TutorialService,
                 JoinService, AnalyticsService, GameLogService, FeedbackService, AntiCheatService, PlayerDataService
   src/client/   Controllers/ Hud, Input, Build, Horde, Anim, Fx, Panel, Tutorial, Audio, Analytics, Notify,
                 Performance; UI/ (Theme, Bus); Store
-  tests/        Formulas, ClientSmoke, ServerSmoke (whole matches, with and without DataStores)
-  tools/        run_tests.sh, luaurun (a small Luau runner), gameplay/ (thumbs.luau, render.js, thumbs_post.py,
-                title_art.py)
+  tests/        Formulas, Terrain, ClientSmoke, ServerSmoke (whole matches, with and without DataStores)
+  tools/        run_tests.sh, luaurun (a small Luau runner), gameplay/ (thumbs.luau, render.js, terrain.js,
+                fetch_textures.py, thumbs_post.py, title_art.py)
 ```
+
+- **The land is Roblox smooth terrain**, written at start-up with `WriteVoxels` (about 2.7 million 4-stud
+  voxels; a couple of seconds) from one height function: rolling valley grass and leafy grass with dirt trails worn
+  along the monster lanes, a creek of wading-deep water with mud and sand banks, the Hill Shrine's flat top with a
+  cobbled plaza and roads, rock cliffs and four cobbled ramps, grassy ridges with rock faces and snowy mountains
+  behind, banded sandstone canyon walls round a sandy floor and the rock spine, and the mountain massif with the
+  cave and both tunnels hollowed out. Roblox's grass decoration is on, the materials are tinted to the game's
+  palette, and the clouds follow the match (white in build time, purple in the plague, red in the last stand).
+  NPCs walk on `MapLayout.groundY`, the same heights, and terrain steeper than 50° can't be walked up, so the
+  ramps, ridges and canyon walls still guide the fight.
+- **Textured materials everywhere** (Roblox's 2022 PBR set, switched on in the project): brick castle walls with
+  arrow slits and slate ledges, cobblestone plinths and gate arches, clay-tile cone roofs, wood-plank doors and
+  decks, marble shrines, leafy trees and bushes, slate and rock boulders, fabric tents and beards, metal armour.
+  On top: a farm, ruins, lanterns, signposts, cacti and bones in the canyon, a natural stone arch, crystals,
+  stalactites and stalagmites in the cave.
 
 - **The server decides everything:** the phase and clocks, who's on which team, every hit (with a short wind-up),
   every piece and every shrine. Clients only draw it and send requests, each rate-limited.
@@ -146,7 +161,7 @@ games/ra7 - Hold the Castle/
 
 ```bash
 cd "games/ra7 - Hold the Castle"
-sh tools/run_tests.sh   # formulas (95), client smoke (232), server smoke (290, and 291 without DataStores)
+sh tools/run_tests.sh   # formulas (95), terrain (52), client smoke (232), server smoke (290, 291 without DataStores)
 ```
 
 The server smoke test plays whole matches on the mock engine: build time with mining, blueprints, NPC dwarves,
@@ -154,7 +169,10 @@ the first choice, jobs, crafting, the scare and a scout; the plague with a volun
 all 10 jobs; shrines falling, barriers opening, the last stand; a dwarf win with rewards, titles, tasks and the
 podium; the next match; a monster win by wipe; plus the shop, gifts, pings, friends, private matches, feedback,
 analytics, the game log and the anti-cheat. The client smoke test feeds the real client every server event and
-presses every button. Lint: selene and stylua clean.
+presses every button. The terrain test checks the land against the game's heights (the hill top, the ramps,
+the valley floor, the canyon and cave floors, the creek, the hangout's plateau), that the cave and tunnels are
+open with rock above, that every resource node and spawn is on reachable ground, and the materials, water and
+clouds. Lint: selene and stylua clean.
 
 ## Analytics and the game log
 

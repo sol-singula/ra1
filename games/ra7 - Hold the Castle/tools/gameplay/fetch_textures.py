@@ -29,7 +29,7 @@ SETS = {
     "Mud": "Ground068",
     "Sand": "Ground054",
     "Rock": "Rock030",
-    "Slate": "Rock035",
+    "Slate": "Rock022",
     "Basalt": "Rock058",
     "Sandstone": "Rock061",
     "Limestone": "Rock051",

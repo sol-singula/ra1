@@ -12,9 +12,19 @@
         "HttpEnabled": true
       }
     },
+    "MaterialService": {
+      "$properties": {
+        "Use2022Materials": true
+      }
+    },
     "Workspace": {
       "$properties": {
         "StreamingEnabled": false
+      },
+      "Terrain": {
+        "$properties": {
+          "Decoration": true
+        }
       }
     },
     "Players": {

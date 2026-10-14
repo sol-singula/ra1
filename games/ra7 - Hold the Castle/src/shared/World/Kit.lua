@@ -207,6 +207,30 @@ function Kit.cone(parent, name, base, diameter, height, color, steps, material, 
 	return first
 end
 
+-- A smooth cone roof (towers): wedges round a centre, each sloping out from the peak to the rim.
+function Kit.roofCone(parent, name, base, radius, height, color, material, sides, extra)
+	sides = sides or 12
+	local first
+	local w = 2 * math.pi * radius / sides * 1.06
+	for k = 0, sides - 1 do
+		local a = (k + 0.5) / sides * math.pi * 2
+		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
+		local pos = base + dir * (radius / 2) + Vector3.new(0, height / 2, 0)
+		local p = Kit.wedge(
+			parent,
+			name,
+			CFrame.lookAt(pos, pos + dir),
+			Vector3.new(w, height, radius),
+			color,
+			material,
+			extra
+		)
+		p.CastShadow = k % 3 == 0
+		first = first or p
+	end
+	return first
+end
+
 function Kit.model(name, parent)
 	local m = Instance.new("Model")
 	m.Name = name
@@ -621,6 +645,104 @@ function Kit.banner(parent, cf, h, color, trim, name)
 		{ CanCollide = false, CastShadow = false }
 	)
 	return m, cloth
+end
+
+-- A saguaro cactus: a ribbed trunk and one or two arms.
+function Kit.cactus(parent, pos, h, rng)
+	rng = rng or Random.new()
+	local m = Kit.model("Cactus", parent)
+	local col = Kit.C.leafDark:Lerp(Kit.C.pineDark, 0.4)
+	Kit.disc(m, "Trunk", pos + Vector3.new(0, h / 2, 0), h * 0.18, h, col, M.Grass)
+	Kit.ball(m, "Top", pos + Vector3.new(0, h, 0), h * 0.18, col, M.Grass, { CastShadow = false })
+	for k = 1, rng:NextInteger(1, 2) do
+		local side = k == 1 and 1 or -1
+		local a = rng:NextNumber(0, math.pi)
+		local dir = Vector3.new(math.cos(a), 0, math.sin(a)) * side
+		local y = h * rng:NextNumber(0.35, 0.55)
+		local reach = h * 0.22
+		Kit.cyl(
+			m,
+			"Arm",
+			CFrame.lookAt(pos + Vector3.new(0, y, 0) + dir * reach / 2, pos + Vector3.new(0, y, 0) + dir * reach)
+				* CFrame.Angles(0, math.rad(90), 0),
+			reach,
+			h * 0.12,
+			col,
+			M.Grass,
+			{ CastShadow = false }
+		)
+		local up = h * rng:NextNumber(0.22, 0.32)
+		Kit.disc(
+			m,
+			"ArmUp",
+			pos + Vector3.new(0, y + up / 2, 0) + dir * reach,
+			h * 0.12,
+			up,
+			col,
+			M.Grass,
+			{ CastShadow = false }
+		)
+		Kit.ball(
+			m,
+			"ArmTop",
+			pos + Vector3.new(0, y + up, 0) + dir * reach,
+			h * 0.12,
+			col,
+			M.Grass,
+			{ CastShadow = false }
+		)
+	end
+	return m
+end
+
+-- A lantern hanging from a crooked post (lights a road at night).
+function Kit.lantern(parent, pos, facing, h)
+	h = h or 7
+	local m = Kit.model("Lantern", parent)
+	local dir = facing or Vector3.new(1, 0, 0)
+	Kit.box(m, "Post", CFrame.new(pos + Vector3.new(0, h / 2, 0)), Vector3.new(0.5, h, 0.5), C.woodDark, M.Wood)
+	Kit.box(
+		m,
+		"Arm",
+		CFrame.lookAt(pos + Vector3.new(0, h - 0.4, 0) + dir * 0.9, pos + Vector3.new(0, h - 0.4, 0) + dir * 2),
+		Vector3.new(0.3, 0.3, 1.9),
+		C.woodDark,
+		M.Wood,
+		{ CastShadow = false }
+	)
+	local at = pos + Vector3.new(0, h - 1.3, 0) + dir * 1.7
+	Kit.box(
+		m,
+		"Cage",
+		CFrame.new(at),
+		Vector3.new(0.9, 1.1, 0.9),
+		C.iron,
+		M.Metal,
+		{ CastShadow = false, CanCollide = false }
+	)
+	Kit.bulb(m, "Light", at, 0.6, C.warm, 16, 1.2)
+	return m
+end
+
+-- A signpost with arrows pointing the way (text on both faces).
+function Kit.signpost(parent, pos, signs)
+	local m = Kit.model("Signpost", parent)
+	Kit.box(m, "Post", CFrame.new(pos + Vector3.new(0, 2.6, 0)), Vector3.new(0.45, 5.2, 0.45), C.woodDark, M.Wood)
+	for k, sg in signs do
+		local cf = CFrame.lookAt(pos, pos + sg.dir) * CFrame.Angles(0, math.rad(-90), 0)
+		local board = Kit.box(
+			m,
+			"Arrow",
+			cf * CFrame.new(1.3, 4.6 - k * 1.05, 0),
+			Vector3.new(2.8, 0.8, 0.2),
+			C.woodLight,
+			M.WoodPlanks,
+			{ CastShadow = false }
+		)
+		Kit.text(board, Enum.NormalId.Front, sg.text, { font = Enum.Font.LuckiestGuy, color = C.woodDark, ppu = 30 })
+		Kit.text(board, Enum.NormalId.Back, sg.text, { font = Enum.Font.LuckiestGuy, color = C.woodDark, ppu = 30 })
+	end
+	return m
 end
 
 function Kit.crate(parent, cf, size, color)

@@ -1230,11 +1230,17 @@ local function positive(v, what)
 end
 function methods.FillBlock(_, cframe, size, material)
 	positive(size, "FillBlock")
-	table.insert(Engine.terrain.ops, { op = "block", cf = cframe, size = size, material = terrainMaterial(material, "FillBlock") })
+	table.insert(
+		Engine.terrain.ops,
+		{ op = "block", cf = cframe, size = size, material = terrainMaterial(material, "FillBlock") }
+	)
 end
 function methods.FillWedge(_, cframe, size, material)
 	positive(size, "FillWedge")
-	table.insert(Engine.terrain.ops, { op = "wedge", cf = cframe, size = size, material = terrainMaterial(material, "FillWedge") })
+	table.insert(
+		Engine.terrain.ops,
+		{ op = "wedge", cf = cframe, size = size, material = terrainMaterial(material, "FillWedge") }
+	)
 end
 function methods.FillBall(_, center, radius, material)
 	positive(radius, "FillBall")

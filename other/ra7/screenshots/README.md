@@ -2,11 +2,16 @@
 
 ![The renders](_all.jpg)
 
-These are **renders of the game's own models**, not AI: the real map (`MapBuilder`), castle pieces
-(`PieceModels`), dwarf and monster costumes (`Costumes`) and effect shapes, posed into a few moments by
-`games/ra7 - Hold the Castle/tools/gameplay/thumbs.luau`, drawn with three.js (`render.js`), then the shader pass
-(`thumbs_post.py`: levels, colour grade, bloom, depth of field, vignette). They are the references the
-[thumbnails](../thumbnails/README.md) were made from.
+These are **renders of the game's own models**, not AI: the real map (the smooth terrain `TerrainBuilder`
+writes, and everything `MapBuilder` puts on it), castle pieces (`PieceModels`), dwarf and monster costumes
+(`Costumes`) and effect shapes, posed into a few moments by `games/ra7 - Hold the Castle/tools/gameplay/thumbs.luau`,
+drawn with three.js (`render.js` + `terrain.js`), then the shader pass (`thumbs_post.py`: levels, colour grade,
+bloom, depth of field, vignette). They are the references the [thumbnails](../thumbnails/README.md) were made from.
+
+The renderer stands in for Roblox's: the terrain's voxels are meshed and textured per material (blended where
+materials meet, with grass blades where Roblox draws its grass decoration and a water surface on the creek), and
+parts get textures for their Roblox material. The textures are free CC0 sets from ambientCG picked to look like
+Roblox's own (`fetch_textures.py`); the game itself uses Roblox's built-in materials.
 
 | File | Moment |
 |---|---|
@@ -24,8 +29,9 @@ These are **renders of the game's own models**, not AI: the real map (`MapBuilde
 Re-render them from the game folder:
 
 ```bash
+python3 tools/gameplay/fetch_textures.py textures        # once: the PBR texture sets (90 files, about 7 MB)
 luaurun tools/gameplay/thumbs.luau out
-node tools/gameplay/render.js out renders --modules <node_modules with puppeteer, three, @fontsource>
+node tools/gameplay/render.js out renders --modules <node_modules with puppeteer, three, @fontsource> --textures textures
 cp out/*.json renders/   # (the shader pass reads each shot's camera from its snapshot)
 python3 tools/gameplay/thumbs_post.py renders post --font <LuckiestGuy.ttf>
 ```

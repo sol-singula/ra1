@@ -47,14 +47,16 @@ function builders.stoneWall(m, cf, w, _d, h, opts)
 				{ CastShadow = false }
 			)
 		end
-		-- a few stone blocks standing out of the face
-		for k, p in { { -w * 0.28, h * 0.32 }, { w * 0.18, h * 0.55 }, { -w * 0.05, h * 0.18 } } do
+		-- arrow slits through the wall, framed in darker stone
+		for _, x in { -w / 4, w / 4 } do
+			trim(m, "Slit", cf * CFrame.new(x, h * 0.58, side * (depth / 2 + 0.02)), v(0.42, 1.9, 0.1), C.black)
 			trim(
 				m,
-				"Block",
-				cf * CFrame.new(p[1], p[2], side * (depth / 2 + 0.06)),
-				v(w * (0.2 + k * 0.03), 1.1, 0.14),
-				k == 2 and C.stone or C.castleDark
+				"SlitFrame",
+				cf * CFrame.new(x, h * 0.58, side * (depth / 2 + 0.01)),
+				v(1.05, 2.5, 0.08),
+				C.castleDark,
+				M.Slate
 			)
 		end
 		if opts.upgraded then
@@ -215,16 +217,26 @@ function builders.tower(m, cf, w, _d, h, opts)
 		)
 	end
 	local roofColor = opts.flag and opts.flag.main or C.roofRed
-	Kit.cone(
+	Kit.roofCone(
 		m,
 		"Roof",
 		(cf * CFrame.new(0, top + 5.2, 0)).Position,
-		w + (opts.upgraded and 3.4 or 2.4),
+		(w + (opts.upgraded and 3.4 or 2.4)) / 2,
 		opts.upgraded and 9 or 7,
 		roofColor,
-		7,
 		M.ClayRoofTiles,
+		12,
 		{ CanCollide = false }
+	)
+	Kit.disc(
+		m,
+		"RoofRim",
+		(cf * CFrame.new(0, top + 5.35, 0)).Position,
+		w + (opts.upgraded and 3.6 or 2.6),
+		0.3,
+		C.woodDark,
+		M.Wood,
+		{ CanCollide = false, CastShadow = false }
 	)
 	Kit.banner(
 		m,

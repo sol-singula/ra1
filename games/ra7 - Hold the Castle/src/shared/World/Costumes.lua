@@ -323,7 +323,7 @@ function Costumes.dwarf(rig, look)
 		rel(rig, "Head", 0, -0.42, -0.36),
 		Vector3.new(1, 0.95, 0.62) * sizeOf(rig, "Head"),
 		beardColor,
-		M.SmoothPlastic,
+		M.Fabric,
 		"Ellipsoid"
 	)
 	add(
@@ -333,7 +333,7 @@ function Costumes.dwarf(rig, look)
 		rel(rig, "Head", 0, -0.86, -0.32),
 		Vector3.new(0.62, 0.5, 0.46) * sizeOf(rig, "Head"),
 		beardColor:Lerp(C.black, 0.08),
-		M.SmoothPlastic,
+		M.Fabric,
 		"Ellipsoid"
 	)
 	for _, side in { -1, 1 } do
@@ -344,7 +344,7 @@ function Costumes.dwarf(rig, look)
 			rel(rig, "Head", side * 0.2, -0.12, -0.5) * CFrame.Angles(0, 0, math.rad(side * -20)),
 			Vector3.new(0.42, 0.2, 0.22) * sizeOf(rig, "Head"),
 			beardColor:Lerp(C.black, 0.12),
-			M.SmoothPlastic,
+			M.Fabric,
 			"Ellipsoid"
 		)
 	end
@@ -414,7 +414,7 @@ function Costumes.dwarf(rig, look)
 				rel(rig, "Head", side * 0.56, 0.42, 0) * CFrame.Angles(0, 0, math.rad(side * -35)),
 				Vector3.new(0.26, 0.62, 0.26) * sizeOf(rig, "Head"),
 				C.cream,
-				M.SmoothPlastic,
+				M.Marble,
 				"Ellipsoid"
 			)
 		end
@@ -494,7 +494,7 @@ function Costumes.dwarf(rig, look)
 			rel(rig, "UpperTorso", 0.15, 0.62, 0.8),
 			Vector3.new(0.8, 0.6, 0.7) * s,
 			C.rock,
-			M.SmoothPlastic,
+			M.Slate,
 			"Ellipsoid"
 		)
 		if rock then
@@ -628,7 +628,7 @@ function monsters.grunt(rig, col, s)
 			rel(rig, "Head", side * 0.22, -0.48, -0.5) * CFrame.Angles(math.rad(-15), 0, 0),
 			Vector3.new(0.12, 0.3, 0.12) * sizeOf(rig, "Head").X * 1.4,
 			C.cream,
-			M.SmoothPlastic,
+			M.Marble,
 			"Ellipsoid"
 		)
 	end
@@ -654,7 +654,7 @@ function monsters.brute(rig, col, s)
 			rel(rig, "Head", side * 0.55, 0.62, -0.05) * CFrame.Angles(0, 0, math.rad(side * -40)),
 			Vector3.new(0.34, 0.95, 0.34) * sizeOf(rig, "Head").X,
 			C.cream,
-			M.SmoothPlastic,
+			M.Marble,
 			"Ellipsoid"
 		)
 		local arm = side < 0 and "LeftUpperArm" or "RightUpperArm"
@@ -675,7 +675,7 @@ function monsters.brute(rig, col, s)
 			rel(rig, arm, side * 0.2, 0.75, 0),
 			Vector3.new(0.4, 0.5, 0.4) * sizeOf(rig, arm).X,
 			C.cream,
-			M.SmoothPlastic,
+			M.Marble,
 			"Ball"
 		)
 		local hand = side < 0 and "LeftHand" or "RightHand"

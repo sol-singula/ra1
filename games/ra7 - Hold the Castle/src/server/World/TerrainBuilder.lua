@@ -49,7 +49,7 @@ TerrainBuilder.COLORS = {
 	Sand = rgb(220, 196, 146),
 	Sandstone = rgb(204, 130, 84),
 	Limestone = rgb(218, 176, 132),
-	Rock = rgb(132, 127, 120),
+	Rock = rgb(128, 122, 114),
 	Slate = rgb(96, 96, 104),
 	Basalt = rgb(74, 66, 94),
 	Cobblestone = rgb(164, 158, 148),
@@ -85,7 +85,7 @@ local function sideWall(x, z)
 		return -math.huge, e
 	end
 	local tc = clamp((x + 130) / (CANYON.minX + 130), 0, 1) -- 0: the valley's ridges, 1: the canyon's walls
-	local slopeLen = (52 + noise(x / 70, z / 70, 4.2) * 16) * (1 - tc) + (6 + noise(x / 30, 1.5, z / 30) * 3) * tc
+	local slopeLen = (62 + noise(x / 70, z / 70, 4.2) * 16) * (1 - tc) + (6 + noise(x / 30, 1.5, z / 30) * 3) * tc
 	local top = (MapLayout.RIDGE_TOP + noise(x / 90, z / 90, 7.7) * 10) * (1 - tc)
 		+ (60 + noise(x / 60, z / 60, 2.6) * 6) * tc
 	-- a slope that starts gently at the foot (a grassy apron) and steepens toward the top
@@ -96,11 +96,11 @@ local function sideWall(x, z)
 	local back = e - slopeLen - 12
 	if back > 0 then
 		h += math.min(back, 60) * 0.2 * (1 + noise(x / 50, z / 50, 9.1))
-		local far = back - 40
+		local far = back - 22
 		if far > 0 then
 			-- the high mountains: rising and leveling off, with ridged peaks
 			local peaks = (1 - abs(noise(x / 120, z / 120, 3.3))) ^ 2
-			h += 92 * (1 - math.exp(-far / 70)) + peaks * 64 * clamp(far / 70, 0, 1)
+			h += 92 * (1 - math.exp(-far / 95)) + peaks * 64 * clamp(far / 90, 0, 1)
 		end
 	end
 	return h, e
@@ -128,11 +128,26 @@ local function mountain(x, z)
 		return -math.huge
 	end
 	local face = smooth(228.5, 234, x)
-	local d2 = (x - 452) ^ 2 + (z * 1.05) ^ 2
-	local peak = 184 * math.exp(-d2 / (2 * 150 * 150))
+	-- one massif: a main peak and two shoulders with ragged outlines, melted together, on a high base over the cave
+	local wx, wz = x + noise(x / 90, z / 90, 1.7) * 34, z + noise(x / 90, z / 90, 8.3) * 34
+	local function peak(cx, cz, h, r)
+		local dx, dz = wx - cx, wz - cz
+		local d = sqrt(dx * dx + dz * dz)
+		local a = math.atan2(dz, dx)
+		local rr = r * (1 + 0.3 * noise(math.cos(a) * 1.4 + cx / 97, math.sin(a) * 1.4, cz / 89))
+		return d < rr and h * (1 - d / rr) ^ 1.3 or 0
+	end
+	local function smax(a, b, k)
+		local t = clamp(0.5 + 0.5 * (b - a) / k, 0, 1)
+		return a * (1 - t) + b * t + k * t * (1 - t)
+	end
 	local base = 76 + noise(x / 40, z / 40, 5.5) * 8
-	local m = math.max(base, peak)
-	m += (1 - abs(noise(x / 55, z / 55, 6.6))) * 18 * smooth(70, 130, m)
+	local m = smax(base, peak(462, 6, 190, 260), 24)
+	m = smax(m, peak(380, 120, 136, 150), 28)
+	m = smax(m, peak(546, -126, 150, 170), 28)
+	-- ridged crags, growing with height
+	local ridged = (1 - abs(noise(x / 70, z / 70, 6.6))) ^ 2 * 34 + (1 - abs(noise(x / 28, z / 28, 7.4))) ^ 2 * 10
+	m += ridged * smooth(76, 150, m)
 	return m * face
 end
 
@@ -400,8 +415,22 @@ local function surfaceMaterial(x, z, h, region, slope)
 		return rocky(x, z), M.Rock
 	end
 	-- the ridges and the mountains
+	local D = MapLayout.hangout.deck
+	if x > D.minX - 6 and x < D.maxX + 6 and z > D.minZ - 4 and z < D.maxZ + 28 then
+		return M.Ground, M.Ground -- under the hangout's deck and hall (grass would poke up through the planks)
+	end
 	local snow = 128 + noise(x / 60, z / 60, 9.9) * 14
 	local crag = noise(x / 18, z / 18, 2.2) * 0.25
+	if region == MOUNTAIN then
+		if h > snow + 6 and slope < 1.25 then
+			return M.Snow, M.Snow
+		elseif slope > 0.9 + crag or h > 104 then
+			return rocky(x, z), M.Rock
+		elseif slope > 0.6 then
+			return noise(x / 12, z / 12, 5.9) > 0 and M.Ground or M.Rock, M.Rock
+		end
+		return noise(x / 30, z / 30, 3.1) > 0.2 and M.LeafyGrass or M.Grass, M.Ground
+	end
 	if h > snow and slope < 1.5 then
 		return M.Snow, M.Snow
 	elseif slope > 1.2 + crag then

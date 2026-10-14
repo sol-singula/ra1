@@ -394,6 +394,61 @@ local function canyon(f, rng)
 			end
 		end
 	end
+	-- cacti, bleached bones and a broken wagon on the floor
+	for _ = 1, 40 do
+		local x, z = rng:NextNumber(C0.minX + 8, C0.maxX - 10), rng:NextNumber(-C0.halfWidth + 4, C0.halfWidth - 4)
+		if MapLayout.walkable(x, z) and not MapLayout.inZone(2, x, z) and math.abs(z) > 14 then
+			local lane = math.min(
+				MapLayout.distToLane(MapLayout.lanes[2][1].points, x, z),
+				MapLayout.distToLane(MapLayout.lanes[2][2].points, x, z),
+				MapLayout.distToLane(MapLayout.lanes[3][1].points, x, z),
+				MapLayout.distToLane(MapLayout.lanes[3][2].points, x, z)
+			)
+			if lane > 9 then
+				Kit.cactus(m, at(x, z) - V3(0, 0.3, 0), rng:NextNumber(5, 9), rng)
+			end
+		end
+	end
+	local bone = Kit.rgb(236, 228, 210)
+	local skull = at(48, -44)
+	Kit.ellipsoid(m, "Skull", skull + V3(0, 1.4, 0), V3(3.4, 2.6, 3), bone, M.Marble)
+	for _, s in { -1, 1 } do
+		Kit.ball(m, "EyeHole", skull + V3(s * 0.7, 1.7, -1.3), 0.9, C.black, M.SmoothPlastic, decor())
+		Kit.box(
+			m,
+			"Horn",
+			CFrame.new(skull + V3(s * 2.2, 2.2, 0)) * CFrame.Angles(0, 0, s * math.rad(-50)),
+			V3(0.6, 2.6, 0.6),
+			bone,
+			M.Marble,
+			decor()
+		)
+	end
+	for k = 0, 4 do
+		Kit.box(
+			m,
+			"Rib",
+			CFrame.new(skull + V3(-3 - k * 1.3, 1, 1.5)) * CFrame.Angles(0, 0, math.rad(70)),
+			V3(0.35, 3.4, 0.35),
+			bone,
+			M.Marble,
+			decor()
+		)
+	end
+	local wagon = CFrame.new(at(176, 40)) * CFrame.Angles(0, math.rad(25), math.rad(-8))
+	Kit.box(m, "WagonBed", wagon * CFrame.new(0, 1.6, 0), V3(5, 0.4, 8), C.wood, M.WoodPlanks)
+	Kit.box(m, "WagonSide", wagon * CFrame.new(2.4, 2.3, 0), V3(0.3, 1.2, 8), C.woodDark, M.WoodPlanks)
+	Kit.cyl(m, "Wheel", wagon * CFrame.new(2.9, 1, -2.6), 0.5, 2.6, C.woodDark, M.Wood)
+	Kit.cyl(
+		m,
+		"BrokenWheel",
+		CFrame.new(at(181, 46) + V3(0, 0.3, 0)) * CFrame.Angles(0, 0.4, math.rad(90)),
+		0.5,
+		2.6,
+		C.woodDark,
+		M.Wood
+	)
+	Kit.barrel(m, at(172, 46))
 	-- the rock spine down the middle (terrain) gets a pine on top
 	local S = MapLayout.SPINE
 	local scx = (S.minX + S.maxX) / 2
@@ -504,8 +559,8 @@ local function mountain(f, rng)
 			V3(CV.center.X + math.cos(a) * r, top + 1.5, CV.center.Y + math.sin(a) * r),
 			h * 0.38,
 			-h,
-			rockDark,
-			4,
+			rockDark:Lerp(C.cave, 0.35),
+			7,
 			M.Slate,
 			decor()
 		)
@@ -521,8 +576,8 @@ local function mountain(f, rng)
 				p - V3(0, 0.3, 0),
 				rng:NextNumber(2.4, 4),
 				rng:NextNumber(4, 9),
-				rockDark,
-				4,
+				rockDark:Lerp(C.cave, 0.35),
+				7,
 				M.Slate
 			)
 		end
@@ -1168,6 +1223,65 @@ local function scenery(f, rng)
 			end
 		end
 	end
+	-- a little farm by the south ridge: a fenced field of crops and a scarecrow
+	local farm = V3(-396, 0, -178)
+	local fw, fd = 32, 16
+	for _, c in { { -1, -1, 1, -1 }, { 1, -1, 1, 1 }, { 1, 1, -1, 1 }, { -1, 1, -1, -1 } } do
+		Kit.fence(
+			m,
+			at(farm.X + c[1] * fw / 2, farm.Z + c[2] * fd / 2),
+			at(farm.X + c[3] * fw / 2, farm.Z + c[4] * fd / 2)
+		)
+	end
+	for row = 0, 4 do
+		local rz = farm.Z - fd / 2 + 2 + row * 3
+		for k = 0, 9 do
+			local p = at(farm.X - fw / 2 + 2 + k * 3, rz)
+			local wheat = row % 2 == 0
+			Kit.box(
+				m,
+				"Crop",
+				CFrame.new(p + V3(0, 0.7, 0)) * CFrame.Angles(0, rng:NextNumber(0, 3), 0),
+				V3(1.2, 1.4, 1.2),
+				wheat and Kit.rgb(232, 196, 90) or C.leaf,
+				M.Grass,
+				decor()
+			)
+		end
+	end
+	local sc = at(farm.X + 6, farm.Z)
+	Kit.box(m, "ScarecrowPost", CFrame.new(sc + V3(0, 3, 0)), V3(0.4, 6, 0.4), C.woodDark, M.Wood)
+	Kit.box(m, "ScarecrowArms", CFrame.new(sc + V3(0, 4.4, 0)), V3(4.2, 0.35, 0.35), C.woodDark, M.Wood)
+	Kit.box(m, "ScarecrowShirt", CFrame.new(sc + V3(0, 3.8, 0)), V3(1.8, 1.8, 0.8), C.red, M.Fabric)
+	Kit.ball(m, "ScarecrowHead", sc + V3(0, 5.4, 0), 1.3, Kit.rgb(226, 196, 110), M.Fabric)
+	Kit.disc(m, "ScarecrowHat", sc + V3(0, 6.1, 0), 2, 0.25, C.woodDark, M.Fabric)
+	Kit.cyl(
+		m,
+		"HayBale",
+		CFrame.new(at(farm.X - 20, farm.Z + 4) + V3(0, 1.2, 0)) * CFrame.Angles(0, 0.3, 0),
+		3,
+		2.4,
+		Kit.rgb(226, 196, 110),
+		M.Fabric
+	)
+	-- lanterns along the middle lane, and signposts where the roads part
+	for _, x in { -460, -430, -400, -330, -300 } do
+		local z = MapLayout.lanes[1][2].points[1].Y
+		for _, p in MapLayout.lanes[1][2].points do
+			if p.X <= x then
+				z = p.Y
+			end
+		end
+		Kit.lantern(m, at(x, z + 9), V3(0, 0, -1))
+	end
+	Kit.signpost(m, at(-340, 12), {
+		{ text = "CASTLE", dir = V3(1, 0, 0) },
+		{ text = "FOREST", dir = V3(-1, 0, 0) },
+	})
+	Kit.signpost(m, at(-120, 14), {
+		{ text = "CANYON", dir = V3(1, 0, 0) },
+		{ text = "CASTLE", dir = V3(-1, 0, 0) },
+	})
 	-- old dwarf ruins by the creek: broken pillars and a fallen arch, half sunk in the grass
 	local ruins = { V3(-404, 0, 150), V3(-318, 0, -168), V3(-436, 0, -150) }
 	for k, c in ruins do

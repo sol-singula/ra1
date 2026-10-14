@@ -43,6 +43,12 @@ for _, d in ws.Map:GetDescendants() do
 		d.Enabled = false
 	end
 end
+-- the walls of magic shimmer in the game; in a still picture they'd be a flat sheet, so they're fainter here
+for _, d in ws.Map:GetDescendants() do
+	if d.Name == "Veil" and d:IsA("BasePart") then
+		d.Transparency = 0.9
+	end
+end
 -- the hangout deck sits on the ridge behind most shots: not part of the match
 local hangoutDeck = ws.Map:FindFirstChild("Hangout")
 if hangoutDeck then
