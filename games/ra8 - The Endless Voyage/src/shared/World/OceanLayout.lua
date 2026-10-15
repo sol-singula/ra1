@@ -5,6 +5,8 @@ the middle and an island zone out from it, and the current that carries debris t
   OceanLayout.plots            { { index, center, islandCenter, angle, current (unit, across the plot) }, ... }
   OceanLayout.plot(index)
   OceanLayout.plotAt(pos)      the plot a position is in, or nil
+  OceanLayout.islandSpot(index, rng)   where this voyage's island rises (a random spot in the plot's island zone)
+  OceanLayout.HORIZON          the far islands you can see but never reach
   OceanLayout.SPAWN            where a player with no plot yet stands (never happens: six plots, six players)
 ]]
 local Constants = require(script.Parent.Parent.Constants)
@@ -49,19 +51,54 @@ function OceanLayout.plotAt(pos)
 	return best
 end
 
--- Far, unreachable islands on the horizon (the ocean has an edge you can't see): { x, z, size, kind }
+-- Where a voyage's island rises beside a plot: somewhere in the plot's island zone, a different spot each time
+-- (so the islands you see from your raft are never a neat ring). Always inside plotAt's reach.
+function OceanLayout.islandSpot(index, rng)
+	local p = OceanLayout.plots[index]
+	if not p then
+		return nil
+	end
+	local a = math.rad(p.angle) + (rng and rng:NextNumber(-0.55, 0.55) or 0)
+	local r = Constants.ISLAND_OFFSET + (rng and rng:NextNumber(-28, 40) or 0)
+	return V3(p.center.X + math.cos(a) * r, 0, p.center.Z + math.sin(a) * r)
+end
+
+-- Far, unreachable islands on the horizon: scattered at random bearings and distances, from the edge of what you
+-- can reach to the edge of the water (the ocean has an edge you can't see): { x, z, size, kind, far }
+--   kind: "peak" (a mountain, snow on the big ones), "low" (green humps with trees), "atoll" (sand and palms)
+--   far: 0 (nearest) .. 1 (the farthest, drawn bigger so it still shows)
 OceanLayout.HORIZON = {}
 do
 	local rng = Random.new(8)
-	for k = 0, 11 do
-		local a = math.rad(k * 30 + rng:NextNumber(-8, 8))
-		local r = Constants.OCEAN_SIZE / 2 - rng:NextNumber(40, 110)
-		table.insert(OceanLayout.HORIZON, {
-			x = math.cos(a) * r,
-			z = math.sin(a) * r,
-			size = rng:NextNumber(40, 90),
-			kind = k % 3 == 0 and "peak" or "low",
-		})
+	local inner = Constants.PLOT_RING + Constants.ISLAND_OFFSET + Constants.ISLAND_RADIUS + 140
+	local outer = Constants.OCEAN_SIZE / 2 - 70
+	local kinds = { "peak", "low", "atoll", "low", "peak", "atoll", "low", "low", "peak" }
+	local angles = {}
+	local tries = 0
+	while #OceanLayout.HORIZON < #kinds and tries < 400 do
+		tries += 1
+		local a = rng:NextNumber(0, math.pi * 2)
+		local clear = true
+		for _, b in angles do
+			local diff = math.abs((a - b + math.pi) % (math.pi * 2) - math.pi)
+			if diff < math.rad(24) then
+				clear = false
+				break
+			end
+		end
+		if clear then
+			table.insert(angles, a)
+			local far = rng:NextNumber() ^ 0.7
+			local r = inner + (outer - inner) * far
+			local k = #OceanLayout.HORIZON + 1
+			table.insert(OceanLayout.HORIZON, {
+				x = math.cos(a) * r,
+				z = math.sin(a) * r,
+				size = rng:NextNumber(34, 64) * (0.8 + far * 0.8),
+				kind = kinds[k],
+				far = far,
+			})
+		end
 	end
 end
 

@@ -4,9 +4,12 @@ step ("Tutorial": { step, total, key, text, target, debris | spot | edge | piece
 false); here it becomes:
   * a card under the callouts: STEP 2 OF 9, what to do, and a SKIP button
   * a bouncing arrow over the target (the nearest piece of debris, a free spot beside the raft, the workbench, the
-    crate, a free edge, the helm, the island's campfire), and the thing itself lit up; for "hook the driftwood"
-    this client picks the nearest piece as you move, so whichever one you aim at is the one
+    crate, a free edge, the helm, the island's campfire), and the thing itself lit up and pulsing; for "hook the
+    driftwood" this client picks the nearest piece as you move, so whichever one you aim at is the one
   * a soft light beam from you to it
+  * the guide's finger on the screen (UI/Glow): a pulsing ring and a hand on the exact button to press next, for
+    whatever is open (BUILD, the piece's PLACE, ACT, the hotbar slot with the hook, the BAG, the crate's slot and
+    OPEN, MAKE, SAIL, HOME)
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,7 +20,12 @@ local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Kit = require(ReplicatedStorage.Shared.World.Kit)
 local Net = require(ReplicatedStorage.Shared.Net)
 local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
+local Items = require(ReplicatedStorage.Shared.Data.Items)
+local Recipes = require(ReplicatedStorage.Shared.Data.Recipes)
+local InputController = require(script.Parent.InputController)
+local PanelController = require(script.Parent.PanelController)
 local Bus = require(script.Parent.Parent.UI.Bus)
+local Glow = require(script.Parent.Parent.UI.Glow)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
@@ -31,6 +39,7 @@ local current
 local glow, glowKey, glowCheckAt = nil, nil, 0
 local target, targetGlow
 local pickAt = 0
+local uiAt = 0
 
 local function modelWith(folderName, attribute, value, deep)
 	local folder = workspace:FindFirstChild(folderName)
@@ -185,6 +194,151 @@ local function pickTarget()
 	end
 end
 
+-- The on-screen button to press next, for the step and whatever is open ----------------------------------------------
+local function screen(name)
+	local pg = player:FindFirstChild("PlayerGui")
+	return pg and pg:FindFirstChild(name)
+end
+
+local function inGui(name, child)
+	local g = screen(name)
+	return g and g:FindFirstChild(child, true) or nil
+end
+
+local function hotbarSlotWith(test)
+	local inv = Store.get("inv") or { slots = {} }
+	for i = 1, Constants.HOTBAR do
+		local slot = inv.slots["h" .. i]
+		if slot and test(slot) then
+			return i, slot
+		end
+	end
+	return nil
+end
+
+local function bagHas(key)
+	for id, slot in (Store.get("inv") or { slots = {} }).slots do
+		if slot.key == key then
+			return id
+		end
+	end
+	return nil
+end
+
+local function raftHas(key)
+	for _, p in (Store.get("raft") or { pieces = {} }).pieces or {} do
+		if p.key == key then
+			return true
+		end
+	end
+	return false
+end
+
+-- ACT on touch (keyboard players click: the world glow is enough), after the right tool is in hand.
+local function actOrTool(toolTest)
+	local _, held = Store.held()
+	if not (held and toolTest(held)) then
+		local i = hotbarSlotWith(toolTest)
+		if i then
+			return inGui("Hud", "Slot" .. i)
+		end
+		return nil
+	end
+	if Theme.inputKind() == "touch" then
+		return inGui("Actions", "Act")
+	end
+	return nil
+end
+
+local function isHook(slot)
+	local item = Items.get(slot.key)
+	return item and item.tool and item.tool.hook ~= nil
+end
+
+-- BUILD, then the piece's PLACE in the panel; nothing while the ghost is out (the pad on the raft glows).
+local function buildStep(pieceKey)
+	if InputController.isBuilding() then
+		return nil
+	end
+	if PanelController.current() == "build" then
+		local row = inGui("Panels", "Piece_" .. pieceKey)
+		return row and row:FindFirstChild("Place") or row
+	end
+	if PanelController.current() then
+		return nil
+	end
+	return inGui("Actions", "Build")
+end
+
+local function uiTarget()
+	if not current then
+		return nil
+	end
+	local key = current.key
+	local panel = PanelController.current()
+	if key == "hook" then
+		return actOrTool(isHook)
+	elseif key == "tile" then
+		return buildStep("floor")
+	elseif key == "bench" then
+		return buildStep("workbench")
+	elseif key == "craft" then
+		if panel == "craft" then
+			-- the hammer if you can afford it, else the rod, else the hammer's row
+			local counts = {}
+			for _, slot in (Store.get("inv") or { slots = {} }).slots do
+				counts[slot.key] = (counts[slot.key] or 0) + slot.n
+			end
+			local pick
+			for _, id in { "hammer", "fishing_rod" } do
+				local r = Recipes.get(id)
+				local can = r ~= nil
+				for k, n in r and r.cost or {} do
+					if (counts[k] or 0) < n then
+						can = false
+					end
+				end
+				if can then
+					pick = id
+					break
+				end
+			end
+			return inGui("Panels", "Make_" .. (pick or "hammer"))
+		end
+		return nil
+	elseif key == "crate" then
+		local slotId = bagHas("supply_crate")
+		if not slotId then
+			return actOrTool(isHook)
+		end
+		if panel == "inventory" then
+			if PanelController.picked() == slotId then
+				return inGui("Panels", "Use")
+			end
+			return inGui("Panels", "Slot_" .. slotId)
+		elseif not panel then
+			return inGui("Hud", "Bag")
+		end
+		return nil
+	elseif key == "net" then
+		return buildStep("net")
+	elseif key == "helm" then
+		if not raftHas("helm") then
+			return buildStep("helm")
+		end
+		if panel == "map" then
+			return inGui("Panels", "Sail_palm_key")
+		end
+		return nil
+	elseif key == "home" then
+		if panel == "map" then
+			return inGui("Panels", "Home")
+		end
+		return nil
+	end
+	return nil
+end
+
 local function ensureWorld()
 	if arrow and arrow.Parent then
 		return
@@ -261,8 +415,10 @@ local function show(view)
 	if not current then
 		card.Visible = false
 		clearWorld()
+		Glow.show(nil)
 		return
 	end
+	uiAt = 0
 	card.Visible = true
 	stepLabel.Text = current.title or `STEP {current.step} OF {current.total}`
 	label.Text = current.text or ""
@@ -278,10 +434,21 @@ local function show(view)
 	end
 end
 
+local function screenStep()
+	local t = os.clock()
+	if t >= uiAt then
+		uiAt = t + 0.1
+		local ok, want = pcall(uiTarget)
+		Glow.show(ok and want or nil)
+	end
+	Glow.step(t)
+end
+
 local function step()
 	if not current then
 		return
 	end
+	screenStep()
 	pickTarget()
 	if not target then
 		clearWorld()
@@ -293,6 +460,16 @@ local function step()
 	end
 	local t = os.clock()
 	updateGlow()
+	if glow and glow.Parent then
+		-- the whole thing pulses: bright, then brighter
+		local pulse = 0.5 + 0.5 * math.sin(t * 5)
+		glow.FillTransparency = 0.75 - pulse * 0.45
+		glow.OutlineTransparency = 0
+		glow.FillColor = C.mustard:Lerp(C.white, pulse * 0.5)
+	end
+	if spotPad and spotPad.Parent then
+		spotPad.Transparency = 0.6 - (0.5 + 0.5 * math.sin(t * 5)) * 0.4
+	end
 	local top = target + Vector3.new(0, (targetGlow and 2.4 or 4) + math.sin(t * 4) * 0.6, 0)
 	local spin = CFrame.Angles(0, t * 2, 0)
 	local shaft = arrow:FindFirstChild("Shaft")
@@ -370,5 +547,6 @@ end
 function TutorialController.current()
 	return current
 end
+TutorialController.uiTarget = uiTarget
 
 return TutorialController

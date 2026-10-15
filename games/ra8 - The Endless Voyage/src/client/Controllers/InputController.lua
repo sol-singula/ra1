@@ -7,7 +7,7 @@ nets, containers, lanterns and totems), and on the right:
           rock, PRY a wreck's salvage, FIX a damaged tile with the hammer, STAB with a spear, THROW a harpoon,
           EAT, OPEN a crate, READ a chart, LEARN a blueprint. Hold to keep going.
   BUILD   the build panel (then tap a spot on the grid: BuildController)
-Keyboard: click = act, 1-6 = hotbar, Tab = the bag, B = build, M = the map, J = the journal, H = wave. Gamepad:
+Keyboard: click = act, 1-6 = hotbar, Tab or I = the bag, B = build, M = the map, J = the journal, H = wave. Gamepad:
 R2 = act, L1/R1 = hotbar, Y = the bag, X = build, DPad up = the map.
 Aim help: on PC, what's under the mouse (a piece of debris, a creature, a tree) if it's in reach; on phones and
 gamepads, the best target in front of you. The server picks the same way when nothing is named.
@@ -483,7 +483,7 @@ function InputController:init()
 	end
 	bind("EV_Bag", function()
 		Bus.Open:Fire("inventory")
-	end, Enum.KeyCode.Tab, Enum.KeyCode.ButtonY)
+	end, Enum.KeyCode.Tab, Enum.KeyCode.I, Enum.KeyCode.ButtonY)
 	bind("EV_Build", function()
 		if building then
 			Bus.Place:Fire(false)
@@ -557,9 +557,13 @@ function InputController:init()
 			InputController.act()
 		end
 	end)
-	-- no Reset Character in the menu (going down is the game's: the lost bag, the respawn on your raft)
+	-- no Reset Character in the menu (going down is the game's: the lost bag, the respawn on your raft), and no
+	-- Roblox player list on Tab (Tab is the bag; FRIENDS and TOP show who's here)
 	task.spawn(function()
 		local ok, StarterGui = pcall(game.GetService, game, "StarterGui")
+		if ok and StarterGui then
+			pcall(StarterGui.SetCoreGuiEnabled, StarterGui, Enum.CoreGuiType.PlayerList, false)
+		end
 		for _ = 1, 30 do
 			if ok and StarterGui and pcall(StarterGui.SetCore, StarterGui, "ResetButtonCallback", false) then
 				break

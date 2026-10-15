@@ -25,6 +25,7 @@ local InputController = require(script.Parent.InputController)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local Icons = require(script.Parent.Parent.UI.Icons)
 
 local HudController = { Name = "HudController", Order = 10 }
 
@@ -390,6 +391,7 @@ local function buildHotbar()
 			Position = UDim2.new(1, -4, 1, -2),
 			Size = UDim2.fromOffset(40, 18),
 			TextXAlignment = Enum.TextXAlignment.Right,
+			ZIndex = 3,
 			outline = 2,
 			Parent = b,
 		})
@@ -399,6 +401,7 @@ local function buildHotbar()
 			Position = UDim2.fromOffset(4, 1),
 			Size = UDim2.fromOffset(16, 16),
 			TextColor3 = C.muted:Lerp(C.white, 0.4),
+			ZIndex = 3,
 			outline = 1.5,
 			Parent = b,
 		})
@@ -428,7 +431,14 @@ local function updateHotbar()
 	for i, s in refs.slots do
 		local slot = inv.slots["h" .. i]
 		local item = slot and Items.get(slot.key)
-		s.icon.Text = item and item.icon or ""
+		-- the item's own model as the picture (the emoji only if it can't be drawn)
+		local key = item and item.key or nil
+		if s.iconKey ~= key then
+			s.iconKey = key
+			Icons.clear(s.button)
+			local drawn = key and Icons.item(s.button, key, { inset = 5 })
+			s.icon.Text = (item and not drawn) and item.icon or ""
+		end
 		s.count.Text = (slot and slot.n > 1) and tostring(slot.n) or ""
 		local selected = (inv.selected or 1) == i
 		s.stroke.Color = selected and C.mustard or (item and rarityColor(item) or C.ink)

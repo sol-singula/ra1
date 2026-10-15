@@ -5,7 +5,10 @@ crate or a bottle, and the bags of things people dropped or lost. A hook pulls a
 hook flies, the piece follows); nets on the raft's edges catch what passes while you do something else; a rod
 casts from the deck and a bite wants a quick REEL.
 
-  debris     { id, kind, pos, plot, expires, model, special?, data? }: anchored models the server drifts
+  debris     { id, kind, pos, plot, expires, model, special?, data? }: the server decides where a piece is (a
+             start position, a time and a velocity on the server's clock, and who is pulling it in: attributes on
+             its model), and every client moves the model itself each frame (DebrisController), so the drift never
+             crosses the network
   lanes      a voyage's debris lane or a supply drop: extra spawns for a while (VoyageService)
   nets       NET_EVERY: each working net takes a piece within NET_RANGE; with a storage box aboard the catch goes
              straight to the owner's bag, otherwise the net holds NET_HOLD pieces until its prompt is used
@@ -117,13 +120,17 @@ function OceanService:Spawn(plot, kind, opts)
 	if opts.special then
 		model:SetAttribute("Special", true)
 	end
+	local t = now()
 	local d = {
 		id = nextId,
 		kind = kind,
 		pos = pos,
+		pos0 = pos,
+		t0 = t,
+		vel = layout.current * Constants.DEBRIS_SPEED,
 		plot = plot,
 		layout = layout,
-		expires = now() + (opts.lifetime or Constants.DEBRIS_LIFETIME),
+		expires = t + (opts.lifetime or Constants.DEBRIS_LIFETIME),
 		model = model,
 		special = opts.special,
 		data = opts.data,
@@ -131,6 +138,12 @@ function OceanService:Spawn(plot, kind, opts)
 		bob = rng:NextNumber(0, 6),
 		yaw = rng:NextNumber(0, math.pi * 2),
 	}
+	-- what the clients need to draw the drift themselves
+	model:SetAttribute("T0", t)
+	model:SetAttribute("Pos0", pos)
+	model:SetAttribute("Vel", d.vel)
+	model:SetAttribute("Bob", d.bob)
+	model:SetAttribute("Yaw", d.yaw)
 	p.debris[d.id] = d
 	p.count += 1
 	byId[d.id] = d
@@ -313,6 +326,33 @@ function OceanService:_collect(player, d, hook)
 	self.Hooked:Fire(player, d, items)
 end
 
+-- The piece starts coming in: the clients draw it heading for the player from here, at this speed.
+function OceanService:_startPull(d, player, speed)
+	d.pull = { player = player, speed = speed }
+	if d.model then
+		d.model:SetAttribute("Pull", player.UserId)
+		d.model:SetAttribute("PullFrom", d.pos)
+		d.model:SetAttribute("PullT0", now())
+		d.model:SetAttribute("PullSpeed", speed)
+	end
+	players:SetPose(player, "pulling", 6)
+end
+
+-- The puller left, or the piece is gone: back to drifting from where it is.
+function OceanService:_stopPull(d)
+	local who = d.pull and d.pull.player
+	d.pull, d.hooked, d.hook = nil, nil, nil
+	d.pos0, d.t0 = d.pos, now()
+	if d.model then
+		d.model:SetAttribute("Pull", nil)
+		d.model:SetAttribute("Pos0", d.pos0)
+		d.model:SetAttribute("T0", d.t0)
+	end
+	if who then
+		players:SetPose(who, "pulling", 0)
+	end
+end
+
 function OceanService:Hook(player, item, targetId, aim)
 	local hook = item and item.tool and item.tool.hook
 	if not hook or not players:IsAlive(player) then
@@ -347,7 +387,7 @@ function OceanService:Hook(player, item, targetId, aim)
 	Net.fire(player, "Sfx", "hook", root.Position)
 	task.delay(Constants.HOOK_FLIGHT, function()
 		if byId[d.id] and d.hooked == player then
-			d.pull = { player = player, speed = 14 * (hook.pull or 1) }
+			self:_startPull(d, player, 14 * (hook.pull or 1))
 		end
 	end)
 	-- the long hook and the claw sometimes bring a second piece
@@ -358,7 +398,7 @@ function OceanService:Hook(player, item, targetId, aim)
 				other.hook = hook
 				task.delay(Constants.HOOK_FLIGHT + 0.2, function()
 					if byId[other.id] and other.hooked == player then
-						other.pull = { player = player, speed = 14 * (hook.pull or 1) }
+						self:_startPull(other, player, 14 * (hook.pull or 1))
 					end
 				end)
 				break
@@ -434,6 +474,7 @@ function OceanService:Cast(player, item, aim)
 		biteAt = t + rng:NextNumber(Constants.FISH_BITE[1], Constants.FISH_BITE[2]) / (rod.speed or 1),
 		bitten = false,
 	}
+	players:SetPose(player, "fishing")
 	Net.fire(player, "Fish", { state = "cast", pos = pos })
 	for _, other in players:PlayersOnPlot(players:Here(player) or 0) do
 		Net.fire(other, "Fx", "cast", { from = root.Position, to = pos, by = player.UserId })
@@ -450,10 +491,12 @@ function OceanService:Reel(player)
 	end
 	fishing[player] = nil
 	if not f.bitten then
+		players:SetPose(player, "fishing", 0)
 		Net.fire(player, "Fish", { state = "off" })
 		hint(player, "🎣 Too early! Wait for the bite.")
 		return false
 	end
+	players:SetPose(player, "reel", 1.4)
 	local plot = players:Here(player)
 	local voyages, weather = registry.VoyageService, registry.WeatherService
 	local waters = voyages and plot and voyages:Waters(plot) or "home"
@@ -508,37 +551,31 @@ function OceanService:_tick(dt)
 			p.netAt = t + Constants.NET_EVERY
 			self:_nets(raft)
 		end
-		-- drift, pull, expire
+		-- drift, pull, expire (the clients draw the models themselves from the same numbers)
 		local layout = raft.layout
 		for _, d in p.debris do
 			if d.pull then
 				local root = players:Root(d.pull.player)
 				if not root or not d.pull.player.Parent then
-					d.pull, d.hooked = nil, nil
+					self:_stopPull(d)
 				else
 					local to = root.Position - d.pos
 					local flat = Vector3.new(to.X, 0, to.Z)
 					local dist = flat.Magnitude
 					if dist <= 3.5 then
+						players:SetPose(d.pull.player, "pulling", 0)
 						self:_collect(d.pull.player, d, d.hook)
 						continue
 					end
 					d.pos += flat.Unit * math.min(dist, d.pull.speed * dt)
 				end
 			else
-				d.pos += layout.current * Constants.DEBRIS_SPEED * dt
+				d.pos = d.pos0 + d.vel * (t - d.t0)
 				local along = (d.pos - layout.center):Dot(layout.current)
 				if along > Constants.DEBRIS_FROM + 14 or t > d.expires then
 					self:Remove(d)
 					continue
 				end
-			end
-			if d.model then
-				local y = Constants.WATER_LEVEL + 0.3 + math.sin(t * 1.6 + d.bob) * 0.12
-				d.model:PivotTo(
-					CFrame.new(d.pos.X, y, d.pos.Z)
-						* CFrame.Angles(math.sin(t + d.bob) * 0.04, d.yaw, math.cos(t * 0.8 + d.bob) * 0.05)
-				)
 			end
 		end
 	end
@@ -551,16 +588,19 @@ function OceanService:_tick(dt)
 		local where = players:Where(player)
 		if where ~= "raft" and where ~= "visiting" then
 			fishing[player] = nil
+			players:SetPose(player, f.bitten and "bite" or "fishing", 0)
 			Net.fire(player, "Fish", { state = "off" })
 			continue
 		end
 		if not f.bitten and t >= f.biteAt then
 			f.bitten = true
 			f.windowEnds = t + Constants.FISH_WINDOW
+			players:SetPose(player, "bite")
 			Net.fire(player, "Fish", { state = "bite", window = Constants.FISH_WINDOW })
 			Net.fire(player, "Sfx", "splash", f.pos)
 		elseif f.bitten and t > f.windowEnds then
 			fishing[player] = nil
+			players:SetPose(player, "bite", 0)
 			Net.fire(player, "Fish", { state = "away" })
 			self.Missed:Fire(player)
 		end
@@ -596,7 +636,13 @@ function OceanService:Init(reg)
 		lastHint[player] = nil
 		for _, d in byId do
 			if d.hooked == player then
-				d.hooked, d.pull = nil, nil
+				d.pull, d.hooked, d.hook = nil, nil, nil
+				d.pos0, d.t0 = d.pos, now()
+				if d.model then
+					d.model:SetAttribute("Pull", nil)
+					d.model:SetAttribute("Pos0", d.pos0)
+					d.model:SetAttribute("T0", d.t0)
+				end
 			end
 		end
 	end)

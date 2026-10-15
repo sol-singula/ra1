@@ -22,10 +22,10 @@ LightingPresets.list = {
 			offset = 0.18,
 			color = rgb(214, 232, 244),
 			decay = rgb(120, 170, 200),
-			glare = 0.2,
-			haze = 1.2,
+			glare = 0.36,
+			haze = 1.3,
 		},
-		grade = { brightness = 0.02, contrast = 0.1, saturation = 0.18, tint = rgb(252, 250, 240) },
+		grade = { brightness = 0.02, contrast = 0.12, saturation = 0.2, tint = rgb(252, 250, 240) },
 		bloom = { intensity = 0.3, size = 24, threshold = 1.7 },
 		clouds = { cover = 0.38, density = 0.5, color = rgb(255, 255, 255) },
 	},
@@ -215,9 +215,13 @@ function LightingPresets.apply(preset, clock)
 	Lighting.Ambient = p.ambient
 	Lighting.OutdoorAmbient = p.outdoor
 	Lighting.ExposureCompensation = p.exposure
-	Lighting.EnvironmentDiffuseScale = 1
-	Lighting.EnvironmentSpecularScale = 1
+	-- a little less fill from the sky, so shapes keep their shading, and soft shadows
+	Lighting.EnvironmentDiffuseScale = 0.55
+	Lighting.EnvironmentSpecularScale = 0.75
 	Lighting.GlobalShadows = true
+	pcall(function()
+		Lighting.ShadowSoftness = 0.3
+	end)
 	local a = child("Atmosphere", "Atmosphere")
 	a.Density, a.Offset, a.Color, a.Decay, a.Glare, a.Haze =
 		p.atmosphere.density,
@@ -232,7 +236,10 @@ function LightingPresets.apply(preset, clock)
 	local b = child("BloomEffect", "Bloom")
 	b.Intensity, b.Size, b.Threshold = p.bloom.intensity, p.bloom.size, p.bloom.threshold
 	local rays = child("SunRaysEffect", "SunRays")
-	rays.Intensity, rays.Spread = 0.06, 0.75
+	rays.Intensity, rays.Spread = 0.08, 0.8
+	-- a touch of depth: the far isles soften (PerformanceController turns it off on phones)
+	local dof = child("DepthOfFieldEffect", "Depth")
+	dof.FarIntensity, dof.NearIntensity, dof.FocusDistance, dof.InFocusRadius = 0.12, 0, 40, 90
 	local terrain = workspace:FindFirstChildOfClass("Terrain")
 	local clouds = terrain and terrain:FindFirstChildOfClass("Clouds")
 	if clouds and p.clouds then

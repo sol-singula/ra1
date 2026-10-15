@@ -13,7 +13,7 @@ Constants.AUTOSAVE_SECONDS = 120
 
 -- The ocean (World/OceanLayout): six plots round the centre, each with a raft and room for the island that comes
 -- to it when a voyage arrives
-Constants.OCEAN_SIZE = 1600 -- the water, edge to edge
+Constants.OCEAN_SIZE = 2400 -- the water, edge to edge (the far islands sit out to its edge)
 Constants.WATER_LEVEL = 0
 Constants.SEA_FLOOR = -34
 Constants.PLOT_RING = 300 -- the plots sit on a ring of this radius round the centre

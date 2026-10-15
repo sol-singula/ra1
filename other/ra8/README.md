@@ -6,7 +6,7 @@ voyage is where the risk is.
 
 * Game: `games/ra8 - The Endless Voyage/` (Rojo project, `TheEndlessVoyage.rbxl` built from it)
 * [The master plan](MASTER_PLAN.md) · [the build plan and what was built](PLAN.md)
-* [Gameplay renders](screenshots/README.md) · [thumbnails and the icon](thumbnails/README.md)
+* [Gameplay renders](screenshots/README.md) · [thumbnails and the icon](thumbnails/README.md) · [item icons](items/README.md)
 * The dashboard (`other/live.html`) has an `ra8` entry: where each player is (raft / water / island / visiting),
   the voyage's state, raft tier and tiles, level, voyages, finds aboard, health, idle.
 
@@ -18,3 +18,4 @@ voyage is where the risk is.
 4. Max players 6 (one plot each). Private servers free.
 5. Upload the icon (`icon/`) and the six thumbnails (`thumbnails/`).
 6. Run `tools/run_tests.sh` before every publish.
+7. Optional: upload the 2D item icons (`items/README.md`) so the bag shows them instead of the 3D model pictures.

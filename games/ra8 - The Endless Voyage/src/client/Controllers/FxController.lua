@@ -1,6 +1,7 @@
 --[[
 Effects (master plan §4: feedback for every action; §10: travel you can watch). The hook's line flies out and the
-piece splashes in; chips fly when you chop and sparks when you mine; a built piece puffs; a storm's waves roll over
+rope stays on the piece as it comes in; the rod's line runs from its tip to the bobber, the bobber dips and ripples
+on a bite, and the fish flies up out of the water to you when you reel; the piece splashes in; chips fly when you chop and sparks when you mine; a built piece puffs; a storm's waves roll over
 the deck and a bite shakes it; harpoons and the turret draw their lines; crates sparkle; a creature's tell is a
 red ring on the ground; dolphins jump, a shadow passes under the raft, a whirlpool spins; your lost bag has a marker
 in the world. Plus floating "+2 🌳" popups and the screen shake (Settings: effects, screen shake; Reduced Motion
@@ -11,6 +12,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Items = require(ReplicatedStorage.Shared.Data.Items)
+local ItemModels = require(ReplicatedStorage.Shared.World.ItemModels)
 local Kit = require(ReplicatedStorage.Shared.World.Kit)
 local Net = require(ReplicatedStorage.Shared.Net)
 local CreatureController = require(script.Parent.CreatureController)
@@ -297,13 +300,127 @@ function FxController.marker(pos, text, color, seconds)
 	end)
 end
 
+-- Lines that stay --------------------------------------------------------------------------------------------------
+local function characterOf(userId)
+	local p = Players:GetPlayerByUserId(userId)
+	return p and p.Character
+end
+
+local function handOf(character)
+	local hand = character and (character:FindFirstChild("RightHand") or character:FindFirstChild("Right Arm"))
+	if hand then
+		return hand.Position
+	end
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	return root and root.Position + Vector3.new(0, 1, 0) or nil
+end
+
+-- The far end of the rod in the hand (its Tip part runs along its own X), else the hand.
+local function rodTip(character)
+	local held = character and character:FindFirstChild("Held")
+	local tip = held and (held:FindFirstChild("Tip") or held:FindFirstChild("Rod"))
+	if tip then
+		return tip.CFrame:PointToWorldSpace(Vector3.new(tip.Size.X / 2, 0, 0))
+	end
+	return handOf(character)
+end
+
+-- A line from one moving point to another, sagging a little, kept while `alive` says so. ends() -> from, to.
+local function tether(width, color, sag, alive, ends)
+	local parts = {
+		chunk(Vector3.zero, Vector3.new(width, width, 0.1), color, M.Neon),
+		chunk(Vector3.zero, Vector3.new(width, width, 0.1), color, M.Neon),
+	}
+	for _, q in parts do
+		q.Transparency = 1
+	end
+	local function segment(q, a, b)
+		local len = math.max(0.1, (b - a).Magnitude)
+		q.Transparency = 0
+		q.Size = Vector3.new(width, width, len)
+		q.CFrame = CFrame.lookAt(a, b) * CFrame.new(0, 0, -len / 2)
+	end
+	table.insert(movers, {
+		update = function()
+			if not alive() then
+				for _, q in parts do
+					q:Destroy()
+				end
+				return false
+			end
+			local from, to = ends()
+			if typeof(from) ~= "Vector3" or typeof(to) ~= "Vector3" then
+				parts[1].Transparency, parts[2].Transparency = 1, 1
+				return true
+			end
+			local mid = (from + to) / 2 - Vector3.new(0, (to - from).Magnitude * sag, 0)
+			segment(parts[1], from, mid)
+			segment(parts[2], mid, to)
+			return true
+		end,
+	})
+end
+
+-- A thing flying from the water to someone in an arc (the fish you reeled in).
+local function flyItem(key, from, to, seconds)
+	local item = Items.get(key)
+	if not item or not near(from, 200) then
+		return
+	end
+	local ok, model = pcall(ItemModels.icon, item, folder)
+	if not ok or not model then
+		return
+	end
+	local age = 0
+	table.insert(movers, {
+		update = function(dt)
+			age += dt
+			local k = math.min(1, age / seconds)
+			local pos = from:Lerp(to, k) + Vector3.new(0, math.sin(k * math.pi) * 5, 0)
+			model:PivotTo(CFrame.new(pos) * CFrame.Angles(age * 9, age * 5, 0))
+			if k >= 1 then
+				model:Destroy()
+				FxController.burst(to, { BLUE, C.white }, 5, 0.25, 4, 0.4, { ball = true, up = 1 })
+				return false
+			end
+			return true
+		end,
+	})
+end
+
+local function debrisModel(id)
+	local f = workspace:FindFirstChild("Debris")
+	for _, m in f and f:GetChildren() or {} do
+		if m:GetAttribute("DebrisId") == id then
+			return m
+		end
+	end
+	return nil
+end
+
 -- Handlers for the server's "Fx" -------------------------------------------------------------------------------------
 function handlers.hook(d)
 	if typeof(d.from) ~= "Vector3" or typeof(d.to) ~= "Vector3" then
 		return
 	end
-	FxController.line(d.from + Vector3.new(0, 1, 0), d.to, C.rope, 0.12, Constants.HOOK_FLIGHT, 0.5)
+	FxController.line(d.from + Vector3.new(0, 1, 0), d.to, C.rope, 0.12, Constants.HOOK_FLIGHT, 0.4)
 	FxController.burst(d.to, BLUE, 6, 0.3, 6, 0.6, { ball = true, up = 1.2 })
+	-- then the rope stays on the piece while it comes in, from the hand that threw it
+	local c = d.by and characterOf(d.by)
+	local model = d.id and debrisModel(d.id)
+	if not c or not model then
+		return
+	end
+	local age = 0
+	tether(0.12, C.rope, 0.08, function()
+		age += 1 / 60
+		return age < Constants.HOOK_FLIGHT + 8 and model.Parent ~= nil and c.Parent ~= nil
+	end, function()
+		if age < Constants.HOOK_FLIGHT then
+			return nil, nil
+		end
+		return handOf(c), model:GetPivot().Position
+	end)
 end
 
 function handlers.splash(d)
@@ -319,21 +436,73 @@ function handlers.cast(d)
 	if typeof(d.to) ~= "Vector3" then
 		return
 	end
-	FxController.line(d.from + Vector3.new(0, 1.5, 0), d.to, C.rope, 0.08, 0.4, 0.3)
-	-- the bobber sits there until the rod's state changes
-	local bob = chunk(d.to, Vector3.new(0.7, 0.7, 0.7), RED, M.SmoothPlastic, "ball")
-	local age = 0
+	FxController.line(d.from + Vector3.new(0, 1.5, 0), d.to, C.rope, 0.08, 0.4, 0.2)
+	FxController.ring(water(d.to), BLUE, 2.5, 0.5, 0.25)
+	-- the bobber sits there (the line from the rod's tip to it) until the rod's state changes: a bite dips it and
+	-- ripples; reeling sends the fish flying up to you; a miss sinks it
+	local mine = d.by == player.UserId
+	local c = characterOf(d.by)
+	local bob = chunk(d.to, Vector3.new(0.6, 0.6, 0.6), RED, M.SmoothPlastic, "ball")
+	local top = chunk(d.to + Vector3.new(0, 0.25, 0), Vector3.new(0.5, 0.5, 0.5), C.white, M.SmoothPlastic, "ball")
+	local age, rippleAt, ending, sink = 0, 0, nil, 0
+	local function state()
+		if mine then
+			local f = Store.get("fish")
+			return f and f.state or "off"
+		end
+		local pose = c and c:GetAttribute("Pose")
+		return pose == "fishing" and "cast" or pose == "bite" and "bite" or pose == "reel" and "caught" or "off"
+	end
+	local function alive()
+		return ending ~= "done" and age < 60 and bob.Parent ~= nil
+	end
+	tether(0.06, C.cream, 0.1, alive, function()
+		return rodTip(c), bob.Position + Vector3.new(0, 0.2, 0)
+	end)
 	table.insert(movers, {
 		update = function(dt)
 			age += dt
-			local f = Store.get("fish")
-			local mine = d.by == player.UserId
-			if mine and (not f or f.state == "off" or f.state == "caught" or f.state == "away") or age > 40 then
-				bob:Destroy()
-				return false
+			local st = state()
+			if not ending then
+				if st == "caught" then
+					ending = "caught"
+					FxController.burst(water(d.to), { BLUE, C.white }, 12, 0.35, 7, 0.7, { ball = true, up = 1.6 })
+					FxController.ring(water(d.to), BLUE, 5, 0.5, 0.3)
+					local to = handOf(c) or d.from
+					flyItem("raw_fish", water(d.to), to, 0.65)
+					bob:Destroy()
+					top:Destroy()
+					ending = "done"
+					return false
+				elseif st == "away" then
+					ending = "away"
+				elseif st == "off" then
+					ending = "done"
+					bob:Destroy()
+					top:Destroy()
+					return false
+				end
 			end
-			local dip = f and f.state == "bite" and mine and -0.6 or 0
-			bob.CFrame = CFrame.new(d.to + Vector3.new(0, math.sin(age * 3) * 0.15 + dip, 0))
+			local dip = 0
+			if st == "bite" then
+				dip = -0.5 + math.sin(age * 18) * 0.25
+				if age >= rippleAt then
+					rippleAt = age + 0.3
+					FxController.ring(water(d.to), BLUE, 2.5, 0.45, 0.2)
+				end
+			elseif ending == "away" then
+				sink += dt
+				dip = -sink * 2
+				if sink > 0.6 then
+					bob:Destroy()
+					top:Destroy()
+					ending = "done"
+					return false
+				end
+			end
+			local pos = d.to + Vector3.new(0, math.sin(age * 3) * 0.12 + dip, 0)
+			bob.CFrame = CFrame.new(pos)
+			top.CFrame = CFrame.new(pos + Vector3.new(0, 0.25, 0))
 			return true
 		end,
 	})

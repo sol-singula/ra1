@@ -235,6 +235,30 @@ check(
 	nearest.model.Parent == ws.Debris and nearest.model:GetAttribute("DebrisId") == nearest.id
 )
 
+check(
+	"a piece carries what the clients need to draw its drift (start, time, velocity, bob)",
+	typeof(nearest.model:GetAttribute("Pos0")) == "Vector3"
+		and type(nearest.model:GetAttribute("T0")) == "number"
+		and typeof(nearest.model:GetAttribute("Vel")) == "Vector3"
+		and type(nearest.model:GetAttribute("Bob")) == "number"
+)
+do
+	local spawnPivot = nearest.model:GetPivot().Position
+	local posBefore = nearest.pos
+	Engine.advance(2)
+	local t = ws:GetServerTimeNow()
+	local expected = nearest.pos0 + nearest.vel * (t - nearest.t0)
+	check(
+		"the server's position follows the same formula the clients draw with (to within one tick)",
+		(nearest.pos - expected).Magnitude < Constants.DEBRIS_SPEED * 0.11 and (nearest.pos - posBefore).Magnitude > 1,
+		(nearest.pos - expected).Magnitude
+	)
+	check(
+		"the server never moves the model itself (nothing about the drift crosses the network)",
+		(nearest.model:GetPivot().Position - spawnPivot).Magnitude < 1e-6
+	)
+end
+
 -- hooking: name the piece
 local m0 = mark()
 local before = Inventory:Count(ava, nearest.kind == "wood" and "wood" or nearest.kind)
@@ -242,7 +266,20 @@ send(ava, "Act", nil, nearest.id)
 check("the hook flew (Fx hook to the plot)", firedSince(m0, "Fx", ava, function(a)
 	return a[1] == "hook"
 end) ~= nil)
+-- (send advanced 0.25 s; the pull starts at HOOK_FLIGHT = 0.35 s and the piece is 10-25 studs off)
+Engine.advance(0.15)
+local pulled = nearest.model
+check(
+	"the piece is told to come in: who pulls it, from where, how fast",
+	pulled ~= nil
+		and pulled:GetAttribute("Pull") == ava.UserId
+		and typeof(pulled:GetAttribute("PullFrom")) == "Vector3"
+		and type(pulled:GetAttribute("PullSpeed")) == "number",
+	pulled and tostring(pulled:GetAttribute("Pull")) or "gone"
+)
+check("the player pulls hand over hand (the pulling pose)", ava.Character:GetAttribute("Pose") == "pulling")
 Engine.advance(4)
+check("the pose ends when the piece is in", ava.Character:GetAttribute("Pose") ~= "pulling")
 check("the piece was pulled in and collected", Ocean:Get(nearest.id) == nil)
 local gotKey = Ocean.KINDS[nearest.kind] and next(Ocean.KINDS[nearest.kind].gives)
 check("it gave its resource", gotKey and Inventory:Count(ava, gotKey) > 0, gotKey)
@@ -336,8 +373,18 @@ check("crafting is announced", firedSince(m2, "Sfx", ava, function(a)
 end) ~= nil)
 check("the guide moved to the crate", lastFired("Tutorial", ava).key == "crate")
 check("a recipe at the wrong station is refused", not Craft:Craft(ava, "plank"))
-stand(ava, tileAt(raft, 6, 6))
-check("crafting away from the station is refused", not Craft:Craft(ava, "fishing_rod"))
+-- (the start tile farthest from the bench: more than the station's 7 studs away, with the materials in the bag)
+give(ava, "rope", 2)
+give(ava, "wood", 3)
+local farTile, farD
+for _, t in Constants.START_TILES do
+	local d = (tileAt(raft, t[1], t[2]) - Rafts:PiecePosition(raft, benchPiece)).Magnitude
+	if not farD or d > farD then
+		farTile, farD = t, d
+	end
+end
+stand(ava, tileAt(raft, farTile[1], farTile[2]))
+check("crafting away from the station is refused", not Craft:Craft(ava, "fishing_rod"), farD)
 
 -- the guide's crate drifts in at 2:20
 Engine.advance(Constants.GUIDE_CRATE_AT)

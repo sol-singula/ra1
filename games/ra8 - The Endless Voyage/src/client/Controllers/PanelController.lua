@@ -4,8 +4,9 @@ see). One open at a time, big tap targets, closes with X, Escape or B:
 
   BUILD     every piece by section, its cost (have/need, green when you can afford it), what locks it (a tier, a
             blueprint); tap PLACE and BuildController takes over. DEMOLISH too.
-  BAG       the hotbar and the bag: tap a slot to see the item, tap another to move or swap it; USE / DROP;
-            RESEARCH an artifact at the Research Station
+  BAG       the hotbar and the bag: drag an item to another slot (or tap one, then the other) to move or swap it;
+            tap or hover one to see it: its picture, what it does, its numbers; USE / HOLD / DROP; RESEARCH an
+            artifact at the Research Station
   CRAFT     opens at a station: what it makes, what each costs, MAKE; the Research Station's points and the
             next milestone; the Decorative Workshop's dyes
   MAP       the destinations: the ones you have charts for (distance, danger, what's there, SAIL), the ones you
@@ -37,6 +38,7 @@ local NotifyController = require(script.Parent.NotifyController)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local Icons = require(script.Parent.Parent.UI.Icons)
 
 local PanelController = { Name = "PanelController", Order = 12 }
 
@@ -44,8 +46,10 @@ local player = Players.LocalPlayer
 local C = Theme.Color
 local new = Theme.new
 local gui
-local open -- { name, frame, body, refresh, arg }
+local open -- { name, frame, body, refresh, arg, cells }
 local picked
+local drag -- { from, slot, start (Vector2), moved, ghost } an item being dragged in the bag
+local hover -- the bag slot under the mouse (keyboard players): its details show without picking it
 local cards = {}
 local bookTab = "islands"
 local boardTab = "tier"
@@ -62,6 +66,11 @@ function PanelController.close()
 		open = nil
 	end
 	picked = nil
+	hover = nil
+	if drag and drag.ghost then
+		drag.ghost:Destroy()
+	end
+	drag = nil
 end
 
 local function panel(name, title, w, h)
@@ -323,13 +332,21 @@ local function buildPanel()
 				end
 				local row = rowFrame(list, 62, order, locked and Color3.fromRGB(215, 210, 205) or nil)
 				row.Name = "Piece_" .. def.key
-				Theme.text({
-					Text = def.icon,
-					Position = UDim2.fromOffset(8, 6),
+				local pic = new("Frame", {
+					Name = "Picture",
+					BackgroundColor3 = Color3.fromRGB(70, 110, 160),
+					Position = UDim2.fromOffset(6, 6),
 					Size = UDim2.fromOffset(50, 50),
-					TextXAlignment = Enum.TextXAlignment.Center,
 					Parent = row,
-				})
+				}, { Theme.corner(10) })
+				if not Icons.piece(pic, def.key, { inset = 2, colours = raft.colours }) then
+					Theme.text({
+						Text = def.icon,
+						Size = UDim2.fromScale(1, 1),
+						TextXAlignment = Enum.TextXAlignment.Center,
+						Parent = pic,
+					})
+				end
 				label(row, def.name, {
 					Position = UDim2.fromOffset(64, 4),
 					Size = UDim2.fromOffset(300, 22),
@@ -379,7 +396,86 @@ local function buildPanel()
 end
 
 -- BAG -----------------------------------------------------------------------------------------------------------------------
-local function itemCell(parent, slotId, slot, order, onClick)
+local CELL = 62
+local BUFF_NAME = { hearty = "Hearty (tougher)", swift = "Swift (faster)", lucky = "Lucky (better hooks)" }
+local suppressUntil = 0 -- a tap right after a drag is not a tap
+
+-- A picture of the item in a cell: its own model, or the emoji if it can't be drawn.
+local function itemPicture(parent, item, inset, zIndex)
+	local drawn = item and Icons.item(parent, item.key, { inset = inset or 4, zIndex = zIndex or 1 })
+	if item and not drawn then
+		Theme.text({
+			Name = "Icon",
+			Text = item.icon or "",
+			Size = UDim2.new(1, -8, 1, -16),
+			Position = UDim2.fromOffset(4, 4),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Parent = parent,
+		})
+	end
+end
+
+-- The item's numbers, in words.
+local function statLines(item, slot)
+	local lines = {}
+	local t = item.tool
+	if t and t.hook then
+		table.insert(lines, `🔗 Reaches {t.hook.range} studs · pulls ×{t.hook.pull}`)
+		if (t.hook.double or 0) > 0 then
+			table.insert(lines, `Two pieces at once {math.floor(t.hook.double * 100)}% of the time`)
+		end
+		if t.hook.rare then
+			table.insert(lines, "Finds metal and pearls in the debris")
+		end
+	elseif t and t.rod then
+		local extra = (t.rod.rare or 0) > 0 and ` · rare fish +{math.floor(t.rod.rare * 100)}%` or ""
+		table.insert(lines, `🎣 Bites ×{t.rod.speed} as fast{extra}`)
+	elseif t and (t.axe or t.pick or t.pry) then
+		local spec = t.axe or t.pick or t.pry
+		local what = t.axe and "palms and trees" or t.pick and "rocks and ore" or "wrecks' salvage"
+		table.insert(lines, `💪 Power ×{spec.power} on {what}`)
+	elseif t and t.hammer then
+		table.insert(lines, `🔨 Repairs {t.hammer.repair} health a hit (1 wood each)`)
+	end
+	if item.light then
+		table.insert(lines, `💡 Lights {item.light.range} studs around you`)
+	end
+	if item.weapon then
+		local wpn = item.weapon
+		table.insert(
+			lines,
+			`⚔️ Damage {wpn.dmg} · reach {wpn.range}{wpn.thrown and " · thrown, it comes back" or ""}`
+		)
+	end
+	if item.food then
+		local buff = item.food.buff
+		local more = buff and ` · {BUFF_NAME[buff.key] or buff.key} for {math.floor(buff.seconds / 60)} min` or ""
+		table.insert(lines, `❤️ Heals {item.food.heal}{more}`)
+	end
+	if item.research then
+		table.insert(
+			lines,
+			`📚 Worth {Constants.RESEARCH_PER_ARTIFACT[item.research] or 10} research at the Research Station`
+		)
+	end
+	if slot and slot.data then
+		if slot.data.dest and Voyages.get(slot.data.dest) then
+			table.insert(lines, `🗺️ Marks {Voyages.get(slot.data.dest).name} on your map`)
+		end
+		if slot.data.key then
+			local def = Pieces.get(slot.data.key) or Recipes.get(slot.data.key)
+			local name = def and (def.name or (def.item and Items.get(def.item) and Items.get(def.item).name))
+				or slot.data.key
+			table.insert(lines, `📜 Teaches: {name}`)
+		end
+	end
+	if item.kind == "resource" and (item.stack or 1) > 1 then
+		table.insert(lines, `Stacks to {item.stack} a slot`)
+	end
+	return lines
+end
+
+local function itemCell(parent, slotId, slot, order, onClick, onEnter, onLeave)
 	local item = slot and Items.get(slot.key)
 	local r = rarity(item)
 	local b = new("TextButton", {
@@ -388,20 +484,14 @@ local function itemCell(parent, slotId, slot, order, onClick)
 		AutoButtonColor = false,
 		LayoutOrder = order or 0,
 		BackgroundColor3 = item and Theme.darken(r.color, 0.5) or Color3.fromRGB(70, 70, 90),
-		Size = UDim2.fromOffset(62, 62),
+		Size = UDim2.fromOffset(CELL, CELL),
 		Parent = parent,
 	}, { Theme.corner(12) })
-	local stroke =
-		Theme.stroke(picked == slotId and 5 or 3, picked == slotId and C.mustard or (item and r.color or C.ink))
+	local base = item and r.color or C.ink
+	local stroke = Theme.stroke(picked == slotId and 5 or 3, picked == slotId and C.mustard or base)
+	stroke:SetAttribute("Base", base)
 	stroke.Parent = b
-	Theme.text({
-		Name = "Icon",
-		Text = item and item.icon or "",
-		Size = UDim2.new(1, -8, 1, -16),
-		Position = UDim2.fromOffset(4, 4),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Parent = b,
-	})
+	itemPicture(b, item, 4, 1)
 	Theme.title({
 		Name = "Count",
 		Text = (slot and slot.n > 1) and tostring(slot.n) or "",
@@ -409,49 +499,335 @@ local function itemCell(parent, slotId, slot, order, onClick)
 		Position = UDim2.new(1, -4, 1, -2),
 		Size = UDim2.fromOffset(40, 18),
 		TextXAlignment = Enum.TextXAlignment.Right,
+		ZIndex = 3,
 		outline = 2,
 		Parent = b,
 	})
 	b.Activated:Connect(function()
+		if os.clock() < suppressUntil then
+			return
+		end
 		onClick(slotId, slot)
 	end)
+	b.InputBegan:Connect(function(input)
+		local kind = input.UserInputType
+		if slot and (kind == Enum.UserInputType.MouseButton1 or kind == Enum.UserInputType.Touch) then
+			drag =
+				{ from = slotId, slot = slot, start = Vector2.new(input.Position.X, input.Position.Y), moved = false }
+		end
+	end)
+	if onEnter then
+		b.MouseEnter:Connect(function()
+			onEnter(slotId)
+		end)
+		b.MouseLeave:Connect(function()
+			onLeave(slotId)
+		end)
+	end
 	return b
 end
 
-local function describe(slot)
+-- Where the pointer is, in the GUI's pixels (the same space as AbsolutePosition).
+local function pointer(input)
+	if input and input.UserInputType == Enum.UserInputType.Touch then
+		return Vector2.new(input.Position.X, input.Position.Y)
+	end
+	local ok, pos = pcall(UserInputService.GetMouseLocation, UserInputService)
+	if not ok or typeof(pos) ~= "Vector2" then
+		return input and Vector2.new(input.Position.X, input.Position.Y) or Vector2.zero
+	end
+	local inset = Vector2.zero
+	pcall(function()
+		inset = GuiService:GetGuiInset()
+	end)
+	return pos - inset
+end
+
+local function inside(obj, pos)
+	local p, sz = obj.AbsolutePosition, obj.AbsoluteSize
+	if typeof(p) ~= "Vector2" or typeof(sz) ~= "Vector2" then
+		return false
+	end
+	return pos.X >= p.X and pos.Y >= p.Y and pos.X <= p.X + sz.X and pos.Y <= p.Y + sz.Y
+end
+
+-- The slot under the pointer: a cell of the open bag, or a slot of the HUD's hotbar.
+local function slotUnder(pos)
+	if open and open.cells then
+		for id, cell in open.cells do
+			if cell.Parent and inside(cell, pos) then
+				return id
+			end
+		end
+	end
+	local pg = player:FindFirstChild("PlayerGui")
+	local hud = pg and pg:FindFirstChild("Hud")
+	local bar = hud and hud:FindFirstChild("Hotbar")
+	for i = 1, Constants.HOTBAR do
+		local b = bar and bar:FindFirstChild("Slot" .. i)
+		if b and inside(b, pos) then
+			return "h" .. i
+		end
+	end
+	return nil
+end
+
+-- Move (or swap) what is in one slot to another.
+function PanelController.dropOn(from, to)
+	if from and to and from ~= to then
+		Net.send("Move", from, to)
+		Bus.Tap:Fire("move_item")
+	end
+	picked = nil
+	if open and open.refresh then
+		open.refresh()
+	end
+end
+
+local function dragMove(input)
+	if not drag or not open then
+		return
+	end
+	local pos = pointer(input)
+	if not drag.moved then
+		if (pos - drag.start).Magnitude < 10 then
+			return
+		end
+		drag.moved = true
+		picked = nil
+		local item = Items.get(drag.slot.key)
+		local ghost = new("Frame", {
+			Name = "DragGhost",
+			BackgroundColor3 = Theme.darken(rarity(item).color, 0.4),
+			BackgroundTransparency = 0.15,
+			Size = UDim2.fromOffset(CELL, CELL),
+			ZIndex = 40,
+			Parent = gui,
+		}, { Theme.corner(12), Theme.stroke(4, C.mustard) })
+		itemPicture(ghost, item, 4, 41)
+		drag.ghost = ghost
+	end
+	local k = 1
+	local origin = Vector2.zero
+	pcall(function()
+		k = gui.Scale.Scale or 1
+		origin = gui.AbsolutePosition or Vector2.zero
+	end)
+	drag.ghost.Position = UDim2.fromOffset((pos.X - origin.X) / k - CELL / 2, (pos.Y - origin.Y) / k - CELL / 2)
+	-- the slot under the ghost lights up
+	local under = slotUnder(pos)
+	if open.cells then
+		for id, cell in open.cells do
+			local stroke = cell:FindFirstChildOfClass("UIStroke")
+			if stroke then
+				stroke.Color = id == under and C.mustard or stroke:GetAttribute("Base") or stroke.Color
+				stroke.Thickness = id == under and 5 or 3
+			end
+		end
+	end
+end
+
+local function dragEnd(input)
+	local d = drag
+	drag = nil
+	if not d then
+		return
+	end
+	if d.ghost then
+		d.ghost:Destroy()
+	end
+	if not d.moved then
+		return
+	end
+	suppressUntil = os.clock() + 0.3
+	local to = slotUnder(pointer(input))
+	if to then
+		PanelController.dropOn(d.from, to)
+	elseif open and open.refresh then
+		open.refresh()
+	end
+end
+
+-- The card on the right: the picture, the name, what it does, its numbers, the buttons.
+local function detailsCard(parent, inv, slotId)
+	local old = parent:FindFirstChild("Details")
+	if old then
+		old:Destroy()
+	end
+	local card = new("Frame", {
+		Name = "Details",
+		BackgroundColor3 = Color3.fromRGB(240, 230, 210),
+		Position = UDim2.new(1, -268, 0, 0),
+		Size = UDim2.new(0, 268, 1, 0),
+		Parent = parent,
+	}, { Theme.corner(14), Theme.stroke(2) })
+	local slot = slotId and inv.slots[slotId]
 	local item = slot and Items.get(slot.key)
 	if not item then
-		return "Tap an item to see it. Tap another slot to move it there."
+		label(
+			card,
+			"Tap an item to see it.\n\nDrag it to another slot to move it (or tap one slot, then the other).\n\nThe hotbar is what you can hold: tap a slot or press 1-6.",
+			{
+				Name = "Text",
+				Position = UDim2.fromOffset(12, 12),
+				Size = UDim2.new(1, -24, 1, -24),
+				TextSize = 15,
+				TextColor3 = C.muted,
+				TextYAlignment = Enum.TextYAlignment.Top,
+			}
+		)
+		return card
 	end
-	local extra = ""
-	if slot.data and slot.data.dest and Voyages.get(slot.data.dest) then
-		extra = ` · to {Voyages.get(slot.data.dest).name}`
-	elseif slot.data and slot.data.key then
-		local def = Pieces.get(slot.data.key) or Recipes.get(slot.data.key)
-		local name = def and (def.name or (def.item and Items.get(def.item).name)) or slot.data.key
-		extra = ` · {name}`
+	local r = rarity(item)
+	local pic = new("Frame", {
+		Name = "Picture",
+		BackgroundColor3 = Theme.darken(r.color, 0.5),
+		Position = UDim2.fromOffset(10, 10),
+		Size = UDim2.fromOffset(96, 96),
+		Parent = card,
+	}, { Theme.corner(14), Theme.stroke(3, r.color) })
+	itemPicture(pic, item, 6, 1)
+	label(card, item.name, {
+		Name = "ItemName",
+		Position = UDim2.fromOffset(114, 10),
+		Size = UDim2.new(1, -124, 0, 44),
+		Font = Theme.Display,
+		TextSize = 18,
+		TextYAlignment = Enum.TextYAlignment.Top,
+	})
+	label(card, `{r.name} {item.kind}{slot.n > 1 and ` · ×{slot.n}` or ""}`, {
+		Name = "Kind",
+		Position = UDim2.fromOffset(114, 56),
+		Size = UDim2.new(1, -124, 0, 18),
+		TextSize = 13,
+		TextColor3 = Theme.darken(r.color, 0.35),
+	})
+	label(card, string.sub(slotId, 1, 1) == "h" and "In your hotbar" or "In your bag", {
+		Name = "Where",
+		Position = UDim2.fromOffset(114, 76),
+		Size = UDim2.new(1, -124, 0, 18),
+		TextSize = 13,
+		TextColor3 = C.muted,
+	})
+	local y = 114
+	label(card, item.desc or "", {
+		Name = "Desc",
+		Position = UDim2.fromOffset(12, y),
+		Size = UDim2.new(1, -24, 0, 40),
+		TextSize = 14,
+		TextYAlignment = Enum.TextYAlignment.Top,
+	})
+	y += 44
+	for i, line in statLines(item, slot) do
+		label(card, line, {
+			Name = "Stat" .. i,
+			Position = UDim2.fromOffset(12, y),
+			Size = UDim2.new(1, -24, 0, 34),
+			TextSize = 13,
+			TextColor3 = Color3.fromRGB(60, 70, 110),
+			TextYAlignment = Enum.TextYAlignment.Top,
+		})
+		y += 30
 	end
-	return `{item.icon} {item.name}{extra} ({rarity(item).name}): {item.desc or ""}`
+	-- the buttons, two to a row at the bottom
+	local buttons = {}
+	local function btn(name, text, color, fn)
+		table.insert(buttons, { name = name, text = text, color = color, fn = fn })
+	end
+	if item.food or item.kind == "chart" or item.kind == "blueprint" or item.key == "supply_crate" then
+		btn(
+			"Use",
+			item.food and "EAT" or item.kind == "blueprint" and "LEARN" or item.kind == "chart" and "READ" or "OPEN",
+			C.good,
+			function()
+				Net.send("Use", slotId)
+				Bus.Tap:Fire("use_" .. item.key)
+			end
+		)
+	end
+	if item.research then
+		btn("Research", "RESEARCH", C.purple, function()
+			Net.send("Research", slotId)
+			Bus.Tap:Fire("research")
+		end)
+	end
+	if string.sub(slotId, 1, 1) == "b" then
+		btn("Hold", "HOLD", C.sky, function()
+			-- to an empty hotbar slot, else the selected one (swapping what's there)
+			local to = "h" .. tostring(inv.selected or 1)
+			for i = 1, Constants.HOTBAR do
+				if not inv.slots["h" .. i] then
+					to = "h" .. i
+					break
+				end
+			end
+			PanelController.dropOn(slotId, to)
+			Bus.Tap:Fire("hold_item")
+		end)
+	else
+		btn("Hold", "TO BAG", C.sky, function()
+			for i = 1, inv.capacity or 16 do
+				if not inv.slots["b" .. i] then
+					PanelController.dropOn(slotId, "b" .. i)
+					return
+				end
+			end
+			Bus.Tap:Fire("bag_full")
+		end)
+	end
+	btn("Drop", "DROP", C.red, function()
+		Net.send("Drop", slotId, 1)
+		Bus.Tap:Fire("drop")
+	end)
+	local rows = math.ceil(#buttons / 2)
+	for i, spec in buttons do
+		local row = (i - 1) // 2
+		local col = (i - 1) % 2
+		local wide = (#buttons % 2 == 1) and i == #buttons
+		local b = Theme.button({
+			Name = spec.name,
+			Text = spec.text,
+			BackgroundColor3 = spec.color,
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.new(0, 10 + col * 126, 1, -10 - (rows - 1 - row) * 46),
+			Size = UDim2.fromOffset(wide and 248 or 120, 40),
+			TextSize = 14,
+			Parent = card,
+		})
+		b.Activated:Connect(spec.fn)
+	end
+	return card
 end
 
 local function inventoryPanel()
 	local body = panel("inventory", "🎒 YOUR BAG", 820, 480)
 	local function refresh()
 		body:ClearAllChildren()
+		open.cells = {}
 		local inv = Store.get("inv") or { slots = {}, capacity = 16 }
 		if picked and not inv.slots[picked] then
 			picked = nil -- (used up or dropped)
 		end
-		label(
-			body,
-			"HOTBAR (tap or 1-6 to hold)",
-			{ Size = UDim2.new(1, 0, 0, 20), Font = Theme.Display, TextSize = 14, TextColor3 = C.muted }
-		)
+		if hover and not inv.slots[hover] then
+			hover = nil
+		end
+		local left = new("Frame", {
+			Name = "Left",
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, -280, 1, 0),
+			Parent = body,
+		})
+		label(left, "HOTBAR (what you can hold: tap a slot or press 1-6)", {
+			Size = UDim2.new(1, 0, 0, 20),
+			Font = Theme.Display,
+			TextSize = 14,
+			TextColor3 = C.muted,
+		})
 		local hot = new("Frame", {
 			BackgroundTransparency = 1,
 			Position = UDim2.fromOffset(0, 22),
 			Size = UDim2.new(1, 0, 0, 66),
-			Parent = body,
+			Parent = left,
 		})
 		new("UIListLayout", {
 			FillDirection = Enum.FillDirection.Horizontal,
@@ -459,11 +835,13 @@ local function inventoryPanel()
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			Parent = hot,
 		})
+		local function showDetails()
+			detailsCard(body, inv, hover or picked)
+		end
 		local function onClick(slotId, slot)
 			if picked and picked ~= slotId then
-				Net.send("Move", picked, slotId)
-				picked = nil
-				Bus.Tap:Fire("move_item")
+				PanelController.dropOn(picked, slotId)
+				return
 			elseif slot then
 				picked = picked == slotId and nil or slotId
 			else
@@ -471,92 +849,67 @@ local function inventoryPanel()
 			end
 			refresh()
 		end
-		for i = 1, Constants.HOTBAR do
-			itemCell(hot, "h" .. i, inv.slots["h" .. i], i, onClick)
+		local function onEnter(slotId)
+			if drag or Theme.inputKind() ~= "keyboard" then
+				return
+			end
+			hover = slotId
+			local cell = open.cells[slotId]
+			local stroke = cell and cell:FindFirstChildOfClass("UIStroke")
+			if stroke and picked ~= slotId then
+				stroke.Color = C.white
+				stroke.Thickness = 5
+			end
+			showDetails()
 		end
-		label(body, `BAG · {inv.capacity or 16} slots (more with storage boxes and tiers)`, {
+		local function onLeave(slotId)
+			if hover ~= slotId then
+				return
+			end
+			hover = nil
+			local cell = open.cells[slotId]
+			local stroke = cell and cell:FindFirstChildOfClass("UIStroke")
+			if stroke and picked ~= slotId then
+				stroke.Color = stroke:GetAttribute("Base") or stroke.Color
+				stroke.Thickness = 3
+			end
+			showDetails()
+		end
+		for i = 1, Constants.HOTBAR do
+			local id = "h" .. i
+			open.cells[id] = itemCell(hot, id, inv.slots[id], i, onClick, onEnter, onLeave)
+		end
+		label(left, `BAG · {inv.capacity or 16} slots (more with storage boxes and tiers) · drag to move`, {
 			Position = UDim2.fromOffset(0, 92),
 			Size = UDim2.new(1, 0, 0, 20),
 			Font = Theme.Display,
 			TextSize = 14,
 			TextColor3 = C.muted,
 		})
-		local grid = scroller(
-			body,
-			{ Position = UDim2.fromOffset(0, 114), Size = UDim2.new(1, 0, 1, -200), grid = UDim2.fromOffset(62, 62) }
-		)
+		local finds = (inv.finds or 0) > 0
+		local grid = scroller(left, {
+			Position = UDim2.fromOffset(0, 114),
+			Size = UDim2.new(1, 0, 1, finds and -138 or -114),
+			grid = UDim2.fromOffset(CELL, CELL),
+		})
 		for i = 1, inv.capacity or 16 do
-			itemCell(grid, "b" .. i, inv.slots["b" .. i], i, onClick)
+			local id = "b" .. i
+			open.cells[id] = itemCell(grid, id, inv.slots[id], i, onClick, onEnter, onLeave)
 		end
-		local info = new("Frame", {
-			Name = "Info",
-			BackgroundColor3 = Color3.fromRGB(240, 230, 210),
-			AnchorPoint = Vector2.new(0, 1),
-			Position = UDim2.new(0, 0, 1, 0),
-			Size = UDim2.new(1, 0, 0, 78),
-			Parent = body,
-		}, { Theme.corner(12), Theme.stroke(2) })
-		local slot = picked and inv.slots[picked]
-		label(
-			info,
-			describe(slot),
-			{ Name = "Text", Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -250, 1, -12), TextSize = 15 }
-		)
-		if slot then
-			local item = Items.get(slot.key)
-			local x = -8
-			local function btn(name, text, color, fn)
-				local b = Theme.button({
-					Name = name,
-					Text = text,
-					BackgroundColor3 = color,
-					AnchorPoint = Vector2.new(1, 0.5),
-					Position = UDim2.new(1, x, 0.5, 0),
-					Size = UDim2.fromOffset(100, 40),
-					TextSize = 14,
-					Parent = info,
-				})
-				b.Activated:Connect(fn)
-				x -= 106
-			end
-			btn("Drop", "DROP", C.red, function()
-				Net.send("Drop", picked, 1)
-				Bus.Tap:Fire("drop")
-			end)
-			if item.food or item.kind == "chart" or item.kind == "blueprint" or item.key == "supply_crate" then
-				btn(
-					"Use",
-					item.food and "EAT"
-						or item.kind == "blueprint" and "LEARN"
-						or item.kind == "chart" and "READ"
-						or "OPEN",
-					C.good,
-					function()
-						Net.send("Use", picked)
-						Bus.Tap:Fire("use_" .. item.key)
-					end
-				)
-			end
-			if item.research then
-				btn("Research", "RESEARCH", C.purple, function()
-					Net.send("Research", picked)
-					Bus.Tap:Fire("research")
-				end)
-			end
-		end
-		if (inv.finds or 0) > 0 then
+		if finds then
 			label(
-				body,
+				left,
 				`🎒 {inv.finds} finds aboard: half float off if you go down away from your dock. Sail home to keep them.`,
 				{
 					AnchorPoint = Vector2.new(0, 1),
-					Position = UDim2.new(0, 0, 1, -82),
-					Size = UDim2.new(1, 0, 0, 18),
+					Position = UDim2.new(0, 0, 1, 0),
+					Size = UDim2.new(1, 0, 0, 20),
 					TextSize = 13,
 					TextColor3 = C.red,
 				}
 			)
 		end
+		showDetails()
 	end
 	open.refresh = refresh
 	refresh()
@@ -647,13 +1000,21 @@ local function craftPanel(station)
 			end
 			local row = rowFrame(list, 62, i, locked and Color3.fromRGB(215, 210, 205) or nil)
 			row.Name = "Recipe_" .. r.id
-			Theme.text({
-				Text = icon,
-				Position = UDim2.fromOffset(8, 6),
+			local pic = new("Frame", {
+				Name = "Picture",
+				BackgroundColor3 = item and Theme.darken(rarity(item).color, 0.5) or C.slate,
+				Position = UDim2.fromOffset(6, 6),
 				Size = UDim2.fromOffset(50, 50),
-				TextXAlignment = Enum.TextXAlignment.Center,
 				Parent = row,
-			})
+			}, { Theme.corner(10) })
+			if not (item and Icons.item(pic, item.key, { inset = 3 })) then
+				Theme.text({
+					Text = icon,
+					Size = UDim2.fromScale(1, 1),
+					TextXAlignment = Enum.TextXAlignment.Center,
+					Parent = pic,
+				})
+			end
 			label(row, name .. (r.count > 1 and (" ×" .. r.count) or ""), {
 				Position = UDim2.fromOffset(64, 4),
 				Size = UDim2.fromOffset(250, 24),
@@ -1758,8 +2119,28 @@ function PanelController.current()
 	return open and open.name or nil
 end
 
+-- The bag slot that is picked (tapped) in the BAG panel, or nil.
+function PanelController.picked()
+	return open and open.name == "inventory" and picked or nil
+end
+
 function PanelController:init()
 	gui = Theme.screen("Panels", 8, player:WaitForChild("PlayerGui"))
+	-- dragging in the bag: the pointer moves, the ghost follows; it lifts, the item drops where it is
+	pcall(function()
+		UserInputService.InputChanged:Connect(function(input)
+			local kind = input.UserInputType
+			if drag and (kind == Enum.UserInputType.MouseMovement or kind == Enum.UserInputType.Touch) then
+				dragMove(input)
+			end
+		end)
+	end)
+	UserInputService.InputEnded:Connect(function(input)
+		local kind = input.UserInputType
+		if drag and (kind == Enum.UserInputType.MouseButton1 or kind == Enum.UserInputType.Touch) then
+			dragEnd(input)
+		end
+	end)
 	Bus.Open:Connect(PanelController.openPanel)
 	Bus.Close:Connect(PanelController.close)
 	Net.listen("Ask", onAsk)

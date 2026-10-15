@@ -62,6 +62,7 @@ Analytics.send = function(payload)
 	return true
 end
 local Constants = Engine.require(tree.shared.Constants)
+local Kit = Engine.require(tree.shared.World.Kit)
 local Formulas = Engine.require(tree.shared.Formulas)
 local Items = Engine.require(tree.shared.Data.Items)
 local Pieces = Engine.require(tree.shared.Data.Pieces)
@@ -160,7 +161,12 @@ check("the HUD is scaled for a phone", hud.Scale.Scale < 1, hud.Scale.Scale)
 check("the clock says docked", refs.voyage.Text:find("DOCKED") ~= nil, refs.voyage.Text)
 check("the raft line says driftwood platform", refs.raftLine.Text:find("Driftwood") ~= nil, refs.raftLine.Text)
 check("health is full", refs.hpText.Text:find("100") ~= nil, refs.hpText.Text)
-check("the hotbar shows the hook in slot 1", refs.slots[1].icon.Text == Items.get("basic_hook").icon)
+check(
+	"the hotbar shows the hook in slot 1 (its own model in a viewport)",
+	refs.slots[1].button:FindFirstChild("Icon3D") ~= nil
+		and refs.slots[1].button.Icon3D:FindFirstChild("basic_hook") ~= nil
+		and refs.slots[1].icon.Text == ""
+)
 check("ACT says HOOK", Input.refs.actLabel.Text == "HOOK", Input.refs.actLabel.Text)
 check("BUILD is there on your own raft", Input.refs.build.Visible == true)
 local card = find(guide, "GuideCard")
@@ -198,6 +204,15 @@ local function hookOnce()
 end
 local ok1 = hookOnce()
 check("ACT sent Act with the piece's id and the hook flew", ok1)
+Engine.advance(Constants.HOOK_FLIGHT + 0.1)
+check("the piece comes in hand over hand (the pulling pose)", player.Character:GetAttribute("Pose") == "pulling")
+local ropes = 0
+for _, m in ws.Fx:GetChildren() do
+	if m:IsA("BasePart") and m.Color == Kit.C.rope then
+		ropes += 1
+	end
+end
+check("the rope stays on the piece as it comes in", ropes >= 2, ropes)
 local act = sent("Act")
 check("the client named the piece it aimed at", act and type(act.args[2]) == "number", act and tostring(act.args[2]))
 Engine.advance(4)
@@ -221,6 +236,7 @@ check(
 	Guide.current() and Guide.current().key
 )
 check("a glowing pad marks the spot", ws.Guide:FindFirstChild("GuidePad") ~= nil)
+check("the guide's finger is on the BUILD button", Guide.uiTarget() == Input.refs.build)
 
 -- Building through the BUILD panel and the ghost ---------------------------------------------------------------------------------
 give("wood", 20)
@@ -229,6 +245,15 @@ tap(Input.refs.build)
 local buildPanel = panels:FindFirstChild("Panel_build")
 check("the BUILD panel opened", buildPanel ~= nil)
 local floorRow = find(buildPanel, "Piece_floor")
+check(
+	"the floor tile row shows the tile itself (a viewport)",
+	floorRow and floorRow.Picture:FindFirstChild("Icon3D") ~= nil
+)
+check(
+	"the guide's finger moved to the floor tile's PLACE",
+	floorRow and Guide.uiTarget() == find(floorRow, "Place"),
+	Guide.uiTarget() and Guide.uiTarget().Name
+)
 check(
 	"the floor tile row shows its cost in wood with have/need",
 	floorRow and find(floorRow, "Cost_wood") and find(floorRow, "Cost_wood").Text:find("Wood") ~= nil,
@@ -350,9 +375,21 @@ for id, s in Store.get("inv").slots do
 		crateSlot = id
 	end
 end
+check(
+	"the guide's finger is on the crate's slot",
+	Guide.uiTarget() ~= nil and Guide.uiTarget().Name == "Slot_" .. crateSlot,
+	Guide.uiTarget() and Guide.uiTarget().Name
+)
 tap(find(bag, "Slot_" .. crateSlot))
 bag = panels:FindFirstChild("Panel_inventory")
-check("tapping the crate shows it", find(bag, "Info") and find(bag, "Info").Text.Text:find("Supply Crate") ~= nil)
+check("the guide's finger moved to OPEN", Guide.uiTarget() ~= nil and Guide.uiTarget().Name == "Use")
+check(
+	"tapping the crate shows it: its picture, its name and what to do",
+	find(bag, "Details") ~= nil
+		and find(bag, "Details").ItemName.Text:find("Supply Crate") ~= nil
+		and find(bag, "Details").Picture:FindFirstChild("Icon3D") ~= nil
+		and find(bag, "Use").Text == "OPEN"
+)
 tap(find(bag, "Use"))
 check(
 	"OPEN opened the crate",
@@ -372,6 +409,31 @@ tap(find(bag, "Use"))
 check("LEARN taught the net", Data:Get(player).blueprints.net == true)
 check("an unlock card showed", find(hud, "Unlock") ~= nil)
 Panels.close()
+-- Drag and drop in the bag: the hook goes to a bag slot and back
+do
+	local hookSlot
+	for id, s in Store.get("inv").slots do
+		if s.key == "basic_hook" then
+			hookSlot = id
+		end
+	end
+	local free
+	for i = 1, 16 do
+		if not Store.get("inv").slots["b" .. i] then
+			free = "b" .. i
+			break
+		end
+	end
+	Panels.dropOn(hookSlot, free)
+	Engine.advance(0.3)
+	check(
+		"dropping the hook on a bag slot moved it there",
+		Store.get("inv").slots[free] and Store.get("inv").slots[free].key == "basic_hook"
+	)
+	Panels.dropOn(free, hookSlot)
+	Engine.advance(0.3)
+	check("and back", Store.get("inv").slots[hookSlot] and Store.get("inv").slots[hookSlot].key == "basic_hook")
+end
 check(
 	"the guide moved to the net",
 	Guide.current() and Guide.current().key == "net",
@@ -512,6 +574,7 @@ for _ in Fx.movers do
 	bobber = true
 end
 check("a bobber floats", bobber)
+check("you hold the rod out (the fishing pose)", player.Character:GetAttribute("Pose") == "fishing")
 for _ = 1, 50 do
 	if Store.get("fish").state == "bite" then
 		break
@@ -524,9 +587,18 @@ check(
 	Store.get("fish").state == "bite" and Input.refs.actLabel.Text == "REEL!",
 	Store.get("fish").state .. " " .. Input.refs.actLabel.Text
 )
+check("the rod tip jerks (the bite pose)", player.Character:GetAttribute("Pose") == "bite")
 Input.act()
 Engine.advance(0.4)
 check("reeling caught something", Store.get("fish").state == "caught", Store.get("fish").state)
+check("you crank the reel (the reel pose)", player.Character:GetAttribute("Pose") == "reel")
+local fishFlying = false
+for _, m in ws.Fx:GetChildren() do
+	if m.Name == "raw_fish" then
+		fishFlying = true
+	end
+end
+check("the fish flies up out of the water to you", fishFlying)
 
 -- The other panels ---------------------------------------------------------------------------------------------------------------
 Bus.Open:Fire("raft")

@@ -52,11 +52,46 @@ where each part lives in `games/ra8 - The Endless Voyage/`.
 * `DANGER_BY_TIER` {1, 1, 2, 3, 5, 5}: a Floating Fortress can face the Trench; the tooth it brings back makes the Legendary Vessel.
 * `XP.cap` 4000 a day.
 
+## Round 2: after the first playtest
+
+What the first play found, and what changed:
+
+* **Frame rate with things in the water.** The server moved every piece of debris every tick, and every part of every
+  piece crossed the network ten times a second. Now the server only decides where a piece is (a start position, a
+  time and a velocity on the server's clock, and who is pulling it in: attributes on the model, `OceanService`),
+  and each client draws the drift itself every frame from those numbers (`DebrisController`). Nothing about the
+  drift crosses the network; far pieces are placed every sixth frame.
+* **Islands in a ring.** The far islands were twelve humps evenly round a ring. Now nine of them are scattered at
+  random bearings and distances out to the edge of a wider ocean (2400 studs), with a peak and snow on the big ones,
+  green humps with trees, and a sandy atoll with palms (`OceanLayout.HORIZON`, `OceanBuilder`), always loaded
+  (persistent) and streamed to 1024 studs; and a voyage's island rises at a different spot in the plot's island zone
+  each time (`OceanLayout.islandSpot`), so what you see from the raft is never a neat circle.
+* **Sky and shading.** A bigger sun and moon, more glare and haze by day, soft shadows, less sky fill so shapes keep
+  their shading, a touch of depth of field on the far isles (off in lite mode), livelier water.
+* **The bag.** Tab (or I) opens the bag; the Roblox player list no longer steals Tab. Drag an item to another slot
+  (the hotbar on screen too) or tap one slot then another; hover shows it. A details card: the item's picture, its
+  rarity and kind, what it does, its numbers (reach, pull, bites, power, damage, heal, research), USE / HOLD / TO BAG /
+  DROP. Every slot, hotbar cell, crafting row and build row shows the thing itself in a little 3D view
+  (`UI/Icons`, a ViewportFrame of `ItemModels` / `RaftModels`), and every one of the 53 items got a real model
+  (hooks with a J, rods with a reel and a bobber, bevelled axes, a coral, a gear, a pearl on its shell, a compass with
+  a needle...). 2D icon art for all of them is in `other/ra8/items/` with an upload script (`tools/icons/`): once
+  uploaded, the UI uses it (`Data/IconIds`).
+* **The guide's finger.** Besides the arrow and the glow in the world (which now pulse, the supply crate too), a
+  pulsing ring and a hand sit on the exact button to press next for whatever is open: BUILD, the piece's PLACE, the
+  hotbar slot with the hook, ACT on touch, the BAG, the crate's slot and OPEN, MAKE at the bench, SAIL, HOME
+  (`UI/Glow`, `TutorialController.uiTarget`).
+* **Animations.** Sustained poses everyone sees (the character's `Pose` attribute, `PlayerService:SetPose`): the rod
+  held out in both hands while you wait, the tip jerking on a bite, the left hand cranking the reel; hand over hand
+  on the rope while a hooked piece comes in. The rod's line runs from its tip to the bobber, the bobber dips and
+  ripples on a bite, the fish flies up out of the water to you when you reel, and the rope stays on the piece as it
+  comes in (`AnimController`, `FxController`).
+* **Aiming.** The cursor picks the nearest thing it is over, not the one nearest the ray's line behind it.
+
 ## Tests
 
 `tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 59 checks: tiers, speeds, loot odds,
-every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 225 checks:
+every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 231 checks:
 the first five minutes, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent, the
 turret and the Leviathan, visiting, friends, boards, leaving and coming back, feedback, the anti-cheat, analytics;
-also run without DataStores) and the client (`tests/ClientSmoke.spec.luau`, 102 checks: the real UI driving the
+also run without DataStores) and the client (`tests/ClientSmoke.spec.luau`, 115 checks: the real UI driving the
 real server on a phone-sized screen).

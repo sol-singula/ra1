@@ -309,6 +309,32 @@ function PlayerService:Buff(player, key, seconds)
 	self:Push(player)
 end
 
+-- A sustained pose everyone sees (AnimController reads the character's "Pose" attribute): "fishing", "bite",
+-- "pulling"... for `seconds` (0 clears it now; nil keeps it until cleared or replaced).
+function PlayerService:SetPose(player, pose, seconds)
+	local c = player.Character
+	if not c then
+		return
+	end
+	local s = state(player)
+	if seconds == 0 then
+		if c:GetAttribute("Pose") == pose then
+			c:SetAttribute("Pose", nil)
+		end
+		return
+	end
+	c:SetAttribute("Pose", pose)
+	s.poseN = (s.poseN or 0) + 1
+	local n = s.poseN
+	if seconds then
+		task.delay(seconds, function()
+			if n == s.poseN and c.Parent and c:GetAttribute("Pose") == pose then
+				c:SetAttribute("Pose", nil)
+			end
+		end)
+	end
+end
+
 -- Going down ---------------------------------------------------------------------------------------------------------
 function PlayerService:Die(player, source)
 	local s = state(player)

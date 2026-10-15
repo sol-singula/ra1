@@ -4,12 +4,15 @@ keep playing; on top of them this bends the joints by hand (each Motor6D's C0, o
 offset in and out:
 
   holding     anything in your hand: the forearm level in front of you, like any Roblox tool
-  the hook    an overarm throw, then the arm reeling in
-  the rod     an overarm cast
+  the hook    an overarm throw; then, while the piece comes in, hand over hand on the rope ("pulling")
+  the rod     an overarm cast; then the rod held out in both hands, the line in the water ("fishing"); the tip
+              jerking on a bite ("bite"); the left hand cranking the reel ("reel")
   axes, picks, crowbars, the hammer   a wind-up over the head and a hard swing down in front
   spears      a level thrust; harpoons: an overarm throw
   eating, reading   hand to the face
   emotes      a wave, a cheer, a dance
+The one-shots come from "Act"; the sustained poses are the character's "Pose" attribute, set by the server
+(PlayerService:SetPose), so everyone sees them.
 Your own actions play the instant you press (InputController fires Bus.Swing); the server's echo for you is skipped.
 Directions: a positive pitch swings an arm or a forearm forward and up; a negative pitch leans the waist forward.
 R15 rigs get every joint; R6 rigs get the shoulders, the neck and the root.
@@ -111,6 +114,29 @@ AnimController.heldItem = heldItem
 local OVERHEAD = { chop = true, mine = true, pry = true, repair = true }
 local OVERARM = { hook = true, cast = true, throw = true }
 
+-- The sustained poses (the character's "Pose" attribute). Each returns S, E, LS, LE, waist, neck.
+local SUSTAINED = {}
+function SUSTAINED.fishing(clock)
+	-- the rod held out and a little down, both hands on it, swaying with the waiting
+	local sway = math.sin(clock * 1.4) * 0.04
+	return 0.75 + sway, 0.3, 0.55 + sway, 1.25, -0.06, 0.12
+end
+function SUSTAINED.bite(clock)
+	-- the tip jerks: the whole arm tugs down and back up, fast
+	local jerk = math.max(0, math.sin(clock * 9)) * 0.3
+	return 0.75 - jerk, 0.3 + jerk * 0.5, 0.55 - jerk * 0.5, 1.25, -0.12 - jerk * 0.2, 0.18
+end
+function SUSTAINED.reel(clock)
+	-- the rod pulled up and back, the left hand cranking in circles
+	local c = clock * 14
+	return 1.45, 0.5, 0.95 + math.sin(c) * 0.25, 1.1 + math.cos(c) * 0.35, 0.12, -0.05
+end
+function SUSTAINED.pulling(clock)
+	-- hand over hand on the rope, leaning back
+	local c = math.sin(clock * 6)
+	return 1.15 + c * 0.35, 0.5 - c * 0.2, 1.15 - c * 0.35, 0.5 + c * 0.2, 0.14, 0.05
+end
+
 function AnimController.pose(rec, character, clock)
 	local out = {}
 	local locked = {}
@@ -149,23 +175,30 @@ function AnimController.pose(rec, character, clock)
 			waist += -0.25 * (1 - k)
 		end
 		locked.RightShoulder, locked.RightElbow = true, true
-	elseif OVERARM[mode] and t < 0.9 then
-		-- overarm: cocked behind the head, whipped forward, then (the hook and the rod) held out, reeling
+	elseif OVERARM[mode] and t < 0.5 then
+		-- overarm: cocked behind the head, whipped forward, then back to the hold (the "pulling" and "fishing"
+		-- poses take over from there)
 		if t < 0.2 then
 			local k = ease(t / 0.2)
 			S, E = lerp(S0, 2.8, k), lerp(E0, 1.2, k)
 		elseif t < 0.35 then
 			local k = ease((t - 0.2) / 0.15)
 			S, E = lerp(2.8, 1.3, k), lerp(1.2, 0.05, k)
-		elseif mode ~= "throw" and t < 0.8 then
-			S, E = 1.3, 0.05 + math.sin(t * 30) * 0.1
-			LS, LE = 0.8, 1.2
-			lockBoth()
 		else
-			local k = ease((t - (mode == "throw" and 0.35 or 0.8)) / 0.1)
+			local k = ease((t - 0.35) / 0.15)
 			S, E = lerp(1.3, S0, k), lerp(0.05, E0, k)
 		end
 		locked.RightShoulder, locked.RightElbow = true, true
+	elseif SUSTAINED[character:GetAttribute("Pose")] then
+		local pS, pE, pLS, pLE, pWaist, pNeck = SUSTAINED[character:GetAttribute("Pose")](clock)
+		-- ease in over the first moments
+		local since = clock - (rec.poseAt or 0)
+		local k = ease(since / 0.25)
+		S, E = lerp(S0, pS, k), lerp(E0, pE, k)
+		LS, LE = pLS * k, pLE * k
+		waist += pWaist * k
+		neck += pNeck * k
+		lockBoth()
 	elseif mode == "swing" and t < 0.45 then
 		-- a level thrust
 		if t < 0.1 then
@@ -260,6 +293,11 @@ local function near(a, b)
 end
 
 local function apply(character, rec, clock)
+	local now = character:GetAttribute("Pose")
+	if now ~= rec.poseKey then
+		rec.poseKey = now
+		rec.poseAt = clock
+	end
 	local pose, locked = AnimController.pose(rec, character, clock)
 	rec.locked = locked
 	for name, m in rec.motors do

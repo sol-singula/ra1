@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local IslandBuilder = require(ReplicatedStorage.Shared.World.IslandBuilder)
+local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
 local OceanModels = require(ReplicatedStorage.Shared.World.OceanModels)
@@ -155,7 +156,7 @@ function IslandService:Arrive(plot, dest)
 		return nil
 	end
 	local folder = workspace:FindFirstChild("Islands") or workspace
-	local built = IslandBuilder.build(dest.template, raft.layout.islandCenter, rng, folder)
+	local built = IslandBuilder.build(dest.template, OceanLayout.islandSpot(plot, rng), rng, folder)
 	built.model:SetAttribute("Plot", plot)
 	built.model:SetAttribute("Dest", dest.key)
 	local island = {
