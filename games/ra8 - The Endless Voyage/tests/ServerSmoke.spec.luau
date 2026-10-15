@@ -1453,6 +1453,82 @@ check(
 	end)()
 )
 
+-- The rod is never a puzzle: empty hands grab it, and it goes back in the hand if the hand changes -------------------------
+do
+	local Mode = service("ModeService")
+	-- empty hands: ACT puts the rod in your hand
+	-- (empty the last hotbar slot: its item goes to the bag, or overboard if the bag's full)
+	local last = "h" .. Constants.HOTBAR
+	if Inventory:View(ava).slots[last] then
+		Inventory:Drop(ava, last)
+	end
+	Inventory:Select(ava, Constants.HOTBAR)
+	Engine.advance(0.3)
+	send(ava, "Act", Vector3.new(1, 0, 0))
+	local _, inHand = Inventory:Selected(ava)
+	check("empty hands: ACT grabs your rod", inHand and Items.toolKind(inHand) == "rod", inHand and inHand.key)
+	-- the hand is swapped (an avatar loading in): the rod comes back to the new hand
+	local c = ava.Character
+	local oldHand = c:FindFirstChild("RightHand") or c:FindFirstChild("Right Arm")
+	if oldHand then
+		local newHand = oldHand:Clone()
+		oldHand:Destroy()
+		newHand.Parent = c
+		Engine.advance(2.5)
+		local held = c:FindFirstChild("Held")
+		local grip = held and held:FindFirstChild("Grip")
+		local weld = grip and grip:FindFirstChildOfClass("Weld")
+		check("a swapped hand gets the rod back", weld ~= nil and weld.Part0 == newHand)
+	end
+
+	-- a friend comes to your world: you both get a crate
+	ws:SetAttribute("Mode", "world")
+	ws:SetAttribute("WorldOwner", 501)
+	local came = 0
+	Mode.FriendCame:Connect(function()
+		came += 1
+	end)
+	local mGift = mark()
+	Mode:OnPlayerReady(ben)
+	Engine.advance(1)
+	local function giftCallout(p)
+		return firedSince(mGift, "Callout", p, function(a)
+			return type(a[1]) == "string" and a[1]:find("supply crate") ~= nil
+		end) ~= nil
+	end
+	check("a friend in your world: you both get a supply crate", came == 1 and giftCallout(ava) and giftCallout(ben))
+	Mode:OnPlayerReady(ben)
+	Engine.advance(1)
+	check("only once a day per friend", came == 1)
+	-- nudges to show your raft, rate-limited
+	check(
+		"a nudge to invite friends goes out",
+		Mode:Nudge(ava, "test") == true and lastFired("Nudge", ava).kind == "invite"
+	)
+	check("but not again right away", Mode:Nudge(ava, "again") == false)
+	ws:SetAttribute("Mode", nil)
+	ws:SetAttribute("WorldOwner", nil)
+
+	-- RESET MY WORLD: back to the platform, an empty bag with the rod
+	local r = Rafts:RaftOf(ava)
+	if Voyages:State(r.plot) == "docked" then
+		send(ava, "ResetWorld")
+		r = Rafts:RaftOf(ava)
+		local kinds = 0
+		for _, sl in Inventory:View(ava).slots do
+			kinds += 1
+			_ = sl
+		end
+		check(
+			"reset: the raft is a little platform again",
+			r.summary.tiles == #Constants.START_TILES and r.tier == 1,
+			r.summary.tiles
+		)
+		check("reset: the bag holds just the rod", kinds == 1 and Inventory:Count(ava, "fishing_rod") == 1)
+		check("reset: the level stays", noDataStore or Data:Get(ava).xp > 0)
+	end
+end
+
 print(`\n{passed} passed, {failed} failed`)
 if #Engine.errors > 0 then
 	print(#Engine.errors .. " script errors")

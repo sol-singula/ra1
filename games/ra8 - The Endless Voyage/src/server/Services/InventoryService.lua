@@ -666,7 +666,17 @@ function InventoryService:_refreshHeld(player)
 	local s = state(player)
 	local _, item = self:Selected(player)
 	local key = item and item.key or nil
-	if s.heldKey == key and s.heldModel and s.heldModel.Parent then
+	-- still in hand? (the model, its weld, and the hand it's welded to all still on this character)
+	local weld = s.heldWeld
+	if
+		s.heldKey == key
+		and s.heldModel
+		and s.heldModel.Parent == c
+		and weld
+		and weld.Parent
+		and weld.Part0
+		and weld.Part0.Parent == c
+	then
 		return
 	end
 	if s.heldModel then
@@ -680,21 +690,30 @@ function InventoryService:_refreshHeld(player)
 	end
 	local hand = c:FindFirstChild("RightHand") or c:FindFirstChild("Right Arm")
 	if not hand then
+		-- (the body isn't all there yet: the tick tries again in a moment)
+		s.heldKey = nil
 		return
 	end
 	local model, grip = ItemModels.held(item, c)
 	model.Name = "Held"
-	local weld = Instance.new("Weld")
-	weld.Part0 = hand
-	weld.Part1 = grip
-	weld.C0 = ItemModels.holdCFrame(item, hand)
-	weld.Parent = grip
+	local w = Instance.new("Weld")
+	w.Part0 = hand
+	w.Part1 = grip
+	w.C0 = ItemModels.holdCFrame(item, hand)
+	w.Parent = grip
 	s.heldModel = model
+	s.heldWeld = w
 	c:SetAttribute("Held", key)
 end
 
 function InventoryService:_tick()
 	local t = now()
+	-- what you hold is in your hand (a body still loading, or an avatar that swapped its hands, gets it back)
+	for _, player in Players:GetPlayers() do
+		if inv[player] then
+			self:_refreshHeld(player)
+		end
+	end
 	for id, d in drops do
 		if t > d.expires then
 			drops[id] = nil
@@ -706,6 +725,17 @@ function InventoryService:_tick()
 end
 
 -- Boot --------------------------------------------------------------------------------------------------------------
+-- Start over: an empty bag, then the starting rod.
+function InventoryService:Reset(player)
+	local s = state(player)
+	s.slots = {}
+	s.finds = {}
+	s.selected = 1
+	self:StartingKit(player)
+	self:Push(player)
+	self:_refreshHeld(player)
+end
+
 function InventoryService:StartingKit(player)
 	self:Give(player, "fishing_rod", 1, "start")
 	self:Select(player, 1)
@@ -771,11 +801,20 @@ function InventoryService:OnPlayerReady(player, profile)
 		end
 	end
 	s.selected = math.clamp(tonumber(profile.inventory and profile.inventory.selected) or 1, 1, Constants.HOTBAR)
-	player.CharacterAdded:Connect(function()
+	player.CharacterAdded:Connect(function(c)
 		local st = state(player)
 		st.heldKey = nil
 		st.heldModel = nil
+		st.heldWeld = nil
 		task.defer(self._refreshHeld, self, player)
+		-- (in a real game the avatar's body parts arrive after the character: put it in the hand when they do)
+		pcall(function()
+			c.ChildAdded:Connect(function(part)
+				if part.Name == "RightHand" or part.Name == "Right Arm" then
+					task.defer(self._refreshHeld, self, player)
+				end
+			end)
+		end)
 	end)
 	if not any then
 		self:StartingKit(player)

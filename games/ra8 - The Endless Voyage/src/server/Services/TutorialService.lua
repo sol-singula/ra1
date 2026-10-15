@@ -232,6 +232,13 @@ function TutorialService:Goal(player)
 		end
 		return goal
 	end
+	-- now and then (a minute in every ten, once the raft has grown): show it to a friend
+	local minute = math.floor(os.time() / 60)
+	if raft.tier >= 2 and minute % 10 == 0 then
+		goal.key, goal.action = "invite", "invite"
+		goal.text = "Show your raft to a friend! 💌 They sail into your world and you both get a 🎁 crate"
+		return goal
+	end
 	-- broken pieces: the hammer
 	local broken
 	for _, p in raft.pieces do

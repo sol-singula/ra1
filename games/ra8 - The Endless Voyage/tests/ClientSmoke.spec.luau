@@ -101,15 +101,24 @@ local Bus = Engine.require(tree.client.UI.Bus)
 local refs = Hud.refs
 local Menu = Engine.require(tree.client.Controllers.MenuController)
 
--- The start menu (a public server asks how you want to play) ----------------------------------------------------------------
+-- The start menu: it's about your world ------------------------------------------------------------------------------------------
 Engine.advance(0.8)
-check("the start menu asks how you want to play", Menu.isOpen() == true)
-check("two choices: MY WORLD and PUBLIC OCEAN", Menu.buttons.world ~= nil and Menu.buttons.public ~= nil)
-local badge = gui.Menu:FindFirstChild("Badge", true)
-check("the corner badge says where you are", badge.Text:find("PUBLIC") ~= nil, badge.Text)
-Menu.buttons.world.Activated:Fire()
+check("the menu greets you", Menu.isOpen() == true)
+check(
+	"PLAY, INVITE FRIENDS, VISIT RAFTS and RESET MY WORLD (no public ocean)",
+	Menu.buttons.play and Menu.buttons.invite and Menu.buttons.visit and Menu.buttons.reset and not Menu.buttons.public
+)
+check("an INVITE FRIENDS button is always on screen", gui.Menu:FindFirstChild("InviteFriends") ~= nil)
+local invitesBefore = Engine.invites
+Menu.buttons.invite.Activated:Fire()
+check("INVITE opens Roblox's invite prompt", Engine.invites == invitesBefore + 1)
+Menu.buttons.reset.Activated:Fire()
+check("RESET asks first", gui.Menu:FindFirstChild("Confirm", true).Visible == true)
+gui.Menu:FindFirstChild("No", true).Activated:Fire()
+check("NO keeps your world", gui.Menu:FindFirstChild("Confirm", true).Visible == false and Menu.isOpen())
+Menu.buttons.play.Activated:Fire()
 Engine.advance(0.5)
-check("in Studio, MY WORLD says you play right here", Menu.status():find("Studio") ~= nil, Menu.status())
+check("in Studio, PLAY says you play right here", Menu.status():find("Studio") ~= nil, Menu.status())
 Engine.advance(3)
 check("then the menu closes and you play", Menu.isOpen() == false)
 

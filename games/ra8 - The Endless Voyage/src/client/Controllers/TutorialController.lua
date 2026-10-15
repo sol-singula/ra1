@@ -473,6 +473,8 @@ local function show(view)
 	stepLabel.Text = current.title or `STEP {current.step} OF {current.total}`
 	label.Text = current.text or ""
 	actionButton.Visible = current.action ~= nil
+	actionButton.Text = current.action == "invite" and "💌 INVITE" or "🎣 HOLD MY ROD"
+	actionButton.BackgroundColor3 = current.action == "invite" and C.mustard or C.good
 	if not was or was.key ~= current.key then
 		Theme.pop(card)
 	end
@@ -585,7 +587,9 @@ function TutorialController:init()
 	})
 	actionButton.Activated:Connect(function()
 		local action = current and current.action
-		if action then
+		if action == "invite" then
+			Bus.Menu:Fire("invite") -- (the invite prompt is the client's)
+		elseif action then
 			Bus.Tap:Fire("guide_" .. action)
 			Net.send("GuideAction", action)
 		end

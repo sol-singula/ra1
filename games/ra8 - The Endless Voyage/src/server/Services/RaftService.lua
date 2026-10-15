@@ -740,6 +740,31 @@ function RaftService:Assign(player, profile)
 	return raft
 end
 
+-- Start over: the raft back to the driftwood platform it began as (RESET MY WORLD).
+function RaftService:Reset(player)
+	local raft = byPlayer[player]
+	if not raft then
+		return false
+	end
+	for _, p in raft.pieces do
+		self:_remove(raft, p)
+	end
+	raft.pieces = {}
+	raft.grid, raft.onTile, raft.edges = { {}, {} }, { {}, {} }, { {}, {} }
+	for _, t in Constants.START_TILES do
+		self:_add(raft, { key = "floor", gx = t[1], gz = t[2], level = 1 })
+	end
+	self:Recompute(raft, true)
+	raft.folder:SetAttribute("Tier", raft.tier)
+	raft.dirty = true
+	local profile = data:Get(player)
+	if profile then
+		self:Save(raft, profile)
+	end
+	self:Push(raft)
+	return true
+end
+
 function RaftService:Save(raft, profile)
 	local list = {}
 	for _, p in raft.pieces do

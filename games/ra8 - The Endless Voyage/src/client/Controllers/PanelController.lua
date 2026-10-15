@@ -1966,39 +1966,21 @@ local function settingsPanel()
 			Parent = list,
 		})
 		invite.Activated:Connect(function()
-			-- the invite names your world when you're in one
-			local mode = workspace:GetAttribute("Mode")
-			local launch = mode == "world" and ("w:" .. tostring(workspace:GetAttribute("WorldOwner") or player.UserId))
-				or nil
-			pcall(function()
-				local options = Instance.new("ExperienceInviteOptions")
-				if launch then
-					options.LaunchData = launch
-				end
-				game:GetService("SocialService"):PromptGameInvite(player, options)
-			end)
+			Bus.Menu:Fire("invite")
 		end)
-		-- where to play: your own world, or the giant online ship
-		for i, choice in
-			{
-				{ "world", "🏝️ MY WORLD (your raft, your friends)" },
-				{ "public", "🌊 PUBLIC OCEAN (other players nearby)" },
-			}
-		do
-			local b = Theme.button({
-				Name = "Go_" .. choice[1],
-				Text = choice[2],
-				BackgroundColor3 = i == 1 and C.good or C.sky,
-				LayoutOrder = 20 + i,
-				Size = UDim2.new(1, -10, 0, 44),
-				TextSize = 15,
-				Parent = list,
-			})
-			b.Activated:Connect(function()
-				PanelController.close()
-				Bus.Menu:Fire(choice[1])
-			end)
-		end
+		local menu = Theme.button({
+			Name = "OpenMenu",
+			Text = "🏝️ MY WORLD MENU (invite, visit, start over)",
+			BackgroundColor3 = C.good,
+			LayoutOrder = 21,
+			Size = UDim2.new(1, -10, 0, 44),
+			TextSize = 15,
+			Parent = list,
+		})
+		menu.Activated:Connect(function()
+			PanelController.close()
+			Bus.Menu:Fire()
+		end)
 	end
 	open.refresh = refresh
 	refresh()

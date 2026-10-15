@@ -32,7 +32,8 @@ Net.ClientEvents = {
 	JoinFriend = 1, -- (userId) join a friend's server (JoinService)
 	FriendAction = 1, -- ("retry" | "cancel" | "private")
 	Pin = 2, -- (pieceKey) put a build shortcut for that piece in your hotbar (InventoryService)
-	Mode = 1, -- ("world" | "public") the start menu's choice (ModeService)
+	Mode = 1, -- ("world") PLAY: go to your world (ModeService)
+	ResetWorld = 1, -- start your world over (ModeService)
 	GuideAction = 4, -- ("hold_rod") the guide card's button: put the best rod in your hand (TutorialService)
 	Viewed = 2, -- ("build" | "craft" | "map" | "journal" | ...) a panel was opened
 	Feedback = 1, -- (like, text?, reasons?) the "Do you like the game?" card (FeedbackService)
@@ -71,6 +72,7 @@ Net.ServerEvents = {
 	"Lost", -- { pos, items }: where your lost bag floats after you went down
 	"Visiting", -- { userId, name, tier, tierName, tiles, pieces, colours }: a raft to look at (VisitService)
 	"VisitList", -- { kind, rows = { { userId, name, ... } } }: who you can visit
+	"Nudge", -- { kind = "invite", text }: a moment worth showing friends (ModeService)
 	"Menu", -- { close?, note?, travelling? }: the start menu (ModeService)
 }
 

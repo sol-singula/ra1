@@ -193,11 +193,27 @@ What the second play found, and what changed:
   Hold the slot and the piece's ghost follows where you look; ACT builds it, again and again, until you pick
   another slot. Dropping the shortcut just takes it off the hotbar.
 
+## Round 7: your world, friends, and the rod fixed for real
+
+* **The rod in your hand.** The server put the rod in your hand once, the moment your character appeared; in a real
+  game the avatar's hands often arrive a moment later, so the rod never showed. Now it goes into the hand whenever
+  it isn't there (the hand arriving, an avatar swapping its hands, every couple of seconds as a safety net), and
+  ACT with empty hands simply grabs your rod.
+* **The menu is about your world.** No public ocean. Every time you arrive: ▶ PLAY (from a public server it takes
+  you to your own world), 💌 INVITE FRIENDS TO SEE YOUR RAFT, 👀 VISIT RAFTS, and 🔄 RESET MY WORLD (it asks first;
+  your raft goes back to the driftwood platform and your bag to just the rod; level, journal, blueprints and
+  achievements stay; not during a trip). ⚙️ MORE reopens it.
+* **Inviting friends, everywhere.** A pulsing 💌 INVITE FRIENDS button is always on screen. Invites name your world,
+  so friends sail straight into it, and when a friend arrives you both get a supply crate (once a day per friend).
+  When there's something to show (the raft grows up, every 10 floors, back from a trip) a card asks "Show it to a
+  friend?" (at most every 8 minutes, 4 a session), and once the raft has grown the NEXT guide suggests it for a
+  minute every ten (`ModeService`, `MenuController`).
+
 ## Tests
 
 `tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 66 checks: tiers, speeds, loot odds,
-every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 252 checks:
+every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 261 checks:
 the first five minutes, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent, the
 turret and the Leviathan, visiting, friends, boards, leaving and coming back, feedback, the anti-cheat, analytics;
-also run without DataStores, 253 checks) and the client (`tests/ClientSmoke.spec.luau`, 154 checks: the real UI driving the
+also run without DataStores, 262 checks) and the client (`tests/ClientSmoke.spec.luau`, 157 checks: the real UI driving the
 real server on a phone-sized screen).

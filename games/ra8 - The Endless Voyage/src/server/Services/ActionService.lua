@@ -57,6 +57,13 @@ function ActionService:Act(player, aim, targetId)
 	end
 	lastAct[player] = t
 	local id, item = inventory:Selected(player)
+	-- empty hands: ACT grabs your rod (the rod is the whole game, it should never be a puzzle to get it back)
+	if not item and inventory:CountKind(player, "rod") > 0 then
+		inventory:HoldKind(player, "rod")
+		id, item = inventory:Selected(player)
+		Net.fire(player, "Toast", "🎣 Rod in hand! Tap ACT again to cast.", "good")
+		return true
+	end
 	local mode = ActionService.modeOf(item)
 	if typeof(aim) ~= "Vector3" then
 		aim = nil
