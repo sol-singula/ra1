@@ -7,7 +7,7 @@ rows go to Supabase through the roblox-analytics function, tagged game = "ra8".
                    how long they stayed, where they were when they left, idle or not, what happened last
   roblox_events    one row per thing that happened, with seconds since the session started:
                      loading (join, loaded, ui_ready, left_while_loading)
-                     the first five minutes (§4): first_hook, first_build, first_bench, first_craft, first_crate,
+                     the first five minutes (§4): first_cast, first_build, first_bench, first_craft, first_crate,
                        first_net, first_sail, first_island, first_home, the guide's steps, left_first_minute
                      the raft: built, demolished, painted, tier_up, broken, repaired
                      the ocean: fish, fish_away; voyages: sail, event, land, home; islands: gather, search, look,
@@ -342,7 +342,7 @@ function AnalyticsService:Init(registry)
 			s.hooked += 1
 			s.lastMoveAt = now()
 		end
-		first(player, "first_hook", { kind = d.kind })
+		first(player, "first_cast", { kind = d.kind })
 		if d.special then
 			track(player, "hooked_special", { kind = d.special })
 		end

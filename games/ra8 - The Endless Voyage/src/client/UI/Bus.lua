@@ -12,4 +12,6 @@ return {
 	Tap = Signal.new("Bus.Tap"), -- (name) a button or a named action (AnalyticsController counts them)
 	Swing = Signal.new("Bus.Swing"), -- (itemKey, mode, target?) your own action, right away (AnimController)
 	Place = Signal.new("Bus.Place"), -- (pieceKey) the build panel picked a piece: BuildController shows the spots
+	Quick = Signal.new("Bus.Quick"), -- ("start", how) | ("place") | ("stop"): the QUICK button is held, ticks, let go
+	--                                 (BuildController builds the recommended piece where you look)
 }

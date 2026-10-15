@@ -113,7 +113,11 @@ local function updateClock()
 		local total = (v.ends or t) - (v.started or t)
 		refs.voyageFill.Size = UDim2.fromScale(total > 0 and math.clamp(1 - left / total, 0, 1) or 0, 1)
 	elseif v.state == "island" then
-		text = `{v.icon or "🏝️"} {string.upper(v.name or "")}`
+		if v.stayEnds then
+			text = `{v.icon or "🏝️"} {string.upper(v.name or "")} · 🌊 {mmss(v.stayEnds - t)}`
+		else
+			text = `{v.icon or "🏝️"} {string.upper(v.name or "")} · ⚓`
+		end
 		refs.voyageBar.Visible = false
 	else
 		text = me.visiting and `⛵ VISITING · PLOT {me.plot or "?"}` or `🏠 DOCKED · PLOT {me.home or "?"}`
@@ -124,7 +128,8 @@ local function updateClock()
 	elseif storm then
 		sub = `⛈️ STORM · hammer what breaks · {timeText}`
 	elseif v.state == "island" then
-		sub = `Sail home from the helm · {timeText}`
+		sub = v.stayEnds and `No anchor: the current takes you home · {timeText}`
+			or `Anchored · sail home from the helm · {timeText}`
 	else
 		sub = timeText
 	end
@@ -720,6 +725,16 @@ local function onFish(f)
 	end
 end
 
+-- Into the water: a word about swimming back (once a dip).
+local lastWhere
+local function onWhere(me)
+	local where = me and me.where
+	if where == "water" and lastWhere ~= "water" then
+		HudController.callout("🏊 You're in the water. Swim back and jump up onto the raft!", "info")
+	end
+	lastWhere = where
+end
+
 function HudController:init()
 	gui = Theme.screen("Hud", 2, player:WaitForChild("PlayerGui"))
 	buildOverlays()
@@ -736,6 +751,9 @@ function HudController:init()
 	Net.listen("Fish", onFish)
 	Bus.Flash:Connect(flash)
 	Store.Changed:Connect(function(partial)
+		if partial.me then
+			onWhere(partial.me)
+		end
 		if partial.inv then
 			updateHotbar()
 			updateMe()

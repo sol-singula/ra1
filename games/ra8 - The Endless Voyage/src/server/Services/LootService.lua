@@ -33,11 +33,11 @@ local rng = Random.new()
 local BLUEPRINT_DANGER = {
 	net = 1,
 	engine = 2,
-	long_hook = 2,
+	long_rod = 2,
 	harpoon = 3,
 	salvage_net = 3,
 	harpoon_turret = 4,
-	salvage_claw = 4,
+	salvage_rod = 4,
 	leviathan_harpoon = 5,
 }
 
@@ -109,9 +109,9 @@ function LootService:OpenCrate(player, crate)
 	table.insert(items, give(player, extra, rng:NextInteger(2, 3), "crate"))
 	local rarity = Formulas.pickRarity(rng, danger, luck)
 	if crate.guide then
-		-- the guide's crate: the Surface Net's blueprint and a rod (§4: 2:30)
+		-- the guide's crate: the Surface Net's blueprint and an axe for the island (§4: 2:30)
 		table.insert(items, give(player, "blueprint", 1, "crate", { kind = "piece", key = "net" }))
-		table.insert(items, give(player, "fishing_rod", 1, "crate"))
+		table.insert(items, give(player, "axe", 1, "crate"))
 	else
 		local bp = (rarity ~= "common" or rng:NextNumber() < 0.35) and self:Blueprint(player, danger) or nil
 		if bp then

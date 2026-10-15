@@ -383,6 +383,73 @@ function RaftService:NearPiece(player, key, range, damagedOnly)
 	return best
 end
 
+-- What to build next (the QUICK button): the next tier's missing stations you can build, tiles while the tier
+-- wants more (stairs first when it wants a second deck), then a few comforts, then room. In the order to try them;
+-- the client takes the first its bag can pay for (Formulas.recommended).
+function RaftService:Recommend(raft)
+	local profile = raft.owner and data:Get(raft.owner)
+	local t = Pieces.TIERS[raft.tier + 1]
+	local out, seen = {}, {}
+	local function add(key, why)
+		local def = Pieces.get(key)
+		if not def or seen[key] or def.tier > raft.tier then
+			return
+		end
+		if def.blueprint and not (profile and profile.blueprints[key]) then
+			return
+		end
+		if def.decor and def.tier >= 2 and not self:Has(raft, "decor_shop", true) then
+			return
+		end
+		seen[key] = true
+		table.insert(out, { key = key, why = why })
+	end
+	local max = Constants.MAX_TILES_BY_TIER[raft.tier] or 12
+	local room = raft.summary.tiles < max
+	if t then
+		local why = `for the {t.name}`
+		for _, def in Pieces.list do
+			local need = t.needs and t.needs[def.key]
+			if need and (raft.summary.pieces[def.key] or 0) < need then
+				add(def.key, why)
+			end
+		end
+		if t.any then
+			local done = false
+			for key, n in t.any do
+				if (raft.summary.pieces[key] or 0) >= n then
+					done = true
+				end
+			end
+			if not done then
+				for _, def in Pieces.list do
+					if t.any[def.key] then
+						add(def.key, why)
+					end
+				end
+			end
+		end
+		if room and t.tiles and raft.summary.tiles < t.tiles then
+			add("floor", `{raft.summary.tiles}/{t.tiles} tiles {why}`)
+		end
+		if room and t.deck2 and raft.summary.deck2 < t.deck2 then
+			if not self:Has(raft, "stairs") then
+				add("stairs", `a second deck {why}`)
+			end
+			add("floor", `{raft.summary.deck2}/{t.deck2} tiles up top {why}`)
+		end
+	end
+	for _, key in { "railing", "bed", "lamp" } do
+		if not self:Has(raft, key) then
+			add(key, "a comfort")
+		end
+	end
+	if room then
+		add("floor", "more room")
+	end
+	return out
+end
+
 -- Views ----------------------------------------------------------------------------------------------------------
 function RaftService:View(raft)
 	local pieces = {}
@@ -435,6 +502,7 @@ function RaftService:View(raft)
 		broken = broken,
 		stations = stations,
 		helm = self:Has(raft, "helm", true),
+		recommend = self:Recommend(raft),
 	}
 end
 

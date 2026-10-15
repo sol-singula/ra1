@@ -42,11 +42,11 @@ Progression.FLAGS = {
 Progression.RESEARCH = {
 	{ points = 40, unlock = { kind = "piece", key = "net" }, name = "Surface Net" },
 	{ points = 120, unlock = { kind = "piece", key = "engine" }, name = "Engine" },
-	{ points = 240, unlock = { kind = "recipe", key = "long_hook" }, name = "Long Hook" },
+	{ points = 240, unlock = { kind = "recipe", key = "long_rod" }, name = "Long Rod" },
 	{ points = 400, unlock = { kind = "recipe", key = "harpoon" }, name = "Harpoon" },
 	{ points = 600, unlock = { kind = "piece", key = "salvage_net" }, name = "Salvage Net" },
 	{ points = 850, unlock = { kind = "piece", key = "harpoon_turret" }, name = "Harpoon Turret" },
-	{ points = 1200, unlock = { kind = "recipe", key = "salvage_claw" }, name = "Salvage Claw" },
+	{ points = 1200, unlock = { kind = "recipe", key = "salvage_rod" }, name = "Salvage Rod" },
 	{ points = 1800, unlock = { kind = "recipe", key = "leviathan_harpoon" }, name = "Leviathan Harpoon" },
 }
 
@@ -56,7 +56,7 @@ Progression.ACHIEVEMENTS = {
 		key = "debris_100",
 		name = "Beachcomber",
 		icon = "🔗",
-		desc = "Hook 100 pieces of debris.",
+		desc = "Reel in 100 pieces of debris.",
 		stat = "debris",
 		goal = 100,
 	},
@@ -64,7 +64,7 @@ Progression.ACHIEVEMENTS = {
 		key = "debris_1000",
 		name = "Salvager",
 		icon = "⛓️",
-		desc = "Hook 1,000 pieces of debris.",
+		desc = "Reel in 1,000 pieces of debris.",
 		stat = "debris",
 		goal = 1000,
 	},

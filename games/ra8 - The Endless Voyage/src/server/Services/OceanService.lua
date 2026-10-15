@@ -1,9 +1,9 @@
 --[[
-What floats past (master plan §7: collecting is the heartbeat; the hook is the first tool; nets collect while you
+What floats past (master plan §7: collecting is the heartbeat; the rod is the first tool; nets collect while you
 build). Debris drifts through every plot with the current: wood, scrap, rope, cloth, metal, now and then a supply
-crate or a bottle, and the bags of things people dropped or lost. A hook pulls a piece in (aim at it, ACT; the
-hook flies, the piece follows); nets on the raft's edges catch what passes while you do something else; a rod
-casts from the deck and a bite wants a quick REEL.
+crate or a bottle, and the bags of things people dropped or lost. The rod does it all: cast at a piece (aim at
+it, ACT) and the line lands on it and reels it in; cast at open water and a bite wants a quick REEL; nets on the
+raft's edges catch what passes while you do something else.
 
   debris     { id, kind, pos, plot, expires, model, special?, data? }: the server decides where a piece is (a
              start position, a time and a velocity on the server's clock, and who is pulling it in: attributes on
@@ -47,7 +47,7 @@ local fishing = {} -- [player] = { rod, pos, biteAt, bitten, windowEnds }
 local rng = Random.new()
 local lastHint = {} -- [player] = os.clock()
 
--- What drifts: the odds and what each gives (a little more with a stronger hook).
+-- What drifts: the odds and what each gives (a little more with a stronger rod).
 local KINDS = {
 	wood = { weight = 40, gives = { wood = { 2, 3 } } },
 	scrap = { weight = 22, gives = { scrap = { 2, 3 } } },
@@ -127,7 +127,7 @@ function OceanService:Spawn(plot, kind, opts)
 		pos = pos,
 		pos0 = pos,
 		t0 = t,
-		vel = layout.current * Constants.DEBRIS_SPEED,
+		vel = layout.current * Constants.DEBRIS_SPEED * (opts.speed or 1),
 		plot = plot,
 		layout = layout,
 		expires = t + (opts.lifetime or Constants.DEBRIS_LIFETIME),
@@ -187,7 +187,7 @@ function OceanService:Burst(plot, n, seconds)
 	table.insert(p.lanes, { left = n, every = seconds / n, nextAt = now() })
 end
 
--- Pieces within reach the moment a new player arrives (§4: the first hook lands in the first ten seconds).
+-- Pieces within reach the moment a new player arrives (§4: the first cast lands in the first ten seconds).
 function OceanService:SeedNear(plot, n)
 	local layout = OceanLayout.plot(plot)
 	if not layout then
@@ -219,9 +219,10 @@ function OceanService:Near(plot, pos, radius)
 	return out
 end
 
--- Hooking ---------------------------------------------------------------------------------------------------------------
--- What the hook aims at: the piece the client named (a debris id, or "drop:<id>"), else the best piece in front.
-function OceanService:_target(player, targetId, aim, range)
+-- Casting at debris --------------------------------------------------------------------------------------------------
+-- What the cast lands on: the piece the client named (a debris id, or "drop:<id>"), else a piece right in front
+-- (`strict`: only one you are clearly looking at, so a cast at open water fishes).
+function OceanService:_target(player, targetId, aim, range, strict)
 	local root = players:Root(player)
 	if not root then
 		return nil
@@ -251,7 +252,7 @@ function OceanService:_target(player, targetId, aim, range)
 			return
 		end
 		local dot = flat.Unit:Dot(dir)
-		if dot < 0.55 then
+		if dot < (strict and 0.8 or 0.55) then
 			return
 		end
 		local score = dot * 2 - dist / range
@@ -287,7 +288,7 @@ local function gives(kind, bonus)
 end
 
 -- The piece is in: what it gives, to whom.
-function OceanService:_collect(player, d, hook)
+function OceanService:_collect(player, d, rod)
 	if not byId[d.id] then
 		return
 	end
@@ -298,15 +299,15 @@ function OceanService:_collect(player, d, hook)
 		items = { { key = "bottle", n = 1, data = registry.LootService:BottleData(player) } }
 	else
 		local bonus = 0
-		if hook and (hook.pull or 1) >= 1.5 and rng:NextNumber() < 0.5 then
+		if rod and (rod.pull or 1) >= 1.5 and rng:NextNumber() < 0.5 then
 			bonus = 1
 		end
 		if players:Luck(player) > 0 and rng:NextNumber() < 0.5 then
 			bonus += 1
 		end
 		items = gives(d.kind, bonus)
-		-- the claw finds the good stuff
-		if hook and hook.rare and rng:NextNumber() < 0.12 * hook.rare then
+		-- the salvage rod's claw finds the good stuff
+		if rod and rod.salvage and rng:NextNumber() < 0.12 * rod.salvage then
 			table.insert(items, { key = rng:NextNumber() < 0.7 and "metal" or "pearl", n = 1 })
 		end
 	end
@@ -335,7 +336,7 @@ function OceanService:_startPull(d, player, speed)
 		d.model:SetAttribute("PullT0", now())
 		d.model:SetAttribute("PullSpeed", speed)
 	end
-	players:SetPose(player, "pulling", 6)
+	players:SetPose(player, "reel", 8)
 end
 
 -- The puller left, or the piece is gone: back to drifting from where it is.
@@ -349,27 +350,24 @@ function OceanService:_stopPull(d)
 		d.model:SetAttribute("T0", d.t0)
 	end
 	if who then
-		players:SetPose(who, "pulling", 0)
+		players:SetPose(who, "reel", 0)
 	end
 end
 
-function OceanService:Hook(player, item, targetId, aim)
-	local hook = item and item.tool and item.tool.hook
-	if not hook or not players:IsAlive(player) then
-		return false
-	end
+-- The line lands on a piece (or a floating bag) and reels it in.
+function OceanService:CastAt(player, item, d, isDrop)
+	local rod = item and item.tool and item.tool.rod
 	local root = players:Root(player)
-	local d, isDrop = self:_target(player, targetId, aim, hook.range)
-	if not d then
-		hint(player, "🔗 Aim at a floating piece and tap ACT to hook it.")
+	if not rod or not root then
 		return false
 	end
 	if isDrop then
 		for _, other in players:PlayersOnPlot(players:Here(player) or 0) do
-			Net.fire(other, "Fx", "hook", { from = root.Position, to = d.pos, by = player.UserId })
+			Net.fire(other, "Fx", "cast", { from = root.Position, to = d.pos, by = player.UserId, drop = d.id })
 		end
 		Net.fire(player, "Sfx", "hook")
-		task.delay(Constants.HOOK_FLIGHT + (d.pos - root.Position).Magnitude / (14 * hook.pull), function()
+		players:SetPose(player, "reel", Constants.HOOK_FLIGHT + (d.pos - root.Position).Magnitude / (14 * rod.pull))
+		task.delay(Constants.HOOK_FLIGHT + (d.pos - root.Position).Magnitude / (14 * rod.pull), function()
 			if player.Parent then
 				inventory:Pickup(player, d.id)
 			end
@@ -380,25 +378,25 @@ function OceanService:Hook(player, item, targetId, aim)
 		return false
 	end
 	d.hooked = player
-	d.hook = hook
+	d.hook = rod
 	for _, other in players:PlayersOnPlot(d.plot) do
-		Net.fire(other, "Fx", "hook", { from = root.Position, to = d.pos, by = player.UserId, id = d.id })
+		Net.fire(other, "Fx", "cast", { from = root.Position, to = d.pos, by = player.UserId, id = d.id })
 	end
 	Net.fire(player, "Sfx", "hook", root.Position)
 	task.delay(Constants.HOOK_FLIGHT, function()
 		if byId[d.id] and d.hooked == player then
-			self:_startPull(d, player, 14 * (hook.pull or 1))
+			self:_startPull(d, player, 14 * (rod.pull or 1))
 		end
 	end)
-	-- the long hook and the claw sometimes bring a second piece
-	if (hook.double or 0) > 0 and rng:NextNumber() < hook.double then
+	-- the long rod and the salvage rod sometimes bring a second piece
+	if (rod.double or 0) > 0 and rng:NextNumber() < rod.double then
 		for _, other in self:Near(d.plot, d.pos, 10) do
 			if other ~= d and not other.hooked and not other.special then
 				other.hooked = player
-				other.hook = hook
+				other.hook = rod
 				task.delay(Constants.HOOK_FLIGHT + 0.2, function()
 					if byId[other.id] and other.hooked == player then
-						self:_startPull(other, player, 14 * (hook.pull or 1))
+						self:_startPull(other, player, 14 * (rod.pull or 1))
 					end
 				end)
 				break
@@ -451,15 +449,23 @@ function OceanService:_nets(raft)
 	_ = p
 end
 
--- Fishing ---------------------------------------------------------------------------------------------------------------
-function OceanService:Cast(player, item, aim)
+-- Casting ----------------------------------------------------------------------------------------------------------------
+-- ACT with a rod: at a piece (named, or clearly in front) it reels it in; at open water it fishes.
+function OceanService:Cast(player, item, aim, targetId)
 	local rod = item and item.tool and item.tool.rod
 	if not rod or not players:IsAlive(player) then
 		return false
 	end
+	local d, isDrop = self:_target(player, targetId, aim, rod.range, targetId == nil)
+	if d then
+		return self:CastAt(player, item, d, isDrop)
+	end
 	local where = players:Where(player)
 	if where ~= "raft" and where ~= "visiting" then
-		hint(player, "🎣 Cast from your raft's edge.")
+		hint(player, "🎣 Cast from your raft's edge: at a floating piece to reel it in, at open water to fish.")
+		return false
+	end
+	if fishing[player] then
 		return false
 	end
 	local root = players:Root(player)
@@ -533,14 +539,14 @@ function OceanService:_tick(dt)
 		local sailing = voyages and voyages:State(plot) == "sailing"
 		if t >= p.nextAt and p.count < Constants.DEBRIS_MAX then
 			p.nextAt = t + Constants.DEBRIS_EVERY * (sailing and 0.6 or 1)
-			self:Spawn(plot, pickKind())
+			self:Spawn(plot, pickKind(), { speed = sailing and 3 or 1 })
 		end
 		for i = #p.lanes, 1, -1 do
 			local lane = p.lanes[i]
 			if t >= lane.nextAt then
 				lane.nextAt = t + lane.every
 				lane.left -= 1
-				self:Spawn(plot, pickKind(), { spread = 12, lifetime = 45 })
+				self:Spawn(plot, pickKind(), { spread = 12, lifetime = 45, speed = sailing and 3 or 1 })
 				if lane.left <= 0 then
 					table.remove(p.lanes, i)
 				end
@@ -563,7 +569,7 @@ function OceanService:_tick(dt)
 					local flat = Vector3.new(to.X, 0, to.Z)
 					local dist = flat.Magnitude
 					if dist <= 3.5 then
-						players:SetPose(d.pull.player, "pulling", 0)
+						players:SetPose(d.pull.player, "reel", 0)
 						self:_collect(d.pull.player, d, d.hook)
 						continue
 					end

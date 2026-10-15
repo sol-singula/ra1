@@ -4,6 +4,9 @@ Building (master plan §5: the raft is a grid, building is visible and tactile).
 green where it can go and red where it can't (with the reason), and ACT / a click / a tap places it: the server
 checks and builds (RaftService). Tiles keep placing until DONE; everything else places once. ROTATE turns a chair
 or the helm; railings and nets pick the edge nearest to where you point. Demolish: tap a piece.
+QUICK (Bus.Quick, from InputController's button): the piece the raft recommends (the next tier's missing station if
+the bag can pay for it, else a tile) goes where you look, again every half second while the button is held, with
+the same ghost and the same rules. Looking at the water beside the raft while a station is recommended lays tiles.
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +19,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
 local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
 local RaftModels = require(ReplicatedStorage.Shared.World.RaftModels)
+local HudController = require(script.Parent.HudController)
 local InputController = require(script.Parent.InputController)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
@@ -27,7 +31,8 @@ local player = Players.LocalPlayer
 local C = Theme.Color
 local gui
 local refs = {}
-local placing -- { key, def, rot, ghost, spot = { gx, gz, level, rot }, valid, reason, demolish }
+local placing -- { key, def, rot, ghost, spot = { gx, gz, level, rot }, valid, reason, demolish, quick, why }
+local quickReason
 local ghostFolder
 local lastSpotKey
 local WATERSIDE = { net = true, salvage_net = true, ladder = true, spikes = true }
@@ -74,7 +79,7 @@ local function check(def, gx, gz, level, rot)
 	if gx < 0 or gz < 0 or gx >= Constants.GRID or gz >= Constants.GRID then
 		return false, "Off the plot"
 	end
-	if def.blueprint and not (profile and profile.blueprints and profile.blueprints[placing.key]) then
+	if def.blueprint and not (profile and profile.blueprints and profile.blueprints[def.key]) then
 		return false, "Needs its blueprint"
 	end
 	if def.tier > (raft.tier or 1) then
@@ -128,7 +133,7 @@ local function check(def, gx, gz, level, rot)
 			if edges[key(gx, gz, level) * 10 + rot] then
 				return false, "That edge is taken"
 			end
-			if WATERSIDE[placing.key] then
+			if WATERSIDE[def.key] then
 				local d = NEIGHBOURS[rot + 1]
 				if tiles[key(gx + d[1], gz + d[2], level)] then
 					return false, "Must face the water"
@@ -154,11 +159,36 @@ local function check(def, gx, gz, level, rot)
 	return true
 end
 
+-- Where you look (the QUICK button, phones and gamepads): the camera's centre line on the deck you stand on, near you.
+local function lookPoint()
+	local r = root()
+	local cam = workspace.CurrentCamera
+	if not r or not cam then
+		return nil
+	end
+	local _, _, level = Formulas.tileAt(center(), r.Position)
+	local planeY = Constants.DECK_Y + (level - 1) * Constants.DECK_HEIGHT + 0.5
+	local origin, dir = cam.CFrame.Position, cam.CFrame.LookVector
+	local point
+	if dir.Y < -0.02 then
+		point = origin + dir * ((planeY - origin.Y) / dir.Y)
+	end
+	if not point or (Vector3.new(point.X, 0, point.Z) - Vector3.new(r.Position.X, 0, r.Position.Z)).Magnitude > 24 then
+		local flat = Vector3.new(dir.X, 0, dir.Z)
+		flat = flat.Magnitude > 0.01 and flat.Unit or r.CFrame.LookVector
+		point = r.Position + flat * 9
+	end
+	return Vector3.new(point.X, planeY, point.Z)
+end
+
 -- Where you point: a world position (the mouse's hit on PC, a few studs ahead otherwise).
 local function aimPoint()
 	local r = root()
 	if not r then
 		return nil
+	end
+	if placing and placing.quick == "look" then
+		return lookPoint()
 	end
 	local hit = InputController.mouseRay()
 	if hit then
@@ -190,10 +220,10 @@ end
 
 -- The spot the ghost goes to: the tile under the point (or the nearest one, so pointing at the water beside the
 -- raft still works), and for edge pieces the edge nearest to the point.
-local function spotFor(def, point)
+local function spotFor(def, point, rot)
 	local c = center()
 	local gx, gz, level = Formulas.tileAt(c, point)
-	local rot = placing.rot
+	rot = rot or 0
 	if not def.structural then
 		local tiles = maps()
 		if not tiles[key(gx, gz, level)] then
@@ -213,9 +243,15 @@ local function spotFor(def, point)
 		end
 	end
 	if def.structural then
-		-- a tile where you point if it's free, else the free spot nearest to the point
+		-- a tile where you point if it's free and beside the raft, else the free spot nearest to the point
 		local tiles = maps()
-		if tiles[key(gx, gz, level)] then
+		local beside = false
+		for _, d in NEIGHBOURS do
+			if tiles[key(gx + d[1], gz + d[2], level)] then
+				beside = true
+			end
+		end
+		if tiles[key(gx, gz, level)] or not beside then
 			local best, bestD
 			for _, p in (Store.get("raft") or { pieces = {} }).pieces or {} do
 				local pd = Pieces.get(p.key)
@@ -318,14 +354,15 @@ local function updateBar()
 		table.insert(parts, `{it and it.icon or ""} {n} {it and it.name or item} ({have})`)
 	end
 	local cost = table.concat(parts, " · ")
+	local lead = placing.quick and `⚡ {def.icon} {def.name} ({placing.why or "next"})` or `{def.icon} {def.name}`
 	if placing.valid then
-		refs.barText.Text = `{def.icon} {def.name} · {cost} · ACT to place`
+		refs.barText.Text = placing.quick and `{lead} · {cost} · hold to build` or `{lead} · {cost} · ACT to place`
 		refs.barText.TextColor3 = C.good
 	else
-		refs.barText.Text = `{def.icon} {def.name} · {placing.reason or ""}`
+		refs.barText.Text = `{lead} · {placing.reason or ""}`
 		refs.barText.TextColor3 = C.red
 	end
-	refs.rotate.Visible = not def.edge and not def.structural
+	refs.rotate.Visible = not def.edge and not def.structural and not placing.quick
 end
 
 local function step()
@@ -336,7 +373,7 @@ local function step()
 	if not point then
 		return
 	end
-	local spot = spotFor(placing.def, point)
+	local spot = spotFor(placing.def, point, placing.rot)
 	placing.spot = spot
 	local ok, reason = check(placing.def, spot.gx, spot.gz, spot.level, spot.rot)
 	placing.valid, placing.reason = ok, reason
@@ -436,6 +473,56 @@ function BuildController.place()
 	return true
 end
 
+-- QUICK: the recommended piece goes where you look (how: "look" for the button, phones and gamepads; "key" for F,
+-- which points with the mouse on PC).
+function BuildController.quickStart(how)
+	local rec = Formulas.recommended(Store.get("raft"), Store.get("inv"))
+	if not rec then
+		return false
+	end
+	BuildController.start(rec.key)
+	if not placing then
+		return false
+	end
+	placing.quick = how == "key" and "key" or "look"
+	placing.why = rec.why
+	quickReason = nil
+	step()
+	return true
+end
+
+-- A tick of the hold: build it if it can go there (a tile instead, when you look at the water beside the raft).
+function BuildController.quickPlace()
+	if not placing or not placing.quick then
+		return false
+	end
+	step()
+	if not placing.valid and not placing.def.structural and placing.reason == "Needs a tile" then
+		local how, why = placing.quick, placing.why
+		BuildController.start("floor")
+		if not placing then
+			return false
+		end
+		placing.quick, placing.why = how, why
+		step()
+	end
+	if placing.valid then
+		quickReason = nil
+		return BuildController.place()
+	end
+	if placing.reason and placing.reason ~= quickReason then
+		quickReason = placing.reason
+		HudController.toast(`⚡ {placing.def.name}: {placing.reason}`, "info")
+	end
+	return false
+end
+
+function BuildController.quickStop()
+	if placing and placing.quick then
+		BuildController.stop()
+	end
+end
+
 function BuildController:init()
 	gui = Theme.screen("Build", 5, player:WaitForChild("PlayerGui"))
 	local bar = Theme.slab({
@@ -494,6 +581,15 @@ function BuildController:init()
 			BuildController.stop()
 		else
 			BuildController.start(k)
+		end
+	end)
+	Bus.Quick:Connect(function(what, how)
+		if what == "start" then
+			BuildController.quickStart(how)
+		elseif what == "place" then
+			BuildController.quickPlace()
+		elseif what == "stop" then
+			BuildController.quickStop()
 		end
 	end)
 	game:GetService("UserInputService").InputBegan:Connect(function(input, processed)

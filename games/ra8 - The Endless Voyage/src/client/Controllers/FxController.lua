@@ -1,7 +1,8 @@
 --[[
-Effects (master plan §4: feedback for every action; §10: travel you can watch). The hook's line flies out and the
-rope stays on the piece as it comes in; the rod's line runs from its tip to the bobber, the bobber dips and ripples
-on a bite, and the fish flies up out of the water to you when you reel; the piece splashes in; chips fly when you chop and sparks when you mine; a built piece puffs; a storm's waves roll over
+Effects (master plan §4: feedback for every action; §10: travel you can watch). The rod's line flies out to the
+piece you cast at and stays on it as it reels in; cast at open water, the line runs from the rod's tip to the
+bobber, the bobber dips and ripples on a bite, and the fish flies up out of the water to you when you reel; the
+piece splashes in; chips fly when you chop and sparks when you mine; a built piece puffs; a storm's waves roll over
 the deck and a bite shakes it; harpoons and the turret draw their lines; crates sparkle; a creature's tell is a
 red ring on the ground; dolphins jump, a shadow passes under the raft, a whirlpool spins; your lost bag has a marker
 in the world. Plus floating "+2 🌳" popups and the screen shake (Settings: effects, screen shake; Reduced Motion
@@ -399,28 +400,14 @@ local function debrisModel(id)
 end
 
 -- Handlers for the server's "Fx" -------------------------------------------------------------------------------------
-function handlers.hook(d)
-	if typeof(d.from) ~= "Vector3" or typeof(d.to) ~= "Vector3" then
-		return
-	end
-	FxController.line(d.from + Vector3.new(0, 1, 0), d.to, C.rope, 0.12, Constants.HOOK_FLIGHT, 0.4)
-	FxController.burst(d.to, BLUE, 6, 0.3, 6, 0.6, { ball = true, up = 1.2 })
-	-- then the rope stays on the piece while it comes in, from the hand that threw it
-	local c = d.by and characterOf(d.by)
-	local model = d.id and debrisModel(d.id)
-	if not c or not model then
-		return
-	end
-	local age = 0
-	tether(0.12, C.rope, 0.08, function()
-		age += 1 / 60
-		return age < Constants.HOOK_FLIGHT + 8 and model.Parent ~= nil and c.Parent ~= nil
-	end, function()
-		if age < Constants.HOOK_FLIGHT then
-			return nil, nil
+local function dropModel(id)
+	local f = workspace:FindFirstChild("Drops")
+	for _, m in f and f:GetChildren() or {} do
+		if m:GetAttribute("DropId") == id then
+			return m
 		end
-		return handOf(c), model:GetPivot().Position
-	end)
+	end
+	return nil
 end
 
 function handlers.splash(d)
@@ -436,12 +423,31 @@ function handlers.cast(d)
 	if typeof(d.to) ~= "Vector3" then
 		return
 	end
-	FxController.line(d.from + Vector3.new(0, 1.5, 0), d.to, C.rope, 0.08, 0.4, 0.2)
+	local c = d.by and characterOf(d.by)
+	FxController.line((c and rodTip(c)) or (d.from + Vector3.new(0, 1.5, 0)), d.to, C.cream, 0.07, 0.35, 0.15)
 	FxController.ring(water(d.to), BLUE, 2.5, 0.5, 0.25)
+	-- cast at a piece (or a floating bag): the line lands on it and stays while it reels in
+	local model = d.id and debrisModel(d.id) or d.drop and dropModel(d.drop)
+	if model then
+		FxController.burst(d.to, BLUE, 6, 0.3, 6, 0.6, { ball = true, up = 1.2 })
+		if not c then
+			return
+		end
+		local age = 0
+		tether(0.07, C.cream, 0.1, function()
+			age += 1 / 60
+			return age < Constants.HOOK_FLIGHT + 10 and model.Parent ~= nil and c.Parent ~= nil
+		end, function()
+			if age < Constants.HOOK_FLIGHT then
+				return nil, nil
+			end
+			return rodTip(c), model:GetPivot().Position + Vector3.new(0, 0.6, 0)
+		end)
+		return
+	end
 	-- the bobber sits there (the line from the rod's tip to it) until the rod's state changes: a bite dips it and
 	-- ripples; reeling sends the fish flying up to you; a miss sinks it
 	local mine = d.by == player.UserId
-	local c = characterOf(d.by)
 	local bob = chunk(d.to, Vector3.new(0.6, 0.6, 0.6), RED, M.SmoothPlastic, "ball")
 	local top = chunk(d.to + Vector3.new(0, 0.25, 0), Vector3.new(0.5, 0.5, 0.5), C.white, M.SmoothPlastic, "ball")
 	local age, rippleAt, ending, sink = 0, 0, nil, 0
@@ -851,10 +857,50 @@ local function step(dt)
 	end
 end
 
+-- Swimming: a splash going in, ripples and bubbles while you're in
+local swimAt = 0
+local function watchSwimming(character)
+	local hum = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid", 5)
+	if not hum then
+		return
+	end
+	hum.StateChanged:Connect(function(_, new)
+		if new == Enum.HumanoidStateType.Swimming then
+			local r = character:FindFirstChild("HumanoidRootPart")
+			if r then
+				handlers.splash({ pos = r.Position })
+			end
+		end
+	end)
+end
+
+local function swimStep()
+	local c = player.Character
+	local hum = c and c:FindFirstChildOfClass("Humanoid")
+	local r = c and c:FindFirstChild("HumanoidRootPart")
+	if not hum or not r or hum:GetState() ~= Enum.HumanoidStateType.Swimming then
+		return
+	end
+	local now = os.clock()
+	if now < swimAt then
+		return
+	end
+	swimAt = now + 0.45
+	local pos = water(r.Position)
+	FxController.ring(pos, BLUE, 2.2, 0.6, 0.15)
+	FxController.burst(pos, { BLUE, C.white }, 3, 0.2, 2.5, 0.5, { ball = true, up = 1.2 })
+end
+
 function FxController:init()
 	folder = workspace:FindFirstChild("Fx") or Instance.new("Folder")
 	folder.Name = "Fx"
 	folder.Parent = workspace
+	if player.Character then
+		task.spawn(watchSwimming, player.Character)
+	end
+	player.CharacterAdded:Connect(function(c)
+		task.spawn(watchSwimming, c)
+	end)
 	Net.listen("Fx", function(kind, data)
 		local h = handlers[kind]
 		if h and type(data) == "table" then
@@ -883,7 +929,10 @@ function FxController:init()
 	Bus.Shake:Connect(function(strength, seconds)
 		FxController.shake(strength or 0.3, seconds or 0.3)
 	end)
-	RunService.RenderStepped:Connect(step)
+	RunService.RenderStepped:Connect(function(dt)
+		step(dt)
+		swimStep()
+	end)
 end
 
 -- (tests)

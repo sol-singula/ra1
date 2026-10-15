@@ -11,7 +11,7 @@ local Net = {}
 -- Client → server, with the maximum calls per second allowed per player.
 Net.ClientEvents = {
 	Ready = 1,
-	Act = 10, -- (aim: Vector3?, targetId?) use what you hold: throw the hook, swing, cast, hammer (ActionService)
+	Act = 10, -- (aim: Vector3?, targetId?) use what you hold: cast, swing, chop, hammer (ActionService)
 	Reel = 10, -- () the fishing rod's bite: reel in
 	Select = 8, -- (slot) hold a hotbar slot (InventoryService)
 	Move = 8, -- (from, to) move or swap inventory slots ("h1".."h6", "b1"..)
@@ -54,7 +54,7 @@ Net.ServerEvents = {
 	"Alert", -- big centre message: text, color, seconds?
 	"Callout", -- text, kind: "Land ho!", "Sharks!"
 	"Popup", -- worldPosition, text, color: floating "+1 🌳"
-	"Fx", -- kind, data: hook, splash, chop, sparks, built, storm, bite, harpoon, discover...
+	"Fx", -- kind, data: cast, splash, chop, sparks, built, storm, bite, harpoon, discover...
 	"Act", -- { by = userId, item, mode, target? }: everyone animates a player's action
 	"Hurt", -- { amount, by?, dir? } you were hit
 	"Tutorial", -- { step, text, target, ... } or false

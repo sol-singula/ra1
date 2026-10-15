@@ -2,7 +2,7 @@
 The game log: everything worth knowing goes to the team's private Discord logs channel, same pipeline as the
 studio's other games (the roblox-game-log Supabase function, the "discord_log" secret, batched every few seconds):
   joins (new or returning, level, raft tier and tiles, voyages) and leaves with how the session went (time
-  played, pieces hooked and built, voyages, discoveries, fish, levels)
+  played, pieces reeled in and built, voyages, discoveries, fish, levels)
   the chat
   rafts reaching a new tier, voyages to dangerous waters, the Leviathan going down, a raft broken by a storm
   anti-cheat flags and kicks, script errors, the server starting and shutting down

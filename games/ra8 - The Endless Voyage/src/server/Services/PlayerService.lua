@@ -2,10 +2,10 @@
 Survivors on the water (master plan §6: persistent you, expedition risk). Your character spawns on your raft (the
 bunk if you have one), heals while you rest on it, and can be hurt by creatures, storms and the sea. Go down and
 you're back on your raft in a few seconds; if it happened away from your dock, half of this voyage's finds float
-off as a lost bag where you fell (InventoryService.LoseFinds), yours to hook or anyone's to take.
+off as a lost bag where you fell (InventoryService.LoseFinds), yours to reel in or anyone's to take.
 
   where      raft (your own) | visiting (someone else's) | island | water, from where you stand (every 0.25 s)
-  buffs      hearty (less damage), swift (faster), lucky (better hooks and nets): the Cookpot's food
+  buffs      hearty (less damage), swift (faster), lucky (better casts and nets): the Cookpot's food
   the sea    swim back to a ladder; fall out of the world and you're back on deck
 ]]
 local Players = game:GetService("Players")
@@ -302,7 +302,7 @@ function PlayerService:Buff(player, key, seconds)
 		"Toast",
 		key == "hearty" and "💪 Hearty: you take less damage for a while."
 			or key == "swift" and "💨 Swift: faster feet for a while."
-			or "🍀 Lucky: better hooks and nets for a while.",
+			or "🍀 Lucky: better casts and nets for a while.",
 		"good"
 	)
 	self.Buffed:Fire(player, key, seconds)

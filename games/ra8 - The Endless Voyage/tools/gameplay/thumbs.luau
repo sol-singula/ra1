@@ -406,7 +406,7 @@ end
 
 local WHITE = { sail = "white", banner = "white", flag = "white", deck = "natural" }
 
--- 01 The first hook: the driftwood platform, the hook flying at a piece of wood ------------------------------------------------
+-- 01 The first cast: the driftwood platform, the rod's line flying out to a piece of wood ------------------------------------
 if wants("01") then
 	clear()
 	light("day")
@@ -417,13 +417,14 @@ if wants("01") then
 	target = V3.new(target.X, WATER + 0.3, target.Z)
 	OceanModels.debris("wood", CF.new(target) * CF.Angles(0, 0.8, 0), debrisFolder)
 	local face = (target - stand).Unit
-	local _, hand = dress(1, { pos = stand, face = face, pose = POSES.throw, hold = "basic_hook" })
-	rope(hand.Position + V3.new(0, 0.2, 0), target + V3.new(0, 0.6, 0))
+	local caster, hand = dress(1, { pos = stand, face = face, pose = POSES.throw, hold = "fishing_rod" })
+	local bobber = caster:FindFirstChild("Bobber", true)
+	rope((bobber and bobber.Position or hand.Position + V3.new(0, 0.2, 0)), target + V3.new(0, 0.6, 0), rgb(240, 232, 210))
 	splash(target, 8, 0.8)
 	-- a friend on the platform's other tile, waving
 	dress(2, { pos = tileWorld(layout, 6, 7), face = face, pose = POSES.wave })
 	local cam = stand - face * 11 + V3.new(0, 6, 0) + V3.new(-face.Z, 0, face.X) * 5
-	shot("01_first_hook", cam, stand + face * 6 + V3.new(0, 1.5, 0), 52, stand + face * 4 + V3.new(0, 2, 0))
+	shot("01_first_cast", cam, stand + face * 6 + V3.new(0, 1.5, 0), 52, stand + face * 4 + V3.new(0, 2, 0))
 	_ = pieces
 end
 
@@ -453,7 +454,7 @@ if wants("02") then
 	dress(1, { pos = here, face = V3.new(1, 0, 0), pose = POSES.hammer, hold = "hammer" })
 	local bench = tileWorld(layout, 6, 7)
 	dress(2, { pos = bench + V3.new(0, 0, 3.2), face = V3.new(0, 0, -1), pose = POSES.carry })
-	dress(3, { pos = tileWorld(layout, 7, 8), face = V3.new(-1, 0, 0.3), pose = POSES.reel, hold = "basic_hook" })
+	dress(3, { pos = tileWorld(layout, 7, 8), face = V3.new(-1, 0, 0.3), pose = POSES.reel, hold = "fishing_rod" })
 	local cam = here + V3.new(-14, 8, 12)
 	shot("02_build_your_raft", cam, here + V3.new(1, 1.5, 0), 50, here + V3.new(0, 2, 0))
 end

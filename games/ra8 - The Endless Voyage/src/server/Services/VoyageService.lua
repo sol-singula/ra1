@@ -125,6 +125,8 @@ function VoyageService:View(plot)
 		danger = v.dest and v.dest.danger or 1,
 		started = v.startedAt,
 		ends = v.ends,
+		stayEnds = v.stayEnds,
+		anchored = raft and rafts:Anchors(raft) > 0 or false,
 		event = v.event and { key = v.event.key, name = v.event.name, icon = v.event.icon, ends = v.event.ends } or nil,
 		speed = raft and rafts:Speed(raft) or 1,
 		log = v.log,
@@ -222,14 +224,27 @@ function VoyageService:Sail(player, destKey)
 		return false, reason
 	end
 	local raft = rafts:RaftOf(player)
+	if destKey == "home" then
+		return self:SailHome(raft.plot)
+	end
+	return self:_depart(raft, Voyages.get(destKey), false)
+end
+
+-- Home from an island: from the helm, or carried off by the current when there is no anchor.
+function VoyageService:SailHome(plot, byCurrent)
+	local raft = rafts:Get(plot)
+	local v = state(plot)
+	if not raft or v.state ~= "island" then
+		return false
+	end
+	island:Leave(plot)
+	return self:_depart(raft, v.dest, true, byCurrent)
+end
+
+function VoyageService:_depart(raft, d, home, byCurrent)
 	local plot = raft.plot
 	local v = state(plot)
 	local t = now()
-	local home = destKey == "home"
-	local d = home and v.dest or Voyages.get(destKey)
-	if home then
-		island:Leave(plot)
-	end
 	local seconds = Formulas.voyageSeconds(d.distance, rafts:Speed(raft))
 	v.state = home and "home" or "sailing"
 	v.dest = d
@@ -237,11 +252,17 @@ function VoyageService:Sail(player, destKey)
 	v.startedAt = t
 	v.ends = t + seconds
 	v.event = nil
+	v.stayEnds = nil
 	v.nextEventAt = t
 		+ rng:NextNumber(Constants.VOYAGE_EVENT_EVERY[1], Constants.VOYAGE_EVENT_EVERY[2])
 			* (home and 1 / Constants.HOME_EVENT_SHARE or 0.6)
 	v.log = {}
-	log(v, home and `Sailing home from {d.name}.` or `Set sail for {d.name}: {seconds}s.`)
+	log(
+		v,
+		byCurrent and `The current carried the raft off {d.name}.`
+			or home and `Sailing home from {d.name}.`
+			or `Set sail for {d.name}: {seconds}s.`
+	)
 	-- everyone in the water comes aboard
 	local aboard = players:PlayersOnPlot(plot)
 	for _, p in aboard do
@@ -251,7 +272,9 @@ function VoyageService:Sail(player, destKey)
 		Net.fire(
 			p,
 			"Alert",
-			home and "⛵ SAILING HOME" or `⛵ SETTING SAIL FOR {string.upper(d.name)}`,
+			byCurrent and "🌊 THE CURRENT TAKES YOU HOME"
+				or home and "⛵ SAILING HOME"
+				or `⛵ SETTING SAIL FOR {string.upper(d.name)}`,
 			Color3.fromRGB(255, 230, 120),
 			3
 		)
@@ -396,16 +419,24 @@ function VoyageService:_arrive(plot)
 	v.state = "island"
 	v.event = nil
 	v.ends = nil
+	-- no anchor: the current carries the raft home after a while (an anchor built later holds it)
+	local anchored = raft and rafts:Anchors(raft) > 0
+	v.stayEnds = (not anchored) and now() + Constants.ISLAND_STAY_NO_ANCHOR or nil
+	v.warned = false
 	island:Arrive(plot, d)
 	log(v, `Land ho: {d.name}.`)
 	local here = players:PlayersOnPlot(plot)
+	local stay = anchored and "Anchored: sail home from the helm when you're done."
+		or `No anchor: the current takes you home in {math.floor(Constants.ISLAND_STAY_NO_ANCHOR / 60)}:{string.format(
+			"%02d",
+			Constants.ISLAND_STAY_NO_ANCHOR % 60
+		)}.`
 	for _, p in here do
 		Net.fire(p, "Alert", `{d.icon} LAND HO! {string.upper(d.name)}`, Color3.fromRGB(255, 230, 120), 4)
 		Net.fire(
 			p,
 			"Callout",
-			d.kind == "deep" and "🌊 The water goes black. Harpoons ready."
-				or `🏝️ {d.desc} Sail home from the helm when you're done.`,
+			d.kind == "deep" and "🌊 The water goes black. Harpoons ready." or `🏝️ {d.desc} {stay}`,
 			"good"
 		)
 		Net.fire(p, "Sfx", "discover")
@@ -452,6 +483,35 @@ function VoyageService:_tick()
 		if not rafts:Get(plot) then
 			voyages[plot] = nil
 			continue
+		end
+		if v.state == "island" then
+			local raft = rafts:Get(plot)
+			if raft and rafts:Anchors(raft) > 0 then
+				if v.stayEnds then
+					v.stayEnds = nil
+					self:Push(plot)
+					for _, p in players:PlayersOnPlot(plot) do
+						Net.fire(p, "Callout", "⚓ Anchored: the raft stays as long as you like.", "good")
+					end
+				end
+			elseif v.stayEnds then
+				if not v.warned and t >= v.stayEnds - Constants.ISLAND_STAY_WARNING then
+					v.warned = true
+					for _, p in players:PlayersOnPlot(plot) do
+						Net.fire(
+							p,
+							"Callout",
+							`⚓ No anchor: the current pulls the raft off in {Constants.ISLAND_STAY_WARNING} s! Get aboard.`,
+							"bad"
+						)
+						Net.fire(p, "Sfx", "horn")
+					end
+				end
+				if t >= v.stayEnds then
+					self:SailHome(plot, true)
+					continue
+				end
+			end
 		end
 		if v.state == "sailing" or v.state == "home" then
 			if v.event and t >= v.event.ends then

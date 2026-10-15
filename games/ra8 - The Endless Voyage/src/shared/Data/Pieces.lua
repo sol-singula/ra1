@@ -118,7 +118,7 @@ Pieces.list = {
 		tier = 3,
 		station = "engineering",
 		hp = 150,
-		desc = "Engines, nets, turrets, the good hooks.",
+		desc = "Engines, nets, turrets, the good rods.",
 	},
 	{
 		key = "research",
@@ -235,7 +235,7 @@ Pieces.list = {
 		tier = 3,
 		hp = 200,
 		effect = { protect = 3 },
-		desc = "Storms do half the damage.",
+		desc = "Keeps you docked at an island as long as you like, and storms do half the damage.",
 	},
 	{
 		key = "spikes",

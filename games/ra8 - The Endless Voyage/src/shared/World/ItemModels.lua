@@ -1,14 +1,14 @@
 --[[
 What items look like: in the hand, floating in the water when dropped, and as the little 3D pictures in the bag,
-the hotbar and the crafting lists (client/UI/Icons). Every one of the 53 items is built from plain parts, so
+the hotbar and the crafting lists (client/UI/Icons). Every one of the 54 items is built from plain parts, so
 nothing needs uploading, and what you hold is what the icon shows.
 
   ItemModels.held(item, parent) -> model, grip     grip: an invisible part where the hand closes round it
   ItemModels.holdCFrame(item, hand) -> CFrame       the weld's C0 from the hand to the grip
   ItemModels.icon(item, parent) -> model            the same model, loose (for a ViewportFrame)
 How things sit in the hand (Roblox's hand frame: -Y comes out of the bottom of the fist, -Z is the back of the
-fingers; in the hold pose, with the forearm level in front of you, -Y points ahead and -Z points up): hooks and rods
-are held by the handle, pointing ahead; axes, picks and hammers stand up out of the fist, the head forward; spears
+fingers; in the hold pose, with the forearm level in front of you, -Y points ahead and -Z points up): rods are held
+by the handle, pointing ahead; axes, picks and hammers stand up out of the fist, the head forward; spears
 point ahead; lanterns hang. Every builder draws its item along -Z from the origin (the grip), "up" along +Y.
 ]]
 local Items = require(script.Parent.Parent.Data.Items)
@@ -86,48 +86,49 @@ local function handle(m, len, dia, color)
 	cylZ(m, "Wrap2", CFrame.new(0, 0, -len + 0.5), 0.5, dia * 1.2, C.barkDark, M.Fabric)
 end
 
-function draw.hook(m, item)
-	local col = metalOf(item)
-	handle(m, 2, 0.32, C.woodDark)
-	cylZ(m, "Line", CFrame.new(0, 0.05, -2.9), 1.8, 0.09, C.rope, M.Fabric)
-	-- a J-shaped hook: a shank, a bend of three segments, and the point with its barb
-	cylZ(m, "Shank", CFrame.new(0, 0.1, -4.1), 0.9, 0.18, col, M.Metal)
-	for i = 1, 3 do
-		local a = R(i * 60)
-		p(
-			m,
-			"Bend",
-			CFrame.new(0, 0.1 + 0.35 - math.cos(a) * 0.35, -4.5 - math.sin(a) * 0.35) * A(a, 0, 0),
-			V3(0.18, 0.18, 0.42),
-			col,
-			M.Metal
-		)
-	end
-	p(m, "Point", CFrame.new(0, 0.95, -4.2) * A(R(-25), 0, 0), V3(0.16, 0.16, 0.5), col, M.Metal)
-	w(m, "Barb", CFrame.new(0, 1.05, -4.4) * A(R(90), 0, 0), V3(0.14, 0.2, 0.3), col, M.Metal)
-	ball(m, "Eye", CFrame.new(0, 0.1, -3.7), 0.28, col, M.Metal)
-	return V3(0, 0, -0.4)
-end
-
+-- The rods: the basic wooden one, the iron one, the long one, the salvage rod with a claw on its line, the deep rod.
 function draw.rod(m, item)
-	local col = item.rarity == "rare" and C.steel or C.plank
+	local key = item.key
+	local long = key == "long_rod" or key == "salvage_rod"
+	local col = (key == "deep_rod" or key == "iron_rod") and C.steel
+		or key == "long_rod" and C.steel:Lerp(C.blueprint, 0.3)
+		or key == "salvage_rod" and Color3.fromRGB(150, 110, 230)
+		or C.plank
+	local reel = key == "fishing_rod" and C.iron or key == "salvage_rod" and C.gold or C.steel
 	handle(m, 1.6, 0.26, C.woodDark)
 	-- the rod tapers in three pieces, with line guides
-	cylZ(m, "Rod", CFrame.new(0, 0, -2.6), 2.2, 0.2, col, M.Wood)
-	cylZ(m, "Rod2", CFrame.new(0, 0, -4.4), 1.6, 0.15, col, M.Wood)
-	cylZ(m, "Tip", CFrame.new(0, 0, -5.6), 1, 0.1, col, M.Wood)
+	local k = long and 1.25 or 1
+	cylZ(m, "Rod", CFrame.new(0, 0, -2.6 * k), 2.2 * k, 0.2, col, key == "fishing_rod" and M.Wood or M.Metal)
+	cylZ(m, "Rod2", CFrame.new(0, 0, -4.4 * k), 1.6 * k, 0.15, col, key == "fishing_rod" and M.Wood or M.Metal)
+	cylZ(m, "Tip", CFrame.new(0, 0, -5.6 * k), 1 * k, 0.1, col, key == "fishing_rod" and M.Wood or M.Metal)
 	for _, z in { -2.2, -3.6, -4.9 } do
-		cylZ(m, "Guide", CFrame.new(0, -0.12, z), 0.1, 0.24, C.iron, M.Metal)
+		cylZ(m, "Guide", CFrame.new(0, -0.12, z * k), 0.1, 0.24, C.iron, M.Metal)
 	end
 	-- the reel and its crank
-	cylY(m, "Reel", CFrame.new(0, -0.42, -1.1) * A(R(90), 0, 0), 0.26, 0.6, C.iron, M.Metal)
+	cylY(m, "Reel", CFrame.new(0, -0.42, -1.1) * A(R(90), 0, 0), 0.26, 0.6, reel, M.Metal)
 	cylY(m, "Spool", CFrame.new(0, -0.42, -1.1) * A(R(90), 0, 0), 0.3, 0.42, C.cream, M.Fabric)
 	p(m, "Crank", CFrame.new(0.25, -0.5, -1.1), V3(0.3, 0.08, 0.08), C.iron, M.Metal)
 	ball(m, "Knob", CFrame.new(0.4, -0.5, -1.1), 0.14, C.woodDark, M.Wood)
-	-- the line and a bobber
-	cylY(m, "Line", CFrame.new(0, -0.6, -6), 1.2, 0.04, C.cream, M.Fabric)
-	ball(m, "Bobber", CFrame.new(0, -1.25, -6), 0.32, C.red, M.SmoothPlastic)
-	ball(m, "BobberTop", CFrame.new(0, -1.1, -6), 0.26, C.white, M.SmoothPlastic)
+	-- the line, and a bobber (a claw on the salvage rod)
+	local tipZ = -6 * k
+	cylY(m, "Line", CFrame.new(0, -0.6, tipZ), 1.2, 0.04, C.cream, M.Fabric)
+	if key == "salvage_rod" then
+		for i = 0, 2 do
+			local a = i / 3 * math.pi * 2
+			w(
+				m,
+				"Claw",
+				CFrame.new(0, -1.3, tipZ) * A(0, a, 0) * CFrame.new(0.22, 0, 0) * A(0, 0, R(-30)),
+				V3(0.12, 0.5, 0.16),
+				C.gold,
+				M.Metal
+			)
+		end
+		ball(m, "ClawHub", CFrame.new(0, -1.15, tipZ), 0.3, C.gold, M.Metal)
+	else
+		ball(m, "Bobber", CFrame.new(0, -1.25, tipZ), 0.32, C.red, M.SmoothPlastic)
+		ball(m, "BobberTop", CFrame.new(0, -1.1, tipZ), 0.26, C.white, M.SmoothPlastic)
+	end
 	return V3(0, 0, -0.5)
 end
 
@@ -641,7 +642,7 @@ function ItemModels.holdCFrame(item, hand)
 	local kind = Items.toolKind(item)
 	if kind == "axe" or kind == "pick" or kind == "hammer" then
 		return CFrame.new(0, -down, 0) * CFrame.Angles(0, 0, math.pi)
-	elseif kind == "hook" or kind == "rod" or kind == "pry" or (item.weapon and item.weapon.class) or item.light then
+	elseif kind == "rod" or kind == "pry" or (item.weapon and item.weapon.class) or item.light then
 		return CFrame.new(0, -down, 0) * CFrame.Angles(math.rad(-90), 0, 0)
 	end
 	return CFrame.new(0, -down - 0.3, 0)

@@ -7,8 +7,11 @@ nets, containers, lanterns and totems), and on the right:
           rock, PRY a wreck's salvage, FIX a damaged tile with the hammer, STAB with a spear, THROW a harpoon,
           EAT, OPEN a crate, READ a chart, LEARN a blueprint. Hold to keep going.
   BUILD   the build panel (then tap a spot on the grid: BuildController)
-Keyboard: click = act, 1-6 = hotbar, Tab or I = the bag, B = build, M = the map, J = the journal, H = wave. Gamepad:
-R2 = act, L1/R1 = hotbar, Y = the bag, X = build, DPad up = the map.
+  QUICK   hold it: the piece your raft needs next (the raft view's recommendations, the first the bag can pay for)
+          goes where you look, one every half second (BuildController, through Bus.Quick)
+Keyboard: click = act, 1-6 = hotbar, Tab or I = the bag, B = build, F (held) = quick build, M = the map, J = the
+journal, H = wave. Gamepad: R2 = act, L1/R1 = hotbar, Y = the bag, X = build, DPad down (held) = quick build, DPad
+up = the map.
 Aim help: on PC, what's under the mouse (a piece of debris, a creature, a tree) if it's in reach; on phones and
 gamepads, the best target in front of you. The server picks the same way when nothing is named.
 ]]
@@ -19,10 +22,13 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
 local CreatureController = require(script.Parent.CreatureController)
 local Bus = require(script.Parent.Parent.UI.Bus)
+local Icons = require(script.Parent.Parent.UI.Icons)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
@@ -37,9 +43,13 @@ local holding = false
 local holdTouch
 local lastAct = 0
 local building = false -- BuildController is placing (ACT places instead)
+local quickHold = false -- QUICK is held: a tick every QUICK_EVERY seconds
+local quickTouch
+local quickAt = 0
+local quickKey -- the piece the QUICK button shows
+local QUICK_EVERY = 0.45
 
 local MODE_LABEL = {
-	hook = { "HOOK", "🔗", C.ketchup },
 	cast = { "CAST", "🎣", C.sky },
 	chop = { "CHOP", "🪓", C.ketchup },
 	mine = { "MINE", "⛏️", C.ketchup },
@@ -70,9 +80,7 @@ function InputController.modeOf(item)
 		return nil
 	end
 	local kind = Items.toolKind(item)
-	if kind == "hook" then
-		return "hook"
-	elseif kind == "rod" then
+	if kind == "rod" then
 		return "cast"
 	elseif kind == "axe" then
 		return "chop"
@@ -259,8 +267,9 @@ function InputController.aim(item)
 	end
 	local mode = InputController.modeOf(item)
 	local candidates
-	if mode == "hook" then
-		candidates = debrisCandidates(r.Position, (item.tool.hook.range or 30) + 4)
+	if mode == "cast" then
+		-- a piece in front and the line lands on it; nothing in front and it is a cast into open water
+		candidates = debrisCandidates(r.Position, (item.tool.rod.range or 30) + 4)
 	elseif mode == "chop" or mode == "mine" or mode == "pry" then
 		local tool = mode == "chop" and "axe" or mode == "mine" and "pick" or "pry"
 		candidates = nodeCandidates(r.Position, 10, tool)
@@ -275,7 +284,7 @@ function InputController.aim(item)
 		candidates = creatureCandidates(r.Position, (item.weapon.range or 60) + 8)
 	end
 	if candidates then
-		local c = pick(candidates, r.Position, forward, rayOrigin, rayDir, mode == "hook" and 70 or 75)
+		local c = pick(candidates, r.Position, forward, rayOrigin, rayDir, mode == "cast" and 60 or 75)
 		if c then
 			local f = Vector3.new(c.pos.X - r.Position.X, 0, c.pos.Z - r.Position.Z)
 			return f.Magnitude > 0.1 and f.Unit or forward, c.id
@@ -347,6 +356,32 @@ function InputController.act()
 	end
 end
 
+-- QUICK held: the recommended piece where you look, now and every QUICK_EVERY while held (BuildController).
+function InputController.quickBegin(how)
+	if not Store.alive() or not Store.onOwnRaft() then
+		return
+	end
+	if building then
+		Bus.Place:Fire(false) -- the panel's placing ends; QUICK takes over
+	end
+	quickHold = true
+	quickAt = os.clock()
+	Bus.Quick:Fire("start", how)
+	Bus.Quick:Fire("place")
+	Bus.Tap:Fire("quick")
+	if refs.quickScale then
+		refs.quickScale.Scale = 0.9
+		Theme.tween(refs.quickScale, 0.15, { Scale = 1 })
+	end
+end
+
+function InputController.quickEnd()
+	if quickHold then
+		quickHold = false
+		Bus.Quick:Fire("stop")
+	end
+end
+
 function InputController.select(index)
 	local inv = Store.get("inv")
 	if inv then
@@ -392,7 +427,7 @@ local function roundButton(name, text, color, size, pos, key, pad)
 end
 
 local function buildButtons()
-	local act, actIcon, actLabel = roundButton("Act", "🔗", C.ketchup, 128, UDim2.new(1, -40, 1, -40), "Click", "R2")
+	local act, actIcon, actLabel = roundButton("Act", "🎣", C.sky, 128, UDim2.new(1, -40, 1, -40), "Click", "R2")
 	refs.act, refs.actIcon, refs.actLabel = act, actIcon, actLabel
 	refs.actScale = act:FindFirstChild("Press") or new("UIScale", { Parent = act })
 	act.MouseButton1Down:Connect(function()
@@ -421,12 +456,58 @@ local function buildButtons()
 			Bus.Open:Fire("build")
 		end
 	end)
+	-- QUICK: the recommended piece (a little model of it), held
+	local quick, quickIcon, quickLabel =
+		roundButton("Quick", "", C.good, 80, UDim2.new(1, -276, 1, -36), "F", "DPadDown")
+	quickLabel.Text = "QUICK"
+	quickLabel.Size = UDim2.new(1.4, 0, 0, 20)
+	refs.quick, refs.quickIcon = quick, quickIcon
+	refs.quickPiece = new("Frame", {
+		Name = "Piece",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -14, 0.62, 0),
+		Position = UDim2.fromOffset(7, 3),
+		Parent = quick,
+	})
+	refs.quickScale = new("UIScale", { Parent = quick })
+	quick.Visible = false
+	quick.MouseButton1Down:Connect(function()
+		InputController.quickBegin("look")
+	end)
+	quick.MouseButton1Up:Connect(InputController.quickEnd)
+	quick.MouseLeave:Connect(InputController.quickEnd)
+	quick.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Touch then
+			quickTouch = input
+		end
+	end)
+end
+
+-- The QUICK button shows the piece it would build (and says which, for the guide's finger).
+local function updateQuick(alive)
+	local raft = Store.get("raft")
+	local rec = alive and Store.onOwnRaft() and Formulas.recommended(raft, Store.get("inv")) or nil
+	refs.quick.Visible = rec ~= nil
+	if not rec then
+		if quickHold then
+			InputController.quickEnd()
+		end
+		return
+	end
+	if rec.key ~= quickKey then
+		quickKey = rec.key
+		refs.quick:SetAttribute("Piece", rec.key)
+		local def = Pieces.get(rec.key)
+		local drawn = Icons.piece(refs.quickPiece, rec.key, { colours = raft and raft.colours, inset = 1 })
+		refs.quickIcon.Text = drawn and "" or (def and def.icon or "🔨")
+	end
 end
 
 local function updateButtons()
 	local alive = Store.alive()
 	refs.act.Visible = alive
 	refs.build.Visible = alive and Store.onOwnRaft()
+	updateQuick(alive)
 	local fish = Store.get("fish")
 	local _, _, item = InputController.held()
 	local mode = InputController.modeOf(item)
@@ -450,6 +531,11 @@ local function updateButtons()
 		refs.actIcon.Text = "🎣"
 		refs.actLabel.Text = "WAIT..."
 		refs.act.BackgroundColor3 = C.slate
+		return
+	elseif player.Character and player.Character:GetAttribute("Pose") == "reel" and mode == "cast" then
+		refs.actIcon.Text = "🎣"
+		refs.actLabel.Text = "REELING"
+		refs.act.BackgroundColor3 = C.sky
 		return
 	end
 	local spec = MODE_LABEL[mode]
@@ -531,6 +617,14 @@ function InputController:init()
 		end
 		return Enum.ContextActionResult.Sink
 	end, false, Enum.KeyCode.ButtonR2)
+	ContextActionService:BindAction("EV_Quick", function(_, state, input)
+		if state == Enum.UserInputState.Begin then
+			InputController.quickBegin(input.KeyCode == Enum.KeyCode.F and "key" or "look")
+		elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
+			InputController.quickEnd()
+		end
+		return Enum.ContextActionResult.Sink
+	end, false, Enum.KeyCode.F, Enum.KeyCode.DPadDown)
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if processed then
 			return
@@ -545,6 +639,10 @@ function InputController:init()
 			holding = false
 			holdTouch = nil
 		end
+		if quickTouch and input == quickTouch then
+			quickTouch = nil
+			InputController.quickEnd()
+		end
 	end)
 	local acc = 0
 	RunService.RenderStepped:Connect(function(dt)
@@ -555,6 +653,10 @@ function InputController:init()
 		end
 		if holding and not building then
 			InputController.act()
+		end
+		if quickHold and os.clock() - quickAt >= QUICK_EVERY then
+			quickAt = os.clock()
+			Bus.Quick:Fire("place")
 		end
 	end)
 	-- no Reset Character in the menu (going down is the game's: the lost bag, the respawn on your raft), and no
@@ -577,6 +679,9 @@ end
 InputController.refs = refs
 function InputController.isBuilding()
 	return building
+end
+function InputController.isQuick()
+	return quickHold
 end
 
 return InputController

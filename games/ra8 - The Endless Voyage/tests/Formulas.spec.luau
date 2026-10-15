@@ -310,7 +310,7 @@ check(
 check(
 	"every tool and weapon can be made or found",
 	(function()
-		local found = { basic_hook = true }
+		local found = { fishing_rod = true }
 		for _, r in Recipes.list do
 			if r.item then
 				found[r.item] = true

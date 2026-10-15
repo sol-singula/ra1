@@ -13,6 +13,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Kit = require(ReplicatedStorage.Shared.World.Kit)
 local LightingPresets = require(ReplicatedStorage.Shared.World.LightingPresets)
 local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
+local OceanModels = require(ReplicatedStorage.Shared.World.OceanModels)
 
 local OceanBuilder = {}
 
@@ -46,121 +47,63 @@ local function water()
 	terrain:FillBlock(CFrame.new(0, Constants.SEA_FLOOR + depth / 2, 0), V3(size, depth, size), Enum.Material.Water)
 end
 
-local FAR_PART = { CastShadow = false, CanCollide = false, CanQuery = false, CanTouch = false }
-
--- Far islands you can see but never reach, scattered at random distances (OceanLayout.HORIZON): green humps with
--- trees, a peak with snow on it, a sandy atoll with palms. Persistent, so they are on the horizon from the first
--- frame whatever streams in later.
+-- Far islands you can see but never reach, scattered at random distances (OceanLayout.HORIZON, OceanModels.isle).
+-- Persistent, so they are on the horizon from the first frame whatever streams in later.
 local function horizon(map)
 	local f = folder("Horizon", map)
 	local rng = Random.new(88)
 	for i, h in OceanLayout.HORIZON do
-		local m = Kit.model("Isle" .. i, f)
+		local m = OceanModels.isle(f, "Isle" .. i, V3(h.x, Constants.WATER_LEVEL - 2, h.z), h, rng)
 		pcall(function()
 			m.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 		end)
-		local base = V3(h.x, Constants.WATER_LEVEL - 2, h.z)
-		local s = h.size
-		local sandy = h.kind == "atoll"
-		-- the shore: a wide low ellipse of sand, then the land on it
-		Kit.ellipsoid(m, "Shore", base + V3(0, s * 0.04, 0), V3(s * 2.6, s * 0.2, s * 2), C.sand, M.Sand, FAR_PART)
-		if not sandy then
-			Kit.ellipsoid(
-				m,
-				"Isle",
-				base + V3(0, s * 0.14, 0),
-				V3(s * 2.1, s * 0.5, s * 1.6),
-				C.grassDark,
-				M.Grass,
-				FAR_PART
-			)
-			Kit.ellipsoid(
-				m,
-				"Hump",
-				base + V3(rng:NextNumber(-0.3, 0.3) * s, s * 0.26, rng:NextNumber(-0.2, 0.2) * s),
-				V3(s * 1.1, s * 0.5, s * 0.9),
-				C.grass,
-				M.Grass,
-				FAR_PART
-			)
-		end
-		if h.kind == "peak" then
-			local hh = s * (1.1 + h.far * 0.5)
-			Kit.cone(m, "Peak", base + V3(0, s * 0.2, 0), s * 0.95, hh, C.rockDark, 6, M.Rock, FAR_PART)
-			if hh > 60 then
-				Kit.cone(
-					m,
-					"Snow",
-					base + V3(0, s * 0.2 + hh * 0.62, 0),
-					s * 0.95 * 0.38,
-					hh * 0.38,
-					C.white,
-					6,
-					M.Snow,
-					FAR_PART
-				)
-			end
-			Kit.cone(
-				m,
-				"Peak2",
-				base + V3(s * 0.45, s * 0.18, s * 0.2),
-				s * 0.6,
-				hh * 0.55,
-				C.rock,
-				5,
-				M.Rock,
-				FAR_PART
-			)
-		end
-		-- trees: a few round crowns on the humps, palms on the atoll
-		local n = sandy and 6 or 5
-		for _ = 1, n do
-			local a = rng:NextNumber(0, math.pi * 2)
-			local r = rng:NextNumber(0.25, 0.8) * s
-			local at = base + V3(math.cos(a) * r, sandy and s * 0.08 or s * 0.34, math.sin(a) * r * 0.75)
-			if sandy then
-				local th = s * rng:NextNumber(0.25, 0.4)
-				Kit.cyl(
-					m,
-					"Trunk",
-					CFrame.new(at + V3(0, th / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-					th,
-					s * 0.05,
-					C.bark,
-					M.Wood,
-					FAR_PART
-				)
-				Kit.ellipsoid(m, "Fronds", at + V3(0, th, 0), V3(s * 0.4, s * 0.12, s * 0.4), C.leaf, M.Grass, FAR_PART)
-			else
-				Kit.ellipsoid(
-					m,
-					"Trees",
-					at,
-					V3(s * rng:NextNumber(0.3, 0.5), s * rng:NextNumber(0.25, 0.4), s * rng:NextNumber(0.3, 0.5)),
-					C.pineDark:Lerp(C.leaf, rng:NextNumber(0, 0.5)),
-					M.Grass,
-					FAR_PART
-				)
-			end
-		end
 	end
 end
 
 -- A buoy at each plot's upstream edge (where the debris comes from), with the plot's number.
+-- A channel buoy at each plot's upstream edge (where the debris comes from): a striped float, a bell on a short
+-- tower, and a flag with the plot's number.
 local function buoys(map)
 	local f = folder("Buoys", map)
+	local brass = C.gold:Lerp(C.goldDark, 0.5)
 	for _, plot in OceanLayout.plots do
 		local pos = plot.center - plot.current * (Constants.DEBRIS_FROM + 10) + V3(0, Constants.WATER_LEVEL, 0)
 		local m = Kit.model("Buoy" .. plot.index, f)
-		Kit.disc(m, "Float", pos + V3(0, 0.6, 0), 3, 1.2, C.canvasRed, M.SmoothPlastic, { CanCollide = false })
-		Kit.box(m, "Post", CFrame.new(pos + V3(0, 2.6, 0)), V3(0.4, 3.2, 0.4), C.iron, M.Metal, { CanCollide = false })
-		local light = Kit.ball(m, "Light", pos + V3(0, 4.4, 0), 0.9, C.warm, M.Neon, { CanCollide = false })
-		Kit.light(light, "PointLight", { Name = "Glow", Color = C.warm, Range = 14, Brightness = 1.2 })
+		local still = { CanCollide = false, CastShadow = false }
+		Kit.disc(m, "Float", pos + V3(0, 0.3, 0), 3.6, 1.6, C.canvasRed, M.SmoothPlastic, still)
+		Kit.disc(m, "Stripe", pos + V3(0, 1.3, 0), 3.2, 0.5, C.white, M.SmoothPlastic, still)
+		Kit.disc(m, "Top", pos + V3(0, 1.75, 0), 2.4, 0.4, C.canvasRed, M.SmoothPlastic, still)
+		for _, a in { 0, 120, 240 } do
+			local r = math.rad(a)
+			Kit.box(
+				m,
+				"Leg",
+				CFrame.new(pos + V3(math.cos(r) * 0.7, 3.2, math.sin(r) * 0.7)) * CFrame.Angles(0, -r, math.rad(8)),
+				V3(0.18, 2.8, 0.18),
+				C.iron,
+				M.Metal,
+				still
+			)
+		end
+		Kit.disc(m, "Ring", pos + V3(0, 4.6, 0), 1.6, 0.16, C.iron, M.Metal, still)
+		Kit.cone(m, "Bell", pos + V3(0, 3.5, 0), 1, 0.9, brass, 3, M.Metal, still)
+		Kit.ball(m, "Clapper", pos + V3(0, 3.45, 0), 0.26, C.iron, M.Metal, still)
+		Kit.box(m, "Mast", CFrame.new(pos + V3(0, 5.4, 0)), V3(0.12, 1.6, 0.12), C.iron, M.Metal, still)
+		local flag =
+			Kit.box(m, "Flag", CFrame.new(pos + V3(0.66, 5.8, 0)), V3(1.2, 0.8, 0.06), C.white, M.Fabric, still)
+		Kit.text(flag, Enum.NormalId.Front, tostring(plot.index), { size = 32, color = C.canvasRed })
+		Kit.text(flag, Enum.NormalId.Back, tostring(plot.index), { size = 32, color = C.canvasRed })
 		m:SetAttribute("Plot", plot.index)
 	end
 end
 
 function OceanBuilder.build()
+	-- a place file's Baseplate sits exactly at the water level (its top at y = 0): nothing may lie on the water
+	for _, c in workspace:GetChildren() do
+		if c:IsA("BasePart") and (c.Name == "Baseplate" or c:IsA("SpawnLocation")) then
+			c:Destroy()
+		end
+	end
 	local map = folder("Map")
 	water()
 	horizon(map)

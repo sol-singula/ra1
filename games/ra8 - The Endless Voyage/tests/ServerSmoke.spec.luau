@@ -28,6 +28,11 @@ local function check(name, cond, detail)
 end
 
 local tree = Engine.mountProject(".")
+do
+	local plate = Engine.Instance.new("Part")
+	plate.Name = "Baseplate"
+	plate.Parent = Engine.workspace
+end
 Engine.runScript(tree.server.Main)
 Engine.advance(0.1)
 local function service(name)
@@ -172,6 +177,11 @@ end
 check("the ocean was filled", #Engine.terrain.ops >= 2, #Engine.terrain.ops)
 check("six plots on a ring", #OceanLayout.plots == 6)
 check("a buoy per plot", #ws.Map.Buoys:GetChildren() == 6)
+check(
+	"a channel buoy: a float, a bell and a numbered flag",
+	ws.Map.Buoys.Buoy1:FindFirstChild("Bell") ~= nil and ws.Map.Buoys.Buoy1:FindFirstChild("Flag") ~= nil
+)
+check("the template's baseplate at the water line is gone (you can swim)", ws:FindFirstChild("Baseplate") == nil)
 check("the day started", ws:GetAttribute("Phase") == "day")
 check("every client remote exists", Engine.remote("Act") ~= nil and Engine.remote("Build") ~= nil)
 
@@ -196,18 +206,18 @@ check(
 )
 check("ava has a character on her raft", ava.Character ~= nil and PlayersS:Where(ava) == "raft", PlayersS:Where(ava))
 check(
-	"ava holds the basic hook",
-	select(2, Inventory:Selected(ava)) ~= nil and select(2, Inventory:Selected(ava)).key == "basic_hook"
+	"ava holds the fishing rod",
+	select(2, Inventory:Selected(ava)) ~= nil and select(2, Inventory:Selected(ava)).key == "fishing_rod"
 )
-check("her character has the hook in hand", ava.Character:FindFirstChild("Held") ~= nil)
+check("her character has the rod in hand", ava.Character:FindFirstChild("Held") ~= nil)
 local view = lastFired("Raft", ava)
 check("the raft view went out", view and view.tier == 1 and #view.pieces == 4 and view.cargo == 16, view and view.cargo)
 local me = lastFired("Me", ava)
 check("the Me view went out", me and me.hp == 100 and me.where == "raft" and me.home == 1)
 local guide = lastFired("Tutorial", ava)
 check(
-	"the guide shows step 1: hook",
-	guide and guide.key == "hook" and guide.step == 1 and guide.total == 9,
+	"the guide shows step 1: cast",
+	guide and guide.key == "cast" and guide.step == 1 and guide.total == 9,
 	guide and guide.key
 )
 check(
@@ -229,7 +239,7 @@ for _, d in debris do
 		nearest, nearestD = d, dist
 	end
 end
-check("the nearest piece is within the hook's range", nearestD and nearestD <= 30, nearestD)
+check("the nearest piece is within the rod's range", nearestD and nearestD <= 30, nearestD)
 check(
 	"debris models are in the workspace with ids",
 	nearest.model.Parent == ws.Debris and nearest.model:GetAttribute("DebrisId") == nearest.id
@@ -259,12 +269,12 @@ do
 	)
 end
 
--- hooking: name the piece
+-- casting: name the piece
 local m0 = mark()
 local before = Inventory:Count(ava, nearest.kind == "wood" and "wood" or nearest.kind)
 send(ava, "Act", nil, nearest.id)
-check("the hook flew (Fx hook to the plot)", firedSince(m0, "Fx", ava, function(a)
-	return a[1] == "hook"
+check("the line flew out to the piece (Fx cast to the plot)", firedSince(m0, "Fx", ava, function(a)
+	return a[1] == "cast" and type(a[2]) == "table" and a[2].id == nearest.id
 end) ~= nil)
 -- (send advanced 0.25 s; the pull starts at HOOK_FLIGHT = 0.35 s and the piece is 10-25 studs off)
 Engine.advance(0.15)
@@ -277,21 +287,21 @@ check(
 		and type(pulled:GetAttribute("PullSpeed")) == "number",
 	pulled and tostring(pulled:GetAttribute("Pull")) or "gone"
 )
-check("the player pulls hand over hand (the pulling pose)", ava.Character:GetAttribute("Pose") == "pulling")
+check("the player cranks the reel (the reel pose)", ava.Character:GetAttribute("Pose") == "reel")
 Engine.advance(4)
-check("the pose ends when the piece is in", ava.Character:GetAttribute("Pose") ~= "pulling")
+check("the pose ends when the piece is in", ava.Character:GetAttribute("Pose") ~= "reel")
 check("the piece was pulled in and collected", Ocean:Get(nearest.id) == nil)
 local gotKey = Ocean.KINDS[nearest.kind] and next(Ocean.KINDS[nearest.kind].gives)
 check("it gave its resource", gotKey and Inventory:Count(ava, gotKey) > 0, gotKey)
 check("a popup said what it gave", firedSince(m0, "Popup", ava) ~= nil)
 check("XP for the debris", Data:Get(ava).xp >= Constants.XP.debris)
 check(
-	"the guide counts the hook (1/5)",
+	"the guide counts the cast (1/5)",
 	lastFired("Tutorial", ava).text:find("1/5") ~= nil,
 	lastFired("Tutorial", ava).text
 )
 
--- hooking without naming a piece: the one in front
+-- casting without naming a piece: the one in front
 local function hookAll(player, max)
 	local got = 0
 	for _ = 1, max do
@@ -320,12 +330,12 @@ local function hookAll(player, max)
 	return got
 end
 local hooked = hookAll(ava, 5)
-check("aiming hooks the piece in front", hooked >= 4, hooked)
+check("aiming reels in the piece in front", hooked >= 4, hooked)
 Engine.advance(2)
 guide = lastFired("Tutorial", ava)
 check("five pieces: the guide moves to the tile", guide and guide.key == "tile", guide and guide.key)
 check("the tile step points at a free spot beside the raft", guide and guide.spot ~= nil and guide.spot.gx ~= nil)
-check("XP for the guide's first step", Data:Get(ava).xp >= Constants.XP.guide.hook)
+check("XP for the guide's first step", Data:Get(ava).xp >= Constants.XP.guide.cast)
 
 -- building: a tile beside the raft
 give(ava, "wood", 10)
@@ -343,6 +353,19 @@ check(
 )
 check("the raft view lists the new tile", #lastFired("Raft", ava).pieces == 5)
 check("the guide moved to the workbench", lastFired("Tutorial", ava).key == "bench")
+local rec = Rafts:Recommend(raft)
+local recFloor = false
+for _, r in rec do
+	if r.key == "floor" then
+		recFloor = true
+	end
+end
+check(
+	"QUICK's recommendations: the stations the next tier needs, then tiles",
+	rec[1] and rec[1].key == "workbench" and rec[2] and rec[2].key == "storage" and recFloor,
+	rec[1] and rec[1].key
+)
+check("the raft view carries them", #lastFired("Raft", ava).recommend >= 3)
 -- a tile can't float: not beside the raft
 local ok = Rafts:Build(ava, "floor", 0, 0, 1)
 check("a tile away from the raft is refused", not ok)
@@ -404,7 +427,7 @@ crate = Ocean:Crate(1, 1, { guide = true, distance = 20, spread = 0 })
 stand(ava, tileAt(raft, 6, 6), crate.pos)
 send(ava, "Act", nil, crate.id)
 Engine.advance(5)
-check("the crate was hooked", Inventory:Count(ava, "supply_crate") == 1)
+check("the crate was reeled in", Inventory:Count(ava, "supply_crate") == 1)
 local slotId
 for id, slot in Inventory:View(ava).slots do
 	if slot.key == "supply_crate" then
@@ -413,8 +436,8 @@ for id, slot in Inventory:View(ava).slots do
 end
 send(ava, "Use", slotId)
 check(
-	"the crate opened: a blueprint and a rod",
-	Inventory:Count(ava, "blueprint") == 1 and Inventory:Count(ava, "fishing_rod") == 1
+	"the crate opened: a blueprint and an axe",
+	Inventory:Count(ava, "blueprint") == 1 and Inventory:Count(ava, "axe") == 1
 )
 check(
 	"the crate's blueprint is the Surface Net's",
@@ -490,9 +513,25 @@ check("the voyage view: sailing to Palm Key", voyage and voyage.state == "sailin
 local secs = Formulas.voyageSeconds(1, 1)
 check("a first trip at paddle speed takes about half a minute", secs >= 25 and secs <= 40, secs)
 check("the guide moved to the island", lastFired("Tutorial", ava).key == "island")
-check("XP for deciding to sail", Data:Get(ava).xp >= Constants.XP.guide.hook + Constants.XP.guide.helm)
-Engine.advance(secs + 2)
+check("XP for deciding to sail", Data:Get(ava).xp >= Constants.XP.guide.cast + Constants.XP.guide.helm)
+for _, d in Ocean:Debris(1) do
+	Ocean:Remove(d)
+end
+Engine.advance(secs / 2)
+local fast = false
+for _, d in Ocean:Debris(1) do
+	if d.vel.Magnitude > Constants.DEBRIS_SPEED * 2 then
+		fast = true
+	end
+end
+check("the debris streams past three times as fast while sailing (the boat is moving)", fast)
+Engine.advance(secs / 2 + 2)
 check("land ho: the voyage is at its island", Voyages:State(1) == "island")
+local arrived = lastFired("Voyage", ava)
+check(
+	"no anchor: the view says when the current takes you home",
+	arrived and arrived.anchored == false and arrived.stayEnds ~= nil and arrived.stayEnds > Engine.now() + 100
+)
 local isl = Island:Here(1)
 check(
 	"Palm Key was built beside the plot",
@@ -603,6 +642,24 @@ check("the guide finished", Tutorial:Active(ava) == nil and Data:Get(ava).tutori
 check("XP for the voyage", Data:Get(ava).xp >= Constants.XP.voyage + Constants.XP.discovery)
 check("a voyage counted", Data:Get(ava).stats.voyages == 1 and Data:Get(ava).records.voyages == 1)
 check("Land Ho achievement", Data:Get(ava).achievements.voyages_1 ~= nil)
+
+-- Docking without an anchor: the current takes the raft home -------------------------------------------------------------
+local mDock = mark()
+send(ava, "Sail", "palm_key")
+Voyages:_setEnds(1, Engine.now() + 1)
+Engine.advance(1.5)
+check("back at Palm Key", Voyages:State(1) == "island")
+Engine.advance(Constants.ISLAND_STAY_NO_ANCHOR - Constants.ISLAND_STAY_WARNING + 0.5)
+check("a warning before the current pulls the raft off", firedSince(mDock, "Callout", ava, function(a)
+	return type(a[1]) == "string" and a[1]:find("No anchor") ~= nil
+end) ~= nil and Voyages:State(1) == "island")
+Engine.advance(Constants.ISLAND_STAY_WARNING + 0.5)
+check("the current took the raft home", Voyages:State(1) == "home" and firedSince(mDock, "Alert", ava, function(a)
+	return type(a[1]) == "string" and a[1]:find("CURRENT") ~= nil
+end) ~= nil)
+Voyages:_setEnds(1, Engine.now() + 1)
+Engine.advance(1.5)
+check("docked again", Voyages:State(1) == "docked" and Data:Get(ava).stats.voyages == 2)
 local lvl = Formulas.level(Data:Get(ava).xp)
 check("ava leveled up at least once", lvl >= 2, lvl)
 
@@ -684,6 +741,22 @@ onTile(ava, "sail")
 check("tier 3, the Expedition Vessel", raft.tier == 3, raft.tier)
 check("a sail doubles the speed", Rafts:Speed(raft) == 2)
 check("the raft view's needs point at tier 4", lastFired("Raft", ava).nextTier == "Ocean Explorer")
+-- the anchor: docked as long as you like
+check("an anchor builds at tier 3", onTile(ava, "anchor") and Rafts:Anchors(raft) == 1)
+send(ava, "Sail", "palm_key")
+Voyages:_setEnds(1, Engine.now() + 1)
+Engine.advance(1.5)
+local anchoredView = lastFired("Voyage", ava)
+check(
+	"anchored: no clock on the island stay",
+	Voyages:State(1) == "island" and anchoredView and anchoredView.anchored == true and anchoredView.stayEnds == nil
+)
+Engine.advance(Constants.ISLAND_STAY_NO_ANCHOR + 5)
+check("the anchored raft stays", Voyages:State(1) == "island")
+send(ava, "Sail", "home")
+Voyages:_setEnds(1, Engine.now() + 1)
+Engine.advance(1.5)
+check("home from the anchored stay", Voyages:State(1) == "docked" and Data:Get(ava).stats.voyages == 3)
 check("records follow the raft", Data:Get(ava).records.tier == 3 and Data:Get(ava).records.tiles >= 24)
 -- demolishing
 local railingTile = Rafts:EmptyTiles(raft, 1)[1]
@@ -773,6 +846,10 @@ check(
 _ = sailHp
 
 -- Fishing and cooking ------------------------------------------------------------------------------------------------------------
+-- (open water: with nothing floating in front, a cast fishes; a piece in front would be reeled in instead)
+for _, d in Ocean:Debris(1) do
+	Ocean:Remove(d)
+end
 hold(ava, "fishing_rod")
 stand(ava, tileAt(raft, 6, 6), tileAt(raft, 6, 6) + Vector3.new(30, 0, 0))
 send(ava, "Act", Vector3.new(1, 0, 0), nil)
@@ -1012,7 +1089,7 @@ Rafts:Build(ava, "spikes", spikeEdge.piece.gx, spikeEdge.piece.gz, 1, spikeEdge.
 check("spikes built on an edge", Rafts:SpikesAt(raft, spikeEdge.piece, spikeEdge.rot))
 Voyages:_setEnds(1, Engine.now() + 1)
 Engine.advance(3)
-check("home again", Voyages:State(1) == "docked" and Data:Get(ava).stats.voyages == 2)
+check("home again", Voyages:State(1) == "docked" and Data:Get(ava).stats.voyages == 4)
 
 -- The turret and the Leviathan ------------------------------------------------------------------------------------------------------------
 Progress:LearnBlueprint(ava, "piece", "harpoon_turret", "test")
@@ -1212,8 +1289,16 @@ check(
 check("the sail is still red", noDataStore or raft.colours.sail == "red")
 
 -- Feedback, notifications, the anti-cheat, analytics ------------------------------------------------------------------------------------
-Feedback:Ask(ava)
-check("the feedback card was asked", lastFired("Ask", ava).kind == "feedback")
+-- (the card comes by itself after FEEDBACK_AFTER seconds of play, at a calm moment; by now it has, or we ask)
+local function askedFeedback()
+	return firedSince(0, "Ask", ava, function(a)
+		return type(a[1]) == "table" and a[1].kind == "feedback"
+	end) ~= nil
+end
+if not askedFeedback() then
+	Feedback:Ask(ava)
+end
+check("the feedback card was asked", askedFeedback() or (Data:Get(ava).feedback.asks or 0) >= 1)
 send(ava, "Feedback", false, "more islands pls", { "empty", "bogus" })
 flush()
 local fb = events("feedback", ava)[1]
@@ -1281,7 +1366,7 @@ flush()
 check("analytics are tagged ra8", taggedRa8)
 check(
 	"the funnel events went out",
-	#events("first_hook", ava) == 1
+	#events("first_cast", ava) == 1
 		and #events("first_build", ava) == 1
 		and #events("first_craft", ava) == 1
 		and #events("first_sail", ava) == 1

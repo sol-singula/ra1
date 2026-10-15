@@ -2,9 +2,10 @@
 
 ![All the icons](_all.jpg)
 
-2D icons for all 53 items, made with AI image generation (Higgsfield, GPT Image 2.5) from renders of the game's
-own item models (`tools/gameplay/items_sheet.luau`), as four 4 × 4 sheets on a transparent background, then cut
-into one PNG per item (`tools/icons/slice_sheets.py`), 320 × 320 each.
+2D icons for all 52 items, made with AI image generation (Higgsfield, GPT Image 2.5) from renders of the game's
+own item models (`tools/gameplay/items_sheet.luau`), as four 4 × 4 sheets on a transparent background (and a 2 × 2
+sheet for the three rods that replaced the hooks in round 3, from the earlier sheets as references), then cut into
+one PNG per item (`tools/icons/slice_sheets.py`), 320 × 320 each.
 
 **The game does not need them to look right.** Every slot, hotbar cell, crafting row and build row shows a little
 3D view of the item's own model (`client/UI/Icons` + `World/ItemModels`), so what you hold is what the icon shows.

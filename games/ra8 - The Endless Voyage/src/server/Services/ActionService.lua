@@ -1,6 +1,7 @@
 --[[
 ACT (master plan §4: one button that does what you hold). The client sends Act(aim, targetId) and the server does
-what the selected item does: a hook hooks, a rod casts, an axe chops the island's trees, a pickaxe mines, a crowbar
+what the selected item does: a rod casts (at a piece of debris: it reels it in; at open water: it fishes), an axe
+chops the island's trees, a pickaxe mines, a crowbar
 pries a wreck's salvage, a hammer repairs the raft, a spear stabs, a harpoon flies, food is eaten, a chart read,
 a crate opened. Everyone nearby sees the action ("Act").
 ]]
@@ -26,9 +27,7 @@ function ActionService.modeOf(item)
 		return nil
 	end
 	local kind = Items.toolKind(item)
-	if kind == "hook" then
-		return "hook"
-	elseif kind == "rod" then
+	if kind == "rod" then
 		return "cast"
 	elseif kind == "axe" then
 		return "chop"
@@ -66,10 +65,8 @@ function ActionService:Act(player, aim, targetId)
 		targetId = nil
 	end
 	local ok = false
-	if mode == "hook" then
-		ok = ocean:Hook(player, item, targetId, aim)
-	elseif mode == "cast" then
-		ok = ocean:Cast(player, item, aim)
+	if mode == "cast" then
+		ok = ocean:Cast(player, item, aim, targetId)
 	elseif mode == "chop" or mode == "mine" or mode == "pry" then
 		ok = registry.IslandService:Gather(player, item, targetId, aim)
 	elseif mode == "repair" then

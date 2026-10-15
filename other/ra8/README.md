@@ -1,6 +1,6 @@
 # ra8 · The Endless Voyage
 
-A raft-building ocean survival game for Roblox: start on a 2 x 2 driftwood platform, hook what drifts past,
+A raft-building ocean survival game for Roblox: start on a 2 x 2 driftwood platform, cast your rod at what drifts past,
 build, craft, raise the sail, and go find what's out there. Your raft and everything you've found persist; a
 voyage is where the risk is.
 

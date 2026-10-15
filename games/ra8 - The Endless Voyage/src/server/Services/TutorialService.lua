@@ -2,12 +2,12 @@
 The first five minutes (master plan §4): one clear thing to do at a time, an arrow to where it is, and the game
 itself does the teaching. Returning players never see it; SKIP ends it.
 
-  1 hook     "Hook the driftwood": six pieces float within reach the moment you arrive            0:00-0:30
+  1 cast     "Cast at the driftwood": six pieces float within reach the moment you arrive         0:00-0:30
   2 tile     "Build a Floor Tile": BUILD, pick it, tap a spot next to your raft                    0:30-0:50
   3 bench    "Build the Workbench"                                                                 0:50-1:30
-  4 craft    "Craft something at the Workbench" (a hammer, a rod)                                  1:30-2:20
-  5 crate    at 2:20 a supply crate drifts by: "Hook the crate, then OPEN it in your bag"          2:20-3:00
-             (inside: the Surface Net's blueprint and a fishing rod)
+  4 craft    "Craft something at the Workbench" (a hammer, an axe)                                 1:30-2:20
+  5 crate    at 2:20 a supply crate drifts by: "Cast at the crate, then OPEN it in your bag"       2:20-3:00
+             (inside: the Surface Net's blueprint and an axe)
   6 net      "Build the Surface Net on an edge facing the water"                                   3:00-3:30
   7 helm     "Build the Helm and set sail for Palm Key": the first real decision (go now, or build) 3:30-4:00
   8 island   "Land ho! Chop a palm, search the crate, look at the campfire"                        4:00-5:00
@@ -38,18 +38,18 @@ local TutorialService = {
 }
 
 local data, rafts, inventory, players, ocean, voyages, island
-local STEPS = { "hook", "tile", "bench", "craft", "crate", "net", "helm", "island", "home" }
+local STEPS = { "cast", "tile", "bench", "craft", "crate", "net", "helm", "island", "home" }
 TutorialService.STEPS = STEPS
 local INDEX = {}
 for i, k in STEPS do
 	INDEX[k] = i
 end
 local TEXT = {
-	hook = "Hook the driftwood 🔗: aim at a piece and tap ACT",
-	tile = "Build a Floor Tile 🟫: open BUILD, pick it, tap a spot beside your raft",
+	cast = "Cast at the driftwood 🎣: aim at a piece, tap ACT, and it reels in",
+	tile = "Build a Floor Tile 🟫: hold QUICK looking at the water beside your raft (or open BUILD and pick it)",
 	bench = "Build the Workbench 🛠️ on a tile",
-	craft = "Stand at the Workbench and craft something (a Hammer 🔨 or a Rod 🎣)",
-	crate = "A supply crate 📦! Hook it, then OPEN it from your bag",
+	craft = "Stand at the Workbench and craft something (a Hammer 🔨 or an Axe 🪓)",
+	crate = "A supply crate 📦! Cast at it to reel it in, then OPEN it from your bag",
 	net = "Build the Surface Net 🕸️ on an edge facing the water: it collects for you",
 	helm = "Build the Helm 🎚️ and set sail for Palm Key, or keep building first. Your call!",
 	island = "Land ho! Chop a palm 🌴, search the crate 📦, and look at the campfire 🔥",
@@ -74,7 +74,7 @@ function TutorialService:Target(player, key)
 		return nil
 	end
 	local pos = players:Position(player)
-	if key == "hook" and pos then
+	if key == "cast" and pos then
 		local best, bestD
 		for _, d in ocean:Debris(raft.plot) do
 			if not d.hooked and not d.special then
@@ -153,7 +153,7 @@ function TutorialService:View(player)
 	end
 	local key = STEPS[a.step]
 	local text = TEXT[key]
-	if key == "hook" then
+	if key == "cast" then
 		text = `{text} ({math.min(a.hooked, Constants.GUIDE_DEBRIS)}/{Constants.GUIDE_DEBRIS})`
 	end
 	local target, glow = self:Target(player, key)
@@ -290,9 +290,9 @@ function TutorialService:Init(registry)
 			return
 		end
 		a.hooked += 1
-		if STEPS[a.step] == "hook" then
+		if STEPS[a.step] == "cast" then
 			if a.hooked >= Constants.GUIDE_DEBRIS then
-				self:Advance(player, "hook")
+				self:Advance(player, "cast")
 			else
 				self:_refresh(player)
 			end
@@ -398,7 +398,7 @@ function TutorialService:Start()
 		local t = now()
 		for player, a in active do
 			local key = STEPS[a.step]
-			-- the crate: at 2:20, again a minute after it drifted past unhooked
+			-- the crate: at 2:20, again a minute after it drifted past untouched
 			if not a.crateOpened and not a.crateHooked then
 				local d = a.crate and ocean:Get(a.crate)
 				local due = (not a.crate and t - a.startedAt >= Constants.GUIDE_CRATE_AT)
@@ -407,7 +407,7 @@ function TutorialService:Start()
 					self:_crate(player, a)
 				end
 			end
-			if key == "hook" or key == "crate" or key == "island" or key == "tile" or key == "net" then
+			if key == "cast" or key == "crate" or key == "island" or key == "tile" or key == "net" then
 				self:_refresh(player)
 			end
 		end

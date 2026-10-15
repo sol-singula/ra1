@@ -4,7 +4,7 @@ and event you've met, with its story), blueprints (found, researched, given), ac
 the raft can wear, the records the leaderboards compare. Every reward lands the moment it's earned and is in the
 profile right away (the save follows).
 
-  XP       Constants.XP: hooking, building, crafting, voyages (more from dangerous waters), discoveries (the
+  XP       Constants.XP: reeling in debris, building, crafting, voyages (more from dangerous waters), discoveries (the
            first time), creatures by size, fish, tiers; a cap a day (Constants.XP.cap) so a session can't be
            farmed flat
   journal  profile.journal[kind][key] = { at, n }: islands, creatures, fish, artifacts, events, notes

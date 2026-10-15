@@ -169,7 +169,7 @@ Voyages.EVENTS = {
 		minDanger = 1,
 		weight = 3,
 		seconds = 22,
-		desc = "Wood and scrap drifting past: hook it while it lasts.",
+		desc = "Wood and scrap drifting past: reel it in while it lasts.",
 	},
 	{
 		key = "supply_drop",
@@ -178,7 +178,7 @@ Voyages.EVENTS = {
 		minDanger = 1,
 		weight = 2,
 		seconds = 30,
-		desc = "A crate in the water. Hook it before it's gone.",
+		desc = "A crate in the water. Cast for it before it's gone.",
 	},
 	{
 		key = "bottle",

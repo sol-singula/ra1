@@ -18,7 +18,7 @@ textures for their Roblox material (free CC0 sets from ambientCG picked to look 
 
 | File | Moment |
 |---|---|
-| `01_first_hook.jpg` | The first minute: two survivors on the 2 x 2 driftwood platform, a hook flying at a plank, debris drifting past |
+| `01_first_cast.jpg` | The first minute: two survivors on the 2 x 2 driftwood platform, the rod's line cast out to a plank, debris drifting past |
 | `02_build_your_raft.jpg` | A survival raft growing: a tile being hammered down, the workbench behind, more wood coming aboard |
 | `03_set_sail.jpg` | Setting sail: the sail up, a hand at the helm, dolphins alongside, Palm Key ahead |
 | `04_palm_key.jpg` | Ashore on Palm Key: chopping a palm, a chest among the bushes, crabs on the beach |

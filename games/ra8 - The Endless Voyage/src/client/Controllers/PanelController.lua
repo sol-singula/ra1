@@ -64,6 +64,9 @@ function PanelController.close()
 	if open then
 		open.frame:Destroy()
 		open = nil
+		pcall(function()
+			GuiService.SelectedObject = nil
+		end)
 	end
 	picked = nil
 	hover = nil
@@ -122,9 +125,12 @@ local function panel(name, title, w, h)
 	})
 	Theme.pop(frame)
 	open = { name = name, frame = frame, body = body, head = head }
-	pcall(function()
-		GuiService.SelectedObject = x
-	end)
+	-- (only a gamepad gets the selection cursor: on a keyboard it would trap the arrow keys and Escape)
+	if Theme.inputKind() == "gamepad" then
+		pcall(function()
+			GuiService.SelectedObject = x
+		end)
+	end
 	return body, frame
 end
 
@@ -397,7 +403,7 @@ end
 
 -- BAG -----------------------------------------------------------------------------------------------------------------------
 local CELL = 62
-local BUFF_NAME = { hearty = "Hearty (tougher)", swift = "Swift (faster)", lucky = "Lucky (better hooks)" }
+local BUFF_NAME = { hearty = "Hearty (tougher)", swift = "Swift (faster)", lucky = "Lucky (better casts)" }
 local suppressUntil = 0 -- a tap right after a drag is not a tap
 
 -- A picture of the item in a cell: its own model, or the emoji if it can't be drawn.
@@ -419,17 +425,16 @@ end
 local function statLines(item, slot)
 	local lines = {}
 	local t = item.tool
-	if t and t.hook then
-		table.insert(lines, `🔗 Reaches {t.hook.range} studs · pulls ×{t.hook.pull}`)
-		if (t.hook.double or 0) > 0 then
-			table.insert(lines, `Two pieces at once {math.floor(t.hook.double * 100)}% of the time`)
-		end
-		if t.hook.rare then
-			table.insert(lines, "Finds metal and pearls in the debris")
-		end
-	elseif t and t.rod then
+	if t and t.rod then
+		table.insert(lines, `🎣 Casts {t.rod.range} studs · reels in ×{t.rod.pull}`)
 		local extra = (t.rod.rare or 0) > 0 and ` · rare fish +{math.floor(t.rod.rare * 100)}%` or ""
-		table.insert(lines, `🎣 Bites ×{t.rod.speed} as fast{extra}`)
+		table.insert(lines, `🐟 Bites ×{t.rod.speed} as fast{extra}`)
+		if (t.rod.double or 0) > 0 then
+			table.insert(lines, `Two pieces at once {math.floor(t.rod.double * 100)}% of the time`)
+		end
+		if t.rod.salvage then
+			table.insert(lines, "Its claw finds metal and pearls in the debris")
+		end
 	elseif t and (t.axe or t.pick or t.pry) then
 		local spec = t.axe or t.pick or t.pry
 		local what = t.axe and "palms and trees" or t.pick and "rocks and ore" or "wrecks' salvage"
@@ -1080,14 +1085,28 @@ local function mapPanel()
 		local v = Store.get("voyage") or { state = "docked" }
 		local allowed = Constants.DANGER_BY_TIER[raft.tier or 1] or 1
 		local status
+		local speed = raft.speed or 1
+		local drive = speed >= 4 and "💨 Engine ×4" or speed >= 2 and "⛵ Sail ×2" or "🚣 Paddling ×1"
+		local nextDrive = speed >= 4 and ""
+			or speed >= 2 and " · an Engine (tier 3) makes it ×4"
+			or " · a Sail (tier 2) makes it ×2, an Engine (tier 3) ×4"
 		if v.state == "docked" then
-			status = raft.helm and "Docked. Pick a destination and SAIL." or "Docked. Build a Helm to set sail."
+			status = (raft.helm and "Docked. Pick a destination and SAIL." or "Docked. Build a Helm to set sail.")
+				.. ` {drive}{nextDrive}`
 		elseif v.state == "island" then
-			status = `At {v.name}. Sail home when you're done.`
+			if v.stayEnds then
+				local left = math.max(0, math.floor((v.stayEnds or 0) - workspace:GetServerTimeNow()))
+				status = `At {v.name}. No anchor: the current carries you home in {left // 60}:{string.format(
+					"%02d",
+					left % 60
+				)}. An Anchor (tier 3) keeps you docked.`
+			else
+				status = `⚓ Anchored at {v.name}. Sail home when you're done.`
+			end
 		else
-			status = v.state == "home" and "Sailing home..." or `Sailing to {v.name}...`
+			status = (v.state == "home" and "Sailing home..." or `Sailing to {v.name}...`) .. ` {drive}`
 		end
-		label(body, status, { Size = UDim2.new(1, -160, 0, 24), Font = Theme.Display, TextSize = 16 })
+		label(body, status, { Size = UDim2.new(1, -160, 0, 44), TextSize = 14, TextWrapped = true })
 		if v.state == "island" then
 			local home = Theme.button({
 				Name = "Home",
@@ -1554,7 +1573,7 @@ local function mePanel()
 		local statsRow = rowFrame(list, 70, 100)
 		label(
 			statsRow,
-			`🔗 {st.debris or 0} hooked · 🔨 {st.built or 0} built · 🛠️ {st.crafted or 0} crafted · ⛵ {st.voyages or 0} voyages · 🎣 {st.fish or 0} fish · 📔 {profile.journalCount or 0} journal entries · ⛈️ {st.storms or 0} storms · 💀 {st.deaths or 0} downs · 🐲 {st.leviathans or 0} leviathans`,
+			`🎣 {st.debris or 0} reeled in · 🔨 {st.built or 0} built · 🛠️ {st.crafted or 0} crafted · ⛵ {st.voyages or 0} voyages · 🎣 {st.fish or 0} fish · 📔 {profile.journalCount or 0} journal entries · ⛈️ {st.storms or 0} storms · 💀 {st.deaths or 0} downs · 🐲 {st.leviathans or 0} leviathans`,
 			{ Position = UDim2.fromOffset(10, 4), Size = UDim2.new(1, -20, 1, -8), TextSize = 14 }
 		)
 	end
@@ -1790,12 +1809,12 @@ end
 
 -- MORE -------------------------------------------------------------------------------------------------------------------------
 local HOW_TO = {
-	"🔗 Hook what floats past: aim at it and tap ACT. Nets catch it for you.",
+	"🎣 Cast at what floats past: aim at it and tap ACT, it reels in. Cast at open water to fish. Nets catch for you.",
 	"🔨 BUILD tiles beside your raft, then stations and systems on them.",
 	"🛠️ Stand at a station to craft. Costs are shown as have/need.",
 	"🎚️ Build a Helm, open the MAP and SAIL. Things happen on the way.",
 	"🏝️ Islands rise beside your raft: chop, mine, search, look, then sail home.",
-	"💀 Go down away from your dock and half your finds float off as a bag. Hook it back.",
+	"💀 Go down away from your dock and half your finds float off as a bag. Cast at it to reel it back.",
 	"⛵ Tiers come from what the raft can do. The RAFT panel shows the next one.",
 }
 

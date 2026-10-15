@@ -4,9 +4,8 @@ keep playing; on top of them this bends the joints by hand (each Motor6D's C0, o
 offset in and out:
 
   holding     anything in your hand: the forearm level in front of you, like any Roblox tool
-  the hook    an overarm throw; then, while the piece comes in, hand over hand on the rope ("pulling")
   the rod     an overarm cast; then the rod held out in both hands, the line in the water ("fishing"); the tip
-              jerking on a bite ("bite"); the left hand cranking the reel ("reel")
+              jerking on a bite ("bite"); the left hand cranking the reel while a piece or a fish comes in ("reel")
   axes, picks, crowbars, the hammer   a wind-up over the head and a hard swing down in front
   spears      a level thrust; harpoons: an overarm throw
   eating, reading   hand to the face
@@ -112,7 +111,7 @@ end
 AnimController.heldItem = heldItem
 
 local OVERHEAD = { chop = true, mine = true, pry = true, repair = true }
-local OVERARM = { hook = true, cast = true, throw = true }
+local OVERARM = { cast = true, throw = true }
 
 -- The sustained poses (the character's "Pose" attribute). Each returns S, E, LS, LE, waist, neck.
 local SUSTAINED = {}
@@ -130,11 +129,6 @@ function SUSTAINED.reel(clock)
 	-- the rod pulled up and back, the left hand cranking in circles
 	local c = clock * 14
 	return 1.45, 0.5, 0.95 + math.sin(c) * 0.25, 1.1 + math.cos(c) * 0.35, 0.12, -0.05
-end
-function SUSTAINED.pulling(clock)
-	-- hand over hand on the rope, leaning back
-	local c = math.sin(clock * 6)
-	return 1.15 + c * 0.35, 0.5 - c * 0.2, 1.15 - c * 0.35, 0.5 + c * 0.2, 0.14, 0.05
 end
 
 function AnimController.pose(rec, character, clock)

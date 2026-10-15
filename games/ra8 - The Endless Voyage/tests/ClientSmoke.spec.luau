@@ -64,6 +64,7 @@ end
 local Constants = Engine.require(tree.shared.Constants)
 local Kit = Engine.require(tree.shared.World.Kit)
 local Formulas = Engine.require(tree.shared.Formulas)
+local OceanLayout = Engine.require(tree.shared.World.OceanLayout)
 local Items = Engine.require(tree.shared.Data.Items)
 local Pieces = Engine.require(tree.shared.Data.Pieces)
 local PPS = Engine.game:GetService("ProximityPromptService")
@@ -92,6 +93,9 @@ local Anim = Engine.require(tree.client.Controllers.AnimController)
 local Audio = Engine.require(tree.client.Controllers.AudioController)
 local Lighting = Engine.require(tree.client.Controllers.LightingController)
 local Guide = Engine.require(tree.client.Controllers.TutorialController)
+local Sailing = Engine.require(tree.client.Controllers.SailingController)
+local RaftMotion = Engine.require(tree.client.Controllers.RaftMotionController)
+local GuiService = Engine.game:GetService("GuiService")
 local Store = Engine.require(tree.client.Store)
 local Bus = Engine.require(tree.client.UI.Bus)
 local refs = Hud.refs
@@ -162,12 +166,12 @@ check("the clock says docked", refs.voyage.Text:find("DOCKED") ~= nil, refs.voya
 check("the raft line says driftwood platform", refs.raftLine.Text:find("Driftwood") ~= nil, refs.raftLine.Text)
 check("health is full", refs.hpText.Text:find("100") ~= nil, refs.hpText.Text)
 check(
-	"the hotbar shows the hook in slot 1 (its own model in a viewport)",
+	"the hotbar shows the rod in slot 1 (its own model in a viewport)",
 	refs.slots[1].button:FindFirstChild("Icon3D") ~= nil
-		and refs.slots[1].button.Icon3D:FindFirstChild("basic_hook") ~= nil
+		and refs.slots[1].button.Icon3D:FindFirstChild("fishing_rod") ~= nil
 		and refs.slots[1].icon.Text == ""
 )
-check("ACT says HOOK", Input.refs.actLabel.Text == "HOOK", Input.refs.actLabel.Text)
+check("ACT says CAST", Input.refs.actLabel.Text == "CAST", Input.refs.actLabel.Text)
 check("BUILD is there on your own raft", Input.refs.build.Visible == true)
 local card = find(guide, "GuideCard")
 check(
@@ -175,12 +179,12 @@ check(
 	card and card.Visible and card.Step.Text:find("STEP 1") ~= nil,
 	card and card.Step.Text
 )
-check("the guide's text says hook", card and card.Text.Text:find("Hook") ~= nil)
+check("the guide's text says cast", card and card.Text.Text:find("Cast") ~= nil)
 check("the guide's arrow is in the world", ws:FindFirstChild("Guide") and ws.Guide:FindFirstChild("GuideArrow") ~= nil)
 local cur = Guide.current()
-check("the client picked the nearest piece to point at", cur and cur.key == "hook")
+check("the client picked the nearest piece to point at", cur and cur.key == "cast")
 
--- Hooking with ACT (the client aims at the piece in front) -----------------------------------------------------------------------
+-- Casting with ACT (the client aims at the piece in front) -----------------------------------------------------------------------
 local raft = Rafts:RaftOf(player)
 local function hookOnce()
 	local p = PlayersS:Position(player)
@@ -203,23 +207,23 @@ local function hookOnce()
 	return e ~= nil and best.hooked == player, e
 end
 local ok1 = hookOnce()
-check("ACT sent Act with the piece's id and the hook flew", ok1)
+check("ACT sent Act with the piece's id and the line flew out", ok1)
 Engine.advance(Constants.HOOK_FLIGHT + 0.1)
-check("the piece comes in hand over hand (the pulling pose)", player.Character:GetAttribute("Pose") == "pulling")
+check("you crank the reel as the piece comes in (the reel pose)", player.Character:GetAttribute("Pose") == "reel")
 local ropes = 0
 for _, m in ws.Fx:GetChildren() do
-	if m:IsA("BasePart") and m.Color == Kit.C.rope then
+	if m:IsA("BasePart") and m.Color == Kit.C.cream then
 		ropes += 1
 	end
 end
-check("the rope stays on the piece as it comes in", ropes >= 2, ropes)
+check("the line stays on the piece as it comes in", ropes >= 2, ropes)
 local act = sent("Act")
 check("the client named the piece it aimed at", act and type(act.args[2]) == "number", act and tostring(act.args[2]))
 Engine.advance(4)
 local inv = Store.get("inv")
 local any = false
 for _, s in inv.slots do
-	if s.key ~= "basic_hook" then
+	if s.key ~= "fishing_rod" then
 		any = true
 	end
 end
@@ -292,7 +296,7 @@ check(
 	Guide.current() and Guide.current().key
 )
 tap(Build.refs.bar.Done)
-check("DONE ends placing", Build.placing() == nil and Input.refs.actLabel.Text == "HOOK")
+check("DONE ends placing", Build.placing() == nil and Input.refs.actLabel.Text == "CAST")
 -- the workbench on the tile just built
 Bus.Open:Fire("build")
 Engine.advance(0.3)
@@ -304,6 +308,79 @@ Engine.advance(0.6)
 check("the workbench was placed on the new tile", Rafts:Has(Rafts:RaftOf(player), "workbench"))
 check("placing a station ends by itself", Build.placing() == nil)
 check("the raft line counts 5 tiles", refs.raftLine.Text:find("5/12") ~= nil, refs.raftLine.Text)
+
+-- QUICK: hold it and the recommended piece goes where you look --------------------------------------------------------------
+Engine.advance(0.3)
+check(
+	"the QUICK button shows the piece the raft recommends (the box the next tier needs, affordable)",
+	Input.refs.quick.Visible == true
+		and Input.refs.quick:GetAttribute("Piece") == "storage"
+		and Input.refs.quickPiece:FindFirstChild("Icon3D") ~= nil,
+	Input.refs.quick:GetAttribute("Piece")
+)
+-- stand on an edge tile looking out over the water beside it
+local free = Rafts:FreeSpots(Rafts:RaftOf(player), 1)[1]
+local freePos = Rafts:TileWorld(Rafts:RaftOf(player), free[1], free[2], 1)
+local edgeTile
+for _, p in Rafts:RaftOf(player).pieces do
+	if p.def.structural and p.level == 1 and math.abs(p.gx - free[1]) + math.abs(p.gz - free[2]) == 1 then
+		edgeTile = p
+	end
+end
+stand(tileAt(raft, edgeTile.gx, edgeTile.gz), freePos)
+local tilesBefore = Rafts:RaftOf(player).summary.tiles
+local woodBefore = Inventory:Count(player, "wood")
+Input.refs.quick.MouseButton1Down:Fire()
+check(
+	"holding QUICK over the water lays a tile (a station needs a tile, so a tile it is)",
+	Build.placing() ~= nil and Build.placing().quick ~= nil and Build.placing().key == "floor",
+	Build.placing() and Build.placing().key
+)
+check("the placing bar says QUICK", Build.refs.barText.Text:find("⚡") ~= nil, Build.refs.barText.Text)
+Engine.advance(0.5)
+check(
+	"the tile went where you looked, and the hold laid the next",
+	Rafts:RaftOf(player).summary.tiles == tilesBefore + 2 and Inventory:Count(player, "wood") == woodBefore - 8,
+	Rafts:RaftOf(player).summary.tiles
+)
+Input.refs.quick.MouseButton1Up:Fire()
+Engine.advance(0.2)
+check("letting go ends it", Build.placing() == nil and not Input.isQuick())
+check(
+	"the raft still asks for the box first (QUICK shows the first piece you can pay for)",
+	Store.get("raft").recommend[1].key == "storage" and Input.refs.quick:GetAttribute("Piece") ~= nil,
+	Input.refs.quick:GetAttribute("Piece")
+)
+
+-- Into the water: a splash, ripples, and the HUD says how to get back -------------------------------------------------------
+do
+	local fxBefore = #ws.Fx:GetChildren()
+	local hum = player.Character.Humanoid
+	hum:ChangeState(Enum.HumanoidStateType.Swimming)
+	hum.StateChanged:Fire(Enum.HumanoidStateType.Running, Enum.HumanoidStateType.Swimming)
+	Engine.advance(0.05)
+	check(
+		"jumping in splashes, and ripples follow you",
+		#ws.Fx:GetChildren() > fxBefore,
+		#ws.Fx:GetChildren() - fxBefore
+	)
+	hum:ChangeState(Enum.HumanoidStateType.Running)
+	local layout = OceanLayout.plot(1)
+	stand(layout.center + layout.out * 40 + Vector3.new(0, 0.5, 0))
+	Engine.advance(0.6)
+	check(
+		"in the water the HUD says to swim back and jump up",
+		refs.callout ~= nil
+			and find(refs.callout, "Text") == nil
+			and refs.callout:FindFirstChildWhichIsA("TextLabel", true) ~= nil
+			and refs.callout:FindFirstChildWhichIsA("TextLabel", true).Text:find("🏊") ~= nil,
+		refs.callout
+			and refs.callout:FindFirstChildWhichIsA("TextLabel", true)
+			and refs.callout:FindFirstChildWhichIsA("TextLabel", true).Text
+	)
+	stand(tileAt(raft, 6, 6))
+	Engine.advance(0.6)
+end
 
 -- The CRAFT panel at the workbench --------------------------------------------------------------------------------------------
 local bench = Rafts:NearPiece(player, "workbench", 100)
@@ -338,7 +415,7 @@ check(
 )
 Panels.close()
 
--- The crate: hook it, open it in the BAG -----------------------------------------------------------------------------------------
+-- The crate: reel it in, open it in the BAG -----------------------------------------------------------------------------------------
 Engine.advance(Constants.GUIDE_CRATE_AT)
 local crate
 for _, d in Ocean:Debris(1) do
@@ -354,7 +431,7 @@ for _, d in Ocean:Debris(1) do
 	end
 end
 crate = Ocean:Crate(1, 1, { guide = true, distance = 20, spread = 0 })
-hold("basic_hook")
+hold("fishing_rod")
 for _ = 1, 60 do
 	if (crate.pos - PlayersS:Position(player)).Magnitude <= 26 then
 		break
@@ -364,7 +441,7 @@ end
 stand(tileAt(raft, 6, 6), crate.pos)
 Input.act()
 Engine.advance(6)
-check("the crate was hooked", Inventory:Count(player, "supply_crate") == 1)
+check("the crate was reeled in", Inventory:Count(player, "supply_crate") == 1)
 Bus.Open:Fire("inventory")
 Engine.advance(0.3)
 local bag = panels:FindFirstChild("Panel_inventory")
@@ -409,11 +486,19 @@ tap(find(bag, "Use"))
 check("LEARN taught the net", Data:Get(player).blueprints.net == true)
 check("an unlock card showed", find(hud, "Unlock") ~= nil)
 Panels.close()
--- Drag and drop in the bag: the hook goes to a bag slot and back
+-- Tab on a keyboard: the bag, without the gamepad's selection cursor (Escape and the arrows stay yours)
+Engine.lastInputType = Enum.UserInputType.Keyboard
+Engine.actions.EV_Bag("EV_Bag", Enum.UserInputState.Begin, { KeyCode = Enum.KeyCode.Tab })
+Engine.advance(0.3)
+check("Tab opens the bag", panels:FindFirstChild("Panel_inventory") ~= nil)
+check("no selection cursor on a keyboard", GuiService.SelectedObject == nil)
+Panels.close()
+Engine.lastInputType = Enum.UserInputType.Touch
+-- Drag and drop in the bag: the rod goes to a bag slot and back
 do
 	local hookSlot
 	for id, s in Store.get("inv").slots do
-		if s.key == "basic_hook" then
+		if s.key == "fishing_rod" then
 			hookSlot = id
 		end
 	end
@@ -427,12 +512,12 @@ do
 	Panels.dropOn(hookSlot, free)
 	Engine.advance(0.3)
 	check(
-		"dropping the hook on a bag slot moved it there",
-		Store.get("inv").slots[free] and Store.get("inv").slots[free].key == "basic_hook"
+		"dropping the rod on a bag slot moved it there",
+		Store.get("inv").slots[free] and Store.get("inv").slots[free].key == "fishing_rod"
 	)
 	Panels.dropOn(free, hookSlot)
 	Engine.advance(0.3)
-	check("and back", Store.get("inv").slots[hookSlot] and Store.get("inv").slots[hookSlot].key == "basic_hook")
+	check("and back", Store.get("inv").slots[hookSlot] and Store.get("inv").slots[hookSlot].key == "fishing_rod")
 end
 check(
 	"the guide moved to the net",
@@ -493,6 +578,15 @@ Engine.advance(0.5)
 check("the clock shows the voyage", refs.voyage.Text:find("PALM KEY") ~= nil, refs.voyage.Text)
 check("the voyage bar is visible", refs.voyageBar.Visible == true)
 check("the music turned to sailing", Audio.wanted() == "sailing", Audio.wanted())
+Engine.advance(3)
+check("the horizon slides past while sailing", Sailing.slide() > 0, Sailing.slide())
+check(
+	"Palm Key shows on the horizon ahead",
+	Sailing.silhouette() ~= nil and Sailing.silhouette().model.Parent ~= nil and #Sailing.silhouette().parts > 0
+)
+check("the wake foams astern", Sailing.wake() ~= nil and Sailing.wake().stern.Foam.Rate > 0)
+local ride = RaftMotion.rafts[ws.Rafts.Raft1]
+check("the raft rides the swell (its parts move as one)", ride ~= nil and #ride.parts > 0 and ride.applied ~= nil)
 local secs = Formulas.voyageSeconds(1, 1)
 Engine.advance(secs + 2)
 check("land ho on screen", Voyages:State(1) == "island" and refs.voyage.Text:find("PALM KEY") ~= nil)
@@ -557,7 +651,10 @@ check("home: the guide finished", Guide.current() == nil and Data:Get(player).tu
 check("the toast said home", true)
 
 -- Fishing with REEL ----------------------------------------------------------------------------------------------------------------
-give("fishing_rod", 1)
+-- (open water: with nothing floating in front, a cast fishes)
+for _, d in Ocean:Debris(1) do
+	Ocean:Remove(d)
+end
 hold("fishing_rod")
 stand(tileAt(raft, 6, 6), tileAt(raft, 6, 6) + Vector3.new(20, 0, 0))
 Engine.advance(0.3)

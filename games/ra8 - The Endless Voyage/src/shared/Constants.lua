@@ -62,6 +62,8 @@ Constants.FISH_WINDOW = 1.1 -- seconds to reel once it bites
 -- Voyages (VoyageService): the raft stays in its plot; the island comes to it
 Constants.VOYAGE_SECONDS_PER_DISTANCE = 32 -- at speed 1 (a sail doubles it, an engine more)
 Constants.VOYAGE_MIN_SECONDS = 14
+Constants.ISLAND_STAY_NO_ANCHOR = 150 -- seconds ashore before the current carries an unanchored raft home
+Constants.ISLAND_STAY_WARNING = 30 -- the warning this long before it does
 Constants.VOYAGE_EVENT_EVERY = { 14, 24 } -- seconds between events while sailing
 Constants.HOME_EVENT_SHARE = 0.5 -- the trip home has half as many
 Constants.DANGER_BY_TIER = { 1, 1, 2, 3, 5, 5 } -- the most dangerous waters each raft tier may sail to (§5.4: a Floating Fortress can face the Trench; the tooth it brings back makes the Legendary Vessel)
@@ -113,7 +115,7 @@ Constants.XP = {
 	fish = 2,
 	rareFish = 10,
 	tier = 100, -- x the new tier
-	guide = { hook = 10, tile = 15, bench = 20, craft = 10, crate = 15, net = 15, helm = 10, island = 20, home = 30 }, -- the guide's firsts (§4)
+	guide = { cast = 10, tile = 15, bench = 20, craft = 10, crate = 15, net = 15, helm = 10, island = 20, home = 30 }, -- the guide's firsts (§4)
 	cap = 4000, -- from one session
 }
 Constants.RESEARCH_PER_ARTIFACT = { common = 10, uncommon = 25, rare = 60, epic = 120, legendary = 300 }
@@ -128,7 +130,7 @@ Constants.FRIEND_RETRY_SECONDS = 20
 Constants.FRIEND_RETRY_TRIES = 6
 
 -- The guide (TutorialService, §4)
-Constants.GUIDE_DEBRIS = 5 -- pieces to hook before the first build
+Constants.GUIDE_DEBRIS = 5 -- pieces to reel in before the first build
 Constants.GUIDE_START_DEBRIS = 6 -- pieces floating within reach the moment a new player arrives (§4: 0:00-0:30)
 Constants.GUIDE_CRATE_AT = 140 -- seconds in: the supply crate with the first blueprint floats by (§4: 2:30)
 Constants.GUIDE_CRATE_RETRY = 60 -- another one if it drifted past

@@ -113,6 +113,87 @@ function OceanModels.debris(kind, cf, parent)
 	return m
 end
 
+-- Far islands --------------------------------------------------------------------------------------------------
+-- A far island you can see but never reach (the horizon, and the place you're sailing to while you sail):
+-- h = { size, kind = "peak" | "low" | "atoll", far = 0..1 }. Green humps with trees, a peak with snow on the big
+-- ones, or a sandy atoll with palms; no shadows or collisions, it is scenery.
+local FAR_PART = { CastShadow = false, CanCollide = false, CanQuery = false, CanTouch = false }
+
+function OceanModels.isle(parent, name, base, h, rng)
+	local m = Kit.model(name, parent)
+	local s = h.size
+	local sandy = h.kind == "atoll"
+	Kit.ellipsoid(m, "Shore", base + V3(0, s * 0.04, 0), V3(s * 2.6, s * 0.2, s * 2), C.sand, M.Sand, FAR_PART)
+	if not sandy then
+		Kit.ellipsoid(
+			m,
+			"Isle",
+			base + V3(0, s * 0.14, 0),
+			V3(s * 2.1, s * 0.5, s * 1.6),
+			C.grassDark,
+			M.Grass,
+			FAR_PART
+		)
+		Kit.ellipsoid(
+			m,
+			"Hump",
+			base + V3(rng:NextNumber(-0.3, 0.3) * s, s * 0.26, rng:NextNumber(-0.2, 0.2) * s),
+			V3(s * 1.1, s * 0.5, s * 0.9),
+			C.grass,
+			M.Grass,
+			FAR_PART
+		)
+	end
+	if h.kind == "peak" then
+		local hh = s * (1.1 + (h.far or 0.5) * 0.5)
+		Kit.cone(m, "Peak", base + V3(0, s * 0.2, 0), s * 0.95, hh, C.rockDark, 6, M.Rock, FAR_PART)
+		if hh > 60 then
+			Kit.cone(
+				m,
+				"Snow",
+				base + V3(0, s * 0.2 + hh * 0.62, 0),
+				s * 0.95 * 0.38,
+				hh * 0.38,
+				C.white,
+				6,
+				M.Snow,
+				FAR_PART
+			)
+		end
+		Kit.cone(m, "Peak2", base + V3(s * 0.45, s * 0.18, s * 0.2), s * 0.6, hh * 0.55, C.rock, 5, M.Rock, FAR_PART)
+	end
+	for _ = 1, sandy and 6 or 5 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local r = rng:NextNumber(0.25, 0.8) * s
+		local at = base + V3(math.cos(a) * r, sandy and s * 0.08 or s * 0.34, math.sin(a) * r * 0.75)
+		if sandy then
+			local th = s * rng:NextNumber(0.25, 0.4)
+			Kit.cyl(
+				m,
+				"Trunk",
+				CFrame.new(at + V3(0, th / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+				th,
+				s * 0.05,
+				C.bark,
+				M.Wood,
+				FAR_PART
+			)
+			Kit.ellipsoid(m, "Fronds", at + V3(0, th, 0), V3(s * 0.4, s * 0.12, s * 0.4), C.leaf, M.Grass, FAR_PART)
+		else
+			Kit.ellipsoid(
+				m,
+				"Trees",
+				at,
+				V3(s * rng:NextNumber(0.3, 0.5), s * rng:NextNumber(0.25, 0.4), s * rng:NextNumber(0.3, 0.5)),
+				C.pineDark:Lerp(C.leaf, rng:NextNumber(0, 0.5)),
+				M.Grass,
+				FAR_PART
+			)
+		end
+	end
+	return m
+end
+
 -- Island props ---------------------------------------------------------------------------------------------------
 local props = {}
 

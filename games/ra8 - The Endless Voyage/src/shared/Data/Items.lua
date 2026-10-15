@@ -5,7 +5,7 @@ Roblox draws (nothing newer than 2019).
   kind      resource | tool | weapon | food | chart | blueprint | artifact | fish
   rarity    common | uncommon | rare | epic | legendary (loot odds, the glow on the ground, the journal)
   stack     how many fit in one slot
-  tool      hook { range, pull, double } | rod { speed, rare } | axe { power } | pick { power } | pry { power } |
+  tool      rod { range, pull, double, salvage, speed, rare } | axe { power } | pick { power } | pry { power } |
             hammer { repair }
   weapon    { dmg, range, arc, cd, class = "spear" | "harpoon", thrown }
   food      { heal, buff = { key, seconds } }
@@ -190,47 +190,7 @@ Items.list = {
 		stack = 10,
 		desc = "Proof. Nothing cuts it.",
 	},
-	-- Tools: collecting (§7.2: each one collects differently)
-	{
-		key = "basic_hook",
-		name = "Basic Hook",
-		kind = "tool",
-		rarity = "common",
-		icon = "🔗",
-		stack = 1,
-		tool = { hook = { range = 30, pull = 1, double = 0 } },
-		desc = "Throw it at debris, pull it in.",
-	},
-	{
-		key = "iron_hook",
-		name = "Iron Hook",
-		kind = "tool",
-		rarity = "uncommon",
-		icon = "⛓️",
-		stack = 1,
-		tool = { hook = { range = 42, pull = 1.5, double = 0 } },
-		desc = "Further, faster.",
-	},
-	{
-		key = "long_hook",
-		name = "Long Hook",
-		kind = "tool",
-		rarity = "rare",
-		icon = "🎣",
-		stack = 1,
-		tool = { hook = { range = 58, pull = 1.6, double = 0.35 } },
-		desc = "Reaches the far lanes. Sometimes two at once.",
-	},
-	{
-		key = "salvage_claw",
-		name = "Salvage Claw",
-		kind = "tool",
-		rarity = "epic",
-		icon = "🦀",
-		stack = 1,
-		tool = { hook = { range = 64, pull = 2.2, double = 0.6, rare = 1 } },
-		desc = "Grabs anything. Finds the good stuff.",
-	},
+	-- Tools: collecting (§7.2: the rod does it all: cast at what floats past and reel it in, cast at open water to fish)
 	{
 		key = "fishing_rod",
 		name = "Fishing Rod",
@@ -238,8 +198,18 @@ Items.list = {
 		rarity = "common",
 		icon = "🎣",
 		stack = 1,
-		tool = { rod = { speed = 1, rare = 0 } },
-		desc = "Cast from the raft's edge.",
+		tool = { rod = { range = 30, pull = 1, speed = 1, rare = 0 } },
+		desc = "Cast at what floats past and reel it in. Cast at open water to fish.",
+	},
+	{
+		key = "iron_rod",
+		name = "Iron Rod",
+		kind = "tool",
+		rarity = "uncommon",
+		icon = "🎣",
+		stack = 1,
+		tool = { rod = { range = 42, pull = 1.5, speed = 1.2, rare = 0 } },
+		desc = "Casts further, reels faster.",
 	},
 	{
 		key = "deep_rod",
@@ -248,8 +218,28 @@ Items.list = {
 		rarity = "rare",
 		icon = "🎣",
 		stack = 1,
-		tool = { rod = { speed = 1.6, rare = 0.3 } },
-		desc = "Bites faster, finds the rare ones.",
+		tool = { rod = { range = 40, pull = 1.2, speed = 1.6, rare = 0.3 } },
+		desc = "Bites faster, finds the rare fish.",
+	},
+	{
+		key = "long_rod",
+		name = "Long Rod",
+		kind = "tool",
+		rarity = "rare",
+		icon = "🎣",
+		stack = 1,
+		tool = { rod = { range = 58, pull = 1.6, double = 0.35, speed = 1.3, rare = 0.1 } },
+		desc = "Reaches the far lanes. Sometimes two pieces at once.",
+	},
+	{
+		key = "salvage_rod",
+		name = "Salvage Rod",
+		kind = "tool",
+		rarity = "epic",
+		icon = "🎣",
+		stack = 1,
+		tool = { rod = { range = 64, pull = 2.2, double = 0.6, salvage = 1, speed = 1.4, rare = 0.2 } },
+		desc = "A claw on the line. Grabs anything, finds the good stuff.",
 	},
 	{
 		key = "axe",
@@ -441,7 +431,7 @@ Items.list = {
 		icon = "🍵",
 		stack = 5,
 		food = { heal = 50, buff = { key = "lucky", seconds = 180 } },
-		desc = "Luckier hooks and nets for three minutes.",
+		desc = "Luckier casts and nets for three minutes.",
 	},
 	-- Charts and finds (the ocean's secrets)
 	{
@@ -558,7 +548,7 @@ function Items.rarityColor(rarity)
 	return r and r.color or Items.RARITY.common.color
 end
 
--- Tool kinds a held item gives: "hook", "rod", "axe", "pick", "pry", "hammer", or nil.
+-- Tool kinds a held item gives: "rod", "axe", "pick", "pry", "hammer", or nil.
 function Items.toolKind(item)
 	if not item or not item.tool then
 		return nil

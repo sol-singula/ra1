@@ -19,7 +19,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 # per-shot caption under the title (None = title only)
 CAPTIONS = {
-    "01_first_hook": "HOOK WHAT DRIFTS BY",
+    "01_first_cast": "CAST FOR WHAT DRIFTS BY",
     "02_build_your_raft": "BUILD YOUR RAFT",
     "03_set_sail": "SET SAIL",
     "04_palm_key": "EXPLORE ISLANDS",

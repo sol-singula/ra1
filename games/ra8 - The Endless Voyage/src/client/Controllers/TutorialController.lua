@@ -4,11 +4,11 @@ step ("Tutorial": { step, total, key, text, target, debris | spot | edge | piece
 false); here it becomes:
   * a card under the callouts: STEP 2 OF 9, what to do, and a SKIP button
   * a bouncing arrow over the target (the nearest piece of debris, a free spot beside the raft, the workbench, the
-    crate, a free edge, the helm, the island's campfire), and the thing itself lit up and pulsing; for "hook the
+    crate, a free edge, the helm, the island's campfire), and the thing itself lit up and pulsing; for "cast at the
     driftwood" this client picks the nearest piece as you move, so whichever one you aim at is the one
   * a soft light beam from you to it
   * the guide's finger on the screen (UI/Glow): a pulsing ring and a hand on the exact button to press next, for
-    whatever is open (BUILD, the piece's PLACE, ACT, the hotbar slot with the hook, the BAG, the crate's slot and
+    whatever is open (BUILD, the piece's PLACE, ACT, the hotbar slot with the rod, the BAG, the crate's slot and
     OPEN, MAKE, SAIL, HOME)
 ]]
 local Players = game:GetService("Players")
@@ -147,7 +147,7 @@ local function pickTarget()
 		return
 	end
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-	if current.key == "hook" and root then
+	if current.key == "cast" and root then
 		local t = os.clock()
 		if t >= pickAt or not target then
 			pickAt = t + 0.2
@@ -250,9 +250,9 @@ local function actOrTool(toolTest)
 	return nil
 end
 
-local function isHook(slot)
+local function isRod(slot)
 	local item = Items.get(slot.key)
-	return item and item.tool and item.tool.hook ~= nil
+	return item and item.tool and item.tool.rod ~= nil
 end
 
 -- BUILD, then the piece's PLACE in the panel; nothing while the ghost is out (the pad on the raft glows).
@@ -267,6 +267,11 @@ local function buildStep(pieceKey)
 	if PanelController.current() then
 		return nil
 	end
+	-- QUICK when it would build this very piece, else BUILD
+	local quick = inGui("Actions", "Quick")
+	if quick and quick.Visible and quick:GetAttribute("Piece") == pieceKey then
+		return quick
+	end
 	return inGui("Actions", "Build")
 end
 
@@ -276,8 +281,8 @@ local function uiTarget()
 	end
 	local key = current.key
 	local panel = PanelController.current()
-	if key == "hook" then
-		return actOrTool(isHook)
+	if key == "cast" then
+		return actOrTool(isRod)
 	elseif key == "tile" then
 		return buildStep("floor")
 	elseif key == "bench" then
@@ -309,7 +314,7 @@ local function uiTarget()
 	elseif key == "crate" then
 		local slotId = bagHas("supply_crate")
 		if not slotId then
-			return actOrTool(isHook)
+			return actOrTool(isRod)
 		end
 		if panel == "inventory" then
 			if PanelController.picked() == slotId then

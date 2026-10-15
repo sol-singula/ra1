@@ -246,4 +246,37 @@ function Formulas.raftScore(summary, tier)
 	return tier * 1000 + summary.tiles * 10 + summary.deck2 * 5
 end
 
+-- Can a bag pay a cost? (slots: { key, n } lists, a view's or the server's)
+function Formulas.affordable(cost, slots)
+	for item, n in cost or {} do
+		local have = 0
+		for _, s in slots or {} do
+			if s.key == item then
+				have += s.n
+			end
+		end
+		if have < n then
+			return false
+		end
+	end
+	return true
+end
+
+-- The piece QUICK builds: the first of the raft's recommendations (RaftService.Recommend, in the raft view) the
+-- bag can pay for, else the first of them.
+function Formulas.recommended(raftView, invView)
+	local list = raftView and raftView.recommend
+	if type(list) ~= "table" or #list == 0 then
+		return nil
+	end
+	local slots = invView and invView.slots or {}
+	for _, r in list do
+		local def = Pieces.get(r.key)
+		if def and Formulas.affordable(def.cost, slots) then
+			return r
+		end
+	end
+	return list[1]
+end
+
 return Formulas

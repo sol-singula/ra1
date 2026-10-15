@@ -9,7 +9,7 @@ to select, move, use or drop, and the server checks and answers.
   finds      everything you pick up while your raft is away from its dock counts as this voyage's finds; go down
              away from your raft and half of it floats off as a lost bag where you fell (PlayerService); sail
              home and it's safe (VoyageService clears it)
-  drops      things dropped or overflowing float on the water as a bag: hook it or take it from the deck
+  drops      things dropped or overflowing float on the water as a bag: cast at it or take it from the deck
   held       the selected hotbar item is in your character's hand (ItemModels)
   saved      in your profile the moment it changes
 ]]
@@ -433,7 +433,7 @@ function InventoryService:FeetOf(player)
 	return Vector3.new(0, Constants.DECK_Y, 0)
 end
 
--- A floating bag: hook it from the raft, or take it when you stand beside it.
+-- A floating bag: cast at it from the raft, or take it when you stand beside it.
 function InventoryService:SpawnDrop(pos, items, opts)
 	opts = opts or {}
 	nextDrop += 1
@@ -494,7 +494,7 @@ function InventoryService:Drops()
 	return drops
 end
 
--- Take a bag (from the deck, or hooked in by OceanService).
+-- Take a bag (from the deck, or reeled in by OceanService).
 function InventoryService:Pickup(player, id)
 	local d = drops[id]
 	if not d then
@@ -578,7 +578,7 @@ end
 
 -- Boot --------------------------------------------------------------------------------------------------------------
 function InventoryService:StartingKit(player)
-	self:Give(player, "basic_hook", 1, "start")
+	self:Give(player, "fishing_rod", 1, "start")
 	self:Select(player, 1)
 end
 

@@ -47,6 +47,20 @@ RaftModels.edgeCF = edgeCF
 local build = {}
 
 -- Structure ----------------------------------------------------------------------------------------------------
+-- What keeps a tile up, and what makes it look like it floats: two pontoons running under it, half in the water
+-- (the water is at cf.Y - DECK_Y), lashed on with rope, and a dark hull skirt under the planks so no light shows
+-- through from below.
+local function pontoons(m, cf, color, material)
+	local still = { CanCollide = false, CastShadow = false }
+	part(m, "Skirt", cf * CFrame.new(0, -0.62, 0), V3(T, 0.6, T), C.barkDark, M.Wood, { CanCollide = false })
+	for _, sz in { -1, 1 } do
+		Kit.cyl(m, "Pontoon", cf * CFrame.new(0, -Constants.DECK_Y, sz * 2), T - 0.2, 2.2, color, material, still)
+		for _, sx in { -1.9, 1.9 } do
+			Kit.cyl(m, "Lashing", cf * CFrame.new(sx, -Constants.DECK_Y, sz * 2), 0.25, 2.4, C.rope, M.Fabric, still)
+		end
+	end
+end
+
 function build.floor(m, cf, opts)
 	local col = deckColor(opts)
 	-- three planks across, a little gap between them, sat on two beams
@@ -63,21 +77,7 @@ function build.floor(m, cf, opts)
 	for k = -1, 1, 2 do
 		part(m, "Beam", cf * CFrame.new(0, -0.6, k * 2.2), V3(T, 0.6, 0.6), C.woodDark, M.Wood, { CanCollide = false })
 	end
-	-- a barrel float under each corner keeps it up
-	for _, sx in { -1, 1 } do
-		for _, sz in { -1, 1 } do
-			Kit.cyl(
-				m,
-				"Float",
-				cf * CFrame.new(sx * 2.2, -1.6, sz * 2.2) * CFrame.Angles(0, 0, math.rad(90)),
-				2.2,
-				1.6,
-				C.canvas:Lerp(C.rope, 0.5),
-				M.SmoothPlastic,
-				{ CanCollide = false, CastShadow = false }
-			)
-		end
-	end
+	pontoons(m, cf, C.barkDark:Lerp(C.woodDark, 0.4), M.Wood)
 end
 
 function build.plank_floor(m, cf, opts)
@@ -86,20 +86,7 @@ function build.plank_floor(m, cf, opts)
 	part(m, "Trim", cf * CFrame.new(0, 0.05, 0), V3(T + 0.1, 0.5, T + 0.1), col:Lerp(C.woodDark, 0.35), M.Wood, {
 		CanCollide = false,
 	})
-	for _, sx in { -1, 1 } do
-		for _, sz in { -1, 1 } do
-			Kit.cyl(
-				m,
-				"Float",
-				cf * CFrame.new(sx * 2.2, -1.6, sz * 2.2) * CFrame.Angles(0, 0, math.rad(90)),
-				2.2,
-				1.8,
-				C.iron,
-				M.Metal,
-				{ CanCollide = false, CastShadow = false }
-			)
-		end
-	end
+	pontoons(m, cf, C.iron, M.Metal)
 end
 
 function build.stairs(m, cf, opts)

@@ -20,9 +20,8 @@ Recipes.STATIONS = {
 
 Recipes.list = {
 	-- Workbench: the basics
-	{ item = "basic_hook", station = "workbench", cost = { wood = 2, rope = 1 } },
-	{ item = "iron_hook", station = "workbench", cost = { metal = 4, rope = 2 } },
 	{ item = "fishing_rod", station = "workbench", cost = { wood = 3, rope = 2 } },
+	{ item = "iron_rod", station = "workbench", cost = { metal = 4, rope = 2, wood = 2 } },
 	{ item = "hammer", station = "workbench", cost = { wood = 2, metal = 1 } },
 	{ item = "axe", station = "workbench", cost = { wood = 3, metal = 2 } },
 	{ item = "pickaxe", station = "workbench", cost = { wood = 3, metal = 3 } },
@@ -42,9 +41,9 @@ Recipes.list = {
 	{ item = "steel_axe", station = "engineering", cost = { metal = 6, plank = 2 } },
 	{ item = "steel_pick", station = "engineering", cost = { metal = 6, plank = 2 } },
 	{ item = "steel_spear", station = "engineering", cost = { metal = 6, plank = 2 } },
-	{ item = "long_hook", station = "engineering", cost = { metal = 6, rope = 4, gear = 1 }, blueprint = true },
+	{ item = "long_rod", station = "engineering", cost = { metal = 6, rope = 4, gear = 1 }, blueprint = true },
 	{ item = "harpoon", station = "engineering", cost = { metal = 8, rope = 4, gear = 1 }, blueprint = true },
-	{ item = "salvage_claw", station = "engineering", cost = { metal = 10, gear = 3, old_tech = 1 }, blueprint = true },
+	{ item = "salvage_rod", station = "engineering", cost = { metal = 10, gear = 3, old_tech = 1 }, blueprint = true },
 	{
 		item = "leviathan_harpoon",
 		station = "engineering",
