@@ -111,23 +111,28 @@ function draw.rod(m, item)
 	ball(m, "Knob", CFrame.new(0.4, -0.5, -1.1), 0.14, C.woodDark, M.Wood)
 	-- the line, and a bobber (a claw on the salvage rod)
 	local tipZ = -6 * k
-	cylY(m, "Line", CFrame.new(0, -0.6, tipZ), 1.2, 0.04, C.cream, M.Fabric)
+	local hang = Vector3.new(0, -math.cos(R(40)), math.sin(R(40))) -- "down" when the rod is held at 40°
+	local tip = Vector3.new(0, 0, tipZ)
+	local function along(d)
+		return CFrame.new(tip + hang * d) * A(R(-40), 0, 0)
+	end
+	cylY(m, "Line", along(0.6), 1.2, 0.04, C.cream, M.Fabric)
 	if key == "salvage_rod" then
 		for i = 0, 2 do
 			local a = i / 3 * math.pi * 2
 			w(
 				m,
 				"Claw",
-				CFrame.new(0, -1.3, tipZ) * A(0, a, 0) * CFrame.new(0.22, 0, 0) * A(0, 0, R(-30)),
+				along(1.3) * A(0, a, 0) * CFrame.new(0.22, 0, 0) * A(0, 0, R(-30)),
 				V3(0.12, 0.5, 0.16),
 				C.gold,
 				M.Metal
 			)
 		end
-		ball(m, "ClawHub", CFrame.new(0, -1.15, tipZ), 0.3, C.gold, M.Metal)
+		ball(m, "ClawHub", along(1.15), 0.3, C.gold, M.Metal)
 	else
-		ball(m, "Bobber", CFrame.new(0, -1.25, tipZ), 0.32, C.red, M.SmoothPlastic)
-		ball(m, "BobberTop", CFrame.new(0, -1.1, tipZ), 0.26, C.white, M.SmoothPlastic)
+		ball(m, "Bobber", along(1.25), 0.32, C.red, M.SmoothPlastic)
+		ball(m, "BobberTop", along(1.1), 0.26, C.white, M.SmoothPlastic)
 	end
 	return V3(0, 0, -0.5)
 end
@@ -642,7 +647,11 @@ function ItemModels.holdCFrame(item, hand)
 	local kind = Items.toolKind(item)
 	if kind == "axe" or kind == "pick" or kind == "hammer" then
 		return CFrame.new(0, -down, 0) * CFrame.Angles(0, 0, math.pi)
-	elseif kind == "rod" or kind == "pry" or (item.weapon and item.weapon.class) or item.light then
+	elseif kind == "rod" then
+		-- the rod rises from the fist like an angler's: 40° above level with the forearm out, forward-down (not
+		-- straight down) with the arm hanging
+		return CFrame.new(0, -down, 0) * CFrame.Angles(math.rad(-50), 0, 0)
+	elseif kind == "pry" or (item.weapon and item.weapon.class) or item.light then
 		return CFrame.new(0, -down, 0) * CFrame.Angles(math.rad(-90), 0, 0)
 	end
 	return CFrame.new(0, -down - 0.3, 0)

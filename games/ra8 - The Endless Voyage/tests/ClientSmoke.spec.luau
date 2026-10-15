@@ -208,7 +208,7 @@ local function hookOnce()
 end
 local ok1 = hookOnce()
 check("ACT sent Act with the piece's id and the line flew out", ok1)
-Engine.advance(Constants.HOOK_FLIGHT + 0.1)
+Engine.advance(0.1)
 check("you crank the reel as the piece comes in (the reel pose)", player.Character:GetAttribute("Pose") == "reel")
 local ropes = 0
 for _, m in ws.Fx:GetChildren() do
@@ -239,16 +239,33 @@ check(
 	Guide.current() and Guide.current().key == "tile",
 	Guide.current() and Guide.current().key
 )
+-- short of wood the step says what's missing and the finger stays on the rod; with it, the spot and BUILD
+Inventory:Take(player, "wood", Inventory:Count(player, "wood"))
+Engine.advance(2.2)
+check(
+	"without the wood, the guide says what's missing (no build button yet)",
+	Guide.current() and Guide.current().gather == true and Guide.uiTarget() ~= Input.refs.build,
+	Guide.current() and Guide.current().text
+)
+give("wood", 20)
+give("rope", 6)
+Engine.advance(2.2)
 check("a glowing pad marks the spot", ws.Guide:FindFirstChild("GuidePad") ~= nil)
 check("the guide's finger is on the BUILD button", Guide.uiTarget() == Input.refs.build)
 
 -- Building through the BUILD panel and the ghost ---------------------------------------------------------------------------------
-give("wood", 20)
-give("rope", 6)
 tap(Input.refs.build)
 local buildPanel = panels:FindFirstChild("Panel_build")
 check("the BUILD panel opened", buildPanel ~= nil)
 local floorRow = find(buildPanel, "Piece_floor")
+check(
+	"the BUILD panel has a category rail on the left (jump to a section)",
+	find(buildPanel, "Categories") ~= nil and find(buildPanel, "Cat_STATIONS") ~= nil
+)
+check(
+	"the piece the guide wants is marked NEXT in the list",
+	floorRow and floorRow:GetAttribute("Wanted") == true and find(floorRow, "Next") ~= nil
+)
 check(
 	"the floor tile row shows the tile itself (a viewport)",
 	floorRow and floorRow.Picture:FindFirstChild("Icon3D") ~= nil
@@ -398,6 +415,7 @@ Engine.advance(0.3)
 local craftPanel = panels:FindFirstChild("Panel_craft")
 check("the prompt opened the CRAFT panel", craftPanel ~= nil)
 give("metal", 2)
+give("wood", 6)
 Engine.advance(0.3)
 craftPanel = panels:FindFirstChild("Panel_craft")
 local hammerRow = find(craftPanel, "Recipe_hammer")
@@ -647,7 +665,50 @@ Engine.advance(0.3)
 tap(find(panels.Panel_map, "Home"))
 check("SAIL HOME from the map", Voyages:State(1) == "home")
 Engine.advance(secs + 3)
-check("home: the guide finished", Guide.current() == nil and Data:Get(player).tutorial.done == true)
+check(
+	"home: the steps finished and the card goes on with NEXT (no SKIP, never empty)",
+	Data:Get(player).tutorial.done == true
+		and Guide.current() ~= nil
+		and Guide.current().goal == true
+		and find(gui.Guide, "Skip") == nil
+		and gui.Guide.GuideCard.Visible == true,
+	Guide.current() and Guide.current().text
+)
+-- hands empty: the card offers HOLD MY ROD, and it works (even from the bag)
+do
+	local rodSlot
+	for id, s in Inventory:View(player).slots do
+		if s.key == "fishing_rod" then
+			rodSlot = id
+		end
+	end
+	local function freeBag()
+		local slots = Inventory:View(player).slots
+		for i = 1, Inventory:Capacity(player) do
+			if not slots["b" .. i] then
+				return "b" .. i
+			end
+		end
+	end
+	Inventory:Move(player, rodSlot, freeBag())
+	Inventory:Select(player, 1)
+	if Inventory:View(player).slots.h1 then
+		Inventory:Move(player, "h1", freeBag())
+	end
+	Engine.advance(1.5)
+	local action = find(gui.Guide, "Action")
+	check(
+		"empty hands: the card says hold your rod, with a button",
+		Guide.current() and Guide.current().action == "hold_rod" and action.Visible == true,
+		Guide.current() and Guide.current().text
+	)
+	check("the guide's finger is on that button", Guide.uiTarget() == action)
+	tap(action)
+	Engine.advance(0.3)
+	local _, held = Inventory:Selected(player)
+	check("HOLD MY ROD put the rod in your hand from the bag", held and held.key == "fishing_rod")
+	check("your last rod can't be dropped", not Inventory:Drop(player, "h1"))
+end
 check("the toast said home", true)
 
 -- Fishing with REEL ----------------------------------------------------------------------------------------------------------------

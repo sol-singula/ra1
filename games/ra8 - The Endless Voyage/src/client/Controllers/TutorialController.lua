@@ -2,7 +2,8 @@
 The guide's side on screen (master plan §4: one clear thing at a time, never a text wall). The server sends the
 step ("Tutorial": { step, total, key, text, target, debris | spot | edge | piece | container | landmark } or
 false); here it becomes:
-  * a card under the callouts: STEP 2 OF 9, what to do, and a SKIP button
+  * a card under the callouts: STEP 2 OF 9 (then NEXT, forever: it can't be dismissed), what to do, and a
+    button when the card can do it for you (HOLD MY ROD)
   * a bouncing arrow over the target (the nearest piece of debris, a free spot beside the raft, the workbench, the
     crate, a free edge, the helm, the island's campfire), and the thing itself lit up and pulsing; for "cast at the
     driftwood" this client picks the nearest piece as you move, so whichever one you aim at is the one
@@ -33,7 +34,7 @@ local TutorialController = { Name = "TutorialController", Order = 25 }
 
 local player = Players.LocalPlayer
 local C = Theme.Color
-local gui, card, label, stepLabel
+local gui, card, label, stepLabel, actionButton
 local arrow, beam, targetAttach, fromAttach, targetPart, spotPad
 local current
 local glow, glowKey, glowCheckAt = nil, nil, 0
@@ -147,7 +148,7 @@ local function pickTarget()
 		return
 	end
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-	if current.key == "cast" and root then
+	if (current.key == "cast" or current.gather) and root then
 		local t = os.clock()
 		if t >= pickAt or not target then
 			pickAt = t + 0.2
@@ -281,6 +282,50 @@ local function uiTarget()
 	end
 	local key = current.key
 	local panel = PanelController.current()
+	if current.action and actionButton and actionButton.Visible then
+		return actionButton
+	end
+	if current.gather then
+		return actOrTool(isRod) -- can't pay for it yet: cast at the debris
+	end
+	if current.learn then
+		-- a blueprint in the bag: BAG, its slot, LEARN
+		local slotId
+		for id, slot in (Store.get("inv") or { slots = {} }).slots do
+			if slot.key == "blueprint" then
+				slotId = id
+			end
+		end
+		if panel == "inventory" and slotId then
+			if PanelController.picked() == slotId then
+				return inGui("Panels", "Use")
+			end
+			return inGui("Panels", "Slot_" .. slotId)
+		elseif not panel then
+			return inGui("Hud", "Bag")
+		end
+		return nil
+	end
+	if key == "quick" then
+		return buildStep(current.quick)
+	elseif key == "repair" then
+		return actOrTool(function(slot)
+			local item = Items.get(slot.key)
+			return item and item.tool and item.tool.hammer ~= nil
+		end)
+	elseif key == "make" then
+		if panel == "craft" then
+			return inGui("Panels", "Make_" .. (current.item or "hammer"))
+		end
+		return nil
+	elseif key == "sail" then
+		if panel == "map" then
+			return inGui("Panels", "Sail_" .. (current.dest or ""))
+		elseif not panel then
+			return inGui("Hud", "Menu_map")
+		end
+		return nil
+	end
 	if key == "cast" then
 		return actOrTool(isRod)
 	elseif key == "tile" then
@@ -427,6 +472,7 @@ local function show(view)
 	card.Visible = true
 	stepLabel.Text = current.title or `STEP {current.step} OF {current.total}`
 	label.Text = current.text or ""
+	actionButton.Visible = current.action ~= nil
 	if not was or was.key ~= current.key then
 		Theme.pop(card)
 	end
@@ -525,19 +571,24 @@ function TutorialController:init()
 		outline = 2.5,
 		Parent = card,
 	})
-	local skip = Theme.button({
-		Name = "Skip",
-		Text = "SKIP",
-		BackgroundColor3 = C.slate,
+	-- no SKIP: the card always says what to do next. When it can do it for you, a button does.
+	actionButton = Theme.button({
+		Name = "Action",
+		Text = "🎣 HOLD MY ROD",
+		BackgroundColor3 = C.good,
 		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -12, 0.5, 0),
-		Size = UDim2.fromOffset(92, 40),
+		Position = UDim2.new(1, -10, 0.5, 0),
+		Size = UDim2.fromOffset(110, 46),
+		TextSize = 13,
+		Visible = false,
 		Parent = card,
 	})
-	skip.Activated:Connect(function()
-		Net.send("SkipTutorial")
-		Bus.Tap:Fire("skip_guide")
-		show(false)
+	actionButton.Activated:Connect(function()
+		local action = current and current.action
+		if action then
+			Bus.Tap:Fire("guide_" .. action)
+			Net.send("GuideAction", action)
+		end
 	end)
 	Net.listen("Tutorial", show)
 	Store.Changed:Connect(function(partial)

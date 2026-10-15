@@ -144,6 +144,48 @@ function InventoryService:Count(player, key)
 	return n
 end
 
+-- How many tools of a kind ("rod", "axe", "hammer"...) you have, and the slot of the best one (the most reach,
+-- else the first).
+function InventoryService:CountKind(player, kind)
+	local n, best, bestScore = 0, nil, -1
+	for id, slot in state(player).slots do
+		local item = Items.get(slot.key)
+		if Items.toolKind(item) == kind then
+			n += slot.n
+			local spec = item.tool[kind]
+			local score = type(spec) == "table" and (spec.range or spec.power or 0) or 0
+			if score > bestScore then
+				best, bestScore = id, score
+			end
+		end
+	end
+	return n, best
+end
+
+-- Put the best tool of a kind in your hand: select it on the hotbar, or bring it from the bag into the slot you
+-- have selected (what was there goes to the bag slot it came from).
+function InventoryService:HoldKind(player, kind)
+	local n, id = self:CountKind(player, kind)
+	if n <= 0 or not id then
+		return false
+	end
+	local s = state(player)
+	if string.sub(id, 1, 1) == "h" then
+		return self:Select(player, tonumber(string.sub(id, 2)))
+	end
+	local target = "h" .. s.selected
+	if s.slots[target] then
+		for i = 1, Constants.HOTBAR do
+			if not s.slots["h" .. i] then
+				target = "h" .. i
+				break
+			end
+		end
+	end
+	self:Move(player, id, target)
+	return self:Select(player, tonumber(string.sub(target, 2)))
+end
+
 function InventoryService:Has(player, key, n)
 	return self:Count(player, key) >= (n or 1)
 end
@@ -210,6 +252,30 @@ function InventoryService:Give(player, key, n, source, opts)
 				local add = opts.data and 1 or math.min(item.stack, left)
 				s.slots[id] = { key = key, n = add, data = opts.data }
 				left -= add
+			end
+		end
+	end
+	if (item.kind == "tool" or item.kind == "weapon") and left > 0 then
+		-- a tool always gets a hotbar slot: a full hotbar moves its last non-tool into the bag to make room
+		local free = true
+		for i = 1, Constants.HOTBAR do
+			if not s.slots["h" .. i] then
+				free = false
+			end
+		end
+		if free then
+			for i = Constants.HOTBAR, 1, -1 do
+				local h = s.slots["h" .. i]
+				local hi = h and Items.get(h.key)
+				if hi and hi.kind ~= "tool" and hi.kind ~= "weapon" then
+					for _, id in ids do
+						if string.sub(id, 1, 1) == "b" and not s.slots[id] then
+							s.slots[id], s.slots["h" .. i] = h, nil
+							break
+						end
+					end
+					break
+				end
 			end
 		end
 	end
@@ -475,6 +541,10 @@ end
 function InventoryService:Drop(player, id, n)
 	local slot, item = self:Slot(player, id)
 	if not slot or not item then
+		return false
+	end
+	if Items.toolKind(item) == "rod" and self:CountKind(player, "rod") <= 1 then
+		Net.fire(player, "Toast", "🎣 That's your only rod. Keep it: it's how you get everything!", "bad")
 		return false
 	end
 	n = math.clamp(math.floor(tonumber(n) or slot.n), 1, slot.n)

@@ -678,6 +678,16 @@ do
 	check("every piece, debris, prop, rig, item and island builds", #bad == 0, table.concat(bad, " | "))
 end
 
+-- QUICK only offers what the bag can pay for
+do
+	local view = { recommend = { { key = "workbench", why = "x" }, { key = "floor", why = "y" } } }
+	check(
+		"QUICK skips what you can't pay for",
+		Formulas.recommended(view, { slots = { b1 = { key = "wood", n = 4 } } }).key == "floor"
+	)
+	check("QUICK offers nothing when you can pay for nothing", Formulas.recommended(view, { slots = {} }) == nil)
+end
+
 print(`\n{passed} passed, {failed} failed`)
 if failed > 0 then
 	error("Formulas: " .. failed .. " failures")

@@ -263,7 +263,7 @@ function Formulas.affordable(cost, slots)
 end
 
 -- The piece QUICK builds: the first of the raft's recommendations (RaftService.Recommend, in the raft view) the
--- bag can pay for, else the first of them.
+-- bag can pay for right now; nil if it can't pay for any (QUICK never offers what you can't build).
 function Formulas.recommended(raftView, invView)
 	local list = raftView and raftView.recommend
 	if type(list) ~= "table" or #list == 0 then
@@ -276,7 +276,7 @@ function Formulas.recommended(raftView, invView)
 			return r
 		end
 	end
-	return list[1]
+	return nil
 end
 
 return Formulas

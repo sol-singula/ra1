@@ -282,8 +282,33 @@ local SECTIONS = {
 	},
 }
 
-local function buildPanel()
-	local body = panel("build", "🔨 BUILD", 820, 480)
+-- The piece the guide wants built: the step's piece, the NEXT goal's QUICK piece, else the raft's first
+-- recommendation.
+local STEP_PIECE = { tile = "floor", bench = "workbench", net = "net", helm = "helm" }
+local function wantedPiece(arg)
+	if type(arg) == "string" and Pieces.get(arg) then
+		return arg
+	end
+	local g = Store.get("tutorial")
+	if type(g) == "table" then
+		if g.quick then
+			return g.quick
+		elseif STEP_PIECE[g.key] then
+			return STEP_PIECE[g.key]
+		end
+	end
+	local raft = Store.get("raft")
+	local rec = raft and raft.recommend and raft.recommend[1]
+	return rec and rec.key or nil
+end
+PanelController.wantedPiece = wantedPiece
+
+local RAIL = 132 -- the category rail on the left
+local HEADER_H, ROW_H, GAP = 22, 62, 6
+
+local function buildPanel(arg)
+	local body = panel("build", "🔨 BUILD", 860, 480)
+	local scrollTo -- the canvas Y of the wanted row (once, when the panel opens)
 	local function refresh()
 		body:ClearAllChildren()
 		local raft = Store.get("raft") or { tier = 1, tiles = 0, max = 12 }
@@ -311,10 +336,45 @@ local function buildPanel()
 			Bus.Tap:Fire("demolish_mode")
 			PanelController.close()
 		end)
-		local list = scroller(body, { Position = UDim2.fromOffset(0, 30), Size = UDim2.new(1, 0, 1, -30) })
+		local list =
+			scroller(body, { Position = UDim2.fromOffset(RAIL + 8, 30), Size = UDim2.new(1, -RAIL - 8, 1, -30) })
+		local rail = new("Frame", {
+			Name = "Categories",
+			BackgroundColor3 = Color3.fromRGB(226, 214, 190),
+			Position = UDim2.fromOffset(0, 30),
+			Size = UDim2.new(0, RAIL, 1, -30),
+			Parent = body,
+		}, {
+			Theme.corner(12),
+			new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+			new("UIPadding", {
+				PaddingTop = UDim.new(0, 6),
+				PaddingLeft = UDim.new(0, 6),
+				PaddingRight = UDim.new(0, 6),
+			}),
+		})
+		local wanted = wantedPiece(arg)
+		local tops, catTabs = {}, {}
+		local y = 0
 		local order = 0
-		for _, section in SECTIONS do
+		for si, section in SECTIONS do
 			order += 1
+			tops[si] = y
+			y += HEADER_H + GAP
+			local tab = Theme.button({
+				Name = "Cat_" .. section[1],
+				Text = section[1],
+				LayoutOrder = si,
+				BackgroundColor3 = C.slate,
+				Size = UDim2.new(1, 0, 0, 40),
+				TextSize = 13,
+				Parent = rail,
+			})
+			catTabs[si] = tab
+			tab.Activated:Connect(function()
+				list.CanvasPosition = Vector2.new(0, tops[si])
+				Bus.Tap:Fire("build_cat")
+			end)
 			label(list, section[1], {
 				LayoutOrder = order,
 				Size = UDim2.new(1, 0, 0, 22),
@@ -327,6 +387,10 @@ local function buildPanel()
 					continue
 				end
 				order += 1
+				if def.key == wanted and not scrollTo then
+					scrollTo = math.max(0, y - HEADER_H - GAP)
+				end
+				y += ROW_H + GAP
 				local locked
 				if def.blueprint and not profile.blueprints[def.key] then
 					locked = "📜 Needs its blueprint (crates, islands, research)"
@@ -336,8 +400,26 @@ local function buildPanel()
 				elseif def.decor and def.tier >= 2 and not (raft.stations and raft.stations.decor) then
 					locked = "🔒 Needs the Decorative Workshop"
 				end
-				local row = rowFrame(list, 62, order, locked and Color3.fromRGB(215, 210, 205) or nil)
+				local row = rowFrame(list, ROW_H, order, locked and Color3.fromRGB(215, 210, 205) or nil)
 				row.Name = "Piece_" .. def.key
+				if def.key == wanted then
+					-- what the guide wants: gold, tagged, and scrolled to
+					row.BackgroundColor3 = Color3.fromRGB(255, 236, 160)
+					local stroke = row:FindFirstChildOfClass("UIStroke")
+					if stroke then
+						stroke.Color = C.mustard
+						stroke.Thickness = 4
+					end
+					row:SetAttribute("Wanted", true)
+					label(row, "⭐ NEXT", {
+						Name = "Next",
+						Position = UDim2.new(1, -230, 0, 4),
+						Size = UDim2.fromOffset(110, 20),
+						Font = Theme.Display,
+						TextSize = 15,
+						TextColor3 = C.orange,
+					})
+				end
 				local pic = new("Frame", {
 					Name = "Picture",
 					BackgroundColor3 = Color3.fromRGB(70, 110, 160),
@@ -396,6 +478,32 @@ local function buildPanel()
 				end)
 			end
 		end
+		-- the rail follows the scroll: the section you're in is lit
+		local function lit()
+			local at = list.CanvasPosition.Y + 8
+			local cur = 1
+			for si, top in tops do
+				if top <= at then
+					cur = si
+				end
+			end
+			for si, tab in catTabs do
+				tab.BackgroundColor3 = si == cur and C.mustard or C.slate
+			end
+		end
+		list:GetPropertyChangedSignal("CanvasPosition"):Connect(lit)
+		if scrollTo and scrollTo >= 0 then
+			list.CanvasPosition = Vector2.new(0, scrollTo)
+			scrollTo = -1 -- (once: a refresh keeps where you scrolled)
+		elseif open and open.buildScroll then
+			list.CanvasPosition = open.buildScroll
+		end
+		list:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
+			if open then
+				open.buildScroll = list.CanvasPosition
+			end
+		end)
+		lit()
 	end
 	open.refresh = refresh
 	refresh()

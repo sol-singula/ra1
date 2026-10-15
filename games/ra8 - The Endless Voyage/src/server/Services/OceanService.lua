@@ -624,6 +624,11 @@ function OceanService:Init(reg)
 	end)
 	rafts.Assigned:Connect(function(_, raft)
 		plotState(raft.plot)
+		-- the lane starts full: pieces all the way out to where they appear, so there's always something close and
+		-- something coming
+		for _ = 1, math.floor(Constants.DEBRIS_MAX / 2) do
+			self:Spawn(raft.plot, pickKind(), { distance = rng:NextNumber(20, Constants.DEBRIS_FROM) })
+		end
 	end)
 	rafts.Released:Connect(function(_, raft)
 		local p = plots[raft.plot]

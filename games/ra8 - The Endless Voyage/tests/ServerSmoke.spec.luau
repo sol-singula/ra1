@@ -334,11 +334,25 @@ check("aiming reels in the piece in front", hooked >= 4, hooked)
 Engine.advance(2)
 guide = lastFired("Tutorial", ava)
 check("five pieces: the guide moves to the tile", guide and guide.key == "tile", guide and guide.key)
-check("the tile step points at a free spot beside the raft", guide and guide.spot ~= nil and guide.spot.gx ~= nil)
 check("XP for the guide's first step", Data:Get(ava).xp >= Constants.XP.guide.cast)
+-- short of wood: the guide says what's missing and points at the debris, not at a spot it can't fill
+Inventory:Take(ava, "wood", Inventory:Count(ava, "wood"))
+Tutorial:_refresh(ava)
+guide = lastFired("Tutorial", ava)
+check(
+	"without the wood, the tile step says what's missing and where it comes from",
+	guide and guide.gather == true and guide.text:find("Wood") ~= nil and guide.spot == nil,
+	guide and guide.text
+)
 
 -- building: a tile beside the raft
 give(ava, "wood", 10)
+Tutorial:_refresh(ava)
+guide = lastFired("Tutorial", ava)
+check(
+	"with the wood, the tile step points at a free spot beside the raft",
+	guide and guide.spot ~= nil and guide.spot.gx ~= nil
+)
 local spot = guide.spot
 local m1 = mark()
 send(ava, "Build", "floor", spot.gx, spot.gz, 1)
@@ -376,6 +390,7 @@ check("a blueprint piece is refused until found", not Rafts:Build(ava, "net", sp
 
 -- the workbench
 give(ava, "rope", 4)
+give(ava, "wood", 8)
 send(ava, "Build", "workbench", spot.gx, spot.gz, 1)
 check("the workbench was built", Rafts:Has(raft, "workbench"))
 check("only one workbench", not Rafts:Build(ava, "workbench", 6, 6, 1))
@@ -458,12 +473,13 @@ end
 check("reading the blueprint teaches the net", Data:Get(ava).blueprints.net == true)
 check("an unlock card announced it", lastFired("Unlock", ava).kind == "blueprint")
 
--- the net on an edge facing the water
+-- the net on an edge facing the water (once the bag can pay for it)
+give(ava, "rope", 6)
+give(ava, "wood", 6)
+Tutorial:_refresh(ava)
 local edge = lastFired("Tutorial", ava).edge
 check("the net step points at a free edge", edge ~= nil and edge.rot ~= nil)
 local edgePiece = raft.pieces[edge.piece]
-give(ava, "rope", 6)
-give(ava, "wood", 6)
 send(ava, "Build", "net", edgePiece.gx, edgePiece.gz, 1, edge.rot)
 check("the net was built on the edge", Rafts:Has(raft, "net"), lastFired("Toast", ava))
 check("a net facing another tile is refused", not Rafts:Build(ava, "net", 6, 6, 1, 0))
@@ -1283,8 +1299,14 @@ check(
 			and Data:Get(ava).blueprints.engine == true
 )
 check(
-	"no guide for a returning player",
-	noDataStore or (Tutorial:Active(ava) == nil and not lastFired("Tutorial", ava))
+	"a returning player skips the steps but still gets the NEXT goal",
+	noDataStore
+		or (
+			Tutorial:Active(ava) == nil
+			and lastFired("Tutorial", ava)
+			and lastFired("Tutorial", ava).goal == true
+			and lastFired("Tutorial", ava).step == nil
+		)
 )
 check("the sail is still red", noDataStore or raft.colours.sail == "red")
 

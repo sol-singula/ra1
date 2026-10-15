@@ -46,12 +46,12 @@ Constants.DEATH_LOSS = 0.5 -- the share of this voyage's finds that float off as
 Constants.LOST_BAG_SECONDS = 120
 
 -- Collecting (OceanService): debris drifts through every plot
-Constants.DEBRIS_MAX = 12 -- afloat round one raft at a time
+Constants.DEBRIS_MAX = 22 -- afloat round one raft at a time (the far ones included)
 Constants.DEBRIS_EVERY = 3.2 -- seconds between new pieces (fewer while the raft is sailing: the lanes bring more)
 Constants.DEBRIS_SPEED = 2.4 -- studs a second, with the current
-Constants.DEBRIS_FROM = 46 -- spawned this far upstream of the raft's centre
+Constants.DEBRIS_FROM = 110 -- spawned this far upstream of the raft's centre (far enough to see it coming)
 Constants.DEBRIS_SPREAD = 30 -- across the current
-Constants.DEBRIS_LIFETIME = 60
+Constants.DEBRIS_LIFETIME = 100
 Constants.HOOK_FLIGHT = 0.35 -- seconds for the hook to reach the piece, then DEBRIS pulls in at the hook's speed
 Constants.NET_EVERY = 7 -- a net checks for debris this often
 Constants.NET_RANGE = 11

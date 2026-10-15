@@ -129,11 +129,29 @@ What the second play found, and what changed:
   velocity; nothing crosses the network while it drifts), so a build with round 2 in it moves the pieces smoothly;
   the server's tick only decides, it never moves a model.
 
+## Round 4: the guide never lets go
+
+* **The guide never ends and can't be dismissed.** SKIP is gone. After the nine steps the card says NEXT, forever
+  (`TutorialService:Goal`): reel in at sea; explore, then sail home on an island; hold your rod when your hands are
+  empty (a HOLD MY ROD button on the card does it, from the bag too); fix what's broken (or make a hammer first);
+  build the helm; then the raft's next piece, or where its blueprint comes from, or a new place to sail.
+* **Blueprint, then materials, then the build.** A build step or goal never asks for something you can't build yet:
+  without the blueprint it sends you for it (the supply crate comes at once, then OPEN it, then LEARN), without the
+  materials it says exactly what's missing and where it comes from and points at the debris, and the moment you can
+  pay for it, it points at QUICK or BUILD. QUICK only ever offers a piece you can pay for right now.
+* **The rod.** Tools always get a hotbar slot (a full hotbar moves a non-tool into the bag). Your last rod can't be
+  dropped, and a player with no rod at all gets a spare one on the raft. The rod now rises from the hand at 40° with
+  the bobber hanging straight down, instead of pointing at the deck.
+* **BUILD panel.** A category rail on the left (STRUCTURE, STATIONS, SYSTEMS, DECORATION) lights the section you're
+  scrolled to and jumps to one on a tap; the panel opens scrolled to the piece the guide wants, marked ⭐ NEXT.
+* **Seeing what's coming.** Debris appears 110 studs upstream instead of 46 (the lane starts full, up to 22 pieces
+  afloat), and the fair-weather haze is about half as thick, so you see pieces coming a long way off.
+
 ## Tests
 
-`tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 59 checks: tiers, speeds, loot odds,
+`tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 61 checks: tiers, speeds, loot odds,
 every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 245 checks:
 the first five minutes, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent, the
 turret and the Leviathan, visiting, friends, boards, leaving and coming back, feedback, the anti-cheat, analytics;
-also run without DataStores, 247 checks) and the client (`tests/ClientSmoke.spec.luau`, 129 checks: the real UI driving the
+also run without DataStores, 247 checks) and the client (`tests/ClientSmoke.spec.luau`, 136 checks: the real UI driving the
 real server on a phone-sized screen).
