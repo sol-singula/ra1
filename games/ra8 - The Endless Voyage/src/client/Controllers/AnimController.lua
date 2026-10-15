@@ -1,11 +1,12 @@
 --[[
 Animation for the survivors' characters (master plan §4: readable actions). Roblox's own walk, run, jump and swim
-keep playing; on top of them this bends the joints by hand (each Motor6D's C0, on this client only), easing every
-offset in and out:
+keep playing; on top of them this bends the joints by hand, on this client only, easing every offset in and out:
 
   holding     anything in your hand: the forearm level in front of you, like any Roblox tool
-  the rod     an overarm cast; then the rod held out in both hands, the line in the water ("fishing"); the tip
-              jerking on a bite ("bite"); the left hand cranking the reel while a piece or a fish comes in ("reel")
+  the rod     held low in front with the rod angled up; an overarm cast (up and back over the shoulder, then the
+              whip out over the water); then the rod held out low in both hands, the line in the water
+              ("fishing"); the tip jerking on a bite ("bite"); the rod pulled up while the left hand cranks the reel
+              as a piece or a fish comes in ("reel")
   axes, picks, crowbars, the hammer   a wind-up over the head and a hard swing down in front
   spears      a level thrust; harpoons: an overarm throw
   eating, reading   hand to the face
@@ -13,8 +14,16 @@ offset in and out:
 The one-shots come from "Act"; the sustained poses are the character's "Pose" attribute, set by the server
 (PlayerService:SetPose), so everyone sees them.
 Your own actions play the instant you press (InputController fires Bus.Swing); the server's echo for you is skipped.
-Directions: a positive pitch swings an arm or a forearm forward and up; a negative pitch leans the waist forward.
-R15 rigs get every joint; R6 rigs get the shoulders, the neck and the root.
+
+How it moves the joints (the way Roblox asks for it): each joint's Transform, written in RunService.PreSimulation,
+after the Animator has written its own for the frame and before the joints move. A joint the pose owns ("locked":
+the arm holding a tool) gets the pose alone; the others (the waist, the neck) get the pose layered on top of what
+the Animator wrote. That works on both kinds of avatar joint: Motor6Ds, and the AnimationConstraints Roblox's Avatar
+Joint Upgrade spawns instead. (C0 is never touched: on avatars the platform spawns, Roblox puts every Motor6D's C0
+back to what its rig attachments say, so posing through C0 does nothing.)
+Directions: a positive pitch swings an arm, a forearm or a hand forward and up; a negative pitch leans the waist
+forward. R15 rigs get every joint; R6 rigs get the shoulders, the neck and the root (the elbow and wrist bends folded
+into the shoulder).
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27,14 +36,20 @@ local Bus = require(script.Parent.Parent.UI.Bus)
 local AnimController = { Name = "AnimController", Order = 40 }
 
 local player = Players.LocalPlayer
-local recs = {} -- [character] = { motors, swingAt, item, mode, emote, emoteAt, flinchAt, lastHealth, locked }
+local recs = {} -- [character] = { joints, swingAt, item, mode, emote, emoteAt, flinchAt, lastHealth, locked, scanAt }
 local RANGE = 150
-local MOTORS = { "RightShoulder", "LeftShoulder", "RightElbow", "LeftElbow", "Waist", "Neck", "Root" }
+local JOINTS =
+	{ "RightShoulder", "LeftShoulder", "RightElbow", "LeftElbow", "RightWrist", "LeftWrist", "Waist", "Neck", "Root" }
 local R6_NAMES = { ["Right Shoulder"] = "RightShoulder", ["Left Shoulder"] = "LeftShoulder", RootJoint = "Root" }
 local localSwingAt, localSwingMode = -10, nil
 
+-- the forearm level in front of you (any tool)
 local HOLD_SHOULDER, HOLD_ELBOW = 0.95, 0.55
+-- the rod: the hand low in front, the rod angled up (the rod leaves the fist 40° above the hand's forward: see
+-- ItemModels.holdCFrame), so with the arm just hanging it still points up and out
+local ROD_HOLD = { 0.25, 0.35, -0.2 } -- shoulder, elbow, wrist
 AnimController.HOLD_SHOULDER, AnimController.HOLD_ELBOW = HOLD_SHOULDER, HOLD_ELBOW
+AnimController.ROD_HOLD = ROD_HOLD
 
 local function ease(t)
 	t = math.clamp(t, 0, 1)
@@ -45,29 +60,50 @@ local function lerp(a, b, t)
 	return a + (b - a) * t
 end
 
+local function isJoint(d)
+	return d:IsA("Motor6D") or d:IsA("AnimationConstraint")
+end
+
 local function scan(rec, character)
+	local joints = {}
 	for _, d in character:GetDescendants() do
-		if d:IsA("Motor6D") then
-			local name = table.find(MOTORS, d.Name) and d.Name or R6_NAMES[d.Name]
-			local m = name and rec.motors[name]
-			if name and (not m or m.motor ~= d) then
-				rec.motors[name] = { motor = d, base = d.C0 }
+		if isJoint(d) then
+			local name = table.find(JOINTS, d.Name) and d.Name or R6_NAMES[d.Name]
+			if name and not joints[name] then
+				local old = rec.joints[name]
+				joints[name] = (old and old.joint == d) and old or { joint = d }
 			end
 		end
 	end
-	rec.scanAt = os.clock() + 1
+	rec.joints = joints
+	rec.scanAt = os.clock() + 2
 end
 
 local function getRec(character)
 	local rec = recs[character]
 	if rec then
-		if os.clock() > rec.scanAt and not (rec.motors.RightShoulder and rec.motors.Neck) then
+		-- a body that changed (an avatar's parts arriving or being swapped): find the joints again
+		local stale = os.clock() > rec.scanAt or not rec.joints.RightShoulder
+		if not stale then
+			for _, j in rec.joints do
+				if not j.joint.Parent then
+					stale = true
+					break
+				end
+			end
+		end
+		if stale then
 			scan(rec, character)
 		end
 		return rec
 	end
-	rec = { motors = {}, swingAt = -10, emoteAt = -10, flinchAt = -10, scanAt = 0, locked = {} }
+	rec = { joints = {}, swingAt = -10, emoteAt = -10, flinchAt = -10, scanAt = 0, locked = {} }
 	scan(rec, character)
+	character.DescendantAdded:Connect(function(d)
+		if isJoint(d) then
+			rec.scanAt = 0
+		end
+	end)
 	local hum = character:FindFirstChildOfClass("Humanoid")
 	if hum then
 		rec.lastHealth = hum.Health
@@ -113,22 +149,22 @@ AnimController.heldItem = heldItem
 local OVERHEAD = { chop = true, mine = true, pry = true, repair = true }
 local OVERARM = { cast = true, throw = true }
 
--- The sustained poses (the character's "Pose" attribute). Each returns S, E, LS, LE, waist, neck.
+-- The sustained poses (the character's "Pose" attribute). Each returns S, E, LS, LE, waist, neck, W (the wrist).
 local SUSTAINED = {}
 function SUSTAINED.fishing(clock)
-	-- the rod held out and a little down, both hands on it, swaying with the waiting
+	-- the rod held out low over the water in both hands, swaying with the waiting
 	local sway = math.sin(clock * 1.4) * 0.04
-	return 0.75 + sway, 0.3, 0.55 + sway, 1.25, -0.06, 0.12
+	return 0.55 + sway, 0.25, 0.5 + sway, 1.2, -0.06, 0.12, -0.95
 end
 function SUSTAINED.bite(clock)
 	-- the tip jerks: the whole arm tugs down and back up, fast
 	local jerk = math.max(0, math.sin(clock * 9)) * 0.3
-	return 0.75 - jerk, 0.3 + jerk * 0.5, 0.55 - jerk * 0.5, 1.25, -0.12 - jerk * 0.2, 0.18
+	return 0.55 - jerk, 0.25 + jerk * 0.5, 0.5 - jerk * 0.5, 1.2, -0.12 - jerk * 0.2, 0.18, -0.95 - jerk * 0.5
 end
 function SUSTAINED.reel(clock)
-	-- the rod pulled up and back, the left hand cranking in circles
+	-- the rod pulled up, the left hand cranking in circles
 	local c = clock * 14
-	return 1.45, 0.5, 0.95 + math.sin(c) * 0.25, 1.1 + math.cos(c) * 0.35, 0.12, -0.05
+	return 0.85, 0.55, 0.95 + math.sin(c) * 0.25, 1.1 + math.cos(c) * 0.35, 0.12, -0.05, -0.9
 end
 
 function AnimController.pose(rec, character, clock)
@@ -140,17 +176,22 @@ function AnimController.pose(rec, character, clock)
 	local t = clock - rec.swingAt
 	local mode = rec.mode
 	local held = heldItem(character)
-	local S, E = 0, 0
+	local rod = held ~= nil and Items.toolKind(held) == "rod"
+	local S, E, W = 0, 0, 0
 	local LS, LE = 0, 0
 	local rollR, rollL = 0, 0
 	local waist, neck = 0, 0
-	if held then
+	if rod then
+		S, E, W = ROD_HOLD[1], ROD_HOLD[2], ROD_HOLD[3]
+		locked.RightShoulder, locked.RightElbow, locked.RightWrist = true, true, true
+	elseif held then
 		S, E = HOLD_SHOULDER, HOLD_ELBOW
-		locked.RightShoulder, locked.RightElbow = true, true
+		locked.RightShoulder, locked.RightElbow, locked.RightWrist = true, true, true
 	end
-	local S0, E0 = S, E
+	local S0, E0, W0 = S, E, W
 	local function lockBoth()
 		locked.RightShoulder, locked.RightElbow, locked.LeftShoulder, locked.LeftElbow = true, true, true, true
+		locked.RightWrist = true
 	end
 	if OVERHEAD[mode] and t < 0.6 then
 		local windup, strike, back = mode == "repair" and 0.1 or 0.14, 0.12, 0.25
@@ -168,33 +209,33 @@ function AnimController.pose(rec, character, clock)
 			S, E = lerp(downS, S0, k), lerp(downE, E0, k)
 			waist += -0.25 * (1 - k)
 		end
-		locked.RightShoulder, locked.RightElbow = true, true
+		locked.RightShoulder, locked.RightElbow, locked.RightWrist = true, true, true
 	elseif mode == "cast" and t < 0.7 then
-		-- a proper cast: both hands up and back over the shoulder, a lean back, then the whip forward with the body
-		-- behind it, a follow-through out toward the water, and the rod settles up in front
+		-- a proper cast: both hands up and back over the shoulder (the rod pointing back behind you), a lean back,
+		-- then the whip forward with the body behind it (the rod out level over the water), and back to the hold
 		if t < 0.25 then
 			local k = ease(t / 0.25)
-			S, E = lerp(S0, 2.9, k), lerp(E0, 1.0, k)
-			LS, LE = 2.4 * k, 1.1 * k
+			S, E, W = lerp(S0, 2.5, k), lerp(E0, 0.6, k), lerp(W0, -1.2, k)
+			LS, LE = 2.2 * k, 1.1 * k
 			waist += 0.18 * k
 			add("Waist", CFrame.Angles(0, -0.35 * k, 0))
 		elseif t < 0.4 then
 			local k = ease((t - 0.25) / 0.15)
-			S, E = lerp(2.9, 1.1, k), lerp(1.0, 0.0, k)
-			LS, LE = lerp(2.4, 1.0, k), lerp(1.1, 0.3, k)
+			S, E, W = lerp(2.5, 0.7, k), lerp(0.6, 0.05, k), lerp(-1.2, -1.25, k)
+			LS, LE = lerp(2.2, 0.9, k), lerp(1.1, 0.3, k)
 			waist += lerp(0.18, -0.22, k)
 			add("Waist", CFrame.Angles(0, lerp(-0.35, 0.2, k), 0))
 		else
 			local k = ease((t - 0.4) / 0.3)
-			S, E = lerp(1.1, S0, k), lerp(0.0, E0, k)
-			LS, LE = lerp(1.0, 0, k), lerp(0.3, 0, k)
+			S, E, W = lerp(0.7, S0, k), lerp(0.05, E0, k), lerp(-1.25, W0, k)
+			LS, LE = lerp(0.9, 0, k), lerp(0.3, 0, k)
 			waist += -0.22 * (1 - k)
 			add("Waist", CFrame.Angles(0, 0.2 * (1 - k), 0))
 		end
 		lockBoth()
 	elseif OVERARM[mode] and t < 0.5 then
-		-- overarm: cocked behind the head, whipped forward, then back to the hold (the "pulling" and "fishing"
-		-- poses take over from there)
+		-- overarm: cocked behind the head, whipped forward, then back to the hold (the "reel" and "fishing" poses
+		-- take over from there)
 		if t < 0.2 then
 			local k = ease(t / 0.2)
 			S, E = lerp(S0, 2.8, k), lerp(E0, 1.2, k)
@@ -205,13 +246,13 @@ function AnimController.pose(rec, character, clock)
 			local k = ease((t - 0.35) / 0.15)
 			S, E = lerp(1.3, S0, k), lerp(0.05, E0, k)
 		end
-		locked.RightShoulder, locked.RightElbow = true, true
+		locked.RightShoulder, locked.RightElbow, locked.RightWrist = true, true, true
 	elseif SUSTAINED[character:GetAttribute("Pose")] then
-		local pS, pE, pLS, pLE, pWaist, pNeck = SUSTAINED[character:GetAttribute("Pose")](clock)
+		local pS, pE, pLS, pLE, pWaist, pNeck, pW = SUSTAINED[character:GetAttribute("Pose")](clock)
 		-- ease in over the first moments
 		local since = clock - (rec.poseAt or 0)
 		local k = ease(since / 0.25)
-		S, E = lerp(S0, pS, k), lerp(E0, pE, k)
+		S, E, W = lerp(S0, pS, k), lerp(E0, pE, k), lerp(W0, rod and pW or 0, k)
 		LS, LE = pLS * k, pLE * k
 		waist += pWaist * k
 		neck += pNeck * k
@@ -230,13 +271,13 @@ function AnimController.pose(rec, character, clock)
 			S, E = lerp(1.55, S0, k), lerp(0, E0, k)
 			waist -= 0.2 * (1 - k)
 		end
-		locked.RightShoulder, locked.RightElbow = true, true
+		locked.RightShoulder, locked.RightElbow, locked.RightWrist = true, true, true
 	elseif (mode == "eat" or mode == "use") and t < 1 then
 		local k = t < 0.2 and ease(t / 0.2) or t > 0.7 and 1 - ease((t - 0.7) / 0.3) or 1
 		S, E = lerp(S0, 1.0, k), lerp(E0, 2.1, k)
 		rollR = -0.3 * k
 		neck -= 0.1 * k
-		locked.RightShoulder, locked.RightElbow = true, true
+		locked.RightShoulder, locked.RightElbow, locked.RightWrist = true, true, true
 	end
 	-- moving fast: lean in; low on health: the chest heaves
 	local hum = character:FindFirstChildOfClass("Humanoid")
@@ -276,22 +317,29 @@ function AnimController.pose(rec, character, clock)
 			lockBoth()
 		end
 	end
-	if not rec.motors.RightElbow then
+	-- R6 (no elbows, no wrists): the bends go into the shoulder
+	if not rec.joints.RightWrist then
+		E, W = E + W, 0
+	end
+	if not rec.joints.RightElbow then
 		S, E = S + E, 0
 	end
-	if not rec.motors.LeftElbow then
+	if not rec.joints.LeftElbow then
 		LS, LE = LS + LE, 0
 	end
-	if S ~= 0 or rollR ~= 0 then
+	if S ~= 0 or rollR ~= 0 or locked.RightShoulder then
 		add("RightShoulder", CFrame.Angles(S, 0, rollR))
 	end
-	if E ~= 0 then
+	if E ~= 0 or locked.RightElbow then
 		add("RightElbow", CFrame.Angles(E, 0, 0))
 	end
-	if LS ~= 0 or rollL ~= 0 then
+	if W ~= 0 or locked.RightWrist then
+		add("RightWrist", CFrame.Angles(W, 0, 0))
+	end
+	if LS ~= 0 or rollL ~= 0 or locked.LeftShoulder then
 		add("LeftShoulder", CFrame.Angles(LS, 0, rollL))
 	end
-	if LE ~= 0 then
+	if LE ~= 0 or locked.LeftElbow then
 		add("LeftElbow", CFrame.Angles(LE, 0, 0))
 	end
 	if waist ~= 0 then
@@ -303,10 +351,59 @@ function AnimController.pose(rec, character, clock)
 	return out, locked
 end
 
-local function near(a, b)
-	return (a.Position - b.Position).Magnitude < 1e-3
-		and a.LookVector:Dot(b.LookVector) > 0.9999
-		and a.UpVector:Dot(b.UpVector) > 0.9999
+local function same(a, b)
+	return (a.Position - b.Position).Magnitude < 1e-4
+		and a.LookVector:Dot(b.LookVector) > 0.99999
+		and a.UpVector:Dot(b.UpVector) > 0.99999
+end
+
+-- The joint's own frame (C0's rotation, or Attachment0's): a pose is a turn about the parent part's axes, the
+-- Transform turns about the joint's.
+local function frameRotation(joint)
+	local ok, r = pcall(function()
+		if joint:IsA("Motor6D") then
+			return joint.C0.Rotation
+		end
+		local a0 = joint.Attachment0
+		return a0 and a0.CFrame.Rotation or CFrame.new()
+	end)
+	return ok and r or CFrame.new()
+end
+
+-- Write the pose into the joints' Transforms (PreSimulation: after the Animator, before the joints move).
+local function write(rec, pose, locked)
+	for name, j in rec.joints do
+		local joint = j.joint
+		if joint.Parent then
+			local current = joint.Transform
+			-- what the Animator wrote this frame (it may skip frames: then what it wrote last)
+			if not j.written or not same(current, j.written) then
+				j.anim = current
+			end
+			local off = pose[name]
+			if off then
+				local r0 = frameRotation(joint)
+				local turn = r0:Inverse() * off * r0
+				local value = locked[name] and turn or turn * (j.anim or CFrame.new())
+				joint.Transform = value
+				j.written = value
+			elseif j.written then
+				-- the pose let go of this joint: back to the animation
+				joint.Transform = j.anim or CFrame.new()
+				j.written = nil
+			end
+		end
+	end
+end
+
+local function rest(rec)
+	for _, j in rec.joints do
+		if j.written and j.joint.Parent then
+			j.joint.Transform = j.anim or CFrame.new()
+		end
+		j.written = nil
+	end
+	rec.locked = {}
 end
 
 local function apply(character, rec, clock)
@@ -317,40 +414,24 @@ local function apply(character, rec, clock)
 	end
 	local pose, locked = AnimController.pose(rec, character, clock)
 	rec.locked = locked
-	for name, m in rec.motors do
-		local motor = m.motor
-		if motor.Parent then
-			if m.set and not near(motor.C0, m.set) then
-				m.base = motor.C0
-			end
-			local off = pose[name]
-			local c0 = off and CFrame.new(m.base.Position) * off * m.base.Rotation or m.base
-			m.set = c0
-			motor.C0 = c0
-		end
-	end
+	write(rec, pose, locked)
 end
 
-local function rest(rec)
-	for _, m in rec.motors do
-		if m.set and m.motor.Parent then
-			m.motor.C0 = m.base
-		end
-		m.set = nil
-	end
-	rec.locked = {}
-end
-
-local function holdLocked()
-	for _, rec in recs do
-		for name in rec.locked or {} do
-			local m = rec.motors[name]
-			if m and m.motor.Parent then
-				m.motor.Transform = CFrame.new()
-			end
+local function frame()
+	local clock = os.clock()
+	local cam = workspace.CurrentCamera
+	local camPos = cam and cam.CFrame and cam.CFrame.Position or Vector3.zero
+	for _, p in Players:GetPlayers() do
+		local c = p.Character
+		local r = c and c:FindFirstChild("HumanoidRootPart")
+		if r and (p == player or (r.Position - camPos).Magnitude < RANGE) then
+			apply(c, getRec(c), clock)
+		elseif c and recs[c] then
+			rest(recs[c])
 		end
 	end
 end
+AnimController.frame = frame
 
 function AnimController:init()
 	Net.listen("Act", function(a)
@@ -376,25 +457,11 @@ function AnimController:init()
 			start(c, item, mode)
 		end
 	end)
-	RunService.RenderStepped:Connect(function()
-		local clock = os.clock()
-		local cam = workspace.CurrentCamera
-		local camPos = cam and cam.CFrame and cam.CFrame.Position or Vector3.zero
-		for _, p in Players:GetPlayers() do
-			local c = p.Character
-			local r = c and c:FindFirstChild("HumanoidRootPart")
-			if r and (r.Position - camPos).Magnitude < RANGE then
-				apply(c, getRec(c), clock)
-			elseif c and recs[c] then
-				rest(recs[c])
-			end
-		end
-	end)
 	local ok, preSimulation = pcall(function()
 		return RunService.PreSimulation
 	end)
 	local signal = ok and preSimulation or RunService.Stepped
-	signal:Connect(holdLocked)
+	signal:Connect(frame)
 end
 
 -- (tests)

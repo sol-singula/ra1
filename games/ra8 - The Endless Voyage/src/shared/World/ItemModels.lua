@@ -7,14 +7,18 @@ nothing needs uploading, and what you hold is what the icon shows.
   ItemModels.holdCFrame(item, hand) -> CFrame       the weld's C0 from the hand to the grip
   ItemModels.icon(item, parent) -> model            the same model, loose (for a ViewportFrame)
 How things sit in the hand (Roblox's hand frame: -Y comes out of the bottom of the fist, -Z is the back of the
-fingers; in the hold pose, with the forearm level in front of you, -Y points ahead and -Z points up): rods are held
-by the handle, pointing ahead; axes, picks and hammers stand up out of the fist, the head forward; spears
-point ahead; lanterns hang. Every builder draws its item along -Z from the origin (the grip), "up" along +Y.
+fingers; with the arm hanging, -Y points down and -Z ahead; in the hold pose, with the forearm level in front of
+you, -Y points ahead and -Z points up): rods leave the fist 40° above the hand's forward, so with the arm just
+hanging the rod still points up and out (and the animation's rod poses tilt the wrist from there); axes, picks and
+hammers stand up out of the fist, the head forward; spears point ahead; lanterns hang. Every builder draws its item
+along -Z from the origin (the grip), "up" along +Y. A held rod has no line of its own: the client hangs one from
+its tip (FxController), straight down whatever the rod's angle; the bag's picture keeps its little line and bobber.
 ]]
 local Items = require(script.Parent.Parent.Data.Items)
 local Kit = require(script.Parent.Kit)
 
 local ItemModels = {}
+ItemModels.ROD_TILT = math.rad(40) -- how far above the hand's forward a held rod leaves the fist
 
 local C, M = Kit.C, Kit.M
 local V3 = Vector3.new
@@ -87,7 +91,7 @@ local function handle(m, len, dia, color)
 end
 
 -- The rods: the basic wooden one, the iron one, the long one, the salvage rod with a claw on its line, the deep rod.
-function draw.rod(m, item)
+function draw.rod(m, item, loose)
 	local key = item.key
 	local long = key == "long_rod" or key == "salvage_rod"
 	local col = (key == "deep_rod" or key == "iron_rod") and C.steel
@@ -109,7 +113,10 @@ function draw.rod(m, item)
 	cylY(m, "Spool", CFrame.new(0, -0.42, -1.1) * A(R(90), 0, 0), 0.3, 0.42, C.cream, M.Fabric)
 	p(m, "Crank", CFrame.new(0.25, -0.5, -1.1), V3(0.3, 0.08, 0.08), C.iron, M.Metal)
 	ball(m, "Knob", CFrame.new(0.4, -0.5, -1.1), 0.14, C.woodDark, M.Wood)
-	-- the line, and a bobber (a claw on the salvage rod)
+	if not loose then
+		return V3(0, 0, -0.5)
+	end
+	-- (the bag's picture) the line, and a bobber (a claw on the salvage rod)
 	local tipZ = -6 * k
 	local hang = Vector3.new(0, -math.cos(R(65)), math.sin(R(65))) -- "down" when the rod is held at 65°
 	local tip = Vector3.new(0, 0, tipZ)
@@ -671,9 +678,9 @@ function ItemModels.holdCFrame(item, hand)
 	if kind == "axe" or kind == "pick" or kind == "hammer" then
 		return CFrame.new(0, -down, 0) * CFrame.Angles(0, 0, math.pi)
 	elseif kind == "rod" then
-		-- the rod stands up from the fist like an angler's: 65° above level with the forearm out, forward (never
-		-- down at the deck) with the arm hanging
-		return CFrame.new(0, -down, 0) * CFrame.Angles(math.rad(-25), 0, 0)
+		-- the rod leaves the fist 40° above the hand's forward: up and out with the arm hanging at your side (even
+		-- with no animation at all), and the arm poses tilt it from there (AnimController.ROD_HOLD)
+		return CFrame.new(0, -down, 0) * CFrame.Angles(ItemModels.ROD_TILT, 0, 0)
 	elseif kind == "pry" or (item.weapon and item.weapon.class) or item.light then
 		return CFrame.new(0, -down, 0) * CFrame.Angles(math.rad(-90), 0, 0)
 	end
@@ -685,7 +692,7 @@ local function build(item, loose)
 	m.Name = item.key
 	local kind = Items.toolKind(item)
 	local fn = draw[kind] or (item.weapon and draw[item.weapon.class]) or (item.light and draw.lantern) or draw.other
-	local at, glow = fn(m, item)
+	local at, glow = fn(m, item, loose)
 	local grip = p(m, "Grip", CFrame.new(at or V3(0, 0, 0)), V3(0.2, 0.2, 0.2), C.woodDark, M.SmoothPlastic)
 	grip.Transparency = 1
 	if not loose then

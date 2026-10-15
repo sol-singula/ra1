@@ -331,17 +331,88 @@ local function rodTip(character)
 	return handOf(character)
 end
 
--- While the line's out, the rod's own little dangling line and bobber hide (the real one is in the water).
+-- A rod in someone's hand has a short line hanging from its tip with the bobber on it (a little claw on the
+-- salvage rod), straight down whatever the rod's angle and swinging a little as the rod moves. While the line's out
+-- in the water it's not there (the real one is).
+local lineOut = setmetatable({}, { __mode = "k" }) -- [character] = true while its line is out
+local idle = setmetatable({}, { __mode = "k" }) -- [character] = { line, bob, top, pos }
+local HANG = 1.3
+
 local function hideRodLine(character, hide)
-	local held = character and character:FindFirstChild("Held")
-	for _, name in { "Line", "Bobber", "BobberTop", "Claw", "ClawHub" } do
-		for _, q in held and held:GetChildren() or {} do
-			if q.Name == name and q:IsA("BasePart") then
-				q.LocalTransparencyModifier = hide and 1 or 0
+	if character then
+		lineOut[character] = hide or nil
+	end
+end
+
+local function dropIdle(c)
+	local rec = idle[c]
+	if rec then
+		rec.line:Destroy()
+		rec.bob:Destroy()
+		rec.top:Destroy()
+		idle[c] = nil
+	end
+end
+
+local function idleLines(dt)
+	local cam = camPos()
+	local seen = {}
+	for _, p in Players:GetPlayers() do
+		local c = p.Character
+		local held = c and c:FindFirstChild("Held")
+		local key = c and c:GetAttribute("Held")
+		local item = type(key) == "string" and Items.get(key) or nil
+		local tipPart = held and held:FindFirstChild("Tip")
+		if
+			tipPart
+			and item
+			and Items.toolKind(item) == "rod"
+			and not lineOut[c]
+			and (tipPart.Position - cam).Magnitude < 160
+		then
+			seen[c] = true
+			local rec = idle[c]
+			if not rec or not rec.line.Parent then
+				dropIdle(c)
+				local salvage = item.key == "salvage_rod"
+				rec = {
+					line = chunk(Vector3.zero, Vector3.new(0.05, 0.05, HANG), C.cream, M.SmoothPlastic),
+					bob = chunk(
+						Vector3.zero,
+						Vector3.new(0.34, 0.34, 0.34),
+						salvage and C.gold or RED,
+						M.SmoothPlastic,
+						"ball"
+					),
+					top = chunk(
+						Vector3.zero,
+						Vector3.new(0.26, 0.26, 0.26),
+						salvage and C.gold or C.white,
+						M.SmoothPlastic,
+						"ball"
+					),
+				}
+				idle[c] = rec
 			end
+			local tip = rodTip(c)
+			local below = tip - Vector3.new(0, HANG, 0)
+			-- the bobber trails a little behind the tip as it moves, and always hangs HANG below it
+			local pos = rec.pos and rec.pos:Lerp(below, math.min(1, dt * 9)) or below
+			local d = pos - tip
+			pos = d.Magnitude > 0.01 and tip + d.Unit * HANG or below
+			rec.pos = pos
+			rec.line.CFrame = CFrame.lookAt(tip, pos) * CFrame.new(0, 0, -HANG / 2)
+			rec.bob.CFrame = CFrame.new(pos)
+			rec.top.CFrame = CFrame.new(pos + Vector3.new(0, 0.18, 0))
+		end
+	end
+	for c in idle do
+		if not seen[c] then
+			dropIdle(c)
 		end
 	end
 end
+FxController.idleLines = idle
 
 -- A line from one moving point to another, sagging a little, kept while `alive` says so. ends() -> from, to.
 local TETHER_SEGMENTS = 8
@@ -476,13 +547,17 @@ local function flyBobber(c, from, to, seconds, after)
 	})
 end
 
-function handlers.cast(d)
-	if typeof(d.to) ~= "Vector3" then
-		return
+-- The bobber leaves the rod at the whip of the cast (AnimController's cast pose), this long after ACT; the server
+-- starts the piece coming in at HOOK_FLIGHT, about when it lands.
+local CAST_LEAD = 0.28
+local lastLocalCast = -10
+
+local function castNow(d, c)
+	if c and not c.Parent then
+		c = nil
 	end
-	local c = d.by and characterOf(d.by)
 	local tip = (c and rodTip(c)) or (d.from + Vector3.new(0, 1.5, 0))
-	local flight = 0.3 + math.min(0.5, (d.to - tip).Magnitude / 120)
+	local flight = 0.22 + math.min(0.4, (d.to - tip).Magnitude / 130)
 	if c then
 		hideRodLine(c, true)
 		-- the rod's own line comes back when the rod's done (no pose left)
@@ -530,32 +605,40 @@ function handlers.cast(d)
 		end)
 		return
 	end
-	FxController.ring(water(d.to), BLUE, 2.5, 0.5, 0.25)
-	FxController.line(tip, d.to, C.cream, 0.05, flight, 0.1)
-	-- cast at a piece (or a floating bag): the line lands on it and stays while it reels in
+	-- cast at a piece (or a floating bag): the bobber flies out and lands on it, and the line stays on it while it
+	-- reels in
 	local model = d.id and debrisModel(d.id) or d.drop and dropModel(d.drop)
 	if model then
-		FxController.burst(d.to, BLUE, 6, 0.3, 6, 0.6, { ball = true, up = 1.2 })
+		local started = os.clock()
+		flyBobber(c, tip, model:GetPivot().Position + Vector3.new(0, 0.6, 0), flight, function()
+			FxController.burst(model:GetPivot().Position, BLUE, 6, 0.3, 6, 0.6, { ball = true, up = 1.2 })
+		end)
 		if not c then
 			return
 		end
-		local age = 0
 		tether(0.07, C.cream, 0.1, function()
-			age += 1 / 60
-			return age < Constants.HOOK_FLIGHT + 10 and model.Parent ~= nil and c.Parent ~= nil
+			return os.clock() - started < flight + 10 and model.Parent ~= nil and c.Parent ~= nil
 		end, function()
-			if age < Constants.HOOK_FLIGHT then
+			if os.clock() - started < flight then
 				return nil, nil
 			end
 			return rodTip(c), model:GetPivot().Position + Vector3.new(0, 0.6, 0)
 		end)
 		return
 	end
-	-- the bobber sits there (the line from the rod's tip to it) until the rod's state changes: a bite dips it and
-	-- ripples; reeling sends the fish flying up to you; a miss sinks it
+	-- open water: the bobber flies out and sits there (the line from the rod's tip to it) until the rod's state
+	-- changes: a bite dips it and ripples; reeling sends the fish flying up to you; a miss sinks it
 	local mine = d.by == player.UserId
+	local landed = false
 	local bob = chunk(d.to, Vector3.new(0.6, 0.6, 0.6), RED, M.SmoothPlastic, "ball")
 	local top = chunk(d.to + Vector3.new(0, 0.25, 0), Vector3.new(0.5, 0.5, 0.5), C.white, M.SmoothPlastic, "ball")
+	bob.Transparency, top.Transparency = 1, 1
+	flyBobber(c, tip, d.to, flight, function()
+		landed = true
+		if bob.Parent then
+			bob.Transparency, top.Transparency = 0, 0
+		end
+	end)
 	local age, rippleAt, ending, sink = 0, 0, nil, 0
 	local function state()
 		if mine then
@@ -569,6 +652,9 @@ function handlers.cast(d)
 		return ending ~= "done" and age < 60 and bob.Parent ~= nil
 	end
 	tether(0.06, C.cream, 0.1, alive, function()
+		if not landed then
+			return nil, nil
+		end
 		return rodTip(c), bob.Position + Vector3.new(0, 0.2, 0)
 	end)
 	table.insert(movers, {
@@ -618,6 +704,23 @@ function handlers.cast(d)
 			return true
 		end,
 	})
+end
+
+function handlers.cast(d)
+	if typeof(d.to) ~= "Vector3" then
+		return
+	end
+	local c = d.by and characterOf(d.by)
+	local lead = CAST_LEAD
+	if d.by == player.UserId then
+		-- (your own cast started when you pressed)
+		lead = math.max(0, CAST_LEAD - (os.clock() - lastLocalCast))
+	end
+	if lead > 0.01 then
+		task.delay(lead, castNow, d, c)
+	else
+		castNow(d, c)
+	end
 end
 
 function handlers.chop(d)
@@ -977,6 +1080,7 @@ local function step(dt)
 		end
 	end
 	updateTells(os.clock())
+	idleLines(dt)
 	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 	if hum then
 		local now = os.clock()
@@ -1058,6 +1162,11 @@ function FxController:init()
 				Theme.Color.mustard,
 				l.seconds or Constants.LOST_BAG_SECONDS
 			)
+		end
+	end)
+	Bus.Swing:Connect(function(_, mode)
+		if mode == "cast" then
+			lastLocalCast = os.clock()
 		end
 	end)
 	Bus.Shake:Connect(function(strength, seconds)

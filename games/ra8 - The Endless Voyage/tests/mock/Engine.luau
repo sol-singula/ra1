@@ -558,6 +558,10 @@ local ISA = {
 	BillboardGui = { "LayerCollector", "GuiBase2d" },
 	SurfaceGui = { "LayerCollector", "GuiBase2d" },
 	Terrain = { "BasePart", "PVInstance" },
+	Motor6D = { "Motor", "JointInstance" },
+	Weld = { "JointInstance" },
+	AnimationConstraint = { "Constraint" },
+	BallSocketConstraint = { "Constraint" },
 }
 local SIGNALS = {
 	RemoteEvent = { "OnServerEvent", "OnClientEvent" },
@@ -616,7 +620,16 @@ local DEFAULTS = {
 		}
 	end,
 	Attachment = function()
-		return { Position = v3() }
+		return { Position = v3(), CFrame = cf(v3()) }
+	end,
+	Motor6D = function()
+		return { C0 = cf(v3()), C1 = cf(v3()), Transform = cf(v3()), Enabled = true }
+	end,
+	Weld = function()
+		return { C0 = cf(v3()), C1 = cf(v3()), Enabled = true }
+	end,
+	AnimationConstraint = function()
+		return { Transform = cf(v3()), IsKinematic = true, Enabled = true }
 	end,
 	Humanoid = function()
 		return {
@@ -1459,7 +1472,15 @@ service("SoundService")
 
 -- RunService
 local RunService = service("RunService")
-rawset(RunService, "_signals", { Heartbeat = newSignal(), RenderStepped = newSignal(), Stepped = newSignal() })
+rawset(RunService, "_signals", {
+	Heartbeat = newSignal(),
+	RenderStepped = newSignal(),
+	Stepped = newSignal(),
+	PreRender = newSignal(),
+	PreAnimation = newSignal(),
+	PreSimulation = newSignal(),
+	PostSimulation = newSignal(),
+})
 function methods.IsServer()
 	return Engine.side == "server"
 end
@@ -1972,18 +1993,52 @@ end
 -- Players helpers ---------------------------------------------------------------------------------------------
 local nextUserId = 1000
 -- A blocky stand-in avatar (Roblox would load the player's own avatar). Body parts are welded to the root.
-local AVATAR = {
-	{ "Head", v3(1.25, 1.25, 1.25), v3(0, 1.65, 0), "skin" },
-	{ "UpperTorso", v3(2, 2, 1), v3(0, 0, 0), "shirt" },
-	{ "LeftUpperArm", v3(1, 1.6, 1), v3(-1.5, 0.2, 0), "shirt" },
-	{ "RightUpperArm", v3(1, 1.6, 1), v3(1.5, 0.2, 0), "shirt" },
-	{ "LeftHand", v3(0.9, 0.5, 0.9), v3(-1.5, -0.85, 0), "skin" },
-	{ "RightHand", v3(0.9, 0.5, 0.9), v3(1.5, -0.85, 0), "skin" },
-	{ "LeftUpperLeg", v3(0.95, 2, 1), v3(-0.5, -2, 0), "pants" },
-	{ "RightUpperLeg", v3(0.95, 2, 1), v3(0.5, -2, 0), "pants" },
-	{ "EyeL", v3(0.18, 0.28, 0.05), v3(-0.25, 1.75, -0.64), "ink" },
-	{ "EyeR", v3(0.18, 0.28, 0.05), v3(0.25, 1.75, -0.64), "ink" },
-	{ "Smile", v3(0.5, 0.1, 0.05), v3(0, 1.38, -0.64), "ink" },
+-- An R15 avatar, joined the way Roblox's rig is: Motor6Ds between the parts (or, with Engine.avatarJoints =
+-- "constraint", the AnimationConstraints that Roblox's Avatar Joint Upgrade spawns instead, on rig attachments).
+-- Like Roblox, every step: the Animator writes each joint's Transform (Engine.animationPose: an idle sway), the
+-- platform puts each Motor6D's C0 back to what its rig attachments say (Engine.platformC0), PreSimulation fires, then
+-- the joints are solved (Part1 = Part0 * C0 * Transform * C1:Inverse()) and what's welded on follows. So code that
+-- poses an arm through C0, or outside PreSimulation, does nothing here, as it does nothing there.
+local R15_PARTS = {
+	{ "LowerTorso", v3(2, 0.4, 1), "pants" },
+	{ "UpperTorso", v3(2, 1.6, 1), "shirt" },
+	{ "Head", v3(1.2, 1.2, 1.2), "skin" },
+	{ "RightUpperArm", v3(1, 1.2, 1), "shirt" },
+	{ "RightLowerArm", v3(1, 1.1, 1), "skin" },
+	{ "RightHand", v3(1, 0.3, 1), "skin" },
+	{ "LeftUpperArm", v3(1, 1.2, 1), "shirt" },
+	{ "LeftLowerArm", v3(1, 1.1, 1), "skin" },
+	{ "LeftHand", v3(1, 0.3, 1), "skin" },
+	{ "RightUpperLeg", v3(1, 1.2, 1), "pants" },
+	{ "RightLowerLeg", v3(1, 1.2, 1), "pants" },
+	{ "RightFoot", v3(1, 0.3, 1), "pants" },
+	{ "LeftUpperLeg", v3(1, 1.2, 1), "pants" },
+	{ "LeftLowerLeg", v3(1, 1.2, 1), "pants" },
+	{ "LeftFoot", v3(1, 0.3, 1), "pants" },
+}
+-- joint, part1, part0, C0, C1 (parents before children)
+local R15_JOINTS = {
+	{ "Root", "LowerTorso", "HumanoidRootPart", v3(0, -0.8, 0), v3(0, 0, 0) },
+	{ "Waist", "UpperTorso", "LowerTorso", v3(0, 0.2, 0), v3(0, -0.8, 0) },
+	{ "Neck", "Head", "UpperTorso", v3(0, 0.8, 0), v3(0, -0.6, 0) },
+	{ "RightShoulder", "RightUpperArm", "UpperTorso", v3(1, 0.56, 0), v3(-0.5, 0.4, 0) },
+	{ "RightElbow", "RightLowerArm", "RightUpperArm", v3(0, -0.4, 0), v3(0, 0.35, 0) },
+	{ "RightWrist", "RightHand", "RightLowerArm", v3(0, -0.5, 0), v3(0, 0.15, 0) },
+	{ "LeftShoulder", "LeftUpperArm", "UpperTorso", v3(-1, 0.56, 0), v3(0.5, 0.4, 0) },
+	{ "LeftElbow", "LeftLowerArm", "LeftUpperArm", v3(0, -0.4, 0), v3(0, 0.35, 0) },
+	{ "LeftWrist", "LeftHand", "LeftLowerArm", v3(0, -0.5, 0), v3(0, 0.15, 0) },
+	{ "RightHip", "RightUpperLeg", "LowerTorso", v3(0.5, -0.2, 0), v3(0, 0.45, 0) },
+	{ "RightKnee", "RightLowerLeg", "RightUpperLeg", v3(0, -0.45, 0), v3(0, 0.45, 0) },
+	{ "RightAnkle", "RightFoot", "RightLowerLeg", v3(0, -0.45, 0), v3(0, 0.05, 0) },
+	{ "LeftHip", "LeftUpperLeg", "LowerTorso", v3(-0.5, -0.2, 0), v3(0, 0.45, 0) },
+	{ "LeftKnee", "LeftLowerLeg", "LeftUpperLeg", v3(0, -0.45, 0), v3(0, 0.45, 0) },
+	{ "LeftAnkle", "LeftFoot", "LeftLowerLeg", v3(0, -0.45, 0), v3(0, 0.05, 0) },
+}
+-- the face, welded to the head
+local FACE = {
+	{ "EyeL", v3(0.18, 0.28, 0.05), v3(-0.25, 0.15, -0.61), "ink" },
+	{ "EyeR", v3(0.18, 0.28, 0.05), v3(0.25, 0.15, -0.61), "ink" },
+	{ "Smile", v3(0.5, 0.1, 0.05), v3(0, -0.22, -0.61), "ink" },
 }
 local AVATAR_COLORS = {
 	skin = { 234, 184, 146 },
@@ -1991,6 +2046,74 @@ local AVATAR_COLORS = {
 	pants = { 44, 48, 66 },
 	ink = { 27, 29, 43 },
 }
+Engine.rigs = setmetatable({}, { __mode = "k" }) -- [character] = { hrp, joints = { { name, inst, part0, part1, c0, a0?, a1? } } }
+Engine.avatarJoints = "motor6d" -- or "constraint"
+Engine.platformC0 = true
+
+-- What the avatar's own animation (Roblox's Animate script: idle, walk) writes to a joint each step.
+function Engine.animationPose(name, t)
+	if name == "RightShoulder" or name == "LeftShoulder" then
+		return CFrame.Angles(math.sin(t * 1.3) * 0.08, 0, 0)
+	end
+	return cf(v3())
+end
+
+local function solveRig(character, rig)
+	for _, j in rig.joints do
+		if not rawget(j.inst, "_destroyed") and not rawget(j.part1, "_destroyed") then
+			local jp = rawget(j.inst, "_props")
+			local c0, c1
+			if j.a0 then
+				c0, c1 = rawget(j.a0, "_props").CFrame, rawget(j.a1, "_props").CFrame
+			else
+				c0, c1 = jp.C0, jp.C1
+			end
+			rawget(j.part1, "_props").CFrame = rawget(j.part0, "_props").CFrame * c0 * jp.Transform * c1:Inverse()
+		end
+	end
+	-- what's welded on: Welds (C0, C1), then WeldConstraints (the offset they were made with)
+	local all = methods.GetDescendants(character)
+	for _, d in all do
+		if rawget(d, "_class") == "Weld" and not rawget(d, "_destroyed") then
+			local p = rawget(d, "_props")
+			if p.Part0 and p.Part1 then
+				rawget(p.Part1, "_props").CFrame = rawget(p.Part0, "_props").CFrame * p.C0 * p.C1:Inverse()
+			end
+		end
+	end
+	for _, d in all do
+		if rawget(d, "_class") == "WeldConstraint" and rawget(d, "_offset") and not rawget(d, "_destroyed") then
+			local p = rawget(d, "_props")
+			if p.Part0 and p.Part1 then
+				rawget(p.Part1, "_props").CFrame = rawget(p.Part0, "_props").CFrame * rawget(d, "_offset")
+			end
+		end
+	end
+end
+Engine.solveRig = solveRig
+
+function Engine.animateRigs()
+	for character, rig in Engine.rigs do
+		if rawget(character, "_destroyed") then
+			continue
+		end
+		for _, j in rig.joints do
+			local jp = rawget(j.inst, "_props")
+			jp.Transform = Engine.animationPose(j.name, clock)
+			if not j.a0 and Engine.platformC0 then
+				jp.C0 = j.c0
+			end
+		end
+	end
+end
+
+function Engine.solveRigs()
+	for character, rig in Engine.rigs do
+		if not rawget(character, "_destroyed") then
+			solveRig(character, rig)
+		end
+	end
+end
 
 function Engine.makeCharacter(player)
 	local character = Instance.new("Model")
@@ -2000,19 +2123,63 @@ function Engine.makeCharacter(player)
 	hrp.Size = v3(2, 2, 1)
 	hrp.Transparency = 1
 	hrp.CFrame = CFrame.new(0, 3, 0)
-	for _, spec in AVATAR do
+	local parts = { HumanoidRootPart = hrp }
+	for _, spec in R15_PARTS do
 		local part = Instance.new("Part", character)
 		part.Name = spec[1]
 		part.Size = spec[2]
-		part.CFrame = hrp.CFrame * CFrame.new(spec[3])
+		local c = AVATAR_COLORS[spec[3]]
+		part.Color = Color3.fromRGB(c[1], c[2], c[3])
+		part.Material = Enum.Material.SmoothPlastic
+		parts[spec[1]] = part
+	end
+	local rig = { hrp = hrp, joints = {} }
+	for _, spec in R15_JOINTS do
+		local name, part1, part0, c0, c1 =
+			spec[1], parts[spec[2]], parts[spec[3]], CFrame.new(spec[4]), CFrame.new(spec[5])
+		local j = { name = name, part0 = part0, part1 = part1, c0 = c0 }
+		if Engine.avatarJoints == "constraint" then
+			local a0 = Instance.new("Attachment")
+			a0.Name = name .. "RigAttachment"
+			a0.CFrame = c0
+			a0.Parent = part0
+			local a1 = Instance.new("Attachment")
+			a1.Name = name .. "RigAttachment"
+			a1.CFrame = c1
+			a1.Parent = part1
+			local inst = Instance.new("AnimationConstraint")
+			inst.Name = name
+			inst.Attachment0 = a0
+			inst.Attachment1 = a1
+			inst.Parent = part1
+			j.inst, j.a0, j.a1 = inst, a0, a1
+		else
+			local inst = Instance.new("Motor6D")
+			inst.Name = name
+			inst.Part0 = part0
+			inst.Part1 = part1
+			inst.C0 = c0
+			inst.C1 = c1
+			inst.Parent = part1
+			j.inst = inst
+		end
+		table.insert(rig.joints, j)
+	end
+	solveRig(character, rig)
+	for _, spec in FACE do
+		local part = Instance.new("Part", character)
+		part.Name = spec[1]
+		part.Size = spec[2]
+		part.CFrame = parts.Head.CFrame * CFrame.new(spec[3])
 		local c = AVATAR_COLORS[spec[4]]
 		part.Color = Color3.fromRGB(c[1], c[2], c[3])
 		part.Material = Enum.Material.SmoothPlastic
 		local w = Instance.new("WeldConstraint")
-		w.Part0 = hrp
+		w.Part0 = parts.Head
 		w.Part1 = part
 		w.Parent = part
 	end
+	Engine.rigs[character] = rig
 	local hum = Instance.new("Humanoid", character)
 	hum.Name = "Humanoid"
 	character.PrimaryPart = hrp
@@ -2062,6 +2229,10 @@ function Engine.moveTo(player, position, lookAt)
 		hrp.CFrame = CFrame.new(position)
 	end
 	Engine.resolveWelds()
+	local rig = Engine.rigs[player.Character]
+	if rig then
+		solveRig(player.Character, rig)
+	end
 end
 
 -- Move every welded part to keep its offset from Part0 (what the physics engine does in Roblox).
@@ -2091,6 +2262,13 @@ function Engine.advance(seconds, step)
 		RunService.Heartbeat:Fire(step)
 		if Engine.side == "client" or Engine.clientEnabled then
 			RunService.RenderStepped:Fire(step)
+			RunService.PreRender:Fire(step)
+			-- the Animator, then PreSimulation (where poses go), then the joints move
+			RunService.PreAnimation:Fire(step)
+			Engine.animateRigs()
+			RunService.Stepped:Fire(clock, step)
+			RunService.PreSimulation:Fire(step)
+			Engine.solveRigs()
 		end
 		local guard = 0
 		while true do

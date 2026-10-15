@@ -53,7 +53,8 @@ Constants.DEBRIS_SPEED = 2.4 -- studs a second, with the current
 Constants.DEBRIS_FROM = 260 -- spawned this far upstream of the raft's centre (far enough to see it coming)
 Constants.DEBRIS_SPREAD = 30 -- across the current
 Constants.DEBRIS_LIFETIME = 240
-Constants.HOOK_FLIGHT = 0.35 -- seconds for the hook to reach the piece, then DEBRIS pulls in at the hook's speed
+Constants.HOOK_FLIGHT = 0.6 -- seconds from ACT until the piece starts coming in (the cast's wind-up and the bobber's
+-- flight: FxController times the bobber to land then), then it pulls in at the hook's speed
 Constants.NET_EVERY = 7 -- a net checks for debris this often
 Constants.NET_RANGE = 24 -- a net reaches this far round its tile (big: nothing has to drift exactly into it)
 Constants.SWEEP_RADIUS = 10 -- a cast's line catches everything this close to it on the way back in

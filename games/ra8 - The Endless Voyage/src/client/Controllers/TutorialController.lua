@@ -374,27 +374,56 @@ local function ensureWorld()
 	arrow = Instance.new("Model")
 	arrow.Name = "GuideArrow"
 	arrow.Parent = folder
-	-- a real arrow: a round shaft and a cone head, built pointing up with its tip at the pivot (then flipped over the
-	-- target every frame, so the tip is what touches the thing to do)
-	local ghost = { CanCollide = false, CanQuery = false, CastShadow = false }
+	-- a proper game arrow: flat like a sign (a shaft and a triangle head), bright yellow with a thick dark outline and a
+	-- white shine, its tip at the pivot pointing down; every frame it turns its face to the camera and bobs, so from
+	-- anywhere it reads as an arrow pointing at the thing to do
 	local pivot = Kit.box(arrow, "Pivot", CFrame.new(), Vector3.new(0.2, 0.2, 0.2), C.mustard, Kit.M.SmoothPlastic, {
 		Transparency = 1,
 		CanCollide = false,
 		CanQuery = false,
 	})
-	Kit.roofCone(arrow, "Head", Vector3.new(0, -2.4, 0), 1.5, 2.4, C.mustard, Kit.M.Neon, 10, ghost)
-	Kit.disc(arrow, "Rim", Vector3.new(0, -2.45, 0), 3.1, 0.2, C.white, Kit.M.Neon, ghost)
-	Kit.cyl(
+	local function shape(name, x, apex, headW, headH, shaftW, shaftH, color, thick)
+		local extra = { CanCollide = false, CanQuery = false, CastShadow = false }
+		-- the head: two wedges back to back, a triangle with its point at y = apex
+		for _, side in { 1, -1 } do
+			Kit.wedge(
+				arrow,
+				name .. "Head",
+				CFrame.new(x, apex + headH / 2, side * headW / 4)
+					* (side < 0 and CFrame.Angles(0, math.pi, 0) or CFrame.new())
+					* CFrame.Angles(math.pi, 0, 0),
+				Vector3.new(thick, headH, headW / 2),
+				color,
+				Kit.M.SmoothPlastic,
+				extra
+			)
+		end
+		-- the shaft, overlapping the head a little
+		Kit.box(
+			arrow,
+			name .. "Shaft",
+			CFrame.new(x, apex + headH + shaftH / 2 - 0.05, 0),
+			Vector3.new(thick, shaftH + 0.1, shaftW),
+			color,
+			Kit.M.SmoothPlastic,
+			extra
+		)
+	end
+	-- the fill (in front, facing +X) and the outline (behind it, bigger by T all round)
+	local W, H, SW, SH, T = 3.0, 1.7, 1.15, 2.0, 0.24
+	local slope = (W / 2) / H -- the head's half-width per stud of height
+	local down = T * math.sqrt(1 + slope * slope) / slope -- how far the outline's point sits below the fill's
+	shape("Fill", 0.12, 0, W, H, SW, SH, C.mustard, 0.5)
+	shape("Outline", -0.06, -down, 2 * (H + T + down) * slope, H + T + down, SW + 2 * T, SH, C.ink, 0.5)
+	Kit.box(
 		arrow,
-		"Shaft",
-		CFrame.new(0, -4.1, 0) * CFrame.Angles(0, 0, math.rad(90)),
-		3.4,
-		1,
-		C.mustard,
-		Kit.M.Neon,
-		ghost
+		"Shine",
+		CFrame.new(0.39, H + SH * 0.55, -SW / 2 + 0.22),
+		Vector3.new(0.06, SH * 0.7, 0.18),
+		C.white,
+		Kit.M.SmoothPlastic,
+		{ CanCollide = false, CanQuery = false, CastShadow = false }
 	)
-	Kit.disc(arrow, "Tail", Vector3.new(0, -5.8, 0), 1.3, 0.2, C.white, Kit.M.Neon, ghost)
 	arrow.PrimaryPart = pivot
 	targetPart = Kit.box(
 		folder,
@@ -501,9 +530,13 @@ local function step()
 	if spotPad and spotPad.Parent then
 		spotPad.Transparency = 0.6 - (0.5 + 0.5 * math.sin(t * 5)) * 0.4
 	end
-	local top = target + Vector3.new(0, (targetGlow and 2.4 or 4) + math.sin(t * 4) * 0.6, 0)
-	local spin = CFrame.Angles(0, t * 2, 0)
-	arrow:PivotTo(CFrame.new(top) * spin * CFrame.Angles(math.rad(180), 0, 0))
+	-- bob above the target, the face turned to the camera (local +X toward it)
+	local top = target + Vector3.new(0, (targetGlow and 1.6 or 2.4) + math.abs(math.sin(t * 3.2)) * 0.9, 0)
+	local cam = workspace.CurrentCamera
+	local to = cam and cam.CFrame and (cam.CFrame.Position - top) or Vector3.new(1, 0, 0)
+	local flat = Vector3.new(to.X, 0, to.Z)
+	local yaw = flat.Magnitude > 0.01 and math.atan2(-flat.Z, flat.X) or 0
+	arrow:PivotTo(CFrame.new(top) * CFrame.Angles(0, yaw, 0))
 	targetPart.CFrame = CFrame.new(target)
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if root and beam then

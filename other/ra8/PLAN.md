@@ -232,11 +232,37 @@ What the second play found, and what changed:
   real dolphins that leap and splash, and the shark, the gull and the crab are rounded, with fins, stalked eyes and
   pincers.
 
+## Round 9: the rod, for real this time
+
+* **Why the rod pointed down.** The arm poses bent the shoulder and elbow through each Motor6D's C0, every frame.
+  On the avatars Roblox spawns today that does nothing: the platform puts every Motor6D's C0 back to what its rig
+  attachments say, and with the Avatar Joint Upgrade the joints aren't Motor6Ds at all but AnimationConstraints. So
+  the arm hung at the side, the rod (welded to point up only when the forearm was raised) pointed at the deck, and
+  the cast swing never played. The test mock had none of this, so the tests passed.
+* **The fix.** AnimController now writes each joint's Transform in RunService.PreSimulation, after the Animator,
+  which is how Roblox asks for procedural poses. It works on both Motor6D and AnimationConstraint joints, and never
+  touches C0. Rods get their own poses with the wrist: held low with the rod angled up, an overarm cast (back over
+  the shoulder, then the whip out level over the water), low over the water while fishing, up while reeling. The rod
+  also leaves the fist 40° up, so even with no arm animation at all it points up and out.
+* **The line.** A held rod's little line hangs straight down from its tip with the bobber, whatever the rod's
+  angle, and swings a little as it moves (FxController). The bobber leaves the rod at the whip of the cast, and the
+  piece starts coming in when it lands (`HOOK_FLIGHT` 0.6 s).
+* **ACT can't go dead.** Picking a hotbar slot ends building. Laying floors ends by itself when the bag can't pay for
+  another. An ACT that can't place says why ("Tap DONE to stop building"). A fishing state that never came back
+  stops blocking ACT. Casting with a line already out recasts, and the caster always gets their own cast's effect.
+* **The guide's arrow.** A flat game arrow (a shaft and a triangle head, bright yellow with a thick dark outline
+  and a white shine) that turns its face to the camera and bobs over the target, instead of a glowing pillar.
+* **The mock now behaves like Roblox here.** Characters are R15 rigs joined by Motor6Ds, or by AnimationConstraints
+  (`Engine.avatarJoints`). Every step the Animator writes each joint's Transform and the platform resets each
+  Motor6D's C0, then PreSimulation fires and the joints are solved. `tests/Rod.spec.luau` measures where the rod's
+  tip really is against the hand, for both kinds of joint, and `tools/gameplay/hold_check.luau` renders it.
+
 ## Tests
 
 `tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 66 checks: tiers, speeds, loot odds,
-every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 261 checks:
+every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 263 checks:
 the first five minutes, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent, the
 turret and the Leviathan, visiting, friends, boards, leaving and coming back, feedback, the anti-cheat, analytics;
-also run without DataStores, 262 checks) and the client (`tests/ClientSmoke.spec.luau`, 160 checks: the real UI driving the
-real server on a phone-sized screen).
+also run without DataStores, 264 checks), the client (`tests/ClientSmoke.spec.luau`, 166 checks: the real UI driving the
+real server on a phone-sized screen) and the rod in the hand (`tests/Rod.spec.luau`, 10 checks, run once with Motor6D
+joints and once with AnimationConstraints).

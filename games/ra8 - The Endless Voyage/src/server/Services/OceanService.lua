@@ -85,6 +85,19 @@ local function pickKind()
 	return "wood"
 end
 
+-- An effect for everyone on the plot, and always for the player who did it (even if the plot doesn't count them
+-- yet): the caster must see their own line.
+local function tell(plot, player, kind, data)
+	local sent = false
+	for _, other in players:PlayersOnPlot(plot or 0) do
+		Net.fire(other, "Fx", kind, data)
+		sent = sent or other == player
+	end
+	if not sent and player and player.Parent then
+		Net.fire(player, "Fx", kind, data)
+	end
+end
+
 local function hint(player, text)
 	local t = os.clock()
 	if t - (lastHint[player] or 0) < 1.5 then
@@ -421,9 +434,12 @@ function OceanService:CastAt(player, item, d, isDrop)
 		return false
 	end
 	if isDrop then
-		for _, other in players:PlayersOnPlot(players:Here(player) or 0) do
-			Net.fire(other, "Fx", "cast", { from = root.Position, to = d.pos, by = player.UserId, drop = d.id })
-		end
+		tell(
+			players:Here(player),
+			player,
+			"cast",
+			{ from = root.Position, to = d.pos, by = player.UserId, drop = d.id }
+		)
 		Net.fire(player, "Sfx", "hook")
 		players:SetPose(player, "reel", Constants.HOOK_FLIGHT + (d.pos - root.Position).Magnitude / (14 * rod.pull))
 		task.delay(Constants.HOOK_FLIGHT + (d.pos - root.Position).Magnitude / (14 * rod.pull), function()
@@ -434,13 +450,12 @@ function OceanService:CastAt(player, item, d, isDrop)
 		return true
 	end
 	if d.hooked then
+		hint(player, "🎣 That one's already coming in!")
 		return false
 	end
 	d.hooked = player
 	d.hook = rod
-	for _, other in players:PlayersOnPlot(d.plot) do
-		Net.fire(other, "Fx", "cast", { from = root.Position, to = d.pos, by = player.UserId, id = d.id })
-	end
+	tell(d.plot, player, "cast", { from = root.Position, to = d.pos, by = player.UserId, id = d.id })
 	Net.fire(player, "Sfx", "hook", root.Position)
 	task.delay(Constants.HOOK_FLIGHT, function()
 		if byId[d.id] and d.hooked == player then
@@ -587,7 +602,10 @@ function OceanService:Cast(player, item, aim, targetId)
 		return false
 	end
 	if fishing[player] then
-		return false
+		-- a line already out: reel it in and cast again (a tap always casts)
+		fishing[player] = nil
+		players:SetPose(player, "fishing", 0)
+		Net.fire(player, "Fish", { state = "off" })
 	end
 	local root = players:Root(player)
 	if not root then
@@ -602,9 +620,12 @@ function OceanService:Cast(player, item, aim, targetId)
 	-- anything near the line on the way back comes in with it
 	local caught = self:_sweep(player, rod, root.Position, pos)
 	if caught > 0 then
-		for _, other in players:PlayersOnPlot(players:Here(player) or 0) do
-			Net.fire(other, "Fx", "cast", { from = root.Position, to = pos, by = player.UserId, sweep = caught })
-		end
+		tell(
+			players:Here(player),
+			player,
+			"cast",
+			{ from = root.Position, to = pos, by = player.UserId, sweep = caught }
+		)
 		Net.fire(player, "Sfx", "hook", root.Position)
 		players:SetPose(player, "reel", Constants.HOOK_FLIGHT + dist / (14 * (rod.pull or 1)) + 0.5)
 		return true
@@ -618,9 +639,7 @@ function OceanService:Cast(player, item, aim, targetId)
 	}
 	players:SetPose(player, "fishing")
 	Net.fire(player, "Fish", { state = "cast", pos = pos })
-	for _, other in players:PlayersOnPlot(players:Here(player) or 0) do
-		Net.fire(other, "Fx", "cast", { from = root.Position, to = pos, by = player.UserId })
-	end
+	tell(players:Here(player), player, "cast", { from = root.Position, to = pos, by = player.UserId })
 	Net.fire(player, "Sfx", "splash", pos)
 	self.CastOut:Fire(player)
 	return true
@@ -725,6 +744,9 @@ function OceanService:_tick(dt)
 	for player, f in fishing do
 		if not player.Parent or not players:IsAlive(player) then
 			fishing[player] = nil
+			if player.Parent then
+				Net.fire(player, "Fish", { state = "off" })
+			end
 			continue
 		end
 		local where = players:Where(player)

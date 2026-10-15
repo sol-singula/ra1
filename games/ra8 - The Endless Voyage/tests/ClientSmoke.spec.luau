@@ -251,7 +251,8 @@ end
 local placing
 local ok1 = hookOnce()
 check("ACT sent Act with the piece's id and the line flew out", ok1)
-Engine.advance(0.1)
+-- (the wind-up, the bobber's flight: the piece starts coming in at HOOK_FLIGHT)
+Engine.advance(Constants.HOOK_FLIGHT - 0.3 + 0.15)
 check("you crank the reel as the piece comes in (the reel pose)", player.Character:GetAttribute("Pose") == "reel")
 local ropes = 0
 for _, m in ws.Fx:GetChildren() do
@@ -584,13 +585,14 @@ do
 	end
 	check("a crate that got away is replaced right away", again ~= nil and again ~= crate)
 end
--- (one in reach, and nothing else to aim at, whatever the guide's own crate is doing by now)
+-- (the guide's own crate, and nothing else to aim at)
 for _, d in Ocean:Debris(1) do
-	if d ~= crate then
+	if d.guide then
+		crate = d
+	else
 		Ocean:Remove(d)
 	end
 end
-crate = Ocean:Crate(1, 1, { guide = true, distance = 20, spread = 0 })
 hold("fishing_rod")
 for _ = 1, 60 do
 	if (crate.pos - PlayersS:Position(player)).Magnitude <= 26 then
@@ -923,6 +925,76 @@ for _, m in ws.Fx:GetChildren() do
 	end
 end
 check("the fish flies up out of the water to you", fishFlying)
+
+-- ACT can't get stuck ----------------------------------------------------------------------------------------------------------
+do
+	Engine.advance(2)
+	local function acted()
+		return countSent("Act") + countSent("Reel")
+	end
+	-- a line that never came back (as if a message was lost): ACT reels for a while, then casts again
+	Store.state.fish = { state = "cast" }
+	Store.Changed:Fire({ fish = Store.state.fish })
+	local reels = countSent("Reel")
+	Input.act()
+	Engine.advance(0.5)
+	check("with a line out, ACT reels", countSent("Reel") == reels + 1)
+	Engine.advance(Constants.FISH_BITE[2] + Constants.FISH_WINDOW + 7)
+	local casts = countSent("Act")
+	Input.act()
+	Engine.advance(0.5)
+	check("a line that never came back doesn't block ACT: it casts again", countSent("Act") == casts + 1)
+	Engine.advance(Constants.FISH_BITE[2] + Constants.FISH_WINDOW + 2)
+	-- building that ended without a word: ACT is yours again
+	Bus.Place:Fire("floor")
+	Engine.advance(0.2)
+	Build.stop()
+	local before = acted()
+	Input.act()
+	Engine.advance(0.5)
+	check("a build that ended quietly gives ACT back", not Input.isBuilding() and acted() == before + 1)
+	Engine.advance(Constants.FISH_BITE[2] + Constants.FISH_WINDOW + 2)
+	-- a click in the world (PC): the real mouse path
+	before = acted()
+	UIS.InputBegan:Fire({ UserInputType = Enum.UserInputType.MouseButton1, KeyCode = Enum.KeyCode.Unknown }, false)
+	Engine.advance(0.05)
+	UIS.InputEnded:Fire({ UserInputType = Enum.UserInputType.MouseButton1, KeyCode = Enum.KeyCode.Unknown })
+	Engine.advance(0.6)
+	check("a click in the world acts (the mouse's own path)", acted() == before + 1, acted() - before)
+	Engine.advance(Constants.FISH_BITE[2] + Constants.FISH_WINDOW + 2)
+end
+-- laying floors ends by itself when the bag can't pay for another (so ACT goes back to the rod)
+do
+	local cost = Pieces.get("floor").cost
+	local saved = {}
+	for item in cost do
+		saved[item] = Inventory:Count(player, item)
+		Inventory:Take(player, item, saved[item])
+	end
+	for item, n in cost do
+		give(item, n)
+	end
+	local r = Rafts:RaftOf(player)
+	local spot = Rafts:FreeSpots(r, 1)[1]
+	local pos = Rafts:TileWorld(r, spot[1], spot[2], 1)
+	local beside
+	for _, p in r.pieces do
+		if p.def.structural and p.level == 1 and math.abs(p.gx - spot[1]) + math.abs(p.gz - spot[2]) == 1 then
+			beside = p
+		end
+	end
+	stand(tileAt(raft, beside.gx, beside.gz), pos)
+	Bus.Place:Fire("floor")
+	Engine.advance(0.4)
+	local tiles = Rafts:RaftOf(player).summary.tiles
+	Input.act()
+	Engine.advance(0.6)
+	check("the last floor the bag could pay for went down", Rafts:RaftOf(player).summary.tiles == tiles + 1)
+	check("and placing ended by itself (ACT is the rod again)", not Input.isBuilding() and Build.placing() == nil)
+	for item, n in saved do
+		give(item, n)
+	end
+end
 
 -- The other panels ---------------------------------------------------------------------------------------------------------------
 Bus.Open:Fire("raft")

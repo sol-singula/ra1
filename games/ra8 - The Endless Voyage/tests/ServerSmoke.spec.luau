@@ -287,8 +287,9 @@ send(ava, "Act", nil, nearest.id)
 check("the line flew out to the piece (Fx cast to the plot)", firedSince(m0, "Fx", ava, function(a)
 	return a[1] == "cast" and type(a[2]) == "table" and a[2].id == nearest.id
 end) ~= nil)
--- (send advanced 0.25 s; the pull starts at HOOK_FLIGHT = 0.35 s and the piece is 10-25 studs off)
-Engine.advance(0.15)
+-- (send advanced 0.25 s; the pull starts at HOOK_FLIGHT (the wind-up and the bobber's flight), and the piece is
+-- 10-25 studs off)
+Engine.advance(Constants.HOOK_FLIGHT - 0.25 + 0.1)
 local pulled = nearest.model
 check(
 	"the piece is told to come in: who pulls it, from where, how fast",
@@ -924,6 +925,30 @@ for _ = 1, 60 do
 end
 Engine.advance(Constants.FISH_WINDOW + 0.3)
 check("too slow: it got away", lastFired("Fish", ava).state == "away")
+-- a tap always casts: with a line already out, ACT reels it in and casts again
+send(ava, "Act", Vector3.new(1, 0, 0), nil)
+local firstLine = Ocean:Fishing(ava)
+Engine.advance(0.3)
+send(ava, "Act", Vector3.new(0.7, 0, 0.7) * 20, nil)
+check(
+	"casting with a line out casts again (never a dead button)",
+	Ocean:Fishing(ava) ~= nil and Ocean:Fishing(ava) ~= firstLine and lastFired("Fish", ava).state == "cast"
+)
+send(ava, "Reel")
+-- whoever casts always sees their own line, even when the plot doesn't count them yet
+do
+	local real = PlayersS.PlayersOnPlot
+	PlayersS.PlayersOnPlot = function()
+		return {}
+	end
+	local m = mark()
+	send(ava, "Act", Vector3.new(1, 0, 0), nil)
+	PlayersS.PlayersOnPlot = real
+	check("the caster always gets their cast's effect", firedSince(m, "Fx", ava, function(a)
+		return a[1] == "cast"
+	end) ~= nil)
+	send(ava, "Reel")
+end
 -- cooking
 give(ava, "raw_fish", 4)
 give(ava, "coconut", 2)

@@ -48,6 +48,7 @@ local quickTouch
 local quickAt = 0
 local quickKey -- the piece the QUICK button shows
 local QUICK_EVERY = 0.45
+local fishAt = 0 -- when the rod's state last changed
 
 local MODE_LABEL = {
 	cast = { "CAST", "🎣", C.sky },
@@ -334,11 +335,19 @@ function InputController.act()
 		return
 	end
 	if building then
-		Bus.Place:Fire("act") -- BuildController places
-		return
+		-- (BuildController places; unless its placing ended without a word, then ACT is yours again)
+		local ok, Build = pcall(require, script.Parent.BuildController)
+		if ok and type(Build) == "table" and Build.placing and Build.placing() == nil then
+			building = false
+		else
+			Bus.Place:Fire("act")
+			return
+		end
 	end
 	local fish = Store.get("fish")
-	if fish and (fish.state == "bite" or fish.state == "cast") then
+	-- a line in the water: ACT reels (unless that state is long out of date: then it casts again)
+	local fresh = os.clock() - fishAt < Constants.FISH_BITE[2] + Constants.FISH_WINDOW + 6
+	if fish and (fish.state == "bite" or fish.state == "cast") and fresh then
 		local now = os.clock()
 		if now - lastAct < 0.2 then
 			return
@@ -395,6 +404,10 @@ function InputController.quickEnd()
 end
 
 function InputController.select(index)
+	-- picking a slot ends building (a 📌 shortcut slot starts its own: BuildController.followHotbar)
+	if building then
+		Bus.Place:Fire(false)
+	end
 	local inv = Store.get("inv")
 	if inv then
 		inv.selected = index
@@ -570,6 +583,11 @@ function InputController:init()
 			return
 		end
 		building = key ~= false and key ~= nil
+	end)
+	Store.Changed:Connect(function(partial)
+		if partial.fish then
+			fishAt = os.clock()
+		end
 	end)
 	local function bind(name, fn, ...)
 		ContextActionService:BindAction(name, function(_, state)

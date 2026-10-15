@@ -72,6 +72,24 @@ local function maps()
 	return tiles, onTile, edges, count, raft
 end
 
+-- Can the bag pay for one more?
+local function canPay(def)
+	local inv = Store.get("inv") or { slots = {} }
+	for item, n in def.cost do
+		local have = 0
+		for _, s in inv.slots do
+			if s.key == item then
+				have += s.n
+			end
+		end
+		if have < n then
+			local it = Items.get(item)
+			return false, `Needs {n} {it and it.name or item} ({have})`
+		end
+	end
+	return true
+end
+
 -- Can the piece go there? (the server's rules, mirrored, so the ghost's colour is honest)
 local function check(def, gx, gz, level, rot)
 	local tiles, onTile, edges, _, raft = maps()
@@ -140,20 +158,7 @@ local function check(def, gx, gz, level, rot)
 			return false, "That tile is taken"
 		end
 	end
-	local inv = Store.get("inv") or { slots = {} }
-	for item, n in def.cost do
-		local have = 0
-		for _, s in inv.slots do
-			if s.key == item then
-				have += s.n
-			end
-		end
-		if have < n then
-			local it = Items.get(item)
-			return false, `Needs {n} {it and it.name or item} ({have})`
-		end
-	end
-	return true
+	return canPay(def)
 end
 
 -- Where you look (the QUICK button, phones and gamepads): the camera's centre line on the deck you stand on, near you.
@@ -453,15 +458,26 @@ function BuildController.place()
 		return false
 	end
 	if not placing.valid or not placing.spot then
+		-- say why nothing happened (and how to stop building), not a dead button
+		local t = os.clock()
+		if t - (placing.toldAt or 0) > 1.5 then
+			placing.toldAt = t
+			HudController.toast(
+				`🔨 {placing.def.name}: {placing.reason or "point at a spot on your raft"}. Tap DONE to stop building.`,
+				"info"
+			)
+		end
 		return false
 	end
-	local s = placing.spot
-	Net.send("Build", placing.key, s.gx, s.gz, s.level, s.rot)
-	Bus.Tap:Fire("place_" .. placing.key)
+	-- (the answer can end placing before this returns: work from this placing)
+	local this = placing
+	local s = this.spot
+	Net.send("Build", this.key, s.gx, s.gz, s.level, s.rot)
+	Bus.Tap:Fire("place_" .. this.key)
 	Bus.Swing:Fire("hammer", "repair")
-	if not placing.def.structural and not placing.pinned then
+	if not this.def.structural and not this.pinned then
 		task.delay(0.3, function()
-			if placing and not placing.def.structural and not placing.pinned then
+			if placing == this then
 				BuildController.stop()
 				Bus.Place:Fire(false)
 			end
@@ -628,6 +644,15 @@ function BuildController:init()
 		end
 		if partial.inv then
 			BuildController.followHotbar()
+			-- laying floors: when the bag can't pay for another, placing ends by itself (ACT is the rod again)
+			if placing and placing.def and placing.def.structural and not placing.pinned and not placing.quick then
+				local ok, reason = canPay(placing.def)
+				if not ok then
+					HudController.toast(`🔨 {reason}: done building {placing.def.name}s.`, "info")
+					BuildController.stop()
+					Bus.Place:Fire(false)
+				end
+			end
 		end
 	end)
 	local acc = 0

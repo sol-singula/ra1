@@ -7,5 +7,7 @@ cargo build --release --quiet --manifest-path tools/luaurun/Cargo.toml
 R=tools/luaurun/target/release/luaurun
 $R tests/Formulas.spec.luau
 $R tests/ClientSmoke.spec.luau
+$R tests/Rod.spec.luau motor6d
+$R tests/Rod.spec.luau constraint
 $R tests/ServerSmoke.spec.luau
 $R tests/ServerSmoke.spec.luau nodatastore
