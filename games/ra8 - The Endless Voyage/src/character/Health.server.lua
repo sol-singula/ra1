@@ -1,0 +1,2 @@
+-- Takes the place of Roblox's default character Health script (which heals 1% of max health a second): a survivor's
+-- health is the server's (SurvivorService), and only food, bandages, the fire and revives bring it back.

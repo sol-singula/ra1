@@ -10,7 +10,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
  *      stats: { compare: { hour|day|week: { now, prev } }, hourly: [ 48 hours ], versions: [ per game version ],
  *               feedback: { all, day, liked, disliked, reasons, recent }, notify: { on_list, shown_players, ... } } }
  *   GET ?summary=1  (same key): how many are on each game, for the "N online" counts on other/live.html's switcher
- * -> { now, games: { ra2: { online, sessions_24h }, ra3: { ... }, ra4: { ... }, ra5: { ... }, ra6: { ... }, ra7: { ... } } }
+ * -> { now, games: { ra2: { online, sessions_24h }, ra3: { ... }, ra4: { ... }, ra5: { ... }, ra6: { ... }, ra7: { ... }, ra8: { ... } } }
  *      online        distinct players with an open session refreshed in the last 2 minutes
  *      sessions_24h  sessions started in the last 24 hours
  *    Cached for 15 seconds.
@@ -214,7 +214,7 @@ async function stats(game: string) {
 // Summary (?summary=1) ----------------------------------------------------------------------------------------
 // Two small queries per game, all at once: the user ids of open sessions refreshed in the last 2 minutes (each
 // player counted once), and a head-only count of the sessions started in the last 24 hours.
-const SUMMARY_GAMES = ["ra2", "ra3", "ra4", "ra5", "ra6", "ra7"];
+const SUMMARY_GAMES = ["ra2", "ra3", "ra4", "ra5", "ra6", "ra7", "ra8"];
 let summaryCache: { at: number; body: unknown } | null = null;
 async function summary() {
   if (summaryCache && Date.now() - summaryCache.at < 15_000) return summaryCache.body;
