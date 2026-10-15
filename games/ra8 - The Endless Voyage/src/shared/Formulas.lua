@@ -80,16 +80,23 @@ function Formulas.tierNeeds(summary, tier, trophies)
 	if not t then
 		return nil
 	end
+	-- each need in words a small kid gets: text ("a Workbench 🛠️"), todo (what's still missing: "3 more floors 🟫")
 	local out = {}
 	if t.tiles then
-		table.insert(
-			out,
-			{ text = `{t.tiles} tiles`, have = summary.tiles, need = t.tiles, done = summary.tiles >= t.tiles }
-		)
+		local left = t.tiles - summary.tiles
+		table.insert(out, {
+			text = `{t.tiles} floors 🟫`,
+			todo = left == 1 and "1 more floor 🟫" or `{left} more floors 🟫`,
+			have = summary.tiles,
+			need = t.tiles,
+			done = summary.tiles >= t.tiles,
+		})
 	end
 	if t.deck2 then
+		local left = t.deck2 - summary.deck2
 		table.insert(out, {
-			text = `{t.deck2} tiles on the second deck`,
+			text = `{t.deck2} floors upstairs 🪜`,
+			todo = left == 1 and "1 more floor upstairs 🪜" or `{left} more floors upstairs 🪜`,
 			have = summary.deck2,
 			need = t.deck2,
 			done = summary.deck2 >= t.deck2,
@@ -98,24 +105,37 @@ function Formulas.tierNeeds(summary, tier, trophies)
 	for key, n in t.needs or {} do
 		local def = Pieces.get(key)
 		local have = summary.pieces[key] or 0
-		table.insert(out, { text = n > 1 and `{n} x {def.name}` or def.name, have = have, need = n, done = have >= n })
+		local words = n > 1 and `{n} {def.name}es {def.icon}` or `a {def.name} {def.icon}`
+		table.insert(out, {
+			text = words,
+			todo = n - have > 1 and `{n - have} more {def.name}es {def.icon}` or `a {def.name} {def.icon}`,
+			have = have,
+			need = n,
+			done = have >= n,
+		})
 	end
 	if t.any then
 		local names, done = {}, false
 		for key, n in t.any do
-			table.insert(names, Pieces.get(key).name)
+			local def = Pieces.get(key)
+			table.insert(names, `a {def.name} {def.icon}`)
 			if (summary.pieces[key] or 0) >= n then
 				done = true
 			end
 		end
-		table.insert(out, { text = table.concat(names, " or "), have = done and 1 or 0, need = 1, done = done })
+		table.sort(names)
+		local words = table.concat(names, " or ")
+		table.insert(out, { text = words, todo = words, have = done and 1 or 0, need = 1, done = done })
 	end
 	if t.trophy then
 		local have = trophies and trophies[t.trophy] and 1 or 0
-		table.insert(
-			out,
-			{ text = "the Leviathan's tooth on the trophy stand", have = have, need = 1, done = have == 1 }
-		)
+		table.insert(out, {
+			text = "the Leviathan's tooth 🦷 on the trophy stand",
+			todo = "the Leviathan's tooth 🦷 on the trophy stand",
+			have = have,
+			need = 1,
+			done = have == 1,
+		})
 	end
 	table.sort(out, function(a, b)
 		return a.text < b.text
@@ -244,6 +264,47 @@ end
 -- The number the dashboard and the boards show for a raft.
 function Formulas.raftScore(summary, tier)
 	return tier * 1000 + summary.tiles * 10 + summary.deck2 * 5
+end
+
+-- What the raft still needs to grow up, in one short sentence: "a Workbench 🛠️ and a Storage Box 📦" (nil at the top).
+function Formulas.growText(needs)
+	if not needs then
+		return nil
+	end
+	local left = {}
+	for _, n in needs do
+		if not n.done then
+			table.insert(left, n.todo or n.text)
+		end
+	end
+	if #left == 0 then
+		return nil
+	elseif #left == 1 then
+		return left[1]
+	end
+	return table.concat(left, ", ", 1, #left - 1) .. " and " .. left[#left]
+end
+
+-- Why a piece is locked, like you'd tell a small kid. `raft` has tier, needs (the raft view's) and nextTier.
+function Formulas.lockedText(def, raft)
+	local tier = raft.tier or 1
+	local grow = Formulas.growText(raft.needs)
+	if def.tier == tier + 1 and grow then
+		return `🔒 Not yet! Build {grow} and your raft grows into a {raft.nextTier or "bigger raft"}. Then you can build this.`
+	end
+	local nextT = Pieces.TIERS[def.tier]
+	return `🔒 Not yet! Your raft has to grow into a {nextT and nextT.name or "bigger raft"} first.`
+		.. (grow and ` Start with {grow}.` or "")
+end
+
+-- The raft is full, in kid words.
+function Formulas.fullText(raft)
+	local grow = Formulas.growText(raft.needs)
+	local nextMax = Constants.MAX_TILES_BY_TIER[(raft.tier or 1) + 1]
+	if not grow or not nextMax then
+		return "🟫 Your raft is as big as a raft can be!"
+	end
+	return `🟫 Your raft is full! Build {grow} and it grows into a {raft.nextTier or "bigger raft"} with room for {nextMax} floors.`
 end
 
 -- Can a bag pay a cost? (slots: { key, n } lists, a view's or the server's)

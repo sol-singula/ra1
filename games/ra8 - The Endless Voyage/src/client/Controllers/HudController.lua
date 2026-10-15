@@ -108,7 +108,7 @@ local function updateClock()
 		refs.voyageFill.Size = UDim2.fromScale(total > 0 and math.clamp(1 - left / total, 0, 1) or 0, 1)
 	elseif v.state == "home" then
 		local left = (v.ends or t) - t
-		text = `🏠 SAILING HOME · {mmss(left)}`
+		text = `⛵ LEAVING THE ISLAND · {mmss(left)}`
 		refs.voyageBar.Visible = true
 		local total = (v.ends or t) - (v.started or t)
 		refs.voyageFill.Size = UDim2.fromScale(total > 0 and math.clamp(1 - left / total, 0, 1) or 0, 1)
@@ -120,7 +120,7 @@ local function updateClock()
 		end
 		refs.voyageBar.Visible = false
 	else
-		text = me.visiting and `⛵ VISITING · PLOT {me.plot or "?"}` or `🏠 DOCKED · PLOT {me.home or "?"}`
+		text = me.visiting and `⛵ VISITING · PLOT {me.plot or "?"}` or `🌊 AT SEA · SPOT {me.home or "?"}`
 		refs.voyageBar.Visible = false
 	end
 	if v.event and v.event.ends and v.event.ends > t then
@@ -128,8 +128,8 @@ local function updateClock()
 	elseif storm then
 		sub = `⛈️ STORM · hammer what breaks · {timeText}`
 	elseif v.state == "island" then
-		sub = v.stayEnds and `No anchor: the current takes you home · {timeText}`
-			or `Anchored · sail home from the helm · {timeText}`
+		sub = v.stayEnds and `No anchor: the current pulls you away soon · {timeText}`
+			or `Anchored · LEAVE ISLAND on the MAP when done · {timeText}`
 	else
 		sub = timeText
 	end
@@ -327,7 +327,7 @@ local function updateRight()
 	local raft = Store.get("raft") or {}
 	local t = Pieces.TIERS[raft.tier or 1]
 	refs.raftLine.Text =
-		`{t and t.icon or "⛵"} {raft.tierName or (t and t.name) or ""} · {raft.tiles or 0}/{raft.max or 12} tiles`
+		`{t and t.icon or "⛵"} {raft.tierName or (t and t.name) or ""} · {raft.tiles or 0}/{raft.max or 12} floors`
 	local needs = raft.needs
 	if needs then
 		local done, total = 0, #needs
@@ -336,8 +336,10 @@ local function updateRight()
 				done += 1
 			end
 		end
-		refs.raftNext.Text =
-			`Next: {raft.nextTier or ""} {done}/{total}{raft.broken and raft.broken > 0 and ` · 💥 {raft.broken} broken` or ""}`
+		local grow = Formulas.growText(needs)
+		refs.raftNext.Text = raft.broken and raft.broken > 0 and `💥 {raft.broken} broken: fix with the 🔨`
+			or grow and `⬆️ To grow: {grow}`
+			or `⬆️ Ready to grow ({done}/{total})`
 	else
 		refs.raftNext.Text = raft.broken and raft.broken > 0 and `💥 {raft.broken} broken` or "The top of the line."
 	end

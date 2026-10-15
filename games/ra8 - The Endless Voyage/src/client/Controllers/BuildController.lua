@@ -83,7 +83,7 @@ local function check(def, gx, gz, level, rot)
 		return false, "Needs its blueprint"
 	end
 	if def.tier > (raft.tier or 1) then
-		return false, `Needs tier {def.tier}`
+		return false, "🔒 Grow your raft first (RAFT shows how)"
 	end
 	local tile = tiles[key(gx, gz, level)]
 	if def.structural then
@@ -91,7 +91,8 @@ local function check(def, gx, gz, level, rot)
 			return false, "A tile is there"
 		end
 		if count >= (raft.max or 12) then
-			return false, "Raft at its limit for this tier"
+			local grow = Formulas.growText(raft.needs)
+			return false, grow and `Raft full! Build {grow} to make it bigger` or "Raft full!"
 		end
 		local adjacent = false
 		for _, d in NEIGHBOURS do

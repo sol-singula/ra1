@@ -99,6 +99,19 @@ local GuiService = Engine.game:GetService("GuiService")
 local Store = Engine.require(tree.client.Store)
 local Bus = Engine.require(tree.client.UI.Bus)
 local refs = Hud.refs
+local Menu = Engine.require(tree.client.Controllers.MenuController)
+
+-- The start menu (a public server asks how you want to play) ----------------------------------------------------------------
+Engine.advance(0.8)
+check("the start menu asks how you want to play", Menu.isOpen() == true)
+check("two choices: MY WORLD and ONLINE", Menu.buttons.world ~= nil and Menu.buttons.online ~= nil)
+local badge = gui.Menu:FindFirstChild("Badge", true)
+check("the corner badge says where you are", badge.Text:find("PUBLIC") ~= nil, badge.Text)
+Menu.buttons.world.Activated:Fire()
+Engine.advance(0.5)
+check("in Studio, MY WORLD says you play right here", Menu.status():find("Studio") ~= nil, Menu.status())
+Engine.advance(3)
+check("then the menu closes and you play", Menu.isOpen() == false)
 
 local function sent(name)
 	for i = #Engine.clientLog, 1, -1 do
@@ -162,7 +175,7 @@ check(
 	hud ~= nil and actions ~= nil and panels ~= nil and guide ~= nil
 )
 check("the HUD is scaled for a phone", hud.Scale.Scale < 1, hud.Scale.Scale)
-check("the clock says docked", refs.voyage.Text:find("DOCKED") ~= nil, refs.voyage.Text)
+check("the clock says you're out at sea at your spot", refs.voyage.Text:find("AT SEA") ~= nil, refs.voyage.Text)
 check("the raft line says driftwood platform", refs.raftLine.Text:find("Driftwood") ~= nil, refs.raftLine.Text)
 check("health is full", refs.hpText.Text:find("100") ~= nil, refs.hpText.Text)
 check(
@@ -664,6 +677,9 @@ Bus.Open:Fire("map")
 Engine.advance(0.3)
 tap(find(panels.Panel_map, "Home"))
 check("SAIL HOME from the map", Voyages:State(1) == "home")
+Engine.advance(0.3)
+check("the island you left slides away behind you (a copy, out of the way)", Sailing.leaving() ~= nil, "no copy")
+check("the button says LEAVE ISLAND, the clock says leaving", refs.voyage.Text:find("LEAVING") ~= nil, refs.voyage.Text)
 Engine.advance(secs + 3)
 check(
 	"home: the steps finished and the card goes on with NEXT (no SKIP, never empty)",

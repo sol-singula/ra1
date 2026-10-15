@@ -678,6 +678,45 @@ do
 	check("every piece, debris, prop, rig, item and island builds", #bad == 0, table.concat(bad, " | "))
 end
 
+-- the helm has a little sail; every piece of debris floats in a ring of foam
+do
+	local RM = Engine.require(tree.shared.World.RaftModels)
+	local OM = Engine.require(tree.shared.World.OceanModels)
+	local helm = RM.build("helm", Engine.CFrame.new(), {}, Engine.workspace)
+	check(
+		"the helm has a mast and a sail",
+		helm:FindFirstChild("Mast", true) ~= nil and helm:FindFirstChild("Canvas1", true) ~= nil
+	)
+	helm:Destroy()
+	local all = true
+	for _, kind in { "wood", "scrap", "rope", "cloth", "metal", "supply_crate", "bottle", "lost_bag" } do
+		local m = OM.debris(kind, Engine.CFrame.new(), Engine.workspace)
+		if not m:FindFirstChild("Foam") or #m:GetChildren() < 4 then
+			all = false
+		end
+		m:Destroy()
+	end
+	check("every piece of debris is detailed and sits in foam", all)
+end
+
+-- explained like you're 3
+do
+	local needs = Formulas.tierNeeds({ tiles = 12, deck2 = 0, pieces = {} }, 1)
+	local full = Formulas.fullText({ tier = 1, needs = needs, nextTier = "Survival Raft" })
+	check(
+		"a full raft says exactly what to build",
+		full:find("Workbench") ~= nil and full:find("Storage Box") ~= nil and full:find("24") ~= nil,
+		full
+	)
+	check("no word 'tier' in what the player reads", not full:lower():find("tier"))
+	local locked = Formulas.lockedText(Pieces.get("refinery"), { tier = 1, needs = needs, nextTier = "Survival Raft" })
+	check(
+		"a locked piece says what to do, not a tier number",
+		locked:find("Not yet") ~= nil and not locked:lower():find("tier"),
+		locked
+	)
+end
+
 -- QUICK only offers what the bag can pay for
 do
 	local view = { recommend = { { key = "workbench", why = "x" }, { key = "floor", why = "y" } } }

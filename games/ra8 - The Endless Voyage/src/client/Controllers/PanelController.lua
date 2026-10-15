@@ -315,7 +315,7 @@ local function buildPanel(arg)
 		local profile = Store.get("profile") or { blueprints = {} }
 		label(
 			body,
-			`{raft.tierName or "Driftwood Platform"} · {raft.tiles or 0}/{raft.max or 12} tiles. Tap PLACE, then tap a spot on your raft.`,
+			`{raft.tierName or "Driftwood Platform"} · {raft.tiles or 0}/{raft.max or 12} floors. Tap PLACE, then tap a spot on your raft.`,
 			{
 				Size = UDim2.new(1, -130, 0, 22),
 				TextSize = 15,
@@ -395,8 +395,7 @@ local function buildPanel(arg)
 				if def.blueprint and not profile.blueprints[def.key] then
 					locked = "📜 Needs its blueprint (crates, islands, research)"
 				elseif def.tier > (raft.tier or 1) then
-					local t = Pieces.TIERS[def.tier]
-					locked = `🔒 Needs tier {def.tier}: {t and t.name or ""}`
+					locked = Formulas.lockedText(def, raft)
 				elseif def.decor and def.tier >= 2 and not (raft.stations and raft.stations.decor) then
 					locked = "🔒 Needs the Decorative Workshop"
 				end
@@ -1012,7 +1011,7 @@ local function inventoryPanel()
 		if finds then
 			label(
 				left,
-				`🎒 {inv.finds} finds aboard: half float off if you go down away from your dock. Sail home to keep them.`,
+				`🎒 {inv.finds} finds aboard: half float off if you go down on a trip. Leave the island and finish the trip to keep them.`,
 				{
 					AnchorPoint = Vector2.new(0, 1),
 					Position = UDim2.new(0, 0, 1, 0),
@@ -1196,29 +1195,30 @@ local function mapPanel()
 		local speed = raft.speed or 1
 		local drive = speed >= 4 and "💨 Engine ×4" or speed >= 2 and "⛵ Sail ×2" or "🚣 Paddling ×1"
 		local nextDrive = speed >= 4 and ""
-			or speed >= 2 and " · an Engine (tier 3) makes it ×4"
-			or " · a Sail (tier 2) makes it ×2, an Engine (tier 3) ×4"
+			or speed >= 2 and " · an Engine makes it ×4 (once your raft is an Expedition Vessel)"
+			or " · a Big Sail makes it ×2, an Engine ×4 (when your raft is bigger)"
 		if v.state == "docked" then
-			status = (raft.helm and "Docked. Pick a destination and SAIL." or "Docked. Build a Helm to set sail.")
-				.. ` {drive}{nextDrive}`
+			status = (
+				raft.helm and "Out at sea. Pick a place and tap SAIL." or "Out at sea. Build a Helm to sail somewhere."
+			) .. ` {drive}{nextDrive}`
 		elseif v.state == "island" then
 			if v.stayEnds then
 				local left = math.max(0, math.floor((v.stayEnds or 0) - workspace:GetServerTimeNow()))
-				status = `At {v.name}. No anchor: the current carries you home in {left // 60}:{string.format(
+				status = `At {v.name}. No anchor: the current pulls you away in {left // 60}:{string.format(
 					"%02d",
 					left % 60
-				)}. An Anchor (tier 3) keeps you docked.`
+				)}. An Anchor keeps you parked there as long as you like.`
 			else
-				status = `⚓ Anchored at {v.name}. Sail home when you're done.`
+				status = `⚓ Anchored at {v.name}. Tap LEAVE ISLAND when you're done.`
 			end
 		else
-			status = (v.state == "home" and "Sailing home..." or `Sailing to {v.name}...`) .. ` {drive}`
+			status = (v.state == "home" and "Leaving the island..." or `Sailing to {v.name}...`) .. ` {drive}`
 		end
 		label(body, status, { Size = UDim2.new(1, -160, 0, 44), TextSize = 14, TextWrapped = true })
 		if v.state == "island" then
 			local home = Theme.button({
 				Name = "Home",
-				Text = "⛵ SAIL HOME",
+				Text = "⛵ LEAVE ISLAND",
 				BackgroundColor3 = C.good,
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, 0, 0, -4),
@@ -1338,31 +1338,35 @@ local function raftPanel()
 		local head = rowFrame(list, 70, 1, Color3.fromRGB(255, 240, 200))
 		label(
 			head,
-			`{t and t.icon or "⛵"} TIER {raft.tier or 1}: {raft.tierName or ""}`,
+			`{t and t.icon or "⛵"} YOUR RAFT: {string.upper(raft.tierName or "")} (size {raft.tier or 1} of 6)`,
 			{ Position = UDim2.fromOffset(10, 4), Size = UDim2.new(1, -20, 0, 26), Font = Theme.Display, TextSize = 18 }
 		)
 		label(
 			head,
-			`{t and t.desc or ""} · {raft.tiles or 0}/{raft.max or 12} tiles · speed {raft.speed or 1}x · {raft.cargo or 16} slots{raft.broken and raft.broken > 0 and ` · 💥 {raft.broken} broken: hammer them` or ""}`,
+			`{t and t.desc or ""} · {raft.tiles or 0}/{raft.max or 12} floors · speed {raft.speed or 1}x · {raft.cargo or 16} slots{raft.broken and raft.broken > 0 and ` · 💥 {raft.broken} broken: hammer them` or ""}`,
 			{ Position = UDim2.fromOffset(10, 32), Size = UDim2.new(1, -20, 0, 34), TextSize = 13 }
 		)
 		if raft.needs then
 			local n = #raft.needs
 			local box = rowFrame(list, 30 + n * 22, 2)
-			label(box, `NEXT: {raft.nextTier or ""}`, {
+			label(box, `TO GROW INTO A {string.upper(raft.nextTier or "")}, BUILD:`, {
 				Position = UDim2.fromOffset(10, 4),
 				Size = UDim2.new(1, -20, 0, 22),
 				Font = Theme.Display,
 				TextSize = 15,
 			})
 			for i, need in raft.needs do
-				label(box, `{need.done and "✅" or "⬜"} {need.text} ({need.have}/{need.need})`, {
-					Name = "Need_" .. i,
-					Position = UDim2.fromOffset(16, 26 + (i - 1) * 22),
-					Size = UDim2.new(1, -30, 0, 20),
-					TextSize = 14,
-					TextColor3 = need.done and Color3.fromRGB(30, 130, 60) or C.ink,
-				})
+				label(
+					box,
+					`{need.done and "✅" or "⬜"} {need.text}{need.need > 1 and ` ({need.have}/{need.need})` or ""}`,
+					{
+						Name = "Need_" .. i,
+						Position = UDim2.fromOffset(16, 26 + (i - 1) * 22),
+						Size = UDim2.new(1, -30, 0, 20),
+						TextSize = 14,
+						TextColor3 = need.done and Color3.fromRGB(30, 130, 60) or C.ink,
+					}
+				)
 			end
 		end
 		-- colours
@@ -1920,10 +1924,10 @@ local HOW_TO = {
 	"🎣 Cast at what floats past: aim at it and tap ACT, it reels in. Cast at open water to fish. Nets catch for you.",
 	"🔨 BUILD tiles beside your raft, then stations and systems on them.",
 	"🛠️ Stand at a station to craft. Costs are shown as have/need.",
-	"🎚️ Build a Helm, open the MAP and SAIL. Things happen on the way.",
-	"🏝️ Islands rise beside your raft: chop, mine, search, look, then sail home.",
+	"☸️ Build a Helm, open the MAP and SAIL. Things happen on the way.",
+	"🏝️ Islands rise beside your raft: chop, mine, search, look, then LEAVE ISLAND on the MAP.",
 	"💀 Go down away from your dock and half your finds float off as a bag. Cast at it to reel it back.",
-	"⛵ Tiers come from what the raft can do. The RAFT panel shows the next one.",
+	"⛵ Your raft grows bigger when you build what it asks for. Tap RAFT to see what.",
 }
 
 local function settingsPanel()
@@ -1975,10 +1979,37 @@ local function settingsPanel()
 			Parent = list,
 		})
 		invite.Activated:Connect(function()
+			-- the invite names where you are: your world, or the online ship
+			local mode = workspace:GetAttribute("Mode")
+			local launch = mode == "online" and "online"
+				or mode == "world" and ("w:" .. tostring(workspace:GetAttribute("WorldOwner") or player.UserId))
+				or nil
 			pcall(function()
-				game:GetService("SocialService"):PromptGameInvite(player)
+				local options = Instance.new("ExperienceInviteOptions")
+				if launch then
+					options.LaunchData = launch
+				end
+				game:GetService("SocialService"):PromptGameInvite(player, options)
 			end)
 		end)
+		-- where to play: your own world, or the giant online ship
+		for i, choice in
+			{ { "world", "🏝️ MY WORLD (your raft, your friends)" }, { "online", "🌍 ONLINE (the giant ship)" } }
+		do
+			local b = Theme.button({
+				Name = "Go_" .. choice[1],
+				Text = choice[2],
+				BackgroundColor3 = i == 1 and C.good or C.sky,
+				LayoutOrder = 20 + i,
+				Size = UDim2.new(1, -10, 0, 44),
+				TextSize = 15,
+				Parent = list,
+			})
+			b.Activated:Connect(function()
+				PanelController.close()
+				Bus.Menu:Fire(choice[1])
+			end)
+		end
 	end
 	open.refresh = refresh
 	refresh()

@@ -630,7 +630,32 @@ function build.trophy_stand(m, cf)
 	part(m, "Cloth", cf * CFrame.new(0, 1.9, 0), V3(2.4, 0.1, 2.4), C.canvasRed, M.Fabric, { CanCollide = false })
 end
 
-function build.helm(m, cf)
+function build.helm(m, cf, opts)
+	-- the wheel steers, and a little sail on a short mast behind it catches the wind: that's what moves the raft
+	part(m, "Mast", cf * CFrame.new(0, 4.6, 1.7), V3(0.45, 9.2, 0.45), C.woodDark, M.Wood, { CanCollide = false })
+	part(m, "Yard", cf * CFrame.new(0, 8.4, 1.9), V3(4.6, 0.28, 0.28), C.woodDark, M.Wood, { CanCollide = false })
+	part(m, "Boom", cf * CFrame.new(0, 3.6, 1.9), V3(4.2, 0.28, 0.28), C.woodDark, M.Wood, { CanCollide = false })
+	-- the canvas, bellied out with the wind (two panels at a slight angle)
+	for i, side in { -1, 1 } do
+		part(
+			m,
+			"Canvas" .. i,
+			cf * CFrame.new(side * 1.05, 6, 2.15) * CFrame.Angles(0, side * math.rad(-12), 0),
+			V3(2.2, 4.6, 0.12),
+			colour(opts, "sail"),
+			M.Fabric,
+			{ CanCollide = false }
+		)
+	end
+	part(
+		m,
+		"Pennant",
+		cf * CFrame.new(0.5, 9.4, 1.7),
+		V3(1, 0.4, 0.06),
+		colour(opts, "flag"),
+		M.Fabric,
+		{ CanCollide = false }
+	)
 	part(m, "Post", cf * CFrame.new(0, 1.4, 0), V3(0.6, 2.8, 0.6), C.woodDark, M.Wood)
 	Kit.cyl(m, "Wheel", cf * CFrame.new(0, 3.2, 0.2), 0.3, 3, C.wood, M.Wood, { CanCollide = false })
 	for k = 0, 3 do

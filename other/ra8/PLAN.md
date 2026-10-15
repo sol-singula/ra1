@@ -147,11 +147,43 @@ What the second play found, and what changed:
 * **Seeing what's coming.** Debris appears 110 studs upstream instead of 46 (the lane starts full, up to 22 pieces
   afloat), and the fair-weather haze is about half as thick, so you see pieces coming a long way off.
 
+## Round 5: plain words, a world that moves, and two ways to play
+
+* **Explained like you're 3.** The word "tier" is gone from everything the player reads. The raft has a name and a
+  size ("Survival Raft, size 2 of 6"), and every message says exactly what to do: a full raft says "Your raft is
+  full! Build a Workbench 🛠️ and a Storage Box 📦 and it grows into a Survival Raft with room for 24 floors"; a
+  locked piece says "Not yet! Build ... first"; the HUD says "⬆️ To grow: ..." (`Formulas.growText`, `lockedText`,
+  `fullText`). Tiles are "floors".
+* **No more "sailing home".** The raft lives at its spot out at sea. Leaving an island says "⛵ LEAVING PALM KEY",
+  the button is LEAVE ISLAND, and you end up "BACK OUT AT SEA". The island's terrain is now cleared out to its widest
+  layer (some islands had a beach shelf left behind).
+* **The world always moves.** The far islands drift past downstream all the time (slowly at your spot, fast while
+  sailing), wrapping round and never passing through the raft; the destination comes in from upstream; and the
+  island you leave stays where it was as a copy that slides away behind you and sinks below the horizon
+  (`SailingController`).
+* **The helm has a sail.** The Helm is a steering wheel with a little mast and sail behind it, so it's clear what
+  moves the raft; the old Sail is the Big Sail (twice as fast).
+* **Debris looks like it floats.** Every piece was rebuilt with more detail (a log with cut ends and nailed planks, a
+  hooped barrel, a coil of rope on a float, a tied canvas bundle, corrugated metal, a flagged crate with a light, a
+  bottle with a note, a buckled bag), sits half under the water, and has a broken ring of foam round it.
+* **Start menu: MY WORLD or ONLINE.** A public server shows the menu over the live ocean (`MenuController`,
+  `ModeService`). MY WORLD sends you to your own reserved server, the same one every time (its code is kept per
+  player), and INVITE FRIENDS sends friends straight there. ONLINE sends everyone to the shared ocean, where there is
+  ONE giant ship that all players build together: everyone aboard can build on it, it outlives whoever leaves, it's
+  saved for everybody (not over anyone's own raft), and servers that run at the same time send each other every
+  piece built or torn down, so it's the same ship everywhere. When one online server is full the next one opens.
+  The same choices are in ⚙️ MORE. In Studio the menu just closes and you play where you are.
+  * To publish: reserved servers and MessagingService only work in a live, published game. Set Max Players as high
+    as Game Settings allows so the online ship holds a crowd.
+
 ## Tests
 
-`tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 61 checks: tiers, speeds, loot odds,
+`tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 66 checks: tiers, speeds, loot odds,
 every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 245 checks:
 the first five minutes, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent, the
 turret and the Leviathan, visiting, friends, boards, leaving and coming back, feedback, the anti-cheat, analytics;
-also run without DataStores, 247 checks) and the client (`tests/ClientSmoke.spec.luau`, 136 checks: the real UI driving the
+also run without DataStores, 247 checks) and the client (`tests/ClientSmoke.spec.luau`, 143 checks: the real UI driving the
 real server on a phone-sized screen).
+
+`tests/Online.spec.luau` (20 checks): the online ocean's one shared ship: everyone on it, everyone builds, it outlives
+whoever leaves, it saves for everyone without touching anyone's own raft, and pieces from other servers show up.

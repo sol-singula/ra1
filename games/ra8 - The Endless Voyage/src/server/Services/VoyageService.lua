@@ -189,12 +189,12 @@ function VoyageService:CanSail(player, destKey)
 	local v = state(raft.plot)
 	if destKey == "home" then
 		if v.state ~= "island" then
-			return false, v.state == "docked" and "You're home already." or "You're on your way."
+			return false, v.state == "docked" and "You're already out at sea." or "You're on your way."
 		end
 		return true
 	end
 	if v.state ~= "docked" then
-		return false, v.state == "island" and "Sail home first." or "You're already at sea."
+		return false, v.state == "island" and "Leave the island first." or "You're already at sea."
 	end
 	local d = Voyages.get(destKey)
 	if not d then
@@ -260,7 +260,7 @@ function VoyageService:_depart(raft, d, home, byCurrent)
 	log(
 		v,
 		byCurrent and `The current carried the raft off {d.name}.`
-			or home and `Sailing home from {d.name}.`
+			or home and `Left {d.name}.`
 			or `Set sail for {d.name}: {seconds}s.`
 	)
 	-- everyone in the water comes aboard
@@ -272,8 +272,8 @@ function VoyageService:_depart(raft, d, home, byCurrent)
 		Net.fire(
 			p,
 			"Alert",
-			byCurrent and "🌊 THE CURRENT TAKES YOU HOME"
-				or home and "⛵ SAILING HOME"
+			byCurrent and `🌊 THE CURRENT PULLS YOU AWAY FROM {string.upper(d.name)}`
+				or home and `⛵ LEAVING {string.upper(d.name)}`
 				or `⛵ SETTING SAIL FOR {string.upper(d.name)}`,
 			Color3.fromRGB(255, 230, 120),
 			3
@@ -426,8 +426,8 @@ function VoyageService:_arrive(plot)
 	island:Arrive(plot, d)
 	log(v, `Land ho: {d.name}.`)
 	local here = players:PlayersOnPlot(plot)
-	local stay = anchored and "Anchored: sail home from the helm when you're done."
-		or `No anchor: the current takes you home in {math.floor(Constants.ISLAND_STAY_NO_ANCHOR / 60)}:{string.format(
+	local stay = anchored and "Anchored: tap LEAVE ISLAND on the MAP when you're done."
+		or `No anchor: the current pulls you away in {math.floor(Constants.ISLAND_STAY_NO_ANCHOR / 60)}:{string.format(
 			"%02d",
 			Constants.ISLAND_STAY_NO_ANCHOR % 60
 		)}.`
@@ -466,11 +466,11 @@ function VoyageService:_home(plot)
 	v.event = nil
 	v.ends = nil
 	v.danger = 1
-	log(v, "Home.")
+	log(v, "Back out at sea.")
 	local here = players:PlayersOnPlot(plot)
 	for _, p in here do
 		inventory:ClearFinds(p)
-		Net.fire(p, "Alert", "🏠 HOME · everything you found is safe", Color3.fromRGB(140, 230, 140), 3)
+		Net.fire(p, "Alert", "🌊 BACK OUT AT SEA · everything you found is safe", Color3.fromRGB(140, 230, 140), 3)
 		Net.fire(p, "Sfx", "win")
 	end
 	self:Push(plot)

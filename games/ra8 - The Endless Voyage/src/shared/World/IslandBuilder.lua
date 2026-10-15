@@ -226,6 +226,7 @@ function IslandBuilder.build(template, center, rng, parent)
 	for _, layer in t.layers do
 		local r, top, mat = layer[1] * t.radius, WATER + layer[2], layer[3]
 		built.top = math.max(built.top, top)
+		built.clear = math.max(built.clear or 0, r) -- the widest layer: what leaving must wash away
 		if terrain then
 			local bottom = Constants.SEA_FLOOR + 4
 			local h = top - bottom
@@ -442,7 +443,7 @@ function IslandBuilder.remove(built)
 	local terrain = workspace:FindFirstChildOfClass("Terrain")
 	if terrain and built.radius > 0 then
 		local c = built.center
-		local r = built.radius + 6
+		local r = math.max(built.radius, built.clear or 0) + 10
 		pcall(function()
 			local depth = WATER - (Constants.SEA_FLOOR + 2)
 			terrain:FillCylinder(

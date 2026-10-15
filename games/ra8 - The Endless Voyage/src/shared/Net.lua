@@ -31,6 +31,7 @@ Net.ClientEvents = {
 	Friends = 1, -- ({ { userId, jobId }, ... }) friends online in this game: where is each one?
 	JoinFriend = 1, -- (userId) join a friend's server (JoinService)
 	FriendAction = 1, -- ("retry" | "cancel" | "private")
+	Mode = 1, -- ("world" | "online") the start menu's choice (ModeService)
 	GuideAction = 4, -- ("hold_rod") the guide card's button: put the best rod in your hand (TutorialService)
 	Viewed = 2, -- ("build" | "craft" | "map" | "journal" | ...) a panel was opened
 	Feedback = 1, -- (like, text?, reasons?) the "Do you like the game?" card (FeedbackService)
@@ -67,6 +68,7 @@ Net.ServerEvents = {
 	"Sfx", -- soundName, worldPosition?: a sound effect (AudioController)
 	"Fade", -- seconds, text?: a short black fade (the rowboat, waking up)
 	"Lost", -- { pos, items }: where your lost bag floats after you went down
+	"Menu", -- { close?, note?, travelling? }: the start menu (ModeService)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).

@@ -22,84 +22,318 @@ local function p(m, name, cf, size, color, material, extra)
 end
 
 -- Debris -------------------------------------------------------------------------------------------------------
+-- Each piece sits half in the water (the pivot is just above the surface) with a ring of foam round it, so you can
+-- spot it from far off and it reads as floating, not resting on glass.
 local debris = {}
+local WATERLINE = -0.3 -- the water's surface, from the pivot
+
+local function foam(m, cf, w, d)
+	-- a loose ring of little foam blobs where the piece meets the water (not a plate)
+	local r = math.max(w, d) / 2 + 0.15
+	local n = 9
+	local first
+	for k = 0, n - 1 do
+		local a = k / n * math.pi * 2 + (k % 2) * 0.2
+		local rr = r * (0.85 + (k % 3) * 0.1)
+		local blob = Kit.ellipsoid(
+			m,
+			k == 0 and "Foam" or "FoamBit",
+			cf.Position + V3(math.cos(a) * rr, WATERLINE + 0.03, math.sin(a) * rr),
+			V3(0.9 + (k % 2) * 0.4, 0.07, 0.5),
+			Color3.fromRGB(245, 250, 255),
+			M.SmoothPlastic,
+			{ CanCollide = false, CanQuery = false, CastShadow = false, Transparency = 0.35 }
+		)
+		blob.CFrame = CFrame.new(blob.Position) * CFrame.Angles(0, -a + math.pi / 2, 0)
+		first = first or blob
+	end
+	return first
+end
+
+-- a plank with darker grain lines and two nail heads
+local function plank(m, name, cf, len, w, color)
+	p(m, name, cf, V3(len, 0.32, w), color, M.WoodPlanks)
+	for _, z in { -w * 0.22, w * 0.22 } do
+		p(
+			m,
+			name .. "Grain",
+			cf * CFrame.new(0, 0.17, z),
+			V3(len * 0.9, 0.02, 0.06),
+			color:Lerp(C.woodDark, 0.45),
+			M.Wood,
+			{ CanQuery = false }
+		)
+	end
+	for _, x in { -len * 0.4, len * 0.4 } do
+		p(m, name .. "Nail", cf * CFrame.new(x, 0.18, 0), V3(0.12, 0.04, 0.12), C.iron, M.Metal, { CanQuery = false })
+	end
+end
 
 function debris.wood(m, cf)
-	p(m, "Log", cf * CFrame.Angles(0, 0.4, 0), V3(3.4, 0.8, 0.9), C.bark, M.Wood)
-	p(m, "Plank", cf * CFrame.new(0.6, 0.2, 0.6) * CFrame.Angles(0, -0.3, 0), V3(2.6, 0.3, 0.7), C.plank, M.WoodPlanks)
+	foam(m, cf, 3.6, 2.4)
+	-- a short log with pale cut ends, and two loose planks across it
+	Kit.cyl(
+		m,
+		"Log",
+		cf * CFrame.new(0, -0.15, 0) * CFrame.Angles(0, 0.4, 0),
+		3.2,
+		0.95,
+		C.bark,
+		M.Wood,
+		{ CanCollide = false }
+	)
+	for _, sx in { -1, 1 } do
+		Kit.cyl(
+			m,
+			"LogEnd",
+			cf * CFrame.Angles(0, 0.4, 0) * CFrame.new(sx * 1.61, -0.15, 0),
+			0.04,
+			0.8,
+			C.woodLight,
+			M.Wood,
+			{ CanCollide = false, CanQuery = false }
+		)
+	end
+	plank(m, "Plank", cf * CFrame.new(0.3, 0.32, 0.5) * CFrame.Angles(0, -0.35, 0.06), 2.8, 0.7, C.plank)
+	plank(
+		m,
+		"Plank2",
+		cf * CFrame.new(-0.4, 0.2, -0.55) * CFrame.Angles(0, 0.9, -0.05),
+		2.2,
+		0.6,
+		C.plank:Lerp(C.woodLight, 0.3)
+	)
 end
 
 function debris.scrap(m, cf)
+	foam(m, cf, 2.6, 2.2)
+	-- a blue barrel on its side, with metal hoops and a cap, and a bit of scrap beside it
+	local body = cf * CFrame.new(0, 0.05, 0) * CFrame.Angles(0, 0.5, 0)
+	Kit.cyl(m, "Barrel", body, 2, 1.4, Color3.fromRGB(52, 128, 196), M.SmoothPlastic, { CanCollide = false })
+	for _, x in { -0.65, 0, 0.65 } do
+		Kit.cyl(
+			m,
+			"Hoop",
+			body * CFrame.new(x, 0, 0),
+			0.12,
+			1.48,
+			Color3.fromRGB(36, 92, 150),
+			M.SmoothPlastic,
+			{ CanCollide = false, CanQuery = false }
+		)
+	end
+	Kit.cyl(
+		m,
+		"Cap",
+		body * CFrame.new(1.03, 0.3, 0),
+		0.08,
+		0.32,
+		C.white,
+		M.SmoothPlastic,
+		{ CanCollide = false, CanQuery = false }
+	)
 	p(
 		m,
-		"Barrel",
-		cf * CFrame.new(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(80)),
-		V3(1.8, 1.4, 1.4),
-		Color3.fromRGB(60, 140, 200),
-		M.Plastic
+		"Bits",
+		cf * CFrame.new(1.3, -0.1, 0.8) * CFrame.Angles(0.2, 0.6, 0.1),
+		V3(0.9, 0.25, 0.7),
+		C.iron,
+		M.CorrodedMetal
 	)
-	p(m, "Bits", cf * CFrame.new(1.2, 0, 0.6), V3(0.9, 0.3, 0.9), C.iron, M.CorrodedMetal)
 end
 
 function debris.rope(m, cf)
-	Kit.cyl(m, "Coil", cf * CFrame.Angles(0, 0, math.rad(90)), 0.6, 2.2, C.rope, M.Fabric, { CanCollide = false })
+	foam(m, cf, 2.4, 2.4)
+	-- a coil of rope: rings of rope round a hole, a loose end trailing, on a cork float
 	Kit.cyl(
 		m,
-		"Hole",
-		cf * CFrame.new(0, 0.05, 0) * CFrame.Angles(0, 0, math.rad(90)),
-		0.7,
-		0.8,
-		C.water,
-		M.SmoothPlastic,
-		{ CanCollide = false, CastShadow = false }
+		"Float",
+		cf * CFrame.new(0, -0.15, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		0.35,
+		2.4,
+		C.woodLight,
+		M.Wood,
+		{ CanCollide = false }
+	)
+	for k = 0, 9 do
+		local a = k / 10 * math.pi * 2
+		p(
+			m,
+			"Coil",
+			cf * CFrame.new(math.cos(a) * 0.75, 0.15, math.sin(a) * 0.75) * CFrame.Angles(0, -a, 0),
+			V3(0.32, 0.32, 0.52),
+			C.rope,
+			M.Fabric
+		)
+	end
+	for k = 0, 9 do
+		local a = (k + 0.5) / 10 * math.pi * 2
+		p(
+			m,
+			"Coil2",
+			cf * CFrame.new(math.cos(a) * 0.55, 0.38, math.sin(a) * 0.55) * CFrame.Angles(0, -a, 0),
+			V3(0.28, 0.28, 0.4),
+			C.rope:Lerp(C.woodLight, 0.2),
+			M.Fabric,
+			{ CanQuery = false }
+		)
+	end
+	p(
+		m,
+		"End",
+		cf * CFrame.new(1.3, 0.05, 0.4) * CFrame.Angles(0, 0.4, 0),
+		V3(1.2, 0.2, 0.2),
+		C.rope,
+		M.Fabric,
+		{ CanQuery = false }
 	)
 end
 
 function debris.cloth(m, cf)
-	p(m, "Sail", cf * CFrame.new(0, 0.1, 0) * CFrame.Angles(0, 0.7, 0), V3(3, 0.15, 2.2), C.canvas, M.Fabric)
+	foam(m, cf, 3.2, 2.6)
+	-- a bundle of canvas tied with rope, a corner of it spread on the water
+	p(m, "Sail", cf * CFrame.new(0.3, -0.1, 0.2) * CFrame.Angles(0, 0.7, 0.03), V3(3, 0.1, 2.2), C.canvas, M.Fabric)
+	p(
+		m,
+		"Bundle",
+		cf * CFrame.new(-0.3, 0.25, -0.2) * CFrame.Angles(0.1, 0.3, 0),
+		V3(1.8, 0.8, 1.2),
+		C.canvas:Lerp(C.cloth, 0.35),
+		M.Fabric
+	)
 	p(
 		m,
 		"Fold",
-		cf * CFrame.new(0.4, 0.3, -0.3) * CFrame.Angles(0.2, 0.2, 0),
-		V3(1.6, 0.2, 1.2),
-		C.canvas:Lerp(C.cloth, 0.3),
-		M.Fabric
+		cf * CFrame.new(-0.25, 0.68, -0.2) * CFrame.Angles(0.1, 0.3, 0.1),
+		V3(1.5, 0.15, 1),
+		C.canvas,
+		M.Fabric,
+		{ CanQuery = false }
 	)
+	for _, x in { -0.5, 0.4 } do
+		p(
+			m,
+			"Tie",
+			cf * CFrame.new(-0.3, 0.25, -0.2) * CFrame.Angles(0.1, 0.3, 0) * CFrame.new(x, 0, 0),
+			V3(0.14, 0.86, 1.26),
+			C.rope,
+			M.Fabric,
+			{ CanQuery = false }
+		)
+	end
 end
 
 function debris.metal(m, cf)
-	p(m, "Plate", cf * CFrame.new(0, 0.1, 0) * CFrame.Angles(0, 0.5, 0.15), V3(2.4, 0.3, 1.6), C.steel, M.Metal)
-	p(m, "Bolt", cf * CFrame.new(0.6, 0.35, 0.3), V3(0.4, 0.4, 0.4), C.iron, M.Metal)
+	foam(m, cf, 3, 2.2)
+	-- a corrugated sheet on a floating crate lid, and a pipe
+	local base = cf * CFrame.new(0, -0.05, 0) * CFrame.Angles(0, 0.5, 0.05)
+	p(m, "Lid", base * CFrame.new(0, -0.15, 0), V3(2.6, 0.3, 1.9), C.wood, M.WoodPlanks)
+	for k = -3, 3 do
+		p(
+			m,
+			"Ridge",
+			base * CFrame.new(k * 0.34, 0.08, 0),
+			V3(0.18, 0.16, 1.7),
+			k % 2 == 0 and C.steel or C.steel:Lerp(C.iron, 0.4),
+			M.Metal
+		)
+	end
+	Kit.cyl(
+		m,
+		"Pipe",
+		cf * CFrame.new(0.4, 0.35, 0.9) * CFrame.Angles(0, -0.4, 0),
+		1.8,
+		0.35,
+		C.iron,
+		M.CorrodedMetal,
+		{ CanCollide = false }
+	)
+	p(m, "Bolt", cf * CFrame.new(-0.7, 0.3, -0.5), V3(0.3, 0.3, 0.3), C.iron, M.Metal)
 end
 
 function debris.supply_crate(m, cf)
-	p(m, "Crate", cf * CFrame.new(0, 0.6, 0) * CFrame.Angles(0, 0.3, 0), V3(2.4, 2.2, 2.4), C.wood, M.WoodPlanks)
-	for _, sx in { -1, 1 } do
-		p(m, "Band", cf * CFrame.new(sx * 0.8, 0.6, 0) * CFrame.Angles(0, 0.3, 0), V3(0.3, 2.3, 2.5), C.iron, M.Metal)
+	foam(m, cf, 3, 3)
+	-- a sturdy crate: planked sides, dark edges, iron corners, a red flag on a pole and a blinking light
+	local box = cf * CFrame.new(0, 0.55, 0) * CFrame.Angles(0, 0.3, 0)
+	p(m, "Crate", box, V3(2.4, 2.1, 2.4), C.wood, M.WoodPlanks)
+	for _, y in { -0.7, 0, 0.7 } do
+		p(m, "Slat", box * CFrame.new(0, y, 1.22), V3(2.3, 0.08, 0.06), C.woodDark, M.Wood, { CanQuery = false })
+		p(m, "SlatB", box * CFrame.new(0, y, -1.22), V3(2.3, 0.08, 0.06), C.woodDark, M.Wood, { CanQuery = false })
 	end
-	local beacon = Kit.ball(m, "Beacon", cf.Position + V3(0, 2.2, 0), 0.6, C.canvasRed, M.Neon, { CanCollide = false })
-	Kit.light(beacon, "PointLight", { Name = "Glow", Color = C.canvasRed, Range = 12, Brightness = 1 })
+	for _, sx in { -1, 1 } do
+		for _, sz in { -1, 1 } do
+			p(
+				m,
+				"Corner",
+				box * CFrame.new(sx * 1.17, 0, sz * 1.17),
+				V3(0.2, 2.2, 0.2),
+				C.iron,
+				M.Metal,
+				{ CanQuery = false }
+			)
+		end
+	end
+	p(m, "Lid", box * CFrame.new(0, 1.1, 0), V3(2.5, 0.16, 2.5), C.woodDark, M.WoodPlanks, { CanQuery = false })
+	p(m, "Pole", box * CFrame.new(0.9, 2.1, 0.9), V3(0.12, 2, 0.12), C.woodDark, M.Wood, { CanQuery = false })
+	p(m, "Flag", box * CFrame.new(1.35, 2.75, 0.9), V3(0.9, 0.6, 0.05), C.canvasRed, M.Fabric, { CanQuery = false })
+	local beacon =
+		Kit.ball(m, "Beacon", (box * CFrame.new(0, 1.35, 0)).Position, 0.5, C.canvasRed, M.Neon, { CanCollide = false })
+	Kit.light(beacon, "PointLight", { Name = "Glow", Color = C.canvasRed, Range = 14, Brightness = 1.2 })
 end
 
 function debris.bottle(m, cf)
+	foam(m, cf, 1.8, 1.2)
+	-- a green bottle bobbing neck-up, a cork, a rolled note inside
+	local body = cf * CFrame.new(0, 0.05, 0) * CFrame.Angles(0, 0.4, math.rad(35))
 	Kit.cyl(
 		m,
 		"Glass",
-		cf * CFrame.new(0, 0.2, 0) * CFrame.Angles(0, 0.4, 0.2),
-		1.6,
-		0.6,
-		Color3.fromRGB(120, 200, 170),
+		body,
+		1.3,
+		0.7,
+		Color3.fromRGB(90, 180, 140),
 		M.Glass,
-		{ CanCollide = false, Transparency = 0.35 }
+		{ CanCollide = false, Transparency = 0.3 }
 	)
-	p(m, "Cork", cf * CFrame.new(0.9, 0.35, 0.3), V3(0.3, 0.3, 0.3), C.woodLight, M.Wood)
-	p(m, "Note", cf * CFrame.new(0, 0.2, 0), V3(0.9, 0.3, 0.3), C.cream, M.Fabric)
+	Kit.cyl(
+		m,
+		"Neck",
+		body * CFrame.new(0.85, 0, 0),
+		0.5,
+		0.3,
+		Color3.fromRGB(90, 180, 140),
+		M.Glass,
+		{ CanCollide = false, Transparency = 0.3 }
+	)
+	Kit.cyl(m, "Cork", body * CFrame.new(1.15, 0, 0), 0.2, 0.26, C.woodLight, M.Wood, { CanCollide = false })
+	Kit.cyl(m, "Note", body, 0.9, 0.36, C.cream, M.Fabric, { CanCollide = false, CanQuery = false })
+	local sparkle = Kit.ball(
+		m,
+		"Sparkle",
+		cf.Position + V3(0, 0.9, 0),
+		0.25,
+		C.white,
+		M.Neon,
+		{ CanCollide = false, CanQuery = false }
+	)
+	Kit.light(sparkle, "PointLight", { Name = "Glow", Color = C.white, Range = 6, Brightness = 0.6 })
 end
 
 function debris.lost_bag(m, cf)
-	p(m, "Bag", cf * CFrame.new(0, 0.5, 0), V3(1.8, 1.4, 1.2), C.canvasGreen, M.Fabric)
-	p(m, "Strap", cf * CFrame.new(0, 1.1, 0), V3(1.9, 0.2, 0.3), C.woodDark, M.Fabric)
-	local glow = Kit.ball(m, "Glow", cf.Position + V3(0, 1.6, 0), 0.5, C.warm, M.Neon, { CanCollide = false })
+	foam(m, cf, 2.2, 1.6)
+	p(m, "Bag", cf * CFrame.new(0, 0.4, 0), V3(1.8, 1.3, 1.2), C.canvasGreen, M.Fabric)
+	p(
+		m,
+		"Flap",
+		cf * CFrame.new(0, 1.0, 0.15),
+		V3(1.85, 0.2, 0.95),
+		C.canvasGreen:Lerp(C.woodDark, 0.25),
+		M.Fabric,
+		{ CanQuery = false }
+	)
+	p(m, "Buckle", cf * CFrame.new(0, 0.85, 0.62), V3(0.3, 0.3, 0.06), C.gold, M.Metal, { CanQuery = false })
+	p(m, "Strap", cf * CFrame.new(0, 1.15, 0), V3(1.9, 0.18, 0.3), C.woodDark, M.Fabric, { CanQuery = false })
+	local glow = Kit.ball(m, "Glow", cf.Position + V3(0, 1.8, 0), 0.5, C.warm, M.Neon, { CanCollide = false })
 	Kit.light(glow, "PointLight", { Name = "Light", Color = C.warm, Range = 10, Brightness = 0.8 })
 end
 

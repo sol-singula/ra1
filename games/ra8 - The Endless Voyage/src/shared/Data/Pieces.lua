@@ -187,13 +187,13 @@ Pieces.list = {
 	},
 	{
 		key = "sail",
-		name = "Sail",
+		name = "Big Sail",
 		icon = "⛵",
 		cost = { cloth = 6, wood = 8, rope = 2 },
 		tier = 2,
 		hp = 120,
 		effect = { speed = 1 },
-		desc = "Twice as fast across the water.",
+		desc = "A big sail catches lots of wind: your trips go twice as fast.",
 	},
 	{
 		key = "engine",
@@ -311,12 +311,12 @@ Pieces.list = {
 	{
 		key = "helm",
 		name = "Helm",
-		icon = "🎚️",
+		icon = "☸️",
 		cost = { wood = 6, rope = 2 },
 		tier = 1,
 		hp = 100,
 		effect = { helm = 1 },
-		desc = "Set sail from here.",
+		desc = "A steering wheel and a little sail. Pick a place on the MAP and sail there!",
 	},
 	-- Decoration (the Decorative Workshop)
 	{

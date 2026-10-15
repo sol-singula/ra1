@@ -1878,6 +1878,22 @@ Engine.friendsOnline = {}
 function methods.GetFriendsOnline()
 	return Engine.friendsOnline
 end
+-- MessagingService: a bus inside this one mock server (Engine.messages keeps every publish)
+local MessagingService = service("MessagingService")
+Engine.messages = {}
+Engine.subscribers = {}
+function methods.PublishAsync(_, topic, data)
+	table.insert(Engine.messages, { topic = topic, data = data })
+	for _, fn in Engine.subscribers[topic] or {} do
+		task.defer(fn, { Data = data, Sent = os.time() })
+	end
+end
+function methods.SubscribeAsync(_, topic, fn)
+	Engine.subscribers[topic] = Engine.subscribers[topic] or {}
+	table.insert(Engine.subscribers[topic], fn)
+	return { Disconnect = function() end }
+end
+_ = MessagingService
 local SocialService = service("SocialService")
 Engine.invites = 0
 function methods.PromptGameInvite()

@@ -9,3 +9,4 @@ $R tests/Formulas.spec.luau
 $R tests/ClientSmoke.spec.luau
 $R tests/ServerSmoke.spec.luau
 $R tests/ServerSmoke.spec.luau nodatastore
+$R tests/Online.spec.luau

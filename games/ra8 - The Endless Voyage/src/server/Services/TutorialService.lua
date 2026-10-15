@@ -63,9 +63,9 @@ local TEXT = {
 	craft = "Stand at the Workbench and craft something (a Hammer 🔨 or an Axe 🪓)",
 	crate = "A supply crate 📦! Cast at it to reel it in, then OPEN it from your bag",
 	net = "Build the Surface Net 🕸️ on an edge facing the water: it collects for you",
-	helm = "Build the Helm 🎚️ and set sail for Palm Key, or keep building first. Your call!",
+	helm = "Build the Helm ☸️ (a steering wheel with a little sail), then open the MAP and SAIL to Palm Key!",
 	island = "Land ho! Chop a palm 🌴, search the crate 📦, and look at the campfire 🔥",
-	home = "Sail home from the helm ⛵: everything you found is safe at your dock",
+	home = "Leave the island ⛵: open the MAP and tap LEAVE ISLAND. Everything you found is yours to keep",
 }
 TutorialService.TEXT = TEXT
 local active = {} -- [player] = { step, shownAt, hooked, startedAt, crate, crateAt }
@@ -212,14 +212,14 @@ function TutorialService:Goal(player)
 	if v.state == "sailing" or v.state == "home" then
 		local d = v.dest
 		goal.key, goal.title = "cast", "AT SEA"
-		goal.text = v.state == "home" and "Sailing home ⛵: reel in what streams past while you go 🎣"
+		goal.text = v.state == "home" and "Leaving the island ⛵: reel in what streams past while you go 🎣"
 			or `Sailing to {d and d.name or "the island"} {d and d.icon or ""}: reel in what streams past 🎣`
 		return goal
 	elseif v.state == "island" then
 		local target, glow = self:Target(player, "island")
 		goal.key, goal.title = "island", "ASHORE"
 		goal.text = target and "Explore: chop palms 🌴, search the crates 📦, look at the landmark"
-			or "Done here? Sail home from the helm ⛵ (everything you found is safe at your dock)"
+			or "Done here? Open the MAP 🗺️ and tap LEAVE ISLAND ⛵ (you keep everything you found)"
 		if not target then
 			local helm = pieceOf(raft, "helm")
 			target = helm and rafts:PiecePosition(raft, helm) + Vector3.new(0, 2, 0)
@@ -270,8 +270,8 @@ function TutorialService:Goal(player)
 	if filler and not rafts:Has(raft, "helm") then
 		local need = missing(player, Pieces.get("helm").cost)
 		goal.key, goal.piece = "helm", nil
-		goal.text = #need == 0 and "Build the Helm 🎚️ (BUILD): it's how you sail to new places"
-			or `For the Helm 🎚️ you need {table.concat(need, ", ")}: cast at the debris 🎣`
+		goal.text = #need == 0 and "Build the Helm ☸️ (BUILD): it's how you sail to new places"
+			or `For the Helm ☸️ you need {table.concat(need, ", ")}: cast at the debris 🎣`
 		if #need > 0 then
 			goal.key = "cast"
 		end
