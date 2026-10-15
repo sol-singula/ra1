@@ -201,7 +201,7 @@ What the second play found, and what changed:
   ACT with empty hands simply grabs your rod.
 * **The menu is about your world.** No public ocean. Every time you arrive: ▶ PLAY (from a public server it takes
   you to your own world), 💌 INVITE FRIENDS TO SEE YOUR RAFT, 👀 VISIT RAFTS, and 🔄 RESET MY WORLD (it asks first;
-  your raft goes back to the driftwood platform and your bag to just the rod; level, journal, blueprints and
+  your raft goes back to the driftwood platform and your bag to just the rod and the hammer; level, journal, blueprints and
   achievements stay; not during a trip). ⚙️ MORE reopens it.
 * **Inviting friends, everywhere.** A pulsing 💌 INVITE FRIENDS button is always on screen. Invites name your world,
   so friends sail straight into it, and when a friend arrives you both get a supply crate (once a day per friend).
@@ -209,11 +209,34 @@ What the second play found, and what changed:
   friend?" (at most every 8 minutes, 4 a session), and once the raft has grown the NEXT guide suggests it for a
   minute every ten (`ModeService`, `MenuController`).
 
+## Round 8: quick wins
+
+* **A net in the first minute.** The guide goes cast → **Surface Net** → tile → workbench → crate → helm → island →
+  home. Three catches and the next thing is a net: it needs no blueprint and no edge (it goes on any floor; things
+  drift under the raft and its mesh hangs below the deck), and it catches anything within `NET_RANGE` (24 studs). There
+  is no "craft something" step and no "make a hammer" goal: everyone starts with a hammer for repairs.
+* **Double hauls on a starter raft.** While the raft is tier 1 every catch gives `EARLY_BOOST` (2x), with a ⭐x2 on the
+  popup and a sparkle where it came out of the water.
+* **The rod.** It points up out of the fist, and casting is a two-handed wind-up, whip and follow-through. The line
+  hides while the bobber flies, then draws as a sagging curve. Casting goes as far as you aim (up to the rod's
+  range: 45, 55, 75, 90 studs), and as it reels back it hooks **everything** within `SWEEP_RADIUS` (10 studs) of the
+  line. No careful aiming.
+* **The crate you can't miss.** When the guide asks for it, a supply crate drifts in right beside the raft
+  (`GUIDE_CRATE_DISTANCE`, 16 studs), slowly, under a tall gold pillar of light with a red "📦 CAST HERE!" sign. If one
+  gets away, another comes a few seconds later, until you have one. Inside: an axe, a spear, 10 wood and 4 rope.
+* **Ready for the island.** Setting sail somewhere with animals hands you a spear if you have no weapon, and fills
+  your health.
+* **Graphics.** Floating pieces lose their hovering badges (only the guide's crate is marked). The guide's arrow is a
+  real arrow: a round shaft and a cone head. The axe, the pickaxe, the hammer, the spears and the harpoons are
+  rebuilt with their heads across the handle and proper points. Wood shows as 🟫 boards, not a tree. Dolphins are
+  real dolphins that leap and splash, and the shark, the gull and the crab are rounded, with fins, stalked eyes and
+  pincers.
+
 ## Tests
 
 `tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 66 checks: tiers, speeds, loot odds,
 every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 261 checks:
 the first five minutes, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent, the
 turret and the Leviathan, visiting, friends, boards, leaving and coming back, feedback, the anti-cheat, analytics;
-also run without DataStores, 262 checks) and the client (`tests/ClientSmoke.spec.luau`, 157 checks: the real UI driving the
+also run without DataStores, 262 checks) and the client (`tests/ClientSmoke.spec.luau`, 160 checks: the real UI driving the
 real server on a phone-sized screen).

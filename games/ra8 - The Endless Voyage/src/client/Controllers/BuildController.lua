@@ -35,7 +35,7 @@ local placing -- { key, def, rot, ghost, spot = { gx, gz, level, rot }, valid, r
 local quickReason
 local ghostFolder
 local lastSpotKey
-local WATERSIDE = { net = true, salvage_net = true, ladder = true, spikes = true }
+local WATERSIDE = { ladder = true, spikes = true }
 local NEIGHBOURS = { { 1, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 } }
 
 local function root()

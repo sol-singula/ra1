@@ -18,6 +18,7 @@ local ItemModels = require(ReplicatedStorage.Shared.World.ItemModels)
 local Kit = require(ReplicatedStorage.Shared.World.Kit)
 local Net = require(ReplicatedStorage.Shared.Net)
 local CreatureController = require(script.Parent.CreatureController)
+local Rigs = require(ReplicatedStorage.Shared.World.Rigs)
 local PerformanceController = require(script.Parent.PerformanceController)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
@@ -321,17 +322,34 @@ local function rodTip(character)
 	local held = character and character:FindFirstChild("Held")
 	local tip = held and (held:FindFirstChild("Tip") or held:FindFirstChild("Rod"))
 	if tip then
-		return tip.CFrame:PointToWorldSpace(Vector3.new(tip.Size.X / 2, 0, 0))
+		-- whichever end of the tip piece is farther from the hand is the rod's tip
+		local a = tip.CFrame:PointToWorldSpace(Vector3.new(tip.Size.X / 2, 0, 0))
+		local b = tip.CFrame:PointToWorldSpace(Vector3.new(-tip.Size.X / 2, 0, 0))
+		local hand = handOf(character) or tip.Position
+		return (a - hand).Magnitude > (b - hand).Magnitude and a or b
 	end
 	return handOf(character)
 end
 
+-- While the line's out, the rod's own little dangling line and bobber hide (the real one is in the water).
+local function hideRodLine(character, hide)
+	local held = character and character:FindFirstChild("Held")
+	for _, name in { "Line", "Bobber", "BobberTop", "Claw", "ClawHub" } do
+		for _, q in held and held:GetChildren() or {} do
+			if q.Name == name and q:IsA("BasePart") then
+				q.LocalTransparencyModifier = hide and 1 or 0
+			end
+		end
+	end
+end
+
 -- A line from one moving point to another, sagging a little, kept while `alive` says so. ends() -> from, to.
+local TETHER_SEGMENTS = 8
 local function tether(width, color, sag, alive, ends)
-	local parts = {
-		chunk(Vector3.zero, Vector3.new(width, width, 0.1), color, M.Neon),
-		chunk(Vector3.zero, Vector3.new(width, width, 0.1), color, M.Neon),
-	}
+	local parts = {}
+	for _ = 1, TETHER_SEGMENTS do
+		table.insert(parts, chunk(Vector3.zero, Vector3.new(width, width, 0.1), color, M.SmoothPlastic))
+	end
 	for _, q in parts do
 		q.Transparency = 1
 	end
@@ -351,12 +369,20 @@ local function tether(width, color, sag, alive, ends)
 			end
 			local from, to = ends()
 			if typeof(from) ~= "Vector3" or typeof(to) ~= "Vector3" then
-				parts[1].Transparency, parts[2].Transparency = 1, 1
+				for _, q in parts do
+					q.Transparency = 1
+				end
 				return true
 			end
-			local mid = (from + to) / 2 - Vector3.new(0, (to - from).Magnitude * sag, 0)
-			segment(parts[1], from, mid)
-			segment(parts[2], mid, to)
+			-- a gentle droop (a parabola under the straight line), drawn in short pieces
+			local drop = (to - from).Magnitude * sag
+			local prev = from
+			for i = 1, TETHER_SEGMENTS do
+				local k = i / TETHER_SEGMENTS
+				local p = from:Lerp(to, k) - Vector3.new(0, 4 * drop * k * (1 - k), 0)
+				segment(parts[i], prev, p)
+				prev = p
+			end
 			return true
 		end,
 	})
@@ -419,13 +445,93 @@ function handlers.splash(d)
 	FxController.burst(pos, { BLUE, C.white }, d.small and 6 or 12, 0.35, 7, 0.7, { ball = true, up = 1.4 })
 end
 
+-- The bobber's flight from the rod's tip to where it lands: a high arc (seconds), then `after`.
+local function flyBobber(c, from, to, seconds, after)
+	local bob = chunk(from, Vector3.new(0.6, 0.6, 0.6), RED, M.SmoothPlastic, "ball")
+	local age = 0
+	local start = (c and rodTip(c)) or from
+	local height = math.clamp((to - start).Magnitude * 0.3, 3, 14)
+	tether(0.05, C.cream, 0.03, function()
+		return bob.Parent ~= nil and age < seconds
+	end, function()
+		return (c and rodTip(c)) or start, bob.Position
+	end)
+	table.insert(movers, {
+		update = function(dt)
+			age += dt
+			local k = math.min(1, age / seconds)
+			local p = start:Lerp(to, k) + Vector3.new(0, 4 * height * k * (1 - k), 0)
+			bob.CFrame = CFrame.new(p)
+			if k >= 1 then
+				bob:Destroy()
+				FxController.ring(water(to), BLUE, 3, 0.5, 0.25)
+				FxController.burst(water(to), { BLUE, C.white }, 6, 0.25, 5, 0.5, { ball = true, up = 1.2 })
+				if after then
+					after()
+				end
+				return false
+			end
+			return true
+		end,
+	})
+end
+
 function handlers.cast(d)
 	if typeof(d.to) ~= "Vector3" then
 		return
 	end
 	local c = d.by and characterOf(d.by)
-	FxController.line((c and rodTip(c)) or (d.from + Vector3.new(0, 1.5, 0)), d.to, C.cream, 0.07, 0.35, 0.15)
+	local tip = (c and rodTip(c)) or (d.from + Vector3.new(0, 1.5, 0))
+	local flight = 0.3 + math.min(0.5, (d.to - tip).Magnitude / 120)
+	if c then
+		hideRodLine(c, true)
+		-- the rod's own line comes back when the rod's done (no pose left)
+		local t = 0
+		table.insert(movers, {
+			update = function(dt)
+				t += dt
+				local pose = c:GetAttribute("Pose")
+				if t > 1.2 and pose ~= "fishing" and pose ~= "bite" and pose ~= "reel" then
+					hideRodLine(c, false)
+					return false
+				end
+				return c.Parent ~= nil and t < 90
+			end,
+		})
+	end
+	-- a sweep: out to where you aimed, then the bobber skims back, the snagged pieces with it
+	if d.sweep then
+		flyBobber(c, tip, water(d.to), flight, function()
+			local bob = chunk(water(d.to), Vector3.new(0.6, 0.6, 0.6), RED, M.SmoothPlastic, "ball")
+			local age = 0
+			local back = math.max(0.6, (d.to - tip).Magnitude / 16)
+			tether(0.05, C.cream, 0.04, function()
+				return bob.Parent ~= nil
+			end, function()
+				return (c and rodTip(c)) or tip, bob.Position
+			end)
+			table.insert(movers, {
+				update = function(dt)
+					age += dt
+					local k = math.min(1, age / back)
+					local home = (c and rodTip(c)) or tip
+					local p = water(d.to):Lerp(Vector3.new(home.X, water(home).Y, home.Z), k)
+					bob.CFrame = CFrame.new(p + Vector3.new(0, math.sin(age * 12) * 0.08, 0))
+					if age % 0.25 < dt then
+						FxController.ring(water(p), BLUE, 1.6, 0.35, 0.12)
+					end
+					if k >= 1 then
+						bob:Destroy()
+						return false
+					end
+					return true
+				end,
+			})
+		end)
+		return
+	end
 	FxController.ring(water(d.to), BLUE, 2.5, 0.5, 0.25)
+	FxController.line(tip, d.to, C.cream, 0.05, flight, 0.1)
 	-- cast at a piece (or a floating bag): the line lands on it and stays while it reels in
 	local model = d.id and debrisModel(d.id) or d.drop and dropModel(d.drop)
 	if model then
@@ -635,6 +741,24 @@ function handlers.loot(d)
 	end
 end
 
+-- A catch came in: a happy little pop of sparkles where it landed, and a ring at your feet.
+function handlers.haul(d)
+	if d.pos then
+		FxController.burst(
+			water(d.pos) + Vector3.new(0, 1, 0),
+			{ C.gold, C.white, C.mustard },
+			10,
+			0.22,
+			6,
+			0.7,
+			{ material = M.Neon, up = 1.8 }
+		)
+	end
+	if d.to then
+		FxController.ring(d.to - Vector3.new(0, 2.6, 0), C.gold, 5, 0.5, 0.25)
+	end
+end
+
 function handlers.discover(d)
 	if d.pos then
 		FxController.ring(d.pos, C.gold, 10, 1.2, 0.4)
@@ -681,18 +805,28 @@ function handlers.dolphins(d)
 		return
 	end
 	for i = 1, 3 do
-		local fin = chunk(c, Vector3.new(0.5, 1.6, 2.6), Color3.fromRGB(120, 140, 160), M.SmoothPlastic)
+		local m = Rigs.build("dolphin", folder)
 		local age, phase = 0, i * 2
 		table.insert(movers, {
 			update = function(dt)
 				age += dt
 				local a = age * 0.6 + phase
 				local r = 26 + i * 4
-				local jump = math.max(0, math.sin(age * 2 + phase)) * 4
-				local pos = c + Vector3.new(math.cos(a) * r, jump - 0.5, math.sin(a) * r)
-				fin.CFrame = CFrame.lookAt(pos, pos + Vector3.new(-math.sin(a), jump > 2 and 0.3 or -0.1, math.cos(a)))
+				-- leaping arcs: out of the water, nose up, then diving back in nose down, with a splash each time
+				local wave = math.sin(age * 2 + phase)
+				local jump = math.max(0, wave) * 4
+				local pos = c + Vector3.new(math.cos(a) * r, jump - 0.6, math.sin(a) * r)
+				local ahead = Vector3.new(-math.sin(a), math.cos(age * 2 + phase) * 0.9, math.cos(a))
+				m:PivotTo(CFrame.lookAt(pos, pos + ahead))
+				if wave < 0 and (m:GetAttribute("Up") == true) then
+					m:SetAttribute("Up", false)
+					FxController.burst(pos, BLUE, 5, 0.25, 5, 0.5, { ball = true, up = 1.2 })
+				elseif wave > 0 and m:GetAttribute("Up") ~= true then
+					m:SetAttribute("Up", true)
+					FxController.burst(pos, BLUE, 4, 0.22, 4, 0.45, { ball = true, up = 1 })
+				end
 				if age > 12 then
-					fin:Destroy()
+					m:Destroy()
 					return false
 				end
 				return true

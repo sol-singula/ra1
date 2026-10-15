@@ -30,7 +30,7 @@ Items.list = {
 		name = "Wood",
 		kind = "resource",
 		rarity = "common",
-		icon = "🌳",
+		icon = "🟫",
 		stack = 40,
 		desc = "Planks and driftwood. Everything starts with it.",
 	},
@@ -198,7 +198,7 @@ Items.list = {
 		rarity = "common",
 		icon = "🎣",
 		stack = 1,
-		tool = { rod = { range = 30, pull = 1, speed = 1, rare = 0 } },
+		tool = { rod = { range = 45, pull = 1, speed = 1, rare = 0 } },
 		desc = "Cast at what floats past and reel it in. Cast at open water to fish.",
 	},
 	{
@@ -208,7 +208,7 @@ Items.list = {
 		rarity = "uncommon",
 		icon = "🎣",
 		stack = 1,
-		tool = { rod = { range = 42, pull = 1.5, speed = 1.2, rare = 0 } },
+		tool = { rod = { range = 55, pull = 1.5, speed = 1.2, rare = 0 } },
 		desc = "Casts further, reels faster.",
 	},
 	{
@@ -218,7 +218,7 @@ Items.list = {
 		rarity = "rare",
 		icon = "🎣",
 		stack = 1,
-		tool = { rod = { range = 40, pull = 1.2, speed = 1.6, rare = 0.3 } },
+		tool = { rod = { range = 55, pull = 1.2, speed = 1.6, rare = 0.3 } },
 		desc = "Bites faster, finds the rare fish.",
 	},
 	{
@@ -228,7 +228,7 @@ Items.list = {
 		rarity = "rare",
 		icon = "🎣",
 		stack = 1,
-		tool = { rod = { range = 58, pull = 1.6, double = 0.35, speed = 1.3, rare = 0.1 } },
+		tool = { rod = { range = 75, pull = 1.6, double = 0.35, speed = 1.3, rare = 0.1 } },
 		desc = "Reaches the far lanes. Sometimes two pieces at once.",
 	},
 	{
@@ -238,7 +238,7 @@ Items.list = {
 		rarity = "epic",
 		icon = "🎣",
 		stack = 1,
-		tool = { rod = { range = 64, pull = 2.2, double = 0.6, salvage = 1, speed = 1.4, rare = 0.2 } },
+		tool = { rod = { range = 90, pull = 2.2, double = 0.6, salvage = 1, speed = 1.4, rare = 0.2 } },
 		desc = "A claw on the line. Grabs anything, finds the good stuff.",
 	},
 	{

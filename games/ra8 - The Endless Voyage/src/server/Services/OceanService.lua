@@ -120,6 +120,9 @@ function OceanService:Spawn(plot, kind, opts)
 	if opts.special then
 		model:SetAttribute("Special", true)
 	end
+	if opts.guide then
+		model:SetAttribute("Guide", true) -- the guide's crate: the clients put a beacon on it
+	end
 	local t = now()
 	local d = {
 		id = nextId,
@@ -174,6 +177,7 @@ function OceanService:Crate(plot, danger, opts)
 		distance = opts.distance or Constants.DEBRIS_FROM,
 		spread = opts.spread or 10,
 		lifetime = opts.lifetime or 90,
+		speed = opts.speed,
 	})
 end
 
@@ -252,7 +256,7 @@ function OceanService:_target(player, targetId, aim, range, strict)
 			return
 		end
 		local dot = flat.Unit:Dot(dir)
-		if dot < (strict and 0.8 or 0.55) then
+		if dot < (strict and 0.7 or 0.5) then
 			return
 		end
 		local score = dot * 2 - dist / range
@@ -293,6 +297,7 @@ function OceanService:_collect(player, d, rod)
 		return
 	end
 	local items = {}
+	local boosted = false
 	if d.special == "supply_crate" then
 		items = { { key = "supply_crate", n = 1, data = d.data } }
 	elseif d.special == "bottle" then
@@ -310,8 +315,17 @@ function OceanService:_collect(player, d, rod)
 		if rod and rod.salvage and rng:NextNumber() < 0.12 * rod.salvage then
 			table.insert(items, { key = rng:NextNumber() < 0.7 and "metal" or "pearl", n = 1 })
 		end
+		-- a small raft hauls in double: the first wins come fast
+		local raft = rafts:RaftOf(player)
+		if raft and raft.tier <= Constants.EARLY_BOOST_TIER then
+			for _, it in items do
+				it.n *= Constants.EARLY_BOOST
+			end
+			boosted = true
+		end
 	end
 	local pos = d.pos
+	local root = players:Root(player)
 	self:Remove(d)
 	local text = {}
 	for _, it in items do
@@ -319,8 +333,14 @@ function OceanService:_collect(player, d, rod)
 		local item = Items.get(it.key)
 		table.insert(text, `+{it.n} {item and item.icon or ""}`)
 	end
+	if boosted then
+		table.insert(text, "⭐x2")
+	end
 	Net.fire(player, "Popup", pos + Vector3.new(0, 2, 0), table.concat(text, " "), Color3.fromRGB(255, 240, 160))
 	Net.fire(player, "Sfx", "pickup")
+	if root then
+		Net.fire(player, "Fx", "haul", { pos = pos, to = root.Position, items = items })
+	end
 	for _, other in players:PlayersOnPlot(d.plot) do
 		Net.fire(other, "Fx", "splash", { pos = pos, small = true })
 	end
@@ -352,6 +372,45 @@ function OceanService:_stopPull(d)
 	if who then
 		players:SetPose(who, "reel", 0)
 	end
+end
+
+-- The line comes back from `to` to `from`: every piece within SWEEP_RADIUS of it is snagged and comes in too (a big,
+-- forgiving catch: nobody has to aim at a piece exactly). Returns how many.
+function OceanService:_sweep(player, rod, from, to, exclude)
+	local plot = players:Here(player)
+	if not plot then
+		return 0
+	end
+	local seg = Vector3.new(to.X - from.X, 0, to.Z - from.Z)
+	local len = seg.Magnitude
+	if len < 1 then
+		return 0
+	end
+	local u = seg / len
+	local speed = 14 * (rod.pull or 1)
+	local n = 0
+	for _, d in plotState(plot).debris do
+		if d ~= exclude and not d.hooked then
+			local rel = Vector3.new(d.pos.X - from.X, 0, d.pos.Z - from.Z)
+			local along = math.clamp(rel:Dot(u), 0, len)
+			local off = (rel - u * along).Magnitude
+			if off <= Constants.SWEEP_RADIUS then
+				d.hooked = player
+				d.hook = rod
+				n += 1
+				local delay = Constants.HOOK_FLIGHT + (len - along) / speed * 0.5
+				task.delay(delay, function()
+					if byId[d.id] and d.hooked == player then
+						self:_startPull(d, player, speed)
+						for _, other in players:PlayersOnPlot(plot) do
+							Net.fire(other, "Fx", "splash", { pos = d.pos, small = true })
+						end
+					end
+				end)
+			end
+		end
+	end
+	return n
 end
 
 -- The line lands on a piece (or a floating bag) and reels it in.
@@ -511,21 +570,45 @@ function OceanService:Cast(player, item, aim, targetId)
 	end
 	local d, isDrop = self:_target(player, targetId, aim, rod.range, targetId == nil)
 	if d then
-		return self:CastAt(player, item, d, isDrop)
+		local ok = self:CastAt(player, item, d, isDrop)
+		local root = players:Root(player)
+		if ok and not isDrop and root then
+			-- the line sweeps in everything near it on the way back
+			self:_sweep(player, rod, root.Position, d.pos, d)
+		end
+		return ok
 	end
 	local where = players:Where(player)
 	if where ~= "raft" and where ~= "visiting" then
-		hint(player, "🎣 Cast from your raft's edge: at a floating piece to reel it in, at open water to fish.")
+		hint(
+			player,
+			"🎣 Cast from your raft: aim where you like, and the line catches what's near it on the way back."
+		)
 		return false
 	end
 	if fishing[player] then
 		return false
 	end
 	local root = players:Root(player)
-	local dir = typeof(aim) == "Vector3" and aim.Magnitude > 0.01 and Vector3.new(aim.X, 0, aim.Z).Unit
-		or root.CFrame.LookVector
-	local pos = root.Position + dir * 11
+	if not root then
+		return false
+	end
+	-- as far as you aimed (up to the rod's reach)
+	local flat = typeof(aim) == "Vector3" and Vector3.new(aim.X, 0, aim.Z) or Vector3.zero
+	local dir = flat.Magnitude > 0.01 and flat.Unit or root.CFrame.LookVector
+	local dist = flat.Magnitude > 3 and math.min(flat.Magnitude, rod.range) or rod.range * 0.7
+	local pos = root.Position + Vector3.new(dir.X, 0, dir.Z) * dist
 	pos = Vector3.new(pos.X, Constants.WATER_LEVEL + 0.2, pos.Z)
+	-- anything near the line on the way back comes in with it
+	local caught = self:_sweep(player, rod, root.Position, pos)
+	if caught > 0 then
+		for _, other in players:PlayersOnPlot(players:Here(player) or 0) do
+			Net.fire(other, "Fx", "cast", { from = root.Position, to = pos, by = player.UserId, sweep = caught })
+		end
+		Net.fire(player, "Sfx", "hook", root.Position)
+		players:SetPose(player, "reel", Constants.HOOK_FLIGHT + dist / (14 * (rod.pull or 1)) + 0.5)
+		return true
+	end
 	local t = now()
 	fishing[player] = {
 		rod = rod,

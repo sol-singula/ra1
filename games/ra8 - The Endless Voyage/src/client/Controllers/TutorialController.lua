@@ -22,7 +22,6 @@ local Kit = require(ReplicatedStorage.Shared.World.Kit)
 local Net = require(ReplicatedStorage.Shared.Net)
 local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
-local Recipes = require(ReplicatedStorage.Shared.Data.Recipes)
 local InputController = require(script.Parent.InputController)
 local PanelController = require(script.Parent.PanelController)
 local Bus = require(script.Parent.Parent.UI.Bus)
@@ -332,30 +331,6 @@ local function uiTarget()
 		return buildStep("floor")
 	elseif key == "bench" then
 		return buildStep("workbench")
-	elseif key == "craft" then
-		if panel == "craft" then
-			-- the hammer if you can afford it, else the rod, else the hammer's row
-			local counts = {}
-			for _, slot in (Store.get("inv") or { slots = {} }).slots do
-				counts[slot.key] = (counts[slot.key] or 0) + slot.n
-			end
-			local pick
-			for _, id in { "hammer", "fishing_rod" } do
-				local r = Recipes.get(id)
-				local can = r ~= nil
-				for k, n in r and r.cost or {} do
-					if (counts[k] or 0) < n then
-						can = false
-					end
-				end
-				if can then
-					pick = id
-					break
-				end
-			end
-			return inGui("Panels", "Make_" .. (pick or "hammer"))
-		end
-		return nil
 	elseif key == "crate" then
 		local slotId = bagHas("supply_crate")
 		if not slotId then
@@ -399,25 +374,28 @@ local function ensureWorld()
 	arrow = Instance.new("Model")
 	arrow.Name = "GuideArrow"
 	arrow.Parent = folder
-	local shaft = Kit.box(
+	-- a real arrow: a round shaft and a cone head, built pointing up with its tip at the pivot (then flipped over the
+	-- target every frame, so the tip is what touches the thing to do)
+	local ghost = { CanCollide = false, CanQuery = false, CastShadow = false }
+	local pivot = Kit.box(arrow, "Pivot", CFrame.new(), Vector3.new(0.2, 0.2, 0.2), C.mustard, Kit.M.SmoothPlastic, {
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+	})
+	Kit.roofCone(arrow, "Head", Vector3.new(0, -2.4, 0), 1.5, 2.4, C.mustard, Kit.M.Neon, 10, ghost)
+	Kit.disc(arrow, "Rim", Vector3.new(0, -2.45, 0), 3.1, 0.2, C.white, Kit.M.Neon, ghost)
+	Kit.cyl(
 		arrow,
 		"Shaft",
-		CFrame.new(),
-		Vector3.new(0.9, 2.2, 0.9),
+		CFrame.new(0, -4.1, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		3.4,
+		1,
 		C.mustard,
 		Kit.M.Neon,
-		{ CanCollide = false, CanQuery = false, CastShadow = false }
+		ghost
 	)
-	Kit.wedge(
-		arrow,
-		"Head",
-		CFrame.new(),
-		Vector3.new(0.4, 1.6, 2.2),
-		C.mustard,
-		Kit.M.Neon,
-		{ CanCollide = false, CanQuery = false, CastShadow = false }
-	)
-	arrow.PrimaryPart = shaft
+	Kit.disc(arrow, "Tail", Vector3.new(0, -5.8, 0), 1.3, 0.2, C.white, Kit.M.Neon, ghost)
+	arrow.PrimaryPart = pivot
 	targetPart = Kit.box(
 		folder,
 		"GuideTarget",
@@ -525,12 +503,7 @@ local function step()
 	end
 	local top = target + Vector3.new(0, (targetGlow and 2.4 or 4) + math.sin(t * 4) * 0.6, 0)
 	local spin = CFrame.Angles(0, t * 2, 0)
-	local shaft = arrow:FindFirstChild("Shaft")
-	local head = arrow:FindFirstChild("Head")
-	if shaft and head then
-		shaft.CFrame = CFrame.new(top + Vector3.new(0, 1.6, 0)) * spin
-		head.CFrame = CFrame.new(top) * spin * CFrame.Angles(math.rad(180), 0, 0) * CFrame.Angles(0, math.rad(90), 0)
-	end
+	arrow:PivotTo(CFrame.new(top) * spin * CFrame.Angles(math.rad(180), 0, 0))
 	targetPart.CFrame = CFrame.new(target)
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if root and beam then

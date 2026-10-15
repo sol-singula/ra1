@@ -419,7 +419,11 @@ if wants("01") then
 	local face = (target - stand).Unit
 	local caster, hand = dress(1, { pos = stand, face = face, pose = POSES.throw, hold = "fishing_rod" })
 	local bobber = caster:FindFirstChild("Bobber", true)
-	rope((bobber and bobber.Position or hand.Position + V3.new(0, 0.2, 0)), target + V3.new(0, 0.6, 0), rgb(240, 232, 210))
+	rope(
+		(bobber and bobber.Position or hand.Position + V3.new(0, 0.2, 0)),
+		target + V3.new(0, 0.6, 0),
+		rgb(240, 232, 210)
+	)
 	splash(target, 8, 0.8)
 	-- a friend on the platform's other tile, waving
 	dress(2, { pos = tileWorld(layout, 6, 7), face = face, pose = POSES.wave })
@@ -493,8 +497,8 @@ if wants("03") then
 	for i = 1, 3 do
 		local a = layout.out * (18 + i * 5) + layout.current * (i * 6 - 8)
 		local p = layout.center + a + V3.new(0, WATER + 1 + (i % 2) * 2, 0)
-		local fin = chunk(p, V3.new(0.5, 1.8, 3), rgb(120, 140, 160))
-		fin.CFrame = CF.lookAt(p, p + layout.out + V3.new(0, 0.3, 0))
+		local dolphin = Rigs.build("dolphin", ws)
+		dolphin:PivotTo(CF.lookAt(p, p + layout.out + V3.new(0, 0.5 - (i % 2), 0)))
 		splash(V3.new(p.X, WATER, p.Z), 4, 0.6)
 	end
 	wave(layout.center, 24, 0.75)

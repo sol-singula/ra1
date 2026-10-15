@@ -70,7 +70,7 @@ local UNIQUE = {
 -- Tall pieces: not under a second deck.
 local TALL = { sail = true, roof = true, crow_nest = true, wall = true }
 -- Edge pieces that must face the water.
-local WATERSIDE = { net = true, salvage_net = true, ladder = true, spikes = true }
+local WATERSIDE = { ladder = true, spikes = true }
 -- Pieces drawn with the raft's colours (rebuilt when they change).
 local COLOURED = {
 	floor = true,
@@ -347,8 +347,8 @@ function RaftService:Nets(raft)
 	local out = {}
 	for _, p in raft.pieces do
 		if (p.key == "net" or p.key == "salvage_net") and not p.broken then
-			local e = RaftModels.edgeCF(self:PieceCF(raft, p), p.rot)
-			table.insert(out, { piece = p, pos = e.Position + e.LookVector * 4 })
+			local pos = self:PiecePosition(raft, p)
+			table.insert(out, { piece = p, pos = Vector3.new(pos.X, Constants.WATER_LEVEL, pos.Z) })
 		end
 	end
 	return out

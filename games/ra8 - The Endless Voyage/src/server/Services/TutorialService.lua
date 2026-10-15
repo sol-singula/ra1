@@ -4,21 +4,21 @@ itself does the teaching. Returning players skip the steps they've done. There i
 guide keeps going with the NEXT thing to do, forever (Goal below), and it can't be dismissed:
   * at sea: reel in what streams past; on an island: explore, then sail home (and the anchor's clock)
   * hands empty: hold your rod (a HOLD MY ROD button on the card does it, from the bag too)
-  * broken pieces: fix them with the hammer (or make a hammer first)
+  * broken pieces: fix them with the hammer (everyone starts with one)
   * no helm yet: build one; then the raft's next piece (RaftService.Recommend): build it with QUICK if you can pay
     for it, else what's missing and where it comes from; when only comforts are left, a new place to sail to
 And a player with no rod at all gets a spare one (the rod is the whole loop; your last one can't be dropped).
 
-  1 cast     "Cast at the driftwood": six pieces float within reach the moment you arrive         0:00-0:30
-  2 tile     "Build a Floor Tile": BUILD, pick it, tap a spot next to your raft                    0:30-0:50
-  3 bench    "Build the Workbench"                                                                 0:50-1:30
-  4 craft    "Craft something at the Workbench" (a hammer, an axe)                                 1:30-2:20
-  5 crate    at 2:20 a supply crate drifts by: "Cast at the crate, then OPEN it in your bag"       2:20-3:00
-             (inside: the Surface Net's blueprint and an axe)
-  6 net      "Build the Surface Net on an edge facing the water"                                   3:00-3:30
-  7 helm     "Build the Helm and set sail for Palm Key": the first real decision (go now, or build) 3:30-4:00
-  8 island   "Land ho! Chop a palm, search the crate, look at the campfire"                        4:00-5:00
-  9 home     "Sail home: what you found is safe at your dock"
+  1 cast     "Cast at the driftwood": six pieces float within reach the moment you arrive         0:00-0:20
+  2 net      "Build a Surface Net on any floor": it fills up by itself (the first big win)         0:20-0:40
+  3 tile     "Build a Floor Tile": BUILD, pick it, tap a spot next to your raft                    0:40-1:00
+  4 bench    "Build the Workbench"                                                                 1:00-1:40
+  5 crate    a supply crate drifts in right beside the raft, with a beacon on it, and another one
+             every few seconds until you have one: "Cast at it, then OPEN it in your bag"          1:40-2:20
+             (inside: an axe, a spear and a pile of wood and rope: you're ready for the island)
+  6 helm     "Build the Helm and set sail for Palm Key": the first real decision (go now, or build) 2:20-3:00
+  7 island   "Land ho! Chop a palm, search the crate, look at the campfire"                        3:00-4:00
+  8 home     "Sail home: what you found is safe at your dock"
 Each first pays XP (Constants.XP.guide). Steps you've already done are skipped.
 ]]
 local Players = game:GetService("Players")
@@ -28,7 +28,6 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
-local Recipes = require(ReplicatedStorage.Shared.Data.Recipes)
 local Voyages = require(ReplicatedStorage.Shared.Data.Voyages)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 
@@ -50,7 +49,7 @@ local TutorialService = {
 }
 
 local data, rafts, inventory, players, ocean, voyages, island
-local STEPS = { "cast", "tile", "bench", "craft", "crate", "net", "helm", "island", "home" }
+local STEPS = { "cast", "net", "tile", "bench", "crate", "helm", "island", "home" }
 TutorialService.STEPS = STEPS
 local INDEX = {}
 for i, k in STEPS do
@@ -60,9 +59,8 @@ local TEXT = {
 	cast = "Cast at the driftwood 🎣: aim at a piece, tap ACT, and it reels in",
 	tile = "Build a Floor Tile 🟫: hold QUICK looking at the water beside your raft (or open BUILD and pick it)",
 	bench = "Build the Workbench 🛠️ on a tile",
-	craft = "Stand at the Workbench and craft something (a Hammer 🔨 or an Axe 🪓)",
-	crate = "A supply crate 📦! Cast at it to reel it in, then OPEN it from your bag",
-	net = "Build the Surface Net 🕸️ on an edge facing the water: it collects for you",
+	crate = "A supply crate 📦 right next to you! Cast at the glowing one, then OPEN it from your bag",
+	net = "Build a Surface Net 🕸️ on any floor: stuff floats under your raft and it catches it for you!",
 	helm = "Build the Helm ☸️ (a steering wheel with a little sail), then open the MAP and SAIL to Palm Key!",
 	island = "Land ho! Chop a palm 🌴, search the crate 📦, and look at the campfire 🔥",
 	home = "Leave the island ⛵: open the MAP and tap LEAVE ISLAND. Everything you found is yours to keep",
@@ -113,26 +111,9 @@ function TutorialService:Target(player, key)
 		if piece then
 			return rafts:PiecePosition(raft, piece) + Vector3.new(0, 2, 0), { piece = piece.id }
 		end
-		if key == "net" then
-			local e = rafts:FreeEdges(raft)[1]
-			if e then
-				local cf = rafts:PieceCF(raft, e.piece)
-				local d = ({ Vector3.new(1, 0, 0), Vector3.new(0, 0, 1), Vector3.new(-1, 0, 0), Vector3.new(0, 0, -1) })[e.rot + 1]
-				return cf.Position + d * (Constants.TILE / 2) + Vector3.new(0, 1, 0),
-					{ edge = { piece = e.piece.id, rot = e.rot } }
-			end
-			return nil
-		end
 		local tile = rafts:EmptyTiles(raft, 1)[1]
 		return tile and rafts:PiecePosition(raft, tile) + Vector3.new(0, 1, 0) or nil,
 			tile and { spot = { gx = tile.gx, gz = tile.gz } } or nil
-	elseif key == "craft" then
-		for _, p in raft.pieces do
-			if p.key == "workbench" then
-				return rafts:PiecePosition(raft, p) + Vector3.new(0, 2, 0), { piece = p.id }
-			end
-		end
-		return nil
 	elseif key == "crate" then
 		local d = a and a.crate and ocean:Get(a.crate)
 		if d then
@@ -246,22 +227,11 @@ function TutorialService:Goal(player)
 			broken = broken or p
 		end
 	end
-	if broken then
-		if inventory:CountKind(player, "hammer") > 0 then
-			goal.key = "repair"
-			goal.text = "Something's broken 🔧: hold the Hammer 🔨 and tap it to fix it"
-			goal.target, goal.piece = rafts:PiecePosition(raft, broken) + Vector3.new(0, 2, 0), broken.id
-			return goal
-		end
-		local bench = pieceOf(raft, "workbench")
-		if bench then
-			local need = missing(player, Recipes.get("hammer").cost)
-			goal.key, goal.item = "make", "hammer"
-			goal.text = #need == 0 and "Make a Hammer 🔨 at the Workbench to fix what's broken"
-				or `For a Hammer 🔨 you need {table.concat(need, ", ")}: cast at the debris 🎣`
-			goal.target, goal.piece = rafts:PiecePosition(raft, bench) + Vector3.new(0, 2, 0), bench.id
-			return goal
-		end
+	if broken and inventory:CountKind(player, "hammer") > 0 then
+		goal.key = "repair"
+		goal.text = "Something's broken 🔧: hold the Hammer 🔨 and tap it to fix it"
+		goal.target, goal.piece = rafts:PiecePosition(raft, broken) + Vector3.new(0, 2, 0), broken.id
+		return goal
 	end
 	-- the raft's next piece
 	local list = rafts:Recommend(raft)
@@ -448,10 +418,8 @@ local function skip(player, a)
 			done = raft.summary.tiles > Constants.MIN_TILES
 		elseif key == "bench" then
 			done = rafts:Has(raft, "workbench")
-		elseif key == "craft" then
-			done = profile.stats.crafted > 0
 		elseif key == "crate" then
-			done = a.crateOpened == true or (profile.blueprints.net == true and a.crateHooked ~= false)
+			done = a.crateOpened == true or profile.tutorial.crate == true
 		elseif key == "net" then
 			done = rafts:Has(raft, "net") or rafts:Has(raft, "salvage_net")
 		elseif key == "helm" then
@@ -522,18 +490,32 @@ function TutorialService:_refresh(player)
 	end
 end
 
--- The guide's crate drifts in at GUIDE_CRATE_AT (again if it drifted past).
+-- The guide's crate: right beside the raft, slow, with a beacon on it (and another one the moment it's gone,
+-- until you've got one).
 function TutorialService:_crate(player, a)
 	local raft = rafts:RaftOf(player)
 	if not raft then
 		return
 	end
-	local d = ocean:Crate(raft.plot, 1, { guide = true, distance = 36, spread = 6, lifetime = 100 })
+	local d = ocean:Crate(raft.plot, 1, {
+		guide = true,
+		distance = Constants.GUIDE_CRATE_DISTANCE,
+		spread = 2,
+		lifetime = 60, -- (gone once it's past the raft: then the next one comes)
+		speed = 0.35,
+	})
 	if d then
+		local first = not a.crate
 		a.crate = d.id
 		a.crateAt = now()
 		a.crateHooked = false
-		Net.fire(player, "Callout", "📦 A supply crate is drifting by! Hook it.", "good")
+		Net.fire(
+			player,
+			"Callout",
+			first and "📦 A supply crate! It's the glowing one right next to you: cast at it!"
+				or "📦 Here's another crate! Cast at the glowing one!",
+			"good"
+		)
 		self:_refresh(player)
 	end
 end
@@ -546,7 +528,6 @@ function TutorialService:Init(registry)
 	ocean = registry.OceanService
 	voyages = registry.VoyageService
 	island = registry.IslandService
-	local craft = registry.CraftService
 	Net.on("GuideAction", function(player, what)
 		if what == "hold_rod" then
 			inventory:HoldKind(player, "rod")
@@ -564,6 +545,7 @@ function TutorialService:Init(registry)
 		end
 		if d.guide then
 			a.crateHooked = true
+			a.crateHookedAt = now()
 			self:_refresh(player)
 			return
 		end
@@ -591,13 +573,14 @@ function TutorialService:Init(registry)
 			self:_refresh(player) -- (the helm: the arrow moves onto it)
 		end
 	end)
-	craft.Crafted:Connect(function(player)
-		self:Advance(player, "craft")
-	end)
 	inventory.Used:Connect(function(player, item, d)
 		local a = active[player]
 		if a and item.key == "supply_crate" then
 			a.crateOpened = true
+			local profile = data:Get(player)
+			if profile then
+				profile.tutorial.crate = true
+			end
 			self:Advance(player, "crate")
 			_ = d
 		end
@@ -687,12 +670,15 @@ function TutorialService:Start()
 		end
 		for player, a in active do
 			local key = STEPS[a.step]
-			-- the crate: at 2:20, again a minute after it drifted past untouched
-			if not a.crateOpened and not a.crateHooked then
+			-- the crate: the moment the guide asks for it, and again a few seconds after one's gone, until you have one
+			if
+				not a.crateOpened
+				and (key == "crate" or a.crateWanted)
+				and inventory:Count(player, "supply_crate") == 0
+			then
 				local d = a.crate and ocean:Get(a.crate)
-				local due = (not a.crate and (a.crateWanted or t - a.startedAt >= Constants.GUIDE_CRATE_AT))
-					or (a.crate and not d and t - (a.crateAt or 0) >= Constants.GUIDE_CRATE_RETRY)
-				if due then
+				local reeling = a.crateHooked and t - (a.crateHookedAt or 0) < 6
+				if not d and not reeling and (not a.crate or t - (a.crateAt or 0) >= Constants.GUIDE_CRATE_RETRY) then
 					self:_crate(player, a)
 				end
 			end

@@ -30,6 +30,28 @@ local function ball(m, name, pos, d, color, material)
 	)
 end
 
+-- a rounded part (a box with a sphere mesh): bodies, heads, bellies
+local function egg(m, name, cf, size, color, material)
+	local e = p(m, name, cf, size, color, material)
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = e
+	return e
+end
+
+-- a wedge (thick at +Z, coming to an edge at -Z along its bottom): fins, beaks, tails
+local function fin(m, name, cf, size, color, material)
+	return Kit.wedge(
+		m,
+		name,
+		cf,
+		size,
+		color,
+		material or M.SmoothPlastic,
+		{ CanCollide = false, CanQuery = false, CanTouch = false, Anchored = true }
+	)
+end
+
 local function eyes(m, cf, spread, y, z, size, color)
 	for _, sx in { -1, 1 } do
 		local e = ball(m, "Eye", (cf * CFrame.new(sx * spread, y, z)).Position, size, C.white)
@@ -42,25 +64,50 @@ local build = {}
 
 function build.reef_crab(m)
 	local cf = CFrame.new()
-	p(m, "Body", cf * CFrame.new(0, 1, 0), V3(3, 1.2, 2.2), Color3.fromRGB(225, 90, 60))
-	eyes(m, cf, 0.6, 1.9, -0.8, 0.45)
+	local red, light, dark = Color3.fromRGB(230, 85, 55), Color3.fromRGB(250, 140, 95), Color3.fromRGB(190, 60, 45)
+	egg(m, "Body", cf * CFrame.new(0, 1, 0), V3(3, 1.3, 2.2), red)
+	egg(m, "Shell", cf * CFrame.new(0, 1.45, 0.1), V3(2.4, 0.7, 1.8), light)
+	-- eyes up on stalks
 	for _, sx in { -1, 1 } do
-		p(m, "Claw", cf * CFrame.new(sx * 2, 0.9, -1.2), V3(1.1, 0.8, 1.3), Color3.fromRGB(240, 110, 70))
+		p(m, "Stalk", cf * CFrame.new(sx * 0.45, 1.85, -0.8), V3(0.16, 0.7, 0.16), dark)
+		ball(m, "Eye", (cf * CFrame.new(sx * 0.45, 2.3, -0.8)).Position, 0.45, C.white)
+		ball(m, "Pupil", (cf * CFrame.new(sx * 0.45, 2.33, -0.98)).Position, 0.24, C.ink)
+	end
+	p(m, "Smile", cf * CFrame.new(0, 0.9, -1.08), V3(0.7, 0.08, 0.06), dark)
+	for _, sx in { -1, 1 } do
+		-- the big pincers: an arm, a round claw and the two jaws of the pincer
+		p(m, "Arm", cf * CFrame.new(sx * 1.55, 0.95, -0.9) * CFrame.Angles(0, sx * 0.5, 0), V3(0.9, 0.35, 0.35), dark)
+		egg(m, "Claw", cf * CFrame.new(sx * 2.1, 1.05, -1.45), V3(1.1, 0.9, 1.2), light)
+		fin(m, "Claw", cf * CFrame.new(sx * 2.1, 1.3, -2.25), V3(0.35, 0.4, 0.7), red)
+		fin(m, "Claw", cf * CFrame.new(sx * 2.1, 0.85, -2.2) * CFrame.Angles(0, 0, math.pi), V3(0.35, 0.3, 0.6), red)
 		for k = -1, 1 do
-			p(m, "Leg", cf * CFrame.new(sx * 1.9, 0.5, k * 0.7), V3(1.2, 0.3, 0.3), Color3.fromRGB(200, 70, 50))
+			p(
+				m,
+				"Leg",
+				cf * CFrame.new(sx * 1.75, 0.55, k * 0.6 + 0.2) * CFrame.Angles(0, 0, sx * -0.6),
+				V3(1.1, 0.22, 0.22),
+				dark
+			)
 		end
 	end
 end
 
 function build.gull(m)
 	local cf = CFrame.new()
-	p(m, "Body", cf * CFrame.new(0, 2, 0), V3(1.2, 1, 2.2), C.white)
-	ball(m, "Head", V3(0, 2.6, -1.2), 0.9, C.white)
-	p(m, "Beak", cf * CFrame.new(0, 2.5, -1.8), V3(0.3, 0.25, 0.7), Color3.fromRGB(255, 170, 40))
+	local grey = Color3.fromRGB(190, 196, 206)
+	local orange = Color3.fromRGB(255, 170, 40)
+	egg(m, "Body", cf * CFrame.new(0, 2, 0), V3(1.1, 1, 2.1), C.white)
+	ball(m, "Head", V3(0, 2.55, -1.05), 0.95, C.white)
+	fin(m, "Beak", cf * CFrame.new(0, 2.45, -1.75) * CFrame.Angles(0, 0, 0), V3(0.24, 0.24, 0.6), orange)
+	ball(m, "BeakSpot", V3(0, 2.36, -1.85), 0.12, Color3.fromRGB(220, 50, 40))
+	fin(m, "TailFeathers", cf * CFrame.new(0, 2.15, 1.3) * CFrame.Angles(math.pi, 0, 0), V3(0.8, 0.14, 0.7), C.white)
 	for _, sx in { -1, 1 } do
-		p(m, "Wing", cf * CFrame.new(sx * 1.4, 2.2, 0), V3(2.4, 0.15, 1.2), Color3.fromRGB(200, 200, 205))
+		-- grey wings with dark tips (one piece each, so they flap together)
+		local wing = cf * CFrame.new(sx * 1.45, 2.25, 0.05)
+		p(m, "Wing", wing, V3(2.5, 0.12, 1), grey)
+		p(m, "Leg", cf * CFrame.new(sx * 0.25, 1.35, 0.3), V3(0.12, 0.6, 0.12), orange)
 	end
-	eyes(m, cf, 0.3, 2.7, -1.5, 0.22)
+	eyes(m, cf, 0.32, 2.7, -1.4, 0.2)
 end
 
 function build.mire_lurker(m)
@@ -123,24 +170,64 @@ end
 
 function build.shark(m)
 	local cf = CFrame.new()
-	p(m, "Body", cf * CFrame.new(0, 0, 0), V3(2.2, 2, 8), Color3.fromRGB(95, 110, 130))
-	p(m, "Belly", cf * CFrame.new(0, -0.7, 0), V3(1.8, 0.8, 6), Color3.fromRGB(220, 225, 230))
-	p(m, "Fin", cf * CFrame.new(0, 1.9, 0.5), V3(0.3, 1.8, 2.2), Color3.fromRGB(80, 95, 115))
-	p(m, "Tail", cf * CFrame.new(0, 0.3, 4.6), V3(0.3, 2.6, 1.6), Color3.fromRGB(80, 95, 115))
-	p(m, "Jaw", cf * CFrame.new(0, -0.5, -3.6), V3(1.6, 0.6, 1.4), Color3.fromRGB(220, 225, 230))
+	local top, belly = Color3.fromRGB(96, 116, 140), Color3.fromRGB(228, 232, 236)
+	local finC = Color3.fromRGB(82, 100, 122)
+	egg(m, "Body", cf, V3(2.4, 2.2, 8.4), top)
+	egg(m, "Belly", cf * CFrame.new(0, -0.55, -0.4), V3(2, 1.2, 6.8), belly)
+	egg(m, "Snout", cf * CFrame.new(0, 0.05, -3.9), V3(1.8, 1.4, 2.6), top)
+	fin(m, "Fin", cf * CFrame.new(0, 2, 0.5), V3(0.3, 2.2, 2.4), finC)
+	egg(m, "Tail", cf * CFrame.new(0, 0.1, 4), V3(1, 1, 2.4), top)
+	fin(m, "Tail", cf * CFrame.new(0, 1.1, 5.05), V3(0.28, 2.4, 1.5), finC)
+	fin(m, "Tail", cf * CFrame.new(0, -0.65, 4.95) * CFrame.Angles(0, 0, math.pi), V3(0.28, 1.4, 1.2), finC)
+	egg(m, "Jaw", cf * CFrame.new(0, -0.65, -4.1), V3(1.5, 0.5, 1.7), belly)
+	p(m, "Mouth", cf * CFrame.new(0, -0.4, -4.55), V3(1.3, 0.1, 0.5), Color3.fromRGB(70, 30, 40))
 	for k = -2, 2 do
-		p(m, "Tooth", cf * CFrame.new(k * 0.35, -0.1, -4.2), V3(0.2, 0.4, 0.2), C.white)
-	end
-	for _, sx in { -1, 1 } do
-		p(
+		fin(
 			m,
-			"Side",
-			cf * CFrame.new(sx * 1.5, -0.3, -0.5) * CFrame.Angles(0, 0, sx * 0.4),
-			V3(1.6, 0.2, 1.4),
-			Color3.fromRGB(80, 95, 115)
+			"Tooth",
+			cf * CFrame.new(k * 0.26, -0.5, -4.75 + math.abs(k) * 0.08) * CFrame.Angles(math.pi / 2, 0, 0),
+			V3(0.14, 0.2, 0.22),
+			C.white
 		)
 	end
-	eyes(m, cf, 0.9, 0.5, -3.2, 0.4)
+	for _, sx in { -1, 1 } do
+		fin(
+			m,
+			"Side",
+			cf * CFrame.new(sx * 1.4, -0.55, -0.6) * CFrame.Angles(0, 0, sx * -0.5),
+			V3(1.6, 0.16, 1.4),
+			finC
+		)
+		for g = 0, 2 do
+			p(m, "Gill", cf * CFrame.new(sx * 1.05, 0.15, -2.4 + g * 0.3), V3(0.1, 0.7, 0.08), finC:Lerp(C.ink, 0.4))
+		end
+	end
+	ball(m, "Eye", (cf * CFrame.new(0.82, 0.45, -3.5)).Position, 0.32, C.ink)
+	ball(m, "Eye", (cf * CFrame.new(-0.82, 0.45, -3.5)).Position, 0.32, C.ink)
+end
+
+-- Dolphins swim alongside when you set sail (only ever drawn by the client: FxController).
+function build.dolphin(m)
+	local cf = CFrame.new()
+	local top, belly = Color3.fromRGB(105, 150, 195), Color3.fromRGB(225, 236, 245)
+	egg(m, "Body", cf, V3(1.6, 1.6, 5.2), top)
+	egg(m, "Belly", cf * CFrame.new(0, -0.38, -0.2), V3(1.3, 0.9, 4), belly)
+	egg(m, "Melon", cf * CFrame.new(0, 0.2, -2.15), V3(1.3, 1.2, 1.7), top)
+	egg(m, "Beak", cf * CFrame.new(0, -0.25, -3), V3(0.6, 0.5, 1.4), belly)
+	p(m, "Smile", cf * CFrame.new(0, -0.3, -3.05), V3(0.62, 0.05, 0.9), Color3.fromRGB(60, 80, 110))
+	fin(m, "Fin", cf * CFrame.new(0, 1.1, 0.35), V3(0.2, 1.1, 1.3), top)
+	egg(m, "Tail", cf * CFrame.new(0, 0, 2.5), V3(0.7, 0.7, 1.8), top)
+	p(m, "Tail", cf * CFrame.new(0, 0, 3.35), V3(2.2, 0.14, 0.7), top)
+	for _, sx in { -1, 1 } do
+		fin(
+			m,
+			"Side",
+			cf * CFrame.new(sx * 0.85, -0.45, -0.9) * CFrame.Angles(0, 0, sx * -0.6),
+			V3(0.9, 0.12, 0.8),
+			top
+		)
+		ball(m, "Eye", (cf * CFrame.new(sx * 0.58, 0.05, -2.45)).Position, 0.22, C.ink)
+	end
 end
 
 function build.sea_serpent(m)

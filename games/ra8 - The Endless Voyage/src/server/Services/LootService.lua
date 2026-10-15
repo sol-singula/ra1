@@ -109,9 +109,12 @@ function LootService:OpenCrate(player, crate)
 	table.insert(items, give(player, extra, rng:NextInteger(2, 3), "crate"))
 	local rarity = Formulas.pickRarity(rng, danger, luck)
 	if crate.guide then
-		-- the guide's crate: the Surface Net's blueprint and an axe for the island (§4: 2:30)
-		table.insert(items, give(player, "blueprint", 1, "crate", { kind = "piece", key = "net" }))
+		-- the guide's crate: everything for the first island (an axe for the palms, a spear for the crabs) and a big
+		-- pile of wood and rope for the helm
 		table.insert(items, give(player, "axe", 1, "crate"))
+		table.insert(items, give(player, "spear", 1, "crate"))
+		table.insert(items, give(player, "wood", 10, "crate"))
+		table.insert(items, give(player, "rope", 4, "crate"))
 	else
 		local bp = (rarity ~= "common" or rng:NextNumber() < 0.35) and self:Blueprint(player, danger) or nil
 		if bp then

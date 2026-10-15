@@ -738,6 +738,7 @@ end
 
 function InventoryService:StartingKit(player)
 	self:Give(player, "fishing_rod", 1, "start")
+	self:Give(player, "hammer", 1, "start") -- (fixing what breaks; nobody should have to make one first)
 	self:Select(player, 1)
 end
 

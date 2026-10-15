@@ -29,8 +29,8 @@ local sheet = Instance.new("Folder", ws)
 sheet.Name = "Sheet"
 LightingPresets.apply("day", 11)
 
-local COLS = 9
-local STEP = 7
+local COLS = 6
+local STEP = 5
 local keys = {}
 for _, it in Items.list do
 	table.insert(keys, it.key)
@@ -69,13 +69,13 @@ local function shot(name, camPos, camTarget, fov)
 end
 local shots = {}
 -- three rows at a time, close enough to see the detail
-local perShot = 3
+local perShot = 2
 for first = 0, rows - 1, perShot do
 	local last = math.min(rows - 1, first + perShot - 1)
 	local zc = ((first + last) / 2 - (rows - 1) / 2) * STEP
 	table.insert(
 		shots,
-		shot(string.format("items_%d", first / perShot + 1), V3.new(0, 24, zc + 16), V3.new(0, 0.5, zc - 1), 52)
+		shot(string.format("items_%d", first / perShot + 1), V3.new(0, 13, zc + 10), V3.new(0, 0.5, zc - 0.5), 58)
 	)
 end
 local http = Engine.game:GetService("HttpService")

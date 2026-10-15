@@ -111,10 +111,10 @@ function draw.rod(m, item)
 	ball(m, "Knob", CFrame.new(0.4, -0.5, -1.1), 0.14, C.woodDark, M.Wood)
 	-- the line, and a bobber (a claw on the salvage rod)
 	local tipZ = -6 * k
-	local hang = Vector3.new(0, -math.cos(R(40)), math.sin(R(40))) -- "down" when the rod is held at 40°
+	local hang = Vector3.new(0, -math.cos(R(65)), math.sin(R(65))) -- "down" when the rod is held at 65°
 	local tip = Vector3.new(0, 0, tipZ)
 	local function along(d)
-		return CFrame.new(tip + hang * d) * A(R(-40), 0, 0)
+		return CFrame.new(tip + hang * d) * A(R(-65), 0, 0)
 	end
 	cylY(m, "Line", along(0.6), 1.2, 0.04, C.cream, M.Fabric)
 	if key == "salvage_rod" then
@@ -137,47 +137,67 @@ function draw.rod(m, item)
 	return V3(0, 0, -0.5)
 end
 
+-- The heads sit across the top of the handle (the handle runs along -Z, the strike goes +Y), the way a real one is.
+-- (A wedge part is thick at +Z and comes to an edge at -Z, along its bottom; the flips below turn that edge where
+-- it's needed.)
+local function tip(m, name, cf, len, wide, thick, color, material)
+	-- a pointed tip along -Z from `cf`: four wedges round the axis, meeting at a point
+	for i = 0, 3 do
+		w(
+			m,
+			name,
+			cf * A(0, 0, R(90 * i)) * CFrame.new(0, wide / 4, -len / 2),
+			V3(thick, wide / 2, len),
+			color,
+			material
+		)
+	end
+end
+
 function draw.axe(m, item)
 	local col = metalOf(item)
+	local bright = C.white:Lerp(col, 0.35)
 	handle(m, 3, 0.3)
-	-- the head: a block, a bevelled blade (two wedges) and a bright edge
-	p(m, "Head", CFrame.new(0, 0.45, -2.6), V3(0.32, 0.7, 0.7), col, M.Metal)
-	w(m, "Blade", CFrame.new(0, 0.95, -2.6) * A(0, R(90), 0), V3(0.7, 0.6, 0.32), col, M.Metal)
-	w(m, "BladeBack", CFrame.new(0, -0.05, -2.6) * A(R(180), R(90), 0), V3(0.7, 0.4, 0.32), col, M.Metal)
-	p(m, "Edge", CFrame.new(0, 1.22, -2.6), V3(0.1, 0.1, 0.8), C.white:Lerp(C.steel, 0.3), M.Metal)
-	p(m, "Poll", CFrame.new(0, 0.45, -2.6) * A(0, 0, 0), V3(0.36, 0.5, 0.3), col:Lerp(C.ink, 0.3), M.Metal)
+	local top = CFrame.new(0, 0, -2.75)
+	-- the eye round the handle's end, a short poll behind it
+	p(m, "Eye", top, V3(0.4, 0.55, 0.55), col:Lerp(C.ink, 0.15), M.Metal)
+	p(m, "Poll", top * CFrame.new(0, -0.38, 0), V3(0.4, 0.25, 0.45), col:Lerp(C.ink, 0.3), M.Metal)
+	-- the cheek narrows out of the eye, then the blade flares wide to its edge
+	p(m, "Cheek", top * CFrame.new(0, 0.45, 0), V3(0.26, 0.4, 0.5), col, M.Metal)
+	p(m, "Blade", top * CFrame.new(0, 0.95, 0), V3(0.18, 0.6, 0.95), col, M.Metal)
+	w(m, "Flare", top * CFrame.new(0, 0.5, 0.36) * A(R(180), 0, 0), V3(0.18, 0.3, 0.23), col, M.Metal)
+	w(m, "Flare2", top * CFrame.new(0, 0.5, -0.36) * A(0, 0, R(180)), V3(0.18, 0.3, 0.23), col, M.Metal)
+	p(m, "Edge", top * CFrame.new(0, 1.28, 0), V3(0.12, 0.08, 0.98), bright, M.Metal)
 	return V3(0, 0, -0.35)
 end
 
 function draw.pick(m, item)
 	local col = metalOf(item)
 	handle(m, 3, 0.3)
-	p(m, "Head", CFrame.new(0, 0.45, -2.7), V3(0.4, 0.4, 0.6), col, M.Metal)
-	w(
-		m,
-		"Prong",
-		CFrame.new(0, 0.45, -2.7) * CFrame.new(0, 0.2, 1.1) * A(R(-90), 0, 0),
-		V3(0.3, 1.6, 0.3),
-		col,
-		M.Metal
-	)
-	w(
-		m,
-		"Prong2",
-		CFrame.new(0, 0.45, -2.7) * CFrame.new(0, 0.2, -1.1) * A(R(90), R(180), 0),
-		V3(0.3, 1.6, 0.3),
-		col,
-		M.Metal
-	)
+	local top = CFrame.new(0, 0, -2.75)
+	-- a socket on the handle and a long head across it, curving a little back towards the hand, pointed both ends
+	p(m, "Socket", top, V3(0.42, 0.5, 0.5), col:Lerp(C.ink, 0.2), M.Metal)
+	for _, side in { 1, -1 } do
+		local arm = top * A(R(side * -12), 0, 0) * CFrame.new(0, side * 0.75, 0)
+		p(m, "Arm", arm, V3(0.26, 1.05, 0.3), col, M.Metal)
+		local point = arm * CFrame.new(0, side * 0.52, 0) * A(R(side * 90), 0, 0)
+		tip(m, "Point", point, 0.55, 0.3, 0.26, col:Lerp(C.white, 0.2), M.Metal)
+	end
 	return V3(0, 0, -0.35)
 end
 
 function draw.hammer(m)
 	handle(m, 2.6, 0.3)
-	p(m, "Head", CFrame.new(0, 0.5, -2.3), V3(0.6, 0.6, 1.2), C.iron, M.Metal)
-	p(m, "Face", CFrame.new(0, 0.5, -2.95), V3(0.7, 0.7, 0.14), C.steel, M.Metal)
-	w(m, "Claw", CFrame.new(0.14, 0.75, -1.7) * A(R(-30), 0, 0), V3(0.18, 0.5, 0.5), C.iron, M.Metal)
-	w(m, "Claw2", CFrame.new(-0.14, 0.75, -1.7) * A(R(-30), 0, 0), V3(0.18, 0.5, 0.5), C.iron, M.Metal)
+	local top = CFrame.new(0, 0, -2.35)
+	-- a heavy head across the handle: the round striking face forward, the split claw behind for pulling nails
+	p(m, "Head", top * CFrame.new(0, 0.2, 0), V3(0.5, 0.95, 0.5), C.iron, M.Metal)
+	cylY(m, "Neck", top * CFrame.new(0, 0.75, 0), 0.25, 0.48, C.iron, M.Metal)
+	cylY(m, "Face", top * CFrame.new(0, 0.93, 0), 0.14, 0.62, C.steel, M.Metal)
+	for _, x in { 0.12, -0.12 } do
+		p(m, "Claw", top * CFrame.new(x, -0.45, 0.06) * A(R(18), 0, 0), V3(0.16, 0.5, 0.34), C.iron, M.Metal)
+		w(m, "ClawTip", top * CFrame.new(x, -0.82, 0.2) * A(R(18 + 90), 0, 0), V3(0.16, 0.3, 0.3), C.iron, M.Metal)
+	end
+	cylZ(m, "Collar", top * CFrame.new(0, 0, 0.36), 0.2, 0.36, C.steel, M.Metal)
 	return V3(0, 0, -0.35)
 end
 
@@ -219,11 +239,12 @@ function draw.spear(m, item)
 		cylZ(m, "Lash", CFrame.new(0, 0, -4.9 - i * 0.12), 0.08, 0.3, C.rope, M.Fabric)
 	end
 	if item.key == "sharp_stick" then
-		w(m, "Tip", CFrame.new(0, 0, -5.9) * A(R(-90), 0, 0), V3(0.22, 0.9, 0.22), C.woodLight, M.Wood)
+		tip(m, "Tip", CFrame.new(0, 0, -5.4), 0.8, 0.24, 0.24, C.woodLight, M.Wood)
 	else
-		-- a leaf-shaped tip: two wedges back to back
-		w(m, "Tip", CFrame.new(0, 0.08, -5.9) * A(R(-90), 0, 0), V3(0.36, 1.1, 0.16), col, M.Metal)
-		w(m, "Tip2", CFrame.new(0, -0.08, -5.9) * A(R(-90), 0, R(180)), V3(0.36, 1.1, 0.16), col, M.Metal)
+		-- a leaf-shaped blade: wide and flat, coming to a point
+		cylZ(m, "Socket", CFrame.new(0, 0, -5.45), 0.35, 0.3, col:Lerp(C.ink, 0.2), M.Metal)
+		tip(m, "Tip", CFrame.new(0, 0, -5.6), 1.1, 0.5, 0.12, col, M.Metal)
+		tip(m, "TipRidge", CFrame.new(0, 0, -5.6), 1.05, 0.16, 0.16, col:Lerp(C.white, 0.25), M.Metal)
 	end
 	return V3(0, 0, -1.6)
 end
@@ -231,9 +252,11 @@ end
 function draw.harpoon(m, item)
 	local col = metalOf(item)
 	cylZ(m, "Shaft", CFrame.new(0, 0, -2.2), 5.4, 0.26, C.iron, M.Metal)
-	w(m, "Tip", CFrame.new(0, 0, -5.6) * A(R(-90), 0, 0), V3(0.3, 1.2, 0.3), col, M.Metal)
-	w(m, "Barb", CFrame.new(0.2, 0, -4.7) * A(R(90), 0, R(90)), V3(0.1, 0.5, 0.3), col, M.Metal)
-	w(m, "Barb2", CFrame.new(-0.2, 0, -4.7) * A(R(90), 0, R(-90)), V3(0.1, 0.5, 0.3), col, M.Metal)
+	tip(m, "Tip", CFrame.new(0, 0, -4.9), 1, 0.4, 0.14, col, M.Metal)
+	for _, side in { 1, -1 } do
+		-- barbs swept back from behind the point
+		w(m, "Barb", CFrame.new(side * 0.2, 0, -4.75) * A(0, 0, R(side * 90)), V3(0.08, 0.22, 0.5), col, M.Metal)
+	end
 	cylZ(m, "Grip", CFrame.new(0, 0, -0.8), 1.2, 0.34, C.barkDark, M.Fabric)
 	cylZ(m, "RopeEye", CFrame.new(0, 0.2, 0.3), 0.2, 0.3, C.iron, M.Metal)
 	p(m, "Rope", CFrame.new(0, -0.1, 0.55) * A(R(30), 0, 0), V3(0.12, 0.12, 1), C.rope, M.Fabric)
@@ -648,9 +671,9 @@ function ItemModels.holdCFrame(item, hand)
 	if kind == "axe" or kind == "pick" or kind == "hammer" then
 		return CFrame.new(0, -down, 0) * CFrame.Angles(0, 0, math.pi)
 	elseif kind == "rod" then
-		-- the rod rises from the fist like an angler's: 40° above level with the forearm out, forward-down (not
-		-- straight down) with the arm hanging
-		return CFrame.new(0, -down, 0) * CFrame.Angles(math.rad(-50), 0, 0)
+		-- the rod stands up from the fist like an angler's: 65° above level with the forearm out, forward (never
+		-- down at the deck) with the arm hanging
+		return CFrame.new(0, -down, 0) * CFrame.Angles(math.rad(-25), 0, 0)
 	elseif kind == "pry" or (item.weapon and item.weapon.class) or item.light then
 		return CFrame.new(0, -down, 0) * CFrame.Angles(math.rad(-90), 0, 0)
 	end

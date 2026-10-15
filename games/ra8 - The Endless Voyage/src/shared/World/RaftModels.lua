@@ -357,58 +357,76 @@ function build.storage(m, cf)
 end
 
 function build.net(m, cf, opts)
-	local e = edgeCF(cf, opts and opts.edge)
+	-- four posts on the tile, a big net hanging from them down into the water round the raft, and a basket
 	for _, sx in { -1, 1 } do
-		part(
-			m,
-			"Arm",
-			e * CFrame.new(sx * 2.4, 0.4, -2.2) * CFrame.Angles(math.rad(-15), 0, 0),
-			V3(0.3, 0.3, 5),
-			C.woodDark,
-			M.Wood,
-			{ CanCollide = false }
-		)
+		for _, sz in { -1, 1 } do
+			part(m, "Post", cf * CFrame.new(sx * 2.4, 1.1, sz * 2.4), V3(0.3, 2.2, 0.3), C.woodDark, M.Wood)
+			part(
+				m,
+				"Line",
+				cf * CFrame.new(sx * 3.6, -0.4, sz * 3.6) * CFrame.Angles(sz * math.rad(35), 0, -sx * math.rad(35)),
+				V3(0.08, 3.4, 0.08),
+				C.rope,
+				M.Fabric,
+				{ CanCollide = false }
+			)
+		end
 	end
 	part(
 		m,
-		"Mesh",
-		e * CFrame.new(0, -0.4, -4) * CFrame.Angles(math.rad(-15), 0, 0),
-		V3(5.2, 0.1, 4.6),
+		"Rim",
+		cf * CFrame.new(0, 2.15, 0),
+		V3(5.1, 0.2, 5.1),
+		C.woodDark,
+		M.Wood,
+		{ CanCollide = false, Transparency = 0 }
+	)
+	part(
+		m,
+		"RimHole",
+		cf * CFrame.new(0, 2.16, 0),
+		V3(4.3, 0.22, 4.3),
 		C.rope,
 		M.Fabric,
-		{
-			CanCollide = false,
-			Transparency = 0.35,
-		}
+		{ CanCollide = false, Transparency = 0.55 }
 	)
-	for k = -2, 2 do
-		part(
-			m,
-			"Cord",
-			e * CFrame.new(k * 1.1, -0.35, -4) * CFrame.Angles(math.rad(-15), 0, 0),
-			V3(0.08, 0.14, 4.6),
-			C.woodDark,
-			M.Fabric,
-			{ CanCollide = false, CastShadow = false }
-		)
-	end
-	Kit.ball(
+	-- the net in the water, wider than the tile so it shows round the raft's edge
+	part(
 		m,
-		"Float",
-		e.Position + e.LookVector * 6.2 + V3(0, -0.5, 0),
-		0.9,
-		C.canvasRed,
-		M.SmoothPlastic,
-		{ CanCollide = false }
+		"Mesh",
+		cf * CFrame.new(0, -1.25, 0),
+		V3(9, 0.08, 9),
+		C.rope,
+		M.Fabric,
+		{ CanCollide = false, Transparency = 0.4 }
 	)
+	for k = -4, 4 do
+		part(m, "Cord", cf * CFrame.new(k, -1.2, 0), V3(0.06, 0.06, 9), C.rope, M.Fabric, { CanCollide = false })
+		part(m, "Cord", cf * CFrame.new(0, -1.2, k), V3(9, 0.06, 0.06), C.rope, M.Fabric, { CanCollide = false })
+	end
+	for _, sx in { -1, 1 } do
+		for _, sz in { -1, 1 } do
+			Kit.ball(
+				m,
+				"Float",
+				(cf * CFrame.new(sx * 4.4, -0.9, sz * 4.4)).Position,
+				0.8,
+				C.canvasRed,
+				M.SmoothPlastic,
+				{ CanCollide = false }
+			)
+		end
+	end
+	-- the catch basket
+	part(m, "Basket", cf * CFrame.new(1.4, 0.55, -1.4), V3(1.4, 1.1, 1.4), C.woodLight, M.WoodPlanks)
+	_ = opts
 end
 
 function build.salvage_net(m, cf, opts)
 	build.net(m, cf, opts)
-	local e = edgeCF(cf, opts and opts.edge)
-	part(m, "Frame", e * CFrame.new(0, 0.6, -0.1), V3(5.6, 0.4, 0.4), C.iron, M.Metal, { CanCollide = false })
+	part(m, "Frame", cf * CFrame.new(0, 2.4, 0), V3(5.4, 0.3, 0.3), C.iron, M.Metal, { CanCollide = false })
 	local lamp =
-		part(m, "Lamp", e * CFrame.new(0, 1.3, -0.1), V3(0.6, 0.6, 0.6), C.glowcap, M.Neon, { CanCollide = false })
+		part(m, "Lamp", cf * CFrame.new(0, 2.9, 0), V3(0.6, 0.6, 0.6), C.glowcap, M.Neon, { CanCollide = false })
 	Kit.light(lamp, "PointLight", { Name = "Glow", Color = C.glowcap, Range = 8, Brightness = 0.5 })
 end
 

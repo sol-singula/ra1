@@ -8,8 +8,8 @@ those numbers, so the drift never crosses the network, and what you aim at is wh
   Pull, PullFrom, PullT0, PullSpeed       hooked: heading for that player's feet at that speed (the server collects
                                           it when it arrives and the model goes)
 Pieces more than FAR studs from the camera are placed every few frames, not every frame.
-Far pieces also wear a marker (a small round badge with what it is), so you can see what's coming from a long way
-off; it fades in past MARK_NEAR studs and the piece itself takes over up close.
+The pieces carry no badges (the models are big and bright enough); only the guide's crate wears a beacon: a tall
+pillar of light and a "CAST HERE!" sign, so there's no wondering which crate it means.
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -20,23 +20,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local DebrisController = { Name = "DebrisController", Order = 35 }
 
 local FAR = 220
-local MARK_NEAR = 45 -- the marker shows past this distance (the model's easy to see nearer)
-local MARK_FAR = 900
-local MARK_ICON = {
-	wood = "🌳",
-	scrap = "🛢️",
-	rope = "🧶",
-	cloth = "🧵",
-	metal = "🔩",
-	supply_crate = "📦",
-	bottle = "🍾",
-	lost_bag = "🎒",
-}
-local MARK_COLOR = {
-	supply_crate = Color3.fromRGB(230, 80, 60),
-	bottle = Color3.fromRGB(90, 190, 150),
-	lost_bag = Color3.fromRGB(240, 190, 70),
-}
+local BEACON_GOLD = Color3.fromRGB(255, 214, 90)
 local pulls = {} -- [model] = { pos, at } the integrated pull so far
 local frame = 0
 
@@ -89,47 +73,69 @@ local function place(m, t, dt, camPos, nth)
 	m:PivotTo(cf)
 end
 
--- A badge over a piece: a coloured dot with its icon, the same size on screen near or far.
-local function marker(m)
-	local mark = m:FindFirstChild("Mark")
-	if mark then
-		return mark
+-- The guide's crate: a pillar of light and a sign over it.
+local function beacon(m)
+	if m:FindFirstChild("GuideBeacon") then
+		return
 	end
-	local kind = m:GetAttribute("Kind") or m:GetAttribute("Debris")
 	local anchor = m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart")
 	if not anchor then
-		return nil
+		return
 	end
-	mark = Instance.new("BillboardGui")
-	mark.Name = "Mark"
-	mark.Adornee = anchor
-	mark.Size = UDim2.fromOffset(30, 30)
-	mark.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
-	mark.MaxDistance = MARK_FAR
-	mark.LightInfluence = 0
-	mark.AlwaysOnTop = false
-	local dot = Instance.new("Frame")
-	dot.Name = "Dot"
-	dot.Size = UDim2.fromScale(1, 1)
-	dot.BackgroundColor3 = MARK_COLOR[kind] or Color3.fromRGB(255, 255, 255)
-	dot.BackgroundTransparency = 0.15
-	dot.Parent = mark
+	local at = m:GetPivot()
+	local pillar = Instance.new("Part")
+	pillar.Name = "GuideBeacon"
+	pillar.Shape = Enum.PartType.Cylinder
+	pillar.Size = Vector3.new(40, 2.4, 2.4)
+	pillar.CFrame = at * CFrame.new(0, 20, 0) * CFrame.Angles(0, 0, math.rad(90))
+	pillar.Material = Enum.Material.Neon
+	pillar.Color = BEACON_GOLD
+	pillar.Transparency = 0.45
+	pillar.Anchored = true
+	pillar.CanCollide = false
+	pillar.CanQuery = false
+	pillar.CanTouch = false
+	pillar.CastShadow = false
+	pillar.Parent = m
+	local ring = Instance.new("Part")
+	ring.Name = "GuideBeaconRing"
+	ring.Shape = Enum.PartType.Cylinder
+	ring.Size = Vector3.new(0.2, 7, 7)
+	ring.CFrame = at * CFrame.new(0, -0.1, 0) * CFrame.Angles(0, 0, math.rad(90))
+	ring.Material = Enum.Material.Neon
+	ring.Color = BEACON_GOLD
+	ring.Transparency = 0.35
+	ring.Anchored = true
+	ring.CanCollide = false
+	ring.CanQuery = false
+	ring.CanTouch = false
+	ring.CastShadow = false
+	ring.Parent = m
+	local sign = Instance.new("BillboardGui")
+	sign.Name = "GuideSign"
+	sign.Adornee = anchor
+	sign.Size = UDim2.fromOffset(190, 54)
+	sign.StudsOffsetWorldSpace = Vector3.new(0, 5, 0)
+	sign.AlwaysOnTop = true
+	sign.LightInfluence = 0
+	local label = Instance.new("TextLabel")
+	label.Name = "Text"
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundColor3 = Color3.fromRGB(220, 70, 50)
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.Font = Enum.Font.FredokaOne
+	label.Text = "📦 CAST HERE!"
+	label.TextScaled = true
+	label.Parent = sign
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(1, 0)
-	corner.Parent = dot
+	corner.CornerRadius = UDim.new(0, 14)
+	corner.Parent = label
 	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 2
-	stroke.Color = Color3.fromRGB(40, 60, 90)
-	stroke.Parent = dot
-	local icon = Instance.new("TextLabel")
-	icon.Name = "Icon"
-	icon.BackgroundTransparency = 1
-	icon.Size = UDim2.fromScale(1, 1)
-	icon.Text = MARK_ICON[kind] or "✨"
-	icon.TextScaled = true
-	icon.Parent = dot
-	mark.Parent = m
-	return mark
+	stroke.Thickness = 3
+	stroke.Color = Color3.fromRGB(255, 255, 255)
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = label
+	sign.Parent = m
 end
 
 local function step(dt)
@@ -147,9 +153,18 @@ local function step(dt)
 			local pivot = m:GetPivot().Position
 			local dist = (pivot - camPos).Magnitude
 			local far = dist > FAR
-			local mark = (frame + i) % 10 == 0 and marker(m) or m:FindFirstChild("Mark")
-			if mark then
-				mark.Enabled = dist > MARK_NEAR and not m:GetAttribute("Pull")
+			if m:GetAttribute("Guide") then
+				if (frame + i) % 10 == 0 then
+					beacon(m)
+				end
+				local pillar = m:FindFirstChild("GuideBeacon")
+				local sign = m:FindFirstChild("GuideSign")
+				if pillar then
+					pillar.Transparency = m:GetAttribute("Pull") and 1 or 0.35 + 0.25 * math.sin(t * 5)
+				end
+				if sign then
+					sign.Enabled = not m:GetAttribute("Pull")
+				end
 			end
 			if not far then
 				place(m, t, dt, camPos, 1)

@@ -169,6 +169,29 @@ function AnimController.pose(rec, character, clock)
 			waist += -0.25 * (1 - k)
 		end
 		locked.RightShoulder, locked.RightElbow = true, true
+	elseif mode == "cast" and t < 0.7 then
+		-- a proper cast: both hands up and back over the shoulder, a lean back, then the whip forward with the body
+		-- behind it, a follow-through out toward the water, and the rod settles up in front
+		if t < 0.25 then
+			local k = ease(t / 0.25)
+			S, E = lerp(S0, 2.9, k), lerp(E0, 1.0, k)
+			LS, LE = 2.4 * k, 1.1 * k
+			waist += 0.18 * k
+			add("Waist", CFrame.Angles(0, -0.35 * k, 0))
+		elseif t < 0.4 then
+			local k = ease((t - 0.25) / 0.15)
+			S, E = lerp(2.9, 1.1, k), lerp(1.0, 0.0, k)
+			LS, LE = lerp(2.4, 1.0, k), lerp(1.1, 0.3, k)
+			waist += lerp(0.18, -0.22, k)
+			add("Waist", CFrame.Angles(0, lerp(-0.35, 0.2, k), 0))
+		else
+			local k = ease((t - 0.4) / 0.3)
+			S, E = lerp(1.1, S0, k), lerp(0.0, E0, k)
+			LS, LE = lerp(1.0, 0, k), lerp(0.3, 0, k)
+			waist += -0.22 * (1 - k)
+			add("Waist", CFrame.Angles(0, 0.2 * (1 - k), 0))
+		end
+		lockBoth()
 	elseif OVERARM[mode] and t < 0.5 then
 		-- overarm: cocked behind the head, whipped forward, then back to the hold (the "pulling" and "fishing"
 		-- poses take over from there)

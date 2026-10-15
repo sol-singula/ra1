@@ -55,7 +55,8 @@ Constants.DEBRIS_SPREAD = 30 -- across the current
 Constants.DEBRIS_LIFETIME = 240
 Constants.HOOK_FLIGHT = 0.35 -- seconds for the hook to reach the piece, then DEBRIS pulls in at the hook's speed
 Constants.NET_EVERY = 7 -- a net checks for debris this often
-Constants.NET_RANGE = 11
+Constants.NET_RANGE = 24 -- a net reaches this far round its tile (big: nothing has to drift exactly into it)
+Constants.SWEEP_RADIUS = 10 -- a cast's line catches everything this close to it on the way back in
 Constants.NET_HOLD = 6 -- pieces a net holds before it's full (a storage box on the raft empties it)
 Constants.NET_HOLD_SALVAGE = 10 -- the salvage net holds more
 Constants.OFFLINE_NET_EVERY = 90 -- while you're away, each net catches one thing this often, until it's full
@@ -133,10 +134,12 @@ Constants.FRIEND_RETRY_SECONDS = 20
 Constants.FRIEND_RETRY_TRIES = 6
 
 -- The guide (TutorialService, §4)
-Constants.GUIDE_DEBRIS = 5 -- pieces to reel in before the first build
+Constants.EARLY_BOOST = 2 -- a starter raft hauls in this many times as much from every piece (quick first wins)
+Constants.EARLY_BOOST_TIER = 1 -- ...while the raft is this tier or lower
+Constants.GUIDE_DEBRIS = 3 -- pieces to reel in before the first build (the net comes right after)
 Constants.GUIDE_START_DEBRIS = 6 -- pieces floating within reach the moment a new player arrives (§4: 0:00-0:30)
-Constants.GUIDE_CRATE_AT = 140 -- seconds in: the supply crate with the first blueprint floats by (§4: 2:30)
-Constants.GUIDE_CRATE_RETRY = 60 -- another one if it drifted past
+Constants.GUIDE_CRATE_DISTANCE = 16 -- the guide's crate drifts in this close (right beside the raft, slowly)
+Constants.GUIDE_CRATE_RETRY = 3 -- seconds: another one the moment it's gone, until you've got one
 
 -- Feedback (FeedbackService): the "Do you like the game?" card
 Constants.FEEDBACK_AFTER = 480

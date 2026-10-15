@@ -248,6 +248,7 @@ for _ = 1, 20 do
 	end
 	Engine.advance(0.5)
 end
+local placing
 local ok1 = hookOnce()
 check("ACT sent Act with the piece's id and the line flew out", ok1)
 Engine.advance(0.1)
@@ -276,6 +277,43 @@ for _ = 1, 5 do
 	Engine.advance(3.5)
 end
 Engine.advance(2)
+check(
+	"right after the first casts the guide wants a net (the first big win)",
+	Guide.current() and Guide.current().key == "net",
+	Guide.current() and Guide.current().key
+)
+check(
+	"the net goes on any floor (the guide marks a tile, not an edge)",
+	Guide.current() and Guide.current().spot ~= nil and Guide.current().edge == nil
+)
+check(
+	"the reels came in doubled on a starter raft",
+	Inventory:Count(player, "wood") + Inventory:Count(player, "rope") >= 4
+)
+
+-- The net on the floor the guide marks ------------------------------------------------------------------------------------------
+give("rope", 2)
+give("wood", 6)
+do
+	local netSpot = Guide.current().spot
+	local netPos = Rafts:TileWorld(raft, netSpot.gx, netSpot.gz, 1)
+	Bus.Place:Fire("net")
+	Engine.advance(0.2)
+	stand(tileAt(raft, 6, 6), netPos)
+	Engine.advance(0.4)
+	placing = Build.placing()
+	check(
+		"the net's ghost sits on the floor you look at",
+		placing and placing.key == "net" and placing.valid,
+		placing and tostring(placing.reason)
+	)
+	Input.act()
+	Engine.advance(0.6)
+	check("the net was placed", Rafts:Has(Rafts:RaftOf(player), "net"))
+	if Build.placing() then
+		tap(Build.refs.bar.Done)
+	end
+end
 check(
 	"the guide moved to the tile step",
 	Guide.current() and Guide.current().key == "tile",
@@ -334,7 +372,7 @@ local spot = Guide.current().spot
 local spotPos = Rafts:TileWorld(raft, spot.gx, spot.gz, 1)
 stand(tileAt(raft, 6, 6), spotPos)
 Engine.advance(0.5)
-local placing = Build.placing()
+placing = Build.placing()
 check("the ghost follows where you look and is valid there", placing.valid == true, placing.reason)
 check("a ghost model is in the world", ws:FindFirstChild("Ghost") and ws.Ghost:FindFirstChild("Ghost") ~= nil)
 check(
@@ -504,7 +542,7 @@ check(
 )
 check("the chips are green once you can afford it", find(hammerRow, "Cost_metal"):GetAttribute("Have") >= 1)
 tap(find(hammerRow, "Make_hammer"))
-check("MAKE crafted the hammer", Inventory:Count(player, "hammer") == 1)
+check("MAKE crafted a hammer (you start with one too)", Inventory:Count(player, "hammer") == 2)
 check(
 	"the guide moved to the crate",
 	Guide.current() and Guide.current().key == "crate",
@@ -513,14 +551,39 @@ check(
 Panels.close()
 
 -- The crate: reel it in, open it in the BAG -----------------------------------------------------------------------------------------
-Engine.advance(Constants.GUIDE_CRATE_AT)
+Engine.advance(1.2)
 local crate
 for _, d in Ocean:Debris(1) do
 	if d.special == "supply_crate" then
 		crate = d
 	end
 end
-check("the crate drifted in", crate ~= nil)
+check("the guide's crate drifted in the moment it asked", crate ~= nil and crate.guide == true)
+check(
+	"it's close (right beside the raft)",
+	crate and (crate.pos - Rafts:Center(Rafts:RaftOf(player))).Magnitude < 40,
+	crate and (crate.pos - Rafts:Center(Rafts:RaftOf(player))).Magnitude
+)
+do
+	local Debris = Engine.require(tree.client.Controllers.DebrisController)
+	for _ = 1, 12 do
+		Debris.step(0.016)
+	end
+	check(
+		"it wears a beacon and a CAST HERE! sign",
+		crate and crate.model:FindFirstChild("GuideBeacon") ~= nil and crate.model:FindFirstChild("GuideSign") ~= nil
+	)
+	-- gone without being caught: another one comes
+	Ocean:Remove(crate)
+	Engine.advance(Constants.GUIDE_CRATE_RETRY + 1.5)
+	local again
+	for _, d in Ocean:Debris(1) do
+		if d.special == "supply_crate" and d.guide then
+			again = d
+		end
+	end
+	check("a crate that got away is replaced right away", again ~= nil and again ~= crate)
+end
 -- (one in reach, and nothing else to aim at, whatever the guide's own crate is doing by now)
 for _, d in Ocean:Debris(1) do
 	if d ~= crate then
@@ -566,22 +629,11 @@ check(
 )
 tap(find(bag, "Use"))
 check(
-	"OPEN opened the crate",
-	Inventory:Count(player, "supply_crate") == 0 and Inventory:Count(player, "blueprint") == 1
+	"OPEN opened the crate: an axe and a spear for the island",
+	Inventory:Count(player, "supply_crate") == 0
+		and Inventory:Count(player, "axe") == 1
+		and Inventory:Count(player, "spear") == 1
 )
-local bpSlot
-for id, s in Store.get("inv").slots do
-	if s.key == "blueprint" then
-		bpSlot = id
-	end
-end
-Engine.advance(0.3)
-bag = panels:FindFirstChild("Panel_inventory")
-tap(find(bag, "Slot_" .. bpSlot))
-bag = panels:FindFirstChild("Panel_inventory")
-tap(find(bag, "Use"))
-check("LEARN taught the net", Data:Get(player).blueprints.net == true)
-check("an unlock card showed", find(hud, "Unlock") ~= nil)
 Panels.close()
 -- Tab on a keyboard: the bag, without the gamepad's selection cursor (Escape and the arrows stay yours)
 Engine.lastInputType = Enum.UserInputType.Keyboard
@@ -616,32 +668,6 @@ do
 	Engine.advance(0.3)
 	check("and back", Store.get("inv").slots[hookSlot] and Store.get("inv").slots[hookSlot].key == "fishing_rod")
 end
-check(
-	"the guide moved to the net",
-	Guide.current() and Guide.current().key == "net",
-	Guide.current() and Guide.current().key
-)
-
--- The net on the edge the guide marks ------------------------------------------------------------------------------------------
-give("rope", 6)
-give("wood", 6)
-local edge = Guide.current().edge
-Bus.Place:Fire("net")
-Engine.advance(0.2)
-local edgePiece = Rafts:RaftOf(player).pieces[edge.piece]
-local tilePos = Rafts:TileWorld(raft, edgePiece.gx, edgePiece.gz, 1)
-local d = ({ Vector3.new(1, 0, 0), Vector3.new(0, 0, 1), Vector3.new(-1, 0, 0), Vector3.new(0, 0, -1) })[edge.rot + 1]
-stand(tilePos + Vector3.new(0, 3, 0) - d * 2, tilePos + d * 6)
-Engine.advance(0.4)
-placing = Build.placing()
-check(
-	"the net's ghost picks the edge you look at",
-	placing and placing.spot and placing.spot.rot == edge.rot and placing.valid,
-	placing and (tostring(placing.spot and placing.spot.rot) .. " " .. tostring(placing.reason))
-)
-Input.act()
-Engine.advance(0.6)
-check("the net was placed", Rafts:Has(Rafts:RaftOf(player), "net"))
 check(
 	"the guide moved to the helm",
 	Guide.current() and Guide.current().key == "helm",
@@ -836,7 +862,7 @@ do
 	check("BACK brings you home", Visit.current() == nil and ws:FindFirstChild("Showroom") == nil)
 end
 
--- Far-off debris wears a marker you can see from a long way --------------------------------------------------------------------------
+-- Floating pieces wear no hovering badge (only the guide's crate has a beacon) ------------------------------------------------
 do
 	local Debris = Engine.require(tree.client.Controllers.DebrisController)
 	for _ = 1, 12 do
@@ -844,11 +870,11 @@ do
 	end
 	local marked = 0
 	for _, m in ws.Debris:GetChildren() do
-		if m:FindFirstChild("Mark") then
+		if m:FindFirstChild("Mark") or (not m:GetAttribute("Guide") and m:FindFirstChild("GuideSign")) then
 			marked += 1
 		end
 	end
-	check("floating pieces carry a far-off marker", marked > 0, marked)
+	check("floating pieces carry no hovering icons", marked == 0, marked)
 end
 
 -- Fishing with REEL ----------------------------------------------------------------------------------------------------------------

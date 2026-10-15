@@ -217,7 +217,7 @@ check("the Me view went out", me and me.hp == 100 and me.where == "raft" and me.
 local guide = lastFired("Tutorial", ava)
 check(
 	"the guide shows step 1: cast",
-	guide and guide.key == "cast" and guide.step == 1 and guide.total == 9,
+	guide and guide.key == "cast" and guide.step == 1 and guide.total == 8,
 	guide and guide.key
 )
 check(
@@ -304,11 +304,19 @@ check("the pose ends when the piece is in", ava.Character:GetAttribute("Pose") ~
 check("the piece was pulled in and collected", Ocean:Get(nearest.id) == nil)
 local gotKey = Ocean.KINDS[nearest.kind] and next(Ocean.KINDS[nearest.kind].gives)
 check("it gave its resource", gotKey and Inventory:Count(ava, gotKey) > 0, gotKey)
+check(
+	"a starter raft hauls in double (the first wins come fast)",
+	gotKey
+		and Inventory:Count(ava, gotKey) - before
+			>= Ocean.KINDS[nearest.kind].gives[gotKey][1] * Constants.EARLY_BOOST,
+	gotKey and Inventory:Count(ava, gotKey) - before
+)
 check("a popup said what it gave", firedSince(m0, "Popup", ava) ~= nil)
 check("XP for the debris", Data:Get(ava).xp >= Constants.XP.debris)
 check(
-	"the guide counts the cast (1/5)",
-	lastFired("Tutorial", ava).text:find("1/5") ~= nil,
+	"the guide counts the cast (1/3, or straight on to the net when the line swept up more)",
+	lastFired("Tutorial", ava).text:find("/" .. Constants.GUIDE_DEBRIS) ~= nil
+		or lastFired("Tutorial", ava).key == "net",
 	lastFired("Tutorial", ava).text
 )
 
@@ -340,12 +348,26 @@ local function hookAll(player, max)
 	end
 	return got
 end
-local hooked = hookAll(ava, 5)
-check("aiming reels in the piece in front", hooked >= 4, hooked)
+local hooked = hookAll(ava, Constants.GUIDE_DEBRIS - 1)
+check("aiming reels in the piece in front", hooked >= Constants.GUIDE_DEBRIS - 1, hooked)
 Engine.advance(2)
 guide = lastFired("Tutorial", ava)
-check("five pieces: the guide moves to the tile", guide and guide.key == "tile", guide and guide.key)
+check("three pieces: the guide wants a Surface Net right away", guide and guide.key == "net", guide and guide.key)
 check("XP for the guide's first step", Data:Get(ava).xp >= Constants.XP.guide.cast)
+-- the net: on any floor, no blueprint, no edge
+give(ava, "wood", 4)
+give(ava, "rope", 1)
+Tutorial:_refresh(ava)
+guide = lastFired("Tutorial", ava)
+check(
+	"the net step points at a floor tile (nets don't need to face the water)",
+	guide and guide.key == "net" and guide.spot ~= nil and guide.edge == nil,
+	guide and guide.text
+)
+send(ava, "Build", "net", guide.spot.gx, guide.spot.gz, 1, 0)
+check("the net was built on a floor tile", Rafts:Has(Rafts:RaftOf(ava), "net"), lastFired("Toast", ava))
+guide = lastFired("Tutorial", ava)
+check("the guide moves to the tile", guide and guide.key == "tile", guide and guide.key)
 -- short of wood: the guide says what's missing and points at the debris, not at a spot it can't fill
 Inventory:Take(ava, "wood", Inventory:Count(ava, "wood"))
 Tutorial:_refresh(ava)
@@ -376,7 +398,7 @@ check(
 			return a[1] == "built"
 		end) ~= nil
 )
-check("the raft view lists the new tile", #lastFired("Raft", ava).pieces == 5)
+check("the raft view lists the new tile (and the net)", #lastFired("Raft", ava).pieces == 6)
 check("the guide moved to the workbench", lastFired("Tutorial", ava).key == "bench")
 local rec = Rafts:Recommend(raft)
 local recFloor = false
@@ -397,7 +419,7 @@ check("a tile away from the raft is refused", not ok)
 check("a tile on a tile is refused", not Rafts:Build(ava, "floor", spot.gx, spot.gz, 1))
 check("a piece needs a tile under it", not Rafts:Build(ava, "workbench", 0, 0, 1))
 check("a piece of a higher tier is refused", not Rafts:Build(ava, "refinery", spot.gx, spot.gz, 1))
-check("a blueprint piece is refused until found", not Rafts:Build(ava, "net", spot.gx, spot.gz, 1, 0))
+check("a blueprint piece is refused until found", not Rafts:Build(ava, "salvage_net", spot.gx, spot.gz, 1, 0))
 
 -- the workbench
 give(ava, "rope", 4)
@@ -405,7 +427,7 @@ give(ava, "wood", 8)
 send(ava, "Build", "workbench", spot.gx, spot.gz, 1)
 check("the workbench was built", Rafts:Has(raft, "workbench"))
 check("only one workbench", not Rafts:Build(ava, "workbench", 6, 6, 1))
-check("the guide moved to crafting", lastFired("Tutorial", ava).key == "craft")
+check("the guide moved to the crate", lastFired("Tutorial", ava).key == "crate", lastFired("Tutorial", ava).key)
 check("the workbench has a prompt", trigger(ava, "station", "Station", "workbench") ~= nil)
 
 -- crafting: stand at the workbench
@@ -416,11 +438,10 @@ give(ava, "metal", 2)
 give(ava, "wood", 4)
 local m2 = mark()
 send(ava, "Craft", "hammer")
-check("a hammer was crafted", Inventory:Count(ava, "hammer") == 1)
+check("a hammer was crafted (one more: everyone starts with one)", Inventory:Count(ava, "hammer") == 2)
 check("crafting is announced", firedSince(m2, "Sfx", ava, function(a)
 	return a[1] == "craft"
 end) ~= nil)
-check("the guide moved to the crate", lastFired("Tutorial", ava).key == "crate")
 check("a recipe at the wrong station is refused", not Craft:Craft(ava, "plank"))
 -- (the start tile farthest from the bench: more than the station's 7 studs away, with the materials in the bag)
 give(ava, "rope", 2)
@@ -435,8 +456,7 @@ end
 stand(ava, tileAt(raft, farTile[1], farTile[2]))
 check("crafting away from the station is refused", not Craft:Craft(ava, "fishing_rod"), farD)
 
--- the guide's crate drifts in at 2:20
-Engine.advance(Constants.GUIDE_CRATE_AT)
+-- the guide's crate drifts in the moment the guide asks for it, right beside the raft
 local crate
 for _, d in Ocean:Debris(1) do
 	if d.special == "supply_crate" then
@@ -444,6 +464,12 @@ for _, d in Ocean:Debris(1) do
 	end
 end
 check("the supply crate is drifting by", crate ~= nil and crate.guide == true)
+check(
+	"it's close and slow",
+	(crate.pos - Rafts:Center(raft)).Magnitude < 40 and crate.vel.Magnitude < Constants.DEBRIS_SPEED * 0.5,
+	(crate.pos - Rafts:Center(raft)).Magnitude
+)
+check("its model is marked for the beacon", crate.model:GetAttribute("Guide") == true)
 check("the guide points at the crate", lastFired("Tutorial", ava).debris == crate.id)
 -- (the guide's own crate drifts past in half a minute and comes again a minute later; the test takes one in reach)
 for _, d in Ocean:Debris(1) do
@@ -462,39 +488,11 @@ for id, slot in Inventory:View(ava).slots do
 end
 send(ava, "Use", slotId)
 check(
-	"the crate opened: a blueprint and an axe",
-	Inventory:Count(ava, "blueprint") == 1 and Inventory:Count(ava, "axe") == 1
+	"the crate opened: an axe and a spear for the island",
+	Inventory:Count(ava, "axe") == 1 and Inventory:Count(ava, "spear") == 1
 )
-check(
-	"the crate's blueprint is the Surface Net's",
-	(function()
-		for _, slot in Inventory:View(ava).slots do
-			if slot.key == "blueprint" then
-				return slot.data and slot.data.key == "net"
-			end
-		end
-	end)()
-)
-check("the guide moved to the net", lastFired("Tutorial", ava).key == "net", lastFired("Tutorial", ava).key)
-for id, slot in Inventory:View(ava).slots do
-	if slot.key == "blueprint" then
-		send(ava, "Use", id)
-	end
-end
-check("reading the blueprint teaches the net", Data:Get(ava).blueprints.net == true)
-check("an unlock card announced it", lastFired("Unlock", ava).kind == "blueprint")
 
--- the net on an edge facing the water (once the bag can pay for it)
-give(ava, "rope", 6)
-give(ava, "wood", 6)
-Tutorial:_refresh(ava)
-local edge = lastFired("Tutorial", ava).edge
-check("the net step points at a free edge", edge ~= nil and edge.rot ~= nil)
-local edgePiece = raft.pieces[edge.piece]
-send(ava, "Build", "net", edgePiece.gx, edgePiece.gz, 1, edge.rot)
-check("the net was built on the edge", Rafts:Has(raft, "net"), lastFired("Toast", ava))
-check("a net facing another tile is refused", not Rafts:Build(ava, "net", 6, 6, 1, 0))
-check("the guide moved to the helm", lastFired("Tutorial", ava).key == "helm")
+check("the guide moved to the helm", lastFired("Tutorial", ava).key == "helm", lastFired("Tutorial", ava).key)
 -- the net catches while you build
 Engine.advance(Constants.NET_EVERY * 3 + 1)
 local netPiece = Rafts:NearPiece(ava, "net", 100)
@@ -540,6 +538,19 @@ check("the voyage view: sailing to Palm Key", voyage and voyage.state == "sailin
 local secs = Formulas.voyageSeconds(1, 1)
 check("a first trip at paddle speed takes about half a minute", secs >= 25 and secs <= 40, secs)
 check("the guide moved to the island", lastFired("Tutorial", ava).key == "island")
+-- sailing somewhere with animals: nobody lands without a weapon, and everyone lands healthy
+do
+	for _, slot in Inventory:View(ava).slots do
+		local it = Items.get(slot.key)
+		if it and it.weapon then
+			Inventory:Take(ava, slot.key, slot.n)
+		end
+	end
+	Voyages:_prepare(ava, VoyageData.get("palm_key"))
+	check("unarmed for an island with crabs: a spear is handed over", Inventory:Count(ava, "spear") == 1)
+	Voyages:_prepare(ava, VoyageData.get("palm_key"))
+	check("only one (you're armed now)", Inventory:Count(ava, "spear") == 1)
+end
 check("XP for deciding to sail", Data:Get(ava).xp >= Constants.XP.guide.cast + Constants.XP.guide.helm)
 for _, d in Ocean:Debris(1) do
 	Ocean:Remove(d)
@@ -1524,7 +1535,10 @@ do
 			r.summary.tiles == #Constants.START_TILES and r.tier == 1,
 			r.summary.tiles
 		)
-		check("reset: the bag holds just the rod", kinds == 1 and Inventory:Count(ava, "fishing_rod") == 1)
+		check(
+			"reset: the bag holds just the starting kit (the rod and the hammer)",
+			kinds == 2 and Inventory:Count(ava, "fishing_rod") == 1 and Inventory:Count(ava, "hammer") == 1
+		)
 		check("reset: the level stays", noDataStore or Data:Get(ava).xp > 0)
 	end
 end

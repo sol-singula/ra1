@@ -293,6 +293,15 @@ function InputController.aim(item)
 			return f.Magnitude > 0.1 and f.Unit or forward, c.id
 		end
 	end
+	if mode == "cast" then
+		-- open water: as far as you point (the mouse's spot on PC; the rod's full reach otherwise)
+		local reach = item.tool.rod.range or 45
+		local dist = reach
+		if hitPos then
+			dist = math.clamp(Vector3.new(hitPos.X - r.Position.X, 0, hitPos.Z - r.Position.Z).Magnitude, 8, reach)
+		end
+		return forward * dist, nil
+	end
 	return forward, nil
 end
 

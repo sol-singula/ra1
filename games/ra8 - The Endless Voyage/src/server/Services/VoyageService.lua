@@ -18,6 +18,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Voyages = require(ReplicatedStorage.Shared.Data.Voyages)
 
 local VoyageService = {
@@ -281,9 +282,35 @@ function VoyageService:_depart(raft, d, home, byCurrent)
 		Net.fire(p, "Sfx", "horn")
 		Net.fire(p, "Fx", "sail", { center = rafts:Center(raft), seconds = seconds, home = home })
 	end
+	if not home and d.creatures and #d.creatures > 0 then
+		for _, p in aboard do
+			self:_prepare(p, d)
+		end
+	end
 	self:Push(plot)
 	self.Departed:Fire(plot, d, aboard, home)
 	return true
+end
+
+-- Sailing somewhere with creatures: nobody lands without a weapon, and everyone lands with full health.
+function VoyageService:_prepare(player, d)
+	local armed = false
+	for _, slot in inventory:Contents(player) do
+		local item = Items.get(slot.key)
+		if item and item.weapon then
+			armed = true
+		end
+	end
+	if not armed then
+		inventory:Give(player, "spear", 1, "voyage")
+		Net.fire(
+			player,
+			"Toast",
+			`🔱 {d.name} has wild animals, so here's a Spear! Hold it and tap to fight.`,
+			"good"
+		)
+	end
+	players:Heal(player, math.huge, "voyage")
 end
 
 -- Events ------------------------------------------------------------------------------------------------------------------
