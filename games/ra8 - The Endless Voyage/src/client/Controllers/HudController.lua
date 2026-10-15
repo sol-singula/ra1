@@ -213,20 +213,6 @@ local function buildMe()
 		outline = 2,
 		Parent = visit,
 	})
-	local home = Theme.button({
-		Name = "RowHome",
-		Text = "ROW HOME",
-		BackgroundColor3 = C.good,
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -6, 0.5, 0),
-		Size = UDim2.fromOffset(96, 30),
-		TextSize = 14,
-		Parent = visit,
-	})
-	home.Activated:Connect(function()
-		Net.send("Visit", false)
-		Bus.Tap:Fire("row_home")
-	end)
 end
 
 local function updateMe()
@@ -269,6 +255,7 @@ local MENU = {
 	{ "me", "👤", "ME", C.teal },
 	{ "boards", "🏆", "TOP", C.orange },
 	{ "friends", "👥", "FRIENDS", C.good },
+	{ "visit", "👀", "VISIT", C.sky },
 	{ "settings", "⚙️", "MORE", C.slate },
 }
 
@@ -326,8 +313,7 @@ end
 local function updateRight()
 	local raft = Store.get("raft") or {}
 	local t = Pieces.TIERS[raft.tier or 1]
-	refs.raftLine.Text =
-		`{t and t.icon or "⛵"} {raft.tierName or (t and t.name) or ""} · {raft.tiles or 0}/{raft.max or 12} floors`
+	refs.raftLine.Text = `{t and t.icon or "⛵"} {raft.tierName or (t and t.name) or ""} · {raft.tiles or 0} floors`
 	local needs = raft.needs
 	if needs then
 		local done, total = 0, #needs
@@ -440,11 +426,20 @@ local function updateHotbar()
 		local item = slot and Items.get(slot.key)
 		-- the item's own model as the picture (the emoji only if it can't be drawn)
 		local key = item and item.key or nil
-		if s.iconKey ~= key then
-			s.iconKey = key
+		local pinned = key == "pin" and slot.data and slot.data.piece or nil
+		local iconKey = pinned and ("pin:" .. pinned) or key
+		if s.iconKey ~= iconKey then
+			s.iconKey = iconKey
 			Icons.clear(s.button)
-			local drawn = key and Icons.item(s.button, key, { inset = 5 })
-			s.icon.Text = (item and not drawn) and item.icon or ""
+			local drawn
+			if pinned then
+				drawn = Icons.piece(s.button, pinned, { inset = 5 })
+				local def = Pieces.get(pinned)
+				s.icon.Text = drawn and "📌" or (def and def.icon or "📌")
+			else
+				drawn = key and Icons.item(s.button, key, { inset = 5 })
+				s.icon.Text = (item and not drawn) and item.icon or ""
+			end
 		end
 		s.count.Text = (slot and slot.n > 1) and tostring(slot.n) or ""
 		local selected = (inv.selected or 1) == i

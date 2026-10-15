@@ -315,7 +315,7 @@ local function buildPanel(arg)
 		local profile = Store.get("profile") or { blueprints = {} }
 		label(
 			body,
-			`{raft.tierName or "Driftwood Platform"} · {raft.tiles or 0}/{raft.max or 12} floors. Tap PLACE, then tap a spot on your raft.`,
+			`{raft.tierName or "Driftwood Platform"} · {raft.tiles or 0} floors. Tap PLACE, then tap a spot on your raft.`,
 			{
 				Size = UDim2.new(1, -130, 0, 22),
 				TextSize = 15,
@@ -475,11 +475,29 @@ local function buildPanel(arg)
 					Bus.Tap:Fire("pick_" .. def.key)
 					PanelController.close()
 				end)
+				if not locked then
+					-- 📌 puts this piece in your hotbar as a build shortcut
+					local pin = Theme.button({
+						Name = "Pin",
+						Text = "📌",
+						BackgroundColor3 = C.sky,
+						AnchorPoint = Vector2.new(1, 0.5),
+						Position = UDim2.new(1, -122, 0.5, 0),
+						Size = UDim2.fromOffset(42, 42),
+						TextSize = 18,
+						Parent = row,
+					})
+					pin.Activated:Connect(function()
+						Net.send("Pin", def.key)
+						Bus.Tap:Fire("pin_" .. def.key)
+					end)
+				end
 			end
 		end
 		-- the rail follows the scroll: the section you're in is lit
 		local function lit()
-			local at = list.CanvasPosition.Y + 8
+			local cp = list.CanvasPosition
+			local at = (cp and cp.Y or 0) + 8
 			local cur = 1
 			for si, top in tops do
 				if top <= at then
@@ -1343,7 +1361,7 @@ local function raftPanel()
 		)
 		label(
 			head,
-			`{t and t.desc or ""} · {raft.tiles or 0}/{raft.max or 12} floors · speed {raft.speed or 1}x · {raft.cargo or 16} slots{raft.broken and raft.broken > 0 and ` · 💥 {raft.broken} broken: hammer them` or ""}`,
+			`{t and t.desc or ""} · {raft.tiles or 0} floors · speed {raft.speed or 1}x · {raft.cargo or 16} slots{raft.broken and raft.broken > 0 and ` · 💥 {raft.broken} broken: hammer them` or ""}`,
 			{ Position = UDim2.fromOffset(10, 32), Size = UDim2.new(1, -20, 0, 34), TextSize = 13 }
 		)
 		if raft.needs then
@@ -1444,31 +1462,6 @@ local function raftPanel()
 			end
 			return false
 		end)
-		-- visitors
-		local row = rowFrame(list, 62, 8)
-		label(row, "👥 WHO MAY ROW OVER", {
-			Position = UDim2.fromOffset(10, 4),
-			Size = UDim2.fromOffset(300, 22),
-			Font = Theme.Display,
-			TextSize = 15,
-		})
-		for i, mode in { "friends", "anyone", "nobody" } do
-			local b = Theme.button({
-				Name = "Permit_" .. mode,
-				Text = string.upper(mode),
-				BackgroundColor3 = profile.permit == mode and C.mustard or C.white,
-				dark = profile.permit ~= mode,
-				AnchorPoint = Vector2.new(0, 1),
-				Position = UDim2.new(0, 10 + (i - 1) * 110, 1, -4),
-				Size = UDim2.fromOffset(104, 30),
-				TextSize = 13,
-				Parent = row,
-			})
-			b.Activated:Connect(function()
-				Net.send("Permit", mode)
-				Bus.Tap:Fire("permit_" .. mode)
-			end)
-		end
 		local d = Theme.button({
 			Name = "Demolish",
 			Text = "💥 DEMOLISH A PIECE",
@@ -1789,10 +1782,9 @@ local function friendsPanel()
 	local function refresh()
 		body:ClearAllChildren()
 		local data = Store.get("friends") or {}
-		local me = Store.get("me") or {}
 		label(
 			body,
-			friendStatus ~= "" and friendStatus or "Rafts in this server: row over and look around.",
+			friendStatus ~= "" and friendStatus or "Rafts in this server: tap VISIT to look around them.",
 			{ Size = UDim2.new(1, 0, 0, 22), Font = Theme.Display, TextSize = 15 }
 		)
 		local list = scroller(body, { Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 1, -86) })
@@ -1810,14 +1802,13 @@ local function friendsPanel()
 			})
 			label(
 				row,
-				`{t and t.icon or "⛵"} {t and t.name or ""} · {r.tiles} tiles · {r.permit == "nobody" and "no visitors" or r.permit == "friends" and "friends only" or "anyone welcome"}`,
+				`{t and t.icon or "⛵"} {t and t.name or ""} · {r.tiles} floors`,
 				{ Position = UDim2.new(0.35, 0, 0, 2), Size = UDim2.new(0.65, -140, 1, -4), TextSize = 13 }
 			)
-			local here = me.visiting == r.userId
 			local b = Theme.button({
-				Name = (here and "Home_" or "Over_") .. r.userId,
-				Text = here and "ROW HOME" or (r.allowed and "ROW OVER" or "🔒"),
-				BackgroundColor3 = here and C.orange or (r.allowed and C.good or C.muted),
+				Name = "Visit_" .. r.userId,
+				Text = "👀 VISIT",
+				BackgroundColor3 = C.sky,
 				AnchorPoint = Vector2.new(1, 0.5),
 				Position = UDim2.new(1, -8, 0.5, 0),
 				Size = UDim2.fromOffset(120, 38),
@@ -1825,13 +1816,9 @@ local function friendsPanel()
 				Parent = row,
 			})
 			b.Activated:Connect(function()
-				if here then
-					Net.send("Visit", false)
-				elseif r.allowed then
-					Net.send("Visit", r.userId)
-					Bus.Tap:Fire("row_over")
-					PanelController.close()
-				end
+				Net.send("Visit", r.userId)
+				Bus.Tap:Fire("visit")
+				PanelController.close()
 			end)
 		end
 		order += 1
@@ -1979,10 +1966,9 @@ local function settingsPanel()
 			Parent = list,
 		})
 		invite.Activated:Connect(function()
-			-- the invite names where you are: your world, or the online ship
+			-- the invite names your world when you're in one
 			local mode = workspace:GetAttribute("Mode")
-			local launch = mode == "online" and "online"
-				or mode == "world" and ("w:" .. tostring(workspace:GetAttribute("WorldOwner") or player.UserId))
+			local launch = mode == "world" and ("w:" .. tostring(workspace:GetAttribute("WorldOwner") or player.UserId))
 				or nil
 			pcall(function()
 				local options = Instance.new("ExperienceInviteOptions")
@@ -1994,7 +1980,10 @@ local function settingsPanel()
 		end)
 		-- where to play: your own world, or the giant online ship
 		for i, choice in
-			{ { "world", "🏝️ MY WORLD (your raft, your friends)" }, { "online", "🌍 ONLINE (the giant ship)" } }
+			{
+				{ "world", "🏝️ MY WORLD (your raft, your friends)" },
+				{ "public", "🌊 PUBLIC OCEAN (other players nearby)" },
+			}
 		do
 			local b = Theme.button({
 				Name = "Go_" .. choice[1],
@@ -2014,6 +2003,92 @@ local function settingsPanel()
 	open.refresh = refresh
 	refresh()
 end
+
+-- VISIT: look at anyone's raft (players here, your friends, the biggest rafts) --------------------------------------------------
+local visitTab = "here"
+local visitRows = {} -- [kind] = rows
+local function visitPanel(arg)
+	local body = panel("visit", "👀 VISIT A RAFT", 820, 480)
+	if type(arg) == "string" then
+		visitTab = arg
+	end
+	local function refresh()
+		body:ClearAllChildren()
+		tabs(
+			body,
+			{
+				{ key = "here", label = "IN THIS SERVER" },
+				{ key = "friends", label = "FRIENDS" },
+				{ key = "top", label = "🏆 BIGGEST RAFTS" },
+			},
+			visitTab,
+			function(k)
+				visitTab = k
+				Net.send("VisitList", k)
+				refresh()
+			end
+		)
+		label(body, "Look around anyone's raft. You can't touch or take anything, it's just for looking!", {
+			Position = UDim2.fromOffset(0, 44),
+			Size = UDim2.new(1, 0, 0, 22),
+			TextSize = 14,
+			TextColor3 = C.muted,
+		})
+		local list = scroller(body, { Position = UDim2.fromOffset(0, 70), Size = UDim2.new(1, 0, 1, -70) })
+		local rows = visitRows[visitTab]
+		if not rows then
+			label(list, "Looking...", { Size = UDim2.new(1, 0, 0, 30), TextSize = 15 })
+			return
+		end
+		if #rows == 0 then
+			label(
+				list,
+				visitTab == "here" and "Nobody else is here right now. Try FRIENDS or BIGGEST RAFTS!"
+					or visitTab == "friends" and "No friends found yet. Invite some from ⚙️ MORE!"
+					or "The leaderboard is still loading. Try again in a moment.",
+				{ Size = UDim2.new(1, 0, 0, 40), TextSize = 15 }
+			)
+			return
+		end
+		for i, r in rows do
+			local row = rowFrame(list, 52, i)
+			row.Name = "VisitRow_" .. tostring(r.userId)
+			local t = r.tier and Pieces.TIERS[r.tier]
+			label(row, `{r.rank and ("#" .. r.rank .. "  ") or ""}{r.name or "?"}{r.online and "  🟢" or ""}`, {
+				Position = UDim2.fromOffset(12, 4),
+				Size = UDim2.new(0.45, 0, 1, -8),
+				Font = Theme.Display,
+				TextSize = 16,
+			})
+			label(
+				row,
+				r.tiles and `{t and t.icon or "⛵"} {t and t.name or ""} · {r.tiles} floors`
+					or r.value and `🟫 {r.value} floors`
+					or "",
+				{ Position = UDim2.new(0.45, 0, 0, 4), Size = UDim2.new(0.55, -140, 1, -8), TextSize = 14 }
+			)
+			local b = Theme.button({
+				Name = "Visit_" .. tostring(r.userId),
+				Text = "👀 VISIT",
+				BackgroundColor3 = C.sky,
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -8, 0.5, 0),
+				Size = UDim2.fromOffset(120, 40),
+				TextSize = 14,
+				Parent = row,
+			})
+			b.Activated:Connect(function()
+				Net.send("Visit", r.userId)
+				Bus.Tap:Fire("visit_" .. visitTab)
+				PanelController.close()
+			end)
+		end
+	end
+	open.refresh = refresh
+	Net.send("VisitList", visitTab)
+	refresh()
+end
+PanelController.visitRows = visitRows
 
 -- Cards ---------------------------------------------------------------------------------------------------------------------------
 function PanelController.card(name, title, text, buttons)
@@ -2258,6 +2333,7 @@ local OPENERS = {
 	me = mePanel,
 	boards = boardsPanel,
 	friends = friendsPanel,
+	visit = visitPanel,
 	settings = settingsPanel,
 }
 
@@ -2302,6 +2378,14 @@ function PanelController:init()
 	Bus.Open:Connect(PanelController.openPanel)
 	Bus.Close:Connect(PanelController.close)
 	Net.listen("Ask", onAsk)
+	Net.listen("VisitList", function(v)
+		if type(v) == "table" and type(v.rows) == "table" then
+			visitRows[v.kind or "here"] = v.rows
+			if open and open.name == "visit" and open.refresh then
+				open.refresh()
+			end
+		end
+	end)
 	Net.listen("FriendResult", onFriendResult)
 	Store.Changed:Connect(function(partial)
 		if not open or not open.refresh then

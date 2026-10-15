@@ -13,8 +13,6 @@ storms and sea creatures damage pieces (a broken piece stops working and waits f
   prompts    the helm (the map), the stations (crafting), the bunk (rest), the nets (empty them): ProximityPrompts
              with a "Kind" attribute the client and the server read
 ]]
-local DataStoreService = game:GetService("DataStoreService")
-local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,7 +20,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
-local Mode = require(ReplicatedStorage.Shared.Mode)
 local Net = require(ReplicatedStorage.Shared.Net)
 local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
 local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
@@ -47,14 +44,6 @@ local RaftService = {
 }
 
 local data, registry
--- The online ocean's one ship (Mode "online"): everyone aboard builds it, it's saved for everybody, and servers
--- that run at the same time tell each other what was built and torn down.
-local shared
-local SHIP_STORE, SHIP_KEY, SHIP_TOPIC = "EV_Ship_v1", "ship", "EV_Ship"
-local function shipStore()
-	local ok, st = pcall(DataStoreService.GetDataStore, DataStoreService, SHIP_STORE)
-	return ok and st or nil
-end
 local rafts = {} -- [plot] = raft
 local byPlayer = {} -- [player] = raft
 local aboard = {} -- [player] = raft they're on (PlayerService keeps this up to date)
@@ -98,7 +87,31 @@ local COLOURED = {
 local NEIGHBOURS = { { 1, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 } } -- by rot: 0 = +X, 1 = +Z, 2 = -X, 3 = -Z
 
 local function tkey(gx, gz)
-	return gx * 100 + gz
+	return (gx + 500) * 1000 + (gz + 500)
+end
+
+-- A net's catch from a save: a clean list of { key, n }.
+function RaftService._heldFrom(list)
+	local out = {}
+	for _, it in type(list) == "table" and list or {} do
+		if type(it) == "table" and Items.get(it.key) and type(it.n) == "number" and it.n > 0 then
+			table.insert(out, { key = it.key, n = math.floor(it.n) })
+		end
+	end
+	return out
+end
+
+-- How far the raft reaches from its centre (studs), so islands rise clear of a big one.
+function RaftService:Extent(raft)
+	local far = 0
+	local c = raft.layout and raft.layout.center or Vector3.zero
+	for _, p in raft.pieces do
+		if p.def.structural then
+			local pos = Formulas.tilePosition(c, p.gx, p.gz, 1)
+			far = math.max(far, (Vector3.new(pos.X - c.X, 0, pos.Z - c.Z)).Magnitude + Constants.TILE)
+		end
+	end
+	return far
 end
 
 local function toast(player, text, kind)
@@ -286,10 +299,10 @@ function RaftService:FreeSpots(raft, level)
 				local gx, gz = p.gx + d[1], p.gz + d[2]
 				local k = tkey(gx, gz)
 				if
-					gx >= 0
-					and gz >= 0
-					and gx < Constants.GRID
-					and gz < Constants.GRID
+					gx >= Constants.GRID_MIN
+					and gz >= Constants.GRID_MIN
+					and gx <= Constants.GRID_MAX
+					and gz <= Constants.GRID_MAX
 					and not seen[k]
 					and not self:Tile(raft, gx, gz, level)
 				then
@@ -415,8 +428,7 @@ function RaftService:Recommend(raft)
 		seen[key] = true
 		table.insert(out, { key = key, why = why })
 	end
-	local max = Constants.MAX_TILES_BY_TIER[raft.tier] or 12
-	local room = raft.summary.tiles < max
+	local room = true -- (rafts grow as big as you like)
 	if t then
 		local why = `so your raft grows into a {t.name}`
 		for _, def in Pieces.list do
@@ -497,16 +509,6 @@ function RaftService:View(raft)
 	end
 	return {
 		owner = raft.owner and raft.owner.UserId or nil,
-		shared = raft.shared or nil, -- the online ship: everyone aboard builds it
-		crew = raft.shared and (function()
-			local n = 0
-			for _, r in byPlayer do
-				if r == raft then
-					n += 1
-				end
-			end
-			return n
-		end)() or nil,
 		ownerName = raft.owner and raft.owner.DisplayName or nil,
 		plot = raft.plot,
 		tier = raft.tier,
@@ -514,7 +516,6 @@ function RaftService:View(raft)
 		nextTier = nextTier and nextTier.name or nil,
 		tiles = raft.summary.tiles,
 		deck2 = raft.summary.deck2,
-		max = Constants.MAX_TILES_BY_TIER[raft.tier] or 12,
 		pieces = pieces,
 		colours = raft.colours,
 		speed = self:Speed(raft),
@@ -635,7 +636,7 @@ function RaftService:_add(raft, spec)
 		maxHp = def.hp,
 		broken = (spec.hp or def.hp) <= 0 or nil,
 		plot = raft.plot,
-		held = (spec.key == "net" or spec.key == "salvage_net") and {} or nil,
+		held = (spec.key == "net" or spec.key == "salvage_net") and RaftService._heldFrom(spec.held) or nil,
 	}
 	raft.pieces[piece.id] = piece
 	index(raft, piece, true)
@@ -684,9 +685,6 @@ end
 function RaftService:Assign(player, profile)
 	if byPlayer[player] then
 		return byPlayer[player]
-	end
-	if Mode.online() then
-		return self:_joinShared(player, profile)
 	end
 	local plot = freePlot()
 	if not plot then
@@ -742,109 +740,18 @@ function RaftService:Assign(player, profile)
 	return raft
 end
 
--- Online: everyone's on the one ship (made from the shared save the first time).
-function RaftService:_joinShared(player, profile)
-	if shared then
-		byPlayer[player] = shared
-		if not (shared.owner and shared.owner.Parent) then
-			shared.owner = player
-			shared.folder:SetAttribute("Owner", player.UserId)
-		end
-		return shared
-	end
-	local saved
-	local st = shipStore()
-	if st then
-		pcall(function()
-			saved = st:GetAsync(SHIP_KEY)
-		end)
-	end
-	local folder = Instance.new("Model")
-	folder.Name = "Raft1"
-	folder:SetAttribute("Plot", 1)
-	folder:SetAttribute("Owner", player.UserId)
-	folder:SetAttribute("Shared", true)
-	folder.Parent = workspace:FindFirstChild("Rafts") or workspace
-	local raft = {
-		plot = 1,
-		layout = OceanLayout.plot(1),
-		owner = player, -- the captain (whoever's been aboard longest); everyone builds
-		shared = true,
-		pieces = {},
-		nextId = 0,
-		grid = { {}, {} },
-		onTile = { {}, {} },
-		edges = { {}, {} },
-		folder = folder,
-		colours = type(saved) == "table" and type(saved.colours) == "table" and saved.colours or {},
-		trophies = type(saved) == "table" and type(saved.trophies) == "table" and saved.trophies or {},
-		summary = { tiles = 0, deck2 = 0, pieces = {} },
-		working = { tiles = 0, deck2 = 0, pieces = {} },
-		tier = 1,
-	}
-	shared = raft
-	rafts[1] = raft
-	byPlayer[player] = raft
-	for _, sp in type(saved) == "table" and type(saved.pieces) == "table" and saved.pieces or {} do
-		local def = type(sp) == "table" and Pieces.get(sp.key)
-		if def and not (def.structural and self:Tile(raft, sp.gx, sp.gz, sp.level or 1)) then
-			self:_add(raft, sp)
-		end
-	end
-	if raft.summary.tiles == 0 and next(raft.pieces) == nil then
-		for _, t in Constants.START_TILES do
-			self:_add(raft, { key = "floor", gx = t[1], gz = t[2], level = 1 })
-		end
-	end
-	self:Recompute(raft, true)
-	folder:SetAttribute("Tier", raft.tier)
-	self.Assigned:Fire(player, raft)
-	_ = profile
-	return raft
-end
-
-local function pieceList(raft)
-	local list = {}
-	for _, p in raft.pieces do
-		table.insert(list, { key = p.key, gx = p.gx, gz = p.gz, level = p.level, rot = p.rot, hp = math.floor(p.hp) })
-	end
-	return list
-end
-
--- Online: write the ship for everybody (merging what other servers built since: a piece someone else placed on a
--- free spot stays).
-function RaftService:SaveShared()
-	local raft = shared
-	local st = shipStore()
-	if not raft or not st then
-		return false
-	end
-	local mine = pieceList(raft)
-	local ok = pcall(function()
-		st:UpdateAsync(SHIP_KEY, function()
-			return { pieces = mine, colours = raft.colours, trophies = raft.trophies, at = os.time() }
-		end)
-	end)
-	if ok then
-		raft.dirty = false
-	end
-	return ok
-end
-
-function RaftService:Shared()
-	return shared
-end
-
 function RaftService:Save(raft, profile)
-	if raft.shared then
-		-- the shared ship is saved for everyone (SaveShared); your own raft in your profile stays as it was
-		profile.records.tiles = math.max(profile.records.tiles or 0, raft.summary.tiles)
-		profile.records.tier = math.max(profile.records.tier or 1, raft.tier)
-		return
-	end
 	local list = {}
 	for _, p in raft.pieces do
-		table.insert(list, { key = p.key, gx = p.gx, gz = p.gz, level = p.level, rot = p.rot, hp = math.floor(p.hp) })
+		table.insert(list, {
+			key = p.key,
+			gx = p.gx,
+			gz = p.gz,
+			level = p.level,
+			rot = p.rot,
+			hp = math.floor(p.hp),
+			held = p.held and #p.held > 0 and p.held or nil,
+		})
 	end
 	table.sort(list, function(a, b)
 		if a.level ~= b.level then
@@ -869,26 +776,6 @@ function RaftService:Release(player, profile)
 	end
 	if profile then
 		self:Save(raft, profile)
-	end
-	if raft.shared then
-		byPlayer[player] = nil
-		aboard[player] = nil
-		-- the captain's hat passes on; the ship stays while anyone's aboard
-		local crew
-		for p, r in byPlayer do
-			if r == raft then
-				crew = crew or p
-			end
-		end
-		if crew then
-			if raft.owner == player then
-				raft.owner = crew
-				raft.folder:SetAttribute("Owner", crew.UserId)
-			end
-			return
-		end
-		self:SaveShared()
-		shared = nil
 	end
 	self.Released:Fire(player, raft)
 	rafts[raft.plot] = nil
@@ -942,8 +829,8 @@ function RaftService:CanBuild(raft, player, key, gx, gz, level, rot)
 		return false, "Pick a spot."
 	end
 	gx, gz = math.floor(gx), math.floor(gz)
-	if gx < 0 or gz < 0 or gx >= Constants.GRID or gz >= Constants.GRID then
-		return false, "Off the edge of the plot."
+	if gx < Constants.GRID_MIN or gz < Constants.GRID_MIN or gx > Constants.GRID_MAX or gz > Constants.GRID_MAX then
+		return false, "That's too far out at sea for one raft."
 	end
 	level = level == 2 and 2 or 1
 	rot = type(rot) == "number" and math.floor(rot) % 4 or 0
@@ -951,11 +838,6 @@ function RaftService:CanBuild(raft, player, key, gx, gz, level, rot)
 	if def.structural then
 		if tile then
 			return false, "There's a tile there already."
-		end
-		local max = Constants.MAX_TILES_BY_TIER[raft.tier] or 12
-		if raft.summary.tiles >= max then
-			local needs, nextT = Formulas.tierNeeds(raft.summary, raft.tier, raft.trophies)
-			return false, Formulas.fullText({ tier = raft.tier, needs = needs, nextTier = nextT and nextT.name })
 		end
 		if key == "stairs" and level ~= 1 then
 			return false, "Stairs go on the first deck."
@@ -1304,89 +1186,9 @@ function RaftService:EmptyNet(player, piece)
 end
 
 -- Boot ------------------------------------------------------------------------------------------------------------
-local function publish(msg)
-	if not (shared and Mode.online()) then
-		return
-	end
-	msg.server = game.JobId
-	task.spawn(pcall, MessagingService.PublishAsync, MessagingService, SHIP_TOPIC, msg)
-end
-
--- Another server built or tore down a piece of the shared ship.
-function RaftService:_onShipMessage(msg)
-	local raft = shared
-	if not raft or type(msg) ~= "table" or msg.server == game.JobId then
-		return
-	end
-	local sp = msg.s
-	if type(sp) ~= "table" or type(sp.gx) ~= "number" or type(sp.gz) ~= "number" then
-		return
-	end
-	local level = sp.level == 2 and 2 or 1
-	if msg.op == "add" and Pieces.get(sp.key) then
-		local def = Pieces.get(sp.key)
-		if def.structural and self:Tile(raft, sp.gx, sp.gz, level) then
-			return
-		end
-		self:_add(raft, { key = sp.key, gx = sp.gx, gz = sp.gz, level = level, rot = sp.rot })
-	elseif msg.op == "remove" then
-		for _, p in raft.pieces do
-			if
-				p.key == sp.key
-				and p.gx == sp.gx
-				and p.gz == sp.gz
-				and p.level == level
-				and (p.rot or 0) == (sp.rot or 0)
-			then
-				self:_remove(raft, p)
-				break
-			end
-		end
-	else
-		return
-	end
-	self:Recompute(raft)
-	raft.folder:SetAttribute("Tier", raft.tier)
-	self:Push(raft)
-end
-
 function RaftService:Init(reg)
 	registry = reg
 	data = reg.PlayerDataService
-	self.Built:Connect(function(_, piece, raft)
-		if raft and raft.shared then
-			publish({
-				op = "add",
-				s = { key = piece.key, gx = piece.gx, gz = piece.gz, level = piece.level, rot = piece.rot },
-			})
-		end
-	end)
-	self.Demolished:Connect(function(_, piece, raft)
-		if raft and raft.shared then
-			publish({
-				op = "remove",
-				s = { key = piece.key, gx = piece.gx, gz = piece.gz, level = piece.level, rot = piece.rot },
-			})
-		end
-	end)
-	-- (the mode's set when the first player arrives: listen once it says online)
-	local subscribed = false
-	local function subscribe()
-		if subscribed or not Mode.online() or not MessagingService then
-			return
-		end
-		subscribed = true
-		task.spawn(pcall, MessagingService.SubscribeAsync, MessagingService, SHIP_TOPIC, function(m)
-			self:_onShipMessage(m and m.Data)
-		end)
-	end
-	workspace:GetAttributeChangedSignal("Mode"):Connect(subscribe)
-	subscribe()
-	game:BindToClose(function()
-		if shared then
-			self:SaveShared()
-		end
-	end)
 	Net.on("Build", function(player, key, gx, gz, level, rot)
 		if type(key) == "string" then
 			self:Build(player, key, gx, gz, level, rot)
@@ -1441,12 +1243,8 @@ function RaftService:Start()
 	-- the raft's save follows the profile's autosave; keep the profile's copy fresh now and then
 	while true do
 		task.wait(10)
-		if shared and shared.dirty and os.clock() - (shared.savedAt or 0) > 30 then
-			shared.savedAt = os.clock()
-			self:SaveShared()
-		end
 		for _, raft in rafts do
-			if raft.dirty and not raft.shared and raft.owner and raft.owner.Parent then
+			if raft.dirty and raft.owner and raft.owner.Parent then
 				local profile = data:Get(raft.owner)
 				if profile then
 					self:Save(raft, profile)

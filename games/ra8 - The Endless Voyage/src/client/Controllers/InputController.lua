@@ -59,6 +59,7 @@ local MODE_LABEL = {
 	throw = { "THROW", "🗡️", C.red },
 	eat = { "EAT", "🍽️", C.good },
 	use = { "USE", "📦", C.mustard },
+	build = { "BUILD", "📌", C.mustard },
 }
 
 local function root()
@@ -96,6 +97,8 @@ function InputController.modeOf(item)
 		return "eat"
 	elseif item.kind == "chart" or item.kind == "blueprint" or item.key == "supply_crate" then
 		return "use"
+	elseif item.kind == "pin" then
+		return "build"
 	end
 	return nil
 end

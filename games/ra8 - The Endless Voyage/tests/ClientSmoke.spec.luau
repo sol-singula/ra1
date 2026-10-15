@@ -104,7 +104,7 @@ local Menu = Engine.require(tree.client.Controllers.MenuController)
 -- The start menu (a public server asks how you want to play) ----------------------------------------------------------------
 Engine.advance(0.8)
 check("the start menu asks how you want to play", Menu.isOpen() == true)
-check("two choices: MY WORLD and ONLINE", Menu.buttons.world ~= nil and Menu.buttons.online ~= nil)
+check("two choices: MY WORLD and PUBLIC OCEAN", Menu.buttons.world ~= nil and Menu.buttons.public ~= nil)
 local badge = gui.Menu:FindFirstChild("Badge", true)
 check("the corner badge says where you are", badge.Text:find("PUBLIC") ~= nil, badge.Text)
 Menu.buttons.world.Activated:Fire()
@@ -218,6 +218,26 @@ local function hookOnce()
 	Engine.advance(0.3)
 	local e = sent("Act")
 	return e ~= nil and best.hooked == player, e
+end
+-- (the first cast: wait for a piece at least 9 studs out, so there's time to watch it come in)
+for _ = 1, 20 do
+	local p = PlayersS:Position(player)
+	local nearestD
+	for _, d in Ocean:Debris(1) do
+		if not d.hooked and not d.special then
+			local dist = (d.pos - p).Magnitude
+			nearestD = (not nearestD or dist < nearestD) and dist or nearestD
+		end
+	end
+	if nearestD and nearestD >= 9 then
+		break
+	end
+	for _, d in Ocean:Debris(1) do
+		if (d.pos - p).Magnitude < 9 then
+			Ocean:Remove(d)
+		end
+	end
+	Engine.advance(0.5)
 end
 local ok1 = hookOnce()
 check("ACT sent Act with the piece's id and the line flew out", ok1)
@@ -337,7 +357,44 @@ Input.act()
 Engine.advance(0.6)
 check("the workbench was placed on the new tile", Rafts:Has(Rafts:RaftOf(player), "workbench"))
 check("placing a station ends by itself", Build.placing() == nil)
-check("the raft line counts 5 tiles", refs.raftLine.Text:find("5/12") ~= nil, refs.raftLine.Text)
+check("the raft line counts 5 tiles", refs.raftLine.Text:find("5 floors") ~= nil, refs.raftLine.Text)
+
+-- 📌 a piece in the hotbar: holding it shows the ghost, ACT builds it ------------------------------------------------------------------
+do
+	Bus.Open:Fire("build")
+	Engine.advance(0.3)
+	local row = find(panels.Panel_build, "Piece_floor")
+	check("each piece you can build has a 📌 button", find(row, "Pin") ~= nil)
+	tap(find(row, "Pin"))
+	Engine.advance(0.4)
+	local inv = Store.get("inv")
+	local pinnedAt
+	for i = 1, Constants.HOTBAR do
+		local slot = inv.slots["h" .. i]
+		if slot and slot.key == "pin" and slot.data and slot.data.piece == "floor" then
+			pinnedAt = i
+		end
+	end
+	check("📌 put the Floor Tile in the hotbar", pinnedAt ~= nil)
+	check(
+		"holding it starts building that piece",
+		Build.placing() ~= nil and Build.placing().key == "floor" and Build.placing().pinned == true
+	)
+	check("ACT says PLACE", Input.refs.actLabel.Text == "PLACE", Input.refs.actLabel.Text)
+	Panels.close()
+	-- back to the rod: the shortcut's ghost goes away
+	for i = 1, Constants.HOTBAR do
+		local slot = Store.get("inv").slots["h" .. i]
+		if slot and slot.key == "fishing_rod" then
+			Input.select(i)
+		end
+	end
+	Engine.advance(0.4)
+	check("picking another slot stops building", Build.placing() == nil)
+	-- (take the shortcut off again so the rest of the test has its hotbar back)
+	Inventory:Drop(player, "h" .. pinnedAt)
+	Engine.advance(0.3)
+end
 
 -- QUICK: hold it and the recommended piece goes where you look --------------------------------------------------------------
 Engine.advance(0.3)
@@ -727,6 +784,64 @@ do
 end
 check("the toast said home", true)
 
+-- 👀 VISIT: look at someone's raft (even an offline one), touch nothing ----------------------------------------------------------------
+do
+	local Visit = Engine.require(tree.client.Controllers.VisitController)
+	local Visits = service("VisitService")
+	check("the HUD has a VISIT button", find(hud, "Menu_visit") ~= nil)
+	tap(find(hud, "Menu_visit"))
+	Engine.advance(0.5)
+	local vp = panels:FindFirstChild("Panel_visit")
+	check(
+		"the VISIT panel opens with tabs: here, friends, the biggest rafts",
+		vp ~= nil and find(vp, "Tab_top") ~= nil and find(vp, "Tab_friends") ~= nil
+	)
+	Engine.dataStores[Constants.PROFILE_STORE] = Engine.dataStores[Constants.PROFILE_STORE] or {}
+	Engine.dataStores[Constants.PROFILE_STORE]["u_888"] = {
+		raft = {
+			pieces = {
+				{ key = "floor", gx = 6, gz = 6, level = 1 },
+				{ key = "floor", gx = 7, gz = 6, level = 1 },
+				{ key = "helm", gx = 6, gz = 6, level = 1 },
+			},
+		},
+		records = { tier = 2 },
+	}
+	local before = Inventory:Count(player, "wood")
+	Visits:Visit(player, 888)
+	Engine.advance(0.5)
+	local cur = Visit.current()
+	check(
+		"visiting shows their raft on its own patch of sea",
+		cur ~= nil and ws:FindFirstChild("Showroom") ~= nil and #ws.Showroom:GetChildren() >= 4
+	)
+	check(
+		"the bar says whose raft it is, with BACK",
+		find(gui.Visit, "VisitBar").Visible == true and find(gui.Visit, "Back") ~= nil
+	)
+	check(
+		"nothing in the copy can be collected (no prompts, nothing for the server)",
+		ws.Showroom:FindFirstChildWhichIsA("ProximityPrompt", true) == nil and Inventory:Count(player, "wood") == before
+	)
+	tap(find(gui.Visit, "Back"))
+	check("BACK brings you home", Visit.current() == nil and ws:FindFirstChild("Showroom") == nil)
+end
+
+-- Far-off debris wears a marker you can see from a long way --------------------------------------------------------------------------
+do
+	local Debris = Engine.require(tree.client.Controllers.DebrisController)
+	for _ = 1, 12 do
+		Debris.step(0.016)
+	end
+	local marked = 0
+	for _, m in ws.Debris:GetChildren() do
+		if m:FindFirstChild("Mark") then
+			marked += 1
+		end
+	end
+	check("floating pieces carry a far-off marker", marked > 0, marked)
+end
+
 -- Fishing with REEL ----------------------------------------------------------------------------------------------------------------
 -- (open water: with nothing floating in front, a cast fishes)
 for _, d in Ocean:Debris(1) do
@@ -783,8 +898,6 @@ check(
 	"paint buttons: white is free, red is locked",
 	find(raftPanel, "Paint_sail_white") and find(raftPanel, "Paint_sail_red").Text:find("🔒") ~= nil
 )
-tap(find(raftPanel, "Permit_anyone"))
-check("the permit went to the server", Data:Get(player).permit == "anyone")
 Bus.Open:Fire("book")
 Engine.advance(0.3)
 local book = panels:FindFirstChild("Panel_book")

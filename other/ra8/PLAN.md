@@ -166,24 +166,38 @@ What the second play found, and what changed:
 * **Debris looks like it floats.** Every piece was rebuilt with more detail (a log with cut ends and nailed planks, a
   hooped barrel, a coil of rope on a float, a tied canvas bundle, corrugated metal, a flagged crate with a light, a
   bottle with a note, a buckled bag), sits half under the water, and has a broken ring of foam round it.
-* **Start menu: MY WORLD or ONLINE.** A public server shows the menu over the live ocean (`MenuController`,
-  `ModeService`). MY WORLD sends you to your own reserved server, the same one every time (its code is kept per
-  player), and INVITE FRIENDS sends friends straight there. ONLINE sends everyone to the shared ocean, where there is
-  ONE giant ship that all players build together: everyone aboard can build on it, it outlives whoever leaves, it's
-  saved for everybody (not over anyone's own raft), and servers that run at the same time send each other every
-  piece built or torn down, so it's the same ship everywhere. When one online server is full the next one opens.
-  The same choices are in ⚙️ MORE. In Studio the menu just closes and you play where you are.
-  * To publish: reserved servers and MessagingService only work in a live, published game. Set Max Players as high
-    as Game Settings allows so the online ship holds a crowd.
+* **Start menu: MY WORLD or PUBLIC OCEAN.** A public server shows the menu over the live ocean (`MenuController`,
+  `ModeService`). MY WORLD sends you to your own reserved server, the same one every time, and INVITE FRIENDS sends
+  friends straight there. PUBLIC OCEAN is an ordinary server with other players nearby, each on their own raft.
+  Your raft is saved to you, so it's the same raft in either. In Studio the menu just closes and you play there.
+  (A shared online ship everyone builds was tried and dropped: no goal, a reset nobody wants, and griefing.)
+
+## Round 6: visiting, no size limit, nets while you're away, pinned pieces
+
+* **Visiting like Clash of Clans.** 👀 VISIT lists the players in this server, your friends and the biggest rafts
+  on the leaderboard. Pick one and you see a copy of their raft (live if they're here, from their save if they're
+  offline) on its own patch of sea, with a camera that turns round it (drag, zoom) and a BACK button. It exists
+  only on your screen, so you can't take, build or break anything, and you never sail up to anyone. The owner gets
+  a "👀 ... is looking at your raft!" toast, and visits count for achievements (`VisitService`, `VisitController`).
+  Rowing over to other rafts and the who-may-visit setting are gone.
+* **Rafts as big as you like.** The tile cap per raft size is gone (the raft still grows up by building what it
+  asks for, which unlocks pieces). The grid reaches 82 × 82 floors round the plot's centre, the plots sit much
+  further apart (a ring of 950 studs in a 4400-stud ocean), and islands rise clear of a big raft's edge.
+* **Seeing what's coming.** Debris appears 260 studs upstream (the lane starts full, up to 30 pieces), and every
+  piece far from you wears a little round badge with what it is (📦 a crate, 🍾 a bottle...), so you spot it from a
+  long way off (`DebrisController`).
+* **Nets work while you're away.** When you come back, each net has caught one thing per 90 seconds you were gone,
+  up to what it holds (6, the salvage net 10), with a callout saying how much; with a storage box it goes straight
+  into your bag (the box also empties what a net was holding). Nets keep their catch in your save.
+* **Pieces in the hotbar.** Every piece you can build has a 📌 button in BUILD: it puts that piece in your hotbar.
+  Hold the slot and the piece's ghost follows where you look; ACT builds it, again and again, until you pick
+  another slot. Dropping the shortcut just takes it off the hotbar.
 
 ## Tests
 
 `tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 66 checks: tiers, speeds, loot odds,
-every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 245 checks:
+every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 252 checks:
 the first five minutes, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent, the
 turret and the Leviathan, visiting, friends, boards, leaving and coming back, feedback, the anti-cheat, analytics;
-also run without DataStores, 247 checks) and the client (`tests/ClientSmoke.spec.luau`, 143 checks: the real UI driving the
+also run without DataStores, 253 checks) and the client (`tests/ClientSmoke.spec.luau`, 154 checks: the real UI driving the
 real server on a phone-sized screen).
-
-`tests/Online.spec.luau` (20 checks): the online ocean's one shared ship: everyone on it, everyone builds, it outlives
-whoever leaves, it saves for everyone without touching anyone's own raft, and pieces from other servers show up.

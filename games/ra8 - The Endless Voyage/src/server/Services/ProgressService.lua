@@ -609,8 +609,8 @@ function ProgressService:Init(reg)
 			self:AddXp(player, xp, "guide")
 		end
 	end)
-	reg.VisitService.Visited:Connect(function(_, host)
-		local profile = data:Get(host)
+	reg.VisitService.Visited:Connect(function(_, _, host)
+		local profile = host and data:Get(host)
 		if profile then
 			self:_checkAchievements(host, profile)
 		end

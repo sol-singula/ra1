@@ -8,6 +8,8 @@ those numbers, so the drift never crosses the network, and what you aim at is wh
   Pull, PullFrom, PullT0, PullSpeed       hooked: heading for that player's feet at that speed (the server collects
                                           it when it arrives and the model goes)
 Pieces more than FAR studs from the camera are placed every few frames, not every frame.
+Far pieces also wear a marker (a small round badge with what it is), so you can see what's coming from a long way
+off; it fades in past MARK_NEAR studs and the piece itself takes over up close.
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,6 +20,23 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local DebrisController = { Name = "DebrisController", Order = 35 }
 
 local FAR = 220
+local MARK_NEAR = 45 -- the marker shows past this distance (the model's easy to see nearer)
+local MARK_FAR = 900
+local MARK_ICON = {
+	wood = "🌳",
+	scrap = "🛢️",
+	rope = "🧶",
+	cloth = "🧵",
+	metal = "🔩",
+	supply_crate = "📦",
+	bottle = "🍾",
+	lost_bag = "🎒",
+}
+local MARK_COLOR = {
+	supply_crate = Color3.fromRGB(230, 80, 60),
+	bottle = Color3.fromRGB(90, 190, 150),
+	lost_bag = Color3.fromRGB(240, 190, 70),
+}
 local pulls = {} -- [model] = { pos, at } the integrated pull so far
 local frame = 0
 
@@ -70,6 +89,49 @@ local function place(m, t, dt, camPos, nth)
 	m:PivotTo(cf)
 end
 
+-- A badge over a piece: a coloured dot with its icon, the same size on screen near or far.
+local function marker(m)
+	local mark = m:FindFirstChild("Mark")
+	if mark then
+		return mark
+	end
+	local kind = m:GetAttribute("Kind") or m:GetAttribute("Debris")
+	local anchor = m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart")
+	if not anchor then
+		return nil
+	end
+	mark = Instance.new("BillboardGui")
+	mark.Name = "Mark"
+	mark.Adornee = anchor
+	mark.Size = UDim2.fromOffset(30, 30)
+	mark.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
+	mark.MaxDistance = MARK_FAR
+	mark.LightInfluence = 0
+	mark.AlwaysOnTop = false
+	local dot = Instance.new("Frame")
+	dot.Name = "Dot"
+	dot.Size = UDim2.fromScale(1, 1)
+	dot.BackgroundColor3 = MARK_COLOR[kind] or Color3.fromRGB(255, 255, 255)
+	dot.BackgroundTransparency = 0.15
+	dot.Parent = mark
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(1, 0)
+	corner.Parent = dot
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 2
+	stroke.Color = Color3.fromRGB(40, 60, 90)
+	stroke.Parent = dot
+	local icon = Instance.new("TextLabel")
+	icon.Name = "Icon"
+	icon.BackgroundTransparency = 1
+	icon.Size = UDim2.fromScale(1, 1)
+	icon.Text = MARK_ICON[kind] or "✨"
+	icon.TextScaled = true
+	icon.Parent = dot
+	mark.Parent = m
+	return mark
+end
+
 local function step(dt)
 	local folder = workspace:FindFirstChild("Debris")
 	if not folder then
@@ -83,7 +145,12 @@ local function step(dt)
 		if m:GetAttribute("DebrisId") then
 			-- far pieces every 6th frame (staggered), near ones every frame
 			local pivot = m:GetPivot().Position
-			local far = (pivot - camPos).Magnitude > FAR
+			local dist = (pivot - camPos).Magnitude
+			local far = dist > FAR
+			local mark = (frame + i) % 10 == 0 and marker(m) or m:FindFirstChild("Mark")
+			if mark then
+				mark.Enabled = dist > MARK_NEAR and not m:GetAttribute("Pull")
+			end
 			if not far then
 				place(m, t, dt, camPos, 1)
 			elseif (frame + i) % 6 == 0 then

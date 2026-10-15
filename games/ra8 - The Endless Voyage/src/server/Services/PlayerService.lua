@@ -413,7 +413,7 @@ function PlayerService:_locate(player, force)
 	local raft = plot and rafts:Get(plot)
 	local where = "water"
 	if raft and rafts:TileAt(raft, pos) then
-		where = (raft.owner == player or raft.shared) and "raft" or "visiting"
+		where = raft.owner == player and "raft" or "visiting"
 	elseif plot then
 		local island = registry.IslandService
 		if island and island:Here(plot) and island:Ashore(plot, pos) then

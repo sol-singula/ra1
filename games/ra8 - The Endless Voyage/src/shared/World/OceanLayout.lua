@@ -53,13 +53,15 @@ end
 
 -- Where a voyage's island rises beside a plot: somewhere in the plot's island zone, a different spot each time
 -- (so the islands you see from your raft are never a neat ring). Always inside plotAt's reach.
-function OceanLayout.islandSpot(index, rng)
+-- `clear`: how far out the island must sit to miss a big raft (its edge plus the island's size).
+function OceanLayout.islandSpot(index, rng, clear)
 	local p = OceanLayout.plots[index]
 	if not p then
 		return nil
 	end
 	local a = math.rad(p.angle) + (rng and rng:NextNumber(-0.55, 0.55) or 0)
-	local r = Constants.ISLAND_OFFSET + (rng and rng:NextNumber(-28, 40) or 0)
+	local r = math.max(Constants.ISLAND_OFFSET, clear or 0) + (rng and rng:NextNumber(-28, 40) or 0)
+	r = math.max(r, clear or 0)
 	return V3(p.center.X + math.cos(a) * r, 0, p.center.Z + math.sin(a) * r)
 end
 

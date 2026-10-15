@@ -23,15 +23,16 @@ Net.ClientEvents = {
 	Craft = 4, -- (recipeId) at a station (CraftService)
 	Research = 3, -- (slot) feed an artifact to the Research Station (CraftService)
 	Sail = 2, -- (destinationKey) set sail from the helm | ("home") sail home (VoyageService)
-	Visit = 2, -- (userId | false) take the rowboat to someone's raft, or home (VisitService)
-	Permit = 2, -- ("friends" | "anyone" | "nobody") who may visit your raft
+	Visit = 3, -- (userId) look at someone's raft (VisitService): a copy comes back as "Visiting"
+	VisitList = 3, -- ("here" | "friends" | "top") who you can visit
 	Emote = 1, -- (key) wave, cheer, dance
 	Settings = 2, -- (key, value) music / shake / fx, or title / flag (ProgressService)
 	Board = 2, -- (category) the friends-first leaderboards (LeaderboardService)
 	Friends = 1, -- ({ { userId, jobId }, ... }) friends online in this game: where is each one?
 	JoinFriend = 1, -- (userId) join a friend's server (JoinService)
 	FriendAction = 1, -- ("retry" | "cancel" | "private")
-	Mode = 1, -- ("world" | "online") the start menu's choice (ModeService)
+	Pin = 2, -- (pieceKey) put a build shortcut for that piece in your hotbar (InventoryService)
+	Mode = 1, -- ("world" | "public") the start menu's choice (ModeService)
 	GuideAction = 4, -- ("hold_rod") the guide card's button: put the best rod in your hand (TutorialService)
 	Viewed = 2, -- ("build" | "craft" | "map" | "journal" | ...) a panel was opened
 	Feedback = 1, -- (like, text?, reasons?) the "Do you like the game?" card (FeedbackService)
@@ -68,6 +69,8 @@ Net.ServerEvents = {
 	"Sfx", -- soundName, worldPosition?: a sound effect (AudioController)
 	"Fade", -- seconds, text?: a short black fade (the rowboat, waking up)
 	"Lost", -- { pos, items }: where your lost bag floats after you went down
+	"Visiting", -- { userId, name, tier, tierName, tiles, pieces, colours }: a raft to look at (VisitService)
+	"VisitList", -- { kind, rows = { { userId, name, ... } } }: who you can visit
 	"Menu", -- { close?, note?, travelling? }: the start menu (ModeService)
 }
 

@@ -269,7 +269,18 @@ do
 	)
 end
 
--- casting: name the piece
+-- casting: name the piece (one at least 9 studs out, so there's time to watch it come in)
+do
+	local here = PlayersS:Position(ava)
+	local best, bestD
+	for _, d in Ocean:Debris(1) do
+		local dist = (d.pos - here).Magnitude
+		if dist >= 9 and dist <= 28 and not d.special and (not bestD or dist < bestD) then
+			best, bestD = d, dist
+		end
+	end
+	nearest = best or nearest
+end
 local m0 = mark()
 local before = Inventory:Count(ava, nearest.kind == "wood" and "wood" or nearest.kind)
 send(ava, "Act", nil, nearest.id)
@@ -733,10 +744,10 @@ check(
 	Inventory:Capacity(ava)
 )
 check(
-	"the raft can't grow past tier 2's cap",
+	"no size cap: the raft grows past the old 24-floor limit",
 	(function()
 		fill(ava, raft, 30)
-		return raft.summary.tiles == Constants.MAX_TILES_BY_TIER[2]
+		return raft.summary.tiles == 30
 	end)(),
 	raft.summary.tiles
 )
@@ -1174,38 +1185,41 @@ send(ben, "Ready")
 Engine.advance(1)
 check("ben got plot 2", Rafts:PlotOf(ben) == 2)
 local rows = Visits:Rafts(ben)
+check("ben sees ava's raft in the VISIT list", #rows == 1 and rows[1].userId == 501 and rows[1].tiles >= 30)
+send(ben, "VisitList", "here")
 check(
-	"ben sees ava's raft in the list, allowed (friends)",
-	#rows == 1 and rows[1].userId == 501 and rows[1].allowed == true
+	"the list goes to ben's VISIT panel",
+	lastFired("VisitList", ben).kind == "here" and #lastFired("VisitList", ben).rows == 1
 )
+local benPos = PlayersS:Position(ben)
 send(ben, "Visit", 501)
-Engine.advance(Constants.ROWBOAT_SECONDS + 1)
+local snap = lastFired("Visiting", ben)
+check("ben gets a copy of ava's raft to look at", snap and snap.userId == 501 and #snap.pieces == #(function()
+	local t = {}
+	for _, p in raft.pieces do
+		table.insert(t, p)
+	end
+	return t
+end)())
+check("looking doesn't move ben anywhere", PlayersS:Here(ben) == 2 and (PlayersS:Position(ben) - benPos).Magnitude < 1)
+check("ben still can't build on ava's raft", not Rafts:Build(ben, "floor", 2, 2, 1))
+check("ava counts a visitor (once per visitor)", Data:Get(ava).stats.visitors == 1 and Data:Get(ben).stats.visits == 1)
+send(ben, "Visit", 501)
+check("a second look doesn't count twice", Data:Get(ava).stats.visitors == 1)
+check("ava is told someone's looking", lastFired("Toast", ava) and lastFired("Toast", ava):find("looking") ~= nil)
+-- an offline player's raft, from their save
+Engine.dataStores[Constants.PROFILE_STORE] = Engine.dataStores[Constants.PROFILE_STORE] or {}
+Engine.dataStores[Constants.PROFILE_STORE]["u_888"] = {
+	raft = { pieces = { { key = "floor", gx = 6, gz = 6, level = 1 }, { key = "helm", gx = 6, gz = 6, level = 1 } } },
+	records = { tier = 2 },
+}
+send(ben, "Visit", 888)
+local offline = lastFired("Visiting", ben)
 check(
-	"ben rowed over to ava's raft",
-	PlayersS:Visiting(ben) == ava and PlayersS:Where(ben) == "visiting",
-	PlayersS:Where(ben)
+	"an offline sailor's raft can be visited from their save",
+	noDataStore or (offline and offline.userId == 888 and #offline.pieces == 2 and offline.tier == 2)
 )
-check("ben's Raft view is ava's raft", lastFired("Raft", ben).owner == 501)
-check("ben can't build on ava's raft", not Rafts:Build(ben, "floor", 2, 2, 1))
-check("ava counts a visitor", Data:Get(ava).stats.visitors == 1 and Data:Get(ben).stats.visits == 1)
--- ava sails: ben rides along
-stand(ava, tileAt(raft, 6, 6))
-send(ava, "Sail", "palm_key")
-Voyages:_setEnds(1, Engine.now() + 1)
-Engine.advance(3)
-check(
-	"ben arrived with ava",
-	Voyages:State(1) == "island" and lastFired("Island", ben) and lastFired("Island", ben).key == "palm_key"
-)
-send(ava, "Sail", "home")
-Voyages:_setEnds(1, Engine.now() + 1)
-Engine.advance(3)
-send(ben, "Visit", false)
-Engine.advance(Constants.ROWBOAT_SECONDS + 1)
-check("ben rowed home", PlayersS:Visiting(ben) == nil and PlayersS:Where(ben) == "raft" and PlayersS:Here(ben) == 2)
-send(ava, "Permit", "nobody")
-check("nobody may visit now", Data:Get(ava).permit == "nobody" and not Visits:Visit(ben, 501))
-send(ava, "Permit", "anyone")
+check("nobody's raft: a polite no", not Visits:Visit(ben, 123456))
 -- friends in other servers
 Engine.friends["501:777"] = true
 Engine.friends["777:501"] = true
@@ -1249,6 +1263,24 @@ check("the global board has ava after a write", noDataStore or (function()
 	return false
 end)())
 
+-- Nets fish while you're away, up to their limit ---------------------------------------------------------------------------------------
+do
+	local nets = Rafts:Nets(raft)
+	check("ava has a net", #nets >= 1)
+	local hold = 0
+	for _, n in nets do
+		hold += Ocean.netHold(n.piece)
+	end
+	local caught = Ocean:Offline(ava, raft, 10 * 3600)
+	check(
+		"ten hours away: the nets caught things, but never more than they hold",
+		caught > 0 and caught <= hold,
+		caught
+	)
+	check("a callout says what the nets caught", lastFired("Callout", ava):find("While you were away") ~= nil)
+	check("a few seconds away: nothing", Ocean:Offline(ava, raft, 5) == 0)
+end
+
 -- Leaving and coming back ------------------------------------------------------------------------------------------------------------------
 local tilesBefore = raft.summary.tiles
 local tierBefore = raft.tier
@@ -1271,6 +1303,12 @@ check(
 	end)()
 )
 check("ben's raft kept going", Rafts:Get(2) ~= nil)
+-- (an hour passes before ava comes back)
+local saved = Engine.dataStores[Constants.PROFILE_STORE] and Engine.dataStores[Constants.PROFILE_STORE]["u_501"]
+if saved and saved.meta then
+	saved.meta.lastSeen -= 3600
+end
+local mBack = mark()
 ava = Engine.addPlayer("Ava", 501)
 Engine.advance(1)
 send(ava, "Ready")
@@ -1285,6 +1323,14 @@ if noDataStore then
 	check("no save: the guide starts again", Tutorial:Active(ava) ~= nil)
 	tilesBefore, tierBefore, xpBefore, scrapBefore2 = 4, 1, Data:Get(ava).xp, Inventory:Count(ava, "scrap")
 end
+if not noDataStore then
+	check(
+		"coming back after an hour: the nets caught things while she was away",
+		firedSince(mBack, "Callout", ava, function(a)
+			return type(a[1]) == "string" and a[1]:find("While you were away") ~= nil
+		end) ~= nil
+	)
+end
 check(
 	"ava is back on plot 1 with her raft as she left it",
 	raft ~= nil and raft.plot == 1 and raft.summary.tiles == tilesBefore and raft.tier == tierBefore,
@@ -1293,7 +1339,7 @@ check(
 check(
 	"her bag, XP, charts and blueprints came back",
 	noDataStore
-		or Inventory:Count(ava, "scrap") == scrapBefore2
+		or Inventory:Count(ava, "scrap") >= scrapBefore2 -- (plus whatever the nets caught while she was away)
 			and Data:Get(ava).xp == xpBefore
 			and Data:Get(ava).known.marrow_wreck == true
 			and Data:Get(ava).blueprints.engine == true

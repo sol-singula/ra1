@@ -156,7 +156,8 @@ function IslandService:Arrive(plot, dest)
 		return nil
 	end
 	local folder = workspace:FindFirstChild("Islands") or workspace
-	local built = IslandBuilder.build(dest.template, OceanLayout.islandSpot(plot, rng), rng, folder)
+	local clear = raft and rafts:Extent(raft) + 75 or 0
+	local built = IslandBuilder.build(dest.template, OceanLayout.islandSpot(plot, rng, clear), rng, folder)
 	built.model:SetAttribute("Plot", plot)
 	built.model:SetAttribute("Dest", dest.key)
 	local island = {

@@ -13,22 +13,23 @@ Constants.AUTOSAVE_SECONDS = 120
 
 -- The ocean (World/OceanLayout): six plots round the centre, each with a raft and room for the island that comes
 -- to it when a voyage arrives
-Constants.OCEAN_SIZE = 2400 -- the water, edge to edge (the far islands sit out to its edge)
+Constants.OCEAN_SIZE = 4400 -- the water, edge to edge (the far islands sit out to its edge)
 Constants.WATER_LEVEL = 0
 Constants.SEA_FLOOR = -34
-Constants.PLOT_RING = 300 -- the plots sit on a ring of this radius round the centre
-Constants.PLOT_RADIUS = 120 -- a plot: the raft in the middle, debris drifting through, the island zone beside it
+Constants.PLOT_RING = 950 -- the plots sit on a ring of this radius round the centre
+Constants.PLOT_RADIUS = 300 -- a plot: the raft in the middle, debris drifting through, the island zone beside it
 Constants.ISLAND_OFFSET = 150 -- the island zone's centre, out from the plot's centre (away from the ring's middle)
 
 -- The raft (RaftService): a grid of tiles on two decks
 Constants.TILE = 6 -- a tile is 6 x 6 studs
-Constants.GRID = 14 -- tiles across the raft, at most (14 x 14)
+Constants.GRID = 14 -- the grid's anchor: tile (6.5, 6.5) is the plot's centre (old saves use these numbers)
+Constants.GRID_MIN, Constants.GRID_MAX = -34, 47 -- how far a raft may spread: 82 x 82 floors, as big as anyone builds
 Constants.DECK_Y = 2 -- the first deck's top surface, above the water
 Constants.DECK_HEIGHT = 7.5 -- the second deck sits this much higher
 Constants.TILE_HP = 100
 Constants.START_TILES = { { 6, 6 }, { 7, 6 }, { 6, 7 }, { 7, 7 } } -- a 2 x 2 driftwood platform in the grid's middle (§5.1)
 Constants.MIN_TILES = 4 -- you can't demolish below the platform you started with
-Constants.MAX_TILES_BY_TIER = { 12, 24, 40, 60, 100, 196 } -- how big each tier may grow (§5.4)
+Constants.MAX_TILES_BY_TIER = { 12, 24, 40, 60, 100, 196 } -- (no longer a limit: rafts grow as big as you like)
 Constants.CARGO_BY_TIER = { 16, 24, 32, 40, 52, 64 } -- inventory slots
 Constants.REPAIR_PER_HIT = 25 -- a hammer's hit on a damaged tile (costs 1 wood)
 Constants.DEMOLISH_REFUND = 0.5 -- the share of a piece's cost you get back
@@ -46,16 +47,18 @@ Constants.DEATH_LOSS = 0.5 -- the share of this voyage's finds that float off as
 Constants.LOST_BAG_SECONDS = 120
 
 -- Collecting (OceanService): debris drifts through every plot
-Constants.DEBRIS_MAX = 22 -- afloat round one raft at a time (the far ones included)
+Constants.DEBRIS_MAX = 30 -- afloat round one raft at a time (the far ones included)
 Constants.DEBRIS_EVERY = 3.2 -- seconds between new pieces (fewer while the raft is sailing: the lanes bring more)
 Constants.DEBRIS_SPEED = 2.4 -- studs a second, with the current
-Constants.DEBRIS_FROM = 110 -- spawned this far upstream of the raft's centre (far enough to see it coming)
+Constants.DEBRIS_FROM = 260 -- spawned this far upstream of the raft's centre (far enough to see it coming)
 Constants.DEBRIS_SPREAD = 30 -- across the current
-Constants.DEBRIS_LIFETIME = 100
+Constants.DEBRIS_LIFETIME = 240
 Constants.HOOK_FLIGHT = 0.35 -- seconds for the hook to reach the piece, then DEBRIS pulls in at the hook's speed
 Constants.NET_EVERY = 7 -- a net checks for debris this often
 Constants.NET_RANGE = 11
 Constants.NET_HOLD = 6 -- pieces a net holds before it's full (a storage box on the raft empties it)
+Constants.NET_HOLD_SALVAGE = 10 -- the salvage net holds more
+Constants.OFFLINE_NET_EVERY = 90 -- while you're away, each net catches one thing this often, until it's full
 Constants.FISH_BITE = { 3, 8 } -- seconds until a bite
 Constants.FISH_WINDOW = 1.1 -- seconds to reel once it bites
 

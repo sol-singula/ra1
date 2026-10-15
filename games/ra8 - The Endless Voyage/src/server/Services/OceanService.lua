@@ -414,7 +414,14 @@ function OceanService:_nets(raft)
 	for _, net in rafts:Nets(raft) do
 		local piece = net.piece
 		local take = piece.key == "salvage_net" and 2 or 1
-		if #(piece.held or {}) >= Constants.NET_HOLD then
+		-- a storage box empties what a net was holding
+		if hasBox and owner and owner.Parent and piece.held and #piece.held > 0 then
+			for _, it in piece.held do
+				inventory:Give(owner, it.key, it.n, "net")
+			end
+			piece.held = {}
+		end
+		if #(piece.held or {}) >= OceanService.netHold(piece) then
 			continue
 		end
 		for _, d in self:Near(raft.plot, net.pos, Constants.NET_RANGE) do
@@ -447,6 +454,52 @@ function OceanService:_nets(raft)
 		end
 	end
 	_ = p
+end
+
+function OceanService.netHold(piece)
+	return piece.key == "salvage_net" and Constants.NET_HOLD_SALVAGE or Constants.NET_HOLD
+end
+
+-- While you were away your nets kept fishing: one catch per OFFLINE_NET_EVERY seconds each, until each is full
+-- (with a storage box, straight into your bag, still no more than the nets hold). Returns how many things.
+function OceanService:Offline(player, raft, seconds)
+	if type(seconds) ~= "number" or seconds < Constants.OFFLINE_NET_EVERY then
+		return 0
+	end
+	local hasBox = rafts:Has(raft, "storage", true)
+	local caught = 0
+	for _, net in rafts:Nets(raft) do
+		local piece = net.piece
+		piece.held = piece.held or {}
+		-- (a storage box empties the net as it goes, so with one each net fills once more into your bag)
+		local room = OceanService.netHold(piece) - (hasBox and 0 or #piece.held)
+		local n = math.min(room, math.floor(seconds / Constants.OFFLINE_NET_EVERY))
+		for _ = 1, math.max(0, n) do
+			local items = gives(pickKind(), 0)
+			if piece.key == "salvage_net" and rng:NextNumber() < 0.25 then
+				table.insert(items, { key = "metal", n = 1 })
+			end
+			for _, it in items do
+				if hasBox then
+					inventory:Give(player, it.key, it.n, "net")
+				else
+					table.insert(piece.held, it)
+				end
+			end
+			caught += 1
+		end
+	end
+	if caught > 0 then
+		raft.dirty = true
+		Net.fire(
+			player,
+			"Callout",
+			hasBox and `🕸️ While you were away your nets caught {caught} things! They're in your bag.`
+				or `🕸️ While you were away your nets caught {caught} things! Empty them on your raft.`,
+			"good"
+		)
+	end
+	return caught
 end
 
 -- Casting ----------------------------------------------------------------------------------------------------------------
@@ -622,12 +675,23 @@ function OceanService:Init(reg)
 	Net.on("Reel", function(player)
 		self:Reel(player)
 	end)
-	rafts.Assigned:Connect(function(_, raft)
+	rafts.Assigned:Connect(function(player, raft)
 		plotState(raft.plot)
+		-- the nets fished while you were away (from when your save was last written)
+		local profile = registry.PlayerDataService and registry.PlayerDataService:Get(player)
+		local last = profile and profile.meta and profile.meta.lastSeen
+		if last then
+			local away = os.time() - last
+			task.defer(function()
+				registry.PlayerDataService:WhenClientReady(player, function()
+					self:Offline(player, raft, away)
+				end)
+			end)
+		end
 		-- the lane starts full: pieces all the way out to where they appear, so there's always something close and
 		-- something coming
 		for _ = 1, math.floor(Constants.DEBRIS_MAX / 2) do
-			self:Spawn(raft.plot, pickKind(), { distance = rng:NextNumber(20, Constants.DEBRIS_FROM) })
+			self:Spawn(raft.plot, pickKind(), { distance = rng:NextNumber(40, Constants.DEBRIS_FROM) })
 		end
 	end)
 	rafts.Released:Connect(function(_, raft)

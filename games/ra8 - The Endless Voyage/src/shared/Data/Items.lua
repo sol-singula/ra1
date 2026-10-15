@@ -2,7 +2,7 @@
 Everything you can hold or carry (master plan §7: resource tiers; §8: tools with a clear purpose). Icons are emoji
 Roblox draws (nothing newer than 2019).
 
-  kind      resource | tool | weapon | food | chart | blueprint | artifact | fish
+  kind      resource | tool | weapon | food | chart | blueprint | artifact | fish | pin (a build shortcut)
   rarity    common | uncommon | rare | epic | legendary (loot odds, the glow on the ground, the journal)
   stack     how many fit in one slot
   tool      rod { range, pull, double, salvage, speed, rare } | axe { power } | pick { power } | pry { power } |
@@ -532,6 +532,17 @@ Items.list = {
 		desc = "Older than the wreck it was in.",
 	},
 }
+
+-- A build shortcut in the hotbar: holding it shows that piece's ghost, ACT builds it (data = { piece = key }).
+table.insert(Items.list, {
+	key = "pin",
+	name = "Build Shortcut",
+	kind = "pin",
+	rarity = "common",
+	icon = "📌",
+	stack = 1,
+	desc = "Hold it to build that piece where you look. Tap ACT to place.",
+})
 
 Items.byKey = {}
 for _, item in Items.list do

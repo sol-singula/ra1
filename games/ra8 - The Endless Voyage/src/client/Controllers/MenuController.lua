@@ -1,17 +1,15 @@
 --[[
 The start menu. On a public server (Mode "hub") it asks how you want to play, over the ocean behind it:
   🏝️ MY WORLD   your own ocean: your raft, friends you invite, and it always saves
-  🌍 ONLINE     one giant ship that everyone builds together, any time you like
+  🌊 PUBLIC OCEAN  play near other players, each on your own raft (look at theirs from 👀 VISIT)
 ModeService does the travelling; in Studio (or if travel fails) the menu closes and you play right where you are.
 The same choices sit in ⚙️ MORE later (PanelController). A small badge in the corner says where you are.
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Mode = require(ReplicatedStorage.Shared.Mode)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Bus = require(script.Parent.Parent.UI.Bus)
-local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
 local MenuController = { Name = "MenuController", Order = 5 }
@@ -31,10 +29,10 @@ local CHOICES = {
 		color = Color3.fromRGB(70, 160, 90),
 	},
 	{
-		key = "online",
-		icon = "🌍",
-		title = "ONLINE",
-		text = "One GIANT ship that everyone builds together. Hop on any time!",
+		key = "public",
+		icon = "🌊",
+		title = "PUBLIC OCEAN",
+		text = "Play near other players, each on your own raft. Your raft always saves.",
 		color = Color3.fromRGB(60, 120, 210),
 	},
 }
@@ -62,20 +60,17 @@ function MenuController.choose(kind)
 		-- (from ⚙️ MORE)
 		shade.Visible = true
 	end
-	setBusy(kind == "world" and "⛵ Sailing to your world..." or "🌍 Sailing to the giant ship...")
+	setBusy(kind == "world" and "⛵ Sailing to your world..." or "🌊 Off to the public ocean...")
 	Bus.Tap:Fire("menu_" .. kind)
 	Net.send("Mode", kind)
 end
 
 local function updateBadge()
-	local mode = Mode.get()
+	local mode = workspace:GetAttribute("Mode") or "hub"
 	if mode == "world" then
 		local name = workspace:GetAttribute("WorldOwnerName")
 		local mine = workspace:GetAttribute("WorldOwner") == player.UserId
 		badge.Text = mine and "🏝️ YOUR WORLD" or `🏝️ {name ~= "" and name or "A FRIEND"}'S WORLD`
-	elseif mode == "online" then
-		local raft = Store.get("raft")
-		badge.Text = `🌍 ONLINE · THE GIANT SHIP{raft and raft.crew and ` · {raft.crew} aboard` or ""}`
 	else
 		badge.Text = "🌊 PUBLIC OCEAN"
 	end
@@ -208,16 +203,11 @@ function MenuController:init()
 		end
 	end)
 	workspace:GetAttributeChangedSignal("Mode"):Connect(updateBadge)
-	Store.Changed:Connect(function(partial)
-		if partial.raft then
-			updateBadge()
-		end
-	end)
 	updateBadge()
 	-- a public server asks how you want to play (a reserved one already knows)
 	task.delay(0.5, function()
 		updateBadge()
-		if Mode.get() == "hub" then
+		if (workspace:GetAttribute("Mode") or "hub") == "hub" then
 			MenuController.open()
 		end
 	end)

@@ -508,12 +508,11 @@ function AnalyticsService:Init(registry)
 		track(player, skipped and "guide_skipped" or "guide_finished", { seconds = seconds(player) })
 	end)
 	-- visits and friends
-	visits.Visited:Connect(function(player, host)
-		track(player, "visit", { host = host.UserId })
-		track(host, "visitor", { who = player.UserId })
-	end)
-	visits.Permitted:Connect(function(player, mode)
-		track(player, "permit", { mode = mode })
+	visits.Visited:Connect(function(player, hostId, host)
+		track(player, "visit", { host = hostId })
+		if host then
+			track(host, "visitor", { who = player.UserId })
+		end
 	end)
 	join.Attempted:Connect(function(player, kind)
 		track(player, "friend_" .. kind)

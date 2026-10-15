@@ -49,13 +49,17 @@ local function center()
 	return layout and layout.center or Vector3.zero
 end
 
+local function key(gx, gz, level)
+	return level * 10000000 + (gx + 500) * 1000 + (gz + 500)
+end
+
 -- Lookups from the raft view: tiles, pieces on tiles, pieces on edges.
 local function maps()
 	local raft = Store.get("raft") or { pieces = {} }
 	local tiles, onTile, edges, count = {}, {}, {}, 0
 	for _, p in raft.pieces or {} do
 		local def = Pieces.get(p.key)
-		local k = p.level * 100000 + p.gx * 100 + p.gz
+		local k = key(p.gx, p.gz, p.level)
 		if def and def.structural then
 			tiles[k] = p
 			count += 1
@@ -68,16 +72,12 @@ local function maps()
 	return tiles, onTile, edges, count, raft
 end
 
-local function key(gx, gz, level)
-	return level * 100000 + gx * 100 + gz
-end
-
 -- Can the piece go there? (the server's rules, mirrored, so the ghost's colour is honest)
 local function check(def, gx, gz, level, rot)
-	local tiles, onTile, edges, count, raft = maps()
+	local tiles, onTile, edges, _, raft = maps()
 	local profile = Store.get("profile")
-	if gx < 0 or gz < 0 or gx >= Constants.GRID or gz >= Constants.GRID then
-		return false, "Off the plot"
+	if gx < Constants.GRID_MIN or gz < Constants.GRID_MIN or gx > Constants.GRID_MAX or gz > Constants.GRID_MAX then
+		return false, "Too far out"
 	end
 	if def.blueprint and not (profile and profile.blueprints and profile.blueprints[def.key]) then
 		return false, "Needs its blueprint"
@@ -89,10 +89,6 @@ local function check(def, gx, gz, level, rot)
 	if def.structural then
 		if tile then
 			return false, "A tile is there"
-		end
-		if count >= (raft.max or 12) then
-			local grow = Formulas.growText(raft.needs)
-			return false, grow and `Raft full! Build {grow} to make it bigger` or "Raft full!"
 		end
 		local adjacent = false
 		for _, d in NEIGHBOURS do
@@ -463,9 +459,9 @@ function BuildController.place()
 	Net.send("Build", placing.key, s.gx, s.gz, s.level, s.rot)
 	Bus.Tap:Fire("place_" .. placing.key)
 	Bus.Swing:Fire("hammer", "repair")
-	if not placing.def.structural then
+	if not placing.def.structural and not placing.pinned then
 		task.delay(0.3, function()
-			if placing and not placing.def.structural then
+			if placing and not placing.def.structural and not placing.pinned then
 				BuildController.stop()
 				Bus.Place:Fire(false)
 			end
@@ -521,6 +517,25 @@ end
 function BuildController.quickStop()
 	if placing and placing.quick then
 		BuildController.stop()
+	end
+end
+
+-- A build shortcut (📌) in the selected hotbar slot: its piece's ghost follows where you look, ACT builds it, and
+-- it keeps going until you pick another slot.
+function BuildController.followHotbar()
+	local inv = Store.get("inv") or { slots = {} }
+	local slot = inv.slots["h" .. tostring(inv.selected or 1)]
+	local piece = slot and slot.key == "pin" and slot.data and slot.data.piece or nil
+	if piece and Store.onOwnRaft() then
+		if not placing or placing.key ~= piece or not placing.pinned then
+			Bus.Place:Fire(piece) -- (BuildController starts it; InputController switches ACT to PLACE)
+			if placing then
+				placing.pinned = true
+			end
+		end
+	elseif placing and placing.pinned then
+		BuildController.stop()
+		Bus.Place:Fire(false)
 	end
 end
 
@@ -610,6 +625,9 @@ function BuildController:init()
 	Store.Changed:Connect(function(partial)
 		if (partial.raft or partial.inv) and placing then
 			lastSpotKey = nil
+		end
+		if partial.inv then
+			BuildController.followHotbar()
 		end
 	end)
 	local acc = 0

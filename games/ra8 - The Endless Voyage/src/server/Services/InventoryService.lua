@@ -19,6 +19,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local ItemModels = require(ReplicatedStorage.Shared.World.ItemModels)
+local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
 local OceanModels = require(ReplicatedStorage.Shared.World.OceanModels)
@@ -538,10 +539,68 @@ function InventoryService:SpawnDrop(pos, items, opts)
 	return d
 end
 
+-- A build shortcut for a piece in the hotbar (the selected slot if it's free, else the first free one, else the
+-- last slot's item goes to the bag). Already pinned: that slot is selected.
+function InventoryService:Pin(player, pieceKey)
+	if type(pieceKey) ~= "string" or not Pieces.get(pieceKey) then
+		return false
+	end
+	local s = state(player)
+	for i = 1, Constants.HOTBAR do
+		local slot = s.slots["h" .. i]
+		if slot and slot.key == "pin" and slot.data and slot.data.piece == pieceKey then
+			return self:Select(player, i)
+		end
+	end
+	local target
+	if not s.slots["h" .. s.selected] then
+		target = s.selected
+	else
+		for i = 1, Constants.HOTBAR do
+			if not s.slots["h" .. i] then
+				target = i
+				break
+			end
+		end
+	end
+	if not target then
+		-- make room: the last hotbar slot's item goes to the bag
+		target = Constants.HOTBAR
+		local free
+		for i = 1, self:Capacity(player) do
+			if not s.slots["b" .. i] then
+				free = "b" .. i
+				break
+			end
+		end
+		if not free then
+			Net.fire(player, "Toast", "🎒 Your bag is full: make room first.", "bad")
+			return false
+		end
+		s.slots[free], s.slots["h" .. target] = s.slots["h" .. target], nil
+	end
+	s.slots["h" .. target] = { key = "pin", n = 1, data = { piece = pieceKey } }
+	s.selected = target
+	self:Push(player)
+	self:_refreshHeld(player)
+	Net.fire(
+		player,
+		"Toast",
+		`📌 {Pieces.get(pieceKey).name} is in your hotbar: hold it and tap ACT to build.`,
+		"good"
+	)
+	return true
+end
+
 function InventoryService:Drop(player, id, n)
 	local slot, item = self:Slot(player, id)
 	if not slot or not item then
 		return false
+	end
+	if item.kind == "pin" then
+		-- (a shortcut isn't a thing: dropping it just takes it off the hotbar)
+		self:Consume(player, id, 1)
+		return true
 	end
 	if Items.toolKind(item) == "rod" and self:CountKind(player, "rod") <= 1 then
 		Net.fire(player, "Toast", "🎣 That's your only rod. Keep it: it's how you get everything!", "bad")
@@ -658,6 +717,9 @@ function InventoryService:Init(reg)
 	rafts = reg.RaftService
 	Net.on("Select", function(player, index)
 		self:Select(player, index)
+	end)
+	Net.on("Pin", function(player, pieceKey)
+		self:Pin(player, pieceKey)
 	end)
 	Net.on("Move", function(player, from, to)
 		self:Move(player, from, to)

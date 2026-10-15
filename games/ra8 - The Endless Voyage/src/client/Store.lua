@@ -105,7 +105,7 @@ end
 -- The raft on screen is your own (not one you're visiting).
 function Store.onOwnRaft()
 	local raft = Store.state.raft
-	return raft and (raft.owner == Players.LocalPlayer.UserId or raft.shared == true)
+	return raft and raft.owner == Players.LocalPlayer.UserId
 end
 
 -- The selected hotbar slot's contents: slotId, { key, n }.
