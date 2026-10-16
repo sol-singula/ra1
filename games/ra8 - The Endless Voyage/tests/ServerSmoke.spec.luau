@@ -1873,6 +1873,36 @@ do
 	end
 end
 
+-- the daily favourite raft: asked after a while, a few rafts at a time, one vote a day, yesterday's winner rewarded
+do
+	local Vote = service("VoteService")
+	local cy = Engine.addPlayer("Cy", 503)
+	Engine.advance(2)
+	local m = mark()
+	Vote:_setAskAt(ava, 0)
+	Engine.advance(6)
+	local asked = firedSince(m, "Ask", ava, function(args)
+		return type(args[1]) == "table" and args[1].kind == "vote"
+	end)
+	check("vote: asked once it's time", asked ~= nil)
+	local choices = asked and asked.args[1].choices or {}
+	local mineOffered = false
+	for _, ch in choices do
+		mineOffered = mineOffered or ch.userId == ava.UserId
+	end
+	check("vote: a few rafts to pick from, never your own", #choices >= 2 and not mineOffered, #choices)
+	check("vote: a raft that wasn't offered can't be voted for", not Vote:Cast(ava, 999999))
+	local pick = choices[1] and choices[1].userId
+	check("vote: voting for one counts", pick ~= nil and Vote:Cast(ava, pick))
+	check("vote: only once a day", not Vote:Cast(ava, pick))
+	Vote:_setWinner({ day = 1, userId = ava.UserId, name = "Ava", votes = 3 })
+	Data:Get(ava).favouriteDay = nil
+	Vote:_greet(ava)
+	check("vote: the winner gets the Favourite Raft title", Data:Get(ava).titles.owned.favourite == true)
+	Engine.removePlayer(cy)
+	Engine.advance(1)
+end
+
 -- build shortcuts only live in the hotbar
 do
 	local pinned

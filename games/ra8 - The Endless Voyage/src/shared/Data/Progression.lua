@@ -12,6 +12,7 @@ Progression.TITLES = {
 	{ key = "captain", name = "Captain", level = 18 },
 	{ key = "admiral", name = "Admiral", level = 30 },
 	{ key = "legend", name = "Legend of the Trench", achievement = "leviathan_1" },
+	{ key = "favourite", name = "Favourite Raft", vote = true }, -- (VoteService: the day's most votes)
 }
 
 -- Colours for sails, banners and flags (the Decorative Workshop's dyes), and the deck's paint.

@@ -1447,6 +1447,24 @@ if Panels.cards.thanks then
 end
 Engine.advance(0.2)
 check("the NEXT card comes back once it's answered", guide.GuideCard.Visible == true)
+-- the daily vote card: a row per raft with LOOK and VOTE
+do
+	local Vote = service("VoteService")
+	local real = Vote.Choices
+	Vote.Choices = function()
+		return { { userId = 9001, name = "Kai", value = 120 }, { userId = 9002, name = "Mo", value = 80 } }
+	end
+	Vote:Ask(player)
+	Vote.Choices = real
+	Engine.advance(0.3)
+	local card = Panels.cards.vote
+	check("the vote card shows each raft", card ~= nil and card:FindFirstChild("Choice_9001") ~= nil)
+	if card then
+		tap(card.Choice_9001.Vote)
+		Engine.advance(0.3)
+		check("voting closes the card", Panels.cards.vote == nil)
+	end
+end
 for _, screen in SCREENS do
 	ws.CurrentCamera.ViewportSize = screen[2]
 	Engine.advance(1.2)

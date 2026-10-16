@@ -38,6 +38,7 @@ Net.ClientEvents = {
 	GuideAction = 4, -- ("hold_rod") the guide card's button: put the best rod in your hand (TutorialService)
 	Viewed = 2, -- ("build" | "craft" | "map" | "journal" | ...) a panel was opened
 	Feedback = 1, -- (like, text?, reasons?) the "Do you like the game?" card (FeedbackService)
+	Vote = 1, -- (userId | "later") the daily favourite raft (VoteService)
 	Notify = 2, -- ("shown" | "on" | "off" | "status", canAsk?) Experience Notifications opt-in results
 	Analytics = 4, -- (kind, data) device info, button taps, frame rate, window focus (AnalyticsService)
 }
@@ -69,7 +70,7 @@ Net.ServerEvents = {
 	"Friends", -- { [userId] = { tier, voyage, players, max, here } }: friends' servers (JoinService)
 	"FriendResult", -- { kind = "teleporting" | "full" | "waiting" | "failed" | "here", ... }
 	"Board", -- { category, friends = { rows }, global = { rows }, you }
-	"Ask", -- { kind = "feedback" | "thanks" | "notify" }: FeedbackService cards
+	"Ask", -- { kind = "feedback" | "thanks" | "notify" | "vote", choices? }: FeedbackService and VoteService cards
 	"Sfx", -- soundName, worldPosition?: a sound effect (AudioController)
 	"Fade", -- seconds, text?, snap?: a short black fade (the rowboat, waking up); snap: a cut (an island arrival)
 	"Lost", -- { pos, items }: where your lost bag floats after you went down

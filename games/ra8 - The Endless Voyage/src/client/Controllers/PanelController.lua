@@ -2398,6 +2398,72 @@ local function onAsk(a)
 				end,
 			},
 		})
+	elseif a.kind == "vote" and type(a.choices) == "table" then
+		-- the daily favourite raft: LOOK at each (a visit), VOTE for one, or LATER
+		local c = PanelController.card(
+			"vote",
+			"⭐ Vote for today's favourite raft!",
+			"Look at each one, then vote. Tomorrow everyone hears who won.",
+			{
+				{
+					text = "LATER",
+					color = C.slate,
+					fn = function()
+						Net.send("Vote", "later")
+					end,
+				},
+			}
+		)
+		local n = #a.choices
+		c.Size = UDim2.fromOffset(560, 150 + n * 58)
+		c.Text.Size = UDim2.new(1, -32, 0, 30)
+		for i, ch in a.choices do
+			local row = new("Frame", {
+				Name = "Choice_" .. tostring(ch.userId),
+				Position = UDim2.fromOffset(14, 92 + (i - 1) * 58),
+				Size = UDim2.new(1, -28, 0, 50),
+				BackgroundColor3 = C.white,
+				Parent = c,
+			}, { Theme.corner(10) })
+			label(row, `{ch.name or "A captain"} · 🧱 {ch.value or 0} pieces`, {
+				Position = UDim2.fromOffset(12, 0),
+				Size = UDim2.new(1, -250, 1, 0),
+				TextSize = 16,
+				Font = Theme.Display,
+			})
+			local look = Theme.button({
+				Name = "Look",
+				Text = "👀 LOOK",
+				BackgroundColor3 = C.sky,
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -126, 0.5, 0),
+				Size = UDim2.fromOffset(104, 38),
+				TextSize = 14,
+				Parent = row,
+			})
+			look.Activated:Connect(function()
+				Net.send("Visit", ch.userId)
+				Bus.Tap:Fire("vote_look")
+			end)
+			local vote = Theme.button({
+				Name = "Vote",
+				Text = "⭐ VOTE",
+				BackgroundColor3 = C.good,
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -8, 0.5, 0),
+				Size = UDim2.fromOffset(110, 38),
+				TextSize = 14,
+				Parent = row,
+			})
+			vote.Activated:Connect(function()
+				Net.send("Vote", ch.userId)
+				Bus.Tap:Fire("vote_cast")
+				c:Destroy()
+				if cards.vote == c then
+					cards.vote = nil
+				end
+			end)
+		end
 	elseif a.kind == "thanks" then
 		PanelController.card(
 			"thanks",

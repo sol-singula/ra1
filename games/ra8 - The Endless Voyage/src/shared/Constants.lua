@@ -155,6 +155,11 @@ Constants.GUIDE_CRATE_RETRY = 3 -- seconds: another one the moment it's gone, un
 
 -- Feedback (FeedbackService): the "Do you like the game?" card
 Constants.FEEDBACK_AFTER = 480
+-- The daily favourite raft (VoteService): asked once a day after this much play, a few rafts at a time
+Constants.VOTE_AFTER = 900
+Constants.VOTE_CHOICES = 3
+Constants.VOTE_STORE = "EV_Vote_"
+Constants.VOTE_PRIZE_XP = 500
 Constants.FEEDBACK_ASK_EVERY = 3 * 24 * 3600
 Constants.FEEDBACK_MAX_ASKS = 3
 Constants.FEEDBACK_MAX_CHARS = 140
