@@ -548,6 +548,45 @@ local function skip(player, a)
 	end
 end
 
+-- The guide's top-up: the first floor tile and the workbench come with what you're missing, once (half of the
+-- players who placed their free net left before the workbench, waiting on wood and scrap). You still build them.
+local KIT_STEPS = { tile = true, bench = true }
+function TutorialService:_kit(player, key)
+	local profile = data:Get(player)
+	local piece = STEP_PIECE[key]
+	if not (KIT_STEPS[key] and profile and piece) then
+		return false
+	end
+	profile.tutorial.kit = profile.tutorial.kit or {}
+	if profile.tutorial.kit[key] then
+		return false
+	end
+	local def = Pieces.get(piece)
+	if not def or (def.blueprint and not profile.blueprints[piece]) then
+		return false
+	end
+	profile.tutorial.kit[key] = true
+	local given = {}
+	for k, n in def.cost or {} do
+		local short = n - inventory:Count(player, k)
+		if short > 0 then
+			inventory:Give(player, k, short, "guide")
+			local it = Items.get(k)
+			table.insert(given, `+{short} {it and it.name or k} {it and it.icon or ""}`)
+		end
+	end
+	if #given > 0 then
+		table.sort(given)
+		Net.fire(
+			player,
+			"Toast",
+			`🎁 Here's what you need for the {def.name}: {table.concat(given, ", ")}. Build it!`,
+			"good"
+		)
+	end
+	return #given > 0
+end
+
 function TutorialService:_show(player)
 	local a = active[player]
 	if not a then
@@ -559,6 +598,7 @@ function TutorialService:_show(player)
 		self:Finish(player, false)
 		return
 	end
+	self:_kit(player, STEPS[a.step])
 	a.shownAt = now()
 	local profile = data:Get(player)
 	if profile then

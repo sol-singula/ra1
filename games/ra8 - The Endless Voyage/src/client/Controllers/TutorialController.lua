@@ -23,6 +23,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local InputController = require(script.Parent.InputController)
+local HudController = require(script.Parent.HudController)
 local PanelController = require(script.Parent.PanelController)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Glow = require(script.Parent.Parent.UI.Glow)
@@ -606,8 +607,69 @@ local function hintStep()
 	end
 end
 
+-- The first cast, shown: a fifth of new players never tapped ACT, even with the ring and the hand on it. After
+-- autoCastAfter (8) seconds on the "cast" step without trying anything, the game casts once for you at the nearest
+-- piece in reach (it reels in, the guide moves on) and says "tap 🎣 to do it yourself". Once a session.
+local autoCastAfter = 8
+local castWait -- os.clock() since when nothing's been tried on the cast step
+local autoCastDone = false
+local function autoCast(model)
+	model = model or pickedModel
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not (root and model and model.Parent) then
+		return false
+	end
+	local _, _, item = InputController.held()
+	local rod = InputController.modeOf(item) == "cast" and item.tool and item.tool.rod
+	local range = rod and rod.range or 45
+	local at = model:GetPivot().Position
+	local flat = Vector3.new(at.X - root.Position.X, 0, at.Z - root.Position.Z)
+	if flat.Magnitude > range or flat.Magnitude < 0.5 then
+		return false -- (wait for one to drift into reach)
+	end
+	autoCastDone = true
+	local id = model:GetAttribute("DebrisId")
+	local function cast()
+		local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if not r then
+			return
+		end
+		r.CFrame = CFrame.lookAt(r.Position, r.Position + flat.Unit)
+		Net.send("Act", flat.Unit, id)
+		local _, s2 = InputController.held()
+		Bus.Swing:Fire(s2 and s2.key or "fishing_rod", "cast")
+	end
+	if rod then
+		cast()
+	else
+		-- (empty hands: the first ACT puts the rod in your hand, the second casts)
+		Net.send("Act", flat.Unit, nil)
+		task.delay(0.6, cast)
+	end
+	HudController.toast("🎣 Like that! Tap the 🎣 button to cast at the floating wood yourself", "info")
+	Bus.Tap:Fire("auto_cast")
+	return true
+end
+
+local function castHelp()
+	if not current or current.key ~= "cast" or autoCastDone then
+		castWait = nil
+		return
+	end
+	local now = os.clock()
+	castWait = castWait or now
+	if Layout.modalOpen() or InputController.panelOpen() then
+		castWait = now -- (busy with a card or a menu: not stuck)
+		return
+	end
+	if now - castWait >= autoCastAfter then
+		autoCast()
+	end
+end
+
 local function step()
 	hintStep()
+	castHelp()
 	if not current then
 		if card.Visible then
 			card.Visible = false
@@ -743,6 +805,9 @@ function TutorialController:init()
 		ZIndex = 3,
 		Parent = missionBar,
 	})
+	Bus.Swing:Connect(function()
+		castWait = os.clock() -- (they're trying: no help needed yet)
+	end)
 	Net.listen("Mission", onMission)
 	Net.listen("Tutorial", onTutorial)
 	Net.listen("Point", onPoint)
@@ -762,5 +827,15 @@ function TutorialController.mission()
 	return mission, missionBar
 end
 TutorialController.uiTarget = uiTarget
+function TutorialController.autoCastDone()
+	return autoCastDone
+end
+function TutorialController.setAutoCastAfter(seconds)
+	autoCastAfter = seconds
+end
+function TutorialController.autoCast(model)
+	autoCastDone = false
+	return autoCast(model)
+end
 
 return TutorialController

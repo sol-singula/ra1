@@ -111,10 +111,10 @@ local function step()
 			continue
 		end
 		local mine = rec.plot == myPlot
-		-- phones (lite): other rafts hold still, yours bobs every other frame (moving every part of up to 20 rafts
-		-- each frame was the heaviest thing on screen)
-		if PerformanceController.lite and (not mine or frame % 2 ~= 0) then
-			if not mine and not rec.still then
+		-- phones (lite): every raft holds still, yours too (moving every part of the rafts each frame was one of the
+		-- heaviest things on screen; the water still moves)
+		if PerformanceController.lite then
+			if not rec.still then
 				rec.still = true
 				rec.applied = CFrame.new()
 				move(rec.parts, rec.bases)

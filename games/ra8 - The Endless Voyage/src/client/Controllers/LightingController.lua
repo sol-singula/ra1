@@ -13,6 +13,7 @@ local Voyages = require(ReplicatedStorage.Shared.Data.Voyages)
 local LightingPresets = require(ReplicatedStorage.Shared.World.LightingPresets)
 local Store = require(script.Parent.Parent.Store)
 local Bus = require(script.Parent.Parent.UI.Bus)
+local PerformanceController = require(script.Parent.PerformanceController)
 
 local LightingController = { Name = "LightingController", Order = 4 }
 
@@ -128,7 +129,8 @@ function LightingController:init()
 	local acc = 1
 	RunService.RenderStepped:Connect(function(dt)
 		acc += dt
-		if acc >= 0.1 then
+		-- (phones: once a second; re-applying the sky and the time of day ten times a second cost them frames)
+		if acc >= (PerformanceController.lite and 1 or 0.1) then
 			acc = 0
 			step()
 		end

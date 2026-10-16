@@ -439,6 +439,21 @@ check(
 )
 check("the raft view lists the new tile (and the net)", #lastFired("Raft", ava).pieces == 6)
 check("the guide moved to the workbench", lastFired("Tutorial", ava).key == "bench")
+do
+	-- reaching the workbench step tops you up with what it costs (once), so there's no wait before building it
+	local cost = Pieces.get("workbench").cost
+	local enough = true
+	for k, n in cost do
+		if Inventory:Count(ava, k) < n then
+			enough = false
+		end
+	end
+	local kit = Data:Get(ava).tutorial.kit
+	check("the workbench step comes with what it costs", enough and kit and kit.bench == true)
+	local before = Inventory:Count(ava, "wood")
+	Tutorial:_kit(ava, "bench")
+	check("...only once", Inventory:Count(ava, "wood") == before)
+end
 local rec = Rafts:Recommend(raft)
 local recFloor = false
 for _, r in rec do

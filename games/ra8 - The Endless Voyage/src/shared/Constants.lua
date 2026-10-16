@@ -69,6 +69,7 @@ Constants.DEBRIS_LIFETIME = 240
 Constants.HOOK_FLIGHT = 0.6 -- seconds from ACT until the piece starts coming in (the cast's wind-up and the bobber's
 -- flight: FxController times the bobber to land then), then it pulls in at the hook's speed
 Constants.NET_EVERY = 7 -- a net checks for debris this often
+Constants.NET_EVERY_EARLY = 3 -- ...this often on a raft with no workbench yet (quick first catches)
 Constants.NET_LANE_SHARE = 0.5 -- with nets aboard, this share of the debris drifts down a net's lane
 Constants.NET_RANGE = 24 -- a net reaches this far round its tile (big: nothing has to drift exactly into it)
 Constants.SWEEP_RADIUS = 10 -- a cast's line catches everything this close to it on the way back in

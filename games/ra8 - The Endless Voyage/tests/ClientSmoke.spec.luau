@@ -93,6 +93,7 @@ local Anim = Engine.require(tree.client.Controllers.AnimController)
 local Audio = Engine.require(tree.client.Controllers.AudioController)
 local Lighting = Engine.require(tree.client.Controllers.LightingController)
 local Guide = Engine.require(tree.client.Controllers.TutorialController)
+Guide.setAutoCastAfter(math.huge) -- (the shown first cast is tested on its own, near the end)
 local Sailing = Engine.require(tree.client.Controllers.SailingController)
 local RaftMotion = Engine.require(tree.client.Controllers.RaftMotionController)
 local GuiService = Engine.game:GetService("GuiService")
@@ -1607,6 +1608,32 @@ do
 	)
 end
 
+-- the first cast, shown for you when you've tried nothing for a while (a fifth of new players never cast)
+do
+	local root = player.Character.HumanoidRootPart
+	local near
+	for _, m in ws.Debris:GetChildren() do
+		local id = m:GetAttribute("DebrisId")
+		if id and not m:GetAttribute("Special") and not m:GetAttribute("Pull") then
+			local d = (m:GetPivot().Position - root.Position).Magnitude
+			if d > 2 and d < 40 then
+				near = m
+				break
+			end
+		end
+	end
+	local before = countSent("Act")
+	local ok = near ~= nil and Guide.autoCast(near)
+	Engine.advance(0.8)
+	local e = sent("Act")
+	check(
+		"the shown first cast casts at the piece for you",
+		ok and countSent("Act") > before and e and e.args[2] == near:GetAttribute("DebrisId"),
+		near and tostring(e and e.args[2]) or "no piece in reach"
+	)
+	check("...and says how to do it yourself", Guide.autoCastDone() == true)
+end
+
 -- lite mode (phones): no shadows, no light sources, no bloom, flat water
 do
 	local Perf = Engine.require(tree.client.Controllers.PerformanceController)
@@ -1628,6 +1655,29 @@ do
 	check("lite: no bloom", bloom == nil or bloom.Enabled == false)
 	check("lite: flat water", ws.Terrain.WaterWaveSize == 0)
 	probe:Destroy()
+	-- the far islands keep only their big shapes, and hold still
+	local Sailing = Engine.require(tree.client.Controllers.SailingController)
+	local map = ws:FindFirstChild("Map") or Engine.globals.Instance.new("Folder")
+	map.Name = "Map"
+	map.Parent = ws
+	local horizon = map:FindFirstChild("Horizon") or Engine.globals.Instance.new("Folder")
+	horizon.Name = "Horizon"
+	horizon.Parent = map
+	local isle = Engine.globals.Instance.new("Model")
+	isle.Name = "LiteTestIsle"
+	local big = Engine.globals.Instance.new("Part")
+	big.Size = Vector3.new(60, 20, 60)
+	big.Parent = isle
+	local leaf = Engine.globals.Instance.new("Part")
+	leaf.Size = Vector3.new(3, 3, 3)
+	leaf.Parent = isle
+	isle.Parent = horizon
+	Sailing.liteIsles()
+	check("lite: far islands drop their small parts", leaf.Parent == nil and big.Parent == isle)
+	local before = big.Position
+	Engine.advance(0.5)
+	check("lite: ...and the big shapes hold still", (big.Position - before).Magnitude < 0.01, big.Position - before)
+	isle:Destroy()
 end
 
 print(`\n{passed} passed, {failed} failed`)

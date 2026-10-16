@@ -21,7 +21,7 @@
       "$properties": {
         "StreamingEnabled": true,
         "StreamingMinRadius": 256,
-        "StreamingTargetRadius": 2048
+        "StreamingTargetRadius": 1024
       },
       "Terrain": {
         "$properties": {

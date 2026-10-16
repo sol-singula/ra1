@@ -18,10 +18,12 @@ local RunService = game:GetService("RunService")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 
 local Store = require(script.Parent.Parent.Store)
+local PerformanceController = require(script.Parent.PerformanceController)
 
 local DebrisController = { Name = "DebrisController", Order = 35 }
 
 local FAR = 220
+local LITE_FAR = 450 -- (phones: past this, other rafts' pieces, they move only twice a second)
 local BEACON_GOLD = Color3.fromRGB(255, 214, 90)
 local pulls = {} -- [model] = { pos, at } the integrated pull so far
 local frame = 0
@@ -177,10 +179,12 @@ local function step(dt)
 					sign.Enabled = mine and not m:GetAttribute("Pull")
 				end
 			end
+			-- (phones: pieces drifting past other rafts, far off, move twice a second)
+			local every = (PerformanceController.lite and dist > LITE_FAR) and 30 or 6
 			if not far then
 				place(m, t, dt, camPos, 1)
-			elseif (frame + i) % 6 == 0 then
-				place(m, t, dt, camPos, 6)
+			elseif (frame + i) % every == 0 then
+				place(m, t, dt, camPos, every)
 			end
 		end
 	end

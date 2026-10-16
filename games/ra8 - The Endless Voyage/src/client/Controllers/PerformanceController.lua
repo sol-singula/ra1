@@ -7,8 +7,9 @@ device only (nothing changes for anyone else):
   * monsters are drawn to a shorter distance and far ones animate less often (CreatureController reads .lite), and
     effects use fewer particles (FxController)
   * no shadows, no light sources (a lamp's bulb still glows), flat water, no clouds
-  * other rafts hold still and yours bobs every other frame (RaftMotionController), the far islands slide every few
-    frames (SailingController)
+  * every raft holds still (RaftMotionController); the far islands hold still and keep only their big shapes
+    (SailingController); the sky updates once a second (LightingController); other rafts' far debris moves twice a
+    second (DebrisController)
 AnalyticsController sends PerformanceController.lite with each frame-rate sample, so the dashboard can tell
 whether it helps.
 ]]

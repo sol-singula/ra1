@@ -745,7 +745,9 @@ function OceanService:_tick(dt)
 		end
 		-- nets
 		if t >= p.netAt then
-			p.netAt = t + Constants.NET_EVERY
+			-- (a new raft's nets work faster until it has a workbench: the first minutes shouldn't be waiting)
+			local early = not rafts:Has(raft, "workbench")
+			p.netAt = t + (early and Constants.NET_EVERY_EARLY or Constants.NET_EVERY)
 			self:_nets(raft)
 		end
 		-- drift, pull, expire (the clients draw the models themselves from the same numbers)

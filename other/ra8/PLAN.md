@@ -423,6 +423,23 @@ The first 8 hours of analytics (641 players) showed three leaks. Each fix is aim
 * **CAST HERE only for your own crate.** Other plots' guide crates have no beacon or sign.
 * **Item icons.** The uploaded icons (`Data/IconIds`) show in the UI. Items without one still draw their 3D model.
 
+## Round 15: fixes from the v14 numbers
+
+The first two hours of v14 (416 new players): a median session of 1.2 minutes, 22% never cast, half of the players
+who placed their free net left before the workbench, and phones (85% of players) ran at a median of 21 FPS.
+
+* **Phones run lighter (lite mode).** The nine far islands are about 3,200 parts, always loaded; phones moved them
+  every third frame. Now on phones they hold still and keep only their big shapes (nothing under 12 studs, about 80%
+  fewer parts, `SailingController` liteIsles). Every raft holds still on phones, your own too (`RaftMotionController`).
+  The sky and time of day update once a second, not ten times (`LightingController`). Other rafts' far debris moves
+  twice a second (`DebrisController`). The streaming radius is 1024 (was 2048).
+* **The first cast, shown.** After 8 seconds on the guide's first step without trying anything, the game casts once
+  for you at the nearest piece in reach and says "tap the 🎣 button to cast yourself" (`TutorialController`
+  autoCast, once a session; counted as the "@auto_cast" tap).
+* **No wait before the workbench.** Reaching the floor-tile and workbench steps tops you up with whatever their cost
+  is missing, once (`TutorialService:_kit`, profile.tutorial.kit). You still build them yourself. A raft's nets
+  check every 3 seconds (`NET_EVERY_EARLY`) until it has a workbench.
+
 ## Tests
 
 `tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 76 checks: tiers, speeds, loot odds,

@@ -258,9 +258,10 @@ local function step(dt)
 	local want = DRIFT_SPEED
 	speed += (want - speed) * math.min(1, dt * 0.8)
 	flow += speed * dt
-	-- (phones: the far islands slide every 3rd frame, they move slowly enough that nobody sees it)
+	-- (phones: the far islands hold still and are cut down to their big shapes, liteIsles: sliding ~3,200 parts
+	-- every few frames was what held phones at ~21 FPS)
 	isleFrame = (isleFrame or 0) + 1
-	if not PerformanceController.lite or isleFrame % 3 == 0 then
+	if not PerformanceController.lite then
 		flowIsles(layout)
 	end
 	local island = Store.get("island")
@@ -357,6 +358,39 @@ local function privacy()
 	end
 end
 
+-- Phones (lite): the far islands keep only their big shapes (nothing under LITE_MIN_SIZE studs: trees' leaves, rocks,
+-- huts' planks), on this client only. They're far enough away that the outline is what you see.
+local LITE_MIN_SIZE = 12
+local litDone = {} -- [model] = true
+local function liteIsles()
+	if not PerformanceController.lite then
+		return 0
+	end
+	local map = workspace:FindFirstChild("Map")
+	local f = map and map:FindFirstChild("Horizon")
+	if not f then
+		return 0
+	end
+	local cut = 0
+	for _, m in f:GetChildren() do
+		if not litDone[m] then
+			litDone[m] = true
+			for _, d in m:GetDescendants() do
+				if d:IsA("BasePart") then
+					local size = d.Size
+					if math.max(size.X, size.Y, size.Z) < LITE_MIN_SIZE then
+						d.Parent = nil
+						cut += 1
+					else
+						d.CastShadow = false
+					end
+				end
+			end
+		end
+	end
+	return cut
+end
+
 function SailingController:init()
 	RunService.RenderStepped:Connect(step)
 	local acc = 0
@@ -365,11 +399,14 @@ function SailingController:init()
 		if acc >= 0.25 then
 			acc = 0
 			privacy()
+			liteIsles()
 		end
 	end)
 end
 
 -- (tests)
+SailingController.liteIsles = liteIsles
+SailingController.LITE_MIN_SIZE = LITE_MIN_SIZE
 function SailingController.privacy()
 	privacy()
 	return hidden
