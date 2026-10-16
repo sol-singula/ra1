@@ -35,6 +35,7 @@ local Progression = require(ReplicatedStorage.Shared.Data.Progression)
 local Recipes = require(ReplicatedStorage.Shared.Data.Recipes)
 local Voyages = require(ReplicatedStorage.Shared.Data.Voyages)
 local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
+local Sources = require(ReplicatedStorage.Shared.Sources)
 local NotifyController = require(script.Parent.NotifyController)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
@@ -242,9 +243,128 @@ local function costChips(parent, cost, pos, width)
 		})
 		chip:SetAttribute("Have", have)
 		chip:SetAttribute("Need", cost[k])
+		if not ok then
+			-- missing: hover for where to get it, tap for the whole how-to
+			chip.Text ..= " ❓"
+			local how = new("TextButton", {
+				Name = "How_" .. k,
+				Text = "",
+				BackgroundTransparency = 1,
+				Size = UDim2.fromScale(1, 1),
+				ZIndex = (chip.ZIndex or 1) + 1,
+				Parent = chip,
+			})
+			how.Activated:Connect(function()
+				PanelController.showHow(k)
+			end)
+			how.MouseEnter:Connect(function()
+				PanelController.howTip(k, chip)
+			end)
+			how.MouseLeave:Connect(function()
+				PanelController.howTip(nil)
+			end)
+		end
 		x += (width or 150) + 2
 	end
 	return all
+end
+
+-- How to get something you're missing, for where you are (Sources.steps).
+local function howContext()
+	local profile = Store.get("profile") or {}
+	local raft = Store.get("raft") or {}
+	local pieces = {}
+	for _, p in raft.pieces or {} do
+		if not p.broken then
+			pieces[p.key] = true
+		end
+	end
+	if raft.helm then
+		pieces.helm = true
+	end
+	return {
+		have = countOf,
+		known = profile.known or {},
+		blueprints = profile.blueprints or {},
+		pieces = pieces,
+		tier = raft.tier or 1,
+		voyage = Store.get("voyage") or { state = "docked" },
+	}
+end
+
+function PanelController.howSteps(key)
+	return Sources.steps(key, howContext())
+end
+
+-- The full how-to on a card: numbered steps.
+function PanelController.showHow(key)
+	PanelController.howTip(nil)
+	local item = Items.get(key)
+	local steps = PanelController.howSteps(key)
+	local lines = {}
+	local n = 0
+	for _, step in steps do
+		if string.sub(step, 1, 3) == "   " then
+			table.insert(lines, step)
+		else
+			n += 1
+			table.insert(lines, `{n}. {step}`)
+		end
+	end
+	local c = PanelController.card(
+		"how",
+		`How to get {item and item.name or key} {item and item.icon or ""}`,
+		#lines > 0 and table.concat(lines, "\n") or "Keep exploring: it turns up out there.",
+		{ { text = "GOT IT", color = C.good } }
+	)
+	c.Size = UDim2.fromOffset(600, math.clamp(150 + #lines * 26, 200, 520))
+	local text = c:FindFirstChild("Text")
+	if text then
+		text.TextXAlignment = Enum.TextXAlignment.Left
+		text.TextYAlignment = Enum.TextYAlignment.Top
+		text.Size = UDim2.new(1, -32, 1, -130)
+	end
+	Bus.Tap:Fire("how_" .. key)
+	return c
+end
+
+-- Hovering a missing cost: the first steps in a small box beside it (the mouse only).
+local howTipFrame
+function PanelController.howTip(key, near)
+	if howTipFrame then
+		howTipFrame:Destroy()
+		howTipFrame = nil
+	end
+	if not key or not near or not gui then
+		return
+	end
+	local steps = PanelController.howSteps(key)
+	if #steps == 0 then
+		return
+	end
+	local shown = {}
+	for i = 1, math.min(#steps, 4) do
+		table.insert(shown, steps[i])
+	end
+	local pos = near.AbsolutePosition
+	howTipFrame = new("Frame", {
+		Name = "HowTip",
+		BackgroundColor3 = Color3.fromRGB(30, 36, 52),
+		Position = UDim2.fromOffset(pos.X, pos.Y + 26),
+		Size = UDim2.fromOffset(360, 30 + #shown * 22),
+		ZIndex = 60,
+		Parent = gui,
+	}, { Theme.corner(10) })
+	Theme.text({
+		Text = table.concat(shown, "\n") .. (#steps > 4 and "\n(tap for all the steps)" or ""),
+		Position = UDim2.fromOffset(10, 6),
+		Size = UDim2.new(1, -20, 1, -12),
+		TextSize = 13,
+		TextColor3 = C.white,
+		TextYAlignment = Enum.TextYAlignment.Top,
+		ZIndex = 61,
+		Parent = howTipFrame,
+	})
 end
 
 local function sendViewed(name)
@@ -535,7 +655,23 @@ local BUFF_NAME = { hearty = "Hearty (tougher)", swift = "Swift (faster)", lucky
 local suppressUntil = 0 -- a tap right after a drag is not a tap
 
 -- A picture of the item in a cell: its own model, or the emoji if it can't be drawn.
-local function itemPicture(parent, item, inset, zIndex)
+local function itemPicture(parent, item, inset, zIndex, slot)
+	local pinned = slot and slot.key == "pin" and slot.data and slot.data.piece
+	if pinned then
+		-- a build shortcut: the piece it builds, with a pin on it (not the shortcut's own empty model)
+		local shown = Icons.piece(parent, pinned, { inset = inset or 4, zIndex = zIndex or 1 })
+		local def = Pieces.get(pinned)
+		Theme.text({
+			Name = "Icon",
+			Text = shown and "📌" or `{def and def.icon or ""}📌`,
+			Position = UDim2.fromOffset(4, 2),
+			Size = shown and UDim2.fromOffset(22, 22) or UDim2.new(1, -8, 1, -16),
+			TextXAlignment = shown and Enum.TextXAlignment.Left or Enum.TextXAlignment.Center,
+			ZIndex = (zIndex or 1) + 2,
+			Parent = parent,
+		})
+		return
+	end
 	local drawn = item and Icons.item(parent, item.key, { inset = inset or 4, zIndex = zIndex or 1 })
 	if item and not drawn then
 		Theme.text({
@@ -624,7 +760,7 @@ local function itemCell(parent, slotId, slot, order, onClick, onEnter, onLeave)
 	local stroke = Theme.stroke(picked == slotId and 5 or 3, picked == slotId and C.mustard or base)
 	stroke:SetAttribute("Base", base)
 	stroke.Parent = b
-	itemPicture(b, item, 4, 1)
+	itemPicture(b, item, 4, 1, slot)
 	Theme.title({
 		Name = "Count",
 		Text = (slot and slot.n > 1) and tostring(slot.n) or "",
@@ -737,7 +873,7 @@ local function dragMove(input)
 			ZIndex = 40,
 			Parent = gui,
 		}, { Theme.corner(12), Theme.stroke(4, C.mustard) })
-		itemPicture(ghost, item, 4, 41)
+		itemPicture(ghost, item, 4, 41, drag.slot)
 		drag.ghost = ghost
 	end
 	local k = 1
@@ -819,7 +955,7 @@ local function detailsCard(parent, inv, slotId)
 		Size = UDim2.fromOffset(96, 96),
 		Parent = card,
 	}, { Theme.corner(14), Theme.stroke(3, r.color) })
-	itemPicture(pic, item, 6, 1)
+	itemPicture(pic, item, 6, 1, inv.slots[slotId])
 	label(card, item.name, {
 		Name = "ItemName",
 		Position = UDim2.fromOffset(114, 10),
@@ -908,8 +1044,8 @@ local function detailsCard(parent, inv, slotId)
 			Bus.Tap:Fire("bag_full")
 		end)
 	end
-	btn("Drop", "DROP", C.red, function()
-		Net.send("Drop", slotId, 1)
+	btn("Drop", "DROP (Q)", C.red, function()
+		Net.send("Drop", slotId, slot.n) -- (the whole stack)
 		Bus.Tap:Fire("drop")
 	end)
 	local rows = math.ceil(#buttons / 2)
@@ -1038,7 +1174,7 @@ local function inventoryPanel()
 		end
 		label(
 			left,
-			`BAG · {inv.capacity or 16} slots (more with storage boxes and tiers) · drag to move · shift-click to the hotbar`,
+			`BAG · {inv.capacity or 16} slots (more with storage boxes and tiers) · drag to move · shift-click to the hotbar · Q drops`,
 			{
 				Position = UDim2.fromOffset(0, 92),
 				Size = UDim2.new(1, 0, 0, 20),
@@ -1212,6 +1348,15 @@ local function craftPanel(station)
 				Parent = row,
 			})
 			b.Activated:Connect(function()
+				if not can and not locked then
+					-- (can't pay: say how to get what's missing instead)
+					for k, n in r.cost do
+						if countOf(k) < n then
+							PanelController.showHow(k)
+							return
+						end
+					end
+				end
 				Net.send("Craft", r.id)
 				Bus.Tap:Fire("craft_" .. r.id)
 			end)
@@ -2609,8 +2754,28 @@ function PanelController:init()
 			) and open
 		then
 			PanelController.close()
+		elseif input.KeyCode == Enum.KeyCode.Q and open and open.name == "inventory" then
+			PanelController.quickDrop()
 		end
 	end)
+end
+
+-- (tests: the mouse over a bag slot)
+function PanelController._hover(id)
+	hover = id
+end
+
+-- Q in the bag: drop the whole stack under the mouse (or the one picked)
+function PanelController.quickDrop()
+	local id = hover or picked
+	local inv = Store.get("inv")
+	local slot = id and inv and inv.slots and inv.slots[id]
+	if not slot then
+		return false
+	end
+	Net.send("Drop", id, slot.n)
+	Bus.Tap:Fire("quick_drop")
+	return true
 end
 
 -- (tests)

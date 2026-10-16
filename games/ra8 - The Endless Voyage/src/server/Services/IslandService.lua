@@ -412,8 +412,8 @@ function IslandService:Puzzle(player, island, partId)
 				glass.Material = Enum.Material.Neon
 				local light = Instance.new("PointLight")
 				light.Color = Color3.fromRGB(255, 200, 90)
-				light.Range = 18
-				light.Brightness = 1.5
+				light.Range = 12
+				light.Brightness = 0.7
 				light.Parent = glass
 			end
 		end

@@ -308,7 +308,7 @@ Items.list = {
 		rarity = "uncommon",
 		icon = "🏮",
 		stack = 1,
-		light = { range = 26, brightness = 1.4 },
+		light = { range = 18, brightness = 0.7 },
 		desc = "Light for the night and the caves.",
 	},
 	-- Weapons

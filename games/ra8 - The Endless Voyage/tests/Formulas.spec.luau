@@ -760,6 +760,70 @@ do
 	)
 end
 
+-- Where things come from: steps for where you are
+do
+	local Sources = Engine.require(tree.shared.Sources)
+	local function ctxWith(t)
+		local have = t.have or {}
+		return {
+			have = function(k)
+				return have[k] or 0
+			end,
+			known = t.known or { palm_key = true },
+			blueprints = t.blueprints or {},
+			pieces = t.pieces or {},
+			tier = t.tier or 1,
+			voyage = t.voyage or { state = "docked" },
+		}
+	end
+	local function has(steps, text)
+		for _, s in steps do
+			if string.find(s, text, 1, true) then
+				return true
+			end
+		end
+		return false
+	end
+	local fresh = Sources.steps("palm", ctxWith({}))
+	check(
+		"how-to: palm fronds from scratch: a helm, sail to Palm Key, an axe (and its workbench), chop the palms",
+		has(fresh, "Helm")
+			and has(fresh, "SAIL for Palm Key")
+			and has(fresh, "Workbench")
+			and has(fresh, "Axe")
+			and has(fresh, "palm trees"),
+		table.concat(fresh, " | ")
+	)
+	local there = Sources.steps(
+		"palm",
+		ctxWith({ have = { axe = 1 }, voyage = { state = "island", dest = "palm_key" }, pieces = { helm = true } })
+	)
+	check(
+		"how-to: already on Palm Key with an axe: just hold it and chop",
+		not has(there, "SAIL") and not has(there, "Craft") and has(there, "Hold your Axe"),
+		table.concat(there, " | ")
+	)
+	local ore = Sources.steps("ore", ctxWith({ pieces = { helm = true } }))
+	check(
+		"how-to: ore from an island you have no chart for says how to find it",
+		has(ore, "chart"),
+		table.concat(ore, " | ")
+	)
+	local wood = Sources.steps("wood", ctxWith({ have = { fishing_rod = 1 } }))
+	check("how-to: wood floats by: cast at it", has(wood, "cast at the Wood"), table.concat(wood, " | "))
+	local cloth = Sources.steps("glass", ctxWith({}))
+	check("how-to: crafted things say where to make them", has(cloth, "Refining Station"), table.concat(cloth, " | "))
+	local every = true
+	for _, it in Items.list do
+		local ok, steps = pcall(Sources.steps, it.key, ctxWith({}))
+		if not ok then
+			every = false
+		end
+		_ = steps
+	end
+	check("how-to: every item gets an answer without an error", every)
+end
+
 print(`\n{passed} passed, {failed} failed`)
 if failed > 0 then
 	error("Formulas: " .. failed .. " failures")

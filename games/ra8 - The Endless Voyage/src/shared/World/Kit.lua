@@ -260,12 +260,17 @@ function Kit.folder(name, parent)
 end
 
 -- Lights ----------------------------------------------------------------------------------------------------------
+-- Every light is softened here (LIGHT_SCALE, LIGHT_REACH): lamps and fires glow, they don't blaze.
+Kit.LIGHT_SCALE = 0.5
+Kit.LIGHT_REACH = 0.7
 function Kit.light(parent, className, props)
 	local l = Instance.new(className or "PointLight")
 	l.Shadows = false
 	for k, v in props or {} do
 		l[k] = v
 	end
+	l.Brightness *= Kit.LIGHT_SCALE
+	l.Range *= Kit.LIGHT_REACH
 	l.Parent = parent
 	return l
 end

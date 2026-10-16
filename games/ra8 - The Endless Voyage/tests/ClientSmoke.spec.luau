@@ -1460,6 +1460,46 @@ if Panels.cards.thanks then
 end
 Engine.advance(0.2)
 check("the NEXT card comes back once it's answered", guide.GuideCard.Visible == true)
+-- missing something: the how-to card, step by step
+do
+	local c = Panels.showHow("palm")
+	Engine.advance(0.2)
+	local text = c and c:FindFirstChild("Text")
+	check(
+		"how-to: a card with numbered steps to get palm fronds",
+		Panels.cards.how ~= nil
+			and text ~= nil
+			and string.find(text.Text, "1. ", 1, true) ~= nil
+			and string.find(text.Text, "Palm Key", 1, true) ~= nil,
+		text and text.Text
+	)
+	if Panels.cards.how then
+		tap(Panels.cards.how.Btn1)
+		Engine.advance(0.2)
+	end
+end
+-- Q in the bag drops the whole stack under the mouse
+do
+	Inventory:Give(player, "stone", 5, "home")
+	Engine.advance(0.3)
+	Panels.openPanel("inventory")
+	Engine.advance(0.3)
+	local id
+	for sid, slot in Store.get("inv").slots do
+		if slot.key == "stone" then
+			id = sid
+		end
+	end
+	local cell = id and find(panels, "Slot_" .. id)
+	if cell then
+		Panels._hover(id)
+	end
+	check("Q: drops the whole stack", id ~= nil and Panels.quickDrop())
+	Engine.advance(0.5)
+	check("Q: the stack is gone", Inventory:Count(player, "stone") == 0, Inventory:Count(player, "stone"))
+	Panels.close()
+	Engine.advance(0.2)
+end
 -- the daily vote card: a row per raft with LOOK and VOTE
 do
 	local Vote = service("VoteService")

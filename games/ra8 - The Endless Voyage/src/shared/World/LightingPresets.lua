@@ -26,7 +26,7 @@ LightingPresets.list = {
 			haze = 0.78,
 		},
 		grade = { brightness = 0.02, contrast = 0.12, saturation = 0.2, tint = rgb(252, 250, 240) },
-		bloom = { intensity = 0.3, size = 24, threshold = 1.7 },
+		bloom = { intensity = 0.12, size = 20, threshold = 2.3 },
 		clouds = { cover = 0.38, density = 0.5, color = rgb(255, 255, 255) },
 	},
 	dawn = { -- pink light, the water flat
@@ -44,7 +44,7 @@ LightingPresets.list = {
 			haze = 0.96,
 		},
 		grade = { brightness = 0.02, contrast = 0.08, saturation = 0.16, tint = rgb(255, 236, 224) },
-		bloom = { intensity = 0.4, size = 28, threshold = 1.5 },
+		bloom = { intensity = 0.16, size = 20, threshold = 2.2 },
 		clouds = { cover = 0.3, density = 0.4, color = rgb(255, 230, 220) },
 	},
 	dusk = { -- the sun goes down orange over the water
@@ -62,7 +62,7 @@ LightingPresets.list = {
 			haze = 1.08,
 		},
 		grade = { brightness = 0.02, contrast = 0.12, saturation = 0.22, tint = rgb(255, 228, 200) },
-		bloom = { intensity = 0.5, size = 30, threshold = 1.4 },
+		bloom = { intensity = 0.2, size = 20, threshold = 2.2 },
 		clouds = { cover = 0.4, density = 0.5, color = rgb(255, 196, 150) },
 	},
 	night = { -- a moon on the water, stars, the lanterns doing the rest
@@ -80,7 +80,7 @@ LightingPresets.list = {
 			haze = 0.84,
 		},
 		grade = { brightness = -0.02, contrast = 0.14, saturation = -0.1, tint = rgb(200, 212, 255) },
-		bloom = { intensity = 0.6, size = 36, threshold = 1.2 },
+		bloom = { intensity = 0.24, size = 20, threshold = 2.2 },
 		clouds = { cover = 0.3, density = 0.5, color = rgb(120, 130, 170) },
 	},
 	storm = { -- black sky, grey water, the rain
@@ -98,7 +98,7 @@ LightingPresets.list = {
 			haze = 3,
 		},
 		grade = { brightness = -0.04, contrast = 0.18, saturation = -0.3, tint = rgb(210, 220, 236) },
-		bloom = { intensity = 0.2, size = 20, threshold = 1.9 },
+		bloom = { intensity = 0.08, size = 20, threshold = 2.5 },
 		clouds = { cover = 0.95, density = 0.9, color = rgb(90, 96, 110) },
 	},
 	fog = { -- Mist Hollow
@@ -116,7 +116,7 @@ LightingPresets.list = {
 			haze = 3.2,
 		},
 		grade = { brightness = 0, contrast = 0.04, saturation = -0.2, tint = rgb(236, 240, 244) },
-		bloom = { intensity = 0.2, size = 20, threshold = 1.9 },
+		bloom = { intensity = 0.08, size = 20, threshold = 2.5 },
 		clouds = { cover = 0.8, density = 0.7, color = rgb(220, 224, 228) },
 	},
 	trench = { -- the water goes black, the sky goes green
@@ -134,7 +134,7 @@ LightingPresets.list = {
 			haze = 2.4,
 		},
 		grade = { brightness = -0.03, contrast = 0.2, saturation = -0.1, tint = rgb(200, 236, 230) },
-		bloom = { intensity = 0.5, size = 30, threshold = 1.3 },
+		bloom = { intensity = 0.2, size = 20, threshold = 2.2 },
 		clouds = { cover = 0.7, density = 0.8, color = rgb(90, 120, 120) },
 	},
 }
