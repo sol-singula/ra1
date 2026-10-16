@@ -392,19 +392,9 @@ function MenuController:init()
 		end
 	end)
 	updateBadge()
-	-- the menu greets returning players when they arrive; a first-timer goes straight into the game (every screen
-	-- before the first cast loses players)
-	task.spawn(function()
-		local waited = 0
-		while not Store.get("profile") and waited < 8 do
-			waited += task.wait(0.25)
-		end
-		updateBadge()
-		local profile = Store.get("profile")
-		if profile and profile.tutorial and profile.tutorial.done then
-			MenuController.open()
-		end
-	end)
+	-- no menu on arrival: everyone lands straight in the game (every screen before playing loses players); the
+	-- menu is one tap away (its button, top left)
+	updateBadge()
 end
 
 -- (tests)

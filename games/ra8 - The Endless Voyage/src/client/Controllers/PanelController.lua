@@ -233,14 +233,32 @@ local function costChips(parent, cost, pos, width)
 		local ok = have >= cost[k]
 		all = all and ok
 		local shown = have > 999 and "999+" or tostring(have)
-		local chip = label(parent, `{item and item.icon or ""} {item and item.name or k} {shown}/{cost[k]}`, {
-			Name = "Cost_" .. k,
-			Position = UDim2.new(pos.X.Scale, pos.X.Offset + x, pos.Y.Scale, pos.Y.Offset),
-			Size = UDim2.fromOffset(width or 150, 22),
-			TextSize = 14,
-			TextColor3 = ok and Color3.fromRGB(30, 130, 60) or C.red,
-			Font = Theme.Display,
+		local chipPos = UDim2.new(pos.X.Scale, pos.X.Offset + x, pos.Y.Scale, pos.Y.Offset)
+		-- the item's own picture before its name (the emoji only when it can't be drawn)
+		local pic = new("Frame", {
+			Name = "CostPic_" .. k,
+			BackgroundTransparency = 1,
+			Position = chipPos,
+			Size = UDim2.fromOffset(22, 22),
+			Parent = parent,
 		})
+		local drawn = item and Icons.item(pic, k, { inset = 0 })
+		if not drawn then
+			pic:Destroy()
+		end
+		local chip = label(
+			parent,
+			`{drawn and "" or ((item and item.icon or "") .. " ")}{item and item.name or k} {shown}/{cost[k]}`,
+			{
+				Name = "Cost_" .. k,
+				Position = drawn and UDim2.new(pos.X.Scale, pos.X.Offset + x + 24, pos.Y.Scale, pos.Y.Offset)
+					or chipPos,
+				Size = UDim2.fromOffset((width or 150) - (drawn and 24 or 0), 22),
+				TextSize = 14,
+				TextColor3 = ok and Color3.fromRGB(30, 130, 60) or C.red,
+				Font = Theme.Display,
+			}
+		)
 		chip:SetAttribute("Have", have)
 		chip:SetAttribute("Need", cost[k])
 		if not ok then
@@ -533,13 +551,22 @@ local function buildPanel(arg)
 						stroke.Thickness = 4
 					end
 					row:SetAttribute("Wanted", true)
-					label(row, "⭐ NEXT", {
+					-- the tag rides on the picture's corner (on the row's text it covered the description)
+					local tag = new("Frame", {
 						Name = "Next",
-						Position = UDim2.new(1, -230, 0, 4),
-						Size = UDim2.fromOffset(110, 20),
+						BackgroundColor3 = C.orange,
+						Position = UDim2.fromOffset(4, 44),
+						Size = UDim2.fromOffset(54, 16),
+						ZIndex = 4,
+						Parent = row,
+					}, { Theme.corner(6) })
+					label(tag, "⭐ NEXT", {
+						Size = UDim2.fromScale(1, 1),
 						Font = Theme.Display,
-						TextSize = 15,
-						TextColor3 = C.orange,
+						TextSize = 11,
+						TextColor3 = C.white,
+						TextXAlignment = Enum.TextXAlignment.Center,
+						ZIndex = 5,
 					})
 				end
 				local pic = new("Frame", {

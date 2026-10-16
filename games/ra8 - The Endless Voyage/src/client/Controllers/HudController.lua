@@ -473,14 +473,23 @@ local function chip(parent, key, i)
 		Size = UDim2.fromOffset(CHIP_W, 30),
 		Parent = parent,
 	}, { Theme.corner(10), Theme.stroke(2, C.ink) })
-	Theme.text({
-		Name = "Icon",
-		Text = it and it.icon or "",
-		Position = UDim2.fromOffset(3, 3),
-		Size = UDim2.fromOffset(24, 24),
-		TextXAlignment = Enum.TextXAlignment.Center,
+	-- the item's own picture (the same one as in the bag), the emoji only if it can't be drawn
+	local pic = new("Frame", {
+		Name = "Pic",
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(2, 2),
+		Size = UDim2.fromOffset(26, 26),
 		Parent = c,
 	})
+	if not (it and Icons.item(pic, key, { inset = 0 })) then
+		Theme.text({
+			Name = "Icon",
+			Text = it and it.icon or "",
+			Size = UDim2.fromScale(1, 1),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Parent = pic,
+		})
+	end
 	local n = Theme.title({
 		Name = "Count",
 		Text = "0",
