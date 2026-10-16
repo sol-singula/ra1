@@ -15,7 +15,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
-local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local Items = require(ReplicatedStorage.Shared.Data.Items)

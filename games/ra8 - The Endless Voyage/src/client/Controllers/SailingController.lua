@@ -27,7 +27,6 @@ local PerformanceController = require(script.Parent.PerformanceController)
 local SailingController = { Name = "SailingController", Order = 37 }
 
 local DRIFT_SPEED = 4 -- studs a second the far islands pass while the raft floats at its spot
-local SAIL_SPEED = 26 -- ... and while it sails
 -- Sailing is a cut scene (VoyageService): the screen goes black and you're there, so nothing here races past, no
 -- wake, no island coming in or sliding away. (false brings the watched trip back.)
 local CUT_SCENE = true
@@ -254,7 +253,6 @@ local function step(dt)
 	dt = math.min(dt or 1 / 60, 0.1)
 	local v = Store.get("voyage") or { state = "docked" }
 	local state = v.state
-	local moving = state == "sailing" or state == "home"
 	-- ease between floating and sailing speed
 	-- (sailing is a cut scene now: the world never races past)
 	local want = DRIFT_SPEED
