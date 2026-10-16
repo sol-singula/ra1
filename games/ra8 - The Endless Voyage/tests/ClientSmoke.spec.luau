@@ -1094,11 +1094,274 @@ if damaged then
 	check("a repair costs a wood", Inventory:Count(player, "wood") == wood - 1, Inventory:Count(player, "wood"))
 end
 
+-- REMOVE: the button (or X) on your raft; the piece you point at glows red with what comes back; ACT takes it off ------------
+do
+	local raft = Rafts:RaftOf(player)
+	-- a railing on the raft's outer edge, to take off
+	local edge
+	for _, p in raft.pieces do
+		if
+			p.def.structural
+			and p.level == 1
+			and not Rafts:Tile(raft, p.gx + 1, p.gz, 1)
+			and not Rafts:OnTile(raft, p.gx, p.gz, 1)
+			and not Rafts:Edge(raft, p.gx, p.gz, 1, 0)
+			and (not edge or p.gx > edge.gx)
+		then
+			edge = p
+		end
+	end
+	for k, n in Pieces.get("railing").cost do
+		Inventory:Give(player, k, n, "test")
+	end
+	check("(a railing to take off)", edge ~= nil and Rafts:Build(player, "railing", edge.gx, edge.gz, 1, 0) == true)
+	Engine.advance(0.3)
+	local rail = Rafts:Edge(raft, edge.gx, edge.gz, 1, 0)
+	local railAt = Rafts:PiecePosition(raft, rail)
+	local tileAt = Rafts:TileWorld(raft, edge.gx, edge.gz, 1)
+	stand(tileAt + Vector3.new(-2, 3, 0), railAt + Vector3.new(3, 0, 0))
+	Engine.advance(0.3)
+	check("a ♻️ REMOVE button is on your raft", gui.Build.Remove.Visible == true)
+	tap(gui.Build.Remove)
+	Engine.advance(0.2)
+	check(
+		"REMOVE is on, and ACT says REMOVE",
+		Build.placing() ~= nil and Build.placing().demolish == true and Input.refs.actLabel.Text == "REMOVE",
+		Input.refs.actLabel.Text
+	)
+	local target = Build.placing() and Build.placing().target
+	check(
+		"the railing in front glows red",
+		target ~= nil and target:GetAttribute("PieceId") == rail.id and target:FindFirstChild("RemoveGlow") ~= nil,
+		target and target.Name
+	)
+	local barText = gui.Build.PlaceBar.Text.Text
+	check("the bar says what you get back", barText:find("REMOVE") ~= nil and barText:find("+") ~= nil, barText)
+	local before = {}
+	for k in Pieces.get("railing").cost do
+		before[k] = Inventory:Count(player, k)
+	end
+	Input.act()
+	Engine.advance(0.4)
+	local whole = true
+	for k, n in Pieces.get("railing").cost do
+		whole = whole and Inventory:Count(player, k) == before[k] + n
+	end
+	check("ACT takes it off, the whole cost back in the bag", Rafts:Edge(raft, edge.gx, edge.gz, 1, 0) == nil and whole)
+	check("REMOVE stays on for the next piece", Build.placing() ~= nil and Build.placing().demolish == true)
+	tap(gui.Build.Remove)
+	check("the button (now DONE) turns it off", Build.placing() == nil and Input.refs.actLabel.Text ~= "REMOVE")
+	Build.toggleRemove()
+	Engine.advance(0.1)
+	check("X / the d-pad do the same", Build.placing() ~= nil and Build.placing().demolish == true)
+	Build.toggleRemove()
+	Engine.advance(0.1)
+end
+
+-- Research away from the station: it says why, and the guide shows the way ---------------------------------------------------
+do
+	local Craft = service("CraftService")
+	local raft = Rafts:RaftOf(player)
+	for _, p in raft.pieces do
+		if p.def.station == "research" then
+			Rafts:_remove(raft, p)
+		end
+	end
+	Inventory:Give(player, "old_compass", 2, "test")
+	Engine.advance(0.3)
+	local function compassSlot()
+		for id, s in Inventory:View(player).slots do
+			if s.key == "old_compass" then
+				return id
+			end
+		end
+		return nil
+	end
+	check("no Research Station: researching says how to get one", Craft:Research(player, compassSlot()) == false)
+	Engine.advance(0.3)
+	local callout = refs.callout and refs.callout:FindFirstChildWhichIsA("TextLabel")
+	check(
+		"...a callout naming the Research Station and where it's built",
+		callout ~= nil and callout.Text:find("Research Station") ~= nil,
+		callout and callout.Text
+	)
+	-- a station across the raft
+	local spots = Rafts:EmptyTiles(raft, 1)
+	local me = player.Character.HumanoidRootPart.Position
+	local far, farD
+	for _, s in spots do
+		local d = (Rafts:TileWorld(raft, s.gx, s.gz, 1) - me).Magnitude
+		if not farD or d > farD then
+			far, farD = s, d
+		end
+	end
+	local station = Rafts:_add(raft, { key = "research", gx = far.gx, gz = far.gz, level = 1 })
+	Rafts:Recompute(raft)
+	Rafts:Push(raft)
+	local at = Rafts:PiecePosition(raft, station)
+	local away
+	for _, s in spots do
+		local w = Rafts:TileWorld(raft, s.gx, s.gz, 1)
+		if (w - at).Magnitude > 14 then
+			away = w
+			break
+		end
+	end
+	stand((away or me) + Vector3.new(0, 3, 0), at)
+	Panels.openPanel("inventory")
+	Engine.advance(0.3)
+	check("away from it: RESEARCH doesn't just fail", Craft:Research(player, compassSlot()) == false)
+	Engine.advance(0.4)
+	local cur = Guide.current()
+	check(
+		"the guide's card says go to your Research Station and the arrow points at it",
+		cur ~= nil
+			and cur.key == "point"
+			and guide.GuideCard.Step.Text:find("RESEARCH") ~= nil
+			and typeof(cur.target) == "Vector3"
+			and (Vector3.new(cur.target.X, 0, cur.target.Z) - Vector3.new(at.X, 0, at.Z)).Magnitude < 1,
+		cur and cur.text
+	)
+	check("the bag closes so you can see the way", Panels.current() == nil, Panels.current())
+	stand(at + (Vector3.new(me.X, at.Y, me.Z) - at).Unit * 3 + Vector3.new(0, 3, 0), at)
+	Engine.advance(0.4)
+	check("there: the Research Station's panel opens by itself", Panels.current() == "craft", Panels.current())
+	check("and the guide goes back to what it was saying", Guide.current() == nil or Guide.current().key ~= "point")
+	check("now it researches", Craft:Research(player, compassSlot()) == true)
+	Panels.close()
+	Engine.advance(0.3)
+end
+
 -- Feedback card, lite mode, analytics --------------------------------------------------------------------------------------------
 Feedback:Ask(player)
 Engine.advance(0.5)
 check("the feedback card showed", Panels.cards.feedback ~= nil)
+-- Nothing on top of anything: the HUD's corners, the guide's card, the passing messages, the hotbar, the action
+-- buttons and a card asking something, on a phone, a tablet, a small window and a big screen.
+local Theme = Engine.require(tree.client.UI.Theme)
+local UDim2 = Engine.globals.UDim2
+local OVERLAYS = { Vignette = true, Flash = true, Fade = true, Down = true }
+-- where a GUI object is on the scaled canvas (from Position, Size and AnchorPoint up to its ScreenGui)
+local function rectOf(obj, canvas)
+	local chain = {}
+	local o = obj
+	while o and not o:IsA("ScreenGui") do
+		table.insert(chain, 1, o)
+		o = o.Parent
+	end
+	local x, y, w, h = 0, 0, canvas.X, canvas.Y
+	for _, g in chain do
+		-- (Roblox's defaults where nothing was set: 100 x 100 at the top left)
+		local s = g.Size or UDim2.fromOffset(100, 100)
+		local p = g.Position or UDim2.new()
+		local a = g.AnchorPoint or Vector2.new()
+		local nw = s.X.Scale * w + s.X.Offset
+		local nh = s.Y.Scale * h + s.Y.Offset
+		x += p.X.Scale * w + p.X.Offset - a.X * nw
+		y += p.Y.Scale * h + p.Y.Offset - a.Y * nh
+		w, h = nw, nh
+	end
+	return { x = x, y = y, w = w, h = h }
+end
+-- every pair of things on screen that overlap, and anything hanging off the edge
+local function overlaps()
+	local canvas = Theme.canvas()
+	local list = {}
+	for _, name in { "Hud", "Guide", "Actions", "Build", "Panels" } do
+		local g = gui:FindFirstChild(name)
+		for _, c in g and g:GetChildren() or {} do
+			if
+				c:IsA("GuiObject")
+				and c.Visible ~= false
+				and not OVERLAYS[c.Name]
+				and (name ~= "Panels" or c.Name:sub(1, 5) == "Card_")
+			then
+				table.insert(list, c)
+			end
+		end
+	end
+	local bad = {}
+	for i = 1, #list do
+		local a = rectOf(list[i], canvas)
+		if a.x < -1 or a.y < -1 or a.x + a.w > canvas.X + 1 or a.y + a.h > canvas.Y + 1 then
+			table.insert(bad, `{list[i].Parent.Name}.{list[i].Name} off the screen`)
+		end
+		for j = i + 1, #list do
+			local b = rectOf(list[j], canvas)
+			local ox = math.min(a.x + a.w, b.x + b.w) - math.max(a.x, b.x)
+			local oy = math.min(a.y + a.h, b.y + b.h) - math.max(a.y, b.y)
+			if ox > 2 and oy > 2 then
+				table.insert(bad, `{list[i].Parent.Name}.{list[i].Name} x {list[j].Parent.Name}.{list[j].Name}`)
+			end
+		end
+	end
+	return bad, canvas
+end
+local SCREENS = {
+	{ "phone", Vector2.new(844, 390) },
+	{ "tablet", Vector2.new(1024, 768) },
+	{ "small window", Vector2.new(1280, 720) },
+	{ "big screen", Vector2.new(1920, 1080) },
+}
+local function everyMessage()
+	Hud.toast("🪵 +3 Wood")
+	Hud.toast("📦 Supply crate!")
+	Hud.toast("🎣 It got away. Cast again!")
+	Hud.alert("🐟 REEL! (ACT)")
+	Hud.callout("🏊 You're in the water. Swim back and jump up onto the raft!", "info")
+	for i = 1, 4 do
+		Hud.unlock({ kind = "level", level = 5 + i })
+	end
+	Engine.advance(0.1)
+end
+for _, screen in SCREENS do
+	ws.CurrentCamera.ViewportSize = screen[2]
+	Engine.advance(1.2)
+	everyMessage()
+	local bad, canvas = overlaps()
+	check(
+		`{screen[1]}: nothing overlaps while "Do you like the game?" is up ({math.floor(canvas.X)} x {math.floor(
+			canvas.Y
+		)})`,
+		#bad == 0,
+		table.concat(bad, "; ")
+	)
+	check(`{screen[1]}: the guide's NEXT card steps aside for the question`, guide.GuideCard.Visible == false)
+end
+ws.CurrentCamera.ViewportSize = Vector2.new(844, 390)
+Engine.advance(4)
 tap(Panels.cards.feedback.Btn1)
+Engine.advance(0.2)
+check(
+	"a thank-you card follows (the NEXT card still out of its way)",
+	Panels.cards.thanks ~= nil and guide.GuideCard.Visible == false
+)
+if Panels.cards.thanks then
+	tap(Panels.cards.thanks.Btn1)
+end
+Engine.advance(0.2)
+check("the NEXT card comes back once it's answered", guide.GuideCard.Visible == true)
+for _, screen in SCREENS do
+	ws.CurrentCamera.ViewportSize = screen[2]
+	Engine.advance(1.2)
+	everyMessage()
+	local bad, canvas = overlaps()
+	check(
+		`{screen[1]}: nothing overlaps with every kind of message up ({math.floor(canvas.X)} x {math.floor(canvas.Y)})`,
+		#bad == 0,
+		table.concat(bad, "; ")
+	)
+	local live = 0
+	for _, c in hud:GetChildren() do
+		if c.Name == "Toast" then
+			live += 1
+		end
+	end
+	check(`{screen[1]}: toasts never pile up (two rows at most)`, live <= 2, live)
+	Engine.advance(5)
+end
+ws.CurrentCamera.ViewportSize = Vector2.new(844, 390)
+Engine.advance(1.2)
 check("the answer went to the server", sent("Feedback") ~= nil and sent("Feedback").args[1] == true)
 Analytics.flush()
 local kinds = {}

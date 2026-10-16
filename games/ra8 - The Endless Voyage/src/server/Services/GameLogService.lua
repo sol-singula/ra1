@@ -6,9 +6,8 @@ studio's other games (the roblox-game-log Supabase function, the "discord_log" s
   the chat
   rafts reaching a new tier, voyages to dangerous waters, the Leviathan going down, a raft broken by a storm
   anti-cheat flags and kicks, script errors, the server starting and shutting down
-Without the secret (and in Studio) nothing is sent.
+Without the secret (and in Studio) nothing is sent; why not is said in the server's log (GameKey).
 ]]
-local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -18,6 +17,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
+local GameKey = require(script.Parent.Parent.GameKey)
 
 local GameLogService = {
 	Name = "GameLogService",
@@ -43,7 +43,6 @@ local COLORS = {
 
 local sessions = {} -- [player] = { start, stats = copy, records = copy, xp, tutorialDone }
 local queue, chat = {}, {}
-local secret
 local startedAt = os.time()
 local peakPlayers = 0
 local errorsSeen = {}
@@ -85,36 +84,49 @@ function GameLogService.send(payload)
 	if RunService:IsStudio() and not Constants.GAME_LOG_IN_STUDIO then
 		return false
 	end
-	if secret == nil then
-		local ok, value = pcall(HttpService.GetSecret, HttpService, "discord_log")
-		secret = ok and value or false
-		if not secret then
-			warn("[GameLog] no 'discord_log' secret in the Secrets Store: game logs are off")
-		end
-	end
-	if not secret then
-		return false
-	end
-	local ok, res = pcall(HttpService.RequestAsync, HttpService, {
-		Url = Constants.GAME_LOG_URL,
-		Method = "POST",
-		Headers = { ["Content-Type"] = "application/json", ["X-Game-Key"] = secret },
-		Body = HttpService:JSONEncode(payload),
-	})
-	if not ok or not res.Success then
-		print("[GameLog] post failed: " .. tostring(ok and res.StatusCode or res))
-		return false
-	end
-	return true
+	return GameKey.post(Constants.GAME_LOG_URL, payload, "Discord log")
 end
+
+-- Everything goes to the studio's shared game-logs channel, so every entry starts with the game's short name
+-- ("ra8 · 🟢 @ava joined"), the emoji after it. The chat goes as entries too (so it starts with it as well),
+-- escaped: it's text, never markdown or a ping.
+local function tagged(e)
+	local t = table.clone(e)
+	t.title = `{Constants.GAME} · {e.emoji and (e.emoji .. " ") or ""}{e.title}`
+	t.emoji = nil
+	return t
+end
+local function plain(text)
+	text = string.gsub(tostring(text), "[`*_~|>\\]", "\\%0")
+	return (string.gsub(text, "@", "@" .. utf8.char(0x200B)))
+end
+GameLogService.tagged, GameLogService.plain = tagged, plain
 
 function GameLogService.flush()
 	if #queue == 0 and #chat == 0 then
 		return
 	end
-	local payload = { events = queue, chat = chat, server = server() }
+	local events = {}
+	for _, e in queue do
+		table.insert(events, tagged(e))
+	end
+	local lines = ""
+	local function chatEntry()
+		if lines ~= "" then
+			table.insert(events, { title = `{Constants.GAME} · 💬 Chat`, color = 0x5865f2, description = lines })
+			lines = ""
+		end
+	end
+	for _, c in chat do
+		local line = `**{plain(string.sub(c.name, 1, 40))}:** {plain(string.sub(c.text, 1, 300))}`
+		if #lines + #line > 1900 then
+			chatEntry()
+		end
+		lines = lines == "" and line or (lines .. "\n" .. line)
+	end
+	chatEntry()
 	queue, chat = {}, {}
-	GameLogService.send(payload)
+	GameLogService.send({ events = events, server = server() })
 end
 
 function GameLogService:Init(registry)

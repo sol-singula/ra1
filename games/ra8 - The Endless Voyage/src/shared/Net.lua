@@ -18,7 +18,7 @@ Net.ClientEvents = {
 	Use = 4, -- (slot) eat, read a chart, open a supply crate, learn a blueprint
 	Drop = 4, -- (slot, count?) drop into the water (it floats a while)
 	Build = 6, -- (pieceKey, gx, gz, level, rot?) place a piece on your raft (RaftService); rot: the edge it sits on
-	Demolish = 4, -- (pieceId) take a piece off your raft (half the cost back)
+	Demolish = 4, -- (pieceId) take a piece off your raft (its whole cost back)
 	Paint = 3, -- (kind, key) the raft's colours: sails, banners, flags, the deck
 	Craft = 4, -- (recipeId) at a station (CraftService)
 	Research = 3, -- (slot) feed an artifact to the Research Station (CraftService)
@@ -61,6 +61,7 @@ Net.ServerEvents = {
 	"Act", -- { by = userId, item, mode, target? }: everyone animates a player's action
 	"Hurt", -- { amount, by?, dir? } you were hit
 	"Tutorial", -- { step, text, target, ... } or false
+	"Point", -- { pos, piece?, title, text, open? }: point the way somewhere for a while (TutorialController)
 	"Unlock", -- { kind = "level" | "achievement" | "blueprint" | "discovery" | "tier" | "research" | "colour", ... }
 	"Journal", -- { entries } the discovery journal's changed page
 	"Friends", -- { [userId] = { tier, voyage, players, max, here } }: friends' servers (JoinService)

@@ -540,8 +540,8 @@ check(
 
 -- The ocean ---------------------------------------------------------------------------------------------------------------
 check(
-	"six plots, each with an island zone further out",
-	#OceanLayout.plots == 6 and (OceanLayout.plots[1].islandCenter - OceanLayout.plots[1].center).Magnitude > 100
+	"eight plots, each with an island zone further out",
+	#OceanLayout.plots == 8 and (OceanLayout.plots[1].islandCenter - OceanLayout.plots[1].center).Magnitude > 100
 )
 check(
 	"plots don't overlap their neighbours' island zones",

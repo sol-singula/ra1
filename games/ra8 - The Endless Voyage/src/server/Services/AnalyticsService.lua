@@ -30,6 +30,7 @@ local RunService = game:GetService("RunService")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
+local GameKey = require(script.Parent.Parent.GameKey)
 
 local AnalyticsService = {
 	Name = "AnalyticsService",
@@ -55,7 +56,6 @@ local AnalyticsService = {
 local data, rafts, players, voyages, weather, progress, ocean, inventoryRef
 local sessions = {} -- [player] = session
 local queue = { sessions = {}, events = {} }
-local secret -- the key from the Secrets Store, or false if there isn't one
 local MAX_EVENTS = 3000
 -- requests that are moves or bookkeeping, not decisions (counted another way, or not at all)
 local SKIP_REQUESTS = {
@@ -141,24 +141,7 @@ function AnalyticsService.send(payload)
 	if RunService:IsStudio() and not Constants.GAME_LOG_IN_STUDIO then
 		return false
 	end
-	if secret == nil then
-		local ok, value = pcall(HttpService.GetSecret, HttpService, "discord_log")
-		secret = ok and value or false
-	end
-	if not secret then
-		return false
-	end
-	local ok, res = pcall(HttpService.RequestAsync, HttpService, {
-		Url = Constants.ANALYTICS_URL,
-		Method = "POST",
-		Headers = { ["Content-Type"] = "application/json", ["X-Game-Key"] = secret },
-		Body = HttpService:JSONEncode(payload),
-	})
-	if not ok or not res.Success then
-		print("[Analytics] post failed: " .. tostring(ok and res.StatusCode or res))
-		return false
-	end
-	return true
+	return GameKey.post(Constants.ANALYTICS_URL, payload, "Analytics")
 end
 
 function AnalyticsService.flush()

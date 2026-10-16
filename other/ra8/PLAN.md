@@ -283,12 +283,38 @@ What the second play found, and what changed:
   parts. New checks: a piece streams in whole with its pivot where it was made, and the arrow points right at the
   piece.
 
+## Round 11: fixes from the live test
+
+* **Costs say what you have.** A cost chip reads 12/4 when you have 12, not 4/4.
+* **Text at every screen size.** Popup titles asked for no outline but got a thick dark one anyway (a bug in
+  `Theme.title`), so on smaller screens dark letters in dark outlines ran into blobs. Now they get none, and every
+  outline is about a tenth of the height its letters are really drawn at (`Theme.outline`).
+* **Nothing overlaps.** The screens are laid out for a canvas at least 1240 across (`Theme.MIN_WIDTH`): on a squarer
+  screen the UI is a little smaller instead of piled up. While a card asks something ("Do you like the game?"), the
+  guide's NEXT card steps aside and alerts and callouts come as one row of toasts at the bottom (`UI/Layout`). Toasts
+  keep to two rows and unlock cards to three, the oldest making room. A test measures every widget on a phone, a
+  tablet, a small window and a big screen.
+* **Research shows the way.** Tapping RESEARCH away from the Research Station closes the bag, points the guide's
+  arrow at your station (it glows) and opens its panel when you get there; with no station it says how to get one
+  (`CraftService:ShowStation`, the "Point" remote). Making something away from its station does the same.
+* **REMOVE, for the whole cost.** X, the gamepad's d-pad left, or the ♻️ button on your raft: the piece you point at
+  glows red, the bar says what you'll get back, and ACT takes it off. A tile takes what's on it and on its edges
+  with it (everything refunded, a net's catch too); the raft still can't be split in two.
+* **Islands come to you.** A voyage's island rises right off the raft's outer side, its beach `ISLAND_GAP` (3 studs)
+  from the deck's edge whatever the raft's size (`Formulas.raftReach`, `OceanLayout.islandBeside`); the destination
+  you watch on the way lands on the same spot. While an island is there, pieces drift past the raft's inner side.
+* **Eight to a server.** Eight rafts on the ring (`MAX_PLAYERS`): set the place's Server Size to 8 and Server Fill to
+  keep 2 slots, so matchmaking stops at 6 and friends can join.
+* **The Discord log.** Every entry in the studio's shared game-logs channel starts with "ra8 · ", the chat too
+  (escaped: no pings, no markdown). A server without the secret looks again every minute, and any failure (no
+  secret, HTTP off, the domain, a wrong key) is said in the server's log, F9 (`GameKey`). Setup: [README](README.md).
+
 ## Tests
 
 `tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 66 checks: tiers, speeds, loot odds,
-every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 264 checks:
+every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 271 checks:
 the first five minutes, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent, the
 turret and the Leviathan, visiting, friends, boards, leaving and coming back, feedback, the anti-cheat, analytics;
-also run without DataStores, 265 checks), the client (`tests/ClientSmoke.spec.luau`, 167 checks: the real UI driving the
+also run without DataStores, 272 checks), the client (`tests/ClientSmoke.spec.luau`, 202 checks: the real UI driving the
 real server on a phone-sized screen) and the rod in the hand (`tests/Rod.spec.luau`, 10 checks, run once with Motor6D
 joints and once with AnimationConstraints).

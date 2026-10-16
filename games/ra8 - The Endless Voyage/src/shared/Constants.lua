@@ -3,7 +3,9 @@
 local Constants = {}
 
 Constants.GAME = "ra8"
-Constants.MAX_PLAYERS = 6 -- six rafts to a server (§2: fun alone, better with friends)
+-- Eight rafts to a server (§2: fun alone, better with friends): set the place's Server Size to 8 and its Server Fill
+-- to keep 2 slots for friends, so matchmaking stops at 6 and a friend can nearly always get in.
+Constants.MAX_PLAYERS = 8
 
 -- Saves (PlayerDataService)
 Constants.PROFILE_STORE = "EV_Profiles_v1"
@@ -32,7 +34,7 @@ Constants.MIN_TILES = 4 -- you can't demolish below the platform you started wit
 Constants.MAX_TILES_BY_TIER = { 12, 24, 40, 60, 100, 196 } -- (no longer a limit: rafts grow as big as you like)
 Constants.CARGO_BY_TIER = { 16, 24, 32, 40, 52, 64 } -- inventory slots
 Constants.REPAIR_PER_HIT = 25 -- a hammer's hit on a damaged tile (costs 1 wood)
-Constants.DEMOLISH_REFUND = 0.5 -- the share of a piece's cost you get back
+Constants.DEMOLISH_REFUND = 1 -- the share of a piece's cost you get back when you take it off: all of it
 
 -- Survivors (PlayerService)
 Constants.HOTBAR = 6
@@ -84,6 +86,7 @@ Constants.LEVIATHAN_ENRAGE = 0.35 -- share of health left when it goes wild
 
 -- Islands (IslandBuilder, IslandService)
 Constants.ISLAND_RADIUS = 46
+Constants.ISLAND_GAP = 3 -- an island's beach rises this far from the raft's outer edge: a hop ashore, not a swim
 Constants.TREE_HP = 30
 Constants.ROCK_HP = 40
 Constants.CONTAINER_SEARCH = 0.8 -- seconds to hold

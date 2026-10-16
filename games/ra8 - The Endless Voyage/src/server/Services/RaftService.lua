@@ -983,6 +983,9 @@ local function connectedWithout(self, raft, piece)
 	return n == raft.summary.tiles - raft.summary.deck2 - 1
 end
 
+-- Take a piece off your raft and get its whole cost back (and whatever a net had caught). A tile takes the pieces on
+-- it and on its edges with it, every one refunded; the raft still can't be split in two, go below its first tiles,
+-- or lose the tile under a second deck or the stairs up to one.
 function RaftService:Demolish(player, pieceId)
 	local raft = byPlayer[player]
 	local piece = raft and raft.pieces[pieceId]
@@ -993,17 +996,8 @@ function RaftService:Demolish(player, pieceId)
 		toast(player, "You can only change your own raft.")
 		return false
 	end
+	local set = { piece }
 	if piece.def.structural then
-		if self:OnTile(raft, piece.gx, piece.gz, piece.level) then
-			toast(player, "Take the piece on it off first.")
-			return false
-		end
-		for rot = 0, 3 do
-			if self:Edge(raft, piece.gx, piece.gz, piece.level, rot) then
-				toast(player, "Take the pieces on its edges off first.")
-				return false
-			end
-		end
 		if piece.level == 1 and self:Tile(raft, piece.gx, piece.gz, 2) then
 			toast(player, "Take the deck above off first.")
 			return false
@@ -1012,7 +1006,7 @@ function RaftService:Demolish(player, pieceId)
 			toast(player, "The second deck needs its stairs.")
 			return false
 		end
-		if raft.summary.tiles <= Constants.MIN_TILES then
+		if piece.level == 1 and raft.summary.tiles - raft.summary.deck2 <= Constants.MIN_TILES then
 			toast(player, "That's as small as a raft gets.")
 			return false
 		end
@@ -1020,21 +1014,64 @@ function RaftService:Demolish(player, pieceId)
 			toast(player, "That would split your raft in two.")
 			return false
 		end
-	end
-	local inventory = registry.InventoryService
-	for item, n in piece.def.cost do
-		local back = math.floor(n * Constants.DEMOLISH_REFUND)
-		if back > 0 then
-			inventory:Give(player, item, back, "demolish")
+		local on = self:OnTile(raft, piece.gx, piece.gz, piece.level)
+		if on then
+			table.insert(set, 1, on)
+		end
+		for rot = 0, 3 do
+			local e = self:Edge(raft, piece.gx, piece.gz, piece.level, rot)
+			if e then
+				table.insert(set, 1, e)
+			end
 		end
 	end
+	local back, order = {}, {}
+	local function add(item, n)
+		if n > 0 then
+			if not back[item] then
+				table.insert(order, item)
+			end
+			back[item] = (back[item] or 0) + n
+		end
+	end
+	for _, p in set do
+		for item, n in p.def.cost do
+			add(item, math.floor(n * Constants.DEMOLISH_REFUND))
+		end
+		for _, it in p.held or {} do
+			add(it.key, it.n)
+		end
+	end
+	local inventory = registry.InventoryService
+	for _, item in order do
+		inventory:Give(player, item, back[item], "demolish")
+	end
 	local pos = self:PiecePosition(raft, piece)
-	self:_remove(raft, piece)
+	for _, p in set do
+		self:_remove(raft, p)
+	end
 	self:Recompute(raft)
 	raft.folder:SetAttribute("Tier", raft.tier)
 	self:Fx(raft, "demolish", { pos = pos })
 	self:Push(raft)
-	self.Demolished:Fire(player, piece, raft)
+	-- what came back, over where it was
+	local parts = {}
+	for _, item in order do
+		local it = Items.get(item)
+		table.insert(parts, `+{back[item]} {it and it.icon or item}`)
+	end
+	if #parts > 0 then
+		Net.fire(
+			player,
+			"Popup",
+			pos + Vector3.new(0, 3, 0),
+			"♻️ " .. table.concat(parts, "  "),
+			Color3.fromRGB(150, 230, 160)
+		)
+	end
+	for _, p in set do
+		self.Demolished:Fire(player, p, raft)
+	end
 	return true
 end
 

@@ -16,6 +16,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
 local Voyages = require(ReplicatedStorage.Shared.Data.Voyages)
+local IslandBuilder = require(ReplicatedStorage.Shared.World.IslandBuilder)
 local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
 local OceanModels = require(ReplicatedStorage.Shared.World.OceanModels)
 local Store = require(script.Parent.Parent.Store)
@@ -301,7 +302,13 @@ local function step(dt)
 		local total = (v.ends or t) - (v.started or t)
 		local progress = total > 0 and math.clamp((t - (v.started or t)) / total, 0, 1) or 0
 		local dist = 720 - 700 * progress
-		local landing = layout.center + layout.out * Constants.ISLAND_OFFSET
+		-- (where the real island will rise: right off the raft's outer side, OceanLayout.islandBeside)
+		local raft = Store.get("raft") or { pieces = {} }
+		local dd = Voyages.get(v.dest)
+		local tpl = dd and IslandBuilder.TEMPLATES[dd.template]
+		local reach = Formulas.raftReach(layout.center, raft.pieces or {}, layout.out)
+		local landing = OceanLayout.islandBeside(layout.index, reach, tpl and tpl.radius or Constants.ISLAND_RADIUS)
+			or layout.center + layout.out * Constants.ISLAND_OFFSET
 		local at = landing - layout.current * dist
 		local cframes = table.create(#silhouette.parts)
 		for i, base in silhouette.bases do

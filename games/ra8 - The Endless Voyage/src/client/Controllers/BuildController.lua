@@ -3,7 +3,9 @@ Building (master plan §5: the raft is a grid, building is visible and tactile).
 (Bus.Place); then a ghost of it follows where you point (the mouse on PC, in front of you on phones and gamepads),
 green where it can go and red where it can't (with the reason), and ACT / a click / a tap places it: the server
 checks and builds (RaftService). Tiles keep placing until DONE; everything else places once. ROTATE turns a chair
-or the helm; railings and nets pick the edge nearest to where you point. Demolish: tap a piece.
+or the helm; railings and nets pick the edge nearest to where you point.
+REMOVE (X, the gamepad's d-pad left, or the ♻️ button on your raft): the piece you point at glows red with what you'd
+get back, and ACT / a click / a tap takes it off for its whole cost (a tile takes what's on it too).
 QUICK (Bus.Quick, from InputController's button): the piece the raft recommends (the next tier's missing station if
 the bag can pay for it, else a tile) goes where you look, again every half second while the button is held, with
 the same ghost and the same rules. Looking at the water beside the raft while a station is recommended lays tiles.
@@ -330,6 +332,107 @@ local function ghostAt(spot)
 	placing.glow = glow
 end
 
+-- REMOVE ---------------------------------------------------------------------------------------------------------------
+local function ownRaftFolder()
+	local raft = Store.get("raft")
+	local rafts = workspace:FindFirstChild("Rafts")
+	return rafts and raft and rafts:FindFirstChild("Raft" .. tostring(raft.plot)) or nil
+end
+
+local function viewPiece(id)
+	for _, p in (Store.get("raft") or { pieces = {} }).pieces or {} do
+		if p.id == id then
+			return p
+		end
+	end
+	return nil
+end
+
+-- The piece you're pointing at on your raft: the one under the mouse, else the one nearest where you look (a
+-- station, railing or net before the tile it stands on).
+local function removalTarget()
+	local folder = ownRaftFolder()
+	if not folder or not Store.onOwnRaft() then
+		return nil
+	end
+	local _, _, _, part = InputController.mouseRay()
+	local m = part
+	while m and m.Parent and m.Parent ~= folder do
+		m = m.Parent
+	end
+	if m and m.Parent == folder and m:GetAttribute("PieceId") then
+		return m
+	end
+	local point = aimPoint()
+	if not point then
+		return nil
+	end
+	local best, bestScore
+	for _, model in folder:GetChildren() do
+		local id = model:GetAttribute("PieceId")
+		local p = id and viewPiece(id)
+		local def = p and Pieces.get(p.key)
+		if def then
+			local pos = model:GetPivot().Position
+			local d = (Vector3.new(pos.X, 0, pos.Z) - Vector3.new(point.X, 0, point.Z)).Magnitude
+			local score = d + (def.structural and 2.5 or 0)
+			if d <= 5 and (not bestScore or score < bestScore) then
+				best, bestScore = model, score
+			end
+		end
+	end
+	return best
+end
+
+-- Everything that comes off with a piece (a tile takes what's on it and on its edges), and what you get back.
+local function removal(id)
+	local p = viewPiece(id)
+	local def = p and Pieces.get(p.key)
+	if not def then
+		return nil
+	end
+	local list = { p }
+	if def.structural then
+		local _, onTile, edges = maps()
+		local k = key(p.gx, p.gz, p.level)
+		if onTile[k] then
+			table.insert(list, onTile[k])
+		end
+		for rot = 0, 3 do
+			if edges[k * 10 + rot] then
+				table.insert(list, edges[k * 10 + rot])
+			end
+		end
+	end
+	local back, order = {}, {}
+	for _, q in list do
+		local qd = Pieces.get(q.key)
+		for item, n in qd and qd.cost or {} do
+			local got = math.floor(n * Constants.DEMOLISH_REFUND)
+			if got > 0 then
+				if not back[item] then
+					table.insert(order, item)
+				end
+				back[item] = (back[item] or 0) + got
+			end
+		end
+	end
+	table.sort(order)
+	local parts = {}
+	for _, item in order do
+		local it = Items.get(item)
+		table.insert(parts, `+{back[item]} {it and it.icon or ""} {it and it.name or item}`)
+	end
+	return { def = def, extra = #list - 1, back = table.concat(parts, " · ") }
+end
+
+local function clearRemoveGlow()
+	if placing and placing.removeGlow then
+		placing.removeGlow:Destroy()
+		placing.removeGlow = nil
+	end
+end
+
 local function updateBar()
 	if not placing then
 		refs.bar.Visible = false
@@ -337,8 +440,15 @@ local function updateBar()
 	end
 	refs.bar.Visible = true
 	if placing.demolish then
-		refs.barText.Text = "💥 DEMOLISH: tap a piece (half its cost back)"
-		refs.barText.TextColor3 = C.red
+		local r = placing.target and removal(placing.target:GetAttribute("PieceId"))
+		if r then
+			local more = r.extra > 0 and ` and the {r.extra} on it` or ""
+			refs.barText.Text = `♻️ REMOVE {r.def.icon} {r.def.name}{more}: {r.back} · ACT`
+			refs.barText.TextColor3 = C.white
+		else
+			refs.barText.Text = "♻️ REMOVE: point at a piece of your raft (you get its whole cost back)"
+			refs.barText.TextColor3 = C.white
+		end
 		refs.rotate.Visible = false
 		return
 	end
@@ -367,8 +477,32 @@ local function updateBar()
 	refs.rotate.Visible = not def.edge and not def.structural and not placing.quick
 end
 
+local function removeStep()
+	local target = removalTarget()
+	if target ~= placing.target then
+		placing.target = target
+		clearRemoveGlow()
+		if target then
+			local glow = Instance.new("Highlight")
+			glow.Name = "RemoveGlow"
+			glow.FillColor = C.red
+			glow.OutlineColor = C.red
+			glow.FillTransparency = 0.55
+			glow.OutlineTransparency = 0
+			glow.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+			glow.Parent = target
+			placing.removeGlow = glow
+		end
+	end
+	updateBar()
+end
+
 local function step()
-	if not placing or placing.demolish then
+	if not placing then
+		return
+	end
+	if placing.demolish then
+		removeStep()
 		return
 	end
 	local point = aimPoint()
@@ -410,6 +544,7 @@ end
 function BuildController.stop()
 	if placing then
 		clearGhost()
+		clearRemoveGlow()
 		placing = nil
 	end
 	updateBar()
@@ -421,41 +556,17 @@ function BuildController.place()
 		return false
 	end
 	if placing.demolish then
-		local r = root()
-		if not r then
+		removeStep()
+		local target = placing.target
+		local id = target and target:GetAttribute("PieceId")
+		if not id then
+			HudController.toast("♻️ Point at a piece of your raft to remove it. Tap DONE to stop.", "info")
 			return false
 		end
-		-- the piece under the mouse, or the nearest one in front
-		local _, dir, origin = InputController.mouseRay()
-		local best, bestScore
-		local rafts = workspace:FindFirstChild("Rafts")
-		local raft = Store.get("raft")
-		local folder = rafts and raft and rafts:FindFirstChild("Raft" .. tostring(raft.plot))
-		for _, m in folder and folder:GetChildren() or {} do
-			local id = m:GetAttribute("PieceId")
-			if id then
-				local pos = m:GetPivot().Position
-				local score
-				if origin and dir then
-					local rel = pos - origin
-					local along = rel:Dot(dir)
-					local off = along > 0 and (rel - dir * along).Magnitude or math.huge
-					score = off < 4 and off or nil
-				else
-					local d = (pos - r.Position).Magnitude
-					score = d <= 10 and d or nil
-				end
-				if score and (not bestScore or score < bestScore) then
-					best, bestScore = id, score
-				end
-			end
-		end
-		if best then
-			Net.send("Demolish", best)
-			Bus.Tap:Fire("demolish")
-			return true
-		end
-		return false
+		Net.send("Demolish", id)
+		Bus.Tap:Fire("demolish")
+		Bus.Swing:Fire("hammer", "repair")
+		return true
 	end
 	if not placing.valid or not placing.spot then
 		-- say why nothing happened (and how to stop building), not a dead button
@@ -560,8 +671,8 @@ function BuildController:init()
 	local bar = Theme.slab({
 		Name = "PlaceBar",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, -40, 1, -84),
-		Size = UDim2.fromOffset(620, 44),
+		Position = UDim2.new(0.5, -50, 1, -84),
+		Size = UDim2.fromOffset(600, 44),
 		Visible = false,
 		Parent = gui,
 	})
@@ -605,6 +716,47 @@ function BuildController:init()
 	done.Activated:Connect(function()
 		BuildController.stop()
 		Bus.Place:Fire(false)
+	end)
+	-- ♻️ REMOVE: on your own raft, above the BUILD button (X on a keyboard, d-pad left on a gamepad)
+	local remove = Theme.button({
+		Name = "Remove",
+		Text = "",
+		BackgroundColor3 = C.white,
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -194, 1, -124),
+		Size = UDim2.fromOffset(60, 60),
+		round = true,
+		Visible = false,
+		Parent = gui,
+	})
+	refs.remove = remove
+	Theme.text({
+		Name = "Icon",
+		Text = "♻️",
+		Size = UDim2.new(1, 0, 0.62, 0),
+		Position = UDim2.fromScale(0, 0.04),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = remove,
+	})
+	Theme.title({
+		Name = "Label",
+		Text = "REMOVE",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Size = UDim2.new(1.4, 0, 0, 16),
+		Position = UDim2.new(0.5, 0, 0.64, 0),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		outline = 2,
+		Parent = remove,
+	})
+	Theme.keyHint(remove, "X", "◀")
+	remove.Activated:Connect(BuildController.toggleRemove)
+	game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
+		if processed then
+			return
+		end
+		if input.KeyCode == Enum.KeyCode.X or input.KeyCode == Enum.KeyCode.DPadLeft then
+			BuildController.toggleRemove()
+		end
 	end)
 	Bus.Place:Connect(function(k)
 		if k == "act" then
@@ -661,8 +813,26 @@ function BuildController:init()
 		if acc >= 0.06 then
 			acc = 0
 			step()
+			-- the REMOVE button: on your own raft, alive; red while removing
+			local show = Store.onOwnRaft() and Store.alive()
+			remove.Visible = show == true
+			remove.BackgroundColor3 = (placing and placing.demolish) and C.red or C.white
+			remove.Label.Text = (placing and placing.demolish) and "DONE" or "REMOVE"
 		end
 	end)
+end
+
+-- REMOVE on and off (the button, X, the d-pad's left).
+function BuildController.toggleRemove()
+	if placing and placing.demolish then
+		BuildController.stop()
+		Bus.Place:Fire(false)
+	elseif Store.onOwnRaft() then
+		Bus.Place:Fire("demolish") -- (start() runs from the Bus; InputController's ACT becomes REMOVE)
+		Bus.Tap:Fire("remove_mode")
+	else
+		HudController.toast("♻️ You can only take pieces off your own raft.", "info")
+	end
 end
 
 -- (tests)

@@ -10,6 +10,7 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local IslandBuilder = require(ReplicatedStorage.Shared.World.IslandBuilder)
 local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
@@ -156,8 +157,12 @@ function IslandService:Arrive(plot, dest)
 		return nil
 	end
 	local folder = workspace:FindFirstChild("Islands") or workspace
-	local clear = raft and rafts:Extent(raft) + 75 or 0
-	local built = IslandBuilder.build(dest.template, OceanLayout.islandSpot(plot, rng, clear), rng, folder)
+	-- right off the raft's outer side, whatever its size: you hop ashore
+	local layout = OceanLayout.plot(plot)
+	local t = IslandBuilder.TEMPLATES[dest.template]
+	local reach = Formulas.raftReach(layout.center, raft.pieces, layout.out)
+	local spot = OceanLayout.islandBeside(plot, reach, t and t.radius or Constants.ISLAND_RADIUS)
+	local built = IslandBuilder.build(dest.template, spot, rng, folder)
 	built.model:SetAttribute("Plot", plot)
 	built.model:SetAttribute("Dest", dest.key)
 	local island = {

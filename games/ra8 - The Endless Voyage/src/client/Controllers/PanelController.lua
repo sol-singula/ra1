@@ -3,7 +3,7 @@ The panels (master plan §4: readable costs; §5: the raft's tier is a goal you 
 see). One open at a time, big tap targets, closes with X, Escape or B:
 
   BUILD     every piece by section, its cost (have/need, green when you can afford it), what locks it (a tier, a
-            blueprint); tap PLACE and BuildController takes over. DEMOLISH too.
+            blueprint); tap PLACE and BuildController takes over. REMOVE too.
   BAG       the hotbar and the bag: drag an item to another slot (or tap one, then the other) to move or swap it;
             tap or hover one to see it: its picture, what it does, its numbers; USE / HOLD / DROP; RESEARCH an
             artifact at the Research Station
@@ -11,7 +11,7 @@ see). One open at a time, big tap targets, closes with X, Escape or B:
             next milestone; the Decorative Workshop's dyes
   MAP       the destinations: the ones you have charts for (distance, danger, what's there, SAIL), the ones you
             don't (how to find them); SAIL HOME at an island
-  RAFT      the tier, what the next one needs, speed and cargo, the colours, who may visit, DEMOLISH
+  RAFT      the tier, what the next one needs, speed and cargo, the colours, who may visit, REMOVE
   BOOK      the discovery journal: islands, creatures, fish, artifacts, events, notes
   ME        level, titles and flags, achievements, stats
   TOP       the leaderboards: six categories, friends first, then everyone
@@ -39,6 +39,7 @@ local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Icons = require(script.Parent.Parent.UI.Icons)
+local Layout = require(script.Parent.Parent.UI.Layout)
 
 local PanelController = { Name = "PanelController", Order = 12 }
 
@@ -214,7 +215,8 @@ local function countOf(key)
 	return n
 end
 
--- What something costs, one chip per material: icon, name, have/need (green once you have enough).
+-- What something costs, one chip per material: icon, name, what you have / what it needs (12/4 when you have 12),
+-- green once you have enough.
 local function costChips(parent, cost, pos, width)
 	local x = 0
 	local keys = {}
@@ -228,15 +230,15 @@ local function costChips(parent, cost, pos, width)
 		local have = countOf(k)
 		local ok = have >= cost[k]
 		all = all and ok
-		local chip =
-			label(parent, `{item and item.icon or ""} {item and item.name or k} {math.min(have, cost[k])}/{cost[k]}`, {
-				Name = "Cost_" .. k,
-				Position = UDim2.new(pos.X.Scale, pos.X.Offset + x, pos.Y.Scale, pos.Y.Offset),
-				Size = UDim2.fromOffset(width or 150, 22),
-				TextSize = 14,
-				TextColor3 = ok and Color3.fromRGB(30, 130, 60) or C.red,
-				Font = Theme.Display,
-			})
+		local shown = have > 999 and "999+" or tostring(have)
+		local chip = label(parent, `{item and item.icon or ""} {item and item.name or k} {shown}/{cost[k]}`, {
+			Name = "Cost_" .. k,
+			Position = UDim2.new(pos.X.Scale, pos.X.Offset + x, pos.Y.Scale, pos.Y.Offset),
+			Size = UDim2.fromOffset(width or 150, 22),
+			TextSize = 14,
+			TextColor3 = ok and Color3.fromRGB(30, 130, 60) or C.red,
+			Font = Theme.Display,
+		})
 		chip:SetAttribute("Have", have)
 		chip:SetAttribute("Need", cost[k])
 		x += (width or 150) + 2
@@ -323,7 +325,7 @@ local function buildPanel(arg)
 		)
 		local demolish = Theme.button({
 			Name = "Demolish",
-			Text = "💥 DEMOLISH",
+			Text = "♻️ REMOVE",
 			BackgroundColor3 = C.red,
 			AnchorPoint = Vector2.new(1, 0),
 			Position = UDim2.new(1, 0, 0, -4),
@@ -1464,7 +1466,7 @@ local function raftPanel()
 		end)
 		local d = Theme.button({
 			Name = "Demolish",
-			Text = "💥 DEMOLISH A PIECE",
+			Text = "♻️ REMOVE A PIECE (WHOLE COST BACK)",
 			BackgroundColor3 = C.red,
 			LayoutOrder = 9,
 			Size = UDim2.new(1, -10, 0, 40),
@@ -2086,6 +2088,7 @@ function PanelController.card(name, title, text, buttons)
 		Parent = gui,
 	})
 	cards[name] = card
+	Layout.modal(name, card)
 	Theme.title({
 		Name = "Title",
 		Text = title,

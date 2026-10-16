@@ -1,6 +1,6 @@
 -- The look of every screen: chunky shapes with thick dark outlines, glossy top-to-bottom gradients, white text
 -- with a black outline, buttons that squish when pressed and panels that pop in. Plus the phone scaling: every
--- ScreenGui is laid out for a 1000 x 560 landscape canvas and scaled to the real screen with a UIScale.
+-- ScreenGui is laid out for a landscape canvas at least 1240 x 560 and scaled to the real screen with a UIScale.
 --
 -- Following Roblox's accessibility and adaptive-design guidance, it also:
 --   * respects the player's Reduced Motion setting (GuiService.ReducedMotionEnabled): tweens snap, nothing pulses
@@ -8,6 +8,7 @@
 --   * respects the Text Size setting (GuiService.PreferredTextSize) on fixed-size text
 --   * knows the player's current input (touch, keyboard/mouse or gamepad) so screens can show the right hints
 local GuiService = game:GetService("GuiService")
+local TextService = game:GetService("TextService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
@@ -145,6 +146,70 @@ function Theme.textStroke(thickness, color)
 	})
 end
 
+-- Outlines that fit their letters. An outline a fixed number of pixels thick swamps small text: a long title that
+-- TextScaled squeezes onto a small phone turns into blobs. So an outline is about a tenth of the height the letters
+-- are really drawn at, never thicker than asked for and never under a pixel, and it follows the text as it changes.
+local asked = setmetatable({}, { __mode = "k" }) -- [stroke] = the thickness asked for
+
+-- How tall a label's letters are drawn, in pixels: its TextSize on the scaled canvas, or for TextScaled text the
+-- biggest size that fits the box (what Roblox picks).
+local function drawnSize(label)
+	local abs = label.AbsoluteSize
+	if typeof(abs) ~= "Vector2" or abs.X < 2 or abs.Y < 2 then
+		return nil
+	end
+	if not label.TextScaled then
+		return label.TextSize * Theme.scaleFactor()
+	end
+	local ok, size = pcall(function()
+		local lo, hi = 1, math.clamp(math.floor(abs.Y), 1, 100)
+		local width = label.TextWrapped and abs.X or 100000
+		while lo < hi do
+			local mid = math.ceil((lo + hi) / 2)
+			local b = TextService:GetTextSize(label.Text, mid, label.Font, Vector2.new(width, 100000))
+			if b.X <= abs.X + 0.5 and b.Y <= abs.Y + 0.5 then
+				lo = mid
+			else
+				hi = mid - 1
+			end
+		end
+		return lo
+	end)
+	if ok and type(size) == "number" then
+		return size
+	end
+	local bounds = label.TextBounds
+	return typeof(bounds) == "Vector2" and bounds.Y > 0 and bounds.Y or nil
+end
+
+local function fitOutline(label, stroke)
+	local want = asked[stroke]
+	if not want or stroke.Parent ~= label then
+		return
+	end
+	local size = drawnSize(label)
+	if size then
+		stroke.Thickness = math.clamp(size * 0.1, 1, want)
+	end
+end
+Theme.fitOutline = fitOutline
+
+-- Put a fitted outline on a TextLabel or TextButton.
+function Theme.outline(label, thickness, color)
+	local stroke = Theme.textStroke(thickness, color)
+	asked[stroke] = stroke.Thickness
+	stroke.Parent = label
+	fitOutline(label, stroke)
+	pcall(function()
+		for _, prop in { "AbsoluteSize", "Text", "TextSize" } do
+			label:GetPropertyChangedSignal(prop):Connect(function()
+				fitOutline(label, stroke)
+			end)
+		end
+	end)
+	return stroke
+end
+
 -- A glossy vertical gradient: lighter at the top, darker at the bottom. Works on top of BackgroundColor3.
 function Theme.gloss(top, bottom)
 	return new("UIGradient", {
@@ -205,16 +270,19 @@ function Theme.text(props)
 	end
 	local label = new("TextLabel", props)
 	if outline then
-		Theme.textStroke(type(outline) == "number" and outline or 2).Parent = label
+		Theme.outline(label, type(outline) == "number" and outline or 2)
 	end
 	return label
 end
 
--- A big outlined headline in the display font.
+-- A big outlined headline in the display font (outline = false for dark letters on a light card: a dark outline
+-- around dark letters runs them together).
 function Theme.title(props)
 	props.Font = props.Font or Theme.Display
 	props.TextColor3 = props.TextColor3 or C.white
-	props.outline = props.outline or 3
+	if props.outline == nil then
+		props.outline = 3
+	end
 	return Theme.text(props)
 end
 
@@ -264,7 +332,7 @@ function Theme.button(props)
 		}),
 	})
 	if not dark then
-		Theme.textStroke(2).Parent = button
+		Theme.outline(button, 2)
 	end
 	button.Selectable = true -- reachable with a gamepad
 	pressable(button)
@@ -364,6 +432,10 @@ end
 
 -- Phone scaling -------------------------------------------------------------------------------------------
 Theme.DESIGN = Vector2.new(1000, 560)
+-- The narrowest canvas the screens get: the HUD's corners, the centre column and the action buttons only fit side
+-- by side from 1240 across, so a squarer screen (a tablet, a small window) gets the whole UI a little smaller
+-- rather than things on top of each other.
+Theme.MIN_WIDTH = 1240
 
 local scaled = {}
 local scaledGuis = {}
@@ -388,7 +460,7 @@ function Theme.scaleFactor()
 	if not size or size.X < 10 then
 		return 1
 	end
-	return math.clamp(math.min(size.X / Theme.DESIGN.X, size.Y / Theme.DESIGN.Y), 0.55, 1.25)
+	return math.clamp(math.min(size.X / Theme.MIN_WIDTH, size.Y / Theme.DESIGN.Y), 0.55, 1.25)
 end
 
 -- True on phones and tablets (no keyboard, touch screen).

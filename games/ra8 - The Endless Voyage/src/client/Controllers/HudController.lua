@@ -26,6 +26,7 @@ local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Icons = require(script.Parent.Parent.UI.Icons)
+local Layout = require(script.Parent.Parent.UI.Layout)
 
 local HudController = { Name = "HudController", Order = 10 }
 
@@ -34,7 +35,6 @@ local C = Theme.Color
 local new = Theme.new
 local gui
 local refs = {}
-local toastY = 0
 
 local function rarityColor(item)
 	return Items.rarityColor(item and item.rarity)
@@ -454,21 +454,50 @@ local function updateHotbar()
 end
 
 -- Messages ----------------------------------------------------------------------------------------------------------------
+-- A free row in a stack of short-lived messages: the lowest one nobody's in, after dropping the oldest while all
+-- `rows` are taken (so a message never lands on another).
+local function freeRow(stack, rows)
+	for i = #stack, 1, -1 do
+		if not stack[i].Parent then
+			table.remove(stack, i)
+		end
+	end
+	while #stack >= rows do
+		local old = table.remove(stack, 1)
+		old:Destroy()
+	end
+	local used = {}
+	for _, m in stack do
+		used[m:GetAttribute("Row")] = true
+	end
+	local row = 0
+	while used[row] do
+		row += 1
+	end
+	return row
+end
+
+local toasts = {}
 function HudController.toast(text, kind)
 	if type(text) ~= "string" then
 		return
 	end
 	local color = kind == "bad" and C.red or kind == "good" and C.good or C.slate
+	-- two rows above the hotbar, left of the action buttons; one while a card asks something (its bottom edge
+	-- stays clear)
+	local row = freeRow(toasts, Layout.modalOpen() and 1 or 2)
 	local label = Theme.slab({
 		Name = "Toast",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -88 - toastY),
+		Position = UDim2.new(0.5, -40, 1, -88 - row * 44),
 		Size = UDim2.fromOffset(520, 38),
 		BackgroundColor3 = color,
 		BackgroundTransparency = 0.05,
 		round = true,
 		Parent = gui,
 	})
+	label:SetAttribute("Row", row)
+	table.insert(toasts, label)
 	Theme.title({
 		Text = text,
 		Size = UDim2.new(1, -20, 1, -8),
@@ -476,7 +505,6 @@ function HudController.toast(text, kind)
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Parent = label,
 	})
-	toastY = (toastY + 44) % 132
 	Theme.pop(label)
 	task.delay(3.4, function()
 		label:Destroy()
@@ -487,15 +515,21 @@ function HudController.alert(text, color, seconds)
 	if type(text) ~= "string" then
 		return
 	end
+	if Layout.modalOpen() then
+		-- a card is asking something in the middle of the screen: say it on the bottom row instead
+		HudController.toast(text, "info")
+		return
+	end
 	if refs.alert then
 		refs.alert:Destroy()
 	end
+	-- (under the guide's card, clear of the unlock cards down the right)
 	local label = Theme.title({
 		Name = "Alert",
 		Text = text,
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0.5, 0, 0.36, 0),
-		Size = UDim2.fromOffset(800, 70),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 206),
+		Size = UDim2.fromOffset(600, 66),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = typeof(color) == "Color3" and color or C.mustard,
 		outline = 4,
@@ -515,6 +549,10 @@ end
 local CALLOUT_COLOR = { bad = C.red, good = C.good, info = C.slate }
 function HudController.callout(text, kind)
 	if type(text) ~= "string" then
+		return
+	end
+	if Layout.modalOpen() then
+		HudController.toast(text, kind)
 		return
 	end
 	if refs.callout then
@@ -547,8 +585,9 @@ function HudController.callout(text, kind)
 	end)
 end
 
--- Unlock cards: level ups, blueprints, charts, discoveries, tiers, achievements, dyes.
-local cardY = 0
+-- Unlock cards: level ups, blueprints, charts, discoveries, tiers, achievements, dyes (three at a time, down the
+-- right under the raft's card).
+local unlocks = {}
 function HudController.unlock(u)
 	if type(u) ~= "table" then
 		return
@@ -583,10 +622,11 @@ function HudController.unlock(u)
 	if text == "" then
 		return
 	end
+	local row = freeRow(unlocks, 3)
 	local card = Theme.slab({
 		Name = "Unlock",
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -10, 0, 200 + cardY),
+		Position = UDim2.new(1, -10, 0, 200 + row * 60),
 		Size = UDim2.fromOffset(300, 54),
 		BackgroundColor3 = color,
 		BackgroundTransparency = 0.05,
@@ -599,7 +639,8 @@ function HudController.unlock(u)
 		outline = 2,
 		Parent = card,
 	})
-	cardY = (cardY + 60) % 180
+	card:SetAttribute("Row", row)
+	table.insert(unlocks, card)
 	Theme.pop(card)
 	task.delay(4.5, function()
 		card:Destroy()

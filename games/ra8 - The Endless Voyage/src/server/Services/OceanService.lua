@@ -120,6 +120,11 @@ function OceanService:Spawn(plot, kind, opts)
 	if not pos then
 		local back = opts.distance or Constants.DEBRIS_FROM
 		local across = (opts.spread or Constants.DEBRIS_SPREAD) * rng:NextNumber(-1, 1)
+		-- an island beside the raft (on its outer side): the current brings pieces past the inner side instead
+		local islands = registry and registry.IslandService
+		if across > 0 and islands and islands:Here(plot) then
+			across = -across
+		end
 		pos = layout.center - layout.current * back + layout.out * across
 	end
 	pos = Vector3.new(pos.X, Constants.WATER_LEVEL + 0.3, pos.Z)

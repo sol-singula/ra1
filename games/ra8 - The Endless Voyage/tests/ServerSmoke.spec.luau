@@ -63,7 +63,7 @@ GameLog.send = function(payload)
 	for _, e in payload.events do
 		table.insert(gameLogs, e)
 	end
-	for _, c in payload.chat do
+	for _, c in payload.chat or {} do
 		table.insert(chatLogs, c)
 	end
 	return true
@@ -175,8 +175,11 @@ end
 
 -- The world ----------------------------------------------------------------------------------------------------------------
 check("the ocean was filled", #Engine.terrain.ops >= 2, #Engine.terrain.ops)
-check("six plots on a ring", #OceanLayout.plots == 6)
-check("a buoy per plot", #ws.Map.Buoys:GetChildren() == 6)
+check(
+	"a plot for every player on a ring (eight)",
+	#OceanLayout.plots == Constants.MAX_PLAYERS and Constants.MAX_PLAYERS == 8
+)
+check("a buoy per plot", #ws.Map.Buoys:GetChildren() == Constants.MAX_PLAYERS)
 check(
 	"a channel buoy: a float, a bell and a numbered flag",
 	ws.Map.Buoys.Buoy1:FindFirstChild("Bell") ~= nil and ws.Map.Buoys.Buoy1:FindFirstChild("Flag") ~= nil
@@ -584,6 +587,25 @@ check(
 	isl ~= nil and isl.dest.key == "palm_key" and ws.Islands:FindFirstChild("Island_tropical") ~= nil
 )
 check("the island is a discovery", Data:Get(ava).journal.islands.palm_key ~= nil)
+do
+	-- it rises right off the raft's outer side: the beach a hop from the deck's edge, never into the raft
+	local layout = OceanLayout.plot(1)
+	local reach = Formulas.raftReach(layout.center, raft.pieces, layout.out)
+	local c = isl.center
+	local along = (c.X - layout.center.X) * layout.out.X + (c.Z - layout.center.Z) * layout.out.Z
+	local gap = along - isl.radius - reach
+	check(
+		"the island's beach is a hop from the raft (no long swim)",
+		gap >= Constants.ISLAND_GAP - 0.5 and gap <= Constants.ISLAND_GAP + 0.5,
+		gap
+	)
+	local nearest = math.huge
+	for _, p in raft.pieces do
+		local pos = Rafts:PiecePosition(raft, p)
+		nearest = math.min(nearest, (Vector3.new(pos.X, 0, pos.Z) - Vector3.new(c.X, 0, c.Z)).Magnitude)
+	end
+	check("and nothing of the raft is inside the island", nearest > isl.radius, nearest)
+end
 check(
 	"palms, bushes, rocks and containers",
 	(function()
@@ -804,26 +826,75 @@ Voyages:_setEnds(1, Engine.now() + 1)
 Engine.advance(1.5)
 check("home from the anchored stay", Voyages:State(1) == "docked" and Data:Get(ava).stats.voyages == 3)
 check("records follow the raft", Data:Get(ava).records.tier == 3 and Data:Get(ava).records.tiles >= 24)
--- demolishing
+-- removing: the whole cost back, a tile with what's on it, never splitting the raft
+local function counts(cost)
+	local out = {}
+	for k in cost do
+		out[k] = Inventory:Count(ava, k)
+	end
+	return out
+end
+local function gotBack(before, ...)
+	local want = table.clone(before)
+	for _, cost in { ... } do
+		for k, n in cost do
+			want[k] = (want[k] or Inventory:Count(ava, k)) + n
+		end
+	end
+	for k, n in want do
+		if Inventory:Count(ava, k) ~= n then
+			return false, `{k}: {Inventory:Count(ava, k)} not {n}`
+		end
+	end
+	return true
+end
 local railingTile = Rafts:EmptyTiles(raft, 1)[1]
 supply(ava, costOf("railing"))
 Rafts:Build(ava, "railing", railingTile.gx, railingTile.gz, 1, 0)
 local rail = Rafts:Edge(raft, railingTile.gx, railingTile.gz, 1, 0)
-local woodBefore2 = Inventory:Count(ava, "wood")
-check("a tile with a piece on its edge can't be demolished", not Rafts:Demolish(ava, railingTile.id))
+local before = counts(costOf("railing"))
 send(ava, "Demolish", rail.id)
+local ok, why = gotBack(before, costOf("railing"))
 check(
-	"demolishing gives half the cost back",
-	Rafts:Edge(raft, railingTile.gx, railingTile.gz, 1, 0) == nil and Inventory:Count(ava, "wood") == woodBefore2 + 1
+	"removing a railing gives its whole cost back",
+	Rafts:Edge(raft, railingTile.gx, railingTile.gz, 1, 0) == nil and ok,
+	why
 )
+check("...with a ♻️ popup of what came back", lastFired("Popup", ava) ~= nil)
+supply(ava, costOf("railing"))
+Rafts:Build(ava, "railing", railingTile.gx, railingTile.gz, 1, 0)
+local tileKey = railingTile.key
+local both = counts(costOf(tileKey))
+for k in costOf("railing") do
+	both[k] = Inventory:Count(ava, k)
+end
+check("a tile comes off with what's on its edges", Rafts:Demolish(ava, railingTile.id) == true)
+ok, why = gotBack(both, costOf(tileKey), costOf("railing"))
 check(
-	"you can't demolish below the platform",
-	(function()
-		-- (the connectivity and the minimum: a corner tile of a full raft is fine, the middle is not)
-		local mid = Rafts:Tile(raft, 7, 7, 1)
-		return mid ~= nil and not Rafts:Demolish(ava, mid.id)
-	end)()
+	"...and both costs come back",
+	Rafts:Tile(raft, railingTile.gx, railingTile.gz, 1) == nil
+		and Rafts:Edge(raft, railingTile.gx, railingTile.gz, 1, 0) == nil
+		and ok,
+	why
 )
+-- a tile sticking out with another beyond it: the one in between can't go (it would split the raft)
+local edgeTile
+for _, p in raft.pieces do
+	if p.def.structural and p.level == 1 and (not edgeTile or p.gx > edgeTile.gx) then
+		edgeTile = p
+	end
+end
+supply(ava, costOf("floor"))
+supply(ava, costOf("floor"))
+Rafts:Build(ava, "floor", edgeTile.gx + 1, edgeTile.gz, 1)
+Rafts:Build(ava, "floor", edgeTile.gx + 2, edgeTile.gz, 1)
+local bridge = Rafts:Tile(raft, edgeTile.gx + 1, edgeTile.gz, 1)
+local tip = Rafts:Tile(raft, edgeTile.gx + 2, edgeTile.gz, 1)
+check("a tile that holds another to the raft can't come off", bridge ~= nil and not Rafts:Demolish(ava, bridge.id))
+check("the one at the end can", tip ~= nil and Rafts:Demolish(ava, tip.id) and Rafts:Demolish(ava, bridge.id))
+-- (the tile that came off goes back, for what follows)
+supply(ava, costOf(tileKey))
+Rafts:Build(ava, tileKey, railingTile.gx, railingTile.gz, 1)
 -- paint
 check("a locked colour is refused", not Rafts:Paint(ava, "sail", "red"))
 onTile(ava, "decor_shop")
@@ -1493,6 +1564,29 @@ check(
 				return true
 			end
 		end
+	end)()
+)
+check(
+	"every entry in the shared channel starts with ra8",
+	(function()
+		for _, e in gameLogs do
+			if string.sub(e.title or "", 1, #"ra8 · ") ~= "ra8 · " then
+				return false
+			end
+		end
+		return #gameLogs > 0
+	end)()
+)
+GameLog.chat(ava, "hi @everyone **look**")
+GameLog.flush()
+check(
+	"the chat goes in as an ra8 entry, as plain text (no pings, no markdown)",
+	(function()
+		local e = gameLogs[#gameLogs]
+		return e
+			and e.title == "ra8 · 💬 Chat"
+			and e.description:find("@\u{200B}everyone", 1, true) ~= nil
+			and e.description:find("\\*\\*look", 1, true) ~= nil
 	end)()
 )
 

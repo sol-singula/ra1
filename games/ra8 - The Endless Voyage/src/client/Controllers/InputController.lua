@@ -43,6 +43,7 @@ local holding = false
 local holdTouch
 local lastAct = 0
 local building = false -- BuildController is placing (ACT places instead)
+local removing = false -- ...or taking pieces off (REMOVE)
 local quickHold = false -- QUICK is held: a tick every QUICK_EVERY seconds
 local quickTouch
 local quickAt = 0
@@ -567,9 +568,9 @@ local function updateButtons()
 	local _, _, item = InputController.held()
 	local mode = InputController.modeOf(item)
 	if building then
-		refs.actIcon.Text = "🔨"
-		refs.actLabel.Text = "PLACE"
-		refs.act.BackgroundColor3 = C.mustard
+		refs.actIcon.Text = removing and "♻️" or "🔨"
+		refs.actLabel.Text = removing and "REMOVE" or "PLACE"
+		refs.act.BackgroundColor3 = removing and C.red or C.mustard
 		refs.build.BackgroundColor3 = C.red
 		refs.build.Label.Text = "DONE"
 		return
@@ -613,6 +614,7 @@ function InputController:init()
 			return
 		end
 		building = key ~= false and key ~= nil
+		removing = key == "demolish"
 	end)
 	Store.Changed:Connect(function(partial)
 		if partial.fish then

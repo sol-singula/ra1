@@ -253,6 +253,21 @@ function Formulas.tilePosition(center, gx, gz, level)
 	)
 end
 
+-- How far a raft reaches from its centre along a flat direction: to the outer edge of its farthest first-deck tile
+-- that way (studs). pieces: the server's pieces or the client's raft view (anything with key, gx, gz, level).
+function Formulas.raftReach(center, pieces, dir)
+	local far = Constants.TILE / 2
+	for _, p in pieces do
+		local def = Pieces.get(p.key)
+		if def and def.structural and (p.level or 1) == 1 then
+			local pos = Formulas.tilePosition(center, p.gx, p.gz, 1)
+			local along = (pos.X - center.X) * dir.X + (pos.Z - center.Z) * dir.Z
+			far = math.max(far, along + Constants.TILE / 2)
+		end
+	end
+	return far
+end
+
 function Formulas.tileAt(center, position)
 	local T = Constants.TILE
 	local gx = math.floor((position.X - center.X) / T + (Constants.GRID - 1) / 2 + 0.5)

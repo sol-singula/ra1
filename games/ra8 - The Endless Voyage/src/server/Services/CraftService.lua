@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
 local Progression = require(ReplicatedStorage.Shared.Data.Progression)
 local Recipes = require(ReplicatedStorage.Shared.Data.Recipes)
 local Signal = require(ReplicatedStorage.Shared.Signal)
@@ -21,6 +22,56 @@ local CraftService = {
 }
 
 local data, rafts, inventory, players, registry
+
+-- Not at the station something needs: point the way. With one on the raft they're on (or their own), the guide's
+-- arrow goes to it and it glows, and its panel opens when they get there ("Point"); with none yet, say how to get
+-- one (it's in BUILD under STATIONS, or it comes with a bigger raft).
+function CraftService:ShowStation(player, station, why)
+	local info = Recipes.STATIONS[station] or { name = station, icon = "🛠️" }
+	local found, onRaft
+	for _, raft in { rafts:Aboard(player), rafts:RaftOf(player) } do
+		for _, p in raft and raft.pieces or {} do
+			if p.def.station == station then
+				found, onRaft = p, raft
+				break
+			end
+		end
+		if found then
+			break
+		end
+	end
+	if found then
+		local pos = rafts:PiecePosition(onRaft, found)
+		Net.fire(player, "Point", {
+			pos = pos,
+			piece = found.id,
+			title = `{info.icon} {string.upper(info.name)}`,
+			text = found.broken and `Your {info.name} is broken: fix it with the hammer, then {why}.`
+				or `{why}: walk to your {info.name} (follow the arrow).`,
+			open = not found.broken and { "craft", station } or nil,
+		})
+		Net.fire(player, "Toast", `{info.icon} Go to your {info.name} to {why}.`, "info")
+		return
+	end
+	local def
+	for _, p in Pieces.list do
+		if p.station == station then
+			def = p
+			break
+		end
+	end
+	local own = rafts:RaftOf(player)
+	local tier = own and rafts:Tier(own) or 1
+	local text
+	if def and def.tier and tier < def.tier then
+		local t = Pieces.TIERS[def.tier]
+		text =
+			`{info.icon} To {why} you need a {info.name}. It unlocks when your raft becomes a {t and t.name or "bigger raft"}.`
+	else
+		text = `{info.icon} To {why} you need a {info.name} on your raft: build one (BUILD, then STATIONS).`
+	end
+	Net.fire(player, "Callout", text, "info")
+end
 
 -- Can the player make this now? ok, reason.
 function CraftService:CanCraft(player, recipeId)
@@ -58,7 +109,12 @@ function CraftService:Craft(player, recipeId)
 	end
 	local ok, reason = self:CanCraft(player, recipeId)
 	if not ok then
-		Net.fire(player, "Toast", reason, "bad")
+		local r = Recipes.get(recipeId)
+		if r and rafts:StationNear(player) ~= r.station then
+			self:ShowStation(player, r.station, "make it")
+		else
+			Net.fire(player, "Toast", reason, "bad")
+		end
 		return false, reason
 	end
 	local r = Recipes.get(recipeId)
@@ -102,12 +158,12 @@ function CraftService:Research(player, slotId)
 	if not profile or not slot or not item then
 		return false
 	end
-	if rafts:StationNear(player) ~= "research" then
-		Net.fire(player, "Toast", "Stand at the Research Station.", "bad")
-		return false
-	end
 	if not item.research then
 		Net.fire(player, "Toast", "Only artifacts can be researched.", "bad")
+		return false
+	end
+	if rafts:StationNear(player) ~= "research" then
+		self:ShowStation(player, "research", "research it")
 		return false
 	end
 	local points = Constants.RESEARCH_PER_ARTIFACT[item.research] or 10

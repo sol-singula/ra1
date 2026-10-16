@@ -28,6 +28,7 @@ local Bus = require(script.Parent.Parent.UI.Bus)
 local Glow = require(script.Parent.Parent.UI.Glow)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local Layout = require(script.Parent.Parent.UI.Layout)
 
 local TutorialController = { Name = "TutorialController", Order = 25 }
 
@@ -487,7 +488,7 @@ local function show(view)
 		return
 	end
 	uiAt = 0
-	card.Visible = true
+	card.Visible = not Layout.modalOpen()
 	stepLabel.Text = current.title or `STEP {current.step} OF {current.total}`
 	label.Text = current.text or ""
 	actionButton.Visible = current.action ~= nil
@@ -515,9 +516,81 @@ local function screenStep()
 	Glow.step(t)
 end
 
+-- A place the server asked us to point at for a while ("Point": your Research Station when you tried to research
+-- away from it): the card and the arrow show the way, the place glows, and when you get there the card goes back
+-- to the guide (and the station's panel opens). The guide's own updates wait meanwhile.
+local hint -- { endsAt, pos, near, open }
+local saved -- the guide's view while a hint is up
+
+local function endHint()
+	if not hint then
+		return nil
+	end
+	local open = hint.open
+	hint = nil
+	show(saved or false)
+	saved = nil
+	return open
+end
+
+local function onPoint(d)
+	if type(d) ~= "table" or typeof(d.pos) ~= "Vector3" then
+		return
+	end
+	if not hint then
+		saved = current
+	end
+	hint = {
+		endsAt = os.clock() + (type(d.seconds) == "number" and d.seconds or 40),
+		pos = d.pos,
+		near = 8,
+		open = type(d.open) == "table" and d.open or nil,
+	}
+	PanelController.close()
+	show({
+		key = "point",
+		title = type(d.title) == "string" and d.title or "👉 THIS WAY",
+		text = type(d.text) == "string" and d.text or "",
+		target = d.pos + Vector3.new(0, 3, 0),
+		piece = type(d.piece) == "number" and d.piece or nil,
+	})
+end
+
+local function onTutorial(view)
+	if hint then
+		saved = type(view) == "table" and view or nil
+		return
+	end
+	show(view)
+end
+
+local function hintStep()
+	if not hint then
+		return
+	end
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if os.clock() > hint.endsAt then
+		endHint()
+	elseif root and (root.Position - hint.pos).Magnitude <= hint.near then
+		local open = endHint()
+		if open then
+			Bus.Open:Fire(open[1], open[2])
+		end
+	end
+end
+
 local function step()
+	hintStep()
 	if not current then
 		return
+	end
+	-- a card asking something is up: the NEXT card steps aside until it's answered, then pops back
+	local away = Layout.modalOpen()
+	if card.Visible == away then
+		card.Visible = not away
+		if not away then
+			Theme.pop(card)
+		end
 	end
 	screenStep()
 	pickTarget()
@@ -611,10 +684,11 @@ function TutorialController:init()
 			Net.send("GuideAction", action)
 		end
 	end)
-	Net.listen("Tutorial", show)
+	Net.listen("Tutorial", onTutorial)
+	Net.listen("Point", onPoint)
 	Store.Changed:Connect(function(partial)
 		if partial.tutorial ~= nil and partial.tutorial == false then
-			show(false)
+			onTutorial(false)
 		end
 	end)
 	RunService.RenderStepped:Connect(step)

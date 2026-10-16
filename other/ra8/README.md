@@ -10,12 +10,30 @@ voyage is where the risk is.
 * The dashboard (`other/live.html`) has an `ra8` entry: where each player is (raft / water / island / visiting),
   the voyage's state, raft tier and tiles, level, voyages, finds aboard, health, idle.
 
+Place `133187155481262`, universe `10771148207`.
+
 ## Publishing checklist
 
 1. Open `TheEndlessVoyage.rbxl` in Studio (or `rojo serve` the project) and publish to the experience.
 2. Game Settings: allow HTTP requests (analytics and the game log), enable Studio API access for testing saves.
-3. Secrets Store: `discord_log` (the studio's shared key for the analytics and game-log functions).
-4. Max players 6 (one plot each). Private servers free.
+3. Secrets: `discord_log`, the studio's shared game key, for the domain `kvedatksqkcsgivntskb.supabase.co`.
+4. Server Size 8 (a raft spot each), Server Fill: customize, keep 2 slots (for friends joining). Private servers free.
 5. Upload the icon (`icon/`) and the six thumbnails (`thumbnails/`).
 6. Run `tools/run_tests.sh` before every publish.
 7. Optional: upload the 2D item icons (`items/README.md`) so the bag shows them instead of the 3D model pictures.
+
+## The Discord log
+
+The game posts batches every few seconds to the studio's Supabase function `roblox-game-log`, which posts them into
+the studio's private game-logs channel with the same bot as the other games; every entry starts with "ra8 · ".
+Nothing to set up on Discord or Supabase. On Roblox:
+
+1. Creator Dashboard → the experience → Secrets: a secret named `discord_log`, its value the studio's shared game
+   key (the one the other games use), the domain `kvedatksqkcsgivntskb.supabase.co`. The analytics use it too.
+2. Studio → Game Settings → Security: Allow HTTP Requests.
+3. Join a live server (Studio never sends). The server starting and your join show within seconds.
+
+Nothing? Press F9 in the game, Server log, and look for `[GameLog]`: it says whether the secret is missing, HTTP
+requests are off, the domain isn't allowed or the key is wrong. A server that started before the secret existed
+picks it up within a minute (older builds: shut the servers down from the Creator Dashboard). The function's own
+log is in Supabase → Edge Functions → roblox-game-log → Logs ("not allowed" = a wrong key).

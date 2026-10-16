@@ -5,9 +5,9 @@ the middle and an island zone out from it, and the current that carries debris t
   OceanLayout.plots            { { index, center, islandCenter, angle, current (unit, across the plot) }, ... }
   OceanLayout.plot(index)
   OceanLayout.plotAt(pos)      the plot a position is in, or nil
-  OceanLayout.islandSpot(index, rng)   where this voyage's island rises (a random spot in the plot's island zone)
+  OceanLayout.islandBeside(i, reach, radius)  where a voyage's island rises: right off the raft's outer side
   OceanLayout.HORIZON          the far islands you can see but never reach
-  OceanLayout.SPAWN            where a player with no plot yet stands (never happens: six plots, six players)
+  OceanLayout.SPAWN            where a player with no plot yet stands (never happens: a plot for every player)
 ]]
 local Constants = require(script.Parent.Parent.Constants)
 
@@ -54,15 +54,16 @@ end
 -- Where a voyage's island rises beside a plot: somewhere in the plot's island zone, a different spot each time
 -- (so the islands you see from your raft are never a neat ring). Always inside plotAt's reach.
 -- `clear`: how far out the island must sit to miss a big raft (its edge plus the island's size).
-function OceanLayout.islandSpot(index, rng, clear)
+-- Where a voyage's island rises: straight off the raft's outer side, its beach Constants.ISLAND_GAP studs from the
+-- edge of the raft (reach: how far the raft goes that way, Formulas.raftReach), so you hop ashore instead of swimming.
+-- Open water (an island of radius 0: the Trench) stays further out, where the Leviathan has room.
+function OceanLayout.islandBeside(index, reach, radius)
 	local p = OceanLayout.plots[index]
 	if not p then
 		return nil
 	end
-	local a = math.rad(p.angle) + (rng and rng:NextNumber(-0.55, 0.55) or 0)
-	local r = math.max(Constants.ISLAND_OFFSET, clear or 0) + (rng and rng:NextNumber(-28, 40) or 0)
-	r = math.max(r, clear or 0)
-	return V3(p.center.X + math.cos(a) * r, 0, p.center.Z + math.sin(a) * r)
+	local r = radius > 0 and (reach + Constants.ISLAND_GAP + radius) or (reach + 70)
+	return V3(p.center.X + p.out.X * r, 0, p.center.Z + p.out.Z * r)
 end
 
 -- Far, unreachable islands on the horizon: scattered at random bearings and distances, from the edge of what you
