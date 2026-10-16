@@ -6,6 +6,10 @@ studio's other games (the roblox-game-log Supabase function, the "discord_log" s
   the chat
   rafts reaching a new tier, voyages to dangerous waters, the Leviathan going down, a raft broken by a storm
   anti-cheat flags and kicks, script errors, the server starting and shutting down
+  and every event of every player (AnalyticsService), one line each, as "ra8 · 📜 Activity" entries every
+  GAME_LOG_ACTIVITY_SECONDS: the time into their session, who, what happened, and where they were (the guide's
+  step, the raft's size, where they stood, what they'd been doing), so where we lose people reads straight off
+  the channel (GAME_LOG_ACTIVITY = false turns it off if the shared channel gets too busy)
 Without the secret (and in Studio) nothing is sent; why not is said in the server's log (GameKey).
 ]]
 local Players = game:GetService("Players")
@@ -102,13 +106,92 @@ local function plain(text)
 end
 GameLogService.tagged, GameLogService.plain = tagged, plain
 
-function GameLogService.flush()
-	if #queue == 0 and #chat == 0 then
+-- The activity feed: a line per event, sent every GAME_LOG_ACTIVITY_SECONDS in as few entries as fit (Discord rate
+-- limits the shared channel), the backlog carried over (at most MAX_LINES, the oldest dropped).
+local activity = {}
+local flushes = 0
+local MAX_LINES = 400
+local SKIP = { perf = true, focus = true }
+local function clock(seconds)
+	seconds = math.max(0, math.floor(seconds or 0))
+	return string.format("%d:%02d", seconds // 60, seconds % 60)
+end
+local function brief(data)
+	local parts = {}
+	for k, v in data or {} do
+		local t = type(v)
+		if k ~= "ctx" and (t == "string" or t == "number" or t == "boolean") then
+			table.insert(parts, `{k}={v}`)
+		end
+	end
+	table.sort(parts)
+	local text = table.concat(parts, " ")
+	return #text > 80 and (string.sub(text, 1, 79) .. "…") or text
+end
+function GameLogService.activity(name, seconds, kind, data)
+	if not Constants.GAME_LOG_ACTIVITY or SKIP[kind] then
+		return
+	end
+	local ctx = type(data) == "table" and type(data.ctx) == "table" and data.ctx or {}
+	local where = {}
+	if ctx.step then
+		table.insert(where, "step " .. tostring(ctx.step))
+	end
+	if ctx.tiles then
+		table.insert(where, `raft {ctx.tiles} tiles T{ctx.tier or 1}`)
+	end
+	if ctx.where then
+		local v = ctx.voyage and ctx.voyage ~= "docked" and ("/" .. tostring(ctx.voyage)) or ""
+		table.insert(where, tostring(ctx.where) .. v)
+	end
+	if ctx.doing and ctx.doing ~= kind then
+		table.insert(where, "was " .. tostring(ctx.doing))
+	end
+	local details = brief(data)
+	if kind == "snapshot" and type(data) == "table" then
+		-- (every 30 s: where they are, short)
+		local d = data
+		details = `{d.where or "?"}{d.voyage and d.voyage ~= "docked" and ("/" .. tostring(d.voyage)) or ""}`
+			.. ` · raft {d.tiles or "?"} tiles T{d.tier or 1} · lvl {d.level or "?"} · hp {d.hp or "?"}`
+			.. (d.tutorial_step and ` · step {d.tutorial_step}` or "")
+			.. (d.idle and " · idle" or "")
+			.. (d.ping_ms and ` · {d.ping_ms} ms` or "")
+	end
+	local line = `\`{clock(seconds)}\` **{plain(string.sub(tostring(name), 1, 30))}** {plain(kind)}`
+		.. (details ~= "" and (" " .. plain(details)) or "")
+		.. (#where > 0 and (" · " .. plain(table.concat(where, " · "))) or "")
+	table.insert(activity, line)
+	if #activity > MAX_LINES then
+		table.remove(activity, 1)
+	end
+end
+
+-- (force: send the activity feed now, whatever the time)
+function GameLogService.flush(force)
+	flushes += 1
+	local every = math.max(1, math.floor(Constants.GAME_LOG_ACTIVITY_SECONDS / Constants.GAME_LOG_FLUSH_SECONDS + 0.5))
+	local activityDue = #activity > 0 and (force or flushes % every == 0)
+	if #queue == 0 and #chat == 0 and not activityDue then
 		return
 	end
 	local events = {}
 	for _, e in queue do
 		table.insert(events, tagged(e))
+	end
+	-- the activity feed, every GAME_LOG_ACTIVITY_SECONDS: up to 6 entries of lines, the rest next time
+	if activityDue then
+		local entries = 0
+		while #activity > 0 and entries < 6 do
+			local text = ""
+			while #activity > 0 and #text + #activity[1] + 1 <= 1900 do
+				text = text == "" and table.remove(activity, 1) or (text .. "\n" .. table.remove(activity, 1))
+			end
+			if text == "" then
+				text = string.sub(table.remove(activity, 1), 1, 1900)
+			end
+			entries += 1
+			table.insert(events, { title = `{Constants.GAME} · 📜 Activity`, color = 0x64748b, description = text })
+		end
 	end
 	local lines = ""
 	local function chatEntry()

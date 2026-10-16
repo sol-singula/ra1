@@ -308,13 +308,39 @@ What the second play found, and what changed:
 * **The Discord log.** Every entry in the studio's shared game-logs channel starts with "ra8 · ", the chat too
   (escaped: no pings, no markdown). A server without the secret looks again every minute, and any failure (no
   secret, HTTP off, the domain, a wrong key) is said in the server's log, F9 (`GameKey`). Setup: [README](README.md).
+* **Where we lose them.** Every analytics event now carries where the player was: the guide's step, what they were
+  doing (casting, building, sailing...), where they stood, the voyage, the raft's tiles and tier, their level. The
+  leave says the step and what they were doing last.
+* **Everything in Discord.** The same events also go to the channel, one line each: the time into the session, who,
+  what happened, and that context. They're sent as "ra8 · 📜 Activity" entries every 15 seconds
+  (`GAME_LOG_ACTIVITY_SECONDS`), in as few messages as fit. Performance and focus events are left out.
+  `GAME_LOG_ACTIVITY = false` turns the feed off if the shared channel gets too busy.
+* **Nets are tiles of their own.** A net is a tile at the raft's edge, like a floor (BUILD, then tap a spot next to
+  the raft). It's a frame round open water, with the net hanging below in a sagging bowl. What it catches floats in
+  the bowl where you can see it (up to six pieces), and its prompt says how full it is.
+  * A storage box empties a net into your bag when it's full, or 45 seconds after its first catch
+    (`NET_BOX_EVERY`), so the catch always shows for a while.
+  * Nothing can be built on a net or over it. Nets only go on the first deck, and they don't count as floor tiles.
+  * A net in an old save sat on a floor tile. It moves to a free spot beside the raft, with its catch. With no free
+    spot, its cost and catch go back to the bag.
+* **Run.** Hold Shift, click the left stick (on until you stop), or tap RUN (on until you tap it again) to run 9
+  studs a second faster (`SPRINT_BONUS`).
+  * The camera widens a little while you run, unless screen shake is off or reduced motion is on.
+  * You lean into it, with forearms raised like a sprinter, on top of Roblox's own run.
+  * You kick up sand on islands.
+  * Your speed changes the moment you press. The server matches it (`PlayerService:Sprint`), and the anti-cheat
+    always allows a run.
+* **JUMP on phones.** The big ACT button sat on top of Roblox's own jump button, so phones had no way to jump. Phones
+  now get a JUMP button above ACT (hold it to keep jumping), with RUN beside it. Roblox's own jump button is hidden.
+  On a phone held sideways, unlock cards keep to two rows so they stay clear of both buttons.
 
 ## Tests
 
 `tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 66 checks: tiers, speeds, loot odds,
-every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 271 checks:
-the first five minutes, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent, the
-turret and the Leviathan, visiting, friends, boards, leaving and coming back, feedback, the anti-cheat, analytics;
-also run without DataStores, 272 checks), the client (`tests/ClientSmoke.spec.luau`, 202 checks: the real UI driving the
-real server on a phone-sized screen) and the rod in the hand (`tests/Rod.spec.luau`, 10 checks, run once with Motor6D
+every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 298 checks:
+the first five minutes, nets, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent,
+the turret and the Leviathan, removing pieces, running, visiting, friends, boards, leaving and coming back, feedback,
+the anti-cheat, analytics and the Discord log; also run without DataStores, 298 checks), the client
+(`tests/ClientSmoke.spec.luau`, 223 checks: the real UI driving the real server on a phone-sized screen, and nothing
+overlapping on four screen sizes) and the rod in the hand (`tests/Rod.spec.luau`, 10 checks, run once with Motor6D
 joints and once with AnimationConstraints).

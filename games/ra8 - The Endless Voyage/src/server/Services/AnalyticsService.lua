@@ -18,6 +18,9 @@ rows go to Supabase through the roblox-analytics function, tagged game = "ra8".
                      a snapshot every 30 s (and the live row the team dashboard reads): where, voyage, tier,
                        tiles, level, voyages, found, hp, idle
                      the leave
+Every event but the snapshots carries ctx: where the player was in the game when it happened (the guide's step, what
+they were doing, where they stood, the voyage, the raft's tiles and tier, their level), so any event, and the last one
+above all, says where we lost someone. Every event also goes to the Discord log as a line (GameLogService.activity).
 Uses the same "discord_log" secret as the game log. Nothing is sent in Studio (unless GAME_LOG_IN_STUDIO).
 ]]
 local HttpService = game:GetService("HttpService")
@@ -29,6 +32,7 @@ local RunService = game:GetService("RunService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
+local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
 local GameKey = require(script.Parent.Parent.GameKey)
 
@@ -53,7 +57,7 @@ local AnalyticsService = {
 	},
 }
 
-local data, rafts, players, voyages, weather, progress, ocean, inventoryRef
+local data, rafts, players, voyages, weather, progress, ocean, inventoryRef, tutorialRef, registryRef
 local sessions = {} -- [player] = session
 local queue = { sessions = {}, events = {} }
 local MAX_EVENTS = 3000
@@ -112,19 +116,66 @@ local function upsertSession(s, fields)
 	end
 end
 
+-- Where a player is in the game right now: { step, doing, where, voyage, tiles, tier, level }.
+local function context(s)
+	local player = s.player
+	if not player or not player.Parent or not players then
+		return nil
+	end
+	local profile = data and data:Get(player)
+	local raft = rafts and rafts:RaftOf(player)
+	local plot = players:Here(player)
+	return {
+		step = tutorialRef and tutorialRef:StepName(player) or nil,
+		doing = s.doing,
+		where = players:IsAlive(player) and players:Where(player) or "down",
+		voyage = plot and voyages and voyages:State(plot) or nil,
+		tiles = raft and raft.summary.tiles or nil,
+		tier = raft and raft.tier or nil,
+		level = profile and (Formulas.level(profile.xp)) or nil,
+	}
+end
+AnalyticsService.context = context
+
+-- What a player is doing now, from an event (the next event's ctx.doing).
+local function doingOf(kind, extra)
+	if kind == "request" then
+		return string.lower(tostring(extra.name or "request"))
+	elseif kind == "panel" then
+		return "panel " .. tostring(extra.panel or "?")
+	end
+	return kind
+end
+
 -- Log one event for a player (or a session table).
 function AnalyticsService.track(player, kind, extra)
 	local s = typeof(player) == "table" and player or sessions[player]
 	if not s or #queue.events >= MAX_EVENTS then
 		return
 	end
+	if type(extra) ~= "table" then
+		extra = extra ~= nil and { value = extra } or {}
+	else
+		extra = table.clone(extra)
+	end
+	if kind ~= "snapshot" and kind ~= "perf" and kind ~= "focus" then
+		extra.ctx = context(s)
+	end
+	local t = math.floor((now() - s.t0) * 10) / 10
 	table.insert(queue.events, {
 		session_id = s.id,
 		user_id = s.userId,
-		t = math.floor((now() - s.t0) * 10) / 10,
+		t = t,
 		kind = kind,
 		data = extra,
 	})
+	local log = registryRef and registryRef.GameLogService
+	if log and log.activity and s.player then
+		log.activity(s.player.DisplayName, t, kind, extra)
+	end
+	if kind ~= "snapshot" and kind ~= "ui" and kind ~= "perf" and kind ~= "focus" and kind ~= "leave" then
+		s.doing = doingOf(kind, extra)
+	end
 	if kind ~= "snapshot" and kind ~= "ui" and kind ~= "perf" and kind ~= "focus" then
 		s.counts[kind] = (s.counts[kind] or 0) + 1
 		table.insert(s.last, kind)
@@ -235,6 +286,7 @@ local function begin(player)
 			return ok and guid or `{player.UserId}-{os.time()}-{math.random(1e6)}`
 		end)(),
 		userId = player.UserId,
+		player = player,
 		t0 = now(),
 		startedAt = os.time(),
 		counts = {},
@@ -297,6 +349,8 @@ function AnalyticsService:WhereOf(player)
 end
 
 function AnalyticsService:Init(registry)
+	registryRef = registry
+	tutorialRef = registry.TutorialService
 	data = registry.PlayerDataService
 	rafts = registry.RaftService
 	players = registry.PlayerService
@@ -517,6 +571,11 @@ function AnalyticsService:Init(registry)
 		s.lastInputAt = now()
 		if name == "Act" or name == "Reel" then
 			s.acts = (s.acts or 0) + 1
+			local item
+			if inventoryRef then
+				_, item = inventoryRef:Selected(player)
+			end
+			s.doing = name == "Reel" and "reeling" or (item and (Items.toolKind(item) or item.key) or "act")
 		elseif not SKIP_REQUESTS[name] then
 			track(player, "request", { name = name, arg = clean(a) })
 		end
@@ -751,11 +810,19 @@ function AnalyticsService:_end(player, profile, reason)
 	summary.counts = s.counts
 	summary.taps = s.taps
 	summary.last_actions = s.last
-	track(
-		s,
-		"leave",
-		{ reason = reason, last = s.last, where = summary.where, voyage = summary.voyage, idle = summary.idle_at_leave }
-	)
+	local ctx = context(s) or {}
+	summary.step = ctx.step
+	summary.doing = s.doing
+	track(s, "leave", {
+		reason = reason,
+		last = s.last,
+		where = summary.where,
+		voyage = summary.voyage,
+		idle = summary.idle_at_leave,
+		step = summary.step,
+		doing = summary.doing,
+		minutes = math.floor(duration / 6) / 10,
+	})
 	upsertSession(s, { ended_at = iso(os.time()), duration_s = duration, end_reason = reason, summary = summary })
 end
 

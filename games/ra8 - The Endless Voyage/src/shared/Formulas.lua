@@ -24,13 +24,15 @@ function Formulas.xpForLevel(level)
 	return total
 end
 
--- What a raft is made of: { tiles, deck2, pieces = { [key] = n } } from a list of placed pieces.
+-- What a raft is made of: { tiles, deck2, nets, pieces = { [key] = n } } from a list of placed pieces.
 function Formulas.raftSummary(placed)
-	local s = { tiles = 0, deck2 = 0, pieces = {} }
+	local s = { tiles = 0, deck2 = 0, nets = 0, pieces = {} }
 	for _, p in placed do
 		local def = Pieces.get(p.key)
 		if def then
-			if def.structural then
+			if def.net then
+				s.nets += 1 -- (a net is a tile of its own, but not a floor: it doesn't count towards the tiles)
+			elseif def.structural then
 				s.tiles += 1
 				if (p.level or 1) == 2 then
 					s.deck2 += 1

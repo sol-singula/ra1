@@ -130,7 +130,7 @@ local function mark()
 end
 local function flush()
 	Analytics.flush()
-	GameLog.flush()
+	GameLog.flush(true)
 end
 local function send(player, name, ...)
 	Engine.fireServer(player, name, ...)
@@ -365,18 +365,45 @@ Engine.advance(2)
 guide = lastFired("Tutorial", ava)
 check("three pieces: the guide wants a Surface Net right away", guide and guide.key == "net", guide and guide.key)
 check("XP for the guide's first step", Data:Get(ava).xp >= Constants.XP.guide.cast)
--- the net: on any floor, no blueprint, no edge
+-- the net: a tile of its own beside the raft, no blueprint
 give(ava, "wood", 4)
 give(ava, "rope", 1)
 Tutorial:_refresh(ava)
 guide = lastFired("Tutorial", ava)
 check(
-	"the net step points at a floor tile (nets don't need to face the water)",
-	guide and guide.key == "net" and guide.spot ~= nil and guide.edge == nil,
+	"the net step points at a free spot beside the raft (a net is a tile of its own)",
+	guide
+		and guide.key == "net"
+		and guide.spot ~= nil
+		and guide.edge == nil
+		and Rafts:Tile(Rafts:RaftOf(ava), guide.spot.gx, guide.spot.gz, 1) == nil,
 	guide and guide.text
 )
 send(ava, "Build", "net", guide.spot.gx, guide.spot.gz, 1, 0)
-check("the net was built on a floor tile", Rafts:Has(Rafts:RaftOf(ava), "net"), lastFired("Toast", ava))
+check("the net was built", Rafts:Has(Rafts:RaftOf(ava), "net"), lastFired("Toast", ava))
+do
+	local r = Rafts:RaftOf(ava)
+	local net = Rafts:NearPiece(ava, "net", 100)
+	check("the net is a tile of its own, beside the raft", net ~= nil and Rafts:Tile(r, net.gx, net.gz, 1) == net)
+	check(
+		"a net isn't a floor: still four tiles, and one net",
+		r.summary.tiles == 4 and r.summary.nets == 1,
+		r.summary.tiles
+	)
+	local m = net and net.model
+	check(
+		"its model: a frame round open water (no planks), the net hanging in it, a place for the catch",
+		m ~= nil
+			and m:FindFirstChild("Frame") ~= nil
+			and m:FindFirstChild("Cord") ~= nil
+			and m:FindFirstChild("Catch") ~= nil
+			and m:FindFirstChild("Plank") == nil
+	)
+	local okOn, whyOn = Rafts:CanBuild(r, ava, "workbench", net.gx, net.gz, 1, 0)
+	check("nothing goes on a net", not okOn and whyOn:find("net") ~= nil, whyOn)
+	local okUp, whyUp = Rafts:CanBuild(r, ava, "net", net.gx, net.gz, 2, 0)
+	check("nets go at the water, not on the second deck", not okUp, whyUp)
+end
 guide = lastFired("Tutorial", ava)
 check("the guide moves to the tile", guide and guide.key == "tile", guide and guide.key)
 -- short of wood: the guide says what's missing and points at the debris, not at a spot it can't fill
@@ -504,18 +531,38 @@ check(
 )
 
 check("the guide moved to the helm", lastFired("Tutorial", ava).key == "helm", lastFired("Tutorial", ava).key)
--- the net catches while you build
+-- the net catches while you build (two pieces drift right past it)
+for _, n in Rafts:Nets(raft) do
+	Ocean:Spawn(1, "wood", { pos = n.pos + Vector3.new(4, 0, 0), speed = 0 })
+	Ocean:Spawn(1, "rope", { pos = n.pos + Vector3.new(-4, 0, 0), speed = 0 })
+end
 Engine.advance(Constants.NET_EVERY * 3 + 1)
 local netPiece = Rafts:NearPiece(ava, "net", 100)
 local caught = netPiece.held and #netPiece.held or 0
-local inv = Inventory:View(ava)
-check("the net held something (no storage box yet)", caught > 0 or inv.finds ~= nil, caught)
+check("the net held something (no storage box yet)", caught > 0, caught)
 if caught > 0 then
 	local woodBefore = Inventory:Count(ava, "wood")
 		+ Inventory:Count(ava, "scrap")
 		+ Inventory:Count(ava, "rope")
 		+ Inventory:Count(ava, "cloth")
 		+ Inventory:Count(ava, "metal")
+	local catch = netPiece.model:FindFirstChild("Catch")
+	local shown = catch and catch:GetChildren() or {}
+	local at = Rafts:PiecePosition(raft, netPiece)
+	local first = shown[1]
+	check("you can see the catch in the net", #shown > 0 and netPiece.model:GetAttribute("Caught") == caught, #shown)
+	check(
+		"...floating in the bowl, at the water",
+		first ~= nil
+			and Vector3.new(first.Position.X - at.X, 0, first.Position.Z - at.Z).Magnitude < 2
+			and math.abs(first.Position.Y - Constants.WATER_LEVEL) < 1,
+		first and first.Position
+	)
+	check(
+		"its prompt says how full it is",
+		netPiece.prompt.ObjectText:find(`({caught}/{Constants.NET_HOLD})`, 1, true) ~= nil,
+		netPiece.prompt.ObjectText
+	)
 	stand(ava, Rafts:PiecePosition(raft, netPiece) + Vector3.new(0, 2.5, 0))
 	trigger(ava, "net", "PieceId", netPiece.id)
 	local after = Inventory:Count(ava, "wood")
@@ -524,6 +571,10 @@ if caught > 0 then
 		+ Inventory:Count(ava, "cloth")
 		+ Inventory:Count(ava, "metal")
 	check("the net's prompt empties it into the bag", after > woodBefore and #netPiece.held == 0)
+	check(
+		"...and the net is empty to look at",
+		#catch:GetChildren() == 0 and netPiece.model:GetAttribute("Caught") == 0
+	)
 end
 
 -- the helm and the first voyage
@@ -784,6 +835,33 @@ check(
 	Inventory:Capacity(ava) == Constants.CARGO_BY_TIER[2] + 8,
 	Inventory:Capacity(ava)
 )
+-- with a box the catch still shows in the net for a while, then goes to the bag (or as soon as the net is full)
+do
+	local net = Rafts:Nets(raft)[1].piece
+	net.held = { { key = "wood", n = 2 } }
+	net.heldSince = nil
+	Rafts:ShowCatch(raft, net)
+	Ocean:_nets(raft)
+	check(
+		"with a box, a new catch stays in the net where you can see it",
+		#net.held >= 1 and #net.model.Catch:GetChildren() > 0,
+		#net.held
+	)
+	net.heldSince -= Constants.NET_BOX_EVERY + 1
+	Ocean:_nets(raft)
+	check(
+		"...and a while later the box takes it into the bag",
+		#net.held == 0 and #net.model.Catch:GetChildren() == 0,
+		#net.held
+	)
+	net.held = {}
+	for _ = 1, Constants.NET_HOLD do
+		table.insert(net.held, { key = "wood", n = 1 })
+	end
+	net.heldSince = nil
+	Ocean:_nets(raft)
+	check("a full net goes to the box straight away", #net.held == 0, #net.held)
+end
 check(
 	"no size cap: the raft grows past the old 24-floor limit",
 	(function()
@@ -892,6 +970,23 @@ local bridge = Rafts:Tile(raft, edgeTile.gx + 1, edgeTile.gz, 1)
 local tip = Rafts:Tile(raft, edgeTile.gx + 2, edgeTile.gz, 1)
 check("a tile that holds another to the raft can't come off", bridge ~= nil and not Rafts:Demolish(ava, bridge.id))
 check("the one at the end can", tip ~= nil and Rafts:Demolish(ava, tip.id) and Rafts:Demolish(ava, bridge.id))
+-- a net comes off with its whole cost and what it was holding
+do
+	local spot = Rafts:FreeSpots(raft, 1)[1]
+	supply(ava, costOf("net"))
+	local built = Rafts:Build(ava, "net", spot[1], spot[2], 1)
+	local net = Rafts:Tile(raft, spot[1], spot[2], 1)
+	check("another net goes beside the raft", built and net ~= nil and net.key == "net")
+	net.held = { { key = "wood", n = 2 } }
+	local netBefore = counts(costOf("net"))
+	check("a net comes off", Rafts:Demolish(ava, net.id) == true)
+	local okNet, whyNet = gotBack(netBefore, costOf("net"), { wood = 2 })
+	check(
+		"...with its whole cost back, and what it was holding",
+		Rafts:Tile(raft, spot[1], spot[2], 1) == nil and okNet,
+		whyNet
+	)
+end
 -- (the tile that came off goes back, for what follows)
 supply(ava, costOf(tileKey))
 Rafts:Build(ava, tileKey, railingTile.gx, railingTile.gz, 1)
@@ -1130,8 +1225,15 @@ local findsBefore = Inventory:View(ava).finds
 check("finds are counted while away", findsBefore >= 10, findsBefore)
 local scrapBefore = Inventory:Count(ava, "scrap")
 local m8 = mark()
+send(ava, "Sprint", true)
 PlayersS:Damage(ava, 999, { kind = "test" })
 check("ava went down", not PlayersS:IsAlive(ava))
+do
+	local downHum = ava.Character:FindFirstChildOfClass("Humanoid")
+	send(ava, "Sprint", false)
+	send(ava, "Sprint", true)
+	check("nobody runs while down", downHum.WalkSpeed == 0 and PlayersS:MaxSpeed(ava) == Constants.WALK_SPEED)
+end
 local lost = firedSince(m8, "Lost", ava)
 check(
 	"half the finds floated off as a lost bag",
@@ -1145,6 +1247,11 @@ check(
 	"back on the raft after a few seconds",
 	PlayersS:IsAlive(ava) and PlayersS:Where(ava) == "raft",
 	PlayersS:Where(ava)
+)
+check(
+	"...walking (a new body doesn't keep running)",
+	ava.Character:FindFirstChildOfClass("Humanoid").WalkSpeed == Constants.WALK_SPEED
+		and ava.Character:GetAttribute("Sprint") == nil
 )
 local bagModel = ws.Drops:FindFirstChild("LostBag")
 local bagId = bagModel:GetAttribute("DropId")
@@ -1422,6 +1529,17 @@ local saved = Engine.dataStores[Constants.PROFILE_STORE] and Engine.dataStores[C
 if saved and saved.meta then
 	saved.meta.lastSeen -= 3600
 end
+-- (and her save has a net from before nets were tiles of their own: it sat on a floor)
+local oldNet
+if saved and saved.raft and saved.raft.pieces then
+	for _, s in saved.raft.pieces do
+		if s.key == "floor" and (s.level or 1) == 1 then
+			oldNet = { key = "net", gx = s.gx, gz = s.gz, level = 1, rot = 0, held = { { key = "rope", n = 1 } } }
+			break
+		end
+	end
+	table.insert(saved.raft.pieces, oldNet)
+end
 local mBack = mark()
 ava = Engine.addPlayer("Ava", 501)
 Engine.advance(1)
@@ -1450,6 +1568,21 @@ check(
 	raft ~= nil and raft.plot == 1 and raft.summary.tiles == tilesBefore and raft.tier == tierBefore,
 	raft and raft.summary.tiles
 )
+if oldNet then
+	local moved
+	for _, p in raft.pieces do
+		if p.key == "net" and p.held and p.held[1] and p.held[1].key == "rope" then
+			moved = p
+		end
+	end
+	check(
+		"an old save's net on a floor moved beside the raft, a tile of its own, still holding its catch",
+		moved ~= nil
+			and not (moved.gx == oldNet.gx and moved.gz == oldNet.gz)
+			and Rafts:Tile(raft, moved.gx, moved.gz, 1) == moved
+			and Rafts:Tile(raft, oldNet.gx, oldNet.gz, 1).key == "floor"
+	)
+end
 check(
 	"her bag, XP, charts and blueprints came back",
 	noDataStore
@@ -1489,6 +1622,36 @@ check(
 	fb and fb.data.like == false and fb.data.reasons[1] == "empty" and #fb.data.reasons == 1
 )
 check("asked only once", not Feedback:Ask(ava))
+-- running: faster feet, and the anti-cheat lets a run through
+do
+	local hum = ava.Character:FindFirstChildOfClass("Humanoid")
+	local walk, sprint = Constants.WALK_SPEED, Constants.WALK_SPEED + Constants.SPRINT_BONUS
+	send(ava, "Sprint", true)
+	check(
+		"running: faster feet, and everyone sees it",
+		hum.WalkSpeed == sprint and ava.Character:GetAttribute("Sprint") == true,
+		hum.WalkSpeed
+	)
+	send(ava, "Sprint", "yes")
+	check("only true or false counts", hum.WalkSpeed == sprint)
+	local runner = PlayersS:Root(ava)
+	stand(ava, tileAt(raft, 6, 6))
+	ava:SetAttribute("AcGrace", 0)
+	Engine.advance(0.5)
+	local strikes = AntiCheat.state[ava].strikes
+	for _ = 1, 10 do
+		runner.CFrame = runner.CFrame + Vector3.new(sprint * 0.25, 0, 0)
+		Engine.advance(0.25)
+	end
+	check("a run's worth of studs a second isn't cheating", AntiCheat.state[ava].strikes == strikes)
+	send(ava, "Sprint", false)
+	check("walking again", hum.WalkSpeed == walk and ava.Character:GetAttribute("Sprint") == nil, hum.WalkSpeed)
+	check(
+		"...and the anti-cheat still allows a run (the client speeds up before the server hears)",
+		AntiCheat.maxSpeed(ava) >= sprint * Constants.AC_SPEED_SLACK
+	)
+	stand(ava, tileAt(raft, 6, 6))
+end
 -- the anti-cheat: a jump across the ocean
 local m10 = mark()
 local root = PlayersS:Root(ava)
@@ -1556,6 +1719,35 @@ check(
 		and #events("first_home", ava) == 1
 )
 check("guide steps were tracked", #events("guide_done", ava) >= 5, #events("guide_done", ava))
+do
+	-- every event says where the player was: the guide's step, what they were doing, the raft, where they stood
+	local fc = events("first_cast", ava)[1]
+	local ctx = fc and fc.data and fc.data.ctx
+	check(
+		"events carry where the player was (the guide's step, the raft, where they stood)",
+		ctx ~= nil
+			and type(ctx.step) == "string"
+			and ctx.step:find("/") ~= nil
+			and type(ctx.tiles) == "number"
+			and ctx.where == "raft",
+		ctx and `{ctx.step} {ctx.tiles} {ctx.where}`
+	)
+	local doing = 0
+	for _, e in aEvents do
+		if e.data and e.data.ctx and e.data.ctx.doing then
+			doing += 1
+		end
+	end
+	check("...and what they'd been doing", doing > 10, doing)
+	local activity = 0
+	for _, e in gameLogs do
+		-- (escaped for Discord: first\_cast shows as first_cast)
+		if e.title == "ra8 · 📜 Activity" and e.description:find("first\\_cast", 1, true) then
+			activity += 1
+		end
+	end
+	check("every event goes to the Discord log as a line (ra8 · 📜 Activity)", activity >= 1, activity)
+end
 check(
 	"the join went to the game log",
 	(function()

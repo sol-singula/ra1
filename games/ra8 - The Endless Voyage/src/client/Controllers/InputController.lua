@@ -478,9 +478,12 @@ local function roundButton(name, text, color, size, pos, key, pad)
 		outline = 2,
 		Parent = b,
 	})
-	Theme.keyHint(b, key, pad)
+	if key then
+		Theme.keyHint(b, key, pad)
+	end
 	return b, icon, label
 end
+InputController.roundButton = roundButton -- (MoveController's RUN and JUMP)
 
 local function buildButtons()
 	local act, actIcon, actLabel = roundButton("Act", "🎣", C.sky, 128, UDim2.new(1, -40, 1, -40), "Click", "R2")

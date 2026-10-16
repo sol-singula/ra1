@@ -221,7 +221,7 @@ function ModeService:Init(reg)
 		end
 	end)
 	reg.RaftService.Built:Connect(function(player, piece, raft)
-		if player and piece.def.structural and raft.summary.tiles % 10 == 0 then
+		if player and piece.def.structural and not piece.def.net and raft.summary.tiles % 10 == 0 then
 			self:Nudge(player, `🟫 {raft.summary.tiles} floors! Your raft is getting big. Invite a friend to see it?`)
 		end
 	end)

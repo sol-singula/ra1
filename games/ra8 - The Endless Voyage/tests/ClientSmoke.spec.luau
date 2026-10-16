@@ -307,15 +307,18 @@ check(
 	Guide.current() and Guide.current().key
 )
 check(
-	"the net goes on any floor (the guide marks a tile, not an edge)",
-	Guide.current() and Guide.current().spot ~= nil and Guide.current().edge == nil
+	"the net is a tile of its own: the guide marks a free spot beside the raft (not a floor, not an edge)",
+	Guide.current()
+		and Guide.current().spot ~= nil
+		and Guide.current().edge == nil
+		and Rafts:Tile(raft, Guide.current().spot.gx, Guide.current().spot.gz, 1) == nil
 )
 check(
 	"the reels came in doubled on a starter raft",
 	Inventory:Count(player, "wood") + Inventory:Count(player, "rope") >= 4
 )
 
--- The net on the floor the guide marks ------------------------------------------------------------------------------------------
+-- The net on the spot the guide marks -------------------------------------------------------------------------------------------
 give("rope", 2)
 give("wood", 6)
 do
@@ -327,16 +330,36 @@ do
 	Engine.advance(0.4)
 	placing = Build.placing()
 	check(
-		"the net's ghost sits on the floor you look at",
-		placing and placing.key == "net" and placing.valid,
+		"the net's ghost sits on the spot you look at",
+		placing
+			and placing.key == "net"
+			and placing.valid
+			and placing.spot.gx == netSpot.gx
+			and placing.spot.gz == netSpot.gz,
 		placing and tostring(placing.reason)
 	)
 	Input.act()
 	Engine.advance(0.6)
 	check("the net was placed", Rafts:Has(Rafts:RaftOf(player), "net"))
+	check("one net and placing ends (it isn't a floor you lay in a row)", Build.placing() == nil)
 	if Build.placing() then
 		tap(Build.refs.bar.Done)
 	end
+	-- a piece pointed at the net goes on a floor beside it: nothing goes on a net
+	Bus.Place:Fire("storage")
+	Engine.advance(0.2)
+	stand(tileAt(raft, 6, 6), netPos)
+	Engine.advance(0.4)
+	placing = Build.placing()
+	check(
+		"a piece pointed at the net goes on a floor instead",
+		placing and placing.spot and not (placing.spot.gx == netSpot.gx and placing.spot.gz == netSpot.gz),
+		placing and placing.spot and `{placing.spot.gx},{placing.spot.gz}`
+	)
+	if Build.placing() then
+		tap(Build.refs.bar.Done)
+	end
+	Engine.advance(0.2)
 end
 check(
 	"the guide moved to the tile step",
@@ -1230,6 +1253,75 @@ do
 	check("now it researches", Craft:Research(player, compassSlot()) == true)
 	Panels.close()
 	Engine.advance(0.3)
+end
+
+-- Running and jumping ----------------------------------------------------------------------------------------------------------------
+do
+	local Move = Engine.require(tree.client.Controllers.MoveController)
+	local c = player.Character
+	local hum = c:FindFirstChildOfClass("Humanoid")
+	local run, jump = Move.refs.run, Move.refs.jump
+	local walk, sprint = Constants.WALK_SPEED, Constants.WALK_SPEED + Constants.SPRINT_BONUS
+	Engine.advance(0.3)
+	check("RUN is on screen", run.Visible == true)
+	check("a phone gets a JUMP button (Roblox's own sits under ACT)", jump.Visible == true)
+	tap(run)
+	check("RUN: faster feet right away", hum.WalkSpeed == sprint, hum.WalkSpeed)
+	check("...the server is told", sent("Sprint") ~= nil and sent("Sprint").args[1] == true)
+	check(
+		"...and runs you too (everyone sees it)",
+		c:GetAttribute("Sprint") == true and PlayersS:MaxSpeed(player) == sprint,
+		PlayersS:MaxSpeed(player)
+	)
+	check("the button says so", Move.refs.runLabel.Text == "RUNNING", Move.refs.runLabel.Text)
+	ws.CurrentCamera.FieldOfView = 70
+	hum.MoveDirection = Vector3.new(0, 0, -1)
+	c.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, -sprint)
+	Engine.advance(1)
+	check(
+		"the camera widens while you run",
+		ws.CurrentCamera.FieldOfView > 70 + Constants.SPRINT_FOV * 0.8,
+		ws.CurrentCamera.FieldOfView
+	)
+	local rec = Anim.recs[c]
+	check("you lean into the run, forearms up", rec ~= nil and (rec.run or 0) > 0.8, rec and rec.run)
+	tap(run)
+	hum.MoveDirection = Vector3.zero
+	c.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+	Engine.advance(1)
+	check("RUN again: back to a walk", hum.WalkSpeed == walk and c:GetAttribute("Sprint") == nil, hum.WalkSpeed)
+	check("...the camera back", math.abs(ws.CurrentCamera.FieldOfView - 70) < 0.5, ws.CurrentCamera.FieldOfView)
+	check("...and upright again", (rec.run or 0) < 0.1, rec.run)
+	-- Shift, held; the left stick, until you stop
+	Engine.actions.EV_Run("EV_Run", Enum.UserInputState.Begin, { KeyCode = Enum.KeyCode.LeftShift })
+	Engine.advance(0.3)
+	check("holding Shift runs", hum.WalkSpeed == sprint and c:GetAttribute("Sprint") == true, hum.WalkSpeed)
+	Engine.actions.EV_Run("EV_Run", Enum.UserInputState.End, { KeyCode = Enum.KeyCode.LeftShift })
+	Engine.advance(0.3)
+	check("letting go walks", hum.WalkSpeed == walk and c:GetAttribute("Sprint") == nil, hum.WalkSpeed)
+	hum.MoveDirection = Vector3.new(1, 0, 0)
+	Engine.actions.EV_Run("EV_Run", Enum.UserInputState.Begin, { KeyCode = Enum.KeyCode.ButtonL3 })
+	Engine.advance(0.3)
+	check("clicking the left stick runs", hum.WalkSpeed == sprint, hum.WalkSpeed)
+	hum.MoveDirection = Vector3.zero
+	Engine.advance(1)
+	check("...until you stop", hum.WalkSpeed == walk and c:GetAttribute("Sprint") == nil, hum.WalkSpeed)
+	-- a lost message: the server's speed catches up anyway
+	PlayersS:Sprint(player, true)
+	Engine.advance(1)
+	check("if the server got it wrong, it's put right", c:GetAttribute("Sprint") == nil and hum.WalkSpeed == walk)
+	-- JUMP, held, keeps jumping
+	hum.Jump = false
+	local finger = { UserInputType = Enum.UserInputType.Touch }
+	jump.InputBegan:Fire(finger)
+	check("JUMP jumps", hum.Jump == true)
+	hum.Jump = false
+	Engine.advance(0.1)
+	check("...and keeps jumping while it's held", hum.Jump == true)
+	UIS.InputEnded:Fire(finger)
+	hum.Jump = false
+	Engine.advance(0.1)
+	check("...not once it's let go", hum.Jump ~= true)
 end
 
 -- Feedback card, lite mode, analytics --------------------------------------------------------------------------------------------

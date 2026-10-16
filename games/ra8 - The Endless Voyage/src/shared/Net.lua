@@ -26,6 +26,7 @@ Net.ClientEvents = {
 	Visit = 3, -- (userId) look at someone's raft (VisitService): a copy comes back as "Visiting"
 	VisitList = 3, -- ("here" | "friends" | "top") who you can visit
 	Emote = 1, -- (key) wave, cheer, dance
+	Sprint = 6, -- (on) running: Shift held, the left stick clicked, RUN tapped (PlayerService)
 	Settings = 2, -- (key, value) music / shake / fx, or title / flag (ProgressService)
 	Board = 2, -- (category) the friends-first leaderboards (LeaderboardService)
 	Friends = 1, -- ({ { userId, jobId }, ... }) friends online in this game: where is each one?

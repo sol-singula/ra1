@@ -84,7 +84,8 @@ function VisitService:Snapshot(userId)
 	local list = cleanPieces(profile.raft.pieces)
 	local tiles = 0
 	for _, p in list do
-		if Pieces.get(p.key).structural and p.level == 1 then
+		local def = Pieces.get(p.key)
+		if def.structural and not def.net and p.level == 1 then
 			tiles += 1
 		end
 	end

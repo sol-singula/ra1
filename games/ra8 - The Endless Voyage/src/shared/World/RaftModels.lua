@@ -356,78 +356,143 @@ function build.storage(m, cf)
 	end
 end
 
+-- A net: a tile of its own. A frame round open water (walk on the frame, see down into the sea), a float under
+-- each side, and the net hanging from the frame's inside in a deep sagging bowl below the water; what it has
+-- caught floats in the bowl (RaftModels.showCatch: the server calls it as the catch changes).
+local NET_HOLE = 3.9 -- the open middle, across
+local function netTile(m, cf, frameColor, frameMaterial, cordColor)
+	local still = { CanCollide = false, CastShadow = false }
+	local side = (T - NET_HOLE) / 2
+	for i = 0, 3 do
+		local a = math.rad(i * 90)
+		local edge = cf * CFrame.Angles(0, a, 0)
+		part(m, "Frame", edge * CFrame.new(0, 0, (T - side) / 2), V3(T, 0.6, side), frameColor, frameMaterial)
+		part(
+			m,
+			"Rim",
+			edge * CFrame.new(0, -0.42, NET_HOLE / 2 + 0.05),
+			V3(NET_HOLE + 0.2, 0.16, 0.16),
+			C.rope,
+			M.Fabric,
+			still
+		)
+		Kit.cyl(
+			m,
+			"Float",
+			edge * CFrame.new(0, -Constants.DECK_Y + 0.25, T / 2 - side / 2),
+			T - 0.6,
+			1.5,
+			C.barkDark,
+			M.Wood,
+			still
+		)
+	end
+	-- the bowl: cords across both ways, each sagging deepest in the middle, into the water and below
+	local h = NET_HOLE / 2
+	local function sag(u, v)
+		-- (u, v from -1 to 1 across the hole: 0 at the rim, deepest at the middle)
+		local depth = (1 - u * u) * (1 - 0.55 * v * v)
+		return -0.45 - depth * 3.1
+	end
+	for _, axis in { "x", "z" } do
+		for k = -2, 2 do
+			local v = k / 2.2
+			local prev
+			for j = 0, 6 do
+				local u = -1 + j / 3
+				local pos = axis == "x" and V3(u * h, sag(u, v), v * h) or V3(v * h, sag(u, v), u * h)
+				local world = cf:PointToWorldSpace(pos)
+				if prev then
+					local len = (world - prev).Magnitude
+					part(
+						m,
+						"Cord",
+						CFrame.lookAt(prev, world) * CFrame.new(0, 0, -len / 2),
+						V3(0.07, 0.07, len + 0.05),
+						cordColor,
+						M.Fabric,
+						still
+					)
+				end
+				prev = world
+			end
+		end
+	end
+	local catch = Instance.new("Folder")
+	catch.Name = "Catch"
+	catch.Parent = m
+end
+
 function build.net(m, cf, opts)
-	-- four posts on the tile, a big net hanging from them down into the water round the raft, and a basket
-	for _, sx in { -1, 1 } do
-		for _, sz in { -1, 1 } do
-			part(m, "Post", cf * CFrame.new(sx * 2.4, 1.1, sz * 2.4), V3(0.3, 2.2, 0.3), C.woodDark, M.Wood)
-			part(
-				m,
-				"Line",
-				cf * CFrame.new(sx * 3.6, -0.4, sz * 3.6) * CFrame.Angles(sz * math.rad(35), 0, -sx * math.rad(35)),
-				V3(0.08, 3.4, 0.08),
-				C.rope,
-				M.Fabric,
-				{ CanCollide = false }
-			)
-		end
-	end
-	part(
-		m,
-		"Rim",
-		cf * CFrame.new(0, 2.15, 0),
-		V3(5.1, 0.2, 5.1),
-		C.woodDark,
-		M.Wood,
-		{ CanCollide = false, Transparency = 0 }
-	)
-	part(
-		m,
-		"RimHole",
-		cf * CFrame.new(0, 2.16, 0),
-		V3(4.3, 0.22, 4.3),
-		C.rope,
-		M.Fabric,
-		{ CanCollide = false, Transparency = 0.55 }
-	)
-	-- the net in the water, wider than the tile so it shows round the raft's edge
-	part(
-		m,
-		"Mesh",
-		cf * CFrame.new(0, -1.25, 0),
-		V3(9, 0.08, 9),
-		C.rope,
-		M.Fabric,
-		{ CanCollide = false, Transparency = 0.4 }
-	)
-	for k = -4, 4 do
-		part(m, "Cord", cf * CFrame.new(k, -1.2, 0), V3(0.06, 0.06, 9), C.rope, M.Fabric, { CanCollide = false })
-		part(m, "Cord", cf * CFrame.new(0, -1.2, k), V3(9, 0.06, 0.06), C.rope, M.Fabric, { CanCollide = false })
-	end
-	for _, sx in { -1, 1 } do
-		for _, sz in { -1, 1 } do
-			Kit.ball(
-				m,
-				"Float",
-				(cf * CFrame.new(sx * 4.4, -0.9, sz * 4.4)).Position,
-				0.8,
-				C.canvasRed,
-				M.SmoothPlastic,
-				{ CanCollide = false }
-			)
-		end
-	end
-	-- the catch basket
-	part(m, "Basket", cf * CFrame.new(1.4, 0.55, -1.4), V3(1.4, 1.1, 1.4), C.woodLight, M.WoodPlanks)
-	_ = opts
+	netTile(m, cf, deckColor(opts):Lerp(C.woodDark, 0.25), M.WoodPlanks, C.rope)
 end
 
 function build.salvage_net(m, cf, opts)
-	build.net(m, cf, opts)
-	part(m, "Frame", cf * CFrame.new(0, 2.4, 0), V3(5.4, 0.3, 0.3), C.iron, M.Metal, { CanCollide = false })
-	local lamp =
-		part(m, "Lamp", cf * CFrame.new(0, 2.9, 0), V3(0.6, 0.6, 0.6), C.glowcap, M.Neon, { CanCollide = false })
+	netTile(m, cf, C.iron:Lerp(C.steel, 0.4), M.Metal, C.rope:Lerp(C.white, 0.35))
+	local lamp = part(m, "Lamp", cf * CFrame.new(T / 2 - 0.4, 1.2, T / 2 - 0.4), V3(0.5, 0.5, 0.5), C.glowcap, M.Neon, {
+		CanCollide = false,
+	})
+	part(m, "LampPost", cf * CFrame.new(T / 2 - 0.4, 0.6, T / 2 - 0.4), V3(0.2, 1.2, 0.2), C.iron, M.Metal, {
+		CanCollide = false,
+	})
 	Kit.light(lamp, "PointLight", { Name = "Glow", Color = C.glowcap, Range = 8, Brightness = 0.5 })
+	_ = opts
+end
+
+-- What a net holds, floating in its bowl: a little piece of each (up to six), the newest on top.
+local CATCH_SPOTS = { { -0.8, -0.7 }, { 0.8, 0.6 }, { 0.7, -0.8 }, { -0.7, 0.8 }, { 0, 0 }, { 0, -1.1 } }
+local function catchPiece(folder, key, cf)
+	local still = { CanCollide = false, CanQuery = false, CastShadow = false }
+	if key == "wood" or key == "plank" then
+		part(folder, "Caught", cf * CFrame.Angles(0, 0.4, 0), V3(1.5, 0.22, 0.38), C.woodLight, M.Wood, still)
+		part(
+			folder,
+			"Caught",
+			cf * CFrame.new(0, 0.18, 0) * CFrame.Angles(0, -0.6, 0),
+			V3(1.3, 0.2, 0.34),
+			C.wood,
+			M.Wood,
+			still
+		)
+	elseif key == "rope" then
+		Kit.cyl(folder, "Caught", cf * CFrame.Angles(0, 0, math.rad(90)), 0.3, 0.95, C.rope, M.Fabric, still)
+	elseif key == "cloth" then
+		part(folder, "Caught", cf * CFrame.Angles(0, 0.7, 0.15), V3(1, 0.2, 0.8), C.canvas, M.Fabric, still)
+	elseif key == "scrap" or key == "metal" then
+		part(folder, "Caught", cf * CFrame.Angles(0.3, 0.5, 0), V3(0.8, 0.45, 0.6), C.steel, M.Metal, still)
+		part(
+			folder,
+			"Caught",
+			cf * CFrame.new(0.3, 0.2, 0) * CFrame.Angles(0, 1.1, 0.4),
+			V3(0.9, 0.12, 0.2),
+			C.iron,
+			M.Metal,
+			still
+		)
+	elseif key == "bottle" then
+		Kit.cyl(folder, "Caught", cf * CFrame.Angles(0, 0.4, math.rad(60)), 0.8, 0.45, C.leafLight, M.Glass, still)
+	else
+		part(folder, "Caught", cf * CFrame.Angles(0, 0.5, 0), V3(0.8, 0.8, 0.8), C.woodLight, M.WoodPlanks, still)
+	end
+end
+
+function RaftModels.showCatch(model, held)
+	local folder = model and model:FindFirstChild("Catch")
+	if not folder then
+		return
+	end
+	folder:ClearAllChildren()
+	local origin = model:GetAttribute("Origin") or model:GetPivot()
+	local list = held or {}
+	local n = math.min(#list, #CATCH_SPOTS)
+	for i = 1, n do
+		local it = list[#list - n + i]
+		local spot = CATCH_SPOTS[i]
+		-- floating at the water, in the bowl
+		local cf = origin * CFrame.new(spot[1], -Constants.DECK_Y + 0.15, spot[2])
+		catchPiece(folder, it.key, cf)
+	end
+	model:SetAttribute("Caught", #list)
 end
 
 function build.sail(m, cf, opts)
@@ -841,6 +906,8 @@ function RaftModels.build(key, cf, opts, parent)
 		part(m, "Crate", cf * CFrame.new(0, 1, 0), V3(2, 2, 2), C.wood, M.WoodPlanks)
 	end
 	m:SetAttribute("Piece", key)
+	-- (where it was built, for what's drawn on it later: a net's catch)
+	m:SetAttribute("Origin", cf)
 	m.Parent = parent
 	return m
 end

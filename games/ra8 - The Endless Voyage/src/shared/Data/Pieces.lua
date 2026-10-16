@@ -1,12 +1,15 @@
 --[[
 What you can build on the raft (master plan §5): structure, stations, systems and decoration. Each piece takes one
-tile (railings, nets, spikes and ladders sit on a tile's edge, facing the water). Tiers (§5.4) are earned by what the
-raft can do (Formulas.raftTier), and each tier opens more pieces and more room.
+tile (railings, spikes and ladders sit on a tile's edge, facing the water; a net is a tile of its own, open to the
+water). Tiers (§5.4) are earned by what the raft can do (Formulas.raftTier), and each tier opens more pieces and more
+room.
 
   cost        materials
   tier        the raft tier it needs
-  edge        true: on a tile's edge (railing, net, spikes, ladder); false: on the tile
-  structural  floor and stairs (the only pieces placed where there's no tile yet)
+  edge        true: on a tile's edge (railing, spikes, ladder); false: on the tile
+  structural  floor, stairs and nets (the only pieces placed where there's no tile yet)
+  net         true: a net tile, on the first deck: a frame round open water (not a floor: nothing goes on it, and it
+              doesn't count as one of the raft's tiles)
   deck        2: only on the second deck; nil: either
   station     a crafting station (Data/Recipes)
   blueprint   true: must be found (a supply crate, an island, a wreck, research) before it can be built
@@ -167,9 +170,11 @@ Pieces.list = {
 		icon = "🕸️",
 		cost = { wood = 4, rope = 1 },
 		tier = 1,
+		structural = true,
+		net = true, -- a tile of its own: a frame round open water with the net hanging in it (not a floor)
 		hp = 60,
 		effect = { collect = 1 },
-		desc = "Put it on any floor. It catches everything that floats near your raft, even while you're away!",
+		desc = "Its own tile at the edge of your raft. Watch it catch what floats by, even while you're away!",
 	},
 	{
 		key = "salvage_net",
@@ -178,9 +183,11 @@ Pieces.list = {
 		cost = { rope = 6, metal = 4, gear = 1 },
 		tier = 3,
 		blueprint = true,
+		structural = true,
+		net = true,
 		hp = 90,
 		effect = { collect = 2 },
-		desc = "A wider net that finds the rare pieces.",
+		desc = "A bigger net tile on an iron frame. It holds more and finds rare pieces.",
 	},
 	{
 		key = "sail",

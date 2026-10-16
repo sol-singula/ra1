@@ -11,6 +11,8 @@ keep playing; on top of them this bends the joints by hand, on this client only,
   spears      a level thrust; harpoons: an overarm throw
   eating, reading   hand to the face
   emotes      a wave, a cheer, a dance
+  running     faster than a walk on your feet (MoveController's run): a lean into it, the head up, and the free
+              arms bent like a sprinter's, on top of Roblox's own run so they still swing with the legs
 The one-shots come from "Act"; the sustained poses are the character's "Pose" attribute, set by the server
 (PlayerService:SetPose), so everyone sees them.
 Your own actions play the instant you press (InputController fires Bus.Swing); the server's echo for you is skipped.
@@ -29,6 +31,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Constants = require(ReplicatedStorage.Shared.Constants)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Bus = require(script.Parent.Parent.UI.Bus)
@@ -48,8 +51,11 @@ local HOLD_SHOULDER, HOLD_ELBOW = 0.95, 0.55
 -- the rod: the hand low in front, the rod angled up (the rod leaves the fist 40° above the hand's forward: see
 -- ItemModels.holdCFrame), so with the arm just hanging it still points up and out
 local ROD_HOLD = { 0.25, 0.35, -0.2 } -- shoulder, elbow, wrist
+-- running: the forearms raised this far (on top of the run's own swing)
+local RUN_ELBOW = 1.15
 AnimController.HOLD_SHOULDER, AnimController.HOLD_ELBOW = HOLD_SHOULDER, HOLD_ELBOW
 AnimController.ROD_HOLD = ROD_HOLD
+AnimController.RUN_ELBOW = RUN_ELBOW
 
 local function ease(t)
 	t = math.clamp(t, 0, 1)
@@ -279,13 +285,26 @@ function AnimController.pose(rec, character, clock)
 		neck -= 0.1 * k
 		locked.RightShoulder, locked.RightElbow, locked.RightWrist = true, true, true
 	end
-	-- moving fast: lean in; low on health: the chest heaves
+	-- running (faster than a walk, not swimming): lean in, head up, the free arms bent; low on health: the chest heaves
 	local hum = character:FindFirstChildOfClass("Humanoid")
 	local r = character:FindFirstChild("HumanoidRootPart")
 	if hum and r then
 		local speed = (r.AssemblyLinearVelocity * Vector3.new(1, 0, 1)).Magnitude
-		if speed > 18 then
-			waist -= 0.12
+		local swimming = hum:GetState() == Enum.HumanoidStateType.Swimming
+		local want = swimming and 0 or math.clamp((speed - Constants.WALK_SPEED - 1) / 6, 0, 1)
+		local dt = math.clamp(clock - (rec.runClock or clock), 0, 0.1)
+		rec.runClock = clock
+		rec.run = (rec.run or 0) + (want - (rec.run or 0)) * math.min(1, dt * 8)
+		local k = rec.run
+		if k > 0.01 then
+			waist -= 0.26 * k
+			neck += 0.14 * k
+			if rec.joints.RightElbow and not locked.RightElbow then
+				E += RUN_ELBOW * k
+			end
+			if rec.joints.LeftElbow and not locked.LeftElbow then
+				LE += RUN_ELBOW * k
+			end
 		end
 		if hum.Health > 0 and hum.Health < hum.MaxHealth * 0.3 then
 			waist += -0.1 + math.sin(clock * 6) * 0.05

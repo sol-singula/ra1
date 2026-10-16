@@ -622,7 +622,9 @@ function HudController.unlock(u)
 	if text == "" then
 		return
 	end
-	local row = freeRow(unlocks, 3)
+	-- (as many rows as fit above JUMP and RUN, whose tops sit 254 above the bottom: two on a phone held sideways)
+	local rows = math.clamp(math.floor((Theme.canvas().Y - 254 - 200 - 54) / 60) + 1, 1, 3)
+	local row = freeRow(unlocks, rows)
 	local card = Theme.slab({
 		Name = "Unlock",
 		AnchorPoint = Vector2.new(1, 0),

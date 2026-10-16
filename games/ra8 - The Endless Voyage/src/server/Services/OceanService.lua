@@ -486,22 +486,20 @@ function OceanService:CastAt(player, item, d, isDrop)
 end
 
 -- Nets ------------------------------------------------------------------------------------------------------------------
+-- What a net catches stays in it, floating in its bowl where you can see it, until someone empties it (its prompt)
+-- or, with a storage box on the raft, until the box takes it: when the net is full, or NET_BOX_EVERY seconds
+-- after it caught the first thing.
 function OceanService:_nets(raft)
-	local p = plotState(raft.plot)
 	local hasBox = rafts:Has(raft, "storage", true)
 	local owner = raft.owner
+	local t = now()
 	for _, net in rafts:Nets(raft) do
 		local piece = net.piece
+		piece.held = piece.held or {}
+		local before = #piece.held
 		local take = piece.key == "salvage_net" and 2 or 1
-		-- a storage box empties what a net was holding
-		if hasBox and owner and owner.Parent and piece.held and #piece.held > 0 then
-			for _, it in piece.held do
-				inventory:Give(owner, it.key, it.n, "net")
-			end
-			piece.held = {}
-		end
-		if #(piece.held or {}) >= OceanService.netHold(piece) then
-			continue
+		if before >= OceanService.netHold(piece) then
+			take = 0
 		end
 		for _, d in self:Near(raft.plot, net.pos, Constants.NET_RANGE) do
 			if take <= 0 then
@@ -515,15 +513,8 @@ function OceanService:_nets(raft)
 				end
 				local pos = d.pos
 				self:Remove(d)
-				if hasBox and owner and owner.Parent then
-					for _, it in items do
-						inventory:Give(owner, it.key, it.n, "net")
-					end
-				else
-					piece.held = piece.held or {}
-					for _, it in items do
-						table.insert(piece.held, it)
-					end
+				for _, it in items do
+					table.insert(piece.held, it)
 				end
 				for _, other in players:PlayersOnPlot(raft.plot) do
 					Net.fire(other, "Fx", "net", { pos = pos, net = net.pos })
@@ -531,8 +522,22 @@ function OceanService:_nets(raft)
 				self.Netted:Fire(raft, piece, items)
 			end
 		end
+		if #piece.held > 0 then
+			piece.heldSince = piece.heldSince or t -- (since its first catch, or since it was loaded holding some)
+		end
+		local full = #piece.held >= OceanService.netHold(piece)
+		local waited = piece.heldSince and t - piece.heldSince >= Constants.NET_BOX_EVERY
+		if hasBox and owner and owner.Parent and #piece.held > 0 and (full or waited) then
+			for _, it in piece.held do
+				inventory:Give(owner, it.key, it.n, "net")
+			end
+			piece.held = {}
+			piece.heldSince = nil
+		end
+		if #piece.held ~= before then
+			rafts:ShowCatch(raft, piece)
+		end
 	end
-	_ = p
 end
 
 function OceanService.netHold(piece)
@@ -570,6 +575,9 @@ function OceanService:Offline(player, raft, seconds)
 	end
 	if caught > 0 then
 		raft.dirty = true
+		for _, net in rafts:Nets(raft) do
+			rafts:ShowCatch(raft, net.piece)
+		end
 		Net.fire(
 			player,
 			"Callout",

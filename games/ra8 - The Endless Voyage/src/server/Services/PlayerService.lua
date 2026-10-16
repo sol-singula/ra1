@@ -6,6 +6,8 @@ off as a lost bag where you fell (InventoryService.LoseFinds), yours to reel in 
 
   where      raft (your own) | visiting (someone else's) | island | water, from where you stand (every 0.25 s)
   buffs      hearty (less damage), swift (faster), lucky (better casts and nets): the Cookpot's food
+  running    faster feet while the client holds the run (Sprint): it speeds itself up the moment you press, and the
+             server's speed matches, so the two never fight (the anti-cheat always allows a run)
   the sea    swim back to a ladder; fall out of the world and you're back on deck
 ]]
 local Players = game:GetService("Players")
@@ -109,8 +111,34 @@ function PlayerService:Luck(player)
 	return self:HasBuff(player, "lucky") and 1 or 0
 end
 
-function PlayerService:MaxSpeed(player)
-	return Constants.WALK_SPEED + (self:HasBuff(player, "swift") and 4 or 0)
+-- How fast your legs go: a walk, the swift buff, and a run while you're running (`sprinting` true: as if running).
+function PlayerService:MaxSpeed(player, sprinting)
+	if sprinting == nil then
+		local s = st[player]
+		sprinting = s ~= nil and s.sprint == true
+	end
+	return Constants.WALK_SPEED
+		+ (self:HasBuff(player, "swift") and 4 or 0)
+		+ (sprinting and Constants.SPRINT_BONUS or 0)
+end
+
+-- Running on or off (the client asks; a player who's down can't run). The character's "Sprint" attribute says so
+-- to every client.
+function PlayerService:Sprint(player, on)
+	local s = state(player)
+	on = on == true and not s.dead
+	if (s.sprint == true) == on then
+		return
+	end
+	s.sprint = on
+	local c = player.Character
+	local hum = c and c:FindFirstChildOfClass("Humanoid")
+	if hum and not s.dead then
+		hum.WalkSpeed = self:MaxSpeed(player)
+	end
+	if c then
+		c:SetAttribute("Sprint", on or nil)
+	end
 end
 
 function PlayerService:Visiting(player)
@@ -180,6 +208,7 @@ end
 function PlayerService:Spawn(player, pos)
 	local s = state(player)
 	s.dead = false
+	s.sprint = false
 	s.respawnAt = nil
 	s.hp = s.maxHp
 	s.protectUntil = now() + Constants.SPAWN_PROTECT
@@ -194,6 +223,7 @@ function PlayerService:Spawn(player, pos)
 		local hum = c:FindFirstChildOfClass("Humanoid")
 		if hum then
 			setupHumanoid(hum)
+			hum.WalkSpeed = self:MaxSpeed(player)
 			hum.Died:Connect(function()
 				self:_characterDied(player, c)
 			end)
@@ -481,6 +511,11 @@ function PlayerService:Init(reg)
 	Net.on("Emote", function(player, key)
 		if type(key) == "string" and #key <= 16 and self:IsAlive(player) then
 			Net.fireAll("Act", { by = player.UserId, mode = "emote", key = key })
+		end
+	end)
+	Net.on("Sprint", function(player, on)
+		if type(on) == "boolean" then
+			self:Sprint(player, on)
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)

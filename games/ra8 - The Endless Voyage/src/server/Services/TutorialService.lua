@@ -10,7 +10,7 @@ guide keeps going with the NEXT thing to do, forever (Goal below), and it can't 
 And a player with no rod at all gets a spare one (the rod is the whole loop; your last one can't be dropped).
 
   1 cast     "Cast at the driftwood": six pieces float within reach the moment you arrive         0:00-0:20
-  2 net      "Build a Surface Net on any floor": it fills up by itself (the first big win)         0:20-0:40
+  2 net      "Build a Surface Net next to your raft": a tile of its own that fills up by itself     0:20-0:40
   3 tile     "Build a Floor Tile": BUILD, pick it, tap a spot next to your raft                    0:40-1:00
   4 bench    "Build the Workbench"                                                                 1:00-1:40
   5 crate    a supply crate drifts in right beside the raft, with a beacon on it, and another one
@@ -60,7 +60,7 @@ local TEXT = {
 	tile = "Build a Floor Tile 🟫: hold QUICK looking at the water beside your raft (or open BUILD and pick it)",
 	bench = "Build the Workbench 🛠️ on a tile",
 	crate = "A supply crate 📦 right next to you! Cast at the glowing one, then OPEN it from your bag",
-	net = "Build a Surface Net 🕸️ on any floor: stuff floats under your raft and it catches it for you!",
+	net = "Build a Surface Net 🕸️ next to your raft. It catches stuff that floats by, and you can watch it fill up!",
 	helm = "Build the Helm ☸️ (a steering wheel with a little sail), then open the MAP and SAIL to Palm Key!",
 	island = "Land ho! Chop a palm 🌴, search the crate 📦, and look at the campfire 🔥",
 	home = "Leave the island ⛵: open the MAP and tap LEAVE ISLAND. Everything you found is yours to keep",
@@ -76,6 +76,16 @@ end
 
 function TutorialService:Active(player)
 	return active[player]
+end
+
+-- Where a player is in the guide, for the analytics and the log: "3/8 tile", "done", or "-" before it starts.
+function TutorialService:StepName(player)
+	local a = active[player]
+	if a then
+		return `{a.step}/{#STEPS} {STEPS[a.step] or "?"}`
+	end
+	local profile = data and data:Get(player)
+	return (profile and profile.tutorial and profile.tutorial.done) and "done" or "-"
 end
 
 -- The arrow's target for a step, and what to light up.
@@ -97,7 +107,8 @@ function TutorialService:Target(player, key)
 			end
 		end
 		return best and best.pos + Vector3.new(0, 1, 0) or nil, best and { debris = best.id } or nil
-	elseif key == "tile" then
+	elseif key == "tile" or (key == "net" and not (rafts:Has(raft, "net") or rafts:Has(raft, "salvage_net"))) then
+		-- (a net is a tile of its own: it goes where a new floor would)
 		local spot = rafts:FreeSpots(raft, 1)[1]
 		return spot and rafts:TileWorld(raft, spot[1], spot[2], 1) + Vector3.new(0, 1, 0) or nil,
 			spot and { spot = { gx = spot[1], gz = spot[2] } } or nil
@@ -563,12 +574,12 @@ function TutorialService:Init(registry)
 		if not a then
 			return
 		end
-		if piece.def.structural then
+		if piece.def.net then
+			self:Advance(player, "net")
+		elseif piece.def.structural then
 			self:Advance(player, "tile")
 		elseif piece.key == "workbench" then
 			self:Advance(player, "bench")
-		elseif piece.key == "net" or piece.key == "salvage_net" then
-			self:Advance(player, "net")
 		else
 			self:_refresh(player) -- (the helm: the arrow moves onto it)
 		end

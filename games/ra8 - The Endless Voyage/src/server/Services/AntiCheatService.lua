@@ -2,7 +2,7 @@
 Anti-cheat (master plan §14: the server is the authority). The server already decides every hit, every item, every
 raft piece and every creature, so nobody can give themselves loot, damage or health; what's left is cheating with
 your character. Checked on the server four times a second:
-  speed      moving faster than your legs allow (the swift buff included), judged over AC_WINDOW seconds so lag
+  speed      moving faster than your legs allow (running and the swift buff included), judged over AC_WINDOW s so lag
              bursts don't count: pulled back to where you were, + a strike
   teleport   the same check with a huge jump: + 3 strikes
   flying     hovering high above the ground for AC_AIR_SECONDS: dropped back down, + 2 strikes
@@ -70,7 +70,8 @@ end
 
 function AntiCheatService.maxSpeed(player)
 	local _, hum = rootOf(player)
-	local allowed = survivors and survivors:MaxSpeed(player) or Constants.WALK_SPEED
+	-- (as if running: anyone may run at any moment, and the client speeds up before the server hears of it)
+	local allowed = survivors and survivors:MaxSpeed(player, true) or Constants.WALK_SPEED + Constants.SPRINT_BONUS
 	local walk = math.max(hum and hum.WalkSpeed or 0, allowed)
 	return walk * Constants.AC_SPEED_SLACK + Constants.AC_SPEED_EXTRA
 end

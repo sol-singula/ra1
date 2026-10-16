@@ -55,6 +55,12 @@ local function key(gx, gz, level)
 	return level * 10000000 + (gx + 500) * 1000 + (gz + 500)
 end
 
+-- A net is a tile of its own (open water in a frame): nothing goes on it or over it.
+local function isNet(p)
+	local def = p and Pieces.get(p.key)
+	return def ~= nil and def.net == true
+end
+
 -- Lookups from the raft view: tiles, pieces on tiles, pieces on edges.
 local function maps()
 	local raft = Store.get("raft") or { pieces = {} }
@@ -110,6 +116,9 @@ local function check(def, gx, gz, level, rot)
 		if tile then
 			return false, "A tile is there"
 		end
+		if def.net and level ~= 1 then
+			return false, "Nets go at the water"
+		end
 		local adjacent = false
 		for _, d in NEIGHBOURS do
 			if tiles[key(gx + d[1], gz + d[2], level)] then
@@ -124,6 +133,9 @@ local function check(def, gx, gz, level, rot)
 			local below = tiles[key(gx, gz, 1)]
 			if not below then
 				return false, "Needs a tile below"
+			end
+			if isNet(below) then
+				return false, "Not over a net"
 			end
 			local stairs = false
 			for _, d in NEIGHBOURS do
@@ -142,6 +154,9 @@ local function check(def, gx, gz, level, rot)
 		end
 		if tile.key == "stairs" then
 			return false, "Not on the stairs"
+		end
+		if isNet(tile) then
+			return false, "Not on a net"
 		end
 		if def.deck == 2 and level ~= 2 then
 			return false, "Second deck only"
@@ -205,13 +220,14 @@ local function aimPoint()
 	return r.Position + flat * 7 + Vector3.new(0, -2, 0)
 end
 
--- The tile nearest to a point (on the level the point's height says, else any), within reach.
+-- The floor nearest to a point (on the level the point's height says, else any), within reach: where a piece can go
+-- (not a net).
 local function nearestTile(point, level)
 	local c = center()
 	local best, bestD
 	for _, p in (Store.get("raft") or { pieces = {} }).pieces or {} do
 		local pd = Pieces.get(p.key)
-		if pd and pd.structural and (not level or p.level == level) then
+		if pd and pd.structural and not pd.net and (not level or p.level == level) then
 			local pos = Formulas.tilePosition(c, p.gx, p.gz, p.level)
 			local d = (Vector3.new(pos.X, 0, pos.Z) - Vector3.new(point.X, 0, point.Z)).Magnitude
 			if d <= 10 and (not bestD or d < bestD) then
@@ -228,9 +244,13 @@ local function spotFor(def, point, rot)
 	local c = center()
 	local gx, gz, level = Formulas.tileAt(c, point)
 	rot = rot or 0
+	if def.net then
+		level = 1 -- (down at the water, even from the second deck)
+	end
 	if not def.structural then
 		local tiles = maps()
-		if not tiles[key(gx, gz, level)] then
+		local under = tiles[key(gx, gz, level)]
+		if not under or isNet(under) then
 			local t = nearestTile(point, level) or nearestTile(point, nil)
 			if t then
 				gx, gz, level = t.gx, t.gz, t.level
@@ -586,7 +606,7 @@ function BuildController.place()
 	Net.send("Build", this.key, s.gx, s.gz, s.level, s.rot)
 	Bus.Tap:Fire("place_" .. this.key)
 	Bus.Swing:Fire("hammer", "repair")
-	if not this.def.structural and not this.pinned then
+	if (not this.def.structural or this.def.net) and not this.pinned then
 		task.delay(0.3, function()
 			if placing == this then
 				BuildController.stop()

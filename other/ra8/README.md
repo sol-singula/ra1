@@ -37,3 +37,9 @@ Nothing? Press F9 in the game, Server log, and look for `[GameLog]`: it says whe
 requests are off, the domain isn't allowed or the key is wrong. A server that started before the secret existed
 picks it up within a minute (older builds: shut the servers down from the Creator Dashboard). The function's own
 log is in Supabase → Edge Functions → roblox-game-log → Logs ("not allowed" = a wrong key).
+
+What goes in: servers starting and stopping, joins and leaves (with the session's stats), tier-ups, feedback, the
+anti-cheat's flags, the chat, and every player's every event as "ra8 · 📜 Activity" lines every 15 seconds. Each
+line has the time into the session, who, what happened, the guide's step, the raft's size, where they were and
+what they were doing. If the shared channel gets too busy, set `GAME_LOG_ACTIVITY = false` in `Constants.lua` and
+publish: the rest still goes in.

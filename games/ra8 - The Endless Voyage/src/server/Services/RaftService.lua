@@ -5,11 +5,14 @@ tiles and railings, nets, spikes and ladders on their edges (Data/Pieces). The o
 storms and sea creatures damage pieces (a broken piece stops working and waits for the hammer); the tier
 (Formulas.raftTier) is earned by what the raft can do. Saved in the owner's profile, rebuilt when they come back.
 
-  pieces     { id, key, gx, gz, level, rot, hp, maxHp, broken, model, held }; rot is the edge a railing or net
-             sits on (0 = +X, 1 = +Z, 2 = -X, 3 = -Z) or the way a chair or the helm faces
-  building   structural pieces (floor, plank deck, stairs) go where there's no tile yet, next to one; the second
-             deck needs a tile below and stairs or another second-deck tile beside it; everything else needs a
-             tile under it (edge pieces: a free edge; nets, ladders and spikes: an edge facing the water)
+  pieces     { id, key, gx, gz, level, rot, hp, maxHp, broken, model, held, heldSince }; rot is the edge a
+             railing sits on (0 = +X, 1 = +Z, 2 = -X, 3 = -Z) or the way a chair or the helm faces; held is what a
+             net has caught
+  building   structural pieces (floor, plank deck, stairs, and the nets: a tile of their own, a frame round open
+             water with the net hanging in it and the catch piling up in view) go where there's no tile yet, next
+             to one; the second deck needs a floor below and stairs or another second-deck tile beside it;
+             everything else needs a floor under it (edge pieces: a free edge; ladders and spikes: an edge facing
+             the water). Nothing goes on a net.
   prompts    the helm (the map), the stations (crafting), the bunk (rest), the nets (empty them): ProximityPrompts
              with a "Kind" attribute the client and the server read
 ]]
@@ -321,6 +324,7 @@ function RaftService:EmptyTiles(raft, level)
 	for _, p in raft.pieces do
 		if
 			p.def.structural
+			and not p.def.net
 			and p.key ~= "stairs"
 			and (not level or p.level == level)
 			and not self:OnTile(raft, p.gx, p.gz, p.level)
@@ -601,6 +605,9 @@ function RaftService:_model(raft, piece)
 	m:SetAttribute("Rot", piece.rot)
 	piece.model = m
 	addPrompt(piece)
+	if piece.def.net then
+		self:ShowCatch(nil, piece)
+	end
 	if piece.hp < piece.maxHp then
 		RaftModels.damage(m, piece.hp / piece.maxHp)
 	end
@@ -716,9 +723,38 @@ function RaftService:Assign(player, profile)
 	byPlayer[player] = raft
 	local saved = profile.raft.pieces
 	if type(saved) == "table" and #saved > 0 then
+		-- the nets after the rest: a net saved from before they were tiles of their own sat on a floor, so it moves
+		-- to a free spot beside the raft (or, with none, back into the bag with what it held)
+		local nets = {}
 		for _, s in saved do
-			if type(s) == "table" and Pieces.get(s.key) then
+			local def = type(s) == "table" and Pieces.get(s.key)
+			if def and def.net then
+				table.insert(nets, s)
+			elseif def then
 				self:_add(raft, s)
+			end
+		end
+		for _, s in nets do
+			local spec = table.clone(s)
+			spec.level = 1
+			if self:Tile(raft, spec.gx, spec.gz, 1) then
+				local spot = self:FreeSpots(raft, 1)[1]
+				spec.gx, spec.gz = spot and spot[1], spot and spot[2]
+			end
+			if spec.gx then
+				self:_add(raft, spec)
+			else
+				task.delay(3, function()
+					local inventory = registry.InventoryService
+					if player.Parent and inventory then
+						for item, n in Pieces.get(s.key).cost do
+							inventory:Give(player, item, n, "demolish")
+						end
+						for _, it in RaftService._heldFrom(s.held) or {} do
+							inventory:Give(player, it.key, it.n, "net")
+						end
+					end
+				end)
 			end
 		end
 	end
@@ -867,6 +903,9 @@ function RaftService:CanBuild(raft, player, key, gx, gz, level, rot)
 		if key == "stairs" and level ~= 1 then
 			return false, "Stairs go on the first deck."
 		end
+		if def.net and level ~= 1 then
+			return false, "Nets go down at the water."
+		end
 		if level == 1 then
 			if not adjacentTile(self, raft, gx, gz, 1) then
 				return false, "Build next to your raft."
@@ -879,6 +918,9 @@ function RaftService:CanBuild(raft, player, key, gx, gz, level, rot)
 			if below.key == "stairs" then
 				return false, "Not over the stairs."
 			end
+			if below.def.net then
+				return false, "Not over a net."
+			end
 			if not adjacentTile(self, raft, gx, gz, 2) and not adjacentStairs(self, raft, gx, gz) then
 				return false, "Needs stairs or a second-deck tile beside it."
 			end
@@ -889,6 +931,9 @@ function RaftService:CanBuild(raft, player, key, gx, gz, level, rot)
 		end
 		if tile.key == "stairs" then
 			return false, "Not on the stairs."
+		end
+		if tile.def.net then
+			return false, "Not on a net: build it on a floor."
 		end
 		if def.deck == 2 and level ~= 2 then
 			return false, "Only on the second deck."
@@ -958,11 +1003,11 @@ end
 
 -- Would the first deck stay in one piece without this tile?
 local function connectedWithout(self, raft, piece)
-	local start
+	local start, total = nil, 0
 	for _, p in raft.pieces do
 		if p.def.structural and p.level == 1 and p ~= piece then
-			start = p
-			break
+			start = start or p
+			total += 1
 		end
 	end
 	if not start then
@@ -980,7 +1025,7 @@ local function connectedWithout(self, raft, piece)
 			end
 		end
 	end
-	return n == raft.summary.tiles - raft.summary.deck2 - 1
+	return n == total
 end
 
 -- Take a piece off your raft and get its whole cost back (and whatever a net had caught). A tile takes the pieces on
@@ -1006,7 +1051,11 @@ function RaftService:Demolish(player, pieceId)
 			toast(player, "The second deck needs its stairs.")
 			return false
 		end
-		if piece.level == 1 and raft.summary.tiles - raft.summary.deck2 <= Constants.MIN_TILES then
+		if
+			not piece.def.net
+			and piece.level == 1
+			and raft.summary.tiles - raft.summary.deck2 <= Constants.MIN_TILES
+		then
 			toast(player, "That's as small as a raft gets.")
 			return false
 		end
@@ -1239,12 +1288,28 @@ function RaftService:EmptyNet(player, piece)
 	local inventory = registry.InventoryService
 	local list = piece.held
 	piece.held = {}
+	piece.heldSince = nil
 	for _, it in list do
 		inventory:Give(player, it.key, it.n, "net")
 	end
+	self:ShowCatch(raft, piece)
 	Net.fire(player, "Sfx", "pickup")
 	self:Push(raft)
 	return true
+end
+
+-- What a net holds, in it where you can see it (RaftModels.showCatch), and in the raft view.
+function RaftService:ShowCatch(raft, piece)
+	if piece and piece.model and piece.def.net then
+		RaftModels.showCatch(piece.model, piece.held)
+		if piece.prompt then
+			local hold = piece.key == "salvage_net" and Constants.NET_HOLD_SALVAGE or Constants.NET_HOLD
+			piece.prompt.ObjectText = `{piece.def.name} ({#(piece.held or {})}/{hold})`
+		end
+	end
+	if raft then
+		raft.dirty = true
+	end
 end
 
 -- Boot ------------------------------------------------------------------------------------------------------------
