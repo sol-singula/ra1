@@ -376,7 +376,7 @@ local function idleLines(dt)
 				dropIdle(c)
 				local salvage = item.key == "salvage_rod"
 				rec = {
-					line = chunk(Vector3.zero, Vector3.new(0.05, 0.05, HANG), C.cream, M.SmoothPlastic),
+					line = chunk(Vector3.zero, Vector3.new(0.08, 0.08, HANG), C.cream, M.SmoothPlastic),
 					bob = chunk(
 						Vector3.zero,
 						Vector3.new(0.34, 0.34, 0.34),
@@ -416,6 +416,7 @@ FxController.idleLines = idle
 
 -- A line from one moving point to another, sagging a little, kept while `alive` says so. ends() -> from, to.
 local TETHER_SEGMENTS = 8
+local LINE = 0.11 -- the fishing line's thickness: thick enough to see from the deck against the water
 local function tether(width, color, sag, alive, ends)
 	local parts = {}
 	for _ = 1, TETHER_SEGMENTS do
@@ -518,11 +519,11 @@ end
 
 -- The bobber's flight from the rod's tip to where it lands: a high arc (seconds), then `after`.
 local function flyBobber(c, from, to, seconds, after)
-	local bob = chunk(from, Vector3.new(0.6, 0.6, 0.6), RED, M.SmoothPlastic, "ball")
+	local bob = chunk(from, Vector3.new(0.85, 0.85, 0.85), RED, M.SmoothPlastic, "ball")
 	local age = 0
 	local start = (c and rodTip(c)) or from
 	local height = math.clamp((to - start).Magnitude * 0.3, 3, 14)
-	tether(0.05, C.cream, 0.03, function()
+	tether(LINE, C.cream, 0.03, function()
 		return bob.Parent ~= nil and age < seconds
 	end, function()
 		return (c and rodTip(c)) or start, bob.Position
@@ -577,10 +578,10 @@ local function castNow(d, c)
 	-- a sweep: out to where you aimed, then the bobber skims back, the snagged pieces with it
 	if d.sweep then
 		flyBobber(c, tip, water(d.to), flight, function()
-			local bob = chunk(water(d.to), Vector3.new(0.6, 0.6, 0.6), RED, M.SmoothPlastic, "ball")
+			local bob = chunk(water(d.to), Vector3.new(0.85, 0.85, 0.85), RED, M.SmoothPlastic, "ball")
 			local age = 0
 			local back = math.max(0.6, (d.to - tip).Magnitude / 16)
-			tether(0.05, C.cream, 0.04, function()
+			tether(LINE, C.cream, 0.04, function()
 				return bob.Parent ~= nil
 			end, function()
 				return (c and rodTip(c)) or tip, bob.Position
@@ -616,7 +617,7 @@ local function castNow(d, c)
 		if not c then
 			return
 		end
-		tether(0.07, C.cream, 0.1, function()
+		tether(LINE, C.cream, 0.1, function()
 			return os.clock() - started < flight + 10 and model.Parent ~= nil and c.Parent ~= nil
 		end, function()
 			if os.clock() - started < flight then
@@ -630,7 +631,7 @@ local function castNow(d, c)
 	-- changes: a bite dips it and ripples; reeling sends the fish flying up to you; a miss sinks it
 	local mine = d.by == player.UserId
 	local landed = false
-	local bob = chunk(d.to, Vector3.new(0.6, 0.6, 0.6), RED, M.SmoothPlastic, "ball")
+	local bob = chunk(d.to, Vector3.new(0.85, 0.85, 0.85), RED, M.SmoothPlastic, "ball")
 	local top = chunk(d.to + Vector3.new(0, 0.25, 0), Vector3.new(0.5, 0.5, 0.5), C.white, M.SmoothPlastic, "ball")
 	bob.Transparency, top.Transparency = 1, 1
 	flyBobber(c, tip, d.to, flight, function()
@@ -651,7 +652,7 @@ local function castNow(d, c)
 	local function alive()
 		return ending ~= "done" and age < 60 and bob.Parent ~= nil
 	end
-	tether(0.06, C.cream, 0.1, alive, function()
+	tether(LINE, C.cream, 0.1, alive, function()
 		if not landed then
 			return nil, nil
 		end

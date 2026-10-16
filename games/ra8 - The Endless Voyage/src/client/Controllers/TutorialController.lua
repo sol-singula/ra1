@@ -38,6 +38,7 @@ local arrow, beam, targetAttach, fromAttach, targetPart, spotPad
 local current
 local glow, glowKey, glowCheckAt = nil, nil, 0
 local target, targetGlow
+local pickedModel -- the piece the arrow follows ("hook the driftwood")
 local pickAt = 0
 local uiAt = 0
 
@@ -149,32 +150,42 @@ local function pickTarget()
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if (current.key == "cast" or current.gather) and root then
 		local t = os.clock()
-		if t >= pickAt or not target then
+		-- the nearest piece, chosen a few times a second, followed every frame as it drifts
+		if t >= pickAt or not (pickedModel and pickedModel.Parent) then
 			pickAt = t + 0.2
-			local best, bestD, bestId
+			pickedModel = nil
+			local bestD
 			local debris = workspace:FindFirstChild("Debris")
 			for _, m in debris and debris:GetChildren() or {} do
-				local id = m:GetAttribute("DebrisId")
-				if id and not m:GetAttribute("Special") then
-					local pos = m:GetPivot().Position
-					local d = (pos - root.Position).Magnitude
+				if m:GetAttribute("DebrisId") and not m:GetAttribute("Special") and not m:GetAttribute("Pull") then
+					local d = (m:GetPivot().Position - root.Position).Magnitude
 					if not bestD or d < bestD then
-						best, bestD, bestId = pos, d, id
+						pickedModel, bestD = m, d
 					end
 				end
 			end
-			if best then
-				target = best + Vector3.new(0, 1, 0)
-				targetGlow = { kind = "debris", id = bestId }
-			elseif typeof(current.target) == "Vector3" then
-				target = current.target
-				targetGlow = current.debris and { kind = "debris", id = current.debris } or nil
-			end
+		end
+		if pickedModel then
+			target = pickedModel:GetPivot().Position + Vector3.new(0, 1, 0)
+			targetGlow = { kind = "debris", id = pickedModel:GetAttribute("DebrisId") }
+		elseif typeof(current.target) == "Vector3" then
+			target = current.target
+			targetGlow = current.debris and { kind = "debris", id = current.debris } or nil
+		else
+			target = nil
 		end
 		return
 	end
 	target = typeof(current.target) == "Vector3" and current.target or nil
 	if current.debris then
+		-- a piece the server named (the guide's crate): where it's drawn now, not where it was a moment ago
+		local debris = workspace:FindFirstChild("Debris")
+		for _, m in debris and debris:GetChildren() or {} do
+			if m:GetAttribute("DebrisId") == current.debris then
+				target = m:GetPivot().Position + Vector3.new(0, 1.5, 0)
+				break
+			end
+		end
 		targetGlow = { kind = "debris", id = current.debris }
 	elseif current.piece then
 		targetGlow = { kind = "piece", id = current.piece }

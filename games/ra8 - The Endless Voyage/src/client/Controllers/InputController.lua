@@ -113,13 +113,14 @@ local function usingMouse()
 	return UserInputService.MouseEnabled and Theme.inputKind() == "keyboard"
 end
 
--- What the mouse points at in the world (PC): the hit position (nil over the sky), the ray's direction and origin.
+-- What the mouse points at in the world (PC): the hit position (nil over the sky), the ray's direction and origin,
+-- and the part it hit.
 local function mouseRay()
 	local cam = workspace.CurrentCamera
 	if not cam or not usingMouse() then
-		return nil, nil, nil
+		return nil, nil, nil, nil
 	end
-	local ok, pos, dir, origin = pcall(function()
+	local ok, pos, dir, origin, part = pcall(function()
 		local m = UserInputService:GetMouseLocation()
 		local ray = cam:ViewportPointToRay(m.X, m.Y)
 		local skip = {}
@@ -136,13 +137,31 @@ local function mouseRay()
 		params.FilterType = Enum.RaycastFilterType.Exclude
 		params.FilterDescendantsInstances = skip
 		local hit = workspace:Raycast(ray.Origin, ray.Direction.Unit * 400, params)
-		return hit and hit.Position or nil, ray.Direction.Unit, ray.Origin
+		return hit and hit.Position or nil, ray.Direction.Unit, ray.Origin, hit and hit.Instance or nil
 	end)
 	if not ok then
-		return nil, nil, nil
+		return nil, nil, nil, nil
 	end
-	return pos, dir, origin
+	return pos, dir, origin, part
 end
+
+-- The floating piece (or bag) a part belongs to: its model and the id the server knows it by.
+local function pieceOf(part)
+	local m = part
+	while m and m ~= workspace do
+		local id = m:GetAttribute("DebrisId")
+		if id then
+			return m, id
+		end
+		id = m:GetAttribute("DropId")
+		if id then
+			return m, "drop:" .. tostring(id)
+		end
+		m = m.Parent
+	end
+	return nil, nil
+end
+InputController.pieceOf = pieceOf
 InputController.mouseRay = mouseRay
 
 -- Candidates for the aim: { pos, id } lists from the world's folders.
@@ -259,7 +278,7 @@ function InputController.aim(item)
 	local look = cam and cam.CFrame and cam.CFrame.LookVector or Vector3.new(0, 0, -1)
 	local facing = r and flatUnit(r.CFrame.LookVector, Vector3.new(0, 0, -1)) or Vector3.new(0, 0, -1)
 	local forward = flatUnit(look, facing)
-	local hitPos, rayDir, rayOrigin = mouseRay()
+	local hitPos, rayDir, rayOrigin, hitPart = mouseRay()
 	if not r then
 		return forward, nil
 	end
@@ -270,6 +289,17 @@ function InputController.aim(item)
 		end
 	end
 	local mode = InputController.modeOf(item)
+	-- clicked right on a floating piece: that one
+	if mode == "cast" and hitPart then
+		local m, id = pieceOf(hitPart)
+		if m then
+			local at = m:GetPivot().Position
+			local f = Vector3.new(at.X - r.Position.X, 0, at.Z - r.Position.Z)
+			if f.Magnitude <= (item.tool.rod.range or 30) + 4 then
+				return f.Magnitude > 0.1 and f.Unit or forward, id
+			end
+		end
+	end
 	local candidates
 	if mode == "cast" then
 		-- a piece in front and the line lands on it; nothing in front and it is a cast into open water

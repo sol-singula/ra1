@@ -343,86 +343,324 @@ function OceanModels.debris(kind, cf, parent)
 	local fn = debris[kind] or debris.wood
 	fn(m, cf)
 	m:SetAttribute("Debris", kind)
+	-- The clients move debris themselves (DebrisController) from the point it was made at, so: the pivot is that
+	-- point (not the middle of whatever parts it has), and the whole piece always streams in at once, never part by
+	-- part (parts that arrived after the piece started drifting would land where it was made and drift along away
+	-- from where it really is: the guide's arrow and your line would go to empty water). Always streamed in also
+	-- means you see it coming from far away.
+	m.WorldPivot = cf
+	pcall(function()
+		m.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	end)
 	m.Parent = parent
 	return m
 end
 
 -- Far islands --------------------------------------------------------------------------------------------------
 -- A far island you can see but never reach (the horizon, and the place you're sailing to while you sail):
--- h = { size, kind = "peak" | "low" | "atoll", far = 0..1 }. Green humps with trees, a peak with snow on the big
--- ones, or a sandy atoll with palms; no shadows or collisions, it is scenery.
+-- h = { size, kind = "peak" | "low" | "atoll", far = 0..1 }. Built to read from far away: surf round a beach of wet
+-- and dry sand, green hills covered in big leafy trees, palms leaning out over the sand, boulders, a jagged rocky
+-- peak with pines up its slopes (snow on the tall ones), or a ring of sand round a turquoise lagoon. The trees are
+-- big on purpose, so you can pick them out from across the sea. Scenery: no shadows, no collisions, nothing to click.
 local FAR_PART = { CastShadow = false, CanCollide = false, CanQuery = false, CanTouch = false }
+
+-- a palm: a trunk curving up in four pieces, a crown of arching fronds, coconuts
+local function farPalm(m, at, h, rng)
+	local yaw = rng:NextNumber(0, math.pi * 2)
+	local side = V3(math.cos(yaw), 0, math.sin(yaw))
+	local lean = rng:NextNumber(0.12, 0.3) * h
+	local function point(t)
+		return at + V3(0, h * t, 0) + side * (lean * t * t)
+	end
+	local prev = point(0)
+	for i = 1, 4 do
+		local nxt = point(i / 4)
+		local mid = (prev + nxt) / 2
+		Kit.cyl(
+			m,
+			"Trunk",
+			CFrame.lookAt(mid, nxt) * CFrame.Angles(0, math.rad(90), 0),
+			(nxt - prev).Magnitude + h * 0.02,
+			h * (0.08 - i * 0.008),
+			C.bark:Lerp(C.woodLight, i * 0.06),
+			M.Wood,
+			FAR_PART
+		)
+		prev = nxt
+	end
+	local top = point(1)
+	local L = h * 0.46
+	for k = 0, 7 do
+		local a = k / 8 * math.pi * 2 + rng:NextNumber(-0.15, 0.15)
+		local col = C.leaf:Lerp(C.leafLight, rng:NextNumber(0, 0.45))
+		local root = CFrame.new(top) * CFrame.Angles(0, a, 0) * CFrame.Angles(0, 0, math.rad(14))
+		-- rising a little, then drooping: two leaves end to end
+		p(m, "Frond", root * CFrame.new(L * 0.25, 0, 0), V3(L * 0.5, h * 0.014, L * 0.24), col, M.Grass, FAR_PART)
+		p(
+			m,
+			"Frond",
+			root * CFrame.new(L * 0.48, 0, 0) * CFrame.Angles(0, 0, math.rad(-48)) * CFrame.new(L * 0.22, 0, 0),
+			V3(L * 0.46, h * 0.014, L * 0.18),
+			col:Lerp(C.leafDark, 0.2),
+			M.Grass,
+			FAR_PART
+		)
+	end
+	for k = 1, 3 do
+		local a = k / 3 * math.pi * 2
+		Kit.ball(
+			m,
+			"Coconut",
+			top + V3(math.cos(a) * h * 0.04, -h * 0.04, math.sin(a) * h * 0.04),
+			h * 0.06,
+			C.bark:Lerp(C.woodDark, 0.4),
+			M.SmoothPlastic,
+			FAR_PART
+		)
+	end
+end
+
+-- a leafy tree: a trunk and a cloud of leaf balls
+local function farTree(m, at, h, rng, color)
+	Kit.cyl(
+		m,
+		"Trunk",
+		CFrame.new(at + V3(0, h * 0.25, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		h * 0.5,
+		h * 0.09,
+		C.bark,
+		M.Wood,
+		FAR_PART
+	)
+	local col = color or C.leaf
+	local clumps = {
+		{ V3(0, 0.64, 0), 0.62 },
+		{ V3(0.2, 0.53, 0.08), 0.46 },
+		{ V3(-0.18, 0.55, -0.1), 0.46 },
+		{ V3(0.03, 0.82, -0.04), 0.42 },
+	}
+	for i, c in clumps do
+		local jitter = V3(rng:NextNumber(-0.04, 0.04), 0, rng:NextNumber(-0.04, 0.04)) * h
+		Kit.ball(
+			m,
+			"Leaves",
+			at + c[1] * h + jitter,
+			h * c[2] * rng:NextNumber(0.9, 1.1),
+			col:Lerp(C.leafLight, rng:NextNumber(0, 0.3)):Lerp(C.leafDark, i == 1 and 0.18 or 0),
+			M.Grass,
+			FAR_PART
+		)
+	end
+end
+
+-- a pine: a trunk and soft stacked tiers of needles
+local function farPine(m, at, h, rng)
+	Kit.cyl(
+		m,
+		"Trunk",
+		CFrame.new(at + V3(0, h * 0.14, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		h * 0.28,
+		h * 0.08,
+		C.bark,
+		M.Wood,
+		FAR_PART
+	)
+	local col = rng:NextNumber() < 0.5 and C.pine or C.pineDark
+	for i = 0, 3 do
+		local t = i / 3
+		local d = h * (0.56 - 0.38 * t)
+		Kit.ellipsoid(
+			m,
+			"Needles",
+			at + V3(0, h * (0.28 + 0.5 * t), 0),
+			V3(d, h * 0.26, d),
+			col:Lerp(C.leafLight, 0.12 * t),
+			M.Grass,
+			FAR_PART
+		)
+	end
+end
+
+-- Snow over the top of a Kit.roofCone: the cone's own wedges (as wide, as steep) from `from` of the way up, pushed
+-- out a little, so the snow lies on the rock all the way round and no rock edge pokes through it. Each runs a little
+-- past the middle too, so its back face isn't in the same plane as the rock's (they'd flicker).
+local function snowCap(m, base, radius, height, sides, from)
+	local margin, back = 0.6, 0.5
+	local w = 2 * math.pi * radius / sides * 1.06 + margin * 2
+	local depth = radius * (1 - from) + margin + back
+	local tall = depth * height / radius
+	for k = 0, sides - 1 do
+		local a = (k + 0.5) / sides * math.pi * 2
+		local dir = V3(math.cos(a), 0, math.sin(a))
+		local pos = base + V3(0, height * from + tall / 2, 0) + dir * (depth / 2 - back)
+		Kit.wedge(m, "Snow", CFrame.lookAt(pos, pos + dir), V3(w, tall, depth), C.white, M.Snow, FAR_PART)
+	end
+end
 
 function OceanModels.isle(parent, name, base, h, rng)
 	local m = Kit.model(name, parent)
 	local s = h.size
-	local sandy = h.kind == "atoll"
-	Kit.ellipsoid(m, "Shore", base + V3(0, s * 0.04, 0), V3(s * 2.6, s * 0.2, s * 2), C.sand, M.Sand, FAR_PART)
-	if not sandy then
-		Kit.ellipsoid(
-			m,
-			"Isle",
-			base + V3(0, s * 0.14, 0),
-			V3(s * 2.1, s * 0.5, s * 1.6),
-			C.grassDark,
-			M.Grass,
-			FAR_PART
-		)
-		Kit.ellipsoid(
-			m,
-			"Hump",
-			base + V3(rng:NextNumber(-0.3, 0.3) * s, s * 0.26, rng:NextNumber(-0.2, 0.2) * s),
-			V3(s * 1.1, s * 0.5, s * 0.9),
-			C.grass,
-			M.Grass,
-			FAR_PART
-		)
+	local kind = h.kind
+	local sea = base.Y + 2 -- (the island's base sits 2 studs under the water)
+	-- the ground: every land ellipsoid, so trees and rocks stand on it
+	local lands = {}
+	local function land(partName, center, size, color, material)
+		Kit.ellipsoid(m, partName, center, size, color, material, FAR_PART)
+		table.insert(lands, { c = center, r = size / 2 })
 	end
-	if h.kind == "peak" then
-		local hh = s * (1.1 + (h.far or 0.5) * 0.5)
-		Kit.cone(m, "Peak", base + V3(0, s * 0.2, 0), s * 0.95, hh, C.rockDark, 6, M.Rock, FAR_PART)
-		if hh > 60 then
-			Kit.cone(
-				m,
-				"Snow",
-				base + V3(0, s * 0.2 + hh * 0.62, 0),
-				s * 0.95 * 0.38,
-				hh * 0.38,
-				C.white,
-				6,
-				M.Snow,
-				FAR_PART
+	local function groundAt(x, z)
+		local best
+		for _, l in lands do
+			local dx, dz = (x - l.c.X) / l.r.X, (z - l.c.Z) / l.r.Z
+			local k = 1 - dx * dx - dz * dz
+			if k > 0 then
+				local y = l.c.Y + l.r.Y * math.sqrt(k)
+				best = (not best or y > best) and y or best
+			end
+		end
+		return best
+	end
+	-- a random spot on the land between two shares of the radius, and the ground there
+	local function spotOn(minShare, maxShare)
+		for _ = 1, 10 do
+			local a = rng:NextNumber(0, math.pi * 2)
+			local r = rng:NextNumber(minShare, maxShare)
+			local x, z = base.X + math.cos(a) * r * s * 1.2, base.Z + math.sin(a) * r * s * 0.95
+			local y = groundAt(x, z)
+			if y and y > sea + 0.5 then
+				return V3(x, y - 0.3, z)
+			end
+		end
+		return nil
+	end
+	-- surf where it meets the sea, then wet sand, then dry sand
+	Kit.ellipsoid(
+		m,
+		"Surf",
+		V3(base.X, sea, base.Z),
+		V3(s * 2.95, 0.7, s * 2.35),
+		C.white,
+		M.SmoothPlastic,
+		{ CastShadow = false, CanCollide = false, CanQuery = false, CanTouch = false, Transparency = 0.35 }
+	)
+	if kind == "atoll" then
+		-- a ring of sand round a lagoon
+		for i = 0, 7 do
+			local a = i / 8 * math.pi * 2
+			land(
+				"Sand",
+				base + V3(math.cos(a) * s * 0.95, s * 0.03, math.sin(a) * s * 0.75),
+				V3(s * 0.9, s * 0.16, s * 0.62),
+				C.sand:Lerp(C.white, rng:NextNumber(0, 0.12)),
+				M.Sand
 			)
 		end
-		Kit.cone(m, "Peak2", base + V3(s * 0.45, s * 0.18, s * 0.2), s * 0.6, hh * 0.55, C.rock, 5, M.Rock, FAR_PART)
+		Kit.cyl(
+			m,
+			"Lagoon",
+			CFrame.new(base.X, sea + 0.15, base.Z) * CFrame.Angles(0, 0, math.rad(90)),
+			0.3,
+			s * 1.5,
+			Color3.fromRGB(80, 214, 214),
+			M.SmoothPlastic,
+			{ CastShadow = false, CanCollide = false, CanQuery = false, CanTouch = false, Transparency = 0.15 }
+		)
+		for _ = 1, 9 + math.floor(s / 12) do
+			local a = rng:NextNumber(0, math.pi * 2)
+			local x, z = base.X + math.cos(a) * s * 0.95, base.Z + math.sin(a) * s * 0.75
+			local y = groundAt(x, z)
+			if y then
+				farPalm(m, V3(x, y - 0.3, z), s * rng:NextNumber(0.32, 0.45), rng)
+			end
+		end
+		for _ = 1, 3 do
+			local a = rng:NextNumber(0, math.pi * 2)
+			local at = base + V3(math.cos(a) * s * 1.2, 1, math.sin(a) * s * 0.95)
+			Kit.boulder(m, at, s * rng:NextNumber(0.12, 0.2), rng, C.rock, M.Rock)
+		end
+	else
+		land("WetSand", base + V3(0, s * 0.02, 0), V3(s * 2.75, s * 0.18, s * 2.15), C.sand:Lerp(C.bark, 0.18), M.Sand)
+		land("Sand", base + V3(0, s * 0.04, 0), V3(s * 2.45, s * 0.22, s * 1.9), C.sand, M.Sand)
+		-- green hills
+		land("Isle", base + V3(0, s * 0.1, 0), V3(s * 1.95, s * 0.5, s * 1.5), C.grassDark, M.Grass)
+		land(
+			"Hump",
+			base + V3(rng:NextNumber(-0.3, 0.3) * s, s * 0.2, rng:NextNumber(-0.2, 0.2) * s),
+			V3(s * 1.15, s * 0.58, s * 0.95),
+			C.grass,
+			M.Grass
+		)
+		land(
+			"Hump",
+			base + V3(rng:NextNumber(-0.5, 0.5) * s, s * 0.14, rng:NextNumber(-0.35, 0.35) * s),
+			V3(s * 0.8, s * 0.42, s * 0.7),
+			C.grass:Lerp(C.leafLight, 0.2),
+			M.Grass
+		)
+		if kind == "peak" then
+			-- a jagged rocky mountain (two peaks), pines up its lower slopes, snow on the tall ones
+			local hh = s * (1.1 + (h.far or 0.5) * 0.5)
+			local top = base + V3(0, s * 0.15, 0)
+			Kit.roofCone(m, "Peak", top, s * 0.78, hh, C.rockDark, M.Rock, 9, FAR_PART)
+			Kit.roofCone(
+				m,
+				"Peak2",
+				top + V3(s * 0.45, -s * 0.02, s * 0.2),
+				s * 0.5,
+				hh * 0.58,
+				C.rock,
+				M.Rock,
+				7,
+				FAR_PART
+			)
+			if hh > 50 then
+				snowCap(m, top, s * 0.78, hh, 9, 0.62)
+			end
+			for _ = 1, 7 + math.floor(s / 14) do
+				local a = rng:NextNumber(0, math.pi * 2)
+				local r = rng:NextNumber(0.55, 0.88) * s * 0.78
+				local y = top.Y + hh * (1 - r / (s * 0.78))
+				farPine(
+					m,
+					V3(base.X + math.cos(a) * r, y - 0.6, base.Z + math.sin(a) * r),
+					s * rng:NextNumber(0.22, 0.32),
+					rng
+				)
+			end
+		end
+		-- leafy trees all over the hills, palms leaning out over the sand
+		for _ = 1, (kind == "peak" and 8 or 13) + math.floor(s / 8) do
+			local at = spotOn(0.05, 0.75)
+			if at and at.Y > base.Y + s * 0.2 then
+				farTree(m, at, s * rng:NextNumber(0.28, 0.42), rng, C.leaf:Lerp(C.pineDark, rng:NextNumber(0, 0.45)))
+			end
+		end
+		for _ = 1, 6 + math.floor(s / 14) do
+			local at = spotOn(0.78, 0.98)
+			if at then
+				farPalm(m, at, s * rng:NextNumber(0.3, 0.42), rng)
+			end
+		end
+		-- boulders on the beach and up the hills
+		for _ = 1, 5 do
+			local at = spotOn(0.6, 1)
+			if at then
+				Kit.boulder(m, at, s * rng:NextNumber(0.1, 0.2), rng, C.rock, M.Rock)
+			end
+		end
 	end
-	for _ = 1, sandy and 6 or 5 do
-		local a = rng:NextNumber(0, math.pi * 2)
-		local r = rng:NextNumber(0.25, 0.8) * s
-		local at = base + V3(math.cos(a) * r, sandy and s * 0.08 or s * 0.34, math.sin(a) * r * 0.75)
-		if sandy then
-			local th = s * rng:NextNumber(0.25, 0.4)
-			Kit.cyl(
-				m,
-				"Trunk",
-				CFrame.new(at + V3(0, th / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
-				th,
-				s * 0.05,
-				C.bark,
-				M.Wood,
-				FAR_PART
-			)
-			Kit.ellipsoid(m, "Fronds", at + V3(0, th, 0), V3(s * 0.4, s * 0.12, s * 0.4), C.leaf, M.Grass, FAR_PART)
-		else
-			Kit.ellipsoid(
-				m,
-				"Trees",
-				at,
-				V3(s * rng:NextNumber(0.3, 0.5), s * rng:NextNumber(0.25, 0.4), s * rng:NextNumber(0.3, 0.5)),
-				C.pineDark:Lerp(C.leaf, rng:NextNumber(0, 0.5)),
-				M.Grass,
-				FAR_PART
-			)
+	-- scenery only: nothing casts a shadow, collides or can be clicked (and no boulder colliders)
+	for _, d in m:GetDescendants() do
+		if d:IsA("BasePart") then
+			if d.Name == "BoulderCollider" then
+				d:Destroy()
+			else
+				d.CastShadow = false
+				d.CanCollide = false
+				d.CanQuery = false
+				d.CanTouch = false
+				d.Anchored = true
+			end
 		end
 	end
 	return m

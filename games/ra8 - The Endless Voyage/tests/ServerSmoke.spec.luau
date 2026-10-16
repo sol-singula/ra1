@@ -246,6 +246,13 @@ check(
 )
 
 check(
+	"a piece streams in whole, always, with its pivot where it was made (so the clients draw it where it really is)",
+	nearest.model.ModelStreamingMode == Engine.Enum.ModelStreamingMode.Persistent
+		and nearest.model.WorldPivot ~= nil
+		and (nearest.model.WorldPivot.Position - nearest.model:GetAttribute("Pos0")).Magnitude < 0.6,
+	nearest.model.WorldPivot and (nearest.model.WorldPivot.Position - nearest.model:GetAttribute("Pos0")).Magnitude
+)
+check(
 	"a piece carries what the clients need to draw its drift (start, time, velocity, bob)",
 	typeof(nearest.model:GetAttribute("Pos0")) == "Vector3"
 		and type(nearest.model:GetAttribute("T0")) == "number"

@@ -20,8 +20,8 @@
     "Workspace": {
       "$properties": {
         "StreamingEnabled": true,
-        "StreamingMinRadius": 128,
-        "StreamingTargetRadius": 1024
+        "StreamingMinRadius": 256,
+        "StreamingTargetRadius": 2048
       },
       "Terrain": {
         "$properties": {

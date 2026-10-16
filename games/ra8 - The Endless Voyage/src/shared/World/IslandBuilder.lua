@@ -21,6 +21,18 @@ local OceanModels = require(script.Parent.OceanModels)
 
 local IslandBuilder = {}
 
+-- Big things show from far away: the trees, rocks, wrecks, huts, chests and the landmark stream in whole and stay
+-- (Roblox's Persistent models), so an island reads as an island from the raft and across the water; small plants
+-- stream in as you come near.
+local function keep(m)
+	if m and m:IsA("Model") then
+		pcall(function()
+			m.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+		end)
+	end
+	return m
+end
+
 local C, M = Kit.C, Kit.M
 local V3 = Vector3.new
 local WATER = Constants.WATER_LEVEL
@@ -259,6 +271,9 @@ function IslandBuilder.build(template, center, rng, parent)
 		if m then
 			m:SetAttribute("NodeId", n.id)
 			m:SetAttribute("Tool", tool or "")
+			if kind ~= "bush" then
+				keep(m)
+			end
 		end
 		table.insert(built.nodes, n)
 		return n
@@ -286,6 +301,7 @@ function IslandBuilder.build(template, center, rng, parent)
 			if n.model then
 				n.model:SetAttribute("NodeId", n.id)
 				n.model:SetAttribute("Tool", "axe")
+				keep(n.model)
 			end
 		end
 	end
@@ -348,17 +364,17 @@ function IslandBuilder.build(template, center, rng, parent)
 	-- the set dressing
 	if t.hull then
 		local pos = V3(center.X, WATER + 0.5, center.Z) + V3(0, 0, t.bigHull and 0 or 6)
-		local hull = OceanModels.prop("wreck_hull", pos, rng, model, t.bigHull)
+		local hull = keep(OceanModels.prop("wreck_hull", pos, rng, model, t.bigHull))
 		hull:SetAttribute("Hull", true)
 	end
 	if t.huts then
 		for _, pos in ring(t, center, ground, rng, t.huts, 0.25, 0.6, 1.5) do
-			OceanModels.prop("hut", pos, rng, model)
+			keep(OceanModels.prop("hut", pos, rng, model))
 		end
 	end
 	if t.walls then
 		for _, pos in ring(t, center, ground, rng, t.walls, 0.3, 0.7, 0.3) do
-			OceanModels.prop("ruin_wall", pos, rng, model)
+			keep(OceanModels.prop("ruin_wall", pos, rng, model))
 		end
 	end
 	if t.lava then
@@ -369,7 +385,7 @@ function IslandBuilder.build(template, center, rng, parent)
 	end
 	if t.seats then
 		for _, pos in ring(t, center, ground, rng, t.seats, 0.8, 0.95, 2) do
-			OceanModels.prop("seat_rock", pos, rng, model)
+			keep(OceanModels.prop("seat_rock", pos, rng, model))
 		end
 	end
 	if t.pillars then
@@ -392,7 +408,7 @@ function IslandBuilder.build(template, center, rng, parent)
 		for _, pos in ring(t, center, ground, rng, t.containers.n, 0.2, 0.7, 2.5) do
 			local kind = t.containers.kind
 			local prop = kind == "locker" and "locker" or "container"
-			local m = OceanModels.prop(prop, pos, rng, model)
+			local m = keep(OceanModels.prop(prop, pos, rng, model))
 			local c = { id = id(), kind = kind, pos = pos, model = m }
 			m:SetAttribute("ContainerId", c.id)
 			table.insert(built.containers, c)
@@ -402,7 +418,7 @@ function IslandBuilder.build(template, center, rng, parent)
 	if t.puzzle then
 		local parts = {}
 		for _, pos in ring(t, center, ground, rng, 3, 0.4, 0.6, 0.8) do
-			local m = OceanModels.prop(t.puzzle == "lanterns" and "lantern_post" or "totem", pos, rng, model)
+			local m = keep(OceanModels.prop(t.puzzle == "lanterns" and "lantern_post" or "totem", pos, rng, model))
 			local part = { id = id(), pos = pos, model = m, lit = false, facing = rng:NextInteger(1, 3) }
 			m:SetAttribute("PuzzleId", part.id)
 			if t.puzzle == "totems" then
@@ -415,7 +431,7 @@ function IslandBuilder.build(template, center, rng, parent)
 	-- the landmark
 	if t.landmark then
 		local pos = spot(t, center, ground, rng, 0.05, 0.25)
-		local m = OceanModels.prop(t.landmark.prop, pos, rng, model)
+		local m = keep(OceanModels.prop(t.landmark.prop, pos, rng, model))
 		m:SetAttribute("Landmark", true)
 		built.landmark = { pos = pos, model = m, text = t.landmark.text }
 	end

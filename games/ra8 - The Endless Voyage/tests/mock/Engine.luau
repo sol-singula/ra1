@@ -805,16 +805,37 @@ local function parts(inst)
 	end
 	return out
 end
+-- The middle of the parts' (axis-aligned) bounding box.
+local function boxCenter(list)
+	local lo, hi
+	for _, p in list do
+		local props = rawget(p, "_props")
+		local c, half = props.CFrame, props.Size / 2
+		local r = c.r
+		local ex = math.abs(r[1]) * half.X + math.abs(r[2]) * half.Y + math.abs(r[3]) * half.Z
+		local ey = math.abs(r[4]) * half.X + math.abs(r[5]) * half.Y + math.abs(r[6]) * half.Z
+		local ez = math.abs(r[7]) * half.X + math.abs(r[8]) * half.Y + math.abs(r[9]) * half.Z
+		local a, b = v3(c.p.X - ex, c.p.Y - ey, c.p.Z - ez), v3(c.p.X + ex, c.p.Y + ey, c.p.Z + ez)
+		lo = lo and v3(math.min(lo.X, a.X), math.min(lo.Y, a.Y), math.min(lo.Z, a.Z)) or a
+		hi = hi and v3(math.max(hi.X, b.X), math.max(hi.Y, b.Y), math.max(hi.Z, b.Z)) or b
+	end
+	return lo and cf((lo + hi) / 2) or cf(v3())
+end
+Engine.boxCenter = boxCenter
+-- A model's pivot, Roblox's rule: its PrimaryPart's; else its WorldPivot, once set (PivotTo sets it too); else the
+-- middle of its parts' bounding box (which moves as parts come and go).
 function methods.GetPivot(inst)
 	if isA(inst, "BasePart") then
 		return inst.CFrame
 	end
-	local pp = rawget(inst, "_props").PrimaryPart
-	if pp then
-		return pp.CFrame
+	local props = rawget(inst, "_props")
+	if props.PrimaryPart then
+		return props.PrimaryPart.CFrame
 	end
-	local list = parts(inst)
-	return list[1] and list[1].CFrame or cf(v3())
+	if props.WorldPivot then
+		return props.WorldPivot
+	end
+	return boxCenter(parts(inst))
 end
 -- Exact inverse of a CFrame (general 3x3 inverse, so tiny rounding in a rotation never grows frame to frame).
 local function exactInverse(c)
@@ -844,6 +865,9 @@ function methods.PivotTo(inst, target)
 		else
 			rawget(p, "_props").CFrame = delta * rawget(p, "_props").CFrame
 		end
+	end
+	if not isA(inst, "BasePart") and not primary then
+		rawget(inst, "_props").WorldPivot = target -- (the pivot goes with it)
 	end
 end
 function methods.ScaleTo() end

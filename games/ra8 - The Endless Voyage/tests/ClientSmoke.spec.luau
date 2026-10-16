@@ -205,6 +205,29 @@ check("the guide's text says cast", card and card.Text.Text:find("Cast") ~= nil)
 check("the guide's arrow is in the world", ws:FindFirstChild("Guide") and ws.Guide:FindFirstChild("GuideArrow") ~= nil)
 local cur = Guide.current()
 check("the client picked the nearest piece to point at", cur and cur.key == "cast")
+do
+	-- the arrow is right over the piece itself (the middle of its parts), not beside it
+	local root = player.Character.HumanoidRootPart
+	local nearest, nearestD
+	for _, m in ws.Debris:GetChildren() do
+		if m:GetAttribute("DebrisId") and not m:GetAttribute("Special") then
+			local d = (m:GetPivot().Position - root.Position).Magnitude
+			if not nearestD or d < nearestD then
+				nearest, nearestD = m, d
+			end
+		end
+	end
+	local partsOf = {}
+	for _, d in nearest and nearest:GetDescendants() or {} do
+		if d:IsA("BasePart") then
+			table.insert(partsOf, d)
+		end
+	end
+	local center = Engine.boxCenter(partsOf).Position
+	local tip = ws.Guide.GuideArrow:GetPivot().Position
+	local off = Vector3.new(tip.X - center.X, 0, tip.Z - center.Z).Magnitude
+	check("the arrow points right at the piece", off < 1.5, off)
+end
 
 -- Casting with ACT (the client aims at the piece in front) -----------------------------------------------------------------------
 local raft = Rafts:RaftOf(player)

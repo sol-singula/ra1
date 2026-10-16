@@ -257,12 +257,38 @@ What the second play found, and what changed:
   Motor6D's C0, then PreSimulation fires and the joints are solved. `tests/Rod.spec.luau` measures where the rod's
   tip really is against the hand, for both kinds of joint, and `tools/gameplay/hold_check.luau` renders it.
 
+## Round 10: the line, the arrow, and islands you can see
+
+* **Why the line went nowhere and the arrow missed.** The world streams in (StreamingEnabled). A floating piece is a
+  model, and its parts can arrive after the model itself. Only the clients move pieces as they drift, so a part that
+  arrived late showed up where the piece was made, not where it had drifted to. The piece's pivot is what the cast,
+  the line and the arrow aim at, and it became the middle of whatever parts had arrived, often empty water. So the
+  bobber flew off to nothing and the arrow hung beside the piece.
+* **The fix.** Every floating piece now streams in whole and stays loaded (a Persistent model), with its pivot pinned to
+  where it was made, so every client draws it in one piece in the right place. Tapping or clicking a piece casts at
+  that piece. The guide's arrow picks the nearest piece a few times a second and follows it every frame; over the
+  guide's crate it follows the crate itself.
+* **A line you can see.** Every line is thicker (0.11 studs) and the bobber is bigger.
+* **Islands from far away.** The far islands are rebuilt in much more detail:
+  * palms with curved trunks, fronds and coconuts
+  * round leafy trees on the hills, pines up the mountains
+  * boulders, wet sand and surf
+  * atolls with a turquoise lagoon
+  * snow on the tall peaks
+
+  The islands you sail to load their trees, rocks, wrecks, huts, chests and landmark whole and keep them loaded, so
+  they show from the raft. Bushes, plants and reeds still load as you come near. The streaming radius is doubled
+  (minimum 256, target 2048), so the land itself shows from further away.
+* **The mock** follows Roblox's rule for a model's pivot: its PrimaryPart, else its WorldPivot, else the middle of its
+  parts. New checks: a piece streams in whole with its pivot where it was made, and the arrow points right at the
+  piece.
+
 ## Tests
 
 `tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 66 checks: tiers, speeds, loot odds,
-every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 263 checks:
+every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 264 checks:
 the first five minutes, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent, the
 turret and the Leviathan, visiting, friends, boards, leaving and coming back, feedback, the anti-cheat, analytics;
-also run without DataStores, 264 checks), the client (`tests/ClientSmoke.spec.luau`, 166 checks: the real UI driving the
+also run without DataStores, 265 checks), the client (`tests/ClientSmoke.spec.luau`, 167 checks: the real UI driving the
 real server on a phone-sized screen) and the rod in the hand (`tests/Rod.spec.luau`, 10 checks, run once with Motor6D
 joints and once with AnimationConstraints).
