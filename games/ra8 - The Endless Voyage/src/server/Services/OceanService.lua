@@ -343,6 +343,12 @@ function OceanService:_collect(player, d, rod)
 		if rod and rod.salvage and rng:NextNumber() < 0.12 * rod.salvage then
 			table.insert(items, { key = rng:NextNumber() < 0.7 and "metal" or "pearl", n = 1 })
 		end
+		-- a golden tide (EventService): everything counts double
+		if workspace:GetAttribute("GoldenTide") then
+			for _, it in items do
+				it.n *= 2
+			end
+		end
 		-- a small raft hauls in double: the first wins come fast
 		local raft = rafts:RaftOf(player)
 		if raft and raft.tier <= Constants.EARLY_BOOST_TIER then
@@ -562,11 +568,14 @@ function OceanService:Offline(player, raft, seconds)
 	end
 	local hasBox = rafts:Has(raft, "storage", true)
 	local caught = 0
-	for _, net in rafts:Nets(raft) do
+	local got = {} -- [key] = n, for the welcome-back card
+	local nets = rafts:Nets(raft)
+	for _, net in nets do
 		local piece = net.piece
 		piece.held = piece.held or {}
-		-- (a storage box empties the net as it goes, so with one each net fills once more into your bag)
-		local room = OceanService.netHold(piece) - (hasBox and 0 or #piece.held)
+		-- with a storage box the net empties into your bag as it goes, so it keeps fishing (up to OFFLINE_NET_MAX);
+		-- without one it stops when it's full
+		local room = hasBox and Constants.OFFLINE_NET_MAX or (OceanService.netHold(piece) - #piece.held)
 		local n = math.min(room, math.floor(seconds / Constants.OFFLINE_NET_EVERY))
 		for _ = 1, math.max(0, n) do
 			local items = gives(pickKind(), 0)
@@ -574,6 +583,7 @@ function OceanService:Offline(player, raft, seconds)
 				table.insert(items, { key = "metal", n = 1 })
 			end
 			for _, it in items do
+				got[it.key] = (got[it.key] or 0) + it.n
 				if hasBox then
 					inventory:Give(player, it.key, it.n, "net")
 				else
@@ -585,16 +595,19 @@ function OceanService:Offline(player, raft, seconds)
 	end
 	if caught > 0 then
 		raft.dirty = true
-		for _, net in rafts:Nets(raft) do
+		for _, net in nets do
 			rafts:ShowCatch(raft, net.piece)
 		end
-		Net.fire(
-			player,
-			"Callout",
-			hasBox and `🕸️ While you were away your nets caught {caught} things! They're in your bag.`
-				or `🕸️ While you were away your nets caught {caught} things! Empty them on your raft.`,
-			"good"
-		)
+	end
+	-- the welcome back: how long, what the nets caught (and how to catch more next time)
+	if seconds >= Constants.AWAY_CARD_AFTER then
+		Net.fire(player, "Away", {
+			seconds = seconds,
+			caught = caught,
+			items = got,
+			inBag = hasBox,
+			nets = #nets,
+		})
 	end
 	return caught
 end

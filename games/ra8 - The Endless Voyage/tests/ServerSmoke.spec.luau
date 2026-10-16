@@ -1498,13 +1498,18 @@ do
 	for _, n in nets do
 		hold += Ocean.netHold(n.piece)
 	end
+	local boxed = Rafts:Has(raft, "storage", true)
 	local caught = Ocean:Offline(ava, raft, 10 * 3600)
 	check(
-		"ten hours away: the nets caught things, but never more than they hold",
-		caught > 0 and caught <= hold,
+		"ten hours away: the nets caught things, but never more than they hold (a storage box: OFFLINE_NET_MAX each)",
+		caught > 0 and caught <= (boxed and #nets * Constants.OFFLINE_NET_MAX or hold),
 		caught
 	)
-	check("a callout says what the nets caught", lastFired("Callout", ava):find("While you were away") ~= nil)
+	local away = lastFired("Away", ava)
+	check(
+		"the welcome-back card says how long and what the nets caught",
+		away and away.seconds == 10 * 3600 and away.caught == caught and next(away.items) ~= nil
+	)
 	check("a few seconds away: nothing", Ocean:Offline(ava, raft, 5) == 0)
 end
 
@@ -1564,8 +1569,8 @@ end
 if not noDataStore then
 	check(
 		"coming back after an hour: the nets caught things while she was away",
-		firedSince(mBack, "Callout", ava, function(a)
-			return type(a[1]) == "string" and a[1]:find("While you were away") ~= nil
+		firedSince(mBack, "Away", ava, function(a)
+			return type(a[1]) == "table" and (a[1].caught or 0) > 0
 		end) ~= nil
 	)
 end
@@ -1936,6 +1941,49 @@ do
 		end
 		check("nets: plenty of debris drifts within a net's reach", inLane >= 25, `{inLane}/60, lane {lane}`)
 	end
+end
+
+-- server events on a clock: a supply rain brings crates to every raft, a golden tide doubles every catch
+do
+	local Ev = service("EventService")
+	check("events: the next one is on the clock", ws:GetAttribute("NextEventAt") ~= nil)
+	local function crates()
+		local n = 0
+		for _, m in ws.Debris:GetChildren() do
+			if m:GetAttribute("Special") then
+				n += 1
+			end
+		end
+		return n
+	end
+	if Ev:Current() then
+		Ev:End()
+	end
+	Ev:_setNext("supply_rain")
+	local before = crates()
+	Ev:Run()
+	Engine.advance(61)
+	check("supply rain: crates drift in for the raft", crates() > before, `{before} -> {crates()}`)
+	Engine.advance(2)
+	check(
+		"...and then it ends, and the next one is scheduled",
+		Ev:Current() == nil and ws:GetAttribute("EventEnds") == nil
+	)
+	Ev:_setNext("golden_tide")
+	Ev:Run()
+	check("golden tide: on", ws:GetAttribute("GoldenTide") == true)
+	Ev:End()
+	check("golden tide: off when it ends", ws:GetAttribute("GoldenTide") == nil)
+end
+
+-- the weekly board: pieces built this week
+do
+	local profile = Data:Get(ava)
+	check(
+		"weekly: this week's builds are counted (a new board every Monday)",
+		profile.weekly ~= nil and profile.weekly.built == profile.records.week and (profile.records.week or 0) > 0,
+		profile.records.week
+	)
 end
 
 -- the hotbar's last three slots are blueprint slots for good: floor, net and wall to start, CHANGE picks another

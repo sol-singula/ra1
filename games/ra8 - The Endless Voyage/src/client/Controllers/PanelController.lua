@@ -2449,6 +2449,83 @@ function PanelController.card(name, title, text, buttons)
 	return card
 end
 
+-- Welcome back: how long you were gone and what your nets caught meanwhile, with each thing's picture.
+function PanelController.away(a)
+	if type(a) ~= "table" then
+		return nil
+	end
+	local secs = tonumber(a.seconds) or 0
+	local h, m = secs // 3600, (secs % 3600) // 60
+	local gone = h >= 24 and `{h // 24} day{h // 24 == 1 and "" or "s"}` or h > 0 and `{h}h {m}m` or `{m} minutes`
+	local text
+	if (a.caught or 0) > 0 then
+		text = a.inBag and `You were gone {gone}. Your nets kept fishing: it's all in your bag!`
+			or `You were gone {gone}. Your nets filled up: empty them on your raft! (A Storage Box 📦 lets them keep going.)`
+	elseif (a.nets or 0) == 0 then
+		text = `You were gone {gone}. Build a Surface Net 🕸️: it catches things for you even while you're away!`
+	else
+		text = `You were gone {gone}. Your nets are full: empty them so they can catch more.`
+	end
+	local c = PanelController.card("away", "🌊 WELCOME BACK!", text, { { text = "COLLECT", color = C.good } })
+	-- what came in, a picture and a count each
+	local keys = {}
+	for k in a.items or {} do
+		table.insert(keys, k)
+	end
+	table.sort(keys, function(x, y)
+		return (a.items[x] or 0) > (a.items[y] or 0)
+	end)
+	if #keys > 0 then
+		c.Size = UDim2.fromOffset(480, 270)
+		local row = new("Frame", {
+			Name = "Caught",
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(16, 128),
+			Size = UDim2.new(1, -32, 0, 60),
+			Parent = c,
+		})
+		for i, k in keys do
+			if i > 6 then
+				break
+			end
+			local item = Items.get(k)
+			local cell = new("Frame", {
+				Name = "Got_" .. k,
+				BackgroundColor3 = C.slate,
+				BackgroundTransparency = 0.2,
+				Position = UDim2.fromOffset((i - 1) * 74, 0),
+				Size = UDim2.fromOffset(68, 60),
+				Parent = row,
+			}, { Theme.corner(10) })
+			local pic = new("Frame", {
+				BackgroundTransparency = 1,
+				Position = UDim2.fromOffset(4, 2),
+				Size = UDim2.fromOffset(38, 38),
+				Parent = cell,
+			})
+			if not (item and Icons.item(pic, k, { inset = 0 })) then
+				Theme.text({
+					Text = item and item.icon or "",
+					Size = UDim2.fromScale(1, 1),
+					TextXAlignment = Enum.TextXAlignment.Center,
+					Parent = pic,
+				})
+			end
+			Theme.title({
+				Text = `×{a.items[k]}`,
+				AnchorPoint = Vector2.new(1, 1),
+				Position = UDim2.new(1, -4, 1, -2),
+				Size = UDim2.fromOffset(50, 20),
+				TextSize = 15,
+				TextXAlignment = Enum.TextXAlignment.Right,
+				outline = 2,
+				Parent = cell,
+			})
+		end
+	end
+	return c
+end
+
 local function onFriendResult(r)
 	if type(r) ~= "table" then
 		return
@@ -2736,6 +2813,7 @@ function PanelController:init()
 	Bus.Open:Connect(PanelController.openPanel)
 	Bus.Close:Connect(PanelController.close)
 	Net.listen("Ask", onAsk)
+	Net.listen("Away", PanelController.away)
 	Net.listen("VisitList", function(v)
 		if type(v) == "table" and type(v.rows) == "table" then
 			visitRows[v.kind or "here"] = v.rows

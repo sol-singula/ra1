@@ -36,7 +36,7 @@ local CARD_TTL = 600
 local READ_EVERY = 1
 local PUSH_EVERY = 3
 
-local data, progress
+local data, progress, registry
 local publicStore
 local stores = {} -- [boardKey] = OrderedDataStore
 local cards = {} -- [userId] = { at, name, records, level, title } | { at, none = true }
@@ -270,7 +270,78 @@ function LeaderboardService:FriendRows(player, board)
 	return rows
 end
 
+-- A weekly board's store: a new one every week ("EV_Board_week_<n>"), so it starts empty each Monday.
+local storeWeek = {}
+function LeaderboardService:_weekStore(board, week)
+	week = week or Formulas.week(os.time())
+	local ok, store = pcall(
+		DataStoreService.GetOrderedDataStore,
+		DataStoreService,
+		Constants.BOARD_STORE_PREFIX .. board.key .. "_" .. week
+	)
+	if week == Formulas.week(os.time()) then
+		stores[board.key] = ok and store or nil
+		storeWeek[board.key] = week
+		global[board.key] = nil
+	end
+	return ok and store or nil
+end
+
+-- Last week's top three get their prize the first time they play after (supply crates, and everyone hears who won).
+local lastWeekTop -- { week, rows = { userId, ... } }
+function LeaderboardService:_lastWeek()
+	local week = Formulas.week(os.time()) - 1
+	if lastWeekTop and lastWeekTop.week == week then
+		return lastWeekTop
+	end
+	lastWeekTop = { week = week, rows = {} }
+	local board = Progression.boardByKey.week
+	local store = board and self:_weekStore(board, week)
+	if store then
+		local ok, pages = pcall(store.GetSortedAsync, store, false, #Constants.WEEKLY_PRIZES)
+		local okPage, page = false, nil
+		if ok and pages then
+			okPage, page = pcall(pages.GetCurrentPage, pages)
+		end
+		if okPage and type(page) == "table" then
+			for _, entry in page do
+				table.insert(lastWeekTop.rows, tonumber(entry.key))
+			end
+		end
+	end
+	return lastWeekTop
+end
+
+function LeaderboardService:WeeklyPrize(player)
+	local profile = data:Get(player)
+	local top = self:_lastWeek()
+	if not profile or profile.weeklyPrize == top.week then
+		return nil
+	end
+	local rank = table.find(top.rows, player.UserId)
+	if not rank then
+		return nil
+	end
+	profile.weeklyPrize = top.week
+	local crates = Constants.WEEKLY_PRIZES[rank] or 1
+	local inventory = registry and registry.InventoryService
+	if inventory then
+		inventory:Give(player, "supply_crate", crates, "weekly", { data = { danger = 2 } })
+	end
+	Net.fire(
+		player,
+		"Alert",
+		`🏆 #{rank} BUILDER LAST WEEK! +{crates} supply crates`,
+		Color3.fromRGB(255, 220, 120),
+		5
+	)
+	return rank
+end
+
 function LeaderboardService:_refreshGlobal(board)
+	if board.weekly and storeWeek[board.key] ~= Formulas.week(os.time()) then
+		self:_weekStore(board) -- (a new week began while the server ran)
+	end
 	local store = stores[board.key]
 	if not store then
 		return false
@@ -348,15 +419,20 @@ function LeaderboardService:Push(player, key)
 	end
 end
 
-function LeaderboardService:Init(registry)
-	data = registry.PlayerDataService
-	progress = registry.ProgressService
+function LeaderboardService:Init(reg)
+	registry = reg
+	data = reg.PlayerDataService
+	progress = reg.ProgressService
 	local okP, ps = pcall(DataStoreService.GetDataStore, DataStoreService, Constants.PUBLIC_STORE)
 	publicStore = okP and ps or nil
 	for _, board in Progression.BOARDS do
-		local ok, store =
-			pcall(DataStoreService.GetOrderedDataStore, DataStoreService, Constants.BOARD_STORE_PREFIX .. board.key)
-		stores[board.key] = ok and store or nil
+		if board.weekly then
+			self:_weekStore(board)
+		else
+			local ok, store =
+				pcall(DataStoreService.GetOrderedDataStore, DataStoreService, Constants.BOARD_STORE_PREFIX .. board.key)
+			stores[board.key] = ok and store or nil
+		end
 	end
 	Net.on("Board", function(player, key)
 		if type(key) == "string" and Progression.boardByKey[key] then
@@ -406,6 +482,11 @@ function LeaderboardService:OnPlayerReady(player)
 	task.spawn(function()
 		self:_loadFriends(player)
 		self:_linkHere(player)
+	end)
+	task.delay(6, function()
+		if player.Parent then
+			self:WeeklyPrize(player)
+		end
 	end)
 end
 

@@ -402,13 +402,30 @@ The first 8 hours of analytics (641 players) showed three leaks. Each fix is aim
   bulbs still glow), water waves and reflections, and clouds. Other rafts hold still and yours bobs every other
   frame (20 rafts' parts were moved every frame). The far islands slide every third frame.
 
+## Round 14: reasons to stay and come back
+
+* **Three blueprint slots.** The hotbar has nine slots: 1-6 for items, and 7-9 for blueprints for good (floor,
+  net and wall to start). Nothing moves in or out of them. The pencil on each opens BUILD to choose another
+  blueprint. You can hold one whatever you have, and its cost sits right above it, a line per material: green when
+  you have enough, red when not.
+* **Welcome back.** Coming back after 10 minutes or more, a card says how long you were gone and shows what your
+  nets caught, a picture and a count for each. With a Storage Box the nets keep fishing into your bag (up to 30
+  things each); without one they stop when full, and the card says so.
+* **Server events every 15 minutes, for everyone.** They take turns: Supply Rain (crates and a lane of debris for
+  every raft), Golden Tide (everything reeled in counts double for two minutes), and Bottle Bloom (bottles with
+  charts in them). The countdown sits by the clock, and everyone hears a minute before (`EventService`).
+* **The weekly board.** "This Week" counts the pieces you've built since Monday 00:00 UTC, on a new board every
+  week. Last week's top three get supply crates (5, 3, 2) the next time they play.
+* **CAST HERE only for your own crate.** Other plots' guide crates have no beacon or sign.
+* **Item icons.** The uploaded icons (`Data/IconIds`) show in the UI. Items without one still draw their 3D model.
+
 ## Tests
 
-`tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 75 checks: tiers, speeds, loot odds,
-every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 313 checks:
+`tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 76 checks: tiers, speeds, loot odds,
+every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 323 checks:
 the first five minutes, nets, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent,
 the turret and the Leviathan, removing pieces, running, visiting, friends, boards, leaving and coming back, feedback,
-the anti-cheat, analytics and the Discord log; the daily vote; also run without DataStores, 313 checks), the client
-(`tests/ClientSmoke.spec.luau`, 236 checks: the real UI driving the real server on a phone-sized screen, and nothing
+the anti-cheat, analytics and the Discord log; the daily vote; also run without DataStores, 323 checks), the client
+(`tests/ClientSmoke.spec.luau`, 238 checks: the real UI driving the real server on a phone-sized screen, and nothing
 overlapping on four screen sizes) and the rod in the hand (`tests/Rod.spec.luau`, 10 checks, run once with Motor6D
 joints and once with AnimationConstraints).

@@ -70,6 +70,7 @@ Net.ServerEvents = {
 	"Friends", -- { [userId] = { tier, voyage, players, max, here } }: friends' servers (JoinService)
 	"FriendResult", -- { kind = "teleporting" | "full" | "waiting" | "failed" | "here", ... }
 	"Board", -- { category, friends = { rows }, global = { rows }, you }
+	"Away", -- { seconds, caught, items = { [key] = n }, inBag, nets }: the welcome-back card (OceanService)
 	"Ask", -- { kind = "feedback" | "thanks" | "notify" | "vote", choices? }: FeedbackService and VoteService cards
 	"Sfx", -- soundName, worldPosition?: a sound effect (AudioController)
 	"Fade", -- seconds, text?, snap?: a short black fade (the rowboat, waking up); snap: a cut (an island arrival)

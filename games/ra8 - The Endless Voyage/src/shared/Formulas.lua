@@ -375,4 +375,9 @@ function Formulas.recommended(raftView, invView)
 	return nil
 end
 
+-- The week a time is in (weeks start Monday 00:00 UTC): the weekly board's season number.
+function Formulas.week(t)
+	return (math.floor(t) + 3 * 86400) // 604800
+end
+
 return Formulas

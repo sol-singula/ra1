@@ -345,6 +345,69 @@ local function updateRight()
 	end
 end
 
+-- The next server event (EventService): a pill left of the clock, "🎁 SUPPLY RAIN in 4:32", then "✨ GOLDEN TIDE! 1:12"
+-- while it's on (gold, pulsing).
+local function buildEvent()
+	-- (between your card on the left and the clock: two short lines, the event and its time)
+	local pill = Theme.slab({
+		Name = "Event",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(0.5, -206, 0, 8),
+		Size = UDim2.fromOffset(122, 52),
+		Visible = false,
+		Parent = gui,
+	})
+	refs.event = pill
+	refs.eventText = Theme.title({
+		Name = "Text",
+		Text = "",
+		Size = UDim2.new(1, -8, 0, 22),
+		Position = UDim2.fromOffset(4, 3),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		outline = 2,
+		Parent = pill,
+	})
+	refs.eventTime = Theme.title({
+		Name = "Time",
+		Text = "",
+		Size = UDim2.new(1, -8, 0, 20),
+		Position = UDim2.fromOffset(4, 27),
+		TextSize = 15,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		outline = 2,
+		Parent = pill,
+	})
+end
+
+local function clockText(secs)
+	secs = math.max(0, math.floor(secs))
+	return `{secs // 60}:{string.format("%02d", secs % 60)}`
+end
+
+function HudController.updateEvent()
+	if not refs.event then
+		return
+	end
+	local t = workspace:GetServerTimeNow()
+	local ends = workspace:GetAttribute("EventEnds")
+	local at = workspace:GetAttribute("NextEventAt")
+	local name = workspace:GetAttribute("EventName") or ""
+	local icon = workspace:GetAttribute("EventIcon") or "🎁"
+	if ends and ends > t then
+		refs.event.Visible = true
+		refs.event.BackgroundColor3 = C.mustard
+		refs.eventText.Text = `{icon} {name}!`
+		refs.eventTime.Text = `{clockText(ends - t)} left`
+	elseif at and at > t then
+		refs.event.Visible = true
+		refs.event.BackgroundColor3 = C.slate
+		refs.eventText.Text = `{icon} {name}`
+		refs.eventTime.Text = `in {clockText(at - t)}`
+	else
+		refs.event.Visible = false
+	end
+end
+
 -- The hotbar -------------------------------------------------------------------------------------------------------
 local SLOT, STEP = 48, 52 -- (nine slots and the bag fit between the resource chips and the action buttons)
 local function buildHotbar()
@@ -1027,6 +1090,7 @@ function HudController:init()
 	gui = Theme.screen("Hud", 2, player:WaitForChild("PlayerGui"))
 	buildOverlays()
 	buildClock()
+	buildEvent()
 	buildMe()
 	buildRight()
 	buildHotbar()
@@ -1067,6 +1131,7 @@ function HudController:init()
 			updateHotbar()
 			updateResources()
 			updateOverlays()
+			HudController.updateEvent()
 		end
 	end)
 end

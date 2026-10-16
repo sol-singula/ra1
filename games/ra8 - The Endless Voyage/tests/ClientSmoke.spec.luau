@@ -1460,6 +1460,37 @@ if Panels.cards.thanks then
 end
 Engine.advance(0.2)
 check("the NEXT card comes back once it's answered", guide.GuideCard.Visible == true)
+-- the next server event on the HUD, beside the clock
+do
+	local now = ws:GetServerTimeNow()
+	ws:SetAttribute("EventEnds", nil)
+	ws:SetAttribute("NextEventAt", now + 125)
+	ws:SetAttribute("EventName", "GOLDEN TIDE")
+	ws:SetAttribute("EventIcon", "✨")
+	Hud.updateEvent()
+	check(
+		"the HUD counts down to the next server event",
+		refs.event.Visible and refs.eventText.Text:find("GOLDEN TIDE") ~= nil and refs.eventTime.Text:find("2:0") ~= nil,
+		refs.eventTime.Text
+	)
+end
+-- welcome back: how long you were away and what your nets caught, with pictures
+do
+	local c =
+		Panels.away({ seconds = 3 * 3600 + 120, caught = 12, items = { wood = 9, rope = 3 }, inBag = true, nets = 2 })
+	Engine.advance(0.2)
+	check(
+		"welcome back: a card with the time away and a cell per thing caught",
+		Panels.cards.away ~= nil
+			and string.find(c.Text.Text, "3h 2m", 1, true) ~= nil
+			and c:FindFirstChild("Got_wood", true) ~= nil
+			and c:FindFirstChild("Got_rope", true) ~= nil,
+		c and c.Text.Text
+	)
+	if Panels.cards.away then
+		tap(Panels.cards.away.Btn1)
+	end
+end
 -- missing something: the how-to card, step by step
 do
 	local c = Panels.showHow("palm")

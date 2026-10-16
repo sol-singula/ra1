@@ -50,6 +50,7 @@ local function defaults()
 		records = {
 			tier = 1,
 			tiles = 4,
+			week = 0, -- pieces built this week (the weekly board; profile.weekly says which week)
 			voyages = 0,
 			discoveries = 0,
 			leviathans = 0,

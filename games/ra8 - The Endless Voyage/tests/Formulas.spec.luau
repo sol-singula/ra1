@@ -447,13 +447,13 @@ check(
 check(
 	"boards compare real records",
 	(function()
-		local records = { tier = 1, tiles = 1, voyages = 1, discoveries = 1, leviathans = 1, fish = 1 }
+		local records = { tier = 1, tiles = 1, week = 1, voyages = 1, discoveries = 1, leviathans = 1, fish = 1 }
 		for _, b in Progression.BOARDS do
 			if not records[b.record] then
 				return false, b.key
 			end
 		end
-		return #Progression.BOARDS == 6
+		return #Progression.BOARDS == 7
 	end)()
 )
 check(
@@ -823,6 +823,12 @@ do
 	end
 	check("how-to: every item gets an answer without an error", every)
 end
+
+check(
+	"the weekly board starts again at Monday 00:00 UTC",
+	Formulas.week(1792368000) == Formulas.week(1792368000 - 1) + 1
+		and Formulas.week(1792368000) == Formulas.week(1792368000 + 6 * 86400 + 86399)
+)
 
 print(`\n{passed} passed, {failed} failed`)
 if failed > 0 then

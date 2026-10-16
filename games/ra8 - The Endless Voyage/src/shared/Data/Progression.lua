@@ -193,6 +193,8 @@ end
 Progression.BOARDS = {
 	{ key = "tier", name = "Raft Tier", icon = "⛵", record = "tier", unit = "" },
 	{ key = "tiles", name = "Biggest Raft", icon = "🧱", record = "tiles", unit = " pieces" },
+	-- pieces built since Monday (a new board every week; last week's top three win supply crates)
+	{ key = "week", name = "This Week", icon = "📅", record = "week", unit = " built", weekly = true },
 	{ key = "voyages", name = "Voyages", icon = "🧭", record = "voyages", unit = "" },
 	{ key = "discoveries", name = "Discoveries", icon = "🔎", record = "discoveries", unit = "" },
 	{ key = "leviathans", name = "Leviathans", icon = "🐲", record = "leviathans", unit = "" },

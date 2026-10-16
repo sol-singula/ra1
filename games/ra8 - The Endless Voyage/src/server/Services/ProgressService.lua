@@ -405,6 +405,13 @@ function ProgressService:Init(reg)
 		local profile = data:Get(player)
 		if profile then
 			profile.stats.built += 1
+			-- this week's builds (the weekly board starts again every Monday)
+			local week = Formulas.week(os.time())
+			if not profile.weekly or profile.weekly.week ~= week then
+				profile.weekly = { week = week, built = 0 }
+			end
+			profile.weekly.built += 1
+			self:Record(player, "week", profile.weekly.built)
 			-- (the raft's size on the boards: every piece on it)
 			profile.stats.tiles = raft.summary.tiles
 			self:Record(player, "tiles", raft.summary.placed or raft.summary.tiles, true)
@@ -621,6 +628,14 @@ end
 
 function ProgressService:OnPlayerReady(player, profile)
 	xpSession[player] = 0
+	-- a new week: this week's builds start from nothing
+	if not profile.weekly or profile.weekly.week ~= Formulas.week(os.time()) then
+		profile.weekly = { week = Formulas.week(os.time()), built = 0 }
+		profile.records.week = 0
+		if profile.boards then
+			profile.boards.week = nil
+		end
+	end
 	self:_dress(player, profile)
 	-- a raft loaded from a save might already be past a record
 	local raft = rafts:RaftOf(player)

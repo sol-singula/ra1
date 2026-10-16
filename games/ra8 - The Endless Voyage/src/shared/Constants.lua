@@ -76,6 +76,8 @@ Constants.NET_HOLD = 6 -- things a net holds before it's full (its prompt, or a 
 Constants.NET_HOLD_SALVAGE = 10 -- the salvage net holds more
 Constants.NET_BOX_EVERY = 45 -- with a storage box, a net empties into your bag when full, or this long after its
 -- first catch (till then you can see the catch in it)
+Constants.OFFLINE_NET_MAX = 30 -- with a storage box, each net catches this many things at most while you're away
+Constants.AWAY_CARD_AFTER = 600 -- away this long (seconds): the welcome-back card says what the nets caught
 Constants.OFFLINE_NET_EVERY = 90 -- while you're away, each net catches one thing this often, until it's full
 Constants.FISH_BITE = { 3, 8 } -- seconds until a bite
 Constants.FISH_WINDOW = 1.1 -- seconds to reel once it bites
@@ -161,6 +163,15 @@ Constants.GUIDE_CRATE_RETRY = 3 -- seconds: another one the moment it's gone, un
 
 -- Feedback (FeedbackService): the "Do you like the game?" card
 Constants.FEEDBACK_AFTER = 480
+-- Server events (EventService): one every SERVER_EVENT_EVERY seconds (the first SERVER_EVENT_FIRST after the server
+-- starts), in turn: a supply rain, a golden tide, a bottle bloom
+Constants.SERVER_EVENT_EVERY = 900
+Constants.SERVER_EVENT_FIRST = 300
+Constants.EVENT_CRATES = 3 -- supply crates per raft in a supply rain
+Constants.EVENT_BOTTLES = 3 -- bottles per raft in a bottle bloom
+-- The weekly board (LeaderboardService "week"): pieces built since Monday 00:00 UTC; last week's top three get
+-- supply crates (WEEKLY_PRIZES) the next time they play
+Constants.WEEKLY_PRIZES = { 5, 3, 2 }
 -- The daily favourite raft (VoteService): asked once a day after this much play, a few rafts at a time
 Constants.VOTE_AFTER = 900
 Constants.VOTE_CHOICES = 3
