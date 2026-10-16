@@ -765,6 +765,19 @@ check("the voyage bar is visible", refs.voyageBar.Visible == true)
 check("the music turned to sailing", Audio.wanted() == "sailing", Audio.wanted())
 Engine.advance(3)
 check("the horizon slides past while sailing", Sailing.slide() > 0, Sailing.slide())
+do
+	-- another plot's island is never shown here (the server builds one per plot)
+	local isles = ws:FindFirstChild("Islands")
+	if isles then
+		local other = Engine.globals.Instance.new("Model")
+		other.Name = "OtherPlotsIsland"
+		other:SetAttribute("Plot", 99)
+		other.Parent = isles
+		local hidden = Sailing.privacy()
+		check("another plot's island is hidden", hidden[other] == true and other.Parent ~= isles)
+		other:Destroy()
+	end
+end
 check(
 	"Palm Key shows on the horizon ahead",
 	Sailing.silhouette() ~= nil and Sailing.silhouette().model.Parent ~= nil and #Sailing.silhouette().parts > 0
