@@ -40,10 +40,9 @@ end
 local LIGHTS = { PointLight = true, SpotLight = true, SurfaceLight = true }
 
 local function lighten(inst)
-	if HEAVY_EFFECTS[inst.ClassName] then
+	-- (light sources cost the most on phones; neon bulbs still look lit)
+	if HEAVY_EFFECTS[inst.ClassName] or (LIGHTS[inst.ClassName] and inst.Name ~= "HeldLight") then
 		inst.Enabled = false
-	elseif LIGHTS[inst.ClassName] and inst.Name ~= "HeldLight" then
-		inst.Enabled = false -- (light sources cost the most on phones; neon bulbs still look lit)
 	elseif inst:IsA("ParticleEmitter") and not inst:GetAttribute("LiteDone") then
 		inst:SetAttribute("LiteDone", true)
 		inst.Rate = inst.Rate * 0.5
