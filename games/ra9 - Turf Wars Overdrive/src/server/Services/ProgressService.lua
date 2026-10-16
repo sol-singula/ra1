@@ -90,6 +90,35 @@ function ProgressService:Award(player, info)
 	return step
 end
 
+-- An extra (Data/Extras) for this player: owned and worn at once, with a card (Net "Unlock", extra = true).
+-- card = { title, line? }. Returns true if it's new to them; an extra they own already isn't given twice (and the
+-- card only shows if it has its own line to say).
+function ProgressService:GrantExtra(player, key, card)
+	local p = data:Get(player)
+	local e = Extras.get(key)
+	if not p or not e then
+		return false
+	end
+	local fresh = not Extras.owns(p, key)
+	if fresh then
+		p.extras = p.extras or {}
+		p.extras[e.id] = true
+		p.equipped[e.kind] = e.key
+	end
+	if card and (fresh or card.line) then
+		Net.fire(player, "Unlock", {
+			extra = true,
+			title = card.title,
+			line = card.line,
+			step = { kind = e.kind, key = e.key, name = e.name, desc = e.desc },
+		})
+	end
+	if fresh then
+		self:Push(player)
+	end
+	return fresh
+end
+
 function ProgressService:Init(registry)
 	data = registry.PlayerDataService
 	Net.on("Settings", function(player, key, value)

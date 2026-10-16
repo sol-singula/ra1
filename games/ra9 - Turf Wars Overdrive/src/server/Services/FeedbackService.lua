@@ -20,7 +20,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
-local Extras = require(ReplicatedStorage.Shared.Data.Extras)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 
@@ -103,21 +102,10 @@ end
 
 -- The thank-you for answering: the trail, once, worn at once.
 function FeedbackService:Thank(player)
-	local p = data:Get(player)
-	if not p or Extras.owns(p, THANKS) then
+	if not progress:GrantExtra(player, THANKS, { title = "THANK YOU!" }) then
 		return false
 	end
-	local e = Extras.get(THANKS)
-	p.extras = p.extras or {}
-	p.extras[e.id] = true
-	p.equipped[e.kind] = e.key
-	Net.fire(player, "Unlock", {
-		extra = true,
-		title = "THANK YOU!",
-		step = { kind = e.kind, key = e.key, name = e.name, desc = e.desc },
-	})
-	progress:Push(player)
-	self.Thanked:Fire(player, e)
+	self.Thanked:Fire(player, THANKS)
 	return true
 end
 

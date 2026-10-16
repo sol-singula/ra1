@@ -86,6 +86,21 @@ crossbow's magazine, victory, rewards, the next map), 38 client checks (the same
   that nothing sticks out of its card, and that the card words shrink to fit (put back the old feed, buttons and
   table and it fails on each). 84 unit, 83 server, 63 client checks.
 
+## Round 4: invite a friend, both get something
+
+* **INVITE A FRIEND** at the top left (or **I**; on phones a tap): Roblox's invite prompt, with LaunchData
+  `i:<your UserId>` ("Come fight with me! We both get the Buddy Trail."). Clickable with the mouse between games.
+* **When the friend joins from it** (`InviteService`; a share link counts too, through `ReferredByPlayerId`), the
+  friend gets the **Buddy Trail** (two white lines, one each side of the tracer) with an "A FRIEND INVITED YOU!" card,
+  and so do you, with "FRIEND JOINED! · Pal came from your invite".
+* **Fair:** you must be Roblox friends and not the same account; the friend is credited once ever; you're credited
+  once per friend (each new friend still gets you the card and counts in `profile.invite.count`); the trail itself
+  is given once.
+* **In another server?** The invite usually lands them in yours, but if not, your credit waits in the
+  `TWO_InviteCredits_v1` DataStore and you get it the next time you join.
+* Tests: 84 unit, 94 server (joining, the cards, rejoining, a stranger, yourself, the inviter elsewhere), 69 client
+  (the button, the I key, the trail's lines, the button in the overlap check).
+
 ## Next (phase F)
 
 * The Discord log and analytics (the studio's shared pipeline), the dashboard entry.

@@ -444,6 +444,73 @@ do
 	)
 end
 
+-- Invite a friend: both get the Buddy Trail ----------------------------------------------------------------------
+do
+	local Invite = service("InviteService")
+	local function join(name, id, launch)
+		local m = mark()
+		local p = Engine.addPlayer(name, id, launch)
+		Engine.advance(1)
+		send(p, "Ready")
+		Engine.advance(0.5)
+		return p, m
+	end
+	local function card(m, p)
+		local u = firedSince(m, "Unlock", p)
+		return u and u.args[1] or {}
+	end
+	local hostCount = Data:Get(red).invite.count
+	Engine.friends["7001:" .. red.UserId] = true
+	local mHost = mark()
+	local pal, mPal = join("Pal", 7001, "i:" .. red.UserId)
+	check(
+		"a friend who joins from your invite gets the Buddy Trail",
+		Data:Get(pal).extras.buddy == true and Data:Get(pal).equipped.trail == "extra_buddy"
+	)
+	check(
+		"...with a card saying who invited them",
+		card(mPal, pal).title == "A FRIEND INVITED YOU!",
+		card(mPal, pal).line
+	)
+	check("...and so do you", Data:Get(red).extras.buddy == true and Data:Get(red).invite.count == hostCount + 1)
+	check(
+		"...with a card naming the friend",
+		card(mHost, red).title == "FRIEND JOINED!" and tostring(card(mHost, red).line):find("Pal") ~= nil,
+		card(mHost, red).line
+	)
+	Engine.removePlayer(pal)
+	Engine.advance(1)
+	local mAgain = mark()
+	local pal2 = join("Pal", 7001, "i:" .. red.UserId)
+	check(
+		"joining from an invite again gives nothing more",
+		Data:Get(red).invite.count == hostCount + 1 and firedSince(mAgain, "Unlock", red) == nil
+	)
+	Engine.removePlayer(pal2)
+	local stranger = join("Stranger", 7002, "i:" .. red.UserId)
+	check("someone who isn't your friend doesn't count", Data:Get(stranger).extras.buddy == nil)
+	Engine.removePlayer(stranger)
+	local me = join("Selfie", 7003, "i:7003")
+	check("nor does inviting yourself", Data:Get(me).extras.buddy == nil and Data:Get(me).invite.by == nil)
+	Engine.removePlayer(me)
+	-- the inviter wasn't in this server: their credit waits and comes when they join
+	Engine.friends["7004:7005"] = true
+	local late = join("Late", 7004, "i:7005")
+	check("a friend gets the trail even when you're in another server", Data:Get(late).extras.buddy == true)
+	local mHost2 = mark()
+	local host2 = join("Host", 7005)
+	check(
+		"...and you get yours when you next join",
+		Data:Get(host2).extras.buddy == true and Data:Get(host2).invite.friends["7004"] == true,
+		Data:Get(host2).invite.count
+	)
+	check("...with the card", card(mHost2, host2).title == "FRIEND JOINED!")
+	check("...once", not Invite:Credit(host2, 7004, "Late"))
+	Engine.removePlayer(late)
+	Engine.removePlayer(host2)
+	Engine.advance(1)
+end
+
 print(`\n{passed} passed, {failed} failed`)
 if #Engine.errors > 0 then
 	for i = 1, math.min(5, #Engine.errors) do

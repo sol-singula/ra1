@@ -1,6 +1,7 @@
 --[[
 The HUD (master plan §1, §2, §5, §7): everything on screen, in the SUPERHOT look (white, black, red, blue).
 
+  top left   INVITE (I): Roblox's invite prompt; a friend who joins from it gets you both the Buddy Trail
   top        the phase and its clock (BUILD 0:42 / FIGHT 1:13), the frontline bar (red | blue, the line marked, how
              far each team is from losing), the map's name, the team counts
   centre     the crosshair, the bow's charge under it, hit markers (white; red for a kill), the big alerts
@@ -22,6 +23,7 @@ their base. Push them off the map."
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -175,6 +177,58 @@ function HudController.updateTop()
 		refs.blueCount.Text = `BLUE {m.blue or 0}`
 		refs.mapName.Text = string.upper(m.mapName or "")
 	end
+end
+
+-- Top left: invite a friend ------------------------------------------------------------------------------------
+function HudController.invite()
+	local SocialService = game:GetService("SocialService")
+	local ok, can = pcall(function()
+		return SocialService:CanSendGameInviteAsync(player)
+	end)
+	if ok and not can then
+		HudController.toast("Invites aren't available on this account.", "bad")
+		return false
+	end
+	local sent = pcall(function()
+		local options = Instance.new("ExperienceInviteOptions")
+		options.LaunchData = "i:" .. tostring(player.UserId)
+		options.PromptMessage = "Come fight with me! We both get the Buddy Trail."
+		SocialService:PromptGameInvite(player, options)
+	end)
+	return sent
+end
+
+local function buildInvite(gui)
+	local touch = Theme.isTouch()
+	local b = Theme.new("TextButton", {
+		Name = "Invite",
+		Position = UDim2.fromOffset(16, 16),
+		Size = UDim2.fromOffset(200, 50),
+		BackgroundColor3 = C.white,
+		Text = "",
+		AutoButtonColor = true,
+		Parent = gui,
+	}, { Theme.corner(4), Theme.stroke(2, C.ink) })
+	Theme.title({
+		Name = "Head",
+		Text = touch and "👥 INVITE A FRIEND" or "👥 INVITE A FRIEND  [I]",
+		Size = UDim2.new(1, -16, 0, 22),
+		Position = UDim2.fromOffset(8, 5),
+		TextColor3 = C.ink,
+		outline = false,
+		Parent = b,
+	})
+	label({
+		Name = "Line",
+		Text = "You both get the Buddy Trail",
+		Size = UDim2.new(1, -16, 0, 16),
+		Position = UDim2.fromOffset(8, 28),
+		fit = 12,
+		TextColor3 = C.muted,
+		Parent = b,
+	})
+	b.Activated:Connect(HudController.invite)
+	refs.invite = b
 end
 
 -- The centre: crosshair, charge, hit markers, alerts -----------------------------------------------------------
@@ -869,7 +923,9 @@ function HudController.showUnlock(u)
 		return nil
 	end
 	local head = u.title or (u.wins and `WIN #{u.wins} · NEW {string.upper(s.kind)}` or `NEW {string.upper(s.kind)}`)
-	local line = u.extra and `{s.name} · equipped` or (s.name .. (u.badge and `  ·  {u.badge} WINS IN A ROW` or ""))
+	local line = u.line
+		or u.extra and `{s.name} · equipped`
+		or (s.name .. (u.badge and `  ·  {u.badge} WINS IN A ROW` or ""))
 	return pushCard(function(card)
 		card.Name = u.extra and "Thanks" or "Unlock"
 		local x = 12
@@ -940,6 +996,10 @@ local function step()
 			refs.countdown.TextColor3 = Constants.TEAM_COLOR[m.winner or ""] or C.ink
 		end
 	end
+	if refs.invite then
+		-- (clickable with the mouse between games, when first person lets go of it; I works any time)
+		refs.invite.Modal = m.phase == "victory"
+	end
 	if refs.flash and refs.flash.BackgroundTransparency < 1 then
 		refs.flash.BackgroundTransparency = math.min(1, refs.flash.BackgroundTransparency + 0.04)
 	end
@@ -952,6 +1012,7 @@ function HudController:init()
 	local gui = Theme.screen("Hud", 5, player:WaitForChild("PlayerGui"))
 	refs.gui = gui
 	buildTop(gui)
+	buildInvite(gui)
 	buildCentre(gui)
 	buildFeed(gui)
 	buildBottom(gui)
@@ -986,6 +1047,11 @@ function HudController:init()
 			refs.charge.Visible = c ~= nil
 			refs.chargeFill.Size = UDim2.new(c or 0, 0, 1, 0)
 			refs.chargeFill.BackgroundColor3 = (c or 0) >= 0.999 and RED or C.ink
+		end
+	end)
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if not processed and input.KeyCode == Enum.KeyCode.I then
+			HudController.invite()
 		end
 	end)
 	RunService.RenderStepped:Connect(step)

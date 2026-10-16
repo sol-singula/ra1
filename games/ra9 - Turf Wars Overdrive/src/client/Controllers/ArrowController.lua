@@ -2,7 +2,7 @@
 Arrows on screen (master plan §5, §0): every arrow the server announces is drawn along the same curve the server
 flies it (Formulas.arrowAt from its origin and velocity, timed by server time), as a white shaft with a long thin
 tracer in its team's colour behind it: the SUPERHOT red line. The shooter's trail (the server sends what they wear)
-can add to it: the Thank-You Trail runs a thin white line beside the tracer. Your own arrow is drawn the instant you let go
+can add to it: the Thank-You Trail runs a thin white line beside the tracer, the Buddy Trail one each side. Your own arrow is drawn the instant you let go
 (predicted) and the server's copy of it is skipped. Where an arrow stops, a few white shards burst out.
 
   ArrowController.predict(origin, velocity, team, shotId)   your own, right away
@@ -44,16 +44,19 @@ local function spawnArrow(key, origin, velocity, team, born, trail)
 	local shaft = part(Vector3.new(0.18, 0.18, 2.6), Color3.fromRGB(250, 250, 250), false)
 	local tracer = part(Vector3.new(0.1, 0.1, 1), color, true)
 	tracer.Transparency = 0.15
-	local twin
-	if trail == "extra_thanks" then
-		twin = part(Vector3.new(0.06, 0.06, 1), Color3.fromRGB(255, 255, 255), true)
-		twin.Name = "Twin"
-		twin.Transparency = 0.1
+	-- the trail's extra lines: where each sits beside the tracer (studs right, up)
+	local twins = {}
+	local offsets = ({ extra_thanks = { { 0.2, 0.06 } }, extra_buddy = { { 0.22, 0 }, { -0.22, 0 } } })[trail or ""]
+	for _, o in offsets or {} do
+		local line = part(Vector3.new(0.06, 0.06, 1), Color3.fromRGB(255, 255, 255), true)
+		line.Name = "Twin"
+		line.Transparency = 0.1
+		table.insert(twins, { part = line, offset = CFrame.new(o[1], o[2], 0) })
 	end
 	live[key] = {
 		shaft = shaft,
 		tracer = tracer,
-		twin = twin,
+		twins = twins,
 		origin = origin,
 		velocity = velocity,
 		born = born,
@@ -90,8 +93,8 @@ local function remove(key, pos)
 	end
 	a.shaft:Destroy()
 	a.tracer:Destroy()
-	if a.twin then
-		a.twin:Destroy()
+	for _, t in a.twins do
+		t.part:Destroy()
 	end
 end
 
@@ -112,9 +115,9 @@ local function step(dt)
 				local tail = p - dir * back
 				a.tracer.Size = Vector3.new(0.1, 0.1, back)
 				a.tracer.CFrame = CFrame.lookAt((p + tail) / 2, p)
-				if a.twin then
-					a.twin.Size = Vector3.new(0.06, 0.06, back)
-					a.twin.CFrame = a.tracer.CFrame * CFrame.new(0.2, 0.06, 0)
+				for _, tw in a.twins do
+					tw.part.Size = Vector3.new(0.06, 0.06, back)
+					tw.part.CFrame = a.tracer.CFrame * tw.offset
 				end
 			end
 		end
@@ -158,7 +161,7 @@ end
 function ArrowController.twins()
 	local n = 0
 	for _, a in live do
-		n += a.twin and 1 or 0
+		n += #a.twins
 	end
 	return n
 end

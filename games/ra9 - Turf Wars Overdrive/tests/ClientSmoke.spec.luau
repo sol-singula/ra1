@@ -11,6 +11,7 @@ and the results screen. Fails on any script error.
 local Engine = loadModule("tests/mock/Engine.luau")
 local Vector3, CFrame = Engine.Vector3, Engine.CFrame
 local Vector2 = Engine.globals.Vector2
+local Enum = Engine.Enum
 
 local passed, failed = 0, 0
 local function check(name, cond, detail)
@@ -211,6 +212,20 @@ Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + 1)
 check("the next match: BUILD again", refs.phase.Text:find("BUILD") ~= nil, refs.phase.Text)
 check("...the results close", refs.results == nil)
 
+-- Invite a friend -------------------------------------------------------------------------------------------------
+do
+	local before = Engine.invites
+	refs.invite.Activated:Fire()
+	check("INVITE opens Roblox's invite prompt", Engine.invites == before + 1)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.I, UserInputType = Enum.UserInputType.Keyboard }, false)
+	check("...and so does I", Engine.invites == before + 2)
+	check("...saying what you both get", refs.invite.Line.Text:find("Buddy Trail") ~= nil)
+	local twins0 = Arrows.twins()
+	Store.set("profile", { equipped = { trail = "extra_buddy" } })
+	Arrows.predict(Vector3.new(0, 5, 0), Vector3.new(80, 0, 0), team, 4343)
+	check("the Buddy Trail draws a line each side of the tracer", Arrows.twins() == twins0 + 2)
+end
+
 -- Nothing on screen overlaps ------------------------------------------------------------------------------------
 -- (the mock draws nothing, so each piece's rectangle is worked out from its Position, Size and AnchorPoint on the
 -- smallest canvas the screens get, 1240 x 560, the way Roblox lays them out)
@@ -311,6 +326,7 @@ do
 	local function corners()
 		return {
 			Top = hud.Top,
+			Invite = refs.invite,
 			Feed = refs.feed,
 			Health = hud.Health,
 			Team = refs.team,
@@ -406,6 +422,8 @@ do
 	tidy("the like card", ask)
 	fit("the like card", ask)
 	tidy("an unlock card", stack[1])
+	tidy("the invite button", refs.invite)
+	fit("the invite button", refs.invite)
 	fit("an unlock card", stack[1])
 	local enjoy = Feedback.show("enjoy")
 	tidy("the question card", enjoy)
