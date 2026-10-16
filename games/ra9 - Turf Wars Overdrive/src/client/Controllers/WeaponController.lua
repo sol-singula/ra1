@@ -17,6 +17,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
@@ -84,9 +85,23 @@ local function buildView()
 	end
 	local w = weapon()
 	local big = w.key == "heavy"
-	local grip = piece(Vector3.new(0.22, 0.6, 0.22), color, "Grip")
-	local upper = piece(Vector3.new(0.14, big and 1.9 or 1.5, 0.14), Constants.WHITE, "Upper")
-	local lower = piece(Vector3.new(0.14, big and 1.9 or 1.5, 0.14), Constants.WHITE, "Lower")
+	-- the bow's finish (Data/Cosmetics skins): the grip and limbs' colours and material
+	local skinKey = ((Store.get("profile") or {}).equipped or {}).skin
+	local skin = Cosmetics.get(skinKey)
+	local look = skin and skin.kind == "skin" and skin.look or nil
+	local gripColor = look and Cosmetics.color(look.grip, team) or color
+	local limbColor = look and Cosmetics.color(look.limbs, team) or Constants.WHITE
+	local grip = piece(Vector3.new(0.22, 0.6, 0.22), gripColor, "Grip")
+	local upper = piece(Vector3.new(0.14, big and 1.9 or 1.5, 0.14), limbColor, "Upper")
+	local lower = piece(Vector3.new(0.14, big and 1.9 or 1.5, 0.14), limbColor, "Lower")
+	if look then
+		local ok, material = pcall(function()
+			return Enum.Material[look.material]
+		end)
+		for _, q in { grip, upper, lower } do
+			q.Material = ok and material or Enum.Material.SmoothPlastic
+		end
+	end
 	local str = piece(Vector3.new(0.03, 1, 0.03), Color3.fromRGB(30, 30, 34), "String")
 	local stock
 	if w.key == "crossbow" then
@@ -262,7 +277,16 @@ function WeaponController:init()
 	end)
 	Store.Changed:Connect(function(partial)
 		local me = partial.me
-		local key = me and (tostring(me.team or Store.team()) .. ":" .. tostring(me.weapon))
+		local prof = partial.profile or Store.get("profile") or {}
+		local skinKey = tostring((prof.equipped or {}).skin)
+		local key = (me or partial.profile)
+			and (
+				tostring((me and me.team) or Store.team())
+				.. ":"
+				.. tostring(me and me.weapon or (Store.get("me") or {}).weapon)
+				.. ":"
+				.. skinKey
+			)
 		if key and key ~= viewKey then
 			viewKey = key
 			buildView()

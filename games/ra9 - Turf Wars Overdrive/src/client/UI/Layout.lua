@@ -22,4 +22,33 @@ function Layout.modalOpen()
 	return false
 end
 
+-- The big panel (shop, pass, locker, goals): while it's open the HUD's middle steps aside (the results, the
+-- countdown, alerts, the build tray), a question card waits, and toasts go to the panel's own message line.
+--
+--   Layout.setPanel(open)      Layout.panel() -> open      Layout.onPanel(fn(open))
+--   Layout.statusSink = fn(text, kind)   (the panel's message line, while it's open)
+local panelOpen = false
+local panelWatchers = {}
+
+function Layout.setPanel(isOpen)
+	isOpen = isOpen == true
+	if isOpen == panelOpen then
+		return
+	end
+	panelOpen = isOpen
+	for _, fn in panelWatchers do
+		task.spawn(fn, isOpen)
+	end
+end
+
+function Layout.panel()
+	return panelOpen
+end
+
+function Layout.onPanel(fn)
+	table.insert(panelWatchers, fn)
+end
+
+Layout.statusSink = nil
+
 return Layout

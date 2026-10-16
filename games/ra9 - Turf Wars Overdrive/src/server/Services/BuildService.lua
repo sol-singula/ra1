@@ -21,6 +21,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
@@ -221,7 +222,26 @@ local function buildModel(s, def)
 	local tint = color:Lerp(white, 0.35)
 	if def.key == "banner" then
 		part(CFrame.new(center.X, def.h / 2, center.Z), Vector3.new(0.6, def.h, 0.6), white)
-		part(CFrame.new(center.X + 1.2, def.h - 2.5, center.Z), Vector3.new(2.4, 4, 0.2), color, false)
+		local flag = part(CFrame.new(center.X + 1.2, def.h - 2.5, center.Z), Vector3.new(2.4, 4, 0.2), color, false)
+		-- the emblem of the banner the builder wears (Data/Cosmetics), white on the flag, both faces
+		local banner = Cosmetics.get(s.emblemKey)
+		if banner and banner.kind == "banner" then
+			for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
+				local sg = Instance.new("SurfaceGui")
+				sg.Name = "Emblem"
+				sg.Face = face
+				sg.CanvasSize = Vector2.new(120, 200)
+				local l = Instance.new("TextLabel")
+				l.BackgroundTransparency = 1
+				l.Size = UDim2.fromScale(1, 1)
+				l.Text = banner.look.emblem
+				l.TextScaled = true
+				l.Font = Enum.Font.GothamBlack
+				l.TextColor3 = white
+				l.Parent = sg
+				sg.Parent = flag
+			end
+		end
 		part(CFrame.new(center.X, 0.3, center.Z), Vector3.new(2.4, 0.6, 2.4), white)
 	elseif def.key == "tower" then
 		-- four legs, a platform, a team-coloured rail round the top, a ladder face
@@ -298,7 +318,8 @@ function BuildService:Place(player, key, cx, cz, rot)
 		occupied[cell[1]] = occupied[cell[1]] or {}
 		occupied[cell[1]][cell[2]] = s.id
 	end
-	s.model = buildModel({ id = s.id, team = s.team, min = mn, max = mx }, def)
+	s.model =
+		buildModel({ id = s.id, team = s.team, min = mn, max = mx, emblemKey = player:GetAttribute("LookBanner") }, def)
 	arena:AddBox(s.id, mn, mx)
 	budgets[player] = self:Budget(player) - def.cost
 	self:Push(player)

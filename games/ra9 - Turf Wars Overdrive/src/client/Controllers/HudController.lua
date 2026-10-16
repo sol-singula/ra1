@@ -2,6 +2,7 @@
 The HUD (master plan §1, §2, §5, §7): everything on screen, in the SUPERHOT look (white, black, red, blue).
 
   top left   INVITE (I): Roblox's invite prompt; a friend who joins from it gets you both the Buddy Trail
+             SHOP (B): the panel (PanelController): the shop, the pass, the locker, the goals
   top        the phase and its clock (BUILD 0:42 / FIGHT 1:13), the frontline bar (red | blue, the line marked, how
              far each team is from losing), the map's name, the team counts
   centre     the crosshair, the bow's charge under it, hit markers (white; red for a kill), the big alerts
@@ -229,6 +230,39 @@ local function buildInvite(gui)
 	})
 	b.Activated:Connect(HudController.invite)
 	refs.invite = b
+	-- the shop and the rest (PanelController), right under it
+	local s = Theme.new("TextButton", {
+		Name = "ShopButton",
+		Position = UDim2.fromOffset(16, 74),
+		Size = UDim2.fromOffset(200, 50),
+		BackgroundColor3 = C.ink,
+		Text = "",
+		AutoButtonColor = true,
+		Parent = gui,
+	}, { Theme.corner(4), Theme.stroke(2, C.ink) })
+	Theme.title({
+		Name = "Head",
+		Text = touch and "◆ SHOP & LOCKER" or "◆ SHOP & LOCKER  [B]",
+		Size = UDim2.new(1, -16, 0, 22),
+		Position = UDim2.fromOffset(8, 5),
+		TextColor3 = C.white,
+		outline = false,
+		Parent = s,
+	})
+	refs.shopLine = label({
+		Name = "Line",
+		Text = "Pass · goals · VIP",
+		Size = UDim2.new(1, -16, 0, 16),
+		Position = UDim2.fromOffset(8, 28),
+		fit = 12,
+		TextColor3 = C.grey,
+		Parent = s,
+	})
+	s.Activated:Connect(function()
+		local Panel = require(script.Parent.PanelController)
+		Panel.toggle()
+	end)
+	refs.shop = s
 end
 
 -- The centre: crosshair, charge, hit markers, alerts -----------------------------------------------------------
@@ -608,6 +642,9 @@ function HudController.toast(text, kind)
 	if not t then
 		return
 	end
+	if Layout.panel() and Layout.statusSink and Layout.statusSink(text, kind) then
+		return -- (the panel's open: its own message line says it)
+	end
 	t.Text = text
 	t.TextColor3 = kind == "bad" and RED or C.ink
 	t.Visible = true
@@ -783,6 +820,10 @@ function HudController.showResults(r)
 		line ..= `  ·  WIN #{you.step.win}: {you.step.name}`
 	elseif you.won and not you.qualified then
 		line ..= "  ·  (play a full match for the win to count)"
+	end
+	local e = you.earned
+	if e and ((e.shards or 0) > 0 or (e.xp or 0) > 0) then
+		line ..= `  ·  +{e.shards} ◆  +{e.xp} PASS XP`
 	end
 	label({
 		Text = line,
@@ -997,8 +1038,24 @@ local function step()
 		end
 	end
 	if refs.invite then
-		-- (clickable with the mouse between games, when first person lets go of it; I works any time)
+		-- (clickable with the mouse between games, when first person lets go of it; I and B work any time)
 		refs.invite.Modal = m.phase == "victory"
+		refs.shop.Modal = m.phase == "victory"
+		local p = Store.get("profile") or {}
+		refs.shopLine.Text = `◆ {p.shards or 0}  ·  PASS TIER {(p.season or {}).tier or 0}`
+	end
+	-- the panel's open: the middle of the HUD steps aside
+	if Layout.panel() then
+		for _, k in { "alert", "objective", "countdown", "respawn", "tray", "cross", "charge", "toast" } do
+			if refs[k] then
+				refs[k].Visible = false
+			end
+		end
+		if refs.results then
+			refs.results.Visible = false
+		end
+	elseif refs.results and refs.results.Visible == false then
+		refs.results.Visible = true
 	end
 	if refs.flash and refs.flash.BackgroundTransparency < 1 then
 		refs.flash.BackgroundTransparency = math.min(1, refs.flash.BackgroundTransparency + 0.04)

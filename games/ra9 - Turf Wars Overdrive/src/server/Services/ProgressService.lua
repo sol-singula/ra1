@@ -1,37 +1,55 @@
 --[[
-Progression (master plan §8): stats, qualifying wins, the 100-win ladder, streaks, MVPs.
+Progression (master plan §8): stats, qualifying wins, the 100-win ladder, streaks, MVPs, and what a match pays:
+Shards (Data/Shop) and Overdrive Pass XP (Data/Season). The goals, VIP and MVP rewards (Data/Achievements) come
+from the stats, so each match's end is also when a newly reached goal is announced.
 
 At the end of every match MatchService calls Award for each player with how it went. A qualifying win
 (Formulas.qualifies: on the winning team, in the match QUALIFY_SECONDS or more, not idle) adds a win, unlocks the
-ladder's next step (Data/Ladder: every 10th a big one, announced to the server) and grows the streak (badges at 3,
-5 and 10). A loss ends the streak. Stats add up either way.
+ladder's next step (Data/Ladder: every 10th a big one) and grows the streak (badges at 3, 5 and 10). A loss ends
+the streak. Stats add up either way.
 
-  ProgressService:Award(player, info)   info: { won, seconds, active, kills, deaths, assists, built, shots, hits,
-                                                 headshots, pushed, mvp }
-  ProgressService:View(player)          what the client shows
+  ProgressService:Award(player, info) -> step, earned   info: { won, seconds, active, kills, deaths, assists,
+                        built, shots, hits, headshots, pushed, longshots, triples, comeback, mvp }
+                        earned: { shards, xp, tiers }
+  ProgressService:View(player)          what the client shows (Net "Profile")
+  ProgressService:Push(player)          sends it, and puts what they wear on the Player's attributes (StatusService
+                                        and every client read those)
+  ProgressService:GrantExtra(player, key, card)
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Achievements = require(ReplicatedStorage.Shared.Data.Achievements)
 local Constants = require(ReplicatedStorage.Shared.Constants)
-local Formulas = require(ReplicatedStorage.Shared.Formulas)
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Extras = require(ReplicatedStorage.Shared.Data.Extras)
+local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Ladder = require(ReplicatedStorage.Shared.Data.Ladder)
+local Locker = require(ReplicatedStorage.Shared.Data.Locker)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Season = require(ReplicatedStorage.Shared.Data.Season)
+local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local ProgressService = {
 	Name = "ProgressService",
-	Dependencies = { "PlayerDataService" },
+	Dependencies = { "PlayerDataService", "EconomyService", "SeasonService" },
 	Unlocked = Signal.new("ProgressService.Unlocked"), -- (player, step)
+	Earned = Signal.new("ProgressService.Earned"), -- (player, key) a goal, VIP or MVP reward newly earned
 }
 
-local data
+local data, economy, season
+
+local LOOK_ATTR =
+	{ trail = "LookTrail", skin = "LookSkin", effect = "LookEffect", banner = "LookBanner", title = "LookTitle" }
+ProgressService.LOOK_ATTR = LOOK_ATTR
 
 function ProgressService:View(player)
 	local p = data:Get(player)
 	if not p then
 		return nil
 	end
+	local s = season:State(player)
+	local info = Season.at(math.floor(workspace:GetServerTimeNow()))
 	return {
 		wins = p.wins,
 		streak = p.streak,
@@ -39,6 +57,19 @@ function ProgressService:View(player)
 		stats = p.stats,
 		equipped = p.equipped,
 		extras = p.extras,
+		owned = p.owned,
+		shards = p.shards or 0,
+		vip = Achievements.isVip(p),
+		season = {
+			n = s.n,
+			name = Season.name(s.n),
+			endsAt = info.endsAt,
+			xp = s.xp,
+			tier = Season.tierOf(s.xp),
+			premium = s.premium,
+			claimed = s.claimed,
+		},
+		starter = p.starter == true,
 		settings = p.settings,
 		next = Ladder.at(p.wins + 1),
 		ladder = Constants.LADDER,
@@ -48,29 +79,89 @@ end
 function ProgressService:Push(player)
 	local v = self:View(player)
 	if v then
+		for kind, attr in LOOK_ATTR do
+			player:SetAttribute(attr, v.equipped[kind])
+		end
+		player:SetAttribute("VIP", v.vip)
 		Net.fire(player, "Profile", v)
+	end
+end
+
+-- A reward card in the popup stack (the HUD's Unlock card)
+local function card(player, key, title, line)
+	local it = Cosmetics.get(key)
+	if not it then
+		return
+	end
+	Net.fire(player, "Unlock", {
+		extra = true,
+		title = title,
+		line = line,
+		step = { kind = it.kind, key = it.key, name = it.name },
+	})
+end
+ProgressService.card = card
+
+local function snapshot(p)
+	return { wins = p.wins, best = p.best, vip = p.vip, stats = table.clone(p.stats) }
+end
+
+-- Goals, VIP and MVP rewards newly earned between two snapshots: worn at once if they're new, with a card each.
+function ProgressService:Celebrate(player, before)
+	local p = data:Get(player)
+	if not p then
+		return
+	end
+	local had = Achievements.earned(before)
+	local now = Achievements.earned(p)
+	if Achievements.isVip(p) and not Achievements.isVip(before) then
+		p.vip = true -- (kept for good)
+		card(player, "vip_title", "YOU'RE VIP!", "Earned, never bought: the VIP tag, halo and 4 cosmetics")
+		p.equipped.title = "vip_title"
+		self.Earned:Fire(player, "vip")
+	end
+	for _, g in Achievements.newly(before, p) do
+		local it = Cosmetics.get(g.reward)
+		card(player, g.reward, `GOAL: {string.upper(g.name)}`, `{it.name} · {Cosmetics.KIND_NAME[it.kind]}`)
+		p.equipped[it.kind] = it.key
+		self.Earned:Fire(player, g.reward)
+	end
+	for _, m in Achievements.MVP do
+		if now[m.reward] and not had[m.reward] then
+			local it = Cosmetics.get(m.reward)
+			card(player, m.reward, `{m.mvps} MVPS!`, `{it.name} · {Cosmetics.KIND_NAME[it.kind]}`)
+			self.Earned:Fire(player, m.reward)
+		end
 	end
 end
 
 function ProgressService:Award(player, info)
 	local p = data:Get(player)
 	if not p then
-		return nil
+		return nil, nil
 	end
+	local before = snapshot(p)
 	local st = p.stats
 	st.matches += 1
-	for _, k in { "kills", "deaths", "assists", "built", "shots", "hits", "headshots", "pushed" } do
+	for _, k in
+		{ "kills", "deaths", "assists", "built", "shots", "hits", "headshots", "pushed", "longshots", "triples" }
+	do
 		st[k] = (st[k] or 0) + (info[k] or 0)
 	end
+	st.hsBest = math.max(st.hsBest or 0, info.headshots or 0)
 	st.minutes = (st.minutes or 0) + math.floor((info.seconds or 0) / 60)
 	if info.mvp then
 		st.mvps += 1
 	end
 	local step
-	if Formulas.qualifies(info) then
+	local qualified = Formulas.qualifies(info)
+	if qualified then
 		p.wins += 1
 		p.streak += 1
 		p.best = math.max(p.best, p.streak)
+		if info.comeback then
+			st.comebacks = (st.comebacks or 0) + 1
+		end
 		step = Ladder.at(p.wins)
 		local badge = Formulas.streakBadge(p.streak)
 		if badge then
@@ -86,14 +177,39 @@ function ProgressService:Award(player, info)
 		st.losses += 1
 		p.streak = 0
 	end
+	-- what the match pays: Shards, and pass XP (the day's first match and first win pay more)
+	local today = math.floor(workspace:GetServerTimeNow()) // 86400
+	if type(p.daily) ~= "table" or p.daily.day ~= today then
+		p.daily = { day = today, played = false, won = false }
+	end
+	local firstWin = qualified and not p.daily.won
+	local shards = Shop.shardsFor({
+		seconds = info.seconds,
+		kills = info.kills,
+		won = qualified,
+		mvp = info.mvp,
+	}, firstWin)
+	local xp = Season.xpFor(info)
+	if xp > 0 and not p.daily.played then
+		xp += Season.DAILY_BONUS
+	end
+	if (info.seconds or 0) >= 60 then
+		p.daily.played = true
+	end
+	if qualified then
+		p.daily.won = true
+	end
+	economy:Add(player, shards, "match")
+	local tiers = season:AddXP(player, xp)
+	self:Celebrate(player, before)
 	self:Push(player)
-	return step
+	return step, { shards = shards, xp = xp, tiers = tiers, firstWin = firstWin }
 end
 
 -- An extra (Data/Extras) for this player: owned and worn at once, with a card (Net "Unlock", extra = true).
 -- card = { title, line? }. Returns true if it's new to them; an extra they own already isn't given twice (and the
 -- card only shows if it has its own line to say).
-function ProgressService:GrantExtra(player, key, card)
+function ProgressService:GrantExtra(player, key, c)
 	local p = data:Get(player)
 	local e = Extras.get(key)
 	if not p or not e then
@@ -105,11 +221,11 @@ function ProgressService:GrantExtra(player, key, card)
 		p.extras[e.id] = true
 		p.equipped[e.kind] = e.key
 	end
-	if card and (fresh or card.line) then
+	if c and (fresh or c.line) then
 		Net.fire(player, "Unlock", {
 			extra = true,
-			title = card.title,
-			line = card.line,
+			title = c.title,
+			line = c.line,
 			step = { kind = e.kind, key = e.key, name = e.name, desc = e.desc },
 		})
 	end
@@ -119,8 +235,28 @@ function ProgressService:GrantExtra(player, key, card)
 	return fresh
 end
 
+-- Wear something you own (or nothing: key = false). Returns ok.
+function ProgressService:Equip(player, kind, key)
+	local p = data:Get(player)
+	if not p or not LOOK_ATTR[kind] then
+		return false
+	end
+	if key == false or key == "" then
+		p.equipped[kind] = nil
+		return true
+	end
+	local it = Cosmetics.get(key)
+	if not it or it.kind ~= kind or not Locker.owns(p, key) then
+		return false
+	end
+	p.equipped[kind] = key
+	return true
+end
+
 function ProgressService:Init(registry)
 	data = registry.PlayerDataService
+	economy = registry.EconomyService
+	season = registry.SeasonService
 	Net.on("Settings", function(player, key, value)
 		local p = data:Get(player)
 		if not p then
@@ -132,18 +268,13 @@ function ProgressService:Init(registry)
 			p.settings.sensitivity = math.clamp(value, 0.2, 3)
 		elseif key == "shake" and type(value) == "boolean" then
 			p.settings.shake = value
-		elseif key == "equip" and type(value) == "table" then
-			-- (only what you've unlocked, on the ladder or as an extra)
-			local k, item = value.kind, value.key
-			for _, s in Ladder.unlocked(p.wins) do
-				if s.kind == k and s.key == item then
-					p.equipped[k] = item
-				end
+		elseif key == "equip" and type(value) == "table" and type(value.kind) == "string" then
+			-- (only what you own: Data/Locker knows every source)
+			local item = value.key
+			if item == nil then
+				item = false -- (wear nothing)
 			end
-			local e = Extras.get(item)
-			if e and e.kind == k and Extras.owns(p, item) then
-				p.equipped[k] = item
-			end
+			self:Equip(player, value.kind, item)
 		end
 		self:Push(player)
 	end)

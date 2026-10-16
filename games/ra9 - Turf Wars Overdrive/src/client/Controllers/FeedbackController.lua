@@ -84,6 +84,7 @@ function FeedbackController.show(kind)
 		Parent = gui,
 	})
 	Layout.modal("ask", card)
+	card.Visible = not Layout.panel() -- (waits behind the shop panel while that's open)
 	if kind == "enjoy" then
 		Theme.title({
 			Text = "ARE YOU LIKING THE GAME?",
@@ -150,6 +151,11 @@ function FeedbackController:init()
 			FeedbackController.answer(current == "enjoy" and true or "ok")
 		elseif input.KeyCode == Enum.KeyCode.N then
 			FeedbackController.answer(current == "enjoy" and false or "later")
+		end
+	end)
+	Layout.onPanel(function(open)
+		if card then
+			card.Visible = not open
 		end
 	end)
 	Store.Changed:Connect(function(partial)

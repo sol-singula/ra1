@@ -62,6 +62,8 @@ local BuildC = Engine.require(tree.client.Controllers.BuildController)
 local Move = Engine.require(tree.client.Controllers.MoveController)
 local Arrows = Engine.require(tree.client.Controllers.ArrowController)
 local Store = Engine.require(tree.client.Store)
+local Shop = Engine.require(tree.shared.Data.Shop)
+local Data = service("PlayerDataService")
 local refs = Hud.refs
 local team = Teams:Team(player)
 local s = team == "red" and -1 or 1
@@ -327,6 +329,7 @@ do
 		return {
 			Top = hud.Top,
 			Invite = refs.invite,
+			ShopButton = refs.shop,
 			Feed = refs.feed,
 			Health = hud.Health,
 			Team = refs.team,
@@ -436,6 +439,140 @@ do
 	L.Popups = Hud.popups()[1]
 	apart("the countdown", L)
 	check("the waiting popups come up as the first ones go", #Hud.popups() >= 1 or #select(2, Hud.popups()) == 0)
+
+	-- The panel: the shop, the pass, the locker, the goals --------------------------------------------------------
+	local Panel = Engine.require(tree.client.Controllers.PanelController)
+	local Layout = Engine.require(tree.client.UI.Layout)
+	local Economy = service("EconomyService")
+	local Cosmetics = Engine.require(tree.shared.Data.Cosmetics)
+	local pr = Panel.refs
+	tidy("the shop button", refs.shop)
+	fit("the shop button", refs.shop)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.B, UserInputType = Enum.UserInputType.Keyboard }, false)
+	Engine.advance(0.1)
+	check("B opens the panel", Panel.isOpen() and pr.panel.Visible == true and Layout.panel())
+	check("...with the mouse free (a Modal button)", pr.close.Modal == true)
+	-- inside a container: its pieces apart and inside it (a scrolling body: inside across, any height)
+	local function walk(what, container, depth)
+		local kids = {}
+		for _, k in container:GetChildren() do
+			if (k:IsA("GuiObject")) and k.Visible ~= false then
+				table.insert(kids, k)
+			end
+		end
+		local bad = {}
+		local cr = rect(container)
+		local scroll = container:IsA("ScrollingFrame")
+		for i, a in kids do
+			local r = rect(a)
+			local inside = r[1] >= cr[1] - 0.5 and r[1] + r[3] <= cr[1] + cr[3] + 0.5
+			if not scroll then
+				inside = inside and r[2] >= cr[2] - 0.5 and r[2] + r[4] <= cr[2] + cr[4] + 0.5
+			else
+				inside = inside and r[2] >= cr[2] - 0.5
+			end
+			if not inside then
+				table.insert(bad, (a.Name or "?") .. " sticks out of " .. container.Name)
+			end
+			for j = i + 1, #kids do
+				if hits(a, kids[j]) then
+					table.insert(bad, a.Name .. " x " .. kids[j].Name)
+				end
+			end
+		end
+		for _, k in kids do
+			-- (a preview's bars and a progress bar's fill sit on each other on purpose)
+			if
+				k.Name ~= "Preview"
+				and k.Name ~= "Progress"
+				and k.Name ~= "VipBar"
+				and k.Name ~= "Bar"
+				and depth < 6
+			then
+				for _, b in walk(what, k, depth + 1) do
+					table.insert(bad, b)
+				end
+			end
+		end
+		return bad
+	end
+	local function panelTidy(tab)
+		local bad = walk(tab, pr.panel, 0)
+		check(`the panel's {tab} tab: nothing overlaps, nothing sticks out`, #bad == 0, table.concat(bad, ", "))
+		local unfit = {}
+		for _, d in pr.panel:GetDescendants() do
+			if d:IsA("TextLabel") and d.TextScaled ~= true then
+				table.insert(unfit, d.Text)
+			end
+		end
+		check(`the panel's {tab} tab: its words shrink to fit`, #unfit == 0, table.concat(unfit, " | "))
+	end
+	Economy:Add(player, 5000)
+	Engine.advance(0.7)
+	for _, tab in { "shop", "pass", "locker", "goals" } do
+		Panel.open(tab)
+		Engine.advance(0.1)
+		check(`the {tab} tab builds`, #pr.body:GetChildren() > 3, #pr.body:GetChildren())
+		panelTidy(tab)
+	end
+	-- the panel among the HUD's pieces: the corners stay clear of it, the middle steps aside
+	Panel.open("shop")
+	Hud.showResults({ winner = "red", rows = rows, mvp = 1, you = { won = true } })
+	Hud.toast("A toast while the panel is up")
+	Engine.advance(0.1)
+	L = corners()
+	L.Panel = pr.panel
+	L.Popups = Hud.popups()[1]
+	apart("the panel open", L)
+	check("...the results card steps aside", refs.results == nil or refs.results.Visible == false)
+	check("...toasts go to the panel's own line", pr.status.Text:find("A toast while") ~= nil, pr.status.Text)
+	-- buying from the shop tab
+	local p = Data:Get(player)
+	local item1 = pr.body:FindFirstChild("Item1")
+	local key1 = Shop.daily(Shop.dayOf(service("ShopService").now()))[1]
+	local shardsBefore = p.shards
+	item1.Buy.Activated:Fire()
+	Engine.advance(0.6)
+	check("BUY in the shop: bought and worn", p.owned[key1] == true and p.shards < shardsBefore)
+	check("...the card says so", pr.body.Item1.Buy.Label.Text == "WORN", pr.body.Item1.Buy.Label.Text)
+	-- the locker: wear something else
+	Panel.open("locker")
+	Engine.advance(0.1)
+	pr.body.Item1.Activated:Fire() -- (NONE: wear no trail)
+	Engine.advance(0.6)
+	check("the locker: wear nothing", p.equipped.trail == nil, p.equipped.trail)
+	local lockedShown = false
+	for _, c in pr.body:GetChildren() do
+		if c:FindFirstChild("Line") and c.Line.Text:find("🔒") then
+			lockedShown = true
+		end
+	end
+	check("...what you don't have says how to get it", lockedShown)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.B, UserInputType = Enum.UserInputType.Keyboard }, false)
+	Engine.advance(0.1)
+	check("B closes it", not Panel.isOpen() and not Layout.panel())
+	check("...and the results come back", refs.results == nil or refs.results.Visible == true)
+	-- looks in play
+	local Looks = Engine.require(tree.client.Controllers.LooksController)
+	check(
+		"a kill effect plays where someone fell",
+		Looks.play("shop_ink", Vector3.new(0, 3, 0), "red") and Looks.count() > 0
+	)
+	p.owned.shop_hologram = true
+	Engine.advance(0.6)
+	Engine.fireServer(player, "Settings", "equip", { kind = "skin", key = "vip_skin" })
+	Engine.advance(0.6)
+	check("a skin you haven't earned isn't worn", p.equipped.skin ~= "vip_skin")
+	Engine.fireServer(player, "Settings", "equip", { kind = "skin", key = "shop_hologram" })
+	Engine.advance(0.6)
+	local vm = ws.CurrentCamera:FindFirstChild("Viewmodel")
+	local grip = vm and vm:FindFirstChild("Grip")
+	check(
+		"your bow wears its finish",
+		grip and grip.Material == Enum.Material.ForceField,
+		grip and tostring(grip.Material)
+	)
+	_ = Cosmetics
 end
 
 print(`\n{passed} passed, {failed} failed`)

@@ -206,6 +206,129 @@ check(
 	table.find(Net.ServerEvents, "Kill") and table.find(Net.ServerEvents, "Results")
 )
 
+-- Money: cosmetics, the shop, the pass, goals, VIP ----------------------------------------------------------------
+do
+	local Cosmetics = Engine.require(tree.shared.Data.Cosmetics)
+	local Shop = Engine.require(tree.shared.Data.Shop)
+	local Season = Engine.require(tree.shared.Data.Season)
+	local Achievements = Engine.require(tree.shared.Data.Achievements)
+	local Locker = Engine.require(tree.shared.Data.Locker)
+	local kinds, rarities = {}, {}
+	for _, k in Cosmetics.KINDS do
+		kinds[k] = true
+	end
+	for _, r in Cosmetics.RARITIES do
+		rarities[r] = true
+	end
+	local bad = {}
+	for _, it in Cosmetics.list do
+		if not kinds[it.kind] or not rarities[it.rarity] or type(it.look) ~= "table" or Cosmetics.get(it.key) ~= it then
+			table.insert(bad, it.key)
+		end
+	end
+	check("every cosmetic has a kind, a rarity and a look", #bad == 0, table.concat(bad, " "))
+	local ladderOk = true
+	for _, st in Ladder.steps do
+		local it = Cosmetics.get(st.key)
+		ladderOk = ladderOk and it ~= nil and it.kind == st.kind and type(it.look) == "table" and it.source == "ladder"
+	end
+	check("every ladder step is a cosmetic with a look", ladderOk)
+	check("the extras are cosmetics too", Cosmetics.get("extra_buddy") and Cosmetics.get("extra_buddy").kind == "trail")
+	local forSale = true
+	for _, k in Shop.pool do
+		local src = Cosmetics.get(k).source
+		forSale = forSale and src == "shop"
+	end
+	check("only shop cosmetics are ever for sale (never goals, VIP or MVP)", forSale and #Shop.pool >= 12, #Shop.pool)
+	-- the rotation
+	local day = 20742
+	local a, b = Shop.daily(day), Shop.daily(day)
+	check("the day's shop is the same everywhere", table.concat(a, ",") == table.concat(b, ","))
+	local seen, distinct = {}, true
+	for _, k in a do
+		distinct = distinct and not seen[k]
+		seen[k] = true
+	end
+	check("4 different items a day", #a == 4 and distinct)
+	local week = Shop.weekly((day + 3) // 7)
+	local clash = false
+	for _, k in week.keys do
+		clash = clash or seen[k] == true
+	end
+	check("the week's bundle isn't also in the day's items", not clash and #week.keys == 3)
+	local sum = 0
+	for _, k in week.keys do
+		sum += Shop.price(Cosmetics.get(k))
+	end
+	check("the bundle is cheaper than its items", week.price < sum, `{week.price} {sum}`)
+	check("the shop changes day to day", table.concat(Shop.daily(day + 1), ",") ~= table.concat(a, ","))
+	check("an item of the day is in the rotation", Shop.inRotation(a[1], day * 86400 + 100))
+	local value = true
+	for i = 2, #Shop.PACKS do
+		value = value
+			and Shop.PACKS[i].shards / Shop.PACKS[i].robux > Shop.PACKS[i - 1].shards / Shop.PACKS[i - 1].robux
+	end
+	check("bigger Shard packs are better value", value)
+	check("a short stay earns nothing", Shop.shardsFor({ seconds = 20, kills = 5 }, false) == 0)
+	check(
+		"a win earns more than a loss, the day's first win more again",
+		Shop.shardsFor({ seconds = 300, won = true }, true) > Shop.shardsFor({ seconds = 300, won = true }, false)
+			and Shop.shardsFor({ seconds = 300, won = true }, false)
+				> Shop.shardsFor({ seconds = 300, won = false }, false)
+	)
+	-- the pass
+	check("season 1 starts at the epoch", Season.at(Season.EPOCH).n == 1 and Season.at(Season.EPOCH - 5).n == 1)
+	check("a new season every 4 weeks", Season.at(Season.EPOCH + 28 * 86400).n == 2)
+	check("tiers from XP", Season.tierOf(0) == 0 and Season.tierOf(Season.XP_PER_TIER * 3 + 5) == 3)
+	check("...capped at 30", Season.tierOf(10 ^ 7) == Season.TIERS)
+	check("premium tier 1: the season title", Cosmetics.get("s1_1p") and Cosmetics.get("s1_1p").kind == "title")
+	check("free tier 5: a cosmetic", Season.reward(1, 5, "f").kind == "cosmetic" and Cosmetics.get("s1_5f") ~= nil)
+	check("tier 30 premium is legendary", Cosmetics.get("s1_30p").rarity == "legendary")
+	check("free odd tiers between give nothing", Season.reward(1, 7, "f") == nil)
+	check("season items aren't made for tiers without one", Cosmetics.get("s1_4f") == nil)
+	check(
+		"season items are the season's own",
+		Cosmetics.get("s2_3p").season == 2 and Cosmetics.get("s2_3p").source == "pass"
+	)
+	-- goals and VIP
+	local pro = { wins = 3, best = 2, stats = { headshots = 100, kills = 10, mvps = 1 } }
+	local earned = Achievements.earned(pro)
+	check("a goal reached gives its reward", earned.goal_sharp == true and earned.goal_centurion == nil)
+	check("VIP isn't there yet", not Achievements.isVip(pro) and not earned.vip_title)
+	local vip = { wins = 50, best = 1, stats = { mvps = 10 } }
+	check("50 wins and 10 MVPs: VIP", Achievements.isVip(vip) and Achievements.earned(vip).vip_trail == true)
+	check("...10 MVPs also gives the MVP title", Achievements.earned(vip).mvp_title == true)
+	check("VIP once earned is kept", Achievements.isVip({ vip = true, wins = 0, stats = {} }))
+	local newly = Achievements.newly({ stats = { headshots = 99 } }, { stats = { headshots = 100 } })
+	check("a goal is announced once, when it's reached", #newly == 1 and newly[1].key == "sharp")
+	-- owning
+	check(
+		"ladder cosmetics: owned with the wins",
+		Locker.owns({ wins = 5 }, "trail_1") and not Locker.owns({ wins = 0 }, "trail_1")
+	)
+	check(
+		"shop cosmetics: owned once bought",
+		Locker.owns({ owned = { shop_echo = true } }, "shop_echo") and not Locker.owns({}, "shop_echo")
+	)
+	check(
+		"goal cosmetics: owned with the stat",
+		Locker.owns(pro, "goal_sharp") and not Locker.owns(pro, "goal_architect")
+	)
+	check("VIP cosmetics: VIPs only", Locker.owns(vip, "vip_skin") and not Locker.owns(pro, "vip_skin"))
+	check("an unknown key isn't owned", not Locker.owns(pro, "nope"))
+	check(
+		"nothing paid adds combat power (cosmetics carry no numbers for fights)",
+		(function()
+			for _, it in Cosmetics.list do
+				if it.damage or it.speed or it.health or it.reload then
+					return false
+				end
+			end
+			return true
+		end)()
+	)
+end
+
 print(`\n{passed} passed, {failed} failed`)
 if failed > 0 then
 	error("Formulas: " .. failed .. " failures")

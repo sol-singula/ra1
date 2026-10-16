@@ -46,6 +46,9 @@ local frontline = 0
 local matchId = 0
 local matchStart = 0
 local mapKey
+local LONGSHOT = 90
+local TRIPLE_SECONDS = 6
+local closest = {} -- [team] = the least share of the way to their losing line they've had left this match
 local stats = {} -- [player] = { joined, kills, deaths, assists, built, shots, hits, headshots, pushed, active }
 local respawnAt = {} -- [player] = time
 local pending = {} -- [player] = true: waiting for the next match to spawn
@@ -68,6 +71,9 @@ local function statsOf(player)
 			hits = 0,
 			headshots = 0,
 			pushed = 0,
+			longshots = 0, -- kills from LONGSHOT studs or more (a goal)
+			triples = 0, -- 3 kills within TRIPLE_SECONDS (a goal)
+			recent = {}, -- (the times of your last kills)
 		}
 		stats[player] = s
 	end
@@ -176,15 +182,39 @@ function MatchService:_onKilled(victim, killer, info)
 				statsOf(a).assists += 1
 			end
 		end
+		-- the goals' feats: a long shot, three kills in a few seconds
+		local kr, vr = killer.Character, victim.Character
+		kr = kr and kr:FindFirstChild("HumanoidRootPart")
+		vr = vr and vr:FindFirstChild("HumanoidRootPart")
+		if kr and vr and (kr.Position - vr.Position).Magnitude >= LONGSHOT then
+			ks.longshots += 1
+		end
+		local t = now()
+		table.insert(ks.recent, t)
+		while #ks.recent > 0 and t - ks.recent[1] > TRIPLE_SECONDS do
+			table.remove(ks.recent, 1)
+		end
+		if #ks.recent >= 3 then
+			ks.triples += 1
+			ks.recent = {}
+		end
 		local cells = Formulas.pushCells(#Players:GetPlayers())
 		push = cells * Constants.CELL
 		ks.pushed += cells
 		local team = teams:Team(killer)
 		frontline = math.clamp(frontline + Formulas.forward(team) * push, arena:LoseLine("red"), arena:LoseLine("blue"))
 		arena:Paint(frontline)
+		-- how close each side has come to losing (a win from 25% or less is a comeback)
+		local lr, lb = arena:LoseLine("red"), arena:LoseLine("blue")
+		closest.red = math.min(closest.red or 1, lr ~= 0 and (frontline - lr) / (0 - lr) or 1)
+		closest.blue = math.min(closest.blue or 1, lb ~= 0 and (lb - frontline) / lb or 1)
 		self.Pushed:Fire(frontline, team, killer, victim)
 	end
+	local vroot = victim.Character and victim.Character:FindFirstChild("HumanoidRootPart")
+	local kp = killer and data:Get(killer)
 	Net.fireAll("Kill", {
+		effect = valid and kp and kp.equipped.effect or nil, -- (the killer's kill effect, drawn where you fell)
+		pos = vroot and vroot.Position or nil,
 		killer = killer and killer.UserId,
 		killerName = killer and killer.DisplayName,
 		killerTeam = killer and teams:Team(killer),
@@ -262,6 +292,7 @@ function MatchService:Victory(winner)
 			seconds = t - math.max(s.joined, matchStart),
 			active = (s.shots + s.built + s.kills + s.assists) > 0,
 			mvp = results.mvpPlayer == p,
+			comeback = team ~= nil and team == winner and (closest[team] or 1) <= 0.25,
 		}
 		for k, v in s do
 			if type(v) == "number" and k ~= "joined" then
@@ -271,12 +302,12 @@ function MatchService:Victory(winner)
 		if team == nil then
 			info.won = nil
 		end
-		local step = progress:Award(p, info)
+		local step, earned = progress:Award(p, info)
 		Net.fire(p, "Results", {
 			winner = winner,
 			rows = results.rows,
 			mvp = results.mvp,
-			you = { team = team, won = info.won, qualified = Formulas.qualifies(info), step = step },
+			you = { team = team, won = info.won, qualified = Formulas.qualifies(info), step = step, earned = earned },
 			next = { key = nextMap.key, name = nextMap.name, tagline = nextMap.tagline },
 		})
 	end
@@ -299,6 +330,7 @@ function MatchService:NewMatch(key)
 	matchId += 1
 	matchStart = now()
 	stats = {}
+	closest = {}
 	respawnAt, pending = {}, {}
 	for _, p in Players:GetPlayers() do
 		statsOf(p)

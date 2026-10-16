@@ -132,7 +132,10 @@ height capped, nothing outside the arena, invalid spots explained. Mobile: a lar
   the Thank-You Trail once; asking for a like gives nothing (no rewards for likes or favourites).
 * Invite a friend: when a friend joins from your invite, you both get the Buddy Trail (friends only, once per
   friend, the friend credited once ever).
-* Monetization later, cosmetic only (bow skins, trails, kill effects, VIP tag and chat colour). No combat power.
+* Monetization, cosmetic only, no combat power (PLAN.md Round 5): Shards (earned and bought) for a daily and
+  weekly rotating shop, a 4-weekly Overdrive Pass with a free and a premium track, a Starter Pack, an optional
+  monthly Shard Club. **VIP and MVP are earned, never sold** (VIP: 50 wins and 10 MVPs; MVP: the match's best wears
+  the crown next match), and so are the goals' cosmetics; each comes with looks nobody can buy.
 
 ## 9. Production
 

@@ -593,6 +593,7 @@ local DEFAULTS = {
 			Size = v3(4, 1, 2),
 			CFrame = cf(v3()),
 			Transparency = 0,
+			LocalTransparencyModifier = 0,
 			Anchored = false,
 			CanCollide = true,
 			CanQuery = true,
@@ -605,6 +606,7 @@ local DEFAULTS = {
 			Size = v3(12, 1, 12),
 			CFrame = cf(v3()),
 			Transparency = 0,
+			LocalTransparencyModifier = 0,
 			Anchored = true,
 			AssemblyLinearVelocity = v3(),
 			Shape = Enum.PartType.Block,
@@ -615,6 +617,7 @@ local DEFAULTS = {
 			Size = v3(4, 1, 2),
 			CFrame = cf(v3()),
 			Transparency = 0,
+			LocalTransparencyModifier = 0,
 			Anchored = false,
 			AssemblyLinearVelocity = v3(),
 		}
@@ -646,6 +649,7 @@ local DEFAULTS = {
 			Size = v3(2, 2, 2),
 			CFrame = cf(v3()),
 			Transparency = 0,
+			LocalTransparencyModifier = 0,
 			Anchored = false,
 			CanCollide = true,
 			CanQuery = true,
@@ -1827,6 +1831,14 @@ function methods.PromptGamePassPurchase(_, player, id)
 end
 function methods.PromptProductPurchase(_, player, id)
 	table.insert(Engine.prompted, { player = player, kind = "product", id = id })
+end
+-- subscriptions: tests set Engine.subscribed[userId .. ":" .. subscriptionId] = true
+Engine.subscribed = {}
+function methods.GetUserSubscriptionStatusAsync(_, player, id)
+	return { IsSubscribed = Engine.subscribed[player.UserId .. ":" .. tostring(id)] == true, IsRenewing = true }
+end
+function methods.PromptSubscriptionPurchase(_, player, id)
+	table.insert(Engine.prompted, { player = player, kind = "subscription", id = id })
 end
 -- TeleportService: tests set Engine.friendPlaces[userId] = { placeId, jobId } and Engine.teleportResult (an
 -- Enum.TeleportResult name) to make the next teleport fail; every TeleportAsync call is kept in Engine.teleports

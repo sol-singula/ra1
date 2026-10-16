@@ -101,6 +101,63 @@ crossbow's magazine, victory, rewards, the next map), 38 client checks (the same
 * Tests: 84 unit, 94 server (joining, the cards, rejoining, a stranger, yourself, the inviter elsewhere), 69 client
   (the button, the I key, the trail's lines, the button in the overlap check).
 
+## Round 5: money, cosmetics only
+
+Nothing for sale changes a fight. VIP, MVP and the goals' rewards can't be bought at all: you earn them, so wearing
+one says what you did.
+
+**Where cosmetics come from** (`Data/Cosmetics`, ownership in `Data/Locker`):
+
+| Source | How | Examples |
+|---|---|---|
+| The 100-win ladder | qualifying wins | trails, bow finishes, kill effects, banners, titles |
+| **Goals (earned only)** | a stat or a feat (`Data/Achievements`) | Sharpshooter (100 headshot kills), Long Shot (10 kills from 90+ studs), Triple (3 kills in 6 s), Headhunter (5 headshot kills in a match), Comeback Kid (win after being nearly pushed off), Bulldozer, Architect, Unbroken (10 in a row), Marathoner, Centurion |
+| **VIP (earned only)** | 50 wins and 10 MVPs, kept for good | a VIP tag over your head, a black halo, the VIP title, Afterimage trail, VIP Shatter effect, Inkwell bow |
+| **MVP (earned only)** | each match's MVP wears the **MVP crown** all next match (★ MVP on their tag); 10 lifetime MVPs: the MVP title; 25: the Spotlight kill effect | |
+| The shop | Shards (◆), while the item is in the rotation | 22 items across all five kinds |
+| The Overdrive Pass | a season's tiers, free or premium | 13 cosmetics a season, that season's only, never sold again |
+| Extras | answering the question, inviting a friend | Thank-You Trail, Buddy Trail |
+| Starter Pack | once | the Founder banner |
+
+**Seen in play:** trails on every arrow (lines in white, black or the team's colours, dashed, spinning, glitching,
+longer tracers, afterimages), bow finishes on your viewmodel, kill effects where your victims fall (seen by
+everyone), the emblem you wear on the team banners you build, your title, VIP and MVP over your head.
+
+**What keeps money coming back (recurring):**
+
+1. **The Overdrive Pass**, a new season every 4 weeks (R$ 349 each season), 30 tiers from playing; **+1 TIER**
+   (R$ 39, buy as often as you like) for the impatient near the season's end.
+2. **The rotating shop:** 4 items a day and a 3-item bundle a week at 30% off, the same on every server, each
+   gone again soon (FOMO without loot boxes: no paid random items, which also keeps it clear of Roblox's rules and
+   countries that ban them).
+3. **Shard packs** (developer products, repeatable): 300 / 800 / 1,800 / 4,000 ◆ for R$ 49 / 119 / 249 / 499,
+   better value as they grow. Shards are also earned in play (about 30-60 a match, more for the day's first win), so
+   free players get there too, and payers are just faster.
+4. **Once:** the Starter Pack (R$ 99: 600 ◆ and the Founder banner) for the first purchase.
+5. **Optional: the Shard Club**, a Roblox subscription (monthly): 600 ◆ every month. Off until its id is set.
+
+**In game:** ◆ SHOP & LOCKER at the top left (or **B**) opens one panel with four tabs: SHOP (with timers to the
+next rotation), PASS (every tier, claim buttons, GET THE PASS, +1 TIER), LOCKER (wear anything you have; what you
+don't have says how to get it), GOALS (VIP progress, MVP, every goal with a progress bar). While it's open the mouse
+is free, the middle of the HUD steps aside, the question card waits, and toasts show on the panel's own line. The
+results card says what the match paid (`+45 ◆ +380 PASS XP`).
+
+**Safety:** Robux receipts are granted exactly once (the receipt ids are kept), and a receipt for someone who
+isn't in the server waits for Roblox to retry. The client only asks: the server checks the rotation, the price, the
+balance, ownership and the tier.
+
+**To do on Roblox before it can sell anything** (the ids go in `src/shared/Data/Shop.lua`; until then Studio gives
+them free so everything can be tried):
+
+* developer products: the 4 Shard packs, the Overdrive Pass, +1 Tier
+* a game pass: the Starter Pack
+* optional: a subscription (the Shard Club), then set `Shop.CLUB.subscriptionId`
+
+Tests: 119 unit (every cosmetic has a look, nothing earned-only is for sale, the rotation agrees everywhere, bundle
+and pack values, the seasons, goals, VIP, owning), 132 server (earning, buying, refusals, receipts once, the pass and
+its claims, the Starter Pack, the club, goals, VIP, the crown, banners), 97 client (the panel's four tabs checked
+piece by piece for overlaps, buying and wearing from it, the HUD stepping aside, kill effects, bow finishes).
+
 ## Next (phase F)
 
 * The Discord log and analytics (the studio's shared pipeline), the dashboard entry.

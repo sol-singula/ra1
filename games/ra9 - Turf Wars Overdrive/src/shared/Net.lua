@@ -20,19 +20,21 @@ Net.ClientEvents = {
 	Slide = 3, -- () a slide while running (MoveService checks the cooldown)
 	Settings = 2, -- (key, value) flips, sensitivity, equipped cosmetics
 	Analytics = 4, -- (kind, data) device info, frame rate (AnalyticsService)
+	Buy = 4, -- ("item", key) | ("bundle") | ("robux", productKey | "starter") (ShopService)
+	Claim = 6, -- (tier, "f" | "p") a tier of the Overdrive Pass
 	Feedback = 2, -- ("enjoy", yes) the "Are you liking the game?" card | ("like", "ok" | "later") the like card
 }
 
 -- Server → client.
 Net.ServerEvents = {
-	"Profile", -- { wins, streak, best, stats, unlocked, equipped, settings }
+	"Profile", -- { wins, streak, best, stats, equipped, owned, shards, vip, season, settings } (ProgressService:View)
 	"Match", -- { phase, ends, map, mapName, frontline, loseRed, loseBlue, push, red, blue, matchId, next? }
 	"Me", -- { team, alive, weapon, ammo, budget, budgetMax, protected }
 	"Arrow", -- { id, by, team, weapon, origin, velocity, t } an arrow everyone draws (the shooter's own is predicted)
 	"ArrowEnd", -- { id, pos, kind = "player" | "structure" | "world" } where it stopped
 	"Hit", -- { damage, head, kill, victim } you hit someone (the hit marker)
 	"Hurt", -- { amount, from } you were hit (from: the shooter's position, for the damage indicator)
-	"Kill", -- { killer, victim, killerTeam, weapon, head, push, assist } the kill feed (everyone)
+	"Kill", -- { killer, victim, killerTeam, weapon, head, push, assist, effect, pos } the kill feed, the kill effect
 	"Structure", -- { kind = "built" | "damaged" | "destroyed", id, key, team, hp, max }
 	"Toast", -- text, kind ("info" | "good" | "bad")
 	"Alert", -- big centre message: text, color, seconds?

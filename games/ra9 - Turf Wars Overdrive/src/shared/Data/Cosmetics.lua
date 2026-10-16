@@ -1,0 +1,271 @@
+--[[
+Every cosmetic in the game, wherever it comes from, and what it looks like. All cosmetic: nothing here changes a
+shot, a hit, health, speed or building (master plan §1: fair competition, nothing paid adds combat power).
+
+  kind     trail (your arrows) | skin (your bow) | effect (what a kill of yours looks like) | banner (the emblem on
+           your team banners) | title (under your name)
+  rarity   common | rare | epic | legendary (the shop's price, the card's colour band)
+  source   how it's had:
+             ladder       the 100-win ladder (Data/Ladder): win N
+             shop         bought with Shards (◆) while it's in the shop's rotation (Data/Shop)
+             pass         the season's Overdrive Pass (Data/Season), free or premium track; never sold again
+             goal         earned only: a stat or a feat (Data/Achievements); never sold
+             vip / mvp    earned only: comes with VIP or MVP status (Data/Achievements); never sold
+             extra        given for something you did (Data/Extras: answering, inviting a friend)
+             starter      the Starter Pack (once, Robux)
+  look     what the client draws (LooksController, ArrowController, WeaponController, BuildService):
+             trail   lines = { { x, y, width, color } } beside the tracer, plus flags: dash, spin, jitter,
+                     length (x the tracer), ghost (afterimages)
+             skin    grip, limbs (colour tokens), material
+             effect  shape (cubes | ring | shards | pixels | rise | spotlight), color, count
+             banner  emblem (one character)
+             title   text
+           colour tokens: "team" (your team's colour), "light" (a lighter shade of it), "white", "ink" (black)
+
+  Cosmetics.get(key)         the item (ladder, extras and season items are resolved here too), or nil
+  Cosmetics.list             every fixed item (not the generated season ones)
+]]
+local Constants = require(script.Parent.Parent.Constants)
+local Ladder = require(script.Parent.Ladder)
+local Extras = require(script.Parent.Extras)
+
+local Cosmetics = {}
+
+Cosmetics.KINDS = { "trail", "skin", "effect", "banner", "title" }
+Cosmetics.KIND_NAME = { trail = "TRAIL", skin = "BOW", effect = "KILL EFFECT", banner = "BANNER", title = "TITLE" }
+Cosmetics.RARITIES = { "common", "rare", "epic", "legendary" }
+
+-- Looks, by name, so the ladder, the shop and the pass can share them -----------------------------------------
+local TRAIL = {
+	["White Line"] = { lines = { { 0.2, 0.06, 0.06, "white" } } },
+	["Dotted"] = { dash = true, lines = { { 0, 0.16, 0.08, "white" } } },
+	["Long Streak"] = { length = 1.8 },
+	["Twin Lines"] = { lines = { { 0.2, 0, 0.06, "team" }, { -0.2, 0, 0.06, "team" } } },
+	["Spiral"] = { spin = true, lines = { { 0.24, 0, 0.06, "white" }, { -0.24, 0, 0.06, "light" } } },
+	["Comet"] = { lines = { { 0, 0, 0.22, "light" } }, length = 0.6 },
+	["Glitch"] = { jitter = true, lines = { { 0.18, 0.1, 0.05, "white" }, { -0.14, -0.08, 0.05, "ink" } } },
+	["Shards"] = { dash = true, lines = { { 0.16, 0, 0.1, "light" }, { -0.16, 0, 0.1, "white" } } },
+	["Ribbon"] = { lines = { { 0, -0.1, 0.3, "light" } } },
+	["Neon"] = { lines = { { 0, 0, 0.03, "white" } }, length = 1.3 },
+	-- the extras
+	["Thank-You Trail"] = { lines = { { 0.2, 0.06, 0.06, "white" } } },
+	["Buddy Trail"] = { lines = { { 0.22, 0, 0.06, "white" }, { -0.22, 0, 0.06, "white" } } },
+	-- shop
+	["Barcode"] = { dash = true, lines = { { 0.12, 0, 0.04, "ink" }, { -0.12, 0, 0.04, "ink" } } },
+	["Static Line"] = { jitter = true, lines = { { 0, 0.14, 0.04, "white" } } },
+	["Double Helix"] = { spin = true, lines = { { 0.3, 0, 0.05, "team" }, { -0.3, 0, 0.05, "white" } } },
+	["Inkline"] = { lines = { { 0, 0.1, 0.07, "ink" } } },
+	["Tripwire"] = { lines = { { 0.24, 0, 0.04, "white" }, { -0.24, 0, 0.04, "white" }, { 0, 0.22, 0.04, "white" } } },
+	["Echo"] = { ghost = 2 },
+	["Overcharge"] = { lines = { { 0, 0, 0.3, "light" }, { 0, 0, 0.04, "white" } }, length = 1.5 },
+	-- goals and status
+	["Crosshair Line"] = { dash = true, lines = { { 0, 0.2, 0.05, "ink" }, { 0, -0.2, 0.05, "ink" } } },
+	["Long Shot"] = { length = 2.4, lines = { { 0, 0, 0.03, "white" } } },
+	["Afterimage"] = { ghost = 3, lines = { { 0, 0.12, 0.04, "ink" } } },
+}
+local SKIN = {
+	["Matte Black"] = { grip = "ink", limbs = "ink", material = "SmoothPlastic" },
+	["Chalk"] = { grip = "white", limbs = "white", material = "Sand" },
+	["Glass"] = { grip = "team", limbs = "white", material = "Glass" },
+	["Chrome"] = { grip = "ink", limbs = "white", material = "Metal" },
+	["Marble"] = { grip = "white", limbs = "white", material = "Marble" },
+	["Gold Edge"] = { grip = "ink", limbs = "light", material = "Metal" },
+	["Carbon"] = { grip = "ink", limbs = "ink", material = "Fabric" },
+	["Frosted"] = { grip = "light", limbs = "white", material = "Ice" },
+	["Obsidian"] = { grip = "ink", limbs = "ink", material = "Glass" },
+	["Prism"] = { grip = "team", limbs = "light", material = "Neon" },
+	-- shop
+	["Team Neon"] = { grip = "team", limbs = "team", material = "Neon" },
+	["Porcelain"] = { grip = "white", limbs = "light", material = "SmoothPlastic" },
+	["Graphite"] = { grip = "ink", limbs = "light", material = "Slate" },
+	["Hologram"] = { grip = "light", limbs = "light", material = "ForceField" },
+	-- goals and status
+	["Bulldozer"] = { grip = "ink", limbs = "white", material = "DiamondPlate" },
+	["Inkwell"] = { grip = "ink", limbs = "ink", material = "Neon" },
+}
+local EFFECT = {
+	["Shatter"] = { shape = "shards", color = "white", count = 10 },
+	["Poof"] = { shape = "cubes", color = "light", count = 8 },
+	["Cubes"] = { shape = "cubes", color = "team", count = 12 },
+	["Ring"] = { shape = "ring", color = "white", count = 12 },
+	["Fold"] = { shape = "pixels", color = "ink", count = 9 },
+	["Static"] = { shape = "pixels", color = "white", count = 16 },
+	["Pixels"] = { shape = "pixels", color = "team", count = 16 },
+	["Spark"] = { shape = "shards", color = "light", count = 14 },
+	["Slice"] = { shape = "ring", color = "ink", count = 8 },
+	["Supernova"] = { shape = "ring", color = "team", count = 20 },
+	-- shop
+	["Confetti"] = { shape = "cubes", color = "white", count = 20 },
+	["Ink Splash"] = { shape = "shards", color = "ink", count = 14 },
+	["Double Ring"] = { shape = "ring", color = "light", count = 18 },
+	["Ascend"] = { shape = "rise", color = "white", count = 10 },
+	-- goals and status
+	["Centurion"] = { shape = "ring", color = "ink", count = 24 },
+	["Triple Shatter"] = { shape = "shards", color = "team", count = 24 },
+	["VIP Shatter"] = { shape = "shards", color = "ink", count = 18 },
+	["Spotlight"] = { shape = "spotlight", color = "white", count = 12 },
+}
+local EMBLEM = {
+	Chevron = "⌃",
+	Star = "★",
+	Arrow = "➤",
+	Crown = "♛",
+	Bolt = "ϟ",
+	Eye = "◉",
+	Wing = "≫",
+	Skull = "☠",
+	Sun = "☀",
+	Infinity = "∞",
+	-- shop, goals, starter
+	Diamond = "◆",
+	Target = "◎",
+	Spade = "♠",
+	Anchor = "⚓",
+	Blueprint = "▦",
+	Founder = "✦",
+}
+
+local function look(kind, name)
+	local base = string.gsub(name, " I+$", "")
+	if kind == "trail" then
+		return TRAIL[base] or TRAIL["White Line"]
+	elseif kind == "skin" then
+		return SKIN[base] or SKIN["Matte Black"]
+	elseif kind == "effect" then
+		return EFFECT[base] or EFFECT["Shatter"]
+	elseif kind == "banner" then
+		return { emblem = EMBLEM[base] or "★" }
+	end
+	return { text = name }
+end
+Cosmetics.look = look
+
+-- The fixed items ---------------------------------------------------------------------------------------------
+local function item(key, kind, name, rarity, source, extra)
+	local it = { key = key, kind = kind, name = name, rarity = rarity, source = source, look = look(kind, name) }
+	for k, v in extra or {} do
+		it[k] = v
+	end
+	return it
+end
+
+Cosmetics.list = {
+	-- the shop's pool (Data/Shop rotates through these)
+	item("shop_barcode", "trail", "Barcode", "common", "shop"),
+	item("shop_inkline", "trail", "Inkline", "common", "shop"),
+	item("shop_static", "trail", "Static Line", "rare", "shop"),
+	item("shop_tripwire", "trail", "Tripwire", "rare", "shop"),
+	item("shop_helix", "trail", "Double Helix", "epic", "shop"),
+	item("shop_echo", "trail", "Echo", "epic", "shop"),
+	item("shop_overcharge", "trail", "Overcharge", "legendary", "shop"),
+	item("shop_porcelain", "skin", "Porcelain", "common", "shop"),
+	item("shop_graphite", "skin", "Graphite", "rare", "shop"),
+	item("shop_teamneon", "skin", "Team Neon", "epic", "shop"),
+	item("shop_hologram", "skin", "Hologram", "legendary", "shop"),
+	item("shop_confetti", "effect", "Confetti", "common", "shop"),
+	item("shop_ink", "effect", "Ink Splash", "rare", "shop"),
+	item("shop_doublering", "effect", "Double Ring", "epic", "shop"),
+	item("shop_ascend", "effect", "Ascend", "legendary", "shop"),
+	item("shop_diamond", "banner", "Diamond", "common", "shop"),
+	item("shop_target", "banner", "Target", "rare", "shop"),
+	item("shop_spade", "banner", "Spade", "rare", "shop"),
+	item("shop_anchor", "banner", "Anchor", "epic", "shop"),
+	item("shop_t_sniper", "title", "Line Breaker", "rare", "shop"),
+	item("shop_t_ghost", "title", "Ghost", "epic", "shop"),
+	item("shop_t_menace", "title", "Menace", "legendary", "shop"),
+	-- earned only: goals (Data/Achievements)
+	item("goal_sharp", "trail", "Crosshair Line", "epic", "goal"),
+	item("goal_longshot", "trail", "Long Shot", "epic", "goal"),
+	item("goal_bulldozer", "skin", "Bulldozer", "epic", "goal"),
+	item("goal_centurion", "effect", "Centurion", "legendary", "goal"),
+	item("goal_triple", "effect", "Triple Shatter", "epic", "goal"),
+	item("goal_architect", "banner", "Blueprint", "epic", "goal"),
+	item("goal_unbroken", "title", "Unbroken", "legendary", "goal"),
+	item("goal_marathon", "title", "Marathoner", "rare", "goal"),
+	item("goal_headhunter", "title", "Headhunter", "epic", "goal"),
+	item("goal_comeback", "title", "Comeback Kid", "epic", "goal"),
+	-- earned only: VIP (Data/Achievements.VIP)
+	item("vip_title", "title", "VIP", "legendary", "vip"),
+	item("vip_trail", "trail", "Afterimage", "legendary", "vip"),
+	item("vip_effect", "effect", "VIP Shatter", "legendary", "vip"),
+	item("vip_skin", "skin", "Inkwell", "legendary", "vip"),
+	-- earned only: MVP
+	item("mvp_title", "title", "MVP", "epic", "mvp", { mvps = 10 }),
+	item("mvp_effect", "effect", "Spotlight", "legendary", "mvp", { mvps = 25 }),
+	-- the Starter Pack
+	item("starter_founder", "banner", "Founder", "legendary", "starter"),
+}
+
+local byKey = {}
+for _, it in Cosmetics.list do
+	byKey[it.key] = it
+end
+for _, s in Ladder.steps do
+	byKey[s.key] = {
+		key = s.key,
+		kind = s.kind,
+		name = s.name,
+		rarity = s.big and "legendary" or (s.win > 60 and "epic" or (s.win > 25 and "rare" or "common")),
+		source = "ladder",
+		win = s.win,
+		look = look(s.kind, s.name),
+	}
+end
+for _, e in Extras.list do
+	byKey[e.key] = { key = e.key, kind = e.kind, name = e.name, rarity = "rare", source = "extra", desc = e.desc }
+	byKey[e.key].look = look(e.kind, e.name)
+end
+
+-- Season items are made from the season and the tier (Data/Season names them): "s<season>_<tier><track>"
+local seasonItem -- (set by Data/Season, which knows what each tier gives)
+function Cosmetics.setSeasonResolver(fn)
+	seasonItem = fn
+end
+
+function Cosmetics.get(key)
+	if type(key) ~= "string" then
+		return nil
+	end
+	local it = byKey[key]
+	if it then
+		return it
+	end
+	if seasonItem and string.match(key, "^s%d+_%d+[fp]$") then
+		it = seasonItem(key)
+		if it then
+			it.look = it.look or look(it.kind, it.name)
+			byKey[key] = it
+		end
+		return it
+	end
+	return nil
+end
+
+-- A colour token for a team: "team", "light", "white", "ink".
+local WHITE, INK = Color3.fromRGB(250, 250, 250), Color3.fromRGB(22, 22, 26)
+local TEAM = Constants.TEAM_COLOR
+function Cosmetics.color(token, team)
+	local c = TEAM[team or ""] or Color3.fromRGB(235, 40, 45)
+	if token == "team" then
+		return c
+	elseif token == "light" then
+		return c:Lerp(WHITE, 0.5)
+	elseif token == "ink" then
+		return INK
+	end
+	return WHITE
+end
+
+-- A trail look for an equipped trail key (nil: the plain tracer).
+function Cosmetics.trailLook(key)
+	local it = Cosmetics.get(key)
+	return it and it.kind == "trail" and it.look or nil
+end
+
+-- A lap of the ladder (II, III) draws its trail a little longer.
+function Cosmetics.lap(name)
+	local roman = string.match(name or "", " (I+)$")
+	return roman and #roman or 1
+end
+
+return Cosmetics

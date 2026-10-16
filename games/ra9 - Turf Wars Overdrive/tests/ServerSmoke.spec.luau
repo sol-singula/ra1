@@ -9,6 +9,7 @@ the results, a qualifying win on the ladder, and the next map loading in the sam
 ]]
 local Engine = loadModule("tests/mock/Engine.luau")
 local Vector3 = Engine.Vector3
+local Enum = Engine.Enum
 local CFrame = Engine.CFrame
 
 local passed, failed = 0, 0
@@ -509,6 +510,196 @@ do
 	Engine.removePlayer(late)
 	Engine.removePlayer(host2)
 	Engine.advance(1)
+end
+
+-- Money: Shards, the shop, Robux, the pass, goals, VIP, MVP --------------------------------------------------------
+do
+	local Economy = service("EconomyService")
+	local ShopS = service("ShopService")
+	local SeasonS = service("SeasonService")
+	local Progress = service("ProgressService")
+	local Status = service("StatusService")
+	local Shop = Engine.require(tree.shared.Data.Shop)
+	local Season = Engine.require(tree.shared.Data.Season)
+	local Cosmetics = Engine.require(tree.shared.Data.Cosmetics)
+	local MPS = Engine.game:GetService("MarketplaceService")
+	local rawSend = send
+	local function send(...)
+		Engine.advance(0.6) -- (each remote has a per-player rate limit)
+		rawSend(...)
+	end
+	local p = Data:Get(red)
+	check("matches pay Shards", (p.shards or 0) > 0, p.shards)
+	check("...and pass XP", (p.season and p.season.xp or 0) > 0)
+	check(
+		"the results say what you earned",
+		results and results.you and results.you.earned ~= nil and (results.you.earned.shards or 0) > 0
+	)
+	-- buying with Shards
+	local today = Shop.daily(Shop.dayOf(ShopS.now()))
+	local key = today[1]
+	local it = Cosmetics.get(key)
+	local price = Shop.price(it)
+	p.shards = price - 1
+	send(red, "Buy", "item", key)
+	check("not enough Shards: no sale", p.shards == price - 1 and not (p.owned or {})[key])
+	Economy:Add(red, 1)
+	send(red, "Buy", "item", key)
+	check("today's item bought with Shards", p.owned[key] == true and p.shards == 0)
+	check("...and worn at once", p.equipped[it.kind] == key)
+	Economy:Add(red, 5000)
+	local before = p.shards
+	send(red, "Buy", "item", key)
+	check("...and never sold twice", p.shards == before)
+	local notToday
+	for _, k in Shop.pool do
+		if not table.find(today, k) then
+			notToday = k
+			break
+		end
+	end
+	send(red, "Buy", "item", notToday)
+	check("an item not in today's shop can't be bought", not p.owned[notToday] and p.shards == before)
+	send(red, "Buy", "item", "goal_sharp")
+	send(red, "Buy", "item", "vip_title")
+	check(
+		"goal and VIP cosmetics can't be bought",
+		not p.owned.goal_sharp and not p.owned.vip_title and p.shards == before
+	)
+	local bundle = Shop.weekly(Shop.weekOf(ShopS.now()))
+	send(red, "Buy", "bundle")
+	check(
+		"the week's bundle",
+		p.owned[bundle.keys[1]] and p.owned[bundle.keys[3]] and p.shards == before - bundle.price
+	)
+	-- Robux: receipts, granted exactly once
+	Shop.PACKS[2].id = 9001
+	Shop.PASS.id = 9002
+	Shop.TIER.id = 9003
+	local s0 = p.shards
+	local function receipt(id, pid)
+		return MPS.ProcessReceipt({ PlayerId = red.UserId, ProductId = pid, PurchaseId = id })
+	end
+	local d1 = receipt("buy-1", 9001)
+	check("a Shard pack", d1 == Enum.ProductPurchaseDecision.PurchaseGranted and p.shards == s0 + Shop.PACKS[2].shards)
+	receipt("buy-1", 9001)
+	check("...the same receipt again gives nothing", p.shards == s0 + Shop.PACKS[2].shards)
+	check(
+		"a receipt for someone not here waits (Roblox retries)",
+		MPS.ProcessReceipt({ PlayerId = 424242, ProductId = 9001, PurchaseId = "x" })
+			== Enum.ProductPurchaseDecision.NotProcessedYet
+	)
+	-- the pass
+	local st = SeasonS:State(red)
+	st.xp = 0
+	st.claimed = {}
+	send(red, "Claim", 1, "p")
+	check("the premium track needs the pass", not st.claimed["1p"])
+	local mPass = mark()
+	receipt("buy-2", 9002)
+	check("the Overdrive Pass: premium", st.premium == true and firedSince(mPass, "Unlock", red) ~= nil)
+	send(red, "Claim", 1, "p")
+	check("...but tier 1 needs tier 1", not st.claimed["1p"])
+	receipt("buy-3", 9003)
+	check("+1 tier", Season.tierOf(st.xp) == 1)
+	send(red, "Claim", 1, "p")
+	check("premium tier 1 claimed: the season title", st.claimed["1p"] and p.owned[`s{st.n}_1p`] == true)
+	send(red, "Settings", "equip", { kind = "title", key = `s{st.n}_1p` })
+	check("...and it can be worn", p.equipped.title == `s{st.n}_1p`)
+	local sh = p.shards
+	send(red, "Claim", 1, "p")
+	check("...once", p.shards == sh)
+	SeasonS:AddTiers(red, 1)
+	local s2 = p.shards
+	send(red, "Claim", 2, "f")
+	check("a free tier's Shards", p.shards == s2 + Season.reward(st.n, 2, "f").amount)
+	send(red, "Claim", 5, "f")
+	check("a tier not reached can't be claimed", not st.claimed["5f"])
+	-- equip checks
+	send(red, "Settings", "equip", { kind = "trail", key = "shop_overcharge" })
+	check("you can't wear what you don't own", p.equipped.trail ~= "shop_overcharge" or p.owned.shop_overcharge)
+	send(red, "Settings", "equip", { kind = "trail", key = false })
+	check("...and you can wear nothing", p.equipped.trail == nil)
+	-- the Starter Pack
+	local s3 = p.shards
+	check(
+		"the Starter Pack",
+		ShopS:GrantStarter(red) and p.shards == s3 + Shop.STARTER.shards and p.owned.starter_founder
+	)
+	check("...once", not ShopS:GrantStarter(red))
+	-- the Shard Club (a subscription): a month's Shards, once a month
+	Shop.CLUB.subscriptionId = "EXP-TEST"
+	Engine.subscribed[red.UserId .. ":EXP-TEST"] = true
+	local s4 = p.shards
+	check("the Shard Club's monthly Shards", ShopS:CheckClub(red) and p.shards == s4 + Shop.CLUB.monthlyShards)
+	check("...once a month", not ShopS:CheckClub(red))
+	Shop.CLUB.subscriptionId = nil
+	-- goals: reached at a match's end, announced, worn
+	p.stats.headshots = 99
+	local mGoal = mark()
+	Progress:Award(red, { won = false, seconds = 200, active = true, kills = 1, headshots = 1 })
+	local g = firedSince(mGoal, "Unlock", red)
+	check(
+		"a goal reached: its card",
+		g and tostring(g.args[1].title):find("SHARPSHOOTER") ~= nil,
+		g and g.args[1].title
+	)
+	check("...its reward worn", p.equipped.trail == "goal_sharp")
+	-- VIP: earned, never bought
+	p.wins, p.stats.mvps = 49, 10
+	local mVip = mark()
+	Progress:Award(red, { won = true, seconds = 300, active = true, kills = 3 })
+	check("50 wins and 10 MVPs: VIP", p.vip == true and red:GetAttribute("VIP") == true)
+	check("...with its card", firedSince(mVip, "Unlock", red, function(e)
+		return e[1].title == "YOU'RE VIP!"
+	end) ~= nil)
+	Engine.advance(0.2)
+	local tag = red.Character and red.Character:FindFirstChild("StatusTag")
+	local tagText = ""
+	for _, l in tag and tag:GetChildren() or {} do
+		tagText ..= l.Text .. "|"
+	end
+	check("...a VIP tag over their head", tagText:find("VIP") ~= nil, tagText)
+	check("...and the halo", red.Character:FindFirstChild("VipHalo") ~= nil)
+	-- MVP: the crown through the next match
+	Status:SetMvp(blue)
+	Engine.advance(0.1)
+	check("the MVP wears the crown", blue.Character and blue.Character:FindFirstChild("MvpCrown") ~= nil)
+	Status:SetMvp(nil)
+	check("...until the next MVP", blue.Character:FindFirstChild("MvpCrown") == nil)
+	-- kill effects ride on the kill feed; banners carry the builder's emblem
+	Data:Get(blue).owned.shop_ink = true
+	send(blue, "Settings", "equip", { kind = "effect", key = "shop_ink" })
+	check("...worn", Data:Get(blue).equipped.effect == "shop_ink")
+	red:SetAttribute("LookBanner", "starter_founder")
+	local root = rootOf(red)
+	Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + 1)
+	Match:NewMatch()
+	Engine.advance(1)
+	local sx = Teams:Team(red) == "red" and -40 or 40
+	stand(red, Vector3.new(sx, 3, -12))
+	-- (the first free spot near you: each map has its own walls and columns)
+	local placed, why
+	for _, dz in { -28, -20, -4, 4, 12, 20, 28, -36, 36 } do
+		for _, dx in { -4, 0, 4, -8, 8 } do
+			if not placed then
+				local bx, bz = Formulas.cellOf(sx + dx, dz)
+				placed, why = Build:Place(red, "banner", bx, bz, 0)
+			end
+		end
+	end
+	local emblem = false
+	for _, m in ws:GetDescendants() do
+		if m.Name == "Emblem" then
+			emblem = true
+		end
+	end
+	check(
+		"a banner shows the emblem its builder wears",
+		emblem,
+		tostring(placed) .. " " .. tostring(why) .. " " .. tostring(ws:GetAttribute("Phase"))
+	)
+	_ = root
 end
 
 print(`\n{passed} passed, {failed} failed`)

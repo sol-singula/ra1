@@ -50,6 +50,13 @@ local function defaults()
 		settings = { flips = true, sensitivity = 1, shake = true, weapon = "bow" },
 		feedback = { askedDay = 0, likeAskedDay = 0 }, -- the winners' cards (FeedbackService)
 		extras = {}, -- [id] = true: cosmetics from outside the ladder (Data/Extras)
+		shards = 0, -- ◆, earned and bought (EconomyService)
+		owned = {}, -- [cosmeticKey] = true: bought, claimed from the pass, the Starter Pack (Data/Locker)
+		receipts = {}, -- the Robux receipts already granted (never twice)
+		vip = false, -- earned once, kept (Data/Achievements.VIP)
+		starter = false, -- the Starter Pack's Shards and banner given
+		daily = { day = 0, played = false, won = false }, -- the day's first match and first win pay more
+		club = { month = 0 }, -- the Shard Club's monthly Shards, last month given
 		invite = { friends = {}, count = 0 }, -- by: who brought you in; friends: the ones you brought (InviteService)
 		meta = { createdAt = os.time(), lastSeen = os.time(), lock = nil },
 	}
