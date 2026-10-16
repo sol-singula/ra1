@@ -5,6 +5,9 @@ The winners' cards (FeedbackService decides who and when):
   "like"   Give the game a 👍 Like on its page: it really helps.   ⭐ FAVOURITE / LATER
            (Roblox doesn't let a game press its like button; FAVOURITE opens Roblox's own favourite prompt)
 
+Answering the first (either way) gives the Thank-You Trail; its card comes up in the HUD's popup stack.
+
+Everything inside has its own band (title 16-46, words 50-80, buttons 88-134 of 146) and the words shrink to fit.
 The buttons are Modal, so the mouse comes free of first person while the card is up. Y / N answer from the
 keyboard. The card closes itself when the next game starts.
 ]]
@@ -92,10 +95,10 @@ function FeedbackController.show(kind)
 			Parent = card,
 		})
 		Theme.text({
-			Text = "Tell us straight. It shapes what we build next.",
-			Size = UDim2.new(1, -20, 0, 20),
-			Position = UDim2.fromOffset(10, 52),
-			TextSize = 14,
+			Text = "Tell us straight: YES or NO, you get the Thank-You Trail.",
+			Size = UDim2.new(1, -20, 0, 30),
+			Position = UDim2.fromOffset(10, 50),
+			fit = 14,
 			TextXAlignment = Enum.TextXAlignment.Center,
 			TextColor3 = C.muted,
 			Parent = card,
@@ -114,9 +117,9 @@ function FeedbackController.show(kind)
 		})
 		Theme.text({
 			Text = "Glad you're having fun! A like on the game's page really helps.",
-			Size = UDim2.new(1, -20, 0, 34),
+			Size = UDim2.new(1, -20, 0, 30),
 			Position = UDim2.fromOffset(10, 50),
-			TextSize = 14,
+			fit = 14,
 			TextXAlignment = Enum.TextXAlignment.Center,
 			TextColor3 = C.muted,
 			Parent = card,

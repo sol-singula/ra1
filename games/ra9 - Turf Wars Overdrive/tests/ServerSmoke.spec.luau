@@ -331,8 +331,34 @@ Engine.advance(Constants.FEEDBACK_ASK_DELAY + 0.3)
 local ask = firedSince(mAsk, "Ask", red)
 check("the winners are asked if they like the game", ask and ask.args[1].kind == "enjoy")
 check("...the losers aren't", firedSince(mAsk, "Ask", blue) == nil)
+local mThanks = mark()
 send(red, "Feedback", "enjoy", true)
 check("the answer is kept", Data:Get(red).feedback.answer == true and Data:Get(red).feedback.pendingLike == true)
+local thanks = firedSince(mThanks, "Unlock", red)
+check(
+	"answering gives the Thank-You Trail",
+	Data:Get(red).extras.thanks == true and Data:Get(red).equipped.trail == "extra_thanks"
+)
+check(
+	"...with a THANK YOU card",
+	thanks and thanks.args[1].extra == true and thanks.args[1].step.key == "extra_thanks",
+	thanks and thanks.args[1].title
+)
+check(
+	"...and it can be equipped again later (an owned extra)",
+	(function()
+		Data:Get(red).equipped.trail = nil
+		send(red, "Settings", "equip", { kind = "trail", key = "extra_thanks" })
+		return Data:Get(red).equipped.trail == "extra_thanks"
+	end)()
+)
+check(
+	"...but nobody else can equip it",
+	(function()
+		send(blue, "Settings", "equip", { kind = "trail", key = "extra_thanks" })
+		return Data:Get(blue).equipped.trail ~= "extra_thanks"
+	end)()
+)
 Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + 1)
 check("the next map loads in the same server", ws:GetAttribute("MapKey") == results.next.key, ws:GetAttribute("MapKey"))
 check("...the frontline resets", ws:GetAttribute("Frontline") == 0)
@@ -381,8 +407,10 @@ do
 	Engine.advance(Constants.FEEDBACK_ASK_DELAY + 0.3)
 	local a = firedSince(m5, "Ask", red)
 	check("their next win asks for a like", a and a.args[1].kind == "like", a and a.args[1].kind)
+	local mLike = mark()
 	send(red, "Feedback", "like", "ok")
 	check("...and remembers it", Data:Get(red).feedback.likeAnswer == "ok")
+	check("...with no reward for it (only answering the question is thanked)", firedSince(mLike, "Unlock", red) == nil)
 	Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + 1)
 	local m6 = mark()
 	Match:Victory(mine)
@@ -391,6 +419,28 @@ do
 	check(
 		"an answer to a card you weren't shown is ignored",
 		not service("FeedbackService"):Answer(red, "enjoy", false)
+	)
+	check("the thank-you is given once only", not service("FeedbackService"):Thank(red))
+	-- a NO is thanked the same as a YES
+	local nay = service("FeedbackService")
+	nay:Ask(blue, "enjoy")
+	send(blue, "Feedback", "enjoy", false)
+	check("a NO gets the Thank-You Trail too", Data:Get(blue).extras.thanks == true)
+	-- the trail rides on their arrows
+	Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + Constants.BUILD_SECONDS + 1.5)
+	local m7 = mark()
+	send(
+		red,
+		"Shoot",
+		rootOf(red).Position + Vector3.new(0, 1.5, 0),
+		Vector3.new(Teams:Team(red) == "red" and 1 or -1, 0, 0),
+		99
+	)
+	local shotSeen = firedSince(m7, "Arrow", nil)
+	check(
+		"everyone sees the trail they wear on their arrows",
+		shotSeen and shotSeen.args[1].trail == "extra_thanks",
+		shotSeen and tostring(shotSeen.args[1].trail) or ws:GetAttribute("Phase")
 	)
 end
 

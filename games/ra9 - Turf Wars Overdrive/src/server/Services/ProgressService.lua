@@ -14,6 +14,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
+local Extras = require(ReplicatedStorage.Shared.Data.Extras)
 local Ladder = require(ReplicatedStorage.Shared.Data.Ladder)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
@@ -37,6 +38,7 @@ function ProgressService:View(player)
 		best = p.best,
 		stats = p.stats,
 		equipped = p.equipped,
+		extras = p.extras,
 		settings = p.settings,
 		next = Ladder.at(p.wins + 1),
 		ladder = Constants.LADDER,
@@ -102,12 +104,16 @@ function ProgressService:Init(registry)
 		elseif key == "shake" and type(value) == "boolean" then
 			p.settings.shake = value
 		elseif key == "equip" and type(value) == "table" then
-			-- (only what you've unlocked)
+			-- (only what you've unlocked, on the ladder or as an extra)
 			local k, item = value.kind, value.key
 			for _, s in Ladder.unlocked(p.wins) do
 				if s.kind == k and s.key == item then
 					p.equipped[k] = item
 				end
+			end
+			local e = Extras.get(item)
+			if e and e.kind == k and Extras.owns(p, item) then
+				p.equipped[k] = item
 			end
 		end
 		self:Push(player)

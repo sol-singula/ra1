@@ -186,6 +186,21 @@ check(
 card.Yes.Activated:Fire()
 Engine.advance(0.2)
 check("YES goes to the server", Engine.lastClientEvent("Feedback") ~= nil and Feedback.current() == nil)
+local popups = Hud.popups()
+local thanksCard = popups[#popups]
+check(
+	"...and a THANK YOU card comes up in the popup stack",
+	thanksCard and thanksCard.Name == "Thanks" and thanksCard.Head.Text == "THANK YOU!",
+	thanksCard and thanksCard.Name
+)
+check("...showing the trail", thanksCard and thanksCard:FindFirstChild("Preview") ~= nil)
+check(
+	"...worn straight away (the profile says so)",
+	((Store.get("profile") or {}).equipped or {}).trail == "extra_thanks"
+)
+local twins0 = Arrows.twins()
+Arrows.predict(Vector3.new(0, 5, 0), Vector3.new(80, 0, 0), team, 4242)
+check("your arrows draw the Thank-You Trail", Arrows.twins() == twins0 + 1)
 Engine.advance(Constants.RESULTS_CARD_SECONDS)
 check(
 	"after the results, a big countdown",
@@ -195,6 +210,215 @@ check(
 Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + 1)
 check("the next match: BUILD again", refs.phase.Text:find("BUILD") ~= nil, refs.phase.Text)
 check("...the results close", refs.results == nil)
+
+-- Nothing on screen overlaps ------------------------------------------------------------------------------------
+-- (the mock draws nothing, so each piece's rectangle is worked out from its Position, Size and AnchorPoint on the
+-- smallest canvas the screens get, 1240 x 560, the way Roblox lays them out)
+do
+	local Theme = Engine.require(tree.client.UI.Theme)
+	local W, H = Theme.MIN_WIDTH, Theme.DESIGN.Y
+	local function rect(o)
+		local p = o.Parent
+		local px, py, pw, ph = 0, 0, W, H
+		if p and not p:IsA("ScreenGui") then
+			px, py, pw, ph = table.unpack(rect(p))
+		end
+		local ap = o.AnchorPoint or Vector2.new(0, 0)
+		local w = o.Size.X.Scale * pw + o.Size.X.Offset
+		local h = o.Size.Y.Scale * ph + o.Size.Y.Offset
+		local x = px + o.Position.X.Scale * pw + o.Position.X.Offset - ap.X * w
+		local y = py + o.Position.Y.Scale * ph + o.Position.Y.Offset - ap.Y * h
+		return { x, y, w, h }
+	end
+	local function shown(o)
+		local x = o
+		while x and not x:IsA("ScreenGui") do
+			if x.Visible == false then
+				return false
+			end
+			x = x.Parent
+		end
+		return o.Parent ~= nil
+	end
+	local function hits(a, b)
+		local ra, rb = rect(a), rect(b)
+		return ra[1] < rb[1] + rb[3] and rb[1] < ra[1] + ra[3] and ra[2] < rb[2] + rb[4] and rb[2] < ra[2] + ra[4]
+	end
+	local function onScreen(o)
+		local r = rect(o)
+		return r[1] >= 0 and r[2] >= 0 and r[1] + r[3] <= W and r[2] + r[4] <= H
+	end
+	-- every pair of the pieces showing is apart, and each is on the screen
+	local function apart(what, list)
+		local bad = {}
+		local live = {}
+		for name, o in list do
+			if o and shown(o) then
+				table.insert(live, { name, o })
+				if not onScreen(o) then
+					table.insert(bad, name .. " off screen")
+				end
+			end
+		end
+		for i = 1, #live do
+			for j = i + 1, #live do
+				if hits(live[i][2], live[j][2]) then
+					table.insert(bad, live[i][1] .. " x " .. live[j][1])
+				end
+			end
+		end
+		check(what .. ": nothing overlaps", #bad == 0, table.concat(bad, ", "))
+		return #live
+	end
+	-- inside a card: every text and button within its card, none on another
+	local function tidy(what, card)
+		local bad = {}
+		local kids = {}
+		local cr = rect(card)
+		for _, k in card:GetChildren() do
+			if k:IsA("TextLabel") or k:IsA("TextButton") or (k:IsA("Frame") and k.Name == "Preview") then
+				table.insert(kids, k)
+				local r = rect(k)
+				if r[1] < cr[1] or r[2] < cr[2] or r[1] + r[3] > cr[1] + cr[3] or r[2] + r[4] > cr[2] + cr[4] then
+					table.insert(bad, (k.Text or k.Name) .. " sticks out")
+				end
+			end
+		end
+		for i = 1, #kids do
+			for j = i + 1, #kids do
+				if hits(kids[i], kids[j]) then
+					table.insert(bad, `{kids[i].Text or kids[i].Name} x {kids[j].Text or kids[j].Name}`)
+				end
+			end
+		end
+		check(what .. ": its words and buttons don't overlap", #bad == 0, table.concat(bad, ", "))
+	end
+	local function fit(what, card)
+		local bad = {}
+		for _, k in card:GetDescendants() do
+			if k:IsA("TextLabel") and k.TextScaled ~= true then
+				table.insert(bad, k.Text)
+			end
+		end
+		check(what .. ": its words shrink to fit", #bad == 0, table.concat(bad, " | "))
+	end
+
+	-- the touch buttons too (built here on the desktop run, the way a phone gets them)
+	UIS.TouchEnabled, UIS.KeyboardEnabled = true, false
+	Hud._buildTouch(refs.gui)
+	UIS.TouchEnabled, UIS.KeyboardEnabled = false, true
+	local t = refs.touch
+	local function corners()
+		return {
+			Top = hud.Top,
+			Feed = refs.feed,
+			Health = hud.Health,
+			Team = refs.team,
+			Bows = hud.Bows,
+			Fire = t.fire,
+			Sprint = t.sprint,
+			Slide = hud:FindFirstChild("Slide"),
+			Toast = refs.toast,
+		}
+	end
+	for i = 1, 5 do
+		Hud.addFeed({ killerName = "SomeoneWithALongName" .. i, victimName = "AnotherLongName", weapon = "bow" })
+	end
+	Hud.toast("A toast that says something")
+
+	-- the build phase: the tray, its hint, the alert, the objective
+	Engine.advance(0.1)
+	local L = corners()
+	L.Tray = refs.tray
+	L.Hint = refs.buildHint
+	L.Alert = refs.alert
+	L.Objective = refs.objective
+	L.Fire, L.Sprint = nil, nil -- (PLACE and TURN take their places, and only once a piece is picked)
+	refs.alert.Visible, refs.objective.Visible = true, true
+	apart("the build phase", L)
+
+	-- the fight: the bows, the touch buttons, the alert, respawning
+	Engine.advance(Constants.BUILD_SECONDS + 0.5)
+	Hud.toast("Another toast")
+	Engine.advance(0.1)
+	L = corners()
+	L.Alert = refs.alert
+	L.Objective = refs.objective
+	L.Respawn = refs.respawn
+	refs.alert.Visible, refs.objective.Visible, refs.respawn.Visible = true, true, true
+	apart("the fight", L)
+	refs.alert.Visible, refs.respawn.Visible = false, false
+
+	-- a win, with everything at once: a full results table, the question, three unlocks (two show, one waits), a
+	-- toast
+	local rows = {}
+	for i = 1, 12 do
+		table.insert(rows, {
+			userId = i,
+			name = "PlayerNumber" .. i,
+			team = i % 2 == 0 and "red" or "blue",
+			kills = 10,
+			deaths = 3,
+			assists = 2,
+			built = 120,
+		})
+	end
+	rows[11].userId = player.UserId
+	Hud.showResults({
+		winner = "red",
+		rows = rows,
+		mvp = 1,
+		you = { won = true, qualified = true, step = { win = 12, name = "Long Streak II" } },
+		next = { name = "Castle Clash", tagline = "Arches, columns and gate towers; balanced lanes" },
+	})
+	local ask = Feedback.show("like")
+	for i = 1, 3 do
+		Hud.showUnlock({
+			step = { kind = "trail", key = "trail_" .. i, name = "Long Streak III" },
+			wins = 90 + i,
+			badge = 10,
+		})
+	end
+	Hud.toast("A toast during the results")
+	Engine.advance(0.1)
+	local stack, waiting = Hud.popups()
+	check("the popups stack, two at a time, the rest waiting", #stack == 2 and #waiting >= 1, `{#stack} {#waiting}`)
+	check("the toast steps up out of the question card's way", refs.toast.Position.Y.Offset == -Hud.toastSlot())
+	L = corners()
+	L.Results = refs.results
+	L.Ask = ask
+	L.Popup1 = stack[1]
+	L.Popup2 = stack[2]
+	L.Countdown = refs.countdown
+	check(
+		"...the results show your row",
+		(function()
+			for _, k in refs.results:GetChildren() do
+				if k:IsA("TextLabel") and k.Text:find("PlayerNumber11") then
+					return true
+				end
+			end
+			return false
+		end)()
+	)
+	apart("a win, everything at once", L)
+	tidy("the results", refs.results)
+	tidy("the like card", ask)
+	fit("the like card", ask)
+	tidy("an unlock card", stack[1])
+	fit("an unlock card", stack[1])
+	local enjoy = Feedback.show("enjoy")
+	tidy("the question card", enjoy)
+	fit("the question card", enjoy)
+	Feedback.answer(true) -- (closes it)
+	Engine.advance(Constants.RESULTS_CARD_SECONDS + 7)
+	refs.countdown.Visible = true
+	L = corners()
+	L.Countdown = refs.countdown
+	L.Popups = Hud.popups()[1]
+	apart("the countdown", L)
+	check("the waiting popups come up as the first ones go", #Hud.popups() >= 1 or #select(2, Hud.popups()) == 0)
+end
 
 print(`\n{passed} passed, {failed} failed`)
 if #Engine.errors > 0 then

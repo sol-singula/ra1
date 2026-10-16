@@ -50,6 +50,12 @@ local function now()
 	return workspace:GetServerTimeNow()
 end
 
+-- The trail the shooter wears (drawn by every client; cosmetic only).
+local function trailOf(player)
+	local profile = data and data:Get(player)
+	return profile and profile.equipped and profile.equipped.trail or nil
+end
+
 local function state(player)
 	local s = states[player]
 	if not s then
@@ -357,6 +363,7 @@ function CombatService:Shoot(player, origin, direction, shotId)
 		velocity = arrow.velocity,
 		at = t,
 		shotId = shotId,
+		trail = trailOf(player),
 	})
 	self.Shot:Fire(player, w.key)
 	if w.mag then

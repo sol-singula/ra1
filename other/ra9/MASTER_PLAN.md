@@ -128,7 +128,8 @@ height capped, nothing outside the arena, invalid spots explained. Mobile: a lar
 * Stats: wins, kills, deaths, assists, accuracy, structures built, frontline pushed, MVPs.
 * MVP of a match: most frontline pushed (kills) plus a share for assists and building.
 * After a win: fireworks in the winners' colour, a 30-second countdown to the next game, and the winners are asked
-  "Are you liking the game?" (once a day); a YES means their next win asks for a like.
+  "Are you liking the game?" (once a day); a YES means their next win asks for a like. Answering (YES or NO) gives
+  the Thank-You Trail once; asking for a like gives nothing (no rewards for likes or favourites).
 * Monetization later, cosmetic only (bow skins, trails, kill effects, VIP tag and chat colour). No combat power.
 
 ## 9. Production

@@ -6,6 +6,9 @@ Asking the winners (only ever right after a win, while the fireworks are going, 
     press the like button for you, so the card asks, and its button offers Roblox's own favourite prompt (the one
     thing a game can open). Asked for a like once; never again after that.
 
+Answering the daily question (YES or NO: it's the answer that's thanked, not liking it) gives the Thank-You Trail
+once (Data/Extras), worn straight away, with a THANK YOU card (Net "Unlock" with extra = true).
+
 Kept in the profile (profile.feedback): the day they were last asked, their answer, whether a like ask is owed,
 and how the like card went. FEEDBACK_ASK_DELAY seconds after the win, so it lands after the fireworks start and
 doesn't cover the results.
@@ -17,17 +20,20 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Extras = require(ReplicatedStorage.Shared.Data.Extras)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local FeedbackService = {
 	Name = "FeedbackService",
-	Dependencies = { "PlayerDataService", "TeamService", "MatchService" },
+	Dependencies = { "PlayerDataService", "TeamService", "MatchService", "ProgressService" },
 	Asked = Signal.new("FeedbackService.Asked"), -- (player, kind)
 	Answered = Signal.new("FeedbackService.Answered"), -- (player, kind, answer)
+	Thanked = Signal.new("FeedbackService.Thanked"), -- (player, extra)
 }
 
-local data, teams, match
+local data, teams, match, progress
+local THANKS = "extra_thanks"
 local outstanding = {} -- [player] = the card they were shown and haven't answered
 
 local function today()
@@ -95,6 +101,26 @@ function FeedbackService:AfterWin(winner)
 	end)
 end
 
+-- The thank-you for answering: the trail, once, worn at once.
+function FeedbackService:Thank(player)
+	local p = data:Get(player)
+	if not p or Extras.owns(p, THANKS) then
+		return false
+	end
+	local e = Extras.get(THANKS)
+	p.extras = p.extras or {}
+	p.extras[e.id] = true
+	p.equipped[e.kind] = e.key
+	Net.fire(player, "Unlock", {
+		extra = true,
+		title = "THANK YOU!",
+		step = { kind = e.kind, key = e.key, name = e.name, desc = e.desc },
+	})
+	progress:Push(player)
+	self.Thanked:Fire(player, e)
+	return true
+end
+
 function FeedbackService:Answer(player, kind, answer)
 	if outstanding[player] ~= kind then
 		return false -- (only the card they were shown)
@@ -110,6 +136,9 @@ function FeedbackService:Answer(player, kind, answer)
 		f.no = (f.no or 0) + (answer and 0 or 1)
 		-- liking it and never asked for a like: ask on the next win
 		f.pendingLike = answer == true and f.likeAskedDay == 0
+		self.Answered:Fire(player, kind, answer)
+		self:Thank(player)
+		return true
 	elseif kind == "like" and (answer == "ok" or answer == "later") then
 		f.likeAnswer = answer
 	else
@@ -123,6 +152,7 @@ function FeedbackService:Init(registry)
 	data = registry.PlayerDataService
 	teams = registry.TeamService
 	match = registry.MatchService
+	progress = registry.ProgressService
 	Net.on("Feedback", function(player, kind, answer)
 		self:Answer(player, kind, answer)
 	end)

@@ -265,12 +265,26 @@ function Theme.text(props)
 	props.TextColor3 = props.TextColor3 or C.ink
 	props.TextXAlignment = props.TextXAlignment or Enum.TextXAlignment.Left
 	props.TextWrapped = true
+	-- fit = n: the words shrink to fit their box (never past it, whatever the text size setting) up to size n
+	local fit = props.fit
+	props.fit = nil
+	if fit then
+		props.TextSize = nil
+		props.TextScaled = true
+	end
 	if not props.TextSize then
 		props.TextScaled = true
 	else
 		props.TextSize = math.floor(props.TextSize * Theme.textFactor() + 0.5)
 	end
 	local label = new("TextLabel", props)
+	if fit then
+		new("UITextSizeConstraint", {
+			MaxTextSize = math.floor(fit * Theme.textFactor() + 0.5),
+			MinTextSize = 8,
+			Parent = label,
+		})
+	end
 	if outline then
 		Theme.outline(label, type(outline) == "number" and outline or 2)
 	end

@@ -280,7 +280,7 @@ function MatchService:Victory(winner)
 			next = { key = nextMap.key, name = nextMap.name, tagline = nextMap.tagline },
 		})
 	end
-	Net.fireAll("Alert", `{Constants.TEAM_NAME[winner]} WINS`, Constants.TEAM_COLOR[winner], 4)
+	-- (no centre alert here: the results card says who won, and nothing else lands on top of it)
 	self.Ended:Fire(winner, results)
 	task.delay(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS, function()
 		self:NewMatch(self._nextMap)

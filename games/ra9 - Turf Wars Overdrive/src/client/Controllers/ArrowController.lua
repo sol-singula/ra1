@@ -1,7 +1,8 @@
 --[[
 Arrows on screen (master plan §5, §0): every arrow the server announces is drawn along the same curve the server
 flies it (Formulas.arrowAt from its origin and velocity, timed by server time), as a white shaft with a long thin
-tracer in its team's colour behind it: the SUPERHOT red line. Your own arrow is drawn the instant you let go
+tracer in its team's colour behind it: the SUPERHOT red line. The shooter's trail (the server sends what they wear)
+can add to it: the Thank-You Trail runs a thin white line beside the tracer. Your own arrow is drawn the instant you let go
 (predicted) and the server's copy of it is skipped. Where an arrow stops, a few white shards burst out.
 
   ArrowController.predict(origin, velocity, team, shotId)   your own, right away
@@ -13,6 +14,7 @@ local RunService = game:GetService("RunService")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Store = require(script.Parent.Parent.Store)
 
 local ArrowController = { Name = "ArrowController", Order = 20 }
 
@@ -37,17 +39,32 @@ local function part(size, color, neon)
 	return p
 end
 
-local function spawnArrow(key, origin, velocity, team, born)
+local function spawnArrow(key, origin, velocity, team, born, trail)
 	local color = Constants.TEAM_COLOR[team] or Color3.new(1, 1, 1)
 	local shaft = part(Vector3.new(0.18, 0.18, 2.6), Color3.fromRGB(250, 250, 250), false)
 	local tracer = part(Vector3.new(0.1, 0.1, 1), color, true)
 	tracer.Transparency = 0.15
-	live[key] = { shaft = shaft, tracer = tracer, origin = origin, velocity = velocity, born = born, team = team }
+	local twin
+	if trail == "extra_thanks" then
+		twin = part(Vector3.new(0.06, 0.06, 1), Color3.fromRGB(255, 255, 255), true)
+		twin.Name = "Twin"
+		twin.Transparency = 0.1
+	end
+	live[key] = {
+		shaft = shaft,
+		tracer = tracer,
+		twin = twin,
+		origin = origin,
+		velocity = velocity,
+		born = born,
+		team = team,
+	}
 	return live[key]
 end
 
 function ArrowController.predict(origin, velocity, team, shotId)
-	return spawnArrow("me" .. tostring(shotId), origin, velocity, team, workspace:GetServerTimeNow())
+	local equipped = (Store.get("profile") or {}).equipped or {}
+	return spawnArrow("me" .. tostring(shotId), origin, velocity, team, workspace:GetServerTimeNow(), equipped.trail)
 end
 
 local function burst(pos, color)
@@ -73,6 +90,9 @@ local function remove(key, pos)
 	end
 	a.shaft:Destroy()
 	a.tracer:Destroy()
+	if a.twin then
+		a.twin:Destroy()
+	end
 end
 
 local function step(dt)
@@ -92,6 +112,10 @@ local function step(dt)
 				local tail = p - dir * back
 				a.tracer.Size = Vector3.new(0.1, 0.1, back)
 				a.tracer.CFrame = CFrame.lookAt((p + tail) / 2, p)
+				if a.twin then
+					a.twin.Size = Vector3.new(0.06, 0.06, back)
+					a.twin.CFrame = a.tracer.CFrame * CFrame.new(0.2, 0.06, 0)
+				end
 			end
 		end
 	end
@@ -120,7 +144,7 @@ function ArrowController:init()
 		end
 		local key = "s" .. a.id
 		byServer[a.id] = byServer[a.id] or key
-		spawnArrow(byServer[a.id], a.origin, a.velocity, a.team, a.at or workspace:GetServerTimeNow())
+		spawnArrow(byServer[a.id], a.origin, a.velocity, a.team, a.at or workspace:GetServerTimeNow(), a.trail)
 	end)
 	Net.listen("ArrowEnd", function(e)
 		local key = byServer[e.id] or ("s" .. e.id)
@@ -131,6 +155,14 @@ function ArrowController:init()
 end
 
 -- (tests)
+function ArrowController.twins()
+	local n = 0
+	for _, a in live do
+		n += a.twin and 1 or 0
+	end
+	return n
+end
+
 function ArrowController.count()
 	local n = 0
 	for _ in live do

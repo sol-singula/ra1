@@ -9,7 +9,12 @@ The HUD (master plan §1, §2, §5, §7): everything on screen, in the SUPERHOT 
   bottom     health (left), the bows (right: 1 2 3, the crossbow's bolts), the build tray in the build phase
              (seven pieces with their costs, your points), toasts
   touch      FIRE (hold to draw), SPRINT, SLIDE; PLACE and ROTATE while building
-  overlays   the results (who won, the table, the MVP, your reward, the next map) and unlock cards
+  overlays   the results (who won, the table, the MVP, your reward, the next map); unlock and thank-you cards
+             stack down the right, under the kill feed
+
+Nothing overlaps on the smallest canvas the screens get (Theme.MIN_WIDTH x DESIGN.Y, 1240 x 560): every piece
+has its own slot, the words inside cards shrink to fit their boxes (Theme.text fit), the toast moves up out of
+the way of the build tray and of a question card, and ClientSmoke checks the rectangles.
 
 The objective is on screen in the first seconds (§1: understood in under 15 s): "Every kill pushes the line toward
 their base. Push them off the map."
@@ -25,6 +30,7 @@ local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local Layout = require(script.Parent.Parent.UI.Layout)
 local BuildController = require(script.Parent.BuildController)
 
 local HudController = { Name = "HudController", Order = 40 }
@@ -36,6 +42,14 @@ local refs = {}
 HudController.refs = refs
 local feed = {}
 local hitUntil = 0
+local FEED_W = 300 -- (clear of the 560-wide top bar on a 1240 canvas)
+-- the popup stack (unlocks, thank-yous): down the right under the kill feed, two at a time, clear of the touch
+-- buttons below
+local STACK = { top = 176, w = 300, h = 64, gap = 8, max = 2 }
+-- where the toast sits (its bottom, up from the screen's bottom): normally, in the build phase (above the tray's
+-- hint), and while a question card is up (between the results card and it)
+local TOAST_UP = { normal = 132, build = 150, modal = 166 }
+local RESULT_ROWS = 5 -- (the results card ends above the question card)
 
 local function now()
 	return workspace:GetServerTimeNow()
@@ -238,7 +252,7 @@ local function buildCentre(gui)
 		Text = "",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.32),
-		Size = UDim2.fromOffset(800, 90),
+		Size = UDim2.fromOffset(560, 90),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = C.ink,
 		outline = false,
@@ -250,8 +264,8 @@ local function buildCentre(gui)
 		Text = "Every kill pushes the line toward their base. Push them off the map.",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 108),
-		Size = UDim2.fromOffset(620, 22),
-		TextSize = 15,
+		Size = UDim2.fromOffset(600, 22),
+		fit = 15,
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Parent = gui,
 	})
@@ -323,7 +337,7 @@ local function buildFeed(gui)
 		Name = "Feed",
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -12, 0, 12),
-		Size = UDim2.fromOffset(330, 150),
+		Size = UDim2.fromOffset(FEED_W, 150),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
@@ -338,7 +352,7 @@ function HudController.addFeed(k)
 	local icon = (Weapons.get(k.weapon or "") or {}).icon or "✖"
 	local killer = k.killerName or ({ fall = "the void", reset = "reset" })[k.kind] or "?"
 	local row = Theme.new("Frame", {
-		Size = UDim2.fromOffset(330, 22),
+		Size = UDim2.fromOffset(FEED_W, 22),
 		BackgroundColor3 = C.white,
 		BackgroundTransparency = 0.1,
 		BorderSizePixel = 0,
@@ -352,7 +366,7 @@ function HudController.addFeed(k)
 		Text = text,
 		Size = UDim2.new(1, -10, 1, 0),
 		Position = UDim2.fromOffset(5, 0),
-		TextSize = 13,
+		fit = 13,
 		TextXAlignment = Enum.TextXAlignment.Right,
 		TextColor3 = Constants.TEAM_COLOR[k.killerTeam or ""] or C.ink,
 		Parent = row,
@@ -526,9 +540,9 @@ local function buildBottom(gui)
 		Name = "Toast",
 		Text = "",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -132),
+		Position = UDim2.new(0.5, 0, 1, -TOAST_UP.normal),
 		Size = UDim2.fromOffset(600, 24),
-		TextSize = 15,
+		fit = 15,
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Visible = false,
 		Parent = gui,
@@ -631,26 +645,29 @@ local function buildTouch(gui)
 		end
 	end)
 	local sprintOn = false
-	local sprint = button("Sprint", "RUN", UDim2.new(1, -220, 1, -110), 64)
+	-- (each clear of the others and of the bows panel along the bottom right)
+	local sprint = button("Sprint", "RUN", UDim2.new(1, -220, 1, -130), 64)
 	sprint.Activated:Connect(function()
 		sprintOn = not sprintOn
 		sprint.BackgroundColor3 = sprintOn and C.ink or C.white
 		sprint.TextColor3 = sprintOn and C.white or C.ink
 		Bus.Sprint:Fire(sprintOn)
 	end)
-	button("Slide", "SLIDE", UDim2.new(1, -210, 1, -190), 58).Activated:Connect(function()
+	button("Slide", "SLIDE", UDim2.new(1, -210, 1, -205), 58).Activated:Connect(function()
 		Bus.Slide:Fire()
 	end)
 	local place = button("Place", "PLACE", UDim2.new(1, -110, 1, -150), 104, C.ink)
 	place.Activated:Connect(function()
 		Bus.Place:Fire()
 	end)
-	local rotate = button("Rotate", "TURN", UDim2.new(1, -220, 1, -110), 64)
+	local rotate = button("Rotate", "TURN", UDim2.new(1, -220, 1, -130), 64)
 	rotate.Activated:Connect(function()
 		Bus.Rotate:Fire()
 	end)
 	refs.touch = { fire = fire, place = place, rotate = rotate, sprint = sprint }
 end
+
+HudController._buildTouch = buildTouch -- (tests: the touch layout on a desktop run)
 
 local function updateTouch()
 	local t = refs.touch
@@ -671,20 +688,36 @@ function HudController.showResults(r)
 	end
 	local gui = refs.gui
 	local winColor = Constants.TEAM_COLOR[r.winner] or C.ink
+	-- the top rows, and yours in the last one if you're further down
+	local rows = {}
+	for i = 1, math.min(RESULT_ROWS, #(r.rows or {})) do
+		rows[i] = r.rows[i]
+	end
+	if #rows == RESULT_ROWS then
+		local mine
+		for i, row in r.rows do
+			if row.userId == player.UserId then
+				mine = i
+			end
+		end
+		if mine and mine > RESULT_ROWS then
+			rows[RESULT_ROWS] = r.rows[mine]
+		end
+	end
 	local card = Theme.card({
 		Name = "Results",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 104),
 		-- (only as tall as its rows, under the top bar: the fireworks stay in view above and round it)
-		Size = UDim2.fromOffset(520, 150 + math.min(8, #(r.rows or {})) * 22),
+		Size = UDim2.fromOffset(520, 150 + #rows * 22),
 		BackgroundColor3 = C.white,
 		Parent = gui,
 	})
 	refs.results = card
 	Theme.title({
 		Text = `{Constants.TEAM_NAME[r.winner] or "?"} WINS`,
-		Size = UDim2.new(1, 0, 0, 54),
-		Position = UDim2.fromOffset(0, 10),
+		Size = UDim2.new(1, -20, 0, 46),
+		Position = UDim2.fromOffset(10, 10),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = winColor,
 		outline = false,
@@ -700,8 +733,8 @@ function HudController.showResults(r)
 	label({
 		Text = line,
 		Size = UDim2.new(1, -20, 0, 20),
-		Position = UDim2.fromOffset(10, 60),
-		TextSize = 15,
+		Position = UDim2.fromOffset(10, 62),
+		fit = 15,
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Parent = card,
 	})
@@ -710,14 +743,13 @@ function HudController.showResults(r)
 		Text = "PLAYER                         K     D     A     BUILT",
 		Size = UDim2.new(1, -40, 0, 16),
 		Position = UDim2.fromOffset(20, y),
-		TextSize = 11,
+		fit = 11,
 		TextColor3 = C.muted,
 		Font = Theme.Display,
 		Parent = card,
 	})
 	y += 20
-	for i = 1, math.min(8, #(r.rows or {})) do
-		local row = r.rows[i]
+	for _, row in rows do
 		local mvp = row.userId == r.mvp and "  ★ MVP" or ""
 		label({
 			Text = string.format(
@@ -729,9 +761,10 @@ function HudController.showResults(r)
 				row.built,
 				mvp
 			),
-			Size = UDim2.new(1, -40, 0, 22),
-			Position = UDim2.fromOffset(20, y),
-			TextSize = 14,
+			Size = UDim2.new(1, -40, 0, 20),
+			Position = UDim2.fromOffset(20, y + 1),
+			fit = 14,
+			TextWrapped = false,
 			Font = Enum.Font.Code,
 			TextColor3 = Constants.TEAM_COLOR[row.team or ""] or C.ink,
 			Parent = card,
@@ -744,7 +777,7 @@ function HudController.showResults(r)
 			AnchorPoint = Vector2.new(0, 1),
 			Size = UDim2.new(1, -20, 0, 20),
 			Position = UDim2.new(0, 10, 1, -12),
-			TextSize = 13,
+			fit = 13,
 			TextXAlignment = Enum.TextXAlignment.Center,
 			Font = Theme.Display,
 			Parent = card,
@@ -759,45 +792,129 @@ function HudController.showResults(r)
 	end)
 end
 
-function HudController.showUnlock(u)
-	local s = u.step
-	if not s then
-		return
+-- The popup stack: each card in its own slot down the right, the oldest on top; more than fit wait their turn.
+local stack = {} -- the cards on screen, in order
+local waiting = {} -- { build, seconds }
+
+local function restack()
+	for i, card in stack do
+		card.Position = UDim2.new(1, -16, 0, STACK.top + (i - 1) * (STACK.h + STACK.gap))
+	end
+end
+
+local function pushCard(build, seconds)
+	if #stack >= STACK.max then
+		table.insert(waiting, { build, seconds })
+		return nil
 	end
 	local card = Theme.card({
-		Name = "Unlock",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 140),
-		Size = UDim2.fromOffset(380, 70),
+		Name = "Popup",
+		AnchorPoint = Vector2.new(1, 0),
+		Size = UDim2.fromOffset(STACK.w, STACK.h),
 		BackgroundColor3 = C.ink,
 		Parent = refs.gui,
 	})
-	Theme.title({
-		Text = `WIN #{u.wins} · NEW {string.upper(s.kind)}`,
-		Size = UDim2.new(1, -20, 0, 26),
-		Position = UDim2.fromOffset(10, 8),
-		TextColor3 = C.white,
-		outline = false,
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Parent = card,
-	})
-	label({
-		Text = s.name .. (u.badge and `  ·  {u.badge} WINS IN A ROW` or ""),
-		Size = UDim2.new(1, -20, 0, 22),
-		Position = UDim2.fromOffset(10, 38),
-		TextSize = 16,
-		TextColor3 = C.white,
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Parent = card,
-	})
+	build(card)
+	table.insert(stack, card)
+	restack()
 	Theme.pop(card)
-	task.delay(5, function()
+	task.delay(seconds, function()
+		local i = table.find(stack, card)
+		if i then
+			table.remove(stack, i)
+		end
 		card:Destroy()
+		restack()
+		local nextUp = table.remove(waiting, 1)
+		if nextUp then
+			pushCard(nextUp[1], nextUp[2])
+		end
 	end)
+	return card
+end
+
+-- A small picture of a trail: the team's tracer, and the white line beside it for the Thank-You Trail.
+local function trailPreview(card, key)
+	local box = Theme.new("Frame", {
+		Name = "Preview",
+		Position = UDim2.fromOffset(10, 10),
+		Size = UDim2.fromOffset(44, 44),
+		BackgroundColor3 = C.white,
+		BorderSizePixel = 0,
+		Parent = card,
+	}, { Theme.corner(4) })
+	local color = Constants.TEAM_COLOR[Store.team() or ""] or RED
+	local function line(y, h, c)
+		Theme.new("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, 0, 0, y),
+			Size = UDim2.fromOffset(34, h),
+			Rotation = -20,
+			BackgroundColor3 = c,
+			BorderSizePixel = 0,
+			Parent = box,
+		})
+	end
+	if key == "extra_thanks" then
+		line(19, 4, color)
+		line(27, 2, C.ink) -- (the white line, drawn dark on the white tile so it shows)
+	else
+		line(22, 4, color)
+	end
+end
+
+function HudController.showUnlock(u)
+	local s = u.step
+	if not s then
+		return nil
+	end
+	local head = u.title or (u.wins and `WIN #{u.wins} · NEW {string.upper(s.kind)}` or `NEW {string.upper(s.kind)}`)
+	local line = u.extra and `{s.name} · equipped` or (s.name .. (u.badge and `  ·  {u.badge} WINS IN A ROW` or ""))
+	return pushCard(function(card)
+		card.Name = u.extra and "Thanks" or "Unlock"
+		local x = 12
+		if s.kind == "trail" then
+			trailPreview(card, s.key)
+			x = 64
+		end
+		Theme.title({
+			Name = "Head",
+			Text = head,
+			Size = UDim2.new(1, -x - 12, 0, 24),
+			Position = UDim2.fromOffset(x, 8),
+			TextColor3 = C.white,
+			outline = false,
+			Parent = card,
+		})
+		label({
+			Name = "Line",
+			Text = line,
+			Size = UDim2.new(1, -x - 12, 0, 22),
+			Position = UDim2.fromOffset(x, 34),
+			fit = 15,
+			TextColor3 = C.white,
+			Parent = card,
+		})
+	end, u.extra and 6 or 5)
+end
+
+function HudController.popups()
+	return stack, waiting
+end
+
+-- Where the toast goes now: up out of the way of the build tray, or of a question card.
+function HudController.toastSlot()
+	if Layout.modalOpen() then
+		return TOAST_UP.modal
+	end
+	return Store.phase() == "build" and TOAST_UP.build or TOAST_UP.normal
 end
 
 -- Each frame ---------------------------------------------------------------------------------------------------
 local function step()
+	if refs.toast then
+		refs.toast.Position = UDim2.new(0.5, 0, 1, -HudController.toastSlot())
+	end
 	HudController.updateTop()
 	HudController.updateBottom()
 	updateTouch()

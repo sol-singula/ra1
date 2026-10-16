@@ -64,9 +64,32 @@ crossbow's magazine, victory, rewards, the next map), 38 client checks (the same
 
 ![](screenshots/victory.png)
 
+## Round 3: a thank-you, and nothing on top of anything
+
+* **The Thank-You Trail** (`Data/Extras`): answering "Are you liking the game?" (YES *or* NO: it's the answer that's
+  thanked, not liking it, so it stays within Roblox's rules on rewards) gives a trail once, worn straight away: a
+  thin white line running beside your arrows' team-coloured tracer, seen by everyone. A THANK YOU card shows it.
+  The like / favourite card gives nothing. Kept in the profile (`extras`), equippable again later.
+* **Popups have slots** (checked on the smallest canvas, 1240 x 560):
+  * unlocks and thank-yous stack down the right under the kill feed, two at a time, the rest waiting their turn
+    (they used to sit in the middle, on the results card);
+  * the results card shows 5 rows (yours in the last if you're further down) and ends above the question card;
+  * no "RED WINS" alert on top of the results card (the card says it);
+  * the toast moves up above the build tray's hint in the build phase, and between the results and the question
+    card while one is up;
+  * the kill feed is 300 wide (it touched the top bar), the objective and alerts narrower;
+  * on phones RUN/TURN and SLIDE moved clear of the bows panel and of each other.
+* **Words shrink to fit their boxes** inside every card (`Theme.text { fit = n }`), whatever the player's text-size
+  setting, and each card's title, words and buttons have their own bands.
+* **Tested**: ClientSmoke works out every piece's rectangle and checks that nothing overlaps in the build phase, the
+  fight, a win with everything at once (a 12-player table, the question, three unlocks, a toast) and the countdown,
+  that nothing sticks out of its card, and that the card words shrink to fit (put back the old feed, buttons and
+  table and it fails on each). 84 unit, 83 server, 63 client checks.
+
 ## Next (phase F)
 
 * The Discord log and analytics (the studio's shared pipeline), the dashboard entry.
 * Bots for small servers (so one or two players still get a fight), lag compensation for hits.
-* Cosmetics applied in play (trails, bow finishes, kill effects, banners, titles) and a locker to pick them.
+* The rest of the cosmetics applied in play (the ladder's trails, bow finishes, kill effects, banners, titles) and a
+  locker to pick them.
 * The icon and store thumbnails from these renders, the place, publishing.
