@@ -17,12 +17,15 @@ local RunService = game:GetService("RunService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 
+local Store = require(script.Parent.Parent.Store)
+
 local DebrisController = { Name = "DebrisController", Order = 35 }
 
 local FAR = 220
 local BEACON_GOLD = Color3.fromRGB(255, 214, 90)
 local pulls = {} -- [model] = { pos, at } the integrated pull so far
 local frame = 0
+local myPlot -- (this player's plot: only its guide crate gets a beacon)
 
 local function place(m, t, dt, camPos, nth)
 	local t0 = m:GetAttribute("T0")
@@ -118,6 +121,7 @@ local function beacon(m)
 	sign.StudsOffsetWorldSpace = Vector3.new(0, 5, 0)
 	sign.AlwaysOnTop = true
 	sign.LightInfluence = 0
+	sign.MaxDistance = 300
 	local label = Instance.new("TextLabel")
 	label.Name = "Text"
 	label.Size = UDim2.fromScale(1, 1)
@@ -144,6 +148,7 @@ local function step(dt)
 		return
 	end
 	frame += 1
+	myPlot = (Store.get("me") or {}).plot
 	local t = workspace:GetServerTimeNow()
 	local cam = workspace.CurrentCamera
 	local camPos = cam and cam.CFrame and cam.CFrame.Position or Vector3.zero
@@ -154,16 +159,22 @@ local function step(dt)
 			local dist = (pivot - camPos).Magnitude
 			local far = dist > FAR
 			if m:GetAttribute("Guide") then
-				if (frame + i) % 10 == 0 then
+				-- (only your own plot's guide crate gets the beacon and the sign: everyone else's stays a crate)
+				local mine = m:GetAttribute("Plot") == myPlot
+				if mine and (frame + i) % 10 == 0 then
 					beacon(m)
 				end
 				local pillar = m:FindFirstChild("GuideBeacon")
+				local ring = m:FindFirstChild("GuideBeaconRing")
 				local sign = m:FindFirstChild("GuideSign")
 				if pillar then
-					pillar.Transparency = m:GetAttribute("Pull") and 1 or 0.35 + 0.25 * math.sin(t * 5)
+					pillar.Transparency = (m:GetAttribute("Pull") or not mine) and 1 or 0.35 + 0.25 * math.sin(t * 5)
+				end
+				if ring then
+					ring.Transparency = mine and 0.35 or 1
 				end
 				if sign then
-					sign.Enabled = not m:GetAttribute("Pull")
+					sign.Enabled = mine and not m:GetAttribute("Pull")
 				end
 			end
 			if not far then

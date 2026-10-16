@@ -448,7 +448,9 @@ local RAIL = 132 -- the category rail on the left
 local HEADER_H, ROW_H, GAP = 22, 62, 6
 
 local function buildPanel(arg)
-	local body = panel("build", "🔨 BUILD", 860, 480)
+	-- CHANGE on a blueprint slot opens this to pick that slot's blueprint ({ quickSlot = 7..9 })
+	local choosing = type(arg) == "table" and tonumber(arg.quickSlot) or nil
+	local body = panel("build", choosing and `📌 CHOOSE A BLUEPRINT FOR SLOT {choosing}` or "🔨 BUILD", 860, 480)
 	local scrollTo -- the canvas Y of the wanted row (once, when the panel opens)
 	local function refresh()
 		body:ClearAllChildren()
@@ -609,8 +611,8 @@ local function buildPanel(arg)
 				end
 				local b = Theme.button({
 					Name = "Place",
-					Text = locked and "LOCKED" or "PLACE",
-					BackgroundColor3 = can and C.good or C.muted,
+					Text = locked and "LOCKED" or (choosing and "CHOOSE" or "PLACE"),
+					BackgroundColor3 = (choosing and not locked) and C.sky or (can and C.good or C.muted),
 					AnchorPoint = Vector2.new(1, 0.5),
 					Position = UDim2.new(1, -10, 0.5, 0),
 					Size = UDim2.fromOffset(104, 42),
@@ -621,11 +623,17 @@ local function buildPanel(arg)
 					if locked then
 						return
 					end
+					if choosing then
+						Net.send("Pin", def.key, choosing)
+						Bus.Tap:Fire("quick_slot_" .. def.key)
+						PanelController.close()
+						return
+					end
 					Bus.Place:Fire(def.key)
 					Bus.Tap:Fire("pick_" .. def.key)
 					PanelController.close()
 				end)
-				if not locked then
+				if not locked and not choosing then
 					-- 📌 puts this piece in your hotbar as a build shortcut
 					local pin = Theme.button({
 						Name = "Pin",
@@ -962,7 +970,7 @@ local function detailsCard(parent, inv, slotId)
 	if not item then
 		label(
 			card,
-			"Tap an item to see it.\n\nDrag it to another slot to move it (or tap one slot, then the other).\n\nThe hotbar is what you can hold: tap a slot or press 1-6.",
+			"Tap an item to see it.\n\nDrag it to another slot to move it (or tap one slot, then the other).\n\nThe hotbar is what you can hold: tap a slot or press 1-9.",
 			{
 				Name = "Text",
 				Position = UDim2.fromOffset(12, 12),
@@ -1113,7 +1121,7 @@ local function inventoryPanel()
 			Size = UDim2.new(1, -280, 1, 0),
 			Parent = body,
 		})
-		label(left, "HOTBAR (what you can hold: tap a slot or press 1-6)", {
+		label(left, "HOTBAR (what you can hold: tap a slot or press 1-9)", {
 			Size = UDim2.new(1, 0, 0, 20),
 			Font = Theme.Display,
 			TextSize = 14,
@@ -1195,9 +1203,12 @@ local function inventoryPanel()
 			end
 			showDetails()
 		end
+		-- (nine slots: smaller cells so the row fits beside the details card)
+		local hotCell = math.min(CELL, math.floor((540 - 6 * (Constants.HOTBAR - 1)) / Constants.HOTBAR))
 		for i = 1, Constants.HOTBAR do
 			local id = "h" .. i
 			open.cells[id] = itemCell(hot, id, inv.slots[id], i, onClick, onEnter, onLeave)
+			open.cells[id].Size = UDim2.fromOffset(hotCell, hotCell)
 		end
 		label(
 			left,

@@ -41,7 +41,12 @@ Constants.REPAIR_PER_HIT = 25 -- a hammer's hit on a damaged tile (costs 1 wood)
 Constants.DEMOLISH_REFUND = 1 -- the share of a piece's cost you get back when you take it off: all of it
 
 -- Survivors (PlayerService)
-Constants.HOTBAR = 6
+Constants.HOTBAR = 9
+-- the last three are blueprint slots for good (QUICK_SLOTS): always a build shortcut, never an item; CHANGE picks
+-- another blueprint for one. Items use the first ITEM_SLOTS.
+Constants.QUICK_SLOTS = 3
+Constants.ITEM_SLOTS = Constants.HOTBAR - Constants.QUICK_SLOTS
+Constants.DEFAULT_PINS = { [7] = "floor", [8] = "net", [9] = "wall" }
 Constants.MAX_HP = 100
 Constants.REGEN_DELAY = 4 -- seconds after a hit before the raft heals you
 Constants.SPAWN_PROTECT = 3

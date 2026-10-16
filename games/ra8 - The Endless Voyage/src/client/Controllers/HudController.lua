@@ -5,7 +5,7 @@ The HUD (master plan §4: phone first, one clear thing at a time, no text walls)
                 event under way, the day's clock, a storm warning
   top left      you: name, title, level; health; buffs; the finds you're carrying while away from your dock
   top right     the menu (MAP, RAFT, BOOK, ME, TOP, FRIENDS, MORE) and the raft's line: tier · tiles · next tier
-  bottom        the hotbar: six slots, tap or 1-6 to hold, rarity colours, counts; the BAG button
+  bottom        the hotbar: nine slots (the last three: floor, net and wall shortcuts), tap or 1-9 to hold, rarity colours, counts; the BAG button
   middle        alerts (LAND HO!), callouts (sharks!), toasts, unlock cards (level up, blueprints, discoveries)
   overlays      red edges when you're hit; YOU WENT DOWN; the rowboat's fade; the visiting banner with ROW HOME;
                 REEL! when a fish bites
@@ -346,13 +346,14 @@ local function updateRight()
 end
 
 -- The hotbar -------------------------------------------------------------------------------------------------------
+local SLOT, STEP = 48, 52 -- (nine slots and the bag fit between the resource chips and the action buttons)
 local function buildHotbar()
 	local bar = new("Frame", {
 		Name = "Hotbar",
 		AnchorPoint = Vector2.new(0.5, 1),
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0.5, -40, 1, -10),
-		Size = UDim2.fromOffset(Constants.HOTBAR * 66 + 70, 64),
+		Position = UDim2.new(0.5, 0, 1, -10),
+		Size = UDim2.fromOffset(Constants.HOTBAR * STEP + 58, 56),
 		Parent = gui,
 	})
 	refs.hotbar = bar
@@ -364,8 +365,8 @@ local function buildHotbar()
 			AutoButtonColor = false,
 			BackgroundColor3 = C.slate,
 			BackgroundTransparency = 0.15,
-			Size = UDim2.fromOffset(60, 60),
-			Position = UDim2.fromOffset((i - 1) * 66, 2),
+			Size = UDim2.fromOffset(SLOT, SLOT),
+			Position = UDim2.fromOffset((i - 1) * STEP, 2),
 			Parent = bar,
 		}, { Theme.corner(12) })
 		local stroke = Theme.stroke(3)
@@ -402,14 +403,50 @@ local function buildHotbar()
 		b.Activated:Connect(function()
 			InputController.select(i)
 		end)
-		refs.slots[i] = { button = b, stroke = stroke, icon = icon, count = count, key = key }
+		local rec = { button = b, stroke = stroke, icon = icon, count = count, key = key }
+		if i > Constants.ITEM_SLOTS then
+			-- a blueprint slot: what it costs right above it (green: you have it, red: not yet), and CHANGE
+			rec.quick = true
+			rec.cost = new("Frame", {
+				Name = "Cost" .. i,
+				AnchorPoint = Vector2.new(0, 1),
+				BackgroundColor3 = C.ink,
+				BackgroundTransparency = 0.35,
+				Position = UDim2.fromOffset((i - 1) * STEP - 2, -2),
+				Size = UDim2.fromOffset(SLOT + 4, 18),
+				Parent = bar,
+			}, { Theme.corner(6) })
+			new("UIListLayout", {
+				FillDirection = Enum.FillDirection.Vertical,
+				VerticalAlignment = Enum.VerticalAlignment.Bottom,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Parent = rec.cost,
+			})
+			local change = Theme.button({
+				Name = "Change",
+				Text = "✏️",
+				BackgroundColor3 = C.sky,
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, 4, 0, -4),
+				Size = UDim2.fromOffset(20, 20),
+				TextSize = 11,
+				ZIndex = 4,
+				Parent = b,
+			})
+			change.Activated:Connect(function()
+				Bus.Open:Fire("build", { quickSlot = i })
+				Bus.Tap:Fire("quick_change")
+			end)
+			rec.change = change
+		end
+		refs.slots[i] = rec
 	end
 	local bag = Theme.button({
 		Name = "Bag",
 		Text = "🎒",
 		BackgroundColor3 = C.orange,
-		Size = UDim2.fromOffset(60, 60),
-		Position = UDim2.fromOffset(Constants.HOTBAR * 66 + 6, 2),
+		Size = UDim2.fromOffset(SLOT, SLOT),
+		Position = UDim2.fromOffset(Constants.HOTBAR * STEP + 6, 2),
 		Parent = bar,
 	})
 	Theme.keyHint(bag, "Tab", "Y")
@@ -422,6 +459,12 @@ end
 local function updateHotbar()
 	local inv = Store.get("inv") or { slots = {} }
 	local keyboard = Theme.inputKind() == "keyboard"
+	local have = {}
+	for _, sl in inv.slots or {} do
+		if type(sl) == "table" and sl.key then
+			have[sl.key] = (have[sl.key] or 0) + (sl.n or 0)
+		end
+	end
 	for i, s in refs.slots do
 		local slot = inv.slots["h" .. i]
 		local item = slot and Items.get(slot.key)
@@ -447,11 +490,58 @@ local function updateHotbar()
 		s.stroke.Color = selected and C.mustard or (item and rarityColor(item) or C.ink)
 		s.stroke.Thickness = selected and 5 or 3
 		s.button.BackgroundColor3 = item and Theme.darken(rarityColor(item), 0.55) or C.slate
-		s.button.Size = selected and UDim2.fromOffset(64, 64) or UDim2.fromOffset(60, 60)
-		s.button.Position = UDim2.fromOffset((i - 1) * 66 - (selected and 2 or 0), selected and 0 or 2)
+		s.button.Size = selected and UDim2.fromOffset(SLOT + 4, SLOT + 4) or UDim2.fromOffset(SLOT, SLOT)
+		s.button.Position = UDim2.fromOffset((i - 1) * STEP - (selected and 2 or 0), selected and 0 or 2)
 		s.key.Visible = keyboard
+		if s.quick then
+			if not item then
+				s.button.BackgroundColor3 = Color3.fromRGB(40, 70, 110)
+			end
+			HudController.quickCost(s, pinned, have)
+		end
 	end
 	refs.hotbar.Visible = Store.alive()
+end
+
+-- Above a blueprint slot: a line per material, "🪵 3/4", green when you have enough and red when not.
+function HudController.quickCost(s, piece, have)
+	local def = piece and Pieces.get(piece)
+	local sig = piece or ""
+	local lines = {}
+	for k, n in def and def.cost or {} do
+		table.insert(lines, { key = k, n = n, have = have[k] or 0 })
+	end
+	table.sort(lines, function(a, b)
+		return a.key < b.key
+	end)
+	for _, l in lines do
+		sig ..= `|{l.key}{l.have}/{l.n}`
+	end
+	if s.costSig == sig then
+		return
+	end
+	s.costSig = sig
+	for _, c in s.cost:GetChildren() do
+		if c:IsA("TextLabel") then
+			c:Destroy()
+		end
+	end
+	for i, l in lines do
+		local it = Items.get(l.key)
+		Theme.title({
+			Name = "Need_" .. l.key,
+			Text = `{it and it.icon or ""}{l.have > 99 and "99+" or l.have}/{l.n}`,
+			LayoutOrder = i,
+			Size = UDim2.new(1, 0, 0, 16),
+			TextSize = 12,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = l.have >= l.n and Color3.fromRGB(120, 230, 120) or Color3.fromRGB(255, 110, 100),
+			outline = 1.5,
+			Parent = s.cost,
+		})
+	end
+	s.cost.Size = UDim2.fromOffset(SLOT + 4, math.max(1, #lines) * 16 + 2)
+	s.cost.Visible = #lines > 0
 end
 
 -- What you have, at a glance -------------------------------------------------------------------------------------------

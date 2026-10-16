@@ -188,9 +188,9 @@ check("the clock says you're out at sea at your spot", refs.voyage.Text:find("AT
 check("the raft line says driftwood platform", refs.raftLine.Text:find("Driftwood") ~= nil, refs.raftLine.Text)
 check("health is full", refs.hpText.Text:find("100") ~= nil, refs.hpText.Text)
 check(
-	"the hotbar shows the rod in slot 1 (its own model in a viewport)",
+	"the hotbar shows the rod in slot 1 (its uploaded picture, or its own model in a viewport)",
 	refs.slots[1].button:FindFirstChild("Icon3D") ~= nil
-		and refs.slots[1].button.Icon3D:FindFirstChild("fishing_rod") ~= nil
+		and (refs.slots[1].button.Icon3D:IsA("ImageLabel") or refs.slots[1].button.Icon3D:FindFirstChild("fishing_rod") ~= nil)
 		and refs.slots[1].icon.Text == ""
 )
 check("ACT says CAST", Input.refs.actLabel.Text == "CAST", Input.refs.actLabel.Text)

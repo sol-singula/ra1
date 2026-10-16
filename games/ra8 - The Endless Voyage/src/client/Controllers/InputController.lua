@@ -9,7 +9,7 @@ nets, containers, lanterns and totems), and on the right:
   BUILD   the build panel (then tap a spot on the grid: BuildController)
   QUICK   hold it: the piece your raft needs next (the raft view's recommendations, the first the bag can pay for)
           goes where you look, one every half second (BuildController, through Bus.Quick)
-Keyboard: click = act, 1-6 = hotbar, Tab or I = the bag, B = build, F (held) = quick build, M = the map, J = the
+Keyboard: click = act, 1-9 = hotbar, Tab or I = the bag, B = build, F (held) = quick build, M = the map, J = the
 journal, H = wave. Gamepad: R2 = act, L1/R1 = hotbar, Y = the bag, X = build, DPad down (held) = quick build, DPad
 up = the map.
 Aim help: on PC, what's under the mouse (a piece of debris, a creature, a tree) if it's in reach; on phones and
@@ -667,6 +667,9 @@ function InputController:init()
 		Enum.KeyCode.Four,
 		Enum.KeyCode.Five,
 		Enum.KeyCode.Six,
+		Enum.KeyCode.Seven,
+		Enum.KeyCode.Eight,
+		Enum.KeyCode.Nine,
 	}
 	for i, key in keys do
 		bind("EV_Slot" .. i, function()

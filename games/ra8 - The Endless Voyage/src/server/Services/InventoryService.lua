@@ -79,9 +79,15 @@ local function validSlot(player, id)
 end
 InventoryService.validSlot = validSlot
 
+-- One of the hotbar's blueprint slots (always a build shortcut: nothing moves in or out).
+function InventoryService.isQuick(id)
+	local n = type(id) == "string" and tonumber(string.match(id, "^h(%d+)$"))
+	return n ~= nil and n > Constants.ITEM_SLOTS and n <= Constants.HOTBAR
+end
+
 local function order(player)
 	local ids = {}
-	for i = 1, Constants.HOTBAR do
+	for i = 1, Constants.ITEM_SLOTS do
 		table.insert(ids, "h" .. i)
 	end
 	for i = 1, InventoryService:Capacity(player) do
@@ -175,8 +181,9 @@ function InventoryService:HoldKind(player, kind)
 		return self:Select(player, tonumber(string.sub(id, 2)))
 	end
 	local target = "h" .. s.selected
-	if s.slots[target] then
-		for i = 1, Constants.HOTBAR do
+	if s.slots[target] or InventoryService.isQuick(target) then
+		target = "h1"
+		for i = 1, Constants.ITEM_SLOTS do
 			if not s.slots["h" .. i] then
 				target = "h" .. i
 				break
@@ -259,13 +266,13 @@ function InventoryService:Give(player, key, n, source, opts)
 	if (item.kind == "tool" or item.kind == "weapon") and left > 0 then
 		-- a tool always gets a hotbar slot: a full hotbar moves its last non-tool into the bag to make room
 		local free = true
-		for i = 1, Constants.HOTBAR do
+		for i = 1, Constants.ITEM_SLOTS do
 			if not s.slots["h" .. i] then
 				free = false
 			end
 		end
 		if free then
-			for i = Constants.HOTBAR, 1, -1 do
+			for i = Constants.ITEM_SLOTS, 1, -1 do
 				local h = s.slots["h" .. i]
 				local hi = h and Items.get(h.key)
 				if hi and hi.kind ~= "tool" and hi.kind ~= "weapon" then
@@ -373,6 +380,9 @@ end
 function InventoryService:Move(player, from, to)
 	if from == to or not validSlot(player, from) or not validSlot(player, to) then
 		return false
+	end
+	if InventoryService.isQuick(from) or InventoryService.isQuick(to) then
+		return false -- (the blueprint slots keep their blueprint: CHANGE picks another)
 	end
 	local s = state(player)
 	local a, b = s.slots[from], s.slots[to]
@@ -547,55 +557,25 @@ function InventoryService:SpawnDrop(pos, items, opts)
 	return d
 end
 
--- A build shortcut for a piece in the hotbar (the selected slot if it's free, else the first free one, else the
--- last shortcut makes way, else the last slot's item goes to the bag). Already pinned: that slot is selected. A
--- shortcut is never a thing: moving it into the bag takes it off.
-function InventoryService:Pin(player, pieceKey)
+-- A blueprint in one of the hotbar's blueprint slots: `slot` (7-9) when given (CHANGE), else the selected one if
+-- it's a blueprint slot, else the last. Already there: that slot is selected. A blueprint is never a thing.
+function InventoryService:Pin(player, pieceKey, slot)
 	if type(pieceKey) ~= "string" or not Pieces.get(pieceKey) then
 		return false
 	end
 	local s = state(player)
-	for i = 1, Constants.HOTBAR do
-		local slot = s.slots["h" .. i]
-		if slot and slot.key == "pin" and slot.data and slot.data.piece == pieceKey then
-			return self:Select(player, i)
-		end
-	end
-	local target
-	if not s.slots["h" .. s.selected] then
-		target = s.selected
-	else
-		for i = 1, Constants.HOTBAR do
-			if not s.slots["h" .. i] then
-				target = i
-				break
+	slot = tonumber(slot)
+	if not slot then
+		for i = Constants.ITEM_SLOTS + 1, Constants.HOTBAR do
+			local cur = s.slots["h" .. i]
+			if cur and cur.key == "pin" and cur.data and cur.data.piece == pieceKey then
+				return self:Select(player, i)
 			end
 		end
 	end
-	if not target then
-		-- a full hotbar: another shortcut makes way first (it's not a thing, nothing is lost)
-		for i = Constants.HOTBAR, 1, -1 do
-			if s.slots["h" .. i].key == "pin" then
-				target = i
-				break
-			end
-		end
-	end
-	if not target then
-		-- make room: the last hotbar slot's item goes to the bag
-		target = Constants.HOTBAR
-		local free
-		for i = 1, self:Capacity(player) do
-			if not s.slots["b" .. i] then
-				free = "b" .. i
-				break
-			end
-		end
-		if not free then
-			Net.fire(player, "Toast", "🎒 Your bag is full: make room first.", "bad")
-			return false
-		end
-		s.slots[free], s.slots["h" .. target] = s.slots["h" .. target], nil
+	local target = slot
+	if not (target and InventoryService.isQuick("h" .. target)) then
+		target = InventoryService.isQuick("h" .. s.selected) and s.selected or Constants.HOTBAR
 	end
 	s.slots["h" .. target] = { key = "pin", n = 1, data = { piece = pieceKey } }
 	s.selected = target
@@ -604,7 +584,7 @@ function InventoryService:Pin(player, pieceKey)
 	Net.fire(
 		player,
 		"Toast",
-		`📌 {Pieces.get(pieceKey).name} is in your hotbar: hold it and tap ACT to build.`,
+		`📌 {Pieces.get(pieceKey).name} is in slot {target}: hold it and tap ACT to build.`,
 		"good"
 	)
 	return true
@@ -616,7 +596,10 @@ function InventoryService:Drop(player, id, n)
 		return false
 	end
 	if item.kind == "pin" then
-		-- (a shortcut isn't a thing: dropping it just takes it off the hotbar)
+		-- (a shortcut isn't a thing: dropping it just takes it off the hotbar; the blueprint slots keep theirs)
+		if InventoryService.isQuick(id) then
+			return false
+		end
 		self:Consume(player, id, 1)
 		return true
 	end
@@ -750,6 +733,7 @@ function InventoryService:Reset(player)
 	s.finds = {}
 	s.selected = 1
 	self:StartingKit(player)
+	self:DefaultPins(player)
 	self:Push(player)
 	self:_refreshHeld(player)
 end
@@ -760,6 +744,17 @@ function InventoryService:StartingKit(player)
 	self:Select(player, 1)
 end
 
+-- The build shortcuts in the hotbar's last slots (Constants.DEFAULT_PINS): put back in any of those slots that's
+-- empty, so floors, nets and walls are always one key away (they're shortcuts, not things: nothing is given).
+function InventoryService:DefaultPins(player)
+	local s = state(player)
+	for i, piece in Constants.DEFAULT_PINS do
+		if i <= Constants.HOTBAR and not s.slots["h" .. i] and Pieces.get(piece) then
+			s.slots["h" .. i] = { key = "pin", n = 1, data = { piece = piece } }
+		end
+	end
+end
+
 function InventoryService:Init(reg)
 	registry = reg
 	data = reg.PlayerDataService
@@ -767,8 +762,8 @@ function InventoryService:Init(reg)
 	Net.on("Select", function(player, index)
 		self:Select(player, index)
 	end)
-	Net.on("Pin", function(player, pieceKey)
-		self:Pin(player, pieceKey)
+	Net.on("Pin", function(player, pieceKey, slot)
+		self:Pin(player, pieceKey, slot)
 	end)
 	Net.on("Move", function(player, from, to)
 		self:Move(player, from, to)
@@ -838,6 +833,7 @@ function InventoryService:OnPlayerReady(player, profile)
 	if not any then
 		self:StartingKit(player)
 	end
+	self:DefaultPins(player)
 	data:WhenClientReady(player, function()
 		self:Push(player)
 	end)

@@ -1793,11 +1793,11 @@ do
 	local Mode = service("ModeService")
 	-- empty hands: ACT puts the rod in your hand
 	-- (empty the last hotbar slot: its item goes to the bag, or overboard if the bag's full)
-	local last = "h" .. Constants.HOTBAR
+	local last = "h" .. Constants.ITEM_SLOTS -- (the last item slot: 7-9 are blueprint slots)
 	if Inventory:View(ava).slots[last] then
 		Inventory:Drop(ava, last)
 	end
-	Inventory:Select(ava, Constants.HOTBAR)
+	Inventory:Select(ava, Constants.ITEM_SLOTS)
 	Engine.advance(0.3)
 	send(ava, "Act", Vector3.new(1, 0, 0))
 	local _, inHand = Inventory:Selected(ava)
@@ -1858,8 +1858,9 @@ do
 		r = Rafts:RaftOf(ava)
 		local kinds = 0
 		for _, sl in Inventory:View(ava).slots do
-			kinds += 1
-			_ = sl
+			if sl.key ~= "pin" then
+				kinds += 1
+			end
 		end
 		check(
 			"reset: the raft is a little platform again",
@@ -1937,32 +1938,38 @@ do
 	end
 end
 
--- build shortcuts only live in the hotbar
+-- the hotbar's last three slots are blueprint slots for good: floor, net and wall to start, CHANGE picks another
 do
-	local pinned
-	if Inventory:Pin(ava, "floor") then
-		for id, sl in Inventory:View(ava).slots do
-			if sl.key == "pin" then
-				pinned = id
-			end
-		end
-	end
-	check("pin: a build shortcut goes in the hotbar", pinned ~= nil and string.sub(pinned, 1, 1) == "h")
+	local slots = Inventory:View(ava).slots
+	check(
+		"blueprint slots: floor, net and wall in slots 7-9",
+		slots.h7
+			and slots.h7.key == "pin"
+			and slots.h7.data.piece == "floor"
+			and slots.h8
+			and slots.h8.data.piece == "net"
+			and slots.h9
+			and slots.h9.data.piece == "wall"
+	)
 	local freeBag
 	for i = 1, Inventory:Capacity(ava) do
-		if not Inventory:View(ava).slots["b" .. i] then
+		if not slots["b" .. i] then
 			freeBag = "b" .. i
 			break
 		end
 	end
-	if pinned and freeBag then
-		Inventory:Move(ava, pinned, freeBag)
-		local any = false
-		for _, sl in Inventory:View(ava).slots do
-			any = any or sl.key == "pin"
+	check("blueprint slots: a blueprint can't be moved out", not Inventory:Move(ava, "h8", freeBag or "b1"))
+	check("blueprint slots: nor dropped", not Inventory:Drop(ava, "h8"))
+	give(ava, "stone", 3)
+	local stoneAt
+	for id, sl in Inventory:View(ava).slots do
+		if sl.key == "stone" then
+			stoneAt = id
 		end
-		check("pin: moved into the bag it's just taken off (never a thing)", not any)
 	end
+	check("blueprint slots: no item goes in one", stoneAt ~= nil and not Inventory:Move(ava, stoneAt, "h9"))
+	check("blueprint slots: CHANGE picks another blueprint for a slot", Inventory:Pin(ava, "railing", 8))
+	check("...and it's there", Inventory:View(ava).slots.h8.data.piece == "railing")
 end
 
 print(`\n{passed} passed, {failed} failed`)

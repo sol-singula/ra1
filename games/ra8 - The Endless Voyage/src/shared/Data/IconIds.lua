@@ -1,4 +1,39 @@
--- Uploaded 2D icons by item key (Roblox image asset ids). Empty until tools/icons/upload_icons.py fills it in from
--- other/ra8/items/; until then (and for any item missing here) the UI draws the item's own 3D model
--- (client/UI/Icons + World/ItemModels), so nothing is ever blank.
-return {}
+-- Uploaded 2D icons by item key (Roblox image asset ids), written by tools/icons/upload_icons.py.
+-- Items missing here show their 3D model (client/UI/Icons + World/ItemModels).
+return {
+	axe = 96944180152779,
+	berries = 113636436774916,
+	blueprint = 101997810392428,
+	bottle = 99886775154041,
+	chart = 136604341710411,
+	cloth = 125829625467943,
+	coconut = 102218154360694,
+	coconut_cake = 131605635635890,
+	cooked_fish = 108117334537982,
+	coral = 100950837232012,
+	crowbar = 101714754600673,
+	deep_rod = 114661916277161,
+	fiber = 114522722422953,
+	fish_stew = 95283566748249,
+	fishing_rod = 76699463840204,
+	frost_crystal = 125724074476099,
+	gear = 118334641299859,
+	glass = 96598157839904,
+	hammer = 72553442769188,
+	harpoon = 76024404435147,
+	heat_crystal = 128571019260681,
+	idol = 132204825864449,
+	iron_rod = 111034345622272,
+	lantern = 90068703766246,
+	leviathan_harpoon = 93380583704225,
+	leviathan_scale = 132604506448110,
+	logbook = 77835155275283,
+	long_rod = 116699050949800,
+	metal = 71226895051836,
+	old_compass = 101574314652712,
+	old_tech = 87108749688147,
+	ore = 71939477568046,
+	palm = 92118549652930,
+	pearl = 88832219921275,
+	pearl_tea = 117160983360141,
+}
