@@ -127,6 +127,8 @@ height capped, nothing outside the arena, invalid spots explained. Mobile: a lar
   titles; every 10th is a big one), with streak badges for 3/5/10 in a row.
 * Stats: wins, kills, deaths, assists, accuracy, structures built, frontline pushed, MVPs.
 * MVP of a match: most frontline pushed (kills) plus a share for assists and building.
+* After a win: fireworks in the winners' colour, a 30-second countdown to the next game, and the winners are asked
+  "Are you liking the game?" (once a day); a YES means their next win asks for a like.
 * Monetization later, cosmetic only (bow skins, trails, kill effects, VIP tag and chat colour). No combat power.
 
 ## 9. Production

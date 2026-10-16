@@ -48,6 +48,7 @@ local function defaults()
 			minutes = 0,
 		},
 		settings = { flips = true, sensitivity = 1, shake = true, weapon = "bow" },
+		feedback = { askedDay = 0, likeAskedDay = 0 }, -- the winners' cards (FeedbackService)
 		meta = { createdAt = os.time(), lastSeen = os.time(), lock = nil },
 	}
 end

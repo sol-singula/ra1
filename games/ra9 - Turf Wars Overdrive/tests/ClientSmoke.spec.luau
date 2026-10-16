@@ -171,6 +171,27 @@ check(
 	"...naming the winner",
 	refs.results and refs.results:FindFirstChildWhichIsA("TextLabel").Text:find("WINS") ~= nil
 )
+local Fireworks = Engine.require(tree.client.Controllers.FireworksController)
+Engine.advance(1)
+check("fireworks go off in the winners' colour", Fireworks.active() and Fireworks.count() > 0, Fireworks.count())
+check("the top shows the countdown", refs.phase.Text:find("NEXT GAME") ~= nil, refs.phase.Text)
+Engine.advance(Constants.FEEDBACK_ASK_DELAY)
+local Feedback = Engine.require(tree.client.Controllers.FeedbackController)
+local kind, card = Feedback.current()
+check("the winner is asked if they like the game", kind == "enjoy" and card ~= nil)
+check(
+	"...with buttons the mouse can reach in first person",
+	card and card:FindFirstChild("Yes") and card.Yes.Modal == true
+)
+card.Yes.Activated:Fire()
+Engine.advance(0.2)
+check("YES goes to the server", Engine.lastClientEvent("Feedback") ~= nil and Feedback.current() == nil)
+Engine.advance(Constants.RESULTS_CARD_SECONDS)
+check(
+	"after the results, a big countdown",
+	refs.countdown.Visible and refs.countdown.Text:find("NEXT GAME IN") ~= nil,
+	refs.countdown.Text
+)
 Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + 1)
 check("the next match: BUILD again", refs.phase.Text:find("BUILD") ~= nil, refs.phase.Text)
 check("...the results close", refs.results == nil)

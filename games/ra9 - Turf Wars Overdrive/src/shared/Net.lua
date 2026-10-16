@@ -20,6 +20,7 @@ Net.ClientEvents = {
 	Slide = 3, -- () a slide while running (MoveService checks the cooldown)
 	Settings = 2, -- (key, value) flips, sensitivity, equipped cosmetics
 	Analytics = 4, -- (kind, data) device info, frame rate (AnalyticsService)
+	Feedback = 2, -- ("enjoy", yes) the "Are you liking the game?" card | ("like", "ok" | "later") the like card
 }
 
 -- Server → client.
@@ -38,6 +39,7 @@ Net.ServerEvents = {
 	"Results", -- { winner, rows = { { userId, name, team, kills, deaths, assists, built } }, mvp, you, next }
 	"Unlock", -- { step = { win, kind, name, big }, wins }
 	"Sfx", -- soundName, worldPosition?
+	"Ask", -- { kind = "enjoy" | "like" } a card for a winner (FeedbackService)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).

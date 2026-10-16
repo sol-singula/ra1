@@ -146,10 +146,10 @@ function HudController.updateTop()
 	local m = Store.get("match") or {}
 	local phase = m.phase or "loading"
 	local left = (m.ends or now()) - now()
-	local names = { build = "BUILD", fight = "FIGHT", victory = "RESULTS", loading = "NEXT MAP" }
+	local names = { build = "BUILD", fight = "FIGHT", victory = "NEXT GAME", loading = "NEXT MAP" }
 	if refs.phase then
 		refs.phase.Text = (names[phase] or "")
-			.. ((phase == "build" or phase == "fight") and (" " .. clock(left)) or "")
+			.. ((phase == "build" or phase == "fight" or phase == "victory") and (" " .. clock(left)) or "")
 		refs.phasePill.BackgroundColor3 = phase == "fight" and C.ink or Color3.fromRGB(70, 70, 78)
 	end
 	local lo, hi = m.loseRed or -80, m.loseBlue or 80
@@ -253,6 +253,19 @@ local function buildCentre(gui)
 		Size = UDim2.fromOffset(620, 22),
 		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = gui,
+	})
+	-- the countdown to the next game, big, once the results card has gone
+	refs.countdown = Theme.title({
+		Name = "Countdown",
+		Text = "",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.42),
+		Size = UDim2.fromOffset(600, 70),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = C.ink,
+		outline = false,
+		Visible = false,
 		Parent = gui,
 	})
 	refs.respawn = Theme.title({
@@ -414,7 +427,7 @@ local function buildBottom(gui)
 		})
 		label({
 			Name = "Name",
-			Text = `{i}  {string.upper(string.split(w.name, " ")[2] or w.name)}`,
+			Text = `{i}  {({ bow = "BOW", crossbow = "CROSSBOW", heavy = "HEAVY" })[w.key] or string.upper(w.name)}`,
 			Size = UDim2.new(1, -4, 0, 14),
 			Position = UDim2.fromOffset(2, 32),
 			TextSize = 10,
@@ -660,9 +673,10 @@ function HudController.showResults(r)
 	local winColor = Constants.TEAM_COLOR[r.winner] or C.ink
 	local card = Theme.card({
 		Name = "Results",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.52),
-		Size = UDim2.fromOffset(560, 380),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 104),
+		-- (only as tall as its rows, under the top bar: the fireworks stay in view above and round it)
+		Size = UDim2.fromOffset(520, 150 + math.min(8, #(r.rows or {})) * 22),
 		BackgroundColor3 = C.white,
 		Parent = gui,
 	})
@@ -686,12 +700,12 @@ function HudController.showResults(r)
 	label({
 		Text = line,
 		Size = UDim2.new(1, -20, 0, 20),
-		Position = UDim2.fromOffset(10, 64),
+		Position = UDim2.fromOffset(10, 60),
 		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Parent = card,
 	})
-	local y = 96
+	local y = 88
 	label({
 		Text = "PLAYER                         K     D     A     BUILT",
 		Size = UDim2.new(1, -40, 0, 16),
@@ -722,7 +736,7 @@ function HudController.showResults(r)
 			TextColor3 = Constants.TEAM_COLOR[row.team or ""] or C.ink,
 			Parent = card,
 		})
-		y += 24
+		y += 22
 	end
 	if r.next then
 		label({
@@ -737,7 +751,7 @@ function HudController.showResults(r)
 		})
 	end
 	Theme.pop(card)
-	task.delay(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS, function()
+	task.delay(Constants.RESULTS_CARD_SECONDS, function()
 		if refs.results == card then
 			card:Destroy()
 			refs.results = nil
@@ -800,10 +814,19 @@ local function step()
 	if refs.cross then
 		refs.cross.Visible = me.alive ~= false and m.phase ~= "victory"
 	end
+	if refs.countdown then
+		local show = m.phase == "victory" and refs.results == nil
+		refs.countdown.Visible = show
+		if show then
+			local left = math.max(0, math.ceil((m.ends or now()) - now()))
+			refs.countdown.Text = `NEXT GAME IN {left}`
+			refs.countdown.TextColor3 = Constants.TEAM_COLOR[m.winner or ""] or C.ink
+		end
+	end
 	if refs.flash and refs.flash.BackgroundTransparency < 1 then
 		refs.flash.BackgroundTransparency = math.min(1, refs.flash.BackgroundTransparency + 0.04)
 	end
-	if refs.objective and refs.objectiveUntil and os.clock() > refs.objectiveUntil then
+	if refs.objective and refs.objectiveUntil and (os.clock() > refs.objectiveUntil or m.phase == "victory") then
 		refs.objective.Visible = false
 	end
 end

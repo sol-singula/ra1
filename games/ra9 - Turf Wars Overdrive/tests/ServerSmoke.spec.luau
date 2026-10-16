@@ -320,6 +320,19 @@ check("...the ladder's first step unlocked", Data:Get(red).wins == 1 and lastFir
 check("the losers' streak is zero", Data:Get(blue).streak == 0 and Data:Get(blue).stats.losses == 1)
 check("the next map is named in the results", results and results.next and results.next.key ~= "castle")
 check("combat stops at the victory", ws:GetAttribute("Phase") == "victory")
+check("the winner is known to everyone (fireworks)", ws:GetAttribute("Winner") == Teams:Team(red))
+check(
+	"a 30 s countdown to the next game",
+	math.abs(ws:GetAttribute("PhaseEnds") - Engine.workspace:GetServerTimeNow() - 30) < 1,
+	ws:GetAttribute("PhaseEnds") - Engine.workspace:GetServerTimeNow()
+)
+local mAsk = mark()
+Engine.advance(Constants.FEEDBACK_ASK_DELAY + 0.3)
+local ask = firedSince(mAsk, "Ask", red)
+check("the winners are asked if they like the game", ask and ask.args[1].kind == "enjoy")
+check("...the losers aren't", firedSince(mAsk, "Ask", blue) == nil)
+send(red, "Feedback", "enjoy", true)
+check("the answer is kept", Data:Get(red).feedback.answer == true and Data:Get(red).feedback.pendingLike == true)
 Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + 1)
 check("the next map loads in the same server", ws:GetAttribute("MapKey") == results.next.key, ws:GetAttribute("MapKey"))
 check("...the frontline resets", ws:GetAttribute("Frontline") == 0)
@@ -358,6 +371,28 @@ stand(red, Vector3.new(-30, -40, 0))
 Engine.advance(0.5)
 check("falling below the map kills", not Combat:Alive(red))
 check("...and pushes nothing", ws:GetAttribute("Frontline") == f0)
+
+-- The winners' next win: a like is asked for (once); a third win the same day asks nothing ------------------------
+do
+	Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + 1)
+	local mine = Teams:Team(red)
+	local m5 = mark()
+	Match:Victory(mine)
+	Engine.advance(Constants.FEEDBACK_ASK_DELAY + 0.3)
+	local a = firedSince(m5, "Ask", red)
+	check("their next win asks for a like", a and a.args[1].kind == "like", a and a.args[1].kind)
+	send(red, "Feedback", "like", "ok")
+	check("...and remembers it", Data:Get(red).feedback.likeAnswer == "ok")
+	Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + 1)
+	local m6 = mark()
+	Match:Victory(mine)
+	Engine.advance(Constants.FEEDBACK_ASK_DELAY + 0.3)
+	check("a third win the same day asks nothing", firedSince(m6, "Ask", red) == nil)
+	check(
+		"an answer to a card you weren't shown is ignored",
+		not service("FeedbackService"):Answer(red, "enjoy", false)
+	)
+end
 
 print(`\n{passed} passed, {failed} failed`)
 if #Engine.errors > 0 then

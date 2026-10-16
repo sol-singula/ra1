@@ -16,8 +16,11 @@ Constants.TEAM_IMBALANCE = 2 -- a solo player joins the smaller team; a party ma
 -- Phases (§2): seconds
 Constants.BUILD_SECONDS = 60
 Constants.FIGHT_SECONDS = 120
-Constants.VICTORY_SECONDS = 7 -- the victory sequence and results
-Constants.TRANSITION_SECONDS = 3 -- the next map loads (8-12 s in all with the results)
+Constants.VICTORY_SECONDS = 27 -- fireworks, the results, then the countdown to the next game...
+Constants.TRANSITION_SECONDS = 3 -- ...and the next map loads: 30 s from the win to the next build phase
+Constants.RESULTS_CARD_SECONDS = 12 -- the results card stays this long; the countdown shows after it
+Constants.FIREWORKS_SECONDS = 14 -- fireworks in the winners' colour all over the arena
+Constants.FEEDBACK_ASK_DELAY = 6 -- seconds after a win before a winner is asked anything (after the fireworks start)
 Constants.MIN_PLAYERS_TO_SCORE = 2 -- with fewer, phases still run (practice) but nobody can win
 Constants.WATCHDOG_SECONDS = 45 * 60 -- a match this long is logged as stalled and restarted (never "won")
 

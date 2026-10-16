@@ -101,6 +101,7 @@ function MatchService:Snapshot()
 		red = teams:Count("red"),
 		blue = teams:Count("blue"),
 		matchId = matchId,
+		winner = workspace:GetAttribute("Winner"),
 	}
 end
 
@@ -246,6 +247,7 @@ function MatchService:Victory(winner)
 		return
 	end
 	local results = self:Results(winner)
+	workspace:SetAttribute("Winner", winner) -- (the clients' fireworks, and anyone joining during the countdown)
 	setPhase("victory", Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS)
 	local nextMap = Maps.next(mapKey, function(a, b)
 		return random:NextInteger(a, b)
@@ -278,12 +280,7 @@ function MatchService:Victory(winner)
 			next = { key = nextMap.key, name = nextMap.name, tagline = nextMap.tagline },
 		})
 	end
-	Net.fireAll(
-		"Alert",
-		`{Constants.TEAM_NAME[winner]} WINS`,
-		Constants.TEAM_COLOR[winner],
-		Constants.VICTORY_SECONDS - 1
-	)
+	Net.fireAll("Alert", `{Constants.TEAM_NAME[winner]} WINS`, Constants.TEAM_COLOR[winner], 4)
 	self.Ended:Fire(winner, results)
 	task.delay(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS, function()
 		self:NewMatch(self._nextMap)
@@ -291,6 +288,7 @@ function MatchService:Victory(winner)
 end
 
 function MatchService:NewMatch(key)
+	workspace:SetAttribute("Winner", nil)
 	setPhase("loading", 1)
 	build:Clear()
 	mapKey = key or mapKey or Maps.list[1].key

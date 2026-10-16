@@ -51,6 +51,19 @@ TURN).
 checks (a whole match: teams, building rules, arrows, kills, the line, the turf rule, structures breaking, the
 crossbow's magazine, victory, rewards, the next map), 38 client checks (the same through the real client).
 
+## Round 2: the win
+
+* **30 seconds from the win to the next game.** The results card (12 s, compact, under the top bar), then a big
+  NEXT GAME IN countdown in the winners' colour; the top pill counts down the whole time.
+* **Fireworks** in the winners' colour all over the arena for 14 s: rockets that burst into neon shards (the team's
+  colour, a lighter shade, white), drawn on each client from the match's Winner (fewer on phones).
+* **Asking the winners** (`FeedbackService`, `FeedbackController`), 6 s after the win so it lands after the
+  fireworks start: "Are you liking the game?" YES / NO at most once a day; after a YES, their next win asks for a
+  👍 like (once). Roblox doesn't let a game press its like button, so the card asks and its button opens Roblox's own
+  favourite prompt. The buttons free the mouse from first person; Y / N answer too.
+
+![](screenshots/victory.png)
+
 ## Next (phase F)
 
 * The Discord log and analytics (the studio's shared pipeline), the dashboard entry.
