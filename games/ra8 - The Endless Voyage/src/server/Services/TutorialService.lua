@@ -78,6 +78,12 @@ function TutorialService:Active(player)
 	return active[player]
 end
 
+-- The piece the guide's step asks for right now (QUICK builds it first), or nil.
+function TutorialService:StepPiece(player)
+	local a = active[player]
+	return a and STEP_PIECE[STEPS[a.step]] or nil
+end
+
 -- Where a player is in the guide, for the analytics and the log: "3/8 tile", "done", or "-" before it starts.
 function TutorialService:StepName(player)
 	local a = active[player]
@@ -224,13 +230,8 @@ function TutorialService:Goal(player)
 		end
 		return goal
 	end
-	-- now and then (a minute in every ten, once the raft has grown): show it to a friend
-	local minute = math.floor(os.time() / 60)
-	if raft.tier >= 2 and minute % 10 == 0 then
-		goal.key, goal.action = "invite", "invite"
-		goal.text = "Show your raft to a friend! 💌 They sail into your world and you both get a 🎁 crate"
-		return goal
-	end
+	-- (no "show your raft to a friend" step: the guide sticks to what to do next; ModeService asks about friends at
+	-- the few moments that are better with one)
 	-- broken pieces: the hammer
 	local broken
 	for _, p in raft.pieces do
@@ -244,17 +245,21 @@ function TutorialService:Goal(player)
 		goal.target, goal.piece = rafts:PiecePosition(raft, broken) + Vector3.new(0, 2, 0), broken.id
 		return goal
 	end
-	-- the raft's next piece
+	-- the raft's next piece: the first thing it needs that you can pay for, else the first thing it needs (and what's
+	-- missing for it); more floor just for room only when nothing is needed (the same rule as QUICK)
 	local list = rafts:Recommend(raft)
-	local rec
+	local rec, firstNeed
 	for _, r in list do
-		if #missing(player, Pieces.get(r.key).cost) == 0 then
-			rec = r
-			break
+		if not r.filler then
+			firstNeed = firstNeed or r
+			if #missing(player, Pieces.get(r.key).cost) == 0 then
+				rec = r
+				break
+			end
 		end
 	end
-	rec = rec or list[1]
-	local filler = not rec or rec.why == "a comfort" or rec.why == "more room"
+	rec = rec or firstNeed or list[1]
+	local filler = not rec or rec.filler == true or string.sub(rec.why or "", 1, 9) == "a comfort"
 	if filler and not rafts:Has(raft, "helm") then
 		local need = missing(player, Pieces.get("helm").cost)
 		goal.key, goal.piece = "helm", nil

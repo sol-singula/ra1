@@ -115,7 +115,7 @@ local function panel(name, title, w, h)
 		Size = UDim2.fromOffset(44, 40),
 		Parent = head,
 	})
-	Theme.keyHint(x, "Esc", "B")
+	Theme.keyHint(x, "C", "B")
 	x.Activated:Connect(PanelController.close)
 	local body = new("Frame", {
 		Name = "Body",
@@ -971,6 +971,30 @@ local function inventoryPanel()
 			detailsCard(body, inv, hover or picked)
 		end
 		local function onClick(slotId, slot)
+			if
+				slot
+				and (
+					UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+					or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+				)
+			then
+				-- shift-click: straight to the hotbar (from the hotbar: to the bag)
+				local toBag = string.sub(slotId, 1, 1) == "h"
+				local count = toBag and (inv.capacity or 16) or Constants.HOTBAR
+				for i = 1, count do
+					local id = (toBag and "b" or "h") .. i
+					if not inv.slots[id] then
+						picked = nil
+						PanelController.dropOn(slotId, id)
+						return
+					end
+				end
+				if not toBag then
+					picked = nil
+					PanelController.dropOn(slotId, "h" .. (inv.selected or 1))
+					return
+				end
+			end
 			if picked and picked ~= slotId then
 				PanelController.dropOn(picked, slotId)
 				return
@@ -1011,13 +1035,17 @@ local function inventoryPanel()
 			local id = "h" .. i
 			open.cells[id] = itemCell(hot, id, inv.slots[id], i, onClick, onEnter, onLeave)
 		end
-		label(left, `BAG · {inv.capacity or 16} slots (more with storage boxes and tiers) · drag to move`, {
-			Position = UDim2.fromOffset(0, 92),
-			Size = UDim2.new(1, 0, 0, 20),
-			Font = Theme.Display,
-			TextSize = 14,
-			TextColor3 = C.muted,
-		})
+		label(
+			left,
+			`BAG · {inv.capacity or 16} slots (more with storage boxes and tiers) · drag to move · shift-click to the hotbar`,
+			{
+				Position = UDim2.fromOffset(0, 92),
+				Size = UDim2.new(1, 0, 0, 20),
+				Font = Theme.Display,
+				TextSize = 14,
+				TextColor3 = C.muted,
+			}
+		)
 		local finds = (inv.finds or 0) > 0
 		local grid = scroller(left, {
 			Position = UDim2.fromOffset(0, 114),
@@ -2089,19 +2117,11 @@ function PanelController.card(name, title, text, buttons)
 	})
 	cards[name] = card
 	Layout.modal(name, card)
-	Theme.title({
-		Name = "Title",
-		Text = title,
-		TextColor3 = C.ink,
-		outline = false,
-		Size = UDim2.new(1, -24, 0, 34),
-		Position = UDim2.fromOffset(12, 10),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Parent = card,
-	})
+	-- the question in white on a dark band (dark letters on the cream card read as blobs on a phone)
+	Theme.cardHeader(card, title, 48)
 	label(card, text or "", {
 		Name = "Text",
-		Position = UDim2.fromOffset(16, 48),
+		Position = UDim2.fromOffset(16, 56),
 		Size = UDim2.new(1, -32, 0, 70),
 		TextSize = 17,
 		TextXAlignment = Enum.TextXAlignment.Center,
@@ -2394,6 +2414,8 @@ function PanelController:init()
 				PanelController.openPanel("craft", prompt:GetAttribute("Station"))
 			elseif kind == "helm" then
 				PanelController.openPanel("map", true)
+			elseif kind == "storage" then
+				PanelController.openPanel("inventory") -- (a box's slots are part of your bag)
 			end
 		end)
 	end)
@@ -2401,7 +2423,13 @@ function PanelController:init()
 		if processed then
 			return
 		end
-		if (input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.ButtonB) and open then
+		if
+			(
+				input.KeyCode == Enum.KeyCode.C
+				or input.KeyCode == Enum.KeyCode.Escape
+				or input.KeyCode == Enum.KeyCode.ButtonB
+			) and open
+		then
 			PanelController.close()
 		end
 	end)

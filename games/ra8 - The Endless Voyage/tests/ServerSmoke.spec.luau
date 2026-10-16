@@ -446,8 +446,8 @@ for _, r in rec do
 	end
 end
 check(
-	"QUICK's recommendations: the stations the next tier needs, then tiles",
-	rec[1] and rec[1].key == "workbench" and rec[2] and rec[2].key == "storage" and recFloor,
+	"QUICK's recommendations: the guide's piece first, then what the raft needs, floor for room last",
+	rec[1] and rec[1].key == "workbench" and recFloor,
 	rec[1] and rec[1].key
 )
 check("the raft view carries them", #lastFired("Raft", ava).recommend >= 3)
@@ -816,9 +816,14 @@ local function fill(player, r, n)
 	return built
 end
 fill(ava, raft, 9)
+Inventory:Give(ava, "scrap", 6)
+Inventory:Give(ava, "rope", 3)
+local anchorTile = Rafts:EmptyTiles(raft, 1)[1]
+send(ava, "Build", "anchor", anchorTile.gx, anchorTile.gz, 1)
+check("the anchor builds early (tier 1) from scrap and rope", Rafts:Anchors(raft) == 1)
 local emptyTile = Rafts:EmptyTiles(raft, 1)[1]
 send(ava, "Build", "storage", emptyTile.gx, emptyTile.gz, 1)
-check("nine tiles, a workbench and a box: tier 2, the Survival Raft", raft.tier == 2, raft.tier)
+check("nine tiles, a workbench, an anchor and a box: tier 2, the Survival Raft", raft.tier == 2, raft.tier)
 check("a tier-up card and XP", firedSince(m6, "Unlock", ava, function(a)
 	return a[1].kind == "tier" and a[1].tier == 2
 end) ~= nil)
@@ -888,7 +893,7 @@ check("tier 3, the Expedition Vessel", raft.tier == 3, raft.tier)
 check("a sail doubles the speed", Rafts:Speed(raft) == 2)
 check("the raft view's needs point at tier 4", lastFired("Raft", ava).nextTier == "Ocean Explorer")
 -- the anchor: docked as long as you like
-check("an anchor builds at tier 3", onTile(ava, "anchor") and Rafts:Anchors(raft) == 1)
+check("the raft still has its anchor at tier 3", Rafts:Anchors(raft) == 1)
 send(ava, "Sail", "palm_key")
 Voyages:_setEnds(1, Engine.now() + 1)
 Engine.advance(1.5)
@@ -1830,13 +1835,20 @@ do
 	Engine.advance(1)
 	check("only once a day per friend", came == 1)
 	-- nudges to show your raft, rate-limited
-	check(
-		"a nudge to invite friends goes out",
-		Mode:Nudge(ava, "test") == true and lastFired("Nudge", ava).kind == "invite"
-	)
-	check("but not again right away", Mode:Nudge(ava, "again") == false)
 	ws:SetAttribute("Mode", nil)
 	ws:SetAttribute("WorldOwner", nil)
+	-- "bring a friend?" only at a few moments: once ever per moment, one card a session
+	local profileA = Data:Get(ava)
+	profileA.nudged = {}
+	Mode._resetNudges(ava)
+	check("an unknown moment asks nothing", Mode:Nudge(ava, "test") == false)
+	check(
+		"a moment that's better with a friend asks once",
+		Mode:Nudge(ava, "mist") == true and lastFired("Nudge", ava).kind == "invite" and profileA.nudged.mist ~= nil
+	)
+	check("no second card in the same session", Mode:Nudge(ava, "trench") == false)
+	Mode._resetNudges(ava)
+	check("and the same moment never again", Mode:Nudge(ava, "mist") == false)
 
 	-- RESET MY WORLD: back to the platform, an empty bag with the rod
 	local r = Rafts:RaftOf(ava)
@@ -1858,6 +1870,34 @@ do
 			kinds == 2 and Inventory:Count(ava, "fishing_rod") == 1 and Inventory:Count(ava, "hammer") == 1
 		)
 		check("reset: the level stays", noDataStore or Data:Get(ava).xp > 0)
+	end
+end
+
+-- build shortcuts only live in the hotbar
+do
+	local pinned
+	if Inventory:Pin(ava, "floor") then
+		for id, sl in Inventory:View(ava).slots do
+			if sl.key == "pin" then
+				pinned = id
+			end
+		end
+	end
+	check("pin: a build shortcut goes in the hotbar", pinned ~= nil and string.sub(pinned, 1, 1) == "h")
+	local freeBag
+	for i = 1, Inventory:Capacity(ava) do
+		if not Inventory:View(ava).slots["b" .. i] then
+			freeBag = "b" .. i
+			break
+		end
+	end
+	if pinned and freeBag then
+		Inventory:Move(ava, pinned, freeBag)
+		local any = false
+		for _, sl in Inventory:View(ava).slots do
+			any = any or sl.key == "pin"
+		end
+		check("pin: moved into the bag it's just taken off (never a thing)", not any)
 	end
 end
 

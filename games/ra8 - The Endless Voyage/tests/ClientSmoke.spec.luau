@@ -492,14 +492,19 @@ end
 
 -- QUICK: hold it and the recommended piece goes where you look --------------------------------------------------------------
 Engine.advance(0.3)
+local recNow = Formulas.recommended(Store.get("raft"), Store.get("inv"))
 check(
-	"the QUICK button shows the piece the raft recommends (the box the next tier needs, affordable)",
+	"the QUICK button shows what the raft needs (not more floor)",
 	Input.refs.quick.Visible == true
-		and Input.refs.quick:GetAttribute("Piece") == "storage"
+		and recNow ~= nil
+		and recNow.key ~= "floor"
+		and Input.refs.quick:GetAttribute("Piece") == recNow.key
 		and Input.refs.quickPiece:FindFirstChild("Icon3D") ~= nil,
 	Input.refs.quick:GetAttribute("Piece")
 )
--- stand on an edge tile looking out over the water beside it
+-- stand on an edge tile looking out over the water beside it, with what the box costs in the bag
+Inventory:Give(player, "wood", 20, "test")
+Engine.advance(0.3)
 local free = Rafts:FreeSpots(Rafts:RaftOf(player), 1)[1]
 local freePos = Rafts:TileWorld(Rafts:RaftOf(player), free[1], free[2], 1)
 local edgeTile
@@ -510,28 +515,26 @@ for _, p in Rafts:RaftOf(player).pieces do
 end
 stand(tileAt(raft, edgeTile.gx, edgeTile.gz), freePos)
 local tilesBefore = Rafts:RaftOf(player).summary.tiles
-local woodBefore = Inventory:Count(player, "wood")
+local piecesBefore = #Rafts:RaftOf(player).pieces
+local want = Formulas.recommended(Store.get("raft"), Store.get("inv"))
 Input.refs.quick.MouseButton1Down:Fire()
 check(
-	"holding QUICK over the water lays a tile (a station needs a tile, so a tile it is)",
-	Build.placing() ~= nil and Build.placing().quick ~= nil and Build.placing().key == "floor",
+	"holding QUICK starts placing what the raft needs",
+	Build.placing() ~= nil and Build.placing().quick ~= nil and Build.placing().key == want.key,
 	Build.placing() and Build.placing().key
 )
 check("the placing bar says QUICK", Build.refs.barText.Text:find("⚡") ~= nil, Build.refs.barText.Text)
 Engine.advance(0.5)
-check(
-	"the tile went where you looked, and the hold laid the next",
-	Rafts:RaftOf(player).summary.tiles == tilesBefore + 2 and Inventory:Count(player, "wood") == woodBefore - 8,
-	Rafts:RaftOf(player).summary.tiles
-)
+Engine.advance(0.5)
 Input.refs.quick.MouseButton1Up:Fire()
 Engine.advance(0.2)
-check("letting go ends it", Build.placing() == nil and not Input.isQuick())
+local r2 = Rafts:RaftOf(player)
 check(
-	"the raft still asks for the box first (QUICK shows the first piece you can pay for)",
-	Store.get("raft").recommend[1].key == "storage" and Input.refs.quick:GetAttribute("Piece") ~= nil,
-	Input.refs.quick:GetAttribute("Piece")
+	"looking at the water, the piece went on a free floor instead of laying more floor",
+	#r2.pieces > piecesBefore and (want.key == "floor" or r2.summary.tiles == tilesBefore),
+	`{#r2.pieces - piecesBefore} pieces, tiles {tilesBefore} -> {r2.summary.tiles}`
 )
+check("letting go ends it", Build.placing() == nil and not Input.isQuick())
 
 -- Into the water: a splash, ripples, and the HUD says how to get back -------------------------------------------------------
 do

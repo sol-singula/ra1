@@ -50,9 +50,27 @@ local build = {}
 -- What keeps a tile up, and what makes it look like it floats: two pontoons running under it, half in the water
 -- (the water is at cf.Y - DECK_Y), lashed on with rope, and a dark hull skirt under the planks so no light shows
 -- through from below.
-local function pontoons(m, cf, color, material)
+-- Only a tile on the water floats: one up on the second deck stands on posts on the deck below instead.
+local function pontoons(m, cf, color, material, opts)
 	local still = { CanCollide = false, CastShadow = false }
 	part(m, "Skirt", cf * CFrame.new(0, -0.62, 0), V3(T, 0.6, T), C.barkDark, M.Wood, { CanCollide = false })
+	if opts and (opts.level or 1) > 1 then
+		local h = Constants.DECK_HEIGHT - 0.9
+		for _, sx in { -1, 1 } do
+			for _, sz in { -1, 1 } do
+				part(
+					m,
+					"Post",
+					cf * CFrame.new(sx * (T / 2 - 0.4), -0.6 - h / 2, sz * (T / 2 - 0.4)),
+					V3(0.5, h, 0.5),
+					C.woodDark,
+					M.Wood,
+					still
+				)
+			end
+		end
+		return
+	end
 	for _, sz in { -1, 1 } do
 		Kit.cyl(m, "Pontoon", cf * CFrame.new(0, -Constants.DECK_Y, sz * 2), T - 0.2, 2.2, color, material, still)
 		for _, sx in { -1.9, 1.9 } do
@@ -77,7 +95,7 @@ function build.floor(m, cf, opts)
 	for k = -1, 1, 2 do
 		part(m, "Beam", cf * CFrame.new(0, -0.6, k * 2.2), V3(T, 0.6, 0.6), C.woodDark, M.Wood, { CanCollide = false })
 	end
-	pontoons(m, cf, C.barkDark:Lerp(C.woodDark, 0.4), M.Wood)
+	pontoons(m, cf, C.barkDark:Lerp(C.woodDark, 0.4), M.Wood, opts)
 end
 
 function build.plank_floor(m, cf, opts)
@@ -86,7 +104,7 @@ function build.plank_floor(m, cf, opts)
 	part(m, "Trim", cf * CFrame.new(0, 0.05, 0), V3(T + 0.1, 0.5, T + 0.1), col:Lerp(C.woodDark, 0.35), M.Wood, {
 		CanCollide = false,
 	})
-	pontoons(m, cf, C.iron, M.Metal)
+	pontoons(m, cf, C.iron, M.Metal, opts)
 end
 
 function build.stairs(m, cf, opts)

@@ -380,7 +380,15 @@ function InventoryService:Move(player, from, to)
 		return false
 	end
 	local itemA = Items.get(a.key)
-	if b and b.key == a.key and itemA.stack > 1 and not a.data and not b.data then
+	local toBag, fromBag = string.sub(to, 1, 1) == "b", string.sub(from, 1, 1) == "b"
+	if (a.key == "pin" and toBag) or (b and b.key == "pin" and fromBag) then
+		-- (a build shortcut only lives in the hotbar: one moved into the bag is just taken off)
+		if a.key == "pin" then
+			s.slots[from] = nil
+		else
+			s.slots[from], s.slots[to] = nil, a
+		end
+	elseif b and b.key == a.key and itemA.stack > 1 and not a.data and not b.data then
 		local add = math.min(itemA.stack - b.n, a.n)
 		b.n += add
 		a.n -= add
@@ -540,7 +548,8 @@ function InventoryService:SpawnDrop(pos, items, opts)
 end
 
 -- A build shortcut for a piece in the hotbar (the selected slot if it's free, else the first free one, else the
--- last slot's item goes to the bag). Already pinned: that slot is selected.
+-- last shortcut makes way, else the last slot's item goes to the bag). Already pinned: that slot is selected. A
+-- shortcut is never a thing: moving it into the bag takes it off.
 function InventoryService:Pin(player, pieceKey)
 	if type(pieceKey) ~= "string" or not Pieces.get(pieceKey) then
 		return false
@@ -558,6 +567,15 @@ function InventoryService:Pin(player, pieceKey)
 	else
 		for i = 1, Constants.HOTBAR do
 			if not s.slots["h" .. i] then
+				target = i
+				break
+			end
+		end
+	end
+	if not target then
+		-- a full hotbar: another shortcut makes way first (it's not a thing, nothing is lost)
+		for i = Constants.HOTBAR, 1, -1 do
+			if s.slots["h" .. i].key == "pin" then
 				target = i
 				break
 			end

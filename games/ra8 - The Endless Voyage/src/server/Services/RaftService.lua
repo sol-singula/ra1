@@ -414,14 +414,22 @@ end
 -- What to build next (the QUICK button): the next tier's missing stations you can build, tiles while the tier
 -- wants more (stairs first when it wants a second deck), then a few comforts, then room. In the order to try them;
 -- the client takes the first its bag can pay for (Formulas.recommended).
+-- What the raft should get next, best first: QUICK builds the first one the bag can pay for (Formulas.recommended),
+-- and the guide's NEXT card names it. Things the raft needs come before more floor: the piece the guide's step asks
+-- for, a way to sail and then the anchor (so you can stay at an island as long as you like), the stations the next
+-- tier needs, the floors it needs, a bunk, railings and a lamp. Floor just for room ("more room", filler = true)
+-- comes last, and QUICK only builds it when nothing else is wanted.
 function RaftService:Recommend(raft)
 	local profile = raft.owner and data:Get(raft.owner)
 	local t = Pieces.TIERS[raft.tier + 1]
 	local out, seen = {}, {}
-	local function add(key, why)
+	local function add(key, why, filler)
 		local def = Pieces.get(key)
 		if not def or seen[key] or def.tier > raft.tier then
 			return
+		end
+		if UNIQUE[key] and self:Has(raft, key) then
+			return -- (one is all a raft can have)
 		end
 		if def.blueprint and not (profile and profile.blueprints[key]) then
 			return
@@ -430,9 +438,18 @@ function RaftService:Recommend(raft)
 			return
 		end
 		seen[key] = true
-		table.insert(out, { key = key, why = why })
+		table.insert(out, { key = key, why = why, filler = filler or nil })
 	end
-	local room = true -- (rafts grow as big as you like)
+	local guide = registry and registry.TutorialService
+	local step = guide and raft.owner and guide:StepPiece(raft.owner)
+	if step then
+		add(step, "the guide's next step")
+	end
+	if not self:Has(raft, "helm") then
+		add("helm", "so you can sail to islands")
+	elseif not self:Has(raft, "anchor") then
+		add("anchor", "so you can stay at an island as long as you like")
+	end
 	if t then
 		local why = `so your raft grows into a {t.name}`
 		for _, def in Pieces.list do
@@ -456,24 +473,25 @@ function RaftService:Recommend(raft)
 				end
 			end
 		end
-		if room and t.tiles and raft.summary.tiles < t.tiles then
-			add("floor", `{raft.summary.tiles}/{t.tiles} tiles {why}`)
+		if t.tiles and raft.summary.tiles < t.tiles then
+			add("floor", `{raft.summary.tiles}/{t.tiles} floors {why}`)
 		end
-		if room and t.deck2 and raft.summary.deck2 < t.deck2 then
+		if t.deck2 and raft.summary.deck2 < t.deck2 then
 			if not self:Has(raft, "stairs") then
 				add("stairs", `a second deck {why}`)
 			end
-			add("floor", `{raft.summary.deck2}/{t.deck2} tiles up top {why}`)
+			add("floor", `{raft.summary.deck2}/{t.deck2} floors up top {why}`)
 		end
 	end
-	for _, key in { "railing", "bed", "lamp" } do
+	if not self:Has(raft, "bed") then
+		add("bed", "a comfort: rest to heal and wake up here")
+	end
+	for _, key in { "railing", "lamp" } do
 		if not self:Has(raft, key) then
 			add(key, "a comfort")
 		end
 	end
-	if room then
-		add("floor", "more room")
-	end
+	add("floor", "more room", true)
 	return out
 end
 
@@ -560,6 +578,7 @@ end
 local PROMPT = {
 	helm = { kind = "helm", text = "Set sail", object = "Helm" },
 	bed = { kind = "bed", text = "Rest", object = "Bunk", hold = 0.6 },
+	storage = { kind = "storage", text = "Open", object = "Storage Box" },
 	net = { kind = "net", text = "Empty net", object = "Surface Net" },
 	salvage_net = { kind = "net", text = "Empty net", object = "Salvage Net" },
 }

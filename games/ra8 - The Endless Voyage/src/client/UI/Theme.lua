@@ -286,6 +286,50 @@ function Theme.title(props)
 	return Theme.text(props)
 end
 
+-- A popup's header: a dark band across the top of a card with the words in white display letters and a dark
+-- outline, like a panel's title bar. (Dark letters on the cream card read as black blobs on a phone.) Without a
+-- textSize the words shrink to fit the band, wrapping onto a second line if they must.
+function Theme.cardHeader(card, text, height, color, textSize)
+	local band = color or C.slate
+	local head = new("Frame", {
+		Name = "Head",
+		BackgroundColor3 = band,
+		BorderSizePixel = 0,
+		Size = UDim2.new(1, 0, 0, height or 48),
+		Parent = card,
+	}, { Theme.corner(18) })
+	-- (square bottom corners: the band meets the card's body in a straight line)
+	new("Frame", {
+		Name = "Square",
+		BackgroundColor3 = band,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0, 0, 1, -16),
+		Size = UDim2.new(1, 0, 0, 16),
+		Parent = head,
+	})
+	local title = Theme.title({
+		Name = "Title",
+		Text = text or "",
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Position = UDim2.fromOffset(14, 5),
+		Size = UDim2.new(1, -28, 1, -10),
+		TextSize = textSize,
+		Parent = head,
+	})
+	return head, title
+end
+
+-- Fade outlined text in or out: the letters and their outline together (an outline left behind keeps the words
+-- on screen as a ghost after the letters have gone).
+function Theme.fadeText(label, seconds, transparency)
+	Theme.tween(label, seconds, { TextTransparency = transparency })
+	for _, d in label:GetChildren() do
+		if d:IsA("UIStroke") then
+			Theme.tween(d, seconds, { Transparency = transparency })
+		end
+	end
+end
+
 -- Buttons react: grow a little under the mouse, squish while held, bounce back on release (about 0.1 s).
 local function pressable(button)
 	local scale = new("UIScale", { Name = "Press", Scale = 1, Parent = button })

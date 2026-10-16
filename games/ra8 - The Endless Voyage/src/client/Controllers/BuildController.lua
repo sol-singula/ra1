@@ -2,13 +2,15 @@
 Building (master plan §5: the raft is a grid, building is visible and tactile). The build panel picks a piece
 (Bus.Place); then a ghost of it follows where you point (the mouse on PC, in front of you on phones and gamepads),
 green where it can go and red where it can't (with the reason), and ACT / a click / a tap places it: the server
-checks and builds (RaftService). Tiles keep placing until DONE; everything else places once. ROTATE turns a chair
-or the helm; railings and nets pick the edge nearest to where you point.
-REMOVE (X, the gamepad's d-pad left, or the ♻️ button on your raft): the piece you point at glows red with what you'd
-get back, and ACT / a click / a tap takes it off for its whole cost (a tile takes what's on it too).
-QUICK (Bus.Quick, from InputController's button): the piece the raft recommends (the next tier's missing station if
-the bag can pay for it, else a tile) goes where you look, again every half second while the button is held, with
-the same ghost and the same rules. Looking at the water beside the raft while a station is recommended lays tiles.
+checks and builds (RaftService). Tiles keep placing until DONE; everything else places once.
+ROTATE (R, the mouse wheel, the gamepad's L2) turns a chair or the helm, and moves a wall or a railing to the next
+side of its floor (until you turn it, it takes the side nearest to where you point).
+REMOVE (X, the gamepad's d-pad left, or the ♻️ button on your raft): the piece you point at glows red, and ACT / a
+click / a tap takes it off for its whole cost (a tile takes what's on it too).
+QUICK (Bus.Quick, from InputController's button): what the raft needs next (Formulas.recommended: never more floor
+while something else is wanted) goes where you look, again every half second while the button is held, with the
+same ghost and the same rules. Something that stands on a floor goes on the free floor nearest to where you look;
+only a raft with no free floor gets a floor laid first.
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -39,6 +41,8 @@ local ghostFolder
 local lastSpotKey
 local WATERSIDE = { ladder = true, spikes = true }
 local NEIGHBOURS = { { 1, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 } }
+
+local freeTileNear -- (below)
 
 local function root()
 	local c = player.Character
@@ -257,7 +261,9 @@ local function spotFor(def, point, rot)
 			end
 		end
 	end
-	if def.edge then
+	if def.edge and placing and placing.edgeRot ~= nil then
+		rot = placing.edgeRot -- (the side you turned it to: R, the mouse wheel or ROTATE)
+	elseif def.edge then
 		local tilePos = Formulas.tilePosition(c, gx, gz, level)
 		local dx, dz = point.X - tilePos.X, point.Z - tilePos.Z
 		if math.abs(dx) > math.abs(dz) then
@@ -300,6 +306,24 @@ local function spotFor(def, point, rot)
 	return { gx = gx, gz = gz, level = level, rot = rot }
 end
 
+-- The free floor nearest to a point where a piece can stand (QUICK: a station goes on a free floor rather than the
+-- floor-laying it used to fall back to), or nil when the raft has none.
+freeTileNear = function(def, point)
+	local c = center()
+	local best, bestD
+	for _, p in (Store.get("raft") or { pieces = {} }).pieces or {} do
+		local pd = Pieces.get(p.key)
+		if pd and pd.structural and not pd.net and p.key ~= "stairs" and check(def, p.gx, p.gz, p.level, 0) then
+			local pos = Formulas.tilePosition(c, p.gx, p.gz, p.level)
+			local d = (Vector3.new(pos.X, 0, pos.Z) - Vector3.new(point.X, 0, point.Z)).Magnitude
+			if not bestD or d < bestD then
+				best, bestD = { gx = p.gx, gz = p.gz, level = p.level, rot = 0 }, d
+			end
+		end
+	end
+	return best
+end
+
 local function ensureFolder()
 	if ghostFolder and ghostFolder.Parent then
 		return ghostFolder
@@ -328,7 +352,7 @@ local function ghostAt(spot)
 	local m = RaftModels.build(
 		placing.key,
 		cf,
-		{ colours = raft.colours, edge = def.edge and spot.rot or nil },
+		{ colours = raft.colours, edge = def.edge and spot.rot or nil, level = spot.level },
 		ensureFolder()
 	)
 	m.Name = "Ghost"
@@ -494,7 +518,7 @@ local function updateBar()
 		refs.barText.Text = `{lead} · {placing.reason or ""}`
 		refs.barText.TextColor3 = C.red
 	end
-	refs.rotate.Visible = not def.edge and not def.structural and not placing.quick
+	refs.rotate.Visible = not def.structural or def.edge == true
 end
 
 local function removeStep()
@@ -530,8 +554,16 @@ local function step()
 		return
 	end
 	local spot = spotFor(placing.def, point, placing.rot)
-	placing.spot = spot
 	local ok, reason = check(placing.def, spot.gx, spot.gz, spot.level, spot.rot)
+	-- QUICK with something that stands on a floor: if it can't go where you look, the free floor nearest to it
+	if placing.quick and not ok and not placing.def.structural and not placing.def.edge then
+		local free = freeTileNear(placing.def, point)
+		if free then
+			spot = free
+			ok, reason = check(placing.def, spot.gx, spot.gz, spot.level, spot.rot)
+		end
+	end
+	placing.spot = spot
 	placing.valid, placing.reason = ok, reason
 	local k = `{spot.gx},{spot.gz},{spot.level},{spot.rot}`
 	if k ~= lastSpotKey then
@@ -543,6 +575,23 @@ local function step()
 		placing.glow.OutlineColor = ok and C.good or C.red
 	end
 	updateBar()
+end
+
+-- Turn what you're placing a quarter turn (dir 1 or -1): a chair or the helm faces the next way, and a wall or a
+-- railing moves to the next side of its floor (until you turn it, it goes on the side nearest to where you point).
+function BuildController.rotate(dir)
+	if not placing or placing.demolish or not placing.def then
+		return false
+	end
+	if placing.def.edge then
+		local from = placing.edgeRot or (placing.spot and placing.spot.rot) or 0
+		placing.edgeRot = (from + (dir or 1)) % 4
+	else
+		placing.rot = (placing.rot + (dir or 1)) % 4
+	end
+	lastSpotKey = nil
+	step()
+	return true
 end
 
 function BuildController.start(pieceKey)
@@ -641,6 +690,7 @@ function BuildController.quickPlace()
 		return false
 	end
 	step()
+	-- (only when the raft has no free floor at all: room first, then the piece)
 	if not placing.valid and not placing.def.structural and placing.reason == "Needs a tile" then
 		local how, why = placing.quick, placing.why
 		BuildController.start("floor")
@@ -686,6 +736,58 @@ function BuildController.followHotbar()
 	end
 end
 
+-- Whatever piece of your raft you're looking at (the mouse on it, within reach) gets a faint outline, and X takes
+-- it straight off for its whole cost: no REMOVE mode needed.
+local hover = { model = nil, glow = nil }
+local function hoverTarget()
+	if placing or not Store.onOwnRaft() or not Store.alive() then
+		return nil
+	end
+	local folder = ownRaftFolder()
+	local _, _, _, part = InputController.mouseRay()
+	local m = part
+	while m and m.Parent and m.Parent ~= folder do
+		m = m.Parent
+	end
+	local r = root()
+	if not (m and folder and m.Parent == folder and m:GetAttribute("PieceId") and r) then
+		return nil
+	end
+	return (m:GetPivot().Position - r.Position).Magnitude <= 22 and m or nil
+end
+local function hoverStep()
+	local t = hoverTarget()
+	if t == hover.model then
+		return
+	end
+	if hover.glow then
+		hover.glow:Destroy()
+	end
+	hover.model, hover.glow = t, nil
+	if t then
+		local glow = Instance.new("Highlight")
+		glow.Name = "LookGlow"
+		glow.FillTransparency = 1
+		glow.OutlineColor = C.white
+		glow.OutlineTransparency = 0.35
+		glow.DepthMode = Enum.HighlightDepthMode.Occluded
+		glow.Parent = t
+		hover.glow = glow
+	end
+end
+function BuildController.removeLooked()
+	local m = hover.model
+	local id = m and m.Parent and m:GetAttribute("PieceId")
+	if not id then
+		return false
+	end
+	Net.send("Demolish", id)
+	Bus.Tap:Fire("demolish")
+	Bus.Swing:Fire("hammer", "repair")
+	return true
+end
+BuildController.hoverTarget = hoverTarget
+
 function BuildController:init()
 	gui = Theme.screen("Build", 5, player:WaitForChild("PlayerGui"))
 	local bar = Theme.slab({
@@ -718,10 +820,7 @@ function BuildController:init()
 	})
 	Theme.keyHint(refs.rotate, "R", "L2")
 	refs.rotate.Activated:Connect(function()
-		if placing and not placing.demolish then
-			placing.rot = (placing.rot + 1) % 4
-			lastSpotKey = nil
-		end
+		BuildController.rotate(1)
 	end)
 	local done = Theme.button({
 		Name = "Done",
@@ -774,6 +873,9 @@ function BuildController:init()
 		if processed then
 			return
 		end
+		if input.KeyCode == Enum.KeyCode.X and not placing and BuildController.removeLooked() then
+			return
+		end
 		if input.KeyCode == Enum.KeyCode.X or input.KeyCode == Enum.KeyCode.DPadLeft then
 			BuildController.toggleRemove()
 		end
@@ -796,16 +898,22 @@ function BuildController:init()
 			BuildController.quickStop()
 		end
 	end)
+	-- the mouse wheel turns what you're placing (and zooms the camera the rest of the time)
+	game:GetService("ContextActionService"):BindActionAtPriority("EV_RotateWheel", function(_, state, input)
+		if state == Enum.UserInputState.Change and placing and not placing.demolish and placing.def then
+			local z = input and input.Position and input.Position.Z or 0
+			BuildController.rotate(z < 0 and -1 or 1)
+			return Enum.ContextActionResult.Sink
+		end
+		return Enum.ContextActionResult.Pass
+	end, false, 3000, Enum.UserInputType.MouseWheel)
 	game:GetService("UserInputService").InputBegan:Connect(function(input, processed)
 		if processed or not placing then
 			return
 		end
 		if input.KeyCode == Enum.KeyCode.R or input.KeyCode == Enum.KeyCode.ButtonL2 then
-			if not placing.demolish then
-				placing.rot = (placing.rot + 1) % 4
-				lastSpotKey = nil
-			end
-		elseif input.KeyCode == Enum.KeyCode.Escape then
+			BuildController.rotate(1)
+		elseif input.KeyCode == Enum.KeyCode.C or input.KeyCode == Enum.KeyCode.Escape then
 			BuildController.stop()
 			Bus.Place:Fire(false)
 		end
@@ -833,6 +941,7 @@ function BuildController:init()
 		if acc >= 0.06 then
 			acc = 0
 			step()
+			hoverStep()
 			-- the REMOVE button: on your own raft, alive; red while removing
 			local show = Store.onOwnRaft() and Store.alive()
 			remove.Visible = show == true
@@ -842,7 +951,7 @@ function BuildController:init()
 	end)
 end
 
--- REMOVE on and off (the button, X, the d-pad's left).
+-- REMOVE on and off (the button, X, the d-pad's left). X while looking at a piece takes that piece off at once.
 function BuildController.toggleRemove()
 	if placing and placing.demolish then
 		BuildController.stop()

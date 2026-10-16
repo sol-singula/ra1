@@ -235,8 +235,8 @@ Pieces.list = {
 		key = "anchor",
 		name = "Anchor",
 		icon = "⚓",
-		cost = { metal = 8, rope = 4 },
-		tier = 3,
+		cost = { scrap = 6, rope = 3 },
+		tier = 1,
 		hp = 200,
 		effect = { protect = 3 },
 		desc = "Keeps you docked at an island as long as you like, and storms do half the damage.",
@@ -400,7 +400,7 @@ Pieces.TIERS = {
 		name = "Survival Raft",
 		icon = "🏠",
 		tiles = 9,
-		needs = { workbench = 1, storage = 1 },
+		needs = { workbench = 1, storage = 1, anchor = 1 },
 		desc = "A home: storage, a workshop, short trips.",
 	},
 	{
@@ -418,7 +418,7 @@ Pieces.TIERS = {
 		icon = "🚢",
 		tiles = 28,
 		deck2 = 4,
-		needs = { engine = 1, engineering = 1, research = 1, anchor = 1 },
+		needs = { engine = 1, engineering = 1, research = 1 },
 		desc = "Two decks, research, the dangerous waters.",
 	},
 	{

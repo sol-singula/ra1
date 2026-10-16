@@ -69,17 +69,17 @@ local function tiles(n, extra)
 	return list
 end
 check(
-	"9 tiles with a workbench and a box is tier 2",
-	Formulas.raftTier(raft(tiles(9, { "workbench", "storage" }))) == 2
+	"9 tiles with a workbench, a box and an anchor is tier 2",
+	Formulas.raftTier(raft(tiles(9, { "workbench", "storage", "anchor" }))) == 2
 )
 check("9 tiles without the workbench stays tier 1", Formulas.raftTier(raft(tiles(9, { "storage" }))) == 1)
 check(
 	"tier 3 needs a sail or an engine",
-	Formulas.raftTier(raft(tiles(16, { "workbench", "storage", "nav_table", "refinery" }))) == 2
+	Formulas.raftTier(raft(tiles(16, { "workbench", "storage", "anchor", "nav_table", "refinery" }))) == 2
 )
 check(
 	"tier 3 with a sail",
-	Formulas.raftTier(raft(tiles(16, { "workbench", "storage", "nav_table", "refinery", "sail" }))) == 3
+	Formulas.raftTier(raft(tiles(16, { "workbench", "storage", "anchor", "nav_table", "refinery", "sail" }))) == 3
 )
 local t4 = tiles(
 	28,
@@ -116,7 +116,7 @@ check(
 	Formulas.raftTier(raft(tiles(60, { "harpoon_turret", "crow_nest", "cookpot", "storage", "storage" }))) == 1
 )
 local needs = Formulas.tierNeeds(raft(start), 1)
-check("the next tier's needs are listed with have/need", needs and #needs == 3 and needs[1].have ~= nil)
+check("the next tier's needs are listed with have/need", needs and #needs == 4 and needs[1].have ~= nil)
 check("no needs at the top", Formulas.tierNeeds(raft(t6), 6) == nil)
 check(
 	"every tier's needs are real pieces",
@@ -724,7 +724,24 @@ do
 		"QUICK skips what you can't pay for",
 		Formulas.recommended(view, { slots = { b1 = { key = "wood", n = 4 } } }).key == "floor"
 	)
-	check("QUICK offers nothing when you can pay for nothing", Formulas.recommended(view, { slots = {} }) == nil)
+	local short = Formulas.recommended(view, { slots = {} })
+	check(
+		"QUICK names the first need (short) when you can pay for nothing",
+		short and short.key == "workbench" and short.short == true
+	)
+	local filler =
+		{ recommend = { { key = "workbench", why = "x" }, { key = "floor", why = "more room", filler = true } } }
+	check(
+		"QUICK never lays filler floor while something is needed",
+		Formulas.recommended(filler, { slots = { b1 = { key = "wood", n = 4 } } }).key == "workbench"
+	)
+	check(
+		"filler floor only when nothing else is wanted",
+		Formulas.recommended(
+			{ recommend = { { key = "floor", why = "more room", filler = true } } },
+			{ slots = { b1 = { key = "wood", n = 4 } } }
+		).key == "floor"
+	)
 end
 
 print(`\n{passed} passed, {failed} failed`)

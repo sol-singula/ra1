@@ -453,6 +453,124 @@ local function updateHotbar()
 	refs.hotbar.Visible = Store.alive()
 end
 
+-- What you have, at a glance -------------------------------------------------------------------------------------------
+-- The bottom left: a chip for each main resource (what drifts by: wood, scrap, rope, cloth, metal) with how many are
+-- in the bag, always there, and a row above for the island ones you're carrying (palms, stone, ore...), the most
+-- first. Not a button: touches pass through to the thumbstick under it.
+local MAIN = { "wood", "scrap", "rope", "cloth", "metal" }
+local MORE = 5 -- island resources shown at most
+local CHIP_W = 64
+
+local function chip(parent, key, i)
+	local it = Items.get(key)
+	local c = new("Frame", {
+		Name = "Res_" .. key,
+		BackgroundColor3 = C.slate,
+		BackgroundTransparency = 0.2,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset((i - 1) * (CHIP_W + 4), 0),
+		Size = UDim2.fromOffset(CHIP_W, 30),
+		Parent = parent,
+	}, { Theme.corner(10), Theme.stroke(2, C.ink) })
+	Theme.text({
+		Name = "Icon",
+		Text = it and it.icon or "",
+		Position = UDim2.fromOffset(3, 3),
+		Size = UDim2.fromOffset(24, 24),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = c,
+	})
+	local n = Theme.title({
+		Name = "Count",
+		Text = "0",
+		Position = UDim2.fromOffset(28, 4),
+		Size = UDim2.new(1, -32, 0, 22),
+		TextSize = 17,
+		outline = 2,
+		Parent = c,
+	})
+	return c, n
+end
+
+local function buildResources()
+	local box = new("Frame", {
+		Name = "Resources",
+		AnchorPoint = Vector2.new(0, 1),
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, 10, 1, -10),
+		Size = UDim2.fromOffset(#MAIN * (CHIP_W + 4) - 4, 30),
+		Parent = gui,
+	})
+	refs.resources = box
+	refs.resChips = {}
+	for i, key in MAIN do
+		local c, n = chip(box, key, i)
+		refs.resChips[key] = { frame = c, count = n }
+	end
+	-- the island row sits just above (its own frame, so the strip stays one row when it's empty)
+	refs.resMore = new("Frame", {
+		Name = "ResourcesMore",
+		AnchorPoint = Vector2.new(0, 1),
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, 10, 1, -44),
+		Size = UDim2.fromOffset(MORE * (CHIP_W + 4) - 4, 30),
+		Visible = false,
+		Parent = gui,
+	})
+end
+
+local function updateResources()
+	local inv = Store.get("inv") or { slots = {} }
+	local have = {}
+	for _, s in inv.slots or {} do
+		if type(s) == "table" and s.key then
+			have[s.key] = (have[s.key] or 0) + (s.n or 0)
+		end
+	end
+	for key, r in refs.resChips do
+		local n = have[key] or 0
+		r.count.Text = n >= 1000 and `{math.floor(n / 100) / 10}k` or tostring(n)
+		r.frame.BackgroundTransparency = n > 0 and 0.2 or 0.5
+	end
+	-- the island resources you hold, the most first
+	local main = {}
+	for _, key in MAIN do
+		main[key] = true
+	end
+	local more = {}
+	for key, n in have do
+		local it = Items.get(key)
+		if n > 0 and not main[key] and it and it.kind == "resource" then
+			table.insert(more, { key = key, n = n })
+		end
+	end
+	table.sort(more, function(a, b)
+		return a.n > b.n or (a.n == b.n and a.key < b.key)
+	end)
+	local shown = {}
+	for i = 1, math.min(MORE, #more) do
+		shown[i] = more[i].key
+	end
+	local sig = table.concat(shown, ",")
+	if refs.resMoreSig ~= sig then
+		refs.resMoreSig = sig
+		refs.resMore:ClearAllChildren()
+		refs.resMoreChips = {}
+		for i, key in shown do
+			local _, n = chip(refs.resMore, key, i)
+			refs.resMoreChips[key] = n
+		end
+		refs.resMore.Size = UDim2.fromOffset(math.max(1, #shown) * (CHIP_W + 4) - 4, 30)
+	end
+	for key, n in refs.resMoreChips or {} do
+		n.Text = tostring(have[key] or 0)
+	end
+	local alive = Store.alive()
+	refs.resources.Visible = alive
+	refs.resMore.Visible = alive and #shown > 0
+end
+HudController.updateResources = updateResources
+
 -- Messages ----------------------------------------------------------------------------------------------------------------
 -- A free row in a stack of short-lived messages: the lowest one nobody's in, after dropping the oldest while all
 -- `rows` are taken (so a message never lands on another).
@@ -675,6 +793,7 @@ local function buildOverlays()
 		BackgroundColor3 = C.ink,
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
+		Visible = false,
 		ZIndex = 32,
 		Parent = gui,
 	})
@@ -689,6 +808,11 @@ local function buildOverlays()
 		ZIndex = 33,
 		Parent = refs.fade,
 	})
+	for _, d in refs.fadeText:GetChildren() do
+		if d:IsA("UIStroke") then
+			d.Transparency = 1 -- (hidden with the letters until a fade shows them)
+		end
+	end
 	local down = Theme.slab({
 		Name = "Down",
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -733,16 +857,34 @@ local function flash(color, seconds)
 	Theme.tween(refs.flash, seconds or 0.6, { BackgroundTransparency = 1 })
 end
 
+-- A fade to black and back ("Resting..."): the words fade with their outline, and once it's over they're cleared
+-- and the overlay hidden, so nothing is left on screen (the newest fade wins if two overlap).
+local fadeToken = 0
 local function fade(seconds, text)
 	seconds = type(seconds) == "number" and seconds or 1
+	fadeToken += 1
+	local token = fadeToken
 	refs.fadeText.Text = type(text) == "string" and text or ""
+	refs.fade.Visible = true
 	Theme.tween(refs.fade, seconds * 0.4, { BackgroundTransparency = 0 })
-	Theme.tween(refs.fadeText, seconds * 0.4, { TextTransparency = 0 })
+	Theme.fadeText(refs.fadeText, seconds * 0.4, 0)
 	task.delay(seconds * 0.6, function()
+		if token ~= fadeToken then
+			return
+		end
 		Theme.tween(refs.fade, seconds * 0.4, { BackgroundTransparency = 1 })
-		Theme.tween(refs.fadeText, seconds * 0.4, { TextTransparency = 1 })
+		Theme.fadeText(refs.fadeText, seconds * 0.4, 1)
+		task.delay(seconds * 0.4 + 0.05, function()
+			if token == fadeToken then
+				refs.fade.BackgroundTransparency = 1
+				refs.fadeText.TextTransparency = 1
+				refs.fadeText.Text = ""
+				refs.fade.Visible = false
+			end
+		end)
 	end)
 end
+HudController.fade = fade
 
 local function updateOverlays()
 	local me = Store.get("me") or {}
@@ -782,6 +924,7 @@ function HudController:init()
 	buildMe()
 	buildRight()
 	buildHotbar()
+	buildResources()
 	Net.listen("Toast", HudController.toast)
 	Net.listen("Alert", HudController.alert)
 	Net.listen("Callout", HudController.callout)
@@ -796,6 +939,7 @@ function HudController:init()
 		end
 		if partial.inv then
 			updateHotbar()
+			updateResources()
 			updateMe()
 		elseif partial.me or partial.profile then
 			updateMe()
@@ -815,6 +959,7 @@ function HudController:init()
 			updateMe()
 			updateRight()
 			updateHotbar()
+			updateResources()
 			updateOverlays()
 		end
 	end)

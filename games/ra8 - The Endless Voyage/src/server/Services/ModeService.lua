@@ -27,10 +27,17 @@ local ModeService = {
 }
 
 local WORLDS = "EV_Worlds_v1" -- [userId] = { code }
-local NUDGE_EVERY = 8 * 60 -- at most one "show your friends" nudge this often
-local NUDGE_MAX = 4 -- per session
+local NUDGE_MAX = 1 -- "bring a friend?" cards a session
+-- The moments that are better with a friend, each asked about once ever (profile.nudged): not every bigger raft or
+-- every trip, so the card means something when it comes.
+local MOMENTS = {
+	first_trip = "🏝️ Your first trip! Islands are more fun with a friend. Bring one on the next voyage?",
+	mist = "🌫️ Your raft can reach Mist Hollow now. Something hides in the reeds: bring a friend to watch your back?",
+	trench = "🐋 Your raft can face the Trench now. The Leviathan is easier with a friend on the harpoons!",
+}
 local registry
-local nudges = {} -- [player] = { at, n }
+local nudges = {} -- [player] = cards this session
+local friendHere = {} -- [player] = true once a friend of theirs is in this server
 local NOPE = "🌊 Couldn't travel right now, so you're playing right here."
 
 local function reserved()
@@ -156,17 +163,46 @@ function ModeService:ResetWorld(player)
 	return true
 end
 
--- A nudge to show your raft to friends, when there's something worth showing (rate-limited).
-function ModeService:Nudge(player, text)
-	local n = nudges[player] or { at = -math.huge, n = 0 }
-	nudges[player] = n
-	local t = os.clock()
-	if n.n >= NUDGE_MAX or t - n.at < NUDGE_EVERY then
+-- "Bring a friend?" at one of the MOMENTS: once ever per moment, one card a session, and never when a friend is
+-- already here with you (in your world, or in the same ocean).
+function ModeService:Nudge(player, moment)
+	local text = MOMENTS[moment]
+	local profile = registry.PlayerDataService:Get(player)
+	if not text or not profile then
 		return false
 	end
-	n.at, n.n = t, n.n + 1
-	Net.fire(player, "Nudge", { kind = "invite", text = text })
+	profile.nudged = profile.nudged or {}
+	if profile.nudged[moment] or (nudges[player] or 0) >= NUDGE_MAX or friendHere[player] then
+		return false
+	end
+	if self:Mode() == "world" and workspace:GetAttribute("WorldOwner") ~= player.UserId then
+		return false -- (you came to a friend's world: they're right here)
+	end
+	profile.nudged[moment] = os.time()
+	nudges[player] = (nudges[player] or 0) + 1
+	Net.fire(player, "Nudge", { kind = "invite", text = text, moment = moment })
 	return true
+end
+
+-- (tests) a fresh session: no cards shown yet, no friend seen yet
+function ModeService._resetNudges(player)
+	nudges[player] = nil
+	friendHere[player] = nil
+end
+
+-- Friends in the same server (so nobody is asked to invite someone who's already here).
+local function noteFriends(player)
+	task.spawn(function()
+		for _, other in Players:GetPlayers() do
+			if other ~= player then
+				local ok, yes = pcall(player.IsFriendsWith, player, other.UserId)
+				if ok and yes then
+					friendHere[player] = true
+					friendHere[other] = true
+				end
+			end
+		end
+	end)
 end
 
 -- A friend came to your world: a crate for both of you (once a day per friend).
@@ -210,30 +246,27 @@ function ModeService:Init(reg)
 	Net.on("ResetWorld", function(player)
 		self:ResetWorld(player)
 	end)
-	-- something worth showing: nudge to invite
+	-- the moments that are better with a friend (MOMENTS)
 	reg.RaftService.TierChanged:Connect(function(player, _, tier, old)
 		if player and tier > (old or 0) then
-			local t = require(ReplicatedStorage.Shared.Data.Pieces).TIERS[tier]
-			self:Nudge(
-				player,
-				`{t and t.icon or "⛵"} Your raft grew into a {t and t.name or "bigger raft"}! Show it to a friend?`
-			)
-		end
-	end)
-	reg.RaftService.Built:Connect(function(player, piece, raft)
-		if player and piece.def.structural and not piece.def.net and raft.summary.tiles % 10 == 0 then
-			self:Nudge(player, `🟫 {raft.summary.tiles} floors! Your raft is getting big. Invite a friend to see it?`)
+			if tier >= 5 then
+				self:Nudge(player, "trench")
+			elseif tier >= 3 then
+				self:Nudge(player, "mist")
+			end
 		end
 	end)
 	reg.VoyageService.Ended:Connect(function(_, _, aboard)
 		for _, player in aboard or {} do
-			self:Nudge(player, "🏝️ You made it back with your finds! Want a friend to come on the next trip?")
+			self:Nudge(player, "first_trip")
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		nudges[player] = nil
+		friendHere[player] = nil
 	end)
 	Players.PlayerAdded:Connect(function(player)
+		noteFriends(player)
 		local jd = fromJoin(player)
 		if self:Mode() == "hub" and jd and jd.LaunchData and jd.LaunchData ~= "" then
 			task.defer(function()

@@ -342,12 +342,28 @@ end
 
 -- The piece QUICK builds: the first of the raft's recommendations (RaftService.Recommend, in the raft view) the
 -- bag can pay for right now; nil if it can't pay for any (QUICK never offers what you can't build).
+-- QUICK's piece: the first thing the raft needs that the bag can pay for (RaftService.Recommend, best first). Floor
+-- just for room (filler) only when nothing is needed. When the bag can pay for none of what's needed, the first need,
+-- marked short: QUICK says what's missing for it instead of laying floor nobody asked for.
 function Formulas.recommended(raftView, invView)
 	local list = raftView and raftView.recommend
 	if type(list) ~= "table" or #list == 0 then
 		return nil
 	end
 	local slots = invView and invView.slots or {}
+	local firstNeed
+	for _, r in list do
+		local def = Pieces.get(r.key)
+		if def and not r.filler then
+			firstNeed = firstNeed or r
+			if Formulas.affordable(def.cost, slots) then
+				return r
+			end
+		end
+	end
+	if firstNeed then
+		return { key = firstNeed.key, why = firstNeed.why, short = true }
+	end
 	for _, r in list do
 		local def = Pieces.get(r.key)
 		if def and Formulas.affordable(def.cost, slots) then

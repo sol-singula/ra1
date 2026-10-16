@@ -11,6 +11,7 @@ something to show (a bigger raft, 10 more floors, back from a trip) a card asks 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SocialService = game:GetService("SocialService")
+local UserInputService = game:GetService("UserInputService")
 
 local Net = require(ReplicatedStorage.Shared.Net)
 local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
@@ -115,64 +116,87 @@ local function bigButton(name, text, color, y, h, size)
 	return b
 end
 
--- "Show your friends?" when there's something to show.
+-- "Bring a friend?" at a moment that's better with one (ModeService picks them, rarely). It never stays: LATER,
+-- the ✕, Escape or the gamepad's B close it, and so does the bar running out (NUDGE_SECONDS).
+local NUDGE_SECONDS = 12
+function MenuController.closeNudge()
+	if nudgeCard then
+		nudgeCard:Destroy()
+		nudgeCard = nil
+	end
+end
+
 local function nudge(n)
 	if type(n) ~= "table" or n.kind ~= "invite" then
 		return
 	end
-	if nudgeCard then
-		nudgeCard:Destroy()
-	end
-	nudgeCard = Theme.card({
+	MenuController.closeNudge()
+	local card = Theme.card({
 		Name = "InviteNudge",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 210),
-		Size = UDim2.fromOffset(460, 150),
+		Size = UDim2.fromOffset(460, 168),
+		ZIndex = 10,
 		Parent = gui,
 	})
-	Theme.title({
-		Name = "Text",
-		Text = n.text or "Show your raft to a friend?",
-		TextColor3 = C.ink,
-		outline = false,
-		Position = UDim2.fromOffset(14, 10),
-		Size = UDim2.new(1, -28, 0, 70),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		TextSize = 18,
-		Parent = nudgeCard,
+	nudgeCard = card
+	local head, text = Theme.cardHeader(card, n.text or "Bring a friend along?", 86)
+	text.Name = "Text"
+	text.Size = UDim2.new(1, -70, 1, -10) -- (clear of the ✕)
+	local x = Theme.button({
+		Name = "Close",
+		Text = "✕",
+		BackgroundColor3 = C.red,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -8, 0, 8),
+		Size = UDim2.fromOffset(40, 36),
+		TextSize = 16,
+		Parent = head,
 	})
 	local yes = Theme.button({
 		Name = "Invite",
 		Text = "💌 INVITE A FRIEND",
 		BackgroundColor3 = C.mustard,
-		Position = UDim2.new(0, 14, 1, -58),
+		Position = UDim2.new(0, 14, 1, -66),
 		Size = UDim2.new(0.62, -20, 0, 46),
 		TextSize = 16,
-		Parent = nudgeCard,
+		Parent = card,
 	})
 	local later = Theme.button({
 		Name = "Later",
 		Text = "LATER",
 		BackgroundColor3 = C.slate,
-		Position = UDim2.new(0.62, 6, 1, -58),
+		Position = UDim2.new(0.62, 6, 1, -66),
 		Size = UDim2.new(0.38, -20, 0, 46),
 		TextSize = 15,
-		Parent = nudgeCard,
+		Parent = card,
 	})
-	local card = nudgeCard
-	yes.Activated:Connect(function()
-		card:Destroy()
-		MenuController.invite()
-	end)
-	later.Activated:Connect(function()
-		card:Destroy()
-	end)
-	Theme.pop(card)
-	task.delay(14, function()
-		if card.Parent then
+	Theme.keyHint(later, "C", "B")
+	-- the time left: a bar along the bottom that runs down
+	local bar = new("Frame", {
+		Name = "Timer",
+		BackgroundColor3 = C.mustard,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0, 18, 1, -12),
+		Size = UDim2.new(1, -36, 0, 5),
+		Parent = card,
+	}, { Theme.corner("round") })
+	Theme.tween(bar, NUDGE_SECONDS, { Size = UDim2.new(0, 0, 0, 5) }, Enum.EasingStyle.Linear)
+	local function close()
+		if nudgeCard == card then
+			MenuController.closeNudge()
+		elseif card.Parent then
 			card:Destroy()
 		end
+	end
+	yes.Activated:Connect(function()
+		close()
+		MenuController.invite()
 	end)
+	later.Activated:Connect(close)
+	x.Activated:Connect(close)
+	Theme.pop(card)
+	task.delay(NUDGE_SECONDS, close)
 end
 
 function MenuController:init()
@@ -186,7 +210,7 @@ function MenuController:init()
 		outline = 2,
 		Parent = gui,
 	})
-	-- the 💌 INVITE button that's always there, gently pulsing
+	-- the 💌 INVITE button that's always there (still: no pulsing for attention)
 	inviteButton = Theme.button({
 		Name = "InviteFriends",
 		Text = "💌 INVITE FRIENDS",
@@ -196,14 +220,19 @@ function MenuController:init()
 		TextSize = 15,
 		Parent = gui,
 	})
-	local pulse = new("UIScale", { Parent = inviteButton })
 	inviteButton.Activated:Connect(MenuController.invite)
-	task.spawn(function()
-		while gui.Parent do
-			Theme.tween(pulse, 0.6, { Scale = 1.07 })
-			task.wait(0.7)
-			Theme.tween(pulse, 0.6, { Scale = 1 })
-			task.wait(2.2)
+	-- (Escape or the gamepad's B closes the "bring a friend?" card)
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if
+			not processed
+			and nudgeCard
+			and (
+				input.KeyCode == Enum.KeyCode.C
+				or input.KeyCode == Enum.KeyCode.Escape
+				or input.KeyCode == Enum.KeyCode.ButtonB
+			)
+		then
+			MenuController.closeNudge()
 		end
 	end)
 
@@ -280,13 +309,12 @@ function MenuController:init()
 		ZIndex = 5,
 		Parent = box,
 	})
-	Theme.title({
+	Theme.cardHeader(confirmBox, "START YOUR WORLD OVER?", 50, C.red, 22)
+	Theme.text({
 		Name = "Ask",
-		Text = "Start your world over?\nYour raft goes back to a tiny platform and your bag empties. Your level, journal and blueprints stay.",
-		TextColor3 = C.ink,
-		outline = false,
-		Position = UDim2.fromOffset(12, 10),
-		Size = UDim2.new(1, -24, 0, 120),
+		Text = "Your raft goes back to a tiny platform and your bag empties. Your level, journal and blueprints stay.",
+		Position = UDim2.fromOffset(16, 58),
+		Size = UDim2.new(1, -32, 0, 96),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextSize = 17,
 		ZIndex = 6,
