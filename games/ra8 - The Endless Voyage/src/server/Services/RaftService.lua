@@ -553,6 +553,12 @@ end
 
 function RaftService:Push(raft)
 	local view = self:View(raft)
+	-- (for everyone's MAP: how big each raft is)
+	if raft.folder then
+		raft.folder:SetAttribute("Size", raft.summary.placed or raft.summary.tiles)
+		raft.folder:SetAttribute("Tier", raft.tier)
+		raft.folder:SetAttribute("OwnerName", raft.owner and raft.owner.DisplayName or "")
+	end
 	local sent = {}
 	for _, player in self:PlayersOn(raft) do
 		sent[player] = true

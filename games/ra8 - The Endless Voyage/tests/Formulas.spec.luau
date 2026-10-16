@@ -540,8 +540,8 @@ check(
 
 -- The ocean ---------------------------------------------------------------------------------------------------------------
 check(
-	"eight plots, each with an island zone further out",
-	#OceanLayout.plots == 8 and (OceanLayout.plots[1].islandCenter - OceanLayout.plots[1].center).Magnitude > 100
+	"twenty plots, each with an island zone further out",
+	#OceanLayout.plots == 20 and (OceanLayout.plots[1].islandCenter - OceanLayout.plots[1].center).Magnitude > 100
 )
 check(
 	"plots don't overlap their neighbours' island zones",
@@ -554,6 +554,22 @@ check(
 						< Constants.ISLAND_RADIUS + Constants.PLOT_RADIUS * 0.5
 				then
 					return false, i .. " " .. j
+				end
+			end
+		end
+		return true
+	end)()
+)
+check(
+	"rafts never meet: two of the biggest rafts a grid allows never overlap, on any two plots",
+	(function()
+		-- (the plot's centre is tile 6.5, halfway between GRID_MIN and GRID_MAX)
+		local half = ((Constants.GRID_MAX - Constants.GRID_MIN) / 2 + 0.5) * Constants.TILE
+		for i, a in OceanLayout.plots do
+			for j, b in OceanLayout.plots do
+				local d = a.center - b.center
+				if i ~= j and math.max(math.abs(d.X), math.abs(d.Z)) <= half * 2 then
+					return false, `{i} {j}`
 				end
 			end
 		end

@@ -34,6 +34,7 @@ local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
 local Progression = require(ReplicatedStorage.Shared.Data.Progression)
 local Recipes = require(ReplicatedStorage.Shared.Data.Recipes)
 local Voyages = require(ReplicatedStorage.Shared.Data.Voyages)
+local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
 local NotifyController = require(script.Parent.NotifyController)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
@@ -1231,6 +1232,112 @@ local HOW = {
 	research = "Research",
 }
 
+-- The ocean from above, in the MAP: every raft on the server (yours gold, the rest with their captain's name and
+-- size) and every player (a dot where they are). Redrawn every second while it's open.
+local OCEAN_MAP = 300
+local mapDraw = 0
+function PanelController.oceanMap(body)
+	mapDraw += 1
+	local token = mapDraw
+	local frame = new("Frame", {
+		Name = "OceanMap",
+		Position = UDim2.fromOffset(0, 50),
+		Size = UDim2.fromOffset(OCEAN_MAP, OCEAN_MAP),
+		BackgroundColor3 = Color3.fromRGB(26, 92, 128),
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		Parent = body,
+	}, { Theme.corner(12) })
+	local scale = (OCEAN_MAP / 2 - 18) / (Constants.PLOT_RING + Constants.ISLAND_OFFSET)
+	local function at(pos, dy)
+		return UDim2.fromOffset(OCEAN_MAP / 2 + pos.X * scale, OCEAN_MAP / 2 + pos.Z * scale + (dy or 0))
+	end
+	local layer =
+		new("Frame", { Name = "Marks", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), Parent = frame })
+	local function draw()
+		layer:ClearAllChildren()
+		local me = Store.get("me") or {}
+		local folder = workspace:FindFirstChild("Rafts")
+		local n = 0
+		for _, m in folder and folder:GetChildren() or {} do
+			local plot = m:GetAttribute("Plot")
+			local layout = plot and OceanLayout.plot(plot)
+			if layout then
+				n += 1
+				local mine = plot == me.plot
+				local size = m:GetAttribute("Size") or 0
+				local px = math.clamp(8 + math.sqrt(size) * 1.6, 8, 26)
+				new("Frame", {
+					Name = "Raft" .. plot,
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = at(layout.center),
+					Size = UDim2.fromOffset(px, px),
+					BackgroundColor3 = mine and C.mustard or Color3.fromRGB(176, 128, 82),
+					BorderSizePixel = 0,
+					Parent = layer,
+				}, { Theme.corner(3) })
+				Theme.text({
+					Name = "Name" .. plot,
+					Text = `{mine and "YOU" or (m:GetAttribute("OwnerName") or "")} · {size}`,
+					AnchorPoint = Vector2.new(0.5, 0),
+					Position = at(layout.center, px / 2 + 1),
+					Size = UDim2.fromOffset(110, 14),
+					TextSize = 11,
+					TextColor3 = C.white,
+					TextXAlignment = Enum.TextXAlignment.Center,
+					outline = 1.5,
+					Parent = layer,
+				})
+			end
+		end
+		-- the players: where they are (a far one that isn't streamed in shows on its raft)
+		for _, p in Players:GetPlayers() do
+			local root = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+			local pos = root and root.Position
+			if not pos then
+				for _, m in folder and folder:GetChildren() or {} do
+					if m:GetAttribute("Owner") == p.UserId then
+						local layout = OceanLayout.plot(m:GetAttribute("Plot"))
+						pos = layout and layout.center
+					end
+				end
+			end
+			if pos then
+				new("Frame", {
+					Name = "Player_" .. p.UserId,
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = at(pos),
+					Size = UDim2.fromOffset(6, 6),
+					BackgroundColor3 = p == Players.LocalPlayer and C.white or C.good,
+					BorderSizePixel = 0,
+					ZIndex = 3,
+					Parent = layer,
+				}, { Theme.corner(3) })
+			end
+		end
+		Theme.text({
+			Name = "Count",
+			Text = `🌊 {n} raft{n == 1 and "" or "s"} out here`,
+			Position = UDim2.fromOffset(8, 6),
+			Size = UDim2.new(1, -16, 0, 16),
+			TextSize = 12,
+			TextColor3 = C.white,
+			outline = 1.5,
+			Parent = layer,
+		})
+	end
+	draw()
+	task.spawn(function()
+		while token == mapDraw and frame.Parent do
+			task.wait(1)
+			if token == mapDraw and frame.Parent then
+				draw()
+			end
+		end
+	end)
+	return frame
+end
+
 local function mapPanel()
 	local body = panel("map", "🗺️ THE OCEAN", 820, 480)
 	local function refresh()
@@ -1263,6 +1370,7 @@ local function mapPanel()
 			status = (v.state == "home" and "Leaving the island..." or `Sailing to {v.name}...`) .. ` {drive}`
 		end
 		label(body, status, { Size = UDim2.new(1, -160, 0, 44), TextSize = 14, TextWrapped = true })
+		PanelController.oceanMap(body)
 		if v.state == "island" then
 			local home = Theme.button({
 				Name = "Home",
@@ -1280,7 +1388,11 @@ local function mapPanel()
 				PanelController.close()
 			end)
 		end
-		local list = scroller(body, { Position = UDim2.fromOffset(0, 30), Size = UDim2.new(1, 0, 1, -30) })
+		-- (under the status line, never over it; the ocean map on the left)
+		local list = scroller(body, {
+			Position = UDim2.fromOffset(OCEAN_MAP + 10, 50),
+			Size = UDim2.new(1, -(OCEAN_MAP + 10), 1, -50),
+		})
 		for i, d in Voyages.list do
 			local known = d.known or (profile.known and profile.known[d.key])
 			local row = rowFrame(list, 70, i, known and nil or Color3.fromRGB(215, 210, 205))

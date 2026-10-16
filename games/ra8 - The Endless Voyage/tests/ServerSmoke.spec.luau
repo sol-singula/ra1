@@ -176,8 +176,8 @@ end
 -- The world ----------------------------------------------------------------------------------------------------------------
 check("the ocean was filled", #Engine.terrain.ops >= 2, #Engine.terrain.ops)
 check(
-	"a plot for every player on a ring (eight)",
-	#OceanLayout.plots == Constants.MAX_PLAYERS and Constants.MAX_PLAYERS == 8
+	"a plot for every player on a ring (twenty)",
+	#OceanLayout.plots == Constants.MAX_PLAYERS and Constants.MAX_PLAYERS == 20
 )
 check("a buoy per plot", #ws.Map.Buoys:GetChildren() == Constants.MAX_PLAYERS)
 check(

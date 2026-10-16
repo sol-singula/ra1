@@ -3,9 +3,8 @@
 local Constants = {}
 
 Constants.GAME = "ra8"
--- Eight rafts to a server (§2: fun alone, better with friends): set the place's Server Size to 8 and its Server Fill
--- to keep 2 slots for friends, so matchmaking stops at 6 and a friend can nearly always get in.
-Constants.MAX_PLAYERS = 8
+-- Twenty rafts to a server, one shared ocean (everyone sees everyone): the place's Server Size is 20.
+Constants.MAX_PLAYERS = 20
 
 -- Saves (PlayerDataService)
 Constants.PROFILE_STORE = "EV_Profiles_v1"
@@ -15,11 +14,16 @@ Constants.AUTOSAVE_SECONDS = 120
 
 -- The ocean (World/OceanLayout): six plots round the centre, each with a raft and room for the island that comes
 -- to it when a voyage arrives
-Constants.OCEAN_SIZE = 4400 -- the water, edge to edge (the far islands sit out to its edge)
+Constants.OCEAN_SIZE = 6000 -- the water, edge to edge (the far islands sit out to its edge)
 Constants.WATER_LEVEL = 0
 Constants.SEA_FLOOR = -34
-Constants.PLOT_RING = 950 -- the plots sit on a ring of this radius round the centre
 Constants.PLOT_RADIUS = 300 -- a plot: the raft in the middle, debris drifting through, the island zone beside it
+-- Rafts never meet: neighbouring plots are PLOT_SPACING apart. The biggest raft a grid allows (GRID_MIN..GRID_MAX)
+-- reaches about 246 studs from the middle each way, square to the world, so two side by side need 492 along X or Z;
+-- at a 45-degree bearing that's 492 x sqrt 2 = 696 apart. Nobody can build into anyone.
+Constants.PLOT_SPACING = 720
+-- the plots sit on a ring of this radius round the centre (neighbours PLOT_SPACING apart, whatever MAX_PLAYERS is)
+Constants.PLOT_RING = math.ceil(Constants.PLOT_SPACING / (2 * math.sin(math.pi / Constants.MAX_PLAYERS)))
 Constants.ISLAND_OFFSET = 150 -- the island zone's centre, out from the plot's centre (away from the ring's middle)
 
 -- The raft (RaftService): a grid of tiles on two decks

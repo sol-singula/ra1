@@ -746,6 +746,13 @@ Engine.advance(0.3)
 local map = panels:FindFirstChild("Panel_map")
 check("the helm's prompt opened the MAP", map ~= nil)
 check("Palm Key can be sailed to", find(map, "Sail_palm_key") and find(map, "Sail_palm_key").Text == "SAIL")
+do
+	local ocean = find(map, "OceanMap")
+	local marks = ocean and ocean:FindFirstChild("Marks")
+	local mine = marks and marks:FindFirstChild("Raft" .. tostring(Store.get("me").plot))
+	check("the MAP shows the ocean with your raft on it", mine ~= nil)
+	check("the MAP shows you", marks and marks:FindFirstChild("Player_" .. player.UserId) ~= nil)
+end
 check(
 	"an unknown destination shows how to find it",
 	find(map, "Dest_gull_rock") ~= nil and find(find(map, "Dest_gull_rock"), "Sail_gull_rock") == nil
