@@ -1,0 +1,761 @@
+diff --git a/games/ra8 - The Endless Voyage/src/client/Controllers/HudController.lua b/games/ra8 - The Endless Voyage/src/client/Controllers/HudController.lua
+index a015c9c..d6ce79d 100644
+--- a/games/ra8 - The Endless Voyage/src/client/Controllers/HudController.lua	
++++ b/games/ra8 - The Endless Voyage/src/client/Controllers/HudController.lua	
+@@ -453,6 +453,124 @@ local function updateHotbar()
+ 	refs.hotbar.Visible = Store.alive()
+ end
+ 
++-- What you have, at a glance -------------------------------------------------------------------------------------------
++-- The bottom left: a chip for each main resource (what drifts by: wood, scrap, rope, cloth, metal) with how many are
++-- in the bag, always there, and a row above for the island ones you're carrying (palms, stone, ore...), the most
++-- first. Not a button: touches pass through to the thumbstick under it.
++local MAIN = { "wood", "scrap", "rope", "cloth", "metal" }
++local MORE = 5 -- island resources shown at most
++local CHIP_W = 64
++
++local function chip(parent, key, i)
++	local it = Items.get(key)
++	local c = new("Frame", {
++		Name = "Res_" .. key,
++		BackgroundColor3 = C.slate,
++		BackgroundTransparency = 0.2,
++		BorderSizePixel = 0,
++		Position = UDim2.fromOffset((i - 1) * (CHIP_W + 4), 0),
++		Size = UDim2.fromOffset(CHIP_W, 30),
++		Parent = parent,
++	}, { Theme.corner(10), Theme.stroke(2, C.ink) })
++	Theme.text({
++		Name = "Icon",
++		Text = it and it.icon or "",
++		Position = UDim2.fromOffset(3, 3),
++		Size = UDim2.fromOffset(24, 24),
++		TextXAlignment = Enum.TextXAlignment.Center,
++		Parent = c,
++	})
++	local n = Theme.title({
++		Name = "Count",
++		Text = "0",
++		Position = UDim2.fromOffset(28, 4),
++		Size = UDim2.new(1, -32, 0, 22),
++		TextSize = 17,
++		outline = 2,
++		Parent = c,
++	})
++	return c, n
++end
++
++local function buildResources()
++	local box = new("Frame", {
++		Name = "Resources",
++		AnchorPoint = Vector2.new(0, 1),
++		BackgroundTransparency = 1,
++		Position = UDim2.new(0, 10, 1, -10),
++		Size = UDim2.fromOffset(#MAIN * (CHIP_W + 4) - 4, 30),
++		Parent = gui,
++	})
++	refs.resources = box
++	refs.resChips = {}
++	for i, key in MAIN do
++		local c, n = chip(box, key, i)
++		refs.resChips[key] = { frame = c, count = n }
++	end
++	-- the island row sits just above (its own frame, so the strip stays one row when it's empty)
++	refs.resMore = new("Frame", {
++		Name = "ResourcesMore",
++		AnchorPoint = Vector2.new(0, 1),
++		BackgroundTransparency = 1,
++		Position = UDim2.new(0, 10, 1, -44),
++		Size = UDim2.fromOffset(MORE * (CHIP_W + 4) - 4, 30),
++		Visible = false,
++		Parent = gui,
++	})
++end
++
++local function updateResources()
++	local inv = Store.get("inv") or { slots = {} }
++	local have = {}
++	for _, s in inv.slots or {} do
++		if type(s) == "table" and s.key then
++			have[s.key] = (have[s.key] or 0) + (s.n or 0)
++		end
++	end
++	for key, r in refs.resChips do
++		local n = have[key] or 0
++		r.count.Text = n >= 1000 and `{math.floor(n / 100) / 10}k` or tostring(n)
++		r.frame.BackgroundTransparency = n > 0 and 0.2 or 0.5
++	end
++	-- the island resources you hold, the most first
++	local main = {}
++	for _, key in MAIN do
++		main[key] = true
++	end
++	local more = {}
++	for key, n in have do
++		local it = Items.get(key)
++		if n > 0 and not main[key] and it and it.kind == "resource" then
++			table.insert(more, { key = key, n = n })
++		end
++	end
++	table.sort(more, function(a, b)
++		return a.n > b.n or (a.n == b.n and a.key < b.key)
++	end)
++	local shown = {}
++	for i = 1, math.min(MORE, #more) do
++		shown[i] = more[i].key
++	end
++	local sig = table.concat(shown, ",")
++	if refs.resMoreSig ~= sig then
++		refs.resMoreSig = sig
++		refs.resMore:ClearAllChildren()
++		refs.resMoreChips = {}
++		for i, key in shown do
++			local _, n = chip(refs.resMore, key, i)
++			refs.resMoreChips[key] = n
++		end
++		refs.resMore.Size = UDim2.fromOffset(math.max(1, #shown) * (CHIP_W + 4) - 4, 30)
++	end
++	for key, n in refs.resMoreChips or {} do
++		n.Text = tostring(have[key] or 0)
++	end
++	local alive = Store.alive()
++	refs.resources.Visible = alive
++	refs.resMore.Visible = alive and #shown > 0
++end
++HudController.updateResources = updateResources
++
+ -- Messages ----------------------------------------------------------------------------------------------------------------
+ -- A free row in a stack of short-lived messages: the lowest one nobody's in, after dropping the oldest while all
+ -- `rows` are taken (so a message never lands on another).
+@@ -675,6 +793,7 @@ local function buildOverlays()
+ 		BackgroundColor3 = C.ink,
+ 		BackgroundTransparency = 1,
+ 		BorderSizePixel = 0,
++		Visible = false,
+ 		ZIndex = 32,
+ 		Parent = gui,
+ 	})
+@@ -689,6 +808,11 @@ local function buildOverlays()
+ 		ZIndex = 33,
+ 		Parent = refs.fade,
+ 	})
++	for _, d in refs.fadeText:GetChildren() do
++		if d:IsA("UIStroke") then
++			d.Transparency = 1 -- (hidden with the letters until a fade shows them)
++		end
++	end
+ 	local down = Theme.slab({
+ 		Name = "Down",
+ 		AnchorPoint = Vector2.new(0.5, 0.5),
+@@ -733,16 +857,34 @@ local function flash(color, seconds)
+ 	Theme.tween(refs.flash, seconds or 0.6, { BackgroundTransparency = 1 })
+ end
+ 
++-- A fade to black and back ("Resting..."): the words fade with their outline, and once it's over they're cleared
++-- and the overlay hidden, so nothing is left on screen (the newest fade wins if two overlap).
++local fadeToken = 0
+ local function fade(seconds, text)
+ 	seconds = type(seconds) == "number" and seconds or 1
++	fadeToken += 1
++	local token = fadeToken
+ 	refs.fadeText.Text = type(text) == "string" and text or ""
++	refs.fade.Visible = true
+ 	Theme.tween(refs.fade, seconds * 0.4, { BackgroundTransparency = 0 })
+-	Theme.tween(refs.fadeText, seconds * 0.4, { TextTransparency = 0 })
++	Theme.fadeText(refs.fadeText, seconds * 0.4, 0)
+ 	task.delay(seconds * 0.6, function()
++		if token ~= fadeToken then
++			return
++		end
+ 		Theme.tween(refs.fade, seconds * 0.4, { BackgroundTransparency = 1 })
+-		Theme.tween(refs.fadeText, seconds * 0.4, { TextTransparency = 1 })
++		Theme.fadeText(refs.fadeText, seconds * 0.4, 1)
++		task.delay(seconds * 0.4 + 0.05, function()
++			if token == fadeToken then
++				refs.fade.BackgroundTransparency = 1
++				refs.fadeText.TextTransparency = 1
++				refs.fadeText.Text = ""
++				refs.fade.Visible = false
++			end
++		end)
+ 	end)
+ end
++HudController.fade = fade
+ 
+ local function updateOverlays()
+ 	local me = Store.get("me") or {}
+@@ -782,6 +924,7 @@ function HudController:init()
+ 	buildMe()
+ 	buildRight()
+ 	buildHotbar()
++	buildResources()
+ 	Net.listen("Toast", HudController.toast)
+ 	Net.listen("Alert", HudController.alert)
+ 	Net.listen("Callout", HudController.callout)
+@@ -796,6 +939,7 @@ function HudController:init()
+ 		end
+ 		if partial.inv then
+ 			updateHotbar()
++			updateResources()
+ 			updateMe()
+ 		elseif partial.me or partial.profile then
+ 			updateMe()
+@@ -815,6 +959,7 @@ function HudController:init()
+ 			updateMe()
+ 			updateRight()
+ 			updateHotbar()
++			updateResources()
+ 			updateOverlays()
+ 		end
+ 	end)
+diff --git a/games/ra8 - The Endless Voyage/src/client/Controllers/MenuController.lua b/games/ra8 - The Endless Voyage/src/client/Controllers/MenuController.lua
+index bb6625c..658cc35 100644
+--- a/games/ra8 - The Endless Voyage/src/client/Controllers/MenuController.lua	
++++ b/games/ra8 - The Endless Voyage/src/client/Controllers/MenuController.lua	
+@@ -11,6 +11,7 @@ something to show (a bigger raft, 10 more floors, back from a trip) a card asks
+ local Players = game:GetService("Players")
+ local ReplicatedStorage = game:GetService("ReplicatedStorage")
+ local SocialService = game:GetService("SocialService")
++local UserInputService = game:GetService("UserInputService")
+ 
+ local Net = require(ReplicatedStorage.Shared.Net)
+ local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
+@@ -115,64 +116,87 @@ local function bigButton(name, text, color, y, h, size)
+ 	return b
+ end
+ 
+--- "Show your friends?" when there's something to show.
++-- "Bring a friend?" at a moment that's better with one (ModeService picks them, rarely). It never stays: LATER,
++-- the ✕, Escape or the gamepad's B close it, and so does the bar running out (NUDGE_SECONDS).
++local NUDGE_SECONDS = 12
++function MenuController.closeNudge()
++	if nudgeCard then
++		nudgeCard:Destroy()
++		nudgeCard = nil
++	end
++end
++
+ local function nudge(n)
+ 	if type(n) ~= "table" or n.kind ~= "invite" then
+ 		return
+ 	end
+-	if nudgeCard then
+-		nudgeCard:Destroy()
+-	end
+-	nudgeCard = Theme.card({
++	MenuController.closeNudge()
++	local card = Theme.card({
+ 		Name = "InviteNudge",
+ 		AnchorPoint = Vector2.new(0.5, 0),
+ 		Position = UDim2.new(0.5, 0, 0, 210),
+-		Size = UDim2.fromOffset(460, 150),
++		Size = UDim2.fromOffset(460, 168),
++		ZIndex = 10,
+ 		Parent = gui,
+ 	})
+-	Theme.title({
+-		Name = "Text",
+-		Text = n.text or "Show your raft to a friend?",
+-		TextColor3 = C.ink,
+-		outline = false,
+-		Position = UDim2.fromOffset(14, 10),
+-		Size = UDim2.new(1, -28, 0, 70),
+-		TextXAlignment = Enum.TextXAlignment.Center,
+-		TextSize = 18,
+-		Parent = nudgeCard,
++	nudgeCard = card
++	local head, text = Theme.cardHeader(card, n.text or "Bring a friend along?", 86)
++	text.Name = "Text"
++	text.Size = UDim2.new(1, -70, 1, -10) -- (clear of the ✕)
++	local x = Theme.button({
++		Name = "Close",
++		Text = "✕",
++		BackgroundColor3 = C.red,
++		AnchorPoint = Vector2.new(1, 0),
++		Position = UDim2.new(1, -8, 0, 8),
++		Size = UDim2.fromOffset(40, 36),
++		TextSize = 16,
++		Parent = head,
+ 	})
+ 	local yes = Theme.button({
+ 		Name = "Invite",
+ 		Text = "💌 INVITE A FRIEND",
+ 		BackgroundColor3 = C.mustard,
+-		Position = UDim2.new(0, 14, 1, -58),
++		Position = UDim2.new(0, 14, 1, -66),
+ 		Size = UDim2.new(0.62, -20, 0, 46),
+ 		TextSize = 16,
+-		Parent = nudgeCard,
++		Parent = card,
+ 	})
+ 	local later = Theme.button({
+ 		Name = "Later",
+ 		Text = "LATER",
+ 		BackgroundColor3 = C.slate,
+-		Position = UDim2.new(0.62, 6, 1, -58),
++		Position = UDim2.new(0.62, 6, 1, -66),
+ 		Size = UDim2.new(0.38, -20, 0, 46),
+ 		TextSize = 15,
+-		Parent = nudgeCard,
++		Parent = card,
+ 	})
+-	local card = nudgeCard
++	Theme.keyHint(later, "Esc", "B")
++	-- the time left: a bar along the bottom that runs down
++	local bar = new("Frame", {
++		Name = "Timer",
++		BackgroundColor3 = C.mustard,
++		BorderSizePixel = 0,
++		Position = UDim2.new(0, 18, 1, -12),
++		Size = UDim2.new(1, -36, 0, 5),
++		Parent = card,
++	}, { Theme.corner("round") })
++	Theme.tween(bar, NUDGE_SECONDS, { Size = UDim2.new(0, 0, 0, 5) }, Enum.EasingStyle.Linear)
++	local function close()
++		if nudgeCard == card then
++			MenuController.closeNudge()
++		elseif card.Parent then
++			card:Destroy()
++		end
++	end
+ 	yes.Activated:Connect(function()
+-		card:Destroy()
++		close()
+ 		MenuController.invite()
+ 	end)
+-	later.Activated:Connect(function()
+-		card:Destroy()
+-	end)
++	later.Activated:Connect(close)
++	x.Activated:Connect(close)
+ 	Theme.pop(card)
+-	task.delay(14, function()
+-		if card.Parent then
+-			card:Destroy()
+-		end
+-	end)
++	task.delay(NUDGE_SECONDS, close)
+ end
+ 
+ function MenuController:init()
+@@ -186,7 +210,7 @@ function MenuController:init()
+ 		outline = 2,
+ 		Parent = gui,
+ 	})
+-	-- the 💌 INVITE button that's always there, gently pulsing
++	-- the 💌 INVITE button that's always there (still: no pulsing for attention)
+ 	inviteButton = Theme.button({
+ 		Name = "InviteFriends",
+ 		Text = "💌 INVITE FRIENDS",
+@@ -196,14 +220,15 @@ function MenuController:init()
+ 		TextSize = 15,
+ 		Parent = gui,
+ 	})
+-	local pulse = new("UIScale", { Parent = inviteButton })
+ 	inviteButton.Activated:Connect(MenuController.invite)
+-	task.spawn(function()
+-		while gui.Parent do
+-			Theme.tween(pulse, 0.6, { Scale = 1.07 })
+-			task.wait(0.7)
+-			Theme.tween(pulse, 0.6, { Scale = 1 })
+-			task.wait(2.2)
++	-- (Escape or the gamepad's B closes the "bring a friend?" card)
++	UserInputService.InputBegan:Connect(function(input, processed)
++		if
++			not processed
++			and nudgeCard
++			and (input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.ButtonB)
++		then
++			MenuController.closeNudge()
+ 		end
+ 	end)
+ 
+@@ -280,13 +305,12 @@ function MenuController:init()
+ 		ZIndex = 5,
+ 		Parent = box,
+ 	})
+-	Theme.title({
++	Theme.cardHeader(confirmBox, "START YOUR WORLD OVER?", 50, C.red, 22)
++	Theme.text({
+ 		Name = "Ask",
+-		Text = "Start your world over?\nYour raft goes back to a tiny platform and your bag empties. Your level, journal and blueprints stay.",
+-		TextColor3 = C.ink,
+-		outline = false,
+-		Position = UDim2.fromOffset(12, 10),
+-		Size = UDim2.new(1, -24, 0, 120),
++		Text = "Your raft goes back to a tiny platform and your bag empties. Your level, journal and blueprints stay.",
++		Position = UDim2.fromOffset(16, 58),
++		Size = UDim2.new(1, -32, 0, 96),
+ 		TextXAlignment = Enum.TextXAlignment.Center,
+ 		TextSize = 17,
+ 		ZIndex = 6,
+diff --git a/games/ra8 - The Endless Voyage/src/client/Controllers/PanelController.lua b/games/ra8 - The Endless Voyage/src/client/Controllers/PanelController.lua
+index 9aae8ea..657d04a 100644
+--- a/games/ra8 - The Endless Voyage/src/client/Controllers/PanelController.lua	
++++ b/games/ra8 - The Endless Voyage/src/client/Controllers/PanelController.lua	
+@@ -2089,19 +2089,11 @@ function PanelController.card(name, title, text, buttons)
+ 	})
+ 	cards[name] = card
+ 	Layout.modal(name, card)
+-	Theme.title({
+-		Name = "Title",
+-		Text = title,
+-		TextColor3 = C.ink,
+-		outline = false,
+-		Size = UDim2.new(1, -24, 0, 34),
+-		Position = UDim2.fromOffset(12, 10),
+-		TextXAlignment = Enum.TextXAlignment.Center,
+-		Parent = card,
+-	})
++	-- the question in white on a dark band (dark letters on the cream card read as blobs on a phone)
++	Theme.cardHeader(card, title, 48)
+ 	label(card, text or "", {
+ 		Name = "Text",
+-		Position = UDim2.fromOffset(16, 48),
++		Position = UDim2.fromOffset(16, 56),
+ 		Size = UDim2.new(1, -32, 0, 70),
+ 		TextSize = 17,
+ 		TextXAlignment = Enum.TextXAlignment.Center,
+diff --git a/games/ra8 - The Endless Voyage/src/client/UI/Theme.lua b/games/ra8 - The Endless Voyage/src/client/UI/Theme.lua
+index b7f05aa..be6bbc9 100644
+--- a/games/ra8 - The Endless Voyage/src/client/UI/Theme.lua	
++++ b/games/ra8 - The Endless Voyage/src/client/UI/Theme.lua	
+@@ -286,6 +286,50 @@ function Theme.title(props)
+ 	return Theme.text(props)
+ end
+ 
++-- A popup's header: a dark band across the top of a card with the words in white display letters and a dark
++-- outline, like a panel's title bar. (Dark letters on the cream card read as black blobs on a phone.) Without a
++-- textSize the words shrink to fit the band, wrapping onto a second line if they must.
++function Theme.cardHeader(card, text, height, color, textSize)
++	local band = color or C.slate
++	local head = new("Frame", {
++		Name = "Head",
++		BackgroundColor3 = band,
++		BorderSizePixel = 0,
++		Size = UDim2.new(1, 0, 0, height or 48),
++		Parent = card,
++	}, { Theme.corner(18) })
++	-- (square bottom corners: the band meets the card's body in a straight line)
++	new("Frame", {
++		Name = "Square",
++		BackgroundColor3 = band,
++		BorderSizePixel = 0,
++		Position = UDim2.new(0, 0, 1, -16),
++		Size = UDim2.new(1, 0, 0, 16),
++		Parent = head,
++	})
++	local title = Theme.title({
++		Name = "Title",
++		Text = text or "",
++		TextXAlignment = Enum.TextXAlignment.Center,
++		Position = UDim2.fromOffset(14, 5),
++		Size = UDim2.new(1, -28, 1, -10),
++		TextSize = textSize,
++		Parent = head,
++	})
++	return head, title
++end
++
++-- Fade outlined text in or out: the letters and their outline together (an outline left behind keeps the words
++-- on screen as a ghost after the letters have gone).
++function Theme.fadeText(label, seconds, transparency)
++	Theme.tween(label, seconds, { TextTransparency = transparency })
++	for _, d in label:GetChildren() do
++		if d:IsA("UIStroke") then
++			Theme.tween(d, seconds, { Transparency = transparency })
++		end
++	end
++end
++
+ -- Buttons react: grow a little under the mouse, squish while held, bounce back on release (about 0.1 s).
+ local function pressable(button)
+ 	local scale = new("UIScale", { Name = "Press", Scale = 1, Parent = button })
+diff --git a/games/ra8 - The Endless Voyage/src/server/Services/ModeService.lua b/games/ra8 - The Endless Voyage/src/server/Services/ModeService.lua
+index a172f91..059e95d 100644
+--- a/games/ra8 - The Endless Voyage/src/server/Services/ModeService.lua	
++++ b/games/ra8 - The Endless Voyage/src/server/Services/ModeService.lua	
+@@ -27,10 +27,17 @@ local ModeService = {
+ }
+ 
+ local WORLDS = "EV_Worlds_v1" -- [userId] = { code }
+-local NUDGE_EVERY = 8 * 60 -- at most one "show your friends" nudge this often
+-local NUDGE_MAX = 4 -- per session
++local NUDGE_MAX = 1 -- "bring a friend?" cards a session
++-- The moments that are better with a friend, each asked about once ever (profile.nudged): not every bigger raft or
++-- every trip, so the card means something when it comes.
++local MOMENTS = {
++	first_trip = "🏝️ Your first trip! Islands are more fun with a friend. Bring one on the next voyage?",
++	mist = "🌫️ Your raft can reach Mist Hollow now. Something hides in the reeds: bring a friend to watch your back?",
++	trench = "🐋 Your raft can face the Trench now. The Leviathan is easier with a friend on the harpoons!",
++}
+ local registry
+-local nudges = {} -- [player] = { at, n }
++local nudges = {} -- [player] = cards this session
++local friendHere = {} -- [player] = true once a friend of theirs is in this server
+ local NOPE = "🌊 Couldn't travel right now, so you're playing right here."
+ 
+ local function reserved()
+@@ -156,19 +163,42 @@ function ModeService:ResetWorld(player)
+ 	return true
+ end
+ 
+--- A nudge to show your raft to friends, when there's something worth showing (rate-limited).
+-function ModeService:Nudge(player, text)
+-	local n = nudges[player] or { at = -math.huge, n = 0 }
+-	nudges[player] = n
+-	local t = os.clock()
+-	if n.n >= NUDGE_MAX or t - n.at < NUDGE_EVERY then
++-- "Bring a friend?" at one of the MOMENTS: once ever per moment, one card a session, and never when a friend is
++-- already here with you (in your world, or in the same ocean).
++function ModeService:Nudge(player, moment)
++	local text = MOMENTS[moment]
++	local profile = registry.PlayerDataService:Get(player)
++	if not text or not profile then
++		return false
++	end
++	profile.nudged = profile.nudged or {}
++	if profile.nudged[moment] or (nudges[player] or 0) >= NUDGE_MAX or friendHere[player] then
+ 		return false
+ 	end
+-	n.at, n.n = t, n.n + 1
+-	Net.fire(player, "Nudge", { kind = "invite", text = text })
++	if self:Mode() == "world" and workspace:GetAttribute("WorldOwner") ~= player.UserId then
++		return false -- (you came to a friend's world: they're right here)
++	end
++	profile.nudged[moment] = os.time()
++	nudges[player] = (nudges[player] or 0) + 1
++	Net.fire(player, "Nudge", { kind = "invite", text = text, moment = moment })
+ 	return true
+ end
+ 
++-- Friends in the same server (so nobody is asked to invite someone who's already here).
++local function noteFriends(player)
++	task.spawn(function()
++		for _, other in Players:GetPlayers() do
++			if other ~= player then
++				local ok, yes = pcall(player.IsFriendsWith, player, other.UserId)
++				if ok and yes then
++					friendHere[player] = true
++					friendHere[other] = true
++				end
++			end
++		end
++	end)
++end
++
+ -- A friend came to your world: a crate for both of you (once a day per friend).
+ function ModeService:OnPlayerReady(player)
+ 	if self:Mode() ~= "world" then
+@@ -210,30 +240,27 @@ function ModeService:Init(reg)
+ 	Net.on("ResetWorld", function(player)
+ 		self:ResetWorld(player)
+ 	end)
+-	-- something worth showing: nudge to invite
++	-- the moments that are better with a friend (MOMENTS)
+ 	reg.RaftService.TierChanged:Connect(function(player, _, tier, old)
+ 		if player and tier > (old or 0) then
+-			local t = require(ReplicatedStorage.Shared.Data.Pieces).TIERS[tier]
+-			self:Nudge(
+-				player,
+-				`{t and t.icon or "⛵"} Your raft grew into a {t and t.name or "bigger raft"}! Show it to a friend?`
+-			)
+-		end
+-	end)
+-	reg.RaftService.Built:Connect(function(player, piece, raft)
+-		if player and piece.def.structural and not piece.def.net and raft.summary.tiles % 10 == 0 then
+-			self:Nudge(player, `🟫 {raft.summary.tiles} floors! Your raft is getting big. Invite a friend to see it?`)
++			if tier >= 5 then
++				self:Nudge(player, "trench")
++			elseif tier >= 3 then
++				self:Nudge(player, "mist")
++			end
+ 		end
+ 	end)
+ 	reg.VoyageService.Ended:Connect(function(_, _, aboard)
+ 		for _, player in aboard or {} do
+-			self:Nudge(player, "🏝️ You made it back with your finds! Want a friend to come on the next trip?")
++			self:Nudge(player, "first_trip")
+ 		end
+ 	end)
+ 	Players.PlayerRemoving:Connect(function(player)
+ 		nudges[player] = nil
++		friendHere[player] = nil
+ 	end)
+ 	Players.PlayerAdded:Connect(function(player)
++		noteFriends(player)
+ 		local jd = fromJoin(player)
+ 		if self:Mode() == "hub" and jd and jd.LaunchData and jd.LaunchData ~= "" then
+ 			task.defer(function()
+diff --git a/games/ra8 - The Endless Voyage/src/server/Services/RaftService.lua b/games/ra8 - The Endless Voyage/src/server/Services/RaftService.lua
+index 5f0c087..dbff687 100644
+--- a/games/ra8 - The Endless Voyage/src/server/Services/RaftService.lua	
++++ b/games/ra8 - The Endless Voyage/src/server/Services/RaftService.lua	
+@@ -414,11 +414,16 @@ end
+ -- What to build next (the QUICK button): the next tier's missing stations you can build, tiles while the tier
+ -- wants more (stairs first when it wants a second deck), then a few comforts, then room. In the order to try them;
+ -- the client takes the first its bag can pay for (Formulas.recommended).
++-- What the raft should get next, best first: QUICK builds the first one the bag can pay for (Formulas.recommended),
++-- and the guide's NEXT card names it. Things the raft needs come before more floor: the piece the guide's step asks
++-- for, a way to sail and then the anchor (so you can stay at an island as long as you like), the stations the next
++-- tier needs, the floors it needs, a bunk, railings and a lamp. Floor just for room ("more room", filler = true)
++-- comes last, and QUICK only builds it when nothing else is wanted.
+ function RaftService:Recommend(raft)
+ 	local profile = raft.owner and data:Get(raft.owner)
+ 	local t = Pieces.TIERS[raft.tier + 1]
+ 	local out, seen = {}, {}
+-	local function add(key, why)
++	local function add(key, why, filler)
+ 		local def = Pieces.get(key)
+ 		if not def or seen[key] or def.tier > raft.tier then
+ 			return
+@@ -430,9 +435,18 @@ function RaftService:Recommend(raft)
+ 			return
+ 		end
+ 		seen[key] = true
+-		table.insert(out, { key = key, why = why })
++		table.insert(out, { key = key, why = why, filler = filler or nil })
++	end
++	local guide = registry and registry.TutorialService
++	local step = guide and raft.owner and guide:StepPiece(raft.owner)
++	if step then
++		add(step, "the guide's next step")
++	end
++	if not self:Has(raft, "helm") then
++		add("helm", "so you can sail to islands")
++	elseif not self:Has(raft, "anchor") then
++		add("anchor", "so you can stay at an island as long as you like")
+ 	end
+-	local room = true -- (rafts grow as big as you like)
+ 	if t then
+ 		local why = `so your raft grows into a {t.name}`
+ 		for _, def in Pieces.list do
+@@ -456,24 +470,25 @@ function RaftService:Recommend(raft)
+ 				end
+ 			end
+ 		end
+-		if room and t.tiles and raft.summary.tiles < t.tiles then
+-			add("floor", `{raft.summary.tiles}/{t.tiles} tiles {why}`)
++		if t.tiles and raft.summary.tiles < t.tiles then
++			add("floor", `{raft.summary.tiles}/{t.tiles} floors {why}`)
+ 		end
+-		if room and t.deck2 and raft.summary.deck2 < t.deck2 then
++		if t.deck2 and raft.summary.deck2 < t.deck2 then
+ 			if not self:Has(raft, "stairs") then
+ 				add("stairs", `a second deck {why}`)
+ 			end
+-			add("floor", `{raft.summary.deck2}/{t.deck2} tiles up top {why}`)
++			add("floor", `{raft.summary.deck2}/{t.deck2} floors up top {why}`)
+ 		end
+ 	end
+-	for _, key in { "railing", "bed", "lamp" } do
++	if not self:Has(raft, "bed") then
++		add("bed", "a comfort: rest to heal and wake up here")
++	end
++	for _, key in { "railing", "lamp" } do
+ 		if not self:Has(raft, key) then
+ 			add(key, "a comfort")
+ 		end
+ 	end
+-	if room then
+-		add("floor", "more room")
+-	end
++	add("floor", "more room", true)
+ 	return out
+ end
+ 
+diff --git a/games/ra8 - The Endless Voyage/src/server/Services/TutorialService.lua b/games/ra8 - The Endless Voyage/src/server/Services/TutorialService.lua
+index 5bb89f3..ef2848b 100644
+--- a/games/ra8 - The Endless Voyage/src/server/Services/TutorialService.lua	
++++ b/games/ra8 - The Endless Voyage/src/server/Services/TutorialService.lua	
+@@ -78,6 +78,12 @@ function TutorialService:Active(player)
+ 	return active[player]
+ end
+ 
++-- The piece the guide's step asks for right now (QUICK builds it first), or nil.
++function TutorialService:StepPiece(player)
++	local a = active[player]
++	return a and STEP_PIECE[STEPS[a.step]] or nil
++end
++
+ -- Where a player is in the guide, for the analytics and the log: "3/8 tile", "done", or "-" before it starts.
+ function TutorialService:StepName(player)
+ 	local a = active[player]
+@@ -224,13 +230,8 @@ function TutorialService:Goal(player)
+ 		end
+ 		return goal
+ 	end
+-	-- now and then (a minute in every ten, once the raft has grown): show it to a friend
+-	local minute = math.floor(os.time() / 60)
+-	if raft.tier >= 2 and minute % 10 == 0 then
+-		goal.key, goal.action = "invite", "invite"
+-		goal.text = "Show your raft to a friend! 💌 They sail into your world and you both get a 🎁 crate"
+-		return goal
+-	end
++	-- (no "show your raft to a friend" step: the guide sticks to what to do next; ModeService asks about friends at
++	-- the few moments that are better with one)
+ 	-- broken pieces: the hammer
+ 	local broken
+ 	for _, p in raft.pieces do
+@@ -244,17 +245,21 @@ function TutorialService:Goal(player)
+ 		goal.target, goal.piece = rafts:PiecePosition(raft, broken) + Vector3.new(0, 2, 0), broken.id
+ 		return goal
+ 	end
+-	-- the raft's next piece
++	-- the raft's next piece: the first thing it needs that you can pay for, else the first thing it needs (and what's
++	-- missing for it); more floor just for room only when nothing is needed (the same rule as QUICK)
+ 	local list = rafts:Recommend(raft)
+-	local rec
++	local rec, firstNeed
+ 	for _, r in list do
+-		if #missing(player, Pieces.get(r.key).cost) == 0 then
+-			rec = r
+-			break
++		if not r.filler then
++			firstNeed = firstNeed or r
++			if #missing(player, Pieces.get(r.key).cost) == 0 then
++				rec = r
++				break
++			end
+ 		end
+ 	end
+-	rec = rec or list[1]
+-	local filler = not rec or rec.why == "a comfort" or rec.why == "more room"
++	rec = rec or firstNeed or list[1]
++	local filler = not rec or rec.filler == true or string.sub(rec.why or "", 1, 9) == "a comfort"
+ 	if filler and not rafts:Has(raft, "helm") then
+ 		local need = missing(player, Pieces.get("helm").cost)
+ 		goal.key, goal.piece = "helm", nil
+diff --git a/games/ra8 - The Endless Voyage/src/shared/Formulas.lua b/games/ra8 - The Endless Voyage/src/shared/Formulas.lua
+index f2104d9..c237aaa 100644
+--- a/games/ra8 - The Endless Voyage/src/shared/Formulas.lua	
++++ b/games/ra8 - The Endless Voyage/src/shared/Formulas.lua	
+@@ -342,12 +342,28 @@ end
+ 
+ -- The piece QUICK builds: the first of the raft's recommendations (RaftService.Recommend, in the raft view) the
+ -- bag can pay for right now; nil if it can't pay for any (QUICK never offers what you can't build).
++-- QUICK's piece: the first thing the raft needs that the bag can pay for (RaftService.Recommend, best first). Floor
++-- just for room (filler) only when nothing is needed. When the bag can pay for none of what's needed, the first need,
++-- marked short: QUICK says what's missing for it instead of laying floor nobody asked for.
+ function Formulas.recommended(raftView, invView)
+ 	local list = raftView and raftView.recommend
+ 	if type(list) ~= "table" or #list == 0 then
+ 		return nil
+ 	end
+ 	local slots = invView and invView.slots or {}
++	local firstNeed
++	for _, r in list do
++		local def = Pieces.get(r.key)
++		if def and not r.filler then
++			firstNeed = firstNeed or r
++			if Formulas.affordable(def.cost, slots) then
++				return r
++			end
++		end
++	end
++	if firstNeed then
++		return { key = firstNeed.key, why = firstNeed.why, short = true }
++	end
+ 	for _, r in list do
+ 		local def = Pieces.get(r.key)
+ 		if def and Formulas.affordable(def.cost, slots) then
