@@ -1588,7 +1588,6 @@ local function mapPanel()
 				Parent = row,
 			})
 			if known then
-				local secs = Formulas.voyageSeconds(d.distance, raft.speed or 1)
 				local visited = profile.visited and profile.visited[d.key]
 				label(row, `{d.name}{visited and " ✓" or ""}`, {
 					Position = UDim2.fromOffset(68, 4),
@@ -1598,7 +1597,7 @@ local function mapPanel()
 				})
 				label(
 					row,
-					`{string.rep("💀", d.danger)} · {math.floor(secs)}s away · {d.desc}`,
+					`{string.rep("💀", d.danger)} · {d.desc}`,
 					{ Position = UDim2.fromOffset(68, 28), Size = UDim2.new(1, -230, 0, 20), TextSize = 13 }
 				)
 				local resources = {}

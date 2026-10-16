@@ -246,7 +246,8 @@ function VoyageService:_depart(raft, d, home, byCurrent)
 	local plot = raft.plot
 	local v = state(plot)
 	local t = now()
-	local seconds = Formulas.voyageSeconds(d.distance, rafts:Speed(raft))
+	-- (a cut scene: a few seconds of black, not a trip you watch)
+	local seconds = Constants.VOYAGE_CUT_SECONDS
 	v.state = home and "home" or "sailing"
 	v.dest = d
 	v.danger = d.danger
@@ -280,7 +281,14 @@ function VoyageService:_depart(raft, d, home, byCurrent)
 			3
 		)
 		Net.fire(p, "Sfx", "horn")
-		Net.fire(p, "Fx", "sail", { center = rafts:Center(raft), seconds = seconds, home = home })
+		-- the cut: black with where you're going, until you're there (the arrival's own cut takes over)
+		Net.fire(
+			p,
+			"Fade",
+			seconds + 1.5,
+			home and "⛵ Heading back out to sea..." or `⛵ Sailing to {d.name} {d.icon or ""}...`,
+			true
+		)
 	end
 	if not home and d.creatures and #d.creatures > 0 then
 		for _, p in aboard do

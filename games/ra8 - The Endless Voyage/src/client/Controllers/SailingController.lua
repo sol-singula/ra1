@@ -28,6 +28,9 @@ local SailingController = { Name = "SailingController", Order = 37 }
 
 local DRIFT_SPEED = 4 -- studs a second the far islands pass while the raft floats at its spot
 local SAIL_SPEED = 26 -- ... and while it sails
+-- Sailing is a cut scene (VoyageService): the screen goes black and you're there, so nothing here races past, no
+-- wake, no island coming in or sliding away. (false brings the watched trip back.)
+local CUT_SCENE = true
 local RANGE = 1150 -- they wrap round at this distance up and down the current
 local CLEAR = 320 -- and never pass closer than this to the raft, sideways
 
@@ -253,7 +256,8 @@ local function step(dt)
 	local state = v.state
 	local moving = state == "sailing" or state == "home"
 	-- ease between floating and sailing speed
-	local want = moving and SAIL_SPEED or DRIFT_SPEED
+	-- (sailing is a cut scene now: the world never races past)
+	local want = DRIFT_SPEED
 	speed += (want - speed) * math.min(1, dt * 0.8)
 	flow += speed * dt
 	-- (phones: the far islands slide every 3rd frame, they move slowly enough that nobody sees it)
@@ -268,12 +272,12 @@ local function step(dt)
 	if state ~= lastState then
 		local was = lastState
 		lastState = state
-		setWake(moving, layout)
+		setWake(false, layout) -- (sailing is a cut scene: no wake, no spray)
 		if state ~= "sailing" then
 			clearSilhouette()
 		end
 		-- leaving an island: a copy of it stays where it was and slides away behind you
-		if was == "island" and lastIsland then
+		if CUT_SCENE == false and was == "island" and lastIsland then
 			if leaving then
 				leaving.model:Destroy()
 			end
@@ -298,7 +302,7 @@ local function step(dt)
 		end
 	end
 	-- the place you're going: upstream ahead, nearer every second, gone when the real island rises
-	if state == "sailing" and v.dest then
+	if CUT_SCENE == false and state == "sailing" and v.dest then
 		if not silhouette or silhouette.dest ~= v.dest then
 			clearSilhouette()
 			local d = Voyages.get(v.dest)

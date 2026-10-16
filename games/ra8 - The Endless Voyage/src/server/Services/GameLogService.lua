@@ -62,8 +62,11 @@ local function who(player)
 	return "@" .. player.Name
 end
 
+-- Each event carries the server's player count at the moment it happened (the footer shows it), not when its batch
+-- goes out: three joins in one batch read 9, 10, 11, not 11, 11, 11.
 function GameLogService.log(event)
 	if #queue < 60 then
+		event.players = event.players or #Players:GetPlayers()
 		table.insert(queue, event)
 	end
 end
@@ -398,6 +401,8 @@ function GameLogService:OnPlayerLeaving(player, profile)
 			color = COLORS.leave,
 			url = profileUrl(player),
 			fields = stats,
+			-- (they're still in the list while leaving: the count is the server without them)
+			players = #Players:GetPlayers() - (player.Parent and 1 or 0),
 		})
 	end
 end

@@ -760,6 +760,11 @@ check(
 tap(find(map, "Sail_palm_key"))
 check("SAIL set sail", Voyages:State(1) == "sailing")
 Engine.advance(0.5)
+check(
+	"sailing is a cut to black: where you're going on the screen",
+	refs.fade.Visible == true and refs.fadeText.Text:find("Sailing to Palm Key") ~= nil,
+	refs.fadeText.Text
+)
 check("the clock shows the voyage", refs.voyage.Text:find("PALM KEY") ~= nil, refs.voyage.Text)
 check("the voyage bar is visible", refs.voyageBar.Visible == true)
 check("the music turned to sailing", Audio.wanted() == "sailing", Audio.wanted())
@@ -779,10 +784,9 @@ do
 	end
 end
 check(
-	"Palm Key shows on the horizon ahead",
-	Sailing.silhouette() ~= nil and Sailing.silhouette().model.Parent ~= nil and #Sailing.silhouette().parts > 0
+	"sailing is a cut scene: nothing races in from the horizon, no wake",
+	Sailing.silhouette() == nil and (Sailing.wake() == nil or Sailing.wake().bow.Spray.Rate == 0)
 )
-check("the wake foams astern", Sailing.wake() ~= nil and Sailing.wake().stern.Foam.Rate > 0)
 local ride = RaftMotion.rafts[ws.Rafts.Raft1]
 check("the raft rides the swell (its parts move as one)", ride ~= nil and #ride.parts > 0 and ride.applied ~= nil)
 local secs = Formulas.voyageSeconds(1, 1)
@@ -845,7 +849,7 @@ Engine.advance(0.3)
 tap(find(panels.Panel_map, "Home"))
 check("SAIL HOME from the map", Voyages:State(1) == "home")
 Engine.advance(0.3)
-check("the island you left slides away behind you (a copy, out of the way)", Sailing.leaving() ~= nil, "no copy")
+check("leaving is a cut too: no copy of the island slides away", Sailing.leaving() == nil)
 check("the button says LEAVE ISLAND, the clock says leaving", refs.voyage.Text:find("LEAVING") ~= nil, refs.voyage.Text)
 Engine.advance(secs + 3)
 check(

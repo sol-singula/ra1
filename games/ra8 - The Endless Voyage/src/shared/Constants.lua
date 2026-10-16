@@ -163,6 +163,9 @@ Constants.GUIDE_CRATE_RETRY = 3 -- seconds: another one the moment it's gone, un
 
 -- Feedback (FeedbackService): the "Do you like the game?" card
 Constants.FEEDBACK_AFTER = 480
+-- Sailing is a cut scene (VoyageService): the screen goes black, "Sailing to ...", and a few seconds later you're
+-- there. Nothing in the world moves.
+Constants.VOYAGE_CUT_SECONDS = 3
 -- Server events (EventService): one every SERVER_EVENT_EVERY seconds (the first SERVER_EVENT_FIRST after the server
 -- starts), in turn: a supply rain, a golden tide, a bottle bloom
 Constants.SERVER_EVENT_EVERY = 900
