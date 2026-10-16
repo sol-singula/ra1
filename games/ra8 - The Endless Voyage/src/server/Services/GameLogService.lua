@@ -1,15 +1,12 @@
 --[[
-The game log: everything worth knowing goes to the team's private Discord logs channel, same pipeline as the
-studio's other games (the roblox-game-log Supabase function, the "discord_log" secret, batched every few seconds):
-  joins (new or returning, level, raft tier and tiles, voyages) and leaves with how the session went (time
-  played, pieces reeled in and built, voyages, discoveries, fish, levels)
+The game log: what we want to read goes to the team's private Discord logs channel, same pipeline as the studio's
+other games (the roblox-game-log Supabase function, the "discord_log" secret, batched every few seconds):
+  joins and leaves, one line each ("ra8 · 🟢 Ava (@ava) joined · new", "ra8 · 🔴 Ava (@ava) left after 12m")
   the chat
-  rafts reaching a new tier, voyages to dangerous waters, the Leviathan going down, a raft broken by a storm
   anti-cheat flags and kicks, script errors, the server starting and shutting down
-  and every event of every player (AnalyticsService), one line each, as "ra8 · 📜 Activity" entries every
-  GAME_LOG_ACTIVITY_SECONDS: the time into their session, who, what happened, and where they were (the guide's
-  step, the raft's size, where they stood, what they'd been doing), so where we lose people reads straight off
-  the channel (GAME_LOG_ACTIVITY = false turns it off if the shared channel gets too busy)
+Everything else players do (every event, raft tiers, voyages, the Leviathan, achievements) is stored by
+AnalyticsService in roblox_events, not posted. GAME_LOG_ACTIVITY = true would post every event as a line again
+("ra8 · 📜 Activity" entries every GAME_LOG_ACTIVITY_SECONDS).
 Without the secret (and in Studio) nothing is sent; why not is said in the server's log (GameKey).
 ]]
 local Players = game:GetService("Players")
@@ -19,33 +16,19 @@ local ScriptContext = game:GetService("ScriptContext")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Format = require(ReplicatedStorage.Shared.Format)
-local Formulas = require(ReplicatedStorage.Shared.Formulas)
-local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
 local GameKey = require(script.Parent.Parent.GameKey)
 
 local GameLogService = {
 	Name = "GameLogService",
-	Dependencies = {
-		"PlayerDataService",
-		"RaftService",
-		"VoyageService",
-		"CreatureService",
-		"ProgressService",
-		"AntiCheatService",
-	},
+	Dependencies = { "PlayerDataService", "AntiCheatService" },
 }
 
 local COLORS = {
-	join = 0x10b981,
-	leave = 0xe11d48,
-	record = 0xf5c518,
-	voyage = 0x38bdf8,
-	event = 0xa855f7,
 	error = 0xef4444,
 	server = 0x94a3b8,
 }
 
-local sessions = {} -- [player] = { start, stats = copy, records = copy, xp, tutorialDone }
+local sessions = {} -- [player] = { start }
 local queue, chat = {}, {}
 local startedAt = os.time()
 local peakPlayers = 0
@@ -216,64 +199,6 @@ function GameLogService.flush(force)
 end
 
 function GameLogService:Init(registry)
-	local rafts = registry.RaftService
-	local voyages = registry.VoyageService
-	local creatures = registry.CreatureService
-	local progress = registry.ProgressService
-	local data = registry.PlayerDataService
-	rafts.TierChanged:Connect(function(player, raft, tier, old)
-		if not player or tier <= old then
-			return
-		end
-		local t = Pieces.TIERS[tier]
-		GameLogService.log({
-			emoji = t and t.icon or "⛵",
-			title = `{who(player)}'s raft is now a {t and t.name or ("tier " .. tier)}`,
-			color = COLORS.record,
-			url = profileUrl(player),
-			fields = { { name = "Tier", value = `{old} → {tier}` }, { name = "Tiles", value = raft.summary.tiles } },
-		})
-	end)
-	voyages.Departed:Connect(function(plot, dest, aboard, home)
-		if home or dest.danger < 3 then
-			return
-		end
-		local raft = rafts:Get(plot)
-		local names = {}
-		for _, p in aboard do
-			table.insert(names, p.DisplayName)
-		end
-		GameLogService.log({
-			emoji = dest.icon,
-			title = `{raft and raft.owner and who(raft.owner) or "A raft"} set sail for {dest.name}`,
-			color = COLORS.voyage,
-			fields = {
-				{ name = "Danger", value = dest.danger },
-				{ name = "Aboard", value = table.concat(names, ", ") },
-			},
-		})
-	end)
-	creatures.Killed:Connect(function(c, killer)
-		if not c.boss then
-			return
-		end
-		GameLogService.log({
-			emoji = "🐲",
-			title = `The Leviathan went down{killer and (" to " .. who(killer)) or ""}`,
-			color = COLORS.event,
-			url = killer and profileUrl(killer) or nil,
-		})
-	end)
-	progress.Achieved:Connect(function(player, key)
-		if key == "leviathan_1" or key == "islands_all" or key == "tier_6" or key == "voyages_50" then
-			GameLogService.log({
-				emoji = "🏆",
-				title = `{who(player)} earned {key}`,
-				color = COLORS.record,
-				url = profileUrl(player),
-			})
-		end
-	end)
 	registry.AntiCheatService.Flagged:Connect(function(player, kind, detail, strikes)
 		if strikes >= 3 then
 			GameLogService.log({
@@ -325,7 +250,6 @@ function GameLogService:Init(registry)
 			GameLogService.flush()
 		end)
 	end)
-	_ = data
 end
 
 function GameLogService:Start()
@@ -338,69 +262,25 @@ end
 
 function GameLogService:OnPlayerReady(player, profile)
 	peakPlayers = math.max(peakPlayers, #Players:GetPlayers())
-	sessions[player] = {
-		start = os.time(),
-		stats = table.clone(profile.stats),
-		records = table.clone(profile.records),
-		xp = profile.xp,
-		tutorialDone = profile.tutorial.done == true,
-	}
+	sessions[player] = { start = os.time() }
 	player.Chatted:Connect(function(message)
 		GameLogService.chat(player, message)
 	end)
-	local t = Pieces.TIERS[profile.records.tier or 1]
 	GameLogService.log({
 		emoji = "🟢",
-		title = who(player) .. " joined",
-		color = COLORS.join,
-		url = profileUrl(player),
-		fields = {
-			{ name = "Player", value = profile._isNew and "🆕 New" or "Returning" },
-			{ name = "Level", value = (Formulas.level(profile.xp)) },
-			{ name = "Raft", value = `{t and t.name or "Driftwood Platform"} · {profile.records.tiles or 4} tiles` },
-			{ name = "Voyages", value = profile.stats.voyages },
-			{ name = "Account age", value = (player.AccountAge or 0) .. " days" },
-		},
+		title = `{who(player)} joined · {profile._isNew and "new" or "returning"}`,
+		line = true,
 	})
 end
 
--- The leave message's stats for a session (exposed for tests).
-function GameLogService:SessionStats(player, profile)
+function GameLogService:OnPlayerLeaving(player)
 	local s = sessions[player]
-	if not s then
-		return nil
-	end
-	local st, old = profile.stats, s.stats
-	local function gained(k)
-		return (st[k] or 0) - (old[k] or 0)
-	end
-	local levelNow, levelThen = Formulas.level(profile.xp), Formulas.level(s.xp)
-	local stats = {
-		{ name = "Time played", value = Format.time(os.time() - s.start) },
-		{ name = "Hooked", value = gained("debris") },
-		{ name = "Built / crafted", value = `{gained("built")} / {gained("crafted")}` },
-		{ name = "Voyages", value = gained("voyages") },
-		{ name = "Raft", value = `tier {profile.records.tier} · {profile.records.tiles} tiles` },
-		{ name = "Discoveries", value = (profile.records.discoveries or 0) - (s.records.discoveries or 0) },
-		{ name = "Fish", value = gained("fish") },
-		{ name = "Level", value = levelNow > levelThen and `{levelThen} → {levelNow}` or tostring(levelNow) },
-	}
-	if not s.tutorialDone and profile.tutorial.done then
-		table.insert(stats, { name = "Guide", value = "✅ finished this session" })
-	end
-	return stats
-end
-
-function GameLogService:OnPlayerLeaving(player, profile)
-	local stats = profile and self:SessionStats(player, profile)
 	sessions[player] = nil
-	if stats then
+	if s then
 		GameLogService.log({
 			emoji = "🔴",
-			title = who(player) .. " left",
-			color = COLORS.leave,
-			url = profileUrl(player),
-			fields = stats,
+			title = `{who(player)} left after {Format.time(os.time() - s.start)}`,
+			line = true,
 			-- (they're still in the list while leaving: the count is the server without them)
 			players = #Players:GetPlayers() - (player.Parent and 1 or 0),
 		})

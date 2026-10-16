@@ -315,6 +315,10 @@ What the second play found, and what changed:
   what happened, and that context. They're sent as "ra8 · 📜 Activity" entries every 15 seconds
   (`GAME_LOG_ACTIVITY_SECONDS`), in as few messages as fit. Performance and focus events are left out.
   `GAME_LOG_ACTIVITY = false` turns the feed off if the shared channel gets too busy.
+  (Later: off. The channel only shows joins and leaves, one line each ("ra8 · 🟢 Ava (@ava) joined · new · 11 in
+  server 5ee0e64b", "ra8 · 🔴 Ava (@ava) left after 12:04 · 10 in ..."), plus the chat, errors, anti-cheat and the
+  server starting and stopping. Every event, tier, voyage, Leviathan and achievement is still stored in
+  roblox_events. The roblox-game-log function also trims ra8 batches from older versions the same way.)
 * **Nets are tiles of their own.** A net is a tile at the raft's edge, like a floor (BUILD, then tap a spot next to
   the raft). It's a frame round open water, with the net hanging below in a sagging bowl. What it catches floats in
   the bowl where you can see it (up to six pieces), and its prompt says how full it is.

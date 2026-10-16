@@ -1524,11 +1524,11 @@ Engine.advance(1)
 flush()
 check("ava's plot was freed", Rafts:Get(1) == nil and ws.Rafts:FindFirstChild("Raft1") == nil)
 check(
-	"the leave went to the game log with the session's stats",
+	"the leave went to the game log as one line (time played, no fields)",
 	(function()
 		for _, e in gameLogs do
-			if e.title and e.title:find("left") then
-				return #e.fields >= 5
+			if e.title and e.title:find("left after") then
+				return e.line == true and e.fields == nil
 			end
 		end
 		return false
@@ -1752,19 +1752,18 @@ do
 	check("...and what they'd been doing", doing > 10, doing)
 	local activity = 0
 	for _, e in gameLogs do
-		-- (escaped for Discord: first\_cast shows as first_cast)
-		if e.title == "ra8 · 📜 Activity" and e.description:find("first\\_cast", 1, true) then
+		if e.title == "ra8 · 📜 Activity" or (e.title or ""):find("raft is now", 1, true) then
 			activity += 1
 		end
 	end
-	check("every event goes to the Discord log as a line (ra8 · 📜 Activity)", activity >= 1, activity)
+	check("the activity is stored (above) but not posted to Discord", activity == 0, activity)
 end
 check(
 	"the join went to the game log",
 	(function()
 		for _, e in gameLogs do
-			if e.title and e.title:find("joined") then
-				return true
+			if e.title and e.title:find("joined · ", 1, true) then
+				return e.line == true and e.fields == nil
 			end
 		end
 	end)()

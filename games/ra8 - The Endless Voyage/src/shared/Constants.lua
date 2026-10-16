@@ -210,7 +210,7 @@ Constants.ADMINS = { [11787294097] = true }
 Constants.GAME_LOG_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-game-log"
 Constants.GAME_LOG_IN_STUDIO = false
 Constants.GAME_LOG_FLUSH_SECONDS = 5
-Constants.GAME_LOG_ACTIVITY = true -- every event of every player to the Discord log too, a line each
+Constants.GAME_LOG_ACTIVITY = false -- (true: every event of every player to the Discord log too, a line each; they are stored either way)
 Constants.GAME_LOG_ACTIVITY_SECONDS = 15 -- how often those lines go (in as few messages as fit)
 Constants.ANALYTICS_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-analytics"
 Constants.ANALYTICS_GAME = "ra8"
