@@ -120,9 +120,19 @@ function OceanService:Spawn(plot, kind, opts)
 	if not pos then
 		local back = opts.distance or Constants.DEBRIS_FROM
 		local across = (opts.spread or Constants.DEBRIS_SPREAD) * rng:NextNumber(-1, 1)
+		-- nets out at the side of a wide raft would sit beside the stream and catch nothing: some of the pieces
+		-- come down a net's own lane (NET_LANE_SHARE of them, when there are nets)
+		local raft = rafts and rafts:Get(plot)
+		local nets = raft and not opts.spread and rafts:Nets(raft)
+		local laned = false
+		if nets and #nets > 0 and rng:NextNumber() < Constants.NET_LANE_SHARE then
+			local net = nets[rng:NextInteger(1, #nets)]
+			across = (net.pos - layout.center):Dot(layout.out) + rng:NextNumber(-6, 6)
+			laned = true
+		end
 		-- an island beside the raft (on its outer side): the current brings pieces past the inner side instead
 		local islands = registry and registry.IslandService
-		if across > 0 and islands and islands:Here(plot) then
+		if not laned and across > 0 and islands and islands:Here(plot) then
 			across = -across
 		end
 		pos = layout.center - layout.current * back + layout.out * across

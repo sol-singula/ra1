@@ -303,8 +303,8 @@ What the second play found, and what changed:
 * **Islands come to you.** A voyage's island rises right off the raft's outer side, its beach `ISLAND_GAP` (3 studs)
   from the deck's edge whatever the raft's size (`Formulas.raftReach`, `OceanLayout.islandBeside`); the destination
   you watch on the way lands on the same spot. While an island is there, pieces drift past the raft's inner side.
-* **Eight to a server.** Eight rafts on the ring (`MAX_PLAYERS`): set the place's Server Size to 8 and Server Fill to
-  keep 2 slots, so matchmaking stops at 6 and friends can join.
+* **Eight to a server.** Eight rafts on the ring (`MAX_PLAYERS`). (Round 12 made it twenty: the place's Server Size
+  is 20.)
 * **The Discord log.** Every entry in the studio's shared game-logs channel starts with "ra8 · ", the chat too
   (escaped: no pings, no markdown). A server without the secret looks again every minute, and any failure (no
   secret, HTTP off, the domain, a wrong key) is said in the server's log, F9 (`GameKey`). Setup: [README](README.md).
@@ -348,13 +348,53 @@ What the second play found, and what changed:
   All of them were made from fresh renders of the current game ([renders](screenshots/README.md)).
   `title_art.py` letters the name in one line or two (`--title`, `--title-size`, `--at`).
 
+## Round 12: a shared ocean, a mission always posted, and fixes from players
+
+* **Twenty rafts, one ocean.** A server holds 20 players. The plots sit on a ring sized so that neighbours are 720
+  studs apart (`Constants.PLOT_SPACING`): even two of the biggest rafts a grid allows can't touch on any two plots,
+  which a test checks for every pair. The ocean grew to fit.
+* **Your own island.** Sailing still happens out at sea, with its events. Arriving is a cut to black with the
+  island's name, then you're there. Each client shows only its own plot's island, so rafts that sail to the same
+  place never meet there. The far islands stay on the horizon.
+* **The MAP shows everyone.** An ocean view beside the list of places: every raft (yours gold, the rest with their
+  captain's name and size) and every player, redrawn each second. The status line no longer overlaps the list.
+* **A mission is always posted.** A bar under the NEXT card shows the long goal (the next tier and how close you
+  are, then the biggest raft on the ocean). It moves up into the card's place when there's no card, and steps
+  aside for questions.
+* **Raft size counts every piece.** Raft size counts everything placed, not just floors, and the Biggest Raft board
+  ranks by it.
+* **The daily favourite raft.** Once a day, after 15 minutes of play, a card shows three rafts from the top of the
+  biggest-raft board, rotated across voters so the whole top gets seen. LOOK visits one, VOTE picks it, LATER asks
+  again later. Votes add up per UTC day (`VoteService`). Yesterday's winner is announced to everyone who joins, and
+  the winner gets +500 XP and the Favourite Raft title.
+* **Readable popups.** Cards have a dark header band with white letters. Fades take their outline with them and
+  clear when done, which fixes the "Resting..." text that stayed on screen after a rest.
+* **Resources at the bottom left:** wood, scrap, rope, cloth, metal, and what you found on islands.
+* **The invite card, less often.** It shows only at three moments (the first trip, the mist, the trench), once
+  each, never with a friend aboard. LATER, ✕ and a 12-second timer close it.
+* **Building what the raft needs.** The anchor arrives at tier 1. QUICK and the guide pick the guide's piece, then
+  the helm, the anchor and the tier's needs before more floor.
+* **Raised floors stand on posts**, not floats.
+* **Storage boxes open the bag.**
+* **Nets catch.** With nets aboard, half of the debris drifts down a net's lane (`NET_LANE_SHARE`), so a net at the
+  side of a wide raft isn't left beside an empty stream.
+* **Controls.**
+  * C closes things (Esc is Roblox's menu).
+  * R, L2 or the mouse wheel rotates any piece, walls included.
+  * X removes the piece you're looking at, with everything back.
+  * Shift-click moves an item between the bag and the hotbar.
+  * Build shortcuts live only in the hotbar: moved into the bag, one is just taken off, and a full hotbar swaps out
+    another shortcut first.
+* **The game log says why it's quiet.** A server that can't send its log reports the reason (no secret, a send
+  error) to the log function without the key.
+
 ## Tests
 
-`tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 66 checks: tiers, speeds, loot odds,
-every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 298 checks:
+`tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 69 checks: tiers, speeds, loot odds,
+every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 311 checks:
 the first five minutes, nets, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent,
 the turret and the Leviathan, removing pieces, running, visiting, friends, boards, leaving and coming back, feedback,
-the anti-cheat, analytics and the Discord log; also run without DataStores, 298 checks), the client
-(`tests/ClientSmoke.spec.luau`, 223 checks: the real UI driving the real server on a phone-sized screen, and nothing
+the anti-cheat, analytics and the Discord log; the daily vote; also run without DataStores, 311 checks), the client
+(`tests/ClientSmoke.spec.luau`, 229 checks: the real UI driving the real server on a phone-sized screen, and nothing
 overlapping on four screen sizes) and the rod in the hand (`tests/Rod.spec.luau`, 10 checks, run once with Motor6D
 joints and once with AnimationConstraints).

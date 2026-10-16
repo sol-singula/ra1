@@ -1903,6 +1903,39 @@ do
 	Engine.advance(1)
 end
 
+-- nets out at the side of the raft still get debris: some of it comes down a net's own lane
+do
+	local r = Rafts:RaftOf(ava)
+	if r and #Rafts:Nets(r) == 0 then
+		local spot = Rafts:FreeSpots(r, 1)[1]
+		supply(ava, costOf("net"))
+		if spot then
+			Rafts:Build(ava, "net", spot[1], spot[2], 1)
+		end
+	end
+	local nets = r and Rafts:Nets(r) or {}
+	check("nets: a net to test with", #nets > 0)
+	if #nets > 0 then
+		local layout = r.layout
+		local lane = (nets[1].pos - layout.center):Dot(layout.out)
+		local inLane = 0
+		for _ = 1, 60 do
+			local d = Ocean:Spawn(r.plot, "wood")
+			if d then
+				for _, n in nets do
+					local lat = (d.pos - layout.center):Dot(layout.out)
+					if math.abs(lat - (n.pos - layout.center):Dot(layout.out)) <= Constants.NET_RANGE then
+						inLane += 1
+						break
+					end
+				end
+				Ocean:Remove(d)
+			end
+		end
+		check("nets: plenty of debris drifts within a net's reach", inLane >= 25, `{inLane}/60, lane {lane}`)
+	end
+end
+
 -- build shortcuts only live in the hotbar
 do
 	local pinned
