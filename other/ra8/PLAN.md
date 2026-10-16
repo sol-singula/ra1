@@ -388,13 +388,27 @@ What the second play found, and what changed:
 * **The game log says why it's quiet.** A server that can't send its log reports the reason (no secret, a send
   error) to the log function without the key.
 
+## Round 13: fixes from the first day's numbers
+
+The first 8 hours of analytics (641 players) showed three leaks. Each fix is aimed at one:
+
+* **No teleport on PLAY.** A public server used to send you on to your own reserved world. 72% of the players who
+  went through that hop never arrived. Now PLAY just closes the menu and you play right there on the shared ocean
+  (your raft is in your save either way). First-timers never see the start menu at all: they land straight in the
+  game. A Roblox invite already brings a friend into your server.
+* **The first net is one tap.** Of the players shown "build a net", fewer than half built one. The guide's net step
+  now has a PLACE MY NET button, and the first net is free (placed upstream, where the debris reaches it first).
+* **Lighter on phones.** Phones ran at a median 32 FPS. Lite mode now also turns off shadows, light sources (the
+  bulbs still glow), water waves and reflections, and clouds. Other rafts hold still and yours bobs every other
+  frame (20 rafts' parts were moved every frame). The far islands slide every third frame.
+
 ## Tests
 
-`tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 69 checks: tiers, speeds, loot odds,
-every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 311 checks:
+`tools/run_tests.sh`: the data and formulas (`tests/Formulas.spec.luau`, 75 checks: tiers, speeds, loot odds,
+every builder builds, every icon is an emoji Roblox draws), the server (`tests/ServerSmoke.spec.luau`, 313 checks:
 the first five minutes, nets, tiers, storms, fishing, research, the wreck and the lost bag, sharks and the serpent,
 the turret and the Leviathan, removing pieces, running, visiting, friends, boards, leaving and coming back, feedback,
-the anti-cheat, analytics and the Discord log; the daily vote; also run without DataStores, 311 checks), the client
-(`tests/ClientSmoke.spec.luau`, 229 checks: the real UI driving the real server on a phone-sized screen, and nothing
+the anti-cheat, analytics and the Discord log; the daily vote; also run without DataStores, 313 checks), the client
+(`tests/ClientSmoke.spec.luau`, 236 checks: the real UI driving the real server on a phone-sized screen, and nothing
 overlapping on four screen sizes) and the rod in the hand (`tests/Rod.spec.luau`, 10 checks, run once with Motor6D
 joints and once with AnimationConstraints).

@@ -38,7 +38,8 @@ local MOMENTS = {
 local registry
 local nudges = {} -- [player] = cards this session
 local friendHere = {} -- [player] = true once a friend of theirs is in this server
-local NOPE = "🌊 Couldn't travel right now, so you're playing right here."
+
+ModeService.FOLLOW_OLD_INVITES = false
 
 local function reserved()
 	return game.PrivateServerId ~= nil and game.PrivateServerId ~= "" and (game.PrivateServerOwnerId or 0) == 0
@@ -96,35 +97,29 @@ local function playHere(player, why)
 	Net.fire(player, "Menu", { close = true, note = why })
 end
 
+-- PLAY: you play right here, on the shared ocean (your raft is in your save, so it's the same raft wherever you
+-- play). No teleport: the second loading screen lost most of the players who went through it (Round 13).
 function ModeService:Choose(player, kind)
 	if kind ~= "world" then
 		return false
 	end
-	if self:Mode() == "world" then
-		playHere(player) -- already in a world (yours, or the friend's you came to see)
-		return true
-	end
-	if RunService:IsStudio() then
-		playHere(player, "🧪 In Studio you play right here (the real game takes you there).")
-		self.Chose:Fire(player, kind, false)
-		return false
-	end
-	local ok
-	local code = self:WorldCode(player.UserId, true)
-	if code then
-		Net.fire(player, "Menu", { travelling = kind })
-		ok = teleport(player, code, { mode = "world", owner = player.UserId, ownerName = player.DisplayName })
-	end
-	if not ok then
-		playHere(player, NOPE)
-	end
-	self.Chose:Fire(player, kind, ok == true)
-	return ok == true
+	playHere(player)
+	self.Chose:Fire(player, kind, true)
+	return true
 end
 
 -- A friend's invite: its launch data names a world ("w:<userId>").
 function ModeService:_launch(player, launch)
+	-- (a Roblox invite already brings the friend into the inviter's server: only an old invite naming a reserved
+	-- world still goes there, when the owner is playing in it)
 	if type(launch) ~= "string" or RunService:IsStudio() then
+		return false
+	end
+	local named = tonumber(string.match(launch, "^w:(%d+)$"))
+	if named and Players:GetPlayerByUserId(named) then
+		return false -- (they're right here)
+	end
+	if not ModeService.FOLLOW_OLD_INVITES then
 		return false
 	end
 	local owner = tonumber(string.match(launch, "^w:(%d+)$"))
@@ -281,7 +276,7 @@ function ModeService:Init(reg)
 		self:Choose(player, kind)
 	end)
 	TeleportService.TeleportInitFailed:Connect(function(player)
-		playHere(player, NOPE)
+		playHere(player, "🌊 Couldn't travel right now, so you're playing right here.")
 	end)
 end
 

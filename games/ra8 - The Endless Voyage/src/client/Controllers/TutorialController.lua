@@ -517,7 +517,9 @@ local function show(view)
 	stepLabel.Text = current.title or `STEP {current.step} OF {current.total}`
 	label.Text = current.text or ""
 	actionButton.Visible = current.action ~= nil
-	actionButton.Text = current.action == "invite" and "💌 INVITE" or "🎣 HOLD MY ROD"
+	actionButton.Text = current.action == "invite" and "💌 INVITE"
+		or current.action == "place_net" and "🕸️ PLACE MY NET"
+		or "🎣 HOLD MY ROD"
 	actionButton.BackgroundColor3 = current.action == "invite" and C.mustard or C.good
 	if not was or was.key ~= current.key then
 		Theme.pop(card)

@@ -365,9 +365,7 @@ Engine.advance(2)
 guide = lastFired("Tutorial", ava)
 check("three pieces: the guide wants a Surface Net right away", guide and guide.key == "net", guide and guide.key)
 check("XP for the guide's first step", Data:Get(ava).xp >= Constants.XP.guide.cast)
--- the net: a tile of its own beside the raft, no blueprint
-give(ava, "wood", 4)
-give(ava, "rope", 1)
+-- the net: a tile of its own beside the raft, no blueprint, and the first one is free and one tap away
 Tutorial:_refresh(ava)
 guide = lastFired("Tutorial", ava)
 check(
@@ -379,8 +377,11 @@ check(
 		and Rafts:Tile(Rafts:RaftOf(ava), guide.spot.gx, guide.spot.gz, 1) == nil,
 	guide and guide.text
 )
-send(ava, "Build", "net", guide.spot.gx, guide.spot.gz, 1, 0)
-check("the net was built", Rafts:Has(Rafts:RaftOf(ava), "net"), lastFired("Toast", ava))
+check("the net step offers PLACE MY NET (the first net is free)", guide and guide.action == "place_net")
+local woodBeforeNet = Inventory:Count(ava, "wood")
+send(ava, "GuideAction", "place_net")
+check("the net was built with one tap", Rafts:Has(Rafts:RaftOf(ava), "net"), lastFired("Toast", ava))
+check("...and it cost nothing", Inventory:Count(ava, "wood") >= woodBeforeNet, Inventory:Count(ava, "wood"))
 do
 	local r = Rafts:RaftOf(ava)
 	local net = Rafts:NearPiece(ava, "net", 100)

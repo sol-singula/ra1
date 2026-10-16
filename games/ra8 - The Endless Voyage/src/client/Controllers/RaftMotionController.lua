@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
 local Store = require(script.Parent.Parent.Store)
+local PerformanceController = require(script.Parent.PerformanceController)
 
 local RaftMotionController = { Name = "RaftMotionController", Order = 36 }
 
@@ -109,8 +110,18 @@ local function step()
 		if far and frame % 4 ~= 0 then
 			continue
 		end
-		-- the swell: slow and small; a storm on this plot triples it; sailing adds a forward lean
 		local mine = rec.plot == myPlot
+		-- phones (lite): other rafts hold still, yours bobs every other frame (moving every part of up to 20 rafts
+		-- each frame was the heaviest thing on screen)
+		if PerformanceController.lite and (not mine or frame % 2 ~= 0) then
+			if not mine and not rec.still then
+				rec.still = true
+				rec.applied = CFrame.new()
+				move(rec.parts, rec.bases)
+			end
+			continue
+		end
+		-- the swell: slow and small; a storm on this plot triples it; sailing adds a forward lean
 		local amp = (mine and storm) and 0.5 or 0.16
 		local roll = (mine and storm) and 2.2 or 0.7
 		local pitchLean = (mine and (voyage == "sailing" or voyage == "home")) and -1.4 or 0

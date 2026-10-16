@@ -5,6 +5,7 @@
 local Lighting = game:GetService("Lighting")
 
 local LightingPresets = {}
+LightingPresets.lite = false -- (set by PerformanceController on phones: no shadows)
 
 local function rgb(r, g, b)
 	return Color3.fromRGB(r, g, b)
@@ -218,7 +219,7 @@ function LightingPresets.apply(preset, clock)
 	-- a little less fill from the sky, so shapes keep their shading, and soft shadows
 	Lighting.EnvironmentDiffuseScale = 0.55
 	Lighting.EnvironmentSpecularScale = 0.75
-	Lighting.GlobalShadows = true
+	Lighting.GlobalShadows = not LightingPresets.lite -- (no shadows on phones: PerformanceController)
 	pcall(function()
 		Lighting.ShadowSoftness = 0.3
 	end)

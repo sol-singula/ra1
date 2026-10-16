@@ -405,6 +405,21 @@ function TutorialService:View(player)
 	local piece = STEP_PIECE[key]
 	local profile = data:Get(player)
 	local raft = rafts:RaftOf(player)
+	if key == "net" and raft and not rafts:Has(raft, "net") then
+		-- the first net is free and one tap away (most players stalled here building it by hand)
+		local view = {
+			step = a.step,
+			total = #STEPS,
+			key = key,
+			action = "place_net",
+			text = "Your first net is FREE 🕸️: tap PLACE MY NET and watch it catch what floats by!",
+			target = target,
+		}
+		for k, v in glow or {} do
+			view[k] = v
+		end
+		return view
+	end
 	if piece and raft and not (key == "helm" and rafts:Has(raft, "helm")) then
 		local def = Pieces.get(piece)
 		local paper
@@ -463,6 +478,43 @@ function TutorialService:View(player)
 		view[k] = v
 	end
 	return view
+end
+
+-- The guide's free first net, placed for you beside the raft (the best free spot: in the debris' path).
+function TutorialService:PlaceFirstNet(player)
+	local raft = rafts:RaftOf(player)
+	if not raft or rafts:Has(raft, "net") then
+		return false
+	end
+	local def = Pieces.get("net")
+	local spots = rafts:FreeSpots(raft, 1)
+	local layout = raft.layout
+	-- upstream first: the debris reaches it soonest
+	table.sort(spots, function(x, y)
+		local px = rafts:TileWorld(raft, x[1], x[2], 1) - layout.center
+		local py = rafts:TileWorld(raft, y[1], y[2], 1) - layout.center
+		return px:Dot(layout.current) < py:Dot(layout.current)
+	end)
+	for _, spot in spots do
+		-- (the cost is handed over only for a spot it can really go on, so a refused tap gives nothing)
+		for k, n in def.cost do
+			inventory:Give(player, k, n, "guide")
+		end
+		if rafts:CanBuild(raft, player, "net", spot[1], spot[2], 1, 0) then
+			local ok = rafts:Build(player, "net", spot[1], spot[2], 1, 0)
+			if ok then
+				if active[player] then
+					self:_refresh(player)
+				end
+				return true
+			end
+		end
+		for k, n in def.cost do
+			inventory:Take(player, k, n)
+		end
+	end
+	Net.fire(player, "Toast", "Stand on your raft to place the net 🕸️", "info")
+	return false
 end
 
 local function skip(player, a)
@@ -590,7 +642,9 @@ function TutorialService:Init(registry)
 	voyages = registry.VoyageService
 	island = registry.IslandService
 	Net.on("GuideAction", function(player, what)
-		if what == "hold_rod" then
+		if what == "place_net" then
+			self:PlaceFirstNet(player)
+		elseif what == "hold_rod" then
 			inventory:HoldKind(player, "rod")
 			if active[player] then
 				self:_refresh(player)

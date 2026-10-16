@@ -1,6 +1,6 @@
 --[[
 The start menu: it's about YOUR world.
-  ▶ PLAY              into your world (from a public server it takes you there; in Studio it just closes)
+  ▶ PLAY              closes the menu: you play right here on the shared ocean (first-timers never see the menu)
   💌 INVITE FRIENDS   the big one: bring friends to see your raft (they arrive in your world; you both get a crate)
   👀 VISIT RAFTS      look at friends' rafts and the biggest ones
   🔄 RESET MY WORLD   start over (asks first)
@@ -83,12 +83,9 @@ end
 
 function MenuController.play()
 	Bus.Tap:Fire("menu_play")
-	if modeOf() == "world" then
-		MenuController.close()
-		return
-	end
-	setBusy("⛵ Sailing to your world...")
-	Net.send("Mode", "world")
+	-- (you play right here, on the shared ocean: no teleport, no second loading screen)
+	MenuController.close()
+	pcall(Net.send, "Mode", "world")
 end
 
 local function updateBadge()
@@ -395,10 +392,18 @@ function MenuController:init()
 		end
 	end)
 	updateBadge()
-	-- the menu greets you every time you arrive
-	task.delay(0.5, function()
+	-- the menu greets returning players when they arrive; a first-timer goes straight into the game (every screen
+	-- before the first cast loses players)
+	task.spawn(function()
+		local waited = 0
+		while not Store.get("profile") and waited < 8 do
+			waited += task.wait(0.25)
+		end
 		updateBadge()
-		MenuController.open()
+		local profile = Store.get("profile")
+		if profile and profile.tutorial and profile.tutorial.done then
+			MenuController.open()
+		end
 	end)
 end
 

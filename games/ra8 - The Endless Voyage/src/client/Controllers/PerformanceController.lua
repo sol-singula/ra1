@@ -6,11 +6,15 @@ device only (nothing changes for anyone else):
   * particle effects make half as many particles
   * monsters are drawn to a shorter distance and far ones animate less often (CreatureController reads .lite), and
     effects use fewer particles (FxController)
+  * no shadows, no light sources (a lamp's bulb still glows), flat water, no clouds
+  * other rafts hold still and yours bobs every other frame (RaftMotionController), the far islands slide every few
+    frames (SailingController)
 AnalyticsController sends PerformanceController.lite with each frame-rate sample, so the dashboard can tell
 whether it helps.
 ]]
 local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local PerformanceController = { Name = "PerformanceController", Order = 1, lite = false }
@@ -33,9 +37,13 @@ local function dropDetail(part)
 	part.Parent = nil
 end
 
+local LIGHTS = { PointLight = true, SpotLight = true, SurfaceLight = true }
+
 local function lighten(inst)
 	if HEAVY_EFFECTS[inst.ClassName] then
 		inst.Enabled = false
+	elseif LIGHTS[inst.ClassName] and inst.Name ~= "HeldLight" then
+		inst.Enabled = false -- (light sources cost the most on phones; neon bulbs still look lit)
 	elseif inst:IsA("ParticleEmitter") and not inst:GetAttribute("LiteDone") then
 		inst:SetAttribute("LiteDone", true)
 		inst.Rate = inst.Rate * 0.5
@@ -43,10 +51,27 @@ local function lighten(inst)
 end
 
 function PerformanceController:init()
-	self.lite = PerformanceController.shouldBeLite()
-	if not self.lite then
+	if PerformanceController.shouldBeLite() then
+		PerformanceController.enable()
+	end
+end
+
+-- Everything already in the world, lightened (what arrives later is caught as it comes).
+function PerformanceController.sweep()
+	for _, inst in workspace:GetDescendants() do
+		if inst:IsA("ParticleEmitter") or LIGHTS[inst.ClassName] then
+			lighten(inst)
+		end
+	end
+end
+
+-- Lite mode on (phones; tests turn it on by hand).
+function PerformanceController.enable()
+	if PerformanceController.enabled then
 		return
 	end
+	PerformanceController.enabled = true
+	PerformanceController.lite = true
 	for _, part in CollectionService:GetTagged("Detail") do
 		dropDetail(part)
 	end
@@ -55,14 +80,24 @@ function PerformanceController:init()
 		lighten(inst)
 	end
 	Lighting.ChildAdded:Connect(lighten)
-	for _, inst in workspace:GetDescendants() do
-		if inst:IsA("ParticleEmitter") then
-			lighten(inst)
+	pcall(function()
+		local LightingPresets = require(ReplicatedStorage.Shared.World.LightingPresets)
+		LightingPresets.lite = true
+	end)
+	Lighting.GlobalShadows = false
+	pcall(function()
+		local terrain = workspace.Terrain
+		terrain.WaterWaveSize = 0
+		terrain.WaterReflectance = 0
+		local clouds = terrain:FindFirstChildOfClass("Clouds")
+		if clouds then
+			clouds.Enabled = false
 		end
-	end
+	end)
+	PerformanceController.sweep()
 	pcall(function()
 		workspace.DescendantAdded:Connect(function(inst)
-			if inst:IsA("ParticleEmitter") then
+			if inst:IsA("ParticleEmitter") or LIGHTS[inst.ClassName] then
 				lighten(inst)
 			end
 		end)

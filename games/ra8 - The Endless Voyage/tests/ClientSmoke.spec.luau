@@ -103,7 +103,9 @@ local Menu = Engine.require(tree.client.Controllers.MenuController)
 
 -- The start menu: it's about your world ------------------------------------------------------------------------------------------
 Engine.advance(0.8)
-check("the menu greets you", Menu.isOpen() == true)
+check("a first-timer goes straight into the game (no menu)", Menu.isOpen() == false)
+Menu.open()
+Engine.advance(0.2)
 check(
 	"PLAY, INVITE FRIENDS, VISIT RAFTS and RESET MY WORLD (no public ocean)",
 	Menu.buttons.play and Menu.buttons.invite and Menu.buttons.visit and Menu.buttons.reset and not Menu.buttons.public
@@ -118,9 +120,7 @@ gui.Menu:FindFirstChild("No", true).Activated:Fire()
 check("NO keeps your world", gui.Menu:FindFirstChild("Confirm", true).Visible == false and Menu.isOpen())
 Menu.buttons.play.Activated:Fire()
 Engine.advance(0.5)
-check("in Studio, PLAY says you play right here", Menu.status():find("Studio") ~= nil, Menu.status())
-Engine.advance(3)
-check("then the menu closes and you play", Menu.isOpen() == false)
+check("PLAY closes the menu and you play right here (no teleport)", Menu.isOpen() == false)
 
 local function sent(name)
 	for i = #Engine.clientLog, 1, -1 do
@@ -1570,6 +1570,29 @@ do
 		m ~= nil and bar ~= nil and string.find(bar.Text.Text, "MISSION") ~= nil,
 		m and m.title
 	)
+end
+
+-- lite mode (phones): no shadows, no light sources, no bloom, flat water
+do
+	local Perf = Engine.require(tree.client.Controllers.PerformanceController)
+	local Lighting = Engine.globals.game:GetService("Lighting")
+	local probe = Engine.globals.Instance.new("Part")
+	local light = Engine.globals.Instance.new("PointLight")
+	light.Parent = probe
+	probe.Parent = ws
+	Perf.enable()
+	Perf.sweep() -- (the real engine catches new lights as they're added; the mock doesn't fire DescendantAdded)
+	Engine.advance(0.2)
+	local bloom = Lighting:FindFirstChildOfClass("BloomEffect")
+	check("lite: no shadows", Lighting.GlobalShadows == false)
+	check(
+		"lite: light sources off",
+		light.Enabled == false,
+		`{tostring(light.Enabled)} {light.ClassName} {light.Name} {tostring(Perf.lite)}`
+	)
+	check("lite: no bloom", bloom == nil or bloom.Enabled == false)
+	check("lite: flat water", ws.Terrain.WaterWaveSize == 0)
+	probe:Destroy()
 end
 
 print(`\n{passed} passed, {failed} failed`)

@@ -22,6 +22,7 @@ local IslandBuilder = require(ReplicatedStorage.Shared.World.IslandBuilder)
 local OceanLayout = require(ReplicatedStorage.Shared.World.OceanLayout)
 local OceanModels = require(ReplicatedStorage.Shared.World.OceanModels)
 local Store = require(script.Parent.Parent.Store)
+local PerformanceController = require(script.Parent.PerformanceController)
 
 local SailingController = { Name = "SailingController", Order = 37 }
 
@@ -38,6 +39,7 @@ local wake -- { stern, bow }
 local silhouette -- { model, dest, parts, bases }
 local leaving -- { model, parts, bases, start, t0 }
 local lastState
+local isleFrame = 0
 local lastIsland -- the island's centre while you're at one (for the copy that sails away)
 
 local KIND_OF_TEMPLATE = {
@@ -254,7 +256,11 @@ local function step(dt)
 	local want = moving and SAIL_SPEED or DRIFT_SPEED
 	speed += (want - speed) * math.min(1, dt * 0.8)
 	flow += speed * dt
-	flowIsles(layout)
+	-- (phones: the far islands slide every 3rd frame, they move slowly enough that nobody sees it)
+	isleFrame = (isleFrame or 0) + 1
+	if not PerformanceController.lite or isleFrame % 3 == 0 then
+		flowIsles(layout)
+	end
 	local island = Store.get("island")
 	if type(island) == "table" and island.center then
 		lastIsland = { center = island.center, template = island.template or island.key }
