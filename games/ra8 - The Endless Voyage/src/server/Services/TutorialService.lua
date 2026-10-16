@@ -28,6 +28,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Pieces = require(ReplicatedStorage.Shared.Data.Pieces)
+local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Voyages = require(ReplicatedStorage.Shared.Data.Voyages)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 
@@ -312,6 +313,39 @@ function TutorialService:Goal(player)
 	return goal
 end
 
+-- The long goal, always posted (the NEXT card is the step, this is what it's for): the next tier with its
+-- progress, then the biggest raft on the ocean.
+function TutorialService:Mission(player)
+	local raft = rafts:RaftOf(player)
+	if not raft then
+		return nil
+	end
+	local needs = Formulas.tierNeeds(raft.summary, raft.tier, raft.trophies)
+	local t = Pieces.TIERS[raft.tier + 1]
+	if needs and t then
+		local have, left = 0, {}
+		for _, n in needs do
+			if n.done then
+				have += 1
+			else
+				table.insert(left, n.todo or n.text)
+			end
+		end
+		return {
+			title = `🎯 MISSION: {t.name} {t.icon}`,
+			text = #left > 0 and `Still needed: {table.concat(left, ", ")}` or "All done: it grows up any moment",
+			have = have,
+			need = #needs,
+		}
+	end
+	return {
+		title = "🎯 MISSION: the biggest raft on the ocean 👑",
+		text = `{raft.summary.placed or raft.summary.tiles} pieces so far: keep building, every piece counts`,
+		have = 1,
+		need = 1,
+	}
+end
+
 local function signature(view)
 	if not view then
 		return "none"
@@ -321,7 +355,18 @@ local function signature(view)
 	return `{view.key}|{view.text}|{view.action or ""}|{at}`
 end
 
+local lastMission = {}
+function TutorialService:_mission(player)
+	local m = self:Mission(player)
+	local sig = m and `{m.title}|{m.text}|{m.have}/{m.need}` or "none"
+	if lastMission[player] ~= sig then
+		lastMission[player] = sig
+		Net.fire(player, "Mission", m or false)
+	end
+end
+
 function TutorialService:_goal(player)
+	self:_mission(player)
 	if active[player] then
 		return
 	end
@@ -670,6 +715,7 @@ function TutorialService:OnPlayerReady(player, profile)
 end
 
 function TutorialService:OnPlayerLeaving(player)
+	lastMission[player] = nil
 	active[player] = nil
 	lastGoal[player] = nil
 end

@@ -114,7 +114,8 @@ function VisitController.show(snap)
 		dist = radius * 2.2,
 	}
 	title.Text = `👀 {string.upper(snap.name or "?")}'S RAFT`
-	sub.Text = `{snap.tierName or ""} · {snap.tiles or 0} floors · just looking, nothing here can be touched`
+	sub.Text =
+		`{snap.tierName or ""} · {snap.size or snap.tiles or 0} pieces · just looking, nothing here can be touched`
 	bar.Visible = true
 	setControls(false)
 	local cam = workspace.CurrentCamera

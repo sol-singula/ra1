@@ -400,15 +400,14 @@ function ProgressService:Init(reg)
 		self:Settings(player, key, value)
 	end)
 	-- the raft
-	rafts.Built:Connect(function(player, piece, raft)
+	rafts.Built:Connect(function(player, _piece, raft)
 		self:AddXp(player, Constants.XP.build, "build")
 		local profile = data:Get(player)
 		if profile then
 			profile.stats.built += 1
-			if piece.def.structural then
-				profile.stats.tiles = raft.summary.tiles
-				self:Record(player, "tiles", raft.summary.tiles, true)
-			end
+			-- (the raft's size on the boards: every piece on it)
+			profile.stats.tiles = raft.summary.tiles
+			self:Record(player, "tiles", raft.summary.placed or raft.summary.tiles, true)
 			self:_checkAchievements(player, profile)
 		end
 	end)
@@ -627,7 +626,7 @@ function ProgressService:OnPlayerReady(player, profile)
 	local raft = rafts:RaftOf(player)
 	if raft then
 		self:Record(player, "tier", raft.tier, true)
-		self:Record(player, "tiles", raft.summary.tiles, true)
+		self:Record(player, "tiles", raft.summary.placed or raft.summary.tiles, true)
 	end
 	data:WhenClientReady(player, function()
 		self:Push(player)

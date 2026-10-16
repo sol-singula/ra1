@@ -7,6 +7,8 @@ this client moves the world instead, all the time:
   * the place you're sailing to rises upstream ahead and comes in as the trip goes on, until the real island
     appears beside the raft
   * leaving an island, a copy of it slides away behind you and sinks below the horizon
+  * every island you land on is your own: other plots' islands are never shown here (a cut to black on arrival,
+    then you're there by yourselves, however many rafts on the server sailed to the same place)
 The raft travels upstream: "ahead" is against the current.
 ]]
 local RunService = game:GetService("RunService")
@@ -318,11 +320,52 @@ local function step(dt)
 	end
 end
 
+-- Only your own plot's island is shown: the others go into a folder of this client's that's never drawn (and back
+-- if your plot changes).
+local hidden = {} -- [model] = true
+local hideBin
+local function privacy()
+	local folder = workspace:FindFirstChild("Islands")
+	if not folder then
+		return
+	end
+	local me = Store.get("me") or {}
+	hideBin = hideBin or Instance.new("Folder")
+	hideBin.Name = "OtherIslands"
+	for _, m in folder:GetChildren() do
+		local plot = m:GetAttribute("Plot")
+		if plot ~= nil and plot ~= me.plot then
+			hidden[m] = true
+			m.Parent = hideBin
+		end
+	end
+	for m in hidden do
+		if m:GetAttribute("Plot") == me.plot then
+			hidden[m] = nil
+			m.Parent = folder
+		elseif m.Parent ~= hideBin then
+			hidden[m] = nil -- (gone: the server took it down)
+		end
+	end
+end
+
 function SailingController:init()
 	RunService.RenderStepped:Connect(step)
+	local acc = 0
+	RunService.Heartbeat:Connect(function(dt)
+		acc += dt
+		if acc >= 0.25 then
+			acc = 0
+			privacy()
+		end
+	end)
 end
 
 -- (tests)
+function SailingController.privacy()
+	privacy()
+	return hidden
+end
 function SailingController.slide()
 	return flow
 end

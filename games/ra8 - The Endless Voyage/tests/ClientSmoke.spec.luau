@@ -451,7 +451,11 @@ Input.act()
 Engine.advance(0.6)
 check("the workbench was placed on the new tile", Rafts:Has(Rafts:RaftOf(player), "workbench"))
 check("placing a station ends by itself", Build.placing() == nil)
-check("the raft line counts 5 tiles", refs.raftLine.Text:find("5 floors") ~= nil, refs.raftLine.Text)
+check(
+	"the raft line counts every piece (5 floors, a net, a bench)",
+	refs.raftLine.Text:find("7 pieces") ~= nil,
+	refs.raftLine.Text
+)
 
 -- 📌 a piece in the hotbar: holding it shows the ghost, ACT builds it ------------------------------------------------------------------
 do
@@ -1467,6 +1471,28 @@ check("the client's device info reached analytics", kinds.ui_ready ~= nil)
 check("panels opened were tracked", kinds.panel ~= nil and kinds.panel >= 5, kinds.panel)
 check("the guide's steps were tracked", kinds.guide_done ~= nil)
 check("no warnings from the client", #Engine.warnings == 0, Engine.warnings[1])
+
+-- a rest's fade leaves nothing behind (the words cleared, the overlay hidden), even two in a row
+Hud.fade(1.2, "Resting...")
+Engine.advance(0.3)
+Hud.fade(1.2, "Resting...")
+Engine.advance(0.6)
+check("resting: the words show during the fade", refs.fadeText.Text == "Resting...")
+Engine.advance(3)
+check(
+	"resting: nothing stays on screen after the fade",
+	refs.fadeText.Text == "" and refs.fade.Visible == false and refs.fadeText.TextTransparency == 1,
+	refs.fadeText.Text
+)
+-- the mission: always posted
+do
+	local m, bar = Guide.mission()
+	check(
+		"the mission is posted",
+		m ~= nil and bar ~= nil and string.find(bar.Text.Text, "MISSION") ~= nil,
+		m and m.title
+	)
+end
 
 print(`\n{passed} passed, {failed} failed`)
 if #Engine.errors > 0 then

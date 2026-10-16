@@ -24,9 +24,10 @@ function Formulas.xpForLevel(level)
 	return total
 end
 
--- What a raft is made of: { tiles, deck2, nets, pieces = { [key] = n } } from a list of placed pieces.
+-- What a raft is made of: { tiles, deck2, nets, placed, pieces = { [key] = n } } from a list of placed pieces
+-- (placed: every piece on it, its size on the boards).
 function Formulas.raftSummary(placed)
-	local s = { tiles = 0, deck2 = 0, nets = 0, pieces = {} }
+	local s = { tiles = 0, deck2 = 0, nets = 0, placed = 0, pieces = {} }
 	for _, p in placed do
 		local def = Pieces.get(p.key)
 		if def then
@@ -39,6 +40,7 @@ function Formulas.raftSummary(placed)
 				end
 			end
 			s.pieces[p.key] = (s.pieces[p.key] or 0) + 1
+			s.placed += 1
 		end
 	end
 	return s
@@ -280,7 +282,7 @@ end
 
 -- The number the dashboard and the boards show for a raft.
 function Formulas.raftScore(summary, tier)
-	return tier * 1000 + summary.tiles * 10 + summary.deck2 * 5
+	return tier * 1000 + (summary.placed or summary.tiles) * 10 + summary.deck2 * 5
 end
 
 -- What the raft still needs to grow up, in one short sentence: "a Workbench 🛠️ and a Storage Box 📦" (nil at the top).

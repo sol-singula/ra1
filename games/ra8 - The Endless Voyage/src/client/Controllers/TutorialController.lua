@@ -35,6 +35,8 @@ local TutorialController = { Name = "TutorialController", Order = 25 }
 local player = Players.LocalPlayer
 local C = Theme.Color
 local gui, card, label, stepLabel, actionButton
+local missionBar, missionLabel, missionFill -- the long goal, always on screen (Mission)
+local mission
 local arrow, beam, targetAttach, fromAttach, targetPart, spotPad
 local current
 local glow, glowKey, glowCheckAt = nil, nil, 0
@@ -478,6 +480,29 @@ local function clearWorld()
 	beam, targetAttach, fromAttach = nil, nil, nil
 end
 
+-- The mission bar sits under the NEXT card, or in its place while there's no card; it steps aside for a card asking
+-- something, like the NEXT card does.
+local function placeMission()
+	if not missionBar then
+		return
+	end
+	missionBar.Visible = mission ~= nil and not Layout.modalOpen()
+	missionBar.Position = UDim2.new(0.5, 0, 0, card.Visible and 204 or 128)
+end
+
+local function onMission(m)
+	mission = type(m) == "table" and m or nil
+	if not mission then
+		placeMission()
+		return
+	end
+	missionLabel.Text = `{mission.title or "🎯 MISSION"} · {mission.text or ""}`
+	local need = math.max(1, tonumber(mission.need) or 1)
+	local have = math.clamp(tonumber(mission.have) or 0, 0, need)
+	missionFill.Size = UDim2.new(have / need, 0, 1, 0)
+	placeMission()
+end
+
 local function show(view)
 	local was = current
 	current = type(view) == "table" and view or nil
@@ -582,6 +607,10 @@ end
 local function step()
 	hintStep()
 	if not current then
+		if card.Visible then
+			card.Visible = false
+		end
+		placeMission()
 		return
 	end
 	-- a card asking something is up: the NEXT card steps aside until it's answered, then pops back
@@ -592,6 +621,7 @@ local function step()
 			Theme.pop(card)
 		end
 	end
+	placeMission()
 	screenStep()
 	pickTarget()
 	if not target then
@@ -684,6 +714,34 @@ function TutorialController:init()
 			Net.send("GuideAction", action)
 		end
 	end)
+	missionBar = Theme.slab({
+		Name = "Mission",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 204),
+		Size = UDim2.fromOffset(520, 30),
+		BackgroundColor3 = Color3.fromRGB(28, 36, 52),
+		BackgroundTransparency = 0.1,
+		Visible = false,
+		Parent = gui,
+	})
+	missionFill = Instance.new("Frame")
+	missionFill.Name = "Fill"
+	missionFill.BackgroundColor3 = C.good
+	missionFill.BackgroundTransparency = 0.55
+	missionFill.BorderSizePixel = 0
+	missionFill.Size = UDim2.new(0, 0, 1, 0)
+	missionFill.Parent = missionBar
+	missionLabel = Theme.title({
+		Name = "Text",
+		Text = "",
+		Size = UDim2.new(1, -16, 1, -4),
+		Position = UDim2.fromOffset(8, 2),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		outline = 2,
+		ZIndex = 3,
+		Parent = missionBar,
+	})
+	Net.listen("Mission", onMission)
 	Net.listen("Tutorial", onTutorial)
 	Net.listen("Point", onPoint)
 	Store.Changed:Connect(function(partial)
@@ -697,6 +755,9 @@ end
 -- (tests)
 function TutorialController.current()
 	return current
+end
+function TutorialController.mission()
+	return mission, missionBar
 end
 TutorialController.uiTarget = uiTarget
 

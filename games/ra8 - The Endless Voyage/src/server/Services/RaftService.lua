@@ -537,6 +537,7 @@ function RaftService:View(raft)
 		tierName = t and t.name or "",
 		nextTier = nextTier and nextTier.name or nil,
 		tiles = raft.summary.tiles,
+		size = raft.summary.placed or raft.summary.tiles,
 		deck2 = raft.summary.deck2,
 		pieces = pieces,
 		colours = raft.colours,
@@ -734,8 +735,8 @@ function RaftService:Assign(player, profile)
 		folder = folder,
 		colours = table.clone(profile.raft.colours or {}),
 		trophies = profile.trophies or {},
-		summary = { tiles = 0, deck2 = 0, pieces = {} },
-		working = { tiles = 0, deck2 = 0, pieces = {} },
+		summary = { tiles = 0, deck2 = 0, placed = 0, pieces = {} },
+		working = { tiles = 0, deck2 = 0, placed = 0, pieces = {} },
 		tier = 1,
 	}
 	rafts[plot] = raft
@@ -844,7 +845,7 @@ function RaftService:Save(raft, profile)
 	end)
 	profile.raft.pieces = list
 	profile.raft.colours = table.clone(raft.colours)
-	profile.records.tiles = math.max(profile.records.tiles or 0, raft.summary.tiles)
+	profile.records.tiles = math.max(profile.records.tiles or 0, raft.summary.placed or raft.summary.tiles)
 	profile.records.tier = math.max(profile.records.tier or 1, raft.tier)
 	raft.dirty = false
 end

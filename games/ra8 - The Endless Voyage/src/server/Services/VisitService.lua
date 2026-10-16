@@ -68,6 +68,7 @@ function VisitService:Snapshot(userId)
 			tier = raft.tier,
 			tierName = t and t.name or "",
 			tiles = raft.summary.tiles,
+			size = raft.summary.placed or raft.summary.tiles,
 			pieces = list,
 			colours = raft.colours,
 		}
@@ -150,6 +151,7 @@ function VisitService:Rafts(player)
 				name = other.DisplayName,
 				tier = raft.tier,
 				tiles = raft.summary.tiles,
+				size = raft.summary.placed or raft.summary.tiles,
 				friend = okF and friend or false,
 			})
 		end

@@ -317,7 +317,7 @@ local function buildPanel(arg)
 		local profile = Store.get("profile") or { blueprints = {} }
 		label(
 			body,
-			`{raft.tierName or "Driftwood Platform"} · {raft.tiles or 0} floors. Tap PLACE, then tap a spot on your raft.`,
+			`{raft.tierName or "Driftwood Platform"} · {raft.size or raft.tiles or 0} pieces. Tap PLACE, then tap a spot on your raft.`,
 			{
 				Size = UDim2.new(1, -130, 0, 22),
 				TextSize = 15,
@@ -1391,7 +1391,7 @@ local function raftPanel()
 		)
 		label(
 			head,
-			`{t and t.desc or ""} · {raft.tiles or 0} floors · speed {raft.speed or 1}x · {raft.cargo or 16} slots{raft.broken and raft.broken > 0 and ` · 💥 {raft.broken} broken: hammer them` or ""}`,
+			`{t and t.desc or ""} · {raft.size or raft.tiles or 0} pieces · speed {raft.speed or 1}x · {raft.cargo or 16} slots{raft.broken and raft.broken > 0 and ` · 💥 {raft.broken} broken: hammer them` or ""}`,
 			{ Position = UDim2.fromOffset(10, 32), Size = UDim2.new(1, -20, 0, 34), TextSize = 13 }
 		)
 		if raft.needs then
@@ -1832,7 +1832,7 @@ local function friendsPanel()
 			})
 			label(
 				row,
-				`{t and t.icon or "⛵"} {t and t.name or ""} · {r.tiles} floors`,
+				`{t and t.icon or "⛵"} {t and t.name or ""} · {r.size or r.tiles} pieces`,
 				{ Position = UDim2.new(0.35, 0, 0, 2), Size = UDim2.new(0.65, -140, 1, -4), TextSize = 13 }
 			)
 			local b = Theme.button({
@@ -2074,8 +2074,8 @@ local function visitPanel(arg)
 			})
 			label(
 				row,
-				r.tiles and `{t and t.icon or "⛵"} {t and t.name or ""} · {r.tiles} floors`
-					or r.value and `🟫 {r.value} floors`
+				r.tiles and `{t and t.icon or "⛵"} {t and t.name or ""} · {r.size or r.tiles} pieces`
+					or r.value and `🧱 {r.value} pieces`
 					or "",
 				{ Position = UDim2.new(0.45, 0, 0, 4), Size = UDim2.new(0.55, -140, 1, -8), TextSize = 14 }
 			)

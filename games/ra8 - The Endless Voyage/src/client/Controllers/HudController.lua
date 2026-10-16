@@ -313,7 +313,8 @@ end
 local function updateRight()
 	local raft = Store.get("raft") or {}
 	local t = Pieces.TIERS[raft.tier or 1]
-	refs.raftLine.Text = `{t and t.icon or "⛵"} {raft.tierName or (t and t.name) or ""} · {raft.tiles or 0} floors`
+	refs.raftLine.Text =
+		`{t and t.icon or "⛵"} {raft.tierName or (t and t.name) or ""} · {raft.size or raft.tiles or 0} pieces`
 	local needs = raft.needs
 	if needs then
 		local done, total = 0, #needs
@@ -646,7 +647,7 @@ function HudController.alert(text, color, seconds)
 		Name = "Alert",
 		Text = text,
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 206),
+		Position = UDim2.new(0.5, 0, 0, 240),
 		Size = UDim2.fromOffset(600, 66),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = typeof(color) == "Color3" and color or C.mustard,
@@ -860,14 +861,20 @@ end
 -- A fade to black and back ("Resting..."): the words fade with their outline, and once it's over they're cleared
 -- and the overlay hidden, so nothing is left on screen (the newest fade wins if two overlap).
 local fadeToken = 0
-local function fade(seconds, text)
+local function fade(seconds, text, snap)
 	seconds = type(seconds) == "number" and seconds or 1
 	fadeToken += 1
 	local token = fadeToken
 	refs.fadeText.Text = type(text) == "string" and text or ""
 	refs.fade.Visible = true
-	Theme.tween(refs.fade, seconds * 0.4, { BackgroundTransparency = 0 })
-	Theme.fadeText(refs.fadeText, seconds * 0.4, 0)
+	if snap then
+		-- a cut: black at once (arriving at an island: it's there when the screen opens again)
+		refs.fade.BackgroundTransparency = 0
+		Theme.fadeText(refs.fadeText, 0.2, 0)
+	else
+		Theme.tween(refs.fade, seconds * 0.4, { BackgroundTransparency = 0 })
+		Theme.fadeText(refs.fadeText, seconds * 0.4, 0)
+	end
 	task.delay(seconds * 0.6, function()
 		if token ~= fadeToken then
 			return

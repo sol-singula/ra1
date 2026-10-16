@@ -191,7 +191,7 @@ end
 -- The leaderboards (friends first): record = a field of profile.records.
 Progression.BOARDS = {
 	{ key = "tier", name = "Raft Tier", icon = "⛵", record = "tier", unit = "" },
-	{ key = "tiles", name = "Biggest Raft", icon = "🟫", record = "tiles", unit = " tiles" },
+	{ key = "tiles", name = "Biggest Raft", icon = "🧱", record = "tiles", unit = " pieces" },
 	{ key = "voyages", name = "Voyages", icon = "🧭", record = "voyages", unit = "" },
 	{ key = "discoveries", name = "Discoveries", icon = "🔎", record = "discoveries", unit = "" },
 	{ key = "leviathans", name = "Leviathans", icon = "🐲", record = "leviathans", unit = "" },

@@ -62,7 +62,7 @@ local function updateWorldLine()
 		worldLine.Text = `🏝️ You're in {name ~= "" and name or "a friend"}'s world!`
 	elseif raft and raft.tiles then
 		local t = Pieces.TIERS[raft.tier or 1]
-		worldLine.Text = `{t and t.icon or "⛵"} Your raft: {raft.tierName or ""} · {raft.tiles} floors`
+		worldLine.Text = `{t and t.icon or "⛵"} Your raft: {raft.tierName or ""} · {raft.size or raft.tiles} pieces`
 	else
 		worldLine.Text = "🌊 Your own ocean, your own raft"
 	end

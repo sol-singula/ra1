@@ -450,6 +450,10 @@ function VoyageService:_arrive(plot)
 	local anchored = raft and rafts:Anchors(raft) > 0
 	v.stayEnds = (not anchored) and now() + Constants.ISLAND_STAY_NO_ANCHOR or nil
 	v.warned = false
+	-- a cut to black, and you're there: your own island, nobody else's raft at it
+	for _, p in players:PlayersOnPlot(plot) do
+		Net.fire(p, "Fade", 2.4, `{d.icon} {d.name}`, true)
+	end
 	island:Arrive(plot, d)
 	log(v, `Land ho: {d.name}.`)
 	local here = players:PlayersOnPlot(plot)

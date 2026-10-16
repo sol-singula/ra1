@@ -62,6 +62,7 @@ Net.ServerEvents = {
 	"Act", -- { by = userId, item, mode, target? }: everyone animates a player's action
 	"Hurt", -- { amount, by?, dir? } you were hit
 	"Tutorial", -- { step, text, target, ... } or false
+	"Mission", -- { title, text, have, need }: the long goal, always on screen (TutorialController)
 	"Point", -- { pos, piece?, title, text, open? }: point the way somewhere for a while (TutorialController)
 	"Unlock", -- { kind = "level" | "achievement" | "blueprint" | "discovery" | "tier" | "research" | "colour", ... }
 	"Journal", -- { entries } the discovery journal's changed page
@@ -70,7 +71,7 @@ Net.ServerEvents = {
 	"Board", -- { category, friends = { rows }, global = { rows }, you }
 	"Ask", -- { kind = "feedback" | "thanks" | "notify" }: FeedbackService cards
 	"Sfx", -- soundName, worldPosition?: a sound effect (AudioController)
-	"Fade", -- seconds, text?: a short black fade (the rowboat, waking up)
+	"Fade", -- seconds, text?, snap?: a short black fade (the rowboat, waking up); snap: a cut (an island arrival)
 	"Lost", -- { pos, items }: where your lost bag floats after you went down
 	"Visiting", -- { userId, name, tier, tierName, tiles, pieces, colours }: a raft to look at (VisitService)
 	"VisitList", -- { kind, rows = { { userId, name, ... } } }: who you can visit
