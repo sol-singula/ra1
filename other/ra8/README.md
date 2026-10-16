@@ -18,7 +18,8 @@ Place `133187155481262`, universe `10771148207`.
 2. Game Settings: allow HTTP requests (analytics and the game log), enable Studio API access for testing saves.
 3. Secrets: `discord_log`, the studio's shared game key, for the domain `kvedatksqkcsgivntskb.supabase.co`.
 4. Server Size 8 (a raft spot each), Server Fill: customize, keep 2 slots (for friends joining). Private servers free.
-5. Upload the icon (`icon/`) and the six thumbnails (`thumbnails/`).
+5. Upload the icon (`icon/icon_bottle.png`) and the six thumbnails (`thumbnails/`, in order): Studio → Game
+   Settings → Basic Info ([how](thumbnails/README.md#upload-them)).
 6. Run `tools/run_tests.sh` before every publish.
 7. Optional: upload the 2D item icons (`items/README.md`) so the bag shows them instead of the 3D model pictures.
 

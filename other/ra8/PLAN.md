@@ -333,6 +333,17 @@ What the second play found, and what changed:
 * **JUMP on phones.** The big ACT button sat on top of Roblox's own jump button, so phones had no way to jump. Phones
   now get a JUMP button above ACT (hold it to keep jumping), with RUN beside it. Roblox's own jump button is hidden.
   On a phone held sideways, unlock cards keep to two rows so they stay clear of both buttons.
+* **Store art that makes you wonder.** Six new thumbnails, each one simple picture and one question:
+  * WHAT'S DOWN THERE? (the Leviathan's shadow under a raft)
+  * WHO SENT THIS? (a bottle with a glowing map)
+  * WHERE DID THEY GO? (Mist Hollow's empty huts)
+  * WHO BUILT THAT? (a fortress raft in the fog)
+  * WHAT ARE THEY WATCHING? (the totems)
+  * WHO WAS ON IT? (the frozen ship)
+
+  There's a new icon (the bottle) with two alternates. All of them were made from fresh renders of the current
+  game, and the renders now include six mystery scenes ([thumbnails](thumbnails/README.md),
+  [renders](screenshots/README.md)).
 
 ## Tests
 

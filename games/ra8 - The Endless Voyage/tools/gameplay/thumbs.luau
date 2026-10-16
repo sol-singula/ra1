@@ -1,10 +1,14 @@
 --[[
 Store thumbnails and screenshots (master plan §1-§10: the raft at the centre, collecting, building, sailing,
-islands, wrecks, the creatures, the Leviathan). Staged scenes made from the game's own models (the ocean from
-OceanBuilder, rafts from RaftModels at the grid's real positions, islands from IslandBuilder, debris from
-OceanModels, creatures from Rigs, items from ItemModels), with survivors as plain blocky Roblox avatars posed by
-hand, and no UI. Snapshots are marked cinematic so render.js also writes a depth pass; thumbs_post.py adds the
-"shader" look.
+islands, wrecks, the creatures, the Leviathan; and the game's mysteries: the bottle with a chart in it, Mist
+Hollow's empty huts, the ship frozen into the Frost Shelf, the Ruin's totems, the shape that passes under the raft,
+the fortress in the fog). Staged scenes made from the game's own models (the ocean from OceanBuilder, rafts from
+RaftModels at the grid's real positions, islands from IslandBuilder, debris from OceanModels, creatures from Rigs,
+items from ItemModels), with survivors as plain blocky Roblox avatars posed by hand, and no UI. Snapshots are marked
+cinematic so render.js also writes a depth pass; thumbs_post.py adds the "shader" look.
+
+Each shot prints where its survivors and creatures land in the frame (0-1 across, 0-1 down) and flags anything cut
+by the edge, so a framing can be checked before the minute-long render.
 
   luaurun tools/gameplay/thumbs.luau <outDir> [only,...]      (from the game folder; only = parts of shot names)
   node tools/gameplay/render.js <outDir> <renderDir> --modules <node_modules> --textures <pbr dir>
@@ -52,13 +56,41 @@ Engine.Players.LocalPlayer = viewer
 Engine.localPlayer = viewer
 local rng = Random.new(8)
 
+-- The deep water. The renderer's water is see-through, so the sea floor 34 studs down showed through it, lit, and
+-- the sea round a raft looked like a sandbar. An opaque deep-blue plane just under the surface hides the floor in
+-- every shot (the islands' shallows stay above it). It has its own folder, which clear() leaves alone.
+local terrainInst = ws:FindFirstChildOfClass("Terrain")
+local WATER_TRANSPARENCY = terrainInst.WaterTransparency
+local deepFolder = Instance.new("Folder", ws)
+deepFolder.Name = "DeepWater"
+local DEEP_Y, DEEP_COLOR = WATER - 8, rgb(14, 62, 92)
+local deep = Kit.box(
+	deepFolder,
+	"Deep",
+	CF.new(0, DEEP_Y, 0),
+	V3.new(Constants.OCEAN_SIZE, 0.5, Constants.OCEAN_SIZE),
+	DEEP_COLOR,
+	M.SmoothPlastic,
+	{ CanCollide = false, CastShadow = false }
+)
+-- the ocean's own terrain (the sea floor and the water): each shot starts from just this
+local baseOps = #Engine.terrain.ops
+
 local function clear()
 	for _, f in { cast, fxFolder, rafts, islands, debrisFolder } do
 		for _, c in f:GetChildren() do
 			c:Destroy()
 		end
 	end
-	-- (the islands' terrain: the renderer reads the ops in order, so the last fill of a spot wins)
+	-- the last shot's islands go (the renderer reads every terrain fill in order, so an old island's land would
+	-- still be there under the next one), and the water is the usual water again
+	local ops = Engine.terrain.ops
+	for i = #ops, baseOps + 1, -1 do
+		ops[i] = nil
+	end
+	terrainInst.WaterTransparency = WATER_TRANSPARENCY
+	deep.CFrame = CF.new(0, DEEP_Y, 0)
+	deep.Color = DEEP_COLOR
 end
 
 -- Rafts: pieces at the grid's real positions, the way RaftService builds them -----------------------------------------
@@ -104,6 +136,9 @@ end
 local function tileWorld(layout, gx, gz, level)
 	return Formulas.tilePosition(layout.center, gx, gz, level or 1) + V3.new(0, 0.3, 0)
 end
+local function flat(v)
+	return V3.new(v.X, 0, v.Z).Unit
+end
 
 -- Survivors: blocky Roblox avatars, posed by hand -----------------------------------------------------------------------
 local SKINS = { rgb(255, 214, 176), rgb(234, 184, 146), rgb(198, 142, 100), rgb(142, 96, 64), rgb(255, 226, 196) }
@@ -122,16 +157,51 @@ local function resolveWelds(model)
 		end
 	end
 end
---[[ spec = { pos, face (direction), shirt, pants, skin (1-5), hair (Color3 | false), hold (item key, right hand),
-  holdL (item key, left hand), pose = { armR, armL (pitch: + is forward/up), rollR, rollL (out to the side),
-  legR, legL, lean (- is forward), twist, turn (the head), nod } ]]
+-- The far end of a held rod's tip (the held rod has a part "Tip", a cylinder along its local X): where the line
+-- starts. nil if the survivor holds no rod.
+local function rodTip(survivorModel)
+	for _, held in survivorModel:GetChildren() do
+		local tip, grip = held:FindFirstChild("Tip"), held:FindFirstChild("Grip")
+		if held.ClassName == "Model" and held:FindFirstChild("Reel") and tip and grip then
+			local a = tip.CFrame:PointToWorldSpace(V3.new(tip.Size.X / 2, 0, 0))
+			local b = tip.CFrame:PointToWorldSpace(V3.new(-tip.Size.X / 2, 0, 0))
+			return (a - grip.Position).Magnitude > (b - grip.Position).Magnitude and a or b
+		end
+	end
+	return nil
+end
+-- A rod in the hand has a short line hanging straight down from its tip with the bobber on it (FxController's idle
+-- line: 1.3 studs, a red ball and a white top).
+local function idleLine(tip)
+	local hang = 1.3
+	local still = { CanCollide = false, CastShadow = false }
+	Kit.box(
+		fxFolder,
+		"Line",
+		CF.new(tip - V3.new(0, hang / 2, 0)),
+		V3.new(0.08, hang, 0.08),
+		C.cream,
+		M.SmoothPlastic,
+		still
+	)
+	Kit.ball(fxFolder, "Bobber", tip - V3.new(0, hang, 0), 0.34, C.red, M.SmoothPlastic, still)
+	Kit.ball(fxFolder, "BobberTop", tip - V3.new(0, hang - 0.18, 0), 0.26, C.white, M.SmoothPlastic, still)
+end
+--[[ spec = { name, pos, face (direction), shirt, pants, skin (1-5), hair (Color3 | false), hold (item key, right
+  hand), holdL (item key, left hand), line (false: no idle line on a held rod, e.g. while it's cast),
+  pose = { armR, armL (pitch: + is forward/up), rollR, rollL (out to the side, - across the body), wrist, wristL
+  (the hand's pitch: what it holds tilts with it), legR, legL, lean (- is forward), twist, turn (the head), nod
+  (+ looks up), drop (studs the body sits lower: sitting, kneeling) } }
+A held item sits at hand * CFrame.Angles(wrist, 0, 0) * ItemModels.holdCFrame: a rod leaves the fist 40° above the
+hand's forward, so its elevation is 40° + the arm's pitch + lean + wrist; a lantern hangs upright when arm + lean +
+wrist is 90°. ]]
 local function survivor(spec)
 	local m = Instance.new("Model")
 	m.Name = spec.name or "Survivor"
 	m.Parent = cast
 	local pose = spec.pose or {}
 	local f = spec.face or V3.new(0, 0, -1)
-	local pos = spec.pos
+	local pos = spec.pos - V3.new(0, pose.drop or 0, 0)
 	local base = CF.lookAt(pos, pos + V3.new(f.X, 0, f.Z))
 	local skin = SKINS[spec.skin or 1]
 	local shirt, pants = spec.shirt or rgb(214, 74, 60), spec.pants or rgb(44, 48, 66)
@@ -171,23 +241,26 @@ local function survivor(spec)
 	end
 	local handR = arm("RightArm", 1, pose.armR, pose.rollR)
 	local handL = arm("LeftArm", -1, pose.armL, pose.rollL)
-	local function hold(key, hand)
+	local function hold(key, hand, wrist)
 		local item = Items.get(key)
 		if not item then
 			return
 		end
 		local model = ItemModels.held(item, m)
-		model:PivotTo(hand * ItemModels.holdCFrame(item, nil))
+		model:PivotTo(hand * CF.Angles(wrist or 0, 0, 0) * ItemModels.holdCFrame(item, nil))
 		Engine.resolveWelds()
+		return item
 	end
-	if spec.hold then
-		hold(spec.hold, handR)
-	end
-	if spec.holdL then
-		hold(spec.holdL, handL)
+	local rod = false
+	for _, h in { { spec.hold, handR, pose.wrist }, { spec.holdL, handL, pose.wristL } } do
+		local item = h[1] and hold(h[1], h[2], h[3])
+		rod = rod or (item ~= nil and Items.toolKind(item) == "rod")
 	end
 	resolveWelds(m)
-	return m, handR
+	if rod and spec.line ~= false then
+		idleLine(rodTip(m))
+	end
+	return m, handR, handL
 end
 
 local POSES = {
@@ -202,8 +275,42 @@ local POSES = {
 	cheer = { armR = 2.9, armL = 2.9, rollR = 0.3, rollL = 0.3 },
 	brace = { armR = 1.6, armL = 1.2, legR = 0.45, legL = -0.45, lean = -0.12 },
 	carry = { armR = 1.1, armL = 1.1, rollR = -0.25, rollL = -0.25, lean = 0.06 },
+	-- planks carried flat in front: the wrists undo the arms' pitch
+	carryPlanks = { armR = 1.0, armL = 1.0, rollR = -0.3, rollL = -0.3, lean = 0.06, wrist = -1.0, wristL = -1.0 },
 	wave = { armR = 2.8, rollR = 0.4, armL = 0.1 },
-	sit = { legR = 1.5, legL = 1.5, armR = 0.6, armL = 0.6 },
+	sit = { drop = 1.45, legR = 1.5, legL = 1.5, armR = 0.6, armL = 0.6 },
+	-- the follow-through of a cast (AnimController's whip): the arm out in front, the wrist turned down so the rod
+	-- points out over the water at about 25° (40° from the grip + 66° arm - 7° lean - 74° wrist)
+	cast = {
+		armR = 1.15,
+		armL = 0.95,
+		rollR = -0.08,
+		rollL = -0.35,
+		legR = 0.3,
+		legL = -0.25,
+		lean = -0.12,
+		twist = 0.12,
+		wrist = -1.3,
+	},
+	-- kneeling at the raft's edge, leaning out, a hand down to the water
+	kneelReach = {
+		drop = 1.5,
+		legR = -1.45,
+		legL = -1.45,
+		lean = -0.9,
+		armR = 1.2,
+		armL = 0.7,
+		rollR = -0.05,
+		rollL = 0.25,
+		nod = 0.1,
+	},
+	-- at the edge, looking down into the water
+	peer = { lean = -0.38, nod = -0.5, armR = 0.3, armL = 0.3, rollR = 0.15, rollL = 0.15, legR = 0.1, legL = -0.1 },
+	peerPoint = { lean = -0.35, nod = -0.45, armR = 1.2, armL = 0.25, rollR = -0.05, rollL = 0.15 },
+	-- a lantern held out in front in the left hand (the wrist keeps it hanging upright)
+	lantern = { armL = 1.35, wristL = 0.22, armR = 0.15, rollR = 0.08, legR = 0.2, legL = -0.15 },
+	-- head back, looking up at something big
+	lookUp = { nod = 0.42, armR = 0.12, armL = 0.12, rollR = 0.1, rollL = 0.1, lean = 0.05 },
 }
 local OUTFITS = {
 	{ shirt = rgb(214, 74, 60), pants = rgb(44, 48, 66), skin = 1, hair = rgb(70, 46, 30) },
@@ -224,9 +331,10 @@ local function dress(k, spec)
 end
 
 -- Creatures ---------------------------------------------------------------------------------------------------------------
-local function creature(kind, pos, facing, state, moving)
+-- (pitch tilts the whole rig nose-up: Rigs.place's own "surface" lean dips the nose)
+local function creature(kind, pos, facing, state, moving, pitch)
 	local model, offsets = Rigs.build(kind, cast)
-	local cf = CF.lookAt(pos, pos + V3.new(facing.X, 0, facing.Z))
+	local cf = CF.lookAt(pos, pos + V3.new(facing.X, 0, facing.Z)) * CF.Angles(pitch or 0, 0, 0)
 	Rigs.place(model, offsets, cf, state or "idle", 1.3, moving)
 	return model
 end
@@ -281,32 +389,43 @@ local function splash(pos, n, size)
 			0.2
 		)
 	end
-	local ring = Kit.disc(
-		fxFolder,
-		"Ring",
-		V3.new(pos.X, WATER + 0.25, pos.Z),
-		(size or 1) * 5,
-		0.2,
-		rgb(220, 240, 250),
-		M.Neon,
-		{ CanCollide = false, Transparency = 0.45 }
-	)
-	_ = ring
+	local r = (size or 1) * 2.2
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2 + rng:NextNumber(-0.2, 0.2)
+		local rr = r * rng:NextNumber(0.8, 1.15)
+		local blob = Kit.ellipsoid(
+			fxFolder,
+			"Foam",
+			V3.new(pos.X + math.cos(a) * rr, WATER + 0.05, pos.Z + math.sin(a) * rr),
+			V3.new((size or 1) * rng:NextNumber(0.7, 1.2), 0.08, (size or 1) * 0.45),
+			rgb(240, 248, 252),
+			M.SmoothPlastic,
+			{ CanCollide = false, CastShadow = false, Transparency = 0.3 }
+		)
+		blob.CFrame = CF.new(blob.Position) * CF.Angles(0, -a + math.pi / 2, 0)
+	end
 end
--- the hook's rope from a hand to a point
-local function rope(from, to, color)
-	local d = to - from
-	local len = d.Magnitude
-	local p = Kit.box(
-		fxFolder,
-		"Rope",
-		CF.lookAt(from, to) * CF.new(0, 0, -len / 2),
-		V3.new(0.14, 0.14, len),
-		color or C.rope,
-		M.Fabric,
-		{ CanCollide = false, CastShadow = false }
-	)
-	return p
+-- A line from one point to another (a harpoon's rope, the turret's shot, the fishing line), sagging a little like
+-- FxController's tether when `sag` is given (the drop at the middle, as a share of the length), in 8 pieces.
+local function rope(from, to, color, width, sag)
+	local n = sag and 8 or 1
+	local drop = (to - from).Magnitude * (sag or 0)
+	local prev = from
+	for i = 1, n do
+		local k = i / n
+		local p = from:Lerp(to, k) - V3.new(0, 4 * drop * k * (1 - k), 0)
+		local len = (p - prev).Magnitude
+		Kit.box(
+			fxFolder,
+			"Rope",
+			CF.lookAt(prev, p) * CF.new(0, 0, -len / 2),
+			V3.new(width or 0.14, width or 0.14, len + 0.04),
+			color or C.rope,
+			M.Fabric,
+			{ CanCollide = false, CastShadow = false }
+		)
+		prev = p
+	end
 end
 local function wave(center, radius, t)
 	Kit.disc(
@@ -356,6 +475,29 @@ local function drift(plot, n, radius, kinds)
 	end
 	return out
 end
+-- A lantern post lit the way IslandService lights it (the glass turns warm Neon and gets a light).
+local function lightLantern(model)
+	local glass = model:FindFirstChild("Glass")
+	if glass then
+		glass.Color = rgb(255, 200, 90)
+		glass.Material = M.Neon
+		local light = Instance.new("PointLight")
+		light.Color = rgb(255, 200, 90)
+		light.Range = 18
+		light.Brightness = 1.5
+		light.Parent = glass
+	end
+end
+-- Children of an island's model by name (huts, walls, trees...).
+local function propsNamed(built, name)
+	local out = {}
+	for _, c in built.model:GetChildren() do
+		if c.Name == name then
+			table.insert(out, c)
+		end
+	end
+	return out
+end
 
 local function light(name, tweak)
 	local p = table.clone(LightingPresets.list[name])
@@ -371,6 +513,78 @@ local function light(name, tweak)
 	end
 	LightingPresets.apply(p)
 end
+-- the renderer's sun comes from this way (its azimuth is fixed): a camera on this side of a subject lights it
+-- from the front, a camera looking this way sees it against the sun
+local SUN = V3.new(-0.6374, 0, 0.7705)
+
+-- Where a point lands in the frame (0-1 across, 0-1 down; nil behind the camera), the way render.js projects it.
+local function screen(camPos, target, fov, p)
+	local f = (target - camPos).Unit
+	local r = f:Cross(V3.new(0, 1, 0)).Unit
+	local u = r:Cross(f)
+	local d = p - camPos
+	local z = d:Dot(f)
+	if z <= 0.1 then
+		return nil
+	end
+	local t = math.tan(math.rad(fov) / 2)
+	return 0.5 + d:Dot(r) / (z * t * 16 / 9) / 2, 0.5 - d:Dot(u) / (z * t) / 2, z
+end
+local function report(camPos, target, fov, marks)
+	local function show(label, parts, head)
+		local lo, hi, n = { 9, 9 }, { -9, -9 }, 0
+		for _, d in parts do
+			local half = d.Size / 2
+			for _, k in
+				{
+					{ -1, -1, -1 },
+					{ -1, -1, 1 },
+					{ -1, 1, -1 },
+					{ -1, 1, 1 },
+					{ 1, -1, -1 },
+					{ 1, -1, 1 },
+					{ 1, 1, -1 },
+					{ 1, 1, 1 },
+				}
+			do
+				local x, y = screen(camPos, target, fov, d.CFrame * V3.new(half.X * k[1], half.Y * k[2], half.Z * k[3]))
+				if x then
+					n += 1
+					lo = { math.min(lo[1], x), math.min(lo[2], y) }
+					hi = { math.max(hi[1], x), math.max(hi[2], y) }
+				end
+			end
+		end
+		local flag = ""
+		if n == 0 then
+			flag = "  << BEHIND THE CAMERA"
+		elseif lo[1] < 0.01 or hi[1] > 0.99 or lo[2] < 0.01 or hi[2] > 0.99 then
+			flag = "  << CUT BY THE EDGE"
+		end
+		local hs = ""
+		if head then
+			local x, y, z = screen(camPos, target, fov, head.Position)
+			hs = x and string.format("  head %.2f,%.2f at %.0f studs", x, y, z) or "  head behind"
+			if x and (x < 0.03 or x > 0.97 or y < 0.03 or y > 0.97) then
+				flag ..= "  << HEAD AT THE EDGE"
+			end
+		end
+		print(string.format("    %-16s x %.2f-%.2f  y %.2f-%.2f%s%s", label, lo[1], hi[1], lo[2], hi[2], hs, flag))
+	end
+	for _, m in cast:GetChildren() do
+		local parts = {}
+		for _, d in m:GetDescendants() do
+			if d:IsA("BasePart") and (rawget(d, "_props").Transparency or 0) < 0.99 then
+				table.insert(parts, d)
+			end
+		end
+		show(m.Name, parts, m:FindFirstChild("Head"))
+	end
+	for label, p in marks or {} do
+		local x, y, z = screen(camPos, target, fov, p)
+		print(string.format("    %-16s %s", label, x and string.format("%.2f,%.2f at %.0f studs", x, y, z) or "behind"))
+	end
+end
 
 local shots = {}
 local function wants(name)
@@ -384,14 +598,15 @@ local function wants(name)
 	end
 	return false
 end
-local function shot(name, camPos, camTarget, fov, focus)
+local function shot(name, camPos, camTarget, fov, focus, marks)
 	if not wants(name) then
 		return
 	end
+	fov = fov or 50
 	local snap = Capture.snapshot(Engine, {
 		pos = { camPos.X, camPos.Y, camPos.Z },
 		target = { camTarget.X, camTarget.Y, camTarget.Z },
-		fov = fov or 50,
+		fov = fov,
 	})
 	snap.title = name
 	snap.cinematic = true
@@ -402,65 +617,83 @@ local function shot(name, camPos, camTarget, fov, focus)
 	Capture.save(Engine, snap, outDir, name)
 	table.insert(shots, name)
 	print("shot", name, #snap.parts, "parts")
+	report(camPos, camTarget, fov, marks)
 end
 
 local WHITE = { sail = "white", banner = "white", flag = "white", deck = "natural" }
 
--- 01 The first cast: the driftwood platform, the rod's line flying out to a piece of wood ------------------------------------
+-- 01 The first cast: the 2 x 2 driftwood platform, the line from the rod's tip out to a plank drifting in -------------------
 if wants("01") then
 	clear()
 	light("day")
-	local layout = raft(1, join(square(6, 6, 2), { { "floor", 8, 6, 1 } }), WHITE)
-	local pieces = drift(1, 7, 22)
-	local stand = tileWorld(layout, 8, 6)
-	local target = stand + layout.current * 14 + V3.new(0, -2, 0)
+	local layout = raft(1, square(6, 6, 2), WHITE)
+	drift(1, 7, 24)
+	-- the caster at the platform's upstream edge, casting at a plank coming in on the current
+	local castDir = V3.new(-0.15, 0, -1).Unit
+	local stand = tileWorld(layout, 7, 6) + V3.new(0.6, 0, -2.2)
+	local target = stand + castDir * 15
 	target = V3.new(target.X, WATER + 0.3, target.Z)
 	OceanModels.debris("wood", CF.new(target) * CF.Angles(0, 0.8, 0), debrisFolder)
-	local face = (target - stand).Unit
-	local caster, hand = dress(1, { pos = stand, face = face, pose = POSES.throw, hold = "fishing_rod" })
-	local bobber = caster:FindFirstChild("Bobber", true)
-	rope(
-		(bobber and bobber.Position or hand.Position + V3.new(0, 0.2, 0)),
-		target + V3.new(0, 0.6, 0),
-		rgb(240, 232, 210)
+	local caster = dress(
+		1,
+		{ name = "Caster", pos = stand, face = castDir, pose = POSES.cast, hold = "fishing_rod", line = false }
 	)
+	local tip = rodTip(caster)
+	rope(tip, target + V3.new(0, 0.6, 0), C.cream, 0.13, 0.03)
 	splash(target, 8, 0.8)
-	-- a friend on the platform's other tile, waving
-	dress(2, { pos = tileWorld(layout, 6, 7), face = face, pose = POSES.wave })
-	local cam = stand - face * 11 + V3.new(0, 6, 0) + V3.new(-face.Z, 0, face.X) * 5
-	shot("01_first_cast", cam, stand + face * 6 + V3.new(0, 1.5, 0), 52, stand + face * 4 + V3.new(0, 2, 0))
-	_ = pieces
+	local right = V3.new(-castDir.Z, 0, castDir.X)
+	local cam = stand + right * 12 + castDir * 1.5 + V3.new(0, 4.5, 0)
+	-- a friend on the platform's far side, waving
+	local friendAt = tileWorld(layout, 6, 7) + V3.new(0.5, 0, -0.5)
+	dress(2, { name = "Friend", pos = friendAt, face = flat(cam - friendAt), pose = POSES.wave })
+	local look = stand + castDir * 4 - right * 3 + V3.new(0, 0.5, 0)
+	shot("01_first_cast", cam, look, 56, stand + V3.new(0, 2.5, 0), { tip = tip, plank = target })
 end
 
--- 02 Building: a survival raft growing, a tile being hammered down ------------------------------------------------------------
+-- 02 Building: a survival raft growing, a tile being hammered down, planks coming aboard -------------------------------------
 if wants("02") then
 	clear()
 	light("day", { clock = 10.5 })
 	local pieces = join(square(5, 5, 4), {
 		{ "workbench", 6, 7, 1, 2 },
 		{ "storage", 5, 5, 1, 0 },
-		{ "bed", 8, 8, 1, 1 },
+		{ "bed", 6, 5, 1, 1 },
 		{ "lamp", 5, 8, 1 },
 		{ "railing", 5, 6, 1, 2 },
 		{ "railing", 5, 7, 1, 2 },
-		{ "net", 8, 5, 1, 0 },
-		{ "net", 8, 6, 1, 0 },
-		{ "ladder", 6, 5, 1, 3 },
+		{ "net", 9, 5, 1 }, -- (a net is a tile of its own, beside the raft)
+		{ "ladder", 7, 5, 1, 3 },
 		{ "floor", 9, 7, 1 },
-		{ "chair", 7, 5, 1, 1 },
+		{ "chair", 5, 6, 1, 1 },
 	})
 	local layout = raft(1, pieces, WHITE)
-	drift(1, 8, 26)
+	drift(1, 8, 28)
 	local newTile = tileWorld(layout, 9, 7)
 	chips(newTile + V3.new(0, 0.6, 0), 10)
 	sparkles(newTile + V3.new(0, 1, 0), C.gold, 8, 1.6)
-	local here = tileWorld(layout, 8, 7)
-	dress(1, { pos = here, face = V3.new(1, 0, 0), pose = POSES.hammer, hold = "hammer" })
-	local bench = tileWorld(layout, 6, 7)
-	dress(2, { pos = bench + V3.new(0, 0, 3.2), face = V3.new(0, 0, -1), pose = POSES.carry })
-	dress(3, { pos = tileWorld(layout, 7, 8), face = V3.new(-1, 0, 0.3), pose = POSES.reel, hold = "fishing_rod" })
-	local cam = here + V3.new(-14, 8, 12)
-	shot("02_build_your_raft", cam, here + V3.new(1, 1.5, 0), 50, here + V3.new(0, 2, 0))
+	local here = tileWorld(layout, 8, 7) + V3.new(0.6, 0, 0)
+	dress(1, { name = "Builder", pos = here, face = V3.new(1, 0, 0.15), pose = POSES.hammer, hold = "hammer" })
+	-- two more bringing planks over from the storage box
+	local p2 = tileWorld(layout, 7, 8) + V3.new(0, 0, 1)
+	dress(2, {
+		name = "Carrier",
+		pos = p2,
+		face = flat(here - p2),
+		pose = POSES.carryPlanks,
+		hold = "plank",
+		holdL = "plank",
+	})
+	local p3 = tileWorld(layout, 6, 6) + V3.new(1, 0, 0)
+	dress(3, {
+		name = "Carrier2",
+		pos = p3,
+		face = V3.new(1, 0, 0.6),
+		pose = POSES.carryPlanks,
+		hold = "wood",
+		holdL = "plank",
+	})
+	local cam = here + V3.new(15, 7.5, 13)
+	shot("02_build_your_raft", cam, here + V3.new(-3, 1.6, -2), 50, here + V3.new(0, 2, 0))
 end
 
 -- 03 Setting sail: a sail up, a hand at the helm, dolphins, an island ahead ---------------------------------------------------
@@ -479,15 +712,16 @@ if wants("03") then
 		{ "railing", 6, 8, 1, 1 },
 		{ "railing", 7, 8, 1, 1 },
 		{ "flag", 8, 6, 1 },
-		{ "net", 8, 7, 1, 0 },
+		{ "net", 9, 7, 1 },
 	})
 	local layout = raft(2, pieces, { sail = "blue", banner = "blue", flag = "blue", deck = "natural" })
 	local dest = layout.islandCenter
 	IslandBuilder.build("tropical", dest, Random.new(3), islands)
 	local helm = tileWorld(layout, 6, 5)
-	dress(2, { pos = helm + V3.new(0, 0, 2.2), face = V3.new(0, 0, -1), pose = POSES.helm })
-	dress(1, { pos = tileWorld(layout, 7, 6), face = layout.out, pose = POSES.cheer })
+	dress(2, { name = "Helm", pos = helm + V3.new(0, 0, 2.2), face = V3.new(0, 0, -1), pose = POSES.helm })
+	dress(1, { name = "Lookout", pos = tileWorld(layout, 7, 6), face = layout.out, pose = POSES.cheer })
 	dress(4, {
+		name = "Fisher",
 		pos = tileWorld(layout, 8, 7) + V3.new(-2, 0, 0),
 		face = V3.new(1, 0, 0),
 		pose = POSES.reel,
@@ -497,11 +731,10 @@ if wants("03") then
 	for i = 1, 3 do
 		local a = layout.out * (18 + i * 5) + layout.current * (i * 6 - 8)
 		local p = layout.center + a + V3.new(0, WATER + 1 + (i % 2) * 2, 0)
-		local dolphin = Rigs.build("dolphin", ws)
+		local dolphin = Rigs.build("dolphin", cast)
 		dolphin:PivotTo(CF.lookAt(p, p + layout.out + V3.new(0, 0.5 - (i % 2), 0)))
 		splash(V3.new(p.X, WATER, p.Z), 4, 0.6)
 	end
-	wave(layout.center, 24, 0.75)
 	local cam = layout.center - layout.out * 26 + layout.current * 22 + V3.new(0, 11, 0)
 	shot("03_set_sail", cam, layout.center + layout.out * 8 + V3.new(0, 5, 0), 55, layout.center + V3.new(0, 4, 0))
 end
@@ -530,9 +763,10 @@ if wants("04") then
 	local at = palm.pos
 	local toRaft = (layout.center - at)
 	toRaft = V3.new(toRaft.X, 0, toRaft.Z).Unit
+	local across = V3.new(-toRaft.Z, 0, toRaft.X)
 	local stand = at + toRaft * 3.2
 	stand = V3.new(stand.X, (built.ground(stand.X, stand.Z) or WATER + 1) + 0.2, stand.Z)
-	dress(1, { pos = stand, face = -toRaft, pose = POSES.chop, hold = "axe" })
+	dress(1, { name = "Chopper", pos = stand, face = -toRaft, pose = POSES.chop, hold = "axe" })
 	chips(at + V3.new(0, 3, 0) + toRaft * 1.5, 12)
 	for i = 1, 3 do
 		local a = i * 2.1
@@ -541,13 +775,12 @@ if wants("04") then
 		creature("reef_crab", p, (stand - p), i == 1 and "tell" or "chase", true)
 	end
 	local firePos = V3.new(fire.X, fire.Y, fire.Z)
-	dress(
-		3,
-		{ pos = firePos + V3.new(3.5, 0.2, 2), face = (firePos - (firePos + V3.new(3.5, 0, 2))), pose = POSES.sit }
-	)
+	local seat = firePos + V3.new(3.2, 0, 1.8)
+	dress(3, { name = "Sitter", pos = seat, face = flat(firePos - seat), pose = POSES.sit })
 	glow(firePos + V3.new(0, 1.5, 0), C.warm, 16, 1.2)
-	local cam = stand + toRaft * 13 + V3.new(0, 7, 0) + V3.new(-toRaft.Z, 0, toRaft.X) * 6
-	shot("04_palm_key", cam, at + V3.new(0, 3, 0), 52, stand + V3.new(0, 2, 0))
+	-- from the side, so the swing and the face show
+	local cam = stand + across * 11 + toRaft * 2.5 + V3.new(0, 4, 0)
+	shot("04_palm_key", cam, (stand + at) / 2 + V3.new(0, 3, 0), 54, stand + V3.new(0, 2, 0))
 end
 
 -- 05 The Drifter: a wreck on its side, prying the salvage, a lurker in the reeds ---------------------------------------------
@@ -579,17 +812,20 @@ if wants("05") then
 	toward = V3.new(toward.X, 0, toward.Z).Unit
 	local stand = at + toward * 2.8
 	stand = V3.new(stand.X, (built.ground(stand.X, stand.Z) or WATER + 1) + 0.2, stand.Z)
-	dress(2, { pos = stand, face = -toward, pose = POSES.stab, hold = "crowbar" })
+	dress(2, { name = "Pryer", pos = stand, face = -toward, pose = POSES.stab, hold = "crowbar" })
 	chips(at + V3.new(0, 1.2, 0), 8, { C.iron, C.steel, rgb(90, 70, 60) })
 	local locker = built.containers[1]
-	dress(5, { pos = locker.pos + toward * 2.5 + V3.new(0, 0.2, 0), face = -toward, pose = POSES.carry })
+	dress(
+		5,
+		{ name = "Looter", pos = locker.pos + toward * 2.5 + V3.new(0, 0.2, 0), face = -toward, pose = POSES.carry }
+	)
 	sparkles(locker.pos + V3.new(0, 1.5, 0), C.gold, 10, 1.4)
 	local lurk = built.center - toward * 10 + V3.new(5, 0, 0)
 	lurk = V3.new(lurk.X, (built.ground(lurk.X, lurk.Z) or WATER + 1) + 1.2, lurk.Z)
 	creature("mire_lurker", lurk, stand - lurk, "tell", false)
 	redRing(V3.new(lurk.X, lurk.Y - 1, lurk.Z), 5.5)
-	local cam = stand + toward * 12 + V3.new(0, 6.5, 0) - V3.new(-toward.Z, 0, toward.X) * 7
-	shot("05_the_wreck", cam, at + V3.new(0, 2.5, 0), 54, stand + V3.new(0, 2, 0))
+	local cam = stand + toward * 6 - V3.new(-toward.Z, 0, toward.X) * 10 + V3.new(0, 5, 0)
+	shot("05_the_wreck", cam, (stand + at) / 2 + V3.new(0, 2.5, 0), 54, stand + V3.new(0, 2, 0))
 end
 
 -- 06 Storm: waves over the deck, a cracked tile, a shark at the edge, the hammer out -------------------------------------------
@@ -611,138 +847,155 @@ if wants("06") then
 		{ "floor", 9, 7, 1, hp = 0.4 },
 	})
 	local layout = raft(5, pieces, { sail = "white", banner = "red", flag = "red", deck = "natural" })
-	wave(layout.center + V3.new(14, 0, 4), 18, 0.55)
-	wave(layout.center + V3.new(-10, 0, -12), 14, 0.6)
-	for i = 1, 14 do
-		local a = i * 0.45
-		splash(layout.center + V3.new(math.cos(a) * 15, 0, math.sin(a) * 15), 3, 1.2)
+	for i = 1, 12 do
+		local a = i * 0.52
+		splash(layout.center + V3.new(math.cos(a) * 15, 0, math.sin(a) * 15), 2, 0.8)
 	end
 	local broken = tileWorld(layout, 9, 6)
-	dress(1, { pos = tileWorld(layout, 8, 7), face = V3.new(1, 0, -0.4), pose = POSES.hammer, hold = "hammer" })
-	dress(3, { pos = tileWorld(layout, 6, 6), face = V3.new(1, 0, 0), pose = POSES.brace })
+	dress(1, {
+		name = "Repairer",
+		pos = tileWorld(layout, 8, 7),
+		face = V3.new(1, 0, -0.4),
+		pose = POSES.hammer,
+		hold = "hammer",
+	})
+	dress(3, { name = "Bracer", pos = tileWorld(layout, 6, 6), face = V3.new(1, 0, 0), pose = POSES.brace })
 	local bite = broken + V3.new(4.5, -2, 0)
-	local shark = creature("shark", V3.new(bite.X, WATER - 0.2, bite.Z), (broken - bite), "surface", true)
-	_ = shark
-	splash(V3.new(bite.X, WATER, bite.Z), 10, 1.6)
+	creature("shark", V3.new(bite.X, WATER - 0.2, bite.Z), (broken - bite), "surface", true)
+	splash(V3.new(bite.X, WATER, bite.Z), 10, 1.3)
 	glow(tileWorld(layout, 7, 5) + V3.new(0, 4, 0), C.warm, 20, 1.4)
 	local cam = layout.center + V3.new(-18, 9, 20)
 	shot("06_storm", cam, broken + V3.new(-2, 1.5, 0), 56, tileWorld(layout, 8, 7) + V3.new(0, 2, 0))
 end
 
--- 07 The Leviathan: night at the Trench, the fortress raft, harpoons flying -----------------------------------------------------
+-- 07 The Leviathan: night at the Trench, the fortress raft, the monster rearing up right off the bow, harpoons flying ------
 if wants("07") then
 	clear()
 	light("trench", { clock = 23 })
 	local pieces = join(square(4, 4, 6), {
+		{ "harpoon_turret", 9, 9, 1, 1 },
 		{ "harpoon_turret", 4, 4, 1 },
-		{ "harpoon_turret", 9, 9, 1 },
 		{ "lamp", 4, 9, 1 },
 		{ "lamp", 9, 4, 1 },
 		{ "lamp", 6, 6, 1 },
-		{ "stairs", 7, 7, 1, 1 },
-		{ "crow_nest", 7, 8, 2 },
+		{ "stairs", 5, 7, 1, 1 },
+		{ "crow_nest", 5, 8, 2 },
 		{ "engine", 4, 6, 1 },
 		{ "sail", 6, 8, 1, 1 },
 		{ "anchor", 5, 4, 1 },
-		{ "research", 8, 5, 1 },
-		{ "engineering", 8, 6, 1 },
+		{ "research", 7, 4, 1 },
+		{ "engineering", 6, 4, 1 },
 		{ "spikes", 9, 5, 1, 0 },
-		{ "spikes", 9, 6, 1, 0 },
-		{ "spikes", 9, 7, 1, 0 },
+		{ "spikes", 9, 8, 1, 0 },
 		{ "railing", 4, 5, 1, 2 },
 		{ "railing", 4, 7, 1, 2 },
 		{ "railing", 4, 8, 1, 2 },
-		{ "floor", 7, 8, 2 },
-		{ "floor", 8, 8, 2 },
-		{ "floor", 8, 7, 2 },
-		{ "floor", 6, 7, 2 },
+		{ "floor", 5, 8, 2 },
+		{ "floor", 4, 8, 2 },
+		{ "floor", 4, 7, 2 },
+		{ "floor", 5, 7, 2 },
 	})
 	local layout = raft(6, pieces, { sail = "black", banner = "gold", flag = "gold", deck = "dark" })
 	IslandBuilder.build("trench", layout.islandCenter, Random.new(9), islands)
-	local out = layout.out
-	local side = V3.new(-out.Z, 0, out.X)
-	local levPos = layout.center + out * 34 + V3.new(0, WATER + 2.5, 0)
-	creature("leviathan", levPos, -out, "surface", false)
-	splash(V3.new(levPos.X, WATER, levPos.Z), 16, 2.5)
-	for _, m in cast:GetChildren() do
-		if m.Name == "leviathan" then
-			local eyes = m:FindFirstChild("EyeGlow")
-			if eyes then
-				Kit.light(eyes, "PointLight", { Name = "Big", Color = rgb(255, 200, 60), Range = 40, Brightness = 2 })
-			end
-		end
+	-- the Leviathan rears up off the raft's +X edge, its jaws a few studs from the planks
+	local out = V3.new(1, 0, 0)
+	local side = V3.new(0, 0, 1)
+	local levPos = layout.center + out * 39 + side * 1 + V3.new(0, WATER + 1.5, 0)
+	local lev = creature("leviathan", levPos, -out, "tell", false, 0.42)
+	local eyes = lev:FindFirstChild("EyeGlow")
+	if eyes then
+		Kit.light(eyes, "PointLight", { Name = "Big", Color = rgb(255, 200, 60), Range = 40, Brightness = 2 })
 	end
+	local head = lev:FindFirstChild("Head")
+	splash(V3.new(levPos.X - 6, WATER, levPos.Z), 16, 2.2)
+	splash(V3.new(levPos.X + 6, WATER, levPos.Z + 2), 10, 1.6)
 	local edge = tileWorld(layout, 9, 7)
-	local _, hand = dress(1, { pos = edge, face = out, pose = POSES.aim, hold = "harpoon" })
-	rope(hand.Position + V3.new(0, 0.5, 0), levPos + V3.new(0, 1, 0) - out * 9 + side * 2, C.steel)
-	dress(2, { pos = tileWorld(layout, 9, 5), face = out, pose = POSES.aim, hold = "harpoon" })
-	dress(4, { pos = tileWorld(layout, 8, 8, 2), face = out, pose = POSES.cheer })
-	dress(3, { pos = tileWorld(layout, 7, 6), face = out, pose = POSES.hammer, hold = "hammer" })
-	-- the turret's shot
-	local tur = tileWorld(layout, 9, 9) + V3.new(0, 3, 0)
-	rope(tur, levPos + V3.new(0, 2, 0) - out * 8, rgb(255, 220, 120))
+	local _, hand = dress(1, {
+		name = "Harpooner",
+		pos = edge + V3.new(-0.5, 0, 0),
+		face = flat(head.Position - edge),
+		pose = POSES.aim,
+		hold = "harpoon",
+	})
+	rope(hand.Position + V3.new(0, 0.5, 0), head.Position + V3.new(0, -1.5, 2.5), C.steel)
+	local e2 = tileWorld(layout, 9, 6) + V3.new(-1, 0, -1)
+	dress(2, { name = "Harpooner2", pos = e2, face = flat(head.Position - e2), pose = POSES.aim, hold = "harpoon" })
+	-- the turret's shot, from the end of its barrel
+	local tur = tileWorld(layout, 9, 9) + V3.new(3.3, 2.1, 0)
+	rope(tur, head.Position + V3.new(1, -2.5, -2), rgb(255, 220, 120), 0.14)
 	for _, g in { tileWorld(layout, 4, 9), tileWorld(layout, 9, 4), tileWorld(layout, 6, 6) } do
 		glow(g + V3.new(0, 4.5, 0), C.warm, 22, 1.6)
 	end
-	local cam = layout.center - out * 12 + side * 30 + V3.new(0, 12, 0)
-	shot("07_the_leviathan", cam, levPos - out * 8 + V3.new(0, 1, 0), 58, edge + V3.new(0, 2, 0))
+	-- from just behind the harpooners, a little above their heads, looking up at it
+	local cam = layout.center + out * 4 + side * -17 + V3.new(0, 7.5, 0)
+	local look = head.Position + V3.new(0, -2.5, -3)
+	shot("07_the_leviathan", cam, look, 54, head.Position, { head = head.Position })
 end
 
 -- 08 Legendary vessel at dusk: two decks, gold flags, the aquarium, the trophy ---------------------------------------------------
-if wants("08") then
-	clear()
-	light("dusk")
-	local pieces = join(square(3, 3, 8), {
-		{ "sail", 6, 6, 1, 1 },
-		{ "helm", 5, 3, 1, 3 },
-		{ "nav_table", 7, 3, 1, 3 },
-		{ "engine", 3, 8, 1 },
-		{ "anchor", 10, 10, 1 },
-		{ "workbench", 3, 4, 1, 0 },
-		{ "refinery", 3, 5, 1, 0 },
-		{ "engineering", 3, 6, 1, 0 },
-		{ "research", 3, 7, 1, 0 },
-		{ "cookpot", 10, 4, 1 },
-		{ "decor_shop", 10, 5, 1, 2 },
-		{ "aquarium", 8, 9, 1, 1 },
-		{ "trophy_stand", 6, 9, 1, 1 },
-		{ "stairs", 9, 7, 1, 1 },
-		{ "crow_nest", 9, 9, 2 },
-		{ "bed", 4, 9, 1, 1 },
-		{ "planter", 5, 10, 1 },
-		{ "planter", 6, 10, 1 },
-		{ "lamp", 3, 10, 1 },
-		{ "lamp", 10, 3, 1 },
-		{ "flag", 7, 10, 1 },
-		{ "banner", 4, 3, 1, 3 },
-		{ "chair", 8, 4, 1, 2 },
-		{ "table", 9, 4, 1 },
-		{ "rug", 8, 5, 1 },
-		{ "storage", 10, 6, 1 },
-		{ "storage", 10, 7, 1 },
-		{ "harpoon_turret", 10, 8, 1 },
-		{ "railing", 3, 3, 1, 2 },
-		{ "railing", 3, 9, 1, 2 },
-		{ "net", 10, 9, 1, 0 },
-		{ "salvage_net", 4, 10, 1, 1 },
-		{ "coral_lamp", 7, 4, 1 },
-	})
+local FORTRESS = {
+	{ "sail", 6, 6, 1, 1 },
+	{ "helm", 5, 3, 1, 3 },
+	{ "nav_table", 7, 3, 1, 3 },
+	{ "engine", 3, 8, 1 },
+	{ "anchor", 10, 10, 1 },
+	{ "workbench", 3, 4, 1, 0 },
+	{ "refinery", 3, 5, 1, 0 },
+	{ "engineering", 3, 6, 1, 0 },
+	{ "research", 3, 7, 1, 0 },
+	{ "cookpot", 10, 4, 1 },
+	{ "decor_shop", 10, 5, 1, 2 },
+	{ "aquarium", 8, 9, 1, 1 },
+	{ "trophy_stand", 6, 9, 1, 1 },
+	{ "stairs", 9, 7, 1, 1 },
+	{ "crow_nest", 9, 9, 2 },
+	{ "bed", 4, 9, 1, 1 },
+	{ "planter", 5, 10, 1 },
+	{ "planter", 6, 10, 1 },
+	{ "lamp", 3, 10, 1 },
+	{ "lamp", 10, 3, 1 },
+	{ "flag", 7, 10, 1 },
+	{ "banner", 4, 3, 1, 3 },
+	{ "chair", 8, 4, 1, 2 },
+	{ "table", 9, 4, 1 },
+	{ "rug", 8, 5, 1 },
+	{ "storage", 10, 6, 1 },
+	{ "storage", 10, 7, 1 },
+	{ "harpoon_turret", 10, 8, 1 },
+	{ "railing", 3, 3, 1, 2 },
+	{ "railing", 3, 9, 1, 2 },
+	{ "net", 11, 9, 1 },
+	{ "salvage_net", 4, 11, 1 },
+	{ "coral_lamp", 7, 4, 1 },
+}
+local function fortress(dz)
+	local pieces = {}
+	for _, p in join(square(3, 3, 8), FORTRESS) do
+		local q = table.clone(p)
+		q[3] += dz or 0
+		table.insert(pieces, q)
+	end
 	for x = 7, 9 do
 		for z = 7, 9 do
 			if not (x == 9 and z == 9) then
-				table.insert(pieces, { "plank_floor", x, z, 2 })
+				table.insert(pieces, { "plank_floor", x, z + (dz or 0), 2 })
 			end
 		end
 	end
-	table.insert(pieces, { "railing", 7, 7, 2, 2 })
-	table.insert(pieces, { "railing", 7, 8, 2, 2 })
-	table.insert(pieces, { "roof", 8, 8, 2 })
-	local layout = raft(1, pieces, { sail = "gold", banner = "gold", flag = "gold", deck = "white" })
+	table.insert(pieces, { "railing", 7, 7 + (dz or 0), 2, 2 })
+	table.insert(pieces, { "railing", 7, 8 + (dz or 0), 2, 2 })
+	table.insert(pieces, { "roof", 8, 8 + (dz or 0), 2 })
+	return pieces
+end
+if wants("08") then
+	clear()
+	light("dusk")
+	local layout = raft(1, fortress(), { sail = "gold", banner = "gold", flag = "gold", deck = "white" })
 	drift(1, 6, 30)
-	dress(1, { pos = tileWorld(layout, 8, 7, 2), face = V3.new(0, 0, 1), pose = POSES.cheer })
-	dress(2, { pos = tileWorld(layout, 5, 3), face = V3.new(0, 0, -1), pose = POSES.helm })
-	dress(3, { pos = tileWorld(layout, 8, 5), face = V3.new(1, 0, 0), pose = POSES.sit })
-	dress(5, { pos = tileWorld(layout, 6, 8), face = V3.new(0, 0, 1), pose = POSES.wave })
+	dress(1, { name = "Captain", pos = tileWorld(layout, 8, 7, 2), face = V3.new(0, 0, 1), pose = POSES.cheer })
+	dress(2, { name = "Helm", pos = tileWorld(layout, 5, 3), face = V3.new(0, 0, -1), pose = POSES.helm })
+	dress(3, { name = "Sitter", pos = tileWorld(layout, 8, 5), face = V3.new(1, 0, 0), pose = POSES.sit })
+	dress(5, { name = "Waver", pos = tileWorld(layout, 6, 8), face = V3.new(0, 0, 1), pose = POSES.wave })
 	for _, g in { tileWorld(layout, 3, 10), tileWorld(layout, 10, 3) } do
 		glow(g + V3.new(0, 4.5, 0), C.warm, 20, 1.2)
 	end
@@ -761,52 +1014,321 @@ if wants("09") then
 	local side = V3.new(-toward.Z, 0, toward.X)
 	local line = { "reef_crab", "gull", "mire_lurker", "lava_beetle", "frost_wolf", "ruin_guardian" }
 	for i, kind in line do
-		local p = c + toward * 26 + side * ((i - 3.5) * 7)
+		local p = c + toward * 27 + side * ((i - 3.5) * 6.5)
 		local y = built.ground(p.X, p.Z) or WATER + 1
 		creature(kind, V3.new(p.X, y + (kind == "gull" and 0 or 1), p.Z), toward, i == 3 and "tell" or "idle", false)
 	end
-	local sharkAt = c + toward * 46 + side * -14
+	-- and in the water off the beach, the shark and the sea serpent
+	local sharkAt = c + toward * 41.5 + side * -15
 	creature("shark", V3.new(sharkAt.X, WATER - 0.2, sharkAt.Z), side, "surface", true)
-	local serpAt = c + toward * 50 + side * 12
+	local serpAt = c + toward * 41.5 + side * 14
 	creature("sea_serpent", V3.new(serpAt.X, WATER + 0.5, serpAt.Z), -side, "surface", true)
 	splash(V3.new(sharkAt.X, WATER, sharkAt.Z), 6, 1.2)
 	splash(V3.new(serpAt.X, WATER, serpAt.Z), 8, 1.6)
-	local cam = c + toward * 52 + V3.new(0, 9, 0)
-	shot("09_the_cast", cam, c + toward * 22 + V3.new(0, 3, 0), 56, c + toward * 26 + V3.new(0, 2, 0))
+	local cam = c + toward * 57 + V3.new(0, 8, 0)
+	shot("09_the_cast", cam, c + toward * 30 + V3.new(0, 2.5, 0), 54, c + toward * 30 + V3.new(0, 2, 0))
 end
 
--- 10 The ocean from above: six plots, rafts, an island or two, the horizon's isles -------------------------------------------
+-- 10 From above: a raft on its plot, its island, debris drifting in on the current, the far isles ---------------------------
 if wants("10") then
 	clear()
-	-- a thin haze: from up here the plots are 600 studs off and the usual atmosphere would wash them out
-	light("day", { clock = 9, atmosphere = { density = 0.1 } })
-	raft(
+	light("day", { clock = 9.5, atmosphere = { density = 0.08 } })
+	local layout = raft(
 		1,
-		join(square(5, 5, 4), { { "sail", 7, 7, 1 }, { "helm", 5, 5, 1 } }),
+		join(
+			square(5, 5, 4),
+			{ { "sail", 7, 7, 1, 1 }, { "helm", 5, 5, 1, 3 }, { "storage", 8, 8, 1 }, { "net", 9, 5, 1 } }
+		),
 		{ sail = "red", banner = "red", flag = "red", deck = "natural" }
 	)
-	raft(2, square(6, 6, 2), WHITE)
-	raft(
-		3,
-		join(
-			square(4, 4, 6),
-			{ { "sail", 7, 7, 1 }, { "crow_nest", 8, 8, 2 }, { "stairs", 8, 7, 1 }, { "floor", 8, 8, 2 } }
-		),
-		{ sail = "blue", banner = "blue", flag = "blue", deck = "dark" }
-	)
-	raft(4, join(square(5, 5, 3), { { "helm", 6, 8, 1 } }), WHITE)
-	raft(
-		5,
-		join(square(5, 5, 4), { { "sail", 7, 7, 1 } }),
-		{ sail = "gold", banner = "gold", flag = "gold", deck = "white" }
-	)
-	raft(6, square(6, 6, 2), WHITE)
-	IslandBuilder.build("tropical", OceanLayout.plot(1).islandCenter, Random.new(3), islands)
-	IslandBuilder.build("rocky", OceanLayout.plot(3).islandCenter, Random.new(4), islands)
-	for p = 1, 6 do
-		drift(p, 5, 28)
+	IslandBuilder.build("tropical", layout.islandCenter, Random.new(3), islands)
+	-- the current brings the debris past in a lane
+	for i = 1, 14 do
+		local along = -150 + i * 19 + rng:NextNumber(-6, 6)
+		local p = layout.center
+			+ layout.current * along
+			+ layout.out * rng:NextNumber(-26, 26)
+			+ V3.new(0, WATER + 0.3, 0)
+		local kinds = { "wood", "scrap", "rope", "wood", "cloth", "metal", "supply_crate", "wood" }
+		OceanModels.debris(kinds[(i - 1) % #kinds + 1], CF.new(p) * CF.Angles(0, rng:NextNumber(0, 6), 0), debrisFolder)
 	end
-	shot("10_the_ocean", V3.new(-200, 150, 430), V3.new(20, 0, 30), 54, V3.new(280, 2, 60))
+	dress(1, {
+		name = "Caster",
+		pos = tileWorld(layout, 8, 6),
+		face = V3.new(0, 0, -1),
+		pose = POSES.reel,
+		hold = "fishing_rod",
+	})
+	dress(2, { name = "Walker", pos = tileWorld(layout, 6, 7), face = V3.new(1, 0, 0) })
+	local cam = layout.center + V3.new(-70, 85, 95)
+	shot("10_the_ocean", cam, layout.center + V3.new(70, 0, -40), 54, layout.center)
+end
+
+-- 11 A message in a bottle: dusk, a green bottle with a note in it bumping the raft, a survivor reaching down for it ---------
+if wants("11") then
+	clear()
+	light("dusk", { clock = 18.2 })
+	local layout = raft(
+		1,
+		join(
+			square(6, 6, 2),
+			{ { "floor", 6, 8, 1 }, { "lamp", 7, 7, 1 }, { "storage", 7, 8, 1 }, { "railing", 7, 6, 1, 3 } }
+		),
+		WHITE
+	)
+	-- kneeling at the platform's -X edge, leaning out, a hand down to the water
+	local tile = tileWorld(layout, 6, 6)
+	local edgeX = tile.X - 3
+	local kneel = V3.new(edgeX + 0.6, tile.Y, tile.Z + 0.6)
+	dress(5, { name = "Reacher", pos = kneel, face = V3.new(-1, 0, 0), pose = POSES.kneelReach })
+	local bottleAt = V3.new(edgeX - 1.25, WATER + 0.3, kneel.Z - 0.5)
+	OceanModels.debris("bottle", CF.new(bottleAt) * CF.Angles(0, 2.6, 0), debrisFolder)
+	-- the little ripples where it knocks against the pontoon
+	Kit.disc(
+		fxFolder,
+		"Ripple",
+		V3.new(bottleAt.X, WATER + 0.22, bottleAt.Z),
+		3.4,
+		0.08,
+		rgb(230, 244, 250),
+		M.SmoothPlastic,
+		{ CanCollide = false, CastShadow = false, Transparency = 0.6 }
+	)
+	local look = V3.new(edgeX - 0.4, 2.5, bottleAt.Z + 0.5)
+	local cam = look + V3.new(-9.5, 0.4, -5.4)
+	shot("11_message_in_a_bottle", cam, look, 50, bottleAt + V3.new(0, 0.8, 0), { bottle = bottleAt })
+end
+
+-- 12 Mist Hollow: evening fog, the huts nobody came back to, two of the three lanterns lit, a survivor with a lantern -------
+if wants("12") then
+	clear()
+	light("fog", {
+		clock = 19.6,
+		brightness = 1.2,
+		ambient = rgb(70, 78, 92),
+		outdoor = rgb(96, 108, 126),
+		atmosphere = { density = 2.6, color = rgb(118, 130, 146), decay = rgb(58, 68, 86) },
+	})
+	local layout = OceanLayout.plot(3)
+	local built = IslandBuilder.build("foggy", layout.islandCenter, Random.new(53), islands)
+	local c = built.center
+	local parts = built.puzzle.parts
+	-- two of the three lanterns lit (the third still dark), the way IslandService lights them
+	lightLantern(parts[1].model)
+	lightLantern(parts[3].model)
+	-- coming up from the shore: from here both lit lanterns and all four huts are ahead, in the fog
+	local a = math.rad(345)
+	local dir = V3.new(math.cos(a), 0, math.sin(a))
+	local across = V3.new(-dir.Z, 0, dir.X)
+	local stand = c + dir * 46.5 + across * 1.8
+	stand = V3.new(stand.X, (built.ground(stand.X, stand.Z) or WATER + 1.2) + 0.2, stand.Z)
+	dress(
+		2,
+		{ name = "Walker", pos = stand, face = flat(-dir - across * 0.12), pose = POSES.lantern, holdL = "lantern" }
+	)
+	local cam = c + dir * 57.5 + across * 3 + V3.new(0, WATER + 8.5, 0)
+	local look = c + dir * 12 + V3.new(0, 3, 0)
+	local marks = {
+		lantern1 = parts[1].pos + V3.new(0, 4.2, 0),
+		lantern3 = parts[3].pos + V3.new(0, 4.2, 0),
+		dark2 = parts[2].pos + V3.new(0, 4.2, 0),
+	}
+	for i, h in propsNamed(built, "hut") do
+		marks["hut" .. i] = h:GetPivot().Position
+	end
+	shot("12_mist_hollow", cam, look, 52, stand + V3.new(0, 3, 0), marks)
+end
+
+-- 13 The Frost Shelf: a ship frozen into the ice, its name worn off; cold morning light, a raft coming in -------------------
+if wants("13") then
+	clear()
+	light("dawn", {
+		clock = 7.6,
+		brightness = 2.4,
+		ambient = rgb(112, 124, 146),
+		outdoor = rgb(150, 170, 200),
+		atmosphere = { density = 0.32, color = rgb(204, 220, 238), decay = rgb(104, 136, 182) },
+		clouds = { cover = 0.45, density = 0.5, color = rgb(232, 238, 250) },
+	})
+	local home = OceanLayout.plot(4)
+	local built = IslandBuilder.build("frozen", home.islandCenter, Random.new(4), islands)
+	local hull
+	for _, m in built.model:GetChildren() do
+		if m:GetAttribute("Hull") then
+			hull = m
+		end
+	end
+	local hullAt = hull:GetPivot().Position
+	-- the raft comes in toward the shore from the sun's side (staged nearer the shore than a voyage leaves it):
+	-- its tiles on plot 4's grid, shifted out to there
+	local toward = flat(SUN + V3.new(0.25, 0, 0.1))
+	local raftAt = built.center + toward * 76
+	local dx = math.floor((raftAt.X - home.center.X) / 6 + 0.5)
+	local dz = math.floor((raftAt.Z - home.center.Z) / 6 + 0.5)
+	local pieces = join(square(5 + dx, 5 + dz, 3), {
+		{ "sail", 6 + dx, 6 + dz, 1, 1 },
+		{ "lamp", 7 + dx, 7 + dz, 1 },
+		{ "storage", 5 + dx, 7 + dz, 1 },
+		{ "railing", 5 + dx, 5 + dz, 1, 3 },
+		{ "railing", 7 + dx, 5 + dz, 1, 3 },
+	})
+	local layout = raft(4, pieces, { sail = "white", banner = "blue", flag = "blue", deck = "natural" })
+	local bow = tileWorld(layout, 6 + dx, 5 + dz)
+	local inland = flat(built.center - bow)
+	local side = V3.new(-inland.Z, 0, inland.X)
+	dress(1, { name = "Lookout", pos = bow + inland * 1.2 - side * 1.2, face = inland, pose = POSES.stand })
+	dress(3, {
+		name = "Sailor",
+		pos = bow + inland * 0.6 + side * 2.4,
+		face = flat(inland + side * 0.2),
+		pose = POSES.peerPoint,
+	})
+	-- from behind and beside the raft (the sail off to the side, out of the way), past them to the ship
+	local cam = bow - inland * 9 - side * 7 + V3.new(0, 7, 0)
+	shot("13_frost_shelf", cam, hullAt + V3.new(0, 2, 0), 40, bow + inland * 25, { hull = hullAt + V3.new(0, 6, 0) })
+end
+
+-- 14 The totems: three of them, turned inland, staring at whoever comes up from the beach -----------------------------------
+if wants("14") then
+	clear()
+	light("day", { clock = 16.6, atmosphere = { density = 0.22, haze = 1.4 } })
+	local layout = OceanLayout.plot(5)
+	local built = IslandBuilder.build("ruin", layout.islandCenter, Random.new(13), islands)
+	local c = built.center
+	-- the camera stands inland, looking out to sea (away from the sun, so the stone is lit); the totems stand on the
+	-- same terrace between it and the sea, turned round to face inland: at the camera
+	local seaward = -SUN
+	local across = V3.new(-seaward.Z, 0, seaward.X)
+	local camAt = c + seaward * 18.6
+	for i, part in built.puzzle.parts do
+		local p = c + seaward * (26.4 + (i == 2 and 0.8 or 0)) + across * ((i - 2) * 4.3)
+		local y = built.ground(p.X, p.Z) or WATER + 1
+		p = V3.new(p.X, y, p.Z)
+		-- stood on the ground (IslandBuilder's PivotTo puts the middle of the model on the ground), eyes (its -Z face)
+		-- toward the camera
+		local m = part.model
+		local base = m:FindFirstChild("Base")
+		local face = flat(camAt - p)
+		local want = CF.lookAt(p + V3.new(0, 0.5, 0), p + V3.new(0, 0.5, 0) + face)
+		local delta = want * base.CFrame:Inverse()
+		for _, d in m:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.CFrame = delta * d.CFrame
+			end
+		end
+		part.pos = p
+	end
+	-- ruin walls and jungle trees round them (the island's own, moved to frame them)
+	local function moveTo(m, p)
+		local y = built.ground(p.X, p.Z) or WATER + 1
+		local piv = m:GetPivot()
+		local bottom = math.huge
+		for _, d in m:GetDescendants() do
+			if d:IsA("BasePart") then
+				bottom = math.min(bottom, d.Position.Y - d.Size.Y / 2)
+			end
+		end
+		m:PivotTo(CF.new(V3.new(p.X, piv.Position.Y + (y - bottom - 0.3), p.Z)) * piv.Rotation)
+	end
+	local walls, trees = propsNamed(built, "ruin_wall"), propsNamed(built, "Tree")
+	if walls[1] then
+		moveTo(walls[1], c + seaward * 24 + across * -13)
+	end
+	if walls[2] then
+		moveTo(walls[2], c + seaward * 25 + across * 13.5)
+	end
+	if trees[1] then
+		moveTo(trees[1], c + seaward * 31 + across * -19)
+	end
+	if trees[2] then
+		moveTo(trees[2], c + seaward * 29 + across * 20)
+	end
+	-- someone coming up from the beach, small between them, looking up
+	local standAt = c + seaward * 39 + across * 4.6
+	standAt = V3.new(standAt.X, (built.ground(standAt.X, standAt.Z) or WATER + 1) + 0.2, standAt.Z)
+	dress(6, { name = "Explorer", pos = standAt, face = flat(-seaward), pose = POSES.lookUp })
+	local camPos = V3.new(camAt.X, (built.ground(camAt.X, camAt.Z) or WATER + 1) + 1.7, camAt.Z)
+	local look = c + seaward * 26 + V3.new(0, 8.2, 0)
+	local marks = {}
+	for i, part in built.puzzle.parts do
+		marks["totem" .. i] = part.pos + V3.new(0, 4, 0)
+	end
+	shot("14_the_totems", camPos, look, 50, c + seaward * 26 + V3.new(0, 4, 0), marks)
+end
+
+-- 15 The shadow: at the Trench, something enormous passes under the raft; they look down and see it go by --------------------
+if wants("15") then
+	clear()
+	light("trench", { clock = 12.5, brightness = 3, atmosphere = { density = 0.25 } })
+	-- the water as clear as it ever gets (the renderer still keeps it half opaque), and the deep plane lowered and
+	-- lighter, so the dark shape just under the surface shows against it
+	terrainInst.WaterTransparency = 1
+	deep.CFrame = CF.new(0, WATER - 18, 0)
+	deep.Color = rgb(44, 138, 160)
+	local layout = raft(
+		6,
+		join(square(5, 5, 4), {
+			{ "sail", 6, 7, 1, 1 },
+			{ "helm", 7, 5, 1, 3 },
+			{ "storage", 5, 5, 1 },
+			{ "lamp", 8, 8, 1 },
+			{ "railing", 5, 6, 1, 2 },
+			{ "railing", 5, 7, 1, 2 },
+			{ "railing", 6, 8, 1, 1 },
+		}),
+		{ sail = "white", banner = "red", flag = "red", deck = "natural" }
+	)
+	IslandBuilder.build("trench", layout.islandCenter, Random.new(9), islands)
+	-- the Leviathan, a few studs down, sliding under the raft from one side to the other
+	local dir = V3.new(1, 0, 0.55).Unit
+	local levPos = layout.center + dir * 4 + V3.new(-dir.Z, 0, dir.X) * 3 + V3.new(0, WATER - 3.2, 0)
+	creature("leviathan", levPos, dir, "idle", true)
+	-- the survivors at the +X edge, looking down over it
+	local e1 = tileWorld(layout, 8, 6) + V3.new(1.6, 0, 0)
+	dress(1, { name = "Looker", pos = e1, face = V3.new(1, 0, 0.2), pose = POSES.peerPoint })
+	local e2 = tileWorld(layout, 8, 7) + V3.new(1.4, 0, 0.5)
+	dress(3, { name = "Looker2", pos = e2, face = V3.new(1, 0, -0.1), pose = POSES.peer })
+	local e3 = tileWorld(layout, 7, 5) + V3.new(0.5, 0, -1.4)
+	dress(2, { name = "Looker3", pos = e3, face = V3.new(0.3, 0, -1), pose = POSES.peer })
+	local perp = V3.new(-dir.Z, 0, dir.X)
+	local cam = layout.center + perp * 16 + V3.new(0, 33, 0) - dir * 2
+	local look = layout.center + dir * 1 + V3.new(0, -4, 0)
+	shot("15_the_shadow", cam, look, 52, layout.center, { leviathan = levPos })
+end
+
+-- 16 Who built that? In the fog, a starter raft drifts up to a fortress somebody else built, its lamps lit -----------------
+if wants("16") then
+	clear()
+	light("fog", {
+		clock = 18.4,
+		brightness = 1.3,
+		ambient = rgb(92, 98, 108),
+		outdoor = rgb(124, 132, 144),
+		atmosphere = { density = 3.2, color = rgb(150, 160, 172), decay = rgb(84, 94, 110) },
+	})
+	-- the fortress (08's raft, a few more lamps lit) and, out in front of it on the same grid, a 2 x 2 starter raft
+	local pieces = fortress()
+	local lamps = { { 3, 10, 1 }, { 10, 3, 1 }, { 8, 10, 1 }, { 9, 10, 1 }, { 7, 9, 2 } }
+	for i = 3, #lamps do
+		table.insert(pieces, { "lamp", lamps[i][1], lamps[i][2], lamps[i][3] })
+	end
+	local layout = raft(2, pieces, { sail = "gold", banner = "gold", flag = "gold", deck = "dark" })
+	raft(2, square(6, 15, 2), WHITE)
+	local small = Formulas.tilePosition(layout.center, 6.5, 15.5, 1) + V3.new(0, 0.3, 0)
+	local big = Formulas.tilePosition(layout.center, 6.5, 6.5, 1)
+	local toBig = flat(big - small)
+	for _, l in lamps do
+		glow(Formulas.tilePosition(layout.center, l[1], l[2], l[3]) + V3.new(1.2, 4.5, 0), C.warm, 26, 1.8)
+	end
+	dress(4, {
+		name = "Starter",
+		pos = small + toBig * 1 + V3.new(0.8, 0, 0),
+		face = flat(toBig + V3.new(0.15, 0, 0)),
+		pose = POSES.lookUp,
+	})
+	local cam = small - toBig * 8 + V3.new(-3, 3.2, 0)
+	local look = big + V3.new(0, 7.5, 0)
+	shot("16_who_built_that", cam, look, 50, small + toBig * 16, { fortress = big + V3.new(0, 6, 0) })
 end
 
 -- (render.js reads the list)

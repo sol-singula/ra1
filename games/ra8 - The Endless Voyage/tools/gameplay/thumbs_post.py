@@ -29,6 +29,12 @@ CAPTIONS = {
     "08_legendary_vessel": "THE LEGENDARY VESSEL",
     "09_the_cast": "WHAT'S OUT THERE?",
     "10_the_ocean": "AN ENDLESS OCEAN",
+    "11_message_in_a_bottle": "WHO SENT THIS?",
+    "12_mist_hollow": "WHERE DID THEY GO?",
+    "13_frost_shelf": "WHO WAS ON IT?",
+    "14_the_totems": "WHAT ARE THEY WATCHING?",
+    "15_the_shadow": "WHAT'S DOWN THERE?",
+    "16_who_built_that": "WHO BUILT THAT?",
 }
 TITLE = "THE ENDLESS VOYAGE"
 
