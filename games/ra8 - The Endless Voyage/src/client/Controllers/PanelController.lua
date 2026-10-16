@@ -2203,77 +2203,69 @@ local function onAsk(a)
 	end
 	if a.kind == "feedback" then
 		local chosen = {}
-		PanelController.card(
-			"feedback",
-			"Do you like The Endless Voyage?",
-			"Tell us! It helps us make the game better.",
+		PanelController.card("feedback", "Do you like the game?", "Tell us! It helps us make the game better.", {
 			{
-				{
-					text = "👍 YES!",
-					color = C.good,
-					fn = function()
-						Net.send("Feedback", true, nil, nil)
-					end,
-				},
-				{
-					text = "👎 NOT REALLY",
-					color = C.red,
-					keep = true,
-					fn = function()
-						local c = cards.feedback
-						if not c then
-							return
+				text = "👍 YES!",
+				color = C.good,
+				fn = function()
+					Net.send("Feedback", true, nil, nil)
+				end,
+			},
+			{
+				text = "👎 NOT REALLY",
+				color = C.red,
+				keep = true,
+				fn = function()
+					local c = cards.feedback
+					if not c then
+						return
+					end
+					c.Size = UDim2.fromOffset(560, 300)
+					c.Text.Text = "What's wrong? (tap any)"
+					for _, b in c:GetChildren() do
+						if b.Name == "Btn1" or b.Name == "Btn2" then
+							b:Destroy()
 						end
-						c.Size = UDim2.fromOffset(560, 300)
-						c.Text.Text = "What's wrong? (tap any)"
-						for _, b in c:GetChildren() do
-							if b.Name == "Btn1" or b.Name == "Btn2" then
-								b:Destroy()
-							end
-						end
-						for i, r in Constants.DISLIKE_REASONS do
-							local btn = Theme.button({
-								Name = "Reason_" .. r.key,
-								Text = r.text,
-								BackgroundColor3 = C.white,
-								dark = true,
-								Size = UDim2.fromOffset(170, 40),
-								Position = UDim2.fromOffset(
-									14 + ((i - 1) % 3) * 178,
-									110 + math.floor((i - 1) / 3) * 46
-								),
-								TextSize = 13,
-								Parent = c,
-							})
-							btn.Activated:Connect(function()
-								chosen[r.key] = not chosen[r.key]
-								btn.BackgroundColor3 = chosen[r.key] and C.mustard or C.white
-							end)
-						end
-						local send = Theme.button({
-							Name = "Send",
-							Text = "SEND",
-							BackgroundColor3 = C.good,
-							AnchorPoint = Vector2.new(0.5, 1),
-							Position = UDim2.new(0.5, 0, 1, -12),
-							Size = UDim2.fromOffset(200, 44),
+					end
+					for i, r in Constants.DISLIKE_REASONS do
+						local btn = Theme.button({
+							Name = "Reason_" .. r.key,
+							Text = r.text,
+							BackgroundColor3 = C.white,
+							dark = true,
+							Size = UDim2.fromOffset(170, 40),
+							Position = UDim2.fromOffset(14 + ((i - 1) % 3) * 178, 110 + math.floor((i - 1) / 3) * 46),
+							TextSize = 13,
 							Parent = c,
 						})
-						send.Activated:Connect(function()
-							local list = {}
-							for k, on in chosen do
-								if on then
-									table.insert(list, k)
-								end
-							end
-							Net.send("Feedback", false, nil, list)
-							c:Destroy()
-							cards.feedback = nil
+						btn.Activated:Connect(function()
+							chosen[r.key] = not chosen[r.key]
+							btn.BackgroundColor3 = chosen[r.key] and C.mustard or C.white
 						end)
-					end,
-				},
-			}
-		)
+					end
+					local send = Theme.button({
+						Name = "Send",
+						Text = "SEND",
+						BackgroundColor3 = C.good,
+						AnchorPoint = Vector2.new(0.5, 1),
+						Position = UDim2.new(0.5, 0, 1, -12),
+						Size = UDim2.fromOffset(200, 44),
+						Parent = c,
+					})
+					send.Activated:Connect(function()
+						local list = {}
+						for k, on in chosen do
+							if on then
+								table.insert(list, k)
+							end
+						end
+						Net.send("Feedback", false, nil, list)
+						c:Destroy()
+						cards.feedback = nil
+					end)
+				end,
+			},
+		})
 	elseif a.kind == "thanks" then
 		PanelController.card(
 			"thanks",

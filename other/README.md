@@ -34,7 +34,7 @@ other/                      everything else: READMEs, screenshots, design docs
 | ra5 | The Last Train | [`games/ra5 - The Last Train/`](<../games/ra5 - The Last Train>) | [How to run and play](ra5/README.md) · [Plan](ra5/PLAN.md) · [Master plan](ra5/MASTER_PLAN.md) · [Thumbnails](ra5/thumbnails/README.md) · [Screenshots](ra5/screenshots/README.md) |
 | ra6 | Survive the 6-7 | [`games/ra6 - Survive the 6-7/`](<../games/ra6 - Survive the 6-7>) | [How to run and play](ra6/README.md) · [Plan](ra6/PLAN.md) · [Master plan](ra6/MASTER_PLAN.md) · [Thumbnails](ra6/thumbnails/README.md) · [Screenshots](ra6/screenshots/README.md) |
 | ra7 | Hold the Castle | [`games/ra7 - Hold the Castle/`](<../games/ra7 - Hold the Castle>) | [How to run and play](ra7/README.md) · [Plan](ra7/PLAN.md) · [Master plan](ra7/MASTER_PLAN.md) · [Thumbnails](ra7/thumbnails/README.md) · [Screenshots](ra7/screenshots/README.md) |
-| ra8 | The Endless Voyage | [`games/ra8 - The Endless Voyage/`](<../games/ra8 - The Endless Voyage>) | [How to run and play](ra8/README.md) · [Plan](ra8/PLAN.md) · [Master plan](ra8/MASTER_PLAN.md) · [Thumbnails](ra8/thumbnails/README.md) · [Screenshots](ra8/screenshots/README.md) · [Item icons](ra8/items/README.md) |
+| ra8 | Build the Biggest Raft | [`games/ra8 - The Endless Voyage/`](<../games/ra8 - The Endless Voyage>) | [How to run and play](ra8/README.md) · [Plan](ra8/PLAN.md) · [Master plan](ra8/MASTER_PLAN.md) · [Thumbnails](ra8/thumbnails/README.md) · [Screenshots](ra8/screenshots/README.md) · [Item icons](ra8/items/README.md) |
 
 To run a game, open a terminal in its folder under `games/` and run `rojo serve`, or double-click the prebuilt
 `.rbxl` file there. Each game's README in `other/` has the details.

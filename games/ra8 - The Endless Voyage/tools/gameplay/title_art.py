@@ -5,6 +5,7 @@ caption under it, or only a caption.
 
   python3 tools/gameplay/title_art.py <in.png> <out.jpg> --font LuckiestGuy.ttf [--caption "SET SAIL"]
                                       [--bottom] [--left | --right] [--no-title]
+                                      [--title "BUILD THE|BIGGEST RAFT"] [--title-size 120] [--at X,Y]
   python3 tools/gameplay/title_art.py <in.png> <out.jpg> --font LuckiestGuy.ttf --caption-only
                                       --caption "WHAT'S DOWN THERE?" [--size 130] [--at X,Y] [--width W]
   python3 tools/gameplay/title_art.py <in.png> <out.jpg> --font LuckiestGuy.ttf --caption-only   (no lettering)
@@ -12,6 +13,8 @@ caption under it, or only a caption.
 With the title: --bottom puts the lettering along the bottom edge (for art with a face or a big shape at the top);
 --left and --right put a slightly smaller block in that top (or bottom) corner instead of the middle, beside a big
 character. --no-title leaves the title off and keeps the small caption where the title's caption would be.
+--title replaces the game's title (a "|" breaks it into lines), --title-size sets its height in px (it shrinks
+until it fits), and --at X,Y puts the block's top middle there instead.
 
 --caption-only prints just the caption, big (--size, default 120 px), white with a dark outline, for a question
 on a thumbnail. Put it in empty sky or water, never over a face or the thing the picture is about: --at X,Y is the
@@ -44,25 +47,43 @@ def fit(img):
     return img.resize((1920, 1080), Image.LANCZOS)
 
 
-def letter(img, font_path, caption, bottom, title, side=None):
+def letter(img, font_path, caption, bottom, title, side=None, text=None, size=None, at=None):
+    """The title (yellow to orange, a "|" breaks it into lines) with the caption under it, one centred block. The
+    title is drawn at --title-size (default 150 px, 105 in a corner) and shrinks until every line fits the frame
+    (or the corner's half of it); the caption is a little over half the title's size."""
     img = img.convert("RGBA")
+    draw = ImageDraw.Draw(img)
     k = 0.7 if side else 1.0
-    big = ImageFont.truetype(font_path, int(150 * k))
-    small = ImageFont.truetype(font_path, int(72 * k))
-    cx = {"left": 500, "right": 1420}.get(side, 960)
-    # a long title (or caption) in a corner must still fit inside the frame (40 px margin)
-    widest = TITLE if title else (caption or "")
-    box = ImageDraw.Draw(img).textbbox((0, 0), widest, font=big if title else small, stroke_width=int(12 * k))
-    half = (box[2] - box[0]) / 2
-    cx = int(max(MARGIN + half, min(cx, 1920 - MARGIN - half)))
-    if bottom:
-        y = 1080 - 40 - int(((110 if caption else 0) + (150 if title else 0)) * k)
+    lines = (text or TITLE).split("|") if title else []
+    size = int(size or 150 * k)
+    limit = (1920 - 2 * MARGIN) if not side else 900
+    while True:
+        big = ImageFont.truetype(font_path, size)
+        stroke = max(6, int(size * 0.08))
+        widths = [draw.textbbox((0, 0), line, font=big, stroke_width=stroke)[2] for line in lines] or [0]
+        if max(widths) <= limit or size <= 48:
+            break
+        size -= 4
+    small = ImageFont.truetype(font_path, max(28, int(size * 0.56)))
+    cap_stroke = max(5, int(size * 0.06))
+    cap_w = draw.textbbox((0, 0), caption, font=small, stroke_width=cap_stroke)[2] if caption else 0
+    half = max(max(widths), cap_w) / 2
+    line_h = [draw.textbbox((0, 0), line, font=big, stroke_width=stroke)[3] for line in lines]
+    cap_h = draw.textbbox((0, 0), caption, font=small, stroke_width=cap_stroke)[3] if caption else 0
+    gap = int(size * 0.12)
+    total = sum(line_h) + gap * max(0, len(lines) - 1) + ((gap + cap_h) if caption else 0)
+    if at:
+        cx, y = at
     else:
-        y = 36
-    if title:
-        y = outlined_text(img, TITLE, big, cx, y, (255, 238, 110), (255, 140, 30), OUTLINE, int(12 * k)) + int(26 * k)
+        cx = {"left": MARGIN + half, "right": 1920 - MARGIN - half}.get(side, 960)
+        y = 1080 - MARGIN - total if bottom else 36
+    # (always inside the frame, 40 px in)
+    cx = int(max(MARGIN + half, min(cx, 1920 - MARGIN - half)))
+    y = int(max(MARGIN - 4, min(y, 1080 - MARGIN - total)))
+    for line in lines:
+        y = outlined_text(img, line, big, cx, y, (255, 238, 110), (255, 140, 30), OUTLINE, stroke) + gap
     if caption:
-        outlined_text(img, caption, small, cx, y, (255, 255, 255), (232, 236, 255), OUTLINE, int(8 * k))
+        outlined_text(img, caption, small, cx, y, (255, 255, 255), (232, 236, 255), OUTLINE, cap_stroke)
     return img.convert("RGB")
 
 
@@ -126,7 +147,9 @@ def main():
         img = caption_only(img, font, caption or "", int(opt("--size", 120)), at, int(opt("--width", 1500)), side,
                            "--bottom" in args)
     else:
-        img = letter(img, font, caption, "--bottom" in args, "--no-title" not in args, side)
+        at = tuple(int(v) for v in opt("--at").split(",")) if opt("--at") else None
+        size = int(opt("--title-size")) if opt("--title-size") else None
+        img = letter(img, font, caption, "--bottom" in args, "--no-title" not in args, side, opt("--title"), size, at)
     img.save(out, quality=90, optimize=True)
     # keep store uploads small
     q = 88

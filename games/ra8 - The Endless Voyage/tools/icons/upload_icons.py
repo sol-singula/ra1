@@ -46,7 +46,7 @@ def upload(session, api_key, creator, path, name):
     request = {
         "assetType": "Image",
         "displayName": name,
-        "description": "The Endless Voyage item icon",
+        "description": "Build the Biggest Raft item icon",
         "creationContext": {"creator": creator},
     }
     with open(path, "rb") as f:

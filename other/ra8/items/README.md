@@ -1,4 +1,4 @@
-# The Endless Voyage: item icons
+# Build the Biggest Raft: item icons
 
 ![All the icons](_all.jpg)
 

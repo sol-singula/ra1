@@ -1,4 +1,4 @@
-# The Endless Voyage: gameplay renders
+# Build the Biggest Raft: gameplay renders
 
 ![The renders](_all.jpg)
 
@@ -10,7 +10,8 @@ creatures' rigs posed the way the client poses them (`Rigs`), the tools and item
 shapes, staged into a few moments by `games/ra8 - The Endless Voyage/tools/gameplay/thumbs.luau`, drawn with
 three.js (`render.js` + `terrain.js`), then the shader pass (`thumbs_post.py`: levels, colour grade, bloom, depth
 of field, vignette). The survivors are plain blocky Roblox avatars (in the game they're the players' own avatars).
-They are the references the [thumbnails and icon](../thumbnails/README.md) were made from.
+They are the references the [store thumbnails and icon](../thumbnails/README.md) and the
+[ad images](../ads/README.md) were made from.
 
 The renderer stands in for Roblox's: the terrain's voxels are meshed and textured per material, and parts get
 textures for their Roblox material (free CC0 sets from ambientCG picked to look like Roblox's own,

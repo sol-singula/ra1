@@ -1,4 +1,4 @@
-# The Endless Voyage (ra8): the build plan, and what was built
+# Build the Biggest Raft (ra8): the build plan, and what was built
 
 The master plan is [MASTER_PLAN.md](MASTER_PLAN.md). This is how it became a game, section by section, and
 where each part lives in `games/ra8 - The Endless Voyage/`.
@@ -333,17 +333,20 @@ What the second play found, and what changed:
 * **JUMP on phones.** The big ACT button sat on top of Roblox's own jump button, so phones had no way to jump. Phones
   now get a JUMP button above ACT (hold it to keep jumping), with RUN beside it. Roblox's own jump button is hidden.
   On a phone held sideways, unlock cards keep to two rows so they stay clear of both buttons.
-* **Store art that makes you wonder.** Six new thumbnails, each one simple picture and one question:
-  * WHAT'S DOWN THERE? (the Leviathan's shadow under a raft)
-  * WHO SENT THIS? (a bottle with a glowing map)
-  * WHERE DID THEY GO? (Mist Hollow's empty huts)
-  * WHO BUILT THAT? (a fortress raft in the fog)
-  * WHAT ARE THEY WATCHING? (the totems)
-  * WHO WAS ON IT? (the frozen ship)
+* **A new name and new store art.** The game is now **Build the Biggest Raft**: the menu's title and badge, the
+  docs and the tools (the folder and the place file keep the working title). The achievement for 50 voyages is
+  Endless Voyager. The art is in two sets with different jobs:
+  * **Ads** ([`ads/`](ads/README.md)): ten dark, quiet pictures for Ads Manager, with no words at all. Each one is a
+    survivor and one strange thing: an eye in the water, a shadow under the raft, a wall of storm, a ship frozen in
+    the ice, Mist Hollow's empty huts, the watching totems, a fortress in the fog, a bottle in a storm, a fin in the
+    fog, a raft city's lights on the horizon.
+  * **The game's page** ([`thumbnails/`](thumbnails/README.md)): six bright thumbnails with the name and one line
+    each: START SMALL. GO BIG!, CATCH WHAT FLOATS BY, BUILD WITH FRIENDS, SAIL TO NEW ISLANDS, FIND TREASURE, FACE
+    THE LEVIATHAN. The README has a description in the same plain words.
+  * **A new icon**: a grinning survivor holding up a hammer in front of a huge raft, with three alternates.
 
-  There's a new icon (the bottle) with two alternates. All of them were made from fresh renders of the current
-  game, and the renders now include six mystery scenes ([thumbnails](thumbnails/README.md),
-  [renders](screenshots/README.md)).
+  All of them were made from fresh renders of the current game ([renders](screenshots/README.md)).
+  `title_art.py` letters the name in one line or two (`--title`, `--title-size`, `--at`).
 
 ## Tests
 

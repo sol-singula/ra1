@@ -99,7 +99,7 @@ Progression.ACHIEVEMENTS = {
 	},
 	{
 		key = "voyages_50",
-		name = "The Endless Voyage",
+		name = "Endless Voyager",
 		icon = "🌊",
 		desc = "Complete 50 voyages.",
 		stat = "voyages",

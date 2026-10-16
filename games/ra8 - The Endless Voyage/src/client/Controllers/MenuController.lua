@@ -97,7 +97,7 @@ local function updateBadge()
 		badge.Text = friendsWorld() and `🏝️ {name ~= "" and string.upper(name) or "A FRIEND"}'S WORLD`
 			or "🏝️ YOUR WORLD"
 	else
-		badge.Text = "🏝️ THE ENDLESS VOYAGE"
+		badge.Text = "🏝️ BUILD THE BIGGEST RAFT"
 	end
 end
 
@@ -225,13 +225,13 @@ function MenuController:init()
 	})
 	Theme.title({
 		Name = "Title",
-		Text = "THE ENDLESS VOYAGE",
+		Text = "BUILD THE BIGGEST RAFT",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 14),
 		Size = UDim2.new(1, -20, 0, 44),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = C.mustard,
-		TextSize = 32,
+		TextSize = 30,
 		Parent = box,
 	})
 	worldLine = Theme.text({

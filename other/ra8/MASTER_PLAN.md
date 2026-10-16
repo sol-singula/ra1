@@ -1,7 +1,7 @@
 # THE ENDLESS VOYAGE — Full Roblox Game Design and Development Plan
 
 Project type: Roblox multiplayer survival, crafting, exploration, and base-building game
-Working title: The Endless Voyage
+Working title: The Endless Voyage (released as **Build the Biggest Raft**)
 Core audience: Players who enjoy collecting, building, exploration, progression, and playing with friends
 Design target: Fun with 1 player, better with 2, scalable to groups
 Business objective: Build a highly replayable Roblox experience with strong retention, organic social growth, and

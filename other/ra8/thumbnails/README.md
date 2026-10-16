@@ -1,75 +1,95 @@
-# The Endless Voyage: thumbnails and the icon
+# Build the Biggest Raft: store thumbnails and the icon
 
-![All 6 thumbnails and the 3 icons](_all.jpg)
+![The 6 store thumbnails and the 4 icons](_all.jpg)
 
-Every thumbnail is **1920 × 1080 (16:9), JPG, under 0.5 MB**, for experience thumbnails and the Ads Manager. The
-icon is `../icon/icon_bottle.png`, **512 × 512 PNG**. `icon_shadow_alt.png` and `icon_rod_alt.png` are alternates
-for an icon A/B test.
+These are the pictures for **the game's own page** (its thumbnails on Home and on the game's page) and its icon. The
+dark, text-free pictures for ads are in [`../ads/`](../ads/README.md).
 
-**The idea: make them wonder.** Each thumbnail is one simple picture with one question, in words a third grader
-reads easily. It shows something strange the game really has, and leaves the answer for the game. No title and no
-captions beyond the question, because the store prints the game's name under every thumbnail.
+Every thumbnail is **1920 × 1080 (16:9), JPG, under 0.6 MB** (Roblox takes up to 3 MB). The icon is
+`../icon/icon_main.png`, **512 × 512 PNG**. `icon_raft_city_alt.png`, `icon_bottle_alt.png` and
+`icon_shadow_alt.png` are alternates for an icon test.
+
+**The idea: say what the game is.** Someone on the game's page is deciding whether to press Play, so these are
+bright and plain. Each one carries the name, **BUILD THE BIGGEST RAFT**, and one short line about what you do, in
+words a third grader reads easily. The name sits at the top like a logo, which Roblox allows. Roblox puts the
+player count along the bottom, so nothing important goes there. The mystery is for the ads; these show the fun.
 
 **They show what is in the game.** Each one was made with AI image generation (Higgsfield, GPT Image 2.5, high
-quality, 2k) from **real renders of the game** as references (the renders are in
-[`../screenshots/`](../screenshots/README.md)): the plank-tile rafts on their log floats, the blocky survivors,
-the Leviathan's long-jawed rig, the bottle that drifts in with a chart, Mist Hollow's empty huts and lanterns, the
-Ruin's totems, the ship frozen into the Frost Shelf, and a fortress raft built from the game's own pieces (two
-decks, crow's nest, lanterns, harpoon turrets, flags). In the game the survivors are the players' own avatars.
-A few details are artistic: the totems' eyes glow, the frozen ship has a lit porthole, and the Leviathan's shadow
-is bigger than it looks from a raft. The questions were lettered afterwards in the game's own font (Luckiest Guy,
-like the HUD) with `tools/gameplay/title_art.py --caption-only`, kept off faces and off the thing the picture is
-about.
+quality, 2k) with **real renders of the game** as references (in [`../screenshots/`](../screenshots/README.md)): the
+plank-tile rafts on their log floats, the blocky survivors, the rod, the drifting planks, barrels and crates, the
+sail and helm, Palm Key's palms, chests and crabs, the dolphins, the harpoon turrets and the Leviathan's
+long-jawed rig. In the game the survivors are the players' own avatars. The words were lettered afterwards in the
+game's own font (Luckiest Guy, like the HUD) with `tools/gameplay/title_art.py`.
 
-| # | File | Question | Scene | In the game |
+| # | File | Line | Picture | In the game |
 |---|---|---|---|---|
-| 1 | `01_whats_down_there.jpg` | WHAT'S DOWN THERE? | From high above: a small raft alone on deep teal water, three survivors looking over the edge, and a giant long-jawed shadow sliding underneath | The Leviathan at the Trench |
-| 2 | `02_who_sent_this.jpg` | WHO SENT THIS? | Sunset: a green bottle with a glowing rolled-up map bumps the raft, a survivor reaching for it | Bottles drift in with charts to new places |
-| 3 | `03_where_did_they_go.jpg` | WHERE DID THEY GO? | Fog at dusk: a survivor with a lantern walks up the beach toward empty huts, one doorway lit, footprints in the sand | Mist Hollow |
-| 4 | `04_who_built_that.jpg` | WHO BUILT THAT? | Thick fog: a huge two-deck raft fortress with lanterns and turrets looms over a tiny 2 × 2 starter raft | Other players' rafts (VISIT), and what yours can become |
-| 5 | `05_what_are_they_watching.jpg` | WHAT ARE THEY WATCHING? | Sunset, low angle: three mossy stone totems tower over an explorer | The Ruin's totems |
-| 6 | `06_who_was_on_it.jpg` | WHO WAS ON IT? | Pink dawn, snow falling: an old ship frozen into the ice, a survivor walking toward it | The Frost Shelf's frozen ship |
+| 1 | `01_build_the_biggest_raft.jpg` | START SMALL. GO BIG! | A giant raft with decks, sails, flags and gardens full of survivors, and beside it a tiny 2 × 2 raft with one survivor | Where you start (the 2 × 2 platform) and what it becomes |
+| 2 | `02_catch_what_floats_by.jpg` | CATCH WHAT FLOATS BY | Two survivors on a small raft, one casting the rod at planks, barrels and a crate drifting past, an island behind | The rod and the debris: the first minute |
+| 3 | `03_build_with_friends.jpg` | BUILD WITH FRIENDS | Three survivors building one raft: hammering a tile down, carrying planks, a sail going up | Friends join your raft and build with you |
+| 4 | `04_sail_to_new_islands.jpg` | SAIL TO NEW ISLANDS | A raft under sail, a survivor at the helm, dolphins jumping alongside, a palm island ahead | Voyages: the sail, the helm, dolphins, Palm Key |
+| 5 | `05_find_treasure.jpg` | FIND TREASURE | On a beach, a survivor opens a glowing chest while another chops a palm, crabs on the sand, the raft waiting offshore | Island chests, chopping palms, Reef Crabs |
+| 6 | `06_face_the_leviathan.jpg` | FACE THE LEVIATHAN | Sunset: the Leviathan bursts out of the sea beside a fortress raft, survivors firing its harpoon turrets | The Leviathan at the Trench, the turrets |
 
-Number 1 is the lead: it has the raft, the ocean and the biggest mystery in one picture.
+Number 1 is the lead: it is the name in one picture. A few details are made up for the pictures: island chests
+give blueprints, pearls, gear and old tech rather than glowing gold, and the Leviathan is drawn bigger than it is.
 
 | Icon | Shows |
 |---|---|
-| `icon_bottle.png` (main) | A glowing bottle with a treasure map floating at dusk, a survivor on the raft reaching for it |
+| `icon_main.png` (main) | A grinning survivor holding up a hammer in front of a huge raft with sails and flags: the name in one look, clear even at 150 pixels |
+| `icon_raft_city_alt.png` | A towering raft with decks, sails and a crow's nest on bright water |
+| `icon_bottle_alt.png` | A survivor on the raft reaching for a glowing bottle with a map at dusk (the last icon) |
 | `icon_shadow_alt.png` | A raft seen from above with the Leviathan's shadow, one glowing eye, passing under it |
-| `icon_rod_alt.png` | A survivor with the rod on a raft under a white sail, looking at a glowing light on the horizon |
 
 The plan says the raft must be recognisable at a glance and that the art must not copy *Raft*'s branding or
-layout: every image is built around the game's own plank-tile rafts and blocky survivors, and none uses another
-game's title layout. Test the thumbnails against each other and keep the one with the most clicks that also keeps
-players.
+layout: every picture is built around the game's own plank-tile rafts and blocky survivors, and the title is
+lettered in the game's own font.
 
-## Checklist (Roblox thumbnail and ad rules)
+## Checklist (Roblox thumbnail rules)
 
-- [x] **Matches the game.** Every place and thing in them is in the game (see the table).
-- [x] **No promises.** No "FREE", "NEW", "UPDATE", rewards or prizes.
-- [x] **No fake interface.** No fake buttons, menus or prompts.
-- [x] **Kid-friendly.** Mysterious, not scary: no blood, no gore, no jump scares.
-- [x] **Simple and readable.** One subject, one question, big letters that read on a phone.
-- [x] **Size.** 16:9, 1920 × 1080, under 0.5 MB. Icons 512 × 512.
+- [x] **Matches the game.** Every place, creature and piece in them is in the game (see the table).
+- [x] **No promises.** No "FREE", "NEW", "UPDATE", rewards, prizes or prices. The lines say what you do.
+- [x] **No fake interface.** No buttons, menus or prompts.
+- [x] **Kid-friendly.** No blood, no gore.
+- [x] **Text at the top.** The name and the line stay clear of the player count at the bottom.
+- [x] **Size.** 16:9, 1920 × 1080, under 0.6 MB. Icon 512 × 512.
+
+Roblox's thumbnail guide also asks for graphics that look like what a player will see. These are lit and finished
+more richly than the game. If moderation pushes back, letter the game's own renders in
+[`../screenshots/`](../screenshots/README.md) the same way (step 3 below) and use those.
 
 ## Upload them
 
-In Studio, with the place open: **Home → Game Settings → Basic Info**.
+On the Creator Hub: **Creator Dashboard** (create.roblox.com/dashboard/creations) → Build the Biggest Raft →
+**Configurations → Places** → the start place (the one with the star).
 
-1. **Game Icon**: upload `../icon/icon_bottle.png`.
-2. **Thumbnails**: remove the old ones and upload `01` to `06` in that order (the first is the one people see
-   first). Save.
+1. **Icon**: media type Image → **Change** → `../icon/icon_main.png` → check the preview → **Save Changes**.
+2. **Thumbnails → Experience Detail Page**: remove the old ones and upload `01` to `06` in that order (the first is
+   the one people see first). Save.
+3. **Thumbnails → Home Page**: turn on two to five of them (`01`, `02`, `04` and `06` to start). With two or more
+   on, Roblox picks which one each player sees on Home.
 
-(The same fields are on the experience's page on the Creator Hub, create.roblox.com.) To compare them, put a
-different one first for a week at a time and watch the click-through rate in the experience's analytics.
+Every upload is moderated before others see it. To compare icons, swap in an alternate for a week at a time and
+watch the click-through rate in the experience's analytics.
+
+## The description
+
+For the game's page (Configurations → Basic Info), in the same plain words:
+
+> Start on a tiny raft in the middle of the ocean. Catch the wood, barrels and crates that float by. Build your
+> raft bigger and bigger! Raise a sail and find islands, wrecks and treasure. Play with your friends. Watch out
+> for sharks... and for what lives in the deep.
 
 ## Making them again
 
-1. Render the references: see [`../screenshots/README.md`](../screenshots/README.md) (the mystery scenes are
-   `11` to `16`; the Leviathan is `07`, a raft is `03`).
+1. Render the references: see [`../screenshots/README.md`](../screenshots/README.md) (a raft is `02` and `03`, an
+   island `04`, the Leviathan `07`, a big raft `08`).
 2. Upload the renders to Higgsfield and generate each picture with GPT Image 2.5 (high quality, 2k, 16:9; icons
    1:1) with one or two renders as image references. Each prompt describes the scene, asks for the blocky Roblox
-   style of the references, one clear subject with the top third left free for the question, "mysterious and
-   curious, kid-friendly, not scary", and no text.
-3. Letter them: `python3 tools/gameplay/title_art.py art.png out.jpg --font LuckiestGuy.ttf --caption-only
-   --caption "WHO SENT THIS?" --left` (`--at X,Y`, `--size`, and a `|` to break a long question).
+   style of the references, bright daylight (sunset for the Leviathan), the top quarter kept simple for the title,
+   and no text.
+3. Letter them: `python3 tools/gameplay/title_art.py art.png out.jpg --font LuckiestGuy.ttf --caption "FIND TREASURE"
+   --title-size 110 --at 1180,36`. The title is BUILD THE BIGGEST RAFT unless `--title` gives another (a `|` breaks
+   it into lines, as in number 1: `--title "BUILD THE|BIGGEST RAFT" --title-size 120 --left`); `--left`, `--right`
+   or `--at X,Y` (the top middle of the words) place it.
+4. Make the sheet: `python3 tools/gameplay/contact_sheet.py _all.jpg --cols 3 --width 640 0*.jpg --icons
+   ../icon/icon_main.png ../icon/icon_raft_city_alt.png ../icon/icon_bottle_alt.png ../icon/icon_shadow_alt.png`.

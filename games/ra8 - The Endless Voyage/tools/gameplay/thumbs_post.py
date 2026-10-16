@@ -36,7 +36,7 @@ CAPTIONS = {
     "15_the_shadow": "WHAT'S DOWN THERE?",
     "16_who_built_that": "WHO BUILT THAT?",
 }
-TITLE = "THE ENDLESS VOYAGE"
+TITLE = "BUILD THE BIGGEST RAFT"
 
 
 def arr(img):
