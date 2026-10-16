@@ -3,604 +3,685 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Roblox Live</title>
+<title>Live · Roblox games</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!--
+  The studio's live dashboard: who's playing Steal a Dragon (ra2), Snipe a Noob (ra4) and Build the Biggest Raft
+  (ra8) right now, then the numbers. Reads the roblox-live Supabase function with the view key (pasted once and
+  remembered in this browser, or ?key= in the address). The key is never in this file.
+
+  The top of the page is every player online, one small tile each, grouped by game and server: it shrinks the tiles
+  (Auto density) until everyone fits on the screen, so a few full 20-player servers need no scrolling. Hover a tile
+  for everything about that player; click it for their Roblox profile. Scroll down for the stats.
+  Keys: 0 all games, 1 2 3 one game, D density, T theme, R refresh.
+-->
 <style>
   :root {
-    --bg: #f4f5f9; --panel: #ffffff; --panel-2: #f8f9fc; --line: #e4e7ef; --text: #161a26; --muted: #6b7286;
-    --accent: #7c3aed; --accent-soft: #efe7ff; --good: #10b981; --good-soft: #dcfaf0; --warn: #f59e0b;
-    --warn-soft: #fff3d6; --bad: #e11d48; --bad-soft: #ffe1e8; --blue: #2563eb; --blue-soft: #e3ecff;
-    --shadow: 0 1px 2px rgba(20, 24, 40, .06), 0 6px 20px rgba(20, 24, 40, .05);
+    --bg: #f2f3f8; --panel: #ffffff; --panel-2: #f6f7fb; --tile: #f7f8fc; --line: #e2e5ee; --line-2: #d3d8e4;
+    --text: #131722; --muted: #687087; --faint: #9aa1b4;
+    --accent: #6a4cff; --accent-soft: #eeeaff; --good: #0f9f6a; --good-soft: #dcf7ec; --warn: #c98400; --warn-soft: #fff1d1;
+    --bad: #db2f57; --bad-soft: #ffe2e9; --blue: #2c6be0; --blue-soft: #e2ebff; --gold: #b7860b;
+    --shadow: 0 1px 2px rgba(18, 23, 40, .05), 0 4px 16px rgba(18, 23, 40, .05);
+    --head-bg: rgba(242, 243, 248, .86);
+    --hh: 60px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0e1018; --panel: #161925; --panel-2: #1b1f2e; --line: #262b3d; --text: #eef0f7; --muted: #9097ad;
-      --accent: #a78bfa; --accent-soft: #2a2145; --good: #34d399; --good-soft: #10302a; --warn: #fbbf24;
-      --warn-soft: #3a2d10; --bad: #fb7185; --bad-soft: #3b1621; --blue: #60a5fa; --blue-soft: #15233f;
-      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+      --bg: #0b0d14; --panel: #131621; --panel-2: #171b28; --tile: #1a1f2d; --line: #232839; --line-2: #2e3448;
+      --text: #eef0f6; --muted: #929ab0; --faint: #687087;
+      --accent: #9d8bff; --accent-soft: #241e44; --good: #36d39a; --good-soft: #0f2f25; --warn: #f5b83d; --warn-soft: #36290c;
+      --bad: #ff6f8f; --bad-soft: #3a1520; --blue: #6ea6ff; --blue-soft: #152542; --gold: #f2c443;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 6px 20px rgba(0, 0, 0, .25);
+      --head-bg: rgba(11, 13, 20, .82);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0e1018; --panel: #161925; --panel-2: #1b1f2e; --line: #262b3d; --text: #eef0f7; --muted: #9097ad;
-    --accent: #a78bfa; --accent-soft: #2a2145; --good: #34d399; --good-soft: #10302a; --warn: #fbbf24;
-    --warn-soft: #3a2d10; --bad: #fb7185; --bad-soft: #3b1621; --blue: #60a5fa; --blue-soft: #15233f;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    --bg: #0b0d14; --panel: #131621; --panel-2: #171b28; --tile: #1a1f2d; --line: #232839; --line-2: #2e3448;
+    --text: #eef0f6; --muted: #929ab0; --faint: #687087;
+    --accent: #9d8bff; --accent-soft: #241e44; --good: #36d39a; --good-soft: #0f2f25; --warn: #f5b83d; --warn-soft: #36290c;
+    --bad: #ff6f8f; --bad-soft: #3a1520; --blue: #6ea6ff; --blue-soft: #152542; --gold: #f2c443;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 6px 20px rgba(0, 0, 0, .25);
+    --head-bg: rgba(11, 13, 20, .82);
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 Inter, system-ui, sans-serif; }
-  .wrap { max-width: none; margin: 0 auto; padding: 18px 24px 40px; }
-  @media (max-width: 600px) { .wrap { padding: 16px 16px 40px; } }
-  .layout { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start; }
-  @media (min-width: 1500px) { .layout { grid-template-columns: minmax(0, 1fr) 380px; } .layout h2:first-child { margin-top: 0; } }
-  .side { position: sticky; top: 16px; }
-  header { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
-  header h1 { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: -.02em; }
-  .live { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--muted);
-    background: var(--panel); border: 1px solid var(--line); padding: 5px 10px; border-radius: 999px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 0 var(--good);
-    animation: pulse 2s infinite; }
-  .dot.off { background: var(--bad); animation: none; }
-  .dot.wait { background: var(--muted); animation: none; }
-  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.5);} 70% { box-shadow: 0 0 0 8px rgba(16,185,129,0);} 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0);} }
-  .spacer { flex: 1; }
-  button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--text); padding: 6px 12px;
-    border-radius: 8px; cursor: pointer; font-weight: 600; }
-  button:hover { border-color: var(--accent); }
-  /* the game switcher: one tab per game, with how many are playing it right now */
-  .games { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
-  .game { display: inline-flex; align-items: center; gap: 9px; padding: 7px 14px 7px 10px; border-radius: 12px; text-align: left; min-width: 0; }
-  .game .ge { font-size: 20px; line-height: 1; flex: none; }
-  .game .gt { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-  .game .gn { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .game .gc { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
-  .gdot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); flex: none; }
-  .gdot.zero { background: var(--muted); opacity: .5; }
-  .game.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-  .game.on .gc { color: var(--accent); }
-  @media (max-width: 600px) {
-    .games { display: grid; grid-template-columns: 1fr 1fr; }
-    .game { width: 100%; padding: 8px 10px; }
-    .game .gt { flex-direction: column; align-items: flex-start; gap: 0; }
-  }
-  .hello { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 28px 24px;
-    text-align: center; max-width: 640px; margin: 4px auto 0; }
-  .hello .em { font-size: 44px; line-height: 1; }
-  .hello h3 { margin: 12px 0 6px; font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
-  .hello p { margin: 8px 0 0; color: var(--muted); }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; }
-  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); }
-  .stat .k { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-  .stat .v { font-size: 26px; font-weight: 800; margin-top: 4px; letter-spacing: -.02em; }
-  .stat .s { font-size: 12px; color: var(--muted); }
-  h2 { font-size: 15px; font-weight: 700; margin: 26px 0 12px; display: flex; align-items: center; gap: 8px; }
-  h2 .count { color: var(--muted); font-weight: 600; }
-  .servers { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-  @media (max-width: 360px) { .servers { grid-template-columns: 1fr; } }
-  .server { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
-  .server-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px 8px; }
-  .server-head .name { font-weight: 800; font-size: 16px; }
-  .chip { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); white-space: nowrap; }
-  .chip.new { background: var(--good-soft); color: var(--good); border-color: transparent; }
-  .chip.idle { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
-  .chip.vip { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
-  .chip.friend { background: var(--blue-soft); color: var(--blue); border-color: transparent; }
-  .chip.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
-  .fill { margin: 0 14px 10px; height: 8px; background: var(--panel-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }
-  .fill > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--blue)); border-radius: 999px; transition: width .4s; }
-  .players { border-top: 1px solid var(--line); }
-  .p { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--line); }
-  .p:last-child { border-bottom: 0; }
-  .avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--panel-2); object-fit: cover; border: 1px solid var(--line); }
-  .who { min-width: 0; }
-  .who .dn { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .who .un { color: var(--muted); font-size: 12px; }
-  .who .chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
-  .right { text-align: right; }
-  .time { font-weight: 800; font-variant-numeric: tabular-nums; }
-  .mini { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .empty { background: var(--panel); border: 1px dashed var(--line); border-radius: 16px; padding: 30px; text-align: center; color: var(--muted); }
-  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
-  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
-  th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; background: var(--panel-2); }
-  tr:last-child td { border-bottom: 0; }
-  td .avatar { width: 28px; height: 28px; border-radius: 8px; vertical-align: middle; margin-right: 8px; }
-  .scroll { overflow-x: auto; }
-  .voice { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.2fr) minmax(360px, 2fr); gap: 12px; margin-bottom: 18px; }
-  @media (max-width: 1100px) { .voice { grid-template-columns: 1fr; } }
-  .vcard { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 14px 16px; }
-  .vcard .big { font-size: 34px; font-weight: 800; letter-spacing: -.02em; }
-  .vcard .k { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-  .vcard table { box-shadow: none; border: 0; margin-top: 8px; }
-  .bar { height: 10px; border-radius: 999px; background: var(--bad-soft); overflow: hidden; margin: 8px 0 4px; }
-  .bar > div { height: 100%; background: var(--good); }
-  .answers { max-height: 330px; overflow-y: auto; margin-top: 6px; }
-  .ans { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; }
-  .ans > div { min-width: 0; overflow-wrap: anywhere; }
-  .ans .t { font-weight: 600; } .ans .m { font-size: 12px; color: var(--muted); }
-  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); }
-  .seg button { border: 0; border-radius: 0; padding: 6px 12px; background: transparent; color: var(--muted); }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.4 Inter, system-ui, -apple-system, sans-serif; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .num, .tm { font-variant-numeric: tabular-nums; }
+
+  /* The header: brand, the game tabs with who's on, and the controls ----------------------------------------- */
+  header { position: sticky; top: 0; z-index: 20; height: var(--hh); display: flex; align-items: center; gap: 10px;
+    padding: 0 18px; background: var(--head-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 16px; letter-spacing: -.01em; white-space: nowrap; }
+  .pulse { width: 9px; height: 9px; border-radius: 50%; background: var(--good); animation: pulse 2s infinite; flex: none; }
+  .pulse.off { background: var(--bad); animation: none; } .pulse.wait { background: var(--faint); animation: none; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, .55); } 70% { box-shadow: 0 0 0 9px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+  .tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; min-width: 0; padding: 2px; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 10px; border: 1px solid transparent;
+    background: transparent; color: var(--muted); font-weight: 600; white-space: nowrap; position: relative; }
+  .tab:hover { background: var(--panel); color: var(--text); }
+  .tab.on { background: var(--panel); color: var(--text); border-color: var(--line); box-shadow: var(--shadow); }
+  .tab.on::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--g, var(--accent)); }
+  .tab .te { font-size: 16px; line-height: 1; }
+  .count { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 999px;
+    background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
+  .count.live { color: var(--good); background: var(--good-soft); border-color: transparent; }
+  .count .d { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .grow { flex: 1; }
+  .ctrl { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .ago { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .btn { border: 1px solid var(--line); background: var(--panel); padding: 5px 10px; border-radius: 9px; font-weight: 600; font-size: 13px; }
+  .btn:hover { border-color: var(--line-2); }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: var(--panel); }
+  .seg button { border: 0; background: transparent; padding: 5px 10px; font-size: 12px; font-weight: 600; color: var(--muted); }
   .seg button.on { background: var(--accent-soft); color: var(--accent); }
-  .delta { font-size: 12px; font-weight: 700; margin-left: 6px; }
-  .delta.up { color: var(--good); } .delta.down { color: var(--bad); } .delta.flat { color: var(--muted); }
-  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px; }
-  @media (max-width: 480px) { .charts { grid-template-columns: 1fr; } }
-  .chart { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 12px 14px; position: relative; }
-  .chart .title { font-weight: 700; font-size: 13px; } .chart .sub { font-size: 12px; color: var(--muted); }
-  .chart svg { width: 100%; height: 150px; display: block; margin-top: 6px; }
-  .tip { position: absolute; pointer-events: none; background: var(--text); color: var(--bg); font-size: 12px; padding: 5px 8px; border-radius: 8px; white-space: nowrap; display: none; z-index: 5; }
-  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .recent { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
-  .r { display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); align-items: start; }
-  .r:last-child { border-bottom: 0; }
-  .r .avatar { width: 32px; height: 32px; border-radius: 9px; }
-  .r .acts { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
-  .key { max-width: 420px; margin: 80px auto; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; box-shadow: var(--shadow); }
-  .key input { width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); margin: 12px 0; }
+  @media (max-width: 860px) { .ctrl .seg, .ctrl .hide-s { display: none; } header { padding: 0 12px; gap: 8px; } .brand span.t { display: none; } }
+
+  main { padding: 12px 18px 48px; }
+  @media (max-width: 600px) { main { padding: 10px 12px 40px; } }
+
+  /* The board: every player online --------------------------------------------------------------------------- */
+  #board { display: flex; flex-direction: column; gap: 10px; }
+  .gsec { --g: var(--accent); }
+  .ghead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 2px 6px; }
+  .ghead .gn { font-weight: 800; font-size: 15px; letter-spacing: -.01em; display: inline-flex; align-items: center; gap: 7px; }
+  .ghead .gn .ge { width: 24px; height: 24px; border-radius: 7px; display: inline-grid; place-items: center; font-size: 15px;
+    background: color-mix(in srgb, var(--g) 16%, transparent); }
+  .ghead .on { font-weight: 800; font-size: 15px; color: var(--text); }
+  .ghead .meta { color: var(--muted); font-size: 12.5px; font-weight: 500; }
+  .ghead .meta b { color: var(--text); font-weight: 700; }
+  .quiet { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px dashed var(--line-2); border-radius: 12px;
+    color: var(--muted); font-size: 13px; background: var(--panel); }
+  .servers { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+  .srv { background: var(--panel); border: 1px solid var(--line); border-radius: 13px; box-shadow: var(--shadow); padding: 7px 8px 8px;
+    flex: 1 1 var(--w, 300px); min-width: min(100%, 240px); max-width: 100%; }
+  .shead { display: flex; align-items: center; gap: 8px; padding: 0 3px 6px; font-size: 12.5px; }
+  .shead .sn { font-weight: 800; }
+  .shead .cap { font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .shead .cap.full { color: var(--bad); }
+  .capbar { flex: 0 1 90px; height: 6px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; }
+  .capbar > i { display: block; height: 100%; background: var(--g); border-radius: 999px; transition: width .4s; }
+  .chip { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--panel-2); color: var(--muted);
+    border: 1px solid var(--line); white-space: nowrap; }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .chip.good { background: var(--good-soft); color: var(--good); border-color: transparent; }
+  .chip.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+  .chip.blue { background: var(--blue-soft); color: var(--blue); border-color: transparent; }
+  .chip.vip { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .shead .job { margin-left: auto; color: var(--faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+  /* A player: avatar, name, time on, and a line of what they're up to. Four sizes (Auto picks the biggest that fits). */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tw), 1fr)); gap: var(--tg); }
+  .tile { display: grid; grid-template-columns: var(--av) minmax(0, 1fr) auto; grid-template-rows: auto auto;
+    column-gap: 8px; align-items: center; padding: var(--tp); min-height: var(--th); border-radius: 10px; background: var(--tile);
+    border: 1px solid transparent; color: inherit; text-decoration: none; position: relative; transition: border-color .12s, transform .12s; }
+  .tile:hover { border-color: var(--g); transform: translateY(-1px); }
+  .tile .av { grid-row: 1 / 3; width: var(--av); height: var(--av); border-radius: 8px; position: relative; background: var(--panel-2); }
+  .tile .av img { width: 100%; height: 100%; border-radius: 8px; object-fit: cover; display: block; }
+  .tile .av .dv { position: absolute; right: -4px; bottom: -4px; font-size: var(--dvs); line-height: 1; filter: drop-shadow(0 0 1px var(--panel)); }
+  .tile .nm { font-weight: 700; font-size: var(--fs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .tile .tm { font-weight: 700; font-size: calc(var(--fs) - 1px); color: var(--muted); justify-self: end; }
+  .tile .st { grid-column: 2 / 4; font-size: calc(var(--fs) - 1.5px); color: var(--muted); white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; min-width: 0; }
+  .tile .mk { font-size: calc(var(--fs) - 2px); margin-left: 3px; }
+  .tile.new { box-shadow: inset 3px 0 0 var(--good); }
+  .tile.new .av { box-shadow: 0 0 0 2px var(--good); }
+  .tile.idle { opacity: .5; }
+  .tile.ghost { grid-template-columns: 1fr; place-items: center; color: var(--muted); font-weight: 600; font-size: 12px;
+    border: 1px dashed var(--line-2); background: transparent; grid-column: span 2; text-align: center; }
+  .tile.ghost:hover { transform: none; border-color: var(--line-2); }
+  #board[data-d="1"] { --tw: 214px; --th: 52px; --av: 36px; --fs: 13.5px; --tp: 6px 9px 6px 7px; --tg: 6px; --dvs: 13px; }
+  #board[data-d="2"] { --tw: 178px; --th: 42px; --av: 28px; --fs: 12.5px; --tp: 4px 8px 4px 6px; --tg: 5px; --dvs: 11px; }
+  #board[data-d="3"] { --tw: 150px; --th: 30px; --av: 22px; --fs: 12px; --tp: 3px 7px 3px 4px; --tg: 4px; --dvs: 9px; }
+  #board[data-d="4"] { --tw: 122px; --th: 26px; --av: 19px; --fs: 11.5px; --tp: 2px 6px 2px 3px; --tg: 3px; --dvs: 8px; }
+  #board[data-d="3"] .tile .st, #board[data-d="4"] .tile .st { display: none; }
+  #board[data-d="3"] .tile, #board[data-d="4"] .tile { grid-template-rows: auto; }
+  #board[data-d="4"] .tile .tm { font-size: 10.5px; }
+  #board[data-d="3"] .srv, #board[data-d="4"] .srv { padding: 5px 6px 6px; }
+  #board[data-d="3"] .shead, #board[data-d="4"] .shead { padding-bottom: 4px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; color: var(--faint); font-size: 12px; margin: 2px 2px 0; }
+  .legend .k { color: var(--muted); }
+  .more { display: flex; justify-content: center; margin: 14px 0 6px; }
+  .more a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 12.5px; padding: 6px 12px; border: 1px solid var(--line);
+    border-radius: 999px; background: var(--panel); }
+  .more a:hover { color: var(--text); }
+
+  /* The hover card */
+  .pop { position: fixed; z-index: 40; width: 300px; background: var(--panel); border: 1px solid var(--line-2); border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .22); padding: 12px; pointer-events: none; font-size: 13px; }
+  .pop .top { display: grid; grid-template-columns: 52px 1fr; gap: 10px; align-items: center; }
+  .pop img, .pop .noimg { width: 52px; height: 52px; border-radius: 12px; background: var(--panel-2); object-fit: cover; }
+  .pop .dn { font-weight: 800; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pop .un { color: var(--muted); font-size: 12px; }
+  .pop .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 9px; }
+  .pop dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 10px 0 0; }
+  .pop dt { color: var(--muted); } .pop dd { margin: 0; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+  .pop .hint { margin-top: 9px; color: var(--faint); font-size: 11.5px; }
+
+  /* The stats ----------------------------------------------------------------------------------------------- */
+  #stats { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 18px; }
+  .shead2 { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }
+  .shead2 h2 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+  .shead2 .sub { color: var(--muted); font-size: 12.5px; }
+  h3 { font-size: 14px; font-weight: 800; margin: 26px 0 10px; display: flex; align-items: center; gap: 8px; }
+  h3 .sub { color: var(--muted); font-weight: 500; font-size: 12.5px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 10px; }
+  .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 12px 14px 8px;
+    display: flex; flex-direction: column; min-height: 118px; }
+  .kpi .k { font-size: 11.5px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi .v { font-size: 26px; font-weight: 800; letter-spacing: -.02em; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .kpi .s { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .kpi svg { width: 100%; height: 30px; margin-top: auto; display: block; }
+  .delta { font-size: 11.5px; font-weight: 800; padding: 1px 6px; border-radius: 999px; }
+  .delta.up { color: var(--good); background: var(--good-soft); } .delta.down { color: var(--bad); background: var(--bad-soft); }
+  .delta.flat { color: var(--muted); background: var(--panel-2); }
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 10px; margin-top: 10px; }
+  @media (max-width: 520px) { .charts { grid-template-columns: 1fr; } }
+  .chart { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 11px 13px 6px; }
+  .chart .t { font-weight: 700; font-size: 13px; display: flex; gap: 8px; align-items: baseline; }
+  .chart .t .sub { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .chart svg { width: 100%; height: 132px; display: block; margin-top: 4px; overflow: visible; }
+  .tip { position: fixed; z-index: 50; pointer-events: none; background: var(--text); color: var(--bg); font-size: 12px; font-weight: 600;
+    padding: 5px 8px; border-radius: 8px; white-space: nowrap; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 13px 15px; }
+  .card .k { font-size: 11.5px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .card .big { font-size: 30px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .voice { display: grid; grid-template-columns: minmax(250px, 1fr) minmax(300px, 1.2fr) minmax(300px, 1.4fr); gap: 10px; }
+  @media (max-width: 1100px) { .voice { grid-template-columns: 1fr; } }
+  .bar { height: 8px; border-radius: 999px; background: var(--panel-2); overflow: hidden; margin: 7px 0 3px; }
+  .bar > i { display: block; height: 100%; border-radius: 999px; }
+  .answers { max-height: 300px; overflow-y: auto; margin-top: 6px; }
+  .ans { display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 13px; }
+  .ans > div { min-width: 0; overflow-wrap: anywhere; } .ans .m { font-size: 12px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    overflow: hidden; box-shadow: var(--shadow); }
+  th, td { text-align: left; padding: 8px 11px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+  th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; background: var(--panel-2); font-weight: 700; }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; }
+  .card table { box-shadow: none; border: 0; margin-top: 6px; } .card td, .card th { padding: 6px 4px; }
+  .scroll { overflow-x: auto; border-radius: 14px; }
+  .mini { font-size: 12px; color: var(--muted); }
+  .recent { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 8px; }
+  .r { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: start; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 8px 10px; }
+  .r img, .r .noimg { width: 34px; height: 34px; border-radius: 9px; background: var(--panel-2); object-fit: cover; }
+  .r .n { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .r .acts { font-size: 11.5px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+  .empty { background: var(--panel); border: 1px dashed var(--line-2); border-radius: 14px; padding: 22px; text-align: center; color: var(--muted); }
+  .keybox { max-width: 440px; margin: 12vh auto 0; background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+    padding: 26px; box-shadow: var(--shadow); }
+  .keybox h1 { margin: 0; font-size: 20px; } .keybox p { color: var(--muted); margin: 6px 0 0; }
+  .keybox input { width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2);
+    color: var(--text); margin: 14px 0 10px; }
   .err { color: var(--bad); font-weight: 600; }
 </style>
 </head>
 <body>
-<div class="wrap" id="app"></div>
+<header id="head"></header>
+<main id="app"></main>
+<div id="pop" class="pop" hidden></div>
+<div id="tip" class="tip" hidden></div>
 <script>
   const ENDPOINT = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-live";
+  const DEFAULT_KEY = ""; // (the gitignored private copy has the view key here; this file never does)
   const REFRESH_MS = 10000;
-  const app = document.getElementById("app");
 
-  // Every game, and how its players look on the page.
-  //   analytics  "on": sends sessions today · "soon": will once it's live · "off": doesn't send any yet
-  //   live       each player's `live` object, from the game's analytics snapshot (see the game's AnalyticsService)
-  //   chips      chips after the shared ones (NEW / visit #, idle, Premium, friends)
-  //   stats      the lines under the clock on the right of a player row
-  //   reasons    labels for the reasons players pick after tapping 👎 (unknown ones show as they are)
-  //   feedbackStats  extra numbers each feedback answer carries: [field, row in the 👍 / 👎 table, word under an answer]
+  // The games, and how their players look. live: each player's `live` object from the game's analytics snapshot.
+  //   line(l, p)     the short line on a player's tile
+  //   details(l, p)  [label, value] rows on the hover card
+  //   analytics      false: the game only reports how many are on each server (no names, no stats)
   const GAMES = {
     ra2: {
-      name: "Steal a Dragon", emoji: "🐉", maxPlayers: 8, analytics: "on",
-      // live: coins, income, dragons, castle, zone, idle, carrying (+ more)
-      zones: { own_base: "at home", other_base: "in a base", road: "on the road", open: "outside" },
-      chips: (l, g) => [l.carrying && `<span class="chip">carrying</span>`, l.zone && `<span class="chip">${g.zones[l.zone] || ""}</span>`],
-      stats: (l, p) => {
-        const gained = l.coins != null && p.start_coins != null ? l.coins - p.start_coins : null;
-        return `<div class="mini">🪙 ${num(l.coins)}${gained != null && gained > 0 ? ` <span style="color:var(--good)">+${num(gained)}</span>` : ""}</div>
-        <div class="mini">${num(l.income)}/s · 🐉 ${l.dragons ?? "–"} · 🏰 ${l.castle ?? "–"}</div>`;
-      },
+      name: "Steal a Dragon", emoji: "🐉", color: "#f26b3a", max: 8, analytics: true,
+      zones: { own_base: "at home", other_base: "in someone's base", road: "on the road", open: "outside" },
+      line: (l, p, g) => `🪙 ${num(l.coins)} · 🐉 ${l.dragons ?? "–"} · 🏰 ${l.castle ?? "–"}${l.carrying ? " · carrying" : ""}`,
+      details: (l, p, g) => [["Coins", `${num(l.coins)}${gain(l, p)}`], ["Income", l.income != null ? num(l.income) + "/s" : null],
+        ["Dragons", l.dragons], ["Castle", l.castle], ["Where", g.zones[l.zone] || l.zone], ["Carrying a dragon", l.carrying ? "yes" : null]],
       reasons: { bonk: "😵 Too much bonking", robbed: "😡 Got robbed a lot", lag: "🐢 Laggy", popups: "💸 Too many Robux pop-ups", boring: "😴 Not much to do", confusing: "🤔 Don't get it" },
       feedbackStats: [["bonked", "Times bonked", "bonked"], ["robbed", "Times robbed", "robbed"]],
-      askedAfter: "The card shows after 7 minutes of play.",
-      showEarned: true,
+      askedAfter: "The card shows after 7 minutes of play.", showEarned: true,
     },
-    ra3: { name: "Raid a Planet", emoji: "🪐", maxPlayers: 12, analytics: "off" },
-    ra4: { name: "Snipe a Noob", emoji: "🎯", maxPlayers: 24, analytics: "off" },
-    ra5: {
-      name: "The Last Train", emoji: "🚂", maxPlayers: 20, analytics: "on",
-      // live: zone, phase, bag (items in the unbanked field bag), cabin (upgrades built, 0-15), distance (km), stops, idle
-      zones: { station: "at the station", train: "aboard", cabin: "in cabin", outside: "outside", stranded: "stranded", recovery: "recovering" },
-      zoneChip: { stranded: "bad", recovery: "idle" },
-      phases: { lobby: "in the lobby", traveling: "traveling", arriving: "arriving", scavenging: "scavenging", warning: "train leaving soon", departing: "departing", ended: "trip over" },
-      chips: (l, g) => [
-        l.zone && `<span class="chip ${g.zoneChip[l.zone] || ""}">${esc(g.zones[l.zone] || l.zone)}</span>`,
-        l.phase && `<span class="chip ${l.phase === "warning" ? "idle" : ""}">${esc(g.phases[l.phase] || l.phase)}</span>`,
-      ],
-      // three short lines rather than one long one, so the name and chips keep their room
-      stats: (l) => `<div class="mini">🎒 ${l.bag ?? "–"} in bag</div><div class="mini">🛠 ${l.cabin ?? "–"}/15 cabin</div>
-        <div class="mini">🚂 ${l.distance == null ? "–" : Math.round(Number(l.distance) * 10) / 10} km · ${l.stops ?? "–"} stop${l.stops === 1 ? "" : "s"}</div>`,
-      // emoji as on the game's 👎 card (Constants.DISLIKE_REASONS)
-      reasons: { timer: "😰 Train leaves too fast", lost: "🧭 Got lost / left behind", slow: "🐌 Upgrades take too long", lag: "🐢 Laggy", boring: "😴 Not much to do", confusing: "🤔 Don't get it" },
-    },
-    ra6: {
-      name: "Survive the 6-7", emoji: "🌲", maxPlayers: 6, analytics: "soon",
-      // live: phase (day | dusk | night | boss | results), day (1-7: nights 1-6, then Mega Kermy on night 7), status
-      // (camp | forest | deep | downed | ghost | waiting: joined after the roster locked), hp, camp (tier 1-4),
-      // kills, loot (finds this run), revives, difficulty, level, idle
-      phases: { day: "☀️ day", dusk: "🌆 dusk", night: "🌙 night", boss: "👹 Mega Kermy", results: "🏁 run over", idle: "starting" },
-      statuses: { camp: "🔥 at camp", forest: "🌲 forest", deep: "🌑 deep forest", downed: "🆘 downed", ghost: "👻 ghost", waiting: "⏳ next run" },
-      statusChip: { downed: "bad", ghost: "idle", waiting: "idle" },
-      chips: (l, g) => [
-        l.status && `<span class="chip ${g.statusChip[l.status] || ""}">${esc(g.statuses[l.status] || l.status)}</span>`,
-        l.phase && `<span class="chip ${l.phase === "boss" ? "bad" : l.phase === "night" ? "idle" : ""}">${esc(g.phases[l.phase] || l.phase)}${l.day && l.phase !== "boss" && l.phase !== "results" ? " " + esc(l.day) : ""}</span>`,
-        l.difficulty && l.difficulty !== "normal" && `<span class="chip vip">${esc(l.difficulty)}</span>`,
-      ],
-      stats: (l) => `<div class="mini">❤️ ${l.hp ?? "–"} · 🏕 camp ${l.camp ?? "–"}/4</div>
-        <div class="mini">⚔️ ${l.kills ?? "–"} · 🎁 ${l.loot ?? "–"} · 🤝 ${l.revives ?? "–"}</div>`,
-      // emoji as on the game's 👎 card (Constants.DISLIKE_REASONS)
-      reasons: { scary: "😱 Too scary", hard: "💀 Too hard", long: "🐌 Runs take too long", lag: "🐢 Laggy", boring: "😴 Not much to do", confusing: "🤔 Don't get it" },
+    ra4: {
+      name: "Snipe a Noob", emoji: "🎯", color: "#14b3a0", max: 24, analytics: false,
+      line: () => "", details: () => [], reasons: {}, feedbackStats: [], askedAfter: "",
     },
     ra8: {
-      name: "Build the Biggest Raft", emoji: "⛵", maxPlayers: 8, analytics: "on",
-      // live: where (raft | water | island | visiting), voyage (docked | sailing | island | home), tier (the raft,
-      // 1-6), tiles, level, voyages (this session), found (discoveries this session), hp, idle
-      wheres: { raft: "⛵ on their raft", water: "🌊 in the water", island: "🏝️ on an island", visiting: "🤝 visiting" },
-      voyages: { docked: "docked", sailing: "⛵ sailing", island: "🏝️ at an island", home: "⛵ sailing home" },
-      chips: (l, g) => [
-        l.where && `<span class="chip ${l.where === "water" ? "idle" : ""}">${esc(g.wheres[l.where] || l.where)}</span>`,
-        l.voyage && l.voyage !== "docked" && `<span class="chip">${esc(g.voyages[l.voyage] || l.voyage)}</span>`,
-      ],
-      stats: (l) => `<div class="mini">⛵ tier ${l.tier ?? "–"} · 🟫 ${l.tiles ?? "–"} tiles</div>
-        <div class="mini">🧭 ${l.voyages ?? "–"} voyages · 🔎 ${l.found ?? "–"} found · ❤️ ${l.hp ?? "–"}</div>`,
-      // emoji as on the game's 👎 card (Constants.DISLIKE_REASONS)
+      name: "Build the Biggest Raft", emoji: "⛵", color: "#2f8ee6", max: 20, analytics: true,
+      wheres: { raft: ["⛵", "on their raft"], water: ["🌊", "in the water"], island: ["🏝️", "on an island"], visiting: ["🤝", "visiting"] },
+      voyages: { docked: "docked", sailing: "sailing", island: "at an island", home: "sailing home" },
+      line: (l, p, g) => `${(g.wheres[l.where] || [""])[0]} T${l.tier ?? "–"} · 🟫 ${l.tiles ?? "–"} · 🧭 ${l.voyages ?? "–"}`,
+      details: (l, p, g) => [["Where", (g.wheres[l.where] || [null, l.where])[1]], ["Voyage", g.voyages[l.voyage] || l.voyage],
+        ["Raft tier", l.tier], ["Raft size", l.tiles], ["Level", l.level], ["Voyages this visit", l.voyages], ["Found this visit", l.found], ["Health", l.hp]],
       reasons: { slow: "🐌 Building takes too long", lost: "🧭 Didn't know what to do", empty: "😴 Not much to find", lag: "🐢 Laggy", hard: "💀 The sea is too dangerous", confusing: "🤔 Don't get it" },
-    },
-    ra7: {
-      name: "Hold the Castle", emoji: "🏰", maxPlayers: 24, analytics: "on",
-      // live: team (dwarf | monster), job, phase, shrine (the one the monsters are after, 1-3), built (pieces this
-      // match), beaten (monsters or dwarves beaten this match), hp, idle
-      teams: { dwarf: "🧔 dwarf", monster: "👹 monster" },
-      phases: { intermission: "between matches", build: "build time", plague: "the plague", fight: "the attack", laststand: "last stand", ended: "match over" },
-      chips: (l, g) => [
-        l.team && `<span class="chip ${l.team === "monster" ? "bad" : ""}">${esc(g.teams[l.team] || l.team)}${l.job ? " · " + esc(l.job) : ""}</span>`,
-        l.phase && `<span class="chip ${l.phase === "laststand" ? "idle" : ""}">${esc(g.phases[l.phase] || l.phase)}</span>`,
-      ],
-      stats: (l) => `<div class="mini">🛠 ${l.built ?? "–"} built · ⚔️ ${l.beaten ?? "–"} beaten</div>
-        <div class="mini">🏰 shrine ${l.shrine ?? "–"} · ❤️ ${l.hp ?? "–"}</div>`,
-      // emoji as on the game's 👎 card (Constants.DISLIKE_REASONS)
-      reasons: { doomed: "😩 Dwarves always lose", weak: "😤 Monsters are too weak", boring: "😴 Build time is boring", lag: "🐢 Laggy", confusing: "🤔 Don't get it", unfair: "😠 Teams feel unfair" },
+      feedbackStats: [], askedAfter: "",
     },
   };
-  const DEFAULTS = {
-    zones: {}, phases: {}, zoneChip: {}, reasons: {}, feedbackStats: [], askedAfter: "", showEarned: false,
-    chips: (l, g) => [l.zone && `<span class="chip">${esc(g.zones[l.zone] || l.zone)}</span>`],
-    stats: () => "",
-  };
-  for (const [id, g] of Object.entries(GAMES)) GAMES[id] = { ...DEFAULTS, ...g, id };
-  const isGame = (id) => Object.prototype.hasOwnProperty.call(GAMES, id);
+  const ORDER = Object.keys(GAMES);
+  for (const id of ORDER) GAMES[id].id = id;
 
-  // the game on screen: ?game= in the URL, else the last one picked here, else Steal a Dragon
-  let game = (() => {
-    const fromUrl = new URLSearchParams(location.search).get("game");
-    if (fromUrl && isGame(fromUrl)) return fromUrl;
-    try { const saved = localStorage.getItem("liveGame"); if (saved && isGame(saved)) return saved; } catch (e) {}
-    return "ra2";
-  })();
-  let cfg = GAMES[game];
-  function remember() {
-    try { localStorage.setItem("liveGame", game); } catch (e) {}
-    try {
-      const u = new URL(location.href);
-      if (u.searchParams.get("game") !== game) { u.searchParams.set("game", game); history.replaceState(null, "", u); }
-    } catch (e) {}
-    document.title = `${cfg.emoji} ${cfg.name} Live`;
-  }
-  remember();
-
-  let state = null, lastOk = 0, error = null, loading = true;
-  const cache = {}; // game -> { data, at }: switching back shows its last view at once while it refreshes
-  let summary = null, summaryRetryAt = 0; // ?summary=1: how many are on each game, for the switcher
-  let period = (() => { try { return localStorage.getItem("livePeriod") || "hour"; } catch (e) { return "hour"; } })();
-  const PERIODS = { hour: ["Last hour", "vs the hour before"], day: ["Last 24 h", "vs the 24 h before"], week: ["Last 7 days", "vs the 7 days before"] };
-  // metric: label, format, which way is good
-  const METRICS = [
-    ["players", "Players", (v) => v ?? "–", 1],
-    ["new_players", "New players", (v) => v ?? "–", 1],
-    ["avg_min", "Avg session", (v) => v == null ? "–" : v + "m", 1],
-    ["quick_quit_pct", "New quit < 1 min", (v) => v == null ? "–" : v + "%", -1],
-    ["stay3_pct", "New stay 3+ min", (v) => v == null ? "–" : v + "%", 1],
-    ["tutorial_pct", "Finish tutorial", (v) => v == null ? "–" : v + "%", 1],
-    ["robux", "Robux buys", (v) => v ?? "–", 1],
-  ];
-  function deltaHtml(now, prev, good) {
-    if (now == null || prev == null) return `<span class="delta flat">no data before</span>`;
-    const d = now - prev;
-    if (Math.abs(d) < 1e-9) return `<span class="delta flat">= same</span>`;
-    const pctChange = prev !== 0 ? Math.round((d / Math.abs(prev)) * 100) : null;
-    const better = d * good > 0;
-    const shown = pctChange == null ? (d > 0 ? "+" : "") + Math.round(d * 10) / 10 : (d > 0 ? "+" : "") + pctChange + "%";
-    return `<span class="delta ${better ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${shown}</span>`;
-  }
-  // a small single-series bar chart of one metric per hour, with lines where a new version went live
-  function hourlyChart(id, title, sub, key, fmt) {
-    const hours = (state.stats && state.stats.hourly) || [];
-    const W = 600, H = 150, padL = 4, padB = 18, bw = (W - padL) / Math.max(1, hours.length);
-    const vals = hours.map((h) => h[key]);
-    const max = Math.max(1, ...vals.filter((v) => v != null));
-    const bars = hours.map((h, i) => {
-      const v = h[key]; if (v == null || v === 0) return "";
-      const bh = Math.max(2, (v / max) * (H - padB - 14));
-      return `<rect x="${padL + i * bw + 1}" y="${H - padB - bh}" width="${Math.max(1, bw - 2)}" height="${bh}" rx="3" fill="var(--accent)"></rect>`;
-    }).join("");
-    const hits = hours.map((h, i) => `<rect data-tip="${esc(new Date(h.t).toLocaleString([], { weekday: "short", hour: "numeric" }))}: ${esc(fmt(h[key]))} (${h.sessions} sessions)" x="${padL + i * bw}" y="0" width="${bw}" height="${H}" fill="transparent"></rect>`).join("");
-    const t0 = hours.length ? Date.parse(hours[0].t) : 0, span = 48 * 3600e3;
-    const marks = ((state.stats && state.stats.versions) || []).filter((v) => v.version && Date.parse(v.first_seen) > t0).map((v) => {
-      const x = padL + ((Date.parse(v.first_seen) - t0) / span) * (W - padL);
-      return `<line x1="${x}" x2="${x}" y1="0" y2="${H - padB}" stroke="var(--muted)" stroke-dasharray="3 3"></line><text x="${x + 3}" y="10" font-size="10" fill="var(--muted)">v${v.version}</text>`;
-    }).join("");
-    const labels = hours.map((h, i) => i % 6 === 0 ? `<text x="${padL + i * bw}" y="${H - 4}" font-size="10" fill="var(--muted)">${new Date(h.t).toLocaleTimeString([], { hour: "numeric" })}</text>` : "").join("");
-    return `<div class="chart" id="${id}"><div class="title">${title}</div><div class="sub">${sub}</div>
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="0" x2="${W}" y1="${H - padB}" y2="${H - padB}" stroke="var(--line)"></line>${bars}${marks}${labels}${hits}</svg><div class="tip"></div></div>`;
-  }
-
-  function getKey() {
-    const fromUrl = new URLSearchParams(location.search).get("key");
-    if (fromUrl) { try { localStorage.setItem("liveKey", fromUrl); } catch (e) {} return fromUrl; }
-    try { return localStorage.getItem("liveKey") || ""; } catch (e) { return ""; }
-  }
-  let KEY = getKey();
-
+  // Helpers ------------------------------------------------------------------------------------------------------
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const num = (n) => n == null ? "–" : n >= 1e12 ? (n / 1e12).toFixed(1) + "T" : n >= 1e9 ? (n / 1e9).toFixed(1) + "B" : n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
-  const dur = (sec) => { sec = Math.max(0, Math.floor(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60; return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}:${String(s).padStart(2, "0")}`; };
-  const flag = (cc) => cc && cc.length === 2 ? String.fromCodePoint(...[...cc.toUpperCase()].map((c) => 127397 + c.charCodeAt(0))) : "";
-  const deviceIcon = (d) => ({ touch: "📱", keyboard: "💻", gamepad: "🎮", vr: "🥽" }[d] || "❔");
+  const num = (n) => n == null || n === "" ? "–" : Math.abs(n) >= 1e12 ? (n / 1e12).toFixed(1) + "T" : Math.abs(n) >= 1e9 ? (n / 1e9).toFixed(1) + "B"
+    : Math.abs(n) >= 1e6 ? (n / 1e6).toFixed(1) + "M" : Math.abs(n) >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
+  const gain = (l, p) => { const d = l.coins != null && p.start_coins != null ? l.coins - p.start_coins : null; return d > 0 ? ` (+${num(d)})` : ""; };
+  const dur = (sec) => { sec = Math.max(0, Math.floor(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+    return h ? `${h}h${String(m).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`; };
   const ago = (iso) => (Date.now() - new Date(iso).getTime()) / 1000;
-  const avatar = (url) => url ? `<img class="avatar" src="${esc(url)}" alt="" loading="lazy">` : `<div class="avatar"></div>`;
+  const since = (iso) => { const s = ago(iso); return s < 60 ? "just now" : s < 3600 ? `${Math.floor(s / 60)}m ago` : `${Math.floor(s / 3600)}h ${Math.floor(s % 3600 / 60)}m ago`; };
+  const flag = (cc) => cc && cc.length === 2 ? String.fromCodePoint(...[...cc.toUpperCase()].map((c) => 127397 + c.charCodeAt(0))) : "";
+  const DEVICE = { touch: ["📱", "phone or tablet"], keyboard: ["💻", "computer"], gamepad: ["🎮", "console"], vr: ["🥽", "VR"] };
+  const pct = (x) => x == null ? "–" : x + "%";
+  const store = { get: (k, d) => { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
 
-  function keyScreen(msg) {
-    app.innerHTML = `<div class="key"><h1 style="margin:0;font-size:20px">${cfg.emoji} ${esc(cfg.name)} Live</h1>
-      <p style="color:var(--muted);margin:6px 0 0">Paste the view key to see who's playing.</p>
-      ${msg ? `<p class="err">${esc(msg)}</p>` : ""}
-      <input id="k" placeholder="live_..." autofocus><button id="go">Open</button></div>`;
-    const go = () => { KEY = document.getElementById("k").value.trim(); try { localStorage.setItem("liveKey", KEY); } catch (e) {} load(); };
-    document.getElementById("go").onclick = go;
-    document.getElementById("k").onkeydown = (e) => { if (e.key === "Enter") go(); };
+  // State ---------------------------------------------------------------------------------------------------------
+  let KEY = (() => {
+    const fromUrl = new URLSearchParams(location.search).get("key");
+    if (fromUrl) { store.set("liveKey", fromUrl); return fromUrl; }
+    return store.get("liveKey", "") || DEFAULT_KEY;
+  })();
+  let view = (() => { // "all" or a game id: ?game= in the address, else the last one picked here
+    const q = new URLSearchParams(location.search).get("game");
+    const saved = store.get("liveView", "all");
+    return q && (q === "all" || GAMES[q]) ? q : saved === "all" || GAMES[saved] ? saved : "all";
+  })();
+  let density = store.get("liveDensity", "auto"); // auto | 1 | 2 | 3 | 4
+  let period = store.get("livePeriod", "day");
+  let theme = store.get("liveTheme", "system");
+  const data = {}; // game -> { body, at, error }
+  let lastOk = 0, loading = true, keyProblem = null;
+  const people = new Map(); // tile key -> { p, g, srv } for the hover card
+
+  function applyTheme() {
+    if (theme === "system") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", theme);
+  }
+  applyTheme();
+
+  function remember() {
+    store.set("liveView", view);
+    try { const u = new URL(location.href); u.searchParams.delete("key"); u.searchParams.set("game", view); history.replaceState(null, "", u); } catch (e) {}
+    const total = onlineTotal();
+    document.title = `${total ? `(${total}) ` : ""}${view === "all" ? "Live · all games" : GAMES[view].emoji + " " + GAMES[view].name}`;
   }
 
-  // how many are on each game right now; an older roblox-live without ?summary=1 answers with a whole dashboard
-  // instead, so then there are no counts (and it's asked again in 5 minutes rather than every refresh)
-  async function loadSummary() {
-    if (Date.now() < summaryRetryAt) return;
-    try {
-      const res = await fetch(`${ENDPOINT}?summary=1`, { headers: { "X-View-Key": KEY } });
-      const body = res.ok ? await res.json() : null;
-      if (body && body.games && typeof body.games === "object") { summary = body; return; }
-      if (body) summaryRetryAt = Date.now() + 5 * 60e3;
-      summary = null;
-    } catch (e) { summary = null; }
-  }
-
-  async function load() {
-    if (!KEY) { if (!document.getElementById("k")) keyScreen(); return; }
-    const g = game; // a switch while this is on its way doesn't show this game's answer under the other game
-    loadSummary().then(paintTabs); // on its own: a slow summary never holds up the dashboard
+  // Loading: all three games every 10 s (so the tabs count everyone and switching is instant) ---------------------------
+  async function loadGame(g) {
     try {
       const res = await fetch(`${ENDPOINT}?game=${g}`, { headers: { "X-View-Key": KEY } });
-      if (res.status === 401) { try { localStorage.removeItem("liveKey"); } catch (e) {} KEY = ""; return keyScreen("That key didn't work."); }
+      if (res.status === 401) { keyProblem = "That key didn't work."; return; }
       if (!res.ok) throw new Error("HTTP " + res.status);
-      const body = await res.json();
-      cache[g] = { data: body, at: Date.now() };
-      if (g === game) { state = body; lastOk = cache[g].at; error = null; }
-    } catch (e) { if (g === game) error = e.message; }
-    if (g !== game || !KEY) return;
+      data[g] = { body: await res.json(), at: Date.now(), error: null };
+    } catch (e) { data[g] = { ...(data[g] || {}), error: e.message }; }
+  }
+  async function loadAll() {
+    if (!KEY) return keyScreen();
+    await Promise.all(ORDER.map(loadGame));
+    if (keyProblem) { store.set("liveKey", ""); KEY = ""; const m = keyProblem; keyProblem = null; return keyScreen(m); }
+    if (ORDER.some((g) => data[g] && data[g].body && !data[g].error)) lastOk = Date.now();
     loading = false;
     render();
   }
 
-  let timer = null;
-  function switchGame(id) {
-    if (!isGame(id) || id === game) return;
-    game = id; cfg = GAMES[id];
-    const c = cache[id];
-    state = c ? c.data : null; lastOk = c ? c.at : 0; error = null; loading = true;
-    remember();
-    render();
-    clearInterval(timer); timer = setInterval(load, REFRESH_MS);
-    load();
+  function keyScreen(msg) {
+    document.getElementById("head").innerHTML = `<div class="brand"><span class="pulse wait"></span><span>Live</span></div>`;
+    document.getElementById("app").innerHTML = `<div class="keybox"><h1>🎮 Live dashboard</h1>
+      <p>Paste the view key to see who's playing Steal a Dragon, Snipe a Noob and Build the Biggest Raft. It stays in this browser.</p>
+      ${msg ? `<p class="err">${esc(msg)}</p>` : ""}<input id="k" placeholder="live_…" autocomplete="off"><button class="btn" id="go">Open</button></div>`;
+    const go = () => { KEY = document.getElementById("k").value.trim(); if (!KEY) return; store.set("liveKey", KEY); loadAll(); };
+    document.getElementById("go").onclick = go;
+    const input = document.getElementById("k");
+    input.onkeydown = (e) => { if (e.key === "Enter") go(); };
+    input.focus();
   }
 
-  function playerRow(p) {
+  // Counting ------------------------------------------------------------------------------------------------------
+  const serversOf = (g) => (data[g] && data[g].body && data[g].body.servers) || [];
+  const countOf = (s) => Math.max(s.players.length, s.reported_players || 0);
+  const onlineOf = (g) => serversOf(g).reduce((a, s) => a + countOf(s), 0);
+  const onlineTotal = () => ORDER.reduce((a, g) => a + onlineOf(g), 0);
+
+  // The header -------------------------------------------------------------------------------------------------------
+  function headerHtml() {
+    const stale = Date.now() - lastOk > REFRESH_MS * 3;
+    const errs = ORDER.filter((g) => data[g] && data[g].error);
+    const state = loading ? "wait" : stale || errs.length === ORDER.length ? "off" : "";
+    const tab = (id, label, emoji, n, color) => `<button class="tab${view === id ? " on" : ""}" data-view="${id}" style="--g:${color}" title="${esc(label)}">
+      <span class="te">${emoji}</span><span>${esc(label)}</span><span class="count${n ? " live" : ""}">${n ? `<span class="d"></span>` : ""}${n}</span></button>`;
+    return `<div class="brand"><span class="pulse ${state}"></span><span class="t">Live</span></div>
+      <nav class="tabs" role="tablist">${tab("all", "All games", "🎮", onlineTotal(), "var(--accent)")}
+        ${ORDER.map((g) => tab(g, GAMES[g].name, GAMES[g].emoji, onlineOf(g), GAMES[g].color)).join("")}</nav>
+      <span class="grow"></span>
+      <div class="ctrl"><span class="ago hide-s" id="ago">${agoText()}</span>
+        <div class="seg" title="Tile size (D)">${[["auto", "Auto"], ["1", "L"], ["2", "M"], ["3", "S"], ["4", "XS"]].map(([k, v]) => `<button data-density="${k}" class="${density === k ? "on" : ""}">${v}</button>`).join("")}</div>
+        <button class="btn" id="theme" title="Theme: ${theme} (T)">${theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "🌓"}</button>
+        <button class="btn" id="refresh" title="Refresh (R)">⟳</button></div>`;
+  }
+  function agoText() {
+    if (loading) return "loading…";
+    if (Date.now() - lastOk > REFRESH_MS * 3) return "reconnecting…";
+    return `updated ${Math.max(0, Math.round((Date.now() - lastOk) / 1000))}s ago`;
+  }
+
+  // The board ---------------------------------------------------------------------------------------------------------
+  function tileHtml(p, g, srv) {
     const l = p.live || {};
-    const chips = [];
-    if (p.is_new) chips.push(`<span class="chip new">NEW</span>`);
-    else if (p.session_no) chips.push(`<span class="chip">visit #${p.session_no}</span>`);
-    if (l.idle) chips.push(`<span class="chip idle">idle</span>`);
-    if (p.premium) chips.push(`<span class="chip vip">Premium</span>`);
-    if (p.friends_in_server > 0) chips.push(`<span class="chip friend">${p.friends_in_server} friend${p.friends_in_server > 1 ? "s" : ""}</span>`);
-    chips.push(...cfg.chips(l, cfg, p).filter(Boolean));
-    return `<div class="p">${avatar(p.headshot)}
-      <div class="who"><div class="dn">${esc(p.display_name || p.username || p.user_id)} <span title="${esc(p.device)}">${deviceIcon(p.device)}</span> ${flag(p.country)}</div>
-        <div class="un">@${esc(p.username || p.user_id)}${p.join_source && p.join_source !== "direct" ? " · " + esc(p.join_source) : ""}</div>
-        <div class="chips">${chips.join("")}</div></div>
-      <div class="right"><div class="time" data-since="${esc(p.started_at)}">${dur(ago(p.started_at))}</div>
-        ${cfg.stats(l, p)}</div></div>`;
+    const key = `${g.id}:${p.user_id}`;
+    people.set(key, { p, g, srv });
+    const dev = DEVICE[p.device] || ["", ""];
+    const marks = [p.premium ? `<span class="mk" title="Premium">⭐</span>` : "", p.friends_in_server > 0 ? `<span class="mk" title="friends here">👥</span>` : "",
+      l.idle ? `<span class="mk" title="idle">💤</span>` : ""].join("");
+    const cls = ["tile", p.is_new ? "new" : "", l.idle ? "idle" : ""].filter(Boolean).join(" ");
+    return `<a class="${cls}" href="https://www.roblox.com/users/${encodeURIComponent(p.user_id)}/profile" target="_blank" rel="noopener" data-p="${esc(key)}">
+      <span class="av">${p.headshot ? `<img src="${esc(p.headshot)}" alt="" loading="lazy">` : ""}${dev[0] ? `<span class="dv">${dev[0]}</span>` : ""}</span>
+      <span class="nm">${esc(p.display_name || p.username || p.user_id)}${marks}</span>
+      <span class="tm" data-since="${esc(p.started_at)}">${dur(ago(p.started_at))}</span>
+      <span class="st">${esc(g.line(l, p, g))}</span></a>`;
   }
 
-  // Player voice: the in-game "Do you like the game?" card and the update-alerts list
-  function voiceHtml() {
-    const st = state.stats || {};
+  function serverHtml(s, g, newest) {
+    const n = countOf(s), known = s.players.length, unknown = n - known;
+    const full = n >= g.max;
+    const players = [...s.players].sort((a, b) => new Date(a.started_at) - new Date(b.started_at));
+    const old = newest && s.version && s.version < newest;
+    const ghost = unknown > 0 ? `<div class="tile ghost" title="${g.analytics ? "This server runs an older version, so it doesn't send names. They show once it restarts." : `${esc(g.name)} doesn't send player details, only how many are on.`}">${known ? "+" : ""}${unknown} player${unknown === 1 ? "" : "s"}${g.analytics ? " (older version)" : " · counts only"}</div>` : "";
+    // as wide as its tiles want (up to 8 across), so small servers share a row and big ones get the whole width
+    const across = Math.max(1, Math.min(8, known + (unknown > 0 ? 2 : 0)));
+    return `<div class="srv" style="--w: calc(var(--tw) * ${across} + var(--tg) * ${across - 1} + 18px)">
+      <div class="shead"><span class="sn">${s.server_no != null ? "Server " + s.server_no : "Server"}</span>
+        <span class="cap${full ? " full" : ""}">${n}/${g.max}</span><span class="capbar"><i style="width:${Math.min(100, n / g.max * 100)}%"></i></span>
+        ${s.version ? `<span class="chip${old ? " warn" : ""}" title="${old ? "an older version than the newest server" : "game version"}">v${s.version}${old ? " old" : ""}</span>` : ""}
+        <span class="job" title="job id ${esc(s.job_id)}${s.last_seen ? ` · last heard ${dur(ago(s.last_seen))} ago` : ""}">${esc(String(s.job_id || "").slice(0, 6))}</span></div>
+      ${known || ghost ? `<div class="tiles">${players.map((p) => tileHtml(p, g, s)).join("")}${ghost}</div>` : `<div class="mini" style="padding:0 3px 2px">nobody on</div>`}</div>`;
+  }
+
+  function gameSection(gid) {
+    const g = GAMES[gid];
+    const d = data[gid];
+    const servers = serversOf(gid).filter((s) => countOf(s) > 0 || s.players.length);
+    const online = onlineOf(gid);
+    const today = (d && d.body && d.body.today) || null;
+    const newest = Math.max(0, ...servers.map((s) => s.version || 0)) || null;
+    const meta = today && g.analytics ? `<span class="meta">today <b>${today.players ?? 0}</b> players · <b>${today.new_players ?? 0}</b> new · avg <b>${today.avg_minutes ?? "–"}</b> min</span>` : "";
+    const head = `<div class="ghead"><span class="gn"><span class="ge">${g.emoji}</span>${esc(g.name)}</span>
+      <span class="on">${online} online</span><span class="meta">${servers.length} server${servers.length === 1 ? "" : "s"}</span>${meta}
+      ${d && d.error ? `<span class="chip bad" title="${esc(d.error)}">can't reach it</span>` : ""}${!g.analytics ? `<span class="chip" title="only the player count per server is known">counts only</span>` : ""}</div>`;
+    if (!d || !d.body) return `<section class="gsec" style="--g:${g.color}">${head}<div class="quiet">Loading…</div></section>`;
+    if (!servers.length) return `<section class="gsec" style="--g:${g.color}">${head}<div class="quiet">${g.emoji} Nobody's playing ${esc(g.name)} right now.</div></section>`;
+    return `<section class="gsec" style="--g:${g.color}">${head}<div class="servers">${servers.map((s) => serverHtml(s, g, newest)).join("")}</div></section>`;
+  }
+
+  function boardHtml() {
+    people.clear();
+    const games = view === "all" ? ORDER : [view];
+    return games.map(gameSection).join("") + `<div class="legend"><span><span class="k">Green edge</span> new player</span><span>💤 idle</span>
+      <span>⭐ Premium</span><span>👥 has friends here</span><span>📱 💻 🎮 device</span><span>Hover for details · click for their Roblox profile</span></div>`;
+  }
+
+  // Auto density: the biggest tiles that let every player fit on the screen without scrolling
+  function fit() {
+    const board = document.getElementById("board");
+    if (!board) return;
+    if (density !== "auto") { board.dataset.d = density; return; }
+    const head = document.getElementById("head").offsetHeight;
+    const room = window.innerHeight - head - 24 - 34; // (the main padding, and the "more stats" link under the board)
+    for (const d of ["1", "2", "3", "4"]) {
+      board.dataset.d = d;
+      if (board.scrollHeight <= room) return;
+    }
+  }
+
+  // The stats ---------------------------------------------------------------------------------------------------------
+  const PERIODS = { hour: ["Last hour", "vs the hour before"], day: ["Last 24 h", "vs the 24 h before"], week: ["Last 7 days", "vs the 7 days before"] };
+  const METRICS = [ // key, label, format, which way is good
+    ["players", "Players", (v) => v ?? "–", 1],
+    ["new_players", "New players", (v) => v ?? "–", 1],
+    ["avg_min", "Avg session", (v) => v == null ? "–" : v + "m", 1],
+    ["quick_quit_pct", "New quit < 1 min", pct, -1],
+    ["stay3_pct", "New stay 3+ min", pct, 1],
+    ["tutorial_pct", "Finish tutorial", pct, 1],
+    ["robux", "Robux buys", (v) => v ?? "–", 1],
+  ];
+  function delta(now, prev, good) {
+    if (now == null || prev == null) return `<span class="delta flat">no data before</span>`;
+    const d = now - prev;
+    if (Math.abs(d) < 1e-9) return `<span class="delta flat">= same</span>`;
+    const ch = prev !== 0 ? Math.round((d / Math.abs(prev)) * 100) : null;
+    const shown = ch == null ? (d > 0 ? "+" : "") + Math.round(d * 10) / 10 : (d > 0 ? "+" : "") + ch + "%";
+    return `<span class="delta ${d * good > 0 ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${shown}</span>`;
+  }
+  // a sparkline of the last 24 hours of a metric, in the game's colour
+  function spark(hours, key, color) {
+    const pts = hours.slice(-24).map((h, i) => [i, h[key]]).filter(([, v]) => v != null);
+    if (pts.length < 2) return `<svg viewBox="0 0 100 30"></svg>`;
+    const max = Math.max(...pts.map(([, v]) => v), 1), min = Math.min(...pts.map(([, v]) => v), 0);
+    const x = (i) => (i / 23) * 100, y = (v) => 27 - ((v - min) / (max - min || 1)) * 24;
+    const line = pts.map(([i, v]) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+    return `<svg viewBox="0 0 100 30" preserveAspectRatio="none"><polyline points="${x(pts[0][0])},30 ${line} ${x(pts[pts.length - 1][0])},30" fill="${color}" opacity=".12" stroke="none"></polyline>
+      <polyline points="${line}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"></polyline></svg>`;
+  }
+  // bars of one metric per hour for the last 48 hours, with dashed lines where a new version went live
+  function hourly(body, title, sub, key, fmt, color) {
+    const hours = (body.stats && body.stats.hourly) || [];
+    const W = 600, H = 132, padB = 16, bw = W / Math.max(1, hours.length);
+    const vals = hours.map((h) => h[key]).filter((v) => v != null);
+    const max = Math.max(1, ...vals);
+    const bars = hours.map((h, i) => {
+      const v = h[key]; if (v == null || v === 0) return "";
+      const bh = Math.max(2, (v / max) * (H - padB - 12));
+      return `<rect x="${i * bw + 1}" y="${H - padB - bh}" width="${Math.max(1, bw - 2)}" height="${bh}" rx="2.5" fill="${color}"></rect>`;
+    }).join("");
+    const hits = hours.map((h, i) => `<rect data-tip="${esc(new Date(h.t).toLocaleString([], { weekday: "short", hour: "numeric" }))} · ${esc(fmt(h[key]))} (${h.sessions} sessions)" x="${i * bw}" y="0" width="${bw}" height="${H}" fill="transparent"></rect>`).join("");
+    const t0 = hours.length ? Date.parse(hours[0].t) : 0, span = 48 * 3600e3;
+    const marks = ((body.stats && body.stats.versions) || []).filter((v) => v.version && Date.parse(v.first_seen) > t0).map((v) => {
+      const x = ((Date.parse(v.first_seen) - t0) / span) * W;
+      return `<line x1="${x}" x2="${x}" y1="0" y2="${H - padB}" stroke="var(--faint)" stroke-dasharray="3 3"></line><text x="${x + 3}" y="9" font-size="9.5" fill="var(--muted)">v${v.version}</text>`;
+    }).join("");
+    const labels = hours.map((h, i) => i % 6 === 0 ? `<text x="${i * bw}" y="${H - 3}" font-size="9.5" fill="var(--muted)">${new Date(h.t).toLocaleTimeString([], { hour: "numeric" })}</text>` : "").join("");
+    return `<div class="chart"><div class="t">${title}<span class="sub">${sub}</span></div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line x1="0" x2="${W}" y1="${H - padB}" y2="${H - padB}" stroke="var(--line)"></line>${bars}${marks}${labels}${hits}</svg></div>`;
+  }
+
+  function periodSeg() {
+    return `<div class="seg">${Object.entries(PERIODS).map(([k, v]) => `<button data-period="${k}" class="${k === period ? "on" : ""}">${v[0]}</button>`).join("")}</div>
+      <span class="sub">${PERIODS[period][1]}</span>`;
+  }
+
+  function kpisHtml(gid) {
+    const g = GAMES[gid], body = data[gid].body, st = body.stats || {}, hours = st.hourly || [];
+    const c = st.compare && st.compare[period];
+    const servers = serversOf(gid);
+    return `<div class="kpis"><div class="kpi"><div class="k">Online now</div><div class="v">${onlineOf(gid)}</div>
+        <div class="s">${servers.length} server${servers.length === 1 ? "" : "s"} · ${g.max} a server</div></div>
+      ${METRICS.map(([key, label, fmt, good]) => {
+        const now = c ? c.now[key] : null, prev = c ? c.prev[key] : null;
+        const before = c && c.prev.sessions > 0;
+        return `<div class="kpi"><div class="k">${label}</div><div class="v">${fmt(now)}</div>
+          <div class="s">${before ? delta(now, prev, good) + `<span>was ${fmt(prev)}</span>` : `<span class="delta flat">no data before</span>`}</div>
+          ${spark(hours, key, g.color)}</div>`;
+      }).join("")}</div>`;
+  }
+
+  function voiceHtml(gid) {
+    const g = GAMES[gid], st = data[gid].body.stats || {};
     const fb = st.feedback, nt = st.notify;
     if (!fb || !nt) return "";
-    const pctTxt = (x) => x == null ? "–" : x + "%";
-    const row = (label, a, b, fmt, lowerIsBetter) => `<tr><td>${label}</td><td class="num">${fmt(a)}</td><td class="num">${fmt(b)}</td></tr>`;
-    const num = (x) => x == null ? "–" : x;
-    return `<h2>Player voice</h2>
+    const n = (x) => x == null ? "–" : x;
+    const row = (label, a, b, fmt) => `<tr><td>${label}</td><td class="num">${fmt(a)}</td><td class="num">${fmt(b)}</td></tr>`;
+    const reasons = Object.entries(fb.reasons || {}).sort((a, b) => b[1] - a[1]);
+    const withReason = fb.dislikes_with_reason || 0;
+    return `<h3>Player voice <span class="sub">the in-game "Do you like the game?" card and the update-alerts list</span></h3>
       <div class="voice">
-        <div class="vcard">
-          <div class="k">🔔 On the update-alerts list</div>
-          <div class="big">${nt.on_list}</div>
-          <div class="mini">players we can send a Roblox notification to</div>
-          <table><tbody>
-            <tr><td>Offered the alerts</td><td class="num">${nt.shown_players}</td></tr>
-            <tr><td>Said yes</td><td class="num">${nt.ever_opted} <span class="mini">(${pctTxt(nt.accept_pct)})</span></td></tr>
-            <tr><td>Joined in the last 24 h</td><td class="num">${nt.opted_24h}</td></tr>
-            <tr><td>Turned them off later</td><td class="num">${nt.left_list}</td></tr>
-          </tbody></table>
-        </div>
-        <div class="vcard">
-          <div class="k">👍 Do you like the game?</div>
-          <div class="big">${pctTxt(fb.all.like_pct)} <span class="mini" style="font-size:13px;font-weight:600">say yes</span></div>
-          <div class="bar"><div style="width:${fb.all.like_pct ?? 0}%"></div></div>
-          <div class="mini">${fb.all.likes} 👍 · ${fb.all.dislikes} 👎 all time · last 24 h: ${fb.day.likes} 👍 · ${fb.day.dislikes} 👎</div>
+        <div class="card"><div class="k">👍 Do you like the game?</div>
+          <div class="big">${pct(fb.all.like_pct)} <span class="mini" style="font-size:13px;font-weight:600">say yes</span></div>
+          <div class="bar" style="background:var(--bad-soft)"><i style="width:${fb.all.like_pct ?? 0}%;background:var(--good)"></i></div>
+          <div class="mini">${fb.all.likes} 👍 · ${fb.all.dislikes} 👎 all time · last 24 h ${fb.day.likes} 👍 · ${fb.day.dislikes} 👎</div>
           <table><thead><tr><th></th><th class="num">👍 players</th><th class="num">👎 players</th></tr></thead><tbody>
-            ${row("Minutes played when asked", fb.liked.minutes, fb.disliked.minutes, num)}
-            ${cfg.feedbackStats.map(([k, label]) => row(label, fb.liked[k], fb.disliked[k], num)).join("")}
-            ${row("On a phone", fb.liked.phone_pct, fb.disliked.phone_pct, pctTxt)}
-            ${row("First visit", fb.liked.new_pct, fb.disliked.new_pct, pctTxt)}
+            ${row("Minutes played when asked", fb.liked.minutes, fb.disliked.minutes, n)}
+            ${g.feedbackStats.map(([k, label]) => row(label, fb.liked[k], fb.disliked[k], n)).join("")}
+            ${row("On a phone", fb.liked.phone_pct, fb.disliked.phone_pct, pct)}${row("First visit", fb.liked.new_pct, fb.disliked.new_pct, pct)}
           </tbody></table>
-        </div>
-        <div class="vcard">
-          <div class="k">Why 👎</div>
-          ${(() => {
-            const names = cfg.reasons;
-            const entries = Object.entries(fb.reasons || {}).sort((a, b) => b[1] - a[1]);
-            const n = fb.dislikes_with_reason || 0;
-            if (!entries.length) return `<div class="empty" style="margin-top:8px">No reasons yet. Players pick them after tapping 👎.</div>`;
-            return `<div class="mini">${n} 👎 answer${n === 1 ? "" : "s"} with a reason (players can pick more than one)</div>` + entries.map(([k, v]) => `
-              <div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(names[k] || k)}</span><b>${v} <span class="mini">(${pctTxt(n ? Math.round(1000 * v / n) / 10 : null)})</span></b></div>
-              <div class="bar" style="background:var(--panel-2)"><div style="width:${n ? Math.round(100 * v / n) : 0}%;background:var(--bad)"></div></div></div>`).join("");
-          })()}
-        </div>
-        <div class="vcard" style="grid-column: 1 / -1">
-          <div class="k">What players said</div>
-          ${fb.recent.length ? `<div class="answers">${fb.recent.map((r) => `<div class="ans">
-            <div style="font-size:20px">${r.liked ? "👍" : "👎"}</div>
-            <div><div class="t">${esc(r.display_name || r.username || r.user_id)}${Array.isArray(r.reasons) && r.reasons.length ? " " + r.reasons.map((k) => `<span class="chip">${esc(k)}</span>`).join(" ") : ""}${r.text ? ` <span style="font-weight:500">“${esc(r.text)}”</span>` : ` <span class="mini">(no comment)</span>`}</div>
-              <div class="m">played ${num(r.minutes)} min${cfg.feedbackStats.map(([k, , word]) => ` · ${word} ${num(r[k])}`).join("")} · ${r.device === "touch" ? "📱 phone" : r.device === "gamepad" ? "🎮 console" : "💻 computer"} · v${r.place_version ?? "?"}</div></div>
-            <div class="mini" style="white-space:nowrap">${dur(ago(r.at))} ago</div></div>`).join("")}</div>` : `<div class="empty" style="margin-top:8px">No answers yet.${cfg.askedAfter ? " " + cfg.askedAfter : ""}</div>`}
-        </div>
+          <div class="k" style="margin-top:12px">🔔 On the update-alerts list</div>
+          <div style="display:flex;gap:16px;align-items:baseline;flex-wrap:wrap"><span class="big" style="font-size:24px">${nt.on_list}</span>
+            <span class="mini">${nt.ever_opted} said yes of ${nt.shown_players} offered (${pct(nt.accept_pct)}) · ${nt.opted_24h} today · ${nt.left_list} turned off</span></div></div>
+        <div class="card"><div class="k">Why 👎</div>
+          ${reasons.length ? `<div class="mini">${withReason} 👎 answer${withReason === 1 ? "" : "s"} with a reason (players can pick more than one)</div>` + reasons.map(([k, v]) => `
+            <div style="margin-top:9px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(g.reasons[k] || k)}</span><b>${v} <span class="mini">(${pct(withReason ? Math.round(1000 * v / withReason) / 10 : null)})</span></b></div>
+            <div class="bar"><i style="width:${withReason ? Math.round(100 * v / withReason) : 0}%;background:var(--bad)"></i></div></div>`).join("")
+            : `<div class="empty" style="margin-top:8px">No reasons yet. Players pick them after tapping 👎.</div>`}</div>
+        <div class="card"><div class="k">What players said</div>
+          ${fb.recent.length ? `<div class="answers">${fb.recent.map((r) => `<div class="ans"><div style="font-size:18px">${r.liked ? "👍" : "👎"}</div>
+            <div><b>${esc(r.display_name || r.username || r.user_id)}</b>${Array.isArray(r.reasons) && r.reasons.length ? " " + r.reasons.map((k) => `<span class="chip">${esc(g.reasons[k] || k)}</span>`).join(" ") : ""}${r.text ? ` “${esc(r.text)}”` : ` <span class="mini">(no comment)</span>`}
+              <div class="m">played ${n(r.minutes)} min${g.feedbackStats.map(([k, , word]) => ` · ${word} ${n(r[k])}`).join("")} · ${(DEVICE[r.device] || ["", "?"])[1]} · v${r.place_version ?? "?"}</div></div>
+            <div class="mini" style="white-space:nowrap">${since(r.at)}</div></div>`).join("")}</div>`
+            : `<div class="empty" style="margin-top:8px">No answers yet.${g.askedAfter ? " " + g.askedAfter : ""}</div>`}</div>
       </div>`;
   }
 
-  // the switcher: a tab per game with how many are playing it (hidden when ?summary=1 isn't available)
-  function gameTabs() {
-    const counts = summary && summary.games;
-    return Object.values(GAMES).map((g) => {
-      const s = counts && counts[g.id];
-      const n = s && typeof s.online === "number" ? s.online : null;
-      const quiet = n === 0 && s.sessions_24h === 0; // not one session in a day: it isn't sending analytics (yet)
-      const count = n == null ? "" : quiet ? `<span class="gc">no analytics yet</span>`
-        : `<span class="gc"><span class="gdot${n ? "" : " zero"}"></span>${n} online</span>`;
-      const tip = n == null ? "" : quiet ? "No sessions in the last 24 h" : `${n} playing now · ${s.sessions_24h ?? "?"} sessions in the last 24 h`;
-      return `<button class="game${g.id === game ? " on" : ""}" role="tab" aria-selected="${g.id === game}" data-game="${g.id}"${tip ? ` title="${esc(tip)}"` : ""}>
-        <span class="ge">${g.emoji}</span><span class="gt"><span class="gn">${esc(g.name)}</span>${count}</span></button>`;
-    }).join("");
+  function versionsHtml(gid) {
+    const st = data[gid].body.stats || {};
+    if (!(st.versions || []).length) return "";
+    return `<h3>By update <span class="sub">each version compared with the one before it · small samples swing a lot</span></h3>
+      <div class="scroll"><table><thead><tr><th>Version</th><th>Live since</th><th class="num">Sessions</th><th class="num">New players</th><th class="num">Avg session</th>
+        <th class="num">New quit &lt; 1 min</th><th class="num">New stay 3+ min</th><th class="num">Finish tutorial</th><th class="num">Robux buys</th><th class="num">Phone fps</th>
+        <th class="num">Phone &lt; 30 fps</th><th class="num">Like it 👍</th></tr></thead><tbody>
+      ${st.versions.map((v, i, all) => {
+        const older = all[i + 1];
+        const cell = (key, fmt, good) => `<td class="num">${fmt(v[key])} ${older ? delta(v[key], older[key], good) : ""}</td>`;
+        return `<tr><td><b>v${v.version ?? "?"}</b>${i === 0 ? ` <span class="chip good">newest</span>` : ""}</td>
+          <td class="mini">${new Date(v.first_seen).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</td>
+          <td class="num">${v.sessions}</td><td class="num">${v.new_players}</td>
+          ${cell("avg_min", (x) => x == null ? "–" : x + "m", 1)}${cell("quick_quit_pct", pct, -1)}${cell("stay3_pct", pct, 1)}${cell("tutorial_pct", pct, 1)}
+          <td class="num">${v.robux}</td>${cell("phone_fps", (x) => x ?? "–", 1)}${cell("phone_under30_pct", pct, -1)}${cell("like_pct", pct, 1)}</tr>`;
+      }).join("")}</tbody></table></div>`;
   }
 
-  function paintTabs() { // just the switcher, when new counts arrive
-    const nav = document.querySelector("nav.games");
-    if (!nav) return;
-    nav.innerHTML = gameTabs();
-    nav.querySelectorAll("[data-game]").forEach((b) => b.onclick = () => switchGame(b.dataset.game));
+  function recentHtml(rows) {
+    if (!rows.length) return `<div class="empty">No sessions have ended yet.</div>`;
+    return `<div class="recent">${rows.map(({ r, g }) => `<div class="r">${r.headshot ? `<img src="${esc(r.headshot)}" alt="" loading="lazy">` : `<div class="noimg"></div>`}
+      <div style="min-width:0"><div class="n">${view === "all" ? g.emoji + " " : ""}${esc(r.display_name || r.username || r.user_id)} ${r.is_new ? `<span class="chip good">NEW</span>` : ""} ${(DEVICE[r.device] || [""])[0]}</div>
+        <div class="mini">${r.server_no != null ? "Server " + r.server_no + " · " : ""}played ${r.duration_s != null ? dur(r.duration_s) : "–"}${g.showEarned || r.earned_gained != null ? " · earned " + num(r.earned_gained) : ""}${r.end_reason && r.end_reason !== "left" ? " · " + esc(r.end_reason) : ""}</div>
+        <div class="acts">${esc((r.last_actions || []).slice(-5).join(" → "))}</div></div>
+      <div class="mini" style="white-space:nowrap">${since(r.ended_at)}</div></div>`).join("")}</div>`;
   }
 
-  function headerHtml() {
-    const stale = Date.now() - lastOk > REFRESH_MS * 3;
-    const wait = loading || (!state && !error);
-    const off = !wait && (stale || error);
-    return `<header><h1>${cfg.emoji} ${esc(cfg.name)} Live</h1>
-        <span class="live"><span class="dot ${wait ? "wait" : off ? "off" : ""}"></span>${wait ? "Loading…" : off ? "Reconnecting…" : "Live · updates every 10 s"}</span>
-        <span class="spacer"></span><button id="refresh">Refresh</button>
-        <nav class="games" role="tablist" aria-label="Games">${gameTabs()}</nav></header>`;
-  }
-
-  const countOf = (s) => Math.max(s.players.length, s.reported_players || 0);
-  function serversHtml(servers) {
-    const max = cfg.maxPlayers;
-    const why = cfg.analytics === "off" ? `${esc(cfg.name)} doesn't send analytics yet, so only the player count is known.`
-      : null;
-    return servers.length ? `<div class="servers">${servers.map((s) => `
-        <div class="server"><div class="server-head"><span class="name">${s.server_no != null ? "Server " + s.server_no : "Server ?"}</span>
-          <span class="chip">${countOf(s)} / ${max}</span>${s.version ? `<span class="chip">v${s.version}</span>` : ""}
-          <span class="spacer"></span><span class="mini" title="${esc(s.job_id)}">${esc(String(s.job_id).slice(0, 8))}</span></div>
-          <div class="fill"><div style="width:${Math.min(100, countOf(s) / max * 100)}%"></div></div>
-          <div class="players">${s.players.sort((a, b) => new Date(a.started_at) - new Date(b.started_at)).map(playerRow).join("")}
-            ${countOf(s) > s.players.length ? `<div class="p"><div class="avatar"></div><div class="who"><div class="dn">${countOf(s) - s.players.length} more player${countOf(s) - s.players.length > 1 ? "s" : ""}</div>
-              <div class="un">${why || `This server runs an older version${s.version ? " (v" + s.version + ")" : ""}, so names aren't sent. They show once it restarts.`}</div></div><div></div></div>` : ""}
-            ${s.last_seen ? `<div class="p" style="grid-template-columns:1fr"><div class="mini">Last heard from ${dur(ago(s.last_seen))} ago</div></div>` : ""}</div></div>`).join("")}</div>`
-      : `<div class="empty">Nobody is playing right now.</div>`;
-  }
-
-  // a game with no sessions at all (none in two weeks, none ended, nobody on): a friendly card, and its servers
-  function noSessions(servers) {
-    const st = state.stats || {};
-    return !(st.versions || []).length && !(state.recent || []).length && !servers.some((s) => s.players.length);
-  }
-  function emptyHtml(servers) {
-    const name = esc(cfg.name);
-    const why = cfg.analytics === "off" ? `${name} doesn't send analytics yet, so there are no sessions, charts or player feedback to show.`
-      : cfg.analytics === "soon" ? `${name} starts sending analytics as soon as it's live. This page fills in by itself once the first players join.`
-      : `${name} hasn't sent any sessions in the last two weeks.`;
-    const groups = [["on", "Sending analytics today"], ["off", "Not sending any yet"], ["soon", "Starts once it's live"]]
-      .map(([a, label]) => [label, Object.values(GAMES).filter((g) => g.analytics === a)]).filter(([, gs]) => gs.length)
-      .map(([label, gs]) => `${label}: ${gs.map((g) => `${g.emoji} ${esc(g.name)} (${g.id})`).join(", ")}`).join("<br>");
-    return `<div class="hello"><div class="em">${cfg.emoji}</div>
-        <h3>No analytics yet for ${name}</h3>
-        <p>${why}</p>
-        <p class="mini">${groups}</p></div>
-      ${servers.length ? `<h2>Servers <span class="count">${servers.length}</span></h2>${serversHtml(servers)}` : ""}`;
-  }
-
-  function dashboardHtml(servers) {
-    const online = servers.reduce((a, s) => a + countOf(s), 0);
-    return `
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px">
-        <div class="seg">${Object.entries(PERIODS).map(([k, v]) => `<button data-period="${k}" class="${k === period ? "on" : ""}">${v[0]}</button>`).join("")}</div>
-        <span class="mini">${PERIODS[period][1]}</span></div>
-      <div class="stats">
-        <div class="stat"><div class="k">Online now</div><div class="v">${online}</div><div class="s">players · ${servers.length} servers</div></div>
-        ${METRICS.map(([key, label, fmt, good]) => {
-          const c = state.stats && state.stats.compare[period];
-          const now = c ? c.now[key] : null, prev = c ? c.prev[key] : null;
-          const prevHasData = c && c.prev.sessions > 0;
-          return `<div class="stat"><div class="k">${label}</div><div class="v">${fmt(now)}</div>
-            <div class="s">${prevHasData ? deltaHtml(now, prev, good) + ` <span class="mini">was ${fmt(prev)}</span>` : `<span class="delta flat">no data before</span>`}</div></div>`;
-        }).join("")}
-      </div>
-      <div class="charts">
-        ${hourlyChart("ch1", "New players per hour", "last 48 hours · dashed lines = a new version went live", "new_players", (v) => v ?? 0)}
-        ${hourlyChart("ch2", "New players who quit in under a minute", "% per hour · lower is better", "quick_quit_pct", (v) => v == null ? "–" : v + "%")}
-      </div>
-      ${voiceHtml()}
-      <h2>By update</h2>
-      ${(state.stats && state.stats.versions.length) ? `<div class="scroll"><table><thead><tr><th>Version</th><th>Live since</th><th class="num">Sessions</th><th class="num">New players</th><th class="num">Avg session</th><th class="num">New quit &lt; 1 min</th><th class="num">New stay 3+ min</th><th class="num">Finish tutorial</th><th class="num">Robux buys</th><th class="num">Phone fps</th><th class="num">Phone choppy (&lt;30 fps)</th><th class="num">Like it 👍</th></tr></thead><tbody>
-        ${state.stats.versions.map((v, i, all) => {
-          const older = all[i + 1];
-          const cell = (key, fmt, good) => `<td class="num">${fmt(v[key])}${older ? deltaHtml(v[key], older[key], good).replace("delta", "delta mini") : ""}</td>`;
-          return `<tr><td><b>v${v.version ?? "?"}</b>${i === 0 ? ` <span class="chip new">newest</span>` : ""}</td>
-            <td class="mini">${new Date(v.first_seen).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</td>
-            <td class="num">${v.sessions}</td><td class="num">${v.new_players}</td>
-            ${cell("avg_min", (x) => x == null ? "–" : x + "m", 1)}${cell("quick_quit_pct", (x) => x == null ? "–" : x + "%", -1)}
-            ${cell("stay3_pct", (x) => x == null ? "–" : x + "%", 1)}${cell("tutorial_pct", (x) => x == null ? "–" : x + "%", 1)}
-            <td class="num">${v.robux}</td>
-            ${cell("phone_fps", (x) => x == null ? "–" : x, 1)}${cell("phone_under30_pct", (x) => x == null ? "–" : x + "%", -1)}
-            ${cell("like_pct", (x) => x == null ? "–" : x + "%", 1)}</tr>`;
-        }).join("")}
-      </tbody></table></div><div class="mini" style="margin-top:6px">Each version is compared with the one before it. Small samples (a few dozen new players) swing a lot.</div>` : `<div class="empty">No versions yet.</div>`}
-      <div class="layout"><div class="main">
-      <h2>Servers <span class="count">${servers.length}</span></h2>
-      ${serversHtml(servers)}
-      </div><div class="side">
-      <h2>Just left</h2>
-      ${(state.recent || []).length ? `<div class="recent">${state.recent.map((r) => `<div class="r">${avatar(r.headshot)}
-        <div style="min-width:0"><div class="dn" style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.display_name || r.username || r.user_id)} ${r.is_new ? `<span class="chip new">NEW</span>` : ""} ${deviceIcon(r.device)}</div>
-          <div class="mini">${r.server_no != null ? "Server " + r.server_no + " · " : ""}played ${r.duration_s != null ? dur(r.duration_s) : "–"}${cfg.showEarned || r.earned_gained != null ? " · earned " + num(r.earned_gained) : ""}${r.end_reason && r.end_reason !== "left" ? " · " + esc(r.end_reason) : ""}</div>
-          <div class="acts">${esc((r.last_actions || []).slice(-5).join(" → "))}</div></div>
-        <div class="mini" style="white-space:nowrap">${dur(ago(r.ended_at))} ago</div></div>`).join("")}</div>` : `<div class="empty">No sessions have ended yet.</div>`}
-      </div></div>`;
-  }
-
-  function render() {
-    let body;
-    if (!state) body = `<div class="empty">Loading…${error ? `<br><span class="err">${esc(error)}</span>` : ""}</div>`;
-    else {
-      const servers = state.servers || [];
-      body = noSessions(servers) ? emptyHtml(servers) : dashboardHtml(servers);
+  function statsHtml() {
+    if (view === "all") {
+      const ready = ORDER.filter((g) => data[g] && data[g].body);
+      const rows = ready.map((gid) => {
+        const g = GAMES[gid], st = data[gid].body.stats || {}, c = st.compare && st.compare[period];
+        const cell = (key, fmt, good) => { const now = c ? c.now[key] : null, prev = c ? c.prev[key] : null;
+          return `<td class="num">${g.analytics ? fmt(now) + (c && c.prev.sessions > 0 ? " " + delta(now, prev, good) : "") : "–"}</td>`; };
+        const fb = st.feedback && st.feedback.all;
+        return `<tr><td><b>${g.emoji} ${esc(g.name)}</b>${g.analytics ? "" : ` <span class="chip">counts only</span>`}</td><td class="num"><b>${onlineOf(gid)}</b></td>
+          ${METRICS.map(([key, , fmt, good]) => cell(key, fmt, good)).join("")}<td class="num">${g.analytics && fb ? pct(fb.like_pct) : "–"}</td></tr>`;
+      }).join("");
+      const recent = ready.flatMap((gid) => (data[gid].body.recent || []).map((r) => ({ r, g: GAMES[gid] })))
+        .sort((a, b) => new Date(b.r.ended_at) - new Date(a.r.ended_at)).slice(0, 18);
+      return `<div class="shead2"><h2>All games</h2>${periodSeg()}</div>
+        <div class="scroll"><table><thead><tr><th>Game</th><th class="num">Online</th>${METRICS.map(([, label]) => `<th class="num">${label}</th>`).join("")}<th class="num">Like it 👍</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <div class="charts">${ready.filter((gid) => GAMES[gid].analytics).map((gid) => hourly(data[gid].body, `${GAMES[gid].emoji} New players per hour`, "last 48 h", "new_players", (v) => v ?? 0, GAMES[gid].color)).join("")}</div>
+        <h3>Just left <span class="sub">every game</span></h3>${recentHtml(recent)}`;
     }
-    app.innerHTML = headerHtml() + body;
-    document.getElementById("refresh").onclick = load;
-    document.querySelectorAll("[data-game]").forEach((b) => b.onclick = () => switchGame(b.dataset.game));
-    document.querySelectorAll("[data-period]").forEach((b) => b.onclick = () => {
-      period = b.dataset.period; try { localStorage.setItem("livePeriod", period); } catch (e) {} render();
-    });
-    document.querySelectorAll(".chart").forEach((chart) => {
-      const tip = chart.querySelector(".tip");
-      chart.querySelectorAll("[data-tip]").forEach((r) => {
-        r.addEventListener("mousemove", (e) => {
-          const box = chart.getBoundingClientRect();
-          tip.textContent = r.dataset.tip; tip.style.display = "block";
-          tip.style.left = Math.min(box.width - tip.offsetWidth - 4, e.clientX - box.left + 10) + "px";
-          tip.style.top = (e.clientY - box.top - 30) + "px";
-        });
-        r.addEventListener("mouseleave", () => { tip.style.display = "none"; });
-      });
-    });
+    const g = GAMES[view], d = data[view];
+    if (!d || !d.body) return `<div class="empty">Loading…</div>`;
+    if (!g.analytics) return `<div class="shead2"><h2>${g.emoji} ${esc(g.name)}</h2></div>
+      <div class="empty">${esc(g.name)} only reports how many are on each server, so there are no sessions, charts or feedback to show.</div>`;
+    const body = d.body;
+    return `<div class="shead2"><h2>${g.emoji} ${esc(g.name)}</h2>${periodSeg()}</div>
+      ${kpisHtml(view)}
+      <div class="charts">
+        ${hourly(body, "New players per hour", "last 48 h · dashed = a new version", "new_players", (v) => v ?? 0, g.color)}
+        ${hourly(body, "Players per hour", "last 48 h", "players", (v) => v ?? 0, g.color)}
+        ${hourly(body, "New players who quit in under a minute", "% per hour · lower is better", "quick_quit_pct", pct, "var(--bad)")}
+        ${hourly(body, "Average session", "minutes per hour", "avg_min", (v) => v == null ? "–" : v + " min", "var(--blue)")}
+      </div>
+      ${voiceHtml(view)}${versionsHtml(view)}
+      <h3>Just left</h3>${recentHtml((body.recent || []).map((r) => ({ r, g })))}`;
   }
 
-  // the time-on clocks tick every second between refreshes
+  // Render ----------------------------------------------------------------------------------------------------------
+  function render() {
+    remember();
+    document.getElementById("head").innerHTML = headerHtml();
+    const any = ORDER.some((g) => data[g] && data[g].body);
+    document.getElementById("app").innerHTML = !any && loading ? `<div class="empty" style="margin-top:20px">Loading…</div>`
+      : `<section id="board" data-d="1">${boardHtml()}</section>
+        <div class="more"><a href="#stats">Stats ↓</a></div>
+        <section id="stats">${statsHtml()}</section>`;
+    fit();
+  }
+
+  // Interaction -----------------------------------------------------------------------------------------------------
+  function setView(v) {
+    if (v === view || !(v === "all" || GAMES[v])) return;
+    view = v; hidePop(); render(); window.scrollTo({ top: 0 });
+  }
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-view],[data-density],[data-period],#theme,#refresh");
+    if (!t) return;
+    if (t.dataset.view) setView(t.dataset.view);
+    else if (t.dataset.density) { density = t.dataset.density; store.set("liveDensity", density); render(); }
+    else if (t.dataset.period) { period = t.dataset.period; store.set("livePeriod", period); const y = window.scrollY; render(); window.scrollTo({ top: y }); }
+    else if (t.id === "theme") { theme = theme === "system" ? "light" : theme === "light" ? "dark" : "system"; store.set("liveTheme", theme); applyTheme(); render(); }
+    else if (t.id === "refresh") loadAll();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "0") setView("all");
+    else if (/^[1-9]$/.test(e.key) && ORDER[Number(e.key) - 1]) setView(ORDER[Number(e.key) - 1]);
+    else if (e.key === "d" || e.key === "D") { const all = ["auto", "1", "2", "3", "4"]; density = all[(all.indexOf(density) + 1) % all.length]; store.set("liveDensity", density); render(); }
+    else if (e.key === "t" || e.key === "T") document.getElementById("theme")?.click();
+    else if (e.key === "r" || e.key === "R") loadAll();
+  });
+
+  // the hover card: everything about a player
+  const pop = document.getElementById("pop");
+  function hidePop() { pop.hidden = true; }
+  function showPop(el, x, y) {
+    const it = people.get(el.dataset.p);
+    if (!it) return hidePop();
+    const { p, g, srv } = it, l = p.live || {};
+    const dev = DEVICE[p.device] || ["❔", p.device || "unknown"];
+    const chips = [p.is_new ? `<span class="chip good">NEW</span>` : p.session_no ? `<span class="chip">visit #${esc(p.session_no)}</span>` : "",
+      l.idle ? `<span class="chip warn">idle</span>` : "", p.premium ? `<span class="chip vip">Premium</span>` : "",
+      p.friends_in_server > 0 ? `<span class="chip blue">${esc(p.friends_in_server)} friend${p.friends_in_server > 1 ? "s" : ""} here</span>` : ""].join("");
+    const rows = [["Online for", dur(ago(p.started_at))], ["Server", srv.server_no != null ? "Server " + srv.server_no : null], ["Device", `${dev[0]} ${dev[1]}`],
+      ["Country", p.country ? `${flag(p.country)} ${p.country}` : null], ["Came from", p.join_source && p.join_source !== "direct" ? p.join_source : null],
+      ...g.details(l, p, g)].filter(([, v]) => v != null && v !== "");
+    pop.innerHTML = `<div class="top">${p.headshot ? `<img src="${esc(p.headshot)}" alt="">` : `<div class="noimg"></div>`}
+      <div style="min-width:0"><div class="dn">${esc(p.display_name || p.username || p.user_id)}</div><div class="un">@${esc(p.username || p.user_id)} · ${g.emoji} ${esc(g.name)}</div></div></div>
+      ${chips ? `<div class="chips">${chips}</div>` : ""}<dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+      <div class="hint">Click for their Roblox profile</div>`;
+    pop.hidden = false;
+    const w = pop.offsetWidth, h = pop.offsetHeight;
+    pop.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, x + 16)) + "px";
+    pop.style.top = Math.max(8, Math.min(window.innerHeight - h - 8, y + 16)) + "px";
+  }
+  document.addEventListener("mousemove", (e) => {
+    const el = e.target.closest && e.target.closest(".tile[data-p]");
+    if (el) showPop(el, e.clientX, e.clientY); else if (!pop.hidden) hidePop();
+    const hit = e.target.closest && e.target.closest("[data-tip]");
+    const tip = document.getElementById("tip");
+    if (hit) { tip.textContent = hit.dataset.tip; tip.hidden = false;
+      tip.style.left = Math.min(window.innerWidth - tip.offsetWidth - 8, e.clientX + 12) + "px"; tip.style.top = (e.clientY - 34) + "px"; }
+    else tip.hidden = true;
+  });
+  window.addEventListener("scroll", hidePop, { passive: true });
+  let resizeTimer = null;
+  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(fit, 120); });
+
+  // the clocks tick every second between refreshes
   setInterval(() => {
     document.querySelectorAll("[data-since]").forEach((el) => { el.textContent = dur(ago(el.dataset.since)); });
+    const a = document.getElementById("ago"); if (a) a.textContent = agoText();
   }, 1000);
-  timer = setInterval(load, REFRESH_MS);
-  if (KEY) render(); // the header and switcher while the first answer is on its way
-  load();
+  setInterval(loadAll, REFRESH_MS);
+  if (KEY) { render(); loadAll(); } else keyScreen();
 </script>
 </body>
 </html>
