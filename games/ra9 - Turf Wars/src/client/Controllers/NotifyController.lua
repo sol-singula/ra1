@@ -2,7 +2,8 @@
 The banners (server/Notify.lua, Net "Announce"): a strip slides down under the top bar with an icon and a few words,
 holds, and slides away; the next one waits its turn (at most a handful wait, the oldest dropped). The kind picks the
 look: "start" and "win" are big and black, "lose" muted, "status" gold, "admin" red, "party" blue, "info" white.
-Hidden while the panel is open (the queue waits).
+Hidden while the panel is open (the queue waits). A banner that waited STALE_SECONDS is dropped (old news), and
+nothing piles up in the AFK room (the "Limbo" attribute): coming back, you don't get a backlog of what you missed.
 
 Someone joining ("join") isn't a banner: a small chip slides in at the left, up to three at once, gone after a few
 seconds. Your side's colour and "joined your team!" for a new teammate; white with the enemy's colour and "new
@@ -34,6 +35,7 @@ local LOOK = {
 	info = { bg = C.white, fg = C.ink, icon = "📣" },
 }
 local MAX_QUEUE = 5
+local STALE_SECONDS = 10 -- a banner that waited this long is old news: dropped
 
 local gui, strip, label, iconLabel
 local queue = {}
@@ -116,6 +118,10 @@ function NotifyController.show(msg)
 		end
 		return true
 	end
+	if Players.LocalPlayer:GetAttribute("Limbo") == true and not msg.always then
+		return false -- (AFK: what happens meanwhile isn't kept for later)
+	end
+	msg.queuedAt = os.clock()
 	table.insert(queue, msg)
 	while #queue > MAX_QUEUE do
 		table.remove(queue, 1)
@@ -154,6 +160,9 @@ local function step()
 				strip.Visible = false
 			end
 		end)
+	end
+	while #queue > 0 and t - (queue[1].queuedAt or t) > STALE_SECONDS do
+		table.remove(queue, 1)
 	end
 	if not showing and #queue > 0 then
 		present(table.remove(queue, 1))
@@ -194,6 +203,10 @@ function NotifyController:init()
 	})
 	NotifyController.refs = { gui = gui, strip = strip, label = label, icon = iconLabel }
 	Net.listen("Announce", NotifyController.show)
+	-- in or out of the AFK room: whatever was waiting is dropped
+	Players.LocalPlayer:GetAttributeChangedSignal("Limbo"):Connect(function()
+		table.clear(queue)
+	end)
 	RunService.RenderStepped:Connect(step)
 end
 

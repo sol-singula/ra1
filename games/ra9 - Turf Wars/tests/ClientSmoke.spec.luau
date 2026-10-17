@@ -439,6 +439,29 @@ do
 	Engine.advance(4)
 	check("...then the next one", NotifyC.current() and NotifyC.current().text == "Ava is MVP!")
 	Engine.advance(4)
+	-- in the AFK room nothing piles up: coming back, no backlog of what you missed
+	player:SetAttribute("Limbo", true)
+	Engine.advance(0.1)
+	NotifyC.show({ text = "You're AFK", kind = "info", always = true })
+	for i = 1, 4 do
+		NotifyC.show({ text = "Missed " .. i, kind = "info" })
+	end
+	check("AFK: only the AFK banner, nothing kept for later", NotifyC.queued() <= 1)
+	player:SetAttribute("Limbo", nil)
+	Engine.advance(0.1)
+	check("...back: no backlog", NotifyC.queued() == 0)
+	Engine.advance(4)
+	-- old news: a banner that waited too long (a menu was open) is dropped
+	local Layout = Engine.require(tree.client.UI.Layout)
+	Layout.setPanel(true)
+	NotifyC.show({ text = "Old news", kind = "info" })
+	Engine.advance(12)
+	Layout.setPanel(false)
+	Engine.advance(0.1)
+	check(
+		"a banner that waited too long is dropped",
+		NotifyC.queued() == 0 and (NotifyC.current() == nil or NotifyC.current().text ~= "Old news")
+	)
 end
 -- the blade: only in the CHARGE (the fight's last seconds); then 4 picks it, a click slashes
 do
