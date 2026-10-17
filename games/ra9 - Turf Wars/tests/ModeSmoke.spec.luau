@@ -120,10 +120,14 @@ check(
 for _, key in Modes.LIST do
 	local m = Modes[key]
 	check(`{key}: its entry`, m and m.key == key and type(m.name) == "string" and type(m.blurb) == "string")
-	check(`{key}: placeId 0 until made`, m.placeId == 0)
+	check(`{key}: its place is made`, type(m.placeId) == "number" and m.placeId > 0, m.placeId)
 	check(`{key}: Modes.get`, Modes.get(key) == m)
 end
-check("the lobby isn't played", Modes.get("lobby") == nil and Modes.LOBBY_PLACE == 0)
+check("the lobby isn't played", Modes.get("lobby") == nil)
+check("the lobby is the start place", Modes.LOBBY_PLACE == 101991401831698)
+check("every place made: multiPlace", Modes.multiPlace() == true)
+-- (from here on, as before the places were made: one place, nothing teleports)
+Modes.LOBBY_PLACE, Modes.turf.placeId, Modes.ctf.placeId, Modes.brawl.placeId, Modes.tycoon.placeId = 0, 0, 0, 0, 0
 check("minPlayers", Modes.turf.minPlayers == 1 and Modes.ctf.minPlayers == 4 and Modes.brawl.minPlayers == 1)
 check("bots", Modes.turf.bots == true and Modes.ctf.bots == false and Modes.brawl.bots == true)
 check("multiPlace false with zero ids", Modes.multiPlace() == false)
@@ -354,6 +358,7 @@ check("bestOf is pure", LPop.bestOf({ brawl = 3, turf = 1, ctf = 0 }) == "brawl"
 
 -- PLAY and LOBBY while the places aren't made: refused, with a word
 local LModes = L.require(ltree.shared.Data.Modes)
+LModes.LOBBY_PLACE, LModes.turf.placeId, LModes.ctf.placeId, LModes.brawl.placeId, LModes.tycoon.placeId = 0, 0, 0, 0, 0
 L.fireServer(a, "Play")
 L.advance(0.1)
 local ltoast = L.lastClientEvent("Toast", a)

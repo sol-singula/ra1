@@ -824,10 +824,10 @@ minimum players and whether it has bots, and `Modes.multiPlace()`: true only onc
 | Place | Mode | Project | Build | Place id |
 |---|---|---|---|---|
 | **Lobby** (the start place) | `lobby` | `places/lobby.project.json` | `Lobby.rbxl` | **101991401831698** (the current place becomes the lobby) |
-| Turf Wars | `turf` | `default.project.json` | `TurfWars.rbxl` | new (make it in the Creator Dashboard, put the id in `Data/Modes.lua`) |
-| Capture the Flag (purple v orange) | `ctf` | `places/ctf.project.json` | `CTF.rbxl` | new |
-| Bot Brawl (green, co-op against bots) | `brawl` | `places/brawl.project.json` | `Brawl.rbxl` | new |
-| Castle Tycoon (your own plot, 6 a server) | `tycoon` | `places/tycoon.project.json` | `Tycoon.rbxl` | new |
+| Turf Wars | `turf` | `default.project.json` | `TurfWars.rbxl` | 110680128276977 |
+| Capture the Flag (purple v orange) | `ctf` | `places/ctf.project.json` | `CTF.rbxl` | 86117559750276 |
+| Bot Brawl (green, co-op against bots) | `brawl` | `places/brawl.project.json` | `Brawl.rbxl` | 130067074571053 |
+| Castle Tycoon (your own plot, 6 a server) | `tycoon` | `places/tycoon.project.json` | `Tycoon.rbxl` | 83756976019182 |
 
 `tools/build_places.sh` builds all five with Rojo (`ROJO=/path/to/rojo` picks the binary). The owner makes the four
 new places under the experience in the Creator Dashboard (Places → Create), publishes each `.rbxl` to its place,

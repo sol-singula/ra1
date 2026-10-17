@@ -46,6 +46,8 @@ local Data = service("PlayerDataService")
 local LobbyBuilder = Engine.require(tree.shared.World.LobbyBuilder)
 local ArenaBuilder = Engine.require(tree.shared.World.ArenaBuilder)
 local Modes = Engine.require(tree.shared.Data.Modes)
+-- (the single-place behaviour: as if the places weren't made, so PLAY says it isn't open)
+Modes.LOBBY_PLACE, Modes.turf.placeId, Modes.ctf.placeId, Modes.brawl.placeId, Modes.tycoon.placeId = 0, 0, 0, 0, 0
 local SPOTS = LobbyBuilder.SPOTS
 
 local function lastFired(name, player)
