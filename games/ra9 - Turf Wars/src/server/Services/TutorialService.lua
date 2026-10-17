@@ -1,9 +1,11 @@
 --[[
 The first-minute tutorial, the server's half (the show itself is TutorialController on the client).
 
-Who sees it: a new player (the profile's tutorial isn't done and they've never finished a match), once. A player
-who already played before the tutorial existed counts as done. Anyone can watch it again (GOALS → REPLAY: Net
-"Tutorial", "replay"). Constants.TUTORIAL off: nobody gets it.
+Who sees it: a brand-new player, once. Anyone back again (TutorialService.returning: tutorial done or skipped or
+started, a match or a kill, or a second visit) never gets it or the intro again: they go straight into the fight
+with a WELCOME BACK banner (Net "Hook" { kind = "welcome" }). Anyone can watch it again on purpose (GOALS → REPLAY:
+Net "Tutorial", "replay"), for that visit only. When it ends, the missions start (HookService:Begin).
+Constants.TUTORIAL off: nobody gets it.
 
 How it goes: once their screen is listening the client is told { kind = "start", boost, replay }. The client plays
 the intro and the guided steps and reports each one (Net "Tutorial": "step", name), then "done" or "skip"; the
@@ -119,6 +121,13 @@ local function finish(player, how)
 	if active[player] then
 		active[player].finished = true
 	end
+	-- the missions after it (HookService, looked up when it's there)
+	local hook = registry and registry.HookService
+	if hook and type(hook.Begin) == "function" then
+		task.defer(function()
+			pcall(hook.Begin, hook, player)
+		end)
+	end
 end
 
 function TutorialService:Begin(player, replay)
@@ -219,19 +228,47 @@ function TutorialService:Init(reg)
 	end)
 end
 
+-- Back again: they've seen the tutorial (done or skipped), got some way into it, played a match, or this isn't their
+-- first visit. They never get the tutorial or the intro again (only if they ask: GOALS → REPLAY).
+function TutorialService.returning(profile)
+	if type(profile) ~= "table" then
+		return false
+	end
+	local t = tut(profile)
+	local stats = profile.stats or {}
+	local sessions = type(profile.meta) == "table" and profile.meta.sessions or 1
+	return t.done
+		or t.skipped
+		or (t.step or "") ~= ""
+		or (stats.matches or 0) > 0
+		or (stats.kills or 0) > 0
+		or (sessions or 1) >= 2
+end
+
 function TutorialService:OnPlayerReady(player, profile)
 	local t = tut(profile)
-	-- (someone who played before the tutorial existed: they know the game)
-	if not t.done and not t.replay and (profile.stats.matches or 0) > 0 then
-		t.done = true
+	-- (a replay asked for last time and left unfinished never carries over: a replay is for that visit only)
+	t.replay = false
+	if TutorialService.returning(profile) then
+		-- straight into the fight: no tutorial, no intro, just a WELCOME BACK (HookController draws it)
+		if not t.done then
+			t.done = true
+			t.skipped = true
+		end
+		local stats = profile.stats or {}
+		data:WhenClientReady(player, function()
+			Net.fire(player, "Hook", {
+				kind = "welcome",
+				wins = profile.wins or 0,
+				streak = profile.streak or 0,
+				kills = stats.kills or 0,
+			})
+		end)
+		analytics(player, "welcome_back", { sessions = type(profile.meta) == "table" and profile.meta.sessions or nil })
+		return
 	end
 	if TutorialService.shouldShow(profile) then
-		self:Begin(player, t.replay)
-	elseif TutorialService.joinIntro(profile) then
-		-- (back after a while: just the opening, so the first seconds feel big)
-		data:WhenClientReady(player, function()
-			Net.fire(player, "Tutorial", { kind = "intro" })
-		end)
+		self:Begin(player, false)
 	end
 end
 

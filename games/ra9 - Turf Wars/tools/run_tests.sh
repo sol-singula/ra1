@@ -22,3 +22,4 @@ $R tests/FlairSmoke.spec.luau
 $R tests/FxSmoke.spec.luau
 $R tests/InviteSmoke.spec.luau
 $R tests/GiftSmoke.spec.luau
+$R tests/HookSmoke.spec.luau

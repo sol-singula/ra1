@@ -580,15 +580,23 @@ local later = Engine.addPlayer("Oldie", 777)
 Engine.advance(0.5)
 Engine.fireServer(later, "Ready")
 Engine.advance(1)
-local kinds = {}
+local kinds, welcome = {}, nil
 for i = mark + 1, #Engine.clientLog do
 	local ev = Engine.clientLog[i]
 	if ev.name == "Tutorial" and ev.player == later then
 		table.insert(kinds, ev.args[1].kind)
+	elseif ev.name == "Hook" and ev.player == later and ev.args[1].kind == "welcome" then
+		welcome = ev.args[1]
 	end
 end
-check("back after 10 minutes: the intro plays again", table.find(kinds, "intro") ~= nil, table.concat(kinds, ","))
-check("...not the whole tutorial", table.find(kinds, "start") == nil and not Tutorial:Active(later))
+check(
+	"back after 10 minutes: no intro (straight into the fight)",
+	table.find(kinds, "intro") == nil,
+	table.concat(kinds, ",")
+)
+check("...not the tutorial", table.find(kinds, "start") == nil and not Tutorial:Active(later))
+check("...a WELCOME BACK with their wins and streak", welcome ~= nil and welcome.wins ~= nil and welcome.streak ~= nil)
+check("...and a body at once", later.Character ~= nil and later.Character:FindFirstChild("HumanoidRootPart") ~= nil)
 check(
 	"the rule: back within 2 minutes, no intro",
 	not Tutorial.joinIntro({ meta = { lastSeen = 1000 } }, 1000 + Constants.JOIN_INTRO_REJOIN_SECONDS - 5)
@@ -602,6 +610,38 @@ check(
 	not Tutorial.shouldShow({ stats = { matches = 3 }, tutorial = { done = false } })
 )
 check("...a replay asked for shows it", Tutorial.shouldShow({ stats = { matches = 3 }, tutorial = { replay = true } }))
+-- back again: never the tutorial or the intro (they go straight into the fight)
+check(
+	"a brand-new player isn't returning",
+	not Tutorial.returning({ meta = { sessions = 1 }, stats = {}, tutorial = {} })
+)
+check(
+	"left part-way through the tutorial: returning (no replay of it)",
+	Tutorial.returning({ meta = { sessions = 1 }, stats = {}, tutorial = { step = "aim" } })
+)
+check("a second visit: returning", Tutorial.returning({ meta = { sessions = 2 }, stats = {}, tutorial = {} }))
+check("a kill or a match: returning", Tutorial.returning({ stats = { kills = 1 }, tutorial = {} }))
+do
+	-- a replay asked for last time and never finished doesn't carry over to the next visit
+	Engine.removePlayer(later)
+	Engine.advance(1)
+	local saved = Engine.dataStores[Constants.PROFILE_STORE]["u_777"]
+	saved.tutorial.replay = true
+	saved.meta.lastSeen -= 600
+	local mk = #Engine.clientLog
+	local rep = Engine.addPlayer("Oldie", 777)
+	Engine.advance(0.5)
+	Engine.fireServer(rep, "Ready")
+	Engine.advance(1)
+	local started = false
+	for i = mk + 1, #Engine.clientLog do
+		local ev = Engine.clientLog[i]
+		if ev.name == "Tutorial" and ev.player == rep then
+			started = true
+		end
+	end
+	check("a replay left over from last visit doesn't replay it", not started and not Tutorial:Active(rep))
+end
 Constants.TUTORIAL = false
 check("...and the switch turns it off", not Tutorial.shouldShow({ stats = { matches = 0 }, tutorial = {} }))
 Constants.TUTORIAL = true

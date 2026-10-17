@@ -62,6 +62,7 @@ Net.ServerEvents = {
 	"PartyInvite", -- { from, name, kind = "invite" | "friend", seconds } or { cancel = true }: the invite card
 	"AdminState", -- { players, servers?, map, phase, bots, frozen, spectating, invisible, jobId } (admins only)
 	"Tutorial", -- { kind = "start", boost, replay } | { kind = "built" } the first-minute guide (TutorialService)
+	"Hook", -- { kind = "step" | "progress" | "stepDone" | "complete" | "welcome", ... } after it (HookService)
 	"Leaderboards", -- { boards, server, you, ok, at, every } the top players, all time and here (LeaderboardService)
 	"InvitePromo", -- { why, pool = { effect keys } } the invite-a-friend card | { pulse = true } nudge the button
 	"InviteReward", -- { key, pool = { effect keys }, friend } a friend joined from your invite: the effect you won
