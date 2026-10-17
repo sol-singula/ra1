@@ -700,8 +700,8 @@ end
 function ArenaBuilder.paint(arena, frontline, team)
 	for i, strip in arena.strips do
 		local x = -arena.half + (i - 0.5) * CELL
-		local team = Formulas.sideOf(x, frontline)
-		local base = Constants.TURF_COLOR[team]
+		local side = Formulas.sideOf(x, frontline)
+		local base = Constants.TURF_COLOR[side]
 		-- every other strip a shade lighter: the grid reads without a texture
 		strip.Color = (i % 2 == 0) and base:Lerp(Color3.new(1, 1, 1), 0.12) or base
 	end

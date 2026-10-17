@@ -66,6 +66,17 @@ check("...holding a bow", list[1].Character:FindFirstChild("HeldBow") ~= nil)
 local start = root(list[1]).Position
 Engine.advance(3)
 check("in the build phase they move about", (root(list[1]).Position - start).Magnitude > 2)
+Engine.advance(12)
+do
+	local Build = service("BuildService")
+	local theirs = 0
+	for _, st in Build:All() do
+		if st.owner == list[1] then
+			theirs += 1
+		end
+	end
+	check("...and build defences, like a person (walls, cover, a tower)", theirs >= 2, theirs)
+end
 
 -- the fight: they find someone and shoot
 Engine.advance(Constants.BUILD_SECONDS + 1)
@@ -163,10 +174,12 @@ Engine.advance(1)
 check("a second person: every bot leaves", #Bots:List() == 0 and #ws.Bots:GetChildren() == 0, #Bots:List())
 check("...and they take the bot's side", Teams:Team(pal) ~= mine and Teams:Team(pal) ~= nil, Teams:Team(pal))
 check(
-	"...where it stood",
-	root(pal) and (root(pal).Position - spot).Magnitude < 4,
-	root(pal) and (root(pal).Position - spot).Magnitude
+	"...and the game starts over so they start even (a fresh build phase, the line in the middle)",
+	Match:Phase() == "build" and Match:Frontline() == 0,
+	`{Match:Phase()} {Match:Frontline()}`
 )
+check("...both spawned in their bases", root(pal) ~= nil and root(solo) ~= nil and Combat:Alive(pal))
+_ = spot
 check("...counted as two now", #Match:Everyone() == 2)
 Engine.advance(3)
 check("two people: no bots come back", #Bots:List() == 0)

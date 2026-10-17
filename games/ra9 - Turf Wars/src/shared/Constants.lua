@@ -62,6 +62,8 @@ Constants.BOT_ENEMIES = 1 -- against you
 Constants.BOT_SPEED = 16 -- a little slower than a person walking
 Constants.BOT_RANGE = 150 -- studs: how far they look for someone to shoot
 Constants.BOT_SPREAD = 2.6 -- degrees of aim error (more at range): beatable, not helpless
+Constants.BOT_MID_RANGE = 45 -- studs: closer than this (but out of blade reach) a bot uses the crossbow
+Constants.BOT_RETREAT_HP = 35 -- a bot this hurt falls back behind cover
 Constants.BOT_REACT = 0.7 -- seconds before a bot starts drawing on someone new
 Constants.BOT_NAMES = { "Ace", "Echo", "Nova", "Blitz", "Rook", "Vex", "Juno", "Kite", "Onyx", "Pike" }
 

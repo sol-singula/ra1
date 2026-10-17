@@ -1,18 +1,22 @@
 --[[
 Bots, only while exactly one person is on: alone in a server you still get a real fight (BOT_ALLIES on your side,
-BOT_ENEMIES against you). The moment a second person joins they take over a bot on the other side: its team, and
-in a build or fight phase the very spot it stood on; every bot then leaves. If it drops back to one person, the bots
-come back. With nobody on, none.
+BOT_ENEMIES against you). The moment a second person joins they take the bot's side, every bot leaves, and the game
+starts over (a fresh match, build phase first) so the two real players start even. If it drops back to one person,
+the bots come back. With nobody on, none.
 
 A bot is a stand-in that looks enough like a player to the rest of the server (a character, a team, attributes, a
 UserId below zero), so it fights through the same code: CombatService draws and flies its arrows and checks its
 hits, MatchService counts its kills, pushes the line and respawns it, the turf rule holds it. Net messages to a bot
 are dropped (Net.fire), the anti-cheat ignores it, and only real players get rewards or rows in the results.
 
-What a bot does (every TICK): in the build phase it walks to a spot on its own side; in the fight it picks the
-nearest enemy it can see within BOT_RANGE, faces them, draws (after BOT_REACT for someone new), and lets go with a
-lead on their movement, the drop allowed for, and BOT_SPREAD degrees of error; between shots it strafes along its
-side of the line.
+What a bot does (every TICK):
+  * build phase: walks to a spot on its own side near the line and builds like a person would (BuildService, the
+    same rules and budget): walls and barricades facing the line first, then cover and a tower behind them.
+  * fight: picks the nearest enemy it can see within BOT_RANGE and the right weapon for the distance (the blade up
+    close, the crossbow at mid range, the bow far away), faces them, draws (after BOT_REACT for someone new) and
+    lets go with a lead on their movement, the drop allowed for, and BOT_SPREAD degrees of error. It strafes side to
+    side while it draws so it's not a still target, falls back behind cover when it's hurt (under BOT_RETREAT_HP),
+    and pushes up when nobody is in sight.
 
   BotService:List()          the bots in the server
   BotService:Ensure()        bots in or out for the number of people on (runs on its own every second)
@@ -23,18 +27,20 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local ArenaBuilder = require(ReplicatedStorage.Shared.World.ArenaBuilder)
+local Notify = require(script.Parent.Parent.Notify)
 local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 
 local BotService = {
 	Name = "BotService",
-	Dependencies = { "TeamService", "CombatService", "MatchService", "ArenaService" },
+	Dependencies = { "TeamService", "CombatService", "MatchService", "ArenaService", "BuildService" },
 }
 
-local teams, combat, match, arenaService
+local teams, combat, match, arenaService, buildService
 local bots = {} -- the bots in the server
 local nextId = 0
 local folder
 BotService.TICK = 0.1
+BotService.RESET_ON_TAKEOVER = true -- (a second person joining starts the game over)
 
 -- The stand-in ------------------------------------------------------------------------------------------------
 local Bot = {}
@@ -121,6 +127,7 @@ function Bot:LoadCharacter()
 		model.Parent = folder
 		self.Character = model
 		self.target, self.drawUntil, self.goal = nil, nil, nil
+		self.buildAt, self.built = nil, nil
 		return model
 	end
 	model = Instance.new("Model")
@@ -154,6 +161,7 @@ function Bot:LoadCharacter()
 	model.Parent = folder
 	self.Character = model
 	self.target, self.drawUntil, self.goal = nil, nil, nil
+	self.buildAt, self.built = nil, nil
 	return model
 end
 
@@ -264,9 +272,16 @@ function BotService:Takeover(player)
 	local phase = match:Phase()
 	teams:Set(player, team)
 	if root and combat:Alive(pick) and (phase == "build" or phase == "fight") then
-		match.SpawnAt[player] = root.CFrame -- (they appear where the bot stood)
+		match.SpawnAt[player] = root.CFrame -- (if no reset happens, they appear where the bot stood)
 	end
 	self:RemoveAll()
+	-- two real people now: start the game over so they start even
+	if self.RESET_ON_TAKEOVER and phase ~= "loading" then
+		task.defer(function()
+			match:NewMatch()
+			Notify.all(`{player.DisplayName} joined! New game!`, "start", { icon = "⚔️" })
+		end)
+	end
 	return team
 end
 
@@ -321,6 +336,23 @@ function BotService:Target(b, root)
 	return best
 end
 
+-- The nearest enemy body, seen or not (where to go looking)
+function BotService:Nearest(b, root)
+	local mine = teams:Team(b)
+	local best, bestD
+	for _, who in match:Everyone() do
+		local r = rootOf(who)
+		local t = teams:Team(who)
+		if who ~= b and r and t and t ~= mine and combat:Alive(who) then
+			local d = (r.Position - root.Position).Magnitude
+			if d <= Constants.BOT_RANGE * 1.5 and (not bestD or d < bestD) then
+				best, bestD = r, d
+			end
+		end
+	end
+	return best
+end
+
 -- Where to aim: their chest, led by their movement over the flight time, raised for the drop, with some error
 function BotService.aim(eye, target, velocity, speed, rng)
 	local d = (target - eye).Magnitude
@@ -367,6 +399,9 @@ function BotService:Think(b)
 		combat:Draw(b, false)
 		b.drawUntil = nil
 		moveTo(b, root, dest)
+		if phase == "build" then
+			self:BuildSome(b, root, team, line, fwd, t)
+		end
 		return
 	end
 	local target = self:Target(b, root)
@@ -378,14 +413,25 @@ function BotService:Think(b)
 		end
 	end
 	if not target then
+		-- nobody in sight (its own walls, or theirs, in the way): come out from cover toward the nearest enemy, along
+		-- the line, to get a shot
+		local near = self:Nearest(b, root)
+		if near and (not b.peekAt or t > b.peekAt) then
+			b.peekAt = t + rng:NextNumber(1.2, 2.2)
+			b.goal =
+				Vector3.new(line - fwd * rng:NextNumber(3, 7), root.Position.Y, near.Position.Z + rng:NextNumber(-6, 6))
+			b.goalAt = b.peekAt
+			dest = a and ArenaBuilder.route(a, team, root.Position, b.goal) or b.goal
+		end
 		moveTo(b, root, dest)
 		return
 	end
 	local tr = rootOf(target)
-	-- up close: the blade (run in and slash); otherwise the bow
+	-- the right weapon for the distance: the blade up close, the crossbow at mid range, the bow far away
 	local blade = Weapons.get("blade")
-	local close = (tr.Position - root.Position).Magnitude <= blade.range - 1
-	local want = close and "blade" or "bow"
+	local dist = (tr.Position - root.Position).Magnitude
+	local close = dist <= blade.range - 1
+	local want = close and "blade" or (dist < Constants.BOT_MID_RANGE and "crossbow" or "bow")
 	if combat:Weapon(b) ~= want then
 		combat:Equip(b, want)
 		combat:Draw(b, false)
@@ -403,8 +449,21 @@ function BotService:Think(b)
 		return
 	end
 	face(root, tr.Position)
-	-- strafe a little while it draws
-	moveTo(b, root, dest)
+	-- hurt: fall back toward its own side, behind the nearest thing it can hide behind
+	if combat:Health(b) < Constants.BOT_RETREAT_HP then
+		local cover = self:Cover(root, tr, fwd)
+		moveTo(b, root, a and ArenaBuilder.route(a, team, root.Position, cover) or cover)
+	else
+		-- strafe side to side while it draws, so it isn't a still target
+		if not b.strafeAt or t > b.strafeAt then
+			b.strafeDir = (b.strafeDir or 1) * -1
+			b.strafeAt = t + rng:NextNumber(0.6, 1.4)
+		end
+		local toT = Vector3.new(tr.Position.X - root.Position.X, 0, tr.Position.Z - root.Position.Z)
+		local side = toT.Magnitude > 0.01 and Vector3.new(-toT.Unit.Z, 0, toT.Unit.X) or Vector3.new(0, 0, 1)
+		local strafe = root.Position + side * b.strafeDir * 6
+		moveTo(b, root, a and ArenaBuilder.route(a, team, root.Position, strafe) or strafe)
+	end
 	face(root, tr.Position)
 	local w = Weapons.get(combat:Weapon(b))
 	if not b.drawUntil then
@@ -424,11 +483,62 @@ function BotService:Think(b)
 	end
 end
 
+-- Somewhere to hide: the nearest standing structure (or map shape) between it and the target, on its own side,
+-- stood behind; with none, just back from the line.
+function BotService:Cover(root, tr, fwd)
+	local best, bestD
+	for _, box in arenaService:Solids() do
+		local c = (box.min + box.max) / 2
+		local tall = box.max.Y - math.max(box.min.Y, 0) >= 3 and box.min.Y < 3
+		local mine = (c.X - match:Frontline()) * fwd < -2
+		if tall and mine then
+			local d = (Vector3.new(c.X, root.Position.Y, c.Z) - root.Position).Magnitude
+			if d < 40 and (not bestD or d < bestD) then
+				best, bestD = c, d
+			end
+		end
+	end
+	if not best then
+		return root.Position - Vector3.new(fwd * 12, 0, 0)
+	end
+	local away = Vector3.new(best.X - tr.Position.X, 0, best.Z - tr.Position.Z)
+	away = away.Magnitude > 0.01 and away.Unit or Vector3.new(-fwd, 0, 0)
+	return Vector3.new(best.X, root.Position.Y, best.Z) + away * 3.5
+end
+
+-- The build phase: build like a person, through the same rules and budget. Walls and barricades facing the line
+-- first, then cover and a tower behind them; a try every second or so, near where it stands.
+local BUILD_PLAN = { "wall", "barricade", "wall", "cover", "tower", "cover", "barricade" }
+function BotService:BuildSome(b, root, _team, line, fwd, t)
+	if not buildService or (b.buildAt and t < b.buildAt) then
+		return
+	end
+	b.buildAt = t + rng:NextNumber(0.8, 1.6)
+	b.built = b.built or 0
+	local key = BUILD_PLAN[(b.built % #BUILD_PLAN) + 1]
+	local back = (key == "tower" or key == "cover") and rng:NextNumber(14, 22) or rng:NextNumber(5, 10)
+	for _ = 1, 6 do
+		local x = line - fwd * back + rng:NextNumber(-2, 2)
+		local z = root.Position.Z + rng:NextNumber(-14, 14)
+		local cx, cz = Formulas.cellOf(x, z)
+		local ok = buildService:Place(b, key, cx, cz, 0)
+		if ok then
+			b.built += 1
+			return true
+		end
+	end
+	if buildService:Budget(b) < 5 then
+		b.buildAt = t + 999 -- (spent: done for this phase)
+	end
+	return false
+end
+
 function BotService:Init(registry)
 	teams = registry.TeamService
 	combat = registry.CombatService
 	match = registry.MatchService
 	arenaService = registry.ArenaService
+	buildService = registry.BuildService
 	folder = Instance.new("Folder")
 	folder.Name = "Bots"
 	folder.Parent = workspace

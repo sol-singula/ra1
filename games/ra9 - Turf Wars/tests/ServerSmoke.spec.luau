@@ -402,6 +402,12 @@ check("the losers' streak is zero", Data:Get(blue).streak == 0 and Data:Get(blue
 check("the next map is named in the results", results and results.next and results.next.key ~= "castle")
 check("combat stops at the victory", ws:GetAttribute("Phase") == "victory")
 check("the winner is known to everyone (fireworks)", ws:GetAttribute("Winner") == Teams:Team(red))
+check("a banner for everyone: who won", firedSince(m4, "Announce", nil, function(a)
+	return a[1].kind == "win" and a[1].text:find("wins") ~= nil
+end) ~= nil)
+check("...and who was MVP", firedSince(m4, "Announce", nil, function(a)
+	return a[1].kind == "status" and a[1].text:find("MVP") ~= nil
+end) ~= nil)
 check(
 	"a 30 s countdown to the next game",
 	math.abs(ws:GetAttribute("PhaseEnds") - Engine.workspace:GetServerTimeNow() - 30) < 1,

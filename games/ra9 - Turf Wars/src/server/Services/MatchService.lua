@@ -21,6 +21,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Notify = require(script.Parent.Parent.Notify)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local MatchService = {
@@ -174,10 +175,9 @@ function MatchService:Spawn(player)
 	respawnAt[player] = nil
 	pending[player] = nil
 	local desc = sameBody()
-	local loaded = desc
-		and pcall(function()
-			player:LoadCharacterWithHumanoidDescription(desc)
-		end)
+	local loaded = desc and pcall(function()
+		player:LoadCharacterWithHumanoidDescription(desc)
+	end)
 	if not loaded then
 		player:LoadCharacter()
 	end
@@ -364,7 +364,16 @@ function MatchService:Victory(winner)
 			next = { key = nextMap.key, name = nextMap.name, tagline = nextMap.tagline },
 		})
 	end
-	-- (no centre alert here: the results card says who won, and nothing else lands on top of it)
+	-- (no centre alert here: the results card says who won; a banner for everyone says it too, and who was MVP)
+	local winName = winner == "red" and "Red" or (winner == "blue" and "Blue" or nil)
+	if winName then
+		Notify.all(`{winName} team wins!`, "win", { color = Constants.TEAM_COLOR[winner] })
+	else
+		Notify.all("It's a draw!", "win")
+	end
+	if results.mvpPlayer then
+		Notify.all(`{results.mvpPlayer.DisplayName} is MVP!`, "status", { icon = "👑" })
+	end
 	self.Ended:Fire(winner, results)
 	task.delay(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS, function()
 		self:NewMatch(self._nextMap)
@@ -395,6 +404,8 @@ function MatchService:NewMatch(key)
 	build:Refill()
 	setPhase("build", Constants.BUILD_SECONDS)
 	Net.fireAll("Alert", "BUILD", Color3.fromRGB(40, 40, 46), 2)
+	local def = Maps.get(mapKey)
+	Notify.all(`New game: {def and def.name or mapKey}`, "start", { icon = "⚔️" })
 	self.Started:Fire(mapKey, matchId)
 end
 

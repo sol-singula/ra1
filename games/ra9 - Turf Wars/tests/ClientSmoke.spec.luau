@@ -194,6 +194,19 @@ do
 	Engine.advance(0.1)
 	check("menu closed: the mouse hides again", UIS.MouseIconEnabled == false and not CamC.mouseFree())
 end
+-- banners: a server message slides in under the top bar, one at a time
+do
+	local NotifyC = Engine.require(tree.client.Controllers.NotifyController)
+	NotifyC.show({ text = "Red team wins!", kind = "win" })
+	NotifyC.show({ text = "Ava is MVP!", kind = "status" })
+	Engine.advance(0.1)
+	local cur = NotifyC.current()
+	check("a banner shows", cur and cur.text == "Red team wins!" and NotifyC.refs.strip.Visible == true)
+	check("...the next waits its turn", NotifyC.queued() == 1)
+	Engine.advance(4)
+	check("...then the next one", NotifyC.current() and NotifyC.current().text == "Ava is MVP!")
+	Engine.advance(4)
+end
 -- the blade: 4 picks it, a click slashes
 do
 	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Four, UserInputType = Enum.UserInputType.Keyboard }, false)

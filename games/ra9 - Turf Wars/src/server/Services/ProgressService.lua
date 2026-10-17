@@ -26,6 +26,7 @@ local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Ladder = require(ReplicatedStorage.Shared.Data.Ladder)
 local Locker = require(ReplicatedStorage.Shared.Data.Locker)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Notify = require(script.Parent.Parent.Notify)
 local Season = require(ReplicatedStorage.Shared.Data.Season)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Signal = require(ReplicatedStorage.Shared.Signal)
@@ -118,6 +119,7 @@ function ProgressService:Celebrate(player, before)
 		p.vip = true -- (kept for good)
 		card(player, "vip_title", "YOU'RE VIP!", "Earned, never bought: the VIP tag, halo and 4 cosmetics")
 		p.equipped.title = "vip_title"
+		Notify.all(`{player.DisplayName} is now VIP!`, "status", { icon = "⭐" })
 		self.Earned:Fire(player, "vip")
 	end
 	for _, g in Achievements.newly(before, p) do
@@ -166,6 +168,10 @@ function ProgressService:Award(player, info)
 		local badge = Formulas.streakBadge(p.streak)
 		if badge then
 			p.badges[tostring(badge)] = true
+			Notify.all(`{player.DisplayName} won {p.streak} in a row!`, "status", { icon = "🔥" })
+		end
+		if step and step.big then
+			Notify.all(`{player.DisplayName} unlocked {step.name}!`, "status", { icon = "🏆" })
 		end
 		if step then
 			-- (the newest of each kind is worn straight away: you see what you just won)

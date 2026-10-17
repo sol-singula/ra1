@@ -207,7 +207,10 @@ for _, def in Maps.list do
 			`{def.key}: the frontline is a line on the floor, not a wall (you see over it)`,
 			arena.marker.Size.Y <= 0.5 and arena.marker.CFrame.Position.Y < 0.5 and arena.glow.Size.Y <= 0.5
 		)
-		check(`{def.key}: white before anyone pushes`, arena.marker.Color.R > 0.99 and arena.marker.Color.G > 0.99 and arena.marker.Color.B > 0.99)
+		check(
+			`{def.key}: white before anyone pushes`,
+			arena.marker.Color.R > 0.99 and arena.marker.Color.G > 0.99 and arena.marker.Color.B > 0.99
+		)
 		ArenaBuilder.paint(arena, 14, "blue")
 		check(
 			`{def.key}: it glows the colour of the last push`,
