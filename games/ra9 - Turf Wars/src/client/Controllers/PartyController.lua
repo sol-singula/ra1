@@ -398,6 +398,7 @@ function PartyController.open()
 	if ok and Panel.isOpen() then
 		Panel.close() -- (one panel at a time)
 	end
+	Layout.claimPanel("party", PartyController.close) -- (and the leaderboards, the admin's)
 	refs.panel.Visible = true
 	Layout.setPanel(true)
 	PartyController.refresh()

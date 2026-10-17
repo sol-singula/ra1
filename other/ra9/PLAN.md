@@ -382,6 +382,33 @@ as done), once, replayable from GOALS → HOW TO PLAY → REPLAY. `TutorialContr
 New `tests/TutorialSmoke.spec.luau` (121 checks) plays it through on the mock engine. The other suites turn the
 tutorial off (`Constants.TUTORIAL = false`): their players stand for people who know the game.
 
+## Leaderboards: the best of all time, and in this server
+
+* **🏆 TOP** (or **L**; D-pad up on a pad; a tap on a phone), a small white button in the top right corner. The kill
+  feed moved under it (y 56, exactly five rows tall) and the popup stack down to y 186, so nothing touches.
+* **The panel** (`LeaderboardController`, the party panel's size): tabs **WINS · KILLS · MVP · STREAK** (the best win
+  streak) and **ALL TIME / THIS SERVER**. A row each: the rank, the name, the number; the top three tinted gold,
+  silver and bronze; your row black with "(you)". Under the list where you stand ("YOU #12 · 34 wins", or "not in
+  the top 50 yet"). It's one of the big panels (`Layout.claimPanel`; the party panel now claims too): the mouse is
+  free while it's open and back with the camera when it closes (Esc, ✕, B on a pad). LB / RB change the tab, Y
+  flips the scope. It steps aside while the tutorial guides.
+* **All time** (`LeaderboardService`): one OrderedDataStore per board (`TW_Top_wins_v1`, `_kills_`, `_mvps_`,
+  `_streak_`; key the UserId), from what the profile already keeps (`wins`, `stats.kills`, `stats.mvps`, `best`). A
+  player's numbers are written when they join, after each match and when they leave, at most once a minute each,
+  only the boards that changed, only within the DataStore budget; what has to wait is kept and written later, even
+  after they've gone, and at shutdown. The top 50 of every board is read every 90 s; a failed read keeps the last
+  good copy. Names from `UserService` (cached). Never written: bots, spectating admins, Studio's test players.
+* **This server** is worked out live from the people here (no bots, no spectating admins).
+* Net: the client asks with `Top`; the answer is `Leaderboards` `{ boards, server, you, ok, at }`, sent again after
+  each refresh and each match to whoever asked.
+
+Tests: new `tests/LeaderboardSmoke.spec.luau` (79: the writes and their throttle, only what changed, no bots or
+spectating admin, the budget, a failed write tried again, the refresh with the top 50 and names, the last good copy,
+the payload, the server view, the button clear of the HUD on a keyboard and a phone, L / D-pad / a tap, the mouse
+freed and captured again, every tab, both scopes, the medal tints and your row, Esc / ✕ / B, a match's end, leaving,
+shutdown). The mock's OrderedDataStore got GetAsync, UpdateAsync, pages, failures, call counts and budgets, and a
+UserService. ClientSmoke checks the button in every overlap layout and the open panel among the HUD (185).
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

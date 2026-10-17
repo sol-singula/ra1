@@ -100,6 +100,11 @@ Constants.ADMIN_VIP = { -- the VIP lengths an admin can give: key, seconds (true
 -- Saves and logs
 Constants.PROFILE_STORE = "TW_Profiles_v1"
 Constants.AUTOSAVE_SECONDS = 120
+-- The leaderboards (LeaderboardService): one OrderedDataStore per board, e.g. TW_Top_wins_v1
+Constants.LEADERBOARD_STORE = "TW_Top_%s_v1"
+Constants.LEADERBOARD_SIZE = 50 -- the top this many of each board
+Constants.LEADERBOARD_WRITE_SECONDS = 60 -- a player's numbers are written at most this often
+Constants.LEADERBOARD_REFRESH_SECONDS = 90 -- the top of every board is read again this often
 Constants.GAME_LOG_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-game-log"
 Constants.ANALYTICS_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-analytics"
 Constants.GAME_LOG_IN_STUDIO = false

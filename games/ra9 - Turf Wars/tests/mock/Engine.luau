@@ -1811,38 +1811,107 @@ function methods.GetDataStore(_, name)
 		end,
 	}
 end
+-- UserService: names for user ids (Engine.userInfoCalls counts the batches; display names are "Name<id>")
+local UserService = service("UserService")
+Engine.userInfoCalls = 0
+function methods.GetUserInfosByUserIdsAsync(_, ids)
+	Engine.userInfoCalls += 1
+	assert(type(ids) == "table" and #ids <= 200, "GetUserInfosByUserIdsAsync takes up to 200 ids")
+	local out = {}
+	for _, id in ids do
+		table.insert(out, { Id = id, Username = "User" .. tostring(id), DisplayName = "Name" .. tostring(id) })
+	end
+	return out
+end
+_ = UserService
+
+-- OrderedDataStores (in memory): Engine.orderedStores[name][key] = integer. Every call is counted in
+-- Engine.orderedCalls ({ store, op, key? }); Engine.orderedFails = true makes each call fail (an outage), and
+-- Engine.dataStoreBudget[requestType name] sets what GetRequestBudgetForRequestType answers (100 if unset).
 Engine.orderedStores = {}
+Engine.orderedCalls = {}
+Engine.orderedFails = false
+Engine.dataStoreBudget = {}
+function methods.GetRequestBudgetForRequestType(_, kind)
+	local n = Engine.dataStoreBudget[kind and kind.Name or ""]
+	return n == nil and 100 or n
+end
 function methods.GetOrderedDataStore(_, name)
 	if Engine.dataStoreFails then
 		error("Studio access to APIs is not allowed")
 	end
 	Engine.orderedStores[name] = Engine.orderedStores[name] or {}
 	local data = Engine.orderedStores[name]
+	local function call(op, key)
+		table.insert(Engine.orderedCalls, { store = name, op = op, key = key })
+		if Engine.orderedFails or Engine.dataStoreFails then
+			error("502: API Services rejected request")
+		end
+	end
+	local function integer(value)
+		assert(type(value) == "number" and value == math.floor(value), "OrderedDataStore needs integers")
+		return value
+	end
 	return {
+		GetAsync = function(_, key)
+			call("GetAsync", key)
+			return data[key]
+		end,
 		SetAsync = function(_, key, value)
-			assert(type(value) == "number" and value == math.floor(value), "OrderedDataStore needs integers")
-			data[key] = value
+			call("SetAsync", key)
+			data[key] = integer(value)
+		end,
+		UpdateAsync = function(_, key, fn)
+			call("UpdateAsync", key)
+			local new = fn(data[key])
+			if new ~= nil then
+				data[key] = integer(new)
+			end
+			return new
+		end,
+		IncrementAsync = function(_, key, delta)
+			call("IncrementAsync", key)
+			data[key] = (data[key] or 0) + integer(delta or 1)
+			return data[key]
+		end,
+		RemoveAsync = function(_, key)
+			call("RemoveAsync", key)
+			local old = data[key]
+			data[key] = nil
+			return old
 		end,
 		GetSortedAsync = function(_, ascending, pageSize)
+			call("GetSortedAsync")
+			assert(type(pageSize) == "number" and pageSize >= 1 and pageSize <= 100, "pageSize must be 1..100")
 			local list = {}
 			for k, v in data do
 				table.insert(list, { key = k, value = v })
 			end
 			table.sort(list, function(a, b)
+				if a.value == b.value then
+					return a.key < b.key
+				end
 				if ascending then
 					return a.value < b.value
 				end
 				return a.value > b.value
 			end)
-			local page = {}
-			for i = 1, math.min(pageSize, #list) do
-				page[i] = list[i]
+			-- pages of pageSize: GetCurrentPage, IsFinished, AdvanceToNextPageAsync (like DataStorePages)
+			local pages = { IsFinished = #list <= pageSize }
+			local at = 1
+			function pages.GetCurrentPage()
+				local page = {}
+				for i = at, math.min(at + pageSize - 1, #list) do
+					table.insert(page, list[i])
+				end
+				return page
 			end
-			return {
-				GetCurrentPage = function()
-					return page
-				end,
-			}
+			function pages.AdvanceToNextPageAsync(self)
+				call("AdvanceToNextPageAsync")
+				at += pageSize
+				self.IsFinished = at + pageSize > #list
+			end
+			return pages
 		end,
 	}
 end
