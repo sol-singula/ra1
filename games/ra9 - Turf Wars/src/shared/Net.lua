@@ -15,7 +15,7 @@ Net.ClientEvents = {
 	Shoot = 12, -- (origin, direction, shotId) release: an arrow (or the TNT, thrown) from about your head, the way you aim
 	Swing = 6, -- (direction) a slash with the blade: the server finds who it reaches
 	Reload = 2, -- () a magazine weapon's reload (none has one now)
-	Build = 8, -- (structureKey, cx, cz, rot) place a structure in the build phase (BuildService)
+	Build = 8, -- (structureKey, cx, cz, rot, y?) place a structure in the build phase, its base at y studs (on top of pieces; BuildService)
 	Demolish = 4, -- (structureId) take back one of yours in the build phase (refunded)
 	Sprint = 6, -- (on)
 	Slide = 3, -- () a slide while running (MoveService checks the cooldown)
@@ -57,9 +57,10 @@ Net.ServerEvents = {
 	"Shield", -- { kind = "on" | "off" | "break", by, pos?, attacker?, seconds?, why? } the comeback shield (CombatService)
 	"Kill", -- { killer, victim, killerTeam, weapon, head, push, assist, effect, pos } the kill feed, the kill effect;
 	-- killerPos, dist and cam = { origin, velocity, t, impact } (an arrow's flight) for the victim's kill cam
-	"Structure", -- { kind = "built" | "damaged" | "destroyed", id, key, team, hp, max }; destroyed adds min, max, rot,
-	-- emblem and blast = { pos, power } (what broke it: a TNT 1, an arrow less, nil for lost turf): the debris
-	-- (DebrisController)
+	"Structure", -- { kind = "built" | "damaged" | "destroyed", id, key, team, hp, max }; built adds boxMin, boxMax
+	-- (its box: the preview stacks on it); destroyed adds min, max, rot, joins, floor (where the debris lands, when it
+	-- came down with what it stood on) and blast = { pos, power } (what broke it: a TNT 1, an arrow less, nil for
+	-- lost turf): the debris (DebrisController)
 	"Toast", -- text, kind ("info" | "good" | "bad")
 	"Earned", -- { amount, why = "kill" | "headshot" | "match" | ..., total } Shards just paid: the +N that flies to the counter
 	"Alert", -- big centre message: text, color, seconds?

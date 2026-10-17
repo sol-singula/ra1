@@ -12,6 +12,7 @@ return {
 	Fire = Signal.new("Bus.Fire"), -- (down) the touch FIRE button: true pressed, false released (WeaponController)
 	BuildPick = Signal.new("Bus.BuildPick"), -- (structureKey | nil) the build tray picked a piece (BuildController)
 	Place = Signal.new("Bus.Place"), -- () the touch PLACE button (BuildController)
+	PlaceHold = Signal.new("Bus.PlaceHold"), -- (down) the touch PLACE button held: a run of pieces (BuildController)
 	Rotate = Signal.new("Bus.Rotate"), -- () turn the piece (BuildController)
 	Weapon = Signal.new("Bus.Weapon"), -- (weaponKey) a weapon button (WeaponController)
 	Slide = Signal.new("Bus.Slide"), -- () the touch SLIDE button (MoveController)

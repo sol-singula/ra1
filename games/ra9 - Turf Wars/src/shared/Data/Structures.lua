@@ -9,6 +9,10 @@ The keys are the old ones (other code and the tutorial name pieces by key); only
   hp       durability (arrows chip it; TNT wrecks it)
   blocks   true: a tall piece that blocks a lane (the server keeps one open cell in every row across the field)
   walkTop  true: you can stand on it (the watchtower's platform, the rampart's deck)
+  stack    false: nothing can be built on top of it (the tower's turret, the shield's cap and the banner's pole all
+           rise over the box); anything else is a floor for the next piece (Formulas.stackCheck: walls on walls,
+           walls and towers on ramparts, a battlement on a wall as its parapet, a shield wall on a rampart)
+  ground   true: it only stands on the floor, never on another piece (the Rally Banner: a spawn is on the ground)
   rally    true: your team comes back to life beside it while it stands (BuildService:RallySpawn); one per team
   role     what it's for, in a few words (the build tray's hint when you pick it)
 ]]
@@ -61,6 +65,7 @@ Structures.list = {
 		hp = 280,
 		blocks = true,
 		walkTop = true,
+		stack = false,
 		role = "Climb the ladder, shoot from the top",
 	},
 	{
@@ -84,6 +89,7 @@ Structures.list = {
 		h = 6,
 		cost = 5,
 		hp = 80,
+		stack = false,
 		role = "A big shield to hide behind",
 	},
 	{
@@ -96,6 +102,8 @@ Structures.list = {
 		cost = 2,
 		hp = 30,
 		rally = true,
+		stack = false,
+		ground = true,
 		role = "Your team respawns here (one per team)",
 	},
 }

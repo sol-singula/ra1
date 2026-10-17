@@ -19,8 +19,9 @@ building rules, the arrows' boxes and the bots don't change. BuildService works 
 piece goes up or comes down and reshapes its neighbours; the hotbar's pictures have none.
 
   StructureModel.parts(key, team, min, max, joins?)   { { name, cf, size, tone, solid, flag?, glow? } }
-  StructureModel.joins(piece, at)             the joins for a piece { key, team, cx, cz, w, d } from what stands
-                                              round it (at(cx, cz) -> the piece on that cell, or nil), or nil
+  StructureModel.joins(piece, at, under?)     the joins for a piece { key, team, cx, cz, w, d } from what stands
+                                              round it at its own level (at(cx, cz) -> the piece on that cell, or
+                                              nil) and under it (under(cx, cz) -> the piece it stands on there), or nil
   StructureModel.joinsKey(joins)              a short string, to tell whether a piece's joins changed
   StructureModel.color(tone, team)            "stone" | "stoneDark" | "mortar" | "wood" | "woodDark" | "iron" |
                                               "team" | "teamDark" | "flame" | "glow" (and the old "build" | "armor")
@@ -33,6 +34,8 @@ joins, in the piece's own frame (A along its long side, X for a square piece; C 
   front, back    its +C and -C sides, a character per cell along A (left to right): "p" (another wall's end meets
                  it there: a corner post), "w" (a wall or tower stands against a Rampart there), "d" (another
                  Rampart's deck), "s" (a Shield Wall beside a Shield Wall), "." nothing
+  below          "wall" when a wall stands on another wall (a stack: BuildService): it drops its plinth, so the
+                 stack reads as one tall wall; nothing else joins up and down
 Strings only, so they go over the network as they are (the "destroyed" message carries them for the debris).
 ]]
 local Constants = require(script.Parent.Constants)
@@ -119,10 +122,19 @@ StructureModel.WALLS = WALLS
 
 -- What touches a piece, worked out from the grid (BuildService's cells; the tutorial's own). Only the same team's
 -- pieces join. Returns nil when nothing does.
-function StructureModel.joins(piece, at)
+function StructureModel.joins(piece, at, under)
 	local def = piece and Structures.get(piece.key)
 	if not def then
 		return nil
+	end
+	local out, any = {}, false
+	if under and WALLS[def.key] then
+		-- (a wall on a wall: it stands on the other's merlons, with no plinth of its own)
+		local U = under(piece.cx, piece.cz)
+		if U and U ~= piece and U.team == piece.team and WALLS[U.key] then
+			out.below = "wall"
+			any = true
+		end
 	end
 	local alongX = piece.w >= piece.d
 	local n = alongX and piece.w or piece.d -- (cells along A)
@@ -140,7 +152,6 @@ function StructureModel.joins(piece, at)
 		end
 		return nil
 	end
-	local out, any = {}, false
 	if WALLS[def.key] then
 		for _, e in { { "left", -1 }, { "right", n } } do
 			local N, nd, parallel = cell(e[2], 0)
@@ -210,7 +221,7 @@ function StructureModel.joinsKey(joins)
 		return ""
 	end
 	local out = {}
-	for _, k in { "left", "right", "front", "back" } do
+	for _, k in { "left", "right", "front", "back", "below" } do
 		table.insert(out, type(joins[k]) == "string" and joins[k] or "")
 	end
 	return table.concat(out, "|")
@@ -285,11 +296,15 @@ function StructureModel.parts(key, team, mn, mx, joins)
 		local s1 = rp and L / 2 - CELL or L / 2
 		local body = T - wl.thin
 		local copeY = wl.top + wl.cope
-		box("Plinth", wl.stone, 0, wl.plinth / 2, 0, L, wl.plinth, T)
+		-- (on another wall, the body goes right down onto the wall below: no plinth)
+		local plinth = joinAt("below") == "wall" and 0 or wl.plinth
+		if plinth > 0 then
+			box("Plinth", wl.stone, 0, plinth / 2, 0, L, plinth, T)
+		end
 		if s1 - s0 > 0.05 then
 			local b0 = s0 + ((lj or lp) and 0 or wl.inset)
 			local b1 = s1 - ((rj or rp) and 0 or wl.inset)
-			box("Body", wl.stone, (b0 + b1) / 2, (wl.plinth + wl.top) / 2, 0, b1 - b0, wl.top - wl.plinth, body)
+			box("Body", wl.stone, (b0 + b1) / 2, (plinth + wl.top) / 2, 0, b1 - b0, wl.top - plinth, body)
 		end
 		if key == "reinforced" and not (lp or rp) then
 			-- the gate (a solid one: it still blocks): an oak door with iron bands between stone jambs under a lintel
@@ -330,20 +345,20 @@ function StructureModel.parts(key, team, mn, mx, joins)
 		-- the joint with the next wall in the row: a pilaster over the seam (the left one of the pair makes it)
 		if rj == "run" and not rp then
 			local pt = key == "barricade" and body + 0.3 or T - 0.1
-			box("Pilaster", wl.stone, L / 2, (wl.plinth + wl.top) / 2, 0, 0.8, wl.top - wl.plinth, pt, false)
+			box("Pilaster", wl.stone, L / 2, (plinth + wl.top) / 2, 0, 0.8, wl.top - plinth, pt, false)
 		end
 		-- a corner post: a square pier on the end cell, a little over the merlons, capped in the coping's tone
 		local topY = copeY + wl.mh + 0.2
 		for _, p in { { lp, -L / 2 + CELL / 2 }, { rp, L / 2 - CELL / 2 } } do
 			if p[1] then
-				box("Post", wl.stone, p[2], (wl.plinth + topY) / 2, 0, CELL, topY - wl.plinth, T)
+				box("Post", wl.stone, p[2], (plinth + topY) / 2, 0, CELL, topY - plinth, T)
 				box("PostCap", wl.copeTone, p[2], topY + 0.2, 0, CELL + 0.3, 0.4, T + 0.3, false)
 			end
 		end
 		-- against a Watchtower: its shaft stands back from its plinth's edge, so the wall reaches in to meet it
 		for _, e in { { lj, -1 }, { rj, 1 } } do
 			if e[1] == "tower" then
-				local y0 = math.max(wl.plinth, 1)
+				local y0 = math.max(plinth, 1)
 				box(
 					"Abut",
 					wl.stone,

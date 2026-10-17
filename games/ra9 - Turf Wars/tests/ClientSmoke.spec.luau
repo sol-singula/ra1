@@ -179,6 +179,136 @@ Engine.advance(0.1)
 check("aiming across the line turns the preview red", BuildC.spot() and not BuildC.spot().ok)
 check("...and says why", refs.buildHint.Text:find("turf") ~= nil, refs.buildHint.Text)
 
+-- Stacking through the preview: look at a piece's top and the ghost sits on it; hold to place a run ---------------
+do
+	local GREEN = Engine.globals.Color3.fromRGB(96, 224, 128)
+	local function same(a, b)
+		return math.abs(a.R - b.R) + math.abs(a.G - b.G) + math.abs(a.B - b.B) < 1e-3
+	end
+	local function ghost()
+		return ws:FindFirstChild("BuildGhost")
+	end
+	local first
+	for _, st in Build:All() do
+		if st.team == team and st.key == "wall" and st.boxMin.Y == 0 then
+			first = st
+		end
+	end
+	check("the client knows the wall's box (the built message carries it)", first and BuildC.boxes()[first.id] ~= nil)
+	local top = Vector3.new((first.boxMin.X + first.boxMax.X) / 2, first.boxMax.Y, first.boxMin.Z + 2)
+	-- from behind and above, looking at the middle of its top
+	cam.CFrame = CFrame.lookAt(top + Vector3.new(-s * 8, 6, 0), top)
+	Engine.advance(0.1)
+	spot = BuildC.spot()
+	check(
+		"looking at the wall's top: the preview sits on it",
+		spot and spot.y == 10 and spot.cx == first.cx and spot.cz == first.cz,
+		spot and (spot.y .. " " .. tostring(spot.why))
+	)
+	check("...and it's a valid spot (a wall on a wall)", spot and spot.ok, spot and spot.why)
+	check("...the ghost is green", ghost() and ghost().Parent == ws and same(ghost().Color, GREEN))
+	check("...drawn on top of the wall", ghost() and ghost().CFrame.Position.Y > 10 and ghost().CFrame.Position.Y < 20)
+	refs.touch.place.Activated:Fire()
+	Engine.advance(0.3)
+	local stacked
+	for _, st in Build:All() do
+		if st.team == team and st.key == "wall" and st.boxMin.Y == 10 then
+			stacked = st
+		end
+	end
+	check("PLACE builds it on top (on the server)", stacked ~= nil)
+	-- a rampart (three cells long) over the stack's top and thin air: NO SUPPORT, in red
+	BuildC.pick("bridge")
+	local top2 = Vector3.new(top.X, 20, top.Z)
+	cam.CFrame = CFrame.lookAt(top2 + Vector3.new(-s * 8, 6, 0), top2)
+	Engine.advance(0.1)
+	spot = BuildC.spot()
+	check(
+		"a rampart over the stack and thin air: NO SUPPORT",
+		spot and spot.y == 20 and not spot.ok and spot.why == "No support",
+		spot and spot.why
+	)
+	check(
+		"...the ghost is red, the hint says so",
+		ghost() and same(ghost().Color, Constants.TEAM_COLOR.red) and refs.buildHint.Text:find("No support") ~= nil,
+		refs.buildHint.Text
+	)
+	-- its side: the floor in front of it
+	local side = Vector3.new(first.boxMin.X + (s > 0 and 0 or 8), 5, first.boxMin.Z + 2)
+	cam.CFrame = CFrame.lookAt(side + Vector3.new(-s * 12, 1, 0), side)
+	Engine.advance(0.1)
+	spot = BuildC.spot()
+	check(
+		"looking at the wall's side: the preview is on the floor in front of it",
+		spot and spot.y == 0 and (spot.cx - first.cx) * s < 0,
+		spot and (spot.cx .. " " .. spot.y)
+	)
+	-- hold to place: a run of battlements along a line, the next slot in line while the aim is still over the last
+	BuildC.pick("barricade")
+	if BuildC.rotation() ~= 1 then
+		BuildC.rotate() -- (turned: 1 x 2, running along Z)
+	end
+	local before = {} -- (what stands already: the run's pieces are the new ones)
+	for id in Build:All() do
+		before[id] = true
+	end
+	local x = s * 30
+	local function aim(z)
+		cam.CFrame = CFrame.lookAt(Vector3.new(x - s * 10, 7, z), Vector3.new(x, 0, z))
+	end
+	aim(-20)
+	Engine.advance(0.1)
+	local faint = ws:FindFirstChild("BuildGhostNext")
+	check(
+		"a fainter ghost shows the next slot in line",
+		faint ~= nil and faint.Transparency > 0.7,
+		BuildC.spot() and BuildC.spot().why
+	)
+	local sp0 = BuildC.spot()
+	Engine.actions.TW_Place("TW_Place", Enum.UserInputState.Begin, { UserInputType = Enum.UserInputType.MouseButton1 })
+	check(
+		"the button down places one and starts a run",
+		BuildC.holding(),
+		sp0 and (sp0.cx .. ":" .. sp0.cz .. " " .. tostring(sp0.why))
+	)
+	for i = 1, 24 do
+		aim(-20 + i * 0.6) -- (the aim creeps along Z, 14 studs in all)
+		Engine.advance(0.1)
+	end
+	Engine.actions.TW_Place("TW_Place", Enum.UserInputState.End, { UserInputType = Enum.UserInputType.MouseButton1 })
+	Engine.advance(0.3)
+	local runPieces = {}
+	for id, st in Build:All() do
+		if not before[id] and st.team == team and st.key == "barricade" then
+			table.insert(runPieces, st)
+		end
+	end
+	table.sort(runPieces, function(p, q)
+		return p.id < q.id
+	end)
+	check("held along a line: a run of pieces went down", #runPieces >= 3, #runPieces)
+	local straight, where = #runPieces >= 2, {}
+	for i = 1, #runPieces do
+		table.insert(where, runPieces[i].cx .. ":" .. runPieces[i].cz)
+		if i > 1 then
+			straight = straight and runPieces[i].cx == runPieces[1].cx and runPieces[i].cz == runPieces[i - 1].cz + 2
+		end
+	end
+	check("...in a straight row, end to end", straight, table.concat(where, " "))
+	check("...the button up ends it", not BuildC.holding())
+	-- (the pieces here go back: the checks after count on one wall standing)
+	for _, st in runPieces do
+		Build:Remove(st.id, nil, true)
+	end
+	if stacked then
+		Build:Remove(stacked.id, nil, true)
+	end
+	BuildC.rotate()
+	BuildC.pick("wall")
+	cam.CFrame = CFrame.lookAt(Vector3.new(s * 40, 5, -28), Vector3.new(s * 48, 0, -28))
+	Engine.advance(0.1)
+end
+
 -- The fight -----------------------------------------------------------------------------------------------------
 Engine.advance(Constants.BUILD_SECONDS + 0.5)
 check("FIGHT on the clock", refs.phase.Text:find("FIGHT") ~= nil, refs.phase.Text)

@@ -193,9 +193,11 @@ Constants.BOT_EASY_REACT_MAX = 2.0
 Constants.BOT_NAMES = { "Ace", "Echo", "Nova", "Blitz", "Rook", "Vex", "Juno", "Kite", "Onyx", "Pike" }
 
 -- Building (§7)
-Constants.BUILD_BUDGET = 120 -- points a player gets each build phase
+Constants.BUILD_BUDGET = 200 -- points a player gets each build phase in turf (another mode sets its own: BuildService:SetBudget)
 Constants.TEAM_STRUCTURES = 72 -- standing structures a team may have (+2 per player past 10)
-Constants.BUILD_REACH = 44 -- studs from you to the structure
+Constants.PLAYER_STRUCTURES = 24 -- standing structures one player may have (phones: the part count)
+Constants.BUILD_MAX_HEIGHT = 30 -- studs: how high a stack of pieces may reach (three Castle Walls)
+Constants.BUILD_REACH = 44 -- studs from you to the middle of the structure (the top of a stack is further off than its foot)
 Constants.BUILD_MAP_OVERLAP = 1.25 -- studs a piece may poke into the map's shapes on each side (a little overlap is fine)
 Constants.BUILD_FRONT_GAP = 0 -- cells kept free on your side of the frontline (0: build right up to it)
 

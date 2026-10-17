@@ -1,11 +1,23 @@
 --[[
 Construction (master plan §2B, §7): modular structures on the 4-stud grid, in the build phase only.
 
-A placement is checked here, never trusted from the client: the phase; the structure exists; your budget covers it
-and your team is under its cap; you're within BUILD_REACH; every cell of its footprint is on your own turf, at least
-up to the frontline (BUILD_FRONT_GAP cells back; 0 = the cell touching it too), out of both spawn zones and inside the field; it doesn't overlap
-another structure or stand in the map's shapes (poking BUILD_MAP_OVERLAP studs into one at the edges is fine); and if it's a tall piece, every row of cells across the field it stands in still
+A placement is checked here, never trusted from the client: the phase; the structure exists; your budget covers it,
+you're under your own cap of standing pieces (PLAYER_STRUCTURES) and your team under its (TEAM_STRUCTURES);
+you're within BUILD_REACH of the piece; every cell of its footprint is on your own turf, at least
+up to the frontline (BUILD_FRONT_GAP cells back; 0 = the cell touching it too), out of both spawn zones and inside the field; it has what it
+stands on (below); it doesn't stand in the map's shapes (poking BUILD_MAP_OVERLAP studs into one at the edges is fine); and if it's a tall piece, every row of cells across the field it stands in still
 has an open cell (no wall ever seals the battlefield). Then it's built for everyone in its team's colour.
+
+Pieces stack (Formulas.stackCheck): a piece goes on the floor (y = 0, every cell of its footprint bare) or on top
+of the same team's pieces (y = their top: every cell's tallest piece must top out at exactly y, and be one that
+can be built on: walls, battlements and ramparts, never a tower, a shield or a banner; the banner itself never
+leaves the floor), up to BUILD_MAX_HEIGHT studs. Walls on walls, a battlement on a wall as its parapet, walls and
+towers on ramparts. The ground cell's rules (turf, the field, the map) are the same whatever the height; a stack is
+as tall as a wall, so the lane rule counts a stacked column as blocked. When a piece comes down, whatever stood on
+it comes down too (Remove: the chain, each with its own debris, falling to the floor), refunded if it was taken back
+and not if it was broken. The boxes are three-dimensional (boxMin, boxMax), so the arrows, the anti-cheat's "inside
+a wall" test and the bots' grid see a stack as it stands; a stacked wall drops its plinth (StructureModel joins
+"below") so the stack reads as one tall wall.
 
 Structures last the match (they're cleared with the arena) unless arrows or TNT break them: CombatService reports
 hits on their boxes (StructureHit, with where the blow came from) and they lose durability; when one comes down
@@ -14,8 +26,9 @@ How each piece looks is StructureModel's (shared with the hotbar's pictures and 
 the full cost.
 
 Pieces touching join up (StructureModel.joins: walls in a row run on as one, corners get a post, a Rampart's deck
-reaches the wall beside it): when one goes up or comes down, the same team's pieces on the cells round it are made
-again if their joins changed (their parts only; the box each stands in, and so every rule, stays the same).
+reaches the wall beside it): when one goes up or comes down, the same team's pieces on the cells round it, at the
+same level, are made again if their joins changed (their parts only; the box each stands in, and so every rule,
+stays the same).
 
 The Rally Banner (Data/Structures: rally) is a forward spawn: while it stands on its team's turf, that team's players
 come back to life beside it instead of in the spawn room (MatchService asks RallySpawn when a respawn is due). One a
@@ -25,11 +38,13 @@ at least a cell back from the line, on the deck (a ray down, where the engine ha
 (ClearLost) and RallySpawn ignores one over the line anyway. The team hears when it goes up and when it falls; it
 glows a little and wears a small RALLY marker. Spawn protection is the same as anywhere (CombatService:Spawned).
 
-  BuildService:Place(player, key, cx, cz, rot) -> ok, why
+  BuildService:Place(player, key, cx, cz, rot, y?) -> ok, why   (y: the base height in studs; 0 or nil, the floor)
   BuildService:Refill()                 the budgets, at each build phase
+  BuildService:SetBudget(points)        what a build phase gives (Constants.BUILD_BUDGET: turf; another mode sets its own)
   BuildService:Clear()                  between matches
-  BuildService:Budget(player)
+  BuildService:Budget(player) / BudgetMax()
   BuildService:All()                    { [id] = structure }
+  BuildService:TopAt(cx, cz)            the tallest piece on that cell, or nil
   BuildService:Rally(team, any?)        the team's standing Rally Banner on its own turf (any: wherever), or nil
   BuildService:RallySpawn(player)       a CFrame beside their team's Rally Banner, or nil (the spawn room)
 ]]
@@ -53,9 +68,10 @@ local BuildService = {
 }
 
 local teams, arena, combat
-local structures = {} -- [id] = { id, key, team, owner, cx, cz, w, d, rot, hp, max, model, boxMin, boxMax, joins, solid }
-local occupied = {} -- [cx][cz] = id
+local structures = {} -- [id] = { id, key, team, owner, cx, cz, w, d, rot, y, hp, max, model, boxMin, boxMax, joins, solid }
+local columns = {} -- [cx][cz] = { id, ... } every piece on that cell, at any height
 local budgets = {} -- [player] = points left
+local budgetMax = Constants.BUILD_BUDGET -- what a build phase gives (SetBudget)
 local nextId = 0
 local open = false -- the build phase
 local frontlineOf -- fn() -> the frontline's X (MatchService)
@@ -72,12 +88,50 @@ local function cellsOf(cx, cz, w, d)
 	return out
 end
 
+-- The pieces on a cell (any height), the one whose base is at y, and the tallest
+local function columnAt(cx, cz)
+	return columns[cx] and columns[cx][cz]
+end
+
+local function pieceAt(cx, cz, y)
+	for _, id in columnAt(cx, cz) or {} do
+		local s = structures[id]
+		if s and math.abs(s.boxMin.Y - (y or 0)) < 0.01 then
+			return s
+		end
+	end
+	return nil
+end
+
+local function topAt(cx, cz)
+	local best
+	for _, id in columnAt(cx, cz) or {} do
+		local s = structures[id]
+		if s and (not best or s.boxMax.Y > best.boxMax.Y) then
+			best = s
+		end
+	end
+	return best
+end
+
+function BuildService:TopAt(cx, cz)
+	return topAt(cx, cz)
+end
+
 function BuildService:Budget(player)
-	return budgets[player] or Constants.BUILD_BUDGET
+	return budgets[player] or budgetMax
+end
+
+function BuildService:BudgetMax()
+	return budgetMax
+end
+
+function BuildService:SetBudget(points)
+	budgetMax = math.max(0, math.floor(tonumber(points) or Constants.BUILD_BUDGET))
 end
 
 function BuildService:Push(player)
-	Net.fire(player, "Me", { budget = self:Budget(player), budgetMax = Constants.BUILD_BUDGET })
+	Net.fire(player, "Me", { budget = self:Budget(player), budgetMax = budgetMax })
 end
 
 function BuildService:SetOpen(on)
@@ -90,7 +144,7 @@ end
 
 function BuildService:Refill()
 	for _, p in Players:GetPlayers() do
-		budgets[p] = Constants.BUILD_BUDGET
+		budgets[p] = budgetMax
 		self:Push(p)
 	end
 end
@@ -105,17 +159,30 @@ function BuildService:TeamCount(team)
 	return n
 end
 
+function BuildService:PlayerCount(player)
+	local n = 0
+	for _, s in structures do
+		if s.owner == player then
+			n += 1
+		end
+	end
+	return n
+end
+
 function BuildService:TeamCap(team)
 	return Constants.TEAM_STRUCTURES + math.max(0, teams:Count(team) - 10) * 2
 end
 
--- Is cell (cx, cz) blocked to walking at ground level (a tall structure or a map shape)?
+-- Is cell (cx, cz) blocked to walking at ground level (a tall structure, a stack of pieces, or a map shape)?
 local function blockedCell(a, cx, cz, extraCells)
 	if extraCells and extraCells[cx .. ":" .. cz] then
 		return true
 	end
-	local id = occupied[cx] and occupied[cx][cz]
-	if id then
+	local col = columnAt(cx, cz)
+	if col and #col > 1 then
+		return true -- (a stack is as tall as a wall)
+	end
+	for _, id in col or {} do
 		local s = structures[id]
 		local def = s and Structures.get(s.key)
 		if def and def.blocks then
@@ -126,7 +193,7 @@ local function blockedCell(a, cx, cz, extraCells)
 end
 
 -- Checks a placement; returns ok, why (a short reason the client shows).
-function BuildService:Check(player, key, cx, cz, rot)
+function BuildService:Check(player, key, cx, cz, rot, y)
 	local def = Structures.get(key)
 	if not def then
 		return false, "Unknown structure"
@@ -141,13 +208,20 @@ function BuildService:Check(player, key, cx, cz, rot)
 	if type(cx) ~= "number" or type(cz) ~= "number" or cx ~= cx or cz ~= cz then
 		return false, "Bad spot"
 	end
+	y = tonumber(y) or 0
+	if y ~= y or y < 0 or y > Constants.BUILD_MAX_HEIGHT then
+		return false, "Bad spot"
+	end
 	cx, cz = math.floor(cx), math.floor(cz)
 	rot = rot == 1 and 1 or 0
 	if self:Budget(player) < def.cost then
 		return false, "Not enough build points"
 	end
+	if self:PlayerCount(player) >= Constants.PLAYER_STRUCTURES then
+		return false, `Limit reached: {Constants.PLAYER_STRUCTURES} pieces each`
+	end
 	if self:TeamCount(team) >= self:TeamCap(team) then
-		return false, "Your team has built all it can"
+		return false, "Limit reached: your team has built all it can"
 	end
 	if def.rally and self:Rally(team, true) then
 		return false, "Your team's Rally Banner is already up"
@@ -157,7 +231,7 @@ function BuildService:Check(player, key, cx, cz, rot)
 		return false, "No arena"
 	end
 	local w, d = Structures.footprint(def, rot)
-	local mn, mx = Formulas.footprintBox(cx, cz, w, d, 0, def.h)
+	local mn, mx = Formulas.footprintBox(cx, cz, w, d, y, def.h)
 	-- inside the field, out of the spawn zones, on your own turf, back from the line
 	local front = frontlineOf and frontlineOf() or 0
 	local edge = a.half - a.spawnDepth
@@ -171,20 +245,19 @@ function BuildService:Check(player, key, cx, cz, rot)
 	elseif team == "blue" and mn.X < front + gap then
 		return false, "Only on your own turf"
 	end
-	-- reach
+	-- reach: to the middle of the piece, height and all (a high one is further off than its cell)
 	local c = player.Character
 	local r = c and c:FindFirstChild("HumanoidRootPart")
-	if r then
-		local center = (mn + mx) / 2
-		if (Vector3.new(center.X, r.Position.Y, center.Z) - r.Position).Magnitude > Constants.BUILD_REACH then
-			return false, "Too far away"
-		end
+	if r and ((mn + mx) / 2 - r.Position).Magnitude > Constants.BUILD_REACH then
+		return false, "Too far away"
 	end
-	-- nothing in the way
-	for _, cell in cellsOf(cx, cz, w, d) do
-		if occupied[cell[1]] and occupied[cell[1]][cell[2]] then
-			return false, "Something's already there"
-		end
+	-- what it stands on: the floor (nothing in the way), or the tops of the same team's pieces
+	local okStack, whyStack = Formulas.stackCheck(def, team, cx, cz, w, d, y, function(x, z)
+		local t = topAt(x, z)
+		return t and { top = t.boxMax.Y, team = t.team, key = t.key } or nil
+	end)
+	if not okStack then
+		return false, whyStack
 	end
 	-- the map: a little overlap at the edges is fine (BUILD_MAP_OVERLAP studs a side), not standing in a shape
 	local pad = Vector3.new(Constants.BUILD_MAP_OVERLAP, 0, Constants.BUILD_MAP_OVERLAP)
@@ -195,8 +268,9 @@ function BuildService:Check(player, key, cx, cz, rot)
 			return false, "Blocked by the map"
 		end
 	end
-	-- the lane rule: every row (each X column of cells) keeps an open cell across the field
-	if def.blocks then
+	-- the lane rule: every row (each X column of cells) keeps an open cell across the field (a stack counts as a
+	-- wall, whatever it's made of)
+	if def.blocks or y > 0 then
 		local extra = {}
 		for _, cell in cellsOf(cx, cz, w, d) do
 			extra[cell[1] .. ":" .. cell[2]] = true
@@ -215,24 +289,33 @@ function BuildService:Check(player, key, cx, cz, rot)
 			end
 		end
 	end
-	return true, nil, def, cx, cz, w, d, rot
+	return true, nil, def, cx, cz, w, d, rot, y
 end
 
--- How a piece joins the same team's pieces touching it (StructureModel.joins), from the grid
-local function pieceAt(cx, cz)
-	local id = occupied[cx] and occupied[cx][cz]
-	return id and structures[id]
-end
-
+-- How a piece joins the same team's pieces touching it at its own level (StructureModel.joins), and what it
+-- stands on, from the grid
 local function joinsOf(s)
-	return StructureModel.joins(s, pieceAt)
+	local y = s.boxMin.Y
+	return StructureModel.joins(s, function(x, z)
+		return pieceAt(x, z, y)
+	end, function(x, z)
+		-- (the piece whose top is this one's base)
+		for _, id in columnAt(x, z) or {} do
+			local u = structures[id]
+			if u and u ~= s and math.abs(u.boxMax.Y - y) < 0.01 then
+				return u
+			end
+		end
+		return nil
+	end)
 end
 
--- The same team's pieces touching this one's sides and ends (its neighbours by the cells round it)
+-- The same team's pieces touching this one's sides and ends at its level (its neighbours by the cells round it)
 local function neighbours(s)
 	local out, seen = {}, {}
+	local y = s.boxMin.Y
 	local function look(x, z)
-		local n = pieceAt(x, z)
+		local n = pieceAt(x, z, y)
 		if n and n ~= s and n.team == s.team and not seen[n] then
 			seen[n] = true
 			table.insert(out, n)
@@ -245,6 +328,21 @@ local function neighbours(s)
 	for z = s.cz, s.cz + s.d - 1 do
 		look(s.cx - 1, z)
 		look(s.cx + s.w, z)
+	end
+	return out
+end
+
+-- The pieces standing on this one (their base on its top, over one of its cells): they come down with it
+local function above(s)
+	local out, seen = {}, {}
+	for _, cell in cellsOf(s.cx, s.cz, s.w, s.d) do
+		for _, id in columnAt(cell[1], cell[2]) or {} do
+			local p = structures[id]
+			if p and p ~= s and not seen[p] and math.abs(p.boxMin.Y - s.boxMax.Y) < 0.01 then
+				seen[p] = true
+				table.insert(out, p)
+			end
+		end
 	end
 	return out
 end
@@ -413,7 +511,7 @@ function BuildService:RallySpawn(player)
 		local x, z = cell[1], cell[2]
 		local mn, mx = Formulas.footprintBox(x, z, 1, 1, 0.3, 5.7)
 		local mid = (mn + mx) / 2
-		local free = not (occupied[x] and occupied[x][z])
+		local free = not topAt(x, z)
 			and not (a.blocked[x] and a.blocked[x][z])
 			and math.abs(mid.X) <= a.half - 2
 			and math.abs(mid.Z) <= a.width / 2 - 2
@@ -443,13 +541,13 @@ function BuildService:RallySpawn(player)
 	return nil
 end
 
-function BuildService:Place(player, key, cx, cz, rot)
-	local ok, why, def, x, z, w, d, r = self:Check(player, key, cx, cz, rot)
+function BuildService:Place(player, key, cx, cz, rot, y)
+	local ok, why, def, x, z, w, d, r, base = self:Check(player, key, cx, cz, rot, y)
 	if not ok then
 		return false, why
 	end
 	nextId += 1
-	local mn, mx = Formulas.footprintBox(x, z, w, d, 0, def.h)
+	local mn, mx = Formulas.footprintBox(x, z, w, d, base, def.h)
 	local s = {
 		id = nextId,
 		key = def.key,
@@ -460,6 +558,7 @@ function BuildService:Place(player, key, cx, cz, rot)
 		w = w,
 		d = d,
 		rot = r,
+		y = base,
 		hp = def.hp,
 		max = def.hp,
 		boxMin = mn,
@@ -468,8 +567,9 @@ function BuildService:Place(player, key, cx, cz, rot)
 	}
 	structures[s.id] = s
 	for _, cell in cellsOf(x, z, w, d) do
-		occupied[cell[1]] = occupied[cell[1]] or {}
-		occupied[cell[1]][cell[2]] = s.id
+		columns[cell[1]] = columns[cell[1]] or {}
+		columns[cell[1]][cell[2]] = columns[cell[1]][cell[2]] or {}
+		table.insert(columns[cell[1]][cell[2]], s.id)
 	end
 	-- (joined up with the same team's pieces touching it, and they with it)
 	s.joins = joinsOf(s)
@@ -488,7 +588,16 @@ function BuildService:Place(player, key, cx, cz, rot)
 	end
 	budgets[player] = self:Budget(player) - def.cost
 	self:Push(player)
-	Net.fireAll("Structure", { kind = "built", id = s.id, key = def.key, team = s.team, hp = s.hp, max = s.max })
+	Net.fireAll("Structure", {
+		kind = "built",
+		id = s.id,
+		key = def.key,
+		team = s.team,
+		hp = s.hp,
+		max = s.max,
+		boxMin = mn, -- (its box: the client's preview snaps to the tops of what stands)
+		boxMax = mx,
+	})
 	if def.rally then
 		tellTeam(s.team, "Rally Banner up! Your team respawns there", "good")
 	end
@@ -496,17 +605,29 @@ function BuildService:Place(player, key, cx, cz, rot)
 	return true, s
 end
 
--- Take a structure down. blast = { pos, power } (what broke it) goes out with the "destroyed" message so every client
--- can throw the debris away from it (DebrisController); a refund (your own, taken back) just goes.
-function BuildService:Remove(id, attacker, refund, blast)
+-- Take a structure down, and whatever stood on it (the chain, top first). blast = { pos, power } (what broke it)
+-- goes out with the "destroyed" message so every client can throw the debris away from it (DebrisController); a
+-- refund (your own, taken back) just goes. fallTo: where the debris lands (the piece's own base, or, for one
+-- coming down with its support, the floor the support stood on).
+function BuildService:Remove(id, attacker, refund, blast, fallTo)
 	local s = structures[id]
 	if not s then
 		return false
 	end
+	for _, p in above(s) do
+		self:Remove(p.id, attacker, refund, blast, fallTo or s.boxMin.Y)
+	end
 	structures[id] = nil
 	for _, cell in cellsOf(s.cx, s.cz, s.w, s.d) do
-		if occupied[cell[1]] then
-			occupied[cell[1]][cell[2]] = nil
+		local col = columnAt(cell[1], cell[2])
+		if col then
+			local at = table.find(col, id)
+			if at then
+				table.remove(col, at)
+			end
+			if #col == 0 then
+				columns[cell[1]][cell[2]] = nil
+			end
 		end
 	end
 	arena:RemoveBox(id)
@@ -529,7 +650,7 @@ function BuildService:Remove(id, attacker, refund, blast)
 		)
 	end
 	if refund and s.owner and s.owner.Parent then
-		budgets[s.owner] = math.min(Constants.BUILD_BUDGET, self:Budget(s.owner) + def.cost)
+		budgets[s.owner] = math.min(budgetMax, self:Budget(s.owner) + def.cost)
 		self:Push(s.owner)
 	end
 	Net.fireAll("Structure", {
@@ -541,6 +662,7 @@ function BuildService:Remove(id, attacker, refund, blast)
 		max = s.boxMax,
 		rot = s.rot,
 		joins = s.joins, -- (the shape it had: the debris breaks the same parts)
+		floor = fallTo, -- (where its debris lands, when not on its own base: the floor its support stood on)
 		refund = refund == true or nil,
 		quiet = clearing or nil, -- (the arena is being cleared: no debris)
 		blast = blast,
@@ -584,7 +706,7 @@ function BuildService:ClearLost(frontline)
 	for id, s in structures do
 		local lost = (s.team == "red" and s.boxMax and s.boxMax.X > frontline + 0.01)
 			or (s.team == "blue" and s.boxMin and s.boxMin.X < frontline - 0.01)
-		if lost then
+		if lost and structures[id] then
 			self:Remove(id, nil, false)
 			gone += 1
 		end
@@ -598,7 +720,7 @@ function BuildService:Clear()
 		self:Remove(id, nil, false)
 	end
 	clearing = false
-	structures, occupied = {}, {}
+	structures, columns = {}, {}
 end
 
 function BuildService:All()
@@ -612,8 +734,8 @@ function BuildService:Init(registry)
 	folder = Instance.new("Folder")
 	folder.Name = "Structures"
 	folder.Parent = workspace
-	Net.on("Build", function(player, key, cx, cz, rot)
-		local ok, why = self:Place(player, key, cx, cz, rot)
+	Net.on("Build", function(player, key, cx, cz, rot, y)
+		local ok, why = self:Place(player, key, cx, cz, rot, y)
 		if not ok and why then
 			Net.fire(player, "Toast", why, "bad")
 		end
