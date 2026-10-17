@@ -50,6 +50,7 @@ local AnalyticsService = {
 		"SeasonService",
 		"FeedbackService",
 		"AntiCheatService",
+		"InviteService",
 	},
 }
 
@@ -509,6 +510,21 @@ function AnalyticsService:Init(registry)
 		else
 			track(player, "like_card", { answer = answer })
 		end
+	end)
+	-- the invite-a-friend card: shown (and why), sent or put off, and the effect won when a friend came
+	local invite = registry.InviteService
+	invite.PromoShown:Connect(function(player, why)
+		track(player, "invite_prompt_shown", { why = why })
+	end)
+	invite.PromoAnswered:Connect(function(player, what, recipients)
+		if what == "sent" then
+			track(player, "invite_prompt_sent", { recipients = recipients })
+		else
+			track(player, "invite_prompt_later")
+		end
+	end)
+	invite.Rewarded:Connect(function(player, key, friendId)
+		track(player, "invite_reward", { key = key, friend = friendId })
 	end)
 	-- the client's requests, device, frame rate, focus
 	Net.tap(function(player, name, a, b)
