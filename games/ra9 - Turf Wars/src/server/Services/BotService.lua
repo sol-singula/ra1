@@ -754,7 +754,14 @@ function BotService:Think(b)
 	local charging = match:Charging()
 	local close = charging and dist <= blade.range - 1
 	local range = Constants.BOT_TNT_RANGE
-	if not close and dist >= range[1] and dist <= range[2] and not self.easyFor(target) and t >= (b.tntAt or 0) then
+	if
+		not close
+		and dist >= range[1]
+		and dist <= range[2]
+		and not self.easyFor(target)
+		and not combat:Novice(target)
+		and t >= (b.tntAt or 0)
+	then
 		b.tntAt = t + rng:NextNumber(2, 4) -- (whether it throws or not, it thinks again in a while)
 		if rng:NextNumber() < Constants.BOT_TNT_CHANCE and self:StartLob(b, root, tr.Position, t) then
 			return
@@ -799,7 +806,7 @@ function BotService:Think(b)
 	face(root, tr.Position)
 	local w = Weapons.get(combat:Weapon(b))
 	-- (a new player's first match: a slower, shakier bot, so the first win comes fast)
-	local easy = self.easyFor(target) == true
+	local easy = self.easyFor(target) == true or combat:Novice(target) -- (or still waiting for their first knockout)
 	local react = Constants.BOT_REACT * (easy and Constants.TUTORIAL_BOT_REACT or 1)
 	if not b.drawUntil then
 		if t - b.seenAt >= react then

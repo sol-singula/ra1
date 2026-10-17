@@ -66,6 +66,9 @@ local nextArrow = 0
 local bombs = {} -- { id, by, team, origin, velocity, t } thrown TNT in the air
 local nextBomb = 0
 local enabled = false
+local history = {} -- [player] = { { t, pos } ... } the last second of each body's root, ~20 a second (lag)
+local scored = {} -- [player] = true once they've knocked someone out this visit (the first-kill help ends)
+local HISTORY_STEP, HISTORY_KEEP = 0.05, 1.1
 
 local function now()
 	return workspace:GetServerTimeNow()
@@ -89,6 +92,55 @@ end
 local function root(player)
 	local c = player.Character
 	return c and c:FindFirstChild("HumanoidRootPart")
+end
+
+-- A real player's ping in seconds (tests replace it); bots: 0
+CombatService.pingOf = function(player)
+	if typeof(player) ~= "Instance" then
+		return 0
+	end
+	local ok, p = pcall(function()
+		return player:GetNetworkPing()
+	end)
+	return ok and type(p) == "number" and p or 0
+end
+
+-- Where a body's root was at time t (from the history; nil if it wasn't kept)
+local function rootAt(player, t)
+	local h = history[player]
+	if not h or #h == 0 then
+		return nil
+	end
+	for i = #h, 1, -1 do
+		local e = h[i]
+		if e.t <= t then
+			local n = h[i + 1]
+			if n and n.t > e.t then
+				return e.pos:Lerp(n.pos, math.clamp((t - e.t) / (n.t - e.t), 0, 1))
+			end
+			return e.pos
+		end
+	end
+	return h[1].pos
+end
+
+local function record(t)
+	for player, s in states do
+		local r = s.alive and root(player)
+		if r then
+			local h = history[player]
+			if not h then
+				h = {}
+				history[player] = h
+			end
+			table.insert(h, { t = t, pos = r.Position })
+			while #h > 0 and t - h[1].t > HISTORY_KEEP do
+				table.remove(h, 1)
+			end
+		else
+			history[player] = nil
+		end
+	end
 end
 
 local function mirror(player, s)
@@ -193,13 +245,32 @@ function CombatService:HoldBow(player, key)
 	return model
 end
 
+-- Still waiting for their first ever knockout (a real player whose saved kills are 0 and who hasn't scored yet this
+-- visit): their shots are helped onto an enemy, they respawn faster and are shielded longer (Constants.FIRST_KILL_*).
+CombatService.firstKillHelp = true -- (tests that aren't about it turn it off: tests/FeelSmoke checks it)
+function CombatService:Novice(player)
+	if not CombatService.firstKillHelp then
+		return false
+	end
+	if typeof(player) ~= "Instance" or not player:IsA("Player") or scored[player] then
+		return false
+	end
+	local profile = data and data:Get(player)
+	local st = profile and profile.stats
+	return st ~= nil and (st.kills or 0) == 0
+end
+
 function CombatService:Spawned(player)
 	local s = state(player)
 	s.hp = Constants.MAX_HEALTH
 	s.alive = true
 	s.drawAt = nil
 	s.hits = {}
-	s.protectUntil = now() + Constants.SPAWN_PROTECT
+	local novice = self:Novice(player)
+	s.protectUntil = now() + (novice and Constants.SPAWN_PROTECT_NEW or Constants.SPAWN_PROTECT)
+	if typeof(player) == "Instance" then
+		player:SetAttribute("Novice", novice or nil) -- (the client marks their first target)
+	end
 	s.attacked = false
 	local profile = data:Get(player)
 	local pick = profile and profile.settings.weapon
@@ -269,6 +340,10 @@ function CombatService:Kill(victim, attacker, info)
 	info.assists = assists
 	mirror(victim, s)
 	self:Push(victim)
+	if attacker and attacker ~= victim and not scored[attacker] and typeof(attacker) == "Instance" then
+		scored[attacker] = true -- (their first knockout this visit: the help ends)
+		attacker:SetAttribute("Novice", nil)
+	end
 	self.Killed:Fire(victim, attacker, info)
 	return true
 end
@@ -327,23 +402,53 @@ function CombatService:Damage(victim, amount, attacker, info)
 end
 
 -- Arrows --------------------------------------------------------------------------------------------------------
+-- (lag and the first knockout: how far back to also look for each target, and how much wider the spheres are)
+local function forgiveness(arrow)
+	local rewind, extra = 0, 0
+	local by = arrow.by
+	if typeof(by) == "Instance" then
+		local ping = math.max(0, CombatService.pingOf(by) or 0)
+		rewind = math.min(ping, Constants.LAG_REWIND_MAX)
+		extra = math.clamp((ping - Constants.LAG_FREE) / 0.1 * Constants.LAG_RADIUS, 0, Constants.LAG_RADIUS_MAX)
+	end
+	if arrow.novice then
+		extra += Constants.FIRST_KILL_RADIUS
+	end
+	return rewind, extra
+end
+
 local function hitPlayers(arrow, a, b)
 	local best, bestT, bestHead
+	local rewind, extra = forgiveness(arrow)
+	local past = rewind > 0.01 and now() - rewind or nil
 	for player, s in states do
 		if s.alive and player ~= arrow.by and player.Parent and teams:Team(player) ~= arrow.team then
 			local r = root(player)
 			if r then
-				local p = r.Position
-				local head = Formulas.segmentSphere(a, b, p + Vector3.new(0, 2.6, 0), Constants.HIT_RADIUS_HEAD)
-				local body = Formulas.segmentSphere(a, b, p + Vector3.new(0, 0.2, 0), Constants.HIT_RADIUS_BODY)
-				local t, isHead = nil, false
-				if head and (not body or head <= body + 0.02) then
-					t, isHead = head, true
-				elseif body then
-					t = body
+				-- where they are now, and where the shooter saw them (their ping ago)
+				local spots = { r.Position }
+				local was = past and rootAt(player, past)
+				if was and (was - r.Position).Magnitude > 0.05 then
+					table.insert(spots, was)
 				end
-				if t and (not bestT or t < bestT) then
-					best, bestT, bestHead = player, t, isHead
+				for _, p in spots do
+					local head = Formulas.segmentSphere(
+						a,
+						b,
+						p + Vector3.new(0, 2.6, 0),
+						Constants.HIT_RADIUS_HEAD + extra * 0.5
+					)
+					local body =
+						Formulas.segmentSphere(a, b, p + Vector3.new(0, 0.2, 0), Constants.HIT_RADIUS_BODY + extra)
+					local t, isHead = nil, false
+					if head and (not body or head <= body + 0.02) then
+						t, isHead = head, true
+					elseif body then
+						t = body
+					end
+					if t and (not bestT or t < bestT) then
+						best, bestT, bestHead = player, t, isHead
+					end
 				end
 			end
 		end
@@ -669,13 +774,51 @@ end
 -- A new player's whisper of aim help: a shot that's already nearly on an enemy (inside AIM_ASSIST_CONE degrees of
 -- where the arrow would have to go, drop included) turns a little onto them (AIM_ASSIST_PULL of the gap, at most
 -- AIM_ASSIST_MAX degrees). Their first matches feel natural; a real miss still misses. Everyone sees the same arrow.
-function CombatService:Assist(player, origin, direction, speed)
+-- How much help this player's shots get: { cone, pull, max, lead?, range?, clear? }, or nil. The first knockout
+-- (Novice): a shot anywhere near an enemy in the open goes onto them, leading them. Else by device (a thumb, a
+-- stick), or the whisper for anyone in their first few matches; whichever helps most.
+function CombatService:AssistFor(player, plain)
 	if typeof(player) ~= "Instance" then
-		return direction -- (bots aim on their own)
+		return nil -- (bots aim on their own)
+	end
+	if plain ~= true and self:Novice(player) then
+		return {
+			cone = Constants.FIRST_KILL_CONE,
+			pull = 1,
+			max = Constants.FIRST_KILL_CONE,
+			lead = true,
+			range = Constants.FIRST_KILL_RANGE,
+			clear = true,
+		}
+	end
+	local best
+	local dev = Constants.AIM_ASSIST_DEVICE[player:GetAttribute("Device") or ""]
+	if dev then
+		best = { cone = dev.cone, pull = dev.pull, max = dev.max }
 	end
 	local profile = data:Get(player)
-	if not profile or ((profile.stats and profile.stats.matches) or 0) >= Constants.AIM_ASSIST_MATCHES then
-		return direction
+	if profile and ((profile.stats and profile.stats.matches) or 0) < Constants.AIM_ASSIST_MATCHES then
+		if not best or best.max < Constants.AIM_ASSIST_MAX then
+			best =
+				{ cone = Constants.AIM_ASSIST_CONE, pull = Constants.AIM_ASSIST_PULL, max = Constants.AIM_ASSIST_MAX }
+		end
+	end
+	return best
+end
+
+-- direction turned by the help (AssistFor), and whether it was. (The first knockout's help only counts enemies in
+-- the clear; with none, the ordinary help still applies.)
+function CombatService:Assist(player, origin, direction, speed, plain)
+	local how = self:AssistFor(player, plain)
+	if not how then
+		return direction, false
+	end
+	if how.clear and plain == nil then
+		local d, helped = self:Assist(player, origin, direction, speed, "first")
+		if helped then
+			return d, true
+		end
+		return self:Assist(player, origin, direction, speed, true)
 	end
 	local mine = teams:Team(player)
 	local best, bestAngle
@@ -683,22 +826,34 @@ function CombatService:Assist(player, origin, direction, speed)
 		local r = os_.alive and other ~= player and teams:Team(other) ~= mine and root(other)
 		if r then
 			local target = r.Position + Vector3.new(0, 0.6, 0)
-			local tt = (target - origin).Magnitude / math.max(speed, 1)
-			local aim = target + Vector3.new(0, 0.5 * Constants.GRAVITY * tt * tt, 0) - origin
-			if aim.Magnitude > 1 then
-				local ideal = aim.Unit
-				local angle = math.deg(math.acos(math.clamp(direction:Dot(ideal), -1, 1)))
-				if angle <= Constants.AIM_ASSIST_CONE and (not bestAngle or angle < bestAngle) then
-					best, bestAngle = ideal, angle
+			local dist = (target - origin).Magnitude
+			if not how.range or dist <= how.range then
+				local tt = dist / math.max(speed, 1)
+				if how.lead then
+					-- (where they'll be when it gets there)
+					local v = Vector3.zero
+					pcall(function()
+						v = r.AssemblyLinearVelocity
+					end)
+					target += Vector3.new(v.X, 0, v.Z) * tt
+					tt = (target - origin).Magnitude / math.max(speed, 1)
+				end
+				local aim = target + Vector3.new(0, 0.5 * Constants.GRAVITY * tt * tt, 0) - origin
+				if aim.Magnitude > 1 and not (how.clear and hitSolids(origin, target)) then
+					local ideal = aim.Unit
+					local angle = math.deg(math.acos(math.clamp(direction:Dot(ideal), -1, 1)))
+					if angle <= how.cone and (not bestAngle or angle < bestAngle) then
+						best, bestAngle = ideal, angle
+					end
 				end
 			end
 		end
 	end
 	if not best or bestAngle < 0.01 then
-		return direction
+		return direction, false
 	end
-	local turn = math.min(bestAngle * Constants.AIM_ASSIST_PULL, Constants.AIM_ASSIST_MAX)
-	return direction:Lerp(best, turn / bestAngle).Unit
+	local turn = math.min(bestAngle * how.pull, how.max)
+	return direction:Lerp(best, turn / bestAngle).Unit, turn > 0.5
 end
 
 -- The shot itself (Net "Shoot"): validated, then an arrow.
@@ -768,7 +923,9 @@ function CombatService:Shoot(player, origin, direction, shotId)
 		return self:_throw(player, w, origin, direction, charge, shotId)
 	end
 	local shot = Formulas.shot(w, charge)
-	direction = self:Assist(player, origin, direction, shot.speed)
+	local sent = direction
+	local helped
+	direction, helped = self:Assist(player, origin, direction, shot.speed)
 	if w.mag then
 		s.ammo -= 1
 		if s.ammo <= 0 then
@@ -788,6 +945,7 @@ function CombatService:Shoot(player, origin, direction, shotId)
 		knockback = shot.knockback,
 		charge = charge,
 		shotId = shotId,
+		novice = self:Novice(player) or nil,
 	}
 	table.insert(arrows, arrow)
 	Net.fireAll("Arrow", {
@@ -800,6 +958,8 @@ function CombatService:Shoot(player, origin, direction, shotId)
 		at = t,
 		shotId = shotId,
 		trail = trailOf(player),
+		-- (the shooter's own client drew it where they aimed: when the help turned it noticeably, it redraws it here)
+		assisted = (helped and (direction - sent).Magnitude > 0.02) or nil,
 	})
 	self.Shot:Fire(player, w.key)
 	if w.mag then
@@ -963,6 +1123,8 @@ function CombatService:Init(registry)
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		states[player] = nil
+		history[player] = nil
+		scored[player] = nil
 		for _, s in states do
 			s.hits[player] = nil
 		end
@@ -973,6 +1135,11 @@ function CombatService:Start()
 	local acc = 0
 	RunService.Heartbeat:Connect(function(dt)
 		acc += dt
+		local tNow = now()
+		if tNow - (self._recordedAt or 0) >= HISTORY_STEP then
+			self._recordedAt = tNow
+			record(tNow)
+		end
 		while acc >= Constants.ARROW_STEP do
 			acc -= Constants.ARROW_STEP
 			self:_step(Constants.ARROW_STEP)

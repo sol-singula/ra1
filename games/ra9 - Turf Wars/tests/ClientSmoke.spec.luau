@@ -36,6 +36,8 @@ local UIS = Engine.game:GetService("UserInputService")
 UIS.TouchEnabled = true
 UIS.KeyboardEnabled = false
 Engine.runScript(tree.server.Main)
+-- (the first-knockout help is tests/FeelSmoke's: here every new test player plays as anyone would)
+Engine.require(tree.server.Services.CombatService).firstKillHelp = false
 Engine.advance(0.2)
 local function service(name)
 	return Engine.require(tree.server.Services[name])
@@ -1930,12 +1932,12 @@ do
 		check("...the arrow flies near real speed first", early > 0.6, early)
 		check("...then slows right down before it hits", late < early * 0.25, `{early} {late}`)
 		check("...and lands at the end of the flight", math.abs(KillCam.flightAt(curve, dur) - 60 / 180) < 1e-6)
-		local total = 0.35 + dur + 0.22 + 0.8 + 0.25
+		local total = 0.2 + dur + 0.15 + 0.45 + 0.18 -- (intro, flight, freeze, card, fade)
 		check("...all of it inside the respawn wait", total <= Constants.RESPAWN_SECONDS + 0.05, total)
 	end
-	Engine.advance(0.45)
+	Engine.advance(0.3)
 	check("...then the arrow is replayed", KillCam.stage() == "flight" and Arrows.count() >= 1, KillCam.stage())
-	Engine.advance(1.6)
+	Engine.advance(0.95)
 	local st = KillCam.stage()
 	check("...a freeze frame, then the card", st == "freeze" or st == "card", st)
 	Engine.advance(2.5)
@@ -1959,7 +1961,11 @@ do
 	Engine.advance(0.2)
 	UIS.InputBegan:Fire(space, false)
 	Engine.advance(0.1)
-	check("...Space in the first half second doesn't skip", CamC.takenOver() and KillCam.stage() == "intro")
+	check(
+		"...Space in the first half second doesn't skip",
+		CamC.takenOver() and (KillCam.stage() == "intro" or KillCam.stage() == "flight"),
+		KillCam.stage()
+	)
 	Engine.advance(0.4)
 	UIS.InputBegan:Fire(space, false)
 	Engine.advance(0.5)

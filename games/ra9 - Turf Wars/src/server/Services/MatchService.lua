@@ -405,7 +405,9 @@ function MatchService:_onKilled(victim, killer, info)
 	end
 	if phase ~= "loading" then
 		-- (in the victory wait too: nobody is stuck dead on the results; they're back up to run about)
-		respawnAt[victim] = now() + Constants.RESPAWN_SECONDS
+		-- (still waiting for their first knockout: back even sooner)
+		local wait = combat:Novice(victim) and Constants.RESPAWN_SECONDS_NEW or Constants.RESPAWN_SECONDS
+		respawnAt[victim] = now() + wait
 	else
 		pending[victim] = true
 	end

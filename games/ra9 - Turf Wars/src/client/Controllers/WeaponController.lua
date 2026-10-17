@@ -70,12 +70,15 @@ local function weapon()
 	return Weapons.get(me and me.weapon or Weapons.DEFAULT) or Weapons.get(Weapons.DEFAULT)
 end
 
--- Aim help on a touch screen only (a thumb can't aim like a mouse): a shot let go within ASSIST_DEGREES of an
--- enemy's body bends that way by ASSIST_PULL of the gap. Small, only close to the line, never through walls (the
--- server flies the arrow as always).
-local ASSIST_DEGREES, ASSIST_RANGE, ASSIST_PULL = 4, 140, 0.6
+-- Aim help by how you play, the same numbers the server uses (Constants.AIM_ASSIST_DEVICE: a thumb a fair bit, a
+-- stick a little; a mouse none): a shot let go within the cone of an enemy's body turns that way by the pull share
+-- of the gap, never more than max degrees. Only close to the line and never through walls (the server flies the
+-- arrow, with the same help, so what you see is what flies). Still waiting for your first knockout ("Novice"), the
+-- server helps a lot more and the arrow is redrawn from its copy.
+local ASSIST_RANGE = 140
 function WeaponController.assist(origin, dir)
-	if not Device.isTouch() then
+	local how = Constants.AIM_ASSIST_DEVICE[Device.kind()]
+	if not how then
 		return dir
 	end
 	local Players = game:GetService("Players")
@@ -101,16 +104,17 @@ function WeaponController.assist(origin, dir)
 			local dist = to.Magnitude
 			if dist > 1 and dist <= ASSIST_RANGE then
 				local angle = math.deg(math.acos(math.clamp(to.Unit:Dot(dir), -1, 1)))
-				if angle <= ASSIST_DEGREES and (not bestAngle or angle < bestAngle) then
+				if angle <= how.cone and (not bestAngle or angle < bestAngle) then
 					best, bestAngle = to.Unit, angle
 				end
 			end
 		end
 	end
-	if not best then
+	if not best or bestAngle < 0.01 then
 		return dir
 	end
-	return dir:Lerp(best, ASSIST_PULL).Unit
+	local turn = math.min(bestAngle * how.pull, how.max)
+	return dir:Lerp(best, turn / bestAngle).Unit
 end
 
 local function canShoot()

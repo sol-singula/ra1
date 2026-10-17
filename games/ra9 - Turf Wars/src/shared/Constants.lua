@@ -47,7 +47,9 @@ Constants.PUSH_CELLS_MAX = 3 -- ...and at most this many (small servers: each ki
 Constants.PUSH_PLAYERS = 16 -- push = clamp(PUSH_PLAYERS / players, MIN, MAX) cells
 Constants.TURF_MARGIN = 1 -- studs of grace before standing on enemy turf pushes you back
 Constants.SPAWN_PROTECT = 2.5 -- seconds of protection after spawning
-Constants.RESPAWN_SECONDS = 3
+Constants.SPAWN_PROTECT_NEW = 4.5 -- (a player still waiting for their first ever knockout: a longer shield)
+Constants.RESPAWN_SECONDS = 2 -- (dead time is when people leave: back in fast)
+Constants.RESPAWN_SECONDS_NEW = 1.5 -- (no knockout yet in their life: faster still)
 
 -- Health and combat (§5)
 Constants.MAX_HEALTH = 100
@@ -55,6 +57,23 @@ Constants.AIM_ASSIST_MATCHES = 5 -- a new player (fewer matches than this) gets 
 Constants.AIM_ASSIST_CONE = 4 -- a shot already within this many degrees of an enemy...
 Constants.AIM_ASSIST_PULL = 0.35 -- ...is turned this share of the way onto them...
 Constants.AIM_ASSIST_MAX = 1.2 -- ...but never more than this many degrees (a near miss becomes a hit; a miss stays one)
+-- By how they play (the "Device" attribute): a thumb can't aim like a mouse, a stick a little better. { cone degrees,
+-- pull share, max degrees }; a keyboard player gets only the new-player whisper above.
+Constants.AIM_ASSIST_DEVICE = {
+	touch = { cone = 9, pull = 0.6, max = 4.5 },
+	gamepad = { cone = 6, pull = 0.45, max = 2.5 },
+}
+-- The first knockout (CombatService:Novice: no knockout ever yet): a shot anywhere near an enemy in the open is aimed
+-- onto them, leading them, and the hit spheres are wider, so it lands within the first half minute or so
+Constants.FIRST_KILL_CONE = 35
+Constants.FIRST_KILL_RANGE = 170
+Constants.FIRST_KILL_RADIUS = 1.6 -- studs added to the body's hit sphere for their arrows
+-- Lag: an arrow is also tested against where its target was the shooter's ping ago (capped), and a laggy shooter's
+-- arrows are a touch wider (LAG_RADIUS studs per 100 ms over LAG_FREE, up to LAG_RADIUS_MAX)
+Constants.LAG_REWIND_MAX = 0.3
+Constants.LAG_FREE = 0.1
+Constants.LAG_RADIUS = 0.5
+Constants.LAG_RADIUS_MAX = 1.0
 Constants.GRAVITY = 70 -- studs/s² on arrows (Roblox's 196 would make bows feel like mortars)
 Constants.HIT_RADIUS_BODY = 2.3 -- the torso's hit sphere (round the root, +0.6 up)
 Constants.HIT_RADIUS_HEAD = 1.1 -- the head's (2.6 above the root)

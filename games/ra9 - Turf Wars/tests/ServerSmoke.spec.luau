@@ -29,6 +29,8 @@ Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand sti
 Engine.require(tree.shared.Constants).MIN_SIDE = 1 -- (the old minimum: these checks count the bots themselves; BotSmoke checks 2 v 2)
 Engine.require(tree.shared.Constants).TUTORIAL = false -- (the players here know the game: tests/TutorialSmoke is the tutorial's)
 Engine.runScript(tree.server.Main)
+-- (the first-knockout help is tests/FeelSmoke's: here every new test player plays as anyone would)
+Engine.require(tree.server.Services.CombatService).firstKillHelp = false
 Engine.advance(0.5)
 local function service(name)
 	return Engine.require(tree.server.Services[name])

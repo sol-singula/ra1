@@ -367,7 +367,10 @@ function ArrowController:init()
 		if a.by == player.UserId then
 			byServer[a.id] = "me" .. tostring(a.shotId)
 			if live[byServer[a.id]] then
-				return -- (already drawn: the prediction)
+				if not a.assisted then
+					return -- (already drawn: the prediction)
+				end
+				remove(byServer[a.id]) -- (the server's aim help turned it: draw where it really flies)
 			end
 		end
 		local key = "s" .. a.id
