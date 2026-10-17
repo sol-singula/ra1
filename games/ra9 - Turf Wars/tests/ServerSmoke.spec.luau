@@ -1421,8 +1421,10 @@ do
 		end
 		return realGround(p, pos)
 	end
+	local s0 = AC:Strikes(cheat)
 	Engine.advance(AC.AIR_SECONDS + 3)
 	check("hovering high for seconds: flying", flagsOf("fly") >= 1)
+	check("...logged, but no strike (knockback and towers set it off for honest players)", AC:Strikes(cheat) <= s0)
 	AC.groundDistance = realGround
 	-- spam and refused shots
 	AC.Dropped(AC, cheat, "Shoot")

@@ -8,8 +8,9 @@ cheater can't give themselves kills, Shards or turf. What's left is the body the
              judged over WINDOW seconds so a lag burst doesn't count: pulled back to where you were, + a strike
   teleport   the same, but a huge jump: pulled back, + 3 strikes
   flying     in the air for AIR_SECONDS without coming down (a jump, a flip and a fall off a tower are all far
-             shorter): dropped back down, + 2 strikes
-  noclip     standing inside a built wall or tower: put back outside, + a strike
+             shorter): dropped back down (no strike: knockback, TNT and towers set it off for honest players)
+  noclip     standing inside a built wall or tower: put back outside (no strike: a wall built or blown up around
+             you, a spawn or a shove set it off; in v19 it kicked 154 honest players, mostly on phones)
   shots      the server refusing your shots again and again (too fast for the bow, from too far off your head, while
              dead or reloading): + a strike per REJECT_LIMIT in REJECT_WINDOW
   spam       remote calls faster than their rate limits (an auto-clicker, a script): + a strike per SPAM_LIMIT drops
@@ -237,7 +238,7 @@ function AntiCheatService:Check(player)
 		if t - s.airSince > self.AIR_SECONDS then
 			s.airSince = nil
 			pullBack(player, s)
-			self:Flag(player, "fly", string.format("%.0f studs up for %.1fs", above, self.AIR_SECONDS), 2)
+			self:Flag(player, "fly", string.format("%.0f studs up for %.1fs", above, self.AIR_SECONDS), 0)
 			return
 		end
 	else
@@ -247,7 +248,7 @@ function AntiCheatService:Check(player)
 	local inside = insideStructure(pos)
 	if inside then
 		pullBack(player, s)
-		self:Flag(player, "noclip", `inside a {inside.key}`, 1)
+		self:Flag(player, "noclip", `inside a {inside.key}`, 0)
 		return
 	end
 	s.good = r.CFrame
