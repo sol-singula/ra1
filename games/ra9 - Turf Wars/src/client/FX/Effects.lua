@@ -379,6 +379,66 @@ function Effects.mannequin(cf, team)
 	return model
 end
 
+-- A stand-in that wears someone's own look: a still copy of their character (avatar, clothes, accessories, the team
+-- bands) at cf, anchored and out of the way of everything. nil if there's no character to copy (then a mannequin).
+function Effects.lookalike(character, cf, team)
+	if typeof(character) ~= "Instance" then
+		return nil
+	end
+	local root = character:FindFirstChild("HumanoidRootPart")
+	if not root then
+		return nil
+	end
+	-- (characters aren't Archivable by default: Clone would give nil)
+	local okA, was = pcall(function()
+		local w = character.Archivable
+		character.Archivable = true
+		return w
+	end)
+	local ok, copy = pcall(function()
+		return character:Clone()
+	end)
+	if okA then
+		pcall(function()
+			character.Archivable = was
+		end)
+	end
+	if not ok or not copy then
+		return nil
+	end
+	pcall(function()
+		copy.Name = "Lookalike"
+		for _, d in copy:GetDescendants() do
+			if d:IsA("Script") or d:IsA("LocalScript") or d:IsA("ModuleScript") or d:IsA("Sound") then
+				d:Destroy()
+			elseif d:IsA("BasePart") then
+				d.Anchored = true
+				d.CanCollide = false
+				d.CanQuery = false
+				d.CanTouch = false
+				d.LocalTransparencyModifier = 0
+				if d.Name == "HumanoidRootPart" then
+					d.Transparency = 1
+				end
+			elseif d:IsA("Decal") then
+				d.Transparency = 0 -- (the face: the shatter may have hidden the real one already)
+			end
+		end
+		local hum = copy:FindFirstChildOfClass("Humanoid")
+		if hum then
+			-- (kept so the clothes still show; no name over it, no health bar, no physics of its own)
+			hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+			hum.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+		end
+		local r = copy:FindFirstChild("HumanoidRootPart")
+		local offset = r and r.CFrame:ToObjectSpace(copy:GetPivot()) or CFrame.new()
+		copy:PivotTo(cf * offset)
+	end)
+	copy:SetAttribute("Team", team)
+	copy.Parent = getFolder()
+	return copy
+end
+
 local GRAVITY = 70
 
 function Effects.step(dt)
