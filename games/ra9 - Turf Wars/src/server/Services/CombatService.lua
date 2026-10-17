@@ -46,6 +46,7 @@ local CombatService = {
 	Shot = Signal.new("CombatService.Shot"), -- (player, weapon)
 	StructureHit = Signal.new("CombatService.StructureHit"), -- (id, damage, attacker)
 	Rejected = Signal.new("CombatService.Rejected"), -- (player, reason) a shot the server refused (the anti-cheat counts)
+	Parried = Signal.new("CombatService.Parried"), -- (swinger, shooter) a blade knocked an arrow back
 }
 
 local data, teams, arena
@@ -359,8 +360,10 @@ function CombatService:_step(dt)
 		local st, sid = hitSolids(a, b)
 		if victim and (not st or vt <= st) then
 			local at = a:Lerp(b, vt)
-			self:_hitPlayer(arrow, victim, head, at, (b - a).Unit)
 			table.remove(arrows, i)
+			if not self:_parry(arrow, victim, at, (b - a).Unit) then
+				self:_hitPlayer(arrow, victim, head, at, (b - a).Unit)
+			end
 		elseif st then
 			local at = a:Lerp(b, st)
 			if sid then
@@ -374,6 +377,58 @@ function CombatService:_step(dt)
 			table.remove(arrows, i)
 		end
 	end
+end
+
+-- A blade swing in the last PARRY_SECONDS, facing the arrow: it's knocked away and flies back at whoever shot it
+-- (now the swinger's arrow). true when parried.
+function CombatService:_parry(arrow, victim, at, dir)
+	local s = states[victim]
+	if not s or (s.parryUntil or 0) < now() or not s.parryDir then
+		return false
+	end
+	if s.parryDir:Dot(-Vector3.new(dir.X, 0, dir.Z).Unit) < Constants.PARRY_DOT then
+		return false -- (from the side or behind: the blade wasn't in the way)
+	end
+	self:_finish(arrow, at, "parry")
+	local speed = arrow.velocity.Magnitude
+	local back = -dir
+	local shooter = arrow.by
+	local sr = shooter and shooter.Parent and root(shooter)
+	if sr then
+		local to = (sr.Position + Vector3.new(0, 1.5, 0)) - at
+		if to.Magnitude > 1 then
+			back = to.Unit
+		end
+	end
+	local origin = at + back * 1.5
+	nextArrow += 1
+	local again = {
+		id = nextArrow,
+		by = victim,
+		team = teams:Team(victim),
+		weapon = arrow.weapon,
+		origin = origin,
+		velocity = back * speed,
+		t = 0,
+		damage = arrow.damage,
+		knockback = arrow.knockback,
+		charge = arrow.charge,
+	}
+	table.insert(arrows, again)
+	Net.fireAll("Arrow", {
+		id = again.id,
+		by = victim.UserId,
+		team = again.team,
+		weapon = again.weapon,
+		origin = origin,
+		velocity = again.velocity,
+		at = now(),
+		trail = trailOf(victim),
+		parried = true,
+	})
+	Net.fire(victim, "Hit", { damage = 0, parry = true, pos = at })
+	self.Parried:Fire(victim, shooter)
+	return true
 end
 
 function CombatService:_hitPlayer(arrow, victim, head, at, dir)
@@ -540,6 +595,8 @@ function CombatService:Swing(player, direction)
 	end
 	local look = Vector3.new(direction.X, 0, direction.Z)
 	look = look.Magnitude > 0.01 and look.Unit or r.CFrame.LookVector
+	-- the swing knocks back arrows from the front for a moment (see _parry)
+	s.parryUntil, s.parryDir = t + Constants.PARRY_SECONDS, look
 	local eye = r.Position + Vector3.new(0, 1.5, 0)
 	local mine = teams:Team(player)
 	local best, bestD

@@ -448,6 +448,15 @@ UserService. ClientSmoke checks the button in every overlap layout and the open 
   colour, or "⚔️ NAME joined RED: new enemy!" (`MatchService:AnnounceJoin`, Notify kind "join").
 * **Admin: PLAY TUTORIAL** (ME tab) runs the first-minute tutorial for yourself from the top.
 
+## Round 14: one hit, one knockout; the blade at the line
+
+* **Every bow hit is a knockout** (every bow, every charge: damage 100). A tap still flies slower than a full draw;
+  the bows differ in draw, speed, cadence, knockback and what they do to walls. **No health bar** (the slot keeps your
+  team's name and PROTECTED).
+* **The blade, since nobody can cross the line:** a 10-stud slash knocks out anyone in reach on the other side of the
+  line, and **a swing parries**: for 0.45 s an arrow arriving from the front (within ~75°) is knocked away and flies
+  straight back at whoever shot it, as the swinger's arrow ("PARRIED!"; `CombatService:_parry`, `Parried` signal).
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

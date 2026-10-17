@@ -543,23 +543,25 @@ end
 
 -- The bottom: health, weapons, the build tray, toasts ----------------------------------------------------------
 local function buildBottom(gui)
+	-- (no health bar: every hit is a knockout. The slot stays for your team's name and PROTECTED)
 	local hp = Theme.new("Frame", {
 		Name = "Health",
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.new(0, 16, 1, -16),
 		Size = UDim2.fromOffset(230, 18),
-		BackgroundColor3 = Color3.fromRGB(220, 220, 224),
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		Parent = gui,
-	}, { Theme.corner(3), Theme.stroke(2, C.ink) })
+	})
 	refs.health = hp
 	refs.hpFill = Theme.new("Frame", {
 		Name = "Fill",
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = C.ink,
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
+		Visible = false,
 		Parent = hp,
-	}, { Theme.corner(3) })
+	})
 	refs.team = Theme.title({
 		Name = "Team",
 		Text = "",
@@ -1305,6 +1307,10 @@ function HudController:init()
 		end
 	end)
 	Net.listen("Hit", function(h)
+		if h.parry then
+			HudController.alert("PARRIED!", Color3.fromRGB(30, 30, 34), 0.9) -- (your blade sent an arrow back)
+			return
+		end
 		HudController.hitMarker(h.kill, h.head)
 	end)
 	Net.listen("Hurt", function()

@@ -1673,6 +1673,9 @@ function TutorialController:init()
 		end
 	end)
 	Net.listen("Hit", function(h)
+		if type(h) == "table" and h.parry then
+			return -- (a parry isn't a hit on them)
+		end
 		if run and not run.finished and not run.hit then
 			run.hit = h
 			-- (where they stood: the burst goes there)

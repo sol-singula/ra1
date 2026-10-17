@@ -37,23 +37,29 @@ check("red pushes east, blue west", Formulas.forward("red") == 1 and Formulas.fo
 local bow, crossbow, heavy = Weapons.get("bow"), Weapons.get("crossbow"), Weapons.get("heavy")
 local blade = Weapons.get("blade")
 check("three bows and a blade, all at the start", #Weapons.list == 4 and bow and crossbow and heavy and blade)
-check("the blade is melee: no arrow, a short reach", blade.melee == true and blade.range < 10 and blade.arc > 0)
 check(
-	"...three slashes win, two from behind",
-	blade.damage[1] * 3 >= 100 and blade.damage[1] * 2 < 100 and blade.damage[1] * blade.backstab * 2 >= 100
+	"the blade is melee: no arrow, a reach across the line",
+	blade.melee == true and blade.range >= 9 and blade.arc > 0
 )
+check("...one slash, one knockout", blade.damage[1] >= Constants.MAX_HEALTH)
+check("...and its swing parries arrows for a moment", Constants.PARRY_SECONDS > 0.2 and Constants.PARRY_SECONDS < 1)
 check("a tap is the least charge", near(Formulas.charge(bow, 0), bow.minCharge))
 check("a full draw is full charge", near(Formulas.charge(bow, 5), 1))
 check("the crossbow is always full", Formulas.charge(crossbow, 0) == 1)
 check("a full bow draw kills (100)", Formulas.shot(bow, 1).damage >= Constants.MAX_HEALTH)
-check("a tap doesn't", Formulas.shot(bow, bow.minCharge).damage < Constants.MAX_HEALTH)
-check("the crossbow takes three hits", math.ceil(Constants.MAX_HEALTH / Formulas.shot(crossbow, 1).damage) == 3)
+check("a tap kills too: every hit is a knockout", Formulas.shot(bow, bow.minCharge).damage >= Constants.MAX_HEALTH)
+check("...a crossbow bolt", Formulas.shot(crossbow, 1).damage >= Constants.MAX_HEALTH)
+check("...a heavy arrow", Formulas.shot(heavy, heavy.minCharge).damage >= Constants.MAX_HEALTH)
+check(
+	"...but a tap flies slower than a full draw",
+	Formulas.shot(bow, bow.minCharge).speed < Formulas.shot(bow, 1).speed
+)
 check("the heavy bow pushes hardest", heavy.knockback > bow.knockback and heavy.knockback > crossbow.knockback)
 check("the heavy bow wrecks structures", heavy.structure > bow.structure)
 -- none is strictly better: each loses somewhere
 check(
 	"no bow is strictly better",
-	heavy.draw > bow.draw and crossbow.damage[2] < bow.damage[2] and bow.speed[2] > heavy.speed[2] - 40
+	heavy.draw > bow.draw and crossbow.mag ~= nil and bow.mag == nil and bow.speed[2] > heavy.speed[2] - 40
 )
 
 -- Arrow maths --------------------------------------------------------------------------------------------------

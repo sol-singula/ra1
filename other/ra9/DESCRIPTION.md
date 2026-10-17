@@ -16,10 +16,10 @@ Push it all the way to their base to win!
 You get 20 seconds to build walls, towers and ramps. Then the fight starts!
 
 🏹 PICK YOUR WEAPON
-• Bow: hold to pull back, let go to shoot
+• Bow: hold to pull back, let go. One hit, one knockout!
 • Crossbow: fast shots, six in a row
 • Heavy Bow: slow, but it knocks walls down
-• Blade: run in close and slash, extra hits from behind
+• Blade: slash across the line, and swat arrows right back!
 
 🏃 MOVE LIKE A PRO
 Run, slide, crouch, and flip off your fourth jump.
