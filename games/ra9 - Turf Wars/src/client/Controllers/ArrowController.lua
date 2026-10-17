@@ -24,6 +24,7 @@ local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Effects = require(script.Parent.Parent.FX.Effects)
+local Flair = require(script.Parent.Parent.FX.Flair)
 local Store = require(script.Parent.Parent.Store)
 local AudioController = require(script.Parent.AudioController)
 
@@ -143,7 +144,14 @@ local function spawnArrow(key, origin, velocity, team, born, trail, lookName)
 			line.Transparency = 0.1
 			table.insert(parts, line)
 		end
-		table.insert(twins, { parts = parts, x = l[1], y = l[2], w = l[3], part = parts[1] })
+		table.insert(twins, { parts = parts, x = l[1], y = l[2], w = l[3], part = parts[1], token = l[4] })
+	end
+	-- what falls off the arrow as it flies (FX/Flair): an emitter on the shaft, or loose bits dropped behind it
+	local drops
+	if skin.particles and not crowd then
+		if not Flair.emitter(shaft, skin.particles) then
+			drops = skin.particles
+		end
 	end
 	local ghosts = {}
 	for i = 1, skin.ghost or 0 do
@@ -170,6 +178,8 @@ local function spawnArrow(key, origin, velocity, team, born, trail, lookName)
 		born = born,
 		team = team,
 		mine = string.sub(key, 1, 2) == "me",
+		drops = drops,
+		dropAt = 0,
 	}
 	return live[key]
 end
@@ -310,12 +320,16 @@ local function step()
 				bend(a, a.glow, a.spec.glow, t, back, v.Magnitude)
 				bend(a, a.haze, a.spec.haze, t, back * 0.8, v.Magnitude)
 				local spin = a.look.spin and CFrame.Angles(0, 0, t * 14) or CFrame.new()
-				for _, tw in a.twins do
+				local zap = a.look.anim == "electric"
+				for ti, tw in a.twins do
 					local x, y = tw.x, tw.y
 					if a.look.jitter then
-						x += (math.random() - 0.5) * 0.16
-						y += (math.random() - 0.5) * 0.16
+						local j = zap and 0.4 or 0.16
+						x += (math.random() - 0.5) * j
+						y += (math.random() - 0.5) * j
 					end
+					-- (a colour that moves: a rainbow running down the line, lightning flickering)
+					local moving = Flair.moving(tw.token)
 					local n = #tw.parts
 					local seg = back / n
 					for i, q in tw.parts do
@@ -324,7 +338,17 @@ local function step()
 						local along = n > 1 and (back / 2 - seg * (i - 0.5)) or 0
 						q.Size = Vector3.new(tw.w, tw.w, math.max(0.05, len))
 						q.CFrame = a.tracer.CFrame * spin * CFrame.new(x, y, -along)
+						if moving then
+							q.Color = Flair.tint(tw.token, a.team, clock, i * 0.12 + ti * 0.3)
+						end
 					end
+				end
+				if zap and math.random() < 0.25 then
+					Flair.arc(tail, tail:Lerp(p, math.random()), Color3.fromRGB(170, 220, 255))
+				end
+				if a.drops and clock >= a.dropAt then
+					a.dropAt = clock + (Flair.lite() and 0.08 or 0.035)
+					Flair.drop(a.drops, p - dir * math.min(back, 1.5 + math.random() * 2), a.team)
 				end
 				for i, g in a.ghosts do
 					local at = p - dir * (i * 1.6)

@@ -34,6 +34,7 @@ local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 local Bus = require(script.Parent.Parent.UI.Bus)
+local Flair = require(script.Parent.Parent.FX.Flair)
 local Device = require(script.Parent.Parent.UI.Device)
 local Store = require(script.Parent.Parent.Store)
 local ArrowController = require(script.Parent.ArrowController)
@@ -258,6 +259,9 @@ end
 
 local function buildView()
 	if view then
+		if view.flair then
+			view.flair:destroy()
+		end
 		view.model:Destroy()
 	end
 	local cam = workspace.CurrentCamera
@@ -368,6 +372,16 @@ local function buildView()
 	-- your arms in the team's sleeves: a bow's grip in the left hand and the string hooked in the right
 	v.left = newLimb(piece, "L", 0.12, color)
 	v.right = newLimb(piece, "R", 0.035, color)
+	-- the skin brought to life (FX/Flair: a rainbow, stripes, embers, sparks, wings...)
+	if look and (look.anim or look.particles or look.wings or Flair.moving(look.grip) or Flair.moving(look.limbs)) then
+		v.flair = Flair.bow({
+			grip = v.grip,
+			limbs = { v.upper, v.lower },
+			tips = { v.tipU, v.tipL },
+			holder = model,
+			scale = VM_SCALE,
+		}, look, team)
+	end
 	model.Parent = cam
 	view = v
 	anim.equipAt = os.clock()
@@ -907,6 +921,9 @@ function WeaponController:init()
 	end)
 	RunService.RenderStepped:Connect(function(dt)
 		placeView(dt)
+		if view and view.flair then
+			view.flair:update(os.clock())
+		end
 		if drawing then
 			local c = WeaponController.charge()
 			Bus.Charge:Fire(c)
