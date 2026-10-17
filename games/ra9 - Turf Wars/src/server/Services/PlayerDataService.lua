@@ -148,11 +148,11 @@ function PlayerDataService:Load(player)
 				break
 			end
 			failure = err
-			if not locked and err then
-				break -- DataStore unavailable (e.g. Studio API access off): fall back below
+			if not locked and err and RunService:IsStudio() then
+				break -- (Studio with API access off: fall back below at once)
 			end
 			if attempt < LOAD_ATTEMPTS then
-				task.wait(4)
+				task.wait(locked and 4 or 2 * attempt) -- (live, a busy DataStore: try again, a little later each time)
 			end
 			if not player.Parent then
 				return nil
@@ -162,6 +162,11 @@ function PlayerDataService:Load(player)
 	if not profile then
 		if store and not failure then
 			player:Kick("Your save is still open on another server. Please rejoin in a minute.")
+			return nil
+		end
+		if store and not RunService:IsStudio() then
+			-- (never play on a blank profile that can't save: it looks like a wipe, and a purchase would be lost)
+			player:Kick("Couldn't load your save (Roblox is busy). Please rejoin.")
 			return nil
 		end
 		profile = defaults()
@@ -176,6 +181,12 @@ function PlayerDataService:Load(player)
 		end
 	end
 	if not player.Parent then
+		-- (gone while it loaded: let go of the lock this load just took, or their next server waits for it)
+		if not profile._noSave then
+			profiles[player] = profile
+			self:Save(player, true)
+			profiles[player] = nil
+		end
 		return nil
 	end
 	profile._joinedAt = os.time()
@@ -216,25 +227,33 @@ local function serializable(profile)
 	return copy
 end
 
+-- true when it's safely written (Studio without a DataStore counts: test purchases there are fine)
 function PlayerDataService:Save(player, releaseLock)
 	local profile = profiles[player]
-	if not profile or profile._noSave or not store then
-		return
+	if not profile then
+		return false
+	end
+	if profile._noSave or not store then
+		return RunService:IsStudio()
 	end
 	profile.meta.lastSeen = os.time()
 	profile.meta.lock = not releaseLock and { jobId = jobId, at = os.time() } or nil
 	local data = serializable(profile)
+	local wrote = false
 	local ok, err = pcall(function()
 		store:UpdateAsync(key(player), function(old)
 			if old and old.meta and old.meta.lock and old.meta.lock.jobId ~= jobId then
+				wrote = false
 				return nil -- lost the lock (another server stole a stale session); never overwrite it
 			end
+			wrote = true
 			return data
 		end)
 	end)
 	if not ok then
 		warn(`[PlayerDataService] save failed for {player.Name}: {err}`)
 	end
+	return ok and wrote
 end
 
 function PlayerDataService:Release(player)

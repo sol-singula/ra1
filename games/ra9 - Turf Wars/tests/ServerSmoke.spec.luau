@@ -699,6 +699,17 @@ do
 	check("a Shard pack", d1 == Enum.ProductPurchaseDecision.PurchaseGranted and p.shards == s0 + Shop.PACKS[2].shards)
 	receipt("buy-1", 9001)
 	check("...the same receipt again gives nothing", p.shards == s0 + Shop.PACKS[2].shards)
+	-- a save that fails: not granted yet (Roblox asks again), and the retry doesn't give it twice
+	Engine.dataStoreFails = true
+	local d2 = receipt("buy-save", 9001)
+	check("a purchase whose save fails: not granted yet", d2 == Enum.ProductPurchaseDecision.NotProcessedYet, d2)
+	Engine.dataStoreFails = false
+	local d3 = receipt("buy-save", 9001)
+	check(
+		"...Roblox asks again: granted once it's saved, given only once",
+		d3 == Enum.ProductPurchaseDecision.PurchaseGranted and p.shards == s0 + 2 * Shop.PACKS[2].shards,
+		`{d3} {p.shards}`
+	)
 	check(
 		"a receipt for someone not here waits (Roblox retries)",
 		MPS.ProcessReceipt({ PlayerId = 424242, ProductId = 9001, PurchaseId = "x" })

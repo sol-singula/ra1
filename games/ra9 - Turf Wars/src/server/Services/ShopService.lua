@@ -180,13 +180,23 @@ function ShopService:ProcessReceipt(receipt)
 	if not product then
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
+	-- granted only once it's saved: a save that fails says "not yet", and Roblox asks again (the receipt id
+	-- kept in the profile stops it being given twice)
+	local Granted, NotYet = Enum.ProductPurchaseDecision.PurchaseGranted, Enum.ProductPurchaseDecision.NotProcessedYet
 	if economy:Receipt(player, receipt.PurchaseId) then
-		return Enum.ProductPurchaseDecision.PurchaseGranted -- (granted before)
+		return data:Save(player) and Granted or NotYet -- (given before: just make sure it's saved)
 	end
-	self:Grant(player, product)
-	data:Save(player)
+	local ok, err = pcall(self.Grant, self, player, product)
+	if not ok then
+		warn("[ShopService] grant failed: " .. tostring(err))
+		local i = p.receipts and table.find(p.receipts, receipt.PurchaseId)
+		if i then
+			table.remove(p.receipts, i) -- (not given: the retry gives it)
+		end
+		return NotYet
+	end
 	progress:Push(player)
-	return Enum.ProductPurchaseDecision.PurchaseGranted
+	return data:Save(player) and Granted or NotYet
 end
 
 -- The Shard Club: a month's Shards, once a month, while subscribed

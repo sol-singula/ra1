@@ -423,6 +423,15 @@ function CombatService:Shoot(player, origin, direction, shotId)
 		return nil
 	end
 	local w = Weapons.get(s.weapon)
+	if w.melee then
+		return nil -- (the blade swings through Swing, never shoots)
+	end
+	if direction ~= direction or origin ~= origin then
+		return nil -- (NaN)
+	end
+	if shotId ~= nil and (type(shotId) ~= "number" or shotId ~= shotId or math.abs(shotId) > 2 ^ 31) then
+		shotId = nil -- (only a plain number goes back out to everyone)
+	end
 	local t = now()
 	if t < (s.readyAt or 0) - 0.08 then
 		self.Rejected:Fire(player, "rate") -- (faster than the bow can shoot, beyond a little lag)
@@ -450,6 +459,8 @@ function CombatService:Shoot(player, origin, direction, shotId)
 	if (origin - head).Magnitude > Constants.ORIGIN_SLACK then
 		origin = head -- (too far from you: it starts from your head instead)
 		self.Rejected:Fire(player, "origin")
+	elseif (origin - head).Magnitude > 0.5 and hitSolids(head, origin) then
+		origin = head -- (never from the far side of a wall)
 	end
 	if direction.Magnitude < 0.5 or direction.Magnitude > 1.5 then
 		return nil

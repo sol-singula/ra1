@@ -207,8 +207,14 @@ function MatchService:Spawn(player)
 	local loaded = desc and pcall(function()
 		player:LoadCharacterWithHumanoidDescription(desc)
 	end)
+	-- (gone while it loaded: nothing to do; LoadCharacter would throw on a player who left)
+	if not player.Parent then
+		return
+	end
 	if not loaded then
-		player:LoadCharacter()
+		pcall(function()
+			player:LoadCharacter()
+		end)
 	end
 	local c = player.Character
 	if not c then
@@ -435,7 +441,13 @@ function MatchService:NewMatch(key)
 	for _, p in self:Everyone() do
 		statsOf(p)
 		if teams:Team(p) then
-			self:Spawn(p)
+			-- (each in its own thread: a character takes a moment to load live, and 40 in a row would hold the match)
+			task.spawn(function()
+				local ok, err = pcall(self.Spawn, self, p)
+				if not ok then
+					warn("[MatchService] spawn failed: " .. tostring(err))
+				end
+			end)
 		end
 	end
 	build:Refill()
@@ -470,10 +482,20 @@ function MatchService:_tick()
 		self:NewMatch(Maps.next(mapKey).key)
 		return
 	end
+	local due = {}
 	for player, at in respawnAt do
 		if t >= at and player.Parent then
-			self:Spawn(player)
+			table.insert(due, player)
 		end
+	end
+	for _, player in due do
+		respawnAt[player] = nil
+		task.spawn(function()
+			local ok, err = pcall(self.Spawn, self, player)
+			if not ok then
+				warn("[MatchService] respawn failed: " .. tostring(err))
+			end
+		end)
 	end
 	-- the turf rule, and the kill plane
 	if phase == "build" or phase == "fight" then
@@ -625,7 +647,11 @@ function MatchService:Start()
 	self:NewMatch(Maps.list[1].key)
 	while true do
 		task.wait(0.2)
-		self:_tick()
+		-- (one bad tick never stops the clock for good)
+		local ok, err = pcall(self._tick, self)
+		if not ok then
+			warn("[MatchService] tick failed: " .. tostring(err))
+		end
 	end
 end
 

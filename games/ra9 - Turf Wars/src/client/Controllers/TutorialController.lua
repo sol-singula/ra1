@@ -462,9 +462,10 @@ local function showMark(target)
 	if not target then
 		return
 	end
-	if not mark then
+	if not mark or not mark.Parent then
 		mark = Theme.new("BillboardGui", {
 			Name = "TutorialMark",
+			ResetOnSpawn = false, -- (kept through a respawn: the first death mustn't take the marker with it)
 			Size = UDim2.fromOffset(120, 120),
 			AlwaysOnTop = true,
 			LightInfluence = 0,

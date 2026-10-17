@@ -420,6 +420,20 @@ freed and captured again, every tab, both scopes, the medal tints and your row, 
 shutdown). The mock's OrderedDataStore got GetAsync, UpdateAsync, pages, failures, call counts and budgets, and a
 UserService. ClientSmoke checks the button in every overlap layout and the open panel among the HUD (185).
 
+## Round 12: Tab, the mouse, and what only breaks live
+
+* **Tab** opens the menu on a new **PLAYERS** tab: everyone on the server by team (VIP, your party), INVITE to party
+  up. Roblox's own Tab list is off, so Tab doesn't open both. **Alt** frees the mouse any time (the chat, the admin
+  panel, any button), with a hint under SHOP; Alt again goes back to aiming.
+* **Launch audit** (things the mock can't catch, fixed): each spawn runs in its own thread and the match clock can't
+  die on one bad tick (a slow character load held the clock; a player leaving mid-load stopped it); a Robux purchase
+  is granted only once its save went through (`PlayerDataService:Save` returns true/false), and a grant that errors
+  gives the receipt back for the retry; a busy DataStore is retried, and live a player is never put on a blank
+  profile that can't save (they're asked to rejoin); a player who leaves mid-load gives their save lock back; the
+  device setting is sent at most every 2 s (a pad + mouse flipped it every frame, which the anti-cheat counted as
+  spam); no shots from the blade, from the far side of a wall, or with NaN or odd shot ids; the tutorial marker
+  survives a respawn; analytics taps can't grow without limit.
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

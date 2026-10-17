@@ -540,9 +540,20 @@ function AnalyticsService:Init(registry)
 			})
 			track(player, "ui_ready", payload)
 		elseif kind == "taps" or kind == "ui" then
+			local kinds = 0
+			for _ in s.taps do
+				kinds += 1
+			end
 			for k, n in type(payload.taps) == "table" and payload.taps or payload do
-				if type(n) == "number" then
-					s.taps[k] = (s.taps[k] or 0) + n
+				-- (short names and plain counts only, and at most 60 kinds a visit: a client can't flood it)
+				if type(k) == "string" and #k <= 32 and type(n) == "number" and n == n and n >= 0 and n <= 1000 then
+					if s.taps[k] == nil and kinds < 60 then
+						kinds += 1
+						s.taps[k] = 0
+					end
+					if s.taps[k] then
+						s.taps[k] += math.floor(n)
+					end
 				end
 			end
 			track(player, "ui", payload)

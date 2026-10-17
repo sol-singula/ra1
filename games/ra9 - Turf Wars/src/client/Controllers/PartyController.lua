@@ -211,6 +211,7 @@ local function refreshMarks()
 		if not bb or not bb.Parent then
 			bb = Theme.new("BillboardGui", {
 				Name = "PartyMark",
+				ResetOnSpawn = false,
 				Size = UDim2.fromOffset(34, 34),
 				StudsOffset = Vector3.new(0, 2.6, 0),
 				AlwaysOnTop = true,
