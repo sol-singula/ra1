@@ -1,12 +1,12 @@
 --[[
 Bots, only while every real person is on one side: alone in a server (or a party alone) you still get a real fight,
-bots on both sides (at least MIN_SIDE a side, below). The moment someone joins on their own,
+bots to fight (MIN_SIDE a side, below). The moment someone joins on their own,
 they take the bots' side, every bot leaves, and the game starts over (a fresh match, build phase first) so both sides
 start even. Someone who joins with the party (or follows a friend in) goes to that side and gets one more bot to
 fight. If everyone ends up on one side again, the bots come back. With nobody on, none.
 
-Always at least MIN_SIDE a side (2 against 2), and always even: bots make up whatever real people don't. One person
-alone gets a bot beside them and two against them; a 1 v 1 gets a bot each side; 3 against 2 gets one bot for the 2.
+Bots only make up the odd person out: 3 against 2 gets one bot for the 2; even sides have none (they leave the moment
+it's even again). One person alone gets one bot to fight (MIN_SIDE 1).
 A newcomer goes to the smaller side and takes a bot's place.
 
 A bot is a stand-in that looks enough like a player to the rest of the server (a character, a team, attributes, a
@@ -303,12 +303,17 @@ function BotService:Ensure()
 		return
 	end
 	local have = { red = {}, blue = {} }
+	local keep = {}
 	for _, b in bots do
 		local t = teams:Team(b)
-		if have[t] then
+		if b.Parent and have[t] then
 			table.insert(have[t], b)
+			table.insert(keep, b)
+		else
+			b:Remove() -- (a bot off both teams, or gone: never left standing about, never counted)
 		end
 	end
+	bots = keep
 	for side, n in want do
 		for _ = #have[side] + 1, n do
 			self:Add(side)

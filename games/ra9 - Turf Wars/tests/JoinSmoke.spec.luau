@@ -40,7 +40,14 @@ local function join(i)
 	return p
 end
 
+local Bots = service("BotService")
 local function audit(label)
+	local red, blue = Teams:People("red"), Teams:People("blue")
+	local want = math.abs(red - blue)
+	if red + blue == 1 then
+		want = 1
+	end
+	check(`{label}: bots only for the odd one out`, #Bots:List() == want, `{#Bots:List()} bots, {red} v {blue}`)
 	for _, p in people do
 		if p.Parent then
 			local r = root(p)
