@@ -1,6 +1,7 @@
 --[[
 The first-person camera (master plan §6): locked first person, a steady field of view that widens a little when
-you sprint and tightens as you draw (a light zoom for aiming), small shakes (hits, the horn) that the player can
+you sprint and tightens as you draw (a light zoom for aiming; on a phone the view is a little wider and the zoom a
+little deeper, so you see more round you on a small screen and aim as tightly as on a monitor), small shakes (hits, the horn) that the player can
 turn off, and the sensitivity setting. Other controllers add their own offsets through CameraController.offset
 (the slide's dip), applied after Roblox's camera each frame.
 
@@ -19,6 +20,7 @@ gives it back: Custom again, on your character, locked first person, looking alo
   CameraController.takeover(fn)   CameraController.release(look?)   CameraController.takenOver() -> bool
   CameraController.parked()       { [button] = true }: Modal buttons switched off while their panel is hidden
   CameraController.cursorMode()   CameraController.setCursorMode(on)   Alt: the mouse free to click anything
+  CameraController.turn(dx, dy)   turn the view by a thumb's drag in points (the touch FIRE button: Bus.Look)
 ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -26,6 +28,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local Net = require(game:GetService("ReplicatedStorage").Shared.Net)
 local Bus = require(script.Parent.Parent.UI.Bus)
+local Device = require(script.Parent.Parent.UI.Device)
 local Layout = require(script.Parent.Parent.UI.Layout)
 local Store = require(script.Parent.Parent.Store)
 
@@ -33,6 +36,7 @@ local CameraController = { Name = "CameraController", Order = 5 }
 
 local player = Players.LocalPlayer
 local BASE_FOV = 80
+CameraController.PHONE_FOV = 6 -- (degrees wider on a phone: Device.isPhone)
 local fov = BASE_FOV
 local shakeUntil, shakeStrength = 0, 0
 local offsets = {} -- [name] = CFrame applied after the camera
@@ -48,7 +52,7 @@ function CameraController.setFov(name, delta)
 end
 
 function CameraController.targetFov()
-	local f = BASE_FOV
+	local f = BASE_FOV + (Device.isPhone() and CameraController.PHONE_FOV or 0)
 	for _, d in fovs do
 		f += d
 	end
@@ -184,6 +188,27 @@ function CameraController.release(look)
 	fov = cam.FieldOfView or fov -- (eases back from the cinematic's lens)
 end
 
+-- A thumb dragged on the FIRE button aims while it draws (the button eats the touch, so Roblox's own camera never
+-- sees it): degrees per point, times the sensitivity setting; never past looking straight up or down
+local TURN_PER_POINT = 0.3
+local PITCH_MAX = math.rad(80)
+
+function CameraController.turn(dx, dy)
+	local cam = workspace.CurrentCamera
+	if not cam or driver or CameraController.mouseFree() then
+		return
+	end
+	local profile = Store.get("profile")
+	local sens = profile and profile.settings and tonumber(profile.settings.sensitivity) or 1
+	local k = math.rad(TURN_PER_POINT * sens)
+	local look = cam.CFrame.LookVector
+	local yaw = math.atan2(-look.X, -look.Z) - dx * k
+	local pitch = math.clamp(math.asin(math.clamp(look.Y, -1, 1)) - dy * k, -PITCH_MAX, PITCH_MAX)
+	local dir = Vector3.new(-math.sin(yaw) * math.cos(pitch), math.sin(pitch), -math.cos(yaw) * math.cos(pitch))
+	local at = cam.CFrame.Position
+	cam.CFrame = CFrame.lookAt(at, at + dir) -- (Roblox's camera carries on from where this one looks)
+end
+
 local function shakeNow()
 	local t = os.clock()
 	if t < shakeUntil then
@@ -244,6 +269,9 @@ function CameraController:init()
 		if (k == Enum.KeyCode.LeftAlt or k == Enum.KeyCode.RightAlt) and not processed then
 			CameraController.setCursorMode(not cursorMode)
 		end
+	end)
+	Bus.Look:Connect(function(dx, dy)
+		CameraController.turn(dx or 0, dy or 0)
 	end)
 	Bus.Shake:Connect(function(strength, seconds)
 		CameraController.shake(strength or 0.3, seconds or 0.25)

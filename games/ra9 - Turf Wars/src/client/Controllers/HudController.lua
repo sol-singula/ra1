@@ -12,7 +12,8 @@ The HUD (master plan §1, §2, §5, §7): everything on screen, in the SUPERHOT 
              what, how far the line moved
   bottom     health (left), the weapons (right: 1 2 3, each a 3D picture, the TNT's cooldown), the build
              tray in the build phase (seven pieces as 3D pictures with their costs, your points), toasts
-  touch      FIRE (hold to draw), SPRINT, SLIDE; PLACE and ROTATE while building
+  touch      big buttons round the right thumb: FIRE (hold to draw, drag to aim), JUMP, CROUCH, RUN, SLIDE, SWAP;
+             PLACE and ROTATE while building. On a phone the crosshair and the hotbar are a little bigger
   overlays   the results (who won, the table, the MVP, your reward, the next map); unlock and thank-you cards
              stack down the right, under the kill feed
 
@@ -1166,84 +1167,140 @@ end
 
 -- Touch controls -----------------------------------------------------------------------------------------------
 -- Built for every device and shown while you're playing by touch (Device: a phone, a tablet, a touch laptop being
--- tapped). Round the right thumb, each in its own spot (centre offsets from the bottom-right corner); Roblox's own
+-- tapped). Big, each with a picture and its name, round the right thumb, each in its own spot (centre offsets from
+-- the bottom-right corner, and a size: at a phone's scale each is about 70 points across or more); Roblox's own
 -- thumbstick keeps the left side, and its jump button is swapped for ours so nothing sits on anything:
---   FIRE (hold to draw)  JUMP  CROUCH (toggle)  RUN (toggle)  SLIDE  RELOAD (a magazine weapon; none has one now)
+--   FIRE (hold to draw, let go to shoot; drag the same thumb on it to aim while you draw: Bus.Look)
+--   JUMP  CROUCH (toggle)  RUN (toggle; the thumbstick pushed all the way runs by itself)  SLIDE
+--   SWAP (the next weapon; the hotbar's slots take a tap too)  RELOAD (a magazine weapon; none has one now)
 --   PLACE and TURN take FIRE's and RUN's spots while building
+-- (all of it right of the build tray's hint, under the popups, clear of the toast, the respawn line and the hotbar)
 local TOUCH = {
-	fire = { -110, -150, 104 },
-	jump = { -60, -52, 72 },
-	crouch = { -190, -58, 60 },
-	sprint = { -230, -140, 64 },
-	slide = { -205, -215, 58 },
-	reload = { -60, -235, 52 },
+	fire = { -86, -214, 160 },
+	jump = { -60, -64, 108 },
+	crouch = { -172, -64, 108 },
+	slide = { -284, -64, 108 },
+	sprint = { -224, -188, 108 },
+	swap = { -336, -216, 108 },
+	reload = { -224, -272, 52 },
 }
 HudController.TOUCH = TOUCH
+-- what FIRE says for the weapon in your hands
+local FIRE_FACE = {
+	bow = { "🏹", "SHOOT" },
+	tnt = { "🧨", "THROW" },
+	blade = { "⚔️", "SLASH" },
+}
 
 local function buildTouch(gui)
-	local function button(name, text, spot, color)
-		return Theme.new("TextButton", {
+	local function button(name, icon, text, spot, color)
+		local size = spot[3]
+		local small = size < 80 -- (a small one: just its name)
+		local b = Theme.new("TextButton", {
 			Name = name,
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(1, spot[1], 1, spot[2]),
-			Size = UDim2.fromOffset(spot[3], spot[3]),
+			Size = UDim2.fromOffset(size, size),
 			BackgroundColor3 = color or C.white,
 			BackgroundTransparency = 0.1,
-			Text = text,
-			Font = Theme.Display,
-			TextSize = spot[3] >= 90 and 18 or 13,
-			TextColor3 = color and C.white or C.ink,
+			Text = "",
 			AutoButtonColor = false,
 			Visible = false,
 			Parent = gui,
-		}, { Theme.corner("round"), Theme.stroke(2, C.ink) })
+		}, { Theme.corner("round"), Theme.stroke(small and 2 or 3, C.ink) })
+		-- the picture over the name
+		label({
+			Name = "Icon",
+			Text = icon,
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.fromScale(0.5, 0.14),
+			Size = UDim2.fromScale(0.6, 0.42),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = color and C.white or C.ink,
+			Visible = not small,
+			Parent = b,
+		})
+		label({
+			Name = "Label",
+			Text = text,
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.fromScale(0.5, small and 0.3 or 0.58),
+			Size = UDim2.fromScale(0.8, small and 0.4 or 0.24),
+			fit = size >= 150 and 26 or 18,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = color and C.white or C.ink,
+			Font = Theme.Display,
+			Parent = b,
+		})
+		return b
 	end
-	local function toggle(b, on)
+	local function paint(b, on)
 		b.BackgroundColor3 = on and C.ink or C.white
-		b.TextColor3 = on and C.white or C.ink
+		b.Icon.TextColor3 = on and C.white or C.ink
+		b.Label.TextColor3 = on and C.white or C.ink
 	end
-	local fire = button("Fire", "FIRE", TOUCH.fire, C.ink)
+	-- FIRE: down draws, up shoots; the same thumb dragged on it turns the view (that touch only, even once it slides
+	-- off the button), so aiming and shooting are one thumb
+	local fire = button("Fire", FIRE_FACE.bow[1], FIRE_FACE.bow[2], TOUCH.fire, C.ink)
+	local fireTouch, fireAt
 	fire.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.Touch then
+		if input.UserInputType == Enum.UserInputType.Touch and not fireTouch then
+			fireTouch, fireAt = input, input.Position
 			Bus.Fire:Fire(true)
 		end
 	end)
-	fire.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.Touch then
+	local function letGo(input)
+		if input.UserInputType == Enum.UserInputType.Touch and fireTouch and input == fireTouch then
+			fireTouch = nil
 			Bus.Fire:Fire(false)
 		end
+	end
+	fire.InputEnded:Connect(letGo)
+	UserInputService.InputEnded:Connect(letGo) -- (let go off the button: the button doesn't hear it)
+	UserInputService.InputChanged:Connect(function(input)
+		if fireTouch and input == fireTouch and typeof(input.Position) == "Vector3" and fireAt then
+			local d = input.Position - fireAt
+			fireAt = input.Position
+			if d.Magnitude > 0 then
+				Bus.Look:Fire(d.X, d.Y)
+			end
+		end
 	end)
-	local jump = button("Jump", "JUMP", TOUCH.jump)
+	local jump = button("Jump", "⬆", "JUMP", TOUCH.jump)
 	jump.Activated:Connect(function()
 		Bus.Jump:Fire()
 	end)
 	local crouchOn = false
-	local crouch = button("Crouch", "CROUCH", TOUCH.crouch)
+	local crouch = button("Crouch", "⬇", "CROUCH", TOUCH.crouch)
 	crouch.Activated:Connect(function()
 		crouchOn = not crouchOn
-		toggle(crouch, crouchOn)
+		paint(crouch, crouchOn)
 		Bus.Crouch:Fire(crouchOn)
 	end)
 	local sprintOn = false
-	local sprint = button("Sprint", "RUN", TOUCH.sprint)
+	local sprint = button("Sprint", "»", "RUN", TOUCH.sprint)
 	sprint.Activated:Connect(function()
 		sprintOn = not sprintOn
-		toggle(sprint, sprintOn)
+		paint(sprint, sprintOn)
 		Bus.Sprint:Fire(sprintOn)
 	end)
-	local slide = button("Slide", "SLIDE", TOUCH.slide)
+	local slide = button("Slide", "💨", "SLIDE", TOUCH.slide)
 	slide.Activated:Connect(function()
 		Bus.Slide:Fire()
 	end)
-	local reload = button("Reload", "RELOAD", TOUCH.reload)
+	local swap = button("Swap", "🔄", "SWAP", TOUCH.swap)
+	swap.Activated:Connect(function()
+		Bus.Cycle:Fire(1)
+	end)
+	local reload = button("Reload", "", "RELOAD", TOUCH.reload)
 	reload.Activated:Connect(function()
 		Bus.Reload:Fire()
 	end)
-	local place = button("Place", "PLACE", TOUCH.fire, C.ink)
+	local place = button("Place", "✅", "PLACE", TOUCH.fire, C.ink)
 	place.Activated:Connect(function()
 		Bus.Place:Fire()
 	end)
-	local rotate = button("Rotate", "TURN", TOUCH.sprint)
+	local rotate = button("Rotate", "↻", "TURN", TOUCH.sprint)
 	rotate.Activated:Connect(function()
 		Bus.Rotate:Fire()
 	end)
@@ -1253,10 +1310,18 @@ local function buildTouch(gui)
 		crouch = crouch,
 		sprint = sprint,
 		slide = slide,
+		swap = swap,
 		reload = reload,
 		place = place,
 		rotate = rotate,
 	}
+	-- FIRE hides (the fight's over, you're knocked out) with a thumb still on it: let go, so the bow never stays drawn
+	refs.releaseFire = function()
+		if fireTouch then
+			fireTouch = nil
+			Bus.Fire:Fire(false)
+		end
+	end
 end
 HudController._buildTouch = buildTouch -- (tests: the touch layout on a desktop run)
 
@@ -1273,7 +1338,12 @@ end
 
 -- Where the corners go for the way you play: on touch the health moves up under the buttons on the left (the
 -- thumbstick has the bottom left), the bows go to the bottom middle (the action buttons have the bottom right),
--- and only one popup shows at a time (the buttons reach up the right side).
+-- and only one popup shows at a time (the buttons reach up the right side). On a phone (not a tablet) what you
+-- need to see while you fight is a little bigger (PHONE: a UIScale on each, round its anchor): the crosshair, the
+-- draw's bar, the hit marker, your team's name, and the hotbar most (it's tapped: a slot a thumb can hit).
+local PHONE = { cross = 1.15, charge = 1.15, hit = 1.15, health = 1.15, bowsFrame = 1.3 }
+HudController.PHONE = PHONE
+
 function HudController.layoutFor(kind)
 	local touch = kind == "touch"
 	if refs.health then
@@ -1284,8 +1354,17 @@ function HudController.layoutFor(kind)
 		refs.bowsFrame.AnchorPoint = touch and Vector2.new(0.5, 1) or Vector2.new(1, 1)
 		refs.bowsFrame.Position = touch and UDim2.new(0.5, 0, 1, -16) or UDim2.new(1, -16, 1, -16)
 	end
+	local phone = touch and Device.isPhone()
+	for key, scale in PHONE do
+		local o = refs[key]
+		if o then
+			local s = o:FindFirstChild("Phone") or Theme.new("UIScale", { Name = "Phone", Parent = o })
+			s.Scale = phone and scale or 1
+		end
+	end
 	STACK.max = touch and 1 or 2
 	refs.layout = kind
+	refs.phone = phone
 end
 
 local function updateTouch()
@@ -1305,14 +1384,27 @@ local function updateTouch()
 	t.crouch.Visible = on and playing
 	t.sprint.Visible = on and playing and not (building and picked)
 	t.slide.Visible = on and playing
+	-- SWAP only with something to swap to (the TNT bought or on its free try; the blade in the CHARGE)
+	local choices = 0
+	for _, x in Weapons.list do
+		if not Weapons.locked(x.key, player) and (not x.melee or workspace:GetAttribute("Charge") == true) then
+			choices += 1
+		end
+	end
+	t.swap.Visible = on and phase == "fight" and me.alive ~= false and choices >= 2
 	t.reload.Visible = on and phase == "fight" and w ~= nil and w.mag ~= nil
 	t.place.Visible = on and building and picked
 	t.rotate.Visible = on and building and picked
+	if not t.fire.Visible and refs.releaseFire then
+		refs.releaseFire()
+	end
+	local face = FIRE_FACE[me.weapon or ""] or FIRE_FACE.bow
+	t.fire.Icon.Text, t.fire.Label.Text = face[1], face[2]
 	if on then
 		hideRobloxJump()
 	end
-	if refs.layout ~= Device.kind() then
-		HudController.layoutFor(Device.kind())
+	if refs.layout ~= Device.kind() or refs.phone ~= (on and Device.isPhone()) then
+		HudController.layoutFor(Device.kind()) -- (the way you play changed, or the screen did: a phone rotated)
 	end
 end
 

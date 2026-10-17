@@ -6,6 +6,7 @@ attribute: the anti-cheat and the stats read it).
 
   Device.kind()                "touch" | "gamepad" | "keyboard"
   Device.isTouch()
+  Device.isPhone()             touch on a small screen (not a tablet): a bigger HUD, a wider view, a stronger zoom
   Device.Changed:Connect(fn(kind))
   Device.set(kind)             (tests)
 ]]
@@ -45,6 +46,18 @@ end
 
 function Device.isTouch()
 	return current == "touch"
+end
+
+-- A phone, not a tablet: touch, and the screen's short side under PHONE_SIDE (Roblox counts points: a phone in
+-- landscape is about 360-430 tall, the smallest iPad 744)
+local PHONE_SIDE = 600
+function Device.isPhone()
+	if current ~= "touch" then
+		return false
+	end
+	local cam = workspace.CurrentCamera
+	local size = cam and cam.ViewportSize
+	return size ~= nil and size.X > 10 and math.min(size.X, size.Y) < PHONE_SIDE
 end
 
 function Device.set(kind)

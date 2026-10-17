@@ -787,7 +787,7 @@ do
 		local bad = {}
 		local t = 0
 		repeat
-			for _, fov in { 80, 70 } do -- (the view's own, and drawn: the view tightens by up to 10)
+			for _, fov in { 80, 70, 86 } do -- (the view's own, drawn (it tightens by up to 10), and a phone's wider one)
 				for _, aspect in { 16 / 9, 844 / 390 } do -- (a monitor, a wide phone)
 					for _, name in inMiddle(fov, aspect) do
 						bad[name] = true
@@ -1106,18 +1106,21 @@ end
 do
 	local Theme = Engine.require(tree.client.UI.Theme)
 	local W, H = Theme.MIN_WIDTH, Theme.DESIGN.Y
+	-- (a phone's "Phone" UIScale grows a piece round its anchor, and the offsets of everything inside it)
 	local function rect(o)
 		local p = o.Parent
-		local px, py, pw, ph = 0, 0, W, H
+		local px, py, pw, ph, ps = 0, 0, W, H, 1
 		if p and not p:IsA("ScreenGui") then
-			px, py, pw, ph = table.unpack(rect(p))
+			px, py, pw, ph, ps = table.unpack(rect(p))
 		end
+		local phone = o:FindFirstChild("Phone")
+		local grow = (phone and phone:IsA("UIScale")) and phone.Scale or 1
 		local ap = o.AnchorPoint or Vector2.new(0, 0)
-		local w = o.Size.X.Scale * pw + o.Size.X.Offset
-		local h = o.Size.Y.Scale * ph + o.Size.Y.Offset
-		local x = px + o.Position.X.Scale * pw + o.Position.X.Offset - ap.X * w
-		local y = py + o.Position.Y.Scale * ph + o.Position.Y.Offset - ap.Y * h
-		return { x, y, w, h }
+		local w = (o.Size.X.Scale * pw + o.Size.X.Offset * ps) * grow
+		local h = (o.Size.Y.Scale * ph + o.Size.Y.Offset * ps) * grow
+		local x = px + o.Position.X.Scale * pw + o.Position.X.Offset * ps - ap.X * w
+		local y = py + o.Position.Y.Scale * ph + o.Position.Y.Offset * ps - ap.Y * h
+		return { x, y, w, h, ps * grow }
 	end
 	local function shown(o)
 		local x = o
@@ -1214,6 +1217,7 @@ do
 			Crouch = t.crouch,
 			Sprint = t.sprint,
 			Slide = t.slide,
+			Swap = t.swap,
 			Reload = t.reload,
 			Place = t.place,
 			Rotate = t.rotate,
@@ -1414,6 +1418,81 @@ do
 		jumped = hum.Jump == true
 	end
 	check("JUMP jumps", jumped)
+
+	-- A phone (this test's screen is 844 x 390): a bigger HUD, big buttons, a wider view, aiming on FIRE ----------
+	local CamC = Engine.require(tree.client.Controllers.CameraController)
+	local Weapons = Engine.require(tree.shared.Data.Weapons)
+	check("an 844 x 390 touch screen is a phone", Device.isPhone())
+	check(
+		"on a phone: the crosshair and the hotbar are bigger",
+		refs.cross.Phone.Scale > 1.1 and refs.bowsFrame.Phone.Scale > 1.2 and refs.health.Phone.Scale > 1.1
+	)
+	Store.merge("me", { weapon = "bow", alive = true })
+	Engine.advance(0.05)
+	check("...SWAP shows in the fight (the TNT is yours)", t.swap.Visible, Weapons.locked("tnt", player))
+	local small = {}
+	for name, b in t do
+		if name ~= "reload" and b.Size.X.Offset * Theme.scaleFactor() < 70 then
+			table.insert(small, `{name} {b.Size.X.Offset * Theme.scaleFactor()}`)
+		end
+	end
+	check("...every button at least 70 points across at the phone's scale", #small == 0, table.concat(small, ", "))
+	t.swap.Visible = true
+	L = corners()
+	L.Alert, L.Objective, L.Respawn, L.Popups = refs.alert, refs.objective, refs.respawn, Hud.popups()[1]
+	L.Cross, L.Charge = refs.cross, refs.charge
+	refs.alert.Visible, refs.objective.Visible, refs.respawn.Visible, refs.charge.Visible = true, true, true, true
+	Hud.toast("A toast on a phone")
+	apart("a phone in the fight, every button showing", L)
+	refs.alert.Visible, refs.respawn.Visible, refs.charge.Visible = false, false, false
+	-- the view: wider on a phone, and the draw zooms in further (to the same tight aim as a monitor)
+	local phoneFov = CamC.targetFov()
+	Device.set("keyboard")
+	local deskFov = CamC.targetFov()
+	Device.set("touch")
+	Engine.advance(0.05)
+	check("the view is wider on a phone", phoneFov == deskFov + CamC.PHONE_FOV, `{phoneFov} vs {deskFov}`)
+	-- SWAP: the next weapon (the FIRE button says what it does)
+	Engine.advance(1)
+	t.swap.Activated:Fire()
+	Engine.advance(0.05)
+	check("SWAP: the TNT", (Store.get("me") or {}).weapon == "tnt", (Store.get("me") or {}).weapon)
+	check("...FIRE says THROW", t.fire.Label.Text == "THROW", t.fire.Label.Text)
+	t.swap.Activated:Fire()
+	Engine.advance(0.05)
+	check("...and back to the bow", (Store.get("me") or {}).weapon == "bow" and t.fire.Label.Text == "SHOOT")
+	-- FIRE: a thumb down draws, dragged turns the view, let go (off the button) shoots
+	Engine.advance(1.5)
+	local touchIn = { UserInputType = Enum.UserInputType.Touch, Position = Vector3.new(1000, 300, 0) }
+	t.fire.InputBegan:Fire(touchIn)
+	Engine.advance(1.6)
+	check("a thumb on FIRE draws", Weapon.drawing())
+	check("...and zooms in further than on a monitor", CamC.targetFov() <= phoneFov - 15, CamC.targetFov())
+	local look0 = ws.CurrentCamera.CFrame.LookVector
+	touchIn.Position = Vector3.new(1040, 290, 0)
+	UIS.InputChanged:Fire(touchIn)
+	local look1 = ws.CurrentCamera.CFrame.LookVector
+	local right = look0:Cross(Vector3.new(0, 1, 0))
+	local turnedBy = math.deg(math.acos(math.clamp(look0:Dot(look1), -1, 1)))
+	check(
+		"...dragged right, the view turns right (a fair way, not a spin)",
+		(look1 - look0):Dot(right) > 0 and turnedBy > 5 and turnedBy < 20,
+		turnedBy
+	)
+	check("...and up a little", look1.Y > look0.Y)
+	local shot0 = Engine.lastClientEvent("Shoot")
+	UIS.InputEnded:Fire(touchIn)
+	Engine.advance(0.05)
+	check(
+		"...let go off the button: the arrow flies",
+		not Weapon.drawing() and Engine.lastClientEvent("Shoot") ~= shot0
+	)
+	-- auto-run: the thumbstick pushed all the way forward runs; easing off a bit keeps it; letting go stops it
+	Move.setSprint(false)
+	check("auto-run: the stick pushed all the way", Move.autoRunFrom(Vector3.new(0, 0, -1)) and Move.sprinting())
+	check("...still running eased off a little", Move.autoRunFrom(Vector3.new(0.1, 0, -0.7)))
+	check("...stopped once let go", not Move.autoRunFrom(Vector3.new(0, 0, -0.2)) and not Move.sprinting())
+	check("...not pushed sideways", not Move.autoRunFrom(Vector3.new(1, 0, 0)))
 	Store.set("match", realMatch)
 	Store.set("me", realMe)
 	Device.set("keyboard")

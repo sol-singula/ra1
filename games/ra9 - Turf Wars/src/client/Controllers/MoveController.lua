@@ -2,7 +2,8 @@
 Movement (master plan §6): sprint, slide, the front flip, and the knockback you take.
 
   * Sprint: hold Shift (or the left stick in, or the touch SPRINT toggle): faster, the view a little wider. Drawing
-    a bow slows you to DRAW_SPEED whatever you're doing.
+    a bow slows you to DRAW_SPEED whatever you're doing. On touch, pushing the thumbstick all the way forward runs
+    by itself (auto-run), until you ease off it.
   * Crouch: hold C or Ctrl (or the touch CROUCH toggle, or B on a gamepad): lower and slower, a smaller target, the
     bow steadier in your hands. Everyone sees you crouch (MoveService lowers you on the server too).
   * Slide: crouch while sprinting (or the touch SLIDE button): a short burst forward, low to the ground, on a
@@ -21,6 +22,7 @@ local RunService = game:GetService("RunService")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Bus = require(script.Parent.Parent.UI.Bus)
+local Device = require(script.Parent.Parent.UI.Device)
 local Store = require(script.Parent.Parent.Store)
 local CameraController = require(script.Parent.CameraController)
 local WeaponController = require(script.Parent.WeaponController)
@@ -29,6 +31,9 @@ local MoveController = { Name = "MoveController", Order = 25 }
 
 local player = Players.LocalPlayer
 local sprinting = false
+local held, autoRun = false, false -- (sprint asked for: Shift, the stick, the RUN toggle; or the thumbstick pushed)
+-- auto-run: the thumbstick pushed this far, mostly forward, starts it; easing off under STOP ends it
+local AUTO_RUN = { start = 0.92, stop = 0.6, forward = 0.7 }
 local slideUntil, slideReady = 0, 0
 local slideDir
 local crouching = false
@@ -47,9 +52,61 @@ function MoveController.sprinting()
 	return sprinting
 end
 
+local function applySprint()
+	local on = held or autoRun
+	if on ~= sprinting then
+		sprinting = on
+		Net.send("Sprint", sprinting)
+	end
+end
+
 function MoveController.setSprint(on)
-	sprinting = on == true
-	Net.send("Sprint", sprinting)
+	held = on == true
+	applySprint()
+end
+
+function MoveController.autoRunning()
+	return autoRun
+end
+
+-- Roblox's own touch thumbstick: how far it's pushed (its move vector, -Z forward), or nil without one
+local controls, nextLook = nil, 0
+local function stick()
+	if not controls and os.clock() >= nextLook then
+		nextLook = os.clock() + 2 -- (the PlayerModule may not be there yet: look again in a bit)
+		pcall(function()
+			local scripts = player:FindFirstChild("PlayerScripts")
+			local pm = scripts and scripts:FindFirstChild("PlayerModule")
+			controls = pm and require(pm):GetControls() or nil
+		end)
+	end
+	if not controls then
+		return nil
+	end
+	local ok, v = pcall(function()
+		return controls:GetMoveVector()
+	end)
+	return ok and typeof(v) == "Vector3" and v or nil
+end
+
+-- Auto-run (touch only): from the thumbstick's move vector v (nil: none), on or off; the hysteresis keeps a thumb
+-- resting near the edge from flickering it
+function MoveController.autoRunFrom(v)
+	local on = false
+	if v and Device.isTouch() then
+		local push = math.min(1, Vector2.new(v.X, v.Z).Magnitude)
+		local forward = -v.Z
+		if autoRun then
+			on = push >= AUTO_RUN.stop and forward > 0
+		else
+			on = push >= AUTO_RUN.start and forward >= AUTO_RUN.forward * push
+		end
+	end
+	if on ~= autoRun then
+		autoRun = on
+		applySprint()
+	end
+	return autoRun
 end
 
 function MoveController.crouching()
@@ -126,6 +183,9 @@ local function step(dt)
 	local hum, root = humanoid()
 	if not hum then
 		return
+	end
+	if Device.isTouch() or autoRun then
+		MoveController.autoRunFrom(stick())
 	end
 	local speed = Constants.WALK_SPEED
 	if sprinting and not crouching then
