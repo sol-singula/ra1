@@ -10,6 +10,11 @@ the camera comes back to you as you respawn.
              in: ELIMINATED BY <name>, their weapon (UI/Icons) and the distance; a fade to white and back to you
   a blade, a TNT, anything else: a quick orbit round the killer (or the blast) with the card, then the fade
 
+The arrow comes off the bow at real speed and slows down more and more in the last stretch, right before it hits you.
+You shatter as yourself (a still copy of your own character: your avatar, your look, your team's bands; a plain
+mannequin only if there's none). It all fits inside the respawn wait, and it ends the moment your new body is there
+(a quick fade to it); if that's late, the last shot holds for it, so you never stand about dead in the floor.
+
 Space, a click or a tap skips it once it's been up half a second. It never starts while another cinematic has the
 camera (the tutorial's: TutorialController.cinematic, CameraController.takenOver) or while an admin spectates, and it
 stops at once if either begins. It borrows the camera through CameraController (takeover / release), so first person
@@ -50,9 +55,15 @@ local UP = Vector3.yAxis
 local refs = {}
 KillCamController.refs = refs
 
--- seconds of each part (the flight's own length follows the real one, slowed, within these bounds)
-local INTRO, FLIGHT_MIN, FLIGHT_MAX, FREEZE, CARD, FADE = 0.45, 0.8, 1.15, 0.32, 0.7, 0.3
+-- seconds of each part (the flight's own length follows the real one, slowed, within these bounds). All of it fits
+-- inside the respawn wait (Constants.RESPAWN_SECONDS); if the new body is slower than that, the last shot holds until
+-- it's there (HOLD_MAX at most), and the moment it is, a quick fade takes the camera to it.
+local INTRO, FLIGHT_MIN, FLIGHT_MAX, FREEZE, CARD, FADE = 0.35, 0.9, 1.6, 0.28, 0.6, 0.25
 local ORBIT = 1.5 -- a blade's or a blast's whole orbit
+local HOLD_MAX = 7 -- seconds: never longer than this, respawned or not
+local QUICK_FADE = 0.2 -- respawned: the fade to the new body
+-- the flight's slow motion: real speed at first, then easing down to SLOWEST of it over the last part of the path
+local SLOW_FROM, SLOWEST = 0.6, 0.1
 local SKIP_AFTER = 0.5
 local OUTRO = 0.35 -- the fade from white back to you, after the camera's given back
 
@@ -71,6 +82,35 @@ end
 
 local function lerp(a, b, t)
 	return a + (b - a) * t
+end
+
+-- The flight's clock: how far along the real flight (0..T seconds) the replay is, by its own time. At real speed
+-- (scaled by rate) to SLOW_FROM of the way, then slowing smoothly to SLOWEST right before it hits. The curve is
+-- worked out once at rate 1 (`samples` every DT); playback reads it at time * rate, chosen so the whole flight lasts
+-- FLIGHT_MIN..FLIGHT_MAX.
+local DT = 1 / 240
+local function flightCurve(T)
+	local samples, a = { 0 }, 0
+	while a < T and #samples < 20000 do
+		local p = a / T
+		local rate = lerp(1, SLOWEST, smoother((p - SLOW_FROM) / (1 - SLOW_FROM)))
+		a = math.min(T, a + rate * DT)
+		table.insert(samples, a)
+	end
+	local length = (#samples - 1) * DT -- at rate 1
+	local dur = math.clamp(length, FLIGHT_MIN, FLIGHT_MAX)
+	return { samples = samples, rate = length / dur, T = T }, dur
+end
+
+-- arrow time at replay time t
+local function flightAt(curve, t)
+	local x = math.max(0, t * curve.rate / DT)
+	local i = math.floor(x)
+	local s = curve.samples
+	if i + 1 >= #s then
+		return curve.T
+	end
+	return lerp(s[i + 1], s[i + 2], x - i)
 end
 
 -- Who else wants the camera: the tutorial's cinematics, an admin spectating
@@ -361,10 +401,12 @@ local function arrowShot(camera, t)
 			c.arrow = ArrowController.replay(O, V, c.team, c.trail)
 			AudioController.play("release", 0.8)
 		end
-		-- slow motion that slows further as it closes in
-		local s = 1 - (1 - u) ^ 2.2
-		local at = s * T
+		-- real speed off the bow, then slower and slower right before it hits you
+		local at = flightAt(c.curve, t)
 		ArrowController.at(c.arrow, at)
+		Effects.timeScale = lerp(1, 0.25, smoother((at / T - SLOW_FROM) / (1 - SLOW_FROM)))
+		-- (the camera moves by both clocks: it keeps moving while the arrow crawls in)
+		u = 0.5 * u + 0.5 * (at / T)
 		local P = Formulas.arrowAt(O, V, at)
 		local v = Formulas.arrowVelocity(V, at)
 		local fwd = v.Magnitude > 0.01 and v.Unit or c.dir
@@ -425,8 +467,9 @@ local function arrowShot(camera, t)
 		return
 	end
 	t -= FREEZE
-	-- the drift round the spot as the card comes in; the shards pick up into slow motion
-	local u = clamp01(t / (CARD + FADE))
+	-- the drift round the spot as the card comes in; the shards pick up into slow motion (still drifting, slower,
+	-- if the new body takes longer than planned)
+	local u = clamp01(t / (CARD + FADE)) + math.max(0, t - CARD - FADE) * 0.04
 	Effects.timeScale = lerp(0.04, 0.45, smoother(t / CARD))
 	local from = c.freezeFrom - c.stand
 	local flat = Vector3.new(from.X, 0, from.Z)
@@ -447,7 +490,9 @@ local function orbitShot(camera, t)
 	local u = clamp01(t / ORBIT)
 	local e = smoother(u)
 	local center = c.center
-	local a = c.yaw + math.rad(lerp(-40, 40, e))
+	-- (the blast, the slash: in slow motion, slowing as the camera comes round)
+	Effects.timeScale = lerp(0.6, 0.12, e)
+	local a = c.yaw + math.rad(lerp(-40, 40, e)) + math.max(0, t - ORBIT) * 0.15
 	local flat = Vector3.new(math.cos(a), 0, math.sin(a))
 	local pos = center + flat * lerp(9, 6.5, e) + UP * lerp(3, 1.4, e)
 	frame(camera, clear(center, pos), center + UP * 0.3, lerp(52, 44, e), math.rad(lerp(-5, 3, e)))
@@ -519,7 +564,7 @@ function KillCamController.play(k)
 		c.origin, c.velocity = info.origin, info.velocity
 		c.flight = math.max(0.05, tonumber(info.t) or 0.3)
 		c.impact = typeof(info.impact) == "Vector3" and info.impact or Formulas.arrowAt(c.origin, c.velocity, c.flight)
-		c.dur = math.clamp(c.flight * 3.5, FLIGHT_MIN, FLIGHT_MAX)
+		c.curve, c.dur = flightCurve(c.flight)
 		local d = c.impact - c.origin
 		d = Vector3.new(d.X, 0, d.Z)
 		c.dir = d.Magnitude > 0.01 and d.Unit or Vector3.new(1, 0, 0)
@@ -530,7 +575,9 @@ function KillCamController.play(k)
 		if (face - c.stand).Magnitude < 0.1 then
 			face = c.stand - c.dir
 		end
-		c.mannequin = Effects.mannequin(CFrame.lookAt(c.stand, face), c.myTeam)
+		-- (wearing your own look: a copy of your character as it stood; a plain mannequin if it's gone)
+		local at = CFrame.lookAt(c.stand, face)
+		c.mannequin = Effects.lookalike(player.Character, at, c.myTeam) or Effects.mannequin(at, c.myTeam)
 		-- (where the flight's camera settles: beside and a little behind you, the arrow coming in)
 		c.closePos = clear(c.stand, c.stand + c.side * 8.5 - c.dir * 7 + UP * 2.2)
 		c.introPos = c.origin + c.dir * 8.5 + c.side * 3.6 + UP * 1.2
@@ -550,6 +597,7 @@ function KillCamController.play(k)
 		c.total = ORBIT
 	end
 	c.endAt = now + c.total
+	c.oldBody = player.Character
 	cam = c
 	outroAt = nil
 	setCard(k)
@@ -574,6 +622,10 @@ function KillCamController.play(k)
 	end)
 	return true
 end
+
+-- (tests) the flight's clock: KillCamController.flight(T) -> curve, seconds; KillCamController.flightAt(curve, t)
+KillCamController.flight = flightCurve
+KillCamController.flightAt = flightAt
 
 function KillCamController.active()
 	return cam ~= nil or outroAt ~= nil
@@ -610,8 +662,17 @@ local function step()
 			local x = -520 + (548 + 14 * math.sin(k * math.pi)) * k
 			refs.card.Position = UDim2.new(0, x, 0.86, 0)
 		end
+		-- respawned (a new body): a quick fade to it now; not yet at the planned end: hold the last shot for it
+		local body = player.Character
+		local respawned = body ~= nil and body ~= c.oldBody and body:FindFirstChild("HumanoidRootPart") ~= nil
+		if respawned and not c.fadeFrom then
+			c.fadeFrom = t
+			c.endAt = math.min(c.endAt, t + QUICK_FADE)
+		elseif not respawned and not c.skipped and t >= c.endAt - FADE and age < HOLD_MAX then
+			c.endAt = t + FADE
+		end
 		-- the fade to white, then the camera comes home
-		local fadeStart = c.skipped and c.fadeFrom or (c.endAt - FADE)
+		local fadeStart = c.fadeFrom or (c.endAt - FADE)
 		if t >= fadeStart then
 			local span = math.max(0.05, c.endAt - fadeStart)
 			refs.fade.BackgroundTransparency = 1 - smoother((t - fadeStart) / span)

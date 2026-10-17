@@ -1882,13 +1882,37 @@ do
 	check("...with the distance", KillCam.refs.info.Text:find("60 STUDS") ~= nil, KillCam.refs.info.Text)
 	check("...the HUD steps aside and the arena goes muffled", Layout.inCinema() and Audio.muffled())
 	check("...the mouse stays as CameraController keeps it", UIS.MouseBehavior == mouse0)
-	Engine.advance(0.55)
+	do
+		local fx = ws:FindFirstChild("Effects")
+		local look = fx and fx:FindFirstChild("Lookalike")
+		check(
+			"...you stand there as yourself (a copy of your own character, not a mannequin)",
+			look ~= nil and look:FindFirstChild("HumanoidRootPart") ~= nil and fx:FindFirstChild("Mannequin") == nil
+		)
+	end
+	-- the flight: real speed off the bow, slower and slower right before it hits
+	do
+		local curve, dur = KillCam.flight(60 / 180)
+		local early = KillCam.flightAt(curve, 0.1) / 0.1
+		local late = (KillCam.flightAt(curve, dur) - KillCam.flightAt(curve, dur - 0.1)) / 0.1
+		check("...the arrow flies near real speed first", early > 0.6, early)
+		check("...then slows right down before it hits", late < early * 0.25, `{early} {late}`)
+		check("...and lands at the end of the flight", math.abs(KillCam.flightAt(curve, dur) - 60 / 180) < 1e-6)
+		local total = 0.35 + dur + 0.28 + 0.6 + 0.25
+		check("...all of it inside the respawn wait", total <= Constants.RESPAWN_SECONDS + 0.05, total)
+	end
+	Engine.advance(0.45)
 	check("...then the arrow is replayed", KillCam.stage() == "flight" and Arrows.count() >= 1, KillCam.stage())
-	Engine.advance(1.2)
+	Engine.advance(1.6)
 	local st = KillCam.stage()
 	check("...a freeze frame, then the card", st == "freeze" or st == "card", st)
 	Engine.advance(2.5)
-	check("it ends inside the respawn wait", not KillCam.active())
+	check("not back yet: the last shot holds (no standing about dead in the floor)", KillCam.active())
+	Engine.require(tree.server.Services.MatchService):Spawn(player)
+	Engine.advance(0.3)
+	check("respawned: it ends at once, on the new body", not CamC.takenOver() and KillCam.stage() == nil)
+	Engine.advance(0.5)
+	check("...and the fade is gone", not KillCam.active())
 	check("...and gives the camera back", not CamC.takenOver() and cam.CameraType == Enum.CameraType.Custom)
 	check("...first person again", player.CameraMode == Enum.CameraMode.LockFirstPerson)
 	check("...the mouse lock as it was", UIS.MouseBehavior == mouse0, tostring(UIS.MouseBehavior))
