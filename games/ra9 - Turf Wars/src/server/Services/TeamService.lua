@@ -84,10 +84,21 @@ local function other(team)
 end
 
 function TeamService:FriendTeam(player)
-	local counts = { red = 0, blue = 0 }
+	-- (a copy first: IsFriendsWith waits on Roblox, and a crowd joining at once changes `teams` meanwhile, which
+	-- breaks a loop over it: Assign threw and they were left with no team. Only real people, and a few at most.)
+	local list = {}
 	for p, t in teams do
-		if p ~= player and p.Parent and friends(player, p) then
-			counts[t] += 1
+		if p ~= player and not p.IsBot and p.Parent then
+			table.insert(list, { p, t })
+		end
+		if #list >= 12 then
+			break
+		end
+	end
+	local counts = { red = 0, blue = 0 }
+	for _, pt in list do
+		if pt[1].Parent and friends(player, pt[1]) then
+			counts[pt[2]] += 1
 		end
 	end
 	if counts.red == 0 and counts.blue == 0 then
@@ -184,7 +195,20 @@ function TeamService:Returning(player)
 	return nil
 end
 
+-- (always a team: if picking one goes wrong anyhow, the smaller side)
 function TeamService:Assign(player)
+	local ok, pick = pcall(self._pick, self, player)
+	if not ok or (pick ~= "red" and pick ~= "blue") then
+		warn("[TeamService] assign fell back: " .. tostring(pick))
+		pick = self:Count("red") <= self:Count("blue") and "red" or "blue"
+	end
+	if teams[player] ~= pick then
+		self:Set(player, pick)
+	end
+	return pick
+end
+
+function TeamService:_pick(player)
 	-- rule 0: back in the same match, the side they were on
 	local back = self:Returning(player)
 	if back then

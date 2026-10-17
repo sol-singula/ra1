@@ -210,8 +210,15 @@ function CombatService:Spawned(player)
 	s.ammo = w.mag
 	s.reloadAt = nil
 	s.readyAt = 0
-	mirror(player, s)
-	self:HoldBow(player, s.weapon)
+	-- (alive is set above whatever happens here: a bow that fails to show must never leave them RESPAWNING)
+	local ok, err = pcall(mirror, player, s)
+	if not ok then
+		warn("[CombatService] mirror failed: " .. tostring(err))
+	end
+	ok, err = pcall(self.HoldBow, self, player, s.weapon)
+	if not ok then
+		warn("[CombatService] hold bow failed: " .. tostring(err))
+	end
 	self:Push(player)
 end
 

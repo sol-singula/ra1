@@ -278,22 +278,44 @@ function MatchService:Spawn(player)
 	cf = CFrame.lookAt(cf.Position, cf.Position + Vector3.new(Formulas.forward(team), 0, 0))
 	local r = c:FindFirstChild("HumanoidRootPart")
 	if r then
+		-- (standing on the deck, whatever the avatar's size: down from above the spot to the floor, then up by the
+		-- legs, so nobody comes in half sunk into it)
+		pcall(function()
+			local params = RaycastParams.new()
+			params.FilterType = Enum.RaycastFilterType.Exclude
+			params.FilterDescendantsInstances = { c }
+			local hit = workspace:Raycast(cf.Position + Vector3.new(0, 4, 0), Vector3.new(0, -14, 0), params)
+			local hum = c:FindFirstChildOfClass("Humanoid")
+			if hit and hum then
+				local y = hit.Position.Y + hum.HipHeight + r.Size.Y / 2 + 0.1
+				cf = CFrame.new(cf.Position.X, math.max(cf.Position.Y, y), cf.Position.Z) * cf.Rotation
+			end
+		end)
 		r.CFrame = cf
 	end
 	player:SetAttribute("AcGrace", os.clock() + 2) -- (our teleport: the anti-cheat lets it go)
-	teams:Dress(c, team)
+	-- (from here on nothing may stop them coming alive: a look that fails to put on, or a hiccup, is only warned)
+	local ok, err = pcall(teams.Dress, teams, c, team)
+	if not ok then
+		warn("[MatchService] dress failed: " .. tostring(err))
+	end
 	local hum = c:FindFirstChildOfClass("Humanoid")
 	if hum then
-		hum.WalkSpeed = Constants.WALK_SPEED
-		hum.BreakJointsOnDeath = false
-		hum.Died:Connect(function()
-			-- (Roblox killed it anyway: the menu's Reset, a glitch) the same as going down, no credit
-			if player.Character == c and combat:Alive(player) then
-				combat:Kill(player, nil, { kind = "reset" })
-			end
+		pcall(function()
+			hum.WalkSpeed = Constants.WALK_SPEED
+			hum.BreakJointsOnDeath = false
+			hum.Died:Connect(function()
+				-- (Roblox killed it anyway: the menu's Reset, a glitch) the same as going down, no credit
+				if player.Character == c and combat:Alive(player) then
+					combat:Kill(player, nil, { kind = "reset" })
+				end
+			end)
 		end)
 	end
-	combat:Spawned(player)
+	ok, err = pcall(combat.Spawned, combat, player)
+	if not ok then
+		warn("[MatchService] spawned failed: " .. tostring(err))
+	end
 	spawning[player] = nil
 end
 
@@ -620,7 +642,23 @@ function MatchService:_tick()
 				or respawnAt[player] ~= nil
 				or pending[player]
 				or (spawning[player] and t - spawning[player] < 12)
-			if fine or not teams:Team(player) then
+			if not teams:Team(player) then
+				-- (in the server, loaded, and still on no team: Join went wrong somewhere; join them again)
+				if not player.IsBot and data:Get(player) then
+					stuckAt[player] = stuckAt[player] or t
+					if t - stuckAt[player] >= Constants.STUCK_RESPAWN_SECONDS then
+						stuckAt[player] = nil
+						task.spawn(function()
+							local ok, err = pcall(self.Join, self, player)
+							if not ok then
+								warn("[MatchService] rejoin failed: " .. tostring(err))
+							end
+						end)
+					end
+				else
+					stuckAt[player] = nil
+				end
+			elseif fine then
 				stuckAt[player] = nil
 			else
 				stuckAt[player] = stuckAt[player] or t
@@ -712,6 +750,7 @@ function MatchService:Join(player)
 	if not teams:Team(player) then
 		teams:Assign(player)
 	end
+	stuckAt[player] = nil
 	statsOf(player)
 	if phase == "loading" then
 		pending[player] = true
