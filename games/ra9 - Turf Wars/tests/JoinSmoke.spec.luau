@@ -26,6 +26,7 @@ end
 local Teams = service("TeamService")
 local Combat = service("CombatService")
 local Match = service("MatchService")
+local Constants = Engine.require(tree.shared.Constants)
 
 local function root(who)
 	return who.Character and who.Character:FindFirstChild("HumanoidRootPart")
@@ -46,6 +47,9 @@ local function audit(label)
 	local want = math.abs(red - blue)
 	if red + blue == 1 then
 		want = 1
+	elseif red + blue >= Constants.BOTS_OFF_AT then
+		want = 0 -- (enough people: no bots, the teams evened among them)
+		check(`{label}: {red} v {blue}: even (within one)`, math.abs(red - blue) <= 1)
 	end
 	check(`{label}: bots only for the odd one out`, #Bots:List() == want, `{#Bots:List()} bots, {red} v {blue}`)
 	for _, p in people do

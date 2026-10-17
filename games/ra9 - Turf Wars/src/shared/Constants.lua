@@ -79,6 +79,7 @@ Constants.CROUCH_SPEED = 10 -- crouched: slower, lower (a smaller target), the b
 Constants.CROUCH_DROP = 1.1 -- studs the body (and the view, and the hit spheres) sink when crouched
 
 -- Bots: only while exactly one person is on (BotService). The second person to join takes over a bot.
+Constants.BOTS_OFF_AT = 4 -- this many real people on: no bots at all, the teams evened among the people instead
 Constants.MIN_SIDE = 1 -- the fewest on a side: bots only make up the odd person out (alone: one bot to fight), and go when it is even
 Constants.BOT_SPEED = 16 -- a little slower than a person walking
 Constants.BOT_RANGE = 150 -- studs: how far they look for someone to shoot

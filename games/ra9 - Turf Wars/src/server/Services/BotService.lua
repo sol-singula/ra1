@@ -5,7 +5,8 @@ they take the bots' side, every bot leaves, and the game starts over (a fresh ma
 start even. Someone who joins with the party (or follows a friend in) goes to that side and gets one more bot to
 fight. If everyone ends up on one side again, the bots come back. With nobody on, none.
 
-Bots only make up the odd person out: 3 against 2 gets one bot for the 2; even sides have none (they leave the moment
+With BOTS_OFF_AT (4) real people or more there are no bots at all: the teams are evened among the people (within
+one). Below that, bots only make up the odd person out: 3 against 2 gets one bot for the 2; even sides have none (they leave the moment
 it's even again). One person alone gets one bot to fight (MIN_SIDE 1).
 A newcomer goes to the smaller side and takes a bot's place.
 
@@ -291,6 +292,17 @@ function BotService:Ensure()
 		end
 		sides[t] = (sides[t] or 0) + 1
 	end
+	-- BOTS_OFF_AT real people or more: no bots, the people evened out instead (within one: 3 v 2 stays 3 v 2)
+	if #people >= Constants.BOTS_OFF_AT then
+		if #bots > 0 then
+			self:RemoveAll()
+		end
+		local reds, blues = sides.red or 0, sides.blue or 0
+		if math.abs(reds - blues) > 1 then
+			self:Even()
+		end
+		return
+	end
 	-- every side at least MIN_SIDE strong and both sides even: bots make up whatever real people don't (one person
 	-- alone gets a bot beside them and two against them; 3 against 2 gets one bot for the 2)
 	local reds, blues = sides.red or 0, sides.blue or 0
@@ -327,6 +339,30 @@ function BotService:Ensure()
 			end
 		end
 	end
+end
+
+-- The people evened out (no bots): solo players moved to the smaller side (TeamService:Rebalance, parties kept
+-- together), each put on their new side's deck and told.
+function BotService:Even()
+	local moved = teams:Rebalance()
+	local phase = match:Phase()
+	for _, p in moved do
+		if (phase == "build" or phase == "fight") and p.Parent and p.Character then
+			task.spawn(function()
+				pcall(match.Spawn, match, p)
+			end)
+		end
+		Notify.to(
+			p,
+			`Teams evened: you're on {string.upper(teams:Team(p) or "")} now.`,
+			"info",
+			{ icon = "⚖️", seconds = 4 }
+		)
+	end
+	if #moved > 0 then
+		match:Broadcast()
+	end
+	return moved
 end
 
 -- Someone new against a side that only had bots to fight: they take a bot's place, and the bots go.

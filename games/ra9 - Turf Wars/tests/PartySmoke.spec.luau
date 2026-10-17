@@ -141,10 +141,9 @@ do
 		Teams:Set(wes, Teams:Team(h))
 		Bots:Ensure()
 	end
-	local filler = Bots:List()[1]
 	check(
-		"...3 v 2: one bot for the side that's short",
-		#Bots:List() == 1 and filler and Teams:Team(filler) == Teams:Team(zed),
+		"...3 v 2 (5 real people, BOTS_OFF_AT or more): no bots at all, close enough to even",
+		#Bots:List() == 0,
 		#Bots:List()
 	)
 	Engine.removePlayer(wes)
