@@ -140,6 +140,7 @@ Constants.TUTORIAL_BOT_REACT = 1.8 -- the bot's wait before it draws, times this
 Constants.TUTORIAL_PUSH_BONUS = 2 -- extra cells each of the new player's knockouts moves the line
 Constants.TUTORIAL = true -- the new-player tutorial, a private practice that ends in a win (tests that aren't about it turn it off)
 Constants.TUTORIAL_MAX_SECONDS = 180 -- the private practice never runs longer: the server joins them to the match then
+Constants.TUTORIAL_STALL_SECONDS = 25 -- no step reported this long after the practice starts: back to the match
 Constants.TUTORIAL_TRAIL = { "shop_rainbowtrail", "shop_hearts", "shop_bubbletrail", "shop_feathertrail" } -- the free trail at its win (the first they don't own)
 Constants.BOT_REACT = 0.7 -- seconds before a bot starts drawing on someone new
 Constants.BOT_NAMES = { "Ace", "Echo", "Nova", "Blitz", "Rook", "Vex", "Juno", "Kite", "Onyx", "Pike" }

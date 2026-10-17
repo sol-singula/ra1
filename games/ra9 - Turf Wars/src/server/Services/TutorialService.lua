@@ -555,6 +555,9 @@ function TutorialService:_tick()
 		if not run.finished and player.Parent then
 			if t - run.t0 >= Constants.TUTORIAL_MAX_SECONDS then
 				finish(player, "timeout")
+			elseif #run.steps == 0 and t - run.t0 >= Constants.TUTORIAL_STALL_SECONDS then
+				-- (their screen never got going: not a step reported, so back to the match rather than stranded)
+				finish(player, "stalled")
 			else
 				local c = player.Character
 				local r = c and c:FindFirstChild("HumanoidRootPart")

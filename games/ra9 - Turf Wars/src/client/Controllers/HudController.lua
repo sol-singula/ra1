@@ -1664,7 +1664,7 @@ local function step()
 	local me = Store.get("me") or {}
 	local m = Store.get("match") or {}
 	if refs.respawn then
-		local dead = me.alive == false and (m.phase == "build" or m.phase == "fight")
+		local dead = me.alive == false and (m.phase == "build" or m.phase == "fight") and not Layout.inPractice()
 		refs.respawn.Visible = dead
 		refs.respawn.Text = dead and "RESPAWNING…" or ""
 	end

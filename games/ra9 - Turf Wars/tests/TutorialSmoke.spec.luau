@@ -727,6 +727,10 @@ do
 	Engine.advance(0.3)
 	check("REPLAY: the practice again", state().running and Tutorial:InPractice(player) and Teams:Team(player) == nil)
 	check("...no rewards this time", Tutorial:Run(player).pay == false)
+	check(
+		"...sent from the match: never RESPAWNING in the practice (alive there)",
+		not hud.respawn.Visible and Engine.require(tree.client.Store).get("me").alive == true
+	)
 	key(Enum.KeyCode.Return)
 	waitFor(2, function()
 		return state().intro
@@ -803,6 +807,18 @@ do
 	check("at the limit: into the live match", not Tutorial:InPractice(mute) and Teams:Team(mute) ~= nil)
 	check("...alive", Combat:Alive(mute))
 	Constants.TUTORIAL_MAX_SECONDS = 180
+	-- a screen that never gets going (not a step reported): back to the match well before the limit
+	Engine.removePlayer(mute)
+	local stuck = Engine.addPlayer("Stuck", 603)
+	Engine.advance(0.5)
+	check("a practice whose screen never starts it", Tutorial:InPractice(stuck))
+	Engine.advance(Constants.TUTORIAL_STALL_SECONDS + 2)
+	check(
+		"...back in the live match after TUTORIAL_STALL_SECONDS",
+		not Tutorial:InPractice(stuck) and Teams:Team(stuck) ~= nil
+	)
+	Engine.removePlayer(stuck)
+	Engine.advance(0.5)
 end
 
 -- The step timers: no step can trap you -----------------------------------------------------------------------------------

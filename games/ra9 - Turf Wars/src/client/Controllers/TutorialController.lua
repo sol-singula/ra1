@@ -2569,8 +2569,9 @@ function TutorialController.replay()
 end
 
 function TutorialController.start(msg)
+	-- (the server's start wins: a run this screen still thinks is going is over)
 	if run and not run.finished then
-		return false
+		run.finished = true
 	end
 	msg = msg or {}
 	local info = type(msg.practice) == "table" and msg.practice or {}
@@ -2579,10 +2580,19 @@ function TutorialController.start(msg)
 	if pr then
 		endPractice()
 	end
+	-- (alive in the practice before anything else: a stale "down" from the match must never leave RESPAWNING up)
+	Store.merge("me", { team = t, alive = true, hp = Constants.MAX_HEALTH })
+	local okWorld, world = pcall(Practice.build, origin, t, workspace)
+	if not okWorld then
+		-- (the arena couldn't be drawn: never stranded in an empty practice, straight to the match instead)
+		warn("[Tutorial] practice arena failed: " .. tostring(world))
+		Net.send("Tutorial", "skip")
+		return false
+	end
 	pr = {
 		origin = origin,
 		team = t,
-		world = Practice.build(origin, t, workspace),
+		world = world,
 		front = 0,
 		kills = 0,
 		bots = {},
