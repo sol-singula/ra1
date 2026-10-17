@@ -603,13 +603,15 @@ function AnalyticsService:Init(registry)
 		elseif kind == "focus" then
 			track(player, kind, payload)
 		elseif kind == "shop" then
-			-- the panel opened (or changed tab): shop_open with the tab
+			-- the panel opened (or changed tab): shop_open with the tab, and what opened it (from: "first_match",
+			-- "results_strip", "deck_sign"; nil for the buttons and keys)
 			track(
 				player,
 				"shop_open",
 				{
 					tab = type(payload.tab) == "string" and string.sub(payload.tab, 1, 16) or nil,
 					opening = payload.opening == true,
+					from = type(payload.from) == "string" and string.sub(payload.from, 1, 16) or nil,
 				}
 			)
 		end

@@ -157,6 +157,12 @@ AC:Flag(cy, "speed", "a test flag", 3)
 Admin.Used:Fire(ava, "end_match", "red")
 Analytics.event(ava, "tutorial_step", { step = 2, key = "build" })
 Analytics.event({ UserId = -1, Name = "Bot" }, "tutorial_step", { step = 1 }) -- (a bot: ignored)
+-- the shop opened from the deck's sign (and the other ways in: "first_match", "results_strip")
+send(ava, "Analytics", "shop", { tab = "shop", opening = true, from = "deck_sign" })
+-- (their first match's shop already seen: the cards after this win are the ones checked here)
+for _, p in { ava, cy } do
+	service("PlayerDataService"):Get(p).gifts.firstShop = true
+end
 Engine.advance(0.2)
 Match:Victory("red")
 Engine.advance(Constants.FEEDBACK_ASK_DELAY + 1)
@@ -245,6 +251,10 @@ check(
 		and #events("feedback_asked", blue) == 1
 		and #events("feedback", red) == 1
 		and events("feedback", red)[1].data.like == true
+)
+check(
+	"the shop opened, and from where (shop_open's from)",
+	#events("shop_open", ava) >= 1 and events("shop_open", ava)[#events("shop_open", ava)].data.from == "deck_sign"
 )
 check("the anti-cheat flag", #events("anticheat", cy) == 1)
 check("the admin action", #events("admin", ava) == 1 and events("admin", ava)[1].data.action == "end_match")

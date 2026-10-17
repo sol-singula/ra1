@@ -874,6 +874,14 @@ end
 
 -- Pushing a team out -------------------------------------------------------------------------------------------
 Engine.advance(30) -- (well past the qualifying time by the end)
+-- (these players have seen their first match's shop: the cards after this win are the ones checked here;
+-- tests/GiftSmoke has the first match's own end)
+for _, p in Engine.Players:GetPlayers() do
+	local prof = Data:Get(p)
+	if prof then
+		prof.gifts.firstShop = true
+	end
+end
 local m4 = mark()
 for _ = 1, 120 do
 	if ws:GetAttribute("Phase") ~= "fight" then

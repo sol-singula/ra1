@@ -93,6 +93,129 @@ end
 ShopS.Bought:Fire(buyer, "shards_s", nil, 49)
 Engine.advance(0.1)
 
+-- 0: the first live match ends in the shop itself, once (not an end card), and nobody's asked anything over it ----
+local function lastShopOpen()
+	for i = #Engine.clientLog, 1, -1 do
+		local e = Engine.clientLog[i]
+		if e.name == "Analytics" and e.args[1] == "shop" then
+			return e.args[2]
+		end
+	end
+	return nil
+end
+local function askedSince(m, who)
+	for i = m + 1, #Engine.clientLog do
+		local e = Engine.clientLog[i]
+		if e.name == "Ask" and e.player == who then
+			return true
+		end
+	end
+	return false
+end
+-- (practice never counts: the tutorial's arena has no team and no stats, and even a first match that ends while
+-- they're back in it waits)
+do
+	local kid = Engine.addPlayer("Kid", 914)
+	Engine.advance(0.5)
+	Engine.fireServer(kid, "Ready")
+	Engine.advance(0.2)
+	local kp = Data:Get(kid)
+	kp.stats.matches = 1
+	kid:SetAttribute("Practice", true)
+	local m = mark()
+	check("in the practice: no first-match shop", not Gifts:FirstShopDue(kid))
+	Gifts:Give(kid)
+	local sent = giftsSince(m, kid)[1]
+	check("...nothing sent, nothing remembered", (sent == nil or not sent.firstShop) and not kp.gifts.firstShop)
+	kid:SetAttribute("Practice", nil)
+	check("...out of it, after a live match, it's due", Gifts:FirstShopDue(kid))
+	Engine.removePlayer(kid)
+	Engine.advance(0.2)
+end
+Engine.advance(0.5)
+local m0 = mark()
+Engine.advance(61) -- (a match long enough to pay)
+local g0 = matchEnd()
+local f = g0.ava
+local paidNow = 0
+for i = m0 + 1, #Engine.clientLog do
+	local e = Engine.clientLog[i]
+	if e.name == "Earned" and e.player == player then
+		paidNow += e.args[1].amount
+	end
+end
+check(
+	"the first match's end: the shop, not an end card",
+	f ~= nil and f.firstShop == true and f.key == nil,
+	f and f.key
+)
+check("...with the Shards that match paid", f and f.shards > 0 and f.shards == paidNow, f and `{f.shards} vs {paidNow}`)
+check("...remembered (once)", Data:Get(player).gifts.firstShop == true and Data:Get(player).gifts.n == 0)
+check("...everyone's first match does it (the foe too)", g0.foe ~= nil and g0.foe.firstShop == true)
+check("...no question card over it", not askedSince(m0, player) and not askedSince(m0, foe))
+check("no end screen", GiftC.current() == nil)
+check("the shop panel opens by itself on the shop", Panel.isOpen() and Panel.tab() == "shop", Panel.tab())
+check("...in its first-match way", Panel.intro() ~= nil and Panel.intro().shards == f.shards)
+local open0 = lastShopOpen()
+check("...tracked: shop_open from first_match", open0 and open0.from == "first_match", open0 and open0.from)
+do
+	local body = Panel.refs.body
+	local view = body.Size.Y.Offset
+	check("...at its top (scrolled to the deal and the TNT)", body.CanvasPosition.Y == 0, body.CanvasPosition.Y)
+	local intro, tnt, deal = body:FindFirstChild("FirstMatch"), body:FindFirstChild("Tnt"), body:FindFirstChild("Deal")
+	check("...the earned Shards on top", intro and string.find(intro.Earned.Text, tostring(f.shards)) ~= nil)
+	check(
+		"...a hand pointing up at your Shards, ringed",
+		intro and intro:FindFirstChild("Hand") ~= nil and Panel.refs.introRing.Visible
+	)
+	local function inView(o)
+		return o ~= nil and o.Position.Y.Offset >= 0 and o.Position.Y.Offset + o.Size.Y.Offset <= view
+	end
+	check("...the TNT card in view", inView(tnt), tnt and tnt.Position.Y.Offset)
+	check("...today's deal in view (when one's on)", deal == nil or inView(deal), deal and deal.Position.Y.Offset)
+	check("...and the tour waits (not over the first-match shop)", Panel.refs.tour == nil)
+	-- what their Shards buy: the item they're closest to, on top and ringed in the list
+	local c = Panel.closest()
+	local near = intro and intro:FindFirstChild("Closest")
+	check(
+		"...what they buy: the closest item, named",
+		c and near and near:GetAttribute("Key") == c.item.key and string.find(near.Words.Text, c.item.name, 1, true),
+		near and near.Words.Text
+	)
+	local ringed
+	for _, k in body:GetChildren() do
+		if k:GetAttribute("Key") == c.item.key and k:FindFirstChild("Spotlight") then
+			ringed = k
+		end
+	end
+	check("...and ringed in the list", ringed ~= nil)
+	near.Activated:Fire()
+	Engine.advance(0.1)
+	check("...a tap scrolls to it", body.CanvasPosition.Y > 0 and Panel.intro() ~= nil, body.CanvasPosition.Y)
+	check(
+		"PLAY NEXT MATCH shows (in the message line's place)",
+		Panel.refs.playNext.Visible and not Panel.refs.status.Visible
+	)
+end
+Panel.refs.playNext.Activated:Fire()
+Engine.advance(0.1)
+check("PLAY NEXT MATCH closes it", not Panel.isOpen() and Panel.intro() == nil and not Panel.refs.playNext.Visible)
+-- (and if they leave it open, the next match's build phase closes it)
+Panel.firstMatch(f.shards)
+check("(open again)", Panel.isOpen() and Panel.intro() ~= nil)
+Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS - Constants.GIFT_DELAY + 1.5)
+check("the next build phase closes it", Match:Phase() == "build" and not Panel.isOpen(), Match:Phase())
+check(
+	"...and a shop opened by hand stays open",
+	(function()
+		Panel.open("shop")
+		Engine.advance(0.2)
+		local ok = Panel.isOpen()
+		Panel.close()
+		return ok
+	end)()
+)
+
 -- 1: a trail, owned not worn, as the end screen
 local g1 = matchEnd()
 local a = g1.ava

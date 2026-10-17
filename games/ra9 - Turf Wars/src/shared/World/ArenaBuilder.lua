@@ -16,6 +16,7 @@ and capitals on columns, steps, ledges, railings, window frames).
     solids = { { min, max, part } },     every solid box (projectiles and building use these)
     collide = { { min, max } },          every box a body bumps into, solid or not (the bots' walking grid)
     spawns = { red = { CFrame }, blue = { CFrame } },
+    shopSigns = { red = Part, blue = Part }   the shop sign's board on each deck (looks only; ShopSignController)
     strips = { [i] = Part },             the turf, west to east; strip i covers x in [x0 + (i-1)*CELL, x0 + i*CELL)
     blocked = { [cx] = { [cz] = true } } cells a tall map shape stands in (the lane rule)
     marker, glow                          the frontline: a glowing line on the floor (and its soft glow), coloured by the last push
@@ -761,6 +762,7 @@ function ArenaBuilder.build(def, parent, scale)
 	-- seeing where you are and where the fight is (no walls, no hall). It's safe by rule, not by walls: nobody can
 	-- hurt you on your own deck until you shoot or swing (CombatService). Distances are from the team's own end wall.
 	local spawns = { red = {}, blue = {} }
+	local shopSigns = {}
 	local room = ArenaBuilder.room(width, spawnDepth)
 	for _, team in Constants.TEAMS do
 		local s = team == "red" and -1 or 1
@@ -832,6 +834,26 @@ function ArenaBuilder.build(def, parent, scale)
 				)
 			end
 		end
+		-- the shop sign: a plain board on a post by the deck's side wall, on the team's right as they face the field,
+		-- turned to the pads. Clear of the pads, the cover and the back wall's piers, and pure looks (no collision, no
+		-- queries): it never stops a body, an arrow or a piece. Each client puts its words and its prompt on it
+		-- (ShopSignController: "🛒 SHOP" and today's deal; the prompt opens the shop).
+		local sg = room.sign
+		local sx, sz = X(sg.d), -s * (width / 2 - sg.inset)
+		shapes:block(sx, sz, 0.6, 0.6, sg.y, deco({ color = Constants.GREY, name = "ShopSignPost" }))
+		shapes:block(sx, sz, 1.6, 1.6, 0.3, deco({ color = Constants.LIGHT, name = "ShopSignPost" }))
+		local face = CFrame.lookAt(Vector3.new(sx, sg.y + sg.h / 2, sz), Vector3.new(X(sg.d + 6), sg.y + sg.h / 2, 0))
+		local board =
+			shapes:box(face, Vector3.new(sg.w, sg.h, 0.3), deco({ color = Constants.WHITE, name = "ShopSign" }))
+		board:SetAttribute("Team", team)
+		for _, dy in { -1, 1 } do
+			shapes:box(
+				face * CFrame.new(0, dy * (sg.h / 2 + 0.15), 0),
+				Vector3.new(sg.w + 0.3, 0.3, 0.4),
+				deco({ color = color, name = "ShopSignTrim" })
+			)
+		end
+		shopSigns[team] = board
 		-- the back wall: piers with capitals, a gate in the middle (two tall piers under a lintel, the team's colour
 		-- glowing in it), a string course and a crest high up
 		local piers = math.floor((width / 2 - 8) / 17)
@@ -922,6 +944,7 @@ function ArenaBuilder.build(def, parent, scale)
 		solids = shapes.solids,
 		collide = shapes.collide,
 		spawns = spawns,
+		shopSigns = shopSigns,
 		strips = strips,
 		blocked = blocked,
 		marker = marker,
@@ -964,6 +987,9 @@ function ArenaBuilder.room(width, spawnDepth)
 			pierW = 2.8,
 			pierH = 7.5,
 		},
+		-- the shop sign (studs from the end wall, in from the side wall; its board's size, and its bottom edge's
+		-- height: over a body's head, so nothing ever walks into its edge)
+		sign = { d = 7, inset = 5, w = 5, h = 2.6, y = 5.6 },
 	}
 end
 

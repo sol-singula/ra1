@@ -70,6 +70,7 @@ local STACK = { top = 186, w = 300, h = 64, gap = 8, max = 2 }
 -- hint), and while a question card is up (between the results card and it)
 local TOAST_UP = { normal = 132, build = 150, modal = 166 }
 local RESULT_ROWS = 5 -- (the results card ends above the question card)
+local RESULT_STRIP = 32 -- the shop strip's room on the results card (still above the question card)
 
 local function now()
 	return workspace:GetServerTimeNow()
@@ -1413,6 +1414,81 @@ local function updateTouch()
 end
 
 -- Results and unlocks ------------------------------------------------------------------------------------------
+-- The results card's shop strip (every match after the first): today's deal with its clock, if one's on, and the
+-- item they're closest to affording ("40 more Shards for Ice Trail"); a tap opens the shop on it. It goes with the
+-- card, and holds nothing (the mouse stays with the camera): the match goes on behind it.
+function HudController.resultsStrip(card, y)
+	local Panel = require(script.Parent.PanelController)
+	local box = Theme.new("Frame", {
+		Name = "ShopStrip",
+		Position = UDim2.fromOffset(10, y),
+		Size = UDim2.new(1, -20, 0, 26),
+		BackgroundTransparency = 1,
+		Parent = card,
+	})
+	local key = player:GetAttribute("Deal")
+	local ends = tonumber(player:GetAttribute("DealEnds"))
+	local d = type(key) == "string" and Shop.products[key]
+	local it = d and Cosmetics.get(d.cosmetic)
+	local deal = it and ends and ends > now()
+	local half = 246
+	local function chip(name, x, w, words, ink, onTap)
+		local b = Theme.new("TextButton", {
+			Name = name,
+			Position = UDim2.fromOffset(x, 0),
+			Size = UDim2.fromOffset(w, 26),
+			BackgroundColor3 = C.white,
+			Text = "",
+			AutoButtonColor = true,
+			Parent = box,
+		}, { Theme.corner(4), Theme.stroke(2, ink) })
+		local l = label({
+			Name = "Words",
+			Text = words,
+			Size = UDim2.new(1, -12, 1, -6),
+			Position = UDim2.fromOffset(6, 3),
+			fit = 13,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = ink,
+			Font = Theme.Display,
+			Parent = b,
+		})
+		b.Activated:Connect(onTap)
+		return b, l
+	end
+	local x = 0
+	if deal then
+		local off = math.floor(Shop.DEAL.off * 100 + 0.5)
+		local words = `⚡ {off}% OFF {string.upper(it.name)}`
+		local _, l = chip("Deal", 0, half, words, C.red, function()
+			Panel.showDeal("results_strip")
+		end)
+		-- (the deal's clock, live while the card's up)
+		local conn
+		conn = RunService.Heartbeat:Connect(function()
+			if not l.Parent or not card.Parent then
+				conn:Disconnect()
+				return
+			end
+			local left = ends - now()
+			l.Text = left > 0 and `{words}  ·  {Panel.clock(left)}` or "DEAL OVER"
+		end)
+		l.Text = `{words}  ·  {Panel.clock(ends - now())}`
+		x = half + 8
+	end
+	local c = Panel.closest(Store.get("profile") or {})
+	if c then
+		local b, l = chip("Closest", x, deal and half or 500, `{c.short}  ›`, C.ink, function()
+			Panel.showShopItem(c.item.key, "results_strip")
+		end)
+		-- (a gem in front, as on the Shards counter; the words move over for it)
+		Theme.gem(b, 18, { Name = "Gem", Position = UDim2.fromOffset(5, 4) })
+		l.Position = UDim2.fromOffset(26, 3)
+		l.Size = UDim2.new(1, -32, 1, -6)
+	end
+	return box
+end
+
 function HudController.showResults(r)
 	if refs.results then
 		refs.results:Destroy()
@@ -1435,12 +1511,16 @@ function HudController.showResults(r)
 			rows[RESULT_ROWS] = r.rows[mine]
 		end
 	end
+	-- (after every match but the first, which ends in the shop itself: the shop strip, today's deal and the item
+	-- they're closest to)
+	local profile = Store.get("profile") or {}
+	local strip = ((profile.stats or {}).matches or 0) > 1
 	local card = Theme.card({
 		Name = "Results",
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 104),
 		-- (only as tall as its rows, under the top bar: the fireworks stay in view above and round it)
-		Size = UDim2.fromOffset(520, 150 + #rows * 22),
+		Size = UDim2.fromOffset(520, 150 + #rows * 22 + (strip and RESULT_STRIP or 0)),
 		BackgroundColor3 = C.white,
 		Parent = gui,
 	})
@@ -1506,6 +1586,9 @@ function HudController.showResults(r)
 			Parent = card,
 		})
 		y += 22
+	end
+	if strip then
+		HudController.resultsStrip(card, y + 4)
 	end
 	if r.next then
 		label({

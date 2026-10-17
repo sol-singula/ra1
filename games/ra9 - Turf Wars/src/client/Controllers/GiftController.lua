@@ -7,6 +7,9 @@ FREE GIFT n OF 6 at the top. After they've bought something it's a short "NEW IN
 
 It waits behind the shop panel if that's open, and closes itself when the next game's fight starts.
 
+The first live match ends without it, once (GiftService: { firstShop = true, shards }): the shop panel opens by
+itself instead (PanelController.firstMatch), and the gifts start from the next match.
+
   GiftController.show(g)     g: Net "Gift"'s table -> the screen
   GiftController.equip()     EQUIP IT (or OPEN SHOP): the locker on the gift
   GiftController.later()     LATER
@@ -491,7 +494,12 @@ end
 function GiftController:init()
 	gui = Theme.screen("Gift", 24, player:WaitForChild("PlayerGui"))
 	Net.listen("Gift", function(g)
-		if Layout.panel() then
+		if type(g) == "table" and g.firstShop then
+			-- (the first live match: no end card, the shop itself, open on the deal and the TNT)
+			close()
+			waiting = nil
+			PanelController.firstMatch(g.shards)
+		elseif Layout.panel() then
 			waiting = g -- (shown once the shop panel's closed)
 		else
 			GiftController.show(g)
