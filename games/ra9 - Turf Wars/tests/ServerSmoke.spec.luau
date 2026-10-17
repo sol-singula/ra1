@@ -322,6 +322,14 @@ do
 		Engine.advance(Constants.SPAWN_PROTECT + 0.1)
 	end
 	send(red, "Equip", "blade")
+	Engine.advance(0.1)
+	check("no blade before the CHARGE (bows only)", Combat:Weapon(red) ~= "blade" and not Match:Charging())
+	-- (the whole fight counts as the CHARGE for this block)
+	local charge0 = Constants.CHARGE_SECONDS
+	Constants.CHARGE_SECONDS = 1e6
+	Engine.advance(0.5)
+	check("the CHARGE: workspace says so", ws:GetAttribute("Charge") == true)
+	send(red, "Equip", "blade")
 	Engine.advance(Constants.SPAWN_PROTECT)
 	check("the blade in hand", Combat:Weapon(red) == "blade")
 	whole(blue)
@@ -362,6 +370,9 @@ do
 	whole(red)
 	whole(blue)
 	send(blue, "Equip", "bow")
+	Constants.CHARGE_SECONDS = charge0
+	Engine.advance(0.5)
+	check("...and the CHARGE is over", not Match:Charging())
 end
 -- the turf rule: red can't walk onto blue's turf
 stand(red, Vector3.new(ws:GetAttribute("Frontline") + 10, 3, 20))
@@ -371,6 +382,33 @@ check(
 	rootOf(red).Position.X <= ws:GetAttribute("Frontline"),
 	rootOf(red).Position.X
 )
+-- the CHARGE (the fight's last seconds): the line opens, the blade comes out; when it ends, the blade goes away and
+-- anyone over the line goes home
+do
+	send(red, "Equip", "bow")
+	check("skip to the CHARGE", Match:SkipTo("charge") and Match:Charging())
+	check("...everyone's told", firedSince(0, "Announce", nil, function(a)
+		return string.find(a[1].text, "CHARGE") ~= nil
+	end) ~= nil)
+	local F = ws:GetAttribute("Frontline")
+	stand(red, Vector3.new(F + 10, 3, 20))
+	Engine.advance(0.4)
+	check("...you can cross the line", rootOf(red).Position.X > F + 5, rootOf(red).Position.X)
+	send(red, "Equip", "blade")
+	Engine.advance(0.1)
+	check("...the blade is out", Combat:Weapon(red) == "blade")
+	Match:SkipTo("build")
+	Engine.advance(0.5)
+	check("the CHARGE ends with the fight", not Match:Charging() and ws:GetAttribute("Charge") ~= true)
+	check("...the blade goes away", Combat:Weapon(red) == "bow", Combat:Weapon(red))
+	check(
+		"...and anyone over the line goes home",
+		rootOf(red).Position.X < ws:GetAttribute("Frontline"),
+		rootOf(red).Position.X
+	)
+	Match:SkipTo("fight")
+	Engine.advance(0.5)
+end
 -- arrows break structures: blue's heavy bow at red's wall
 do
 	local wall

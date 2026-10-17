@@ -1615,7 +1615,14 @@ local function stepTips(dt)
 	local kind = Device.kind()
 	local me = Store.get("me") or {}
 	local _, d = nearestEnemy()
-	if not session.tips.blade and kind ~= "gamepad" and d and d < 14 and me.weapon ~= "blade" then
+	if
+		not session.tips.blade
+		and kind ~= "gamepad"
+		and workspace:GetAttribute("Charge") == true -- (the blade is only out in the CHARGE)
+		and d
+		and d < 14
+		and me.weapon ~= "blade"
+	then
 		session.tips.blade = true
 		tip(by("4 = BLADE", "TAP BLADE"))
 		local b = (hud().bows or {}).blade

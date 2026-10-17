@@ -18,9 +18,11 @@ next map in the same server. No lobby, no queue.
   MatchService:People() / :Everyone()   the real players / plus the bots
   MatchService:Join(player) / :Leave(player)   into the match / out of it (an admin starting to spectate)
   MatchService:Victory(winner)          "red" | "blue" | "draw"
-  MatchService:NewMatch(mapKey?)        MatchService:SkipTo("fight" | "build")   MatchService:Freeze(on)
+  MatchService:NewMatch(mapKey?)        MatchService:SkipTo("fight" | "build" | "charge")   MatchService:Freeze(on)
+  MatchService:Charging() -> bool       the CHARGE: the fight's last CHARGE_SECONDS, when the line is open to
+                                        everyone and the blade comes out (workspace "Charge" says so to the clients)
 
-Workspace attributes the clients read: Phase, PhaseEnds, Frontline, LoseRed, LoseBlue, MatchId, MapKey, MapName.
+Workspace attributes the clients read: Phase, PhaseEnds, Charge, Frontline, LoseRed, LoseBlue, MatchId, MapKey, MapName.
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -44,6 +46,7 @@ local MatchService = {
 		"ProgressService",
 	},
 	PhaseChanged = Signal.new("MatchService.PhaseChanged"), -- (phase, old)
+	ChargeChanged = Signal.new("MatchService.ChargeChanged"), -- (on) the CHARGE began or ended
 	Pushed = Signal.new("MatchService.Pushed"), -- (frontline, byTeam, killer, victim)
 	Ended = Signal.new("MatchService.Ended"), -- (winner, results)
 	Started = Signal.new("MatchService.Started"), -- (mapKey, matchId)
@@ -137,6 +140,7 @@ local function setPhase(new, seconds)
 	local old = phase
 	phase = new
 	phaseEnds = now() + (seconds or 0)
+	MatchService:_charge()
 	combat:SetEnabled(new == "fight")
 	build:SetOpen(new == "build")
 	MatchService:Broadcast()
@@ -500,6 +504,38 @@ function MatchService:NewMatch(key)
 	self.Started:Fire(mapKey, matchId)
 end
 
+-- The CHARGE: the fight's last seconds. The line opens (the turf rule is off), the blade comes out, and everyone
+-- may run across. When it's over, anyone still on the other side goes home (a fresh spawn on their own side).
+function MatchService:Charging()
+	return workspace:GetAttribute("Charge") == true
+end
+
+function MatchService:_charge()
+	local on = phase == "fight" and phaseEnds - now() <= Constants.CHARGE_SECONDS
+	if on == self:Charging() then
+		return
+	end
+	workspace:SetAttribute("Charge", on or nil)
+	if on then
+		Net.fireAll("Alert", "CHARGE!", Color3.fromRGB(30, 30, 34), 1.8)
+		Net.fireAll("Sfx", "horn")
+		Notify.all("CHARGE! Cross the line, blades out!", "start", { icon = "⚔️", seconds = 4 })
+	elseif phase == "build" then
+		for _, player in self:Everyone() do
+			local team = teams:Team(player)
+			local c = player.Character
+			local r = c and c:FindFirstChild("HumanoidRootPart")
+			local fwd = team and Formulas.forward(team)
+			if r and fwd and combat:Alive(player) and (r.Position.X - frontline) * fwd > 0 then
+				task.spawn(function()
+					pcall(self.Spawn, self, player)
+				end)
+			end
+		end
+	end
+	self.ChargeChanged:Fire(on)
+end
+
 -- The clock ----------------------------------------------------------------------------------------------------
 function MatchService:_tick()
 	local t = now()
@@ -519,6 +555,7 @@ function MatchService:_tick()
 		setPhase("build", Constants.BUILD_SECONDS)
 		Net.fireAll("Alert", "BUILD", Color3.fromRGB(40, 40, 46), 1.5)
 	end
+	self:_charge()
 	if (phase == "build" or phase == "fight") and not frozen and t - matchStart > Constants.WATCHDOG_SECONDS then
 		warn(`[MatchService] match {matchId} ran {math.floor(t - matchStart)} s: restarting (no winner)`)
 		self:NewMatch(Maps.next(mapKey).key)
@@ -545,7 +582,7 @@ function MatchService:_tick()
 			local team = teams:Team(player)
 			local c = player.Character
 			local r = c and c:FindFirstChild("HumanoidRootPart")
-			if team and r and combat:Alive(player) then
+			if team and r and combat:Alive(player) and not self:Charging() then
 				local x = r.Position.X
 				if r.Position.Y < -20 then
 					combat:Kill(player, nil, { kind = "fall" })
@@ -636,6 +673,15 @@ end
 -- Admin controls (AdminService) ---------------------------------------------------------------------------------
 -- End the phase now: "fight" from the build phase, "build" from the fight. Returns ok.
 function MatchService:SkipTo(target)
+	if target == "charge" then
+		-- (straight to the fight's last seconds)
+		if frozen or (phase ~= "fight" and not self:SkipTo("fight")) then
+			return false
+		end
+		phaseEnds = math.min(phaseEnds, now() + Constants.CHARGE_SECONDS - 0.05)
+		self:_tick()
+		return self:Charging()
+	end
 	if frozen or (target ~= "fight" and target ~= "build") or phase == target then
 		return false
 	end

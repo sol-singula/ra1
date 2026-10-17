@@ -138,8 +138,9 @@ check(
 		return Combat:Alive(victim)
 	end)()
 )
--- up close a bot draws its blade and slashes
+-- in the CHARGE (the fight's last seconds), up close a bot draws its blade and slashes
 do
+	Constants.CHARGE_SECONDS = 1e6 -- (the whole fight is the CHARGE for this block)
 	if not Combat:Alive(solo) then
 		Engine.advance(Constants.RESPAWN_SECONDS + 1)
 	end
@@ -161,6 +162,8 @@ do
 		end
 	end
 	check("up close a bot draws its blade and slashes", slashed, `{Combat:Weapon(victim)} {Combat:Health(solo)}`)
+	Constants.CHARGE_SECONDS = 20
+	Engine.advance(0.3)
 end
 
 -- a second person: they take over an enemy bot, and the bots go

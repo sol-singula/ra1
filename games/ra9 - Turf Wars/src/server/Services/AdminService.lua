@@ -20,7 +20,7 @@ Actions (target: a player's UserId; value: what the action needs):
   tutorial (target?)                    the first-minute tutorial from the start: yourself, or that player
   afkroom (on)                          go to the AFK room and stay there (no team, unseen), or come back
   end ("red" | "blue" | "draw")         the match ends now, the normal way
-  skip ("fight" | "build") | restart | map (key) | bots (on) | freeze (on) | announce (text)
+  skip ("fight" | "build" | "charge") | restart | map (key) | bots (on) | freeze (on) | announce (text)
   team (target, "red" | "blue") | kill | heal (heal, or respawn if down) | kick (target, reason)
   mvp | vip (target, "1h" | "1d" | "7d" | "30d" | "forever" | "remove") | shards (target, n) | tiers (target, n)
   cosmetic (target, key) | resetshop (target: 4 new daily shop items for them) | goto | bring

@@ -146,8 +146,9 @@ function CombatService:HoldBow(player, key)
 			hand = right
 		end
 		part("Grip", Vector3.new(0.25, 0.25, 0.7), color, CFrame.new(0, -0.3, 0))
-		part("Guard", Vector3.new(0.9, 0.2, 0.2), Constants.WHITE, CFrame.new(0, -0.3, -0.45))
-		part("Edge", Vector3.new(0.12, 0.3, 2.4), Constants.WHITE, CFrame.new(0, -0.3, -1.75))
+		part("Guard", Vector3.new(0.9, 0.2, 0.2), Color3.fromRGB(118, 122, 132), CFrame.new(0, -0.3, -0.45))
+		part("Edge", Vector3.new(0.12, 0.3, 2.4), Color3.fromRGB(214, 218, 225), CFrame.new(0, -0.3, -1.75))
+		part("Bevel", Vector3.new(0.13, 0.06, 2.3), Color3.fromRGB(250, 251, 253), CFrame.new(0, -0.43, -1.75))
 	elseif key == "crossbow" then
 		part("Stock", Vector3.new(0.25, 0.25, 1.8), Constants.WHITE, CFrame.new(0, -0.2, -0.6))
 		part("Limbs", Vector3.new(2.2, 0.15, 0.2), color, CFrame.new(0, -0.2, -1.4))
@@ -183,6 +184,9 @@ function CombatService:Spawned(player)
 	local profile = data:Get(player)
 	local pick = profile and profile.settings.weapon
 	s.weapon = Weapons.get(pick) and pick or s.weapon or Weapons.DEFAULT
+	if not CombatService.allowed(s.weapon) then
+		s.weapon = Weapons.DEFAULT -- (the blade only comes out in the CHARGE)
+	end
 	local w = Weapons.get(s.weapon)
 	s.ammo = w.mag
 	s.reloadAt = nil
@@ -570,6 +574,13 @@ function CombatService:Shoot(player, origin, direction, shotId)
 	return arrow
 end
 
+-- The blade is only out in the CHARGE (the fight's last seconds, MatchService sets workspace "Charge"): bows only
+-- the rest of the time
+function CombatService.allowed(key)
+	local w = Weapons.get(key)
+	return w ~= nil and (not w.melee or workspace:GetAttribute("Charge") == true)
+end
+
 -- A slash (Net "Swing"; bots call it too): the nearest enemy in reach and in front, nothing solid between.
 function CombatService:Swing(player, direction)
 	if not enabled or typeof(direction) ~= "Vector3" or direction.Magnitude < 0.5 or direction.Magnitude > 1.5 then
@@ -577,7 +588,7 @@ function CombatService:Swing(player, direction)
 	end
 	local s = state(player)
 	local w = Weapons.get(s.weapon)
-	if not s.alive or not w or not w.melee then
+	if not s.alive or not w or not w.melee or not CombatService.allowed(s.weapon) then
 		return nil
 	end
 	local t = now()
@@ -648,7 +659,7 @@ end
 
 function CombatService:Equip(player, key)
 	local w = Weapons.get(key)
-	if not w then
+	if not w or not CombatService.allowed(key) then
 		return false
 	end
 	local s = state(player)
@@ -694,6 +705,18 @@ function CombatService:Init(registry)
 			s.reloadAt = now() + w.reload
 			s.ammo = 0
 			self:Push(player)
+		end
+	end)
+	-- the CHARGE is over: blades away, bows back out
+	workspace:GetAttributeChangedSignal("Charge"):Connect(function()
+		if workspace:GetAttribute("Charge") == true then
+			return
+		end
+		for who, st in states do
+			local sw = Weapons.get(st.weapon)
+			if sw and sw.melee and who.Parent then
+				self:Equip(who, Weapons.DEFAULT)
+			end
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)

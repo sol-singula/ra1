@@ -260,13 +260,11 @@ do
 end
 wheel(-1)
 check("wheel down: the next bow", Store.get("me").weapon == "heavy", Store.get("me").weapon)
+check("no blade slot outside the CHARGE", refs.bows.blade.button.Visible == false)
 wheel(-1)
-check("...then the blade", Store.get("me").weapon == "blade", Store.get("me").weapon)
-wheel(-1)
-check("...round the end", Store.get("me").weapon == "bow", Store.get("me").weapon)
+check("...round the end (past the blade: not out yet)", Store.get("me").weapon == "bow", Store.get("me").weapon)
 wheel(1)
-wheel(1)
-check("wheel up: the one before", Store.get("me").weapon == "heavy", Store.get("me").weapon)
+check("wheel up: the one before (past the blade)", Store.get("me").weapon == "heavy", Store.get("me").weapon)
 -- the shop's first-time tour: the first time the shop opens, 3 steps (your Shards, today's items, the pass),
 -- skippable, remembered in the profile, never shown again
 do
@@ -442,8 +440,14 @@ do
 	check("...then the next one", NotifyC.current() and NotifyC.current().text == "Ava is MVP!")
 	Engine.advance(4)
 end
--- the blade: 4 picks it, a click slashes
+-- the blade: only in the CHARGE (the fight's last seconds); then 4 picks it, a click slashes
 do
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Four, UserInputType = Enum.UserInputType.Keyboard }, false)
+	Engine.advance(0.3)
+	check("4 does nothing before the CHARGE", Store.get("me").weapon ~= "blade")
+	Constants.CHARGE_SECONDS = 1e6 -- (the whole fight is the CHARGE for this block)
+	Engine.advance(0.5)
+	check("the CHARGE: the blade's slot shows", refs.bows.blade.button.Visible == true)
 	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Four, UserInputType = Enum.UserInputType.Keyboard }, false)
 	Engine.advance(0.3)
 	check("4 picks the blade", Store.get("me").weapon == "blade" and Combat:Weapon(player) == "blade")
@@ -453,7 +457,10 @@ do
 	check(
 		"...solid steel, never see-through or glowing (bow skins are for bows)",
 		vm
-			and vm.Edge.Material == Enum.Material.Metal
+			and vm.Edge.Material ~= Enum.Material.Neon
+			and vm.Edge.Material ~= Enum.Material.Metal -- (Metal came out black under the matte light)
+			and vm.Edge.Color.R > 0.75
+			and vm:FindFirstChild("Bevel") ~= nil
 			and vm.Edge.Transparency == 0
 			and vm.Grip.Material ~= Enum.Material.ForceField
 			and vm.Grip.Material ~= Enum.Material.Glass
@@ -473,6 +480,12 @@ do
 	check("someone else's slash shows on their body", SwingC.slashOf(foe.Character, Vector3.new(1, 0, 0)))
 	check("...no charge ring for a blade", not refs.charge.Visible)
 	Engine.advance(0.6)
+	Constants.CHARGE_SECONDS = 20
+	Engine.advance(0.5)
+	check(
+		"the CHARGE over: the blade goes away",
+		Store.get("me").weapon ~= "blade" and refs.bows.blade.button.Visible == false
+	)
 end
 Weapon.equip("bow")
 Engine.advance(0.2)

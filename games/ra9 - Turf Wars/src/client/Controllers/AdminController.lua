@@ -264,6 +264,13 @@ local function matchTab(body)
 			end,
 		},
 		{
+			"SkipCharge",
+			"SKIP TO CHARGE",
+			function()
+				send("skip", nil, "charge")
+			end,
+		},
+		{
 			"Freeze",
 			state.frozen and "START CLOCK" or "STOP CLOCK",
 			function()

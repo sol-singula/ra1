@@ -1,8 +1,8 @@
 --[[
 The three bows (master plan §5) and the blade, all free from the start. Every hit is a knockout (one shot, every
 bow, every charge): the bows differ in draw time, arrow speed, cadence, knockback and what they do to walls. The
-blade can't cross the line any more than you can, so it works AT the line: a long slash that knocks out anyone
-within reach on the other side, and its swing knocks arrows out of the air and sends them back (CombatService).
+blade only comes out in the CHARGE (the fight's last Constants.CHARGE_SECONDS, when the line opens and anyone may
+run across): a slash knocks out anyone in reach, and its swing knocks arrows back at the archer (CombatService).
 
   draw        seconds to full charge (0 = fires at once, the crossbow)
   minCharge   the least charge a shot can have (a tap)

@@ -500,10 +500,12 @@ function BotService:Think(b)
 		return
 	end
 	local tr = rootOf(target)
-	-- the right weapon for the distance: the blade up close, the crossbow at mid range, the bow far away
+	-- the right weapon for the distance: the blade up close (in the CHARGE), the crossbow at mid range, the bow far away
 	local blade = Weapons.get("blade")
 	local dist = (tr.Position - root.Position).Magnitude
-	local close = dist <= blade.range - 1
+	-- (the blade only in the CHARGE, the fight's last seconds: then the bots run across the line at you)
+	local charging = match:Charging()
+	local close = charging and dist <= blade.range - 1
 	local want = close and "blade" or (dist < Constants.BOT_MID_RANGE and "crossbow" or "bow")
 	if combat:Weapon(b) ~= want then
 		combat:Equip(b, want)
@@ -535,6 +537,9 @@ function BotService:Think(b)
 		local toT = Vector3.new(tr.Position.X - root.Position.X, 0, tr.Position.Z - root.Position.Z)
 		local side = toT.Magnitude > 0.01 and Vector3.new(-toT.Unit.Z, 0, toT.Unit.X) or Vector3.new(0, 0, 1)
 		local strafe = root.Position + side * b.strafeDir * 6
+		if charging and dist < 45 then
+			strafe = tr.Position + side * b.strafeDir * 3 -- (the CHARGE: in, weaving, to get the blade on them)
+		end
 		moveTo(b, root, a and ArenaBuilder.route(a, team, root.Position, strafe) or strafe)
 	end
 	face(root, tr.Position)

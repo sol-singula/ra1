@@ -19,7 +19,7 @@ You get 20 seconds to build walls, towers and ramps. Then the fight starts!
 • Bow: hold to pull back, let go. One hit, one knockout!
 • Crossbow: fast shots, six in a row
 • Heavy Bow: slow, but it knocks walls down
-• Blade: slash across the line, and swat arrows right back!
+• The CHARGE: in the last 20 seconds of every fight the line opens. Run across, blade out, and swat arrows right back!
 
 🏃 MOVE LIKE A PRO
 Run, slide, crouch, and flip off your fourth jump.

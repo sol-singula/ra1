@@ -299,17 +299,22 @@ local function buildView()
 	local v = { model = model, big = big, cross = cross, limbLen = limbLen }
 	if w.melee then
 		-- the blade: solid steel, whatever bow skin is worn (a Glass, Neon or Hologram skin is for bows: on a sword
-		-- it looked like a hologram): a leather grip in the team's colour, a dark steel guard and pommel, a bright
-		-- steel edge with a darker spine
+		-- it looked like a hologram). Painted steel, not Metal: the matte lighting has almost no reflections to
+		-- show, so Metal came out near black. A bright edge with a white bevel, a darker fuller down the middle, a
+		-- grey guard with a gem in the team's colour, a leather grip in the team's colour
 		v.blade = true
-		local steel, darkSteel = Color3.fromRGB(196, 200, 206), Color3.fromRGB(70, 72, 78)
-		local metal, leather = Enum.Material.Metal, Enum.Material.Fabric
+		local steel, bevel, fuller =
+			Color3.fromRGB(214, 218, 225), Color3.fromRGB(250, 251, 253), Color3.fromRGB(150, 155, 164)
+		local guardSteel = Color3.fromRGB(118, 122, 132)
+		local smooth, leather = Enum.Material.SmoothPlastic, Enum.Material.Fabric
 		v.grip = piece(Vector3.new(0.2, 0.2, 0.75), color, "Grip", leather)
-		v.pommel = piece(Vector3.new(0.28, 0.28, 0.2), darkSteel, "Pommel", metal)
-		v.guard = piece(Vector3.new(0.85, 0.16, 0.2), darkSteel, "Guard", metal)
-		v.edge = piece(Vector3.new(0.07, 0.28, 1.6), steel, "Edge", metal)
-		v.spine = piece(Vector3.new(0.09, 0.04, 1.4), darkSteel, "Spine", metal)
-		v.tip = piece(Vector3.new(0.08, 0.2, 0.3), steel, "Tip", metal)
+		v.pommel = piece(Vector3.new(0.28, 0.28, 0.2), guardSteel, "Pommel", smooth)
+		v.guard = piece(Vector3.new(0.85, 0.16, 0.2), guardSteel, "Guard", smooth)
+		v.gem = piece(Vector3.new(0.16, 0.16, 0.3), color, "Gem", Enum.Material.Neon)
+		v.edge = piece(Vector3.new(0.07, 0.28, 1.6), steel, "Edge", smooth)
+		v.bevel = piece(Vector3.new(0.075, 0.05, 1.55), bevel, "Bevel", smooth)
+		v.spine = piece(Vector3.new(0.08, 0.06, 1.25), fuller, "Spine", smooth)
+		v.tip = piece(Vector3.new(0.08, 0.2, 0.3), steel, "Tip", smooth)
 		-- the right hand round the grip, the left a loose fist
 		v.right = newLimb(piece, "R", 0.11, color)
 		v.left = newLimb(piece, "L", 0.05, color)
@@ -470,7 +475,9 @@ local function placeView(dt)
 		view.pommel.CFrame = up * L(0, 0, 0.45)
 		view.guard.CFrame = up * L(0, 0, -0.45)
 		view.edge.CFrame = up * L(0, 0, -1.35)
-		view.spine.CFrame = up * L(0, 0.15, -1.25)
+		view.spine.CFrame = up * L(0, 0.03, -1.3)
+		view.bevel.CFrame = up * L(0, -0.12, -1.35)
+		view.gem.CFrame = up * L(0, 0, -0.45)
 		view.tip.CFrame = up * L(0, 0, -2.25) * CFrame.Angles(math.rad(45), 0, 0)
 		-- the right hand round the grip: the bar along the grip (index finger toward the guard), the back of the
 		-- hand out to the right, the wrist under the grip
@@ -684,8 +691,14 @@ function WeaponController.swing()
 	return true
 end
 
+-- The blade only comes out in the CHARGE (the fight's last seconds: workspace "Charge"); bows the rest of the time
+function WeaponController.allowed(key)
+	local w = Weapons.get(key)
+	return w ~= nil and (not w.melee or workspace:GetAttribute("Charge") == true)
+end
+
 function WeaponController.equip(key)
-	if not Weapons.get(key) or Store.phase() == "build" then
+	if not WeaponController.allowed(key) or Store.phase() == "build" then
 		return false
 	end
 	drawing = false
@@ -699,7 +712,13 @@ end
 function WeaponController.cycle(step)
 	local n = #Weapons.list
 	local at = weapon().order or 1
-	return WeaponController.equip(Weapons.list[(at - 1 + step) % n + 1].key)
+	for i = 1, n do
+		local key = Weapons.list[(at - 1 + step * i) % n + 1].key
+		if WeaponController.allowed(key) then
+			return WeaponController.equip(key)
+		end
+	end
+	return false
 end
 
 function WeaponController.reload()
@@ -776,6 +795,15 @@ function WeaponController:init()
 	end)
 	Bus.Weapon:Connect(function(key)
 		WeaponController.equip(key)
+	end)
+	-- the CHARGE is over: the blade goes away, the bow comes back out
+	workspace:GetAttributeChangedSignal("Charge"):Connect(function()
+		local w = weapon()
+		if workspace:GetAttribute("Charge") ~= true and w and w.melee then
+			drawing = false
+			Store.merge("me", { weapon = Weapons.DEFAULT, ammo = Weapons.get(Weapons.DEFAULT).mag })
+			buildView()
+		end
 	end)
 	Bus.Reload:Connect(function()
 		WeaponController.reload()
