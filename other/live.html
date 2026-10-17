@@ -254,6 +254,11 @@
   .keybox input { width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2);
     color: var(--text); margin: 14px 0 10px; }
   .err { color: var(--bad); font-weight: 600; }
+  .lv { font-variant-numeric: tabular-nums; }
+  .livedot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--good); margin-left: 4px; vertical-align: middle;
+    animation: lvpulse 1s ease-in-out infinite; }
+  @keyframes lvpulse { 50% { opacity: .35; } }
+  @media (prefers-reduced-motion: reduce) { .livedot { animation: none; } }
 </style>
 </head>
 <body>
@@ -324,6 +329,9 @@
   const dur = (sec) => { sec = Math.max(0, Math.floor(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
     return h ? `${h}h${String(m).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`; };
   const ago = (iso) => (Date.now() - new Date(iso).getTime()) / 1000;
+  // a length of time with seconds: 45s, 3m 30s, 1h 02m 10s
+  const hms = (sec) => { if (sec == null || !isFinite(sec)) return "–"; sec = Math.max(0, Math.round(sec)); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+    return h ? `${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s` : m ? `${m}m ${String(s).padStart(2, "0")}s` : `${s}s`; };
   const since = (iso) => { const s = ago(iso); return s < 60 ? "just now" : s < 3600 ? `${Math.floor(s / 60)}m ago` : `${Math.floor(s / 3600)}h ${Math.floor(s % 3600 / 60)}m ago`; };
   const flag = (cc) => cc && cc.length === 2 ? String.fromCodePoint(...[...cc.toUpperCase()].map((c) => 127397 + c.charCodeAt(0))) : "";
   const DEVICE = { touch: ["📱", "phone or tablet"], keyboard: ["💻", "computer"], gamepad: ["🎮", "console"], vr: ["🥽", "VR"] };
@@ -444,6 +452,43 @@
   const onlineOf = (g) => serversOf(g).reduce((a, s) => a + countOf(s), 0);
   const onlineTotal = () => ORDER.reduce((a, g) => a + onlineOf(g), 0);
 
+  // Live math: worked out again every second in the browser, between refreshes ---------------------------------------
+  // The server's session averages only count sessions that have ended (its session counts include the open ones). So
+  // the live average adds everyone online now, at the length of their visit so far:
+  //   (ended sessions × their average + the seconds each open session has run) / (ended + open)
+  // and it grows second by second while they play.
+  const WINDOW = { hour: 3600e3, day: 86400e3, week: 7 * 86400e3 };
+  const onlinePlayers = (g, version) => serversOf(g).filter((s) => version == null || s.version === version).flatMap((s) => s.players);
+  function liveAvg(g, windowMs, avgMin, sessions, version, from) {
+    const now = Date.now(), cut = from != null ? from : now - windowMs;
+    const open = onlinePlayers(g, version).filter((p) => p.started_at && Date.parse(p.started_at) >= cut);
+    const ended = Math.max(0, (sessions || 0) - open.length);
+    const total = (avgMin || 0) * 60 * (avgMin == null ? 0 : ended) + open.reduce((a, p) => a + (now - Date.parse(p.started_at)) / 1000, 0);
+    const n = (avgMin == null ? 0 : ended) + open.length;
+    return { sec: n ? total / n : null, open: open.length };
+  }
+  // every number on the page that moves on its own: data-live says which, the rest of its data-* say whose
+  const LIVE = {
+    avg: (el) => { const g = el.dataset.g, c = (statsOf(g).compare || {})[el.dataset.p]; if (!c) return "–";
+      return hms(liveAvg(g, WINDOW[el.dataset.p], c.now.avg_min, c.now.sessions).sec); },
+    avgnote: (el) => { const g = el.dataset.g, c = (statsOf(g).compare || {})[el.dataset.p]; if (!c) return "";
+      const n = liveAvg(g, WINDOW[el.dataset.p], c.now.avg_min, c.now.sessions).open; return n ? `incl. ${n} playing now` : "ended visits only"; },
+    today: (el) => { const g = el.dataset.g, t = data[g] && data[g].body && data[g].body.today; if (!t) return "–";
+      return hms(liveAvg(g, WINDOW.day, t.avg_minutes, t.sessions).sec); },
+    vavg: (el) => { const g = el.dataset.g, v = (statsOf(g).versions || []).find((x) => String(x.version) === el.dataset.v); if (!v) return "–";
+      return hms(liveAvg(g, 0, v.avg_min, v.sessions, v.version, Date.parse(v.first_seen)).sec); },
+    playing: (el) => { const now = Date.now(); return hms(onlinePlayers(el.dataset.g).reduce((a, p) => a + (p.started_at ? (now - Date.parse(p.started_at)) / 1000 : 0), 0)); },
+    longest: (el) => { const now = Date.now(); const t = onlinePlayers(el.dataset.g).map((p) => p.started_at ? (now - Date.parse(p.started_at)) / 1000 : 0);
+      return t.length ? hms(Math.max(...t)) : "–"; },
+    meanNow: (el) => { const now = Date.now(); const t = onlinePlayers(el.dataset.g).filter((p) => p.started_at).map((p) => (now - Date.parse(p.started_at)) / 1000);
+      return t.length ? hms(t.reduce((a, b) => a + b, 0) / t.length) : "–"; },
+  };
+  const statsOf = (g) => (data[g] && data[g].body && data[g].body.stats) || {};
+  const live = (kind, attrs, first) => `<span class="lv" data-live="${kind}"${Object.entries(attrs).map(([k, v]) => ` data-${k}="${esc(v)}"`).join("")}>${first ?? ""}</span>`;
+  function tickLive() {
+    document.querySelectorAll("[data-live]").forEach((el) => { const f = LIVE[el.dataset.live]; if (f) { const t = f(el); if (el.textContent !== t) el.textContent = t; } });
+  }
+
   // The header -------------------------------------------------------------------------------------------------------
   function headerHtml() {
     const stale = Date.now() - lastOk > REFRESH_MS * 3;
@@ -508,7 +553,7 @@
     const online = onlineOf(gid);
     const today = (d && d.body && d.body.today) || null;
     const newest = Math.max(0, ...servers.map((s) => s.version || 0)) || null;
-    const meta = today && g.analytics ? `<span class="meta">today <b>${today.players ?? 0}</b> players · <b>${today.new_players ?? 0}</b> new · avg <b>${today.avg_minutes ?? "–"}</b> min</span>` : "";
+    const meta = today && g.analytics ? `<span class="meta">today <b>${today.players ?? 0}</b> players · <b>${today.new_players ?? 0}</b> new · avg <b>${live("today", { g: gid })}</b> a visit</span>` : "";
     const head = `<div class="ghead"><span class="gn"><span class="ge">${g.emoji}</span>${esc(g.name)}</span>
       <span class="on">${online} online</span><span class="meta">${servers.length} server${servers.length === 1 ? "" : "s"}</span>${meta}
       ${d && d.error ? `<span class="chip bad" title="${esc(d.error)}">can't reach it</span>` : ""}${!g.analytics ? `<span class="chip" title="only the player count per server is known">counts only</span>` : ""}</div>`;
@@ -542,7 +587,7 @@
   const METRICS = [ // key, label, format, which way is good
     ["players", "Players", (v) => v ?? "–", 1],
     ["new_players", "New players", (v) => v ?? "–", 1],
-    ["avg_min", "Avg session", (v) => v == null ? "–" : v + "m", 1],
+    ["avg_min", "Avg session", (v) => v == null ? "–" : hms(v * 60), 1],
     ["quick_quit_pct", "New quit < 1 min", pct, -1],
     ["stay3_pct", "New stay 3+ min", pct, 1],
     ["tutorial_pct", "Finish tutorial", pct, 1],
@@ -599,9 +644,15 @@
     const servers = serversOf(gid);
     return `<div class="kpis"><div class="kpi"><div class="k">Online now</div><div class="v">${onlineOf(gid)}</div>
         <div class="s">${servers.length} server${servers.length === 1 ? "" : "s"} · ${g.max} a server</div></div>
+      <div class="kpi"><div class="k">Playing right now <span class="livedot" title="worked out live, every second"></span></div><div class="v">${live("playing", { g: gid })}</div>
+        <div class="s"><span>everyone online, added up · longest ${live("longest", { g: gid })} · average ${live("meanNow", { g: gid })}</span></div></div>
       ${METRICS.map(([key, label, fmt, good]) => {
         const now = c ? c.now[key] : null, prev = c ? c.prev[key] : null;
         const before = c && c.prev.sessions > 0;
+        if (key === "avg_min") return `<div class="kpi"><div class="k">${label} <span class="livedot" title="worked out live, every second"></span></div><div class="v">${live("avg", { g: gid, p: period })}</div>
+          <div class="s">${before ? delta(now, prev, good) + `<span>was ${hms(prev * 60)}</span>` : `<span class="delta flat">no data before</span>`}</div>
+          <div class="s"><span>${live("avgnote", { g: gid, p: period })}</span></div>
+          ${spark(hours, key, g.color)}</div>`;
         return `<div class="kpi"><div class="k">${label}</div><div class="v">${fmt(now)}</div>
           <div class="s">${before ? delta(now, prev, good) + `<span>was ${fmt(prev)}</span>` : `<span class="delta flat">no data before</span>`}</div>
           ${spark(hours, key, g.color)}</div>`;
@@ -657,7 +708,7 @@
         return `<tr><td><b>v${v.version ?? "?"}</b>${i === 0 ? ` <span class="chip good">newest</span>` : ""}</td>
           <td class="mini">${new Date(v.first_seen).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</td>
           <td class="num">${v.sessions}</td><td class="num">${v.new_players}</td>
-          ${cell("avg_min", (x) => x == null ? "–" : x + "m", 1)}${cell("quick_quit_pct", pct, -1)}${cell("stay3_pct", pct, 1)}${cell("tutorial_pct", pct, 1)}
+          ${i === 0 ? `<td class="num">${live("vavg", { g: gid, v: v.version })} ${older ? delta(v.avg_min, older.avg_min, 1) : ""}</td>` : cell("avg_min", (x) => x == null ? "–" : hms(x * 60), 1)}${cell("quick_quit_pct", pct, -1)}${cell("stay3_pct", pct, 1)}${cell("tutorial_pct", pct, 1)}
           <td class="num">${v.robux}</td>${cell("phone_fps", (x) => x ?? "–", 1)}${cell("phone_under30_pct", pct, -1)}${cell("like_pct", pct, 1)}</tr>`;
       }).join("")}</tbody></table></div>`;
   }
@@ -677,7 +728,8 @@
       const rows = ready.map((gid) => {
         const g = GAMES[gid], st = data[gid].body.stats || {}, c = st.compare && st.compare[period];
         const cell = (key, fmt, good) => { const now = c ? c.now[key] : null, prev = c ? c.prev[key] : null;
-          return `<td class="num">${g.analytics ? fmt(now) + (c && c.prev.sessions > 0 ? " " + delta(now, prev, good) : "") : "–"}</td>`; };
+          const shown = key === "avg_min" ? live("avg", { g: gid, p: period }) : fmt(now);
+          return `<td class="num">${g.analytics ? shown + (c && c.prev.sessions > 0 ? " " + delta(now, prev, good) : "") : "–"}</td>`; };
         const fb = st.feedback && st.feedback.all;
         return `<tr><td><b>${g.emoji} ${esc(g.name)}</b>${g.analytics ? "" : ` <span class="chip">counts only</span>`}</td><td class="num"><b>${onlineOf(gid)}</b></td>
           ${METRICS.map(([key, , fmt, good]) => cell(key, fmt, good)).join("")}<td class="num">${g.analytics && fb ? pct(fb.like_pct) : "–"}</td></tr>`;
@@ -700,7 +752,7 @@
         ${hourly(body, "New players per hour", "last 48 h · dashed = a new version", "new_players", (v) => v ?? 0, g.color)}
         ${hourly(body, "Players per hour", "last 48 h", "players", (v) => v ?? 0, g.color)}
         ${hourly(body, "New players who quit in under a minute", "% per hour · lower is better", "quick_quit_pct", pct, "var(--bad)")}
-        ${hourly(body, "Average session", "minutes per hour", "avg_min", (v) => v == null ? "–" : v + " min", "var(--blue)")}
+        ${hourly(body, "Average session", "minutes per hour", "avg_min", (v) => v == null ? "–" : hms(v * 60), "var(--blue)")}
       </div>
       ${voiceHtml(view)}${versionsHtml(view)}
       <h3>Just left</h3>${recentHtml((body.recent || []).map((r) => ({ r, g })))}`;
@@ -717,6 +769,7 @@
           <span>⭐ Premium</span><span>👥 has friends here</span><span>📱 💻 🎮 device</span><span>Hover for details · click for their Roblox profile</span></div>
           <a href="#stats">Stats ↓</a></div>
         <section id="stats">${statsHtml()}</section>`;
+    tickLive();
     fit();
   }
 
@@ -786,6 +839,7 @@
   setInterval(() => {
     document.querySelectorAll("[data-since]").forEach((el) => { el.textContent = dur(ago(el.dataset.since)); });
     const a = document.getElementById("ago"); if (a) a.textContent = agoText();
+    tickLive();
   }, 1000);
   setInterval(loadAll, REFRESH_MS);
   (async () => { // ?pw= in the address unlocks too (and is then taken out of the address)
