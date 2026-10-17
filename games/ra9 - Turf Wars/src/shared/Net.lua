@@ -42,8 +42,10 @@ Net.ServerEvents = {
 	"ArrowEnd", -- { id, pos, kind = "player" | "structure" | "world" } where it stopped
 	"Bomb", -- { id, by, team, origin, velocity, at, shotId } a TNT thrown: everyone draws its lob (Formulas.lobAt)
 	"Blast", -- { id, pos, team, by, ground, radius, core } it went off: the explosion everyone sees and hears
-	"Swing", -- { by, hit, pos, dir } someone slashed (their blade swings for everyone: SwingController)
-	"Hit", -- { damage, head, kill, victim, melee?, pos? } you hit someone (the hit marker; a blade hit's spot)
+	"Swing", -- { by, hit, pos, dir } someone slashed (their blade swings for everyone: SwingController) | { by, whiff }
+	-- (to the swinger: their slash cut no one)
+	"Hit", -- { damage, head, kill, victim, melee?, pos? } you hit someone (the hit marker; a blade hit's spot);
+	-- { parry, clash, melee, pos, knock } two blades met (no knockout: you're thrown back by knock)
 	"Hurt", -- { amount, from } you were hit (from: the shooter's position, for the damage indicator)
 	"Kill", -- { killer, victim, killerTeam, weapon, head, push, assist, effect, pos } the kill feed, the kill effect;
 	-- killerPos, dist and cam = { origin, velocity, t, impact } (an arrow's flight) for the victim's kill cam

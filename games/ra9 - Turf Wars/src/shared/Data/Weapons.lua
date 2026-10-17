@@ -16,8 +16,8 @@ reach, and its swing knocks arrows back at the archer (CombatService).
   throw       (the TNT) no arrow: a lobbed explosive (CombatService:Throw)
   knockback   studs/s pushed at full charge
   structure   damage multiplier on structures
-  melee       (the blade) no arrow: a slash hits the nearest enemy within range studs, inside arc degrees of
-              where you look; from behind (back) it does backstab x damage
+  melee       (the blade) no arrow: a slash hits the nearest enemy within range studs (plus the lunge,
+              Constants.BLADE_*), inside arc degrees of where you look; from behind (back) it does backstab x damage
 ]]
 local Weapons = {}
 
@@ -66,8 +66,8 @@ Weapons.list = {
 		cooldown = 0.5,
 		knockback = 30,
 		structure = 0.5,
-		range = 10,
-		arc = 55,
+		range = 10, -- (+ Constants.BLADE_LUNGE: the lunge carries you in)
+		arc = 65,
 		backstab = 1.5,
 		mag = nil,
 		reload = nil,

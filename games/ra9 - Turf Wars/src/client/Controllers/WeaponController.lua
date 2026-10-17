@@ -40,6 +40,7 @@ local Store = require(script.Parent.Parent.Store)
 local ArrowController = require(script.Parent.ArrowController)
 local CameraController = require(script.Parent.CameraController)
 local ExplosionController = require(script.Parent.ExplosionController)
+local SwingController = require(script.Parent.SwingController)
 
 local WeaponController = { Name = "WeaponController", Order = 30 }
 
@@ -494,7 +495,7 @@ local function placeView(dt)
 	if view.blade then
 		-- the blade: held in the right hand, edge up and forward; a slash sweeps it from up right to down left
 		-- across the view, with a little lunge, then it comes back
-		local f = math.clamp((t - (anim.swingAt or -10)) / 0.32, 0, 1)
+		local f = math.clamp((SwingController.clock() - (anim.swingAt or -10)) / 0.32, 0, 1) -- (holds in a hit-stop)
 		local sw = f < 1 and math.sin(f * math.pi) or 0 -- (out and back)
 		local arc = f < 1 and (f < 0.45 and ease(f / 0.45) or 1 - ease((f - 0.45) / 0.55) * 0.999) or 0
 		local pos = Vector3.new(0.6, -0.62, -1.5):Lerp(Vector3.new(-0.25, -0.4, -1.75), arc)
@@ -767,7 +768,8 @@ function WeaponController.release(instant)
 	return true
 end
 
--- A slash with the blade: it swings at once; the server decides who it reaches
+-- A slash with the blade: it swings at once, turned onto the nearest enemy in front and lunging you at them
+-- (SwingController); the server decides who it reaches
 function WeaponController.swing()
 	local w = weapon()
 	if not w.melee or not canShoot() or os.clock() - (lastShot[w.key] or 0) < w.cooldown then
@@ -775,9 +777,10 @@ function WeaponController.swing()
 	end
 	lastShot[w.key] = os.clock()
 	local cam = workspace.CurrentCamera
-	local dir = cam and cam.CFrame.LookVector or Vector3.new(0, 0, -1)
+	local dir, lock = SwingController.aim(cam and cam.CFrame.LookVector or Vector3.new(0, 0, -1))
 	Net.send("Swing", dir)
-	anim.swingAt = os.clock()
+	SwingController.lunge(dir, lock)
+	anim.swingAt = SwingController.clock()
 	CameraController.shake(0.06, 0.1)
 	Bus.Fired:Fire(w.key, 1)
 	return true

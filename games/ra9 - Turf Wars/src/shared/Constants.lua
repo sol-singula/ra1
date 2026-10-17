@@ -85,6 +85,18 @@ Constants.HIT_RADIUS_HEAD = 1.1 -- the head's (2.6 above the root)
 Constants.HEADSHOT = 1.35 -- damage multiplier
 Constants.PARRY_SECONDS = 0.45 -- a blade swing knocks back arrows from the front for this long
 Constants.PARRY_DOT = 0.25 -- ...arriving within about 75 degrees of where you swung
+-- The blade (Data/Weapons "blade"; still one slash, one knockout): a slash lunges you at the nearest enemy in front
+-- (a soft lock: a thumb can't aim a sword), and keeps cutting for a moment, so someone a few steps off or stepping in
+-- is still caught. Lag is forgiven like an arrow's (where the swinger saw them, their ping ago, and a touch wider).
+Constants.BLADE_LUNGE = 5 -- studs a slash at someone carries you forward (stopping just short of them)...
+Constants.BLADE_STEP = 1.5 -- ...and a slash at no one (a step, not a dash: the lunge isn't a way to get about)
+Constants.BLADE_LUNGE_TIME = 0.14 -- seconds the lunge takes
+Constants.BLADE_WINDOW = 0.2 -- seconds a slash keeps cutting after the click
+Constants.BLADE_LOCK_ARC = 75 -- degrees off where you look the lock-on finds an enemy...
+Constants.BLADE_LOCK_RANGE = 16 -- ...within this many studs
+Constants.BLADE_CLASH = 0.15 -- seconds: two blades swung at each other this close together clash (no knockout)
+Constants.BLADE_CLASH_PUSH = 34 -- studs/s each is thrown back from a clash
+Constants.BLADE_HITSTOP = 0.07 -- seconds the slash freezes on a knockout (the impact)
 Constants.ARROW_LIFETIME = 4
 Constants.ARROW_STEP = 1 / 30 -- the server's projectile step
 Constants.ORIGIN_SLACK = 7 -- how far from your head a shot may start (latency, the viewmodel)

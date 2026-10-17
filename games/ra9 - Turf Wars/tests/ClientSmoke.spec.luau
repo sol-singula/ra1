@@ -556,6 +556,37 @@ do
 	check("...with a streak through the air", SwingC.streaks() > 0)
 	check("someone else's slash shows on their body", SwingC.slashOf(foe.Character, Vector3.new(1, 0, 0)))
 	check("...no charge ring for a blade", not refs.charge.Visible)
+	Engine.advance(0.4)
+	local AudioS = Engine.require(tree.client.Controllers.AudioController)
+	check("a slash that cut no one: you hear the whiff", AudioS.count("whiff") > 0, AudioS.count("whiff"))
+	-- the soft lock-on and the lunge: a slash turns onto the enemy in front (40 degrees off where you look) and
+	-- carries you at them, stopping short
+	do
+		local myRoot = player.Character.HumanoidRootPart
+		local at = myRoot.Position
+		local look = Vector3.new(0, 0, -1)
+		local off = Vector3.new(math.sin(math.rad(40)), 0, -math.cos(math.rad(40)))
+		Engine.moveTo(player, at, at + look)
+		Engine.moveTo(foe, at + off * 9, at)
+		local dir, lock = SwingC.aim(look)
+		check("the lock-on finds the enemy in front", lock == foe.Character.HumanoidRootPart)
+		check("...and turns the slash onto them", dir:Dot(off) > 0.99, dir)
+		check("...a lunge at them", SwingC.lunge(dir, lock) and SwingC.lunging())
+		Engine.advance(1 / 60)
+		local v = myRoot.AssemblyLinearVelocity
+		check(
+			"...carries you their way, fast",
+			Vector3.new(v.X, 0, v.Z):Dot(off) > Constants.BLADE_LUNGE / Constants.BLADE_LUNGE_TIME * 0.9,
+			v
+		)
+		Engine.advance(Constants.BLADE_LUNGE_TIME + 0.1)
+		check("...for a moment only", not SwingC.lunging())
+		Engine.moveTo(foe, at - look * 30, at)
+		local dir2, lock2 = SwingC.aim(look)
+		check("no one in front: no lock, the slash goes where you look", lock2 == nil and dir2:Dot(look) > 0.99)
+		Engine.moveTo(foe, at + look * 2.5, at)
+		check("already on them: no lunge (you'd run through)", not SwingC.lunge(look, foe.Character.HumanoidRootPart))
+	end
 	Engine.advance(0.6)
 	Constants.CHARGE_SECONDS = 20
 	Engine.advance(0.5)
