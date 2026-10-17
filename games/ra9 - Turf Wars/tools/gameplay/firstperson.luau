@@ -1,8 +1,8 @@
 --[[
 First-person frames (the viewmodel and the HUD, the way a player sees them): the real server and client boot on the
-mock engine, a fight is staged on Castle Clash, and the bow is caught at rest, half drawn, at full draw and on the
-crossbow, the blade at rest and mid-slash, the build tray, plus a frame of each touch layout. For checking the
-animation and as references for the store art.
+mock engine, a fight is staged on Castle Clash, and the bow is caught at rest, half drawn, at full draw, the TNT at
+rest, wound up and just thrown, the blade at rest and mid-slash, the build tray, plus a frame of each touch layout.
+For checking the animation and as references for the store art.
 
   luaurun tools/gameplay/firstperson.luau <outDir>
   node tools/gameplay/render.js <outDir> <pngDir> --modules <node_modules> --chromium <chrome>
@@ -100,17 +100,17 @@ Engine.advance(1.2)
 shot("fp_full")
 Bus.Fire:Fire(false)
 Engine.advance(1)
-Weapon.equip("heavy")
+Weapon.equip("tnt")
 Engine.advance(1)
+shot("fp_tnt")
 Bus.Fire:Fire(true)
-Engine.advance(2)
-shot("fp_heavy_full")
+Engine.advance(0.9)
+shot("fp_tnt_windup")
 Bus.Fire:Fire(false)
-Engine.advance(1)
-Weapon.equip("crossbow")
-Engine.advance(1)
-shot("fp_crossbow")
-Engine.require(tree.shared.Constants).CHARGE_SECONDS = 1e6 -- (the blade is only out in the CHARGE)
+Engine.advance(0.12)
+shot("fp_tnt_thrown")
+Engine.advance(4)
+Constants.CHARGE_SECONDS = 1e6 -- (the blade only comes out in the CHARGE)
 Engine.advance(0.5)
 Weapon.equip("blade")
 Engine.advance(1)

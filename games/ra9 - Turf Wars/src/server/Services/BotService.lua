@@ -14,7 +14,8 @@ What a bot does (every TICK):
   * build phase: walks to a spot on its own side near the line and builds like a person would (BuildService, the
     same rules and budget): walls and barricades facing the line first, then cover and a tower behind them.
   * fight: picks the nearest enemy it can see within BOT_RANGE and the right weapon for the distance (the blade up
-    close, the crossbow at mid range, the bow far away), faces them, draws (after BOT_REACT for someone new) and
+    close, the bow further out; now and then, in BOT_TNT_RANGE, a TNT lobbed at them, or at an enemy wall in the
+    way when nobody is in sight), faces them, draws (after BOT_REACT for someone new) and
     lets go with a lead on their movement, the drop allowed for, and BOT_SPREAD degrees of error. It strafes side to
     side while it draws so it's not a still target, falls back behind cover when it's hurt (under BOT_RETREAT_HP),
     and pushes up when nobody is in sight.
@@ -470,11 +471,15 @@ function BotService:Think(b)
 	local dest = a and ArenaBuilder.route(a, team, root.Position, b.goal) or b.goal
 	if phase ~= "fight" then
 		combat:Draw(b, false)
-		b.drawUntil = nil
+		b.drawUntil, b.lob = nil, nil
 		moveTo(b, root, dest)
 		if phase == "build" then
 			self:BuildSome(b, root, team, line, fwd, t)
 		end
+		return
+	end
+	-- a TNT on its way up: wind it up, then lob it at the spot (Lob)
+	if b.lob and self:Lob(b, root, t) then
 		return
 	end
 	local target = self:Target(b, root)
@@ -489,6 +494,11 @@ function BotService:Think(b)
 		-- nobody in sight (its own walls, or theirs, in the way): come out from cover toward the nearest enemy, along
 		-- the line, to get a shot
 		local near = self:Nearest(b, root)
+		-- (an enemy wall in the way: blow it up)
+		local wall = near and self:WallInWay(b, root, team)
+		if wall and self:StartLob(b, root, wall, t) then
+			return
+		end
 		if near and (not b.peekAt or t > b.peekAt) then
 			b.peekAt = t + rng:NextNumber(1.2, 2.2)
 			b.goal =
@@ -500,13 +510,21 @@ function BotService:Think(b)
 		return
 	end
 	local tr = rootOf(target)
-	-- the right weapon for the distance: the blade up close (in the CHARGE), the crossbow at mid range, the bow far away
+	-- the right weapon for the distance: the blade up close (only in the CHARGE), the bow further out, and now and
+	-- then the TNT
 	local blade = Weapons.get("blade")
 	local dist = (tr.Position - root.Position).Magnitude
 	-- (the blade only in the CHARGE, the fight's last seconds: then the bots run across the line at you)
 	local charging = match:Charging()
 	local close = charging and dist <= blade.range - 1
-	local want = close and "blade" or (dist < Constants.BOT_MID_RANGE and "crossbow" or "bow")
+	local range = Constants.BOT_TNT_RANGE
+	if not close and dist >= range[1] and dist <= range[2] and not self.easyFor(target) and t >= (b.tntAt or 0) then
+		b.tntAt = t + rng:NextNumber(2, 4) -- (whether it throws or not, it thinks again in a while)
+		if rng:NextNumber() < Constants.BOT_TNT_CHANCE and self:StartLob(b, root, tr.Position, t) then
+			return
+		end
+	end
+	local want = close and "blade" or "bow"
 	if combat:Weapon(b) ~= want then
 		combat:Equip(b, want)
 		combat:Draw(b, false)
@@ -564,6 +582,70 @@ function BotService:Think(b)
 		b.drawUntil = nil
 		b.seenAt = t - Constants.BOT_REACT + w.cooldown + rng:NextNumber(0.2, 0.7) -- (a breath before the next)
 	end
+end
+
+-- The TNT: pick it up and start winding up, for a throw at `point` (a spot on the ground or a wall). The charge is
+-- picked for the distance; Lob lets go once it's wound up that far.
+function BotService:StartLob(b, root, point, t)
+	local w = Weapons.get("tnt")
+	if not w or t < (b.tntReadyAt or 0) then
+		return false
+	end
+	local dist = (Vector3.new(point.X, root.Position.Y, point.Z) - root.Position).Magnitude
+	local want = math.sqrt(dist * Constants.TNT_GRAVITY / 0.9)
+	local charge = math.clamp((want - w.speed[1]) / (w.speed[2] - w.speed[1]), w.minCharge, 1)
+	combat:Equip(b, "tnt")
+	combat:Draw(b, true)
+	b.drawUntil = nil
+	b.lob = { point = point, start = t, release = t + charge * w.draw }
+	return true
+end
+
+-- A lob being wound up: face the spot, and at the charge it wanted, aim the arc onto it and let go. false when it's
+-- over (the next tick goes back to the bow).
+function BotService:Lob(b, root, t)
+	local lob = b.lob
+	local w = Weapons.get("tnt")
+	if combat:Weapon(b) ~= "tnt" then
+		b.lob = nil
+		return false
+	end
+	face(root, lob.point)
+	if t < lob.release then
+		return true
+	end
+	local eye = root.Position + Vector3.new(0, 1.5, 0)
+	local speed = Formulas.shot(w, Formulas.charge(w, t - lob.start)).speed
+	local dir = Formulas.lobAim(eye, lob.point, speed)
+	-- (a little spread, like its arrows)
+	local spread = math.rad(Constants.BOT_SPREAD)
+	dir = (CFrame.fromAxisAngle(Vector3.new(0, 1, 0), rng:NextNumber(-spread, spread)) * dir).Unit
+	b.shotId += 1
+	combat:Shoot(b, eye, dir, b.shotId)
+	b.lob = nil
+	b.tntReadyAt = t + w.cooldown + rng:NextNumber(2, 5)
+	combat:Equip(b, "bow")
+	return true
+end
+
+-- The nearest enemy structure within TNT reach, ahead of it (toward the enemy): somewhere to throw a TNT when
+-- nobody is in sight
+function BotService:WallInWay(b, root, team)
+	if not buildService or os.clock() < (b.tntReadyAt or 0) then
+		return nil
+	end
+	local range = Constants.BOT_TNT_RANGE
+	local best, bestD
+	for _, st in buildService:All() do
+		if st.team ~= team and st.boxMin then
+			local c = (st.boxMin + st.boxMax) / 2
+			local d = (Vector3.new(c.X, root.Position.Y, c.Z) - root.Position).Magnitude
+			if d >= range[1] and d <= range[2] and (not bestD or d < bestD) then
+				best, bestD = Vector3.new(c.X, st.boxMin.Y + 1, c.Z), d
+			end
+		end
+	end
+	return best
 end
 
 -- Somewhere to hide: the nearest standing structure (or map shape) between it and the target, on its own side,

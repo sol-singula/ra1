@@ -4,7 +4,9 @@ look (white pieces, the team's colour where the real thing has it, a dark string
 little from above, so the bow reads as a bow and the tower as a tower at a glance.
 
   Icons.weapon(key, team, props)      a ViewportFrame with that weapon (Data/Weapons key) laid across it
-  Icons.structure(key, team, props)   a ViewportFrame with that piece (Data/Structures key), seen from the front corner
+  Icons.structure(key, team, props)   a ViewportFrame with that piece (Data/Structures key) as it's built
+                                      (StructureModel: the team's one shade, the armoured wall darker), seen from the
+                                      front corner
   Icons.paint(frame, team)            the team's colour on an icon again (after a team change)
 
 And the shop's pictures (PanelController), so every card shows the real thing:
@@ -23,6 +25,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
+local StructureModel = require(ReplicatedStorage.Shared.StructureModel)
 local Structures = require(ReplicatedStorage.Shared.Data.Structures)
 
 local Icons = {}
@@ -94,58 +97,48 @@ function WEAPON.bow(m, c)
 	piece(m, CFrame.new(-1.65, 0, 0.12) * CFrame.Angles(0, 0, math.rad(45)), Vector3.new(0.22, 0.22, 0.1), c, 0)
 	piece(m, CFrame.new(0.75, 0, 0.12), Vector3.new(0.4, 0.24, 0.03), c, 0)
 end
-function WEAPON.heavy(m, c)
-	piece(m, CFrame.new(-0.05, 0, 0), Vector3.new(0.38, 1.0, 0.4), c, 0)
-	piece(m, CFrame.new(-0.05, 0, 0), Vector3.new(0.42, 0.25, 0.44), INK)
-	local top = limb(m, 1, 2.2, 0.55, 0.36, WHITE)
-	local bottom = limb(m, -1, 2.2, 0.55, 0.36, WHITE)
-	-- bands round the limbs and recurved tips in the team's colour
-	for _, sgn in { 1, -1 } do
+function WEAPON.tnt(m)
+	-- a bundle of three red sticks lying along X, two dark bands round them, a fuse curling out of one end with its
+	-- spark
+	local red = Constants.TNT_RED
+	for _, at in { Vector3.new(0, 0.2, 0.18), Vector3.new(0, 0.2, -0.18), Vector3.new(0, -0.14, 0) } do
+		piece(m, CFrame.new(at), Vector3.new(2.3, 0.42, 0.42), red, nil, Enum.PartType.Cylinder)
+		-- (the stick's paper end, a lighter ring)
 		piece(
 			m,
-			CFrame.new(0.14, sgn * 1.45, 0) * CFrame.Angles(0, 0, math.rad(sgn * -14)),
-			Vector3.new(0.44, 0.22, 0.4),
-			c,
-			0
+			CFrame.new(at + Vector3.new(-1.16, 0, 0)),
+			Vector3.new(0.04, 0.36, 0.36),
+			Color3.fromRGB(236, 170, 150),
+			nil,
+			Enum.PartType.Cylinder
 		)
 	end
-	piece(
-		m,
-		CFrame.new(top + Vector3.new(-0.12, 0.15, 0)) * CFrame.Angles(0, 0, math.rad(-35)),
-		Vector3.new(0.2, 0.5, 0.26),
-		c,
-		0
-	)
-	piece(
-		m,
-		CFrame.new(bottom + Vector3.new(-0.12, -0.15, 0)) * CFrame.Angles(0, 0, math.rad(35)),
-		Vector3.new(0.2, 0.5, 0.26),
-		c,
-		0
-	)
-	bar(m, top, Vector3.new(0.8, 0, 0), 0.07, nil, INK)
-	bar(m, bottom, Vector3.new(0.8, 0, 0), 0.07, nil, INK)
-	piece(m, CFrame.new(-0.4, 0, 0.16), Vector3.new(2.5, 0.12, 0.12), WHITE)
-	piece(m, CFrame.new(-1.75, 0, 0.16) * CFrame.Angles(0, 0, math.rad(45)), Vector3.new(0.3, 0.3, 0.14), c, 0)
-end
-function WEAPON.crossbow(m, c)
-	-- the stock along X, the limbs across it at the front, the string back to the latch, a bolt on top
-	piece(m, CFrame.new(0.3, 0, 0), Vector3.new(2.6, 0.3, 0.3), WHITE)
-	piece(m, CFrame.new(1.45, -0.15, 0), Vector3.new(0.6, 0.5, 0.32), c, 0)
-	piece(m, CFrame.new(0.75, -0.42, 0) * CFrame.Angles(0, 0, math.rad(-12)), Vector3.new(0.24, 0.55, 0.26), c, 0)
-	piece(m, CFrame.new(0.45, -0.3, 0), Vector3.new(0.08, 0.26, 0.1), INK)
-	local tips = {}
-	for i, sgn in { 1, -1 } do
-		local a = Vector3.new(-0.85, 0, 0)
-		local b = Vector3.new(-0.55, 0, sgn * 1.25)
-		bar(m, a, b, 0.22, 0.14, WHITE)
-		tips[i] = b
-		piece(m, CFrame.new(b), Vector3.new(0.18, 0.18, 0.18), c, 0)
+	for _, x in { -0.55, 0.55 } do
+		piece(m, CFrame.new(x, 0.08, 0), Vector3.new(0.18, 0.9, 0.86), INK)
 	end
-	bar(m, tips[1], Vector3.new(0.05, 0.12, 0), 0.05, nil, INK)
-	bar(m, tips[2], Vector3.new(0.05, 0.12, 0), 0.05, nil, INK)
-	piece(m, CFrame.new(-0.4, 0.2, 0), Vector3.new(1.3, 0.08, 0.08), WHITE)
-	piece(m, CFrame.new(-1.1, 0.2, 0) * CFrame.Angles(0, 0, math.rad(45)), Vector3.new(0.18, 0.18, 0.1), c, 0)
+	bar(m, Vector3.new(1.15, 0.2, 0.18), Vector3.new(1.55, 0.5, 0.18), 0.07, nil, INK)
+	bar(m, Vector3.new(1.55, 0.5, 0.18), Vector3.new(1.8, 0.42, 0.18), 0.07, nil, INK)
+	local spark = piece(
+		m,
+		CFrame.new(1.86, 0.42, 0.18),
+		Vector3.new(0.3, 0.3, 0.3),
+		Color3.fromRGB(255, 200, 60),
+		nil,
+		Enum.PartType.Ball
+	)
+	spark.Material = Enum.Material.Neon
+	for i = 1, 4 do
+		local a = i * math.pi / 2 + 0.4
+		bar(
+			m,
+			Vector3.new(1.86, 0.42, 0.18),
+			Vector3.new(1.86 + math.cos(a) * 0.32, 0.42 + math.sin(a) * 0.32, 0.18),
+			0.05,
+			nil,
+			Color3.fromRGB(255, 230, 120)
+		).Material =
+			Enum.Material.Neon
+	end
 end
 function WEAPON.blade(m, c)
 	-- along X: the pommel, the grip in the team's colour, the guard, a long white edge with a coloured spine
@@ -157,44 +150,19 @@ function WEAPON.blade(m, c)
 	piece(m, CFrame.new(-1.88, 0, 0) * CFrame.Angles(0, 0, math.rad(45)), Vector3.new(0.24, 0.24, 0.08), WHITE)
 end
 -- how each lies across its frame (a turn about the view axis), and how much room it takes
-local LAY = { bow = 32, heavy = 32, crossbow = -24, blade = -28 }
+local LAY = { bow = 32, tnt = 18, blade = -28 }
 
--- The structures, from Data/Structures' sizes (a cell is 4 studs), like BuildService builds them
-local function structureModel(m, def, c)
+-- The structures, from Data/Structures' sizes (a cell is 4 studs), exactly as BuildService builds them
+local function structureModel(m, def, team, c)
 	local w, d = def.w * Constants.CELL, def.d * Constants.CELL
-	local h = def.h
-	if def.key == "banner" then
-		piece(m, CFrame.new(0, h / 2, 0), Vector3.new(0.6, h, 0.6), WHITE)
-		piece(m, CFrame.new(1.2, h - 2.5, 0), Vector3.new(2.4, 4, 0.2), c, 0)
-		piece(m, CFrame.new(0, 0.3, 0), Vector3.new(2.4, 0.6, 2.4), WHITE)
-	elseif def.key == "tower" then
-		local hx, hz = w / 2 - 0.6, d / 2 - 0.6
-		for _, sx in { -1, 1 } do
-			for _, sz in { -1, 1 } do
-				piece(m, CFrame.new(sx * hx, h / 2, sz * hz), Vector3.new(1.2, h, 1.2), WHITE)
-			end
-		end
-		piece(m, CFrame.new(0, h / 2, 0), Vector3.new(w - 2.4, h - 1, d - 2.4), c, 0.35)
-		piece(m, CFrame.new(0, h - 0.5, 0), Vector3.new(w, 1, d), c, 0.35)
-		for _, sz in { -1, 1 } do
-			piece(m, CFrame.new(0, h + 1, sz * (d / 2 - 0.2)), Vector3.new(w, 2, 0.4), c, 0)
-			piece(m, CFrame.new(sz * (w / 2 - 0.2), h + 1, 0), Vector3.new(0.4, 2, d), c, 0)
-		end
-	elseif def.key == "bridge" then
-		piece(m, CFrame.new(0, h - 0.5, 0), Vector3.new(w, 1, d), c, 0.35)
-		for _, sz in { -1, 1 } do
-			piece(m, CFrame.new(0, (h - 1) / 2, sz * (d / 2 - 0.6)), Vector3.new(w - 0.4, h - 1, 1.2), WHITE)
-		end
-		piece(m, CFrame.new(0, h + 0.4, 0), Vector3.new(w + 0.1, 0.2, d * 0.7), c, 0)
-	else
-		piece(m, CFrame.new(0, h / 2, 0), Vector3.new(w, h, d), c, 0.35)
-		piece(m, CFrame.new(0, h + 0.2, 0), Vector3.new(w + 0.3, 0.4, d + 0.3), WHITE)
-		piece(m, CFrame.new(0, h * 0.6, 0), Vector3.new(w + 0.05, 0.5, d + 0.05), c, 0)
-		if def.key == "reinforced" then
-			for _, sx in { -1, 1 } do
-				piece(m, CFrame.new(sx * (w / 2 - 0.4), h / 2, 0), Vector3.new(0.9, h, d + 0.4), WHITE)
-			end
-		end
+	for _, spec in StructureModel.parts(def.key, team, Vector3.new(-w / 2, 0, -d / 2), Vector3.new(w / 2, def.h, d / 2)) do
+		local p = StructureModel.make(spec, team)
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.CastShadow = false
+		p.Massless = true
+		p.Parent = m
 	end
 	-- a square of turf under it, so it stands on something
 	piece(m, CFrame.new(0, -0.15, 0), Vector3.new(w + 1.6, 0.3, d + 1.6), c, 0.6)
@@ -260,8 +228,8 @@ function Icons.weapon(key, team, props)
 	local build = WEAPON[key] or WEAPON.bow
 	build(model, teamColor(team))
 	-- lay it across the frame, tipped toward you a little so it has some depth
-	-- (the crossbow from well above, so its limbs show across the stock)
-	local tip = key == "crossbow" and 62 or 18
+	-- (the TNT from a little more above, so the bundle shows its three sticks)
+	local tip = key == "tnt" and 30 or 18
 	local turn = CFrame.Angles(0, 0, math.rad(LAY[key] or 0)) * CFrame.Angles(math.rad(tip), math.rad(16), 0)
 	for _, p in model:GetChildren() do
 		p.CFrame = turn * p.CFrame
@@ -274,7 +242,7 @@ function Icons.structure(key, team, props)
 	local model = Instance.new("Model")
 	model.Name = "Structure"
 	if def then
-		structureModel(model, def, teamColor(team))
+		structureModel(model, def, team or "red", teamColor(team))
 	end
 	return frame(model, Vector3.new(1, 0.75, 1.35), props, 0.9)
 end
@@ -726,8 +694,11 @@ function Icons.paint(vf, team)
 	local c = teamColor(team)
 	for _, p in vf:GetDescendants() do
 		local tint = p:IsA("BasePart") and p:GetAttribute("Tint")
+		local tone = p:IsA("BasePart") and p:GetAttribute("Tone")
 		if tint then
 			p.Color = c:Lerp(WHITE, tint)
+		elseif tone then
+			p.Color = StructureModel.color(tone, team) -- (a structure: its team shade, or the armour's)
 		end
 	end
 end

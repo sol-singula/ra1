@@ -6,6 +6,11 @@ The rules as pure functions (no Instances), shared by the server, the client and
   Formulas.charge(weapon, heldSeconds)        0..1 (the bow's draw)
   Formulas.shot(weapon, charge)               speed, damage, knockback at that charge
   Formulas.arrowAt(origin, velocity, t)       where an arrow is t seconds after it left
+  Formulas.lobVelocity(dir, speed)           the TNT's throw: where you look, lifted into a lob
+  Formulas.lobAt(origin, velocity, t)         where a thrown TNT is t seconds after it left (heavier than an arrow)
+  Formulas.lobAim(origin, target, speed)      the look direction that lobs it onto target at that speed (bots)
+  Formulas.blast(distance)                    0..1: how much of the TNT's structure damage reaches that far
+  Formulas.boxDistance(p, min, max)           from a point to the nearest point of a box (0 inside)
   Formulas.segmentSphere(a, b, c, r)          the fraction along a→b where it first touches the sphere, or nil
   Formulas.segmentBox(a, b, min, max)         ...the axis-aligned box, or nil
   Formulas.cellOf(x, z) / cellCenter(cx, cz)  the 4-stud building grid
@@ -62,6 +67,46 @@ end
 
 function Formulas.arrowVelocity(velocity, t)
 	return velocity + Vector3.new(0, -Constants.GRAVITY * t, 0)
+end
+
+function Formulas.lobVelocity(dir, speed)
+	local d = dir + Vector3.new(0, Constants.TNT_LIFT, 0)
+	return (d.Magnitude > 1e-6 and d.Unit or Vector3.new(0, 1, 0)) * speed
+end
+
+function Formulas.lobAt(origin, velocity, t)
+	return origin + velocity * t + Vector3.new(0, -0.5 * Constants.TNT_GRAVITY * t * t, 0)
+end
+
+-- The look direction (toward target, pitched) whose lob comes closest to target at this throw speed, by trying
+-- pitches from straight ahead to steep: a bot's throw. Returns the direction and how close it lands.
+function Formulas.lobAim(origin, target, speed)
+	local flat = Vector3.new(target.X - origin.X, 0, target.Z - origin.Z)
+	local yaw = flat.Magnitude > 0.01 and flat.Unit or Vector3.new(1, 0, 0)
+	local best, bestMiss
+	for deg = -40, 60, 4 do
+		local a = math.rad(deg)
+		local dir = yaw * math.cos(a) + Vector3.new(0, math.sin(a), 0)
+		local v = Formulas.lobVelocity(dir, speed)
+		local miss = math.huge
+		for i = 1, 40 do
+			local p = Formulas.lobAt(origin, v, i * Constants.TNT_FUSE / 40)
+			miss = math.min(miss, (p - target).Magnitude)
+		end
+		if not bestMiss or miss < bestMiss then
+			best, bestMiss = dir, miss
+		end
+	end
+	return best, bestMiss
+end
+
+function Formulas.blast(d)
+	return math.clamp(1 - d / Constants.TNT_RADIUS, 0, 1)
+end
+
+function Formulas.boxDistance(p, mn, mx)
+	local q = Vector3.new(math.clamp(p.X, mn.X, mx.X), math.clamp(p.Y, mn.Y, mx.Y), math.clamp(p.Z, mn.Z, mx.Z))
+	return (p - q).Magnitude
 end
 
 -- Segment a→b against a sphere at c, radius r: the first fraction in [0, 1] where it touches, or nil.

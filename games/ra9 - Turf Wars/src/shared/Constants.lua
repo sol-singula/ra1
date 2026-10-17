@@ -49,6 +49,16 @@ Constants.ARROW_STEP = 1 / 30 -- the server's projectile step
 Constants.ORIGIN_SLACK = 7 -- how far from your head a shot may start (latency, the viewmodel)
 Constants.KNOCKBACK_CAP = 70 -- studs/s
 Constants.ASSIST_WINDOW = 6 -- damage within this many seconds of a kill is an assist
+-- TNT (Data/Weapons "tnt"): thrown in a lob, the server flies it like an arrow but heavier, and it blows up on what
+-- it touches (or when its fuse runs out)
+Constants.TNT_GRAVITY = 95 -- studs/s² (heavier than an arrow: a real lob)
+Constants.TNT_LIFT = 0.42 -- the throw leaves this much above where you look (a lob, not a line)
+Constants.TNT_FUSE = 1.2 -- seconds: in the air this long, it goes off where it is
+Constants.TNT_RADIUS = 9 -- studs: enemy structures this close take the blast (falling off with distance)
+Constants.TNT_CORE = 5 -- studs: enemies this close (and in the open from the blast) are knocked out
+Constants.TNT_STRUCTURE = { 520, 160 } -- structure damage at the middle of the blast, and at its edge
+Constants.TNT_RED = Color3.fromRGB(200, 34, 30) -- (the sticks, whoever throws them)
+Constants.TNT_PUSH = 55 -- studs/s: enemies in the blast but out of the core are thrown back this hard (less further out)
 
 -- Movement (§6)
 Constants.WALK_SPEED = 18
@@ -67,7 +77,8 @@ Constants.BOT_ENEMIES = 1 -- against you
 Constants.BOT_SPEED = 16 -- a little slower than a person walking
 Constants.BOT_RANGE = 150 -- studs: how far they look for someone to shoot
 Constants.BOT_SPREAD = 2.6 -- degrees of aim error (more at range): beatable, not helpless
-Constants.BOT_MID_RANGE = 45 -- studs: closer than this (but out of blade reach) a bot uses the crossbow
+Constants.BOT_TNT_RANGE = { 14, 46 } -- studs: a bot throws TNT at someone (or a wall in its way) this far off...
+Constants.BOT_TNT_CHANCE = 0.35 -- ...this often when it's ready (else the bow)
 Constants.BOT_RETREAT_HP = 35 -- a bot this hurt falls back behind cover
 -- the first-match boost (TutorialService): only while a new player is alone with the bot in their first match
 Constants.TUTORIAL_BOT_SPREAD = 2.2 -- the bot's aim error, times this
@@ -126,6 +137,9 @@ Constants.WHITE = Color3.fromRGB(242, 242, 240)
 Constants.LIGHT = Color3.fromRGB(226, 226, 224)
 Constants.GREY = Color3.fromRGB(196, 197, 200)
 Constants.DARK = Color3.fromRGB(150, 152, 158)
+-- What a team builds: every piece in one shade of the team's colour, the Reinforced Wall (the armour) darker
+Constants.BUILD_COLOR = { red = Color3.fromRGB(226, 70, 72), blue = Color3.fromRGB(62, 126, 236) }
+Constants.ARMOR_COLOR = { red = Color3.fromRGB(128, 26, 32), blue = Color3.fromRGB(24, 56, 140) }
 
 -- Sounds (the studio's uploaded set, shared with the other games)
 Constants.SOUNDS = {
@@ -138,7 +152,9 @@ Constants.SOUNDS = {
 	built = "rbxassetid://106516156393061",
 	draw = "rbxassetid://96391581866585",
 	tick = "rbxassetid://118634876996683",
+	boom = "rbxasset://sounds/collide.wav", -- (Roblox's own: a heavy thud, played low for the TNT)
+	crumble = "rbxasset://sounds/collide.wav", -- (a structure coming down, higher and softer)
 }
-Constants.SOUND_VOLUME = { horn = 0.7, win = 0.8, shoot = 0.5, draw = 0.3, tick = 0.4 }
+Constants.SOUND_VOLUME = { horn = 0.7, win = 0.8, shoot = 0.5, draw = 0.3, tick = 0.4, boom = 1, crumble = 0.55 }
 
 return Constants

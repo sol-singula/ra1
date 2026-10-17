@@ -7,8 +7,10 @@ up to the frontline (BUILD_FRONT_GAP cells back; 0 = the cell touching it too), 
 another structure or stand in the map's shapes (poking BUILD_MAP_OVERLAP studs into one at the edges is fine); and if it's a tall piece, every row of cells across the field it stands in still
 has an open cell (no wall ever seals the battlefield). Then it's built for everyone in its team's colour.
 
-Structures last the match (they're cleared with the arena) unless arrows break them: CombatService reports hits on
-their boxes (StructureHit) and they lose durability. In the build phase you can take back your own (Demolish) for
+Structures last the match (they're cleared with the arena) unless arrows or TNT break them: CombatService reports
+hits on their boxes (StructureHit, with where the blow came from) and they lose durability; when one comes down
+everyone is told where it stood and what hit it, and each client breaks it into flying debris (DebrisController).
+How each piece looks is StructureModel's (shared with the hotbar's pictures and the debris). In the build phase you can take back your own (Demolish) for
 the full cost.
 
   BuildService:Place(player, key, cx, cz, rot) -> ok, why
@@ -25,6 +27,7 @@ local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local StructureModel = require(ReplicatedStorage.Shared.StructureModel)
 local Structures = require(ReplicatedStorage.Shared.Data.Structures)
 
 local BuildService = {
@@ -42,6 +45,7 @@ local nextId = 0
 local open = false -- the build phase
 local frontlineOf -- fn() -> the frontline's X (MatchService)
 local folder
+local clearing = false -- (Clear is taking everything down between matches)
 
 local function cellsOf(cx, cz, w, d)
 	local out = {}
@@ -196,36 +200,23 @@ function BuildService:Check(player, key, cx, cz, rot)
 	return true, nil, def, cx, cz, w, d, rot
 end
 
+-- The piece in the world: StructureModel's parts (one shade of the team's colour, the Reinforced Wall darker), the
+-- builder's banner emblem on any flag
 local function buildModel(s, def)
-	local color = Constants.TEAM_COLOR[s.team]
 	local model = Instance.new("Model")
 	model.Name = "S" .. s.id
 	model:SetAttribute("StructureId", s.id)
 	model:SetAttribute("Team", s.team)
-	local function part(cf, size, c, solid)
-		local p = Instance.new("Part")
-		p.Anchored = true
-		p.Size = size
-		p.CFrame = cf
-		p.Material = Enum.Material.SmoothPlastic
-		p.Color = c
-		p.CanCollide = solid ~= false
-		p.TopSurface = Enum.SurfaceType.Smooth
-		p.BottomSurface = Enum.SurfaceType.Smooth
-		p.Parent = model
-		return p
-	end
-	local size = s.max - s.min
-	local center = (s.min + s.max) / 2
-	local white = Constants.WHITE
-	local tint = color:Lerp(white, 0.35)
-	if def.key == "banner" then
-		part(CFrame.new(center.X, def.h / 2, center.Z), Vector3.new(0.6, def.h, 0.6), white)
-		local flag = part(CFrame.new(center.X + 1.2, def.h - 2.5, center.Z), Vector3.new(2.4, 4, 0.2), color, false)
-		-- the emblem of the banner the builder wears (Data/Cosmetics), white on the flag, both faces
-		local banner = Cosmetics.get(s.emblemKey)
-		if banner and banner.kind == "banner" then
-			for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
+	model:SetAttribute("Key", def.key)
+	local banner = Cosmetics.get(s.emblemKey)
+	for _, spec in StructureModel.parts(def.key, s.team, s.min, s.max) do
+		local p = StructureModel.make(spec, s.team)
+		if spec.flag and banner and banner.kind == "banner" then
+			-- the emblem of the banner the builder wears (Data/Cosmetics), white on the flag, both faces
+			local wide = spec.size.X >= spec.size.Z
+			for _, face in
+				wide and { Enum.NormalId.Front, Enum.NormalId.Back } or { Enum.NormalId.Left, Enum.NormalId.Right }
+			do
 				local sg = Instance.new("SurfaceGui")
 				sg.Name = "Emblem"
 				sg.Face = face
@@ -236,55 +227,12 @@ local function buildModel(s, def)
 				l.Text = banner.look.emblem
 				l.TextScaled = true
 				l.Font = Enum.Font.GothamBlack
-				l.TextColor3 = white
+				l.TextColor3 = Constants.WHITE
 				l.Parent = sg
-				sg.Parent = flag
+				sg.Parent = p
 			end
 		end
-		part(CFrame.new(center.X, 0.3, center.Z), Vector3.new(2.4, 0.6, 2.4), white)
-	elseif def.key == "tower" then
-		-- four legs, a platform, a team-coloured rail round the top, a ladder face
-		local hx, hz = size.X / 2 - 0.6, size.Z / 2 - 0.6
-		for _, sx in { -1, 1 } do
-			for _, sz in { -1, 1 } do
-				part(CFrame.new(center.X + sx * hx, def.h / 2, center.Z + sz * hz), Vector3.new(1.2, def.h, 1.2), white)
-			end
-		end
-		part(CFrame.new(center.X, def.h - 0.5, center.Z), Vector3.new(size.X, 1, size.Z), tint)
-		for _, sz in { -1, 1 } do
-			part(
-				CFrame.new(center.X, def.h + 1, center.Z + sz * (size.Z / 2 - 0.2)),
-				Vector3.new(size.X, 2, 0.4),
-				color
-			)
-		end
-		for i = 1, 5 do
-			part(CFrame.new(center.X, i * 2, center.Z), Vector3.new(size.X - 2.4, 0.4, 0.4), white)
-		end
-		part(CFrame.new(center.X, def.h / 2, center.Z), Vector3.new(size.X - 2.4, def.h - 1, size.Z - 2.4), tint, true)
-	elseif def.key == "bridge" then
-		part(CFrame.new(center.X, def.h - 0.5, center.Z), Vector3.new(size.X, 1, size.Z), tint)
-		for _, sz in { -1, 1 } do
-			part(
-				CFrame.new(center.X, (def.h - 1) / 2, center.Z + sz * (size.Z / 2 - 0.6)),
-				Vector3.new(size.X - 0.4, def.h - 1, 1.2),
-				white
-			)
-		end
-	else
-		-- walls, barricades, cover: a slab in a light tint of the team colour, a white cap, a coloured stripe
-		part(CFrame.new(center.X, def.h / 2, center.Z), Vector3.new(size.X, def.h, size.Z), tint)
-		part(CFrame.new(center.X, def.h + 0.2, center.Z), Vector3.new(size.X + 0.3, 0.4, size.Z + 0.3), white)
-		part(CFrame.new(center.X, def.h * 0.6, center.Z), Vector3.new(size.X + 0.05, 0.5, size.Z + 0.05), color, false)
-		if def.key == "reinforced" then
-			for _, sx in { -1, 1 } do
-				part(
-					CFrame.new(center.X + sx * (size.X / 2 - 0.4), def.h / 2, center.Z),
-					Vector3.new(0.9, def.h, size.Z + 0.4),
-					white
-				)
-			end
-		end
+		p.Parent = model
 	end
 	model.Parent = folder
 	return model
@@ -327,7 +275,9 @@ function BuildService:Place(player, key, cx, cz, rot)
 	return true, s
 end
 
-function BuildService:Remove(id, attacker, refund)
+-- Take a structure down. blast = { pos, power } (what broke it) goes out with the "destroyed" message so every client
+-- can throw the debris away from it (DebrisController); a refund (your own, taken back) just goes.
+function BuildService:Remove(id, attacker, refund, blast)
 	local s = structures[id]
 	if not s then
 		return false
@@ -347,28 +297,40 @@ function BuildService:Remove(id, attacker, refund)
 		budgets[s.owner] = math.min(Constants.BUILD_BUDGET, self:Budget(s.owner) + def.cost)
 		self:Push(s.owner)
 	end
-	Net.fireAll("Structure", { kind = "destroyed", id = id, key = s.key, team = s.team })
+	Net.fireAll("Structure", {
+		kind = "destroyed",
+		id = id,
+		key = s.key,
+		team = s.team,
+		min = s.boxMin,
+		max = s.boxMax,
+		rot = s.rot,
+		refund = refund == true or nil,
+		quiet = clearing or nil, -- (the arena is being cleared: no debris)
+		blast = blast,
+	})
 	if not refund then
 		self.Destroyed:Fire(s, attacker)
 	end
 	return true
 end
 
-function BuildService:Hit(id, damage, attacker)
+function BuildService:Hit(id, damage, attacker, blast)
 	local s = structures[id]
 	if not s then
 		return
 	end
-	if attacker and teams:Team(attacker) == s.team then
-		return -- (your own arrows don't break your team's walls)
+	local from = (attacker and teams:Team(attacker)) or (blast and blast.team)
+	if from == s.team then
+		return -- (your own arrows and TNT don't break your team's walls)
 	end
 	s.hp -= damage
 	if s.hp <= 0 then
-		self:Remove(id, attacker, false)
+		self:Remove(id, attacker, false, blast)
 	else
 		Net.fireAll("Structure", { kind = "damaged", id = id, key = s.key, team = s.team, hp = s.hp, max = s.max })
 		if s.model then
-			-- (it fades toward white as it breaks)
+			-- (it fades a little as it breaks)
 			local f = math.clamp(s.hp / s.max, 0, 1)
 			for _, p in s.model:GetChildren() do
 				if p:IsA("BasePart") then
@@ -395,9 +357,11 @@ function BuildService:ClearLost(frontline)
 end
 
 function BuildService:Clear()
+	clearing = true
 	for id in structures do
 		self:Remove(id, nil, false)
 	end
+	clearing = false
 	structures, occupied = {}, {}
 end
 
@@ -424,8 +388,8 @@ function BuildService:Init(registry)
 			self:Remove(id, nil, true)
 		end
 	end)
-	combat.StructureHit:Connect(function(id, damage, attacker)
-		self:Hit(id, damage, attacker)
+	combat.StructureHit:Connect(function(id, damage, attacker, blast)
+		self:Hit(id, damage, attacker, blast)
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		budgets[player] = nil

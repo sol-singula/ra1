@@ -301,7 +301,7 @@
       teams: { red: ["🔴", "Red"], blue: ["🔵", "Blue"] },
       phases: { build: "🧱 building", fight: "⚔️ fighting", victory: "🏆 results", loading: "🗺️ next map" },
       maps: { castle: "Castle Clash", frost: "Frostbite", jungle: "Jungle Rush", dust: "Dust Devil" },
-      weapons: { bow: "Standard Bow", crossbow: "Rapid Crossbow", heavy: "Heavy Bow", blade: "Blade" },
+      weapons: { bow: "Standard Bow", tnt: "🧨 TNT", blade: "Blade" },
       line: (l, p, g) => `${(g.teams[l.team] || ["⚪"])[0]}${l.alive === false ? " 💀" : ""} · ⚔️ ${l.kills ?? "–"}/${l.deaths ?? "–"} · 🏆 ${l.wins ?? "–"}`,
       details: (l, p, g) => [["Team", l.team ? (g.teams[l.team] || [null, l.team])[1] : null], ["Phase", g.phases[l.phase] || l.phase],
         ["Map", g.maps[l.map] || l.map], ["Kills / deaths (this match)", l.kills != null ? `${l.kills} / ${l.deaths ?? 0}` : null],

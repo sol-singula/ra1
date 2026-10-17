@@ -399,7 +399,7 @@ Constants.CHARGE_SECONDS = 1e6 -- (the blade tip is only for the CHARGE: the who
 Engine.advance(0.3)
 Engine.moveTo(bot, root(player).Position + Vector3.new(fwd * 6, 0, 0), root(player).Position)
 Engine.advance(0.2)
-check("an enemy close in the CHARGE: 4 = BLADE", refs.tip.Visible and refs.tip.Text == "4 = BLADE", refs.tip.Text)
+check("an enemy close in the CHARGE: 3 = BLADE", refs.tip.Visible and refs.tip.Text == "3 = BLADE", refs.tip.Text)
 check("...the blade's slot pulses", hud.bows.blade.button:FindFirstChild("TutorialGlow") ~= nil)
 Engine.moveTo(bot, root(player).Position + Vector3.new(fwd * 30, 0, 0), root(player).Position)
 Engine.advance(3.5)

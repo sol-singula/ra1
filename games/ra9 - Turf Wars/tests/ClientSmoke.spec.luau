@@ -2,7 +2,8 @@
 Client smoke test: the real server AND the real client together on the mock engine, as a phone-sized touch
 screen, so everything the client shows comes from what the server sends. A player joins: the HUD (phase, clock,
 the frontline bar, the objective), the build tray and a structure placed through the client's own preview and
-PLACE button, the bows (switching, the crossbow's bolts), the fight with the FIRE button (a predicted arrow, a hit
+PLACE button, the hotbar (bow, TNT, blade; switching, the TNT's cooldown), the TNT thrown (the bundle in your hands,
+the wind-up, the lob, the explosion and its clean-up), structures shattering into debris, the fight with the FIRE button (a predicted arrow, a hit
 marker, the kill feed, the line moving on the bar), the camera and movement (the slide, the flip on the 4th jump),
 and the results screen. Fails on any script error.
 
@@ -175,19 +176,27 @@ Engine.advance(Constants.BUILD_SECONDS + 0.5)
 check("FIGHT on the clock", refs.phase.Text:find("FIGHT") ~= nil, refs.phase.Text)
 check("the tray goes away", not refs.tray.Visible)
 check("touch: FIRE is up", refs.touch.fire.Visible)
-Weapon.equip("crossbow")
+do
+	local keys = {}
+	for k in refs.bows do
+		table.insert(keys, k)
+	end
+	table.sort(keys)
+	check(
+		"the hotbar: the bow, the TNT and the blade, nothing else (no crossbow, no heavy bow)",
+		#keys == 3 and refs.bows.bow and refs.bows.tnt and refs.bows.blade,
+		table.concat(keys, " ")
+	)
+end
+UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Two, UserInputType = Enum.UserInputType.Keyboard }, false)
 Engine.advance(0.2)
-check("switching to the crossbow", Store.get("me").weapon == "crossbow" and Combat:Weapon(player) == "crossbow")
-check("its bolts show", refs.bows.crossbow.ammo.Text:find("/6") ~= nil, refs.bows.crossbow.ammo.Text)
+check("2 picks the TNT", Store.get("me").weapon == "tnt" and Combat:Weapon(player) == "tnt")
 check(
-	"the bows are numbered 1, 2, 3",
-	refs.bows.bow.key.Num.Text == "1" and refs.bows.crossbow.key.Num.Text == "2" and refs.bows.heavy.key.Num.Text == "3"
+	"the slots are numbered 1, 2, 3",
+	refs.bows.bow.key.Num.Text == "1" and refs.bows.tnt.key.Num.Text == "2" and refs.bows.blade.key.Num.Text == "3"
 )
-check("...the names say just the name", refs.bows.heavy.button.Label.Text == "HEAVY", refs.bows.heavy.button.Label.Text)
-check(
-	"...the one in hand: its badge white",
-	refs.bows.crossbow.key.BackgroundColor3 ~= refs.bows.bow.key.BackgroundColor3
-)
+check("...the names say just the name", refs.bows.tnt.button.Label.Text == "TNT", refs.bows.tnt.button.Label.Text)
+check("...the one in hand: its badge white", refs.bows.tnt.key.BackgroundColor3 ~= refs.bows.bow.key.BackgroundColor3)
 -- the hotbar's look: a 3D picture in every slot, the one in hand lifted with a ring in the team's colour, the slots
 -- side by side inside the bar
 do
@@ -209,7 +218,7 @@ do
 		all = all and pictured(b)
 	end
 	check("every weapon and every piece has its 3D picture (a ViewportFrame with a model and a camera)", all)
-	local on, off = refs.bows.crossbow.button, refs.bows.bow.button
+	local on, off = refs.bows.tnt.button, refs.bows.bow.button
 	local teamC = Constants.TEAM_COLOR[team]
 	check(
 		"...the one in hand: a ring and a glow in the team's colour, lifted, dark",
@@ -220,7 +229,18 @@ do
 			and on.Position.Y.Offset < off.Position.Y.Offset
 			and on.BackgroundColor3 ~= off.BackgroundColor3
 	)
-	check("...its bolts as pips", refs.bows.crossbow.pips.Visible and #refs.bows.crossbow.pips:GetChildren() == 6)
+	check(
+		"...a red TNT bundle in its picture",
+		(function()
+			local red = 0
+			for _, d in refs.bows.tnt.icon:GetDescendants() do
+				if d:IsA("BasePart") and d.Color == Constants.TNT_RED then
+					red += 1
+				end
+			end
+			return red >= 3
+		end)()
+	)
 	local function inside(frame, buttons)
 		local bad = {}
 		local list = {}
@@ -258,13 +278,22 @@ do
 	bad = inside(refs.tray, refs.trayButtons)
 	check("...and the tray's", #bad == 0, table.concat(bad, ", "))
 end
-wheel(-1)
-check("wheel down: the next bow", Store.get("me").weapon == "heavy", Store.get("me").weapon)
 check("no blade slot outside the CHARGE", refs.bows.blade.button.Visible == false)
 wheel(-1)
-check("...round the end (past the blade: not out yet)", Store.get("me").weapon == "bow", Store.get("me").weapon)
+check(
+	"wheel down: round the end (past the blade: not out yet)",
+	Store.get("me").weapon == "bow",
+	Store.get("me").weapon
+)
+wheel(-1)
+check("...the next: the TNT", Store.get("me").weapon == "tnt", Store.get("me").weapon)
 wheel(1)
-check("wheel up: the one before (past the blade)", Store.get("me").weapon == "heavy", Store.get("me").weapon)
+wheel(1)
+check(
+	"wheel up: the one before, round the end (past the blade)",
+	Store.get("me").weapon == "tnt",
+	Store.get("me").weapon
+)
 -- the shop's first-time tour: the first time the shop opens, 3 steps (your Shards, today's items, the pass),
 -- skippable, remembered in the profile, never shown again
 do
@@ -315,7 +344,7 @@ do
 	check("...a click doesn't draw the bow", not Weapon.drawing())
 	BusM.Fire:Fire(false)
 	wheel(-1)
-	check("...the wheel doesn't switch bows (it scrolls the menu)", Store.get("me").weapon == "heavy")
+	check("...the wheel doesn't switch weapons (it scrolls the menu)", Store.get("me").weapon == "tnt")
 	Layout.setPanel(false)
 	Engine.advance(0.1)
 	check("menu closed: the mouse hides again", UIS.MouseIconEnabled == false and not CamC.mouseFree())
@@ -463,18 +492,18 @@ do
 		NotifyC.queued() == 0 and (NotifyC.current() == nil or NotifyC.current().text ~= "Old news")
 	)
 end
--- the blade: only in the CHARGE (the fight's last seconds); then 4 picks it, a click slashes
+-- the blade: only in the CHARGE (the fight's last seconds); then 3 picks it, a click slashes
 do
-	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Four, UserInputType = Enum.UserInputType.Keyboard }, false)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Three, UserInputType = Enum.UserInputType.Keyboard }, false)
 	Engine.advance(0.3)
-	check("4 does nothing before the CHARGE", Store.get("me").weapon ~= "blade")
+	check("3 does nothing before the CHARGE", Store.get("me").weapon ~= "blade")
 	Constants.CHARGE_SECONDS = 1e6 -- (the whole fight is the CHARGE for this block)
 	Engine.advance(0.5)
 	check("the CHARGE: the blade's slot shows", refs.bows.blade.button.Visible == true)
-	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Four, UserInputType = Enum.UserInputType.Keyboard }, false)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Three, UserInputType = Enum.UserInputType.Keyboard }, false)
 	Engine.advance(0.3)
-	check("4 picks the blade", Store.get("me").weapon == "blade" and Combat:Weapon(player) == "blade")
-	check("...numbered 4 on the hotbar", refs.bows.blade and refs.bows.blade.key.Num.Text == "4")
+	check("3 picks the blade", Store.get("me").weapon == "blade" and Combat:Weapon(player) == "blade")
+	check("...numbered 3 on the hotbar", refs.bows.blade and refs.bows.blade.key.Num.Text == "3")
 	local vm = ws.CurrentCamera:FindFirstChild("Viewmodel")
 	check("...a blade in your hand", vm and vm:FindFirstChild("Edge") ~= nil and vm:FindFirstChild("String") == nil)
 	check(
@@ -588,7 +617,7 @@ do
 		return ws.CurrentCamera.CFrame:PointToObjectSpace(p.Position)
 	end
 	Engine.advance(1)
-	Weapon.equip("heavy")
+	Weapon.equip("bow")
 	Engine.advance(0.03)
 	local early = rel("Grip")
 	Engine.advance(0.8)
@@ -610,12 +639,76 @@ do
 	Engine.advance(0.02)
 	check("release: the bow kicks", Weapon.anim().kick.v ~= 0 or Weapon.anim().kick.p ~= 0)
 	Engine.advance(1)
-	Weapon.equip("crossbow")
-	Engine.advance(0.5)
-	Weapon.reload()
-	check("the crossbow tips down to reload", Weapon.anim().reloadAt ~= nil)
-	Engine.advance(2.5)
-	check("...and comes back up", Weapon.anim().reloadAt == nil)
+	-- the TNT: a red bundle in your right hand; winding up draws it back over your shoulder, its fuse sparking; let go
+	-- and it's thrown (drawn flying at once), your hand empty through the cooldown (counted on the hotbar), then a
+	-- fresh bundle comes up
+	local Explosion = Engine.require(tree.client.Controllers.ExplosionController)
+	local tnt = Engine.require(tree.shared.Data.Weapons).get("tnt")
+	Weapon.equip("tnt")
+	Engine.advance(0.6)
+	local tvm = ws.CurrentCamera:FindFirstChild("Viewmodel")
+	local sticks = 0
+	for _, q in tvm:GetChildren() do
+		if q.Name == "Stick" and q.Color == Constants.TNT_RED and q.Transparency == 0 then
+			sticks += 1
+		end
+	end
+	check("the TNT in your hand: three red sticks, a fuse", sticks == 3 and tvm:FindFirstChild("Fuse") ~= nil, sticks)
+	check("...and no bow (no string)", tvm:FindFirstChild("String") == nil)
+	local restBand = rel("Band")
+	Bus.Fire:Fire(true)
+	Engine.advance(0.9)
+	local woundBand = rel("Band")
+	check(
+		"winding up: the bundle goes back and up, over your shoulder",
+		woundBand.Z > restBand.Z + 0.15 and woundBand.Y > restBand.Y + 0.1,
+		`{restBand} -> {woundBand}`
+	)
+	check("...the fuse sparks", tvm.Spark.Material == Enum.Material.Neon and tvm.Spark.Transparency == 0)
+	check("...and the ring shows how far it'll go", refs.charge.Visible)
+	local before = Engine.lastClientEvent("Shoot")
+	local bombs0 = Explosion.bombs()
+	Bus.Fire:Fire(false)
+	Engine.advance(0.1)
+	check("let go: it's thrown (the server is asked)", Engine.lastClientEvent("Shoot") ~= before)
+	check("...and drawn flying at once", Explosion.bombs() >= bombs0 + 1 or Explosion.effects() > 0, Explosion.bombs())
+	check("...your hand is empty", tvm.Stick.Transparency == 1)
+	check(
+		"...the cooldown on the hotbar",
+		tonumber(refs.bows.tnt.ammo.Text) ~= nil and tonumber(refs.bows.tnt.ammo.Text) > 1,
+		refs.bows.tnt.ammo.Text
+	)
+	Bus.Fire:Fire(true)
+	Engine.advance(0.1)
+	check("...no winding up again during it", not Weapon.drawing())
+	Bus.Fire:Fire(false)
+	Weapon.equip("bow")
+	Engine.advance(0.2)
+	Bus.Fire:Fire(true)
+	Engine.advance(0.1)
+	check("...but the bow is ready at once (the TNT has its own cooldown)", Weapon.drawing())
+	Bus.Fire:Fire(false)
+	-- (it goes off where it lands, within the fuse: watch for the explosion's pieces)
+	local seen = {}
+	for _ = 1, math.ceil((Constants.TNT_FUSE + 0.3) / 0.05) do
+		Engine.advance(0.05)
+		for _, kind in { "grow", "ring", "smoke", "spark", "light" } do
+			seen[kind] = seen[kind] or Explosion.effects(kind) > 0
+		end
+	end
+	check(
+		"it goes off: a flash and a fireball, a shockwave, smoke, sparks, a light",
+		seen.grow and seen.ring and seen.smoke and seen.spark and seen.light
+	)
+	Weapon.equip("tnt")
+	Engine.advance(tnt.cooldown)
+	check(
+		"...and after the cooldown a fresh bundle is in your hand",
+		ws.CurrentCamera.Viewmodel.Stick.Transparency == 0
+	)
+	check("...the hotbar's count gone", refs.bows.tnt.ammo.Text == "", refs.bows.tnt.ammo.Text)
+	Engine.advance(3.5)
+	check("the explosion cleans itself up", Explosion.effects() == 0 and Explosion.bombs() == 0, Explosion.effects())
 	Weapon.equip("bow")
 	Engine.advance(0.3)
 	local held = foe.Character and foe.Character:FindFirstChild("HeldBow")
@@ -727,28 +820,134 @@ do
 		check("...light: no shadows, nothing to bump into or hit", light)
 	end
 	local BusH = Engine.require(tree.client.UI.Bus)
-	for _, key in { "bow", "heavy", "crossbow", "blade" } do
+	for _, key in { "bow", "tnt", "blade" } do
 		Weapon.equip(key)
 		Engine.advance(1)
 		hands(key)
 		clear(key .. " at rest")
-		if key == "bow" or key == "heavy" then
+		if key == "bow" then
 			BusH.Fire:Fire(true)
 			clear(key .. " drawing", 0.8)
 			Engine.advance(1.6)
 			clear(key .. " at full draw (shaking)", 0.5)
 			BusH.Fire:Fire(false)
 			clear(key .. " after the shot (the kick, back down)", 1)
-		elseif key == "crossbow" then
+		elseif key == "tnt" then
 			BusH.Fire:Fire(true)
-			clear(key .. " firing a bolt (the kick)", 0.4)
+			clear(key .. " winding up", 0.8)
 			BusH.Fire:Fire(false)
-			Weapon.reload()
-			clear(key .. " reloading", 2)
+			clear(
+				key .. " thrown (the cooldown, a fresh bundle coming up)",
+				Engine.require(tree.shared.Data.Weapons).get("tnt").cooldown + 0.2
+			)
 		end
 	end
 	Weapon.equip("bow")
 	Engine.advance(0.3)
+end
+
+-- Structures: one team shade, the armoured wall darker; when one comes down it shatters into debris ---------------
+do
+	local Debris = Engine.require(tree.client.Controllers.DebrisController)
+	local Gfx = Engine.require(tree.client.Controllers.GraphicsController)
+	local shade, armor = Constants.BUILD_COLOR[team], Constants.ARMOR_COLOR[team]
+	local wall
+	for _, st in Build:All() do
+		if st.team == team and st.key == "wall" then
+			wall = st
+		end
+	end
+	local function colours(container)
+		local set, n = {}, 0
+		for _, d in container:GetDescendants() do
+			if d:IsA("BasePart") and d:GetAttribute("Tone") then
+				set[tostring(d.Color)] = d.Color
+				n += 1
+			end
+		end
+		return set, n
+	end
+	local set, n = colours(wall.model)
+	local only = true
+	for _, c in set do
+		only = only and c == shade
+	end
+	check("your wall: many parts, all in your team's one shade", n >= 8 and only, n)
+	local aset = colours(refs.trayButtons.reinforced.Icon)
+	local dark = true
+	for _, c in aset do
+		dark = dark and c == armor
+	end
+	check("the tray's Reinforced Wall: the darker armour shade", next(aset) ~= nil and dark)
+	local wset = colours(refs.trayButtons.tower.Icon)
+	local same = true
+	for _, c in wset do
+		same = same and c == shade
+	end
+	check("...the tower: the team shade like the rest", next(wset) ~= nil and same)
+	-- an arrow breaks it: the client throws its pieces from where the arrow hit
+	Gfx.apply("high")
+	local hitAt = (wall.boxMin + wall.boxMax) / 2 + Vector3.new(0, 2, 0)
+	Build:Remove(wall.id, foe, false, { pos = hitAt, power = 0.35, team = Teams:Team(foe) })
+	Engine.advance(0.05)
+	check("the wall comes down: its model gone", wall.model.Parent == nil)
+	local flying = Debris.count()
+	check("...it shatters into chunks", flying >= 20, flying)
+	local folder = ws:FindFirstChild("DebrisFx")
+	local quiet = true
+	for _, d in folder and folder:GetDescendants() or {} do
+		if d:IsA("BasePart") and (d.CanCollide or d.CanQuery or d.CanTouch) then
+			quiet = false
+		end
+	end
+	check("...nothing anyone can bump into or hit", quiet)
+	check("...with dust", Debris.dust() > 0)
+	local before = {}
+	for _, d in folder:GetChildren() do
+		if d.Name == "Chunk" then
+			before[d] = d.Position
+		end
+	end
+	Engine.advance(0.4)
+	local moved, under = 0, 0
+	for d, p0 in before do
+		if d.Parent and (d.Position - p0).Magnitude > 0.5 then
+			moved += 1
+		end
+		if d.Parent and d.Position.Y < wall.boxMin.Y - 0.01 then
+			under += 1
+		end
+	end
+	check("...flying apart", moved >= flying * 0.6, moved)
+	check("...never through the floor", under == 0, under)
+	Engine.advance(3.2)
+	check(
+		"...and all gone again after about 3 s",
+		Debris.count() == 0 and Debris.dust() == 0 and #folder:GetChildren() == 0,
+		Debris.count()
+	)
+	-- the TNT's is much bigger; a phone gets far fewer; a cap on how many are made each frame
+	local box0, box1 = Vector3.new(40, 0, 40), Vector3.new(48, 10, 44)
+	local tntInfo = {
+		key = "wall",
+		team = team,
+		min = box0,
+		max = box1,
+		blast = { pos = Vector3.new(44, 1, 46), power = 1, tnt = true },
+	}
+	local arrowInfo =
+		{ key = "wall", team = team, min = box0, max = box1, blast = { pos = Vector3.new(44, 5, 46), power = 0.35 } }
+	local big = Debris.shatter(tntInfo)
+	local small = Debris.shatter(arrowInfo)
+	check("a TNT shatters it into far more pieces than an arrow", big > small * 1.5, `{big} {small}`)
+	check("...made a few each frame, not all at once", Debris.queued() > 0)
+	Engine.advance(3.5)
+	Gfx.apply("low")
+	local phone = Debris.shatter(tntInfo)
+	check("...far fewer on a phone (low graphics)", phone < big * 0.5, `{phone} {big}`)
+	Engine.advance(3.5)
+	check("...and cleaned up", Debris.count() == 0)
+	Gfx.apply(nil)
 end
 
 -- The results ----------------------------------------------------------------------------------------------------
@@ -1112,16 +1311,16 @@ do
 		Store.merge("match", { phase = ph })
 		Engine.advance(0.05)
 	end
-	Store.merge("me", { weapon = "crossbow", alive = false })
+	Store.merge("me", { weapon = "bow", alive = false })
 	phaseAs("fight")
 	check(
-		"on a phone: FIRE, JUMP, CROUCH, RUN, SLIDE and RELOAD show",
+		"on a phone: FIRE, JUMP, CROUCH, RUN and SLIDE show (RELOAD only for a magazine: no weapon has one)",
 		t.fire.Visible
 			and t.jump.Visible
 			and t.crouch.Visible
 			and t.sprint.Visible
 			and t.slide.Visible
-			and t.reload.Visible
+			and not t.reload.Visible
 	)
 	check(
 		"...the bows move to the bottom middle, health to the top left",

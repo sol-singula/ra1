@@ -10,7 +10,7 @@ The HUD (master plan §1, §2, §5, §7): everything on screen, in the SUPERHOT 
              (BUILD, FIGHT!, RED WINS), the respawn countdown
   top right  🏆 TOP (L) in the corner: the leaderboards (LeaderboardController); under it the kill feed: who, with
              what, how far the line moved
-  bottom     health (left), the weapons (right: 1 2 3 4, each a 3D picture, the crossbow's bolts), the build
+  bottom     health (left), the weapons (right: 1 2 3, each a 3D picture, the TNT's cooldown), the build
              tray in the build phase (seven pieces as 3D pictures with their costs, your points), toasts
   touch      FIRE (hold to draw), SPRINT, SLIDE; PLACE and ROTATE while building
   overlays   the results (who won, the table, the MVP, your reward, the next map); unlock and thank-you cards
@@ -166,7 +166,7 @@ local function paintSlot(b, on, dim, teamC, x, y)
 	b.Edge.Thickness = on and 3 or 2
 	b.Glow.Visible = on
 	b.Glow.Ring.Color = teamC
-	-- (not where the crossbow's bolts or a piece's cost already sit)
+	-- (not where a magazine's pips or a piece's cost already sit)
 	b.Bar.Visible = on and not b:FindFirstChild("Pips") and not b:FindFirstChild("CostPill")
 	b.Bar.BackgroundColor3 = teamC
 	b.Icon.ImageTransparency = dim and not on and 0.55 or 0
@@ -621,7 +621,7 @@ local function buildBottom(gui)
 		outline = false,
 		Parent = hp,
 	})
-	-- the weapons: four slots (1 2 3 4), each with its picture
+	-- the weapons: a slot each (1 2 3), each with its picture
 	local bows = Theme.new("Frame", {
 		Name = "Bows",
 		AnchorPoint = Vector2.new(1, 1),
@@ -645,8 +645,7 @@ local function buildBottom(gui)
 		))
 		label({
 			Name = "Label",
-			Text = ({ bow = "BOW", crossbow = "CROSSBOW", heavy = "HEAVY", blade = "BLADE" })[w.key]
-				or string.upper(w.name),
+			Text = ({ bow = "BOW", tnt = "TNT", blade = "BLADE" })[w.key] or string.upper(w.name),
 			Size = UDim2.new(1, -4, 0, 12),
 			Position = UDim2.fromOffset(2, 43),
 			TextSize = 10,
@@ -654,7 +653,8 @@ local function buildBottom(gui)
 			Font = Theme.Display,
 			Parent = b,
 		})
-		-- the bolts left (the crossbow): a number in the top right and a row of pips under the name
+		-- the top right: the TNT's cooldown in seconds (and a magazine's count with a row of pips under the name, for
+		-- a weapon that has one: none does now)
 		local ammo = label({
 			Name = "Ammo",
 			Text = "",
@@ -851,8 +851,13 @@ function HudController.updateBottom()
 	for key, b in refs.bows or {} do
 		local on = me.weapon == key
 		local w = Weapons.get(key)
-		paintSlot(b.button, on, false, teamC, b.x, BOW_SLOT.y)
-		b.ammo.Text = (w.mag and on) and `{me.ammo or 0}/{w.mag}` or ""
+		local wait = w.throw and (me.readyAt or 0) - os.clock() or 0
+		paintSlot(b.button, on, wait > 0, teamC, b.x, BOW_SLOT.y)
+		if wait > 0 then
+			b.ammo.Text = string.format("%.1f", wait)
+		else
+			b.ammo.Text = (w.mag and on) and `{me.ammo or 0}/{w.mag}` or ""
+		end
 		if b.pips then
 			b.pips.Visible = on
 			for k, pip in b.pips:GetChildren() do
@@ -887,7 +892,7 @@ end
 -- Built for every device and shown while you're playing by touch (Device: a phone, a tablet, a touch laptop being
 -- tapped). Round the right thumb, each in its own spot (centre offsets from the bottom-right corner); Roblox's own
 -- thumbstick keeps the left side, and its jump button is swapped for ours so nothing sits on anything:
---   FIRE (hold to draw)  JUMP  CROUCH (toggle)  RUN (toggle)  SLIDE  RELOAD (the crossbow)
+--   FIRE (hold to draw)  JUMP  CROUCH (toggle)  RUN (toggle)  SLIDE  RELOAD (a magazine weapon; none has one now)
 --   PLACE and TURN take FIRE's and RUN's spots while building
 local TOUCH = {
 	fire = { -110, -150, 104 },
