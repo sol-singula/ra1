@@ -54,8 +54,9 @@ for _, m in Maps.list do
 		local stuck = 0
 		for _, team in { "red", "blue" } do
 			local s = team == "red" and -1 or 1
-			local goal = V3.new(s * (a.half - 40), 3.5, 0)
 			for _, cf in a.spawns[team] do
+				-- (straight out along the pad's own lane: the deck's cover stands between the lanes)
+				local goal = V3.new(s * (a.half - 40), 3.5, cf.Position.Z)
 				local p, out = cf.Position, false
 				for _ = 1, 300 do
 					local nxt = ArenaBuilder.route(a, team, p, goal)
@@ -82,6 +83,22 @@ for _, m in Maps.list do
 			end
 		end
 		check(`{name}: every pad has a clear way out`, stuck == 0, stuck)
+		-- cover on both decks: solid parapets and piers between the lanes, that stop a shot across the deck
+		for _, team in { "red", "blue" } do
+			local s = team == "red" and -1 or 1
+			local n = 0
+			for _, solid in a.solids do
+				if solid.part and solid.part.Name == "Cover" and s * solid.min.X > a.half - a.spawnDepth - 1 then
+					n += 1
+				end
+			end
+			local c = a.room.cover
+			local z = c.pitch / 2
+			local behind = V3.new(s * (a.half - c.parapet + 3), 2.5, z)
+			local front = V3.new(s * (a.half - c.parapet - 6), 2.5, z)
+			check(`{name}: {team}'s deck has cover`, n >= 12, n)
+			check(`{name}: ...that stops a low shot at someone crouched behind it`, Combat:Blocked(front, behind))
+		end
 	end
 end
 
