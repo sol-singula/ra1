@@ -36,6 +36,12 @@ What a bot does (every TICK):
   BotService.easyFor(who)    a hook: true and a bot aiming at them is slower and shakier (TutorialService sets it)
   BotService.softness(who)   -> spread, react: how much shakier and slower a bot is against them (1, 1: not at all)
 
+Another mode's bots (Bot Brawl, BrawlService): with BotService.auto off, Ensure and the takeover do nothing and
+that service adds and removes them itself: BotService:Add(team, name?) and BotService:Remove(bot). Its hooks:
+BotService.unbound(bot) (true: the bot ignores the line and hunts anywhere, as in the CHARGE), BotService.handicap(bot)
+-> speed, spread, react (multipliers on its walk, its aim error and its wait: the waves and the director), a bot's
+own stunUntil (os.clock: it stands still till then) and tntChance (instead of BOT_TNT_CHANCE; 0: never).
+
 Going easy: against a touch player a bot aims worse and waits longer (BOT_TOUCH_*), and with a mouse or pad player
 in view too it goes for them first (a phone player counts BOT_TOUCH_TARGET times further off); against a player in
 their first matches (CombatService:NewHelp) it's slower and shakier too, less each match; the tutorial's and the
@@ -61,6 +67,7 @@ local BotService = {
 local teams, combat, match, arenaService, buildService
 local bots = {} -- the bots in the server
 local enabled = true -- (an admin can switch them off for this server)
+BotService.auto = true -- (bots come and go on their own for who's on; off: another service runs them, see the header)
 local nextId = 0
 local folder
 BotService.TICK = 0.1
@@ -249,19 +256,20 @@ end
 function BotService:RemoveAll()
 	for _, b in bots do
 		b:Remove()
+		combat:Forget(b)
 	end
 	bots = {}
 end
 
-function BotService:Add(team)
+function BotService:Add(team, name)
 	local used = {}
 	for _, b in bots do
 		used[b.DisplayName] = true
 	end
-	local name = "Bot"
+	name = name or "Bot"
 	for _, n in Constants.BOT_NAMES do
 		if not used[n .. " (bot)"] then
-			name = n
+			name = name == "Bot" and n or name
 			break
 		end
 	end
@@ -281,7 +289,20 @@ function BotService:Add(team)
 	return b
 end
 
+-- One bot out (another mode's: BrawlService); it leaves the list and the arena.
+function BotService:Remove(b)
+	local at = table.find(bots, b)
+	if at then
+		table.remove(bots, at)
+	end
+	b:Remove()
+	combat:Forget(b)
+end
+
 function BotService:Ensure()
+	if not self.auto then
+		return -- (another service runs the bots)
+	end
 	local people = humans()
 	if not enabled or #people == 0 then
 		if #bots > 0 then
@@ -373,6 +394,9 @@ end
 
 -- Someone new against a side that only had bots to fight: they take a bot's place, and the bots go.
 function BotService:Takeover(player)
+	if not self.auto then
+		return nil
+	end
 	if teams.Returning and teams:Returning(player) then
 		return nil -- (back in the same match: their old side, no restart; Ensure evens the bots)
 	end
@@ -430,6 +454,13 @@ end
 BotService.easyFor = function(_target)
 	return false
 end
+-- (hooks, see the header: a bot free of the line; its speed, aim error and wait multipliers)
+BotService.unbound = function(_bot)
+	return false
+end
+BotService.handicap = function(_bot)
+	return 1, 1, 1
+end
 
 local function rootOf(who)
 	local c = who.Character
@@ -439,8 +470,9 @@ end
 local function moveTo(b, root, goal)
 	b.moveGoal = goal
 	local hum = b.Character:FindFirstChildOfClass("Humanoid")
+	local speed = Constants.BOT_SPEED * (BotService.handicap(b) or 1)
 	if hum then
-		hum.WalkSpeed = Constants.BOT_SPEED
+		hum.WalkSpeed = speed
 	end
 	local ok = hum and pcall(function()
 		hum:MoveTo(goal)
@@ -448,7 +480,7 @@ local function moveTo(b, root, goal)
 	if not ok then
 		-- (no physics here: step it along by hand)
 		local flat = Vector3.new(goal.X - root.Position.X, 0, goal.Z - root.Position.Z)
-		local step = math.min(flat.Magnitude, Constants.BOT_SPEED * BotService.TICK)
+		local step = math.min(flat.Magnitude, speed * BotService.TICK)
 		if step > 0.05 then
 			root.CFrame = root.CFrame + flat.Unit * step
 		end
@@ -489,8 +521,9 @@ function BotService:Go(b, root, dest)
 	local fwd = Formulas.forward(team)
 	local line = match:Frontline()
 	local pos = root.Position
-	-- (in the field, never over the line: the turf rule would only put it back; in the CHARGE the line is open)
-	local charging = match:Charging()
+	-- (in the field, never over the line: the turf rule would only put it back; in the CHARGE the line is open, and
+	-- an unbound bot is always free of it)
+	local charging = match:Charging() or self.unbound(b)
 	local x = dest.X
 	if not charging and (x - line) * fwd > -2 then
 		x = line - fwd * 2
@@ -570,8 +603,10 @@ function BotService:_unstick(b, root, hum, dest, aim, grid, t)
 	if hum then
 		hum.Jump = true
 	end
-	-- (its own side of the line, except in the CHARGE: then it may be over the line and anywhere is fair)
-	local side = not match:Charging() and { line = match:Frontline(), fwd = Formulas.forward(teams:Team(b)) } or nil
+	-- (its own side of the line, except in the CHARGE, or unbound: then it may be over the line and anywhere is fair)
+	local side = not (match:Charging() or self.unbound(b))
+			and { line = match:Frontline(), fwd = Formulas.forward(teams:Team(b)) }
+		or nil
 	-- shut in (no way from here to there at all: structures went up round it), or inside something: straight to the
 	-- nearest spot it can get there from
 	local inside = false
@@ -723,7 +758,16 @@ function BotService:Think(b)
 	local line = match:Frontline()
 	local fwd = Formulas.forward(team) -- (+1: toward the enemy)
 	local t = os.clock()
-	-- a spot on its own side, a little back from the line, somewhere along it; a new one now and then
+	-- stunned (Bot Brawl's no-wipe freeze): it stands where it is, the bow down
+	if (b.stunUntil or 0) > t then
+		combat:Draw(b, false)
+		b.drawUntil, b.lob = nil, nil
+		moveTo(b, root, root.Position)
+		return
+	end
+	local free = self.unbound(b)
+	-- a spot on its own side, a little back from the line, somewhere along it; a new one now and then (an unbound
+	-- bot: somewhere round the nearest enemy, wherever they are)
 	if not b.goal or t > b.goalAt then
 		local back = phase == "fight" and rng:NextNumber(8, 20) or rng:NextNumber(14, 30)
 		local gx = line - fwd * back
@@ -736,6 +780,11 @@ function BotService:Think(b)
 		local wz = a and a.width / 2 - 14 or 34
 		b.goal = Vector3.new(gx, root.Position.Y, rng:NextNumber(-wz, wz))
 		b.goalAt = t + rng:NextNumber(2.5, 5)
+		local near = free and self:Nearest(b, root)
+		if near then
+			b.goal = near.Position + Vector3.new(rng:NextNumber(-8, 8), 0, rng:NextNumber(-8, 8))
+			b.goalAt = t + rng:NextNumber(1.5, 3)
+		end
 	end
 	if phase ~= "fight" then
 		combat:Draw(b, false)
@@ -771,6 +820,9 @@ function BotService:Think(b)
 			b.peekAt = t + rng:NextNumber(1.2, 2.2)
 			b.goal =
 				Vector3.new(line - fwd * rng:NextNumber(3, 7), root.Position.Y, near.Position.Z + rng:NextNumber(-6, 6))
+			if free then
+				b.goal = near.Position + Vector3.new(rng:NextNumber(-6, 6), 0, rng:NextNumber(-6, 6)) -- (straight at them)
+			end
 			b.goalAt = b.peekAt
 		end
 		self:Go(b, root, b.goal)
@@ -794,7 +846,7 @@ function BotService:Think(b)
 		and t >= (b.tntAt or 0)
 	then
 		b.tntAt = t + rng:NextNumber(2, 4) -- (whether it throws or not, it thinks again in a while)
-		if rng:NextNumber() < Constants.BOT_TNT_CHANCE and self:StartLob(b, root, tr.Position, t) then
+		if rng:NextNumber() < (b.tntChance or Constants.BOT_TNT_CHANCE) and self:StartLob(b, root, tr.Position, t) then
 			return
 		end
 	end
@@ -836,8 +888,10 @@ function BotService:Think(b)
 	end
 	face(root, tr.Position)
 	local w = Weapons.get(combat:Weapon(b))
-	-- (a new player's first matches, a thumb: a slower, shakier bot; BotService.softness)
+	-- (a new player's first matches, a thumb: a slower, shakier bot; BotService.softness; and the bot's own handicap)
 	local spreadTimes, reactTimes = self.softness(target)
+	local _, hSpread, hReact = self.handicap(b)
+	spreadTimes, reactTimes = spreadTimes * (hSpread or 1), reactTimes * (hReact or 1)
 	local react = Constants.BOT_REACT * reactTimes
 	if not b.drawUntil then
 		if t - b.seenAt >= react then

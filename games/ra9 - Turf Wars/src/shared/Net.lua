@@ -72,6 +72,9 @@ Net.ServerEvents = {
 	"Leaderboards", -- { boards, server, you, ok, at, every } the top players, all time and here (LeaderboardService)
 	"InvitePromo", -- { why, pool = { effect keys } } the invite-a-friend card | { pulse = true } nudge the button
 	"InviteReward", -- { key, pool = { effect keys }, friend } a friend joined from your invite: the effect you won
+	"Brawl", -- Bot Brawl (BrawlService): { kind = "state", wave, state, ends, alive, total, boss?, best, last }
+	-- | { kind = "clear", wave, shards, best, boss?, center } a wave down (the fireworks) | { kind = "last" } one bot
+	-- left | { kind = "stun", seconds } the bots froze
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).

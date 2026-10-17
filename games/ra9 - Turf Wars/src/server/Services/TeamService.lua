@@ -34,6 +34,8 @@ The rules, in order:
   TeamService:SetParties(fn)          fn() -> { { leader = player, members = { players } } } (PartyService)
   TeamService:Set(player, team)       TeamService:Clear(player)   (no team: a spectating admin)
   TeamService:Dress(character, team)
+  TeamService.fixedSide(player)       a hook: a team, and the player always goes there (Bot Brawl: every person on
+                                      one side, the bots on the other; rules 2-4 are off while it's set), or nil
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -46,6 +48,9 @@ local TeamService = {
 	Dependencies = {},
 	Changed = Signal.new("TeamService.Changed"), -- (player, team, old)
 }
+
+-- (a hook, nil until a mode sets it: the side a player must be on; see the header)
+TeamService.fixedSide = nil
 
 local teams = {} -- [player] = "red" | "blue"
 local left = {} -- [userId] = { team, match }: the side someone left from, kept for that match (a rejoin goes back)
@@ -237,6 +242,12 @@ function TeamService:Assign(player)
 end
 
 function TeamService:_pick(player)
+	-- (a fixed side, whatever else: Bot Brawl's people)
+	local fixed = self.fixedSide and self.fixedSide(player)
+	if fixed then
+		self:Set(player, fixed)
+		return fixed
+	end
 	-- rule 0: back in the same match, the side they were on
 	local back = self:Returning(player)
 	if back then
@@ -272,6 +283,9 @@ end
 -- Rule 3: every party on its leader's team, then even teams: solo players first, whole parties last.
 function TeamService:Rebalance()
 	local moved = {}
+	if self.fixedSide then
+		return moved -- (fixed sides: nothing to even)
+	end
 	local function move(p, team)
 		if teams[p] ~= team then
 			self:Set(p, team)
@@ -348,6 +362,9 @@ end
 -- bigger one, which keeps the teams within one).
 function TeamService:SpreadDevices()
 	local moved = {}
+	if self.fixedSide then
+		return moved -- (fixed sides: nobody trades places)
+	end
 	local list = parties()
 	local function free(p)
 		if p.IsBot or partyOf(p, list) then

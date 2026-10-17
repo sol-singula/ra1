@@ -1,6 +1,15 @@
 -- Service loader: requires every service module, sorts them by Dependencies,
 -- then runs Init (must not yield) and Start (own thread) in that order. Errors are isolated per service.
+-- A service with Modes = { "brawl", ... } only boots in one of those modes (Constants.MODE); without it, in every mode.
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Constants = require(ReplicatedStorage.Shared.Constants)
+
 local Loader = {}
+
+local function inMode(svc)
+	return svc.Modes == nil or table.find(svc.Modes, Constants.MODE) ~= nil
+end
 
 local function sorted(services)
 	local order, state = {}, {}
@@ -38,8 +47,10 @@ function Loader.boot(folder, only)
 	for _, child in folder:GetChildren() do
 		if child:IsA("ModuleScript") and (not only or only[child.Name]) then
 			local svc = require(child)
-			services[svc.Name] = svc
-			registry[svc.Name] = svc
+			if inMode(svc) then
+				services[svc.Name] = svc
+				registry[svc.Name] = svc
+			end
 		end
 	end
 	local order = sorted(services)

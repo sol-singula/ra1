@@ -24,6 +24,11 @@ next map in the same server. No lobby, no queue.
   MatchService:SkipTo("fight" | "build" | "charge")   MatchService:Freeze(on)
   MatchService:Charging() -> bool       the CHARGE: the fight's last CHARGE_SECONDS, when the line is open to
                                         everyone and the blade comes out (workspace "Charge" says so to the clients)
+  MatchService.rules                    the match's rules, as Turf Wars plays them; a mode (BrawlService) changes
+                                        them before the first match: push (kills move the line and win), turf (no
+                                        standing on enemy turf), tips (the joining toasts), phaseSeconds(phase) ->
+                                        seconds or nil (how long a build or fight lasts), respawn(victim, seconds)
+                                        -> seconds or false (no respawn at all)
 
 Workspace attributes the clients read: Phase, PhaseEnds, Charge, Frontline, LoseRed, LoseBlue, MatchId, MapKey, MapName.
 ]]
@@ -247,6 +252,15 @@ MatchService.SpawnAt = {}
 MatchService.bonusCells = function(_killer)
 	return 0
 end
+-- The rules (see the header): Turf Wars' own unless a mode changes them
+MatchService.rules = { push = true, turf = true, tips = true, phaseSeconds = nil, respawn = nil }
+
+-- How long a phase lasts: the mode's say, else the constants
+local function phaseSeconds(which)
+	local r = MatchService.rules
+	local s = r.phaseSeconds and r.phaseSeconds(which)
+	return s or (which == "fight" and Constants.FIGHT_SECONDS or Constants.BUILD_SECONDS)
+end
 
 function MatchService:Spawn(player)
 	if Admins.spectating(player) then
@@ -368,6 +382,9 @@ function MatchService:_onKilled(victim, killer, info)
 			ks.triples += 1
 			ks.recent = {}
 		end
+	end
+	if valid and self.rules.push then
+		local ks = statsOf(killer)
 		local cells = Formulas.pushCells(#self:Everyone()) + (self.bonusCells(killer) or 0)
 		push = cells * Constants.CELL
 		ks.pushed += cells
@@ -407,10 +424,10 @@ function MatchService:_onKilled(victim, killer, info)
 	})
 	if valid then
 		self:Broadcast()
-		if frontline >= arena:LoseLine("blue") then
+		if self.rules.push and frontline >= arena:LoseLine("blue") then
 			self:Victory("red")
 			return
-		elseif frontline <= arena:LoseLine("red") then
+		elseif self.rules.push and frontline <= arena:LoseLine("red") then
 			self:Victory("blue")
 			return
 		end
@@ -419,7 +436,12 @@ function MatchService:_onKilled(victim, killer, info)
 		-- (in the victory wait too: nobody is stuck dead on the results; they're back up to run about)
 		-- (still waiting for their first knockout: back even sooner)
 		local wait = combat:Novice(victim) and Constants.RESPAWN_SECONDS_NEW or Constants.RESPAWN_SECONDS
-		respawnAt[victim] = now() + wait
+		if self.rules.respawn then
+			wait = self.rules.respawn(victim, wait) -- (the mode's say; false: down for good, a Bot Brawl bot)
+		end
+		if wait then
+			respawnAt[victim] = now() + wait
+		end
 	else
 		pending[victim] = true
 	end
@@ -501,7 +523,9 @@ function MatchService:Victory(winner)
 		})
 	end
 	-- (no centre alert here: the results card says who won; a banner for everyone says it too, and who was MVP)
-	local winName = winner == "red" and "Red" or (winner == "blue" and "Blue" or nil)
+	-- (the team's name as the mode shows it, in a word: Red, Blue; Bot Brawl's Green)
+	local shown = Constants.TEAM_NAME[winner]
+	local winName = shown and (shown:sub(1, 1) .. shown:sub(2):lower()) or nil
 	if winName then
 		Notify.all(`{winName} team wins!`, "win", { color = Constants.TEAM_COLOR[winner] })
 	else
@@ -556,7 +580,7 @@ function MatchService:NewMatch(key, size)
 		end
 	end
 	build:Refill()
-	setPhase("build", Constants.BUILD_SECONDS)
+	setPhase("build", phaseSeconds("build"))
 	Net.fireAll("Alert", "BUILD", Color3.fromRGB(40, 40, 46), 2)
 	local def = Maps.get(mapKey)
 	Notify.all(`New game: {def and def.name or mapKey}`, "start", { icon = "⚔️" })
@@ -622,12 +646,12 @@ function MatchService:_tick()
 			self:Broadcast()
 		end
 	elseif phase == "build" and t >= phaseEnds then
-		setPhase("fight", Constants.FIGHT_SECONDS)
+		setPhase("fight", phaseSeconds("fight"))
 		Net.fireAll("Alert", "FIGHT!", Color3.fromRGB(30, 30, 34), 1.5)
 		Net.fireAll("Sfx", "horn")
 	elseif phase == "fight" and t >= phaseEnds then
 		build:Refill()
-		setPhase("build", Constants.BUILD_SECONDS)
+		setPhase("build", phaseSeconds("build"))
 		Net.fireAll("Alert", "BUILD", Color3.fromRGB(40, 40, 46), 1.5)
 	end
 	self:_charge()
@@ -704,6 +728,9 @@ function MatchService:_tick()
 				local x = r.Position.X
 				if r.Position.Y < -20 then
 					combat:Kill(player, nil, { kind = "fall" })
+				elseif not self.rules.turf then
+					-- (no turf rule: anyone anywhere; Bot Brawl)
+					continue
 				elseif team == "red" and x > frontline + Constants.TURF_MARGIN then
 					self:_tellCharge(player)
 					r.CFrame = CFrame.new(frontline - 3, r.Position.Y + 0.5, r.Position.Z) * r.CFrame.Rotation
@@ -786,11 +813,13 @@ function MatchService:Join(player)
 	return true
 end
 
--- Out of the match, still in the server (an admin starting to spectate): no stats, no respawn, no body.
+-- Out of the match, still in the server (an admin starting to spectate; a bot gone): no stats, no respawn, no body.
 function MatchService:Leave(player)
 	stats[player] = nil
 	respawnAt[player] = nil
 	pending[player] = nil
+	spawning[player] = nil
+	stuckAt[player] = nil
 	self.SpawnAt[player] = nil
 	self:Broadcast()
 end
@@ -868,7 +897,9 @@ function MatchService:OnPlayerReady(player)
 		Net.fire(player, "Match", self:Snapshot())
 		combat:Push(player)
 		build:Push(player)
-		if phase == "fight" then
+		if not self.rules.tips then
+			return -- (the mode has its own words: BrawlService)
+		elseif phase == "fight" then
 			Net.fire(player, "Toast", "The fight is on: shoot across the line to push it back!", "info")
 		elseif phase == "build" then
 			Net.fire(player, "Toast", "Build defences on your side, then fight!", "info")

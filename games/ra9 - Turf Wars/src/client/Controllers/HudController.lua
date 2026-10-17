@@ -533,6 +533,8 @@ function HudController.flyEarned(e)
 		hook = "MISSION",
 		pass = "PASS REWARD",
 		starter = "STARTER PACK",
+		wave = "WAVE CLEAR", -- (Bot Brawl: BrawlService)
+		boss = "BOSS DOWN",
 	})[e.why or ""]
 	if why then
 		Theme.text({

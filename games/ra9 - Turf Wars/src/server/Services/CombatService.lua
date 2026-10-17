@@ -44,11 +44,13 @@ at most every NEAR_MISS_GAP; a hit says so through Hurt.from).
   CombatService:Damage(victim, amount, attacker, info)
   CombatService:Kill(victim, attacker, info)
   CombatService:Remove(player)             out of the fight, no kill (a spectating admin)
+  CombatService:Forget(player)             a bot that left the server: its state goes
   CombatService:Heal(player)               full health
   CombatService:NewHelp(player) -> 0..1    the new-player help's strength (1 in the first match, 0 from the 3rd on)
   CombatService:Shielded(player) -> bool   wearing a comeback shield now
   CombatService:GiveShield(player) / :DropShield(player, why)
   CombatService:Device(player)             "touch" | "gamepad" | "keyboard" | nil (as their client reported it)
+  (a "Hits" attribute of 2 or more on a victim: a Bot Brawl boss, knocked out only by its last hit)
   CombatService:HitScale(player)           how much bigger the spheres are for their arrows (1 .. TOUCH_HIT_MAX)
   CombatService.Killed(victim, killer, info)   info: { weapon, head, assists = { players }, kind }
   CombatService.StructureHit(id, damage, attacker)
@@ -572,6 +574,14 @@ function CombatService:Damage(victim, amount, attacker, info)
 	end
 	if attacker then
 		s.hits[attacker] = now()
+	end
+	-- (a Bot Brawl boss: a "Hits" attribute counts the hits it still takes; each one is a hit, only the last knocks
+	-- it out)
+	local hits = victim:GetAttribute("Hits")
+	if type(hits) == "number" and hits > 1 then
+		victim:SetAttribute("Hits", hits - 1)
+		self.Damaged:Fire(victim, amount, attacker, info or {})
+		return true, false
 	end
 	s.hp = math.max(0, s.hp - amount)
 	mirror(victim, s)
@@ -1389,6 +1399,16 @@ function CombatService:_slashStep()
 				Net.fire(sl.by, "Swing", { by = sl.by.UserId, whiff = true })
 			end
 		end
+	end
+end
+
+-- Gone for good (a bot removed: BotService; a person's state goes with PlayerRemoving): nothing of theirs is kept.
+function CombatService:Forget(player)
+	states[player] = nil
+	history[player] = nil
+	stopSlashes(player)
+	for _, s in states do
+		s.hits[player] = nil
 	end
 end
 

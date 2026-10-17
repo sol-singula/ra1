@@ -4,6 +4,12 @@ local Constants = {}
 Constants.GAME = "ra9"
 Constants.GAME_NAME = "Turf Wars"
 
+-- The mode this place runs: "turf" (the match: red against blue over the line) or "brawl" (Bot Brawl: everyone
+-- against waves of bots, BrawlService). Services may declare Modes = { ... }: the Loader only boots them in those.
+-- applyMode(key) sets MODE and recolours the teams for it (the game reads TEAM_COLOR / TEAM_NAME / TURF_COLOR,
+-- never a colour of its own), before anything is loaded.
+Constants.MODE = "turf"
+
 -- Server and teams (§1, §2A)
 Constants.MAX_PLAYERS = 40
 Constants.TEAMS = { "red", "blue" }
@@ -273,5 +279,96 @@ Constants.SOUND_VOLUME = { horn = 0.7, win = 0.8, shoot = 0.5, draw = 0.3, tick 
 -- The mix (AudioController's SoundGroups): Master over SFX (World: everything in the arena, ducked under a kill and
 -- the kill cam; Stinger: your kills, streaks and phase calls, never ducked), Music (the ambient bed) and UI
 Constants.SOUND_GROUPS = { Master = 1, SFX = 1, World = 0.9, Stinger = 1, Music = 0.55, UI = 0.7 }
+
+-- Bot Brawl (BrawlService): every real player on one side (internal "red", shown as GREEN) against waves of bots
+-- (internal "blue", shown as SHADOW) on grass. A wave set is SET_WAVES waves: a build phase (BUILD_SECONDS) before
+-- each set, BREATHER_SECONDS between its waves. Wave N spawns BOTS_BASE + N bots from the far deck (never more than
+-- ALIVE_CAP alive at once, and fewer with few people: ALIVE_PER_PLAYER each over ALIVE_MIN), over about
+-- WAVE_SECONDS; a wave still standing WAVE_GRACE after that falls back (the wave counts as cleared anyway). Every
+-- BOSS_EVERY waves a BOSS bot that takes BOSS_HITS hits; from TNT_FROM_WAVE on, one bot in TNT_EVERY lobs TNT. Each
+-- wave cleared pays everyone SHARDS_WAVE + SHARDS_PER_WAVE x wave (a boss SHARDS_BOSS more) and gets FIREWORKS_SECONDS
+-- of the win show; after LAST_WAVE the run is a victory and starts over on a new map. Going down costs RESPAWN
+-- seconds. The director (BrawlService:Director) keeps it winnable: bots get RAMP_SPEED faster and RAMP_SHARP sharper
+-- a wave (to the caps), and over the last DIRECTOR_WINDOW seconds, losing (more deaths than kills, or DOWN_STREAK
+-- downs in a row) makes them EASY_* sloppy and spawn EASY_SPAWN slower, cruising (KILLS_CRUISE kills, no deaths)
+-- PRESS_* sharper. With the whole human side down the bots freeze for STUN_SECONDS so nobody wipes.
+Constants.BRAWL = {
+	BUILD_SECONDS = 20,
+	BREATHER_SECONDS = 10,
+	SET_WAVES = 3,
+	WAVE_SECONDS = 50,
+	WAVE_GRACE = 25,
+	BOTS_BASE = 3,
+	ALIVE_CAP = 12,
+	ALIVE_MIN = 5,
+	ALIVE_PER_PLAYER = 2,
+	SPAWN_GAP = 0.6, -- seconds between two bots stepping off the deck
+	BOSS_EVERY = 5,
+	BOSS_HITS = 3,
+	BOSS_SCALE = 1.35,
+	TNT_FROM_WAVE = 3,
+	TNT_EVERY = 4,
+	TNT_CHANCE = 0.6, -- (a TNT bot's chance to lob when it's in range and ready; the others never do)
+	SHARDS_WAVE = 10,
+	SHARDS_PER_WAVE = 2,
+	SHARDS_BOSS = 40,
+	FIREWORKS_SECONDS = 4,
+	LAST_WAVE = 20,
+	RESPAWN = 3,
+	BUILD_BUDGET = 160,
+	DIRECTOR_WINDOW = 30,
+	DOWN_STREAK = 3,
+	KILLS_CRUISE = 4,
+	RAMP_SPEED = 0.012, -- per wave, up to RAMP_SPEED_MAX
+	RAMP_SPEED_MAX = 1.2,
+	RAMP_SHARP = 0.015, -- per wave off the aim error and the wait, down to RAMP_SHARP_MIN
+	RAMP_SHARP_MIN = 0.75,
+	EASY_SPEED = 0.85,
+	EASY_SLOPPY = 1.7, -- times the aim error and the wait
+	EASY_SPAWN = 1.8, -- times the spawn gap
+	PRESS_SPEED = 1.08,
+	PRESS_SHARP = 0.85,
+	STUN_SECONDS = 3,
+	STUN_GAP = 8, -- seconds before the bots can be frozen again
+}
+
+-- The modes' looks: what applyMode puts into TEAM_NAME, TEAM_COLOR, TURF_COLOR, BUILD_COLOR and ARMOR_COLOR
+Constants.MODE_LOOKS = {
+	turf = {
+		TEAM_NAME = { red = "RED", blue = "BLUE" },
+		TEAM_COLOR = { red = Color3.fromRGB(235, 40, 45), blue = Color3.fromRGB(35, 110, 245) },
+		TURF_COLOR = { red = Color3.fromRGB(240, 120, 118), blue = Color3.fromRGB(120, 165, 245) },
+		BUILD_COLOR = { red = Color3.fromRGB(226, 70, 72), blue = Color3.fromRGB(62, 126, 236) },
+		ARMOR_COLOR = { red = Color3.fromRGB(128, 26, 32), blue = Color3.fromRGB(24, 56, 140) },
+	},
+	-- (the humans in green on grass; the bots' far half a darker grass, the bots themselves near black)
+	brawl = {
+		TEAM_NAME = { red = "GREEN", blue = "SHADOW" },
+		TEAM_COLOR = { red = Color3.fromRGB(60, 190, 80), blue = Color3.fromRGB(52, 50, 60) },
+		TURF_COLOR = { red = Color3.fromRGB(120, 200, 110), blue = Color3.fromRGB(78, 150, 80) },
+		BUILD_COLOR = { red = Color3.fromRGB(70, 170, 80), blue = Color3.fromRGB(70, 68, 80) },
+		ARMOR_COLOR = { red = Color3.fromRGB(30, 100, 42), blue = Color3.fromRGB(28, 26, 34) },
+	},
+}
+
+-- Put the place into a mode (before the services boot, and on each client before its controllers start): the
+-- looks above go into the team tables (the same tables, filled in place, so anything that kept one sees it).
+function Constants.applyMode(key)
+	local look = Constants.MODE_LOOKS[key]
+	assert(look, `unknown mode {tostring(key)}`)
+	Constants.MODE = key
+	for name, colors in look do
+		local t = Constants[name]
+		for k, v in colors do
+			t[k] = v
+		end
+	end
+	if key == "brawl" then
+		Constants.TUTORIAL = false -- (the practice teaches the line: no line here)
+		Constants.CHARGE_SECONDS = 0 -- (no CHARGE: the bots come to you, bows out)
+		Constants.BUILD_BUDGET = Constants.BRAWL.BUILD_BUDGET
+	end
+	return key
+end
 
 return Constants
