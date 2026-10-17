@@ -71,6 +71,22 @@
   .tab.on { background: var(--panel); color: var(--text); border-color: var(--line); box-shadow: var(--shadow); }
   .tab.on::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--g, var(--accent)); }
   .tab .te { font-size: 16px; line-height: 1; }
+  /* the game picker: the game you're looking at; click it for the others */
+  .pick { position: relative; }
+  .gbtn { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--panel); font-weight: 700; font-size: 14px; box-shadow: var(--shadow); white-space: nowrap; }
+  .gbtn:hover { border-color: var(--line-2); }
+  .gbtn .te { font-size: 17px; line-height: 1; }
+  .gbtn .car { font-size: 11px; opacity: .6; margin-left: 2px; }
+  .menu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 300px; z-index: 40; padding: 6px; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--panel); box-shadow: 0 12px 32px rgba(0,0,0,.18); display: grid; gap: 2px; }
+  .menu[hidden] { display: none; }
+  .mi { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; border: 0; background: none; text-align: left;
+    font-weight: 600; font-size: 14px; width: 100%; color: var(--text); white-space: nowrap; }
+  .mi:hover, .mi.on { background: var(--accent-soft); }
+  .mi .te { font-size: 17px; width: 22px; text-align: center; }
+  .mi .grow { flex: 1; }
+  .mi .key { font-size: 11px; opacity: .5; }
   .count { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 999px;
     background: var(--panel-2); color: var(--muted); border: 1px solid var(--line); }
   .count.live { color: var(--good); background: var(--good-soft); border-color: transparent; }
@@ -300,13 +316,14 @@
   let KEY = (() => {
     const fromUrl = new URLSearchParams(location.search).get("key");
     if (fromUrl) { store.set("liveKey", fromUrl); return fromUrl; }
-    return store.get("liveKey", "") || DEFAULT_KEY;
+    return DEFAULT_KEY || store.get("liveKey", ""); // (a built-in key wins: no box to paste into)
   })();
-  let view = (() => { // "all" or a game id: ?game= in the address, else the last one picked here
+  let view = (() => { // a game id: ?game= in the address, else the last one picked here, else the first
     const q = new URLSearchParams(location.search).get("game");
-    const saved = store.get("liveView", "all");
-    return q && (q === "all" || GAMES[q]) ? q : saved === "all" || GAMES[saved] ? saved : "all";
+    const saved = store.get("liveView", "");
+    return GAMES[q] ? q : GAMES[saved] ? saved : ORDER[0];
   })();
+  let menuOpen = false;
   let density = store.get("liveDensity", "auto"); // auto | 1 … 6
   let period = store.get("livePeriod", "day");
   let theme = store.get("liveTheme", "system");
@@ -324,7 +341,9 @@
     store.set("liveView", view);
     try { const u = new URL(location.href); u.searchParams.delete("key"); u.searchParams.set("game", view); history.replaceState(null, "", u); } catch (e) {}
     const total = onlineTotal();
-    document.title = `${total ? `(${total}) ` : ""}${view === "all" ? "Live · all games" : GAMES[view].emoji + " " + GAMES[view].name}`;
+    const n = onlineOf(view);
+    document.title = `${n ? `(${n}) ` : ""}${GAMES[view].emoji} ${GAMES[view].name} · Live`;
+    void total;
   }
 
   // Loading: all three games every 10 s (so the tabs count everyone and switching is instant) ---------------------------
@@ -339,7 +358,12 @@
   async function loadAll() {
     if (!KEY) return keyScreen();
     await Promise.all(ORDER.map(loadGame));
-    if (keyProblem) { store.set("liveKey", ""); KEY = ""; const m = keyProblem; keyProblem = null; return keyScreen(m); }
+    if (keyProblem) {
+      store.set("liveKey", "");
+      keyProblem = null;
+      if (DEFAULT_KEY && KEY !== DEFAULT_KEY) { KEY = DEFAULT_KEY; return loadAll(); } // (an old saved key: use the built-in one)
+      KEY = ""; return keyScreen("That key didn't work.");
+    }
     if (ORDER.some((g) => data[g] && data[g].body && !data[g].error)) lastOk = Date.now();
     loading = false;
     render();
@@ -348,7 +372,7 @@
   function keyScreen(msg) {
     document.getElementById("head").innerHTML = `<div class="brand"><span class="pulse wait"></span><span>Live</span></div>`;
     document.getElementById("app").innerHTML = `<div class="keybox"><h1>🎮 Live dashboard</h1>
-      <p>Paste the view key to see who's playing Steal a Dragon, Snipe a Noob and Build the Biggest Raft. It stays in this browser.</p>
+      <p>Paste the view key to see who's playing. It stays in this browser. (live_private.html has it built in.)</p>
       ${msg ? `<p class="err">${esc(msg)}</p>` : ""}<input id="k" placeholder="live_…" autocomplete="off"><button class="btn" id="go">Open</button></div>`;
     const go = () => { KEY = document.getElementById("k").value.trim(); if (!KEY) return; store.set("liveKey", KEY); loadAll(); };
     document.getElementById("go").onclick = go;
@@ -368,11 +392,13 @@
     const stale = Date.now() - lastOk > REFRESH_MS * 3;
     const errs = ORDER.filter((g) => data[g] && data[g].error);
     const state = loading ? "wait" : stale || errs.length === ORDER.length ? "off" : "";
-    const tab = (id, label, emoji, n, color) => `<button class="tab${view === id ? " on" : ""}" data-view="${id}" style="--g:${color}" title="${esc(label)}">
-      <span class="te">${emoji}</span><span>${esc(label)}</span><span class="count${n ? " live" : ""}">${n ? `<span class="d"></span>` : ""}${n}</span></button>`;
+    const cur = GAMES[view];
+    const cnt = (n) => `<span class="count${n ? " live" : ""}">${n ? `<span class="d"></span>` : ""}${n}</span>`;
     return `<div class="brand"><span class="pulse ${state}"></span><span class="t">Live</span></div>
-      <nav class="tabs" role="tablist">${tab("all", "All games", "🎮", onlineTotal(), "var(--accent)")}
-        ${ORDER.map((g) => tab(g, GAMES[g].name, GAMES[g].emoji, onlineOf(g), GAMES[g].color)).join("")}</nav>
+      <div class="pick"><button class="gbtn" id="gpick" aria-haspopup="listbox" aria-expanded="${menuOpen}" style="--g:${cur.color}" title="Pick a game">
+        <span class="te">${cur.emoji}</span><span>${esc(cur.name)}</span>${cnt(onlineOf(view))}<span class="car">▾</span></button>
+        <div class="menu" id="gmenu" role="listbox"${menuOpen ? "" : " hidden"}>${ORDER.map((g, i) => `<button class="mi${g === view ? " on" : ""}" role="option" data-view="${g}">
+          <span class="te">${GAMES[g].emoji}</span><span class="grow">${esc(GAMES[g].name)}</span>${cnt(onlineOf(g))}<span class="key">${i + 1}</span></button>`).join("")}</div></div>
       <span class="grow"></span>
       <div class="ctrl"><span class="ago hide-s" id="ago">${agoText()}</span>
         <div class="seg" title="Tile size (D)">${[["auto", "Auto"], ["1", "L"], ["2", "M"], ["3", "S"], ["4", "XS"], ["5", "2XS"], ["6", "3XS"]].map(([k, v]) => `<button data-density="${k}" class="${density === k ? "on" : ""}">${v}</button>`).join("")}</div>
@@ -639,12 +665,14 @@
 
   // Interaction -----------------------------------------------------------------------------------------------------
   function setView(v) {
-    if (v === view || !(v === "all" || GAMES[v])) return;
+    menuOpen = false;
+    if (v === view || !GAMES[v]) { render(); return; }
     view = v; hidePop(); render(); window.scrollTo({ top: 0 });
   }
   document.addEventListener("click", (e) => {
+    if (e.target.closest("#gpick")) { menuOpen = !menuOpen; render(); return; }
     const t = e.target.closest("[data-view],[data-density],[data-period],#theme,#refresh");
-    if (!t) return;
+    if (!t) { if (menuOpen) { menuOpen = false; render(); } return; }
     if (t.dataset.view) setView(t.dataset.view);
     else if (t.dataset.density) { density = t.dataset.density; store.set("liveDensity", density); render(); }
     else if (t.dataset.period) { period = t.dataset.period; store.set("livePeriod", period); const y = window.scrollY; render(); window.scrollTo({ top: y }); }
@@ -653,7 +681,7 @@
   });
   document.addEventListener("keydown", (e) => {
     if (e.target.closest("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.key === "0") setView("all");
+    if (e.key === "Escape" && menuOpen) { menuOpen = false; render(); }
     else if (/^[1-9]$/.test(e.key) && ORDER[Number(e.key) - 1]) setView(ORDER[Number(e.key) - 1]);
     else if (e.key === "d" || e.key === "D") { const all = ["auto", ...DENSITIES]; density = all[(all.indexOf(density) + 1) % all.length]; store.set("liveDensity", density); render(); }
     else if (e.key === "t" || e.key === "T") document.getElementById("theme")?.click();
