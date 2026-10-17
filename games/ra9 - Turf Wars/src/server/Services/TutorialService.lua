@@ -1,6 +1,6 @@
 --[[
 The new-player tutorial, the server's half (the show itself is TutorialController on the client): a private practice
-of about 2:50 that ends in a win, then into the live match.
+of about 2:15 that ends in a win, then into the live match.
 
 Who sees it: a brand-new player, once. Anyone back again (TutorialService.returning: tutorial done or skipped or
 started, a match or a kill, or a second visit) never gets it or the intro again: they go straight into the fight
@@ -24,7 +24,10 @@ at once: { kind = "reward", key, name }), then "done" or "skip". A piece they bu
 checked here (their own turf of the practice, their points) and told back ({ kind = "built", id, key, min, max,
 budget }). Nothing can get stuck: the client times every step out, and here it ends at TUTORIAL_MAX_SECONDS whatever
 happens. At the end ({ kind = "leave", how }) they come back from the practice and join the live match the normal
-way (a team, a spawn, the match's state, the join chips for everyone else).
+way (a team, a spawn, the match's state, the join chips for everyone else). Never into someone else's win: when the
+live match is between games (its victory or its loading) they're told { kind = "wait" } and stay in the practice,
+still hushed, behind their screen's white (NEXT MATCH STARTING…), until its next game starts (MatchService.PhaseChanged
+to the build phase), TUTORIAL_JOIN_WAIT at most, then join.
 
 The first live match boost, so the first real win comes fast too: in a new player's first match after it, while
 they're alone with the bot, the bot is slower and shakier against them (BotService.easyFor) and each of their
@@ -79,8 +82,6 @@ local STEPS = {
 	build_view = true,
 	pick_wall = true,
 	place_wall = true,
-	pick_tower = true,
-	place_tower = true,
 	fight_again = true,
 	tnt = true,
 	push = true,
@@ -217,7 +218,8 @@ end
 
 function TutorialService:Begin(player, replay)
 	local p = data:Get(player)
-	if not p or (active[player] and not active[player].finished) then
+	local was = active[player]
+	if not p or (was and (not was.finished or (was.waiting and not was.left))) then
 		return
 	end
 	if not self:InPractice(player) then
@@ -334,17 +336,40 @@ local function finish(player, how)
 		})
 	end
 	-- (their first live match gets the boost: this one, or the next if this one is ending)
+	local id, phase = currentMatch()
 	if run.pay then
-		local id, phase = currentMatch()
 		boosts[player] = (phase == "build" or phase == "fight") and id or id + 1
 	end
-	leave(player, run, how)
-	-- the missions after it (HookService, looked up when it's there)
-	local hook = registry and registry.HookService
-	if hook and type(hook.Begin) == "function" then
-		task.defer(function()
-			pcall(hook.Begin, hook, player)
+	local function go()
+		if run.left then
+			return
+		end
+		run.left = true
+		if run.conn then
+			run.conn:Disconnect()
+			run.conn = nil
+		end
+		leave(player, run, how)
+		-- the missions after it (HookService, looked up when it's there)
+		local hook = registry and registry.HookService
+		if hook and type(hook.Begin) == "function" and player.Parent then
+			task.defer(function()
+				pcall(hook.Begin, hook, player)
+			end)
+		end
+	end
+	if (phase == "victory" or phase == "loading") and how ~= "stalled" and player.Parent then
+		-- the live match is between games: not into its win or its countdown, but its next game's start
+		run.waiting = true
+		Net.fire(player, "Tutorial", { kind = "wait" })
+		run.conn = match.PhaseChanged:Connect(function(new)
+			if new == "build" or new == "fight" then
+				task.defer(go)
+			end
 		end)
+		task.delay(Constants.TUTORIAL_JOIN_WAIT, go)
+	else
+		go()
 	end
 	return true
 end
@@ -414,7 +439,7 @@ local function reward(player, run)
 	local p = data:Get(player)
 	local out = { kind = "reward" }
 	if run.pay and p then
-		pcall(economy.Add, economy, player, Shop.EARN.win, "match")
+		pcall(economy.Add, economy, player, Shop.EARN.win, "win") -- (the HUD's +N reads VICTORY)
 		for _, key in Constants.TUTORIAL_TRAIL do
 			local it = Cosmetics.get(key)
 			if it and not Locker.owns(p, key) then
@@ -535,6 +560,10 @@ function TutorialService:Init(reg)
 		local run = active[player]
 		if run then
 			run.finished = true
+			run.left = true
+			if run.conn then
+				run.conn:Disconnect()
+			end
 			if run.floor then
 				run.floor:Destroy()
 			end
