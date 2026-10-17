@@ -8,6 +8,7 @@ still 0 is given for free in Studio, so the whole shop can be tried before the p
 
   Net "Buy" ("item", key) | ("bundle") | ("robux", productKey | "starter")
   Net "Claim" (tier, "f" | "p")
+  ShopService:Reroll(player)   an admin's RESET SHOP: 4 new daily items for this player (until they leave)
 ]]
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -48,7 +49,7 @@ function ShopService:BuyItem(player, key)
 	if Locker.owns(p, key) then
 		return false, "You have it already."
 	end
-	if not Shop.inRotation(key, self.now()) then
+	if not Shop.inRotation(key, self.now(), player:GetAttribute("ShopRoll")) then
 		return false, "That's not in the shop today."
 	end
 	local price = Shop.price(it)
@@ -59,6 +60,13 @@ function ShopService:BuyItem(player, key)
 	p.equipped[it.kind] = key
 	self.Bought:Fire(player, key, price, nil)
 	return true
+end
+
+-- A new roll of today's items for one player (Shop.daily's roll, on the Player so their client shows the same).
+function ShopService:Reroll(player)
+	local roll = (tonumber(player:GetAttribute("ShopRoll")) or 0) + 1
+	player:SetAttribute("ShopRoll", roll)
+	return roll
 end
 
 function ShopService:BuyBundle(player)

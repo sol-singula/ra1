@@ -470,7 +470,7 @@ function HudController.addFeed(k)
 		return
 	end
 	local icon = (Weapons.get(k.weapon or "") or {}).icon or "✖"
-	local killer = k.killerName or ({ fall = "the void", reset = "reset" })[k.kind] or "?"
+	local killer = k.killerName or ({ fall = "the void", reset = "reset", admin = "an admin" })[k.kind] or "?"
 	local row = Theme.new("Frame", {
 		Size = UDim2.fromOffset(FEED_W, 22),
 		BackgroundColor3 = C.white,
@@ -1185,6 +1185,21 @@ local function step()
 		end
 	elseif refs.results and refs.results.Visible == false then
 		refs.results.Visible = true
+	end
+	-- a spectating admin has no body: no health, no bows, no crosshair, no build tray
+	local watching = player:GetAttribute("Spectating") == true
+	if refs.health then
+		refs.health.Visible = not watching
+	end
+	if watching then
+		for _, k in { "respawn", "tray", "cross", "charge" } do
+			if refs[k] then
+				refs[k].Visible = false
+			end
+		end
+		if refs.bowsFrame then
+			refs.bowsFrame.Visible = false
+		end
 	end
 	if refs.flash and refs.flash.BackgroundTransparency < 1 then
 		refs.flash.BackgroundTransparency = math.min(1, refs.flash.BackgroundTransparency + 0.04)

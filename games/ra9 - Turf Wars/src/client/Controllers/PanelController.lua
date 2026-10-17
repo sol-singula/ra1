@@ -228,7 +228,7 @@ local function shopTab(body)
 	local day = Shop.dayOf(t)
 	local y = section(body, "TodayLabel", `TODAY  ·  NEW ITEMS IN {span((day + 1) * 86400 - t)}`, 0)
 	local cw = (W - 3 * 8) / 4
-	for i, key in Shop.daily(day) do
+	for i, key in Shop.daily(day, player:GetAttribute("ShopRoll")) do
 		local it = Cosmetics.get(key)
 		local card = frame(body, "Item" .. i, (i - 1) * (cw + 8), y, cw, 156)
 		label(card, "Kind", Cosmetics.KIND_NAME[it.kind], 8, 6, cw - 16, 14, 11, C.muted)
@@ -667,6 +667,7 @@ function PanelController.open(tab)
 		return
 	end
 	current = tab or current
+	Layout.claimPanel("panel", PanelController.close)
 	refs.panel.Visible = true
 	PanelController.status("")
 	Layout.modal("panel", refs.panel)

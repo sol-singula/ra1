@@ -19,7 +19,7 @@ cheater can't give themselves kills, Shards or turf. What's left is the body the
 Strikes fade (one every DECAY_SECONDS). At KICK_STRIKES you're removed from the server with a plain message. Our
 own teleports and knockbacks set the player's "AcGrace" attribute (an os.clock() time) so they never count. Every
 flag is logged (warn, the Flagged signal, and the profile's ac record: flags, kicks, the last few kinds) so repeat
-offenders show up across servers.
+offenders show up across servers. Admins (server/Admins.lua) are never checked or flagged.
 
   AntiCheatService.Flagged (player, kind, detail, strikes)
   AntiCheatService.Kicked (player, reason)
@@ -31,6 +31,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local Admins = require(script.Parent.Parent.Admins)
 
 local AntiCheatService = {
 	Name = "AntiCheatService",
@@ -133,8 +134,8 @@ local function log(player, kind, detail)
 end
 
 function AntiCheatService:Flag(player, kind, detail, strikes)
-	if typeof(player) ~= "Instance" then
-		return -- (a bot)
+	if typeof(player) ~= "Instance" or Admins.isAdmin(player) then
+		return -- (a bot; an admin is never flagged)
 	end
 	local s = st(player)
 	s.strikes += strikes or 0
@@ -188,6 +189,9 @@ local function insideStructure(pos)
 end
 
 function AntiCheatService:Check(player)
+	if Admins.isAdmin(player) then
+		return -- (admins teleport, fly and spectate: never checked)
+	end
 	local r, hum = rootOf(player)
 	local s = st(player)
 	local t = os.clock()

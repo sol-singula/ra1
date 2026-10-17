@@ -54,6 +54,7 @@ local function defaults()
 		owned = {}, -- [cosmeticKey] = true: bought, claimed from the pass, the Starter Pack (Data/Locker)
 		receipts = {}, -- the Robux receipts already granted (never twice)
 		vip = false, -- earned once, kept (Data/Achievements.VIP)
+		vipUntil = 0, -- VIP given by an admin for a while: until this os.time() (AdminService)
 		starter = false, -- the Starter Pack's Shards and banner given
 		daily = { day = 0, played = false, won = false }, -- the day's first match and first win pay more
 		club = { month = 0 }, -- the Shard Club's monthly Shards, last month given

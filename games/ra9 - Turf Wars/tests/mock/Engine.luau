@@ -2276,6 +2276,9 @@ end
 
 -- join (optional): { teleportData = the data a teleport brought (GetJoinData().TeleportData), followUserId = the
 -- friend they followed in with Roblox's Join (Player.FollowUserId) }
+-- join (optional): { teleportData = the data a teleport brought (GetJoinData().TeleportData), followUserId = the
+-- friend they followed in with Roblox's Join (Player.FollowUserId) }; any other table is taken as the teleport data
+-- itself (Engine.addPlayer(name, id, nil, { adminSpectate = true }))
 function Engine.addPlayer(name, userId, launchData, join)
 	nextUserId += 1
 	local p = Instance.new("Player")
@@ -2283,9 +2286,13 @@ function Engine.addPlayer(name, userId, launchData, join)
 	p.DisplayName = name
 	p.UserId = userId or nextUserId
 	p._launchData = launchData
-	if join then
-		p._teleportData = join.teleportData
-		p.FollowUserId = join.followUserId
+	if type(join) == "table" then
+		if join.teleportData ~= nil or join.followUserId ~= nil then
+			p._teleportData = join.teleportData
+			p.FollowUserId = join.followUserId
+		else
+			p._teleportData = join
+		end
 	end
 	local pg = Instance.new("Folder", p)
 	pg.Name = "PlayerGui"

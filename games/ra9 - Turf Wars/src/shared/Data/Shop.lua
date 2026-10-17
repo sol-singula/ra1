@@ -13,9 +13,9 @@ Where the money comes back from (recurring, by design):
 IDs: 0 until they're made on the Creator Dashboard; in Studio an id of 0 is granted for free so it can be tried.
 
   Shop.price(item)              Shards
-  Shop.daily(day)               the day's 4 items (keys), the same on every server
+  Shop.daily(day, roll?)        the day's 4 items (keys), the same on every server (roll: an admin's reset)
   Shop.weekly(week)             { keys, price } the week's bundle
-  Shop.inRotation(key, t)       true if it's on sale now (today's or this week's)
+  Shop.inRotation(key, t, roll?)   true if it's in today's items
   Shop.shardsFor(info, firstWinToday)   Shards for a match
 ]]
 local Cosmetics = require(script.Parent.Cosmetics)
@@ -136,17 +136,19 @@ function Shop.weekly(week)
 	return { keys = keys, price = math.floor(sum * (1 - Shop.BUNDLE_OFF) / 10 + 0.5) * 10 }
 end
 
-function Shop.daily(day)
+-- roll: 0 (or nil) is everyone's shop; an admin's RESET SHOP gives one player a new roll (their "ShopRoll"
+-- attribute, for the rest of their visit), so they get 4 other items for the day.
+function Shop.daily(day, roll)
 	local week = (day + 3) // 7
 	local skip = {}
 	for _, k in Shop.weekly(week).keys do
 		skip[k] = true
 	end
-	return pick(day * 17 + 3, Shop.DAILY_SLOTS, skip)
+	return pick(day * 17 + 3 + (tonumber(roll) or 0) * 7919, Shop.DAILY_SLOTS, skip)
 end
 
-function Shop.inRotation(key, t)
-	for _, k in Shop.daily(Shop.dayOf(t)) do
+function Shop.inRotation(key, t, roll)
+	for _, k in Shop.daily(Shop.dayOf(t), roll) do
 		if k == key then
 			return true
 		end

@@ -22,6 +22,7 @@ The rules, in order:
   TeamService:PartyTeam(player)       the team the player's party is on, or nil
   TeamService:Rebalance()             rule 3; returns the players it moved
   TeamService:SetParties(fn)          fn() -> { { leader = player, members = { players } } } (PartyService)
+  TeamService:Set(player, team)       TeamService:Clear(player)   (no team: a spectating admin)
   TeamService:Dress(character, team)
 ]]
 local Players = game:GetService("Players")
@@ -144,6 +145,20 @@ end
 
 function TeamService:SetParties(fn)
 	partyList = fn
+end
+
+------------------------------------------------------------------------------------------------------
+-- Off both teams (a spectating admin).
+function TeamService:Clear(player)
+	local old = teams[player]
+	teams[player] = nil
+	player:SetAttribute("Team", nil)
+	pcall(function()
+		player.Team = nil
+	end)
+	if old then
+		self.Changed:Fire(player, nil, old)
+	end
 end
 
 -- Joining ----------------------------------------------------------------------------------------------------------

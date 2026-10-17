@@ -314,6 +314,31 @@ fight waiting, Rebalance never splitting a party, max size, kick, leave, a new l
 teleport with its data and the party forming again, a failed teleport, banners); ClientSmoke checks the button, the
 panel, the list, the card and the marker, and that none of it overlaps the HUD.
 
+## Round 9: the admin panel
+
+* **Who:** `Constants.ADMINS` (xthirtysix's user id; the username works too, in Studio only), checked in
+  `src/server/Admins.lua`. Admins get a red ADMIN on their name tag and an **ADMIN** button at the top left, right of
+  INVITE and SHOP (nobody else sees it). Every request is checked on the server (`AdminService`, Net `Admin`), anyone
+  else is refused, and every action fires `AdminService.Used (admin, action, detail)` for the game log.
+* **Four tabs** in the shop panel's box: **SERVERS** (every live server: map, phase, score, players; JOIN),
+  **MATCH** (end now: red, blue or a draw, through the normal results; skip to the fight or the build; stop the
+  clock; restart; any map; bots on or off; a filtered banner for everyone), **PLAYERS** (team, knock out, heal or
+  respawn, go to, bring, MVP with the crown and a "👑 NAME is MVP!" banner, VIP for 1 hour to 30 days or for good
+  with a "⭐ NAME got VIP!" banner, or taken away, Shards, pass tiers, any cosmetic given and worn, reset shop, kick
+  with a reason), **ME** (spectate, invisible, UNLOCK ALL, Shards for yourself).
+* **The server list:** each server writes a line about itself to a MemoryStore sorted map every 15 s; lines expire
+  after 45 s, so dead servers drop off. JOIN teleports there with `{ adminSpectate = true }`.
+* **Spectating:** watching unseen. No body, no team, not in `MatchService:People()` (so not counted, never in the
+  results, and a lone player with a spectating admin still gets a bot), never hit. A free-fly camera (WASD, mouse,
+  Shift, Q/E) or following a player from behind (F, the arrow keys, a bar at the bottom; drag and FLY on a phone).
+  Leaving puts you on a team the normal way. The anti-cheat ignores admins.
+* **Reset shop** gives that player a new roll of today's 4 shop items (`Shop.daily(day, roll)`, the "ShopRoll"
+  attribute) for the rest of their visit; the weekly bundle stays.
+* Fixed on the way: a closed shop panel still counted as a question card, so the mouse stayed free after the shop
+  was opened once.
+
+Tests: new `tests/AdminSmoke.spec.luau` (125 checks).
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.
