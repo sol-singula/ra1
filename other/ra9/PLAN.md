@@ -264,6 +264,29 @@ over the line...), with short question lines (SO CLOSE..., BEHIND YOU!, WHAT'S I
 
 ![](thumbnails/_all.jpg)
 
+## Parties: play together, on one team, move together
+
+* **PARTY** (or **P**), a small button beside INVITE (`PartyController`): your party (★ the leader, KICK for the
+  leader), everyone in this server with INVITE, LEAVE, and for the leader **FIND A NEW SERVER** / **JOIN A FULLER
+  SERVER**. Up to 4. An invite is a card, YES / NO (Y / N), gone after 20 s; in the fight it doesn't take the mouse.
+  In a party you see the names in the left corner and a 👥 over your party's heads (drawn only on your screen).
+* **Friends:** a friend who joins your server, or follows you in with Roblox's Join, gets a one-tap "PARTY UP WITH
+  NAME?" card.
+* **One team** (`TeamService` doc comment has the rules): a party always plays on its leader's team. When it forms or
+  grows in the build phase or between matches it moves at once (solo players move to keep it fair, a party is never
+  split, even one bigger than half the server); in the fight it waits for the next match. Rebalance counts a party as
+  one block, moving solo players first. A solo player still joins the smaller team / the losing team / a friend's.
+* **Moving together** (`PartyService`): one `TeleportService:TeleportAsync(placeId, members, options)` for the whole
+  party, with the party in the teleport data; it forms again on arrival, on one team, the old leader leading. A
+  fuller server comes from `PartyService.findServer(size)` when a server list sets it; otherwise Roblox picks.
+* Every step is a short blue party banner ("Ben joined your party!", "Your party is on BLUE!").
+* A party of two alone in a server is two people: no bots (and both on one side, by the party rule).
+
+Tests: new `tests/PartySmoke.spec.luau` (74: invites, the card timing out, same team on forming and on arrival, the
+fight waiting, Rebalance never splitting a party, max size, kick, leave, a new leader, following a friend in, the
+teleport with its data and the party forming again, a failed teleport, banners); ClientSmoke checks the button, the
+panel, the list, the card and the marker, and that none of it overlaps the HUD.
+
 ## Next (phase F)
 
 * The Discord log and analytics (the studio's shared pipeline), the dashboard entry.

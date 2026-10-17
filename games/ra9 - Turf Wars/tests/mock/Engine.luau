@@ -1009,7 +1009,8 @@ function methods.IsFriendsWith(inst, id)
 	return Engine.friends[rawget(inst, "_props").UserId .. ":" .. id] == true
 end
 function methods.GetJoinData(inst)
-	return { LaunchData = rawget(inst, "_props")._launchData }
+	local props = rawget(inst, "_props")
+	return { LaunchData = props._launchData, TeleportData = props._teleportData }
 end
 -- Players:GetFriendsAsync: one page of the friends Engine.makeFriends made (tests can add offline friends to
 -- Engine.offlineFriends[userId] = { { Id, Username, DisplayName }, ... })
@@ -2241,13 +2242,19 @@ function methods.LoadCharacter(player)
 	Engine.makeCharacter(player)
 end
 
-function Engine.addPlayer(name, userId, launchData)
+-- join (optional): { teleportData = the data a teleport brought (GetJoinData().TeleportData), followUserId = the
+-- friend they followed in with Roblox's Join (Player.FollowUserId) }
+function Engine.addPlayer(name, userId, launchData, join)
 	nextUserId += 1
 	local p = Instance.new("Player")
 	p.Name = name
 	p.DisplayName = name
 	p.UserId = userId or nextUserId
 	p._launchData = launchData
+	if join then
+		p._teleportData = join.teleportData
+		p.FollowUserId = join.followUserId
+	end
 	local pg = Instance.new("Folder", p)
 	pg.Name = "PlayerGui"
 	local backpack = Instance.new("Backpack", p)

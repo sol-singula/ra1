@@ -1,17 +1,27 @@
 --[[
-Teams (master plan §2A): red and blue, kept together with friends, balanced around them.
+Teams (master plan §2A): red and blue, parties kept together, solo players balanced round them.
 
-  * A joining player always goes to the smaller team. When they're even, to the team losing on turf; only when the
-    turf is even too does a friend decide (their team), then a coin flip.
-  * Between matches, teams are rebalanced by moving players who have no friend on their team from the bigger side.
-  * The look (§0): everyone is a mannequin in their team's colour: body parts tinted, clothes and accessories off,
-    so in a white world a player is a red or blue figure you can read at any distance.
+The rules, in order:
+
+  1. A party always plays on one team. A player who joins (or arrives with) a party goes straight to the party's
+     team: the leader's (or, while the leader has none, any member's).
+  2. A solo player who joins goes to the smaller team. When they're even, to the team losing on turf; only when the
+     turf is even too does a friend decide (their team), then a coin flip. (The owner's rule: unchanged.)
+  3. Rebalance (between matches; and when a party forms or grows in the build phase, PartyService) first puts every
+     party on its leader's team, then evens the teams (within 1): it moves solo players from the bigger side (ones
+     with no friend there first), and only when no solo is left there, a whole party as one block (the smallest,
+     and only if that makes it fairer). A party is never split, even when it is more than half the server
+     (fairness comes second). A party that forms in the fight waits: it moves at the next match start.
+  4. The look (§0): everyone is a mannequin in their team's colour: body parts tinted, clothes and accessories off,
+     so in a white world a player is a red or blue figure you can read at any distance.
 
   TeamService:Team(player)            "red" | "blue" | nil
   TeamService:Members(team)           { players }
   TeamService:Count(team)
-  TeamService:Assign(player)          picks and sets a team
-  TeamService:Rebalance()             between matches
+  TeamService:Assign(player)          picks and sets a team (rule 1, else rule 2)
+  TeamService:PartyTeam(player)       the team the player's party is on, or nil
+  TeamService:Rebalance()             rule 3; returns the players it moved
+  TeamService:SetParties(fn)          fn() -> { { leader = player, members = { players } } } (PartyService)
   TeamService:Dress(character, team)
 ]]
 local Players = game:GetService("Players")
@@ -28,6 +38,7 @@ local TeamService = {
 
 local teams = {} -- [player] = "red" | "blue"
 local turfLeader -- fn() -> "red" | "blue" | nil: the team ahead on turf (MatchService sets it)
+local partyList -- fn() -> { { leader, members } } (PartyService sets it)
 
 function TeamService:Team(player)
 	return teams[player]
@@ -52,6 +63,10 @@ local function friends(a, b)
 		return a:IsFriendsWith(b.UserId)
 	end)
 	return ok and yes == true
+end
+
+local function other(team)
+	return team == "red" and "blue" or "red"
 end
 
 function TeamService:FriendTeam(player)
@@ -82,51 +97,139 @@ function TeamService:Set(player, team)
 	end
 end
 
+-- Parties --------------------------------------------------------------------------------------------------------
+-- The parties right now: only members still in the server (a party of one is no party).
+local function parties()
+	local out = {}
+	for _, party in partyList and partyList() or {} do
+		local members = {}
+		for _, p in party.members or {} do
+			if p.Parent then
+				table.insert(members, p)
+			end
+		end
+		if #members >= 2 then
+			table.insert(out, { leader = party.leader, members = members })
+		end
+	end
+	return out
+end
+
+local function partyOf(player, list)
+	for _, party in list or parties() do
+		if table.find(party.members, player) then
+			return party
+		end
+	end
+	return nil
+end
+
+-- The team a party is on: the leader's, else the first member's that has one (leaving out `except`).
+local function teamOfParty(party, except)
+	if party.leader and party.leader ~= except and teams[party.leader] then
+		return teams[party.leader]
+	end
+	for _, p in party.members do
+		if p ~= except and teams[p] then
+			return teams[p]
+		end
+	end
+	return nil
+end
+
+function TeamService:PartyTeam(player)
+	local party = partyOf(player)
+	return party and teamOfParty(party, player) or nil
+end
+
+function TeamService:SetParties(fn)
+	partyList = fn
+end
+
+-- Joining ----------------------------------------------------------------------------------------------------------
 function TeamService:Assign(player)
+	-- rule 1: with your party
+	local pick = self:PartyTeam(player)
+	if pick then
+		self:Set(player, pick)
+		return pick
+	end
+	-- rule 2: solo
 	local red, blue = self:Count("red"), self:Count("blue")
-	local pick
 	if red ~= blue then
 		pick = red < blue and "red" or "blue"
 	else
 		-- (even: help the side that's behind on turf; turf even too: a friend's side, else a coin flip)
 		local leader = turfLeader and turfLeader()
-		pick = (leader and (leader == "red" and "blue" or "red"))
-			or self:FriendTeam(player)
-			or (math.random(1, 2) == 1 and "red" or "blue")
+		pick = (leader and other(leader)) or self:FriendTeam(player) or (math.random(1, 2) == 1 and "red" or "blue")
 	end
 	self:Set(player, pick)
 	return pick
 end
 
--- Between matches: move players with no friend on their side from the bigger team until it's even (within 1).
+-- Rule 3: every party on its leader's team, then even teams: solo players first, whole parties last.
 function TeamService:Rebalance()
-	for _ = 1, Constants.MAX_PLAYERS do
-		local red, blue = self:Count("red"), self:Count("blue")
-		if math.abs(red - blue) <= 1 then
-			return
-		end
-		local big = red > blue and "red" or "blue"
-		local moved = false
-		for _, p in self:Members(big) do
-			local hasFriend = false
-			for _, q in self:Members(big) do
-				if q ~= p and friends(p, q) then
-					hasFriend = true
-					break
-				end
-			end
-			if not hasFriend then
-				self:Set(p, big == "red" and "blue" or "red")
-				moved = true
-				break
-			end
-		end
-		if not moved then
-			-- (everyone on the big side has a friend there: move the newest anyway, so teams stay fair)
-			local list = self:Members(big)
-			self:Set(list[#list], big == "red" and "blue" or "red")
+	local moved = {}
+	local function move(p, team)
+		if teams[p] ~= team then
+			self:Set(p, team)
+			table.insert(moved, p)
 		end
 	end
+	local list = parties()
+	for _, party in list do
+		local team = teamOfParty(party)
+		if team then
+			for _, p in party.members do
+				move(p, team)
+			end
+		end
+	end
+	for _ = 1, Constants.MAX_PLAYERS * 2 do
+		local red, blue = self:Count("red"), self:Count("blue")
+		local diff = math.abs(red - blue)
+		if diff <= 1 then
+			break
+		end
+		local big = red > blue and "red" or "blue"
+		local members = self:Members(big)
+		local newest, lonely -- (a solo player: the last one listed; the first with no friend on this side)
+		for _, p in members do
+			if not partyOf(p, list) then
+				newest = p
+				local hasFriend = false
+				for _, q in members do
+					if q ~= p and friends(p, q) then
+						hasFriend = true
+						break
+					end
+				end
+				if not hasFriend and not lonely then
+					lonely = p
+				end
+			end
+		end
+		local pick = lonely or newest
+		if pick then
+			move(pick, other(big))
+		else
+			-- (only parties left on the big side: move the smallest one whole, if that makes it fairer)
+			local best
+			for _, party in list do
+				local n = #party.members
+				if teams[party.members[1]] == big and n < diff and (not best or n < #best.members) then
+					best = party
+				end
+			end
+			if not best then
+				break
+			end
+			for _, p in best.members do
+				move(p, other(big))
+			end
+		end
+	end
+	return moved
 end
 
 function TeamService:SetTurfLeader(fn)

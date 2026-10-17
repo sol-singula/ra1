@@ -25,6 +25,7 @@ Net.ClientEvents = {
 	Buy = 4, -- ("item", key) | ("bundle") | ("robux", productKey | "starter") (ShopService)
 	Claim = 6, -- (tier, "f" | "p") a tier of the Turf Pass
 	Feedback = 2, -- ("enjoy", yes) the "Are you liking the game?" card | ("like", "ok" | "later") the like card
+	Party = 4, -- ("invite", userId) | ("accept") | ("decline") | ("leave") | ("kick", userId) | ("move", "new" | "fuller")
 }
 
 -- Server → client.
@@ -46,6 +47,8 @@ Net.ServerEvents = {
 	"Unlock", -- { step = { win, kind, name, big }, wins }
 	"Sfx", -- soundName, worldPosition?
 	"Ask", -- { kind = "enjoy" | "like" } a card for a winner (FeedbackService)
+	"PartyState", -- { id, leader, max, members = { { userId, name } } } or false: your party (PartyService)
+	"PartyInvite", -- { from, name, kind = "invite" | "friend", seconds } or { cancel = true }: the invite card
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).
