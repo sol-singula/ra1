@@ -523,7 +523,8 @@ function BotService:_unstick(b, root, hum, dest, aim, grid, t)
 	if hum then
 		hum.Jump = true
 	end
-	local side = { line = match:Frontline(), fwd = Formulas.forward(teams:Team(b)) }
+	-- (its own side of the line, except in the CHARGE: then it may be over the line and anywhere is fair)
+	local side = not match:Charging() and { line = match:Frontline(), fwd = Formulas.forward(teams:Team(b)) } or nil
 	-- shut in (no way from here to there at all: structures went up round it), or inside something: straight to the
 	-- nearest spot it can get there from
 	local inside = false

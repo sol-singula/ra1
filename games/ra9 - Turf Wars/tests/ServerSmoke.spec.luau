@@ -1263,6 +1263,7 @@ end
 
 -- the spawn deck: open (no walls), and safe by rule until you shoot
 do
+	service("BotService"):SetEnabled(false) -- (no bot shooting the one being tested)
 	local victim = Engine.addPlayer("Deck", 611)
 	local shooter = Engine.addPlayer("Archer", 612)
 	Engine.advance(0.5)
@@ -1288,6 +1289,7 @@ do
 	Engine.advance(1)
 	Combat:Shoot(victim, rootOf(victim).Position + Vector3.new(0, 1.5, 0), Vector3.new(1, 0, 0))
 	check("...until you shoot", Combat:Damage(victim, 10, shooter) == true)
+	service("BotService"):SetEnabled(true)
 end
 
 -- the AFK limbo: standing still in a match sends you to a room above the arena; walking around there brings you back
