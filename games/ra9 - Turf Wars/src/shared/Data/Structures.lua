@@ -1,10 +1,11 @@
 --[[
-What a team can build (master plan §2B, §7): modular pieces that snap to the 4-stud grid.
+What a team can build (master plan §2B, §7): modular pieces that snap to the 4-stud grid. How they look is
+StructureModel's: every piece in one shade of the team's colour, the Reinforced Wall (the armour) darker.
 
   w, d     footprint in cells (w along X, d along Z, before rotation)
   h        height in studs
   cost     budget points
-  hp       durability (arrows chip it; the heavy bow wrecks it)
+  hp       durability (arrows chip it; TNT wrecks it)
   blocks   true: a tall piece that blocks a lane (the server keeps one open cell in every row across the field)
   walkTop  true: you can stand on it (the tower's platform, the bridge's deck)
 ]]

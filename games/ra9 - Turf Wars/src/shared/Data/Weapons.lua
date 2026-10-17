@@ -1,15 +1,18 @@
 --[[
-The three bows (master plan §5) and the blade, all free from the start. Every hit is a knockout (one shot, every
-bow, every charge): the bows differ in draw time, arrow speed, cadence, knockback and what they do to walls. The
-blade can't cross the line any more than you can, so it works AT the line: a long slash that knocks out anyone
-within reach on the other side, and its swing knocks arrows out of the air and sends them back (CombatService).
+The bow, the TNT and the blade, all free from the start (1 2 3 on the hotbar). Every bow hit is a knockout (one
+shot, every charge). The TNT is thrown: hold to wind up (the charge is how far it goes), let go and it flies in a
+lob and blows up where it lands (Constants.TNT_*: enemy structures in the blast break, enemies right by it are
+knocked out, the rest are thrown back; a cooldown between throws). The blade can't cross the line any more than you
+can, so it works AT the line: a long slash that knocks out anyone within reach on the other side, and its swing
+knocks arrows out of the air and sends them back (CombatService).
 
-  draw        seconds to full charge (0 = fires at once, the crossbow)
+  draw        seconds to full charge (0 = at once)
   minCharge   the least charge a shot can have (a tap)
   damage      { min, max } by charge
-  speed       { min, max } studs/s by charge
+  speed       { min, max } studs/s by charge (the TNT: how hard it's thrown)
   cooldown    seconds after a shot before the next draw
-  mag/reload  shots before a reload, and its seconds (the crossbow)
+  mag/reload  shots before a reload, and its seconds (none has a magazine now; the code still handles one)
+  throw       (the TNT) no arrow: a lobbed explosive (CombatService:Throw)
   knockback   studs/s pushed at full charge
   structure   damage multiplier on structures
   melee       (the blade) no arrow: a slash hits the nearest enemy within range studs, inside arc degrees of
@@ -34,32 +37,18 @@ Weapons.list = {
 		reload = nil,
 	},
 	{
-		key = "crossbow",
-		name = "Rapid Crossbow",
-		icon = "🎯",
-		role = "Aggressive: fast bolts, six to a magazine. Every bolt that hits is a knockout.",
-		draw = 0,
-		minCharge = 1,
+		key = "tnt",
+		name = "TNT",
+		icon = "🧨",
+		role = "Hold to wind up, let go to lob it. It blows up walls and knocks out anyone close.",
+		throw = true,
+		draw = 0.8,
+		minCharge = 0.2,
 		damage = { 100, 100 },
-		speed = { 190, 190 },
-		cooldown = 0.32,
-		knockback = 10,
-		structure = 0.7,
-		mag = 6,
-		reload = 1.7,
-	},
-	{
-		key = "heavy",
-		name = "Heavy Bow",
-		icon = "💥",
-		role = "Slow and brutal: a long draw, huge knockback, wrecks structures. One hit, one knockout.",
-		draw = 1.5,
-		minCharge = 0.4,
-		damage = { 100, 100 },
-		speed = { 120, 200 },
-		cooldown = 0.5,
-		knockback = 60,
-		structure = 3,
+		speed = { 30, 78 },
+		cooldown = 3,
+		knockback = 0,
+		structure = 1,
 		mag = nil,
 		reload = nil,
 	},

@@ -12,9 +12,9 @@ Net.ClientEvents = {
 	Ready = 1,
 	Equip = 4, -- (weaponKey) pick a bow (CombatService)
 	Draw = 10, -- (on) start / stop drawing the bow (the charge is timed on the server from this)
-	Shoot = 12, -- (origin, direction, shotId) release: an arrow from about where your head is, the way you aim
+	Shoot = 12, -- (origin, direction, shotId) release: an arrow (or the TNT, thrown) from about your head, the way you aim
 	Swing = 6, -- (direction) a slash with the blade: the server finds who it reaches
-	Reload = 2, -- () the crossbow's magazine
+	Reload = 2, -- () a magazine weapon's reload (none has one now)
 	Build = 8, -- (structureKey, cx, cz, rot) place a structure in the build phase (BuildService)
 	Demolish = 4, -- (structureId) take back one of yours in the build phase (refunded)
 	Sprint = 6, -- (on)
@@ -38,11 +38,15 @@ Net.ServerEvents = {
 	"Me", -- { team, alive, weapon, ammo, budget, budgetMax, protected }
 	"Arrow", -- { id, by, team, weapon, origin, velocity, t } an arrow everyone draws (the shooter's own is predicted)
 	"ArrowEnd", -- { id, pos, kind = "player" | "structure" | "world" } where it stopped
+	"Bomb", -- { id, by, team, origin, velocity, at, shotId } a TNT thrown: everyone draws its lob (Formulas.lobAt)
+	"Blast", -- { id, pos, team, by, ground, radius, core } it went off: the explosion everyone sees and hears
 	"Swing", -- { by, hit, pos, dir } someone slashed (their blade swings for everyone: SwingController)
 	"Hit", -- { damage, head, kill, victim, melee?, pos? } you hit someone (the hit marker; a blade hit's spot)
 	"Hurt", -- { amount, from } you were hit (from: the shooter's position, for the damage indicator)
 	"Kill", -- { killer, victim, killerTeam, weapon, head, push, assist, effect, pos } the kill feed, the kill effect
-	"Structure", -- { kind = "built" | "damaged" | "destroyed", id, key, team, hp, max }
+	"Structure", -- { kind = "built" | "damaged" | "destroyed", id, key, team, hp, max }; destroyed adds min, max, rot,
+	-- emblem and blast = { pos, power } (what broke it: a TNT 1, an arrow less, nil for lost turf): the debris
+	-- (DebrisController)
 	"Toast", -- text, kind ("info" | "good" | "bad")
 	"Alert", -- big centre message: text, color, seconds?
 	"Announce", -- { text, kind, color?, icon?, seconds? } a banner for everyone or one player (server/Notify.lua)

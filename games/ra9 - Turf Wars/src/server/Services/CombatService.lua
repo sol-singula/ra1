@@ -1,6 +1,6 @@
 --[[
-Combat (master plan §5): health, the three bows and the blade, server arrows, slashes, hits, knockback, kills and
-credit.
+Combat (master plan §5): health, the bow, the TNT and the blade, server arrows, thrown TNT, slashes, hits,
+knockback, kills and credit.
 
 The blade: the client sends Swing(direction) as you click; the server checks the cadence and finds the nearest enemy
 in reach (Weapons blade.range from you, inside blade.arc degrees of where you look, nothing solid between), and hits
@@ -8,11 +8,20 @@ it (more from behind). Everyone is told (Swing) so they see the slash.
 
 The client only asks: Draw(true) when you start drawing, Shoot(origin, direction, shotId) when you let go. The
 server times the draw itself (the charge is how long it has really been drawing, capped by the bow), checks you're
-alive, it's the fight, the bow is ready (cooldown, the crossbow's magazine), and that the arrow starts near your
-head. Then it flies the arrow itself in ARROW_STEP steps (Formulas.arrowAt: the same curve the clients draw) against
+alive, it's the fight, the bow is ready (its cooldown; a magazine if a weapon had one), and that the arrow starts
+near your head. Then it flies the arrow itself in ARROW_STEP steps (Formulas.arrowAt: the same curve the clients draw) against
 every opponent's head and body spheres and every solid box (the map's, the structures'), and decides the hit, the
 damage (by charge; heads x HEADSHOT), the knockback, and the kill. Everyone is told about the arrow (Arrow) so they
 draw it, and where it stopped (ArrowEnd).
+
+The TNT goes through Shoot too (the same checks: alive, the fight, its cooldown, near your head, never from the far
+side of a wall): the charge is how hard it's thrown, and it flies as a lob (Formulas.lobVelocity, lobAt: heavier
+than an arrow) in the same steps, against the same spheres and boxes. It goes off on the first thing it touches or
+when its fuse runs out (TNT_FUSE): every enemy structure within TNT_RADIUS takes TNT_STRUCTURE damage (less further
+out), every enemy within TNT_CORE with nothing solid between them and the blast is knocked out (through Damage, so
+spawn protection, the spawn deck's safety and no friendly fire all hold), and the rest in the open within the radius
+are thrown back. Your own team's structures and players are never touched. Everyone is told (Bomb when it's thrown,
+Blast when it goes off) so they draw the lob and the explosion.
 
 Health is the server's own (state.hp), mirrored onto the Humanoid for the health bar. Spawn protection, no friendly
 fire, no damage outside the fight. Kills credit the last opponent to hit you; others who hit you in the last
@@ -53,6 +62,8 @@ local data, teams, arena
 local states = {} -- [player] = { hp, alive, weapon, drawAt, ammo, reloadAt, readyAt, protectUntil, hits = { [attacker] = t } }
 local arrows = {} -- { id, by, team, weapon, origin, velocity, t, damage, knockback, head }
 local nextArrow = 0
+local bombs = {} -- { id, by, team, origin, velocity, t } thrown TNT in the air
+local nextBomb = 0
 local enabled = false
 
 local function now()
@@ -138,8 +149,19 @@ function CombatService:HoldBow(player, key)
 		p.Parent = model
 		return p
 	end
-	local big = key == "heavy"
-	if key == "blade" then
+	if key == "tnt" then
+		-- a bundle of red sticks in the right hand, a band round them, a fuse
+		local right = c:FindFirstChild("RightHand") or c:FindFirstChild("Right Arm")
+		if right then
+			hand = right
+		end
+		for i, off in { -0.17, 0, 0.17 } do
+			local at = CFrame.new(off, -0.5, i == 2 and -0.12 or 0) * CFrame.Angles(0, 0, math.rad(90))
+			part("Stick", Vector3.new(0.9, 0.3, 0.3), Constants.TNT_RED, at).Shape = Enum.PartType.Cylinder
+		end
+		part("Band", Vector3.new(0.6, 0.14, 0.36), Color3.fromRGB(30, 30, 34), CFrame.new(0, -0.5, -0.04))
+		part("Fuse", Vector3.new(0.05, 0.4, 0.05), Color3.fromRGB(30, 30, 34), CFrame.new(0, -0.05, -0.04))
+	elseif key == "blade" then
 		-- held in the right hand for everyone else: a grip, a guard, the blade
 		local right = c:FindFirstChild("RightHand") or c:FindFirstChild("Right Arm")
 		if right then
@@ -148,11 +170,8 @@ function CombatService:HoldBow(player, key)
 		part("Grip", Vector3.new(0.25, 0.25, 0.7), color, CFrame.new(0, -0.3, 0))
 		part("Guard", Vector3.new(0.9, 0.2, 0.2), Constants.WHITE, CFrame.new(0, -0.3, -0.45))
 		part("Edge", Vector3.new(0.12, 0.3, 2.4), Constants.WHITE, CFrame.new(0, -0.3, -1.75))
-	elseif key == "crossbow" then
-		part("Stock", Vector3.new(0.25, 0.25, 1.8), Constants.WHITE, CFrame.new(0, -0.2, -0.6))
-		part("Limbs", Vector3.new(2.2, 0.15, 0.2), color, CFrame.new(0, -0.2, -1.4))
 	else
-		local len = big and 2 or 1.6
+		local len = 1.6
 		part("Grip", Vector3.new(0.25, 0.6, 0.25), color, CFrame.new(0, -0.3, 0))
 		part(
 			"Upper",
@@ -368,7 +387,8 @@ function CombatService:_step(dt)
 			local at = a:Lerp(b, st)
 			if sid then
 				local w = Weapons.get(arrow.weapon)
-				self.StructureHit:Fire(sid, arrow.damage * (w and w.structure or 1), arrow.by)
+				local blast = { pos = at, power = 0.35, dir = (b - a).Unit, team = arrow.team }
+				self.StructureHit:Fire(sid, arrow.damage * (w and w.structure or 1), arrow.by, blast)
 			end
 			self:_finish(arrow, at, sid and "structure" or "world")
 			table.remove(arrows, i)
@@ -377,6 +397,133 @@ function CombatService:_step(dt)
 			table.remove(arrows, i)
 		end
 	end
+	for i = #bombs, 1, -1 do
+		local bomb = bombs[i]
+		local t0 = bomb.t
+		local t1 = math.min(t0 + dt, Constants.TNT_FUSE)
+		local a = Formulas.lobAt(bomb.origin, bomb.velocity, t0)
+		local b = Formulas.lobAt(bomb.origin, bomb.velocity, t1)
+		bomb.t = t1
+		local victim, vt = hitPlayers(bomb, a, b)
+		local st = hitSolids(a, b)
+		local hit = (victim and (not st or vt <= st)) and vt or st
+		if hit then
+			-- (it goes off just short of what it touched, so the blast's line of sight starts in the open)
+			local at = a:Lerp(b, hit)
+			local back = (b - a).Magnitude > 0.01 and (b - a).Unit * 0.4 or Vector3.zero
+			table.remove(bombs, i)
+			self:_explode(bomb, at - back)
+		elseif t1 >= Constants.TNT_FUSE or not arena:Inside(b) then
+			table.remove(bombs, i)
+			self:_explode(bomb, b)
+		end
+	end
+end
+
+-- The TNT goes off at pos: enemy structures in the radius take the blast, enemies in the core with a clear line to it
+-- are knocked out, the rest of them in the open within the radius are thrown back. Never your own team.
+function CombatService:_explode(bomb, pos)
+	local by = bomb.by
+	local attacker = by and by.Parent and by or nil
+	-- the floor under it (where the shockwave runs)
+	local down = 14
+	local gt = hitSolids(pos + Vector3.new(0, 0.1, 0), pos - Vector3.new(0, down, 0))
+	local ground = gt and (pos.Y + 0.1 - gt * (down + 0.1)) or pos.Y
+	Net.fireAll("Blast", {
+		id = bomb.id,
+		pos = pos,
+		team = bomb.team,
+		by = by and by.UserId,
+		ground = ground,
+		radius = Constants.TNT_RADIUS,
+		core = Constants.TNT_CORE,
+	})
+	local lo, hi = Constants.TNT_STRUCTURE[2], Constants.TNT_STRUCTURE[1]
+	for _, sol in arena:Solids() do
+		if sol.id then
+			local d = Formulas.boxDistance(pos, sol.min, sol.max)
+			if d <= Constants.TNT_RADIUS then
+				local k = Formulas.blast(d)
+				-- (BuildService leaves the thrower's own team's pieces alone: blast.team)
+				local blast = { pos = pos, power = 0.75 + 0.25 * k, team = bomb.team, tnt = true }
+				self.StructureHit:Fire(sol.id, lo + (hi - lo) * k, attacker, blast)
+			end
+		end
+	end
+	-- (the structures it broke are gone now, so what was behind them is in the open)
+	local t = now()
+	local hits, kills = 0, 0
+	for player, st in states do
+		local team = teams:Team(player)
+		local r = st.alive and player.Parent and team ~= bomb.team and root(player)
+		if r then
+			local body = r.Position + Vector3.new(0, 0.2, 0)
+			local d = (body - pos).Magnitude
+			if d <= Constants.TNT_RADIUS and not hitSolids(pos, body) then
+				local away = body - pos
+				away = Vector3.new(away.X, 0, away.Z)
+				away = away.Magnitude > 0.01 and away.Unit or Vector3.new(1, 0, 0)
+				if d <= Constants.TNT_CORE then
+					local info = { weapon = "tnt", head = false, kind = "blast" }
+					local ok, killed = self:Damage(player, Constants.MAX_HEALTH, attacker, info)
+					if ok then
+						hits += 1
+						kills += killed and 1 or 0
+						Net.fire(
+							player,
+							"Hurt",
+							{ amount = Constants.MAX_HEALTH, from = pos, knock = Vector3.zero, blast = true }
+						)
+					end
+				else
+					-- thrown back (unless spawn protection or the deck keeps them safe)
+					local safe = (st.protectUntil or 0) > t or (not st.attacked and arena:OnDeck(player, team))
+					if not safe then
+						local push = Constants.TNT_PUSH * math.max(0.3, Formulas.blast(d))
+						local kb = away * math.min(push, Constants.KNOCKBACK_CAP) + Vector3.new(0, push * 0.45, 0)
+						pcall(function()
+							r.AssemblyLinearVelocity += kb
+						end)
+						player:SetAttribute("AcGrace", os.clock() + 1.5) -- (the push is ours: the anti-cheat lets it go)
+						Net.fire(player, "Hurt", { amount = 0, from = pos, knock = kb, blast = true })
+					end
+				end
+			end
+		end
+	end
+	if attacker and hits > 0 then
+		Net.fire(attacker, "Hit", { damage = Constants.MAX_HEALTH, head = false, kill = kills > 0, pos = pos })
+	end
+	return hits, kills
+end
+
+-- A TNT thrown (from Shoot, already checked): it leaves near your head in a lob, the charge how hard
+function CombatService:_throw(player, w, origin, direction, charge, shotId)
+	local shot = Formulas.shot(w, charge)
+	nextBomb += 1
+	local bomb = {
+		id = nextBomb,
+		by = player,
+		team = teams:Team(player),
+		origin = origin,
+		velocity = Formulas.lobVelocity(direction, shot.speed),
+		t = 0,
+		charge = charge,
+		shotId = shotId,
+	}
+	table.insert(bombs, bomb)
+	Net.fireAll("Bomb", {
+		id = bomb.id,
+		by = player.UserId,
+		team = bomb.team,
+		origin = origin,
+		velocity = bomb.velocity,
+		at = now(),
+		shotId = shotId,
+	})
+	self.Shot:Fire(player, w.key)
+	self:Push(player)
+	return bomb
 end
 
 -- A blade swing in the last PARRY_SECONDS, facing the arrow: it's knocked away and flies back at whoever shot it
@@ -528,9 +675,12 @@ function CombatService:Shoot(player, origin, direction, shotId)
 	direction = direction.Unit
 	s.attacked = true -- (shooting gives up the spawn deck's safety)
 	local charge = w.draw > 0 and Formulas.charge(w, s.drawAt and (t - s.drawAt) or 0) or 1
-	local shot = Formulas.shot(w, charge)
 	s.drawAt = nil
 	s.readyAt = t + w.cooldown
+	if w.throw then
+		return self:_throw(player, w, origin, direction, charge, shotId)
+	end
+	local shot = Formulas.shot(w, charge)
 	if w.mag then
 		s.ammo -= 1
 		if s.ammo <= 0 then
@@ -667,6 +817,10 @@ end
 
 function CombatService:Arrows()
 	return arrows
+end
+
+function CombatService:Bombs()
+	return bombs
 end
 
 function CombatService:Init(registry)

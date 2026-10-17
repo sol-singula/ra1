@@ -17,8 +17,7 @@ You get 20 seconds to build walls, towers and ramps. Then the fight starts!
 
 🏹 PICK YOUR WEAPON
 • Bow: hold to pull back, let go. One hit, one knockout!
-• Crossbow: fast shots, six in a row
-• Heavy Bow: slow, but it knocks walls down
+• TNT: hold to wind up, then throw it. BOOM! Walls fly apart!
 • Blade: slash across the line, and swat arrows right back!
 
 🏃 MOVE LIKE A PRO
@@ -31,7 +30,7 @@ Nobody can hurt you in your base until you shoot. Get ready, then charge!
 
 🎁 Win to unlock new bows, trails and effects. Get the Turf Pass for even more!
 
-Controls: Click to shoot · 1 2 3 4 or scroll to switch · Shift to run · C to crouch · B for the shop
+Controls: Click to shoot · 1 2 3 or scroll to switch · Shift to run · C to crouch · B for the shop
 ```
 
 ## Other hooks to try (swap the first line)

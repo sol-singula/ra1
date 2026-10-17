@@ -2,7 +2,8 @@
 Server smoke test: boots the real server on the mock engine and plays a match: four players join (two of them
 friends), teams balance with the friends together, the build phase (valid and refused placements, budgets, the
 lane rule), the fight (a timed draw, a server arrow, a hit, a kill, the frontline moving, assists, friendly fire,
-spawn protection, knockback), the turf rule, structures taking arrows, the crossbow's magazine, a team pushed out,
+spawn protection, knockback), the turf rule, structures taking arrows, the TNT (the throw, the lob, the blast on
+enemy structures and players, line of sight, teammates, the push, the deck, the cooldown, the checks), a team pushed out,
 the results, a qualifying win on the ladder, and the next map loading in the same server.
 
   luaurun tests/ServerSmoke.spec.luau
@@ -371,7 +372,8 @@ check(
 	rootOf(red).Position.X <= ws:GetAttribute("Frontline"),
 	rootOf(red).Position.X
 )
--- arrows break structures: blue's heavy bow at red's wall
+-- arrows break structures: blue's bow at red's wall, and when it comes down everyone is told where it stood and what
+-- broke it (the debris flies from there)
 do
 	local wall
 	for _, st in Build:All() do
@@ -380,37 +382,206 @@ do
 			break
 		end
 	end
-	send(blue, "Equip", "heavy")
+	send(blue, "Equip", "bow")
 	Engine.advance(Constants.SPAWN_PROTECT)
 	local target = (wall.boxMin + wall.boxMax) / 2
 	stand(blue, Vector3.new(ws:GetAttribute("Frontline") + 6, 3, target.Z), target)
 	local hp0 = wall.hp
-	shootAt(blue, target, 1.6)
+	local mw = mark()
+	shootAt(blue, target, 1)
 	check("an arrow chips a structure", wall.hp < hp0 or Build:All()[wall.id] == nil, wall.hp)
-	for _ = 1, 4 do
-		shootAt(blue, target, 1.6)
+	for _ = 1, 3 do
+		shootAt(blue, target, 1)
 	end
-	check("...and the heavy bow breaks it", Build:All()[wall.id] == nil)
+	check("...and a few more break it", Build:All()[wall.id] == nil)
+	local gone = firedSince(mw, "Structure", nil, function(a)
+		return a[1].kind == "destroyed" and a[1].id == wall.id
+	end)
+	local info = gone and gone.args[1]
+	check(
+		"...everyone is told where it stood (its box, its turn)",
+		info and info.min == wall.boxMin and info.max == wall.boxMax and info.rot == wall.rot and info.key == "wall"
+	)
+	check(
+		"...and what broke it: an arrow, from where it hit (the debris flies from there)",
+		info
+			and type(info.blast) == "table"
+			and info.blast.pos.X ~= nil
+			and info.blast.power > 0
+			and info.blast.power < 1
+			and not info.blast.tnt
+			and (info.blast.pos - target).Magnitude < 6,
+		info and info.blast and `{info.blast.pos} {info.blast.power} {target}`
+	)
 end
--- the crossbow: a magazine and a reload
-send(blue2, "Equip", "crossbow")
-local cb = Weapons.get("crossbow")
-stand(blue2, Vector3.new(ws:GetAttribute("Frontline") + 8, 3, 40), Vector3.new(0, 3, 40))
-local m3 = mark()
-for _ = 1, cb.mag + 2 do
-	send(blue2, "Shoot", rootOf(blue2).Position + Vector3.new(0, 1.5, 0), Vector3.new(-1, 0, 0), 2)
-	Engine.advance(cb.cooldown + 0.02)
-end
-local n = 0
-for i = m3 + 1, #Engine.clientLog do
-	local e = Engine.clientLog[i]
-	if e.name == "Arrow" and e.args[1].by == blue2.UserId then
-		n += 1
+
+-- TNT: wound up, thrown in a lob, it blows up enemy structures (never your own team's) and knocks out enemies close
+-- to it with nothing between; a cooldown between throws; checked like a shot
+do
+	local tnt = Weapons.get("tnt")
+	local function whole(p)
+		Combat:Spawned(p)
+		Engine.advance(Constants.SPAWN_PROTECT + 0.1)
 	end
+	local function eye(p)
+		return rootOf(p).Position + Vector3.new(0, 1.5, 0)
+	end
+	-- wind up for `held` seconds, then throw onto `target`
+	local function throwAt(p, target, held)
+		send(p, "Draw", true)
+		Engine.advance(held)
+		local charge = Formulas.charge(tnt, held + 0.05)
+		local dir = Formulas.lobAim(eye(p), target, Formulas.shot(tnt, charge).speed)
+		send(p, "Shoot", eye(p), dir, 77)
+	end
+	local F = ws:GetAttribute("Frontline")
+	-- a red wall at the line, a blue cover just across it (inside the blast), built for the test where the map is clear
+	Build:SetOpen(true)
+	local okR, rw, okB, bc
+	for _, z0 in { 30, 18, 6, -6, -18, 40, -40 } do
+		Build:Refill()
+		stand(red, Vector3.new(F - 12, 3, z0))
+		okR, rw = Build:Place(red, "wall", Formulas.cellOf(F - 4, z0), select(2, Formulas.cellOf(F - 4, z0)), 1)
+		if okR then
+			stand(blue, Vector3.new(F + 12, 3, z0))
+			okB, bc =
+				Build:Place(blue, "cover", Formulas.cellOf(F + 1, z0 + 9), select(2, Formulas.cellOf(F + 1, z0 + 9)), 0)
+			if okB then
+				break
+			end
+			Build:Remove(rw.id, nil, true)
+		end
+	end
+	Build:SetOpen(false)
+	check("(a red wall and a blue cover at the line for the test)", okR == true and okB == true, `{rw} {bc}`)
+	whole(red)
+	whole(blue)
+	send(blue, "Equip", "tnt")
+	check("the TNT in hand", Combat:Weapon(blue) == "tnt")
+	local held = blue.Character:FindFirstChild("HeldBow")
+	check("...everyone sees red sticks in your hand", held and held:GetAttribute("Weapon") == "tnt" and held:FindFirstChild("Stick") ~= nil)
+	local wallMid = (rw.boxMin + rw.boxMax) / 2
+	stand(blue, Vector3.new(F + 12, 3, wallMid.Z), wallMid)
+	stand(red, Vector3.new(F - 30, 3, wallMid.Z - 20))
+	local m = mark()
+	throwAt(blue, wallMid, 0.4)
+	local thrown = firedSince(m, "Bomb", nil)
+	check("a throw: everyone is told (Bomb)", thrown ~= nil and thrown.args[1].by == blue.UserId)
+	check("...it flies on the server", #Combat:Bombs() == 1, #Combat:Bombs())
+	do
+		-- a lob: it rises above a straight line from your hand, then comes down
+		local b = thrown and thrown.args[1]
+		local mid = b and Formulas.lobAt(b.origin, b.velocity, 0.15)
+		local line = b and b.origin + b.velocity * 0.15
+		check("...in an arc (gravity pulls it down)", mid and mid.Y < line.Y)
+	end
+	-- (straight away again: the cooldown)
+	local mr = mark()
+	local rejected
+	local conn = Combat.Rejected:Connect(function(p, why)
+		if p == blue then
+			rejected = why
+		end
+	end)
+	send(blue, "Shoot", eye(blue), Vector3.new(-1, 0, 0), 78)
+	check("a second throw straight away is refused (the cooldown)", firedSince(mr, "Bomb", nil) == nil and rejected == "rate", rejected)
+	conn:Disconnect()
+	Engine.advance(Constants.TNT_FUSE + 0.2)
+	local blast = firedSince(m, "Blast", nil)
+	check("it goes off: everyone is told (Blast)", blast ~= nil and blast.args[1].radius == Constants.TNT_RADIUS)
+	check("...at the wall", blast and (blast.args[1].pos - wallMid).Magnitude < 5, blast and blast.args[1].pos)
+	check("...the enemy's wall is blown up", Build:All()[rw.id] == nil)
+	check("...never your own team's", Build:All()[bc.id] ~= nil)
+	local gone = firedSince(m, "Structure", nil, function(a)
+		return a[1].kind == "destroyed" and a[1].id == rw.id
+	end)
+	local info = gone and gone.args[1]
+	check(
+		"...its debris goes out with the blast: where and how hard (a TNT: much harder than an arrow)",
+		info and info.blast and info.blast.tnt == true and info.blast.power >= 0.75 and (info.blast.pos - blast.args[1].pos).Magnitude < 0.01
+	)
+	check("...and the bomb is gone", #Combat:Bombs() == 0)
+	-- a knockout: thrown at an enemy's feet in the open
+	F = ws:GetAttribute("Frontline")
+	whole(red2)
+	stand(red2, Vector3.new(F - 8, 3, -36), Vector3.new(F + 10, 3, -36))
+	stand(blue, Vector3.new(F + 14, 3, -36), Vector3.new(F - 8, 3, -36))
+	Engine.advance(tnt.cooldown)
+	local mk = mark()
+	throwAt(blue, rootOf(red2).Position - Vector3.new(0, 2.5, 0), 0.5)
+	Engine.advance(Constants.TNT_FUSE + 0.2)
+	check("thrown at an enemy's feet: it goes off by them", firedSince(mk, "Blast", nil) ~= nil)
+	check("...a knockout", not Combat:Alive(red2), Combat:Health(red2))
+	local kill = firedSince(mk, "Kill", nil)
+	check("...credited to the thrower, with the TNT", kill and kill.args[1].killer == blue.UserId and kill.args[1].weapon == "tnt")
+	-- checked like a shot: from far off your head it starts at your head; never from the far side of a wall
+	Engine.advance(Constants.RESPAWN_SECONDS + 0.5)
+	Engine.advance(tnt.cooldown)
+	F = ws:GetAttribute("Frontline")
+	stand(blue, Vector3.new(F + 14, 3, -36), Vector3.new(F - 8, 3, -36))
+	local mo = mark()
+	send(blue, "Draw", true)
+	Engine.advance(0.3)
+	send(blue, "Shoot", eye(blue) + Vector3.new(0, 40, 0), Vector3.new(-1, 0, 0), 79)
+	local far = firedSince(mo, "Bomb", nil)
+	check("a throw from far off your head starts at your head", far and (far.args[1].origin - eye(blue)).Magnitude < 0.5)
+	Engine.advance(tnt.cooldown + 0.2)
+	local head = eye(blue)
+	Arena:AddBox("test_screen", head + Vector3.new(-2.5, -3, -3), head + Vector3.new(-1.5, 3, 3))
+	local mt = mark()
+	send(blue, "Shoot", head + Vector3.new(-4, 0, 0), Vector3.new(-1, 0, 0), 80)
+	local through = firedSince(mt, "Bomb", nil)
+	check("...and never from the far side of a wall", through and (through.args[1].origin - head).Magnitude < 0.5)
+	Arena:RemoveBox("test_screen")
+	Engine.advance(Constants.TNT_FUSE + 0.3)
+	-- the fuse: thrown up into the air it goes off when the fuse runs out
+	Engine.advance(tnt.cooldown)
+	send(blue, "Draw", true)
+	Engine.advance(tnt.draw + 0.05)
+	local mf = mark()
+	send(blue, "Shoot", eye(blue), Vector3.new(0, 1, 0), 81)
+	Engine.advance(Constants.TNT_FUSE - 0.15)
+	check("up in the air: not yet...", firedSince(mf, "Blast", nil) == nil)
+	Engine.advance(0.3)
+	local fuse = firedSince(mf, "Blast", nil)
+	check("...then the fuse runs out and it goes off in the air", fuse and fuse.args[1].pos.Y > eye(blue).Y + 3)
+	-- the blast itself (straight at the server's own explode): the core, line of sight, teammates, the push, the deck
+	F = ws:GetAttribute("Frontline")
+	whole(red)
+	whole(red2)
+	whole(blue2)
+	local spot = Vector3.new(F - 10, 1, 40)
+	stand(red, spot + Vector3.new(-3, 2, 0))
+	stand(blue2, spot + Vector3.new(0, 2, 3)) -- (blue's own: on red's turf just for this)
+	stand(red2, spot + Vector3.new(7.5, 2, 0))
+	local v0 = rootOf(red2).AssemblyLinearVelocity
+	Arena:AddBox("test_block", spot + Vector3.new(-2, -1, -3), spot + Vector3.new(-1.2, 6, 3))
+	local mx = mark()
+	Combat:_explode({ id = 901, by = blue, team = "blue" }, spot)
+	check("in the core but behind something solid: safe (line of sight)", Combat:Alive(red))
+	check("a teammate in the core is never hurt", Combat:Alive(blue2))
+	check("in the blast, out of the core: thrown back, not knocked out", Combat:Alive(red2) and rootOf(red2).AssemblyLinearVelocity.X > v0.X + 5)
+	check("...and told (the push for its own client)", firedSince(mx, "Hurt", red2, function(a)
+		return a[1].blast == true and a[1].amount == 0 and a[1].knock.X > 0
+	end) ~= nil)
+	Arena:RemoveBox("test_block")
+	Combat:_explode({ id = 902, by = blue, team = "blue" }, spot)
+	check("...in the open: knocked out", not Combat:Alive(red))
+	-- the spawn deck keeps you safe until you shoot, TNT or not
+	Engine.advance(Constants.RESPAWN_SECONDS + 0.5)
+	whole(red)
+	local deck = Arena:SpawnFor("red", 1).Position
+	stand(red, deck)
+	check("(standing on red's spawn deck)", Arena:OnDeck(red, "red"))
+	Combat:_explode({ id = 903, by = blue, team = "blue" }, rootOf(red).Position + Vector3.new(1, -1.5, 0))
+	check("on your own spawn deck: safe from the TNT too", Combat:Alive(red))
+	whole(red)
+	whole(red2)
+	whole(blue)
+	whole(blue2)
+	send(blue, "Equip", "bow")
+	send(blue2, "Equip", "bow")
 end
-check("the crossbow fires its magazine, then has to reload", n == cb.mag, n)
-Engine.advance(cb.reload + 0.2)
-check("...and refills", lastFired("Me", blue2).ammo == cb.mag)
 
 -- Pushing a team out -------------------------------------------------------------------------------------------
 Engine.advance(30) -- (well past the qualifying time by the end)

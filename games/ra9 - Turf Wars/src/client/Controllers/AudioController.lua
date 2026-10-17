@@ -1,6 +1,7 @@
 --[[
 Sound (master plan §5: every hit has a distinct sound): your shot, the hit tick, the kill, being hit, the horn at
-the start of a fight, a structure going up, the win. Short, dry sounds; no music under the fight.
+the start of a fight, a structure going up (and coming down), a TNT going off (a boom, quieter far away), the win.
+Short, dry sounds; no music under the fight.
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,7 +16,8 @@ local AudioController = { Name = "AudioController", Order = 60 }
 local player = Players.LocalPlayer
 local cache = {}
 
-function AudioController.play(name, speed)
+-- volume: 0..1 of the sound's own (a far-off boom is quieter)
+function AudioController.play(name, speed, volume)
 	local id = Constants.SOUNDS[name]
 	if not id then
 		return nil
@@ -30,6 +32,7 @@ function AudioController.play(name, speed)
 		cache[name] = s
 	end
 	s.PlaybackSpeed = speed or 1
+	s.Volume = (Constants.SOUND_VOLUME[name] or 0.6) * (volume or 1)
 	pcall(function()
 		SoundService:PlayLocalSound(s)
 	end)
@@ -38,8 +41,9 @@ end
 
 function AudioController:init()
 	Bus.Fired:Connect(function(key, charge)
-		-- (the blade: the same whoosh, pitched low, so a slash sounds heavier than a bowstring)
-		AudioController.play("shoot", key == "blade" and 0.55 or 0.9 + (charge or 0) * 0.3)
+		-- (the blade: the same whoosh, pitched low, so a slash sounds heavier than a bowstring; the TNT lower still)
+		local pitch = key == "blade" and 0.55 or (key == "tnt" and 0.45 or 0.9 + (charge or 0) * 0.3)
+		AudioController.play("shoot", pitch)
 	end)
 	Net.listen("Hit", function(h)
 		AudioController.play(h.kill and "kill" or "hit", h.melee and 0.75 or (h.head and 1.3 or 1))

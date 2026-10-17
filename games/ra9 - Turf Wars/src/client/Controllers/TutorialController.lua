@@ -14,7 +14,7 @@ When the server says { kind = "start" } and you're standing in the arena:
        build:  PICK A WALL → PLACE IT
        fight:  FIGHT! (the camera turns you to the nearest enemy) → AIM HERE → HOLD TO PULL → LET GO! → HIT THEM →
                KNOCK THEM OUT (the camera follows the line jumping forward: THE LINE MOVED!) → PUSH IT TO THEIR BASE
-  3. Tips, each once and only when it fits: 4 = BLADE (an enemy very close), SHIFT = RUN (walking a long while).
+  3. Tips, each once and only when it fits: 3 = BLADE (an enemy very close), SHIFT = RUN (walking a long while).
   4. Your first win: the camera circles you with confetti (YOU WIN!).
 
 Nothing traps you: every step times out, the timers wait while you're down, a step for the build phase is dropped
@@ -653,7 +653,7 @@ local function say(text, hint)
 	sound("tick", 1.25)
 end
 
--- A small tip, once (4 = BLADE, SHIFT = RUN)
+-- A small tip, once (3 = BLADE, SHIFT = RUN)
 local function tip(text)
 	local l = refs.tip
 	l.Text = text
@@ -1617,7 +1617,7 @@ local function stepTips(dt)
 	local _, d = nearestEnemy()
 	if not session.tips.blade and kind ~= "gamepad" and d and d < 14 and me.weapon ~= "blade" then
 		session.tips.blade = true
-		tip(by("4 = BLADE", "TAP BLADE"))
+		tip(by("3 = BLADE", "TAP BLADE"))
 		local b = (hud().bows or {}).blade
 		glow(b and b.button)
 		after(3.2, unglow)

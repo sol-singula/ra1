@@ -1,13 +1,16 @@
 --[[
-Your bow (master plan §5, §6): the viewmodel in your hands, the draw and the shot.
+Your weapons (master plan §5, §6): the viewmodel in your hands, the draw, the shot and the throw.
 
   * Hold the mouse (or the touch FIRE button, or the gamepad's right trigger) to draw; let go to shoot. The bow's
     string comes back as the charge builds, the view tightens a little, and a ring round the crosshair fills
-    (Bus.Charge). The crossbow fires on each press, six bolts, then R (or the RELOAD button) to reload.
+    (Bus.Charge).
   * Let go and the arrow is drawn at once (ArrowController.predict) while the shot goes to the server (Shoot:
     from your eye, the way you're looking). The server times the draw itself, so a held mouse can't cheat a charge.
-  * 1 / 2 / 3 / 4 pick the Standard Bow, the Rapid Crossbow, the Heavy Bow, the Blade (in the fight; in the build
-    phase the digits pick structures), and the mouse wheel steps through them. Only in the fight, alive.
+  * The TNT: hold to wind up (the ring fills: the charge is how far it goes), let go to lob it. It's drawn flying at
+    once (ExplosionController.predict) and the server throws the real one (Shoot again: it knows it's the TNT). Then a
+    cooldown (Weapons tnt.cooldown) before the next bundle comes up into your hand.
+  * 1 / 2 / 3 pick the bow, the TNT and the blade (Data/Weapons' order; in the build phase the digits pick
+    structures), and the mouse wheel steps through them. Only in the fight, alive.
   * The Blade: click (or FIRE) to slash. The slash shows at once; the server finds who it reaches (Swing).
   * No drawing or shooting while a menu is open (the shop, a card, the results): the mouse is the menu's then.
 
@@ -15,9 +18,10 @@ The viewmodel (this client only): your arms in the team's sleeves holding the bo
 that bends to your hand, and the arrow. It moves on springs: up from below when you equip, a walking bob and
 breathing, lagging a little behind your view as you look round, dropped and turned across you as you sprint,
 tilted in a slide, steadier crouched, toward the middle as you draw (the limbs bend, the string comes back, and at
-full draw it shakes with the tension, more for the Heavy Bow), a snap and a kick on release with the string
-overshooting, the next arrow sliding in, a dip when you land; the crossbow lies flat, kicks per bolt and tips down
-to reload.
+full draw it shakes with the tension), a snap and a kick on release with the string overshooting, the next arrow
+sliding in, a dip when you land. The TNT: a bundle of red sticks in your right hand with a fuse that sparks while you
+wind up, drawn back over your shoulder as the charge builds, thrown forward on release, your hand down and empty
+through the cooldown and a fresh bundle up from below at its end.
 ]]
 local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -34,6 +38,7 @@ local Device = require(script.Parent.Parent.UI.Device)
 local Store = require(script.Parent.Parent.Store)
 local ArrowController = require(script.Parent.ArrowController)
 local CameraController = require(script.Parent.CameraController)
+local ExplosionController = require(script.Parent.ExplosionController)
 
 local WeaponController = { Name = "WeaponController", Order = 30 }
 
@@ -279,8 +284,6 @@ local function buildView()
 		return p
 	end
 	local w = weapon()
-	local big = w.key == "heavy"
-	local cross = w.key == "crossbow"
 	-- the bow's finish (Data/Cosmetics skins): the grip and limbs' colours and material
 	local skinKey = ((Store.get("profile") or {}).equipped or {}).skin
 	local skin = Cosmetics.get(skinKey)
@@ -294,9 +297,31 @@ local function buildView()
 		end)
 		material = ok and m or nil
 	end
-	local limbLen = cross and 1.0 or (big and 1.9 or 1.5)
+	local limbLen = 1.5
 	local ink = Color3.fromRGB(30, 30, 34)
-	local v = { model = model, big = big, cross = cross, limbLen = limbLen }
+	local v = { model = model, limbLen = limbLen }
+	if w.throw then
+		-- the TNT: three red sticks bundled upright (dark bands round them), a fuse out of the top with its spark,
+		-- held in the right hand; the left a loose fist
+		v.tnt = true
+		v.sticks = {}
+		for i = 1, 3 do
+			local stick = piece(Vector3.new(1.05, 0.3, 0.3), Constants.TNT_RED, "Stick")
+			stick.Shape = Enum.PartType.Cylinder
+			v.sticks[i] = stick
+		end
+		v.bandU = piece(Vector3.new(0.66, 0.1, 0.6), ink, "Band")
+		v.bandL = piece(Vector3.new(0.66, 0.1, 0.6), ink, "Band")
+		v.fuse = piece(Vector3.new(0.04, 0.32, 0.04), ink, "Fuse")
+		v.spark = piece(Vector3.new(0.13, 0.13, 0.13), Color3.fromRGB(255, 196, 60), "Spark", Enum.Material.Neon)
+		v.spark.Shape = Enum.PartType.Ball
+		v.right = newLimb(piece, "R", 0.27, color)
+		v.left = newLimb(piece, "L", 0.05, color)
+		model.Parent = cam
+		view = v
+		anim.equipAt = os.clock()
+		return
+	end
 	if w.melee then
 		-- the blade: solid steel, whatever bow skin is worn (a Glass, Neon or Hologram skin is for bows: on a sword
 		-- it looked like a hologram): a leather grip in the team's colour, a dark steel guard and pommel, a bright
@@ -326,18 +351,13 @@ local function buildView()
 	-- the string in two halves: straight at rest, a V to your hand as you draw
 	v.strU = piece(Vector3.new(0.03, 1, 0.03), ink, "String")
 	v.strL = piece(Vector3.new(0.03, 1, 0.03), ink, "StringL")
-	if cross then
-		v.stock = piece(Vector3.new(0.22, 0.22, 1.7), limbColor, "Stock", material)
-		v.trigger = piece(Vector3.new(0.08, 0.22, 0.1), ink, "Trigger")
-	end
 	-- the arrow: a white shaft, a team-coloured head and fletching
-	v.shaft = piece(Vector3.new(0.07, 0.07, cross and 1.2 or 1.9), Constants.WHITE, "Nocked")
+	v.shaft = piece(Vector3.new(0.07, 0.07, 1.9), Constants.WHITE, "Nocked")
 	v.head = piece(Vector3.new(0.13, 0.13, 0.22), color, "Head", Enum.Material.Neon)
 	v.fletch = piece(Vector3.new(0.02, 0.18, 0.32), color, "Fletch")
-	-- your arms in the team's sleeves: a bow's grip in the left hand and the string hooked in the right; the
-	-- crossbow's stock in the left, its grip in the right
-	v.left = newLimb(piece, "L", cross and 0.12 or 0.12, color)
-	v.right = newLimb(piece, "R", cross and 0.12 or 0.035, color)
+	-- your arms in the team's sleeves: a bow's grip in the left hand and the string hooked in the right
+	v.left = newLimb(piece, "L", 0.12, color)
+	v.right = newLimb(piece, "R", 0.035, color)
 	model.Parent = cam
 	view = v
 	anim.equipAt = os.clock()
@@ -427,13 +447,13 @@ local function placeView(dt)
 	-- it starts to shake with the tension
 	local aim = spring(anim.aim, drawing and 1 or 0, dt, 160, 18)
 	local held = drawing and math.max(0, t - drawStart - w.draw) or 0
-	local tremble = held > 0 and math.min(1, held / 2) * (view.big and 0.018 or 0.01) * steady or 0
+	local tremble = held > 0 and math.min(1, held / 2) * 0.01 * steady or 0
 	local shake = Vector3.new(math.sin(t * 47) * tremble, math.cos(t * 53) * tremble, 0)
 	-- the shot: a snap forward, a kick up; the string overshoots past rest and settles
 	local kickP = spring(anim.kick, 0, dt, 220, 16)
 	local pullS = spring(anim.pull, drawing and c or 0, dt, drawing and 400 or 900, drawing and 40 or 22)
 	local landP = spring(anim.land, 0, dt, 160, 14)
-	-- the crossbow's reload: tipped down, the bolt pushed in, cocked
+	-- a magazine's reload (no weapon has one now): tipped down and back
 	local reloadK = 0
 	if anim.reloadAt and w.reload then
 		local f = (t - anim.reloadAt) / w.reload
@@ -485,18 +505,87 @@ local function placeView(dt)
 		placeLimb(view.left, leftCf, Vector3.new(-0.95, -1.1, -0.4))
 		return
 	end
-	local cross = view.cross
+	if view.tnt then
+		-- the TNT, low on the right; winding up draws it back and up over your shoulder (out to the right, clear of
+		-- the crosshair), the throw snaps it forward and down, then the hand drops out of sight, empty, until the
+		-- cooldown's last moments bring a fresh bundle up from below
+		local since = t - (anim.thrownAt or -10)
+		local restP = Vector3.new(0.56, -0.6, -1.4)
+		local windP = Vector3.new(0.8, -0.24, -0.95)
+		local throwP = Vector3.new(0.5, -0.86, -1.8)
+		local downP = Vector3.new(0.62, -1.5, -1.3)
+		local wind = pullS
+		local pos, pitch
+		local holding = true
+		local THROW, DROP = 0.3, 0.3
+		if since < THROW then
+			local f = ease(since / THROW)
+			pos = (anim.throwFrom or windP):Lerp(throwP, f)
+			pitch = (anim.throwPitch or 40) + (-60 - (anim.throwPitch or 40)) * f
+			holding = since < 0.06
+		elseif since < w.cooldown then
+			local f = math.clamp((since - THROW) / DROP, 0, 1)
+			local up = math.clamp((since - (w.cooldown - 0.45)) / 0.45, 0, 1)
+			pos = throwP:Lerp(downP, f):Lerp(restP, ease(up))
+			pitch = -60 + (10 + 60) * up
+			holding = up > 0
+		else
+			pos = restP:Lerp(windP, wind)
+			pitch = 10 + wind * 35
+		end
+		pos += Vector3.new(swayX * 0.35 - run * 0.1, breathe - swayY * 0.35 - run * 0.15 - crouchK * 0.05 - landP, 0) + shake
+		local bcf = cam.CFrame
+			* CFrame.new(bob)
+			* CFrame.new(pos)
+			* equipOff
+			* CFrame.Angles(
+				math.rad(pitch - run * 20 + swayY * 20),
+				math.rad(-12 + wind * 10 + run * 25 + swayX * 25),
+				math.rad(-12 - wind * 18 - tilt * 16 + swayX * 15)
+			)
+		if since >= THROW and since < w.cooldown then
+			anim.throwFrom, anim.throwPitch = nil, nil
+		elseif since >= w.cooldown then
+			anim.lastTnt, anim.lastPitch = pos, pitch -- (where a throw starts from)
+		end
+		-- the bundle: three sticks upright round the frame's Y, bands, the fuse and its spark (lit while winding up)
+		local spots = { Vector3.new(-0.15, 0, 0.07), Vector3.new(0.15, 0, 0.07), Vector3.new(0, 0, -0.19) }
+		for i, stick in view.sticks do
+			stick.CFrame = bcf * L(spots[i].X, 0, spots[i].Z) * CFrame.Angles(0, 0, math.rad(90))
+		end
+		view.bandU.CFrame = bcf * L(0, 0.28, -0.02)
+		view.bandL.CFrame = bcf * L(0, -0.3, -0.02)
+		view.fuse.CFrame = bcf * L(0.02, 0.66, 0.02) * CFrame.Angles(0, 0, math.rad(-12))
+		local lit = drawing or since < THROW
+		local flick = 1 + math.sin(t * 61) * 0.35 + math.sin(t * 37) * 0.2
+		view.spark.Size = Vector3.new(0.13, 0.13, 0.13) * VM_SCALE * (lit and flick * 1.3 or 0.7)
+		view.spark.CFrame = bcf * L(0.06, 0.84, 0.02)
+		for _, q in { view.sticks[1], view.sticks[2], view.sticks[3], view.bandU, view.bandL, view.fuse, view.spark } do
+			q.Transparency = holding and 0 or 1
+		end
+		if not lit then
+			view.spark.Transparency = holding and 0.55 or 1
+		end
+		-- the right hand round the bundle's middle (the back of the hand out to the right), the left a loose fist low
+		-- on the left, coming forward a little as you wind up
+		placeLimb(view.right, bcf * L(0, -0.02, 0), Vector3.new(0.95, -1.25, -0.4))
+		local leftCf = cam.CFrame
+			* CFrame.new(-0.62 + wind * 0.08, -0.74 + bob.Y + wind * 0.06, -1.15 - wind * 0.15)
+			* equipOff
+			* CFrame.Angles(math.rad(-70), math.rad(-25), math.rad(10))
+		placeLimb(view.left, leftCf, Vector3.new(-0.95, -1.1, -0.4))
+		return
+	end
 	-- where the bow sits in front of you (camera space, studs): low on the right at rest; drawn, across to the low
 	-- left, the top limb leaning out to the left and the arrow turned a touch outward, so nothing of the bow, the
-	-- arrow or your hands crosses the middle of the screen (the crosshair) at any point of the draw. The crossbow is
-	-- held level, low on the right.
-	local restP = cross and Vector3.new(0.42, -0.5, -1.55) or Vector3.new(0.5, -0.58, -1.5)
+	-- arrow or your hands crosses the middle of the screen (the crosshair) at any point of the draw
+	local restP = Vector3.new(0.5, -0.58, -1.5)
 	local aimP = Vector3.new(-0.74, -0.5, -1.65)
 	-- (on the way across it swings low, under the crosshair: up from below as you draw, back down after the shot)
-	local dip = cross and 0 or 4 * aim * (1 - aim) * (view.big and 1.4 or 1.0)
+	local dip = 4 * aim * (1 - aim)
 	local pos = restP:Lerp(aimP, aim)
 		- Vector3.new(0, dip, 0)
-		+ Vector3.new(reloadK * 0.12, -reloadK * 0.3, 0) -- (the crossbow drops away to reload, under the crosshair)
+		+ Vector3.new(reloadK * 0.12, -reloadK * 0.3, 0) -- (a reload drops it away, under the crosshair)
 		+ Vector3.new(
 			swayX * 0.35 - run * 0.1,
 			breathe - swayY * 0.35 - run * 0.2 - crouchK * 0.05 - landP,
@@ -508,8 +597,8 @@ local function placeView(dt)
 		* equipOff
 		* CFrame.Angles(
 			math.rad(kickP * 9 - aim * 6 - run * 25 - reloadK * 35 + swayY * 20),
-			math.rad((cross and -4 or -12) + aim * 32 + run * 30 + swayX * 25),
-			math.rad((cross and -6 or -35) + aim * 50 - tilt * 16 - reloadK * 20 + swayX * 15)
+			math.rad(-12 + aim * 32 + run * 30 + swayX * 25),
+			math.rad(-35 + aim * 50 - tilt * 16 - reloadK * 20 + swayX * 15)
 		)
 	local half = view.limbLen / 2 -- (model units; L scales them)
 	local bend = 0.15 + pullS * 0.3
@@ -519,43 +608,6 @@ local function placeView(dt)
 	end
 	-- (the shoulders are just off the screen's edges, in front of you: the sleeves come in from the corners)
 	local shoulderR = Vector3.new(0.9, -1.25, -0.5)
-	if cross then
-		-- the crossbow lies flat: the stock along your view, the limbs across, the string drawn back to the latch
-		at(base * L(0, -0.1, 0.35), view.stock)
-		at(base * L(0, -0.3, 0.6), view.trigger)
-		at(base * L(0, -0.15, 1.05), view.grip)
-		local ends = {}
-		for i, sgn in { 1, -1 } do
-			local limb = i == 1 and view.upper or view.lower
-			local cf = base
-				* L(sgn * (half + 0.05), 0, -0.25)
-				* CFrame.Angles(0, math.rad(sgn * (8 + pullS * 6)), math.rad(90))
-			at(cf, limb)
-			ends[i] = (base * L(sgn * (half * 2 + 0.05), 0, -0.25 + bend * 0.6)).Position
-			at(CFrame.new(ends[i]) * (base - base.Position), i == 1 and view.tipU or view.tipL)
-		end
-		local latch = (base * L(0, 0.05, -0.1 + (1 - reloadK) * 0.4)).Position
-		for i, part in { view.strU, view.strL } do
-			local a, b = ends[i], latch
-			part.Size = Vector3.new(0.03 * VM_SCALE, 0.03 * VM_SCALE, (b - a).Magnitude)
-			part.CFrame = CFrame.lookAt((a + b) / 2, b)
-		end
-		local loaded = (me.ammo or 0) > 0 and reloadK < 0.6
-		local boltCf = base * L(0, 0.12, -0.35 + reloadK * 0.6)
-		at(boltCf, view.shaft)
-		at(boltCf * L(0, 0, -0.65), view.head)
-		at(boltCf * L(0, 0, 0.5), view.fletch)
-		for _, q in { view.shaft, view.head, view.fletch } do
-			q.Transparency = loaded and 0 or 1
-		end
-		-- hands: the left cradling the stock from under the front (the bar along the stock, the back of the hand
-		-- down, the forearm off to the left), the right round the grip (the back of the hand out to the right)
-		local under = base * L(0, -0.1, -0.15)
-		local leftCf = CFrame.fromMatrix(under.Position, base.UpVector, base.LookVector, -base.RightVector)
-		placeLimb(view.left, leftCf * CFrame.Angles(0, math.rad(25), 0), Vector3.new(-0.8, -1.2, -0.45))
-		placeLimb(view.right, base * L(0, -0.22, 1.08), shoulderR)
-		return
-	end
 	-- a bow: held upright in the left hand, the limbs bending back as you draw
 	at(base, view.grip)
 	at(base * L(0, half + 0.25, bend * 0.5) * CFrame.Angles(math.rad(-18 - pullS * 16), 0, 0), view.upper)
@@ -606,8 +658,8 @@ function WeaponController.startDraw()
 	if w.melee then
 		return WeaponController.swing()
 	end
-	if w.key == "crossbow" then
-		WeaponController.release(true)
+	if w.draw <= 0 then
+		WeaponController.release(true) -- (a weapon with no draw shoots on each press)
 		return true
 	end
 	if os.clock() - lastShot < w.cooldown then
@@ -646,12 +698,25 @@ function WeaponController.release(instant)
 	local cam = workspace.CurrentCamera
 	local origin = cam and cam.CFrame.Position or Vector3.zero
 	local dir = cam and cam.CFrame.LookVector or Vector3.new(0, 0, -1)
-	dir = WeaponController.assist(origin, dir)
+	if not w.throw then
+		dir = WeaponController.assist(origin, dir) -- (a lob isn't a straight line: no help for the TNT)
+	end
 	shotId += 1
 	lastShot = os.clock()
 	local shot = Formulas.shot(w, charge)
 	-- (start it a stud ahead, so it never begins inside your own head)
 	local start = origin + dir * 1
+	if w.throw then
+		-- the TNT: drawn flying at once in the same lob the server throws, the cooldown on the hotbar
+		ExplosionController.predict(start, Formulas.lobVelocity(dir, shot.speed), Store.team() or "red", shotId)
+		Net.send("Shoot", start, dir, shotId)
+		Store.merge("me", { readyAt = os.clock() + w.cooldown })
+		anim.thrownAt = os.clock()
+		anim.throwFrom, anim.throwPitch = anim.lastTnt, anim.lastPitch
+		CameraController.shake(0.05 + charge * 0.06, 0.12)
+		Bus.Fired:Fire(w.key, charge)
+		return true
+	end
 	ArrowController.predict(start, dir * shot.speed, Store.team() or "red", shotId)
 	Net.send("Shoot", start, dir, shotId)
 	if w.mag then
@@ -742,13 +807,10 @@ function WeaponController:init()
 		if processed or Store.phase() == "build" then
 			return
 		end
-		local map = {
-			[Enum.KeyCode.One] = "bow",
-			[Enum.KeyCode.Two] = "crossbow",
-			[Enum.KeyCode.Three] = "heavy",
-			[Enum.KeyCode.Four] = "blade",
-		}
-		local key = map[input.KeyCode]
+		-- (the digits in Data/Weapons' order: 1 the bow, 2 the TNT, 3 the blade)
+		local digits = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four, Enum.KeyCode.Five }
+		local i = table.find(digits, input.KeyCode)
+		local key = i and Weapons.list[i] and Weapons.list[i].key
 		if key then
 			WeaponController.equip(key)
 		end
@@ -806,7 +868,7 @@ function WeaponController:init()
 		if drawing then
 			local c = WeaponController.charge()
 			Bus.Charge:Fire(c)
-			CameraController.setFov("draw", -(c or 0) * 10)
+			CameraController.setFov("draw", -(c or 0) * (weapon().throw and 3 or 10))
 		else
 			CameraController.setFov("draw", nil)
 		end

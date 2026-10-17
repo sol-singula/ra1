@@ -34,10 +34,14 @@ check("...never more than three", Formulas.pushCells(1) == 3)
 check("turf: west of the line is red's", Formulas.sideOf(-1, 0) == "red" and Formulas.sideOf(1, 0) == "blue")
 check("red pushes east, blue west", Formulas.forward("red") == 1 and Formulas.forward("blue") == -1)
 
--- Bows ---------------------------------------------------------------------------------------------------------
-local bow, crossbow, heavy = Weapons.get("bow"), Weapons.get("crossbow"), Weapons.get("heavy")
-local blade = Weapons.get("blade")
-check("three bows and a blade, all at the start", #Weapons.list == 4 and bow and crossbow and heavy and blade)
+-- Weapons ------------------------------------------------------------------------------------------------------
+local bow, tnt, blade = Weapons.get("bow"), Weapons.get("tnt"), Weapons.get("blade")
+check(
+	"the bow, the TNT and the blade, in that order (1 2 3), all at the start",
+	#Weapons.list == 3 and Weapons.list[1] == bow and Weapons.list[2] == tnt and Weapons.list[3] == blade
+)
+check("no crossbow, no heavy bow", Weapons.get("crossbow") == nil and Weapons.get("heavy") == nil)
+check("no weapon has a magazine now", bow.mag == nil and tnt.mag == nil and blade.mag == nil)
 check(
 	"the blade is melee: no arrow, a reach across the line",
 	blade.melee == true and blade.range >= 9 and blade.arc > 0
@@ -46,22 +50,96 @@ check("...one slash, one knockout", blade.damage[1] >= Constants.MAX_HEALTH)
 check("...and its swing parries arrows for a moment", Constants.PARRY_SECONDS > 0.2 and Constants.PARRY_SECONDS < 1)
 check("a tap is the least charge", near(Formulas.charge(bow, 0), bow.minCharge))
 check("a full draw is full charge", near(Formulas.charge(bow, 5), 1))
-check("the crossbow is always full", Formulas.charge(crossbow, 0) == 1)
 check("a full bow draw kills (100)", Formulas.shot(bow, 1).damage >= Constants.MAX_HEALTH)
 check("a tap kills too: every hit is a knockout", Formulas.shot(bow, bow.minCharge).damage >= Constants.MAX_HEALTH)
-check("...a crossbow bolt", Formulas.shot(crossbow, 1).damage >= Constants.MAX_HEALTH)
-check("...a heavy arrow", Formulas.shot(heavy, heavy.minCharge).damage >= Constants.MAX_HEALTH)
 check(
 	"...but a tap flies slower than a full draw",
 	Formulas.shot(bow, bow.minCharge).speed < Formulas.shot(bow, 1).speed
 )
-check("the heavy bow pushes hardest", heavy.knockback > bow.knockback and heavy.knockback > crossbow.knockback)
-check("the heavy bow wrecks structures", heavy.structure > bow.structure)
--- none is strictly better: each loses somewhere
+-- the TNT: thrown, wound up (the charge is the distance), a cooldown so it isn't spammy
+check("the TNT is thrown, not shot", tnt.throw == true and not tnt.melee)
+check("...wound up like a draw", tnt.draw > 0 and tnt.minCharge > 0)
+check("...a few seconds between throws", tnt.cooldown >= 2.5 and tnt.cooldown <= 4)
 check(
-	"no bow is strictly better",
-	heavy.draw > bow.draw and crossbow.mag ~= nil and bow.mag == nil and bow.speed[2] > heavy.speed[2] - 40
+	"...the blast: a core inside the radius, a short fuse",
+	Constants.TNT_CORE < Constants.TNT_RADIUS and Constants.TNT_RADIUS >= 8 and Constants.TNT_FUSE <= 1.5
 )
+do
+	local look = Vector3.new(1, 0, 0)
+	local v = Formulas.lobVelocity(look, 50)
+	check("a throw leaves above where you look (a lob)", v.Y > 0 and near(v.Magnitude, 50, 1e-4))
+	local o2 = Vector3.new(0, 5, 0)
+	local top, land
+	for i = 1, 200 do
+		local q = Formulas.lobAt(o2, v, i / 100)
+		top = math.max(top or q.Y, q.Y)
+		if not land and q.Y <= 0 then
+			land = q
+		end
+	end
+	check("...it rises, then comes down", top > 5 and land ~= nil)
+	check("...falling faster than an arrow (heavier)", Constants.TNT_GRAVITY > Constants.GRAVITY)
+	local far = Formulas.lobAt(o2, Formulas.lobVelocity(look, Formulas.shot(tnt, 1).speed), 0.5)
+	local short = Formulas.lobAt(o2, Formulas.lobVelocity(look, Formulas.shot(tnt, tnt.minCharge).speed), 0.5)
+	check("...wound up all the way, it goes further", far.X > short.X * 1.8, `{far.X} {short.X}`)
+	local target = Vector3.new(30, 0.5, 6)
+	local speed = Formulas.shot(tnt, 0.7).speed
+	local dir, miss = Formulas.lobAim(o2, target, speed)
+	check("lobAim finds a throw onto a spot (bots)", miss < 2.5, miss)
+	check("...toward it", dir and dir.X > 0 and dir.Z > 0)
+	check("the blast falls off with distance", Formulas.blast(0) == 1 and Formulas.blast(Constants.TNT_RADIUS) == 0)
+	check("...half way, half", near(Formulas.blast(Constants.TNT_RADIUS / 2), 0.5))
+	check(
+		"a point's distance to a box",
+		Formulas.boxDistance(Vector3.new(5, 1, 0), Vector3.new(0, 0, -1), Vector3.new(2, 4, 1)) == 3
+			and Formulas.boxDistance(Vector3.new(1, 1, 0), Vector3.new(0, 0, -1), Vector3.new(2, 4, 1)) == 0
+	)
+end
+
+-- What structures look like (StructureModel): one team shade for every piece, the armoured wall darker ------------
+do
+	local StructureModel = Engine.require(tree.shared.StructureModel)
+	for _, team in { "red", "blue" } do
+		local shade, armor = Constants.BUILD_COLOR[team], Constants.ARMOR_COLOR[team]
+		check(`{team}: the armour shade is darker than the build shade`, armor.R + armor.G + armor.B < shade.R + shade.G + shade.B - 0.6)
+		for _, def in Structures.list do
+			for rot = 0, 1 do
+				local w, d = Structures.footprint(def, rot)
+				local mn, mx = Formulas.footprintBox(3, -2, w, d, 0, def.h)
+				local parts = StructureModel.parts(def.key, team, mn, mx)
+				local tones, outside, high = {}, 0, 0
+				for _, e in parts do
+					tones[e.tone] = true
+					-- (anything solid stays inside the footprint and near its height)
+					if e.solid then
+						local c = e.cf.Position
+						if c.X < mn.X - 0.01 or c.X > mx.X + 0.01 or c.Z < mn.Z - 0.01 or c.Z > mx.Z + 0.01 then
+							outside += 1
+						end
+						if c.Y > def.h + 2.5 then
+							high += 1
+						end
+					end
+				end
+				local want = def.key == "reinforced" and "armor" or "build"
+				local only = tones[want] and not tones[want == "armor" and "build" or "armor"]
+				check(`{team} {def.key} rot {rot}: detailed ({#parts} parts), all in its one shade`, #parts >= 8 and only)
+				check(`...nothing solid outside its footprint or high above it`, outside == 0 and high == 0, `{outside} {high}`)
+			end
+		end
+		check(`{team}: the colours`, StructureModel.color("build", team) == shade and StructureModel.color("armor", team) == armor)
+	end
+	-- the tower: tapered, battlements, a lookout to stand on, a ladder, a banner
+	local mn, mx = Formulas.footprintBox(0, 0, 2, 2, 0, Structures.get("tower").h)
+	local names = {}
+	for _, e in StructureModel.parts("tower", "red", mn, mx) do
+		names[e.name] = (names[e.name] or 0) + 1
+	end
+	check(
+		"the tower: tiers, merlons, a lookout, a ladder with rungs, a banner",
+		names.Tier1 and names.Tier2 and (names.Merlon or 0) >= 6 and names.Lookout and (names.Rung or 0) >= 5 and names.Flag
+	)
+end
 
 -- Arrow maths --------------------------------------------------------------------------------------------------
 local o, v = Vector3.new(0, 10, 0), Vector3.new(100, 0, 0)
@@ -228,7 +306,8 @@ for _, def in Maps.list do
 end
 
 -- Remotes ------------------------------------------------------------------------------------------------------
-check("Shoot is rate-limited above the crossbow's rate", Net.ClientEvents.Shoot >= 1 / crossbow.cooldown)
+check("Shoot is rate-limited above the bow's rate", Net.ClientEvents.Shoot >= 1 / bow.cooldown)
+check("the TNT's lob and blast go to everyone", table.find(Net.ServerEvents, "Bomb") and table.find(Net.ServerEvents, "Blast"))
 check(
 	"the server events include the kill feed and results",
 	table.find(Net.ServerEvents, "Kill") and table.find(Net.ServerEvents, "Results")
