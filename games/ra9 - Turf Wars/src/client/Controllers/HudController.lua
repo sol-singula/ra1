@@ -10,8 +10,8 @@ The HUD (master plan §1, §2, §5, §7): everything on screen, in the SUPERHOT 
              (BUILD, FIGHT!, RED WINS), the respawn countdown
   top right  🏆 TOP (L) in the corner: the leaderboards (LeaderboardController); under it the kill feed: who, with
              what, how far the line moved
-  bottom     health (left), the bows (right: 1 2 3, the crossbow's bolts), the build tray in the build phase
-             (seven pieces with their costs, your points), toasts
+  bottom     health (left), the weapons (right: 1 2 3 4, each a 3D picture, the crossbow's bolts), the build
+             tray in the build phase (seven pieces as 3D pictures with their costs, your points), toasts
   touch      FIRE (hold to draw), SPRINT, SLIDE; PLACE and ROTATE while building
   overlays   the results (who won, the table, the MVP, your reward, the next map); unlock and thank-you cards
              stack down the right, under the kill feed
@@ -41,6 +41,7 @@ local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Layout = require(script.Parent.Parent.UI.Layout)
 local Device = require(script.Parent.Parent.UI.Device)
+local Icons = require(script.Parent.Parent.UI.Icons)
 local BuildController = require(script.Parent.BuildController)
 
 local HudController = { Name = "HudController", Order = 40 }
@@ -85,16 +86,18 @@ local function keyBadge(n, parent)
 		Position = UDim2.fromOffset(3, 3),
 		Size = UDim2.fromOffset(18, 18),
 		BackgroundColor3 = C.ink,
+		ZIndex = 2,
 		Parent = parent,
-	}, { Theme.corner(3) })
+	}, { Theme.corner(4) })
 	label({
 		Name = "Num",
 		Text = tostring(n),
 		Size = UDim2.fromScale(1, 1),
-		TextSize = 13,
+		TextSize = 12,
 		TextColor3 = C.white,
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Font = Theme.Display,
+		ZIndex = 2,
 		Parent = badge,
 	})
 	return badge
@@ -105,6 +108,82 @@ local function paintBadge(badge, on)
 		badge.BackgroundColor3 = on and C.white or C.ink
 		badge.Num.TextColor3 = on and C.ink or C.white
 	end
+end
+
+-- A hotbar slot (the weapons, the build tray): a white card, softly shaded top to bottom, with its picture
+-- (UI/Icons), the key to press in a badge and the name under the picture. The one picked lifts a little, turns
+-- black with a ring and a soft glow in your team's colour and a short bar under it, and pops as you switch to it.
+local BOW_SLOT = { y = 8, h = 66 } -- (the weapons: a slot's top, its height; lifted, it sits LIFT higher)
+local TRAY_SLOT = { y = 32, h = 78 } -- (the tray: under the points)
+local LIFT = 6
+local function slot(props, n, icon)
+	props.BackgroundColor3 = C.white
+	props.Text = ""
+	props.AutoButtonColor = false
+	local b = Theme.new("TextButton", props, {
+		Theme.corner(8),
+		Theme.new("UIGradient", {
+			Name = "Shade",
+			Rotation = 90,
+			Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(222, 222, 228)),
+		}),
+	})
+	local edge = Theme.stroke(2, C.ink)
+	edge.Name = "Edge"
+	edge.Parent = b
+	-- the glow: a wide soft ring just outside the edge, only on the one picked
+	Theme.new("Frame", {
+		Name = "Glow",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.new(1, 6, 1, 6),
+		BackgroundTransparency = 1,
+		Visible = false,
+		Parent = b,
+	}, { Theme.corner(10), Theme.new("UIStroke", { Name = "Ring", Thickness = 4, Transparency = 0.55 }) })
+	icon.Parent = b
+	keyBadge(n, b)
+	Theme.new("Frame", {
+		Name = "Bar",
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -2),
+		Size = UDim2.fromOffset(26, 3),
+		BorderSizePixel = 0,
+		Visible = false,
+		Parent = b,
+	}, { Theme.corner(2) })
+	return b
+end
+
+-- Paint a slot: picked (on), out of reach (dim: a piece you can't afford), or plain; x, y where it sits unpicked
+local SHADE_LIGHT = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(222, 222, 228))
+local SHADE_DARK = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(120, 120, 132))
+local function paintSlot(b, on, dim, teamC, x, y)
+	local was = b:GetAttribute("On") == true
+	b.BackgroundColor3 = on and Color3.fromRGB(44, 44, 52) or (dim and Color3.fromRGB(232, 232, 235) or C.white)
+	b.Shade.Color = on and SHADE_DARK or SHADE_LIGHT
+	b.Edge.Color = on and teamC or (dim and C.muted or C.ink)
+	b.Edge.Thickness = on and 3 or 2
+	b.Glow.Visible = on
+	b.Glow.Ring.Color = teamC
+	-- (not where the crossbow's bolts or a piece's cost already sit)
+	b.Bar.Visible = on and not b:FindFirstChild("Pips") and not b:FindFirstChild("CostPill")
+	b.Bar.BackgroundColor3 = teamC
+	b.Icon.ImageTransparency = dim and not on and 0.55 or 0
+	b.Label.TextColor3 = on and C.white or (dim and C.muted or C.ink)
+	local ammo = b:FindFirstChild("Ammo")
+	if ammo then
+		ammo.TextColor3 = on and C.white or C.ink
+	end
+	paintBadge(b.Key, on)
+	b.Position = UDim2.fromOffset(x, on and y - LIFT or y)
+	if on and not was then
+		-- switched to: a quick pop (bigger, then back with a little bounce)
+		local scale = b:FindFirstChild("Pop") or Theme.new("UIScale", { Name = "Pop", Parent = b })
+		scale.Scale = Theme.reducedMotion() and 1 or 1.12
+		Theme.tween(scale, 0.22, { Scale = 1 }, Enum.EasingStyle.Back)
+	end
+	b:SetAttribute("On", on)
 end
 
 -- The top: phase, clock, the frontline bar ---------------------------------------------------------------------
@@ -571,67 +650,83 @@ local function buildBottom(gui)
 		outline = false,
 		Parent = hp,
 	})
-	-- the bows: three buttons (1 2 3)
+	-- the weapons: four slots (1 2 3 4), each with its picture
 	local bows = Theme.new("Frame", {
 		Name = "Bows",
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(1, -16, 1, -16),
-		Size = UDim2.fromOffset(#Weapons.list * 82, 64),
+		Size = UDim2.fromOffset(#Weapons.list * 82, BOW_SLOT.y + BOW_SLOT.h),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	})
 	refs.bowsFrame = bows
 	refs.bows = {}
 	for i, w in Weapons.list do
-		local b = Theme.new("TextButton", {
+		local b = slot({
 			Name = "Bow_" .. w.key,
-			Position = UDim2.fromOffset((i - 1) * 82, 0),
-			Size = UDim2.fromOffset(76, 64),
-			BackgroundColor3 = C.white,
-			Text = "",
-			AutoButtonColor = false,
+			Position = UDim2.fromOffset((i - 1) * 82, BOW_SLOT.y),
+			Size = UDim2.fromOffset(76, BOW_SLOT.h),
 			Parent = bows,
-		}, { Theme.corner(4), Theme.stroke(2, C.ink) })
-		local badge = keyBadge(i, b)
-		label({
-			Text = w.icon,
-			Size = UDim2.new(1, -48, 0, 28),
-			Position = UDim2.fromOffset(24, 4),
-			TextSize = 22,
-			TextXAlignment = Enum.TextXAlignment.Center,
-			Parent = b,
-		})
+		}, i, Icons.weapon(
+			w.key,
+			Store.team(),
+			{ Position = UDim2.fromOffset(4, 1), Size = UDim2.fromOffset(68, 42) }
+		))
 		label({
 			Name = "Label",
 			Text = ({ bow = "BOW", crossbow = "CROSSBOW", heavy = "HEAVY", blade = "BLADE" })[w.key]
 				or string.upper(w.name),
-			Size = UDim2.new(1, -4, 0, 14),
-			Position = UDim2.fromOffset(2, 32),
+			Size = UDim2.new(1, -4, 0, 12),
+			Position = UDim2.fromOffset(2, 43),
 			TextSize = 10,
 			TextXAlignment = Enum.TextXAlignment.Center,
 			Font = Theme.Display,
 			Parent = b,
 		})
+		-- the bolts left (the crossbow): a number in the top right and a row of pips under the name
 		local ammo = label({
 			Name = "Ammo",
 			Text = "",
-			Size = UDim2.new(1, 0, 0, 14),
-			Position = UDim2.fromOffset(0, 46),
+			Size = UDim2.fromOffset(32, 14),
+			Position = UDim2.fromOffset(41, 4),
 			TextSize = 11,
-			TextXAlignment = Enum.TextXAlignment.Center,
+			TextXAlignment = Enum.TextXAlignment.Right,
+			Font = Theme.Display,
 			Parent = b,
 		})
+		local pips
+		if w.mag then
+			pips = Theme.new("Frame", {
+				Name = "Pips",
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = UDim2.new(0.5, 0, 0, 57),
+				Size = UDim2.fromOffset(w.mag * 8 - 2, 4),
+				BackgroundTransparency = 1,
+				Visible = false,
+				Parent = b,
+			})
+			for k = 1, w.mag do
+				Theme.new("Frame", {
+					Name = "Pip" .. k,
+					Position = UDim2.fromOffset((k - 1) * 8, 0),
+					Size = UDim2.fromOffset(6, 4),
+					BorderSizePixel = 0,
+					BackgroundColor3 = C.white,
+					Parent = pips,
+				}, { Theme.corner(1) })
+			end
+		end
 		b.Activated:Connect(function()
 			Bus.Weapon:Fire(w.key)
 		end)
-		refs.bows[w.key] = { button = b, ammo = ammo, key = badge }
+		refs.bows[w.key] = { button = b, ammo = ammo, key = b.Key, icon = b.Icon, pips = pips, x = (i - 1) * 82 }
 	end
 	-- the build tray
 	local tray = Theme.new("Frame", {
 		Name = "BuildTray",
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -14),
-		Size = UDim2.fromOffset(#Structures.list * 74 + 6, 106),
+		Size = UDim2.fromOffset(#Structures.list * 74 + 6, TRAY_SLOT.y + TRAY_SLOT.h),
 		BackgroundTransparency = 1,
 		Visible = false,
 		Parent = gui,
@@ -646,48 +741,53 @@ local function buildBottom(gui)
 		Parent = tray,
 	})
 	refs.trayButtons = {}
+	refs.traySlots = {}
 	for i, s in Structures.list do
-		local b = Theme.new("TextButton", {
-			Name = "Piece_" .. s.key,
-			Position = UDim2.fromOffset(3 + (i - 1) * 74, 26),
-			Size = UDim2.fromOffset(70, 70),
-			BackgroundColor3 = C.white,
-			Text = "",
-			AutoButtonColor = false,
-			Parent = tray,
-		}, { Theme.corner(4), Theme.stroke(2, C.ink) })
-		keyBadge(i, b)
-		label({
-			Text = s.icon,
-			Size = UDim2.new(1, -48, 0, 26),
-			Position = UDim2.fromOffset(24, 4),
-			TextSize = 22,
-			TextXAlignment = Enum.TextXAlignment.Center,
-			Parent = b,
-		})
+		local b = slot(
+			{
+				Name = "Piece_" .. s.key,
+				Position = UDim2.fromOffset(3 + (i - 1) * 74, TRAY_SLOT.y),
+				Size = UDim2.fromOffset(70, TRAY_SLOT.h),
+				Parent = tray,
+			},
+			i,
+			Icons.structure(s.key, Store.team(), { Position = UDim2.fromOffset(3, 2), Size = UDim2.fromOffset(64, 42) })
+		)
 		label({
 			Name = "Label",
 			Text = string.upper(s.name),
-			Size = UDim2.new(1, -4, 0, 24),
-			Position = UDim2.fromOffset(2, 30),
-			TextSize = 9,
+			Size = UDim2.new(1, -4, 0, 18),
+			Position = UDim2.fromOffset(2, 43),
+			TextSize = 8,
 			TextXAlignment = Enum.TextXAlignment.Center,
 			Font = Theme.Display,
 			Parent = b,
 		})
+		-- what it costs, in a small pill along the bottom
+		local pill = Theme.new("Frame", {
+			Name = "CostPill",
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, 62),
+			Size = UDim2.fromOffset(40, 13),
+			BorderSizePixel = 0,
+			BackgroundColor3 = C.ink,
+			Parent = b,
+		}, { Theme.corner("round") })
 		label({
 			Name = "Cost",
-			Text = tostring(s.cost),
-			Size = UDim2.new(1, 0, 0, 14),
-			Position = UDim2.fromOffset(0, 54),
-			TextSize = 12,
+			Text = `{s.cost} PTS`,
+			Size = UDim2.fromScale(1, 1),
+			TextSize = 9,
 			TextXAlignment = Enum.TextXAlignment.Center,
-			Parent = b,
+			TextColor3 = C.white,
+			Font = Theme.Display,
+			Parent = pill,
 		})
 		b.Activated:Connect(function()
 			BuildController.pick(s.key)
 		end)
 		refs.trayButtons[s.key] = b
+		refs.traySlots[s.key] = { x = 3 + (i - 1) * 74 }
 	end
 	refs.tray = tray
 	refs.buildHint = label({
@@ -745,17 +845,29 @@ function HudController.updateBottom()
 		refs.team.TextColor3 = Constants.TEAM_COLOR[team or ""] or C.ink
 		refs.hpFill.BackgroundColor3 = Constants.TEAM_COLOR[team or ""] or C.ink
 	end
+	local teamC = Constants.TEAM_COLOR[me.team or ""] or C.ink
+	if refs.iconTeam ~= me.team then
+		-- the pictures wear your team's colour
+		refs.iconTeam = me.team
+		for _, b in refs.bows or {} do
+			Icons.paint(b.icon, me.team)
+		end
+		for _, b in refs.trayButtons or {} do
+			Icons.paint(b.Icon, me.team)
+		end
+	end
 	for key, b in refs.bows or {} do
 		local on = me.weapon == key
-		b.button.BackgroundColor3 = on and C.ink or C.white
-		for _, d in b.button:GetChildren() do
-			if d:IsA("TextLabel") then
-				d.TextColor3 = on and C.white or C.ink
+		local w = Weapons.get(key)
+		paintSlot(b.button, on, false, teamC, b.x, BOW_SLOT.y)
+		b.ammo.Text = (w.mag and on) and `{me.ammo or 0}/{w.mag}` or ""
+		if b.pips then
+			b.pips.Visible = on
+			for k, pip in b.pips:GetChildren() do
+				local n = tonumber(pip.Name:sub(4)) or k
+				pip.BackgroundColor3 = n <= (me.ammo or 0) and teamC or Color3.fromRGB(80, 80, 90)
 			end
 		end
-		paintBadge(b.key, on)
-		local w = Weapons.get(key)
-		b.ammo.Text = (w.mag and on) and `{me.ammo or 0}/{w.mag}` or ""
 	end
 	local building = m.phase == "build"
 	if refs.tray then
@@ -765,13 +877,9 @@ function HudController.updateBottom()
 		for key, b in refs.trayButtons do
 			local s = Structures.get(key)
 			local afford = (me.budget or 0) >= s.cost
-			b.BackgroundColor3 = picked == key and C.ink or (afford and C.white or Color3.fromRGB(225, 225, 228))
-			for _, d in b:GetChildren() do
-				if d:IsA("TextLabel") then
-					d.TextColor3 = picked == key and C.white or (afford and C.ink or C.muted)
-				end
-			end
-			paintBadge(b:FindFirstChild("Key"), picked == key)
+			local on = picked == key
+			paintSlot(b, on, not afford, teamC, refs.traySlots[key].x, TRAY_SLOT.y)
+			b.CostPill.BackgroundColor3 = on and teamC or (afford and C.ink or Color3.fromRGB(170, 170, 176))
 		end
 		local spot = BuildController.spot()
 		refs.buildHint.Text = (picked and spot and not spot.ok and spot.why)

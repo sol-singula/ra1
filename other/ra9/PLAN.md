@@ -457,6 +457,42 @@ UserService. ClientSmoke checks the button in every overlap layout and the open 
   line, and **a swing parries**: for 0.45 s an arrow arriving from the front (within ~75°) is knocked away and flies
   straight back at whoever shot it, as the swinger's arrow ("PARRIED!"; `CombatService:_parry`, `Parried` signal).
 
+## Real hands, a clear crosshair, a better hotbar
+
+* **Hands** (`WeaponController`): the stick arms are gone. Each hand is a palm, a rounded knuckle ridge, four
+  fingers in two bones each (cylinders, the little finger thinner) wrapped round the bar it holds and a thumb closing
+  the other way; the left hand is the right one mirrored. Each arm is a bare wrist, a darker cuff and a sleeve in the
+  team's colour that widens toward the elbow and runs off the screen's edge. Bow and Heavy Bow: the left hand round
+  the grip, the right hooked on the string at the nock (it comes back with the draw); crossbow: the left cradling the
+  stock from under the front, the right on the grip; blade: the right round the hilt, the left a loose fist low on the
+  left. They ride the existing motion (equip, sway, draw, kick, reload, slash). Skin: your avatar's own skin colour
+  (`GetHumanoidDescriptionFromUserId`, once; in a match the body is painted in the team's colour), a neutral light
+  tone until then. 16 parts a side, anchored, no shadows, no collisions, massless.
+* **The crosshair stays clear:** drawn, the bow goes across to the low left with its top limb leaning out and the
+  arrow turned a touch outward, swinging low under the crosshair on the way across (up from below as you draw, back
+  down after the shot); the crossbow drops away as it reloads. Nothing of the weapon or the hands enters the middle
+  16% of the screen at rest, drawing, at full draw (shaking) or through the kick, at the view's field of view and the
+  drawn one, on a monitor and a wide phone (the slash still sweeps across: it's a moment).
+* **Hotbar and build tray** (`UI/Icons`, `HudController`): every weapon and every structure is a little 3D model in a
+  ViewportFrame (white pieces, the team's colour where the real thing has it, lit from the top left, a camera fitted
+  to the frame) instead of an emoji or glyph. The slots are white cards shaded top to bottom; the one picked lifts,
+  turns dark with a ring and a soft glow in the team's colour and a short bar under it, and pops (a quick scale with
+  a bounce; snaps with Reduced Motion). The key in a badge, the name under the picture, the crossbow's bolts as a
+  number and a row of pips, a piece's cost in a pill (the team's colour when picked, grey when you can't afford it).
+  Same places and footprints as before (the tray 4 px taller), so the HUD's overlap checks hold everywhere.
+* **Renders:** the gameplay renderer draws ViewportFrames (Capture records their parts, camera and light), the
+  first-person frames use the real field of view and include the build tray.
+
+![](screenshots/hands_bow.png)
+![](screenshots/hands_blade.png)
+![](screenshots/hotbar.png)
+![](screenshots/build_tray.png)
+
+ClientSmoke (229): both hands on every weapon (a real palm, eight finger bones, a thumb, sleeves in the team's
+colour), all of it light; nothing in the middle of the screen through rest, the draw, full draw and the kick for
+each weapon (sampled every 1/20 s, at two fields of view and two screen shapes); a 3D picture in every slot; the
+picked slot and piece styled apart and lifted; the slots side by side inside the bar and the tray.
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

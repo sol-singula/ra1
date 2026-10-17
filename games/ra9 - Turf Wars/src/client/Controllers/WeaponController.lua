@@ -124,6 +124,133 @@ function WeaponController.charge()
 end
 
 -- The viewmodel ----------------------------------------------------------------------------------------------------
+-- Your hands: your avatar's own skin colour (its HumanoidDescription; in a match everyone's body is painted in the
+-- team's colour, so it's asked for once from your avatar), a neutral light tone until then
+local SKIN = Color3.fromRGB(236, 196, 162)
+local skinTone
+
+local function skinColor()
+	return skinTone or SKIN
+end
+
+-- A hand closed round a bar (a grip, a hilt, the stock; with a thin bar, the string: a hook): built in its own frame,
+-- the bar along Y through the middle (radius r), the index finger toward +Y, the forearm going off toward +Z, and the
+-- palm against the bar from +X (the back of the hand out at +X). The left hand is the right one in a mirror (X
+-- flipped). Model units, like every viewmodel offset. Each part is { part, where in the hand's frame }.
+local function handShape(piece, name, mirror, r)
+	local sx = mirror and -1 or 1
+	local list = {}
+	local color = skinColor()
+	local function at(x, y, z)
+		return Vector3.new(x * sx, y, z) * VM_SCALE
+	end
+	-- a rounded piece from a to b (a finger's bone, the thumb): a cylinder, its axis along the line
+	local function bone(a, b, d, partName)
+		local p = piece(Vector3.new(1, d, d), color, partName)
+		p.Shape = Enum.PartType.Cylinder
+		p.Size = Vector3.new((b - a).Magnitude + d * 0.6 * VM_SCALE, d * VM_SCALE, d * VM_SCALE)
+		local mid = (a + b) / 2
+		local up = math.abs((b - a).Unit.Y) > 0.95 and Vector3.xAxis or Vector3.yAxis
+		table.insert(list, { p, CFrame.lookAt(mid, b, up) * CFrame.Angles(0, math.rad(90), 0) })
+		return p
+	end
+	-- the palm and the back of the hand, a rounded ridge along the knuckles
+	local palm = piece(Vector3.new(0.16, 0.42, 0.36), color, name)
+	table.insert(list, { palm, CFrame.new(at(r + 0.08, -0.02, 0.14)) })
+	local ridge = piece(Vector3.new(0.42, 0.15, 0.15), color, name .. "Knuckles")
+	ridge.Shape = Enum.PartType.Cylinder
+	table.insert(list, { ridge, CFrame.new(at(r + 0.07, -0.02, -0.03)) * CFrame.Angles(0, 0, math.rad(90)) })
+	-- four fingers wrapped round the front of the bar to its far side, the little finger a bit thinner
+	for i, y in { 0.15, 0.05, -0.05, -0.15 } do
+		local d = i == 4 and 0.085 or 0.1
+		local knuckle = at(r + 0.06, y, -0.05)
+		local front = at(r * 0.25, y, -(r + 0.06))
+		local far = at(-(r + 0.05), y, -r * 0.2)
+		bone(knuckle, front, d, name .. "Finger")
+		bone(front, far, d * 0.92, name .. "Finger")
+	end
+	-- the thumb, round the other way to meet them
+	local base = at(r + 0.03, 0.16, 0.2)
+	local mid = at(r * 0.2 - 0.02, 0.22, r + 0.07)
+	local tip = at(-(r * 0.8), 0.2, r * 0.25 + 0.02)
+	bone(base, mid, 0.115, name .. "Thumb")
+	bone(mid, tip, 0.1, name .. "Thumb")
+	return { list = list, palm = palm, mirror = mirror, r = r }
+end
+
+-- An arm: a short bare wrist out of the palm, a cuff, then the sleeve in the team's colour, a little wider toward
+-- the elbow, out past the edge of the screen. Named for the side (ArmL / ArmR is the sleeve)
+local function armShape(piece, side, color)
+	local function tube(d, c, partName)
+		local p = piece(Vector3.new(1, d, d), c, partName)
+		p.Shape = Enum.PartType.Cylinder
+		return p
+	end
+	return {
+		wrist = tube(0.22, skinColor(), "Wrist" .. side),
+		cuff = tube(0.33, color:Lerp(Color3.new(0, 0, 0), 0.25), "Cuff" .. side),
+		sleeve = tube(0.3, color, "Arm" .. side),
+		upper = tube(0.34, color, "Arm" .. side .. "Upper"),
+	}
+end
+
+local function newLimb(piece, side, r, color)
+	local h = handShape(piece, "Hand" .. side, side == "L", r)
+	h.arm = armShape(piece, side, color)
+	return h
+end
+
+-- Put a hand where its frame is (cf: the bar's middle, the hand's own axes) and its arm from the wrist out to a
+-- shoulder (camera space, off the screen's edge)
+local function placeLimb(limb, cf, shoulder)
+	for _, e in limb.list do
+		e[1].CFrame = cf * e[2]
+	end
+	local sx = limb.mirror and -1 or 1
+	local cam = workspace.CurrentCamera
+	local from = cf * (Vector3.new((limb.r + 0.08) * sx, -0.02, 0.22) * VM_SCALE)
+	local wristEnd = cf * (Vector3.new((limb.r + 0.07) * sx, -0.02, 0.5) * VM_SCALE)
+	local to = cam.CFrame * shoulder
+	-- the forearm leaves the hand along the hand's own +Z, then heads for the shoulder
+	local function tube(p, a, b)
+		local len = math.max(0.05, (b - a).Magnitude)
+		p.Size = Vector3.new(len, p.Size.Y, p.Size.Z)
+		p.CFrame = CFrame.lookAt((a + b) / 2, b) * CFrame.Angles(0, math.rad(90), 0)
+	end
+	local dir = (to - wristEnd).Magnitude > 0.01 and (to - wristEnd).Unit or Vector3.zAxis
+	local cuffA = wristEnd - dir * 0.02 * VM_SCALE
+	local cuffB = cuffA + dir * 0.12 * VM_SCALE
+	local mid = cuffB:Lerp(to, 0.45)
+	tube(limb.arm.wrist, from, wristEnd + dir * 0.04 * VM_SCALE)
+	tube(limb.arm.cuff, cuffA, cuffB)
+	tube(limb.arm.sleeve, cuffB - dir * 0.02 * VM_SCALE, mid)
+	tube(limb.arm.upper, mid - dir * 0.04 * VM_SCALE, to)
+end
+
+-- Your avatar's skin, asked for once (a web call: it can be slow, or fail, and then the neutral tone stays)
+local function fetchSkin()
+	task.spawn(function()
+		local Players = game:GetService("Players")
+		local ok, desc = pcall(function()
+			return Players:GetHumanoidDescriptionFromUserId(Players.LocalPlayer.UserId)
+		end)
+		local c = ok and desc and (desc.LeftArmColor or desc.RightArmColor)
+		if typeof(c) == "Color3" then
+			skinTone = c
+			if view then
+				for _, limb in { view.left, view.right } do
+					for _, e in limb and limb.list or {} do
+						e[1].Color = c
+					end
+					if limb then
+						limb.arm.wrist.Color = c
+					end
+				end
+			end
+		end
+	end)
+end
+
 local function buildView()
 	if view then
 		view.model:Destroy()
@@ -144,6 +271,7 @@ local function buildView()
 		p.CanQuery = false
 		p.CanTouch = false
 		p.CastShadow = false
+		p.Massless = true
 		p.Size = size * VM_SCALE
 		p.Color = c
 		p.Material = material or Enum.Material.SmoothPlastic
@@ -178,10 +306,9 @@ local function buildView()
 		v.edge = piece(Vector3.new(0.07, 0.28, 1.6), limbColor, "Edge", material)
 		v.spine = piece(Vector3.new(0.09, 0.04, 1.4), gripColor, "Spine", material)
 		v.tip = piece(Vector3.new(0.08, 0.2, 0.3), limbColor, "Tip", material)
-		v.armL = piece(Vector3.new(0.22, 0.22, 1), color, "ArmL")
-		v.handL = piece(Vector3.new(0.3, 0.34, 0.3), Constants.WHITE, "HandL")
-		v.armR = piece(Vector3.new(0.22, 0.22, 1), color, "ArmR")
-		v.handR = piece(Vector3.new(0.3, 0.32, 0.32), Constants.WHITE, "HandR")
+		-- the right hand round the grip, the left a loose fist
+		v.right = newLimb(piece, "R", 0.11, color)
+		v.left = newLimb(piece, "L", 0.05, color)
 		model.Parent = cam
 		view = v
 		anim.equipAt = os.clock()
@@ -203,11 +330,10 @@ local function buildView()
 	v.shaft = piece(Vector3.new(0.07, 0.07, cross and 1.2 or 1.9), Constants.WHITE, "Nocked")
 	v.head = piece(Vector3.new(0.13, 0.13, 0.22), color, "Head", Enum.Material.Neon)
 	v.fletch = piece(Vector3.new(0.02, 0.18, 0.32), color, "Fletch")
-	-- your arms: the team's sleeves, white hands
-	v.armL = piece(Vector3.new(0.22, 0.22, 1), color, "ArmL")
-	v.handL = piece(Vector3.new(0.3, 0.34, 0.3), Constants.WHITE, "HandL")
-	v.armR = piece(Vector3.new(0.22, 0.22, 1), color, "ArmR")
-	v.handR = piece(Vector3.new(0.24, 0.26, 0.26), Constants.WHITE, "HandR")
+	-- your arms in the team's sleeves: a bow's grip in the left hand and the string hooked in the right; the
+	-- crossbow's stock in the left, its grip in the right
+	v.left = newLimb(piece, "L", cross and 0.12 or 0.12, color)
+	v.right = newLimb(piece, "R", cross and 0.12 or 0.035, color)
 	model.Parent = cam
 	view = v
 	anim.equipAt = os.clock()
@@ -342,24 +468,31 @@ local function placeView(dt)
 		view.edge.CFrame = up * L(0, 0, -1.35)
 		view.spine.CFrame = up * L(0, 0.15, -1.25)
 		view.tip.CFrame = up * L(0, 0, -2.25) * CFrame.Angles(math.rad(45), 0, 0)
-		view.handR.CFrame = up * L(0, 0, 0.05)
-		local function sleeve(part, from, shoulder)
-			local to = cam.CFrame * shoulder
-			part.Size = Vector3.new(part.Size.X, part.Size.Y, math.max(0.1, (to - from).Magnitude))
-			part.CFrame = CFrame.lookAt((from + to) / 2, to)
-		end
-		sleeve(view.armR, view.handR.Position, Vector3.new(0.95, -1.0, -0.55))
-		-- the left hand low and out of the way, swinging back a little as you slash
-		view.handL.CFrame = cam.CFrame * CFrame.new(-0.55 - sw * 0.1, -0.75 + bob.Y, -1.2) * equipOff
-		sleeve(view.armL, view.handL.Position, Vector3.new(-0.95, -1.05, -0.5))
+		-- the right hand round the grip: the bar along the grip (index finger toward the guard), the back of the
+		-- hand out to the right, the wrist under the grip
+		local gripCf = up * L(0, 0, 0.08)
+		local handCf = CFrame.fromMatrix(gripCf.Position, gripCf.RightVector, gripCf.LookVector, gripCf.UpVector)
+		placeLimb(view.right, handCf * CFrame.Angles(0, math.rad(-20), 0), Vector3.new(0.95, -1.0, -0.45))
+		-- the left a loose fist low and out of the way, swinging back a little as you slash
+		local leftCf = cam.CFrame
+			* CFrame.new(-0.62 - sw * 0.1, -0.72 + bob.Y, -1.15)
+			* equipOff
+			* CFrame.Angles(math.rad(-70), math.rad(-25), math.rad(10))
+		placeLimb(view.left, leftCf, Vector3.new(-0.95, -1.1, -0.4))
 		return
 	end
 	local cross = view.cross
-	-- where the bow sits in front of you (camera space, studs): low on the right at rest; drawn, up just left of
-	-- the crosshair and nearly upright, the arrow along your aim. The crossbow is held level, a little right.
-	local restP = cross and Vector3.new(0.42, -0.5, -1.55) or Vector3.new(0.55, -0.55, -1.8)
-	local aimP = Vector3.new(-0.1, -0.08, -1.8)
+	-- where the bow sits in front of you (camera space, studs): low on the right at rest; drawn, across to the low
+	-- left, the top limb leaning out to the left and the arrow turned a touch outward, so nothing of the bow, the
+	-- arrow or your hands crosses the middle of the screen (the crosshair) at any point of the draw. The crossbow is
+	-- held level, low on the right.
+	local restP = cross and Vector3.new(0.42, -0.5, -1.55) or Vector3.new(0.5, -0.58, -1.5)
+	local aimP = Vector3.new(-0.62, -0.42, -1.65)
+	-- (on the way across it swings low, under the crosshair: up from below as you draw, back down after the shot)
+	local dip = cross and 0 or 4 * aim * (1 - aim) * (view.big and 1.4 or 1.0)
 	local pos = restP:Lerp(aimP, aim)
+		- Vector3.new(0, dip, 0)
+		+ Vector3.new(reloadK * 0.12, -reloadK * 0.3, 0) -- (the crossbow drops away to reload, under the crosshair)
 		+ Vector3.new(
 			swayX * 0.35 - run * 0.1,
 			breathe - swayY * 0.35 - run * 0.2 - crouchK * 0.05 - landP,
@@ -370,9 +503,9 @@ local function placeView(dt)
 		* CFrame.new(pos)
 		* equipOff
 		* CFrame.Angles(
-			math.rad(kickP * 9 - run * 25 - reloadK * 35 + swayY * 20),
-			math.rad((cross and -4 or -12) + aim * 14 + run * 30 + swayX * 25),
-			math.rad((cross and -6 or -35) + aim * 25 - tilt * 16 - reloadK * 20 + swayX * 15)
+			math.rad(kickP * 9 - aim * 6 - run * 25 - reloadK * 35 + swayY * 20),
+			math.rad((cross and -4 or -12) + aim * 32 + run * 30 + swayX * 25),
+			math.rad((cross and -6 or -35) + aim * 50 - tilt * 16 - reloadK * 20 + swayX * 15)
 		)
 	local half = view.limbLen / 2 -- (model units; L scales them)
 	local bend = 0.15 + pullS * 0.3
@@ -380,14 +513,8 @@ local function placeView(dt)
 		part.CFrame = cf
 		return cf
 	end
-	-- an arm: a sleeve from the hand out to a shoulder past the edge of the screen (camera space)
-	local function arm(part, from, shoulder)
-		local to = cam.CFrame * shoulder
-		part.Size = Vector3.new(part.Size.X, part.Size.Y, math.max(0.1, (to - from).Magnitude))
-		part.CFrame = CFrame.lookAt((from + to) / 2, to)
-	end
 	-- (the shoulders are just off the screen's edges, in front of you: the sleeves come in from the corners)
-	local shoulderR = Vector3.new(0.95, -1.0, -0.55)
+	local shoulderR = Vector3.new(0.9, -1.25, -0.5)
 	if cross then
 		-- the crossbow lies flat: the stock along your view, the limbs across, the string drawn back to the latch
 		at(base * L(0, -0.1, 0.35), view.stock)
@@ -417,11 +544,12 @@ local function placeView(dt)
 		for _, q in { view.shaft, view.head, view.fletch } do
 			q.Transparency = loaded and 0 or 1
 		end
-		-- hands: the left under the front, the right on the grip
-		local hl = at(base * L(0, -0.32, -0.2), view.handL)
-		local hr = at(base * L(0, -0.3, 1.2), view.handR)
-		arm(view.armL, hl.Position, Vector3.new(-0.5, -1.1, -0.6))
-		arm(view.armR, hr.Position, shoulderR)
+		-- hands: the left cradling the stock from under the front (the bar along the stock, the back of the hand
+		-- down, the forearm off to the left), the right round the grip (the back of the hand out to the right)
+		local under = base * L(0, -0.1, -0.15)
+		local leftCf = CFrame.fromMatrix(under.Position, base.UpVector, base.LookVector, -base.RightVector)
+		placeLimb(view.left, leftCf * CFrame.Angles(0, math.rad(25), 0), Vector3.new(-0.8, -1.2, -0.45))
+		placeLimb(view.right, base * L(0, -0.22, 1.08), shoulderR)
 		return
 	end
 	-- a bow: held upright in the left hand, the limbs bending back as you draw
@@ -455,10 +583,14 @@ local function placeView(dt)
 	end
 	-- hands: the left round the grip, the right pinching the string at the nock (a little under it, so the
 	-- crosshair stays clear), each arm out past the screen's edge
-	local hl = at(base * L(0.02, 0, 0.02), view.handL)
-	local hr = at(CFrame.new(nock) * (base - base.Position) * L(0.05, -0.16, 0.08), view.handR)
-	arm(view.armL, hl.Position, Vector3.new(0.3, -1.15, -0.7):Lerp(Vector3.new(-0.95, -1.0, -0.7), aim))
-	arm(view.armR, hr.Position, shoulderR)
+	-- (the left hand's knuckles turned out to the left a little; the right hand's index finger just under the
+	-- arrow, its fingers hooked round the string)
+	placeLimb(
+		view.left,
+		base * CFrame.Angles(0, math.rad(-30), 0),
+		Vector3.new(-0.35, -1.35, -0.45):Lerp(Vector3.new(-0.95, -1.15, -0.6), aim)
+	)
+	placeLimb(view.right, CFrame.new(nock) * (base - base.Position) * L(0, -0.22, 0), shoulderR)
 end
 
 -- Draw and shoot ---------------------------------------------------------------------------------------------------
@@ -587,6 +719,7 @@ end
 
 function WeaponController:init()
 	buildView()
+	fetchSkin()
 	ContextActionService:BindAction("TW_Fire", function(_, state)
 		if state == Enum.UserInputState.Begin then
 			WeaponController.startDraw()

@@ -139,6 +139,14 @@ check(
 	"the picked piece's badge turns white",
 	refs.trayButtons.wall.Key.BackgroundColor3 ~= refs.trayButtons.cover.Key.BackgroundColor3
 )
+check(
+	"...and the slot lifts, with a ring and its cost pill in the team's colour",
+	refs.trayButtons.wall.Glow.Visible
+		and refs.trayButtons.wall.Edge.Color == Constants.TEAM_COLOR[team]
+		and refs.trayButtons.wall.CostPill.BackgroundColor3 == Constants.TEAM_COLOR[team]
+		and refs.trayButtons.wall.Position.Y.Offset < refs.trayButtons.cover.Position.Y.Offset
+		and not refs.trayButtons.cover.Glow.Visible
+)
 local spot = BuildC.spot()
 check("a preview snaps to a cell where you look", spot ~= nil and spot.cx ~= nil, spot and spot.why)
 check("...and it's a valid spot", spot and spot.ok, spot and spot.why)
@@ -179,6 +187,76 @@ check(
 	"...the one in hand: its badge white",
 	refs.bows.crossbow.key.BackgroundColor3 ~= refs.bows.bow.key.BackgroundColor3
 )
+-- the hotbar's look: a 3D picture in every slot, the one in hand lifted with a ring in the team's colour, the slots
+-- side by side inside the bar
+do
+	local function pictured(button)
+		local icon = button:FindFirstChild("Icon")
+		local parts = 0
+		for _, d in icon and icon:GetDescendants() or {} do
+			if d:IsA("BasePart") then
+				parts += 1
+			end
+		end
+		return icon ~= nil and icon.ClassName == "ViewportFrame" and icon.CurrentCamera ~= nil and parts >= 3
+	end
+	local all = true
+	for _, b in refs.bows do
+		all = all and pictured(b.button)
+	end
+	for _, b in refs.trayButtons do
+		all = all and pictured(b)
+	end
+	check("every weapon and every piece has its 3D picture (a ViewportFrame with a model and a camera)", all)
+	local on, off = refs.bows.crossbow.button, refs.bows.bow.button
+	local teamC = Constants.TEAM_COLOR[team]
+	check(
+		"...the one in hand: a ring and a glow in the team's colour, lifted, dark",
+		on.Edge.Color == teamC
+			and on.Glow.Visible
+			and not off.Glow.Visible
+			and off.Edge.Color ~= teamC
+			and on.Position.Y.Offset < off.Position.Y.Offset
+			and on.BackgroundColor3 ~= off.BackgroundColor3
+	)
+	check("...its bolts as pips", refs.bows.crossbow.pips.Visible and #refs.bows.crossbow.pips:GetChildren() == 6)
+	local function inside(frame, buttons)
+		local bad = {}
+		local list = {}
+		for _, b in buttons do
+			table.insert(list, b)
+			local x, y = b.Position.X.Offset, b.Position.Y.Offset
+			if
+				x < 0
+				or y < 0
+				or x + b.Size.X.Offset > frame.Size.X.Offset
+				or y + b.Size.Y.Offset > frame.Size.Y.Offset
+			then
+				table.insert(bad, b.Name .. " sticks out")
+			end
+		end
+		for i = 1, #list do
+			for j = i + 1, #list do
+				local a, c = list[i], list[j]
+				if
+					a.Position.X.Offset < c.Position.X.Offset + c.Size.X.Offset
+					and c.Position.X.Offset < a.Position.X.Offset + a.Size.X.Offset
+				then
+					table.insert(bad, a.Name .. " x " .. c.Name)
+				end
+			end
+		end
+		return bad
+	end
+	local buttons = {}
+	for _, b in refs.bows do
+		table.insert(buttons, b.button)
+	end
+	local bad = inside(refs.bowsFrame, buttons)
+	check("...the slots side by side inside the bar", #bad == 0, table.concat(bad, ", "))
+	bad = inside(refs.tray, refs.trayButtons)
+	check("...and the tray's", #bad == 0, table.concat(bad, ", "))
+end
 wheel(-1)
 check("wheel down: the next bow", Store.get("me").weapon == "heavy", Store.get("me").weapon)
 wheel(-1)
@@ -451,7 +529,7 @@ do
 		(drawnHand - drawnGrip).Magnitude > (restHand - restGrip).Magnitude + 0.6,
 		`{(restHand - restGrip).Magnitude} -> {(drawnHand - drawnGrip).Magnitude}`
 	)
-	check("...and the bow comes toward the middle", math.abs(drawnGrip.X) < math.abs(restGrip.X) - 0.2)
+	check("...and the bow comes across to the left (clear of the crosshair)", drawnGrip.X < restGrip.X - 0.2)
 	Bus.Fire:Fire(false)
 	Engine.advance(0.02)
 	check("release: the bow kicks", Weapon.anim().kick.v ~= 0 or Weapon.anim().kick.p ~= 0)
@@ -469,6 +547,132 @@ do
 	check("everyone holds a bow others can see", held ~= nil or mine ~= nil)
 	local hidden = mine and mine:FindFirstChildWhichIsA("BasePart").LocalTransparencyModifier == 1
 	check("...yours hidden from you (you see your arms)", hidden == true)
+end
+
+-- Your hands, and the middle of the screen kept clear --------------------------------------------------------------
+do
+	local camera = ws.CurrentCamera
+	-- the parts of the viewmodel that land in the middle of the screen (the middle 16% of its width and height), at
+	-- a field of view and a screen shape: points through each part (corners, edges and inside), projected
+	local function inMiddle(fov, aspect)
+		local vm = camera:FindFirstChild("Viewmodel")
+		local tanV = math.tan(math.rad(fov / 2))
+		local bad = {}
+		for _, p in vm:GetChildren() do
+			if p:IsA("BasePart") and p.Transparency < 1 then
+				local n = {}
+				for k, s in { p.Size.X, p.Size.Y, p.Size.Z } do
+					n[k] = math.clamp(math.ceil(s / 0.04), 1, 16)
+				end
+				local hit = false
+				for i = 0, n[1] do
+					for j = 0, n[2] do
+						for k = 0, n[3] do
+							local q = p.CFrame
+								* Vector3.new(
+									(i / n[1] - 0.5) * p.Size.X,
+									(j / n[2] - 0.5) * p.Size.Y,
+									(k / n[3] - 0.5) * p.Size.Z
+								)
+							local c = camera.CFrame:PointToObjectSpace(q)
+							if c.Z < -0.01 then
+								local sx = c.X / (-c.Z * tanV * aspect)
+								local sy = c.Y / (-c.Z * tanV)
+								if math.abs(sx) < 0.16 and math.abs(sy) < 0.16 then
+									hit = true
+								end
+							end
+						end
+					end
+				end
+				if hit then
+					table.insert(bad, p.Name)
+				end
+			end
+		end
+		return bad
+	end
+	-- clear for `seconds` (every frame of 1/20 s through it; 0: just now)
+	local function clear(what, seconds)
+		local bad = {}
+		local t = 0
+		repeat
+			for _, fov in { 80, 70 } do -- (the view's own, and drawn: the view tightens by up to 10)
+				for _, aspect in { 16 / 9, 844 / 390 } do -- (a monitor, a wide phone)
+					for _, name in inMiddle(fov, aspect) do
+						bad[name] = true
+					end
+				end
+			end
+			if (seconds or 0) > 0 then
+				Engine.advance(0.05)
+			end
+			t += 0.05
+		until t > (seconds or 0)
+		local names = {}
+		for name in bad do
+			table.insert(names, name)
+		end
+		check(what .. ": nothing in the middle of the screen", #names == 0, table.concat(names, ", "))
+	end
+	local function hands(key)
+		local vm = camera:FindFirstChild("Viewmodel")
+		local ok, why = true, ""
+		for _, side in { "L", "R" } do
+			local palm = vm:FindFirstChild("Hand" .. side)
+			local fingers, thumbs = 0, 0
+			for _, p in vm:GetChildren() do
+				if p.Name == "Hand" .. side .. "Finger" then
+					fingers += 1
+				elseif p.Name == "Hand" .. side .. "Thumb" then
+					thumbs += 1
+				end
+			end
+			local sizes = palm and { palm.Size.X, palm.Size.Y, palm.Size.Z } or { 0, 0, 0 }
+			table.sort(sizes)
+			-- a real palm (not a stick: its two big sides over 0.18 studs), four fingers in two bones, a thumb
+			if not palm or sizes[2] < 0.18 or fingers < 8 or thumbs < 2 or palm.Transparency ~= 0 then
+				ok = false
+				why ..= `{side}: palm {sizes[2]} fingers {fingers} thumbs {thumbs} `
+			end
+			local sleeve = vm:FindFirstChild("Arm" .. side)
+			if not sleeve or sleeve.Size.Y < 0.15 or sleeve.Color ~= Constants.TEAM_COLOR[team] then
+				ok = false
+				why ..= `{side}: no sleeve in the team's colour `
+			end
+		end
+		check(key .. ": both hands, a palm, fingers and a thumb each, sleeves in the team's colour", ok, why)
+		local light = true
+		for _, p in vm:GetChildren() do
+			if p:IsA("BasePart") and (p.CastShadow or p.CanCollide or p.CanQuery or p.CanTouch) then
+				light = false
+			end
+		end
+		check("...light: no shadows, nothing to bump into or hit", light)
+	end
+	local BusH = Engine.require(tree.client.UI.Bus)
+	for _, key in { "bow", "heavy", "crossbow", "blade" } do
+		Weapon.equip(key)
+		Engine.advance(1)
+		hands(key)
+		clear(key .. " at rest")
+		if key == "bow" or key == "heavy" then
+			BusH.Fire:Fire(true)
+			clear(key .. " drawing", 0.8)
+			Engine.advance(1.6)
+			clear(key .. " at full draw (shaking)", 0.5)
+			BusH.Fire:Fire(false)
+			clear(key .. " after the shot (the kick, back down)", 1)
+		elseif key == "crossbow" then
+			BusH.Fire:Fire(true)
+			clear(key .. " firing a bolt (the kick)", 0.4)
+			BusH.Fire:Fire(false)
+			Weapon.reload()
+			clear(key .. " reloading", 2)
+		end
+	end
+	Weapon.equip("bow")
+	Engine.advance(0.3)
 end
 
 -- The results ----------------------------------------------------------------------------------------------------
