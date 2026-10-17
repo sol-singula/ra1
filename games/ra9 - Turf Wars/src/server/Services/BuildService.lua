@@ -13,11 +13,21 @@ everyone is told where it stood and what hit it, and each client breaks it into 
 How each piece looks is StructureModel's (shared with the hotbar's pictures and the debris). In the build phase you can take back your own (Demolish) for
 the full cost.
 
+The Rally Banner (Data/Structures: rally) is a forward spawn: while it stands on its team's turf, that team's players
+come back to life beside it instead of in the spawn room (MatchService asks RallySpawn when a respawn is due). One a
+team at a time (a second is refused until the first is down or taken back), so it's a team decision, not a carpet of
+spawns. The spot is a free cell round it, toward home first: never in a structure or a map shape, inside the field,
+at least a cell back from the line, on the deck (a ray down, where the engine has one). Lost turf takes it down
+(ClearLost) and RallySpawn ignores one over the line anyway. The team hears when it goes up and when it falls; it
+glows a little and wears a small RALLY marker. Spawn protection is the same as anywhere (CombatService:Spawned).
+
   BuildService:Place(player, key, cx, cz, rot) -> ok, why
   BuildService:Refill()                 the budgets, at each build phase
   BuildService:Clear()                  between matches
   BuildService:Budget(player)
   BuildService:All()                    { [id] = structure }
+  BuildService:Rally(team, any?)        the team's standing Rally Banner on its own turf (any: wherever), or nil
+  BuildService:RallySpawn(player)       a CFrame beside their team's Rally Banner, or nil (the spawn room)
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -134,6 +144,9 @@ function BuildService:Check(player, key, cx, cz, rot)
 	if self:TeamCount(team) >= self:TeamCap(team) then
 		return false, "Your team has built all it can"
 	end
+	if def.rally and self:Rally(team, true) then
+		return false, "Your team's Rally Banner is already up"
+	end
 	local a = arena:Current()
 	if not a then
 		return false, "No arena"
@@ -200,8 +213,8 @@ function BuildService:Check(player, key, cx, cz, rot)
 	return true, nil, def, cx, cz, w, d, rot
 end
 
--- The piece in the world: StructureModel's parts (one shade of the team's colour, the Reinforced Wall darker), the
--- builder's banner emblem on any flag
+-- The piece in the world: StructureModel's parts (stone, wood and iron with the team's colour on them), the
+-- builder's banner emblem on any flag, and the Rally Banner's light and tag
 local function buildModel(s, def)
 	local model = Instance.new("Model")
 	model.Name = "S" .. s.id
@@ -232,10 +245,128 @@ local function buildModel(s, def)
 				sg.Parent = p
 			end
 		end
+		if spec.glow then
+			-- (the Rally Banner's marker: a soft light in the team's colour on the glowing square)
+			local light = Instance.new("PointLight")
+			light.Color = StructureModel.color("team", s.team)
+			light.Range = 10
+			light.Brightness = 1.2
+			light.Shadows = false
+			light.Parent = p
+		end
 		p.Parent = model
+	end
+	if def.rally then
+		-- a small RALLY tag over it, so a team-mate (and the enemy hunting it) can find it
+		local top = model:FindFirstChild("Pole")
+		if top then
+			local bb = Instance.new("BillboardGui")
+			bb.Name = "RallyTag"
+			bb.Size = UDim2.fromOffset(84, 22)
+			bb.StudsOffset = Vector3.new(0, top.Size.Y / 2 + 2, 0)
+			bb.MaxDistance = 160
+			bb.LightInfluence = 0
+			local l = Instance.new("TextLabel")
+			l.BackgroundTransparency = 1
+			l.Size = UDim2.fromScale(1, 1)
+			l.Text = "⚑ RALLY"
+			l.TextScaled = true
+			l.Font = Enum.Font.GothamBlack
+			l.TextColor3 = StructureModel.color("team", s.team)
+			l.TextStrokeColor3 = Constants.WHITE
+			l.TextStrokeTransparency = 0.2
+			l.Parent = bb
+			bb.Parent = top
+		end
 	end
 	model.Parent = folder
 	return model
+end
+
+-- A message for everyone on a team (a toast under the HUD)
+local function tellTeam(team, text, kind)
+	for _, p in teams:Members(team) do
+		Net.fire(p, "Toast", text, kind)
+	end
+end
+
+-- Is this structure still on its own team's side of the line?
+local function onTurf(s, front)
+	if s.team == "red" then
+		return s.boxMax.X <= front + 0.01
+	end
+	return s.boxMin.X >= front - 0.01
+end
+
+-- The team's Rally Banner (the newest, if ever there were two), standing on its own turf; any: whatever the line
+function BuildService:Rally(team, any)
+	local front = frontlineOf and frontlineOf() or 0
+	local best
+	for _, s in structures do
+		local def = Structures.get(s.key)
+		if s.team == team and def and def.rally and (any or onTurf(s, front)) and (not best or s.id > best.id) then
+			best = s
+		end
+	end
+	return best
+end
+
+-- Where someone on that team comes back beside their Rally Banner: a free cell round it (toward home first, then
+-- the sides, the front last), or nil when there's none (or no banner): the spawn room then.
+function BuildService:RallySpawn(player)
+	local team = teams:Team(player)
+	local s = team and self:Rally(team)
+	local a = arena:Current()
+	if not (s and a) then
+		return nil
+	end
+	local front = frontlineOf and frontlineOf() or 0
+	local fwd = Formulas.forward(team)
+	local cells = {}
+	for dx = -2, 2 do
+		for dz = -2, 2 do
+			if dx ~= 0 or dz ~= 0 then
+				table.insert(cells, { s.cx + dx, s.cz + dz, dx * fwd * 10 + math.abs(dz) + math.abs(dx) })
+			end
+		end
+	end
+	table.sort(cells, function(p, q)
+		return p[3] < q[3]
+	end)
+	local solids = arena:Solids()
+	local edge = Vector3.new(0.4, 0, 0.4)
+	for _, cell in cells do
+		local x, z = cell[1], cell[2]
+		local mn, mx = Formulas.footprintBox(x, z, 1, 1, 0.3, 5.7)
+		local mid = (mn + mx) / 2
+		local free = not (occupied[x] and occupied[x][z])
+			and not (a.blocked[x] and a.blocked[x][z])
+			and math.abs(mid.X) <= a.half - 2
+			and math.abs(mid.Z) <= a.width / 2 - 2
+			and (front - mid.X) * fwd >= Constants.CELL -- (a cell back from the line, at least)
+		if free then
+			for _, b in solids do
+				if b.part ~= a.strips[1] and Formulas.boxesOverlap(mn + edge, mx - edge, b.min, b.max) then
+					free = false
+					break
+				end
+			end
+		end
+		if free then
+			-- (the deck under it: a ray down finds the floor, not something on it; where the engine has no rays,
+			-- the field's floor covers every cell inside it)
+			local ok, hit = pcall(function()
+				return workspace:Raycast(Vector3.new(mid.X, 8, mid.Z), Vector3.new(0, -12, 0))
+			end)
+			if ok and hit and math.abs(hit.Position.Y) > 1 then
+				free = false
+			end
+		end
+		if free then
+			return CFrame.new(mid.X, 3.5, mid.Z)
+		end
+	end
+	return nil
 end
 
 function BuildService:Place(player, key, cx, cz, rot)
@@ -277,6 +408,9 @@ function BuildService:Place(player, key, cx, cz, rot)
 	budgets[player] = self:Budget(player) - def.cost
 	self:Push(player)
 	Net.fireAll("Structure", { kind = "built", id = s.id, key = def.key, team = s.team, hp = s.hp, max = s.max })
+	if def.rally then
+		tellTeam(s.team, "Rally Banner up! Your team respawns there", "good")
+	end
 	self.Built:Fire(player, s)
 	return true, s
 end
@@ -298,8 +432,16 @@ function BuildService:Remove(id, attacker, refund, blast)
 	if s.model then
 		s.model:Destroy()
 	end
+	local def = Structures.get(s.key)
+	if def and def.rally and not clearing then
+		tellTeam(
+			s.team,
+			refund and "Rally Banner taken down: back to the spawn room"
+				or "Your Rally Banner fell! Back to the spawn room",
+			refund and "info" or "bad"
+		)
+	end
 	if refund and s.owner and s.owner.Parent then
-		local def = Structures.get(s.key)
 		budgets[s.owner] = math.min(Constants.BUILD_BUDGET, self:Budget(s.owner) + def.cost)
 		self:Push(s.owner)
 	end

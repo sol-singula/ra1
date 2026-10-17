@@ -3,36 +3,53 @@ What each structure looks like, as a list of parts, shared by the server (BuildS
 hotbar (UI/Icons draws it in a ViewportFrame) and the debris (DebrisController breaks the same shapes into chunks
 when it comes down), so all three always agree.
 
-Every piece is one shade of its team's colour (Constants.BUILD_COLOR) except the Reinforced Wall, the armoured one,
-which is all in the darker shade (Constants.ARMOR_COLOR): the shapes carry the detail (plinths, bevelled caps,
-pilasters, slits, crenellations, braces, a tapered tower with a lookout, a ladder and a banner), the light and
-shadow do the rest. Nothing solid reaches outside the footprint box or far above its height, so the building rules,
-the arrows' boxes and the tests see the same piece as before; overhangs and trim are not solid.
+Castle pieces: pale stone (a touch of the team's colour in it) laid in courses (thin mortar lines through the body, so
+one part draws a line on both faces), wood and iron, and the team's colour where a castle wears it: the coping and
+the merlons on the walls, the tower's platform and roof, the rampart's trim, the shield's band, every banner. Only
+boxes: nothing round anywhere (no balls, no cylinders), and few, large parts (most players are on phones
+and a match fills up with pieces). Nothing solid reaches outside the footprint box or far above its height, so the
+building rules, the arrows' boxes and the tests see the same piece as before; trim and detail are not solid.
 
-  StructureModel.parts(key, team, min, max)   { { name, cf, size, tone, shape?, wedge?, solid, flag? } }
-  StructureModel.color(tone, team)            "build" | "armor"
-  StructureModel.make(spec, team)             a Part (or WedgePart) for one entry, its tone in a "Tone" attribute
+  StructureModel.parts(key, team, min, max)   { { name, cf, size, tone, solid, flag?, glow? } }
+  StructureModel.color(tone, team)            "stone" | "stoneDark" | "mortar" | "wood" | "woodDark" | "iron" |
+                                              "team" | "teamDark" | "flame" | "glow" (and the old "build" | "armor")
+  StructureModel.make(spec, team)             a Part for one entry, its tone in a "Tone" attribute
 ]]
 local Constants = require(script.Parent.Constants)
 
 local StructureModel = {}
 
 local Y = Vector3.new(0, 1, 0)
-local PI = math.pi
+
+-- The palette: stone, wood and iron are the same for both sides but for a touch of the team in the stone (so even a
+-- piece's body leans red or blue); the trim is the team's own build shade
+local STONE = Color3.fromRGB(208, 202, 192)
+local STONE_DARK = Color3.fromRGB(128, 122, 114)
+local MORTAR = Color3.fromRGB(118, 112, 104)
+local FIXED = {
+	wood = Color3.fromRGB(156, 108, 66),
+	woodDark = Color3.fromRGB(104, 70, 44),
+	iron = Color3.fromRGB(62, 62, 68),
+	flame = Color3.fromRGB(255, 156, 44),
+}
+local GLOWS = { flame = true, glow = true } -- (Neon: the torch's flame, the Rally Banner's marker)
 
 function StructureModel.color(tone, team)
-	local set = tone == "armor" and Constants.ARMOR_COLOR or Constants.BUILD_COLOR
-	return set[team or ""] or set.red
+	local build = Constants.BUILD_COLOR[team or ""] or Constants.BUILD_COLOR.red
+	local armor = Constants.ARMOR_COLOR[team or ""] or Constants.ARMOR_COLOR.red
+	if FIXED[tone] then
+		return FIXED[tone]
+	elseif tone == "stone" then
+		return STONE:Lerp(build, 0.18)
+	elseif tone == "stoneDark" then
+		return STONE_DARK:Lerp(armor, 0.3)
+	elseif tone == "mortar" then
+		return MORTAR:Lerp(build, 0.15)
+	elseif tone == "teamDark" or tone == "armor" then
+		return armor
+	end
+	return build -- "team", "glow" (and the old "build")
 end
-
--- The wedges' turns: the slope of a WedgePart faces its own -Z (and up); these face it outward along the piece's
--- frame (A along, C across)
-local FACE = {
-	["-C"] = CFrame.new(),
-	["+C"] = CFrame.Angles(0, PI, 0),
-	["+A"] = CFrame.Angles(0, -PI / 2, 0),
-	["-A"] = CFrame.Angles(0, PI / 2, 0),
-}
 
 function StructureModel.parts(key, team, mn, mx)
 	local out = {}
@@ -45,14 +62,15 @@ function StructureModel.parts(key, team, mn, mx)
 	local L = A.X == 1 and size.X or size.Z
 	local T = A.X == 1 and size.Z or size.X
 	local h = size.Y
-	local tone = key == "reinforced" and "armor" or "build"
 	-- (the enemy's side, along A: red looks toward +X; only square pieces care, their A is X)
 	local f = team == "blue" and -1 or 1
+	-- (the home side across C, for a long piece turned to face the enemy; +C when it runs along the line)
+	local home = C.X ~= 0 and (C.X * -f > 0 and 1 or -1) or 1
 	local function frame(a, y, c)
 		return CFrame.fromMatrix(base + A * a + Y * y + C * c, A, Y, C)
 	end
-	-- a box at (a, y, c) in the frame (y its middle), la x ly x lc
-	local function box(name, a, y, c, la, ly, lc, solid, turn)
+	-- a box in `tone` at (a, y, c) in the frame (y its middle), la x ly x lc
+	local function box(name, tone, a, y, c, la, ly, lc, solid, turn)
 		local e = {
 			name = name,
 			cf = frame(a, y, c) * (turn or CFrame.new()),
@@ -63,396 +81,269 @@ function StructureModel.parts(key, team, mn, mx)
 		table.insert(out, e)
 		return e
 	end
-	-- a wedge whose slope faces `face` (and up; down = true: an upside-down corbel), its edge len long
-	local function wedge(name, a, y, c, len, ht, depth, face, down, solid)
-		local e =
-			box(name, a, y, c, len, ht, depth, solid, FACE[face] * (down and CFrame.Angles(0, 0, PI) or CFrame.new()))
-		e.wedge = true
-		return e
-	end
-	local function cylinder(name, a, y, c, len, dia, turn, solid)
-		local e = box(name, a, y, c, len, dia, dia, solid, turn)
-		e.shape = "Cylinder"
-		return e
-	end
-	local function ball(name, a, y, c, dia, solid)
-		local e = box(name, a, y, c, dia, dia, dia, solid)
-		e.shape = "Ball"
-		return e
-	end
-	-- a bevelled cap: a slab with wedges along both long edges (and the short ends when `ends`)
-	local function cap(name, y, la, lc, th, bevel, ends)
-		box(name, 0, y, 0, la - bevel * 2 * (ends and 1 or 0), th, lc - bevel * 2)
-		for _, s in { 1, -1 } do
-			wedge(
-				name .. "Bevel",
-				0,
-				y,
-				s * (lc / 2 - bevel / 2),
-				la - (ends and bevel * 2 or 0),
-				th,
-				bevel,
-				s > 0 and "+C" or "-C"
-			)
-			if ends then
-				wedge(
-					name .. "Bevel",
-					s * (la / 2 - bevel / 2),
-					y,
-					0,
-					lc - bevel * 2,
-					th,
-					bevel,
-					s > 0 and "+A" or "-A"
-				)
-			end
-		end
-	end
-	-- a diagonal brace in the face plane at across c, from (a0, y0) to (a1, y1)
-	local function brace(name, c, a0, y0, a1, y1, thick, solid)
+	-- a square bar in the face plane at across c, from (a0, y0) to (a1, y1)
+	local function brace(name, tone, c, a0, y0, a1, y1, thick, solid)
 		local da, dy = a1 - a0, y1 - y0
 		local len = math.sqrt(da * da + dy * dy)
 		local turn = CFrame.fromAxisAngle(Vector3.new(0, 0, 1), math.atan2(dy, da))
-		return box(name, (a0 + a1) / 2, (y0 + y1) / 2, c, len, thick, thick, solid, turn)
+		return box(name, tone, (a0 + a1) / 2, (y0 + y1) / 2, c, len, thick, thick, solid, turn)
+	end
+	-- mortar: a thin line right through a stone body (la long, lc a hair wider than it), so it shows on both faces;
+	-- a joint is the same standing up, between y0 and y1
+	local function course(y, la, lc)
+		box("Course", "mortar", 0, y, 0, la, 0.14, lc, false)
+	end
+	local function joint(a, y0, y1, lc)
+		box("Joint", "mortar", a, (y0 + y1) / 2, 0, 0.14, y1 - y0, lc, false)
 	end
 
 	if key == "barricade" then
-		-- a low rampart: a plinth, a recessed body between end posts, crossed braces on both faces, a bevelled rail
-		box("Plinth", 0, 0.3, 0, L, 0.6, T)
-		box("Body", 0, 0.6 + (h - 1.5) / 2, 0, L - 1.6, h - 1.5, T - 1.4)
-		for _, s in { 1, -1 } do
-			box("Post", s * (L / 2 - 0.5), (h - 0.2) / 2, 0, 1, h - 0.2, T - 0.4)
-			box("PostCap", s * (L / 2 - 0.5), h - 0.1, 0, 1.2, 0.2, T - 0.2, false)
+		-- the Battlement: a low stone wall in two courses on a plinth, a coping in the team's dark shade and three
+		-- merlons in its colour on top
+		local body = T - 1
+		box("Plinth", "stone", 0, 0.3, 0, L, 0.6, T)
+		box("Body", "stone", 0, 1.7, 0, L - 0.4, 2.2, body)
+		course(1.7, L - 0.3, body + 0.1)
+		joint(-L / 4, 0.6, 1.7, body + 0.1)
+		joint(L / 4, 0.6, 1.7, body + 0.1)
+		joint(0, 1.7, 2.8, body + 0.1)
+		box("Coping", "teamDark", 0, 2.95, 0, L, 0.3, T - 0.6)
+		for _, a in { -(L / 2 - 0.8), 0, L / 2 - 0.8 } do
+			box("Merlon", "team", a, 3.55, 0, 1.6, 0.9, T - 0.9)
 		end
-		for _, s in { 1, -1 } do
-			local c = s * (T / 2 - 0.55)
-			brace("Brace", c, -L / 2 + 1, 0.8, L / 2 - 1, h - 1.1, 0.35, false)
-			brace("Brace", c, -L / 2 + 1, h - 1.1, L / 2 - 1, 0.8, 0.35, false)
+	elseif key == "wall" then
+		-- the Castle Wall: four courses of stone blocks (staggered joints) on a plinth, a walkway coping and three
+		-- merlons in the team's colours, and a torch on an iron bracket on the home face
+		local body = T - 1.2
+		box("Plinth", "stone", 0, 0.5, 0, L, 1, T)
+		box("Body", "stone", 0, 4.7, 0, L - 0.4, 7.4, body)
+		local ch = 1.85 -- (a course's height: 1 to 8.4 in four)
+		for k = 0, 3 do
+			local y0 = 1 + ch * k
+			if k > 0 then
+				course(y0, L - 0.3, body + 0.1)
+			end
+			for _, a in (k % 2 == 0) and { -L / 4, L / 4 } or { 0 } do
+				joint(a, y0, y0 + ch, body + 0.1)
+			end
 		end
-		cap("Rail", h - 0.6, L - 2, T - 0.6, 0.5, 0.35)
-	elseif key == "wall" or key == "reinforced" then
-		local armored = key == "reinforced"
-		local body = armored and T - 0.8 or T - 1.6
-		box("Plinth", 0, 0.45, 0, L, 0.9, T)
-		wedge("PlinthBevel", 0, 1.1, T / 2 - 0.3, L, 0.4, 0.6, "+C", false, false)
-		wedge("PlinthBevel", 0, 1.1, -(T / 2 - 0.3), L, 0.4, 0.6, "-C", false, false)
-		box("Body", 0, 0.9 + (h - 2.5) / 2, 0, L - 0.8, h - 2.5, body)
-		if armored then
-			-- armour: raised plates on both faces (two across, three up) with a rivet at each corner, buttresses at
-			-- the ends, and a heavy flat top with two square merlons
-			local ph = (h - 3) / 3
-			for _, s in { 1, -1 } do
-				local c = s * (body / 2 + 0.15)
-				for i = 0, 1 do
-					for j = 0, 2 do
-						local a = (i - 0.5) * (L / 2 - 0.3)
-						local y = 1.2 + ph * (j + 0.5)
-						box("Plate", a, y, c, L / 2 - 0.9, ph - 0.35, 0.3, false)
-						for _, ra in { -1, 1 } do
-							for _, ry in { -1, 1 } do
-								ball(
-									"Rivet",
-									a + ra * (L / 4 - 0.75),
-									y + ry * (ph / 2 - 0.4),
-									c + s * 0.15,
-									0.28,
-									false
-								)
-							end
-						end
-					end
-				end
-				for _, e in { 1, -1 } do
-					wedge(
-						"Buttress",
-						e * (L / 2 - 0.6),
-						0.9 + 2,
-						s * (body / 2 + (T - body) / 4),
-						1.2,
-						4,
-						(T - body) / 2,
-						s > 0 and "+C" or "-C"
-					)
-				end
+		box("Coping", "teamDark", 0, 8.65, 0, L, 0.5, T)
+		for _, a in { -(L / 2 - 0.8), 0, L / 2 - 0.8 } do
+			box("Merlon", "team", a, 9.45, 0, 1.6, 1.1, T - 0.6)
+		end
+		local tc = home * (body / 2 + 0.35)
+		box("Bracket", "iron", 1, 5.4, home * (body / 2 + 0.25), 0.3, 0.9, 0.5, false)
+		box("Torch", "woodDark", 1, 6, tc, 0.3, 1, 0.3, false)
+		box("Flame", "flame", 1, 6.7, tc, 0.45, 0.5, 0.45, false)
+	elseif key == "reinforced" then
+		-- the Keep Wall: thick dark stone with a gate in it (a solid one: it still blocks), an oak door with iron
+		-- bands between stone jambs under a lintel and keystone, an iron strap along the top, coursed stone either
+		-- side, then the coping in the team's colour and heavy merlons in its dark shade
+		local body = T - 0.4
+		box("Plinth", "stoneDark", 0, 0.6, 0, L, 1.2, T)
+		box("Body", "stoneDark", 0, 4.8, 0, L - 0.2, 7.2, body)
+		box("Gate", "woodDark", 0, 3.6, 0, 3.4, 4.8, body + 0.1, false)
+		for _, s in { 1, -1 } do
+			box("Jamb", "stone", s * 1.95, 3.6, 0, 0.5, 4.8, body + 0.16, false)
+		end
+		box("Lintel", "stone", 0, 6.35, 0, 4.4, 0.7, body + 0.16, false)
+		box("Keystone", "stone", 0, 6.6, 0, 1, 1.2, body + 0.22, false)
+		for _, y in { 2.4, 4.8 } do
+			box("GateBand", "iron", 0, y, 0, 3.5, 0.3, body + 0.14, false)
+		end
+		box("Strap", "iron", 0, 7.7, 0, L - 0.1, 0.35, body + 0.08, false)
+		for _, s in { 1, -1 } do
+			for _, y in { 3, 5 } do
+				box("Course", "mortar", s * 3.05, y, 0, 1.7, 0.14, body + 0.1, false)
 			end
-			box("Top", 0, h - 1.2, 0, L - 0.2, 0.8, T - 0.2)
-			cap("TopCap", h - 0.55, L, T, 0.5, 0.4, true)
-			for _, s in { 1, -1 } do
-				box("Merlon", s * (L / 2 - 1.3), h - 0.1, 0, 2, 0.6, T - 1.2, false)
-			end
-		else
-			-- pilasters at the ends and the middle, a band, slits between, a corbelled walkway and crenellations
-			for _, a in { -(L / 2 - 0.55), 0, L / 2 - 0.55 } do
-				box("Pilaster", a, 0.9 + (h - 2.4) / 2, 0, a == 0 and 0.9 or 1.1, h - 2.4, T - 0.5)
-			end
-			box("Band", 0, 0.9 + (h - 2.6) * 0.45, 0, L - 0.4, 0.45, body + 0.5, false)
-			for _, s in { 1, -1 } do
-				for _, a in { -L / 4, L / 4 } do
-					-- (an arrow slit: two ribs either side of a dark gap in the face)
-					for _, side in { -1, 1 } do
-						box("Slit", a + side * 0.4, h * 0.62, s * (body / 2 + 0.1), 0.3, 2.2, 0.25, false)
-					end
-					box("SlitSill", a, h * 0.62 - 1.2, s * (body / 2 + 0.12), 1.1, 0.25, 0.3, false)
-				end
-				wedge("Corbel", 0, h - 1.95, s * (T / 2 - 0.5), L - 0.4, 0.7, 0.9, s > 0 and "+C" or "-C", true, false)
-			end
-			box("Walk", 0, h - 1.35, 0, L, 0.5, T)
-			for i, a in { -(L / 2 - 0.8), 0, L / 2 - 0.8 } do
-				box("Merlon", a, h - 0.55, 0, i == 2 and 1.6 or 1.5, 1.1, T - 0.5)
-			end
+		end
+		box("Coping", "team", 0, 8.65, 0, L, 0.5, T)
+		for _, a in { -(L / 2 - 0.9), 0, L / 2 - 0.9 } do
+			box("Merlon", "teamDark", a, 9.45, 0, 1.8, 1.1, T - 0.4)
 		end
 	elseif key == "tower" then
-		-- a tapered keep: a plinth with corner spurs, two tiers stepping in (bevelled steps, slits on every face),
-		-- corbels out to a lookout platform on top (walk on it), battlements round it, a ladder up the back in a
-		-- recess, and a banner on a pole at the front corner
-		local back = -f -- (the ladder's side: toward home)
-		box("Plinth", 0, 0.5, 0, L, 1, T)
-		for _, sa in { 1, -1 } do
-			for _, sc in { 1, -1 } do
-				wedge(
-					"Spur",
-					sa * (L / 2 - 0.5),
-					1.6,
-					sc * (T / 2 - 0.9),
-					1,
-					1.2,
-					1.2,
-					sc > 0 and "+C" or "-C",
-					false,
-					false
-				)
-			end
-		end
-		-- the tiers, each a ring of blocks round a recess at the back for the ladder (2.4 wide)
-		local slot = 2.4
-		local tiers = { { y0 = 1, y1 = 5.4, w = 7.4 }, { y0 = 5.4, y1 = 9.4, w = 6.6 } }
-		for ti, tr in tiers do
-			local ht = tr.y1 - tr.y0
-			local y = tr.y0 + ht / 2
-			local inner = L / 2 - 1.3 -- (the recess's inside wall, from the middle)
-			local w = tr.w
-			-- the front part (up to the recess) and the two sides of the recess
-			local frontDepth = w / 2 + inner
-			box("Tier" .. ti, -back * (w / 2 - frontDepth / 2), y, 0, frontDepth, ht, w)
-			local sideW = (w - slot) / 2
-			local depth = w / 2 - inner
-			for _, sc in { 1, -1 } do
-				box("Tier" .. ti, back * (inner + depth / 2), y, sc * (slot / 2 + sideW / 2), depth, ht, sideW)
-			end
-			-- the step out to the tier below: bevels on the three faces without the ladder
-			local step = (ti == 1 and L or tiers[ti - 1].w) - w
-			if step > 0.05 then
-				for _, sc in { 1, -1 } do
-					wedge(
-						"Step",
-						0,
-						tr.y0 + 0.25,
-						sc * (w / 2 + step / 4),
-						w,
-						0.5,
-						step / 2,
-						sc > 0 and "+C" or "-C",
-						false,
-						false
-					)
-				end
-				wedge(
-					"Step",
-					-back * (w / 2 + step / 4),
-					tr.y0 + 0.25,
-					0,
-					w,
-					0.5,
-					step / 2,
-					-back > 0 and "+A" or "-A",
-					false,
-					false
-				)
-			end
-			-- slits: the front and both sides
-			for _, face in { { 0, 1 }, { 0, -1 }, { -back, 0 } } do
-				local fa, fc = face[1], face[2]
-				for _, side in { -1, 1 } do
-					local along = side * 0.45
-					local a = fa ~= 0 and fa * (w / 2 + 0.1) or along
-					local c = fc ~= 0 and fc * (w / 2 + 0.1) or along
-					box("Slit", a, y + 0.2, c, fa ~= 0 and 0.25 or 0.3, ht * 0.5, fa ~= 0 and 0.3 or 0.25, false)
-				end
-			end
-		end
-		-- the corbels: out from the top tier to the lookout's edge, all round
-		local top = tiers[#tiers]
-		local over = (L - top.w) / 2
-		for _, sc in { 1, -1 } do
-			wedge(
-				"Corbel",
-				0,
-				top.y1 + 0.5,
-				sc * (top.w / 2 + over / 2),
-				L,
-				1,
-				over,
-				sc > 0 and "+C" or "-C",
-				true,
-				false
+		-- the Watchtower: a square stone shaft in courses with arrow slits on the front and sides, a platform in the
+		-- team's colour on top (you stand on it) behind a crenellated parapet, a square turret at the front corner
+		-- with a stepped roof and the team's flag, and a ladder up the back in a recess, through a hatch
+		local b = -f -- (the back, along A: toward home)
+		local w = L - 0.8 -- (the shaft)
+		local slot, inner = 2.4, 2.5 -- (the recess: its width across, and its inside wall from the middle)
+		box("Plinth", "stone", 0, 0.5, 0, L, 1, T)
+		local front = w / 2 + inner
+		box("Shaft", "stone", b * (inner - front / 2), 5.9, 0, front, 9.8, w)
+		for _, s in { 1, -1 } do
+			box(
+				"Shaft",
+				"stone",
+				b * (inner + (w / 2 - inner) / 2),
+				5.9,
+				s * (slot / 2 + (w - slot) / 4),
+				w / 2 - inner,
+				9.8,
+				(w - slot) / 2
 			)
 		end
-		wedge(
-			"Corbel",
-			-back * (top.w / 2 + over / 2),
-			top.y1 + 0.5,
-			0,
-			top.w,
-			1,
-			over,
-			-back > 0 and "+A" or "-A",
-			true,
-			false
-		)
-		-- the lookout: the platform (its top at the piece's height: you stand on it) and its battlements; the back
-		-- has an opening over the ladder
-		box("Lookout", 0, top.y1 + 1 + (h - top.y1 - 1) / 2, 0, L, h - top.y1 - 1, T)
-		local parapet = 0.6
-		for _, sc in { 1, -1 } do
-			box("Parapet", 0, h + 0.45, sc * (T / 2 - parapet / 2), L, 0.9, parapet)
-			for _, a in { -(L / 2 - 0.8), 0, L / 2 - 0.8 } do
-				box("Merlon", a, h + 1.45, sc * (T / 2 - parapet / 2), 1.6, 1.1, parapet + 0.1)
-			end
+		for _, y in { 3.45, 5.9, 8.35 } do
+			box("Course", "mortar", b * (inner - front / 2), y, 0, front + 0.1, 0.14, w + 0.1, false)
 		end
-		for _, sa in { 1, -1 } do
-			local side = sa == back and "back" or "front"
-			if side == "front" then
-				box("Parapet", sa * (L / 2 - parapet / 2), h + 0.45, 0, parapet, 0.9, T - parapet * 2)
-				box("Merlon", sa * (L / 2 - parapet / 2), h + 1.45, 0, parapet + 0.1, 1.1, 1.6)
-			else
-				-- (either side of the opening)
-				local w = (T - parapet * 2 - slot) / 2
-				for _, sc in { 1, -1 } do
-					box("Parapet", sa * (L / 2 - parapet / 2), h + 0.95, sc * (slot / 2 + w / 2), parapet, 1.9, w)
-				end
+		for _, y in { 4.6, 8 } do
+			-- (the slits: two through the front, one right through the sides)
+			for _, s in { 1, -1 } do
+				box("Slit", "iron", b * (inner - front / 2), y, s * 2.2, front + 0.1, 1.6, 0.4, false)
 			end
+			box("Slit", "iron", b * (inner - front / 2), y, 0, 0.4, 1.6, w + 0.1, false)
 		end
-		-- the ladder: two rails and rungs in the recess at the back, from the plinth to the lookout
-		local la = back * (L / 2 - 0.45)
-		for _, sc in { 1, -1 } do
-			box("LadderRail", la, (1 + h) / 2, sc * (slot / 2 - 0.2), 0.3, h - 1, 0.3)
+		-- the platform, open over the ladder (a hatch)
+		local deck = h - 1.2
+		box("Platform", "team", b * (inner - L / 2) / 2, deck + 0.6, 0, L / 2 + inner, 1.2, T)
+		for _, s in { 1, -1 } do
+			box(
+				"Platform",
+				"team",
+				b * (inner + L / 2) / 2,
+				deck + 0.6,
+				s * (slot / 2 + (T - slot) / 4),
+				L / 2 - inner,
+				1.2,
+				(T - slot) / 2
+			)
+		end
+		-- the parapet (the back in two, either side of the hatch) and its merlons; the turret takes the front corner
+		local p = 0.6
+		for _, s in { 1, -1 } do
+			box("Parapet", "stone", 0, h + 0.45, s * (T / 2 - p / 2), L, 0.9, p)
+			box(
+				"Parapet",
+				"stone",
+				b * (L / 2 - p / 2),
+				h + 0.45,
+				s * (slot / 2 + (T / 2 - p - slot / 2) / 2),
+				p,
+				0.9,
+				T / 2 - p - slot / 2
+			)
+		end
+		box("Parapet", "stone", -b * (L / 2 - p / 2), h + 0.45, 0, p, 0.9, T - p * 2)
+		local tc = T / 2 - 1.1 -- (the turret's corner: front, +C)
+		for _, corner in { { b, 1 }, { b, -1 }, { -b, -1 } } do
+			box("Merlon", "stone", corner[1] * (L / 2 - 0.45), h + 1.4, corner[2] * (T / 2 - 0.45), 0.9, 1, 0.9)
+		end
+		for _, s in { 1, -1 } do
+			box("Merlon", "stone", 0, h + 1.4, s * (T / 2 - 0.35), 1.4, 1, 0.7)
+		end
+		box("Merlon", "stone", -b * (L / 2 - 0.35), h + 1.4, 0, 0.7, 1, 1.4)
+		local ta = -b * (L / 2 - 1.1)
+		box("Turret", "stone", ta, h + 1.5, tc, 2.2, 3, 2.2)
+		for i, s in { 2.8, 2, 1.2 } do
+			box("Roof", "team", ta, h + 2.75 + 0.5 * i, tc, s, 0.5, s, false)
+		end
+		box("Pole", "woodDark", ta, h + 6, tc, 0.25, 3, 0.25, false)
+		box("Flag", "team", ta, h + 6.7, tc - 1.2, 0.12, 1.5, 2.2, false).flag = true
+		-- the ladder: two rails (up past the platform, to hold) and square rungs in the recess, through the hatch
+		local la = b * (L / 2 - 0.5)
+		for _, s in { 1, -1 } do
+			box("LadderRail", "woodDark", la, (1 + h + 1) / 2, s * 1, 0.3, h, 0.3)
 		end
 		local y = 1.6
-		while y < top.y1 + 0.8 do
-			cylinder("Rung", la, y, 0, slot - 0.4, 0.22, CFrame.Angles(0, PI / 2, 0))
-			y += 1.4
+		while y < h - 0.4 do
+			box("Rung", "woodDark", la, y, 0, 0.25, 0.25, 2)
+			y += 1.6
 		end
-		-- the banner: a pole at a front corner with a flag in the team's colour (not solid)
-		local pa, pc = -back * (L / 2 - 0.3), T / 2 - 0.3
-		cylinder("Pole", pa, h + 3.4, pc, 6.8, 0.3, CFrame.Angles(0, 0, PI / 2), false)
-		ball("Finial", pa, h + 6.9, pc, 0.55, false)
-		local flag = box("Flag", pa, h + 5.4, pc - 1.35, 0.15, 2.2, 2.4, false)
-		flag.flag = true
-		wedge("FlagTail", pa, h + 3.9, pc - 1.35, 0.15, 0.8, 2.4, "-C", true, false)
 	elseif key == "bridge" then
-		-- a deck of planks on two stringers between bevelled piers at the ends, braces under it, a rail each side
-		local deckY = h - 0.4
-		local planks = 6
-		for i = 1, planks do
-			local a = -L / 2 + (i - 0.5) * L / planks
-			box("Plank", a, deckY, 0, L / planks - 0.12, 0.8, T)
-		end
-		for _, sc in { 1, -1 } do
-			box("Stringer", 0, h - 1.1, sc * (T / 2 - 0.35), L - 0.4, 0.6, 0.7, false)
-		end
-		for _, sa in { 1, -1 } do
-			local a = sa * (L / 2 - 0.8)
-			box("Pier", a, (h - 0.8) / 2, 0, 1.6, h - 0.8, T - 0.4)
-			box("PierFoot", a, 0.3, 0, 2, 0.6, T)
-			-- (braces from each pier out under the deck)
-			for _, sc in { 1, -1 } do
-				brace("Brace", sc * (T / 2 - 0.5), a - sa * 0.8, h * 0.35, a - sa * 3.4, h - 1.3, 0.4, false)
+		-- the Rampart: a plank deck on six square posts (stood on to shoot over the walls), braced underneath, a
+		-- palisade with the team's trim on the enemy's side, a team-coloured fascia along both edges, low kerbs at
+		-- the ends and a ladder up the home side
+		local enemy = -home
+		local deckT = T - 0.6
+		for _, a in { -(L / 2 - 0.4), 0, L / 2 - 0.4 } do
+			for _, s in { 1, -1 } do
+				box("Post", "woodDark", a, 2.6, s * (T / 2 - 0.4), 0.8, 5.2, 0.8)
 			end
 		end
-		for _, sc in { 1, -1 } do
-			local c = sc * (T / 2 - 0.15)
-			box("Rail", 0, h + 1.1, c, L - 0.2, 0.25, 0.25, false)
-			for i = 0, 4 do
-				box("RailPost", -L / 2 + 0.3 + i * (L - 0.6) / 4, h + 0.55, c, 0.3, 1.1, 0.3, false)
-			end
+		for _, s in { 1, -1 } do
+			local c = s * (T / 2 - 0.4)
+			box("Beam", "woodDark", 0, 4.95, c, L, 0.5, 0.5, false)
+			brace("Brace", "woodDark", c, -(L / 2 - 0.8), 0.6, -0.4, 4.6, 0.3, false)
+			brace("Brace", "woodDark", c, 0.4, 4.6, L / 2 - 0.8, 0.6, 0.3, false)
+			box("Fascia", "team", 0, 5.45, s * (deckT / 2 + 0.06), L, 0.45, 0.12, false)
+		end
+		for i = 1, 4 do
+			box("Plank", "wood", -L / 2 + (i - 0.5) * L / 4, h - 0.4, 0, L / 4 - 0.1, 0.8, deckT)
+		end
+		box("Palisade", "wood", 0, h + 0.55, enemy * (deckT / 2 - 0.2), L, 1.1, 0.35)
+		box("Trim", "team", 0, h + 1.22, enemy * (deckT / 2 - 0.2), L, 0.25, 0.5, false)
+		for _, s in { 1, -1 } do
+			box("Kerb", "woodDark", s * (L / 2 - 0.15), h + 0.3, 0, 0.25, 0.6, deckT - 1, false)
+		end
+		-- (the ladder: just outside the deck's edge on the home side, between two posts)
+		local lc = home * (T / 2 - 0.2)
+		for _, a in { L / 4 - 0.9, L / 4 + 0.9 } do
+			box("LadderRail", "woodDark", a, (h + 1.2) / 2, lc, 0.3, h + 1.2, 0.3)
+		end
+		local y = 0.9
+		while y < h do
+			box("Rung", "woodDark", L / 4, y, lc, 2, 0.25, 0.25)
+			y += 1.2
 		end
 	elseif key == "cover" then
-		-- a stout block: a plinth, corner posts, crossed braces on every face, a bevelled cap
-		box("Plinth", 0, 0.3, 0, L, 0.6, T)
-		box("Body", 0, 0.6 + (h - 1.4) / 2, 0, L - 0.9, h - 1.4, T - 0.9)
-		for _, sa in { 1, -1 } do
-			for _, sc in { 1, -1 } do
-				box("Post", sa * (L / 2 - 0.4), (h - 0.2) / 2, sc * (T / 2 - 0.4), 0.8, h - 0.2, 0.8)
-			end
+		-- the Shield Wall: a big plank mantlet facing the enemy on two skids, propped from behind by two struts and a
+		-- crossbar, with iron bands, a broad band in the team's colour with an iron boss, and a team cap
+		local fa = f * 0.9 -- (the board, toward the enemy)
+		for _, s in { 1, -1 } do
+			box("Skid", "woodDark", 0, 0.2, s * 1.5, L, 0.4, 0.6)
 		end
-		for _, sc in { 1, -1 } do
-			local c = sc * (T / 2 - 0.4)
-			brace("Brace", c, -L / 2 + 0.8, 1, L / 2 - 0.8, h - 1.2, 0.3, false)
-			brace("Brace", c, -L / 2 + 0.8, h - 1.2, L / 2 - 0.8, 1, 0.3, false)
+		box("Board", "wood", fa, 3.1, 0, 0.7, 5.4, T - 0.1)
+		for _, s in { 1, -1 } do
+			box("Seam", "woodDark", fa, 3.1, s * 0.65, 0.8, 5.3, 0.12, false)
 		end
-		for _, sa in { 1, -1 } do
-			local a = sa * (L / 2 - 0.4)
-			local turn = CFrame.Angles(0, PI / 2, 0)
-			box(
-				"Brace",
-				a,
-				h / 2,
-				0,
-				math.sqrt((T - 1.6) ^ 2 + (h - 2.2) ^ 2),
-				0.3,
-				0.3,
-				false,
-				turn * CFrame.fromAxisAngle(Vector3.new(0, 0, 1), math.atan2(h - 2.2, T - 1.6))
-			)
-			box(
-				"Brace",
-				a,
-				h / 2,
-				0,
-				math.sqrt((T - 1.6) ^ 2 + (h - 2.2) ^ 2),
-				0.3,
-				0.3,
-				false,
-				turn * CFrame.fromAxisAngle(Vector3.new(0, 0, 1), -math.atan2(h - 2.2, T - 1.6))
-			)
+		for _, y in { 1.2, 5.2 } do
+			box("Band", "iron", fa, y, 0, 0.78, 0.25, T - 0.06, false)
 		end
-		cap("Cap", h - 0.3, L, T, 0.6, 0.4, true)
+		box("Stripe", "team", fa, 3.3, 0, 0.82, 1.2, T - 0.04, false)
+		box("Boss", "iron", fa, 3.3, 0, 0.95, 1, 1, false)
+		box("Cap", "team", fa, 5.92, 0, 0.9, 0.25, T, false)
+		for _, s in { 1, -1 } do
+			brace("Strut", "woodDark", s * 1.3, f * 0.5, 5, -f * 1.6, 0.4, 0.3, false)
+		end
+		box("Crossbar", "woodDark", -f * 1.05, 1.6, 0, 0.3, 0.3, 2.9, false)
 	elseif key == "banner" then
-		-- a stepped base, a pole with a finial, a crossbar, and the flag (the builder's emblem on it)
-		box("Base", 0, 0.25, 0, 2.6, 0.5, 2.6)
-		box("Base", 0, 0.7, 0, 1.8, 0.4, 1.8)
-		cap("BaseCap", 1.05, 1.4, 1.4, 0.3, 0.25, true)
-		cylinder("Pole", 0, (1.2 + h) / 2, 0, h - 1.2, 0.6, CFrame.Angles(0, 0, PI / 2))
-		ball("Finial", 0, h + 0.3, 0, 0.8, false)
-		box("Crossbar", 1.2, h - 0.5, 0, 2.8, 0.25, 0.25, false)
-		local flag = box("Flag", 1.2, h - 2.6, 0, 2.4, 3.8, 0.2, false)
-		flag.flag = true
-		for _, s in { -1, 1 } do
-			-- (the swallowtail: two points at the bottom, the notch between them)
-			wedge("FlagTail", 1.2 + s * 0.6, h - 4.9, 0, 0.2, 0.8, 1.2, s > 0 and "-A" or "+A", true, false)
+		-- the Rally Banner: a war banner in the team's colour (the builder's emblem on it) hung from an iron
+		-- crossbar on a square pole, on a stepped stone base, with a glowing square on the ground round it (your
+		-- team comes back here: BuildService)
+		box("RallyGlow", "glow", 0, 0.06, 0, 3.4, 0.12, 3.4, false).glow = true
+		box("Base", "stone", 0, 0.3, 0, 2.6, 0.6, 2.6)
+		box("Base", "teamDark", 0, 0.85, 0, 1.8, 0.5, 1.8)
+		box("Pole", "woodDark", 0, (1.1 + h) / 2, 0, 0.5, h - 1.1, 0.5)
+		box("Crossbar", "iron", 0, h - 0.9, 0, 3.2, 0.3, 0.3, false)
+		box("Flag", "team", 0, h - 3.55, 0.35, 2.6, 5, 0.15, false).flag = true
+		box("FlagTop", "teamDark", 0, h - 1.3, 0.35, 2.7, 0.5, 0.2, false)
+		for _, s in { 1, -1 } do
+			-- (the tails: two square tabs at the bottom, a notch between them)
+			box("FlagTail", "team", s * 0.85, h - 6.5, 0.35, 0.9, 0.9, 0.15, false)
 		end
+		box("Finial", "iron", 0, h + 0.18, 0, 0.75, 0.35, 0.75, false)
+		box("Finial", "iron", 0, h + 0.6, 0, 0.35, 0.5, 0.35, false)
 	else
-		box("Body", 0, h / 2, 0, L, h, T)
+		box("Body", "stone", 0, h / 2, 0, L, h, T)
 	end
 	return out
 end
 
 -- One entry as a part (anchored; solid or not as it says; its tone kept so a team change can paint it again)
 function StructureModel.make(spec, team)
-	local p = Instance.new(spec.wedge and "WedgePart" or "Part")
+	local p = Instance.new("Part")
 	p.Name = spec.name or "Piece"
 	p.Anchored = true
 	p.Size = spec.size
 	p.CFrame = spec.cf
-	p.Material = Enum.Material.SmoothPlastic
+	p.Material = GLOWS[spec.tone] and Enum.Material.Neon or Enum.Material.SmoothPlastic
 	p.Color = StructureModel.color(spec.tone, team)
 	p.CanCollide = spec.solid ~= false
 	p.TopSurface = Enum.SurfaceType.Smooth
 	p.BottomSurface = Enum.SurfaceType.Smooth
-	if spec.shape == "Ball" then
-		p.Shape = Enum.PartType.Ball
-	elseif spec.shape == "Cylinder" then
-		p.Shape = Enum.PartType.Cylinder
+	if spec.tone == "glow" then
+		p.Transparency = 0.35
+		p.CastShadow = false
 	end
 	p:SetAttribute("Tone", spec.tone)
 	return p

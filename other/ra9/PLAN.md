@@ -768,6 +768,48 @@ skip, after that it does, a tap skips; a blade's is an orbit; never over another
 a fall; the mix's groups; your kill's layered sound and the dip, a headshot, a streak, the release, a swing, a clunk,
 the boom, a 3D flyby; twenty shatters under the cap, back to the pool, a phone's lighter).
 
+## Castle pieces and the Rally Banner
+
+The pieces are castle pieces now (`StructureModel`, still shared by BuildService, the tray's pictures and the debris):
+pale stone with a touch of the team's colour, laid in courses (thin mortar lines through the body, one part for both
+faces), wood and iron, and the team's own shade where a castle wears it: copings, merlons, the tower's platform and
+roof, the rampart's trim, the shield's band, the banners. Boxes only: no balls, cylinders or wedges anywhere. Fewer
+parts than before for phones (the tower 42 instead of about 60). Keys, footprints, heights, costs, HP and every build
+rule are as before (the tutorial and the bots still say "wall", "tower").
+
+| key | was | now |
+|---|---|---|
+| barricade | Low Barricade | **Battlement**: a low two-course stone wall, a dark team coping, three team merlons (10 parts) |
+| wall | Wall | **Castle Wall**: four courses of staggered stone blocks, a walkway coping, three merlons, a torch on an iron bracket on the home face (18) |
+| reinforced | Reinforced Wall | **Keep Wall**: thick dark stone, a solid oak gate with iron bands between stone jambs under a lintel and keystone, an iron strap, a team coping, heavy merlons (18) |
+| tower | Short Tower | **Watchtower**: a square stone shaft in courses with arrow slits, a team-coloured platform at the top behind a crenellated parapet, a square corner turret with a stepped team roof and the flag, a ladder up a recess at the back through a hatch (42) |
+| bridge | Bridge | **Rampart**: a plank deck on six square posts, braced, a palisade with team trim on the enemy's side, team fascias, a ladder up the home side; you stand on it to shoot over walls (29) |
+| cover | Cover | **Shield Wall**: a big plank mantlet on skids facing the enemy, propped by struts, iron bands, a team band with an iron boss (13) |
+| banner | Team Banner | **Rally Banner**: a war banner in the team's colour (the builder's emblem on it) on an iron crossbar and a square pole, a stepped base, a glowing square round it and a RALLY tag (11) |
+
+**The Rally Banner** is a forward spawn. While a team's banner stands on its own turf, that team's players come back
+to life beside it instead of in the spawn room (`BuildService:RallySpawn`, asked by a small hook in MatchService's
+respawn loop in the build and fight phases). The rules:
+
+* **One per team** at a time: a second is refused ("Your team's Rally Banner is already up") until the first is
+  knocked down or taken back. It stays a cheap piece (2 points, 30 HP) that the enemy can shoot down.
+* **The spot**: a free cell round it, toward home first, then the sides, the front last; never a cell with a structure
+  or a map shape in it (the standing box is checked against every solid), inside the field, at least a cell back from
+  the line, on the deck (a ray down must find the floor; MatchService's spawn ray lifts the body onto it). No free
+  cell: the spawn room.
+* **Lost turf**: the line passing it takes it down (as any piece), and RallySpawn ignores one over the line anyway.
+* Spawn protection is the same as anywhere; the CHARGE's "back to your side" and a new match still use the spawn room.
+* The team hears it: "Rally Banner up! Your team respawns there", "Your Rally Banner fell! Back to the spawn room".
+  The tray's hint says what each piece is for while it's picked ("RALLY BANNER: Your team respawns here (one per
+  team)").
+
+Tests: Formulas (every piece's name and role, the Rally Banner the only rally piece, nothing round, 8 to 45 parts, the
+team's colour on each, nothing solid outside its footprint, the watchtower's and the rampart's tops to stand on),
+ServerSmoke (a banner goes up and the team hears it, its glow and tag, a second refused for anyone on the team, down
+and back up beside it on your side, not in a wall, protected; walled in behind it the spot moves; its turf lost, no
+rally; knocked down, the spawn room again; then a new one may go up), ClientSmoke (the pieces' tones, the Keep Wall's
+dark stone, the Watchtower's team roof, nothing round in the tray, the new names, the hint).
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

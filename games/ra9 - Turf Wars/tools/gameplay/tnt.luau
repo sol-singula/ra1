@@ -1,6 +1,6 @@
 --[[
 The TNT and the structures, seen from outside (for the docs): the real server and client boot on the mock engine on
-Dust Devil's open floor, every piece is built for both teams (all one team shade, the Reinforced Wall darker), the
+Dust Devil's open floor, every piece is built for both teams (castle stone, wood and iron with the team's trim), the
 tower close up, then a blue TNT goes off against a red wall and tower and the frames catch the explosion and the
 debris flying (what ExplosionController and DebrisController draw on every client).
 
