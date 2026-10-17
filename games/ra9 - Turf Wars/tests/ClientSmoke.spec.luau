@@ -394,6 +394,67 @@ do
 	check("the Buddy Trail draws a line each side of the tracer", Arrows.twins() == twins0 + 2)
 end
 
+-- Parties ------------------------------------------------------------------------------------------------------
+local PartyC = Engine.require(tree.client.Controllers.PartyController)
+local pref = PartyC.refs
+do
+	local PartySvc = service("PartyService")
+	local Layout = Engine.require(tree.client.UI.Layout)
+	check("a PARTY button beside INVITE", pref.button ~= nil and pref.button.Parent ~= nil)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.P, UserInputType = Enum.UserInputType.Keyboard }, false)
+	Engine.advance(0.1)
+	check("P opens the party panel", PartyC.isOpen() and Layout.panel())
+	check("...with the mouse free (a Modal button)", pref.close.Modal == true)
+	local inv = pref.players:FindFirstChild("Invite_" .. foe.UserId)
+	check("...listing the players here with INVITE", inv ~= nil)
+	if inv then
+		inv.Activated:Fire()
+	end
+	Engine.advance(0.3)
+	PartySvc:Answer(foe, true)
+	Engine.advance(0.3)
+	check("INVITE, and a YES: a party, you lead", PartySvc:Of(player) ~= nil and PartySvc:Of(player).leader == player)
+	check("...both on your team", Teams:Team(foe) == Teams:Team(player))
+	check(
+		"...the panel shows KICK and the server buttons",
+		pref.members:FindFirstChild("Kick2") ~= nil and pref.newServer.Visible
+	)
+	check("...the corner list shows you both", pref.list.Visible and pref.list:FindFirstChild("Member2") ~= nil)
+	check("...the PARTY button says so", pref.buttonLine.Text:find("2/4") ~= nil, pref.buttonLine.Text)
+	local mark = PartyC.marks()[foe.UserId]
+	check(
+		"...a 👥 over Foe, drawn only on your screen",
+		mark and mark.Parent == player.PlayerGui and mark.Adornee ~= nil
+	)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.P, UserInputType = Enum.UserInputType.Keyboard }, false)
+	Engine.advance(0.1)
+	check("P closes it", not PartyC.isOpen() and not Layout.panel())
+	-- an invite card: N says no, and it goes
+	Engine.remote("PartyInvite").OnClientEvent:Fire({ from = 900, name = "Foe", kind = "friend", seconds = 20 })
+	local card = PartyC.card()
+	check("an invite card", card ~= nil and card.Title.Text:find("PARTY UP WITH FOE") ~= nil)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.N, UserInputType = Enum.UserInputType.Keyboard }, false)
+	check("...N answers it", PartyC.card() == nil)
+	Engine.remote("PartyInvite").OnClientEvent:Fire({ from = 900, name = "Foe", kind = "invite", seconds = 20 })
+	Engine.advance(21)
+	check("...it goes by itself after 20 s", PartyC.card() == nil)
+	PartySvc:Leave(foe)
+	Engine.advance(0.3)
+	check("the party ends: the list and the marker go", not pref.list.Visible and next(PartyC.marks()) == nil)
+	-- (a full party of four in the corner list, for the layout checks below)
+	Engine.remote("PartyState").OnClientEvent:Fire({
+		id = "x",
+		leader = player.UserId,
+		max = 4,
+		members = {
+			{ userId = player.UserId, name = "Ava" },
+			{ userId = 7, name = "SomeoneWithALongName" },
+			{ userId = 8, name = "Ben" },
+			{ userId = 9, name = "Cy" },
+		},
+	})
+end
+
 -- Nothing on screen overlaps ------------------------------------------------------------------------------------
 -- (the mock draws nothing, so each piece's rectangle is worked out from its Position, Size and AnchorPoint on the
 -- smallest canvas the screens get, 1240 x 560, the way Roblox lays them out)
@@ -496,6 +557,8 @@ do
 			Top = hud.Top,
 			Invite = refs.invite,
 			ShopButton = refs.shop,
+			PartyButton = pref.button,
+			PartyList = pref.list,
 			Feed = refs.feed,
 			Health = hud.Health,
 			Team = refs.team,
@@ -535,8 +598,12 @@ do
 	L.Alert = refs.alert
 	L.Objective = refs.objective
 	L.Respawn = refs.respawn
+	L.PartyAsk = PartyC.showInvite({ from = 900, name = "SomeoneWithALongName", kind = "invite", seconds = 20 })
 	refs.alert.Visible, refs.objective.Visible, refs.respawn.Visible = true, true, true
 	apart("the fight", L)
+	tidy("the party card", L.PartyAsk)
+	fit("the party card", L.PartyAsk)
+	PartyC.answer(false)
 	refs.alert.Visible, refs.respawn.Visible = false, false
 
 	-- a win, with everything at once: a full results table, the question, three unlocks (two show, one waits), a
@@ -643,7 +710,9 @@ do
 	Engine.advance(0.05)
 	L = corners()
 	L.Alert, L.Objective, L.Respawn, L.Popups = refs.alert, refs.objective, refs.respawn, Hud.popups()[1]
+	L.PartyAsk = PartyC.showInvite({ from = 900, name = "Foe", kind = "friend", seconds = 20 })
 	apart("a phone in the fight", L)
+	PartyC.answer(false)
 	check("...one popup showing, the rest waiting", #Hud.popups() == 1, #Hud.popups())
 	refs.alert.Visible, refs.respawn.Visible = false, false
 	phaseAs("build")
@@ -764,6 +833,22 @@ do
 	apart("the panel open", L)
 	check("...the results card steps aside", refs.results == nil or refs.results.Visible == false)
 	check("...toasts go to the panel's own line", pr.status.Text:find("A toast while") ~= nil, pr.status.Text)
+	-- the party panel: one panel at a time, its pieces apart, among the HUD's
+	PartyC.open()
+	Engine.advance(0.1)
+	check("the party panel closes the shop panel", PartyC.isOpen() and not Panel.isOpen() and Layout.panel())
+	L = corners()
+	L.PartyPanel = pref.panel
+	apart("the party panel open", L)
+	local pbad = walk("party", pref.panel, 0)
+	check("the party panel: nothing overlaps, nothing sticks out", #pbad == 0, table.concat(pbad, ", "))
+	for _, box in { pref.members, pref.players } do
+		pbad = walk("party", box, 0)
+		check(`the party panel's {box.Name}: nothing overlaps`, #pbad == 0, table.concat(pbad, ", "))
+	end
+	PartyC.close()
+	check("...closed, the mouse goes back", not Layout.panel())
+	Panel.open("shop")
 	-- buying from the shop tab
 	local p = Data:Get(player)
 	local item1 = pr.body:FindFirstChild("Item1")

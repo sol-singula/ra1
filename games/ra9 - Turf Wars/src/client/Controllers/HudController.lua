@@ -3,6 +3,7 @@ The HUD (master plan §1, §2, §5, §7): everything on screen, in the SUPERHOT 
 
   top left   INVITE (I): Roblox's invite prompt; a friend who joins from it gets you both the Buddy Trail
              SHOP (B): the panel (PanelController): the shop, the pass, the locker, the goals
+             PARTY (P), beside INVITE, and the party list under SHOP: PartyController
   top        the phase and its clock (BUILD 0:42 / FIGHT 1:13), the frontline bar (red | blue, the line marked, how
              far each team is from losing), the map's name, the team counts
   centre     the crosshair, the bow's charge under it, hit markers (white; red for a kill), the big alerts
