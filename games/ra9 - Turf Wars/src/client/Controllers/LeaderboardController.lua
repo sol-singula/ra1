@@ -45,6 +45,7 @@ local TABS = {
 	{ "kills", "KILLS", "KILLS" },
 	{ "mvps", "MVP", "MVPS" },
 	{ "streak", "STREAK", "BEST STREAK" },
+	{ "duels", "DUELS", "DUEL WINS" },
 }
 local MEDAL = { -- the badge, and the row's pale tint
 	{ Color3.fromRGB(255, 200, 40), Color3.fromRGB(255, 244, 205) },
@@ -362,7 +363,7 @@ local function buildPanel(gui)
 	end, { Position = UDim2.fromOffset(P.w - 46, 4) })
 	refs.close.Modal = true -- (frees the mouse from first person while the panel is up)
 	refs.tabs = {}
-	local tw = (P.w - 20 - 3 * 6) / 4
+	local tw = (P.w - 20 - (#TABS - 1) * 6) / #TABS
 	for i, t in TABS do
 		refs.tabs[t[1]] = button(panel, "Tab_" .. t[1], t[2], 10 + (i - 1) * (tw + 6), 46, tw, 32, false, function()
 			LeaderboardController.open(t[1])

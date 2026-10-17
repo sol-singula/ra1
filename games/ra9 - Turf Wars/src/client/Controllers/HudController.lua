@@ -533,6 +533,7 @@ function HudController.flyEarned(e)
 		hook = "MISSION",
 		pass = "PASS REWARD",
 		starter = "STARTER PACK",
+		duel = "DUEL",
 	})[e.why or ""]
 	if why then
 		Theme.text({

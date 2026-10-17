@@ -46,6 +46,8 @@ local function defaults()
 			pushed = 0, -- cells of frontline moved by your kills
 			mvps = 0,
 			minutes = 0,
+			duelWins = 0, -- the lobby's duels (DuelService)
+			duelLosses = 0,
 		},
 		settings = { flips = true, sensitivity = 1, shake = true, weapon = "bow" },
 		feedback = { askedDay = 0, likeAskedDay = 0 }, -- the winners' cards (FeedbackService)

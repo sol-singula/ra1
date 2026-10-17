@@ -31,6 +31,7 @@ Net.ClientEvents = {
 	Top = 2, -- () the leaderboards, please (LeaderboardService answers with "Leaderboards")
 	Active = 1, -- () the player touched a key, the mouse or the screen lately (AfkService: not idle)
 	InvitePromo = 4, -- ("sent", recipients) | ("later") the invite-a-friend card (InviteService)
+	Duel = 6, -- ("join", size) | ("cancel") | ("rematch") | ("leave") the lobby's duels (DuelService)
 }
 
 -- Server → client.
@@ -72,6 +73,8 @@ Net.ServerEvents = {
 	"Leaderboards", -- { boards, server, you, ok, at, every } the top players, all time and here (LeaderboardService)
 	"InvitePromo", -- { why, pool = { effect keys } } the invite-a-friend card | { pulse = true } nudge the button
 	"InviteReward", -- { key, pool = { effect keys }, friend } a friend joined from your invite: the effect you won
+	"Duel", -- { kind = "queue" | "start" | "round" | "roundEnd" | "result" | "rematch" | "end", ... } the lobby's
+	-- duels: the queue chip, the scoreboard, the round banners, the result card (DuelService, DuelController)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).

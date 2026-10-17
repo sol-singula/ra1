@@ -4,6 +4,34 @@ local Constants = {}
 Constants.GAME = "ra9"
 Constants.GAME_NAME = "Turf Wars"
 
+-- The place this server is: "turf" (the match) or "lobby" (the plaza and the duels). A service that names its
+-- Modes only runs in those (Loader); one that names none runs everywhere. Constants.applyMode(key) at boot.
+Constants.MODE = "turf"
+function Constants.applyMode(key)
+	Constants.MODE = key
+	return key
+end
+
+-- Duels (DuelService, lobby only): the four pads on the plaza (1v1, 2v2, 3v3, 4v4; the lobby builds the pads and
+-- their signs), each duel in its own arena far out past the plaza, first side to DUEL_ROUNDS round wins
+Constants.DUEL_SIZES = { 1, 2, 3, 4 } -- a side's size at each pad
+Constants.DUEL_PADS = {
+	Vector3.new(-60, 0, -90),
+	Vector3.new(-20, 0, -90),
+	Vector3.new(20, 0, -90),
+	Vector3.new(60, 0, -90),
+}
+Constants.DUEL_PAD_RADIUS = 4.5 -- studs from a pad's middle: standing this close is standing on it
+Constants.DUEL_COUNTDOWN = 5 -- seconds from a full queue to the duel
+Constants.DUEL_ROUNDS = 5 -- first side to this many round wins
+Constants.DUEL_SECONDS = 180 -- the cap: the side ahead on rounds wins when it runs out (even: a draw)
+Constants.DUEL_ROUND_WAIT = 2 -- seconds between rounds (everyone back on their deck)
+Constants.DUEL_RESULT_SECONDS = 12 -- the result card's time; then the arena comes down and everyone is home
+Constants.DUEL_ORIGIN_Z = -800 -- the first arena's middle along Z (the plaza is round the origin)...
+Constants.DUEL_GAP = 300 -- ...and each slot this far on (an arena is 96 wide; the slots are reused)
+Constants.DUEL_SHARDS = { win = 20, kill = 3 } -- what a duel pays (EconomyService, why "duel")
+Constants.DUEL_SIDE_NAME = { red = "RED", blue = "BLUE" } -- (the two sides inside a duel: red/blue looks)
+
 -- Server and teams (§1, §2A)
 Constants.MAX_PLAYERS = 40
 Constants.TEAMS = { "red", "blue" }
