@@ -5,7 +5,8 @@ next map in the same server. No lobby, no queue.
   * Phases: "build" (BUILD_SECONDS, building open, no damage), "fight" (FIGHT_SECONDS, bows), back to "build" with
     the frontline where it was; "victory" (the results) and "loading" (the next map) between matches.
   * The frontline is the server's number (X along the field). Each valid kill (opposing teams, the fight phase, a
-    real attacker) moves it Formulas.pushCells(players) cells toward the victim's base. When it reaches a team's
+    real attacker) moves it Formulas.pushCells(players) cells toward the victim's base (plus MatchService.bonusCells
+    (killer), a hook: TutorialService's first-match boost). When it reaches a team's
     lose line (the edge of its spawn zone), that team is out.
   * Turf Wars' rule: you can't stand on enemy turf. Step over the line and you're put back on your side.
   * Players join straight into the running match (TeamService picks the side), spawn on their pads with a moment
@@ -145,6 +146,10 @@ function MatchService:Everyone()
 end
 -- A one-shot spawn point for a player (BotService: the second player takes over a bot where it stood).
 MatchService.SpawnAt = {}
+-- Extra cells a kill by this player moves the line (TutorialService: a new player's first match, alone).
+MatchService.bonusCells = function(_killer)
+	return 0
+end
 
 function MatchService:Spawn(player)
 	local team = teams:Team(player) or teams:Assign(player)
@@ -214,7 +219,7 @@ function MatchService:_onKilled(victim, killer, info)
 			ks.triples += 1
 			ks.recent = {}
 		end
-		local cells = Formulas.pushCells(#self:Everyone())
+		local cells = Formulas.pushCells(#self:Everyone()) + (self.bonusCells(killer) or 0)
 		push = cells * Constants.CELL
 		ks.pushed += cells
 		local team = teams:Team(killer)

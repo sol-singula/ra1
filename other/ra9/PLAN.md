@@ -264,6 +264,39 @@ over the line...), with short question lines (SO CLOSE..., BEHIND YOU!, WHAT'S I
 
 ![](thumbnails/_all.jpg)
 
+## Tutorial: the first minute, guided like a cinematic
+
+New players only (`TutorialService`: the profile's new `tutorial` field; anyone who played before it existed counts
+as done), once, replayable from GOALS → HOW TO PLAY → REPLAY. `TutorialController` runs the show:
+
+* **The intro** (about 7 s, any key or tap skips it after a second): letterbox bars, the camera sweeps high over the
+  arena (RED ... BLUE, each side's turf rippling in its colour), swoops onto the glowing line (THE LINE), skims it
+  (THIS IS YOUR TURF), rises over your spawn room and drops into your eyes facing the enemy (TAKE THEIRS). Big
+  titles slam in from huge with a shake, a lens punch and a sound. `CameraController.takeover(fn)` / `release(look)`
+  hand the camera over and back to locked first person.
+* **Guided steps**, one at a time, each with one big instruction, a glowing guide in the world, the matching button
+  pulsing and a payoff: PICK A WALL → PLACE IT (a glowing spot near the line with a beam and an arrow of chevrons to
+  it; NICE! and a burst) → FIGHT! (the camera turns you to the nearest enemy) → AIM HERE (a marker over them) → HOLD
+  TO PULL (a big charge ring) → LET GO! → HIT THEM (HIT!) → KNOCK THEM OUT (the camera rises to watch the line jump
+  forward with a shockwave along the turf: THE LINE MOVED!) → PUSH IT TO THEIR BASE (an arrow along the turf). The
+  HUD keeps only what the step needs (`Layout.focus`); cinematics hide it (`Layout.cinema`).
+* **Tips**, once each and only when they fit: 4 = BLADE (an enemy close), SHIFT = RUN (walking a long while).
+* **The first win:** the camera circles you, confetti, YOU WIN!
+* **Never a trap:** every step times out, timers wait while you're down, build steps drop once the fight starts, K
+  or SKIP ends it. Phones read TAP A WALL / TAP PLACE / HOLD FIRE; pads get their buttons (the wall is picked for
+  them). Reduced Motion: small shakes, no lens punches.
+* **First-match boost:** in a new player's very first match, alone with the bot, the bot is slower and shakier
+  against them (`BotService.easyFor`) and their knockouts push the line 2 more cells (`MatchService.bonusCells`).
+  Only that match.
+* **Analytics:** tutorial_start, tutorial_step, tutorial_done, tutorial_skip through `AnalyticsService.event` when
+  that service is there.
+
+![](screenshots/tutorial_intro_blue.png)
+![](screenshots/tutorial_place_it.png)
+
+New `tests/TutorialSmoke.spec.luau` (121 checks) plays it through on the mock engine. The other suites turn the
+tutorial off (`Constants.TUTORIAL = false`): their players stand for people who know the game.
+
 ## Next (phase F)
 
 * The Discord log and analytics (the studio's shared pipeline), the dashboard entry.

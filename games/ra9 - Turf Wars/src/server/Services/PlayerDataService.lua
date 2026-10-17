@@ -58,6 +58,8 @@ local function defaults()
 		daily = { day = 0, played = false, won = false }, -- the day's first match and first win pay more
 		club = { month = 0 }, -- the Shard Club's monthly Shards, last month given
 		invite = { friends = {}, count = 0 }, -- by: who brought you in; friends: the ones you brought (InviteService)
+		-- the first-minute guide (TutorialService): done (or skipped) once; replay asks for it again
+		tutorial = { done = false, skipped = false, replay = false, step = "", at = 0 },
 		meta = { createdAt = os.time(), lastSeen = os.time(), lock = nil },
 	}
 end

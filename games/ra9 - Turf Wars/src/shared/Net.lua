@@ -25,6 +25,7 @@ Net.ClientEvents = {
 	Buy = 4, -- ("item", key) | ("bundle") | ("robux", productKey | "starter") (ShopService)
 	Claim = 6, -- (tier, "f" | "p") a tier of the Turf Pass
 	Feedback = 2, -- ("enjoy", yes) the "Are you liking the game?" card | ("like", "ok" | "later") the like card
+	Tutorial = 6, -- ("step", name, how?) | ("done") | ("skip", where?) | ("replay") the first-minute guide
 }
 
 -- Server → client.
@@ -46,6 +47,7 @@ Net.ServerEvents = {
 	"Unlock", -- { step = { win, kind, name, big }, wins }
 	"Sfx", -- soundName, worldPosition?
 	"Ask", -- { kind = "enjoy" | "like" } a card for a winner (FeedbackService)
+	"Tutorial", -- { kind = "start", boost, replay } | { kind = "built" } the first-minute guide (TutorialService)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).

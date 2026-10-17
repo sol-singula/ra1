@@ -12,6 +12,7 @@ local V3, CF = Engine.Vector3, Engine.CFrame
 local Vector2 = Engine.globals.Vector2
 local outDir = ARGS[1]
 local tree = Engine.mountProject(".")
+Engine.require(tree.shared.Constants).TUTORIAL = false -- (the players here know the game: tests/TutorialSmoke is the tutorial's)
 Engine.clientEnabled = true
 local ws = Engine.workspace
 ws.CurrentCamera.ViewportSize = Vector2.new(1600, 900)

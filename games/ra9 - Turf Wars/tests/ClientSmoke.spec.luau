@@ -24,6 +24,7 @@ local function check(name, cond, detail)
 end
 
 local tree = Engine.mountProject(".")
+Engine.require(tree.shared.Constants).TUTORIAL = false -- (the players here know the game: tests/TutorialSmoke is the tutorial's)
 Engine.clientEnabled = true
 local ws = Engine.workspace
 ws.CurrentCamera.ViewportSize = Vector2.new(844, 390)

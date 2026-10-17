@@ -241,7 +241,11 @@ local function placeView(dt)
 		return
 	end
 	local me = Store.get("me")
-	local show = me and me.alive and Store.phase() ~= "build" and Store.phase() ~= "loading"
+	local show = me
+		and me.alive
+		and Store.phase() ~= "build"
+		and Store.phase() ~= "loading"
+		and not CameraController.takenOver() -- (a cinematic has the camera: no bow floating in it)
 	for _, p in view.model:GetChildren() do
 		if p:IsA("BasePart") then
 			p.LocalTransparencyModifier = show and 0 or 1

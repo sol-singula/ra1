@@ -11,3 +11,4 @@ $R tests/ServerSmoke.spec.luau
 $R tests/ClientSmoke.spec.luau
 $R tests/BotSmoke.spec.luau
 $R tests/MapSmoke.spec.luau
+$R tests/TutorialSmoke.spec.luau

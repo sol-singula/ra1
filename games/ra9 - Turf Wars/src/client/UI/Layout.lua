@@ -4,6 +4,7 @@
 --
 --   Layout.modal(name, card)   a card is on screen (it counts until it leaves the screen)
 --   Layout.modalOpen()         true while any is
+--   (and the panel, and the tutorial's focus and cinema flags: below)
 local Layout = {}
 
 local open = {} -- [name] = the card
@@ -50,5 +51,29 @@ function Layout.onPanel(fn)
 end
 
 Layout.statusSink = nil
+
+-- The tutorial (TutorialController). While it guides, the HUD keeps only what the step needs (the top bar, health,
+-- the crosshair, the bows or the tray) and hides the rest. While one of its cinematics plays, the whole HUD steps
+-- away (the letterbox and the big titles have the screen).
+--
+--   Layout.focus(on)    Layout.focused() -> on
+--   Layout.cinema(on)   Layout.inCinema() -> on
+local focusOn, cinemaOn = false, false
+
+function Layout.focus(on)
+	focusOn = on == true
+end
+
+function Layout.focused()
+	return focusOn
+end
+
+function Layout.cinema(on)
+	cinemaOn = on == true
+end
+
+function Layout.inCinema()
+	return cinemaOn
+end
 
 return Layout
