@@ -36,6 +36,11 @@ Constants.FEEDBACK_REASONS = {
 	{ key = "bugs", text = "Bugs / got stuck", icon = "🐛" },
 	{ key = "pay", text = "Too much to buy", icon = "💸" },
 }
+-- The free gifts (GiftService): at each match's end, until they've bought something, a free shop cosmetic, to get
+-- them into the locker; up to GIFT_MAX, stopping early once they've worn a gift of each of trail, effect and bow
+Constants.GIFT_MAX = 6
+Constants.GIFT_DELAY = 7 -- seconds after the win: after the results card (RESULTS_CARD_SECONDS), in the victory
+Constants.GIFT_NUDGES = 2 -- after they've bought: a "NEW IN THE SHOP" end card this many more times, then nothing
 Constants.FEEDBACK_ASK_DELAY = 6 -- seconds after a win before a winner is asked anything (after the fireworks start)
 Constants.MIN_PLAYERS_TO_SCORE = 2 -- with fewer, phases still run (practice) but nobody can win
 Constants.WATCHDOG_SECONDS = 45 * 60 -- a match this long is logged as stalled and restarted (never "won")

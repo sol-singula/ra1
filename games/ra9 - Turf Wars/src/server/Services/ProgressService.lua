@@ -38,6 +38,7 @@ local ProgressService = {
 	Dependencies = { "PlayerDataService", "EconomyService", "SeasonService" },
 	Unlocked = Signal.new("ProgressService.Unlocked"), -- (player, step)
 	Earned = Signal.new("ProgressService.Earned"), -- (player, key) a goal, VIP or MVP reward newly earned
+	Equipped = Signal.new("ProgressService.Equipped"), -- (player, kind, key) worn from the locker
 }
 
 local data, economy, season
@@ -307,6 +308,7 @@ function ProgressService:Equip(player, kind, key)
 		return false
 	end
 	p.equipped[kind] = key
+	self.Equipped:Fire(player, kind, key)
 	return true
 end
 
