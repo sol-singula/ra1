@@ -641,7 +641,7 @@ local function passTab(body)
 	label(
 		intro,
 		"How",
-		"Play matches to earn XP. Climb tiers to unlock rewards. The Turf Pass adds a gold reward on every tier.",
+		"Play matches to earn XP. Every tier gives a reward. The Turf Pass unlocks the gold rewards too.",
 		94,
 		28,
 		W - 104,

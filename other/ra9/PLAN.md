@@ -579,6 +579,12 @@ remembered, every panel's close button the shared X), ServerSmoke 174, AdminSmok
   it look like a hologram). Now it's always a leather grip in the team's colour, a dark steel guard and pommel and a
   bright steel edge; bow skins stay on bows.
 
+## Round 20: every free tier gives something
+
+* The odd free tiers that gave nothing now give **10 Shards** (even ones 20, cosmetic tiers their cosmetic), so the
+  pass tab says it plainly: "Play matches to earn XP. Every tier gives a reward. The Turf Pass unlocks the gold
+  rewards too."
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

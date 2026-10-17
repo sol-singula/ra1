@@ -91,7 +91,8 @@ function Season.reward(n, tier, track)
 		return { kind = "cosmetic", key = `s{n}_{tier}{track}` }
 	end
 	if track == "f" then
-		return tier % 2 == 0 and { kind = "shards", amount = 20 } or nil
+		-- (every free tier gives something: 20 Shards on even tiers, 10 on the odd ones in between)
+		return { kind = "shards", amount = tier % 2 == 0 and 20 or 10 }
 	end
 	return { kind = "shards", amount = 25 + (tier // 10) * 5 }
 end

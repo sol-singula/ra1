@@ -312,7 +312,14 @@ do
 	check("premium tier 1: the season title", Cosmetics.get("s1_1p") and Cosmetics.get("s1_1p").kind == "title")
 	check("free tier 5: a cosmetic", Season.reward(1, 5, "f").kind == "cosmetic" and Cosmetics.get("s1_5f") ~= nil)
 	check("tier 30 premium is legendary", Cosmetics.get("s1_30p").rarity == "legendary")
-	check("free odd tiers between give nothing", Season.reward(1, 7, "f") == nil)
+	check("free odd tiers between give 10 Shards", (Season.reward(1, 7, "f") or {}).amount == 10)
+	local every = true
+	for t = 1, Season.TIERS do
+		if not Season.reward(1, t, "f") then
+			every = false
+		end
+	end
+	check("...every free tier gives a reward", every)
 	check("season items aren't made for tiers without one", Cosmetics.get("s1_4f") == nil)
 	check(
 		"season items are the season's own",
