@@ -908,6 +908,14 @@ function methods.GetAccessories()
 	return {}
 end
 function methods.ApplyImpulse() end
+-- Humanoid:MoveTo(goal) walks only when a test installs tests/mock/Walker.luau (the mock has no physics otherwise:
+-- it errors, and BotService steps its bots by hand)
+function methods.MoveTo(inst, goal)
+	if Engine.walker and rawget(inst, "_class") == "Humanoid" then
+		return Engine.walker.moveTo(inst, goal)
+	end
+	error("MoveTo is not modelled here (tests/mock/Walker.luau models a Humanoid's)", 2)
+end
 function methods.SetNetworkOwner() end
 function methods.GetNetworkPing()
 	return 0.05

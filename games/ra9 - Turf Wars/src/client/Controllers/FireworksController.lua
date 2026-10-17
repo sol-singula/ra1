@@ -46,7 +46,8 @@ end
 local function launch()
 	local lo, hi = bounds()
 	local x = lo + math.random() * (hi - lo)
-	local z = (math.random() - 0.5) * 84
+	local m = Store.get("match") or {}
+	local z = (math.random() - 0.5) * ((m.width or 96) - 12) -- (the arena's width: bigger with more people)
 	local color = Constants.TEAM_COLOR[team] or Color3.new(1, 1, 1)
 	local from = Vector3.new(x, 1, z)
 	local to = Vector3.new(x + (math.random() - 0.5) * 8, 30 + math.random() * 34, z + (math.random() - 0.5) * 8)

@@ -18,6 +18,11 @@ What a bot does (every TICK):
     lets go with a lead on their movement, the drop allowed for, and BOT_SPREAD degrees of error. It strafes side to
     side while it draws so it's not a still target, falls back behind cover when it's hurt (under BOT_RETREAT_HP),
     and pushes up when nobody is in sight.
+  * getting about (BotService:Go): every move goes through a path on the walking grid (server/BotNav: the map's
+    shapes and the structures, kept on its own side of the line), straight to the farthest point of it in clear
+    view, with a jump over anything low just ahead. Goals inside a solid move to the nearest free spot. A bot that
+    makes no headway for STUCK_SECONDS jumps and marks what it walked into, then backs off round a detour, then
+    gives up on that goal, and if it's still wedged it's put on the nearest free square.
 
   BotService:List()          the bots in the server
   BotService:Ensure()        bots in or out for the number of people on (runs on its own every second)
@@ -32,7 +37,9 @@ local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local ArenaBuilder = require(ReplicatedStorage.Shared.World.ArenaBuilder)
 local Notify = require(script.Parent.Parent.Notify)
 local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
+local Structures = require(ReplicatedStorage.Shared.Data.Structures)
 local Admins = require(script.Parent.Parent.Admins)
+local BotNav = require(script.Parent.Parent.BotNav)
 
 local BotService = {
 	Name = "BotService",
@@ -45,6 +52,7 @@ local enabled = true -- (an admin can switch them off for this server)
 local nextId = 0
 local folder
 BotService.TICK = 0.1
+BotService.STUCK_SECONDS = 1.25 -- no headway for this long (wanting to go somewhere): stuck
 BotService.RESET_ON_TAKEOVER = true -- (a real opponent joining starts the game over)
 
 -- The stand-in ------------------------------------------------------------------------------------------------
@@ -133,6 +141,7 @@ function Bot:LoadCharacter()
 		self.Character = model
 		self.target, self.drawUntil, self.goal = nil, nil, nil
 		self.buildAt, self.built = nil, nil
+		self.path, self.detour, self.prog, self.stuckN = nil, nil, nil, 0
 		return model
 	end
 	model = Instance.new("Model")
@@ -167,6 +176,7 @@ function Bot:LoadCharacter()
 	self.Character = model
 	self.target, self.drawUntil, self.goal = nil, nil, nil
 	self.buildAt, self.built = nil, nil
+	self.path, self.detour, self.prog, self.stuckN = nil, nil, nil, 0
 	return model
 end
 
@@ -365,6 +375,7 @@ local function rootOf(who)
 end
 
 local function moveTo(b, root, goal)
+	b.moveGoal = goal
 	local hum = b.Character:FindFirstChildOfClass("Humanoid")
 	if hum then
 		hum.WalkSpeed = Constants.BOT_SPEED
@@ -379,6 +390,174 @@ local function moveTo(b, root, goal)
 		if step > 0.05 then
 			root.CFrame = root.CFrame + flat.Unit * step
 		end
+	end
+end
+
+local wander = Random.new() -- (detours)
+
+local function flat(v)
+	return Vector3.new(v.X, 0, v.Z).Magnitude
+end
+
+-- The walking grid for the arena as it stands now (made again when the map or a structure changes)
+local nav, navVersion
+local function navNow()
+	local a = arenaService:Current()
+	if not a then
+		return nil
+	end
+	if not nav or navVersion ~= arenaService.version then
+		nav = BotNav.new(a, arenaService:Collide())
+		navVersion = arenaService.version
+	end
+	return nav
+end
+BotService.nav = navNow
+
+-- Go toward dest by the walking grid: kept in the field and on its own side, around whatever is in the way, with a
+-- jump over low things and the stuck handling below.
+function BotService:Go(b, root, dest)
+	local a = arenaService:Current()
+	local grid = navNow()
+	if not a or not grid then
+		return moveTo(b, root, dest)
+	end
+	local t = os.clock()
+	local team = teams:Team(b)
+	local fwd = Formulas.forward(team)
+	local line = match:Frontline()
+	local pos = root.Position
+	-- (in the field, never over the line: the turf rule would only put it back)
+	local x = dest.X
+	if (x - line) * fwd > -2 then
+		x = line - fwd * 2
+	end
+	x = math.clamp(x, -a.half + 3, a.half - 3)
+	dest = Vector3.new(x, pos.Y, math.clamp(dest.Z, -a.width / 2 + 3, a.width / 2 - 3))
+	dest = ArenaBuilder.route(a, team, pos, dest)
+	if b.detour then
+		if t < b.detourUntil and flat(b.detour - pos) > 1.5 then
+			dest = b.detour
+		else
+			b.detour = nil
+			b.path = nil
+		end
+	end
+	local side = { line = line, fwd = fwd }
+	if
+		not b.path
+		or flat(dest - b.pathGoal) > 3
+		or t > b.pathAt + 2
+		or b.pathVersion ~= navVersion
+		or b.pathLine ~= line
+	then
+		b.path = grid:Path(pos, dest, side) or false
+		b.pathI, b.pathGoal, b.pathAt, b.pathVersion, b.pathLine = 1, dest, t, navVersion, line
+	end
+	local aim = dest
+	local path = b.path
+	if path then
+		while b.pathI < #path and flat(path[b.pathI] - pos) < 1.5 do
+			b.pathI += 1
+		end
+		aim = path[b.pathI]
+		-- (the farthest point ahead it can walk straight to)
+		for j = math.min(#path, b.pathI + 8), b.pathI + 1, -1 do
+			if grid:Clear(pos, path[j]) then
+				aim = path[j]
+				break
+			end
+		end
+	end
+	local hum = b.Character:FindFirstChildOfClass("Humanoid")
+	local toAim = Vector3.new(aim.X - pos.X, 0, aim.Z - pos.Z)
+	if hum and toAim.Magnitude > 0.5 then
+		local dir = toAim.Unit
+		if grid:Low(pos + dir * 1.6) or grid:Low(pos + dir * 3) then
+			hum.Jump = true -- (a crate, a bench, a low wall: over it)
+		end
+	end
+	b.wantAt = dest -- (where it's really going: the tests read it)
+	self:_unstick(b, root, hum, dest, aim, grid, t)
+	moveTo(b, root, Vector3.new(aim.X, pos.Y, aim.Z))
+end
+
+-- No headway for STUCK_SECONDS while wanting to go somewhere: a jump each time, and step by step something more:
+-- the square it walked into is marked for a few seconds and it plans again; then it backs off round a detour; then
+-- it drops that goal; and if it is still wedged (inside something), it's put on the nearest free square.
+function BotService:_unstick(b, root, hum, dest, aim, grid, t)
+	local pos = root.Position
+	local p0 = b.prog
+	if not p0 or flat(pos - p0.pos) > 1.5 or flat(dest - pos) < 2.5 then
+		if p0 and flat(pos - p0.pos) > 1.5 then
+			b.stuckN = 0
+		end
+		b.prog = { pos = pos, t = t }
+		return
+	end
+	if t - p0.t < self.STUCK_SECONDS then
+		return
+	end
+	b.prog = { pos = pos, t = t }
+	b.stuckN = (b.stuckN or 0) + 1
+	b.stuckTimes = (b.stuckTimes or 0) + 1
+	if hum then
+		hum.Jump = true
+	end
+	local side = { line = match:Frontline(), fwd = Formulas.forward(teams:Team(b)) }
+	-- shut in (no way from here to there at all: structures went up round it), or inside something: straight to the
+	-- nearest spot it can get there from
+	local inside = false
+	local feet = pos.Y - (hum and hum.HipHeight or 2) - root.Size.Y / 2
+	for _, box in arenaService:Collide() do
+		local mn, mx = box.min, box.max
+		if
+			pos.X > mn.X
+			and pos.X < mx.X
+			and pos.Z > mn.Z
+			and pos.Z < mx.Z
+			and mn.Y < feet + 2
+			and mx.Y > feet + 0.3
+		then
+			inside = true
+			break
+		end
+	end
+	if inside or b.path == false then
+		local spot = grid:Reach(pos, dest, side, 20)
+		if spot and spot ~= pos then
+			root.CFrame = CFrame.new(spot.X, 3.5, spot.Z) * root.CFrame.Rotation
+			b.stuckN, b.path, b.detour = 0, nil, nil
+			return
+		end
+	end
+	local toAim = Vector3.new(aim.X - pos.X, 0, aim.Z - pos.Z)
+	local dir = toAim.Magnitude > 0.1 and toAim.Unit or root.CFrame.LookVector
+	if b.stuckN == 1 then
+		grid:Block(pos + dir * 2, t + 5)
+		b.path = nil
+	elseif b.stuckN == 2 then
+		-- back off, to one side: a free spot a few studs away that isn't the way it was going
+		for _ = 1, 16 do
+			local a = wander:NextNumber(0, math.pi * 2)
+			local off = Vector3.new(math.cos(a), 0, math.sin(a))
+			if off:Dot(dir) < 0.2 then
+				local spot = grid:Free(pos + off * wander:NextNumber(4, 9), side)
+				if spot and flat(spot - pos) > 2 and grid:Path(pos, spot, side) then
+					b.detour, b.detourUntil = spot, t + 1.8
+					break
+				end
+			end
+		end
+		b.path = nil
+	elseif b.stuckN == 3 then
+		b.goal, b.path, b.detour = nil, nil, nil
+	else
+		local spot = grid:Free(pos, side) or grid:Free(pos)
+		if spot then
+			root.CFrame = CFrame.new(spot.X, 3.5, spot.Z) * root.CFrame.Rotation
+		end
+		b.stuckN, b.path, b.detour = 0, nil, nil
 	end
 end
 
@@ -462,16 +641,14 @@ function BotService:Think(b)
 			local outX = -fwd * (a.half - a.room.front1 - 6)
 			gx = fwd > 0 and math.max(gx, outX) or math.min(gx, outX)
 		end
-		b.goal = Vector3.new(gx, root.Position.Y, rng:NextNumber(-34, 34))
+		local wz = a and a.width / 2 - 14 or 34
+		b.goal = Vector3.new(gx, root.Position.Y, rng:NextNumber(-wz, wz))
 		b.goalAt = t + rng:NextNumber(2.5, 5)
 	end
-	-- the next step toward it: out of the spawn room by its doors first
-	local a = arenaService:Current()
-	local dest = a and ArenaBuilder.route(a, team, root.Position, b.goal) or b.goal
 	if phase ~= "fight" then
 		combat:Draw(b, false)
 		b.drawUntil = nil
-		moveTo(b, root, dest)
+		self:Go(b, root, b.goal)
 		if phase == "build" then
 			self:BuildSome(b, root, team, line, fwd, t)
 		end
@@ -494,9 +671,8 @@ function BotService:Think(b)
 			b.goal =
 				Vector3.new(line - fwd * rng:NextNumber(3, 7), root.Position.Y, near.Position.Z + rng:NextNumber(-6, 6))
 			b.goalAt = b.peekAt
-			dest = a and ArenaBuilder.route(a, team, root.Position, b.goal) or b.goal
 		end
-		moveTo(b, root, dest)
+		self:Go(b, root, b.goal)
 		return
 	end
 	local tr = rootOf(target)
@@ -512,7 +688,7 @@ function BotService:Think(b)
 	end
 	if close then
 		face(root, tr.Position)
-		moveTo(b, root, tr.Position)
+		self:Go(b, root, tr.Position)
 		face(root, tr.Position)
 		if t >= (b.swingAt or 0) then
 			b.swingAt = t + blade.cooldown + rng:NextNumber(0.15, 0.45)
@@ -525,7 +701,7 @@ function BotService:Think(b)
 	-- hurt: fall back toward its own side, behind the nearest thing it can hide behind
 	if combat:Health(b) < Constants.BOT_RETREAT_HP then
 		local cover = self:Cover(root, tr, fwd)
-		moveTo(b, root, a and ArenaBuilder.route(a, team, root.Position, cover) or cover)
+		self:Go(b, root, cover)
 	else
 		-- strafe side to side while it draws, so it isn't a still target
 		if not b.strafeAt or t > b.strafeAt then
@@ -535,7 +711,7 @@ function BotService:Think(b)
 		local toT = Vector3.new(tr.Position.X - root.Position.X, 0, tr.Position.Z - root.Position.Z)
 		local side = toT.Magnitude > 0.01 and Vector3.new(-toT.Unit.Z, 0, toT.Unit.X) or Vector3.new(0, 0, 1)
 		local strafe = root.Position + side * b.strafeDir * 6
-		moveTo(b, root, a and ArenaBuilder.route(a, team, root.Position, strafe) or strafe)
+		self:Go(b, root, strafe)
 	end
 	face(root, tr.Position)
 	local w = Weapons.get(combat:Weapon(b))
@@ -599,7 +775,7 @@ function BotService:BuildSome(b, root, _team, line, fwd, t)
 		local x = line - fwd * back + rng:NextNumber(-2, 2)
 		local z = root.Position.Z + rng:NextNumber(-14, 14)
 		local cx, cz = Formulas.cellOf(x, z)
-		local ok = buildService:Place(b, key, cx, cz, 0)
+		local ok = not self:_onBody(cx, cz, key) and buildService:Place(b, key, cx, cz, 0)
 		if ok then
 			b.built += 1
 			return true
@@ -607,6 +783,27 @@ function BotService:BuildSome(b, root, _team, line, fwd, t)
 	end
 	if buildService:Budget(b) < 5 then
 		b.buildAt = t + 999 -- (spent: done for this phase)
+	end
+	return false
+end
+
+-- Would that piece go up on top of someone (itself, a team-mate)? A bot never builds round a body: it would be shut
+-- in, or inside it.
+function BotService:_onBody(cx, cz, key)
+	local def = Structures.get(key)
+	if not def then
+		return false
+	end
+	local w, d = Structures.footprint(def, 0)
+	local mn, mx = Formulas.footprintBox(cx, cz, w, d, 0, def.h)
+	for _, who in match:Everyone() do
+		local r = rootOf(who)
+		if r then
+			local p = r.Position
+			if p.X > mn.X - 2.5 and p.X < mx.X + 2.5 and p.Z > mn.Z - 2.5 and p.Z < mx.Z + 2.5 then
+				return true
+			end
+		end
 	end
 	return false
 end

@@ -3,8 +3,10 @@ Renders each map the way it plays (for the docs and the store page): the real se
 loads each map in turn, stages a moment of a match (players in their team colours on both sides of the line,
 structures up, arrows in flight, the turf pushed off centre), and saves snapshots for render.js:
 
-  luaurun tools/gameplay/maps.luau <outDir>
+  luaurun tools/gameplay/maps.luau <outDir> [mapKey] [small|large]
   node tools/gameplay/render.js <outDir> <pngDir> --modules <node_modules> --chromium <chrome>
+
+Each map at the small size (<key>_overview, _line, _side) and the large one (<key>_large, _large_line).
 ]]
 local Engine = loadModule("tests/mock/Engine.luau")
 local Capture = loadModule("tools/gameplay/Capture.luau")
@@ -83,8 +85,18 @@ local function arrow(from, to, team)
 	shaft.Parent = fx
 end
 
+local onlyMap, onlySize = ARGS[2], ARGS[3]
+local jobs = {}
 for _, def in Maps.list do
-	Match:NewMatch(def.key)
+	for _, size in { "small", "large" } do
+		if (not onlyMap or onlyMap == def.key or onlyMap == "all") and (not onlySize or onlySize == size) then
+			table.insert(jobs, { def = def, size = size })
+		end
+	end
+end
+for _, job in jobs do
+	local def, size = job.def, job.size
+	Match:NewMatch(def.key, size)
 	Engine.advance(0.5)
 	local frontline = -12
 	Match:_setFrontline(frontline)
@@ -122,9 +134,23 @@ for _, def in Maps.list do
 	arrow(V3.new(frontline + 30, 5, 20), V3.new(frontline - 2, 4.6, 14), "blue")
 	arrow(V3.new(frontline - 30, 6, 24), V3.new(frontline + 6, 5.5, 30), "red")
 	Engine.advance(0.1)
-	shot(def.key .. "_overview", V3.new(-70, 46, -70), V3.new(10, 0, 10), 60)
-	shot(def.key .. "_line", V3.new(frontline - 26, 5.5, -6), V3.new(frontline + 40, 4, 4), 75)
-	shot(def.key .. "_side", V3.new(30, 14, 46), V3.new(-10, 4, -6), 70)
+	-- (where a map's own shapes would stand in front of the camera, it gets its own spot)
+	local cams = {
+		castle = { side = { V3.new(24, 24, 36), V3.new(-20, 2, -6) } },
+		dust = { line = { V3.new(frontline - 26, 6, 0), V3.new(frontline + 40, 4, 0) } },
+	}
+	local cam = cams[def.key] or {}
+	if size == "small" then
+		local line = cam.line or { V3.new(frontline - 26, 5.5, -10), V3.new(frontline + 40, 4, 2) }
+		local side = cam.side or { V3.new(30, 17, 30), V3.new(-14, 4, -8) }
+		shot(def.key .. "_overview", V3.new(-62, 78, -66), V3.new(14, 0, 8), 60)
+		shot(def.key .. "_line", line[1], line[2], 75)
+		shot(def.key .. "_side", side[1], side[2], 70)
+	else
+		local a = Arena:Current()
+		shot(def.key .. "_large", V3.new(-a.half * 0.62, 104, -a.width * 0.7), V3.new(a.half * 0.1, 0, 8), 62)
+		shot(def.key .. "_large_line", V3.new(frontline - 30, 6, -10), V3.new(frontline + 60, 5, 6), 75)
+	end
 end
 
 local http = Engine.game:GetService("HttpService")
