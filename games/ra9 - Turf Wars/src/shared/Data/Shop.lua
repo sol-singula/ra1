@@ -60,8 +60,42 @@ Shop.TNT = {
 Shop.CLUB =
 	{ key = "club", name = "Shard Club", subscriptionId = nil, monthlyShards = 600, desc = "600 Shards every month" }
 
+-- Robux only, yours for good (Data/Cosmetics source "robux"): a developer product each, the price on the item.
+-- Always in the shop's PREMIUM row (never rotated); a product's key is the cosmetic's.
+Shop.PREMIUM_IDS = {
+	rbx_lightning = 3719155231,
+	rbx_doge = 3719155265,
+	rbx_web = 3719155268,
+	rbx_oof = 3719155271,
+	rbx_bonk = 3719155272,
+	rbx_dance = 3719155275,
+	rbx_blackhole = 3719155280,
+	rbx_heaven = 3719155284,
+	rbx_storm = 3719155290,
+	rbx_dragon = 3719155291,
+	rbx_thunder = 3719155297,
+	rbx_lightningbanner = 3719155299,
+	rbx_dogebanner = 3719155301,
+	rbx_crown = 3719155306,
+}
+Shop.PREMIUM = {}
+for _, it in Cosmetics.list do
+	if it.source == "robux" then
+		table.insert(Shop.PREMIUM, {
+			key = it.key,
+			name = it.name,
+			robux = it.robux,
+			id = Shop.PREMIUM_IDS[it.key] or 0,
+			cosmetic = it.key,
+		})
+	end
+end
+
 Shop.products = {} -- [key] = product
 for _, p in Shop.PACKS do
+	Shop.products[p.key] = p
+end
+for _, p in Shop.PREMIUM do
 	Shop.products[p.key] = p
 end
 Shop.products.pass = Shop.PASS

@@ -13,6 +13,7 @@ shot, a hit, health, speed or building (master plan §1: fair competition, nothi
              vip / mvp    earned only: comes with VIP or MVP status (Data/Achievements); never sold
              extra        given for something you did (Data/Extras: answering, inviting a friend)
              starter      the Starter Pack (once, Robux)
+             robux        Robux only, yours for good (Data/Shop.PREMIUM: a developer product each; it.robux the price)
   look     what the client draws (LooksController, ArrowController, WeaponController, BuildService):
              trail   lines = { { x, y, width, color } } beside the tracer, plus flags: dash, spin, jitter,
                      length (x the tracer), ghost (afterimages)
@@ -20,7 +21,8 @@ shot, a hit, health, speed or building (master plan §1: fair competition, nothi
              effect  shape (cubes | ring | shards | pixels | rise | spotlight), color, count
              banner  emblem (one character)
              title   text
-           colour tokens: "team" (your team's colour), "light" (a lighter shade of it), "white", "ink" (black)
+           colour tokens: "team" (your team's colour), "light" (a lighter shade of it), "white", "ink" (black), and
+           the bright ones: gold, yellow, pink, lava, ice, electric, galaxy, candy, rainbow (moving through hues)
 
   Cosmetics.get(key)         the item (ladder, extras and season items are resolved here too), or nil
   Cosmetics.list             every fixed item (not the generated season ones)
@@ -58,6 +60,19 @@ local TRAIL = {
 	["Tripwire"] = { lines = { { 0.24, 0, 0.04, "white" }, { -0.24, 0, 0.04, "white" }, { 0, 0.22, 0.04, "white" } } },
 	["Echo"] = { ghost = 2 },
 	["Overcharge"] = { lines = { { 0, 0, 0.3, "light" }, { 0, 0, 0.04, "white" } }, length = 1.5 },
+	-- the big ones (anim: drawn alive by ArrowController; particles: what falls off the arrow as it flies)
+	["Rainbow Road"] = { anim = "rainbow", lines = { { 0, 0, 0.18, "rainbow" } }, length = 1.4, particles = "sparkles" },
+	["Feather Trail"] = { lines = { { 0, 0, 0.05, "white" } }, particles = "feathers" },
+	["Bubble Trail"] = { lines = { { 0, 0, 0.04, "light" } }, particles = "bubbles" },
+	["Pixel Rain"] = { dash = true, lines = { { 0, 0, 0.12, "rainbow" } }, particles = "blocks" },
+	["Thunder Trail"] = {
+		anim = "electric",
+		jitter = true,
+		lines = { { 0, 0, 0.08, "electric" } },
+		length = 1.6,
+		particles = "sparks",
+	},
+	["Hearts"] = { lines = { { 0, 0, 0.05, "pink" } }, particles = "hearts" },
 	-- goals and status
 	["Crosshair Line"] = { dash = true, lines = { { 0, 0.2, 0.05, "ink" }, { 0, -0.2, 0.05, "ink" } } },
 	["Long Shot"] = { length = 2.4, lines = { { 0, 0, 0.03, "white" } } },
@@ -79,6 +94,22 @@ local SKIN = {
 	["Porcelain"] = { grip = "white", limbs = "light", material = "SmoothPlastic" },
 	["Graphite"] = { grip = "ink", limbs = "light", material = "Slate" },
 	["Hologram"] = { grip = "light", limbs = "light", material = "ForceField" },
+	-- the big ones (anim: drawn alive by WeaponController: rainbow colour cycle, pulse, sparkle, embers, electric,
+	-- frost; particles: what comes off the bow while you hold it)
+	["Rainbow Cycle"] = { grip = "rainbow", limbs = "rainbow", material = "Neon", anim = "rainbow" },
+	["Lava"] = { grip = "ink", limbs = "lava", material = "Neon", anim = "pulse", particles = "embers" },
+	["Galaxy"] = { grip = "galaxy", limbs = "galaxy", material = "Glass", anim = "sparkle", particles = "sparkles" },
+	["Candy Cane"] = { grip = "white", limbs = "candy", material = "SmoothPlastic", anim = "stripes" },
+	["Frostbite"] = { grip = "light", limbs = "ice", material = "Ice", anim = "frost", particles = "snow" },
+	["Storm Caller"] = { grip = "ink", limbs = "electric", material = "Neon", anim = "electric", particles = "sparks" },
+	["Golden Dragon"] = {
+		grip = "gold",
+		limbs = "gold",
+		material = "Metal",
+		anim = "pulse",
+		particles = "embers",
+		wings = true,
+	},
 	-- goals and status
 	["Bulldozer"] = { grip = "ink", limbs = "white", material = "DiamondPlate" },
 	["Inkwell"] = { grip = "ink", limbs = "ink", material = "Neon" },
@@ -99,6 +130,24 @@ local EFFECT = {
 	["Ink Splash"] = { shape = "shards", color = "ink", count = 14 },
 	["Double Ring"] = { shape = "ring", color = "light", count = 18 },
 	["Ascend"] = { shape = "rise", color = "white", count = 10 },
+	-- the big ones: each is its own animation (KillFxController; shown slowed down in the victim's kill cam)
+	["Feather Burst"] = { shape = "feathers", color = "white", count = 26 },
+	["Rainbow Sparkle"] = { shape = "sparkles", color = "rainbow", count = 40 },
+	["Block Party"] = { shape = "blocks", color = "rainbow", count = 24 },
+	["Firework"] = { shape = "firework", color = "rainbow", count = 36 },
+	["Bubble Pop"] = { shape = "bubbles", color = "light", count = 22 },
+	["Chicken"] = { shape = "chicken", color = "white", count = 12, funny = true }, -- they turn into a chicken and run
+	["Rubber Duck"] = { shape = "duck", color = "yellow", count = 10, funny = true }, -- a giant duck pops out, squeak
+	["Balloon Ride"] = { shape = "balloons", color = "rainbow", count = 8, funny = true }, -- floated away on balloons
+	["Banana Slip"] = { shape = "banana", color = "yellow", count = 6, funny = true }, -- slip, spin, splat
+	["Lightning Strike"] = { shape = "lightning", color = "electric", count = 16 },
+	["Much Wow"] = { shape = "doge", color = "gold", count = 6, funny = true }, -- a shiba pops up: "wow" "such kill"
+	["Web Slinger"] = { shape = "web", color = "white", count = 12 }, -- webbed up and yanked away
+	["OOF"] = { shape = "oof", color = "yellow", count = 8, funny = true }, -- a giant bouncing OOF
+	["Bonk"] = { shape = "bonk", color = "white", count = 6, funny = true }, -- a giant cartoon mallet: BONK
+	["Dance Off"] = { shape = "dance", color = "rainbow", count = 20, funny = true }, -- a disco floor, they dance out
+	["Black Hole"] = { shape = "blackhole", color = "ink", count = 30 },
+	["Heaven's Gate"] = { shape = "heaven", color = "gold", count = 24 }, -- golden light, wings, up they go
 	-- goals and status
 	["Centurion"] = { shape = "ring", color = "ink", count = 24 },
 	["Triple Shatter"] = { shape = "shards", color = "team", count = 24 },
@@ -123,6 +172,25 @@ local EMBLEM = {
 	Anchor = "⚓",
 	Blueprint = "▦",
 	Founder = "✦",
+	-- the big ones (drawn alive: anim spin | pulse | rainbow | flame | sparkle)
+	Flame = "🔥",
+	Rainbow = "🌈",
+	Lightning = "⚡",
+	Doge = "🐕",
+	Chicken = "🐔",
+	Skulls = "💀",
+	Galaxy = "🌌",
+	Crown2 = "👑",
+}
+local BANNER_ANIM = {
+	Flame = "flame",
+	Rainbow = "rainbow",
+	Lightning = "electric",
+	Doge = "pulse",
+	Chicken = "bounce",
+	Skulls = "spin",
+	Galaxy = "sparkle",
+	Crown2 = "sparkle",
 }
 
 local function look(kind, name)
@@ -134,7 +202,7 @@ local function look(kind, name)
 	elseif kind == "effect" then
 		return EFFECT[base] or EFFECT["Shatter"]
 	elseif kind == "banner" then
-		return { emblem = EMBLEM[base] or "★" }
+		return { emblem = EMBLEM[base] or "★", anim = BANNER_ANIM[base] }
 	end
 	return { text = name }
 end
@@ -173,6 +241,46 @@ Cosmetics.list = {
 	item("shop_t_sniper", "title", "Line Breaker", "rare", "shop"),
 	item("shop_t_ghost", "title", "Ghost", "epic", "shop"),
 	item("shop_t_menace", "title", "Menace", "legendary", "shop"),
+	-- the big ones, for Shards (in the shop's rotation like the rest)
+	item("shop_feathers", "effect", "Feather Burst", "rare", "shop"),
+	item("shop_sparkle", "effect", "Rainbow Sparkle", "epic", "shop"),
+	item("shop_blocks", "effect", "Block Party", "rare", "shop"),
+	item("shop_firework", "effect", "Firework", "epic", "shop"),
+	item("shop_bubbles", "effect", "Bubble Pop", "rare", "shop"),
+	item("shop_chicken", "effect", "Chicken", "legendary", "shop"),
+	item("shop_duck", "effect", "Rubber Duck", "epic", "shop"),
+	item("shop_balloons", "effect", "Balloon Ride", "legendary", "shop"),
+	item("shop_banana", "effect", "Banana Slip", "epic", "shop"),
+	item("shop_rainbowtrail", "trail", "Rainbow Road", "epic", "shop"),
+	item("shop_feathertrail", "trail", "Feather Trail", "rare", "shop"),
+	item("shop_bubbletrail", "trail", "Bubble Trail", "rare", "shop"),
+	item("shop_pixelrain", "trail", "Pixel Rain", "epic", "shop"),
+	item("shop_hearts", "trail", "Hearts", "rare", "shop"),
+	item("shop_rainbowbow", "skin", "Rainbow Cycle", "legendary", "shop"),
+	item("shop_lava", "skin", "Lava", "epic", "shop"),
+	item("shop_galaxy", "skin", "Galaxy", "legendary", "shop"),
+	item("shop_candy", "skin", "Candy Cane", "rare", "shop"),
+	item("shop_frost", "skin", "Frostbite", "epic", "shop"),
+	item("shop_flame", "banner", "Flame", "rare", "shop"),
+	item("shop_rainbowbanner", "banner", "Rainbow", "epic", "shop"),
+	item("shop_chickenbanner", "banner", "Chicken", "rare", "shop"),
+	item("shop_skulls", "banner", "Skulls", "epic", "shop"),
+	item("shop_galaxybanner", "banner", "Galaxy", "legendary", "shop"),
+	-- Robux only (Data/Shop.PREMIUM: a developer product each, yours for good; always in the shop, never rotated)
+	item("rbx_lightning", "effect", "Lightning Strike", "legendary", "robux", { robux = 199 }),
+	item("rbx_doge", "effect", "Much Wow", "legendary", "robux", { robux = 149 }),
+	item("rbx_web", "effect", "Web Slinger", "legendary", "robux", { robux = 149 }),
+	item("rbx_oof", "effect", "OOF", "epic", "robux", { robux = 99 }),
+	item("rbx_bonk", "effect", "Bonk", "epic", "robux", { robux = 99 }),
+	item("rbx_dance", "effect", "Dance Off", "legendary", "robux", { robux = 129 }),
+	item("rbx_blackhole", "effect", "Black Hole", "legendary", "robux", { robux = 199 }),
+	item("rbx_heaven", "effect", "Heaven's Gate", "legendary", "robux", { robux = 249 }),
+	item("rbx_storm", "skin", "Storm Caller", "legendary", "robux", { robux = 149 }),
+	item("rbx_dragon", "skin", "Golden Dragon", "legendary", "robux", { robux = 199 }),
+	item("rbx_thunder", "trail", "Thunder Trail", "legendary", "robux", { robux = 99 }),
+	item("rbx_lightningbanner", "banner", "Lightning", "epic", "robux", { robux = 49 }),
+	item("rbx_dogebanner", "banner", "Doge", "epic", "robux", { robux = 49 }),
+	item("rbx_crown", "banner", "Crown2", "legendary", "robux", { robux = 79 }),
 	-- earned only: goals (Data/Achievements)
 	item("goal_sharp", "trail", "Crosshair Line", "epic", "goal"),
 	item("goal_longshot", "trail", "Long Shot", "epic", "goal"),
@@ -244,9 +352,27 @@ end
 -- A colour token for a team: "team", "light", "white", "ink".
 local WHITE, INK = Color3.fromRGB(250, 250, 250), Color3.fromRGB(22, 22, 26)
 local TEAM = Constants.TEAM_COLOR
+local NAMED = {
+	gold = Color3.fromRGB(255, 196, 40),
+	yellow = Color3.fromRGB(255, 226, 60),
+	pink = Color3.fromRGB(255, 105, 180),
+	lava = Color3.fromRGB(255, 90, 20),
+	ice = Color3.fromRGB(150, 220, 255),
+	electric = Color3.fromRGB(120, 200, 255),
+	galaxy = Color3.fromRGB(110, 60, 200),
+	candy = Color3.fromRGB(230, 30, 50),
+}
+-- "rainbow": a hue that moves with time (t: seconds; nil: os.clock())
+function Cosmetics.rainbow(t, offset)
+	return Color3.fromHSV(((t or os.clock()) * 0.25 + (offset or 0)) % 1, 0.75, 1)
+end
 function Cosmetics.color(token, team)
 	local c = TEAM[team or ""] or Color3.fromRGB(235, 40, 45)
-	if token == "team" then
+	if NAMED[token] then
+		return NAMED[token]
+	elseif token == "rainbow" then
+		return Cosmetics.rainbow()
+	elseif token == "team" then
 		return c
 	elseif token == "light" then
 		return c:Lerp(WHITE, 0.5)

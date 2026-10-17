@@ -100,7 +100,15 @@ end
 
 -- Robux ----------------------------------------------------------------------------------------------------------
 function ShopService:Grant(player, product)
-	if product.shards then
+	if product.cosmetic then
+		-- (a Robux-only cosmetic: yours for good, and put on)
+		economy:Give(player, product.cosmetic)
+		local it = Cosmetics.get(product.cosmetic)
+		if it then
+			data:Get(player).equipped[it.kind] = it.key
+			progress.card(player, it.key, "YOURS FOREVER!", it.name)
+		end
+	elseif product.shards then
 		economy:Add(player, product.shards, "robux")
 		say(player, `+{product.shards} Shards!  Thank you!`, "good")
 	elseif product.key == "pass" then
@@ -234,6 +242,9 @@ function ShopService:PromptRobux(player, key)
 	local product = Shop.products[key]
 	if not product then
 		return false, "bad"
+	end
+	if product.cosmetic and (data:Get(player).owned or {})[product.cosmetic] then
+		return false, "That's already yours."
 	end
 	if key == "pass" and season:State(player).premium then
 		return false, "You have this season's pass."
