@@ -504,6 +504,8 @@ end
 -- Parties ------------------------------------------------------------------------------------------------------
 local PartyC = Engine.require(tree.client.Controllers.PartyController)
 local pref = PartyC.refs
+local TopC = Engine.require(tree.client.Controllers.LeaderboardController)
+local tref = TopC.refs
 do
 	local PartySvc = service("PartyService")
 	local Layout = Engine.require(tree.client.UI.Layout)
@@ -666,6 +668,7 @@ do
 			ShopButton = refs.shop,
 			PartyButton = pref.button,
 			PartyList = pref.list,
+			TopButton = tref.button,
 			Feed = refs.feed,
 			Health = hud.Health,
 			Team = refs.team,
@@ -955,6 +958,25 @@ do
 	end
 	PartyC.close()
 	check("...closed, the mouse goes back", not Layout.panel())
+	-- the leaderboards panel: one panel at a time, its pieces apart, among the HUD's
+	tidy("the TOP button", tref.button)
+	fit("the TOP button", tref.button)
+	PartyC.open()
+	TopC.open("kills", "server")
+	Engine.advance(0.6)
+	check("the leaderboards close the party panel", TopC.isOpen() and not PartyC.isOpen() and Layout.panel())
+	check("...with rows from the server", #tref.list:GetChildren() >= 1, #tref.list:GetChildren())
+	L = corners()
+	L.TopPanel = tref.panel
+	apart("the leaderboards open", L)
+	local tbad = walk("top", tref.panel, 0)
+	check("the leaderboards panel: nothing overlaps, nothing sticks out", #tbad == 0, table.concat(tbad, ", "))
+	Panel.open("shop")
+	check("...the shop panel closes it", Panel.isOpen() and not TopC.isOpen() and Layout.panel())
+	Panel.close()
+	TopC.open()
+	TopC.close()
+	check("...closed, the mouse goes back", not Layout.panel() and not Layout.modalOpen())
 	Panel.open("shop")
 	-- buying from the shop tab
 	local p = Data:Get(player)

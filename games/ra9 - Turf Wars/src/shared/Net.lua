@@ -28,6 +28,7 @@ Net.ClientEvents = {
 	Party = 4, -- ("invite", userId) | ("accept") | ("decline") | ("leave") | ("kick", userId) | ("move", "new" | "fuller")
 	Admin = 8, -- (action, target?, value?) the admin panel; refused unless you're an admin (AdminService)
 	Tutorial = 6, -- ("step", name, how?) | ("done") | ("skip", where?) | ("replay") the first-minute guide
+	Top = 2, -- () the leaderboards, please (LeaderboardService answers with "Leaderboards")
 }
 
 -- Server → client.
@@ -53,6 +54,7 @@ Net.ServerEvents = {
 	"PartyInvite", -- { from, name, kind = "invite" | "friend", seconds } or { cancel = true }: the invite card
 	"AdminState", -- { players, servers?, map, phase, bots, frozen, spectating, invisible, jobId } (admins only)
 	"Tutorial", -- { kind = "start", boost, replay } | { kind = "built" } the first-minute guide (TutorialService)
+	"Leaderboards", -- { boards, server, you, ok, at, every } the top players, all time and here (LeaderboardService)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).

@@ -8,7 +8,8 @@ The HUD (master plan §1, §2, §5, §7): everything on screen, in the SUPERHOT 
              far each team is from losing), the map's name, the team counts
   centre     the crosshair, the bow's charge under it, hit markers (white; red for a kill), the big alerts
              (BUILD, FIGHT!, RED WINS), the respawn countdown
-  top right  the kill feed: who, with what, how far the line moved
+  top right  🏆 TOP (L) in the corner: the leaderboards (LeaderboardController); under it the kill feed: who, with
+             what, how far the line moved
   bottom     health (left), the bows (right: 1 2 3, the crossbow's bolts), the build tray in the build phase
              (seven pieces with their costs, your points), toasts
   touch      FIRE (hold to draw), SPRINT, SLIDE; PLACE and ROTATE while building
@@ -52,9 +53,11 @@ HudController.refs = refs
 local feed = {}
 local hitUntil = 0
 local FEED_W = 300 -- (clear of the 560-wide top bar on a 1240 canvas)
+-- the kill feed: under the TOP button (12..48), five rows of 22 with 3 between
+local FEED = { top = 56, h = 5 * 22 + 4 * 3 }
 -- the popup stack (unlocks, thank-yous): down the right under the kill feed, two at a time, clear of the touch
 -- buttons below
-local STACK = { top = 176, w = 300, h = 64, gap = 8, max = 2 }
+local STACK = { top = 186, w = 300, h = 64, gap = 8, max = 2 }
 -- where the toast sits (its bottom, up from the screen's bottom): normally, in the build phase (above the tray's
 -- hint), and while a question card is up (between the results card and it)
 local TOAST_UP = { normal = 132, build = 150, modal = 166 }
@@ -490,8 +493,8 @@ local function buildFeed(gui)
 	refs.feed = Theme.new("Frame", {
 		Name = "Feed",
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -12, 0, 12),
-		Size = UDim2.fromOffset(FEED_W, 150),
+		Position = UDim2.new(1, -12, 0, FEED.top),
+		Size = UDim2.fromOffset(FEED_W, FEED.h),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	}, {
