@@ -1045,6 +1045,21 @@ do
 	Engine.advance(1.5)
 	check("walking around in the room: back in the game", not Afk:Away(idle) and Teams:Team(idle) ~= nil)
 	check("...on the field again", rootOf(idle) and rootOf(idle).Position.Y < 100)
+	-- the hall: columns, crown molding, and three leaderboards on the far wall
+	local hall = ws:FindFirstChild("Limbo")
+	check("the AFK hall is built (detailed)", hall and #hall:GetChildren() > 120, hall and #hall:GetChildren())
+	local lit = false
+	for _, d in hall and hall:GetDescendants() or {} do
+		lit = lit or d.ClassName == "PointLight"
+	end
+	check("...a lamp lights it", lit)
+	Afk:RefreshBoards()
+	for _, key in Afk.BOARD_KEYS do
+		local b = hall and hall:FindFirstChild("LimboBoard_" .. key)
+		local rows = b and b.Board.Rows
+		local first = rows and (rows:FindFirstChild("Row1") or rows:FindFirstChild("Empty"))
+		check(`...a {key} board with rows`, first ~= nil and first.Text ~= "", first and first.Text)
+	end
 	Constants.AFK_SECONDS = 0
 end
 
