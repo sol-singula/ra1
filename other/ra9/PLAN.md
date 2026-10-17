@@ -551,6 +551,15 @@ price and no "R$" or "◆" glyph, the balance, the confirm step with YES / NO, t
 going to the packs, the pass's words, track, rows, YOU ARE HERE, XP numbers, CLAIM, the tour shown once and
 remembered, every panel's close button the shared X), ServerSmoke 174, AdminSmoke 129.
 
+## Round 17: the tutorial plays through
+
+* **The intro isn't skipped by accident:** any key or tap used to skip it after its first second, and new players
+  press W, click or drag at once, so most only saw RED and BLUE. Now only Enter or K (Select on a pad, a SKIP button
+  on a phone) skips a cinematic; walking, jumping, looking and clicking never do. The hint says "PRESS ENTER TO SKIP".
+* **Time to build:** the build phase is 20 s now, and the intro alone takes 7.6 s. When a brand-new player's tutorial
+  starts alone with the bot, the first build phase is held to at least `TUTORIAL_BUILD_SECONDS` (38) so they get to
+  PICK A WALL and PLACE IT (`MatchService:HoldBuild`).
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

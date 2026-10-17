@@ -72,6 +72,7 @@ Constants.BOT_RETREAT_HP = 35 -- a bot this hurt falls back behind cover
 Constants.TUTORIAL_BOT_SPREAD = 2.2 -- the bot's aim error, times this
 Constants.TUTORIAL_BOT_REACT = 1.8 -- the bot's wait before it draws, times this
 Constants.TUTORIAL_PUSH_BONUS = 2 -- extra cells each of the new player's knockouts moves the line
+Constants.TUTORIAL_BUILD_SECONDS = 38 -- the first build phase lasts at least this long once their tutorial starts (the intro, then PICK A WALL and PLACE IT)
 Constants.TUTORIAL = true -- the first-minute tutorial for new players (tests that aren't about it turn it off)
 Constants.BOT_REACT = 0.7 -- seconds before a bot starts drawing on someone new
 Constants.BOT_NAMES = { "Ace", "Echo", "Nova", "Blitz", "Rook", "Vex", "Juno", "Kite", "Onyx", "Pike" }

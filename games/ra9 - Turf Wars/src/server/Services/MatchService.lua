@@ -188,6 +188,22 @@ local function sameBody()
 end
 MatchService.sameBody = sameBody
 
+-- Keep the build phase going at least `seconds` from now (TutorialService: a new player's first build, which their
+-- intro would otherwise eat). Only while building; true when it moved the clock.
+function MatchService:HoldBuild(seconds)
+	if phase ~= "build" or frozen then
+		return false
+	end
+	local want = now() + seconds
+	if want <= phaseEnds then
+		return false
+	end
+	phaseEnds = want
+	workspace:SetAttribute("PhaseEnds", phaseEnds)
+	self:Broadcast()
+	return true
+end
+
 -- A one-shot spawn point for a player (BotService: the second player takes over a bot where it stood).
 MatchService.SpawnAt = {}
 -- Extra cells a kill by this player moves the line (TutorialService: a new player's first match, alone).

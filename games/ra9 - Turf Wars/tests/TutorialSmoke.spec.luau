@@ -115,6 +115,12 @@ check(
 	start and start.args[1].kind
 )
 check("...with the first-match boost", start and start.args[1].boost == true)
+check(
+	"...the first build phase waits for them (the intro, then their first wall)",
+	ws:GetAttribute("Phase") ~= "build"
+		or ws:GetAttribute("PhaseEnds") - ws:GetServerTimeNow() >= Constants.TUTORIAL_BUILD_SECONDS - 3,
+	ws:GetAttribute("PhaseEnds") - ws:GetServerTimeNow()
+)
 check("the server has it running", Tutorial:Active(player))
 check("a fresh profile has a tutorial field", Data:Get(player).tutorial and Data:Get(player).tutorial.done == false)
 local team = Teams:Team(player)
@@ -158,7 +164,16 @@ check("then THE LINE", refs.title.Text == "THE LINE", refs.title.Text)
 check("...down low over it", cam.CFrame.Position.Y < 30, cam.CFrame.Position.Y)
 at(4.4)
 check("then THIS IS YOUR TURF", refs.title.Text == "THIS IS YOUR TURF", refs.title.Text)
-check("...a skip hint shows", refs.skipHint.Visible)
+check("...a skip hint shows", refs.skipHint.Visible and string.find(refs.skipHint.Text, "ENTER") ~= nil)
+-- moving, jumping and clicking (what a new player does at once) never skip it
+key(Enum.KeyCode.W)
+key(Enum.KeyCode.Space)
+Engine.game:GetService("UserInputService").InputBegan:Fire({
+	KeyCode = Enum.KeyCode.Unknown,
+	UserInputType = Enum.UserInputType.MouseButton1,
+}, false)
+Engine.advance(0.05)
+check("...walking, jumping or clicking don't skip it", state().intro and CamC.takenOver())
 at(7.0)
 check("then TAKE THEIRS", refs.title.Text == "TAKE THEIRS", refs.title.Text)
 check(
@@ -239,7 +254,7 @@ check("...the bot is the only other one", bot ~= nil and #Match:Everyone() == 2)
 Bots.Think = function() end -- (the bot stands still where we put it)
 check(
 	"the fight comes",
-	untilTrue(Constants.BUILD_SECONDS + 2, function()
+	untilTrue(math.max(Constants.BUILD_SECONDS, Constants.TUTORIAL_BUILD_SECONDS) + 2, function()
 		return Match:Phase() == "fight"
 	end)
 )
@@ -451,7 +466,10 @@ check(
 Engine.advance(1.2)
 key(Enum.KeyCode.Space)
 Engine.advance(0.1)
-check("any key skips the intro after a second", not state().intro and not CamC.takenOver())
+check("Space doesn't skip it", state().intro)
+key(Enum.KeyCode.Return)
+Engine.advance(0.1)
+check("Enter skips the intro after a second", not state().intro and not CamC.takenOver())
 check(
 	"...the camera back in first person",
 	cam.CameraType == Enum.CameraType.Custom and (cam.CFrame.Position - headPos()).Magnitude < 0.6

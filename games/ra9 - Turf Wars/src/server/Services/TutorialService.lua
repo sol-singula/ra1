@@ -134,6 +134,10 @@ function TutorialService:Begin(player, replay)
 	data:WhenClientReady(player, function()
 		if self:Active(player) then
 			Net.fire(player, "Tutorial", { kind = "start", boost = boosts[player] ~= nil, replay = replay == true })
+			-- (alone in their first match: the build phase waits long enough for the intro and their first wall)
+			if self:Boosted(player) then
+				match:HoldBuild(Constants.TUTORIAL_BUILD_SECONDS)
+			end
 		end
 	end)
 	analytics(player, "tutorial_start", { replay = replay == true, phase = phase })

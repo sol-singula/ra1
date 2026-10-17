@@ -3,7 +3,7 @@ The first-minute tutorial, the show (TutorialService on the server decides who g
 
 When the server says { kind = "start" } and you're standing in the arena:
 
-  1. The intro, a short cinematic (about 7 s; any key or a tap skips it after the first second). Letterbox bars, the
+  1. The intro, a short cinematic (about 7 s; Enter, K, Select or the SKIP button skips it after the first second; moving, looking and clicking never do). Letterbox bars, the
      camera sweeps high over the arena (RED ... BLUE, each side's turf rippling in its colour), swoops down onto the
      glowing frontline (THE LINE), skims along it (THIS IS YOUR TURF), rises over your spawn room and drops straight
      into your eyes, looking at the enemy side (TAKE THEIRS). The camera goes back to normal first person after.
@@ -772,6 +772,26 @@ local function buildGui()
 		Visible = false,
 		Parent = gui,
 	})
+	-- (a phone's way to skip a cinematic: a button, so dragging to look around never skips it)
+	refs.skipCine = Theme.new("TextButton", {
+		Name = "SkipCinematic",
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -16, 1, -16),
+		Size = UDim2.fromOffset(110, 40),
+		BackgroundColor3 = C.white,
+		Text = "SKIP  ›",
+		Font = Theme.Display,
+		TextSize = 18,
+		TextColor3 = C.ink,
+		AutoButtonColor = true,
+		Visible = false,
+		Parent = gui,
+	}, { Theme.corner(6), Theme.stroke(2, C.ink) })
+	refs.skipCine.Activated:Connect(function()
+		if cine and cine.skippable and now() - cine.t0 >= 1 then
+			endCinematic(true)
+		end
+	end)
 	refs.title = Theme.title({
 		Name = "Title",
 		Text = "",
@@ -877,7 +897,7 @@ end
 
 -- Cinematics -------------------------------------------------------------------------------------------------------
 -- The camera is handed to drive(cam, t, dt) for `seconds`; then it's given back (CameraController.release), looking
--- along cine.look. opts: bars (the letterbox), hideHud, skippable (any key after a second)
+-- along cine.look. opts: bars (the letterbox), hideHud, skippable (Enter / K / Select / SKIP after a second)
 local function endCinematic(skipped)
 	local c = cine
 	if not c then
@@ -888,6 +908,7 @@ local function endCinematic(skipped)
 		bars(false)
 	end
 	refs.skipHint.Visible = false
+	refs.skipCine.Visible = false
 	Layout.cinema(false)
 	CameraController.release(c.look)
 	if c.finish then
@@ -1056,10 +1077,11 @@ local function playIntro(onDone)
 		local pos, look, fov = along(keys, t)
 		aimCam(cam, pos, look, fov)
 		refs.skipHint.Visible = t >= 1
+		refs.skipCine.Visible = t >= 1 and Device.isTouch()
 		cine.look = ahead
 	end, onDone, { bars = true, skippable = true })
 	cine.look = ahead
-	refs.skipHint.Text = by("PRESS ANY KEY TO SKIP", "TAP TO SKIP", "PRESS ANY BUTTON TO SKIP")
+	refs.skipHint.Text = by("PRESS ENTER TO SKIP", "TAP SKIP TO SKIP", "PRESS SELECT TO SKIP")
 end
 
 -- FIGHT!: the camera turns you to the nearest enemy and zooms in a little
@@ -1714,12 +1736,12 @@ function TutorialController:init()
 		end
 	end)
 	UserInputService.InputBegan:Connect(function(input, processed)
-		local kind = input.UserInputType
-		local isPress = input.KeyCode ~= nil and input.KeyCode ~= Enum.KeyCode.Unknown
-			or kind == Enum.UserInputType.MouseButton1
-			or kind == Enum.UserInputType.Touch
-		-- any key or tap skips a skippable cinematic after its first second
-		if cine and cine.skippable and isPress and now() - cine.t0 >= 1 then
+		-- only a deliberate key skips a cinematic (after its first second): Enter or K, Select on a pad (a phone
+		-- has its SKIP button). Moving, looking, clicking or dragging never does: new players press those at once,
+		-- and the intro used to end right after RED and BLUE.
+		local k = input.KeyCode
+		local isSkip = k == Enum.KeyCode.Return or k == Enum.KeyCode.K or k == Enum.KeyCode.ButtonSelect
+		if cine and cine.skippable and isSkip and now() - cine.t0 >= 1 then
 			endCinematic(true)
 			return
 		end
