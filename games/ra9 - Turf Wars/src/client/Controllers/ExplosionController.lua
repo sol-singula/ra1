@@ -151,9 +151,9 @@ function ExplosionController.blast(info)
 	effect("light", lamp, 0.6, { light = light })
 	-- the fireball: a hot core, an orange ball, a dark red one rolling up
 	local layers = {
-		{ Color3.fromRGB(255, 244, 190), 1, radius * 0.95, 0.42, 0 },
-		{ Color3.fromRGB(255, 140, 30), 1.5, radius * 1.35, 0.6, 1.5 },
-		{ Color3.fromRGB(196, 46, 20), 2, radius * 1.6, 0.85, 3.5 },
+		{ Color3.fromRGB(255, 236, 160), 1, radius * 1.15, 0.45, 0 },
+		{ Color3.fromRGB(255, 122, 20), 1.5, radius * 1.75, 0.65, 2 },
+		{ Color3.fromRGB(180, 36, 16), 2, radius * 2.1, 0.9, 4.5 },
 	}
 	for i, l in layers do
 		local ball = part(Vector3.new(l[2], l[2], l[2]), l[1], true, Enum.PartType.Ball)

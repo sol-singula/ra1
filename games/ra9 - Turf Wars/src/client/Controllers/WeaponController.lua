@@ -45,7 +45,7 @@ local WeaponController = { Name = "WeaponController", Order = 30 }
 local drawing = false
 local drawStart = 0
 local shotId = 0
-local lastShot = 0
+local lastShot = {} -- [weapon key] = os.clock() of its last shot (each has its own cooldown)
 local view -- the viewmodel's parts (buildView)
 -- the viewmodel is modelled at a comfortable size and drawn at this scale (its offsets scale with it): a bow a
 -- little under half the view's height at full draw
@@ -310,8 +310,13 @@ local function buildView()
 			stick.Shape = Enum.PartType.Cylinder
 			v.sticks[i] = stick
 		end
-		v.bandU = piece(Vector3.new(0.66, 0.1, 0.6), ink, "Band")
-		v.bandL = piece(Vector3.new(0.66, 0.1, 0.6), ink, "Band")
+		-- (a dark tape ring round each stick, near the top and the bottom)
+		v.rings = {}
+		for i = 1, 6 do
+			local ring = piece(Vector3.new(0.09, 0.33, 0.33), ink, "Band")
+			ring.Shape = Enum.PartType.Cylinder
+			v.rings[i] = ring
+		end
 		v.fuse = piece(Vector3.new(0.04, 0.32, 0.04), ink, "Fuse")
 		v.spark = piece(Vector3.new(0.13, 0.13, 0.13), Color3.fromRGB(255, 196, 60), "Spark", Enum.Material.Neon)
 		v.spark.Shape = Enum.PartType.Ball
@@ -517,8 +522,8 @@ local function placeView(dt)
 		-- the crosshair), the throw snaps it forward and down, then the hand drops out of sight, empty, until the
 		-- cooldown's last moments bring a fresh bundle up from below
 		local since = t - (anim.thrownAt or -10)
-		local restP = Vector3.new(0.56, -0.6, -1.4)
-		local windP = Vector3.new(0.8, -0.24, -0.95)
+		local restP = Vector3.new(0.58, -0.64, -1.4)
+		local windP = Vector3.new(0.8, -0.36, -1.12)
 		local throwP = Vector3.new(0.5, -0.86, -1.8)
 		local downP = Vector3.new(0.62, -1.5, -1.3)
 		local wind = pullS
@@ -533,12 +538,12 @@ local function placeView(dt)
 		elseif since < w.cooldown then
 			local f = math.clamp((since - THROW) / DROP, 0, 1)
 			local up = math.clamp((since - (w.cooldown - 0.45)) / 0.45, 0, 1)
-			pos = throwP:Lerp(downP, f):Lerp(restP, ease(up))
+			pos = throwP:Lerp(downP, f):Lerp(restP, up * up * (3 - 2 * up)) -- (no overshoot: it settles at rest)
 			pitch = -60 + (10 + 60) * up
 			holding = up > 0
 		else
 			pos = restP:Lerp(windP, wind)
-			pitch = 10 + wind * 35
+			pitch = 10 + wind * 22
 		end
 		pos += Vector3.new(swayX * 0.35 - run * 0.1, breathe - swayY * 0.35 - run * 0.15 - crouchK * 0.05 - landP, 0) + shake
 		local bcf = cam.CFrame
@@ -560,19 +565,23 @@ local function placeView(dt)
 		for i, stick in view.sticks do
 			stick.CFrame = bcf * L(spots[i].X, 0, spots[i].Z) * CFrame.Angles(0, 0, math.rad(90))
 		end
-		view.bandU.CFrame = bcf * L(0, 0.28, -0.02)
-		view.bandL.CFrame = bcf * L(0, -0.3, -0.02)
+		for i, ring in view.rings do
+			local spot = spots[(i - 1) % 3 + 1]
+			ring.CFrame = bcf * L(spot.X, i <= 3 and 0.3 or -0.32, spot.Z) * CFrame.Angles(0, 0, math.rad(90))
+		end
 		view.fuse.CFrame = bcf * L(0.02, 0.66, 0.02) * CFrame.Angles(0, 0, math.rad(-12))
 		local lit = drawing or since < THROW
 		local flick = 1 + math.sin(t * 61) * 0.35 + math.sin(t * 37) * 0.2
-		view.spark.Size = Vector3.new(0.13, 0.13, 0.13) * VM_SCALE * (lit and flick * 1.3 or 0.7)
+		view.spark.Size = Vector3.new(0.085, 0.085, 0.085) * VM_SCALE * (lit and flick or 0.8)
 		view.spark.CFrame = bcf * L(0.06, 0.84, 0.02)
-		for _, q in { view.sticks[1], view.sticks[2], view.sticks[3], view.bandU, view.bandL, view.fuse, view.spark } do
-			q.Transparency = holding and 0 or 1
+		for _, q in view.model:GetChildren() do
+			if q.Name == "Stick" or q.Name == "Band" or q == view.fuse or q == view.spark then
+				q.Transparency = holding and 0 or 1
+			end
 		end
-		if not lit then
-			view.spark.Transparency = holding and 0.55 or 1
-		end
+		-- (unlit: just the fuse's dark tip; lit: a flickering yellow spark)
+		view.spark.Color = lit and Color3.fromRGB(255, 196, 60) or Color3.fromRGB(60, 52, 44)
+		view.spark.Material = lit and Enum.Material.Neon or Enum.Material.SmoothPlastic
 		-- the right hand round the bundle's middle (the back of the hand out to the right), the left a loose fist low
 		-- on the left, coming forward a little as you wind up
 		placeLimb(view.right, bcf * L(0, -0.02, 0), Vector3.new(0.95, -1.25, -0.4))
@@ -669,7 +678,7 @@ function WeaponController.startDraw()
 		WeaponController.release(true) -- (a weapon with no draw shoots on each press)
 		return true
 	end
-	if os.clock() - lastShot < w.cooldown then
+	if os.clock() - (lastShot[w.key] or 0) < w.cooldown then
 		return false
 	end
 	drawing = true
@@ -696,7 +705,7 @@ function WeaponController.release(instant)
 		drawing = false
 		return false
 	end
-	if instant and os.clock() - lastShot < w.cooldown then
+	if instant and os.clock() - (lastShot[w.key] or 0) < w.cooldown then
 		return false
 	end
 	local charge = instant and 1 or Formulas.charge(w, os.clock() - drawStart)
@@ -709,7 +718,7 @@ function WeaponController.release(instant)
 		dir = WeaponController.assist(origin, dir) -- (a lob isn't a straight line: no help for the TNT)
 	end
 	shotId += 1
-	lastShot = os.clock()
+	lastShot[w.key] = os.clock()
 	local shot = Formulas.shot(w, charge)
 	-- (start it a stud ahead, so it never begins inside your own head)
 	local start = origin + dir * 1
@@ -743,10 +752,10 @@ end
 -- A slash with the blade: it swings at once; the server decides who it reaches
 function WeaponController.swing()
 	local w = weapon()
-	if not w.melee or not canShoot() or os.clock() - lastShot < w.cooldown then
+	if not w.melee or not canShoot() or os.clock() - (lastShot[w.key] or 0) < w.cooldown then
 		return false
 	end
-	lastShot = os.clock()
+	lastShot[w.key] = os.clock()
 	local cam = workspace.CurrentCamera
 	local dir = cam and cam.CFrame.LookVector or Vector3.new(0, 0, -1)
 	Net.send("Swing", dir)

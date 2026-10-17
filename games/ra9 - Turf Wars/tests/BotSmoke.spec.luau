@@ -107,8 +107,8 @@ for _ = 1, 60 do
 end
 for i = m0 + 1, #Engine.clientLog do
 	local e = Engine.clientLog[i]
-	if e.name == "Arrow" and e.args[1].by < 0 then
-		arrows += 1
+	if (e.name == "Arrow" or e.name == "Bomb") and e.args[1].by < 0 then
+		arrows += 1 -- (an arrow, or now and then a TNT)
 	end
 	if e.name == "Hurt" and e.player == solo then
 		hurt = true
@@ -116,6 +116,35 @@ for i = m0 + 1, #Engine.clientLog do
 end
 check("bots shoot (server arrows, like anyone's)", arrows >= 3, arrows)
 check("...and hit you sometimes", hurt)
+-- the TNT: in range and ready, a bot sometimes lobs one at you (made certain here)
+do
+	local chance = Constants.BOT_TNT_CHANCE
+	Constants.BOT_TNT_CHANCE = 1
+	if not Combat:Alive(solo) then
+		Engine.advance(Constants.RESPAWN_SECONDS + 1)
+	end
+	local m1 = #Engine.clientLog
+	local thrown, blasts = 0, 0
+	for _ = 1, 40 do
+		Engine.advance(0.25)
+		local r = root(enemy)
+		if r then
+			-- (in TNT range, on your own side)
+			Engine.moveTo(solo, Vector3.new(line + fwd * 10, 3, r.Position.Z))
+		end
+	end
+	for i = m1 + 1, #Engine.clientLog do
+		local e = Engine.clientLog[i]
+		if e.name == "Bomb" and e.args[1].by < 0 then
+			thrown += 1
+		elseif e.name == "Blast" and e.args[1].by and e.args[1].by < 0 then
+			blasts += 1
+		end
+	end
+	check("bots throw TNT too (in range, now and then)", thrown >= 1 and blasts >= 1, `{thrown} {blasts}`)
+	check("...a few seconds apart, not spammed", thrown <= 4, thrown)
+	Constants.BOT_TNT_CHANCE = chance
+end
 
 -- you can kill a bot, and it pushes the line
 local f0 = Match:Frontline()

@@ -644,10 +644,11 @@ function CombatService:Shoot(player, origin, direction, shotId)
 		shotId = nil -- (only a plain number goes back out to everyone)
 	end
 	local t = now()
-	if t < (s.readyAt or 0) - 0.08 then
+	local ready = w.throw and (s.throwAt or 0) or (s.readyAt or 0)
+	if t < ready - 0.08 then
 		self.Rejected:Fire(player, "rate") -- (faster than the bow can shoot, beyond a little lag)
 		return nil
-	elseif t < (s.readyAt or 0) then
+	elseif t < ready then
 		return nil
 	end
 	if w.mag then
@@ -680,7 +681,11 @@ function CombatService:Shoot(player, origin, direction, shotId)
 	s.attacked = true -- (shooting gives up the spawn deck's safety)
 	local charge = w.draw > 0 and Formulas.charge(w, s.drawAt and (t - s.drawAt) or 0) or 1
 	s.drawAt = nil
-	s.readyAt = t + w.cooldown
+	if w.throw then
+		s.throwAt = t + w.cooldown -- (the TNT has its own cooldown: the bow is ready again at once)
+	else
+		s.readyAt = t + w.cooldown
+	end
 	if w.throw then
 		return self:_throw(player, w, origin, direction, charge, shotId)
 	end

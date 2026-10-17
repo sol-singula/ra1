@@ -585,6 +585,67 @@ remembered, every panel's close button the shared X), ServerSmoke 174, AdminSmok
   pass tab says it plainly: "Play matches to earn XP. Every tier gives a reward. The Turf Pass unlocks the gold
   rewards too."
 
+## Round 21: TNT, things blowing up, better pieces
+
+The owner: "get rid of cross bow. change heavy to like tnt and we can throw it and when it blows stuff up we need SUPER
+cool animation of the building going into pieces and exploding. make the building pieces better, tower cooler. make
+them all the same color besides one with armor as darker color."
+
+* **No crossbow, no heavy bow.** The hotbar is 1 the bow, 2 the TNT, 3 the blade (the blade's slot still only shows in
+  the CHARGE); the digits follow `Data/Weapons`' order, the wheel steps through them. The magazine and reload code
+  stays generic but nothing uses it now (RELOAD never shows). Bots use the bow, the blade in the CHARGE, and the TNT.
+* **TNT** (`Data/Weapons` "tnt", `Constants.TNT_*`): hold to wind up (the ring fills: the charge is how far it goes),
+  let go and it's lobbed. It goes through Shoot like an arrow and is checked the same way (alive, the fight, near your
+  head, never from the far side of a wall, its own 3 s cooldown that doesn't hold up the bow), and the server flies it
+  in the same 1/30 s steps on a heavier curve (`Formulas.lobVelocity`, `lobAt`). It goes off on the first thing it
+  touches, or in the air when its 1.2 s fuse runs out: every enemy structure within 9 studs takes 520 damage at the
+  middle down to 160 at the edge (a wall or a tower breaks anywhere in it; the Reinforced Wall holds at the edge), and
+  enemies within 5 studs with nothing solid between them and the blast are knocked out (through `Damage`: spawn
+  protection, the spawn deck and no friendly fire hold); the rest in the open within 9 studs are thrown back. Your own
+  team's pieces and players are never touched. Net `Bomb` (thrown) and `Blast` (gone off) tell everyone.
+  * In your hands: three red sticks taped together with a fuse, in the right hand; the fuse sparks as you wind up and
+    the bundle comes back over your shoulder (out to the right, the crosshair clear), the throw snaps it forward, your
+    hand drops away empty through the cooldown (counted on the hotbar slot) and a fresh bundle comes up at its end.
+    Others see the bundle in your hand. The hotbar picture is the bundle with its lit fuse.
+  * Bots throw it now and then at someone 14-46 studs off, or at an enemy wall when nobody's in sight
+    (`BotService:StartLob`: the arc solved by `Formulas.lobAim`), never at a new player in their first match.
+* **The explosion** (`ExplosionController`, every client): the bundle tumbling along its lob with its spark, then a
+  white flash and a light, a fireball in three layers (a hot core, orange, dark red rolling up), smoke rolling out,
+  sparks, a shockwave racing out over the floor and a scorch mark, clods of floor thrown up to rain down, a camera
+  shake by distance and a boom (Roblox's own `collide.wav`, low, quieter far away). Fewer puffs, sparks and clods on
+  phones and low graphics.
+* **Structures shatter** (`DebrisController`, every client): the "destroyed" message now carries the piece's box, its
+  turn and what broke it (`blast = { pos, power, dir?, tnt? }`). Each client rebuilds the same parts and cuts every
+  block into smaller blocks of its shape and colour (little gaps, a touch lighter or darker each), which fly away from
+  the blow (an arrow knocks them back along its flight, a TNT throws them out and up, some high enough to rain down,
+  lost turf just crumbles), spin, bounce and slide on the floor, then shrink and fade: all gone in about 3 s, with dust
+  and sparks. Anchored parts moved by the controller itself: they never touch anyone. Per tier: 110 / 70 / 32 chunks
+  for a TNT, 60 / 40 / 20 otherwise, at most 320 / 200 / 80 flying, 60 / 40 / 20 made a frame. A piece taken back in
+  the build phase or cleared between matches just goes.
+* **Better pieces** (`StructureModel`, shared by BuildService, the tray's pictures and the debris): plinths, bevelled
+  caps, pilasters, arrow slits, corbels and crenellations on the wall, crossed braces on the barricade and the cover,
+  planks, stringers, braces and rails on the bridge, a stepped base and a swallowtail flag on the banner. **The tower**
+  is a tapered keep: two tiers stepping in with slits on every face, corbels out to a lookout you stand on, battlements
+  with an opening at the back over a ladder in a recess, and a banner on a pole at the front corner. **One colour:**
+  every piece in one shade of the team's colour (`Constants.BUILD_COLOR`), the **Reinforced Wall** (the armour: the
+  most HP, 360) all in the darker shade (`ARMOR_COLOR`), with armour plates, rivets and buttresses. Footprints,
+  heights, costs, HP, the arrows' boxes and every build rule are as before; nothing solid sticks out of the footprint.
+
+![](screenshots/tnt_hold.png)
+![](screenshots/tnt_blast.png)
+![](screenshots/structures.png)
+![](screenshots/tower.png)
+
+Tests: Formulas 208 (the three weapons, the lob, `lobAim`, the blast's falloff, every piece's parts in its one shade
+and inside its footprint, the tower's parts), ServerSmoke 227 (an arrow's break carrying where it hit; a throw, its
+arc, the cooldown, a wall blown up and a teammate's piece spared, the debris info, a knockout credited to the TNT,
+the origin checks, the fuse in the air, line of sight, teammates, the push, the spawn deck), ClientSmoke 313 (the
+hotbar's three slots and numbers, 2 for the TNT, the bundle, the wind-up, the throw drawn at once, the cooldown on the
+slot, the bow ready meanwhile, the explosion's pieces and their clean-up, the crosshair kept clear, your wall in its
+shade and the armour darker in the tray, the debris flying, never under the floor, gone in 3 s, more for a TNT, fewer
+on a phone, a cap per frame), BotSmoke 25 (bots throw TNT, a few seconds apart). Renders:
+`tools/gameplay/tnt.luau` (the pieces, the tower, the blast) and `firstperson.luau` (fp_tnt*).
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.
