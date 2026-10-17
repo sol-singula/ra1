@@ -325,7 +325,8 @@ function Capture.snapshot(Engine, camera)
 	for _, d in workspace:GetDescendants() do
 		if d:IsA("BasePart") and d.ClassName ~= "Terrain" then
 			local p = rawget(d, "_props")
-			local transparency = p.Transparency or 0
+			-- (a part hidden on this client only, LocalTransparencyModifier, is hidden in the shot too)
+			local transparency = math.max(p.Transparency or 0, p.LocalTransparencyModifier or 0)
 			if transparency < 0.99 then
 				local cf = p.CFrame
 				table.insert(snap.parts, partEntry(d, p, transparency))

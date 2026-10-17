@@ -4,7 +4,9 @@ all anchored parts that never collide or answer a query, moved here each frame:
 
   Effects.shatter(opts)          a body breaking into white and team-coloured shards that burst out along the hit's
                                  direction, with a neon flash, a ring shockwave, sparks and a short glow.
-                                 opts = { pos, dir?, team, parts? (the body's parts to cut from), power? }
+                                 opts = { pos, dir?, team, parts? (the body's parts to cut from), power?,
+                                 scale? (more or fewer shards), quiet? (no flash, glow ball or rings: the kill cam's
+                                 slow motion, where they'd hang in the air) }
   Effects.impact(pos, color, dir?)   an arrow landing: a pop of light, a little ring, white chips and team sparks
   Effects.explosion(pos, radius, color?)   a blast (ExplosionController owns it: this just hands it over)
   Effects.mannequin(cf, team)    a blocky stand-in body (the kill cam's replay of you), parts in a Model
@@ -12,7 +14,7 @@ all anchored parts that never collide or answer a query, moved here each frame:
 
 The parts come from a pool and go back to it, and there is a cap on how many are alive at once (by the graphics
 tier: GraphicsController, and always the light version on a phone), so twenty kills at once can't sink the frame
-rate: a kill over the cap gets only its flash.
+rate: near the cap a kill gets fewer shards, then only its flash, then nothing more until pieces die away.
 
   Effects.count()   Effects.cap()   Effects.tier()   Effects.pooled()   (tests)
 ]]
@@ -135,29 +137,55 @@ local function randomDir()
 end
 
 -- a ball that swells from s0 to s1 and fades (a flash, a glow)
-local function flash(pos, color, s0, s1, life, t0)
+local function flash(pos, color, s0, s1, life, t0, alpha)
 	local p = take("Ball", Vector3.new(s0, s0, s0), color, true)
 	p.CFrame = CFrame.new(pos)
-	return add({ part = p, shape = "Ball", kind = "grow", at = pos, s0 = s0, s1 = s1, life = life, t0 = t0 or 0 })
+	local e = { part = p, shape = "Ball", kind = "grow", at = pos, s0 = s0, s1 = s1, life = life, t0 = t0 or 0 }
+	e.alpha = alpha or 0.05 -- (how see-through it starts)
+	return add(e)
 end
 
--- a flat ring racing out, facing `normal`
-local function ring(pos, normal, color, r1, life, thick)
+-- a ring racing out, facing `normal`: a circle of thin neon pieces (a hollow ring; a cylinder would be a solid
+-- disc). Returns how many pieces it made.
+local ARCS = { high = 16, mid = 12, low = 8 }
+local function ring(pos, normal, color, r1, life, thick, alpha, pieces)
 	local n = normal.Magnitude > 0.01 and normal.Unit or Vector3.yAxis
 	local side = math.abs(n.Y) < 0.95 and Vector3.yAxis or Vector3.xAxis
-	-- (a Roblox cylinder runs along its X: X is the normal, the disc spans Y and Z)
+	-- (in this frame X is the normal; the ring lies in Y and Z)
 	local up = n:Cross(side).Unit
 	local cf = CFrame.fromMatrix(pos, n, up, n:Cross(up).Unit)
-	local p = take("Cylinder", Vector3.new(thick or 0.14, 1, 1), color, true)
-	p.CFrame = cf
-	p.Transparency = 0.1
-	return add({ part = p, shape = "Cylinder", kind = "ring", cf = cf, s0 = 1, s1 = r1 * 2, life = life })
+	local count = room(pieces or ARCS[Effects.tier()] or 8)
+	for i = 1, count do
+		local p = take("Block", Vector3.new(thick or 0.14, thick or 0.14, 0.2), color, true)
+		p.CFrame = AWAY
+		p.Transparency = alpha or 0.1
+		add({
+			part = p,
+			shape = "Block",
+			kind = "arc",
+			cf = cf * CFrame.Angles(i / count * math.pi * 2, 0, 0),
+			n = count,
+			r1 = r1,
+			life = life,
+			thick = thick or 0.14,
+			alpha = alpha or 0.1,
+		})
+	end
+	return count
 end
 
 local function spark(pos, dir, color, speed, life, len)
 	local p = take("Block", Vector3.new(0.09, 0.09, len or 1.4), color, true)
 	p.CFrame = CFrame.lookAt(pos, pos + dir)
-	return add({ part = p, shape = "Block", kind = "spark", pos = pos, vel = dir * speed, life = life, len = len or 1.4 })
+	return add({
+		part = p,
+		shape = "Block",
+		kind = "spark",
+		pos = pos,
+		vel = dir * speed,
+		life = life,
+		len = len or 1.4,
+	})
 end
 
 local function glow(pos, color, range, life)
@@ -174,10 +202,10 @@ local function glow(pos, color, range, life)
 end
 
 -- one shard: a sliver of white or the team's colour (some glowing), cut from somewhere inside the body
-local function shard(at, color, neon, vel, life)
+local function shard(at, color, neon, vel, life, scale)
 	local wedge = rng:NextNumber() < 0.55
-	local a, b = rng:NextNumber(0.3, 0.95), rng:NextNumber(0.25, 0.7)
-	local size = Vector3.new(rng:NextNumber(0.08, 0.22), a, b)
+	local a, b = rng:NextNumber(0.45, 1.25), rng:NextNumber(0.35, 0.9)
+	local size = Vector3.new(rng:NextNumber(0.12, 0.3), a, b) * (scale or 1)
 	local p = take(wedge and "Wedge" or "Block", size, color, neon)
 	local rot = CFrame.fromAxisAngle(randomDir(), rng:NextNumber(0, math.pi * 2))
 	p.CFrame = CFrame.new(at) * rot
@@ -203,8 +231,11 @@ local function pointIn(parts, weights, total)
 		pick -= weights[i]
 		if pick <= 0 or i == #parts then
 			local s = p.Size * 0.5
-			return p.CFrame
-				* Vector3.new(rng:NextNumber(-s.X, s.X), rng:NextNumber(-s.Y, s.Y), rng:NextNumber(-s.Z, s.Z)),
+			return p.CFrame * Vector3.new(
+				rng:NextNumber(-s.X, s.X),
+				rng:NextNumber(-s.Y, s.Y),
+				rng:NextNumber(-s.Z, s.Z)
+			),
 				p.Color
 		end
 	end
@@ -221,17 +252,25 @@ function Effects.shatter(opts)
 	local dir = typeof(opts.dir) == "Vector3" and opts.dir.Magnitude > 0.01 and opts.dir.Unit or Vector3.yAxis
 	local power = opts.power or 1
 	local made = 0
-	-- the flash first (it always plays, even over the cap): white hot, then the team's glow
-	flash(pos, WHITE, 1, 7.5, 0.22)
-	made += 1
-	if room(1) > 0 then
-		flash(pos, team, 1.5, 5.5, 0.38, 0.03)
+	-- the flash first (the last thing the cap takes away): white hot, then the team's glow
+	if room(1) == 0 then
+		return 0
+	end
+	if not opts.quiet then
+		flash(pos, WHITE, 0.8, 4, 0.14, 0, 0.35)
 		made += 1
 	end
-	for i = 1, math.min(cap.rings, room(cap.rings)) do
-		-- the shockwave: across the arrow's path, and (high) a second one flat on the floor
-		ring(pos, i == 1 and dir or Vector3.yAxis, i == 1 and team or WHITE, i == 1 and 7 or 9, i == 1 and 0.45 or 0.6)
+	if room(1) > 0 and not opts.quiet then
+		flash(pos, team, 0.8, 1.8, 0.18, 0.02, 0.65)
 		made += 1
+	end
+	for i = 1, opts.quiet and 0 or cap.rings do
+		-- the shockwave: across the arrow's path in the team's colour, and (high) a white one flat on the floor
+		if i == 1 then
+			made += ring(pos, dir, team, 5.5, 0.4, 0.14, 0.05)
+		else
+			made += ring(Vector3.new(pos.X, pos.Y - 2.6, pos.Z), Vector3.yAxis, WHITE, 7, 0.55, 0.12, 0.2)
+		end
 	end
 	if cap.light and room(1) > 0 then
 		glow(pos, team, 18, 0.55)
@@ -287,17 +326,16 @@ function Effects.impact(pos, color, dir)
 	local back = typeof(dir) == "Vector3" and dir.Magnitude > 0.01 and -dir.Unit or Vector3.yAxis
 	local made = 0
 	if room(1) > 0 then
-		flash(pos, WHITE, 0.4, 2.6, 0.14)
+		flash(pos, WHITE, 0.4, 2.4, 0.14, 0, 0.2)
 		made += 1
 	end
 	if room(1) > 0 then
-		ring(pos, back, color, 2.4, 0.28, 0.08)
-		made += 1
+		made += ring(pos, back, color, 2.2, 0.26, 0.07, 0.1, math.ceil((ARCS[Effects.tier()] or 8) / 2))
 	end
 	for i = 1, room(cap.chips) do
 		local d = (back * 1.2 + randomDir()).Unit
 		local vel = d * rng:NextNumber(10, 22) + Vector3.new(0, rng:NextNumber(3, 9), 0)
-		shard(pos, i == 1 and color or WHITE, false, vel, rng:NextNumber(0.4, 0.7)).floor = pos.Y - 6
+		shard(pos, i == 1 and color or WHITE, false, vel, rng:NextNumber(0.4, 0.7), 0.45).floor = pos.Y - 6
 		made += 1
 	end
 	for _ = 1, room(math.ceil(cap.sparks / 2)) do
@@ -384,12 +422,14 @@ function Effects.step(dt)
 			local s = e.s0 + (e.s1 - e.s0) * (1 - (1 - g) ^ 3)
 			p.Size = Vector3.new(s, s, s)
 			p.CFrame = CFrame.new(e.at)
-			p.Transparency = math.clamp(0.05 + f * f * 1.05, 0, 1)
-		elseif e.kind == "ring" then
-			local s = e.s0 + (e.s1 - e.s0) * (1 - (1 - f) ^ 2.5)
-			p.Size = Vector3.new(p.Size.X, s, s)
-			p.CFrame = e.cf
-			p.Transparency = 0.1 + 0.9 * f
+			p.Transparency = math.clamp(e.alpha + (1 - e.alpha) * f * f * 1.05, 0, 1)
+		elseif e.kind == "arc" then
+			-- (one piece of a ring: out along its spoke, long enough to meet its neighbours, thinning as it goes)
+			local r = 0.4 + (e.r1 - 0.4) * (1 - (1 - f) ^ 2.5)
+			local thick = e.thick * (1 - 0.5 * f)
+			p.Size = Vector3.new(thick, thick, r * math.pi * 2 / e.n * 1.08)
+			p.CFrame = e.cf * CFrame.new(0, r, 0)
+			p.Transparency = e.alpha + (1 - e.alpha) * f * f
 		elseif e.kind == "light" then
 			e.light.Brightness = 6 * (1 - f) ^ 2
 		end

@@ -68,174 +68,194 @@ local FX = {
 	air = { { "EqualizerSoundEffect", { LowGain = -18, MidGain = -3, HighGain = 3 } } },
 	dull = { { "EqualizerSoundEffect", { LowGain = 3, MidGain = -6, HighGain = -24 } } },
 	chorus = { { "ChorusSoundEffect", { Depth = 0.35, Mix = 0.5, Rate = 1.8 } } },
-	room = { { "ReverbSoundEffect", { DecayTime = 0.8, Density = 0.9, Diffusion = 0.8, DryLevel = 0, WetLevel = -12 } } },
+	room = {
+		{ "ReverbSoundEffect", { DecayTime = 0.8, Density = 0.9, Diffusion = 0.8, DryLevel = 0, WetLevel = -12 } },
+	},
 	hall = { { "ReverbSoundEffect", { DecayTime = 2.4, Density = 1, Diffusion = 1, DryLevel = 0, WetLevel = -5 } } },
 }
 
--- The cues. Each layer: { clip, v = volume, p = pitch, r = pitch randomness (±), d = delay s, fx = { presets } }.
+-- The cues. Each layer: { c = clip, v = volume, p = pitch, r = pitch randomness (±), d = delay s, fx = { presets } }.
 -- group: "World" (3D or 2D, ducked), "Stinger" (yours, never ducked), "UI", "Music". loop: a looping cue.
 local CUES = {
 	-- the bow
-	draw = { group = "World", layers = { { "draw", v = 0.32, p = 0.75, r = 0.04, fx = { "room" } } } },
-	creak = { group = "World", layers = { { "draw", v = 0.22, p = 1, r = 0.03, fx = { "dull" } } } },
+	draw = { group = "World", layers = { { c = "draw", v = 0.32, p = 0.75, r = 0.04, fx = { "room" } } } },
+	creak = { group = "World", layers = { { c = "draw", v = 0.22, p = 1, r = 0.03, fx = { "dull" } } } },
 	full = {
 		group = "World",
-		layers = { { "ping", v = 0.1, p = 1.7, fx = { "room" } }, { "draw", v = 0.2, p = 1.35, d = 0.02 } },
+		layers = { { c = "ping", v = 0.1, p = 1.7, fx = { "room" } }, { c = "draw", v = 0.2, p = 1.35, d = 0.02 } },
 	},
 	release = {
 		group = "World",
 		layers = {
-			{ "twang", v = 0.7, p = 1, r = 0.05 },
-			{ "shoot", v = 0.45, p = 1.25, r = 0.06, fx = { "air" } },
-			{ "click", v = 0.14, p = 0.6 },
+			{ c = "twang", v = 0.7, p = 1, r = 0.05 },
+			{ c = "shoot", v = 0.45, p = 1.25, r = 0.06, fx = { "air" } },
+			{ c = "click", v = 0.14, p = 0.6 },
 		},
 	},
 	flyby = {
 		group = "World",
-		layers = { { "shoot", v = 0.85, p = 1.7, r = 0.1, fx = { "air" } }, { "shoot", v = 0.3, p = 2.3, d = 0.04 } },
+		layers = {
+			{ c = "shoot", v = 0.85, p = 1.7, r = 0.1, fx = { "air" } },
+			{ c = "shoot", v = 0.3, p = 2.3, d = 0.04 },
+		},
 	},
 	impact = {
 		group = "World",
 		layers = {
-			{ "thud", v = 0.9, p = 1.35, r = 0.08 },
-			{ "boom", v = 0.22, p = 2.2, r = 0.1 },
-			{ "click", v = 0.22, p = 0.8 },
+			{ c = "thud", v = 0.9, p = 1.35, r = 0.08 },
+			{ c = "boom", v = 0.22, p = 2.2, r = 0.1 },
+			{ c = "click", v = 0.22, p = 0.8 },
 		},
 	},
-	hit = { group = "Stinger", layers = { { "hit", v = 0.6, p = 1.4 }, { "ping", v = 0.18, p = 2.2 } } },
+	hit = { group = "Stinger", layers = { { c = "hit", v = 0.6, p = 1.4 }, { c = "ping", v = 0.18, p = 2.2 } } },
 	-- kills
 	kill = {
 		group = "Stinger",
 		layers = {
-			{ "thud", v = 1, p = 0.55, r = 0.03, fx = { "punch" } },
-			{ "rocket", v = 0.32, p = 0.5, fx = { "sub" } },
-			{ "glass", v = 0.5, p = 1.15, r = 0.05, d = 0.02 },
-			{ "ping", v = 0.42, p = 1, d = 0.05, fx = { "room" } },
-			{ "kill", v = 0.5, p = 1.25, d = 0.08, fx = { "room" } },
-			{ "ping", v = 0.3, p = 1.5, d = 0.16, fx = { "room" } },
+			{ c = "thud", v = 1, p = 0.55, r = 0.03, fx = { "punch" } },
+			{ c = "rocket", v = 0.32, p = 0.5, fx = { "sub" } },
+			{ c = "glass", v = 0.5, p = 1.15, r = 0.05, d = 0.02 },
+			{ c = "ping", v = 0.42, p = 1, d = 0.05, fx = { "room" } },
+			{ c = "kill", v = 0.5, p = 1.25, d = 0.08, fx = { "room" } },
+			{ c = "ping", v = 0.3, p = 1.5, d = 0.16, fx = { "room" } },
 		},
 	},
 	headshot = {
 		group = "Stinger",
 		layers = {
-			{ "thud", v = 1, p = 0.6, r = 0.03, fx = { "punch" } },
-			{ "headshot", v = 0.75, p = 1 },
-			{ "rocket", v = 0.3, p = 0.5, fx = { "sub" } },
-			{ "glass", v = 0.55, p = 1.3, r = 0.05, d = 0.02 },
-			{ "ping", v = 0.42, p = 1.26, d = 0.05, fx = { "room" } },
-			{ "kill", v = 0.5, p = 1.5, d = 0.09, fx = { "room" } },
-			{ "ping", v = 0.32, p = 2, d = 0.2, fx = { "room" } },
+			{ c = "thud", v = 1, p = 0.6, r = 0.03, fx = { "punch" } },
+			{ c = "headshot", v = 0.75, p = 1 },
+			{ c = "rocket", v = 0.3, p = 0.5, fx = { "sub" } },
+			{ c = "glass", v = 0.55, p = 1.3, r = 0.05, d = 0.02 },
+			{ c = "ping", v = 0.42, p = 1.26, d = 0.05, fx = { "room" } },
+			{ c = "kill", v = 0.5, p = 1.5, d = 0.09, fx = { "room" } },
+			{ c = "ping", v = 0.32, p = 2, d = 0.2, fx = { "room" } },
 		},
 	},
 	shatter = {
 		group = "World",
 		layers = {
-			{ "glass", v = 0.7, p = 1, r = 0.08 },
-			{ "thud", v = 0.6, p = 0.7, r = 0.05, fx = { "punch" } },
-			{ "ping", v = 0.14, p = 1.2, d = 0.04, fx = { "room" } },
+			{ c = "glass", v = 0.7, p = 1, r = 0.08 },
+			{ c = "thud", v = 0.6, p = 0.7, r = 0.05, fx = { "punch" } },
+			{ c = "ping", v = 0.14, p = 1.2, d = 0.04, fx = { "room" } },
 		},
 	},
 	hurt = {
 		group = "Stinger",
-		layers = { { "thud", v = 0.8, p = 0.7, r = 0.05, fx = { "punch" } }, { "hit", v = 0.5, p = 0.6 } },
+		layers = { { c = "thud", v = 0.8, p = 0.7, r = 0.05, fx = { "punch" } }, { c = "hit", v = 0.5, p = 0.6 } },
 	},
 	-- the blade
 	swing = {
 		group = "World",
-		layers = { { "slash", v = 0.55, p = 1, r = 0.08 }, { "shoot", v = 0.4, p = 0.55, r = 0.05, fx = { "air" } } },
+		layers = {
+			{ c = "slash", v = 0.55, p = 1, r = 0.08 },
+			{ c = "shoot", v = 0.4, p = 0.55, r = 0.05, fx = { "air" } },
+		},
 	},
 	parry = {
 		group = "Stinger",
 		layers = {
-			{ "unsheath", v = 0.7, p = 1.35, r = 0.05, fx = { "room" } },
-			{ "ping", v = 0.4, p = 0.8, fx = { "hall" } },
-			{ "hit", v = 0.4, p = 2 },
+			{ c = "unsheath", v = 0.7, p = 1.35, r = 0.05, fx = { "room" } },
+			{ c = "ping", v = 0.4, p = 0.8, fx = { "hall" } },
+			{ c = "hit", v = 0.4, p = 2 },
 		},
 	},
 	-- the TNT
-	fuse = { group = "World", loop = true, layers = { { "wind", v = 0.22, p = 2.4, fx = { "air" } } } },
-	throw = { group = "World", layers = { { "shoot", v = 0.6, p = 0.5, r = 0.05 }, { "lunge", v = 0.4, p = 0.9 } } },
+	fuse = { group = "World", loop = true, layers = { { c = "wind", v = 0.22, p = 2.4, fx = { "air" } } } },
+	throw = {
+		group = "World",
+		layers = { { c = "shoot", v = 0.6, p = 0.5, r = 0.05 }, { c = "lunge", v = 0.4, p = 0.9 } },
+	},
 	boom = {
 		group = "World",
 		layers = {
-			{ "boom", v = 1, p = 0.42, r = 0.04, fx = { "sub", "hall" } },
-			{ "rocket", v = 0.6, p = 0.55, r = 0.05, fx = { "crunch" } },
-			{ "thud", v = 1, p = 0.38, fx = { "punch" } },
-			{ "glass", v = 0.3, p = 0.5, d = 0.05 },
-			{ "wind", v = 0.3, p = 1.6, d = 0.1, fx = { "air" } },
+			{ c = "boom", v = 1, p = 0.42, r = 0.04, fx = { "sub", "hall" } },
+			{ c = "rocket", v = 0.6, p = 0.55, r = 0.05, fx = { "crunch" } },
+			{ c = "thud", v = 1, p = 0.38, fx = { "punch" } },
+			{ c = "glass", v = 0.3, p = 0.5, d = 0.05 },
+			{ c = "wind", v = 0.3, p = 1.6, d = 0.1, fx = { "air" } },
 		},
 	},
 	-- building
 	place = {
 		group = "World",
 		layers = {
-			{ "thud", v = 0.7, p = 1, r = 0.05 },
-			{ "button", v = 0.35, p = 0.7 },
-			{ "land", v = 0.4, p = 1.2, r = 0.05 },
+			{ c = "thud", v = 0.7, p = 1, r = 0.05 },
+			{ c = "button", v = 0.35, p = 0.7 },
+			{ c = "land", v = 0.4, p = 1.2, r = 0.05 },
 		},
 	},
-	built = { group = "Stinger", layers = { { "built", v = 0.4, p = 1 } } },
-	refused = { group = "UI", layers = { { "button", v = 0.35, p = 0.55 }, { "click", v = 0.2, p = 0.5, d = 0.06 } } },
+	built = { group = "Stinger", layers = { { c = "built", v = 0.4, p = 1 } } },
+	refused = {
+		group = "UI",
+		layers = { { c = "button", v = 0.35, p = 0.55 }, { c = "click", v = 0.2, p = 0.5, d = 0.06 } },
+	},
 	crumble = {
 		group = "World",
 		layers = {
-			{ "crumble", v = 0.7, p = 0.9, r = 0.06, fx = { "crunch" } },
-			{ "thud", v = 0.7, p = 0.7, r = 0.05 },
-			{ "glass", v = 0.35, p = 0.65, d = 0.04 },
+			{ c = "crumble", v = 0.7, p = 0.9, r = 0.06, fx = { "crunch" } },
+			{ c = "thud", v = 0.7, p = 0.7, r = 0.05 },
+			{ c = "glass", v = 0.35, p = 0.65, d = 0.04 },
 		},
 	},
 	-- phases
 	build = {
 		group = "Stinger",
 		layers = {
-			{ "built", v = 0.6, p = 0.8, fx = { "room" } },
-			{ "ping", v = 0.3, p = 1, d = 0.1, fx = { "room" } },
-			{ "ping", v = 0.3, p = 1.33, d = 0.2, fx = { "room" } },
+			{ c = "built", v = 0.6, p = 0.8, fx = { "room" } },
+			{ c = "ping", v = 0.3, p = 1, d = 0.1, fx = { "room" } },
+			{ c = "ping", v = 0.3, p = 1.33, d = 0.2, fx = { "room" } },
 		},
 	},
 	horn = {
 		group = "Stinger",
 		layers = {
-			{ "horn", v = 0.7, p = 1, fx = { "room" } },
-			{ "rocket", v = 0.35, p = 0.45, fx = { "sub" } },
-			{ "thud", v = 0.8, p = 0.5, fx = { "punch" } },
+			{ c = "horn", v = 0.7, p = 1, fx = { "room" } },
+			{ c = "rocket", v = 0.35, p = 0.45, fx = { "sub" } },
+			{ c = "thud", v = 0.8, p = 0.5, fx = { "punch" } },
 		},
 	},
 	charge = {
 		group = "Stinger",
 		layers = {
-			{ "shoot", v = 0.4, p = 0.5 },
-			{ "shoot", v = 0.45, p = 0.7, d = 0.22 },
-			{ "shoot", v = 0.5, p = 0.95, d = 0.44 },
-			{ "horn", v = 0.7, p = 0.8, d = 0.62, fx = { "chorus", "hall" } },
-			{ "horn", v = 0.35, p = 1.2, d = 0.67 },
-			{ "thud", v = 0.9, p = 0.45, d = 0.62, fx = { "punch" } },
+			{ c = "shoot", v = 0.4, p = 0.5 },
+			{ c = "shoot", v = 0.45, p = 0.7, d = 0.22 },
+			{ c = "shoot", v = 0.5, p = 0.95, d = 0.44 },
+			{ c = "horn", v = 0.7, p = 0.8, d = 0.62, fx = { "chorus", "hall" } },
+			{ c = "horn", v = 0.35, p = 1.2, d = 0.67 },
+			{ c = "thud", v = 0.9, p = 0.45, d = 0.62, fx = { "punch" } },
 		},
 	},
-	count = { group = "Stinger", layers = { { "click", v = 0.5, p = 1 }, { "button", v = 0.15, p = 1.6 } } },
-	countHigh = { group = "Stinger", layers = { { "ping", v = 0.4, p = 1.5 }, { "click", v = 0.45, p = 1.2 } } },
+	count = { group = "Stinger", layers = { { c = "click", v = 0.5, p = 1 }, { c = "button", v = 0.15, p = 1.6 } } },
+	countHigh = { group = "Stinger", layers = { { c = "ping", v = 0.4, p = 1.5 }, { c = "click", v = 0.45, p = 1.2 } } },
 	victory = {
 		group = "Stinger",
 		layers = {
-			{ "win", v = 0.8, p = 1, fx = { "room" } },
-			{ "ping", v = 0.3, p = 1, fx = { "room" } },
-			{ "ping", v = 0.3, p = 1.26, d = 0.1, fx = { "room" } },
-			{ "ping", v = 0.3, p = 1.5, d = 0.2, fx = { "room" } },
-			{ "ping", v = 0.35, p = 2, d = 0.3, fx = { "hall" } },
+			{ c = "win", v = 0.8, p = 1, fx = { "room" } },
+			{ c = "ping", v = 0.3, p = 1, fx = { "room" } },
+			{ c = "ping", v = 0.3, p = 1.26, d = 0.1, fx = { "room" } },
+			{ c = "ping", v = 0.3, p = 1.5, d = 0.2, fx = { "room" } },
+			{ c = "ping", v = 0.35, p = 2, d = 0.3, fx = { "hall" } },
 		},
 	},
 	defeat = {
 		group = "Stinger",
-		layers = { { "horn", v = 0.5, p = 0.6, fx = { "dull" } }, { "kill", v = 0.35, p = 0.6, d = 0.2, fx = { "dull", "hall" } } },
+		layers = {
+			{ c = "horn", v = 0.5, p = 0.6, fx = { "dull" } },
+			{ c = "kill", v = 0.35, p = 0.6, d = 0.2, fx = { "dull", "hall" } },
+		},
 	},
 	-- the menus
-	click = { group = "UI", layers = { { "button", v = 0.3, p = 1.15, r = 0.04 } } },
-	hover = { group = "UI", layers = { { "click", v = 0.07, p = 1.7 } } },
+	click = { group = "UI", layers = { { c = "button", v = 0.3, p = 1.15, r = 0.04 } } },
+	hover = { group = "UI", layers = { { c = "click", v = 0.07, p = 1.7 } } },
 	-- ambience (loops)
 	wind = {
 		group = "Music",
 		loop = true,
-		layers = { { "wind", v = 0.12, p = 0.42, fx = { "dull" } }, { "wind", v = 0.1, p = 0.27, fx = { "dull" } } },
+		layers = {
+			{ c = "wind", v = 0.12, p = 0.42, fx = { "dull" } },
+			{ c = "wind", v = 0.1, p = 0.27, fx = { "dull" } },
+		},
 	},
 }
 AudioController.CUES = CUES
@@ -243,12 +263,12 @@ AudioController.CUES = CUES
 -- The streak stinger: a note up the scale for each kill in a row (from 2), a horn on top from 5
 local SCALE = { 1, 1.26, 1.5, 2, 2.52 }
 for n = 2, 5 do
-	local layers = { { "kill", v = 0.35, p = 0.9 + n * 0.08, d = 0, fx = { "room" } } }
+	local layers = { { c = "kill", v = 0.35, p = 0.9 + n * 0.08, d = 0, fx = { "room" } } }
 	for i = 1, n do
-		table.insert(layers, { "ping", v = 0.3, p = SCALE[i], d = (i - 1) * 0.075, fx = { "room" } })
+		table.insert(layers, { c = "ping", v = 0.3, p = SCALE[i], d = (i - 1) * 0.075, fx = { "room" } })
 	end
 	if n >= 5 then
-		table.insert(layers, { "horn", v = 0.35, p = 1.4, d = 0.3, fx = { "chorus", "hall" } })
+		table.insert(layers, { c = "horn", v = 0.35, p = 1.4, d = 0.3, fx = { "chorus", "hall" } })
 	end
 	CUES["streak" .. n] = { group = "Stinger", layers = layers }
 end
@@ -321,7 +341,7 @@ local function voice(cueName, index, layer, group, spatial)
 	end
 	local s = Instance.new("Sound")
 	s.Name = cueName
-	s.SoundId = Constants.SOUNDS[layer[1]] or ""
+	s.SoundId = Constants.SOUNDS[layer.c] or ""
 	s.SoundGroup = groups[group] or groups.SFX
 	addFx(s, layer.fx)
 	local att
@@ -351,7 +371,7 @@ local function start(cueName, pos, speed, volume)
 		if not Constants.SOUNDS[cueName] then
 			return nil
 		end
-		cue = { group = "World", layers = { { cueName, v = Constants.SOUND_VOLUME[cueName] or 0.6, p = 1 } } }
+		cue = { group = "World", layers = { { c = cueName, v = Constants.SOUND_VOLUME[cueName] or 0.6, p = 1 } } }
 		CUES[cueName] = cue
 	end
 	mixGroups()
@@ -361,7 +381,7 @@ local function start(cueName, pos, speed, volume)
 	for i, layer in cue.layers do
 		local v = voice(cueName, i, layer, cue.group, spatial)
 		local s = v.sound
-		local r = (layer.r or (FLAT[layer[1]] and 0 or 0.02))
+		local r = (layer.r or (FLAT[layer.c] and 0 or 0.02))
 		s.PlaybackSpeed = (layer.p or 1) * (speed or 1) * (1 + rng:NextNumber(-r, r))
 		s.Volume = (layer.v or 0.6) * (volume or 1)
 		if v.att then
@@ -407,7 +427,7 @@ function AudioController.loop(cueName, on, volume)
 			for i, layer in cue.layers do
 				local s = Instance.new("Sound")
 				s.Name = cueName .. "Loop" .. i
-				s.SoundId = Constants.SOUNDS[layer[1]] or ""
+				s.SoundId = Constants.SOUNDS[layer.c] or ""
 				s.Looped = true
 				s.PlaybackSpeed = layer.p or 1
 				s.SoundGroup = groups[cue.group] or groups.SFX

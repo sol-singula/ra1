@@ -43,7 +43,8 @@ Net.ServerEvents = {
 	"Swing", -- { by, hit, pos, dir } someone slashed (their blade swings for everyone: SwingController)
 	"Hit", -- { damage, head, kill, victim, melee?, pos? } you hit someone (the hit marker; a blade hit's spot)
 	"Hurt", -- { amount, from } you were hit (from: the shooter's position, for the damage indicator)
-	"Kill", -- { killer, victim, killerTeam, weapon, head, push, assist, effect, pos } the kill feed, the kill effect
+	"Kill", -- { killer, victim, killerTeam, weapon, head, push, assist, effect, pos } the kill feed, the kill effect;
+	-- killerPos, dist and cam = { origin, velocity, t, impact } (an arrow's flight) for the victim's kill cam
 	"Structure", -- { kind = "built" | "damaged" | "destroyed", id, key, team, hp, max }; destroyed adds min, max, rot,
 	-- emblem and blast = { pos, power } (what broke it: a TNT 1, an arrow less, nil for lost turf): the debris
 	-- (DebrisController)

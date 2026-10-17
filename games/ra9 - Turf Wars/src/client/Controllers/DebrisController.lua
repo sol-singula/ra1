@@ -188,10 +188,10 @@ function DebrisController.shatter(info)
 	launch(list, from, power, dir, info.min.Y, tnt)
 	dust(Vector3.new(mid.X, info.min.Y + 0.6, mid.Z), Color3.fromRGB(226, 223, 216), b.dust, 7, 1.4)
 	sparks(from, b.sparks + (tnt and b.sparks or 0), tnt and 40 or 22)
-	-- (the crash, quieter the further off it is)
+	-- (the crunch from where it stood, quieter the further off it is)
 	local cam = workspace.CurrentCamera
 	local d = cam and (cam.CFrame.Position - mid).Magnitude or 0
-	AudioController.play("crumble", tnt and 0.8 or 1.15, math.clamp(1 - d / 160, 0.15, 1))
+	AudioController.playAt("crumble", mid, tnt and 0.8 or 1.15, math.clamp(1 - d / 160, 0.15, 1))
 	return #list
 end
 

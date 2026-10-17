@@ -38,12 +38,16 @@ local DASHES = 5 -- the pieces of a dashed trail line
 local FLYBY = 8 -- studs: an enemy arrow passing this close whooshes
 local CROWD = 24 -- arrows up at once past which new ones get the light version
 local WHITE = Color3.fromRGB(250, 250, 250)
+local ALONG = CFrame.Angles(0, math.rad(90), 0) -- (a cylinder's X turned to lie along the flight)
 
--- the glow per graphics tier: { segments, width, transparency } for the glow and the haze, the tip's star, a Trail
+-- the glow per graphics tier: { segments, width, transparency } for the glow and the haze, a halo at the tip (star),
+-- a Trail
 local LOOK = {
-	high = { glow = { 7, 0.34, 0.3 }, haze = { 5, 0.95, 0.8 }, star = true, trail = true },
-	mid = { glow = { 5, 0.32, 0.32 }, star = false, trail = true },
-	low = { glow = { 3, 0.28, 0.3 }, star = false, trail = false },
+	high = { glow = { 9, 0.26, 0.04 }, haze = { 6, 0.6, 0.82 }, star = true, trail = true },
+	mid = { glow = { 6, 0.26, 0.05 }, star = true, trail = true },
+	low = { glow = { 3, 0.24, 0.05 }, star = false, trail = false },
+	-- (the kill cam's replay, seen from a few studs away: slimmer)
+	replay = { glow = { 8, 0.2, 0.05 }, haze = { 6, 0.5, 0.86 }, star = false, trail = true },
 }
 
 local function part(size, color, neon, shape)
@@ -66,7 +70,8 @@ end
 local function segments(spec, color, name)
 	local list = {}
 	for _ = 1, spec and spec[1] or 0 do
-		local q = part(Vector3.new(spec[2], spec[2], 1), color, true)
+		-- (round: a cylinder, which runs along its X)
+		local q = part(Vector3.new(1, spec[2], spec[2]), color, true, Enum.PartType.Cylinder)
 		q.Name = name
 		q.Transparency = 1
 		table.insert(list, q)
@@ -102,10 +107,10 @@ local function addTrail(shaft, color)
 	return trail
 end
 
-local function spawnArrow(key, origin, velocity, team, born, trail)
+local function spawnArrow(key, origin, velocity, team, born, trail, lookName)
 	local color = Constants.TEAM_COLOR[team] or Color3.new(1, 1, 1)
 	local crowd = ArrowController.count() >= CROWD
-	local look = LOOK[crowd and "low" or Effects.tier()] or LOOK.low
+	local look = LOOK[lookName or (crowd and "low" or Effects.tier())] or LOOK.low
 	local shaft = part(Vector3.new(0.18, 0.18, 2.6), WHITE, false)
 	shaft.Name = "Shaft"
 	-- the core: a thin white-hot line (the team's colour, mostly white), straight back from the tip
@@ -114,12 +119,14 @@ local function spawnArrow(key, origin, velocity, team, born, trail)
 	tracer.Transparency = 0.05
 	local glow = segments(look.glow, color, "Glow")
 	local haze = segments(look.haze, color, "Haze")
-	local tip = part(Vector3.new(0.45, 0.45, 0.45), WHITE, true, Enum.PartType.Ball)
+	local tip = part(Vector3.new(0.3, 0.3, 0.3), WHITE, true, Enum.PartType.Ball)
 	tip.Name = "Tip"
 	local star
 	if look.star then
-		star = part(Vector3.new(0.06, 1.3, 0.06), color:Lerp(WHITE, 0.3), true)
-		star.Name = "Star"
+		-- (a soft halo round the tip)
+		star = part(Vector3.new(0.85, 0.85, 0.85), color:Lerp(WHITE, 0.25), true, Enum.PartType.Ball)
+		star.Name = "Halo"
+		star.Transparency = 0.62
 	end
 	if look.trail then
 		addTrail(shaft, color)
@@ -176,7 +183,7 @@ local replays = 0
 function ArrowController.replay(origin, velocity, team, trail)
 	replays += 1
 	local key = "replay" .. replays
-	local a = spawnArrow(key, origin, velocity, team, 0, trail)
+	local a = spawnArrow(key, origin, velocity, team, 0, trail, "replay")
 	a.manual, a.t, a.mine = true, 0, true
 	return key
 end
@@ -240,9 +247,9 @@ local function bend(a, list, spec, t, back, speed)
 			q.Transparency = 1
 		else
 			local k = (i - 1) / math.max(1, n - 1)
-			local w = spec[2] * (1 - 0.72 * k)
-			q.Size = Vector3.new(w, w, len + w * 0.5)
-			q.CFrame = CFrame.lookAt((prev + at) / 2, prev)
+			local w = spec[2] * (1 - 0.5 * k)
+			q.Size = Vector3.new(len + w * 1.5, w, w)
+			q.CFrame = CFrame.lookAt((prev + at) / 2, prev) * ALONG
 			q.Transparency = spec[3] + (1 - spec[3]) * k ^ 1.4
 		end
 		prev = at
@@ -282,11 +289,13 @@ local function step()
 			a.shaft.CFrame = CFrame.lookAt(p, p + dir)
 			-- the sparkle at the tip: it flickers, the star turns
 			local tipAt = p + dir * 1.3
-			local flick = 0.36 + math.abs(math.sin(clock * 41 + a.born)) * 0.2
+			local flick = 0.26 + math.abs(math.sin(clock * 41 + a.born)) * 0.16
 			a.tip.Size = Vector3.new(flick, flick, flick)
 			a.tip.CFrame = CFrame.new(tipAt)
 			if a.star then
-				a.star.CFrame = CFrame.lookAt(tipAt, tipAt + dir) * CFrame.Angles(0, 0, clock * 9)
+				local halo = flick * 2.6
+				a.star.Size = Vector3.new(halo, halo, halo)
+				a.star.CFrame = CFrame.new(tipAt)
 			end
 			if a.last then
 				flyby(a, a.last, p)

@@ -1818,6 +1818,193 @@ do
 	_ = Cosmetics
 end
 
+-- The kill cam, the kill shatter and the sound ---------------------------------------------------------------------
+do
+	local KillCam = Engine.require(tree.client.Controllers.KillCamController)
+	local KillFx = Engine.require(tree.client.Controllers.KillFxController)
+	local Audio = Engine.require(tree.client.Controllers.AudioController)
+	local CamC = Engine.require(tree.client.Controllers.CameraController)
+	local Graphics = Engine.require(tree.client.Controllers.GraphicsController)
+	local Explosion = Engine.require(tree.client.Controllers.ExplosionController)
+	local Effects = Engine.require(tree.client.FX.Effects)
+	local Device = Engine.require(tree.client.UI.Device)
+	local Layout = Engine.require(tree.client.UI.Layout)
+	local Bus = Engine.require(tree.client.UI.Bus)
+	local cam = ws.CurrentCamera
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	local here = root and root.Position or Vector3.new(0, 3, 0)
+	local origin = here + Vector3.new(-60, 2, 0)
+	local function kill(extra)
+		local k = {
+			killer = foe.UserId,
+			killerName = "Foe",
+			killerTeam = Teams:Team(foe),
+			victim = player.UserId,
+			victimTeam = team,
+			weapon = "bow",
+			head = true,
+			kind = "arrow",
+			pos = here,
+			killerPos = origin - Vector3.new(0, 1.5, 0),
+			dist = 60,
+			cam = { origin = origin, velocity = Vector3.new(180, 6, 0), t = 60 / 180, impact = here },
+		}
+		for key, v in extra or {} do
+			k[key] = v
+		end
+		return k
+	end
+	local mouse0, type0 = UIS.MouseBehavior, cam.CameraType
+	Engine.remote("Kill"):FireAllClients(kill())
+	Engine.advance(0.05)
+	check("your knockout starts the kill cam", KillCam.active() and CamC.takenOver())
+	check("...it has the camera", cam.CameraType == Enum.CameraType.Scriptable, tostring(cam.CameraType))
+	check("...the letterbox slides in", KillCam.refs.barTop.Size.Y.Scale > 0)
+	check("...the card names the killer", KillCam.refs.name.Text == "FOE", KillCam.refs.name.Text)
+	check("...with the distance", KillCam.refs.info.Text:find("60 STUDS") ~= nil, KillCam.refs.info.Text)
+	check("...the HUD steps aside and the arena goes muffled", Layout.inCinema() and Audio.muffled())
+	check("...the mouse stays as CameraController keeps it", UIS.MouseBehavior == mouse0)
+	Engine.advance(0.55)
+	check("...then the arrow is replayed", KillCam.stage() == "flight" and Arrows.count() >= 1, KillCam.stage())
+	Engine.advance(1.2)
+	local st = KillCam.stage()
+	check("...a freeze frame, then the card", st == "freeze" or st == "card", st)
+	Engine.advance(2.5)
+	check("it ends inside the respawn wait", not KillCam.active())
+	check("...and gives the camera back", not CamC.takenOver() and cam.CameraType == Enum.CameraType.Custom)
+	check("...first person again", player.CameraMode == Enum.CameraMode.LockFirstPerson)
+	check("...the mouse lock as it was", UIS.MouseBehavior == mouse0, tostring(UIS.MouseBehavior))
+	check(
+		"...the HUD, the sound and time back",
+		not Layout.inCinema() and not Audio.muffled() and Effects.timeScale == 1
+	)
+	_ = type0
+	-- skipping: not in the first half second, then Space ends it
+	local space = { KeyCode = Enum.KeyCode.Space, UserInputType = Enum.UserInputType.Keyboard }
+	check("it plays again for the next knockout", KillCam.play(kill()))
+	Engine.advance(0.2)
+	UIS.InputBegan:Fire(space, false)
+	Engine.advance(0.1)
+	check("...Space in the first half second doesn't skip", CamC.takenOver() and KillCam.stage() == "intro")
+	Engine.advance(0.4)
+	UIS.InputBegan:Fire(space, false)
+	Engine.advance(0.5)
+	check("...after that it skips", not CamC.takenOver() and cam.CameraType == Enum.CameraType.Custom)
+	Engine.advance(0.5)
+	check("...and the overlay is gone", not KillCam.active() and KillCam.refs.gui.Enabled == false)
+	-- a tap skips too; a blade's knockout is an orbit round the killer
+	check("a blade's knockout: an orbit", KillCam.play(kill({ weapon = "blade", kind = "melee", cam = false })))
+	Engine.advance(0.3)
+	check("...round the killer", KillCam.stage() == "orbit", KillCam.stage())
+	Engine.advance(0.4)
+	UIS.InputBegan:Fire({ UserInputType = Enum.UserInputType.Touch }, false)
+	Engine.advance(1)
+	check("...a tap skips it", not KillCam.active() and not CamC.takenOver())
+	-- never over another cinematic, never while spectating, never for a fall
+	CamC.takeover(function() end)
+	check("never during another cinematic (the tutorial's)", not KillCam.play(kill()))
+	CamC.release()
+	player:SetAttribute("Spectating", true)
+	check("never while an admin spectates", not KillCam.play(kill()))
+	player:SetAttribute("Spectating", nil)
+	check("no kill cam without a killer", not KillCam.play(kill({ killer = false, kind = "fall" })))
+	Engine.advance(0.5)
+
+	-- the sound: the mix, your kill, the bow, the blade, a flyby, the TNT, building
+	local groups = Audio.groups()
+	check(
+		"the mix: Master, SFX, Music, UI",
+		groups.Master and groups.SFX and groups.Music and groups.UI and groups.World.Parent == groups.SFX
+	)
+	local n = Audio.count("kill")
+	Engine.remote("Hit"):FireClient(player, { damage = 100, kill = true, victim = foe.UserId })
+	Engine.advance(0.05)
+	check("your kill plays the kill sound", Audio.count("kill") == n + 1)
+	local layers = 0
+	for _, s in Engine.game:GetService("SoundService"):GetChildren() do
+		if s:IsA("Sound") and s.Name == "kill" then
+			layers += 1
+		end
+	end
+	check("...layered (a punch, a shatter, the chimes)", layers >= 5, layers)
+	check("...and the arena dips under it", groups.World.Volume < Constants.SOUND_GROUPS.World)
+	n = Audio.count("headshot")
+	Engine.remote("Hit"):FireClient(player, { damage = 100, kill = true, head = true, victim = foe.UserId })
+	Engine.advance(0.05)
+	check("a headshot has its own", Audio.count("headshot") == n + 1)
+	local s0 = Audio.count("streak2")
+	Engine.remote("Kill")
+		:FireAllClients(kill({ killer = player.UserId, victim = foe.UserId, victimTeam = Teams:Team(foe) }))
+	Engine.remote("Kill")
+		:FireAllClients(kill({ killer = player.UserId, victim = foe.UserId, victimTeam = Teams:Team(foe) }))
+	Engine.advance(0.5)
+	check("two in a row: a streak stinger", Audio.count("streak2") == s0 + 1)
+	n = Audio.count("release")
+	Bus.Fired:Fire("bow", 1)
+	Engine.advance(0.05)
+	check("letting an arrow go: the twang and whoosh", Audio.count("release") == n + 1)
+	n = Audio.count("swing")
+	Bus.Fired:Fire("blade", 1)
+	Engine.advance(0.05)
+	check("a blade swing whooshes", Audio.count("swing") == n + 1)
+	n = Audio.count("place")
+	Bus.Tap:Fire("build_wall")
+	Engine.advance(0.05)
+	check("placing a piece clunks", Audio.count("place") == n + 1)
+	n = Audio.count("boom")
+	Explosion.blast({ pos = here + Vector3.new(30, 0, 0), radius = 10, team = Teams:Team(foe) })
+	Engine.advance(0.05)
+	check("a TNT booms", Audio.count("boom") == n + 1)
+	-- an enemy arrow passing close by whooshes, from where it is
+	n = Audio.count("flyby")
+	local eye = cam.CFrame.Position
+	Engine.remote("Arrow"):FireAllClients({
+		id = 987654,
+		by = foe.UserId,
+		team = Teams:Team(foe),
+		weapon = "bow",
+		origin = eye + Vector3.new(-40, 1.5, 2),
+		velocity = Vector3.new(200, 0, 0),
+		at = ws:GetServerTimeNow(),
+	})
+	Engine.advance(0.5)
+	check("an arrow passing close whooshes by", Audio.count("flyby") == n + 1)
+	local positional = false
+	for _, d in ws.Terrain:GetChildren() do
+		if d.Name == "Sfx_flyby" and d:FindFirstChildOfClass("Sound") then
+			positional = true
+		end
+	end
+	check("...from where it passed (3D)", positional)
+
+	-- the kill shatter: capped, pooled, and lighter on a phone
+	Device.set("keyboard")
+	Graphics.apply("high")
+	Engine.advance(3)
+	local made = 0
+	for i = 1, 20 do
+		made += KillFx.shatter({
+			pos = Vector3.new(i * 4, 5, 60),
+			victim = -999,
+			victimTeam = "red",
+			kind = "arrow",
+			cam = { velocity = Vector3.new(1, 0, 0) },
+		})
+	end
+	check("twenty knockouts at once stay under the cap", Effects.count() <= Effects.cap().live, Effects.count())
+	check("...and still burst", made > 0 and Effects.count() > 0)
+	Engine.advance(3)
+	check("...the pieces go back to the pool", Effects.count() == 0 and Effects.pooled() > 0, Effects.pooled())
+	local big = KillFx.shatter({ pos = Vector3.new(0, 5, 60), victim = -999, victimTeam = "blue", kind = "arrow" })
+	Engine.advance(3)
+	Device.set("touch")
+	check("a phone gets the light version", Effects.tier() == "low")
+	local small = KillFx.shatter({ pos = Vector3.new(0, 5, 60), victim = -999, victimTeam = "blue", kind = "arrow" })
+	check("...fewer pieces", small < big and small > 0, `{small} vs {big}`)
+	Graphics.apply(nil)
+	Engine.advance(3)
+end
+
 print(`\n{passed} passed, {failed} failed`)
 if #Engine.errors > 0 then
 	for i = 1, math.min(6, #Engine.errors) do
