@@ -1903,7 +1903,7 @@ do
 		check("...the arrow flies near real speed first", early > 0.6, early)
 		check("...then slows right down before it hits", late < early * 0.25, `{early} {late}`)
 		check("...and lands at the end of the flight", math.abs(KillCam.flightAt(curve, dur) - 60 / 180) < 1e-6)
-		local total = 0.35 + dur + 0.28 + 0.6 + 0.25
+		local total = 0.35 + dur + 0.22 + 0.8 + 0.25
 		check("...all of it inside the respawn wait", total <= Constants.RESPAWN_SECONDS + 0.05, total)
 	end
 	Engine.advance(0.45)

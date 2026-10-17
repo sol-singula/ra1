@@ -18,3 +18,4 @@ $R tests/LogSmoke.spec.luau
 $R tests/TutorialSmoke.spec.luau
 $R tests/LeaderboardSmoke.spec.luau
 $R tests/JoinSmoke.spec.luau
+$R tests/FxSmoke.spec.luau

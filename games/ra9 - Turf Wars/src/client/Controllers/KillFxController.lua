@@ -7,6 +7,7 @@ light version on a phone).
 The killer gets a crisp pop on top: the hit marker grows into an X (HudController), a quick colour flash with red and
 cyan fringes at the edges of the screen, and a small kick of the field of view.
 
+  KillFxController.onKill(k)    a Kill message: the shatter and the killer's kill effect (FX/KillEffects)
   KillFxController.shatter(k)   the shatter for a Kill message (tests call it too); returns the pieces made
   KillFxController.pop()        the killer's screen pop
   KillFxController.body(k)      the fallen body's model, if it's still there
@@ -16,8 +17,10 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Effects = require(script.Parent.Parent.FX.Effects)
+local KillEffects = require(script.Parent.Parent.FX.KillEffects)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local CameraController = require(script.Parent.CameraController)
 
@@ -81,6 +84,56 @@ function KillFxController.shatter(k)
 	local pos = root and root.Position or (k.pos + Vector3.new(0, 0.5, 0))
 	local power = k.kind == "blast" and 1.5 or (k.kind == "melee" and 0.8 or 1)
 	return Effects.shatter({ pos = pos, dir = direction(k), team = k.victimTeam, parts = parts, power = power })
+end
+
+-- A Kill message, here: the shatter, and the killer's kill effect (FX/KillEffects) where they fell. An effect that
+-- carries the body off (balloons, a web, a black hole...) takes a still copy of it instead of shattering it. Your own
+-- death's effect is your kill cam's to play (slowed, on you), so it's left to it when it takes it.
+function KillFxController.onKill(k)
+	if type(k) ~= "table" or typeof(k.pos) ~= "Vector3" then
+		return nil
+	end
+	local it = k.effect and Cosmetics.get(k.effect)
+	local look = it and it.kind == "effect" and it.look or nil
+	local standin
+	if look and KillEffects.usesBody(look.shape) then
+		local body = KillFxController.body(k)
+		local root = body and body:FindFirstChild("HumanoidRootPart")
+		if root then
+			standin = Effects.lookalike(body, root.CFrame, k.victimTeam)
+		end
+		for _, d in body and body:GetDescendants() or {} do
+			if d:IsA("BasePart") then
+				d.LocalTransparencyModifier = 1
+			elseif d:IsA("Decal") then
+				d.Transparency = 1
+			end
+		end
+		if not standin then
+			KillFxController.shatter(k)
+		end
+	else
+		KillFxController.shatter(k)
+	end
+	if not look then
+		return nil
+	end
+	local function go()
+		if KillEffects.claimed(k) then
+			if standin then
+				standin:Destroy()
+			end
+			return
+		end
+		KillEffects.play(k.effect, k.pos, k.killerTeam, {
+			body = standin,
+			victimTeam = k.victimTeam,
+			dir = direction(k),
+		})
+	end
+	-- (after the kill cam has had its say this frame)
+	task.defer(go)
+	return true
 end
 
 local function build()
@@ -167,7 +220,7 @@ function KillFxController:init()
 	build()
 	Net.listen("Kill", function(k)
 		if type(k) == "table" and k.pos then
-			KillFxController.shatter(k)
+			KillFxController.onKill(k)
 		end
 	end)
 	Net.listen("Hit", function(h)
