@@ -56,6 +56,7 @@ Net.ServerEvents = {
 	"Unlock", -- { step = { win, kind, name, big }, wins }
 	"Sfx", -- soundName, worldPosition?
 	"Ask", -- { kind = "enjoy" | "like" } a card for a winner (FeedbackService)
+	"Gift", -- { key, kind, name, rarity, count, of } a free cosmetic at the match's end | { nudge = true } (GiftService)
 	"PartyState", -- { id, leader, max, members = { { userId, name } } } or false: your party (PartyService)
 	"PartyInvite", -- { from, name, kind = "invite" | "friend", seconds } or { cancel = true }: the invite card
 	"AdminState", -- { players, servers?, map, phase, bots, frozen, spectating, invisible, jobId } (admins only)

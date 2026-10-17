@@ -77,6 +77,7 @@ local refs = {}
 PanelController.refs = refs
 local current = "shop"
 local lockerKind = "trail"
+local spotlight -- a cosmetic key the locker points at (a free gift: PanelController.showItem), until it's worn
 local gui
 local pending -- a purchase waiting for the server: { check = fn(profile), show = fn(), untilT }
 local toured = false -- (the shop's tour shown this visit)
@@ -1162,6 +1163,43 @@ local function lockerTab(body)
 			Parent = body,
 		}, { Theme.corner(6), Theme.stroke(worn and 3 or 2, worn and GOLD or C.ink) })
 		card:SetAttribute("Key", it.key or "")
+		if it.key and it.key == spotlight then
+			if worn then
+				spotlight = nil -- (worn: the point's made)
+			else
+				-- (the free gift: a pulsing gold ring and a hand on it, and the panel scrolls to it)
+				local ring = Theme.new("Frame", {
+					Name = "Spotlight",
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.fromScale(0.5, 0.5),
+					Size = UDim2.new(1, 10, 1, 10),
+					BackgroundTransparency = 1,
+					ZIndex = 6,
+					Parent = card,
+				}, { Theme.corner(9), Theme.stroke(4, GOLD) })
+				ring:SetAttribute("Layer", true)
+				local hand = Theme.new("TextLabel", {
+					Name = "Hand",
+					AnchorPoint = Vector2.new(0.5, 0),
+					Position = UDim2.new(0.5, 0, 1, -6),
+					Size = UDim2.fromOffset(gw, 26),
+					BackgroundTransparency = 1,
+					Text = "👆 TAP TO WEAR",
+					Font = Theme.Display,
+					TextSize = 15,
+					TextColor3 = GOLD,
+					ZIndex = 7,
+					Parent = card,
+				}, { Theme.textStroke(2, C.ink) })
+				hand:SetAttribute("Layer", true)
+				animate(ring, function(t)
+					local k = 0.5 + 0.5 * math.sin(t * 6)
+					ring.Size = UDim2.new(1, 8 + k * 8, 1, 8 + k * 8)
+					hand.Position = UDim2.new(0.5, 0, 1, -6 + k * 6)
+				end)
+				refs.spotY = y
+			end
+		end
 		if it.key then
 			local pic = preview(card, it, 6, 6, gw - 12, 74)
 			if not owned then
@@ -2062,6 +2100,32 @@ function PanelController.close()
 	end
 	pending = nil
 	Layout.setPanel(false)
+end
+
+-- Open the locker on this item's kind with the item pointed at (a free gift's EQUIP IT): a gold ring, a hand, and
+-- scrolled to it. Returns the item's card (or nil).
+function PanelController.showItem(key)
+	local it = Cosmetics.get(key)
+	if not it or not refs.panel then
+		return nil
+	end
+	spotlight = key
+	lockerKind = it.kind
+	refs.spotY = nil
+	PanelController.open("locker")
+	if refs.spotY then
+		refs.body.CanvasPosition = Vector2.new(0, math.max(0, refs.spotY - 40))
+	end
+	for _, c in refs.body:GetChildren() do
+		if c:GetAttribute("Key") == key then
+			return c
+		end
+	end
+	return nil
+end
+
+function PanelController.spotlight()
+	return spotlight
 end
 
 function PanelController.isOpen()

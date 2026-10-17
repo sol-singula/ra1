@@ -20,3 +20,4 @@ $R tests/LeaderboardSmoke.spec.luau
 $R tests/JoinSmoke.spec.luau
 $R tests/FlairSmoke.spec.luau
 $R tests/FxSmoke.spec.luau
+$R tests/GiftSmoke.spec.luau

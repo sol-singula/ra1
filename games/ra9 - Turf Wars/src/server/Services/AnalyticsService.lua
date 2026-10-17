@@ -492,6 +492,16 @@ function AnalyticsService:Init(registry)
 	feedback.Asked:Connect(function(player, kind)
 		track(player, "feedback_asked", { kind = kind, minutes = math.floor((seconds(player) or 0) / 6) / 10 })
 	end)
+	-- the free match-end gifts (GiftService): given, and worn from the locker (did the end screen teach them?)
+	local gifts = registry.GiftService
+	if gifts then
+		gifts.Gifted:Connect(function(player, it, n)
+			track(player, "gift", { key = it.key, kind = it.kind, rarity = it.rarity, n = n })
+		end)
+		gifts.Worn:Connect(function(player, kind, key)
+			track(player, "gift_equipped", { key = key, kind = kind })
+		end)
+	end
 	feedback.Answered:Connect(function(player, kind, answer, reasons)
 		local s = sessions[player]
 		if kind == "enjoy" then
