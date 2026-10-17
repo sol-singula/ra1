@@ -296,14 +296,20 @@ for _, def in Maps.list do
 			check(`{def.key} {tier}: detailed (lots of shapes)`, parts >= 150, parts)
 			check(`{def.key} {tier}: within a phone's budget (well under 2500 parts)`, parts <= 2400, parts)
 			check(`{def.key} {tier}: ten spawn pads a team`, #arena.spawns.red == 10 and #arena.spawns.blue == 10)
-			-- nothing of the map's own in the spawn zones (beyond the back wall's detail and the spawn room itself)
+			-- nothing of the map's own in the spawn zones (beyond the back wall's detail and the spawn room itself:
+			-- its cover too, the parapets and piers between the pads' lanes)
 			local inSpawn = 0
 			local edge = arena.half - arena.spawnDepth
 			for _, s in arena.solids do
 				local inside = s.min.X > edge + 1 or s.max.X < -edge - 1
 				local own = s.part and s.part.Parent and s.part.Parent.Name == "Map"
 				local room = s.part
-					and (s.part.Name == "Baffle" or s.part.Name == "SpawnWall" or s.part.Name == "SpawnRoof")
+					and (
+						s.part.Name == "Baffle"
+						or s.part.Name == "SpawnWall"
+						or s.part.Name == "SpawnRoof"
+						or s.part.Name == "Cover"
+					)
 				if
 					inside
 					and own

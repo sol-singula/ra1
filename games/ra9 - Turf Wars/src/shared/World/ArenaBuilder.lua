@@ -790,6 +790,48 @@ function ArenaBuilder.build(def, parent, scale)
 			0.25,
 			{ color = color, material = Enum.Material.Neon, solid = false }
 		)
+		-- cover on the deck (solid: arrows and TNT stop on it), between the pads' lanes so every pad still looks and
+		-- walks straight out: a chest-high parapet along the deck's front edge in segments (a gap in front of each pad
+		-- row), and a tall pier behind each segment to duck behind, each with a band of the team's colour. Only round
+		-- the pads (nobody spawns further out), and few pieces each: the big arenas stay within a phone's budget.
+		local cover = room.cover
+		local zMax = math.min(width / 2 - cover.margin, cover.reach)
+		for k = -6, 5 do
+			local z = (k + 0.5) * cover.pitch
+			if math.abs(z) + cover.segment / 2 <= zMax then
+				-- the parapet, and a neon band along its field face
+				local px = X(cover.parapet)
+				shapes:block(
+					px,
+					z,
+					cover.thick,
+					cover.segment,
+					cover.parapetH,
+					{ color = shapes.white, name = "Cover" }
+				)
+				shapes:block(
+					px - s * (cover.thick / 2 + 0.05),
+					z,
+					0.1,
+					cover.segment - 1,
+					0.35,
+					deco({ color = color, material = Enum.Material.Neon }),
+					cover.parapetH - 1.1
+				)
+				-- the pier, under a light capital
+				local qx = X(cover.pier)
+				shapes:block(qx, z, cover.pierW, cover.pierW, cover.pierH, { color = shapes.white, name = "Cover" })
+				shapes:block(
+					qx,
+					z,
+					cover.pierW + 0.6,
+					cover.pierW + 0.6,
+					0.6,
+					deco({ color = shapes.light }),
+					cover.pierH
+				)
+			end
+		end
 		-- the back wall: piers with capitals, a gate in the middle (two tall piers under a lintel, the team's colour
 		-- glowing in it), a string course and a crest high up
 		local piers = math.floor((width / 2 - 8) / 17)
@@ -894,7 +936,7 @@ end
 -- The spawn room's measures, in studs from the team's own end wall (d) and across the field (z):
 --   pads (d of the two pad columns), baffle0/baffle1 (the baffle's faces), baffleHalf (it spans |z| <= this),
 --   front0/front1 (the front wall's faces), gapMid/gapHalf (the doors: |z| within gapMid +- gapHalf),
---   height (walls and roof), door (a door's height), baffleH
+--   height (walls and roof), door (a door's height), baffleH, cover (the deck's parapets and piers)
 function ArenaBuilder.room(width, spawnDepth)
 	return {
 		open = true, -- (no walls: safe by rule, see CombatService)
@@ -909,6 +951,19 @@ function ArenaBuilder.room(width, spawnDepth)
 		height = 12,
 		door = 9,
 		baffleH = 10,
+		-- the deck's cover (studs from the end wall; segments centred between the pad rows, pitch apart)
+		cover = {
+			pitch = 14, -- (the pad rows' spacing: a segment sits halfway between two rows)
+			segment = 7, -- a parapet's length across the field (a 7-stud gap in front of each row)
+			margin = 3, -- kept clear of the side walls
+			reach = 38.5, -- and no further out than this (the outer pad rows are at 28)
+			parapet = 17.5, -- its middle, just inside the spawn line
+			thick = 1.4,
+			parapetH = 4.2, -- chest high: crouch behind it, stand to shoot over
+			pier = 13, -- a tall pier behind each segment
+			pierW = 2.8,
+			pierH = 7.5,
+		},
 	}
 end
 

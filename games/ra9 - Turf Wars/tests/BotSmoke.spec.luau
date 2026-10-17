@@ -93,6 +93,9 @@ end
 local er = root(enemy)
 local fwd = mine == "red" and -1 or 1
 local line = Match:Frontline()
+-- (the bot starts on its own side near the line: where the build phase left it depends on its walk, which the map's
+-- shapes change, and from far back it would only shoot from out of range)
+Engine.moveTo(enemy, Vector3.new(line - fwd * 12, 3.5, er.Position.Z))
 Engine.moveTo(solo, Vector3.new(line + fwd * 10, 3, er.Position.Z), er.Position)
 local arrows = 0
 local hurt = false
