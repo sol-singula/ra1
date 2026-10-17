@@ -5,8 +5,8 @@ little from above, so the bow reads as a bow and the tower as a tower at a glanc
 
   Icons.weapon(key, team, props)      a ViewportFrame with that weapon (Data/Weapons key) laid across it
   Icons.structure(key, team, props)   a ViewportFrame with that piece (Data/Structures key) as it's built
-                                      (StructureModel: the team's one shade, the armoured wall darker), seen from the
-                                      front corner
+                                      (StructureModel: the same castle stone, wood, iron and team trim), seen from
+                                      the front corner
   Icons.paint(frame, team)            the team's colour on an icon again (after a team change)
 
 And the shop's pictures (PanelController), so every card shows the real thing:
@@ -708,7 +708,7 @@ function Icons.paint(vf, team)
 		if tint then
 			p.Color = c:Lerp(WHITE, tint)
 		elseif tone then
-			p.Color = StructureModel.color(tone, team) -- (a structure: its team shade, or the armour's)
+			p.Color = StructureModel.color(tone, team) -- (a structure: its stone, wood, iron or team trim)
 		end
 	end
 end

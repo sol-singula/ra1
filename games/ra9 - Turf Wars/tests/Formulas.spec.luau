@@ -97,25 +97,50 @@ do
 	)
 end
 
--- What structures look like (StructureModel): one team shade for every piece, the armoured wall darker ------------
+-- What structures look like (StructureModel): castle pieces, boxes only, the team's colour on each ---------------
 do
 	local StructureModel = Engine.require(tree.shared.StructureModel)
+	-- (the same colour: the mock's Color3 has no value equality)
+	local function same(a, b)
+		return math.abs(a.R - b.R) + math.abs(a.G - b.G) + math.abs(a.B - b.B) < 1e-3
+	end
+	local NAMES = {
+		barricade = "Battlement",
+		wall = "Castle Wall",
+		reinforced = "Keep Wall",
+		tower = "Watchtower",
+		bridge = "Rampart",
+		cover = "Shield Wall",
+		banner = "Rally Banner",
+	}
+	for key, name in NAMES do
+		local def = Structures.get(key)
+		check(`{key} is the {name} (the key kept)`, def ~= nil and def.name == name, def and def.name)
+		check(`...and says what it's for`, def and type(def.role) == "string" and #def.role > 0)
+	end
+	local onlyBanner = true
+	for _, def in Structures.list do
+		if (def.rally == true) ~= (def.key == "banner") then
+			onlyBanner = false
+		end
+	end
+	check("the Rally Banner rallies (and nothing else does)", onlyBanner)
 	for _, team in { "red", "blue" } do
-		local shade, armor = Constants.BUILD_COLOR[team], Constants.ARMOR_COLOR[team]
-		check(
-			`{team}: the armour shade is darker than the build shade`,
-			armor.R + armor.G + armor.B < shade.R + shade.G + shade.B - 0.6
-		)
+		local shade = Constants.BUILD_COLOR[team]
 		for _, def in Structures.list do
 			for rot = 0, 1 do
 				local w, d = Structures.footprint(def, rot)
 				local mn, mx = Formulas.footprintBox(3, -2, w, d, 0, def.h)
 				local parts = StructureModel.parts(def.key, team, mn, mx)
-				local tones, outside, high = {}, 0, 0
+				local outside, high, round, teamed, solid = 0, 0, 0, false, 0
 				for _, e in parts do
-					tones[e.tone] = true
+					teamed = teamed or same(StructureModel.color(e.tone, team), shade)
+					if e.shape or e.wedge then
+						round += 1 -- (a Ball or a Cylinder; no wedges either: boxes only)
+					end
 					-- (anything solid stays inside the footprint and near its height)
 					if e.solid then
+						solid += 1
 						local c = e.cf.Position
 						if c.X < mn.X - 0.01 or c.X > mx.X + 0.01 or c.Z < mn.Z - 0.01 or c.Z > mx.Z + 0.01 then
 							outside += 1
@@ -125,12 +150,11 @@ do
 						end
 					end
 				end
-				local want = def.key == "reinforced" and "armor" or "build"
-				local only = tones[want] and not tones[want == "armor" and "build" or "armor"]
 				check(
-					`{team} {def.key} rot {rot}: detailed ({#parts} parts), all in its one shade`,
-					#parts >= 8 and only
+					`{team} {def.key} rot {rot}: detailed but light for phones ({#parts} parts), the team's colour on it`,
+					#parts >= 8 and #parts <= 45 and teamed and solid > 0
 				)
+				check(`...nothing round in it`, round == 0, round)
 				check(
 					`...nothing solid outside its footprint or high above it`,
 					outside == 0 and high == 0,
@@ -138,25 +162,52 @@ do
 				)
 			end
 		end
-		check(
-			`{team}: the colours`,
-			StructureModel.color("build", team) == shade and StructureModel.color("armor", team) == armor
-		)
+		check(`{team}: the trim is the build shade`, same(StructureModel.color("team", team), shade))
 	end
-	-- the tower: tapered, battlements, a lookout to stand on, a ladder, a banner
+	-- the stone leans to the team; wood and iron are the same for both
+	check(
+		"the stone tells the sides apart",
+		not same(StructureModel.color("stone", "red"), StructureModel.color("stone", "blue"))
+	)
+	check(
+		"...the wood doesn't need to",
+		same(StructureModel.color("wood", "red"), StructureModel.color("wood", "blue"))
+	)
+	-- the watchtower: square, crenellated, a platform to stand on at its top, a ladder, a roofed turret with a flag
 	local mn, mx = Formulas.footprintBox(0, 0, 2, 2, 0, Structures.get("tower").h)
 	local names = {}
+	local platformTop = 0
 	for _, e in StructureModel.parts("tower", "red", mn, mx) do
 		names[e.name] = (names[e.name] or 0) + 1
+		if e.name == "Platform" then
+			platformTop = math.max(platformTop, e.cf.Position.Y + e.size.Y / 2)
+		end
 	end
 	check(
-		"the tower: tiers, merlons, a lookout, a ladder with rungs, a banner",
-		names.Tier1
-			and names.Tier2
+		"the watchtower: a shaft, slits, merlons, a platform, a ladder with rungs, a stepped roof, a flag",
+		names.Shaft
+			and (names.Slit or 0) >= 4
 			and (names.Merlon or 0) >= 6
-			and names.Lookout
+			and names.Platform
 			and (names.Rung or 0) >= 5
+			and (names.Roof or 0) >= 3
 			and names.Flag
+	)
+	check("...you stand on its top", math.abs(platformTop - Structures.get("tower").h) < 0.01, platformTop)
+	-- the rampart: you stand on its deck at its height, and a ladder goes up
+	local bmn, bmx = Formulas.footprintBox(0, 0, 1, 3, 0, Structures.get("bridge").h)
+	local deck, rungs = 0, 0
+	for _, e in StructureModel.parts("bridge", "red", bmn, bmx) do
+		if e.name == "Plank" then
+			deck = math.max(deck, e.cf.Position.Y + e.size.Y / 2)
+		elseif e.name == "Rung" then
+			rungs += 1
+		end
+	end
+	check(
+		"the rampart: a deck at its height, a ladder up",
+		math.abs(deck - Structures.get("bridge").h) < 0.01 and rungs >= 4,
+		`{deck} {rungs}`
 	)
 end
 

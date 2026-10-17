@@ -54,9 +54,10 @@ Audience: 13–24 (attention to 16+); accessible to younger players.
 
 * **A. Assignment:** straight into the running match; parties together, solo players balance round them. Joining
   mid-fight: a protected spawn on your side, told the phase, in at the next safe moment.
-* **B. Build (60 s):** snap-to-grid modular structures (low barricade, wall, reinforced wall, short tower, bridge,
-  cover, team banner) with a preview, a valid/invalid colour and a cost; a personal budget and a team cap; budgets
-  refill each build phase; structures persist until destroyed or the match ends.
+* **B. Build (60 s):** snap-to-grid modular castle pieces (battlement, castle wall, keep wall, watchtower, rampart,
+  shield wall, rally banner) with a preview, a valid/invalid colour and a cost; a personal budget and a team cap;
+  budgets refill each build phase; structures persist until destroyed or the match ends. The rally banner (one per
+  team) is a forward spawn: the team respawns beside it while it stands on their turf.
 * **C. Fight (120 s):** a horn; building off; bows, sprint, jump, slide. Each qualifying kill moves the frontline.
   Feedback per kill: the hit, the frontline moving, your contribution. Ends at once if a team has no turf left.
 * **D. Rebuild (60 s):** the frontline stays where it is.

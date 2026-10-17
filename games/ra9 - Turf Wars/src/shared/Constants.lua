@@ -193,7 +193,8 @@ Constants.WHITE = Color3.fromRGB(242, 242, 240)
 Constants.LIGHT = Color3.fromRGB(226, 226, 224)
 Constants.GREY = Color3.fromRGB(196, 197, 200)
 Constants.DARK = Color3.fromRGB(150, 152, 158)
--- What a team builds: every piece in one shade of the team's colour, the Reinforced Wall (the armour) darker
+-- What a team builds: the team shade on the trim, banners and roofs of its castle pieces (StructureModel), the dark
+-- shade on the Keep Wall's stone and the copings
 Constants.BUILD_COLOR = { red = Color3.fromRGB(226, 70, 72), blue = Color3.fromRGB(62, 126, 236) }
 Constants.ARMOR_COLOR = { red = Color3.fromRGB(128, 26, 32), blue = Color3.fromRGB(24, 56, 140) }
 

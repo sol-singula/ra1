@@ -10,7 +10,8 @@ next map in the same server. No lobby, no queue.
     lose line (the edge of its spawn zone), that team is out.
   * Turf Wars' rule: you can't stand on enemy turf. Step over the line and you're put back on your side.
   * Players join straight into the running match (TeamService picks the side), spawn on their pads with a moment
-    of protection, and respawn RESPAWN_SECONDS after going down.
+    of protection, and respawn RESPAWN_SECONDS after going down (beside their team's Rally Banner while one
+    stands: BuildService:RallySpawn).
   * A kill plane below the map; a watchdog that restarts a match running absurdly long (logged, never "won").
   * A spectating admin (server/Admins.lua) is in the server but not in the match: People() and Everyone() leave
     them out, so they get no team, no body, no stats, no row in the results.
@@ -638,6 +639,11 @@ function MatchService:_tick()
 	end
 	for _, player in due do
 		respawnAt[player] = nil
+		if phase == "build" or phase == "fight" then
+			-- (their team's Rally Banner stands: back up beside it, not in the spawn room; BuildService:RallySpawn)
+			local ok, cf = pcall(build.RallySpawn, build, player)
+			self.SpawnAt[player] = self.SpawnAt[player] or (ok and cf or nil)
+		end
 		task.spawn(function()
 			local ok, err = pcall(self.Spawn, self, player)
 			if not ok then

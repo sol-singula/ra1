@@ -115,7 +115,11 @@ check(
 	"the tray's pieces are numbered 1-7",
 	refs.trayButtons.barricade.Key.Num.Text == "1" and refs.trayButtons.banner.Key.Num.Text == "7"
 )
-check("...the name says just the name", refs.trayButtons.wall.Label.Text == "WALL", refs.trayButtons.wall.Label.Text)
+check(
+	"...the name says just the name",
+	refs.trayButtons.wall.Label.Text == "CASTLE WALL",
+	refs.trayButtons.wall.Label.Text
+)
 wheel(-1)
 check("wheel down: the next piece", BuildC.picked() == "reinforced", BuildC.picked())
 wheel(1)
@@ -155,6 +159,7 @@ check(
 local spot = BuildC.spot()
 check("a preview snaps to a cell where you look", spot ~= nil and spot.cx ~= nil, spot and spot.why)
 check("...and it's a valid spot", spot and spot.ok, spot and spot.why)
+check("...the hint says what the piece is for", refs.buildHint.Text:find("CASTLE WALL") ~= nil, refs.buildHint.Text)
 refs.touch.place.Activated:Fire()
 Engine.advance(0.3)
 local built = 0
@@ -898,45 +903,54 @@ do
 	Engine.advance(0.3)
 end
 
--- Structures: one team shade, the armoured wall darker; when one comes down it shatters into debris ---------------
+-- Structures: castle stone, wood and iron with the team's colour on the trim; when one comes down it shatters ---
 do
 	local Debris = Engine.require(tree.client.Controllers.DebrisController)
 	local Gfx = Engine.require(tree.client.Controllers.GraphicsController)
-	local shade, armor = Constants.BUILD_COLOR[team], Constants.ARMOR_COLOR[team]
+	local StructureModel = Engine.require(tree.shared.StructureModel)
+	-- (the same colour: the mock's Color3 has no value equality)
+	local function same(a, b)
+		return math.abs(a.R - b.R) + math.abs(a.G - b.G) + math.abs(a.B - b.B) < 1e-3
+	end
+	local shade = Constants.BUILD_COLOR[team]
 	local wall
 	for _, st in Build:All() do
 		if st.team == team and st.key == "wall" then
 			wall = st
 		end
 	end
+	-- every toned part: is it in its tone's colour, round anywhere, and is the team's own shade there?
 	local function colours(container)
-		local set, n = {}, 0
+		local n, right, round, teamed = 0, true, 0, false
 		for _, d in container:GetDescendants() do
-			if d:IsA("BasePart") and d:GetAttribute("Tone") then
-				set[tostring(d.Color)] = d.Color
+			local tone = d:IsA("BasePart") and d:GetAttribute("Tone")
+			if tone then
 				n += 1
+				right = right and same(d.Color, StructureModel.color(tone, team))
+				teamed = teamed or same(d.Color, shade)
+				if d.Shape == Enum.PartType.Ball or d.Shape == Enum.PartType.Cylinder then
+					round += 1
+				end
 			end
 		end
-		return set, n
+		return n, right, round, teamed
 	end
-	local set, n = colours(wall.model)
-	local only = true
-	for _, c in set do
-		only = only and c == shade
+	local n, right, round, teamed = colours(wall.model)
+	check("your Castle Wall: many parts, each in its tone, your team's colour on it", n >= 8 and right and teamed, n)
+	check("...nothing round in it", round == 0, round)
+	local _, kRight, kRound = colours(refs.trayButtons.reinforced.Icon)
+	local dark = false
+	for _, d in refs.trayButtons.reinforced.Icon:GetDescendants() do
+		dark = dark or (d:IsA("BasePart") and same(d.Color, StructureModel.color("stoneDark", team)))
 	end
-	check("your wall: many parts, all in your team's one shade", n >= 8 and only, n)
-	local aset = colours(refs.trayButtons.reinforced.Icon)
-	local dark = true
-	for _, c in aset do
-		dark = dark and c == armor
-	end
-	check("the tray's Reinforced Wall: the darker armour shade", next(aset) ~= nil and dark)
-	local wset = colours(refs.trayButtons.tower.Icon)
-	local same = true
-	for _, c in wset do
-		same = same and c == shade
-	end
-	check("...the tower: the team shade like the rest", next(wset) ~= nil and same)
+	check("the tray's Keep Wall: its dark stone, nothing round", dark and kRight and kRound == 0)
+	local tn, tRight, tRound, tTeamed = colours(refs.trayButtons.tower.Icon)
+	check("...the Watchtower: square, the team's colour on top", tn > 0 and tRight and tRound == 0 and tTeamed)
+	check(
+		"...the tray's names are the castle's",
+		refs.trayButtons.bridge.Label.Text == "RAMPART" and refs.trayButtons.banner.Label.Text == "RALLY BANNER",
+		refs.trayButtons.bridge.Label.Text
+	)
 	-- an arrow breaks it: the client throws its pieces from where the arrow hit
 	Gfx.apply("high")
 	local hitAt = (wall.boxMin + wall.boxMax) / 2 + Vector3.new(0, 2, 0)

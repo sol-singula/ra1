@@ -1350,6 +1350,139 @@ do
 	_ = root
 end
 
+-- The Rally Banner: the team comes back to life beside it while it stands -----------------------------------------
+do
+	Match:NewMatch()
+	Engine.advance(1)
+	local team = Teams:Team(red)
+	local mate, foe
+	for _, p in { ava, ben, cy, dee } do
+		if p ~= red and p.Parent and Teams:Team(p) == team then
+			mate = p
+		elseif p.Parent and Teams:Team(p) and Teams:Team(p) ~= team then
+			foe = p
+		end
+	end
+	local fwd = Formulas.forward(team)
+	local sx = -fwd * 40
+	stand(red, Vector3.new(sx, 3, -12))
+	Build:Refill()
+	local m0 = mark()
+	local banner
+	for _, dz in { -12, -4, 4, -20, 12, 20, -28, 28 } do
+		for _, dx in { 0, 4, -4, 8 } do
+			if not banner then
+				local ok, st =
+					Build:Place(red, "banner", Formulas.cellOf(sx + dx, dz), select(2, Formulas.cellOf(0, dz)), 0)
+				if ok then
+					banner = st
+				end
+			end
+		end
+	end
+	check("a Rally Banner goes up", banner ~= nil)
+	if banner then
+		local function toastSince(m, p, words)
+			return firedSince(m, "Toast", p, function(a)
+				return string.find(tostring(a[1]), words, 1, true) ~= nil
+			end) ~= nil
+		end
+		check(
+			"...its team hears it",
+			toastSince(m0, red, "Rally Banner up") and (not mate or toastSince(m0, mate, "Rally Banner up"))
+		)
+		check("...the other side doesn't", not foe or not toastSince(m0, foe, "Rally"))
+		local glow, light, tag = banner.model:FindFirstChild("RallyGlow"), false, false
+		for _, d in banner.model:GetDescendants() do
+			light = light or d:IsA("PointLight")
+			tag = tag or d.Name == "RallyTag"
+		end
+		check("...it glows a little and wears a RALLY tag", glow ~= nil and light and tag)
+		-- one a team
+		local again, whyAgain = Build:Place(red, "banner", banner.cx, banner.cz + 2, 0)
+		check(
+			"one Rally Banner a team: a second is refused",
+			not again and tostring(whyAgain):find("already") ~= nil,
+			whyAgain
+		)
+		if mate then
+			local mateTry, mateWhy = Build:Place(mate, "banner", banner.cx, banner.cz - 2, 0)
+			check("...a team-mate's too", not mateTry and tostring(mateWhy):find("already") ~= nil, mateWhy)
+		end
+		-- down and back up: beside it, not in the spawn room, protected as anywhere
+		local bc = (banner.boxMin + banner.boxMax) / 2
+		local a = Arena:Current()
+		local function insideSomething(pos)
+			for _, b in Arena:Solids() do
+				if
+					b.part ~= a.strips[1]
+					and pos.X > b.min.X - 0.5
+					and pos.X < b.max.X + 0.5
+					and pos.Z > b.min.Z - 0.5
+					and pos.Z < b.max.Z + 0.5
+					and pos.Y - 2.5 < b.max.Y
+					and pos.Y + 2.5 > b.min.Y
+				then
+					return true
+				end
+			end
+			return false
+		end
+		local m1 = mark()
+		Combat:Kill(red, nil, { kind = "reset" })
+		Engine.advance(Constants.RESPAWN_SECONDS + 1)
+		local r = rootOf(red)
+		local near = r and (Vector3.new(r.Position.X - bc.X, 0, r.Position.Z - bc.Z)).Magnitude
+		check("down and back up: beside the Rally Banner", Combat:Alive(red) and near ~= nil and near < 12, near)
+		check(
+			"...on your own side, a cell back from the line",
+			r and (Match:Frontline() - r.Position.X) * fwd >= Constants.CELL - 0.01,
+			r and r.Position.X
+		)
+		check("...never inside a wall or a shape", r and not insideSomething(r.Position))
+		check("...with spawn protection", firedSince(m1, "Me", red, function(m)
+			return m[1].protected == true
+		end) ~= nil)
+		-- walled in behind: the spot moves to a free cell, never into a piece
+		Build:Refill()
+		local walled = 0
+		for dz = -1, 1 do
+			if Build:Place(red, "cover", banner.cx - fwd, banner.cz + dz, 0) then
+				walled += 1
+			end
+		end
+		local cf = Build:RallySpawn(red)
+		check(
+			"...walled in behind it: a free cell instead",
+			walled > 0 and cf ~= nil and not insideSomething(cf.Position),
+			walled
+		)
+		-- the line passes it: no rallying on turf that's been lost (ClearLost takes it down too)
+		Build:SetFrontline(function()
+			return bc.X - fwd * 6
+		end)
+		check("its turf lost: nobody rallies there", Build:RallySpawn(red) == nil and Build:Rally(team) == nil)
+		Build:SetFrontline(function()
+			return Match:Frontline()
+		end)
+		check("...the line back: it counts again", Build:RallySpawn(red) ~= nil)
+		-- knocked down: the team hears it, and it's the spawn room again
+		local m2 = mark()
+		Build:Remove(banner.id, foe, false)
+		check("knocked down: the team hears it", toastSince(m2, red, "Rally Banner fell"))
+		check("...and nobody rallies there", Build:Rally(team) == nil and Build:RallySpawn(red) == nil)
+		Combat:Kill(red, nil, { kind = "reset" })
+		Engine.advance(Constants.RESPAWN_SECONDS + 1)
+		r = rootOf(red)
+		check("...back in the spawn room", Combat:Alive(red) and r and r.Position.X * fwd < -60, r and r.Position.X)
+		-- a new one may go up once the old one's down
+		Build:Refill()
+		stand(red, Vector3.new(sx, 3, -12))
+		local okNew = Build:Place(red, "banner", banner.cx, banner.cz, 0)
+		check("...and a new Rally Banner may go up", okNew == true)
+	end
+end
+
 -- Anti-cheat ---------------------------------------------------------------------------------------------------------
 do
 	local honest = {}

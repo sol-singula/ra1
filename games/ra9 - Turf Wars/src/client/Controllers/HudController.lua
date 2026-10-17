@@ -1156,7 +1156,10 @@ function HudController.updateBottom()
 			b.CostPill.BackgroundColor3 = on and teamC or (afford and C.ink or Color3.fromRGB(170, 170, 176))
 		end
 		local spot = BuildController.spot()
+		-- (why not, where it can't go; what the piece is for, while it's picked; the keys otherwise)
+		local def = picked and Structures.get(picked)
 		refs.buildHint.Text = (picked and spot and not spot.ok and spot.why)
+			or (def and def.role and `{string.upper(def.name)}: {def.role}`)
 			or "1-7 or wheel: pick · Click: place · Right-click or R: turn · Q: cancel"
 		refs.buildHint.TextColor3 = (picked and spot and not spot.ok) and RED or C.muted
 	end
