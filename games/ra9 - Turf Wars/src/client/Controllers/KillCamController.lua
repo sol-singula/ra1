@@ -63,9 +63,9 @@ KillCamController.refs = refs
 -- inside the respawn wait (Constants.RESPAWN_SECONDS); if the new body is slower than that, the last shot holds until
 -- it's there (HOLD_MAX at most), and the moment it is, a quick fade takes the camera to it.
 -- (the card's beat is longer now: the killer's kill effect plays on you there, slowed down, so you see it)
-local INTRO, FLIGHT_MIN, FLIGHT_MAX, FREEZE, CARD, FADE = 0.35, 0.9, 1.4, 0.22, 0.8, 0.25
+local INTRO, FLIGHT_MIN, FLIGHT_MAX, FREEZE, CARD, FADE = 0.2, 0.7, 1.0, 0.15, 0.45, 0.18 -- (all inside the 2 s respawn wait)
 local FX_SCALE = 0.5 -- the killer's effect on you: half speed
-local ORBIT = 1.5 -- a blade's or a blast's whole orbit
+local ORBIT = 1.2 -- a blade's or a blast's whole orbit
 local HOLD_MAX = 7 -- seconds: never longer than this, respawned or not
 local QUICK_FADE = 0.2 -- respawned: the fade to the new body
 -- the flight's slow motion: real speed at first, then easing down to SLOWEST of it over the last part of the path
