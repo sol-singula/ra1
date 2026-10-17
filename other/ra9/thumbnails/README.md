@@ -5,21 +5,19 @@
 For **the game's own page** (Home and the game's page). Each is **1920 × 1080 (16:9), JPG, under 0.4 MB**. The
 text-free pictures for ads are in [`../ads/`](../ads/README.md); the icon is in [`../icon/`](../icon/README.md).
 
-**The idea: say what the game is, in the game's look.** Plain white, SUPERHOT-style geometry, and only the two
-team colours. Each carries the name (TURF in red, WARS in blue, heavy italic like the HUD) and
-one short line on a black bar. The name sits in the empty sky at the top; Roblox's player count runs along the
+**The idea: make them curious.** Each picture stops on a moment where something is about to happen, and the line
+under the name is a short question or warning a third grader can read. Plain white SUPERHOT-style world, only the two
+team colours, the name (TURF in red, WARS in blue) in the empty sky at the top. Roblox's player count runs along the
 bottom, so nothing important goes there.
 
-They were made with AI image generation (Higgsfield, GPT Image 2.5, high, 2k) with **real renders of the game**
-as references (`../screenshots/`: Castle Clash, the first-person view, the victory), then lettered with
-`games/ra9 - Turf Wars/tools/gameplay/title_art.py`. The players in the game wear their own avatars dressed
-in their team's colour; the pictures show them as plain red and blue figures.
+Made with Higgsfield (GPT Image 2.5, high, 2k) using the game's art and renders as references, then lettered with
+`games/ra9 - Turf Wars/tools/gameplay/title_art.py`.
 
 | # | File | Line | Picture | In the game |
 |---|---|---|---|---|
-| 1 | `01_push_their_turf_back.jpg` | PUSH THEIR TURF BACK | Red and blue armies on their coloured turf, arrows crossing the line | The frontline, the turf, every kill pushing it |
-| 2 | `02_build_then_fight.jpg` | BUILD, THEN FIGHT | Three blue players building a wall, a tower, a ramp and a banner | The build phase's 7 pieces |
-| 3 | `03_pick_your_bow.jpg` | PICK YOUR BOW | Three archers: a longbow, a crossbow, a heavy bow | The Standard Bow, Rapid Crossbow and Heavy Bow |
-| 4 | `04_flip_slide_shoot.jpg` | FLIP. SLIDE. SHOOT. | A red archer front-flipping over a wall and shooting; a blue one sliding under an arch | The 4th-jump flip, the slide |
-| 5 | `05_red_vs_blue.jpg` | RED VS BLUE | The arena from above, split red and blue | Castle Clash's courtyard |
-| 6 | `06_win_and_unlock.jpg` | WIN TO UNLOCK REWARDS | Red fireworks over the red team on a wall, the blue banner falling | The win: fireworks in the winners' colour, a reward per win |
+| 1 | `01_so_close.jpg` | SO CLOSE... | Red floor creeping up to blue's base door, blue archers bracing in the doorway | The frontline pushing toward a team's spawn room |
+| 2 | `02_behind_you.jpg` | BEHIND YOU! | A blue player with a blade sneaking up behind a red archer | The Blade (extra damage from behind) |
+| 3 | `03_one_tile_left.jpg` | ONE TILE LEFT | One blue player on the last blue patch, red archers all round | The turf: every hit takes floor |
+| 4 | `04_who_built_this.jpg` | WHO BUILT THIS?! | A huge white fort with blue archers on top, red players staring up | The build phase |
+| 5 | `05_whats_in_there.jpg` | WHAT'S IN THERE? | A walled base with a glowing red door, red players gathering inside, a blue one creeping up | The spawn rooms |
+| 6 | `06_dont_step_over.jpg` | DON'T STEP OVER | A red foot over the glowing line, blue archers aiming at it | The frontline (you can't cross it) |

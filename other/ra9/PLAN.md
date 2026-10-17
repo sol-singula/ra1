@@ -253,6 +253,13 @@ named. The game's folder is `games/ra9 - Turf Wars/`, the place file `TurfWars.r
 and the six thumbnails are lettered TURF WARS (`title_art.py` no longer adds OVERDRIVE). The ladder's top title is
 still called Overdrive.
 
+**Store page, curiosity pass:** a new description with the hook on its first line ([`DESCRIPTION.md`](DESCRIPTION.md):
+"Every hit steals their floor. Don't let them take yours!"), four new icons and six new thumbnails, each stopped on
+a moment where something is about to happen (one blue player on the last tile, a blade behind an archer, a red foot
+over the line...), with short question lines (SO CLOSE..., BEHIND YOU!, WHAT'S IN THERE?).
+
+![](thumbnails/_all.jpg)
+
 ## Next (phase F)
 
 * The Discord log and analytics (the studio's shared pipeline), the dashboard entry.
