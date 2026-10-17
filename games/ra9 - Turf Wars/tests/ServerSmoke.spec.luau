@@ -763,6 +763,24 @@ do
 	check("you can't wear what you don't own", p.equipped.trail ~= "shop_overcharge" or p.owned.shop_overcharge)
 	send(red, "Settings", "equip", { kind = "trail", key = false })
 	check("...and you can wear nothing", p.equipped.trail == nil)
+	-- a bundle's EQUIP NOW: a few at once in one request, still only what you own
+	p.owned.shop_barcode, p.owned.shop_diamond, p.owned.shop_overcharge = true, true, nil
+	send(red, "Settings", "equip", {
+		{ kind = "banner", key = "shop_diamond" },
+		{ kind = "trail", key = "shop_barcode" },
+		{ kind = "skin", key = "shop_overcharge" },
+	})
+	check(
+		"EQUIP NOW: a few at once",
+		p.equipped.trail == "shop_barcode"
+			and p.equipped.banner == "shop_diamond"
+			and p.equipped.skin ~= "shop_overcharge"
+	)
+	-- the shop's first-time tour, remembered
+	send(red, "Settings", "shopTour", "yes")
+	check("the shop tour setting takes only true or false", p.settings.shopTour == nil)
+	send(red, "Settings", "shopTour", true)
+	check("...the tour seen is kept in the profile", p.settings.shopTour == true)
 	-- the Starter Pack
 	local s3 = p.shards
 	check(

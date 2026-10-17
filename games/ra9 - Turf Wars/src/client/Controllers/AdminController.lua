@@ -638,9 +638,9 @@ local function buildPanel()
 		end)
 	end
 	label(panel, "Title", "ADMIN", 414, 6, 120, 32, 18, C.red, Enum.TextXAlignment.Center).Font = Theme.Display
-	refs.close = button(panel, "Close", "✕", 548, 6, 42, 32, "dark", function()
+	refs.close = Theme.closeButton(panel, function()
 		AdminController.close()
-	end)
+	end, { Position = UDim2.fromOffset(P.w - 46, 4) })
 	refs.close.Modal = true -- (frees the mouse from first person while the panel is up)
 	refs.body = Theme.new("ScrollingFrame", {
 		Name = "Body",

@@ -1487,7 +1487,7 @@ end
 _ = PhysicsService
 service("Teams", "Teams")
 function methods.GetServerTimeNow()
-	return clock
+	return clock + (Engine.serverTimeOffset or 0) -- (a render can set the date: tools/gameplay/shop.luau)
 end
 local Players = service("Players")
 playersService = Players

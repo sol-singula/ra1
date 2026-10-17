@@ -472,8 +472,8 @@ PLAYER_ACTIONS.shards = function(_, _, target, n)
 	end
 	economy:Add(target, n, "admin")
 	progress:Push(target)
-	Net.fire(target, "Toast", `+{n} ◆ from an admin!`, "good")
-	return true, `Gave {target.DisplayName} {n} ◆.`, tostring(n)
+	Net.fire(target, "Toast", `+{n} Shards from an admin!`, "good")
+	return true, `Gave {target.DisplayName} {n} Shards.`, tostring(n)
 end
 
 PLAYER_ACTIONS.tiers = function(_, _, target, n)

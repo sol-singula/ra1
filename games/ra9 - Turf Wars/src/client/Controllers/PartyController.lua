@@ -5,7 +5,7 @@ Parties on screen (PartyService decides everything), in the SUPERHOT look:
                 "Play together" or "2/4 · you lead"
   the panel     your party (★ the leader; KICK for the leader), the players in this server with INVITE, and
                 LEAVE · FIND A NEW SERVER · JOIN A FULLER SERVER (the last two for the leader). While it's open the
-                mouse is free (Layout.setPanel). Esc or ✕ closes it; it steps aside for the shop panel.
+                mouse is free (Layout.setPanel). Esc or the X closes it; it steps aside for the shop panel.
   the list      in the left corner while you're in a party: "👥 PARTY" and the names (under SHOP; on a phone
                 under the health bar)
   the card      "NAME WANTS YOU IN THEIR PARTY" / "PARTY UP WITH NAME?": YES / NO (Y / N), gone after 20 s.
@@ -349,9 +349,9 @@ local function buildPanel(gui)
 		outline = false,
 		Parent = panel,
 	})
-	refs.close = button(panel, "Close", "✕", P.w - 52, 6, 42, 32, true, function()
+	refs.close = Theme.closeButton(panel, function()
 		PartyController.close()
-	end)
+	end, { Position = UDim2.fromOffset(P.w - 46, 4) })
 	refs.close.Modal = true -- (frees the mouse from first person while the panel is up)
 	refs.members = Theme.new("Frame", {
 		Name = "Members",
