@@ -6,6 +6,7 @@ reads cleanly. The block sits at the top middle (the art leaves that sky empty),
 
   python3 tools/gameplay/title_art.py <in.png> <out.jpg> --line "PUSH THEIR TURF BACK" [--at X,Y] [--size 120]
   python3 tools/gameplay/title_art.py <in.png> <out.jpg> --icon        (a 512 x 512 icon, no lettering)
+  python3 tools/gameplay/title_art.py <in.png> <out.jpg> --plain       (a 1920 x 1080 ad image, no lettering)
 
 Needs Pillow. The font is Inter Black Italic (the system's /usr/share/fonts/opentype/inter); --font overrides it.
 """
@@ -39,12 +40,16 @@ def main():
     ap.add_argument("--size", type=int, default=140)
     ap.add_argument("--font", default=FONT)
     ap.add_argument("--icon", action="store_true")
+    ap.add_argument("--plain", action="store_true")
     a = ap.parse_args()
     img = Image.open(a.src).convert("RGB")
     if a.icon:
         fit(img, 1).resize((512, 512), Image.LANCZOS).save(a.dst, optimize=True)
         return
     img = fit(img, 16 / 9).resize((1920, 1080), Image.LANCZOS)
+    if a.plain:
+        img.save(a.dst, quality=86, optimize=True)
+        return
     d = ImageDraw.Draw(img)
     big = ImageFont.truetype(a.font, a.size)
     small = ImageFont.truetype(a.font, int(a.size * 0.42))

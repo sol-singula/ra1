@@ -192,6 +192,10 @@ piece by piece for overlaps, buying and wearing from it, the HUD stepping aside,
 
   ![](thumbnails/_all.jpg)
 
+Then 8 new text-free ads (`ads/`: the last blue tile, arrows stuck in the spawn roof, a blade duel over the line, the
+war from above...) and new icons (`icon/`: the main is one player split half red, half blue, with a bow and a blade;
+five alternates for the icon test).
+
 Tests: 119 unit, 146 server, 121 client.
 
 ## Round 7: bots when you're alone, the mouse in menus, a numbered hotbar

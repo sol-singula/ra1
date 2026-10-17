@@ -2,26 +2,24 @@
 
 ![The 8 ad images](_all.jpg)
 
-For **Roblox Ads Manager** (sponsored experience ads). Each is **1920 × 1080 (16:9), JPG, under 0.3 MB**; a
-campaign takes up to 10. **No words at all**: Roblox prints the game's name and "Sponsored" beside every ad.
+For **Roblox Ads Manager** (sponsored experience ads). Each is **1920 × 1080 (16:9), JPG, under 0.4 MB**; a campaign
+takes up to 10. **No words at all**: Roblox prints the game's name and "Sponsored" beside every ad.
 
-**The idea: one frozen, striking moment.** A feed is full of loud, busy thumbnails; these are almost all white, with
-a single hit of red and blue and the long glowing tracer lines of arrows, so they stop the scroll by being calm and
-strange. Each one shows something real from the game, caught at its most dramatic.
+**The idea: make them wonder.** Each one is a strange or tense moment that leaves a question hanging: how did it get
+like this? who wins? what happens next? Mostly white, with big hits of red and blue, so they stand out in a busy
+feed. Made with Higgsfield (GPT Image 2.5, high, 2k) using the game's art and renders as references, then cut to
+1920 × 1080 with `title_art.py --plain`.
 
-Made with AI image generation (Higgsfield, GPT Image 2.5, high, 2k) using **real renders of the game** as references
-(`../screenshots/`: the four maps, the first-person bow, the victory).
+| # | File | Picture | The question | In the game |
+|---|---|---|---|---|
+| 1 | `01_last_blue_tile.jpg` | An endless red floor; one blue tile left, a blue player kneeling on it | How did it get like this? | The turf |
+| 2 | `02_arrows_on_the_roof.jpg` | Red arrows stuck in a glass roof; blue players safe underneath, looking up | Are they safe? | The spawn rooms' roof |
+| 3 | `03_blade_duel.jpg` | A red and a blue player leap at each other over the line, blades crossing | Who wins? | The Blade, the frontline |
+| 4 | `04_the_war_from_above.jpg` | The arena from above, red pushed deep into blue like a spear | Can blue hold? | The frontline moving |
+| 5 | `05_building_in_seconds.jpg` | Blocks fly together into a fort around a blue player | How did he build that? | The build phase |
+| 6 | `06_flip_shot.jpg` | A red archer upside down mid-flip over a wall, aiming at a startled blue player | Did it hit? | The 4th-jump flip |
+| 7 | `07_everyone_aims_at_you.jpg` | First person in a doorway: every red archer turns and aims at you | What now? | First person, the bow |
+| 8 | `08_the_last_arrow.jpg` | One red arrow flies at blue's base door; everyone freezes to watch | Does red win? | Pushing the line to a base |
 
-| # | File | Picture | In the game |
-|---|---|---|---|
-| 1 | `01_frozen_volley.jpg` | A red archer leaps through the air, bow drawn, a volley of blue arrows frozen around them | Arrows with team tracers, Castle Clash |
-| 2 | `02_the_line_from_above.jpg` | The courtyard from above, split exactly into red and blue turf, armies at the line | The turf and the frontline |
-| 3 | `03_full_draw.jpg` | First person: blue arms at full draw, a red archer on a white tower far ahead | The first-person bow, towers |
-| 4 | `04_ice_slide.jpg` | A blue archer slides across a glacier while red arrows streak overhead | Frostbite, the slide |
-| 5 | `05_canyon_long_shot.jpg` | Two tiny archers on mesas, one red tracer arcing across the canyon | Dust Devil's long sightlines |
-| 6 | `06_close_call.jpg` | A blue archer behind a pillar, a red arrow just landed beside their head | Jungle Rush's cover and narrow routes |
-| 7 | `07_build_under_fire.jpg` | The red team racing to build a fort as blue arrows rain in | Building, then the fight |
-| 8 | `08_red_wins.jpg` | Red fireworks over the red team; the blue banner falls | The win and its fireworks |
-
-Some details are made up for the picture: the frozen mid-air arrows (they fly in the game), the ice spray, and the
-arrows rain thicker than any one moment in play.
+Some details are made up for the picture: blocks flying into place (you place them one at a time), arrows frozen in
+mid-air, arrows stuck in the roof, and a red floor stretching to the horizon.
