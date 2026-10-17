@@ -103,9 +103,13 @@ for _, it in skins do
 		check(`{it.name}: the grip's colour moves`, grip and grip.Color ~= c0)
 	end
 	if look.anim == "electric" then
-		local n0 = Flair.count()
-		Engine.advance(0.6)
-		check(`{it.name}: lightning crackles round it`, Flair.count() > 0 or n0 > 0)
+		-- (the arcs come at random moments: watch a couple of seconds for one)
+		local most = Flair.count()
+		for _ = 1, 25 do
+			Engine.advance(0.1)
+			most = math.max(most, Flair.count())
+		end
+		check(`{it.name}: lightning crackles round it`, most > 0)
 	end
 end
 do
@@ -156,13 +160,13 @@ for _, it in list("trail") do
 	local equipped = table.clone((Store.get("profile") or {}).equipped or {})
 	equipped.trail = it.key
 	Store.set("profile", { equipped = equipped })
-	local before = Flair.count()
+	local before = Flair.dropped()
 	local key = Arrows.predict(Vector3.new(0, 8, 0), Vector3.new(90, 6, 0), "red", 7000 + #it.key)
 	Engine.advance(0.35)
 	check(`{it.name}: an arrow wearing it flies`, Arrows.count() >= 1)
 	local p = it.look.particles
 	if p == "feathers" or p == "bubbles" or p == "blocks" or p == "hearts" then
-		check(`{it.name}: {p} fall off the arrow`, Flair.count() > before, `{before} -> {Flair.count()}`)
+		check(`{it.name}: {p} fall off the arrow`, Flair.dropped() > before, `{before} -> {Flair.dropped()}`)
 	end
 	_ = key
 	Engine.advance(2.5) -- (the bits clear before the next: on a phone only a few are up at once)

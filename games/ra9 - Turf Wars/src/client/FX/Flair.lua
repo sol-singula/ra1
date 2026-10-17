@@ -205,10 +205,12 @@ local function rnd(a, b)
 	return a + math.random() * (b - a)
 end
 
+local dropped = 0 -- (every drop asked for, kept or not: tests)
 function Flair.drop(kind, pos, _team)
 	if typeof(pos) ~= "Vector3" then
 		return nil
 	end
+	dropped += 1
 	if #bits >= (Flair.lite() and CAP_LITE or CAP) then
 		return nil
 	end
@@ -328,6 +330,11 @@ end
 
 function Flair.count()
 	return #bits
+end
+
+-- How many bits have been asked for so far (counts the ones the cap turned away too)
+function Flair.dropped()
+	return dropped
 end
 
 -- Bows ----------------------------------------------------------------------------------------------------------
