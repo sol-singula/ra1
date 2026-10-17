@@ -41,6 +41,7 @@ Net.ServerEvents = {
 	"Structure", -- { kind = "built" | "damaged" | "destroyed", id, key, team, hp, max }
 	"Toast", -- text, kind ("info" | "good" | "bad")
 	"Alert", -- big centre message: text, color, seconds?
+	"Announce", -- { text, kind, color?, icon?, seconds? } a banner for everyone or one player (server/Notify.lua)
 	"Results", -- { winner, rows = { { userId, name, team, kills, deaths, assists, built } }, mvp, you, next }
 	"Unlock", -- { step = { win, kind, name, big }, wins }
 	"Sfx", -- soundName, worldPosition?
