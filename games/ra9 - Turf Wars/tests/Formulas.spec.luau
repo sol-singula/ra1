@@ -151,8 +151,8 @@ do
 					end
 				end
 				check(
-					`{team} {def.key} rot {rot}: detailed but light for phones ({#parts} parts), the team's colour on it`,
-					#parts >= 8 and #parts <= 45 and teamed and solid > 0
+					`{team} {def.key} rot {rot}: plain and light for phones ({#parts} parts), the team's colour on it`,
+					#parts >= 5 and #parts <= 45 and teamed and solid > 0
 				)
 				check(`...nothing round in it`, round == 0, round)
 				check(
@@ -164,15 +164,17 @@ do
 		end
 		check(`{team}: the trim is the build shade`, same(StructureModel.color("team", team), shade))
 	end
-	-- the stone leans to the team; wood and iron are the same for both
+	-- plain: everything leans to the team, and nothing is brown (a warm colour with little blue in it, dark-ish)
 	check(
 		"the stone tells the sides apart",
 		not same(StructureModel.color("stone", "red"), StructureModel.color("stone", "blue"))
 	)
-	check(
-		"...the wood doesn't need to",
-		same(StructureModel.color("wood", "red"), StructureModel.color("wood", "blue"))
-	)
+	for _, tone in { "stone", "stoneDark", "wood", "woodDark", "iron", "mortar" } do
+		for _, team in { "red", "blue" } do
+			local c = StructureModel.color(tone, team)
+			check(`{tone} ({team}): plain greys and whites, no brown`, math.abs(c.R - c.B) < 0.2, `{c.R} {c.G} {c.B}`)
+		end
+	end
 	-- the watchtower: square, crenellated, a platform to stand on at its top, a ladder, a roofed turret with a flag
 	local mn, mx = Formulas.footprintBox(0, 0, 2, 2, 0, Structures.get("tower").h)
 	local names = {}

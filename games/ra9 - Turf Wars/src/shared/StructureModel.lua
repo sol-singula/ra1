@@ -3,8 +3,8 @@ What each structure looks like, as a list of parts, shared by the server (BuildS
 hotbar (UI/Icons draws it in a ViewportFrame) and the debris (DebrisController breaks the same shapes into chunks
 when it comes down), so all three always agree.
 
-Castle pieces: pale stone (a touch of the team's colour in it) laid in courses (thin mortar lines through the body, so
-one part draws a line on both faces), wood and iron, and the team's colour where a castle wears it: the coping and
+Castle pieces, kept plain like the maps: white and pale grey blocks (a touch of the team's colour in them), no
+browns or orange, and the team's colour where a castle wears it: the coping and
 the merlons on the walls, the tower's platform and roof, the rampart's trim, the shield's band, every banner. Only
 boxes: nothing round anywhere (no balls, no cylinders), and few, large parts (most players are on phones
 and a match fills up with pieces). Nothing solid reaches outside the footprint box or far above its height, so the
@@ -21,34 +21,30 @@ local StructureModel = {}
 
 local Y = Vector3.new(0, 1, 0)
 
--- The palette: stone, wood and iron are the same for both sides but for a touch of the team in the stone (so even a
--- piece's body leans red or blue); the trim is the team's own build shade
-local STONE = Color3.fromRGB(208, 202, 192)
-local STONE_DARK = Color3.fromRGB(128, 122, 114)
-local MORTAR = Color3.fromRGB(118, 112, 104)
-local FIXED = {
-	wood = Color3.fromRGB(156, 108, 66),
-	woodDark = Color3.fromRGB(104, 70, 44),
-	iron = Color3.fromRGB(62, 62, 68),
-	flame = Color3.fromRGB(255, 156, 44),
-}
+-- The palette: plain, like the maps: white and pale grey with a touch of the team in them (so a piece's body leans
+-- red or blue), the trim in the team's own build shade. No browns, no orange: "wood" and "iron" are just lighter and
+-- darker greys now, and the torch's flame and the rally marker glow in the team's colour.
+local STONE = Color3.fromRGB(236, 236, 240)
+local STONE_DARK = Color3.fromRGB(176, 178, 186)
+local LIGHT = Color3.fromRGB(214, 216, 222) -- ("wood": planks, posts, the door)
+local MID = Color3.fromRGB(150, 152, 160) -- ("woodDark", "iron": bands, brackets, rungs)
 local GLOWS = { flame = true, glow = true } -- (Neon: the torch's flame, the Rally Banner's marker)
 
 function StructureModel.color(tone, team)
 	local build = Constants.BUILD_COLOR[team or ""] or Constants.BUILD_COLOR.red
 	local armor = Constants.ARMOR_COLOR[team or ""] or Constants.ARMOR_COLOR.red
-	if FIXED[tone] then
-		return FIXED[tone]
-	elseif tone == "stone" then
-		return STONE:Lerp(build, 0.18)
+	if tone == "stone" then
+		return STONE:Lerp(build, 0.12)
 	elseif tone == "stoneDark" then
-		return STONE_DARK:Lerp(armor, 0.3)
-	elseif tone == "mortar" then
-		return MORTAR:Lerp(build, 0.15)
+		return STONE_DARK:Lerp(armor, 0.22)
+	elseif tone == "wood" then
+		return LIGHT:Lerp(build, 0.1)
+	elseif tone == "woodDark" or tone == "iron" or tone == "mortar" then
+		return MID:Lerp(armor, 0.15)
 	elseif tone == "teamDark" or tone == "armor" then
 		return armor
 	end
-	return build -- "team", "glow" (and the old "build")
+	return build -- "team", "glow", "flame" (and the old "build")
 end
 
 function StructureModel.parts(key, team, mn, mx)
@@ -78,7 +74,9 @@ function StructureModel.parts(key, team, mn, mx)
 			tone = tone,
 			solid = solid ~= false,
 		}
-		table.insert(out, e)
+		if tone ~= "mortar" then
+			table.insert(out, e) -- (no mortar lines: the blocks stay plain)
+		end
 		return e
 	end
 	-- a square bar in the face plane at across c, from (a0, y0) to (a1, y1)

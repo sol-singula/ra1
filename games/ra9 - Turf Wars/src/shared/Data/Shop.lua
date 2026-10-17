@@ -97,7 +97,22 @@ end
 -- hour is real: once it's over the price goes back up until tomorrow's deal. Each deal price is its own developer
 -- product (Shop.DEAL_IDS, "deal_<key>"); an id of 0 leaves that item out of the deals.
 Shop.DEAL = { off = 0.7, seconds = 3600 }
-Shop.DEAL_IDS = {}
+Shop.DEAL_IDS = {
+	rbx_lightning = 3719253873,
+	rbx_doge = 3719253882,
+	rbx_web = 3719253893,
+	rbx_oof = 3719253897,
+	rbx_bonk = 3719253908,
+	rbx_dance = 3719253917,
+	rbx_blackhole = 3719253920,
+	rbx_heaven = 3719253924,
+	rbx_storm = 3719253928,
+	rbx_dragon = 3719253935,
+	rbx_thunder = 3719253942,
+	rbx_lightningbanner = 3719253947,
+	rbx_dogebanner = 3719253957,
+	rbx_crown = 3719253965,
+}
 Shop.DEALS = {}
 for _, prem in Shop.PREMIUM do
 	local d = {
