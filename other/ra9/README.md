@@ -28,4 +28,4 @@ next map loads in the same server.
 
 1. Create the experience on Roblox, publish `TurfWars.rbxl` (or `rojo serve` the project).
 2. Server Size 40. Allow HTTP Requests (for the Discord log and analytics, once they're in: PLAN.md, phase F).
-3. Record the place and universe ids here.
+3. Ids: **universe 10771380252**, **place 101991401831698**.
