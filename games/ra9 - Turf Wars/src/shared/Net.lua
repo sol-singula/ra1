@@ -46,7 +46,9 @@ Net.ServerEvents = {
 	-- (to the swinger: their slash cut no one)
 	"Hit", -- { damage, head, kill, victim, melee?, pos? } you hit someone (the hit marker; a blade hit's spot);
 	-- { parry, clash, melee, pos, knock } two blades met (no knockout: you're thrown back by knock)
-	"Hurt", -- { amount, from } you were hit (from: the shooter's position, for the damage indicator)
+	"Hurt", -- { amount, from, by? } you were hit (from: the shooter's position, for the damage indicator)
+	"Threat", -- { from, by } an enemy arrow just passed close to you (from: where it was shot; HitDirectionController)
+	"Shield", -- { kind = "on" | "off" | "break", by, pos?, attacker?, seconds?, why? } the comeback shield (CombatService)
 	"Kill", -- { killer, victim, killerTeam, weapon, head, push, assist, effect, pos } the kill feed, the kill effect;
 	-- killerPos, dist and cam = { origin, velocity, t, impact } (an arrow's flight) for the victim's kill cam
 	"Structure", -- { kind = "built" | "damaged" | "destroyed", id, key, team, hp, max }; destroyed adds min, max, rot,

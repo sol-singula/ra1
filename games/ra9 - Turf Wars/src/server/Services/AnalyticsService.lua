@@ -10,6 +10,8 @@ the roblox-analytics function, tagged game = "ra9" (Constants.ANALYTICS_GAME), i
                      the first matches: first_shot, first_build, first_kill, first_win, left_first_minute
                      matches: match_start (map), match_end (won or lost, kills, deaths, assists, built, MVP)
                      fighting: kill, down, assist; building: build; teams: team
+                     the helps: shield_granted (downs), shield_broken (by), shield_expired (why: kill, time,
+                       down), new_help (matches, level, device: their first matches' extra help, once a match)
                      progress: ladder (a step of the 100-win ladder), earned (a goal, VIP, an MVP reward)
                      buying: purchase (Robux), shard_buy (Shards)
                      the winners' cards: feedback_asked, feedback (the "liking the game?" answer), like_card
@@ -460,6 +462,13 @@ function AnalyticsService:Init(registry)
 				end
 			end
 		end
+	end)
+	-- the easier-fight helps: the comeback shield (granted, broken, expired) and the new-player help (once a match)
+	combat.Shield:Connect(function(player, what, detail)
+		AnalyticsService.event(player, "shield_" .. tostring(what), detail)
+	end)
+	combat.Helped:Connect(function(player, detail)
+		AnalyticsService.event(player, "new_help", detail)
 	end)
 	-- building
 	build.Built:Connect(function(player, structure)

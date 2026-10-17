@@ -12,6 +12,9 @@ Constants.TEAM_COLOR = { red = Color3.fromRGB(235, 40, 45), blue = Color3.fromRG
 -- the turf on the ground: a softer version of the team colour, so players stand out from it
 Constants.TURF_COLOR = { red = Color3.fromRGB(240, 120, 118), blue = Color3.fromRGB(120, 165, 245) }
 Constants.TEAM_IMBALANCE = 2 -- (between matches the teams are evened to within 1; a joining player always takes the smaller team)
+-- Mice split between the sides: between matches, while one side has DEVICE_SPREAD or more keyboard players than the
+-- other, a solo keyboard player there trades places with a solo touch or pad player on the other side (sizes stay)
+Constants.DEVICE_SPREAD = 2
 
 -- Phases (§2): seconds
 Constants.BUILD_SECONDS = 20
@@ -83,6 +86,28 @@ Constants.LAG_RADIUS_MAX = 1.0
 Constants.GRAVITY = 70 -- studs/s² on arrows (Roblox's 196 would make bows feel like mortars)
 Constants.HIT_RADIUS_BODY = 2.3 -- the torso's hit sphere (round the root, +0.6 up)
 Constants.HIT_RADIUS_HEAD = 1.1 -- the head's (2.6 above the root)
+-- A thumb's arrows: the server tests an arrow shot by touch (the shooter's reported "Device") against target spheres
+-- this much bigger, head and body. Whatever a client reports, no shot's spheres ever grow more than TOUCH_HIT_MAX.
+Constants.TOUCH_HIT_SCALE = { touch = 1.3 }
+Constants.TOUCH_HIT_MAX = 1.3
+-- The first few matches after the tutorial (fewer than NEW_PLAYER_MATCHES finished: profile stats.matches): extra aim
+-- help on top of the device's (strongest in the first, a third of it in the third), never past NEW_PLAYER_AIM_CAP,
+-- and the bots are slower and shakier against them (BOT_NEW_* at full strength, fading the same way)
+Constants.NEW_PLAYER_MATCHES = 3
+Constants.NEW_PLAYER_AIM = { cone = 4, pull = 0.15, max = 2 } -- (a mouse's first match: 8° / 0.5 / 3.2°, between the whisper and a thumb)
+Constants.NEW_PLAYER_AIM_CAP = { cone = 15, pull = 0.8, max = 7.5 }
+-- The comeback shield: knocked out COMEBACK_DOWNS times in a row without a knockout of your own, your next life has a
+-- bubble that blocks exactly one hit of anything (an arrow, a blade, a TNT). It pops on the hit, and goes when you
+-- score or after COMEBACK_SECONDS. One at a time.
+Constants.COMEBACK_DOWNS = 3
+Constants.COMEBACK_SECONDS = 60
+Constants.COMEBACK_BUBBLE = 6.5 -- studs across, round the body
+-- The hit-direction marker (HitDirectionController): an enemy arrow passing within NEAR_MISS_RADIUS studs of your body
+-- (or hitting you) shows a red marker at the screen's edge toward the shooter for HIT_MARKER_SECONDS; the server sends
+-- each player at most one near miss every NEAR_MISS_GAP seconds
+Constants.NEAR_MISS_RADIUS = 7
+Constants.NEAR_MISS_GAP = 0.35
+Constants.HIT_MARKER_SECONDS = 1.5
 Constants.HEADSHOT = 1.35 -- damage multiplier
 Constants.PARRY_SECONDS = 0.45 -- a blade swing knocks back arrows from the front for this long
 Constants.PARRY_DOT = 0.25 -- ...arriving within about 75 degrees of where you swung
@@ -143,6 +168,18 @@ Constants.TUTORIAL_MAX_SECONDS = 180 -- the private practice never runs longer: 
 Constants.TUTORIAL_STALL_SECONDS = 25 -- no step reported this long after the practice starts: back to the match
 Constants.TUTORIAL_TRAIL = { "shop_rainbowtrail", "shop_hearts", "shop_bubbletrail", "shop_feathertrail" } -- the free trail at its win (the first they don't own)
 Constants.BOT_REACT = 0.7 -- seconds before a bot starts drawing on someone new
+-- Bots go easy on thumbs: against a touch player their aim error is BOT_TOUCH_SPREAD times and their wait before
+-- drawing BOT_TOUCH_REACT times, and with a mouse or pad player in view too, a touch player counts as
+-- BOT_TOUCH_TARGET times further away (the bot picks the PC player unless the phone player is much closer)
+Constants.BOT_TOUCH_SPREAD = 1.5
+Constants.BOT_TOUCH_REACT = 1.35
+Constants.BOT_TOUCH_TARGET = 2.5
+-- a player in their first matches (NEW_PLAYER_MATCHES): the bot's error and wait at most these times (the first match)
+Constants.BOT_NEW_SPREAD = 1.6
+Constants.BOT_NEW_REACT = 1.5
+-- however many reasons stack, a bot is never softer than this on anyone
+Constants.BOT_EASY_SPREAD_MAX = 2.6
+Constants.BOT_EASY_REACT_MAX = 2.0
 Constants.BOT_NAMES = { "Ace", "Echo", "Nova", "Blitz", "Rook", "Vex", "Juno", "Kite", "Onyx", "Pike" }
 
 -- Building (§7)

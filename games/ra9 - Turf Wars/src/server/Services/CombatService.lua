@@ -31,6 +31,13 @@ Health is the server's own (state.hp), mirrored onto the Humanoid for the health
 fire, no damage outside the fight. Kills credit the last opponent to hit you; others who hit you in the last
 ASSIST_WINDOW seconds get assists.
 
+Kinder to thumbs and newcomers (one hit still knocks out): an arrow shot by touch (the shooter's "Device", capped at
+TOUCH_HIT_MAX whatever is reported) is tested against bigger spheres (TOUCH_HIT_SCALE); a player in their first
+NEW_PLAYER_MATCHES gets extra aim help on top of their device's (NewHelp: fading match by match); knocked out
+COMEBACK_DOWNS times in a row without a knockout, your next life wears a comeback shield that blocks one hit (a
+bubble everyone sees; Net "Shield"); and an enemy arrow passing close tells you where it came from (Net "Threat",
+at most every NEAR_MISS_GAP; a hit says so through Hurt.from).
+
   CombatService:Spawned(player)            fresh health, protection, the bow you picked
   CombatService:Alive(player)
   CombatService:SetEnabled(on)             the fight phase
@@ -38,8 +45,15 @@ ASSIST_WINDOW seconds get assists.
   CombatService:Kill(victim, attacker, info)
   CombatService:Remove(player)             out of the fight, no kill (a spectating admin)
   CombatService:Heal(player)               full health
+  CombatService:NewHelp(player) -> 0..1    the new-player help's strength (1 in the first match, 0 from the 3rd on)
+  CombatService:Shielded(player) -> bool   wearing a comeback shield now
+  CombatService:GiveShield(player) / :DropShield(player, why)
+  CombatService:Device(player)             "touch" | "gamepad" | "keyboard" | nil (as their client reported it)
+  CombatService:HitScale(player)           how much bigger the spheres are for their arrows (1 .. TOUCH_HIT_MAX)
   CombatService.Killed(victim, killer, info)   info: { weapon, head, assists = { players }, kind }
   CombatService.StructureHit(id, damage, attacker)
+  CombatService.Shield(player, what, detail)   "granted" | "broken" | "expired" (the analytics)
+  CombatService.Helped(player, detail)     the new-player help is on for them this match (once a match)
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -61,10 +75,13 @@ local CombatService = {
 	Rejected = Signal.new("CombatService.Rejected"), -- (player, reason) a shot the server refused (the anti-cheat counts)
 	Locked = Signal.new("CombatService.Locked"), -- (player, key) tried a weapon they haven't bought (ShopService offers it)
 	Parried = Signal.new("CombatService.Parried"), -- (swinger, shooter) a blade knocked an arrow back
+	Shield = Signal.new("CombatService.Shield"), -- (player, "granted" | "broken" | "expired", detail)
+	Helped = Signal.new("CombatService.Helped"), -- (player, { matches, level }) the new-player help, once a match
 }
 
 local data, teams, arena
-local states = {} -- [player] = { hp, alive, weapon, drawAt, ammo, reloadAt, readyAt, protectUntil, hits = { [attacker] = t } }
+local states = {} -- [player] = { hp, alive, weapon, drawAt, ammo, reloadAt, readyAt, protectUntil, hits = { [attacker] = t },
+-- downs (knocked out in a row without a knockout), shieldUntil (the comeback shield) }
 local arrows = {} -- { id, by, team, weapon, origin, velocity, t, damage, knockback, head }
 local nextArrow = 0
 local bombs = {} -- { id, by, team, origin, velocity, t } thrown TNT in the air
@@ -72,6 +89,8 @@ local nextBomb = 0
 local enabled = false
 local history = {} -- [player] = { { t, pos } ... } the last second of each body's root, ~20 a second (lag)
 local scored = {} -- [player] = true once they've knocked someone out this visit (the first-kill help ends)
+local warnedAt = {} -- [player] = when they were last told about a near miss
+local helpedIn = {} -- [player] = the match their new-player help was last logged in
 local HISTORY_STEP, HISTORY_KEEP = 0.05, 1.1
 
 local function now()
@@ -264,6 +283,123 @@ function CombatService:Novice(player)
 	return st ~= nil and (st.kills or 0) == 0
 end
 
+-- How they play, as their client last reported it (ProgressService only takes "touch", "gamepad" or "keyboard"),
+-- or nil. Bots: nil.
+function CombatService:Device(player)
+	if typeof(player) ~= "Instance" then
+		return nil
+	end
+	local d = player:GetAttribute("Device")
+	return (d == "touch" or d == "gamepad" or d == "keyboard") and d or nil
+end
+
+-- How much bigger the target spheres are for this player's arrows: a thumb's are TOUCH_HIT_SCALE, a mouse's and a
+-- pad's plain. Never past TOUCH_HIT_MAX, whatever the client says.
+function CombatService:HitScale(player)
+	local scale = Constants.TOUCH_HIT_SCALE[self:Device(player) or ""] or 1
+	return math.clamp(scale, 1, Constants.TOUCH_HIT_MAX)
+end
+
+-- The new-player help (their first NEW_PLAYER_MATCHES finished matches after the tutorial): 1 in the first, fading
+-- by a step each match (2/3, 1/3), 0 after. Bots and players without a save: 0.
+CombatService.newPlayerHelp = true -- (tests that aren't about it turn it off: tests/FeelSmoke checks it)
+function CombatService:NewHelp(player)
+	if not CombatService.newPlayerHelp or typeof(player) ~= "Instance" or not player:IsA("Player") then
+		return 0
+	end
+	local profile = data and data:Get(player)
+	local played = profile and profile.stats and profile.stats.matches
+	if type(played) ~= "number" then
+		return 0
+	end
+	local n = Constants.NEW_PLAYER_MATCHES
+	return math.clamp((n - played) / n, 0, 1)
+end
+
+-- The comeback shield ----------------------------------------------------------------------------------------------
+-- A see-through bubble round the body (made here, so everyone sees it): massless, out of every query and collision
+-- (the hit spheres are the server's, not this part).
+local function bubble(player, on)
+	local c = player.Character
+	local old = c and c:FindFirstChild("ComebackShield")
+	if old then
+		old:Destroy()
+	end
+	if c then
+		c:SetAttribute("Shield", on or nil)
+	end
+	local r = on and c and c:FindFirstChild("HumanoidRootPart")
+	if not r then
+		return nil
+	end
+	local p = Instance.new("Part")
+	p.Name = "ComebackShield"
+	p.Shape = Enum.PartType.Ball
+	p.Size = Vector3.one * Constants.COMEBACK_BUBBLE
+	p.Color = Color3.fromRGB(120, 220, 255)
+	p.Material = Enum.Material.ForceField
+	p.Transparency = 0.2
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Massless = true
+	p.CastShadow = false
+	p.CFrame = r.CFrame * CFrame.new(0, 0.4, 0)
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0, weld.Part1 = r, p
+	weld.Parent = p
+	p.Parent = c
+	return p
+end
+
+CombatService.comebackShield = true -- (tests that aren't about it turn it off: tests/FeelSmoke checks it)
+
+function CombatService:Shielded(player)
+	local s = states[player]
+	return s ~= nil and (s.shieldUntil or 0) > now()
+end
+
+-- Put a shield on them for this life (only when they have none: it never stacks)
+function CombatService:GiveShield(player, why)
+	local s = state(player)
+	if self:Shielded(player) then
+		return false
+	end
+	s.shieldUntil = now() + Constants.COMEBACK_SECONDS
+	player:SetAttribute("Shield", true)
+	bubble(player, true)
+	Net.fire(player, "Shield", { kind = "on", by = player.UserId, seconds = Constants.COMEBACK_SECONDS })
+	self.Shield:Fire(player, "granted", { downs = s.downs or 0, why = why })
+	return true
+end
+
+-- The shield goes: "broken" (it blocked a hit: a pop everyone sees and hears), "kill" (they scored), "time", "down"
+function CombatService:DropShield(player, why, by)
+	local s = states[player]
+	if not s or not s.shieldUntil then
+		return false
+	end
+	s.shieldUntil = nil
+	if typeof(player) == "Instance" then
+		player:SetAttribute("Shield", nil)
+	end
+	local r = root(player)
+	bubble(player, false)
+	if why == "broken" then
+		Net.fireAll("Shield", {
+			kind = "break",
+			by = player.UserId,
+			pos = r and r.Position + Vector3.new(0, 1, 0) or nil,
+			attacker = by and by.UserId or nil,
+		})
+		self.Shield:Fire(player, "broken", { by = by and (by.IsBot and "bot" or "player") or nil })
+	else
+		Net.fire(player, "Shield", { kind = "off", by = player.UserId, why = why })
+		self.Shield:Fire(player, "expired", { why = why })
+	end
+	return true
+end
+
 function CombatService:Spawned(player)
 	local s = state(player)
 	s.hp = Constants.MAX_HEALTH
@@ -294,6 +430,27 @@ function CombatService:Spawned(player)
 	ok, err = pcall(self.HoldBow, self, player, s.weapon)
 	if not ok then
 		warn("[CombatService] hold bow failed: " .. tostring(err))
+	end
+	-- a losing streak (COMEBACK_DOWNS knockouts in a row without one of theirs): this life has a comeback shield
+	local streak = (s.downs or 0) >= Constants.COMEBACK_DOWNS
+	if CombatService.comebackShield and streak and typeof(player) == "Instance" and player:IsA("Player") then
+		ok, err = pcall(self.GiveShield, self, player, "streak")
+		if ok then
+			s.downs = 0
+		else
+			warn("[CombatService] shield failed: " .. tostring(err))
+		end
+	end
+	-- (the new-player help, logged once a match for the analytics)
+	local help = self:NewHelp(player)
+	local matchId = workspace:GetAttribute("MatchId")
+	if help > 0 and helpedIn[player] ~= matchId then
+		helpedIn[player] = matchId
+		self.Helped:Fire(player, {
+			matches = profile and profile.stats and profile.stats.matches or 0,
+			level = math.floor(help * 100 + 0.5) / 100,
+			device = self:Device(player),
+		})
 	end
 	self:Push(player)
 end
@@ -348,6 +505,20 @@ function CombatService:Kill(victim, attacker, info)
 		scored[attacker] = true -- (their first knockout this visit: the help ends)
 		attacker:SetAttribute("Novice", nil)
 	end
+	-- the losing streak (a menu Reset doesn't count); a knockout of your own ends it, and any shield you wear
+	if s.shieldUntil then
+		self:DropShield(victim, "down")
+	end
+	if info.kind ~= "reset" then
+		s.downs = (s.downs or 0) + 1
+	end
+	local as = attacker and attacker ~= victim and states[attacker]
+	if as then
+		as.downs = 0
+		if as.shieldUntil then
+			self:DropShield(attacker, "kill")
+		end
+	end
 	self.Killed:Fire(victim, attacker, info)
 	return true
 end
@@ -393,6 +564,13 @@ function CombatService:Damage(victim, amount, attacker, info)
 		if teams:Team(attacker) == teams:Team(victim) then
 			return false -- (no friendly fire)
 		end
+	end
+	-- the comeback shield takes the whole hit, and pops
+	if self:Shielded(victim) then
+		self:DropShield(victim, "broken", attacker)
+		return false
+	end
+	if attacker then
 		s.hits[attacker] = now()
 	end
 	s.hp = math.max(0, s.hp - amount)
@@ -424,6 +602,7 @@ end
 local function hitPlayers(arrow, a, b)
 	local best, bestT, bestHead
 	local rewind, extra = forgiveness(arrow)
+	local scale = math.clamp(arrow.scale or 1, 1, Constants.TOUCH_HIT_MAX) -- (a thumb's arrow: bigger spheres)
 	local past = rewind > 0.01 and now() - rewind or nil
 	for player, s in states do
 		if s.alive and player ~= arrow.by and player.Parent and teams:Team(player) ~= arrow.team then
@@ -440,10 +619,14 @@ local function hitPlayers(arrow, a, b)
 						a,
 						b,
 						p + Vector3.new(0, 2.6, 0),
-						Constants.HIT_RADIUS_HEAD + extra * 0.5
+						Constants.HIT_RADIUS_HEAD * scale + extra * 0.5
 					)
-					local body =
-						Formulas.segmentSphere(a, b, p + Vector3.new(0, 0.2, 0), Constants.HIT_RADIUS_BODY + extra)
+					local body = Formulas.segmentSphere(
+						a,
+						b,
+						p + Vector3.new(0, 0.2, 0),
+						Constants.HIT_RADIUS_BODY * scale + extra
+					)
 					local t, isHead = nil, false
 					if head and (not body or head <= body + 0.02) then
 						t, isHead = head, true
@@ -515,6 +698,34 @@ local function hitSolids(a, b)
 	return bestT, bestId
 end
 
+-- An enemy arrow passing close: each player it comes within NEAR_MISS_RADIUS of (once an arrow, and at most every
+-- NEAR_MISS_GAP for anyone) is told where it came from, for the marker toward the shooter (HitDirectionController)
+function CombatService:_nearMiss(arrow, a, b, victim)
+	local t
+	for player, s in states do
+		if
+			s.alive
+			and player ~= victim
+			and player ~= arrow.by
+			and typeof(player) == "Instance"
+			and player.Parent
+			and teams:Team(player) ~= arrow.team
+			and not (arrow.near and arrow.near[player])
+		then
+			local r = root(player)
+			if r and Formulas.segmentSphere(a, b, r.Position + Vector3.new(0, 1, 0), Constants.NEAR_MISS_RADIUS) then
+				arrow.near = arrow.near or {}
+				arrow.near[player] = true
+				t = t or now()
+				if t - (warnedAt[player] or -math.huge) >= Constants.NEAR_MISS_GAP then
+					warnedAt[player] = t
+					Net.fire(player, "Threat", { from = arrow.origin, by = arrow.by and arrow.by.UserId })
+				end
+			end
+		end
+	end
+end
+
 function CombatService:_finish(arrow, pos, kind)
 	arrow.done = true
 	Net.fireAll("ArrowEnd", { id = arrow.id, pos = pos, kind = kind })
@@ -530,7 +741,11 @@ function CombatService:_step(dt)
 		arrow.t = t1
 		local victim, vt, head = hitPlayers(arrow, a, b)
 		local st, sid = hitSolids(a, b)
-		if victim and (not st or vt <= st) then
+		local hits = victim and (not st or vt <= st)
+		-- (the near misses: as far as it really flew this step, up to what it struck)
+		local upTo = (hits and vt) or st
+		self:_nearMiss(arrow, a, upTo and a:Lerp(b, upTo) or b, hits and victim or nil)
+		if hits then
 			local at = a:Lerp(b, vt)
 			arrow.hitT = t0 + dt * vt -- (when in its flight it struck: the kill cam replays up to here)
 			table.remove(arrows, i)
@@ -754,7 +969,7 @@ function CombatService:_hitPlayer(arrow, victim, head, at, dir)
 		end)
 	end
 	victim:SetAttribute("AcGrace", os.clock() + 1.5) -- (the knockback is ours: the anti-cheat lets it go)
-	Net.fire(victim, "Hurt", { amount = amount, from = arrow.origin, knock = kb, head = head })
+	Net.fire(victim, "Hurt", { amount = amount, from = arrow.origin, knock = kb, head = head, by = shooter.UserId })
 	if shooter.Parent then
 		Net.fire(shooter, "Hit", { damage = amount, head = head, kill = killed, victim = victim.UserId })
 	end
@@ -805,6 +1020,17 @@ function CombatService:AssistFor(player, plain)
 		if not best or best.max < Constants.AIM_ASSIST_MAX then
 			best =
 				{ cone = Constants.AIM_ASSIST_CONE, pull = Constants.AIM_ASSIST_PULL, max = Constants.AIM_ASSIST_MAX }
+		end
+	end
+	-- their first matches after the tutorial: more on top, fading match by match, never past NEW_PLAYER_AIM_CAP
+	-- (and never less than the device gives anyway)
+	local help = self:NewHelp(player)
+	if help > 0 then
+		local base = best or { cone = 0, pull = 0, max = 0 }
+		local add, cap = Constants.NEW_PLAYER_AIM, Constants.NEW_PLAYER_AIM_CAP
+		best = {}
+		for _, k in { "cone", "pull", "max" } do
+			best[k] = math.max(base[k], math.min(base[k] + add[k] * help, cap[k]))
 		end
 	end
 	return best
@@ -950,6 +1176,7 @@ function CombatService:Shoot(player, origin, direction, shotId)
 		charge = charge,
 		shotId = shotId,
 		novice = self:Novice(player) or nil,
+		scale = self:HitScale(player), -- (shot by touch: bigger spheres)
 	}
 	table.insert(arrows, arrow)
 	Net.fireAll("Arrow", {
@@ -1136,7 +1363,7 @@ function CombatService:_slash(sl, best)
 	if typeof(best) == "Instance" then
 		best:SetAttribute("AcGrace", os.clock() + 1.5)
 	end
-	Net.fire(best, "Hurt", { amount = amount, from = r.Position, knock = kb, head = false })
+	Net.fire(best, "Hurt", { amount = amount, from = r.Position, knock = kb, head = false, by = player.UserId })
 	Net.fire(
 		player,
 		"Hit",
@@ -1290,6 +1517,8 @@ function CombatService:Init(registry)
 		states[player] = nil
 		history[player] = nil
 		scored[player] = nil
+		warnedAt[player] = nil
+		helpedIn[player] = nil
 		stopSlashes(player)
 		for _, s in states do
 			s.hits[player] = nil
@@ -1313,9 +1542,12 @@ function CombatService:Start()
 		-- (slashes still cutting, bots mid-lunge)
 		self:_slashStep()
 		self:_lungeStep(dt)
-		-- (finished reloads refill the magazine)
+		-- (finished reloads refill the magazine; a comeback shield that ran out goes)
 		local t = now()
 		for player, s in states do
+			if s.shieldUntil and t >= s.shieldUntil then
+				self:DropShield(player, "time")
+			end
 			if s.reloadAt and t >= s.reloadAt then
 				local w = Weapons.get(s.weapon)
 				s.reloadAt, s.ammo = nil, w.mag

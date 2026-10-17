@@ -532,6 +532,11 @@ function MatchService:NewMatch(key, size)
 	frontline = 0
 	arena:Paint(frontline)
 	teams:Rebalance()
+	-- (and the mice split between the sides: TeamService rule 4)
+	local spread, spreadErr = pcall(teams.SpreadDevices, teams)
+	if not spread then
+		warn("[MatchService] spreading devices failed: " .. tostring(spreadErr))
+	end
 	matchId += 1
 	matchStart = now()
 	stats = {}

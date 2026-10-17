@@ -12,7 +12,14 @@ The rules, in order:
      with no friend there first), and only when no solo is left there, a whole party as one block (the smallest,
      and only if that makes it fairer). A party is never split, even when it is more than half the server
      (fairness comes second). A party that forms in the fight waits: it moves at the next match start.
-  4. The look: players wear their own avatar (at a standard size), with their team on it: neon bands on both upper
+  4. Mice split between the sides (SpreadDevices, between matches, after rule 3): most players are on phones, and a
+     side with all the keyboard-and-mouse players is no fun for the other. While one side has DEVICE_SPREAD or more
+     keyboard players than the other (the "Device" each client reports), a solo keyboard player there with no friend
+     on that side trades places with a solo touch or pad player (no friend there either) on the other side; the
+     sizes stay as they were. Rule 3's evening moves a keyboard player first when their side has more of them, and a
+     solo joiner on even teams with the turf even too goes where there are fewer mice (a friend still comes first).
+     Parties and friends are never split for it.
+  5. The look: players wear their own avatar (at a standard size), with their team on it: neon bands on both upper
      arms and the waist and a team-coloured outline, so red and blue read at any distance. Bots are mannequins in
      their team's colour.
 
@@ -22,6 +29,8 @@ The rules, in order:
   TeamService:Assign(player)          picks and sets a team (rule 1, else rule 2)
   TeamService:PartyTeam(player)       the team the player's party is on, or nil
   TeamService:Rebalance()             rule 3; returns the players it moved
+  TeamService:SpreadDevices()         rule 4; returns the players it moved
+  TeamService:Keyboards(team)         keyboard players on the team (real people)
   TeamService:SetParties(fn)          fn() -> { { leader = player, members = { players } } } (PartyService)
   TeamService:Set(player, team)       TeamService:Clear(player)   (no team: a spectating admin)
   TeamService:Dress(character, team)
@@ -81,6 +90,25 @@ end
 
 local function other(team)
 	return team == "red" and "blue" or "red"
+end
+
+-- How a real person plays, as their client reported it ("touch" | "gamepad" | "keyboard"), or nil (a bot, not yet)
+local function deviceOf(p)
+	if p.IsBot then
+		return nil
+	end
+	local d = p:GetAttribute("Device")
+	return (d == "touch" or d == "gamepad" or d == "keyboard") and d or nil
+end
+
+function TeamService:Keyboards(team)
+	local n = 0
+	for _, p in self:Members(team) do
+		if deviceOf(p) == "keyboard" then
+			n += 1
+		end
+	end
+	return n
 end
 
 function TeamService:FriendTeam(player)
@@ -229,7 +257,13 @@ function TeamService:_pick(player)
 	else
 		-- (even: help the side that's behind on turf; turf even too: a friend's side, else a coin flip)
 		local leader = turfLeader and turfLeader()
-		pick = (leader and other(leader)) or self:FriendTeam(player) or (math.random(1, 2) == 1 and "red" or "blue")
+		pick = (leader and other(leader)) or self:FriendTeam(player)
+		if not pick and deviceOf(player) == "keyboard" then
+			-- (a mouse: the side with fewer of them; rule 4 evens the rest between matches)
+			local kr, kb = self:Keyboards("red"), self:Keyboards("blue")
+			pick = kr ~= kb and (kr < kb and "red" or "blue") or nil
+		end
+		pick = pick or (math.random(1, 2) == 1 and "red" or "blue")
 	end
 	self:Set(player, pick)
 	return pick
@@ -261,10 +295,18 @@ function TeamService:Rebalance()
 		end
 		local big = red > blue and "red" or "blue"
 		local members = self:Members(big)
-		local newest, lonely -- (a solo player: the last one listed; the first with no friend on this side)
+		-- (with more mice on the big side, one of them goes first; with fewer, anyone but one: rule 4)
+		local kbig, ksmall = self:Keyboards(big), self:Keyboards(other(big))
+		local function suits(p)
+			local kb = deviceOf(p) == "keyboard"
+			return (kbig > ksmall and kb) or (kbig < ksmall and not kb) or kbig == ksmall
+		end
+		-- (a solo player: the last one listed; the first with no friend on this side; each, preferably one that suits)
+		local newest, lonely, newestFit, lonelyFit
 		for _, p in members do
 			if not partyOf(p, list) then
 				newest = p
+				newestFit = suits(p) and p or newestFit
 				local hasFriend = false
 				for _, q in members do
 					if q ~= p and friends(p, q) then
@@ -272,12 +314,13 @@ function TeamService:Rebalance()
 						break
 					end
 				end
-				if not hasFriend and not lonely then
-					lonely = p
+				if not hasFriend then
+					lonely = lonely or p
+					lonelyFit = lonelyFit or (suits(p) and p or nil)
 				end
 			end
 		end
-		local pick = lonely or newest
+		local pick = lonelyFit or lonely or newestFit or newest
 		if pick then
 			move(pick, other(big))
 		else
@@ -295,6 +338,61 @@ function TeamService:Rebalance()
 			for _, p in best.members do
 				move(p, other(big))
 			end
+		end
+	end
+	return moved
+end
+
+-- Rule 4: keyboard players split between the sides (between matches, after Rebalance). Only solo players with no
+-- friend on their side trade places; the sizes stay as they were (or one more mouse crosses when their side is the
+-- bigger one, which keeps the teams within one).
+function TeamService:SpreadDevices()
+	local moved = {}
+	local list = parties()
+	local function free(p)
+		if p.IsBot or partyOf(p, list) then
+			return false
+		end
+		local team = teams[p]
+		for _, q in self:Members(team) do
+			if q ~= p and not q.IsBot and friends(p, q) then
+				return false
+			end
+		end
+		return true
+	end
+	local function find(team, wantKeyboard)
+		for _, p in self:Members(team) do
+			local d = deviceOf(p)
+			local fits = wantKeyboard and d == "keyboard" or (not wantKeyboard and (d == "touch" or d == "gamepad"))
+			if fits and not table.find(moved, p) and free(p) then
+				return p
+			end
+		end
+		return nil
+	end
+	for _ = 1, Constants.MAX_PLAYERS do
+		local kr, kb = self:Keyboards("red"), self:Keyboards("blue")
+		if math.abs(kr - kb) < Constants.DEVICE_SPREAD then
+			break
+		end
+		local heavy = kr > kb and "red" or "blue"
+		local light = other(heavy)
+		local mouse = find(heavy, true)
+		if not mouse then
+			break
+		end
+		local thumb = find(light, false)
+		if thumb then
+			self:Set(mouse, light)
+			self:Set(thumb, heavy)
+			table.insert(moved, mouse)
+			table.insert(moved, thumb)
+		elseif self:Count(heavy) > self:Count(light) then
+			self:Set(mouse, light)
+			table.insert(moved, mouse)
+		else
+			break
 		end
 	end
 	return moved
