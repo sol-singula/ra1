@@ -181,19 +181,29 @@ end
 -- end pays the rest)
 Shop.EARN = { match = 10, win = 30, perKill = 5, headshot = 2, killCap = 30, mvp = 15, firstWin = 50 }
 
-function Shop.shardsFor(info, firstWinToday)
-	if (info.seconds or 0) < 60 then
-		return 0
+-- What a match pays, in parts, each paid (and shown flying to the counter) on its own: { match, win, mvp }.
+-- In it at least PAY_SECONDS for any of it (a late joiner who helps win still gets the win); the day's first win
+-- bonus only for a win that counts (firstWinToday).
+Shop.PAY_SECONDS = 30
+function Shop.shardsParts(info, firstWinToday)
+	local out = { match = 0, win = 0, mvp = 0 }
+	if (info.seconds or 0) < Shop.PAY_SECONDS then
+		return out
 	end
 	local e = Shop.EARN
-	local n = e.match -- (the kills were paid as they happened)
-	if info.won and info.qualified ~= false then
-		n += e.win + (firstWinToday and e.firstWin or 0)
+	out.match = e.match -- (the kills were paid as they happened)
+	if info.won then
+		out.win = e.win + (firstWinToday and e.firstWin or 0)
 	end
 	if info.mvp then
-		n += e.mvp
+		out.mvp = e.mvp
 	end
-	return n
+	return out
+end
+
+function Shop.shardsFor(info, firstWinToday)
+	local parts = Shop.shardsParts(info, firstWinToday)
+	return parts.match + parts.win + parts.mvp
 end
 
 -- The rotation --------------------------------------------------------------------------------------------------

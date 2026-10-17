@@ -1015,6 +1015,19 @@ do
 	Engine.advance(Constants.FEEDBACK_ASK_DELAY + 0.3)
 	local a = firedSince(m5, "Ask", red)
 	check("their next win asks for a like", a and a.args[1].kind == "like", a and a.args[1].kind)
+	-- the win pays on its own (VICTORY), apart from playing the match, each flying to the counter
+	local whys = {}
+	for i = m5 + 1, #Engine.clientLog do
+		local ev = Engine.clientLog[i]
+		if ev.name == "Earned" and ev.player == red then
+			whys[ev.args[1].why] = ev.args[1].amount
+		end
+	end
+	check(
+		"a win: VICTORY Shards and MATCH PLAYED Shards, each its own",
+		(whys.win or 0) >= Engine.require(tree.shared.Data.Shop).EARN.win and (whys.match or 0) > 0,
+		`{whys.win} {whys.match}`
+	)
 	local mLike = mark()
 	send(red, "Feedback", "like", "ok")
 	check("...and remembers it", Data:Get(red).feedback.likeAnswer == "ok")

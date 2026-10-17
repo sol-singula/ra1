@@ -486,12 +486,29 @@ function HudController.paintShards()
 end
 
 -- A +N flying from the middle of the screen into the counter, the counter punching when it lands
+-- (several at once, a match's end: VICTORY, MVP, MATCH PLAYED: one after another, not on top of each other)
+local nextFly = 0
+local FLY_GAP = 0.55
+
 function HudController.earned(e)
 	if type(e) ~= "table" or type(e.amount) ~= "number" or not refs.shop then
 		return
 	end
+	local wait = math.max(0, nextFly - os.clock())
+	nextFly = os.clock() + wait + FLY_GAP
+	if wait > 0 then
+		task.delay(wait, HudController.flyEarned, e)
+		return
+	end
+	HudController.flyEarned(e)
+end
+
+function HudController.flyEarned(e)
+	if not refs.shop then
+		return
+	end
 	local gui = refs.shop.Parent
-	local big = e.why == "match"
+	local big = e.why == "match" or e.why == "win" or e.why == "mvp"
 	local fly = Theme.text({
 		Name = "Earned",
 		Text = `+{e.amount} ◆`,
@@ -506,7 +523,16 @@ function HudController.earned(e)
 		ZIndex = 20,
 		Parent = gui,
 	})
-	local why = ({ kill = "KNOCKOUT", headshot = "HEADSHOT", match = "MATCH REWARD", starter = "STARTER PACK" })[e.why or ""]
+	local why = ({
+		kill = "KNOCKOUT",
+		headshot = "HEADSHOT",
+		match = "MATCH PLAYED",
+		win = "VICTORY",
+		mvp = "MVP",
+		hook = "MISSION",
+		pass = "PASS REWARD",
+		starter = "STARTER PACK",
+	})[e.why or ""]
 	if why then
 		Theme.text({
 			Name = "Why",

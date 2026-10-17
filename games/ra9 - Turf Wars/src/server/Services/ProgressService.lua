@@ -241,12 +241,13 @@ function ProgressService:Award(player, info)
 		p.daily = { day = today, played = false, won = false }
 	end
 	local firstWin = qualified and not p.daily.won
-	local shards = Shop.shardsFor({
+	local parts = Shop.shardsParts({
 		seconds = info.seconds,
 		kills = info.kills,
-		won = qualified,
+		won = info.won == true,
 		mvp = info.mvp,
 	}, firstWin)
+	local shards = parts.match + parts.win + parts.mvp
 	local xp = Season.xpFor(info)
 	if xp > 0 and not p.daily.played then
 		xp += Season.DAILY_BONUS
@@ -257,7 +258,12 @@ function ProgressService:Award(player, info)
 	if qualified then
 		p.daily.won = true
 	end
-	economy:Add(player, shards, "match")
+	-- (each part on its own, so the counter ticks up with a reason each time: VICTORY, MVP, MATCH)
+	for _, why in { "win", "mvp", "match" } do
+		if parts[why] > 0 then
+			economy:Add(player, parts[why], why)
+		end
+	end
 	local tiers = season:AddXP(player, xp)
 	self:Celebrate(player, before)
 	self:Push(player)
