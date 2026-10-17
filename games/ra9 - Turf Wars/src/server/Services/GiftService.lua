@@ -52,7 +52,7 @@ local GiftService = {
 
 local data, progress, shop, match, teams, economy
 local paid = {} -- [player] = the Shards this match has paid them (what the first match's shop points at)
-local PAID = { kill = true, headshot = true, match = true } -- (EconomyService's whys a match pays)
+local PAID = { kill = true, headshot = true, match = true, win = true, mvp = true } -- (EconomyService's whys a match pays)
 
 local ORDER = { "trail", "effect", "skin", "banner" }
 local NEEDED = { "trail", "effect", "skin" } -- (worn one of each: they've learnt the locker)
