@@ -14,6 +14,9 @@ the geometry questions the other services ask:
   ArenaService:LoseLine(team)      where the frontline ends that team
   ArenaService:Inside(pos)         inside the playable box
   ArenaService:ClearTemplate()     (at start) removes a template's Baseplate and SpawnLocation
+  ArenaService:AddArena(key, arena) / :RemoveArena(key)   another arena beside the main one (a duel's, far out past
+                                   the plaza: World/DuelArena, with its origin): its solids count for every arrow
+                                   and slash, its box is inside the world, its decks are safe
 ]]
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,7 +27,7 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local ArenaService = {
 	Name = "ArenaService",
-	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
+	-- (every place: the lobby has no map, but its duels' arenas go through here, for CombatService's arrows and blades)
 	Dependencies = {},
 	Loaded = Signal.new("ArenaService.Loaded"), -- (arena)
 }
@@ -32,6 +35,7 @@ local ArenaService = {
 local arena
 ArenaService.version = 0
 local extra = {} -- [id] = { min, max } the structures' boxes (BuildService keeps them here)
+local others = {} -- [key] = an arena beside the main one (a duel's), its boxes already where it stands
 local spawnTurn = { red = 0, blue = 0 }
 
 -- Matte, not glowing: a softer sun and less fill light, so the white world reads as white plaster that catches
@@ -109,7 +113,20 @@ function ArenaService:RemoveBox(id)
 	end
 end
 
--- Every solid box: the map's and the structures'.
+-- Another arena beside the main one (a duel's): its boxes are already where it stands (World/DuelArena moves them)
+function ArenaService:AddArena(key, a)
+	others[key] = a
+	self.version += 1
+end
+
+function ArenaService:RemoveArena(key)
+	if others[key] then
+		others[key] = nil
+		self.version += 1
+	end
+end
+
+-- Every solid box: the map's, the structures' and the other arenas'.
 function ArenaService:Solids()
 	local out = {}
 	for _, s in arena and arena.solids or {} do
@@ -117,6 +134,11 @@ function ArenaService:Solids()
 	end
 	for _, s in extra do
 		table.insert(out, s)
+	end
+	for _, a in others do
+		for _, s in a.solids do
+			table.insert(out, s)
+		end
 	end
 	return out
 end
@@ -128,6 +150,11 @@ function ArenaService:Collide()
 	end
 	for _, s in extra do
 		table.insert(out, s)
+	end
+	for _, a in others do
+		for _, s in a.collide do
+			table.insert(out, s)
+		end
 	end
 	return out
 end
@@ -144,26 +171,45 @@ function ArenaService:SpawnFor(team, index)
 	return list[(index - 1) % #list + 1]
 end
 
--- Is this player standing on their team's spawn deck?
+-- Is this player standing on their team's spawn deck (the main arena's, or the deck of the other arena they're in)?
 function ArenaService:OnDeck(player, team)
 	local c = player.Character
 	local r = c and c:FindFirstChild("HumanoidRootPart")
-	if not (arena and arena.room and r and team) then
+	if not (r and team) then
 		return false
 	end
-	return ArenaBuilder.inRoom(arena, team, r.Position)
+	if arena and arena.room and ArenaBuilder.inRoom(arena, team, r.Position) then
+		return true
+	end
+	for _, a in others do
+		local p = r.Position - (a.origin or Vector3.zero)
+		if a.room and ArenaBuilder.inRoom(a, team, p) and math.abs(p.Z) <= a.width / 2 then
+			return true
+		end
+	end
+	return false
 end
 
 function ArenaService:LoseLine(team)
 	return arena and ArenaBuilder.loseLine(arena, team) or 0
 end
 
+local function within(a, pos)
+	local mn, mx = ArenaBuilder.bounds(a)
+	local p = pos - (a.origin or Vector3.zero)
+	return p.X >= mn.X and p.X <= mx.X and p.Y >= mn.Y and p.Y <= mx.Y and p.Z >= mn.Z and p.Z <= mx.Z
+end
+
 function ArenaService:Inside(pos)
+	for _, a in others do
+		if within(a, pos) then
+			return true
+		end
+	end
 	if not arena then
 		return true
 	end
-	local mn, mx = ArenaBuilder.bounds(arena)
-	return pos.X >= mn.X and pos.X <= mx.X and pos.Y >= mn.Y and pos.Y <= mx.Y and pos.Z >= mn.Z and pos.Z <= mx.Z
+	return within(arena, pos)
 end
 
 -- What a Roblox template leaves in the place (the grey Baseplate with its grid, the default SpawnLocation): the

@@ -81,11 +81,15 @@ end
 -- (the Bonk Arena runs a small set). mode: which place this is (default Constants.MODE).
 function Loader.boot(folder, only, mode)
 	mode = mode or Constants.MODE
-	local all = {}
+	local all, left = {}, {}
 	for _, child in folder:GetChildren() do
-		if child:IsA("ModuleScript") and (not only or only[child.Name]) then
-			local svc = require(child)
-			all[svc.Name] = svc
+		if child:IsA("ModuleScript") then
+			if only and not only[child.Name] then
+				left[child.Name] = true -- (not in this set: a dependency on it is nil, as a skipped mode's would be)
+			else
+				local svc = require(child)
+				all[svc.Name] = svc
+			end
 		end
 	end
 	local services, skipped = Loader.select(all, mode)
@@ -97,6 +101,9 @@ function Loader.boot(folder, only, mode)
 	if #names > 0 then
 		table.sort(names)
 		print(`[Loader] {mode}: not running {table.concat(names, ", ")}`)
+	end
+	for name in left do
+		skipped[name] = true
 	end
 	local order = sorted(services, skipped)
 	for _, svc in order do

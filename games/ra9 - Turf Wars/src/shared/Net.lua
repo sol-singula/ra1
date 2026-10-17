@@ -34,7 +34,7 @@ Net.ClientEvents = {
 	-- the universe (Data/Modes): PlaceService takes Play and ToLobby; the rest are the lobby's, the duels', the crates'
 	Play = 0.5, -- (modeKey?) off to that mode's place (none: the one with the most players, PopulationService:Best)
 	ToLobby = 0.2, -- () back to the lobby
-	Duel = 4, -- the duels (the lobby's DuelService)
+	Duel = 6, -- ("join", size) | ("cancel") | ("rematch") | ("leave") the lobby's duels (DuelService)
 	Crate = 4, -- ("spin", "shards" | "robux") the lobby's Crate: one roll (CrateService)
 	Verify = 0.2, -- () a check the lobby asks for
 	Ctf = 4, -- ("ready", on) READY (or not) for the next Capture the Flag match (CtfService)
@@ -87,7 +87,8 @@ Net.ServerEvents = {
 	"Brawl", -- Bot Brawl (BrawlService): { kind = "state", wave, state, ends, alive, total, boss?, best, last }
 	-- | { kind = "clear", wave, shards, best, boss?, center } a wave down (the fireworks) | { kind = "last" } one bot
 	-- left | { kind = "stun", seconds } the bots froze
-	"Duel", -- the duels' (DuelService)
+	"Duel", -- { kind = "queue" | "start" | "round" | "roundEnd" | "result" | "rematch" | "end", ... } the lobby's
+	-- duels: the queue chip, the scoreboard, the round banners, the result card (DuelService, DuelController)
 	"Crate", -- { key, kind, name, rarity, dup, refund, paid } what the Crate rolled for you (CrateService)
 	"Ctf", -- { ready, need, waiting, scores = { red, blue }, toWin, sudden, flags = { [team] = { state = "home" |
 	-- "carried" | "dropped", carrier, name } } } Capture the Flag's state, whenever it changes (CtfService)

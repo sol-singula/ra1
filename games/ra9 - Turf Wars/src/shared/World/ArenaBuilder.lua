@@ -9,8 +9,10 @@ in World/Maps with the shapes below, mirrored so both sides play the same.
 The look (§0): SUPERHOT. White and light grey, smooth matte plastic, no textures; detail comes from shapes (bases
 and capitals on columns, steps, ledges, railings, window frames).
 
-  local arena = ArenaBuilder.build(mapDef, parent, scale)   scale: how many people are in the match (or a tier's
-                                                             name); it picks the size (ArenaBuilder.SIZES)
+  local arena = ArenaBuilder.build(mapDef, parent, scale, opts)   scale: how many people are in the match (or a
+                                                             tier's name); it picks the size (ArenaBuilder.SIZES).
+                                                             opts.compact: no skyline and a tight ground (a duel's
+                                                             arena, built beside others: World/DuelArena)
   arena = {
     folder, def, length, width, half, spawnDepth, tier,
     solids = { { min, max, part } },     every solid box (projectiles and building use these)
@@ -586,7 +588,8 @@ function ArenaBuilder.tier(scale)
 end
 
 -- The arena ---------------------------------------------------------------------------------------------------
-function ArenaBuilder.build(def, parent, scale)
+function ArenaBuilder.build(def, parent, scale, opts)
+	opts = opts or {}
 	local folder = Instance.new("Folder")
 	folder.Name = "Arena"
 	local tier = ArenaBuilder.tier(scale)
@@ -721,8 +724,9 @@ function ArenaBuilder.build(def, parent, scale)
 
 	-- beyond the walls: a skyline fading into the haze, so the world never ends at a wall. Towers with set-backs,
 	-- crowns and a few needles by default; a map can draw its own (def.skyline(shapes, x, z, w, d, h, rng, i)).
+	-- (compact: none, and a tight ground: a duel's arena stands a few hundred studs from the next)
 	local r = Random.new(def.seed or #def.key * 97)
-	for i = 1, 64 do
+	for i = 1, opts.compact and 0 or 64 do
 		local a = (i / 64) * math.pi * 2 + r:NextNumber(-0.04, 0.04)
 		local rx, rz = (half + 80) + r:NextNumber(0, 150), (width / 2 + 80) + r:NextNumber(0, 150)
 		local x, z = math.cos(a) * rx, math.sin(a) * rz
@@ -751,9 +755,10 @@ function ArenaBuilder.build(def, parent, scale)
 		end
 	end
 	-- the ground out there: one wide pale floor, below the arena's, so nothing below the walls is ever empty
+	local spread = opts.compact and 100 or 600
 	local ground = shapes:box(
 		Vector3.new(0, -2.5, 0),
-		Vector3.new(length + 600, 1, width + 600),
+		Vector3.new(length + spread, 1, width + spread),
 		deco({ color = Constants.MAP_GROUND.ground or shapes.light, shadow = false })
 	)
 	ground.Name = "Ground"

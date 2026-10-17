@@ -230,7 +230,6 @@ for _, name in
 		"TeamService",
 		"BuildService",
 		"BotService",
-		"ArenaService",
 		"AfkService",
 		"HookService",
 		"GiftService",

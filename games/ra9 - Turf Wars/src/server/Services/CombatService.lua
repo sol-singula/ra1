@@ -53,6 +53,7 @@ at most every NEAR_MISS_GAP; a hit says so through Hurt.from).
   (a "Hits" attribute of 2 or more on a victim: a Bot Brawl boss, knocked out only by its last hit)
   CombatService.mayShoot(player) -> bool   a hook: false and their bow stays down (CtfService: a flag carrier)
   CombatService:HitScale(player)           how much bigger the spheres are for their arrows (1 .. TOUCH_HIT_MAX)
+  CombatService:SetTeams(provider)         who answers Team(player) (the lobby: DuelService, for its duels' sides)
   CombatService.Killed(victim, killer, info)   info: { weapon, head, assists = { players }, kind }
   CombatService.StructureHit(id, damage, attacker)
   CombatService.Shield(player, what, detail)   "granted" | "broken" | "expired" (the analytics)
@@ -84,6 +85,12 @@ local CombatService = {
 }
 
 local data, teams, arena
+-- Whose side someone is on: TeamService's teams, or whatever was registered instead (the lobby has no match and
+-- no TeamService: DuelService answers for its duels' sides, CombatService:SetTeams)
+local function teamOf(player)
+	return teams and teams:Team(player) or nil
+end
+
 local states = {} -- [player] = { hp, alive, weapon, drawAt, ammo, reloadAt, readyAt, protectUntil, hits = { [attacker] = t },
 -- downs (knocked out in a row without a knockout), shieldUntil (the comeback shield) }
 local arrows = {} -- { id, by, team, weapon, origin, velocity, t, damage, knockback, head }
@@ -183,7 +190,7 @@ function CombatService:Push(player)
 	local s = state(player)
 	local w = Weapons.get(s.weapon)
 	Net.fire(player, "Me", {
-		team = teams:Team(player),
+		team = teamOf(player),
 		alive = s.alive,
 		hp = s.hp,
 		weapon = s.weapon,
@@ -205,7 +212,7 @@ function CombatService:HoldBow(player, key)
 	if old then
 		old:Destroy()
 	end
-	local team = teams:Team(player)
+	local team = teamOf(player)
 	local color = Constants.TEAM_COLOR[team or ""] or Constants.WHITE
 	local model = Instance.new("Model")
 	model.Name = "HeldBow"
@@ -562,11 +569,11 @@ function CombatService:Damage(victim, amount, attacker, info)
 		return false
 	end
 	-- safe on your own spawn deck until you shoot or swing (it's open, so walls don't do it)
-	if attacker and not s.attacked and arena and arena:OnDeck(victim, teams:Team(victim)) then
+	if attacker and not s.attacked and arena and arena:OnDeck(victim, teamOf(victim)) then
 		return false
 	end
 	if attacker then
-		if teams:Team(attacker) == teams:Team(victim) then
+		if teamOf(attacker) == teamOf(victim) then
 			return false -- (no friendly fire)
 		end
 	end
@@ -618,7 +625,7 @@ local function hitPlayers(arrow, a, b)
 	local scale = math.clamp(arrow.scale or 1, 1, Constants.TOUCH_HIT_MAX) -- (a thumb's arrow: bigger spheres)
 	local past = rewind > 0.01 and now() - rewind or nil
 	for player, s in states do
-		if s.alive and player ~= arrow.by and player.Parent and teams:Team(player) ~= arrow.team then
+		if s.alive and player ~= arrow.by and player.Parent and teamOf(player) ~= arrow.team then
 			local r = root(player)
 			if r then
 				-- where they are now, and where the shooter saw them (their ping ago)
@@ -722,7 +729,7 @@ function CombatService:_nearMiss(arrow, a, b, victim)
 			and player ~= arrow.by
 			and typeof(player) == "Instance"
 			and player.Parent
-			and teams:Team(player) ~= arrow.team
+			and teamOf(player) ~= arrow.team
 			and not (arrow.near and arrow.near[player])
 		then
 			local r = root(player)
@@ -836,7 +843,7 @@ function CombatService:_explode(bomb, pos)
 	local t = now()
 	local hits, kills = 0, 0
 	for player, st in states do
-		local team = teams:Team(player)
+		local team = teamOf(player)
 		local r = st.alive and player.Parent and team ~= bomb.team and root(player)
 		if r then
 			local body = r.Position + Vector3.new(0, 0.2, 0)
@@ -886,7 +893,7 @@ function CombatService:_throw(player, w, origin, direction, charge, shotId)
 	local bomb = {
 		id = nextBomb,
 		by = player,
-		team = teams:Team(player),
+		team = teamOf(player),
 		origin = origin,
 		velocity = Formulas.lobVelocity(direction, shot.speed),
 		t = 0,
@@ -934,7 +941,7 @@ function CombatService:_parry(arrow, victim, at, dir)
 	local again = {
 		id = nextArrow,
 		by = victim,
-		team = teams:Team(victim),
+		team = teamOf(victim),
 		weapon = arrow.weapon,
 		origin = origin,
 		velocity = back * speed,
@@ -1069,10 +1076,10 @@ function CombatService:Assist(player, origin, direction, speed, plain)
 		end
 		return self:Assist(player, origin, direction, speed, true)
 	end
-	local mine = teams:Team(player)
+	local mine = teamOf(player)
 	local best, bestAngle
 	for other, os_ in states do
-		local r = os_.alive and other ~= player and teams:Team(other) ~= mine and root(other)
+		local r = os_.alive and other ~= player and teamOf(other) ~= mine and root(other)
 		if r then
 			local target = r.Position + Vector3.new(0, 0.6, 0)
 			local dist = (target - origin).Magnitude
@@ -1188,7 +1195,7 @@ function CombatService:Shoot(player, origin, direction, shotId)
 	local arrow = {
 		id = nextArrow,
 		by = player,
-		team = teams:Team(player),
+		team = teamOf(player),
 		weapon = w.key,
 		origin = origin,
 		velocity = direction * shot.speed,
@@ -1247,7 +1254,7 @@ function CombatService:_slashTarget(sl)
 	if not r then
 		return nil
 	end
-	local mine = teams:Team(sl.by)
+	local mine = teamOf(sl.by)
 	local past = sl.rewind > 0.01 and now() - sl.rewind or nil
 	-- (from where the slash began, the lunge still to come; and from where the swinger is now, the lunge made)
 	local froms = { { sl.from, sl.w.range + Constants.BLADE_LUNGE + sl.extra } }
@@ -1256,7 +1263,7 @@ function CombatService:_slashTarget(sl)
 	end
 	local best, bestD
 	for other, os_ in states do
-		local orr = os_.alive and other ~= sl.by and other.Parent and teams:Team(other) ~= mine and root(other)
+		local orr = os_.alive and other ~= sl.by and other.Parent and teamOf(other) ~= mine and root(other)
 		if orr then
 			local spots = { orr.Position }
 			local was = past and rootAt(other, past)
@@ -1522,6 +1529,11 @@ local NO_ARENA = {
 		return false
 	end,
 }
+
+-- Who answers Team(player) (a TeamService-shaped table): the lobby's DuelService, for its duels' sides
+function CombatService:SetTeams(provider)
+	teams = provider
+end
 
 function CombatService:Init(registry)
 	data = registry.PlayerDataService

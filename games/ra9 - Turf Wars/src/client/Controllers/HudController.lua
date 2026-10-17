@@ -571,6 +571,7 @@ function HudController.flyEarned(e)
 		boss = "BOSS DOWN",
 		capture = "CAPTURE",
 		flagReturn = "FLAG RETURNED",
+		duel = "DUEL",
 	})[e.why or ""]
 	if why then
 		Theme.text({
