@@ -3,8 +3,8 @@ Construction (master plan §2B, §7): modular structures on the 4-stud grid, in 
 
 A placement is checked here, never trusted from the client: the phase; the structure exists; your budget covers it
 and your team is under its cap; you're within BUILD_REACH; every cell of its footprint is on your own turf, at least
-up to the frontline (BUILD_FRONT_GAP cells back; 0 = the cell touching it too), out of both spawn zones and inside the field; it doesn't overlap the
-map's shapes or another structure; and if it's a tall piece, every row of cells across the field it stands in still
+up to the frontline (BUILD_FRONT_GAP cells back; 0 = the cell touching it too), out of both spawn zones and inside the field; it doesn't overlap
+another structure or stand in the map's shapes (poking BUILD_MAP_OVERLAP studs into one at the edges is fine); and if it's a tall piece, every row of cells across the field it stands in still
 has an open cell (no wall ever seals the battlefield). Then it's built for everyone in its team's colour.
 
 Structures last the match (they're cleared with the arena) unless arrows break them: CombatService reports hits on
@@ -163,11 +163,9 @@ function BuildService:Check(player, key, cx, cz, rot)
 		if occupied[cell[1]] and occupied[cell[1]][cell[2]] then
 			return false, "Something's already there"
 		end
-		if a.blocked[cell[1]] and a.blocked[cell[1]][cell[2]] then
-			return false, "Blocked by the map"
-		end
 	end
-	local pad = Vector3.new(0.05, 0, 0.05)
+	-- the map: a little overlap at the edges is fine (BUILD_MAP_OVERLAP studs a side), not standing in a shape
+	local pad = Vector3.new(Constants.BUILD_MAP_OVERLAP, 0, Constants.BUILD_MAP_OVERLAP)
 	for _, s in a.solids do
 		if
 			s.part ~= a.strips[1] and Formulas.boxesOverlap(mn + pad + Vector3.new(0, 0.6, 0), mx - pad, s.min, s.max)

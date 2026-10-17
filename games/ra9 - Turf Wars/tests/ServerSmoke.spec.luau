@@ -198,6 +198,52 @@ stand(red, Vector3.new(-48, 3, -30))
 local ok5, why5 = Build:Place(red, "cover", Formulas.cellOf(-58, -38), select(2, Formulas.cellOf(-58, -38)), 0)
 check("not on the map's own walls", not ok5 and why5 ~= nil, why5)
 do
+	-- a little overlap with the map is fine: a cell whose box pokes into a shape only at its edge
+	local a = Arena:Current()
+	local side = Teams:Team(red) == "red" and -1 or 1
+	local F = ws:GetAttribute("Frontline")
+	local found
+	for x = -70, 70, 4 do
+		for z = -46, 46, 4 do
+			local px, pz = Formulas.cellOf(x, z)
+			local mn, mx = Formulas.footprintBox(px, pz, 1, 1, 0, 3)
+			local centre = (mn + mx) / 2
+			if (centre.X - F) * side > 2 and not found then
+				local edge, inside = false, false
+				for _, sol in a.solids do
+					if sol.part ~= a.strips[1] and sol.max.Y > 0.6 then
+						local pad = Vector3.new(Constants.BUILD_MAP_OVERLAP, 0, Constants.BUILD_MAP_OVERLAP)
+						if
+							Formulas.boxesOverlap(
+								mn + Vector3.new(0.05, 0.6, 0.05),
+								mx - Vector3.new(0.05, 0, 0.05),
+								sol.min,
+								sol.max
+							)
+						then
+							edge = true
+						end
+						if Formulas.boxesOverlap(mn + pad + Vector3.new(0, 0.6, 0), mx - pad, sol.min, sol.max) then
+							inside = true
+						end
+					end
+				end
+				if edge and not inside then
+					found = { px, pz, centre }
+				end
+			end
+		end
+	end
+	if found then
+		stand(red, Vector3.new(found[3].X, 3, found[3].Z) + Vector3.new(-side * 6, 0, 0))
+		Build:Refill()
+		local okO, whyO = Build:Check(red, "cover", found[1], found[2], 0)
+		check("a little overlap with the map is fine", okO == true or (whyO and not whyO:find("map")), whyO)
+	else
+		print("  (no edge-overlap cell on this map: skipped)")
+	end
+end
+do
 	-- right up to the line: the cell touching it is yours to build on (and the cell against the long wall)
 	local F = ws:GetAttribute("Frontline")
 	local side = Teams:Team(red) == "red" and -1 or 1

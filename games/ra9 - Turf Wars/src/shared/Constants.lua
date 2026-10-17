@@ -82,6 +82,7 @@ Constants.BOT_NAMES = { "Ace", "Echo", "Nova", "Blitz", "Rook", "Vex", "Juno", "
 Constants.BUILD_BUDGET = 120 -- points a player gets each build phase
 Constants.TEAM_STRUCTURES = 72 -- standing structures a team may have (+2 per player past 10)
 Constants.BUILD_REACH = 44 -- studs from you to the structure
+Constants.BUILD_MAP_OVERLAP = 1.25 -- studs a piece may poke into the map's shapes on each side (a little overlap is fine)
 Constants.BUILD_FRONT_GAP = 0 -- cells kept free on your side of the frontline (0: build right up to it)
 
 -- Rewards (§8)
