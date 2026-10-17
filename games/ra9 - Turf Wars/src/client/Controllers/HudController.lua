@@ -36,6 +36,8 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Structures = require(ReplicatedStorage.Shared.Data.Structures)
 local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
+local Shop = require(ReplicatedStorage.Shared.Data.Shop)
+local Format = require(ReplicatedStorage.Shared.Format)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -740,10 +742,51 @@ local function buildBottom(gui)
 				}, { Theme.corner(1) })
 			end
 		end
+		-- (the TNT before it's bought: still on the hotbar, under a lock and its price; a tap opens the purchase)
+		local lock
+		if w.key == Shop.TNT.key then
+			lock = Theme.new("Frame", {
+				Name = "Lock",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundColor3 = C.ink,
+				BackgroundTransparency = 0.45,
+				Visible = false,
+				ZIndex = 5,
+				Parent = b,
+			}, { Theme.corner(8) })
+			label({
+				Name = "Padlock",
+				Text = "🔒",
+				Size = UDim2.new(1, 0, 0, 26),
+				Position = UDim2.fromOffset(0, 6),
+				TextSize = 22,
+				TextXAlignment = Enum.TextXAlignment.Center,
+				ZIndex = 6,
+				Parent = lock,
+			})
+			label({
+				Name = "Price",
+				Text = Format.robux(Shop.TNT.robux),
+				Size = UDim2.new(1, -8, 0, 18),
+				Position = UDim2.fromOffset(4, 38),
+				TextSize = 13,
+				TextColor3 = C.white,
+				TextXAlignment = Enum.TextXAlignment.Center,
+				Font = Theme.Display,
+				ZIndex = 6,
+				Parent = lock,
+			})
+			local function paintLock()
+				lock.Visible = Weapons.locked(w.key, Players.LocalPlayer)
+			end
+			paintLock()
+			Players.LocalPlayer:GetAttributeChangedSignal("OwnsTNT"):Connect(paintLock)
+		end
 		b.Activated:Connect(function()
 			Bus.Weapon:Fire(w.key)
 		end)
-		refs.bows[w.key] = { button = b, ammo = ammo, key = b.Key, icon = b.Icon, pips = pips, x = (i - 1) * 82 }
+		refs.bows[w.key] =
+			{ button = b, ammo = ammo, key = b.Key, icon = b.Icon, pips = pips, lock = lock, x = (i - 1) * 82 }
 	end
 	-- the blade's slot is only there in the CHARGE (the fight's last seconds, when the line opens)
 	local function chargeSlots()

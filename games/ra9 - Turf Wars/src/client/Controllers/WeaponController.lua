@@ -772,6 +772,11 @@ function WeaponController.allowed(key)
 end
 
 function WeaponController.equip(key)
+	if Weapons.locked(key, game:GetService("Players").LocalPlayer) then
+		-- (not bought yet: the server opens the purchase; until then the bow stays in hand)
+		Net.send("Equip", key)
+		return false
+	end
 	if not WeaponController.allowed(key) or Store.phase() == "build" then
 		return false
 	end
@@ -788,7 +793,7 @@ function WeaponController.cycle(step)
 	local at = weapon().order or 1
 	for i = 1, n do
 		local key = Weapons.list[(at - 1 + step * i) % n + 1].key
-		if WeaponController.allowed(key) then
+		if WeaponController.allowed(key) and not Weapons.locked(key, game:GetService("Players").LocalPlayer) then
 			return WeaponController.equip(key)
 		end
 	end

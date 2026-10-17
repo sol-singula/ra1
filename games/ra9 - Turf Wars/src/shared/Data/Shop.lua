@@ -1,13 +1,13 @@
 --[[
-Shards (◆) and what they buy. Cosmetic only: nothing for sale changes a fight, and VIP, MVP and the goals' rewards
-are never for sale (Data/Achievements).
+Shards (◆) and what they buy. Cosmetic, but for one thing: the TNT (Shop.TNT, a game pass). VIP, MVP and the goals'
+rewards are never for sale (Data/Achievements).
 
 Where the money comes back from (recurring, by design):
   * the Turf Pass, a new one every 4 weeks (Data/Season), with +1 TIER for the impatient
   * the shop rotates: 4 items a day and a 3-item bundle a week, so there's always something new and each one is
     gone again soon (it comes back some day; season items never do)
   * Shards in packs (developer products: buy as often as you like), earned in play too, so free players get there
-  * once: the Starter Pack (a game pass)
+  * once: the Starter Pack (a game pass), and the TNT (a game pass: locked on the hotbar until it's bought)
   * optional: the Shard Club (a Roblox subscription, monthly), when its id is set
 
 IDs: 0 until they're made on the Creator Dashboard; in Studio an id of 0 is granted for free so it can be tried.
@@ -44,6 +44,15 @@ Shop.STARTER = {
 	shards = 600,
 	cosmetic = "starter_founder",
 	desc = "600 Shards and the Founder banner",
+}
+-- Robux (a game pass, once): TNT for good. Without it the TNT still sits on the hotbar, locked with its price; a
+-- tap there opens the purchase. (Bots always have it: it's how everyone sees what it does.)
+Shop.TNT = {
+	key = "tnt",
+	name = "TNT",
+	robux = 149,
+	id = 0, -- (a game pass: set its id once it's made on the Creator Dashboard; 0 = not on sale, free in Studio)
+	desc = "Yours forever: lob it to blow up walls and knock out anyone close",
 }
 -- A Roblox subscription (monthly); nil turns it off (nothing shows)
 Shop.CLUB =

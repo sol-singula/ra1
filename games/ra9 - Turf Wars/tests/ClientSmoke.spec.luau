@@ -189,6 +189,23 @@ do
 		table.concat(keys, " ")
 	)
 end
+-- the TNT before it's bought: on the hotbar under a lock and its price; 2 keeps the bow in hand (and offers the
+-- purchase: in Studio, with no pass id yet, that gives it free)
+do
+	local lock = refs.bows.tnt.lock
+	local price = lock and lock:FindFirstChild("Price", true)
+	check(
+		"TNT not bought: its slot is locked, with the price",
+		lock ~= nil and lock.Visible and price ~= nil and price.Text ~= "",
+		`{lock and lock.Visible} {price and price.Text}`
+	)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Two, UserInputType = Enum.UserInputType.Keyboard }, false)
+	Engine.advance(0.2)
+	check("...2 leaves the bow in hand", Combat:Weapon(player) ~= "tnt", Combat:Weapon(player))
+	Engine.require(tree.server.Services.ShopService):GrantTNT(player)
+	Engine.advance(0.2)
+	check("bought: the lock comes off", lock ~= nil and not lock.Visible)
+end
 UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Two, UserInputType = Enum.UserInputType.Keyboard }, false)
 Engine.advance(0.2)
 check("2 picks the TNT", Store.get("me").weapon == "tnt" and Combat:Weapon(player) == "tnt")

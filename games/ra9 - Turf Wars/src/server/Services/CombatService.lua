@@ -55,6 +55,7 @@ local CombatService = {
 	Shot = Signal.new("CombatService.Shot"), -- (player, weapon)
 	StructureHit = Signal.new("CombatService.StructureHit"), -- (id, damage, attacker)
 	Rejected = Signal.new("CombatService.Rejected"), -- (player, reason) a shot the server refused (the anti-cheat counts)
+	Locked = Signal.new("CombatService.Locked"), -- (player, key) tried a weapon they haven't bought (ShopService offers it)
 	Parried = Signal.new("CombatService.Parried"), -- (swinger, shooter) a blade knocked an arrow back
 }
 
@@ -203,8 +204,8 @@ function CombatService:Spawned(player)
 	local profile = data:Get(player)
 	local pick = profile and profile.settings.weapon
 	s.weapon = Weapons.get(pick) and pick or s.weapon or Weapons.DEFAULT
-	if not CombatService.allowed(s.weapon) then
-		s.weapon = Weapons.DEFAULT -- (the blade only comes out in the CHARGE)
+	if not CombatService.allowed(s.weapon, player) then
+		s.weapon = Weapons.DEFAULT -- (the blade only comes out in the CHARGE; the TNT once it's bought)
 	end
 	local w = Weapons.get(s.weapon)
 	s.ammo = w.mag
@@ -809,9 +810,9 @@ end
 
 -- The blade is only out in the CHARGE (the fight's last seconds, MatchService sets workspace "Charge"): bows only
 -- the rest of the time
-function CombatService.allowed(key)
+function CombatService.allowed(key, player)
 	local w = Weapons.get(key)
-	return w ~= nil and (not w.melee or workspace:GetAttribute("Charge") == true)
+	return w ~= nil and (not w.melee or workspace:GetAttribute("Charge") == true) and not Weapons.locked(key, player)
 end
 
 -- A slash (Net "Swing"; bots call it too): the nearest enemy in reach and in front, nothing solid between.
@@ -892,7 +893,11 @@ end
 
 function CombatService:Equip(player, key)
 	local w = Weapons.get(key)
-	if not w or not CombatService.allowed(key) then
+	if w and Weapons.locked(key, player) then
+		self.Locked:Fire(player, key)
+		return false
+	end
+	if not w or not CombatService.allowed(key, player) then
 		return false
 	end
 	local s = state(player)

@@ -545,6 +545,13 @@ do
 	check("(a red wall and a blue cover at the line for the test)", okR == true and okB == true, `{rw} {bc}`)
 	whole(red)
 	whole(blue)
+	-- the TNT is a Robux unlock: not bought, it stays locked (the bow in hand) and the purchase is offered
+	blue:SetAttribute("OwnsTNT", nil)
+	send(blue, "Equip", "tnt")
+	check("TNT not bought: locked, the bow stays in hand", Combat:Weapon(blue) ~= "tnt", Combat:Weapon(blue))
+	-- bought (the game pass): for good
+	service("ShopService"):GrantTNT(blue)
+	check("bought: owned (saved)", blue:GetAttribute("OwnsTNT") == true and Data:Get(blue).tnt == true)
 	send(blue, "Equip", "tnt")
 	check("the TNT in hand", Combat:Weapon(blue) == "tnt")
 	local held = blue.Character:FindFirstChild("HeldBow")

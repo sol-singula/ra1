@@ -1,5 +1,6 @@
 --[[
-The bow, the TNT and the blade, all free from the start (1 2 3 on the hotbar). Every bow hit is a knockout (one
+The bow, the TNT and the blade (1 2 3 on the hotbar). The bow and the blade are free; the TNT is a Robux unlock, for
+good (Data/Shop TNT): until then its slot shows a lock and the price (Weapons.locked). Every bow hit is a knockout (one
 shot, every charge). The TNT is thrown: hold to wind up (the charge is how far it goes), let go and it flies in a
 lob and blows up where it lands (Constants.TNT_*: enemy structures in the blast break, enemies right by it are
 knocked out, the rest are thrown back; a cooldown between throws). The blade only comes out in the CHARGE (the
@@ -84,5 +85,14 @@ function Weapons.get(key)
 end
 
 Weapons.DEFAULT = "bow"
+
+-- Not theirs yet: the TNT for a player who hasn't bought it (the "OwnsTNT" attribute, set by the server). Bots and
+-- nil: never locked.
+function Weapons.locked(key, player)
+	if key ~= "tnt" or typeof(player) ~= "Instance" or not player:IsA("Player") then
+		return false
+	end
+	return player:GetAttribute("OwnsTNT") ~= true
+end
 
 return Weapons

@@ -35,6 +35,8 @@ function ShopService.now()
 	return math.floor(workspace:GetServerTimeNow())
 end
 
+local Notify = require(script.Parent.Parent.Notify)
+
 local function say(player, text, kind)
 	Net.fire(player, "Toast", text, kind or "info")
 end
@@ -125,6 +127,29 @@ function ShopService:GrantStarter(player)
 	return true
 end
 
+-- The TNT for good (Shop.TNT): saved, and the attribute every check reads (Weapons.locked)
+function ShopService:GrantTNT(player, quiet)
+	local p = data:Get(player)
+	if not p then
+		return false
+	end
+	player:SetAttribute("OwnsTNT", true)
+	if p.tnt then
+		return false
+	end
+	p.tnt = true
+	if not quiet then
+		Notify.to(
+			player,
+			"TNT unlocked for good! Press 2: hold to wind up, let go to lob it",
+			"good",
+			{ icon = "🧨", seconds = 5 }
+		)
+		self.Bought:Fire(player, "tnt", nil, Shop.TNT.robux)
+	end
+	return true
+end
+
 local function studio(player, name)
 	if RunService:IsStudio() then
 		say(player, `Studio test: {name} given free (set its id in Data/Shop).`)
@@ -134,6 +159,20 @@ local function studio(player, name)
 end
 
 function ShopService:PromptRobux(player, key)
+	if key == "tnt" then
+		if player:GetAttribute("OwnsTNT") == true then
+			return false, "The TNT is yours."
+		end
+		if Shop.TNT.id == 0 then
+			if studio(player, Shop.TNT.name) then
+				self:GrantTNT(player)
+				return true
+			end
+			return false, "The TNT isn't on sale yet."
+		end
+		pcall(MarketplaceService.PromptGamePassPurchase, MarketplaceService, player, Shop.TNT.id)
+		return true
+	end
 	if key == "starter" then
 		local p = data:Get(player)
 		if p and p.starter then
@@ -229,6 +268,15 @@ function ShopService:Init(registry)
 	economy = registry.EconomyService
 	season = registry.SeasonService
 	progress = registry.ProgressService
+	-- (a tap on the locked TNT: the purchase, right there)
+	registry.CombatService.Locked:Connect(function(player, key)
+		if key == "tnt" then
+			local ok, why = self:PromptRobux(player, "tnt")
+			if ok == false and why then
+				say(player, why, "bad")
+			end
+		end
+	end)
 	Net.on("Buy", function(player, kind, key)
 		local ok, why
 		if kind == "item" and type(key) == "string" then
@@ -267,11 +315,27 @@ function ShopService:Init(registry)
 			self:GrantStarter(player)
 			progress:Push(player)
 		end
+		if bought and passId == Shop.TNT.id and Shop.TNT.id ~= 0 then
+			self:GrantTNT(player)
+			progress:Push(player)
+		end
 	end)
 end
 
-function ShopService:OnPlayerReady(player)
+function ShopService:OnPlayerReady(player, profile)
+	if profile and profile.tnt then
+		player:SetAttribute("OwnsTNT", true)
+	end
 	task.spawn(function()
+		-- (bought on the website, or a save that missed it: the pass itself says so)
+		if Shop.TNT.id ~= 0 and player:GetAttribute("OwnsTNT") ~= true then
+			local ok, owns = pcall(function()
+				return MarketplaceService:UserOwnsGamePassAsync(player.UserId, Shop.TNT.id)
+			end)
+			if ok and owns then
+				self:GrantTNT(player, true)
+			end
+		end
 		if Shop.STARTER.id ~= 0 then
 			local ok, owns = pcall(function()
 				return MarketplaceService:UserOwnsGamePassAsync(player.UserId, Shop.STARTER.id)
