@@ -5,7 +5,7 @@ The leaderboards on screen (LeaderboardService has the numbers), in the SUPERHOT
   the panel     four tabs (WINS, KILLS, MVP, STREAK) and ALL TIME / THIS SERVER; a row each: the rank, the name,
                 the number. The top three are tinted gold, silver and bronze; your row is black. Under the list
                 where you stand ("YOU  #12 · 34 WINS"). While it's open the mouse is free (Layout.setPanel and a
-                Modal close button); Esc or ✕ closes it, and it's one panel at a time (Layout.claimPanel).
+                Modal close button); Esc or the X closes it, and it's one panel at a time (Layout.claimPanel).
   gamepad       D-pad up opens and closes it, LB / RB change the tab, Y flips ALL TIME / THIS SERVER, B closes
   touch         a tap on the button; the list scrolls
 
@@ -357,9 +357,9 @@ local function buildPanel(gui)
 		outline = false,
 		Parent = panel,
 	})
-	refs.close = button(panel, "Close", "✕", P.w - 52, 6, 42, 32, true, function()
+	refs.close = Theme.closeButton(panel, function()
 		LeaderboardController.close()
-	end)
+	end, { Position = UDim2.fromOffset(P.w - 46, 4) })
 	refs.close.Modal = true -- (frees the mouse from first person while the panel is up)
 	refs.tabs = {}
 	local tw = (P.w - 20 - 3 * 6) / 4

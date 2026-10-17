@@ -512,6 +512,45 @@ picked slot and piece styled apart and lifted; the slots side by side inside the
   way, a spawn, "Welcome back!". Nobody can stall a match by standing still. Tests switch it off (their players
   stand still); ServerSmoke checks it on its own.
 
+## The shop made friendly: pictures, guided, a pass that makes sense
+
+* **Real pictures on every card** (`UI/Icons`): a cosmetic is a 3D model in a ViewportFrame (a bow in its finish's
+  colours and material, a trail as a glowing streak behind an arrow, a kill effect as its burst: cubes, rings,
+  shards, pixels, rising bits, a spotlight), a banner is a flag in the team's colour with its emblem, a title a
+  nameplate; Shard packs are a growing pile of gems (a few, a heap, a crate, an overflowing gold-banded vault), the
+  Starter Pack a present with gems, the Turf Pass a gold ticket, +1 TIER steps with an arrow. The same pictures in
+  the locker (greyed under a padlock when not yours), the pass track and the dialogs.
+* **The Shard gem** (`Theme.gem`, `Theme.shards`): a cut aqua gem drawn with frames next to every Shard amount
+  (prices, packs, pass rewards, the panel's balance, the HUD's SHOP button, toasts about Shards). The balance sits
+  big at the top of the panel with a green + that jumps to the packs. Server messages say "Shards" in words.
+* **Robux prices** wear Roblox's own Robux icon (`Format.robux`, U+E002), never "R$" (the Discord log keeps R$).
+* **Close buttons** (`Theme.closeButton`): one round dark button with an X of two crossed white bars, red under the
+  mouse, in the shop, party, leaderboards and admin panels (each still `refs.close`, Modal).
+* **Guided:** "Pick something fun!" on top, the week's bundle as the FEATURED · BEST VALUE card, rarity bands, big
+  buy buttons. A Shard price always asks first ("Buy Team Neon for ◆ 700?", YES / NO, what you'll have left); not
+  enough says "You need 900 more Shards: get some?" with GET SHARDS to the packs. A buy pops with confetti and NEW!;
+  a bundle offers EQUIP NOW (one request: `Settings "equip"` takes a short list). The first time the shop opens, a
+  3-step tour (your Shards, today's items, the Turf Pass), SKIP any time, remembered as `settings.shopTour`
+  (ProgressService allows the key).
+* **The Turf Pass, explained** (what `Data/Season` really does): "Play matches to earn XP. Climb tiers to unlock
+  rewards. The Turf Pass adds a gold reward on every tier." and how XP comes (120 a match, more for winning,
+  knockouts, assists and building, +300 for the day's first match, 800 XP a tier); your tier and "320 / 800 XP to
+  tier 4"; GET THE TURF PASS and +1 TIER ("skip ahead one tier now") in Robux; the season's time left; then the 30
+  tiers as a track you scroll across, a FREE row and a gold PASS row, YOU ARE HERE on your tier, CLAIM glowing on
+  what's ready, a padlock and GET PASS on gold rewards without the pass. It all fits without scrolling down.
+* Renders: `tools/gameplay/shop.luau` (the renderer now rotates GUI, honours text size limits, scrolls frames and
+  draws the Robux icon).
+
+![](screenshots/shop.png)
+![](screenshots/shop_confirm.png)
+![](screenshots/pass.png)
+![](screenshots/locker.png)
+
+Tests: ClientSmoke 289 (a picture on every shop card, bigger piles for bigger packs, the Robux icon on every Robux
+price and no "R$" or "◆" glyph, the balance, the confirm step with YES / NO, the celebration, EQUIP NOW, not enough
+going to the packs, the pass's words, track, rows, YOU ARE HERE, XP numbers, CLAIM, the tour shown once and
+remembered, every panel's close button the shared X), ServerSmoke 174, AdminSmoke 129.
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

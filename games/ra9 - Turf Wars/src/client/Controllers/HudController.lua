@@ -358,11 +358,12 @@ local function buildInvite(gui)
 		AutoButtonColor = true,
 		Parent = gui,
 	}, { Theme.corner(4), Theme.stroke(2, C.ink) })
+	Theme.gem(s, 20, { Name = "Gem", Position = UDim2.fromOffset(6, 5) })
 	Theme.title({
 		Name = "Head",
-		Text = touch and "◆ SHOP & LOCKER" or "◆ SHOP & LOCKER  [B]",
-		Size = UDim2.new(1, -16, 0, 22),
-		Position = UDim2.fromOffset(8, 5),
+		Text = touch and "SHOP & LOCKER" or "SHOP & LOCKER  [B]",
+		Size = UDim2.new(1, -36, 0, 22),
+		Position = UDim2.fromOffset(30, 5),
 		TextColor3 = C.white,
 		outline = false,
 		Parent = s,
@@ -370,8 +371,8 @@ local function buildInvite(gui)
 	refs.shopLine = label({
 		Name = "Line",
 		Text = "Pass · goals · VIP",
-		Size = UDim2.new(1, -16, 0, 16),
-		Position = UDim2.fromOffset(8, 28),
+		Size = UDim2.new(1, -36, 0, 16),
+		Position = UDim2.fromOffset(30, 28),
 		fit = 12,
 		TextColor3 = C.grey,
 		Parent = s,
@@ -792,6 +793,16 @@ function HudController.toast(text, kind)
 	if Layout.panel() and Layout.statusSink and Layout.statusSink(text, kind) then
 		return -- (the panel's open: its own message line says it)
 	end
+	-- a toast about Shards wears the Shard gem in front of its words
+	text = string.gsub(text, " ?◆", " Shards")
+	local gem = t:FindFirstChild("Gem") or Theme.gem(t, 20, { Name = "Gem" })
+	local shards = string.find(text, "Shard") ~= nil
+	gem.Visible = shards
+	if shards then
+		-- (the words are centred: roughly 0.55 of the letters' height each)
+		local width = math.min(t.Size.X.Offset, (utf8.len(text) or #text) * 15 * 0.55)
+		gem.Position = UDim2.fromOffset(math.max(0, (t.Size.X.Offset - width) / 2 - 24), 2)
+	end
 	t.Text = text
 	t.TextColor3 = kind == "bad" and RED or C.ink
 	t.Visible = true
@@ -1065,7 +1076,7 @@ function HudController.showResults(r)
 	end
 	local e = you.earned
 	if e and ((e.shards or 0) > 0 or (e.xp or 0) > 0) then
-		line ..= `  ·  +{e.shards} ◆  +{e.xp} PASS XP`
+		line ..= `  ·  +{e.shards} SHARDS  +{e.xp} PASS XP`
 	end
 	label({
 		Text = line,
@@ -1285,7 +1296,7 @@ local function step()
 		refs.invite.Modal = m.phase == "victory" and refs.results ~= nil
 		refs.shop.Modal = m.phase == "victory" and refs.results ~= nil
 		local p = Store.get("profile") or {}
-		refs.shopLine.Text = `◆ {p.shards or 0}  ·  PASS TIER {(p.season or {}).tier or 0}`
+		refs.shopLine.Text = `{Theme.commas(p.shards or 0)} SHARDS  ·  PASS TIER {(p.season or {}).tier or 0}`
 	end
 	-- the panel's open: the middle of the HUD steps aside
 	if Layout.panel() then

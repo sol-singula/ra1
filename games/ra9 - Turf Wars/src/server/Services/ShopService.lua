@@ -54,7 +54,7 @@ function ShopService:BuyItem(player, key)
 	end
 	local price = Shop.price(it)
 	if not economy:Spend(player, price) then
-		return false, `You need {price - (p.shards or 0)} more ◆.`
+		return false, `You need {price - (p.shards or 0)} more Shards.`
 	end
 	economy:Give(player, key)
 	p.equipped[it.kind] = key
@@ -85,7 +85,7 @@ function ShopService:BuyBundle(player)
 		return false, "You have the whole bundle."
 	end
 	if not economy:Spend(player, bundle.price) then
-		return false, `You need {bundle.price - (p.shards or 0)} more ◆.`
+		return false, `You need {bundle.price - (p.shards or 0)} more Shards.`
 	end
 	for _, k in bundle.keys do
 		economy:Give(player, k)
@@ -98,7 +98,7 @@ end
 function ShopService:Grant(player, product)
 	if product.shards then
 		economy:Add(player, product.shards, "robux")
-		say(player, `+{product.shards} ◆  Thank you!`, "good")
+		say(player, `+{product.shards} Shards!  Thank you!`, "good")
 	elseif product.key == "pass" then
 		season:GrantPremium(player)
 		local n = season:State(player).n
@@ -220,7 +220,7 @@ function ShopService:CheckClub(player)
 	end
 	p.club.month = month
 	economy:Add(player, Shop.CLUB.monthlyShards, "club")
-	say(player, `Shard Club: +{Shop.CLUB.monthlyShards} ◆ for this month!`, "good")
+	say(player, `Shard Club: +{Shop.CLUB.monthlyShards} Shards for this month!`, "good")
 	return true
 end
 
@@ -252,7 +252,7 @@ function ShopService:Init(registry)
 				say(player, why, "bad")
 			end
 		elseif r.kind == "shards" then
-			say(player, `+{r.amount} ◆`, "good")
+			say(player, `+{r.amount} Shards`, "good")
 		else
 			local it = Cosmetics.get(r.key)
 			say(player, `{it.name} is yours!`, "good")

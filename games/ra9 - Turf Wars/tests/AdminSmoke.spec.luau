@@ -488,7 +488,7 @@ do
 	local function walk(container, depth)
 		local kids = {}
 		for _, k in container:GetChildren() do
-			if k:IsA("GuiObject") and k.Visible ~= false then
+			if k:IsA("GuiObject") and k.Visible ~= false and not k:GetAttribute("Layer") then
 				table.insert(kids, k)
 			end
 		end
@@ -509,7 +509,7 @@ do
 					table.insert(out, a.Name .. " x " .. kids[j].Name)
 				end
 			end
-			if depth < 6 then
+			if depth < 6 and not a:GetAttribute("Art") then
 				for _, x in walk(a, depth + 1) do
 					table.insert(out, x)
 				end
@@ -521,6 +521,12 @@ do
 	Engine.advance(0.5)
 	check("the button opens the panel", AdminC.isOpen() and Layout.panel())
 	check("...the mouse free", r.close.Modal == true)
+	check(
+		"...its close button is the shared X (two crossed bars in a round button)",
+		r.close:GetAttribute("CloseButton") == true
+			and r.close.Glyph.Bar1.Rotation == 45
+			and r.close.Glyph.Bar2.Rotation == -45
+	)
 	check("...the server sent its data", #(AdminC.state().players or {}) >= 2, #(AdminC.state().players or {}))
 	AdminC.select(owner.UserId)
 	for _, tab in { "servers", "match", "players", "me" } do

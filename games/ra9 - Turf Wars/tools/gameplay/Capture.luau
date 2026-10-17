@@ -117,6 +117,8 @@ local GUI_PROPS = {
 	"Name",
 	"Enabled",
 	"DisplayOrder",
+	"Rotation",
+	"CanvasPosition",
 }
 local MOD_PROPS = {
 	UICorner = { "CornerRadius" },
@@ -126,6 +128,7 @@ local MOD_PROPS = {
 	UIGridLayout = { "CellSize", "CellPadding", "HorizontalAlignment" },
 	UIScale = { "Scale" },
 	UIGradient = { "Color", "Rotation" },
+	UITextSizeConstraint = { "MaxTextSize", "MinTextSize" },
 }
 
 -- A part as the renderer wants it (the world's parts and a ViewportFrame's alike)

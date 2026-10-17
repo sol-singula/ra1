@@ -368,6 +368,8 @@ local function pressable(button)
 	end)
 end
 
+Theme.pressable = pressable
+
 -- A chunky glossy button with white outlined text. dark = true keeps ink text (for white buttons).
 function Theme.button(props)
 	local dark, round = props.dark, props.round
@@ -397,6 +399,167 @@ function Theme.button(props)
 	button.Selectable = true -- reachable with a gamepad
 	pressable(button)
 	return button
+end
+
+-- Every panel's close button: a round dark button with an X drawn as two crossed white bars (a "✕" glyph doesn't
+-- draw in every font), red under the mouse. It's "Close", marked CloseButton; the caller makes it Modal.
+--   Theme.closeButton(parent, onClick, { Position = …, Size = … })
+function Theme.closeButton(parent, onClick, props)
+	props = props or {}
+	local b = new("TextButton", {
+		Name = "Close",
+		Position = props.Position or UDim2.fromOffset(0, 0),
+		Size = props.Size or UDim2.fromOffset(36, 36),
+		AnchorPoint = props.AnchorPoint,
+		BackgroundColor3 = C.ink,
+		BorderSizePixel = 0,
+		Text = "",
+		AutoButtonColor = false,
+		Selectable = true,
+		Parent = parent,
+	}, { Theme.corner("round"), Theme.stroke(2, C.ink) })
+	b:SetAttribute("CloseButton", true)
+	-- the X (its two bars cross on purpose: a picture, not a layout)
+	local glyph = new("Frame", {
+		Name = "Glyph",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(0.62, 0.62),
+		BackgroundTransparency = 1,
+		Parent = b,
+	})
+	glyph:SetAttribute("Art", true)
+	for i, rot in { 45, -45 } do
+		new("Frame", {
+			Name = "Bar" .. i,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			Size = UDim2.new(1, 0, 0, 4),
+			Rotation = rot,
+			BackgroundColor3 = C.white,
+			BorderSizePixel = 0,
+			Parent = glyph,
+		}, { Theme.corner("round") })
+	end
+	b.MouseEnter:Connect(function()
+		b.BackgroundColor3 = C.red
+	end)
+	b.MouseLeave:Connect(function()
+		b.BackgroundColor3 = C.ink
+	end)
+	pressable(b)
+	if onClick then
+		b.Activated:Connect(onClick)
+	end
+	return b
+end
+
+-- The Shard: a small cut gem drawn from frames (a diamond in two shades of aqua, a white glint, a dark edge), so
+-- every Shard amount reads the same at any size. A square box; `size` in pixels.
+Theme.SHARD = rgb(40, 190, 230)
+function Theme.gem(parent, size, props)
+	props = props or {}
+	local box = new("Frame", {
+		Name = props.Name or "Shard",
+		Position = props.Position or UDim2.fromOffset(0, 0),
+		AnchorPoint = props.AnchorPoint,
+		Size = UDim2.fromOffset(size, size),
+		BackgroundTransparency = 1,
+		ZIndex = props.ZIndex,
+		Parent = parent,
+	})
+	box:SetAttribute("Art", true) -- (its facets sit on each other on purpose)
+	local stone = new("Frame", {
+		Name = "Stone",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromScale(0.68, 0.68),
+		Rotation = 45,
+		BackgroundColor3 = C.white,
+		BorderSizePixel = 0,
+		ZIndex = props.ZIndex,
+		Parent = box,
+	}, {
+		Theme.corner(math.max(1, math.floor(size / 10))),
+		Theme.stroke(math.max(1, size / 14), rgb(14, 60, 90)),
+		-- the left facets lit, the right in shade (a hard split down the middle, corner to corner)
+		new("UIGradient", {
+			Rotation = 45,
+			Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, rgb(170, 245, 255)),
+				ColorSequenceKeypoint.new(0.499, rgb(80, 215, 245)),
+				ColorSequenceKeypoint.new(0.5, rgb(25, 150, 215)),
+				ColorSequenceKeypoint.new(1, rgb(15, 105, 175)),
+			}),
+		}),
+	})
+	-- the table (the flat top) and a glint
+	new("Frame", {
+		Name = "Table",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.42, 0.42),
+		Size = UDim2.fromScale(0.34, 0.34),
+		BackgroundColor3 = rgb(215, 250, 255),
+		BackgroundTransparency = 0.15,
+		BorderSizePixel = 0,
+		ZIndex = props.ZIndex,
+		Parent = stone,
+	}, { Theme.corner(math.max(1, math.floor(size / 16))) })
+	new("Frame", {
+		Name = "Glint",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.36, 0.28),
+		Size = UDim2.fromOffset(math.max(2, size * 0.12), math.max(2, size * 0.12)),
+		Rotation = 45,
+		BackgroundColor3 = C.white,
+		BorderSizePixel = 0,
+		ZIndex = props.ZIndex,
+		Parent = box,
+	})
+	return box
+end
+
+-- An amount of Shards: the gem, then the number, centred in a w x h box (or left with align = "left").
+-- Returns the box; its number is box.Amount.
+function Theme.shards(parent, amount, props)
+	local w, h = props.w, props.h
+	local box = new("Frame", {
+		Name = props.Name or "Price",
+		Position = props.Position or UDim2.fromOffset(0, 0),
+		AnchorPoint = props.AnchorPoint,
+		Size = UDim2.fromOffset(w, h),
+		BackgroundTransparency = 1,
+		ZIndex = props.ZIndex,
+		Parent = parent,
+	})
+	local s = type(amount) == "number" and Theme.commas(amount) or tostring(amount)
+	local gs = math.floor(h * (props.gem or 0.95))
+	-- (the number's width, roughly: the display font's figures run about 0.62 of their height)
+	local tw = math.min(w - gs - 4, #s * h * 0.62)
+	local x = props.align == "left" and 0 or math.floor((w - gs - 4 - tw) / 2)
+	Theme.gem(box, gs, {
+		Position = UDim2.fromOffset(x, math.floor((h - gs) / 2)),
+		ZIndex = props.ZIndex,
+	})
+	Theme.text({
+		Name = "Amount",
+		Text = s,
+		Position = UDim2.fromOffset(x + gs + 4, 0),
+		Size = UDim2.fromOffset(w - x - gs - 4, h),
+		Font = Theme.Display,
+		TextColor3 = props.color or C.ink,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		fit = props.fit or h,
+		ZIndex = props.ZIndex,
+		Parent = box,
+	})
+	return box
+end
+
+function Theme.commas(n)
+	local s = tostring(math.floor(n or 0))
+	local out = s:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+	return (out:gsub("^,", ""))
 end
 
 -- Show a button is working after a tap (e.g. while Roblox's purchase prompt opens), and block double taps.

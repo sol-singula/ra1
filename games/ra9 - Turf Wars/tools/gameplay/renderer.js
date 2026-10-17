@@ -446,7 +446,7 @@ void main() {
     if (!flow) {
       el.style.left = calc(pos[0], pos[1]);
       el.style.top = calc(pos[2], pos[3]);
-      el.style.transform = `translate(${-anchor[0] * 100}%, ${-anchor[1] * 100}%)`;
+      el.style.transform = `translate(${-anchor[0] * 100}%, ${-anchor[1] * 100}%)` + (props.Rotation ? ` rotate(${props.Rotation}deg)` : '');
     }
     el.style.flexShrink = '0';
     const w = calc(size[0], size[1]), h = calc(size[2], size[3]);
@@ -470,11 +470,11 @@ void main() {
     }
     if (node.viewport) { el.dataset.vp = viewports.length; viewports.push(node.viewport); }
     if (props.ZIndex) el.style.zIndex = props.ZIndex;
-    if (props.ClipsDescendants) el.style.overflow = 'hidden';
+    if (props.ClipsDescendants || node.cls === 'ScrollingFrame') el.style.overflow = 'hidden';
     const mods = node.mods || {};
     if (mods.UICorner) {
       const r = mods.UICorner.CornerRadius || [0, 8];
-      el.style.borderRadius = r[0] > 0 ? `${r[0] * 100}%` : `${r[1]}px`;
+      el.style.borderRadius = r[0] >= 0.5 ? "9999px" : r[0] > 0 ? `${r[0] * 100}%` : `${r[1]}px`; // (a full scale corner rounds the short side, a pill)
     }
     if (mods.UIStroke) {
       const st = mods.UIStroke;
@@ -484,7 +484,19 @@ void main() {
     if (node.cls === 'TextLabel' || node.cls === 'TextButton') {
       const span = document.createElement('span');
       span.className = 'txt';
-      span.textContent = props.Text ?? '';
+      // Roblox draws U+E002 as its Robux icon: drawn here as the icon (a rounded hexagon round a square)
+      const words = String(props.Text ?? '');
+      if (words.includes('')) {
+        words.split('').forEach((part, i) => {
+          if (i > 0) {
+            const icon = document.createElement('span');
+            icon.className = 'robux';
+            icon.innerHTML = '<svg viewBox="0 0 24 24" style="width:0.95em;height:0.95em;vertical-align:-0.12em"><path d="M12 2.2 20.6 7.1v9.8L12 21.8 3.4 16.9V7.1z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><rect x="8.6" y="8.6" width="6.8" height="6.8" rx="1.2" fill="none" stroke="currentColor" stroke-width="2.6"/></svg>';
+            span.appendChild(icon);
+          }
+          span.appendChild(document.createTextNode(part));
+        });
+      } else span.textContent = words;
       const fam = FONTS[props.Font] || '"Fredoka", "Noto Color Emoji", sans-serif';
       el.style.fontFamily = fam;
       el.style.fontWeight = { FredokaOne: '600', Oswald: '500', GothamMedium: '500', GothamBold: '700', GothamBlack: '800', BuilderSansBold: '700' }[props.Font] || '400';
@@ -510,7 +522,7 @@ void main() {
         const sc = rgba(props.TextStrokeColor3 || '#000000', props.TextStrokeTransparency);
         span.style.textShadow = `1.5px 0 ${sc}, -1.5px 0 ${sc}, 0 1.5px ${sc}, 0 -1.5px ${sc}`;
       }
-      if (props.TextScaled) el.dataset.scaled = '1';
+      if (props.TextScaled) { el.dataset.scaled = '1'; const tc = (node.mods || {}).UITextSizeConstraint; if (tc && tc.MaxTextSize) el.dataset.max = tc.MaxTextSize; }
       el.appendChild(span);
     }
     // children container honours UIPadding and layouts
@@ -556,6 +568,8 @@ void main() {
       }
       buildNode(k, content, !!layout, auto !== 'None' && !layout);
     });
+    // a scrolling frame shows its canvas from where it's scrolled to
+    if (node.cls === 'ScrollingFrame' && props.CanvasPosition) content.style.transform = `translate(${-props.CanvasPosition[0]}px, ${-props.CanvasPosition[1]}px)`;
     if (kids.length) el.appendChild(content);
     parentEl.appendChild(el);
   }
@@ -570,7 +584,7 @@ void main() {
     root.querySelectorAll('[data-scaled="1"]').forEach((el) => {
       const span = el.querySelector('.txt');
       if (!span || !span.textContent) return;
-      let lo = 4, hi = 100;
+      let lo = 4, hi = Math.max(5, +(el.dataset.max || 100));
       const boxW = el.clientWidth, boxH = el.clientHeight;
       if (!boxW || !boxH) return;
       while (hi - lo > 0.5) {

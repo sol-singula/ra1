@@ -267,6 +267,41 @@ check("...round the end", Store.get("me").weapon == "bow", Store.get("me").weapo
 wheel(1)
 wheel(1)
 check("wheel up: the one before", Store.get("me").weapon == "heavy", Store.get("me").weapon)
+-- the shop's first-time tour: the first time the shop opens, 3 steps (your Shards, today's items, the pass),
+-- skippable, remembered in the profile, never shown again
+do
+	local PanelC = Engine.require(tree.client.Controllers.PanelController)
+	local pr = PanelC.refs
+	check("no tour seen yet", Data:Get(player).settings.shopTour ~= true)
+	PanelC.open("shop")
+	Engine.advance(0)
+	check("the shop opens with its tour", pr.tour ~= nil and pr.tour:GetAttribute("Step") == 1 and pr.overlay.Visible)
+	check(
+		"...step 1 rings your Shards",
+		pr.tourRing.Visible and pr.tourRing.Position.X.Offset == pr.shards.Position.X.Offset - 4,
+		pr.tourRing.Position
+	)
+	pr.tour.Next.Activated:Fire()
+	check(
+		"...NEXT: step 2, today's items",
+		pr.tour and pr.tour:GetAttribute("Step") == 2 and pr.tour.Title.Text == "TODAY'S ITEMS"
+	)
+	pr.tour.Next.Activated:Fire()
+	check(
+		"...step 3: the Turf Pass, GOT IT!",
+		pr.tour and pr.tour:GetAttribute("Step") == 3 and pr.tour.Next.Label.Text == "GOT IT!" and pr.tour.Skip ~= nil
+	)
+	pr.tour.Skip.Activated:Fire()
+	Engine.advance(0)
+	check("...SKIP ends it", pr.tour == nil and not pr.overlay.Visible and not pr.tourRing.Visible)
+	check("...remembered in the profile", Data:Get(player).settings.shopTour == true)
+	PanelC.close()
+	PanelC.open("shop")
+	Engine.advance(0)
+	check("...and not shown again", pr.tour == nil and not pr.overlay.Visible)
+	PanelC.close()
+	Engine.advance(0)
+end
 -- a menu in the fight: the mouse shows and comes free, the bow doesn't fire
 do
 	local Layout = Engine.require(tree.client.UI.Layout)
@@ -1102,21 +1137,26 @@ do
 	Engine.advance(0.1)
 	check("B opens the panel", Panel.isOpen() and pr.panel.Visible == true and Layout.panel())
 	check("...with the mouse free (a Modal button)", pr.close.Modal == true)
-	-- inside a container: its pieces apart and inside it (a scrolling body: inside across, any height)
+	-- inside a container: its pieces apart and inside it (a scrolling body: inside across, any height; a track
+	-- scrolling sideways: inside top to bottom, any length). A picture (Art: a gem, an X, a 3D preview) is one
+	-- thing; a layer on top on purpose (Layer: the dialogs' layer, a sticker, confetti) is checked on its own.
 	local function walk(what, container, depth)
 		local kids = {}
 		for _, k in container:GetChildren() do
-			if (k:IsA("GuiObject")) and k.Visible ~= false then
+			if (k:IsA("GuiObject")) and k.Visible ~= false and not k:GetAttribute("Layer") then
 				table.insert(kids, k)
 			end
 		end
 		local bad = {}
 		local cr = rect(container)
 		local scroll = container:IsA("ScrollingFrame")
+		local sideways = scroll and container.ScrollingDirection == Enum.ScrollingDirection.X
 		for i, a in kids do
 			local r = rect(a)
 			local inside = r[1] >= cr[1] - 0.5 and r[1] + r[3] <= cr[1] + cr[3] + 0.5
-			if not scroll then
+			if sideways then
+				inside = r[1] >= cr[1] - 0.5 and r[2] >= cr[2] - 0.5 and r[2] + r[4] <= cr[2] + cr[4] + 0.5
+			elseif not scroll then
 				inside = inside and r[2] >= cr[2] - 0.5 and r[2] + r[4] <= cr[2] + cr[4] + 0.5
 			else
 				inside = inside and r[2] >= cr[2] - 0.5
@@ -1137,7 +1177,8 @@ do
 				and k.Name ~= "Progress"
 				and k.Name ~= "VipBar"
 				and k.Name ~= "Bar"
-				and depth < 6
+				and not k:GetAttribute("Art")
+				and depth < 7
 			then
 				for _, b in walk(what, k, depth + 1) do
 					table.insert(bad, b)
@@ -1145,6 +1186,12 @@ do
 			end
 		end
 		return bad
+	end
+	local Season = Engine.require(tree.shared.Data.Season)
+	-- a card's picture: a Preview holding a 3D model (a ViewportFrame) or vector art, both named Icon
+	local function hasPicture(card)
+		local pv = card:FindFirstChild("Preview", true)
+		return pv ~= nil and pv:FindFirstChild("Icon", true) ~= nil
 	end
 	local function panelTidy(tab)
 		local bad = walk(tab, pr.panel, 0)
@@ -1158,12 +1205,177 @@ do
 		check(`the panel's {tab} tab: its words shrink to fit`, #unfit == 0, table.concat(unfit, " | "))
 	end
 	Economy:Add(player, 5000)
+	service("ProgressService"):Push(player) -- (the client sees its real profile again, after the made-up one above)
 	Engine.advance(0.7)
 	for _, tab in { "shop", "pass", "locker", "goals" } do
 		Panel.open(tab)
 		Engine.advance(0.1)
 		check(`the {tab} tab builds`, #pr.body:GetChildren() > 3, #pr.body:GetChildren())
 		panelTidy(tab)
+	end
+	-- the shop: a picture on every card, Robux prices with Roblox's Robux icon, never "R$" or a "◆" glyph
+	local FormatM = Engine.require(tree.shared.Format)
+	Panel.open("shop")
+	Engine.advance(0.1)
+	check("the shop says hello", pr.body.Welcome.Hello.Text == "Pick something fun!")
+	check(
+		"...a FEATURED card",
+		pr.body:FindFirstChild("Featured") and pr.body.Featured.Ribbon.Words.Text:find("FEATURED") ~= nil
+	)
+	local cards, bare = 0, {}
+	for _, c in pr.body:GetChildren() do
+		local n = c.Name
+		if
+			n:match("^Item%d$")
+			or n:match("^Pack%d$")
+			or n == "Featured"
+			or n == "PassCard"
+			or n == "TierCard"
+			or n == "Starter"
+		then
+			cards += 1
+			if not hasPicture(c) then
+				table.insert(bare, n)
+			end
+		end
+	end
+	check(
+		"every shop card has a picture",
+		cards >= 12 and #bare == 0,
+		`{cards} cards; bare: {table.concat(bare, ", ")}`
+	)
+	local packPics = {}
+	for i = 1, 4 do
+		local vf = pr.body["Pack" .. i].Preview:FindFirstChild("Icon")
+		local n = 0
+		for _, d in vf and vf:GetDescendants() or {} do
+			if d:IsA("BasePart") then
+				n += 1
+			end
+		end
+		packPics[i] = n
+	end
+	check(
+		"...a bigger pile of gems for a bigger pack",
+		packPics[1] < packPics[2] and packPics[2] < packPics[3] and packPics[3] < packPics[4],
+		table.concat(packPics, " ")
+	)
+	local R = FormatM.ROBUX
+	check(
+		"Robux prices wear the Robux icon",
+		R == utf8.char(0xE002)
+			and pr.body.Pack1.BuyPack.Label.Text == FormatM.robux(Shop.PACKS[1].robux)
+			and pr.body.Starter.BuyStarter.Label.Text:find(R, 1, true) ~= nil
+			and pr.body.PassCard.GetPass.Label.Text:find(R, 1, true) ~= nil
+			and pr.body.TierCard.AddTier.Label.Text:find(R, 1, true) ~= nil
+	)
+	local function glyphs()
+		local found = {}
+		for _, d in pr.panel:GetDescendants() do
+			if
+				(d:IsA("TextLabel") or d:IsA("TextButton"))
+				and d.Name ~= "Emblem"
+				and (d.Text:find("R$", 1, true) or d.Text:find("◆", 1, true))
+			then
+				table.insert(found, d.Text)
+			end
+		end
+		return found
+	end
+	local g = glyphs()
+	check('...no "R$" and no "◆" glyph anywhere in the shop', #g == 0, table.concat(g, " | "))
+	check(
+		"your Shards up top: the gem, the number, a +",
+		pr.shards.Price:FindFirstChild("Shard")
+			and pr.shards.Price.Amount.Text == FormatM.commas(Data:Get(player).shards)
+			and pr.addShards ~= nil,
+		`{pr.shards.Price.Amount.Text} vs {Data:Get(player).shards} store {(Store.get("profile") or {}).shards}`
+	)
+	-- the pass: what it is, where you are, the track with both rows
+	Panel.open("pass")
+	Engine.advance(0.1)
+	local pb = pr.body
+	check(
+		"the pass says what it is in plain words",
+		pb.Intro.How.Text:find("Play matches to earn XP") ~= nil and pb.Intro.How.Text:find("Turf Pass") ~= nil
+	)
+	check("...and how XP comes", pb.Intro.Xp.Text:find("First match of the day") ~= nil)
+	check("...the season's time left", pb.Intro.Ends.Text:find("LEFT") ~= nil)
+	local tr = pb:FindFirstChild("Track")
+	check(
+		"...the tiers as a track you scroll across",
+		tr
+			and tr.ScrollingDirection == Enum.ScrollingDirection.X
+			and tr:FindFirstChild("Tier1")
+			and tr:FindFirstChild("Tier30")
+	)
+	check(
+		"...a FREE row and a gold PASS row",
+		pb.Rows.FreeTag.Words.Text == "FREE"
+			and pb.Rows.PassTag.Words.Text == "PASS"
+			and tr.Tier3:FindFirstChild("Free")
+			and tr.Tier3:FindFirstChild("Prem")
+	)
+	local st = Store.get("profile").season
+	local tierNow = Season.tierOf(st.xp)
+	check(
+		"...YOU ARE HERE on your tier",
+		pr.here and pr.here.Parent == tr["Tier" .. tierNow] and pr.here.Words.Text == "YOU ARE HERE",
+		tierNow
+	)
+	check(
+		"...XP to the next tier in numbers",
+		pb.You.XpText.Text
+			== `{FormatM.commas(st.xp - tierNow * Season.XP_PER_TIER)} / {FormatM.commas(Season.XP_PER_TIER)} XP  to tier {tierNow + 1}`,
+		pb.You.XpText.Text
+	)
+	check(
+		"...GET THE PASS and +1 TIER in Robux, +1 TIER explained",
+		pb.GetPass.Label.Text:find(R, 1, true)
+			and pb.AddTier.Label.Text:find(R, 1, true)
+			and pb.AddTier.Sub.Text == "Skip ahead one tier now"
+	)
+	local locked = tr.Tier3.Prem
+	check(
+		"...a pass reward without the pass: a lock and GET PASS",
+		locked:FindFirstChild("Lock") and locked:FindFirstChild("GetPass")
+	)
+	-- reach tier 2: its free reward glows with CLAIM
+	service("SeasonService"):AddXP(player, Season.XP_PER_TIER * 2)
+	service("ProgressService"):Push(player)
+	Engine.advance(0.3)
+	tr = pr.body.Track
+	local claim = tr.Tier2.Free:FindFirstChild("Claim")
+	check(
+		"a reached reward: CLAIM, glowing",
+		claim and tr.Tier2.Free:FindFirstChildOfClass("UIStroke").Color == Engine.require(tree.client.UI.Icons).GOLD
+	)
+	check(
+		"...YOU ARE HERE moves up",
+		pr.here and pr.here.Parent == tr["Tier" .. Season.tierOf(Store.get("profile").season.xp)]
+	)
+	local before = Data:Get(player).shards
+	if claim then
+		claim.Activated:Fire()
+		Engine.advance(0.6)
+	end
+	check("...CLAIM gives it", Data:Get(player).shards > before and pr.body.Track.Tier2.Free:FindFirstChild("Tick"))
+	panelTidy("pass (tier 2)")
+	-- every panel's close button is the one helper's X (two crossed bars in a round button), red under the mouse
+	for name, x in { shop = pr.close, party = pref.close, top = tref.close } do
+		local bars = x and x:FindFirstChild("Glyph")
+		check(
+			`the {name} panel's close button is an X`,
+			x
+				and x:GetAttribute("CloseButton") == true
+				and bars
+				and bars.Bar1.Rotation == 45
+				and bars.Bar2.Rotation == -45
+				and x.Text == ""
+		)
+		x.MouseEnter:Fire()
+		check(`...red under the mouse ({name})`, x.BackgroundColor3 == Engine.require(tree.client.UI.Theme).Color.red)
+		x.MouseLeave:Fire()
 	end
 	-- the panel among the HUD's pieces: the corners stay clear of it, the middle steps aside
 	Panel.open("shop")
@@ -1216,10 +1428,109 @@ do
 	local item1 = pr.body:FindFirstChild("Item1")
 	local key1 = Shop.daily(Shop.dayOf(service("ShopService").now()))[1]
 	local shardsBefore = p.shards
+	local Format = Engine.require(tree.shared.Format)
+	check(
+		"the price shows the Shard gem and the number",
+		item1.Buy:FindFirstChild("Price")
+			and item1.Buy.Price:FindFirstChild("Shard")
+			and item1.Buy.Price.Amount.Text == Format.commas(Shop.price(Cosmetics.get(key1)))
+	)
 	item1.Buy.Activated:Fire()
+	Engine.advance(0.6)
+	local cf = pr.confirm
+	check(
+		"a price tapped: it asks first",
+		cf ~= nil and cf.Name == "Confirm" and pr.overlay.Visible and p.owned[key1] ~= true
+	)
+	check(
+		'..."Buy NAME for" the price, YES / NO',
+		cf
+			and cf.Question.Text == `Buy {Cosmetics.get(key1).name} for`
+			and cf.Price.Amount.Text == Format.commas(Shop.price(Cosmetics.get(key1)))
+			and cf:FindFirstChild("Yes")
+			and cf:FindFirstChild("No")
+	)
+	check("...with its picture", cf and hasPicture(cf))
+	local cbad = cf and walk("confirm", cf, 0) or { "no dialog" }
+	check("...the dialog: nothing overlaps, nothing sticks out", #cbad == 0, table.concat(cbad, ", "))
+	cf.No.Activated:Fire()
+	Engine.advance(0.6)
+	check(
+		"NO: nothing bought, the dialog goes",
+		p.owned[key1] ~= true and p.shards == shardsBefore and not pr.overlay.Visible
+	)
+	pr.body.Item1.Buy.Activated:Fire()
+	pr.confirm.Yes.Activated:Fire()
 	Engine.advance(0.6)
 	check("BUY in the shop: bought and worn", p.owned[key1] == true and p.shards < shardsBefore)
 	check("...the card says so", pr.body.Item1.Buy.Label.Text == "WORN", pr.body.Item1.Buy.Label.Text)
+	local cel = pr.celebrate
+	check(
+		"...a celebration: NEW!, its picture, confetti",
+		cel ~= nil and cel:FindFirstChild("New") and cel:FindFirstChild("Confetti") and cel:FindFirstChild("Preview")
+	)
+	check(
+		"...worn already: no EQUIP NOW",
+		cel and cel:FindFirstChild("Equip") == nil and cel:FindFirstChild("Ok") ~= nil
+	)
+	cbad = cel and walk("celebrate", cel, 0) or { "no card" }
+	check("...the card: nothing overlaps", #cbad == 0, table.concat(cbad, ", "))
+	cel.Ok.Activated:Fire()
+	check("...OK closes it", not pr.overlay.Visible)
+	-- the bundle: bought, then EQUIP NOW (a bundle isn't worn by itself)
+	local bundle = Shop.weekly(Shop.weekOf(service("ShopService").now()))
+	pr.body.Featured.BuyBundle.Activated:Fire()
+	check("the bundle asks first too", pr.confirm and pr.confirm.Question.Text:find("bundle") ~= nil)
+	pr.confirm.Yes.Activated:Fire()
+	Engine.advance(0.6)
+	check("...bought", p.owned[bundle.keys[1]] == true and p.owned[bundle.keys[3]] == true)
+	cel = pr.celebrate
+	check("...EQUIP NOW after buying", cel and cel:FindFirstChild("Equip") and cel.Equip.Label.Text == "EQUIP NOW")
+	if cel and cel:FindFirstChild("Equip") then
+		cel.Equip.Activated:Fire()
+		Engine.advance(0.6)
+		local last = Cosmetics.get(bundle.keys[3])
+		check(
+			"...EQUIP NOW wears it",
+			p.equipped[last.kind] == last.key and not pr.overlay.Visible,
+			`{tostring(p.equipped[last.kind])} {last.key} {pr.overlay.Visible}`
+		)
+	end
+	-- not enough Shards: how many more, and the packs
+	local saved = p.shards
+	p.shards = 10
+	service("ProgressService"):Push(player)
+	Engine.advance(0.3)
+	local unowned
+	for i = 1, 4 do
+		local c = pr.body:FindFirstChild("Item" .. i)
+		if c and c.Buy:FindFirstChild("Price") then
+			unowned = c
+		end
+	end
+	if unowned then
+		unowned.Buy.Activated:Fire()
+		local ne = pr.confirm
+		check(
+			"not enough: it says how many more",
+			ne and ne.Name == "NotEnough" and ne.Question.Text:find("more Shards: get some%?") ~= nil,
+			ne and ne.Question.Text
+		)
+		ne.GetShards.Activated:Fire()
+		check(
+			"...GET SHARDS goes to the packs",
+			not pr.overlay.Visible and math.abs(pr.body.CanvasPosition.Y - (pr.packsY - 6)) < 1
+		)
+	end
+	p.shards = saved
+	service("ProgressService"):Push(player)
+	Engine.advance(0.3)
+	pr.addShards.Activated:Fire()
+	check(
+		"the + by your Shards goes to the packs",
+		Panel.tab() == "shop" and math.abs(pr.body.CanvasPosition.Y - (pr.packsY - 6)) < 1
+	)
+	pr.body.CanvasPosition = Vector2.zero
 	-- the locker: wear something else
 	Panel.open("locker")
 	Engine.advance(0.1)

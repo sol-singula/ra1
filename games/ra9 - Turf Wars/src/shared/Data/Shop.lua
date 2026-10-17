@@ -43,11 +43,11 @@ Shop.STARTER = {
 	id = 2038113079, -- (a game pass)
 	shards = 600,
 	cosmetic = "starter_founder",
-	desc = "600 ◆ and the Founder banner",
+	desc = "600 Shards and the Founder banner",
 }
 -- A Roblox subscription (monthly); nil turns it off (nothing shows)
 Shop.CLUB =
-	{ key = "club", name = "Shard Club", subscriptionId = nil, monthlyShards = 600, desc = "600 ◆ every month" }
+	{ key = "club", name = "Shard Club", subscriptionId = nil, monthlyShards = 600, desc = "600 Shards every month" }
 
 Shop.products = {} -- [key] = product
 for _, p in Shop.PACKS do
