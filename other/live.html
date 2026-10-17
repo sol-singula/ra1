@@ -8,16 +8,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <!--
-  The studio's live dashboard: who's playing Steal a Dragon (ra2), Snipe a Noob (ra4) and Build the Biggest Raft
-  (ra8) right now, then the numbers. Reads the roblox-live Supabase function with the view key (pasted once and
-  remembered in this browser, or ?key= in the address). The key is never in this file.
+  The studio's live dashboard: who's playing Steal a Dragon (ra2), Snipe a Noob (ra4), Build the Biggest Raft (ra8)
+  and Turf Wars (ra9) right now, then the numbers. Reads the roblox-live Supabase function (?game=<id>, no key).
+  The page asks for a password first (typed once and remembered in this browser, or ?pw= in the address). Only the
+  password's SHA-256 is in this file, never the password, and no key of any kind.
 
   The top of the page is every player online, one small tile each, grouped by game and server (each server's number
   and how full it is sit in a narrow rail on its left, so a server costs no extra row). Auto density picks the biggest
   of six tile sizes that fits everyone on the screen, down to faces only (names on hover), so even 200 players need no
   scrolling. Grayscale, with colour only where it means something. Hover a tile for everything about that player;
   click it for their Roblox profile. Scroll down for the stats.
-  Keys: 0 all games, 1 2 3 one game, D density, T theme, R refresh.
+  Keys: 1 2 3 4 one game (in the menu's order), D density, T theme, R refresh.
 -->
 <style>
   /* Grayscale; colour only where it means something: each game's own colour, live/new (green), full/errors (red),
@@ -262,7 +263,8 @@
 <div id="tip" class="tip" hidden></div>
 <script>
   const ENDPOINT = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-live";
-  const DEFAULT_KEY = ""; // (the gitignored private copy has the view key here; this file never does)
+  // the password's SHA-256 (hex): the page compares the hash of what's typed with this; the password isn't here
+  const PW_SHA256 = "a98df1e6ffedf5833af0e35250c4c93f51e6f2b6b07b69a5d0a90aaf56870c5a";
   const REFRESH_MS = 10000;
 
   // The games, and how their players look. live: each player's `live` object from the game's analytics snapshot.
@@ -294,6 +296,22 @@
       reasons: { slow: "🐌 Building takes too long", lost: "🧭 Didn't know what to do", empty: "😴 Not much to find", lag: "🐢 Laggy", hard: "💀 The sea is too dangerous", confusing: "🤔 Don't get it" },
       feedbackStats: [], askedAfter: "",
     },
+    ra9: {
+      name: "Turf Wars", emoji: "🏹", color: "#7c4dff", max: 40, analytics: true,
+      teams: { red: ["🔴", "Red"], blue: ["🔵", "Blue"] },
+      phases: { build: "🧱 building", fight: "⚔️ fighting", victory: "🏆 results", loading: "🗺️ next map" },
+      maps: { castle: "Castle Clash", frost: "Frostbite", jungle: "Jungle Rush", dust: "Dust Devil" },
+      weapons: { bow: "Standard Bow", crossbow: "Rapid Crossbow", heavy: "Heavy Bow", blade: "Blade" },
+      line: (l, p, g) => `${(g.teams[l.team] || ["⚪"])[0]}${l.alive === false ? " 💀" : ""} · ⚔️ ${l.kills ?? "–"}/${l.deaths ?? "–"} · 🏆 ${l.wins ?? "–"}`,
+      details: (l, p, g) => [["Team", l.team ? (g.teams[l.team] || [null, l.team])[1] : null], ["Phase", g.phases[l.phase] || l.phase],
+        ["Map", g.maps[l.map] || l.map], ["Kills / deaths (this match)", l.kills != null ? `${l.kills} / ${l.deaths ?? 0}` : null],
+        ["Weapon", g.weapons[l.weapon] || l.weapon], ["Alive", l.alive == null ? null : l.alive ? "yes" : "💀 down"], ["Wins", l.wins],
+        ["Ladder", l.ladder != null ? `step ${l.ladder} of 100` : null], ["Pass tier", l.tier], ["Shards", l.shards != null ? num(l.shards) + " ◆" : null],
+        ["Matches this visit", l.matches]],
+      // (the winners' card is YES / NO only: it sends no reasons)
+      reasons: {}, noReasons: "Turf Wars' card is YES / NO only, so there are no reasons to pick.",
+      feedbackStats: [], askedAfter: "Only winners are asked, a few seconds after a win, at most once a day.",
+    },
   };
   const ORDER = Object.keys(GAMES);
   for (const id of ORDER) GAMES[id].id = id;
@@ -313,11 +331,7 @@
   const store = { get: (k, d) => { try { return localStorage.getItem(k) ?? d; } catch (e) { return d; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
 
   // State ---------------------------------------------------------------------------------------------------------
-  let KEY = (() => {
-    const fromUrl = new URLSearchParams(location.search).get("key");
-    if (fromUrl) { store.set("liveKey", fromUrl); return fromUrl; }
-    return DEFAULT_KEY || store.get("liveKey", ""); // (a built-in key wins: no box to paste into)
-  })();
+  let unlocked = store.get("livePw", "") === PW_SHA256; // (the right password was typed in this browser before)
   let view = (() => { // a game id: ?game= in the address, else the last one picked here, else the first
     const q = new URLSearchParams(location.search).get("game");
     const saved = store.get("liveView", "");
@@ -328,7 +342,7 @@
   let period = store.get("livePeriod", "day");
   let theme = store.get("liveTheme", "system");
   const data = {}; // game -> { body, at, error }
-  let lastOk = 0, loading = true, keyProblem = null;
+  let lastOk = 0, loading = true;
   const people = new Map(); // tile key -> { p, g, srv } for the hover card
 
   function applyTheme() {
@@ -339,7 +353,7 @@
 
   function remember() {
     store.set("liveView", view);
-    try { const u = new URL(location.href); u.searchParams.delete("key"); u.searchParams.set("game", view); history.replaceState(null, "", u); } catch (e) {}
+    try { const u = new URL(location.href); u.searchParams.delete("key"); u.searchParams.delete("pw"); u.searchParams.set("game", view); history.replaceState(null, "", u); } catch (e) {}
     const total = onlineTotal();
     const n = onlineOf(view);
     document.title = `${n ? `(${n}) ` : ""}${GAMES[view].emoji} ${GAMES[view].name} · Live`;
@@ -349,35 +363,78 @@
   // Loading: all three games every 10 s (so the tabs count everyone and switching is instant) ---------------------------
   async function loadGame(g) {
     try {
-      const res = await fetch(`${ENDPOINT}?game=${g}`, { headers: { "X-View-Key": KEY } });
-      if (res.status === 401) { keyProblem = "That key didn't work."; return; }
+      const res = await fetch(`${ENDPOINT}?game=${g}`);
       if (!res.ok) throw new Error("HTTP " + res.status);
       data[g] = { body: await res.json(), at: Date.now(), error: null };
     } catch (e) { data[g] = { ...(data[g] || {}), error: e.message }; }
   }
   async function loadAll() {
-    if (!KEY) return keyScreen();
+    if (!unlocked) return; // (the password screen stays as it is while someone types)
     await Promise.all(ORDER.map(loadGame));
-    if (keyProblem) {
-      store.set("liveKey", "");
-      keyProblem = null;
-      if (DEFAULT_KEY && KEY !== DEFAULT_KEY) { KEY = DEFAULT_KEY; return loadAll(); } // (an old saved key: use the built-in one)
-      KEY = ""; return keyScreen("That key didn't work.");
-    }
     if (ORDER.some((g) => data[g] && data[g].body && !data[g].error)) lastOk = Date.now();
     loading = false;
     render();
   }
 
-  function keyScreen(msg) {
+  // The password: only its SHA-256 is compared (crypto.subtle; a small SHA-256 here where that's missing, e.g. the
+  // page opened over plain http). The right one is remembered in this browser.
+  async function sha256(text) {
+    const bytes = new TextEncoder().encode(text);
+    if (window.crypto && crypto.subtle) {
+      const buf = await crypto.subtle.digest("SHA-256", bytes);
+      return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+    return sha256js(bytes);
+  }
+  function sha256js(bytes) {
+    const K = [], H = [];
+    const frac = (x) => ((x - Math.floor(x)) * 4294967296) >>> 0;
+    for (let n = 2, found = 0; found < 64; n++) {
+      let prime = true;
+      for (let d = 2; d * d <= n; d++) if (n % d === 0) { prime = false; break; }
+      if (prime) { if (found < 8) H[found] = frac(Math.pow(n, 1 / 2)); K[found++] = frac(Math.pow(n, 1 / 3)); }
+    }
+    const len = bytes.length, total = ((len + 9 + 63) >> 6) << 6, m = new Uint8Array(total);
+    m.set(bytes); m[len] = 0x80;
+    const dv = new DataView(m.buffer); dv.setUint32(total - 4, len * 8 >>> 0); dv.setUint32(total - 8, Math.floor(len / 536870912));
+    const rotr = (x, r) => (x >>> r) | (x << (32 - r)), w = new Array(64);
+    for (let o = 0; o < total; o += 64) {
+      for (let i = 0; i < 16; i++) w[i] = dv.getUint32(o + i * 4);
+      for (let i = 16; i < 64; i++) {
+        const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3), s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+      }
+      let [a, b, c, d, e, f, g, h] = H;
+      for (let i = 0; i < 64; i++) {
+        const t1 = (h + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + w[i]) >>> 0;
+        const t2 = ((rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
+        h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+      }
+      [a, b, c, d, e, f, g, h].forEach((v, i) => { H[i] = (H[i] + v) >>> 0; });
+    }
+    return H.map((v) => v.toString(16).padStart(8, "0")).join("");
+  }
+  async function tryPassword(pw) {
+    if (!pw || (await sha256(pw)) !== PW_SHA256) return false;
+    unlocked = true; store.set("livePw", PW_SHA256);
+    render(); loadAll();
+    return true;
+  }
+  function lockScreen(msg) {
     document.getElementById("head").innerHTML = `<div class="brand"><span class="pulse wait"></span><span>Live</span></div>`;
-    document.getElementById("app").innerHTML = `<div class="keybox"><h1>🎮 Live dashboard</h1>
-      <p>Paste the view key to see who's playing. It stays in this browser. (live_private.html has it built in.)</p>
-      ${msg ? `<p class="err">${esc(msg)}</p>` : ""}<input id="k" placeholder="live_…" autocomplete="off"><button class="btn" id="go">Open</button></div>`;
-    const go = () => { KEY = document.getElementById("k").value.trim(); if (!KEY) return; store.set("liveKey", KEY); loadAll(); };
-    document.getElementById("go").onclick = go;
-    const input = document.getElementById("k");
-    input.onkeydown = (e) => { if (e.key === "Enter") go(); };
+    document.getElementById("app").innerHTML = `<form class="keybox" id="lock"><h1>🔒 Live dashboard</h1>
+      <p>Type the password to see who's playing. It's remembered in this browser.</p>
+      <p class="err" id="pwerr"${msg ? "" : " hidden"}>${esc(msg || "")}</p>
+      <input id="pw" type="password" placeholder="Password" autocomplete="current-password"><button class="btn" id="go" type="submit">Open</button></form>`;
+    const input = document.getElementById("pw");
+    document.getElementById("lock").onsubmit = async (e) => {
+      e.preventDefault();
+      if (!input.value) return;
+      if (!(await tryPassword(input.value))) {
+        const err = document.getElementById("pwerr"); err.textContent = "That password didn't work."; err.hidden = false;
+        input.select();
+      }
+    };
     input.focus();
   }
 
@@ -577,7 +634,7 @@
           ${reasons.length ? `<div class="mini">${withReason} 👎 answer${withReason === 1 ? "" : "s"} with a reason (players can pick more than one)</div>` + reasons.map(([k, v]) => `
             <div style="margin-top:9px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(g.reasons[k] || k)}</span><b>${v} <span class="mini">(${pct(withReason ? Math.round(1000 * v / withReason) / 10 : null)})</span></b></div>
             <div class="bar"><i style="width:${withReason ? Math.round(100 * v / withReason) : 0}%;background:var(--bad)"></i></div></div>`).join("")
-            : `<div class="empty" style="margin-top:8px">No reasons yet. Players pick them after tapping 👎.</div>`}</div>
+            : `<div class="empty" style="margin-top:8px">${g.noReasons ? esc(g.noReasons) : "No reasons yet. Players pick them after tapping 👎."}</div>`}</div>
         <div class="card"><div class="k">What players said</div>
           ${fb.recent.length ? `<div class="answers">${fb.recent.map((r) => `<div class="ans"><div style="font-size:18px">${r.liked ? "👍" : "👎"}</div>
             <div><b>${esc(r.display_name || r.username || r.user_id)}</b>${Array.isArray(r.reasons) && r.reasons.length ? " " + r.reasons.map((k) => `<span class="chip">${esc(g.reasons[k] || k)}</span>`).join(" ") : ""}${r.text ? ` “${esc(r.text)}”` : ` <span class="mini">(no comment)</span>`}
@@ -670,6 +727,7 @@
     view = v; hidePop(); render(); window.scrollTo({ top: 0 });
   }
   document.addEventListener("click", (e) => {
+    if (!unlocked) return;
     if (e.target.closest("#gpick")) { menuOpen = !menuOpen; render(); return; }
     const t = e.target.closest("[data-view],[data-density],[data-period],#theme,#refresh");
     if (!t) { if (menuOpen) { menuOpen = false; render(); } return; }
@@ -680,7 +738,7 @@
     else if (t.id === "refresh") loadAll();
   });
   document.addEventListener("keydown", (e) => {
-    if (e.target.closest("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!unlocked || e.target.closest("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
     if (e.key === "Escape" && menuOpen) { menuOpen = false; render(); }
     else if (/^[1-9]$/.test(e.key) && ORDER[Number(e.key) - 1]) setView(ORDER[Number(e.key) - 1]);
     else if (e.key === "d" || e.key === "D") { const all = ["auto", ...DENSITIES]; density = all[(all.indexOf(density) + 1) % all.length]; store.set("liveDensity", density); render(); }
@@ -730,7 +788,12 @@
     const a = document.getElementById("ago"); if (a) a.textContent = agoText();
   }, 1000);
   setInterval(loadAll, REFRESH_MS);
-  if (KEY) { render(); loadAll(); } else keyScreen();
+  (async () => { // ?pw= in the address unlocks too (and is then taken out of the address)
+    const fromUrl = new URLSearchParams(location.search).get("pw");
+    if (unlocked) { render(); loadAll(); return; }
+    if (fromUrl && (await tryPassword(fromUrl))) return;
+    lockScreen(fromUrl ? "That password didn't work." : "");
+  })();
 </script>
 </body>
 </html>
