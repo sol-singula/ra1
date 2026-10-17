@@ -267,7 +267,13 @@ function BuildService:Place(player, key, cx, cz, rot)
 	end
 	s.model =
 		buildModel({ id = s.id, team = s.team, min = mn, max = mx, emblemKey = player:GetAttribute("LookBanner") }, def)
-	arena:AddBox(s.id, mn, mx)
+	local solid = {}
+	for _, p in s.model:GetDescendants() do
+		if p:IsA("BasePart") and p.CanCollide then
+			table.insert(solid, p)
+		end
+	end
+	arena:AddBox(s.id, mn, mx, #solid > 0 and solid or nil)
 	budgets[player] = self:Budget(player) - def.cost
 	self:Push(player)
 	Net.fireAll("Structure", { kind = "built", id = s.id, key = def.key, team = s.team, hp = s.hp, max = s.max })

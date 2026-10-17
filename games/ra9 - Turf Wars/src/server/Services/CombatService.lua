@@ -343,6 +343,28 @@ local function hitPlayers(arrow, a, b)
 	return best, bestT, bestHead
 end
 
+local function partShape(p)
+	local ok, shape = pcall(function()
+		return p:IsA("Part") and p.Shape.Name or "Block"
+	end)
+	return ok and shape or "Block"
+end
+
+-- Does the part still fill the box it was entered with? (the floor's strips are one solid box made of many
+-- moving parts: those stay a plain box)
+local function sameBox(p, s)
+	local ok, same = pcall(function()
+		local cf, half = p.CFrame, p.Size / 2
+		local ext = Vector3.new(
+			math.abs(cf.RightVector.X) * half.X + math.abs(cf.UpVector.X) * half.Y + math.abs(cf.LookVector.X) * half.Z,
+			math.abs(cf.RightVector.Y) * half.X + math.abs(cf.UpVector.Y) * half.Y + math.abs(cf.LookVector.Y) * half.Z,
+			math.abs(cf.RightVector.Z) * half.X + math.abs(cf.UpVector.Z) * half.Y + math.abs(cf.LookVector.Z) * half.Z
+		)
+		return ((cf.Position - ext) - s.min).Magnitude < 0.2 and ((cf.Position + ext) - s.max).Magnitude < 0.2
+	end)
+	return ok and same
+end
+
 local function hitSolids(a, b)
 	local bestT, bestId
 	local mn = Vector3.new(math.min(a.X, b.X), math.min(a.Y, b.Y), math.min(a.Z, b.Z))
@@ -358,6 +380,16 @@ local function hitSolids(a, b)
 			and s.min.Z <= mx.Z
 		then
 			local t = Formulas.segmentBox(a, b, s.min, s.max)
+			if t and (s.parts or (s.part and sameBox(s.part, s))) then
+				-- (the box round it only says "maybe": the real shapes inside decide, so gaps let arrows through)
+				t = nil
+				for _, p in s.parts or { s.part } do
+					local pt = Formulas.segmentPart(a, b, p.CFrame, p.Size, partShape(p))
+					if pt and (not t or pt < t) then
+						t = pt
+					end
+				end
+			end
 			if t and (not bestT or t < bestT) then
 				bestT, bestId = t, s.id
 			end
