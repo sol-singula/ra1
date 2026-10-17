@@ -168,7 +168,9 @@ function DebrisController.shatter(info)
 	local mid = (info.min + info.max) / 2
 	local from = blast and typeof(blast.pos) == "Vector3" and blast.pos or Vector3.new(mid.X, info.min.Y, mid.Z)
 	local dir = blast and typeof(blast.dir) == "Vector3" and blast.dir or nil
-	local specs = StructureModel.parts(info.key, info.team, info.min, info.max)
+	-- (the shape it had, joined to its neighbours or not: the server sends its joins)
+	local joins = type(info.joins) == "table" and info.joins or nil
+	local specs = StructureModel.parts(info.key, info.team, info.min, info.max, joins)
 	-- the piece's chunks, shared out by size (the big blocks get most of them)
 	local total = 0
 	for _, s in specs do

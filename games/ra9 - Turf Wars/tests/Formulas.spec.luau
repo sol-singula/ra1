@@ -213,6 +213,318 @@ do
 	)
 end
 
+-- Pieces touching join up (StructureModel.joins): a row of walls is one wall, corners get a post ----------------
+do
+	local StructureModel = Engine.require(tree.shared.StructureModel)
+	local CELL = Constants.CELL
+	-- a little grid of pieces, and what stands on a cell
+	local function grid(list)
+		local cells = {}
+		for _, p in list do
+			for x = p.cx, p.cx + p.w - 1 do
+				for z = p.cz, p.cz + p.d - 1 do
+					cells[x .. ":" .. z] = p
+				end
+			end
+		end
+		return function(x, z)
+			return cells[x .. ":" .. z]
+		end
+	end
+	local function piece(key, cx, cz, rot, team)
+		local w, d = Structures.footprint(Structures.get(key), rot or 0)
+		return { key = key, team = team or "red", cx = cx, cz = cz, w = w, d = d, rot = rot or 0 }
+	end
+	local function boxOf(p)
+		return Formulas.footprintBox(p.cx, p.cz, p.w, p.d, 0, Structures.get(p.key).h)
+	end
+	local function partsOf(p, joins)
+		local mn, mx = boxOf(p)
+		return StructureModel.parts(p.key, p.team, mn, mx, joins)
+	end
+	-- a part's box in the world (every frame here is square to the grid)
+	local function extent(e)
+		local cf, s = e.cf, e.size
+		local function abs(v)
+			return Vector3.new(math.abs(v.X), math.abs(v.Y), math.abs(v.Z))
+		end
+		local half = (abs(cf.RightVector) * s.X + abs(cf.UpVector) * s.Y + abs(cf.LookVector) * s.Z) / 2
+		return cf.Position - half, cf.Position + half
+	end
+	local function named(parts, name)
+		local out = {}
+		for _, e in parts do
+			if e.name == name then
+				table.insert(out, e)
+			end
+		end
+		return out
+	end
+	-- solid parts of two pieces that overlap (they'd fight for the same space) or anything solid outside its own box
+	local function clash(pa, pb, a, b)
+		local n = 0
+		for _, ea in pa do
+			for _, eb in pb do
+				if ea.solid and eb.solid then
+					local a0, a1 = extent(ea)
+					local b0, b1 = extent(eb)
+					local o = Vector3.new(
+						math.min(a1.X, b1.X) - math.max(a0.X, b0.X),
+						math.min(a1.Y, b1.Y) - math.max(a0.Y, b0.Y),
+						math.min(a1.Z, b1.Z) - math.max(a0.Z, b0.Z)
+					)
+					if o.X > 0.01 and o.Y > 0.01 and o.Z > 0.01 then
+						n += 1
+					end
+				end
+			end
+		end
+		for _, pair in { { pa, a }, { pb, b } } do
+			local mn, mx = boxOf(pair[2])
+			for _, e in pair[1] do
+				local e0, e1 = extent(e)
+				if
+					e.solid
+					and (e0.X < mn.X - 0.01 or e1.X > mx.X + 0.01 or e0.Z < mn.Z - 0.01 or e1.Z > mx.Z + 0.01)
+				then
+					n += 1
+				end
+			end
+		end
+		return n
+	end
+	-- the merlons along a row (merged where two halves meet on a seam) and the gaps between them
+	local function crenels(list, axis)
+		local spans = {}
+		for _, e in list do
+			local e0, e1 = extent(e)
+			table.insert(spans, { e0[axis], e1[axis] })
+		end
+		table.sort(spans, function(p, q)
+			return p[1] < q[1]
+		end)
+		local merged = {}
+		for _, s in spans do
+			local last = merged[#merged]
+			if last and s[1] <= last[2] + 0.01 then
+				last[2] = math.max(last[2], s[2])
+			else
+				table.insert(merged, { s[1], s[2] })
+			end
+		end
+		local gaps, widths = {}, {}
+		for i, s in merged do
+			table.insert(widths, s[2] - s[1])
+			if i > 1 then
+				table.insert(gaps, s[1] - merged[i - 1][2])
+			end
+		end
+		return gaps, widths
+	end
+	local function spread(list)
+		local lo, hi = math.huge, -math.huge
+		for _, v in list do
+			lo, hi = math.min(lo, v), math.max(hi, v)
+		end
+		return hi - lo
+	end
+	local function plain(parts)
+		local bad = 0
+		for _, e in parts do
+			local c = StructureModel.color(e.tone, "red")
+			local teamed = e.tone == "team" or e.tone == "teamDark" or e.tone == "flame" or e.tone == "glow"
+			if e.shape or e.wedge or (not teamed and math.abs(c.R - c.B) >= 0.2) then
+				bad += 1
+			end
+		end
+		return bad
+	end
+
+	for _, key in { "barricade", "wall", "reinforced" } do
+		for rot = 0, 1 do
+			-- two of them end to end in a row
+			local a = piece(key, 0, 0, rot)
+			local b = rot == 0 and piece(key, 2, 0, rot) or piece(key, 0, 2, rot)
+			local at = grid({ a, b })
+			local ja, jb = StructureModel.joins(a, at), StructureModel.joins(b, at)
+			local axis = rot == 0 and "X" or "Z"
+			local seam = 2 * CELL
+			check(`{key} rot {rot}: two end to end run on`, ja and ja.right == "run" and jb and jb.left == "run")
+			local pa, pb = partsOf(a, ja), partsOf(b, jb)
+			local _, ba1 = extent(named(pa, "Body")[1])
+			local bb0 = extent(named(pb, "Body")[1])
+			check(
+				`...the bodies meet at the seam (no end set in there)`,
+				near(ba1[axis], seam, 0.01) and near(bb0[axis], seam, 0.01)
+			)
+			local ca, cb = named(pa, "Coping")[1], named(pb, "Coping")[1]
+			local ca0, ca1 = extent(ca)
+			local cb0, cb1 = extent(cb)
+			check(
+				`...the coping runs on: end to end, the same height and width`,
+				near(ca1[axis], cb0[axis], 0.01)
+					and near(ca0.Y, cb0.Y, 0.01)
+					and near(ca1.Y, cb1.Y, 0.01)
+					and near(
+						ca1.X - ca0.X + ca1.Z - ca0.Z - (ca1[axis] - ca0[axis]),
+						cb1.X - cb0.X + cb1.Z - cb0.Z - (cb1[axis] - cb0[axis]),
+						0.01
+					)
+			)
+			local merlons = named(pa, "Merlon")
+			for _, e in named(pb, "Merlon") do
+				table.insert(merlons, e)
+			end
+			local gaps, widths = crenels(merlons, axis)
+			check(
+				`...the merlons keep one rhythm over the joint (one on the seam, as wide as the rest)`,
+				#gaps >= 3 and spread(gaps) < 0.05 and spread(widths) < 0.05,
+				`{table.concat(gaps, " ")} / {table.concat(widths, " ")}`
+			)
+			check(`...one pilaster on the joint`, #named(pa, "Pilaster") + #named(pb, "Pilaster") == 1)
+			local free = #partsOf(a) + #partsOf(b)
+			check(`...hardly more parts than two apart`, #pa + #pb <= free + 1, `{#pa + #pb} vs {free}`)
+			check(`...nothing solid fighting for the same space`, clash(pa, pb, a, b) == 0, clash(pa, pb, a, b))
+			check(`...still plain: nothing round, nothing brown`, plain(pa) + plain(pb) == 0)
+			-- one taken away: the other is itself again
+			local alone = StructureModel.joins(a, grid({ a }))
+			check(
+				`...take one away and the other finishes its end again`,
+				alone == nil and StructureModel.joinsKey(alone) == ""
+			)
+		end
+	end
+	-- an L: a wall's end against another's end cell makes a square corner post there
+	do
+		local a = piece("wall", 0, 0, 0) -- (cells x 0..1 at z 0)
+		local b = piece("wall", 2, 0, 1) -- (cells z 0..1 at x 2: its end cell beside a's end)
+		local at = grid({ a, b })
+		local ja, jb = StructureModel.joins(a, at), StructureModel.joins(b, at)
+		check("an L: the one meeting the other's side butts into it", ja and ja.right == "butt", ja and ja.right)
+		local pa, pb = partsOf(a, ja), partsOf(b, jb)
+		local posts = named(pb, "Post")
+		local p0, p1 = extent(posts[1] or named(pb, "Plinth")[1])
+		check(
+			"...a square corner post on the corner cell",
+			#posts == 1
+				and near(p0.X, 2 * CELL, 0.01)
+				and near(p1.X, 3 * CELL, 0.01)
+				and near(p0.Z, 0, 0.01)
+				and near(p1.Z, CELL, 0.01)
+		)
+		check("...with a cap", #named(pb, "PostCap") == 1)
+		local _, ab1 = extent(named(pa, "Body")[1])
+		check("...the other's body runs right up to the post", near(ab1.X, 2 * CELL, 0.01))
+		local cb0 = extent(named(pb, "Coping")[1])
+		check("...the coping stops at the post (no doubled top)", cb0.Z >= CELL - 0.01, cb0.Z)
+		check("...nothing solid overlapping at the corner", clash(pa, pb, a, b) == 0, clash(pa, pb, a, b))
+		check("...still plain: nothing round, nothing brown", plain(pa) + plain(pb) == 0)
+		check("...a few parts at most added", #pa + #pb <= #partsOf(a) + #partsOf(b) + 2)
+		-- the T: a third wall running on from the post side, the post stays shared
+		local c = piece("wall", 2, -2, 1)
+		local at3 = grid({ a, b, c })
+		local jb3 = StructureModel.joins(b, at3)
+		check(
+			"a T: the post stays, the walls either side run on",
+			jb3 and jb3.left == "run" and #named(partsOf(b, jb3), "Post") == 1
+		)
+		check("...and taking the corner away puts the end back", StructureModel.joins(b, grid({ b })) == nil)
+	end
+	-- a wall into a Watchtower: no end facing into the tower, it reaches the shaft
+	do
+		local a = piece("wall", 0, 0, 0)
+		local t = piece("tower", 2, 0, 0)
+		local ja = StructureModel.joins(a, grid({ a, t }))
+		check("a wall against a Watchtower butts into it", ja and ja.right == "tower")
+		local pa = partsOf(a, ja)
+		local _, ab1 = extent(named(pa, "Body")[1])
+		local abut = named(pa, "Abut")[1]
+		local _, u1 = extent(abut or named(pa, "Plinth")[1])
+		check(
+			"...its body to the end and a reach to the shaft",
+			near(ab1.X, 2 * CELL, 0.01) and abut and u1.X > 2 * CELL + 0.3
+		)
+		check("...the tower is as it was", StructureModel.joins(t, grid({ a, t })) == nil)
+		check("...nothing solid in the tower", clash(pa, partsOf(t), a, t) == 0)
+	end
+	-- heights: a Battlement against a Castle Wall's end steps cleanly
+	do
+		local low = piece("barricade", 0, 0, 0)
+		local high = piece("wall", 2, 0, 0)
+		local at = grid({ low, high })
+		local jl, jh = StructureModel.joins(low, at), StructureModel.joins(high, at)
+		check(
+			"different heights: the lower butts in, the taller finishes",
+			jl.left == nil and jl.right == "butt" and jh.left == "flush"
+		)
+		local ph = partsOf(high, jh)
+		local hb0 = extent(named(ph, "Body")[1])
+		check("...the taller's end set flush (no slot)", near(hb0.X, 2 * CELL, 0.01))
+		check("...nothing solid overlapping", clash(partsOf(low, jl), ph, low, high) == 0)
+		check(
+			"other teams' pieces don't join",
+			StructureModel.joins(low, grid({ low, piece("barricade", 2, 0, 0, "blue") })) == nil
+		)
+	end
+	-- a Rampart: decks run on end to end, and no palisade where a wall stands against it
+	do
+		local r1 = piece("bridge", 0, 0, 0) -- (along Z: cells z 0..2 at x 0)
+		local r2 = piece("bridge", 0, 3, 0)
+		local at = grid({ r1, r2 })
+		local j1, j2 = StructureModel.joins(r1, at), StructureModel.joins(r2, at)
+		check("ramparts end to end: one deck", j1.right == "run" and j2.left == "run")
+		local p1, p2 = partsOf(r1, j1), partsOf(r2, j2)
+		check(
+			"...no kerb across it, no doubled posts on the seam",
+			#named(p1, "Kerb") + #named(p2, "Kerb") == 2 and #named(p1, "Post") == 4
+		)
+		local top1, top2 = 0, 0
+		for _, e in named(p1, "Plank") do
+			top1 = math.max(top1, select(2, extent(e)).Y)
+		end
+		for _, e in named(p2, "Plank") do
+			top2 = math.max(top2, select(2, extent(e)).Y)
+		end
+		check("...the decks line up", near(top1, top2, 0.01))
+		check("...fewer parts than two apart", #p1 + #p2 < #partsOf(r1) + #partsOf(r2))
+		check("...nothing solid overlapping", clash(p1, p2, r1, r2) == 0)
+		-- (red's enemy is +X: a wall along the rampart's enemy side)
+		local w = piece("wall", 1, 0, 1)
+		local jr = StructureModel.joins(r1, grid({ r1, w }))
+		local pr = partsOf(r1, jr)
+		local len = 0
+		for _, e in named(pr, "Palisade") do
+			local e0, e1 = extent(e)
+			len += e1.Z - e0.Z
+		end
+		check("a wall against a rampart's enemy side: no palisade there", jr and len > 0 and near(len, CELL, 0.01), len)
+		local d1 = 0
+		for _, e in named(pr, "Plank") do
+			d1 = math.max(d1, select(2, extent(e)).X)
+		end
+		check("...the deck reaches the wall", near(d1, CELL, 0.01), d1)
+		check(
+			"...nothing solid overlapping",
+			clash(pr, partsOf(w, StructureModel.joins(w, grid({ r1, w }))), r1, w) == 0
+		)
+	end
+	-- Shield Walls side by side close up
+	do
+		local s1, s2 = piece("cover", 0, 0, 0), piece("cover", 0, 1, 0)
+		local at = grid({ s1, s2 })
+		local b1 = named(partsOf(s1, StructureModel.joins(s1, at)), "Board")[1]
+		local b2 = named(partsOf(s2, StructureModel.joins(s2, at)), "Board")[1]
+		local _, e1 = extent(b1)
+		local e2 = extent(b2)
+		check("shield walls side by side: one board, no slit", near(e1.Z, CELL, 0.01) and near(e2.Z, CELL, 0.01))
+	end
+	-- with no joins (the hotbar's pictures) every piece is just as it was
+	for _, def in Structures.list do
+		local p = piece(def.key, 0, 0, 0)
+		check(`{def.key}: no neighbours, no joins`, StructureModel.joins(p, grid({ p })) == nil)
+	end
+end
+
 -- Arrow maths --------------------------------------------------------------------------------------------------
 local o, v = Vector3.new(0, 10, 0), Vector3.new(100, 0, 0)
 local p = Formulas.arrowAt(o, v, 1)

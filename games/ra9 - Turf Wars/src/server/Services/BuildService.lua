@@ -13,6 +13,10 @@ everyone is told where it stood and what hit it, and each client breaks it into 
 How each piece looks is StructureModel's (shared with the hotbar's pictures and the debris). In the build phase you can take back your own (Demolish) for
 the full cost.
 
+Pieces touching join up (StructureModel.joins: walls in a row run on as one, corners get a post, a Rampart's deck
+reaches the wall beside it): when one goes up or comes down, the same team's pieces on the cells round it are made
+again if their joins changed (their parts only; the box each stands in, and so every rule, stays the same).
+
 The Rally Banner (Data/Structures: rally) is a forward spawn: while it stands on its team's turf, that team's players
 come back to life beside it instead of in the spawn room (MatchService asks RallySpawn when a respawn is due). One a
 team at a time (a second is refused until the first is down or taken back), so it's a team decision, not a carpet of
@@ -48,7 +52,7 @@ local BuildService = {
 }
 
 local teams, arena, combat
-local structures = {} -- [id] = { id, key, team, owner, cx, cz, w, d, rot, hp, max, model, boxMin, boxMax }
+local structures = {} -- [id] = { id, key, team, owner, cx, cz, w, d, rot, hp, max, model, boxMin, boxMax, joins, solid }
 local occupied = {} -- [cx][cz] = id
 local budgets = {} -- [player] = points left
 local nextId = 0
@@ -213,16 +217,42 @@ function BuildService:Check(player, key, cx, cz, rot)
 	return true, nil, def, cx, cz, w, d, rot
 end
 
--- The piece in the world: StructureModel's parts (stone, wood and iron with the team's colour on them), the
--- builder's banner emblem on any flag, and the Rally Banner's light and tag
-local function buildModel(s, def)
-	local model = Instance.new("Model")
-	model.Name = "S" .. s.id
-	model:SetAttribute("StructureId", s.id)
-	model:SetAttribute("Team", s.team)
-	model:SetAttribute("Key", def.key)
+-- How a piece joins the same team's pieces touching it (StructureModel.joins), from the grid
+local function pieceAt(cx, cz)
+	local id = occupied[cx] and occupied[cx][cz]
+	return id and structures[id]
+end
+
+local function joinsOf(s)
+	return StructureModel.joins(s, pieceAt)
+end
+
+-- The same team's pieces touching this one's sides and ends (its neighbours by the cells round it)
+local function neighbours(s)
+	local out, seen = {}, {}
+	local function look(x, z)
+		local n = pieceAt(x, z)
+		if n and n ~= s and n.team == s.team and not seen[n] then
+			seen[n] = true
+			table.insert(out, n)
+		end
+	end
+	for x = s.cx, s.cx + s.w - 1 do
+		look(x, s.cz - 1)
+		look(x, s.cz + s.d)
+	end
+	for z = s.cz, s.cz + s.d - 1 do
+		look(s.cx - 1, z)
+		look(s.cx + s.w, z)
+	end
+	return out
+end
+
+-- The piece's parts in its model: StructureModel's (stone, wood and iron with the team's colour on them, shaped by
+-- its joins), the builder's banner emblem on any flag, the Rally Banner's light
+local function addParts(model, s, def, joins)
 	local banner = Cosmetics.get(s.emblemKey)
-	for _, spec in StructureModel.parts(def.key, s.team, s.min, s.max) do
+	for _, spec in StructureModel.parts(def.key, s.team, s.min, s.max, joins) do
 		local p = StructureModel.make(spec, s.team)
 		if spec.flag and banner and banner.kind == "banner" then
 			-- the emblem of the banner the builder wears (Data/Cosmetics), white on the flag, both faces
@@ -256,6 +286,16 @@ local function buildModel(s, def)
 		end
 		p.Parent = model
 	end
+end
+
+-- The piece in the world: its parts, and the Rally Banner's tag
+local function buildModel(s, def, joins)
+	local model = Instance.new("Model")
+	model.Name = "S" .. s.id
+	model:SetAttribute("StructureId", s.id)
+	model:SetAttribute("Team", s.team)
+	model:SetAttribute("Key", def.key)
+	addParts(model, s, def, joins)
 	if def.rally then
 		-- a small RALLY tag over it, so a team-mate (and the enemy hunting it) can find it
 		local top = model:FindFirstChild("Pole")
@@ -281,6 +321,39 @@ local function buildModel(s, def)
 	end
 	model.Parent = folder
 	return model
+end
+
+local function lookOf(s)
+	return { id = s.id, team = s.team, min = s.boxMin, max = s.boxMax, emblemKey = s.emblemKey }
+end
+
+-- A neighbour went up or came down: if that changes how this piece joins, its parts are made again (only how it
+-- looks: its box, so the building rules, the bots and the arrows' first test, stays the same, and the arrows' list
+-- of its solid parts is the same table, refilled)
+local function reshape(s)
+	local joins = joinsOf(s)
+	local key = StructureModel.joinsKey(joins)
+	if not s.model or key == (s.joinsKey or "") then
+		return
+	end
+	s.joins, s.joinsKey = joins, key
+	for _, p in s.model:GetChildren() do
+		if p:IsA("BasePart") then
+			p:Destroy()
+		end
+	end
+	addParts(s.model, lookOf(s), Structures.get(s.key), joins)
+	table.clear(s.solid)
+	for _, p in s.model:GetChildren() do
+		if p:IsA("BasePart") then
+			if s.hp < s.max then
+				p.Transparency = (1 - math.clamp(s.hp / s.max, 0, 1)) * 0.35 -- (as worn as it was: Hit)
+			end
+			if p.CanCollide then
+				table.insert(s.solid, p)
+			end
+		end
+	end
 end
 
 -- A message for everyone on a team (a toast under the HUD)
@@ -390,21 +463,28 @@ function BuildService:Place(player, key, cx, cz, rot)
 		max = def.hp,
 		boxMin = mn,
 		boxMax = mx,
+		emblemKey = player:GetAttribute("LookBanner"),
 	}
 	structures[s.id] = s
 	for _, cell in cellsOf(x, z, w, d) do
 		occupied[cell[1]] = occupied[cell[1]] or {}
 		occupied[cell[1]][cell[2]] = s.id
 	end
-	s.model =
-		buildModel({ id = s.id, team = s.team, min = mn, max = mx, emblemKey = player:GetAttribute("LookBanner") }, def)
+	-- (joined up with the same team's pieces touching it, and they with it)
+	s.joins = joinsOf(s)
+	s.joinsKey = StructureModel.joinsKey(s.joins)
+	s.model = buildModel(lookOf(s), def, s.joins)
 	local solid = {}
 	for _, p in s.model:GetDescendants() do
 		if p:IsA("BasePart") and p.CanCollide then
 			table.insert(solid, p)
 		end
 	end
+	s.solid = solid
 	arena:AddBox(s.id, mn, mx, #solid > 0 and solid or nil)
+	for _, n in neighbours(s) do
+		reshape(n)
+	end
 	budgets[player] = self:Budget(player) - def.cost
 	self:Push(player)
 	Net.fireAll("Structure", { kind = "built", id = s.id, key = def.key, team = s.team, hp = s.hp, max = s.max })
@@ -432,6 +512,12 @@ function BuildService:Remove(id, attacker, refund, blast)
 	if s.model then
 		s.model:Destroy()
 	end
+	if not clearing then
+		-- (what it was joined to finishes its ends again)
+		for _, n in neighbours(s) do
+			reshape(n)
+		end
+	end
 	local def = Structures.get(s.key)
 	if def and def.rally and not clearing then
 		tellTeam(
@@ -453,6 +539,7 @@ function BuildService:Remove(id, attacker, refund, blast)
 		min = s.boxMin,
 		max = s.boxMax,
 		rot = s.rot,
+		joins = s.joins, -- (the shape it had: the debris breaks the same parts)
 		refund = refund == true or nil,
 		quiet = clearing or nil, -- (the arena is being cleared: no debris)
 		blast = blast,
