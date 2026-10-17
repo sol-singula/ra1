@@ -28,19 +28,19 @@ Shop.DAILY_SLOTS = 4
 
 -- Robux (developer products, repeatable)
 Shop.PACKS = {
-	{ key = "shards_s", name = "Pocket of Shards", shards = 300, robux = 49, id = 0 },
-	{ key = "shards_m", name = "Pile of Shards", shards = 800, robux = 119, id = 0, tag = "+9%" },
-	{ key = "shards_l", name = "Crate of Shards", shards = 1800, robux = 249, id = 0, tag = "+18%" },
-	{ key = "shards_xl", name = "Vault of Shards", shards = 4000, robux = 499, id = 0, tag = "BEST VALUE" },
+	{ key = "shards_s", name = "Pocket of Shards", shards = 300, robux = 49, id = 3719115678 },
+	{ key = "shards_m", name = "Pile of Shards", shards = 800, robux = 119, id = 3719115682, tag = "+9%" },
+	{ key = "shards_l", name = "Crate of Shards", shards = 1800, robux = 249, id = 3719115684, tag = "+18%" },
+	{ key = "shards_xl", name = "Vault of Shards", shards = 4000, robux = 499, id = 3719115687, tag = "BEST VALUE" },
 }
-Shop.PASS = { key = "pass", name = "Turf Pass", robux = 349, id = 0 } -- per season
-Shop.TIER = { key = "tier", name = "+1 Pass Tier", robux = 39, id = 0 }
+Shop.PASS = { key = "pass", name = "Turf Pass", robux = 349, id = 3719115689 } -- per season
+Shop.TIER = { key = "tier", name = "+1 Pass Tier", robux = 39, id = 3719115693 }
 -- Robux (a game pass, once)
 Shop.STARTER = {
 	key = "starter",
 	name = "Starter Pack",
 	robux = 99,
-	id = 0,
+	id = 2038113079, -- (a game pass)
 	shards = 600,
 	cosmetic = "starter_founder",
 	desc = "600 ◆ and the Founder banner",
