@@ -3,7 +3,9 @@ The panel (B, or the SHOP button; Tab opens it on PLAYERS): five tabs, SUPERHOT-
 the team's colour) with a picture on every card:
 
   PLAYERS  everyone on the server by team (VIP, your party), INVITE to party up; Roblox's own Tab list is off
-  SHOP     "Pick something fun!": the week's bundle as the FEATURED card, today's 4 items, Shard packs (a bigger
+  SHOP     "Pick something fun!": LEGENDARY FX (every Robux-only cosmetic on a big animated card: a turning
+           rainbow edge, a sweeping shine, its emoji bobbing, a funny line and the Robux price, sideways in one
+           row), the week's bundle as the FEATURED card, today's 4 items, Shard packs (a bigger
            pile of gems for a bigger pack), the Turf Pass and +1 TIER, the Starter Pack (and the Shard Club when
            it's on); timers to the next rotation
   PASS     the season's Turf Pass explained in a line, your tier and XP, GET THE PASS and +1 TIER, and the tiers as
@@ -25,6 +27,7 @@ checks); the dialogs and the tour sit on a layer of their own over the body.
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local Achievements = require(ReplicatedStorage.Shared.Data.Achievements)
@@ -39,6 +42,7 @@ local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Icons = require(script.Parent.Parent.UI.Icons)
 local Layout = require(script.Parent.Parent.UI.Layout)
+local KillBanner = require(script.Parent.KillBannerController)
 
 local PanelController = { Name = "PanelController", Order = 48 }
 
@@ -305,11 +309,43 @@ local function waitFor(seconds, check, show)
 	pending = { untilT = os.clock() + seconds, check = check, show = show }
 end
 
+-- The panel's moving bits (the premium cards' edges and shine, the legendary shimmer): stepped each frame while
+-- their card is on screen, dropped when it's gone (the body is rebuilt on every refresh)
+local anims = {} -- { inst, update = fn(t) }
+local function animate(inst, update)
+	table.insert(anims, { inst = inst, update = update })
+end
+PanelController.anims = anims
+
 -- One of today's items or a locker card's action: WORN, WEAR, or its price
 local function itemCard(body, i, key, x, y, cw)
 	local p = profile()
 	local it = Cosmetics.get(key)
-	local card = frame(body, "Item" .. i, x, y, cw, 200)
+	-- (the rarer, the louder: an edge in the rarity's colour from epic up, a shimmer on the legendary ones)
+	local glow = (it.rarity == "epic" or it.rarity == "legendary") and RARITY_COLOR[it.rarity] or nil
+	local card = frame(body, "Item" .. i, x, y, cw, 200, nil, glow)
+	if it.rarity == "legendary" then
+		card.ClipsDescendants = true
+		local shimmer = Theme.new("Frame", {
+			Name = "Shimmer",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(-0.3, 0, 0.5, 0),
+			Size = UDim2.new(0, 26, 1.6, 0),
+			Rotation = 20,
+			BackgroundColor3 = Color3.fromRGB(255, 236, 160),
+			BackgroundTransparency = 0.6,
+			BorderSizePixel = 0,
+			ZIndex = 5,
+			Parent = card,
+		})
+		shimmer:SetAttribute("Layer", true) -- (a light over the card on purpose)
+		local phase = i * 0.5
+		animate(card, function(t)
+			local s = ((t + phase) % 2.6) / 0.8
+			shimmer.Position = UDim2.new(-0.3 + 1.6 * math.min(s, 1), 0, 0.5, 0)
+			shimmer.Visible = s < 1
+		end)
+	end
 	local band = Theme.new("Frame", {
 		Name = "Band",
 		Position = UDim2.fromOffset(0, 0),
@@ -371,6 +407,186 @@ local function itemCard(body, i, key, x, y, cw)
 	return card
 end
 
+-- The premium row -----------------------------------------------------------------------------------------------
+-- Every Robux-only cosmetic (Shop.PREMIUM) on a big dark card: a rainbow edge that turns, a shine that sweeps
+-- across, the picture bobbing with its emoji, a funny line, and the Robux price (OWNED / WEAR once it's yours).
+-- The cards scroll sideways in one row, so the row is the same height on a phone.
+local TAGLINE = {
+	rbx_lightning = "Zeus called. He wants his kill back.",
+	rbx_doge = "wow. such kill. much skill.",
+	rbx_web = "Your friendly neighbourhood knockout.",
+	rbx_oof = "The sound says it all.",
+	rbx_bonk = "BONK. Straight to jail.",
+	rbx_dance = "Lose? Dance it off.",
+	rbx_blackhole = "Gone. Reduced to atoms.",
+	rbx_heaven = "Send them up in style.",
+	rbx_storm = "A bow that crackles.",
+	rbx_dragon = "Gold. Wings. Respect.",
+	rbx_thunder = "Every arrow brings the storm.",
+	rbx_lightningbanner = "Your banner, electrified.",
+	rbx_dogebanner = "much banner. very team.",
+	rbx_crown = "For the king of the turf.",
+}
+local KIND_EMOJI = { skin = "🏹", trail = "☄️", title = "🏷️" }
+
+local function emojiOf(it)
+	local look = it.look or {}
+	if it.kind == "effect" then
+		return KillBanner.EMOJI[look.shape] or "✨"
+	elseif it.kind == "banner" then
+		return look.emblem or "★"
+	end
+	return KIND_EMOJI[it.kind] or "✨"
+end
+
+local function premiumRow(body, y)
+	if #Shop.PREMIUM == 0 then
+		return y
+	end
+	local p = profile()
+	y = section(body, "PremiumLabel", "✨ LEGENDARY FX ✨", y, "Robux only · yours forever")
+	local CW, CH = 168, 238
+	local row = Theme.new("ScrollingFrame", {
+		Name = "Premium",
+		Position = UDim2.fromOffset(0, y),
+		Size = UDim2.fromOffset(W, CH + 14),
+		CanvasSize = UDim2.fromOffset(#Shop.PREMIUM * (CW + 10) + 4, CH),
+		ScrollingDirection = Enum.ScrollingDirection.X,
+		ScrollBarThickness = 6,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Parent = body,
+	})
+	refs.premium = row
+	refs.premiumCards = {}
+	for i, prod in Shop.PREMIUM do
+		local it = Cosmetics.get(prod.cosmetic)
+		if it then
+			local owned = Locker.owns(p, it.key)
+			local worn = (p.equipped or {})[it.kind] == it.key
+			local x = 2 + (i - 1) * (CW + 10)
+			local card = Theme.new("Frame", {
+				Name = "Premium_" .. it.key,
+				Position = UDim2.fromOffset(x, 4),
+				Size = UDim2.fromOffset(CW, CH),
+				BackgroundColor3 = Color3.fromRGB(26, 22, 40),
+				BorderSizePixel = 0,
+				ClipsDescendants = true,
+				Parent = row,
+			}, { Theme.corner(10) })
+			card:SetAttribute("Key", it.key)
+			-- the rainbow edge (a gradient on the stroke, turning)
+			local edge = Theme.stroke(3, C.white)
+			edge.Parent = card
+			local hue = Theme.new("UIGradient", {
+				Name = "Rainbow",
+				Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 70, 90)),
+					ColorSequenceKeypoint.new(0.25, Color3.fromRGB(255, 200, 40)),
+					ColorSequenceKeypoint.new(0.5, Color3.fromRGB(60, 230, 140)),
+					ColorSequenceKeypoint.new(0.75, Color3.fromRGB(60, 160, 255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(220, 80, 255)),
+				}),
+				Parent = edge,
+			})
+			-- the band: what it is
+			local band = Theme.new("Frame", {
+				Name = "Band",
+				Position = UDim2.fromOffset(0, 0),
+				Size = UDim2.fromOffset(CW, 22),
+				BackgroundColor3 = GOLD,
+				BorderSizePixel = 0,
+				Parent = card,
+			})
+			label(
+				band,
+				"Kind",
+				(it.kind == "effect" and "KILL EFFECT" or Cosmetics.KIND_NAME[it.kind])
+					.. "  ·  "
+					.. (RARITY[it.rarity] or ""),
+				6,
+				3,
+				CW - 12,
+				16,
+				11,
+				C.ink,
+				Enum.TextXAlignment.Center,
+				Theme.Display
+			)
+			-- the picture, bobbing, its emoji big over it
+			local pic = preview(card, it, 10, 28, CW - 20, 92)
+			local emoji = text(pic, {
+				Name = "Emoji",
+				Text = emojiOf(it),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.fromScale(0.78, 0.3),
+				Size = UDim2.fromOffset(40, 40),
+				fit = 34,
+				TextXAlignment = Enum.TextXAlignment.Center,
+				ZIndex = 3,
+			})
+			if owned then
+				tick(pic, CW - 34, 14, 20)
+			end
+			label(card, "Name", it.name, 8, 124, CW - 16, 24, 17, C.white, Enum.TextXAlignment.Center, Theme.Display)
+			label(
+				card,
+				"Tagline",
+				TAGLINE[it.key] or "",
+				8,
+				150,
+				CW - 16,
+				32,
+				11,
+				Color3.fromRGB(200, 196, 220),
+				Enum.TextXAlignment.Center
+			)
+			local buy
+			if worn then
+				buy = button(card, "Buy", "WORN", 10, CH - 46, CW - 20, 36, "grey")
+			elseif owned then
+				buy = button(card, "Buy", "WEAR", 10, CH - 46, CW - 20, 36, "light", function()
+					Net.send("Settings", "equip", { kind = it.kind, key = it.key })
+				end)
+			else
+				buy = priceButton(card, "Buy", 10, CH - 46, CW - 20, 36, { robux = prod.robux }, "gold", function()
+					waitFor(60, function(np)
+						return Locker.owns(np, it.key)
+					end, function()
+						celebrate({ item = it, title = "YOURS FOREVER!" })
+					end)
+					Net.send("Buy", "robux", prod.key)
+				end)
+			end
+			-- the shine: a bright bar that sweeps across now and then
+			local shine = Theme.new("Frame", {
+				Name = "Shine",
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.new(-0.3, 0, 0.5, 0),
+				Size = UDim2.new(0, 34, 1.6, 0),
+				Rotation = 20,
+				BackgroundColor3 = C.white,
+				BackgroundTransparency = 0.75,
+				BorderSizePixel = 0,
+				ZIndex = 5,
+				Parent = card,
+			})
+			shine:SetAttribute("Layer", true) -- (a light over the card on purpose)
+			local phase = i * 0.37
+			animate(card, function(t)
+				hue.Rotation = (t * 90 + i * 25) % 360
+				local s = ((t + phase) % 3.2) / 0.9
+				shine.Position = UDim2.new(-0.3 + 1.6 * math.min(s, 1), 0, 0.5, 0)
+				shine.Visible = s < 1
+				emoji.Position = UDim2.new(0.78, 0, 0.3, math.sin(t * 3 + phase) * 5)
+				emoji.Rotation = math.sin(t * 2 + phase) * 10
+			end)
+			refs.premiumCards[it.key] = { card = card, buy = buy, owned = owned }
+		end
+	end
+	return y + CH + 22
+end
+
 local function shopTab(body)
 	local p = profile()
 	local t = now()
@@ -394,6 +610,8 @@ local function shopTab(body)
 		Theme.Display
 	)
 	local y = 64
+	-- PREMIUM: the Robux-only ones, always here, the loudest thing in the shop
+	y = premiumRow(body, y)
 	-- FEATURED: this week's bundle, 30% off
 	local week = Shop.weekOf(t)
 	local bundle = Shop.weekly(week)
@@ -979,6 +1197,22 @@ local function lockerTab(body)
 			Theme.pressable(card)
 			card.Activated:Connect(function()
 				Net.send("Settings", "equip", { kind = lockerKind, key = it.key or nil })
+			end)
+		elseif it.source == "robux" then
+			-- (Robux only: gold-edged, the price on it, a tap opens the purchase)
+			card.BackgroundColor3 = GOLD_SOFT
+			local edge = card:FindFirstChildOfClass("UIStroke")
+			if edge then
+				edge.Color = GOLD
+			end
+			Theme.pressable(card)
+			card.Activated:Connect(function()
+				waitFor(60, function(np)
+					return Locker.owns(np, it.key)
+				end, function()
+					celebrate({ item = it, title = "YOURS FOREVER!" })
+				end)
+				Net.send("Buy", "robux", it.key)
 			end)
 		end
 		if col == 3 then
@@ -1849,6 +2083,24 @@ end
 function PanelController:init()
 	gui = Theme.screen("Panel", 15, player:WaitForChild("PlayerGui"))
 	build()
+	-- the moving bits, while the panel's open (the gone ones dropped)
+	RunService.RenderStepped:Connect(function()
+		if #anims == 0 then
+			return
+		end
+		local t = os.clock()
+		for i = #anims, 1, -1 do
+			local a = anims[i]
+			if not a.inst.Parent then
+				table.remove(anims, i)
+			elseif PanelController.isOpen() then
+				local ok = pcall(a.update, t)
+				if not ok then
+					table.remove(anims, i)
+				end
+			end
+		end
+	end)
 	-- Tab opens the menu on its PLAYERS tab, so Roblox's own player list (also on Tab) steps aside
 	pcall(function()
 		game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)

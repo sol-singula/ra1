@@ -37,7 +37,9 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Structures = require(ReplicatedStorage.Shared.Data.Structures)
 local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Format = require(ReplicatedStorage.Shared.Format)
+local KillBanner = require(script.Parent.KillBannerController)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -594,6 +596,11 @@ local function killPop()
 end
 
 -- The kill feed ------------------------------------------------------------------------------------------------
+local FEED_RARITY = {
+	rare = Color3.fromRGB(35, 110, 245),
+	epic = Color3.fromRGB(150, 90, 240),
+	legendary = Color3.fromRGB(240, 160, 20),
+}
 local function buildFeed(gui)
 	refs.feed = Theme.new("Frame", {
 		Name = "Feed",
@@ -613,14 +620,21 @@ function HudController.addFeed(k)
 	end
 	local icon = (Weapons.get(k.weapon or "") or {}).icon or "✖"
 	local killer = k.killerName or ({ fall = "the void", reset = "reset", admin = "an admin" })[k.kind] or "?"
+	-- (the killer's kill effect: its rarity edges the row, its picture rides in it, and a Robux one glows gold)
+	local fx = Cosmetics.get(k.effect)
+	local edge = fx and FEED_RARITY[fx.rarity] or nil
 	local row = Theme.new("Frame", {
 		Size = UDim2.fromOffset(FEED_W, 22),
-		BackgroundColor3 = C.white,
+		BackgroundColor3 = (fx and fx.source == "robux") and Color3.fromRGB(255, 244, 205) or C.white,
 		BackgroundTransparency = 0.1,
 		BorderSizePixel = 0,
 		Parent = refs.feed,
 	}, { Theme.corner(3) })
-	local text = `{killer}  {icon}{k.head and " 🎯" or ""}  {k.victimName or "?"}`
+	if edge then
+		Theme.stroke(2, edge).Parent = row
+	end
+	local fxIcon = fx and fx.look and KillBanner.EMOJI[fx.look.shape]
+	local text = `{killer}  {icon}{k.head and " 🎯" or ""}{fxIcon and (" " .. fxIcon) or ""}  {k.victimName or "?"}`
 	if (k.push or 0) > 0 then
 		text ..= `   +{math.floor(k.push / Constants.CELL)}`
 	end
@@ -633,6 +647,11 @@ function HudController.addFeed(k)
 		TextColor3 = Constants.TEAM_COLOR[k.killerTeam or ""] or C.ink,
 		Parent = row,
 	})
+	-- (in from the right with a little overshoot)
+	local pad = Theme.new("UIPadding", { PaddingLeft = UDim.new(0, 60), Parent = row })
+	pcall(function()
+		Theme.tween(pad, 0.25, { PaddingLeft = UDim.new(0, 0) }, Enum.EasingStyle.Back)
+	end)
 	table.insert(feed, row)
 	while #feed > 5 do
 		table.remove(feed, 1):Destroy()
