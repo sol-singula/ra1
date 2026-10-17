@@ -64,6 +64,11 @@ Constants.BOT_RANGE = 150 -- studs: how far they look for someone to shoot
 Constants.BOT_SPREAD = 2.6 -- degrees of aim error (more at range): beatable, not helpless
 Constants.BOT_MID_RANGE = 45 -- studs: closer than this (but out of blade reach) a bot uses the crossbow
 Constants.BOT_RETREAT_HP = 35 -- a bot this hurt falls back behind cover
+-- the first-match boost (TutorialService): only while a new player is alone with the bot in their first match
+Constants.TUTORIAL_BOT_SPREAD = 2.2 -- the bot's aim error, times this
+Constants.TUTORIAL_BOT_REACT = 1.8 -- the bot's wait before it draws, times this
+Constants.TUTORIAL_PUSH_BONUS = 2 -- extra cells each of the new player's knockouts moves the line
+Constants.TUTORIAL = true -- the first-minute tutorial for new players (tests that aren't about it turn it off)
 Constants.BOT_REACT = 0.7 -- seconds before a bot starts drawing on someone new
 Constants.BOT_NAMES = { "Ace", "Echo", "Nova", "Blitz", "Rook", "Vex", "Juno", "Kite", "Onyx", "Pike" }
 

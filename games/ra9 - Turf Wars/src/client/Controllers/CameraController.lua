@@ -8,6 +8,12 @@ The mouse: hidden in play (the HUD draws the crosshair), shown and free while a 
 pass, locker, goals), a question card, the results card (once it closes, the wait for the next game is free running
 about, so the mouse goes back to the camera). CameraController.mouseFree() says which; the bow and the build
 tray don't fire while it's true, so a click in the shop is only a click in the shop.
+
+Cinematics (the tutorial): CameraController.takeover(fn) hands the camera to fn(camera, dt), called every frame
+instead of the first-person lock (the camera goes Scriptable; shakes still play on top). CameraController.release(look)
+gives it back: Custom again, on your character, locked first person, looking along `look` (or where you face).
+
+  CameraController.takeover(fn)   CameraController.release(look?)   CameraController.takenOver() -> bool
 ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -68,9 +74,83 @@ local function setMouse(free)
 	mouseShown = free
 end
 
+-- Cinematics ---------------------------------------------------------------------------------------------------
+local driver -- fn(cam, dt) while a cinematic has the camera
+
+function CameraController.takeover(fn)
+	driver = fn
+	local cam = workspace.CurrentCamera
+	if cam then
+		pcall(function()
+			cam.CameraType = Enum.CameraType.Scriptable
+		end)
+	end
+end
+
+function CameraController.takenOver()
+	return driver ~= nil
+end
+
+function CameraController.release(look)
+	driver = nil
+	local cam = workspace.CurrentCamera
+	if not cam then
+		return
+	end
+	local c = player.Character
+	local head = c and c:FindFirstChild("Head")
+	local root = c and c:FindFirstChild("HumanoidRootPart")
+	local hum = c and c:FindFirstChildOfClass("Humanoid")
+	pcall(function()
+		cam.CameraType = Enum.CameraType.Custom
+		if hum then
+			cam.CameraSubject = hum
+		end
+		player.CameraMode = Enum.CameraMode.LockFirstPerson
+	end)
+	-- (Roblox's camera carries on from where this one looks: straight back into your eyes)
+	local eye = head and head.Position or (root and root.Position + Vector3.new(0, 1.5, 0))
+	if eye then
+		local dir = look or (root and root.CFrame.LookVector) or cam.CFrame.LookVector
+		if dir.Magnitude < 0.01 then
+			dir = Vector3.new(0, 0, -1)
+		end
+		cam.CFrame = CFrame.lookAt(eye, eye + dir.Unit)
+	end
+	fov = cam.FieldOfView or fov -- (eases back from the cinematic's lens)
+end
+
+local function shakeNow()
+	local t = os.clock()
+	if t < shakeUntil then
+		local s = shakeStrength * ((shakeUntil - t) / 0.4)
+		return CFrame.Angles(math.rad((math.random() - 0.5) * s * 4), math.rad((math.random() - 0.5) * s * 4), 0)
+	end
+	shakeStrength = 0
+	return nil
+end
+
 local function step(dt)
 	local cam = workspace.CurrentCamera
 	if not cam then
+		return
+	end
+	if driver then
+		local free = CameraController.mouseFree()
+		if free or mouseShown ~= free then
+			setMouse(free)
+		end
+		local fn = driver
+		local ok, err = pcall(fn, cam, dt)
+		if not ok then
+			warn("[CameraController] cinematic failed: " .. tostring(err))
+			CameraController.release()
+			return
+		end
+		local s = shakeNow()
+		if s then
+			cam.CFrame = cam.CFrame * s
+		end
 		return
 	end
 	pcall(function()
@@ -86,12 +166,9 @@ local function step(dt)
 	for _, cf in offsets do
 		extra *= cf
 	end
-	local t = os.clock()
-	if t < shakeUntil then
-		local s = shakeStrength * ((shakeUntil - t) / 0.4)
-		extra *= CFrame.Angles(math.rad((math.random() - 0.5) * s * 4), math.rad((math.random() - 0.5) * s * 4), 0)
-	else
-		shakeStrength = 0
+	local s = shakeNow()
+	if s then
+		extra *= s
 	end
 	if extra ~= CFrame.new() then
 		cam.CFrame = cam.CFrame * extra

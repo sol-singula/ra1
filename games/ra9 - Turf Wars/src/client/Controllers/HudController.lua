@@ -19,6 +19,10 @@ Nothing overlaps on the smallest canvas the screens get (Theme.MIN_WIDTH x DESIG
 has its own slot, the words inside cards shrink to fit their boxes (Theme.text fit), the toast moves up out of
 the way of the build tray and of a question card, and ClientSmoke checks the rectangles.
 
+The tutorial (TutorialController): while it guides (Layout.focused) the invite and shop buttons, the kill feed, the
+build hint, the objective, alerts and toasts step aside; while one of its cinematics plays (Layout.inCinema) the whole
+HUD does.
+
 The objective is on screen in the first seconds (§1: understood in under 15 s): "Every kill pushes the line toward
 their base. Push them off the map."
 ]]
@@ -1206,6 +1210,20 @@ local function step()
 	end
 	if refs.objective and refs.objectiveUntil and (os.clock() > refs.objectiveUntil or m.phase == "victory") then
 		refs.objective.Visible = false
+	end
+	-- the tutorial: a cinematic has the whole screen; while it guides, only what the step needs stays
+	if refs.gui then
+		refs.gui.Enabled = not Layout.inCinema()
+	end
+	local focus = Layout.focused()
+	if focus or refs.focusHid then
+		-- (the first four come back after; the passing ones keep their own timers)
+		for i, k in { "invite", "shop", "feed", "buildHint", "objective", "alert", "toast" } do
+			if refs[k] and (focus or i <= 4) then
+				refs[k].Visible = not focus
+			end
+		end
+		refs.focusHid = focus
 	end
 end
 

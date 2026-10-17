@@ -22,6 +22,7 @@ What a bot does (every TICK):
   BotService:List()          the bots in the server
   BotService:Ensure()        bots in or out for the number of people on (runs on its own every second)
   BotService:SetEnabled(on)  an admin's switch for this server (a spectating admin never counts as a person)
+  BotService.easyFor(who)    a hook: true and a bot aiming at them is slower and shakier (TutorialService sets it)
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -353,6 +354,11 @@ function BotService:Takeover(player)
 end
 
 -- The brain ---------------------------------------------------------------------------------------------------
+-- Go easy on this player? (TutorialService: a new player's first match, alone with the bot)
+BotService.easyFor = function(_target)
+	return false
+end
+
 local function rootOf(who)
 	local c = who.Character
 	return c and c:FindFirstChild("HumanoidRootPart")
@@ -421,13 +427,13 @@ function BotService:Nearest(b, root)
 end
 
 -- Where to aim: their chest, led by their movement over the flight time, raised for the drop, with some error
-function BotService.aim(eye, target, velocity, speed, rng)
+function BotService.aim(eye, target, velocity, speed, rng, spreadTimes)
 	local d = (target - eye).Magnitude
 	local t = d / speed
 	local at = target + velocity * t
 	at += Vector3.new(0, 0.5 * Constants.GRAVITY * t * t, 0)
 	local dir = (at - eye).Unit
-	local spread = math.rad(Constants.BOT_SPREAD * (1 + d / 120))
+	local spread = math.rad(Constants.BOT_SPREAD * (spreadTimes or 1) * (1 + d / 120))
 	local r = rng or Random.new()
 	local cf = CFrame.lookAt(Vector3.zero, dir)
 		* CFrame.Angles((r:NextNumber() - 0.5) * 2 * spread, (r:NextNumber() - 0.5) * 2 * spread, 0)
@@ -533,8 +539,11 @@ function BotService:Think(b)
 	end
 	face(root, tr.Position)
 	local w = Weapons.get(combat:Weapon(b))
+	-- (a new player's first match: a slower, shakier bot, so the first win comes fast)
+	local easy = self.easyFor(target) == true
+	local react = Constants.BOT_REACT * (easy and Constants.TUTORIAL_BOT_REACT or 1)
 	if not b.drawUntil then
-		if t - b.seenAt >= Constants.BOT_REACT then
+		if t - b.seenAt >= react then
 			combat:Draw(b, true)
 			b.drawUntil = t + w.draw * rng:NextNumber(0.75, 1.1)
 		end
@@ -542,7 +551,9 @@ function BotService:Think(b)
 		local eye = root.Position + Vector3.new(0, 1.5, 0)
 		local charge = 1
 		local speed = Formulas.shot(w, charge).speed
-		local dir = self.aim(eye, tr.Position + Vector3.new(0, 0.4, 0), tr.AssemblyLinearVelocity, speed, rng)
+		local spreadTimes = easy and Constants.TUTORIAL_BOT_SPREAD or 1
+		local dir =
+			self.aim(eye, tr.Position + Vector3.new(0, 0.4, 0), tr.AssemblyLinearVelocity, speed, rng, spreadTimes)
 		b.shotId += 1
 		combat:Shoot(b, eye, dir, b.shotId)
 		b.drawUntil = nil

@@ -19,6 +19,7 @@ local function check(name, cond, detail)
 end
 
 local tree = Engine.mountProject(".")
+Engine.require(tree.shared.Constants).TUTORIAL = false -- (the players here know the game: tests/TutorialSmoke is the tutorial's)
 Engine.runScript(tree.server.Main)
 Engine.advance(0.5)
 local function service(name)

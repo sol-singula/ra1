@@ -5,7 +5,8 @@ The panel (B, or the SHOP button): four tabs, SUPERHOT-plain (white cards, black
            when it's on); timers to the next rotation
   PASS     the season's Turf Pass: the tiers, free and premium, claim buttons, GET THE PASS, +1 TIER
   LOCKER   everything of a kind (trail, bow, kill effect, banner, title): yours to wear, or how to get it
-  GOALS    VIP (earned, never bought) and how close you are, MVP, the goals and their rewards
+  GOALS    VIP (earned, never bought) and how close you are, MVP, the goals and their rewards, and HOW TO PLAY
+           (REPLAY: the first-game tutorial again)
 
 While it's open the mouse is free, the HUD's middle steps aside (Layout.setPanel) and toasts show on the panel's own
 line at the bottom. Every piece has its own slot (the numbers below), so nothing lands on anything (ClientSmoke
@@ -577,7 +578,15 @@ local function goalsTab(body)
 		fill.Size = UDim2.fromScale(have / g.goal, 1)
 		y += 62
 	end
-	return y
+	-- the first-game guide, again (TutorialService)
+	local tr = frame(body, "Tutorial", 0, y, W, 48)
+	label(tr, "Title", "HOW TO PLAY", 10, 6, 330, 20, 15)
+	label(tr, "Line", "Watch the first-game guide again.", 10, 28, 330, 14, 12, C.muted)
+	button(tr, "Replay", "REPLAY", W - 130, 9, 120, 30, true, function()
+		Net.send("Tutorial", "replay")
+		PanelController.close()
+	end)
+	return y + 54
 end
 
 local BUILD = { shop = shopTab, pass = passTab, locker = lockerTab, goals = goalsTab }

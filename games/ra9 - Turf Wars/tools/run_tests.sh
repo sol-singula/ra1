@@ -14,3 +14,4 @@ $R tests/PartySmoke.spec.luau
 $R tests/AdminSmoke.spec.luau
 $R tests/MapSmoke.spec.luau
 $R tests/LogSmoke.spec.luau
+$R tests/TutorialSmoke.spec.luau

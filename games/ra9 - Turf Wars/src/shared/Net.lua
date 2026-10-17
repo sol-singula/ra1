@@ -27,6 +27,7 @@ Net.ClientEvents = {
 	Feedback = 2, -- ("enjoy", yes) the "Are you liking the game?" card | ("like", "ok" | "later") the like card
 	Party = 4, -- ("invite", userId) | ("accept") | ("decline") | ("leave") | ("kick", userId) | ("move", "new" | "fuller")
 	Admin = 8, -- (action, target?, value?) the admin panel; refused unless you're an admin (AdminService)
+	Tutorial = 6, -- ("step", name, how?) | ("done") | ("skip", where?) | ("replay") the first-minute guide
 }
 
 -- Server → client.
@@ -51,6 +52,7 @@ Net.ServerEvents = {
 	"PartyState", -- { id, leader, max, members = { { userId, name } } } or false: your party (PartyService)
 	"PartyInvite", -- { from, name, kind = "invite" | "friend", seconds } or { cancel = true }: the invite card
 	"AdminState", -- { players, servers?, map, phase, bots, frozen, spectating, invisible, jobId } (admins only)
+	"Tutorial", -- { kind = "start", boost, replay } | { kind = "built" } the first-minute guide (TutorialService)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).
