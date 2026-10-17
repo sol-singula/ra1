@@ -368,7 +368,12 @@ function AfkService:Send(player, opts)
 	w.at = now()
 	w.stay = opts and opts.stay or nil -- (an admin visiting: walking doesn't send them back)
 	if not w.stay then
-		Notify.to(player, "You're AFK. Walk around to jump back in!", "info", { icon = "💤", seconds = 5 })
+		Notify.to(
+			player,
+			"You're AFK. Walk around to jump back in!",
+			"info",
+			{ icon = "💤", seconds = 5, always = true }
+		)
 	end
 	return true
 end
