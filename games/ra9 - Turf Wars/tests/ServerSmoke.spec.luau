@@ -764,8 +764,8 @@ check("...and who was MVP", firedSince(m4, "Announce", nil, function(a)
 	return a[1].kind == "status" and a[1].text:find("MVP") ~= nil
 end) ~= nil)
 check(
-	"a 30 s countdown to the next game",
-	math.abs(ws:GetAttribute("PhaseEnds") - Engine.workspace:GetServerTimeNow() - 30) < 1,
+	"a 15 s countdown to the next game (time to see the shop)",
+	math.abs(ws:GetAttribute("PhaseEnds") - Engine.workspace:GetServerTimeNow() - 15) < 1,
 	ws:GetAttribute("PhaseEnds") - Engine.workspace:GetServerTimeNow()
 )
 do
@@ -1022,7 +1022,11 @@ do
 		end
 	end
 	send(red, "Buy", "item", notToday)
-	check("an item not in today's shop can't be bought", not p.owned[notToday] and p.shards == before)
+	check(
+		"an item not in today's four can be bought too (everything is for sale, every day)",
+		p.owned[notToday] and p.shards == before - Shop.price(Cosmetics.get(notToday))
+	)
+	before = p.shards
 	send(red, "Buy", "item", "goal_sharp")
 	send(red, "Buy", "item", "vip_title")
 	check(

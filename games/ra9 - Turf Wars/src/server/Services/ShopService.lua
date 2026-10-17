@@ -53,9 +53,7 @@ function ShopService:BuyItem(player, key)
 	if Locker.owns(p, key) then
 		return false, "You have it already."
 	end
-	if not Shop.inRotation(key, self.now(), player:GetAttribute("ShopRoll")) then
-		return false, "That's not in the shop today."
-	end
+	-- (every shop item is for sale every day; today's four are just the featured row)
 	local price = Shop.price(it)
 	if not economy:Spend(player, price) then
 		return false, `You need {price - (p.shards or 0)} more Shards.`

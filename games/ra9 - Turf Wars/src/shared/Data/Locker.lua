@@ -13,6 +13,7 @@ local Extras = require(script.Parent.Extras)
 local Format = require(script.Parent.Parent.Format)
 local Ladder = require(script.Parent.Ladder)
 local Season = require(script.Parent.Season) -- (and so season items resolve)
+local Shop = require(script.Parent.Shop)
 
 local Locker = {}
 
@@ -67,7 +68,7 @@ function Locker.how(it)
 	if src == "ladder" then
 		return `Win {it.win}`
 	elseif src == "shop" then
-		return "Shop"
+		return `◆ {Shop.price(it)} · TAP TO BUY`
 	elseif src == "pass" then
 		return `Season {it.season} Pass`
 	elseif src == "vip" then

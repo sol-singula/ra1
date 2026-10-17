@@ -668,6 +668,34 @@ local function shopTab(body)
 		itemCard(body, i, key, (i - 1) * (cw + 8), y, cw)
 	end
 	y += 200 + 14
+	-- every item, any day: a section a kind, four to a row
+	refs.allY = y
+	local n = 100
+	for _, kind in Cosmetics.KINDS do
+		local keys = {}
+		for _, it in Cosmetics.list do
+			if it.source == "shop" and it.kind == kind then
+				table.insert(keys, it.key)
+			end
+		end
+		table.sort(keys, function(a, b)
+			local ia, ib = Cosmetics.get(a), Cosmetics.get(b)
+			if Shop.price(ia) ~= Shop.price(ib) then
+				return Shop.price(ia) < Shop.price(ib)
+			end
+			return ia.name < ib.name
+		end)
+		if #keys > 0 then
+			local name = Cosmetics.KIND_NAME[kind] or string.upper(kind)
+			y = section(body, "All_" .. kind, `ALL {name}S`, y, `{#keys} TO GET`)
+			for i, key in keys do
+				n += 1
+				local col, row = (i - 1) % 4, (i - 1) // 4
+				itemCard(body, n, key, col * (cw + 8), y + row * (200 + 8), cw)
+			end
+			y += math.ceil(#keys / 4) * (200 + 8) + 6
+		end
+	end
 	-- Shards
 	refs.packsY = y
 	y = section(body, "ShardsLabel", "GET SHARDS", y, "Spend them on anything in the shop")
@@ -1197,6 +1225,12 @@ local function lockerTab(body)
 			Theme.pressable(card)
 			card.Activated:Connect(function()
 				Net.send("Settings", "equip", { kind = lockerKind, key = it.key or nil })
+			end)
+		elseif it.source == "shop" then
+			-- (any shop item, any day: a tap buys it with Shards)
+			Theme.pressable(card)
+			card.Activated:Connect(function()
+				confirmBuy(it, Shop.price(it))
 			end)
 		elseif it.source == "robux" then
 			-- (Robux only: gold-edged, the price on it, a tap opens the purchase)

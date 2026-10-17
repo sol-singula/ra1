@@ -21,9 +21,9 @@ Constants.AFK_JOIN_GRACE = 120 -- seconds after joining that nobody is ever sent
 Constants.FIGHT_SECONDS = 120
 Constants.STUCK_RESPAWN_SECONDS = 3 -- no body and no respawn coming this long: the server puts them back in
 Constants.CHARGE_SECONDS = 20 -- the last this many seconds of a fight: anyone may cross the line, and the blade is out
-Constants.VICTORY_SECONDS = 27 -- fireworks, the results, then the countdown to the next game...
-Constants.TRANSITION_SECONDS = 3 -- ...and the next map loads: 30 s from the win to the next build phase
-Constants.RESULTS_CARD_SECONDS = 12 -- the results card stays this long; the countdown shows after it
+Constants.VICTORY_SECONDS = 12 -- fireworks, the results (and the end screen's shop card), then the countdown...
+Constants.TRANSITION_SECONDS = 3 -- ...and the next map loads: 15 s from the win to the next build phase
+Constants.RESULTS_CARD_SECONDS = 6 -- the results card stays this long; the shop card and countdown after it
 Constants.FIREWORKS_SECONDS = 14 -- fireworks in the winners' colour all over the arena
 -- A NO on "are you liking the game?" must say why: one or more of these (the analytics keep the keys)
 Constants.FEEDBACK_REASONS = {
