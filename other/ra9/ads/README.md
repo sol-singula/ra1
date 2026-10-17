@@ -1,4 +1,4 @@
-# Turf Wars: Overdrive: ad images (no text)
+# Turf Wars: ad images (no text)
 
 ![The 8 ad images](_all.jpg)
 

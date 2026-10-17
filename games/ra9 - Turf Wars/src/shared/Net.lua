@@ -23,7 +23,7 @@ Net.ClientEvents = {
 	Settings = 2, -- (key, value) flips, sensitivity, equipped cosmetics
 	Analytics = 4, -- (kind, data) device info, frame rate (AnalyticsService)
 	Buy = 4, -- ("item", key) | ("bundle") | ("robux", productKey | "starter") (ShopService)
-	Claim = 6, -- (tier, "f" | "p") a tier of the Overdrive Pass
+	Claim = 6, -- (tier, "f" | "p") a tier of the Turf Pass
 	Feedback = 2, -- ("enjoy", yes) the "Are you liking the game?" card | ("like", "ok" | "later") the like card
 }
 

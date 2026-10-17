@@ -1,8 +1,8 @@
 --[[
-The Overdrive Pass: a new season every 4 weeks, 30 tiers climbed with pass XP from playing. Two tracks:
+The Turf Pass: a new season every 4 weeks, 30 tiers climbed with pass XP from playing. Two tracks:
 
   free      everyone: Shards on every other tier, a cosmetic at tiers 5, 15 and 25
-  premium   the season's Overdrive Pass (Robux, Data/Shop.PASS, bought again each season): a cosmetic on every 3rd
+  premium   the season's Turf Pass (Robux, Data/Shop.PASS, bought again each season): a cosmetic on every 3rd
             tier (the 30th legendary), a season title straight away at tier 1, Shards on the rest
 
 Season cosmetics are that season's only: they never come back to the shop (Data/Cosmetics, source "pass").

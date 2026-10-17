@@ -1,4 +1,4 @@
-# ra9 · Turf Wars: Overdrive — master plan
+# ra9 · Turf Wars — master plan
 
 The design brief (October 2026), kept here as the reference every phase is checked against, with the art direction
 and the decisions made where the brief stops (it ends partway through §7, Construction).
@@ -133,7 +133,7 @@ height capped, nothing outside the arena, invalid spots explained. Mobile: a lar
 * Invite a friend: when a friend joins from your invite, you both get the Buddy Trail (friends only, once per
   friend, the friend credited once ever).
 * Monetization, cosmetic only, no combat power (PLAN.md Round 5): Shards (earned and bought) for a daily and
-  weekly rotating shop, a 4-weekly Overdrive Pass with a free and a premium track, a Starter Pack, an optional
+  weekly rotating shop, a 4-weekly Turf Pass with a free and a premium track, a Starter Pack, an optional
   monthly Shard Club. **VIP and MVP are earned, never sold** (VIP: 50 wins and 10 MVPs; MVP: the match's best wears
   the crown next match), and so are the goals' cosmetics; each comes with looks nobody can buy.
 

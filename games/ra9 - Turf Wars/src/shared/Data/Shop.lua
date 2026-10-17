@@ -3,7 +3,7 @@ Shards (◆) and what they buy. Cosmetic only: nothing for sale changes a fight,
 are never for sale (Data/Achievements).
 
 Where the money comes back from (recurring, by design):
-  * the Overdrive Pass, a new one every 4 weeks (Data/Season), with +1 TIER for the impatient
+  * the Turf Pass, a new one every 4 weeks (Data/Season), with +1 TIER for the impatient
   * the shop rotates: 4 items a day and a 3-item bundle a week, so there's always something new and each one is
     gone again soon (it comes back some day; season items never do)
   * Shards in packs (developer products: buy as often as you like), earned in play too, so free players get there
@@ -33,7 +33,7 @@ Shop.PACKS = {
 	{ key = "shards_l", name = "Crate of Shards", shards = 1800, robux = 249, id = 0, tag = "+18%" },
 	{ key = "shards_xl", name = "Vault of Shards", shards = 4000, robux = 499, id = 0, tag = "BEST VALUE" },
 }
-Shop.PASS = { key = "pass", name = "Overdrive Pass", robux = 349, id = 0 } -- per season
+Shop.PASS = { key = "pass", name = "Turf Pass", robux = 349, id = 0 } -- per season
 Shop.TIER = { key = "tier", name = "+1 Pass Tier", robux = 39, id = 0 }
 -- Robux (a game pass, once)
 Shop.STARTER = {

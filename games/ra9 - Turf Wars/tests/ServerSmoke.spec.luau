@@ -670,7 +670,7 @@ do
 	check("the premium track needs the pass", not st.claimed["1p"])
 	local mPass = mark()
 	receipt("buy-2", 9002)
-	check("the Overdrive Pass: premium", st.premium == true and firedSince(mPass, "Unlock", red) ~= nil)
+	check("the Turf Pass: premium", st.premium == true and firedSince(mPass, "Unlock", red) ~= nil)
 	send(red, "Claim", 1, "p")
 	check("...but tier 1 needs tier 1", not st.claimed["1p"])
 	receipt("buy-3", 9003)

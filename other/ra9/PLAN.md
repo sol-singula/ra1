@@ -4,7 +4,7 @@
 
 Phases A to E of the master plan (§9), tested on the mock engine.
 
-**A. Scaffold.** `games/ra9 - Turf Wars Overdrive/` from the studio's engine (the service loader, the typed remotes
+**A. Scaffold.** `games/ra9 - Turf Wars/` from the studio's engine (the service loader, the typed remotes
 with per-player rate limits, the session-locked saves, the mock engine and the Luau test runner), the master plan.
 
 **B. The match** (`MatchService`, `TeamService`, `ProgressService`)
@@ -115,7 +115,7 @@ one says what you did.
 | **VIP (earned only)** | 50 wins and 10 MVPs, kept for good | a VIP tag over your head, a black halo, the VIP title, Afterimage trail, VIP Shatter effect, Inkwell bow |
 | **MVP (earned only)** | each match's MVP wears the **MVP crown** all next match (★ MVP on their tag); 10 lifetime MVPs: the MVP title; 25: the Spotlight kill effect | |
 | The shop | Shards (◆), while the item is in the rotation | 22 items across all five kinds |
-| The Overdrive Pass | a season's tiers, free or premium | 13 cosmetics a season, that season's only, never sold again |
+| The Turf Pass | a season's tiers, free or premium | 13 cosmetics a season, that season's only, never sold again |
 | Extras | answering the question, inviting a friend | Thank-You Trail, Buddy Trail |
 | Starter Pack | once | the Founder banner |
 
@@ -125,7 +125,7 @@ everyone), the emblem you wear on the team banners you build, your title, VIP an
 
 **What keeps money coming back (recurring):**
 
-1. **The Overdrive Pass**, a new season every 4 weeks (R$ 349 each season), 30 tiers from playing; **+1 TIER**
+1. **The Turf Pass**, a new season every 4 weeks (R$ 349 each season), 30 tiers from playing; **+1 TIER**
    (R$ 39, buy as often as you like) for the impatient near the season's end.
 2. **The rotating shop:** 4 items a day and a 3-item bundle a week at 30% off, the same on every server, each
    gone again soon (FOMO without loot boxes: no paid random items, which also keeps it clear of Roblox's rules and
@@ -149,7 +149,7 @@ balance, ownership and the tier.
 **To do on Roblox before it can sell anything** (the ids go in `src/shared/Data/Shop.lua`; until then Studio gives
 them free so everything can be tried):
 
-* developer products: the 4 Shard packs, the Overdrive Pass, +1 Tier
+* developer products: the 4 Shard packs, the Turf Pass, +1 Tier
 * a game pass: the Starter Pack
 * optional: a subscription (the Shard Club), then set `Shop.CLUB.subscriptionId`
 
@@ -247,6 +247,11 @@ Tests: 119 unit, 146 server, 140 client, 19 bots.
   ![](screenshots/fp_blade_slash.png)
 
 Tests: 121 unit, 158 server, 147 client, 21 bots, 16 maps.
+
+**The name is now just Turf Wars** (was Turf Wars: Overdrive): two plain words, the way the biggest Roblox games are
+named. The game's folder is `games/ra9 - Turf Wars/`, the place file `TurfWars.rbxl`, the season pass the Turf Pass,
+and the six thumbnails are lettered TURF WARS (`title_art.py` no longer adds OVERDRIVE). The ladder's top title is
+still called Overdrive.
 
 ## Next (phase F)
 

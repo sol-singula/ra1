@@ -1,8 +1,8 @@
--- Turf Wars: Overdrive (ra9): every tunable number in one place (master plan §1-§8).
+-- Turf Wars (ra9): every tunable number in one place (master plan §1-§8).
 local Constants = {}
 
 Constants.GAME = "ra9"
-Constants.GAME_NAME = "Turf Wars: Overdrive"
+Constants.GAME_NAME = "Turf Wars"
 
 -- Server and teams (§1, §2A)
 Constants.MAX_PLAYERS = 40

@@ -3,7 +3,7 @@ The panel (B, or the SHOP button): four tabs, SUPERHOT-plain (white cards, black
 
   SHOP     today's 4 items and this week's bundle for Shards (◆), Shard packs, the Starter Pack (and the Shard Club
            when it's on); timers to the next rotation
-  PASS     the season's Overdrive Pass: the tiers, free and premium, claim buttons, GET THE PASS, +1 TIER
+  PASS     the season's Turf Pass: the tiers, free and premium, claim buttons, GET THE PASS, +1 TIER
   LOCKER   everything of a kind (trail, bow, kill effect, banner, title): yours to wear, or how to get it
   GOALS    VIP (earned, never bought) and how close you are, MVP, the goals and their rewards
 
@@ -348,7 +348,7 @@ local function passTab(body)
 	button(
 		body,
 		"GetPass",
-		s.premium and "PREMIUM ✓" or `GET THE OVERDRIVE PASS  ·  R$ {Shop.PASS.robux}`,
+		s.premium and "PREMIUM ✓" or `GET THE TURF PASS  ·  R$ {Shop.PASS.robux}`,
 		0,
 		72,
 		300,

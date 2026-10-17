@@ -1,6 +1,6 @@
 --[[
 Buying (Data/Shop): cosmetics for Shards from the day's rotation and the week's bundle, and Robux: Shard packs, the
-season's Overdrive Pass, +1 pass tier (developer products), the Starter Pack (a game pass), and the Shard Club (a
+season's Turf Pass, +1 pass tier (developer products), the Starter Pack (a game pass), and the Shard Club (a
 Roblox subscription, when its id is set). Claiming the pass's tiers too. Cosmetic only, all of it.
 
 Robux receipts are granted exactly once (EconomyService:Receipt) and saved straight after. A product whose id is
@@ -94,7 +94,7 @@ function ShopService:Grant(player, product)
 	elseif product.key == "pass" then
 		season:GrantPremium(player)
 		local n = season:State(player).n
-		progress.card(player, `s{n}_1p`, "OVERDRIVE PASS!", `{Season.name(n)}: the premium track is yours`)
+		progress.card(player, `s{n}_1p`, "TURF PASS!", `{Season.name(n)}: the premium track is yours`)
 	elseif product.key == "tier" then
 		season:AddTiers(player, 1)
 		say(player, "+1 pass tier!", "good")

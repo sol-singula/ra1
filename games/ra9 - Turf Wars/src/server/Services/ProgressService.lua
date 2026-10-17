@@ -1,6 +1,6 @@
 --[[
 Progression (master plan §8): stats, qualifying wins, the 100-win ladder, streaks, MVPs, and what a match pays:
-Shards (Data/Shop) and Overdrive Pass XP (Data/Season). The goals, VIP and MVP rewards (Data/Achievements) come
+Shards (Data/Shop) and Turf Pass XP (Data/Season). The goals, VIP and MVP rewards (Data/Achievements) come
 from the stats, so each match's end is also when a newly reached goal is announced.
 
 At the end of every match MatchService calls Award for each player with how it went. A qualifying win

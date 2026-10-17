@@ -1,4 +1,4 @@
-# Turf Wars: Overdrive: the icon
+# Turf Wars: the icon
 
 ![Main icon and two alternates](_all.jpg)
 

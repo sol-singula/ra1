@@ -1,4 +1,4 @@
-# Turf Wars: Overdrive: store thumbnails
+# Turf Wars: store thumbnails
 
 ![The 6 thumbnails](_all.jpg)
 
@@ -6,13 +6,13 @@ For **the game's own page** (Home and the game's page). Each is **1920 × 1080 (
 text-free pictures for ads are in [`../ads/`](../ads/README.md); the icon is in [`../icon/`](../icon/README.md).
 
 **The idea: say what the game is, in the game's look.** Plain white, SUPERHOT-style geometry, and only the two
-team colours. Each carries the name (TURF in red, WARS in blue, OVERDRIVE in black, heavy italic like the HUD) and
+team colours. Each carries the name (TURF in red, WARS in blue, heavy italic like the HUD) and
 one short line on a black bar. The name sits in the empty sky at the top; Roblox's player count runs along the
 bottom, so nothing important goes there.
 
 They were made with AI image generation (Higgsfield, GPT Image 2.5, high, 2k) with **real renders of the game**
 as references (`../screenshots/`: Castle Clash, the first-person view, the victory), then lettered with
-`games/ra9 - Turf Wars Overdrive/tools/gameplay/title_art.py`. The players in the game wear their own avatars dressed
+`games/ra9 - Turf Wars/tools/gameplay/title_art.py`. The players in the game wear their own avatars dressed
 in their team's colour; the pictures show them as plain red and blue figures.
 
 | # | File | Line | Picture | In the game |

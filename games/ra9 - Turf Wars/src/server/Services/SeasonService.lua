@@ -1,5 +1,5 @@
 --[[
-The Overdrive Pass (Data/Season): each player's pass for the season now running (profile.season). A new season
+The Turf Pass (Data/Season): each player's pass for the season now running (profile.season). A new season
 starts everyone again at tier 0 (what they claimed stays theirs).
 
   SeasonService:State(player)          { n, xp, premium, claimed = { ["<tier><f|p>"] = true } }
@@ -81,7 +81,7 @@ function SeasonService:Claim(player, tier, track)
 		return nil, `Reach tier {tier} first.`
 	end
 	if track == "p" and not s.premium then
-		return nil, "That's on the premium track: get the Overdrive Pass."
+		return nil, "That's on the premium track: get the Turf Pass."
 	end
 	local k = tostring(tier) .. track
 	if s.claimed[k] then

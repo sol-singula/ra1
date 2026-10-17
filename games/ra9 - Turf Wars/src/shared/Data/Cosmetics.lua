@@ -8,7 +8,7 @@ shot, a hit, health, speed or building (master plan §1: fair competition, nothi
   source   how it's had:
              ladder       the 100-win ladder (Data/Ladder): win N
              shop         bought with Shards (◆) while it's in the shop's rotation (Data/Shop)
-             pass         the season's Overdrive Pass (Data/Season), free or premium track; never sold again
+             pass         the season's Turf Pass (Data/Season), free or premium track; never sold again
              goal         earned only: a stat or a feat (Data/Achievements); never sold
              vip / mvp    earned only: comes with VIP or MVP status (Data/Achievements); never sold
              extra        given for something you did (Data/Extras: answering, inviting a friend)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Finish a store thumbnail (AI art made from the game's renders): crop to 16:9, size to 1920 x 1080, and letter
 the title and a short line in the game's own plain style: heavy black-italic type, TURF in red and WARS in blue,
-OVERDRIVE in black, the line in black under it. No outlines: the art is white, like the game, so plain dark type
+the line on a black bar under it. No outlines: the art is white, like the game, so plain dark type
 reads cleanly. The block sits at the top middle (the art leaves that sky empty), or wherever --at puts it.
 
   python3 tools/gameplay/title_art.py <in.png> <out.jpg> --line "PUSH THEIR TURF BACK" [--at X,Y] [--size 120]
@@ -36,7 +36,7 @@ def main():
     ap.add_argument("dst")
     ap.add_argument("--line", default="")
     ap.add_argument("--at", default="960,40")
-    ap.add_argument("--size", type=int, default=118)
+    ap.add_argument("--size", type=int, default=140)
     ap.add_argument("--font", default=FONT)
     ap.add_argument("--icon", action="store_true")
     a = ap.parse_args()
@@ -49,17 +49,14 @@ def main():
     big = ImageFont.truetype(a.font, a.size)
     small = ImageFont.truetype(a.font, int(a.size * 0.42))
     x0, y0 = (int(v) for v in a.at.split(","))
-    # line 1: TURF (red) WARS (blue); line 2: OVERDRIVE (black); then the caption
+    # the name: TURF (red) WARS (blue); then the caption
     words = [("TURF ", RED), ("WARS", BLUE)]
     widths = [d.textlength(t, font=big) for t, _ in words]
     x = x0 - sum(widths) / 2
     for (t, c), wdt in zip(words, widths):
         d.text((x, y0), t, font=big, fill=c)
         x += wdt
-    y = y0 + int(a.size * 0.98)
-    od = ImageFont.truetype(a.font, int(a.size * 0.62))
-    d.text((x0 - d.textlength("OVERDRIVE", font=od) / 2, y), "OVERDRIVE", font=od, fill=INK)
-    y += int(a.size * 0.78)
+    y = y0 + int(a.size * 1.12)
     if a.line:
         # the caption on a short black bar, white letters (it reads on any part of the art)
         tw = d.textlength(a.line, font=small)
