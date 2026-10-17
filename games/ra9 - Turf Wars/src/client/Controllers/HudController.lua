@@ -1293,8 +1293,8 @@ local function step()
 	end
 	if refs.invite then
 		-- (clickable with the mouse between games, when first person lets go of it; I and B work any time)
-		refs.invite.Modal = m.phase == "victory" and refs.results ~= nil
-		refs.shop.Modal = m.phase == "victory" and refs.results ~= nil
+		refs.invite.Modal = false -- (the win screen keeps you in play: no cursor; I, B and Tab work any time)
+		refs.shop.Modal = false
 		local p = Store.get("profile") or {}
 		refs.shopLine.Text = `{Theme.commas(p.shards or 0)} SHARDS  ·  PASS TIER {(p.season or {}).tier or 0}`
 	end

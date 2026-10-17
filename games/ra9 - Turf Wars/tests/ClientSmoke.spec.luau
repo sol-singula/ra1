@@ -450,6 +450,14 @@ do
 	check("...numbered 4 on the hotbar", refs.bows.blade and refs.bows.blade.key.Num.Text == "4")
 	local vm = ws.CurrentCamera:FindFirstChild("Viewmodel")
 	check("...a blade in your hand", vm and vm:FindFirstChild("Edge") ~= nil and vm:FindFirstChild("String") == nil)
+	check(
+		"...solid steel, never see-through or glowing (bow skins are for bows)",
+		vm
+			and vm.Edge.Material == Enum.Material.Metal
+			and vm.Edge.Transparency == 0
+			and vm.Grip.Material ~= Enum.Material.ForceField
+			and vm.Grip.Material ~= Enum.Material.Glass
+	)
 	Engine.advance(0.5)
 	local edge = vm and vm:FindFirstChild("Edge")
 	local rest = edge and edge.Position
@@ -711,6 +719,10 @@ end
 Match:Victory(team)
 Engine.advance(0.5)
 check("the results card shows", refs.results ~= nil and refs.results.Parent ~= nil)
+check(
+	"...and you stay in play: no cursor",
+	UIS.MouseIconEnabled == false and UIS.MouseBehavior == Enum.MouseBehavior.LockCenter
+)
 check(
 	"...naming the winner",
 	refs.results and refs.results:FindFirstChildWhichIsA("TextLabel").Text:find("WINS") ~= nil

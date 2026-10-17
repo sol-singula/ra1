@@ -76,10 +76,8 @@ function CameraController.setCursorMode(on)
 end
 
 function CameraController.mouseFree()
-	return cursorMode
-		or Layout.panel()
-		or Layout.modalOpen()
-		or (Store.phase() == "victory" and Layout.resultsOpen == true)
+	-- (the results card after a win doesn't free it: you stay in play, free to run about; Tab opens the menu)
+	return cursorMode or Layout.panel() or Layout.modalOpen()
 end
 
 local mouseShown

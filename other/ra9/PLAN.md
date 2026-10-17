@@ -571,6 +571,14 @@ remembered, every panel's close button the shared X), ServerSmoke 174, AdminSmok
 * Fixed: the phone's SKIP button for the tutorial intro (last round) called a function before it was defined, so a
   tap errored; TutorialSmoke now taps it.
 
+## Round 19: stay in play after a win, a steel blade
+
+* **The win screen keeps you in play:** the results card no longer frees the mouse (and its corner buttons aren't
+  Modal any more); you keep aiming and running about until the next game. Tab still opens the menu.
+* **The blade is solid steel:** it used to take the equipped bow skin's material (a Glass, Prism or Hologram skin made
+  it look like a hologram). Now it's always a leather grip in the team's colour, a dark steel guard and pommel and a
+  bright steel edge; bow skins stay on bows.
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

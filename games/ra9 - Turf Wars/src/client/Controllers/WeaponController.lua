@@ -298,14 +298,18 @@ local function buildView()
 	local ink = Color3.fromRGB(30, 30, 34)
 	local v = { model = model, big = big, cross = cross, limbLen = limbLen }
 	if w.melee then
-		-- the blade: a grip in the team's colour, a guard, a long white edge with a darker spine, a pommel
+		-- the blade: solid steel, whatever bow skin is worn (a Glass, Neon or Hologram skin is for bows: on a sword
+		-- it looked like a hologram): a leather grip in the team's colour, a dark steel guard and pommel, a bright
+		-- steel edge with a darker spine
 		v.blade = true
-		v.grip = piece(Vector3.new(0.2, 0.2, 0.75), gripColor, "Grip", material)
-		v.pommel = piece(Vector3.new(0.28, 0.28, 0.2), limbColor, "Pommel", material)
-		v.guard = piece(Vector3.new(0.85, 0.16, 0.2), limbColor, "Guard", material)
-		v.edge = piece(Vector3.new(0.07, 0.28, 1.6), limbColor, "Edge", material)
-		v.spine = piece(Vector3.new(0.09, 0.04, 1.4), gripColor, "Spine", material)
-		v.tip = piece(Vector3.new(0.08, 0.2, 0.3), limbColor, "Tip", material)
+		local steel, darkSteel = Color3.fromRGB(196, 200, 206), Color3.fromRGB(70, 72, 78)
+		local metal, leather = Enum.Material.Metal, Enum.Material.Fabric
+		v.grip = piece(Vector3.new(0.2, 0.2, 0.75), color, "Grip", leather)
+		v.pommel = piece(Vector3.new(0.28, 0.28, 0.2), darkSteel, "Pommel", metal)
+		v.guard = piece(Vector3.new(0.85, 0.16, 0.2), darkSteel, "Guard", metal)
+		v.edge = piece(Vector3.new(0.07, 0.28, 1.6), steel, "Edge", metal)
+		v.spine = piece(Vector3.new(0.09, 0.04, 1.4), darkSteel, "Spine", metal)
+		v.tip = piece(Vector3.new(0.08, 0.2, 0.3), steel, "Tip", metal)
 		-- the right hand round the grip, the left a loose fist
 		v.right = newLimb(piece, "R", 0.11, color)
 		v.left = newLimb(piece, "L", 0.05, color)
