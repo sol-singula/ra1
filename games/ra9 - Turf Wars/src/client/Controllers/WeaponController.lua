@@ -10,7 +10,7 @@ Your weapons (master plan §5, §6): the viewmodel in your hands, the draw, the 
     once (ExplosionController.predict) and the server throws the real one (Shoot again: it knows it's the TNT). Then a
     cooldown (Weapons tnt.cooldown) before the next bundle comes up into your hand.
   * 1 / 2 / 3 pick the bow, the TNT and the blade (Data/Weapons' order; in the build phase the digits pick
-    structures), and the mouse wheel steps through them. Only in the fight, alive.
+    structures), and the mouse wheel (or the touch SWAP button) steps through them. Only in the fight, alive.
   * The Blade: click (or FIRE) to slash. The slash shows at once; the server finds who it reaches (Swing).
   * No drawing or shooting while a menu is open (the shop, a card, the results): the mouse is the menu's then.
 
@@ -890,6 +890,11 @@ function WeaponController:init()
 	Bus.Weapon:Connect(function(key)
 		WeaponController.equip(key)
 	end)
+	Bus.Cycle:Connect(function(step)
+		if Store.phase() == "fight" then
+			WeaponController.cycle(step or 1)
+		end
+	end)
 	-- the CHARGE is over: the blade goes away, the bow comes back out
 	workspace:GetAttributeChangedSignal("Charge"):Connect(function()
 		local w = weapon()
@@ -931,7 +936,9 @@ function WeaponController:init()
 		if drawing then
 			local c = WeaponController.charge()
 			Bus.Charge:Fire(c)
-			CameraController.setFov("draw", -(c or 0) * (weapon().throw and 3 or 10))
+			-- (a phone's wider view zooms in further, to the same tight aim as a monitor's)
+			local zoom = weapon().throw and 3 or (Device.isPhone() and 10 + CameraController.PHONE_FOV or 10)
+			CameraController.setFov("draw", -(c or 0) * zoom)
 		else
 			CameraController.setFov("draw", nil)
 		end

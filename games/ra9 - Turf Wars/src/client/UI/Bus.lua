@@ -18,6 +18,8 @@ return {
 	Sprint = Signal.new("Bus.Sprint"), -- (on) the touch SPRINT toggle (MoveController)
 	Crouch = Signal.new("Bus.Crouch"), -- (on) the touch CROUCH toggle (MoveController)
 	Jump = Signal.new("Bus.Jump"), -- () the touch JUMP button (MoveController)
+	Cycle = Signal.new("Bus.Cycle"), -- (step) the touch SWAP button: the next weapon (WeaponController)
+	Look = Signal.new("Bus.Look"), -- (dx, dy) a thumb dragged on the touch FIRE button turns the view (CameraController)
 	Reload = Signal.new("Bus.Reload"), -- () the touch RELOAD button (WeaponController)
 	CursorMode = Signal.new("Bus.CursorMode"), -- (on) Alt freed the mouse / went back to aiming (CameraController)
 }

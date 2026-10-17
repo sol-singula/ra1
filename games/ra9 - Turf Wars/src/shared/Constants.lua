@@ -62,10 +62,11 @@ Constants.AIM_ASSIST_MATCHES = 5 -- a new player (fewer matches than this) gets 
 Constants.AIM_ASSIST_CONE = 4 -- a shot already within this many degrees of an enemy...
 Constants.AIM_ASSIST_PULL = 0.35 -- ...is turned this share of the way onto them...
 Constants.AIM_ASSIST_MAX = 1.2 -- ...but never more than this many degrees (a near miss becomes a hit; a miss stays one)
--- By how they play (the "Device" attribute): a thumb can't aim like a mouse, a stick a little better. { cone degrees,
--- pull share, max degrees }; a keyboard player gets only the new-player whisper above.
+-- By how they play (the "Device" attribute): a thumb can't aim like a mouse (most players are on a phone, against
+-- mice: a thumb gets a wide cone and a firm pull), a stick a little better. { cone degrees, pull share, max
+-- degrees }; a keyboard player gets only the new-player whisper above.
 Constants.AIM_ASSIST_DEVICE = {
-	touch = { cone = 9, pull = 0.6, max = 4.5 },
+	touch = { cone = 12, pull = 0.7, max = 6 },
 	gamepad = { cone = 6, pull = 0.45, max = 2.5 },
 }
 -- The first knockout (CombatService:Novice: no knockout ever yet): a shot anywhere near an enemy in the open is aimed
