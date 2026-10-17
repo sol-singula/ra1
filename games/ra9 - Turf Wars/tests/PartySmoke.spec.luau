@@ -120,10 +120,36 @@ check("...still two after a while", #Bots:List() == 2, #Bots:List())
 local zed = join("Zed", 913)
 Engine.advance(1)
 check(
-	"someone joins the other side: the bots go",
-	Teams:Team(zed) ~= Teams:Team(h) and #Bots:List() == 0,
+	"someone joins the other side: 2 against 1, so one bot stays, on their side (2 v 2)",
+	Teams:Team(zed) ~= Teams:Team(h) and #Bots:List() == 1 and Teams:Team(Bots:List()[1]) == Teams:Team(zed),
 	`{#Bots:List()} {Teams:Team(zed)} {Teams:Team(h)}`
 )
+do
+	-- one more on Zed's side: even now, no bots
+	local yan = join("Yan", 914)
+	Engine.advance(1)
+	check(
+		"...one more joins them: 2 v 2 people, no bots",
+		Teams:Team(yan) == Teams:Team(zed) and #Bots:List() == 0,
+		#Bots:List()
+	)
+	-- and one more on the party's side: 3 v 2, a bot fills in for Zed's side
+	local wes = join("Wes", 915)
+	Engine.advance(1)
+	if Teams:Team(wes) ~= Teams:Team(h) then
+		Teams:Set(wes, Teams:Team(h))
+		Bots:Ensure()
+	end
+	local filler = Bots:List()[1]
+	check(
+		"...3 v 2: one bot for the side that's short",
+		#Bots:List() == 1 and filler and Teams:Team(filler) == Teams:Team(zed),
+		#Bots:List()
+	)
+	Engine.removePlayer(wes)
+	Engine.removePlayer(yan)
+	Engine.advance(1)
+end
 Engine.removePlayer(zed)
 Engine.advance(1)
 check("...nothing broke", #Engine.errors == 0, Engine.errors[1])

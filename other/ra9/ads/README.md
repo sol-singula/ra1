@@ -1,6 +1,6 @@
 # Turf Wars: ad images (no text)
 
-![The 8 ad images](_all.jpg)
+![The 10 ad images](_all.jpg)
 
 For **Roblox Ads Manager** (sponsored experience ads). Each is **1920 × 1080 (16:9), JPG, under 0.4 MB**; a campaign
 takes up to 10. **No words at all**: Roblox prints the game's name and "Sponsored" beside every ad.
@@ -20,6 +20,11 @@ feed. Made with Higgsfield (GPT Image 2.5, high, 2k) using the game's art and re
 | 6 | `06_flip_shot.jpg` | A red archer upside down mid-flip over a wall, aiming at a startled blue player | Did it hit? | The 4th-jump flip |
 | 7 | `07_everyone_aims_at_you.jpg` | First person in a doorway: every red archer turns and aims at you | What now? | First person, the bow |
 | 8 | `08_the_last_arrow.jpg` | One red arrow flies at blue's base door; everyone freezes to watch | Does red win? | Pushing the line to a base |
+| 9 | `09_the_line_to_the_castle.jpg` | An endless floor split red and blue by one glowing line; a lone figure stands on it, a white castle in the haze far ahead | What is the line? Where does it lead? | The frontline, the turf |
+| 10 | `10_who_shot_that.jpg` | A tiny blue figure at the foot of an enormous white castle wall, one glowing red arrow stuck high above | Who shot it, and from where? | The bow, the castle map |
+
+**9 and 10 are vaguer on purpose:** no fight on screen, just a quiet, strange place and one clue, so the
+viewer has to tap to find out what the game is.
 
 Some details are made up for the picture: blocks flying into place (you place them one at a time), arrows frozen in
 mid-air, arrows stuck in the roof, and a red floor stretching to the horizon.

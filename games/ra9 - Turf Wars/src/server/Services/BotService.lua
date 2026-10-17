@@ -5,6 +5,9 @@ they take the bots' side, every bot leaves, and the game starts over (a fresh ma
 start even. Someone who joins with the party (or follows a friend in) goes to that side and gets one more bot to
 fight. If everyone ends up on one side again, the bots come back. With nobody on, none.
 
+Uneven sides: with real people on both sides but not as many (3 against 2, say), the smaller side gets a bot for each
+person it's missing, so the teams are always even. A newcomer goes to the smaller side and takes a bot's place.
+
 A bot is a stand-in that looks enough like a player to the rest of the server (a character, a team, attributes, a
 UserId below zero), so it fights through the same code: CombatService draws and flies its arrows and checks its
 hits, MatchService counts its kills, pushes the line and respawns it, the turf rule holds it. Net messages to a bot
@@ -272,7 +275,7 @@ function BotService:Ensure()
 		end
 		return
 	end
-	-- which sides real people are on: bots only while everyone is on one side (one player alone, or a party alone)
+	-- which sides real people are on: everyone on one side (one player alone, or a party alone), or uneven sides
 	local sides = {}
 	for _, p in people do
 		local t = teams:Team(p)
@@ -282,27 +285,34 @@ function BotService:Ensure()
 		sides[t] = (sides[t] or 0) + 1
 	end
 	local only = (sides.red and not sides.blue) and "red" or ((sides.blue and not sides.red) and "blue" or nil)
-	if not only then
+	local want
+	if only then
+		-- everyone on one side: one bot against each real person there (at least BOT_ENEMIES), BOT_ALLIES with them
+		local other = only == "red" and "blue" or "red"
+		want = { [other] = math.max(Constants.BOT_ENEMIES, #people), [only] = Constants.BOT_ALLIES }
+	else
+		-- people on both sides but not as many: the smaller side gets a bot for each person it's missing
+		local r, b = sides.red or 0, sides.blue or 0
+		want = { red = math.max(0, b - r), blue = math.max(0, r - b) }
+	end
+	if want.red == 0 and want.blue == 0 then
 		if #bots > 0 then
 			self:RemoveAll()
 		end
 		return
 	end
-	-- one bot against each real person on that side (at least BOT_ENEMIES), and BOT_ALLIES with them
-	local other = only == "red" and "blue" or "red"
-	local wantEnemies = math.max(Constants.BOT_ENEMIES, #people)
-	local have = { [only] = {}, [other] = {} }
+	local have = { red = {}, blue = {} }
 	for _, b in bots do
 		local t = teams:Team(b)
 		if have[t] then
 			table.insert(have[t], b)
 		end
 	end
-	for side, want in { [other] = wantEnemies, [only] = Constants.BOT_ALLIES } do
-		for _ = #have[side] + 1, want do
+	for side, n in want do
+		for _ = #have[side] + 1, n do
 			self:Add(side)
 		end
-		for i = #have[side], want + 1, -1 do
+		for i = #have[side], n + 1, -1 do
 			local b = have[side][i]
 			b:Remove()
 			local at = table.find(bots, b)

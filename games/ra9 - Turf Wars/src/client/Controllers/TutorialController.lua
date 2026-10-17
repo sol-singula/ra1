@@ -22,6 +22,7 @@ once the fight starts, the match never waits for the tutorial, and K (or SKIP) e
 PLACE, HOLD FIRE), pads their buttons. Reduced Motion: smaller shakes, no zoom punches.
 
   TutorialController.start(msg)     (the server's start; tests call it too)
+  { kind = "intro" } from the server: a returning player's join plays the intro alone (TutorialService.joinIntro)
   TutorialController.skip()         end it now (K, the SKIP button)
   TutorialController.replay()       ask the server to run it again (GOALS → REPLAY)
   TutorialController.state() -> { running, step, intro, cinema, text, history = { { name, how } } }
@@ -65,6 +66,7 @@ local session -- after the steps: the tips and the first-win show still watch (u
 local charge -- the bow's draw (Bus.Charge), nil when not drawing
 local punch = 0 -- degrees the lens is punched in (decays)
 local history = {}
+local introPending -- the server asked for the opening alone (a returning player's join): plays once you're in
 
 -- Little helpers ---------------------------------------------------------------------------------------------
 local function now()
@@ -1670,7 +1672,14 @@ local function frame(dt)
 			d.Size = UDim2.fromOffset(i <= lit and 11 or 8, i <= lit and 11 or 8)
 		end
 	end
-	if run and not run.finished and not cine then
+	if introPending and not cine and not (run and not run.finished) and alive() and playing() then
+		-- the opening alone: RED, BLUE, THE LINE, YOUR TURF, and down into your eyes
+		introPending = false
+		Layout.focus(true)
+		playIntro(function()
+			Layout.focus(false)
+		end)
+	elseif run and not run.finished and not cine then
 		stepRun(dt)
 	elseif not run or run.finished then
 		stepTips(dt)
@@ -1690,6 +1699,8 @@ function TutorialController:init()
 		end
 		if msg.kind == "start" then
 			TutorialController.start(msg)
+		elseif msg.kind == "intro" and not (run and not run.finished) then
+			introPending = true
 		elseif msg.kind == "built" and run then
 			run.built = true
 		end
