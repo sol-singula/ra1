@@ -1512,6 +1512,11 @@ function TutorialController.start(msg)
 	return true
 end
 
+-- true while one of the tutorial's camera shows plays (the intro, THE LINE MOVED!): the kill cam waits
+function TutorialController.cinematic()
+	return cine ~= nil
+end
+
 function TutorialController.state()
 	local step = run and not run.finished and STEPS[run.i]
 	return {
