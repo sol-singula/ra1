@@ -1,5 +1,5 @@
 --[[
-The new-player tutorial, the show: a private practice of about 2:50 that ends in a WIN (TutorialService on the server
+The new-player tutorial, the show: a private practice of about 2:15 that ends in a WIN (TutorialService on the server
 decides who gets it, takes them out of the match, pays the Shards and joins them to the live match after).
 
 When the server says { kind = "start", practice = { origin, team, ... } } this client draws the practice arena far
@@ -13,15 +13,20 @@ own state (the match's never reaches you: Net.hush), and runs the steps:
                     the arrow in slow motion, a freeze on the hit, the kill effect close up, KNOCKOUT!
   0:15 multi_kill   two side by side: DOUBLE KILL! TRIPLE KILL! (bigger each time, the Shards fly into the
                     counter), then the camera follows the line jumping forward: THE LINE MOVED!
-  0:30 near_miss    a bot arrow whips just past your head in slow motion: THEY SHOOT BACK. BUILD COVER!
-  0:40 build        BUILD TIME: NO SHOOTING, the camera up over the line; PICK A WALL → PLACE IT, PICK A TOWER →
-                    PLACE IT (the clock waits until you've placed); then three bot arrows thud into your wall
-  1:25 tnt          a bot lobs TNT at your wall, followed in slow motion, and it blows: THAT'S TNT. YOURS FOREVER
+  0:33 near_miss    at once the camera's (letterbox, your shots held): it turns to an archer, who draws fast and
+                    looses; the arrow whips just past your head in slow motion: THEY SHOOT BACK. BUILD COVER! (~5 s)
+  0:38 build        BUILD TIME: NO SHOOTING and the build tray at once (the wall pulsing in it), a quick look up
+                    over the line while you pick; PICK A WALL → PLACE IT: one wall is all it asks (any wall you put
+                    up counts; the clock waits until then); ADD ANOTHER IF YOU LIKE while the clock runs, then three
+                    bot arrows thud into your wall
+  1:00 tnt          a bot lobs TNT at your wall, followed in slow motion, and it blows: THAT'S TNT. YOURS FOREVER
                     IN THE SHOP. (the TNT's slot glows: no popup)
-  1:45 push         a wave of four: every knockout jumps the line, a short kill cam each, 2 MORE TO WIN!
-  2:20 win          the last one in slow motion, the camera pulls out and circles you, fireworks
+  1:16 push         a wave of four: every knockout jumps the line, a short kill cam each, 2 MORE TO WIN!
+  1:54 win          the last one in slow motion, the camera pulls out and circles you, fireworks
                     (FireworksController.show), VICTORY!, the Shards counting up, a free trail; THE REAL GAME STARTS
-                    NOW and you walk through the gate (a fade) into the live match
+                    NOW and you walk through the gate (a fade to white) into the live match. The white stays up (the
+                    practice's show all cleared away) until the server joins you: if the live match is between games
+                    (its victory, its loading) that waits, a calm NEXT MATCH STARTING… card on it, for the next one
 
 Each step has ONE big short instruction low in the middle, a guide in the world (a spot on the floor with a beam and
 an arrow to it, a marker over the target), the button it needs pulsing, and a payoff. Words by device: tap words on
@@ -756,14 +761,23 @@ local function bars(on)
 	end)
 end
 
--- The fade to white (into the live match) and back
+-- The fade to white (into the live match) and back (the latest one wins: a fade back never fights one still going in)
+local fadeToken
+
 local function fade(to, seconds, done)
 	local f = refs.fade
 	local from = f.BackgroundTransparency
+	local token = {}
+	fadeToken = token
 	f.Visible = true
 	animate(seconds or 0.5, function(a)
-		f.BackgroundTransparency = lerp(from, to, smoother(a))
+		if fadeToken == token then
+			f.BackgroundTransparency = lerp(from, to, smoother(a))
+		end
 	end, function()
+		if fadeToken ~= token then
+			return
+		end
 		f.Visible = to < 0.999
 		if done then
 			done()
@@ -808,6 +822,21 @@ local function buildGui()
 		BorderSizePixel = 0,
 		Visible = false,
 		ZIndex = 10,
+		Parent = box,
+	})
+	-- (on the white while the live match is between games: a calm card, no slam, no sound)
+	refs.waitCard = Theme.title({
+		Name = "NextMatch",
+		Text = "NEXT MATCH STARTING…",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(640, 60),
+		fit = 44,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = C.ink,
+		outline = false,
+		Visible = false,
+		ZIndex = 11,
 		Parent = box,
 	})
 	refs.skipHint = Theme.text({
@@ -989,7 +1018,8 @@ end
 
 -- Cinematics -------------------------------------------------------------------------------------------------------
 -- The camera is handed to drive(cam, t, dt) for `seconds`; then it's given back (CameraController.release), looking
--- along cine.look. opts: bars (the letterbox), hideHud, skippable (Enter / K / Select / SKIP after a second)
+-- along cine.look. opts: bars (the letterbox), hideHud, skippable (Enter / K / Select / SKIP after a second),
+-- noShots (your shots are held while it plays: onShot takes them and nothing flies)
 function endCinematic(skipped)
 	local c = cine
 	if not c then
@@ -1021,6 +1051,7 @@ local function cinematic(seconds, drive, finish, opts)
 		finish = finish,
 		bars = opts.bars ~= false,
 		skippable = opts.skippable == true,
+		noShots = opts.noShots == true,
 		look = nil,
 	}
 	local mine = cine
@@ -1589,6 +1620,9 @@ local function onShot(start, dir, _w, power)
 	if not pr then
 		return false
 	end
+	if (cine and cine.noShots) or pr.leaving then
+		return true -- (a show that's watching, not shooting: the shot is held, nothing flies)
+	end
 	local st = run and not run.finished and run.state
 	local want = st and st.shots
 	local target = want and not cine and pickTarget(start, dir)
@@ -1642,23 +1676,45 @@ local function builtOf(key)
 	return best
 end
 
--- Where to build: a few cells back from the line on your side, near where you stand, a spot that's free
-local function free(mn, mx)
+-- The practice's own rules for a piece, the same as the server's (TutorialService:_build): your points, inside the
+-- field, your own turf, nothing already there. Returns nil when it can go, else why not (in the server's words).
+local function practiceWhy(key, cx, cz, rot)
+	local def = Structures.get(key)
+	if not def or not pr then
+		return "No team"
+	end
+	local w, d = Structures.footprint(def, rot)
+	local mn, mx = Formulas.footprintBox(cx, cz, w, d, 0, def.h)
+	local z0 = pr.origin.Z
+	if ((Store.get("me") or {}).budget or 0) < def.cost then
+		return "Not enough build points"
+	elseif
+		mn.X < -Practice.EDGE
+		or mx.X > Practice.EDGE
+		or mn.Z < z0 - Practice.WIDTH / 2
+		or mx.Z > z0 + Practice.WIDTH / 2
+	then
+		return "Outside the battlefield"
+	elseif (team() == "red" and mx.X > pr.front) or (team() == "blue" and mn.X < pr.front) then
+		return "Only on your own turf"
+	end
 	for _, s in pr.built do
 		if Formulas.boxesOverlap(mn + V3(0.05, 0, 0.05), mx - V3(0.05, 0, 0.05), s.min, s.max) then
-			return false
+			return "Something's already there"
 		end
 	end
-	return true
+	return nil
 end
 
-local function buildSpot(key, back, dz, rot)
+-- Where to build: a cell or so back from the line on your side, level with where you stand, a spot both checks pass
+-- (the HUD's and the practice's). Returns its centre, its size along X and Z, and its cell.
+local function buildSpot(key, back, rot)
 	local A = arena()
 	local def = Structures.get(key)
 	local f = fwd()
 	local _, root = body()
 	local lo, hi = A.z - A.width / 2 + 8, A.z + A.width / 2 - 8
-	local z0 = math.clamp((root and root.Position.Z or A.z) + (dz or 0), lo, hi)
+	local z0 = math.clamp(root and root.Position.Z or A.z, lo, hi)
 	local w, d = Structures.footprint(def, rot)
 	for _, ddz in { 0, 6, -6, 12, -12 } do
 		for b = back, back + 4 do
@@ -1666,7 +1722,7 @@ local function buildSpot(key, back, dz, rot)
 			local z = math.clamp(z0 + ddz, lo, hi)
 			local cx, cz = Formulas.cellOf(x - (w - 1) * CELL / 2, z - (d - 1) * CELL / 2)
 			local mn, mx = Formulas.footprintBox(cx, cz, w, d, 0, def.h)
-			if BuildController.check(key, cx, cz, rot) and free(mn, mx) then
+			if BuildController.check(key, cx, cz, rot) and not practiceWhy(key, cx, cz, rot) then
 				return V3((mn.X + mx.X) / 2, 0, (mn.Z + mx.Z) / 2), w * CELL, d * CELL, cx, cz
 			end
 		end
@@ -1674,6 +1730,21 @@ local function buildSpot(key, back, dz, rot)
 	local cx, cz = Formulas.cellOf(A.front - f * (back + 1) * CELL, z0)
 	return V3((cx + 0.5) * CELL, 0, (cz + 0.5) * CELL), w * CELL, d * CELL, cx, cz
 end
+
+-- Why the piece can't go where you're aiming (nil: it can): the HUD's own check first, then the practice's rules
+-- (the HUD's hint for it steps aside while the tutorial guides, so the step says it)
+local function aimWhy(key)
+	local sp = BuildController.spot()
+	if not sp or not pr then
+		return nil
+	end
+	if not sp.ok then
+		return sp.why
+	end
+	return practiceWhy(key, sp.cx, sp.cz, BuildController.rotation())
+end
+
+local lastSent = 0 -- (when a piece last went to the server: one in flight is never doubled by the step's timeout)
 
 -- A bot's arrow, drawn here and moved by hand (never a hit): from its bow to `to`, on past it by `beyond` studs,
 -- in slow motion (slow, 0..1) for a stretch either side of `to`; stop(at) where it lands
@@ -1855,19 +1926,32 @@ local function waitKill(st, dt, wait, mode)
 	end
 end
 
+-- turn the piece to `rot` (BuildController keeps one rotation: R and the right click flip it)
+local function turnTo(rot)
+	if BuildController.rotation() ~= rot then
+		BuildController.rotate()
+	end
+end
+
+-- PICK A WALL: done once it's picked (or one's already up). carry: its words and the tray's glow stay on into the
+-- next step (no blink between them), gap 0: no pause either.
 local function pickStep(name, key, rot, words, wait)
 	return {
 		name = name,
 		timeout = wait,
+		grace = 1,
+		gap = 0,
+		carry = true,
 		enter = function()
-			if BuildController.rotation() ~= rot then
-				BuildController.rotate()
-			end
+			turnTo(rot)
 			if Device.kind() == "gamepad" and BuildController.picked() ~= key then
 				BuildController.pick(key) -- (no tray on a pad: it's picked for you)
 			end
 		end,
 		tick = function()
+			if builtOf(key) then
+				return "built" -- (one's up already: picked and placed in a breath)
+			end
 			local slot = Structures.get(key).order
 			say(by(words[1], words[2], words[1]), by(`press {slot}`, "", ""))
 			glow((hud().trayButtons or {})[key], true)
@@ -1881,25 +1965,46 @@ local function pickStep(name, key, rot, words, wait)
 	}
 end
 
-local function placeStep(name, key, rot, back, dz, wait, word, lesson)
+-- PLACE IT: one is all it asks. Any `key` you put up counts, wherever it went (the glow is only a suggestion), and so
+-- does one placed a moment early (between the steps). The glow stays put: it moves only when you turn the piece or
+-- its spot can't take it any more. Where you aim and it can't go, it says why (the ghost goes red for the practice's
+-- own rules too). On its timeout the piece goes up for you, on the glow, unless one of yours is already on its way.
+local function placeStep(name, key, rot, back, wait, word, lesson)
+	local function spotFor(st)
+		st.rot = BuildController.rotation()
+		st.center, st.w, st.d, st.cx, st.cz = buildSpot(key, back, st.rot)
+		showSpot(st.center, st.w, st.d, teamColor())
+	end
 	return {
 		name = name,
 		timeout = wait,
-		grace = 4,
+		grace = 3,
+		gap = 0,
 		enter = function(st)
-			st.before = pr.lastBuilt and pr.lastBuilt.id or 0 -- (a piece built from here on ends it)
-			if BuildController.rotation() ~= rot then
-				BuildController.rotate()
-			end
+			turnTo(rot) -- (across the field: facing the line)
+			spotFor(st)
 		end,
 		tick = function(st)
 			if st.builtAt then
-				return st.t - st.builtAt >= 2.6 -- (a moment for what it taught)
+				return st.t - st.builtAt >= 2.2 -- (a moment for what it taught)
 			end
-			if (st.spotAt or 0) < now() then
-				st.spotAt = now() + 1
-				st.center, st.w, st.d, st.cx, st.cz = buildSpot(key, back, dz, rot)
-				showSpot(st.center, st.w, st.d, teamColor())
+			local b = builtOf(key)
+			if b then
+				st.builtAt = st.t
+				payoff(word, teamColor(), (b.min + b.max) / 2)
+				hideSpot()
+				hidePath()
+				unglow()
+				say(nil)
+				after(0.9, function()
+					if run and run.state == st then
+						say(lesson)
+					end
+				end)
+				return false
+			end
+			if BuildController.rotation() ~= st.rot or practiceWhy(key, st.cx, st.cz, st.rot) then
+				spotFor(st)
 			end
 			local _, root = body()
 			if root then
@@ -1908,35 +2013,37 @@ local function placeStep(name, key, rot, back, dz, wait, word, lesson)
 			if BuildController.picked() ~= key then
 				BuildController.pick(key)
 			end
-			say(by("PLACE IT", "TAP PLACE", "PRESS R2"), by("aim at the glow and click", "aim at the glow", ""))
-			glow(Device.isTouch() and (hud().touch or {}).place or nil, true)
-			local b = pr.lastBuilt
-			if b and b.id > st.before then
-				st.builtAt = st.t
-				payoff(word, teamColor(), (b.min + b.max) / 2)
-				hideSpot()
-				hidePath()
-				unglow()
-				after(1.1, function()
-					if run and run.state == st then
-						say(lesson)
-					end
-				end)
+			local why = aimWhy(key)
+			local ghost = workspace:FindFirstChild("BuildGhost")
+			if why and ghost and ghost:IsA("BasePart") then
+				ghost.Color = Constants.TEAM_COLOR.red
+				ghost.Transparency = 0.6
 			end
+			say(
+				by("PLACE IT", "TAP PLACE", "PRESS R2"),
+				why and string.upper(why) or by("aim at the glow and click", "aim at the glow", "")
+			)
+			refs.hint.TextColor3 = why and Constants.TEAM_COLOR.red or C.white
+			glow(Device.isTouch() and (hud().touch or {}).place or nil, true)
 			return false
 		end,
 		expire = function(st)
-			if st.builtAt then
+			if st.builtAt or builtOf(key) or now() - lastSent < 1.5 then
 				return
 			end
-			-- (it's built for you, right on the glow)
-			pcall(Net.send, "Build", key, st.cx, st.cz, rot)
+			-- (it's built for you, right on the glow: a fresh spot, so it's one the server takes)
+			spotFor(st)
+			lastSent = now()
+			pcall(Net.send, "Build", key, st.cx, st.cz, st.rot)
 			Bus.Tap:Fire("build_" .. key)
 		end,
 		leave = function()
 			hideSpot()
 			hidePath()
-			BuildController.pick(nil)
+			refs.hint.TextColor3 = C.white
+			if BuildController.picked() then
+				BuildController.pick(nil)
+			end
 		end,
 	}
 end
@@ -1965,7 +2072,8 @@ local function rewardCard(st, t)
 end
 
 -- Each step: name, timeout (then expire(st) does its part for you; grace more seconds and it moves on anyway),
--- enter(st), tick(st, dt) -> true | "how" when it's done, leave(st). The clock stops while a cinematic plays.
+-- enter(st), tick(st, dt) -> true | "how" when it's done, leave(st); gap (the pause before it, default 0.6 s), carry
+-- (its words and glow stay up into the next step). The clock stops while a cinematic plays.
 local STEPS
 STEPS = {
 	{
@@ -2059,98 +2167,115 @@ STEPS = {
 	},
 	{
 		name = "near_miss",
-		timeout = 12,
+		timeout = 7,
 		grace = 2,
+		gap = 0.2,
 		enter = function(st)
-			st.archer = puppet(pr.front + fwd() * 44, -6, { keep = 28, speed = 4.5 })
-			say("WATCH THIS ONE…")
+			-- the camera's at once (your shots held), so you watch this one rather than shoot it: it turns to the
+			-- archer, who draws fast and looses; the arrow whips just past your head in slow motion, and back to you.
+			-- Never a target (the aim help passes it over); knocked out anyway, the step still runs its course.
+			local _, root = body()
+			local dz = math.clamp((root and root.Position.Z or pr.origin.Z) - pr.origin.Z - 5, -14, 14)
+			local b = puppet(pr.front + fwd() * 26, dz, { keep = 26, speed = 0 })
+			b.waiting = true
+			st.archer = b
+			local cam = workspace.CurrentCamera
+			local look0 = cam.CFrame.LookVector
+			local e0 = eye() or cam.CFrame.Position
+			local SHOW, DRAW, LOOSE = 4.2, 0.45, 1.25
+			local aimAt = b.head.Position
+			cinematic(SHOW, function(c, t)
+				local e = eye() or e0
+				if b.alive then
+					aimAt = b.head.Position
+				end
+				local to = aimAt - e
+				local want = to.Magnitude > 0.1 and to.Unit or look0
+				-- (turned to it in under half a second, held, and eased back to where you looked at the end)
+				local k = smoother(clamp01(t / DRAW)) * (1 - smoother(clamp01((t - (SHOW - 0.7)) / 0.7)))
+				local look = look0:Lerp(want, k)
+				look = look.Magnitude > 0.01 and look.Unit or want
+				b.draw = st.loosed and 0 or clamp01((t - DRAW) / (LOOSE - DRAW))
+				if t >= LOOSE and not st.loosed then
+					st.loosed = true
+					if b.alive then
+						-- (just past your head: over and to the side, slowed right down as it goes by)
+						local right = CFrame.lookAt(e, aimAt).RightVector
+						botArrow(b, e + right * 1.5 + V3(0, 1.3, 0), 30, 0.12, function()
+							st.landed = true
+						end)
+					else
+						st.landed = true
+					end
+				end
+				if (st.landed or t >= LOOSE + 1.8) and not st.told then
+					st.told = true
+					slam("THEY SHOOT BACK.", teamColor(enemyTeam()), 1.1, { sound = "hit", pitch = 0.7, shake = 0.4 })
+					say("BUILD COVER!")
+				end
+				aimCam(c, e, e + look * 20, lerp(BASE_FOV, 58, k * (reduced() and 0.5 or 1)))
+				cine.look = look0
+			end, function()
+				st.done = true
+			end, { bars = true, hideHud = true, noShots = true })
 		end,
 		tick = function(st)
-			local b = st.archer
-			b.draw = clamp01((st.t - 2.8) / 1.0)
-			if st.t >= 4.0 and not st.shot then
-				say(nil)
-				st.shot = true
-				-- (just past your head: over and to the side, slowed right down as it goes by)
-				local e = eye() or b.torso.Position
-				local cam = workspace.CurrentCamera
-				local right = cam and cam.CFrame.RightVector or V3(0, 0, 1)
-				botArrow(b, e + right * 1.5 + V3(0, 1.3, 0), 30, 0.12, function()
-					st.landed = true
-				end)
+			return st.done == true
+		end,
+		leave = function(st)
+			if st.archer then
+				st.archer.draw = 0
 			end
-			if st.landed and not st.told then
-				st.told = true
-				b.draw = 0
-				slam("THEY SHOOT BACK.", teamColor(enemyTeam()), 1.1, { sound = "hit", pitch = 0.7, shake = 0.4 })
-				after(1.5, function()
-					if run and run.state == st then
-						say("BUILD COVER!")
-					end
-				end)
-				st.at = st.t
-			end
-			return st.at ~= nil and st.t - st.at >= 4.6
 		end,
 	},
 	{
 		name = "build_view",
-		timeout = 12,
-		grace = 2,
+		timeout = 5,
+		grace = 1,
+		carry = true,
 		enter = function(st)
-			-- the build phase: no shooting, the clock waits until you've built
+			-- the build phase: no shooting, the clock waits until you've built. The tray is up at once (no
+			-- letterbox, the HUD stays) with the wall pulsing in it, and a quick look up over the line plays while
+			-- you pick (the tray works all through it)
 			setPhase("build", nil, 45)
 			Store.merge("me", { budget = Constants.BUILD_BUDGET, budgetMax = Constants.BUILD_BUDGET })
-			slam("BUILD TIME: NO SHOOTING", C.white, 1.4, { sound = "build", pitch = 1, big = 2.2 })
-			st.look = true
-			after(1.2, function()
-				if not pr then
-					return
-				end
-				local _, root = body()
-				local z = root and root.Position.Z or pr.origin.Z
-				local e0 = eye() or V3(0, 4, z)
-				local cam = workspace.CurrentCamera
-				local look0 = cam.CFrame.LookVector
-				local f = fwd()
-				local high = V3(pr.front - f * 14, 30, z + 18)
-				local told, lined = false, false
-				cinematic(6.5, function(c, t)
-					local e = eye() or e0
-					local k = smoother(clamp01(t / 1.2)) * (1 - smoother(clamp01((t - 5.3) / 1.2)))
-					if t >= 1.4 and not told then
-						told = true
-						rippleSide(team())
-						slam("BUILD ON YOUR SIDE", teamColor(), 1.3, { sound = "built", big = 2 })
-					end
-					if t >= 3.4 and not lined then
-						lined = true
-						slam("UP TO THE LINE", C.white, 1.2, { sound = "count", big = 2 })
-					end
-					glowLine(pr.front, (t >= 3.4 and t < 5.2) and (0.6 + 0.4 * math.sin(t * 12)) or 0)
-					aimCam(c, e:Lerp(high, k), (e + look0 * 20):Lerp(V3(pr.front, 0, z), k), lerp(BASE_FOV, 64, k))
-					cine.look = look0
-				end, function()
-					st.seen = true
-				end, { bars = true, hideHud = true })
-			end)
+			slam("BUILD TIME: NO SHOOTING", C.white, 1.1, { sound = "build", pitch = 1, big = 2.2 })
+			say(by("PICK A WALL", "TAP A WALL", "PICK A WALL"), by(`press {Structures.get("wall").order}`, "", ""))
+			glow((hud().trayButtons or {}).wall, true)
+			rippleSide(team())
+			local _, root = body()
+			local z = root and root.Position.Z or pr.origin.Z
+			local e0 = eye() or V3(0, 4, z)
+			local cam = workspace.CurrentCamera
+			local look0 = cam.CFrame.LookVector
+			local f = fwd()
+			local high = V3(pr.front - f * 12, 22, z + 14)
+			cinematic(2.4, function(c, t)
+				local e = eye() or e0
+				local k = smoother(clamp01(t / 0.7)) * (1 - smoother(clamp01((t - 1.6) / 0.8)))
+				glowLine(pr.front, (t >= 0.4 and t < 1.8) and (0.6 + 0.4 * math.sin(t * 12)) or 0)
+				aimCam(c, e:Lerp(high, k), (e + look0 * 20):Lerp(V3(pr.front, 0, z), k), lerp(BASE_FOV, 66, k))
+				cine.look = look0
+			end, function()
+				glowLine(pr.front, 0)
+				st.seen = true
+			end, { bars = false, hideHud = false })
 		end,
 		tick = function(st)
 			return st.seen == true
 		end,
 	},
 	pickStep("pick_wall", "wall", 1, { "PICK A WALL", "TAP A WALL" }, 6),
-	placeStep("place_wall", "wall", 1, 1, 0, 10, "NICE WALL!", "PIECES COST POINTS: SPEND THEM"),
-	pickStep("pick_tower", "tower", 0, { "NOW A TOWER", "TAP A TOWER" }, 5),
-	placeStep("place_tower", "tower", 0, 3, 7, 8, "TOWER UP!", "TOWERS SEE OVER WALLS"),
+	placeStep("place_wall", "wall", 1, 1, 10, "NICE WALL!", "PIECES COST POINTS"),
 	{
 		name = "fight_again",
 		timeout = 14,
 		grace = 2,
 		enter = function(st)
-			-- built: the clock runs (5 s), then the fight, and the wall takes three arrows
+			-- built: the clock runs (5 s; another piece if you like, never asked for), then the fight, and the wall
+			-- takes three arrows
 			setPhase("build", 5)
-			say("BUILD FIRST, THEN FIGHT")
+			say("ADD ANOTHER IF YOU LIKE", by("or wait: the fight's coming", "or wait: the fight's coming", ""))
 			st.archer = liveBots()[1] or puppet(pr.front + fwd() * 30, -6, { keep = 26, speed = 5 })
 		end,
 		tick = function(st)
@@ -2493,24 +2618,63 @@ local function clearGuides()
 	refs.ring.Visible = false
 end
 
--- The practice is over (done, skipped, or the server's time): this client's world goes, the camera and the screen
--- are the match's again (the server's join brings the match's state)
-local function endPractice()
+-- The show stops, all of it, at once: the camera's handed back, every title, word, card, burst, firework, letterbox
+-- and slow motion gone, and nothing still pending can bring one back (a step's callbacks check run.state; the titles
+-- their token; what's left of the animations is played out to its end now, so their pieces are cleaned up)
+local function clearShow()
+	if run then
+		run.state = nil
+	end
+	onKill = nil
 	if cine then
 		endCinematic(true)
 	end
+	titleToken, sayToken = nil, nil
+	for _ = 1, 3 do
+		local pending = anims
+		anims = {}
+		for _, a in pending do
+			if a.fn then
+				pcall(a.fn, 1)
+			end
+			if a.done then
+				pcall(a.done)
+			end
+		end
+	end
 	clearGuides()
+	refs.title.Visible = false
+	refs.tip.Visible = false
 	refs.reward.Visible = false
 	refs.skip.Visible = false
+	refs.skipHint.Visible = false
+	refs.skipCine.Visible = false
+	refs.barTop.Size = UDim2.new(1, 0, 0, 0)
+	refs.barBottom.Size = UDim2.new(1, 0, 0, 0)
+	for _, d in refs.gui:GetChildren() do
+		if d.Name == "Bit" then
+			d:Destroy()
+		end
+	end
 	if FireworksController.stop then
 		pcall(FireworksController.stop)
 	end
 	pcall(AudioController.loop, "fuse", false)
 	Effects.timeScale = 1
+	punch = 0
+	CameraController.setFov("tutorial", nil)
+	BuildController.pick(nil)
+end
+
+-- The practice is over (done, skipped, or the server's time): this client's world goes, the camera and the screen
+-- are the match's again (the server's join brings the match's state)
+local function endPractice()
+	clearShow()
+	refs.waitCard.Visible = false
 	WeaponController.shotHook = nil
+	Layout.cinema(false)
 	Layout.focus(false)
 	Layout.practice(false)
-	BuildController.pick(nil)
 	clearOverlay()
 	if lineGlow then
 		lineGlow:Destroy()
@@ -2525,9 +2689,31 @@ local function endPractice()
 	end
 	-- (from white, back into the live match)
 	if refs.fade.Visible then
+		local token = {}
+		fadeToken = token
 		after(0.25, function()
-			fade(1, 0.8)
+			if fadeToken == token then
+				fade(1, 0.8)
+			end
 		end)
+	end
+end
+
+-- Done with the practice, waiting for the server to join us to the live match: the show's cleared away at once and
+-- the screen goes (or stays) white with the HUD off, the practice still under it, until the server's "leave" (at once,
+-- or once the live match's next game starts: its "wait" puts NEXT MATCH STARTING… on the white). If that never comes,
+-- out anyway after LEAVE_WAIT.
+local LEAVE_WAIT = Constants.TUTORIAL_JOIN_WAIT + 8
+
+local function leaving()
+	if not pr or pr.leaving then
+		return
+	end
+	pr.leaving = now()
+	clearShow()
+	Layout.cinema(true)
+	if not refs.fade.Visible or refs.fade.BackgroundTransparency > 0.01 then
+		fade(0, 0.35)
 	end
 end
 
@@ -2549,7 +2735,7 @@ local function finishRun(how)
 		session = { tips = {}, walk = 0 }
 		pcall(Net.send, "Tutorial", "done")
 	end
-	endPractice()
+	leaving()
 end
 
 -- end it now (K, the SKIP button): into the live match
@@ -2661,14 +2847,18 @@ local function advance(how)
 		end
 		report(step.name, how ~= true and how or nil)
 	end
-	unglow()
+	-- (a step that carries on into the next keeps its words and glow up: the next one says the same, no blink)
+	if not (step and step.carry) then
+		unglow()
+		say(nil)
+	end
 	hideMark()
 	refs.ring.Visible = false
-	say(nil)
 	run.i += 1
 	run.state = nil
 	onKill = nil
-	run.gap = 0.6
+	local nextStep = STEPS[run.i]
+	run.gap = nextStep and nextStep.gap or 0.6
 	if run.i > #STEPS then
 		finishRun("done")
 	end
@@ -2808,6 +2998,9 @@ local function frame(dt)
 		pr.ends = workspace:GetServerTimeNow() + pr.hold
 		pushMatch()
 	end
+	if pr and pr.leaving and t - pr.leaving >= LEAVE_WAIT then
+		endPractice() -- (the server's join never came: never left on a white screen)
+	end
 	if introPending and not cine and not (run and not run.finished) and alive() and playing() then
 		-- the opening alone: YOUR TURF, THE LINE, TAKE THEIRS, and down into your eyes
 		introPending = false
@@ -2843,6 +3036,14 @@ function TutorialController:init()
 			tip(string.upper(msg.why))
 		elseif msg.kind == "reward" and pr then
 			pr.reward = msg
+		elseif msg.kind == "wait" then
+			-- (the server's done with it, the live match is between games: on the white, a calm card, until its next)
+			if run and not run.finished then
+				run.finished = true
+				session = { tips = {}, walk = 0 }
+			end
+			leaving()
+			refs.waitCard.Visible = pr ~= nil
 		elseif msg.kind == "leave" then
 			-- (the server's ended it: done, skipped, or its time) into the live match
 			if run and not run.finished then
@@ -2856,6 +3057,20 @@ function TutorialController:init()
 	end)
 	Bus.Charge:Connect(function(c)
 		charge = c
+	end)
+	Bus.Tap:Connect(function(name)
+		if not pr or type(name) ~= "string" then
+			return
+		end
+		if name == "build_refused" then
+			-- (the ghost's red where you aimed: say why, the way the server says it)
+			local why = BuildController.picked() and aimWhy(BuildController.picked())
+			if why then
+				tip(string.upper(why))
+			end
+		elseif string.sub(name, 1, 6) == "build_" then
+			lastSent = now()
+		end
 	end)
 	UserInputService.InputBegan:Connect(function(input, processed)
 		-- only a deliberate key skips a cinematic (after its first second): Enter or K, Select on a pad (a phone

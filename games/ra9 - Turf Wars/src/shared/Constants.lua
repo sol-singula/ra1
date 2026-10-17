@@ -166,6 +166,7 @@ Constants.TUTORIAL_PUSH_BONUS = 2 -- extra cells each of the new player's knocko
 Constants.TUTORIAL = true -- the new-player tutorial, a private practice that ends in a win (tests that aren't about it turn it off)
 Constants.TUTORIAL_MAX_SECONDS = 180 -- the private practice never runs longer: the server joins them to the match then
 Constants.TUTORIAL_STALL_SECONDS = 25 -- no step reported this long after the practice starts: back to the match
+Constants.TUTORIAL_JOIN_WAIT = 20 -- done while the live match is between games: they wait in the practice for its next, at most this long
 Constants.TUTORIAL_TRAIL = { "shop_rainbowtrail", "shop_hearts", "shop_bubbletrail", "shop_feathertrail" } -- the free trail at its win (the first they don't own)
 Constants.BOT_REACT = 0.7 -- seconds before a bot starts drawing on someone new
 -- Bots go easy on thumbs: against a touch player their aim error is BOT_TOUCH_SPREAD times and their wait before
