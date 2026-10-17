@@ -34,6 +34,12 @@ What a bot does (every TICK):
   BotService:Ensure()        bots in or out for the number of people on (runs on its own every second)
   BotService:SetEnabled(on)  an admin's switch for this server (a spectating admin never counts as a person)
   BotService.easyFor(who)    a hook: true and a bot aiming at them is slower and shakier (TutorialService sets it)
+  BotService.softness(who)   -> spread, react: how much shakier and slower a bot is against them (1, 1: not at all)
+
+Going easy: against a touch player a bot aims worse and waits longer (BOT_TOUCH_*), and with a mouse or pad player
+in view too it goes for them first (a phone player counts BOT_TOUCH_TARGET times further off); against a player in
+their first matches (CombatService:NewHelp) it's slower and shakier too, less each match; the tutorial's and the
+first knockout's boost as before. However they stack, never past BOT_EASY_*_MAX.
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -629,7 +635,8 @@ local function face(root, at)
 	end
 end
 
--- The nearest enemy it can see
+-- The nearest enemy it can see (a touch player counts as further off: with a mouse or pad player in view too, the
+-- bot picks them unless the phone player is a lot closer)
 function BotService:Target(b, root)
 	local mine = teams:Team(b)
 	local eye = root.Position + Vector3.new(0, 1.5, 0)
@@ -639,14 +646,38 @@ function BotService:Target(b, root)
 		local t = teams:Team(who)
 		if who ~= b and r and t and t ~= mine and combat:Alive(who) then
 			local d = (r.Position - root.Position).Magnitude
-			if d <= Constants.BOT_RANGE and (not bestD or d < bestD) then
+			local weighed = d * (combat:Device(who) == "touch" and Constants.BOT_TOUCH_TARGET or 1)
+			if d <= Constants.BOT_RANGE and (not bestD or weighed < bestD) then
 				if not combat:Blocked(eye, r.Position + Vector3.new(0, 1.2, 0)) then
-					best, bestD = who, d
+					best, bestD = who, weighed
 				end
 			end
 		end
 	end
 	return best
+end
+
+-- How easy to go on who: (spread, react) multipliers for its aim error and its wait before drawing. A new player's
+-- first match alone with the bot (easyFor) or their wait for a first knockout: the tutorial's boost; a thumb:
+-- BOT_TOUCH_*; their first matches: BOT_NEW_* by CombatService:NewHelp. They stack, up to BOT_EASY_*_MAX.
+function BotService.softness(who)
+	local spread, react = 1, 1
+	if who == nil then
+		return spread, react
+	end
+	if BotService.easyFor(who) == true or combat:Novice(who) then
+		spread, react = Constants.TUTORIAL_BOT_SPREAD, Constants.TUTORIAL_BOT_REACT
+	end
+	if combat:Device(who) == "touch" then
+		spread *= Constants.BOT_TOUCH_SPREAD
+		react *= Constants.BOT_TOUCH_REACT
+	end
+	local help = combat:NewHelp(who)
+	if help > 0 then
+		spread *= 1 + (Constants.BOT_NEW_SPREAD - 1) * help
+		react *= 1 + (Constants.BOT_NEW_REACT - 1) * help
+	end
+	return math.min(spread, Constants.BOT_EASY_SPREAD_MAX), math.min(react, Constants.BOT_EASY_REACT_MAX)
 end
 
 -- The nearest enemy body, seen or not (where to go looking)
@@ -805,9 +836,9 @@ function BotService:Think(b)
 	end
 	face(root, tr.Position)
 	local w = Weapons.get(combat:Weapon(b))
-	-- (a new player's first match: a slower, shakier bot, so the first win comes fast)
-	local easy = self.easyFor(target) == true or combat:Novice(target) -- (or still waiting for their first knockout)
-	local react = Constants.BOT_REACT * (easy and Constants.TUTORIAL_BOT_REACT or 1)
+	-- (a new player's first matches, a thumb: a slower, shakier bot; BotService.softness)
+	local spreadTimes, reactTimes = self.softness(target)
+	local react = Constants.BOT_REACT * reactTimes
 	if not b.drawUntil then
 		if t - b.seenAt >= react then
 			combat:Draw(b, true)
@@ -817,7 +848,6 @@ function BotService:Think(b)
 		local eye = root.Position + Vector3.new(0, 1.5, 0)
 		local charge = 1
 		local speed = Formulas.shot(w, charge).speed
-		local spreadTimes = easy and Constants.TUTORIAL_BOT_SPREAD or 1
 		local dir =
 			self.aim(eye, tr.Position + Vector3.new(0, 0.4, 0), tr.AssemblyLinearVelocity, speed, rng, spreadTimes)
 		b.shotId += 1

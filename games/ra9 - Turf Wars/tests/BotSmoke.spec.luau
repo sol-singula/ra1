@@ -1,7 +1,8 @@
 --[[
 Bots: alone in a server you get bots (allies and enemies) that walk, see, shoot, kill and respawn through the same
 combat as everyone; you can kill them and push the line; the second person to join takes over a bot on the other
-side (its team, where it stood) and every bot leaves; back to one person, they return.
+side (its team, where it stood) and every bot leaves; back to one person, they return. Against a touch player (or
+a new one) they aim worse and draw slower.
 
   luaurun tests/BotSmoke.spec.luau
 ]]
@@ -130,6 +131,34 @@ for i = m0 + 1, #Engine.clientLog do
 end
 check("bots shoot (server arrows, like anyone's)", arrows >= 3, arrows)
 check("...and hit you sometimes", hurt)
+-- easy on thumbs: a bot's aim against a touch player strays further, and it waits longer before drawing
+do
+	local st = service("PlayerDataService"):Get(solo).stats
+	local matches, kills = st.matches, st.kills
+	st.matches, st.kills = 50, 50 -- (a veteran: only the device counts here)
+	local function spreadAgainst(device)
+		solo:SetAttribute("Device", device)
+		local spreadTimes, reactTimes = Bots.softness(solo)
+		local rng = Engine.globals.Random.new(7)
+		local eye, at = Vector3.new(0, 4.5, 0), Vector3.new(60, 3, 0)
+		local total = 0
+		for _ = 1, 200 do
+			local d = Bots.aim(eye, at, Vector3.zero, 200, rng, spreadTimes)
+			local ideal = Bots.aim(eye, at, Vector3.zero, 200, rng, 0)
+			total += math.deg(math.acos(math.clamp(d:Dot(ideal), -1, 1)))
+		end
+		return total / 200, reactTimes
+	end
+	local kbErr, kbReact = spreadAgainst("keyboard")
+	local tcErr, tcReact = spreadAgainst("touch")
+	check("bots aim worse at a touch player", tcErr > kbErr * 1.3, `{tcErr} vs {kbErr}`)
+	check("...and draw slower on them", tcReact > kbReact, `{tcReact} vs {kbReact}`)
+	st.matches, st.kills = 0, kills
+	solo:SetAttribute("Device", "keyboard")
+	check("...and on a player in their first match, too", (Bots.softness(solo)) > 1)
+	st.matches = matches
+	solo:SetAttribute("Device", nil)
+end
 -- the TNT: in range and ready, a bot sometimes lobs one at you (made certain here)
 do
 	local chance = Constants.BOT_TNT_CHANCE

@@ -4,6 +4,7 @@ card (YES, NO, no answer in 20 s); the party on one team when it forms in the bu
 a party that forms in the fight waits for the next match; Rebalance evens the teams and never splits a party (one
 bigger than half the server too); the max size; kick, leave, a new leader; a friend who joins (or follows you in)
 gets "Party up?"; the leader's FIND A NEW SERVER teleports everyone together with the party in the teleport data;
+the keyboard players split between the sides (friends kept together, the sizes kept);
 the notifications.
 
   luaurun tests/PartySmoke.spec.luau
@@ -355,6 +356,56 @@ m0 = mark()
 Engine.removePlayer(gus2)
 Engine.advance(0.5)
 check("a member leaves the server: a party of one is over", Party:Of(ava2) == nil and got(ava2, m0, "Gus left"))
+
+-- 10. Mice split between the sides (TeamService rule 4): solo keyboard players trade places with solo thumbs, the
+-- sizes kept, friends never parted -------------------------------------------------------------------------------
+do
+	local kbs, thumbs = {}, {}
+	for i = 1, 3 do
+		table.insert(kbs, join("Mouse" .. i, 920 + i))
+		table.insert(thumbs, join("Thumb" .. i, 930 + i))
+	end
+	for _, p in kbs do
+		p:SetAttribute("Device", "keyboard")
+		Teams:Set(p, "red")
+	end
+	for _, p in thumbs do
+		p:SetAttribute("Device", "touch")
+		Teams:Set(p, "blue")
+	end
+	Engine.makeFriends(kbs[1], kbs[2])
+	local red0, blue0 = Teams:Count("red"), Teams:Count("blue")
+	check("(all three mice on red)", Teams:Keyboards("red") == 3 and Teams:Keyboards("blue") == 0)
+	local moved = Teams:SpreadDevices()
+	check(
+		"the mice spread: 2 and 1",
+		math.abs(Teams:Keyboards("red") - Teams:Keyboards("blue")) <= 1,
+		`{Teams:Keyboards("red")} {Teams:Keyboards("blue")}`
+	)
+	check("...by a trade: the sizes as they were", Teams:Count("red") == red0 and Teams:Count("blue") == blue0)
+	check("...one mouse for one thumb", #moved == 2 and Teams:Team(kbs[3]) == "blue", #moved)
+	check("...the two friends kept together", same({ kbs[1], kbs[2] }) and Teams:Team(kbs[1]) == "red")
+	check("...even already: nothing moves", #Teams:SpreadDevices() == 0)
+	-- the same at the start of a match (MatchService:NewMatch)
+	for _, p in kbs do
+		Teams:Set(p, "red")
+	end
+	for _, p in thumbs do
+		Teams:Set(p, "blue")
+	end
+	Match:NewMatch()
+	Engine.advance(1)
+	check(
+		"a new match: the mice spread between the sides",
+		math.abs(Teams:Keyboards("red") - Teams:Keyboards("blue")) <= 1 and same({ kbs[1], kbs[2] }),
+		`{Teams:Keyboards("red")} {Teams:Keyboards("blue")}`
+	)
+	check(
+		"...and the sides still even",
+		math.abs(Teams:Count("red") - Teams:Count("blue")) <= 1,
+		`{Teams:Count("red")} {Teams:Count("blue")}`
+	)
+end
 
 print(`\n{passed} passed, {failed} failed`)
 if #Engine.errors > 0 then

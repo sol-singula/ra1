@@ -5,7 +5,7 @@ the frontline bar, the objective), the build tray and a structure placed through
 PLACE button, the hotbar (bow, TNT, blade; switching, the TNT's cooldown), the TNT thrown (the bundle in your hands,
 the wind-up, the lob, the explosion and its clean-up), structures shattering into debris, the fight with the FIRE button (a predicted arrow, a hit
 marker, the kill feed, the line moving on the bar), the camera and movement (the slide, the flip on the 4th jump),
-and the results screen. Fails on any script error.
+and the results screen, the hit-direction markers and the comeback shield's pops. Fails on any script error.
 
   luaurun tests/ClientSmoke.spec.luau
 ]]
@@ -2333,6 +2333,71 @@ do
 	KillBanner.onKill({ killer = -61, victim = player.UserId, killerName = "Fay", effect = "rbx_bonk" })
 	Engine.advance(1)
 	check("...a new one is offered once you're up", KillBanner.offer() ~= nil, KillBanner.offer())
+end
+
+-- Where it came from, and the comeback shield ---------------------------------------------------------------------
+do
+	local HitDir = Engine.require(tree.client.Controllers.HitDirectionController)
+	local ShieldC = Engine.require(tree.client.Controllers.ShieldController)
+	local AudioC = Engine.require(tree.client.Controllers.AudioController)
+	Engine.advance(2) -- (whatever was on screen has gone)
+	local cam = ws.CurrentCamera
+	local cf = cam.CFrame
+	local right = Vector3.new(-cf.LookVector.Z, 0, cf.LookVector.X).Unit
+	local flatLook = Vector3.new(cf.LookVector.X, 0, cf.LookVector.Z).Unit
+	-- an arrow just missed you from off to your right: a near miss
+	Engine.remote("Threat"):FireClient(player, { from = cf.Position + right * 40, by = 900 })
+	local marks = HitDir.markers()
+	local m = marks[1]
+	check("a near miss: a marker on screen", #marks == 1 and m.Parent ~= nil and m.Parent.Name == "HitDirection")
+	check(
+		"...on the right of the ring, pointing right",
+		m and m.Position.X.Scale > 0.7 and math.abs(m.Position.Y.Scale - 0.5) < 0.08 and math.abs(m.Rotation - 90) < 5,
+		m and `{m.Position} {m.Rotation}`
+	)
+	check(
+		"...drawn above the HUD, so no thumb button covers it",
+		m and m.Parent.DisplayOrder > hud.DisplayOrder,
+		m and m.Parent.DisplayOrder
+	)
+	check("...inside the screen", m and m.Position.X.Scale < 0.95 and m.Position.Y.Scale > 0.05)
+	Engine.remote("Threat"):FireClient(player, { from = cf.Position + right * 40, by = 900 })
+	check("the same shooter again: still one marker", #HitDir.markers() == 1)
+	-- a hit from behind (the knockout too): a bigger, solid marker at the bottom
+	Engine.remote("Hurt"):FireClient(player, { amount = 100, from = cf.Position - flatLook * 40, by = 901 })
+	marks = HitDir.markers()
+	local hit = marks[2]
+	check(
+		"a hit from behind: a second, bigger marker at the bottom",
+		#marks == 2
+			and hit:GetAttribute("Kind") == "hit"
+			and hit.Position.Y.Scale > 0.75
+			and hit.Size.X.Offset > m.Size.X.Offset,
+		hit and `{hit.Position} {hit.Size}`
+	)
+	check(
+		"...it points at where the shooter is, whichever way you face",
+		math.abs(HitDir.angleTo(cf.Position + flatLook * 40)) < 1
+			and math.abs(HitDir.angleTo(cf.Position + right * 40) - 90) < 1
+	)
+	Engine.advance(Constants.HIT_MARKER_SECONDS + 0.3)
+	check("...gone after a moment and a half", #HitDir.markers() == 0)
+	-- the comeback shield
+	Engine.remote("Shield"):FireClient(player, { kind = "on", by = player.UserId, seconds = 60 })
+	check(
+		"your comeback shield goes up: COMEBACK SHIELD, blocks 1 hit",
+		ShieldC.pop() ~= nil and ShieldC.pop().Text == "COMEBACK SHIELD" and ShieldC.pop().Sub.Text:find("1 HIT") ~= nil
+	)
+	local heard = AudioC.count("shield")
+	Engine.remote("Shield"):FireClient(player, { kind = "break", by = player.UserId, pos = cf.Position })
+	check("it breaks: a big SHIELD! pop", ShieldC.pop() ~= nil and ShieldC.pop().Text == "SHIELD!")
+	check("...and its sound", AudioC.count("shield") == heard + 1)
+	Engine.remote("Shield"):FireClient(player, { kind = "break", by = 900, pos = cf.Position + flatLook * 20 })
+	local w = ShieldC.lastWorld()
+	check("someone else's breaks: SHIELD! where they stand", w ~= nil and w.Text.Text == "SHIELD!")
+	check("...heard there", AudioC.count("shield") == heard + 2)
+	Engine.advance(1.5)
+	check("...and the pops go", ShieldC.pop() == nil and ShieldC.lastWorld() == nil)
 end
 
 print(`\n{passed} passed, {failed} failed`)

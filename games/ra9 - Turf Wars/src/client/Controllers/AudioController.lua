@@ -137,6 +137,15 @@ local CUES = {
 			{ c = "ping", v = 0.32, p = 2, d = 0.2, fx = { "room" } },
 		},
 	},
+	-- a comeback shield popping (it took the hit): a bright glassy burst and a ring
+	shield = {
+		group = "World",
+		layers = {
+			{ c = "glass", v = 0.65, p = 1.6, r = 0.05 },
+			{ c = "unsheath", v = 0.35, p = 1.4, d = 0.01 },
+			{ c = "ping", v = 0.35, p = 1.8, d = 0.04, fx = { "room" } },
+		},
+	},
 	shatter = {
 		group = "World",
 		layers = {

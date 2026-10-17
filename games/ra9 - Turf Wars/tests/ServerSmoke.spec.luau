@@ -31,6 +31,7 @@ Engine.require(tree.shared.Constants).TUTORIAL = false -- (the players here know
 Engine.runScript(tree.server.Main)
 -- (the first-knockout help is tests/FeelSmoke's: here every new test player plays as anyone would)
 Engine.require(tree.server.Services.CombatService).firstKillHelp = false
+Engine.require(tree.server.Services.CombatService).comebackShield = false -- (and the comeback shield: tests/FeelSmoke)
 Engine.advance(0.5)
 local function service(name)
 	return Engine.require(tree.server.Services[name])
@@ -1712,6 +1713,8 @@ do
 	local _, ideal = angleTo(Vector3.new(1, 0, 0))
 	local off3 = (CFrame.fromAxisAngle(Vector3.new(0, 1, 0), math.rad(3)) * ideal).Unit
 	local a0 = angleTo(off3)
+	-- (the whisper alone: past the first matches' extra help, tests/FeelSmoke checks that)
+	Data:Get(newbie).stats.matches = Constants.NEW_PLAYER_MATCHES
 	local a1 = angleTo(Combat:Assist(newbie, origin, off3, speed))
 	check(
 		"a near miss (3°) turns a little onto them",
