@@ -512,7 +512,7 @@ function CombatService:Swing(player, direction)
 			end
 		end
 	end
-	Net.fireAll("Swing", { by = player.UserId, hit = best ~= nil })
+	Net.fireAll("Swing", { by = player.UserId, hit = best ~= nil, pos = r.Position, dir = look })
 	self.Shot:Fire(player, w.key)
 	if not best then
 		return nil
@@ -536,7 +536,11 @@ function CombatService:Swing(player, direction)
 	end
 	best:SetAttribute("AcGrace", os.clock() + 1.5)
 	Net.fire(best, "Hurt", { amount = amount, from = r.Position, knock = kb, head = false })
-	Net.fire(player, "Hit", { damage = amount, head = back, kill = killed, victim = best.UserId })
+	Net.fire(
+		player,
+		"Hit",
+		{ damage = amount, head = back, kill = killed, victim = best.UserId, melee = true, pos = vr.Position }
+	)
 	return best, killed
 end
 

@@ -212,6 +212,9 @@ do
 	BusB.Fire:Fire(false)
 	check("a click slashes (the server is asked)", Engine.lastClientEvent("Swing") ~= before)
 	check("...and the blade sweeps across", edge and (edge.Position - rest).Magnitude > 0.1)
+	local SwingC = Engine.require(tree.client.Controllers.SwingController)
+	check("...with a streak through the air", SwingC.streaks() > 0)
+	check("someone else's slash shows on their body", SwingC.slashOf(foe.Character, Vector3.new(1, 0, 0)))
 	check("...no charge ring for a blade", not refs.charge.Visible)
 	Engine.advance(0.6)
 end

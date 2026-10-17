@@ -2241,6 +2241,16 @@ function methods.LoadCharacter(player)
 	Engine.makeCharacter(player)
 end
 
+-- Player:LoadCharacterWithHumanoidDescription(desc): a fresh character wearing that description (kept on the
+-- Humanoid, so Humanoid:GetAppliedDescription() returns it and tests can read the body it was given)
+function methods.LoadCharacterWithHumanoidDescription(player, desc)
+	methods.LoadCharacter(player)
+	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if hum then
+		rawset(hum, "_desc", desc)
+	end
+end
+
 function Engine.addPlayer(name, userId, launchData)
 	nextUserId += 1
 	local p = Instance.new("Player")

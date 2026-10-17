@@ -88,11 +88,42 @@ local PARTS = {
 	{ "RightUpperLeg", Vector3.new(1, 2, 1), Vector3.new(0.5, -1.7, 0) },
 }
 
+-- A real R15 body built from the same description every player wears (MatchService.sameBody), so a bot is exactly
+-- the shape and size of a person; the hand-made block body below is only a fallback (Studio without the API, tests).
+local function realRig(name)
+	local desc = match and match.sameBody and match.sameBody()
+	if not desc then
+		return nil
+	end
+	local ok, model = pcall(function()
+		return Players:CreateHumanoidModelFromDescription(desc, Enum.HumanoidRigType.R15)
+	end)
+	if not ok or typeof(model) ~= "Instance" or not model:FindFirstChild("HumanoidRootPart") then
+		return nil
+	end
+	model.Name = name
+	return model
+end
+
 function Bot:LoadCharacter()
 	if self.Character then
 		self.Character:Destroy()
 	end
-	local model = Instance.new("Model")
+	local model = realRig(self.Name)
+	if model then
+		local root = model:FindFirstChild("HumanoidRootPart")
+		local hum = model:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		end
+		model.PrimaryPart = root
+		self:_tag(model, root)
+		model.Parent = folder
+		self.Character = model
+		self.target, self.drawUntil, self.goal = nil, nil, nil
+		return model
+	end
+	model = Instance.new("Model")
 	model.Name = self.Name
 	local root = Instance.new("Part")
 	root.Name = "HumanoidRootPart"
@@ -119,7 +150,16 @@ function Bot:LoadCharacter()
 	hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	hum.Parent = model
 	model.PrimaryPart = root
-	-- a name over its head, so nobody takes it for a person
+	self:_tag(model, root)
+	model.Parent = folder
+	self.Character = model
+	self.target, self.drawUntil, self.goal = nil, nil, nil
+	return model
+end
+
+-- a name over its head, so nobody takes it for a person (and its id, so clients can find its body for a slash)
+function Bot:_tag(model, root)
+	model:SetAttribute("BotId", self.UserId)
 	local tag = Instance.new("BillboardGui")
 	tag.Name = "BotTag"
 	tag.Size = UDim2.fromOffset(160, 22)
@@ -135,10 +175,6 @@ function Bot:LoadCharacter()
 	l.TextColor3 = Color3.fromRGB(30, 30, 34)
 	l.Parent = tag
 	tag.Parent = model
-	model.Parent = folder
-	self.Character = model
-	self.target, self.drawUntil, self.goal = nil, nil, nil
-	return model
 end
 
 function Bot:Remove()

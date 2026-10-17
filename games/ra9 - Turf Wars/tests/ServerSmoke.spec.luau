@@ -144,6 +144,13 @@ local blue = Teams:Team(ava) == "red" and cy or ava
 local blue2 = blue == ava and ben or dee
 check("everyone spawned alive", Combat:Alive(ava) and Combat:Alive(cy))
 do
+	local d = ava.Character:FindFirstChildOfClass("Humanoid"):GetAppliedDescription()
+	check(
+		"everyone has the same plain R15 body (standard size, no packages)",
+		d.HeightScale == 1 and d.WidthScale == 1 and d.BodyTypeScale == 0 and d.Torso == 0 and d.Head == 0
+	)
+end
+do
 	local r = rootOf(red)
 	check("red spawns at the west end", r and r.Position.X < -70, r and r.Position.X)
 	check("blue spawns at the east end", rootOf(blue).Position.X > 70)

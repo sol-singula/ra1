@@ -34,8 +34,8 @@ Net.ServerEvents = {
 	"Me", -- { team, alive, weapon, ammo, budget, budgetMax, protected }
 	"Arrow", -- { id, by, team, weapon, origin, velocity, t } an arrow everyone draws (the shooter's own is predicted)
 	"ArrowEnd", -- { id, pos, kind = "player" | "structure" | "world" } where it stopped
-	"Swing", -- { by, hit } someone slashed (their blade swings for everyone)
-	"Hit", -- { damage, head, kill, victim } you hit someone (the hit marker)
+	"Swing", -- { by, hit, pos, dir } someone slashed (their blade swings for everyone: SwingController)
+	"Hit", -- { damage, head, kill, victim, melee?, pos? } you hit someone (the hit marker; a blade hit's spot)
 	"Hurt", -- { amount, from } you were hit (from: the shooter's position, for the damage indicator)
 	"Kill", -- { killer, victim, killerTeam, weapon, head, push, assist, effect, pos } the kill feed, the kill effect
 	"Structure", -- { kind = "built" | "damaged" | "destroyed", id, key, team, hp, max }

@@ -143,6 +143,29 @@ function MatchService:Everyone()
 	end
 	return list
 end
+-- Everyone gets the same body: Roblox's plain R15 shape at the standard size, whatever their avatar is (no
+-- packages, no tall/wide/slim scaling, no accessories or clothes), so nobody is a bigger or smaller target and the
+-- team mannequins all look alike. Faces and skin colour don't matter: TeamService:Dress paints the whole body.
+local uniformBody
+local function sameBody()
+	if uniformBody then
+		return uniformBody
+	end
+	local ok, d = pcall(function()
+		local desc = Instance.new("HumanoidDescription")
+		for _, k in { "Head", "Torso", "LeftArm", "RightArm", "LeftLeg", "RightLeg" } do
+			desc[k] = 0 -- (0: the plain R15 part)
+		end
+		desc.HeightScale, desc.WidthScale, desc.DepthScale, desc.HeadScale = 1, 1, 1, 1
+		desc.BodyTypeScale, desc.ProportionScale = 0, 0
+		desc.Shirt, desc.Pants, desc.GraphicTShirt = 0, 0, 0
+		return desc
+	end)
+	uniformBody = ok and d or nil
+	return uniformBody
+end
+MatchService.sameBody = sameBody
+
 -- A one-shot spawn point for a player (BotService: the second player takes over a bot where it stood).
 MatchService.SpawnAt = {}
 
@@ -150,7 +173,14 @@ function MatchService:Spawn(player)
 	local team = teams:Team(player) or teams:Assign(player)
 	respawnAt[player] = nil
 	pending[player] = nil
-	player:LoadCharacter()
+	local desc = sameBody()
+	local loaded = desc
+		and pcall(function()
+			player:LoadCharacterWithHumanoidDescription(desc)
+		end)
+	if not loaded then
+		player:LoadCharacter()
+	end
 	local c = player.Character
 	if not c then
 		return
