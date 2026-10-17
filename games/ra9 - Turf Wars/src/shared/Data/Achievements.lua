@@ -9,7 +9,7 @@ have the reward exactly while the profile says you've done it.
   Achievements.progress(profile, g)  how far along (0..goal)
   Achievements.done(profile, g)
   Achievements.VIP                   what VIP takes (wins and MVPs: you earn it, it can't be bought)
-  Achievements.isVip(profile)
+  Achievements.isVip(profile)        earned (kept for good), or given by an admin (profile.vipUntil, os.time())
   Achievements.vipProgress(profile)  { wins, mvps, needWins, needMvps }
   Achievements.earned(profile)       [cosmeticKey] = true: every goal, VIP and MVP cosmetic this profile has
   Achievements.newly(before, after)  the goals done in `after` that weren't in `before` (the cards to show)
@@ -133,6 +133,9 @@ end
 function Achievements.isVip(profile)
 	if profile.vip then
 		return true -- (kept once earned, even if the numbers were ever reset)
+	end
+	if type(profile.vipUntil) == "number" and profile.vipUntil > os.time() then
+		return true -- (given by an admin for a while)
 	end
 	return (profile.wins or 0) >= Achievements.VIP.wins and stat(profile, "mvps") >= Achievements.VIP.mvps
 end

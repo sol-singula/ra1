@@ -23,6 +23,8 @@ ASSIST_WINDOW seconds get assists.
   CombatService:SetEnabled(on)             the fight phase
   CombatService:Damage(victim, amount, attacker, info)
   CombatService:Kill(victim, attacker, info)
+  CombatService:Remove(player)             out of the fight, no kill (a spectating admin)
+  CombatService:Heal(player)               full health
   CombatService.Killed(victim, killer, info)   info: { weapon, head, assists = { players }, kind }
   CombatService.StructureHit(id, damage, attacker)
 ]]
@@ -235,6 +237,31 @@ function CombatService:Kill(victim, attacker, info)
 	mirror(victim, s)
 	self:Push(victim)
 	self.Killed:Fire(victim, attacker, info)
+	return true
+end
+
+-- Out of the fight without going down (no kill, no feed): a spectating admin. Nothing can hit them.
+function CombatService:Remove(player)
+	local s = state(player)
+	s.alive = false
+	s.hp = 0
+	s.drawAt = nil
+	s.hits = {}
+	for _, o in states do
+		o.hits[player] = nil
+	end
+	self:Push(player)
+end
+
+-- Back to full health (an admin's heal).
+function CombatService:Heal(player)
+	local s = state(player)
+	if not s.alive then
+		return false
+	end
+	s.hp = Constants.MAX_HEALTH
+	mirror(player, s)
+	self:Push(player)
 	return true
 end
 

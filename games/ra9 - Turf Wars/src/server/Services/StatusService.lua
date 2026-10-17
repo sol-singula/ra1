@@ -1,7 +1,8 @@
 --[[
 What everyone sees on you (all cosmetic, none of it in the hit spheres CombatService uses):
 
-  * a name tag over your head: your name, the title you wear (Data/Cosmetics), and VIP or ★ MVP
+  * a name tag over your head: your name, the title you wear (Data/Cosmetics), and VIP or ★ MVP; admins get a red
+    ADMIN (the "Admin" attribute, AdminService), and an invisible admin (the "Invisible" attribute) no tag at all
   * the MVP crown: the last match's MVP wears it through the whole next match (white and black blocks over the head)
   * the VIP halo: a thin black ring, for VIPs (earned, never bought: Data/Achievements.VIP)
 
@@ -9,6 +10,7 @@ Built from the Player's attributes (ProgressService:Push sets LookTitle and VIP)
 
   StatusService:Mvp()               the player wearing the crown
   StatusService:Refresh(player)
+  StatusService:SetMvp(player)      the crown (the match's end; an admin can give it too)
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -75,8 +77,8 @@ function StatusService:Refresh(player)
 	end
 	clear(c)
 	local head = c:FindFirstChild("Head")
-	if not head then
-		return
+	if not head or player:GetAttribute("Invisible") == true then
+		return -- (an invisible admin wears nothing at all)
 	end
 	local isMvp = mvp == player
 	local isVip = player:GetAttribute("VIP") == true
@@ -104,9 +106,19 @@ function StatusService:Refresh(player)
 		l.Parent = tag
 		return l
 	end
-	local badge = (isMvp and "★ MVP" or "") .. ((isMvp and isVip) and "  ·  " or "") .. (isVip and "VIP" or "")
-	if badge ~= "" then
-		line(badge, 0, 16, INK, Enum.Font.GothamBlack)
+	local isAdmin = player:GetAttribute("Admin") == true
+	local parts = {}
+	if isAdmin then
+		table.insert(parts, "ADMIN")
+	end
+	if isMvp then
+		table.insert(parts, "★ MVP")
+	end
+	if isVip then
+		table.insert(parts, "VIP")
+	end
+	if #parts > 0 then
+		line(table.concat(parts, "  ·  "), 0, 16, isAdmin and Constants.TEAM_COLOR.red or INK, Enum.Font.GothamBlack)
 	end
 	line(player.DisplayName, 16, 22, Constants.TEAM_COLOR[team or ""] or INK, Enum.Font.GothamBlack)
 	if title and title.kind == "title" then
@@ -156,7 +168,7 @@ local function watch(player)
 			StatusService:Refresh(player)
 		end)
 	end)
-	for _, attr in { "VIP", "LookTitle" } do
+	for _, attr in { "VIP", "LookTitle", "Admin", "Invisible" } do
 		player:GetAttributeChangedSignal(attr):Connect(function()
 			StatusService:Refresh(player)
 		end)

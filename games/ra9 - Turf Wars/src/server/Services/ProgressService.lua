@@ -15,6 +15,8 @@ the streak. Stats add up either way.
   ProgressService:Push(player)          sends it, and puts what they wear on the Player's attributes (StatusService
                                         and every client read those)
   ProgressService:GrantExtra(player, key, card)
+  ProgressService:AddMvp(player)        an admin's MVP (counted like a real one)
+  ProgressService:SetVip(player, s)     an admin's VIP: seconds | true (for good) | false (taken away)
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -103,7 +105,56 @@ end
 ProgressService.card = card
 
 local function snapshot(p)
-	return { wins = p.wins, best = p.best, vip = p.vip, stats = table.clone(p.stats) }
+	return { wins = p.wins, best = p.best, vip = p.vip, vipUntil = p.vipUntil, stats = table.clone(p.stats) }
+end
+
+-- An MVP from an admin: counted like a real one (the lifetime MVPs, their rewards' cards). The crown is
+-- StatusService's.
+function ProgressService:AddMvp(player)
+	local p = data:Get(player)
+	if not p then
+		return false
+	end
+	local before = snapshot(p)
+	p.stats.mvps = (p.stats.mvps or 0) + 1
+	self:Celebrate(player, before)
+	self:Push(player)
+	return true
+end
+
+-- VIP from an admin: seconds (for a while), true (for good) or false (taken away: what an admin gave goes; VIP
+-- earned from wins and MVPs stays, the numbers still say so).
+function ProgressService:SetVip(player, seconds)
+	local p = data:Get(player)
+	if not p then
+		return false
+	end
+	local had = Achievements.isVip(p)
+	if seconds == false then
+		p.vip = false
+		p.vipUntil = 0
+	elseif seconds == true then
+		p.vip = true
+	elseif type(seconds) == "number" and seconds > 0 then
+		p.vipUntil = math.max(p.vipUntil or 0, os.time()) + math.floor(seconds)
+	else
+		return false
+	end
+	if Achievements.isVip(p) and not had then
+		card(player, "vip_title", "YOU'RE VIP!", "The VIP tag, halo and 4 cosmetics")
+		p.equipped.title = "vip_title"
+		self.Earned:Fire(player, "vip")
+	elseif not Achievements.isVip(p) then
+		-- (the VIP cosmetics go with it: wear nothing there instead)
+		for _, k in Achievements.VIP.rewards do
+			local it = Cosmetics.get(k)
+			if it and p.equipped[it.kind] == k and not Locker.owns(p, k) then
+				p.equipped[it.kind] = nil
+			end
+		end
+	end
+	self:Push(player)
+	return true
 end
 
 -- Goals, VIP and MVP rewards newly earned between two snapshots: worn at once if they're new, with a card each.

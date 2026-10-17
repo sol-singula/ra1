@@ -76,6 +76,20 @@ Constants.QUALIFY_SECONDS = 120 -- in the match at least this long for a win to 
 Constants.LADDER = 100
 Constants.STREAKS = { 3, 5, 10 }
 
+-- Admins (AdminService): by user id; the username works too, in Studio only
+Constants.ADMINS = { [11787294097] = true } -- xthirtysix
+Constants.ADMIN_NAMES = { xthirtysix = true }
+Constants.ADMIN_HEARTBEAT = 15 -- seconds between each server's line in the server list
+Constants.ADMIN_SERVER_TTL = 45 -- a server not heard from for this long drops off the list
+Constants.ADMIN_SERVER_MAP = "TW_Servers_v1" -- (the MemoryStore sorted map)
+Constants.ADMIN_VIP = { -- the VIP lengths an admin can give: key, seconds (true: for good), label
+	{ "1h", 3600, "1 HOUR" },
+	{ "1d", 86400, "1 DAY" },
+	{ "7d", 7 * 86400, "7 DAYS" },
+	{ "30d", 30 * 86400, "30 DAYS" },
+	{ "forever", true, "FOREVER" },
+}
+
 -- Saves and logs
 Constants.PROFILE_STORE = "TW_Profiles_v1"
 Constants.AUTOSAVE_SECONDS = 120

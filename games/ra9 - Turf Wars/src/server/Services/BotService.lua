@@ -16,6 +16,7 @@ side of the line.
 
   BotService:List()          the bots in the server
   BotService:Ensure()        bots in or out for the number of people on (runs on its own every second)
+  BotService:SetEnabled(on)  an admin's switch for this server (a spectating admin never counts as a person)
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,6 +25,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local ArenaBuilder = require(ReplicatedStorage.Shared.World.ArenaBuilder)
 local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
+local Admins = require(script.Parent.Parent.Admins)
 
 local BotService = {
 	Name = "BotService",
@@ -32,6 +34,7 @@ local BotService = {
 
 local teams, combat, match, arenaService
 local bots = {} -- the bots in the server
+local enabled = true -- (an admin can switch them off for this server)
 local nextId = 0
 local folder
 BotService.TICK = 0.1
@@ -154,8 +157,25 @@ function BotService:List()
 	return bots
 end
 
+-- The people on (a spectating admin isn't one: alone with one, you still get bots)
 local function humans()
-	return Players:GetPlayers()
+	local out = {}
+	for _, p in Players:GetPlayers() do
+		if not Admins.spectating(p) then
+			table.insert(out, p)
+		end
+	end
+	return out
+end
+
+-- Bots on or off for this server (an admin's switch). Off: every bot leaves and none come back.
+function BotService:SetEnabled(on)
+	enabled = on == true
+	self:Ensure()
+end
+
+function BotService:Enabled()
+	return enabled
 end
 
 function BotService:RemoveAll()
@@ -189,7 +209,7 @@ end
 
 function BotService:Ensure()
 	local people = humans()
-	if #people == 1 then
+	if #people == 1 and enabled then
 		if #bots == 0 then
 			local mine = teams:Team(people[1])
 			if not mine then
@@ -211,7 +231,7 @@ end
 -- The second person in: they take a bot's place (on the side against the first person), and the bots go.
 function BotService:Takeover(player)
 	local people = humans()
-	if #people ~= 2 or #bots == 0 then
+	if #people ~= 2 or #bots == 0 or Admins.spectating(player) then
 		return nil
 	end
 	local first = people[1] == player and people[2] or people[1]

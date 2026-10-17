@@ -11,6 +11,7 @@ Teams (master plan §2A): red and blue, kept together with friends, balanced aro
   TeamService:Members(team)           { players }
   TeamService:Count(team)
   TeamService:Assign(player)          picks and sets a team
+  TeamService:Set(player, team)       TeamService:Clear(player)   (no team: a spectating admin)
   TeamService:Rebalance()             between matches
   TeamService:Dress(character, team)
 ]]
@@ -79,6 +80,19 @@ function TeamService:Set(player, team)
 	end)
 	if old ~= team then
 		self.Changed:Fire(player, team, old)
+	end
+end
+
+-- Off both teams (a spectating admin).
+function TeamService:Clear(player)
+	local old = teams[player]
+	teams[player] = nil
+	player:SetAttribute("Team", nil)
+	pcall(function()
+		player.Team = nil
+	end)
+	if old then
+		self.Changed:Fire(player, nil, old)
 	end
 end
 

@@ -11,6 +11,13 @@ next map in the same server. No lobby, no queue.
   * Players join straight into the running match (TeamService picks the side), spawn on their pads with a moment
     of protection, and respawn RESPAWN_SECONDS after going down.
   * A kill plane below the map; a watchdog that restarts a match running absurdly long (logged, never "won").
+  * A spectating admin (server/Admins.lua) is in the server but not in the match: People() and Everyone() leave
+    them out, so they get no team, no body, no stats, no row in the results.
+
+  MatchService:People() / :Everyone()   the real players / plus the bots
+  MatchService:Join(player) / :Leave(player)   into the match / out of it (an admin starting to spectate)
+  MatchService:Victory(winner)          "red" | "blue" | "draw"
+  MatchService:NewMatch(mapKey?)        MatchService:SkipTo("fight" | "build")   MatchService:Freeze(on)
 
 Workspace attributes the clients read: Phase, PhaseEnds, Frontline, LoseRed, LoseBlue, MatchId, MapKey, MapName.
 ]]
@@ -22,6 +29,7 @@ local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local Admins = require(script.Parent.Parent.Admins)
 
 local MatchService = {
 	Name = "MatchService",
@@ -52,6 +60,7 @@ local closest = {} -- [team] = the least share of the way to their losing line t
 local stats = {} -- [player] = { joined, kills, deaths, assists, built, shots, hits, headshots, pushed, active }
 local respawnAt = {} -- [player] = time
 local pending = {} -- [player] = true: waiting for the next match to spawn
+local frozen -- seconds left on the clock while an admin holds it (nil: running)
 local random = Random.new()
 
 local function now()
@@ -108,6 +117,7 @@ function MatchService:Snapshot()
 		blue = teams:Count("blue"),
 		matchId = matchId,
 		winner = workspace:GetAttribute("Winner"),
+		frozen = frozen ~= nil,
 	}
 end
 
@@ -136,8 +146,18 @@ end
 MatchService.extras = function()
 	return {}
 end
+-- The real people in the match: every player but a spectating admin (server/Admins.lua).
+function MatchService:People()
+	local list = {}
+	for _, p in Players:GetPlayers() do
+		if not Admins.spectating(p) then
+			table.insert(list, p)
+		end
+	end
+	return list
+end
 function MatchService:Everyone()
-	local list = Players:GetPlayers()
+	local list = self:People()
 	for _, b in self.extras() do
 		table.insert(list, b)
 	end
@@ -147,6 +167,10 @@ end
 MatchService.SpawnAt = {}
 
 function MatchService:Spawn(player)
+	if Admins.spectating(player) then
+		respawnAt[player], pending[player] = nil, nil
+		return -- (watching unseen: no body)
+	end
 	local team = teams:Team(player) or teams:Assign(player)
 	respawnAt[player] = nil
 	pending[player] = nil
@@ -264,7 +288,7 @@ end
 function MatchService:Results(winner)
 	local rows = {}
 	local best, bestScore
-	for _, p in Players:GetPlayers() do
+	for _, p in self:People() do
 		local s = statsOf(p)
 		local row = {
 			userId = p.UserId,
@@ -288,10 +312,12 @@ function MatchService:Results(winner)
 	return { winner = winner, rows = rows, mvp = best and best.UserId or nil, mvpPlayer = best }
 end
 
+-- winner: "red" | "blue" | "draw" (an admin's call: nobody wins or loses)
 function MatchService:Victory(winner)
 	if phase == "victory" or phase == "loading" then
-		return
+		return false
 	end
+	frozen = nil
 	local results = self:Results(winner)
 	workspace:SetAttribute("Winner", winner) -- (the clients' fireworks, and anyone joining during the countdown)
 	setPhase("victory", Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS)
@@ -300,7 +326,7 @@ function MatchService:Victory(winner)
 	end)
 	self._nextMap = nextMap.key
 	local t = now()
-	for _, p in Players:GetPlayers() do
+	for _, p in self:People() do
 		local s = statsOf(p)
 		local team = teams:Team(p)
 		local info = {
@@ -315,7 +341,7 @@ function MatchService:Victory(winner)
 				info[k] = v
 			end
 		end
-		if team == nil then
+		if team == nil or winner == "draw" then
 			info.won = nil
 		end
 		local step, earned = progress:Award(p, info)
@@ -329,12 +355,18 @@ function MatchService:Victory(winner)
 	end
 	-- (no centre alert here: the results card says who won, and nothing else lands on top of it)
 	self.Ended:Fire(winner, results)
+	local ended = matchId
 	task.delay(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS, function()
-		self:NewMatch(self._nextMap)
+		if matchId == ended then -- (unless an admin already started a new one)
+			self:NewMatch(self._nextMap)
+		end
 	end)
+	return true
 end
 
 function MatchService:NewMatch(key)
+	frozen = nil
+	workspace:SetAttribute("Frozen", nil)
 	workspace:SetAttribute("Winner", nil)
 	setPhase("loading", 1)
 	build:Clear()
@@ -364,7 +396,14 @@ end
 -- The clock ----------------------------------------------------------------------------------------------------
 function MatchService:_tick()
 	local t = now()
-	if phase == "build" and t >= phaseEnds then
+	if frozen then
+		-- (held: the clock stays where it was, told to everyone about once a second)
+		phaseEnds = t + frozen
+		if t - (self._frozenSent or 0) >= 1 then
+			self._frozenSent = t
+			self:Broadcast()
+		end
+	elseif phase == "build" and t >= phaseEnds then
 		setPhase("fight", Constants.FIGHT_SECONDS)
 		Net.fireAll("Alert", "FIGHT!", Color3.fromRGB(30, 30, 34), 1.5)
 		Net.fireAll("Sfx", "horn")
@@ -373,7 +412,7 @@ function MatchService:_tick()
 		setPhase("build", Constants.BUILD_SECONDS)
 		Net.fireAll("Alert", "BUILD", Color3.fromRGB(40, 40, 46), 1.5)
 	end
-	if (phase == "build" or phase == "fight") and t - matchStart > Constants.WATCHDOG_SECONDS then
+	if (phase == "build" or phase == "fight") and not frozen and t - matchStart > Constants.WATCHDOG_SECONDS then
 		warn(`[MatchService] match {matchId} ran {math.floor(t - matchStart)} s: restarting (no winner)`)
 		self:NewMatch(Maps.next(mapKey).key)
 		return
@@ -450,9 +489,13 @@ function MatchService:Init(registry)
 	end)
 end
 
-function MatchService:OnPlayerReady(player)
+-- Into the match: a team (unless BotService already gave them a bot's), then a body now or at the next match.
+function MatchService:Join(player)
+	if Admins.spectating(player) then
+		return false
+	end
 	if not teams:Team(player) then
-		teams:Assign(player) -- (BotService may already have given them a bot's team)
+		teams:Assign(player)
 	end
 	statsOf(player)
 	if phase == "victory" or phase == "loading" then
@@ -460,6 +503,58 @@ function MatchService:OnPlayerReady(player)
 	else
 		self:Spawn(player)
 	end
+	self:Broadcast()
+	return true
+end
+
+-- Out of the match, still in the server (an admin starting to spectate): no stats, no respawn, no body.
+function MatchService:Leave(player)
+	stats[player] = nil
+	respawnAt[player] = nil
+	pending[player] = nil
+	self.SpawnAt[player] = nil
+	self:Broadcast()
+end
+
+-- Admin controls (AdminService) ---------------------------------------------------------------------------------
+-- End the phase now: "fight" from the build phase, "build" from the fight. Returns ok.
+function MatchService:SkipTo(target)
+	if frozen or (target ~= "fight" and target ~= "build") or phase == target then
+		return false
+	end
+	if phase ~= "build" and phase ~= "fight" then
+		return false
+	end
+	phaseEnds = now()
+	self:_tick()
+	return true
+end
+
+-- Hold the clock (on) or let it run again.
+function MatchService:Freeze(on)
+	if on and not frozen and (phase == "build" or phase == "fight") then
+		frozen = math.max(1, phaseEnds - now())
+	elseif not on and frozen then
+		phaseEnds = now() + frozen
+		frozen = nil
+	else
+		return false
+	end
+	workspace:SetAttribute("Frozen", frozen ~= nil or nil)
+	self:Broadcast()
+	return true
+end
+
+function MatchService:Frozen()
+	return frozen ~= nil
+end
+
+function MatchService:MapKey()
+	return mapKey
+end
+
+function MatchService:OnPlayerReady(player)
+	self:Join(player)
 	data:WhenClientReady(player, function()
 		Net.fire(player, "Match", self:Snapshot())
 		combat:Push(player)
