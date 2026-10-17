@@ -545,8 +545,28 @@ do
 	check("(a red wall and a blue cover at the line for the test)", okR == true and okB == true, `{rw} {bc}`)
 	whole(red)
 	whole(blue)
-	-- the TNT is a Robux unlock: not bought, it stays locked (the bow in hand) and the purchase is offered
+	-- the TNT is a Robux unlock, with one free throw an hour to try it
+	local ShopS = service("ShopService")
 	blue:SetAttribute("OwnsTNT", nil)
+	Data:Get(blue).tntTriedAt = nil
+	ShopS:RefreshTry(blue)
+	check("not bought: the free try is ready", blue:GetAttribute("TntTry") == true)
+	send(blue, "Equip", "tnt")
+	check("...so the TNT comes out", Combat:Weapon(blue) == "tnt", Combat:Weapon(blue))
+	Combat.Shot:Fire(blue, "tnt") -- (a throw on the try)
+	Engine.advance(1)
+	check(
+		"...one throw uses it up: an hour till the next, the bow back in hand",
+		blue:GetAttribute("TntTry") == false
+			and type(blue:GetAttribute("TntTryAt")) == "number"
+			and Combat:Weapon(blue) ~= "tnt",
+		`{blue:GetAttribute("TntTry")} {Combat:Weapon(blue)}`
+	)
+	Data:Get(blue).tntTriedAt -= Constants.TNT_TRY_SECONDS + 1
+	ShopS:RefreshTry(blue)
+	check("...an hour later it's back", blue:GetAttribute("TntTry") == true)
+	Data:Get(blue).tntTriedAt = os.time()
+	ShopS:RefreshTry(blue)
 	send(blue, "Equip", "tnt")
 	check("TNT not bought: locked, the bow stays in hand", Combat:Weapon(blue) ~= "tnt", Combat:Weapon(blue))
 	-- bought (the game pass): for good
@@ -650,7 +670,8 @@ do
 	-- the fuse: thrown up into the air it goes off when the fuse runs out
 	Engine.advance(tnt.cooldown)
 	send(blue, "Draw", true)
-	Engine.advance(tnt.draw + 0.05)
+	-- (wound up most of the way: high enough to stay up the whole fuse, under the ceiling a full throw now reaches)
+	Engine.advance(tnt.draw * 0.75)
 	local mf = mark()
 	send(blue, "Shoot", eye(blue), Vector3.new(0, 1, 0), 81)
 	Engine.advance(Constants.TNT_FUSE - 0.15)

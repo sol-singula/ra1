@@ -545,7 +545,19 @@ local function shopTab(body)
 			props.Parent = box
 			Icons.weapon("tnt", team, props)
 		end)
-		label(card, "Name", Shop.TNT.name, 128, 10, W - 290, 24, 20, C.ink, nil, Theme.Display)
+		label(
+			card,
+			"Name",
+			Shop.TNT.was and `{Shop.TNT.name}   50% OFF (was {Shop.TNT.was})` or Shop.TNT.name,
+			128,
+			10,
+			W - 290,
+			24,
+			20,
+			C.ink,
+			nil,
+			Theme.Display
+		)
 		label(card, "Desc", Shop.TNT.desc, 128, 38, W - 290, 34, 13, C.ink)
 		priceButton(card, "BuyTnt", W - 154, 30, 144, 44, { robux = Shop.TNT.robux }, "gold", function()
 			Net.send("Buy", "robux", "tnt")

@@ -15,12 +15,14 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Constants = require(ReplicatedStorage.Shared.Constants)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Locker = require(ReplicatedStorage.Shared.Data.Locker)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Season = require(ReplicatedStorage.Shared.Data.Season)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 
 local ShopService = {
 	Name = "ShopService",
@@ -28,7 +30,7 @@ local ShopService = {
 	Bought = Signal.new("ShopService.Bought"), -- (player, what, shards?, robux?)
 }
 
-local data, economy, season, progress
+local data, economy, season, progress, combat
 
 -- (the same clock the clients read: the shop's rotation must agree on both sides)
 function ShopService.now()
@@ -127,6 +129,45 @@ function ShopService:GrantStarter(player)
 	return true
 end
 
+-- The free TNT try: one throw an hour for anyone who hasn't bought it (profile.tntTriedAt, os.time). Sets the
+-- attributes the hotbar and every check read: TntTry (ready now), TntTryAt (when the next one comes).
+function ShopService:RefreshTry(player)
+	local p = data:Get(player)
+	if not p or player:GetAttribute("OwnsTNT") == true then
+		player:SetAttribute("TntTry", nil)
+		player:SetAttribute("TntTryAt", nil)
+		return
+	end
+	local at = (p.tntTriedAt or 0) + Constants.TNT_TRY_SECONDS
+	local ready = os.time() >= at
+	if player:GetAttribute("TntTry") ~= ready then
+		player:SetAttribute("TntTry", ready)
+	end
+	player:SetAttribute("TntTryAt", (not ready) and at or nil)
+end
+
+-- A TNT thrown on the free try: used up (the hour starts now), and the bow back in hand
+function ShopService:UseTry(player)
+	local p = data:Get(player)
+	if not p or player:GetAttribute("OwnsTNT") == true then
+		return false
+	end
+	p.tntTriedAt = os.time()
+	self:RefreshTry(player)
+	task.delay(0.6, function()
+		if player.Parent and Weapons.locked("tnt", player) then
+			combat:Equip(player, Weapons.DEFAULT)
+		end
+	end)
+	Notify.to(
+		player,
+		`That was your free TNT! Get it for good: {Shop.TNT.robux} Robux (50% off)`,
+		"info",
+		{ icon = "🧨", seconds = 5 }
+	)
+	return true
+end
+
 -- The TNT for good (Shop.TNT): saved, and the attribute every check reads (Weapons.locked)
 function ShopService:GrantTNT(player, quiet)
 	local p = data:Get(player)
@@ -134,6 +175,8 @@ function ShopService:GrantTNT(player, quiet)
 		return false
 	end
 	player:SetAttribute("OwnsTNT", true)
+	player:SetAttribute("TntTry", nil)
+	player:SetAttribute("TntTryAt", nil)
 	if p.tnt then
 		return false
 	end
@@ -268,6 +311,22 @@ function ShopService:Init(registry)
 	economy = registry.EconomyService
 	season = registry.SeasonService
 	progress = registry.ProgressService
+	combat = registry.CombatService
+	-- (the free try: a throw without the TNT bought uses it up)
+	combat.Shot:Connect(function(player, key)
+		if key == "tnt" and Weapons.trying(key, player) then
+			self:UseTry(player)
+		end
+	end)
+	-- (the hour comes round: the try is back)
+	task.spawn(function()
+		while true do
+			task.wait(5)
+			for _, player in Players:GetPlayers() do
+				pcall(self.RefreshTry, self, player)
+			end
+		end
+	end)
 	-- (a tap on the locked TNT: the purchase, right there)
 	registry.CombatService.Locked:Connect(function(player, key)
 		if key == "tnt" then
@@ -326,6 +385,7 @@ function ShopService:OnPlayerReady(player, profile)
 	if profile and profile.tnt then
 		player:SetAttribute("OwnsTNT", true)
 	end
+	self:RefreshTry(player)
 	task.spawn(function()
 		-- (bought on the website, or a save that missed it: the pass itself says so)
 		if Shop.TNT.id ~= 0 and player:GetAttribute("OwnsTNT") ~= true then

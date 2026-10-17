@@ -45,12 +45,14 @@ Shop.STARTER = {
 	cosmetic = "starter_founder",
 	desc = "600 Shards and the Founder banner",
 }
--- Robux (a game pass, once): TNT for good. Without it the TNT still sits on the hotbar, locked with its price; a
--- tap there opens the purchase. (Bots always have it: it's how everyone sees what it does.)
+-- Robux (a game pass, once): TNT for good. Without it the TNT still sits on the hotbar, locked with its price (50%
+-- off), and one free throw an hour (Constants.TNT_TRY_SECONDS) lets them try it; a tap on the locked slot opens the
+-- purchase. (Bots always have it: it's how everyone sees what it does.)
 Shop.TNT = {
 	key = "tnt",
 	name = "TNT",
-	robux = 149,
+	robux = 75, -- (50% off: the tag and the old price show beside it)
+	was = 149,
 	id = 2036241176, -- (a game pass; 0 would mean not on sale, free in Studio)
 	desc = "Yours forever: lob it to blow up walls and knock out anyone close",
 }

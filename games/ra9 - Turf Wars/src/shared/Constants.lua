@@ -59,10 +59,11 @@ Constants.ASSIST_WINDOW = 6 -- damage within this many seconds of a kill is an a
 -- it touches (or when its fuse runs out)
 Constants.TNT_GRAVITY = 95 -- studs/s² (heavier than an arrow: a real lob)
 Constants.TNT_LIFT = 0.42 -- the throw leaves this much above where you look (a lob, not a line)
-Constants.TNT_FUSE = 1.2 -- seconds: in the air this long, it goes off where it is
+Constants.TNT_FUSE = 1.7 -- seconds: in the air this long, it goes off where it is
 Constants.TNT_RADIUS = 9 -- studs: enemy structures this close take the blast (falling off with distance)
 Constants.TNT_CORE = 5 -- studs: enemies this close (and in the open from the blast) are knocked out
 Constants.TNT_STRUCTURE = { 520, 160 } -- structure damage at the middle of the blast, and at its edge
+Constants.TNT_TRY_SECONDS = 3600 -- without the TNT bought: one free throw this often, to try it
 Constants.TNT_RED = Color3.fromRGB(200, 34, 30) -- (the sticks, whoever throws them)
 Constants.TNT_PUSH = 55 -- studs/s: enemies in the blast but out of the core are thrown back this hard (less further out)
 
@@ -82,7 +83,7 @@ Constants.MIN_SIDE = 1 -- the fewest on a side: bots only make up the odd person
 Constants.BOT_SPEED = 16 -- a little slower than a person walking
 Constants.BOT_RANGE = 150 -- studs: how far they look for someone to shoot
 Constants.BOT_SPREAD = 2.6 -- degrees of aim error (more at range): beatable, not helpless
-Constants.BOT_TNT_RANGE = { 14, 46 } -- studs: a bot throws TNT at someone (or a wall in its way) this far off...
+Constants.BOT_TNT_RANGE = { 14, 70 } -- studs: a bot throws TNT at someone (or a wall in its way) this far off...
 Constants.BOT_TNT_CHANCE = 0.35 -- ...this often when it's ready (else the bow)
 Constants.BOT_RETREAT_HP = 35 -- a bot this hurt falls back behind cover
 -- the first-match boost (TutorialService): only while a new player is alone with the bot in their first match
