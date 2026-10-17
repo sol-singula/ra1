@@ -13,6 +13,7 @@ The rules as pure functions (no Instances), shared by the server, the client and
   Formulas.boxDistance(p, min, max)           from a point to the nearest point of a box (0 inside)
   Formulas.segmentSphere(a, b, c, r)          the fraction along a→b where it first touches the sphere, or nil
   Formulas.segmentBox(a, b, min, max)         ...the axis-aligned box, or nil
+  Formulas.segmentPart(a, b, cf, size, shape) ...a part's real shape: turned box, cylinder (axis X) or ball
   Formulas.cellOf(x, z) / cellCenter(cx, cz)  the 4-stud building grid
 ]]
 local Constants = require(script.Parent.Constants)
@@ -158,6 +159,50 @@ function Formulas.segmentBox(a, b, mn, mx)
 		end
 	end
 	return tmin
+end
+
+-- Segment a→b against a part as it really is (an arrow is a point, so it slips through any gap): a box turned by
+-- its CFrame, a cylinder along its X axis, or a ball. The entry fraction in [0, 1], or nil.
+function Formulas.segmentPart(a, b, cf, size, shape)
+	if shape == "Ball" then
+		return Formulas.segmentSphere(a, b, cf.Position, math.min(size.X, size.Y, size.Z) / 2)
+	end
+	local la, lb = cf:PointToObjectSpace(a), cf:PointToObjectSpace(b)
+	local half = size / 2
+	local t = Formulas.segmentBox(la, lb, -half, half)
+	if not t or shape ~= "Cylinder" then
+		return t
+	end
+	-- the cylinder: inside the box, and inside the circle across Y and Z
+	local r = math.min(size.Y, size.Z) / 2
+	local d = lb - la
+	local oy, oz, dy, dz = la.Y, la.Z, d.Y, d.Z
+	local A = dy * dy + dz * dz
+	local C = oy * oy + oz * oz - r * r
+	local enter, leave = 0, 1
+	if A < 1e-9 then
+		if C > 0 then
+			return nil
+		end
+	else
+		local B = 2 * (oy * dy + oz * dz)
+		local disc = B * B - 4 * A * C
+		if disc < 0 then
+			return nil
+		end
+		local sq = math.sqrt(disc)
+		enter, leave = math.max(0, (-B - sq) / (2 * A)), math.min(1, (-B + sq) / (2 * A))
+	end
+	-- (and between the end caps)
+	local x0, x1 = 0, 1
+	if math.abs(d.X) > 1e-9 then
+		local t1, t2 = (-half.X - la.X) / d.X, (half.X - la.X) / d.X
+		x0, x1 = math.min(t1, t2), math.max(t1, t2)
+	elseif math.abs(la.X) > half.X then
+		return nil
+	end
+	local tin, tout = math.max(enter, x0, 0), math.min(leave, x1, 1)
+	return tin <= tout and tin or nil
 end
 
 function Formulas.boxesOverlap(aMin, aMax, bMin, bMax)

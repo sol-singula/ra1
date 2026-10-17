@@ -89,8 +89,9 @@ function ArenaService:Paint(frontline, team)
 	end
 end
 
-function ArenaService:AddBox(id, mn, mx)
-	extra[id] = { min = mn, max = mx, id = id }
+-- parts: the solid parts inside the box (arrows test those, so they fly through the gaps), or nil for a plain box
+function ArenaService:AddBox(id, mn, mx, parts)
+	extra[id] = { min = mn, max = mx, id = id, parts = parts }
 end
 
 function ArenaService:RemoveBox(id)

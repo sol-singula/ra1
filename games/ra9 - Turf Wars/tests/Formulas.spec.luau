@@ -181,6 +181,50 @@ check(
 	Formulas.segmentBox(Vector3.new(-5, 5, 1), Vector3.new(5, 5, 1), Vector3.zero, Vector3.new(2, 2, 2)) == nil
 )
 
+-- an arrow is a point: it slips through anything that isn't really there
+do
+	local CF = Engine.CFrame
+	-- a thin plank turned 45°: its axis-aligned box is huge, the plank itself is not
+	local plank = CF.new(0, 0, 0) * CF.Angles(0, math.rad(45), 0)
+	local size = Vector3.new(8, 2, 0.4)
+	check(
+		"a turned plank: an arrow through the empty corner of its box flies on",
+		Formulas.segmentPart(Vector3.new(0.6, 0, 2.4), Vector3.new(5, 0, 2.4), plank, size, "Block") == nil
+			and Formulas.segmentBox(
+					Vector3.new(0.6, 0, 2.4),
+					Vector3.new(5, 0, 2.4),
+					Vector3.new(-3, -1, -3),
+					Vector3.new(3, 1, 3)
+				)
+				~= nil
+	)
+	check(
+		"...through the plank itself, it stops",
+		Formulas.segmentPart(Vector3.new(-5, 0, 0), Vector3.new(5, 0, 0), plank, size, "Block") ~= nil
+	)
+	-- a round column (a cylinder stood up): past the corner of its square, an arrow flies on
+	local column = CF.new(0, 0, 0) * CF.Angles(0, 0, math.rad(90))
+	local csize = Vector3.new(10, 4, 4)
+	check(
+		"a round column: past its square's corner, the arrow flies on",
+		Formulas.segmentPart(Vector3.new(-5, 0, 1.8), Vector3.new(5, 0, 1.8 - 10), column, csize, "Cylinder") == nil
+			or Formulas.segmentPart(Vector3.new(-5, 0, 1.9), Vector3.new(1.9, 0, -5), column, csize, "Cylinder")
+				== nil
+	)
+	local tc = Formulas.segmentPart(Vector3.new(-5, 0, 0), Vector3.new(5, 0, 0), column, csize, "Cylinder")
+	check("...into it, it stops at its face", tc and near(tc, 0.3), tc)
+	check(
+		"a ball: only the ball",
+		Formulas.segmentPart(
+			Vector3.new(-5, 1.8, 1.8),
+			Vector3.new(5, 1.8, 1.8),
+			CF.new(0, 0, 0),
+			Vector3.new(4, 4, 4),
+			"Ball"
+		) == nil
+	)
+end
+
 -- Structures and the grid --------------------------------------------------------------------------------------
 check("seven structures", #Structures.list == 7)
 for _, s in Structures.list do
