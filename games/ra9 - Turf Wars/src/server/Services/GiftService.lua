@@ -7,6 +7,8 @@ locker on it, so they learn where it lives and how to wear it.
   The kinds go round: trail, kill effect, bow, banner, skipping a kind they've already worn a gift of. Cheaper ones
   first (common, rare), an epic now and then (the 3rd and the 5th). Up to Constants.GIFT_MAX, and it stops once
   they've worn a gift of each of trail, effect and bow, or bought anything.
+  After the gifts, until they've bought: a first-buy offer each match instead (GiftService:Offer: the day's 70% off
+  deal, the TNT, the Starter Pack, in turn).
   After they've bought: a "NEW IN THE SHOP" end card Constants.GIFT_NUDGES more times, then nothing.
 
 Kept in the profile (profile.gifts): n (given), keys (what), wore ({ [kind] = true }), bought, nudges.
@@ -106,6 +108,30 @@ local function pick(player, p, g, kind)
 	return pool[rng:NextInteger(1, #pool)]
 end
 
+-- The end screen's first-buy offer, round the ones that apply: the day's deal (while its hour runs), the TNT (not
+-- bought yet), the Starter Pack (not bought yet). g.offers counts them. nil when none apply.
+function GiftService:Offer(player, g)
+	local p = data:Get(player)
+	local list = {}
+	if type(player:GetAttribute("Deal")) == "string" then
+		table.insert(
+			list,
+			{ offer = "deal", key = player:GetAttribute("Deal"), ends = player:GetAttribute("DealEnds") }
+		)
+	end
+	if player:GetAttribute("OwnsTNT") ~= true then
+		table.insert(list, { offer = "tnt", key = "tnt" })
+	end
+	if p and not p.starter then
+		table.insert(list, { offer = "starter", key = "starter" })
+	end
+	if #list == 0 then
+		return nil
+	end
+	g.offers = (g.offers or 0) + 1
+	return list[(g.offers - 1) % #list + 1]
+end
+
 function GiftService:Give(player)
 	local g, p = giftsOf(player)
 	if not g then
@@ -119,6 +145,11 @@ function GiftService:Give(player)
 		return nil
 	end
 	if self:Done(player) then
+		-- (no more free ones and nothing bought yet: a first-buy offer instead, a different one each match)
+		local offer = self:Offer(player, g)
+		if offer then
+			Net.fire(player, "Gift", offer)
+		end
 		return nil
 	end
 	local kind = kindFor(g)

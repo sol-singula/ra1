@@ -90,11 +90,12 @@ check("someone else's wall doesn't count", HookS:State(player).i == 2 and HookS:
 Build.Built:Fire(player, {})
 Engine.advance(0.3)
 check("a wall of theirs: next, PUSH THE LINE", HookS:State(player).i == 3)
+player:SetAttribute("OwnsTNT", true) -- (bought: the TNT mission is theirs to do)
 for _ = 1, 3 do
 	Match.Pushed:Fire(0, Teams:Team(player), player, foe)
 end
 Engine.advance(0.3)
--- the TNT mission: their free try is there (a new player), so it waits for a throw
+-- the TNT mission: theirs (bought), so it waits for a throw
 check("3 pushes: next, THROW THE TNT", HookS:State(player).i == 4, HookS:State(player).i)
 Combat.Shot:Fire(player, "bow")
 check("a bow shot isn't a TNT throw", HookS:State(player).i == 4)
@@ -169,7 +170,7 @@ check("the gamepad hint shows over the hotbar", Pad.hint().Visible == true)
 Match:SkipTo("fight")
 Engine.advance(1)
 check("(the fight)", Store.phase() == "fight", Store.phase())
--- (the TNT theirs, so R1 has somewhere to go: their free try went on the TNT mission)
+-- (the TNT theirs, so R1 has somewhere to go)
 player:SetAttribute("OwnsTNT", true)
 Engine.advance(0.1)
 local before = (Store.get("me") or {}).weapon

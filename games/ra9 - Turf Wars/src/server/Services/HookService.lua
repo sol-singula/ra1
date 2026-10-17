@@ -10,7 +10,7 @@ Counting (only the current step counts):
   ko     CombatService.Killed, they were the killer (not themselves)
   build  BuildService.Built by them
   push   MatchService.Pushed with them as the killer
-  tnt    CombatService.Shot with the TNT (the free try counts; a step whose TNT is locked for them is passed by)
+  tnt    CombatService.Shot with the TNT (a step whose TNT is locked for them is passed by)
   win    MatchService.Ended, their team won
 
   Net "Hook" (server -> client):

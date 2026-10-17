@@ -6,7 +6,7 @@ Roblox subscription, when its id is set). Claiming the pass's tiers too. Cosmeti
 Robux receipts are granted exactly once (EconomyService:Receipt) and saved straight after. A product whose id is
 still 0 is given for free in Studio, so the whole shop can be tried before the products exist.
 
-  Net "Buy" ("item", key) | ("bundle") | ("robux", productKey | "starter")
+  Net "Buy" ("item", key) | ("bundle") | ("robux", productKey | "starter" | "tnt" | "deal_<key>")
   Net "Claim" (tier, "f" | "p")
   ShopService:Reroll(player)   an admin's RESET SHOP: 4 new daily items for this player (until they leave)
 ]]
@@ -15,14 +15,12 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local Constants = require(ReplicatedStorage.Shared.Constants)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Locker = require(ReplicatedStorage.Shared.Data.Locker)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Season = require(ReplicatedStorage.Shared.Data.Season)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Signal = require(ReplicatedStorage.Shared.Signal)
-local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 
 local ShopService = {
 	Name = "ShopService",
@@ -30,7 +28,7 @@ local ShopService = {
 	Bought = Signal.new("ShopService.Bought"), -- (player, what, shards?, robux?)
 }
 
-local data, economy, season, progress, combat
+local data, economy, season, progress
 
 -- (the same clock the clients read: the shop's rotation must agree on both sides)
 function ShopService.now()
@@ -120,6 +118,9 @@ function ShopService:Grant(player, product)
 	local p = data:Get(player)
 	p.stats.robux = (p.stats.robux or 0) + (product.robux or 0)
 	self.Bought:Fire(player, product.key, nil, product.robux)
+	if product.cosmetic then
+		self:RefreshDeal(player) -- (the deal's item, bought either way: no deal left today)
+	end
 end
 
 function ShopService:GrantStarter(player)
@@ -135,45 +136,6 @@ function ShopService:GrantStarter(player)
 	return true
 end
 
--- The free TNT try: one throw an hour for anyone who hasn't bought it (profile.tntTriedAt, os.time). Sets the
--- attributes the hotbar and every check read: TntTry (ready now), TntTryAt (when the next one comes).
-function ShopService:RefreshTry(player)
-	local p = data:Get(player)
-	if not p or player:GetAttribute("OwnsTNT") == true then
-		player:SetAttribute("TntTry", nil)
-		player:SetAttribute("TntTryAt", nil)
-		return
-	end
-	local at = (p.tntTriedAt or 0) + Constants.TNT_TRY_SECONDS
-	local ready = os.time() >= at
-	if player:GetAttribute("TntTry") ~= ready then
-		player:SetAttribute("TntTry", ready)
-	end
-	player:SetAttribute("TntTryAt", (not ready) and at or nil)
-end
-
--- A TNT thrown on the free try: used up (the hour starts now), and the bow back in hand
-function ShopService:UseTry(player)
-	local p = data:Get(player)
-	if not p or player:GetAttribute("OwnsTNT") == true then
-		return false
-	end
-	p.tntTriedAt = os.time()
-	self:RefreshTry(player)
-	task.delay(0.6, function()
-		if player.Parent and Weapons.locked("tnt", player) then
-			combat:Equip(player, Weapons.DEFAULT)
-		end
-	end)
-	Notify.to(
-		player,
-		`That was your free TNT! Get it for good: {Shop.TNT.robux} Robux (50% off)`,
-		"info",
-		{ icon = "🧨", seconds = 5 }
-	)
-	return true
-end
-
 -- The TNT for good (Shop.TNT): saved, and the attribute every check reads (Weapons.locked)
 function ShopService:GrantTNT(player, quiet)
 	local p = data:Get(player)
@@ -181,8 +143,6 @@ function ShopService:GrantTNT(player, quiet)
 		return false
 	end
 	player:SetAttribute("OwnsTNT", true)
-	player:SetAttribute("TntTry", nil)
-	player:SetAttribute("TntTryAt", nil)
 	if p.tnt then
 		return false
 	end
@@ -197,6 +157,32 @@ function ShopService:GrantTNT(player, quiet)
 		self.Bought:Fire(player, "tnt", nil, Shop.TNT.robux)
 	end
 	return true
+end
+
+-- The day's deal (Shop.DEAL): picked on the first look of the UTC day, its hour from then (profile.deal: day, key,
+-- ends). The attributes the shop, the HUD and the end screen read: Deal (the product key, while it's on) and
+-- DealEnds (os time). Over, or bought: both cleared until tomorrow.
+function ShopService:RefreshDeal(player)
+	local p = data:Get(player)
+	if not p then
+		return
+	end
+	local t = self.now()
+	local day = Shop.dayOf(t)
+	local d = p.deal
+	if type(d) ~= "table" or d.day ~= day then
+		local pick = Shop.dealFor(player.UserId, day, function(k)
+			return Locker.owns(p, k)
+		end, RunService:IsStudio())
+		d = { day = day, key = pick and pick.key or nil, ends = t + Shop.DEAL.seconds }
+		p.deal = d
+	end
+	local product = d.key and Shop.products[d.key]
+	local live = product ~= nil and t < d.ends and not Locker.owns(p, product.cosmetic)
+	if player:GetAttribute("Deal") ~= (live and d.key or nil) then
+		player:SetAttribute("Deal", live and d.key or nil)
+	end
+	player:SetAttribute("DealEnds", live and d.ends or nil)
 end
 
 local function studio(player, name)
@@ -243,6 +229,9 @@ function ShopService:PromptRobux(player, key)
 	end
 	if product.cosmetic and (data:Get(player).owned or {})[product.cosmetic] then
 		return false, "That's already yours."
+	end
+	if product.deal and player:GetAttribute("Deal") ~= key then
+		return false, "That deal is over. A new one comes tomorrow!"
 	end
 	if key == "pass" and season:State(player).premium then
 		return false, "You have this season's pass."
@@ -320,22 +309,6 @@ function ShopService:Init(registry)
 	economy = registry.EconomyService
 	season = registry.SeasonService
 	progress = registry.ProgressService
-	combat = registry.CombatService
-	-- (the free try: a throw without the TNT bought uses it up)
-	combat.Shot:Connect(function(player, key)
-		if key == "tnt" and Weapons.trying(key, player) then
-			self:UseTry(player)
-		end
-	end)
-	-- (the hour comes round: the try is back)
-	task.spawn(function()
-		while true do
-			task.wait(5)
-			for _, player in Players:GetPlayers() do
-				pcall(self.RefreshTry, self, player)
-			end
-		end
-	end)
 	-- (a tap on the locked TNT: the purchase, right there)
 	registry.CombatService.Locked:Connect(function(player, key)
 		if key == "tnt" then
@@ -345,7 +318,21 @@ function ShopService:Init(registry)
 			end
 		end
 	end)
+	-- (the deal's hour running out, and tomorrow's coming round)
+	task.spawn(function()
+		while true do
+			task.wait(15)
+			for _, player in Players:GetPlayers() do
+				pcall(self.RefreshDeal, self, player)
+			end
+		end
+	end)
 	Net.on("Buy", function(player, kind, key)
+		-- (every Robux tap, with what it was for: the funnel's middle step)
+		local analytics = registry.AnalyticsService
+		if kind == "robux" and type(key) == "string" and analytics and analytics.track then
+			pcall(analytics.track, player, "buy_tap", { key = string.sub(key, 1, 32) })
+		end
 		local ok, why
 		if kind == "item" and type(key) == "string" then
 			ok, why = self:BuyItem(player, key)
@@ -394,7 +381,7 @@ function ShopService:OnPlayerReady(player, profile)
 	if profile and profile.tnt then
 		player:SetAttribute("OwnsTNT", true)
 	end
-	self:RefreshTry(player)
+	self:RefreshDeal(player)
 	task.spawn(function()
 		-- (bought on the website, or a save that missed it: the pass itself says so)
 		if Shop.TNT.id ~= 0 and player:GetAttribute("OwnsTNT") ~= true then

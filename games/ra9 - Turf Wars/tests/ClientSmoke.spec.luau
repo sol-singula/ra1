@@ -194,10 +194,6 @@ end
 -- the TNT before it's bought: on the hotbar under a lock and its price; 2 keeps the bow in hand (and offers the
 -- purchase: in Studio, with no pass id yet, that gives it free)
 do
-	-- (the hour's free try used up)
-	local ShopS = Engine.require(tree.server.Services.ShopService)
-	Engine.require(tree.server.Services.PlayerDataService):Get(player).tntTriedAt = os.time()
-	ShopS:RefreshTry(player)
 	Engine.advance(0.2)
 	local lock = refs.bows.tnt.lock
 	local price = lock and lock:FindFirstChild("Price", true)

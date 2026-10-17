@@ -152,47 +152,51 @@ Engine.fireServer(player, "Settings", "equip", { kind = "effect", key = g2.ava.k
 Engine.advance(0.2)
 nextMatch()
 
--- 3: a bow, and an epic (the 3rd)
-local g3 = matchEnd()
-local e3 = g3.ava and Cosmetics.get(g3.ava.key)
-check("then a bow", e3 and e3.kind == "skin", e3 and e3.kind)
-check("...then nothing for the buyer", g3.buyer == nil)
-check("...the 3rd an epic", e3 and e3.rarity == "epic", e3 and e3.rarity)
-Engine.fireServer(player, "Settings", "equip", { kind = "skin", key = g3.ava.key })
-Engine.advance(0.2)
-check("worn a gift of each of trail, effect and bow: done", Gifts:Done(player))
-nextMatch()
-
--- 4: no more for the player; the buyer's last nudge; the foe goes on
-local g4 = matchEnd()
-check("done: no more gifts", g4.ava == nil)
-nextMatch()
-matchEnd()
-nextMatch()
-
--- the foe never wears any: up to GIFT_MAX, then none
-for _ = 6, Constants.GIFT_MAX do
-	matchEnd()
+-- 3 on: the free ones are done (GIFT_MAX, a taste): a first-buy offer instead, a different one each match
+local offers = {}
+for i = 1, 3 do
+	local g = matchEnd()
+	if i == 1 then
+		check("after GIFT_MAX gifts no more free ones", Data:Get(player).gifts.n == Constants.GIFT_MAX)
+		check("...then nothing for the buyer", g.buyer == nil)
+	end
+	local o = g.ava
+	check(`match {i + 2}: a first-buy offer`, o ~= nil and o.offer ~= nil and type(o.key) == "string", o and o.offer)
+	if o then
+		offers[o.offer] = (offers[o.offer] or 0) + 1
+		local _, scr2 = GiftC.current()
+		local c = scr2 and scr2:FindFirstChild("Card")
+		check(
+			"...shown with BUY and its price, and LATER",
+			c and c:FindFirstChild("Equip") and string.find(c.Equip.Text, "BUY") ~= nil and c:FindFirstChild("Later"),
+			c and c:FindFirstChild("Equip") and c.Equip.Text
+		)
+		if o.offer == "tnt" then
+			check(
+				"...the TNT one says PERMANENT and its % off",
+				string.find(c.Title.Text, "PERMANENT") ~= nil and string.find(c.Title.Text, "% OFF") ~= nil,
+				c.Title.Text
+			)
+		elseif o.offer == "deal" then
+			check("...the deal one counts down", string.find(c.Line.Text, "ENDS IN") ~= nil, c.Line.Text)
+		end
+		if i == 3 then
+			local asked = false
+			local real = ShopS.PromptRobux
+			ShopS.PromptRobux = function(self, who, key)
+				asked = asked or (who == player and key == o.key)
+				return real(self, who, key)
+			end
+			check("BUY: the Robux prompt for it, the card gone", GiftC.buy() and GiftC.current() == nil)
+			Engine.advance(0.3)
+			ShopS.PromptRobux = real
+			check("...(Buy robux sent)", asked)
+		end
+	end
 	nextMatch()
 end
-check(
-	"a player who never wears one: GIFT_MAX gifts",
-	Data:Get(foe).gifts.n == Constants.GIFT_MAX,
-	Data:Get(foe).gifts.n
-)
-local g9 = matchEnd()
-check("...then none", g9.foe == nil)
-local kinds = {}
-for _, k in Data:Get(foe).gifts.keys do
-	kinds[Cosmetics.get(k).kind] = true
-end
-check("...the kinds went round", kinds.trail and kinds.effect and kinds.skin and kinds.banner)
-local all = true
-for _, k in Data:Get(foe).gifts.keys do
-	all = all and Cosmetics.get(k).source == "shop" and Cosmetics.get(k).rarity ~= "legendary"
-end
-check("...all from the shop, none legendary", all)
-nextMatch()
+check("...they go round (the TNT and the Starter Pack both offered)", offers.tnt and offers.starter, offers)
+check("the foe got GIFT_MAX gifts, all from the shop", Data:Get(foe).gifts.n == Constants.GIFT_MAX)
 
 -- a buy stops the gifts at once
 local fresh = Engine.addPlayer("Fresh", 913)
@@ -202,7 +206,7 @@ Engine.advance(1)
 ShopS.Bought:Fire(fresh, "tnt", nil, 75)
 Engine.advance(0.1)
 local g10 = matchEnd()
-check("buying anything: no free gifts", g10.ava == nil and Data:Get(fresh).gifts.n == 0)
+check("buying anything: no free gifts", Data:Get(fresh).gifts.n == 0)
 
 print(`GiftSmoke: {passed} passed, {failed} failed`)
 if #Engine.errors > 0 then

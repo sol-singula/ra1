@@ -609,6 +609,157 @@ local function premiumRow(body, y)
 	return y + CH + 22
 end
 
+-- mm:ss (or h:mm:ss) for the deal's countdown
+local function clock(seconds)
+	seconds = math.max(0, math.floor(seconds))
+	local h, m, s = seconds // 3600, (seconds % 3600) // 60, seconds % 60
+	if h > 0 then
+		return string.format("%d:%02d:%02d", h, m, s)
+	end
+	return string.format("%d:%02d", m, s)
+end
+PanelController.clock = clock
+
+-- The day's deal (Shop.DEAL, the "Deal" attribute the server sets): one Robux-only item 70% off for its hour, the
+-- countdown ticking. Nothing while there's no deal on.
+local function dealCard(body, y)
+	local key = player:GetAttribute("Deal")
+	local ends = tonumber(player:GetAttribute("DealEnds"))
+	local d = type(key) == "string" and Shop.products[key]
+	local it = d and Cosmetics.get(d.cosmetic)
+	if not (d and it and ends) then
+		return y
+	end
+	local RED = Color3.fromRGB(230, 40, 60)
+	local card = frame(body, "Deal", 0, y, W, 132, Color3.fromRGB(30, 18, 30), RED)
+	card.ClipsDescendants = true
+	local ribbon = Theme.new("Frame", {
+		Name = "Ribbon",
+		Position = UDim2.fromOffset(0, 0),
+		Size = UDim2.fromOffset(W, 26),
+		BackgroundColor3 = RED,
+		BorderSizePixel = 0,
+		Parent = card,
+	})
+	label(
+		ribbon,
+		"Words",
+		`⚡ TODAY'S DEAL  ·  {math.floor(Shop.DEAL.off * 100 + 0.5)}% OFF ⚡`,
+		10,
+		3,
+		W - 200,
+		20,
+		16,
+		C.white,
+		nil,
+		Theme.Display
+	)
+	local timer = label(
+		ribbon,
+		"Timer",
+		`ENDS IN {clock(ends - now())}`,
+		W - 190,
+		3,
+		180,
+		20,
+		16,
+		C.white,
+		Enum.TextXAlignment.Right,
+		Theme.Display
+	)
+	preview(card, it, 10, 34, 120, 90)
+	label(card, "Name", it.name, 142, 34, W - 320, 26, 22, C.white, nil, Theme.Display)
+	label(
+		card,
+		"Kind",
+		(it.kind == "effect" and "KILL EFFECT" or Cosmetics.KIND_NAME[it.kind]) .. "  ·  yours forever",
+		142,
+		62,
+		W - 320,
+		16,
+		12,
+		Color3.fromRGB(220, 200, 220)
+	)
+	label(
+		card,
+		"Was",
+		`was {Format.robux(d.was)}`,
+		142,
+		84,
+		W - 320,
+		18,
+		15,
+		Color3.fromRGB(255, 150, 160),
+		nil,
+		Theme.Display
+	)
+	local strike = Theme.new("Frame", {
+		Name = "Strike",
+		Position = UDim2.fromOffset(142, 93),
+		Size = UDim2.fromOffset(110, 2),
+		BackgroundColor3 = Color3.fromRGB(255, 150, 160),
+		BorderSizePixel = 0,
+		Parent = card,
+	})
+	strike:SetAttribute("Layer", true) -- (a line through the old price on purpose)
+	local buy = priceButton(card, "BuyDeal", W - 170, 50, 160, 56, { robux = d.robux }, "gold", function()
+		waitFor(60, function(np)
+			return Locker.owns(np, it.key)
+		end, function()
+			celebrate({ item = it, title = "YOURS FOREVER!" })
+		end)
+		Net.send("Buy", "robux", d.key)
+	end)
+	refs.deal = buy
+	animate(card, function(t)
+		local left = ends - now()
+		timer.Text = left > 0 and `ENDS IN {clock(left)}` or "DEAL OVER"
+		local s = 1 + 0.04 * math.sin(t * 6)
+		buy.Size = UDim2.fromOffset(160 * s, 56 * s)
+	end)
+	return y + 132 + 14
+end
+
+-- The TNT (a game pass, for good): at the top of the shop until it's yours, as on the hotbar
+local function tntCard(body, y, team)
+	if player:GetAttribute("OwnsTNT") == true then
+		return y
+	end
+	local off = Shop.off(Shop.TNT)
+	y = section(
+		body,
+		"TntLabel",
+		"🧨 TNT: PERMANENT",
+		y,
+		off and `{off}% OFF  ·  was {Format.robux(Shop.TNT.was)}` or nil
+	)
+	local card = frame(body, "Tnt", 0, y, W, 104, GOLD_SOFT, GOLD)
+	picture(card, 8, 8, 110, 88, function(box, w, h)
+		local props = fill(w, h)
+		props.Parent = box
+		Icons.weapon("tnt", team, props)
+	end)
+	label(
+		card,
+		"Name",
+		off and `{Shop.TNT.name}  ·  PERMANENT  ·  {off}% OFF` or `{Shop.TNT.name}  ·  PERMANENT`,
+		128,
+		10,
+		W - 290,
+		24,
+		20,
+		C.ink,
+		nil,
+		Theme.Display
+	)
+	label(card, "Desc", Shop.TNT.desc, 128, 38, W - 290, 34, 13, C.ink)
+	label(card, "Note", "Buy once, keep it forever. No more locked slot.", 128, 76, W - 290, 16, 12, C.muted)
+	priceButton(card, "BuyTnt", W - 154, 30, 144, 44, { robux = Shop.TNT.robux }, "gold", function()
+		Net.send("Buy", "robux", "tnt")
+	end)
+	return y + 104 + 14
+end
+
 local function shopTab(body)
 	local p = profile()
 	local t = now()
@@ -632,6 +783,9 @@ local function shopTab(body)
 		Theme.Display
 	)
 	local y = 64
+	-- the day's deal and the TNT: first thing they see
+	y = dealCard(body, y)
+	y = tntCard(body, y, team)
 	-- PREMIUM: the Robux-only ones, always here, the loudest thing in the shop
 	y = premiumRow(body, y)
 	-- FEATURED: this week's bundle, 30% off
@@ -804,34 +958,6 @@ local function shopTab(body)
 		PanelController.buyTier()
 	end)
 	y += 104 + 14
-	-- the TNT (a game pass, for good): here until it's yours, as on the hotbar
-	if player:GetAttribute("OwnsTNT") ~= true then
-		y = section(body, "TntLabel", "UNLOCK FOR GOOD", y)
-		local card = frame(body, "Tnt", 0, y, W, 104)
-		picture(card, 8, 8, 110, 88, function(box, w, h)
-			local props = fill(w, h)
-			props.Parent = box
-			Icons.weapon("tnt", team, props)
-		end)
-		label(
-			card,
-			"Name",
-			Shop.TNT.was and `{Shop.TNT.name}   50% OFF (was {Shop.TNT.was})` or Shop.TNT.name,
-			128,
-			10,
-			W - 290,
-			24,
-			20,
-			C.ink,
-			nil,
-			Theme.Display
-		)
-		label(card, "Desc", Shop.TNT.desc, 128, 38, W - 290, 34, 13, C.ink)
-		priceButton(card, "BuyTnt", W - 154, 30, 144, 44, { robux = Shop.TNT.robux }, "gold", function()
-			Net.send("Buy", "robux", "tnt")
-		end)
-		y += 104 + 14
-	end
 	-- once
 	local oneTime = not p.starter or Shop.CLUB.subscriptionId ~= nil
 	if oneTime then
@@ -845,7 +971,21 @@ local function shopTab(body)
 				props.Parent = box
 				Icons.gift(team, props)
 			end)
-			label(card, "Name", Shop.STARTER.name, 128, 10, wide - 290, 24, 20, C.ink, nil, Theme.Display)
+			local off = Shop.off(Shop.STARTER)
+			label(
+				card,
+				"Name",
+				off and `{Shop.STARTER.name}  ·  {off}% OFF (was {Format.robux(Shop.STARTER.was)})`
+					or Shop.STARTER.name,
+				128,
+				10,
+				wide - 290,
+				24,
+				20,
+				C.ink,
+				nil,
+				Theme.Display
+			)
 			label(card, "Desc", Shop.STARTER.desc:gsub("◆", "Shards"), 128, 38, wide - 290, 18, 13, C.ink)
 			label(card, "Note", "The best deal in the shop. Only once!", 128, 60, wide - 290, 16, 12, C.muted)
 			priceButton(card, "BuyStarter", wide - 154, 30, 144, 44, { robux = Shop.STARTER.robux }, "gold", function()
@@ -2226,6 +2366,14 @@ function PanelController:init()
 	pcall(function()
 		game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 	end)
+	-- (the deal coming or going, the TNT bought: the shop follows while it's open)
+	for _, a in { "Deal", "OwnsTNT" } do
+		player:GetAttributeChangedSignal(a):Connect(function()
+			if PanelController.isOpen() and current == "shop" then
+				PanelController.refresh()
+			end
+		end)
+	end
 	-- (players coming and going: the list follows while it's open)
 	local function follow()
 		if PanelController.isOpen() and current == "players" then

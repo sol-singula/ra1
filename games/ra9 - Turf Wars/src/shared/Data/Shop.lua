@@ -39,22 +39,23 @@ Shop.TIER = { key = "tier", name = "+1 Pass Tier", robux = 39, id = 3719115693 }
 Shop.STARTER = {
 	key = "starter",
 	name = "Starter Pack",
-	robux = 99,
+	robux = 49,
+	was = 99, -- (its old price, shown struck beside it)
 	id = 2038113079, -- (a game pass)
 	shards = 600,
 	cosmetic = "starter_founder",
 	desc = "600 Shards and the Founder banner",
 }
--- Robux (a game pass, once): TNT for good. Without it the TNT still sits on the hotbar, locked with its price (50%
--- off), and one free throw an hour (Constants.TNT_TRY_SECONDS) lets them try it; a tap on the locked slot opens the
--- purchase. (Bots always have it: it's how everyone sees what it does.)
+-- Robux (a game pass, once): TNT for good. Without it the TNT still sits on the hotbar, locked with its price (80%
+-- off its old price), and a tap on the locked slot opens the purchase. No free throws: they see the bots' TNT and
+-- want it. (Bots always have it: it's how everyone sees what it does.)
 Shop.TNT = {
 	key = "tnt",
 	name = "TNT",
-	robux = 75, -- (50% off: the tag and the old price show beside it)
+	robux = 30, -- (80% off: the tag and the old price show beside it)
 	was = 149,
 	id = 2036241176, -- (a game pass; 0 would mean not on sale, free in Studio)
-	desc = "Yours forever: lob it to blow up walls and knock out anyone close",
+	desc = "PERMANENT: yours forever. Throw one every 3s: it blows up walls and knocks out anyone close",
 }
 -- A Roblox subscription (monthly); nil turns it off (nothing shows)
 Shop.CLUB =
@@ -91,6 +92,42 @@ for _, it in Cosmetics.list do
 	end
 end
 
+-- The daily deal: every UTC day each player gets one Robux-only item they don't have at Shop.DEAL.off, for
+-- Shop.DEAL.seconds from when they first see it that day (ShopService: the "Deal" and "DealEnds" attributes). The
+-- hour is real: once it's over the price goes back up until tomorrow's deal. Each deal price is its own developer
+-- product (Shop.DEAL_IDS, "deal_<key>"); an id of 0 leaves that item out of the deals.
+Shop.DEAL = { off = 0.7, seconds = 3600 }
+Shop.DEAL_IDS = {}
+Shop.DEALS = {}
+for _, prem in Shop.PREMIUM do
+	local d = {
+		key = "deal_" .. prem.key,
+		name = prem.name,
+		robux = math.max(1, math.floor(prem.robux * (1 - Shop.DEAL.off) + 0.5)),
+		was = prem.robux,
+		id = Shop.DEAL_IDS[prem.key] or 0,
+		cosmetic = prem.cosmetic,
+		deal = true,
+	}
+	table.insert(Shop.DEALS, d)
+end
+
+-- The day's deal for a player: a Robux-only item they don't own (owns(key) -> bool), the same all day on every
+-- server; nil when they own them all. inStudio: deals whose id is still 0 count too (given free there).
+function Shop.dealFor(userId, day, owns, inStudio)
+	local list = {}
+	for _, d in Shop.DEALS do
+		if (d.id ~= 0 or inStudio) and not (owns and owns(d.cosmetic)) then
+			table.insert(list, d)
+		end
+	end
+	if #list == 0 then
+		return nil
+	end
+	local x = ((tonumber(userId) or 0) % 1000003 * 7919 + day * 104729) % 2147483647
+	return list[x % #list + 1]
+end
+
 Shop.products = {} -- [key] = product
 for _, p in Shop.PACKS do
 	Shop.products[p.key] = p
@@ -98,8 +135,19 @@ end
 for _, p in Shop.PREMIUM do
 	Shop.products[p.key] = p
 end
+for _, p in Shop.DEALS do
+	Shop.products[p.key] = p
+end
 Shop.products.pass = Shop.PASS
 Shop.products.tier = Shop.TIER
+
+-- "80% OFF": the cut from an item's old price (it.was), or nil
+function Shop.off(it)
+	if not (it and it.was and it.robux and it.was > it.robux) then
+		return nil
+	end
+	return math.floor((1 - it.robux / it.was) * 100 + 0.5)
+end
 
 function Shop.productById(id)
 	if id == 0 then

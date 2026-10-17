@@ -37,8 +37,8 @@ Constants.FEEDBACK_REASONS = {
 	{ key = "pay", text = "Too much to buy", icon = "💸" },
 }
 -- The free gifts (GiftService): at each match's end, until they've bought something, a free shop cosmetic, to get
--- them into the locker; up to GIFT_MAX, stopping early once they've worn a gift of each of trail, effect and bow
-Constants.GIFT_MAX = 6
+-- them into the locker; up to GIFT_MAX (a taste, not a stream: after that each match ends on a first-buy offer)
+Constants.GIFT_MAX = 2
 Constants.GIFT_DELAY = 7 -- seconds after the win: after the results card (RESULTS_CARD_SECONDS), in the victory
 Constants.GIFT_NUDGES = 2 -- after they've bought: a "NEW IN THE SHOP" end card this many more times, then nothing
 Constants.FEEDBACK_ASK_DELAY = 6 -- seconds after a win before a winner is asked anything (after the fireworks start)
@@ -98,7 +98,6 @@ Constants.TNT_FUSE = 1.7 -- seconds: in the air this long, it goes off where it 
 Constants.TNT_RADIUS = 9 -- studs: enemy structures this close take the blast (falling off with distance)
 Constants.TNT_CORE = 5 -- studs: enemies this close (and in the open from the blast) are knocked out
 Constants.TNT_STRUCTURE = { 520, 160 } -- structure damage at the middle of the blast, and at its edge
-Constants.TNT_TRY_SECONDS = 3600 -- without the TNT bought: one free throw this often, to try it
 Constants.TNT_RED = Color3.fromRGB(200, 34, 30) -- (the sticks, whoever throws them)
 Constants.TNT_PUSH = 55 -- studs/s: enemies in the blast but out of the core are thrown back this hard (less further out)
 

@@ -40,6 +40,56 @@ local RARITY_COLOR = {
 local KIND_WORD = { trail = "TRAIL", effect = "KILL EFFECT", skin = "BOW", banner = "BANNER", title = "TITLE" }
 local EQUIP_SIZE = Vector2.new(300, 60)
 
+-- The first-buy offers (GiftService:Offer, once the free gifts are done): what each says, its price (and old price)
+local OFFERS = {
+	deal = {
+		top = "⚡ TODAY ONLY · 1 HOUR ⚡",
+		title = function(it)
+			return `{math.floor(Shop.DEAL.off * 100 + 0.5)}% OFF {string.upper(it.name)}!`
+		end,
+		price = function(g)
+			local d = Shop.products[g.key]
+			return d.robux, d.was
+		end,
+		line = function(_, was)
+			return `was {Format.robux(was)}  ·  yours forever`
+		end,
+	},
+	tnt = {
+		top = "🧨 YOUR FIRST UPGRADE 🧨",
+		title = function()
+			local off = Shop.off(Shop.TNT)
+			return off and `TNT · PERMANENT · {off}% OFF` or "TNT · PERMANENT"
+		end,
+		price = function()
+			return Shop.TNT.robux, Shop.TNT.was
+		end,
+		line = function(_, was)
+			return was and `was {Format.robux(was)}  ·  throw one every 3s, forever` or "throw one every 3s, forever"
+		end,
+		picture = function(props)
+			return Icons.weapon("tnt", Store.team() or "red", props)
+		end,
+	},
+	starter = {
+		top = "🎁 ONE TIME ONLY 🎁",
+		title = function()
+			local off = Shop.off(Shop.STARTER)
+			return off and `STARTER PACK · {off}% OFF` or "STARTER PACK"
+		end,
+		price = function()
+			return Shop.STARTER.robux, Shop.STARTER.was
+		end,
+		line = function(_, was)
+			local what = Shop.STARTER.desc:gsub("◆", "Shards")
+			return was and `{what}  ·  was {Format.robux(was)}` or what
+		end,
+		picture = function(props)
+			return Icons.gift(Store.team() or "red", props)
+		end,
+	},
+}
+
 local player = Players.LocalPlayer
 local gui
 local screen -- the end screen up now
@@ -96,6 +146,17 @@ function GiftController.equip()
 	else
 		PanelController.open("shop")
 	end
+	return true
+end
+
+-- An offer's BUY: the Robux prompt for it, the screen out of the way
+function GiftController.buy()
+	if not (shown and shown.offer) then
+		return false
+	end
+	local key = shown.key
+	close()
+	Net.send("Buy", "robux", key)
 	return true
 end
 
@@ -179,9 +240,19 @@ function GiftController.show(g)
 	if type(g) ~= "table" then
 		return nil
 	end
-	local it = g.key and Cosmetics.get(g.key)
-	if not g.nudge and not it then
-		return nil
+	local offer = g.offer and OFFERS[g.offer] and g
+	local it
+	if offer then
+		local d = Shop.products[g.key]
+		it = d and d.cosmetic and Cosmetics.get(d.cosmetic)
+		if g.offer == "deal" and not it then
+			return nil
+		end
+	else
+		it = g.key and Cosmetics.get(g.key)
+		if not g.nudge and not it then
+			return nil
+		end
 	end
 	shown = g
 	local color = it and RARITY_COLOR[it.rarity] or GOLD
@@ -221,7 +292,7 @@ function GiftController.show(g)
 		Name = "Card",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.48),
-		Size = UDim2.fromOffset(460, g.nudge and 250 or 430),
+		Size = UDim2.fromOffset(460, g.nudge and 250 or (offer and 420 or 430)),
 		BackgroundColor3 = C.white,
 		ZIndex = 2,
 		Parent = screen,
@@ -232,7 +303,84 @@ function GiftController.show(g)
 		edge.Thickness = 4
 	end
 	local burst = {}
-	if g.nudge then
+	local tick -- (the deal's countdown, stepped below)
+	if offer then
+		local o = OFFERS[g.offer]
+		local price, was = o.price(g)
+		text({
+			Name = "Count",
+			Text = o.top,
+			Position = UDim2.fromOffset(10, 12),
+			Size = UDim2.new(1, -20, 0, 18),
+			TextSize = 13,
+			TextColor3 = C.red,
+			Font = Theme.Display,
+			ZIndex = 3,
+			Parent = card,
+		})
+		text({
+			Name = "Title",
+			Text = o.title(it, g),
+			Position = UDim2.fromOffset(10, 32),
+			Size = UDim2.new(1, -20, 0, 40),
+			fit = 28,
+			Font = Theme.Display,
+			ZIndex = 3,
+			Parent = card,
+		})
+		if it then
+			prize(card, it, color)
+		else
+			local box = Theme.new("Frame", {
+				Name = "Prize",
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = UDim2.new(0.5, 0, 0, 80),
+				Size = UDim2.fromOffset(0, 190),
+				BackgroundColor3 = GOLD,
+				ClipsDescendants = true,
+				ZIndex = 3,
+				Parent = card,
+			}, { Theme.corner(10), Theme.stroke(3, C.ink) })
+			o.picture({
+				Name = "Picture",
+				Position = UDim2.fromOffset(8, 8),
+				Size = UDim2.new(1, -16, 1, -16),
+				BackgroundColor3 = C.white,
+				ZIndex = 4,
+				Parent = box,
+			})
+		end
+		burst = sparkles(card)
+		local line = text({
+			Name = "Line",
+			Text = o.line(g, was),
+			Position = UDim2.fromOffset(10, 274),
+			Size = UDim2.new(1, -20, 0, 20),
+			fit = 15,
+			TextColor3 = C.red,
+			Font = Theme.Display,
+			ZIndex = 3,
+			Parent = card,
+		})
+		if g.offer == "deal" and tonumber(g.ends) then
+			tick = function()
+				local left = tonumber(g.ends) - workspace:GetServerTimeNow()
+				line.Text = left > 0 and `{o.line(g, was)}  ·  ENDS IN {PanelController.clock(left)}` or "DEAL OVER"
+			end
+			tick()
+		end
+		bigButton(
+			card,
+			"Equip",
+			`BUY  {Format.robux(price)}`,
+			300,
+			EQUIP_SIZE.X,
+			EQUIP_SIZE.Y,
+			true,
+			GiftController.buy
+		)
+		bigButton(card, "Later", "LATER", 370, 140, 30, false, GiftController.later)
+	elseif g.nudge then
 		text({
 			Name = "Title",
 			Text = "✨ NEW IN THE SHOP ✨",
@@ -314,6 +462,9 @@ function GiftController.show(g)
 		end
 		local t = os.clock() - t0
 		rays.Rotation = t * 18
+		if tick then
+			tick()
+		end
 		if flipBox then
 			local k = math.clamp((t - 0.25) / 0.35, 0, 1)
 			flipBox.Size = UDim2.fromOffset(240 * (1 - (1 - k) ^ 3), 190)

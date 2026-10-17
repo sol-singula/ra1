@@ -7,7 +7,7 @@ card with a cosmetic that points to the shop. For new players only (their first 
   ko       your knockouts                   enemy    a bouncing arrow over the nearest enemy
   build    walls you build                  build    the build tray glows (the build phase only)
   push     knockouts that move the line     line     an arrow on the frontline pointing at their side
-  tnt      TNT throws (the free try counts) enemy
+  tnt      TNT throws (only for those who own it: passed by otherwise) enemy
   win      a match your team wins           line
 ]]
 local Hook = {}
@@ -44,7 +44,7 @@ Hook.STEPS = {
 	{
 		key = "tnt",
 		title = "THROW THE TNT",
-		desc = "Press 2 for your free TNT and lob it at their walls!",
+		desc = "Press 2 for your TNT and lob it at their walls!",
 		need = 1,
 		shards = 40,
 		marker = "enemy",

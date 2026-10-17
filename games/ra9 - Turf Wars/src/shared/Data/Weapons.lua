@@ -86,22 +86,13 @@ end
 
 Weapons.DEFAULT = "bow"
 
--- Not theirs yet: the TNT for a player who hasn't bought it (the "OwnsTNT" attribute, set by the server) and has no
--- free try ready ("TntTry": one throw an hour; "TntTryAt": os.time() the next one comes). Bots and nil: never locked.
+-- Not theirs yet: the TNT for a player who hasn't bought it (the "OwnsTNT" attribute, set by the server). Bots and
+-- nil: never locked.
 function Weapons.locked(key, player)
 	if key ~= "tnt" or typeof(player) ~= "Instance" or not player:IsA("Player") then
 		return false
 	end
-	return player:GetAttribute("OwnsTNT") ~= true and player:GetAttribute("TntTry") ~= true
-end
-
--- Theirs only for the free try (one throw an hour, not bought)
-function Weapons.trying(key, player)
-	return key == "tnt"
-		and typeof(player) == "Instance"
-		and player:IsA("Player")
-		and player:GetAttribute("OwnsTNT") ~= true
-		and player:GetAttribute("TntTry") == true
+	return player:GetAttribute("OwnsTNT") ~= true
 end
 
 return Weapons

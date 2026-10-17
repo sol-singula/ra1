@@ -892,8 +892,8 @@ local function buildBottom(gui)
 				}, { Theme.corner(1) })
 			end
 		end
-		-- (the TNT before it's bought: still on the hotbar, under a lock with its price, 50% off, and when the free
-		-- try comes back; a tap opens the purchase. With the hour's free throw ready: a FREE TRY badge, and it works)
+		-- (the TNT before it's bought: still on the hotbar, under a lock with its price, its % off and PERMANENT; a
+		-- tap opens the purchase)
 		local lock
 		if w.key == Shop.TNT.key then
 			lock = Theme.new("Frame", {
@@ -917,7 +917,7 @@ local function buildBottom(gui)
 			})
 			local tag = label({
 				Name = "Sale",
-				Text = "50% OFF",
+				Text = `{Shop.off(Shop.TNT) or 0}% OFF`,
 				Size = UDim2.fromOffset(52, 13),
 				Position = UDim2.new(0.5, -26, 0, -9),
 				TextSize = 10,
@@ -943,52 +943,24 @@ local function buildBottom(gui)
 				ZIndex = 6,
 				Parent = lock,
 			})
-			local timer = label({
-				Name = "Timer",
-				Text = "",
+			label({
+				Name = "Permanent",
+				Text = "PERMANENT",
 				Size = UDim2.new(1, -4, 0, 12),
 				Position = UDim2.fromOffset(2, 40),
 				TextSize = 9,
-				TextColor3 = C.white,
+				TextColor3 = Color3.fromRGB(255, 214, 64),
+				Font = Theme.Display,
 				TextXAlignment = Enum.TextXAlignment.Center,
 				ZIndex = 6,
 				Parent = lock,
 			})
-			local try = label({
-				Name = "FreeTry",
-				Text = "FREE TRY",
-				Size = UDim2.fromOffset(56, 13),
-				Position = UDim2.new(0.5, -28, 0, -9),
-				TextSize = 10,
-				TextColor3 = C.white,
-				TextXAlignment = Enum.TextXAlignment.Center,
-				Font = Theme.Display,
-				BackgroundTransparency = 0,
-				BackgroundColor3 = Color3.fromRGB(46, 170, 90),
-				Visible = false,
-				ZIndex = 7,
-				Parent = b,
-			})
-			try.BackgroundTransparency = 0
 			local function paintLock()
 				local me = Players.LocalPlayer
-				local owned = me:GetAttribute("OwnsTNT") == true
 				lock.Visible = Weapons.locked(w.key, me)
-				try.Visible = not owned and Weapons.trying(w.key, me)
-				local at = me:GetAttribute("TntTryAt")
-				local left = type(at) == "number" and at - os.time() or 0
-				timer.Text = left > 0 and `free try in {math.ceil(left / 60)}m` or ""
 			end
 			paintLock()
-			for _, a in { "OwnsTNT", "TntTry", "TntTryAt" } do
-				Players.LocalPlayer:GetAttributeChangedSignal(a):Connect(paintLock)
-			end
-			task.spawn(function()
-				while lock.Parent do
-					task.wait(15)
-					paintLock()
-				end
-			end)
+			Players.LocalPlayer:GetAttributeChangedSignal("OwnsTNT"):Connect(paintLock)
 		end
 		b.Activated:Connect(function()
 			Bus.Weapon:Fire(w.key)
