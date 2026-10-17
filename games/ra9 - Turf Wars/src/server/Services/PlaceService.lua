@@ -19,6 +19,7 @@ mode isn't open yet, and the one place carries on as it always has.
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
@@ -103,9 +104,22 @@ function PlaceService:Teleport(placeId, members, data)
 				task.wait(self.RETRY_SECONDS)
 			end
 		end
+		-- (Roblox never teleports from Studio: say how to test a mode there instead)
+		local studio = RunService:IsStudio()
+		if studio then
+			warn(
+				"[PlaceService] Studio can't teleport between places. To test a mode here: stop, set "
+					.. "ReplicatedStorage > Mode to lobby / turf / ctf / brawl / tycoon, then press Play."
+			)
+		end
 		for _, p in members do
 			if isPlayer(p) then
-				say(p, "Could not go there. Try again!", "bad")
+				say(
+					p,
+					studio and "Could not go there: Studio can't teleport. Set ReplicatedStorage.Mode, then Play"
+						or "Could not go there. Try again!",
+					"bad"
+				)
 			end
 		end
 	end)
