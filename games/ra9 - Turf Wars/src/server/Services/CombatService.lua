@@ -658,6 +658,41 @@ function CombatService:Blocked(a, b)
 	return (hitSolids(a, b)) ~= nil
 end
 
+-- A new player's whisper of aim help: a shot that's already nearly on an enemy (inside AIM_ASSIST_CONE degrees of
+-- where the arrow would have to go, drop included) turns a little onto them (AIM_ASSIST_PULL of the gap, at most
+-- AIM_ASSIST_MAX degrees). Their first matches feel natural; a real miss still misses. Everyone sees the same arrow.
+function CombatService:Assist(player, origin, direction, speed)
+	if typeof(player) ~= "Instance" then
+		return direction -- (bots aim on their own)
+	end
+	local profile = data:Get(player)
+	if not profile or ((profile.stats and profile.stats.matches) or 0) >= Constants.AIM_ASSIST_MATCHES then
+		return direction
+	end
+	local mine = teams:Team(player)
+	local best, bestAngle
+	for other, os_ in states do
+		local r = os_.alive and other ~= player and teams:Team(other) ~= mine and root(other)
+		if r then
+			local target = r.Position + Vector3.new(0, 0.6, 0)
+			local tt = (target - origin).Magnitude / math.max(speed, 1)
+			local aim = target + Vector3.new(0, 0.5 * Constants.GRAVITY * tt * tt, 0) - origin
+			if aim.Magnitude > 1 then
+				local ideal = aim.Unit
+				local angle = math.deg(math.acos(math.clamp(direction:Dot(ideal), -1, 1)))
+				if angle <= Constants.AIM_ASSIST_CONE and (not bestAngle or angle < bestAngle) then
+					best, bestAngle = ideal, angle
+				end
+			end
+		end
+	end
+	if not best or bestAngle < 0.01 then
+		return direction
+	end
+	local turn = math.min(bestAngle * Constants.AIM_ASSIST_PULL, Constants.AIM_ASSIST_MAX)
+	return direction:Lerp(best, turn / bestAngle).Unit
+end
+
 -- The shot itself (Net "Shoot"): validated, then an arrow.
 function CombatService:Shoot(player, origin, direction, shotId)
 	if not enabled or typeof(origin) ~= "Vector3" or typeof(direction) ~= "Vector3" then
@@ -725,6 +760,7 @@ function CombatService:Shoot(player, origin, direction, shotId)
 		return self:_throw(player, w, origin, direction, charge, shotId)
 	end
 	local shot = Formulas.shot(w, charge)
+	direction = self:Assist(player, origin, direction, shot.speed)
 	if w.mag then
 		s.ammo -= 1
 		if s.ammo <= 0 then

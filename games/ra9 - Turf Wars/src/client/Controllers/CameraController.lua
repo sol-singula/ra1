@@ -255,6 +255,23 @@ function CameraController:init()
 			end)
 		end
 	end)
+	-- a new body faces the line: so does the camera (first person turns the body to the camera, so an old look
+	-- left over from the last life would turn them round)
+	player.CharacterAdded:Connect(function(c)
+		task.spawn(function()
+			local root = c:WaitForChild("HumanoidRootPart", 5)
+			for _ = 1, 3 do
+				task.wait(0.05)
+				local cam = workspace.CurrentCamera
+				if not root or not cam or driver or player.Character ~= c then
+					return
+				end
+				local eye = root.Position + Vector3.new(0, 1.5, 0)
+				local dir = root.CFrame.LookVector
+				cam.CFrame = CFrame.lookAt(eye, eye + Vector3.new(dir.X, 0, dir.Z))
+			end
+		end)
+	end)
 	local ok = pcall(function()
 		RunService:BindToRenderStep("TWCamera", Enum.RenderPriority.Camera.Value + 1, step)
 	end)

@@ -274,6 +274,8 @@ function MatchService:Spawn(player)
 	end
 	local cf = self.SpawnAt[player] or arena:SpawnFor(team)
 	self.SpawnAt[player] = nil
+	-- (always facing the line: straight across the field toward the enemy)
+	cf = CFrame.lookAt(cf.Position, cf.Position + Vector3.new(Formulas.forward(team), 0, 0))
 	local r = c:FindFirstChild("HumanoidRootPart")
 	if r then
 		r.CFrame = cf
@@ -595,7 +597,7 @@ function MatchService:_tick()
 	-- the watchdog: nobody in the match is ever left without a body and nothing coming (a rejoin, a body that never
 	-- loaded, a respawn lost somewhere): down with no respawn due, or "alive" with no body, for a few seconds
 	if phase == "build" or phase == "fight" then
-		for _, player in self:People() do
+		for _, player in self:Everyone() do
 			local c = player.Character
 			local r = c and c:FindFirstChild("HumanoidRootPart")
 			local fine = (combat:Alive(player) and r ~= nil)

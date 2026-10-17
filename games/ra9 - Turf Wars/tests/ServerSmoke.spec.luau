@@ -1338,6 +1338,49 @@ do
 	Constants.AFK_SECONDS = 0
 end
 
+-- a new player's whisper of aim help: a near miss turns a hair onto the enemy; a real miss, or a veteran, doesn't
+do
+	local newbie = Engine.addPlayer("Newbie", 641)
+	local foe = Engine.addPlayer("Foe", 642)
+	Engine.advance(0.5)
+	send(newbie, "Ready")
+	send(foe, "Ready")
+	Engine.advance(0.5)
+	if Teams:Team(newbie) == Teams:Team(foe) then
+		Teams:Set(foe, Teams:Team(newbie) == "red" and "blue" or "red")
+	end
+	Combat:Spawned(newbie)
+	Combat:Spawned(foe)
+	stand(newbie, Vector3.new(-40, 3, 0))
+	stand(foe, Vector3.new(20, 3, 0))
+	local origin = Vector3.new(-40, 4.5, 0)
+	local speed = 200
+	local function angleTo(dir)
+		local tt = (Vector3.new(20, 3.6, 0) - origin).Magnitude / speed
+		local ideal = (Vector3.new(20, 3.6 + 0.5 * Constants.GRAVITY * tt * tt, 0) - origin).Unit
+		return math.deg(math.acos(math.clamp(dir:Dot(ideal), -1, 1))), ideal
+	end
+	local _, ideal = angleTo(Vector3.new(1, 0, 0))
+	local off3 = (CFrame.fromAxisAngle(Vector3.new(0, 1, 0), math.rad(3)) * ideal).Unit
+	local a0 = angleTo(off3)
+	local a1 = angleTo(Combat:Assist(newbie, origin, off3, speed))
+	check(
+		"a near miss (3°) turns a little onto them",
+		a1 < a0 - 0.5 and a1 > a0 - Constants.AIM_ASSIST_MAX - 0.05,
+		`{a0} -> {a1}`
+	)
+	local off10 = (CFrame.fromAxisAngle(Vector3.new(0, 1, 0), math.rad(10)) * ideal).Unit
+	check("...a real miss (10°) stays a miss", angleTo(Combat:Assist(newbie, origin, off10, speed)) > 9.99)
+	Data:Get(newbie).stats.matches = Constants.AIM_ASSIST_MATCHES
+	check(
+		"...and after their first matches, no help at all",
+		math.abs(angleTo(Combat:Assist(newbie, origin, off3, speed)) - a0) < 0.001
+	)
+	Engine.removePlayer(newbie)
+	Engine.removePlayer(foe)
+	Engine.advance(1)
+end
+
 -- leave and come back before the match ends: the same side, and straight back in (never stuck "respawning")
 do
 	local r1 = Engine.addPlayer("Rejoin", 631)
@@ -1361,6 +1404,8 @@ do
 	check("rejoining the same match: the side you were on", Teams:Team(r2) == was, `{Teams:Team(r2)} {was}`)
 	check("...the match goes on (no restart)", ws:GetAttribute("MatchId") == matchId)
 	check("...and you're back in, alive", Combat:Alive(r2) and rootOf(r2) ~= nil)
+	local look = rootOf(r2) and rootOf(r2).CFrame.LookVector
+	check("...facing the line", look and look.X * Formulas.forward(Teams:Team(r2)) > 0.95, look)
 	-- a body that goes missing (it never loaded, it fell apart): the server puts them back in on its own
 	r2.Character:Destroy()
 	r2.Character = nil

@@ -39,6 +39,10 @@ Constants.RESPAWN_SECONDS = 3
 
 -- Health and combat (§5)
 Constants.MAX_HEALTH = 100
+Constants.AIM_ASSIST_MATCHES = 5 -- a new player (fewer matches than this) gets a whisper of help aiming:
+Constants.AIM_ASSIST_CONE = 4 -- a shot already within this many degrees of an enemy...
+Constants.AIM_ASSIST_PULL = 0.35 -- ...is turned this share of the way onto them...
+Constants.AIM_ASSIST_MAX = 1.2 -- ...but never more than this many degrees (a near miss becomes a hit; a miss stays one)
 Constants.GRAVITY = 70 -- studs/s² on arrows (Roblox's 196 would make bows feel like mortars)
 Constants.HIT_RADIUS_BODY = 2.3 -- the torso's hit sphere (round the root, +0.6 up)
 Constants.HIT_RADIUS_HEAD = 1.1 -- the head's (2.6 above the root)

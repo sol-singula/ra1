@@ -262,7 +262,13 @@ function BotService:Add(team)
 	table.insert(bots, b)
 	local phase = match:Phase()
 	if phase == "build" or phase == "fight" then
-		match:Spawn(b)
+		-- (in its own thread, and a failed body never takes the bot loop down: the match's watchdog retries)
+		task.spawn(function()
+			local ok, err = pcall(match.Spawn, match, b)
+			if not ok then
+				warn("[BotService] spawn failed: " .. tostring(err))
+			end
+		end)
 	end
 	return b
 end
@@ -935,7 +941,7 @@ function BotService:Init(registry)
 	end)
 	Players.PlayerRemoving:Connect(function()
 		task.defer(function()
-			self:Ensure()
+			pcall(self.Ensure, self)
 		end)
 	end)
 end
@@ -947,7 +953,11 @@ function BotService:Start()
 		local t = os.clock()
 		if t - last >= 1 then
 			last = t
-			self:Ensure()
+			-- (every second: the right bots for who's on; one error never stops it for good)
+			local ok, err = pcall(self.Ensure, self)
+			if not ok then
+				warn("[BotService] ensure failed: " .. tostring(err))
+			end
 		end
 		for _, b in bots do
 			local ok, err = pcall(self.Think, self, b)
