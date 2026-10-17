@@ -38,6 +38,7 @@ local CombatService = {
 	Damaged = Signal.new("CombatService.Damaged"), -- (victim, amount, attacker?, info)
 	Shot = Signal.new("CombatService.Shot"), -- (player, weapon)
 	StructureHit = Signal.new("CombatService.StructureHit"), -- (id, damage, attacker)
+	Rejected = Signal.new("CombatService.Rejected"), -- (player, reason) a shot the server refused (the anti-cheat counts)
 }
 
 local data, teams, arena
@@ -93,6 +94,67 @@ function CombatService:Push(player)
 	})
 end
 
+-- The bow in your hand that everyone else sees (your own client hides it: you see the viewmodel). Welded to the
+-- left hand, massless, out of every query (the hit spheres are the server's, not these parts).
+function CombatService:HoldBow(player, key)
+	local c = player.Character
+	local hand = c and (c:FindFirstChild("LeftHand") or c:FindFirstChild("Left Arm"))
+	if not hand then
+		return nil
+	end
+	local old = c:FindFirstChild("HeldBow")
+	if old then
+		old:Destroy()
+	end
+	local team = teams:Team(player)
+	local color = Constants.TEAM_COLOR[team or ""] or Constants.WHITE
+	local model = Instance.new("Model")
+	model.Name = "HeldBow"
+	model:SetAttribute("Weapon", key)
+	local function part(name, size, c3, offset)
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Size = size
+		p.Color = c3
+		p.Material = Enum.Material.SmoothPlastic
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.Massless = true
+		p.CastShadow = false
+		p.CFrame = hand.CFrame * offset
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = hand
+		weld.Part1 = p
+		weld.Parent = p
+		p.Parent = model
+		return p
+	end
+	local big = key == "heavy"
+	if key == "crossbow" then
+		part("Stock", Vector3.new(0.25, 0.25, 1.8), Constants.WHITE, CFrame.new(0, -0.2, -0.6))
+		part("Limbs", Vector3.new(2.2, 0.15, 0.2), color, CFrame.new(0, -0.2, -1.4))
+	else
+		local len = big and 2 or 1.6
+		part("Grip", Vector3.new(0.25, 0.6, 0.25), color, CFrame.new(0, -0.3, 0))
+		part(
+			"Upper",
+			Vector3.new(0.15, len, 0.15),
+			Constants.WHITE,
+			CFrame.new(0, -0.3 + len / 2 + 0.25, -0.2) * CFrame.Angles(math.rad(-15), 0, 0)
+		)
+		part(
+			"Lower",
+			Vector3.new(0.15, len, 0.15),
+			Constants.WHITE,
+			CFrame.new(0, -0.3 - len / 2 - 0.25, -0.2) * CFrame.Angles(math.rad(15), 0, 0)
+		)
+		part("String", Vector3.new(0.04, len * 2 + 0.4, 0.04), Color3.fromRGB(30, 30, 34), CFrame.new(0, -0.3, 0.25))
+	end
+	model.Parent = c
+	return model
+end
+
 function CombatService:Spawned(player)
 	local s = state(player)
 	s.hp = Constants.MAX_HEALTH
@@ -108,6 +170,7 @@ function CombatService:Spawned(player)
 	s.reloadAt = nil
 	s.readyAt = 0
 	mirror(player, s)
+	self:HoldBow(player, s.weapon)
 	self:Push(player)
 end
 
@@ -286,6 +349,7 @@ function CombatService:_hitPlayer(arrow, victim, head, at, dir)
 			r.AssemblyLinearVelocity += kb
 		end)
 	end
+	victim:SetAttribute("AcGrace", os.clock() + 1.5) -- (the knockback is ours: the anti-cheat lets it go)
 	Net.fire(victim, "Hurt", { amount = amount, from = arrow.origin, knock = kb, head = head })
 	if shooter.Parent then
 		Net.fire(shooter, "Hit", { damage = amount, head = head, kill = killed, victim = victim.UserId })
@@ -299,15 +363,20 @@ function CombatService:Shoot(player, origin, direction, shotId)
 	end
 	local s = state(player)
 	if not s.alive then
+		self.Rejected:Fire(player, "dead")
 		return nil
 	end
 	local w = Weapons.get(s.weapon)
 	local t = now()
-	if t < (s.readyAt or 0) then
+	if t < (s.readyAt or 0) - 0.08 then
+		self.Rejected:Fire(player, "rate") -- (faster than the bow can shoot, beyond a little lag)
+		return nil
+	elseif t < (s.readyAt or 0) then
 		return nil
 	end
 	if w.mag then
 		if s.reloadAt and t < s.reloadAt then
+			self.Rejected:Fire(player, "reload")
 			return nil
 		end
 		if s.reloadAt and t >= s.reloadAt then
@@ -324,6 +393,7 @@ function CombatService:Shoot(player, origin, direction, shotId)
 	local head = r.Position + Vector3.new(0, 1.5, 0)
 	if (origin - head).Magnitude > Constants.ORIGIN_SLACK then
 		origin = head -- (too far from you: it starts from your head instead)
+		self.Rejected:Fire(player, "origin")
 	end
 	if direction.Magnitude < 0.5 or direction.Magnitude > 1.5 then
 		return nil
@@ -386,6 +456,7 @@ function CombatService:Equip(player, key)
 	if profile then
 		profile.settings.weapon = key
 	end
+	self:HoldBow(player, key)
 	self:Push(player)
 	return true
 end

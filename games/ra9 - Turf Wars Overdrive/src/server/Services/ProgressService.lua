@@ -268,6 +268,9 @@ function ProgressService:Init(registry)
 			p.settings.sensitivity = math.clamp(value, 0.2, 3)
 		elseif key == "shake" and type(value) == "boolean" then
 			p.settings.shake = value
+		elseif key == "device" and (value == "touch" or value == "gamepad" or value == "keyboard") then
+			player:SetAttribute("Device", value) -- (how they play: the anti-cheat and the stats read it)
+			return
 		elseif key == "equip" and type(value) == "table" and type(value.kind) == "string" then
 			-- (only what you own: Data/Locker knows every source)
 			local item = value.key

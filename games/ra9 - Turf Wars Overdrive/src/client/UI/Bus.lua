@@ -16,4 +16,7 @@ return {
 	Weapon = Signal.new("Bus.Weapon"), -- (weaponKey) a weapon button (WeaponController)
 	Slide = Signal.new("Bus.Slide"), -- () the touch SLIDE button (MoveController)
 	Sprint = Signal.new("Bus.Sprint"), -- (on) the touch SPRINT toggle (MoveController)
+	Crouch = Signal.new("Bus.Crouch"), -- (on) the touch CROUCH toggle (MoveController)
+	Jump = Signal.new("Bus.Jump"), -- () the touch JUMP button (MoveController)
+	Reload = Signal.new("Bus.Reload"), -- () the touch RELOAD button (WeaponController)
 }

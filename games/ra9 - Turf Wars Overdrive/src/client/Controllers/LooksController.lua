@@ -3,7 +3,7 @@ The cosmetics others wear, drawn on this client (Data/Cosmetics looks):
 
   * kill effects: where someone falls, the killer's effect plays (Net "Kill" carries it): cubes, a ring, shards,
     pixels, a rising column, a spotlight; white, black or the killer's team colours, SUPERHOT-plain neon blocks
-  * your own name tag, crown and halo (StatusService puts them on your character for everyone else) are hidden
+  * your own name tag, crown, halo and held bow (StatusService puts them on your character for everyone else) are hidden
     from you: in first person they'd sit in your view
 
   LooksController.play(effectKey, pos, team)   (tests call it too)
@@ -125,6 +125,12 @@ local function step(dt)
 		for _, d in c:GetChildren() do
 			if (d.Name == "MvpCrown" or d.Name == "VipHalo") and d.LocalTransparencyModifier ~= 1 then
 				d.LocalTransparencyModifier = 1
+			elseif d.Name == "HeldBow" then
+				for _, q in d:GetChildren() do
+					if q:IsA("BasePart") and q.LocalTransparencyModifier ~= 1 then
+						q.LocalTransparencyModifier = 1 -- (you see the viewmodel instead)
+					end
+				end
 			end
 		end
 	end

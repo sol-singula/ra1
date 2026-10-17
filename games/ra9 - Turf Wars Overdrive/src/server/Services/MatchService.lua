@@ -146,6 +146,7 @@ function MatchService:Spawn(player)
 	if r then
 		r.CFrame = cf
 	end
+	player:SetAttribute("AcGrace", os.clock() + 2) -- (our teleport: the anti-cheat lets it go)
 	teams:Dress(c, team)
 	local hum = c:FindFirstChildOfClass("Humanoid")
 	if hum then
@@ -378,11 +379,13 @@ function MatchService:_tick()
 					combat:Kill(player, nil, { kind = "fall" })
 				elseif team == "red" and x > frontline + Constants.TURF_MARGIN then
 					r.CFrame = CFrame.new(frontline - 3, r.Position.Y + 0.5, r.Position.Z) * r.CFrame.Rotation
+					player:SetAttribute("AcGrace", os.clock() + 1)
 					pcall(function()
 						r.AssemblyLinearVelocity = Vector3.new(-20, 10, 0)
 					end)
 				elseif team == "blue" and x < frontline - Constants.TURF_MARGIN then
 					r.CFrame = CFrame.new(frontline + 3, r.Position.Y + 0.5, r.Position.Z) * r.CFrame.Rotation
+					player:SetAttribute("AcGrace", os.clock() + 1)
 					pcall(function()
 						r.AssemblyLinearVelocity = Vector3.new(20, 10, 0)
 					end)

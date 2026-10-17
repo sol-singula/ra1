@@ -29,6 +29,11 @@ local function service(name)
 	return Engine.require(tree.server.Services[name])
 end
 local Data = service("PlayerDataService")
+local AC = service("AntiCheatService")
+local acFlags = {} -- every flag the anti-cheat raises during the whole run: { player, kind, detail }
+AC.Flagged:Connect(function(player, kind, detail)
+	table.insert(acFlags, { player = player, kind = kind, detail = detail })
+end)
 local Teams = service("TeamService")
 local Arena = service("ArenaService")
 local Combat = service("CombatService")
@@ -700,6 +705,110 @@ do
 		tostring(placed) .. " " .. tostring(why) .. " " .. tostring(ws:GetAttribute("Phase"))
 	)
 	_ = root
+end
+
+-- Anti-cheat ---------------------------------------------------------------------------------------------------------
+do
+	local honest = {}
+	for _, f in acFlags do
+		table.insert(honest, `{f.player.Name} {f.kind} {f.detail}`)
+	end
+	check("a whole run of honest play: the anti-cheat flags nobody", #honest == 0, table.concat(honest, " | "))
+	Match:NewMatch()
+	Engine.advance(1)
+	local cheat = Engine.addPlayer("Cheater", 6660)
+	Engine.advance(1)
+	send(cheat, "Ready")
+	Engine.advance(3) -- (spawned, the spawn's grace over)
+	local function flagsOf(kind)
+		local n = 0
+		for _, f in acFlags do
+			if f.player == cheat and f.kind == kind then
+				n += 1
+			end
+		end
+		return n
+	end
+	local r = rootOf(cheat)
+	check("the cheater is in and alive", r ~= nil and service("CombatService"):Alive(cheat))
+	-- walking at a normal speed: fine
+	local start = r.Position
+	for i = 1, 8 do
+		r.CFrame = CFrame.new(start + Vector3.new(0, 0, i * Constants.WALK_SPEED * 0.25))
+		Engine.advance(0.25)
+	end
+	check("walking: nothing", flagsOf("speed") == 0 and AC:Strikes(cheat) == 0)
+	-- a speed hack: 3x as fast
+	local from = rootOf(cheat).Position
+	-- (a speed hack pushes the body along from wherever it is, 3x a walk)
+	for _ = 1, 8 do
+		rootOf(cheat).CFrame = rootOf(cheat).CFrame + Vector3.new(0, 0, -Constants.WALK_SPEED * 3 * 0.25)
+		Engine.advance(0.25)
+	end
+	local went = (rootOf(cheat).Position - from).Magnitude
+	check("too fast: flagged", flagsOf("speed") >= 1, AC:Strikes(cheat))
+	check("...and pulled back (it gets them nowhere much)", went < Constants.WALK_SPEED * 3 * 2 * 0.6, went)
+	-- a sprint is allowed its speed (the server heard the sprint)
+	local before = flagsOf("speed")
+	send(cheat, "Sprint", true)
+	Engine.advance(1.2)
+	local s0 = rootOf(cheat).Position
+	for i = 1, 8 do
+		rootOf(cheat).CFrame = CFrame.new(s0 + Vector3.new(0, 0, i * Constants.SPRINT_SPEED * 0.25))
+		Engine.advance(0.25)
+	end
+	check("sprinting at sprint speed: nothing", flagsOf("speed") == before)
+	send(cheat, "Sprint", false)
+	-- a teleport
+	Engine.advance(1)
+	local strikes = AC:Strikes(cheat)
+	rootOf(cheat).CFrame = rootOf(cheat).CFrame + Vector3.new(0, 0, 150)
+	Engine.advance(0.3)
+	check("a teleport: 3 strikes", flagsOf("teleport") == 1 and AC:Strikes(cheat) >= strikes + 3, AC:Strikes(cheat))
+	-- our own teleports don't count
+	local t0 = flagsOf("teleport")
+	Engine.moveTo(cheat, rootOf(cheat).Position + Vector3.new(0, 0, -120))
+	Engine.advance(0.5)
+	check("...our own teleports never count", flagsOf("teleport") == t0)
+	-- flying
+	local realGround = AC.groundDistance
+	AC.groundDistance = function(p, pos)
+		if p == cheat then
+			return 30
+		end
+		return realGround(p, pos)
+	end
+	Engine.advance(AC.AIR_SECONDS + 3)
+	check("hovering high for seconds: flying", flagsOf("fly") >= 1)
+	AC.groundDistance = realGround
+	-- spam and refused shots
+	AC.Dropped(AC, cheat, "Shoot")
+	for _ = 1, AC.SPAM_LIMIT do
+		AC:Dropped(cheat, "Shoot")
+	end
+	check("calls over the rate limits: spam", flagsOf("spam") >= 1)
+	for _ = 1, AC.REJECT_LIMIT do
+		service("CombatService").Rejected:Fire(cheat, "rate")
+	end
+	Engine.advance(0.1)
+	check("shots refused again and again: flagged", flagsOf("shots") >= 1)
+	-- aim: a note, never a strike
+	local k0 = AC:Strikes(cheat)
+	for _ = 1, AC.AIM_MIN_KILLS do
+		service("CombatService").Killed:Fire(red, cheat, { head = true })
+	end
+	Engine.advance(0.1)
+	check("all headshots for 25 kills: noted for a look", flagsOf("aim") == 1 and AC:Strikes(cheat) == k0)
+	-- enough strikes: removed
+	check(
+		"enough strikes: removed from the server",
+		cheat.Parent == nil or AC:Strikes(cheat) >= AC.KICK_STRIKES,
+		AC:Strikes(cheat)
+	)
+	check(
+		"...and it's on their record",
+		Data:Get(cheat) == nil or (Data:Get(cheat).ac and Data:Get(cheat).ac.flags >= 4)
+	)
 end
 
 print(`\n{passed} passed, {failed} failed`)

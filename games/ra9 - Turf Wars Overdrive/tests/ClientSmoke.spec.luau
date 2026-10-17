@@ -166,6 +166,71 @@ for _ = 1, Constants.FLIP_EVERY do
 end
 check("the 4th jump flips", flips == 1 and Move.flipping())
 
+-- Crouch ---------------------------------------------------------------------------------------------------------
+Engine.advance(2)
+local hum0 = player.Character:FindFirstChildOfClass("Humanoid")
+local hip0 = hum0.HipHeight
+Move.setSprint(false)
+Engine.advance(0.7)
+Move.setCrouch(true)
+Engine.advance(0.7)
+check("crouch: lower", hum0.HipHeight < hip0 - 0.5, `{hum0.HipHeight} vs {hip0}`)
+check("...and slower", hum0.WalkSpeed == Constants.CROUCH_SPEED, hum0.WalkSpeed)
+check("...and the server knows (it lowers you for everyone)", service("MoveService"):State(player).crouch == true)
+Move.setCrouch(false)
+Engine.advance(0.7)
+check("standing back up", math.abs(hum0.HipHeight - hip0) < 0.01 and hum0.WalkSpeed == Constants.WALK_SPEED)
+
+-- The bow in your hands -------------------------------------------------------------------------------------------
+do
+	local vm = ws.CurrentCamera:FindFirstChild("Viewmodel")
+	check(
+		"the viewmodel has arms and hands",
+		vm and vm:FindFirstChild("ArmL") and vm:FindFirstChild("ArmR") and vm:FindFirstChild("HandR") ~= nil
+	)
+	check("...and a string in two halves", vm and vm:FindFirstChild("String") and vm:FindFirstChild("StringL") ~= nil)
+	local function rel(name)
+		local p = ws.CurrentCamera:FindFirstChild("Viewmodel"):FindFirstChild(name)
+		return ws.CurrentCamera.CFrame:PointToObjectSpace(p.Position)
+	end
+	Engine.advance(1)
+	Weapon.equip("heavy")
+	Engine.advance(0.03)
+	local early = rel("Grip")
+	Engine.advance(0.8)
+	local late = rel("Grip")
+	check("equipping: the bow comes up from below", early.Y < late.Y - 0.2, `{early.Y} -> {late.Y}`)
+	local restHand = rel("HandR")
+	local restGrip = rel("Grip")
+	Bus.Fire:Fire(true)
+	Engine.advance(1.6)
+	local drawnHand = rel("HandR")
+	local drawnGrip = rel("Grip")
+	check(
+		"drawing: your hand pulls the string back",
+		(drawnHand - drawnGrip).Magnitude > (restHand - restGrip).Magnitude + 0.6,
+		`{(restHand - restGrip).Magnitude} -> {(drawnHand - drawnGrip).Magnitude}`
+	)
+	check("...and the bow comes toward the middle", math.abs(drawnGrip.X) < math.abs(restGrip.X) - 0.2)
+	Bus.Fire:Fire(false)
+	Engine.advance(0.02)
+	check("release: the bow kicks", Weapon.anim().kick.v ~= 0 or Weapon.anim().kick.p ~= 0)
+	Engine.advance(1)
+	Weapon.equip("crossbow")
+	Engine.advance(0.5)
+	Weapon.reload()
+	check("the crossbow tips down to reload", Weapon.anim().reloadAt ~= nil)
+	Engine.advance(2.5)
+	check("...and comes back up", Weapon.anim().reloadAt == nil)
+	Weapon.equip("bow")
+	Engine.advance(0.3)
+	local held = foe.Character and foe.Character:FindFirstChild("HeldBow")
+	local mine = player.Character:FindFirstChild("HeldBow")
+	check("everyone holds a bow others can see", held ~= nil or mine ~= nil)
+	local hidden = mine and mine:FindFirstChildWhichIsA("BasePart").LocalTransparencyModifier == 1
+	check("...yours hidden from you (you see your arms)", hidden == true)
+end
+
 -- The results ----------------------------------------------------------------------------------------------------
 Match:Victory(team)
 Engine.advance(0.5)
@@ -320,10 +385,10 @@ do
 		check(what .. ": its words shrink to fit", #bad == 0, table.concat(bad, " | "))
 	end
 
-	-- the touch buttons too (built here on the desktop run, the way a phone gets them)
-	UIS.TouchEnabled, UIS.KeyboardEnabled = true, false
-	Hud._buildTouch(refs.gui)
-	UIS.TouchEnabled, UIS.KeyboardEnabled = false, true
+	-- first the desktop layout (the touch buttons are hidden); the touch layout is checked after
+	local Device = Engine.require(tree.client.UI.Device)
+	Device.set("keyboard")
+	Engine.advance(0.05)
 	local t = refs.touch
 	local function corners()
 		return {
@@ -335,8 +400,13 @@ do
 			Team = refs.team,
 			Bows = hud.Bows,
 			Fire = t.fire,
+			Jump = t.jump,
+			Crouch = t.crouch,
 			Sprint = t.sprint,
-			Slide = hud:FindFirstChild("Slide"),
+			Slide = t.slide,
+			Reload = t.reload,
+			Place = t.place,
+			Rotate = t.rotate,
 			Toast = refs.toast,
 		}
 	end
@@ -439,6 +509,73 @@ do
 	L.Popups = Hud.popups()[1]
 	apart("the countdown", L)
 	check("the waiting popups come up as the first ones go", #Hud.popups() >= 1 or #select(2, Hud.popups()) == 0)
+
+	-- The touch layout: a phone, every button showing, in each phase ------------------------------------------------
+	Device.set("touch")
+	local realMatch = Store.get("match")
+	local realMe = Store.get("me")
+	local function phaseAs(ph)
+		Store.merge("match", { phase = ph })
+		Engine.advance(0.05)
+	end
+	Store.merge("me", { weapon = "crossbow", alive = false })
+	phaseAs("fight")
+	check(
+		"on a phone: FIRE, JUMP, CROUCH, RUN, SLIDE and RELOAD show",
+		t.fire.Visible
+			and t.jump.Visible
+			and t.crouch.Visible
+			and t.sprint.Visible
+			and t.slide.Visible
+			and t.reload.Visible
+	)
+	check(
+		"...the bows move to the bottom middle, health to the top left",
+		refs.bowsFrame.AnchorPoint.X == 0.5 and refs.health.Position.Y.Scale == 0
+	)
+	check("...and one popup at a time", select(1, Hud.popups()) and true)
+	refs.alert.Visible, refs.objective.Visible, refs.respawn.Visible = true, true, true
+	Hud.toast("A toast on a phone")
+	for i = 1, 3 do
+		Hud.showUnlock({ step = { kind = "trail", key = "trail_" .. i, name = "Long Streak" }, wins = i })
+	end
+	Engine.advance(0.05)
+	L = corners()
+	L.Alert, L.Objective, L.Respawn, L.Popups = refs.alert, refs.objective, refs.respawn, Hud.popups()[1]
+	apart("a phone in the fight", L)
+	check("...one popup showing, the rest waiting", #Hud.popups() == 1, #Hud.popups())
+	refs.alert.Visible, refs.respawn.Visible = false, false
+	phaseAs("build")
+	BuildC.pick("wall")
+	Engine.advance(0.05)
+	check("on a phone building: PLACE and TURN", t.place.Visible and t.rotate.Visible and not t.fire.Visible)
+	L = corners()
+	L.Tray, L.Hint, L.Popups = refs.tray, refs.buildHint, Hud.popups()[1]
+	apart("a phone building", L)
+	BuildC.pick(nil)
+	phaseAs("victory")
+	Hud.showResults({ winner = "red", rows = rows, mvp = 1, you = { won = true } })
+	local askT = Feedback.show("enjoy")
+	Engine.advance(0.05)
+	L = corners()
+	L.Results, L.Ask, L.Popups = refs.results, askT, Hud.popups()[1]
+	apart("a phone at the win", L)
+	Feedback.answer(true)
+	-- a jump on the phone's own button
+	local jumped = false
+	local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.Jump = false
+		phaseAs("fight")
+		t.jump.Activated:Fire()
+		jumped = hum.Jump == true
+	end
+	check("JUMP jumps", jumped)
+	Store.set("match", realMatch)
+	Store.set("me", realMe)
+	Device.set("keyboard")
+	Engine.advance(0.05)
+	check("back on a keyboard: the touch buttons go", not t.fire.Visible and not t.jump.Visible)
 
 	-- The panel: the shop, the pass, the locker, the goals --------------------------------------------------------
 	local Panel = Engine.require(tree.client.Controllers.PanelController)

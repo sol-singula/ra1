@@ -3,8 +3,10 @@ Movement (master plan §6): sprint, slide, the front flip, and the knockback you
 
   * Sprint: hold Shift (or the left stick in, or the touch SPRINT toggle): faster, the view a little wider. Drawing
     a bow slows you to DRAW_SPEED whatever you're doing.
-  * Slide: C or Ctrl while running (or the touch SLIDE button): a short burst forward, low to the ground, on a
-    cooldown. The camera dips with it.
+  * Crouch: hold C or Ctrl (or the touch CROUCH toggle, or B on a gamepad): lower and slower, a smaller target, the
+    bow steadier in your hands. Everyone sees you crouch (MoveService lowers you on the server too).
+  * Slide: crouch while sprinting (or the touch SLIDE button): a short burst forward, low to the ground, on a
+    cooldown. The camera dips with it, and if you're still holding crouch you stay down at the end.
   * Front flip: every FLIP_EVERY-th jump the camera rolls a full turn forward through the jump. Cosmetic only (your
     direction and speed don't change), and off in the settings if you don't like it.
   * Knockback: the server's Hurt carries a push; your client owns your body, so it applies it here.
@@ -29,6 +31,9 @@ local player = Players.LocalPlayer
 local sprinting = false
 local slideUntil, slideReady = 0, 0
 local slideDir
+local crouching = false
+local camY = 0 -- (the view's height offset, eased)
+local baseHip
 local jumps = 0
 local flipStart
 local FLIP_SECONDS = 0.5
@@ -45,6 +50,35 @@ end
 function MoveController.setSprint(on)
 	sprinting = on == true
 	Net.send("Sprint", sprinting)
+end
+
+function MoveController.crouching()
+	return crouching
+end
+
+local function applyHip()
+	local hum = humanoid()
+	if not hum then
+		return
+	end
+	baseHip = baseHip or hum.HipHeight
+	hum.HipHeight = crouching and math.max(0.2, baseHip - Constants.CROUCH_DROP) or baseHip
+end
+
+-- Crouch on or off; crouching while you sprint (and move) is a slide.
+function MoveController.setCrouch(on)
+	on = on == true
+	if on == crouching then
+		return
+	end
+	local hum = humanoid()
+	if on and sprinting and hum and (hum.MoveDirection or Vector3.zero).Magnitude > 0.1 then
+		MoveController.slide()
+	end
+	crouching = on
+	applyHip()
+	Net.send("Crouch", crouching)
+	Bus.Tap:Fire(on and "crouch" or "stand")
 end
 
 function MoveController.slide()
@@ -88,14 +122,16 @@ function MoveController.flipping()
 	return flipStart ~= nil and os.clock() - flipStart < FLIP_SECONDS
 end
 
-local function step()
+local function step(dt)
 	local hum, root = humanoid()
 	if not hum then
 		return
 	end
 	local speed = Constants.WALK_SPEED
-	if sprinting then
+	if sprinting and not crouching then
 		speed = Constants.SPRINT_SPEED
+	elseif crouching then
+		speed = Constants.CROUCH_SPEED
 	end
 	if WeaponController.drawing() then
 		speed = Constants.DRAW_SPEED
@@ -104,10 +140,11 @@ local function step()
 		local v = root.AssemblyLinearVelocity
 		root.AssemblyLinearVelocity =
 			Vector3.new(slideDir.X * Constants.SLIDE_SPEED, v.Y, slideDir.Z * Constants.SLIDE_SPEED)
-		hum.CameraOffset = Vector3.new(0, -1.6, 0)
-	else
-		hum.CameraOffset = Vector3.new(0, 0, 0)
 	end
+	-- the view's height: down for a slide, a little down crouched (the body sinks too), eased
+	local want = MoveController.sliding() and -1.6 or (crouching and -0.5 or 0)
+	camY += (want - camY) * math.min(1, (dt or 1 / 60) * 14)
+	hum.CameraOffset = Vector3.new(0, camY, 0)
 	hum.WalkSpeed = speed
 	CameraController.setFov("sprint", (sprinting and (hum.MoveDirection or Vector3.zero).Magnitude > 0.1) and 8 or nil)
 	-- the flip: a full forward roll of the view through the jump
@@ -129,14 +166,18 @@ local function hookCharacter(c)
 		return
 	end
 	jumps = 0
-	hum.StateChanged:Connect(function(_, new)
+	baseHip, crouching, camY = hum.HipHeight, false, 0
+	hum.StateChanged:Connect(function(old, new)
 		if new == Enum.HumanoidStateType.Jumping then
 			MoveController.jumped()
+		elseif new == Enum.HumanoidStateType.Landed then
+			WeaponController.landed(old == Enum.HumanoidStateType.Freefall)
 		end
 	end)
 end
 
 function MoveController:init()
+	WeaponController.bindMovement(MoveController.sprinting, MoveController.crouching, MoveController.sliding)
 	ContextActionService:BindAction("TW_Sprint", function(_, state)
 		if state == Enum.UserInputState.Begin then
 			MoveController.setSprint(true)
@@ -145,12 +186,23 @@ function MoveController:init()
 		end
 		return Enum.ContextActionResult.Pass
 	end, false, Enum.KeyCode.LeftShift, Enum.KeyCode.ButtonL3)
-	ContextActionService:BindAction("TW_Slide", function(_, state)
+	ContextActionService:BindAction("TW_Crouch", function(_, state)
 		if state == Enum.UserInputState.Begin then
-			MoveController.slide()
+			MoveController.setCrouch(true)
+		elseif state == Enum.UserInputState.End then
+			MoveController.setCrouch(false)
 		end
 		return Enum.ContextActionResult.Pass
 	end, false, Enum.KeyCode.C, Enum.KeyCode.LeftControl, Enum.KeyCode.ButtonB)
+	Bus.Crouch:Connect(function(on)
+		MoveController.setCrouch(on)
+	end)
+	Bus.Jump:Connect(function()
+		local hum = humanoid()
+		if hum then
+			hum.Jump = true
+		end
+	end)
 	Bus.Sprint:Connect(function(on)
 		MoveController.setSprint(on)
 	end)

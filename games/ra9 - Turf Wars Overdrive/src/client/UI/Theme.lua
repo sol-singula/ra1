@@ -525,7 +525,7 @@ end
 
 -- True on phones and tablets (no keyboard, touch screen).
 function Theme.isTouch()
-	return UserInputService.TouchEnabled == true and UserInputService.KeyboardEnabled ~= true
+	return require(script.Parent.Device).isTouch()
 end
 
 -- A ScreenGui that keeps its UIScale in step with the screen size.

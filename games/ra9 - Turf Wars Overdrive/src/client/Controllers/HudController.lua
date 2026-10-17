@@ -34,6 +34,7 @@ local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Layout = require(script.Parent.Parent.UI.Layout)
+local Device = require(script.Parent.Parent.UI.Device)
 local BuildController = require(script.Parent.BuildController)
 
 local HudController = { Name = "HudController", Order = 40 }
@@ -483,6 +484,7 @@ local function buildBottom(gui)
 		BorderSizePixel = 0,
 		Parent = gui,
 	}, { Theme.corner(3), Theme.stroke(2, C.ink) })
+	refs.health = hp
 	refs.hpFill = Theme.new("Frame", {
 		Name = "Fill",
 		Size = UDim2.fromScale(1, 1),
@@ -508,6 +510,7 @@ local function buildBottom(gui)
 		BackgroundTransparency = 1,
 		Parent = gui,
 	})
+	refs.bowsFrame = bows
 	refs.bows = {}
 	for i, w in Weapons.list do
 		local b = Theme.new("TextButton", {
@@ -699,32 +702,49 @@ function HudController.updateBottom()
 		refs.buildHint.TextColor3 = (picked and spot and not spot.ok) and RED or C.muted
 	end
 	if refs.bows then
-		refs.bows.bow.button.Parent.Visible = not building
+		refs.bows.bow.button.Parent.Visible = not building and m.phase ~= "victory" -- (not over the question card)
 	end
 end
 
 -- Touch controls -----------------------------------------------------------------------------------------------
+-- Built for every device and shown while you're playing by touch (Device: a phone, a tablet, a touch laptop being
+-- tapped). Round the right thumb, each in its own spot (centre offsets from the bottom-right corner); Roblox's own
+-- thumbstick keeps the left side, and its jump button is swapped for ours so nothing sits on anything:
+--   FIRE (hold to draw)  JUMP  CROUCH (toggle)  RUN (toggle)  SLIDE  RELOAD (the crossbow)
+--   PLACE and TURN take FIRE's and RUN's spots while building
+local TOUCH = {
+	fire = { -110, -150, 104 },
+	jump = { -60, -52, 72 },
+	crouch = { -190, -58, 60 },
+	sprint = { -230, -140, 64 },
+	slide = { -205, -215, 58 },
+	reload = { -60, -235, 52 },
+}
+HudController.TOUCH = TOUCH
+
 local function buildTouch(gui)
-	if not Theme.isTouch() then
-		return
-	end
-	local function button(name, text, pos, size, color)
+	local function button(name, text, spot, color)
 		return Theme.new("TextButton", {
 			Name = name,
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = pos,
-			Size = UDim2.fromOffset(size, size),
+			Position = UDim2.new(1, spot[1], 1, spot[2]),
+			Size = UDim2.fromOffset(spot[3], spot[3]),
 			BackgroundColor3 = color or C.white,
 			BackgroundTransparency = 0.1,
 			Text = text,
 			Font = Theme.Display,
-			TextSize = 14,
+			TextSize = spot[3] >= 90 and 18 or 13,
 			TextColor3 = color and C.white or C.ink,
 			AutoButtonColor = false,
+			Visible = false,
 			Parent = gui,
 		}, { Theme.corner("round"), Theme.stroke(2, C.ink) })
 	end
-	local fire = button("Fire", "FIRE", UDim2.new(1, -110, 1, -150), 104, C.ink)
+	local function toggle(b, on)
+		b.BackgroundColor3 = on and C.ink or C.white
+		b.TextColor3 = on and C.white or C.ink
+	end
+	local fire = button("Fire", "FIRE", TOUCH.fire, C.ink)
 	fire.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.Touch then
 			Bus.Fire:Fire(true)
@@ -735,41 +755,107 @@ local function buildTouch(gui)
 			Bus.Fire:Fire(false)
 		end
 	end)
+	local jump = button("Jump", "JUMP", TOUCH.jump)
+	jump.Activated:Connect(function()
+		Bus.Jump:Fire()
+	end)
+	local crouchOn = false
+	local crouch = button("Crouch", "CROUCH", TOUCH.crouch)
+	crouch.Activated:Connect(function()
+		crouchOn = not crouchOn
+		toggle(crouch, crouchOn)
+		Bus.Crouch:Fire(crouchOn)
+	end)
 	local sprintOn = false
-	-- (each clear of the others and of the bows panel along the bottom right)
-	local sprint = button("Sprint", "RUN", UDim2.new(1, -220, 1, -130), 64)
+	local sprint = button("Sprint", "RUN", TOUCH.sprint)
 	sprint.Activated:Connect(function()
 		sprintOn = not sprintOn
-		sprint.BackgroundColor3 = sprintOn and C.ink or C.white
-		sprint.TextColor3 = sprintOn and C.white or C.ink
+		toggle(sprint, sprintOn)
 		Bus.Sprint:Fire(sprintOn)
 	end)
-	button("Slide", "SLIDE", UDim2.new(1, -210, 1, -205), 58).Activated:Connect(function()
+	local slide = button("Slide", "SLIDE", TOUCH.slide)
+	slide.Activated:Connect(function()
 		Bus.Slide:Fire()
 	end)
-	local place = button("Place", "PLACE", UDim2.new(1, -110, 1, -150), 104, C.ink)
+	local reload = button("Reload", "RELOAD", TOUCH.reload)
+	reload.Activated:Connect(function()
+		Bus.Reload:Fire()
+	end)
+	local place = button("Place", "PLACE", TOUCH.fire, C.ink)
 	place.Activated:Connect(function()
 		Bus.Place:Fire()
 	end)
-	local rotate = button("Rotate", "TURN", UDim2.new(1, -220, 1, -130), 64)
+	local rotate = button("Rotate", "TURN", TOUCH.sprint)
 	rotate.Activated:Connect(function()
 		Bus.Rotate:Fire()
 	end)
-	refs.touch = { fire = fire, place = place, rotate = rotate, sprint = sprint }
+	refs.touch = {
+		fire = fire,
+		jump = jump,
+		crouch = crouch,
+		sprint = sprint,
+		slide = slide,
+		reload = reload,
+		place = place,
+		rotate = rotate,
+	}
+end
+HudController._buildTouch = buildTouch -- (tests: the touch layout on a desktop run)
+
+-- Roblox's own touch jump button sits where ours are: hidden while ours shows (its thumbstick stays)
+local function hideRobloxJump()
+	local pg = player:FindFirstChild("PlayerGui")
+	local tg = pg and pg:FindFirstChild("TouchGui")
+	local frame = tg and tg:FindFirstChild("TouchControlFrame")
+	local jb = frame and frame:FindFirstChild("JumpButton")
+	if jb and jb.Visible then
+		jb.Visible = false
+	end
 end
 
-HudController._buildTouch = buildTouch -- (tests: the touch layout on a desktop run)
+-- Where the corners go for the way you play: on touch the health moves up under the buttons on the left (the
+-- thumbstick has the bottom left), the bows go to the bottom middle (the action buttons have the bottom right),
+-- and only one popup shows at a time (the buttons reach up the right side).
+function HudController.layoutFor(kind)
+	local touch = kind == "touch"
+	if refs.health then
+		refs.health.AnchorPoint = touch and Vector2.new(0, 0) or Vector2.new(0, 1)
+		refs.health.Position = touch and UDim2.fromOffset(16, 160) or UDim2.new(0, 16, 1, -16)
+	end
+	if refs.bowsFrame then
+		refs.bowsFrame.AnchorPoint = touch and Vector2.new(0.5, 1) or Vector2.new(1, 1)
+		refs.bowsFrame.Position = touch and UDim2.new(0.5, 0, 1, -16) or UDim2.new(1, -16, 1, -16)
+	end
+	STACK.max = touch and 1 or 2
+	refs.layout = kind
+end
 
 local function updateTouch()
 	local t = refs.touch
 	if not t then
 		return
 	end
-	local building = Store.phase() == "build"
-	t.fire.Visible = not building
-	t.sprint.Visible = not building or BuildController.picked() == nil
-	t.place.Visible = building and BuildController.picked() ~= nil
-	t.rotate.Visible = building and BuildController.picked() ~= nil
+	local on = Device.isTouch()
+	local phase = Store.phase()
+	local building = phase == "build"
+	local playing = phase == "build" or phase == "fight"
+	local picked = BuildController.picked() ~= nil
+	local me = Store.get("me") or {}
+	local w = Weapons.get(me.weapon or "")
+	t.fire.Visible = on and phase == "fight"
+	t.jump.Visible = on and playing
+	t.crouch.Visible = on and playing
+	t.sprint.Visible = on and playing and not (building and picked)
+	t.slide.Visible = on and playing
+	t.reload.Visible = on and phase == "fight" and w ~= nil and w.mag ~= nil
+	t.place.Visible = on and building and picked
+	t.rotate.Visible = on and building and picked
+	if on then
+		hideRobloxJump()
+	end
+	if refs.layout ~= Device.kind() then
+		HudController.layoutFor(Device.kind())
+	end
 end
 
 -- Results and unlocks ------------------------------------------------------------------------------------------
@@ -1074,6 +1160,12 @@ function HudController:init()
 	buildFeed(gui)
 	buildBottom(gui)
 	buildTouch(gui)
+	HudController.layoutFor(Device.kind())
+	Net.send("Settings", "device", Device.kind())
+	Device.Changed:Connect(function(kind)
+		HudController.layoutFor(kind)
+		Net.send("Settings", "device", kind)
+	end)
 	refs.objectiveUntil = os.clock() + 20
 	Net.listen("Alert", function(text, color, seconds)
 		HudController.alert(text, color, seconds)

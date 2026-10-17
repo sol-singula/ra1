@@ -18,6 +18,7 @@ Net.ClientEvents = {
 	Demolish = 4, -- (structureId) take back one of yours in the build phase (refunded)
 	Sprint = 6, -- (on)
 	Slide = 3, -- () a slide while running (MoveService checks the cooldown)
+	Crouch = 6, -- (on) crouched or not (MoveService: everyone sees you lower; the anti-cheat expects you slower)
 	Settings = 2, -- (key, value) flips, sensitivity, equipped cosmetics
 	Analytics = 4, -- (kind, data) device info, frame rate (AnalyticsService)
 	Buy = 4, -- ("item", key) | ("bundle") | ("robux", productKey | "starter") (ShopService)

@@ -53,6 +53,8 @@ Constants.SLIDE_SPEED = 42
 Constants.SLIDE_SECONDS = 0.55
 Constants.SLIDE_COOLDOWN = 1.6
 Constants.FLIP_EVERY = 4 -- a front flip on every 4th eligible jump
+Constants.CROUCH_SPEED = 10 -- crouched: slower, lower (a smaller target), the bow steadier
+Constants.CROUCH_DROP = 1.1 -- studs the body (and the view, and the hit spheres) sink when crouched
 
 -- Building (§7)
 Constants.BUILD_BUDGET = 100 -- points a player gets each build phase

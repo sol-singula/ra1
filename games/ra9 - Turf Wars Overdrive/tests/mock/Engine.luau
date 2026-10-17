@@ -216,6 +216,12 @@ CF.__index = function(c, k)
 		return function(self, other)
 			return self:Inverse() * other
 		end
+	elseif k == "ToEulerAnglesYXZ" or k == "ToOrientation" then
+		-- R = Ry * Rx * Rz (row-major r)
+		return function(self)
+			local r = self.r
+			return math.asin(math.clamp(-r[6], -1, 1)), math.atan2(r[3], r[9]), math.atan2(r[4], r[5])
+		end
 	elseif k == "ToWorldSpace" then
 		return function(self, other)
 			return self * other
