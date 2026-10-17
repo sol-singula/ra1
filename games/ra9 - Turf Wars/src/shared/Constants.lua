@@ -4,6 +4,14 @@ local Constants = {}
 Constants.GAME = "ra9"
 Constants.GAME_NAME = "Turf Wars"
 
+-- The place this server runs: "turf" (the arena) or "lobby" (the hub: the Crate, the shop signs). A service or
+-- controller with Modes = { "lobby" } boots only there (CrateService, CrateController); the rest run everywhere.
+Constants.MODE = "turf"
+function Constants.applyMode(key)
+	Constants.MODE = key == "lobby" and "lobby" or "turf"
+	return Constants.MODE
+end
+
 -- Server and teams (§1, §2A)
 Constants.MAX_PLAYERS = 40
 Constants.TEAMS = { "red", "blue" }

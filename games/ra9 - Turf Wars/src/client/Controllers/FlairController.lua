@@ -4,6 +4,9 @@ The cosmetics others wear, alive on this client (FX/Flair):
   * the bow in everyone else's hand (CombatService builds it plain: "HeldBow"): painted with the skin they wear (their
     LookSkin attribute), then animated: a rainbow or candy stripes sliding along the limbs, lava pulsing, galaxy
     sparkles, frost, lightning crackling, golden dragon wings flapping, embers, snow or sparks coming off it
+  * the blade in everyone else's hand in the CHARGE (CombatService builds it in the sword skin they wear, "HeldBow"
+    with Weapon "blade"; Shared/SwordSkins): a rainbow or lava moving, a neon edge throbbing, arcs crackling down a
+    Lightning Fang, embers, snow, sparks or dark smoke off it, the Doge sticker on the guard
   * the banner emblems on every flag (BuildService: a SurfaceGui "Emblem"): fire off a Flame, a Rainbow's hues, a
     Lightning flicker, a Doge pulse, a Chicken bounce, Skulls spinning, a Galaxy or Crown sparkling
   * the loose bits everything drops (feathers, bubbles, blocks, hearts...): Flair.step every frame
@@ -12,6 +15,7 @@ Far-off bows and banners are updated less often; your own held bow is hidden (yo
 WeaponController decorates itself).
 
   FlairController.bows()      bows decorated now (tests)
+  FlairController.swords()    blades brought alive now (tests)
   FlairController.banners()   banners animated now (tests)
   FlairController.scan()      look for new bows and banners at once (tests; it runs every half second anyway)
 ]]
@@ -20,6 +24,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
+local SwordSkins = require(ReplicatedStorage.Shared.SwordSkins)
 local Flair = require(script.Parent.Parent.FX.Flair)
 
 local FlairController = { Name = "FlairController", Order = 47 }
@@ -61,14 +66,25 @@ local function scanBows()
 		local model = c and c:FindFirstChild("HeldBow")
 		if model then
 			local weapon = model:GetAttribute("Weapon")
-			local skinKey = p:GetAttribute("LookSkin")
+			local skinKey = weapon == "blade" and p:GetAttribute("LookSword") or p:GetAttribute("LookSkin")
 			local have = bows[model]
 			if have and have.skin ~= skinKey then
 				have.handle:destroy()
 				bows[model] = nil
 				have = nil
 			end
-			if not have and (weapon == nil or weapon == "bow" or weapon == "crossbow" or weapon == "heavy") then
+			if not have and weapon == "blade" then
+				-- (their blade: the server built it in their skin; its moving parts are this client's)
+				local it = Cosmetics.get(skinKey)
+				local look = it and it.kind == "sword" and it.look or nil
+				if look and (look.anim or look.particles or look.sticker) and model:FindFirstChild("Edge") then
+					local handle =
+						Flair.sword(SwordSkins.adopt(model, look, p:GetAttribute("Team")), look, p:GetAttribute("Team"))
+					bows[model] = { handle = handle, skin = skinKey, owner = p, sword = true }
+				else
+					bows[model] = { handle = { update = function() end, destroy = function() end }, skin = skinKey }
+				end
+			elseif not have and (weapon == nil or weapon == "bow" or weapon == "crossbow" or weapon == "heavy") then
 				local it = Cosmetics.get(skinKey)
 				local look = it and it.kind == "skin" and it.look or nil
 				local grip = model:FindFirstChild("Grip")
@@ -137,7 +153,17 @@ end
 function FlairController.bows()
 	local n = 0
 	for _, b in bows do
-		if b.owner then
+		if b.owner and not b.sword then
+			n += 1
+		end
+	end
+	return n
+end
+
+function FlairController.swords()
+	local n = 0
+	for _, b in bows do
+		if b.owner and b.sword then
 			n += 1
 		end
 	end

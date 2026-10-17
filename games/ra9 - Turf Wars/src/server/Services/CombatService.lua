@@ -62,6 +62,7 @@ local RunService = game:GetService("RunService")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
+local SwordSkins = require(ReplicatedStorage.Shared.SwordSkins)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 
@@ -243,10 +244,11 @@ function CombatService:HoldBow(player, key)
 		if right then
 			hand = right
 		end
-		part("Grip", Vector3.new(0.25, 0.25, 0.7), color, CFrame.new(0, -0.3, 0))
-		part("Guard", Vector3.new(0.9, 0.2, 0.2), Color3.fromRGB(118, 122, 132), CFrame.new(0, -0.3, -0.45))
-		part("Edge", Vector3.new(0.12, 0.3, 2.4), Color3.fromRGB(214, 218, 225), CFrame.new(0, -0.3, -1.75))
-		part("Bevel", Vector3.new(0.13, 0.06, 2.3), Color3.fromRGB(250, 251, 253), CFrame.new(0, -0.43, -1.75))
+		-- (in the sword skin they wear: Shared/SwordSkins lays it out; the client brings it alive, FlairController)
+		for _, s in SwordSkins.specs(SwordSkins.lookOf(player:GetAttribute("LookSword")), team) do
+			local p = part(s.name, s.size, s.color, CFrame.new(0, -0.3, 0) * s.offset)
+			p.Material, p.Transparency = Enum.Material[s.material] or p.Material, s.transparency or 0
+		end
 	else
 		local len = 1.6
 		part("Grip", Vector3.new(0.25, 0.6, 0.25), color, CFrame.new(0, -0.3, 0))

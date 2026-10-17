@@ -31,6 +31,7 @@ Net.ClientEvents = {
 	Top = 2, -- () the leaderboards, please (LeaderboardService answers with "Leaderboards")
 	Active = 1, -- () the player touched a key, the mouse or the screen lately (AfkService: not idle)
 	InvitePromo = 4, -- ("sent", recipients) | ("later") the invite-a-friend card (InviteService)
+	Crate = 2, -- ("spin", "shards" | "robux") the lobby's Crate: one roll (CrateService)
 }
 
 -- Server → client.
@@ -72,6 +73,7 @@ Net.ServerEvents = {
 	"Leaderboards", -- { boards, server, you, ok, at, every } the top players, all time and here (LeaderboardService)
 	"InvitePromo", -- { why, pool = { effect keys } } the invite-a-friend card | { pulse = true } nudge the button
 	"InviteReward", -- { key, pool = { effect keys }, friend } a friend joined from your invite: the effect you won
+	"Crate", -- { key, kind, name, rarity, dup, refund, paid } what the Crate rolled for you (CrateService)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).

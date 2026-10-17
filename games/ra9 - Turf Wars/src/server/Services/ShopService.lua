@@ -9,6 +9,7 @@ still 0 is given for free in Studio, so the whole shop can be tried before the p
   Net "Buy" ("item", key) | ("bundle") | ("robux", productKey | "starter" | "tnt" | "deal_<key>")
   Net "Claim" (tier, "f" | "p")
   ShopService:Reroll(player)   an admin's RESET SHOP: 4 new daily items for this player (until they leave)
+  ShopService.handlers[productKey] = fn(player, product)   a product another service grants (the Crate's spin)
 ]]
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -26,6 +27,7 @@ local ShopService = {
 	Name = "ShopService",
 	Dependencies = { "PlayerDataService", "EconomyService", "SeasonService", "ProgressService" },
 	Bought = Signal.new("ShopService.Bought"), -- (player, what, shards?, robux?)
+	handlers = {}, -- [product key] = fn(player, product): granted by another service (CrateService's spin)
 }
 
 local data, economy, season, progress
@@ -96,7 +98,9 @@ end
 
 -- Robux ----------------------------------------------------------------------------------------------------------
 function ShopService:Grant(player, product)
-	if product.cosmetic then
+	if self.handlers[product.key] then
+		self.handlers[product.key](player, product)
+	elseif product.cosmetic then
 		-- (a Robux-only cosmetic: yours for good, and put on)
 		economy:Give(player, product.cosmetic)
 		local it = Cosmetics.get(product.cosmetic)
