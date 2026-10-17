@@ -5,9 +5,11 @@ the camera comes back to you as you respawn.
   an arrow   the letterbox slides in and the view cuts to the killer, a slow push in on their bow; then the arrow is
              replayed from the bow to you in slow motion (the same arc the server flew, Net "Kill" cam), the camera
              riding beside it and swinging round it on an eased path with a slight roll, slowing as it closes in
-             (and a depth of field on high graphics); a freeze frame on the impact with a white flash, a stand-in of
-             you (Effects.mannequin) shattering in slow motion; then the camera drifts round the spot as a card slides
-             in: ELIMINATED BY <name>, their weapon (UI/Icons) and the distance; a fade to white and back to you
+             (and a depth of field on high graphics); a freeze frame on the impact with a white flash, and the
+             KILLER'S kill effect playing on a stand-in of you at half speed (FX/KillEffects: you see exactly what
+             got you: a chicken, a lightning strike...; the plain shatter under it when the effect doesn't carry
+             your body off); then the camera drifts round the spot as a card slides
+             in: ELIMINATED BY <name>, their weapon (UI/Icons), the distance and their effect's name; a fade to white and back to you
   a blade, a TNT, anything else: a quick orbit round the killer (or the blast) with the card, then the fade
 
 The arrow comes off the bow at real speed and slows down more and more in the last stretch, right before it hits you.
@@ -33,10 +35,12 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 local Effects = require(script.Parent.Parent.FX.Effects)
+local KillEffects = require(script.Parent.Parent.FX.KillEffects)
 local Device = require(script.Parent.Parent.UI.Device)
 local Icons = require(script.Parent.Parent.UI.Icons)
 local Layout = require(script.Parent.Parent.UI.Layout)
@@ -58,7 +62,9 @@ KillCamController.refs = refs
 -- seconds of each part (the flight's own length follows the real one, slowed, within these bounds). All of it fits
 -- inside the respawn wait (Constants.RESPAWN_SECONDS); if the new body is slower than that, the last shot holds until
 -- it's there (HOLD_MAX at most), and the moment it is, a quick fade takes the camera to it.
-local INTRO, FLIGHT_MIN, FLIGHT_MAX, FREEZE, CARD, FADE = 0.35, 0.9, 1.6, 0.28, 0.6, 0.25
+-- (the card's beat is longer now: the killer's kill effect plays on you there, slowed down, so you see it)
+local INTRO, FLIGHT_MIN, FLIGHT_MAX, FREEZE, CARD, FADE = 0.35, 0.9, 1.4, 0.22, 0.8, 0.25
+local FX_SCALE = 0.5 -- the killer's effect on you: half speed
 local ORBIT = 1.5 -- a blade's or a blast's whole orbit
 local HOLD_MAX = 7 -- seconds: never longer than this, respawned or not
 local QUICK_FADE = 0.2 -- respawned: the fade to the new body
@@ -292,6 +298,10 @@ local function setCard(k)
 	if k.head then
 		table.insert(bits, "HEADSHOT")
 	end
+	local fx = k.effect and Cosmetics.get(k.effect)
+	if fx and fx.kind == "effect" then
+		table.insert(bits, string.upper(fx.name))
+	end
 	refs.info.Text = table.concat(bits, "  ·  ")
 	for _, c in refs.iconSlot:GetChildren() do
 		if c.Name == "Icon" then
@@ -441,11 +451,30 @@ local function arrowShot(camera, t)
 		-- the impact: you shatter, everything freezes for a beat in a white flash
 		ArrowController.stop(c.arrow, nil) -- (no burst of its own: you shattering is the impact)
 		Effects.timeScale = 0.04
-		local parts = c.mannequin and c.mannequin:GetChildren() or {}
 		local dir = (Formulas.arrowVelocity(V, T)).Unit
-		local burst = { pos = c.stand, dir = dir, team = c.myTeam, parts = parts, power = 1.2, scale = 1.3 }
-		burst.quiet = true -- (the screen's own flash does the glow; in slow motion a ball of light would hang there)
-		Effects.shatter(burst)
+		-- the killer's kill effect, on you, slowed down (one that moves a body takes your stand-in with it)
+		local fxLook = c.fx and c.fx.look
+		local carries = fxLook and KillEffects.usesBody(fxLook.shape)
+		if not carries then
+			local parts = c.mannequin and c.mannequin:GetChildren() or {}
+			local burst = { pos = c.stand, dir = dir, team = c.myTeam, parts = parts, power = 1.2, scale = 1.3 }
+			burst.quiet = true -- (the screen's own flash does the glow; in slow motion a ball of light would hang there)
+			Effects.shatter(burst)
+		end
+		if c.fx then
+			local body = carries and c.mannequin or nil
+			local ok, h = pcall(KillEffects.play, c.fx.key, c.stand, c.team, {
+				body = body,
+				victimTeam = c.myTeam,
+				dir = dir,
+				scale = FX_SCALE,
+				fixed = true,
+			})
+			c.fxHandle = ok and h or nil
+			if body and c.fxHandle then
+				c.mannequin = nil -- (the effect has it now, and cleans it up)
+			end
+		end
 		if c.mannequin then
 			c.mannequin:Destroy()
 			c.mannequin = nil
@@ -515,6 +544,9 @@ local function finish()
 	if c.mannequin then
 		c.mannequin:Destroy()
 	end
+	if c.fxHandle and c.fxHandle.alive then
+		c.fxHandle.scale = 2 -- (you're back: the rest of it plays out quickly)
+	end
 	Effects.timeScale = 1
 	grade(false)
 	AudioController.muffle(false)
@@ -583,6 +615,12 @@ function KillCamController.play(k)
 		c.introPos = c.origin + c.dir * 8.5 + c.side * 3.6 + UP * 1.2
 		c.introLook = c.origin - UP * 0.9
 		c.trail = trails[k.killer] -- (what they wear: their arrows said)
+		-- (their kill effect plays here, on you, slowed: nobody else plays it on this screen)
+		local fx = k.effect and Cosmetics.get(k.effect)
+		if fx and fx.kind == "effect" then
+			c.fx = fx
+			KillEffects.claim(k)
+		end
 	else
 		local center = typeof(k.killerPos) == "Vector3" and k.killerPos
 			or (typeof(info.impact) == "Vector3" and info.impact)
