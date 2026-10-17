@@ -24,6 +24,12 @@ Light on phones and low graphics (fewer pieces), capped, and everything cleans u
   KillEffects.playShape(shape, pos, team, opts?)   the same by shape name (tests, previews)
   KillEffects.usesBody(shape)   KillEffects.SHAPES   KillEffects.count()   KillEffects.pieces()   KillEffects.step(dt)
   KillEffects.claim(k) / KillEffects.claimed(k)   the victim's kill cam takes a kill's effect to play itself
+
+A shop card's live preview (UI/ItemPreview) plays one inside a ViewportFrame: opts.parent (its WorldModel) holds the
+pieces instead of workspace, opts.ground is the floor (no raycast), and opts.preview keeps it quiet and to itself (no
+sounds, the lightning's darkness kept off Lighting as fx.grade for the preview to show, light piece counts, not
+counted or stepped here: the caller steps the handle and destroys it). A viewport doesn't draw billboards, so every
+word and sticker's BillboardGui is also listed in fx.boards for the preview to draw over the frame.
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -223,7 +229,9 @@ function Actor:text(str, offset, color, o)
 	gui.LightInfluence = 0
 	gui.MaxDistance = 400
 	gui.Adornee = anchor
+	gui.Enabled = not self.preview -- (a preview draws it itself)
 	gui.Parent = anchor
+	table.insert(self.boards, gui)
 	local l = Instance.new("TextLabel")
 	l.Name = "Text"
 	l.BackgroundTransparency = 1
@@ -259,7 +267,9 @@ function Actor:sticker(name, offset, size, opts)
 		gui.LightInfluence = 0
 		gui.MaxDistance = 500
 		gui.Adornee = anchor
+		gui.Enabled = not self.preview -- (a preview draws it itself)
 		gui.Parent = anchor
+		table.insert(self.boards, gui)
 		local img = Instance.new("ImageLabel")
 		img.Name = "Art"
 		img.BackgroundTransparency = 1
@@ -305,8 +315,8 @@ end
 -- a sound from the spot: one of the studio's shared clips, pitched (slower in slow motion)
 function Actor:sound(clip, pitch, volume, delay)
 	local function play()
-		if not self.alive then
-			return
+		if not self.alive or self.preview then
+			return -- (a shop preview plays silently)
 		end
 		pcall(function()
 			local id = Constants.SOUNDS[clip] or clip
@@ -1025,7 +1035,9 @@ S.lightning = function(fx)
 		cc.Contrast = 0.4
 		cc.Saturation = -0.4
 		cc.TintColor = Color3.fromRGB(190, 210, 255)
-		cc.Parent = Lighting
+		-- (a shop preview keeps it to itself: the preview shows it on its own frame)
+		cc.Parent = fx.preview and fx.folder or Lighting
+		fx.grade = cc
 		table.insert(fx.parts, cc)
 		local t0 = fx.age
 		table.insert(fx.ticks, function(_, t)
@@ -1595,13 +1607,14 @@ function KillEffects.playShape(shape, pos, team, opts)
 		return nil
 	end
 	opts = opts or {}
-	local t = tier()
-	if KillEffects.pieces() > (MAX_PIECES[t] or 150) then
+	local preview = opts.preview == true
+	local t = preview and "low" or tier()
+	if not preview and KillEffects.pieces() > (MAX_PIECES[t] or 150) then
 		return nil -- (too much on screen: this one sits out)
 	end
 	local look = opts.look or { shape = shape, color = "team", count = 12 }
 	local dir = typeof(opts.dir) == "Vector3" and opts.dir.Magnitude > 0.01 and opts.dir.Unit or Vector3.new(1, 0, 0)
-	local f = getFolder()
+	local f = typeof(opts.parent) == "Instance" and opts.parent or getFolder()
 	local anchor = Instance.new("Part")
 	anchor.Name = "FxAnchor"
 	anchor.Anchored = true
@@ -1613,8 +1626,11 @@ function KillEffects.playShape(shape, pos, team, opts)
 	anchor.CFrame = CFrame.new(pos)
 	anchor.Parent = f
 	-- pos is where they stood (a body's middle); the floor under it for what lies on the ground
-	local ground = pos - UP * 2.9
+	local ground = typeof(opts.ground) == "Vector3" and opts.ground or pos - UP * 2.9
 	pcall(function()
+		if opts.ground then
+			return
+		end
 		local params = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Exclude
 		params.FilterDescendantsInstances = { f, opts.body }
@@ -1634,7 +1650,8 @@ function KillEffects.playShape(shape, pos, team, opts)
 		color = look.color == "rainbow" and rainbow(0) or Cosmetics.color(look.color or "team", team),
 		mult = MULT[t] or 0.4,
 		scale = math.clamp(tonumber(opts.scale) or 1, 0.05, 2),
-		fixed = opts.fixed == true,
+		fixed = opts.fixed == true or preview,
+		preview = preview,
 		age = 0,
 		life = LIFE,
 		folder = f,
@@ -1644,6 +1661,7 @@ function KillEffects.playShape(shape, pos, team, opts)
 		emitters = {},
 		timers = {},
 		ticks = {},
+		boards = {},
 		body = opts.body,
 		ownsBody = opts.ownsBody ~= false and opts.body ~= nil,
 		bodyAlpha = {},
@@ -1655,6 +1673,9 @@ function KillEffects.playShape(shape, pos, team, opts)
 		local ok, m = pcall(Effects.mannequin, CFrame.new(fx.at), opts.victimTeam)
 		if ok and m then
 			fx.body, fx.ownsBody = m, true
+			if preview then
+				m.Parent = f
+			end
 		end
 	end
 	fx.tick = function(self, now, dt)
@@ -1668,8 +1689,10 @@ function KillEffects.playShape(shape, pos, team, opts)
 		fx:destroy()
 		return nil
 	end
-	table.insert(actors, fx)
-	connect()
+	if not preview then
+		table.insert(actors, fx)
+		connect()
+	end
 	return fx
 end
 
