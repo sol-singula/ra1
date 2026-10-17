@@ -2,10 +2,10 @@
 The lobby's screen and its world (Modes = { "lobby" }: only in the lobby place; LobbyService runs the server side),
 phone-first: big buttons, the SUPERHOT look (white cards, black type, gold for PLAY).
 
-  bottom centre  ▶ PLAY, big and gold: "joins the fullest game · N playing"; above it three mode cards (Turf Wars,
-                 Capture the Flag, Bot Brawl) with their live counts (Net "Population"); a tap sends Net "Play"
+  bottom centre  ▶ PLAY, big and gold: "joins the fullest game · N playing"; above it four mode cards (Turf Wars,
+                 Capture the Flag, Bot Brawl, Castle Tycoon) with their live counts (Net "Population"); a tap sends Net "Play"
                  (with the card's mode; the framework's PlaceService teleports)
-  top left       🛒 SHOP (the panel: PanelController) and your Shards
+  top left       🛒 SHOP (the panel: PanelController) and your Shards under it
   top right      🏆 TOP: LeaderboardController's own button and panel
   top centre     the parkour clock while you climb (PARKOUR 0:12.3 · 2/4), toasts under the PLAY block
   the card       LIKE TURF WARS? 👍 "If you like the game, tap VERIFY to tell us": VERIFY sends Net "Verify" (a
@@ -187,7 +187,7 @@ local function buildCards(gui)
 		local card = Theme.new("TextButton", {
 			Name = "Card_" .. key,
 			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.new(0.5, (i - 2) * (G.card.w + G.card.gap), 1, -y),
+			Position = UDim2.new(0.5, (i - (#Modes.LIST + 1) / 2) * (G.card.w + G.card.gap), 1, -y),
 			Size = UDim2.fromOffset(G.card.w, G.card.h),
 			BackgroundColor3 = C.paper,
 			BorderSizePixel = 0,
@@ -260,8 +260,8 @@ local function buildTop(gui)
 	refs.shop = shop
 	local slab = Theme.slab({
 		Name = "Shards",
-		Position = UDim2.fromOffset(150, 12),
-		Size = UDim2.fromOffset(130, 44),
+		Position = UDim2.fromOffset(12, 62), -- (under SHOP: the PARTY chip has the spot beside it)
+		Size = UDim2.fromOffset(130, 40),
 		Parent = gui,
 	})
 	Theme.gem(slab, 22, { Name = "Gem", Position = UDim2.fromOffset(10, 11) })

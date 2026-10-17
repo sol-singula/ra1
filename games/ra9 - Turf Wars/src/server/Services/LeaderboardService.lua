@@ -1,9 +1,10 @@
 --[[
-The leaderboards (the 🏆 TOP panel: LeaderboardController). Five boards, from what the profile already keeps:
+The leaderboards (the 🏆 TOP panel: LeaderboardController). Six boards, from what the profile already keeps:
 
   wins     qualifying wins (profile.wins)        kills    stats.kills
   mvps     stats.mvps                            streak   the best win streak (profile.best)
   duels    stats.duelWins (the lobby's duels: DuelService)
+  tycoon   stats.tycoonEarned (Gold collected in Castle Tycoon: TycoonService)
 
 All time: one OrderedDataStore per board (Constants.LEADERBOARD_STORE: TW_Top_wins_v1 ..., key = the UserId,
 value = the number). A player's numbers are written when they join, after each match and when they leave, at most
@@ -81,6 +82,13 @@ local BOARDS = {
 		name = "DUEL WINS",
 		read = function(p)
 			return int(p.stats and p.stats.duelWins)
+		end,
+	},
+	{
+		key = "tycoon",
+		name = "GOLD EARNED",
+		read = function(p)
+			return int(p.stats and p.stats.tycoonEarned)
 		end,
 	},
 }

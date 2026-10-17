@@ -9,7 +9,7 @@ The fixed spots everything stands on (LobbyBuilder.SPOTS: the numbers every othe
   spawn     CFrame at (0, 3, 40) facing -Z: where everyone lands, looking down the walkway at PLAY
   play      (0, 0, -20): the gold PLAY beacon: a dais under a gate with "PLAY" in 3D letters on it and a column of
             light; walking onto the dais joins the fullest game (LobbyController sends Net "Play")
-  portals   ctf (-40, 0, -30), brawl (40, 0, -30): a smaller arch each in its mode's colour, a sign for its name and
+  portals   ctf (-40, 0, -30), brawl (40, 0, -30), tycoon (72, 0, -30): a smaller arch each in its mode's colour, a sign for its name and
             live count; walking in plays that mode
   parkour   start (-90, 0, 60), up the west wall to top (-90, 40, -60): gold and white blocks, a "PARKOUR ▲" sign,
             checkpoints on the way (LobbyBuilder.PARKOUR: the platforms, the checkpoints, the top)
@@ -62,7 +62,7 @@ LobbyBuilder.SPOTS = {
 	crate = V3(60, 0, 60),
 	shops = { V3(18, 0, 10), V3(-18, 0, 10), V3(-95, 0, 0), V3(40, 0, -95) },
 	verify = V3(30, 0, 45),
-	portals = { ctf = V3(-40, 0, -30), brawl = V3(40, 0, -30) },
+	portals = { ctf = V3(-40, 0, -30), brawl = V3(40, 0, -30), tycoon = V3(72, 0, -30) },
 }
 local SPOTS = LobbyBuilder.SPOTS
 

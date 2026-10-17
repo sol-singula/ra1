@@ -48,6 +48,7 @@ local function defaults()
 			minutes = 0,
 			duelWins = 0, -- the lobby's duels (DuelService)
 			duelLosses = 0,
+			tycoonEarned = 0, -- Gold collected in Castle Tycoon, all time (the GOLD EARNED board)
 		},
 		settings = { flips = true, sensitivity = 1, shake = true, weapon = "bow" },
 		feedback = { askedDay = 0, likeAskedDay = 0 }, -- the winners' cards (FeedbackService)
@@ -67,6 +68,8 @@ local function defaults()
 		tutorial = { done = false, skipped = false, replay = false, step = "", at = 0 },
 		-- the lobby (LobbyService): VERIFY thanked once; the parkour's Shards once a day (the day it last paid), the best time
 		lobby = { verified = false, parkourDay = 0, parkourBest = 0 },
+		-- Castle Tycoon (TycoonService): Gold in hand, the pieces built, rebirths, Gold earned, the tiers paid this run
+		tycoon = { cash = 0, bought = {}, rebirths = 0, earned = 0, tiers = {} },
 		meta = { createdAt = os.time(), lastSeen = os.time(), lock = nil },
 	}
 end

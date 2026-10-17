@@ -1,0 +1,78 @@
+{
+  "name": "Tycoon",
+  "tree": {
+    "$className": "DataModel",
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future",
+        "GlobalShadows": true,
+        "ClockTime": 14
+      }
+    },
+    "HttpService": {
+      "$properties": {
+        "HttpEnabled": true
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false,
+        "Gravity": 196.2
+      },
+      "Terrain": {
+        "$properties": {
+          "Decoration": false
+        }
+      }
+    },
+    "Players": {
+      "$properties": {
+        "CharacterAutoLoads": false,
+        "RespawnTime": 3,
+        "MaxPlayers": 6
+      }
+    },
+    "Teams": {
+      "$className": "Teams"
+    },
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "../src/shared"
+      },
+      "Mode": {
+        "$className": "StringValue",
+        "$properties": {
+          "Value": "tycoon"
+        }
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "../src/server"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "CameraMode": "Classic",
+        "CameraMaxZoomDistance": 30,
+        "CameraMinZoomDistance": 6,
+        "EnableMouseLockOption": true,
+        "GameSettingsAvatar": "R15",
+        "CharacterWalkSpeed": 18,
+        "CharacterUseJumpPower": false,
+        "CharacterJumpHeight": 7.5,
+        "DevCameraOcclusionMode": "Invisicam"
+      },
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "../src/client"
+        }
+      },
+      "StarterCharacterScripts": {
+        "Health": {
+          "$path": "../src/character/Health.server.lua"
+        }
+      }
+    }
+  }
+}

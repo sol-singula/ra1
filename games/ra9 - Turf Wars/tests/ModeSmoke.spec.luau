@@ -41,6 +41,7 @@ local WANT = {
 	turf = { "RED", "BLUE" },
 	ctf = { "PURPLE", "ORANGE" },
 	brawl = { "GREEN", "SHADOW" },
+	tycoon = { "RED", "BLUE" }, -- (no teams there: the plots have their own colours)
 }
 for _, key in Constants.MODES do
 	check(`applyMode({key}) returns it`, Constants.applyMode(key) == key and Constants.MODE == key)
@@ -109,8 +110,12 @@ modeValue:Destroy()
 
 -- 2. Data/Modes --------------------------------------------------------------------------------------------------
 check(
-	"three modes to play",
-	#Modes.LIST == 3 and Modes.LIST[1] == "turf" and Modes.LIST[2] == "ctf" and Modes.LIST[3] == "brawl"
+	"four modes to play",
+	#Modes.LIST == 4
+		and Modes.LIST[1] == "turf"
+		and Modes.LIST[2] == "ctf"
+		and Modes.LIST[3] == "brawl"
+		and Modes.LIST[4] == "tycoon"
 )
 for _, key in Modes.LIST do
 	local m = Modes[key]
@@ -125,8 +130,10 @@ check("multiPlace false with zero ids", Modes.multiPlace() == false)
 Modes.LOBBY_PLACE, Modes.turf.placeId, Modes.ctf.placeId = 1, 2, 3
 check("multiPlace needs every id", Modes.multiPlace() == false)
 Modes.brawl.placeId = 4
+Modes.tycoon.placeId = 5
 check("multiPlace with every id", Modes.multiPlace() == true)
 Modes.LOBBY_PLACE, Modes.turf.placeId, Modes.ctf.placeId, Modes.brawl.placeId = 0, 0, 0, 0
+Modes.tycoon.placeId = 0
 check("runsIn: no Modes means everywhere", Modes.runsIn({}, "lobby") and Modes.runsIn({ Name = "X" }, "ctf"))
 check(
 	"runsIn: Modes listed",
@@ -358,6 +365,7 @@ check(
 check("lobby: LOBBY from the lobby is 'here'", select(2, LPlace:ToLobby(a)) == "closed")
 -- the places made: PLAY teleports, with where they came from
 LModes.LOBBY_PLACE, LModes.turf.placeId, LModes.ctf.placeId, LModes.brawl.placeId = 1001, 1002, 1003, 1004
+LModes.tycoon.placeId = 1005
 check("lobby: LOBBY from the lobby is 'here' once open", select(2, LPlace:ToLobby(a)) == "here")
 L.advance(2.5) -- (PLAY is one every 2 s)
 L.fireServer(a, "Play")
@@ -421,6 +429,7 @@ check("lobby: ...and lifts the cooldown", select(2, LPlace:ToMode(c2, "turf")) =
 local d = L.addPlayer("Dan", 7104, nil, { from = "turf" })
 check("arrivedFrom reads the teleport data", LPlace.arrivedFrom(d) == "turf" and LPlace.arrivedFrom(a) == nil)
 LModes.LOBBY_PLACE, LModes.turf.placeId, LModes.ctf.placeId, LModes.brawl.placeId = 0, 0, 0, 0
+LModes.tycoon.placeId = 0
 L.removePlayer(b)
 L.advance(0.5)
 check("lobby: leaving is counted", LPop:Here() == 3 and LPop:Counts().lobby == 3, LPop:Counts().lobby)

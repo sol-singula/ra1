@@ -1,6 +1,6 @@
 --[[
 The universe: one experience, four places. The lobby is the start place (everyone lands there and picks a game);
-the three modes are places of their own, each a server running this same code with Constants.MODE set by the
+the four modes are places of their own, each a server running this same code with Constants.MODE set by the
 Mode value Rojo puts under ReplicatedStorage (places/*.project.json; default.project.json is turf, as the one
 place has always been). Modes.LIST is what you can play: the lobby isn't one of them.
 
@@ -8,10 +8,10 @@ Until the owner has made the places (Creator Dashboard) and put their ids here, 
 everything behaves as today: one place, no teleports (PlaceService only says the mode isn't open yet), the lobby's
 features dormant.
 
-  Modes.LIST                     { "turf", "ctf", "brawl" }
+  Modes.LIST                     { "turf", "ctf", "brawl", "tycoon" }
   Modes[key]                     { key, name, placeId (0 until made), blurb, minPlayers, bots, color }
   Modes.LOBBY_PLACE              the lobby's place id (0 until made)
-  Modes.current()                Constants.MODE ("lobby" | "turf" | "ctf" | "brawl")
+  Modes.current()                Constants.MODE ("lobby" | "turf" | "ctf" | "brawl" | "tycoon")
   Modes.get(key)                 the mode, or nil
   Modes.multiPlace()             true only when every place id (the lobby's too) is set
   Modes.runsIn(module, mode?)    a service or controller with Modes = { keys } runs in those modes; none: in all
@@ -22,7 +22,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 
 local Modes = {}
 
-Modes.LIST = { "turf", "ctf", "brawl" }
+Modes.LIST = { "turf", "ctf", "brawl", "tycoon" }
 Modes.LOBBY_PLACE = 0
 
 Modes.turf = {
@@ -51,6 +51,15 @@ Modes.brawl = {
 	minPlayers = 1,
 	bots = true,
 	color = Color3.fromRGB(46, 170, 90),
+}
+Modes.tycoon = {
+	key = "tycoon",
+	name = "Castle Tycoon",
+	placeId = 0,
+	blurb = "Your own plot. Build a castle, grow your Gold, rebirth!",
+	minPlayers = 1,
+	bots = false,
+	color = Color3.fromRGB(30, 200, 185),
 }
 
 function Modes.current()

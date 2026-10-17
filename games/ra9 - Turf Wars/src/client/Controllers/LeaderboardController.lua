@@ -46,6 +46,7 @@ local TABS = {
 	{ "mvps", "MVP", "MVPS" },
 	{ "streak", "STREAK", "BEST STREAK" },
 	{ "duels", "DUELS", "DUEL WINS" },
+	{ "tycoon", "TYCOON", "GOLD EARNED" },
 }
 local MEDAL = { -- the badge, and the row's pale tint
 	{ Color3.fromRGB(255, 200, 40), Color3.fromRGB(255, 244, 205) },

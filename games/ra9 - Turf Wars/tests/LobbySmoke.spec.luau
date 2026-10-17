@@ -115,6 +115,7 @@ local spotList = {
 	{ "verify", SPOTS.verify },
 	{ "portal ctf", SPOTS.portals.ctf },
 	{ "portal brawl", SPOTS.portals.brawl },
+	{ "portal tycoon", SPOTS.portals.tycoon },
 }
 for i, p in SPOTS.duelPads do
 	table.insert(spotList, { "duel pad " .. i, p })
@@ -249,7 +250,7 @@ local TopC = Engine.require(tree.client.Controllers.LeaderboardController)
 local refs = LobbyC.refs
 check("a big PLAY button", refs.play and refs.play.Visible ~= false and refs.play.Head.Text:find("PLAY") ~= nil)
 check("...saying what it does", refs.playLine.Text:find("fullest") ~= nil)
-check("three mode cards", refs.cards.turf and refs.cards.ctf and refs.cards.brawl)
+check("four mode cards", refs.cards.turf and refs.cards.ctf and refs.cards.brawl and refs.cards.tycoon)
 check("a SHOP button and your Shards", refs.shop and refs.shards)
 check("the state came: not verified yet", LobbyC.state().verified == false)
 

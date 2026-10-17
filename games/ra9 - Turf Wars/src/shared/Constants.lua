@@ -6,11 +6,11 @@ local Constants = {}
 Constants.GAME = "ra9"
 Constants.GAME_NAME = "Turf Wars"
 
--- The place this server is (Data/Modes): "lobby" (the start place), "turf" (this game), "ctf" or "brawl". Read
+-- The place this server is (Data/Modes): "lobby" (the start place), "turf" (this game), "ctf", "brawl" or "tycoon". Read
 -- once, from a StringValue named Mode under ReplicatedStorage (places/*.project.json put it there); none means
 -- turf, as the one place has always been. Constants.applyMode(key) sets it and the team names and colours below
 -- for it (tests call it before the scripts run; it's safe to call again).
-Constants.MODES = { "lobby", "turf", "ctf", "brawl" }
+Constants.MODES = { "lobby", "turf", "ctf", "brawl", "tycoon" }
 Constants.MODE = "turf"
 -- Capture the Flag (CtfService, MatchService's ctf rules): each base has a FLAG on a stand at its back; touch the
 -- enemy's to carry it (slower, no bow), bring it to your own stand while your flag is home to CAPTURE
@@ -308,6 +308,7 @@ local TURF_LOOK = {
 Constants.MODE_LOOK = {
 	turf = TURF_LOOK,
 	lobby = TURF_LOOK,
+	tycoon = TURF_LOOK, -- (no teams: each plot has its own colour, Data/Tycoon.COLORS)
 	ctf = {
 		name = { red = "PURPLE", blue = "ORANGE" },
 		team = { red = rgb(150, 70, 230), blue = rgb(255, 140, 30) },

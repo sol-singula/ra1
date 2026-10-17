@@ -38,6 +38,7 @@ Net.ClientEvents = {
 	Crate = 4, -- ("spin", "shards" | "robux") the lobby's Crate: one roll (CrateService)
 	Verify = 0.2, -- () a check the lobby asks for
 	Ctf = 4, -- ("ready", on) READY (or not) for the next Capture the Flag match (CtfService)
+	Tycoon = 8, -- ("hit") the nearest raider | ("rebirth") yes to the REBIRTH card (TycoonService)
 }
 
 -- Server → client.
@@ -87,6 +88,8 @@ Net.ServerEvents = {
 	"Brawl", -- Bot Brawl (BrawlService): { kind = "state", wave, state, ends, alive, total, boss?, best, last }
 	-- | { kind = "clear", wave, shards, best, boss?, center } a wave down (the fireworks) | { kind = "last" } one bot
 	-- left | { kind = "stun", seconds } the bots froze
+	"Tycoon", -- Castle Tycoon's (TycoonService): { kind = "state" | "bought" | "tier" | "collect" | "rebirthAsk" |
+	-- "rebirth" | "raid" | "raidOver" | "stolen" | "zap", ... }
 	"Duel", -- { kind = "queue" | "start" | "round" | "roundEnd" | "result" | "rematch" | "end", ... } the lobby's
 	-- duels: the queue chip, the scoreboard, the round banners, the result card (DuelService, DuelController)
 	"Crate", -- { key, kind, name, rarity, dup, refund, paid } what the Crate rolled for you (CrateService)

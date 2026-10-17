@@ -810,9 +810,9 @@ and back up beside it on your side, not in a wall, protected; walled in behind i
 rally; knocked down, the spawn room again; then a new one may go up), ClientSmoke (the pieces' tones, the Keep Wall's
 dark stone, the Watchtower's team roof, nothing round in the tray, the new names, the hint).
 
-## Places: one experience, four places
+## Places: one experience, five places
 
-Turf Wars becomes a universe: a **lobby** everyone lands in, and three games you teleport to from it, each a place
+Turf Wars becomes a universe: a **lobby** everyone lands in, and four games you teleport to from it, each a place
 of its own running this same code. Which place a server is comes from one StringValue, `ReplicatedStorage.Mode`
 (`places/*.project.json` put it there; `default.project.json`, the turf place, has none and means turf):
 `Constants.MODE` reads it at require time and `Constants.applyMode(key)` sets the sides' names and colours for it
@@ -827,10 +827,11 @@ minimum players and whether it has bots, and `Modes.multiPlace()`: true only onc
 | Turf Wars | `turf` | `default.project.json` | `TurfWars.rbxl` | new (make it in the Creator Dashboard, put the id in `Data/Modes.lua`) |
 | Capture the Flag (purple v orange) | `ctf` | `places/ctf.project.json` | `CTF.rbxl` | new |
 | Bot Brawl (green, co-op against bots) | `brawl` | `places/brawl.project.json` | `Brawl.rbxl` | new |
+| Castle Tycoon (your own plot, 6 a server) | `tycoon` | `places/tycoon.project.json` | `Tycoon.rbxl` | new |
 
-`tools/build_places.sh` builds all four with Rojo (`ROJO=/path/to/rojo` picks the binary). The owner makes the three
+`tools/build_places.sh` builds all five with Rojo (`ROJO=/path/to/rojo` picks the binary). The owner makes the four
 new places under the experience in the Creator Dashboard (Places → Create), publishes each `.rbxl` to its place,
-and writes the ids into `Data/Modes.lua` (`Modes.turf.placeId`, `Modes.ctf.placeId`, `Modes.brawl.placeId`,
+and writes the ids into `Data/Modes.lua` (`Modes.turf.placeId`, `Modes.ctf.placeId`, `Modes.brawl.placeId`, `Modes.tycoon.placeId`,
 `Modes.LOBBY_PLACE = 101991401831698`). Until then `Modes.multiPlace()` is false and everything behaves as before:
 one place, no teleports (PLAY only says the mode isn't open yet), the lobby's features dormant.
 
@@ -865,3 +866,26 @@ one place, no teleports (PLAY only says the mode isn't open yet), the lobby's fe
 * The rest of the cosmetics applied in play (the ladder's trails, bow finishes, kill effects, banners, titles) and a
   locker to pick them.
 * The icon and store thumbnails from these renders, the place, publishing.
+
+## Castle Tycoon (the fourth mode)
+
+The easy mode for players who find the fights hard: no aiming, no losing, a number that always goes up. Its own
+place (`places/tycoon.project.json`, MaxPlayers 6, third-person camera); a card and a teal portal in the lobby.
+
+* **The street** (`World/TycoonBuilder`): six plots, three each side, each 64 x 64 in its own accent colour, the
+  LOBBY portal at the north end. A plot is built in its own frame (local -Z is the gate), so one castle layout
+  stands on both sides.
+* **The loop** (`TycoonService`, `Data/Tycoon`): 28 pieces in five tiers (CAMP, FORT, KEEP, CASTLE, CITADEL); the
+  next three show on buy-pads by the gate (stand on one to build it). Mines fill the vault every second; the COLLECT
+  pad moves it into your Gold. Each tier finished pays Shards (20/30/45/70/100: 265 a castle), so the tycoon feeds
+  the same shop as the fights. With everything built, REBIRTH (asks first): the castle starts over, +50% income per
+  rebirth, prices +75% per rebirth, 150 Shards + 50 per rebirth before. Saved in `profile.tycoon`; the GOLD EARNED
+  board (`stats.tycoonEarned`) is the sixth leaderboard.
+* **Pacing** (TycoonSmoke checks it): the first castle in about 18 minutes, a pad every ~10 s at first, never more
+  than two minutes for the next; a rebirth's castle at least 80% as long as the first.
+* **Raids**: from the first tower, every 150 s, 2 + tier raiders walk from the street to the vault. Towers shoot
+  them (mage towers twice as hard); anyone close can HIT (a big button on phones, click or E on a PC). A raider at
+  the vault takes 20% of what's in it (never collected Gold); a raid beaten clean pays a bonus. Fighting helps but is
+  never required.
+* **Next for money**: a 2x Gold game pass and an auto-collect pass are the genre's best sellers; both need new pass
+  ids from the Creator Dashboard before they can go in.

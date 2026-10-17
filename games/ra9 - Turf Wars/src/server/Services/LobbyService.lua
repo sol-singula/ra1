@@ -49,7 +49,7 @@ LobbyService.RESPAWN = 2 -- seconds after a knockout or a fall
 
 local data, economy, progress, place, analytics
 local world
-local population = { turf = 0, ctf = 0, brawl = 0 }
+local population = { turf = 0, ctf = 0, brawl = 0, tycoon = 0 }
 local runs = {} -- [player] = { step = n (checkpoints passed; 0: not started), startedAt = os.clock() }
 local spawning = {} -- [player] = true while a body is loading
 

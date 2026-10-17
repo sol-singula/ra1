@@ -14,7 +14,7 @@ local Theme = require(script.Parent.UI.Theme)
 Net.init()
 Store.init()
 Theme.watchScale()
-Layout.lobby(Constants.MODE == "lobby")
+Layout.lobby(Constants.MODE == "lobby" or Constants.MODE == "tycoon") -- (no match: the third-person camera)
 pcall(function()
 	Players.LocalPlayer:WaitForChild("PlayerGui").ScreenOrientation = Enum.ScreenOrientation.LandscapeSensor
 end)

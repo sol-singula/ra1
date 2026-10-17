@@ -35,7 +35,7 @@ local PopulationService = {
 	PUBLISH_SECONDS = 20,
 	READ_SECONDS = 20,
 	TTL = 60,
-	ORDER = { "turf", "ctf", "brawl" }, -- (a tie between modes: the first of these)
+	ORDER = { "turf", "ctf", "brawl", "tycoon" }, -- (a tie between modes: the first of these)
 }
 
 local data
