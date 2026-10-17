@@ -1,7 +1,8 @@
 --[[
 First-person frames (the viewmodel and the HUD, the way a player sees them): the real server and client boot on the
 mock engine, a fight is staged on Castle Clash, and the bow is caught at rest, half drawn, at full draw and on the
-crossbow, the blade at rest and mid-slash, plus a frame of each touch layout. For checking the animation and as references for the store art.
+crossbow, the blade at rest and mid-slash, the build tray, plus a frame of each touch layout. For checking the
+animation and as references for the store art.
 
   luaurun tools/gameplay/firstperson.luau <outDir>
   node tools/gameplay/render.js <outDir> <pngDir> --modules <node_modules> --chromium <chrome>
@@ -39,7 +40,7 @@ Engine.localPlayer = player
 Engine.runScript(tree.client.Main)
 Engine.advance(1.5)
 Match:NewMatch("castle")
-Engine.advance(Constants.BUILD_SECONDS + Constants.SPAWN_PROTECT + 1)
+Engine.advance(1)
 local team = Teams:Team(player)
 local s = team == "red" and -1 or 1
 local Weapon = Engine.require(tree.client.Controllers.WeaponController)
@@ -47,14 +48,18 @@ local Bus = Engine.require(tree.client.UI.Bus)
 local cam = ws.CurrentCamera
 local eye = V3.new(s * 6, 4.6, 30)
 local look = V3.new(-s * 40, 3.5, 26)
-Engine.moveTo(player, V3.new(s * 6, 3, 30), look)
-for i, f in foes do
-	if Teams:Team(f) ~= team then
-		Engine.moveTo(f, V3.new(-s * (14 + i * 8), 3, 22 + i * 3), eye)
-	else
-		Engine.moveTo(f, V3.new(s * (20 + i * 4), 3, 6 + i * 4), look)
+-- everyone where the frames want them (again once the fight starts: the fight puts people back at their spawns)
+local function stage()
+	Engine.moveTo(player, V3.new(s * 6, 3, 30), look)
+	for i, f in foes do
+		if Teams:Team(f) ~= team then
+			Engine.moveTo(f, V3.new(-s * (14 + i * 8), 3, 22 + i * 3), eye)
+		else
+			Engine.moveTo(f, V3.new(s * (20 + i * 4), 3, 6 + i * 4), look)
+		end
 	end
 end
+stage()
 local shots = {}
 local function shot(name)
 	cam.CFrame = CF.lookAt(eye, look)
@@ -66,13 +71,21 @@ local function shot(name)
 		end
 	end
 	local snap =
-		Capture.snapshot(Engine, { pos = { eye.X, eye.Y, eye.Z }, target = { look.X, look.Y, look.Z }, fov = 70 })
+		Capture.snapshot(Engine, { pos = { eye.X, eye.Y, eye.Z }, target = { look.X, look.Y, look.Z }, fov = cam.FieldOfView or 70 })
 	snap.title = name
 	snap.cinematic = false
 	snap.viewport = { w = 1600, h = 900, dpr = 1 }
 	Capture.save(Engine, snap, outDir, name)
 	table.insert(shots, name)
 end
+-- the build phase: the tray, a wall picked
+local BuildC = Engine.require(tree.client.Controllers.BuildController)
+BuildC.pick("wall")
+Engine.advance(0.2)
+shot("fp_build_tray")
+BuildC.pick(nil)
+Engine.advance(Constants.BUILD_SECONDS + Constants.SPAWN_PROTECT)
+stage()
 cam.CFrame = CF.lookAt(eye, look)
 Weapon.equip("bow")
 Engine.advance(1)

@@ -128,6 +128,63 @@ local MOD_PROPS = {
 	UIGradient = { "Color", "Rotation" },
 }
 
+-- A part as the renderer wants it (the world's parts and a ViewportFrame's alike)
+local function partEntry(d, p, transparency)
+	local cf = p.CFrame
+	local r = cf.r
+	local shape = "Block"
+	if d.ClassName == "WedgePart" then
+		shape = "Wedge"
+	elseif p.Shape then
+		shape = p.Shape.Name
+	end
+	local mesh = d:FindFirstChildOfClass("SpecialMesh")
+	if mesh and rawget(mesh, "_props").MeshType and rawget(mesh, "_props").MeshType.Name == "Sphere" then
+		shape = "Ellipsoid"
+	end
+	return {
+		s = shape,
+		size = { p.Size.X, p.Size.Y, p.Size.Z },
+		m = { cf.p.X, cf.p.Y, cf.p.Z, r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9] },
+		c = p.Color and hex(p.Color) or "#a3a2a5",
+		mat = p.Material and p.Material.Name or "Plastic",
+		t = transparency,
+		n = p.Name,
+		studs = p.TopSurface ~= nil and p.TopSurface.Name == "Studs" or nil,
+	}
+end
+
+-- A ViewportFrame's little scene: its parts, its camera and its light
+local function viewportScene(inst, props)
+	local parts = {}
+	for _, d in inst:GetDescendants() do
+		if d:IsA("BasePart") then
+			local p = rawget(d, "_props")
+			if (p.Transparency or 0) < 0.99 then
+				table.insert(parts, partEntry(d, p, p.Transparency or 0))
+			end
+		end
+	end
+	local cam = props.CurrentCamera
+	local cp = cam and rawget(cam, "_props") or {}
+	local ccf = cp.CFrame
+	local look = ccf and ccf.LookVector
+	return {
+		parts = parts,
+		camera = ccf and {
+			pos = { ccf.p.X, ccf.p.Y, ccf.p.Z },
+			target = { ccf.p.X + look.X, ccf.p.Y + look.Y, ccf.p.Z + look.Z },
+			up = { ccf.UpVector.X, ccf.UpVector.Y, ccf.UpVector.Z },
+			fov = cp.FieldOfView or 70,
+		} or nil,
+		ambient = props.Ambient and hex(props.Ambient) or "#c8c8c8",
+		light = props.LightColor and hex(props.LightColor) or "#8c8c8c",
+		dir = props.LightDirection and { props.LightDirection.X, props.LightDirection.Y, props.LightDirection.Z }
+			or { -1, -1, -1 },
+		imageTransparency = props.ImageTransparency or 0,
+	}
+end
+
 local function guiTree(inst, Engine)
 	local props = rawget(inst, "_props")
 	local node = { cls = inst.ClassName, props = {}, mods = {}, children = {} }
@@ -136,6 +193,9 @@ local function guiTree(inst, Engine)
 		if v ~= nil then
 			node.props[k] = value(v, Engine)
 		end
+	end
+	if inst.ClassName == "ViewportFrame" then
+		node.viewport = viewportScene(inst, props)
 	end
 	for _, child in inst:GetChildren() do
 		local cls = child.ClassName
@@ -265,27 +325,7 @@ function Capture.snapshot(Engine, camera)
 			local transparency = p.Transparency or 0
 			if transparency < 0.99 then
 				local cf = p.CFrame
-				local r = cf.r
-				local shape = "Block"
-				if d.ClassName == "WedgePart" then
-					shape = "Wedge"
-				elseif p.Shape then
-					shape = p.Shape.Name
-				end
-				local mesh = d:FindFirstChildOfClass("SpecialMesh")
-				if mesh and rawget(mesh, "_props").MeshType and rawget(mesh, "_props").MeshType.Name == "Sphere" then
-					shape = "Ellipsoid"
-				end
-				table.insert(snap.parts, {
-					s = shape,
-					size = { p.Size.X, p.Size.Y, p.Size.Z },
-					m = { cf.p.X, cf.p.Y, cf.p.Z, r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9] },
-					c = p.Color and hex(p.Color) or "#a3a2a5",
-					mat = p.Material and p.Material.Name or "Plastic",
-					t = transparency,
-					n = p.Name,
-					studs = p.TopSurface ~= nil and p.TopSurface.Name == "Studs" or nil,
-				})
+				table.insert(snap.parts, partEntry(d, p, transparency))
 				for _, child in d:GetChildren() do
 					local cls = child.ClassName
 					if cls == "PointLight" or cls == "SpotLight" or cls == "SurfaceLight" then

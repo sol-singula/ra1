@@ -468,6 +468,7 @@ void main() {
         el.style.background = rgba(props.BackgroundColor3, bgT);
       }
     }
+    if (node.viewport) { el.dataset.vp = viewports.length; viewports.push(node.viewport); }
     if (props.ZIndex) el.style.zIndex = props.ZIndex;
     if (props.ClipsDescendants) el.style.overflow = 'hidden';
     const mods = node.mods || {};
@@ -673,6 +674,53 @@ void main() {
     });
   }
 
+  // ViewportFrames: each little scene drawn with its own camera and Roblox's viewport light (Ambient, plus LightColor
+  // from LightDirection), no shadows or fog, into an image the size the frame is laid out at
+  const viewports = [];
+  let vpRenderer = null;
+  function renderViewports(layer) {
+    layer.querySelectorAll('[data-vp]').forEach((el) => {
+      const vp = viewports[+el.dataset.vp];
+      const w = el.clientWidth, h = el.clientHeight;
+      if (!vp || !vp.camera || !w || !h) return;
+      const dpr = (window.devicePixelRatio || 1) * 2;
+      if (!vpRenderer) {
+        vpRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+        vpRenderer.outputEncoding = THREE.sRGBEncoding;
+      }
+      vpRenderer.setPixelRatio(dpr);
+      vpRenderer.setSize(w, h, false);
+      vpRenderer.setClearColor(0x000000, 0);
+      const scene = new THREE.Scene();
+      scene.add(new THREE.AmbientLight(new THREE.Color(vp.ambient), 1.0));
+      const sun = new THREE.DirectionalLight(new THREE.Color(vp.light), 1.6);
+      sun.position.set(-vp.dir[0], -vp.dir[1], -vp.dir[2]);
+      scene.add(sun);
+      const m4 = new THREE.Matrix4();
+      vp.parts.forEach((p) => {
+        const color = new THREE.Color(p.c);
+        const mat = p.mat === 'Neon' ? new THREE.MeshBasicMaterial({ color }) : new THREE.MeshLambertMaterial({ color });
+        if (p.t > 0) { mat.transparent = true; mat.opacity = 1 - p.t; }
+        const mesh = new THREE.Mesh(baseGeometry(p), mat);
+        const m = p.m;
+        m4.set(m[3], m[4], m[5], m[0], m[6], m[7], m[8], m[1], m[9], m[10], m[11], m[2], 0, 0, 0, 1);
+        mesh.matrixAutoUpdate = false;
+        mesh.matrix.copy(m4);
+        scene.add(mesh);
+      });
+      const c = vp.camera;
+      const camera = new THREE.PerspectiveCamera(c.fov, w / h, 0.05, 2000);
+      camera.position.set(...c.pos);
+      camera.up.set(...c.up);
+      camera.lookAt(new THREE.Vector3(...c.target));
+      vpRenderer.render(scene, camera);
+      const img = document.createElement('img');
+      img.src = vpRenderer.domElement.toDataURL('image/png');
+      Object.assign(img.style, { position: 'absolute', left: '0', top: '0', width: '100%', height: '100%', opacity: String(1 - (vp.imageTransparency || 0)) });
+      el.insertBefore(img, el.firstChild);
+    });
+  }
+
   function renderScreens(snap, layer) {
     snap.screens.sort((a, b) => a.order - b.order).forEach((sg) => {
       const div = document.createElement('div');
@@ -712,6 +760,7 @@ void main() {
       renderBillboards(snap, camera, overlay);
       renderPrompts(snap, camera, overlay);
       renderScreens(snap, overlay);
+      renderViewports(overlay);
     }
     await document.fonts.ready;
     fitScaledText(overlay);
