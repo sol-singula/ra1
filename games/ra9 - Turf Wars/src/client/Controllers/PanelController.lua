@@ -23,7 +23,18 @@ While it's open the mouse is free, the HUD's middle steps aside (Layout.setPanel
 line at the bottom. Every piece has its own slot (the numbers below), so nothing lands on anything (ClientSmoke
 checks); the dialogs and the tour sit on a layer of their own over the body.
 
-  PanelController.open(tab?)   .close()   .toggle()   .tab()   .refs
+The first live match's end (GiftController, once: GiftService decides) opens the shop by itself:
+PanelController.firstMatch(shards). On top, in place of the welcome, "YOU EARNED 45 SHARDS: SPEND THEM HERE!" with a
+hand pointing up at your Shards (a gold ring round them) and the item they're closest to, ringed (a tap scrolls to
+its card, ringed too); under it today's deal and the TNT, all in view. A big PLAY NEXT MATCH ▶ at the bottom closes
+it, and it closes itself when the next match's build phase starts. No tour that time (it comes the next time).
+
+  PanelController.open(tab?, from?)   .close()   .toggle()   .tab()   .refs
+    from: what opened it, for the analytics' shop_open ("first_match", "results_strip", "deck_sign")
+  PanelController.firstMatch(shards)   .intro() (its state, or nil)   .playNext() (PLAY NEXT MATCH)
+  PanelController.showShopItem(key, from?)   the shop scrolled to an item's card, ringed
+  PanelController.showDeal(from?)            the shop at its top: today's deal and the TNT
+  PanelController.closest(profile)           { item, price, short } the shop item they're closest to affording
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -80,6 +91,8 @@ PanelController.refs = refs
 local current = "shop"
 local lockerKind = "trail"
 local spotlight -- a cosmetic key the locker points at (a free gift: PanelController.showItem), until it's worn
+local shopSpot -- a cosmetic key the shop points at (PanelController.showShopItem), until the panel closes
+local firstShop -- the first match's shop (PanelController.firstMatch): { shards }, until the panel closes
 local gui
 local pending -- a purchase waiting for the server: { check = fn(profile), show = fn(), untilT }
 local toured = false -- (the shop's tour shown this visit)
@@ -325,6 +338,41 @@ local function animate(inst, update)
 end
 PanelController.anims = anims
 
+-- A pulsing gold ring round a card, and a hand on it with a word or two (the shop's pointed-at item)
+local function pointAt(card, w, words)
+	local ring = Theme.new("Frame", {
+		Name = "Spotlight",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.new(1, 8, 1, 8),
+		BackgroundTransparency = 1,
+		ZIndex = 6,
+		Parent = card,
+	}, { Theme.corner(9), Theme.stroke(4, GOLD) })
+	ring:SetAttribute("Layer", true)
+	local hand = Theme.text({
+		Name = "Hand",
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 0, 114), -- (on the picture's foot, clear of the words)
+		Size = UDim2.fromOffset(w - 8, 22),
+		Text = words,
+		Font = Theme.Display,
+		fit = 14,
+		TextColor3 = GOLD,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		ZIndex = 7,
+		Parent = card,
+	})
+	Theme.textStroke(2, C.ink).Parent = hand
+	hand:SetAttribute("Layer", true)
+	animate(ring, function(t)
+		local k = 0.5 + 0.5 * math.sin(t * 6)
+		ring.Size = UDim2.new(1, 4 + k * 8, 1, 4 + k * 8)
+		hand.Position = UDim2.new(0.5, 0, 0, 114 - k * 4)
+	end)
+	return ring
+end
+
 -- One of today's items or a locker card's action: WORN, WEAR, or its price
 local function itemCard(body, i, key, x, y, cw)
 	local p = profile()
@@ -332,6 +380,12 @@ local function itemCard(body, i, key, x, y, cw)
 	-- (the rarer, the louder: an edge in the rarity's colour from epic up, a shimmer on the legendary ones)
 	local glow = (it.rarity == "epic" or it.rarity == "legendary") and RARITY_COLOR[it.rarity] or nil
 	local card = frame(body, "Item" .. i, x, y, cw, 200, nil, glow)
+	card:SetAttribute("Key", key)
+	if key == shopSpot then
+		-- (pointed at: the first match's closest item, or a tap on the results' strip)
+		pointAt(card, cw, (p.shards or 0) >= Shop.price(it) and "👆 YOU CAN BUY IT!" or "👆 SAVE UP FOR IT")
+		refs.shopSpotY = refs.shopSpotY or y
+	end
 	if it.rarity == "legendary" then
 		card.ClipsDescendants = true
 		local shimmer = Theme.new("Frame", {
@@ -770,29 +824,110 @@ local function tntCard(body, y, team)
 	return y + 104 + 14
 end
 
+-- The shop item they're closest to affording: the cheapest one they don't have (as the HUD's Shards counter says).
+-- short: "40 more Shards for Ice Trail", or "✨ You can buy Ice Trail!". nil when they have everything.
+function PanelController.closest(p)
+	p = p or profile()
+	local best
+	for _, it in Cosmetics.list do
+		if it.source == "shop" and not Locker.owns(p, it.key) then
+			local price = Shop.price(it)
+			if not best or price < best.price then
+				best = { item = it, price = price }
+			end
+		end
+	end
+	if best then
+		local short = best.price - (p.shards or 0)
+		best.short = short > 0 and `{money(short)} more Shards for {best.item.name}`
+			or `✨ You can buy {best.item.name}!`
+	end
+	return best
+end
+
+-- The first match's top of the shop: the Shards just earned (a hand pointing up at your Shards) and the item
+-- they're closest to, ringed (a tap scrolls to its card). 64 tall, so the deal and the TNT fit under it in view.
+local INTRO_H = 64
+local function introStrip(body, p)
+	local box = frame(body, "FirstMatch", 0, 0, W, INTRO_H, GOLD_SOFT, GOLD)
+	local n = firstShop and firstShop.shards or 0
+	Theme.gem(box, 24, { Name = "Gem", Position = UDim2.fromOffset(10, 6) })
+	label(
+		box,
+		"Earned",
+		n > 0 and `YOU EARNED {money(n)} SHARDS: SPEND THEM HERE!` or "YOUR SHARDS: SPEND THEM HERE!",
+		40,
+		6,
+		362,
+		24,
+		20,
+		C.ink,
+		nil,
+		Theme.Display
+	)
+	local c = PanelController.closest(p)
+	if c then
+		local go = Theme.new("TextButton", {
+			Name = "Closest",
+			Position = UDim2.fromOffset(12, 34),
+			Size = UDim2.fromOffset(390, 24),
+			BackgroundColor3 = C.white,
+			Text = "",
+			AutoButtonColor = true,
+			Parent = box,
+		}, { Theme.corner(4), Theme.stroke(3, GOLD) })
+		go:SetAttribute("Key", c.item.key)
+		label(go, "Words", `👉 {c.short}  ›`, 8, 2, 374, 20, 14, C.ink, nil, Theme.Display)
+		go.Activated:Connect(function()
+			PanelController.showShopItem(c.item.key)
+		end)
+		local edge = go:FindFirstChildOfClass("UIStroke")
+		animate(go, function(t)
+			if edge then
+				edge.Thickness = 2 + 2 * (0.5 + 0.5 * math.sin(t * 6))
+			end
+		end)
+	end
+	-- (the hand under the header's Shards, pointing up at them)
+	local pill = refs.shards
+	local px = pill.Position.X.Offset + pill.Size.X.Offset / 2 - 10 - 40
+	local hand = label(box, "Hand", "👆", px, 4, 80, 34, 30, C.ink, Enum.TextXAlignment.Center)
+	label(box, "Yours", "YOUR SHARDS", px - 10, 40, 120, 16, 12, C.ink, Enum.TextXAlignment.Center, Theme.Display)
+	animate(hand, function(t)
+		hand.Position = UDim2.fromOffset(px, 4 - 3 * math.abs(math.sin(t * 4)))
+	end)
+	return INTRO_H + 10
+end
+
 local function shopTab(body)
 	local p = profile()
 	local t = now()
 	local team = Store.team() or "red"
 	local day = Shop.dayOf(t)
-	-- a welcome
-	local hi = frame(body, "Welcome", 0, 0, W, 54, GOLD_SOFT, GOLD)
-	label(hi, "Hello", "Pick something fun!", 12, 6, 330, 26, 22, C.ink, nil, Theme.Display)
-	label(hi, "Line", "Everything here is just for looks: no one buys a better bow.", 12, 32, 360, 16, 12, C.muted)
-	label(
-		hi,
-		"Fresh",
-		`NEW ITEMS IN {span((day + 1) * 86400 - t)}`,
-		W - 190,
-		17,
-		178,
-		20,
-		13,
-		C.ink,
-		Enum.TextXAlignment.Right,
-		Theme.Display
-	)
 	local y = 64
+	if firstShop then
+		-- the first match's end: what they earned and what it buys, the deal and the TNT straight under it
+		y = introStrip(body, p)
+	else
+		-- a welcome
+		local hi = frame(body, "Welcome", 0, 0, W, 54, GOLD_SOFT, GOLD)
+		label(hi, "Hello", "Pick something fun!", 12, 6, 330, 26, 22, C.ink, nil, Theme.Display)
+		label(hi, "Line", "Everything here is just for looks: no one buys a better bow.", 12, 32, 360, 16, 12, C.muted)
+		label(
+			hi,
+			"Fresh",
+			`NEW ITEMS IN {span((day + 1) * 86400 - t)}`,
+			W - 190,
+			17,
+			178,
+			20,
+			13,
+			C.ink,
+			Enum.TextXAlignment.Right,
+			Theme.Display
+		)
+	end
+	refs.dealY = y
 	-- the day's deal and the TNT: first thing they see
 	y = dealCard(body, y)
 	y = tntCard(body, y, team)
@@ -2125,7 +2260,7 @@ function PanelController.refresh()
 			c:Destroy()
 		end
 	end
-	refs.track, refs.here = nil, nil
+	refs.track, refs.here, refs.shopSpotY = nil, nil, nil
 	local h = BUILD[current](body)
 	body.CanvasSize = UDim2.fromOffset(0, h)
 	body.CanvasPosition = keep
@@ -2246,6 +2381,33 @@ local function build()
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = C.muted,
 	})
+	-- the first match's way out: PLAY NEXT MATCH ▶, big, where the message line sits (that line steps aside), and a
+	-- gold ring round your Shards in the header (PanelController.firstMatch)
+	refs.playNext = button(
+		panel,
+		"PlayNext",
+		"PLAY NEXT MATCH ▶",
+		P.w / 2 - 160,
+		P.bodyY + P.bodyH + 4,
+		320,
+		38,
+		"gold",
+		function()
+			PanelController.playNext()
+		end
+	)
+	refs.playNext.Visible = false
+	refs.introRing = Theme.new("Frame", {
+		Name = "IntroRing",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.new(1, 8, 1, 8),
+		BackgroundTransparency = 1,
+		Visible = false,
+		ZIndex = 6,
+		Parent = sh,
+	}, { Theme.corner("round"), Theme.stroke(4, GOLD) })
+	refs.introRing:SetAttribute("Layer", true)
 	-- the layer for dialogs and the tour, over everything under the header (it sits on the body on purpose)
 	refs.overlay = Theme.new("Frame", {
 		Name = "Overlay",
@@ -2270,7 +2432,17 @@ local function build()
 	refs.tourRing:SetAttribute("Layer", true)
 end
 
-function PanelController.open(tab)
+-- The first match's pieces in the frame (the PLAY NEXT MATCH button, the ring round your Shards), on or off
+local function paintIntro()
+	if not refs.playNext then
+		return
+	end
+	refs.playNext.Visible = firstShop ~= nil
+	refs.introRing.Visible = firstShop ~= nil
+	refs.status.Visible = firstShop == nil -- (the button has the message line's place)
+end
+
+function PanelController.open(tab, from)
 	if not refs.panel then
 		return
 	end
@@ -2282,17 +2454,18 @@ function PanelController.open(tab)
 	PanelController.status("")
 	Layout.modal("panel", refs.panel)
 	Layout.setPanel(true)
-	if opening or was ~= current then
+	if opening or was ~= current or from then
 		-- (for the analytics: who opens the shop, on which tab, and how they got there)
-		pcall(Net.send, "Analytics", "shop", { tab = current, opening = opening })
+		pcall(Net.send, "Analytics", "shop", { tab = current, opening = opening, from = from })
 		if refs.tour then
 			finishTour() -- (moved on mid-tour: it's been seen)
 		else
 			PanelController.closeDialog()
 		end
 	end
+	paintIntro()
 	PanelController.refresh()
-	if current == "shop" and tourDue() then
+	if current == "shop" and tourDue() and not firstShop then
 		startTour()
 	end
 end
@@ -2305,9 +2478,72 @@ function PanelController.close()
 		PanelController.closeDialog()
 		refs.panel.Visible = false
 	end
+	firstShop, shopSpot = nil, nil
+	paintIntro()
 	ItemPreview.stop() -- (every card's live preview: none play while it's shut)
 	pending = nil
 	Layout.setPanel(false)
+end
+
+-- The first live match's end (GiftController, once): the shop opens by itself at its top (the deal and the TNT),
+-- pointing at the Shards just earned and the item they're closest to. PLAY NEXT MATCH (or the next build phase)
+-- closes it.
+function PanelController.firstMatch(shards)
+	if not refs.panel then
+		return false
+	end
+	firstShop = { shards = math.max(0, math.floor(tonumber(shards) or 0)) }
+	local c = PanelController.closest(profile())
+	shopSpot = c and c.item.key or nil
+	if refs.overlay.Visible then
+		PanelController.closeDialog() -- (whatever was asking: the shop's the thing now)
+	end
+	PanelController.open("shop", "first_match")
+	refs.body.CanvasPosition = Vector2.zero
+	return true
+end
+
+function PanelController.intro()
+	return firstShop
+end
+
+-- PLAY NEXT MATCH ▶: the first match's shop shut, back to the game
+function PanelController.playNext()
+	if not firstShop then
+		return false
+	end
+	PanelController.close()
+	return true
+end
+
+-- The shop at its top, today's deal first (the results' strip, the deck's sign)
+function PanelController.showDeal(from)
+	if not refs.panel then
+		return false
+	end
+	PanelController.open("shop", from)
+	refs.body.CanvasPosition = Vector2.new(0, math.max(0, (refs.dealY or 0) - 4))
+	return true
+end
+
+-- The shop scrolled to an item's card (today's, else its kind's row), a gold ring and a hand on it. Returns the
+-- card (or nil).
+function PanelController.showShopItem(key, from)
+	local it = Cosmetics.get(key)
+	if not it or it.source ~= "shop" or not refs.panel then
+		return nil
+	end
+	shopSpot = key
+	PanelController.open("shop", from)
+	if refs.shopSpotY then
+		refs.body.CanvasPosition = Vector2.new(0, math.max(0, refs.shopSpotY - 40))
+	end
+	for _, c in refs.body:GetChildren() do
+		if c:GetAttribute("Key") == key and c:FindFirstChild("Spotlight") then
+			return c
+		end
+	end
+	return nil
 end
 
 -- Open the locker on this item's kind with the item pointed at (a free gift's EQUIP IT): a gold ring, a hand, and
@@ -2403,6 +2639,9 @@ function PanelController:init()
 		return false
 	end
 	Store.Changed:Connect(function(partial)
+		if partial.match and partial.match.phase == "build" and firstShop then
+			PanelController.close() -- (the first match's shop: the next match is on, back to it)
+		end
 		if partial.profile and PanelController.isOpen() then
 			PanelController.refresh()
 			-- a purchase the server has now given: celebrate it

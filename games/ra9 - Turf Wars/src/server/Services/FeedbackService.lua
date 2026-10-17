@@ -13,7 +13,8 @@ once (Data/Extras), worn straight away, with a THANK YOU card (Net "Unlock" with
 
 Kept in the profile (profile.feedback): the day they were last asked, their answer, whether a like ask is owed,
 and how the like card went. FEEDBACK_ASK_DELAY seconds after the win, so it lands after the fireworks start and
-doesn't cover the results.
+doesn't cover the results. Never at the end of someone's first live match: that one ends in the shop
+(GiftService:FirstShopDue), so the question waits for their next match.
 
   Net "Ask" { kind = "enjoy" | "like" }          server -> client
   Net "Feedback" ("enjoy", true) | ("enjoy", false, { reason keys }) | ("like", "ok" | "later")
@@ -27,13 +28,13 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local FeedbackService = {
 	Name = "FeedbackService",
-	Dependencies = { "PlayerDataService", "TeamService", "MatchService", "ProgressService" },
+	Dependencies = { "PlayerDataService", "TeamService", "MatchService", "ProgressService", "GiftService" },
 	Asked = Signal.new("FeedbackService.Asked"), -- (player, kind)
 	Answered = Signal.new("FeedbackService.Answered"), -- (player, kind, answer)
 	Thanked = Signal.new("FeedbackService.Thanked"), -- (player, extra)
 }
 
-local data, teams, match, progress
+local data, teams, match, progress, gifts
 local THANKS = "extra_thanks"
 local outstanding = {} -- [player] = the card they were shown and haven't answered
 
@@ -90,7 +91,8 @@ end
 function FeedbackService:AfterWin(winner)
 	local list = {}
 	for _, p in Players:GetPlayers() do
-		if teams:Team(p) ~= nil then
+		-- (their first match ends in the shop instead: the question waits for the next one)
+		if teams:Team(p) ~= nil and not (gifts and gifts:FirstShopDue(p)) then
 			table.insert(list, p)
 		end
 	end
@@ -167,6 +169,7 @@ function FeedbackService:Init(registry)
 	teams = registry.TeamService
 	match = registry.MatchService
 	progress = registry.ProgressService
+	gifts = registry.GiftService
 	Net.on("Feedback", function(player, kind, answer, reasons)
 		self:Answer(player, kind, answer, reasons)
 	end)

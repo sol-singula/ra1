@@ -11,12 +11,20 @@ locker on it, so they learn where it lives and how to wear it.
   deal, the TNT, the Starter Pack, in turn).
   After they've bought: a "NEW IN THE SHOP" end card Constants.GIFT_NUDGES more times, then nothing.
 
-Kept in the profile (profile.gifts): n (given), keys (what), wore ({ [kind] = true }), bought, nudges.
+The first live match ever (never the tutorial's practice) ends differently, once: instead of the end card the shop
+opens by itself on today's deal and the TNT, pointing at the Shards that match paid (Net "Gift" { firstShop = true,
+shards }: PanelController.firstMatch). The free gifts start from the next match. FeedbackService holds its question
+that time, so nothing lands on the shop.
+
+Kept in the profile (profile.gifts): n (given), keys (what), wore ({ [kind] = true }), bought, nudges, firstShop
+(the first match's shop shown).
 
   GiftService:Give(player)        -> the item given (or nil); sends Net "Gift"
   GiftService:Done(player)        -> true when no more gifts come
+  GiftService:FirstShopDue(player) -> true when this match's end is their first live one (the shop, not a card)
   GiftService.Gifted              (player, item, n)
   GiftService.Worn                (player, kind, key) a gift worn from the locker
+  GiftService.FirstShop           (player, shards) the first match's shop opened for them
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -29,12 +37,22 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local GiftService = {
 	Name = "GiftService",
-	Dependencies = { "PlayerDataService", "ProgressService", "ShopService", "MatchService", "TeamService" },
+	Dependencies = {
+		"PlayerDataService",
+		"ProgressService",
+		"ShopService",
+		"MatchService",
+		"TeamService",
+		"EconomyService",
+	},
 	Gifted = Signal.new("GiftService.Gifted"),
 	Worn = Signal.new("GiftService.Worn"),
+	FirstShop = Signal.new("GiftService.FirstShop"),
 }
 
-local data, progress, shop, match, teams
+local data, progress, shop, match, teams, economy
+local paid = {} -- [player] = the Shards this match has paid them (what the first match's shop points at)
+local PAID = { kill = true, headshot = true, match = true } -- (EconomyService's whys a match pays)
 
 local ORDER = { "trail", "effect", "skin", "banner" }
 local NEEDED = { "trail", "effect", "skin" } -- (worn one of each: they've learnt the locker)
@@ -50,6 +68,7 @@ local function giftsOf(player)
 	g.keys = g.keys or {}
 	g.wore = g.wore or {}
 	g.nudges = g.nudges or 0
+	g.firstShop = g.firstShop == true
 	return g, p
 end
 
@@ -71,6 +90,16 @@ function GiftService:Done(player)
 		end
 	end
 	return true
+end
+
+-- Their first live match just ended (its stats are in: it's the only match counted) and its shop hasn't been shown
+-- yet. Never in the practice (the tutorial's has no team and no stats; nor while they're back in it).
+function GiftService:FirstShopDue(player)
+	local g, p = giftsOf(player)
+	if not g or g.firstShop or player:GetAttribute("Practice") == true then
+		return false
+	end
+	return p.stats ~= nil and p.stats.matches == 1
 end
 
 -- The kind for the n-th gift: round the order from n, the first not worn yet
@@ -137,6 +166,14 @@ function GiftService:Give(player)
 	if not g then
 		return nil
 	end
+	if self:FirstShopDue(player) then
+		-- (the first match: the shop instead of the end card, once; the gifts start next match)
+		g.firstShop = true
+		local shards = paid[player] or 0
+		Net.fire(player, "Gift", { firstShop = true, shards = shards })
+		self.FirstShop:Fire(player, shards)
+		return nil
+	end
 	if bought(p, g) then
 		if g.nudges < Constants.GIFT_NUDGES then
 			g.nudges += 1
@@ -189,6 +226,20 @@ function GiftService:Init(registry)
 	shop = registry.ShopService
 	match = registry.MatchService
 	teams = registry.TeamService
+	economy = registry.EconomyService
+	-- (what the match pays, its knockouts and its end: the first match's shop says how many Shards they just earned;
+	-- the practice's knockouts don't count)
+	economy.Changed:Connect(function(player, _, delta, why)
+		if PAID[why] and delta > 0 and player:GetAttribute("Practice") ~= true then
+			paid[player] = (paid[player] or 0) + delta
+		end
+	end)
+	match.Started:Connect(function()
+		table.clear(paid)
+	end)
+	Players.PlayerRemoving:Connect(function(player)
+		paid[player] = nil
+	end)
 	-- (anything bought: no more gifts)
 	shop.Bought:Connect(function(player)
 		local g = giftsOf(player)

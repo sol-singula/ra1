@@ -1017,9 +1017,12 @@ do
 end
 
 -- The results ----------------------------------------------------------------------------------------------------
+-- (a player with a few matches behind them: the first one ends in the shop instead, tests/GiftSmoke)
+Data:Get(player).stats.matches = 3
 Match:Victory(team)
 Engine.advance(0.5)
 check("the results card shows", refs.results ~= nil and refs.results.Parent ~= nil)
+check("...with its shop strip (not the first match)", refs.results and refs.results:FindFirstChild("ShopStrip") ~= nil)
 check(
 	"...and you stay in play: no cursor",
 	UIS.MouseIconEnabled == false and UIS.MouseBehavior == Enum.MouseBehavior.LockCenter
@@ -1067,6 +1070,130 @@ check(
 Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + 1)
 check("the next match: BUILD again", refs.phase.Text:find("BUILD") ~= nil, refs.phase.Text)
 check("...the results close", refs.results == nil)
+
+-- The way into the shop: the results' strip, and the sign on the deck ---------------------------------------------
+do
+	local Panel = Engine.require(tree.client.Controllers.PanelController)
+	local Cosmetics = Engine.require(tree.shared.Data.Cosmetics)
+	local function lastShopOpen()
+		for i = #Engine.clientLog, 1, -1 do
+			local e = Engine.clientLog[i]
+			if e.name == "Analytics" and e.args[1] == "shop" then
+				return e.args[2]
+			end
+		end
+		return nil
+	end
+	-- today's deal on, so the strip shows it
+	local dealKey
+	for key, d in Shop.products do
+		if d.cosmetic and d.was and Cosmetics.get(d.cosmetic) then
+			dealKey = key
+			break
+		end
+	end
+	local wasDeal, wasEnds = player:GetAttribute("Deal"), player:GetAttribute("DealEnds")
+	player:SetAttribute("Deal", dealKey)
+	player:SetAttribute("DealEnds", ws:GetServerTimeNow() + 600)
+	local rows =
+		{ { userId = player.UserId, name = "Ava", team = team, kills = 1, deaths = 0, assists = 0, built = 3 } }
+	-- the first match: no strip (it ends in the shop itself)
+	local prof = Store.get("profile")
+	local matches = prof.stats.matches
+	prof.stats.matches = 1
+	Hud.showResults({ winner = team, rows = rows, you = { won = true } })
+	check("the first match's results: no shop strip", refs.results:FindFirstChild("ShopStrip") == nil)
+	prof.stats.matches = math.max(2, matches)
+	Hud.showResults({ winner = team, rows = rows, you = { won = true } })
+	local strip = refs.results:FindFirstChild("ShopStrip")
+	check("every later match's results: a shop strip", strip ~= nil)
+	local dealChip, near = strip and strip:FindFirstChild("Deal"), strip and strip:FindFirstChild("Closest")
+	local dealIt = Cosmetics.get(Shop.products[dealKey].cosmetic)
+	check(
+		"...today's deal, with its clock",
+		dealChip
+			and string.find(dealChip.Words.Text, string.upper(dealIt.name), 1, true)
+			and string.find(dealChip.Words.Text, "%d+:%d%d") ~= nil,
+		dealChip and dealChip.Words.Text
+	)
+	Engine.advance(1.2)
+	check("...ticking", dealChip and string.find(dealChip.Words.Text, "9:5%d") ~= nil, dealChip and dealChip.Words.Text)
+	local c = Panel.closest(Store.get("profile"))
+	check(
+		"...and the item they're closest to ('N more Shards for X', with a gem)",
+		near and c and string.find(near.Words.Text, c.item.name, 1, true) and near:FindFirstChild("Gem") ~= nil,
+		near and near.Words.Text
+	)
+	check("...that doesn't take the mouse (you stay in play)", near and not near.Modal and not dealChip.Modal)
+	near.Activated:Fire()
+	Engine.advance(0.1)
+	check("a tap opens the shop", Panel.isOpen() and Panel.tab() == "shop")
+	local spot
+	for _, k in Panel.refs.body:GetChildren() do
+		if k:GetAttribute("Key") == c.item.key and k:FindFirstChild("Spotlight") then
+			spot = k
+		end
+	end
+	check("...on that item, ringed, scrolled to", spot ~= nil and Panel.refs.body.CanvasPosition.Y > 0)
+	check("...tracked: shop_open from results_strip", (lastShopOpen() or {}).from == "results_strip")
+	check("...no first-match bits", Panel.intro() == nil and not Panel.refs.playNext.Visible)
+	Panel.close()
+	dealChip.Activated:Fire()
+	Engine.advance(0.1)
+	check(
+		"the deal's tap: the shop at the deal",
+		Panel.isOpen()
+			and Panel.refs.body:FindFirstChild("Deal") ~= nil
+			and (lastShopOpen() or {}).from == "results_strip"
+	)
+	Panel.close()
+	Engine.advance(Constants.RESULTS_CARD_SECONDS)
+	check("the strip goes with the card", refs.results == nil and not strip.Parent)
+	prof.stats.matches = matches
+
+	-- the sign on the deck: both decks have one; in the build phase yours says SHOP and the deal, and opens the shop
+	local Sign = Engine.require(tree.client.Controllers.ShopSignController)
+	Sign.update()
+	local signs = Sign.signs()
+	check("a shop sign on both decks", signs.red ~= nil and signs.blue ~= nil)
+	check("...on the arena's decks", signs.red and signs.red.board:IsDescendantOf(ws.Arena))
+	local mine, theirs = signs[team], signs[team == "red" and "blue" or "red"]
+	check("(the build phase)", Store.phase() == "build", Store.phase())
+	check("...yours shows in the build phase, with its prompt", mine and mine.gui.Enabled and mine.prompt.Enabled)
+	check("...the other team's doesn't", theirs and not theirs.gui.Enabled and not theirs.prompt.Enabled)
+	local nowDeal = Shop.products[player:GetAttribute("Deal") or ""] -- (the server's own deal by now)
+	local nowName = nowDeal and Cosmetics.get(nowDeal.cosmetic).name or dealIt.name
+	check(
+		"...'🛒 SHOP' and today's deal",
+		mine and mine.title.Text == "🛒 SHOP" and string.find(mine.line.Text, string.upper(nowName), 1, true),
+		mine and mine.line.Text
+	)
+	check(
+		"...a prompt for every device (a key, a gamepad button, a tap or a click, no hold)",
+		mine
+			and mine.prompt.KeyboardKeyCode == Enum.KeyCode.E
+			and mine.prompt.GamepadKeyCode == Enum.KeyCode.ButtonX
+			and mine.prompt.HoldDuration == 0
+			and mine.prompt.ClickablePrompt == true
+			and mine.prompt.RequiresLineOfSight == false
+	)
+	check(
+		"...looks only (nothing walks, shoots or builds into it)",
+		mine and not mine.board.CanCollide and not mine.board.CanQuery
+	)
+	mine.prompt.Triggered:Fire(player)
+	Engine.advance(0.1)
+	check("the prompt opens the shop", Panel.isOpen() and Panel.tab() == "shop")
+	check("...tracked: shop_open from deck_sign", (lastShopOpen() or {}).from == "deck_sign")
+	Panel.close()
+	Store.merge("match", { phase = "fight" })
+	Sign.update()
+	check("in the fight it's gone (just the board)", not mine.gui.Enabled and not mine.prompt.Enabled)
+	Store.merge("match", { phase = "build" })
+	Sign.update()
+	player:SetAttribute("Deal", wasDeal)
+	player:SetAttribute("DealEnds", wasEnds)
+end
 
 -- Invite a friend -------------------------------------------------------------------------------------------------
 do
@@ -1632,6 +1759,14 @@ do
 		check(`the {tab} tab builds`, #pr.body:GetChildren() > 3, #pr.body:GetChildren())
 		panelTidy(tab)
 	end
+	-- the first match's shop (tests/GiftSmoke has the when): its strip on top and PLAY NEXT MATCH, all apart
+	Panel.firstMatch(45)
+	Engine.advance(0.1)
+	check("the first-match shop builds", pr.body:FindFirstChild("FirstMatch") ~= nil and pr.playNext.Visible)
+	panelTidy("first-match shop")
+	check("...its words say Shards (no ◆ glyph)", not pr.body.FirstMatch.Earned.Text:find("◆", 1, true))
+	Panel.playNext()
+	Engine.advance(0.1)
 	-- the shop: a picture on every card, Robux prices with Roblox's Robux icon, never "R$" or a "◆" glyph
 	local FormatM = Engine.require(tree.shared.Format)
 	Panel.open("shop")

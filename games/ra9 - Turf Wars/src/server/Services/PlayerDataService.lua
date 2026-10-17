@@ -58,7 +58,8 @@ local function defaults()
 		starter = false, -- the Starter Pack's Shards and banner given
 		daily = { day = 0, played = false, won = false }, -- the day's first match and first win pay more
 		club = { month = 0 }, -- the Shard Club's monthly Shards, last month given
-		gifts = { n = 0, keys = {}, wore = {}, bought = false, nudges = 0 }, -- the free match-end gifts (GiftService)
+		-- the free match-end gifts, and the first match's shop shown (GiftService)
+		gifts = { n = 0, keys = {}, wore = {}, bought = false, nudges = 0, firstShop = false },
 		invite = { friends = {}, count = 0 }, -- by: who brought you in; friends: the ones you brought (InviteService)
 		-- the first-minute guide (TutorialService): done (or skipped) once; replay asks for it again
 		tutorial = { done = false, skipped = false, replay = false, step = "", at = 0 },

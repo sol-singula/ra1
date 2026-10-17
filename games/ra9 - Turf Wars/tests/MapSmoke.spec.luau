@@ -100,6 +100,60 @@ for _, m in Maps.list do
 			check(`{name}: {team}'s deck has cover`, n >= 12, n)
 			check(`{name}: ...that stops a low shot at someone crouched behind it`, Combat:Blocked(front, behind))
 		end
+		-- the shop sign on both decks: there, looks only, and clear of everything a body, an arrow or a piece meets
+		for _, team in { "red", "blue" } do
+			local board = a.shopSigns and a.shopSigns[team]
+			check(
+				`{name}: {team}'s deck has a shop sign`,
+				board ~= nil
+					and board.Parent ~= nil
+					and board:GetAttribute("Team") == team
+					and ArenaBuilder.inRoom(a, team, board.Position)
+			)
+			if board then
+				local bad = {}
+				for _, d in a.folder:GetDescendants() do
+					if
+						(d.Name == "ShopSign" or d.Name == "ShopSignPost" or d.Name == "ShopSignTrim")
+						and math.sign(d.Position.X) == math.sign(board.Position.X)
+					then
+						if d.CanCollide or d.CanQuery or d.CanTouch then
+							table.insert(bad, d.Name .. " can be hit")
+						end
+						local mn, mx = ArenaBuilder.aabbOf(d.CFrame, d.Size)
+						for _, box in a.collide do
+							if
+								mn.X < box.max.X
+								and box.min.X < mx.X
+								and mn.Y < box.max.Y
+								and box.min.Y < mx.Y
+								and mn.Z < box.max.Z
+								and box.min.Z < mx.Z
+							then
+								table.insert(bad, `{d.Name} in a solid at {(box.min + box.max) / 2}`)
+								break
+							end
+						end
+						for _, cf in a.spawns[team] do
+							if math.abs(cf.Position.Z - d.Position.Z) < 8 then
+								table.insert(bad, d.Name .. " in a pad's lane")
+								break
+							end
+						end
+					end
+				end
+				for _, s in a.solids do
+					if s.part and string.sub(s.part.Name, 1, 8) == "ShopSign" then
+						table.insert(bad, "a sign piece stops arrows")
+					end
+				end
+				check(
+					`{name}: ...clear of the cover, the pads' lanes and every solid`,
+					#bad == 0,
+					table.concat(bad, ", ")
+				)
+			end
+		end
 	end
 end
 
