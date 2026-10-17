@@ -2,7 +2,8 @@
 Kill effects (FX/KillEffects): every shape plays on the mock engine without an error, makes pieces, moves them, and
 cleans every one of them up; every kill effect in the catalogue plays; the ones that carry a body move it and take
 it away; a time scale slows them; a Kill message plays the killer's effect where the victim fell (KillFxController),
-and in the victim's own kill cam it's the cam's to play, slowed, on their stand-in (never twice).
+and in the victim's own kill cam it's the cam's to play, slowed, on their stand-in (never twice); the shop's
+cards play their items themselves (UI/ItemPreview), a few at once, and stop when the panel closes.
 
   luaurun tests/FxSmoke.spec.luau
 ]]
@@ -181,6 +182,104 @@ do
 	check("...slowed down (still going well into the card)", KillEffects.count() > 0 or not KillCam.active(), h)
 	Engine.advance(8)
 	check("...and it's all cleaned up after", KillEffects.count() == 0, KillEffects.count())
+end
+
+-- The shop's cards play their items themselves (UI/ItemPreview): the ones on screen, a few at once, each kill effect
+-- on a dummy in its own viewport (never in the world, never counted with the real ones), the BUY IT? dialog's first,
+-- and all of it stopped when the panel closes
+do
+	local Panel = Engine.require(tree.client.Controllers.PanelController)
+	local ItemPreview = Engine.require(tree.client.UI.ItemPreview)
+	local pr = Panel.refs
+	KillEffects.clear()
+	local before = folderCount()
+	Panel.open("shop")
+	Engine.advance(1.2)
+	check("the shop's cards get live previews", ItemPreview.slots() >= 10, ItemPreview.slots())
+	check(
+		"...a few play at once, within the cap",
+		ItemPreview.running() > 0 and ItemPreview.load() <= ItemPreview.budget(),
+		`{ItemPreview.running()} playing, {ItemPreview.load()} of {ItemPreview.budget()}`
+	)
+	check("...every one builds", ItemPreview.broken() == 0, ItemPreview.broken())
+	local function stages()
+		local out = {}
+		for _, d in pr.panel:GetDescendants() do
+			if d.Name == "Live" and d:FindFirstChild("Stage") then
+				table.insert(out, d)
+			end
+		end
+		return out
+	end
+	local function pieces(live)
+		return #live.Stage.World:GetDescendants()
+	end
+	local playing = stages()
+	local busy, boards = 0, 0
+	for _, live in playing do
+		if pieces(live) > 8 then
+			busy += 1
+		end
+		boards += #live.Words:GetChildren()
+	end
+	check("...a kill effect plays on a dummy in its card's viewport", #playing > 0 and busy > 0, `{#playing} {busy}`)
+	check("...its words and stickers drawn over the frame", boards > 0, boards)
+	local lightning = pr.body.Premium:FindFirstChild("Premium_rbx_lightning")
+	local pic = lightning and lightning:FindFirstChild("Preview")
+	check(
+		"...in place of the still picture (and the sticker over it)",
+		pic ~= nil
+			and pic:FindFirstChild("Live") ~= nil
+			and pic.Icon.Visible == false
+			and (not pic:FindFirstChild("Sticker") or pic.Sticker.Visible == false)
+	)
+	check(
+		"...never in the world, never counted with the real ones",
+		KillEffects.count() == 0 and folderCount() == before,
+		`{KillEffects.count()} {folderCount()}`
+	)
+	-- on a loop: a few seconds on, the effects are still going
+	Engine.advance(4.1)
+	busy = 0
+	for _, live in stages() do
+		if pieces(live) > 2 then
+			busy += 1
+		end
+	end
+	check("...on a loop (still playing seconds later)", busy > 0 and ItemPreview.broken() == 0, busy)
+	-- the BUY IT? dialog: its own preview plays, the cards under it wait
+	Engine.require(tree.server.Services.EconomyService):Add(player, 50000)
+	Engine.require(tree.server.Services.ProgressService):Push(player)
+	Engine.advance(0.5)
+	local card = pr.body:FindFirstChild("Item1")
+	if card then
+		card.Buy.Activated:Fire()
+	end
+	Engine.advance(0.6)
+	local inDialog, under = ItemPreview.running(), 0
+	for _, live in stages() do
+		if not live:IsDescendantOf(pr.overlay) then
+			under += 1
+		end
+	end
+	check(
+		"the BUY IT? dialog's item plays there, the cards under it wait",
+		pr.confirm ~= nil and inDialog == 1 and under == 0,
+		`{pr.confirm ~= nil} {inDialog} {under}`
+	)
+	Panel.closeDialog()
+	Engine.advance(0.5)
+	check("...and they play again when it's gone", ItemPreview.running() > 1, ItemPreview.running())
+	Panel.close()
+	Engine.advance(0.2)
+	check(
+		"closing the panel stops every preview",
+		ItemPreview.running() == 0 and ItemPreview.slots() == 0 and #stages() == 0,
+		`{ItemPreview.running()} {ItemPreview.slots()} {#stages()}`
+	)
+	local still = pr.body.Premium:FindFirstChild("Premium_rbx_lightning")
+	still = still and still:FindFirstChild("Preview")
+	check("...the still pictures back", still ~= nil and still.Icon.Visible ~= false)
 end
 
 check("no script errors", #Engine.errors == errors0, Engine.errors[#Engine.errors])

@@ -42,6 +42,7 @@ local MemeArt = require(ReplicatedStorage.Shared.Data.MemeArt)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Icons = require(script.Parent.Parent.UI.Icons)
+local ItemPreview = require(script.Parent.Parent.UI.ItemPreview)
 local Layout = require(script.Parent.Parent.UI.Layout)
 local KillBanner = require(script.Parent.KillBannerController)
 
@@ -224,15 +225,20 @@ local function fill(w, h, pad)
 	}
 end
 
--- A cosmetic's picture (Icons.cosmetic) in a w x h box
-local function preview(parent, it, x, y, w, h)
-	return picture(parent, x, y, w, h, function(box)
+-- A cosmetic's picture (Icons.cosmetic) in a w x h box; live: it plays itself while it's on screen (UI/ItemPreview:
+-- true, or its opts)
+local function preview(parent, it, x, y, w, h, live)
+	local pic = picture(parent, x, y, w, h, function(box)
 		if it then
 			local props = fill(w, h)
 			props.Parent = box
 			Icons.cosmetic(it, Store.team() or "red", props)
 		end
 	end)
+	if live and it then
+		ItemPreview.attach(pic, it, type(live) == "table" and live or nil)
+	end
+	return pic
 end
 PanelController.preview = preview
 
@@ -371,7 +377,7 @@ local function itemCard(body, i, key, x, y, cw)
 	)
 	local owned = Locker.owns(p, key)
 	local worn = (p.equipped or {})[it.kind] == key
-	local pic = preview(card, it, 8, 28, cw - 16, 88)
+	local pic = preview(card, it, 8, 28, cw - 16, 88, true)
 	if owned then
 		tick(pic, cw - 30, 14, 20)
 	end
@@ -527,7 +533,9 @@ local function premiumRow(body, y)
 				TextXAlignment = Enum.TextXAlignment.Center,
 				ZIndex = 3,
 			})
-			-- (the meme ones: their sticker art, big over the picture, bobbing with the emoji)
+			-- (the meme ones: their sticker art, big over the picture, bobbing with the emoji; hidden while the
+			-- effect plays itself there)
+			local cover = {}
 			local art = MemeArt.FOR_ITEM[it.key]
 			if art then
 				local img = Theme.new("ImageLabel", {
@@ -541,12 +549,14 @@ local function premiumRow(body, y)
 					ZIndex = 2,
 					Parent = pic,
 				})
+				table.insert(cover, img)
 				local phase2 = i * 0.9
 				animate(card, function(t)
 					img.Rotation = math.sin(t * 2.4 + phase2) * 7
 					img.Size = UDim2.fromOffset(88 + math.sin(t * 4 + phase2) * 5, 88 + math.sin(t * 4 + phase2) * 5)
 				end)
 			end
+			ItemPreview.attach(pic, it, { cover = cover })
 			if owned then
 				tick(pic, CW - 34, 14, 20)
 			end
@@ -806,7 +816,7 @@ local function shopTab(body)
 	for i, key in bundle.keys do
 		local it = Cosmetics.get(key)
 		local px = 10 + (i - 1) * 102
-		preview(fc, it, px, 30, 94, 80)
+		preview(fc, it, px, 30, 94, 80, true)
 		label(fc, "BName" .. i, it.name, px, 114, 94, 16, 12, C.ink, Enum.TextXAlignment.Center, Theme.Display)
 		label(fc, "BKind" .. i, Cosmetics.KIND_NAME[it.kind], px, 130, 94, 12, 10, C.muted, Enum.TextXAlignment.Center)
 		all = all and Locker.owns(p, key)
@@ -1718,10 +1728,10 @@ confirmBuy = function(it, price, bundle)
 	refs.confirm = card
 	if bundle then
 		for i, key in bundle.keys do
-			preview(card, Cosmetics.get(key), 16 + (i - 1) * 118, 50, 112, 84)
+			preview(card, Cosmetics.get(key), 16 + (i - 1) * 118, 50, 112, 84, { priority = true })
 		end
 	else
-		preview(card, it, 120, 50, 140, 84)
+		preview(card, it, 120, 50, 140, 84, { priority = true })
 	end
 	label(
 		card,
@@ -2295,6 +2305,7 @@ function PanelController.close()
 		PanelController.closeDialog()
 		refs.panel.Visible = false
 	end
+	ItemPreview.stop() -- (every card's live preview: none play while it's shut)
 	pending = nil
 	Layout.setPanel(false)
 end
