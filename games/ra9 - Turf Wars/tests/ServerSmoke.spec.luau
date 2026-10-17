@@ -289,6 +289,56 @@ do
 		end
 	end
 	check("no wall ever seals the whole field", refused == true)
+	-- pieces touching join up (StructureModel.joins): that column of Keep Walls is one wall; take one back and the
+	-- one it ran into finishes its end again, in the same box
+	local row = {}
+	for _, st in Build:All() do
+		if st.key == "reinforced" and st.cx == col then
+			row[st.cz] = st
+		end
+	end
+	local a, b
+	for z, st in row do
+		if row[z + 2] and not row[z + 4] then
+			a, b = st, row[z + 2]
+		end
+	end
+	check("walls end to end join up", a and a.joins and a.joins.right == "run" and b.joins.left == "run")
+	if a and b then
+		local box0, box1, solids = a.boxMin, a.boxMax, a.solid
+		check("...the server built the joint (a pilaster on the seam)", a.model:FindFirstChild("Pilaster") ~= nil)
+		local mr = mark()
+		Build:Remove(b.id, nil, true)
+		check("...take one back: the other finishes its end", a.joins == nil or a.joins.right == nil)
+		check("...its parts made again (no pilaster now)", a.model:FindFirstChild("Pilaster") == nil)
+		local entry
+		for _, sol in Arena:Solids() do
+			if sol.id == a.id then
+				entry = sol
+			end
+		end
+		local live = #solids > 0
+		for _, p in solids do
+			live = live and p.Parent == a.model and p.CanCollide
+		end
+		check(
+			"...its box exactly as it was, the arrows' list of its solid parts the new ones",
+			a.boxMin == box0
+				and a.boxMax == box1
+				and entry
+				and entry.min == box0
+				and entry.max == box1
+				and entry.parts == solids
+				and live
+		)
+		local gone = firedSince(mr, "Structure", nil, function(m)
+			return m[1].kind == "destroyed" and m[1].id == b.id
+		end)
+		check(
+			"...the debris is told the shape it had (its joins)",
+			gone and type(gone.args[1].joins) == "table" and gone.args[1].joins.left == "run"
+		)
+	end
 end
 check("the budget is spent per player", Build:Budget(blue) == Constants.BUILD_BUDGET)
 local okB, whyB = Build:Place(blue, "tower", Formulas.cellOf(30, 0), 2, 0)

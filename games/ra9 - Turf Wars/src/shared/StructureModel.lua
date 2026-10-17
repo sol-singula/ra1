@@ -10,12 +10,33 @@ boxes: nothing round anywhere (no balls, no cylinders), and few, large parts (mo
 and a match fills up with pieces). Nothing solid reaches outside the footprint box or far above its height, so the
 building rules, the arrows' boxes and the tests see the same piece as before; trim and detail are not solid.
 
-  StructureModel.parts(key, team, min, max)   { { name, cf, size, tone, solid, flag?, glow? } }
+Pieces placed touching join up (joins): walls end to end in a row run on as one wall (no gap in the body, the coping
+and the merlons running on evenly over the seam, a pilaster on the joint), a wall whose end meets another's side
+makes a square corner post there (an L or a T), a wall's end butts into a taller wall or a Watchtower's face, a
+Rampart's deck runs on into the next and drops its palisade where a wall stands against it, Shield Walls side by side
+close up. Joining only moves and trims the parts (and usually drops a few); the footprint box is the same, so the
+building rules, the arrows' boxes and the bots don't change. BuildService works the joins out from the grid when a
+piece goes up or comes down and reshapes its neighbours; the hotbar's pictures have none.
+
+  StructureModel.parts(key, team, min, max, joins?)   { { name, cf, size, tone, solid, flag?, glow? } }
+  StructureModel.joins(piece, at)             the joins for a piece { key, team, cx, cz, w, d } from what stands
+                                              round it (at(cx, cz) -> the piece on that cell, or nil), or nil
+  StructureModel.joinsKey(joins)              a short string, to tell whether a piece's joins changed
   StructureModel.color(tone, team)            "stone" | "stoneDark" | "mortar" | "wood" | "woodDark" | "iron" |
                                               "team" | "teamDark" | "flame" | "glow" (and the old "build" | "armor")
   StructureModel.make(spec, team)             a Part for one entry, its tone in a "Tone" attribute
+
+joins, in the piece's own frame (A along its long side, X for a square piece; C across, A x up):
+  left, right    its -A and +A ends: "run" (the same height of wall goes on in line), "butt" (it ends against a
+                 taller wall, or a corner post), "flush" (a lower wall butts into it: its end finishes, set flush),
+                 "tower" (it ends against a Watchtower), "wall" (a Rampart's end against a wall or a tower)
+  front, back    its +C and -C sides, a character per cell along A (left to right): "p" (another wall's end meets
+                 it there: a corner post), "w" (a wall or tower stands against a Rampart there), "d" (another
+                 Rampart's deck), "s" (a Shield Wall beside a Shield Wall), "." nothing
+Strings only, so they go over the network as they are (the "destroyed" message carries them for the debris).
 ]]
 local Constants = require(script.Parent.Constants)
+local Structures = require(script.Parent.Data.Structures)
 
 local StructureModel = {}
 
@@ -47,7 +68,155 @@ function StructureModel.color(tone, team)
 	return build -- "team", "glow", "flame" (and the old "build")
 end
 
-function StructureModel.parts(key, team, mn, mx)
+-- The wall pieces (they run on in a row and meet at corners), and how each is made: the plinth's height, the stone,
+-- how much thinner than the footprint the body is and how far it's set in at a free end, the top of the body, the
+-- coping (height, how much thinner, tone) and the merlons (length, height, how much thinner, tone)
+local WALLS = {
+	barricade = {
+		plinth = 0.6,
+		stone = "stone",
+		thin = 1,
+		inset = 0.2,
+		top = 2.8,
+		cope = 0.3,
+		copeThin = 0.6,
+		copeTone = "teamDark",
+		m = 1.6,
+		mh = 0.9,
+		mThin = 0.9,
+		mTone = "team",
+	},
+	wall = {
+		plinth = 1,
+		stone = "stone",
+		thin = 1.2,
+		inset = 0.2,
+		top = 8.4,
+		cope = 0.5,
+		copeThin = 0,
+		copeTone = "teamDark",
+		m = 1.6,
+		mh = 1.1,
+		mThin = 0.6,
+		mTone = "team",
+	},
+	reinforced = {
+		plinth = 1.2,
+		stone = "stoneDark",
+		thin = 0.4,
+		inset = 0.1,
+		top = 8.4,
+		cope = 0.5,
+		copeThin = 0,
+		copeTone = "team",
+		m = 1.8,
+		mh = 1.1,
+		mThin = 0.4,
+		mTone = "teamDark",
+	},
+}
+StructureModel.WALLS = WALLS
+
+-- What touches a piece, worked out from the grid (BuildService's cells; the tutorial's own). Only the same team's
+-- pieces join. Returns nil when nothing does.
+function StructureModel.joins(piece, at)
+	local def = piece and Structures.get(piece.key)
+	if not def then
+		return nil
+	end
+	local alongX = piece.w >= piece.d
+	local n = alongX and piece.w or piece.d -- (cells along A)
+	local m = alongX and piece.d or piece.w -- (cells across)
+	-- the cell at i along A (-1 and n: past the ends) and j across (-1: the back, m: the front)
+	local function cell(i, j)
+		local N
+		if alongX then
+			N = at(piece.cx + i, piece.cz + j)
+		else
+			N = at(piece.cx + (m - 1) - j, piece.cz + i) -- (C is -X when A is Z)
+		end
+		if N and N ~= piece and N.team == piece.team and Structures.get(N.key) then
+			return N, Structures.get(N.key), (N.w >= N.d) == alongX
+		end
+		return nil
+	end
+	local out, any = {}, false
+	if WALLS[def.key] then
+		for _, e in { { "left", -1 }, { "right", n } } do
+			local N, nd, parallel = cell(e[2], 0)
+			local kind
+			if N and WALLS[nd.key] then
+				if parallel then
+					kind = nd.h == def.h and "run" or nd.h > def.h and "butt" or "flush"
+				else
+					kind = nd.h >= def.h and "butt" or "flush" -- (it meets the other's corner post)
+				end
+			elseif N and nd.key == "tower" then
+				kind = "tower"
+			end
+			out[e[1]] = kind
+			any = any or kind ~= nil
+		end
+		for _, s in { { "front", m }, { "back", -1 } } do
+			local str = ""
+			for i = 0, n - 1 do
+				local N, nd, parallel = cell(i, s[2])
+				local post = N and WALLS[nd.key] and not parallel
+				str ..= post and "p" or "."
+				any = any or post
+			end
+			out[s[1]] = str
+		end
+	elseif def.key == "bridge" then
+		for _, e in { { "left", -1 }, { "right", n } } do
+			local N, nd, parallel = cell(e[2], 0)
+			local kind
+			if N and nd.key == "bridge" and parallel then
+				kind = "run"
+			elseif N and (WALLS[nd.key] or nd.key == "tower" or nd.key == "bridge") then
+				kind = "wall"
+			end
+			out[e[1]] = kind
+			any = any or kind ~= nil
+		end
+		for _, s in { { "front", m }, { "back", -1 } } do
+			local str = ""
+			for i = 0, n - 1 do
+				local N, nd = cell(i, s[2])
+				local c = "."
+				if N and (WALLS[nd.key] or nd.key == "tower") then
+					c = "w"
+				elseif N and nd.key == "bridge" then
+					c = "d"
+				end
+				str ..= c
+				any = any or c ~= "."
+			end
+			out[s[1]] = str
+		end
+	elseif def.key == "cover" then
+		for _, s in { { "front", m }, { "back", -1 } } do
+			local N, nd = cell(0, s[2])
+			local c = N and nd.key == "cover" and "s" or "."
+			out[s[1]] = c
+			any = any or c ~= "."
+		end
+	end
+	return any and out or nil
+end
+
+function StructureModel.joinsKey(joins)
+	if type(joins) ~= "table" then
+		return ""
+	end
+	local out = {}
+	for _, k in { "left", "right", "front", "back" } do
+		table.insert(out, type(joins[k]) == "string" and joins[k] or "")
+	end
+	return table.concat(out, "|")
+end
+
+function StructureModel.parts(key, team, mn, mx, joins)
 	local out = {}
 	local size = mx - mn
 	local mid = (mn + mx) / 2
@@ -86,78 +255,117 @@ function StructureModel.parts(key, team, mn, mx)
 		local turn = CFrame.fromAxisAngle(Vector3.new(0, 0, 1), math.atan2(dy, da))
 		return box(name, tone, (a0 + a1) / 2, (y0 + y1) / 2, c, len, thick, thick, solid, turn)
 	end
-	-- mortar: a thin line right through a stone body (la long, lc a hair wider than it), so it shows on both faces;
-	-- a joint is the same standing up, between y0 and y1
-	local function course(y, la, lc)
-		box("Course", "mortar", 0, y, 0, la, 0.14, lc, false)
+	-- what touches it (joins): an end's kind, and a side's character at cell i along A ("." for none)
+	local function joinAt(side)
+		local v = joins and joins[side]
+		return type(v) == "string" and v or nil
 	end
-	local function joint(a, y0, y1, lc)
-		box("Joint", "mortar", a, (y0 + y1) / 2, 0, 0.14, y1 - y0, lc, false)
+	local function sideAt(side, i)
+		local v = joinAt(side)
+		local ch = v and v:sub(i + 1, i + 1) or ""
+		return ch ~= "" and ch or "."
 	end
+	local CELL = Constants.CELL
+	local cells = math.max(1, math.floor(L / CELL + 0.5)) -- (cells along A)
 
-	if key == "barricade" then
-		-- the Battlement: a low stone wall in two courses on a plinth, a coping in the team's dark shade and three
-		-- merlons in its colour on top
-		local body = T - 1
-		box("Plinth", "stone", 0, 0.3, 0, L, 0.6, T)
-		box("Body", "stone", 0, 1.7, 0, L - 0.4, 2.2, body)
-		course(1.7, L - 0.3, body + 0.1)
-		joint(-L / 4, 0.6, 1.7, body + 0.1)
-		joint(L / 4, 0.6, 1.7, body + 0.1)
-		joint(0, 1.7, 2.8, body + 0.1)
-		box("Coping", "teamDark", 0, 2.95, 0, L, 0.3, T - 0.6)
-		for _, a in { -(L / 2 - 0.8), 0, L / 2 - 0.8 } do
-			box("Merlon", "team", a, 3.55, 0, 1.6, 0.9, T - 0.9)
+	local wl = WALLS[key]
+	if wl then
+		-- the three walls: the Battlement (a low wall, a coping in the team's dark shade, merlons in its colour), the
+		-- Castle Wall (tall, a walkway coping, a torch on the home face) and the Keep Wall (thick dark stone, a gate in
+		-- it, an iron strap, the coping in the team's colour and heavy merlons in its dark shade), each a body on a
+		-- plinth. Joined, the body runs right to the end, the coping runs on and the merlons are spaced from seam to
+		-- seam (the one on the seam cut in half: the neighbour has the other half) with a pilaster on the joint; a
+		-- square post takes an end cell where another wall's end meets its side (an L or a T)
+		local lj, rj = joinAt("left"), joinAt("right")
+		local function post(i)
+			return sideAt("front", i) == "p" or sideAt("back", i) == "p"
 		end
-	elseif key == "wall" then
-		-- the Castle Wall: four courses of stone blocks (staggered joints) on a plinth, a walkway coping and three
-		-- merlons in the team's colours, and a torch on an iron bracket on the home face
-		local body = T - 1.2
-		box("Plinth", "stone", 0, 0.5, 0, L, 1, T)
-		box("Body", "stone", 0, 4.7, 0, L - 0.4, 7.4, body)
-		local ch = 1.85 -- (a course's height: 1 to 8.4 in four)
-		for k = 0, 3 do
-			local y0 = 1 + ch * k
-			if k > 0 then
-				course(y0, L - 0.3, body + 0.1)
+		local lp, rp = post(0), cells > 1 and post(cells - 1)
+		local s0 = lp and -L / 2 + CELL or -L / 2 -- (the stretch of wall between the posts)
+		local s1 = rp and L / 2 - CELL or L / 2
+		local body = T - wl.thin
+		local copeY = wl.top + wl.cope
+		box("Plinth", wl.stone, 0, wl.plinth / 2, 0, L, wl.plinth, T)
+		if s1 - s0 > 0.05 then
+			local b0 = s0 + ((lj or lp) and 0 or wl.inset)
+			local b1 = s1 - ((rj or rp) and 0 or wl.inset)
+			box("Body", wl.stone, (b0 + b1) / 2, (wl.plinth + wl.top) / 2, 0, b1 - b0, wl.top - wl.plinth, body)
+		end
+		if key == "reinforced" and not (lp or rp) then
+			-- the gate (a solid one: it still blocks): an oak door with iron bands between stone jambs under a lintel
+			-- and keystone (no room for it beside a corner post)
+			box("Gate", "woodDark", 0, 3.6, 0, 3.4, 4.8, body + 0.1, false)
+			for _, s in { 1, -1 } do
+				box("Jamb", "stone", s * 1.95, 3.6, 0, 0.5, 4.8, body + 0.16, false)
 			end
-			for _, a in (k % 2 == 0) and { -L / 4, L / 4 } or { 0 } do
-				joint(a, y0, y0 + ch, body + 0.1)
-			end
-		end
-		box("Coping", "teamDark", 0, 8.65, 0, L, 0.5, T)
-		for _, a in { -(L / 2 - 0.8), 0, L / 2 - 0.8 } do
-			box("Merlon", "team", a, 9.45, 0, 1.6, 1.1, T - 0.6)
-		end
-		local tc = home * (body / 2 + 0.35)
-		box("Bracket", "iron", 1, 5.4, home * (body / 2 + 0.25), 0.3, 0.9, 0.5, false)
-		box("Torch", "woodDark", 1, 6, tc, 0.3, 1, 0.3, false)
-		box("Flame", "flame", 1, 6.7, tc, 0.45, 0.5, 0.45, false)
-	elseif key == "reinforced" then
-		-- the Keep Wall: thick dark stone with a gate in it (a solid one: it still blocks), an oak door with iron
-		-- bands between stone jambs under a lintel and keystone, an iron strap along the top, coursed stone either
-		-- side, then the coping in the team's colour and heavy merlons in its dark shade
-		local body = T - 0.4
-		box("Plinth", "stoneDark", 0, 0.6, 0, L, 1.2, T)
-		box("Body", "stoneDark", 0, 4.8, 0, L - 0.2, 7.2, body)
-		box("Gate", "woodDark", 0, 3.6, 0, 3.4, 4.8, body + 0.1, false)
-		for _, s in { 1, -1 } do
-			box("Jamb", "stone", s * 1.95, 3.6, 0, 0.5, 4.8, body + 0.16, false)
-		end
-		box("Lintel", "stone", 0, 6.35, 0, 4.4, 0.7, body + 0.16, false)
-		box("Keystone", "stone", 0, 6.6, 0, 1, 1.2, body + 0.22, false)
-		for _, y in { 2.4, 4.8 } do
-			box("GateBand", "iron", 0, y, 0, 3.5, 0.3, body + 0.14, false)
-		end
-		box("Strap", "iron", 0, 7.7, 0, L - 0.1, 0.35, body + 0.08, false)
-		for _, s in { 1, -1 } do
-			for _, y in { 3, 5 } do
-				box("Course", "mortar", s * 3.05, y, 0, 1.7, 0.14, body + 0.1, false)
+			box("Lintel", "stone", 0, 6.35, 0, 4.4, 0.7, body + 0.16, false)
+			box("Keystone", "stone", 0, 6.6, 0, 1, 1.2, body + 0.22, false)
+			for _, y in { 2.4, 4.8 } do
+				box("GateBand", "iron", 0, y, 0, 3.5, 0.3, body + 0.14, false)
 			end
 		end
-		box("Coping", "team", 0, 8.65, 0, L, 0.5, T)
-		for _, a in { -(L / 2 - 0.9), 0, L / 2 - 0.9 } do
-			box("Merlon", "teamDark", a, 9.45, 0, 1.8, 1.1, T - 0.4)
+		if key == "reinforced" and s1 - s0 > 0.05 then
+			local t0 = s0 + ((lj or lp) and 0 or 0.05)
+			local t1 = s1 - ((rj or rp) and 0 or 0.05)
+			box("Strap", "iron", (t0 + t1) / 2, 7.7, 0, t1 - t0, 0.35, body + 0.08, false)
+		end
+		if s1 - s0 > 0.05 then
+			box("Coping", wl.copeTone, (s0 + s1) / 2, wl.top + wl.cope / 2, 0, s1 - s0, wl.cope, T - wl.copeThin)
+			-- the merlons, evenly from end to end: a free (or flush) end has a whole one at its corner, a seam or a
+			-- post the middle of one (cut where the piece ends), so a row of walls keeps one rhythm over its joints
+			local lseam = lp or (lj ~= nil and lj ~= "flush")
+			local rseam = rp or (rj ~= nil and rj ~= "flush")
+			local c0 = lseam and s0 or s0 + wl.m / 2
+			local c1 = rseam and s1 or s1 - wl.m / 2
+			local span = c1 - c0
+			local count = span > 0.05 and math.floor(span / (2 * wl.m) + 0.4) + 1 or 1
+			for k = 0, count - 1 do
+				local c = count > 1 and c0 + span * k / (count - 1) or (c0 + c1) / 2
+				local lo, hi = math.max(c - wl.m / 2, s0), math.min(c + wl.m / 2, s1)
+				if hi - lo > 0.05 then
+					box("Merlon", wl.mTone, (lo + hi) / 2, copeY + wl.mh / 2, 0, hi - lo, wl.mh, T - wl.mThin)
+				end
+			end
+		end
+		-- the joint with the next wall in the row: a pilaster over the seam (the left one of the pair makes it)
+		if rj == "run" and not rp then
+			local pt = key == "barricade" and body + 0.3 or T - 0.1
+			box("Pilaster", wl.stone, L / 2, (wl.plinth + wl.top) / 2, 0, 0.8, wl.top - wl.plinth, pt, false)
+		end
+		-- a corner post: a square pier on the end cell, a little over the merlons, capped in the coping's tone
+		local topY = copeY + wl.mh + 0.2
+		for _, p in { { lp, -L / 2 + CELL / 2 }, { rp, L / 2 - CELL / 2 } } do
+			if p[1] then
+				box("Post", wl.stone, p[2], (wl.plinth + topY) / 2, 0, CELL, topY - wl.plinth, T)
+				box("PostCap", wl.copeTone, p[2], topY + 0.2, 0, CELL + 0.3, 0.4, T + 0.3, false)
+			end
+		end
+		-- against a Watchtower: its shaft stands back from its plinth's edge, so the wall reaches in to meet it
+		for _, e in { { lj, -1 }, { rj, 1 } } do
+			if e[1] == "tower" then
+				local y0 = math.max(wl.plinth, 1)
+				box(
+					"Abut",
+					wl.stone,
+					e[2] * (L / 2 + 0.2),
+					(y0 + copeY) / 2,
+					0,
+					0.4,
+					copeY - y0,
+					T - wl.copeThin,
+					false
+				)
+			end
+		end
+		if key == "wall" then
+			-- the torch on an iron bracket on the home face (in a cell without a corner post)
+			local ta = not rp and 1 or not lp and -1 or nil
+			if ta then
+				local tc = home * (body / 2 + 0.35)
+				box("Bracket", "iron", ta, 5.4, home * (body / 2 + 0.25), 0.3, 0.9, 0.5, false)
+				box("Torch", "woodDark", ta, 6, tc, 0.3, 1, 0.3, false)
+				box("Flame", "flame", ta, 6.7, tc, 0.45, 0.5, 0.45, false)
+			end
 		end
 	elseif key == "tower" then
 		-- the Watchtower: a square stone shaft in courses with arrow slits on the front and sides, a platform in the
@@ -250,12 +458,21 @@ function StructureModel.parts(key, team, mn, mx)
 	elseif key == "bridge" then
 		-- the Rampart: a plank deck on six square posts (stood on to shoot over the walls), braced underneath, a
 		-- palisade with the team's trim on the enemy's side, a team-coloured fascia along both edges, low kerbs at
-		-- the ends and a ladder up the home side
+		-- the ends and a ladder up the home side. Joined: end to end the decks run on as one (the posts on the seam
+		-- are the next one's, no kerbs between), and where a wall or a tower (or another deck) stands against a side
+		-- the deck reaches it and the palisade stops there (the wall is the parapet)
 		local enemy = -home
 		local deckT = T - 0.6
+		local lj, rj = joinAt("left"), joinAt("right")
+		local function touched(side)
+			return (joinAt(side) or ""):find("[wd]") ~= nil
+		end
+		local touch = { [1] = touched("front"), [-1] = touched("back") }
 		for _, a in { -(L / 2 - 0.4), 0, L / 2 - 0.4 } do
-			for _, s in { 1, -1 } do
-				box("Post", "woodDark", a, 2.6, s * (T / 2 - 0.4), 0.8, 5.2, 0.8)
+			if not (rj == "run" and a > 0.5) then
+				for _, s in { 1, -1 } do
+					box("Post", "woodDark", a, 2.6, s * (T / 2 - 0.4), 0.8, 5.2, 0.8)
+				end
 			end
 		end
 		for _, s in { 1, -1 } do
@@ -263,15 +480,35 @@ function StructureModel.parts(key, team, mn, mx)
 			box("Beam", "woodDark", 0, 4.95, c, L, 0.5, 0.5, false)
 			brace("Brace", "woodDark", c, -(L / 2 - 0.8), 0.6, -0.4, 4.6, 0.3, false)
 			brace("Brace", "woodDark", c, 0.4, 4.6, L / 2 - 0.8, 0.6, 0.3, false)
-			box("Fascia", "team", 0, 5.45, s * (deckT / 2 + 0.06), L, 0.45, 0.12, false)
+			if not touch[s] then
+				box("Fascia", "team", 0, 5.45, s * (deckT / 2 + 0.06), L, 0.45, 0.12, false)
+			end
 		end
+		local d0 = touch[-1] and -T / 2 or -deckT / 2
+		local d1 = touch[1] and T / 2 or deckT / 2
 		for i = 1, 4 do
-			box("Plank", "wood", -L / 2 + (i - 0.5) * L / 4, h - 0.4, 0, L / 4 - 0.1, 0.8, deckT)
+			local p0 = (i == 1 and lj) and -L / 2 or -L / 2 + (i - 1) * L / 4 + 0.05
+			local p1 = (i == 4 and rj) and L / 2 or -L / 2 + i * L / 4 - 0.05
+			box("Plank", "wood", (p0 + p1) / 2, h - 0.4, (d0 + d1) / 2, p1 - p0, 0.8, d1 - d0)
 		end
-		box("Palisade", "wood", 0, h + 0.55, enemy * (deckT / 2 - 0.2), L, 1.1, 0.35)
-		box("Trim", "team", 0, h + 1.22, enemy * (deckT / 2 - 0.2), L, 0.25, 0.5, false)
-		for _, s in { 1, -1 } do
-			box("Kerb", "woodDark", s * (L / 2 - 0.15), h + 0.3, 0, 0.25, 0.6, deckT - 1, false)
+		-- (the palisade, in stretches over the cells with nothing standing against them)
+		local eside = enemy == 1 and "front" or "back"
+		local i0
+		for i = 0, cells do
+			local open = i < cells and not sideAt(eside, i):find("[wd]")
+			if open and not i0 then
+				i0 = i
+			elseif not open and i0 then
+				local a0, a1 = -L / 2 + i0 * CELL, -L / 2 + i * CELL
+				box("Palisade", "wood", (a0 + a1) / 2, h + 0.55, enemy * (deckT / 2 - 0.2), a1 - a0, 1.1, 0.35)
+				box("Trim", "team", (a0 + a1) / 2, h + 1.22, enemy * (deckT / 2 - 0.2), a1 - a0, 0.25, 0.5, false)
+				i0 = nil
+			end
+		end
+		for _, e in { { lj, -1 }, { rj, 1 } } do
+			if not e[1] then
+				box("Kerb", "woodDark", e[2] * (L / 2 - 0.15), h + 0.3, 0, 0.25, 0.6, deckT - 1, false)
+			end
 		end
 		-- (the ladder: just outside the deck's edge on the home side, between two posts)
 		local lc = home * (T / 2 - 0.2)
@@ -285,19 +522,29 @@ function StructureModel.parts(key, team, mn, mx)
 		end
 	elseif key == "cover" then
 		-- the Shield Wall: a big plank mantlet facing the enemy on two skids, propped from behind by two struts and a
-		-- crossbar, with iron bands, a broad band in the team's colour with an iron boss, and a team cap
+		-- crossbar, with iron bands, a broad band in the team's colour with an iron boss, and a team cap. Side by
+		-- side, the boards close up into one shield wall (no slit between them)
 		local fa = f * 0.9 -- (the board, toward the enemy)
+		local fj, bj = sideAt("front", 0) == "s", sideAt("back", 0) == "s"
+		-- (across, `width` wide, or right to the edge on a joined side): its middle and its size
+		local function across(width)
+			local lo, hi = bj and -T / 2 or -width / 2, fj and T / 2 or width / 2
+			return (lo + hi) / 2, hi - lo
+		end
 		for _, s in { 1, -1 } do
 			box("Skid", "woodDark", 0, 0.2, s * 1.5, L, 0.4, 0.6)
 		end
-		box("Board", "wood", fa, 3.1, 0, 0.7, 5.4, T - 0.1)
+		local bc, bw = across(T - 0.1)
+		box("Board", "wood", fa, 3.1, bc, 0.7, 5.4, bw)
 		for _, s in { 1, -1 } do
 			box("Seam", "woodDark", fa, 3.1, s * 0.65, 0.8, 5.3, 0.12, false)
 		end
 		for _, y in { 1.2, 5.2 } do
-			box("Band", "iron", fa, y, 0, 0.78, 0.25, T - 0.06, false)
+			local c, w = across(T - 0.06)
+			box("Band", "iron", fa, y, c, 0.78, 0.25, w, false)
 		end
-		box("Stripe", "team", fa, 3.3, 0, 0.82, 1.2, T - 0.04, false)
+		local sc, sw = across(T - 0.04)
+		box("Stripe", "team", fa, 3.3, sc, 0.82, 1.2, sw, false)
 		box("Boss", "iron", fa, 3.3, 0, 0.95, 1, 1, false)
 		box("Cap", "team", fa, 5.92, 0, 0.9, 0.25, T, false)
 		for _, s in { 1, -1 } do
