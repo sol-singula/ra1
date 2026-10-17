@@ -560,6 +560,17 @@ remembered, every panel's close button the shared X), ServerSmoke 174, AdminSmok
   starts alone with the bot, the first build phase is held to at least `TUTORIAL_BUILD_SECONDS` (38) so they get to
   PICK A WALL and PLACE IT (`MatchService:HoldBuild`).
 
+## Round 18: their own avatars
+
+* **Players wear their own avatar** (skin tone, face, clothes, accessories, body parts) from
+  `Players:GetHumanoidDescriptionFromUserId`, asked once per player and kept, at the standard size whatever their
+  scaling (Height/Width/Depth/Head 1, BodyType/Proportion 0), so nobody is a bigger or smaller target (hits go by the
+  body anyway, not by the parts). Their team is on it: neon bands on both upper arms and the waist and a team-coloured
+  outline (a Highlight). Accessories never block shots or builds. Bots stay mannequins in their team's colour; anyone
+  whose avatar can't be loaded gets the plain body.
+* Fixed: the phone's SKIP button for the tutorial intro (last round) called a function before it was defined, so a
+  tap errored; TutorialSmoke now taps it.
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

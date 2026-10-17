@@ -158,16 +158,22 @@ check("everyone spawned alive", Combat:Alive(ava) and Combat:Alive(cy))
 do
 	local d = ava.Character:FindFirstChildOfClass("Humanoid"):GetAppliedDescription()
 	check(
-		"everyone has the same plain R15 body (standard size, no packages)",
-		d.HeightScale == 1 and d.WidthScale == 1 and d.BodyTypeScale == 0 and d.Torso == 0 and d.Head == 0
+		"everyone wears their own avatar, at the standard size",
+		d.HeightScale == 1 and d.WidthScale == 1 and d.DepthScale == 1 and d.BodyTypeScale == 0
 	)
 end
 do
 	local r = rootOf(red)
 	check("red spawns at the west end", r and r.Position.X < -70, r and r.Position.X)
 	check("blue spawns at the east end", rootOf(blue).Position.X > 70)
-	local arm = red.Character:FindFirstChild("RightUpperArm") or red.Character:FindFirstChild("Head")
-	check("players are mannequins in their team's colour", arm and arm.Color == Constants.TEAM_COLOR.red)
+	local bands, outline = 0, red.Character:FindFirstChild("TeamOutline")
+	for _, c in red.Character:GetChildren() do
+		if c.Name == "TeamBand" and c.Color == Constants.TEAM_COLOR.red then
+			bands += 1
+		end
+	end
+	check("...wearing their team: bands in its colour", bands >= 1, bands)
+	check("...and a team-coloured outline", outline and outline.OutlineColor == Constants.TEAM_COLOR.red)
 end
 check("the client got the match", lastFired("Match", red) ~= nil and lastFired("Match", red).phase == "build")
 

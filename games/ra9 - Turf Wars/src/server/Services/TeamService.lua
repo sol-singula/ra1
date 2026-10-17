@@ -12,8 +12,9 @@ The rules, in order:
      with no friend there first), and only when no solo is left there, a whole party as one block (the smallest,
      and only if that makes it fairer). A party is never split, even when it is more than half the server
      (fairness comes second). A party that forms in the fight waits: it moves at the next match start.
-  4. The look (§0): everyone is a mannequin in their team's colour: body parts tinted, clothes and accessories off,
-     so in a white world a player is a red or blue figure you can read at any distance.
+  4. The look: players wear their own avatar (at a standard size), with their team on it: neon bands on both upper
+     arms and the waist and a team-coloured outline, so red and blue read at any distance. Bots are mannequins in
+     their team's colour.
 
   TeamService:Team(player)            "red" | "blue" | nil
   TeamService:Members(team)           { players }
@@ -262,20 +263,68 @@ function TeamService:SetTurfLeader(fn)
 	turfLeader = fn
 end
 
--- The mannequin: every body part in the team's colour, smooth, no clothes, no accessories.
+-- The look. A player keeps their own avatar (skin, face, clothes, accessories) and wears their team on it: a bright
+-- band round each upper arm and the waist and a team-coloured outline, so red and blue read at any distance. A bot
+-- is a mannequin in its team's colour (every part tinted, no clothes).
+local function band(character, partName, color, size, offset)
+	local at = character:FindFirstChild(partName)
+	if not at or not at:IsA("BasePart") then
+		return
+	end
+	local p = Instance.new("Part")
+	p.Name = "TeamBand"
+	p.Size = size
+	p.Color = color
+	p.Material = Enum.Material.Neon
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Massless = true
+	p.CastShadow = false
+	p.CFrame = at.CFrame * offset
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0, weld.Part1 = at, p
+	weld.Parent = p
+	p.Parent = character
+end
+
 function TeamService:Dress(character, team)
 	local color = Constants.TEAM_COLOR[team] or Constants.WHITE
-	for _, d in character:GetDescendants() do
-		if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
-			d.Color = color
-			d.Material = Enum.Material.SmoothPlastic
-		elseif d:IsA("Accessory") or d:IsA("Shirt") or d:IsA("Pants") or d:IsA("ShirtGraphic") then
-			d:Destroy()
-		elseif d:IsA("Decal") and d.Name == "face" then
-			d.Transparency = 0.6
+	character:SetAttribute("Team", team)
+	if character:GetAttribute("BotId") ~= nil then
+		for _, d in character:GetDescendants() do
+			if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" then
+				d.Color = color
+				d.Material = Enum.Material.SmoothPlastic
+			elseif d:IsA("Accessory") or d:IsA("Shirt") or d:IsA("Pants") or d:IsA("ShirtGraphic") then
+				d:Destroy()
+			end
+		end
+		return
+	end
+	for _, old in character:GetChildren() do
+		if old.Name == "TeamBand" or old.Name == "TeamOutline" then
+			old:Destroy()
 		end
 	end
-	character:SetAttribute("Team", team)
+	for _, d in character:GetDescendants() do
+		-- (accessories never block a shot or a build: arrows and slashes go by the body, not the hat)
+		if d:IsA("BasePart") and d.Parent and d.Parent:IsA("Accessory") then
+			d.CanQuery = false
+			d.CanTouch = false
+		end
+	end
+	band(character, "LeftUpperArm", color, Vector3.new(1.08, 0.35, 1.08), CFrame.new(0, 0.15, 0))
+	band(character, "RightUpperArm", color, Vector3.new(1.08, 0.35, 1.08), CFrame.new(0, 0.15, 0))
+	band(character, "LowerTorso", color, Vector3.new(2.1, 0.3, 1.1), CFrame.new(0, 0.1, 0))
+	local outline = Instance.new("Highlight")
+	outline.Name = "TeamOutline"
+	outline.FillColor = color
+	outline.FillTransparency = 0.85
+	outline.OutlineColor = color
+	outline.OutlineTransparency = 0.1
+	outline.DepthMode = Enum.HighlightDepthMode.Occluded
+	outline.Parent = character
 end
 
 function TeamService:Init()

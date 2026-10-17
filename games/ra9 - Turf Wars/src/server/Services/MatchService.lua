@@ -165,9 +165,8 @@ function MatchService:Everyone()
 	end
 	return list
 end
--- Everyone gets the same body: Roblox's plain R15 shape at the standard size, whatever their avatar is (no
--- packages, no tall/wide/slim scaling, no accessories or clothes), so nobody is a bigger or smaller target and the
--- team mannequins all look alike. Faces and skin colour don't matter: TeamService:Dress paints the whole body.
+-- The plain body: Roblox's plain R15 shape at the standard size (no packages, no clothes). Bots wear it, and so does
+-- anyone whose avatar can't be loaded (Studio's test players, a Roblox hiccup).
 local uniformBody
 local function sameBody()
 	if uniformBody then
@@ -187,6 +186,32 @@ local function sameBody()
 	return uniformBody
 end
 MatchService.sameBody = sameBody
+
+-- A player's own avatar (their skin tone, face, clothes, accessories, body parts), at the standard size whatever
+-- their scaling is, so nobody is a bigger or smaller target. Asked of Roblox once per player and kept.
+local avatars = {} -- [userId] = HumanoidDescription | false
+local function ownBody(player)
+	local id = player.UserId
+	if type(id) ~= "number" or id <= 0 then
+		return nil
+	end
+	if avatars[id] == nil then
+		local ok, d = pcall(function()
+			return Players:GetHumanoidDescriptionFromUserId(id)
+		end)
+		if ok and d then
+			pcall(function()
+				d.HeightScale, d.WidthScale, d.DepthScale, d.HeadScale = 1, 1, 1, 1
+				d.BodyTypeScale, d.ProportionScale = 0, 0
+			end)
+			avatars[id] = d
+		else
+			avatars[id] = false
+		end
+	end
+	return avatars[id] or nil
+end
+MatchService.ownBody = ownBody
 
 -- Keep the build phase going at least `seconds` from now (TutorialService: a new player's first build, which their
 -- intro would otherwise eat). Only while building; true when it moved the clock.
@@ -219,7 +244,7 @@ function MatchService:Spawn(player)
 	local team = teams:Team(player) or teams:Assign(player)
 	respawnAt[player] = nil
 	pending[player] = nil
-	local desc = sameBody()
+	local desc = ownBody(player) or sameBody()
 	local loaded = desc and pcall(function()
 		player:LoadCharacterWithHumanoidDescription(desc)
 	end)

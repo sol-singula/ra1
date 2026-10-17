@@ -497,6 +497,26 @@ key(Enum.KeyCode.K)
 Engine.advance(0.2)
 check("K skips the tutorial", not state().running and not Layout.focused())
 check("...the server saves it as skipped", p.tutorial.done == true and p.tutorial.skipped == true)
+-- on a phone: dragging never skips the intro; its SKIP button does
+Device.set("touch")
+Tut.replay()
+Engine.advance(0.2)
+check(
+	"a phone: the intro again",
+	untilTrue(3, function()
+		return state().intro
+	end)
+)
+UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Unknown, UserInputType = Enum.UserInputType.Touch }, false)
+Engine.advance(1.3)
+check("...a drag doesn't skip it", state().intro)
+check("...the SKIP button shows", refs.skipCine.Visible)
+refs.skipCine.Activated:Fire()
+Engine.advance(0.1)
+check("...tapping SKIP skips it", not state().intro and not CamC.takenOver())
+Tut.skip()
+Engine.advance(0.2)
+Device.set("keyboard")
 check("...the guides go", count("SpotBeam") == 0 and not refs.say.Visible)
 
 -- The step timers: a step can't trap you (it times out, the match never waits) -----------------------------------------

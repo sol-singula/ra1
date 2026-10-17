@@ -60,6 +60,7 @@ TutorialController.refs = refs
 local fx -- the world's pieces (a folder in the workspace, this client only)
 local run -- the tutorial while it runs: { i, t, gap, built, fired, hit, kill, history, finished }
 local cine -- the camera cinematic playing: { t0, dur, drive, finish, skippable, look }
+local endCinematic -- (defined with the cinematics below; the phone's SKIP button, built first, calls it)
 local session -- after the steps: the tips and the first-win show still watch (until the match ends)
 local charge -- the bow's draw (Bus.Charge), nil when not drawing
 local punch = 0 -- degrees the lens is punched in (decays)
@@ -898,7 +899,7 @@ end
 -- Cinematics -------------------------------------------------------------------------------------------------------
 -- The camera is handed to drive(cam, t, dt) for `seconds`; then it's given back (CameraController.release), looking
 -- along cine.look. opts: bars (the letterbox), hideHud, skippable (Enter / K / Select / SKIP after a second)
-local function endCinematic(skipped)
+function endCinematic(skipped)
 	local c = cine
 	if not c then
 		return
