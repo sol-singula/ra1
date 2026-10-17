@@ -522,6 +522,21 @@ Engine.advance(0.2)
 Device.set("keyboard")
 check("...the guides go", count("SpotBeam") == 0 and not refs.say.Visible)
 
+-- The join intro (a returning player): the opening alone plays, then the camera is yours again ---------------------------
+do
+	local NetS = Engine.require(tree.shared.Net)
+	NetS.fire(player, "Tutorial", { kind = "intro" })
+	local played = untilTrue(3, function()
+		return Tut.state().cinema
+	end)
+	check("the join intro plays the opening cinematic", played)
+	check("...not the guided steps", not Tut.state().running)
+	local over = untilTrue(12, function()
+		return not Tut.state().cinema
+	end)
+	check("...and ends, the camera back to you", over and ws.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable)
+end
+
 -- The step timers: a step can't trap you (it times out, the match never waits) -----------------------------------------
 for _, st in Tut.STEPS do
 	check(`step {st.name} times out`, type(st.timeout) == "number" and st.timeout <= 60, st.timeout)
@@ -552,8 +567,35 @@ for i = mark + 1, #Engine.clientLog do
 		again = true
 	end
 end
-check("coming back after finishing it: no tutorial", not again and not Tutorial:Active(back))
+check("coming back right away after finishing it: no tutorial, no intro", not again and not Tutorial:Active(back))
 check("...their save says done", Data:Get(back) and Data:Get(back).tutorial.done == true)
+-- back after a while: the opening alone (RED, BLUE, THE LINE, YOUR TURF, into your eyes), not the whole tutorial
+Engine.removePlayer(back)
+Engine.advance(1)
+local savedOld = Engine.dataStores[Constants.PROFILE_STORE]["u_777"]
+savedOld.meta.lastSeen -= 600 -- (the mock clock: ten minutes before they left)
+mark = #Engine.clientLog
+local later = Engine.addPlayer("Oldie", 777)
+Engine.advance(0.5)
+Engine.fireServer(later, "Ready")
+Engine.advance(1)
+local kinds = {}
+for i = mark + 1, #Engine.clientLog do
+	local ev = Engine.clientLog[i]
+	if ev.name == "Tutorial" and ev.player == later then
+		table.insert(kinds, ev.args[1].kind)
+	end
+end
+check("back after 10 minutes: the intro plays again", table.find(kinds, "intro") ~= nil, table.concat(kinds, ","))
+check("...not the whole tutorial", table.find(kinds, "start") == nil and not Tutorial:Active(later))
+check(
+	"the rule: back within 2 minutes, no intro",
+	not Tutorial.joinIntro({ meta = { lastSeen = 1000 } }, 1000 + Constants.JOIN_INTRO_REJOIN_SECONDS - 5)
+)
+check(
+	"...2 minutes or more, the intro",
+	Tutorial.joinIntro({ meta = { lastSeen = 1000 } }, 1000 + Constants.JOIN_INTRO_REJOIN_SECONDS)
+)
 check(
 	"someone who played before the tutorial existed counts as done",
 	not Tutorial.shouldShow({ stats = { matches = 3 }, tutorial = { done = false } })

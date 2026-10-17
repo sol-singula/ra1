@@ -118,6 +118,8 @@ Constants.ADMIN_VIP = { -- the VIP lengths an admin can give: key, seconds (true
 -- Saves and logs
 Constants.PROFILE_STORE = "TW_Profiles_v1"
 Constants.AUTOSAVE_SECONDS = 120
+Constants.JOIN_INTRO = true -- the tutorial's opening (RED, BLUE, THE LINE, YOUR TURF, into your eyes) on every join...
+Constants.JOIN_INTRO_REJOIN_SECONDS = 120 -- ...unless they were here less than this long ago
 -- The leaderboards (LeaderboardService): one OrderedDataStore per board, e.g. TW_Top_wins_v1
 Constants.LEADERBOARD_STORE = "TW_Top_%s_v1"
 Constants.LEADERBOARD_SIZE = 50 -- the top this many of each board

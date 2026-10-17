@@ -18,6 +18,7 @@ Analytics: tutorial_start, tutorial_step, tutorial_done, tutorial_skip through A
 data) when that service is there (looked up when it's needed, never required).
 
   TutorialService.shouldShow(profile) -> bool     (pure: the rule above)
+  TutorialService.joinIntro(profile, at?) -> bool  just the opening cinematic this join (not back within 2 min)
   TutorialService:Boosted(player) -> bool         the first-match boost is on for them right now
   TutorialService:Active(player) -> bool          the guide is running for them (not done or skipped yet)
   TutorialService:Steps(player) -> { names }      the steps they reported, in order (tests)
@@ -226,7 +227,22 @@ function TutorialService:OnPlayerReady(player, profile)
 	end
 	if TutorialService.shouldShow(profile) then
 		self:Begin(player, t.replay)
+	elseif TutorialService.joinIntro(profile) then
+		-- (back after a while: just the opening, so the first seconds feel big)
+		data:WhenClientReady(player, function()
+			Net.fire(player, "Tutorial", { kind = "intro" })
+		end)
 	end
+end
+
+-- The opening alone, for someone who has played the tutorial: on every join, unless they left less than
+-- JOIN_INTRO_REJOIN_SECONDS ago (meta.lastSeen is their last save, made as they left)
+function TutorialService.joinIntro(profile, at)
+	if not Constants.TUTORIAL or not Constants.JOIN_INTRO or type(profile) ~= "table" then
+		return false
+	end
+	local last = type(profile.meta) == "table" and tonumber(profile.meta.lastSeen) or 0
+	return (at or os.time()) - last >= Constants.JOIN_INTRO_REJOIN_SECONDS
 end
 
 return TutorialService
