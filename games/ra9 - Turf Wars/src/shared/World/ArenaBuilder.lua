@@ -16,9 +16,10 @@ and capitals on columns, steps, ledges, railings, window frames).
     spawns = { red = { CFrame }, blue = { CFrame } },
     strips = { [i] = Part },             the turf, west to east; strip i covers x in [x0 + (i-1)*CELL, x0 + i*CELL)
     blocked = { [cx] = { [cz] = true } } cells a tall map shape stands in (the lane rule)
-    marker,                               the frontline's light sheet
+    marker, glow                          the frontline: a glowing line on the floor (and its soft glow), coloured by the last push
   }
-  ArenaBuilder.paint(arena, frontline)    recolour the turf (and move the marker) for this frontline
+  ArenaBuilder.paint(arena, frontline, team?)   recolour the turf and move the glowing line; team: who pushed it
+                                                last (its colour), nil = white (a new match)
   ArenaBuilder.bounds(arena)              the playable box (min, max)
 ]]
 local Constants = require(script.Parent.Parent.Constants)
@@ -571,19 +572,33 @@ function ArenaBuilder.build(def, parent)
 		def.build(shapes)
 	end
 
-	-- the frontline's marker: a thin sheet of light across the field
-	local marker = Instance.new("Part")
-	marker.Name = "Frontline"
-	marker.Anchored = true
-	marker.CanCollide = false
-	marker.CanQuery = false
-	marker.CastShadow = false
-	marker.Material = Enum.Material.Neon
-	marker.Color = Color3.fromRGB(255, 255, 255)
-	marker.Transparency = 0.55
-	marker.Size = Vector3.new(0.4, 6, width)
-	marker.CFrame = CFrame.new(0, 3, 0)
-	marker.Parent = folder
+	-- the frontline: a big glowing line ON the floor across the field (nothing standing up, so both teams always see
+	-- each other over it), in the colour of the team that pushed it last, with a wide soft glow round it
+	local function glowPart(name, w, h, transparency)
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.CastShadow = false
+		p.Material = Enum.Material.Neon
+		p.Color = Color3.fromRGB(255, 255, 255)
+		p.Transparency = transparency
+		p.Size = Vector3.new(w, h, width)
+		p.CFrame = CFrame.new(0, h / 2 + 0.02, 0)
+		p.Parent = folder
+		return p
+	end
+	local marker = glowPart("Frontline", 1.6, 0.3, 0)
+	local glow = glowPart("FrontlineGlow", 7, 0.08, 0.55)
+	local light = Instance.new("SurfaceLight")
+	light.Face = Enum.NormalId.Top
+	light.Angle = 120
+	light.Range = 14
+	light.Brightness = 3
+	light.Color = marker.Color
+	light.Parent = marker
 
 	-- cells a tall map shape stands in (for the lane rule): any solid between 0.5 and 5 studs up in that cell
 	local blocked = {}
@@ -614,6 +629,7 @@ function ArenaBuilder.build(def, parent)
 		strips = strips,
 		blocked = blocked,
 		marker = marker,
+		glow = glow,
 		ceiling = ceiling,
 	}
 	arena.room = room
@@ -679,8 +695,9 @@ function ArenaBuilder.route(arena, team, pos, goal)
 	return at(r.front1 + 4, gz) -- (out of the door)
 end
 
--- Recolour the turf for this frontline (and move the marker onto it).
-function ArenaBuilder.paint(arena, frontline)
+-- Recolour the turf for this frontline, and move the glowing line onto it in the colour of the team that pushed it
+-- last (white when nobody has yet).
+function ArenaBuilder.paint(arena, frontline, team)
 	for i, strip in arena.strips do
 		local x = -arena.half + (i - 0.5) * CELL
 		local team = Formulas.sideOf(x, frontline)
@@ -688,7 +705,19 @@ function ArenaBuilder.paint(arena, frontline)
 		-- every other strip a shade lighter: the grid reads without a texture
 		strip.Color = (i % 2 == 0) and base:Lerp(Color3.new(1, 1, 1), 0.12) or base
 	end
-	arena.marker.CFrame = CFrame.new(frontline, 3, 0)
+	local color = Constants.TEAM_COLOR[team or ""] or Color3.fromRGB(255, 255, 255)
+	local m = arena.marker
+	m.CFrame = CFrame.new(frontline, m.Size.Y / 2 + 0.02, 0)
+	m.Color = color
+	local light = m:FindFirstChildOfClass("SurfaceLight")
+	if light then
+		light.Color = color
+	end
+	if arena.glow then
+		arena.glow.CFrame = CFrame.new(frontline, arena.glow.Size.Y / 2 + 0.02, 0)
+		arena.glow.Color = color
+	end
+	arena.lastTeam = team
 end
 
 -- Where a team loses: the frontline reaching its spawn zone's edge.

@@ -5,7 +5,7 @@ the geometry questions the other services ask:
 
   ArenaService:Load(mapKey)        tear down the old arena, build this one
   ArenaService:Current()           the arena table (ArenaBuilder.build's)
-  ArenaService:Paint(frontline)
+  ArenaService:Paint(frontline, team?)   team: who pushed it last (the glowing line's colour)
   ArenaService:Solids()            the map's solid boxes plus every standing structure's
   ArenaService:SpawnFor(team, i)   a spawn CFrame
   ArenaService:LoseLine(team)      where the frontline ends that team
@@ -79,9 +79,9 @@ function ArenaService:Current()
 	return arena
 end
 
-function ArenaService:Paint(frontline)
+function ArenaService:Paint(frontline, team)
 	if arena then
-		ArenaBuilder.paint(arena, frontline)
+		ArenaBuilder.paint(arena, frontline, team)
 	end
 end
 

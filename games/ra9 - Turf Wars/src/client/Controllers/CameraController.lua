@@ -5,7 +5,8 @@ turn off, and the sensitivity setting. Other controllers add their own offsets t
 (the front flip's roll, the slide's dip), applied after Roblox's camera each frame.
 
 The mouse: hidden in play (the HUD draws the crosshair), shown and free while a menu needs it: the panel (shop,
-pass, locker, goals), a question card, the results. CameraController.mouseFree() says which; the bow and the build
+pass, locker, goals), a question card, the results card (once it closes, the wait for the next game is free running
+about, so the mouse goes back to the camera). CameraController.mouseFree() says which; the bow and the build
 tray don't fire while it's true, so a click in the shop is only a click in the shop.
 ]]
 local Players = game:GetService("Players")
@@ -52,7 +53,7 @@ function CameraController.shake(strength, seconds)
 end
 
 function CameraController.mouseFree()
-	return Layout.panel() or Layout.modalOpen() or Store.phase() == "victory"
+	return Layout.panel() or Layout.modalOpen() or (Store.phase() == "victory" and Layout.resultsOpen == true)
 end
 
 local mouseShown

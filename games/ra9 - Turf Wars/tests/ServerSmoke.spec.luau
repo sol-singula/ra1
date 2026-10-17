@@ -400,6 +400,19 @@ check(
 	math.abs(ws:GetAttribute("PhaseEnds") - Engine.workspace:GetServerTimeNow() - 30) < 1,
 	ws:GetAttribute("PhaseEnds") - Engine.workspace:GetServerTimeNow()
 )
+do
+	-- the wait for the next game: nobody stays dead, and anyone can run anywhere (no turf rule)
+	Engine.advance(Constants.RESPAWN_SECONDS + 0.5)
+	check("dead at the win: back up to run about", Combat:Alive(blue), Combat:Alive(blue))
+	local enemySide = Teams:Team(blue) == "blue" and -60 or 60
+	stand(blue, Vector3.new(enemySide, 3, 10))
+	Engine.advance(0.4)
+	check(
+		"...and free to walk onto the other team's side",
+		math.abs(rootOf(blue).Position.X - enemySide) < 2,
+		rootOf(blue).Position.X
+	)
+end
 local mAsk = mark()
 Engine.advance(Constants.FEEDBACK_ASK_DELAY + 0.3)
 local ask = firedSince(mAsk, "Ask", red)

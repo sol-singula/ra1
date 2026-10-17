@@ -203,6 +203,16 @@ for _, def in Maps.list do
 				and arena.strips[#arena.strips].Color:Lerp(Constants.TURF_COLOR.blue, 0) ~= nil
 		)
 		check(`{def.key}: the frontline marker moved`, near(arena.marker.CFrame.Position.X, 10))
+		check(
+			`{def.key}: the frontline is a line on the floor, not a wall (you see over it)`,
+			arena.marker.Size.Y <= 0.5 and arena.marker.CFrame.Position.Y < 0.5 and arena.glow.Size.Y <= 0.5
+		)
+		check(`{def.key}: white before anyone pushes`, arena.marker.Color.R > 0.99 and arena.marker.Color.G > 0.99 and arena.marker.Color.B > 0.99)
+		ArenaBuilder.paint(arena, 14, "blue")
+		check(
+			`{def.key}: it glows the colour of the last push`,
+			arena.marker.Color == Constants.TEAM_COLOR.blue and arena.glow.Color == Constants.TEAM_COLOR.blue
+		)
 		holder:Destroy()
 	end
 end

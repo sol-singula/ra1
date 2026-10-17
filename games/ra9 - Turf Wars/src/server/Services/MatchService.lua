@@ -219,7 +219,7 @@ function MatchService:_onKilled(victim, killer, info)
 		ks.pushed += cells
 		local team = teams:Team(killer)
 		frontline = math.clamp(frontline + Formulas.forward(team) * push, arena:LoseLine("red"), arena:LoseLine("blue"))
-		arena:Paint(frontline)
+		arena:Paint(frontline, team)
 		-- how close each side has come to losing (a win from 25% or less is a comeback)
 		local lr, lb = arena:LoseLine("red"), arena:LoseLine("blue")
 		closest.red = math.min(closest.red or 1, lr ~= 0 and (frontline - lr) / (0 - lr) or 1)
@@ -253,7 +253,8 @@ function MatchService:_onKilled(victim, killer, info)
 			return
 		end
 	end
-	if phase ~= "victory" and phase ~= "loading" then
+	if phase ~= "loading" then
+		-- (in the victory wait too: nobody is stuck dead on the results; they're back up to run about)
 		respawnAt[victim] = now() + Constants.RESPAWN_SECONDS
 	else
 		pending[victim] = true
@@ -295,6 +296,12 @@ function MatchService:Victory(winner)
 	local results = self:Results(winner)
 	workspace:SetAttribute("Winner", winner) -- (the clients' fireworks, and anyone joining during the countdown)
 	setPhase("victory", Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS)
+	-- anyone down when it ended (the last kill's victim too) gets back up for the wait: nobody is stuck dead
+	for _, p in self:Everyone() do
+		if not combat:Alive(p) and not respawnAt[p] then
+			respawnAt[p] = now() + Constants.RESPAWN_SECONDS
+		end
+	end
 	local nextMap = Maps.next(mapKey, function(a, b)
 		return random:NextInteger(a, b)
 	end)
@@ -455,7 +462,7 @@ function MatchService:OnPlayerReady(player)
 		teams:Assign(player) -- (BotService may already have given them a bot's team)
 	end
 	statsOf(player)
-	if phase == "victory" or phase == "loading" then
+	if phase == "loading" then
 		pending[player] = true
 	else
 		self:Spawn(player)

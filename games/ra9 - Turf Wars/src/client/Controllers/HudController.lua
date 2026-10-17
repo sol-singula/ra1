@@ -928,6 +928,7 @@ function HudController.showResults(r)
 		Parent = gui,
 	})
 	refs.results = card
+	Layout.resultsOpen = true
 	Theme.title({
 		Text = `{Constants.TEAM_NAME[r.winner] or "?"} WINS`,
 		Size = UDim2.new(1, -20, 0, 46),
@@ -1006,6 +1007,7 @@ function HudController.showResults(r)
 		if refs.results == card then
 			card:Destroy()
 			refs.results = nil
+			Layout.resultsOpen = false
 		end
 	end)
 end
@@ -1162,8 +1164,8 @@ local function step()
 	end
 	if refs.invite then
 		-- (clickable with the mouse between games, when first person lets go of it; I and B work any time)
-		refs.invite.Modal = m.phase == "victory"
-		refs.shop.Modal = m.phase == "victory"
+		refs.invite.Modal = m.phase == "victory" and refs.results ~= nil
+		refs.shop.Modal = m.phase == "victory" and refs.results ~= nil
 		local p = Store.get("profile") or {}
 		refs.shopLine.Text = `◆ {p.shards or 0}  ·  PASS TIER {(p.season or {}).tier or 0}`
 	end

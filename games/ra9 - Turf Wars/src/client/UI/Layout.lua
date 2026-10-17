@@ -51,4 +51,8 @@ end
 
 Layout.statusSink = nil
 
+-- The results card after a match (HudController sets it): the mouse is free while it's up; once it's gone the
+-- victory wait is free running about (anywhere on the map), so the mouse goes back to the camera.
+Layout.resultsOpen = false
+
 return Layout
