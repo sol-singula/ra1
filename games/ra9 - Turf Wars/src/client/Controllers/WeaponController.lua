@@ -13,6 +13,8 @@ Your weapons (master plan §5, §6): the viewmodel in your hands, the draw, the 
     structures), and the mouse wheel (or the touch SWAP button) steps through them. Only in the fight, alive.
   * The Blade: click (or FIRE) to slash. The slash shows at once; the server finds who it reaches (Swing).
   * No drawing or shooting while a menu is open (the shop, a card, the results): the mouse is the menu's then.
+  * In the tutorial's private practice the arrow is the tutorial's (WeaponController.shotHook): the same draw, the
+    same release, its own flight onto its own targets.
 
 The viewmodel (this client only): your arms in the team's sleeves holding the bow, its limbs, a string in two halves
 that bends to your hand, and the arrow. It moves on springs: up from below when you equip, a walking bob and
@@ -36,6 +38,7 @@ local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Flair = require(script.Parent.Parent.FX.Flair)
 local Device = require(script.Parent.Parent.UI.Device)
+local Layout = require(script.Parent.Parent.UI.Layout)
 local Store = require(script.Parent.Parent.Store)
 local ArrowController = require(script.Parent.ArrowController)
 local CameraController = require(script.Parent.CameraController)
@@ -117,6 +120,10 @@ function WeaponController.assist(origin, dir)
 	local turn = math.min(bestAngle * how.pull, how.max)
 	return dir:Lerp(best, turn / bestAngle).Unit
 end
+
+-- The tutorial's private practice (TutorialController): fn(start, dir, weapon, charge) -> true when it flies the
+-- arrow itself (its targets are its own; nothing goes to the server). nil: every shot is the match's.
+WeaponController.shotHook = nil
 
 local function canShoot()
 	local me = Store.get("me")
@@ -752,8 +759,12 @@ function WeaponController.release(instant)
 		Bus.Fired:Fire(w.key, charge)
 		return true
 	end
-	ArrowController.predict(start, dir * shot.speed, Store.team() or "red", shotId)
-	Net.send("Shoot", start, dir, shotId)
+	-- (the tutorial's private practice flies its own arrows: WeaponController.shotHook takes the shot)
+	local taken = WeaponController.shotHook and WeaponController.shotHook(start, dir, w, charge)
+	if not taken then
+		ArrowController.predict(start, dir * shot.speed, Store.team() or "red", shotId)
+		Net.send("Shoot", start, dir, shotId)
+	end
 	if w.mag then
 		Store.merge("me", { ammo = math.max(0, (me.ammo or 0) - 1) })
 	end
@@ -789,7 +800,7 @@ end
 -- The blade only comes out in the CHARGE (the fight's last seconds: workspace "Charge"); bows the rest of the time
 function WeaponController.allowed(key)
 	local w = Weapons.get(key)
-	return w ~= nil and (not w.melee or workspace:GetAttribute("Charge") == true)
+	return w ~= nil and (not w.melee or Layout.charging())
 end
 
 function WeaponController.equip(key)

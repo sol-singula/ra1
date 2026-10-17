@@ -342,6 +342,11 @@ function AfkService:RefreshBoards()
 	return payload ~= nil
 end
 
+-- Count them as active now, as if they'd just joined (TutorialService: back from the private practice)
+function AfkService:Touch(player)
+	watch[player] = { at = now(), joined = now() }
+end
+
 function AfkService:Away(player)
 	return player:GetAttribute("Limbo") == true
 end

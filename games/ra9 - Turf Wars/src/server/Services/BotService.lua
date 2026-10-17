@@ -980,14 +980,22 @@ function BotService:Init(registry)
 		end
 		return out
 	end
-	Players.PlayerAdded:Connect(function(player)
-		self:Takeover(player)
-	end)
 	Players.PlayerRemoving:Connect(function()
 		task.defer(function()
 			pcall(self.Ensure, self)
 		end)
 	end)
+end
+
+-- Someone's save has loaded, before they join the match: the takeover (a brand-new player off to their private
+-- practice first takes nothing: BotService.away, TutorialService sets it)
+BotService.away = function(_player, _profile)
+	return false
+end
+function BotService:OnPlayerLoaded(player, profile)
+	if not self.away(player, profile) then
+		self:Takeover(player)
+	end
 end
 
 function BotService:Start()

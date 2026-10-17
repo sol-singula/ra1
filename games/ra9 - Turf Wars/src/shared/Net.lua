@@ -151,11 +151,39 @@ function Net.on(name, handler)
 			end
 			return
 		end
+		-- (a player in their private practice: TutorialService takes their shots and building, the match never sees them)
+		if Net.divert and Net.divert(player, name, ...) then
+			return
+		end
 		local ok, err = xpcall(handler, debug.traceback, player, ...)
 		if not ok then
 			warn(`[Net {name}] {err}`)
 		end
 	end)
+end
+
+-- The private practice (TutorialService): while a player is hushed, nothing from the match reaches them (the kill
+-- feed, the match's state and music cues, banners, toasts, invites, gift, hook, feedback and shop cards); only what
+-- is theirs alone (Net.PRIVATE) and what the tutorial sends through Net.direct.
+--   Net.hush(player, on)   Net.hushed(player)   Net.direct(player, name, ...)   Net.divert = fn(player, name, ...) -> took it
+Net.PRIVATE = { Tutorial = true, Profile = true, Earned = true, Leaderboards = true, AdminState = true }
+local hushed = {} -- [player] = true
+local anyHushed = false
+Net.divert = nil
+
+function Net.hush(player, on)
+	hushed[player] = on == true or nil
+	anyHushed = next(hushed) ~= nil
+end
+
+function Net.hushed(player)
+	return hushed[player] == true
+end
+
+function Net.direct(player, name, ...)
+	if typeof(player) == "Instance" then
+		remote(name):FireClient(player, ...)
+	end
 end
 
 function Net.onDrop(fn)
@@ -175,11 +203,23 @@ function Net.fire(player, name, ...)
 	if typeof(player) ~= "Instance" then
 		return -- (a bot: BotService's stand-ins have no client)
 	end
+	if hushed[player] and not Net.PRIVATE[name] then
+		return -- (in their private practice: Net.hush)
+	end
 	remote(name):FireClient(player, ...)
 end
 
 function Net.fireAll(name, ...)
-	remote(name):FireAllClients(...)
+	if not anyHushed or Net.PRIVATE[name] then
+		remote(name):FireAllClients(...)
+		return
+	end
+	local re = remote(name)
+	for _, p in game:GetService("Players"):GetPlayers() do
+		if not hushed[p] then
+			re:FireClient(p, ...)
+		end
+	end
 end
 
 -- Client API -----------------------------------------------------------------------------------------------
