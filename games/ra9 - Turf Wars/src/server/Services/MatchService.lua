@@ -18,7 +18,9 @@ next map in the same server. No lobby, no queue.
   MatchService:People() / :Everyone()   the real players / plus the bots
   MatchService:Join(player) / :Leave(player)   into the match / out of it (an admin starting to spectate)
   MatchService:Victory(winner)          "red" | "blue" | "draw"
-  MatchService:NewMatch(mapKey?)        MatchService:SkipTo("fight" | "build" | "charge")   MatchService:Freeze(on)
+  MatchService:NewMatch(mapKey?, size?) a new match; the arena's size is picked from everyone in it now (players
+                                        and bots; size: a count or a tier's name instead). It only changes here.
+  MatchService:SkipTo("fight" | "build" | "charge")   MatchService:Freeze(on)
   MatchService:Charging() -> bool       the CHARGE: the fight's last CHARGE_SECONDS, when the line is open to
                                         everyone and the blade comes out (workspace "Charge" says so to the clients)
 
@@ -117,6 +119,8 @@ function MatchService:Snapshot()
 		frontline = frontline,
 		loseRed = arena:LoseLine("red"),
 		loseBlue = arena:LoseLine("blue"),
+		size = arena:Current() and arena:Current().tier,
+		width = arena:Current() and arena:Current().width,
 		push = Formulas.pushCells(#self:Everyone()) * Constants.CELL,
 		red = teams:Count("red"),
 		blue = teams:Count("blue"),
@@ -467,14 +471,15 @@ function MatchService:Victory(winner)
 	return true
 end
 
-function MatchService:NewMatch(key)
+function MatchService:NewMatch(key, size)
 	frozen = nil
 	workspace:SetAttribute("Frozen", nil)
 	workspace:SetAttribute("Winner", nil)
 	setPhase("loading", 1)
 	build:Clear()
 	mapKey = key or mapKey or Maps.list[1].key
-	arena:Load(mapKey)
+	-- (the arena's size: how many are in the match as it starts; people joining or leaving later wait for the next)
+	arena:Load(mapKey, size or #self:Everyone())
 	frontline = 0
 	arena:Paint(frontline)
 	teams:Rebalance()

@@ -102,8 +102,20 @@ local hurt = false
 local m0 = #Engine.clientLog
 for _ = 1, 60 do
 	Engine.advance(0.25)
-	-- keep the target standing still in the open
-	Engine.moveTo(solo, Vector3.new(line + fwd * 10, 3, root(enemy) and root(enemy).Position.Z or 0))
+	-- keep the target standing still in the open, somewhere the bot can see (the maps have columns and statues)
+	local ez = root(enemy) and root(enemy).Position.Z or 0
+	local spot = Vector3.new(line + fwd * 10, 3, ez)
+	if root(enemy) then
+		local eye = root(enemy).Position + Vector3.new(0, 1.5, 0)
+		for _, dz in { 0, 4, -4, 8, -8, 12, -12 } do
+			local p = Vector3.new(line + fwd * 10, 3, ez + dz)
+			if not Combat:Blocked(eye, p + Vector3.new(0, 1.2, 0)) then
+				spot = p
+				break
+			end
+		end
+	end
+	Engine.moveTo(solo, spot)
 end
 for i = m0 + 1, #Engine.clientLog do
 	local e = Engine.clientLog[i]

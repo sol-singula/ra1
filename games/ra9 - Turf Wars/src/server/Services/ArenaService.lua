@@ -3,8 +3,11 @@ The arena in the world (master plan §4): builds the current map (World/ArenaBui
 SUPERHOT way (white haze, soft grey shadows, the map's own light), paints the turf for the frontline, and answers
 the geometry questions the other services ask:
 
-  ArenaService:Load(mapKey)        tear down the old arena, build this one
+  ArenaService:Load(mapKey, size?) tear down the old arena, build this one; size: how many are in the match (or a
+                                   tier's name), which picks the arena's size (ArenaBuilder.SIZES)
   ArenaService:Current()           the arena table (ArenaBuilder.build's)
+  ArenaService:Collide()           every box a body bumps into: the map's (solid or not) and the structures'
+  ArenaService.version             goes up whenever the arena or a structure's box changes (the bots re-plan)
   ArenaService:Paint(frontline, team?)   team: who pushed it last (the glowing line's colour)
   ArenaService:Solids()            the map's solid boxes plus every standing structure's
   ArenaService:SpawnFor(team, i)   a spawn CFrame
@@ -26,6 +29,7 @@ local ArenaService = {
 }
 
 local arena
+ArenaService.version = 0
 local extra = {} -- [id] = { min, max } the structures' boxes (BuildService keeps them here)
 local spawnTurn = { red = 0, blue = 0 }
 
@@ -64,17 +68,19 @@ local function light(def)
 	cc.Parent = Lighting
 end
 
-function ArenaService:Load(mapKey)
+function ArenaService:Load(mapKey, size)
 	local def = Maps.get(mapKey) or Maps.list[1]
 	if arena and arena.folder then
 		arena.folder:Destroy()
 	end
 	extra = {}
 	spawnTurn = { red = 0, blue = 0 }
-	arena = ArenaBuilder.build(def, workspace)
+	arena = ArenaBuilder.build(def, workspace, size)
+	self.version += 1
 	light(def)
 	workspace:SetAttribute("MapKey", def.key)
 	workspace:SetAttribute("MapName", def.name)
+	workspace:SetAttribute("MapSize", arena.tier)
 	self.Loaded:Fire(arena)
 	return arena
 end
@@ -92,16 +98,31 @@ end
 -- parts: the solid parts inside the box (arrows test those, so they fly through the gaps), or nil for a plain box
 function ArenaService:AddBox(id, mn, mx, parts)
 	extra[id] = { min = mn, max = mx, id = id, parts = parts }
+	self.version += 1
 end
 
 function ArenaService:RemoveBox(id)
-	extra[id] = nil
+	if extra[id] then
+		extra[id] = nil
+		self.version += 1
+	end
 end
 
 -- Every solid box: the map's and the structures'.
 function ArenaService:Solids()
 	local out = {}
 	for _, s in arena and arena.solids or {} do
+		table.insert(out, s)
+	end
+	for _, s in extra do
+		table.insert(out, s)
+	end
+	return out
+end
+
+function ArenaService:Collide()
+	local out = {}
+	for _, s in arena and arena.collide or {} do
 		table.insert(out, s)
 	end
 	for _, s in extra do

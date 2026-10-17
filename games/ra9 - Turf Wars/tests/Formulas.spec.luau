@@ -281,89 +281,137 @@ check(
 	end)()
 )
 for _, def in Maps.list do
-	local holder = Engine.Instance.new("Folder")
-	local ok, arena = pcall(ArenaBuilder.build, def, holder)
-	check(`{def.key}: builds`, ok, not ok and arena or nil)
-	if ok then
-		local parts = 0
-		for _, x in arena.folder:GetDescendants() do
-			if x:IsA("BasePart") then
-				parts += 1
-			end
-		end
-		check(`{def.key}: detailed (lots of shapes)`, parts >= 150, parts)
-		check(`{def.key}: within a phone's budget`, parts <= 1500, parts)
-		check(`{def.key}: ten spawn pads a team`, #arena.spawns.red == 10 and #arena.spawns.blue == 10)
-		-- nothing of the map's own in the spawn zones (beyond the back wall's detail and the spawn room itself)
-		local inSpawn = 0
-		local edge = arena.half - arena.spawnDepth
-		for _, s in arena.solids do
-			local inside = s.min.X > edge + 1 or s.max.X < -edge - 1
-			local own = s.part and s.part.Parent and s.part.Parent.Name == "Map"
-			local room = s.part
-				and (s.part.Name == "Baffle" or s.part.Name == "SpawnWall" or s.part.Name == "SpawnRoof")
-			if inside and own and not room and s.min.Y < 6 and s.max.Y > 0.5 and math.abs(s.min.X) < arena.half - 4 then
-				inSpawn += 1
-			end
-		end
-		check(`{def.key}: spawn zones are clear`, inSpawn == 0, inSpawn)
-		-- the lanes: every row across the field has open cells at ground level
-		local worst = math.huge
-		local _, z0 = Formulas.cellOf(0, -arena.width / 2 + 0.01)
-		local _, z1 = Formulas.cellOf(0, arena.width / 2 - 0.01)
-		local x0 = Formulas.cellOf(-edge + 0.01, 0)
-		local x1 = Formulas.cellOf(edge - 0.01, 0)
-		for cx = x0, x1 do
-			local free = 0
-			for cz = z0, z1 do
-				if not (arena.blocked[cx] and arena.blocked[cx][cz]) then
-					free += 1
+	for _, tier in ArenaBuilder.TIERS do
+		local holder = Engine.Instance.new("Folder")
+		local ok, arena = pcall(ArenaBuilder.build, def, holder, tier)
+		check(`{def.key} {tier}: builds`, ok, not ok and arena or nil)
+		if ok then
+			local parts = 0
+			for _, x in arena.folder:GetDescendants() do
+				if x:IsA("BasePart") then
+					parts += 1
 				end
 			end
-			worst = math.min(worst, free)
-		end
-		check(`{def.key}: every row has a way through`, worst >= 4, worst)
-		-- fair: the same shapes on both halves (as many solids west of the middle as east)
-		local west, east = 0, 0
-		for _, s in arena.solids do
-			local c = (s.min.X + s.max.X) / 2
-			if c < -1 then
-				west += 1
-			elseif c > 1 then
-				east += 1
+			check(`{def.key} {tier}: detailed (lots of shapes)`, parts >= 150, parts)
+			check(`{def.key} {tier}: within a phone's budget (well under 2500 parts)`, parts <= 2400, parts)
+			check(`{def.key} {tier}: ten spawn pads a team`, #arena.spawns.red == 10 and #arena.spawns.blue == 10)
+			-- nothing of the map's own in the spawn zones (beyond the back wall's detail and the spawn room itself)
+			local inSpawn = 0
+			local edge = arena.half - arena.spawnDepth
+			for _, s in arena.solids do
+				local inside = s.min.X > edge + 1 or s.max.X < -edge - 1
+				local own = s.part and s.part.Parent and s.part.Parent.Name == "Map"
+				local room = s.part
+					and (s.part.Name == "Baffle" or s.part.Name == "SpawnWall" or s.part.Name == "SpawnRoof")
+				if
+					inside
+					and own
+					and not room
+					and s.min.Y < 6
+					and s.max.Y > 0.5
+					and math.abs(s.min.X) < arena.half - 4
+				then
+					inSpawn += 1
+				end
 			end
-		end
-		check(`{def.key}: mirrored halves`, west == east, `{west} vs {east}`)
-		-- closed: shell walls on every side and a ceiling
-		local shells = 0
-		for _, x in arena.folder:GetDescendants() do
-			if x.Name == "Shell" or x.Name == "Ceiling" then
-				shells += 1
+			check(`{def.key} {tier}: spawn zones are clear`, inSpawn == 0, inSpawn)
+			-- the lanes: every row across the field has open cells at ground level
+			local worst = math.huge
+			local _, z0 = Formulas.cellOf(0, -arena.width / 2 + 0.01)
+			local _, z1 = Formulas.cellOf(0, arena.width / 2 - 0.01)
+			local x0 = Formulas.cellOf(-edge + 0.01, 0)
+			local x1 = Formulas.cellOf(edge - 0.01, 0)
+			for cx = x0, x1 do
+				local free = 0
+				for cz = z0, z1 do
+					if not (arena.blocked[cx] and arena.blocked[cx][cz]) then
+						free += 1
+					end
+				end
+				worst = math.min(worst, free)
 			end
+			check(`{def.key} {tier}: every row has a way through`, worst >= 4, worst)
+			-- fair: the same shapes on both halves (as many solids west of the middle as east)
+			local west, east = 0, 0
+			for _, s in arena.solids do
+				local c = (s.min.X + s.max.X) / 2
+				if c < -1 then
+					west += 1
+				elseif c > 1 then
+					east += 1
+				end
+			end
+			check(`{def.key} {tier}: mirrored halves`, west == east, `{west} vs {east}`)
+			-- closed: shell walls on every side and a ceiling
+			local shells = 0
+			for _, x in arena.folder:GetDescendants() do
+				if x.Name == "Shell" or x.Name == "Ceiling" then
+					shells += 1
+				end
+			end
+			check(`{def.key} {tier}: walled in and roofed`, shells == 5, shells)
+			-- the turf paints from the frontline
+			ArenaBuilder.paint(arena, 10)
+			check(
+				`{def.key} {tier}: the turf paints red west of the line, blue east`,
+				arena.strips[1].Color == Constants.TURF_COLOR.red
+					and arena.strips[#arena.strips].Color:Lerp(Constants.TURF_COLOR.blue, 0) ~= nil
+			)
+			check(`{def.key} {tier}: the frontline marker moved`, near(arena.marker.CFrame.Position.X, 10))
+			check(
+				`{def.key} {tier}: the frontline is a line on the floor, not a wall (you see over it)`,
+				arena.marker.Size.Y <= 0.5 and arena.marker.CFrame.Position.Y < 0.5 and arena.glow.Size.Y <= 0.5
+			)
+			check(
+				`{def.key} {tier}: white before anyone pushes`,
+				arena.marker.Color.R > 0.99 and arena.marker.Color.G > 0.99 and arena.marker.Color.B > 0.99
+			)
+			ArenaBuilder.paint(arena, 14, "blue")
+			check(
+				`{def.key} {tier}: it glows the colour of the last push`,
+				arena.marker.Color == Constants.TEAM_COLOR.blue and arena.glow.Color == Constants.TEAM_COLOR.blue
+			)
+			holder:Destroy()
 		end
-		check(`{def.key}: walled in and roofed`, shells == 5, shells)
-		-- the turf paints from the frontline
-		ArenaBuilder.paint(arena, 10)
+	end
+end
+
+-- The sizes: more people, a bigger arena; always whole cells, the lose lines spawnDepth from the end walls
+do
+	check("8 people: the small arena", ArenaBuilder.tier(8) == "small" and ArenaBuilder.tier(1) == "small")
+	check("9 to 20: medium", ArenaBuilder.tier(9) == "medium" and ArenaBuilder.tier(20) == "medium")
+	check("21 and up: large", ArenaBuilder.tier(21) == "large" and ArenaBuilder.tier(40) == "large")
+	check("a tier's name passes through", ArenaBuilder.tier("large") == "large" and ArenaBuilder.tier(nil) == "small")
+	local holder = Engine.Instance.new("Folder")
+	local last
+	for _, tier in ArenaBuilder.TIERS do
+		local a = ArenaBuilder.build(Maps.list[1], holder, tier)
 		check(
-			`{def.key}: the turf paints red west of the line, blue east`,
-			arena.strips[1].Color == Constants.TURF_COLOR.red
-				and arena.strips[#arena.strips].Color:Lerp(Constants.TURF_COLOR.blue, 0) ~= nil
+			`{tier}: whole cells along and across`,
+			a.length % (2 * Constants.CELL) == 0 and a.width % (2 * Constants.CELL) == 0,
+			`{a.length}x{a.width}`
 		)
-		check(`{def.key}: the frontline marker moved`, near(arena.marker.CFrame.Position.X, 10))
+		check(`{tier}: a strip per cell`, #a.strips == a.length / Constants.CELL, #a.strips)
 		check(
-			`{def.key}: the frontline is a line on the floor, not a wall (you see over it)`,
-			arena.marker.Size.Y <= 0.5 and arena.marker.CFrame.Position.Y < 0.5 and arena.glow.Size.Y <= 0.5
+			`{tier}: the lose lines spawnDepth from the walls`,
+			ArenaBuilder.loseLine(a, "blue") == a.half - a.spawnDepth
+				and ArenaBuilder.loseLine(a, "red") == -(a.half - a.spawnDepth)
+				and a.spawnDepth == 20
 		)
-		check(
-			`{def.key}: white before anyone pushes`,
-			arena.marker.Color.R > 0.99 and arena.marker.Color.G > 0.99 and arena.marker.Color.B > 0.99
-		)
-		ArenaBuilder.paint(arena, 14, "blue")
-		check(
-			`{def.key}: it glows the colour of the last push`,
-			arena.marker.Color == Constants.TEAM_COLOR.blue and arena.glow.Color == Constants.TEAM_COLOR.blue
-		)
-		holder:Destroy()
+		check(`{tier}: the lose line on a cell edge`, (a.half - a.spawnDepth) % Constants.CELL == 0)
+		if last then
+			check(`{tier}: longer and wider than the one before`, a.length > last.length and a.width > last.width)
+			-- (more cells to push through, and pushCells(people) never more than before: it takes longer)
+			local cellsBefore = (last.half - last.spawnDepth) / Constants.CELL
+			local cells = (a.half - a.spawnDepth) / Constants.CELL
+			local people = { medium = 14, large = 30 }
+			check(
+				`{tier}: more kills to win than the size before`,
+				cells / Formulas.pushCells(people[tier]) > cellsBefore / Formulas.pushCells(8)
+			)
+		end
+		last = a
+		a.folder:Destroy()
 	end
 end
 

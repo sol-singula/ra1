@@ -646,6 +646,67 @@ shade and the armour darker in the tray, the debris flying, never under the floo
 on a phone, a cap per frame), BotSmoke 25 (bots throw TNT, a few seconds apart). Renders:
 `tools/gameplay/tnt.luau` (the pieces, the tower, the blast) and `firstperson.luau` (fp_tnt*).
 
+## Round 22: bots that never get stuck, taller maps, arenas that grow with the crowd
+
+* **Why bots got stuck:** they walked in a straight line at their goal (a spot near the line, an enemy to slash, a
+  side-step while drawing) and only the spawn room had a route. On every map that ended against something: behind
+  Castle Clash's rampart walls and towers, on Frostbite's terrace ends and crates, in Jungle Rush's grove and temple
+  corners, under Dust Devil's mesas and ramps; a goal on the far side of the line (a slash target) kept them
+  walking into the turf rule; and a bot building round itself could wall itself in, or end up inside a piece. Run on
+  the mock engine with real bodies, bots stood still for up to 117 s of a 2-minute match.
+* **Now** (`server/BotNav`, `BotService:Go`): every move goes through a path on a 2-stud walking grid made from
+  every box a body bumps into (the map's, solid or not, and the structures'), remade when a structure goes up or
+  comes down (`ArenaService.version`). Squares are free, low (a crate, a bench: the bot jumps) or walls; paths keep
+  to the bot's own side of the line; goals inside something move to the nearest free square; the bot walks straight
+  to the farthest point of its path it can see clear. **Stuck** (no headway for 1.25 s while wanting to go
+  somewhere): a jump, the square it walked into marked for 5 s and a new plan; then a detour off to one side; then a
+  new goal; shut in or inside something, it's put on the nearest spot it can get there from (the grid knows which
+  areas join up). Bots never build on top of a body. Worst stand-still now: under 2 s.
+* **`tests/BotNavSmoke`** runs seven bots (and a person out of sight) through two minutes on every map at every size
+  with real bodies (`tests/mock/Walker.luau`: a stand-in for humanoid physics that slides along walls, steps up a
+  stud, falls and jumps) and checks nobody stays stuck and everyone gets about. The old straight-line steering fails
+  it on every map.
+* **Taller, more detailed maps:** walls 36-40 studs in bays (pilasters with capitals and lamps, a string course,
+  tall windows, balconies on every other bay, a double crown molding, battlements on the castle), a gate on each
+  end wall with the team's colour glowing in it, a skyline drawn per map (castle keeps, ice spires and glaciers,
+  jungle trees and a pyramid, desert mesas and windmills). Shared shapes: towers (string courses, window slits,
+  battlements / a stepped roof / a spire), colonnades under an entablature with a crown molding, archer statues,
+  platforms with stairs, balconies, trees. **Castle Clash:** a rampart walk you climb from your side (battlements in
+  front), 26-stud gate towers with flags, corner keeps, archer statues at the gate, topiary, arcades along the walls,
+  a taller obelisk. **Frostbite:** a higher second shelf on each terrace, crystal monoliths with glowing cores, a
+  frozen colonnade along the walls, ice spires, a great arch of ice over the ridge. **Jungle Rush:** four-tier temples
+  with roofed shrines and stairs up the back to the firing ledge, a taller grove with vines, giant stone heads,
+  corner trees, a corbelled gate with a carved lintel, vines down the walls. **Dust Devil:** taller stepped mesas
+  with overhangs, hoodoos, rock arches over the corners, bridge pylons, adobe lookouts with stairs, telegraph poles.
+  Every map is still mirrored, keeps open lanes and its open spawn decks.
+* **Arenas that grow with the crowd:** `MatchService:NewMatch` counts everyone in the match (people and bots) and
+  `ArenaService:Load(map, count)` / `ArenaBuilder.build(def, parent, scale)` pick a size: **small** (up to 8, 200 x
+  96), **medium** (9-20, 248 x 112), **large** (21+, 296 x 128). Whole cells added to each side (so it takes more
+  kills to win, with `pushCells` falling as the crowd grows), wider, spawn decks as deep as ever; the maps stretch
+  their layouts (`A:fx`, `A:fz`) and add a few pieces at the bigger sizes. People joining or leaving mid-match wait
+  for the next match. The HUD, building, fireworks and the tutorial read the size from the match (lose lines,
+  width) and the turf strips.
+
+| parts (all / colliding) | small | medium | large |
+|---|---|---|---|
+| Castle Clash | 1386 / 548 | 1550 / 620 | 1726 / 700 |
+| Frostbite | 934 / 320 | 1046 / 372 | 1162 / 408 |
+| Jungle Rush | 1211 / 329 | 1359 / 385 | 1519 / 421 |
+| Dust Devil | 1016 / 361 | 1132 / 405 | 1252 / 441 |
+
+(`tools/gameplay/mapstats.luau` prints these; pure decoration doesn't collide, can't be queried or touched, and its
+small bits cast no shadow.)
+
+![](screenshots/castle_overview.png)
+![](screenshots/castle_large.png)
+![](screenshots/frost_overview.png)
+![](screenshots/jungle_overview.png)
+![](screenshots/dust_overview.png)
+
+Tests: Formulas 261 (every map at every size: fair, closed, open lanes, within 2400 parts; the tiers, whole cells,
+lose lines), MapSmoke 55 (every map at every size; 24 people get the large arena, 4 the small, 12 medium, never
+resized mid-match), BotNavSmoke 36.
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

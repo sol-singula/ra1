@@ -9,10 +9,12 @@ in World/Maps with the shapes below, mirrored so both sides play the same.
 The look (§0): SUPERHOT. White and light grey, smooth matte plastic, no textures; detail comes from shapes (bases
 and capitals on columns, steps, ledges, railings, window frames).
 
-  local arena = ArenaBuilder.build(mapDef, parent)
+  local arena = ArenaBuilder.build(mapDef, parent, scale)   scale: how many people are in the match (or a tier's
+                                                             name); it picks the size (ArenaBuilder.SIZES)
   arena = {
-    folder, def, length, width, half, spawnDepth,
+    folder, def, length, width, half, spawnDepth, tier,
     solids = { { min, max, part } },     every solid box (projectiles and building use these)
+    collide = { { min, max } },          every box a body bumps into, solid or not (the bots' walking grid)
     spawns = { red = { CFrame }, blue = { CFrame } },
     strips = { [i] = Part },             the turf, west to east; strip i covers x in [x0 + (i-1)*CELL, x0 + i*CELL)
     blocked = { [cx] = { [cz] = true } } cells a tall map shape stands in (the lane rule)
@@ -21,6 +23,13 @@ and capitals on columns, steps, ledges, railings, window frames).
   ArenaBuilder.paint(arena, frontline, team?)   recolour the turf and move the glowing line; team: who pushed it
                                                 last (its colour), nil = white (a new match)
   ArenaBuilder.bounds(arena)              the playable box (min, max)
+  ArenaBuilder.tier(scale)                "small" (up to 8 people) | "medium" (up to 20) | "large"
+
+Sizes: a map is drawn for the small arena (200 x 96); a bigger tier adds whole cells to the length (so the turf
+takes longer to push) and to the width, with the spawn decks as deep as ever. Maps place their shapes through
+A:fx / A:fz (distances stretched to this arena) and A.W / A.edge / A.tier, so every size is the same map, mirrored.
+Height: the walls stand wallHeight tall with bays of pilasters, windows and balconies, and the shapes below
+(towers, colonnades under entablatures, statues, platforms with stairs, trees) give a map its skyline.
 ]]
 local Constants = require(script.Parent.Parent.Constants)
 local Formulas = require(script.Parent.Parent.Formulas)
@@ -67,10 +76,22 @@ function Shapes:part(className, cf, size, opts)
 	if opts.reflect then
 		p.Reflectance = opts.reflect
 	end
+	if not p.CanCollide then
+		-- (pure looks: nothing asks about it, nothing touches it, and the small bits cast no shadow)
+		p.CanQuery = false
+		p.CanTouch = false
+		if opts.shadow == nil and math.max(size.X, size.Y, size.Z) < 4 then
+			p.CastShadow = false
+		end
+	end
 	p.Parent = opts.parent or self.folder
-	if p.CanCollide and opts.solid ~= false then
+	if p.CanCollide then
 		local mn, mx = aabbOf(cf, size)
-		table.insert(self.solids, { min = mn, max = mx, part = p })
+		-- (everything a body bumps into, solid to arrows or not: the bots' walking grid reads this)
+		table.insert(self.collide, { min = mn, max = mx })
+		if opts.solid ~= false then
+			table.insert(self.solids, { min = mn, max = mx, part = p })
+		end
 	end
 	return p
 end
@@ -90,17 +111,19 @@ function Shapes:wedge(cf, size, opts)
 	return self:part("WedgePart", cf, size, opts)
 end
 
--- A round column with a square base and capital (the detail that makes a plain world read as architecture).
+-- A round column with a square base and capital (the detail that makes a plain world read as architecture), standing
+-- on opts.y0 (default the floor).
 function Shapes:column(x, z, h, r, opts)
 	opts = opts or {}
+	local y0 = opts.y0 or 0
 	local base = r * 2 + 1.2
-	self:block(x, z, base, base, 1, { color = self.light })
-	self:block(x, z, base - 0.6, base - 0.6, 0.5, { color = self.white }, 1)
+	self:block(x, z, base, base, 1, { color = self.light }, y0)
+	self:block(x, z, base - 0.6, base - 0.6, 0.5, { color = self.white }, y0 + 1)
 	local shaft = Instance.new("Part")
 	shaft.Shape = Enum.PartType.Cylinder
 	shaft.Anchored = true
 	shaft.Size = Vector3.new(h - 3, r * 2, r * 2)
-	shaft.CFrame = CFrame.new(x, 1.5 + (h - 3) / 2, z) * CFrame.Angles(0, 0, math.rad(90))
+	shaft.CFrame = CFrame.new(x, y0 + 1.5 + (h - 3) / 2, z) * CFrame.Angles(0, 0, math.rad(90))
 	shaft.Material = Enum.Material.SmoothPlastic
 	shaft.Color = opts.color or self.white
 	shaft.TopSurface = Enum.SurfaceType.Smooth
@@ -108,12 +131,11 @@ function Shapes:column(x, z, h, r, opts)
 	shaft.Name = "Column"
 	shaft.Parent = self.folder
 	-- (the shaft collides as its square: close enough, and never lets an arrow through a gap that isn't there)
-	table.insert(
-		self.solids,
-		{ min = Vector3.new(x - r, 1.5, z - r), max = Vector3.new(x + r, h - 1.5, z + r), part = shaft }
-	)
-	self:block(x, z, base - 0.6, base - 0.6, 0.5, { color = self.white }, h - 1.5)
-	self:block(x, z, base, base, 1, { color = self.light }, h - 1)
+	local mn, mx = Vector3.new(x - r, y0 + 1.5, z - r), Vector3.new(x + r, y0 + h - 1.5, z + r)
+	table.insert(self.solids, { min = mn, max = mx, part = shaft })
+	table.insert(self.collide, { min = mn, max = mx })
+	self:block(x, z, base - 0.6, base - 0.6, 0.5, { color = self.white }, y0 + h - 1.5)
+	self:block(x, z, base, base, 1, { color = self.light }, y0 + h - 1)
 end
 
 -- A square pillar with plinth and cap.
@@ -146,9 +168,11 @@ function Shapes:arch(x, z, span, h, depth, along, opts)
 	at(span / 2 - 0.75, 1.5, 1.5, h - 1.5, self.light)
 end
 
--- Steps up to a height: from (x, z), climbing toward dir ("+x" | "-x" | "+z" | "-z"), width w.
+-- Steps up to a height: from (x, z), climbing toward dir ("+x" | "-x" | "+z" | "-z"), width w, from opts.y0 (default
+-- the floor).
 function Shapes:stairs(x, z, dir, steps, rise, run, w, opts)
 	opts = opts or {}
+	local y0 = opts.y0 or 0
 	for i = 1, steps do
 		local h = rise * i
 		local off = run * (i - 0.5)
@@ -163,7 +187,7 @@ function Shapes:stairs(x, z, dir, steps, rise, run, w, opts)
 		else
 			cz, sx, sz = z - off, w, run
 		end
-		self:block(cx, cz, sx, sz, h, { color = (i % 2 == 0) and self.white or self.light })
+		self:block(cx, cz, sx, sz, h, { color = (i % 2 == 0) and self.white or self.light }, y0)
 	end
 end
 
@@ -316,23 +340,262 @@ function Shapes:rubble(x, z, n, seed)
 	end
 end
 
+-- Bigger pieces: the height and the skyline of a map --------------------------------------------------------------
+
+-- A box along "x" or "z": (x, z) its middle, len along that way, depth across, h tall from y0
+function Shapes:run(x, z, len, along, depth, h, opts, y0)
+	if along == "x" then
+		return self:block(x, z, len, depth, h, opts, y0)
+	end
+	return self:block(x, z, depth, len, h, opts, y0)
+end
+
+-- The beam over a colonnade: an architrave, a frieze set back from it, and a crown molding of two steps out.
+-- (x, z) its middle, len along `along`, depth across, sitting on y.
+function Shapes:entablature(x, z, len, along, y, depth)
+	self:run(x, z, len, along, depth, 1.6, { color = self.white }, y)
+	self:run(x, z, len - 0.4, along, depth - 0.5, 1.4, { color = self.light }, y + 1.6)
+	self:run(x, z, len + 0.8, along, depth + 0.8, 0.5, deco({ color = self.white }), y + 3)
+	self:run(x, z, len + 1.4, along, depth + 1.4, 0.4, deco({ color = self.light }), y + 3.5)
+end
+
+-- A row of n columns from a to b (distances along `along`, at `at` across) under one entablature
+function Shapes:colonnade(a, b, at, along, n, h, r, opts)
+	opts = opts or {}
+	for i = 0, n - 1 do
+		local c = a + (b - a) * (n > 1 and i / (n - 1) or 0.5)
+		if along == "x" then
+			self:column(c, at, h, r, opts)
+		else
+			self:column(at, c, h, r, opts)
+		end
+	end
+	local mid = (a + b) / 2
+	local len = math.abs(b - a) + r * 2 + 2
+	if along == "x" then
+		self:entablature(mid, at, len, "x", (opts.y0 or 0) + h, r * 2 + 1.4)
+	else
+		self:entablature(at, mid, len, "z", (opts.y0 or 0) + h, r * 2 + 1.4)
+	end
+end
+
+-- A tall tower: a plinth, the shaft, a thin string course every `floor` studs with a dark window slit on each face
+-- between them, a corbelled crown, and on top battlements (opts.crown = "battlements", the default), a stepped roof
+-- ("roof") or a needle spire ("spire"). Returns the height of its top.
+function Shapes:tower(x, z, w, d, h, opts)
+	opts = opts or {}
+	local y0 = opts.y0 or 0
+	self:block(x, z, w + 1.2, d + 1.2, 1.2, { color = self.light }, y0)
+	self:block(x, z, w, d, h, { color = opts.color or self.white }, y0)
+	local floor = opts.floor or 9
+	local dark = opts.windowColor or self.dark
+	for y = y0 + floor, y0 + h - 5, floor do
+		self:block(x, z, w + 0.5, d + 0.5, 0.4, deco({ color = self.light }), y)
+		if not opts.noWindows then
+			for _, f in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
+				local wx, wz = x + f[1] * (w / 2 + 0.05), z + f[2] * (d / 2 + 0.05)
+				local sx, sz = f[1] ~= 0 and 0.2 or 1, f[2] ~= 0 and 0.2 or 1
+				self:block(wx, wz, sx, sz, 3.2, deco({ color = dark }), y - floor / 2 - 1.6)
+			end
+		end
+	end
+	local top = y0 + h
+	self:block(x, z, w + 1.6, d + 1.6, 1.2, { color = self.light }, top)
+	local crown = opts.crown or "battlements"
+	if crown == "battlements" then
+		for _, side in { -1, 1 } do
+			local n = math.max(2, math.floor((w + 1.6) / 2.6))
+			for i = 0, n - 1 do
+				local cx = x - (w + 1.6) / 2 + 0.7 + i * ((w + 1.6 - 1.4) / (n - 1))
+				self:block(cx, z + side * (d / 2 + 0.25), 1.3, 1.1, 1.8, { color = self.white }, top + 1.2)
+			end
+			local m = math.max(2, math.floor((d + 1.6) / 2.6))
+			for i = 1, m - 2 do
+				local cz = z - (d + 1.6) / 2 + 0.7 + i * ((d + 1.6 - 1.4) / (m - 1))
+				self:block(x + side * (w / 2 + 0.25), cz, 1.1, 1.3, 1.8, { color = self.white }, top + 1.2)
+			end
+		end
+	elseif crown == "roof" then
+		for i = 1, 4 do
+			local k = 1 - i * 0.22
+			self:block(
+				x,
+				z,
+				(w + 1) * k,
+				(d + 1) * k,
+				1.4,
+				{ color = (i % 2 == 0) and self.light or self.white },
+				top + 1.2 + (i - 1) * 1.4
+			)
+		end
+	elseif crown == "spire" then
+		self:block(x, z, w * 0.6, d * 0.6, 3, { color = self.white }, top + 1.2)
+		self:block(x, z, w * 0.36, d * 0.36, 5, { color = self.light }, top + 4.2)
+		self:block(x, z, 0.6, 0.6, 6, deco({ color = self.white }), top + 9.2)
+	end
+	return top
+end
+
+-- A statue on a pedestal: a faceted archer (legs, a long coat, the chest, the head, one arm up, a bow held low)
+-- facing along X (face = 1: toward +X); s (optional) adds a sash in that half's colour. k scales it (1: about 12
+-- studs with the pedestal).
+function Shapes:statue(x, z, face, k, s, y0)
+	k = k or 1
+	y0 = y0 or 0
+	self:block(x, z, 4.6 * k, 4.6 * k, 1 * k, { color = self.light }, y0)
+	self:block(x, z, 3.6 * k, 3.6 * k, 3.2 * k, { color = self.white }, y0 + 1 * k)
+	self:block(x, z, 4.2 * k, 4.2 * k, 0.5 * k, deco({ color = self.light }), y0 + 4.2 * k)
+	local base = CFrame.new(x, y0 + 4.7 * k, z) * CFrame.Angles(0, face > 0 and -math.pi / 2 or math.pi / 2, 0)
+	local stone = deco({ color = self.white, shadow = true })
+	local function piece(off, size, rot, opts)
+		self:box(base * CFrame.new(off * k) * (rot or CFrame.new()), size * k, opts or stone)
+	end
+	piece(Vector3.new(-0.55, 1.5, 0), Vector3.new(0.9, 3, 1))
+	piece(Vector3.new(0.55, 1.5, 0.3), Vector3.new(0.9, 3, 1), CFrame.Angles(math.rad(-8), 0, 0))
+	piece(Vector3.new(0, 3.3, 0), Vector3.new(2.3, 1.8, 1.4), nil, deco({ color = self.light, shadow = true }))
+	piece(Vector3.new(0, 4.9, 0), Vector3.new(2.2, 1.8, 1.1))
+	piece(Vector3.new(0, 6.4, 0), Vector3.new(1.1, 1.1, 1.1), CFrame.Angles(0, math.rad(20), 0))
+	piece(Vector3.new(1.45, 6.2, -0.2), Vector3.new(0.65, 2.6, 0.65), CFrame.Angles(math.rad(-25), 0, math.rad(-15)))
+	piece(Vector3.new(-1.35, 5.3, -0.8), Vector3.new(0.65, 0.65, 2.2))
+	-- the bow: three thin bars in an arc ahead of the lowered arm
+	for i = -1, 1 do
+		piece(
+			Vector3.new(-1.35, 5.3 + i * 1.3, -2 + math.abs(i) * 0.45),
+			Vector3.new(0.25, 1.5, 0.25),
+			CFrame.Angles(math.rad(-i * 28), 0, 0),
+			deco({ color = self.light })
+		)
+	end
+	if s then
+		piece(
+			Vector3.new(0, 4.9, -0.58),
+			Vector3.new(0.5, 2.5, 0.12),
+			CFrame.Angles(0, 0, math.rad(35)),
+			deco({ color = self:teamColor(s) })
+		)
+	end
+	return y0 + 4.7 * k
+end
+
+-- A raised deck players climb from their own side: a block h tall with a lip round its top, and steps of about a
+-- stud each up the side `stairs` faces ("+x" | "-x" | "+z" | "-z"), w2 wide.
+function Shapes:platform(x, z, w, d, h, stairs, w2, opts)
+	opts = opts or {}
+	self:block(x, z, w, d, h, { color = opts.color or self.light })
+	self:block(x, z, w + 0.6, d + 0.6, 0.4, deco({ color = self.white }), h - 0.2)
+	if stairs then
+		local steps = math.ceil(h)
+		local rise, run = h / steps, 1.3
+		local sx, sz, dir = x, z, nil
+		if stairs == "+x" then
+			sx, dir = x + w / 2 + steps * run, "-x"
+		elseif stairs == "-x" then
+			sx, dir = x - w / 2 - steps * run, "+x"
+		elseif stairs == "+z" then
+			sz, dir = z + d / 2 + steps * run, "-z"
+		else
+			sz, dir = z - d / 2 - steps * run, "+z"
+		end
+		self:stairs(sx, sz, dir, steps, rise, run, w2 or 6)
+	end
+end
+
+-- A balcony on a long wall, high over the field (looks only, out of reach): a slab on two brackets with a
+-- balustrade. x its middle, face the wall's inner face (z), zz which wall (+1 / -1), y its floor.
+function Shapes:balcony(x, face, zz, y, len)
+	local z = face - zz * 1.3
+	self:block(x, z, len, 2.6, 0.6, { color = self.white }, y)
+	for _, sx in { -1, 1 } do
+		self:wedge(
+			CFrame.new(x + sx * (len / 2 - 0.8), y - 0.8, face - zz * 0.7)
+				* CFrame.Angles(0, zz > 0 and 0 or math.pi, math.pi),
+			Vector3.new(0.8, 1.6, 1.4),
+			deco({ color = self.light })
+		)
+	end
+	self:block(x, face - zz * 2.45, len, 0.3, 1.8, deco({ color = self.light }), y + 0.6)
+	self:block(x, face - zz * 2.45, len + 0.3, 0.5, 0.3, deco({ color = self.white }), y + 2.4)
+	for i = 0, 2 do
+		self:block(
+			x + (i - 1) * (len / 2 - 0.4),
+			face - zz * 2.45,
+			0.5,
+			0.55,
+			1.8,
+			deco({ color = self.white }),
+			y + 0.6
+		)
+	end
+end
+
+-- A geometric tree: a trunk and three canopy blocks turned against each other (the canopy is looks only)
+function Shapes:tree(x, z, h, leaf, leaf2, k)
+	k = k or 1
+	self:block(x, z, 1.2 * k, 1.2 * k, h, { color = self.grey })
+	for i = 0, 2 do
+		local size = (6 - i * 1.6) * k
+		self:box(
+			CFrame.new(x, h + i * 2 * k, z) * CFrame.Angles(math.rad(8 - i * 6), math.rad(i * 35), math.rad(-6 + i * 5)),
+			Vector3.new(size, 2.2 * k, size),
+			deco({ color = (i % 2 == 0) and leaf or leaf2, shadow = true })
+		)
+	end
+end
+
+-- A distance along the field (from the middle) or across it (from the centre line), drawn for the small arena,
+-- stretched to this one
+function Shapes:fx(v)
+	return v * self.sx
+end
+function Shapes:fz(v)
+	return v * self.sz
+end
+
 -- Both halves at once: fn(s) runs for s = -1 (red's half, -X) and s = 1 (blue's, +X), so maps stay fair.
 function Shapes:mirror(fn)
 	fn(-1)
 	fn(1)
 end
 
+-- Sizes: a match that starts with a lot of people gets a bigger arena (MatchService:NewMatch counts everyone). Each
+-- tier adds whole cells to the field (`grow` studs of length, half to each side, so the turf takes longer to push)
+-- and to its width; the spawn decks stay as deep, so the lose lines are always spawnDepth from the end walls.
+ArenaBuilder.TIERS = { "small", "medium", "large" }
+ArenaBuilder.SIZES = {
+	small = { upTo = 8, grow = 0, widen = 0 },
+	medium = { upTo = 20, grow = 48, widen = 16 },
+	large = { upTo = math.huge, grow = 96, widen = 32 },
+}
+
+-- The tier for a scale: a tier's name, or a number of people (nil: small)
+function ArenaBuilder.tier(scale)
+	if type(scale) == "string" and ArenaBuilder.SIZES[scale] then
+		return scale
+	end
+	local n = tonumber(scale) or 0
+	for _, t in ArenaBuilder.TIERS do
+		if n <= ArenaBuilder.SIZES[t].upTo then
+			return t
+		end
+	end
+	return "large"
+end
+
 -- The arena ---------------------------------------------------------------------------------------------------
-function ArenaBuilder.build(def, parent)
+function ArenaBuilder.build(def, parent, scale)
 	local folder = Instance.new("Folder")
 	folder.Name = "Arena"
-	local length, width = def.length or 200, def.width or 96
+	local tier = ArenaBuilder.tier(scale)
+	local size = ArenaBuilder.SIZES[tier]
+	local baseLength, baseWidth = def.length or 200, def.width or 96
+	local length, width = baseLength + size.grow, baseWidth + size.widen
 	local half = length / 2
 	local spawnDepth = def.spawnDepth or 20
 	local palette = def.palette or {}
 	local shapes = setmetatable({
 		folder = Instance.new("Folder"),
 		solids = {},
+		collide = {},
 		white = palette.white or Constants.WHITE,
 		light = palette.light or Constants.LIGHT,
 		grey = palette.grey or Constants.GREY,
@@ -340,7 +603,14 @@ function ArenaBuilder.build(def, parent)
 		length = length,
 		width = width,
 		half = half,
+		W = width / 2,
 		spawnDepth = spawnDepth,
+		edge = half - spawnDepth,
+		tier = tier,
+		wallH = def.wallHeight or 26,
+		-- (a map is drawn for the small field; fx / fz stretch its distances to this one's)
+		sx = (half - spawnDepth) / (baseLength / 2 - spawnDepth),
+		sz = width / baseWidth,
 	}, Shapes)
 	shapes.folder.Name = "Map"
 	shapes.folder.Parent = folder
@@ -370,8 +640,9 @@ function ArenaBuilder.build(def, parent)
 		{ min = Vector3.new(-half, -2, -width / 2), max = Vector3.new(half, 0, width / 2), part = strips[1] }
 	)
 
-	-- the walls round it: visible to 26 studs, then an invisible shell up to the ceiling (nobody leaves)
-	local wallH, ceiling, t = def.wallHeight or 26, def.ceiling or 70, 4
+	-- the walls round it: visible to wallH, then an invisible shell up to the ceiling (nobody leaves)
+	local wallH, t = shapes.wallH, 4
+	local ceiling = def.ceiling or math.max(70, wallH + 26)
 	local function shell(cx, cz, sx, sz)
 		shapes:box(Vector3.new(cx, wallH / 2, cz), Vector3.new(sx, wallH, sz), { color = shapes.light, name = "Wall" })
 		shapes:box(
@@ -395,13 +666,16 @@ function ArenaBuilder.build(def, parent)
 		shapes:block(0, zz * (width / 2 + 0.5), length + 8, 1.6, 1, { color = shapes.white, solid = false }, wallH)
 	end
 
-	-- the long walls' detail: pilasters every 20 studs with a lamp, recessed panels between, a banner in each
-	-- half's colour, a cornice at the top
+	-- the long walls, in bays of 20 studs: a pilaster the full height with its base, capital and a lamp, a recessed
+	-- panel low down, a tall window high up over a string course, a balcony on every other bay; a banner in each
+	-- half's colour; a crown molding along the top (and battlements, for a map that asks)
+	local course = math.floor(wallH * 0.42)
 	for _, zz in { -1, 1 } do
 		local face = zz * (width / 2)
 		for x = -half + 30, half - 30, 20 do
 			shapes:block(x, face - zz * 0.6, 2.4, 1.2, wallH, { color = shapes.white, solid = false })
 			shapes:block(x, face - zz * 1.0, 3, 1.4, 1.2, deco({ color = shapes.light }))
+			shapes:block(x, face - zz * 0.9, 3.2, 1.8, 1, deco({ color = shapes.light }), wallH - 3)
 			shapes:block(
 				x,
 				face - zz * 1.4,
@@ -409,38 +683,67 @@ function ArenaBuilder.build(def, parent)
 				0.8,
 				0.8,
 				deco({ color = Color3.new(1, 1, 1), material = Enum.Material.Neon }),
-				wallH - 4
+				course - 3
 			)
 		end
 		for x = -half + 40, half - 40, 20 do
-			shapes:block(x, face - zz * 0.15, 14, 0.3, 14, deco({ color = shapes.white }), 5)
-			shapes:block(x, face - zz * 0.3, 12, 0.3, 12, deco({ color = shapes.grey }), 6)
-			shapes:block(x, face - zz * 0.45, 11, 0.3, 11, deco({ color = shapes.light }), 6.5)
+			shapes:block(x, face - zz * 0.15, 14, 0.3, 11, deco({ color = shapes.white }), 2.5)
+			shapes:block(x, face - zz * 0.3, 12, 0.3, 9, deco({ color = shapes.grey }), 3.5)
+			shapes:block(x, face - zz * 0.45, 11, 0.3, 8, deco({ color = shapes.light }), 4)
+			local winH = wallH - course - 8
+			if winH > 4 then
+				shapes:block(x, face - zz * 0.2, 8, 0.4, winH + 1.2, deco({ color = shapes.white }), course + 3.4)
+				shapes:block(x, face - zz * 0.35, 6, 0.4, winH, deco({ color = shapes.dark }), course + 4)
+				shapes:block(x, face - zz * 0.45, 0.6, 0.4, winH, deco({ color = shapes.white }), course + 4)
+			end
+			if math.floor((math.abs(x) + 10) / 20) % 2 == 1 then -- (every other bay, the same both halves)
+				shapes:balcony(x, face, zz, course + 1, 10)
+			end
 		end
+		shapes:block(0, face - zz * 0.4, length, 0.8, 0.6, deco({ color = shapes.white }), course)
 		for _, sx in { -1, 1 } do
 			for _, k in { 30, 50 } do
 				shapes:banner(sx * (half - k), face, sx, -zz, 9, 10)
 			end
 		end
 		shapes:block(0, face - zz * 0.8, length, 1.6, 0.8, deco({ color = shapes.white }), wallH - 1.5)
+		shapes:block(0, face - zz * 1.2, length, 1.2, 0.5, deco({ color = shapes.light }), wallH - 2.2)
+		if def.crown == "battlements" then
+			for x = -half + 2, half - 2, 6 do
+				shapes:block(x, zz * (width / 2 + 1), 2.6, 2, 2.2, deco({ color = shapes.white }), wallH + 1)
+			end
+		end
 	end
 
-	-- beyond the walls: a skyline of white monoliths fading into the haze, so the world never ends at a wall
+	-- beyond the walls: a skyline fading into the haze, so the world never ends at a wall. Towers with set-backs,
+	-- crowns and a few needles by default; a map can draw its own (def.skyline(shapes, x, z, w, d, h, rng, i)).
 	local r = Random.new(def.seed or #def.key * 97)
-	for i = 1, 70 do
-		local a = (i / 70) * math.pi * 2 + r:NextNumber(-0.04, 0.04)
-		local rx, rz = (half + 90) + r:NextNumber(0, 160), (width / 2 + 90) + r:NextNumber(0, 160)
+	for i = 1, 64 do
+		local a = (i / 64) * math.pi * 2 + r:NextNumber(-0.04, 0.04)
+		local rx, rz = (half + 80) + r:NextNumber(0, 150), (width / 2 + 80) + r:NextNumber(0, 150)
 		local x, z = math.cos(a) * rx, math.sin(a) * rz
-		local w, d, h = r:NextNumber(12, 36), r:NextNumber(12, 36), r:NextNumber(24, 80)
-		local c = (i % 3 == 0) and shapes.light or ((i % 3 == 1) and shapes.white or shapes.grey)
-		local p = shapes:box(Vector3.new(x, h / 2 - 2, z), Vector3.new(w, h, d), deco({ color = c, shadow = false }))
-		p.Name = "Skyline"
-		if i % 4 == 0 then
-			shapes:box(
-				Vector3.new(x, h - 2 + 1.5, z),
-				Vector3.new(w * 0.6, 3, d * 0.6),
-				deco({ color = shapes.white, shadow = false })
-			)
+		local w, d, h = r:NextNumber(14, 36), r:NextNumber(14, 36), r:NextNumber(34, 100)
+		if not (def.skyline and def.skyline(shapes, x, z, w, d, h, r, i)) then
+			local c = (i % 3 == 0) and shapes.light or ((i % 3 == 1) and shapes.white or shapes.grey)
+			local p =
+				shapes:box(Vector3.new(x, h / 2 - 2, z), Vector3.new(w, h, d), deco({ color = c, shadow = false }))
+			p.Name = "Skyline"
+			if i % 2 == 0 then
+				shapes:box(
+					Vector3.new(x, h - 2 + h * 0.12, z),
+					Vector3.new(w * 0.62, h * 0.24, d * 0.62),
+					deco({ color = shapes.white, shadow = false })
+				)
+			elseif i % 3 == 0 then
+				shapes:box(
+					Vector3.new(x, h - 1.5, z),
+					Vector3.new(w + 2, 1, d + 2),
+					deco({ color = shapes.light, shadow = false })
+				)
+			end
+			if i % 5 == 0 then
+				shapes:box(Vector3.new(x, h * 1.24 + 6, z), Vector3.new(1, 18, 1), deco({ color = shapes.white }))
+			end
 		end
 	end
 	-- the ground out there: one wide pale floor, below the arena's, so nothing below the walls is ever empty
@@ -484,10 +787,28 @@ function ArenaBuilder.build(def, parent)
 			0.25,
 			{ color = color, material = Enum.Material.Neon, solid = false }
 		)
-		-- the back wall's arches (detail on the base end)
-		for k = -2, 2 do
-			shapes:block(X(1.5), k * 17, 3, 3, wallH, { color = shapes.white })
+		-- the back wall: piers with capitals, a gate in the middle (two tall piers under a lintel, the team's colour
+		-- glowing in it), a string course and a crest high up
+		local piers = math.floor((width / 2 - 8) / 17)
+		for k = -piers, piers do
+			if k ~= 0 then
+				shapes:block(X(1.5), k * 17, 3, 3, wallH, { color = shapes.white })
+				shapes:block(X(1.8), k * 17, 3.6, 3.6, 1.2, deco({ color = shapes.light }), wallH - 3)
+			end
 		end
+		for _, zs in { -1, 1 } do
+			shapes:block(X(2), zs * 7, 4, 4, wallH + 4, { color = shapes.white })
+			shapes:block(X(2.2), zs * 7, 4.8, 4.8, 1.4, deco({ color = shapes.light }), wallH - 6)
+		end
+		shapes:block(X(2), 0, 4, 18, 4, { color = shapes.white }, wallH - 10)
+		shapes:block(X(0.4), 0, 0.8, 10, wallH - 12, deco({ color = color, material = Enum.Material.Neon }), 0.5)
+		shapes:block(X(0.6), 0, 1.2, 12, wallH - 11, deco({ color = shapes.light }), 0)
+		shapes:box(
+			CFrame.new(X(1.2), wallH - 2, 0) * CFrame.Angles(math.rad(45), 0, 0),
+			Vector3.new(1, 5, 5),
+			deco({ color = color })
+		)
+		shapes:block(X(0.6), 0, 1.2, width, 0.8, deco({ color = shapes.white }), course)
 		shapes:block(X(1), 0, 2, width, 2, { color = color, material = Enum.Material.Neon, solid = false }, wallH - 4)
 	end
 
@@ -543,6 +864,7 @@ function ArenaBuilder.build(def, parent)
 	end
 
 	folder:SetAttribute("Map", def.key)
+	folder:SetAttribute("Size", tier)
 	folder.Parent = parent
 	local arena = {
 		folder = folder,
@@ -551,7 +873,9 @@ function ArenaBuilder.build(def, parent)
 		width = width,
 		half = half,
 		spawnDepth = spawnDepth,
+		tier = tier,
 		solids = shapes.solids,
+		collide = shapes.collide,
 		spawns = spawns,
 		strips = strips,
 		blocked = blocked,
