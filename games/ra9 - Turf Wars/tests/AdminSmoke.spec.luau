@@ -334,6 +334,18 @@ do
 		end
 	end
 	check("PLAY TUTORIAL: it starts for you, from the top", started)
+	-- and anyone else in the server
+	n0 = #Engine.clientLog
+	act(owner, "tutorial", solo.UserId)
+	local sent = false
+	for i = n0 + 1, #Engine.clientLog do
+		local e = Engine.clientLog[i]
+		if e.name == "Tutorial" and e.player == solo and e.args[1].kind == "start" and e.args[1].replay then
+			sent = true
+		end
+	end
+	check("SEND TO TUTORIAL: it starts for that player", sent)
+	check("...and it's logged", used[#used].action == "tutorial")
 end
 
 -- match controls

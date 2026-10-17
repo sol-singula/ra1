@@ -405,6 +405,15 @@ local function playersTab(body)
 			end,
 		},
 	})
+	y = row(body, y, {
+		{
+			"SendTutorial",
+			"SEND TO TUTORIAL",
+			function()
+				send("tutorial", id)
+			end,
+		},
+	})
 	y = section(body, "VipLabel", "GIVE VIP", y)
 	local vips = {}
 	for _, v in Constants.ADMIN_VIP do

@@ -446,7 +446,7 @@ UserService. ClientSmoke checks the button in every overlap layout and the open 
   swing (`ArenaService:OnDeck`, CombatService).
 * **Join chips:** someone joins, everyone else gets a small chip at the left: "🎉 NAME joined your team!" in your
   colour, or "⚔️ NAME joined RED: new enemy!" (`MatchService:AnnounceJoin`, Notify kind "join").
-* **Admin: PLAY TUTORIAL** (ME tab) runs the first-minute tutorial for yourself from the top.
+* **Admin: PLAY TUTORIAL** (ME tab) runs the first-minute tutorial for yourself from the top; **SEND TO TUTORIAL** (PLAYERS tab) sends any player in the server into it.
 
 ## Round 14: one hit, one knockout; the blade at the line
 

@@ -17,7 +17,7 @@ Actions (target: a player's UserId; value: what the action needs):
   join (jobId)                          spectate another server
   spectate (on) | invisible (on)        yourself
   unlockall                             every cosmetic, for yourself
-  tutorial                              play the first-minute tutorial yourself, from the start
+  tutorial (target?)                    the first-minute tutorial from the start: yourself, or that player
   end ("red" | "blue" | "draw")         the match ends now, the normal way
   skip ("fight" | "build") | restart | map (key) | bots (on) | freeze (on) | announce (text)
   team (target, "red" | "blue") | kill | heal (heal, or respawn if down) | kick (target, reason)
@@ -320,17 +320,28 @@ ACTIONS.invisible = function(self, admin, _, on)
 	return true, on and "You're invisible." or "You can be seen again.", tostring(on == true)
 end
 
--- Play the first-minute tutorial yourself (as a new player would see it), from the start
-ACTIONS.tutorial = function(_, admin)
+-- Play the first-minute tutorial from the top: yourself (no target), or send any player in this server into it
+ACTIONS.tutorial = function(_, admin, target)
 	local tutorial = registryRef and registryRef.TutorialService
 	if not tutorial or not Constants.TUTORIAL then
 		return false, "The tutorial is off in this build."
 	end
-	if Admins.spectating(admin) then
-		return false, "Stop spectating first."
+	local who = admin
+	if target ~= nil then
+		who = find(target)
+		if not who then
+			return false, "That player left."
+		end
 	end
-	tutorial:_onClient(admin, "replay")
-	return true, "Tutorial started!"
+	if Admins.spectating(who) then
+		return false, who == admin and "Stop spectating first." or `{who.DisplayName} is away right now.`
+	end
+	tutorial:_onClient(who, "replay")
+	if who == admin then
+		return true, "Tutorial started!"
+	end
+	Notify.to(who, "Here's a quick tour of Turf Wars!", "info", { icon = "🎓" })
+	return true, `Sent {who.DisplayName} to the tutorial.`, `{who.Name} ({who.UserId})`
 end
 
 ACTIONS.unlockall = function(_, admin)
