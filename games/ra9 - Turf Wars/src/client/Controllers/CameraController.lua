@@ -264,6 +264,12 @@ local function step(dt)
 		end
 		return
 	end
+	if Layout.inLobby() then
+		-- (the lobby: Roblox's own third-person camera, the mouse free; LobbyController sets the zoom)
+		parkModals(mouseShown ~= true)
+		setMouse(true)
+		return
+	end
 	pcall(function()
 		player.CameraMode = Enum.CameraMode.LockFirstPerson
 	end)
@@ -286,7 +292,7 @@ local function step(dt)
 end
 
 function CameraController:init()
-	setMouse(false) -- (the HUD draws the crosshair)
+	setMouse(Layout.inLobby()) -- (the HUD draws the crosshair; in the lobby the mouse stays free)
 	UserInputService.InputBegan:Connect(function(input, processed)
 		local k = input.KeyCode
 		if (k == Enum.KeyCode.LeftAlt or k == Enum.KeyCode.RightAlt) and not processed then

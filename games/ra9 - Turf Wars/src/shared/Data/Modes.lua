@@ -9,7 +9,7 @@ everything behaves as today: one place, no teleports (PlaceService only says the
 features dormant.
 
   Modes.LIST                     { "turf", "ctf", "brawl" }
-  Modes[key]                     { key, name, placeId (0 until made), blurb, minPlayers, bots }
+  Modes[key]                     { key, name, placeId (0 until made), blurb, minPlayers, bots, color }
   Modes.LOBBY_PLACE              the lobby's place id (0 until made)
   Modes.current()                Constants.MODE ("lobby" | "turf" | "ctf" | "brawl")
   Modes.get(key)                 the mode, or nil
@@ -32,6 +32,7 @@ Modes.turf = {
 	blurb = "Build, shoot, push the line. Knock the other team off the map!",
 	minPlayers = 1,
 	bots = true,
+	color = Color3.fromRGB(255, 196, 40), -- (the lobby's card and portal)
 }
 Modes.ctf = {
 	key = "ctf",
@@ -40,6 +41,7 @@ Modes.ctf = {
 	blurb = "Purple v orange. Grab their flag and bring it home!",
 	minPlayers = 4,
 	bots = false,
+	color = Color3.fromRGB(150, 90, 240),
 }
 Modes.brawl = {
 	key = "brawl",
@@ -48,6 +50,7 @@ Modes.brawl = {
 	blurb = "Team up against waves of bots. How long can you last?",
 	minPlayers = 1,
 	bots = true,
+	color = Color3.fromRGB(46, 170, 90),
 }
 
 function Modes.current()

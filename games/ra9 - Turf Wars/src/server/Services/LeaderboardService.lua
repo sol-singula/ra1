@@ -36,9 +36,10 @@ local Admins = require(script.Parent.Parent.Admins)
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Net = require(ReplicatedStorage.Shared.Net)
 
+-- (MatchService isn't a dependency: in the lobby place there's no match, and "this server" is everyone here)
 local LeaderboardService = {
 	Name = "LeaderboardService",
-	Dependencies = { "PlayerDataService", "MatchService" },
+	Dependencies = { "PlayerDataService" },
 }
 
 local function int(n)
@@ -253,9 +254,23 @@ local function nameOf(userId)
 	return names[userId] or ("Player " .. tostring(userId))
 end
 
+-- Who "this server" is: the match's people (no bots, no spectating admins), or in the lobby everyone here
+local function people()
+	if match then
+		return match:People()
+	end
+	local out = {}
+	for _, p in Players:GetPlayers() do
+		if counts(p) then
+			table.insert(out, p)
+		end
+	end
+	return out
+end
+
 local function serverRows(board)
 	local rows = {}
-	for _, p in match and match:People() or Players:GetPlayers() do
+	for _, p in people() do
 		local prof = data:Get(p)
 		if prof then
 			table.insert(rows, { userId = p.UserId, name = p.DisplayName, value = board.read(prof) })
@@ -315,7 +330,7 @@ end
 -- Hooks --------------------------------------------------------------------------------------------------------
 function LeaderboardService:Init(registry)
 	data = registry.PlayerDataService
-	match = registry.MatchService
+	match = registry.MatchService -- (nil in the lobby place)
 	Net.on("Top", function(player)
 		watchers[player] = true
 		self:Push(player)

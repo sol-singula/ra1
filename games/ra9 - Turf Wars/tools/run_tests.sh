@@ -28,3 +28,4 @@ $R tests/FeelSmoke.spec.luau
 $R tests/BrawlSmoke.spec.luau
 $R tests/ModeSmoke.spec.luau
 $R tests/CtfSmoke.spec.luau
+$R tests/LobbySmoke.spec.luau

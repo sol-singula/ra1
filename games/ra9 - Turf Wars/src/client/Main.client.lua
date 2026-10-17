@@ -1,16 +1,20 @@
 -- Client bootstrap: landscape on phones, start the controllers, then tell the server the UI is listening.
--- A controller with Modes = { "turf", "ctf" } (Data/Modes) starts only in those places; none: everywhere.
+-- A controller with Modes = { "turf", "ctf" } (Data/Modes) starts only in those places; none: everywhere. In the lobby
+-- the camera is Roblox's own third person and the mouse is free (Layout.lobby).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Constants = require(ReplicatedStorage.Shared.Constants)
 local Modes = require(ReplicatedStorage.Shared.Data.Modes)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Store = require(script.Parent.Store)
+local Layout = require(script.Parent.UI.Layout)
 local Theme = require(script.Parent.UI.Theme)
 
 Net.init()
 Store.init()
 Theme.watchScale()
+Layout.lobby(Constants.MODE == "lobby")
 pcall(function()
 	Players.LocalPlayer:WaitForChild("PlayerGui").ScreenOrientation = Enum.ScreenOrientation.LandscapeSensor
 end)

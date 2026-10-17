@@ -234,6 +234,7 @@ local EMBLEM = {
 	Anchor = "⚓",
 	Blueprint = "▦",
 	Founder = "✦",
+	Supporter = "👍",
 	-- the big ones (drawn alive: anim spin | pulse | rainbow | flame | sparkle)
 	Flame = "🔥",
 	Rainbow = "🌈",

@@ -165,8 +165,17 @@ function Net.init()
 end
 
 -- Register a handler for a client → server event. Errors are caught and logged, never crash the server.
+-- Several services may listen to one event (PlaceService and LobbyService both hear "Play"): the rate limit and
+-- the practice's divert are checked once per call, then every handler runs, each on its own (one failing never
+-- stops the others).
+local handlers = {} -- [name] = { fn, ... }
 function Net.on(name, handler)
 	assert(Net.ClientEvents[name], `not a client event: {name}`)
+	if handlers[name] then
+		table.insert(handlers[name], handler)
+		return
+	end
+	handlers[name] = { handler }
 	remote(name).OnServerEvent:Connect(function(player, ...)
 		if not allow(player, name) then
 			if dropHook then
@@ -178,9 +187,11 @@ function Net.on(name, handler)
 		if Net.divert and Net.divert(player, name, ...) then
 			return
 		end
-		local ok, err = xpcall(handler, debug.traceback, player, ...)
-		if not ok then
-			warn(`[Net {name}] {err}`)
+		for _, fn in handlers[name] do
+			local ok, err = xpcall(fn, debug.traceback, player, ...)
+			if not ok then
+				warn(`[Net {name}] {err}`)
+			end
 		end
 	end)
 end
