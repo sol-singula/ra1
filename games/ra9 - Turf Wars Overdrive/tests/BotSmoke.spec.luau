@@ -42,6 +42,7 @@ Engine.fireServer(solo, "Ready")
 Engine.advance(2)
 local list = Bots:List()
 check("alone: bots join", #list == Constants.BOT_ALLIES + Constants.BOT_ENEMIES, #list)
+check("...just one, against you", #list == 1, #list)
 local mine = Teams:Team(solo)
 local allies, enemies = 0, 0
 for _, b in list do
@@ -122,6 +123,30 @@ check(
 		return Combat:Alive(victim)
 	end)()
 )
+-- up close a bot draws its blade and slashes
+do
+	if not Combat:Alive(solo) then
+		Engine.advance(Constants.RESPAWN_SECONDS + 1)
+	end
+	Engine.advance(Constants.SPAWN_PROTECT + 0.5)
+	local Formulas = Engine.require(tree.shared.Formulas)
+	local fwd = Formulas.forward(mine)
+	local line = Match:Frontline()
+	local me = Vector3.new(line - fwd * 2.5, 3, 20)
+	local hp0
+	local slashed = false
+	for _ = 1, 30 do
+		Engine.moveTo(solo, me, me + Vector3.new(fwd, 0, 0))
+		Engine.moveTo(victim, me + Vector3.new(fwd * 4, 0, 0), me)
+		hp0 = hp0 or Combat:Health(solo)
+		Engine.advance(0.1)
+		if Combat:Weapon(victim) == "blade" and Combat:Health(solo) < hp0 then
+			slashed = true
+			break
+		end
+	end
+	check("up close a bot draws its blade and slashes", slashed, `{Combat:Weapon(victim)} {Combat:Health(solo)}`)
+end
 
 -- a second person: they take over an enemy bot, and the bots go
 local pick -- (the one the takeover chooses: the first enemy bot that's alive)

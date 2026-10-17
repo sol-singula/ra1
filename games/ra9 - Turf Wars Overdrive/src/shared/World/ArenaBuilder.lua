@@ -224,6 +224,97 @@ function Shapes:shard(x, z, w, h, tiltX, tiltZ, opts)
 	self:box(cf2, Vector3.new(w * 0.55, h * 0.55, w * 0.45), { color = opts.color2 or self.light })
 end
 
+-- Detail pieces (looks only: nothing here stops an arrow or a builder) ---------------------------------------------
+local function deco(opts)
+	opts = opts or {}
+	opts.solid = false
+	if opts.collide == nil then
+		opts.collide = false
+	end
+	return opts
+end
+ArenaBuilder.deco = deco
+
+-- The team colour for a half: s = -1 red, 1 blue
+function Shapes:teamColor(s)
+	return Constants.TEAM_COLOR[s < 0 and "red" or "blue"]
+end
+
+-- A lamp post: a slim post on a plinth, an arm and a glowing cube (colour: the light's, default white)
+function Shapes:lamp(x, z, h, color)
+	self:block(x, z, 1.4, 1.4, 0.6, deco({ color = self.light, collide = true }))
+	self:block(x, z, 0.5, 0.5, h, deco({ color = self.white, collide = true }), 0.6)
+	self:block(x, z, 1.2, 1.2, 0.3, deco({ color = self.light }), h + 0.6)
+	self:block(
+		x,
+		z,
+		0.9,
+		0.9,
+		0.9,
+		deco({ color = color or Color3.fromRGB(255, 255, 255), material = Enum.Material.Neon }),
+		h + 0.9
+	)
+	self:block(x, z, 1.3, 1.3, 0.25, deco({ color = self.light }), h + 1.8)
+end
+
+-- A team banner hanging on a wall: a rod, the cloth in the team's colour with a white stripe, a pointed foot.
+-- (x, z) the wall face, facing: +1 / -1 the way the banner faces along Z (it hangs on a long wall)
+function Shapes:banner(x, z, s, facing, y, h)
+	local c = self:teamColor(s)
+	y = y or 10
+	h = h or 9
+	local zf = z + facing * 0.35
+	self:block(x, zf, 4.2, 0.4, 0.4, deco({ color = self.white }), y + h)
+	self:block(x, zf, 3.2, 0.2, h - 1.2, deco({ color = c }), y + 1.2)
+	self:block(x, zf + facing * 0.05, 0.6, 0.2, h - 1.6, deco({ color = Constants.WHITE }), y + 1.4)
+	self:wedge(
+		CFrame.new(x - 0.8, y + 0.6, zf) * CFrame.Angles(0, math.rad(90), math.rad(180)),
+		Vector3.new(0.2, 1.2, 1.6),
+		deco({ color = c })
+	)
+	self:wedge(
+		CFrame.new(x + 0.8, y + 0.6, zf) * CFrame.Angles(0, math.rad(-90), math.rad(180)),
+		Vector3.new(0.2, 1.2, 1.6),
+		deco({ color = c })
+	)
+end
+
+-- A flag on a pole (on a tower top, a gate): the pole, a ball, the flag in the team's colour
+function Shapes:flag(x, z, y, s)
+	self:block(x, z, 0.35, 0.35, 8, deco({ color = self.white }), y)
+	self:block(x, z, 0.7, 0.7, 0.7, deco({ color = self.light }), y + 8)
+	self:block(x - s * 1.8, z, 3.4, 0.15, 2.2, deco({ color = self:teamColor(s) }), y + 5.4)
+end
+
+-- A stack of crates: low cover where it stands (the bottom ones are solid), lids and bands for detail
+function Shapes:crates(x, z, n, yaw)
+	local cf0 = CFrame.new(x, 0, z) * CFrame.Angles(0, math.rad(yaw or 0), 0)
+	local spots = { { 0, 0, 0 }, { 2.6, 0, 0.3 }, { 1.2, 2.4, 0.1 }, { -0.2, 0, 2.5 } }
+	for i = 1, math.min(n or 3, #spots) do
+		local sp = spots[i]
+		local cf = cf0 * CFrame.new(sp[1], 1.2 + sp[2], sp[3]) * CFrame.Angles(0, math.rad(i * 9), 0)
+		self:box(cf, Vector3.new(2.4, 2.4, 2.4), { color = (i % 2 == 0) and self.light or self.white })
+		self:box(cf * CFrame.new(0, 0, 0), Vector3.new(2.5, 0.3, 2.5), deco({ color = self.grey }))
+		self:box(cf * CFrame.new(0, 1.15, 0), Vector3.new(2.0, 0.15, 2.0), deco({ color = self.light }))
+	end
+end
+
+-- Steps of rubble: a few small tilted blocks scattered round a point (looks only)
+function Shapes:rubble(x, z, n, seed)
+	local r = Random.new(seed or 1)
+	for i = 1, n or 5 do
+		local a = r:NextNumber(0, math.pi * 2)
+		local d = r:NextNumber(0.5, 3)
+		local sz = r:NextNumber(0.5, 1.4)
+		self:box(
+			CFrame.new(x + math.cos(a) * d, sz / 2 - 0.1, z + math.sin(a) * d)
+				* CFrame.Angles(r:NextNumber(-0.4, 0.4), r:NextNumber(0, 3), r:NextNumber(-0.4, 0.4)),
+			Vector3.new(sz, sz * 0.7, sz * 1.1),
+			deco({ color = (i % 2 == 0) and self.light or self.grey })
+		)
+	end
+end
+
 -- Both halves at once: fn(s) runs for s = -1 (red's half, -X) and s = 1 (blue's, +X), so maps stay fair.
 function Shapes:mirror(fn)
 	fn(-1)
@@ -303,45 +394,176 @@ function ArenaBuilder.build(def, parent)
 		shapes:block(0, zz * (width / 2 + 0.5), length + 8, 1.6, 1, { color = shapes.white, solid = false }, wallH)
 	end
 
-	-- the spawn zones: pads in the team's colour, a back wall with arches, a frame you leave through
+	-- the long walls' detail: pilasters every 20 studs with a lamp, recessed panels between, a banner in each
+	-- half's colour, a cornice at the top
+	for _, zz in { -1, 1 } do
+		local face = zz * (width / 2)
+		for x = -half + 30, half - 30, 20 do
+			shapes:block(x, face - zz * 0.6, 2.4, 1.2, wallH, { color = shapes.white, solid = false })
+			shapes:block(x, face - zz * 1.0, 3, 1.4, 1.2, deco({ color = shapes.light }))
+			shapes:block(
+				x,
+				face - zz * 1.4,
+				0.8,
+				0.8,
+				0.8,
+				deco({ color = Color3.new(1, 1, 1), material = Enum.Material.Neon }),
+				wallH - 4
+			)
+		end
+		for x = -half + 40, half - 40, 20 do
+			shapes:block(x, face - zz * 0.15, 14, 0.3, 14, deco({ color = shapes.white }), 5)
+			shapes:block(x, face - zz * 0.3, 12, 0.3, 12, deco({ color = shapes.grey }), 6)
+			shapes:block(x, face - zz * 0.45, 11, 0.3, 11, deco({ color = shapes.light }), 6.5)
+		end
+		for _, sx in { -1, 1 } do
+			for _, k in { 30, 50 } do
+				shapes:banner(sx * (half - k), face, sx, -zz, 9, 10)
+			end
+		end
+		shapes:block(0, face - zz * 0.8, length, 1.6, 0.8, deco({ color = shapes.white }), wallH - 1.5)
+	end
+
+	-- beyond the walls: a skyline of white monoliths fading into the haze, so the world never ends at a wall
+	local r = Random.new(def.seed or #def.key * 97)
+	for i = 1, 70 do
+		local a = (i / 70) * math.pi * 2 + r:NextNumber(-0.04, 0.04)
+		local rx, rz = (half + 90) + r:NextNumber(0, 160), (width / 2 + 90) + r:NextNumber(0, 160)
+		local x, z = math.cos(a) * rx, math.sin(a) * rz
+		local w, d, h = r:NextNumber(12, 36), r:NextNumber(12, 36), r:NextNumber(24, 80)
+		local c = (i % 3 == 0) and shapes.light or ((i % 3 == 1) and shapes.white or shapes.grey)
+		local p = shapes:box(Vector3.new(x, h / 2 - 2, z), Vector3.new(w, h, d), deco({ color = c, shadow = false }))
+		p.Name = "Skyline"
+		if i % 4 == 0 then
+			shapes:box(
+				Vector3.new(x, h - 2 + 1.5, z),
+				Vector3.new(w * 0.6, 3, d * 0.6),
+				deco({ color = shapes.white, shadow = false })
+			)
+		end
+	end
+	-- the ground out there: one wide pale floor, below the arena's, so nothing below the walls is ever empty
+	local ground = shapes:box(
+		Vector3.new(0, -2.5, 0),
+		Vector3.new(length + 600, 1, width + 600),
+		deco({ color = shapes.light, shadow = false })
+	)
+	ground.Name = "Ground"
+
+	-- the spawn rooms (no spawn killing): pads in the team's colour inside a walled, roofed room. Its front wall has
+	-- two doors; just inside, a long baffle wall stands between the doors and the pads, so nobody outside can see or
+	-- shoot a pad: you leave round the baffle's ends, along the corridor behind the front wall, and out of a door.
+	-- The roof (frames and glass) stops arrows lobbed over. Distances are from the team's own end wall (d).
 	local spawns = { red = {}, blue = {} }
+	local room = ArenaBuilder.room(width, spawnDepth)
 	for _, team in Constants.TEAMS do
 		local s = team == "red" and -1 or 1
 		local color = Constants.TEAM_COLOR[team]
-		local zoneX = s * (half - spawnDepth / 2)
+		local function X(d)
+			return s * (half - d)
+		end
+		local zoneX = X(spawnDepth / 2)
 		shapes:block(zoneX, 0, spawnDepth, width - 2, 0.2, { color = shapes.light, collide = false, solid = false }, 0)
 		for row = -2, 2 do
-			for col = 0, 1 do
-				local px = s * (half - 5 - col * 7)
-				local pz = row * 14
+			for _, d in room.pads do
+				local px, pz = X(d), row * 14
 				local pad =
 					shapes:block(px, pz, 4.5, 4.5, 0.3, { color = color, material = Enum.Material.Neon, solid = false })
 				pad.Name = team .. "Pad"
+				-- a ring round the pad: a step you read from across the room
+				shapes:block(px, pz, 5.6, 5.6, 0.15, { color = shapes.white, collide = false, solid = false })
 				table.insert(spawns[team], CFrame.lookAt(Vector3.new(px, 3.5, pz), Vector3.new(0, 3.5, pz)))
 			end
 		end
 		-- the spawn line: a thin bar in the team's colour across the floor, where the base ends
 		shapes:block(
-			s * (half - spawnDepth),
+			X(spawnDepth),
 			0,
 			0.6,
 			width,
 			0.25,
 			{ color = color, material = Enum.Material.Neon, solid = false }
 		)
+		-- the front wall, with its two doors (and lintels over them)
+		local fd = (room.front0 + room.front1) / 2
+		local ft = room.front1 - room.front0
+		local edges = { -width / 2 }
+		for _, side in { -1, 1 } do
+			for _, e in { room.gapMid - room.gapHalf, room.gapMid + room.gapHalf } do
+				table.insert(edges, side * e)
+			end
+		end
+		table.insert(edges, width / 2)
+		table.sort(edges)
+		for i = 1, #edges, 2 do
+			local z0, z1 = edges[i], edges[i + 1]
+			shapes:block(X(fd), (z0 + z1) / 2, ft, z1 - z0, room.height, { color = shapes.white, name = "SpawnWall" })
+			-- pilasters on its face toward the field, and a plinth
+			for z = z0 + 3, z1 - 3, 8 do
+				shapes:block(X(room.front1 + 0.4), z, 0.8, 1.6, room.height, { color = shapes.light, solid = false })
+			end
+			shapes:block(X(room.front1 + 0.3), (z0 + z1) / 2, 0.6, z1 - z0, 1, { color = shapes.grey, solid = false })
+		end
+		for _, side in { -1, 1 } do
+			local gz = side * room.gapMid
+			shapes:block(X(fd), gz, ft, room.gapHalf * 2, room.height - room.door, { color = shapes.white }, room.door)
+			-- the door frame: a team-coloured line round it
+			shapes:block(X(room.front1 + 0.1), gz, 0.3, room.gapHalf * 2 + 0.6, 0.4, {
+				color = color,
+				material = Enum.Material.Neon,
+				solid = false,
+			}, room.door)
+			for _, e in { -1, 1 } do
+				shapes:block(X(room.front1 + 0.1), gz + e * (room.gapHalf + 0.15), 0.3, 0.3, room.door, {
+					color = color,
+					material = Enum.Material.Neon,
+					solid = false,
+				})
+			end
+		end
+		-- a coping and a team band along the wall's top
+		shapes:block(X(fd), 0, ft + 0.8, width, 0.6, { color = shapes.light, solid = false }, room.height)
+		shapes:block(X(room.front1 + 0.05), 0, 0.2, width, 0.5, {
+			color = color,
+			material = Enum.Material.Neon,
+			solid = false,
+		}, room.height - 1.6)
+		-- the baffle inside, with a bench along its back (the pads' side)
+		local bd = (room.baffle0 + room.baffle1) / 2
+		shapes:block(X(bd), 0, room.baffle1 - room.baffle0, room.baffleHalf * 2, room.baffleH, {
+			color = shapes.light,
+			name = "Baffle",
+		})
+		shapes:block(X(bd), 0, room.baffle1 - room.baffle0 + 0.6, room.baffleHalf * 2 + 0.6, 0.4, {
+			color = shapes.white,
+			solid = false,
+		}, room.baffleH)
+		shapes:block(
+			X(room.baffle0 - 0.6),
+			0,
+			1.2,
+			room.baffleHalf * 2 - 4,
+			1.4,
+			{ color = shapes.white, solid = false }
+		)
+		-- the roof: frames (beams across the room) with glass between, so the light still comes in
+		local rd = room.front1 / 2
+		shapes:box(Vector3.new(X(rd), room.height + 0.5, 0), Vector3.new(room.front1, 1, width), {
+			color = color:Lerp(Color3.new(1, 1, 1), 0.75),
+			material = Enum.Material.Glass,
+			transparency = 0.55,
+			shadow = false,
+			name = "SpawnRoof",
+		})
+		for z = -width / 2 + 6, width / 2 - 6, 12 do
+			shapes:block(X(rd), z, room.front1, 1, 1.2, { color = shapes.white, solid = false }, room.height + 0.9)
+		end
+		shapes:block(X(room.front1 - 0.5), 0, 1, width, 1.2, { color = shapes.white, solid = false }, room.height + 0.9)
 		-- the back wall's arches (detail on the base end)
 		for k = -2, 2 do
-			shapes:block(s * (half - 1.5), k * 17, 3, 3, wallH, { color = shapes.white })
+			shapes:block(X(1.5), k * 17, 3, 3, wallH, { color = shapes.white })
 		end
-		shapes:block(
-			s * (half - 1),
-			0,
-			2,
-			width,
-			2,
-			{ color = color, material = Enum.Material.Neon, solid = false },
-			wallH - 4
-		)
+		shapes:block(X(1), 0, 2, width, 2, { color = color, material = Enum.Material.Neon, solid = false }, wallH - 4)
 	end
 
 	-- the map's own architecture
@@ -394,7 +616,67 @@ function ArenaBuilder.build(def, parent)
 		marker = marker,
 		ceiling = ceiling,
 	}
+	arena.room = room
 	return arena
+end
+
+-- The spawn room's measures, in studs from the team's own end wall (d) and across the field (z):
+--   pads (d of the two pad columns), baffle0/baffle1 (the baffle's faces), baffleHalf (it spans |z| <= this),
+--   front0/front1 (the front wall's faces), gapMid/gapHalf (the doors: |z| within gapMid +- gapHalf),
+--   height (walls and roof), door (a door's height), baffleH
+function ArenaBuilder.room(width, spawnDepth)
+	return {
+		pads = { 4, 8.5 },
+		baffle0 = 11.5,
+		baffle1 = 13,
+		baffleHalf = math.min(26, width / 2 - 12),
+		front0 = spawnDepth - 3,
+		front1 = spawnDepth - 1,
+		gapMid = 14,
+		gapHalf = 4,
+		height = 12,
+		door = 9,
+		baffleH = 10,
+	}
+end
+
+-- Inside a team's spawn room? (behind its front wall)
+function ArenaBuilder.inRoom(arena, team, pos)
+	local s = team == "red" and -1 or 1
+	return arena.half - s * pos.X < arena.room.front1 + 0.5
+end
+
+-- The way out of the spawn room: where to walk next from pos to reach goal (goal itself when there's nothing in
+-- the way). Round the baffle's end on your side, along the corridor, out of the door.
+function ArenaBuilder.route(arena, team, pos, goal)
+	local r = arena.room
+	if not r then
+		return goal
+	end
+	local s = team == "red" and -1 or 1
+	local function d(p)
+		return arena.half - s * p.X
+	end
+	local function at(dd, z)
+		return Vector3.new(s * (arena.half - dd), pos.Y, z)
+	end
+	local dp, dg = d(pos), d(goal)
+	if dp >= r.front1 + 0.5 or dg < r.front0 then
+		return goal -- (already out, or staying in)
+	end
+	local side = math.abs(pos.Z) > 1 and math.sign(pos.Z) or (goal.Z >= 0 and 1 or -1)
+	local corridor = (r.baffle1 + r.front0) / 2
+	if dp < r.baffle1 + 0.8 and (dp < r.baffle0 or math.abs(pos.Z) >= r.baffleHalf) then
+		if math.abs(pos.Z) < r.baffleHalf + 2 then
+			return at(r.baffle0 - 2, side * (r.baffleHalf + 4)) -- (along the baffle's back to its end)
+		end
+		return at(corridor, side * (r.baffleHalf + 4)) -- (round the end)
+	end
+	local gz = side * r.gapMid
+	if dp < r.front0 and math.abs(pos.Z - gz) > r.gapHalf - 1.2 then
+		return at(corridor, gz) -- (along the corridor to the door)
+	end
+	return at(r.front1 + 4, gz) -- (out of the door)
 end
 
 -- Recolour the turf for this frontline (and move the marker onto it).

@@ -1,8 +1,8 @@
 --[[
 Teams (master plan §2A): red and blue, kept together with friends, balanced around them.
 
-  * A joining player goes to a team with a friend on it, if that doesn't put it more than TEAM_IMBALANCE ahead;
-    otherwise to the smaller team (ties: the one losing on turf, then random).
+  * A joining player always goes to the smaller team. When they're even, to the team losing on turf; only when the
+    turf is even too does a friend decide (their team), then a coin flip.
   * Between matches, teams are rebalanced by moving players who have no friend on their team from the bigger side.
   * The look (§0): everyone is a mannequin in their team's colour: body parts tinted, clothes and accessories off,
     so in a white world a player is a red or blue figure you can read at any distance.
@@ -85,22 +85,14 @@ end
 function TeamService:Assign(player)
 	local red, blue = self:Count("red"), self:Count("blue")
 	local pick
-	local friend = self:FriendTeam(player)
-	if friend then
-		local mine = friend == "red" and red or blue
-		local other = friend == "red" and blue or red
-		if mine + 1 - other <= Constants.TEAM_IMBALANCE then
-			pick = friend
-		end
-	end
-	if not pick then
-		if red ~= blue then
-			pick = red < blue and "red" or "blue"
-		else
-			-- (even: help the side that's behind on turf, else a coin flip)
-			local leader = turfLeader and turfLeader()
-			pick = leader and (leader == "red" and "blue" or "red") or (math.random(1, 2) == 1 and "red" or "blue")
-		end
+	if red ~= blue then
+		pick = red < blue and "red" or "blue"
+	else
+		-- (even: help the side that's behind on turf; turf even too: a friend's side, else a coin flip)
+		local leader = turfLeader and turfLeader()
+		pick = (leader and (leader == "red" and "blue" or "red"))
+			or self:FriendTeam(player)
+			or (math.random(1, 2) == 1 and "red" or "blue")
 	end
 	self:Set(player, pick)
 	return pick

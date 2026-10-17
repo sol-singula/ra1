@@ -536,7 +536,7 @@ local function buildBottom(gui)
 		Name = "Bows",
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(1, -16, 1, -16),
-		Size = UDim2.fromOffset(3 * 82, 64),
+		Size = UDim2.fromOffset(#Weapons.list * 82, 64),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	})
@@ -563,7 +563,8 @@ local function buildBottom(gui)
 		})
 		label({
 			Name = "Label",
-			Text = ({ bow = "BOW", crossbow = "CROSSBOW", heavy = "HEAVY" })[w.key] or string.upper(w.name),
+			Text = ({ bow = "BOW", crossbow = "CROSSBOW", heavy = "HEAVY", blade = "BLADE" })[w.key]
+				or string.upper(w.name),
 			Size = UDim2.new(1, -4, 0, 14),
 			Position = UDim2.fromOffset(2, 32),
 			TextSize = 10,
@@ -1172,6 +1173,9 @@ local function step()
 			if refs[k] then
 				refs[k].Visible = false
 			end
+		end
+		if refs.bowsFrame then
+			refs.bowsFrame.Visible = false -- (the weapons wait under the panel)
 		end
 		if refs.results then
 			refs.results.Visible = false

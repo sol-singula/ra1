@@ -54,6 +54,38 @@ return {
 				A:block(s * (24 + k * 16), 44, 8, 6, 4 + k * 2, { color = (k % 2 == 0) and A.light or A.white })
 				A:block(s * (24 + k * 16), -44, 8, 6, 4 + k * 2, { color = (k % 2 == 1) and A.light or A.white })
 			end
+			-- (detail) icicles under the terrace lip, crystal lamps, snow drifts along the walls
+			for k = -7, 7 do
+				local len = 1.2 + (k % 3) * 0.7
+				A:wedge(
+					CFrame.new(tx - s * 6.4, 7 - len / 2, k * 2.2) * CFrame.Angles(math.rad(180), 0, 0),
+					Vector3.new(0.5, len, 0.6),
+					{ color = A.white, solid = false, collide = false }
+				)
+			end
+			for _, zs in { -1, 1 } do
+				A:lamp(s * 40, zs * 12, 5, Color3.fromRGB(200, 228, 255))
+				for k = 0, 3 do
+					A:wedge(
+						CFrame.new(s * (16 + k * 14), 1, zs * 46.5) * CFrame.Angles(0, zs > 0 and 0 or math.rad(180), 0),
+						Vector3.new(10, 2, 3),
+						{ color = A.white, solid = false, collide = false }
+					)
+				end
+				-- frozen crates half buried by the terrace
+				A:crates(tx + s * 2, zs * 22, 2, zs * 25)
+				A:shard(s * 62, zs * 30, 2.5, 5, 14, -8, { yaw = zs * 50 })
+			end
+			-- cracks in the ice floor: thin pale lines
+			for k = 0, 4 do
+				A:box(
+					CFrame.new(s * (14 + k * 9), 0.06, (k % 2 == 0 and 1 or -1) * (6 + k * 3))
+						* CFrame.Angles(0, math.rad(k * 37), 0),
+					Vector3.new(0.25, 0.1, 6 + k),
+					{ color = A.grey, solid = false, collide = false }
+				)
+			end
+			A:rubble(s * 24, 0, 6, 30 + s)
 		end)
 		-- the ridge across the middle: four shard walls with three gaps between
 		for _, zc in { -36, -14, 14, 36 } do
@@ -67,5 +99,14 @@ return {
 			)
 			A:block(0, zc, 4, 9, 2, { color = A.light })
 		end
+		-- a frozen pillar of light in the ridge's middle gap
+		A:block(0, 0, 1.2, 1.2, 0.4, { color = A.light, solid = false, collide = false })
+		A:block(0, 0, 0.6, 0.6, 16, {
+			color = Color3.fromRGB(215, 235, 255),
+			material = Enum.Material.Neon,
+			transparency = 0.4,
+			solid = false,
+			collide = false,
+		}, 0.4)
 	end,
 }

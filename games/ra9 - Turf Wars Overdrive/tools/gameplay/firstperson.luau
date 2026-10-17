@@ -1,7 +1,7 @@
 --[[
 First-person frames (the viewmodel and the HUD, the way a player sees them): the real server and client boot on the
 mock engine, a fight is staged on Castle Clash, and the bow is caught at rest, half drawn, at full draw and on the
-crossbow, plus a frame of each touch layout. For checking the animation and as references for the store art.
+crossbow, the blade at rest and mid-slash, plus a frame of each touch layout. For checking the animation and as references for the store art.
 
   luaurun tools/gameplay/firstperson.luau <outDir>
   node tools/gameplay/render.js <outDir> <pngDir> --modules <node_modules> --chromium <chrome>
@@ -93,6 +93,14 @@ Engine.advance(1)
 Weapon.equip("crossbow")
 Engine.advance(1)
 shot("fp_crossbow")
+Weapon.equip("blade")
+Engine.advance(1)
+shot("fp_blade")
+Bus.Fire:Fire(true)
+Engine.advance(0.1)
+shot("fp_blade_slash")
+Bus.Fire:Fire(false)
+Engine.advance(1)
 local Device = Engine.require(tree.client.UI.Device)
 Device.set("touch")
 ws.CurrentCamera.ViewportSize = Vector2.new(1600, 740)

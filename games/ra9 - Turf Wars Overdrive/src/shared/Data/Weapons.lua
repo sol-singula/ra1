@@ -1,6 +1,6 @@
 --[[
-The three bows (master plan §5), all free from the start. Balanced on draw time, damage, arrow speed, cadence and
-knockback; none is strictly better.
+The three bows (master plan §5) and the blade, all free from the start. Balanced on draw time, damage, arrow speed,
+cadence and knockback; none is strictly better. The blade is for up close: run in and slash.
 
   draw        seconds to full charge (0 = fires at once, the crossbow)
   minCharge   the least charge a shot can have (a tap)
@@ -10,6 +10,8 @@ knockback; none is strictly better.
   mag/reload  shots before a reload, and its seconds (the crossbow)
   knockback   studs/s pushed at full charge
   structure   damage multiplier on structures
+  melee       (the blade) no arrow: a slash hits the nearest enemy within range studs, inside arc degrees of
+              where you look; from behind (back) it does backstab x damage
 ]]
 local Weapons = {}
 
@@ -56,6 +58,25 @@ Weapons.list = {
 		cooldown = 0.5,
 		knockback = 60,
 		structure = 3,
+		mag = nil,
+		reload = nil,
+	},
+	{
+		key = "blade",
+		name = "Blade",
+		icon = "🗡️",
+		role = "Up close: run in and slash. Three hits win, two from behind.",
+		melee = true,
+		draw = 0,
+		minCharge = 1,
+		damage = { 36, 36 },
+		speed = { 0, 0 },
+		cooldown = 0.5,
+		knockback = 30,
+		structure = 0.5,
+		range = 7.5,
+		arc = 55,
+		backstab = 1.5,
 		mag = nil,
 		reload = nil,
 	},

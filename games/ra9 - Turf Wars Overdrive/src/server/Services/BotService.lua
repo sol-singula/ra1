@@ -22,14 +22,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
+local ArenaBuilder = require(ReplicatedStorage.Shared.World.ArenaBuilder)
 local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 
 local BotService = {
 	Name = "BotService",
-	Dependencies = { "TeamService", "CombatService", "MatchService" },
+	Dependencies = { "TeamService", "CombatService", "MatchService", "ArenaService" },
 }
 
-local teams, combat, match
+local teams, combat, match, arenaService
 local bots = {} -- the bots in the server
 local nextId = 0
 local folder
@@ -313,13 +314,23 @@ function BotService:Think(b)
 	-- a spot on its own side, a little back from the line, somewhere along it; a new one now and then
 	if not b.goal or t > b.goalAt then
 		local back = phase == "fight" and rng:NextNumber(8, 20) or rng:NextNumber(14, 30)
-		b.goal = Vector3.new(line - fwd * back, root.Position.Y, rng:NextNumber(-34, 34))
+		local gx = line - fwd * back
+		local a = arenaService:Current()
+		if a then
+			-- (never back inside its spawn room: out in the field, in front of the room's wall)
+			local outX = -fwd * (a.half - a.room.front1 - 6)
+			gx = fwd > 0 and math.max(gx, outX) or math.min(gx, outX)
+		end
+		b.goal = Vector3.new(gx, root.Position.Y, rng:NextNumber(-34, 34))
 		b.goalAt = t + rng:NextNumber(2.5, 5)
 	end
+	-- the next step toward it: out of the spawn room by its doors first
+	local a = arenaService:Current()
+	local dest = a and ArenaBuilder.route(a, team, root.Position, b.goal) or b.goal
 	if phase ~= "fight" then
 		combat:Draw(b, false)
 		b.drawUntil = nil
-		moveTo(b, root, b.goal)
+		moveTo(b, root, dest)
 		return
 	end
 	local target = self:Target(b, root)
@@ -331,15 +342,35 @@ function BotService:Think(b)
 		end
 	end
 	if not target then
-		moveTo(b, root, b.goal)
+		moveTo(b, root, dest)
 		return
 	end
 	local tr = rootOf(target)
+	-- up close: the blade (run in and slash); otherwise the bow
+	local blade = Weapons.get("blade")
+	local close = (tr.Position - root.Position).Magnitude <= blade.range - 1
+	local want = close and "blade" or "bow"
+	if combat:Weapon(b) ~= want then
+		combat:Equip(b, want)
+		combat:Draw(b, false)
+		b.drawUntil = nil
+	end
+	if close then
+		face(root, tr.Position)
+		moveTo(b, root, tr.Position)
+		face(root, tr.Position)
+		if t >= (b.swingAt or 0) then
+			b.swingAt = t + blade.cooldown + rng:NextNumber(0.15, 0.45)
+			local look = tr.Position - root.Position
+			combat:Swing(b, look.Magnitude > 0.01 and look.Unit or root.CFrame.LookVector)
+		end
+		return
+	end
 	face(root, tr.Position)
 	-- strafe a little while it draws
-	moveTo(b, root, b.goal)
+	moveTo(b, root, dest)
 	face(root, tr.Position)
-	local w = Weapons.get(b.weapon)
+	local w = Weapons.get(combat:Weapon(b))
 	if not b.drawUntil then
 		if t - b.seenAt >= Constants.BOT_REACT then
 			combat:Draw(b, true)
@@ -361,6 +392,7 @@ function BotService:Init(registry)
 	teams = registry.TeamService
 	combat = registry.CombatService
 	match = registry.MatchService
+	arenaService = registry.ArenaService
 	folder = Instance.new("Folder")
 	folder.Name = "Bots"
 	folder.Parent = workspace

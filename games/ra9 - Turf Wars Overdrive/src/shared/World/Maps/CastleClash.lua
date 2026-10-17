@@ -78,6 +78,40 @@ return {
 					A:arch(s * ax, zs * 45, 6, 9, 2, "z", { pier = 1.5 })
 				end
 			end
+			-- (detail) flags on the gate towers, banners over the gate, torches either side of it
+			for _, zs in { -1, 1 } do
+				A:flag(wx, zs * 38, 22.4, s)
+				A:lamp(wx - s * 4, zs * 7.5, 6, Color3.fromRGB(255, 236, 200))
+			end
+			A:block(wx - s * 2.1, 0, 0.3, 8, 3, { color = A:teamColor(s), solid = false, collide = false }, 13.8)
+			-- a cobbled path through the gate: flat tiles in two shades
+			for i = 0, 7 do
+				A:block(wx - s * (8 + i * 3), 0, 2.6, 7, 0.1, {
+					color = (i % 2 == 0) and A.light or A.grey,
+					solid = false,
+					collide = false,
+				})
+			end
+			-- crates and barrels by the rampart stairs (low cover on your own side)
+			A:crates(wx + s * 6, 26, 3, 15)
+			A:crates(wx + s * 6, -26, 2, -20)
+			-- wall-walk crenels on the rampart's back edge and rubble at the tower feet
+			for _, zs in { -1, 1 } do
+				A:rubble(wx - s * 7, zs * 30, 5, 11 + zs)
+				A:block(s * 20, zs * 24, 30, 0.3, 0.6, { color = A.grey, solid = false, collide = false }, 13)
+			end
+			-- planters along the colonnade: low boxes with a tuft of pale leaves
+			for k = 0, 2 do
+				local px = s * (12 + k * 8)
+				for _, zs in { -1, 1 } do
+					A:block(px, zs * 30, 2.4, 2.4, 1.6, { color = A.light })
+					A:block(px, zs * 30, 1.8, 1.8, 0.8, {
+						color = Color3.fromRGB(214, 222, 206),
+						solid = false,
+						collide = false,
+					}, 1.6)
+				end
+			end
 		end)
 		-- the fountain in the middle: stacked plinths and an obelisk
 		A:block(0, 0, 12, 12, 1, { color = A.light })
@@ -90,5 +124,25 @@ return {
 			Vector3.new(3, 2.2, 1.5),
 			{ color = A.white }
 		)
+		-- the fountain's water: a pale glassy pool, and four lamps round the square
+		A:block(0, 0, 8.2, 8.2, 0.3, {
+			color = Color3.fromRGB(205, 225, 240),
+			material = Enum.Material.Glass,
+			transparency = 0.3,
+			solid = false,
+			collide = false,
+		}, 3)
+		for _, c in { { 9, 9 }, { -9, 9 }, { 9, -9 }, { -9, -9 } } do
+			A:lamp(c[1], c[2], 7)
+		end
+		-- a ring of paving round the fountain
+		for i = 0, 15 do
+			local a = i / 16 * math.pi * 2
+			A:box(
+				CFrame.new(math.cos(a) * 8, 0.05, math.sin(a) * 8) * CFrame.Angles(0, -a, 0),
+				Vector3.new(1.4, 0.1, 3),
+				{ color = (i % 2 == 0) and A.light or A.grey, solid = false, collide = false }
+			)
+		end
 	end,
 }

@@ -215,6 +215,39 @@ Tests: 119 unit, 146 server, 121 client.
 
 Tests: 119 unit, 146 server, 140 client, 19 bots.
 
+## Round 8: safe spawns, fairer teams, one bot, a blade, more detailed maps
+
+* **No baseplate:** a place made from Roblox's Baseplate template kept its grey grid plate and SpawnLocation under
+  the arena. `ArenaService:ClearTemplate()` removes them (and any template terrain) at start; a wide pale ground now
+  lies under everything and a skyline of white monoliths stands in the haze beyond the walls, so nothing outside
+  the arena is ever empty.
+* **One bot:** alone, you get a single bot against you (`BOT_ALLIES = 0`, `BOT_ENEMIES = 1`); the second person to
+  join still takes its place.
+* **Teams:** a joining player always goes to the smaller team; with the teams even, to the team losing on turf.
+  Only with the turf even too does a friend decide, then a coin flip. (Between matches, teams are still evened.)
+* **Spawn rooms:** each base is a walled, roofed room. Its front wall has two doors, and just inside a long baffle
+  wall stands between the doors and the pads: you leave round the baffle's ends, along a corridor behind the front
+  wall and out of a door. The roof (white frames, glass tinted in the team's colour) stops lobbed arrows. New
+  `tests/MapSmoke.spec.luau` checks every map: from anywhere in the field (floor, ledges, tower tops) no straight
+  line reaches any pad, and every pad has a clear walk out. Bots follow the same route (`ArenaBuilder.route`).
+* **Map detail:** every map's long walls got pilasters with lamps, recessed panels, team banners in each half and a
+  cornice; each map got its own extras: Castle Clash flags on the towers, torches at the gate, a cobbled path,
+  crates, planters, the fountain's water and lamps; Frostbite icicles, crystal lamps, snow drifts, ice cracks, a
+  light pillar; Jungle Rush vines, stepping stones, ferns, shrine lamps, more canopies and rubble; Dust Devil
+  geometric cacti, boulders, sandbags, bridge lamps, wind lines in the sand. Every map is now 450+ pieces (still
+  within the phone budget).
+
+  ![](screenshots/castle_overview.png)
+
+* **The Blade** (slot 4, `🗡️`): click to slash. The server finds the nearest enemy within 7.5 studs and 55° of
+  where you look, with nothing solid between: 36 damage (three slashes win), 54 from behind (two win), a shove. A
+  half-second cadence, checked on the server. Your viewmodel holds it in the right hand and sweeps it across; others
+  see it in your hand. Bots draw it when you're close and switch back to the bow at range.
+
+  ![](screenshots/fp_blade_slash.png)
+
+Tests: 121 unit, 158 server, 147 client, 21 bots, 16 maps.
+
 ## Next (phase F)
 
 * The Discord log and analytics (the studio's shared pipeline), the dashboard entry.

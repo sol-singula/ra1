@@ -74,6 +74,35 @@ return {
 				Vector3.new(5, 2.4, 3),
 				{ color = A.white }
 			)
+			-- (detail) vines down the grove pillars, stepping stones, a shrine lamp on each temple, more rubble
+			for k = 0, 3 do
+				for _, zs in { -1, 1 } do
+					local px, pz = s * (14 + k * 9), zs * (40 - (k % 2) * 3)
+					A:block(px + 1.05, pz, 0.15, 0.6, 8, { color = leafDark, solid = false, collide = false }, 3)
+					A:block(px, pz - 1.05, 0.5, 0.15, 6, { color = leaf, solid = false, collide = false }, 5)
+				end
+			end
+			for i = 0, 6 do
+				A:block(s * (10 + i * 6), (i % 2 == 0) and 4 or -4, 2.4, 2.4, 0.15, {
+					color = (i % 2 == 0) and A.light or A.grey,
+					solid = false,
+					collide = false,
+				})
+			end
+			for _, zs in { -1, 1 } do
+				A:lamp(s * 52, zs * 28 + zs * 6, 3, Color3.fromRGB(230, 255, 220))
+				A:rubble(s * 34, zs * 26, 6, 40 + zs)
+				canopy(s * 30, zs * 6, 10.5, 5)
+			end
+			A:crates(s * 60, 0, 3, s * 10)
+			-- fern tufts at the walls' feet
+			for k = 0, 3 do
+				for _, zs in { -1, 1 } do
+					local cf = CFrame.new(s * (20 + k * 15), 0.6, zs * 46.6)
+						* CFrame.Angles(math.rad(zs * 20), math.rad(k * 30), 0)
+					A:box(cf, Vector3.new(3, 0.3, 2), { color = leaf, solid = false, collide = false })
+				end
+			end
 		end)
 		-- the ruined gate in the middle, with two passages beside it
 		A:arch(0, 0, 8, 10, 3, "x", { pier = 3 })

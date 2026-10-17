@@ -11,6 +11,7 @@ local Engine = loadModule("tests/mock/Engine.luau")
 local Vector3 = Engine.Vector3
 local Enum = Engine.Enum
 local CFrame = Engine.CFrame
+local Instance = Engine.Instance
 
 local passed, failed = 0, 0
 local function check(name, cond, detail)
@@ -89,6 +90,17 @@ end
 -- The arena and the first match ---------------------------------------------------------------------------------
 check("an arena was built", ws:FindFirstChild("Arena") ~= nil)
 check("the first map is Castle Clash", ws:GetAttribute("MapKey") == "castle")
+do
+	-- a place made from Roblox's Baseplate template: its baseplate and spawn go
+	local bp = Instance.new("Part")
+	bp.Name = "Baseplate"
+	bp.Parent = ws
+	local sl = Instance.new("SpawnLocation")
+	sl.Parent = ws
+	Arena:ClearTemplate()
+	check("no template baseplate or spawn", ws:FindFirstChild("Baseplate") == nil and sl.Parent == nil)
+	check("...the arena stays", ws:FindFirstChild("Arena") ~= nil)
+end
 check("the match opens in the build phase", ws:GetAttribute("Phase") == "build")
 check("the frontline starts in the middle", ws:GetAttribute("Frontline") == 0)
 check(
@@ -102,17 +114,29 @@ check("Red and Blue teams exist", Engine.game:GetService("Teams"):FindFirstChild
 
 -- Four players join; Ava and Ben are friends --------------------------------------------------------------------
 Engine.friends["501:502"], Engine.friends["502:501"] = true, true -- (friends before they join)
+-- (one at a time: Ava and Cy split, Ben joins the even teams with the turf even: his friend's side; Dee the smaller)
 local ava = Engine.addPlayer("Ava", 501)
-local ben = Engine.addPlayer("Ben", 502)
 local cy = Engine.addPlayer("Cy", 503)
-local dee = Engine.addPlayer("Dee", 504)
 Engine.advance(1)
-for _, p in { ava, ben, cy, dee } do
-	send(p, "Ready")
-end
+send(ava, "Ready")
+send(cy, "Ready")
+Engine.advance(0.5)
+check("two players: one each", Teams:Team(ava) and Teams:Team(cy) and Teams:Team(ava) ~= Teams:Team(cy))
+local ben = Engine.addPlayer("Ben", 502)
+Engine.advance(0.3)
+send(ben, "Ready")
+Engine.advance(0.3)
+local dee = Engine.addPlayer("Dee", 504)
+Engine.advance(0.3)
+send(dee, "Ready")
 Engine.advance(0.5)
 check("everyone has a team", Teams:Team(ava) and Teams:Team(ben) and Teams:Team(cy) and Teams:Team(dee))
-check("friends are kept together", Teams:Team(ava) == Teams:Team(ben), `{Teams:Team(ava)} {Teams:Team(ben)}`)
+check(
+	"even teams, even turf: a friend joins his friend",
+	Teams:Team(ava) == Teams:Team(ben),
+	`{Teams:Team(ava)} {Teams:Team(ben)}`
+)
+check("the odd one out joins the smaller team", Teams:Team(dee) == Teams:Team(cy))
 check("teams are even", Teams:Count("red") == 2 and Teams:Count("blue") == 2)
 local red = Teams:Team(ava) == "red" and ava or cy
 local red2 = red == ava and ben or dee
@@ -150,14 +174,14 @@ local ok5, why5 = Build:Place(red, "cover", Formulas.cellOf(-58, -38), select(2,
 check("not on the map's own walls", not ok5 and why5 ~= nil, why5)
 -- the lane rule: wall a whole row and the last openings are refused
 do
-	stand(red2, Vector3.new(-28, 3, 0))
-	local col = Formulas.cellOf(-26, 0)
+	stand(red2, Vector3.new(-40, 3, 0))
+	local col = Formulas.cellOf(-38, 0)
 	local refused
 	local _, z0 = Formulas.cellOf(0, -47)
 	local _, z1 = Formulas.cellOf(0, 47)
 	Build:Refill()
 	for z = z0, z1 do
-		stand(red2, Vector3.new(-28, 3, z * Constants.CELL))
+		stand(red2, Vector3.new(-40, 3, z * Constants.CELL))
 		local okW, whyW = Build:Place(red2, "reinforced", col, z, 1)
 		if not okW and whyW and whyW:find("wall off") then
 			refused = true
@@ -226,6 +250,16 @@ local feed = firedSince(m2, "Kill", nil)
 check("the kill feed says who and how far", feed and feed.args[1].killer == red.UserId and feed.args[1].push == push)
 check("the kill counts", Match:Stats(red).kills == 1)
 check("the helper gets an assist", Match:Stats(red2).assists == 1, Match:Stats(red2).assists)
+do
+	-- a fifth player joins two against two: the team losing on turf (blue, pushed back) gets them
+	local eve = Engine.addPlayer("Eve", 505)
+	Engine.advance(0.3)
+	send(eve, "Ready")
+	Engine.advance(0.3)
+	check("even teams: a newcomer joins the losing team", Teams:Team(eve) == "blue", Teams:Team(eve))
+	Engine.removePlayer(eve)
+	Engine.advance(0.3)
+end
 Engine.advance(Constants.RESPAWN_SECONDS + 0.4)
 check("blue respawns", Combat:Alive(blue))
 check(
@@ -241,6 +275,40 @@ stand(red, Vector3.new(-10, 3, -12), Vector3.new(-6, 3, -12))
 stand(red2, Vector3.new(-4, 3, -12))
 shootAt(red, rootOf(red2).Position, 1)
 check("no friendly fire", Combat:Health(red2) == Constants.MAX_HEALTH, Combat:Health(red2))
+-- the blade: up close, in front, on its cadence; more from behind
+do
+	local blade = Weapons.get("blade")
+	local F = ws:GetAttribute("Frontline")
+	send(red, "Equip", "blade")
+	Engine.advance(Constants.SPAWN_PROTECT)
+	check("the blade in hand", Combat:Weapon(red) == "blade")
+	stand(blue, Vector3.new(F + 2.5, 3, 30), Vector3.new(F - 10, 3, 30))
+	stand(red, Vector3.new(F - 2.5, 3, 30), Vector3.new(F + 10, 3, 30))
+	local h0 = Combat:Health(blue)
+	local m = mark()
+	send(red, "Swing", Vector3.new(1, 0, 0))
+	check("a slash hits who's in front, in reach", Combat:Health(blue) == h0 - blade.damage[1], Combat:Health(blue))
+	check("...and everyone sees it", firedSince(m, "Swing", nil) ~= nil)
+	local h1 = Combat:Health(blue)
+	send(red, "Swing", Vector3.new(1, 0, 0))
+	check("...not faster than the blade swings", Combat:Health(blue) == h1, Combat:Health(blue))
+	Engine.advance(blade.cooldown)
+	send(red, "Swing", Vector3.new(-1, 0, 0))
+	check("...not who's behind you", Combat:Health(blue) == h1, Combat:Health(blue))
+	Engine.advance(blade.cooldown)
+	stand(red, Vector3.new(F - 14, 3, 30), Vector3.new(F + 10, 3, 30))
+	send(red, "Swing", Vector3.new(1, 0, 0))
+	check("...not out of reach", Combat:Health(blue) == h1, Combat:Health(blue))
+	Engine.advance(blade.cooldown)
+	-- from behind: blue looks away
+	stand(blue, Vector3.new(F + 2.5, 3, 30), Vector3.new(F + 20, 3, 30))
+	stand(red, Vector3.new(F - 2, 3, 30), Vector3.new(F + 10, 3, 30))
+	send(red, "Swing", Vector3.new(1, 0, 0))
+	local back = math.floor(blade.damage[1] * blade.backstab + 0.5)
+	check("from behind it hits harder", Combat:Health(blue) == h1 - back, Combat:Health(blue))
+	Combat:Spawned(blue) -- (whole again for what follows)
+	send(red, "Equip", "bow")
+end
 -- the turf rule: red can't walk onto blue's turf
 stand(red, Vector3.new(ws:GetAttribute("Frontline") + 10, 3, 20))
 Engine.advance(0.4)

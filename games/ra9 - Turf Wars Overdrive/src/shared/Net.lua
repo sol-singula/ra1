@@ -13,6 +13,7 @@ Net.ClientEvents = {
 	Equip = 4, -- (weaponKey) pick a bow (CombatService)
 	Draw = 10, -- (on) start / stop drawing the bow (the charge is timed on the server from this)
 	Shoot = 12, -- (origin, direction, shotId) release: an arrow from about where your head is, the way you aim
+	Swing = 6, -- (direction) a slash with the blade: the server finds who it reaches
 	Reload = 2, -- () the crossbow's magazine
 	Build = 8, -- (structureKey, cx, cz, rot) place a structure in the build phase (BuildService)
 	Demolish = 4, -- (structureId) take back one of yours in the build phase (refunded)
@@ -33,6 +34,7 @@ Net.ServerEvents = {
 	"Me", -- { team, alive, weapon, ammo, budget, budgetMax, protected }
 	"Arrow", -- { id, by, team, weapon, origin, velocity, t } an arrow everyone draws (the shooter's own is predicted)
 	"ArrowEnd", -- { id, pos, kind = "player" | "structure" | "world" } where it stopped
+	"Swing", -- { by, hit } someone slashed (their blade swings for everyone)
 	"Hit", -- { damage, head, kill, victim } you hit someone (the hit marker)
 	"Hurt", -- { amount, from } you were hit (from: the shooter's position, for the damage indicator)
 	"Kill", -- { killer, victim, killerTeam, weapon, head, push, assist, effect, pos } the kill feed, the kill effect

@@ -11,7 +11,7 @@ Constants.TEAM_NAME = { red = "RED", blue = "BLUE" }
 Constants.TEAM_COLOR = { red = Color3.fromRGB(235, 40, 45), blue = Color3.fromRGB(35, 110, 245) }
 -- the turf on the ground: a softer version of the team colour, so players stand out from it
 Constants.TURF_COLOR = { red = Color3.fromRGB(240, 120, 118), blue = Color3.fromRGB(120, 165, 245) }
-Constants.TEAM_IMBALANCE = 2 -- a solo player joins the smaller team; a party may push its team ahead by up to this many
+Constants.TEAM_IMBALANCE = 2 -- (between matches the teams are evened to within 1; a joining player always takes the smaller team)
 
 -- Phases (§2): seconds
 Constants.BUILD_SECONDS = 60
@@ -57,8 +57,8 @@ Constants.CROUCH_SPEED = 10 -- crouched: slower, lower (a smaller target), the b
 Constants.CROUCH_DROP = 1.1 -- studs the body (and the view, and the hit spheres) sink when crouched
 
 -- Bots: only while exactly one person is on (BotService). The second person to join takes over a bot.
-Constants.BOT_ALLIES = 1 -- on your side
-Constants.BOT_ENEMIES = 2 -- against you
+Constants.BOT_ALLIES = 0 -- on your side
+Constants.BOT_ENEMIES = 1 -- against you
 Constants.BOT_SPEED = 16 -- a little slower than a person walking
 Constants.BOT_RANGE = 150 -- studs: how far they look for someone to shoot
 Constants.BOT_SPREAD = 2.6 -- degrees of aim error (more at range): beatable, not helpless

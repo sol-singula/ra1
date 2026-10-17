@@ -58,6 +58,68 @@ return {
 			)
 			A:block(s * 64, 0, 3, 10, 3.5, { color = A.light })
 			A:block(s * 64, 0, 3.6, 10.6, 0.5, { color = A.white }, 3.5)
+			-- (detail) geometric cacti, boulders, sandbags by the ramps, lamps on the bridge piers
+			for _, c in { { 36, 20 }, { 54, -22 }, { 22, -30 } } do
+				local cx, cz = s * c[1], c[2]
+				A:block(cx, cz, 1.4, 1.4, 6, { color = Color3.fromRGB(214, 220, 196) })
+				A:block(
+					cx + 1.2,
+					cz,
+					1.0,
+					1.0,
+					1,
+					{ color = Color3.fromRGB(214, 220, 196), solid = false, collide = false },
+					2.6
+				)
+				A:block(
+					cx + 1.7,
+					cz,
+					1.0,
+					1.0,
+					2.4,
+					{ color = Color3.fromRGB(206, 214, 188), solid = false, collide = false },
+					3.1
+				)
+				A:block(
+					cx - 1.2,
+					cz,
+					1.0,
+					1.0,
+					1,
+					{ color = Color3.fromRGB(214, 220, 196), solid = false, collide = false },
+					3.6
+				)
+				A:block(
+					cx - 1.7,
+					cz,
+					1.0,
+					1.0,
+					1.8,
+					{ color = Color3.fromRGB(206, 214, 188), solid = false, collide = false },
+					4.1
+				)
+			end
+			for _, zs in { -1, 1 } do
+				A:lamp(bx, zs * 12 + zs * 2.2, 9, Color3.fromRGB(255, 230, 190))
+				for k = 0, 3 do
+					A:block(bx + s * 13, zs * (24 + k * 1.6), 3.2, 1.4, 1.1, { color = A.light }, (k % 2) * 0)
+				end
+				A:rubble(s * 52, zs * 36, 6, 60 + zs)
+			end
+			A:box(
+				CFrame.new(s * 16, 1.4, -34) * CFrame.Angles(math.rad(14), math.rad(s * 40), 0),
+				Vector3.new(4, 2.8, 3.4),
+				{ color = A.light }
+			)
+			A:crates(s * 70, 18, 3, s * 12)
+			-- wind lines in the sand: long thin pale streaks
+			for k = 0, 5 do
+				A:box(
+					CFrame.new(s * (12 + k * 10), 0.05, (k - 2.5) * 11) * CFrame.Angles(0, math.rad(8 + k * 3), 0),
+					Vector3.new(14, 0.1, 0.35),
+					{ color = A.light, solid = false, collide = false }
+				)
+			end
 		end)
 		-- the middle: one low wall and two boulders. Open ground, few places to hide
 		A:block(0, 0, 2, 14, 3.2, { color = A.light })

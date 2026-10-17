@@ -168,7 +168,10 @@ check(
 wheel(-1)
 check("wheel down: the next bow", Store.get("me").weapon == "heavy", Store.get("me").weapon)
 wheel(-1)
+check("...then the blade", Store.get("me").weapon == "blade", Store.get("me").weapon)
+wheel(-1)
 check("...round the end", Store.get("me").weapon == "bow", Store.get("me").weapon)
+wheel(1)
 wheel(1)
 check("wheel up: the one before", Store.get("me").weapon == "heavy", Store.get("me").weapon)
 -- a menu in the fight: the mouse shows and comes free, the bow doesn't fire
@@ -190,6 +193,27 @@ do
 	Layout.setPanel(false)
 	Engine.advance(0.1)
 	check("menu closed: the mouse hides again", UIS.MouseIconEnabled == false and not CamC.mouseFree())
+end
+-- the blade: 4 picks it, a click slashes
+do
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Four, UserInputType = Enum.UserInputType.Keyboard }, false)
+	Engine.advance(0.3)
+	check("4 picks the blade", Store.get("me").weapon == "blade" and Combat:Weapon(player) == "blade")
+	check("...numbered 4 on the hotbar", refs.bows.blade and refs.bows.blade.key.Num.Text == "4")
+	local vm = ws.CurrentCamera:FindFirstChild("Viewmodel")
+	check("...a blade in your hand", vm and vm:FindFirstChild("Edge") ~= nil and vm:FindFirstChild("String") == nil)
+	Engine.advance(0.5)
+	local edge = vm and vm:FindFirstChild("Edge")
+	local rest = edge and edge.Position
+	local BusB = Engine.require(tree.client.UI.Bus)
+	local before = Engine.lastClientEvent("Swing")
+	BusB.Fire:Fire(true)
+	Engine.advance(0.1)
+	BusB.Fire:Fire(false)
+	check("a click slashes (the server is asked)", Engine.lastClientEvent("Swing") ~= before)
+	check("...and the blade sweeps across", edge and (edge.Position - rest).Magnitude > 0.1)
+	check("...no charge ring for a blade", not refs.charge.Visible)
+	Engine.advance(0.6)
 end
 Weapon.equip("bow")
 Engine.advance(0.2)

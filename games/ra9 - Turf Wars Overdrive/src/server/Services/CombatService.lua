@@ -1,5 +1,10 @@
 --[[
-Combat (master plan §5): health, the three bows, server arrows, hits, knockback, kills and credit.
+Combat (master plan §5): health, the three bows and the blade, server arrows, slashes, hits, knockback, kills and
+credit.
+
+The blade: the client sends Swing(direction) as you click; the server checks the cadence and finds the nearest enemy
+in reach (Weapons blade.range from you, inside blade.arc degrees of where you look, nothing solid between), and hits
+it (more from behind). Everyone is told (Swing) so they see the slash.
 
 The client only asks: Draw(true) when you start drawing, Shoot(origin, direction, shotId) when you let go. The
 server times the draw itself (the charge is how long it has really been drawing, capped by the bow), checks you're
@@ -131,7 +136,16 @@ function CombatService:HoldBow(player, key)
 		return p
 	end
 	local big = key == "heavy"
-	if key == "crossbow" then
+	if key == "blade" then
+		-- held in the right hand for everyone else: a grip, a guard, the blade
+		local right = c:FindFirstChild("RightHand") or c:FindFirstChild("Right Arm")
+		if right then
+			hand = right
+		end
+		part("Grip", Vector3.new(0.25, 0.25, 0.7), color, CFrame.new(0, -0.3, 0))
+		part("Guard", Vector3.new(0.9, 0.2, 0.2), Constants.WHITE, CFrame.new(0, -0.3, -0.45))
+		part("Edge", Vector3.new(0.12, 0.3, 2.4), Constants.WHITE, CFrame.new(0, -0.3, -1.75))
+	elseif key == "crossbow" then
 		part("Stock", Vector3.new(0.25, 0.25, 1.8), Constants.WHITE, CFrame.new(0, -0.2, -0.6))
 		part("Limbs", Vector3.new(2.2, 0.15, 0.2), color, CFrame.new(0, -0.2, -1.4))
 	else
@@ -457,6 +471,75 @@ function CombatService:Shoot(player, origin, direction, shotId)
 	return arrow
 end
 
+-- A slash (Net "Swing"; bots call it too): the nearest enemy in reach and in front, nothing solid between.
+function CombatService:Swing(player, direction)
+	if not enabled or typeof(direction) ~= "Vector3" or direction.Magnitude < 0.5 or direction.Magnitude > 1.5 then
+		return nil
+	end
+	local s = state(player)
+	local w = Weapons.get(s.weapon)
+	if not s.alive or not w or not w.melee then
+		return nil
+	end
+	local t = now()
+	if t < (s.readyAt or 0) - 0.08 then
+		self.Rejected:Fire(player, "rate")
+		return nil
+	elseif t < (s.readyAt or 0) then
+		return nil
+	end
+	s.readyAt = t + w.cooldown
+	local r = root(player)
+	if not r then
+		return nil
+	end
+	local look = Vector3.new(direction.X, 0, direction.Z)
+	look = look.Magnitude > 0.01 and look.Unit or r.CFrame.LookVector
+	local eye = r.Position + Vector3.new(0, 1.5, 0)
+	local mine = teams:Team(player)
+	local best, bestD
+	for other, os_ in states do
+		local orr = os_.alive and other ~= player and other.Parent and teams:Team(other) ~= mine and root(other)
+		if orr then
+			local to = orr.Position - r.Position
+			local flat = Vector3.new(to.X, 0, to.Z)
+			local d = flat.Magnitude
+			local inArc = d < 1.5 or math.deg(math.acos(math.clamp(flat.Unit:Dot(look), -1, 1))) <= w.arc
+			if d <= w.range and math.abs(to.Y) < 5 and inArc and (not bestD or d < bestD) then
+				if not self:Blocked(eye, orr.Position + Vector3.new(0, 1, 0)) then
+					best, bestD = other, d
+				end
+			end
+		end
+	end
+	Net.fireAll("Swing", { by = player.UserId, hit = best ~= nil })
+	self.Shot:Fire(player, w.key)
+	if not best then
+		return nil
+	end
+	local vr = root(best)
+	-- from behind: the victim faces away from you
+	local away = (vr.Position - r.Position)
+	away = Vector3.new(away.X, 0, away.Z)
+	local back = away.Magnitude > 0.01 and vr.CFrame.LookVector:Dot(away.Unit) > 0.5
+	local amount = math.floor(w.damage[1] * (back and w.backstab or 1) + 0.5)
+	local info = { weapon = w.key, head = false, kind = "melee", back = back }
+	local ok, killed = self:Damage(best, amount, player, info)
+	if not ok then
+		return best, false
+	end
+	local kb = look * math.min(w.knockback, Constants.KNOCKBACK_CAP) + Vector3.new(0, w.knockback * 0.3, 0)
+	if not killed then
+		pcall(function()
+			vr.AssemblyLinearVelocity += kb
+		end)
+	end
+	best:SetAttribute("AcGrace", os.clock() + 1.5)
+	Net.fire(best, "Hurt", { amount = amount, from = r.Position, knock = kb, head = false })
+	Net.fire(player, "Hit", { damage = amount, head = back, kill = killed, victim = best.UserId })
+	return best, killed
+end
+
 function CombatService:Equip(player, key)
 	local w = Weapons.get(key)
 	if not w then
@@ -494,6 +577,9 @@ function CombatService:Init(registry)
 	end)
 	Net.on("Shoot", function(player, origin, direction, shotId)
 		self:Shoot(player, origin, direction, shotId)
+	end)
+	Net.on("Swing", function(player, direction)
+		self:Swing(player, direction)
 	end)
 	Net.on("Reload", function(player)
 		local s = state(player)

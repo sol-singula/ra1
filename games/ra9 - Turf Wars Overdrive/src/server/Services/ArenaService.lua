@@ -10,6 +10,7 @@ the geometry questions the other services ask:
   ArenaService:SpawnFor(team, i)   a spawn CFrame
   ArenaService:LoseLine(team)      where the frontline ends that team
   ArenaService:Inside(pos)         inside the playable box
+  ArenaService:ClearTemplate()     (at start) removes a template's Baseplate and SpawnLocation
 ]]
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -128,6 +129,24 @@ function ArenaService:Inside(pos)
 	return pos.X >= mn.X and pos.X <= mx.X and pos.Y >= mn.Y and pos.Y <= mx.Y and pos.Z >= mn.Z and pos.Z <= mx.Z
 end
 
-function ArenaService:Init() end
+-- What a Roblox template leaves in the place (the grey Baseplate with its grid, the default SpawnLocation): the
+-- arena is the whole world, so they go.
+function ArenaService:ClearTemplate()
+	local gone = 0
+	for _, d in workspace:GetChildren() do
+		if (d:IsA("BasePart") and (d.Name == "Baseplate" or d:IsA("SpawnLocation"))) or d.Name == "Baseplate" then
+			d:Destroy()
+			gone += 1
+		end
+	end
+	pcall(function()
+		workspace.Terrain:Clear()
+	end)
+	return gone
+end
+
+function ArenaService:Init()
+	self:ClearTemplate()
+end
 
 return ArenaService

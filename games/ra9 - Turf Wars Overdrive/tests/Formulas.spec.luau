@@ -35,7 +35,13 @@ check("red pushes east, blue west", Formulas.forward("red") == 1 and Formulas.fo
 
 -- Bows ---------------------------------------------------------------------------------------------------------
 local bow, crossbow, heavy = Weapons.get("bow"), Weapons.get("crossbow"), Weapons.get("heavy")
-check("three bows, all at the start", #Weapons.list == 3 and bow and crossbow and heavy)
+local blade = Weapons.get("blade")
+check("three bows and a blade, all at the start", #Weapons.list == 4 and bow and crossbow and heavy and blade)
+check("the blade is melee: no arrow, a short reach", blade.melee == true and blade.range < 10 and blade.arc > 0)
+check(
+	"...three slashes win, two from behind",
+	blade.damage[1] * 3 >= 100 and blade.damage[1] * 2 < 100 and blade.damage[1] * blade.backstab * 2 >= 100
+)
 check("a tap is the least charge", near(Formulas.charge(bow, 0), bow.minCharge))
 check("a full draw is full charge", near(Formulas.charge(bow, 5), 1))
 check("the crossbow is always full", Formulas.charge(crossbow, 0) == 1)
@@ -141,13 +147,15 @@ for _, def in Maps.list do
 		check(`{def.key}: detailed (lots of shapes)`, parts >= 150, parts)
 		check(`{def.key}: within a phone's budget`, parts <= 1500, parts)
 		check(`{def.key}: ten spawn pads a team`, #arena.spawns.red == 10 and #arena.spawns.blue == 10)
-		-- nothing of the map's own in the spawn zones (beyond the back wall's detail)
+		-- nothing of the map's own in the spawn zones (beyond the back wall's detail and the spawn room itself)
 		local inSpawn = 0
 		local edge = arena.half - arena.spawnDepth
 		for _, s in arena.solids do
 			local inside = s.min.X > edge + 1 or s.max.X < -edge - 1
 			local own = s.part and s.part.Parent and s.part.Parent.Name == "Map"
-			if inside and own and s.min.Y < 6 and s.max.Y > 0.5 and math.abs(s.min.X) < arena.half - 4 then
+			local room = s.part
+				and (s.part.Name == "Baffle" or s.part.Name == "SpawnWall" or s.part.Name == "SpawnRoof")
+			if inside and own and not room and s.min.Y < 6 and s.max.Y > 0.5 and math.abs(s.min.X) < arena.half - 4 then
 				inSpawn += 1
 			end
 		end

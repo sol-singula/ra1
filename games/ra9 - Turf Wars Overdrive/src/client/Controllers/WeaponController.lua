@@ -6,8 +6,9 @@ Your bow (master plan §5, §6): the viewmodel in your hands, the draw and the s
     (Bus.Charge). The crossbow fires on each press, six bolts, then R (or the RELOAD button) to reload.
   * Let go and the arrow is drawn at once (ArrowController.predict) while the shot goes to the server (Shoot:
     from your eye, the way you're looking). The server times the draw itself, so a held mouse can't cheat a charge.
-  * 1 / 2 / 3 pick the Standard Bow, the Rapid Crossbow, the Heavy Bow (in the fight; in the build phase the
-    digits pick structures), and the mouse wheel steps through them. Only in the fight, alive.
+  * 1 / 2 / 3 / 4 pick the Standard Bow, the Rapid Crossbow, the Heavy Bow, the Blade (in the fight; in the build
+    phase the digits pick structures), and the mouse wheel steps through them. Only in the fight, alive.
+  * The Blade: click (or FIRE) to slash. The slash shows at once; the server finds who it reaches (Swing).
   * No drawing or shooting while a menu is open (the shop, a card, the results): the mouse is the menu's then.
 
 The viewmodel (this client only): your arms in the team's sleeves holding the bow, its limbs, a string in two halves
@@ -168,6 +169,24 @@ local function buildView()
 	local limbLen = cross and 1.0 or (big and 1.9 or 1.5)
 	local ink = Color3.fromRGB(30, 30, 34)
 	local v = { model = model, big = big, cross = cross, limbLen = limbLen }
+	if w.melee then
+		-- the blade: a grip in the team's colour, a guard, a long white edge with a darker spine, a pommel
+		v.blade = true
+		v.grip = piece(Vector3.new(0.2, 0.2, 0.75), gripColor, "Grip", material)
+		v.pommel = piece(Vector3.new(0.28, 0.28, 0.2), limbColor, "Pommel", material)
+		v.guard = piece(Vector3.new(0.85, 0.16, 0.2), limbColor, "Guard", material)
+		v.edge = piece(Vector3.new(0.07, 0.28, 1.6), limbColor, "Edge", material)
+		v.spine = piece(Vector3.new(0.09, 0.04, 1.4), gripColor, "Spine", material)
+		v.tip = piece(Vector3.new(0.08, 0.2, 0.3), limbColor, "Tip", material)
+		v.armL = piece(Vector3.new(0.22, 0.22, 1), color, "ArmL")
+		v.handL = piece(Vector3.new(0.3, 0.34, 0.3), Constants.WHITE, "HandL")
+		v.armR = piece(Vector3.new(0.22, 0.22, 1), color, "ArmR")
+		v.handR = piece(Vector3.new(0.3, 0.32, 0.32), Constants.WHITE, "HandR")
+		model.Parent = cam
+		view = v
+		anim.equipAt = os.clock()
+		return
+	end
 	v.grip = piece(Vector3.new(0.22, 0.6, 0.24), gripColor, "Grip", material)
 	v.upper = piece(Vector3.new(0.24, limbLen, 0.13), limbColor, "Upper", material)
 	v.lower = piece(Vector3.new(0.24, limbLen, 0.13), limbColor, "Lower", material)
@@ -290,6 +309,47 @@ local function placeView(dt)
 			reloadK = math.sin(math.min(1, f) * math.pi)
 		end
 	end
+	if view.blade then
+		-- the blade: held in the right hand, edge up and forward; a slash sweeps it from up right to down left
+		-- across the view, with a little lunge, then it comes back
+		local f = math.clamp((t - (anim.swingAt or -10)) / 0.32, 0, 1)
+		local sw = f < 1 and math.sin(f * math.pi) or 0 -- (out and back)
+		local arc = f < 1 and (f < 0.45 and ease(f / 0.45) or 1 - ease((f - 0.45) / 0.55) * 0.999) or 0
+		local pos = Vector3.new(0.6, -0.62, -1.5):Lerp(Vector3.new(-0.25, -0.4, -1.75), arc)
+			+ Vector3.new(
+				swayX * 0.35 - run * 0.1,
+				breathe - swayY * 0.35 - run * 0.15 - crouchK * 0.05 - landP,
+				-sw * 0.2
+			)
+		local bcf = cam.CFrame
+			* CFrame.new(bob)
+			* CFrame.new(pos)
+			* equipOff
+			* CFrame.Angles(
+				math.rad(35 - arc * 70 - run * 20 + swayY * 20),
+				math.rad(-15 + arc * 50 + run * 25 + swayX * 25),
+				math.rad(-25 + arc * 85 - tilt * 16 + swayX * 15)
+			)
+		-- (the blade points up and forward from the hand: along the grip's -Z, tipped up)
+		local up = bcf * CFrame.Angles(math.rad(60), 0, 0)
+		view.grip.CFrame = up
+		view.pommel.CFrame = up * L(0, 0, 0.45)
+		view.guard.CFrame = up * L(0, 0, -0.45)
+		view.edge.CFrame = up * L(0, 0, -1.35)
+		view.spine.CFrame = up * L(0, 0.15, -1.25)
+		view.tip.CFrame = up * L(0, 0, -2.25) * CFrame.Angles(math.rad(45), 0, 0)
+		view.handR.CFrame = up * L(0, 0, 0.05)
+		local function sleeve(part, from, shoulder)
+			local to = cam.CFrame * shoulder
+			part.Size = Vector3.new(part.Size.X, part.Size.Y, math.max(0.1, (to - from).Magnitude))
+			part.CFrame = CFrame.lookAt((from + to) / 2, to)
+		end
+		sleeve(view.armR, view.handR.Position, Vector3.new(0.95, -1.0, -0.55))
+		-- the left hand low and out of the way, swinging back a little as you slash
+		view.handL.CFrame = cam.CFrame * CFrame.new(-0.55 - sw * 0.1, -0.75 + bob.Y, -1.2) * equipOff
+		sleeve(view.armL, view.handL.Position, Vector3.new(-0.95, -1.05, -0.5))
+		return
+	end
 	local cross = view.cross
 	-- where the bow sits in front of you (camera space, studs): low on the right at rest; drawn, up just left of
 	-- the crosshair and nearly upright, the arrow along your aim. The crossbow is held level, a little right.
@@ -403,6 +463,9 @@ function WeaponController.startDraw()
 		return false
 	end
 	local w = weapon()
+	if w.melee then
+		return WeaponController.swing()
+	end
 	if w.key == "crossbow" then
 		WeaponController.release(true)
 		return true
@@ -418,6 +481,9 @@ end
 
 function WeaponController.release(instant)
 	local w = weapon()
+	if w.melee then
+		return false
+	end
 	if not instant and not drawing then
 		return false
 	end
@@ -459,6 +525,22 @@ function WeaponController.release(instant)
 	end
 	CameraController.shake(0.08 + charge * 0.12, 0.12)
 	Bus.Fired:Fire(w.key, charge)
+	return true
+end
+
+-- A slash with the blade: it swings at once; the server decides who it reaches
+function WeaponController.swing()
+	local w = weapon()
+	if not w.melee or not canShoot() or os.clock() - lastShot < w.cooldown then
+		return false
+	end
+	lastShot = os.clock()
+	local cam = workspace.CurrentCamera
+	local dir = cam and cam.CFrame.LookVector or Vector3.new(0, 0, -1)
+	Net.send("Swing", dir)
+	anim.swingAt = os.clock()
+	CameraController.shake(0.06, 0.1)
+	Bus.Fired:Fire(w.key, 1)
 	return true
 end
 
@@ -519,7 +601,12 @@ function WeaponController:init()
 		if processed or Store.phase() == "build" then
 			return
 		end
-		local map = { [Enum.KeyCode.One] = "bow", [Enum.KeyCode.Two] = "crossbow", [Enum.KeyCode.Three] = "heavy" }
+		local map = {
+			[Enum.KeyCode.One] = "bow",
+			[Enum.KeyCode.Two] = "crossbow",
+			[Enum.KeyCode.Three] = "heavy",
+			[Enum.KeyCode.Four] = "blade",
+		}
 		local key = map[input.KeyCode]
 		if key then
 			WeaponController.equip(key)
