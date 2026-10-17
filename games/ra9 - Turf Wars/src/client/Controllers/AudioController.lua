@@ -18,6 +18,8 @@ repeats exactly, and shaped with sound effects (reverb, EQ, distortion, chorus, 
   building     a clunk as you place a piece, a crunch where one comes down (3D)
   phases       a bright call at the build, the horn at FIGHT!, a riser and a doubled horn at the CHARGE, a tick each
                of the last 10 s (higher in the last 3), a victory or defeat stinger
+  fireworks    the win's show (fw_ cues, 3D): launches hissing, whistles climbing, bursts, crackles, and the finale's
+               deep boom with a long tail
   the menus    a soft click on every button, fainter still on hover
   ambience     a low wind under everything (Music)
 
@@ -259,6 +261,55 @@ local CUES = {
 		layers = {
 			{ c = "horn", v = 0.5, p = 0.6, fx = { "dull" } },
 			{ c = "kill", v = 0.35, p = 0.6, d = 0.2, fx = { "dull", "hall" } },
+		},
+	},
+	-- the win's fireworks (FireworksController, 3D where each goes off): a hissing launch, a whistle climbing, a
+	-- burst (lower for a bigger shell), the crackle of little pops after it, and the finale's giant gold shell: a
+	-- deep boom with a sub, a long rolling tail and the win chord ringing in the hall
+	fw_launch = {
+		group = "World",
+		layers = {
+			{ c = "rocket", v = 0.35, p = 1.5, r = 0.08, fx = { "air" } },
+			{ c = "shoot", v = 0.25, p = 0.7, r = 0.06 },
+		},
+	},
+	fw_whistle = {
+		group = "World",
+		layers = {
+			{ c = "whistle", v = 0.3, p = 1.3, r = 0.06, fx = { "air" } },
+			{ c = "whistle", v = 0.22, p = 1.6, d = 0.18, fx = { "air" } },
+			{ c = "whistle", v = 0.16, p = 1.95, d = 0.36, fx = { "air" } },
+		},
+	},
+	fw_burst = {
+		group = "World",
+		layers = {
+			{ c = "boom", v = 0.9, p = 0.8, r = 0.06, fx = { "hall" } },
+			{ c = "thud", v = 0.6, p = 0.6, r = 0.05, fx = { "punch" } },
+			{ c = "glass", v = 0.18, p = 1.8, d = 0.03 },
+		},
+	},
+	fw_crackle = {
+		group = "World",
+		layers = {
+			{ c = "tick", v = 0.3, p = 2.6, r = 0.1 },
+			{ c = "pop", v = 0.3, p = 2.2, r = 0.1, d = 0.06 },
+			{ c = "tick", v = 0.25, p = 3, r = 0.1, d = 0.12 },
+			{ c = "glass", v = 0.12, p = 3, d = 0.1 },
+			{ c = "pop", v = 0.25, p = 2.6, r = 0.1, d = 0.19 },
+			{ c = "tick", v = 0.2, p = 3.4, r = 0.1, d = 0.26 },
+		},
+	},
+	fw_finale = {
+		group = "Stinger",
+		layers = {
+			{ c = "boom", v = 1, p = 0.32, fx = { "sub", "hall" } },
+			{ c = "thud", v = 1, p = 0.3, fx = { "punch" } },
+			{ c = "rocket", v = 0.5, p = 0.35, fx = { "sub" } },
+			{ c = "glass", v = 0.3, p = 0.6, d = 0.04 },
+			{ c = "wind", v = 0.45, p = 0.5, d = 0.1, fx = { "dull" } },
+			{ c = "boom", v = 0.6, p = 0.5, d = 0.14, fx = { "hall" } },
+			{ c = "win", v = 0.45, p = 0.8, d = 0.3, fx = { "chorus", "hall" } },
 		},
 	},
 	-- the menus

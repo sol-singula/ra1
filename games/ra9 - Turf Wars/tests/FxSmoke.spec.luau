@@ -3,7 +3,8 @@ Kill effects (FX/KillEffects): every shape plays on the mock engine without an e
 cleans every one of them up; every kill effect in the catalogue plays; the ones that carry a body move it and take
 it away; a time scale slows them; a Kill message plays the killer's effect where the victim fell (KillFxController),
 and in the victim's own kill cam it's the cam's to play, slowed, on their stand-in (never twice); the shop's
-cards play their items themselves (UI/ItemPreview), a few at once, and stop when the panel closes.
+cards play their items themselves (UI/ItemPreview), a few at once, and stop when the panel closes; the win's
+fireworks play all three acts (the giant gold finale too), stay under the cap on low graphics and clean up.
 
   luaurun tests/FxSmoke.spec.luau
 ]]
@@ -376,6 +377,119 @@ do
 			Banner.banner() == nil and not (f and f.Parent and f.Parent:FindFirstChild("Flourish"))
 		)
 	end
+end
+
+-- the win's fireworks (FireworksController): a show in three acts, the volley, the main show with every kind of
+-- shell and its crackle, and the finale's barrage ending in the giant gold shell (a flash, the boom, the arena lit);
+-- on low graphics fewer of everything and never past the cap; the camera tilts up to watch and back down (not with
+-- Reduced Motion); and once it's over every piece, light and the flash are gone
+do
+	local Fireworks = Engine.require(tree.client.Controllers.FireworksController)
+	local Audio = Engine.require(tree.client.Controllers.AudioController)
+	local Gfx = Engine.require(tree.client.Controllers.GraphicsController)
+	local Constants = Engine.require(tree.shared.Constants)
+	local GuiService = Engine.globals.game:GetService("GuiService")
+	local cam = ws.CurrentCamera
+	local pg = player:FindFirstChild("PlayerGui")
+	local function inFolder()
+		local f = ws:FindFirstChild("Fireworks")
+		return f and #f:GetChildren() or 0
+	end
+	local function pitch()
+		return math.deg(math.asin(cam.CFrame.LookVector.Y))
+	end
+	local function run(tier)
+		Gfx.apply(tier)
+		Fireworks.stop()
+		cam.CFrame = CFrame.lookAt(Vector3.new(0, 5, 0), Vector3.new(0, 5, -10)) -- (looking level)
+		local p0 = pitch()
+		local r = { acts = {}, peak = 0, tilt = 0, lit = false, flash = false, sounds = {} }
+		local cues = { "fw_launch", "fw_whistle", "fw_burst", "fw_crackle", "fw_finale" }
+		local before = {}
+		for _, c in cues do
+			before[c] = Audio.count(c)
+		end
+		Fireworks.show(Vector3.new(0, 0, 40), Constants.TEAM_COLOR.blue, { radius = 40 })
+		for _ = 1, (Constants.FIREWORKS_SECONDS + 5) * 10 do
+			Engine.advance(0.1)
+			local a = Fireworks.act()
+			if a then
+				r.acts[a] = true
+			end
+			r.peak = math.max(r.peak, Fireworks.count())
+			r.tilt = math.max(r.tilt, pitch() - p0)
+			local f = ws:FindFirstChild("Fireworks")
+			for _, d in f and f:GetChildren() or {} do
+				local l = d.Name == "FwLight" and d:FindFirstChildWhichIsA("PointLight")
+				r.lit = r.lit or (l and (l.Brightness or 0) > 0) or false
+			end
+			r.flash = r.flash or (pg and pg:FindFirstChild("FireworksFlash") ~= nil) or false
+		end
+		for _, c in cues do
+			r.sounds[c] = Audio.count(c) - before[c]
+		end
+		r.stats = Fireworks.stats()
+		r.back = math.abs(pitch() - p0)
+		r.cap = Fireworks.cap()
+		return r
+	end
+
+	local hi = run("high")
+	local st = hi.stats
+	check(
+		"fireworks: all three acts play",
+		hi.acts.volley and hi.acts.main and hi.acts.finale,
+		`{hi.acts.volley} {hi.acts.main} {hi.acts.finale}`
+	)
+	check("...the opening volley: rockets in waves", st.volley >= 12, st.volley)
+	local kinds = 0
+	for _ in st.types do
+		kinds += 1
+	end
+	check("...the main show: big shells of every kind", st.main >= 12 and kinds == 5, `{st.main} {kinds}`)
+	check("...each with a crackle after", st.crackles >= st.main * 0.8, `{st.crackles} {st.main}`)
+	check("...the finale: a barrage", st.barrage >= 15, st.barrage)
+	check("...ending in the giant gold shell, with a flash", st.giant and st.flash and hi.flash)
+	check("...the arena lit up by the bursts", hi.lit)
+	check(
+		"...and heard: launches, whistles, bursts, crackles, the finale's boom",
+		hi.sounds.fw_launch > 0
+			and hi.sounds.fw_whistle > 0
+			and hi.sounds.fw_burst > 0
+			and hi.sounds.fw_crackle > 0
+			and hi.sounds.fw_finale == 1,
+		`{hi.sounds.fw_launch} {hi.sounds.fw_whistle} {hi.sounds.fw_burst} {hi.sounds.fw_crackle} {hi.sounds.fw_finale}`
+	)
+	check("...the sky full (many pieces at once)", hi.peak > 150, hi.peak)
+	check("...the camera tilts up to watch", hi.tilt > 6, hi.tilt)
+	check("...and back down at the end", hi.back < 1, hi.back)
+	check(
+		"...all cleaned up after",
+		not Fireworks.active()
+			and Fireworks.count() == 0
+			and inFolder() == 0
+			and not pg:FindFirstChild("FireworksFlash"),
+		`{Fireworks.count()} {inFolder()}`
+	)
+
+	local lo = run("low")
+	check("fireworks on low graphics: still all three acts and the giant shell", lo.stats.giant and lo.acts.volley)
+	check("...never past the cap", lo.peak <= lo.cap.live and lo.stats.peak <= lo.cap.live, `{lo.peak} {lo.cap.live}`)
+	check("...far fewer than on high", lo.peak < hi.peak * 0.6, `{lo.peak} {hi.peak}`)
+	check("...all cleaned up after", Fireworks.count() == 0 and inFolder() == 0)
+
+	GuiService.ReducedMotionEnabled = true
+	local calm = run("high")
+	check("with Reduced Motion the camera stays put", calm.tilt < 0.01 and calm.stats.giant, calm.tilt)
+	GuiService.ReducedMotionEnabled = false
+	Gfx.apply(nil)
+
+	-- the old call (the match's victory) and stopping a show part way (the tutorial's skip)
+	Fireworks.start("red")
+	Engine.advance(1)
+	check("FireworksController.start(team) still plays", Fireworks.active() and Fireworks.count() > 0)
+	Fireworks.stop()
+	check("...and stop() clears it at once", not Fireworks.active() and Fireworks.count() == 0 and inFolder() == 0)
 end
 
 check("no script errors", #Engine.errors == errors0, Engine.errors[#Engine.errors])
