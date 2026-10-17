@@ -25,6 +25,17 @@ Constants.VICTORY_SECONDS = 27 -- fireworks, the results, then the countdown to 
 Constants.TRANSITION_SECONDS = 3 -- ...and the next map loads: 30 s from the win to the next build phase
 Constants.RESULTS_CARD_SECONDS = 12 -- the results card stays this long; the countdown shows after it
 Constants.FIREWORKS_SECONDS = 14 -- fireworks in the winners' colour all over the arena
+-- A NO on "are you liking the game?" must say why: one or more of these (the analytics keep the keys)
+Constants.FEEDBACK_REASONS = {
+	{ key = "hard", text = "Too hard / I die too fast", icon = "💀" },
+	{ key = "confusing", text = "Didn't know what to do", icon = "❓" },
+	{ key = "lag", text = "Laggy / low FPS", icon = "🐢" },
+	{ key = "controls", text = "Controls feel bad", icon = "🎮" },
+	{ key = "boring", text = "Boring / not much to do", icon = "😴" },
+	{ key = "unfair", text = "Unfair teams or bots", icon = "⚖️" },
+	{ key = "bugs", text = "Bugs / got stuck", icon = "🐛" },
+	{ key = "pay", text = "Too much to buy", icon = "💸" },
+}
 Constants.FEEDBACK_ASK_DELAY = 6 -- seconds after a win before a winner is asked anything (after the fireworks start)
 Constants.MIN_PLAYERS_TO_SCORE = 2 -- with fewer, phases still run (practice) but nobody can win
 Constants.WATCHDOG_SECONDS = 45 * 60 -- a match this long is logged as stalled and restarted (never "won")

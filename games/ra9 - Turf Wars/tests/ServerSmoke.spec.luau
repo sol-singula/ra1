@@ -785,7 +785,8 @@ local mAsk = mark()
 Engine.advance(Constants.FEEDBACK_ASK_DELAY + 0.3)
 local ask = firedSince(mAsk, "Ask", red)
 check("the winners are asked if they like the game", ask and ask.args[1].kind == "enjoy")
-check("...the losers aren't", firedSince(mAsk, "Ask", blue) == nil)
+local askLoser = firedSince(mAsk, "Ask", blue)
+check("...the losers too (the ones who'd say why not)", askLoser and askLoser.args[1].kind == "enjoy")
 local mThanks = mark()
 send(red, "Feedback", "enjoy", true)
 check("the answer is kept", Data:Get(red).feedback.answer == true and Data:Get(red).feedback.pendingLike == true)
@@ -880,7 +881,15 @@ do
 	local nay = service("FeedbackService")
 	nay:Ask(blue, "enjoy")
 	send(blue, "Feedback", "enjoy", false)
-	check("a NO gets the Thank-You Trail too", Data:Get(blue).extras.thanks == true)
+	check("a NO without a reason isn't taken (they must say why)", not (Data:Get(blue).extras or {}).thanks)
+	send(blue, "Feedback", "enjoy", false, { "made_up" })
+	check("...nor with only a made-up one", not (Data:Get(blue).extras or {}).thanks)
+	send(blue, "Feedback", "enjoy", false, { "hard", "lag" })
+	check(
+		"a NO with its reasons is taken, kept, and gets the Thank-You Trail too",
+		Data:Get(blue).extras.thanks == true and Data:Get(blue).feedback.reasons[2] == "lag",
+		`{tostring(Data:Get(blue).extras.thanks)} {table.concat(Data:Get(blue).feedback.reasons or {}, ",")}`
+	)
 	-- the trail rides on their arrows
 	Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + Constants.BUILD_SECONDS + 1.5)
 	local m7 = mark()

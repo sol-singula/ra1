@@ -239,9 +239,9 @@ check(
 	#events("purchase", ava) == 1 and events("purchase", ava)[1].data.robux == 49
 )
 check(
-	"the winners' card: asked, then feedback, liked",
+	"the card after the match: winners and losers asked, then feedback, liked",
 	#events("feedback_asked", red) == 1
-		and #events("feedback_asked", blue) == 0
+		and #events("feedback_asked", blue) == 1
 		and #events("feedback", red) == 1
 		and events("feedback", red)[1].data.like == true
 )

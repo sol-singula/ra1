@@ -492,15 +492,18 @@ function AnalyticsService:Init(registry)
 	feedback.Asked:Connect(function(player, kind)
 		track(player, "feedback_asked", { kind = kind, minutes = math.floor((seconds(player) or 0) / 6) / 10 })
 	end)
-	feedback.Answered:Connect(function(player, kind, answer)
+	feedback.Answered:Connect(function(player, kind, answer, reasons)
 		local s = sessions[player]
 		if kind == "enjoy" then
 			track(player, "feedback", {
 				like = answer == true,
+				reasons = reasons,
 				minutes = math.floor((seconds(player) or 0) / 6) / 10,
 				matches = s and s.totals.matches or nil,
 				wins = s and s.totals.wins or nil,
 				kills = s and s.totals.kills or nil,
+				deaths = s and s.totals.deaths or nil,
+				fps = s and s.fps or nil,
 				device = s and s.device or nil,
 			})
 		else
@@ -557,7 +560,21 @@ function AnalyticsService:Init(registry)
 				end
 			end
 			track(player, "ui", payload)
-		elseif kind == "perf" or kind == "focus" then
+		elseif kind == "perf" then
+			-- (the client's frame rate: kept for the snapshots and the session summary, and logged)
+			if
+				type(payload.fps) == "number"
+				and payload.fps == payload.fps
+				and payload.fps >= 0
+				and payload.fps < 1000
+			then
+				s.fps = math.floor(payload.fps * 10 + 0.5) / 10
+				s.fpsLow = type(payload.low) == "number" and math.floor(payload.low) or nil
+				s.fpsSum = (s.fpsSum or 0) + s.fps
+				s.fpsN = (s.fpsN or 0) + 1
+			end
+			track(player, kind, payload)
+		elseif kind == "focus" then
 			track(player, kind, payload)
 		end
 	end)
@@ -617,6 +634,8 @@ function AnalyticsService:Live(player)
 		team = teams:Team(player),
 		phase = match:Phase(),
 		map = map,
+		fps = s.fps,
+		fps_low = s.fpsLow,
 		kills = s.match.kills,
 		deaths = s.match.deaths,
 		assists = s.match.assists,
@@ -735,6 +754,8 @@ function AnalyticsService:_end(player, profile, reason)
 	summary.deaths_session = s.totals.deaths
 	summary.built_session = s.totals.built
 	summary.shots_session = s.totals.shots
+	summary.fps_avg = s.fpsN and math.floor(s.fpsSum / s.fpsN * 10 + 0.5) / 10 or nil
+	summary.fps_low = s.fpsLow
 	for _, k in { "wins", "ladder", "tier", "shards", "kills", "deaths", "built", "matches", "mvps", "robux" } do
 		summary[k .. "_gained"] = (summary[k] or 0) - (start[k] or 0)
 	end

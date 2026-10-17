@@ -1141,13 +1141,10 @@ S.web = function(fx)
 		table.insert(anchors, center + Vector3.new(math.cos(a) * 14, rng:NextNumber(4, 12), math.sin(a) * 14))
 	end
 	for _, a in anchors do
-		table.insert(
-			strands,
-			{
-				from = a,
-				part = fx:part(Vector3.new(0.12, 0.12, 0.1), WHITE, { material = Enum.Material.SmoothPlastic }),
-			}
-		)
+		table.insert(strands, {
+			from = a,
+			part = fx:part(Vector3.new(0.12, 0.12, 0.1), WHITE, { material = Enum.Material.SmoothPlastic }),
+		})
 	end
 	-- the cocoon: rings of web wrapping round them
 	local wraps = {}

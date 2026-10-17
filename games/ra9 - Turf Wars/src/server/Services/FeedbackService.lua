@@ -1,7 +1,9 @@
 --[[
-Asking the winners (only ever right after a win, while the fireworks are going, never mid-fight):
+Asking the players (only ever right after a match, while the fireworks are going, never mid-fight; winners and
+losers alike, the like card only for winners):
 
-  * "Are you liking the game?" YES / NO: at most once a day (UTC) per player.
+  * "Are you liking the game?" YES / NO: at most once a day (UTC) per player. A NO must say why: one or more of
+    Constants.FEEDBACK_REASONS (the card won't send without one).
   * Said YES? Then on their NEXT win they're asked for a like: "Give the game a 👍 Like". Roblox doesn't let a game
     press the like button for you, so the card asks, and its button offers Roblox's own favourite prompt (the one
     thing a game can open). Asked for a like once; never again after that.
@@ -14,7 +16,7 @@ and how the like card went. FEEDBACK_ASK_DELAY seconds after the win, so it land
 doesn't cover the results.
 
   Net "Ask" { kind = "enjoy" | "like" }          server -> client
-  Net "Feedback" ("enjoy", yes) | ("like", "ok" | "later")
+  Net "Feedback" ("enjoy", true) | ("enjoy", false, { reason keys }) | ("like", "ok" | "later")
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -83,18 +85,23 @@ function FeedbackService:Ask(player, kind)
 	return true
 end
 
--- After a win: each winner still here, a moment later.
+-- After a match: everyone who played it, a moment later (the losers too: they're the ones who'd say why not).
+-- The like card only ever goes to a winner.
 function FeedbackService:AfterWin(winner)
 	local list = {}
 	for _, p in Players:GetPlayers() do
-		if teams:Team(p) == winner then
+		if teams:Team(p) ~= nil then
 			table.insert(list, p)
 		end
 	end
 	task.delay(Constants.FEEDBACK_ASK_DELAY, function()
 		for _, p in list do
 			if p.Parent and match:Phase() == "victory" then
-				self:Ask(p, self:Pick(p))
+				local kind = self:Pick(p)
+				if kind == "like" and teams:Team(p) ~= winner then
+					kind = nil -- (a like ask after a loss would land badly: their next win)
+				end
+				self:Ask(p, kind)
 			end
 		end
 	end)
@@ -109,7 +116,7 @@ function FeedbackService:Thank(player)
 	return true
 end
 
-function FeedbackService:Answer(player, kind, answer)
+function FeedbackService:Answer(player, kind, answer, reasons)
 	if outstanding[player] ~= kind then
 		return false -- (only the card they were shown)
 	end
@@ -119,12 +126,31 @@ function FeedbackService:Answer(player, kind, answer)
 		return false
 	end
 	if kind == "enjoy" and type(answer) == "boolean" then
+		-- (a NO must say why: one or more of Constants.FEEDBACK_REASONS; without one the card stays up)
+		local why
+		if answer == false then
+			why = {}
+			local valid = {}
+			for _, r in Constants.FEEDBACK_REASONS do
+				valid[r.key] = true
+			end
+			for _, k in type(reasons) == "table" and reasons or {} do
+				if type(k) == "string" and valid[k] and not table.find(why, k) then
+					table.insert(why, k)
+				end
+			end
+			if #why == 0 then
+				outstanding[player] = kind
+				return false
+			end
+			f.reasons = why
+		end
 		f.answer = answer
 		f.yes = (f.yes or 0) + (answer and 1 or 0)
 		f.no = (f.no or 0) + (answer and 0 or 1)
 		-- liking it and never asked for a like: ask on the next win
 		f.pendingLike = answer == true and f.likeAskedDay == 0
-		self.Answered:Fire(player, kind, answer)
+		self.Answered:Fire(player, kind, answer, why)
 		self:Thank(player)
 		return true
 	elseif kind == "like" and (answer == "ok" or answer == "later") then
@@ -141,8 +167,8 @@ function FeedbackService:Init(registry)
 	teams = registry.TeamService
 	match = registry.MatchService
 	progress = registry.ProgressService
-	Net.on("Feedback", function(player, kind, answer)
-		self:Answer(player, kind, answer)
+	Net.on("Feedback", function(player, kind, answer, reasons)
+		self:Answer(player, kind, answer, reasons)
 	end)
 	match.Ended:Connect(function(winner)
 		self:AfterWin(winner)

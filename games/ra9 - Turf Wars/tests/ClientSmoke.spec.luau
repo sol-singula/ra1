@@ -1317,7 +1317,34 @@ do
 	local enjoy = Feedback.show("enjoy")
 	tidy("the question card", enjoy)
 	fit("the question card", enjoy)
-	Feedback.answer(true) -- (closes it)
+	-- a NO must say why: the reasons card, SEND only once one is ticked
+	Feedback.answer(false)
+	check(
+		"NO opens WHAT WAS WRONG? (not sent yet)",
+		Feedback.current() == "why" and enjoy:FindFirstChild("Send") ~= nil
+	)
+	tidy("the reasons card", enjoy)
+	fit("the reasons card", enjoy)
+	check(
+		"...a chip for every reason",
+		enjoy:FindFirstChild("Reason_hard") ~= nil and enjoy:FindFirstChild("Reason_pay") ~= nil
+	)
+	check("...SEND does nothing with none ticked", not Feedback.send() and Feedback.current() == "why")
+	Feedback.toggle("lag")
+	Feedback.toggle("controls")
+	Feedback.toggle("controls")
+	check("...ticked reasons show", enjoy.Reason_lag.TextColor3 ~= enjoy.Reason_hard.TextColor3 and enjoy.Send.Active)
+	check("...SEND sends the NO with its reasons", Feedback.send() and Feedback.current() == nil)
+	local sent = Engine.lastClientEvent("Feedback")
+	check(
+		"...as ('enjoy', false, { 'lag' })",
+		sent
+			and sent.args[2] == false
+			and type(sent.args[3]) == "table"
+			and sent.args[3][1] == "lag"
+			and #sent.args[3] == 1,
+		sent and tostring(sent.args[1])
+	)
 	Engine.advance(Constants.RESULTS_CARD_SECONDS + 7)
 	refs.countdown.Visible = true
 	L = corners()

@@ -1,7 +1,8 @@
 --[[
 The winners' cards (FeedbackService decides who and when):
 
-  "enjoy"  ARE YOU LIKING THE GAME?   YES 👍 / NO 👎
+  "enjoy"  ARE YOU LIKING THE GAME?   YES 👍 / NO 👎   (NO: then WHAT WAS WRONG? tick one or more of
+           Constants.FEEDBACK_REASONS; SEND only works once one is ticked)
   "like"   Give the game a 👍 Like on its page: it really helps.   ⭐ FAVOURITE / LATER
            (Roblox doesn't let a game press its like button; FAVOURITE opens Roblox's own favourite prompt)
 
@@ -15,6 +16,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
+local Constants = require(ReplicatedStorage.Shared.Constants)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -36,11 +38,19 @@ local function close()
 	current = nil
 end
 
+local picked -- the reasons ticked on the NO card: { [key] = true }
+local showReasons -- (set below)
+
 function FeedbackController.answer(value)
 	if not current then
 		return false
 	end
 	local kind = current
+	if kind == "enjoy" and value == false then
+		-- (a NO says why first: the reasons card, which won't send without one)
+		showReasons()
+		return true
+	end
 	if kind == "like" and value == "ok" then
 		pcall(function()
 			game:GetService("AvatarEditorService"):PromptSetFavorite(game.PlaceId, Enum.AvatarItemType.Asset, true)
@@ -132,6 +142,123 @@ function FeedbackController.show(kind)
 	return card
 end
 
+-- The NO card's second step: tick one or more reasons, then SEND (greyed out until one is ticked).
+showReasons = function()
+	if not card then
+		return
+	end
+	current = "why"
+	picked = {}
+	local reasons = Constants.FEEDBACK_REASONS
+	local rows = math.ceil(#reasons / 2)
+	for _, ch in card:GetChildren() do
+		if ch:IsA("GuiObject") then
+			ch:Destroy()
+		end
+	end
+	card.Size = UDim2.fromOffset(460, 104 + rows * 44 + 58)
+	Theme.title({
+		Text = "WHAT WAS WRONG?",
+		Size = UDim2.new(1, -20, 0, 30),
+		Position = UDim2.fromOffset(10, 14),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = C.ink,
+		outline = false,
+		Parent = card,
+	})
+	Theme.text({
+		Text = "Pick one or more. We read every answer and fix what you tell us.",
+		Size = UDim2.new(1, -20, 0, 24),
+		Position = UDim2.fromOffset(10, 48),
+		fit = 14,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = C.muted,
+		Parent = card,
+	})
+	local send
+	local function paintSend()
+		local any = next(picked) ~= nil
+		send.Active = any
+		send.AutoButtonColor = any
+		send.BackgroundColor3 = any and C.ink or Color3.fromRGB(205, 205, 210)
+		send.Text = any and "SEND" or "PICK AT LEAST ONE"
+	end
+	for i, r in reasons do
+		local col, row = (i - 1) % 2, (i - 1) // 2
+		local b = Theme.new("TextButton", {
+			Name = "Reason_" .. r.key,
+			Position = UDim2.fromOffset(12 + col * 222, 82 + row * 44),
+			Size = UDim2.fromOffset(214, 38),
+			BackgroundColor3 = C.white,
+			Text = `{r.icon}  {r.text}`,
+			Font = Theme.Body,
+			TextSize = 13,
+			TextWrapped = true,
+			TextColor3 = C.ink,
+			AutoButtonColor = true,
+			Modal = true,
+			Parent = card,
+		}, { Theme.corner(4), Theme.stroke(2, C.ink) })
+		b.Activated:Connect(function()
+			FeedbackController.toggle(r.key)
+		end)
+	end
+	send = Theme.new("TextButton", {
+		Name = "Send",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 82 + rows * 44 + 8),
+		Size = UDim2.fromOffset(220, 42),
+		Font = Theme.Display,
+		TextSize = 16,
+		TextColor3 = C.white,
+		Modal = true,
+		Parent = card,
+	}, { Theme.corner(4) })
+	send.Activated:Connect(function()
+		FeedbackController.send()
+	end)
+	FeedbackController._paint = function()
+		for _, r in reasons do
+			local b = card and card:FindFirstChild("Reason_" .. r.key)
+			if b then
+				local on = picked[r.key] == true
+				b.BackgroundColor3 = on and C.ink or C.white
+				b.TextColor3 = on and C.white or C.ink
+			end
+		end
+		paintSend()
+	end
+	paintSend()
+end
+
+-- Tick or untick a reason on the NO card.
+function FeedbackController.toggle(key)
+	if current ~= "why" or not picked then
+		return false
+	end
+	picked[key] = not picked[key] or nil
+	if FeedbackController._paint then
+		FeedbackController._paint()
+	end
+	return true
+end
+
+-- Send the NO with its reasons (nothing happens until at least one is ticked).
+function FeedbackController.send()
+	if current ~= "why" or not picked or next(picked) == nil then
+		return false
+	end
+	local list = {}
+	for _, r in Constants.FEEDBACK_REASONS do
+		if picked[r.key] then
+			table.insert(list, r.key)
+		end
+	end
+	Net.send("Feedback", "enjoy", false, list)
+	close()
+	return true
+end
+
 function FeedbackController.current()
 	return current, card
 end
@@ -144,7 +271,7 @@ function FeedbackController:init()
 		end
 	end)
 	UserInputService.InputBegan:Connect(function(input, processed)
-		if processed or not current then
+		if processed or not current or current == "why" then
 			return
 		end
 		if input.KeyCode == Enum.KeyCode.Y then
@@ -159,8 +286,8 @@ function FeedbackController:init()
 		end
 	end)
 	Store.Changed:Connect(function(partial)
-		if partial.match and partial.match.phase ~= "victory" and current then
-			close() -- (the next game started: no answer)
+		if partial.match and partial.match.phase ~= "victory" and current and current ~= "why" then
+			close() -- (the next game started: no answer; a NO already given waits for its reasons)
 		end
 	end)
 end
