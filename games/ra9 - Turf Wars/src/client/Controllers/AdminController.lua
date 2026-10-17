@@ -569,7 +569,7 @@ local function meTab(body)
 	label(
 		body,
 		"Help",
-		"WASD to fly, the mouse to look, Shift to go fast, Q and E to go down and up. F to follow a player, the arrow keys for the next one. On a phone: drag to look, hold FLY.",
+		"WASD to fly, the mouse to look, Space to go up, Shift to go down, Ctrl to go fast. F to follow a player, the arrow keys for the next one. On a phone: drag to look, hold FLY.",
 		0,
 		y,
 		W,

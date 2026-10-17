@@ -7,13 +7,16 @@ turn off, and the sensitivity setting. Other controllers add their own offsets t
 The mouse: hidden in play (the HUD draws the crosshair), shown and free while a menu needs it: the panel (shop,
 pass, locker, goals), a question card, the results card (once it closes, the wait for the next game is free running
 about, so the mouse goes back to the camera). CameraController.mouseFree() says which; the bow and the build
-tray don't fire while it's true, so a click in the shop is only a click in the shop.
+tray don't fire while it's true, so a click in the shop is only a click in the shop. Once a menu closes the lock is
+put back every frame (Roblox can show the cursor again on its own), and a Modal button left inside a closed panel
+stops being Modal (a Modal button keeps the cursor out even when its panel is hidden) until the panel is back.
 
 Cinematics (the tutorial): CameraController.takeover(fn) hands the camera to fn(camera, dt), called every frame
 instead of the first-person lock (the camera goes Scriptable; shakes still play on top). CameraController.release(look)
 gives it back: Custom again, on your character, locked first person, looking along `look` (or where you face).
 
   CameraController.takeover(fn)   CameraController.release(look?)   CameraController.takenOver() -> bool
+  CameraController.parked()       { [button] = true }: Modal buttons switched off while their panel is hidden
 ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -72,6 +75,51 @@ local function setMouse(free)
 		UserInputService.MouseBehavior = free and Enum.MouseBehavior.Default or Enum.MouseBehavior.LockCenter
 	end)
 	mouseShown = free
+end
+
+-- Modal buttons inside something hidden: not Modal while hidden, Modal again once shown
+local parked = {} -- [button] = true
+local nextScan = 0
+
+local function shown(gui)
+	local g = gui
+	while g and g:IsA("GuiObject") do
+		if g.Visible == false then
+			return false
+		end
+		g = g.Parent
+	end
+	return not (g and g:IsA("ScreenGui") and g.Enabled == false)
+end
+
+local function parkModals(force)
+	local t = os.clock()
+	if not force and t < nextScan then
+		return
+	end
+	nextScan = t + 0.25
+	local pg = player:FindFirstChild("PlayerGui")
+	if not pg then
+		return
+	end
+	for b in parked do
+		if not b.Parent then
+			parked[b] = nil
+		elseif shown(b) then
+			b.Modal = true
+			parked[b] = nil
+		end
+	end
+	for _, d in pg:GetDescendants() do
+		if d:IsA("GuiButton") and d.Modal and not shown(d) then
+			d.Modal = false
+			parked[d] = true
+		end
+	end
+end
+
+function CameraController.parked()
+	return parked
 end
 
 -- Cinematics ---------------------------------------------------------------------------------------------------
@@ -137,9 +185,8 @@ local function step(dt)
 	end
 	if driver then
 		local free = CameraController.mouseFree()
-		if free or mouseShown ~= free then
-			setMouse(free)
-		end
+		parkModals(mouseShown ~= free)
+		setMouse(free)
 		local fn = driver
 		local ok, err = pcall(fn, cam, dt)
 		if not ok then
@@ -157,9 +204,8 @@ local function step(dt)
 		player.CameraMode = Enum.CameraMode.LockFirstPerson
 	end)
 	local free = CameraController.mouseFree()
-	if free or mouseShown ~= free then
-		setMouse(free)
-	end
+	parkModals(mouseShown ~= free)
+	setMouse(free)
 	fov += (CameraController.targetFov() - fov) * math.min(1, dt * 10)
 	cam.FieldOfView = fov
 	local extra = CFrame.new()

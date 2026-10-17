@@ -555,6 +555,16 @@ do
 	Spectate.step(0.5)
 	Engine.keysDown[Enum.KeyCode.W] = nil
 	check("...W flies it", (ws.CurrentCamera.CFrame.Position - p0).Magnitude > 5)
+	local y0 = ws.CurrentCamera.CFrame.Position.Y
+	Engine.keysDown[Enum.KeyCode.Space] = true
+	Spectate.step(0.5)
+	Engine.keysDown[Enum.KeyCode.Space] = nil
+	local y1 = ws.CurrentCamera.CFrame.Position.Y
+	check("...Space goes up", y1 > y0 + 5, `{y0} -> {y1}`)
+	Engine.keysDown[Enum.KeyCode.LeftShift] = true
+	Spectate.step(0.5)
+	Engine.keysDown[Enum.KeyCode.LeftShift] = nil
+	check("...Shift goes down", ws.CurrentCamera.CFrame.Position.Y < y1 - 5)
 	local t = Spectate.follow(nil)
 	Spectate.step(0.1)
 	check("FOLLOW: behind a player", t ~= nil and Spectate.mode() == "follow" and t ~= me)

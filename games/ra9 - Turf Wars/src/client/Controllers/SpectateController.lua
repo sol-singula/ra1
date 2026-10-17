@@ -2,7 +2,7 @@
 The spectator camera, for an admin watching unseen (the "Spectating" attribute the server sets on you: you have no
 body then). Two ways to watch:
 
-  free     fly anywhere: WASD to move, the mouse to look, Shift to go fast, Q / E down / up (on a phone: drag to
+  free     fly anywhere: WASD to move, the mouse to look, Space up, Shift down, Ctrl to go fast (on a phone: drag to
            look, hold FLY to go where you look)
   follow   behind a player, a little above (third person); ◀ ▶ (or the arrow keys) for the next one, F to switch
 
@@ -202,15 +202,15 @@ function SpectateController.step(dt)
 		if key(Enum.KeyCode.A) then
 			move -= rot.RightVector
 		end
-		if key(Enum.KeyCode.E) then
+		if key(Enum.KeyCode.Space) or key(Enum.KeyCode.E) then
 			move += Vector3.new(0, 1, 0)
 		end
-		if key(Enum.KeyCode.Q) then
+		if key(Enum.KeyCode.LeftShift) or key(Enum.KeyCode.RightShift) or key(Enum.KeyCode.Q) then
 			move -= Vector3.new(0, 1, 0)
 		end
 	end
 	if move.Magnitude > 0.01 then
-		local speed = key(Enum.KeyCode.LeftShift) and FAST or SPEED
+		local speed = (key(Enum.KeyCode.LeftControl) or key(Enum.KeyCode.RightControl)) and FAST or SPEED
 		pos += move.Unit * speed * dt
 	end
 	cam.CFrame = CFrame.new(pos) * rot

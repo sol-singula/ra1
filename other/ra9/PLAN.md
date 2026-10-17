@@ -382,6 +382,17 @@ as done), once, replayable from GOALS → HOW TO PLAY → REPLAY. `TutorialContr
 New `tests/TutorialSmoke.spec.luau` (121 checks) plays it through on the mock engine. The other suites turn the
 tutorial off (`Constants.TUTORIAL = false`): their players stand for people who know the game.
 
+## Round 11: fly controls, the cursor, better light
+
+* **Admin fly:** Space goes up, Shift goes down, Ctrl goes fast (Q / E still work).
+* **The cursor after a menu:** once a menu closes, the camera puts the mouse lock back every frame, and a Modal
+  button inside a closed panel stops being Modal until the panel is shown again (a Modal button kept the cursor out
+  even when its panel was hidden).
+* **Graphics tiers** (`GraphicsController`, client only): a PC or console on graphics level 8+ (or Automatic) gets a
+  soft bloom on the neon (threshold high, so the white world stays white), faint sun rays, a little far haze, crisper
+  shadows and shinier surfaces; levels 4-7 a lighter bloom; phones and levels 1-3 nothing added. It follows the
+  graphics slider live and goes back on after each map load.
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

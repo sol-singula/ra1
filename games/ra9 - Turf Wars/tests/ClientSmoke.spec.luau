@@ -206,6 +206,57 @@ do
 	Layout.setPanel(false)
 	Engine.advance(0.1)
 	check("menu closed: the mouse hides again", UIS.MouseIconEnabled == false and not CamC.mouseFree())
+	-- the shop panel for real: once closed its Modal ✕ lets go, and the cursor stays hidden even if Roblox shows it
+	local PanelC = Engine.require(tree.client.Controllers.PanelController)
+	PanelC.open()
+	Engine.advance(0.5)
+	local x = PanelC.refs and PanelC.refs.close
+	check("the shop open: the mouse shows", UIS.MouseIconEnabled == true and (x == nil or x.Modal == true))
+	PanelC.close()
+	Engine.advance(0.5)
+	check(
+		"...closed: its Modal button lets go",
+		x == nil or (x.Modal == false and CamC.parked()[x] == true),
+		x and `{x.Modal} {CamC.parked()[x]} {x.Visible} {x.Parent and x.Parent.Name} {x:IsA("GuiButton")}`
+	)
+	UIS.MouseIconEnabled = true
+	UIS.MouseBehavior = Enum.MouseBehavior.Default
+	Engine.advance(0.1)
+	check(
+		"...and the cursor is put away again",
+		UIS.MouseIconEnabled == false and UIS.MouseBehavior == Enum.MouseBehavior.LockCenter
+	)
+	PanelC.open()
+	Engine.advance(0.5)
+	check("...open again: Modal again", x == nil or x.Modal == true)
+	PanelC.close()
+	Engine.advance(0.5)
+end
+-- graphics: more on a PC that can take it, nothing added on a phone
+do
+	local Gfx = Engine.require(tree.client.Controllers.GraphicsController)
+	local Dev = Engine.require(tree.client.UI.Device)
+	local L = Engine.game:GetService("Lighting")
+	local was = Dev.kind()
+	Dev.set("touch")
+	check("a phone: nothing added", Gfx.tier() == "low" and not L:FindFirstChild("TW_Bloom"), Gfx.tier())
+	Dev.set("keyboard")
+	check("a PC: the high tier", Gfx.tier() == "high", Gfx.tier())
+	check(
+		"...bloom, sun rays, far haze",
+		L:FindFirstChild("TW_Bloom") and L:FindFirstChild("TW_Rays") and L:FindFirstChild("TW_Depth")
+	)
+	check("...the bloom only catches the neon", L.TW_Bloom.Threshold >= 1.8)
+	Gfx.apply("mid")
+	check(
+		"mid: a lighter bloom, no rays",
+		L:FindFirstChild("TW_Bloom") and not L:FindFirstChild("TW_Rays") and not L:FindFirstChild("TW_Depth")
+	)
+	Gfx.apply("low")
+	check("low: nothing added", not L:FindFirstChild("TW_Bloom") and not L:FindFirstChild("TW_Rays"))
+	Gfx.apply(nil)
+	check("...back to the device's own", Gfx.tier() == "high")
+	Dev.set(was)
 end
 -- banners: a server message slides in under the top bar, one at a time
 do
