@@ -9,7 +9,11 @@ where it goes off (Net "Blast") the explosion everyone sees:
   * a shockwave ring racing out across the floor, and a scorch mark left a moment
   * clods of floor thrown up that rain back down (DebrisController.burst); the structures it breaks shatter on their
     own (DebrisController)
-  * the camera shakes, harder the closer you are, and a boom (quieter far away)
+  * the store art's neon on top: a ring in the thrower's colour and a burst of white and coloured shards (Effects)
+  * the camera shakes, harder the closer you are, and a boom from where it went off (AudioController's layered
+    "boom": a sub, a crack, debris and a hall tail; quieter far away, and the arena dips around it when it's close)
+
+Anything else can set one off: ExplosionController.blast{ pos, radius, color?, team? } (Effects.explosion does).
 
 Fewer smoke puffs, sparks and clods on phones and low graphics (GraphicsController.tier()).
 
@@ -24,6 +28,7 @@ local RunService = game:GetService("RunService")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Effects = require(script.Parent.Parent.FX.Effects)
 local AudioController = require(script.Parent.AudioController)
 local CameraController = require(script.Parent.CameraController)
 local DebrisController = require(script.Parent.DebrisController)
@@ -131,9 +136,10 @@ function ExplosionController.blast(info)
 	local ground = tonumber(info.ground) or pos.Y
 	local counts = COUNTS[GraphicsController.tier()] or COUNTS.low
 	-- (the bundle that made it is gone now)
-	local key = byServer[info.id] or ("s" .. tostring(info.id))
-	removeBomb(key)
-	byServer[info.id] = nil
+	if info.id ~= nil then
+		removeBomb(byServer[info.id] or ("s" .. tostring(info.id)))
+		byServer[info.id] = nil
+	end
 	-- the flash and its light
 	local flash = part(Vector3.new(2, 2, 2), Color3.fromRGB(255, 252, 235), true, Enum.PartType.Ball)
 	flash.Name = "Flash"
@@ -220,8 +226,21 @@ function ExplosionController.blast(info)
 	if near > 0 then
 		CameraController.shake(0.12 + 0.9 * near * near, 0.25 + 0.45 * near)
 	end
-	AudioController.play("boom", 0.45 + rng:NextNumber(0, 0.08), math.clamp(1 - d / 220, 0.2, 1))
-	AudioController.play("hit", 0.35, math.clamp(1 - d / 160, 0.1, 1))
+	-- the store art's neon: a ring in the thrower's colour racing out, white and coloured shards flying off
+	local tint = typeof(info.color) == "Color3" and info.color or Constants.TEAM_COLOR[info.team or ""]
+	if tint then
+		local glowRing = part(Vector3.new(0.16, 2, 2), tint, true, Enum.PartType.Cylinder)
+		glowRing.Name = "Shockwave"
+		glowRing.CFrame = flat * CFrame.new(0.08, 0, 0)
+		effect("ring", glowRing, 0.42, { cf = flat * CFrame.new(0.08, 0, 0), s0 = 2, s1 = radius * 2.2 })
+	end
+	Effects.shatter({ pos = pos, dir = Vector3.yAxis, team = info.team, power = 1.4, scale = 0.7 })
+	-- the boom from where it went off (3D: it rolls off with distance and comes from its side), duller far away
+	local near2 = math.clamp(1 - d / 220, 0.25, 1)
+	AudioController.playAt("boom", pos, 1 + rng:NextNumber(-0.05, 0.05), near2)
+	if d < 60 then
+		AudioController.duck(0.4 * (1 - d / 60), 0.5)
+	end
 end
 
 local function step(dt)

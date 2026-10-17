@@ -347,7 +347,14 @@ function MatchService:_onKilled(victim, killer, info)
 	end
 	local vroot = victim.Character and victim.Character:FindFirstChild("HumanoidRootPart")
 	local kp = killer and data:Get(killer)
+	-- (the victim's kill cam: where the killer stood, how far, and the arrow's flight when it was one)
+	local kc = killer and killer.Character
+	local kroot = kc and kc:FindFirstChild("HumanoidRootPart")
+	local killerPos = kroot and kroot.Position or nil
 	Net.fireAll("Kill", {
+		killerPos = killerPos,
+		dist = killerPos and vroot and math.floor((killerPos - vroot.Position).Magnitude + 0.5) or nil,
+		cam = info.cam,
 		effect = valid and kp and kp.equipped.effect or nil, -- (the killer's kill effect, drawn where you fell)
 		pos = vroot and vroot.Position or nil,
 		killer = killer and killer.UserId,

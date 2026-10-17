@@ -707,6 +707,67 @@ Tests: Formulas 261 (every map at every size: fair, closed, open lanes, within 2
 lose lines), MapSmoke 55 (every map at every size; 24 people get the large arena, 4 the small, 12 medium, never
 resized mid-match), BotNavSmoke 36.
 
+## Round 23: the sound, the kill effects, the tracers, the kill cam
+
+The owner: "add some AMAZING AUDIO. kill effects and trails/explosions need to be WAYYYY BETTER and better match what
+is "advertised". when someone dies, we should display a kill cam that follows the arrow with cinematic like camera
+movement and it should beautiful animations/transitions."
+
+* **The sound** (`AudioController`, `Constants.SOUNDS` / `SOUND_GROUPS`). No new uploads: the studio's shared clips
+  plus a few of Roblox's own (`rbxasset://sounds/...`: swordslash, swordlunge, unsheath, Rocket shot, collide,
+  electronicpingshort, glassbreak, button, clickfast, action_falling, action_jump_land), layered into cues and shaped
+  with sound effects (reverb, EQ, distortion, chorus, a compressor, an octave down), each layer pitched, timed and a
+  little random. The bow creaks tighter as the charge builds and pings at full; a twang and a whoosh on release; an
+  enemy arrow passing close whooshes by where it is; a thunk where one lands; a kill is a punch, a shatter and a
+  rising chime (a headshot its own crack and a higher note), and a streak climbs a note per kill. The blade whooshes,
+  a parry clangs; the TNT's fuse hisses as you wind up, a throw, a boom with a sub and a hall tail (quieter and duller
+  far off); a clunk as you place a piece, a crunch where one comes down. A call at the build, the horn at FIGHT!, a
+  riser and a doubled horn at the CHARGE, a tick for each of the last 10 s, victory and defeat stingers, soft clicks
+  on every button, a low wind under it all. SoundGroups Master > SFX (World, Stinger), Music, UI; the arena dips
+  under a kill and goes muffled and roomy under the kill cam. Everything in the arena is 3D (an Attachment where it
+  happened), and each layer reuses a few voices. (No volume setting exists to respect; the groups are where one
+  would go.)
+* **Knockouts shatter** (`KillFxController`, `FX/Effects`): the fallen body is hidden here and bursts into white and
+  team-coloured shards cut from its own parts, flying on along the arrow, with a neon flash, a ring shockwave across
+  the arrow's path and one on the floor (hollow rings of neon pieces), sparks and a short glow. All pooled, and
+  capped by the graphics tier (always the light version on a phone): twenty at once stay under the cap. The killer
+  gets a pop: the hit marker snaps out into a big X, red and cyan fringes flash at the edges, a colour punch and a
+  small kick of the field of view.
+* **Tracers** (`ArrowController`): a white shaft with a flickering tip and a halo, a white-hot core line, and a bold
+  team-colour glow that follows the arc and tapers and fades toward the tail, a soft haze round it on high graphics,
+  and a Trail for Roblox's softest edge. Fewer pieces on phones and when lots of arrows are up. Where one lands, a pop
+  of light, a ring and chips (`Effects.impact`). The cosmetic trails still draw beside it.
+* **Explosions**: `ExplosionController` (the TNT's) gets a neon ring in the thrower's colour, a burst of white and
+  coloured shards and the layered 3D boom; anything can set one off with `Effects.explosion(pos, radius, color)`.
+* **The kill cam** (`KillCamController`): knocked out by an arrow, the letterbox slides in, the view cuts to the
+  killer (a slow push in), then the arrow is replayed from their bow to you in slow motion on the arc the server
+  flew, the camera riding beside it, swinging round it with a slight roll and settling beside you as it closes in
+  (a depth of field on high graphics); a freeze on the impact with a white flash as a stand-in of you shatters in
+  slow motion; then the camera drifts round the spot as the card slides in (ELIMINATED BY <name>, their weapon's
+  icon, the distance, HEADSHOT), and a fade to white back to you, all inside the 3 s respawn. A blade or a TNT: an
+  orbit round the killer. Space, a click or a tap skips it after half a second. It never starts while another
+  cinematic has the camera (the tutorial's) or an admin spectates, and stops if one begins; it borrows the camera
+  through `CameraController.takeover` / `release`, so first person and the mouse lock come back as before. The
+  server adds `killerPos`, `dist` and `cam = { origin, velocity, t, impact }` to Net "Kill" (CombatService records
+  when in its flight an arrow struck).
+
+![](screenshots/killcam_1_killer.png)
+![](screenshots/killcam_2_flight.png)
+![](screenshots/killcam_3_closing.png)
+![](screenshots/killcam_4_impact.png)
+![](screenshots/killcam_5_card.png)
+![](screenshots/trail.png)
+![](screenshots/shatter.png)
+
+(`tools/gameplay/killcam.luau` stages these where nothing blocks the view. The renderer now honours
+LocalTransparencyModifier, a rolled camera, and see-through parts no longer hide what's inside them.)
+
+Tests: ClientSmoke 357 (the kill cam starts on your knockout, has the camera, replays the arrow, freezes, shows the
+card, ends inside the respawn wait and gives back Custom, first person and the mouse lock; Space too early doesn't
+skip, after that it does, a tap skips; a blade's is an orbit; never over another cinematic, while spectating or for
+a fall; the mix's groups; your kill's layered sound and the dip, a headshot, a streak, the release, a swing, a clunk,
+the boom, a 3D flyby; twenty shatters under the cap, back to the pool, a phone's lighter).
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

@@ -144,20 +144,40 @@ Constants.DARK = Color3.fromRGB(150, 152, 158)
 Constants.BUILD_COLOR = { red = Color3.fromRGB(226, 70, 72), blue = Color3.fromRGB(62, 126, 236) }
 Constants.ARMOR_COLOR = { red = Color3.fromRGB(128, 26, 32), blue = Color3.fromRGB(24, 56, 140) }
 
--- Sounds (the studio's uploaded set, shared with the other games)
+-- Sounds: the raw clips. The studio's uploaded set (shared with the other games) and a few of Roblox's own client
+-- sounds (rbxasset://sounds/...). AudioController layers, pitches and shapes these into every cue the game plays
+-- (a kill is a punch, a shatter and a rising chime at once); a cue with no recipe there plays its clip as it is.
 Constants.SOUNDS = {
-	shoot = "rbxassetid://95486565209148",
-	hit = "rbxassetid://138148057831879",
-	kill = "rbxassetid://115604569854725",
+	shoot = "rbxassetid://95486565209148", -- (a whoosh)
+	hit = "rbxassetid://138148057831879", -- (a short tick)
+	kill = "rbxassetid://115604569854725", -- (a bright chime)
 	hurt = "rbxassetid://138148057831879",
 	horn = "rbxassetid://88832672717864",
 	win = "rbxassetid://119933432712786",
 	built = "rbxassetid://106516156393061",
-	draw = "rbxassetid://96391581866585",
+	draw = "rbxassetid://96391581866585", -- (a wooden click: the bow's creak)
 	tick = "rbxassetid://118634876996683",
+	thud = "rbxassetid://105444665436909", -- (a dull knock: impacts, the punch under a kill)
+	twang = "rbxassetid://136556611710738", -- (a bowstring)
+	headshot = "rbxassetid://137096881472307",
+	pop = "rbxassetid://109359226723492",
+	whistle = "rbxassetid://109983444504089",
 	boom = "rbxasset://sounds/collide.wav", -- (Roblox's own: a heavy thud, played low for the TNT)
 	crumble = "rbxasset://sounds/collide.wav", -- (a structure coming down, higher and softer)
+	rocket = "rbxasset://sounds/Rocket shot.wav", -- (a hissing launch: the fuse, the blast's tail)
+	slash = "rbxasset://sounds/swordslash.wav",
+	lunge = "rbxasset://sounds/swordlunge.wav",
+	unsheath = "rbxasset://sounds/unsheath.wav", -- (steel on steel: the parry's clang)
+	ping = "rbxasset://sounds/electronicpingshort.wav", -- (the chimes: kills, streaks, the last seconds)
+	glass = "rbxasset://sounds/glassbreak.wav", -- (the shatter)
+	button = "rbxasset://sounds/button.wav",
+	click = "rbxasset://sounds/clickfast.wav",
+	wind = "rbxasset://sounds/action_falling.mp3", -- (a rush of air: slowed right down, the ambient wind)
+	land = "rbxasset://sounds/action_jump_land.mp3",
 }
 Constants.SOUND_VOLUME = { horn = 0.7, win = 0.8, shoot = 0.5, draw = 0.3, tick = 0.4, boom = 1, crumble = 0.55 }
+-- The mix (AudioController's SoundGroups): Master over SFX (World: everything in the arena, ducked under a kill and
+-- the kill cam; Stinger: your kills, streaks and phase calls, never ducked), Music (the ambient bed) and UI
+Constants.SOUND_GROUPS = { Master = 1, SFX = 1, World = 0.9, Stinger = 1, Music = 0.55, UI = 0.7 }
 
 return Constants

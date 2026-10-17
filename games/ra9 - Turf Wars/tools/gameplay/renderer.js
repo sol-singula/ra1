@@ -88,7 +88,7 @@
     const color = new THREE.Color(p.c);
     const pbr = SURF[p.mat] || [0.5, 0];
     const opts = { color, roughness: pbr[0], metalness: pbr[1], envMapIntensity: 0.55 };
-    if (p.mat === 'Neon') return new THREE.MeshBasicMaterial({ color: color.clone().multiplyScalar(1.6), transparent: p.t > 0, opacity: 1 - (p.t || 0), fog: true });
+    if (p.mat === 'Neon') return new THREE.MeshBasicMaterial({ color: color.clone().multiplyScalar(1.6), transparent: p.t > 0, depthWrite: !(p.t > 0), opacity: 1 - (p.t || 0), fog: true }); // (see-through parts don't hide what's inside them, as in Roblox)
     const canvas = textureFor(p.mat);
     if (canvas) {
       const t = new THREE.CanvasTexture(canvas);
@@ -373,6 +373,7 @@ void main() {
 
     const camera = new THREE.PerspectiveCamera(cam.fov || 70, W / H, 0.1, 3000);
     camera.position.set(...cam.pos);
+    if (cam.up) camera.up.set(...cam.up); // (a rolled camera: the kill cam)
     camera.lookAt(target);
     camera.updateMatrixWorld();
     dome.position.copy(camera.position);

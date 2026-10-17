@@ -415,6 +415,7 @@ function CombatService:_step(dt)
 		local st, sid = hitSolids(a, b)
 		if victim and (not st or vt <= st) then
 			local at = a:Lerp(b, vt)
+			arrow.hitT = t0 + dt * vt -- (when in its flight it struck: the kill cam replays up to here)
 			table.remove(arrows, i)
 			if not self:_parry(arrow, victim, at, (b - a).Unit) then
 				self:_hitPlayer(arrow, victim, head, at, (b - a).Unit)
@@ -500,7 +501,7 @@ function CombatService:_explode(bomb, pos)
 				away = Vector3.new(away.X, 0, away.Z)
 				away = away.Magnitude > 0.01 and away.Unit or Vector3.new(1, 0, 0)
 				if d <= Constants.TNT_CORE then
-					local info = { weapon = "tnt", head = false, kind = "blast" }
+					local info = { weapon = "tnt", head = false, kind = "blast", cam = { impact = pos } }
 					local ok, killed = self:Damage(player, Constants.MAX_HEALTH, attacker, info)
 					if ok then
 						hits += 1
@@ -618,6 +619,8 @@ function CombatService:_hitPlayer(arrow, victim, head, at, dir)
 	local amount = math.floor(arrow.damage * (head and Constants.HEADSHOT or 1) + 0.5)
 	local shooter = arrow.by
 	local info = { weapon = arrow.weapon, head = head, kind = "arrow" }
+	-- (what the victim's kill cam replays: the arrow from the bow to where it struck)
+	info.cam = { origin = arrow.origin, velocity = arrow.velocity, t = arrow.hitT or arrow.t, impact = at }
 	local ok, killed = self:Damage(victim, amount, shooter.Parent and shooter or nil, info)
 	self:_finish(arrow, at, "player")
 	if not ok then
