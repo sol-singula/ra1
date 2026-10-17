@@ -28,6 +28,7 @@ end
 local tree = Engine.mountProject(".")
 Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
 Engine.require(tree.shared.Constants).MIN_SIDE = 1 -- (the old minimum: these checks count the bots themselves; BotSmoke checks 2 v 2)
+Engine.require(tree.shared.Constants).TUTORIAL = false -- (the players here know the game: tests/TutorialSmoke is the tutorial's)
 Engine.clientEnabled = true
 local ws = Engine.workspace
 ws.CurrentCamera.ViewportSize = Vector2.new(1240, 560)
@@ -327,6 +328,7 @@ end
 
 -- play the tutorial yourself
 do
+	Constants.TUTORIAL = true
 	local n0 = #Engine.clientLog
 	act(owner, "tutorial")
 	local started = false
@@ -349,6 +351,12 @@ do
 	end
 	check("SEND TO TUTORIAL: it starts for that player", sent)
 	check("...and it's logged", used[#used].action == "tutorial")
+	-- (both off to their private practice: skip it, and they're back in the match)
+	Engine.fireServer(owner, "Tutorial", "skip")
+	Engine.fireServer(solo, "Tutorial", "skip")
+	Engine.advance(1)
+	check("...skipped: both back in the match", Teams:Team(owner) ~= nil and Teams:Team(solo) ~= nil)
+	Constants.TUTORIAL = false
 end
 
 -- the AFK room: go there and stay (walking doesn't send you back), then the same button brings you back

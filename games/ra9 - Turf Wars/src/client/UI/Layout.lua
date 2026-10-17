@@ -89,4 +89,23 @@ function Layout.inCinema()
 	return cinemaOn
 end
 
+-- The private practice (the tutorial's own arena, far from the match): the match's moments never show (the CHARGE,
+-- its sounds), and while it guides the Shards counter stays up so every knockout's Shards fly into it.
+--
+--   Layout.practice(on)   Layout.inPractice() -> on
+local practiceOn = false
+
+function Layout.practice(on)
+	practiceOn = on == true
+end
+
+function Layout.inPractice()
+	return practiceOn
+end
+
+-- The CHARGE (the match's last seconds: workspace "Charge"), as the screen should show it: never in the practice
+function Layout.charging()
+	return workspace:GetAttribute("Charge") == true and not practiceOn
+end
+
 return Layout

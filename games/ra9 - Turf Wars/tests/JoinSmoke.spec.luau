@@ -1,7 +1,8 @@
 --[[
 Joining: with the live settings (2 v 2 minimum, bots, the tutorial on, the AFK room on), everyone who joins, at any
 point of the match, one after another, gets a team and a body on their side and is alive; nobody is left without
-one. (The live bug: people loading in, standing in the floor with RESPAWNING and no team.)
+one. (The live bug: people loading in, standing in the floor with RESPAWNING and no team.) Brand-new players go to
+their private practice first (a body there, no team: TutorialService); they skip it here, and join like anyone.
 
   luaurun tests/JoinSmoke.spec.luau
 ]]
@@ -27,16 +28,26 @@ local Teams = service("TeamService")
 local Combat = service("CombatService")
 local Match = service("MatchService")
 local Constants = Engine.require(tree.shared.Constants)
+local Tutorial = service("TutorialService")
 
 local function root(who)
 	return who.Character and who.Character:FindFirstChild("HumanoidRootPart")
 end
 
 local people = {}
+-- brand new: their private practice first (a body there, out of the match), then they skip it into the match
+local function practice(p, label)
+	local r = root(p)
+	check(`{label}: {p.Name} starts in their practice`, Tutorial:InPractice(p) and Teams:Team(p) == nil)
+	check(`{label}: {p.Name} has a body there`, r ~= nil and math.abs(r.Position.Z) > 2000, r and r.Position)
+	Engine.fireServer(p, "Tutorial", "skip")
+end
 local function join(i)
 	local p = Engine.addPlayer("Joiner" .. i, 9100 + i)
 	Engine.advance(0.5)
 	Engine.fireServer(p, "Ready")
+	Engine.advance(0.3)
+	practice(p, "join " .. i)
 	table.insert(people, p)
 	return p
 end
@@ -73,6 +84,10 @@ for i = 1, 20 do
 end
 for _, p in burst do
 	Engine.fireServer(p, "Ready")
+end
+Engine.advance(1)
+for _, p in burst do
+	practice(p, "the burst")
 end
 Engine.advance(8)
 audit("a burst of 20 joins")

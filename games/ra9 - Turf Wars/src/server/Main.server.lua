@@ -16,6 +16,16 @@ local function onPlayerAdded(player)
 	if not profile or not player.Parent then
 		return
 	end
+	-- (first, before anyone joins them to anything: the save is here; TutorialService takes a brand-new player to
+	-- their private practice, BotService decides a takeover)
+	for _, svc in order do
+		if svc.OnPlayerLoaded then
+			local ok, err = xpcall(svc.OnPlayerLoaded, debug.traceback, svc, player, profile)
+			if not ok then
+				warn(`[{svc.Name}] OnPlayerLoaded failed: {err}`)
+			end
+		end
+	end
 	for _, svc in order do
 		if svc.OnPlayerReady then
 			local ok, err = xpcall(svc.OnPlayerReady, debug.traceback, svc, player, profile)

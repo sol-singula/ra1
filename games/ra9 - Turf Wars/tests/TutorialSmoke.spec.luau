@@ -1,12 +1,14 @@
 --[[
-The first-minute tutorial: the real server and the real client on the mock engine, one brand-new player alone with
-the bot. The intro cinematic plays (the camera taken over, the titles in order, the turf rippling) and hands the
-camera back to first person; each guided step shows its words and guide and ends on the real thing (a piece picked
-from the tray, a wall built on the server, the fight's camera nudge, aiming, pulling, letting go, a hit, a
-knockout that moves the line, the arrow to their base); the tips come once; the first win gets its show; the
-server saved it all, in order. The first-match boost (a weaker bot, a longer push) is on for that match only. Then:
-a replay from the menu, skipping the intro with a key (not in its first second), waiting while you're down, the
-phone's words, skipping the tutorial (saved), and a returning player who doesn't get it again.
+The new-player tutorial, end to end: the real server and the real client on the mock engine. A veteran is playing
+the live match when a brand-new player joins: the newcomer is taken to a private practice arena of their own, far
+from the match (out of the match, the bots, the balancing, the watchdog, the AFK room and the anti-cheat; nothing
+from the match reaches them), and plays the whole show the way a new player would: the intro, the first kill
+(within seconds of having control), DOUBLE KILL! TRIPLE KILL! (paid in Shards), the near-miss, the build (a wall,
+a tower, the clock waiting, three arrows into the wall), the TNT, the push, the win (fireworks, VICTORY!, a free
+trail), the gate, and into the live match with a team. Never knocked out, under 3:00, every step timed. Then: a
+replay skipped with K (straight into the match), a replay where they touch nothing (every step does its part for
+them, still a win, still under 3:00), a player whose client never answers (the server's time limit), the phone's
+and the pad's words, and the returning-player rules.
 
   luaurun tests/TutorialSmoke.spec.luau
 ]]
@@ -26,8 +28,9 @@ local function check(name, cond, detail)
 end
 
 local tree = Engine.mountProject(".")
-Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
-Engine.require(tree.shared.Constants).MIN_SIDE = 1 -- (the old minimum: these checks count the bots themselves; BotSmoke checks 2 v 2)
+local Constants = Engine.require(tree.shared.Constants)
+Constants.AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
+Constants.MIN_SIDE = 1
 Engine.clientEnabled = true
 local ws = Engine.workspace
 ws.CurrentCamera.ViewportSize = Vector2.new(1600, 900)
@@ -45,20 +48,38 @@ local Teams = service("TeamService")
 local Combat = service("CombatService")
 local Bots = service("BotService")
 local Data = service("PlayerDataService")
-local Constants = Engine.require(tree.shared.Constants)
+local Build = service("BuildService")
+local Afk = service("AfkService")
+local AntiCheat = service("AntiCheatService")
 local Formulas = Engine.require(tree.shared.Formulas)
+local Practice = Engine.require(tree.shared.World.Practice)
+local Net = Engine.require(tree.shared.Net)
+local Shop = Engine.require(tree.shared.Data.Shop)
 
--- a brand-new player, alone (the bot comes in)
+-- a veteran in the live match (they know the game: no tutorial for them)
+Constants.TUTORIAL = false
+local vet = Engine.addPlayer("Veteran", 700)
+Engine.advance(0.5)
+Engine.fireServer(vet, "Ready")
+Engine.advance(1)
+Constants.TUTORIAL = true
+check("the veteran is in the match", Teams:Team(vet) ~= nil and Combat:Alive(vet))
+local botsBefore = #Bots:List()
+
+-- a brand-new player joins
 local player = Engine.addPlayer("Newbie", 601)
 Engine.Players.LocalPlayer = player
 Engine.localPlayer = player
+local logFrom = #Engine.clientLog
 Engine.runScript(tree.client.Main)
-Engine.advance(0.2)
+Engine.advance(0.3)
 
 local Tut = Engine.require(tree.client.Controllers.TutorialController)
 local CamC = Engine.require(tree.client.Controllers.CameraController)
 local Hud = Engine.require(tree.client.Controllers.HudController)
 local BuildC = Engine.require(tree.client.Controllers.BuildController)
+local WeaponC = Engine.require(tree.client.Controllers.WeaponController)
+local Fireworks = Engine.require(tree.client.Controllers.FireworksController)
 local Layout = Engine.require(tree.client.UI.Layout)
 local Bus = Engine.require(tree.client.UI.Bus)
 local Device = Engine.require(tree.client.UI.Device)
@@ -100,460 +121,709 @@ local function untilTrue(seconds, fn)
 end
 local function count(name)
 	local n = 0
-	for _, d in fx:GetChildren() do
+	for _, d in fx:GetDescendants() do
 		if d.Name == name then
 			n += 1
 		end
 	end
 	return n
 end
+-- every title slammed in and every instruction shown, as they come (polled each step of the clock)
+local seen = {}
+local function watchWords()
+	if refs.title.Visible then
+		seen[refs.title.Text] = seen[refs.title.Text] or Engine.now()
+	end
+	if refs.say.Visible then
+		seen[refs.say.Text] = seen[refs.say.Text] or Engine.now()
+	end
+end
+local function run(seconds)
+	local t = 0
+	while t < seconds do
+		Engine.advance(0.05)
+		watchWords()
+		t += 0.05
+	end
+end
+local function waitFor(seconds, fn)
+	local t = 0
+	while t < seconds do
+		if fn() then
+			return true
+		end
+		run(0.1)
+		t += 0.1
+	end
+	return fn()
+end
+local function stepIs(name)
+	return function()
+		return state().step == name
+	end
+end
+-- shoot like a new player: hold for a moment, let go (any release finds a bot: the aim help)
+local function shoot(hold)
+	Bus.Fire:Fire(true)
+	run(hold or 1.1)
+	Bus.Fire:Fire(false)
+end
+local hurt, downs = 0, 0
+local function audit()
+	for i = logFrom + 1, #Engine.clientLog do
+		local e = Engine.clientLog[i]
+		if e.player == player or e.player == "all" then
+			if e.name == "Hurt" then
+				hurt += 1
+			elseif e.name == "Kill" and type(e.args[1]) == "table" and e.args[1].victim == player.UserId then
+				downs += 1
+			end
+		end
+	end
+end
 
--- The start ------------------------------------------------------------------------------------------------------
+-- Taken to the private practice --------------------------------------------------------------------------------------
 local start = Engine.lastClientEvent("Tutorial", player)
+check("a new player is told to start", start and start.args[1].kind == "start", start and start.args[1].kind)
+local info = start and start.args[1].practice or {}
+check("...in a practice arena of their own", info.origin ~= nil and info.slot ~= nil)
+local origin = info.origin or Vector3.new(0, 0, 0)
+check("...far from the match (2000+ studs)", origin.Magnitude >= 2000, origin)
+check("the server has it running", Tutorial:Active(player) and Tutorial:InPractice(player))
+check("...out of the match: no team", Teams:Team(player) == nil)
+check("...not counted in the match", table.find(Match:Everyone(), player) == nil)
+check("...hushed: nothing from the match reaches them", Net.hushed(player))
+check("the match's bots don't change for them", #Bots:List() == botsBefore, #Bots:List())
 check(
-	"a new player is told to start the tutorial",
-	start and start.args[1].kind == "start",
-	start and start.args[1].kind
+	"the server drew nothing there anyone could see (an invisible floor and walls only)",
+	(function()
+		local floor = ws:FindFirstChild("PracticeFloor" .. info.slot)
+		if not floor then
+			return false
+		end
+		for _, p in floor:GetChildren() do
+			if p.Transparency < 1 then
+				return false
+			end
+		end
+		return #floor:GetChildren() >= 5
+	end)()
 )
-check("...with the first-match boost", start and start.args[1].boost == true)
 check(
-	"...the first build phase waits for them (the intro, then their first wall)",
-	ws:GetAttribute("Phase") ~= "build"
-		or ws:GetAttribute("PhaseEnds") - ws:GetServerTimeNow() >= Constants.TUTORIAL_BUILD_SECONDS - 3,
-	ws:GetAttribute("PhaseEnds") - ws:GetServerTimeNow()
-)
-check("the server has it running", Tutorial:Active(player))
-check("a fresh profile has a tutorial field", Data:Get(player).tutorial and Data:Get(player).tutorial.done == false)
-local team = Teams:Team(player)
-local s = team == "red" and -1 or 1
-local fwd = Formulas.forward(team)
-
--- The intro --------------------------------------------------------------------------------------------------------
-check(
-	"the intro starts on the first spawn",
+	"a body in the practice, just behind the line",
 	untilTrue(2, function()
+		local r = root(player)
+		return r ~= nil and Practice.inside(origin, r.Position)
+	end)
+)
+check("the practice world is drawn on their client", Tut.practice() and Tut.practice().world.folder.Parent == ws)
+check("...the HUD reads the practice", Store.get("match").practice == true and Store.get("match").phase == "fight")
+check("...their side and their body", Store.get("me").team == info.team and Store.get("me").alive == true)
+local team = info.team
+local fwd = Formulas.forward(team)
+local t0 = Engine.now()
+
+-- The intro ----------------------------------------------------------------------------------------------------------
+check(
+	"the intro starts",
+	waitFor(2, function()
 		return state().intro
 	end)
 )
-local t0 = Engine.now()
-local function at(t)
-	Engine.advance(math.max(0, t0 + t - Engine.now()))
-end
-at(0.5)
-check("the camera is taken over (scriptable)", CamC.takenOver() and cam.CameraType == Enum.CameraType.Scriptable)
+run(0.6)
+check("the camera is taken over", CamC.takenOver() and cam.CameraType == Enum.CameraType.Scriptable)
+check("...letterbox bars", refs.barTop.Size.Y.Scale > 0.05)
 check("...the HUD steps away for it", Layout.inCinema() and hud.gui.Enabled == false)
-check("...letterbox bars come in", refs.barTop.Size.Y.Scale > 0.05, refs.barTop.Size.Y.Scale)
-check("RED slams in first", refs.title.Visible and refs.title.Text == "RED", refs.title.Text)
-local lit = 0
-for _, d in fx:GetChildren() do
-	if d.Name == "TurfGlow" and d.Transparency < 0.9 then
-		lit += 1
-	end
-end
-check("...and the turf ripples", lit > 0, lit)
-check("high over the arena", cam.CFrame.Position.Y > 40, cam.CFrame.Position.Y)
-local x1 = cam.CFrame.Position.X
-at(0.7)
-key(Enum.KeyCode.W)
+check("THIS IS YOUR TURF", refs.title.Text == "THIS IS YOUR TURF", refs.title.Text)
+check("...high over the small arena", cam.CFrame.Position.Y > 25, cam.CFrame.Position.Y)
+check("...over the practice, not the match", math.abs(cam.CFrame.Position.Z - origin.Z) < 120, cam.CFrame.Position.Z)
+key(Enum.KeyCode.K)
 Engine.advance(0.05)
-check("a key in the first second doesn't skip it", state().intro and CamC.takenOver())
-at(1.7)
-check("then BLUE", refs.title.Text == "BLUE", refs.title.Text)
-check("...the camera sweeping across", cam.CFrame.Position.X ~= x1)
-at(3.2)
-check("then THE LINE", refs.title.Text == "THE LINE", refs.title.Text)
-check("...down low over it", cam.CFrame.Position.Y < 30, cam.CFrame.Position.Y)
-at(4.4)
-check("then THIS IS YOUR TURF", refs.title.Text == "THIS IS YOUR TURF", refs.title.Text)
-check("...a skip hint shows", refs.skipHint.Visible and string.find(refs.skipHint.Text, "ENTER") ~= nil)
--- moving, jumping and clicking (what a new player does at once) never skip it
-key(Enum.KeyCode.W)
-key(Enum.KeyCode.Space)
-Engine.game:GetService("UserInputService").InputBegan:Fire({
-	KeyCode = Enum.KeyCode.Unknown,
-	UserInputType = Enum.UserInputType.MouseButton1,
-}, false)
-Engine.advance(0.05)
-check("...walking, jumping or clicking don't skip it", state().intro and CamC.takenOver())
-at(7.0)
-check("then TAKE THEIRS", refs.title.Text == "TAKE THEIRS", refs.title.Text)
+check("K in the intro's first second skips nothing", state().intro and state().running)
+local controlAt
 check(
-	"...dropping into your eyes",
-	(cam.CFrame.Position - headPos()).Magnitude < 1.5,
-	(cam.CFrame.Position - headPos()).Magnitude
+	"the intro ends",
+	waitFor(9, function()
+		return not state().intro and state().history[1] ~= nil
+	end)
 )
-at(8.0)
-check("the intro ends", not state().intro and state().history[1] and state().history[1].name == "intro")
+controlAt = Engine.now()
+check("...THE LINE and TAKE THEIRS were in it", seen["THE LINE"] ~= nil and seen["TAKE THEIRS"] ~= nil)
+check("...about 8 seconds", controlAt - t0 <= 9.5, controlAt - t0)
 check("the camera is handed back", not CamC.takenOver() and cam.CameraType == Enum.CameraType.Custom)
-check("...locked first person again", player.CameraMode == Enum.CameraMode.LockFirstPerson)
-check("...on your character", cam.CameraSubject == player.Character:FindFirstChildOfClass("Humanoid"))
-check(
-	"...from your eyes",
-	(cam.CFrame.Position - headPos()).Magnitude < 0.6,
-	(cam.CFrame.Position - headPos()).Magnitude
-)
-check("...looking at the enemy side", cam.CFrame.LookVector.X * fwd > 0.8, cam.CFrame.LookVector.X)
+check("...locked first person", player.CameraMode == Enum.CameraMode.LockFirstPerson)
 check("...the HUD back, kept to the essentials", hud.gui.Enabled and Layout.focused() and hud.invite.Visible == false)
-check("...the bars gone", refs.barTop.Size.Y.Scale < 0.01)
-check("...a SKIP button where the invite was", refs.skip.Visible)
-
--- Build: PICK A WALL → PLACE IT --------------------------------------------------------------------------------------
 check(
-	"PICK A WALL",
-	untilTrue(2, function()
-		return state().step == "pick" and state().text == "PICK A WALL"
-	end),
-	state().text
-)
-check("...the wall in the tray pulses", hud.trayButtons.wall:FindFirstChild("TutorialGlow") ~= nil)
-check("...with its key", refs.hint.Visible and refs.hint.Text == "press 2", refs.hint.Text)
-check("...the tray stays, the rest goes", hud.tray.Visible and not hud.feed.Visible and not hud.objective.Visible)
-hud.trayButtons.wall.Activated:Fire()
-Engine.advance(0.1)
-check("picking it ends the step", names(state().history) == "intro,pick", names(state().history))
-check(
-	"PLACE IT",
-	untilTrue(2, function()
-		return state().text == "PLACE IT"
-	end),
-	state().text
-)
-Engine.advance(0.1)
-check("...a glowing spot on the floor, with a beam", count("SpotBeam") == 1 and count("SpotEdge") == 4)
-check("...an arrow along the floor to it", count("Chevron") > 4, count("Chevron"))
-local slab = fx:FindFirstChild("SpotSlab")
-local center = slab.Position
-check("...on your side of the line", (center.X - Match:Frontline()) * fwd < 0, center.X)
-check("...near the line", math.abs(center.X - Match:Frontline()) < 40, center.X)
--- walk up to it and aim at the glow
-local stand = Vector3.new(center.X - fwd * 14, 3, center.Z)
-Engine.moveTo(player, stand, center)
-cam.CFrame = CFrame.lookAt(stand + Vector3.new(0, 1.6, 0), center)
-Engine.advance(0.2)
-check(
-	"...the preview sits on it, a valid spot",
-	BuildC.spot() and BuildC.spot().ok,
-	BuildC.spot() and BuildC.spot().why
-)
-Bus.Place:Fire()
-Engine.advance(0.3)
-check("building it (on the server) ends the step", names(state().history) == "intro,pick,place", names(state().history))
-check("...NICE! slams in", refs.title.Visible and refs.title.Text == "NICE!", refs.title.Text)
-check("...with a burst", count("Burst") > 0)
-Engine.advance(1.5)
-check("...the spot and the arrow go", count("SpotBeam") == 0 and count("Chevron") == 0)
-check("then nothing on screen until the fight", state().text == nil)
-
--- The boost --------------------------------------------------------------------------------------------------------
-check("the first-match boost is on", Tutorial:Boosted(player))
-check("...the bot goes easy on you", Bots.easyFor(player) == true)
-check("...your knockouts push further", Match.bonusCells(player) == Constants.TUTORIAL_PUSH_BONUS)
-local bot = Bots:List()[1]
-check("...the bot is the only other one", bot ~= nil and #Match:Everyone() == 2)
-
--- The fight: FIGHT! → AIM HERE → HOLD TO PULL → LET GO! → HIT THEM → KNOCK THEM OUT → PUSH IT ------------------------
-Bots.Think = function() end -- (the bot stands still where we put it)
-check(
-	"the fight comes",
-	untilTrue(math.max(Constants.BUILD_SECONDS, Constants.TUTORIAL_BUILD_SECONDS) + 2, function()
-		return Match:Phase() == "fight"
+	"...the Shards counter stays up",
+	untilTrue(0.5, function()
+		return hud.shop.Visible
 	end)
 )
-Engine.moveTo(player, Vector3.new(Match:Frontline() - fwd * 6, 3, 10), Vector3.new(Match:Frontline() + fwd * 10, 3, 10))
-Engine.moveTo(bot, Vector3.new(Match:Frontline() + fwd * 10, 3, 10), Vector3.new(Match:Frontline() - fwd * 6, 3, 10))
-cam.CFrame = CFrame.lookAt(headPos(), headPos() + Vector3.new(0, 0, 1)) -- (looking the wrong way)
 check(
-	"FIGHT! slams in",
+	"a SKIP button now",
 	untilTrue(1, function()
-		return refs.title.Visible and refs.title.Text == "FIGHT!"
-	end),
-	refs.title.Text
-)
-check(
-	"...the camera turns you to the enemy",
-	untilTrue(1, function()
-		return CamC.takenOver()
+		return refs.skip.Visible
 	end)
 )
+
+-- The first kill --------------------------------------------------------------------------------------------------------
+check("FIRST KILL: a bot walks at you", waitFor(2, stepIs("first_kill")))
+run(0.3)
+local bot = Tut.practice().bots[1]
+check("...one bot", bot ~= nil and #Tut.practice().bots == 1)
+check("...the camera turns you to it", CamC.takenOver())
 check(
-	"...and lets go",
-	untilTrue(2, function()
-		return not CamC.takenOver()
-	end)
-)
-local toBot = (root(bot).Position + Vector3.new(0, 1, 0) - cam.CFrame.Position).Unit
-check("...now looking right at them", cam.CFrame.LookVector:Dot(toBot) > 0.98, cam.CFrame.LookVector:Dot(toBot))
-check(
-	"looking at them: AIM HERE is done",
-	untilTrue(2, function()
-		return names(state().history):find("aim") ~= nil
-	end),
-	names(state().history)
-)
-check(
-	"HOLD TO PULL",
-	untilTrue(2, function()
-		return state().text == "HOLD TO PULL"
+	"HOLD…",
+	waitFor(2, function()
+		return state().text == "HOLD…"
 	end),
 	state().text
 )
-check("...the charge ring shows", refs.ring.Visible)
-check(
-	"...a marker over the enemy",
-	player.PlayerGui:FindFirstChild("TutorialMark") and player.PlayerGui.TutorialMark.Enabled
-)
-Engine.advance(Constants.SPAWN_PROTECT)
-local aim = root(bot).Position + Vector3.new(0, 0.6, 0)
-cam.CFrame = CFrame.lookAt(headPos(), aim)
+check("...a marker over it", player.PlayerGui:FindFirstChild("TutorialMark") and player.PlayerGui.TutorialMark.Enabled)
+run(3) -- (a new player takes it in)
+local dist = (bot.torso.Position - root(player).Position).Magnitude
+check("...about 15 studs off", dist > 11 and dist < 26, dist)
 Bus.Fire:Fire(true)
-Engine.advance(1.0)
-check("pulling far enough ends it", names(state().history):find("draw") ~= nil, names(state().history))
 check(
-	"LET GO!",
-	untilTrue(1.5, function()
+	"...pulling: LET GO!",
+	waitFor(1.5, function()
 		return state().text == "LET GO!"
 	end),
 	state().text
 )
-local f0 = Match:Frontline()
-cam.CFrame = CFrame.lookAt(headPos(), aim)
+local f0 = Tut.practice().front
 Bus.Fire:Fire(false)
-Engine.advance(0.1)
-check("letting go ends it", names(state().history):find("release") ~= nil, names(state().history))
-Engine.advance(0.8)
-check("the arrow knocks the bot out", not Combat:Alive(bot), Combat:Health(bot))
-local pushed = math.abs(Match:Frontline() - f0)
+Engine.advance(0.3)
+check("the arrow in slow motion: the camera rides with it", CamC.takenOver() and state().cinema)
+check("...nothing went to the match's server (the practice's own arrow)", #Combat:Arrows() == 0)
 check(
-	"...and the boost pushes the line further",
-	pushed == (Formulas.pushCells(2) + Constants.TUTORIAL_PUSH_BONUS) * Constants.CELL,
-	pushed
+	"KNOCKOUT!",
+	waitFor(3, function()
+		return seen["KNOCKOUT!"] ~= nil
+	end)
 )
+check("...the bot's down", not bot.alive and Tut.practice().kills == 1)
+local firstKillAt = Engine.now()
+check("...within 15 s of having control", firstKillAt - controlAt <= 15, firstKillAt - controlAt)
+check("...the line moved toward them", (Tut.practice().front - f0) * fwd == Practice.PUSH, Tut.practice().front)
+check("...Shards for it (the server's)", Tutorial:Run(player).kills == 1)
+
+-- DOUBLE KILL! TRIPLE KILL! ---------------------------------------------------------------------------------------------
+local shards0 = Data:Get(player).shards
+check("two more side by side", waitFor(4, stepIs("multi_kill")))
+run(0.4)
+check("...two bots", #(function()
+	local n = {}
+	for _, b in Tut.practice().bots do
+		if b.alive then
+			table.insert(n, b)
+		end
+	end
+	return n
+end)() == 2)
+run(4.5)
+shoot(1)
 check(
-	"HIT!",
-	untilTrue(2, function()
-		return names(state().history):find("hit") ~= nil and refs.title.Text == "HIT!"
-	end),
-	names(state().history) .. " " .. refs.title.Text
+	"DOUBLE KILL!",
+	waitFor(2, function()
+		return seen["DOUBLE KILL!"] ~= nil
+	end)
 )
+run(4)
+shoot(0.9)
 check(
-	"the knockout: the camera follows the line",
-	untilTrue(2, function()
-		return names(state().history):find("knockout") ~= nil and CamC.takenOver()
-	end),
-	names(state().history)
-)
-check(
-	"THE LINE MOVED!",
-	untilTrue(1.5, function()
-		return refs.title.Text == "THE LINE MOVED!"
-	end),
-	refs.title.Text
-)
-check("...the camera out above the field", cam.CFrame.Position.Y > 8, cam.CFrame.Position.Y)
-check(
-	"...back to first person after",
-	untilTrue(3, function()
-		return not CamC.takenOver() and cam.CameraType == Enum.CameraType.Custom
+	"TRIPLE KILL!",
+	waitFor(2, function()
+		return seen["TRIPLE KILL!"] ~= nil
 	end)
 )
 check(
-	"PUSH IT TO THEIR BASE",
-	untilTrue(2, function()
-		return state().text == "PUSH IT TO THEIR BASE"
+	"THE LINE MOVED! (the camera follows it)",
+	waitFor(4, function()
+		return seen["THE LINE MOVED!"] ~= nil
+	end)
+)
+check("...each one paid in Shards", Data:Get(player).shards == shards0 + 2 * Shop.EARN.perKill, Data:Get(player).shards)
+local earned = 0
+for i = logFrom + 1, #Engine.clientLog do
+	local e = Engine.clientLog[i]
+	if e.name == "Earned" and e.player == player then
+		earned += 1
+	end
+end
+check("...that fly into the counter (Earned)", earned == 3, earned)
+
+-- The near miss ---------------------------------------------------------------------------------------------------------
+check("a bot shoots back", waitFor(6, stepIs("near_miss")))
+local closest = math.huge
+local arrows = ws:FindFirstChild("Arrows")
+check(
+	"THEY SHOOT BACK.",
+	waitFor(8, function()
+		for _, d in arrows and arrows:GetDescendants() or {} do
+			if d:IsA("BasePart") and d.Transparency < 1 then
+				closest = math.min(closest, (d.Position - headPos()).Magnitude)
+			end
+		end
+		return seen["THEY SHOOT BACK."] ~= nil
+	end)
+)
+check("...it came close", closest < 6, closest)
+check("...and missed (never a hit)", hurt == 0 and downs == 0 and (audit() or true) and hurt == 0 and downs == 0)
+check(
+	"BUILD COVER!",
+	waitFor(3, function()
+		return seen["BUILD COVER!"] ~= nil
+	end)
+)
+
+-- The build ----------------------------------------------------------------------------------------------------------------
+check(
+	"BUILD TIME: NO SHOOTING",
+	waitFor(5, function()
+		return seen["BUILD TIME: NO SHOOTING"] ~= nil
+	end)
+)
+check("...the build phase on the HUD", Store.phase() == "build")
+Bus.Fire:Fire(true)
+Engine.advance(0.1)
+check("...no drawing the bow", not WeaponC.drawing())
+Bus.Fire:Fire(false)
+check(
+	"...the camera rises over the line",
+	waitFor(2, function()
+		return CamC.takenOver() and cam.CFrame.Position.Y > 15
+	end),
+	cam.CFrame.Position.Y
+)
+local left0 = Store.get("match").ends - ws:GetServerTimeNow()
+check(
+	"PICK A WALL",
+	waitFor(7, function()
+		return state().text == "PICK A WALL"
 	end),
 	state().text
 )
-check("...an arrow along the turf to their base", count("Chevron") > 4)
+local left1 = Store.get("match").ends - ws:GetServerTimeNow()
+check("...the clock waits", math.abs(left1 - left0) < 1, `{left0} {left1}`)
+check("...the wall pulses in the tray, with its key", hud.trayButtons.wall:FindFirstChild("TutorialGlow") ~= nil)
+check("...its key", refs.hint.Visible and refs.hint.Text == "press 2", refs.hint.Text)
+run(5)
+hud.trayButtons.wall.Activated:Fire()
 check(
-	"then the tutorial is done",
-	untilTrue(8, function()
-		return not state().running
+	"PLACE IT",
+	waitFor(2, function()
+		return state().text == "PLACE IT"
+	end),
+	state().text
+)
+run(0.3)
+check("...a glowing spot on the floor, a beam, an arrow to it", count("SpotBeam") == 1 and count("Chevron") > 2)
+local function placeOnSpot()
+	local slab = fx:FindFirstChild("SpotSlab")
+	local center = slab.Position
+	local stand = Vector3.new(center.X - fwd * 12, 3, center.Z)
+	Engine.moveTo(player, stand, center)
+	run(6) -- (walking there)
+	cam.CFrame = CFrame.lookAt(stand + Vector3.new(0, 1.6, 0), center)
+	Engine.advance(0.1)
+	cam.CFrame = CFrame.lookAt(stand + Vector3.new(0, 1.6, 0), center)
+	local ok = BuildC.spot() and BuildC.spot().ok
+	Bus.Place:Fire()
+	return ok, center
+end
+local okSpot, wallSpot = placeOnSpot()
+check("...the preview sits on it, a valid spot", okSpot, BuildC.spot() and BuildC.spot().why)
+check(
+	"NICE WALL!",
+	waitFor(2, function()
+		return seen["NICE WALL!"] ~= nil
+	end)
+)
+local wall
+for _, s in Tut.practice().built do
+	if s.key == "wall" then
+		wall = s
+	end
+end
+check("...a wall in their practice", wall ~= nil and wall.model.Parent ~= nil)
+check("...facing the line (across the field)", wall and (wall.max.Z - wall.min.Z) > (wall.max.X - wall.min.X))
+check(
+	"...on their side of it",
+	wall and (fwd > 0 and wall.max.X <= Tut.practice().front or wall.min.X >= Tut.practice().front)
+)
+check(
+	"...never in the match's structures",
+	(function()
+		for _, s in Build:All() do
+			if s.owner == player then
+				return false
+			end
+		end
+		return true
+	end)()
+)
+check("...the points spent", Store.get("me").budget == Constants.BUILD_BUDGET - 10, Store.get("me").budget)
+check(
+	"NOW A TOWER",
+	waitFor(3, function()
+		return state().text == "NOW A TOWER"
+	end),
+	state().text
+)
+run(5)
+hud.trayButtons.tower.Activated:Fire()
+check(
+	"...PLACE IT",
+	waitFor(2, function()
+		return state().text == "PLACE IT"
+	end)
+)
+run(0.3)
+placeOnSpot()
+check(
+	"TOWER UP!",
+	waitFor(2, function()
+		return seen["TOWER UP!"] ~= nil
 	end)
 )
 check(
-	"every step in order",
-	names(state().history) == "intro,pick,place,fight,aim,draw,release,hit,knockout,push",
+	"then the clock runs again",
+	waitFor(6, function()
+		return Store.get("match").ends - ws:GetServerTimeNow() < 6
+	end)
+)
+check(
+	"FIGHT!",
+	waitFor(6, function()
+		return seen["FIGHT!"] ~= nil and Store.phase() == "fight"
+	end)
+)
+check(
+	"...three arrows thud into the wall: WALLS STOP ARROWS!",
+	waitFor(5, function()
+		return seen["WALLS STOP ARROWS!"] ~= nil
+	end)
+)
+
+-- The TNT --------------------------------------------------------------------------------------------------------------
+check(
+	"the TNT: followed in slow motion",
+	waitFor(12, function()
+		return state().step == "tnt" and fx:FindFirstChild("PracticeTnt") ~= nil and CamC.takenOver()
+	end)
+)
+check(
+	"THAT'S TNT.",
+	waitFor(6, function()
+		return seen["THAT'S TNT."] ~= nil
+	end)
+)
+check("...the wall's gone", wall and wall.model.Parent == nil and Tut.practice().built[wall.id] == nil)
+check(
+	"YOURS FOREVER IN THE SHOP.",
+	waitFor(4, function()
+		return seen["YOURS FOREVER IN THE SHOP."] ~= nil
+	end)
+)
+check("...the TNT's slot glows (no popup)", hud.bows.tnt.button:FindFirstChild("TutorialGlow") ~= nil)
+
+-- The push --------------------------------------------------------------------------------------------------------------
+check(
+	"PUSH THE LINE!",
+	waitFor(14, function()
+		return state().step == "push" and seen["PUSH THE LINE!"] ~= nil
+	end)
+)
+for i = 1, 3 do
+	run(4.5)
+	shoot(0.9)
+	run(0.5)
+	waitFor(3, function()
+		return not state().cinema
+	end)
+	check(`...push knockout {i}`, state().kills == 3 + i, state().kills)
+end
+check("2 MORE TO WIN!", seen["2 MORE TO WIN!"] ~= nil)
+check("...a short kill cam each", state().kills == 6, state().kills)
+
+-- The win ----------------------------------------------------------------------------------------------------------------
+check(
+	"LAST ONE!",
+	waitFor(4, function()
+		return state().step == "final_kill"
+	end)
+)
+run(4)
+shoot(1)
+check(
+	"...in slow motion",
+	untilTrue(0.5, function()
+		return CamC.takenOver()
+	end)
+)
+check(
+	"VICTORY!",
+	waitFor(14, function()
+		return seen["VICTORY!"] ~= nil
+	end)
+)
+check("...the line all the way to their base", state().front == fwd * Practice.EDGE, state().front)
+check("...the camera circles them", CamC.takenOver())
+check("...fireworks", Fireworks.active())
+local reward
+check(
+	"...a free trail",
+	waitFor(9, function()
+		local e = Engine.lastClientEvent("Tutorial", player)
+		if e and e.args[1].kind == "reward" then
+			reward = e.args[1]
+		end
+		return reward ~= nil and refs.reward.Visible
+	end)
+)
+local p = Data:Get(player)
+check("...theirs, and worn", reward and reward.key and p.owned[reward.key] and p.equipped.trail == reward.key)
+check(
+	"...the Shards counting up (7 knockouts and the win)",
+	p.shards == shards0 - Shop.EARN.perKill + 7 * Shop.EARN.perKill + Shop.EARN.win,
+	p.shards
+)
+check(
+	"THE REAL GAME STARTS NOW",
+	waitFor(20, function()
+		return seen["THE REAL GAME STARTS NOW"] ~= nil
+	end)
+)
+local gate = fx:FindFirstChild("PracticeGate")
+check("...a gate to walk through", gate ~= nil)
+run(3.5)
+local veil = gate and gate:FindFirstChild("Veil")
+if veil then
+	Engine.moveTo(player, Vector3.new(veil.Position.X, 3, veil.Position.Z))
+end
+check(
+	"into the live match",
+	waitFor(4, function()
+		return not state().running and Teams:Team(player) ~= nil
+	end)
+)
+local total = Engine.now() - t0
+local timings = Tutorial:Run(player).timings
+check(
+	"every step, in order",
+	names(state().history)
+		== "intro,first_kill,multi_kill,near_miss,build_view,pick_wall,place_wall,pick_tower,place_tower,fight_again,tnt,push,final_kill,victory,gate",
 	names(state().history)
 )
-check(
-	"...and the server heard them in order",
-	names(Tutorial:Steps(player)) == "intro,pick,place,fight,aim,draw,release,hit,knockout,push",
-	names(Tutorial:Steps(player))
-)
-check("the HUD comes back", not Layout.focused() and hud.invite.Visible and hud.feed.Visible)
-check("...the SKIP button goes", not refs.skip.Visible)
-local p = Data:Get(player)
-check("done, saved on the profile", p.tutorial.done == true and p.tutorial.skipped == false)
-Engine.advance(0.5)
-local saved = Engine.dataStores[Constants.PROFILE_STORE]["u_601"]
-check("...and in the save", saved and saved.tutorial and saved.tutorial.done == true)
-check("...not running on the server any more", not Tutorial:Active(player))
+check("about 2:50 (and under 3:00)", total >= 140 and total < 180, total)
+audit()
+check("never knocked out, never hurt", hurt == 0 and downs == 0, `{hurt} {downs}`)
+check("never knocked out (the server's count)", (Match:Stats(player).deaths or 0) == 0)
 
--- The tips, once each -------------------------------------------------------------------------------------------------
+-- After: in the live match --------------------------------------------------------------------------------------------
+Engine.advance(1)
+check("on a team", Teams:Team(player) ~= nil)
 check(
-	"the bot comes back",
-	untilTrue(Constants.RESPAWN_SECONDS + 1, function()
-		return Combat:Alive(bot)
-	end)
+	"...alive, with a body in the arena",
+	Combat:Alive(player) and root(player) and math.abs(root(player).Position.Z) < 300
 )
-Constants.CHARGE_SECONDS = 1e6 -- (the blade tip is only for the CHARGE: the whole fight is it here)
-Engine.advance(0.3)
-Engine.moveTo(bot, root(player).Position + Vector3.new(fwd * 6, 0, 0), root(player).Position)
-Engine.advance(0.2)
-check("an enemy close in the CHARGE: 3 = BLADE", refs.tip.Visible and refs.tip.Text == "3 = BLADE", refs.tip.Text)
-check("...the blade's slot pulses", hud.bows.blade.button:FindFirstChild("TutorialGlow") ~= nil)
-Engine.moveTo(bot, root(player).Position + Vector3.new(fwd * 30, 0, 0), root(player).Position)
-Engine.advance(3.5)
-Constants.CHARGE_SECONDS = 20
-local hum = player.Character:FindFirstChildOfClass("Humanoid")
-hum.MoveDirection = Vector3.new(1, 0, 0)
-Engine.advance(8.5)
-check("walking a while: SHIFT = RUN", refs.tip.Text == "SHIFT = RUN", refs.tip.Text)
-hum.MoveDirection = Vector3.new(0, 0, 0)
-Engine.moveTo(bot, root(player).Position + Vector3.new(fwd * 6, 0, 0), root(player).Position)
-Engine.advance(4)
-local tips = 0
+check("...counted in the match", table.find(Match:Everyone(), player) ~= nil)
+check("...not hushed, not in practice", not Net.hushed(player) and player:GetAttribute("Practice") == nil)
+check(
+	"...the HUD reads the match again",
+	Store.get("match").practice ~= true and Store.get("match").matchId == Match:Snapshot().matchId
+)
+check("...and their team", Store.get("me").team == Teams:Team(player) and Store.get("me").alive == true)
+check("...the practice gone", Tut.practice() == nil and ws:FindFirstChild("PracticeFloor" .. info.slot) == nil)
+check("...the HUD whole again", not Layout.focused() and not Layout.inPractice())
+check("...the anti-cheat never struck them", AntiCheat:Strikes(player) == 0)
+check("done, saved", p.tutorial.done == true and p.tutorial.skipped == false)
+check("...not running on the server", not Tutorial:Active(player))
+
+-- What it measured (the report) -----------------------------------------------------------------------------------------
+local line = {}
 for _, e in state().history do
-	if e.name:sub(1, 4) == "tip_" then
-		tips += 1
-	end
+	table.insert(line, `{e.name}={e.t}`)
 end
-check("...each tip only once", tips == 2, tips)
-
--- The first win ------------------------------------------------------------------------------------------------------
-Match:Victory(team)
-Engine.advance(0.3)
-check("the first win: the camera circles you", CamC.takenOver())
-check("...YOU WIN!", refs.title.Text == "YOU WIN!", refs.title.Text)
-check(
-	"...confetti",
-	untilTrue(1.5, function()
-		return count("Burst") > 0
-	end)
+print(
+	"step timings (client, s from the start): " .. table.concat(line, " ") .. ` | total {math.floor(total * 10) / 10}`
 )
-check(
-	"...and back",
-	untilTrue(6, function()
-		return not CamC.takenOver() and cam.CameraType == Enum.CameraType.Custom
-	end)
-)
-check("the win is told to the server", names(Tutorial:Steps(player)):find("win") ~= nil, names(Tutorial:Steps(player)))
-check("only the first match had the boost", not Tutorial:Boosted(player))
-Engine.advance(Constants.VICTORY_SECONDS + Constants.TRANSITION_SECONDS + 1)
-check("the next match", Match:Phase() == "build", Match:Phase())
-check(
-	"...no boost: a normal bot, a normal push",
-	not Tutorial:Boosted(player) and Bots.easyFor(player) == false and Match.bonusCells(player) == 0
-)
-local starts = 0
-for _, ev in Engine.clientLog do
-	if ev.name == "Tutorial" and ev.player == player and ev.args[1].kind == "start" then
-		starts += 1
-	end
-end
-check("...and no tutorial", not state().running and starts == 1, starts)
-
--- Replay, skips, waiting while down, the phone's words ---------------------------------------------------------------
-Tut.replay()
-Engine.advance(0.2)
-check("REPLAY starts it again", state().running and Tutorial:Active(player))
-check(
-	"...without a boost",
-	not Tutorial:Boosted(player) and Engine.lastClientEvent("Tutorial", player).args[1].boost == false
-)
-check(
-	"...the intro again",
-	untilTrue(2, function()
-		return state().intro
-	end)
-)
-Engine.advance(1.2)
-key(Enum.KeyCode.Space)
-Engine.advance(0.1)
-check("Space doesn't skip it", state().intro)
-key(Enum.KeyCode.Return)
-Engine.advance(0.1)
-check("Enter skips the intro after a second", not state().intro and not CamC.takenOver())
-check(
-	"...the camera back in first person",
-	cam.CameraType == Enum.CameraType.Custom and (cam.CFrame.Position - headPos()).Magnitude < 0.6
-)
-local last = state().history[#state().history]
-check("...told as skipped", last.name == "intro" and last.how == "skip", last.how)
-check(
-	"the steps carry on",
-	untilTrue(2, function()
-		return state().step == "pick" and state().text == "PICK A WALL"
-	end),
-	state().step
-)
-Device.set("touch")
-Engine.advance(0.1)
-check("on a phone: TAP A WALL", state().text == "TAP A WALL", state().text)
-Device.set("keyboard")
-Engine.advance(0.1)
-Combat:Kill(player, nil, { kind = "reset" })
-Engine.advance(0.5)
-check("down: the step waits, nothing on screen", state().step == "pick" and state().text == nil, state().text)
-Engine.advance(Constants.RESPAWN_SECONDS + 0.5)
-check("back up: it carries on", state().step == "pick" and state().text == "PICK A WALL", state().text)
-key(Enum.KeyCode.K)
-Engine.advance(0.2)
-check("K skips the tutorial", not state().running and not Layout.focused())
-check("...the server saves it as skipped", p.tutorial.done == true and p.tutorial.skipped == true)
--- on a phone: dragging never skips the intro; its SKIP button does
-Device.set("touch")
-Tut.replay()
-Engine.advance(0.2)
-check(
-	"a phone: the intro again",
-	untilTrue(3, function()
-		return state().intro
-	end)
-)
-UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Unknown, UserInputType = Enum.UserInputType.Touch }, false)
-Engine.advance(1.3)
-check("...a drag doesn't skip it", state().intro)
-check("...the SKIP button shows", refs.skipCine.Visible)
-refs.skipCine.Activated:Fire()
-Engine.advance(0.1)
-check("...tapping SKIP skips it", not state().intro and not CamC.takenOver())
-Tut.skip()
-Engine.advance(0.2)
-Device.set("keyboard")
-check("...the guides go", count("SpotBeam") == 0 and not refs.say.Visible)
-
--- The join intro (a returning player): the opening alone plays, then the camera is yours again ---------------------------
+local sline = {}
+for _, n in
+	{
+		"intro",
+		"first_kill",
+		"multi_kill",
+		"near_miss",
+		"build_view",
+		"place_tower",
+		"fight_again",
+		"tnt",
+		"push",
+		"final_kill",
+		"victory",
+		"gate",
+	}
 do
-	local NetS = Engine.require(tree.shared.Net)
-	NetS.fire(player, "Tutorial", { kind = "intro" })
-	local played = untilTrue(3, function()
-		return Tut.state().cinema
-	end)
-	check("the join intro plays the opening cinematic", played)
-	check("...not the guided steps", not Tut.state().running)
-	local over = untilTrue(12, function()
-		return not Tut.state().cinema
-	end)
-	check("...and ends, the camera back to you", over and ws.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable)
+	table.insert(sline, `{n}={timings[n]}`)
+end
+print("step timings (server): " .. table.concat(sline, " "))
+check("the server timed every step", timings.gate ~= nil and timings.intro ~= nil)
+
+-- Nothing from the match reached them while they were away --------------------------------------------------------------
+do
+	-- (during the run: kills, banners, toasts, joins happened in the match; check the log between start and leave)
+	local leaveAt
+	for i = #Engine.clientLog, logFrom + 1, -1 do
+		local e = Engine.clientLog[i]
+		if e.name == "Tutorial" and e.player == player and e.args[1].kind == "leave" then
+			leaveAt = i
+			break
+		end
+	end
+	local outside = {}
+	local blocked = {
+		Kill = true,
+		Announce = true,
+		Toast = true,
+		Alert = true,
+		Match = true,
+		Me = true,
+		InvitePromo = true,
+		Gift = true,
+		Hook = true,
+		Ask = true,
+		Results = true,
+		Sfx = true,
+		Arrow = true,
+		Structure = true,
+		PartyInvite = true,
+	}
+	local startAt
+	for i = logFrom + 1, leaveAt or #Engine.clientLog do
+		local e = Engine.clientLog[i]
+		if e.name == "Tutorial" and e.player == player and e.args[1].kind == "start" then
+			startAt = i
+		end
+		if startAt and i > startAt and (e.player == player or e.player == "all") and blocked[e.name] then
+			outside[e.name] = (outside[e.name] or 0) + 1
+		end
+	end
+	local list = {}
+	for k, v in outside do
+		table.insert(list, `{k}x{v}`)
+	end
+	check(
+		"no outside notifications in the practice (feed, joins, banners, toasts, cards, the match's state)",
+		#list == 0,
+		table.concat(list, " ")
+	)
 end
 
--- The step timers: a step can't trap you (it times out, the match never waits) -----------------------------------------
+-- A replay, skipped: straight into the live match ------------------------------------------------------------------------
+do
+	Tut.replay()
+	Engine.advance(0.3)
+	check("REPLAY: the practice again", state().running and Tutorial:InPractice(player) and Teams:Team(player) == nil)
+	check("...no rewards this time", Tutorial:Run(player).pay == false)
+	key(Enum.KeyCode.Return)
+	waitFor(2, function()
+		return state().intro
+	end)
+	run(1.2)
+	key(Enum.KeyCode.Return)
+	Engine.advance(0.1)
+	check("Enter skips the intro (after its first second)", not state().intro and not CamC.takenOver())
+	check("...the steps carry on", waitFor(2, stepIs("first_kill")))
+	check("...SKIP shows", refs.skip.Visible)
+	-- a phone's words, a pad's words
+	Device.set("touch")
+	run(1.3)
+	check("on a phone: HOLD FIRE…", state().text == "HOLD FIRE…", state().text)
+	Device.set("gamepad")
+	Engine.advance(0.1)
+	check("on a pad: HOLD R2…", state().text == "HOLD R2…", state().text)
+	Device.set("keyboard")
+	Engine.advance(0.1)
+	key(Enum.KeyCode.K)
+	Engine.advance(0.3)
+	check("K skips it: into the live match", not state().running and Teams:Team(player) ~= nil and Combat:Alive(player))
+	check("...the practice gone", Tut.practice() == nil and not Net.hushed(player))
+	check("...saved as skipped", Data:Get(player).tutorial.skipped == true)
+end
+
+-- A replay where they touch nothing: every step does its part, still a win, still under 3:00 ------------------------------
+do
+	Tut.replay()
+	Engine.advance(0.2)
+	local i0 = Engine.now()
+	check("REPLAY again", state().running)
+	local ended = waitFor(185, function()
+		return not state().running
+	end)
+	local idle = Engine.now() - i0
+	check("idle: it ends on its own", ended)
+	check("...under 3:00", idle < 180, idle)
+	check(
+		"...with the win (all seven knockouts done for them)",
+		names(state().history):find("victory") ~= nil and Tutorial:Run(player).kills == 7
+	)
+	check("...a wall built for them (then the TNT took it)", seen["NICE WALL!"] ~= nil)
+	check(
+		"...and into the match with a team",
+		waitFor(2, function()
+			return Teams:Team(player) ~= nil and Combat:Alive(player)
+		end)
+	)
+	print(`idle run: {math.floor(idle * 10) / 10} s`)
+end
+
+-- A client that never answers: the server ends it at its time limit ---------------------------------------------------------
+do
+	Constants.TUTORIAL_MAX_SECONDS = 20
+	local mute = Engine.addPlayer("Silent", 602)
+	Engine.advance(0.5)
+	check("another new player: in a practice of their own", Tutorial:InPractice(mute) and Tutorial:Run(mute) ~= nil)
+	-- (and while they're in it, someone else's practice is somewhere else)
+	Tut.replay()
+	Engine.advance(0.3)
+	check("...two at once: two slots", Tutorial:Run(player).slot ~= Tutorial:Run(mute).slot)
+	check("...far apart", (Tutorial:Run(player).origin - Tutorial:Run(mute).origin).Magnitude >= 300)
+	Tut.skip()
+	Engine.advance(0.3)
+	-- the watchdog, the AFK room and the bots leave them be
+	Constants.AFK_SECONDS = 1
+	Afk:_check()
+	Constants.AFK_SECONDS = 0
+	check("...not sent to the AFK room", not Afk:Away(mute))
+	Engine.advance(Constants.STUCK_RESPAWN_SECONDS + 1)
+	check("...the watchdog doesn't pull them into the match", Teams:Team(mute) == nil and Tutorial:InPractice(mute))
+	Engine.advance(17)
+	check("at the limit: into the live match", not Tutorial:InPractice(mute) and Teams:Team(mute) ~= nil)
+	check("...alive", Combat:Alive(mute))
+	Constants.TUTORIAL_MAX_SECONDS = 180
+end
+
+-- The step timers: no step can trap you -----------------------------------------------------------------------------------
+local worst = 8
 for _, st in Tut.STEPS do
-	check(`step {st.name} times out`, type(st.timeout) == "number" and st.timeout <= 60, st.timeout)
+	check(`step {st.name} times out`, type(st.timeout) == "number" and st.timeout <= 25, st.timeout)
+	worst += st.timeout + (st.grace or 4) + 0.6
 end
+check("even every step at its very longest stays near the limit (the server ends it at 3:00)", worst < 260, worst)
 
--- A returning player -----------------------------------------------------------------------------------------------------
+-- A returning player ------------------------------------------------------------------------------------------------------
 local old = Engine.addPlayer("Oldie", 777)
 Engine.advance(0.5)
 Engine.fireServer(old, "Ready")
 Engine.advance(0.5)
 local e = Engine.lastClientEvent("Tutorial", old)
-check("another new player gets it too", e and e.player == old and e.args[1].kind == "start")
-check("...no boost with two people on", not Tutorial:Boosted(old))
+check("another new player gets it", e and e.player == old and e.args[1].kind == "start")
 Engine.fireServer(old, "Tutorial", "step", "intro")
 Engine.fireServer(old, "Tutorial", "done")
 Engine.advance(0.2)
+check("...done: joined to the match", Teams:Team(old) ~= nil)
 Engine.removePlayer(old)
 Engine.advance(1)
 local mark = #Engine.clientLog
@@ -568,35 +838,9 @@ for i = mark + 1, #Engine.clientLog do
 		again = true
 	end
 end
-check("coming back right away after finishing it: no tutorial, no intro", not again and not Tutorial:Active(back))
+check("coming back after finishing it: no tutorial", not again and not Tutorial:Active(back))
+check("...straight into the match", Teams:Team(back) ~= nil and not Tutorial:InPractice(back))
 check("...their save says done", Data:Get(back) and Data:Get(back).tutorial.done == true)
--- back after a while: the opening alone (RED, BLUE, THE LINE, YOUR TURF, into your eyes), not the whole tutorial
-Engine.removePlayer(back)
-Engine.advance(1)
-local savedOld = Engine.dataStores[Constants.PROFILE_STORE]["u_777"]
-savedOld.meta.lastSeen -= 600 -- (the mock clock: ten minutes before they left)
-mark = #Engine.clientLog
-local later = Engine.addPlayer("Oldie", 777)
-Engine.advance(0.5)
-Engine.fireServer(later, "Ready")
-Engine.advance(1)
-local kinds, welcome = {}, nil
-for i = mark + 1, #Engine.clientLog do
-	local ev = Engine.clientLog[i]
-	if ev.name == "Tutorial" and ev.player == later then
-		table.insert(kinds, ev.args[1].kind)
-	elseif ev.name == "Hook" and ev.player == later and ev.args[1].kind == "welcome" then
-		welcome = ev.args[1]
-	end
-end
-check(
-	"back after 10 minutes: no intro (straight into the fight)",
-	table.find(kinds, "intro") == nil,
-	table.concat(kinds, ",")
-)
-check("...not the tutorial", table.find(kinds, "start") == nil and not Tutorial:Active(later))
-check("...a WELCOME BACK with their wins and streak", welcome ~= nil and welcome.wins ~= nil and welcome.streak ~= nil)
-check("...and a body at once", later.Character ~= nil and later.Character:FindFirstChild("HumanoidRootPart") ~= nil)
 check(
 	"the rule: back within 2 minutes, no intro",
 	not Tutorial.joinIntro({ meta = { lastSeen = 1000 } }, 1000 + Constants.JOIN_INTRO_REJOIN_SECONDS - 5)
@@ -610,38 +854,16 @@ check(
 	not Tutorial.shouldShow({ stats = { matches = 3 }, tutorial = { done = false } })
 )
 check("...a replay asked for shows it", Tutorial.shouldShow({ stats = { matches = 3 }, tutorial = { replay = true } }))
--- back again: never the tutorial or the intro (they go straight into the fight)
 check(
 	"a brand-new player isn't returning",
 	not Tutorial.returning({ meta = { sessions = 1 }, stats = {}, tutorial = {} })
 )
 check(
 	"left part-way through the tutorial: returning (no replay of it)",
-	Tutorial.returning({ meta = { sessions = 1 }, stats = {}, tutorial = { step = "aim" } })
+	Tutorial.returning({ meta = { sessions = 1 }, stats = {}, tutorial = { step = "first_kill" } })
 )
 check("a second visit: returning", Tutorial.returning({ meta = { sessions = 2 }, stats = {}, tutorial = {} }))
 check("a kill or a match: returning", Tutorial.returning({ stats = { kills = 1 }, tutorial = {} }))
-do
-	-- a replay asked for last time and never finished doesn't carry over to the next visit
-	Engine.removePlayer(later)
-	Engine.advance(1)
-	local saved = Engine.dataStores[Constants.PROFILE_STORE]["u_777"]
-	saved.tutorial.replay = true
-	saved.meta.lastSeen -= 600
-	local mk = #Engine.clientLog
-	local rep = Engine.addPlayer("Oldie", 777)
-	Engine.advance(0.5)
-	Engine.fireServer(rep, "Ready")
-	Engine.advance(1)
-	local started = false
-	for i = mk + 1, #Engine.clientLog do
-		local ev = Engine.clientLog[i]
-		if ev.name == "Tutorial" and ev.player == rep then
-			started = true
-		end
-	end
-	check("a replay left over from last visit doesn't replay it", not started and not Tutorial:Active(rep))
-end
 Constants.TUTORIAL = false
 check("...and the switch turns it off", not Tutorial.shouldShow({ stats = { matches = 0 }, tutorial = {} }))
 Constants.TUTORIAL = true

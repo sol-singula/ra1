@@ -883,8 +883,8 @@ function AudioController:init()
 		end
 	end)
 	workspace:GetAttributeChangedSignal("Charge"):Connect(function()
-		if workspace:GetAttribute("Charge") == true then
-			AudioController.play("charge")
+		if workspace:GetAttribute("Charge") == true and not player:GetAttribute("Practice") then
+			AudioController.play("charge") -- (never in the tutorial's private practice: the match's moment)
 		end
 	end)
 	RunService.RenderStepped:Connect(function()

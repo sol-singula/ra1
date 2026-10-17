@@ -23,7 +23,7 @@ the way of the build tray and of a question card, and ClientSmoke checks the rec
 
 The tutorial (TutorialController): while it guides (Layout.focused) the invite and shop buttons, the kill feed, the
 build hint, the objective, alerts and toasts step aside; while one of its cinematics plays (Layout.inCinema) the whole
-HUD does.
+HUD does. In its private practice (Layout.inPractice) the Shards counter stays up and the match's CHARGE never shows.
 
 The objective is on screen in the first seconds (§1: understood in under 15 s): "Every kill pushes the line toward
 their base. Push them off the map."
@@ -971,7 +971,7 @@ local function buildBottom(gui)
 	end
 	-- the blade's slot is only there in the CHARGE (the fight's last seconds, when the line opens)
 	local function chargeSlots()
-		local on = workspace:GetAttribute("Charge") == true
+		local on = Layout.charging()
 		for _, w in Weapons.list do
 			if w.melee and refs.bows[w.key] then
 				refs.bows[w.key].button.Visible = on
@@ -979,6 +979,7 @@ local function buildBottom(gui)
 		end
 	end
 	chargeSlots()
+	refs.chargeSlots = chargeSlots -- (the practice's start and end change it too: every frame, step)
 	workspace:GetAttributeChangedSignal("Charge"):Connect(chargeSlots)
 	-- the build tray
 	local tray = Theme.new("Frame", {
@@ -1390,7 +1391,7 @@ local function updateTouch()
 	-- SWAP only with something to swap to (the TNT bought or on its free try; the blade in the CHARGE)
 	local choices = 0
 	for _, x in Weapons.list do
-		if not Weapons.locked(x.key, player) and (not x.melee or workspace:GetAttribute("Charge") == true) then
+		if not Weapons.locked(x.key, player) and (not x.melee or Layout.charging()) then
 			choices += 1
 		end
 	end
@@ -1728,13 +1729,17 @@ local function step()
 	end
 	local focus = Layout.focused()
 	if focus or refs.focusHid then
-		-- (the first four come back after; the passing ones keep their own timers)
+		-- (the first four come back after; the passing ones keep their own timers; in the practice the Shards
+		-- counter stays: every knockout's Shards fly into it)
 		for i, k in { "invite", "shop", "feed", "buildHint", "objective", "alert", "toast" } do
 			if refs[k] and (focus or i <= 4) then
-				refs[k].Visible = not focus
+				refs[k].Visible = not focus or (k == "shop" and Layout.inPractice())
 			end
 		end
 		refs.focusHid = focus
+	end
+	if refs.chargeSlots then
+		refs.chargeSlots()
 	end
 end
 

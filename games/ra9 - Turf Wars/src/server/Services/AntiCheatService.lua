@@ -193,8 +193,13 @@ function AntiCheatService:Check(player)
 	if Admins.isAdmin(player) then
 		return -- (admins teleport, fly and spectate: never checked)
 	end
-	local r, hum = rootOf(player)
 	local s = st(player)
+	if player:GetAttribute("Practice") == true then
+		-- (a new player in their private practice: our own scripted moves, far from the match; judged afresh after)
+		s.samples, s.good, s.airSince = {}, nil, nil
+		return
+	end
+	local r, hum = rootOf(player)
 	local t = os.clock()
 	-- strikes fade
 	if t - s.lastDecay >= self.DECAY_SECONDS then
