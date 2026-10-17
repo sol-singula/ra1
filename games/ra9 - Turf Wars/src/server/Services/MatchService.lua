@@ -66,6 +66,8 @@ local TRIPLE_SECONDS = 6
 local closest = {} -- [team] = the least share of the way to their losing line they've had left this match
 local stats = {} -- [player] = { joined, kills, deaths, assists, built, shots, hits, headshots, pushed, active }
 local respawnAt = {} -- [player] = time
+local spawning = {} -- [player] = when a body started loading (the watchdog waits for it)
+local stuckAt = {} -- [player] = since when they've had no body and nothing coming (the watchdog)
 local pending = {} -- [player] = true: waiting for the next match to spawn
 local frozen -- seconds left on the clock while an admin holds it (nil: running)
 local random = Random.new()
@@ -252,6 +254,7 @@ function MatchService:Spawn(player)
 	local team = teams:Team(player) or teams:Assign(player)
 	respawnAt[player] = nil
 	pending[player] = nil
+	spawning[player] = now() -- (a body takes a moment to load live: the watchdog leaves it alone meanwhile)
 	local desc = ownBody(player) or sameBody()
 	local loaded = desc and pcall(function()
 		player:LoadCharacterWithHumanoidDescription(desc)
@@ -289,6 +292,7 @@ function MatchService:Spawn(player)
 		end)
 	end
 	combat:Spawned(player)
+	spawning[player] = nil
 end
 
 function MatchService:_onKilled(victim, killer, info)
@@ -581,6 +585,28 @@ function MatchService:_tick()
 			end
 		end)
 	end
+	-- the watchdog: nobody in the match is ever left without a body and nothing coming (a rejoin, a body that never
+	-- loaded, a respawn lost somewhere): down with no respawn due, or "alive" with no body, for a few seconds
+	if phase == "build" or phase == "fight" then
+		for _, player in self:People() do
+			local c = player.Character
+			local r = c and c:FindFirstChild("HumanoidRootPart")
+			local fine = (combat:Alive(player) and r ~= nil)
+				or respawnAt[player] ~= nil
+				or pending[player]
+				or (spawning[player] and t - spawning[player] < 12)
+			if fine or not teams:Team(player) then
+				stuckAt[player] = nil
+			else
+				stuckAt[player] = stuckAt[player] or t
+				if t - stuckAt[player] >= Constants.STUCK_RESPAWN_SECONDS then
+					stuckAt[player] = nil
+					spawning[player] = nil
+					respawnAt[player] = t
+				end
+			end
+		end
+	end
 	-- the turf rule, and the kill plane
 	if phase == "build" or phase == "fight" then
 		for _, player in self:Everyone() do
@@ -645,6 +671,8 @@ function MatchService:Init(registry)
 		stats[player] = nil
 		respawnAt[player] = nil
 		pending[player] = nil
+		spawning[player] = nil
+		stuckAt[player] = nil
 	end)
 end
 

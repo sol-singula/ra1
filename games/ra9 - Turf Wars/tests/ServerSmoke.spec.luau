@@ -1338,6 +1338,46 @@ do
 	Constants.AFK_SECONDS = 0
 end
 
+-- leave and come back before the match ends: the same side, and straight back in (never stuck "respawning")
+do
+	local r1 = Engine.addPlayer("Rejoin", 631)
+	local o1 = Engine.addPlayer("Other", 632)
+	Engine.advance(0.5)
+	send(r1, "Ready")
+	send(o1, "Ready")
+	Engine.advance(0.5)
+	Match:NewMatch()
+	Engine.advance(1)
+	Match:SkipTo("fight")
+	Engine.advance(0.5)
+	local was = Teams:Team(r1)
+	local matchId = ws:GetAttribute("MatchId")
+	Engine.removePlayer(r1)
+	Engine.advance(2)
+	local r2 = Engine.addPlayer("Rejoin", 631)
+	Engine.advance(0.5)
+	send(r2, "Ready")
+	Engine.advance(1.5)
+	check("rejoining the same match: the side you were on", Teams:Team(r2) == was, `{Teams:Team(r2)} {was}`)
+	check("...the match goes on (no restart)", ws:GetAttribute("MatchId") == matchId)
+	check("...and you're back in, alive", Combat:Alive(r2) and rootOf(r2) ~= nil)
+	-- a body that goes missing (it never loaded, it fell apart): the server puts them back in on its own
+	r2.Character:Destroy()
+	r2.Character = nil
+	local back = false
+	for _ = 1, 20 do
+		Engine.advance(0.5)
+		if r2.Character and rootOf(r2) and Combat:Alive(r2) then
+			back = true
+			break
+		end
+	end
+	check("no body and nothing coming: put back in within seconds", back)
+	Engine.removePlayer(r2)
+	Engine.removePlayer(o1)
+	Engine.advance(1)
+end
+
 print(`\n{passed} passed, {failed} failed`)
 if #Engine.errors > 0 then
 	for i = 1, math.min(5, #Engine.errors) do

@@ -325,6 +325,9 @@ end
 
 -- Someone new against a side that only had bots to fight: they take a bot's place, and the bots go.
 function BotService:Takeover(player)
+	if teams.Returning and teams:Returning(player) then
+		return nil -- (back in the same match: their old side, no restart; Ensure evens the bots)
+	end
 	local people = humans()
 	if #people < 2 or #bots == 0 or Admins.spectating(player) then
 		return nil

@@ -39,6 +39,7 @@ local TeamService = {
 }
 
 local teams = {} -- [player] = "red" | "blue"
+local left = {} -- [userId] = { team, match }: the side someone left from, kept for that match (a rejoin goes back)
 local turfLeader -- fn() -> "red" | "blue" | nil: the team ahead on turf (MatchService sets it)
 local partyList -- fn() -> { { leader, members } } (PartyService sets it)
 
@@ -174,7 +175,23 @@ function TeamService:Clear(player)
 end
 
 -- Joining ----------------------------------------------------------------------------------------------------------
+-- Back in the same match after leaving (a rejoin, a crash): the side they were on, or nil
+function TeamService:Returning(player)
+	local was = typeof(player) == "Instance" and left[player.UserId]
+	if was and was.match == workspace:GetAttribute("MatchId") then
+		return was.team
+	end
+	return nil
+end
+
 function TeamService:Assign(player)
+	-- rule 0: back in the same match, the side they were on
+	local back = self:Returning(player)
+	if back then
+		left[player.UserId] = nil
+		self:Set(player, back)
+		return back
+	end
 	-- rule 1: with your party
 	local pick = self:PartyTeam(player)
 	if pick then
@@ -341,6 +358,10 @@ function TeamService:Init()
 		end)
 	end
 	Players.PlayerRemoving:Connect(function(player)
+		-- (remembered for this match: if they come back before it ends, they're on the same side)
+		if teams[player] then
+			left[player.UserId] = { team = teams[player], match = workspace:GetAttribute("MatchId") }
+		end
 		teams[player] = nil
 	end)
 end
