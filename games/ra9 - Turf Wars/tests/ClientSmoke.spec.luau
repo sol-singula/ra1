@@ -613,7 +613,11 @@ check("letting go draws your arrow at once (predicted)", Arrows.count() >= 1)
 Engine.advance(0.6)
 check("the shot went to the server", Engine.lastClientEvent("Shoot") ~= nil)
 check("a full draw kills the foe", not Combat:Alive(foe), Combat:Health(foe))
-check("a hit marker (red: a kill)", refs.hit and refs.hitLines[1].BackgroundColor3 == Constants.TEAM_COLOR.red)
+-- (the HUD's own red, not the team's: in Bot Brawl the team is green, a kill's marker still red)
+check(
+	"a hit marker (red: a kill)",
+	refs.hit and refs.hitLines[1].BackgroundColor3 == Engine.require(tree.client.UI.Theme).Color.red
+)
 check("the kill feed shows it", #refs.feed:GetChildren() >= 2)
 check(
 	"the bar moved toward them",

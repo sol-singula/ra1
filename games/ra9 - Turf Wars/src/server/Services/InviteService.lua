@@ -38,6 +38,7 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local InviteService = {
 	Name = "InviteService",
+	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
 	Dependencies = { "PlayerDataService", "ProgressService", "MatchService", "TeamService", "CombatService" },
 	Credited = Signal.new("InviteService.Credited"), -- (inviter, friendUserId)
 	PromoShown = Signal.new("InviteService.PromoShown"), -- (player, why)

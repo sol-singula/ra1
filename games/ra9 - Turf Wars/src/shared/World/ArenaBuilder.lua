@@ -634,7 +634,7 @@ function ArenaBuilder.build(def, parent, scale)
 		p.CFrame = CFrame.new(x, -1, 0)
 		p.Material = Enum.Material.SmoothPlastic
 		p.TopSurface = Enum.SurfaceType.Smooth
-		p.Color = Constants.WHITE
+		p.Color = Constants.MAP_GROUND.turf or Constants.WHITE -- (the mode's ground, when it has one: grass in Bot Brawl)
 		p.Parent = turf
 		strips[i] = p
 	end
@@ -754,7 +754,7 @@ function ArenaBuilder.build(def, parent, scale)
 	local ground = shapes:box(
 		Vector3.new(0, -2.5, 0),
 		Vector3.new(length + 600, 1, width + 600),
-		deco({ color = shapes.light, shadow = false })
+		deco({ color = Constants.MAP_GROUND.ground or shapes.light, shadow = false })
 	)
 	ground.Name = "Ground"
 
@@ -771,7 +771,15 @@ function ArenaBuilder.build(def, parent, scale)
 			return s * (half - d)
 		end
 		local zoneX = X(spawnDepth / 2)
-		shapes:block(zoneX, 0, spawnDepth, width - 2, 0.2, { color = shapes.light, collide = false, solid = false }, 0)
+		shapes:block(
+			zoneX,
+			0,
+			spawnDepth,
+			width - 2,
+			0.2,
+			{ color = Constants.MAP_GROUND.deck or shapes.light, collide = false, solid = false },
+			0
+		)
 		for row = -2, 2 do
 			for _, d in room.pads do
 				local px, pz = X(d), row * 14

@@ -37,6 +37,7 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local GiftService = {
 	Name = "GiftService",
+	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
 	Dependencies = {
 		"PlayerDataService",
 		"ProgressService",

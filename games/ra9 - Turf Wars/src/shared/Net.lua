@@ -31,6 +31,12 @@ Net.ClientEvents = {
 	Top = 2, -- () the leaderboards, please (LeaderboardService answers with "Leaderboards")
 	Active = 1, -- () the player touched a key, the mouse or the screen lately (AfkService: not idle)
 	InvitePromo = 4, -- ("sent", recipients) | ("later") the invite-a-friend card (InviteService)
+	-- the universe (Data/Modes): PlaceService takes Play and ToLobby; the rest are the lobby's, the duels', the crates'
+	Play = 0.5, -- (modeKey?) off to that mode's place (none: the one with the most players, PopulationService:Best)
+	ToLobby = 0.2, -- () back to the lobby
+	Duel = 4, -- the duels (the lobby's DuelService)
+	Crate = 4, -- the crates (CrateService)
+	Verify = 0.2, -- () a check the lobby asks for
 }
 
 -- Server → client.
@@ -72,9 +78,15 @@ Net.ServerEvents = {
 	"Leaderboards", -- { boards, server, you, ok, at, every } the top players, all time and here (LeaderboardService)
 	"InvitePromo", -- { why, pool = { effect keys } } the invite-a-friend card | { pulse = true } nudge the button
 	"InviteReward", -- { key, pool = { effect keys }, friend } a friend joined from your invite: the effect you won
+	-- the universe (Data/Modes)
+	"Population", -- { counts = { turf, ctf, brawl, lobby }, best, here, open } players in every mode (PopulationService)
+	"Lobby", -- the lobby's own (the lobby's services)
+	"Ctf", -- Capture the Flag's own (CtfService)
 	"Brawl", -- Bot Brawl (BrawlService): { kind = "state", wave, state, ends, alive, total, boss?, best, last }
 	-- | { kind = "clear", wave, shards, best, boss?, center } a wave down (the fireworks) | { kind = "last" } one bot
 	-- left | { kind = "stun", seconds } the bots froze
+	"Duel", -- the duels' (DuelService)
+	"Crate", -- the crates' (CrateService)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).
@@ -125,11 +137,12 @@ local function allow(player, name)
 	end
 	local b = perPlayer[name]
 	local now = os.clock()
+	local burst = math.max(rate, 1) -- (a rate under one a second, like Play's 1 in 2 s, still allows the first call)
 	if not b then
-		b = { tokens = rate, last = now }
+		b = { tokens = burst, last = now }
 		perPlayer[name] = b
 	end
-	b.tokens = math.min(rate, b.tokens + (now - b.last) * rate)
+	b.tokens = math.min(burst, b.tokens + (now - b.last) * rate)
 	b.last = now
 	if b.tokens < 1 then
 		return false

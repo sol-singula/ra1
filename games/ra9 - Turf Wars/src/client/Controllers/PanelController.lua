@@ -46,6 +46,7 @@ local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Ladder = require(ReplicatedStorage.Shared.Data.Ladder)
 local Locker = require(ReplicatedStorage.Shared.Data.Locker)
+local Modes = require(ReplicatedStorage.Shared.Data.Modes)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Season = require(ReplicatedStorage.Shared.Data.Season)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
@@ -1734,7 +1735,7 @@ local function playersTab(body)
 	label(
 		body,
 		"Count",
-		`{#everyone} ONLINE   ·   RED {count.red}   ·   BLUE {count.blue}{nBots > 0 and `   ·   🤖 {nBots} BOT{nBots == 1 and "" or "S"}` or ""}`,
+		`{#everyone} ONLINE   ·   {Constants.TEAM_NAME.red} {count.red}   ·   {Constants.TEAM_NAME.blue} {count.blue}{nBots > 0 and `   ·   🤖 {nBots} BOT{nBots == 1 and "" or "S"}` or ""}`,
 		0,
 		0,
 		W,
@@ -2381,6 +2382,12 @@ local function build()
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = C.muted,
 	})
+	-- the way out to the lobby (Data/Modes: only once the places are made), small, at the foot's right
+	refs.lobby = button(panel, "Lobby", "⌂ LOBBY", P.w - 100, P.footY - 2, 90, P.footH + 2, "light", function()
+		Net.send("ToLobby")
+		PanelController.status("Off to the lobby...", "good")
+	end)
+	refs.lobby.Visible = false
 	-- the first match's way out: PLAY NEXT MATCH ▶, big, where the message line sits (that line steps aside), and a
 	-- gold ring round your Shards in the header (PanelController.firstMatch)
 	refs.playNext = button(
@@ -2432,7 +2439,8 @@ local function build()
 	refs.tourRing:SetAttribute("Layer", true)
 end
 
--- The first match's pieces in the frame (the PLAY NEXT MATCH button, the ring round your Shards), on or off
+-- The first match's pieces in the frame (the PLAY NEXT MATCH button, the ring round your Shards), on or off;
+-- and the LOBBY button, when there is a lobby to go to (the message line makes room for it)
 local function paintIntro()
 	if not refs.playNext then
 		return
@@ -2440,6 +2448,9 @@ local function paintIntro()
 	refs.playNext.Visible = firstShop ~= nil
 	refs.introRing.Visible = firstShop ~= nil
 	refs.status.Visible = firstShop == nil -- (the button has the message line's place)
+	local lobby = firstShop == nil and Modes.multiPlace() and Modes.current() ~= "lobby"
+	refs.lobby.Visible = lobby
+	refs.status.Size = UDim2.fromOffset(P.w - 20 - (lobby and 100 or 0), P.footH)
 end
 
 function PanelController.open(tab, from)

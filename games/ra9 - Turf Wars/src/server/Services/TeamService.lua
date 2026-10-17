@@ -45,6 +45,7 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local TeamService = {
 	Name = "TeamService",
+	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
 	Dependencies = {},
 	Changed = Signal.new("TeamService.Changed"), -- (player, team, old)
 }

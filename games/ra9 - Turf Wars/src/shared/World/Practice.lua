@@ -126,12 +126,20 @@ function Practice.build(origin, team, parent)
 		p.CFrame = CFrame.new(-half + (i - 0.5) * CELL, -1, Z)
 		p.Material = Enum.Material.SmoothPlastic
 		p.TopSurface = Enum.SurfaceType.Smooth
-		p.Color = Constants.WHITE
+		p.Color = Constants.MAP_GROUND.turf or Constants.WHITE -- (the mode's ground, when it has one)
 		p.Parent = turf
 		strips[i] = p
 	end
 	-- the pale ground out past the walls, so the world never ends at them, and a skyline of plain blocks in the haze
-	shapes:block(0, Z, half * 2 + 500, W + 500, 1, deco({ color = shapes.light, shadow = false }), -3)
+	shapes:block(
+		0,
+		Z,
+		half * 2 + 500,
+		W + 500,
+		1,
+		deco({ color = Constants.MAP_GROUND.ground or shapes.light, shadow = false }),
+		-3
+	)
 	local r = Random.new(97)
 	for i = 1, 18 do
 		local a = (i / 18) * math.pi * 2 + r:NextNumber(-0.08, 0.08)
@@ -206,7 +214,15 @@ function Practice.build(origin, team, parent)
 		shapes:block(X(0.3), Z, 0.6, W, 0.5, trim(shapes.white, "Molding"), 6)
 		shapes:block(X(0.55), Z, 1.1, W, 0.7, trim(shapes.white, "Molding"), H - 1.5)
 		shapes:block(X(0.1), Z, 0.2, W, 0.5, neon(color), H - 3.2)
-		shapes:block(zoneX, Z, Practice.DEPTH, W - 2, 0.2, deco({ color = shapes.light }), 0)
+		shapes:block(
+			zoneX,
+			Z,
+			Practice.DEPTH,
+			W - 2,
+			0.2,
+			deco({ color = Constants.MAP_GROUND.deck or shapes.light }),
+			0
+		)
 		shapes:block(s * Practice.EDGE, Z, 0.6, W, 0.25, neon(color))
 		for _, dz in { -12, 0, 12 } do
 			shapes:block(X(5), Z + dz, 4.5, 4.5, 0.3, neon(color))

@@ -37,6 +37,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Ladder = require(ReplicatedStorage.Shared.Data.Ladder)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Season = require(ReplicatedStorage.Shared.Data.Season)
+local Signal = require(ReplicatedStorage.Shared.Signal)
 local GameKey = require(script.Parent.Parent.GameKey)
 
 local AnalyticsService = {
@@ -359,17 +360,33 @@ local function setDevice(s, device)
 	end
 end
 
+-- A stand-in for a service that isn't running in this place (the lobby has no match, teams, building, feedback
+-- or invite card): its signals never fire, and the methods given answer for it
+local function quiet(methods)
+	return setmetatable(methods or {}, {
+		__index = function(t, k)
+			local sig = Signal.new("AnalyticsService.quiet." .. tostring(k))
+			rawset(t, k, sig)
+			return sig
+		end,
+	})
+end
+
 function AnalyticsService:Init(registry)
 	registryRef = registry
 	data = registry.PlayerDataService
-	teams = registry.TeamService
-	match = registry.MatchService
+	teams = registry.TeamService or quiet({ Team = function() end })
+	match = registry.MatchService or quiet({
+		Phase = function()
+			return Constants.MODE
+		end,
+	})
 	combat = registry.CombatService
 	season = registry.SeasonService
-	local build = registry.BuildService
+	local build = registry.BuildService or quiet()
 	local shop = registry.ShopService
 	local progress = registry.ProgressService
-	local feedback = registry.FeedbackService
+	local feedback = registry.FeedbackService or quiet()
 	local anticheat = registry.AntiCheatService
 	map = workspace:GetAttribute("MapKey")
 	anticheat.Flagged:Connect(function(player, kind, detail, strikes)
@@ -531,7 +548,7 @@ function AnalyticsService:Init(registry)
 		end
 	end)
 	-- the invite-a-friend card: shown (and why), sent or put off, and the effect won when a friend came
-	local invite = registry.InviteService
+	local invite = registry.InviteService or quiet()
 	invite.PromoShown:Connect(function(player, why)
 		track(player, "invite_prompt_shown", { why = why })
 	end)

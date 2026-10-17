@@ -30,7 +30,8 @@ local Theme = require(script.Parent.Parent.UI.Theme)
 local HudController = require(script.Parent.HudController)
 local KillBanner = require(script.Parent.KillBannerController)
 
-local InvitePromoController = { Name = "InvitePromoController", Order = 57 }
+-- (a match's: not in the lobby, which has its own screens)
+local InvitePromoController = { Name = "InvitePromoController", Order = 57, Modes = { "turf", "ctf", "brawl" } }
 
 local C = Theme.Color
 local player = Players.LocalPlayer

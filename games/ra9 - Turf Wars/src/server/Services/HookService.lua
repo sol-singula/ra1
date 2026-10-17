@@ -33,6 +33,7 @@ local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 
 local HookService = {
 	Name = "HookService",
+	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
 	Dependencies = {
 		"PlayerDataService",
 		"EconomyService",

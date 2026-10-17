@@ -83,7 +83,7 @@ function StatusService:Refresh(player)
 	local isMvp = mvp == player
 	local isVip = player:GetAttribute("VIP") == true
 	local title = Cosmetics.get(player:GetAttribute("LookTitle"))
-	local team = teams:Team(player)
+	local team = teams and teams:Team(player)
 	-- the tag
 	local tag = Instance.new("BillboardGui")
 	tag.Name = "StatusTag"
@@ -177,9 +177,11 @@ end
 
 function StatusService:Init(registry)
 	teams = registry.TeamService
-	registry.MatchService.Ended:Connect(function(_, results)
-		self:SetMvp(results and results.mvpPlayer or nil)
-	end)
+	if registry.MatchService then -- (not in the lobby: no match, no MVP)
+		registry.MatchService.Ended:Connect(function(_, results)
+			self:SetMvp(results and results.mvpPlayer or nil)
+		end)
+	end
 	Players.PlayerAdded:Connect(watch)
 	for _, p in Players:GetPlayers() do
 		watch(p)

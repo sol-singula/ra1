@@ -21,7 +21,8 @@ local Bus = require(script.Parent.Parent.UI.Bus)
 local Layout = require(script.Parent.Parent.UI.Layout)
 local Store = require(script.Parent.Parent.Store)
 
-local BuildController = { Name = "BuildController", Order = 32 }
+-- (a match's: not in the lobby, which has its own screens)
+local BuildController = { Name = "BuildController", Order = 32, Modes = { "turf", "ctf", "brawl" } }
 
 local picked -- structure key
 local rot = 0

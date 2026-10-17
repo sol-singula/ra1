@@ -255,7 +255,7 @@ end
 
 local function serverRows(board)
 	local rows = {}
-	for _, p in match:People() do
+	for _, p in match and match:People() or Players:GetPlayers() do
 		local prof = data:Get(p)
 		if prof then
 			table.insert(rows, { userId = p.UserId, name = p.DisplayName, value = board.read(prof) })
@@ -321,12 +321,14 @@ function LeaderboardService:Init(registry)
 		self:Push(player)
 	end)
 	-- after each match (ProgressService has already counted it): everyone's new numbers
-	match.Ended:Connect(function()
-		for _, p in match:People() do
-			self:Write(p)
-		end
-		self:PushWatchers()
-	end)
+	if match then -- (not in the lobby)
+		match.Ended:Connect(function()
+			for _, p in match:People() do
+				self:Write(p)
+			end
+			self:PushWatchers()
+		end)
+	end
 	pcall(function()
 		game:BindToClose(function()
 			self:Flush(true)

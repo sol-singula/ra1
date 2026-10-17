@@ -128,7 +128,7 @@ local function add(e)
 end
 
 local function teamColor(team)
-	return Constants.TEAM_COLOR[team or ""] or Color3.fromRGB(235, 40, 45)
+	return Constants.TEAM_COLOR[team or ""] or Constants.TEAM_COLOR.red
 end
 
 local function randomDir()

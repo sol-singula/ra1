@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 # Runs every test outside Roblox: the rules and the maps (Formulas), then a whole match on the mock engine from the
 # server's and the client's side, the bots (and their finding their way on every map at every size), every map, and what goes out to the Discord log and the analytics
-# (LogSmoke), the tutorial, the leaderboards, and Bot Brawl (BrawlSmoke: the place in "brawl" mode). First it builds the
-# small Luau runner in tools/luaurun.
+# (LogSmoke), the tutorial, the leaderboards, the universe's modes and places (ModeSmoke) and Bot Brawl (BrawlSmoke:
+# the place in "brawl" mode). First it builds the small Luau runner in tools/luaurun.
 set -e
 cd "$(dirname "$0")/.."
 cargo build --release --quiet --manifest-path tools/luaurun/Cargo.toml
@@ -26,3 +26,4 @@ $R tests/GiftSmoke.spec.luau
 $R tests/HookSmoke.spec.luau
 $R tests/FeelSmoke.spec.luau
 $R tests/BrawlSmoke.spec.luau
+$R tests/ModeSmoke.spec.luau

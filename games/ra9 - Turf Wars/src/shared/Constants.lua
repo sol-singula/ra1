@@ -1,18 +1,21 @@
 -- Turf Wars (ra9): every tunable number in one place (master plan §1-§8).
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 local Constants = {}
 
 Constants.GAME = "ra9"
 Constants.GAME_NAME = "Turf Wars"
 
--- The mode this place runs: "turf" (the match: red against blue over the line) or "brawl" (Bot Brawl: everyone
--- against waves of bots, BrawlService). Services may declare Modes = { ... }: the Loader only boots them in those.
--- applyMode(key) sets MODE and recolours the teams for it (the game reads TEAM_COLOR / TEAM_NAME / TURF_COLOR,
--- never a colour of its own), before anything is loaded.
+-- The place this server is (Data/Modes): "lobby" (the start place), "turf" (this game), "ctf" or "brawl". Read
+-- once, from a StringValue named Mode under ReplicatedStorage (places/*.project.json put it there); none means
+-- turf, as the one place has always been. Constants.applyMode(key) sets it and the team names and colours below
+-- for it (tests call it before the scripts run; it's safe to call again).
+Constants.MODES = { "lobby", "turf", "ctf", "brawl" }
 Constants.MODE = "turf"
 
 -- Server and teams (§1, §2A)
 Constants.MAX_PLAYERS = 40
-Constants.TEAMS = { "red", "blue" }
+Constants.TEAMS = { "red", "blue" } -- (the keys stay red and blue in every mode: only the names and colours change)
 Constants.TEAM_NAME = { red = "RED", blue = "BLUE" }
 Constants.TEAM_COLOR = { red = Color3.fromRGB(235, 40, 45), blue = Color3.fromRGB(35, 110, 245) }
 -- the turf on the ground: a softer version of the team colour, so players stand out from it
@@ -243,6 +246,81 @@ Constants.DARK = Color3.fromRGB(150, 152, 158)
 -- shade on the Keep Wall's stone and the copings
 Constants.BUILD_COLOR = { red = Color3.fromRGB(226, 70, 72), blue = Color3.fromRGB(62, 126, 236) }
 Constants.ARMOR_COLOR = { red = Color3.fromRGB(128, 26, 32), blue = Color3.fromRGB(24, 56, 140) }
+-- The ground's shades, when a mode has its own (ArenaBuilder and World/Practice read them; empty: the map's own
+-- white and grey): turf (an unpainted strip), deck (the spawn deck's floor) and ground (the floor past the walls)
+Constants.MAP_GROUND = {}
+
+-- Each mode's look: the same flat SmoothPlastic world, its two sides in other colours. Turf Wars (and the lobby)
+-- red v blue; Capture the Flag purple v orange; Bot Brawl the people (the "red" side) in grass green against the
+-- bots (the "blue" side) in shadow grey, on green ground. Every table is filled in place (modules keep references
+-- to them), so a mode switch recolours the whole game at once.
+local function rgb(r, g, b)
+	return Color3.fromRGB(r, g, b)
+end
+local TURF_LOOK = {
+	name = { red = "RED", blue = "BLUE" },
+	team = { red = rgb(235, 40, 45), blue = rgb(35, 110, 245) },
+	turf = { red = rgb(240, 120, 118), blue = rgb(120, 165, 245) },
+	build = { red = rgb(226, 70, 72), blue = rgb(62, 126, 236) },
+	armor = { red = rgb(128, 26, 32), blue = rgb(24, 56, 140) },
+	ground = {},
+}
+Constants.MODE_LOOK = {
+	turf = TURF_LOOK,
+	lobby = TURF_LOOK,
+	ctf = {
+		name = { red = "PURPLE", blue = "ORANGE" },
+		team = { red = rgb(150, 70, 230), blue = rgb(255, 140, 30) },
+		turf = { red = rgb(195, 160, 240), blue = rgb(255, 195, 135) },
+		build = { red = rgb(140, 80, 220), blue = rgb(240, 130, 40) },
+		armor = { red = rgb(80, 30, 140), blue = rgb(150, 70, 10) },
+		ground = {},
+	},
+	brawl = {
+		name = { red = "GREEN", blue = "SHADOW" },
+		team = { red = rgb(70, 180, 80), blue = rgb(60, 60, 70) },
+		turf = { red = rgb(150, 210, 150), blue = rgb(125, 128, 138) },
+		build = { red = rgb(62, 160, 72), blue = rgb(72, 72, 84) },
+		armor = { red = rgb(32, 95, 42), blue = rgb(34, 34, 42) },
+		ground = { turf = rgb(200, 228, 190), deck = rgb(178, 216, 168), ground = rgb(162, 206, 152) },
+	},
+}
+
+local function fill(into, from)
+	table.clear(into)
+	for k, v in from do
+		into[k] = v
+	end
+end
+
+-- Set the mode (one of Constants.MODES) and its look. An unknown key means turf.
+function Constants.applyMode(key)
+	local look = Constants.MODE_LOOK[key]
+	if not look then
+		key, look = "turf", TURF_LOOK
+	end
+	Constants.MODE = key
+	fill(Constants.TEAM_NAME, look.name)
+	fill(Constants.TEAM_COLOR, look.team)
+	fill(Constants.TURF_COLOR, look.turf)
+	fill(Constants.BUILD_COLOR, look.build)
+	fill(Constants.ARMOR_COLOR, look.armor)
+	fill(Constants.MAP_GROUND, look.ground)
+	if Constants.applyModeRules then
+		Constants.applyModeRules(key) -- (defined below, after the numbers it sets)
+	end
+	return key
+end
+
+-- The place's own mode: the Mode value Rojo put under ReplicatedStorage (places/*.project.json), else turf
+function Constants.placeMode()
+	local ok, mode = pcall(function()
+		local v = ReplicatedStorage:FindFirstChild("Mode")
+		return v and v.Value
+	end)
+	return ok and type(mode) == "string" and Constants.MODE_LOOK[mode] and mode or "turf"
+end
+Constants.applyMode(Constants.placeMode())
 
 -- Sounds: the raw clips. The studio's uploaded set (shared with the other games) and a few of Roblox's own client
 -- sounds (rbxasset://sounds/...). AudioController layers, pitches and shapes these into every cue the game plays
@@ -332,43 +410,21 @@ Constants.BRAWL = {
 	STUN_GAP = 8, -- seconds before the bots can be frozen again
 }
 
--- The modes' looks: what applyMode puts into TEAM_NAME, TEAM_COLOR, TURF_COLOR, BUILD_COLOR and ARMOR_COLOR
-Constants.MODE_LOOKS = {
-	turf = {
-		TEAM_NAME = { red = "RED", blue = "BLUE" },
-		TEAM_COLOR = { red = Color3.fromRGB(235, 40, 45), blue = Color3.fromRGB(35, 110, 245) },
-		TURF_COLOR = { red = Color3.fromRGB(240, 120, 118), blue = Color3.fromRGB(120, 165, 245) },
-		BUILD_COLOR = { red = Color3.fromRGB(226, 70, 72), blue = Color3.fromRGB(62, 126, 236) },
-		ARMOR_COLOR = { red = Color3.fromRGB(128, 26, 32), blue = Color3.fromRGB(24, 56, 140) },
-	},
-	-- (the humans in green on grass; the bots' far half a darker grass, the bots themselves near black)
-	brawl = {
-		TEAM_NAME = { red = "GREEN", blue = "SHADOW" },
-		TEAM_COLOR = { red = Color3.fromRGB(60, 190, 80), blue = Color3.fromRGB(52, 50, 60) },
-		TURF_COLOR = { red = Color3.fromRGB(120, 200, 110), blue = Color3.fromRGB(78, 150, 80) },
-		BUILD_COLOR = { red = Color3.fromRGB(70, 170, 80), blue = Color3.fromRGB(70, 68, 80) },
-		ARMOR_COLOR = { red = Color3.fromRGB(30, 100, 42), blue = Color3.fromRGB(28, 26, 34) },
-	},
-}
-
--- Put the place into a mode (before the services boot, and on each client before its controllers start): the
--- looks above go into the team tables (the same tables, filled in place, so anything that kept one sees it).
-function Constants.applyMode(key)
-	local look = Constants.MODE_LOOKS[key]
-	assert(look, `unknown mode {tostring(key)}`)
-	Constants.MODE = key
-	for name, colors in look do
-		local t = Constants[name]
-		for k, v in colors do
-			t[k] = v
-		end
+-- The mode's rules (its looks are above, Constants.MODE_LOOK): Bot Brawl has no practice tutorial (it teaches the
+-- line: no line there), no CHARGE (the bots come to you, bows out) and its own build budget; every other mode has the
+-- turf numbers. Called by applyMode, and once here for the place's mode (it comes after every number it sets).
+local TURF_RULES =
+	{ TUTORIAL = Constants.TUTORIAL, CHARGE_SECONDS = Constants.CHARGE_SECONDS, BUILD_BUDGET = Constants.BUILD_BUDGET }
+function Constants.applyModeRules(key)
+	for k, v in TURF_RULES do
+		Constants[k] = v
 	end
 	if key == "brawl" then
-		Constants.TUTORIAL = false -- (the practice teaches the line: no line here)
-		Constants.CHARGE_SECONDS = 0 -- (no CHARGE: the bots come to you, bows out)
+		Constants.TUTORIAL = false
+		Constants.CHARGE_SECONDS = 0
 		Constants.BUILD_BUDGET = Constants.BRAWL.BUILD_BUDGET
 	end
-	return key
 end
+Constants.applyModeRules(Constants.MODE)
 
 return Constants

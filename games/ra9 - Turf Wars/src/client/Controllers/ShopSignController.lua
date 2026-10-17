@@ -25,7 +25,8 @@ local Layout = require(script.Parent.Parent.UI.Layout)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local PanelController = require(script.Parent.PanelController)
 
-local ShopSignController = { Name = "ShopSignController", Order = 60 }
+-- (a match's: not in the lobby, which has its own screens)
+local ShopSignController = { Name = "ShopSignController", Order = 60, Modes = { "turf", "ctf", "brawl" } }
 
 local C = Theme.Color
 local player = Players.LocalPlayer
