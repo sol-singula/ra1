@@ -261,6 +261,26 @@ do
 	Dev.set(was)
 	Engine.advance(0.2)
 end
+-- Tab: the menu on its PLAYERS tab (everyone on the server, INVITE to party up), Tab again closes it
+do
+	local PanelC = Engine.require(tree.client.Controllers.PanelController)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Tab, UserInputType = Enum.UserInputType.Keyboard }, false)
+	Engine.advance(0.2)
+	check("Tab opens the menu on PLAYERS", PanelC.isOpen() and PanelC.tab() == "players", PanelC.tab())
+	local body = PanelC.refs.body
+	local rows = 0
+	for _, c in body:GetChildren() do
+		if string.sub(c.Name, 1, 6) == "Player" then
+			rows += 1
+		end
+	end
+	check("...a row for everyone here", rows == #Engine.game:GetService("Players"):GetPlayers(), rows)
+	check("...the count on top", body:FindFirstChild("Count") and string.find(body.Count.Text, "ONLINE") ~= nil)
+	check("...the mouse is free", UIS.MouseIconEnabled == true)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.Tab, UserInputType = Enum.UserInputType.Keyboard }, false)
+	Engine.advance(0.2)
+	check("Tab again closes it", not PanelC.isOpen())
+end
 -- graphics: more on a PC that can take it, nothing added on a phone
 do
 	local Gfx = Engine.require(tree.client.Controllers.GraphicsController)

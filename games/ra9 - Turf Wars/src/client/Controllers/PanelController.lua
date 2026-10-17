@@ -1,6 +1,8 @@
 --[[
-The panel (B, or the SHOP button): four tabs, SUPERHOT-plain (white cards, black type, the team's colour):
+The panel (B, or the SHOP button; Tab opens it on PLAYERS): five tabs, SUPERHOT-plain (white cards, black type,
+the team's colour):
 
+  PLAYERS  everyone on the server by team (VIP, your party), INVITE to party up; Roblox's own Tab list is off
   SHOP     today's 4 items and this week's bundle for Shards (◆), Shard packs, the Starter Pack (and the Shard Club
            when it's on); timers to the next rotation
   PASS     the season's Turf Pass: the tiers, free and premium, claim buttons, GET THE PASS, +1 TIER
@@ -42,7 +44,13 @@ local P = { w = 600, h = 450, top = 96, head = 44, bodyY = 52, bodyH = 352, foot
 local W = 564 -- the body's content width (inside its scroll bar)
 PanelController.P = P
 
-local TABS = { { "shop", "SHOP" }, { "pass", "PASS" }, { "locker", "LOCKER" }, { "goals", "GOALS" } }
+local TABS = {
+	{ "players", "PLAYERS" },
+	{ "shop", "SHOP" },
+	{ "pass", "PASS" },
+	{ "locker", "LOCKER" },
+	{ "goals", "GOALS" },
+}
 local refs = {}
 PanelController.refs = refs
 local current = "shop"
@@ -589,7 +597,101 @@ local function goalsTab(body)
 	return y + 54
 end
 
-local BUILD = { shop = shopTab, pass = passTab, locker = lockerTab, goals = goalsTab }
+-- PLAYERS: everyone on the server, by team (who's VIP, who's in your party), with INVITE to party up
+local function playersTab(body)
+	local Constants = require(ReplicatedStorage.Shared.Constants)
+	local mine = player:GetAttribute("Party")
+	local everyone = {}
+	for _, p in Players:GetPlayers() do
+		-- (an unseen admin isn't listed, except to themselves)
+		if p == player or not p:GetAttribute("Spectating") then
+			table.insert(everyone, p)
+		end
+	end
+	local function team(p)
+		local c = p.Character
+		return p:GetAttribute("Team") or (c and c:GetAttribute("Team"))
+	end
+	local count = { red = 0, blue = 0 }
+	for _, p in everyone do
+		local t = team(p)
+		if count[t] then
+			count[t] += 1
+		end
+	end
+	local bots = workspace:FindFirstChild("Bots")
+	local nBots = bots and #bots:GetChildren() or 0
+	label(
+		body,
+		"Count",
+		`{#everyone} ONLINE   ·   RED {count.red}   ·   BLUE {count.blue}{nBots > 0 and `   ·   🤖 {nBots} BOT{nBots == 1 and "" or "S"}` or ""}`,
+		0,
+		0,
+		W,
+		22,
+		15
+	)
+	table.sort(everyone, function(a, b)
+		local ta, tb = team(a) or "z", team(b) or "z"
+		if ta ~= tb then
+			return ta < tb
+		end
+		return a.DisplayName:lower() < b.DisplayName:lower()
+	end)
+	local y = 30
+	for i, p in everyone do
+		local t = team(p)
+		local me = p == player
+		local row = frame(body, "Player" .. i, 0, y, W, 40, me and C.ink or C.white)
+		Theme.new("Frame", {
+			Name = "Team",
+			Position = UDim2.fromOffset(0, 0),
+			Size = UDim2.new(0, 8, 1, 0),
+			BackgroundColor3 = Constants.TEAM_COLOR[t or ""] or C.grey,
+			BorderSizePixel = 0,
+			Parent = row,
+		}, { Theme.corner(4) })
+		local tags = {}
+		if me then
+			table.insert(tags, "YOU")
+		end
+		if p:GetAttribute("VIP") then
+			table.insert(tags, "⭐ VIP")
+		end
+		if mine and p:GetAttribute("Party") == mine and not me then
+			table.insert(tags, "👥 PARTY")
+		end
+		local ink = me and C.white or C.ink
+		label(row, "Name", `{p.DisplayName}  @{p.Name}`, 18, 4, W - 150, 18, 14, ink)
+		label(
+			row,
+			"Line",
+			`{t and Constants.TEAM_NAME[t] or "NO TEAM"}{#tags > 0 and ("  ·  " .. table.concat(tags, "  ·  ")) or ""}`,
+			18,
+			22,
+			W - 150,
+			14,
+			11,
+			me and C.white or C.muted
+		)
+		if not me and not (mine and p:GetAttribute("Party") == mine) then
+			button(row, "Invite", "INVITE", W - 104, 6, 94, 28, true, function()
+				Net.send("Party", "invite", p.UserId)
+				PanelController.status(`Asked {p.DisplayName} to party up.`, "good")
+			end)
+		end
+		y += 46
+	end
+	return y
+end
+
+local BUILD = {
+	players = playersTab,
+	shop = shopTab,
+	pass = passTab,
+	locker = lockerTab,
+	goals = goalsTab,
+}
 
 -- The panel -----------------------------------------------------------------------------------------------------
 function PanelController.refresh()
@@ -637,7 +739,7 @@ local function build()
 	refs.panel = panel
 	refs.tabs = {}
 	for i, t in TABS do
-		refs.tabs[t[1]] = button(panel, "Tab_" .. t[1], t[2], 10 + (i - 1) * 100, 6, 94, 32, false, function()
+		refs.tabs[t[1]] = button(panel, "Tab_" .. t[1], t[2], 10 + (i - 1) * 80, 6, 76, 32, false, function()
 			PanelController.open(t[1])
 		end)
 	end
@@ -710,6 +812,20 @@ end
 function PanelController:init()
 	gui = Theme.screen("Panel", 15, player:WaitForChild("PlayerGui"))
 	build()
+	-- Tab opens the menu on its PLAYERS tab, so Roblox's own player list (also on Tab) steps aside
+	pcall(function()
+		game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+	end)
+	-- (players coming and going: the list follows while it's open)
+	local function follow()
+		if PanelController.isOpen() and current == "players" then
+			PanelController.refresh()
+		end
+	end
+	Players.PlayerAdded:Connect(follow)
+	Players.PlayerRemoving:Connect(function()
+		task.defer(follow)
+	end)
 	Layout.statusSink = function(s, kind)
 		if PanelController.isOpen() then
 			PanelController.status(s, kind)
@@ -728,6 +844,8 @@ function PanelController:init()
 		end
 		if input.KeyCode == Enum.KeyCode.B then
 			PanelController.toggle()
+		elseif input.KeyCode == Enum.KeyCode.Tab then
+			PanelController.toggle("players")
 		elseif input.KeyCode == Enum.KeyCode.Escape and PanelController.isOpen() then
 			PanelController.close()
 		end
