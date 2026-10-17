@@ -232,6 +232,35 @@ do
 	PanelC.close()
 	Engine.advance(0.5)
 end
+-- Alt frees the mouse any time (the chat, the admin panel, any button), Alt again goes back to aiming
+do
+	local CamC = Engine.require(tree.client.Controllers.CameraController)
+	local Dev = Engine.require(tree.client.UI.Device)
+	local was = Dev.kind()
+	Dev.set("keyboard")
+	Engine.advance(0.2)
+	check("the mouse hint shows on a PC", Hud.refs.mouseHint and Hud.refs.mouseHint.Visible)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.LeftAlt, UserInputType = Enum.UserInputType.Keyboard }, false)
+	Engine.advance(0.1)
+	check(
+		"Alt: the mouse is free",
+		CamC.cursorMode() and UIS.MouseIconEnabled == true and UIS.MouseBehavior == Enum.MouseBehavior.Default
+	)
+	check("...the hint says how to go back", string.find(Hud.refs.mouseText.Text, "BACK TO AIMING") ~= nil)
+	local BusFire = Engine.require(tree.client.UI.Bus)
+	BusFire.Fire:Fire(true)
+	Engine.advance(0.3)
+	check("...a click doesn't shoot", not Weapon.drawing())
+	BusFire.Fire:Fire(false)
+	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.LeftAlt, UserInputType = Enum.UserInputType.Keyboard }, false)
+	Engine.advance(0.1)
+	check("Alt again: back to aiming", not CamC.cursorMode() and UIS.MouseIconEnabled == false)
+	Dev.set("touch")
+	Engine.advance(0.2)
+	check("...no hint on a phone", not Hud.refs.mouseHint.Visible)
+	Dev.set(was)
+	Engine.advance(0.2)
+end
 -- graphics: more on a PC that can take it, nothing added on a phone
 do
 	local Gfx = Engine.require(tree.client.Controllers.GraphicsController)

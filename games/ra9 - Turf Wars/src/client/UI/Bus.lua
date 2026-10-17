@@ -19,4 +19,5 @@ return {
 	Crouch = Signal.new("Bus.Crouch"), -- (on) the touch CROUCH toggle (MoveController)
 	Jump = Signal.new("Bus.Jump"), -- () the touch JUMP button (MoveController)
 	Reload = Signal.new("Bus.Reload"), -- () the touch RELOAD button (WeaponController)
+	CursorMode = Signal.new("Bus.CursorMode"), -- (on) Alt freed the mouse / went back to aiming (CameraController)
 }

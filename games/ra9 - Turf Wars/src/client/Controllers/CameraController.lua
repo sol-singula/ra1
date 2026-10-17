@@ -6,7 +6,8 @@ turn off, and the sensitivity setting. Other controllers add their own offsets t
 
 The mouse: hidden in play (the HUD draws the crosshair), shown and free while a menu needs it: the panel (shop,
 pass, locker, goals), a question card, the results card (once it closes, the wait for the next game is free running
-about, so the mouse goes back to the camera). CameraController.mouseFree() says which; the bow and the build
+about, so the mouse goes back to the camera), and any time you press Alt (Alt again: back to aiming).
+CameraController.mouseFree() says which; the bow and the build
 tray don't fire while it's true, so a click in the shop is only a click in the shop. Once a menu closes the lock is
 put back every frame (Roblox can show the cursor again on its own), and a Modal button left inside a closed panel
 stops being Modal (a Modal button keeps the cursor out even when its panel is hidden) until the panel is back.
@@ -17,6 +18,7 @@ gives it back: Custom again, on your character, locked first person, looking alo
 
   CameraController.takeover(fn)   CameraController.release(look?)   CameraController.takenOver() -> bool
   CameraController.parked()       { [button] = true }: Modal buttons switched off while their panel is hidden
+  CameraController.cursorMode()   CameraController.setCursorMode(on)   Alt: the mouse free to click anything
 ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -61,8 +63,23 @@ function CameraController.shake(strength, seconds)
 	shakeUntil = math.max(shakeUntil, os.clock() + seconds)
 end
 
+-- Alt frees the mouse any time (to click the chat, the admin panel, a button), Alt again goes back to aiming
+local cursorMode = false
+
+function CameraController.cursorMode()
+	return cursorMode
+end
+
+function CameraController.setCursorMode(on)
+	cursorMode = on == true
+	Bus.CursorMode:Fire(cursorMode)
+end
+
 function CameraController.mouseFree()
-	return Layout.panel() or Layout.modalOpen() or (Store.phase() == "victory" and Layout.resultsOpen == true)
+	return cursorMode
+		or Layout.panel()
+		or Layout.modalOpen()
+		or (Store.phase() == "victory" and Layout.resultsOpen == true)
 end
 
 local mouseShown
@@ -223,6 +240,12 @@ end
 
 function CameraController:init()
 	setMouse(false) -- (the HUD draws the crosshair)
+	UserInputService.InputBegan:Connect(function(input, processed)
+		local k = input.KeyCode
+		if (k == Enum.KeyCode.LeftAlt or k == Enum.KeyCode.RightAlt) and not processed then
+			CameraController.setCursorMode(not cursorMode)
+		end
+	end)
 	Bus.Shake:Connect(function(strength, seconds)
 		CameraController.shake(strength or 0.3, seconds or 0.25)
 	end)
