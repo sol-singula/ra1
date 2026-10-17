@@ -667,7 +667,25 @@ function AdminService:Init(registry)
 	end)
 end
 
+-- Every admin's panel, live: someone joins or leaves, every admin here gets the new list (and a note who it was)
+function AdminService:PushAll(note)
+	for _, p in Players:GetPlayers() do
+		if Admins.isAdmin(p) and p.Parent then
+			self:Push(p)
+			if note then
+				say(p, note, "info")
+			end
+		end
+	end
+end
+
 function AdminService:OnPlayerReady(player)
+	-- (in the match now, with a team: every admin's list shows them)
+	task.delay(1, function()
+		if player.Parent then
+			self:PushAll(not Admins.isAdmin(player) and `{player.DisplayName} joined` or nil)
+		end
+	end)
 	if not Admins.isAdmin(player) then
 		return
 	end
@@ -676,6 +694,12 @@ function AdminService:OnPlayerReady(player)
 		if Admins.spectating(player) then
 			say(player, "Spectating. Nobody can see you.", "good")
 		end
+	end)
+end
+
+function AdminService:OnPlayerLeaving(player)
+	task.defer(function()
+		self:PushAll(not Admins.isAdmin(player) and `{player.DisplayName} left` or nil)
 	end)
 end
 

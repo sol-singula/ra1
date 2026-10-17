@@ -522,6 +522,22 @@ function MatchService:NewMatch(key, size)
 	self.Started:Fire(mapKey, matchId)
 end
 
+-- Someone tried to cross the line: when they'll be able to (the CHARGE), at most every few seconds
+local toldAt = {}
+function MatchService:_tellCharge(player)
+	local t = now()
+	if t - (toldAt[player] or -math.huge) < 4 then
+		return
+	end
+	toldAt[player] = t
+	local wait = phaseEnds - t - Constants.CHARGE_SECONDS
+	if phase == "build" then
+		wait = (phaseEnds - t) + Constants.FIGHT_SECONDS - Constants.CHARGE_SECONDS
+	end
+	wait = math.max(0, math.ceil(wait))
+	Net.fire(player, "Toast", string.format("Not yet! You can charge across in %d:%02d", wait // 60, wait % 60), "info")
+end
+
 -- The CHARGE: the fight's last seconds. The line opens (the turf rule is off), the blade comes out, and everyone
 -- may run across. When it's over, anyone still on the other side goes home (a fresh spawn on their own side).
 function MatchService:Charging()
@@ -627,12 +643,14 @@ function MatchService:_tick()
 				if r.Position.Y < -20 then
 					combat:Kill(player, nil, { kind = "fall" })
 				elseif team == "red" and x > frontline + Constants.TURF_MARGIN then
+					self:_tellCharge(player)
 					r.CFrame = CFrame.new(frontline - 3, r.Position.Y + 0.5, r.Position.Z) * r.CFrame.Rotation
 					player:SetAttribute("AcGrace", os.clock() + 1)
 					pcall(function()
 						r.AssemblyLinearVelocity = Vector3.new(-20, 10, 0)
 					end)
 				elseif team == "blue" and x < frontline - Constants.TURF_MARGIN then
+					self:_tellCharge(player)
 					r.CFrame = CFrame.new(frontline + 3, r.Position.Y + 0.5, r.Position.Z) * r.CFrame.Rotation
 					player:SetAttribute("AcGrace", os.clock() + 1)
 					pcall(function()
@@ -677,6 +695,7 @@ function MatchService:Init(registry)
 		statsOf(player).built += 1
 	end)
 	Players.PlayerRemoving:Connect(function(player)
+		toldAt[player] = nil
 		stats[player] = nil
 		respawnAt[player] = nil
 		pending[player] = nil

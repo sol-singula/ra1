@@ -365,6 +365,30 @@ do
 	check("...and it's logged", used[#used].action == "afkroom")
 end
 
+-- the panel is live: someone joins, every admin's list updates (and says who)
+do
+	local n0 = #Engine.clientLog
+	local guest = Engine.addPlayer("Guest", 9191)
+	Engine.advance(0.5)
+	Engine.fireServer(guest, "Ready")
+	Engine.advance(2)
+	local listed, told = false, false
+	for i = n0 + 1, #Engine.clientLog do
+		local e = Engine.clientLog[i]
+		if e.name == "AdminState" and e.player == owner then
+			for _, p in e.args[1].players or {} do
+				listed = listed or p.id == 9191
+			end
+		elseif e.name == "Toast" and e.player == owner and string.find(tostring(e.args[1]), "Guest joined") then
+			told = true
+		end
+	end
+	check("someone joins: they pop up in the admin list straight away", listed)
+	check("...and the admin is told", told)
+	Engine.removePlayer(guest)
+	Engine.advance(1)
+end
+
 -- mission control: the admins' room of screens, live
 do
 	local MC = service("MissionControlService")

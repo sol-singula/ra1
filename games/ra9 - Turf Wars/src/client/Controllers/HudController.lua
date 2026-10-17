@@ -227,6 +227,9 @@ local function buildTop(gui)
 		BorderSizePixel = 0,
 		Parent = top,
 	}, { Theme.corner(3), Theme.stroke(2, C.ink) })
+	refs.bar = bar
+	refs.barScale = Instance.new("UIScale")
+	refs.barScale.Parent = bar
 	refs.redFill = Theme.new("Frame", {
 		Name = "Red",
 		Size = UDim2.new(0.5, 0, 1, 0),
@@ -278,6 +281,8 @@ local function buildTop(gui)
 	})
 end
 
+local barF, barAt -- (the bar's shown position, gliding to the real one)
+
 function HudController.updateTop()
 	local m = Store.get("match") or {}
 	local phase = m.phase or "loading"
@@ -289,10 +294,29 @@ function HudController.updateTop()
 		refs.phasePill.BackgroundColor3 = phase == "fight" and C.ink or Color3.fromRGB(70, 70, 78)
 	end
 	local lo, hi = m.loseRed or -80, m.loseBlue or 80
-	local f = math.clamp(((m.frontline or 0) - lo) / math.max(1, hi - lo), 0, 1)
+	local target = math.clamp(((m.frontline or 0) - lo) / math.max(1, hi - lo), 0, 1)
 	if refs.redFill then
+		-- the bar glides to where the line is, and the closer a side gets to winning the more it comes alive: the
+		-- line marker beats faster and bigger, the winning side's colour flares, the whole bar throbs, and at the
+		-- very end it trembles
+		local t = os.clock()
+		local dt = math.clamp(t - (barAt or t), 0, 0.1)
+		barAt = t
+		barF = barF and (barF + (target - barF) * (1 - math.exp(-dt * 8))) or target
+		local f = barF
+		local danger = math.clamp((math.abs(f - 0.5) - 0.12) / 0.38, 0, 1) -- (0 near the middle, 1 at the edge)
+		local beat = 0.5 + 0.5 * math.sin(t * (2 + danger * 10))
 		refs.redFill.Size = UDim2.new(f, 0, 1, 0)
 		refs.lineMark.Position = UDim2.new(f, 0, 0.5, 0)
+		refs.lineMark.Size = UDim2.new(0, 4 + danger * beat * 6, 1, 10 + danger * beat * 8)
+		local leader = f > 0.5 and refs.redFill or refs.bar
+		local base = f > 0.5 and RED or BLUE
+		refs.redFill.BackgroundColor3 = RED
+		refs.bar.BackgroundColor3 = BLUE
+		leader.BackgroundColor3 = base:Lerp(Color3.new(1, 1, 1), danger * beat * 0.45)
+		refs.barScale.Scale = 1 + danger * beat * 0.07
+		local shake = danger > 0.75 and (danger - 0.75) * 4 * 3 or 0
+		refs.bar.Position = UDim2.new(0.5, (math.random() - 0.5) * shake, 0, 38 + (math.random() - 0.5) * shake)
 		refs.redCount.Text = `RED {m.red or 0}`
 		refs.blueCount.Text = `BLUE {m.blue or 0}`
 		refs.mapName.Text = "" -- (the map's name stays off the bar: "New game: ..." says it once)

@@ -423,6 +423,7 @@ do
 	check("...and the CHARGE is over", not Match:Charging())
 end
 -- the turf rule: red can't walk onto blue's turf
+local mTurf = mark()
 stand(red, Vector3.new(ws:GetAttribute("Frontline") + 10, 3, 20))
 Engine.advance(0.4)
 check(
@@ -430,6 +431,9 @@ check(
 	rootOf(red).Position.X <= ws:GetAttribute("Frontline"),
 	rootOf(red).Position.X
 )
+check("...and tells you when you can charge across", firedSince(mTurf, "Toast", red, function(a)
+	return string.find(a[1], "charge across in") ~= nil
+end) ~= nil)
 -- the CHARGE (the fight's last seconds): the line opens, the blade comes out; when it ends, the blade goes away and
 -- anyone over the line goes home
 do
@@ -1380,6 +1384,24 @@ do
 	)
 	Engine.removePlayer(newbie)
 	Engine.removePlayer(foe)
+	Engine.advance(1)
+end
+
+-- joining a game that's already going: a team and a body at once, in this match (never left out until the next)
+do
+	Match:SkipTo("fight")
+	Engine.advance(0.5)
+	local matchId = ws:GetAttribute("MatchId")
+	local late = Engine.addPlayer("Latecomer", 651)
+	Engine.advance(0.5)
+	send(late, "Ready")
+	Engine.advance(1.5)
+	check("joining mid-game: on a team at once", Teams:Team(late) ~= nil, Teams:Team(late))
+	check("...in the game now, alive", Combat:Alive(late) and rootOf(late) ~= nil)
+	check("...the same match goes on", ws:GetAttribute("MatchId") == matchId)
+	Engine.advance(10)
+	check("...and not sent off as AFK while settling in", not service("AfkService"):Away(late))
+	Engine.removePlayer(late)
 	Engine.advance(1)
 end
 

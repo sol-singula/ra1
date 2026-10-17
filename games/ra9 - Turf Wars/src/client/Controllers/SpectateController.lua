@@ -40,6 +40,7 @@ local followed -- the Player followed
 local orbitYaw, orbitPitch, zoom = 0, -18, 14 -- (follow: where the camera sits round them)
 local speed = SPEED -- (free: the wheel changes it)
 local turning = false -- the right mouse button held: the mouse turns the camera
+local heli = 0 -- (nobody to watch: the helicopter's angle round the arena)
 local smoothFocus, smoothYaw -- (follow: eased, so their steps and turns don't shake the camera)
 local pos = Vector3.new(0, 40, 60)
 local yaw, pitch = 0, -25
@@ -88,7 +89,7 @@ local function label()
 	if mode == "follow" and followed then
 		refs.name.Text = `WATCHING {string.upper(followed.DisplayName)}`
 	elseif mode == "follow" then
-		refs.name.Text = "NOBODY TO WATCH"
+		refs.name.Text = "HELICOPTER VIEW (NOBODY ON)"
 	else
 		refs.name.Text = "FREE CAMERA"
 	end
@@ -237,6 +238,16 @@ function SpectateController.step(dt)
 			pos = eye
 			return
 		end
+		-- nobody to watch: a slow helicopter circle high over the whole arena
+		heli += (dt or 1 / 60) * 0.06
+		local lo = workspace:GetAttribute("LoseRed") or -90
+		local hi = workspace:GetAttribute("LoseBlue") or 90
+		local span = math.max(60, hi - lo)
+		local centre = Vector3.new((lo + hi) / 2, 0, 0)
+		local eye = centre + Vector3.new(math.cos(heli) * span * 0.6, span * 0.42, math.sin(heli) * span * 0.45)
+		cam.CFrame = CFrame.lookAt(eye, centre)
+		pos = eye
+		return
 	end
 	yaw -= dx * LOOK
 	pitch = math.clamp(pitch - dy * LOOK, -85, 85)

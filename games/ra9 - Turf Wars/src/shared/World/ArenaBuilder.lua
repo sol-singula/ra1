@@ -839,7 +839,7 @@ function ArenaBuilder.build(def, parent, scale)
 	local marker = linePart("Frontline", 1.2, 0.32, 0)
 	local glow = linePart("FrontlineGlow", 2.2, 0.06, 0.65)
 	local edge = linePart("FrontlineEdge", 2.0, 0.28, 0, Enum.Material.SmoothPlastic)
-	edge.Color = Color3.fromRGB(28, 28, 32)
+	edge.Color = Constants.WHITE -- (white edges either side of the glowing line, like the rest of the world)
 	local light = Instance.new("SurfaceLight")
 	light.Face = Enum.NormalId.Top
 	light.Angle = 60
