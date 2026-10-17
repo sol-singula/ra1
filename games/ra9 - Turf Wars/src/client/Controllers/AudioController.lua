@@ -10,7 +10,8 @@ repeats exactly, and shaped with sound effects (reverb, EQ, distortion, chorus, 
   kills        yours: a heavy punch under a glass shatter and a chime that rises (a headshot adds its own crack and a
                higher note); a streak of them adds a stinger that climbs a note per kill; someone else's falls
                shatter where they stood (3D)
-  the blade    a whoosh on every swing (everyone's, where they are), a steel clang on a parry
+  the blade    a whoosh on every swing (everyone's, where they are), a meaty cut under your knockout, an empty
+               swish when yours cuts nothing, a steel clang on a parry or when two blades clash
   the TNT      a fuse hissing while you wind up, a throw, and the blast: a deep boom with a sub under it, a crack, a
                hiss of debris and a long hall tail, quieter and duller far away
   building     a clunk as you place a piece, a crunch where one comes down (3D)
@@ -150,6 +151,19 @@ local CUES = {
 		layers = {
 			{ c = "slash", v = 0.55, p = 1, r = 0.08 },
 			{ c = "shoot", v = 0.4, p = 0.55, r = 0.05, fx = { "air" } },
+		},
+	},
+	-- (your slash reached no one: a hollow swish, lower and duller than the swing)
+	whiff = {
+		group = "World",
+		layers = { { c = "shoot", v = 0.3, p = 0.42, r = 0.05, fx = { "air" } }, { c = "lunge", v = 0.18, p = 0.7 } },
+	},
+	-- (your slash knocked someone out: the blade biting, under the kill)
+	cut = {
+		group = "Stinger",
+		layers = {
+			{ c = "slash", v = 0.7, p = 0.72, r = 0.05, fx = { "punch" } },
+			{ c = "thud", v = 0.7, p = 0.85, fx = { "punch" } },
 		},
 	},
 	parry = {
@@ -585,10 +599,15 @@ function AudioController:init()
 		if type(h) ~= "table" then
 			return
 		end
-		if h.parry then
+		if h.clash then
+			return -- (two blades met: everyone hears that clang where it happened, Sfx)
+		elseif h.parry then
 			AudioController.play("parry")
 		elseif h.kill then
 			AudioController.play(h.head and "headshot" or "kill", h.melee and 0.9 or 1)
+			if h.melee then
+				AudioController.play("cut")
+			end
 			AudioController.duck(0.55, 0.35)
 		else
 			AudioController.play("hit", h.head and 1.2 or 1)
@@ -619,7 +638,9 @@ function AudioController:init()
 		end
 	end)
 	Net.listen("Swing", function(s)
-		if type(s) == "table" and s.by ~= player.UserId and typeof(s.pos) == "Vector3" then
+		if type(s) == "table" and s.whiff and s.by == player.UserId then
+			AudioController.play("whiff")
+		elseif type(s) == "table" and s.by ~= player.UserId and typeof(s.pos) == "Vector3" then
 			AudioController.playAt("swing", s.pos + Vector3.new(0, 1.5, 0), 0.95)
 		end
 	end)

@@ -408,6 +408,127 @@ do
 	send(red, "Swing", Vector3.new(1, 0, 0))
 	check("...not out of reach", Combat:Alive(blue), Combat:Health(blue))
 	Engine.advance(blade.cooldown)
+	-- the lunge carries you in: a slash at someone a few steps past the blade's reach still lands (one slash, one
+	-- knockout)
+	-- (quick respawns and no spawn shield for these, so they fit in the fight; back in once the server's own
+	-- respawn is done, so it doesn't land mid-test)
+	local quick0 = { Constants.RESPAWN_SECONDS, Constants.RESPAWN_SECONDS_NEW, Constants.SPAWN_PROTECT }
+	Constants.RESPAWN_SECONDS, Constants.RESPAWN_SECONDS_NEW, Constants.SPAWN_PROTECT = 0.2, 0.2, 0
+	local function fresh(p)
+		if not Combat:Alive(p) then
+			Engine.advance(0.4)
+		end
+		Match:_setFrontline(F) -- (each knockout here pushed the line: back where it was, so the fight goes on)
+		whole(p)
+	end
+	local function at(p, x, lookX)
+		stand(p, Vector3.new(F + x, 3, 30), Vector3.new(F + lookX, 3, 30))
+	end
+	fresh(blue)
+	at(blue, 7, -10)
+	at(red, -7, 10)
+	send(red, "Swing", Vector3.new(1, 0, 0))
+	check(
+		"the lunge: a slash reaches past the blade's range (it carries you in)",
+		not Combat:Alive(blue) and 14 > blade.range,
+		Combat:Health(blue)
+	)
+	check("...still one slash, one knockout", blade.damage[1] >= Constants.MAX_HEALTH)
+	Engine.advance(blade.cooldown)
+	-- a wide arc: someone well off to the side (60 degrees) is still caught
+	fresh(blue)
+	stand(blue, Vector3.new(F + 4, 3, 30 + 4 * math.tan(math.rad(60))), Vector3.new(F - 10, 3, 30))
+	at(red, 0, 10)
+	send(red, "Swing", Vector3.new(1, 0, 0))
+	check("...a wide arc: 60 degrees off is still caught", not Combat:Alive(blue), Combat:Health(blue))
+	Engine.advance(blade.cooldown)
+	-- the slash keeps cutting for a moment: someone stepping in just after the click is caught
+	fresh(blue)
+	at(blue, 14, -10)
+	at(red, -6, 10)
+	local mw = mark()
+	Engine.fireServer(red, "Swing", Vector3.new(1, 0, 0))
+	check("...out of reach as you click: nothing yet", Combat:Alive(blue))
+	Engine.advance(Constants.BLADE_WINDOW * 0.3)
+	at(blue, 6, -10)
+	Engine.advance(0.05)
+	check("...but stepping into the slash a moment later: knocked out", not Combat:Alive(blue), Combat:Health(blue))
+	check("...(no whiff for a hit)", firedSince(mw, "Swing", red, function(a)
+		return a[1].whiff == true
+	end) == nil)
+	Engine.advance(blade.cooldown)
+	-- a slash that cuts no one: once it's done, the swinger hears the whiff
+	fresh(blue)
+	at(blue, 30, -10)
+	at(red, -6, 10)
+	mw = mark()
+	send(red, "Swing", Vector3.new(1, 0, 0))
+	Engine.advance(Constants.BLADE_WINDOW + 0.05)
+	check("a slash at no one: a whiff (only the swinger's told)", firedSince(mw, "Swing", red, function(a)
+		return a[1].whiff == true and a[1].by == red.UserId
+	end) ~= nil and Combat:Alive(blue))
+	Engine.advance(blade.cooldown)
+	-- not spammy: a second slash before the cooldown does nothing
+	at(blue, 8, -10)
+	at(red, 0, 10)
+	send(red, "Swing", Vector3.new(-1, 0, 0)) -- (the wrong way: a whiff, and the blade's cooling down)
+	send(red, "Swing", Vector3.new(1, 0, 0))
+	Engine.advance(0.05)
+	check("the cooldown: no second slash straight after", Combat:Alive(blue), Combat:Health(blue))
+	Engine.advance(blade.cooldown)
+	-- lag: a laggy swinger's slash is also tested where they saw the target (their ping ago), like an arrow
+	local ping0 = Combat.pingOf
+	fresh(blue)
+	at(blue, 8, -10)
+	at(red, -4, 10)
+	Engine.advance(0.5) -- (the server's kept where blue was)
+	Combat.pingOf = function(p)
+		return p == red and 0.2 or 0
+	end
+	Engine.moveTo(blue, Vector3.new(F + 40, 3, 30), Vector3.new(F, 3, 30)) -- (blue's already gone on the server)
+	Engine.advance(0.12) -- (gone a moment: longer ago than the mock's own ping, not red's)
+	send(red, "Swing", Vector3.new(1, 0, 0))
+	check("lag: a slash where the swinger saw them (their ping ago) still lands", not Combat:Alive(blue))
+	Combat.pingOf = ping0
+	Engine.advance(blade.cooldown)
+	fresh(blue)
+	at(blue, 8, -10)
+	Engine.advance(0.5)
+	Engine.moveTo(blue, Vector3.new(F + 40, 3, 30), Vector3.new(F, 3, 30))
+	Engine.advance(0.12)
+	send(red, "Swing", Vector3.new(1, 0, 0))
+	Engine.advance(Constants.BLADE_WINDOW)
+	check("...(no lag: nothing to forgive)", Combat:Alive(blue))
+	Engine.advance(blade.cooldown)
+	-- a clash: blue's blade is already swinging at red as red's slash lands: no knockout, both thrown apart
+	send(blue, "Equip", "blade")
+	fresh(blue)
+	at(blue, 12, -10)
+	at(red, -8, 10)
+	local mc = mark()
+	Engine.fireServer(blue, "Swing", Vector3.new(-1, 0, 0)) -- (red's just out of blue's reach: still cutting)
+	Engine.moveTo(red, Vector3.new(F, 3, 30), Vector3.new(F + 10, 3, 30)) -- (red steps in and slashes back at once)
+	Engine.fireServer(red, "Swing", Vector3.new(1, 0, 0))
+	Engine.advance(0.1)
+	check("a clash: two blades swung at each other, no knockout", Combat:Alive(blue) and Combat:Alive(red))
+	check("...both hear it", firedSince(mc, "Hit", red, function(a)
+		return a[1].clash == true
+	end) ~= nil and firedSince(mc, "Hit", blue, function(a)
+		return a[1].clash == true
+	end) ~= nil)
+	Engine.advance(blade.cooldown)
+	-- ...but a slash a while after theirs (they swung and missed) lands
+	at(blue, 12, -10)
+	at(red, -8, 10)
+	send(blue, "Swing", Vector3.new(-1, 0, 0))
+	Engine.advance(Constants.BLADE_CLASH + 0.1)
+	at(red, 0, 10)
+	send(red, "Swing", Vector3.new(1, 0, 0))
+	check("...not long after theirs: it lands", not Combat:Alive(blue), Combat:Health(blue))
+	send(blue, "Equip", "bow")
+	fresh(blue)
+	Constants.RESPAWN_SECONDS, Constants.RESPAWN_SECONDS_NEW, Constants.SPAWN_PROTECT = table.unpack(quick0)
+	Engine.advance(blade.cooldown)
 	-- the parry: blue swings a blade toward red as red's arrow arrives; it flies back and knocks red out
 	send(red, "Equip", "bow")
 	send(blue, "Equip", "blade")

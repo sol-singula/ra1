@@ -2,9 +2,13 @@
 Combat (master plan §5): health, the bow, the TNT and the blade, server arrows, thrown TNT, slashes, hits,
 knockback, kills and credit.
 
-The blade: the client sends Swing(direction) as you click; the server checks the cadence and finds the nearest enemy
-in reach (Weapons blade.range from you, inside blade.arc degrees of where you look, nothing solid between), and hits
-it (more from behind). Everyone is told (Swing) so they see the slash.
+The blade: the client sends Swing(direction) as you click (turned onto the nearest enemy in front, and lunging you at
+them: SwingController); the server checks the cadence and finds the nearest enemy in reach (Weapons blade.range plus
+Constants.BLADE_LUNGE from where the slash began, inside blade.arc degrees of where you swung, nothing solid between;
+like an arrow, also where a laggy swinger saw them), and knocks it out (one slash, one knockout). A slash that reaches
+no one keeps cutting for BLADE_WINDOW (someone stepping in is still caught), then is a whiff (the swinger is told,
+Swing { whiff }). Two blades swung at each other within BLADE_CLASH clash: no knockout, both thrown apart. Bots'
+lunges are moved here (a player's own client moves them). Everyone is told (Swing) so they see the slash.
 
 The client only asks: Draw(true) when you start drawing, Shoot(origin, direction, shotId) when you let go. The
 server times the draw itself (the charge is how long it has really been drawing, capped by the bow), checks you're
@@ -975,7 +979,192 @@ function CombatService.allowed(key, player)
 	return w ~= nil and (not w.melee or workspace:GetAttribute("Charge") == true) and not Weapons.locked(key, player)
 end
 
--- A slash (Net "Swing"; bots call it too): the nearest enemy in reach and in front, nothing solid between.
+-- The blade ----------------------------------------------------------------------------------------------------
+-- A slash (Net "Swing"; bots call it too) lunges the swinger in and keeps cutting for BLADE_WINDOW: it hits the
+-- nearest enemy in front within reach (the blade's range, plus the lunge from where the slash began), nothing solid
+-- between. Like an arrow, a laggy swinger's slash is also tested against where they saw each target (their ping
+-- ago) and reaches a touch further. Two blades swung at each other at nearly the same moment clash instead.
+local slashes = {} -- { by, w, t, untilT, from, look, rewind, extra } slashes still cutting
+local lunges = {} -- [bot] = { dir, left, speed } a bot's lunge, moved here (a player's own client moves them)
+
+local function flatUnit(v, fallback)
+	local f = Vector3.new(v.X, 0, v.Z)
+	return f.Magnitude > 0.01 and f.Unit or fallback
+end
+
+-- The enemy a slash reaches now (nearest first), or nil
+function CombatService:_slashTarget(sl)
+	local r = root(sl.by)
+	if not r then
+		return nil
+	end
+	local mine = teams:Team(sl.by)
+	local past = sl.rewind > 0.01 and now() - sl.rewind or nil
+	-- (from where the slash began, the lunge still to come; and from where the swinger is now, the lunge made)
+	local froms = { { sl.from, sl.w.range + Constants.BLADE_LUNGE + sl.extra } }
+	if (r.Position - sl.from).Magnitude > 0.2 then
+		table.insert(froms, { r.Position, sl.w.range + sl.extra })
+	end
+	local best, bestD
+	for other, os_ in states do
+		local orr = os_.alive and other ~= sl.by and other.Parent and teams:Team(other) ~= mine and root(other)
+		if orr then
+			local spots = { orr.Position }
+			local was = past and rootAt(other, past)
+			if was and (was - orr.Position).Magnitude > 0.05 then
+				table.insert(spots, was)
+			end
+			for _, f in froms do
+				for _, p in spots do
+					local to = p - f[1]
+					local flat = Vector3.new(to.X, 0, to.Z)
+					local d = flat.Magnitude
+					local inArc = d < 1.5 or math.deg(math.acos(math.clamp(flat.Unit:Dot(sl.look), -1, 1))) <= sl.w.arc
+					if d <= f[2] and math.abs(to.Y) < 5 and inArc and (not bestD or d < bestD) then
+						if not self:Blocked(f[1] + Vector3.new(0, 1.5, 0), p + Vector3.new(0, 1, 0)) then
+							best, bestD = other, d
+						end
+					end
+				end
+			end
+		end
+	end
+	return best
+end
+
+-- A bot's lunge (a player's own client lunges them: it owns their body): toward who it's slashing, stopping short
+local function lungeBot(bot, r, look, target)
+	local dist = Constants.BLADE_STEP
+	local tr = target and root(target)
+	if tr then
+		local gap = Vector3.new(tr.Position.X - r.Position.X, 0, tr.Position.Z - r.Position.Z).Magnitude
+		dist = math.clamp(gap - 3, 0, Constants.BLADE_LUNGE)
+	end
+	if dist > 0.1 then
+		lunges[bot] = { dir = look, left = dist, speed = dist / Constants.BLADE_LUNGE_TIME }
+	end
+end
+
+function CombatService:_lungeStep(dt)
+	for bot, l in lunges do
+		local r = root(bot)
+		local s = states[bot]
+		if not r or not s or not s.alive or l.left <= 0 then
+			lunges[bot] = nil
+		else
+			local d = math.min(l.left, l.speed * dt)
+			local at = r.Position + Vector3.new(0, 1, 0)
+			if self:Blocked(at, at + l.dir * (d + 1.5)) then
+				lunges[bot] = nil -- (a wall in the way: it stops)
+			else
+				r.CFrame += l.dir * d
+				l.left -= d
+			end
+		end
+	end
+end
+
+-- Did the victim's own blade meet this slash (they swung at the swinger a moment ago)?
+local function clashes(sl, victim)
+	local vs = states[victim]
+	local vw = vs and Weapons.get(vs.weapon)
+	if not vw or not vw.melee or not vs.swingAt or sl.t - vs.swingAt > Constants.BLADE_CLASH then
+		return false
+	end
+	local vr, r = root(victim), root(sl.by)
+	if not vr or not r then
+		return false
+	end
+	return vs.swingLook:Dot(flatUnit(r.Position - vr.Position, vs.swingLook)) >= Constants.PARRY_DOT
+end
+
+local function stopSlashes(who)
+	for i = #slashes, 1, -1 do
+		if slashes[i].by == who then
+			table.remove(slashes, i)
+		end
+	end
+	lunges[who] = nil
+end
+
+-- Steel on steel: no knockout; both are thrown apart and hear the clang
+function CombatService:_clash(a, b)
+	local ar, br = root(a), root(b)
+	local mid = (ar.Position + br.Position) / 2 + Vector3.new(0, 1.5, 0)
+	for _, pair in { { a, ar, br }, { b, br, ar } } do
+		local who, mine, theirs = pair[1], pair[2], pair[3]
+		stopSlashes(who)
+		local knock = flatUnit(mine.Position - theirs.Position, -mine.CFrame.LookVector) * Constants.BLADE_CLASH_PUSH
+			+ Vector3.new(0, 8, 0)
+		pcall(function()
+			mine.AssemblyLinearVelocity += knock
+		end)
+		if typeof(who) == "Instance" then
+			who:SetAttribute("AcGrace", os.clock() + 1)
+			Net.fire(who, "Hit", { damage = 0, parry = true, clash = true, melee = true, pos = mid, knock = knock })
+		end
+	end
+	Net.fireAll("Sfx", "parry", mid)
+end
+
+-- The slash lands on best: a knockout (more from behind), or a clash
+function CombatService:_slash(sl, best)
+	stopSlashes(sl.by)
+	local player, w = sl.by, sl.w
+	if clashes(sl, best) then
+		self:_clash(player, best)
+		return best, false
+	end
+	local r, vr = root(player), root(best)
+	-- from behind: the victim faces away from you
+	local away = (vr.Position - r.Position)
+	away = Vector3.new(away.X, 0, away.Z)
+	local back = away.Magnitude > 0.01 and vr.CFrame.LookVector:Dot(away.Unit) > 0.5
+	local amount = math.floor(w.damage[1] * (back and w.backstab or 1) + 0.5)
+	local info = { weapon = w.key, head = false, kind = "melee", back = back }
+	local ok, killed = self:Damage(best, amount, player, info)
+	if not ok then
+		return best, false
+	end
+	local look = flatUnit(away, sl.look)
+	local kb = look * math.min(w.knockback, Constants.KNOCKBACK_CAP) + Vector3.new(0, w.knockback * 0.3, 0)
+	if not killed then
+		pcall(function()
+			vr.AssemblyLinearVelocity += kb
+		end)
+	end
+	if typeof(best) == "Instance" then
+		best:SetAttribute("AcGrace", os.clock() + 1.5)
+	end
+	Net.fire(best, "Hurt", { amount = amount, from = r.Position, knock = kb, head = false })
+	Net.fire(
+		player,
+		"Hit",
+		{ damage = amount, head = back, kill = killed, victim = best.UserId, melee = true, pos = vr.Position }
+	)
+	return best, killed
+end
+
+-- (each step: the slashes still cutting look again; one that ran out is a whiff, and the swinger hears it)
+function CombatService:_slashStep()
+	local t = now()
+	for i = #slashes, 1, -1 do
+		local sl = slashes[i]
+		local s = states[sl.by]
+		if not s or not s.alive or not sl.by.Parent or not enabled then
+			table.remove(slashes, i)
+		else
+			local best = self:_slashTarget(sl)
+			if best then
+				self:_slash(sl, best)
+			elseif t >= sl.untilT then
+				table.remove(slashes, i)
+				Net.fire(sl.by, "Swing", { by = sl.by.UserId, whiff = true })
+			end
+		end
+	end
+end
+
 function CombatService:Swing(player, direction)
 	if not enabled or typeof(direction) ~= "Vector3" or direction.Magnitude < 0.5 or direction.Magnitude > 1.5 then
 		return nil
@@ -998,57 +1187,33 @@ function CombatService:Swing(player, direction)
 	if not r then
 		return nil
 	end
-	local look = Vector3.new(direction.X, 0, direction.Z)
-	look = look.Magnitude > 0.01 and look.Unit or r.CFrame.LookVector
-	-- the swing knocks back arrows from the front for a moment (see _parry)
+	local look = flatUnit(direction, r.CFrame.LookVector)
+	-- the swing knocks back arrows from the front for a moment (see _parry), and meets another blade (clashes)
 	s.parryUntil, s.parryDir = t + Constants.PARRY_SECONDS, look
-	local eye = r.Position + Vector3.new(0, 1.5, 0)
-	local mine = teams:Team(player)
-	local best, bestD
-	for other, os_ in states do
-		local orr = os_.alive and other ~= player and other.Parent and teams:Team(other) ~= mine and root(other)
-		if orr then
-			local to = orr.Position - r.Position
-			local flat = Vector3.new(to.X, 0, to.Z)
-			local d = flat.Magnitude
-			local inArc = d < 1.5 or math.deg(math.acos(math.clamp(flat.Unit:Dot(look), -1, 1))) <= w.arc
-			if d <= w.range and math.abs(to.Y) < 5 and inArc and (not bestD or d < bestD) then
-				if not self:Blocked(eye, orr.Position + Vector3.new(0, 1, 0)) then
-					best, bestD = other, d
-				end
-			end
-		end
+	s.swingAt, s.swingLook = t, look
+	stopSlashes(player)
+	local rewind, extra = forgiveness({ by = player })
+	local sl = {
+		by = player,
+		w = w,
+		t = t,
+		untilT = t + Constants.BLADE_WINDOW,
+		from = r.Position,
+		look = look,
+		rewind = rewind,
+		extra = extra,
+	}
+	local best = self:_slashTarget(sl)
+	if typeof(player) ~= "Instance" then
+		lungeBot(player, r, look, best)
 	end
 	Net.fireAll("Swing", { by = player.UserId, hit = best ~= nil, pos = r.Position, dir = look })
 	self.Shot:Fire(player, w.key)
 	if not best then
+		table.insert(slashes, sl) -- (still cutting: see _slashStep)
 		return nil
 	end
-	local vr = root(best)
-	-- from behind: the victim faces away from you
-	local away = (vr.Position - r.Position)
-	away = Vector3.new(away.X, 0, away.Z)
-	local back = away.Magnitude > 0.01 and vr.CFrame.LookVector:Dot(away.Unit) > 0.5
-	local amount = math.floor(w.damage[1] * (back and w.backstab or 1) + 0.5)
-	local info = { weapon = w.key, head = false, kind = "melee", back = back }
-	local ok, killed = self:Damage(best, amount, player, info)
-	if not ok then
-		return best, false
-	end
-	local kb = look * math.min(w.knockback, Constants.KNOCKBACK_CAP) + Vector3.new(0, w.knockback * 0.3, 0)
-	if not killed then
-		pcall(function()
-			vr.AssemblyLinearVelocity += kb
-		end)
-	end
-	best:SetAttribute("AcGrace", os.clock() + 1.5)
-	Net.fire(best, "Hurt", { amount = amount, from = r.Position, knock = kb, head = false })
-	Net.fire(
-		player,
-		"Hit",
-		{ damage = amount, head = back, kill = killed, victim = best.UserId, melee = true, pos = vr.Position }
-	)
-	return best, killed
+	return self:_slash(sl, best)
 end
 
 function CombatService:Equip(player, key)
@@ -1125,6 +1290,7 @@ function CombatService:Init(registry)
 		states[player] = nil
 		history[player] = nil
 		scored[player] = nil
+		stopSlashes(player)
 		for _, s in states do
 			s.hits[player] = nil
 		end
@@ -1144,6 +1310,9 @@ function CombatService:Start()
 			acc -= Constants.ARROW_STEP
 			self:_step(Constants.ARROW_STEP)
 		end
+		-- (slashes still cutting, bots mid-lunge)
+		self:_slashStep()
+		self:_lungeStep(dt)
 		-- (finished reloads refill the magazine)
 		local t = now()
 		for player, s in states do
