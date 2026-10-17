@@ -53,6 +53,7 @@ local refs = {}
 HudController.refs = refs
 local feed = {}
 local hitUntil = 0
+local killPopAt -- (a kill: the marker grows into an X)
 local FEED_W = 300 -- (clear of the 560-wide top bar on a 1240 canvas)
 -- the kill feed: under the TOP button (12..48), five rows of 22 with 3 between
 local FEED = { top = 56, h = 5 * 22 + 4 * 3 }
@@ -531,11 +532,39 @@ function HudController.alert(text, color, seconds)
 end
 
 function HudController.hitMarker(kill, head)
-	hitUntil = os.clock() + (kill and 0.45 or 0.2)
+	hitUntil = os.clock() + (kill and 0.55 or 0.2)
+	killPopAt = kill and os.clock() or nil
 	for _, l in refs.hitLines or {} do
 		l.BackgroundColor3 = kill and RED or (head and C.ink or Color3.fromRGB(60, 60, 66))
 		l.Size = UDim2.fromOffset(kill and 13 or 9, 3)
 	end
+	if not kill then
+		HudController.placeHitLines(12, 9, 3)
+	end
+end
+
+-- the four ticks round the centre: r from it, len long (a kill draws them in and out into one big X)
+function HudController.placeHitLines(r, len, thick)
+	for i, a in { 45, -45, 135, -135 } do
+		local l = refs.hitLines and refs.hitLines[i]
+		if l then
+			l.Position = UDim2.new(0.5, math.cos(math.rad(a)) * r, 0.5, math.sin(math.rad(a)) * r)
+			l.Size = UDim2.fromOffset(len, thick)
+		end
+	end
+end
+
+local function killPop()
+	if not killPopAt then
+		return
+	end
+	local t = os.clock() - killPopAt
+	-- a snap out past full size (an overshoot), then it settles and thins as it goes
+	local g = math.min(1, t / 0.12)
+	local back = 1 + 2.2 * (g - 1) ^ 3 + 1.2 * (g - 1) ^ 2
+	local len = 9 + 21 * back
+	local fade = math.clamp((t - 0.3) / 0.25, 0, 1)
+	HudController.placeHitLines(6 + len * 0.5 + 2 * fade, len * (1 - 0.35 * fade), 4 - fade)
 end
 
 -- The kill feed ------------------------------------------------------------------------------------------------
@@ -1287,6 +1316,7 @@ local function step()
 	updateTouch()
 	if refs.hit then
 		refs.hit.Visible = os.clock() < hitUntil
+		killPop()
 	end
 	local me = Store.get("me") or {}
 	local m = Store.get("match") or {}
