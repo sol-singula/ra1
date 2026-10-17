@@ -21,6 +21,7 @@ gives it back: Custom again, on your character, locked first person, looking alo
   CameraController.parked()       { [button] = true }: Modal buttons switched off while their panel is hidden
   CameraController.cursorMode()   CameraController.setCursorMode(on)   Alt: the mouse free to click anything
   CameraController.turn(dx, dy)   turn the view by a thumb's drag in points (the touch FIRE button: Bus.Look)
+  CameraController.lookUp(rad, ceiling?)   tilt the view up (or down) a little (the win's fireworks)
 ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -207,6 +208,27 @@ function CameraController.turn(dx, dy)
 	local dir = Vector3.new(-math.sin(yaw) * math.cos(pitch), math.sin(pitch), -math.cos(yaw) * math.cos(pitch))
 	local at = cam.CFrame.Position
 	cam.CFrame = CFrame.lookAt(at, at + dir) -- (Roblox's camera carries on from where this one looks)
+end
+
+-- A gentle look up by `rad` (down when negative), never higher than `ceiling` (the win's fireworks: an eye to the
+-- sky); not while a cinematic has the camera or a menu has the mouse. Returns how far it actually turned.
+function CameraController.lookUp(rad, ceiling)
+	local cam = workspace.CurrentCamera
+	if not cam or driver or CameraController.mouseFree() or rad == 0 then
+		return 0
+	end
+	local look = cam.CFrame.LookVector
+	local yaw = math.atan2(-look.X, -look.Z)
+	local pitch = math.asin(math.clamp(look.Y, -1, 1))
+	local top = math.max(pitch, math.min(ceiling or PITCH_MAX, PITCH_MAX)) -- (already higher: no further)
+	local to = math.clamp(pitch + rad, -PITCH_MAX, rad > 0 and top or PITCH_MAX)
+	if math.abs(to - pitch) < 1e-5 then
+		return 0
+	end
+	local dir = Vector3.new(-math.sin(yaw) * math.cos(to), math.sin(to), -math.cos(yaw) * math.cos(to))
+	local at = cam.CFrame.Position
+	cam.CFrame = CFrame.lookAt(at, at + dir)
+	return to - pitch
 end
 
 local function shakeNow()
