@@ -4,6 +4,7 @@
 local Engine = loadModule("tests/mock/Engine.luau")
 local tree = Engine.mountProject(".")
 Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
+Engine.require(tree.shared.Constants).MIN_SIDE = 1 -- (the old minimum: these checks count the bots themselves; BotSmoke checks 2 v 2)
 local Formulas = Engine.require(tree.shared.Formulas)
 local Constants = Engine.require(tree.shared.Constants)
 local Weapons = Engine.require(tree.shared.Data.Weapons)

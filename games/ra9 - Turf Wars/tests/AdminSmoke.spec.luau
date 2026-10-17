@@ -27,6 +27,7 @@ end
 
 local tree = Engine.mountProject(".")
 Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
+Engine.require(tree.shared.Constants).MIN_SIDE = 1 -- (the old minimum: these checks count the bots themselves; BotSmoke checks 2 v 2)
 Engine.clientEnabled = true
 local ws = Engine.workspace
 ws.CurrentCamera.ViewportSize = Vector2.new(1240, 560)
@@ -371,12 +372,19 @@ do
 	act(owner, "mission", nil, true)
 	local room = ws:FindFirstChild("MissionControl")
 	check("MISSION CONTROL: the room is built", room ~= nil and #room:GetChildren() > 150, room and #room:GetChildren())
-	check("...you're in it, out of the match", Afk:Away(owner) and root(owner) and (root(owner).Position - MC.ROOM.Position).Magnitude < 60)
+	check(
+		"...you're in it, out of the match",
+		Afk:Away(owner) and root(owner) and (root(owner).Position - MC.ROOM.Position).Magnitude < 60
+	)
 	check("...someone's in it", MC:Occupied())
 	MC:Refresh(true)
 	local main = room and room:FindFirstChild("MainScreen")
 	local title = main and main.Screen:FindFirstChild("Label")
-	check("...the big screen shows this server live", title and title.Text:find("THIS SERVER") ~= nil, title and title.Text)
+	check(
+		"...the big screen shows this server live",
+		title and title.Text:find("THIS SERVER") ~= nil,
+		title and title.Text
+	)
 	local dots = main and main.Screen.Field.Dots:GetChildren()
 	check("...a dot for everyone on the field", dots and #dots >= 1, dots and #dots)
 	local srv = room and room:FindFirstChild("ServerScreen1")

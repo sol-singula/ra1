@@ -17,6 +17,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Net = require(ReplicatedStorage.Shared.Net)
 local Notify = require(script.Parent.Parent.Notify)
 local Admins = require(script.Parent.Parent.Admins)
 
@@ -400,7 +401,7 @@ function AfkService:_check()
 	for _, player in Players:GetPlayers() do
 		local w = watch[player]
 		if not w then
-			w = { at = now() }
+			w = { at = now(), joined = now() }
 			watch[player] = w
 		end
 		local r = root(player)
@@ -416,8 +417,9 @@ function AfkService:_check()
 			if not w.pos or (p - w.pos).Magnitude > 2 then
 				w.pos, w.at = p, now()
 			end
-			-- (a spectating admin is never sent; nor anyone while no match is on)
-			if on and not Admins.spectating(player) and now() - w.at >= Constants.AFK_SECONDS then
+			-- (a spectating admin is never sent; nor anyone while no match is on, nor someone who just joined)
+			local fresh = now() - (w.joined or 0) < Constants.AFK_JOIN_GRACE
+			if on and not fresh and not Admins.spectating(player) and now() - w.at >= Constants.AFK_SECONDS then
 				self:Send(player)
 			end
 		else
@@ -438,6 +440,10 @@ function AfkService:Start()
 	buildRoom()
 	pcall(self.RefreshBoards, self)
 	combat.Shot:Connect(active)
+	-- (any input at all counts: looking round, a menu, the shop; only someone who touches nothing is idle)
+	Net.on("Active", function(player)
+		active(player)
+	end)
 	build.Built:Connect(active)
 	Players.PlayerRemoving:Connect(function(player)
 		watch[player] = nil

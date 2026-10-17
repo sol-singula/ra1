@@ -24,6 +24,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local Net = require(game:GetService("ReplicatedStorage").Shared.Net)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Layout = require(script.Parent.Parent.UI.Layout)
 local Store = require(script.Parent.Parent.Store)
@@ -253,6 +254,26 @@ function CameraController:init()
 			pcall(function()
 				UserInputService.MouseDeltaSensitivity = p.settings.sensitivity
 			end)
+		end
+	end)
+	-- any input tells the server you're here (at most every 10 s): only someone who touches nothing is "AFK"
+	local lastActive = -math.huge
+	local function activity()
+		local t = os.clock()
+		if t - lastActive >= 10 then
+			lastActive = t
+			pcall(Net.send, "Active")
+		end
+	end
+	UserInputService.InputBegan:Connect(activity)
+	UserInputService.InputChanged:Connect(function(input)
+		local kind = input.UserInputType
+		if
+			kind == Enum.UserInputType.MouseMovement
+			or kind == Enum.UserInputType.Touch
+			or kind == Enum.UserInputType.Gamepad1
+		then
+			activity()
 		end
 	end)
 	-- a new body faces the line: so does the camera (first person turns the body to the camera, so an old look

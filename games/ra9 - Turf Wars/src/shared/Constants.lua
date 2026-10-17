@@ -16,7 +16,8 @@ Constants.TEAM_IMBALANCE = 2 -- (between matches the teams are evened to within 
 -- Phases (§2): seconds
 Constants.BUILD_SECONDS = 20
 Constants.AFK_SECONDS = 75 -- no moving, shooting or building this long in a match: off to the limbo room (0 = off)
-Constants.AFK_RETURN_STUDS = 4 -- walk this far in the limbo room to jump back in
+Constants.AFK_RETURN_STUDS = 4
+Constants.AFK_JOIN_GRACE = 120 -- seconds after joining that nobody is ever sent to the AFK room -- walk this far in the limbo room to jump back in
 Constants.FIGHT_SECONDS = 120
 Constants.STUCK_RESPAWN_SECONDS = 3 -- no body and no respawn coming this long: the server puts them back in
 Constants.CHARGE_SECONDS = 20 -- the last this many seconds of a fight: anyone may cross the line, and the blade is out
@@ -77,8 +78,7 @@ Constants.CROUCH_SPEED = 10 -- crouched: slower, lower (a smaller target), the b
 Constants.CROUCH_DROP = 1.1 -- studs the body (and the view, and the hit spheres) sink when crouched
 
 -- Bots: only while exactly one person is on (BotService). The second person to join takes over a bot.
-Constants.BOT_ALLIES = 0 -- on your side
-Constants.BOT_ENEMIES = 1 -- against you
+Constants.MIN_SIDE = 2 -- the fewest on a side: bots fill in (2 v 2 at least, so there is always action)
 Constants.BOT_SPEED = 16 -- a little slower than a person walking
 Constants.BOT_RANGE = 150 -- studs: how far they look for someone to shoot
 Constants.BOT_SPREAD = 2.6 -- degrees of aim error (more at range): beatable, not helpless

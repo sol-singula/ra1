@@ -26,6 +26,7 @@ end
 
 local tree = Engine.mountProject(".")
 Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
+Engine.require(tree.shared.Constants).MIN_SIDE = 1 -- (the old minimum: these checks count the bots themselves; BotSmoke checks 2 v 2)
 Engine.require(tree.shared.Constants).TUTORIAL = false -- (the players here know the game: tests/TutorialSmoke is the tutorial's)
 Engine.runScript(tree.server.Main)
 Engine.advance(0.5)
@@ -1298,6 +1299,7 @@ do
 	Engine.advance(1)
 	check("a match is on", Match:Phase() == "build" or Match:Phase() == "fight", Match:Phase())
 	Constants.AFK_SECONDS = 6
+	Constants.AFK_JOIN_GRACE = 0 -- (just joined: normally never sent)
 	for _ = 1, 25 do
 		if Afk:Away(idle) then
 			break

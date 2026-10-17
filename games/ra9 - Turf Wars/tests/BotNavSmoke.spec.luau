@@ -22,9 +22,8 @@ end
 local tree = Engine.mountProject(".")
 local Constants = Engine.require(tree.shared.Constants)
 Constants.AFK_SECONDS = 0 -- (the person here stands still on purpose)
+Constants.MIN_SIDE = 4 -- (four a side: the person and three bots, four bots against them)
 Constants.TUTORIAL = false
-Constants.BOT_ALLIES = 3 -- (four a side: the person's three allies and four against them)
-Constants.BOT_ENEMIES = 4
 Walker.install(Engine)
 Engine.runScript(tree.server.Main)
 Engine.advance(0.5)

@@ -20,6 +20,7 @@ end
 
 local tree = Engine.mountProject(".")
 Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
+Engine.require(tree.shared.Constants).MIN_SIDE = 1 -- (the old minimum: these checks count the bots themselves; BotSmoke checks 2 v 2)
 Engine.require(tree.shared.Constants).TUTORIAL = false -- (the players here know the game: tests/TutorialSmoke is the tutorial's)
 Engine.runScript(tree.server.Main)
 Engine.advance(0.5)
@@ -43,7 +44,7 @@ Engine.advance(1)
 Engine.fireServer(solo, "Ready")
 Engine.advance(2)
 local list = Bots:List()
-check("alone: bots join", #list == Constants.BOT_ALLIES + Constants.BOT_ENEMIES, #list)
+check("alone: bots join", #list == 1, #list)
 check("...just one, against you", #list == 1, #list)
 local mine = Teams:Team(solo)
 local allies, enemies = 0, 0
@@ -54,11 +55,7 @@ for _, b in list do
 		enemies += 1
 	end
 end
-check(
-	"...allies on your side, enemies on the other",
-	allies == Constants.BOT_ALLIES and enemies == Constants.BOT_ENEMIES,
-	`{allies} {enemies}`
-)
+check("...allies on your side, enemies on the other", allies == 0 and enemies == 1, `{allies} {enemies}`)
 check("...with bodies in the arena", list[1] and root(list[1]) ~= nil and list[1].Character.Parent ~= nil)
 check("...named as bots", list[1].Character:FindFirstChild("BotTag") ~= nil)
 check("...counted in the match", #Match:Everyone() == 1 + #list)
@@ -235,7 +232,32 @@ check("two people: no bots come back", #Bots:List() == 0)
 -- back to one: the bots return
 Engine.removePlayer(pal)
 Engine.advance(2.5)
-check("back to one person: bots again", #Bots:List() == Constants.BOT_ALLIES + Constants.BOT_ENEMIES, #Bots:List())
+check("back to one person: bots again", #Bots:List() == 1, #Bots:List())
+do
+	-- the real rule: at least 2 a side, so one person gets a bot beside them and two against them
+	Constants.MIN_SIDE = 2
+	Bots:Ensure()
+	Engine.advance(0.5)
+	local mine, with, against = nil, 0, 0
+	for _, p in Engine.Players:GetPlayers() do
+		mine = mine or Teams:Team(p)
+	end
+	for _, b in Bots:List() do
+		if Teams:Team(b) == mine then
+			with += 1
+		else
+			against += 1
+		end
+	end
+	check(
+		"2 v 2 at least: one person gets a bot beside them and two against",
+		with == 1 and against == 2,
+		`{with} {against}`
+	)
+	Constants.MIN_SIDE = 1
+	Bots:Ensure()
+	Engine.advance(0.5)
+end
 Engine.removePlayer(solo)
 Engine.advance(2.5)
 check("nobody on: no bots", #Bots:List() == 0)

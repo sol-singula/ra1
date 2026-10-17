@@ -29,6 +29,7 @@ Net.ClientEvents = {
 	Admin = 8, -- (action, target?, value?) the admin panel; refused unless you're an admin (AdminService)
 	Tutorial = 6, -- ("step", name, how?) | ("done") | ("skip", where?) | ("replay") the first-minute guide
 	Top = 2, -- () the leaderboards, please (LeaderboardService answers with "Leaderboards")
+	Active = 1, -- () the player touched a key, the mouse or the screen lately (AfkService: not idle)
 }
 
 -- Server → client.

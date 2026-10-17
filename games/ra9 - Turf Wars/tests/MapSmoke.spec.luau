@@ -21,6 +21,7 @@ end
 
 local tree = Engine.mountProject(".")
 Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
+Engine.require(tree.shared.Constants).MIN_SIDE = 1 -- (the old minimum: these checks count the bots themselves; BotSmoke checks 2 v 2)
 Engine.runScript(tree.server.Main)
 Engine.advance(0.5)
 local Arena = Engine.require(tree.server.Services.ArenaService)

@@ -1,12 +1,13 @@
 --[[
 Bots, only while every real person is on one side: alone in a server (or a party alone) you still get a real fight,
-one bot against each of you (at least BOT_ENEMIES; BOT_ALLIES on your side). The moment someone joins on their own,
+bots on both sides (at least MIN_SIDE a side, below). The moment someone joins on their own,
 they take the bots' side, every bot leaves, and the game starts over (a fresh match, build phase first) so both sides
 start even. Someone who joins with the party (or follows a friend in) goes to that side and gets one more bot to
 fight. If everyone ends up on one side again, the bots come back. With nobody on, none.
 
-Uneven sides: with real people on both sides but not as many (3 against 2, say), the smaller side gets a bot for each
-person it's missing, so the teams are always even. A newcomer goes to the smaller side and takes a bot's place.
+Always at least MIN_SIDE a side (2 against 2), and always even: bots make up whatever real people don't. One person
+alone gets a bot beside them and two against them; a 1 v 1 gets a bot each side; 3 against 2 gets one bot for the 2.
+A newcomer goes to the smaller side and takes a bot's place.
 
 A bot is a stand-in that looks enough like a player to the rest of the server (a character, a team, attributes, a
 UserId below zero), so it fights through the same code: CombatService draws and flies its arrows and checks its
@@ -290,17 +291,11 @@ function BotService:Ensure()
 		end
 		sides[t] = (sides[t] or 0) + 1
 	end
-	local only = (sides.red and not sides.blue) and "red" or ((sides.blue and not sides.red) and "blue" or nil)
-	local want
-	if only then
-		-- everyone on one side: one bot against each real person there (at least BOT_ENEMIES), BOT_ALLIES with them
-		local other = only == "red" and "blue" or "red"
-		want = { [other] = math.max(Constants.BOT_ENEMIES, #people), [only] = Constants.BOT_ALLIES }
-	else
-		-- people on both sides but not as many: the smaller side gets a bot for each person it's missing
-		local r, b = sides.red or 0, sides.blue or 0
-		want = { red = math.max(0, b - r), blue = math.max(0, r - b) }
-	end
+	-- every side at least MIN_SIDE strong and both sides even: bots make up whatever real people don't (one person
+	-- alone gets a bot beside them and two against them; 3 against 2 gets one bot for the 2)
+	local reds, blues = sides.red or 0, sides.blue or 0
+	local target = math.max(Constants.MIN_SIDE, reds, blues)
+	local want = { red = target - reds, blue = target - blues }
 	if want.red == 0 and want.blue == 0 then
 		if #bots > 0 then
 			self:RemoveAll()
