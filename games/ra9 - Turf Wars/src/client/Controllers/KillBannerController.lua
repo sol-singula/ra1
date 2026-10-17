@@ -4,7 +4,10 @@ The kill banners: what a knockout feels like from your side of the screen.
   your knockout   a banner punches in (big, a little overshoot and a tilt that settles): ELIMINATED <name>, coloured
                   by the rarity of the kill effect you wear (the rainbow cycles for the Robux ones), "with <EFFECT>"
                   under it, and a funny line for the funny ones ("bawk bawk"); HEADSHOT! on a head hit; a burst of
-                  sparkles (and confetti) flies out of it
+                  sparkles (and confetti) flies out of it. The big effects make it their own (FLOURISH): their
+                  colours, their own move (lightning flickers, gold shimmers, the black hole pulses, the funny ones
+                  wobble), their sticker popping in at its side, a flash of their colour round the screen's edges,
+                  and their own stinger in your ears (AudioController.signature)
   a streak        kills of yours within MULTI_WINDOW seconds stack: DOUBLE! TRIPLE! QUAD! RAMPAGE! UNSTOPPABLE! a
                   bigger banner each time, hotter colours, more sparkles and a screen shake that grows
   knocked out     by an effect that's Robux only and isn't yours: once you're back on your feet, a small card
@@ -24,11 +27,13 @@ local RunService = game:GetService("RunService")
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Locker = require(ReplicatedStorage.Shared.Data.Locker)
+local MemeArt = require(ReplicatedStorage.Shared.Data.MemeArt)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Store = require(script.Parent.Parent.Store)
 local Layout = require(script.Parent.Parent.UI.Layout)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local AudioController = require(script.Parent.AudioController)
 
 local KillBannerController = { Name = "KillBannerController", Order = 56 }
 
@@ -78,8 +83,84 @@ local EMOJI = {
 	blackhole = "🕳️",
 	heaven = "😇",
 }
+for shape, e in
+	{
+		smoke = "💨",
+		shards = "💎",
+		pixels = "👾",
+		ring = "⭕",
+		slice = "🗡️",
+		fold = "📄",
+		static = "📺",
+		spark = "✨",
+		nova = "🌟",
+		spears = "🔱",
+		confetti = "🎉",
+		ink = "🖋️",
+		orbit = "🪐",
+		rise = "👻",
+		spotlight = "🔦",
+		cubes = "🧊",
+	}
+do
+	EMOJI[shape] = e
+end
 KillBannerController.EMOJI = EMOJI
 KillBannerController.FUNNY = FUNNY
+
+-- Your kill effect's own moment on the banner: its colours (bg, the edge, the sparks), how the banner moves (anim:
+-- flicker | shimmer | rainbow | pulse | wobble) and the sticker that pops in beside it (Data/MemeArt), with a flash
+-- of its colour round the edges of the screen
+local FLOURISH = {
+	lightning = {
+		bg = Color3.fromRGB(18, 30, 70),
+		edge = Color3.fromRGB(140, 210, 255),
+		anim = "flicker",
+		sticker = "bolt",
+	},
+	doge = { bg = Color3.fromRGB(230, 160, 40), edge = Color3.fromRGB(255, 60, 200), anim = "wobble", sticker = "doge" },
+	web = { bg = Color3.fromRGB(190, 30, 45), edge = Color3.fromRGB(40, 90, 220), anim = "wobble", sticker = "web" },
+	oof = { bg = Color3.fromRGB(240, 170, 20), edge = Color3.fromRGB(255, 255, 255), anim = "wobble", sticker = "oof" },
+	bonk = { bg = Color3.fromRGB(200, 40, 50), edge = Color3.fromRGB(255, 230, 60), anim = "wobble", sticker = "bonk" },
+	dance = {
+		bg = Color3.fromRGB(120, 40, 200),
+		edge = Color3.fromRGB(255, 255, 255),
+		anim = "rainbow",
+		sticker = "disco",
+	},
+	blackhole = {
+		bg = Color3.fromRGB(20, 10, 40),
+		edge = Color3.fromRGB(190, 110, 255),
+		anim = "pulse",
+		sticker = "blackhole",
+	},
+	heaven = {
+		bg = Color3.fromRGB(240, 180, 40),
+		edge = Color3.fromRGB(255, 250, 225),
+		anim = "shimmer",
+		sticker = "heaven",
+	},
+	chicken = {
+		bg = Color3.fromRGB(230, 60, 50),
+		edge = Color3.fromRGB(255, 255, 255),
+		anim = "wobble",
+		sticker = "chicken",
+	},
+	duck = { bg = Color3.fromRGB(250, 200, 30), edge = Color3.fromRGB(255, 140, 30), anim = "wobble", sticker = "duck" },
+	banana = {
+		bg = Color3.fromRGB(240, 200, 30),
+		edge = Color3.fromRGB(110, 70, 20),
+		anim = "wobble",
+		sticker = "banana",
+	},
+	firework = { bg = Color3.fromRGB(30, 20, 70), edge = Color3.fromRGB(255, 200, 50), anim = "rainbow" },
+	sparkles = { bg = Color3.fromRGB(150, 90, 240), edge = Color3.fromRGB(255, 255, 255), anim = "rainbow" },
+	rise = { bg = Color3.fromRGB(70, 140, 230), edge = Color3.fromRGB(255, 255, 255), anim = "shimmer" },
+	spotlight = { bg = Color3.fromRGB(30, 30, 36), edge = Color3.fromRGB(255, 200, 50), anim = "shimmer" },
+	spears = { bg = Color3.fromRGB(24, 24, 28), edge = Color3.fromRGB(255, 196, 40), anim = "shimmer" },
+	nova = { bg = Color3.fromRGB(240, 100, 40), edge = Color3.fromRGB(255, 240, 200), anim = "pulse" },
+}
+KillBannerController.FLOURISH = FLOURISH
 
 local gui
 local current -- { frame, t0, life, shake, rainbow, sparks = { { f, v, spin } } }
@@ -147,6 +228,9 @@ local function clear()
 	if current and current.frame then
 		current.frame:Destroy()
 	end
+	if current and current.glow then
+		current.glow:Destroy()
+	end
 	current = nil
 end
 
@@ -158,7 +242,8 @@ local function show(k, n)
 	local premium = it and it.source == "robux"
 	local tier = STREAK[math.min(n, #STREAK + 1) - 1]
 	local big = tier ~= nil
-	local color = tier and tier.color or (it and RARITY_COLOR[it.rarity]) or C.ink
+	local fl = FLOURISH[look.shape]
+	local color = tier and tier.color or (fl and fl.bg) or (it and RARITY_COLOR[it.rarity]) or C.ink
 	local w, h = big and 460 or 380, big and 104 or 84
 	local f = Theme.new("Frame", {
 		Name = "KillBanner",
@@ -170,7 +255,7 @@ local function show(k, n)
 		Parent = gui,
 	}, {
 		Theme.corner(10),
-		Theme.stroke(3, C.white),
+		Theme.stroke(3, fl and fl.edge or C.white),
 		Theme.new("UIScale", { Name = "Scale", Scale = 2.2 }),
 		Theme.new("UIGradient", {
 			Name = "Shine",
@@ -224,17 +309,67 @@ local function show(k, n)
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = Color3.fromRGB(255, 250, 220),
 	})
-	local colors =
-		{ C.white, Color3.fromRGB(255, 220, 60), Color3.fromRGB(120, 230, 255), Color3.fromRGB(255, 110, 190) }
+	local colors = fl and { C.white, fl.edge, fl.bg:Lerp(C.white, 0.4), fl.edge:Lerp(fl.bg, 0.5) }
+		or { C.white, Color3.fromRGB(255, 220, 60), Color3.fromRGB(120, 230, 255), Color3.fromRGB(255, 110, 190) }
+	-- the effect's own sticker, popping in at the banner's side
+	local sticker
+	if fl and fl.sticker then
+		sticker = Theme.new("ImageLabel", {
+			Name = "Sticker",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0, 0, 0.5, 0),
+			Size = UDim2.fromOffset(h * 1.6, h * 1.6),
+			BackgroundTransparency = 1,
+			Image = MemeArt.image(fl.sticker),
+			ScaleType = Enum.ScaleType.Fit,
+			ZIndex = 5,
+			Parent = f,
+		})
+	end
+	-- a flash of its colour round the edges of the screen
+	local glow
+	if fl or premium then
+		glow = Theme.new("Frame", {
+			Name = "Flourish",
+			Size = UDim2.fromScale(1, 1),
+			BackgroundColor3 = fl and fl.edge or C.white,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ZIndex = 0,
+			Parent = gui,
+		}, {
+			Theme.new("UIGradient", {
+				Transparency = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 0),
+					NumberSequenceKeypoint.new(0.22, 1),
+					NumberSequenceKeypoint.new(0.78, 1),
+					NumberSequenceKeypoint.new(1, 0),
+				}),
+			}),
+		})
+	end
+	local labels = {}
+	for _, d in f:GetDescendants() do
+		if d:IsA("TextLabel") then
+			table.insert(labels, d)
+		end
+	end
 	current = {
 		frame = f,
 		t0 = os.clock(),
-		life = big and 2.4 or 1.9,
+		life = big and 2.4 or ((fl or premium) and 2.2 or 1.9),
 		shake = tier and tier.shake or (k.head and 3 or 1.5),
-		rainbow = premium,
+		anim = fl and fl.anim or (premium and "rainbow" or nil),
 		base = color,
-		sparks = burst(f, (big and 26 or 14) + (premium and 10 or 0), colors),
+		edge = fl and fl.edge or C.white,
+		sticker = sticker,
+		glow = glow,
+		labels = labels,
+		sparks = burst(f, (big and 26 or 14) + ((premium or fl) and 10 or 0), colors),
 	}
+	if it then
+		AudioController.signature(look.shape)
+	end
 	return f
 end
 
@@ -374,8 +509,28 @@ local function step()
 			f.Rotation = -6 * math.max(0, 1 - t / 0.35) * math.cos(t * 30)
 			local amp = current.shake * math.max(0, 1 - t / 0.6)
 			f.Position = UDim2.new(0.5, math.random(-100, 100) / 100 * amp, 0.26, math.random(-100, 100) / 100 * amp)
-			if current.rainbow then
+			-- moving in the effect's own way
+			local anim = current.anim
+			if anim == "rainbow" then
 				f.BackgroundColor3 = rainbow(t)
+			elseif anim == "flicker" then
+				f.BackgroundColor3 = math.random() < 0.12 and current.edge or current.base
+			elseif anim == "shimmer" then
+				f.BackgroundColor3 = current.base:Lerp(C.white, 0.2 + 0.2 * math.sin(t * 8))
+			elseif anim == "pulse" then
+				f.BackgroundColor3 = current.base:Lerp(current.edge, 0.3 + 0.3 * math.sin(t * 10))
+			elseif anim == "wobble" then
+				f.Rotation += math.sin(t * 14) * 2.5 * math.max(0, 1 - t / 1.4)
+			end
+			local st = current.sticker
+			if st then
+				local pop = math.clamp((t - 0.08) / 0.3, 0, 1)
+				local k = pop < 1 and 1 + 1.7 * (pop - 1) ^ 3 + 0.7 * (pop - 1) ^ 2 or 1
+				st.Size = UDim2.fromOffset(f.Size.Y.Offset * 1.6 * k, f.Size.Y.Offset * 1.6 * k)
+				st.Rotation = -25 * (1 - pop) + math.sin(t * 9) * 6
+			end
+			if current.glow then
+				current.glow.BackgroundTransparency = 1 - 0.55 * math.max(0, 1 - t / 0.5)
 			end
 			local shine = f:FindFirstChild("Shine")
 			if shine then
@@ -383,10 +538,11 @@ local function step()
 			end
 			local fade = math.clamp((t - (current.life - 0.35)) / 0.35, 0, 1)
 			f.BackgroundTransparency = fade
-			for _, d in f:GetDescendants() do
-				if d:IsA("TextLabel") and d.Name ~= "Spark" then
-					d.TextTransparency = fade
-				end
+			for _, d in current.labels do
+				d.TextTransparency = fade
+			end
+			if current.sticker then
+				current.sticker.ImageTransparency = fade
 			end
 			for _, sp in current.sparks do
 				if sp.f.Parent then

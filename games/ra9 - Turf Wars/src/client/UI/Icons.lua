@@ -323,6 +323,16 @@ local function streak(m, look, team)
 			end
 		end
 	end
+	-- a ribbon: a soft band streaming out behind, wide at the arrow and thinning
+	if look.ribbon then
+		local c, tint = token(look.ribbon[2], team)
+		for i = 1, 4 do
+			local f = (i - 0.5) / 4
+			local w = math.clamp(look.ribbon[1], 0.1, 1) * 0.7 * (1 - f * 0.7)
+			local p = piece(m, CFrame.new(-len * f * 0.8, -0.05, -0.05), Vector3.new(len / 4 * 0.85, w, 0.03), c, tint)
+			p.Transparency = 0.25 + f * 0.6
+		end
+	end
 	-- afterimages: faded copies of the arrow behind it
 	for i = 1, look.ghost or 0 do
 		local x = -i * 1.3

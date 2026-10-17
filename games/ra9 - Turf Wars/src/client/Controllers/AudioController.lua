@@ -8,8 +8,9 @@ repeats exactly, and shaped with sound effects (reverb, EQ, distortion, chorus, 
                release a twang and a whoosh (harder the fuller the draw); an arrow passing close by whooshes past
                where it is; a thunk where one lands; a tick on a hit
   kills        yours: a heavy punch under a glass shatter and a chime that rises (a headshot adds its own crack and a
-               higher note); a streak of them adds a stinger that climbs a note per kill; someone else's falls
-               shatter where they stood (3D)
+               higher note), then your kill effect's own stinger (a thunder crack, a choir, comic blips...); a
+               streak of them adds a stinger that climbs a note per kill; someone else's falls shatter where they
+               stood (3D)
   the blade    a whoosh on every swing (everyone's, where they are), a steel clang on a parry
   the TNT      a fuse hissing while you wind up, a throw, and the blast: a deep boom with a sub under it, a crack, a
                hiss of debris and a long hall tail, quieter and duller far away
@@ -28,6 +29,7 @@ so you hear where. Each layer has a few voices it reuses (nothing is made per sh
   AudioController.playAt(cue, pos, speed?, volume?)   3D, from pos
   AudioController.loop(cue, on, volume?)              a looping cue (the fuse, the wind) on or off
   AudioController.streak(n)                           the streak stinger for n kills in a row
+  AudioController.signature(shape, delay?)            your kill effect's own stinger (sig_<shape>), for you
   AudioController.duck(depth, seconds)                World and Music down by depth (0..1), back up after
   AudioController.muffle(on)                          the kill cam's dull, roomy arena
   AudioController.count(cue?)                         (tests) how many times a cue (or any) has played
@@ -260,6 +262,142 @@ local CUES = {
 }
 AudioController.CUES = CUES
 
+-- Your kill effect's own stinger (sig_<shape>): played for you, the killer, on top of the kill, wherever it
+-- happened, so every effect has a sound of its own in your ears too (KillBannerController plays it)
+local SIGNATURE = {
+	lightning = {
+		{ c = "boom", v = 0.8, p = 0.5, fx = { "punch" } },
+		{ c = "glass", v = 0.45, p = 0.7, d = 0.02 },
+		{ c = "rocket", v = 0.35, p = 1.6, d = 0.02, fx = { "crunch" } },
+		{ c = "ping", v = 0.3, p = 2, d = 0.1, fx = { "hall" } },
+	},
+	doge = {
+		{ c = "tick", v = 0.4, p = 1.6 },
+		{ c = "tick", v = 0.4, p = 1.9, d = 0.08 },
+		{ c = "tick", v = 0.4, p = 2.2, d = 0.16 },
+		{ c = "ping", v = 0.35, p = 2.8, d = 0.26, fx = { "room" } },
+	},
+	web = {
+		{ c = "whistle", v = 0.4, p = 2.8, fx = { "air" } },
+		{ c = "slash", v = 0.4, p = 1.6, d = 0.04 },
+		{ c = "whistle", v = 0.35, p = 3.1, d = 0.12, fx = { "air" } },
+	},
+	oof = {
+		{ c = "thud", v = 0.9, p = 0.6, fx = { "punch" } },
+		{ c = "pop", v = 0.5, p = 0.5, d = 0.05 },
+		{ c = "whistle", v = 0.3, p = 1.6, d = 0.25, fx = { "dull" } },
+	},
+	bonk = {
+		{ c = "thud", v = 1, p = 0.5, fx = { "punch" } },
+		{ c = "boom", v = 0.4, p = 1.1 },
+		{ c = "ping", v = 0.25, p = 3.2, d = 0.15 },
+		{ c = "ping", v = 0.25, p = 3.5, d = 0.3 },
+	},
+	dance = {
+		{ c = "thud", v = 0.7, p = 0.85, fx = { "punch" } },
+		{ c = "ping", v = 0.3, p = 1.4, fx = { "room" } },
+		{ c = "click", v = 0.3, p = 2, d = 0.14 },
+		{ c = "ping", v = 0.3, p = 1.76, d = 0.14, fx = { "room" } },
+		{ c = "thud", v = 0.6, p = 0.85, d = 0.28 },
+		{ c = "ping", v = 0.3, p = 2.1, d = 0.28, fx = { "room" } },
+	},
+	blackhole = {
+		{ c = "wind", v = 0.5, p = 0.5, fx = { "sub" } },
+		{ c = "boom", v = 0.7, p = 0.8, d = 0.3, fx = { "hall" } },
+		{ c = "ping", v = 0.3, p = 0.5, d = 0.3, fx = { "hall" } },
+	},
+	heaven = {
+		{ c = "ping", v = 0.35, p = 0.5, fx = { "hall" } },
+		{ c = "ping", v = 0.3, p = 0.63, d = 0.1, fx = { "hall" } },
+		{ c = "ping", v = 0.3, p = 0.75, d = 0.2, fx = { "hall" } },
+		{ c = "win", v = 0.4, p = 0.8, d = 0.25, fx = { "chorus", "room" } },
+	},
+	chicken = {
+		{ c = "pop", v = 0.5, p = 2.2 },
+		{ c = "pop", v = 0.45, p = 2.5, d = 0.1 },
+		{ c = "draw", v = 0.3, p = 2 },
+	},
+	duck = { { c = "ping", v = 0.45, p = 2.7 }, { c = "ping", v = 0.4, p = 3, d = 0.15 } },
+	balloons = { { c = "whistle", v = 0.35, p = 1.6 }, { c = "pop", v = 0.5, p = 1.2, d = 0.3 } },
+	banana = { { c = "whistle", v = 0.4, p = 2.2 }, { c = "thud", v = 0.7, p = 0.8, d = 0.25, fx = { "punch" } } },
+	firework = {
+		{ c = "rocket", v = 0.4, p = 1.4 },
+		{ c = "boom", v = 0.6, p = 1.6, d = 0.2 },
+		{ c = "tick", v = 0.3, p = 2.2, d = 0.35 },
+	},
+	sparkles = {
+		{ c = "ping", v = 0.3, p = 1, fx = { "room" } },
+		{ c = "ping", v = 0.3, p = 1.26, d = 0.06, fx = { "room" } },
+		{ c = "ping", v = 0.3, p = 1.5, d = 0.12, fx = { "room" } },
+		{ c = "ping", v = 0.3, p = 2, d = 0.18, fx = { "hall" } },
+	},
+	feathers = { { c = "pop", v = 0.5, p = 0.7 }, { c = "wind", v = 0.3, p = 1.6, fx = { "air" } } },
+	blocks = {
+		{ c = "thud", v = 0.6, p = 0.7 },
+		{ c = "thud", v = 0.6, p = 0.7, d = 0.15 },
+		{ c = "thud", v = 0.6, p = 0.7, d = 0.3 },
+		{ c = "pop", v = 0.5, p = 1.1, d = 0.45 },
+	},
+	bubbles = {
+		{ c = "pop", v = 0.4, p = 1.3 },
+		{ c = "pop", v = 0.4, p = 1.7, d = 0.1 },
+		{ c = "pop", v = 0.4, p = 2.1, d = 0.2 },
+	},
+	confetti = {
+		{ c = "pop", v = 0.5, p = 1 },
+		{ c = "pop", v = 0.5, p = 1.1, d = 0.12 },
+		{ c = "whistle", v = 0.25, p = 2.8, d = 0.2 },
+	},
+	ink = {
+		{ c = "thud", v = 0.6, p = 0.8 },
+		{ c = "pop", v = 0.5, p = 0.45 },
+		{ c = "pop", v = 0.3, p = 1.6, d = 0.2 },
+	},
+	orbit = {
+		{ c = "wind", v = 0.35, p = 2.6, fx = { "air" } },
+		{ c = "boom", v = 0.5, p = 1.4, d = 0.2 },
+		{ c = "ping", v = 0.3, p = 1.2, d = 0.2, fx = { "room" } },
+	},
+	rise = {
+		{ c = "ping", v = 0.3, p = 1, fx = { "room" } },
+		{ c = "ping", v = 0.3, p = 1.26, d = 0.1, fx = { "room" } },
+		{ c = "ping", v = 0.3, p = 1.5, d = 0.2, fx = { "room" } },
+		{ c = "win", v = 0.3, p = 1.4, d = 0.2, fx = { "room" } },
+	},
+	spotlight = {
+		{ c = "thud", v = 0.6, p = 0.6 },
+		{ c = "click", v = 0.4, p = 0.5 },
+		{ c = "click", v = 0.25, p = 1.1, d = 0.2 },
+		{ c = "click", v = 0.25, p = 0.9, d = 0.28 },
+		{ c = "click", v = 0.25, p = 1.2, d = 0.36 },
+	},
+	spears = {
+		{ c = "thud", v = 0.8, p = 1, fx = { "punch" } },
+		{ c = "unsheath", v = 0.5, p = 0.8, d = 0.15, fx = { "room" } },
+	},
+	nova = {
+		{ c = "whistle", v = 0.3, p = 2.4 },
+		{ c = "boom", v = 0.6, p = 0.7, d = 0.15, fx = { "sub" } },
+		{ c = "ping", v = 0.3, p = 0.5, d = 0.15, fx = { "hall" } },
+	},
+	cubes = { { c = "pop", v = 0.5, p = 0.85 }, { c = "tick", v = 0.3, p = 1.8, d = 0.1 } },
+	smoke = { { c = "pop", v = 0.5, p = 0.55 }, { c = "wind", v = 0.25, p = 2.4, fx = { "air" } } },
+	shards = { { c = "glass", v = 0.45, p = 1.1 }, { c = "tick", v = 0.3, p = 2.6, d = 0.05 } },
+	pixels = {
+		{ c = "tick", v = 0.3, p = 1.3 },
+		{ c = "tick", v = 0.3, p = 1.6, d = 0.07 },
+		{ c = "tick", v = 0.3, p = 1.9, d = 0.14 },
+	},
+	ring = { { c = "ping", v = 0.35, p = 0.7, fx = { "room" } }, { c = "whistle", v = 0.25, p = 2.4 } },
+	slice = { { c = "unsheath", v = 0.45, p = 1.5 }, { c = "slash", v = 0.45, p = 1.3, d = 0.08 } },
+	fold = { { c = "draw", v = 0.35, p = 1.8 }, { c = "click", v = 0.4, p = 1.4, d = 0.15 } },
+	static = { { c = "wind", v = 0.25, p = 3.2, fx = { "air" } }, { c = "click", v = 0.45, p = 0.7, d = 0.18 } },
+	spark = { { c = "rocket", v = 0.3, p = 2.4 }, { c = "glass", v = 0.35, p = 2.6, d = 0.12 } },
+}
+for shape, layers in SIGNATURE do
+	CUES["sig_" .. shape] = { group = "Stinger", layers = layers }
+end
+
 -- The streak stinger: a note up the scale for each kill in a row (from 2), a horn on top from 5
 local SCALE = { 1, 1.26, 1.5, 2, 2.52 }
 for n = 2, 5 do
@@ -412,6 +550,18 @@ function AudioController.playAt(cue, pos, speed, volume)
 		return start(cue, nil, speed, volume)
 	end
 	return start(cue, pos, speed, volume)
+end
+
+-- Your kill effect's stinger (its shape: FX/KillEffects), a beat after the kill's own sound; false if it has none
+function AudioController.signature(shape, delay)
+	local cue = "sig_" .. tostring(shape)
+	if not CUES[cue] then
+		return false
+	end
+	task.delay(delay or 0.12, function()
+		start(cue, nil, 1, 1)
+	end)
+	return true
 end
 
 function AudioController.loop(cueName, on, volume)

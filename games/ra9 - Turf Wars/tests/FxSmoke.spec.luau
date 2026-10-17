@@ -45,25 +45,85 @@ local function folderCount()
 	return f and #f:GetChildren() or 0
 end
 
--- every shape, one at a time: pieces made, moving, then all gone
+-- what an effect shows right now: how many of each kind of piece (class, shape, material) can be seen, as a line
+local function makeup(h)
+	local n = {}
+	for _, p in h.parts do
+		local k = p.ClassName
+		if p:IsA("BasePart") and p.Transparency >= 0.99 and #p:GetChildren() == 0 then
+			continue
+		end
+		if p:IsA("BasePart") then
+			k ..= ":" .. (p.ClassName == "Part" and tostring(p.Shape) or "") .. ":" .. tostring(p.Material)
+		end
+		for _, d in p:GetChildren() do
+			k ..= "+" .. d.ClassName
+		end
+		n[k] = (n[k] or 0) + 1
+	end
+	local keys = {}
+	for k, c in n do
+		table.insert(keys, `{k}x{c}`)
+	end
+	table.sort(keys)
+	return table.concat(keys, " ")
+end
+
+-- every shape, one at a time: pieces made, moving, then all gone; each its own length, look and sound
 local at = Vector3.new(0, 4, 40)
+local looks, sounds = {}, {}
+local Lighting = Engine.globals.game:GetService("Lighting")
 for _, shape in KillEffects.SHAPES do
 	KillEffects.clear()
 	local h = KillEffects.playShape(shape, at, "red", { victimTeam = "blue", dir = Vector3.new(1, 0, 0) })
 	check(`{shape}: plays`, h ~= nil)
+	check(`{shape}: its own length, 1.4 to 3 s`, h and h.life >= 1.4 and h.life <= 3, h and h.life)
+	local a = h and makeup(h) or ""
 	Engine.advance(0.6)
 	check(`{shape}: makes pieces`, KillEffects.pieces() > 0, KillEffects.pieces())
+	local b = h and makeup(h) or ""
+	local look = a .. " | " .. b
+	check(`{shape}: looks like no other effect`, looks[look] == nil, looks[look])
+	looks[look] = shape
 	if KillEffects.usesBody(shape) then
 		check(`{shape}: has a stand-in to carry`, h and h.body ~= nil)
 	end
-	Engine.advance(3)
+	local lights = 0
+	for _, p in h and h.parts or {} do
+		if p:FindFirstChildOfClass("PointLight") then
+			lights += 1
+		end
+	end
+	check(`{shape}: lights kept to a few`, lights <= 3, lights)
+	Engine.advance(1)
+	check(`{shape}: still animating (nothing broke its ticks)`, h and (h.tick ~= nil or not h.alive))
+	local c = h and makeup(h) or ""
+	check(`{shape}: changes as it plays (a wind-up, the hit, what's left)`, not (a == b and b == c), a)
+	local heard = h and h.heard or ""
+	check(`{shape}: makes a sound`, heard ~= "", heard)
+	-- (the first few notes: its own cue, not another effect's)
+	local cue = table.concat({ string.match(heard, "^(%S+) (%S+) (%S+)") }, " ")
+	check(`{shape}: sounds like no other effect`, sounds[cue] == nil, `{cue} = {sounds[cue]}`)
+	sounds[cue] = shape
+	Engine.advance(2)
 	check(
 		`{shape}: done and cleaned up`,
 		KillEffects.count() == 0 and folderCount() == 0,
 		`{KillEffects.count()} {folderCount()}`
 	)
+	check(
+		`{shape}: the screen's colour is back`,
+		Lighting:FindFirstChild("TW_KillFx") == nil and Lighting:FindFirstChild("TW_Lightning") == nil
+	)
 end
 check("no script errors playing every shape", #Engine.errors == errors0, Engine.errors[#Engine.errors])
+
+-- every effect's shape is one there is (nothing in the catalogue falls back to another's)
+for _, it in Cosmetics.list do
+	if it.kind == "effect" then
+		check(`{it.name}: has its own shape`, table.find(KillEffects.SHAPES, it.look.shape) ~= nil, it.look.shape)
+	end
+end
 
 -- every kill effect in the catalogue (the shop's, the Robux ones, goals, VIP, MVP...)
 local n = 0
@@ -181,6 +241,42 @@ do
 	check("...slowed down (still going well into the card)", KillEffects.count() > 0 or not KillCam.active(), h)
 	Engine.advance(8)
 	check("...and it's all cleaned up after", KillEffects.count() == 0, KillEffects.count())
+end
+
+-- your own kill: the banner wears your effect (its colours, its sticker, a flash of its colour round the screen)
+-- and you hear its own stinger; every effect has one
+do
+	local Banner = Engine.require(tree.client.Controllers.KillBannerController)
+	local Audio = Engine.require(tree.client.Controllers.AudioController)
+	for _, it in Cosmetics.list do
+		if it.kind == "effect" then
+			check(`{it.name}: a stinger of its own`, Audio.CUES["sig_" .. it.look.shape] ~= nil, it.look.shape)
+		end
+	end
+	for i, key in { "rbx_lightning", "rbx_heaven", "rbx_doge" } do
+		local before = Audio.count("sig_" .. Cosmetics.get(key).look.shape)
+		Banner.onKill({
+			killer = player.UserId,
+			victim = 31000 + i,
+			victimName = "Target",
+			effect = key,
+			pos = at,
+		})
+		local f = Banner.banner()
+		check(`{key}: your banner`, f ~= nil)
+		local fl = Banner.FLOURISH[Cosmetics.get(key).look.shape]
+		check(`{key}: ...in its own colours`, f and fl and f.BackgroundColor3 == fl.bg)
+		check(`{key}: ...its sticker at the side`, f and f:FindFirstChild("Sticker") ~= nil)
+		check(`{key}: ...a flash round the screen`, f and f.Parent and f.Parent:FindFirstChild("Flourish") ~= nil)
+		Engine.advance(0.3)
+		local after = Audio.count("sig_" .. Cosmetics.get(key).look.shape)
+		check(`{key}: ...and its stinger plays for you`, after > before, `{before} -> {after}`)
+		Engine.advance(5)
+		check(
+			`{key}: ...all gone after`,
+			Banner.banner() == nil and not (f and f.Parent and f.Parent:FindFirstChild("Flourish"))
+		)
+	end
 end
 
 check("no script errors", #Engine.errors == errors0, Engine.errors[#Engine.errors])

@@ -155,24 +155,90 @@ do
 	check("no skin: the plain bow, nothing added", FlairC.bows() == 0, FlairC.bows())
 end
 
--- every trail in flight: its lines, its moving colours, what falls off it
+-- every trail in flight: its own pieces, its moving colours, what falls off it, and no two alike
+local seen = {} -- [what it's drawn with] = trail name
+local shot = 7000
+local function cfs(pieces)
+	local out = {}
+	for i, q in pieces do
+		out[i] = q.CFrame
+	end
+	return out
+end
 for _, it in list("trail") do
 	local equipped = table.clone((Store.get("profile") or {}).equipped or {})
 	equipped.trail = it.key
 	Store.set("profile", { equipped = equipped })
 	local before = Flair.dropped()
-	local key = Arrows.predict(Vector3.new(0, 8, 0), Vector3.new(90, 6, 0), "red", 7000 + #it.key)
+	shot += 1
+	local key = "me" .. tostring(shot)
+	Arrows.predict(Vector3.new(0, 8, 0), Vector3.new(90, 6, 0), "red", shot)
 	Engine.advance(0.35)
 	check(`{it.name}: an arrow wearing it flies`, Arrows.count() >= 1)
-	local p = it.look.particles
-	if p == "feathers" or p == "bubbles" or p == "blocks" or p == "hearts" then
-		check(`{it.name}: {p} fall off the arrow`, Flair.dropped() > before, `{before} -> {Flair.dropped()}`)
+	local desc, pieces = Arrows.describe(key)
+	check(`{it.name}: drawn`, desc ~= nil)
+	desc = desc or ""
+	check(`{it.name}: looks like no other trail`, seen[desc] == nil, `same as {seen[desc]}: {desc}`)
+	seen[desc] = it.name
+	local inWorld = true
+	for _, q in pieces or {} do
+		inWorld = inWorld and q.Parent ~= nil
 	end
-	_ = key
+	check(`{it.name}: its pieces are in the world`, inWorld)
+	local look = it.look
+	if look.ribbon then
+		check(`{it.name}: a ribbon streams off it`, string.find(desc, "ribbon:", 1, true) ~= nil, desc)
+	end
+	if look.helix or look.spin or look.march or look.bolt or look.wobble then
+		-- (the pieces move round or along the tracer, not just with it)
+		local a0 = cfs(pieces or {})
+		Engine.advance(1 / 30)
+		local moved = false
+		local tracer0 = pieces and pieces[1]
+		for i, q in pieces or {} do
+			moved = moved or (q.CFrame.Position - a0[i].Position).Magnitude > 0.01
+		end
+		check(`{it.name}: its pieces move`, moved and tracer0 ~= nil)
+	end
+	if look.bolt then
+		check(`{it.name}: a lightning bolt crackles along it`, string.find(desc, "bolt", 1, true) ~= nil, desc)
+	end
+	if look.fire then
+		check(`{it.name}: flames off the head`, string.find(desc, "Flair_fire", 1, true) ~= nil, desc)
+	end
+	if look.wisp then
+		check(`{it.name}: ghostly wisps`, string.find(desc, "Flair_wisp", 1, true) ~= nil, desc)
+	end
+	local p = look.particles
+	local loose = { feathers = 1, bubbles = 1, blocks = 1, hearts = 1, ink = 1, pixels = 1, shards = 1, glints = 1 }
+	if loose[p] or look.rings then
+		local made = false
+		for _ = 1, 4 do
+			Engine.advance(0.05)
+			made = made or Flair.dropped() > before
+		end
+		check(`{it.name}: {p or "rings"} fall off the arrow`, made, `{before} -> {Flair.dropped()}`)
+		local found = false
+		for _, d in (ws:FindFirstChild("Flair") or ws):GetChildren() do
+			found = found or d.Name == "Drop_" .. (loose[p] and p or "ring")
+		end
+		check(`{it.name}: ...and they're {p or "rings"}`, found)
+	end
+	Arrows.stop(key)
 	Engine.advance(2.5) -- (the bits clear before the next: on a phone only a few are up at once)
+	check(`{it.name}: gone when it lands`, Arrows.describe(key) == nil)
 end
 Engine.advance(3)
 check("the loose bits clear away by themselves", Flair.count() < 40, Flair.count())
+do
+	local left = 0
+	for _, d in (ws:FindFirstChild("Arrows") or ws):GetChildren() do
+		if d.Name ~= "Folder" then
+			left += 1
+		end
+	end
+	check("no trail pieces left behind once the arrows are gone", Arrows.count() > 0 or left == 0, left)
+end
 
 -- the banner emblems on a flag: brought to life, each with its own move
 do
