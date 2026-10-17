@@ -2052,6 +2052,136 @@ do
 	Engine.advance(3)
 end
 
+-- The premium row, the kill banners and the "killed by" card -------------------------------------------------------
+do
+	local Panel = Engine.require(tree.client.Controllers.PanelController)
+	local KillBanner = Engine.require(tree.client.Controllers.KillBannerController)
+	local ShopData = Engine.require(tree.shared.Data.Shop)
+	local Economy = service("EconomyService")
+	local pr = Panel.refs
+	Panel.open("shop")
+	Engine.advance(0.2)
+	local row = pr.body:FindFirstChild("Premium")
+	check("the shop has a LEGENDARY FX row", row ~= nil and row:IsA("ScrollingFrame"))
+	local missing = {}
+	for _, prod in ShopData.PREMIUM do
+		if not (row and row:FindFirstChild("Premium_" .. prod.key)) then
+			table.insert(missing, prod.key)
+		end
+	end
+	check(
+		"...a card for every Robux-only item",
+		#ShopData.PREMIUM >= 10 and #missing == 0,
+		`{#ShopData.PREMIUM} items, missing {table.concat(missing, " ")}`
+	)
+	local lightning = row and row:FindFirstChild("Premium_rbx_lightning")
+	check(
+		"...each with its name, a line and a Robux price",
+		lightning ~= nil
+			and lightning:FindFirstChild("Name").Text == "Lightning Strike"
+			and lightning.Tagline.Text ~= ""
+			and lightning.Buy.Label.Text:find("199") ~= nil
+	)
+	-- (the edges turn, the shine sweeps: the cards move while the panel's open)
+	local hue = lightning and lightning:FindFirstChildOfClass("UIStroke"):FindFirstChild("Rainbow")
+	local r0 = hue and hue.Rotation
+	Engine.advance(0.5)
+	check("...and they're alive (the rainbow edge turns)", hue ~= nil and hue.Rotation ~= r0, r0)
+	-- a tap buys it: the server opens Roblox's purchase for that product
+	local before = #Engine.prompted
+	lightning.Buy.Activated:Fire()
+	Engine.advance(0.3)
+	local last = Engine.prompted[#Engine.prompted]
+	check(
+		"tapping its price opens the purchase for that product",
+		#Engine.prompted == before + 1 and last.id == ShopData.PREMIUM_IDS.rbx_lightning,
+		last and last.id
+	)
+	-- once it's yours: WEAR, then WORN, no price
+	Economy:Give(player, "rbx_doge")
+	service("ProgressService"):Push(player)
+	Engine.advance(0.5)
+	Panel.open("shop")
+	Engine.advance(0.2)
+	local doge = pr.body.Premium:FindFirstChild("Premium_rbx_doge")
+	check(
+		"owned: the card says WEAR, not a price",
+		doge and doge.Buy.Label.Text == "WEAR",
+		doge and doge.Buy.Label.Text
+	)
+	-- the locker: a Robux one you haven't got shows its price, and a tap buys it
+	Panel.open("locker")
+	Engine.advance(0.1)
+	pr.body.Chip_effect.Activated:Fire()
+	Engine.advance(0.1)
+	local locked
+	for _, c in pr.body:GetChildren() do
+		if c:GetAttribute("Key") == "rbx_lightning" then
+			locked = c
+		end
+	end
+	check(
+		"the locker: a Robux one shows its price, TAP TO GET",
+		locked ~= nil and locked.Line.Text:find("TAP TO GET") ~= nil,
+		locked and locked.Line.Text
+	)
+	local m = #Engine.prompted
+	if locked then
+		locked.Activated:Fire()
+	end
+	Engine.advance(0.3)
+	check("...and a tap opens the purchase", #Engine.prompted == m + 1)
+	Panel.close()
+	Engine.advance(0.2)
+
+	-- your knockout: the banner, with your effect's name and its funny line
+	local data = service("PlayerDataService"):Get(player)
+	KillBanner.onKill({ killer = player.UserId, victim = -50, victimName = "Bob", effect = "shop_chicken" })
+	Engine.advance(0.05)
+	local b = KillBanner.banner()
+	check("a knockout of yours: a banner punches in", b ~= nil and b.Headline.Text == "ELIMINATED")
+	check(
+		"...with your kill effect and its funny line",
+		b and b.With.Text:find("CHICKEN") ~= nil and b.With.Text:find("bawk") ~= nil,
+		b and b.With.Text
+	)
+	check("...and sparkles fly out of it", b and #b:GetChildren() > 8)
+	KillBanner.onKill({ killer = player.UserId, victim = -51, victimName = "Cal", effect = "shop_chicken", head = true })
+	Engine.advance(0.05)
+	check("two quick ones: DOUBLE KILL!", KillBanner.banner() and KillBanner.banner().Headline.Text == "DOUBLE KILL!")
+	KillBanner.onKill({ killer = player.UserId, victim = -52, victimName = "Dee", effect = "rbx_lightning" })
+	Engine.advance(0.05)
+	check(
+		"three: TRIPLE KILL!, the streak counted",
+		KillBanner.banner() and KillBanner.banner().Headline.Text == "TRIPLE KILL!" and KillBanner.streak() == 3
+	)
+	Engine.advance(3)
+	check("...and it goes", KillBanner.banner() == nil)
+	-- knocked out by a Robux one that isn't yours: once you're up, "Killed by" with GET IT
+	data.owned = data.owned or {}
+	data.owned.rbx_lightning = nil
+	local card = KillBanner.showOffer("rbx_lightning")
+	check(
+		"killed by a Robux effect: a card offers it",
+		card ~= nil and card.Title.Text:find("LIGHTNING STRIKE") ~= nil and card.GetIt.Label.Text:find("199") ~= nil
+	)
+	local n = #Engine.prompted
+	card.GetIt.Activated:Fire()
+	Engine.advance(0.3)
+	check(
+		"...GET IT opens the purchase",
+		#Engine.prompted == n + 1 and Engine.prompted[#Engine.prompted].id == ShopData.PREMIUM_IDS.rbx_lightning
+	)
+	-- the same effect again this session: no card (not spammy)
+	KillBanner.onKill({ killer = -60, victim = player.UserId, killerName = "Eve", effect = "rbx_lightning" })
+	Engine.advance(1)
+	check("...only once a session", KillBanner.offer() == nil)
+	-- a different one: offered once you're on your feet
+	KillBanner.onKill({ killer = -61, victim = player.UserId, killerName = "Fay", effect = "rbx_bonk" })
+	Engine.advance(1)
+	check("...a new one is offered once you're up", KillBanner.offer() ~= nil, KillBanner.offer())
+end
+
 print(`\n{passed} passed, {failed} failed`)
 if #Engine.errors > 0 then
 	for i = 1, math.min(6, #Engine.errors) do

@@ -10,6 +10,7 @@ profile.owned (an admin's gift goes there too, whatever the item's source).
 local Achievements = require(script.Parent.Achievements)
 local Cosmetics = require(script.Parent.Cosmetics)
 local Extras = require(script.Parent.Extras)
+local Format = require(script.Parent.Parent.Format)
 local Ladder = require(script.Parent.Ladder)
 local Season = require(script.Parent.Season) -- (and so season items resolve)
 
@@ -75,6 +76,8 @@ function Locker.how(it)
 		return `{it.mvps} MVPs`
 	elseif src == "starter" then
 		return "Starter Pack"
+	elseif src == "robux" then
+		return `{Format.robux(it.robux or 0)} · TAP TO GET`
 	elseif src == "extra" then
 		return it.desc or "Special"
 	elseif src == "goal" then
