@@ -32,6 +32,7 @@ Engine.runScript(tree.server.Main)
 -- (the first-knockout help is tests/FeelSmoke's: here every new test player plays as anyone would)
 Engine.require(tree.server.Services.CombatService).firstKillHelp = false
 Engine.require(tree.server.Services.CombatService).comebackShield = false -- (and the comeback shield: tests/FeelSmoke)
+Engine.require(tree.server.Services.CombatService).newPlayerHelp = false -- (and the new-player aim help: it bends shots at the wall toward people)
 Engine.advance(0.5)
 local function service(name)
 	return Engine.require(tree.server.Services[name])
