@@ -133,6 +133,9 @@ local function log(player, kind, detail)
 end
 
 function AntiCheatService:Flag(player, kind, detail, strikes)
+	if typeof(player) ~= "Instance" then
+		return -- (a bot)
+	end
 	local s = st(player)
 	s.strikes += strikes or 0
 	log(player, kind, detail)

@@ -69,6 +69,36 @@ local function label(props)
 	return Theme.text(props)
 end
 
+-- The hotbar's key badge: the number to press, in a small square at a slot's top left (black; white when the slot
+-- is the one picked, which turns black itself)
+local function keyBadge(n, parent)
+	local badge = Theme.new("Frame", {
+		Name = "Key",
+		Position = UDim2.fromOffset(3, 3),
+		Size = UDim2.fromOffset(18, 18),
+		BackgroundColor3 = C.ink,
+		Parent = parent,
+	}, { Theme.corner(3) })
+	label({
+		Name = "Num",
+		Text = tostring(n),
+		Size = UDim2.fromScale(1, 1),
+		TextSize = 13,
+		TextColor3 = C.white,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Font = Theme.Display,
+		Parent = badge,
+	})
+	return badge
+end
+
+local function paintBadge(badge, on)
+	if badge then
+		badge.BackgroundColor3 = on and C.white or C.ink
+		badge.Num.TextColor3 = on and C.ink or C.white
+	end
+end
+
 -- The top: phase, clock, the frontline bar ---------------------------------------------------------------------
 local function buildTop(gui)
 	local top = Theme.new("Frame", {
@@ -522,17 +552,18 @@ local function buildBottom(gui)
 			AutoButtonColor = false,
 			Parent = bows,
 		}, { Theme.corner(4), Theme.stroke(2, C.ink) })
+		local badge = keyBadge(i, b)
 		label({
 			Text = w.icon,
-			Size = UDim2.new(1, 0, 0, 28),
-			Position = UDim2.fromOffset(0, 4),
+			Size = UDim2.new(1, -48, 0, 28),
+			Position = UDim2.fromOffset(24, 4),
 			TextSize = 22,
 			TextXAlignment = Enum.TextXAlignment.Center,
 			Parent = b,
 		})
 		label({
-			Name = "Name",
-			Text = `{i}  {({ bow = "BOW", crossbow = "CROSSBOW", heavy = "HEAVY" })[w.key] or string.upper(w.name)}`,
+			Name = "Label",
+			Text = ({ bow = "BOW", crossbow = "CROSSBOW", heavy = "HEAVY" })[w.key] or string.upper(w.name),
 			Size = UDim2.new(1, -4, 0, 14),
 			Position = UDim2.fromOffset(2, 32),
 			TextSize = 10,
@@ -552,7 +583,7 @@ local function buildBottom(gui)
 		b.Activated:Connect(function()
 			Bus.Weapon:Fire(w.key)
 		end)
-		refs.bows[w.key] = { button = b, ammo = ammo }
+		refs.bows[w.key] = { button = b, ammo = ammo, key = badge }
 	end
 	-- the build tray
 	local tray = Theme.new("Frame", {
@@ -584,16 +615,18 @@ local function buildBottom(gui)
 			AutoButtonColor = false,
 			Parent = tray,
 		}, { Theme.corner(4), Theme.stroke(2, C.ink) })
+		keyBadge(i, b)
 		label({
 			Text = s.icon,
-			Size = UDim2.new(1, 0, 0, 26),
-			Position = UDim2.fromOffset(0, 4),
+			Size = UDim2.new(1, -48, 0, 26),
+			Position = UDim2.fromOffset(24, 4),
 			TextSize = 22,
 			TextXAlignment = Enum.TextXAlignment.Center,
 			Parent = b,
 		})
 		label({
-			Text = `{i} {string.upper(s.name)}`,
+			Name = "Label",
+			Text = string.upper(s.name),
 			Size = UDim2.new(1, -4, 0, 24),
 			Position = UDim2.fromOffset(2, 30),
 			TextSize = 9,
@@ -618,7 +651,7 @@ local function buildBottom(gui)
 	refs.tray = tray
 	refs.buildHint = label({
 		Name = "Hint",
-		Text = "Click to place · R rotate · Q cancel",
+		Text = "1-7 or wheel: pick · Click to place · R rotate · Q cancel",
 		AnchorPoint = Vector2.new(0.5, 1),
 		Size = UDim2.fromOffset(420, 18),
 		Position = UDim2.new(0.5, 0, 0, -2),
@@ -679,6 +712,7 @@ function HudController.updateBottom()
 				d.TextColor3 = on and C.white or C.ink
 			end
 		end
+		paintBadge(b.key, on)
 		local w = Weapons.get(key)
 		b.ammo.Text = (w.mag and on) and `{me.ammo or 0}/{w.mag}` or ""
 	end
@@ -696,9 +730,11 @@ function HudController.updateBottom()
 					d.TextColor3 = picked == key and C.white or (afford and C.ink or C.muted)
 				end
 			end
+			paintBadge(b:FindFirstChild("Key"), picked == key)
 		end
 		local spot = BuildController.spot()
-		refs.buildHint.Text = (picked and spot and not spot.ok and spot.why) or "Click to place · R rotate · Q cancel"
+		refs.buildHint.Text = (picked and spot and not spot.ok and spot.why)
+			or "1-7 or wheel: pick · Click to place · R rotate · Q cancel"
 		refs.buildHint.TextColor3 = (picked and spot and not spot.ok) and RED or C.muted
 	end
 	if refs.bows then

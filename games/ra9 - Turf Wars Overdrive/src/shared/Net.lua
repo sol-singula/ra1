@@ -146,6 +146,9 @@ function Net.tap(fn)
 end
 
 function Net.fire(player, name, ...)
+	if typeof(player) ~= "Instance" then
+		return -- (a bot: BotService's stand-ins have no client)
+	end
 	remote(name):FireClient(player, ...)
 end
 

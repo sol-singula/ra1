@@ -56,6 +56,15 @@ Constants.FLIP_EVERY = 4 -- a front flip on every 4th eligible jump
 Constants.CROUCH_SPEED = 10 -- crouched: slower, lower (a smaller target), the bow steadier
 Constants.CROUCH_DROP = 1.1 -- studs the body (and the view, and the hit spheres) sink when crouched
 
+-- Bots: only while exactly one person is on (BotService). The second person to join takes over a bot.
+Constants.BOT_ALLIES = 1 -- on your side
+Constants.BOT_ENEMIES = 2 -- against you
+Constants.BOT_SPEED = 16 -- a little slower than a person walking
+Constants.BOT_RANGE = 150 -- studs: how far they look for someone to shoot
+Constants.BOT_SPREAD = 2.6 -- degrees of aim error (more at range): beatable, not helpless
+Constants.BOT_REACT = 0.7 -- seconds before a bot starts drawing on someone new
+Constants.BOT_NAMES = { "Ace", "Echo", "Nova", "Blitz", "Rook", "Vex", "Juno", "Kite", "Onyx", "Pike" }
+
 -- Building (§7)
 Constants.BUILD_BUDGET = 100 -- points a player gets each build phase
 Constants.TEAM_STRUCTURES = 60 -- standing structures a team may have (+2 per player past 10)

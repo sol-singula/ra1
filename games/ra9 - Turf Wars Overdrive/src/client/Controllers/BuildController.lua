@@ -1,11 +1,11 @@
 --[[
-Building (master plan §2B, §7) on your side: pick a structure from the tray (a click, a tap, or 1-7), and a
+Building (master plan §2B, §7) on your side: pick a structure from the tray (a click, a tap, 1-7, or the mouse wheel), and a
 see-through preview follows where you look on the floor, snapped to the 4-stud grid: white where it can go, red
 where it can't (enemy turf, too close to the line, the spawn zones, out of reach, something already there). Click
 (or the PLACE button) to build; R (or ROTATE) turns it. The server checks everything again and says why if not.
 
 The floor is flat at y = 0 everywhere you can build, so "where you look" is the camera's ray meeting that plane:
-no raycast needed, the same on every device.
+no raycast needed, the same on every device. Nothing is placed while a menu is open (the click is the menu's).
 ]]
 local ContextActionService = game:GetService("ContextActionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,6 +17,7 @@ local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Structures = require(ReplicatedStorage.Shared.Data.Structures)
 local Bus = require(script.Parent.Parent.UI.Bus)
+local Layout = require(script.Parent.Parent.UI.Layout)
 local Store = require(script.Parent.Parent.Store)
 
 local BuildController = { Name = "BuildController", Order = 32 }
@@ -44,6 +45,22 @@ function BuildController.pick(key)
 		ghost = nil
 	end
 	Bus.BuildPick:Fire(picked)
+end
+
+-- The mouse wheel: the next (step 1) or the one before (step -1) in the tray, round the end; from nothing, the first
+-- or the last.
+function BuildController.cycle(step)
+	local n = #Structures.list
+	local at
+	for i, s in Structures.list do
+		if s.key == picked then
+			at = i
+		end
+	end
+	local i = at and ((at - 1 + step) % n + 1) or (step > 0 and 1 or n)
+	picked = nil -- (so pick() picks it rather than toggling it off)
+	BuildController.pick(Structures.list[i].key)
+	return picked
 end
 
 -- Where the camera's ray meets the floor (y = 0), or nil if you look up.
@@ -131,7 +148,7 @@ local function placeGhost()
 end
 
 function BuildController.place()
-	if not picked or not spot then
+	if not picked or not spot or Layout.panel() or Layout.modalOpen() then
 		return false
 	end
 	if not spot.ok then
@@ -168,8 +185,23 @@ function BuildController:init()
 			BuildController.pick(nil)
 		end
 	end)
+	UserInputService.InputChanged:Connect(function(input, processed)
+		if
+			processed
+			or input.UserInputType ~= Enum.UserInputType.MouseWheel
+			or Store.phase() ~= "build"
+			or Layout.panel()
+			or Layout.modalOpen()
+		then
+			return
+		end
+		local z = input.Position and input.Position.Z or 0
+		if z ~= 0 then
+			BuildController.cycle(z < 0 and 1 or -1) -- (wheel down: the next piece)
+		end
+	end)
 	ContextActionService:BindAction("TW_Place", function(_, state)
-		if state == Enum.UserInputState.Begin and picked and Store.phase() == "build" then
+		if state == Enum.UserInputState.Begin and picked and Store.phase() == "build" and not Layout.panel() then
 			BuildController.place()
 			return Enum.ContextActionResult.Sink
 		end

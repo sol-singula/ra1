@@ -194,10 +194,31 @@ piece by piece for overlaps, buying and wearing from it, the HUD stepping aside,
 
 Tests: 119 unit, 146 server, 121 client.
 
+## Round 7: bots when you're alone, the mouse in menus, a numbered hotbar
+
+* **Bots, only for one person on** (`BotService`): alone on a server you get one bot on your team and two against
+  you (`BOT_ALLIES`, `BOT_ENEMIES`), named "Ace (bot)" and so on with a 🤖 tag. They are stand-ins the existing
+  team, match and combat code treat as players (`MatchService:Everyone()` counts them for spawns, the line and
+  turf), so nothing about the rules is special-cased. In the build phase they walk up to their side of the line; in
+  the fight they find the nearest enemy they can see, turn, draw and shoot with lead, drop and some spread
+  (`BOT_REACT`, `BOT_SPREAD`), and die, push the line and respawn like anyone. They never get results rows, MVP,
+  money or anti-cheat strikes, and messages to them are dropped. **The moment a second person joins** the bots go
+  and the newcomer takes an enemy bot's place: its team, and (mid-round) the spot where it stood. Back to one
+  person, the bots come back; nobody on, none. Touch aim assist sees bots too. `tests/BotSmoke.spec.luau` plays it.
+* **The mouse in menus:** the cursor was hidden for good (first person), so the shop opened but nothing in it could
+  be clicked. Now `CameraController.mouseFree()` (the panel, a question card, the results) shows the cursor and
+  frees it every frame, and hides it again when the menu closes. While it's free the bow doesn't draw or shoot, the
+  build tray doesn't place, and the wheel doesn't switch, so a click in the shop is only a click in the shop.
+* **Hotbar:** every bow and tray piece has its number in a black badge at its top left (white on the one you're
+  holding), the names say only the name. The mouse wheel steps through the bows in the fight and the pieces in the
+  build phase (down: the next, round the end).
+
+Tests: 119 unit, 146 server, 140 client, 19 bots.
+
 ## Next (phase F)
 
 * The Discord log and analytics (the studio's shared pipeline), the dashboard entry.
-* Bots for small servers (so one or two players still get a fight), lag compensation for hits.
+* Lag compensation for hits; bots that also build in the build phase.
 * The rest of the cosmetics applied in play (the ladder's trails, bow finishes, kill effects, banners, titles) and a
   locker to pick them.
 * The icon and store thumbnails from these renders, the place, publishing.

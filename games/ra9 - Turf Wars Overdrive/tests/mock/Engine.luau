@@ -1990,11 +1990,12 @@ function methods.UnbindAction(_, name)
 end
 _ = ContextActionService
 local UserInputService = service("UserInputService")
-rawset(
-	UserInputService,
-	"_signals",
-	{ InputBegan = newSignal(), InputEnded = newSignal(), LastInputTypeChanged = newSignal() }
-)
+rawset(UserInputService, "_signals", {
+	InputBegan = newSignal(),
+	InputEnded = newSignal(),
+	InputChanged = newSignal(),
+	LastInputTypeChanged = newSignal(),
+})
 Engine.lastInputType = Enum.UserInputType.Touch
 function methods.GetLastInputType()
 	return Engine.lastInputType

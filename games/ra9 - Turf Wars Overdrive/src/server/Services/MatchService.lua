@@ -103,7 +103,7 @@ function MatchService:Snapshot()
 		frontline = frontline,
 		loseRed = arena:LoseLine("red"),
 		loseBlue = arena:LoseLine("blue"),
-		push = Formulas.pushCells(#Players:GetPlayers()) * Constants.CELL,
+		push = Formulas.pushCells(#self:Everyone()) * Constants.CELL,
 		red = teams:Count("red"),
 		blue = teams:Count("blue"),
 		matchId = matchId,
@@ -132,6 +132,20 @@ local function setPhase(new, seconds)
 end
 
 -- Spawning -----------------------------------------------------------------------------------------------------
+-- Everyone in the match: the players, and BotService's bots when there are any (it sets MatchService.extras).
+MatchService.extras = function()
+	return {}
+end
+function MatchService:Everyone()
+	local list = Players:GetPlayers()
+	for _, b in self.extras() do
+		table.insert(list, b)
+	end
+	return list
+end
+-- A one-shot spawn point for a player (BotService: the second player takes over a bot where it stood).
+MatchService.SpawnAt = {}
+
 function MatchService:Spawn(player)
 	local team = teams:Team(player) or teams:Assign(player)
 	respawnAt[player] = nil
@@ -141,7 +155,8 @@ function MatchService:Spawn(player)
 	if not c then
 		return
 	end
-	local cf = arena:SpawnFor(team)
+	local cf = self.SpawnAt[player] or arena:SpawnFor(team)
+	self.SpawnAt[player] = nil
 	local r = c:FindFirstChild("HumanoidRootPart")
 	if r then
 		r.CFrame = cf
@@ -199,7 +214,7 @@ function MatchService:_onKilled(victim, killer, info)
 			ks.triples += 1
 			ks.recent = {}
 		end
-		local cells = Formulas.pushCells(#Players:GetPlayers())
+		local cells = Formulas.pushCells(#self:Everyone())
 		push = cells * Constants.CELL
 		ks.pushed += cells
 		local team = teams:Team(killer)
@@ -333,7 +348,8 @@ function MatchService:NewMatch(key)
 	stats = {}
 	closest = {}
 	respawnAt, pending = {}, {}
-	for _, p in Players:GetPlayers() do
+	self.SpawnAt = {}
+	for _, p in self:Everyone() do
 		statsOf(p)
 		if teams:Team(p) then
 			self:Spawn(p)
@@ -369,7 +385,7 @@ function MatchService:_tick()
 	end
 	-- the turf rule, and the kill plane
 	if phase == "build" or phase == "fight" then
-		for _, player in Players:GetPlayers() do
+		for _, player in self:Everyone() do
 			local team = teams:Team(player)
 			local c = player.Character
 			local r = c and c:FindFirstChild("HumanoidRootPart")
@@ -435,7 +451,9 @@ function MatchService:Init(registry)
 end
 
 function MatchService:OnPlayerReady(player)
-	teams:Assign(player)
+	if not teams:Team(player) then
+		teams:Assign(player) -- (BotService may already have given them a bot's team)
+	end
 	statsOf(player)
 	if phase == "victory" or phase == "loading" then
 		pending[player] = true

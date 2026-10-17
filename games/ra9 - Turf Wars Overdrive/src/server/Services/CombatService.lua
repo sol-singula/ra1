@@ -356,6 +356,21 @@ function CombatService:_hitPlayer(arrow, victim, head, at, dir)
 	end
 end
 
+-- Start or stop drawing (Net "Draw"; bots call it directly). The charge is timed from here.
+function CombatService:Draw(player, on)
+	local s = state(player)
+	if on == true and s.alive and enabled then
+		s.drawAt = now()
+	elseif on == false then
+		s.drawAt = nil
+	end
+end
+
+-- Is the straight line from a to b blocked by the map or a structure? (bots check their line of fire with it)
+function CombatService:Blocked(a, b)
+	return (hitSolids(a, b)) ~= nil
+end
+
 -- The shot itself (Net "Shoot"): validated, then an arrow.
 function CombatService:Shoot(player, origin, direction, shotId)
 	if not enabled or typeof(origin) ~= "Vector3" or typeof(direction) ~= "Vector3" then
@@ -475,12 +490,7 @@ function CombatService:Init(registry)
 		end
 	end)
 	Net.on("Draw", function(player, on)
-		local s = state(player)
-		if on == true and s.alive and enabled then
-			s.drawAt = now()
-		elseif on == false then
-			s.drawAt = nil
-		end
+		self:Draw(player, on)
 	end)
 	Net.on("Shoot", function(player, origin, direction, shotId)
 		self:Shoot(player, origin, direction, shotId)

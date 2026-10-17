@@ -7,7 +7,8 @@ Your bow (master plan §5, §6): the viewmodel in your hands, the draw and the s
   * Let go and the arrow is drawn at once (ArrowController.predict) while the shot goes to the server (Shoot:
     from your eye, the way you're looking). The server times the draw itself, so a held mouse can't cheat a charge.
   * 1 / 2 / 3 pick the Standard Bow, the Rapid Crossbow, the Heavy Bow (in the fight; in the build phase the
-    digits pick structures). Only in the fight, alive.
+    digits pick structures), and the mouse wheel steps through them. Only in the fight, alive.
+  * No drawing or shooting while a menu is open (the shop, a card, the results): the mouse is the menu's then.
 
 The viewmodel (this client only): your arms in the team's sleeves holding the bow, its limbs, a string in two halves
 that bends to your hand, and the arrow. It moves on springs: up from below when you equip, a walking bob and
@@ -74,10 +75,21 @@ function WeaponController.assist(origin, dir)
 	local me = Players.LocalPlayer
 	local myTeam = me:GetAttribute("Team")
 	local best, bestAngle
+	local bodies = {}
 	for _, p in Players:GetPlayers() do
-		local c = p.Character
+		if p ~= me and p:GetAttribute("Team") ~= myTeam then
+			table.insert(bodies, p.Character)
+		end
+	end
+	local bots = workspace:FindFirstChild("Bots") -- (the stand-ins when you play alone: BotService)
+	for _, c in bots and bots:GetChildren() or {} do
+		if c:GetAttribute("Team") ~= myTeam then
+			table.insert(bodies, c)
+		end
+	end
+	for _, c in bodies do
 		local root = c and c:FindFirstChild("HumanoidRootPart")
-		if p ~= me and root and p:GetAttribute("Team") ~= myTeam then
+		if root then
 			local to = root.Position + Vector3.new(0, 0.6, 0) - origin
 			local dist = to.Magnitude
 			if dist > 1 and dist <= ASSIST_RANGE then
@@ -96,7 +108,7 @@ end
 
 local function canShoot()
 	local me = Store.get("me")
-	return Store.phase() == "fight" and me and me.alive == true
+	return Store.phase() == "fight" and me and me.alive == true and not CameraController.mouseFree()
 end
 
 function WeaponController.drawing()
@@ -461,6 +473,13 @@ function WeaponController.equip(key)
 	return true
 end
 
+-- The mouse wheel: the next (step 1) or the one before (step -1) bow, round the end
+function WeaponController.cycle(step)
+	local n = #Weapons.list
+	local at = weapon().order or 1
+	return WeaponController.equip(Weapons.list[(at - 1 + step) % n + 1].key)
+end
+
 function WeaponController.reload()
 	local w = weapon()
 	if w.mag then
@@ -504,6 +523,20 @@ function WeaponController:init()
 		local key = map[input.KeyCode]
 		if key then
 			WeaponController.equip(key)
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input, processed)
+		if
+			processed
+			or input.UserInputType ~= Enum.UserInputType.MouseWheel
+			or Store.phase() ~= "fight"
+			or CameraController.mouseFree()
+		then
+			return
+		end
+		local z = input.Position and input.Position.Z or 0
+		if z ~= 0 then
+			WeaponController.cycle(z < 0 and 1 or -1) -- (wheel down: the next bow)
 		end
 	end)
 	Bus.Fire:Connect(function(down)

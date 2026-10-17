@@ -99,6 +99,32 @@ refs.trayButtons.wall.Activated:Fire()
 Engine.advance(0.1)
 check("tapping a piece picks it", BuildC.picked() == "wall")
 check("touch: PLACE and TURN appear", refs.touch.place.Visible and refs.touch.rotate.Visible)
+-- the hotbar: numbered pieces, and the mouse wheel steps through them
+local function wheel(z)
+	UIS.InputChanged:Fire({ UserInputType = Enum.UserInputType.MouseWheel, Position = Vector3.new(0, 0, z) }, false)
+	Engine.advance(0.2)
+end
+check(
+	"the tray's pieces are numbered 1-7",
+	refs.trayButtons.barricade.Key.Num.Text == "1" and refs.trayButtons.banner.Key.Num.Text == "7"
+)
+check("...the name says just the name", refs.trayButtons.wall.Label.Text == "WALL", refs.trayButtons.wall.Label.Text)
+wheel(-1)
+check("wheel down: the next piece", BuildC.picked() == "reinforced", BuildC.picked())
+wheel(1)
+wheel(1)
+check("wheel up: the one before", BuildC.picked() == "barricade", BuildC.picked())
+wheel(1)
+check("...round the end", BuildC.picked() == "banner", BuildC.picked())
+BuildC.pick(nil)
+wheel(-1)
+check("...from nothing, the first", BuildC.picked() == "barricade", BuildC.picked())
+BuildC.pick("wall")
+Engine.advance(0.1)
+check(
+	"the picked piece's badge turns white",
+	refs.trayButtons.wall.Key.BackgroundColor3 ~= refs.trayButtons.cover.Key.BackgroundColor3
+)
 local spot = BuildC.spot()
 check("a preview snaps to a cell where you look", spot ~= nil and spot.cx ~= nil, spot and spot.why)
 check("...and it's a valid spot", spot and spot.ok, spot and spot.why)
@@ -130,6 +156,41 @@ Weapon.equip("crossbow")
 Engine.advance(0.2)
 check("switching to the crossbow", Store.get("me").weapon == "crossbow" and Combat:Weapon(player) == "crossbow")
 check("its bolts show", refs.bows.crossbow.ammo.Text:find("/6") ~= nil, refs.bows.crossbow.ammo.Text)
+check(
+	"the bows are numbered 1, 2, 3",
+	refs.bows.bow.key.Num.Text == "1" and refs.bows.crossbow.key.Num.Text == "2" and refs.bows.heavy.key.Num.Text == "3"
+)
+check("...the names say just the name", refs.bows.heavy.button.Label.Text == "HEAVY", refs.bows.heavy.button.Label.Text)
+check(
+	"...the one in hand: its badge white",
+	refs.bows.crossbow.key.BackgroundColor3 ~= refs.bows.bow.key.BackgroundColor3
+)
+wheel(-1)
+check("wheel down: the next bow", Store.get("me").weapon == "heavy", Store.get("me").weapon)
+wheel(-1)
+check("...round the end", Store.get("me").weapon == "bow", Store.get("me").weapon)
+wheel(1)
+check("wheel up: the one before", Store.get("me").weapon == "heavy", Store.get("me").weapon)
+-- a menu in the fight: the mouse shows and comes free, the bow doesn't fire
+do
+	local Layout = Engine.require(tree.client.UI.Layout)
+	local CamC = Engine.require(tree.client.Controllers.CameraController)
+	local BusM = Engine.require(tree.client.UI.Bus)
+	check("in play the mouse is hidden", UIS.MouseIconEnabled == false)
+	Layout.setPanel(true)
+	Engine.advance(0.1)
+	check("a menu open: the mouse shows", UIS.MouseIconEnabled == true and CamC.mouseFree())
+	check("...and is free to move", UIS.MouseBehavior == Enum.MouseBehavior.Default)
+	BusM.Fire:Fire(true)
+	Engine.advance(0.3)
+	check("...a click doesn't draw the bow", not Weapon.drawing())
+	BusM.Fire:Fire(false)
+	wheel(-1)
+	check("...the wheel doesn't switch bows (it scrolls the menu)", Store.get("me").weapon == "heavy")
+	Layout.setPanel(false)
+	Engine.advance(0.1)
+	check("menu closed: the mouse hides again", UIS.MouseIconEnabled == false and not CamC.mouseFree())
+end
 Weapon.equip("bow")
 Engine.advance(0.2)
 -- stand facing the foe across the line and shoot with the FIRE button
