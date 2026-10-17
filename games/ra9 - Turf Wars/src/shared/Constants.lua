@@ -15,6 +15,8 @@ Constants.TEAM_IMBALANCE = 2 -- (between matches the teams are evened to within 
 
 -- Phases (§2): seconds
 Constants.BUILD_SECONDS = 20
+Constants.AFK_SECONDS = 75 -- no moving, shooting or building this long in a match: off to the limbo room (0 = off)
+Constants.AFK_RETURN_STUDS = 4 -- walk this far in the limbo room to jump back in
 Constants.FIGHT_SECONDS = 120
 Constants.VICTORY_SECONDS = 27 -- fireworks, the results, then the countdown to the next game...
 Constants.TRANSITION_SECONDS = 3 -- ...and the next map loads: 30 s from the win to the next build phase

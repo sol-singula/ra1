@@ -39,7 +39,12 @@ function Admins.joinFlag(player)
 	return type(td) == "table" and td.adminSpectate == true
 end
 
+-- Out of the match: an admin watching unseen, or anyone sent to the AFK limbo (AfkService). Either way they have
+-- no team, aren't counted (bots fill in), can't be hit and aren't in the results.
 function Admins.spectating(player)
+	if player:GetAttribute("Limbo") == true then
+		return true
+	end
 	if not Admins.isAdmin(player) then
 		return false
 	end

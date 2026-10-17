@@ -24,6 +24,7 @@ local function check(name, cond, detail)
 end
 
 local tree = Engine.mountProject(".")
+Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
 Engine.require(tree.shared.Constants).TUTORIAL = false -- (the players here know the game: tests/TutorialSmoke is the tutorial's)
 Engine.runScript(tree.server.Main)
 Engine.advance(0.5)
@@ -983,6 +984,44 @@ do
 	Engine.advance(1)
 	Combat:Shoot(victim, rootOf(victim).Position + Vector3.new(0, 1.5, 0), Vector3.new(1, 0, 0))
 	check("...until you shoot", Combat:Damage(victim, 10, shooter) == true)
+end
+
+-- the AFK limbo: standing still in a match sends you to a room above the arena; walking around there brings you back
+do
+	local Afk = service("AfkService")
+	local idle = Engine.addPlayer("Idle", 621)
+	local mover = Engine.addPlayer("Mover", 622)
+	Engine.advance(0.5)
+	send(idle, "Ready")
+	send(mover, "Ready")
+	Engine.advance(0.5)
+	Match:NewMatch()
+	Engine.advance(1)
+	check("a match is on", Match:Phase() == "build" or Match:Phase() == "fight", Match:Phase())
+	Constants.AFK_SECONDS = 6
+	for _ = 1, 25 do
+		if Afk:Away(idle) then
+			break
+		end
+		-- (the mover walks about; the idle one doesn't)
+		local r = rootOf(mover)
+		if r then
+			Engine.moveTo(mover, r.Position + Vector3.new(0, 0, 3))
+		end
+		Engine.advance(1)
+	end
+	check("standing still: off to the AFK room", Afk:Away(idle) and Teams:Team(idle) == nil)
+	check("...out of the match (not counted)", not table.find(Match:People(), idle))
+	check("...up in the room", rootOf(idle) and rootOf(idle).Position.Y > 500, rootOf(idle) and rootOf(idle).Position)
+	check("...and told how to come back", firedSince(0, "Announce", idle, function(a)
+		return string.find(a[1].text, "AFK") ~= nil
+	end) ~= nil)
+	check("someone moving stays in", not Afk:Away(mover) and Teams:Team(mover) ~= nil)
+	Engine.moveTo(idle, rootOf(idle).Position + Vector3.new(6, 0, 0))
+	Engine.advance(1.5)
+	check("walking around in the room: back in the game", not Afk:Away(idle) and Teams:Team(idle) ~= nil)
+	check("...on the field again", rootOf(idle) and rootOf(idle).Position.Y < 100)
+	Constants.AFK_SECONDS = 0
 end
 
 print(`\n{passed} passed, {failed} failed`)

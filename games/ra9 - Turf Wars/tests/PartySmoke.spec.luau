@@ -21,6 +21,7 @@ local function check(name, cond, detail)
 end
 
 local tree = Engine.mountProject(".")
+Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
 Engine.game.PlaceId = 4242
 Engine.runScript(tree.server.Main)
 Engine.advance(0.5)

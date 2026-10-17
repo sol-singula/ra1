@@ -13,6 +13,7 @@ local V3, CF = Engine.Vector3, Engine.CFrame
 local Vector2 = Engine.globals.Vector2
 local outDir = ARGS[1]
 local tree = Engine.mountProject(".")
+Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
 Engine.require(tree.shared.Constants).TUTORIAL = false -- (the players here know the game: tests/TutorialSmoke is the tutorial's)
 Engine.clientEnabled = true
 local ws = Engine.workspace
@@ -70,8 +71,10 @@ local function shot(name)
 			d.Transparency = 1
 		end
 	end
-	local snap =
-		Capture.snapshot(Engine, { pos = { eye.X, eye.Y, eye.Z }, target = { look.X, look.Y, look.Z }, fov = cam.FieldOfView or 70 })
+	local snap = Capture.snapshot(
+		Engine,
+		{ pos = { eye.X, eye.Y, eye.Z }, target = { look.X, look.Y, look.Z }, fov = cam.FieldOfView or 70 }
+	)
 	snap.title = name
 	snap.cinematic = false
 	snap.viewport = { w = 1600, h = 900, dpr = 1 }

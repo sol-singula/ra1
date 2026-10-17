@@ -503,6 +503,15 @@ picked slot and piece styled apart and lifted; the slots side by side inside the
 * **Robux products are real now:** 4 Shard packs, Turf Pass, +1 Tier (developer products) and the Starter Pack (a game
   pass), created on the experience through Open Cloud; their ids are in `Data/Shop.lua`.
 
+## Round 16: the AFK limbo
+
+* **AfkService:** no moving (2+ studs), shooting, swinging or building for `AFK_SECONDS` (75) while a match is on, and
+  you're taken out of it: no team, not counted, never hit (the "Limbo" attribute; `Admins.spectating` treats it like
+  an unseen admin), bots fill in. You're moved to a small white room high above the arena with a sign and a banner:
+  "You're AFK. Walk around to jump back in!". Walk `AFK_RETURN_STUDS` (4) there and you're back: a team the normal
+  way, a spawn, "Welcome back!". Nobody can stall a match by standing still. Tests switch it off (their players
+  stand still); ServerSmoke checks it on its own.
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

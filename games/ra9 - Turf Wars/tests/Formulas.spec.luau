@@ -3,6 +3,7 @@
 --   luaurun tests/Formulas.spec.luau      (from the game folder)
 local Engine = loadModule("tests/mock/Engine.luau")
 local tree = Engine.mountProject(".")
+Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
 local Formulas = Engine.require(tree.shared.Formulas)
 local Constants = Engine.require(tree.shared.Constants)
 local Weapons = Engine.require(tree.shared.Data.Weapons)

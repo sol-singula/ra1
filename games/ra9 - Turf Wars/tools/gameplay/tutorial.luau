@@ -13,6 +13,7 @@ local V3, CF = Engine.Vector3, Engine.CFrame
 local Vector2 = Engine.globals.Vector2
 local outDir = ARGS[1]
 local tree = Engine.mountProject(".")
+Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
 Engine.clientEnabled = true
 local ws = Engine.workspace
 ws.CurrentCamera.ViewportSize = Vector2.new(1600, 900)

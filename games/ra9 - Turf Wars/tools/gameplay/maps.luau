@@ -14,6 +14,7 @@ local Instance = Engine.Instance
 local Enum = Engine.Enum
 local outDir = ARGS[1]
 local tree = Engine.mountProject(".")
+Engine.require(tree.shared.Constants).AFK_SECONDS = 0 -- (test players stand still: tests/ServerSmoke checks the AFK limbo on its own)
 Engine.workspace.CurrentCamera.ViewportSize = Vector2.new(1600, 900)
 Engine.runScript(tree.server.Main)
 Engine.advance(0.5)
@@ -46,7 +47,10 @@ Engine.localPlayer = viewer
 
 local shots = {}
 local function shot(name, pos, target, fov)
-	local snap = Capture.snapshot(Engine, { pos = { pos.X, pos.Y, pos.Z }, target = { target.X, target.Y, target.Z }, fov = fov or 70 })
+	local snap = Capture.snapshot(
+		Engine,
+		{ pos = { pos.X, pos.Y, pos.Z }, target = { target.X, target.Y, target.Z }, fov = fov or 70 }
+	)
 	snap.title = name
 	snap.cinematic = false
 	snap.hideGui = true
