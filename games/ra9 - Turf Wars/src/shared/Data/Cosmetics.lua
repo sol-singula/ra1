@@ -151,7 +151,7 @@ local EFFECT = {
 	["Bonk"] = { shape = "bonk", color = "white", count = 6, funny = true }, -- a giant cartoon mallet: BONK
 	["Dance Off"] = { shape = "dance", color = "rainbow", count = 20, funny = true }, -- a disco floor, they dance out
 	["Black Hole"] = { shape = "blackhole", color = "ink", count = 30 },
-	["Heaven's Gate"] = { shape = "heaven", color = "gold", count = 24 }, -- golden light, wings, up they go
+	["Golden Gate"] = { shape = "heaven", color = "gold", count = 24 }, -- golden light, wings, up they go
 	-- goals and status
 	["Centurion"] = { shape = "ring", color = "ink", count = 24 },
 	["Triple Shatter"] = { shape = "shards", color = "team", count = 24 },
@@ -286,7 +286,7 @@ Cosmetics.list = {
 	item("rbx_bonk", "effect", "Bonk", "epic", "robux", { robux = 99 }),
 	item("rbx_dance", "effect", "Dance Off", "legendary", "robux", { robux = 129 }),
 	item("rbx_blackhole", "effect", "Black Hole", "legendary", "robux", { robux = 199 }),
-	item("rbx_heaven", "effect", "Heaven's Gate", "legendary", "robux", { robux = 249 }),
+	item("rbx_heaven", "effect", "Golden Gate", "legendary", "robux", { robux = 249 }),
 	item("rbx_storm", "skin", "Storm Caller", "legendary", "robux", { robux = 149 }),
 	item("rbx_dragon", "skin", "Golden Dragon", "legendary", "robux", { robux = 199 }),
 	item("rbx_thunder", "trail", "Thunder Trail", "legendary", "robux", { robux = 99 }),
