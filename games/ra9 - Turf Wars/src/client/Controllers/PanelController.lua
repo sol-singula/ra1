@@ -536,6 +536,22 @@ local function shopTab(body)
 		PanelController.buyTier()
 	end)
 	y += 104 + 14
+	-- the TNT (a game pass, for good): here until it's yours, as on the hotbar
+	if player:GetAttribute("OwnsTNT") ~= true then
+		y = section(body, "TntLabel", "UNLOCK FOR GOOD", y)
+		local card = frame(body, "Tnt", 0, y, W, 104)
+		picture(card, 8, 8, 110, 88, function(box, w, h)
+			local props = fill(w, h)
+			props.Parent = box
+			Icons.weapon("tnt", team, props)
+		end)
+		label(card, "Name", Shop.TNT.name, 128, 10, W - 290, 24, 20, C.ink, nil, Theme.Display)
+		label(card, "Desc", Shop.TNT.desc, 128, 38, W - 290, 34, 13, C.ink)
+		priceButton(card, "BuyTnt", W - 154, 30, 144, 44, { robux = Shop.TNT.robux }, "gold", function()
+			Net.send("Buy", "robux", "tnt")
+		end)
+		y += 104 + 14
+	end
 	-- once
 	local oneTime = not p.starter or Shop.CLUB.subscriptionId ~= nil
 	if oneTime then

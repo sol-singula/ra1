@@ -51,7 +51,7 @@ Shop.TNT = {
 	key = "tnt",
 	name = "TNT",
 	robux = 149,
-	id = 0, -- (a game pass: set its id once it's made on the Creator Dashboard; 0 = not on sale, free in Studio)
+	id = 2036241176, -- (a game pass; 0 would mean not on sale, free in Studio)
 	desc = "Yours forever: lob it to blow up walls and knock out anyone close",
 }
 -- A Roblox subscription (monthly); nil turns it off (nothing shows)
