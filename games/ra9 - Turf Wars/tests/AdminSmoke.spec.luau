@@ -129,6 +129,7 @@ do
 		{ "unlockall" },
 		{ "tutorial" },
 		{ "afkroom", nil, true },
+		{ "mission", nil, true },
 		{ "end", nil, "red" },
 		{ "skip", nil, "fight" },
 		{ "restart" },
@@ -361,6 +362,34 @@ do
 	act(owner, "afkroom", nil, false)
 	check("LEAVE AFK ROOM: back in the match", not Afk:Away(owner) and Teams:Team(owner) ~= nil)
 	check("...and it's logged", used[#used].action == "afkroom")
+end
+
+-- mission control: the admins' room of screens, live
+do
+	local MC = service("MissionControlService")
+	local Afk = service("AfkService")
+	act(owner, "mission", nil, true)
+	local room = ws:FindFirstChild("MissionControl")
+	check("MISSION CONTROL: the room is built", room ~= nil and #room:GetChildren() > 150, room and #room:GetChildren())
+	check("...you're in it, out of the match", Afk:Away(owner) and root(owner) and (root(owner).Position - MC.ROOM.Position).Magnitude < 60)
+	check("...someone's in it", MC:Occupied())
+	MC:Refresh(true)
+	local main = room and room:FindFirstChild("MainScreen")
+	local title = main and main.Screen:FindFirstChild("Label")
+	check("...the big screen shows this server live", title and title.Text:find("THIS SERVER") ~= nil, title and title.Text)
+	local dots = main and main.Screen.Field.Dots:GetChildren()
+	check("...a dot for everyone on the field", dots and #dots >= 1, dots and #dots)
+	local srv = room and room:FindFirstChild("ServerScreen1")
+	local st = srv and srv.Screen:FindFirstChild("Label")
+	check("...the biggest servers on the wall", st and st.Text ~= "", st and st.Text)
+	local mon = room and room:FindFirstChild("Monitor1")
+	local mv = mon and mon.Screen:GetChildren()
+	check("...and the consoles' monitors have numbers", mv and #mv >= 3)
+	Engine.moveTo(owner, root(owner).Position + Vector3.new(6, 0, 0))
+	Engine.advance(2.5)
+	check("...walking about there keeps you there", Afk:Away(owner))
+	act(owner, "mission", nil, false)
+	check("LEAVE MISSION CONTROL: back in the match", not Afk:Away(owner) and Teams:Team(owner) ~= nil)
 end
 
 -- match controls

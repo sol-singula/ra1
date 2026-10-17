@@ -8,7 +8,8 @@ Walk around to jump back in!". The moment they walk AFK_RETURN_STUDS in there, t
   AfkService:Away(player)      -> bool
   AfkService:Send(player)      off to limbo now (tests, an admin)
   AfkService:Return(player)    back into the match now
-  AfkService:Send(player, { stay = true })   an admin visiting: walking around doesn't bring them back
+  AfkService:Send(player, { stay = true, spot? })   an admin visiting (the AFK room, or spot: mission control):
+                               walking around doesn't bring them back
   AfkService:RefreshBoards()   the hall's three leaderboards (every 30 s on its own)
   AfkService.ROOM              the limbo room's floor centre (a CFrame)
 ]]
@@ -353,7 +354,7 @@ function AfkService:Send(player, opts)
 	match:Leave(player)
 	local r = root(player)
 	if r then
-		local spot = AfkService.ROOM * CFrame.new(0, 3, 0)
+		local spot = (opts and opts.spot) or AfkService.ROOM * CFrame.new(0, 3, 0)
 		local ok = pcall(function()
 			player.Character:PivotTo(spot)
 		end)
@@ -383,6 +384,7 @@ function AfkService:Return(player)
 		return false
 	end
 	player:SetAttribute("Limbo", nil)
+	player:SetAttribute("MissionControl", nil)
 	local w = watch[player]
 	if w then
 		w.limboAt, w.at, w.pos, w.stay = nil, now(), nil, nil

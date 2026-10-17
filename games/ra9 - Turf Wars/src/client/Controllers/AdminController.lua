@@ -528,7 +528,8 @@ local function meTab(body)
 	local y = section(
 		body,
 		"Now",
-		state.afk and "YOU'RE IN THE AFK ROOM"
+		state.mission and "YOU'RE IN MISSION CONTROL"
+			or state.afk and "YOU'RE IN THE AFK ROOM"
 			or state.spectating and "YOU'RE SPECTATING: NOBODY CAN SEE YOU"
 			or (state.invisible and "YOU'RE INVISIBLE (STILL PLAYING)" or "YOU'RE PLAYING"),
 		0
@@ -553,12 +554,50 @@ local function meTab(body)
 	})
 	y = row(body, y, {
 		{
+			"WatchPlayer",
+			"WATCH A PLAYER",
+			function()
+				-- (spectate, then the list of everyone to pick from)
+				if not state.spectating then
+					send("spectate", nil, true)
+				end
+				AdminController.close()
+				task.delay(0.4, function()
+					SpectateController.showList(true)
+				end)
+			end,
+		},
+		{
+			"FreeRoam",
+			"FREE ROAM",
+			function()
+				if not state.spectating then
+					send("spectate", nil, true)
+				end
+				AdminController.close()
+				task.delay(0.4, SpectateController.free)
+			end,
+		},
+	})
+	y = row(body, y, {
+		{
 			"Tutorial",
 			"PLAY TUTORIAL",
 			function()
 				send("tutorial")
 				AdminController.close() -- (out of the way: the tutorial has the screen)
 			end,
+		},
+		{
+			"Mission",
+			state.mission and "LEAVE MISSION CONTROL" or "MISSION CONTROL",
+			function()
+				send("mission", nil, not state.mission)
+				if not state.mission then
+					AdminController.close() -- (out of the way: the screens are the show)
+				end
+			end,
+			state.mission and "dark" or RED,
 		},
 		{
 			"AfkRoom",

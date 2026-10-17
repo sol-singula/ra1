@@ -19,6 +19,7 @@ Actions (target: a player's UserId; value: what the action needs):
   unlockall                             every cosmetic, for yourself
   tutorial (target?)                    the first-minute tutorial from the start: yourself, or that player
   afkroom (on)                          go to the AFK room and stay there (no team, unseen), or come back
+  mission (on)                          go to mission control (the admins' room of screens), or come back
   end ("red" | "blue" | "draw")         the match ends now, the normal way
   skip ("fight" | "build" | "charge") | restart | map (key) | bots (on) | freeze (on) | announce (text)
   team (target, "red" | "blue") | kill | heal (heal, or respawn if down) | kick (target, reason)
@@ -193,7 +194,8 @@ function AdminService:Push(admin, servers, extra)
 		frozen = match:Frozen(),
 		spectating = Admins.spectating(admin),
 		invisible = admin:GetAttribute("Invisible") == true,
-		afk = admin:GetAttribute("Limbo") == true,
+		afk = admin:GetAttribute("Limbo") == true and admin:GetAttribute("MissionControl") ~= true,
+		mission = admin:GetAttribute("Limbo") == true and admin:GetAttribute("MissionControl") == true,
 		servers = servers,
 	}
 	for k, v in extra or {} do
@@ -335,6 +337,9 @@ ACTIONS.afkroom = function(_, admin, _, on)
 		end
 		return true, "Back to the match!", "left"
 	end
+	if admin:GetAttribute("MissionControl") == true then
+		afk:Return(admin) -- (from mission control: straight across)
+	end
 	if Admins.spectating(admin) and not afk:Away(admin) then
 		return false, "Stop spectating first."
 	end
@@ -342,6 +347,33 @@ ACTIONS.afkroom = function(_, admin, _, on)
 		return false, "You're in the AFK room already."
 	end
 	return true, "Welcome to the AFK room.", "went"
+end
+
+-- Mission control: the admins' room (MissionControlService), out of the match the same way as the AFK room
+ACTIONS.mission = function(_, admin, _, on)
+	local afk = registryRef and registryRef.AfkService
+	local mc = registryRef and registryRef.MissionControlService
+	if not afk or not mc then
+		return false, "There's no mission control in this build."
+	end
+	if on == false then
+		if not afk:Return(admin) then
+			return false, "You're not in mission control."
+		end
+		return true, "Back to the match!", "left"
+	end
+	if afk:Away(admin) then
+		afk:Return(admin) -- (from the AFK room: straight across)
+	end
+	if Admins.spectating(admin) then
+		return false, "Stop spectating first."
+	end
+	mc:Build()
+	if not afk:Send(admin, { stay = true, spot = mc.SPOT }) then
+		return false, "Couldn't take you there."
+	end
+	admin:SetAttribute("MissionControl", true)
+	return true, "Welcome to mission control.", "went"
 end
 
 -- Play the first-minute tutorial from the top: yourself (no target), or send any player in this server into it
