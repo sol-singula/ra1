@@ -379,9 +379,10 @@ end
 
 -- The sizes: more people, a bigger arena; always whole cells, the lose lines spawnDepth from the end walls
 do
-	check("8 people: the small arena", ArenaBuilder.tier(8) == "small" and ArenaBuilder.tier(1) == "small")
-	check("9 to 20: medium", ArenaBuilder.tier(9) == "medium" and ArenaBuilder.tier(20) == "medium")
-	check("21 and up: large", ArenaBuilder.tier(21) == "large" and ArenaBuilder.tier(40) == "large")
+	check("up to 9 people: the small arena", ArenaBuilder.tier(9) == "small" and ArenaBuilder.tier(1) == "small")
+	check("10 to 19: medium", ArenaBuilder.tier(10) == "medium" and ArenaBuilder.tier(19) == "medium")
+	check("20 to 29: large", ArenaBuilder.tier(20) == "large" and ArenaBuilder.tier(29) == "large")
+	check("30 and up: huge", ArenaBuilder.tier(30) == "huge" and ArenaBuilder.tier(40) == "huge")
 	check("a tier's name passes through", ArenaBuilder.tier("large") == "large" and ArenaBuilder.tier(nil) == "small")
 	local holder = Engine.Instance.new("Folder")
 	local last
@@ -405,7 +406,7 @@ do
 			-- (more cells to push through, and pushCells(people) never more than before: it takes longer)
 			local cellsBefore = (last.half - last.spawnDepth) / Constants.CELL
 			local cells = (a.half - a.spawnDepth) / Constants.CELL
-			local people = { medium = 14, large = 30 }
+			local people = { medium = 14, large = 24, huge = 35 }
 			check(
 				`{tier}: more kills to win than the size before`,
 				cells / Formulas.pushCells(people[tier]) > cellsBefore / Formulas.pushCells(8)

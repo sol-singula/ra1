@@ -57,7 +57,7 @@ local DEBUG = ARGS and ARGS[2] == "debug"
 local SIM = 120 -- simulated seconds per map
 local STUCK = 4 -- seconds of wanting to move without getting anywhere that count as stuck
 for _, def in Maps.list do
-	for _, size in { "small", "medium", "large" } do
+	for _, size in { "small", "medium", "large", "huge" } do
 		if only and only ~= def.key then
 			continue
 		end

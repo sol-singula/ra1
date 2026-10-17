@@ -23,7 +23,7 @@ and capitals on columns, steps, ledges, railings, window frames).
   ArenaBuilder.paint(arena, frontline, team?)   recolour the turf and move the glowing line; team: who pushed it
                                                 last (its colour), nil = white (a new match)
   ArenaBuilder.bounds(arena)              the playable box (min, max)
-  ArenaBuilder.tier(scale)                "small" (up to 8 people) | "medium" (up to 20) | "large"
+  ArenaBuilder.tier(scale)                "small" (up to 9 people) | "medium" (10 to 19) | "large" (20 to 29) | "huge" (30 and up)
 
 Sizes: a map is drawn for the small arena (200 x 96); a bigger tier adds whole cells to the length (so the turf
 takes longer to push) and to the width, with the spawn decks as deep as ever. Maps place their shapes through
@@ -560,11 +560,14 @@ end
 -- Sizes: a match that starts with a lot of people gets a bigger arena (MatchService:NewMatch counts everyone). Each
 -- tier adds whole cells to the field (`grow` studs of length, half to each side, so the turf takes longer to push)
 -- and to its width; the spawn decks stay as deep, so the lose lines are always spawnDepth from the end walls.
-ArenaBuilder.TIERS = { "small", "medium", "large" }
+-- A step every 10 people, each a big one: 10 in the match is half as long again and half as wide again, 20 nearly
+-- twice the small field, 30 and up about two and a half times as long and wide.
+ArenaBuilder.TIERS = { "small", "medium", "large", "huge" }
 ArenaBuilder.SIZES = {
-	small = { upTo = 8, grow = 0, widen = 0 },
-	medium = { upTo = 20, grow = 48, widen = 16 },
-	large = { upTo = math.huge, grow = 96, widen = 32 },
+	small = { upTo = 9, grow = 0, widen = 0 },
+	medium = { upTo = 19, grow = 96, widen = 48 },
+	large = { upTo = 29, grow = 192, widen = 96 },
+	huge = { upTo = math.huge, grow = 288, widen = 144 },
 }
 
 -- The tier for a scale: a tier's name, or a number of people (nil: small)
@@ -578,7 +581,7 @@ function ArenaBuilder.tier(scale)
 			return t
 		end
 	end
-	return "large"
+	return ArenaBuilder.TIERS[#ArenaBuilder.TIERS]
 end
 
 -- The arena ---------------------------------------------------------------------------------------------------
