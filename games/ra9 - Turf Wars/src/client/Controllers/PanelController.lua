@@ -10,7 +10,7 @@ the team's colour) with a picture on every card:
            it's on); timers to the next rotation
   PASS     the season's Turf Pass explained in a line, your tier and XP, GET THE PASS and +1 TIER, and the tiers as
            a track you scroll across: the FREE row and the gold PASS row, YOU ARE HERE, CLAIM on what's ready
-  LOCKER   everything of a kind (trail, bow, kill effect, banner, title): yours to wear, or how to get it
+  LOCKER   everything of a kind (trail, bow, sword skin, kill effect, banner, title): yours to wear, or how to get it
   GOALS    VIP (earned, never bought) and how close you are, MVP, the goals and their rewards, and HOW TO PLAY
            (REPLAY: the first-game tutorial again)
 
@@ -489,8 +489,11 @@ local TAGLINE = {
 	rbx_lightningbanner = "Your banner, electrified.",
 	rbx_dogebanner = "much banner. very team.",
 	rbx_crown = "For the king of the turf.",
+	rbx_lightningfang = "A blade that bites with thunder.",
+	rbx_dogeblade = "much slash. very sword. wow.",
+	rbx_scythe = "Reap what they sowed.",
 }
-local KIND_EMOJI = { skin = "🏹", trail = "☄️", title = "🏷️" }
+local KIND_EMOJI = { skin = "🏹", sword = "🗡️", trail = "☄️", title = "🏷️" }
 
 local function emojiOf(it)
 	local look = it.look or {}
@@ -1441,9 +1444,11 @@ end
 
 local function lockerTab(body)
 	local p = profile()
-	local cw = (W - 4 * 6) / 5
+	local n = #Cosmetics.KINDS
+	local cw = (W - (n - 1) * 6) / n
 	for i, k in Cosmetics.KINDS do
-		button(body, "Chip_" .. k, Cosmetics.KIND_NAME[k], (i - 1) * (cw + 6), 0, cw, 30, k == lockerKind, function()
+		local chip = k == "sword" and "SWORD" or Cosmetics.KIND_NAME[k]
+		button(body, "Chip_" .. k, chip, (i - 1) * (cw + 6), 0, cw, 30, k == lockerKind, function()
 			lockerKind = k
 			PanelController.refresh()
 		end)

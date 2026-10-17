@@ -14,6 +14,9 @@ on phones and low graphics (Effects.tier "low"), everything cleaned up with what
                                                  glints of gold, a ring of energy square to dir), drifting and
                                                  fading by itself (Flair.step); its part is named "Drop_<kind>"
             Flair.arc(a, b, color)               a crackle of lightning between two points, gone in a blink
+  swords    Flair.sword(sword, look, team, opts) brings a blade alive (Shared/SwordSkins.build or .adopt): its moving
+                                                 colours, the pulse of its lines, embers, snow, sparks, mist, arcs
+                                                 crackling down it, the sticker on the guard; a handle like a bow's
   bows      Flair.bow(parts, look, team, opts)   decorates a bow's parts { grip, limbs = { upper, lower }, tips,
                                                  holder } with its look's anim, particles and wings; returns a
                                                  handle: handle:update(t) each frame, handle:destroy()
@@ -586,6 +589,141 @@ function Flair.bow(parts, look, team, opts)
 					* CFrame.new(w.side * 0.18 * scale, 0.15 * scale, 0.15 * scale)
 					* CFrame.Angles(0, w.side * spread, 0)
 					* CFrame.new(0, 0, 0.45 * scale * (w.layer == 1 and 1 or 0.8))
+			end
+		end
+	end
+
+	function handle.destroy()
+		for _, inst in handle.made do
+			if inst and inst.Parent then
+				inst:Destroy()
+			end
+		end
+		handle.made = {}
+	end
+	return handle
+end
+
+-- Swords ----------------------------------------------------------------------------------------------------------
+-- A sticker on the guard, its long faces (a SurfaceGui each: a ViewportFrame doesn't draw them, the world does)
+local function sticker(part, text)
+	local made = {}
+	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back, Enum.NormalId.Top, Enum.NormalId.Bottom } do
+		local sg = Instance.new("SurfaceGui")
+		sg.Name = "FlairSticker"
+		sg.Face = face
+		sg.LightInfluence = 0
+		sg.AlwaysOnTop = false
+		local l = Instance.new("TextLabel")
+		l.BackgroundTransparency = 1
+		l.Size = UDim2.fromScale(1, 1)
+		l.Text = text
+		l.TextScaled = true
+		l.TextColor3 = WHITE
+		l.Parent = sg
+		sg.Parent = part
+		table.insert(made, sg)
+	end
+	return made
+end
+
+local PULSED = { Bevel = true, Spine = true, Gem = true }
+-- The pixel sword's blocks cycle through these, one step at a time
+local PIXELS = { "team", "white", "yellow", "ice", "pink" }
+
+--[[
+sword: SwordSkins.build's or .adopt's table ({ parts = { { part, offset, token, name } }, scale }); the parts are
+coloured already. Moving tokens (rainbow, lava, galaxy, electric, gold, ice) move; neon / ember / pulse throb the
+edge's lines; electric crackles arcs down the edge; frost, ember, shadow and the rest put their particles on it;
+pixel steps its blocks round the palette; a sticker goes on the guard.
+]]
+function Flair.sword(sword, look, team, opts)
+	opts = opts or {}
+	local handle = { made = {}, look = look or {}, nextArc = 0, nextStep = 0 }
+	look = handle.look
+	if not sword or not sword.parts or #sword.parts == 0 then
+		function handle.update() end
+		function handle.destroy() end
+		return handle
+	end
+	local scale = sword.scale or 1
+	local byName = {}
+	for _, e in sword.parts do
+		byName[e.name] = byName[e.name] or e.part
+	end
+	local edge = byName.Edge
+	if look.particles and edge then
+		local kind = look.particles == "glints" and "sparkles" or look.particles
+		local color = look.particles == "glints" and NAMED.gold
+			or (look.anim == "shadow" and Color3.fromRGB(60, 40, 90))
+			or nil
+		local e = Flair.emitter(edge, kind, color)
+		if e then
+			if scale < 1 then
+				e.Size = seq(0.14, 0)
+				e.Speed = NumberRange.new(0.2, 0.8)
+			end
+			if look.anim == "shadow" then
+				e.Color = cseq(Color3.fromRGB(70, 40, 110), Color3.fromRGB(20, 16, 30))
+			end
+			table.insert(handle.made, e)
+		end
+	end
+	if look.anim == "frost" and edge then
+		local e = Flair.emitter(edge, "wisp", Color3.fromRGB(200, 240, 255))
+		if e then
+			e.Rate = Flair.lite() and 4 or 9
+			e.Size = seq(0.3 * scale, 0.9 * scale)
+			table.insert(handle.made, e)
+		end
+	end
+	if look.sticker and byName.Guard then
+		for _, g in sticker(byName.Guard, look.sticker) do
+			table.insert(handle.made, g)
+		end
+	end
+
+	function handle.update(_, t)
+		t = t or os.clock()
+		local anchor = byName.Grip or edge
+		if not anchor or not anchor.Parent then
+			return
+		end
+		for i, e in sword.parts do
+			if Flair.moving(e.token) then
+				e.part.Color = Flair.tint(e.token, team, t, i * 0.12)
+			end
+		end
+		if look.anim == "neon" or look.anim == "pulse" or look.anim == "ember" then
+			local k = 0.5 + 0.5 * math.sin(t * (look.anim == "ember" and 3 or 5))
+			for _, e in sword.parts do
+				if PULSED[e.name] and not Flair.moving(e.token) then
+					e.part.Color = Cosmetics.color(e.token, team):Lerp(WHITE, k * 0.45)
+				end
+			end
+		end
+		if look.anim == "pixel" and t >= handle.nextStep then
+			handle.nextStep = t + 0.35
+			handle.step = (handle.step or 0) + 1
+			local n = 0
+			for _, e in sword.parts do
+				if e.name == "Edge" or string.sub(e.name, 1, 5) == "Pixel" then
+					n += 1
+					e.part.Color = Cosmetics.color(PIXELS[(handle.step + n) % #PIXELS + 1], team)
+				end
+			end
+		end
+		if look.anim == "electric" and edge and t >= handle.nextArc then
+			handle.nextArc = t + rnd(0.07, 0.22)
+			local half = edge.Size.Z / 2
+			local a = (edge.CFrame * CFrame.new(0, 0, rnd(-half, half))).Position
+			local b = a + Vector3.new(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)) * 0.5 * scale
+			Flair.arc(a, b, NAMED.electric:Lerp(WHITE, 0.5))
+		end
+		if look.anim == "shadow" and edge and not Flair.lite() and math.random() < 0.05 then
+			local d = Flair.drop("ink", edge.Position, team)
+			if d and scale < 1 then
+				d.Size *= 0.5
 			end
 		end
 	end

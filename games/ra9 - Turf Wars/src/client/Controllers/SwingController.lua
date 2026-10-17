@@ -28,10 +28,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
+local SwordSkins = require(ReplicatedStorage.Shared.SwordSkins)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Device = require(script.Parent.Parent.UI.Device)
 local Theme = require(script.Parent.Parent.UI.Theme)
+local Store = require(script.Parent.Parent.Store)
 local CameraController = require(script.Parent.CameraController)
 
 local SwingController = { Name = "SwingController", Order = 47 }
@@ -196,6 +199,16 @@ function SwingController.streaks()
 	return #pieces
 end
 
+-- The streak's colour: a sword skin's own (its trail token: lava, ice, a rainbow...), else `default`
+local function streakColor(swordKey, team, default)
+	local token = SwordSkins.trailToken(SwordSkins.lookOf(swordKey))
+	if not token then
+		return default
+	end
+	return Cosmetics.color(token, team):Lerp(Color3.new(1, 1, 1), 0.2)
+end
+SwingController.streakColor = streakColor
+
 function SwingController.slashOf(character, dir)
 	if not character then
 		return false
@@ -206,6 +219,8 @@ function SwingController.slashOf(character, dir)
 	end
 	local team = character:GetAttribute("Team")
 	local color = (Constants.TEAM_COLOR[team or ""] or Color3.new(1, 1, 1)):Lerp(Color3.new(1, 1, 1), 0.45)
+	local owner = Players:GetPlayerFromCharacter(character)
+	color = streakColor(owner and owner:GetAttribute("LookSword"), team, color)
 	local look = typeof(dir) == "Vector3" and dir or root.CFrame.LookVector
 	streak(root.Position + Vector3.new(0, 1.2, 0) + look * 2.4, look, color, 2.2)
 	local arm = character:FindFirstChild("RightUpperArm")
@@ -350,7 +365,9 @@ function SwingController:init()
 		local cam = workspace.CurrentCamera
 		if cam then
 			local look = cam.CFrame.LookVector
-			streak(cam.CFrame.Position + look * 2.6 - Vector3.new(0, 0.35, 0), look, Color3.fromRGB(255, 255, 255), 1.5)
+			local mine = ((Store.get("profile") or {}).equipped or {}).sword
+			local color = streakColor(mine, Store.team(), Color3.fromRGB(255, 255, 255))
+			streak(cam.CFrame.Position + look * 2.6 - Vector3.new(0, 0.35, 0), look, color, 1.5)
 		end
 	end)
 	Net.listen("Hit", function(h)

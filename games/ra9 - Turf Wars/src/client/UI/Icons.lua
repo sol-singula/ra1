@@ -11,9 +11,10 @@ little from above, so the bow reads as a bow and the tower as a tower at a glanc
 
 And the shop's pictures (PanelController), so every card shows the real thing:
 
-  Icons.cosmetic(item, team, props)   a cosmetic (Data/Cosmetics): a bow in its finish, a trail as a glowing
-                                      streak behind an arrow, a kill effect as a burst (3D); a banner as a flag, a
-                                      title as a nameplate (drawn with frames)
+  Icons.cosmetic(item, team, props)   a cosmetic (Data/Cosmetics): a bow in its finish, a sword skin's blade, a trail
+                                      as a glowing streak behind an arrow, a kill effect as a burst (3D); a banner
+                                      as a flag, a title as a nameplate (drawn with frames)
+  Icons.model(item, team)             the 3D ones as a plain Model, for the world (the Crate's rack), or nil
   Icons.shardPile(size, props)        Shards: 1 a few gems, 2 a heap, 3 a crate of them, 4 an overflowing vault
   Icons.gift(team, props)             the Starter Pack: a present with gems
   Icons.pass(props)                   the Turf Pass: a gold ticket with a crown
@@ -26,6 +27,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local StructureModel = require(ReplicatedStorage.Shared.StructureModel)
+local SwordSkins = require(ReplicatedStorage.Shared.SwordSkins)
 local Structures = require(ReplicatedStorage.Shared.Data.Structures)
 
 local Icons = {}
@@ -522,6 +524,28 @@ local function nameplate(it, props)
 	return box
 end
 
+-- The 3D ones as a Model round the origin (a bow stands along Y, a sword lies along X with its point to -X, a
+-- trail's arrow flies along +X), untouched by any turn: the world's (the Crate's rack) and the pictures' start
+function Icons.model(it, team)
+	if not it or it.kind == "banner" or it.kind == "title" then
+		return nil
+	end
+	local model = Instance.new("Model")
+	model.Name = "Cosmetic"
+	local look = it.look or {}
+	if it.kind == "skin" then
+		finishedBow(model, look, team)
+	elseif it.kind == "sword" then
+		local sword = SwordSkins.build(model, look, team)
+		SwordSkins.place(sword, CFrame.new(0.9, 0, 0) * CFrame.Angles(0, math.rad(90), 0))
+	elseif it.kind == "trail" then
+		streak(model, look, team)
+	else
+		burst(model, look, team)
+	end
+	return model
+end
+
 function Icons.cosmetic(it, team, props)
 	props = props or {}
 	if not it then
@@ -531,18 +555,15 @@ function Icons.cosmetic(it, team, props)
 	elseif it.kind == "title" then
 		return nameplate(it, props)
 	end
-	local model = Instance.new("Model")
-	model.Name = "Cosmetic"
-	local look = it.look or {}
+	local model = Icons.model(it, team)
 	local turn
 	if it.kind == "skin" then
-		finishedBow(model, look, team)
 		turn = CFrame.Angles(0, 0, math.rad(LAY.bow)) * CFrame.Angles(math.rad(18), math.rad(16), 0)
+	elseif it.kind == "sword" then
+		turn = CFrame.Angles(0, 0, math.rad(LAY.blade)) * CFrame.Angles(math.rad(18), math.rad(16), 0)
 	elseif it.kind == "trail" then
-		streak(model, look, team)
 		turn = CFrame.Angles(0, 0, math.rad(16)) * CFrame.Angles(math.rad(14), math.rad(-12), 0)
 	else
-		burst(model, look, team)
 		turn = CFrame.Angles(math.rad(10), math.rad(20), 0)
 	end
 	for _, p in model:GetChildren() do

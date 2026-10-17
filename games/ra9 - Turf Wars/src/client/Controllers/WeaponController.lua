@@ -37,6 +37,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Flair = require(script.Parent.Parent.FX.Flair)
+local SwordSkins = require(ReplicatedStorage.Shared.SwordSkins)
 local Device = require(script.Parent.Parent.UI.Device)
 local Layout = require(script.Parent.Parent.UI.Layout)
 local Store = require(script.Parent.Parent.Store)
@@ -344,23 +345,15 @@ local function buildView()
 		return
 	end
 	if w.melee then
-		-- the blade: solid steel, whatever bow skin is worn (a Glass, Neon or Hologram skin is for bows: on a sword
-		-- it looked like a hologram). Painted steel, not Metal: the matte lighting has almost no reflections to
-		-- show, so Metal came out near black. A bright edge with a white bevel, a darker fuller down the middle, a
-		-- grey guard with a gem in the team's colour, a leather grip in the team's colour
+		-- the blade, in the sword skin worn (Shared/SwordSkins; plain: painted steel, never a bow skin's finish).
+		-- Not Metal: the matte lighting has almost no reflections to show, so Metal came out near black
 		v.blade = true
-		local steel, bevel, fuller =
-			Color3.fromRGB(214, 218, 225), Color3.fromRGB(250, 251, 253), Color3.fromRGB(150, 155, 164)
-		local guardSteel = Color3.fromRGB(118, 122, 132)
-		local smooth, leather = Enum.Material.SmoothPlastic, Enum.Material.Fabric
-		v.grip = piece(Vector3.new(0.2, 0.2, 0.75), color, "Grip", leather)
-		v.pommel = piece(Vector3.new(0.28, 0.28, 0.2), guardSteel, "Pommel", smooth)
-		v.guard = piece(Vector3.new(0.85, 0.16, 0.2), guardSteel, "Guard", smooth)
-		v.gem = piece(Vector3.new(0.16, 0.16, 0.3), color, "Gem", Enum.Material.Neon)
-		v.edge = piece(Vector3.new(0.07, 0.28, 1.6), steel, "Edge", smooth)
-		v.bevel = piece(Vector3.new(0.075, 0.05, 1.55), bevel, "Bevel", smooth)
-		v.spine = piece(Vector3.new(0.08, 0.06, 1.25), fuller, "Spine", smooth)
-		v.tip = piece(Vector3.new(0.08, 0.2, 0.3), steel, "Tip", smooth)
+		local swordLook = SwordSkins.lookOf(((Store.get("profile") or {}).equipped or {}).sword)
+		v.sword = SwordSkins.build(model, swordLook, team, { scale = VM_SCALE * 0.78 })
+		v.grip = v.sword.parts[1].part
+		if swordLook ~= SwordSkins.PLAIN then
+			v.flair = Flair.sword(v.sword, swordLook, team)
+		end
 		-- the right hand round the grip, the left a loose fist
 		v.right = newLimb(piece, "R", 0.11, color)
 		v.left = newLimb(piece, "L", 0.05, color)
@@ -522,14 +515,7 @@ local function placeView(dt)
 			)
 		-- (the blade points up and forward from the hand: along the grip's -Z, tipped up)
 		local up = bcf * CFrame.Angles(math.rad(60), 0, 0)
-		view.grip.CFrame = up
-		view.pommel.CFrame = up * L(0, 0, 0.45)
-		view.guard.CFrame = up * L(0, 0, -0.45)
-		view.edge.CFrame = up * L(0, 0, -1.35)
-		view.spine.CFrame = up * L(0, 0.03, -1.3)
-		view.bevel.CFrame = up * L(0, -0.12, -1.35)
-		view.gem.CFrame = up * L(0, 0, -0.45)
-		view.tip.CFrame = up * L(0, 0, -2.25) * CFrame.Angles(math.rad(45), 0, 0)
+		SwordSkins.place(view.sword, up)
 		-- the right hand round the grip: the bar along the grip (index finger toward the guard), the back of the
 		-- hand out to the right, the wrist under the grip
 		local gripCf = up * L(0, 0, 0.08)
@@ -927,7 +913,7 @@ function WeaponController:init()
 	Store.Changed:Connect(function(partial)
 		local me = partial.me
 		local prof = partial.profile or Store.get("profile") or {}
-		local skinKey = tostring((prof.equipped or {}).skin)
+		local skinKey = tostring((prof.equipped or {}).skin) .. ":" .. tostring((prof.equipped or {}).sword)
 		local key = (me or partial.profile)
 			and (
 				tostring((me and me.team) or Store.team())

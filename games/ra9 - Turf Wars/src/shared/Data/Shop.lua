@@ -57,6 +57,9 @@ Shop.TNT = {
 	id = 2036241176, -- (a game pass; 0 would mean not on sale, free in Studio)
 	desc = "PERMANENT: yours forever. Throw one every 3s: it blows up walls and knocks out anyone close",
 }
+-- The lobby's Crate (Data/Crate: the odds and the pool): one spin for Shards, or for Robux (a developer product,
+-- repeatable; 0 until it's made)
+Shop.CRATE = { key = "crate", name = "Crate Spin", shards = 250, robux = 99, id = 0, crate = true }
 -- A Roblox subscription (monthly); nil turns it off (nothing shows)
 Shop.CLUB =
 	{ key = "club", name = "Shard Club", subscriptionId = nil, monthlyShards = 600, desc = "600 Shards every month" }
@@ -78,6 +81,10 @@ Shop.PREMIUM_IDS = {
 	rbx_lightningbanner = 3719155299,
 	rbx_dogebanner = 3719155301,
 	rbx_crown = 3719155306,
+	-- the sword skins (0: not made yet; free in Studio, "not on sale yet" live)
+	rbx_lightningfang = 0,
+	rbx_dogeblade = 0,
+	rbx_scythe = 0,
 }
 Shop.PREMIUM = {}
 for _, it in Cosmetics.list do
@@ -155,6 +162,7 @@ for _, p in Shop.DEALS do
 end
 Shop.products.pass = Shop.PASS
 Shop.products.tier = Shop.TIER
+Shop.products.crate = Shop.CRATE
 
 -- "80% OFF": the cut from an item's old price (it.was), or nil
 function Shop.off(it)

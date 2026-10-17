@@ -7,6 +7,7 @@ loop, over or in place of its still picture (Icons.cosmetic):
            viewport doesn't draw billboards, so the effect's words and stickers are drawn over the frame here, where
            the camera sees them; the lightning's dark sky darkens the frame
   skin     the bow turning round, its moving colours (rainbow, lava...) moving
+  sword    the blade turning round, its moving colours moving, its lines throbbing (Flair.sword)
   trail    the arrow swishing through, its streak behind it
   banner   the flag waving, its emblem alive (Flair.banner)
   title    the nameplate bobbing
@@ -30,11 +31,12 @@ local Effects = require(script.Parent.Parent.FX.Effects)
 local Flair = require(script.Parent.Parent.FX.Flair)
 local KillEffects = require(script.Parent.Parent.FX.KillEffects)
 local Store = require(script.Parent.Parent.Store)
+local SwordSkins = require(ReplicatedStorage.Shared.SwordSkins)
 
 local ItemPreview = {}
 
 local BUDGET = { high = 6, mid = 6, low = 4 } -- (an effect costs 1, the cheap ones half)
-local COST = { effect = 1, skin = 0.5, trail = 0.5, banner = 0.25, title = 0.25 }
+local COST = { effect = 1, skin = 0.5, sword = 0.5, trail = 0.5, banner = 0.25, title = 0.25 }
 local PICK_EVERY = 0.25 -- seconds between looks at what's on screen
 local STAND = 0.5 -- the dummy stands this long before the effect plays
 local PERIOD = 3.8 -- one loop of an effect (KillEffects' life is 2.8)
@@ -355,6 +357,43 @@ local function bowStep(_, live, dt)
 	end
 end
 
+-- the sword: turning like the bow, its colours and lines alive (Flair.sword on the picture's own parts)
+local function swordStart(slot)
+	local model, rest, center = modelOf(slot.icon)
+	local look = slot.it.look or {}
+	local team = Store.team() or "red"
+	local colors = {}
+	for p in rest do
+		colors[p] = p.Color
+	end
+	local sword = SwordSkins.adopt(model, look, team)
+	return {
+		rest = rest,
+		center = CFrame.new(center),
+		colors = colors,
+		flair = Flair.sword(sword, look, team),
+		t = 0,
+	}
+end
+
+local function swordStep(_, live, dt)
+	live.t += dt
+	local t = live.t
+	local turn = live.center
+		* CFrame.new(UP * math.sin(t * 2) * 0.06)
+		* CFrame.Angles(0, t * 1.3, 0)
+		* live.center:Inverse()
+	for p, c in live.rest do
+		p.CFrame = turn * c
+	end
+	live.flair:update(os.clock())
+end
+
+local function swordStop(_, live)
+	live.flair:destroy()
+	restore(live)
+end
+
 -- the arrow comes in from the left, hangs a moment, and is gone off the right
 local function trailStep(_, live, dt)
 	live.t = (live.t + dt) % 2.4
@@ -422,6 +461,7 @@ end
 local KINDS = {
 	effect = { start = effectStart, step = effectStep, stop = effectStop },
 	skin = { start = bowStart, step = bowStep, stop = restore },
+	sword = { start = swordStart, step = swordStep, stop = swordStop },
 	trail = { start = trailStart, step = trailStep, stop = restore },
 	banner = { start = bannerStart, step = bannerStep, stop = bannerStop },
 	title = { start = titleStart, step = titleStep, stop = titleStop },

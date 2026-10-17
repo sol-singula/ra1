@@ -43,8 +43,14 @@ local ProgressService = {
 
 local data, economy, season
 
-local LOOK_ATTR =
-	{ trail = "LookTrail", skin = "LookSkin", effect = "LookEffect", banner = "LookBanner", title = "LookTitle" }
+local LOOK_ATTR = {
+	trail = "LookTrail",
+	skin = "LookSkin",
+	sword = "LookSword",
+	effect = "LookEffect",
+	banner = "LookBanner",
+	title = "LookTitle",
+}
 ProgressService.LOOK_ATTR = LOOK_ATTR
 
 function ProgressService:View(player)

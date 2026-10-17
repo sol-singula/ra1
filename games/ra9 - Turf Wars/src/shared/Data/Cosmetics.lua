@@ -2,8 +2,8 @@
 Every cosmetic in the game, wherever it comes from, and what it looks like. All cosmetic: nothing here changes a
 shot, a hit, health, speed or building (master plan §1: fair competition, nothing paid adds combat power).
 
-  kind     trail (your arrows) | skin (your bow) | effect (what a kill of yours looks like) | banner (the emblem on
-           your team banners) | title (under your name)
+  kind     trail (your arrows) | skin (your bow) | sword (your blade in the CHARGE) | effect (what a kill of yours
+           looks like) | banner (the emblem on your team banners) | title (under your name)
   rarity   common | rare | epic | legendary (the shop's price, the card's colour band)
   source   how it's had:
              ladder       the 100-win ladder (Data/Ladder): win N
@@ -18,6 +18,9 @@ shot, a hit, health, speed or building (master plan §1: fair competition, nothi
              trail   lines = { { x, y, width, color } } beside the tracer, a ribbon, and how they're drawn (dash,
                      dots, helix, bolt, fire, ghost... see TRAIL below), length (x the tracer)
              skin    grip, limbs (colour tokens), material
+             sword   shape (Shared/SwordSkins draws it: sword, katana, gladius, cleaver, pixel, saber, scythe), the
+                     colour tokens of its parts (edge, bevel, spine, guard, grip, gem), material, anim, particles,
+                     sticker; trail: the token its slash streak is drawn in
              effect  shape (one of FX/KillEffects.SHAPES), color, count (bursts, trim: the shatter's variants)
              banner  emblem (one character)
              title   text
@@ -33,8 +36,15 @@ local Extras = require(script.Parent.Extras)
 
 local Cosmetics = {}
 
-Cosmetics.KINDS = { "trail", "skin", "effect", "banner", "title" }
-Cosmetics.KIND_NAME = { trail = "TRAIL", skin = "BOW", effect = "KILL EFFECT", banner = "BANNER", title = "TITLE" }
+Cosmetics.KINDS = { "trail", "skin", "sword", "effect", "banner", "title" }
+Cosmetics.KIND_NAME = {
+	trail = "TRAIL",
+	skin = "BOW",
+	sword = "SWORD SKIN",
+	effect = "KILL EFFECT",
+	banner = "BANNER",
+	title = "TITLE",
+}
 Cosmetics.RARITIES = { "common", "rare", "epic", "legendary" }
 
 -- Looks, by name, so the ladder, the shop and the pass can share them -----------------------------------------
@@ -174,6 +184,167 @@ local SKIN = {
 	["Bulldozer"] = { grip = "ink", limbs = "white", material = "DiamondPlate" },
 	["Inkwell"] = { grip = "ink", limbs = "ink", material = "Neon" },
 }
+-- Sword skins (Shared/SwordSkins builds the blade, FX/Flair brings it alive): each its own shape and colours, plain
+-- box parts like the rest of the game. Tokens: edge (the blade), bevel (its bright line), spine (the line down the
+-- middle), guard, grip, gem; trail: the colour its slash streak is drawn in (the edge's when unset)
+--   anim      frost (see-through ice, cold mist) | ember (a lava core, embers) | neon (the edge line throbbing) |
+--             rainbow | electric (arcs crackling down the blade) | pixel (its blocks cycling) | shadow (dark smoke) |
+--             pulse (the edge line throbbing)
+--   sticker   a character on the guard, both faces (the Doge Blade)
+local STEEL, BEVEL, FULLER, GUARD =
+	Color3.fromRGB(214, 218, 225),
+	Color3.fromRGB(250, 251, 253),
+	Color3.fromRGB(150, 155, 164),
+	Color3.fromRGB(118, 122, 132)
+local SWORD = {
+	-- (the plain blade everyone starts with: Shared/SwordSkins.PLAIN is this)
+	["Steel"] = {
+		shape = "sword",
+		edge = STEEL,
+		bevel = BEVEL,
+		spine = FULLER,
+		guard = GUARD,
+		grip = "team",
+		gem = "team",
+	},
+	-- shop
+	["Chalk Blade"] = {
+		shape = "sword",
+		edge = "white",
+		bevel = "white",
+		spine = "ink",
+		guard = "ink",
+		grip = "ink",
+		gem = "white",
+		material = "Sand",
+	},
+	["Inkblade"] = {
+		shape = "sword",
+		edge = "ink",
+		bevel = "white",
+		spine = "ink",
+		guard = "ink",
+		grip = "team",
+		gem = "white",
+	},
+	["Pixel Sword"] = {
+		shape = "pixel",
+		edge = "team",
+		bevel = "white",
+		guard = "ink",
+		grip = "ink",
+		gem = "yellow",
+		anim = "pixel",
+	},
+	["Frost Edge"] = {
+		shape = "sword",
+		edge = "ice",
+		bevel = "white",
+		spine = "ice",
+		guard = "white",
+		grip = "light",
+		gem = "ice",
+		material = "Ice",
+		anim = "frost",
+		particles = "snow",
+		trail = "ice",
+	},
+	["Golden Gladius"] = {
+		shape = "gladius",
+		edge = "gold",
+		bevel = "yellow",
+		spine = "gold",
+		guard = "gold",
+		grip = "ink",
+		gem = "candy",
+		particles = "glints",
+		trail = "gold",
+	},
+	["Ember Blade"] = {
+		shape = "sword",
+		edge = "ink",
+		bevel = "lava",
+		spine = "lava",
+		guard = "ink",
+		grip = "ink",
+		gem = "lava",
+		anim = "ember",
+		particles = "embers",
+		trail = "lava",
+	},
+	["Neon Katana"] = {
+		shape = "katana",
+		edge = "ink",
+		bevel = "team",
+		guard = "ink",
+		grip = "ink",
+		gem = "team",
+		anim = "neon",
+		trail = "light",
+	},
+	["Obsidian Cleaver"] = {
+		shape = "cleaver",
+		edge = "ink",
+		bevel = "candy",
+		spine = "candy",
+		guard = "ink",
+		grip = "ink",
+		gem = "candy",
+		material = "Glass",
+		anim = "pulse",
+		trail = "candy",
+	},
+	["Rainbow Saber"] = {
+		shape = "saber",
+		edge = "rainbow",
+		bevel = "white",
+		guard = "ink",
+		grip = "ink",
+		gem = "rainbow",
+		anim = "rainbow",
+		particles = "sparkles",
+		trail = "rainbow",
+	},
+	-- Robux only
+	["Lightning Fang"] = {
+		shape = "katana",
+		edge = "electric",
+		bevel = "white",
+		guard = "ink",
+		grip = "ink",
+		gem = "electric",
+		anim = "electric",
+		particles = "sparks",
+		trail = "electric",
+	},
+	["Doge Blade"] = {
+		shape = "gladius",
+		edge = "gold",
+		bevel = "yellow",
+		spine = "gold",
+		guard = "yellow",
+		grip = "ink",
+		gem = "gold",
+		anim = "pulse",
+		particles = "glints",
+		sticker = "🐕",
+		trail = "gold",
+	},
+	["Shadow Scythe"] = {
+		shape = "scythe",
+		edge = "ink",
+		bevel = "galaxy",
+		spine = "galaxy",
+		guard = "ink",
+		grip = "ink",
+		gem = "galaxy",
+		anim = "shadow",
+		particles = "wisp",
+		trail = "galaxy",
+	},
+}
+Cosmetics.SWORD = SWORD
+
 -- Kill effects (FX/KillEffects): each shape is its own little film; Triple Shatter and VIP Shatter are the
 -- shatter broken three times (bursts) and in black glass and gold (trim)
 local EFFECT = {
@@ -270,6 +441,8 @@ local function look(kind, name)
 		return TRAIL[base] or TRAIL["White Line"]
 	elseif kind == "skin" then
 		return SKIN[base] or SKIN["Matte Black"]
+	elseif kind == "sword" then
+		return SWORD[base] or SWORD["Steel"]
 	elseif kind == "effect" then
 		return EFFECT[base] or EFFECT["Shatter"]
 	elseif kind == "banner" then
@@ -337,6 +510,16 @@ Cosmetics.list = {
 	item("shop_chickenbanner", "banner", "Chicken", "rare", "shop"),
 	item("shop_skulls", "banner", "Skulls", "epic", "shop"),
 	item("shop_galaxybanner", "banner", "Galaxy", "legendary", "shop"),
+	-- the sword skins (the blade in the CHARGE; Shared/SwordSkins draws them)
+	item("shop_chalkblade", "sword", "Chalk Blade", "common", "shop"),
+	item("shop_inkblade", "sword", "Inkblade", "common", "shop"),
+	item("shop_pixelsword", "sword", "Pixel Sword", "common", "shop"),
+	item("shop_frostedge", "sword", "Frost Edge", "rare", "shop"),
+	item("shop_gladius", "sword", "Golden Gladius", "rare", "shop"),
+	item("shop_emberblade", "sword", "Ember Blade", "epic", "shop"),
+	item("shop_neonkatana", "sword", "Neon Katana", "epic", "shop"),
+	item("shop_cleaver", "sword", "Obsidian Cleaver", "epic", "shop"),
+	item("shop_rainbowsaber", "sword", "Rainbow Saber", "legendary", "shop"),
 	-- Robux only (Data/Shop.PREMIUM: a developer product each, yours for good; always in the shop, never rotated)
 	item("rbx_lightning", "effect", "Lightning Strike", "legendary", "robux", { robux = 199 }),
 	item("rbx_doge", "effect", "Much Wow", "legendary", "robux", { robux = 149 }),
@@ -352,6 +535,9 @@ Cosmetics.list = {
 	item("rbx_lightningbanner", "banner", "Lightning", "epic", "robux", { robux = 49 }),
 	item("rbx_dogebanner", "banner", "Doge", "epic", "robux", { robux = 49 }),
 	item("rbx_crown", "banner", "Crown2", "legendary", "robux", { robux = 79 }),
+	item("rbx_lightningfang", "sword", "Lightning Fang", "legendary", "robux", { robux = 149 }),
+	item("rbx_dogeblade", "sword", "Doge Blade", "legendary", "robux", { robux = 129 }),
+	item("rbx_scythe", "sword", "Shadow Scythe", "legendary", "robux", { robux = 199 }),
 	-- earned only: goals (Data/Achievements)
 	item("goal_sharp", "trail", "Crosshair Line", "epic", "goal"),
 	item("goal_longshot", "trail", "Long Shot", "epic", "goal"),
@@ -439,7 +625,9 @@ function Cosmetics.rainbow(t, offset)
 end
 function Cosmetics.color(token, team)
 	local c = TEAM[team or ""] or TEAM.red
-	if NAMED[token] then
+	if typeof(token) == "Color3" then
+		return token -- (a fixed colour, not a token: the plain sword's steel)
+	elseif NAMED[token] then
 		return NAMED[token]
 	elseif token == "rainbow" then
 		return Cosmetics.rainbow()
