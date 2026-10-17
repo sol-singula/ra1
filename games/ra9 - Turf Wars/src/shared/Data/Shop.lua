@@ -114,14 +114,16 @@ function Shop.productById(id)
 end
 
 -- Earning in play
-Shop.EARN = { match = 8, win = 20, perKill = 1, killCap = 15, mvp = 10, firstWin = 40 }
+-- (kills are paid the moment they happen, MatchService: perKill, +headshot, up to killCap a match; the match's
+-- end pays the rest)
+Shop.EARN = { match = 10, win = 30, perKill = 5, headshot = 2, killCap = 30, mvp = 15, firstWin = 50 }
 
 function Shop.shardsFor(info, firstWinToday)
 	if (info.seconds or 0) < 60 then
 		return 0
 	end
 	local e = Shop.EARN
-	local n = e.match + math.min(e.killCap, (info.kills or 0) * e.perKill)
+	local n = e.match -- (the kills were paid as they happened)
 	if info.won and info.qualified ~= false then
 		n += e.win + (firstWinToday and e.firstWin or 0)
 	end

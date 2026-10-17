@@ -51,6 +51,7 @@ Net.ServerEvents = {
 	-- emblem and blast = { pos, power } (what broke it: a TNT 1, an arrow less, nil for lost turf): the debris
 	-- (DebrisController)
 	"Toast", -- text, kind ("info" | "good" | "bad")
+	"Earned", -- { amount, why = "kill" | "headshot" | "match" | ..., total } Shards just paid: the +N that flies to the counter
 	"Alert", -- big centre message: text, color, seconds?
 	"Announce", -- { text, kind, color?, icon?, seconds? } a banner for everyone or one player (server/Notify.lua)
 	"Results", -- { winner, rows = { { userId, name, team, kills, deaths, assists, built } }, mvp, you, next }

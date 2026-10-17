@@ -338,6 +338,16 @@ local feed = firedSince(m1, "Kill", nil)
 check("the kill feed says who and how far", feed and feed.args[1].killer == red.UserId and feed.args[1].push == push)
 check("the kill counts", Match:Stats(red).kills == 1)
 do
+	local earned = firedSince(m1, "Earned", red)
+	check(
+		"a knockout pays Shards right away (the +N flies to their counter)",
+		earned
+			and earned.args[1].amount >= Engine.require(tree.shared.Data.Shop).EARN.perKill
+			and earned.args[1].why ~= nil,
+		earned and earned.args[1].amount
+	)
+end
+do
 	-- a fifth player joins two against two: the team losing on turf (blue, pushed back) gets them
 	local eve = Engine.addPlayer("Eve", 505)
 	Engine.advance(0.3)

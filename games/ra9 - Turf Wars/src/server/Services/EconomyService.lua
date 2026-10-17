@@ -11,6 +11,8 @@ profile to the client after (ShopService, ProgressService).
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Net = require(ReplicatedStorage.Shared.Net)
+
 local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local EconomyService = {
@@ -36,6 +38,8 @@ function EconomyService:Add(player, n, why)
 	p.shards = (p.shards or 0) + n
 	p.stats.shardsEarned = (p.stats.shardsEarned or 0) + n
 	self.Changed:Fire(player, p.shards, n, why)
+	-- (the +N on their screen, flying into the Shards counter)
+	Net.fire(player, "Earned", { amount = n, why = why, total = p.shards })
 	return p.shards
 end
 

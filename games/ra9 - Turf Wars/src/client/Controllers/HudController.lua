@@ -38,6 +38,7 @@ local Structures = require(ReplicatedStorage.Shared.Data.Structures)
 local Weapons = require(ReplicatedStorage.Shared.Data.Weapons)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
+local Locker = require(ReplicatedStorage.Shared.Data.Locker)
 local Format = require(ReplicatedStorage.Shared.Format)
 local KillBanner = require(script.Parent.KillBannerController)
 local Bus = require(script.Parent.Parent.UI.Bus)
@@ -377,40 +378,170 @@ local function buildInvite(gui)
 	})
 	b.Activated:Connect(HudController.invite)
 	refs.invite = b
-	-- the shop and the rest (PanelController), right under it
+	-- your Shards, big and always there: the shop's button (PanelController). Every Shard you earn flies in
+	-- here (Net "Earned"); when you can afford something new it glows and says what
 	local s = Theme.new("TextButton", {
 		Name = "ShopButton",
 		Position = UDim2.fromOffset(16, 74),
-		Size = UDim2.fromOffset(200, 50),
+		Size = UDim2.fromOffset(200, 54),
 		BackgroundColor3 = C.ink,
 		Text = "",
 		AutoButtonColor = true,
 		Parent = gui,
-	}, { Theme.corner(4), Theme.stroke(2, C.ink) })
-	Theme.gem(s, 20, { Name = "Gem", Position = UDim2.fromOffset(6, 5) })
-	Theme.title({
-		Name = "Head",
-		Text = touch and "SHOP & LOCKER" or "SHOP & LOCKER  [B]",
-		Size = UDim2.new(1, -36, 0, 22),
-		Position = UDim2.fromOffset(30, 5),
+	}, { Theme.corner(6), Theme.stroke(3, Theme.SHARD) })
+	Theme.gem(s, 26, { Name = "Gem", Position = UDim2.fromOffset(7, 6) })
+	refs.shardCount = Theme.title({
+		Name = "Count",
+		Text = "0",
+		Size = UDim2.new(1, -104, 0, 30),
+		Position = UDim2.fromOffset(38, 3),
+		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = C.white,
 		outline = false,
 		Parent = s,
 	})
+	refs.shopHead = label({
+		Name = "Head",
+		Text = touch and "SHOP ›" or "SHOP [B]",
+		Size = UDim2.fromOffset(60, 14),
+		Position = UDim2.new(1, -64, 0, 11),
+		fit = 11,
+		TextColor3 = Theme.SHARD,
+		Font = Theme.Display,
+		Parent = s,
+	})
 	refs.shopLine = label({
 		Name = "Line",
-		Text = "Pass · goals · VIP",
-		Size = UDim2.new(1, -36, 0, 16),
-		Position = UDim2.fromOffset(30, 28),
-		fit = 12,
+		Text = "Win and knock out to earn",
+		Size = UDim2.new(1, -16, 0, 14),
+		Position = UDim2.fromOffset(8, 35),
+		fit = 11,
 		TextColor3 = C.grey,
 		Parent = s,
 	})
+	refs.shopScale = Theme.new("UIScale", { Scale = 1, Parent = s })
 	s.Activated:Connect(function()
 		local Panel = require(script.Parent.PanelController)
 		Panel.toggle()
 	end)
 	refs.shop = s
+end
+
+local GOLD = Color3.fromRGB(255, 200, 40)
+
+-- The Shards counter: the number (counting up to the real one), what you can buy next, and the +N that flies in
+local shown -- the number on the counter now (it counts up to the profile's)
+local nextCheck = 0
+local function cheapestNew(p)
+	-- the cheapest shop item you don't have yet: what the counter tells you to go and get
+	local best
+	for _, it in Cosmetics.list do
+		if it.source == "shop" and not Locker.owns(p, it.key) then
+			local price = Shop.price(it)
+			if not best or price < best.price then
+				best = { item = it, price = price }
+			end
+		end
+	end
+	return best
+end
+
+function HudController.paintShards()
+	if not refs.shardCount then
+		return
+	end
+	local p = Store.get("profile") or {}
+	local real = p.shards or 0
+	shown = shown or real
+	if shown ~= real then
+		-- (count up quickly; down at once: spending)
+		shown = real < shown and real or math.min(real, shown + math.max(1, math.ceil((real - shown) * 0.2)))
+	end
+	refs.shardCount.Text = Theme.commas(math.floor(shown))
+	local t = os.clock()
+	if t >= nextCheck then
+		nextCheck = t + 0.5
+		local nxt = cheapestNew(p)
+		local stroke = refs.shop:FindFirstChildOfClass("UIStroke")
+		if nxt and real >= nxt.price then
+			refs.shopLine.Text = `✨ YOU CAN BUY {string.upper(nxt.item.name)}!`
+			refs.shopLine.TextColor3 = GOLD
+			refs.canBuy = true
+		elseif nxt then
+			refs.shopLine.Text = `{Theme.commas(nxt.price - real)} more for {nxt.item.name}`
+			refs.shopLine.TextColor3 = C.grey
+			refs.canBuy = false
+		else
+			refs.shopLine.Text = "Everything's yours!"
+			refs.canBuy = false
+		end
+		if stroke then
+			stroke.Color = refs.canBuy and GOLD or Theme.SHARD
+		end
+	end
+	if refs.canBuy and refs.shopScale then
+		refs.shopScale.Scale = 1 + math.max(0, math.sin(t * 4)) * 0.04
+	end
+end
+
+-- A +N flying from the middle of the screen into the counter, the counter punching when it lands
+function HudController.earned(e)
+	if type(e) ~= "table" or type(e.amount) ~= "number" or not refs.shop then
+		return
+	end
+	local gui = refs.shop.Parent
+	local big = e.why == "match"
+	local fly = Theme.text({
+		Name = "Earned",
+		Text = `+{e.amount} ◆`,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.42),
+		Size = UDim2.fromOffset(big and 260 or 160, big and 70 or 46),
+		Font = Theme.Display,
+		TextColor3 = big and GOLD or Theme.SHARD,
+		TextStrokeTransparency = 0,
+		TextStrokeColor3 = C.ink,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		ZIndex = 20,
+		Parent = gui,
+	})
+	local why = ({ kill = "KNOCKOUT", headshot = "HEADSHOT", match = "MATCH REWARD", starter = "STARTER PACK" })[e.why or ""]
+	if why then
+		Theme.text({
+			Name = "Why",
+			Text = why,
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 1, -4),
+			Size = UDim2.new(1, 0, 0, 18),
+			fit = 14,
+			Font = Theme.Display,
+			TextColor3 = C.white,
+			TextStrokeTransparency = 0,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Parent = fly,
+		})
+	end
+	local scale = Theme.new("UIScale", { Scale = 0.3, Parent = fly })
+	Theme.tween(scale, 0.25, { Scale = 1.15 }, Enum.EasingStyle.Back)
+	task.delay(big and 0.9 or 0.45, function()
+		if not fly.Parent then
+			return
+		end
+		-- (into the gem on the counter: top left, where the button sits)
+		Theme.tween(fly, 0.45, { Position = UDim2.fromOffset(36, 92) }, Enum.EasingStyle.Quad)
+		Theme.tween(scale, 0.45, { Scale = 0.4 })
+		task.delay(0.45, function()
+			fly:Destroy()
+			if refs.shopScale then
+				refs.shopScale.Scale = 1.18
+				Theme.tween(refs.shopScale, 0.3, { Scale = 1 }, Enum.EasingStyle.Back)
+			end
+			pcall(function()
+				local Audio = require(script.Parent.AudioController)
+				Audio.play("count", 1.6, 0.5)
+			end)
+		end)
+	end)
 end
 
 -- The centre: crosshair, charge, hit markers, alerts -----------------------------------------------------------
@@ -1485,8 +1616,7 @@ local function step()
 		-- (clickable with the mouse between games, when first person lets go of it; I and B work any time)
 		refs.invite.Modal = false -- (the win screen keeps you in play: no cursor; I, B and Tab work any time)
 		refs.shop.Modal = false
-		local p = Store.get("profile") or {}
-		refs.shopLine.Text = `{Theme.commas(p.shards or 0)} SHARDS  ·  PASS TIER {(p.season or {}).tier or 0}`
+		HudController.paintShards()
 	end
 	-- the panel's open: the middle of the HUD steps aside
 	if Layout.panel() then
@@ -1572,6 +1702,7 @@ function HudController:init()
 	Net.listen("Alert", function(text, color, seconds)
 		HudController.alert(text, color, seconds)
 	end)
+	Net.listen("Earned", HudController.earned)
 	Net.listen("Toast", function(text, kind)
 		HudController.toast(text, kind)
 	end)

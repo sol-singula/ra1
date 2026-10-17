@@ -602,12 +602,35 @@ function AnalyticsService:Init(registry)
 			track(player, kind, payload)
 		elseif kind == "focus" then
 			track(player, kind, payload)
+		elseif kind == "shop" then
+			-- the panel opened (or changed tab): shop_open with the tab
+			track(
+				player,
+				"shop_open",
+				{
+					tab = type(payload.tab) == "string" and string.sub(payload.tab, 1, 16) or nil,
+					opening = payload.opening == true,
+				}
+			)
 		end
 	end)
 	Players.PlayerAdded:Connect(function(player)
 		if not sessions[player] then
 			begin(player)
 		end
+	end)
+	-- every Robux prompt's end: bought or backed out (the funnel's last step)
+	pcall(function()
+		local Market = game:GetService("MarketplaceService")
+		Market.PromptProductPurchaseFinished:Connect(function(userId, productId, bought)
+			local player = Players:GetPlayerByUserId(userId)
+			if player then
+				track(player, "prompt_closed", { product = productId, bought = bought == true, pass = false })
+			end
+		end)
+		Market.PromptGamePassPurchaseFinished:Connect(function(player, passId, bought)
+			track(player, "prompt_closed", { product = passId, bought = bought == true, pass = true })
+		end)
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		local s = sessions[player]

@@ -32,6 +32,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Formulas = require(ReplicatedStorage.Shared.Formulas)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Notify = require(script.Parent.Parent.Notify)
 local Signal = require(ReplicatedStorage.Shared.Signal)
@@ -54,7 +55,7 @@ local MatchService = {
 	Started = Signal.new("MatchService.Started"), -- (mapKey, matchId)
 }
 
-local data, teams, arena, combat, build, progress
+local data, teams, arena, combat, build, progress, economy
 local phase = "loading"
 local phaseEnds = 0
 local frontline = 0
@@ -332,6 +333,16 @@ function MatchService:_onKilled(victim, killer, info)
 	if valid then
 		local ks = statsOf(killer)
 		ks.kills += 1
+		-- Shards for the kill, right now (up to EARN.killCap kills a match), the +N flying to their counter
+		if economy and typeof(killer) == "Instance" and ks.kills <= Shop.EARN.killCap then
+			pcall(
+				economy.Add,
+				economy,
+				killer,
+				Shop.EARN.perKill + (info.head and Shop.EARN.headshot or 0),
+				info.head and "headshot" or "kill"
+			)
+		end
 		if info.head then
 			ks.headshots += 1
 		end
@@ -704,6 +715,7 @@ end
 
 function MatchService:Init(registry)
 	data = registry.PlayerDataService
+	economy = registry.EconomyService
 	teams = registry.TeamService
 	arena = registry.ArenaService
 	combat = registry.CombatService

@@ -2133,6 +2133,8 @@ function PanelController.open(tab)
 	Layout.modal("panel", refs.panel)
 	Layout.setPanel(true)
 	if opening or was ~= current then
+		-- (for the analytics: who opens the shop, on which tab, and how they got there)
+		pcall(Net.send, "Analytics", "shop", { tab = current, opening = opening })
 		if refs.tour then
 			finishTour() -- (moved on mid-tour: it's been seen)
 		else
