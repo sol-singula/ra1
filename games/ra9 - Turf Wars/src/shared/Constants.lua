@@ -73,8 +73,8 @@ Constants.BOT_REACT = 0.7 -- seconds before a bot starts drawing on someone new
 Constants.BOT_NAMES = { "Ace", "Echo", "Nova", "Blitz", "Rook", "Vex", "Juno", "Kite", "Onyx", "Pike" }
 
 -- Building (§7)
-Constants.BUILD_BUDGET = 100 -- points a player gets each build phase
-Constants.TEAM_STRUCTURES = 60 -- standing structures a team may have (+2 per player past 10)
+Constants.BUILD_BUDGET = 120 -- points a player gets each build phase
+Constants.TEAM_STRUCTURES = 72 -- standing structures a team may have (+2 per player past 10)
 Constants.BUILD_REACH = 44 -- studs from you to the structure
 Constants.BUILD_FRONT_GAP = 0 -- cells kept free on your side of the frontline (0: build right up to it)
 

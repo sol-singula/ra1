@@ -115,7 +115,7 @@ height capped, nothing outside the arena, invalid spots explained. Mobile: a lar
 
 * Grid: 4-stud cells; structures go only on **your own turf** (the frontline is the limit), never within the spawn
   zones, never on the map's solid geometry.
-* Budget: 100 points a player each build phase; a team cap of 60 standing structures (raised with team size).
+* Budget: 120 points a player each build phase; a team cap of 72 standing structures (raised with team size).
 * A wall can't be placed if it would close the last open cell across a lane (the server checks a free path across
   the battlefield's width at that row).
 * Structures take arrow damage (heavy bow more); destroyed pieces leave nothing.

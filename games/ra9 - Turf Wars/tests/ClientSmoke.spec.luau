@@ -330,6 +330,20 @@ for _ = 1, Constants.FLIP_EVERY do
 	end
 end
 check("the 4th jump flips", flips == 1 and Move.flipping())
+do
+	local cam = Engine.game:GetService("Workspace").CurrentCamera
+	local CamC = Engine.require(tree.client.Controllers.CameraController)
+	local fov0 = CamC.targetFov()
+	local still = true
+	for _ = 1, 8 do
+		local before = cam.CFrame.LookVector
+		Engine.advance(0.05)
+		if (cam.CFrame.LookVector - before).Magnitude > 0.001 or CamC.targetFov() ~= fov0 then
+			still = false
+		end
+	end
+	check("...and the camera stays exactly as it is (no spin, dip or zoom)", still)
+end
 
 -- Crouch ---------------------------------------------------------------------------------------------------------
 Engine.advance(2)

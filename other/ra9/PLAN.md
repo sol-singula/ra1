@@ -36,7 +36,7 @@ two railed bridges, tall angled slabs, an open floor). Each has its own off-whit
   against head and body spheres and every solid box (map and structures), and decides hits (heads ×1.35),
   knockback (capped), kills and assists (6 s window). No friendly fire, no damage outside the fight.
 * Seven structures on the 4-stud grid (`Data/Structures`), only on your own turf, a cell back from the line, out of
-  the spawn zones, within reach; 100 points a player each build phase, a team cap; no wall may close the last
+  the spawn zones, within reach; 120 points a player each build phase, a team cap; no wall may close the last
   openings of any row across the field; arrows chip them, the heavy bow breaks them; your own refunded in the build
   phase.
 

@@ -2,7 +2,7 @@
 The first-person camera (master plan §6): locked first person, a steady field of view that widens a little when
 you sprint and tightens as you draw (a light zoom for aiming), small shakes (hits, the horn) that the player can
 turn off, and the sensitivity setting. Other controllers add their own offsets through CameraController.offset
-(the front flip's roll, the slide's dip), applied after Roblox's camera each frame.
+(the slide's dip), applied after Roblox's camera each frame.
 
 The mouse: hidden in play (the HUD draws the crosshair), shown and free while a menu needs it: the panel (shop,
 pass, locker, goals), a question card, the results card (once it closes, the wait for the next game is free running

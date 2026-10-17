@@ -7,9 +7,8 @@ Movement (master plan §6): sprint, slide, the front flip, and the knockback you
     bow steadier in your hands. Everyone sees you crouch (MoveService lowers you on the server too).
   * Slide: crouch while sprinting (or the touch SLIDE button): a short burst forward, low to the ground, on a
     cooldown. The camera dips with it, and if you're still holding crouch you stay down at the end.
-  * Front flip: every FLIP_EVERY-th jump is a flip jump. Your view stays level (no spinning camera): it only gives a
-    small forward dip and a wider view through the jump, so it feels quick without making anyone dizzy. Cosmetic
-    only (your direction and speed don't change), and off in the settings if you don't like it.
+  * Front flip: every FLIP_EVERY-th jump is a flip jump. Your camera is never touched (no spin, no dip, no zoom):
+    your view stays exactly as it is. Cosmetic only (your direction and speed don't change), and off in the settings.
   * Knockback: the server's Hurt carries a push; your client owns your body, so it applies it here.
 
 Movement runs on your client (Roblox's way: the client owns its character); the server only checks the outcome.
@@ -148,18 +147,9 @@ local function step(dt)
 	hum.CameraOffset = Vector3.new(0, camY, 0)
 	hum.WalkSpeed = speed
 	CameraController.setFov("sprint", (sprinting and (hum.MoveDirection or Vector3.zero).Magnitude > 0.1) and 8 or nil)
-	-- the flip jump: a small forward dip of the view and a wider view, then back (never a full spin)
-	if flipStart then
-		local f = (os.clock() - flipStart) / FLIP_SECONDS
-		if f >= 1 then
-			flipStart = nil
-			CameraController.offset("flip", nil)
-			CameraController.setFov("flip", nil)
-		else
-			local k = math.sin(f * math.pi)
-			CameraController.offset("flip", CFrame.Angles(-math.rad(9) * k, 0, 0))
-			CameraController.setFov("flip", 7 * k)
-		end
+	-- the flip jump: the camera is left alone (no dip, no zoom, no spin)
+	if flipStart and os.clock() - flipStart >= FLIP_SECONDS then
+		flipStart = nil
 	end
 end
 
