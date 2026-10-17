@@ -22,7 +22,8 @@ local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Layout = require(script.Parent.Parent.UI.Layout)
 
-local FeedbackController = { Name = "FeedbackController", Order = 50 }
+-- (a match's: not in the lobby, which has its own screens)
+local FeedbackController = { Name = "FeedbackController", Order = 50, Modes = { "turf", "ctf", "brawl" } }
 
 local C = Theme.Color
 local player = Players.LocalPlayer

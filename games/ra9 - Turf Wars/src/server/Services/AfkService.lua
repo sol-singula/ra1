@@ -23,6 +23,7 @@ local Admins = require(script.Parent.Parent.Admins)
 
 local AfkService = {
 	Name = "AfkService",
+	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
 	Dependencies = { "MatchService", "TeamService", "CombatService", "BuildService" },
 }
 

@@ -170,7 +170,7 @@ local function pullBack(player, s, to)
 end
 
 local function insideStructure(pos)
-	for _, sct in build:All() do
+	for _, sct in build and build:All() or {} do
 		local mn, mx = sct.boxMin, sct.boxMax
 		if mn and mx then
 			local inset = 0.6

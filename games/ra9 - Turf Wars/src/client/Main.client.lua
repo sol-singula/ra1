@@ -1,7 +1,9 @@
 -- Client bootstrap: landscape on phones, start the controllers, then tell the server the UI is listening.
+-- A controller with Modes = { "turf", "ctf" } (Data/Modes) starts only in those places; none: everywhere.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Modes = require(ReplicatedStorage.Shared.Data.Modes)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Store = require(script.Parent.Store)
 local Theme = require(script.Parent.UI.Theme)
@@ -16,7 +18,10 @@ end)
 local controllers = {}
 for _, module in script.Parent.Controllers:GetChildren() do
 	if module:IsA("ModuleScript") then
-		table.insert(controllers, require(module))
+		local controller = require(module)
+		if Modes.runsIn(controller) then
+			table.insert(controllers, controller)
+		end
 	end
 end
 table.sort(controllers, function(a, b)

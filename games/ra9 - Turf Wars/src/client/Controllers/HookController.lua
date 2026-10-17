@@ -31,7 +31,8 @@ local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local AudioController = require(script.Parent.AudioController)
 
-local HookController = { Name = "HookController", Order = 72 }
+-- (a match's: not in the lobby, which has its own screens)
+local HookController = { Name = "HookController", Order = 72, Modes = { "turf", "ctf", "brawl" } }
 
 local C = Theme.Color
 local player = Players.LocalPlayer

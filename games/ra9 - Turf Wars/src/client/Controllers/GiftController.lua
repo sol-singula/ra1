@@ -29,7 +29,8 @@ local Layout = require(script.Parent.Parent.UI.Layout)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local PanelController = require(script.Parent.PanelController)
 
-local GiftController = { Name = "GiftController", Order = 52 }
+-- (a match's: not in the lobby, which has its own screens)
+local GiftController = { Name = "GiftController", Order = 52, Modes = { "turf", "ctf", "brawl" } }
 
 local C = Theme.Color
 local GOLD = Icons.GOLD

@@ -50,10 +50,11 @@ local Device = require(script.Parent.Parent.UI.Device)
 local Icons = require(script.Parent.Parent.UI.Icons)
 local BuildController = require(script.Parent.BuildController)
 
-local HudController = { Name = "HudController", Order = 40 }
+-- (a match's: not in the lobby, which has its own screens)
+local HudController = { Name = "HudController", Order = 40, Modes = { "turf", "ctf", "brawl" } }
 
 local C = Theme.Color
-local RED, BLUE = Constants.TEAM_COLOR.red, Constants.TEAM_COLOR.blue
+local RED = C.red -- (the HUD's own red: a kill, a warning. The teams' colours are Constants.TEAM_COLOR's, read when painted)
 local player = Players.LocalPlayer
 local refs = {}
 HudController.refs = refs
@@ -230,7 +231,7 @@ local function buildTop(gui)
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 38),
 		Size = UDim2.fromOffset(520, 16),
-		BackgroundColor3 = BLUE,
+		BackgroundColor3 = Constants.TEAM_COLOR.blue,
 		BorderSizePixel = 0,
 		Parent = top,
 	}, { Theme.corner(3), Theme.stroke(2, C.ink) })
@@ -240,7 +241,7 @@ local function buildTop(gui)
 	refs.redFill = Theme.new("Frame", {
 		Name = "Red",
 		Size = UDim2.new(0.5, 0, 1, 0),
-		BackgroundColor3 = RED,
+		BackgroundColor3 = Constants.TEAM_COLOR.red,
 		BorderSizePixel = 0,
 		Parent = bar,
 	}, { Theme.corner(3) })
@@ -255,22 +256,22 @@ local function buildTop(gui)
 	}, { Theme.stroke(1.5, C.ink) })
 	refs.redCount = label({
 		Name = "RedCount",
-		Text = "RED 0",
+		Text = `{Constants.TEAM_NAME.red} 0`,
 		Size = UDim2.fromOffset(110, 18),
 		Position = UDim2.new(0, -2, 1, 2),
 		TextSize = 13,
-		TextColor3 = RED,
+		TextColor3 = Constants.TEAM_COLOR.red,
 		Font = Theme.Display,
 		Parent = bar,
 	})
 	refs.blueCount = label({
 		Name = "BlueCount",
-		Text = "BLUE 0",
+		Text = `{Constants.TEAM_NAME.blue} 0`,
 		AnchorPoint = Vector2.new(1, 0),
 		Size = UDim2.fromOffset(110, 18),
 		Position = UDim2.new(1, 2, 1, 2),
 		TextSize = 13,
-		TextColor3 = BLUE,
+		TextColor3 = Constants.TEAM_COLOR.blue,
 		TextXAlignment = Enum.TextXAlignment.Right,
 		Font = Theme.Display,
 		Parent = bar,
@@ -317,15 +318,17 @@ function HudController.updateTop()
 		refs.lineMark.Position = UDim2.new(f, 0, 0.5, 0)
 		refs.lineMark.Size = UDim2.new(0, 4 + danger * beat * 6, 1, 10 + danger * beat * 8)
 		local leader = f > 0.5 and refs.redFill or refs.bar
-		local base = f > 0.5 and RED or BLUE
-		refs.redFill.BackgroundColor3 = RED
-		refs.bar.BackgroundColor3 = BLUE
+		local base = f > 0.5 and Constants.TEAM_COLOR.red or Constants.TEAM_COLOR.blue
+		refs.redFill.BackgroundColor3 = Constants.TEAM_COLOR.red
+		refs.bar.BackgroundColor3 = Constants.TEAM_COLOR.blue
 		leader.BackgroundColor3 = base:Lerp(Color3.new(1, 1, 1), danger * beat * 0.45)
 		refs.barScale.Scale = 1 + danger * beat * 0.07
 		local shake = danger > 0.75 and (danger - 0.75) * 4 * 3 or 0
 		refs.bar.Position = UDim2.new(0.5, (math.random() - 0.5) * shake, 0, 38 + (math.random() - 0.5) * shake)
-		refs.redCount.Text = `RED {m.red or 0}`
-		refs.blueCount.Text = `BLUE {m.blue or 0}`
+		refs.redCount.Text = `{Constants.TEAM_NAME.red} {m.red or 0}`
+		refs.blueCount.Text = `{Constants.TEAM_NAME.blue} {m.blue or 0}`
+		refs.redCount.TextColor3 = Constants.TEAM_COLOR.red
+		refs.blueCount.TextColor3 = Constants.TEAM_COLOR.blue
 		refs.mapName.Text = "" -- (the map's name stays off the bar: "New game: ..." says it once)
 	end
 end

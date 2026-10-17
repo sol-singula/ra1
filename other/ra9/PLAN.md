@@ -810,6 +810,55 @@ and back up beside it on your side, not in a wall, protected; walled in behind i
 rally; knocked down, the spawn room again; then a new one may go up), ClientSmoke (the pieces' tones, the Keep Wall's
 dark stone, the Watchtower's team roof, nothing round in the tray, the new names, the hint).
 
+## Places: one experience, four places
+
+Turf Wars becomes a universe: a **lobby** everyone lands in, and three games you teleport to from it, each a place
+of its own running this same code. Which place a server is comes from one StringValue, `ReplicatedStorage.Mode`
+(`places/*.project.json` put it there; `default.project.json`, the turf place, has none and means turf):
+`Constants.MODE` reads it at require time and `Constants.applyMode(key)` sets the sides' names and colours for it
+(the team keys stay `red` and `blue` everywhere; only `TEAM_NAME`, `TEAM_COLOR`, `TURF_COLOR`, `BUILD_COLOR`,
+`ARMOR_COLOR` and the ground, `MAP_GROUND`, change, in place, so every HUD, banner, castle piece, bot and arena
+recolours with the mode). `Data/Modes` lists what you can play (`Modes.LIST`), each mode's name, blurb, place id,
+minimum players and whether it has bots, and `Modes.multiPlace()`: true only once every place id is set.
+
+| Place | Mode | Project | Build | Place id |
+|---|---|---|---|---|
+| **Lobby** (the start place) | `lobby` | `places/lobby.project.json` | `Lobby.rbxl` | **101991401831698** (the current place becomes the lobby) |
+| Turf Wars | `turf` | `default.project.json` | `TurfWars.rbxl` | new (make it in the Creator Dashboard, put the id in `Data/Modes.lua`) |
+| Capture the Flag (purple v orange) | `ctf` | `places/ctf.project.json` | `CTF.rbxl` | new |
+| Bot Brawl (green, co-op against bots) | `brawl` | `places/brawl.project.json` | `Brawl.rbxl` | new |
+
+`tools/build_places.sh` builds all four with Rojo (`ROJO=/path/to/rojo` picks the binary). The owner makes the three
+new places under the experience in the Creator Dashboard (Places → Create), publishes each `.rbxl` to its place,
+and writes the ids into `Data/Modes.lua` (`Modes.turf.placeId`, `Modes.ctf.placeId`, `Modes.brawl.placeId`,
+`Modes.LOBBY_PLACE = 101991401831698`). Until then `Modes.multiPlace()` is false and everything behaves as before:
+one place, no teleports (PLAY only says the mode isn't open yet), the lobby's features dormant.
+
+* **The loader** (`server/Loader.lua`, and the client's `Main.client.lua` the same way): a service or controller
+  with `Modes = { "turf", "ctf", "brawl" }` runs only in those places; none means everywhere. In the lobby the
+  match's services (Match, Team, Build, Bot, Arena, Afk, Hook, Gift, Feedback, Invite, Tutorial, MissionControl)
+  and the match's screens (the HUD, the build tray, the tutorial, the hook, the gift and invite cards, the deck
+  signs) don't run. A skipped service is nil in the registry; the ones that run everywhere (PlayerData, Economy,
+  Shop, Progress, Season, Leaderboard, Analytics, Admin, GameLog, MemeArt, AntiCheat, Combat for the duels, Party,
+  Status, Move) nil-check what they look up. A service whose every dependency is skipped is skipped too.
+* **PlaceService**: `ToMode(player, key)` and `ToLobby(player)` teleport (TeleportAsync, under pcall, tried again
+  once, a toast when it still fails); a party's leader takes the whole party, with the party in the teleport data as
+  PartyService:Move sends it, and `from = Constants.MODE` so the place they land in can say where they came from
+  (`PlaceService.arrivedFrom(player)`). Net "Play" (a mode key, or none for the fullest mode) and "ToLobby".
+* **PopulationService**: every server writes `{ mode, n, at }` (real people; the bots never) under its JobId to a
+  MemoryStore sorted map every 20 s and on every join and leave, reads every line back every 20 s and sums them:
+  `Counts()` → `{ turf, ctf, brawl, lobby }`, `Best()` → the fullest mode (a tie: turf, then ctf, then brawl),
+  pushed to the clients as Net "Population" on join and whenever it moves. Without a MemoryStore it knows this
+  server alone.
+* **In a match**: a small ⌂ LOBBY button at the foot of the panel (only once the places are made) sends "ToLobby".
+* **Joining**: the turf place still takes a brand-new player to their private practice first; a returning player
+  goes straight in. In the lobby nothing match-related runs (the lobby's own services spawn and keep the players).
+* Net: server events Population, Lobby, Ctf, Brawl, Duel, Crate; client events Play, ToLobby, Duel, Crate, Verify.
+* Tests: `tests/ModeSmoke.spec.luau` (applyMode for all four modes and back, Modes.multiPlace, the three project
+  files, a turf server's count without its bot, the lobby booting with the match's services skipped and a player
+  joining with no team, the population sums and Best, PLAY and LOBBY refused while closed and teleporting, a party
+  together, once open; a failed teleport).
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

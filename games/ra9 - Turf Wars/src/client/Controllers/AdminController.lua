@@ -34,7 +34,7 @@ local SpectateController = require(script.Parent.SpectateController)
 local AdminController = { Name = "AdminController", Order = 49 }
 
 local C = Theme.Color
-local RED, BLUE = Constants.TEAM_COLOR.red, Constants.TEAM_COLOR.blue
+local RED = C.red -- (the panel's own red: the dangerous buttons. The teams' colours are Constants.TEAM_COLOR's)
 local player = Players.LocalPlayer
 
 -- The geometry (design pixels): the same box as the shop panel, so nothing new lands on the HUD
@@ -192,7 +192,7 @@ local function serversTab(body)
 		label(
 			card,
 			"Line",
-			`{string.upper(s.map or "?")} · {string.upper(s.phase or "?")} · {s.players or 0} ON · RED {s.red or 0} · BLUE {s.blue or 0}`,
+			`{string.upper(s.map or "?")} · {string.upper(s.phase or "?")} · {s.players or 0} ON · {Constants.TEAM_NAME.red} {s.red or 0} · {Constants.TEAM_NAME.blue} {s.blue or 0}`,
 			10,
 			6,
 			W - 130,
@@ -224,19 +224,19 @@ local function matchTab(body)
 	y = row(body, y, {
 		{
 			"RedWins",
-			"RED WINS",
+			`{Constants.TEAM_NAME.red} WINS`,
 			function()
 				send("end", nil, "red")
 			end,
-			RED,
+			Constants.TEAM_COLOR.red,
 		},
 		{
 			"BlueWins",
-			"BLUE WINS",
+			`{Constants.TEAM_NAME.blue} WINS`,
 			function()
 				send("end", nil, "blue")
 			end,
-			BLUE,
+			Constants.TEAM_COLOR.blue,
 		},
 		{
 			"Draw",
@@ -351,19 +351,19 @@ local function playersTab(body)
 	y = row(body, y, {
 		{
 			"TeamRed",
-			"RED TEAM",
+			`{Constants.TEAM_NAME.red} TEAM`,
 			function()
 				send("team", id, "red")
 			end,
-			RED,
+			Constants.TEAM_COLOR.red,
 		},
 		{
 			"TeamBlue",
-			"BLUE TEAM",
+			`{Constants.TEAM_NAME.blue} TEAM`,
 			function()
 				send("team", id, "blue")
 			end,
-			BLUE,
+			Constants.TEAM_COLOR.blue,
 		},
 		{
 			"Kill",

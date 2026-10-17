@@ -41,6 +41,7 @@ local Admins = require(script.Parent.Parent.Admins)
 
 local MatchService = {
 	Name = "MatchService",
+	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
 	Dependencies = {
 		"PlayerDataService",
 		"TeamService",
@@ -501,9 +502,13 @@ function MatchService:Victory(winner)
 		})
 	end
 	-- (no centre alert here: the results card says who won; a banner for everyone says it too, and who was MVP)
-	local winName = winner == "red" and "Red" or (winner == "blue" and "Blue" or nil)
+	local winName = Constants.TEAM_NAME[winner] -- (RED, or the mode's name for that side: Data/Modes)
 	if winName then
-		Notify.all(`{winName} team wins!`, "win", { color = Constants.TEAM_COLOR[winner] })
+		Notify.all(
+			`{string.upper(string.sub(winName, 1, 1))}{string.lower(string.sub(winName, 2))} team wins!`,
+			"win",
+			{ color = Constants.TEAM_COLOR[winner] }
+		)
 	else
 		Notify.all("It's a draw!", "win")
 	end

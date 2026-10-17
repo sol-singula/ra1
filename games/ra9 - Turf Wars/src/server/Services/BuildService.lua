@@ -46,6 +46,7 @@ local Structures = require(ReplicatedStorage.Shared.Data.Structures)
 
 local BuildService = {
 	Name = "BuildService",
+	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
 	Dependencies = { "TeamService", "ArenaService", "CombatService" },
 	Built = Signal.new("BuildService.Built"), -- (player, structure)
 	Destroyed = Signal.new("BuildService.Destroyed"), -- (structure, attacker?)

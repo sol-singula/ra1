@@ -24,6 +24,7 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local ArenaService = {
 	Name = "ArenaService",
+	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
 	Dependencies = {},
 	Loaded = Signal.new("ArenaService.Loaded"), -- (arena)
 }

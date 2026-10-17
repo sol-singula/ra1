@@ -61,6 +61,7 @@ local Structures = require(ReplicatedStorage.Shared.Data.Structures)
 
 local TutorialService = {
 	Name = "TutorialService",
+	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
 	Dependencies = {
 		"PlayerDataService",
 		"MatchService",

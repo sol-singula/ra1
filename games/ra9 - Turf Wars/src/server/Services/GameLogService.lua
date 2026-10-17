@@ -178,7 +178,7 @@ local function onMatchEnded(winner, results)
 		end
 	end
 	for player, s in sessions do
-		local team = teams:Team(player)
+		local team = teams and teams:Team(player)
 		if team then
 			s.matches += 1
 			if team == winner then
@@ -240,8 +240,10 @@ function GameLogService:Init(registry)
 			url = profileUrl(player),
 		})
 	end)
-	registry.MatchService.Started:Connect(onMatchStarted)
-	registry.MatchService.Ended:Connect(onMatchEnded)
+	if registry.MatchService then -- (not in the lobby)
+		registry.MatchService.Started:Connect(onMatchStarted)
+		registry.MatchService.Ended:Connect(onMatchEnded)
+	end
 	registry.ShopService.Bought:Connect(onBought)
 	pcall(function()
 		ScriptContext.Error:Connect(function(message, trace)

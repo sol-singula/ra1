@@ -1,12 +1,21 @@
 -- Turf Wars (ra9): every tunable number in one place (master plan §1-§8).
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 local Constants = {}
 
 Constants.GAME = "ra9"
 Constants.GAME_NAME = "Turf Wars"
 
+-- The place this server is (Data/Modes): "lobby" (the start place), "turf" (this game), "ctf" or "brawl". Read
+-- once, from a StringValue named Mode under ReplicatedStorage (places/*.project.json put it there); none means
+-- turf, as the one place has always been. Constants.applyMode(key) sets it and the team names and colours below
+-- for it (tests call it before the scripts run; it's safe to call again).
+Constants.MODES = { "lobby", "turf", "ctf", "brawl" }
+Constants.MODE = "turf"
+
 -- Server and teams (§1, §2A)
 Constants.MAX_PLAYERS = 40
-Constants.TEAMS = { "red", "blue" }
+Constants.TEAMS = { "red", "blue" } -- (the keys stay red and blue in every mode: only the names and colours change)
 Constants.TEAM_NAME = { red = "RED", blue = "BLUE" }
 Constants.TEAM_COLOR = { red = Color3.fromRGB(235, 40, 45), blue = Color3.fromRGB(35, 110, 245) }
 -- the turf on the ground: a softer version of the team colour, so players stand out from it
@@ -237,6 +246,78 @@ Constants.DARK = Color3.fromRGB(150, 152, 158)
 -- shade on the Keep Wall's stone and the copings
 Constants.BUILD_COLOR = { red = Color3.fromRGB(226, 70, 72), blue = Color3.fromRGB(62, 126, 236) }
 Constants.ARMOR_COLOR = { red = Color3.fromRGB(128, 26, 32), blue = Color3.fromRGB(24, 56, 140) }
+-- The ground's shades, when a mode has its own (ArenaBuilder and World/Practice read them; empty: the map's own
+-- white and grey): turf (an unpainted strip), deck (the spawn deck's floor) and ground (the floor past the walls)
+Constants.MAP_GROUND = {}
+
+-- Each mode's look: the same flat SmoothPlastic world, its two sides in other colours. Turf Wars (and the lobby)
+-- red v blue; Capture the Flag purple v orange; Bot Brawl the people (the "red" side) in grass green against the
+-- bots (the "blue" side) in shadow grey, on green ground. Every table is filled in place (modules keep references
+-- to them), so a mode switch recolours the whole game at once.
+local function rgb(r, g, b)
+	return Color3.fromRGB(r, g, b)
+end
+local TURF_LOOK = {
+	name = { red = "RED", blue = "BLUE" },
+	team = { red = rgb(235, 40, 45), blue = rgb(35, 110, 245) },
+	turf = { red = rgb(240, 120, 118), blue = rgb(120, 165, 245) },
+	build = { red = rgb(226, 70, 72), blue = rgb(62, 126, 236) },
+	armor = { red = rgb(128, 26, 32), blue = rgb(24, 56, 140) },
+	ground = {},
+}
+Constants.MODE_LOOK = {
+	turf = TURF_LOOK,
+	lobby = TURF_LOOK,
+	ctf = {
+		name = { red = "PURPLE", blue = "ORANGE" },
+		team = { red = rgb(150, 70, 230), blue = rgb(255, 140, 30) },
+		turf = { red = rgb(195, 160, 240), blue = rgb(255, 195, 135) },
+		build = { red = rgb(140, 80, 220), blue = rgb(240, 130, 40) },
+		armor = { red = rgb(80, 30, 140), blue = rgb(150, 70, 10) },
+		ground = {},
+	},
+	brawl = {
+		name = { red = "GREEN", blue = "SHADOW" },
+		team = { red = rgb(70, 180, 80), blue = rgb(60, 60, 70) },
+		turf = { red = rgb(150, 210, 150), blue = rgb(125, 128, 138) },
+		build = { red = rgb(62, 160, 72), blue = rgb(72, 72, 84) },
+		armor = { red = rgb(32, 95, 42), blue = rgb(34, 34, 42) },
+		ground = { turf = rgb(200, 228, 190), deck = rgb(178, 216, 168), ground = rgb(162, 206, 152) },
+	},
+}
+
+local function fill(into, from)
+	table.clear(into)
+	for k, v in from do
+		into[k] = v
+	end
+end
+
+-- Set the mode (one of Constants.MODES) and its look. An unknown key means turf.
+function Constants.applyMode(key)
+	local look = Constants.MODE_LOOK[key]
+	if not look then
+		key, look = "turf", TURF_LOOK
+	end
+	Constants.MODE = key
+	fill(Constants.TEAM_NAME, look.name)
+	fill(Constants.TEAM_COLOR, look.team)
+	fill(Constants.TURF_COLOR, look.turf)
+	fill(Constants.BUILD_COLOR, look.build)
+	fill(Constants.ARMOR_COLOR, look.armor)
+	fill(Constants.MAP_GROUND, look.ground)
+	return key
+end
+
+-- The place's own mode: the Mode value Rojo put under ReplicatedStorage (places/*.project.json), else turf
+function Constants.placeMode()
+	local ok, mode = pcall(function()
+		local v = ReplicatedStorage:FindFirstChild("Mode")
+		return v and v.Value
+	end)
+	return ok and type(mode) == "string" and Constants.MODE_LOOK[mode] and mode or "turf"
+end
+Constants.applyMode(Constants.placeMode())
 
 -- Sounds: the raw clips. The studio's uploaded set (shared with the other games) and a few of Roblox's own client
 -- sounds (rbxasset://sounds/...). AudioController layers, pitches and shapes these into every cue the game plays

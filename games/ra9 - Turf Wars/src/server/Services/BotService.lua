@@ -55,6 +55,7 @@ local BotNav = require(script.Parent.Parent.BotNav)
 
 local BotService = {
 	Name = "BotService",
+	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
 	Dependencies = { "TeamService", "CombatService", "MatchService", "ArenaService", "BuildService" },
 }
 

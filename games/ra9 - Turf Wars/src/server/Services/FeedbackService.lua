@@ -28,6 +28,7 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local FeedbackService = {
 	Name = "FeedbackService",
+	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
 	Dependencies = { "PlayerDataService", "TeamService", "MatchService", "ProgressService", "GiftService" },
 	Asked = Signal.new("FeedbackService.Asked"), -- (player, kind)
 	Answered = Signal.new("FeedbackService.Answered"), -- (player, kind, answer)

@@ -437,7 +437,7 @@ function Cosmetics.rainbow(t, offset)
 	return Color3.fromHSV(((t or os.clock()) * 0.25 + (offset or 0)) % 1, 0.75, 1)
 end
 function Cosmetics.color(token, team)
-	local c = TEAM[team or ""] or Color3.fromRGB(235, 40, 45)
+	local c = TEAM[team or ""] or TEAM.red
 	if NAMED[token] then
 		return NAMED[token]
 	elseif token == "rainbow" then

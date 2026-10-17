@@ -1474,10 +1474,27 @@ function CombatService:Bombs()
 	return bombs
 end
 
+-- (the lobby: no TeamService or ArenaService there. Nobody has a team, so no arrow ever counts as an enemy's
+-- and nothing can be hurt until the lobby's own services say so; there are no solids and no decks)
+local NO_TEAMS = {
+	Team = function() end,
+}
+local NO_ARENA = {
+	Solids = function()
+		return {}
+	end,
+	Inside = function()
+		return true
+	end,
+	OnDeck = function()
+		return false
+	end,
+}
+
 function CombatService:Init(registry)
 	data = registry.PlayerDataService
-	teams = registry.TeamService
-	arena = registry.ArenaService
+	teams = registry.TeamService or NO_TEAMS
+	arena = registry.ArenaService or NO_ARENA
 	Net.on("Equip", function(player, key)
 		if type(key) == "string" then
 			self:Equip(player, key)

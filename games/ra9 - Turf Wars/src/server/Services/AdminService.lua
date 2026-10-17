@@ -88,7 +88,7 @@ local function rootOf(player)
 end
 
 local function playing()
-	local p = match:Phase()
+	local p = match and match:Phase()
 	return p == "build" or p == "fight"
 end
 
@@ -115,22 +115,23 @@ end
 -- The server list -----------------------------------------------------------------------------------------------
 function AdminService:Info()
 	local names = {}
-	local people = match:People()
+	local people = match and match:People() or Players:GetPlayers()
 	for i, p in people do
 		if i <= 40 then
 			table.insert(names, p.DisplayName)
 		end
 	end
-	local m = Maps.get(match:MapKey())
+	local m = match and Maps.get(match:MapKey())
 	return {
 		jobId = jobId,
+		mode = Constants.MODE,
 		players = #people,
 		names = names,
-		map = m and m.name or "?",
-		phase = match:Phase(),
-		red = teams:Count("red"),
-		blue = teams:Count("blue"),
-		frontline = math.floor(match:Frontline()),
+		map = m and m.name or (match and "?" or Constants.MODE),
+		phase = match and match:Phase() or Constants.MODE,
+		red = teams and teams:Count("red") or 0,
+		blue = teams and teams:Count("blue") or 0,
+		frontline = match and math.floor(match:Frontline()) or 0,
 		at = os.time(),
 	}
 end
@@ -178,7 +179,7 @@ function AdminService:Push(admin, servers, extra)
 			id = p.UserId,
 			name = p.DisplayName,
 			user = p.Name,
-			team = teams:Team(p),
+			team = teams and teams:Team(p) or nil,
 			alive = combat:Alive(p),
 			admin = Admins.isAdmin(p),
 			spectating = Admins.spectating(p),
@@ -188,10 +189,11 @@ function AdminService:Push(admin, servers, extra)
 	local state = {
 		jobId = jobId,
 		players = list,
-		map = match:MapKey(),
-		phase = match:Phase(),
-		bots = bots:Enabled(),
-		frozen = match:Frozen(),
+		mode = Constants.MODE,
+		map = match and match:MapKey() or nil,
+		phase = match and match:Phase() or Constants.MODE,
+		bots = bots ~= nil and bots:Enabled(),
+		frozen = match ~= nil and match:Frozen(),
 		spectating = Admins.spectating(admin),
 		invisible = admin:GetAttribute("Invisible") == true,
 		afk = admin:GetAttribute("Limbo") == true and admin:GetAttribute("MissionControl") ~= true,
@@ -594,9 +596,24 @@ PLAYER_ACTIONS.bring = function(_, admin, target)
 	return true, `Brought {target.DisplayName}.`
 end
 
+-- (the match's own: nothing to do in the lobby, where MatchService and TeamService aren't running)
+local MATCH_ACTIONS = {
+	spectate = true,
+	["end"] = true,
+	skip = true,
+	restart = true,
+	map = true,
+	bots = true,
+	freeze = true,
+	team = true,
+}
+
 function AdminService:Do(admin, action, target, value)
 	if not Admins.isAdmin(admin) or type(action) ~= "string" then
 		return false, "Admins only."
+	end
+	if MATCH_ACTIONS[action] and not (match and teams and bots) then
+		return false, "Not in the lobby."
 	end
 	local ok, message, detail, extra
 	local fn = ACTIONS[action]

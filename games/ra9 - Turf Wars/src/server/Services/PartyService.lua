@@ -156,6 +156,9 @@ end
 -- Same team: the party goes to the leader's team (at once in the build phase or between matches, else at the
 -- next match start). `joiner` is a new member who hasn't spawned yet: they go straight to the party's team.
 function PartyService:Settle(party, joiner)
+	if not teams or not match then
+		return -- (the lobby: no teams to settle on)
+	end
 	-- (a joiner's own team doesn't count: it's the others' team they join)
 	local team = (joiner and teams:PartyTeam(joiner)) or teams:Team(party.leader) or teams:PartyTeam(party.leader)
 	if not team then
@@ -484,9 +487,11 @@ function PartyService:Init(registry)
 	data = registry.PlayerDataService
 	teams = registry.TeamService
 	match = registry.MatchService
-	teams:SetParties(function()
-		return parties
-	end)
+	if teams then
+		teams:SetParties(function()
+			return parties
+		end)
+	end
 	Net.on("Party", onRequest)
 	-- (after BotService's takeover, so a party member who arrives second still lands on the party's team)
 	Players.PlayerAdded:Connect(function(player)
@@ -503,7 +508,8 @@ function PartyService:Init(registry)
 		remove(player, "gone")
 	end)
 	-- a party moved (by Rebalance at a match start, or at once): tell it where it is, once
-	teams.Changed:Connect(function(player, _, old)
+	local teamChanged = teams and teams.Changed or Signal.new("PartyService.NoTeams") -- (the lobby: never)
+	teamChanged:Connect(function(player, _, old)
 		local party = partyOf[player]
 		if not party or old == nil or party.noticing then
 			return

@@ -12,7 +12,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Store = require(script.Parent.Parent.Store)
 
-local FirstTargetController = { Name = "FirstTargetController", Order = 91 }
+-- (a match's: not in the lobby, which has its own screens)
+local FirstTargetController = { Name = "FirstTargetController", Order = 91, Modes = { "turf", "ctf", "brawl" } }
 
 local player = Players.LocalPlayer
 local marked -- the character marked

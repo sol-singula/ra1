@@ -79,7 +79,8 @@ local KillFxController = require(script.Parent.KillFxController)
 local MoveController = require(script.Parent.MoveController)
 local WeaponController = require(script.Parent.WeaponController)
 
-local TutorialController = { Name = "TutorialController", Order = 70 }
+-- (a match's: not in the lobby, which has its own screens)
+local TutorialController = { Name = "TutorialController", Order = 70, Modes = { "turf", "ctf", "brawl" } }
 
 local player = Players.LocalPlayer
 local C = Theme.Color

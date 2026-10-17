@@ -29,6 +29,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 
 local MissionControlService = {
 	Name = "MissionControlService",
+	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
 	Dependencies = { "MatchService", "TeamService", "ArenaService", "AdminService" },
 }
 
@@ -294,13 +295,13 @@ local MONITORS = {
 		end,
 	},
 	{
-		"RED ON THE FIELD",
+		`{Constants.TEAM_NAME.red} ON THE FIELD`, -- (the side's name in this mode: Data/Modes)
 		function()
 			return teams:Count("red")
 		end,
 	},
 	{
-		"BLUE ON THE FIELD",
+		`{Constants.TEAM_NAME.blue} ON THE FIELD`,
 		function()
 			return teams:Count("blue")
 		end,
