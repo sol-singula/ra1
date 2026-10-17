@@ -17,7 +17,7 @@ The rules, in order:
 
   TeamService:Team(player)            "red" | "blue" | nil
   TeamService:Members(team)           { players }
-  TeamService:Count(team)
+  TeamService:Count(team)             TeamService:People(team) (the same without bots)
   TeamService:Assign(player)          picks and sets a team (rule 1, else rule 2)
   TeamService:PartyTeam(player)       the team the player's party is on, or nil
   TeamService:Rebalance()             rule 3; returns the players it moved
@@ -57,6 +57,17 @@ end
 
 function TeamService:Count(team)
 	return #self:Members(team)
+end
+
+-- (real people only: bots fill in for a missing side, so a newcomer goes where the bots are)
+function TeamService:People(team)
+	local n = 0
+	for _, p in self:Members(team) do
+		if not p.IsBot then
+			n += 1
+		end
+	end
+	return n
 end
 
 local function friends(a, b)
@@ -170,7 +181,7 @@ function TeamService:Assign(player)
 		return pick
 	end
 	-- rule 2: solo
-	local red, blue = self:Count("red"), self:Count("blue")
+	local red, blue = self:People("red"), self:People("blue")
 	if red ~= blue then
 		pick = red < blue and "red" or "blue"
 	else

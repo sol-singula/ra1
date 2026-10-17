@@ -119,6 +119,18 @@ check("...round the end", BuildC.picked() == "banner", BuildC.picked())
 BuildC.pick(nil)
 wheel(-1)
 check("...from nothing, the first", BuildC.picked() == "barricade", BuildC.picked())
+do
+	-- turning a piece: a right click (the wheel picks pieces) or R
+	local r0 = BuildC.rotation()
+	Engine.actions.TW_Rotate(
+		"TW_Rotate",
+		Enum.UserInputState.Begin,
+		{ UserInputType = Enum.UserInputType.MouseButton2 }
+	)
+	check("a right click turns the piece", BuildC.rotation() ~= r0, BuildC.rotation())
+	Engine.actions.TW_Rotate("TW_Rotate", Enum.UserInputState.Begin, { KeyCode = Enum.KeyCode.R })
+	check("...and R turns it back", BuildC.rotation() == r0)
+end
 BuildC.pick("wall")
 Engine.advance(0.1)
 check(

@@ -3,7 +3,7 @@ Construction (master plan §2B, §7): modular structures on the 4-stud grid, in 
 
 A placement is checked here, never trusted from the client: the phase; the structure exists; your budget covers it
 and your team is under its cap; you're within BUILD_REACH; every cell of its footprint is on your own turf, at least
-BUILD_FRONT_GAP cells back from the frontline, out of both spawn zones and inside the field; it doesn't overlap the
+up to the frontline (BUILD_FRONT_GAP cells back; 0 = the cell touching it too), out of both spawn zones and inside the field; it doesn't overlap the
 map's shapes or another structure; and if it's a tall piece, every row of cells across the field it stands in still
 has an open cell (no wall ever seals the battlefield). Then it's built for everyone in its team's colour.
 
@@ -139,7 +139,8 @@ function BuildService:Check(player, key, cx, cz, rot)
 	-- inside the field, out of the spawn zones, on your own turf, back from the line
 	local front = frontlineOf and frontlineOf() or 0
 	local edge = a.half - a.spawnDepth
-	if mn.X < -edge or mx.X > edge or mn.Z < -a.width / 2 + 1 or mx.Z > a.width / 2 - 1 then
+	-- (right up to the long walls and the spawn lines: the cell touching them is yours to build on)
+	if mn.X < -edge or mx.X > edge or mn.Z < -a.width / 2 or mx.Z > a.width / 2 then
 		return false, "Outside the battlefield"
 	end
 	local gap = Constants.BUILD_FRONT_GAP * Constants.CELL

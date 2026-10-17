@@ -1,5 +1,5 @@
 --[[
-Parties: a party that arrives by teleport forms again on one team (and two people mean no bots); an invite and its
+Parties: a party that arrives by teleport forms again on one team (alone on one side, they get a bot each to fight); an invite and its
 card (YES, NO, no answer in 20 s); the party on one team when it forms in the build phase and when a friend joins;
 a party that forms in the fight waits for the next match; Rebalance evens the teams and never splits a party (one
 bigger than half the server too); the max size; kick, leave, a new leader; a friend who joins (or follows you in)
@@ -102,9 +102,28 @@ check("...the old leader leads again", Party:Of(h) and Party:Of(h).leader == ivo
 check("...on one team (not the bot's side the takeover gave)", same({ h, ivo }), `{Teams:Team(h)} {Teams:Team(ivo)}`)
 check("...and they hear it", got(ivo, m0, "back together"), table.concat(banners(ivo, m0), " | "))
 check("...their clients get the party", state(ivo) and #state(ivo).members == 2)
-check("a party of two in an empty server: no bots", #Bots:List() == 0, #Bots:List())
+local function botsAgainst(side)
+	for _, b in Bots:List() do
+		if Teams:Team(b) == side then
+			return false
+		end
+	end
+	return true
+end
+Engine.advance(1)
+check("a party of two alone on one side: a bot each against them", #Bots:List() == 2, #Bots:List())
+check("...all on the other team", botsAgainst(Teams:Team(h)))
 Engine.advance(3)
-check("...still none after a while", #Bots:List() == 0)
+check("...still two after a while", #Bots:List() == 2, #Bots:List())
+local zed = join("Zed", 913)
+Engine.advance(1)
+check(
+	"someone joins the other side: the bots go",
+	Teams:Team(zed) ~= Teams:Team(h) and #Bots:List() == 0,
+	`{#Bots:List()} {Teams:Team(zed)} {Teams:Team(h)}`
+)
+Engine.removePlayer(zed)
+Engine.advance(1)
 check("...nothing broke", #Engine.errors == 0, Engine.errors[1])
 Engine.removePlayer(h)
 Engine.removePlayer(ivo)

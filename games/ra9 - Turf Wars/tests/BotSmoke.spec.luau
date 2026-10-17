@@ -81,6 +81,8 @@ end
 -- the fight: they find someone and shoot
 Engine.advance(Constants.BUILD_SECONDS + 1)
 check("FIGHT", Match:Phase() == "fight", Match:Phase())
+-- (the bots' own walls can stand right at the line now: clear them so this checks the shooting itself)
+service("BuildService"):Clear()
 -- stand the solo player in the open in front of an enemy bot
 local enemy
 for _, b in list do

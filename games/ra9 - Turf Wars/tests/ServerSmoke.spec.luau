@@ -179,6 +179,21 @@ check("not out of reach", not ok4, why4)
 stand(red, Vector3.new(-48, 3, -30))
 local ok5, why5 = Build:Place(red, "cover", Formulas.cellOf(-58, -38), select(2, Formulas.cellOf(-58, -38)), 0)
 check("not on the map's own walls", not ok5 and why5 ~= nil, why5)
+do
+	-- right up to the line: the cell touching it is yours to build on (and the cell against the long wall)
+	local F = ws:GetAttribute("Frontline")
+	local side = Teams:Team(red) == "red" and -1 or 1
+	stand(red, Vector3.new(F + side * 10, 3, 14))
+	Build:Refill()
+	local lx, lz = Formulas.cellOf(F + side * 2, 14)
+	local okL, whyL = Build:Place(red, "cover", lx, lz, 0)
+	check("you can build in the cell touching the line", okL == true, whyL)
+	stand(red, Vector3.new(F + side * 14, 3, -40))
+	local wx, wz = Formulas.cellOf(F + side * 14, -47)
+	local okW, whyW = Build:Place(red, "cover", wx, wz, 0)
+	check("...and in the cell against the long wall", okW == true, whyW)
+	Build:Refill()
+end
 -- the lane rule: wall a whole row and the last openings are refused
 do
 	stand(red2, Vector3.new(-40, 3, 0))

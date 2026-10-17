@@ -653,9 +653,9 @@ local function buildBottom(gui)
 	refs.tray = tray
 	refs.buildHint = label({
 		Name = "Hint",
-		Text = "1-7 or wheel: pick · Click to place · R rotate · Q cancel",
+		Text = "1-7 or wheel: pick · Click: place · Right-click or R: turn · Q: cancel",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Size = UDim2.fromOffset(420, 18),
+		Size = UDim2.fromOffset(540, 18),
 		Position = UDim2.new(0.5, 0, 0, -2),
 		TextSize = 12,
 		TextColor3 = C.muted,
@@ -736,7 +736,7 @@ function HudController.updateBottom()
 		end
 		local spot = BuildController.spot()
 		refs.buildHint.Text = (picked and spot and not spot.ok and spot.why)
-			or "1-7 or wheel: pick · Click to place · R rotate · Q cancel"
+			or "1-7 or wheel: pick · Click: place · Right-click or R: turn · Q: cancel"
 		refs.buildHint.TextColor3 = (picked and spot and not spot.ok) and RED or C.muted
 	end
 	if refs.bows then

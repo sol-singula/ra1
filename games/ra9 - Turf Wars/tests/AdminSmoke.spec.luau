@@ -350,6 +350,9 @@ do
 	act(owner, "restart")
 	check("restart", Match:MapKey() == "frost" and Match:Phase() == "build")
 
+	if Teams:Team(solo) == Teams:Team(owner) then
+		act(owner, "team", solo.UserId, Teams:Team(owner) == "red" and "blue" or "red")
+	end
 	n0 = #Engine.clientLog
 	local red = Teams:Team(owner) == "red" and owner or solo
 	local blue = red == owner and solo or owner
@@ -358,7 +361,11 @@ do
 	check("end the match: BLUE wins", Match:Phase() == "victory" and ws:GetAttribute("Winner") == "blue")
 	local res = since(n0, "Results", blue)
 	check("...the normal results", #res > 0 and res[#res].args[1].winner == "blue")
-	check("...blue won, red lost", res[#res].args[1].you.won == true and Data:Get(red).wins == redWins)
+	check(
+		"...blue won, red lost",
+		res[#res].args[1].you.won == true and Data:Get(red).wins == redWins,
+		`{Teams:Team(owner)} {Teams:Team(solo)} {res[#res].args[1].you.won} {Data:Get(red).wins} {redWins}`
+	)
 	check("...logged", used[#used].action == "end" and used[#used].detail == "blue")
 	-- an admin's new match during the results: the old countdown doesn't start another one
 	act(owner, "restart")

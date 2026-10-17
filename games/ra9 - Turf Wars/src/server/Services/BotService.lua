@@ -1,8 +1,9 @@
 --[[
-Bots, only while exactly one person is on: alone in a server you still get a real fight (BOT_ALLIES on your side,
-BOT_ENEMIES against you). The moment a second person joins they take the bot's side, every bot leaves, and the game
-starts over (a fresh match, build phase first) so the two real players start even. If it drops back to one person,
-the bots come back. With nobody on, none.
+Bots, only while every real person is on one side: alone in a server (or a party alone) you still get a real fight,
+one bot against each of you (at least BOT_ENEMIES; BOT_ALLIES on your side). The moment someone joins on their own,
+they take the bots' side, every bot leaves, and the game starts over (a fresh match, build phase first) so both sides
+start even. Someone who joins with the party (or follows a friend in) goes to that side and gets one more bot to
+fight. If everyone ends up on one side again, the bots come back. With nobody on, none.
 
 A bot is a stand-in that looks enough like a player to the rest of the server (a character, a team, attributes, a
 UserId below zero), so it fights through the same code: CombatService draws and flies its arrows and checks its
@@ -43,7 +44,7 @@ local enabled = true -- (an admin can switch them off for this server)
 local nextId = 0
 local folder
 BotService.TICK = 0.1
-BotService.RESET_ON_TAKEOVER = true -- (a second person joining starts the game over)
+BotService.RESET_ON_TAKEOVER = true -- (a real opponent joining starts the game over)
 
 -- The stand-in ------------------------------------------------------------------------------------------------
 local Bot = {}
@@ -253,33 +254,79 @@ end
 
 function BotService:Ensure()
 	local people = humans()
-	if #people == 1 and enabled then
-		if #bots == 0 then
-			local mine = teams:Team(people[1])
-			if not mine then
-				return
-			end
-			local other = mine == "red" and "blue" or "red"
-			for _ = 1, Constants.BOT_ALLIES do
-				self:Add(mine)
-			end
-			for _ = 1, Constants.BOT_ENEMIES do
-				self:Add(other)
+	if not enabled or #people == 0 then
+		if #bots > 0 then
+			self:RemoveAll()
+		end
+		return
+	end
+	-- which sides real people are on: bots only while everyone is on one side (one player alone, or a party alone)
+	local sides = {}
+	for _, p in people do
+		local t = teams:Team(p)
+		if not t then
+			return -- (someone still getting a team: decide next time)
+		end
+		sides[t] = (sides[t] or 0) + 1
+	end
+	local only = (sides.red and not sides.blue) and "red" or ((sides.blue and not sides.red) and "blue" or nil)
+	if not only then
+		if #bots > 0 then
+			self:RemoveAll()
+		end
+		return
+	end
+	-- one bot against each real person on that side (at least BOT_ENEMIES), and BOT_ALLIES with them
+	local other = only == "red" and "blue" or "red"
+	local wantEnemies = math.max(Constants.BOT_ENEMIES, #people)
+	local have = { [only] = {}, [other] = {} }
+	for _, b in bots do
+		local t = teams:Team(b)
+		if have[t] then
+			table.insert(have[t], b)
+		end
+	end
+	for side, want in { [other] = wantEnemies, [only] = Constants.BOT_ALLIES } do
+		for _ = #have[side] + 1, want do
+			self:Add(side)
+		end
+		for i = #have[side], want + 1, -1 do
+			local b = have[side][i]
+			b:Remove()
+			local at = table.find(bots, b)
+			if at then
+				table.remove(bots, at)
 			end
 		end
-	elseif #bots > 0 then
-		self:RemoveAll()
 	end
 end
 
--- The second person in: they take a bot's place (on the side against the first person), and the bots go.
+-- Someone new against a side that only had bots to fight: they take a bot's place, and the bots go.
 function BotService:Takeover(player)
 	local people = humans()
-	if #people ~= 2 or #bots == 0 or Admins.spectating(player) then
+	if #people < 2 or #bots == 0 or Admins.spectating(player) then
 		return nil
 	end
-	local first = people[1] == player and people[2] or people[1]
-	local firstTeam = teams:Team(first)
+	-- (someone arriving with their party, or following a friend in, joins that friend's side: PartyService puts
+	-- them there and the bots stay, one more against them)
+	local ok, joinData = pcall(function()
+		return player:GetJoinData()
+	end)
+	local td = ok and type(joinData) == "table" and joinData.TeleportData or nil
+	if (type(td) == "table" and td.party) or (teams.PartyTeam and teams:PartyTeam(player)) then
+		return nil
+	end
+	-- (everyone else on one side, so far: a party, or one person)
+	local firstTeam
+	for _, p in people do
+		if p ~= player then
+			local t = teams:Team(p)
+			if firstTeam and t ~= firstTeam then
+				return nil
+			end
+			firstTeam = t
+		end
+	end
 	local pick
 	for _, b in bots do
 		if b.Parent and teams:Team(b) ~= firstTeam and (not pick or (combat:Alive(b) and not combat:Alive(pick))) then
@@ -295,7 +342,7 @@ function BotService:Takeover(player)
 		match.SpawnAt[player] = root.CFrame -- (if no reset happens, they appear where the bot stood)
 	end
 	self:RemoveAll()
-	-- two real people now: start the game over so they start even
+	-- a real opponent now: start the game over so both sides start even
 	if self.RESET_ON_TAKEOVER and phase ~= "loading" then
 		task.defer(function()
 			match:NewMatch()

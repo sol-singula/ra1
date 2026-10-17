@@ -339,6 +339,16 @@ panel, the list, the card and the marker, and that none of it overlaps the HUD.
 
 Tests: new `tests/AdminSmoke.spec.luau` (125 checks).
 
+## Round 10: bots for a lone party, build to the line, turn with right-click
+
+* **Bots whenever everyone is on one side:** a party alone in a server gets one bot per member to fight
+  (`BotService:Ensure`, at least `BOT_ENEMIES`). Someone joining on their own takes the bots' side (team picks count
+  real people only, `TeamService:People`), the bots leave and the game starts over; someone joining with the party
+  gets one more bot instead.
+* **Build right up to the line and the walls:** `BUILD_FRONT_GAP = 0`, so the cell touching the frontline is
+  yours, and pieces can sit flush against the long side walls.
+* **Turning a piece:** right-click (or R, or Y on a gamepad) turns it, since the wheel picks the item.
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

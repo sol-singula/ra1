@@ -71,7 +71,7 @@ Constants.BOT_NAMES = { "Ace", "Echo", "Nova", "Blitz", "Rook", "Vex", "Juno", "
 Constants.BUILD_BUDGET = 100 -- points a player gets each build phase
 Constants.TEAM_STRUCTURES = 60 -- standing structures a team may have (+2 per player past 10)
 Constants.BUILD_REACH = 44 -- studs from you to the structure
-Constants.BUILD_FRONT_GAP = 1 -- cells kept free on your side of the frontline
+Constants.BUILD_FRONT_GAP = 0 -- cells kept free on your side of the frontline (0: build right up to it)
 
 -- Rewards (§8)
 Constants.QUALIFY_SECONDS = 120 -- in the match at least this long for a win to count

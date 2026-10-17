@@ -1,8 +1,9 @@
 --[[
-Building (master plan §2B, §7) on your side: pick a structure from the tray (a click, a tap, 1-7, or the mouse wheel), and a
-see-through preview follows where you look on the floor, snapped to the 4-stud grid: white where it can go, red
-where it can't (enemy turf, too close to the line, the spawn zones, out of reach, something already there). Click
-(or the PLACE button) to build; R (or ROTATE) turns it. The server checks everything again and says why if not.
+Building (master plan §2B, §7) on your side: pick a structure from the tray (a click, a tap, 1-7, or the mouse
+wheel), and a see-through preview follows where you look on the floor, snapped to the 4-stud grid: white where it
+can go, red where it can't (enemy turf, the spawn zones, out of reach, something already there); right up to the
+line is fine. Click (or the PLACE button) to build; R or a right click (or TURN) turns it. The server checks
+everything again and says why if not.
 
 The floor is flat at y = 0 everywhere you can build, so "where you look" is the camera's ray meeting that plane:
 no raycast needed, the same on every device. Nothing is placed while a menu is open (the click is the menu's).
@@ -160,6 +161,10 @@ function BuildController.place()
 	return true
 end
 
+function BuildController.rotation()
+	return rot
+end
+
 function BuildController.rotate()
 	rot = 1 - rot
 end
@@ -207,12 +212,15 @@ function BuildController:init()
 		end
 		return Enum.ContextActionResult.Pass
 	end, false, Enum.UserInputType.MouseButton1, Enum.KeyCode.ButtonR2)
+	-- turning the piece: R, a right click (the wheel picks the piece, so the mouse's other button turns it), or the
+	-- gamepad's Y; the touch TURN button too (Bus.Rotate)
 	ContextActionService:BindAction("TW_Rotate", function(_, state)
-		if state == Enum.UserInputState.Begin and picked then
+		if state == Enum.UserInputState.Begin and picked and Store.phase() == "build" then
 			BuildController.rotate()
+			return Enum.ContextActionResult.Sink
 		end
 		return Enum.ContextActionResult.Pass
-	end, false, Enum.KeyCode.R, Enum.KeyCode.ButtonY)
+	end, false, Enum.KeyCode.R, Enum.UserInputType.MouseButton2, Enum.KeyCode.ButtonY)
 	Bus.Place:Connect(BuildController.place)
 	Bus.Rotate:Connect(BuildController.rotate)
 	Store.Changed:Connect(function(partial)
