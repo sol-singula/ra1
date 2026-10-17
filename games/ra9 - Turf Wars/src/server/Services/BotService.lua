@@ -510,10 +510,13 @@ function BotService:Think(b)
 		return
 	end
 	local tr = rootOf(target)
-	-- the right weapon for the distance: the blade up close, the bow further out, and now and then the TNT
+	-- the right weapon for the distance: the blade up close (only in the CHARGE), the bow further out, and now and
+	-- then the TNT
 	local blade = Weapons.get("blade")
 	local dist = (tr.Position - root.Position).Magnitude
-	local close = dist <= blade.range - 1
+	-- (the blade only in the CHARGE, the fight's last seconds: then the bots run across the line at you)
+	local charging = match:Charging()
+	local close = charging and dist <= blade.range - 1
 	local range = Constants.BOT_TNT_RANGE
 	if not close and dist >= range[1] and dist <= range[2] and not self.easyFor(target) and t >= (b.tntAt or 0) then
 		b.tntAt = t + rng:NextNumber(2, 4) -- (whether it throws or not, it thinks again in a while)
@@ -552,6 +555,9 @@ function BotService:Think(b)
 		local toT = Vector3.new(tr.Position.X - root.Position.X, 0, tr.Position.Z - root.Position.Z)
 		local side = toT.Magnitude > 0.01 and Vector3.new(-toT.Unit.Z, 0, toT.Unit.X) or Vector3.new(0, 0, 1)
 		local strafe = root.Position + side * b.strafeDir * 6
+		if charging and dist < 45 then
+			strafe = tr.Position + side * b.strafeDir * 3 -- (the CHARGE: in, weaving, to get the blade on them)
+		end
 		moveTo(b, root, a and ArenaBuilder.route(a, team, root.Position, strafe) or strafe)
 	end
 	face(root, tr.Position)

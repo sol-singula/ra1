@@ -18,8 +18,9 @@ Actions (target: a player's UserId; value: what the action needs):
   spectate (on) | invisible (on)        yourself
   unlockall                             every cosmetic, for yourself
   tutorial (target?)                    the first-minute tutorial from the start: yourself, or that player
+  afkroom (on)                          go to the AFK room and stay there (no team, unseen), or come back
   end ("red" | "blue" | "draw")         the match ends now, the normal way
-  skip ("fight" | "build") | restart | map (key) | bots (on) | freeze (on) | announce (text)
+  skip ("fight" | "build" | "charge") | restart | map (key) | bots (on) | freeze (on) | announce (text)
   team (target, "red" | "blue") | kill | heal (heal, or respawn if down) | kick (target, reason)
   mvp | vip (target, "1h" | "1d" | "7d" | "30d" | "forever" | "remove") | shards (target, n) | tiers (target, n)
   cosmetic (target, key) | resetshop (target: 4 new daily shop items for them) | goto | bring
@@ -192,6 +193,7 @@ function AdminService:Push(admin, servers, extra)
 		frozen = match:Frozen(),
 		spectating = Admins.spectating(admin),
 		invisible = admin:GetAttribute("Invisible") == true,
+		afk = admin:GetAttribute("Limbo") == true,
 		servers = servers,
 	}
 	for k, v in extra or {} do
@@ -318,6 +320,28 @@ ACTIONS.invisible = function(self, admin, _, on)
 	end
 	self:SetInvisible(admin, on == true)
 	return true, on and "You're invisible." or "You can be seen again.", tostring(on == true)
+end
+
+-- Visit the AFK room: out of the match like an idle player, but walking around doesn't send you back; the
+-- same button (on = false) does
+ACTIONS.afkroom = function(_, admin, _, on)
+	local afk = registryRef and registryRef.AfkService
+	if not afk then
+		return false, "There's no AFK room in this build."
+	end
+	if on == false then
+		if not afk:Return(admin) then
+			return false, "You're not in the AFK room."
+		end
+		return true, "Back to the match!", "left"
+	end
+	if Admins.spectating(admin) and not afk:Away(admin) then
+		return false, "Stop spectating first."
+	end
+	if not afk:Send(admin, { stay = true }) then
+		return false, "You're in the AFK room already."
+	end
+	return true, "Welcome to the AFK room.", "went"
 end
 
 -- Play the first-minute tutorial from the top: yourself (no target), or send any player in this server into it

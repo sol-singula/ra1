@@ -18,6 +18,7 @@ Constants.BUILD_SECONDS = 20
 Constants.AFK_SECONDS = 75 -- no moving, shooting or building this long in a match: off to the limbo room (0 = off)
 Constants.AFK_RETURN_STUDS = 4 -- walk this far in the limbo room to jump back in
 Constants.FIGHT_SECONDS = 120
+Constants.CHARGE_SECONDS = 20 -- the last this many seconds of a fight: anyone may cross the line, and the blade is out
 Constants.VICTORY_SECONDS = 27 -- fireworks, the results, then the countdown to the next game...
 Constants.TRANSITION_SECONDS = 3 -- ...and the next map loads: 30 s from the win to the next build phase
 Constants.RESULTS_CARD_SECONDS = 12 -- the results card stays this long; the countdown shows after it

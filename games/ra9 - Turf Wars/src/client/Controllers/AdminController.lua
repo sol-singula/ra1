@@ -264,6 +264,13 @@ local function matchTab(body)
 			end,
 		},
 		{
+			"SkipCharge",
+			"SKIP TO CHARGE",
+			function()
+				send("skip", nil, "charge")
+			end,
+		},
+		{
 			"Freeze",
 			state.frozen and "START CLOCK" or "STOP CLOCK",
 			function()
@@ -521,7 +528,8 @@ local function meTab(body)
 	local y = section(
 		body,
 		"Now",
-		state.spectating and "YOU'RE SPECTATING: NOBODY CAN SEE YOU"
+		state.afk and "YOU'RE IN THE AFK ROOM"
+			or state.spectating and "YOU'RE SPECTATING: NOBODY CAN SEE YOU"
 			or (state.invisible and "YOU'RE INVISIBLE (STILL PLAYING)" or "YOU'RE PLAYING"),
 		0
 	)
@@ -552,6 +560,16 @@ local function meTab(body)
 				AdminController.close() -- (out of the way: the tutorial has the screen)
 			end,
 		},
+		{
+			"AfkRoom",
+			state.afk and "LEAVE AFK ROOM" or "GO TO AFK ROOM",
+			function()
+				send("afkroom", nil, not state.afk)
+			end,
+			state.afk and "dark" or nil,
+		},
+	})
+	y = row(body, y, {
 		{
 			"UnlockAll",
 			"UNLOCK ALL",

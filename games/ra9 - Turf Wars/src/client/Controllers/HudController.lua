@@ -692,6 +692,17 @@ local function buildBottom(gui)
 		end)
 		refs.bows[w.key] = { button = b, ammo = ammo, key = b.Key, icon = b.Icon, pips = pips, x = (i - 1) * 82 }
 	end
+	-- the blade's slot is only there in the CHARGE (the fight's last seconds, when the line opens)
+	local function chargeSlots()
+		local on = workspace:GetAttribute("Charge") == true
+		for _, w in Weapons.list do
+			if w.melee and refs.bows[w.key] then
+				refs.bows[w.key].button.Visible = on
+			end
+		end
+	end
+	chargeSlots()
+	workspace:GetAttributeChangedSignal("Charge"):Connect(chargeSlots)
 	-- the build tray
 	local tray = Theme.new("Frame", {
 		Name = "BuildTray",

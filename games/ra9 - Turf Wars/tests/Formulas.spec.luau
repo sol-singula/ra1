@@ -101,7 +101,10 @@ do
 	local StructureModel = Engine.require(tree.shared.StructureModel)
 	for _, team in { "red", "blue" } do
 		local shade, armor = Constants.BUILD_COLOR[team], Constants.ARMOR_COLOR[team]
-		check(`{team}: the armour shade is darker than the build shade`, armor.R + armor.G + armor.B < shade.R + shade.G + shade.B - 0.6)
+		check(
+			`{team}: the armour shade is darker than the build shade`,
+			armor.R + armor.G + armor.B < shade.R + shade.G + shade.B - 0.6
+		)
 		for _, def in Structures.list do
 			for rot = 0, 1 do
 				local w, d = Structures.footprint(def, rot)
@@ -123,11 +126,21 @@ do
 				end
 				local want = def.key == "reinforced" and "armor" or "build"
 				local only = tones[want] and not tones[want == "armor" and "build" or "armor"]
-				check(`{team} {def.key} rot {rot}: detailed ({#parts} parts), all in its one shade`, #parts >= 8 and only)
-				check(`...nothing solid outside its footprint or high above it`, outside == 0 and high == 0, `{outside} {high}`)
+				check(
+					`{team} {def.key} rot {rot}: detailed ({#parts} parts), all in its one shade`,
+					#parts >= 8 and only
+				)
+				check(
+					`...nothing solid outside its footprint or high above it`,
+					outside == 0 and high == 0,
+					`{outside} {high}`
+				)
 			end
 		end
-		check(`{team}: the colours`, StructureModel.color("build", team) == shade and StructureModel.color("armor", team) == armor)
+		check(
+			`{team}: the colours`,
+			StructureModel.color("build", team) == shade and StructureModel.color("armor", team) == armor
+		)
 	end
 	-- the tower: tapered, battlements, a lookout to stand on, a ladder, a banner
 	local mn, mx = Formulas.footprintBox(0, 0, 2, 2, 0, Structures.get("tower").h)
@@ -137,7 +150,12 @@ do
 	end
 	check(
 		"the tower: tiers, merlons, a lookout, a ladder with rungs, a banner",
-		names.Tier1 and names.Tier2 and (names.Merlon or 0) >= 6 and names.Lookout and (names.Rung or 0) >= 5 and names.Flag
+		names.Tier1
+			and names.Tier2
+			and (names.Merlon or 0) >= 6
+			and names.Lookout
+			and (names.Rung or 0) >= 5
+			and names.Flag
 	)
 end
 
@@ -307,7 +325,10 @@ end
 
 -- Remotes ------------------------------------------------------------------------------------------------------
 check("Shoot is rate-limited above the bow's rate", Net.ClientEvents.Shoot >= 1 / bow.cooldown)
-check("the TNT's lob and blast go to everyone", table.find(Net.ServerEvents, "Bomb") and table.find(Net.ServerEvents, "Blast"))
+check(
+	"the TNT's lob and blast go to everyone",
+	table.find(Net.ServerEvents, "Bomb") and table.find(Net.ServerEvents, "Blast")
+)
 check(
 	"the server events include the kill feed and results",
 	table.find(Net.ServerEvents, "Kill") and table.find(Net.ServerEvents, "Results")

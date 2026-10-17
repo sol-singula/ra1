@@ -323,6 +323,14 @@ do
 		Engine.advance(Constants.SPAWN_PROTECT + 0.1)
 	end
 	send(red, "Equip", "blade")
+	Engine.advance(0.1)
+	check("no blade before the CHARGE (bows only)", Combat:Weapon(red) ~= "blade" and not Match:Charging())
+	-- (the whole fight counts as the CHARGE for this block)
+	local charge0 = Constants.CHARGE_SECONDS
+	Constants.CHARGE_SECONDS = 1e6
+	Engine.advance(0.5)
+	check("the CHARGE: workspace says so", ws:GetAttribute("Charge") == true)
+	send(red, "Equip", "blade")
 	Engine.advance(Constants.SPAWN_PROTECT)
 	check("the blade in hand", Combat:Weapon(red) == "blade")
 	whole(blue)
@@ -363,6 +371,9 @@ do
 	whole(red)
 	whole(blue)
 	send(blue, "Equip", "bow")
+	Constants.CHARGE_SECONDS = charge0
+	Engine.advance(0.5)
+	check("...and the CHARGE is over", not Match:Charging())
 end
 -- the turf rule: red can't walk onto blue's turf
 stand(red, Vector3.new(ws:GetAttribute("Frontline") + 10, 3, 20))
@@ -372,6 +383,33 @@ check(
 	rootOf(red).Position.X <= ws:GetAttribute("Frontline"),
 	rootOf(red).Position.X
 )
+-- the CHARGE (the fight's last seconds): the line opens, the blade comes out; when it ends, the blade goes away and
+-- anyone over the line goes home
+do
+	send(red, "Equip", "bow")
+	check("skip to the CHARGE", Match:SkipTo("charge") and Match:Charging())
+	check("...everyone's told", firedSince(0, "Announce", nil, function(a)
+		return string.find(a[1].text, "CHARGE") ~= nil
+	end) ~= nil)
+	local F = ws:GetAttribute("Frontline")
+	stand(red, Vector3.new(F + 10, 3, 20))
+	Engine.advance(0.4)
+	check("...you can cross the line", rootOf(red).Position.X > F + 5, rootOf(red).Position.X)
+	send(red, "Equip", "blade")
+	Engine.advance(0.1)
+	check("...the blade is out", Combat:Weapon(red) == "blade")
+	Match:SkipTo("build")
+	Engine.advance(0.5)
+	check("the CHARGE ends with the fight", not Match:Charging() and ws:GetAttribute("Charge") ~= true)
+	check("...the blade goes away", Combat:Weapon(red) == "bow", Combat:Weapon(red))
+	check(
+		"...and anyone over the line goes home",
+		rootOf(red).Position.X < ws:GetAttribute("Frontline"),
+		rootOf(red).Position.X
+	)
+	Match:SkipTo("fight")
+	Engine.advance(0.5)
+end
 -- arrows break structures: blue's bow at red's wall, and when it comes down everyone is told where it stood and what
 -- broke it (the debris flies from there)
 do
@@ -459,7 +497,10 @@ do
 	send(blue, "Equip", "tnt")
 	check("the TNT in hand", Combat:Weapon(blue) == "tnt")
 	local held = blue.Character:FindFirstChild("HeldBow")
-	check("...everyone sees red sticks in your hand", held and held:GetAttribute("Weapon") == "tnt" and held:FindFirstChild("Stick") ~= nil)
+	check(
+		"...everyone sees red sticks in your hand",
+		held and held:GetAttribute("Weapon") == "tnt" and held:FindFirstChild("Stick") ~= nil
+	)
 	local wallMid = (rw.boxMin + rw.boxMax) / 2
 	stand(blue, Vector3.new(F + 12, 3, wallMid.Z), wallMid)
 	stand(red, Vector3.new(F - 30, 3, wallMid.Z - 20))
@@ -484,7 +525,11 @@ do
 		end
 	end)
 	send(blue, "Shoot", eye(blue), Vector3.new(-1, 0, 0), 78)
-	check("a second throw straight away is refused (the cooldown)", firedSince(mr, "Bomb", nil) == nil and rejected == "rate", rejected)
+	check(
+		"a second throw straight away is refused (the cooldown)",
+		firedSince(mr, "Bomb", nil) == nil and rejected == "rate",
+		rejected
+	)
 	conn:Disconnect()
 	Engine.advance(Constants.TNT_FUSE + 0.2)
 	local blast = firedSince(m, "Blast", nil)
@@ -498,7 +543,11 @@ do
 	local info = gone and gone.args[1]
 	check(
 		"...its debris goes out with the blast: where and how hard (a TNT: much harder than an arrow)",
-		info and info.blast and info.blast.tnt == true and info.blast.power >= 0.75 and (info.blast.pos - blast.args[1].pos).Magnitude < 0.01
+		info
+			and info.blast
+			and info.blast.tnt == true
+			and info.blast.power >= 0.75
+			and (info.blast.pos - blast.args[1].pos).Magnitude < 0.01
 	)
 	check("...and the bomb is gone", #Combat:Bombs() == 0)
 	-- a knockout: thrown at an enemy's feet in the open
@@ -513,7 +562,10 @@ do
 	check("thrown at an enemy's feet: it goes off by them", firedSince(mk, "Blast", nil) ~= nil)
 	check("...a knockout", not Combat:Alive(red2), Combat:Health(red2))
 	local kill = firedSince(mk, "Kill", nil)
-	check("...credited to the thrower, with the TNT", kill and kill.args[1].killer == blue.UserId and kill.args[1].weapon == "tnt")
+	check(
+		"...credited to the thrower, with the TNT",
+		kill and kill.args[1].killer == blue.UserId and kill.args[1].weapon == "tnt"
+	)
 	-- checked like a shot: from far off your head it starts at your head; never from the far side of a wall
 	Engine.advance(Constants.RESPAWN_SECONDS + 0.5)
 	Engine.advance(tnt.cooldown)
@@ -524,7 +576,10 @@ do
 	Engine.advance(0.3)
 	send(blue, "Shoot", eye(blue) + Vector3.new(0, 40, 0), Vector3.new(-1, 0, 0), 79)
 	local far = firedSince(mo, "Bomb", nil)
-	check("a throw from far off your head starts at your head", far and (far.args[1].origin - eye(blue)).Magnitude < 0.5)
+	check(
+		"a throw from far off your head starts at your head",
+		far and (far.args[1].origin - eye(blue)).Magnitude < 0.5
+	)
 	Engine.advance(tnt.cooldown + 0.2)
 	local head = eye(blue)
 	Arena:AddBox("test_screen", head + Vector3.new(-2.5, -3, -3), head + Vector3.new(-1.5, 3, 3))
@@ -560,7 +615,10 @@ do
 	Combat:_explode({ id = 901, by = blue, team = "blue" }, spot)
 	check("in the core but behind something solid: safe (line of sight)", Combat:Alive(red))
 	check("a teammate in the core is never hurt", Combat:Alive(blue2))
-	check("in the blast, out of the core: thrown back, not knocked out", Combat:Alive(red2) and rootOf(red2).AssemblyLinearVelocity.X > v0.X + 5)
+	check(
+		"in the blast, out of the core: thrown back, not knocked out",
+		Combat:Alive(red2) and rootOf(red2).AssemblyLinearVelocity.X > v0.X + 5
+	)
 	check("...and told (the push for its own client)", firedSince(mx, "Hurt", red2, function(a)
 		return a[1].blast == true and a[1].amount == 0 and a[1].knock.X > 0
 	end) ~= nil)
@@ -1216,6 +1274,21 @@ do
 	Engine.advance(1.5)
 	check("walking around in the room: back in the game", not Afk:Away(idle) and Teams:Team(idle) ~= nil)
 	check("...on the field again", rootOf(idle) and rootOf(idle).Position.Y < 100)
+	-- the hall: columns, crown molding, and three leaderboards on the far wall
+	local hall = ws:FindFirstChild("Limbo")
+	check("the AFK hall is built (detailed)", hall and #hall:GetChildren() > 120, hall and #hall:GetChildren())
+	local lit = false
+	for _, d in hall and hall:GetDescendants() or {} do
+		lit = lit or d.ClassName == "PointLight"
+	end
+	check("...a lamp lights it", lit)
+	Afk:RefreshBoards()
+	for _, key in Afk.BOARD_KEYS do
+		local b = hall and hall:FindFirstChild("LimboBoard_" .. key)
+		local rows = b and b.Board.Rows
+		local first = rows and (rows:FindFirstChild("Row1") or rows:FindFirstChild("Empty"))
+		check(`...a {key} board with rows`, first ~= nil and first.Text ~= "", first and first.Text)
+	end
 	Constants.AFK_SECONDS = 0
 end
 

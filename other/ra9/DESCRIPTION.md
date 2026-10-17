@@ -18,7 +18,7 @@ You get 20 seconds to build walls, towers and ramps. Then the fight starts!
 🏹 PICK YOUR WEAPON
 • Bow: hold to pull back, let go. One hit, one knockout!
 • TNT: hold to wind up, then throw it. BOOM! Walls fly apart!
-• Blade: slash across the line, and swat arrows right back!
+• The CHARGE: in the last 20 seconds of every fight the line opens. Run across, blade out, and swat arrows right back!
 
 🏃 MOVE LIKE A PRO
 Run, slide, crouch, and flip off your fourth jump.

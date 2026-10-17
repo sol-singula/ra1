@@ -128,6 +128,7 @@ do
 		{ "invisible", nil, true },
 		{ "unlockall" },
 		{ "tutorial" },
+		{ "afkroom", nil, true },
 		{ "end", nil, "red" },
 		{ "skip", nil, "fight" },
 		{ "restart" },
@@ -346,6 +347,20 @@ do
 	end
 	check("SEND TO TUTORIAL: it starts for that player", sent)
 	check("...and it's logged", used[#used].action == "tutorial")
+end
+
+-- the AFK room: go there and stay (walking doesn't send you back), then the same button brings you back
+do
+	local Afk = service("AfkService")
+	act(owner, "afkroom", nil, true)
+	check("GO TO AFK ROOM: you're up in the hall", Afk:Away(owner) and root(owner) and root(owner).Position.Y > 500)
+	check("...off your team meanwhile", Teams:Team(owner) == nil)
+	Engine.moveTo(owner, root(owner).Position + Vector3.new(8, 0, 6))
+	Engine.advance(2.5)
+	check("...walking about there keeps you there", Afk:Away(owner))
+	act(owner, "afkroom", nil, false)
+	check("LEAVE AFK ROOM: back in the match", not Afk:Away(owner) and Teams:Team(owner) ~= nil)
+	check("...and it's logged", used[#used].action == "afkroom")
 end
 
 -- match controls

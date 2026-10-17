@@ -2,9 +2,9 @@
 The bow, the TNT and the blade, all free from the start (1 2 3 on the hotbar). Every bow hit is a knockout (one
 shot, every charge). The TNT is thrown: hold to wind up (the charge is how far it goes), let go and it flies in a
 lob and blows up where it lands (Constants.TNT_*: enemy structures in the blast break, enemies right by it are
-knocked out, the rest are thrown back; a cooldown between throws). The blade can't cross the line any more than you
-can, so it works AT the line: a long slash that knocks out anyone within reach on the other side, and its swing
-knocks arrows out of the air and sends them back (CombatService).
+knocked out, the rest are thrown back; a cooldown between throws). The blade only comes out in the CHARGE (the
+fight's last Constants.CHARGE_SECONDS, when the line opens and anyone may run across): a slash knocks out anyone in
+reach, and its swing knocks arrows back at the archer (CombatService).
 
   draw        seconds to full charge (0 = at once)
   minCharge   the least charge a shot can have (a tap)
