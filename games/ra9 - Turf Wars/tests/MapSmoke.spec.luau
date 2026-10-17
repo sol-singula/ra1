@@ -1,8 +1,7 @@
 --[[
-The maps: every map builds, and its spawn rooms keep you safe. From anywhere in the field (on the floor, on a
-ledge, on a tower top) no straight line reaches a spawn pad: the front wall, the baffle inside it and the roof
-are in the way. And from every pad there's a clear walk out (the route the bots follow: round the baffle, along
-the corridor, out of a door) that never runs into a wall.
+The maps: every map builds, its spawns are open decks (from every pad you see out onto the field: no walls, no
+hall; they're safe by rule, see ServerSmoke), and from every pad there's a clear walk out that never runs into a
+wall.
 
   luaurun tests/MapSmoke.spec.luau
 ]]
@@ -32,28 +31,20 @@ for _, m in Maps.list do
 	check(`{m.name}: builds`, a and #a.spawns.red == 10 and #a.spawns.blue == 10)
 	local parts = #a.folder:GetDescendants()
 	check(`{m.name}: detailed (hundreds of pieces)`, parts >= 450, parts)
-	-- nobody in the field can see a pad
-	local seen, first = 0, nil
+	-- the spawn is an open deck: from every pad you see the field (no walls, no hall)
+	local blind, firstBlind = 0, nil
 	for _, team in { "red", "blue" } do
 		local s = team == "red" and -1 or 1
 		for _, cf in a.spawns[team] do
-			for _, up in { 0, 2.5 } do
-				local pad = cf.Position + V3.new(0, up, 0)
-				for d = a.room.front1 + 1.5, a.length - 6, 4 do
-					for z = -a.width / 2 + 1, a.width / 2 - 1, 4 do
-						for _, y in { 4.5, 12, 24 } do
-							local from = V3.new(s * (a.half - d), y, z)
-							if not Combat:Blocked(from, pad) then
-								seen += 1
-								first = first or `{from} sees {pad}`
-							end
-						end
-					end
-				end
+			local eye = cf.Position + V3.new(0, 1.5, 0)
+			local out = V3.new(s * (a.half - a.room.front1 - 6), eye.Y, cf.Position.Z)
+			if Combat:Blocked(eye, out) then
+				blind += 1
+				firstBlind = firstBlind or `{eye} -> {out}`
 			end
 		end
 	end
-	check(`{m.name}: no line of fire into a spawn room`, seen == 0, first)
+	check(`{m.name}: open spawn decks (you see out)`, blind == 0, firstBlind)
 	-- a clear walk out from every pad
 	local stuck = 0
 	for _, team in { "red", "blue" } do

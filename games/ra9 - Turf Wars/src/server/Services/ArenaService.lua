@@ -29,34 +29,38 @@ local arena
 local extra = {} -- [id] = { min, max } the structures' boxes (BuildService keeps them here)
 local spawnTurn = { red = 0, blue = 0 }
 
+-- Matte, not glowing: a softer sun and less fill light, so the white world reads as white plaster that catches
+-- shadow (the bright whites used to burn out on screen), and no shine off the surfaces.
 local function light(def)
 	local l = def.lighting or {}
-	Lighting.Ambient = l.ambient or Color3.fromRGB(170, 170, 172)
-	Lighting.OutdoorAmbient = Color3.fromRGB(200, 200, 204)
-	Lighting.Brightness = l.brightness or 2.6
+	local amb = l.ambient or Color3.fromRGB(170, 170, 172)
+	Lighting.Ambient = amb:Lerp(Color3.new(0, 0, 0), 0.32)
+	Lighting.OutdoorAmbient = Color3.fromRGB(138, 138, 142)
+	Lighting.Brightness = (l.brightness or 2.6) * 0.62
 	Lighting.ClockTime = l.clock or 14
 	Lighting.GlobalShadows = true
-	Lighting.EnvironmentDiffuseScale = 0.6
-	Lighting.EnvironmentSpecularScale = 0.2
-	Lighting.FogColor = Color3.fromRGB(245, 245, 247)
+	Lighting.EnvironmentDiffuseScale = 0.35
+	Lighting.EnvironmentSpecularScale = 0.04
+	Lighting.ExposureCompensation = -0.25
+	Lighting.FogColor = Color3.fromRGB(232, 232, 236)
 	Lighting.FogEnd = 1200
 	pcall(function()
-		Lighting.ShadowSoftness = 0.6
+		Lighting.ShadowSoftness = 0.3 -- (crisper shadows: the geometry reads)
 	end)
-	-- a white sky: an atmosphere thick with white haze
+	-- a pale sky: an atmosphere with a light haze
 	local atmo = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
-	atmo.Density = 0.32
+	atmo.Density = 0.3
 	atmo.Offset = 0.1
-	atmo.Color = Color3.fromRGB(250, 250, 252)
-	atmo.Decay = Color3.fromRGB(235, 236, 240)
+	atmo.Color = Color3.fromRGB(236, 236, 240)
+	atmo.Decay = Color3.fromRGB(214, 216, 222)
 	atmo.Glare = 0
 	atmo.Haze = l.haze or 1.2
 	atmo.Parent = Lighting
 	local cc = Lighting:FindFirstChild("Grade") or Instance.new("ColorCorrectionEffect")
 	cc.Name = "Grade"
 	cc.Saturation = 0.15 -- (the reds and blues pop; the whites stay white)
-	cc.Contrast = 0.08
-	cc.Brightness = 0.03
+	cc.Contrast = 0.12
+	cc.Brightness = -0.03
 	cc.Parent = Lighting
 end
 
@@ -115,6 +119,16 @@ function ArenaService:SpawnFor(team, index)
 		index = spawnTurn[team]
 	end
 	return list[(index - 1) % #list + 1]
+end
+
+-- Is this player standing on their team's spawn deck?
+function ArenaService:OnDeck(player, team)
+	local c = player.Character
+	local r = c and c:FindFirstChild("HumanoidRootPart")
+	if not (arena and arena.room and r and team) then
+		return false
+	end
+	return ArenaBuilder.inRoom(arena, team, r.Position)
 end
 
 function ArenaService:LoseLine(team)

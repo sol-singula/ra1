@@ -1,13 +1,13 @@
 --[[
 Better light on machines that can take it, drawn on each client only (the server's map lighting stays the base):
 
-  high   a PC or console on a high graphics level (8+, or Automatic): soft bloom on the neon (the frontline, the
-         team lights), faint sun rays, a little haze in the far distance, crisper shadows and shinier surfaces
-  mid    graphics level 4-7: a lighter bloom and the shinier surfaces, nothing else
+  high   a PC or console on a high graphics level (8+, or Automatic): soft bloom on the neon only (the frontline,
+         the team lights), faint sun rays, a little haze in the far distance, crisper shadows; surfaces stay matte
+  mid    graphics level 4-7: a lighter bloom, nothing else
   low    phones and tablets, and levels 1-3: nothing added (the plain look, the best frame rate)
 
 The tier follows the player's graphics slider live, and is put back after every map load (the server resets the
-lighting for each map). The bloom's threshold is high, so the white world stays white and only the neon glows.
+lighting for each map). The bloom's threshold is high (2.6+), so the white world never glows: only the neon does.
 
   GraphicsController.tier()       "high" | "mid" | "low"
   GraphicsController.apply(tier)  (tests, or a settings toggle) forces a tier
@@ -73,14 +73,14 @@ end
 
 local TIERS = {
 	high = {
-		bloom = { Intensity = 0.45, Size = 30, Threshold = 1.9 },
+		bloom = { Intensity = 0.35, Size = 26, Threshold = 2.6 },
 		rays = true,
 		dof = true,
-		specular = 0.5,
-		diffuse = 0.85,
-		soft = 0.3,
+		specular = 0.06,
+		diffuse = 0.42,
+		soft = 0.25,
 	},
-	mid = { bloom = { Intensity = 0.25, Size = 22, Threshold = 2.1 }, specular = 0.35, diffuse = 0.7 },
+	mid = { bloom = { Intensity = 0.2, Size = 22, Threshold = 2.8 }, specular = 0.05, diffuse = 0.38 },
 	low = {},
 }
 
@@ -99,7 +99,7 @@ function GraphicsController.refresh()
 			drop("TW_Bloom")
 		end
 		if t.rays then
-			effect("SunRaysEffect", "TW_Rays", { Intensity = 0.035, Spread = 0.55 })
+			effect("SunRaysEffect", "TW_Rays", { Intensity = 0.02, Spread = 0.5 })
 		else
 			drop("TW_Rays")
 		end

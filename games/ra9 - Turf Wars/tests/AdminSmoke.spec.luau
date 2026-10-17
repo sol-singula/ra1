@@ -126,6 +126,7 @@ do
 		{ "spectate", nil, true },
 		{ "invisible", nil, true },
 		{ "unlockall" },
+		{ "tutorial" },
 		{ "end", nil, "red" },
 		{ "skip", nil, "fight" },
 		{ "restart" },
@@ -318,6 +319,20 @@ do
 	Engine.moveTo(owner, Vector3.new(30, 3, 30))
 	act(owner, "bring", solo.UserId)
 	check("bring them", (root(owner).Position - root(solo).Position).Magnitude < 8)
+end
+
+-- play the tutorial yourself
+do
+	local n0 = #Engine.clientLog
+	act(owner, "tutorial")
+	local started = false
+	for i = n0 + 1, #Engine.clientLog do
+		local e = Engine.clientLog[i]
+		if e.name == "Tutorial" and e.player == owner and e.args[1].kind == "start" and e.args[1].replay then
+			started = true
+		end
+	end
+	check("PLAY TUTORIAL: it starts for you, from the top", started)
 end
 
 -- match controls

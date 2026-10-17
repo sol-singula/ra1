@@ -178,6 +178,7 @@ function CombatService:Spawned(player)
 	s.drawAt = nil
 	s.hits = {}
 	s.protectUntil = now() + Constants.SPAWN_PROTECT
+	s.attacked = false
 	local profile = data:Get(player)
 	local pick = profile and profile.settings.weapon
 	s.weapon = Weapons.get(pick) and pick or s.weapon or Weapons.DEFAULT
@@ -271,6 +272,10 @@ function CombatService:Damage(victim, amount, attacker, info)
 		return false
 	end
 	if (s.protectUntil or 0) > now() then
+		return false
+	end
+	-- safe on your own spawn deck until you shoot or swing (it's open, so walls don't do it)
+	if attacker and not s.attacked and arena and arena:OnDeck(victim, teams:Team(victim)) then
 		return false
 	end
 	if attacker then
@@ -466,6 +471,7 @@ function CombatService:Shoot(player, origin, direction, shotId)
 		return nil
 	end
 	direction = direction.Unit
+	s.attacked = true -- (shooting gives up the spawn deck's safety)
 	local charge = w.draw > 0 and Formulas.charge(w, s.drawAt and (t - s.drawAt) or 0) or 1
 	local shot = Formulas.shot(w, charge)
 	s.drawAt = nil
@@ -527,6 +533,7 @@ function CombatService:Swing(player, direction)
 		return nil
 	end
 	s.readyAt = t + w.cooldown
+	s.attacked = true
 	local r = root(player)
 	if not r then
 		return nil

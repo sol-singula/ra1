@@ -451,10 +451,9 @@ function ArenaBuilder.build(def, parent)
 	)
 	ground.Name = "Ground"
 
-	-- the spawn rooms (no spawn killing): pads in the team's colour inside a walled, roofed room. Its front wall has
-	-- two doors; just inside, a long baffle wall stands between the doors and the pads, so nobody outside can see or
-	-- shoot a pad: you leave round the baffle's ends, along the corridor behind the front wall, and out of a door.
-	-- The roof (frames and glass) stops arrows lobbed over. Distances are from the team's own end wall (d).
+	-- the spawns: an open deck at the back of the base, pads in the team's colour facing the field, so you come in
+	-- seeing where you are and where the fight is (no walls, no hall). It's safe by rule, not by walls: nobody can
+	-- hurt you on your own deck until you shoot or swing (CombatService). Distances are from the team's own end wall.
 	local spawns = { red = {}, blue = {} }
 	local room = ArenaBuilder.room(width, spawnDepth)
 	for _, team in Constants.TEAMS do
@@ -485,81 +484,6 @@ function ArenaBuilder.build(def, parent)
 			0.25,
 			{ color = color, material = Enum.Material.Neon, solid = false }
 		)
-		-- the front wall, with its two doors (and lintels over them)
-		local fd = (room.front0 + room.front1) / 2
-		local ft = room.front1 - room.front0
-		local edges = { -width / 2 }
-		for _, side in { -1, 1 } do
-			for _, e in { room.gapMid - room.gapHalf, room.gapMid + room.gapHalf } do
-				table.insert(edges, side * e)
-			end
-		end
-		table.insert(edges, width / 2)
-		table.sort(edges)
-		for i = 1, #edges, 2 do
-			local z0, z1 = edges[i], edges[i + 1]
-			shapes:block(X(fd), (z0 + z1) / 2, ft, z1 - z0, room.height, { color = shapes.white, name = "SpawnWall" })
-			-- pilasters on its face toward the field, and a plinth
-			for z = z0 + 3, z1 - 3, 8 do
-				shapes:block(X(room.front1 + 0.4), z, 0.8, 1.6, room.height, { color = shapes.light, solid = false })
-			end
-			shapes:block(X(room.front1 + 0.3), (z0 + z1) / 2, 0.6, z1 - z0, 1, { color = shapes.grey, solid = false })
-		end
-		for _, side in { -1, 1 } do
-			local gz = side * room.gapMid
-			shapes:block(X(fd), gz, ft, room.gapHalf * 2, room.height - room.door, { color = shapes.white }, room.door)
-			-- the door frame: a team-coloured line round it
-			shapes:block(X(room.front1 + 0.1), gz, 0.3, room.gapHalf * 2 + 0.6, 0.4, {
-				color = color,
-				material = Enum.Material.Neon,
-				solid = false,
-			}, room.door)
-			for _, e in { -1, 1 } do
-				shapes:block(X(room.front1 + 0.1), gz + e * (room.gapHalf + 0.15), 0.3, 0.3, room.door, {
-					color = color,
-					material = Enum.Material.Neon,
-					solid = false,
-				})
-			end
-		end
-		-- a coping and a team band along the wall's top
-		shapes:block(X(fd), 0, ft + 0.8, width, 0.6, { color = shapes.light, solid = false }, room.height)
-		shapes:block(X(room.front1 + 0.05), 0, 0.2, width, 0.5, {
-			color = color,
-			material = Enum.Material.Neon,
-			solid = false,
-		}, room.height - 1.6)
-		-- the baffle inside, with a bench along its back (the pads' side)
-		local bd = (room.baffle0 + room.baffle1) / 2
-		shapes:block(X(bd), 0, room.baffle1 - room.baffle0, room.baffleHalf * 2, room.baffleH, {
-			color = shapes.light,
-			name = "Baffle",
-		})
-		shapes:block(X(bd), 0, room.baffle1 - room.baffle0 + 0.6, room.baffleHalf * 2 + 0.6, 0.4, {
-			color = shapes.white,
-			solid = false,
-		}, room.baffleH)
-		shapes:block(
-			X(room.baffle0 - 0.6),
-			0,
-			1.2,
-			room.baffleHalf * 2 - 4,
-			1.4,
-			{ color = shapes.white, solid = false }
-		)
-		-- the roof: frames (beams across the room) with glass between, so the light still comes in
-		local rd = room.front1 / 2
-		shapes:box(Vector3.new(X(rd), room.height + 0.5, 0), Vector3.new(room.front1, 1, width), {
-			color = color:Lerp(Color3.new(1, 1, 1), 0.75),
-			material = Enum.Material.Glass,
-			transparency = 0.55,
-			shadow = false,
-			name = "SpawnRoof",
-		})
-		for z = -width / 2 + 6, width / 2 - 6, 12 do
-			shapes:block(X(rd), z, room.front1, 1, 1.2, { color = shapes.white, solid = false }, room.height + 0.9)
-		end
-		shapes:block(X(room.front1 - 0.5), 0, 1, width, 1.2, { color = shapes.white, solid = false }, room.height + 0.9)
 		-- the back wall's arches (detail on the base end)
 		for k = -2, 2 do
 			shapes:block(X(1.5), k * 17, 3, 3, wallH, { color = shapes.white })
@@ -642,6 +566,7 @@ end
 --   height (walls and roof), door (a door's height), baffleH
 function ArenaBuilder.room(width, spawnDepth)
 	return {
+		open = true, -- (no walls: safe by rule, see CombatService)
 		pads = { 4, 8.5 },
 		baffle0 = 11.5,
 		baffle1 = 13,
@@ -656,17 +581,16 @@ function ArenaBuilder.room(width, spawnDepth)
 	}
 end
 
--- Inside a team's spawn room? (behind its front wall)
+-- On a team's spawn deck? (behind its spawn line)
 function ArenaBuilder.inRoom(arena, team, pos)
 	local s = team == "red" and -1 or 1
 	return arena.half - s * pos.X < arena.room.front1 + 0.5
 end
 
--- The way out of the spawn room: where to walk next from pos to reach goal (goal itself when there's nothing in
--- the way). Round the baffle's end on your side, along the corridor, out of the door.
+-- The way out of the spawn deck: straight on (it's open). (Kept for the bots; a room with walls would route here.)
 function ArenaBuilder.route(arena, team, pos, goal)
 	local r = arena.room
-	if not r then
+	if not r or r.open then
 		return goal
 	end
 	local s = team == "red" and -1 or 1

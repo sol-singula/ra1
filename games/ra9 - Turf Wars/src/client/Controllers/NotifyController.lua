@@ -4,9 +4,14 @@ holds, and slides away; the next one waits its turn (at most a handful wait, the
 look: "start" and "win" are big and black, "lose" muted, "status" gold, "admin" red, "party" blue, "info" white.
 Hidden while the panel is open (the queue waits).
 
+Someone joining ("join") isn't a banner: a small chip slides in at the left, up to three at once, gone after a few
+seconds. Your side's colour and "joined your team!" for a new teammate; white with the enemy's colour and "new
+enemy!" for the other side.
+
   NotifyController.show({ text, kind, color?, icon?, seconds? })   (tests call it too)
   NotifyController.current()   the banner on screen, or nil
   NotifyController.queued()    how many are waiting
+  NotifyController.chips()     the join chips on screen
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -58,9 +63,58 @@ local function present(msg)
 	untilT = os.clock() + (msg.seconds or (look.big and 3.2 or 2.6))
 end
 
+-- The join chips --------------------------------------------------------------------------------------------
+local chips = {} -- { frame, untilT }
+local CHIP_W, CHIP_H, CHIP_GAP, MAX_CHIPS = 250, 30, 6, 3
+
+function NotifyController.chips()
+	return chips
+end
+
+local function placeChips()
+	for i, c in chips do
+		Theme.tween(c.frame, 0.2, { Position = UDim2.new(0, 16, 0.4, (i - 1) * (CHIP_H + CHIP_GAP)) })
+	end
+end
+
+local function chip(msg)
+	local ally = msg.ally == true
+	local color = typeof(msg.color) == "Color3" and msg.color or C.ink
+	local f = Theme.new("Frame", {
+		Name = "JoinChip",
+		Position = UDim2.new(0, -CHIP_W, 0.4, #chips * (CHIP_H + CHIP_GAP)),
+		Size = UDim2.fromOffset(CHIP_W, CHIP_H),
+		BackgroundColor3 = ally and color or C.white,
+		Parent = gui,
+	}, { Theme.corner(15), Theme.stroke(2, color) })
+	Theme.text({
+		Name = "Text",
+		Text = `{msg.icon or (ally and "🎉" or "⚔️")}  {string.upper(msg.text)}`,
+		Size = UDim2.new(1, -16, 1, -4),
+		Position = UDim2.fromOffset(8, 2),
+		fit = 13,
+		Font = Theme.Display,
+		TextColor3 = ally and C.white or color,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = f,
+	})
+	table.insert(chips, { frame = f, untilT = os.clock() + (msg.seconds or 4) })
+	while #chips > MAX_CHIPS do
+		table.remove(chips, 1).frame:Destroy()
+	end
+	placeChips()
+	Theme.pop(f)
+end
+
 function NotifyController.show(msg)
 	if type(msg) ~= "table" or type(msg.text) ~= "string" or msg.text == "" then
 		return false
+	end
+	if msg.kind == "join" then
+		if gui then
+			chip(msg)
+		end
+		return true
 	end
 	table.insert(queue, msg)
 	while #queue > MAX_QUEUE do
@@ -72,6 +126,20 @@ end
 local function step()
 	if not strip then
 		return
+	end
+	local now = os.clock()
+	for i = #chips, 1, -1 do
+		local c = chips[i]
+		c.frame.Visible = not Layout.panel()
+		if now >= c.untilT then
+			table.remove(chips, i)
+			local f = c.frame
+			Theme.tween(f, 0.2, { Position = UDim2.new(0, -CHIP_W - 20, f.Position.Y.Scale, f.Position.Y.Offset) })
+			task.delay(0.25, function()
+				f:Destroy()
+			end)
+			placeChips()
+		end
 	end
 	if Layout.panel() then
 		strip.Visible = false

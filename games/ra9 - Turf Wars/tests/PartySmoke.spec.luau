@@ -32,6 +32,7 @@ local Teams = service("TeamService")
 local Bots = service("BotService")
 local Match = service("MatchService")
 local Constants = Engine.require(tree.shared.Constants)
+Constants.BUILD_SECONDS = 60 -- (these checks were written around a long build phase; the game uses 20 s)
 
 local function join(name, id, data)
 	local p = Engine.addPlayer(name, id, nil, data)

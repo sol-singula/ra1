@@ -14,7 +14,7 @@ Constants.TURF_COLOR = { red = Color3.fromRGB(240, 120, 118), blue = Color3.from
 Constants.TEAM_IMBALANCE = 2 -- (between matches the teams are evened to within 1; a joining player always takes the smaller team)
 
 -- Phases (§2): seconds
-Constants.BUILD_SECONDS = 60
+Constants.BUILD_SECONDS = 20
 Constants.FIGHT_SECONDS = 120
 Constants.VICTORY_SECONDS = 27 -- fireworks, the results, then the countdown to the next game...
 Constants.TRANSITION_SECONDS = 3 -- ...and the next map loads: 30 s from the win to the next build phase

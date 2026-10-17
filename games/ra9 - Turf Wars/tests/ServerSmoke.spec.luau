@@ -127,6 +127,7 @@ local ben = Engine.addPlayer("Ben", 502)
 Engine.advance(0.3)
 send(ben, "Ready")
 Engine.advance(0.3)
+local mJoin = mark()
 local dee = Engine.addPlayer("Dee", 504)
 Engine.advance(0.3)
 send(dee, "Ready")
@@ -138,6 +139,15 @@ check(
 	`{Teams:Team(ava)} {Teams:Team(ben)}`
 )
 check("the odd one out joins the smaller team", Teams:Team(dee) == Teams:Team(cy))
+check("someone joins: their new teammates get a chip", firedSince(mJoin, "Announce", cy, function(a)
+	return a[1].kind == "join" and a[1].ally == true and string.find(a[1].text, "your team") ~= nil
+end) ~= nil)
+check("...the other side hears of a new enemy", firedSince(mJoin, "Announce", ava, function(a)
+	return a[1].kind == "join" and a[1].ally == false and string.find(a[1].text, "new enemy") ~= nil
+end) ~= nil)
+check("...and not the one who joined", firedSince(mJoin, "Announce", dee, function(a)
+	return a[1].kind == "join"
+end) == nil)
 check("teams are even", Teams:Count("red") == 2 and Teams:Count("blue") == 2)
 local red = Teams:Team(ava) == "red" and ava or cy
 local red2 = red == ava and ben or dee
@@ -930,6 +940,35 @@ do
 		"...and it's on their record",
 		Data:Get(cheat) == nil or (Data:Get(cheat).ac and Data:Get(cheat).ac.flags >= 4)
 	)
+end
+
+-- the spawn deck: open (no walls), and safe by rule until you shoot
+do
+	local victim = Engine.addPlayer("Deck", 611)
+	local shooter = Engine.addPlayer("Archer", 612)
+	Engine.advance(0.5)
+	send(victim, "Ready")
+	send(shooter, "Ready")
+	Engine.advance(0.5)
+	if Teams:Team(victim) == Teams:Team(shooter) then
+		Teams:Set(shooter, Teams:Team(victim) == "red" and "blue" or "red")
+	end
+	Match:NewMatch()
+	Engine.advance(0.5)
+	Match:SkipTo("fight")
+	Engine.advance(Constants.SPAWN_PROTECT + 0.5)
+	local deck = Arena:SpawnFor(Teams:Team(victim), 1)
+	Engine.moveTo(victim, deck.Position)
+	check(
+		"on your own spawn deck",
+		Arena:OnDeck(victim, Teams:Team(victim)),
+		`{rootOf(victim) and rootOf(victim).Position} {deck.Position} {Teams:Team(victim)}`
+	)
+	check("...nobody can hurt you there", Combat:Damage(victim, 10, shooter) == false)
+	Combat:Equip(victim, "bow")
+	Engine.advance(1)
+	Combat:Shoot(victim, rootOf(victim).Position + Vector3.new(0, 1.5, 0), Vector3.new(1, 0, 0))
+	check("...until you shoot", Combat:Damage(victim, 10, shooter) == true)
 end
 
 print(`\n{passed} passed, {failed} failed`)

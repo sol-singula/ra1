@@ -215,7 +215,7 @@ function HudController.updateTop()
 		refs.lineMark.Position = UDim2.new(f, 0, 0.5, 0)
 		refs.redCount.Text = `RED {m.red or 0}`
 		refs.blueCount.Text = `BLUE {m.blue or 0}`
-		refs.mapName.Text = string.upper(m.mapName or "")
+		refs.mapName.Text = "" -- (the map's name stays off the bar: "New game: ..." says it once)
 	end
 end
 

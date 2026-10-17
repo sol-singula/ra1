@@ -17,6 +17,7 @@ Actions (target: a player's UserId; value: what the action needs):
   join (jobId)                          spectate another server
   spectate (on) | invisible (on)        yourself
   unlockall                             every cosmetic, for yourself
+  tutorial                              play the first-minute tutorial yourself, from the start
   end ("red" | "blue" | "draw")         the match ends now, the normal way
   skip ("fight" | "build") | restart | map (key) | bots (on) | freeze (on) | announce (text)
   team (target, "red" | "blue") | kill | heal (heal, or respawn if down) | kick (target, reason)
@@ -62,6 +63,7 @@ local AdminService = {
 }
 
 local data, teams, combat, match, bots, economy, season, progress, status, shop
+local registryRef -- (TutorialService is looked up when used: optional, never a dependency)
 local serverMap
 local jobId = game.JobId ~= "" and game.JobId or "studio"
 
@@ -318,6 +320,19 @@ ACTIONS.invisible = function(self, admin, _, on)
 	return true, on and "You're invisible." or "You can be seen again.", tostring(on == true)
 end
 
+-- Play the first-minute tutorial yourself (as a new player would see it), from the start
+ACTIONS.tutorial = function(_, admin)
+	local tutorial = registryRef and registryRef.TutorialService
+	if not tutorial or not Constants.TUTORIAL then
+		return false, "The tutorial is off in this build."
+	end
+	if Admins.spectating(admin) then
+		return false, "Stop spectating first."
+	end
+	tutorial:_onClient(admin, "replay")
+	return true, "Tutorial started!"
+end
+
 ACTIONS.unlockall = function(_, admin)
 	local n = 0
 	for _, key in Locker.every(Season.at(math.floor(workspace:GetServerTimeNow())).n) do
@@ -538,6 +553,7 @@ function AdminService:Do(admin, action, target, value)
 end
 
 function AdminService:Init(registry)
+	registryRef = registry
 	data = registry.PlayerDataService
 	teams = registry.TeamService
 	combat = registry.CombatService

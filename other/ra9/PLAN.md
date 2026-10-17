@@ -434,6 +434,20 @@ UserService. ClientSmoke checks the button in every overlap layout and the open 
   spam); no shots from the blade, from the far side of a wall, or with NaN or odd shot ids; the tutorial marker
   survives a respawn; analytics taps can't grow without limit.
 
+## Round 13: a faster start, matte white, open spawns, join chips
+
+* **Build phase: 20 s** (was 60).
+* **The top bar** no longer shows the map's name ("New game: ..." says it once).
+* **Matte, not glowing:** a softer sun and less fill light, almost no shine (EnvironmentSpecularScale 0.04), a
+  little exposure down and crisper shadows, so the white reads as plaster that catches shadow; the bloom only
+  catches the neon now (threshold 2.6+).
+* **Open spawns:** no more walled hall (front wall, inner baffle and roof gone). You spawn on an open deck at the back
+  of your base, facing the field, and it's safe by rule: nobody can hurt you on your own deck until you shoot or
+  swing (`ArenaService:OnDeck`, CombatService).
+* **Join chips:** someone joins, everyone else gets a small chip at the left: "🎉 NAME joined your team!" in your
+  colour, or "⚔️ NAME joined RED: new enemy!" (`MatchService:AnnounceJoin`, Notify kind "join").
+* **Admin: PLAY TUTORIAL** (ME tab) runs the first-minute tutorial for yourself from the top.
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

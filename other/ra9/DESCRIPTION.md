@@ -13,7 +13,7 @@ Your side of the floor is your turf. Every time you knock someone out, the line 
 Push it all the way to their base to win!
 
 🧱 BUILD, THEN FIGHT
-You get 60 seconds to build walls, towers and ramps. Then the fight starts!
+You get 20 seconds to build walls, towers and ramps. Then the fight starts!
 
 🏹 PICK YOUR WEAPON
 • Bow: hold to pull back, let go to shoot
@@ -25,7 +25,7 @@ You get 60 seconds to build walls, towers and ramps. Then the fight starts!
 Run, slide, crouch, and flip off your fourth jump.
 
 🛡️ SAFE SPAWNS
-Your base has walls and a roof. Nobody can shoot you while you get ready.
+Nobody can hurt you in your base until you shoot. Get ready, then charge!
 
 🤖 NO ONE ELSE ON? A bot fights you until a friend joins.
 

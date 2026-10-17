@@ -25,6 +25,7 @@ end
 
 local tree = Engine.mountProject(".")
 Engine.require(tree.shared.Constants).TUTORIAL = false -- (the players here know the game: tests/TutorialSmoke is the tutorial's)
+Engine.require(tree.shared.Constants).BUILD_SECONDS = 60 -- (these checks were written around a long build phase; the game uses 20 s)
 Engine.clientEnabled = true
 local ws = Engine.workspace
 ws.CurrentCamera.ViewportSize = Vector2.new(844, 390)
@@ -281,6 +282,17 @@ do
 	Engine.advance(0.2)
 	check("Tab again closes it", not PanelC.isOpen())
 end
+-- someone joins: a small chip at the left (not the banner), gone after a few seconds
+do
+	local NotifyC = Engine.require(tree.client.Controllers.NotifyController)
+	NotifyC.show({ text = "Zed joined your team!", kind = "join", ally = true, icon = "🎉" })
+	NotifyC.show({ text = "Kai joined BLUE: new enemy!", kind = "join", ally = false, icon = "⚔️" })
+	Engine.advance(0.3)
+	check("join chips: small, at the left", #NotifyC.chips() == 2 and NotifyC.chips()[1].frame.Size.X.Offset <= 260)
+	check("...not the big banner", NotifyC.current() == nil or NotifyC.current().kind ~= "join")
+	Engine.advance(5)
+	check("...gone after a few seconds", #NotifyC.chips() == 0)
+end
 -- graphics: more on a PC that can take it, nothing added on a phone
 do
 	local Gfx = Engine.require(tree.client.Controllers.GraphicsController)
@@ -295,7 +307,7 @@ do
 		"...bloom, sun rays, far haze",
 		L:FindFirstChild("TW_Bloom") and L:FindFirstChild("TW_Rays") and L:FindFirstChild("TW_Depth")
 	)
-	check("...the bloom only catches the neon", L.TW_Bloom.Threshold >= 1.8)
+	check("...the bloom only catches the neon", L.TW_Bloom.Threshold >= 2.5)
 	Gfx.apply("mid")
 	check(
 		"mid: a lighter bloom, no rays",

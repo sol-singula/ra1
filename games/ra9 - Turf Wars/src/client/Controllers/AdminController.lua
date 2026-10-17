@@ -536,6 +536,14 @@ local function meTab(body)
 	})
 	y = row(body, y, {
 		{
+			"Tutorial",
+			"PLAY TUTORIAL",
+			function()
+				send("tutorial")
+				AdminController.close() -- (out of the way: the tutorial has the screen)
+			end,
+		},
+		{
 			"UnlockAll",
 			"UNLOCK ALL",
 			function()

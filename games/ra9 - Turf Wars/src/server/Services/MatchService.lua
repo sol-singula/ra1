@@ -628,8 +628,29 @@ function MatchService:MapKey()
 	return mapKey
 end
 
+-- Someone new: a small chip for everyone else, "joined your team!" for their side, "a new enemy!" for the other
+function MatchService:AnnounceJoin(player)
+	local team = teams:Team(player)
+	if not team or Admins.spectating(player) then
+		return
+	end
+	for _, other in Players:GetPlayers() do
+		if other ~= player and teams:Team(other) then
+			local same = teams:Team(other) == team
+			Notify.to(
+				other,
+				same and `{player.DisplayName} joined your team!`
+					or `{player.DisplayName} joined {Constants.TEAM_NAME[team]}: new enemy!`,
+				"join",
+				{ color = Constants.TEAM_COLOR[team], icon = same and "🎉" or "⚔️", ally = same }
+			)
+		end
+	end
+end
+
 function MatchService:OnPlayerReady(player)
 	self:Join(player)
+	self:AnnounceJoin(player)
 	data:WhenClientReady(player, function()
 		Net.fire(player, "Match", self:Snapshot())
 		combat:Push(player)
