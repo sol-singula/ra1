@@ -600,6 +600,59 @@ local w, d = Structures.footprint(Structures.get("wall"), 1)
 check("a turned wall swaps its footprint", w == 1 and d == 2)
 check("cells are 4 studs", Formulas.cellOf(5, -1) == 1 and select(2, Formulas.cellOf(5, -1)) == -1)
 check("a budget buys several pieces", Constants.BUILD_BUDGET >= Structures.get("tower").cost * 3)
+check(
+	"200 points a phase, 24 pieces each, stacks to 30 studs",
+	Constants.BUILD_BUDGET == 200 and Constants.PLAYER_STRUCTURES == 24 and Constants.BUILD_MAX_HEIGHT == 30
+)
+do
+	-- stacking (Formulas.stackCheck): what stands on each cell, as the server and the preview see it
+	local tops = {}
+	local function topAt(x, z)
+		return tops[x .. ":" .. z]
+	end
+	local function set(x, z, top, team, key)
+		tops[x .. ":" .. z] = top and { top = top, team = team or "red", key = key or "wall" } or nil
+	end
+	local wall, tower, banner, bar =
+		Structures.get("wall"), Structures.get("tower"), Structures.get("banner"), Structures.get("barricade")
+	check("the floor, bare: a wall goes down", Formulas.stackCheck(wall, "red", 0, 0, 2, 1, 0, topAt) == true)
+	set(0, 0, 10)
+	set(1, 0, 10)
+	local ok, why = Formulas.stackCheck(wall, "red", 0, 0, 2, 1, 0, topAt)
+	check("...taken: something's already there", not ok and why == "Something's already there", why)
+	check("a wall on two wall tops at 10: supported", Formulas.stackCheck(wall, "red", 0, 0, 2, 1, 10, topAt) == true)
+	ok, why = Formulas.stackCheck(wall, "red", 0, 0, 2, 1, 6, topAt)
+	check("...half way up: no support", not ok and why == "No support", why)
+	ok, why = Formulas.stackCheck(wall, "red", 1, 0, 2, 1, 10, topAt)
+	check("...half on a wall, half in the air: no support", not ok and why == "No support", why)
+	set(1, 0, 4, "red", "barricade")
+	ok, why = Formulas.stackCheck(wall, "red", 0, 0, 2, 1, 10, topAt)
+	check("...on tops of different heights: no support", not ok and why == "No support", why)
+	set(1, 0, 10, "blue")
+	ok, why = Formulas.stackCheck(wall, "red", 0, 0, 2, 1, 10, topAt)
+	check("...on the enemy's wall: no support", not ok and why == "No support", why)
+	set(1, 0, 10, "red", "tower")
+	ok, why = Formulas.stackCheck(bar, "red", 0, 0, 2, 1, 10, topAt)
+	check(
+		"...on a tower: no support (nothing builds on a tower, a shield or a banner)",
+		not ok and why == "No support",
+		why
+	)
+	set(1, 0, 10)
+	ok, why = Formulas.stackCheck(banner, "red", 0, 0, 1, 1, 10, topAt)
+	check("the Rally Banner only on the floor", not ok and why == "Only on the floor", why)
+	check("a battlement on a wall: a parapet", Formulas.stackCheck(bar, "red", 0, 0, 2, 1, 10, topAt) == true)
+	set(0, 0, 20)
+	set(1, 0, 20)
+	check("a third wall reaches the cap", Formulas.stackCheck(wall, "red", 0, 0, 2, 1, 20, topAt) == true)
+	ok, why = Formulas.stackCheck(tower, "red", 0, 0, 2, 2, 20, topAt)
+	check("...a tower there would go over it: too high", not ok and why and why:find("Too high") ~= nil, why)
+	set(0, 0, 6, "red", "bridge")
+	set(1, 0, 6, "red", "bridge")
+	set(0, 1, 6, "red", "bridge")
+	set(1, 1, 6, "red", "bridge")
+	check("a tower on four rampart cells: supported", Formulas.stackCheck(tower, "red", 0, 0, 2, 2, 6, topAt) == true)
+end
 
 -- The ladder ---------------------------------------------------------------------------------------------------
 check("a hundred steps", #Ladder.steps == 100)

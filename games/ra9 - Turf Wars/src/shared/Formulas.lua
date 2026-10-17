@@ -15,8 +15,11 @@ The rules as pure functions (no Instances), shared by the server, the client and
   Formulas.segmentBox(a, b, min, max)         ...the axis-aligned box, or nil
   Formulas.segmentPart(a, b, cf, size, shape) ...a part's real shape: turned box, cylinder (axis X) or ball
   Formulas.cellOf(x, z) / cellCenter(cx, cz)  the 4-stud building grid
+  Formulas.footprintBox(cx, cz, w, d, y, h)   a piece's box, its base at y
+  Formulas.stackCheck(def, team, cx, cz, w, d, y, topAt)   may a piece stand at base height y on those cells?
 ]]
 local Constants = require(script.Parent.Constants)
+local Structures = require(script.Parent.Data.Structures)
 
 local Formulas = {}
 
@@ -226,6 +229,37 @@ end
 function Formulas.footprintBox(cx, cz, w, d, y, h)
 	local c = Constants.CELL
 	return Vector3.new(cx * c, y, cz * c), Vector3.new((cx + w) * c, y + h, (cz + d) * c)
+end
+
+-- Stacking (BuildService checks it, BuildController's preview shows it): may a piece of `def` go with its base at
+-- height y on the cells (cx, cz, w x d)? topAt(x, z) -> the tallest piece on that cell as { top, team, key } (nil:
+-- bare floor). On the floor (y = 0) every cell must be bare; above it, every cell's top must be exactly y (the one
+-- tallest piece under each cell: no piece half on a wall and half in the air), every piece under it `team`'s own
+-- and one that can be built on (Data/Structures stack ~= false), the piece one that may leave the floor (not
+-- ground), and the stack no taller than BUILD_MAX_HEIGHT. Returns ok, why (the reason the player sees).
+function Formulas.stackCheck(def, team, cx, cz, w, d, y, topAt)
+	y = y or 0
+	if y > 0 and def.ground then
+		return false, "Only on the floor"
+	end
+	if y + def.h > Constants.BUILD_MAX_HEIGHT + 0.01 then
+		return false, `Too high ({Constants.BUILD_MAX_HEIGHT} studs at most)`
+	end
+	for x = cx, cx + w - 1 do
+		for z = cz, cz + d - 1 do
+			local under = topAt(x, z)
+			if y <= 0 then
+				if under then
+					return false, "Something's already there"
+				end
+			elseif not under or math.abs(under.top - y) > 0.01 then
+				return false, "No support"
+			elseif under.team ~= team or (Structures.get(under.key) or {}).stack == false then
+				return false, "No support"
+			end
+		end
+	end
+	return true, nil
 end
 
 -- A win counts toward the ladder when you were on the winning team, in the match long enough, and not idle.

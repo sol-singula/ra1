@@ -52,6 +52,31 @@ local function root(who)
 	return who.Character and who.Character:FindFirstChild("HumanoidRootPart")
 end
 
+-- Stacks on the walking grid (server/BotNav): a battlement alone is a hop; two stacked (BuildService's boxes are
+-- three-dimensional, the top one's base at 4) are a wall, and a path goes round them
+do
+	local BotNav = Engine.require(tree.server.BotNav)
+	local field = { half = 60, width = 60, length = 120 }
+	local low = { min = V3.new(-8, 0, -4), max = V3.new(8, 4, 4) }
+	local nav1 = BotNav.new(field, { low })
+	check(
+		"one battlement: a hop for a bot (LOW)",
+		nav1:ClassAt(V3.new(0, 0, 0)) == BotNav.LOW,
+		nav1:ClassAt(V3.new(0, 0, 0))
+	)
+	local nav2 = BotNav.new(field, { low, { min = V3.new(-8, 4, -4), max = V3.new(8, 8, 4) } })
+	check("two stacked: a wall (WALL)", nav2:ClassAt(V3.new(0, 0, 0)) == BotNav.WALL, nav2:ClassAt(V3.new(0, 0, 0)))
+	local path = nav2:Path(V3.new(-24, 0, 0), V3.new(24, 0, 0))
+	local clear = path ~= nil and #path > 0
+	for _, p in path or {} do
+		if p.X > -9.5 and p.X < 9.5 and p.Z > -5.5 and p.Z < 5.5 then
+			clear = false
+		end
+	end
+	check("...a path across goes round the stack", clear, path and #path)
+	check("...its far end is the goal", path and (path[#path] - V3.new(24, 0, 0)).Magnitude < 0.01)
+end
+
 local only = ARGS and ARGS[1] ~= "all" and ARGS[1] or nil
 local DEBUG = ARGS and ARGS[2] == "debug"
 local SIM = 120 -- simulated seconds per map

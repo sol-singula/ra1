@@ -346,6 +346,210 @@ check("the budget is spent per player", Build:Budget(blue) == Constants.BUILD_BU
 local okB, whyB = Build:Place(blue, "tower", Formulas.cellOf(30, 0), 2, 0)
 check("blue can't build beside the line from spawn (reach)", not okB, whyB)
 
+-- Stacking: pieces on the tops of pieces (Formulas.stackCheck), the caps, the chain when a support falls ----------
+do
+	check("a build phase gives 200 points", Constants.BUILD_BUDGET == 200 and Build:BudgetMax() == 200)
+	Build:SetBudget(120)
+	Build:Refill()
+	check("...another mode can set its own", Build:Budget(red) == 120, Build:Budget(red))
+	Build:SetBudget(Constants.BUILD_BUDGET)
+	Build:Refill()
+	-- a 2 x 2 block of free cells on red's side (two walls side by side go there, and a tower over them)
+	local function near(cx, cz)
+		local px, pz = Formulas.cellCenter(cx, cz)
+		stand(red, Vector3.new(px - 10, 3, pz))
+	end
+	local cx, cz
+	for x = -16, -5 do
+		for z = -6, 6 do
+			if not cx then
+				near(x, z)
+				if
+					Build:Check(red, "wall", x, z, 0)
+					and Build:Check(red, "wall", x, z + 1, 0)
+					and Build:Check(red, "wall", x + 2, z, 0)
+				then
+					cx, cz = x, z
+				end
+			end
+		end
+	end
+	check("a clear patch to stack on", cx ~= nil)
+	near(cx, cz)
+	local mS = mark()
+	local ok1, A = Build:Place(red, "wall", cx, cz, 0)
+	check("a wall on the floor", ok1 == true, A)
+	local ok2, B = Build:Place(red, "wall", cx, cz, 0, 10)
+	check("a wall on top of it is built", ok2 == true, B)
+	check("...its box starts where the first tops out", ok2 and B.boxMin.Y == 10 and B.boxMax.Y == 20)
+	check(
+		"...joined down: no plinth of its own (the stack reads as one tall wall)",
+		ok2
+			and B.joins
+			and B.joins.below == "wall"
+			and B.model:FindFirstChild("Plinth") == nil
+			and A.model:FindFirstChild("Plinth") ~= nil
+			and B.model:FindFirstChild("Body") ~= nil
+	)
+	check("...everyone is told, with its box (the preview stacks on it)", firedSince(mS, "Structure", nil, function(m)
+		return m[1].kind == "built" and m[1].id == B.id and m[1].boxMin == B.boxMin and m[1].boxMax == B.boxMax
+	end) ~= nil)
+	local entry
+	for _, sol in Arena:Solids() do
+		if sol.id == B.id then
+			entry = sol
+		end
+	end
+	check(
+		"...the arrows' box is the stacked one",
+		entry and entry.min.Y == 10 and entry.max.Y == 20 and entry.parts == B.solid
+	)
+	local okU, whyU = Build:Place(red, "wall", cx, cz, 0, 5)
+	check("half way up a wall: no support", not okU and whyU == "No support", whyU)
+	local okU2, whyU2 = Build:Place(red, "wall", cx + 2, cz, 0, 10)
+	check("...in the air beside it: no support", not okU2 and whyU2 == "No support", whyU2)
+	local okU3, whyU3 = Build:Place(red, "tower", cx, cz, 0, 10)
+	check("...a tower over a stack and thin air: no support", not okU3 and whyU3 == "No support", whyU3)
+	local okU4, whyU4 = Build:Place(red, "wall", cx, cz, 0, 0)
+	check("...on the floor where the stack stands: taken", not okU4 and whyU4 == "Something's already there", whyU4)
+	local ok3, C = Build:Place(red, "wall", cx, cz, 0, 20)
+	check("a third wall: three high, the cap", ok3 == true and C.boxMax.Y == Constants.BUILD_MAX_HEIGHT, C)
+	local okH, whyH = Build:Place(red, "barricade", cx, cz, 0, 30)
+	check("...nothing above it", not okH and whyH and whyH:find("Too high") ~= nil, whyH)
+	-- take the top one back: a battlement on the wall is a parapet; a banner stays on the floor
+	local b0 = Build:Budget(red)
+	Build:Remove(C.id, nil, true)
+	check("taking the top back refunds it", Build:Budget(red) == b0 + 10 and Build:All()[C.id] == nil)
+	local okP, P = Build:Place(red, "barricade", cx, cz, 0, 20)
+	check("a battlement on a wall: a parapet", okP == true and P.boxMin.Y == 20 and P.boxMax.Y == 24, P)
+	local okBan, whyBan = Build:Place(red, "banner", cx, cz, 0, 24)
+	check("the Rally Banner stays on the floor", not okBan and whyBan == "Only on the floor", whyBan)
+	-- a shield wall takes nothing on it; a rampart takes a wall
+	local okSh, Sh = Build:Place(red, "cover", cx + 2, cz, 0)
+	local okSh2, Sh2 = Build:Place(red, "cover", cx + 3, cz, 0)
+	local okOn, whyOn = Build:Place(red, "barricade", cx + 2, cz, 0, 6)
+	check(
+		"nothing goes on a shield wall",
+		okSh == true and okSh2 == true and not okOn and whyOn == "No support",
+		okSh and okSh2 and whyOn or Sh2 or Sh
+	)
+	-- reach is to the piece: from where the floor is in reach, the top of a stack may not be
+	do
+		local mid = (P.boxMin + P.boxMax) / 2
+		stand(red, Vector3.new(mid.X - 40, 3, mid.Z))
+		local _, whyF = Build:Check(red, "barricade", cx, cz, 0)
+		local _, whyT = Build:Check(red, "barricade", cx, cz, 0, 24)
+		check(
+			"reach is measured to the piece: the stack's foot in reach, its top not",
+			whyF == "Something's already there" and whyT == "Too far away",
+			(whyF or "?") .. " / " .. (whyT or "?")
+		)
+		near(cx, cz)
+	end
+	-- a player standing on the stack's top is not inside it (the anti-cheat's noclip test)
+	do
+		local mid = (P.boxMin + P.boxMax) / 2
+		stand(red, Vector3.new(mid.X, P.boxMax.Y + 3, mid.Z))
+		local realGround = AC.groundDistance
+		AC.groundDistance = function(p, pos)
+			if p == red then
+				return 3
+			end
+			return realGround(p, pos)
+		end
+		local n0 = #acFlags
+		Engine.advance(3.2) -- (past the teleport's grace, then a few checks)
+		local flagged = false
+		for i = n0 + 1, #acFlags do
+			if acFlags[i].player == red then
+				flagged = true
+			end
+		end
+		check(
+			"standing on top of a stack: the anti-cheat sees nothing wrong",
+			not flagged,
+			flagged and acFlags[#acFlags].kind
+		)
+		AC.groundDistance = realGround
+		near(cx, cz)
+	end
+	-- the support comes down: everything on it falls with it (no refund), each with its own debris, to the floor
+	local fell = {}
+	local conn = Build.Destroyed:Connect(function(s)
+		table.insert(fell, s.id)
+	end)
+	local mD = mark()
+	local bBefore = Build:Budget(red)
+	Build:Hit(A.id, 9999, blue)
+	conn:Disconnect()
+	check(
+		"break the bottom wall: the whole stack comes down",
+		Build:All()[A.id] == nil and Build:All()[B.id] == nil and Build:All()[P.id] == nil
+	)
+	check("...each counted as destroyed", #fell == 3, #fell)
+	local top = firedSince(mD, "Structure", nil, function(m)
+		return m[1].kind == "destroyed" and m[1].id == P.id
+	end)
+	check(
+		"...the parapet's debris falls to the floor the stack stood on",
+		top and top.args[1].floor == 0 and top.args[1].min.Y == 20,
+		top and top.args[1].floor
+	)
+	check("...nothing refunded", Build:Budget(red) == bBefore)
+	check("...the cells are free again", Build:Place(red, "wall", cx, cz, 0) == true)
+	-- taken back by hand: the stack comes down refunded
+	local okA2, A2 = true, nil
+	for _, st in Build:All() do
+		if st.cx == cx and st.cz == cz and st.team == Teams:Team(red) and st.boxMin.Y == 0 then
+			A2 = st
+		end
+	end
+	local okB2, B2 = Build:Place(red, "wall", cx, cz, 0, 10)
+	local bb = Build:Budget(red)
+	check("a stack again", okA2 and A2 and okB2 == true, B2)
+	Build:Remove(A2.id, nil, true)
+	check(
+		"take the bottom back: both go, both refunded",
+		Build:All()[B2.id] == nil and Build:Budget(red) == math.min(Constants.BUILD_BUDGET, bb + 20),
+		Build:Budget(red)
+	)
+	for _, sh in { okSh and Sh, okSh2 and Sh2 } do
+		if sh then
+			Build:Remove(sh.id, nil, true)
+		end
+	end
+	-- the cap on standing pieces: 24 each, LIMIT REACHED after
+	Build:Refill()
+	local placed, whyCap = {}, nil
+	for x = -16, -4 do
+		near(x, 0) -- (a column at a time: the whole column is in reach from its middle)
+		for z = -8, 8 do
+			if not whyCap then
+				local okC, res = Build:Place(red, "barricade", x, z, 0)
+				if okC then
+					table.insert(placed, res.id)
+				elseif res and res:find("Limit reached") then
+					whyCap = res
+				end
+				if Build:Budget(red) < 10 then
+					Build:Refill()
+				end
+			end
+		end
+	end
+	check(
+		"a player's standing pieces are capped at 24: LIMIT REACHED",
+		whyCap ~= nil and Build:PlayerCount(red) == Constants.PLAYER_STRUCTURES,
+		whyCap or Build:PlayerCount(red)
+	)
+	for _, id in placed do
+		Build:Remove(id, nil, true)
+	end
+	check("...taken back, there's room again", Build:PlayerCount(red) < Constants.PLAYER_STRUCTURES)
+	Build:Refill()
+	stand(red, Vector3.new(-40, 3, -12))
+end
+
 -- The fight -----------------------------------------------------------------------------------------------------
 check(
 	"no damage in the build phase",
