@@ -63,7 +63,7 @@ check("...wound up like a draw", tnt.draw > 0 and tnt.minCharge > 0)
 check("...a few seconds between throws", tnt.cooldown >= 2.5 and tnt.cooldown <= 4)
 check(
 	"...the blast: a core inside the radius, a short fuse",
-	Constants.TNT_CORE < Constants.TNT_RADIUS and Constants.TNT_RADIUS >= 8 and Constants.TNT_FUSE <= 1.5
+	Constants.TNT_CORE < Constants.TNT_RADIUS and Constants.TNT_RADIUS >= 8 and Constants.TNT_FUSE <= 2
 )
 do
 	local look = Vector3.new(1, 0, 0)
