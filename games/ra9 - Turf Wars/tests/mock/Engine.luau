@@ -1697,6 +1697,28 @@ end
 function methods.JSONDecode(_, s)
 	return decode(s)
 end
+-- The experience's Secrets Store (tests fill Engine.secrets) and outgoing requests: every RequestAsync is kept in
+-- Engine.httpRequests ({ Url, Method, Headers, Body }) and answered with Engine.httpStatus.
+Engine.secrets = {}
+Engine.httpRequests = {}
+Engine.httpStatus = 200
+function methods.GetSecret(_, name)
+	local v = Engine.secrets[name]
+	if v == nil then
+		error("Can't find secret with given key")
+	end
+	return v
+end
+function methods.RequestAsync(_, request)
+	table.insert(Engine.httpRequests, request)
+	local code = Engine.httpStatus
+	return { Success = code >= 200 and code < 300, StatusCode = code, StatusMessage = "", Headers = {}, Body = "{}" }
+end
+function methods.UrlEncode(_, s)
+	return (string.gsub(tostring(s), "[^%w%-_%.~]", function(c)
+		return string.format("%%%02X", string.byte(c))
+	end))
+end
 _ = HttpService
 
 -- DataStoreService (in memory)

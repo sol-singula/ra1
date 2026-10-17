@@ -113,6 +113,7 @@ function ShopService:GrantStarter(player)
 	economy:Add(player, Shop.STARTER.shards, "starter")
 	economy:Give(player, Shop.STARTER.cosmetic)
 	progress.card(player, Shop.STARTER.cosmetic, "STARTER PACK!", Shop.STARTER.desc)
+	self.Bought:Fire(player, "starter", nil, Shop.STARTER.robux)
 	return true
 end
 

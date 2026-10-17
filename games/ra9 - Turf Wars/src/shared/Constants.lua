@@ -85,6 +85,10 @@ Constants.GAME_LOG_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/
 Constants.ANALYTICS_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-analytics"
 Constants.GAME_LOG_IN_STUDIO = false
 Constants.GAME_LOG_FLUSH_SECONDS = 5
+Constants.ANALYTICS_GAME = "ra9" -- (the game tag on every analytics row: the live dashboard's ?game=ra9)
+Constants.ANALYTICS_FLUSH_SECONDS = 10
+Constants.ANALYTICS_SNAPSHOT_SECONDS = 30 -- each player's live row (the team's dashboard) this often
+Constants.ANALYTICS_IDLE_SECONDS = 45 -- no movement or input this long: idle
 
 -- The look (§0): white world, grey shadows, red and blue
 Constants.WHITE = Color3.fromRGB(242, 242, 240)

@@ -264,9 +264,35 @@ over the line...), with short question lines (SO CLOSE..., BEHIND YOU!, WHAT'S I
 
 ![](thumbnails/_all.jpg)
 
+## Logs, analytics, dashboard
+
+The studio's shared pipeline, ported from ra8 (same functions, same payloads, tagged `ra9`):
+
+* **Discord game log** (`GameLogService`, through the roblox-game-log function, batched every 5 s): server started
+  and shutting down, joins (new, or returning with their wins) and leaves (how long they stayed, matches and wins),
+  the chat (as plain text), each match starting (🗺️ its map), each match won (🏆 the team, kills for and against,
+  the MVP, how long it took), Robux purchases (💸), anti-cheat flags (3+ strikes, and aim) and kicks, script errors,
+  and admin actions (🛡️ "xthirtysix used end match (red)") when an `AdminService` with a `Used` signal is loaded.
+  Every line starts "ra9 · ".
+* **Analytics** (`AnalyticsService`, through the roblox-analytics function, every 10 s): a `roblox_sessions` row per
+  visit (new or returning, device, country, join source, friends here, progress at the start and the end, what they
+  were doing when they left) and `roblox_events`: join, loaded, first_shot, first_build, first_kill, first_win,
+  match_start, match_end (won or lost, kills, deaths, assists, built, MVP), kill, down, assist, build, team, ladder,
+  earned, purchase (Robux), shard_buy, feedback_asked, feedback (the winners' "liking it?" answer), like_card,
+  anticheat, kicked, requests, idle, the leave. Every event carries ctx (team, phase, map, alive, weapon, the
+  match's kills and deaths). Other services add their own with `AnalyticsService.event(player, name, data)`: the
+  tutorial should send `tutorial_step` and `tutorial_done` (the dashboard's "Finish tutorial" counts
+  `tutorial_done`); if the profile gets a `tutorial = { step, done }` table it is read too.
+* **Live dashboard** (`other/live.html`, 🏹 Turf Wars, key 4): every 30 s each player's live row (team, phase, map,
+  kills and deaths this match, weapon, alive, wins, ladder step, pass tier, Shards, device, idle). The page now asks
+  for a password (only its SHA-256 is in the file; remembered per browser; `?pw=` works too).
+* Needs the experience's **"discord_log" secret** (Secrets Store, domain kvedatksqkcsgivntskb.supabase.co) and
+  **Allow HTTP Requests**. Without them nothing is sent and the server's log (F9) says why (`GameKey`).
+* `tests/LogSmoke.spec.luau` plays a short match on the mock engine and reads what actually went out over
+  HttpService (both functions, the key header, the payload fields, the Discord lines).
+
 ## Next (phase F)
 
-* The Discord log and analytics (the studio's shared pipeline), the dashboard entry.
 * Lag compensation for hits; bots that also build in the build phase.
 * The rest of the cosmetics applied in play (the ladder's trails, bow finishes, kill effects, banners, titles) and a
   locker to pick them.
