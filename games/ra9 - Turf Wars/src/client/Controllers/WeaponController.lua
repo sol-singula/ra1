@@ -700,6 +700,9 @@ function WeaponController.startDraw()
 	if w.melee then
 		return WeaponController.swing()
 	end
+	if game:GetService("Players").LocalPlayer:GetAttribute("Flag") then
+		return false -- (Capture the Flag: a carrier's bow stays down; the blade still swings. The server refuses too)
+	end
 	if w.draw <= 0 then
 		WeaponController.release(true) -- (a weapon with no draw shoots on each press)
 		return true

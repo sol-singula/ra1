@@ -27,6 +27,12 @@ HUD does. In its private practice (Layout.inPractice) the Shards counter stays u
 
 The objective is on screen in the first seconds (§1: understood in under 15 s): "Every kill pushes the line toward
 their base. Push them off the map."
+
+Capture the Flag (the match's mode: Store match.mode, workspace "Mode"): the frontline bar gives way to both scores,
+big, in the mode's team names and colours (Constants.TEAM_NAME / TEAM_COLOR), each side's flag beside its score
+(⚑ home, ✕ taken, ▼ dropped); markers on the screen (or at its edge, pointing) to the enemy flag and to your own
+when it's dropped or taken; "YOU HAVE THE FLAG: RUN HOME!" while you carry it; the phase pill says WAITING FOR
+PLAYERS 2/4 and a READY button (R) joins the queue; the results card gets a CAPS column. The objective says the mode's.
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -42,6 +48,7 @@ local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Locker = require(ReplicatedStorage.Shared.Data.Locker)
 local Format = require(ReplicatedStorage.Shared.Format)
 local KillBanner = require(script.Parent.KillBannerController)
+local HitDirection = require(script.Parent.HitDirectionController)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -54,6 +61,7 @@ local HudController = { Name = "HudController", Order = 40 }
 
 local C = Theme.Color
 local RED, BLUE = Constants.TEAM_COLOR.red, Constants.TEAM_COLOR.blue
+local RED_ALERT = Color3.fromRGB(235, 40, 45) -- (a warning, whatever the teams' colours: TAKEN!)
 local player = Players.LocalPlayer
 local refs = {}
 HudController.refs = refs
@@ -290,15 +298,38 @@ end
 
 local barF, barAt -- (the bar's shown position, gliding to the real one)
 
+-- The mode the match is in: the server's word first (the snapshot), the place's until it comes
+local function modeOf(m)
+	return m.mode or workspace:GetAttribute("Mode") or Constants.MODE
+end
+
 function HudController.updateTop()
 	local m = Store.get("match") or {}
 	local phase = m.phase or "loading"
 	local left = (m.ends or now()) - now()
 	local names = { build = "BUILD", fight = "FIGHT", victory = "NEXT GAME", loading = "NEXT MAP" }
+	local ctfMode = modeOf(m) == "ctf"
 	if refs.phase then
-		refs.phase.Text = (names[phase] or "")
-			.. ((phase == "build" or phase == "fight" or phase == "victory") and (" " .. clock(left)) or "")
+		if phase == "waiting" then
+			-- (Capture the Flag's queue: how many are READY of how many it takes)
+			local c = Store.get("ctf") or {}
+			refs.phase.Text = `WAITING FOR PLAYERS {c.ready or 0}/{c.need or Constants.CTF.READY_PLAYERS}`
+		elseif ctfMode and phase == "fight" and m.sudden then
+			refs.phase.Text = "SUDDEN DEATH " .. clock(left)
+		else
+			refs.phase.Text = (names[phase] or "")
+				.. ((phase == "build" or phase == "fight" or phase == "victory") and (" " .. clock(left)) or "")
+		end
+		refs.phasePill.Size = UDim2.fromOffset(phase == "waiting" and 300 or 190, 32)
 		refs.phasePill.BackgroundColor3 = phase == "fight" and C.ink or Color3.fromRGB(70, 70, 78)
+	end
+	if refs.ctf then
+		-- (Capture the Flag: the scores where the line's bar was)
+		refs.bar.Visible = not ctfMode
+		refs.ctf.Visible = ctfMode
+		if ctfMode then
+			HudController.updateCtf(m)
+		end
 	end
 	local lo, hi = m.loseRed or -80, m.loseBlue or 80
 	local target = math.clamp(((m.frontline or 0) - lo) / math.max(1, hi - lo), 0, 1)
@@ -533,6 +564,8 @@ function HudController.flyEarned(e)
 		hook = "MISSION",
 		pass = "PASS REWARD",
 		starter = "STARTER PACK",
+		capture = "CAPTURE",
+		flagReturn = "FLAG RETURNED",
 	})[e.why or ""]
 	if why then
 		Theme.text({
@@ -698,6 +731,288 @@ local function buildCentre(gui)
 		ZIndex = 0,
 		Parent = gui,
 	})
+end
+
+-- Capture the Flag --------------------------------------------------------------------------------------------
+-- Both scores big under the phase pill (where Turf Wars' bar is), each side in the mode's team name and colour
+-- with its flag's state beside it; the carry banner; the READY button; and the flag markers on their own screen
+-- (no UIScale: they're placed in shares of the screen, on the flag or at the screen's edge pointing to it).
+local function buildCtf(gui)
+	local top = refs.phasePill.Parent
+	local board = Theme.new("Frame", {
+		Name = "Ctf",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 36),
+		Size = UDim2.fromOffset(520, 40),
+		BackgroundTransparency = 1,
+		Visible = false,
+		Parent = top,
+	})
+	refs.ctf = board
+	refs.ctfSides = {}
+	for i, team in Constants.TEAMS do
+		local left = i == 1
+		local color = Constants.TEAM_COLOR[team]
+		local side = Theme.new("Frame", {
+			Name = team,
+			AnchorPoint = Vector2.new(left and 0 or 1, 0),
+			Position = UDim2.new(left and 0 or 1, 0, 0, 0),
+			Size = UDim2.fromOffset(230, 40),
+			BackgroundColor3 = C.ink,
+			BorderSizePixel = 0,
+			Parent = board,
+		}, { Theme.corner(4), Theme.stroke(2, color) })
+		local score = Theme.title({
+			Name = "Score",
+			Text = "0",
+			Size = UDim2.fromOffset(60, 40),
+			Position = left and UDim2.new(1, -64, 0, 0) or UDim2.new(0, 4, 0, 0),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = color,
+			outline = false,
+			Parent = side,
+		})
+		local name = label({
+			Name = "Name",
+			Text = Constants.TEAM_NAME[team],
+			Size = UDim2.fromOffset(150, 20),
+			Position = left and UDim2.new(0, 10, 0, 2) or UDim2.new(1, -160, 0, 2),
+			TextSize = 15,
+			TextColor3 = color,
+			Font = Theme.Display,
+			TextXAlignment = left and Enum.TextXAlignment.Left or Enum.TextXAlignment.Right,
+			Parent = side,
+		})
+		local flag = label({
+			Name = "Flag",
+			Text = "⚑ HOME",
+			Size = UDim2.fromOffset(150, 16),
+			Position = left and UDim2.new(0, 10, 0, 22) or UDim2.new(1, -160, 0, 22),
+			TextSize = 12,
+			TextColor3 = C.white,
+			Font = Theme.Display,
+			TextXAlignment = left and Enum.TextXAlignment.Left or Enum.TextXAlignment.Right,
+			Parent = side,
+		})
+		refs.ctfSides[team] = { frame = side, score = score, name = name, flag = flag }
+	end
+	refs.ctfToWin = label({
+		Name = "ToWin",
+		Text = "FIRST TO 3",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 12),
+		Size = UDim2.fromOffset(60, 18),
+		TextSize = 11,
+		TextColor3 = C.muted,
+		Font = Theme.Display,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = board,
+	})
+	-- the carry banner (under the objective's line, over the crosshair)
+	refs.carry = Theme.title({
+		Name = "Carry",
+		Text = "",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.22),
+		Size = UDim2.fromOffset(640, 48),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = C.ink,
+		outline = false,
+		Visible = false,
+		Parent = gui,
+	})
+	-- READY (the queue): a tap, a click (the mouse is free while waiting), or R
+	refs.ready = Theme.button({
+		Name = "Ready",
+		Text = "READY",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.64),
+		Size = UDim2.fromOffset(220, 60),
+		Visible = false,
+		Parent = gui,
+	})
+	refs.ready.Activated:Connect(function()
+		HudController.toggleReady()
+	end)
+	Theme.keyHint(refs.ready, "R", "ButtonA")
+	-- the markers
+	local screen = Instance.new("ScreenGui")
+	screen.Name = "FlagMarkers"
+	screen.ResetOnSpawn = false
+	screen.IgnoreGuiInset = true
+	screen.DisplayOrder = 6
+	screen.Parent = gui.Parent
+	refs.flagMarkers = {}
+	for _, team in Constants.TEAMS do
+		local m = Theme.new("Frame", {
+			Name = team,
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Size = UDim2.fromOffset(150, 52),
+			BackgroundTransparency = 1,
+			Visible = false,
+			Parent = screen,
+		})
+		local icon = Theme.title({
+			Name = "Icon",
+			Text = "⚑",
+			Size = UDim2.new(1, 0, 0, 32),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = Constants.TEAM_COLOR[team],
+			outline = 2,
+			Parent = m,
+		})
+		local caption = Theme.title({
+			Name = "Caption",
+			Text = "",
+			Size = UDim2.new(1, 0, 0, 16),
+			Position = UDim2.fromOffset(0, 34),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = C.white,
+			outline = 2,
+			Parent = m,
+		})
+		local arrow = Theme.title({
+			Name = "Arrow",
+			Text = "▲",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, 0, 0, -8),
+			Size = UDim2.fromOffset(22, 22),
+			TextColor3 = Constants.TEAM_COLOR[team],
+			outline = 2,
+			Visible = false,
+			Parent = m,
+		})
+		refs.flagMarkers[team] = { frame = m, icon = icon, caption = caption, arrow = arrow }
+	end
+end
+
+function HudController.toggleReady()
+	local c = Store.get("ctf") or {}
+	local on = table.find(c.readyIds or {}, player.UserId) ~= nil
+	Net.send("Ctf", "ready", not on)
+	if refs.ready then
+		Theme.pop(refs.ready)
+	end
+end
+
+-- The other side's key (the TEAMS table has two)
+local function otherTeam(team)
+	for _, t in Constants.TEAMS do
+		if t ~= team then
+			return t
+		end
+	end
+	return nil
+end
+
+-- Where a flag is in the world right now (the stand, the carrier, or where it lies: CtfService's models)
+local function flagWorldPos(team, st)
+	local flags = workspace:FindFirstChild("Flags")
+	if st.state == "carried" and st.carrier then
+		local p = Players:GetPlayerByUserId(st.carrier)
+		local c = p and p.Character
+		local r = c and c:FindFirstChild("HumanoidRootPart")
+		return r and r.Position + Vector3.new(0, 3.5, 0) or nil
+	end
+	local m = flags and flags:FindFirstChild((st.state == "dropped" and "Dropped_" or "Stand_") .. team)
+	local part = m and (m:FindFirstChild("Finial") or m:FindFirstChild("Flag"))
+	return part and part.Position or nil
+end
+
+-- A world point on the screen (shares of it), and whether it's in view; off the screen it's put on a ring round
+-- the middle in its direction (the hit markers' way), with the angle to turn an arrow by
+local function onScreen(pos)
+	local cam = workspace.CurrentCamera
+	if not cam then
+		return nil
+	end
+	local vp = cam.ViewportSize
+	local rel = cam.CFrame:PointToObjectSpace(pos)
+	local f = (vp.Y / 2) / math.tan(math.rad(cam.FieldOfView or 70) / 2)
+	if rel.Z < -0.5 then
+		local sx = vp.X / 2 + rel.X / -rel.Z * f
+		local sy = vp.Y / 2 - rel.Y / -rel.Z * f
+		if sx >= 0 and sx <= vp.X and sy >= 0 and sy <= vp.Y then
+			return sx / vp.X, sy / vp.Y, true, 0
+		end
+	end
+	local deg = HitDirection.angleTo(pos)
+	local a = math.rad(deg)
+	return 0.5 + math.sin(a) * 0.42, 0.5 - math.cos(a) * 0.36, false, deg
+end
+
+function HudController.updateCtf(m)
+	local c = Store.get("ctf") or {}
+	local me = Store.get("me") or {}
+	local scores, flags = c.scores or {}, c.flags or {}
+	local mine = me.team
+	local enemy = mine and otherTeam(mine)
+	for _, team in Constants.TEAMS do
+		local ui = refs.ctfSides[team]
+		local st = (flags[team] or {}).state or "home"
+		ui.name.Text = Constants.TEAM_NAME[team] or string.upper(team)
+		ui.name.TextColor3 = Constants.TEAM_COLOR[team] or C.white
+		ui.score.TextColor3 = Constants.TEAM_COLOR[team] or C.white
+		ui.score.Text = tostring(scores[team] or 0)
+		ui.flag.Text = st == "home" and "⚑ HOME" or (st == "carried" and "✕ TAKEN!" or "▼ DROPPED")
+		ui.flag.TextColor3 = st == "home" and C.white or (st == "carried" and RED_ALERT or GOLD)
+	end
+	refs.ctfToWin.Text = `FIRST TO {c.toWin or Constants.CTF.CAPTURES_TO_WIN}`
+	if refs.objective and not refs.objectiveCtf then
+		-- (the first seconds' line says the mode's goal)
+		refs.objectiveCtf = true
+		refs.objective.Text =
+			`Grab their flag and run it home to yours. First to {c.toWin or Constants.CTF.CAPTURES_TO_WIN} captures wins.`
+	end
+	-- the banner: the flag on your back; or an enemy running off with yours
+	local ef, mf = enemy and flags[enemy], mine and flags[mine]
+	local carrying = ef ~= nil and ef.state == "carried" and ef.carrier == player.UserId
+	local fight = m.phase == "fight"
+	if refs.carry then
+		if carrying and fight then
+			refs.carry.Text = "YOU HAVE THE FLAG: RUN HOME!"
+			refs.carry.TextColor3 = Constants.TEAM_COLOR[mine] or C.ink
+			refs.carry.Visible = true
+		elseif mf ~= nil and mf.state == "carried" and fight then
+			refs.carry.Text = "THEY HAVE YOUR FLAG!"
+			refs.carry.TextColor3 = RED_ALERT
+			refs.carry.Visible = true
+		else
+			refs.carry.Visible = false
+		end
+	end
+	-- READY: what the button says
+	if refs.ready and refs.ready.Visible then
+		local on = table.find(c.readyIds or {}, player.UserId) ~= nil
+		refs.ready.Text = on and `READY ✓  {c.ready or 0}/{c.need or Constants.CTF.READY_PLAYERS}` or "READY"
+		refs.ready.BackgroundColor3 = on and (Constants.TEAM_COLOR[mine] or C.mustard) or C.mustard
+	end
+	-- the markers: the enemy flag (unless it's on your back), and your own when it's dropped or taken
+	for team, mk in refs.flagMarkers do
+		local st = flags[team] or {}
+		local show, caption
+		if fight and team == enemy and not carrying then
+			show = true
+			caption = st.state == "carried" and `{string.upper(st.name or "A TEAMMATE")} HAS IT`
+				or (st.state == "dropped" and "ENEMY FLAG: DROPPED" or "ENEMY FLAG")
+		elseif fight and team == mine and st.state ~= "home" then
+			show = true
+			caption = st.state == "dropped" and "YOUR FLAG: RETURN IT!" or "THEY HAVE YOUR FLAG!"
+		end
+		local pos = show and flagWorldPos(team, st) or nil
+		local x, y, inView, deg = nil, nil, false, 0
+		if pos then
+			x, y, inView, deg = onScreen(pos)
+		end
+		mk.frame.Visible = x ~= nil and not Layout.panel()
+		if x then
+			mk.frame.Position = UDim2.fromScale(x, y)
+			mk.caption.Text = caption or ""
+			mk.arrow.Visible = not inView
+			mk.arrow.Rotation = deg
+			mk.frame:SetAttribute("InView", inView)
+		end
+	end
 end
 
 function HudController.alert(text, color, seconds)
@@ -1581,8 +1896,11 @@ function HudController.showResults(r)
 		Parent = card,
 	})
 	local y = 88
+	-- (Capture the Flag's rows carry captures: one more column)
+	local caps = rows[1] ~= nil and rows[1].captures ~= nil
 	label({
-		Text = "PLAYER                         K     D     A     BUILT",
+		Text = caps and "PLAYER                         K     D     A     BUILT  CAPS"
+			or "PLAYER                         K     D     A     BUILT",
 		Size = UDim2.new(1, -40, 0, 16),
 		Position = UDim2.fromOffset(20, y),
 		fit = 11,
@@ -1594,7 +1912,16 @@ function HudController.showResults(r)
 	for _, row in rows do
 		local mvp = row.userId == r.mvp and "  ★ MVP" or ""
 		label({
-			Text = string.format(
+			Text = caps and string.format(
+				"%-24s %4d  %4d  %4d   %5d  %4d%s",
+				string.sub(row.name or "?", 1, 22),
+				row.kills,
+				row.deaths,
+				row.assists,
+				row.built,
+				row.captures or 0,
+				mvp
+			) or string.format(
 				"%-24s %4d  %4d  %4d   %5d%s",
 				string.sub(row.name or "?", 1, 22),
 				row.kills,
@@ -1780,6 +2107,10 @@ local function step()
 	if refs.cross then
 		refs.cross.Visible = me.alive ~= false and m.phase ~= "victory"
 	end
+	if refs.ready then
+		-- (Capture the Flag's queue: the button while the match waits; what it says: HudController.updateCtf)
+		refs.ready.Visible = m.phase == "waiting" and not Layout.inPractice()
+	end
 	if refs.countdown then
 		local show = m.phase == "victory" and refs.results == nil
 		refs.countdown.Visible = show
@@ -1858,6 +2189,7 @@ function HudController:init()
 	buildTop(gui)
 	buildInvite(gui)
 	buildCentre(gui)
+	buildCtf(gui)
 	buildFeed(gui)
 	buildBottom(gui)
 	buildTouch(gui)
@@ -1919,6 +2251,8 @@ function HudController:init()
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if not processed and input.KeyCode == Enum.KeyCode.I then
 			HudController.invite()
+		elseif not processed and input.KeyCode == Enum.KeyCode.R and Store.phase() == "waiting" then
+			HudController.toggleReady() -- (Capture the Flag's queue; R turns a piece only in the build phase)
 		end
 	end)
 	RunService.RenderStepped:Connect(step)

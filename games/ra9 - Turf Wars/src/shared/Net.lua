@@ -31,6 +31,7 @@ Net.ClientEvents = {
 	Top = 2, -- () the leaderboards, please (LeaderboardService answers with "Leaderboards")
 	Active = 1, -- () the player touched a key, the mouse or the screen lately (AfkService: not idle)
 	InvitePromo = 4, -- ("sent", recipients) | ("later") the invite-a-friend card (InviteService)
+	Ctf = 4, -- ("ready", on) READY (or not) for the next Capture the Flag match (CtfService)
 }
 
 -- Server → client.
@@ -72,6 +73,8 @@ Net.ServerEvents = {
 	"Leaderboards", -- { boards, server, you, ok, at, every } the top players, all time and here (LeaderboardService)
 	"InvitePromo", -- { why, pool = { effect keys } } the invite-a-friend card | { pulse = true } nudge the button
 	"InviteReward", -- { key, pool = { effect keys }, friend } a friend joined from your invite: the effect you won
+	"Ctf", -- { ready, need, waiting, scores = { red, blue }, toWin, sudden, flags = { [team] = { state = "home" |
+	-- "carried" | "dropped", carrier, name } } } Capture the Flag's state, whenever it changes (CtfService)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).

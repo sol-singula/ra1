@@ -56,6 +56,7 @@ local BotNav = require(script.Parent.Parent.BotNav)
 local BotService = {
 	Name = "BotService",
 	Dependencies = { "TeamService", "CombatService", "MatchService", "ArenaService", "BuildService" },
+	Modes = { "turf" }, -- (never in Capture the Flag: its match waits for real players instead; Ensure checks too)
 }
 
 local teams, combat, match, arenaService, buildService
@@ -283,7 +284,7 @@ end
 
 function BotService:Ensure()
 	local people = humans()
-	if not enabled or #people == 0 then
+	if not enabled or #people == 0 or Constants.MODE == "ctf" then
 		if #bots > 0 then
 			self:RemoveAll()
 		end

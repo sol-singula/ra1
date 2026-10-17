@@ -1,7 +1,7 @@
 --[[
 What the client knows, from the server's events: the match (phase, timer, frontline, map), you (team, health,
-weapon, ammo, build budget) and your profile (wins, streak, stats, settings). Controllers read it and listen to
-Store.Changed(partial).
+weapon, ammo, build budget), your profile (wins, streak, stats, settings) and, in Capture the Flag, the flags and
+the scores ("ctf": Net "Ctf"). Controllers read it and listen to Store.Changed(partial).
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -52,6 +52,9 @@ function Store.init()
 	end)
 	Net.listen("Profile", function(p)
 		Store.set("profile", p)
+	end)
+	Net.listen("Ctf", function(c)
+		Store.set("ctf", c)
 	end)
 end
 

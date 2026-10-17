@@ -26,7 +26,8 @@ at least a cell back from the line, on the deck (a ray down, where the engine ha
 glows a little and wears a small RALLY marker. Spawn protection is the same as anywhere (CombatService:Spawned).
 
   BuildService:Place(player, key, cx, cz, rot) -> ok, why
-  BuildService:Refill()                 the budgets, at each build phase
+  BuildService:Refill()                 the budgets, at each build phase (BUILD_BUDGET; Capture the Flag's
+                                        CTF_BUILD_BUDGET: BuildService.budgetMax)
   BuildService:Clear()                  between matches
   BuildService:Budget(player)
   BuildService:All()                    { [id] = structure }
@@ -71,12 +72,18 @@ local function cellsOf(cx, cz, w, d)
 	return out
 end
 
+-- The points each player gets in a build phase: the mode's (Capture the Flag's build is bigger: one build phase, a
+-- whole fight to hold); the only thing here that differs by mode
+function BuildService.budgetMax()
+	return Constants.MODE == "ctf" and Constants.CTF_BUILD_BUDGET or Constants.BUILD_BUDGET
+end
+
 function BuildService:Budget(player)
-	return budgets[player] or Constants.BUILD_BUDGET
+	return budgets[player] or BuildService.budgetMax()
 end
 
 function BuildService:Push(player)
-	Net.fire(player, "Me", { budget = self:Budget(player), budgetMax = Constants.BUILD_BUDGET })
+	Net.fire(player, "Me", { budget = self:Budget(player), budgetMax = BuildService.budgetMax() })
 end
 
 function BuildService:SetOpen(on)
@@ -89,7 +96,7 @@ end
 
 function BuildService:Refill()
 	for _, p in Players:GetPlayers() do
-		budgets[p] = Constants.BUILD_BUDGET
+		budgets[p] = BuildService.budgetMax()
 		self:Push(p)
 	end
 end
@@ -528,7 +535,7 @@ function BuildService:Remove(id, attacker, refund, blast)
 		)
 	end
 	if refund and s.owner and s.owner.Parent then
-		budgets[s.owner] = math.min(Constants.BUILD_BUDGET, self:Budget(s.owner) + def.cost)
+		budgets[s.owner] = math.min(BuildService.budgetMax(), self:Budget(s.owner) + def.cost)
 		self:Push(s.owner)
 	end
 	Net.fireAll("Structure", {
