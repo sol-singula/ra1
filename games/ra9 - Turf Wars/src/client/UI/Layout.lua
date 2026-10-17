@@ -108,4 +108,18 @@ function Layout.charging()
 	return workspace:GetAttribute("Charge") == true and not practiceOn
 end
 
+-- The lobby place (LobbyController): Roblox's own third-person camera and a free mouse, no first-person lock, no
+-- crosshair (CameraController steps aside while it's on).
+--
+--   Layout.lobby(on)   Layout.inLobby() -> on
+local lobbyOn = false
+
+function Layout.lobby(on)
+	lobbyOn = on == true
+end
+
+function Layout.inLobby()
+	return lobbyOn
+end
+
 return Layout

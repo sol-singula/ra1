@@ -1,6 +1,52 @@
 -- Service loader: requires every service module, sorts them by Dependencies,
 -- then runs Init (must not yield) and Start (own thread) in that order. Errors are isolated per service.
+--
+-- Modes (Constants.MODE: the place this server is): a service may declare Modes = { "lobby", ... } and runs only
+-- in those. In the lobby, a service that declares nothing runs only when a lobby service depends on it (so the
+-- match, the bots and the arena stay out of the lobby); in a match mode everything runs. (A stub until the
+-- framework's version lands.)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Constants = require(ReplicatedStorage.Shared.Constants)
+
 local Loader = {}
+
+-- The services that run in this mode (see above).
+local function forMode(services, mode)
+	local keep = {}
+	local declared = {}
+	for name, svc in services do
+		if type(svc.Modes) == "table" then
+			declared[name] = true
+			if table.find(svc.Modes, mode) then
+				keep[name] = true
+			end
+		elseif mode ~= "lobby" then
+			keep[name] = true
+		end
+	end
+	-- (the lobby: what its services depend on comes along, and what those depend on)
+	local todo = {}
+	for name in keep do
+		table.insert(todo, name)
+	end
+	while #todo > 0 do
+		local name = table.remove(todo)
+		for _, dep in (services[name] and services[name].Dependencies) or {} do
+			if not keep[dep] and not declared[dep] then
+				keep[dep] = true
+				table.insert(todo, dep)
+			end
+		end
+	end
+	local out = {}
+	for name, svc in services do
+		if keep[name] then
+			out[name] = svc
+		end
+	end
+	return out
+end
 
 local function sorted(services)
 	local order, state = {}, {}
@@ -34,14 +80,15 @@ end
 -- Returns the registry (name -> service) and the boot order. With `only` (a set of names), just those services
 -- (the Bonk Arena runs a small set).
 function Loader.boot(folder, only)
-	local services, registry = {}, {}
+	local services = {}
 	for _, child in folder:GetChildren() do
 		if child:IsA("ModuleScript") and (not only or only[child.Name]) then
 			local svc = require(child)
 			services[svc.Name] = svc
-			registry[svc.Name] = svc
 		end
 	end
+	services = forMode(services, Constants.MODE)
+	local registry = table.clone(services)
 	local order = sorted(services)
 	for _, svc in order do
 		if svc.Init then

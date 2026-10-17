@@ -31,6 +31,9 @@ Net.ClientEvents = {
 	Top = 2, -- () the leaderboards, please (LeaderboardService answers with "Leaderboards")
 	Active = 1, -- () the player touched a key, the mouse or the screen lately (AfkService: not idle)
 	InvitePromo = 4, -- ("sent", recipients) | ("later") the invite-a-friend card (InviteService)
+	Play = 2, -- (modeKey?) the lobby's PLAY: into a match of that mode (nil: the fullest game) (PlaceService)
+	ToLobby = 2, -- () back to the lobby place (PlaceService)
+	Verify = 2, -- () the lobby's VERIFY stand: "if you like the game, tap verify" (LobbyService: thanked once)
 }
 
 -- Server → client.
@@ -72,6 +75,8 @@ Net.ServerEvents = {
 	"Leaderboards", -- { boards, server, you, ok, at, every } the top players, all time and here (LeaderboardService)
 	"InvitePromo", -- { why, pool = { effect keys } } the invite-a-friend card | { pulse = true } nudge the button
 	"InviteReward", -- { key, pool = { effect keys }, friend } a friend joined from your invite: the effect you won
+	"Population", -- { turf = n, ctf = n, brawl = n } who's playing what, for the lobby's cards (on join and on change)
+	"Lobby", -- { kind = "state" | "parkour" | "verified", ... } the lobby's own moments (LobbyService)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).

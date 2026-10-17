@@ -63,6 +63,8 @@ local function defaults()
 		invite = { friends = {}, count = 0 }, -- by: who brought you in; friends: the ones you brought (InviteService)
 		-- the first-minute guide (TutorialService): done (or skipped) once; replay asks for it again
 		tutorial = { done = false, skipped = false, replay = false, step = "", at = 0 },
+		-- the lobby (LobbyService): VERIFY thanked once; the parkour's Shards once a day (the day it last paid), the best time
+		lobby = { verified = false, parkourDay = 0, parkourBest = 0 },
 		meta = { createdAt = os.time(), lastSeen = os.time(), lock = nil },
 	}
 end

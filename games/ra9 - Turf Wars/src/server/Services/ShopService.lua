@@ -309,15 +309,18 @@ function ShopService:Init(registry)
 	economy = registry.EconomyService
 	season = registry.SeasonService
 	progress = registry.ProgressService
-	-- (a tap on the locked TNT: the purchase, right there)
-	registry.CombatService.Locked:Connect(function(player, key)
-		if key == "tnt" then
-			local ok, why = self:PromptRobux(player, "tnt")
-			if ok == false and why then
-				say(player, why, "bad")
+	-- (a tap on the locked TNT: the purchase, right there; no CombatService in the lobby place)
+	local combat = registry.CombatService
+	if combat then
+		combat.Locked:Connect(function(player, key)
+			if key == "tnt" then
+				local ok, why = self:PromptRobux(player, "tnt")
+				if ok == false and why then
+					say(player, why, "bad")
+				end
 			end
-		end
-	end)
+		end)
+	end
 	-- (the deal's hour running out, and tomorrow's coming round)
 	task.spawn(function()
 		while true do

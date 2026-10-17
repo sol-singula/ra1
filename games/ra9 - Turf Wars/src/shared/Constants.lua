@@ -4,6 +4,19 @@ local Constants = {}
 Constants.GAME = "ra9"
 Constants.GAME_NAME = "Turf Wars"
 
+-- Which place this server is (Data/Modes): "lobby" (everyone lands there first), "turf" (the match), "ctf", "brawl".
+-- A service or controller with Modes = { "lobby" } runs only there (Loader, client/Main). (A stub: the framework's
+-- place service sets it from the place id.)
+Constants.MODE = "turf"
+function Constants.applyMode(key)
+	Constants.MODE = key or "turf"
+end
+
+-- The lobby (World/LobbyBuilder, LobbyService)
+Constants.GOLD = Color3.fromRGB(255, 196, 40) -- the accent: the PLAY beacon, the parkour, the trims
+Constants.PARKOUR_SHARDS = 50 -- the lobby's parkour: Shards for the top, once a day (and the Parkour title, once)
+Constants.VERIFY_SHARDS = 100 -- the thank-you for tapping VERIFY (once per account, with the Supporter banner)
+
 -- Server and teams (§1, §2A)
 Constants.MAX_PLAYERS = 40
 Constants.TEAMS = { "red", "blue" }
