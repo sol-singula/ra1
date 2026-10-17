@@ -15,10 +15,10 @@ shot, a hit, health, speed or building (master plan §1: fair competition, nothi
              starter      the Starter Pack (once, Robux)
              robux        Robux only, yours for good (Data/Shop.PREMIUM: a developer product each; it.robux the price)
   look     what the client draws (LooksController, ArrowController, WeaponController, BuildService):
-             trail   lines = { { x, y, width, color } } beside the tracer, plus flags: dash, spin, jitter,
-                     length (x the tracer), ghost (afterimages)
+             trail   lines = { { x, y, width, color } } beside the tracer, a ribbon, and how they're drawn (dash,
+                     dots, helix, bolt, fire, ghost... see TRAIL below), length (x the tracer)
              skin    grip, limbs (colour tokens), material
-             effect  shape (cubes | ring | shards | pixels | rise | spotlight), color, count
+             effect  shape (one of FX/KillEffects.SHAPES), color, count (bursts, trim: the shatter's variants)
              banner  emblem (one character)
              title   text
            colour tokens: "team" (your team's colour), "light" (a lighter shade of it), "white", "ink" (black), and
@@ -38,49 +38,105 @@ Cosmetics.KIND_NAME = { trail = "TRAIL", skin = "BOW", effect = "KILL EFFECT", b
 Cosmetics.RARITIES = { "common", "rare", "epic", "legendary" }
 
 -- Looks, by name, so the ladder, the shop and the pass can share them -----------------------------------------
+-- Trails (ArrowController draws them; FX/Flair the bits that fall off): each its own shape, not just a colour.
+--   lines    { { x, y, width, token } } beside the tracer       ribbon  { w, token, life, taper?, alpha?, twist? }
+--   dash     the lines in pieces: dots (balls), bars (across),   a soft Trail off the arrow (life: seconds, so its
+--            crystal (diamonds); march (studs/s they slide)      length); twist: a flat ribbon that turns over
+--   helix    the lines wound round the tracer (turns)           spin    the lines turning round it (rate)
+--   converge the lines meeting at the tip                       wobble  the lines waving    flicker  blinking
+--   jitter   shaking; rgb: a glitch's colour split, snapping    pulse   widths throbbing (rate)
+--   bolt     a lightning bolt re-jagged along the tracer         fire    flames off the head  wisp  ghostly smoke
+--   ghost    afterimages of the shaft (ghostColor, wave)         rings   rings of energy every so often (seconds)
+--   light    a glow on the arrow (a token)                       particles  what falls off it (FX/Flair.drop)
 local TRAIL = {
-	["White Line"] = { lines = { { 0.2, 0.06, 0.06, "white" } } },
-	["Dotted"] = { dash = true, lines = { { 0, 0.16, 0.08, "white" } } },
-	["Long Streak"] = { length = 1.8 },
-	["Twin Lines"] = { lines = { { 0.2, 0, 0.06, "team" }, { -0.2, 0, 0.06, "team" } } },
-	["Spiral"] = { spin = true, lines = { { 0.24, 0, 0.06, "white" }, { -0.24, 0, 0.06, "light" } } },
-	["Comet"] = { lines = { { 0, 0, 0.22, "light" } }, length = 0.6, particles = "sparkles" },
-	["Glitch"] = { jitter = true, lines = { { 0.18, 0.1, 0.05, "white" }, { -0.14, -0.08, 0.05, "ink" } } },
+	-- the ladder: simple, each still its own
+	["White Line"] = { lines = { { 0.2, 0.06, 0.06, "white" } }, ribbon = { 0.16, "white", 0.14 } },
+	["Dotted"] = { dash = true, dots = true, march = 7, lines = { { 0, 0.16, 0.13, "white" } } },
+	["Long Streak"] = { length = 1.8, ribbon = { 0.12, "light", 0.5, 0 } },
+	["Twin Lines"] = { converge = true, lines = { { 0.3, 0, 0.07, "team" }, { -0.3, 0, 0.07, "team" } } },
+	["Spiral"] = { helix = 1.5, spin = 10, lines = { { 0.26, 0, 0.07, "white" }, { -0.26, 0, 0.07, "light" } } },
+	["Comet"] = {
+		fire = true,
+		lines = { { 0, 0, 0.16, "lava" } },
+		ribbon = { 0.75, "lava", 0.3, 0 },
+		length = 0.6,
+		light = "lava",
+		particles = "embers",
+	},
+	["Glitch"] = { rgb = true, flicker = true, lines = { { 0.1, 0.06, 0.07, "candy" }, { -0.1, -0.06, 0.07, "ice" } } },
 	["Shards"] = {
 		dash = true,
-		lines = { { 0.16, 0, 0.1, "light" }, { -0.16, 0, 0.1, "white" } },
-		particles = "blocks",
+		crystal = true,
+		lines = { { 0.18, 0, 0.14, "ice" }, { -0.18, 0, 0.14, "white" } },
+		particles = "shards",
 	},
-	["Ribbon"] = { lines = { { 0, -0.1, 0.3, "light" } } },
-	["Neon"] = { lines = { { 0, 0, 0.03, "white" } }, length = 1.3 },
+	["Ribbon"] = { ribbon = { 0.7, "team", 0.4, 0.4, 0.15, true } },
+	["Neon"] = { lines = { { 0, 0, 0.05, "white" } }, length = 1.3, pulse = 10, ribbon = { 0.3, "team", 0.12, 0 } },
 	-- the extras
-	["Thank-You Trail"] = { lines = { { 0.2, 0.06, 0.06, "white" } } },
-	["Buddy Trail"] = { lines = { { 0.22, 0, 0.06, "white" }, { -0.22, 0, 0.06, "white" } } },
+	["Thank-You Trail"] = { lines = { { 0.2, 0.06, 0.06, "white" } }, particles = "glints" },
+	["Buddy Trail"] = { helix = 0.75, spin = 4, lines = { { 0.22, 0, 0.07, "white" }, { -0.22, 0, 0.07, "yellow" } } },
 	-- shop
-	["Barcode"] = { dash = true, lines = { { 0.12, 0, 0.04, "ink" }, { -0.12, 0, 0.04, "ink" } } },
-	["Static Line"] = { jitter = true, lines = { { 0, 0.14, 0.04, "white" } } },
-	["Double Helix"] = { spin = true, lines = { { 0.3, 0, 0.05, "team" }, { -0.3, 0, 0.05, "white" } } },
-	["Inkline"] = { lines = { { 0, 0.1, 0.07, "ink" } } },
-	["Tripwire"] = { lines = { { 0.24, 0, 0.04, "white" }, { -0.24, 0, 0.04, "white" }, { 0, 0.22, 0.04, "white" } } },
-	["Echo"] = { ghost = 2 },
-	["Overcharge"] = { lines = { { 0, 0, 0.3, "light" }, { 0, 0, 0.04, "white" } }, length = 1.5, particles = "sparks" },
-	-- the big ones (anim: drawn alive by ArrowController; particles: what falls off the arrow as it flies)
-	["Rainbow Road"] = { anim = "rainbow", lines = { { 0, 0, 0.18, "rainbow" } }, length = 1.4, particles = "sparkles" },
-	["Feather Trail"] = { lines = { { 0, 0, 0.05, "white" } }, particles = "feathers" },
-	["Bubble Trail"] = { lines = { { 0, 0, 0.04, "light" } }, particles = "bubbles" },
-	["Pixel Rain"] = { dash = true, lines = { { 0, 0, 0.12, "rainbow" } }, particles = "blocks" },
-	["Thunder Trail"] = {
-		anim = "electric",
+	["Barcode"] = { dash = true, bars = true, lines = { { 0, 0, 0.05, "ink" } } },
+	["Static Line"] = {
 		jitter = true,
-		lines = { { 0, 0, 0.08, "electric" } },
-		length = 1.6,
+		flicker = true,
+		lines = { { 0, 0.14, 0.05, "white" }, { 0, 0.14, 0.02, "ink" } },
+	},
+	["Double Helix"] = {
+		helix = 2.5,
+		spin = 6,
+		dots = true,
+		lines = { { 0.32, 0, 0.12, "team" }, { -0.32, 0, 0.12, "white" } },
+	},
+	["Inkline"] = { lines = { { 0, 0.1, 0.08, "ink" } }, ribbon = { 0.3, "ink", 0.25, 0.2, 0.3 }, particles = "ink" },
+	["Tripwire"] = {
+		spin = 3,
+		lines = { { 0.24, -0.12, 0.04, "white" }, { -0.24, -0.12, 0.04, "white" }, { 0, 0.26, 0.04, "candy" } },
+	},
+	["Echo"] = { ghost = 3, ghostColor = "ice", wave = true, wisp = true },
+	["Overcharge"] = {
+		lines = { { 0, 0, 0.3, "light" }, { 0, 0, 0.04, "white" } },
+		length = 1.5,
+		pulse = 14,
+		rings = 0.09,
+		light = "team",
 		particles = "sparks",
 	},
-	["Hearts"] = { lines = { { 0, 0, 0.05, "pink" } }, particles = "hearts" },
+	-- the big ones (anim: drawn alive by ArrowController; particles: what falls off the arrow as it flies)
+	["Rainbow Road"] = {
+		anim = "rainbow",
+		lines = { { 0, 0, 0.18, "rainbow" } },
+		ribbon = { 1, "rainbow", 0.45, 0.3 },
+		length = 1.4,
+		light = "rainbow",
+		particles = "sparkles",
+	},
+	["Feather Trail"] = {
+		lines = { { 0, 0, 0.05, "white" } },
+		ribbon = { 0.4, "white", 0.3, 0.2, 0.6 },
+		particles = "feathers",
+	},
+	["Bubble Trail"] = { wobble = true, lines = { { 0, 0, 0.06, "ice" } }, particles = "bubbles" },
+	["Pixel Rain"] = { dash = true, lines = { { 0, 0, 0.14, "rainbow" } }, particles = "pixels" },
+	["Thunder Trail"] = {
+		anim = "electric",
+		bolt = true,
+		lines = { { 0, 0, 0.06, "electric" } },
+		ribbon = { 0.5, "electric", 0.18, 0 },
+		length = 1.6,
+		light = "electric",
+		particles = "sparks",
+	},
+	["Hearts"] = {
+		pulse = 6,
+		lines = { { 0, 0, 0.06, "pink" } },
+		ribbon = { 0.35, "pink", 0.25 },
+		particles = "hearts",
+	},
 	-- goals and status
-	["Crosshair Line"] = { dash = true, lines = { { 0, 0.2, 0.05, "ink" }, { 0, -0.2, 0.05, "ink" } } },
-	["Long Shot"] = { length = 2.4, lines = { { 0, 0, 0.03, "white" } } },
-	["Afterimage"] = { ghost = 3, lines = { { 0, 0.12, 0.04, "ink" } } },
+	["Crosshair Line"] = { dash = true, march = 4, lines = { { 0, 0.2, 0.05, "ink" }, { 0, -0.2, 0.05, "ink" } } },
+	["Long Shot"] = { length = 2.4, lines = { { 0, 0, 0.03, "white" } }, ribbon = { 0.07, "white", 0.8, 0.5, 0.4 } },
+	["Afterimage"] = { ghost = 3, ghostColor = "ink", lines = { { 0, 0.12, 0.04, "ink" } }, particles = "glints" },
 }
 local SKIN = {
 	["Matte Black"] = { grip = "ink", limbs = "ink", material = "SmoothPlastic" },
@@ -118,21 +174,23 @@ local SKIN = {
 	["Bulldozer"] = { grip = "ink", limbs = "white", material = "DiamondPlate" },
 	["Inkwell"] = { grip = "ink", limbs = "ink", material = "Neon" },
 }
+-- Kill effects (FX/KillEffects): each shape is its own little film; Triple Shatter and VIP Shatter are the
+-- shatter broken three times (bursts) and in black glass and gold (trim)
 local EFFECT = {
 	["Shatter"] = { shape = "shards", color = "white", count = 10 },
-	["Poof"] = { shape = "cubes", color = "light", count = 8 },
+	["Poof"] = { shape = "smoke", color = "light", count = 8 },
 	["Cubes"] = { shape = "cubes", color = "team", count = 12 },
 	["Ring"] = { shape = "ring", color = "white", count = 12 },
-	["Fold"] = { shape = "pixels", color = "ink", count = 9 },
-	["Static"] = { shape = "pixels", color = "white", count = 16 },
+	["Fold"] = { shape = "fold", color = "ink", count = 9 },
+	["Static"] = { shape = "static", color = "white", count = 16 },
 	["Pixels"] = { shape = "pixels", color = "team", count = 16 },
-	["Spark"] = { shape = "shards", color = "light", count = 14 },
-	["Slice"] = { shape = "ring", color = "ink", count = 8 },
-	["Supernova"] = { shape = "ring", color = "team", count = 20 },
+	["Spark"] = { shape = "spark", color = "light", count = 14 },
+	["Slice"] = { shape = "slice", color = "ink", count = 8 },
+	["Supernova"] = { shape = "nova", color = "team", count = 20 },
 	-- shop
-	["Confetti"] = { shape = "cubes", color = "white", count = 20 },
-	["Ink Splash"] = { shape = "shards", color = "ink", count = 14 },
-	["Double Ring"] = { shape = "ring", color = "light", count = 18 },
+	["Confetti"] = { shape = "confetti", color = "white", count = 24 },
+	["Ink Splash"] = { shape = "ink", color = "ink", count = 14 },
+	["Double Ring"] = { shape = "orbit", color = "light", count = 18 },
 	["Ascend"] = { shape = "rise", color = "white", count = 10 },
 	-- the big ones: each is its own animation (KillFxController; shown slowed down in the victim's kill cam)
 	["Feather Burst"] = { shape = "feathers", color = "white", count = 26 },
@@ -153,9 +211,9 @@ local EFFECT = {
 	["Black Hole"] = { shape = "blackhole", color = "ink", count = 30 },
 	["Golden Gate"] = { shape = "heaven", color = "gold", count = 24 }, -- golden light, wings, up they go
 	-- goals and status
-	["Centurion"] = { shape = "ring", color = "ink", count = 24 },
-	["Triple Shatter"] = { shape = "shards", color = "team", count = 24 },
-	["VIP Shatter"] = { shape = "shards", color = "ink", count = 18 },
+	["Centurion"] = { shape = "spears", color = "ink", count = 24 },
+	["Triple Shatter"] = { shape = "shards", color = "team", count = 24, bursts = 3 },
+	["VIP Shatter"] = { shape = "shards", color = "ink", count = 18, trim = "gold" },
 	["Spotlight"] = { shape = "spotlight", color = "white", count = 12 },
 }
 local EMBLEM = {

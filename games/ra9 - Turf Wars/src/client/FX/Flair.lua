@@ -8,8 +8,11 @@ on phones and low graphics (Effects.tier "low"), everything cleaned up with what
                                                  flashes), gold and ice (a shimmer), pink; anything else Cosmetics.color
             Flair.moving(token)                  true when the token changes over time
   particles Flair.emitter(part, kind, color?)    a ParticleEmitter on a part: sparkles | embers | snow | sparks | fire
-            Flair.drop(kind, pos, team)          one loose bit at pos (feathers, bubbles, blocks, hearts, sparkles,
-                                                 sparks, snow, embers), drifting and fading by itself (Flair.step)
+                                                 | wisp (a pale ghostly smoke)
+            Flair.drop(kind, pos, team, dir?)    one loose bit at pos (feathers, bubbles, blocks, hearts, sparkles,
+                                                 sparks, snow, embers, ink drips, pixels raining square, ice shards,
+                                                 glints of gold, a ring of energy square to dir), drifting and
+                                                 fading by itself (Flair.step); its part is named "Drop_<kind>"
             Flair.arc(a, b, color)               a crackle of lightning between two points, gone in a blink
   bows      Flair.bow(parts, look, team, opts)   decorates a bow's parts { grip, limbs = { upper, lower }, tips,
                                                  holder } with its look's anim, particles and wings; returns a
@@ -141,6 +144,19 @@ local EMITTERS = {
 		e.SpreadAngle = Vector2.new(180, 180)
 		e.LightEmission = 0.6
 	end,
+	wisp = function(e, color)
+		e.Texture = TEX.smoke
+		e.Color = cseq(color or Color3.fromRGB(200, 235, 255), WHITE)
+		e.Size = seq(0.45, 1.3)
+		e.Transparency = seq(0.55, 1)
+		e.Lifetime = NumberRange.new(0.45, 0.8)
+		e.Rate = 20
+		e.Speed = NumberRange.new(0.2, 0.7)
+		e.SpreadAngle = Vector2.new(180, 180)
+		e.Rotation = NumberRange.new(0, 360)
+		e.RotSpeed = NumberRange.new(-60, 60)
+		e.LightEmission = 0.4
+	end,
 	sparks = function(e, color)
 		e.Texture = TEX.sparkle
 		e.Color = cseq(color or WHITE, NAMED.electric)
@@ -206,7 +222,7 @@ local function rnd(a, b)
 end
 
 local dropped = 0 -- (every drop asked for, kept or not: tests)
-function Flair.drop(kind, pos, _team)
+function Flair.drop(kind, pos, team, dir)
 	if typeof(pos) ~= "Vector3" then
 		return nil
 	end
@@ -262,10 +278,45 @@ function Flair.drop(kind, pos, _team)
 		b.part = piece(Vector3.new(0.14, 0.14, 0.14), NAMED.lavaHot, Enum.Material.Neon)
 		b.vel, b.life = Vector3.new(rnd(-0.5, 0.5), rnd(1.5, 3), rnd(-0.5, 0.5)), rnd(0.5, 0.9)
 		b.grow = -1
+	elseif kind == "ink" then
+		-- (a glossy black drip that drops)
+		local d = rnd(0.12, 0.2)
+		b.part = piece(Vector3.new(d, d, d), Color3.fromRGB(16, 16, 22), Enum.Material.Glass, Enum.PartType.Ball)
+		b.vel, b.life, b.gravity = Vector3.new(rnd(-0.3, 0.3), rnd(-0.5, 0.5), rnd(-0.3, 0.3)), rnd(0.5, 0.8), 22
+		b.spin = Vector3.zero
+	elseif kind == "pixels" then
+		-- (flat squares, square to the world, raining down in every hue)
+		b.part = piece(Vector3.new(0.24, 0.24, 0.05), Color3.fromHSV(math.random(), 0.75, 1))
+		b.vel, b.life, b.gravity = Vector3.new(0, rnd(-1, 0), 0), rnd(0.6, 1), 9
+		b.spin, b.square = Vector3.zero, true
+	elseif kind == "shards" then
+		b.part = piece(Vector3.new(0.05, 0.05, 0.32), NAMED.ice:Lerp(WHITE, rnd(0, 0.6)), Enum.Material.Glass)
+		b.part.Transparency = 0.2
+		b.vel, b.life, b.gravity = Vector3.new(rnd(-2, 2), rnd(0, 2), rnd(-2, 2)), rnd(0.5, 0.8), 12
+		b.spin = Vector3.new(rnd(-14, 14), rnd(-14, 14), rnd(-14, 14))
+	elseif kind == "glints" then
+		local c = NAMED.gold:Lerp(WHITE, rnd(0, 0.4))
+		b.part = piece(Vector3.new(0.18, 0.18, 0.18), c, Enum.Material.Neon, Enum.PartType.Ball)
+		b.vel, b.life = Vector3.new(rnd(-0.4, 0.4), rnd(0.2, 0.9), rnd(-0.4, 0.4)), rnd(0.45, 0.75)
+		b.twinkle = rnd(25, 40)
+	elseif kind == "ring" then
+		-- (a thin disc of energy, square to the flight, that swells and fades)
+		local c = Cosmetics.color("light", team)
+		b.part = piece(Vector3.new(0.05, 0.45, 0.45), c, Enum.Material.Neon, Enum.PartType.Cylinder)
+		b.vel, b.life, b.grow, b.spin = Vector3.zero, 0.3, 3, Vector3.zero
+		local d = typeof(dir) == "Vector3" and dir.Magnitude > 0.01 and dir.Unit or Vector3.zAxis
+		b.cf = CFrame.lookAt(pos, pos + d) * CFrame.Angles(0, math.rad(90), 0)
 	else
 		return nil
 	end
-	b.part.CFrame = CFrame.new(at) * CFrame.Angles(rnd(0, 6), rnd(0, 6), rnd(0, 6))
+	b.part.Name = "Drop_" .. kind
+	if b.cf then
+		b.part.CFrame = b.cf
+	elseif b.square then
+		b.part.CFrame = CFrame.new(at)
+	else
+		b.part.CFrame = CFrame.new(at) * CFrame.Angles(rnd(0, 6), rnd(0, 6), rnd(0, 6))
+	end
 	b.size = b.part.Size
 	table.insert(bits, b)
 	return b.part
@@ -314,11 +365,15 @@ function Flair.step(dt)
 			b.part.CFrame = (cf + b.vel * dt + sway) * CFrame.Angles(b.spin.X * dt, b.spin.Y * dt, b.spin.Z * dt)
 			if b.grow then
 				b.part.Size = b.size * math.max(0.05, 1 + b.grow * k)
+			elseif b.twinkle then
+				b.part.Size = b.size * (0.35 + 0.65 * math.abs(math.sin(age * b.twinkle))) * (1 - k * 0.6)
 			elseif b.pop and k > 0.85 then
 				b.part.Size = b.size * (1 + (k - 0.85) * 4)
 			end
 			if b.label then
 				b.label.TextTransparency = k * k
+			elseif b.kind == "shards" then
+				b.part.Transparency = 0.2 + 0.8 * k * k
 			elseif b.kind ~= "bubbles" then
 				b.part.Transparency = k * k
 			else
