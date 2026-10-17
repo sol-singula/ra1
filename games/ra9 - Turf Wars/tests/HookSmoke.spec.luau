@@ -149,6 +149,7 @@ Engine.advance(5)
 check("...and goes by itself", HookC.refs.welcome == nil)
 
 -- The gamepad ----------------------------------------------------------------------------------------------------
+Engine.advance(12.5) -- (the HOOK COMPLETE card closes itself: while it's up the mouse is free and shots wait)
 Engine.setInput(Enum.UserInputType.Gamepad1)
 local K = Enum.KeyCode
 if Store.phase() ~= "build" then

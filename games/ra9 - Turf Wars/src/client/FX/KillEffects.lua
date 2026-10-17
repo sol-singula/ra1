@@ -30,6 +30,7 @@ local RunService = game:GetService("RunService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
+local MemeArt = require(ReplicatedStorage.Shared.Data.MemeArt)
 local Effects = require(script.Parent.Effects)
 
 local KillEffects = {}
@@ -238,6 +239,67 @@ function Actor:text(str, offset, color, o)
 	l.Rotation = o.rotation or 0
 	l.Parent = gui
 	return { anchor = anchor, gui = gui, label = l, born = self.age, base = offset }
+end
+
+-- A comic sticker (Data/MemeArt) on a billboard over the spot: it pops in with a bounce, then (opts) wobbles,
+-- spins, floats up, swings like a mallet, and fades out before the end. size: studs across; delay: seconds.
+--   opts = { delay?, life? (LIFE - delay), wobble?, spin? (deg/s), float? (studs/s), swing?, pulse?, onTop? }
+function Actor:sticker(name, offset, size, opts)
+	opts = opts or {}
+	local function make()
+		if not self.alive then
+			return
+		end
+		local anchor =
+			self:part(Vector3.new(0.2, 0.2, 0.2), WHITE, { transparency = 1, cf = CFrame.new(self.at + offset) })
+		local gui = Instance.new("BillboardGui")
+		gui.Name = "Sticker_" .. name
+		gui.Size = UDim2.fromScale(0.01, 0.01)
+		gui.AlwaysOnTop = opts.onTop ~= false
+		gui.LightInfluence = 0
+		gui.MaxDistance = 500
+		gui.Adornee = anchor
+		gui.Parent = anchor
+		local img = Instance.new("ImageLabel")
+		img.Name = "Art"
+		img.BackgroundTransparency = 1
+		img.AnchorPoint = Vector2.new(0.5, 0.5)
+		img.Position = UDim2.fromScale(0.5, 0.5)
+		img.Size = UDim2.fromScale(1, 1)
+		img.ScaleType = Enum.ScaleType.Fit
+		img.Image = MemeArt.image(name)
+		img.Parent = gui
+		local born = self.age
+		local life = opts.life or math.max(0.6, LIFE - (opts.delay or 0) - 0.1)
+		table.insert(self.ticks, function(_, now)
+			local v = now - born
+			local k = outBack(clamp01(v / 0.28))
+			local fade = clamp01((v - (life - 0.35)) / 0.35)
+			local pulse = opts.pulse and (1 + math.sin(v * 9) * 0.06) or 1
+			local sz = size * math.max(0.01, k) * pulse * (1 - fade * 0.3)
+			gui.Size = UDim2.fromScale(sz, sz)
+			img.ImageTransparency = fade
+			local rot = 0
+			if opts.wobble then
+				rot += math.sin(v * 7) * 9
+			end
+			if opts.spin then
+				rot += v * opts.spin
+			end
+			if opts.swing then
+				-- (a mallet: raised, then slams down, a little bounce)
+				local u = clamp01(v / 0.45)
+				rot += -70 + 110 * (u * u) - (u >= 1 and math.sin((v - 0.45) * 20) * 8 * math.max(0, 1 - (v - 0.45) * 3) or 0)
+			end
+			img.Rotation = rot
+			anchor.CFrame = CFrame.new(self.at + offset + UP * (opts.float or 0) * v)
+		end)
+	end
+	if opts.delay and opts.delay > 0 then
+		self:after(opts.delay, make)
+	else
+		make()
+	end
 end
 
 -- a sound from the spot: one of the studio's shared clips, pitched (slower in slow motion)
@@ -746,6 +808,8 @@ local function chickenModel(fx, scale)
 end
 
 S.chicken = function(fx)
+	fx:sticker("chicken", Vector3.new(0, 5, 0), 5, { delay = 0.2, wobble = true, float = 0.8 })
+	fx:sticker("bawk", Vector3.new(2.5, 8, 0), 5, { delay = 0.45, wobble = true, float = 0.6 })
 	poof(fx, fx.at, 10, WHITE, 1.3)
 	fx:sound("pop", 1.1, 0.6)
 	for i = 1, math.floor(10 * fx.mult) do
@@ -803,6 +867,7 @@ S.chicken = function(fx)
 end
 
 S.duck = function(fx)
+	fx:sticker("duck", Vector3.new(0, 6, 0), 7, { delay = 0.1, wobble = true, pulse = true })
 	local body = fx:part(Vector3.new(3.4, 2.6, 4.2), YELLOW, { ball = true, material = Enum.Material.SmoothPlastic })
 	local head = fx:part(Vector3.new(2.2, 2.2, 2.2), YELLOW, { ball = true, material = Enum.Material.SmoothPlastic })
 	local beak = fx:part(Vector3.new(1.2, 0.5, 1), ORANGE, { material = Enum.Material.SmoothPlastic })
@@ -886,6 +951,8 @@ S.balloons = function(fx)
 end
 
 S.banana = function(fx)
+	fx:sticker("banana", Vector3.new(0, 2.5, 0), 3.5, { life = 1, spin = 200 })
+	fx:sticker("splat", Vector3.new(0, 6.5, 0), 6, { delay = 0.9, wobble = true })
 	local peel = fx:part(Vector3.new(1.4, 0.25, 0.7), YELLOW, { material = Enum.Material.SmoothPlastic })
 	local tip =
 		fx:part(Vector3.new(0.3, 0.2, 0.3), Color3.fromRGB(90, 60, 20), { material = Enum.Material.SmoothPlastic })
@@ -946,6 +1013,8 @@ end
 
 -- the big ones ------------------------------------------------------------------------------------------------------
 S.lightning = function(fx)
+	fx:sticker("bolt", Vector3.new(0, 9, 0), 14, { delay = 0.12, life = 0.7, pulse = true })
+	fx:sticker("zap", Vector3.new(0, 7, 0), 6.5, { delay = 0.35, wobble = true, float = 0.5 })
 	local blue = Cosmetics.color("electric", fx.team)
 	-- the sky goes dark for a beat (on this client)
 	pcall(function()
@@ -1099,7 +1168,18 @@ S.doge = function(fx)
 			e[1].Transparency = s < 0.05 and 1 or 0
 		end
 	end)
-	local words = { "wow", "such kill", "very rekt", "much skill", "so oof", "amaze" }
+	-- the meme itself: the shiba sticker, big, tilting, and the words as stickers popping round it
+	fx:sticker("doge", Vector3.new(0, 7.5, 0), 8, { delay = 0.15, wobble = true, pulse = true })
+	for i = 1, 4 do
+		local a = (i - 1) * math.pi / 2 + 0.6
+		fx:sticker(
+			"doge_word" .. i,
+			Vector3.new(math.cos(a) * 6, 6 + math.sin(a) * 3.5, math.sin(a) * 2),
+			5.5,
+			{ delay = 0.35 + i * 0.3, wobble = true, float = 0.35 }
+		)
+	end
+	local words = { "so oof", "amaze", "wow", "such kill", "very rekt", "much skill" }
 	local colors = {
 		Color3.fromRGB(255, 60, 200),
 		Color3.fromRGB(60, 220, 255),
@@ -1108,9 +1188,9 @@ S.doge = function(fx)
 		Color3.fromRGB(255, 120, 40),
 		Color3.fromRGB(170, 120, 255),
 	}
-	local n = math.min(#words, math.max(3, fx.look.count or 6))
+	local n = 2 -- (the other words are stickers now)
 	for i = 1, n do
-		fx:after(0.25 + i * 0.28, function()
+		fx:after(1.7 + i * 0.3, function()
 			local off = Vector3.new(rng:NextNumber(-5, 5), rng:NextNumber(3, 7), rng:NextNumber(-3, 3))
 			local w = fx:text(words[i], off, colors[i], {
 				w = 6,
@@ -1132,6 +1212,8 @@ S.doge = function(fx)
 end
 
 S.web = function(fx)
+	fx:sticker("web", Vector3.new(0, 3, 0), 9, { delay = 0.15, spin = 25, onTop = false })
+	fx:sticker("thwip", Vector3.new(0, 8, 0), 7, { delay = 0.1, wobble = true, float = 0.5 })
 	local strands = {}
 	local start = fx.body and fx.body:GetPivot() or CFrame.new(fx.at)
 	local center = start.Position
@@ -1204,6 +1286,7 @@ S.web = function(fx)
 end
 
 S.oof = function(fx)
+	fx:sticker("oof", Vector3.new(0, 6, 0), 9, { delay = 0.05, wobble = true, pulse = true })
 	local w = fx:text("OOF", UP * 3.5, YELLOW, { w = 10, h = 4.5, font = Enum.Font.LuckiestGuy })
 	fx:sound("thud", 0.7, 0.8)
 	fx:sound("pop", 0.6, 0.5, 0.35)
@@ -1225,6 +1308,8 @@ S.oof = function(fx)
 end
 
 S.bonk = function(fx)
+	fx:sticker("mallet", Vector3.new(1.5, 7, 0), 7, { life = 1.1, swing = true })
+	fx:sticker("bonk", Vector3.new(0, 8, 0), 7.5, { delay = 0.45, wobble = true, float = 0.4 })
 	local brown = Color3.fromRGB(130, 80, 40)
 	local red = Color3.fromRGB(220, 40, 50)
 	local m = { material = Enum.Material.SmoothPlastic }
@@ -1295,6 +1380,7 @@ S.bonk = function(fx)
 end
 
 S.dance = function(fx)
+	fx:sticker("disco", Vector3.new(0, 10, 0), 5, { delay = 0.1, spin = 90 })
 	local tiles = {}
 	local n = 5
 	for x = 1, n do
@@ -1351,6 +1437,7 @@ S.dance = function(fx)
 end
 
 S.blackhole = function(fx)
+	fx:sticker("blackhole", Vector3.new(0, 3, 0), 12, { delay = 0.05, spin = -160, pulse = true, onTop = false })
 	local center = fx.at + UP * 0.6
 	local disc = fx:part(Vector3.new(0.2, 1, 1), INK, {
 		cylinder = true,
@@ -1424,6 +1511,7 @@ S.blackhole = function(fx)
 end
 
 S.heaven = function(fx)
+	fx:sticker("heaven", Vector3.new(0, 7, 0), 11, { delay = 0.1, spin = 12, float = 1.5, onTop = false })
 	local beam = fx:part(Vector3.new(80, 4, 4), GOLD, {
 		cylinder = true,
 		transparency = 0.55,

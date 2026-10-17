@@ -469,6 +469,7 @@ local function showComplete(msg)
 		Parent = root,
 	})
 	refs.complete = card
+	Layout.modal("hookComplete", card) -- (the mouse comes free for its buttons)
 	glowEdge(card, GOLD)
 	label({
 		Name = "Title",

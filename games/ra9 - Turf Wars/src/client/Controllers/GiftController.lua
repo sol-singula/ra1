@@ -194,6 +194,7 @@ function GiftController.show(g)
 		Parent = gui,
 	})
 	screen.Visible = not Layout.panel()
+	Layout.modal("gift", screen) -- (the mouse comes free of first person while it's up, so the buttons can be clicked)
 	-- the rays behind the card, turning
 	local rays = Theme.new("Frame", {
 		Name = "Rays",

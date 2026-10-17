@@ -38,6 +38,7 @@ local Locker = require(ReplicatedStorage.Shared.Data.Locker)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Season = require(ReplicatedStorage.Shared.Data.Season)
 local Shop = require(ReplicatedStorage.Shared.Data.Shop)
+local MemeArt = require(ReplicatedStorage.Shared.Data.MemeArt)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Icons = require(script.Parent.Parent.UI.Icons)
@@ -526,6 +527,26 @@ local function premiumRow(body, y)
 				TextXAlignment = Enum.TextXAlignment.Center,
 				ZIndex = 3,
 			})
+			-- (the meme ones: their sticker art, big over the picture, bobbing with the emoji)
+			local art = MemeArt.FOR_ITEM[it.key]
+			if art then
+				local img = Theme.new("ImageLabel", {
+					Name = "Sticker",
+					BackgroundTransparency = 1,
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.fromScale(0.5, 0.5),
+					Size = UDim2.fromOffset(88, 88),
+					ScaleType = Enum.ScaleType.Fit,
+					Image = MemeArt.image(art),
+					ZIndex = 2,
+					Parent = pic,
+				})
+				local phase2 = i * 0.9
+				animate(card, function(t)
+					img.Rotation = math.sin(t * 2.4 + phase2) * 7
+					img.Size = UDim2.fromOffset(88 + math.sin(t * 4 + phase2) * 5, 88 + math.sin(t * 4 + phase2) * 5)
+				end)
+			end
 			if owned then
 				tick(pic, CW - 34, 14, 20)
 			end
