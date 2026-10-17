@@ -158,6 +158,42 @@ and pack values, the seasons, goals, VIP, owning), 132 server (earning, buying, 
 its claims, the Starter Pack, the club, goals, VIP, the crown, banners), 97 client (the panel's four tabs checked
 piece by piece for overlaps, buying and wearing from it, the HUD stepping aside, kill effects, bow finishes).
 
+## Round 6: crouch, phones, the bow in your hands, anti-cheat, store art
+
+* **Crouch:** hold C or Ctrl (or tap CROUCH): lower (the body sinks 1.1 studs, so the hit spheres do too), slower
+  (`CROUCH_SPEED`), the bow steadier. Everyone sees it (the server's `MoveService` lowers you too). Crouch while
+  sprinting is a slide; still holding crouch at the end of it, you stay down.
+* **Phones:** `UI/Device` tells touch, gamepad and keyboard apart at the start and follows live switches (pick up a
+  pad, tap a touch laptop), and tells the server. On touch: FIRE, JUMP, CROUCH, RUN, SLIDE and RELOAD round the
+  right thumb (ours replace Roblox's own jump button, which sat in the same place), PLACE and TURN while building,
+  the bows move to the bottom middle and health to the top left (Roblox's thumbstick has the bottom left), one
+  popup at a time. A light aim assist for touch only: a shot let go within 4° of an enemy bends 60% of the way.
+  ClientSmoke checks the whole touch layout for overlaps in the fight, the build phase and the win.
+* **The bow in your hands** (`WeaponController`): your arms in the team's sleeves come in from the screen's corners
+  to hold it; the string is two halves that bend into a V to your hand. Spring motion: up from below on equip, a
+  walking bob and breathing, lag behind your view as you look round, dropped across you sprinting, tilted in a
+  slide, steadier crouched, toward the middle as you draw (limbs bend, at full draw it shakes, more for the Heavy
+  Bow), a snap and kick on release with the string overshooting, the next arrow sliding in, a dip when you land;
+  the crossbow lies flat, kicks per bolt and tips down to reload. Everyone else sees a bow in your hand
+  (`CombatService:HoldBow`). First-person renders: `screenshots/fp_*.png` (`tools/gameplay/firstperson.luau`).
+
+  ![](screenshots/fp_full.png)
+
+* **Anti-cheat** (`AntiCheatService`): the server already owns every arrow, hit, kill, the line, building and
+  money, so it watches the body the client owns and odd patterns: speed and teleports (judged over a second, with
+  sprint, slide and our knockback allowed for; pulled back to where the second began), flying (high above ground
+  for 3 s), standing inside a built wall, shots refused again and again (too fast, from too far off your head),
+  remote spam past the rate limits. Strikes fade; at 6 you're removed with a plain message. Aim outliers (all
+  headshots for 25 kills, 92%+ accuracy over 60 shots) are only noted, never struck. Our own teleports and
+  knockback set `AcGrace` so they never count. Every flag goes in the profile's `ac` record. ServerSmoke runs the
+  whole honest match first and checks nobody was flagged, then a cheater.
+* **Store art:** 6 thumbnails ([`thumbnails/`](thumbnails/README.md), titled), 8 ads with no text
+  ([`ads/`](ads/README.md)), the icon and two alternates ([`icon/`](icon/README.md)), all from the game's renders.
+
+  ![](thumbnails/_all.jpg)
+
+Tests: 119 unit, 146 server, 121 client.
+
 ## Next (phase F)
 
 * The Discord log and analytics (the studio's shared pipeline), the dashboard entry.

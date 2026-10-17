@@ -9,6 +9,7 @@ next map loads in the same server.
 * [The master plan](MASTER_PLAN.md) (the design brief, the art direction and the decisions) ·
   [the build plan and what was built](PLAN.md)
 * [Map renders](screenshots/) (from the mock engine through `tools/gameplay`)
+* Store art: [thumbnails](thumbnails/README.md), [ads (no text)](ads/README.md), [icon](icon/README.md)
 
 ## The maps
 
