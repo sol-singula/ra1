@@ -381,6 +381,21 @@ function BuildService:Hit(id, damage, attacker)
 	end
 end
 
+-- The line moved: whatever a team had built on turf it just lost comes down (any part of it over the line).
+-- Returns how many fell.
+function BuildService:ClearLost(frontline)
+	local gone = 0
+	for id, s in structures do
+		local lost = (s.team == "red" and s.boxMax and s.boxMax.X > frontline + 0.01)
+			or (s.team == "blue" and s.boxMin and s.boxMin.X < frontline - 0.01)
+		if lost then
+			self:Remove(id, nil, false)
+			gone += 1
+		end
+	end
+	return gone
+end
+
 function BuildService:Clear()
 	for id in structures do
 		self:Remove(id, nil, false)

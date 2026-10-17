@@ -487,7 +487,7 @@ local function placeView(dt)
 	-- arrow or your hands crosses the middle of the screen (the crosshair) at any point of the draw. The crossbow is
 	-- held level, low on the right.
 	local restP = cross and Vector3.new(0.42, -0.5, -1.55) or Vector3.new(0.5, -0.58, -1.5)
-	local aimP = Vector3.new(-0.62, -0.42, -1.65)
+	local aimP = Vector3.new(-0.74, -0.5, -1.65)
 	-- (on the way across it swings low, under the crosshair: up from below as you draw, back down after the shot)
 	local dip = cross and 0 or 4 * aim * (1 - aim) * (view.big and 1.4 or 1.0)
 	local pos = restP:Lerp(aimP, aim)

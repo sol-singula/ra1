@@ -493,6 +493,16 @@ colour), all of it light; nothing in the middle of the screen through rest, the 
 each weapon (sampled every 1/20 s, at two fields of view and two screen shapes); a 3D picture in every slot; the
 picked slot and piece styled apart and lifted; the slots side by side inside the bar and the tray.
 
+## Round 15: a sharper line, lost turf clears, products live
+
+* **The line:** one crisp neon bar (1.2 studs) in the colour of the team that pushed last, with dark edges on both
+  sides and only a thin glow right on it (no more wide glow spilling over both turfs).
+* **Lost turf clears:** when the line moves, whatever the losing side had built on the turf it just lost comes down
+  (`BuildService:ClearLost`).
+* **No "use the mouse" hint:** Tab opens the menu (with the mouse). Alt still frees the mouse, unannounced.
+* **Robux products are real now:** 4 Shard packs, Turf Pass, +1 Tier (developer products) and the Starter Pack (a game
+  pass), created on the experience through Open Cloud; their ids are in `Data/Shop.lua`.
+
 ## Next (phase F)
 
 * Lag compensation for hits; bots that also build in the build phase.

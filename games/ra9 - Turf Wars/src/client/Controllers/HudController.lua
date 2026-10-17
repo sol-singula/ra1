@@ -381,36 +381,6 @@ local function buildInvite(gui)
 		Panel.toggle()
 	end)
 	refs.shop = s
-	-- Alt frees the mouse (to click the chat, a button, the admin panel); this says so, and says how to go back
-	local m = Theme.new("TextButton", {
-		Name = "MouseHint",
-		Position = UDim2.fromOffset(16, 132),
-		Size = UDim2.fromOffset(200, 28),
-		BackgroundColor3 = C.white,
-		Text = "",
-		AutoButtonColor = true,
-		Visible = not touch,
-		Parent = gui,
-	}, { Theme.corner(4), Theme.stroke(2, C.ink) })
-	refs.mouseText = Theme.title({
-		Name = "Head",
-		Text = "🖱 USE THE MOUSE  [ALT]",
-		Size = UDim2.new(1, -16, 1, -6),
-		Position = UDim2.fromOffset(8, 3),
-		TextColor3 = C.ink,
-		outline = false,
-		Parent = m,
-	})
-	m.Activated:Connect(function()
-		local Cam = require(script.Parent.CameraController)
-		Cam.setCursorMode(not Cam.cursorMode())
-	end)
-	Bus.CursorMode:Connect(function(on)
-		m.BackgroundColor3 = on and C.ink or C.white
-		refs.mouseText.TextColor3 = on and C.white or C.ink
-		refs.mouseText.Text = on and "🎯 BACK TO AIMING  [ALT]" or "🖱 USE THE MOUSE  [ALT]"
-	end)
-	refs.mouseHint = m
 end
 
 -- The centre: crosshair, charge, hit markers, alerts -----------------------------------------------------------
@@ -1367,10 +1337,6 @@ local function step()
 			end
 		end
 		refs.focusHid = focus
-	end
-	if refs.mouseHint then
-		-- (a mouse and keyboard only: a phone taps, a pad has its own buttons)
-		refs.mouseHint.Visible = Device.kind() == "keyboard" and not focus and not Layout.panel()
 	end
 end
 

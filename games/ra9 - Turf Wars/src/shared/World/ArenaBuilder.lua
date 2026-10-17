@@ -496,9 +496,10 @@ function ArenaBuilder.build(def, parent)
 		def.build(shapes)
 	end
 
-	-- the frontline: a big glowing line ON the floor across the field (nothing standing up, so both teams always see
-	-- each other over it), in the colour of the team that pushed it last, with a wide soft glow round it
-	local function glowPart(name, w, h, transparency)
+	-- the frontline: one crisp, bright line ON the floor across the field (nothing standing up, so both teams always
+	-- see each other over it), in the colour of the team that pushed it last. Dark edges on both sides keep it sharp
+	-- against the red and the blue turf; the glow is a thin band right on it, so it never bleeds across both sides.
+	local function linePart(name, w, h, transparency, material)
 		local p = Instance.new("Part")
 		p.Name = name
 		p.Anchored = true
@@ -506,7 +507,7 @@ function ArenaBuilder.build(def, parent)
 		p.CanQuery = false
 		p.CanTouch = false
 		p.CastShadow = false
-		p.Material = Enum.Material.Neon
+		p.Material = material or Enum.Material.Neon
 		p.Color = Color3.fromRGB(255, 255, 255)
 		p.Transparency = transparency
 		p.Size = Vector3.new(w, h, width)
@@ -514,13 +515,15 @@ function ArenaBuilder.build(def, parent)
 		p.Parent = folder
 		return p
 	end
-	local marker = glowPart("Frontline", 1.6, 0.3, 0)
-	local glow = glowPart("FrontlineGlow", 7, 0.08, 0.55)
+	local marker = linePart("Frontline", 1.2, 0.32, 0)
+	local glow = linePart("FrontlineGlow", 2.2, 0.06, 0.65)
+	local edge = linePart("FrontlineEdge", 2.0, 0.28, 0, Enum.Material.SmoothPlastic)
+	edge.Color = Color3.fromRGB(28, 28, 32)
 	local light = Instance.new("SurfaceLight")
 	light.Face = Enum.NormalId.Top
-	light.Angle = 120
-	light.Range = 14
-	light.Brightness = 3
+	light.Angle = 60
+	light.Range = 5
+	light.Brightness = 1.5
 	light.Color = marker.Color
 	light.Parent = marker
 
@@ -554,6 +557,7 @@ function ArenaBuilder.build(def, parent)
 		blocked = blocked,
 		marker = marker,
 		glow = glow,
+		edge = edge,
 		ceiling = ceiling,
 	}
 	arena.room = room
@@ -640,6 +644,9 @@ function ArenaBuilder.paint(arena, frontline, team)
 	if arena.glow then
 		arena.glow.CFrame = CFrame.new(frontline, arena.glow.Size.Y / 2 + 0.02, 0)
 		arena.glow.Color = color
+	end
+	if arena.edge then
+		arena.edge.CFrame = CFrame.new(frontline, arena.edge.Size.Y / 2 + 0.02, 0)
 	end
 	arena.lastTeam = team
 end

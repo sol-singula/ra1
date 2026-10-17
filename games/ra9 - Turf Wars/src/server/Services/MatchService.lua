@@ -285,6 +285,7 @@ function MatchService:_onKilled(victim, killer, info)
 		local team = teams:Team(killer)
 		frontline = math.clamp(frontline + Formulas.forward(team) * push, arena:LoseLine("red"), arena:LoseLine("blue"))
 		arena:Paint(frontline, team)
+		build:ClearLost(frontline) -- (the losing side's walls on the turf it just lost come down)
 		-- how close each side has come to losing (a win from 25% or less is a comeback)
 		local lr, lb = arena:LoseLine("red"), arena:LoseLine("blue")
 		closest.red = math.min(closest.red or 1, lr ~= 0 and (frontline - lr) / (0 - lr) or 1)
@@ -680,6 +681,7 @@ end
 function MatchService:_setFrontline(x)
 	frontline = x
 	arena:Paint(frontline)
+	build:ClearLost(frontline)
 	self:Broadcast()
 end
 function MatchService:_setPhase(p, seconds)

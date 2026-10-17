@@ -318,14 +318,13 @@ do
 	local was = Dev.kind()
 	Dev.set("keyboard")
 	Engine.advance(0.2)
-	check("the mouse hint shows on a PC", Hud.refs.mouseHint and Hud.refs.mouseHint.Visible)
+	check("no mouse hint on screen (Tab opens the menu for the mouse)", Hud.refs.mouseHint == nil)
 	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.LeftAlt, UserInputType = Enum.UserInputType.Keyboard }, false)
 	Engine.advance(0.1)
 	check(
 		"Alt: the mouse is free",
 		CamC.cursorMode() and UIS.MouseIconEnabled == true and UIS.MouseBehavior == Enum.MouseBehavior.Default
 	)
-	check("...the hint says how to go back", string.find(Hud.refs.mouseText.Text, "BACK TO AIMING") ~= nil)
 	local BusFire = Engine.require(tree.client.UI.Bus)
 	BusFire.Fire:Fire(true)
 	Engine.advance(0.3)
@@ -334,9 +333,6 @@ do
 	UIS.InputBegan:Fire({ KeyCode = Enum.KeyCode.LeftAlt, UserInputType = Enum.UserInputType.Keyboard }, false)
 	Engine.advance(0.1)
 	check("Alt again: back to aiming", not CamC.cursorMode() and UIS.MouseIconEnabled == false)
-	Dev.set("touch")
-	Engine.advance(0.2)
-	check("...no hint on a phone", not Hud.refs.mouseHint.Visible)
 	Dev.set(was)
 	Engine.advance(0.2)
 end

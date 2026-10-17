@@ -203,6 +203,13 @@ do
 	local wx, wz = Formulas.cellOf(F + side * 14, -47)
 	local okW, whyW = Build:Place(red, "cover", wx, wz, 0)
 	check("...and in the cell against the long wall", okW == true, whyW)
+	-- the line moves into red's turf: red's piece at the line falls, the one further back stays
+	local lineId = type(whyL) == "table" and whyL.id
+	local backId = type(whyW) == "table" and whyW.id
+	Match:_setFrontline(F + side * 8)
+	check("the line moves in: what they built on the lost turf comes down", lineId and Build:All()[lineId] == nil)
+	check("...what's still on their side stays", backId and Build:All()[backId] ~= nil)
+	Match:_setFrontline(F)
 	Build:Refill()
 end
 -- the lane rule: wall a whole row and the last openings are refused
