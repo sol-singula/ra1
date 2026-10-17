@@ -40,7 +40,8 @@ glows a little and wears a small RALLY marker. Spawn protection is the same as a
 
   BuildService:Place(player, key, cx, cz, rot, y?) -> ok, why   (y: the base height in studs; 0 or nil, the floor)
   BuildService:Refill()                 the budgets, at each build phase
-  BuildService:SetBudget(points)        what a build phase gives (Constants.BUILD_BUDGET: turf; another mode sets its own)
+  BuildService:SetBudget(points)        what a build phase gives (Constants.BUILD_BUDGET: turf; Capture the Flag's
+                                        CTF_BUILD_BUDGET at Init; Bot Brawl sets its own)
   BuildService:Clear()                  between matches
   BuildService:Budget(player) / BudgetMax()
   BuildService:All()                    { [id] = structure }
@@ -128,6 +129,12 @@ end
 
 function BuildService:SetBudget(points)
 	budgetMax = math.max(0, math.floor(tonumber(points) or Constants.BUILD_BUDGET))
+end
+
+-- The points each player gets in a build phase: the mode's (Capture the Flag's build is bigger: one build phase, a
+-- whole fight to hold; Bot Brawl and others call SetBudget)
+function BuildService.budgetMax()
+	return budgetMax
 end
 
 function BuildService:Push(player)

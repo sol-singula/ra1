@@ -12,6 +12,19 @@ Constants.GAME_NAME = "Turf Wars"
 -- for it (tests call it before the scripts run; it's safe to call again).
 Constants.MODES = { "lobby", "turf", "ctf", "brawl" }
 Constants.MODE = "turf"
+-- Capture the Flag (CtfService, MatchService's ctf rules): each base has a FLAG on a stand at its back; touch the
+-- enemy's to carry it (slower, no bow), bring it to your own stand while your flag is home to CAPTURE
+Constants.CTF = {
+	READY_PLAYERS = 4, -- the match starts when this many players are READY (a party readies together; never bots)
+	FIGHT_SECONDS = 240, -- one fight after the build phase (no return to building, no CHARGE: blades out throughout)
+	SUDDEN_DEATH_SECONDS = 60, -- a tie at the end: this much more, the first capture wins; still a tie: a draw
+	CAPTURES_TO_WIN = 3,
+	FLAG_RETURN_SECONDS = 8, -- a dropped flag goes home on its own after this long
+	PICKUP_RADIUS = 4, -- studs from a flag (home on its stand, or dropped) to take it, return it or capture with it
+	CARRY_SPEED = 0.9, -- a carrier's walking and running speed, times this
+	STAND_BACK = 13, -- the stand: this far from the team's end wall, in the middle (between the deck's two piers)
+}
+Constants.CTF_BUILD_BUDGET = 400 -- points a player gets in Capture the Flag's build phase (twice Turf Wars': one build, a whole fight to hold)
 
 -- Server and teams (§1, §2A)
 Constants.MAX_PLAYERS = 40
@@ -425,8 +438,12 @@ function Constants.applyModeRules(key)
 		Constants.TUTORIAL = false
 		Constants.CHARGE_SECONDS = 0
 		Constants.BUILD_BUDGET = Constants.BRAWL.BUILD_BUDGET
+	elseif key == "ctf" then
+		Constants.TUTORIAL = false -- (the practice teaches the line; CTF has the flags: CtfService's own tips)
+		Constants.BUILD_BUDGET = Constants.CTF_BUILD_BUDGET -- (one build phase, a whole fight to hold: twice turf's)
 	end
 end
+Constants.TURF_BUILD_BUDGET = TURF_RULES.BUILD_BUDGET -- (turf's, whatever mode this is: the others compare to it)
 Constants.applyModeRules(Constants.MODE)
 
 return Constants

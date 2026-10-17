@@ -51,6 +51,7 @@ at most every NEAR_MISS_GAP; a hit says so through Hurt.from).
   CombatService:GiveShield(player) / :DropShield(player, why)
   CombatService:Device(player)             "touch" | "gamepad" | "keyboard" | nil (as their client reported it)
   (a "Hits" attribute of 2 or more on a victim: a Bot Brawl boss, knocked out only by its last hit)
+  CombatService.mayShoot(player) -> bool   a hook: false and their bow stays down (CtfService: a flag carrier)
   CombatService:HitScale(player)           how much bigger the spheres are for their arrows (1 .. TOUCH_HIT_MAX)
   CombatService.Killed(victim, killer, info)   info: { weapon, head, assists = { players }, kind }
   CombatService.StructureHit(id, damage, attacker)
@@ -985,10 +986,16 @@ function CombatService:_hitPlayer(arrow, victim, head, at, dir)
 	end
 end
 
+-- May this player draw and shoot a bow (or throw) right now? A mode's hook (CtfService: never while carrying a
+-- flag: the blade only). The default: always.
+CombatService.mayShoot = function(_player)
+	return true
+end
+
 -- Start or stop drawing (Net "Draw"; bots call it directly). The charge is timed from here.
 function CombatService:Draw(player, on)
 	local s = state(player)
-	if on == true and s.alive and enabled then
+	if on == true and s.alive and enabled and CombatService.mayShoot(player) then
 		s.drawAt = now()
 	elseif on == false then
 		s.drawAt = nil
@@ -1109,6 +1116,9 @@ function CombatService:Shoot(player, origin, direction, shotId)
 	local w = Weapons.get(s.weapon)
 	if w.melee then
 		return nil -- (the blade swings through Swing, never shoots)
+	end
+	if not CombatService.mayShoot(player) then
+		return nil -- (a flag carrier's bow stays down: CtfService)
 	end
 	if direction ~= direction or origin ~= origin then
 		return nil -- (NaN)

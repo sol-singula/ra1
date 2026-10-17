@@ -15,6 +15,12 @@ next map in the same server. No lobby, no queue.
   * A kill plane below the map; a watchdog that restarts a match running absurdly long (logged, never "won").
   * A spectating admin (server/Admins.lua) is in the server but not in the match: People() and Everyone() leave
     them out, so they get no team, no body, no stats, no row in the results.
+  * The mode (Constants.MODE) picks the rules (Rules, below): Turf Wars as above, or Capture the Flag (CtfService
+    holds the flags, the scores and the READY queue): the line stays at the middle (your half is your turf in the
+    build phase), the whole fight is open with blades out (the CHARGE from the first second, no call), kills push
+    nothing, one fight (CTF.FIGHT_SECONDS) to CTF.CAPTURES_TO_WIN captures or the most when it ends, a tie into
+    sudden death (one more minute, the first capture wins) and then a draw; and the match only starts when enough
+    players are READY: until then "waiting", everyone on their decks with the arena up.
 
   MatchService:People() / :Everyone()   the real players / plus the bots
   MatchService:Join(player) / :Leave(player)   into the match / out of it (an admin starting to spectate)
@@ -24,13 +30,16 @@ next map in the same server. No lobby, no queue.
   MatchService:SkipTo("fight" | "build" | "charge")   MatchService:Freeze(on)
   MatchService:Charging() -> bool       the CHARGE: the fight's last CHARGE_SECONDS, when the line is open to
                                         everyone and the blade comes out (workspace "Charge" says so to the clients)
+  MatchService:SuddenDeath() -> bool    (Capture the Flag) the tie-breaker minute is on
   MatchService.rules                    the match's rules, as Turf Wars plays them; a mode (BrawlService) changes
                                         them before the first match: push (kills move the line and win), turf (no
                                         standing on enemy turf), tips (the joining toasts), phaseSeconds(phase) ->
                                         seconds or nil (how long a build or fight lasts), respawn(victim, seconds)
-                                        -> seconds or false (no respawn at all)
+                                        -> seconds or false (no respawn at all). Capture the Flag's own rules are
+                                        the Rules table below, keyed by Constants.MODE.
 
-Workspace attributes the clients read: Phase, PhaseEnds, Charge, Frontline, LoseRed, LoseBlue, MatchId, MapKey, MapName.
+Workspace attributes the clients read: Phase, PhaseEnds, Charge, Frontline, LoseRed, LoseBlue, MatchId, MapKey, MapName,
+Mode.
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -63,9 +72,11 @@ local MatchService = {
 }
 
 local data, teams, arena, combat, build, progress, economy
+local ctf -- CtfService (Capture the Flag's flags, scores and queue), when the build has it
 local phase = "loading"
 local phaseEnds = 0
 local frontline = 0
+local sudden = false -- (Capture the Flag: the fight ended in a tie and its last minute is on)
 local matchId = 0
 local matchStart = 0
 local mapKey
@@ -118,11 +129,17 @@ function MatchService:Stats(player)
 	return statsOf(player)
 end
 
+function MatchService:SuddenDeath()
+	return sudden
+end
+
 function MatchService:Snapshot()
 	local m = Maps.get(mapKey)
 	return {
+		mode = Constants.MODE,
 		phase = phase,
 		ends = phaseEnds,
+		sudden = sudden or nil,
 		map = mapKey,
 		mapName = m and m.name,
 		tagline = m and m.tagline,
@@ -141,6 +158,7 @@ function MatchService:Snapshot()
 end
 
 function MatchService:Broadcast()
+	workspace:SetAttribute("Mode", Constants.MODE)
 	workspace:SetAttribute("Phase", phase)
 	workspace:SetAttribute("PhaseEnds", phaseEnds)
 	workspace:SetAttribute("Frontline", frontline)
@@ -159,6 +177,151 @@ local function setPhase(new, seconds)
 	build:SetOpen(new == "build")
 	MatchService:Broadcast()
 	MatchService.PhaseChanged:Fire(new, old)
+end
+
+-- The rules (see the header): Turf Wars' own unless a mode changes them
+MatchService.rules = { push = true, turf = true, tips = true, phaseSeconds = nil, respawn = nil }
+
+-- How long a phase lasts: the mode's say, else the constants
+local function phaseSeconds(which)
+	local r = MatchService.rules
+	local s = r.phaseSeconds and r.phaseSeconds(which)
+	return s or (which == "fight" and Constants.FIGHT_SECONDS or Constants.BUILD_SECONDS)
+end
+
+-- The rules by mode (Constants.MODE): what Turf Wars and Capture the Flag do differently. Everything else (the
+-- phases and their clocks, spawning, kills and their Shards, the results and the rewards, the watchdog) is the
+-- same match. A mode without rules of its own plays Turf Wars'.
+local Rules = {}
+local function rules()
+	return Rules[Constants.MODE] or Rules.turf
+end
+-- Turf Wars: the line, pushed by kills; the CHARGE at the fight's end; build, fight, build again until a side is out
+Rules.turf = {
+	-- the line is open (and the blade out) in the CHARGE: the fight's last CHARGE_SECONDS
+	lineOpen = function()
+		return phase == "fight" and phaseEnds - now() <= Constants.CHARGE_SECONDS
+	end,
+	chargeCall = true, -- (CHARGE! when it opens; anyone over the line goes home when it closes)
+	fightSeconds = function()
+		return phaseSeconds("fight")
+	end,
+	-- a valid kill moves the line toward the victim's base; returns the push in studs
+	onKill = function(killer, victim, ks)
+		local cells = Formulas.pushCells(#MatchService:Everyone()) + (MatchService.bonusCells(killer) or 0)
+		local push = cells * Constants.CELL
+		ks.pushed += cells
+		local team = teams:Team(killer)
+		frontline = math.clamp(frontline + Formulas.forward(team) * push, arena:LoseLine("red"), arena:LoseLine("blue"))
+		arena:Paint(frontline, team)
+		build:ClearLost(frontline) -- (the losing side's walls on the turf it just lost come down)
+		-- how close each side has come to losing (a win from 25% or less is a comeback)
+		local lr, lb = arena:LoseLine("red"), arena:LoseLine("blue")
+		closest.red = math.min(closest.red or 1, lr ~= 0 and (frontline - lr) / (0 - lr) or 1)
+		closest.blue = math.min(closest.blue or 1, lb ~= 0 and (lb - frontline) / lb or 1)
+		MatchService.Pushed:Fire(frontline, team, killer, victim)
+		return push
+	end,
+	-- the fight's clock ran out: back to building, the line where it is
+	fightOver = function()
+		build:Refill()
+		setPhase("build", phaseSeconds("build"))
+		Net.fireAll("Alert", "BUILD", Color3.fromRGB(40, 40, 46), 1.5)
+	end,
+	-- the side ahead (TeamService rule 2 sends a solo joiner to the other one)
+	leader = function()
+		if frontline > 0 then
+			return "red"
+		elseif frontline < 0 then
+			return "blue"
+		end
+		return nil
+	end,
+	ready = function()
+		return true -- (a match starts as soon as its map is up)
+	end,
+	score = Formulas.mvpScore, -- (the MVP, and the results' order)
+	row = function(_row, _stats) end, -- (nothing more on a results row)
+	-- someone tried to cross the line: when they'll be able to (the CHARGE)
+	crossText = function(t)
+		local wait = phaseEnds - t - Constants.CHARGE_SECONDS
+		if phase == "build" then
+			wait = (phaseEnds - t) + Constants.FIGHT_SECONDS - Constants.CHARGE_SECONDS
+		end
+		wait = math.max(0, math.ceil(wait))
+		return string.format("Not yet! You can charge across in %d:%02d", wait // 60, wait % 60)
+	end,
+	-- the one-line tip for someone joining in this phase
+	tip = function(p)
+		if p == "fight" then
+			return "The fight is on: shoot across the line to push it back!"
+		elseif p == "build" then
+			return "Build defences on your side, then fight!"
+		end
+		return nil
+	end,
+}
+-- Capture the Flag (CtfService: the flags, the scores, the READY queue): the line stays at the middle and holds
+-- only until the fight; then everyone may cross, blades out; kills push nothing; one fight, to the captures or the
+-- clock; a tie goes to sudden death, then a draw; and nothing starts until enough players are READY
+Rules.ctf = {
+	lineOpen = function()
+		return phase == "fight"
+	end,
+	chargeCall = false, -- (FIGHT! said it; nobody is sent home after)
+	fightSeconds = function()
+		return Constants.CTF.FIGHT_SECONDS
+	end,
+	onKill = function(_killer, _victim, _ks)
+		return 0 -- (no line; CtfService drops whatever the victim carried)
+	end,
+	fightOver = function()
+		local ahead = ctf and ctf:Leader(true)
+		if ahead then
+			MatchService:Victory(ahead)
+		elseif not sudden then
+			-- a tie: one more minute, and the first capture wins (CtfService ends it)
+			sudden = true
+			setPhase("fight", Constants.CTF.SUDDEN_DEATH_SECONDS)
+			Net.fireAll("Alert", "SUDDEN DEATH", Color3.fromRGB(30, 30, 34), 2)
+			Net.fireAll("Sfx", "horn")
+			Notify.all("Sudden death! The first capture wins", "start", { icon = "⚑", seconds = 4 })
+		else
+			MatchService:Victory("draw")
+		end
+	end,
+	leader = function()
+		return ctf and ctf:Leader() or nil -- (captures, then knockouts: a solo joiner goes to the side behind)
+	end,
+	ready = function()
+		return ctf == nil or ctf:ReadyCount() >= Constants.CTF.READY_PLAYERS
+	end,
+	score = function(s)
+		return Formulas.mvpScore(s) + (s.captures or 0) * 25 + (s.returns or 0) * 5
+	end,
+	row = function(row, s)
+		row.captures, row.returns = s.captures or 0, s.returns or 0
+	end,
+	crossText = function(t)
+		if phase == "build" then
+			local wait = math.max(0, math.ceil(phaseEnds - t))
+			return string.format("Not yet! Stay on your half until the fight: %d:%02d", wait // 60, wait % 60)
+		end
+		return "Not yet! You can cross when the match starts"
+	end,
+	tip = function(p)
+		if p == "fight" then
+			return "Grab their flag and run it home to your stand!"
+		elseif p == "build" then
+			return "Build on your half, then go for their flag!"
+		elseif p == "waiting" then
+			return `Press READY when you're set: the match starts with {Constants.CTF.READY_PLAYERS} players`
+		end
+		return nil
+	end,
+}
+function MatchService:Rules()
+	return rules()
 end
 
 -- Spawning -----------------------------------------------------------------------------------------------------
@@ -252,15 +415,6 @@ MatchService.SpawnAt = {}
 -- Extra cells a kill by this player moves the line (TutorialService: a new player's first match, alone).
 MatchService.bonusCells = function(_killer)
 	return 0
-end
--- The rules (see the header): Turf Wars' own unless a mode changes them
-MatchService.rules = { push = true, turf = true, tips = true, phaseSeconds = nil, respawn = nil }
-
--- How long a phase lasts: the mode's say, else the constants
-local function phaseSeconds(which)
-	local r = MatchService.rules
-	local s = r.phaseSeconds and r.phaseSeconds(which)
-	return s or (which == "fight" and Constants.FIGHT_SECONDS or Constants.BUILD_SECONDS)
 end
 
 function MatchService:Spawn(player)
@@ -383,21 +537,10 @@ function MatchService:_onKilled(victim, killer, info)
 			ks.triples += 1
 			ks.recent = {}
 		end
-	end
-	if valid and self.rules.push then
-		local ks = statsOf(killer)
-		local cells = Formulas.pushCells(#self:Everyone()) + (self.bonusCells(killer) or 0)
-		push = cells * Constants.CELL
-		ks.pushed += cells
-		local team = teams:Team(killer)
-		frontline = math.clamp(frontline + Formulas.forward(team) * push, arena:LoseLine("red"), arena:LoseLine("blue"))
-		arena:Paint(frontline, team)
-		build:ClearLost(frontline) -- (the losing side's walls on the turf it just lost come down)
-		-- how close each side has come to losing (a win from 25% or less is a comeback)
-		local lr, lb = arena:LoseLine("red"), arena:LoseLine("blue")
-		closest.red = math.min(closest.red or 1, lr ~= 0 and (frontline - lr) / (0 - lr) or 1)
-		closest.blue = math.min(closest.blue or 1, lb ~= 0 and (lb - frontline) / lb or 1)
-		self.Pushed:Fire(frontline, team, killer, victim)
+		-- (Turf Wars: the line moves toward the victim's base; Capture the Flag: nothing moves; Bot Brawl: no line)
+		if self.rules.push then
+			push = rules().onKill(killer, victim, ks)
+		end
 	end
 	local vroot = victim.Character and victim.Character:FindFirstChild("HumanoidRootPart")
 	local kp = killer and data:Get(killer)
@@ -464,21 +607,22 @@ function MatchService:Results(winner)
 			built = s.built,
 			pushed = s.pushed,
 		}
+		rules().row(row, s) -- (Capture the Flag: captures and returns)
 		table.insert(rows, row)
-		local score = Formulas.mvpScore(s)
+		local score = rules().score(s)
 		if score > 0 and (not bestScore or score > bestScore) then
 			best, bestScore = p, score
 		end
 	end
 	table.sort(rows, function(a, b)
-		return Formulas.mvpScore(a) > Formulas.mvpScore(b)
+		return rules().score(a) > rules().score(b)
 	end)
 	return { winner = winner, rows = rows, mvp = best and best.UserId or nil, mvpPlayer = best }
 end
 
 -- winner: "red" | "blue" | "draw" (an admin's call: nobody wins or loses)
 function MatchService:Victory(winner)
-	if phase == "victory" or phase == "loading" then
+	if phase == "victory" or phase == "loading" or phase == "waiting" then
 		return false
 	end
 	frozen = nil
@@ -502,7 +646,7 @@ function MatchService:Victory(winner)
 		local info = {
 			won = team ~= nil and team == winner,
 			seconds = t - math.max(s.joined, matchStart),
-			active = (s.shots + s.built + s.kills + s.assists) > 0,
+			active = (s.shots + s.built + s.kills + s.assists + (s.captures or 0) + (s.returns or 0)) > 0,
 			mvp = results.mvpPlayer == p,
 			comeback = team ~= nil and team == winner and (closest[team] or 1) <= 0.25,
 		}
@@ -524,15 +668,11 @@ function MatchService:Victory(winner)
 		})
 	end
 	-- (no centre alert here: the results card says who won; a banner for everyone says it too, and who was MVP)
-	-- (the team's name as the mode shows it, in a word: Red, Blue; Bot Brawl's Green)
-	local shown = Constants.TEAM_NAME[winner]
-	local winName = shown and (shown:sub(1, 1) .. shown:sub(2):lower()) or nil
+	local winName = Constants.TEAM_NAME[winner]
 	if winName then
-		Notify.all(
-			`{string.upper(string.sub(winName, 1, 1))}{string.lower(string.sub(winName, 2))} team wins!`,
-			"win",
-			{ color = Constants.TEAM_COLOR[winner] }
-		)
+		-- ("Red team wins!": the side's name as the mode spells it, in sentence case)
+		winName = string.upper(string.sub(winName, 1, 1)) .. string.lower(string.sub(winName, 2))
+		Notify.all(`{winName} team wins!`, "win", { color = Constants.TEAM_COLOR[winner] })
 	else
 		Notify.all("It's a draw!", "win")
 	end
@@ -568,6 +708,7 @@ function MatchService:NewMatch(key, size)
 	end
 	matchId += 1
 	matchStart = now()
+	sudden = false
 	stats = {}
 	closest = {}
 	respawnAt, pending = {}, {}
@@ -585,6 +726,12 @@ function MatchService:NewMatch(key, size)
 		end
 	end
 	build:Refill()
+	if not rules().ready() then
+		-- (Capture the Flag: not enough players READY yet. The arena is up to wait in; when they are, the match
+		-- starts from here again: _tick)
+		setPhase("waiting", 0)
+		return
+	end
 	setPhase("build", phaseSeconds("build"))
 	Net.fireAll("Alert", "BUILD", Color3.fromRGB(40, 40, 46), 2)
 	local def = Maps.get(mapKey)
@@ -600,31 +747,29 @@ function MatchService:_tellCharge(player)
 		return
 	end
 	toldAt[player] = t
-	local wait = phaseEnds - t - Constants.CHARGE_SECONDS
-	if phase == "build" then
-		wait = (phaseEnds - t) + Constants.FIGHT_SECONDS - Constants.CHARGE_SECONDS
-	end
-	wait = math.max(0, math.ceil(wait))
-	Net.fire(player, "Toast", string.format("Not yet! You can charge across in %d:%02d", wait // 60, wait % 60), "info")
+	Net.fire(player, "Toast", rules().crossText(t), "info")
 end
 
 -- The CHARGE: the fight's last seconds. The line opens (the turf rule is off), the blade comes out, and everyone
 -- may run across. When it's over, anyone still on the other side goes home (a fresh spawn on their own side).
+-- (Capture the Flag: the whole fight, and no call: Rules.ctf)
 function MatchService:Charging()
 	return workspace:GetAttribute("Charge") == true
 end
 
 function MatchService:_charge()
-	local on = phase == "fight" and phaseEnds - now() <= Constants.CHARGE_SECONDS
+	local on = rules().lineOpen()
 	if on == self:Charging() then
 		return
 	end
 	workspace:SetAttribute("Charge", on or nil)
-	if on then
+	-- (a mode without the call: FIGHT! opened the line, and the match's end closes it; nobody is sent home)
+	local call = rules().chargeCall
+	if call and on then
 		Net.fireAll("Alert", "CHARGE!", Color3.fromRGB(30, 30, 34), 1.8)
 		Net.fireAll("Sfx", "horn")
 		Notify.all("CHARGE! Cross the line, blades out!", "start", { icon = "⚔️", seconds = 4 })
-	elseif phase == "build" then
+	elseif call and phase == "build" then
 		for _, player in self:Everyone() do
 			local team = teams:Team(player)
 			local c = player.Character
@@ -651,13 +796,14 @@ function MatchService:_tick()
 			self:Broadcast()
 		end
 	elseif phase == "build" and t >= phaseEnds then
-		setPhase("fight", phaseSeconds("fight"))
+		setPhase("fight", rules().fightSeconds())
 		Net.fireAll("Alert", "FIGHT!", Color3.fromRGB(30, 30, 34), 1.5)
 		Net.fireAll("Sfx", "horn")
 	elseif phase == "fight" and t >= phaseEnds then
-		build:Refill()
-		setPhase("build", phaseSeconds("build"))
-		Net.fireAll("Alert", "BUILD", Color3.fromRGB(40, 40, 46), 1.5)
+		rules().fightOver() -- (Turf Wars: back to building; Capture the Flag: the scores decide)
+	elseif phase == "waiting" and rules().ready() then
+		self:NewMatch(mapKey) -- (enough players READY: the match starts)
+		return
 	end
 	self:_charge()
 	if (phase == "build" or phase == "fight") and not frozen and t - matchStart > Constants.WATCHDOG_SECONDS then
@@ -687,7 +833,7 @@ function MatchService:_tick()
 	end
 	-- the watchdog: nobody in the match is ever left without a body and nothing coming (a rejoin, a body that never
 	-- loaded, a respawn lost somewhere): down with no respawn due, or "alive" with no body, for a few seconds
-	if phase == "build" or phase == "fight" then
+	if phase == "build" or phase == "fight" or phase == "waiting" then
 		for _, player in self:Everyone() do
 			local c = player.Character
 			local r = c and c:FindFirstChild("HumanoidRootPart")
@@ -724,7 +870,7 @@ function MatchService:_tick()
 		end
 	end
 	-- the turf rule, and the kill plane
-	if phase == "build" or phase == "fight" then
+	if phase == "build" or phase == "fight" or phase == "waiting" then
 		for _, player in self:Everyone() do
 			local team = teams:Team(player)
 			local c = player.Character
@@ -764,16 +910,12 @@ function MatchService:Init(registry)
 	combat = registry.CombatService
 	build = registry.BuildService
 	progress = registry.ProgressService
+	ctf = registry.CtfService -- (nil in a build without Capture the Flag)
 	build:SetFrontline(function()
 		return frontline
 	end)
 	teams:SetTurfLeader(function()
-		if frontline > 0 then
-			return "red"
-		elseif frontline < 0 then
-			return "blue"
-		end
-		return nil
+		return rules().leader()
 	end)
 	combat.Killed:Connect(function(victim, killer, info)
 		self:_onKilled(victim, killer, info)
@@ -902,12 +1044,9 @@ function MatchService:OnPlayerReady(player)
 		Net.fire(player, "Match", self:Snapshot())
 		combat:Push(player)
 		build:Push(player)
-		if not self.rules.tips then
-			return -- (the mode has its own words: BrawlService)
-		elseif phase == "fight" then
-			Net.fire(player, "Toast", "The fight is on: shoot across the line to push it back!", "info")
-		elseif phase == "build" then
-			Net.fire(player, "Toast", "Build defences on your side, then fight!", "info")
+		local tip = self.rules.tips and rules().tip(phase) -- (a mode with its own words says nothing here: BrawlService)
+		if tip then
+			Net.fire(player, "Toast", tip, "info")
 		end
 	end)
 	self:Broadcast()

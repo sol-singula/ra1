@@ -180,6 +180,8 @@ end
 -- (kills are paid the moment they happen, MatchService: perKill, +headshot, up to killCap a match; the match's
 -- end pays the rest)
 Shop.EARN = { match = 10, win = 30, perKill = 5, headshot = 2, killCap = 30, mvp = 15, firstWin = 50 }
+-- (Capture the Flag: a capture, and bringing your own dropped flag home, paid as they happen like kills)
+Shop.EARN.capture, Shop.EARN.flagReturn = 15, 5
 
 -- What a match pays, in parts, each paid (and shown flying to the counter) on its own: { match, win, mvp }.
 -- In it at least PAY_SECONDS for any of it (a late joiner who helps win still gets the win); the day's first win

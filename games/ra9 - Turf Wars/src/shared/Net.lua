@@ -37,6 +37,7 @@ Net.ClientEvents = {
 	Duel = 4, -- the duels (the lobby's DuelService)
 	Crate = 4, -- the crates (CrateService)
 	Verify = 0.2, -- () a check the lobby asks for
+	Ctf = 4, -- ("ready", on) READY (or not) for the next Capture the Flag match (CtfService)
 }
 
 -- Server → client.
@@ -88,6 +89,8 @@ Net.ServerEvents = {
 	-- left | { kind = "stun", seconds } the bots froze
 	"Duel", -- the duels' (DuelService)
 	"Crate", -- the crates' (CrateService)
+	"Ctf", -- { ready, need, waiting, scores = { red, blue }, toWin, sudden, flags = { [team] = { state = "home" |
+	-- "carried" | "dropped", carrier, name } } } Capture the Flag's state, whenever it changes (CtfService)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).

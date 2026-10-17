@@ -61,7 +61,9 @@ local BotNav = require(script.Parent.Parent.BotNav)
 
 local BotService = {
 	Name = "BotService",
-	Modes = { "turf", "ctf", "brawl" }, -- (a match's: never in the lobby)
+	-- (a match's, never in the lobby. In Capture the Flag it boots but adds nobody: Ensure checks the mode, the match
+	-- waits for real players instead; Bot Brawl drives it by hand: BrawlService)
+	Modes = { "turf", "ctf", "brawl" },
 	Dependencies = { "TeamService", "CombatService", "MatchService", "ArenaService", "BuildService" },
 }
 
@@ -305,7 +307,7 @@ function BotService:Ensure()
 		return -- (another service runs the bots)
 	end
 	local people = humans()
-	if not enabled or #people == 0 then
+	if not enabled or #people == 0 or Constants.MODE == "ctf" then
 		if #bots > 0 then
 			self:RemoveAll()
 		end

@@ -82,8 +82,9 @@ function CameraController.setCursorMode(on)
 end
 
 function CameraController.mouseFree()
-	-- (the results card after a win doesn't free it: you stay in play, free to run about; Tab opens the menu)
-	return cursorMode or Layout.panel() or Layout.modalOpen()
+	-- (the results card after a win doesn't free it: you stay in play, free to run about; Tab opens the menu;
+	-- waiting for players in Capture the Flag, the READY button wants a click)
+	return cursorMode or Layout.panel() or Layout.modalOpen() or Store.phase() == "waiting"
 end
 
 local mouseShown

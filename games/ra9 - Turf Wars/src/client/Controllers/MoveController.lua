@@ -196,6 +196,9 @@ local function step(dt)
 	if WeaponController.drawing() then
 		speed = Constants.DRAW_SPEED
 	end
+	if player:GetAttribute("Flag") then
+		speed *= Constants.CTF.CARRY_SPEED -- (Capture the Flag: the flag on your back slows you a little)
+	end
 	if MoveController.sliding() and root and slideDir then
 		local v = root.AssemblyLinearVelocity
 		root.AssemblyLinearVelocity =
