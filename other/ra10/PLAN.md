@@ -202,8 +202,69 @@ the guide, the conveyor holding back, packing it, the truck driving off, Cash an
 crops only, the day's first visit; saving). The other suites switch specials off so their packing stays exact.
 409 checks in all.
 
-## Next: Phase G
+## Phase G: coming back, and watching each other
 
-Coming back (offline earnings, the 7-day calendar, the weekly Big Contract as the week's headline special, the
-golden pumpkin, the end-of-session card, the guide to 100%) and watching each other (the street board, plot
-billboards, visiting, friends: master plan §13.4).
+* **Analytics** (`AnalyticsService`, `GameKey`): one session row per visit (new or returning, the session number,
+  days since the last visit, country, device, how they joined, progress at the start and the end) and an event for
+  everything that matters (the first minute's plant/harvest/sell, buys, guide steps, orders, trucks, specials,
+  the calendar, the franchise, Robux taps, a snapshot every 30 s). It goes to the studio pipeline tagged "ra10" and
+  sends nothing from Studio.
+* **Offline earnings** (`OfflineService`): while they're away the operation keeps going at half speed, at the
+  slowest station's rate (or the fields' rate before the warehouse), for up to 4 h (12 h with Long Nap, +2 h a
+  franchise nap perk). The **welcome-back card** (`AwayController`) counts the Cash up and lists what's waiting:
+  ripe crops, a Special Order, the day's reward.
+* **The 7-day calendar** (`Data/Daily`, `DailyService`, the DAILY panel): one reward a UTC day, growing to day 7's
+  Gems and golden seeds. A missed day steps back one day, not to zero. **Golden seeds** make the next plantings
+  golden. The panel opens by itself after the welcome-back card while a reward is waiting.
+* **The weekly Big Contract**: four parts drawn from the week's play (orders, crops, packing, specials, contracts,
+  feeding, pallets), measured from Monday and scaled to the level; Cash and 50 Gems when all four are done.
+* **The menu bar** (`MenuController`, `UI/Panel`): DAILY, STREET, FRIENDS, FRANCHISE and SHOP along the top right.
+  One panel is open at a time; there are red dots for what's waiting, and the button pulses when the guide points
+  at it.
+* **The street** (`StreetService`, `World/StreetBuilder`): a **STREET gantry** over the road ranks every farm live
+  by Cash/min, with deliveries/min, Size and the best shipment today, and the street's biggest shipment of the day
+  along the bottom. A **billboard** over every gate shows the same numbers and likes; the most liked farm gets a
+  tag. In the STREET panel, VISIT any farm's gate and come HOME, and LIKE once a day per farm.
+* **Friends**: friends online in the game, with their farm's numbers from the summary they saved on another
+  server; VISIT if they're here, JOIN to teleport to theirs.
+* **The Hall of Fame** (`LeaderboardService`): three OrderedDataStore boards (most Cash ever, biggest shipment,
+  biggest operation) on a second gantry, turning every 15 s, and in the STREET panel.
+
+Tests: `ComebackSmoke` (56 checks) and `StreetSmoke` (40 checks).
+
+## Phase H: Franchise
+
+* **Franchise** (`Data/Franchise`, `FranchiseService`, the FRANCHISE panel): once the Market Hall stands, sell the
+  company for Stars, sqrt(this run's Cash / 1M) of them, at least 1. The plot is rebuilt in place as a stage-1
+  farm in the next region (`PlayerDataService.Rebuild` cycles the player's services without leaving the server).
+  GOES: Cash, buildings, stages, the warehouse, the live orders. STAYS: Gems, the farm level, animal levels, golden
+  seeds, the calendar, likes and every stat. Guide steps pay once only, across runs.
+* **Regions**: Orchard Valley, Tropical Coast (x1.6), Northern Dairy (x2.4), Mega Port (x3.5). Each changes the
+  meadow's colour, the trees along the back (palms, pines, cranes with containers) and the sign. Every Star ever
+  earned adds +2% to everything shipped.
+* **Perks** for Stars: Green Thumb (growth), Big Baskets, Head Start (the new farm's Cash), Quick Fleet (truck
+  trips), Extra Order, Long Lunch (offline hours).
+
+Tests: `FranchiseSmoke` (48 checks).
+
+## Phase I: money, the guide to 100%, art
+
+* **The shop** (`Data/Shop`, `ShopService`, the SHOP panel):
+  * Robux: Gem packs, a once-only Starter Pack, Instant Harvest.
+  * Passes: 2x Cash, VIP (+10%, +10 Gems a day, a tag), Extra Order, Long Nap.
+  * Gems: Ripen Everything, Feed Everyone, Golden Seeds, Cash Rush (x2 for 15 minutes), a Special Order now.
+  * The ids are in `Constants.PRODUCTS` / `Constants.PASSES`. While an id is 0 the item is free in Studio and shows
+    SOON live, so creating the products and setting their ids is all that's left. Receipts are granted once and
+    saved; passes bought on the website are found on join.
+* **The guide to 100%**: chapters for the street (claim the calendar, visit, like), the hub (back docks, the front
+  hall, a special, the tower, solar, the market, the first semi and its trip) and the franchise (sell, a perk). The
+  card shows a percentage.
+* **Renders**: the street board, a gate billboard, the Hall of Fame, the DAILY, STREET, SHOP and FRANCHISE panels,
+  the welcome-back card, and a franchised farm in Tropical Coast.
+
+Tests: `ShopSmoke` (37 checks). 591 checks in all, in 11 suites.
+
+## Before going live
+
+* Create the developer products and game passes (prices in `Data/Shop`) and put their ids in `Constants`.
+* Publish (only with the owner's go-ahead).

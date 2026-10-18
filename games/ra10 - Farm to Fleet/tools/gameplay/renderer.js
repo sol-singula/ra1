@@ -737,11 +737,12 @@ void main() {
   }
 
   function renderScreens(snap, layer) {
-    snap.screens.sort((a, b) => a.order - b.order).forEach((sg) => {
+    snap.screens.sort((a, b) => a.order - b.order).forEach((sg, i) => {
       const div = document.createElement('div');
       div.className = 'screengui';
       const scale = ((sg.tree.mods || {}).UIScale || {}).Scale || 1;
-      Object.assign(div.style, { position: 'absolute', left: '0', top: INSET + 'px', width: (W / scale) + 'px', height: ((H - INSET) / scale) + 'px', transform: `scale(${scale})`, transformOrigin: '0 0' });
+      // (each ScreenGui its own layer, like Roblox's DisplayOrder: a child's ZIndex never reaches over another screen)
+      Object.assign(div.style, { zIndex: String(i + 1), position: 'absolute', left: '0', top: INSET + 'px', width: (W / scale) + 'px', height: ((H - INSET) / scale) + 'px', transform: `scale(${scale})`, transformOrigin: '0 0' });
       buildRoot(sg.tree, div);
       layer.appendChild(div);
     });

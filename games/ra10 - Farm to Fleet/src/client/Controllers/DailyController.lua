@@ -23,6 +23,14 @@ DailyController.refs = refs
 local ORANGE = Color3.fromRGB(240, 120, 60)
 local autoOpened = false
 
+local function left(seconds)
+	seconds = math.max(0, seconds)
+	if seconds >= 86400 then
+		return `{seconds // 86400}d {(seconds % 86400) // 3600}h`
+	end
+	return Format.time(seconds)
+end
+
 local function rewardText(r)
 	local out = {}
 	if (r.cash or 0) > 0 then
@@ -69,7 +77,7 @@ local function paint(d)
 	end
 	local r = w.reward or {}
 	refs.weeklyPay.Text = w.paid and "PAID! A new one on Monday"
-		or `All four: 💵 {Format.num(r.cash or 0)} + 💎 {r.gems or 0} · {Format.time(math.max(0, w.ends or 0))} left`
+		or `All four: 💵 {Format.num(r.cash or 0)} + 💎 {r.gems or 0} · {left(w.ends or 0)} left`
 end
 
 function DailyController:init()

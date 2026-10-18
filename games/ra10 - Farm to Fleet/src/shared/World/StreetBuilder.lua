@@ -47,7 +47,14 @@ function StreetBuilder.gantry(parent, x, name, color)
 	local faces = {}
 	for i, dir in { 1, -1 } do
 		-- the board: a dark panel with a coloured frame, one face toward each end of the road
-		local board = s:box(dir * 1.2, H + 6, 0, 0.6, 12, 36, { color = INK, name = "Board" })
+		-- (turned so its Front face looks down the road: the words go on the Front)
+		local centre = Vector3.new(x + dir * 1.2, H + 6, 0)
+		local board = s:part(
+			"Part",
+			CFrame.lookAt(centre, centre + Vector3.new(dir, 0, 0)),
+			Vector3.new(36, 12, 0.6),
+			{ color = INK, name = "Board" }
+		)
 		s:box(dir * 1.4, H + 12.4, 0, 0.4, 0.8, 37, Shapes.deco({ color = color, name = "Frame" }))
 		s:box(dir * 1.4, H - 0.4, 0, 0.4, 0.8, 37, Shapes.deco({ color = color, name = "Frame" }))
 		board.Name = "Face" .. i
@@ -93,7 +100,7 @@ function StreetBuilder.fill(gantry, title, header, rows, footer, color)
 		local gui = face:FindFirstChild("Board") or Instance.new("SurfaceGui")
 		gui.Name = "Board"
 		-- (the board stands across the road: its wide faces are Left and Right)
-		gui.Face = face:GetAttribute("Side") == 1 and Enum.NormalId.Right or Enum.NormalId.Left
+		gui.Face = Enum.NormalId.Front
 		gui.LightInfluence = 0
 		gui.SizingMode = Enum.SurfaceGuiSizingMode.FixedSize
 		gui.CanvasSize = Vector2.new(1800, 600)

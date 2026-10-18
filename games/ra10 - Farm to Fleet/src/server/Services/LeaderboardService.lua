@@ -160,6 +160,9 @@ function LeaderboardService:Paint()
 	for _, r in self:Top(b.key) do
 		table.insert(cells, { tostring(r.rank), r.name, "", Format.num(r.value), "", "" })
 	end
+	if #cells == 0 then
+		cells[1] = { "", "Nobody yet: be the first!", "", "", "", "" }
+	end
 	StreetBuilder.fill(
 		street.hall,
 		b.title,

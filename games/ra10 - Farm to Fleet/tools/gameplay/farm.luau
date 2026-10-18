@@ -62,6 +62,7 @@ Engine.Players.LocalPlayer = player
 Engine.localPlayer = player
 Engine.runScript(tree.client.Main)
 Engine.advance(2)
+Engine.require(tree.client.UI.Bus).Panel:Fire(nil) -- (the day's reward opened its panel by itself: the shots want the farm)
 local mine = Plots:Plot(player).index
 local theirs = Plots:Plot(ben).index
 
@@ -196,6 +197,76 @@ do
 	Engine.advance(9)
 	shot("farm_orders_panel", at(mine, 16, -100, 12), at(mine, 22, -72, 2), false)
 	shot("special_express", at(mine, 10, -100, 9), at(mine, -10, -116, 3), true)
+end
+-- the street watching itself: the STREET gantry, a billboard over Ben's gate, the Hall of Fame
+do
+	local Street = service("StreetService")
+	Economy:Add(ben, 250000, "pallets")
+	Economy:Add(ben, 180000, "special")
+	Economy:Add(player, 42000, "order")
+	Street:Like(player, theirs)
+	service("LeaderboardService"):Refresh()
+	service("LeaderboardService").page = 1
+	service("LeaderboardService"):Paint()
+	Engine.advance(Street.TICK + 0.5)
+	Engine.require(tree.client.UI.Bus).Panel:Fire(nil)
+	Engine.advance(0.2)
+	shot("street_board", V3.new(-150, 24, 6), V3.new(-82, 31, 0), true)
+	shot("street_billboard", at(theirs, 40, -150, 26), at(theirs, 40, -104, 32), true)
+	shot("hall_of_fame", V3.new(150, 24, -6), V3.new(82, 31, 0), true)
+end
+-- the menu's panels and the welcome-back card
+do
+	local Bus = Engine.require(tree.client.UI.Bus)
+	local Net = Engine.require(tree.shared.Net)
+	local Daily = service("DailyService")
+	local pa = Data:Get(player)
+	pa.calendar = { day = 3, streak = 3, claimedDay = Engine.require(tree.shared.Data.Daily).day() - 1 }
+	pa.goldenSeeds = 3
+	Daily:Push(player)
+	Engine.advance(0.5)
+	Bus.Panel:Fire("calendar")
+	Engine.advance(0.5)
+	shot("panel_daily", at(mine, -44, -122, 14), at(mine, -30, -78, 0), false)
+	Bus.Panel:Fire("street")
+	Engine.advance(0.5)
+	shot("panel_street", at(mine, -44, -122, 14), at(mine, -30, -78, 0), false)
+	Bus.Panel:Fire("shop")
+	Engine.advance(0.5)
+	shot("panel_shop", at(mine, -44, -122, 14), at(mine, -30, -78, 0), false)
+	Bus.Panel:Fire(nil)
+	Net.fire(player, "Away", {
+		seconds = 5 * 3600,
+		earned = 184250,
+		capped = true,
+		hours = 4,
+		ripe = 12,
+		special = true,
+		calendar = { day = 4 },
+	})
+	Engine.advance(1.5)
+	shot("away_card", at(mine, -44, -122, 14), at(mine, -30, -78, 0), false)
+	Engine.require(tree.client.Controllers.AwayController).refs.card.Visible = false
+end
+-- Ben franchises: the FRANCHISE panel (on Ava's screen, as hers would look), then his new farm in Tropical Coast
+do
+	local Fr = service("FranchiseService")
+	local Bus = Engine.require(tree.client.UI.Bus)
+	local pa = Data:Get(player)
+	pa.owned.marketHall = 1
+	pa.stats.earned = 3.6e8
+	pa.franchise.stars = 7
+	Fr:Push(player)
+	Bus.Panel:Fire("franchise")
+	Engine.advance(0.5)
+	shot("panel_franchise", at(mine, -44, -122, 14), at(mine, -30, -78, 0), false)
+	Bus.Panel:Fire(nil)
+	pa.owned.marketHall = nil
+	Engine.require(tree.client.Controllers.MenuController).show("franchise", false)
+	pb.stats.earned = 9e8
+	Fr:Sell(ben)
+	Engine.advance(2)
+	shot("franchise_region", at(theirs, 60, -150, 70), at(theirs, -10, 40, 0), true)
 end
 local http = Engine.game:GetService("HttpService")
 writeFile(outDir .. "/index.json", http:JSONEncode(shots))
