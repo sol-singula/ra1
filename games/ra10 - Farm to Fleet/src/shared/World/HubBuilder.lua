@@ -119,6 +119,9 @@ return function(FarmBuilder, BUILD, kit)
 		L:block(x, BACK + 0.75, 10, 1.5, 1.3, { color = P.concrete, name = "DockLip" }, 0)
 		L:box(x, 1.32, BACK + 1.6, 8, 0.12, 1.4, deco({ color = P.steel, name = "Leveler" }))
 		L:box(x, 5.6, BACK + 0.06, 8.2, 10, 0.1, deco({ color = rgb(120, 126, 136), name = "DockDoor" }))
+		-- its number over the door, big, so the trucks (and you) know which is which
+		local plate = L:box(x, 12, BACK + 0.2, 5, 1.8, 0.2, deco({ color = P.safetyYellow, name = "DockSign" }))
+		FarmBuilder.sign(plate, `DOCK {i}`, "", INK, Enum.NormalId.Back)
 		for k = 1, 6 do
 			L:box(x, 1 + k * 1.5, BACK + 0.12, 8.2, 0.12, 0.05, deco({ color = rgb(96, 102, 112), name = "Slat" }))
 		end

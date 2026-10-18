@@ -119,6 +119,8 @@ local LIST = {
 	{ key = "controlTower", name = "Control Tower", stage = 5, cost = 6000000,  kind = "orderPrice", value = 0.1, level = 28, desc = "runs the whole hub: orders pay +10%" },
 	{ key = "solarRoof",  name = "Solar Roof",      stage = 5, cost = 8000000,  kind = "hall",   value = 0.25, level = 29, desc = "free power: packs +25%" },
 	{ key = "marketHall", name = "The Market Hall", stage = 5, cost = 10000000, kind = "price",  value = 0.5,  level = 30, desc = "your own market: +50% on everything you sell" },
+	{ key = "annex1",     name = "Warehouse Annex", stage = 5, cost = 12000000, kind = "racks",  value = 12,   level = 31, needs = "backDocks", desc = "a second giant warehouse out back: 4 more rows of shelves" },
+	{ key = "annex2",     name = "Annex Racks",     stage = 5, cost = 20000000, kind = "racks",  value = 16,   level = 33, needs = "annex1", desc = "fill the annex: 4 more rows of shelves" },
 	-- (the SHIP station's track carries on into stage 5: semis on the shared road, once there are back docks)
 	{ key = "semi1",      name = "First Semi",      stage = 5, cost = 15000000, kind = "semis",  value = 1,    level = 30, track = "ship", needs = "backDocks", desc = "a giant semi truck: ships loads of pallets" },
 	{ key = "semi2",      name = "Second Semi",     stage = 5, cost = 25000000, kind = "semis",  value = 2,    level = 32, track = "ship", needs = "backDocks", desc = "another giant semi truck" },

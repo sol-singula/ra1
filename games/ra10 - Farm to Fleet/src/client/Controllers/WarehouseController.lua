@@ -52,7 +52,7 @@ end
 
 -- A loop for a forklift: waypoints (local to its plot) with what happens at each
 local function newLoop(m)
-	local rows = math.max(1, m:GetAttribute("Rows") or 1)
+	local rows = math.clamp(m:GetAttribute("Rows") or 1, 1, 8) -- (the annex's rows have their own crew)
 	local row = math.random(1, rows)
 	local per = math.floor((PlotLayout.RACK_X[2] - PlotLayout.RACK_X[1]) / PlotLayout.SLOT)
 	local slot = PlotLayout.rackSlot(row, math.random(1, per * PlotLayout.LEVELS))

@@ -118,10 +118,18 @@ PlotLayout.FRONT = -74 -- the front hall's front wall (where the shed's front wa
 PlotLayout.MARKET = Vector3.new(42, 13, 21) -- the market hall's size
 PlotLayout.LEVELS = 3
 
+-- The warehouse annex (stage 5, out the back of the plot): rack rows 9-16, two to a bay of ANNEX_BAY
+PlotLayout.ANNEX = Vector3.new(38, 0, 150) -- its middle; 64 wide (like the warehouse), 56 deep
+PlotLayout.ANNEX_SIZE = Vector3.new(64, 18, 56)
+PlotLayout.ANNEX_BAY = 13
+
 -- A rack row's slot (n from 1, along the row then up): its local centre (where a pallet sits)
 function PlotLayout.rackSlot(row, n)
 	local slice = (row + 1) // 2 -- (rows 1-2 in the first bay slice, 3-4 the next...)
 	local z0 = PlotLayout.SLICES[slice + 1]
+	if row > 8 then
+		z0 = PlotLayout.ANNEX.Z - PlotLayout.ANNEX_SIZE.Z / 2 + 3 + ((row - 9) // 2) * PlotLayout.ANNEX_BAY
+	end
 	local back = row % 2 == 0
 	local z = z0 + (back and 9.7 or 7.1)
 	local per = math.floor((PlotLayout.RACK_X[2] - PlotLayout.RACK_X[1]) / PlotLayout.SLOT)
@@ -133,6 +141,9 @@ end
 -- The aisle a rack row faces (its z), where the forklifts drive: a front row's own slice's, a back row's the next
 -- slice's (the last back row is reached from the front)
 function PlotLayout.aisle(row)
+	if row > 8 then
+		return PlotLayout.rackSlot(row, 1).Z + (row % 2 == 0 and 2.9 or -2.9)
+	end
 	local slice = (row + 1) // 2
 	if row % 2 == 0 and slice + 2 <= #PlotLayout.SLICES - 1 then
 		return PlotLayout.SLICES[slice + 2] + 2.9

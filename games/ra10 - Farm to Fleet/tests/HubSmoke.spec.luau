@@ -299,6 +299,50 @@ check(
 	`{hallHidden} {marketHidden}`
 )
 
+-- The annex: a second giant warehouse out back, rack rows 9-16, labelled -------------------------------------------------
+do
+	p.level = math.max(p.level or 1, 34)
+	p.cash = 1e9
+	for _, key in Upgrades.LIST do
+		if key == "annex1" then
+			break
+		end
+		if not p.owned[key] then
+			buy(key) -- (upgrades come in order)
+		end
+	end
+	local firstMissing = ""
+	for _, key in Upgrades.LIST do
+		if not p.owned[key] and not Upgrades[key].track then
+			firstMissing = key
+				.. " lvl"
+				.. Upgrades[key].level
+				.. " needs "
+				.. tostring(Upgrades[key].needs)
+				.. " p.level "
+				.. tostring(p.level)
+			break
+		end
+	end
+	local offered = { firstMissing }
+	for _, o in Upg:Offer(player) do
+		table.insert(offered, o.upgrade.key .. (o.locked and "(locked)" or ""))
+	end
+	local ok, why = buy("annex1")
+	check("buy the Warehouse Annex", ok, `{tostring(why)} offered: {table.concat(offered, ",")} stage {p.stage}`)
+	local rows = {}
+	for _, d in plot.items:GetDescendants() do
+		if d.Name == "RackPallet" and (d:GetAttribute("Row") or 0) > 8 then
+			rows[d:GetAttribute("Row")] = true
+		end
+	end
+	check("...rows 9-12 with room for pallets", rows[9] and rows[12] and not rows[13])
+	check("...more room in the warehouse", Flow.rows(p.owned) == 12 and Flow.stockCap(p.owned) > 0)
+	check("...signed WAREHOUSE ANNEX", plot.items:FindFirstChild("AnnexSign", true) ~= nil)
+	check("...and every zone labelled", plot.items:FindFirstChild("ZoneSign", true) ~= nil)
+	check("fill it: rows 13-16", buy("annex2") and Flow.rows(p.owned) == 16)
+end
+
 -- Coming back -------------------------------------------------------------------------------------------------------------------
 Engine.removePlayer(player)
 Engine.advance(1)

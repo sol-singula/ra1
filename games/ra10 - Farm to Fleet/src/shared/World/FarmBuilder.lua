@@ -71,6 +71,29 @@ function FarmBuilder.sign(part, title, line, color, face)
 	return gui
 end
 
+-- A hanging zone sign (the warehouse's RECEIVING, ROW 3...): a board readable from both sides on two chains; turn
+-- = true runs it along Z instead of X
+function FarmBuilder.hang(L, x, y, z, title, color, turn, width)
+	local w = width or 10
+	for side = 0, 1 do
+		local b = L:box(x, y, z, w, 1.8, 0.2, deco({ color = color or P.safetyYellow, name = "ZoneSign" }))
+		local yaw = (turn and math.pi / 2 or 0) + side * math.pi
+		b.CFrame = L.cf * CFrame.new(x, y, z) * CFrame.Angles(0, yaw, 0) * CFrame.new(0, 0, -0.06)
+		FarmBuilder.sign(b, title, "", INK)
+	end
+	for _, d in { -w * 0.4, w * 0.4 } do
+		L:box(
+			x + (turn and 0 or d),
+			y + 2.4,
+			z + (turn and d or 0),
+			0.12,
+			3,
+			0.12,
+			deco({ color = P.steel, name = "SignChain" })
+		)
+	end
+end
+
 -- A board's face (an order on the order board): a title, up to three lines and a status line along the bottom
 function FarmBuilder.board(part, title, lines, status, color)
 	local gui = part:FindFirstChild("Board") or Instance.new("SurfaceGui")
