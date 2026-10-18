@@ -74,6 +74,14 @@ local function paint()
 		return a.n > b.n
 	end)
 	refs.stock.Visible = #rows > 0
+	local total = 0
+	for _, r in rows do
+		total += r.n
+	end
+	local cap = f and f.stockCap
+	refs.stockTitle.Text = cap and `WAREHOUSE {Format.num(total)} / {Format.num(cap)}{total >= cap and "  FULL!" or ""}`
+		or "STOCK"
+	refs.stockTitle.TextColor3 = cap and total >= cap and C.red or C.mustard
 	for i, row in refs.stockRows do
 		local r = rows[i]
 		row.frame.Visible = r ~= nil
@@ -169,7 +177,7 @@ function HudController:init()
 		Parent = gui,
 	})
 	refs.stock = stock
-	Theme.text({
+	refs.stockTitle = Theme.text({
 		Name = "Title",
 		Text = "STOCK",
 		Position = UDim2.fromOffset(10, 4),
@@ -276,6 +284,7 @@ function HudController:init()
 		Visible = false,
 		Parent = gui,
 	})
+	Theme.compact(refs.toast, 0.7)
 	refs.earned = Theme.text({
 		Name = "Earned",
 		Text = "",

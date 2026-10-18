@@ -248,7 +248,8 @@ function GuideService:Target(player, target)
 		local plot = plots:Plot(player)
 		local folder = plot and plot.items:FindFirstChild("tractor")
 		local m = folder and folder:FindFirstChild("Tractor")
-		return m and m:GetPivot().Position
+		local to = m and m:GetAttribute("To")
+		return typeof(to) == "Vector3" and to or (m and m:GetPivot().Position)
 	elseif target == "soil1" then
 		return refs.tiles[1] and refs.tiles[1].Position
 	elseif target == "soil" then

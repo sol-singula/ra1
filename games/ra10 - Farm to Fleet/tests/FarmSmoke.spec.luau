@@ -215,7 +215,10 @@ check("no WATER or TEND on the soil", FarmC.action() ~= "water" and FarmC.action
 Economy:AddXP(player, 2000, "test")
 Engine.advance(0.5)
 check("level 4 unlocks carrots", (p.level or 1) >= 4 and Crops.best(p.level) ~= "strawberry", p.level)
-check("...and the farm plants the newest crop", Farm:Chosen(player) == Crops.best(p.level))
+check(
+	"...and the farm plants a crop it has unlocked (random until the warehouse)",
+	table.find(Crops.unlocked(p.level), Farm:Chosen(player)) ~= nil
+)
 check("...no crop picker until the warehouse", #lastFired("Farm", player).crops == 0 and not FarmC.refs.picker.Visible)
 -- everything in the chapter can be bought, in order
 local bought = 0

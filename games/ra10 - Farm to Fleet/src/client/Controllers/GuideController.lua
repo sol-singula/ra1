@@ -292,6 +292,7 @@ function GuideController:init()
 		Parent = gui,
 	})
 	refs.card = card
+	Theme.compact(card, 0.78)
 	refs.badge = Theme.new("Frame", {
 		Name = "Badge",
 		Position = UDim2.fromOffset(-14, -14),
@@ -377,6 +378,7 @@ function GuideController:init()
 		Visible = false,
 		Parent = gui,
 	})
+	Theme.compact(refs.pay, 0.7)
 	refs.payTitle = Theme.title({
 		Name = "Title",
 		Text = "",

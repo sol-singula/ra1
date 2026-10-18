@@ -44,6 +44,7 @@ local FarmBuilder = require(ReplicatedStorage.Shared.World.FarmBuilder)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
+local Flow = require(ReplicatedStorage.Shared.Data.Flow)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Stand = require(ReplicatedStorage.Shared.Data.Stand)
 
@@ -51,7 +52,8 @@ local FarmService = {
 	Name = "FarmService",
 	Dependencies = { "PlayerDataService", "EconomyService", "PlotService" },
 	Changed = Signal.new("FarmService.Changed"),
-	REACH = 11, -- studs from a tile's middle that ACT reaches
+	REACH = 13, -- studs from a tile's middle that ACT reaches
+	PICK_EVERY = 30, -- seconds between random crop picks (before the warehouse)
 	TAP_REACH = 16,
 	TICK = 0.25,
 	SELL_REACH = 4.5,
@@ -227,6 +229,7 @@ function FarmService:Push(player)
 		auto = p.settings.crop == nil,
 		next = Crops.nextUnlock(p.level or 1) and Crops.nextUnlock(p.level or 1).key or nil,
 		stock = stockOf(p),
+		stockCap = p.owned and p.owned.warehouse and Flow.stockCap(p.owned) or nil,
 		reserved = self:Reserved(player),
 		golden = golden,
 		well = Upgrades.stat(p.owned or {}, "water", 0) > 0,
@@ -267,7 +270,15 @@ function FarmService:Chosen(player)
 	if p.owned and p.owned.warehouse and pick and Crops[pick] and Crops[pick].level <= (p.level or 1) then
 		return pick
 	end
-	-- what the open orders are shortest of (counting what's in hand and what's already growing)
+	-- before the warehouse: a crop picked at random from what they've unlocked, a new pick every PICK_EVERY seconds
+	-- (so a field planted together is all one crop, and ripens together)
+	local warehouse = p.owned and p.owned.warehouse
+	if not warehouse then
+		local list = Crops.unlocked(p.level or 1)
+		local bucket = math.floor(now() / self.PICK_EVERY)
+		return list[(bucket * 7919 + (player.UserId or 0)) % #list + 1]
+	end
+	-- with the warehouse: what the open orders are shortest of (counting what's in hand and what's growing)
 	local needs = self.hold and self.hold(player)
 	if needs then
 		local growing = {}
@@ -412,6 +423,9 @@ function FarmService:Harvest(player, n)
 	if self:Carried(player) >= self:Carry(player) then
 		return false, "full"
 	end
+	if self:WarehouseFull(player) then
+		return false, "warehouse"
+	end
 	local c = Crops[t.crop]
 	local golden = t.golden == true
 	local bag = (golden and "*" or "") .. t.crop
@@ -444,19 +458,21 @@ function FarmService:Act(player)
 	if #list == 0 then
 		return nil, 0
 	end
-	local done, full = 0, false
+	local done, full = 0, nil
 	for _, n in list do
 		if self:Ripe(player, n) then
 			local ok, why = self:Harvest(player, n)
 			if ok then
 				done += 1
-			elseif why == "full" then
-				full = true
+			elseif why == "full" or why == "warehouse" then
+				full = why
 			end
 		end
 	end
 	if done > 0 or full then
-		if full then
+		if full == "warehouse" then
+			Net.fire(player, "Toast", "The warehouse is full! Ship or sell the excess to make room", "bad")
+		elseif full then
 			Net.fire(player, "Toast", "Your basket is full! Sell at the farm stand", "info")
 		end
 		self:Push(player)
@@ -557,6 +573,19 @@ function FarmService:Store(player)
 		self:Push(player)
 	end
 	return n
+end
+
+-- With the warehouse: the stock can't grow past its racks' room (Flow.stockCap); full, nothing more is harvested
+function FarmService:WarehouseFull(player)
+	local p = profileOf(player)
+	if not (p and p.owned and p.owned.warehouse) then
+		return false
+	end
+	local n = self:Carried(player)
+	for _, k in stockOf(p) do
+		n += k
+	end
+	return n >= Flow.stockCap(p.owned)
 end
 
 -- What the open orders keep ({ [key] = n }, no more than there is), and what's left over to sell

@@ -1,11 +1,13 @@
 --[[
 Farming with one thumb (master plan §3, phone first). A big round button at the bottom right says what it will do
 for the soil you're standing by (Net "Farm" "act"; the server does all of it that's in reach): HARVEST when
-something there is ripe, PLANT when there's empty soil. It hides when there's nothing to do. With it, along the bottom of the screen, the crop picker: one chip per
+something there is ripe, PLANT when there's empty soil, TEND when you're at a pen and the animals are ready for
+it (AnimalService). It hides when there's nothing to do. With it, along the bottom of the screen, the crop picker: one chip per
 crop you've unlocked, in rows of five (Net "Farm" "crop"). Walk up to the soil and every crop near you shows its
-timer above it (0:04, READY!). On a PC, E (or a click away from the buttons) does the same as the button.
+timer above it (0:04, READY!). Tap (or click) a patch and a card says what's growing there and how long it has
+left (FarmController.inspect). On a PC, E (or a click away from the buttons) does the same as the button.
 
-  FarmController.action()   -> "harvest" | "plant" | nil, what the button shows now
+  FarmController.action()   -> "harvest" | "plant" | "tend" (standing at a pen) | nil, what the button shows now
   FarmController.press()    what the button does
   FarmController.refs
 ]]
@@ -21,7 +23,7 @@ local Store = require(script.Parent.Parent.Store)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
-local FarmController = { Name = "FarmController", Order = 20, REACH = 11, TIMER_REACH = 18 }
+local FarmController = { Name = "FarmController", Order = 20, REACH = 13, TIMER_REACH = 18 }
 
 local C = Theme.Color
 local player = Players.LocalPlayer
@@ -31,6 +33,7 @@ FarmController.refs = refs
 local LOOK = {
 	harvest = { "HARVEST", Color3.fromRGB(240, 70, 70) },
 	plant = { "PLANT", Color3.fromRGB(70, 190, 90) },
+	tend = { "TEND", Color3.fromRGB(245, 165, 40) },
 }
 
 local function root()
@@ -60,6 +63,12 @@ function FarmController.action()
 	if not f or not r then
 		return nil
 	end
+	-- at a pen: TEND them (when they're ready for it)
+	local pens = Store.get("animals")
+	local pen = pens and pens.at and pens.pens and pens.pens[pens.at]
+	if pen and pen.product and workspace:GetServerTimeNow() >= (pen.tendAt or 0) then
+		return "tend"
+	end
 	local now = workspace:GetServerTimeNow()
 	local ripe, empty = false, false
 	for n, tile in tiles() do
@@ -83,7 +92,10 @@ end
 
 function FarmController.press()
 	local a = FarmController.action()
-	if a then
+	if a == "tend" then
+		local pens = Store.get("animals")
+		Net.send("Animal", "tend", pens.at)
+	elseif a then
 		Net.send("Farm", "act")
 	end
 	return a
@@ -127,6 +139,63 @@ local function paintPicker()
 	refs.picker.Size = UDim2.fromOffset(math.min(#list, ROW) * 110 - 6, math.ceil(#list / ROW) * 40)
 end
 
+-- The card for one patch: its crop, golden or not, and the time left (or READY, or empty)
+function FarmController.inspect(n)
+	local f = Store.get("farm")
+	local t = f and f.tiles and f.tiles[n]
+	local card = refs.inspect
+	if not card then
+		return nil
+	end
+	local text
+	if not t then
+		text = "Empty soil: it gets planted next"
+	else
+		local c = Crops[t.crop]
+		local left = t.need - (workspace:GetServerTimeNow() - t.at)
+		text = `{t.golden and "Golden " or ""}{c and c.name or t.crop}: `
+			.. (left <= 0 and "READY to harvest!" or `ready in {Format.time(math.ceil(left))}`)
+	end
+	card.Text = text
+	card.Visible = true
+	local token = {}
+	refs.inspectToken = token
+	task.delay(3, function()
+		if refs.inspectToken == token then
+			card.Visible = false
+		end
+	end)
+	return text
+end
+
+-- A tap or a click on the screen: the patch under it, if it's one of mine
+local function tapped(pos)
+	local cam = workspace.CurrentCamera
+	if not cam or not pos then
+		return false
+	end
+	local ray = cam:ViewportPointToRay(pos.X, pos.Y)
+	local hit = workspace:Raycast(ray.Origin, ray.Direction * 300)
+	local part = hit and hit.Instance
+	for n, tile in tiles() do
+		if part and (part == tile or part:IsDescendantOf(tile)) then
+			FarmController.inspect(n)
+			return true
+		end
+	end
+	-- (a crop model on the patch: the nearest patch to where it hit)
+	if hit then
+		for n, tile in tiles() do
+			local d = tile.Position - hit.Position
+			if Vector3.new(d.X, 0, d.Z).Magnitude < 3.4 then
+				FarmController.inspect(n)
+				return true
+			end
+		end
+	end
+	return false
+end
+
 function FarmController:init()
 	local gui = Theme.screen("Farm", 6, player:WaitForChild("PlayerGui"))
 	refs.gui = gui
@@ -165,10 +234,36 @@ function FarmController:init()
 		if processed then
 			return
 		end
+		if
+			input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch
+		then
+			local pos = input.Position
+			if tapped(pos and Vector2.new(pos.X, pos.Y)) then
+				return
+			end
+		end
 		if input.KeyCode == Enum.KeyCode.E or input.UserInputType == Enum.UserInputType.MouseButton1 then
 			FarmController.press()
 		end
 	end)
+	refs.inspect = Theme.text({
+		Name = "Inspect",
+		Text = "",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 52),
+		Size = UDim2.fromOffset(420, 34),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		BackgroundTransparency = 0.15,
+		BackgroundColor3 = Color3.fromRGB(30, 34, 44),
+		TextColor3 = Color3.new(1, 1, 1),
+		Font = Theme.Display,
+		fit = 18,
+		Visible = false,
+		Parent = gui,
+	})
+	Theme.new("UICorner", { CornerRadius = UDim.new(0, 10), Parent = refs.inspect })
+	Theme.compact(refs.inspect, 0.8)
 	-- (the guide's step needs this button: it pulses, a gold ring round it)
 	local ring = Theme.new("Frame", {
 		Name = "Ring",

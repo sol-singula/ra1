@@ -518,6 +518,17 @@ do
 	end
 	check("no failed saves or ticks", #bad == 0, bad[1])
 end
+-- A full warehouse: nowhere for the crops to go, so nothing is harvested until it's shipped or sold
+do
+	p.soil["1"] = { crop = "strawberry", at = 0, need = 1, watered = false, golden = false }
+	table.clear(p.storage)
+	p.stock = { strawberry = Flow.stockCap(p.owned) }
+	local ok, why = Farm:Harvest(player, 1)
+	check("warehouse full: no harvest", not ok and why == "warehouse", why)
+	table.clear(p.stock)
+	check("...room again: it harvests", Farm:Harvest(player, 1))
+end
+
 if #Engine.errors > 0 then
 	for _, e in Engine.errors do
 		print("ERROR " .. tostring(e))

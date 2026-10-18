@@ -103,6 +103,12 @@ local function growRate(p, now)
 	return tiles * each * 60 / (need + wait)
 end
 
+-- How many crates the warehouse holds in stock before the farm can't harvest any more (the racks' room)
+Flow.CRATES_PER_SLOT = 25
+function Flow.stockCap(owned)
+	return Flow.rows(owned) * Flow.SLOTS_PER_ROW * Flow.CRATES_PER_SLOT
+end
+
 function Flow.rates(p, now)
 	local owned = p.owned or {}
 	local r = {

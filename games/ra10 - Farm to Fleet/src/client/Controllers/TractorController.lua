@@ -13,11 +13,52 @@ local UserInputService = game:GetService("UserInputService")
 
 local Net = require(ReplicatedStorage.Shared.Net)
 
-local TractorController = { Name = "TractorController", Order = 45, SCAN = 2 }
+local TractorController = { Name = "TractorController", Order = 45, SCAN = 2, SIT = "rbxassetid://2506281703" }
 
 local player = Players.LocalPlayer
 local tractors = {}
 local lastScan = -math.huge
+local seated = nil -- { track, animate } while you ride: the sit pose, and the walk animations switched off
+
+-- Riding: sit, don't walk (the character's Animate script is paused and a sit pose plays)
+local function sit(on)
+	local c = player.Character
+	local hum = c and c:FindFirstChildOfClass("Humanoid")
+	if on and not seated and hum then
+		seated = {}
+		local animate = c:FindFirstChild("Animate")
+		if animate then
+			animate.Disabled = true
+			seated.animate = animate
+		end
+		pcall(function()
+			local animator = hum:FindFirstChildOfClass("Animator") or hum
+			for _, t in animator:GetPlayingAnimationTracks() do
+				t:Stop(0.1)
+			end
+			local anim = Instance.new("Animation")
+			anim.AnimationId = TractorController.SIT
+			seated.track = animator:LoadAnimation(anim)
+			seated.track.Looped = true
+			seated.track.Priority = Enum.AnimationPriority.Action
+			seated.track:Play(0.15)
+		end)
+	elseif not on and seated then
+		pcall(function()
+			if seated.track then
+				seated.track:Stop(0.15)
+			end
+		end)
+		if seated.animate then
+			seated.animate.Disabled = false
+		end
+		seated = nil
+	end
+end
+
+function TractorController.seated()
+	return seated ~= nil
+end
 
 function TractorController.driving()
 	for _, m in tractors do
@@ -43,6 +84,7 @@ end
 
 function TractorController.step()
 	local t = workspace:GetServerTimeNow()
+	sit(TractorController.driving())
 	for _, m in tractors do
 		if not m.Parent then
 			continue

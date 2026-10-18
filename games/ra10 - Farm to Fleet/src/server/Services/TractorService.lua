@@ -216,10 +216,8 @@ function TractorService:Step(player, _dt)
 	model:SetAttribute("To", plot.cf * Vector3.new(to.X, 0, to.Z))
 	model:SetAttribute("Depart", t)
 	model:SetAttribute("Arrive", t + secs - self.WORK)
-	-- (the server's own copy sits where it's headed: the clients do the driving)
-	local dir = Vector3.new(to.X - s.pos.X, 0, to.Z - s.pos.Z)
-	local goal = Vector3.new(to.X, 0, to.Z)
-	model:PivotTo(plot.cf * (dir.Magnitude > 0.01 and CFrame.lookAt(goal, goal + dir.Unit) or CFrame.new(goal)))
+	-- (the clients do the driving from these: the server never moves its copy while it drives itself, so nothing
+	-- it replicates fights their animation)
 	s.target = not parked and Vector3.new(to.X, 0, to.Z) or nil
 	if parked then
 		s.pos = Vector3.new(to.X, 0, to.Z)

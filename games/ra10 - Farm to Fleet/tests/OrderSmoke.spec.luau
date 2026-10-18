@@ -187,7 +187,10 @@ check("...with what to pack", OrderC.refs.rows[1].items.Text:find("0/") ~= nil, 
 check("...and the time left", OrderC.refs.rows[1].status.Text:find("left") ~= nil, OrderC.refs.rows[1].status.Text)
 check("...today's three contracts", #OrderC.state().contracts == 3 and OrderC.refs.contracts[3].Visible)
 check("the guide: pack an order", GuideC.state().key == "pack1", GuideC.state().key)
-check("...pointing at PACK ORDERS", (GuideC.state().target - pad.Position).Magnitude < 0.1)
+check(
+	"...pointing at the order board (packing is automatic)",
+	GuideC.state().target ~= nil and (GuideC.state().target - pad.Position).Magnitude > 0.1
+)
 
 -- The conveyor leaves what the orders need ---------------------------------------------------------------------------------
 local first = live[1]
@@ -299,7 +302,18 @@ check("...the van's back: it goes", a.state ~= "shipping" and b.state == "shippi
 Engine.advance(21)
 check("buy the Box Line", buy("boxLine"))
 Engine.advance(Orders.REFRESH + 2)
-local o3 = Order:Slots(player)[1]
+local o3
+for _ = 1, 20 do
+	for _, o in Order:Slots(player) do
+		if o.state == "open" and o.items then
+			o3 = o
+		end
+	end
+	if o3 then
+		break
+	end
+	Engine.advance(Orders.REFRESH / 2)
+end
 local k3 = next(o3.items)
 table.clear(p.storage)
 p.storage[k3] = 1

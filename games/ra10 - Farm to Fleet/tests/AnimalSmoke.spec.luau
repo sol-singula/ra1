@@ -153,9 +153,12 @@ do
 		AnimalC.refs.tend.Visible and AnimalC.refs.tend.Text == "TEND",
 		AnimalC.refs.tend.Text
 	)
-	AnimalC.refs.tend.Activated:Fire()
+	local FarmCtl = Engine.require(tree.client.Controllers.FarmController)
+	check("...and on the big button too (phones)", FarmCtl.action() == "tend", FarmCtl.action())
+	FarmCtl.press()
 	Engine.advance(0.4)
 	check("...TEND: eggs right away", (p.storage.egg or 0) > eggs, p.storage.egg)
+	check("...the big button waits out the cooldown", FarmCtl.action() ~= "tend")
 	check("...then a cooldown on the button", AnimalC.refs.tend.Text:find("%d+s") ~= nil, AnimalC.refs.tend.Text)
 	local again = p.storage.egg
 	AnimalC.refs.tend.Activated:Fire()
@@ -241,6 +244,9 @@ do
 	prompt.Triggered:Fire(player)
 	local hum = player.Character:FindFirstChildOfClass("Humanoid")
 	check("...you're on it: faster, up in the seat", Tractor:Driving(player) and hum.WalkSpeed == Tractor.DRIVE_SPEED)
+	local TractorC = Engine.require(tree.client.Controllers.TractorController)
+	Engine.advance(0.2)
+	check("...sitting, not walking", TractorC.seated())
 	table.clear(p.storage)
 	p.soil["15"] = nil
 	Engine.moveTo(player, Farm:Tiles(player)[15].Position + Vector3.new(0, 3, 0))
@@ -253,6 +259,7 @@ do
 	Engine.fireServer(player, "Tractor", "off")
 	Engine.advance(0.2)
 	check("jump off: back on your feet", not Tractor:Driving(player) and hum.WalkSpeed ~= Tractor.DRIVE_SPEED)
+	check("...the sit pose ends", not TractorC.seated())
 end
 check("buy the Big Field", buy("field2"))
 check("buy the Conveyor Belt", buy("conveyor"))

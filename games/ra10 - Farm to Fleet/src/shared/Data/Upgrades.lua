@@ -17,7 +17,7 @@ owned yet whose level is reached. Each one is visible on the plot (World/FarmBui
   kind "orders"   the order board holds `value` orders at once (Data/Orders, OrderService)
   kind "van"      a delivery van: an order's trip takes `value` seconds (the buyer's pickup takes longer)
   kind "vans"     `value` vans: that many orders on the road at once
-  kind "autopack" the box line: every `value` seconds it packs what the basket has into the open orders
+  kind "autopack" the box line: orders get packed every `value` seconds (OrderService.AUTO_PACK without it)
   kind "orderPrice" orders pay + `value` (they add up)
   kind "tripCut"  the loading dock: trips take `value` less time
   (stage 4: the warehouse, Data/Flow) kind "warehouse" the building; and by track, one buy-pad each by the
@@ -82,7 +82,7 @@ local LIST = {
 	{ key = "yard",       name = "Paved Yard",      stage = 3, cost = 20000,  kind = "decor",     value = 0,    level = 11 },
 	{ key = "van",        name = "Delivery Van",    stage = 3, cost = 25000,  kind = "van",       value = 20,   level = 12 },
 	{ key = "orderBoard", name = "Big Order Board", stage = 3, cost = 30000,  kind = "orders",    value = 3,    level = 12 },
-	{ key = "boxLine",    name = "Box Line",        stage = 3, cost = 36000,  kind = "autopack",  value = 6,    level = 13 },
+	{ key = "boxLine",    name = "Box Line",        stage = 3, cost = 36000,  kind = "autopack",  value = 1,    level = 13 },
 	{ key = "sorter",     name = "Sorting Machine", stage = 3, cost = 45000,  kind = "orderPrice", value = 0.15, level = 14 },
 	{ key = "loadingDock", name = "Loading Dock",   stage = 3, cost = 52000,  kind = "tripCut",   value = 0.25, level = 14 },
 	{ key = "wrapper",    name = "Pallet Wrapper",  stage = 3, cost = 60000,  kind = "orderPrice", value = 0.15, level = 15 },

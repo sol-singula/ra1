@@ -649,8 +649,9 @@ end
 -- Pop a panel in: it grows from 80% with a little overshoot (0.25 s), or just appears with Reduced Motion on.
 function Theme.pop(guiObject)
 	local scale = guiObject:FindFirstChild("Pop") or new("UIScale", { Name = "Pop", Parent = guiObject })
-	scale.Scale = Theme.reducedMotion() and 1 or 0.8
-	Theme.tween(scale, 0.25, { Scale = 1 }, Enum.EasingStyle.Back)
+	local base = guiObject:GetAttribute("Compact") or 1 -- (Theme.compact's size on a phone)
+	scale.Scale = Theme.reducedMotion() and base or 0.8 * base
+	Theme.tween(scale, 0.25, { Scale = base }, Enum.EasingStyle.Back)
 end
 
 -- Phone scaling -------------------------------------------------------------------------------------------
@@ -689,6 +690,21 @@ end
 -- True on phones and tablets (no keyboard, touch screen).
 function Theme.isTouch()
 	return require(script.Parent.Device).isTouch()
+end
+
+-- On a phone, pop-ups and cards come in smaller (k of their size) so they don't cover the farm; on a PC as built
+function Theme.compact(guiObject, k)
+	-- (one UIScale per object: the same one Theme.pop bounces)
+	local scale = guiObject:FindFirstChild("Pop") or new("UIScale", { Name = "Pop", Parent = guiObject })
+	local Device = require(script.Parent.Device)
+	local function set()
+		local f = Device.isTouch() and (k or 0.72) or 1
+		guiObject:SetAttribute("Compact", f)
+		scale.Scale = f
+	end
+	set()
+	Device.Changed:Connect(set)
+	return scale
 end
 
 -- A ScreenGui that keeps its UIScale in step with the screen size.

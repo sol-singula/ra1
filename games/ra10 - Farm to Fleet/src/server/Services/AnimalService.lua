@@ -97,6 +97,7 @@ function AnimalService:Push(player, at)
 				boost = boostText(key, st, t),
 				product = Animals[key].productName,
 				tendLeft = st.tendedAt and math.max(0, math.ceil(self.TEND_GAP - (t - st.tendedAt))) or 0,
+				tendAt = st.tendedAt and st.tendedAt + self.TEND_GAP or 0, -- (server time it can be tended again)
 			}
 		end
 	end

@@ -178,6 +178,13 @@ do
 		timer and timer.gui.Enabled and timer.label.Text:match("0:0%d$") ~= nil,
 		timer and timer.label.Text
 	)
+	local said = FarmC.inspect(1)
+	check(
+		"tap a patch: what's growing and how long",
+		said and said:find("Strawberry") and said:find("ready in") and FarmC.refs.inspect.Visible,
+		said
+	)
+	check("...an empty one says so", (FarmC.inspect(12) or ""):find("Empty") ~= nil or Farm:Tiles(player)[12] == nil)
 	local r1 = p.soil["1"].at + p.soil["1"].need
 	local r3 = p.soil["3"].at + p.soil["3"].need
 	check("...the field ripens together", math.abs(r1 - r3) < 0.01, r3 - r1)

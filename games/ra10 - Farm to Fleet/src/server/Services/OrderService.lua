@@ -7,8 +7,8 @@ holds Upgrades.stat "orders" slots, and each slot cycles through these states:
   shipping  on the road: the buyer's pickup, or one of the plot's vans; pays when the trip ends (at + length)
   wait      empty until `at` (Orders.REFRESH after it shipped, ran out, or was skipped), then a new customer
 
-  pack      standing on the shed's PackPad (the hub's front hall's, later) packs the basket into the open orders (first slot first); the box line
-            (Upgrades "autopack") does it every few seconds by itself
+  pack      automatic: every AUTO_PACK seconds the basket and the stock fill the open orders (first slot first); the
+            box line (Upgrades "autopack") makes it quicker; standing on the PackPad does it at once
   the conveyor  once the shed stands, the conveyor leaves in the basket what the open orders still need
             (FarmService.hold)
   skip      Net "Order" ("skip", slot): an open order goes, its boxes back into the basket, the next one comes
@@ -51,6 +51,7 @@ local OrderService = {
 	Changed = Signal.new("OrderService.Changed"),
 	REACH = 3.6,
 	TICK = 0.5,
+	AUTO_PACK = 3, -- seconds between automatic packs from the stock
 }
 
 local data, economy, plots, farm, upgrades, analytics
@@ -546,9 +547,9 @@ function OrderService:Step(player, p)
 			end
 		end
 	end
-	-- the box line
-	local every = Upgrades.stat(p.owned or {}, "autopack", nil)
-	if every and t - (packAt[player] or 0) >= every then
+	-- packing is automatic: the stock fills the open orders every AUTO_PACK seconds (the box line: faster)
+	local every = Upgrades.stat(p.owned or {}, "autopack", self.AUTO_PACK)
+	if t - (packAt[player] or 0) >= every then
 		packAt[player] = t
 		self:Pack(player, true)
 	end
