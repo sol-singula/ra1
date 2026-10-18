@@ -1098,6 +1098,8 @@ end
 
 -- (stage 3's pieces, and the vehicles)
 require(script.Parent.ShedBuilder)(FarmBuilder, BUILD)
+-- (stage 4's)
+require(script.Parent.WarehouseBuilder)(FarmBuilder, BUILD)
 
 FarmBuilder.BUILD = BUILD
 

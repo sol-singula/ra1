@@ -20,13 +20,19 @@ owned yet whose level is reached. Each one is visible on the plot (World/FarmBui
   kind "autopack" the box line: every `value` seconds it packs what the basket has into the open orders
   kind "orderPrice" orders pay + `value` (they add up)
   kind "tripCut"  the loading dock: trips take `value` less time
+  (stage 4: the warehouse, Data/Flow) kind "warehouse" the building; and by track, one buy-pad each by the
+  warehouse (master plan §13.2): "grow" (kind "grow": crops grow + `value`, they add up), "pack" ("packLines": that
+  many packing lines; "packSpeed": + `value`), "store" ("forklifts", "racks": rack rows (bays come with rows 3, 5,
+  7), "forkSpeed": + `value`), "ship" ("trucks": box trucks, "truckCap": pallets a truck takes)
 
   Upgrades.LIST              every upgrade, in order
   Upgrades[key]              { key, name, stage, cost, kind, value, level, replaces? (the piece it takes down: a
-                             site sign) }
-  Upgrades.next(owned, level, n)   the next n on offer (the buy-pads)
+                             site sign), track? ("grow" | "pack" | "store" | "ship": the warehouse's station pads) }
+  Upgrades.next(owned, level, n)   the next n on offer at the stand's pads (no track's)
+  Upgrades.trackNext(owned, track) the next in a track (or nil when the track is done)
+  Upgrades.TRACKS            the four, in flow order
   Upgrades.stat(owned, kind, default)   the value the plot has for a kind (the highest owned; "price",
-                             "golden" and "orderPrice" add up)
+                             "golden", "orderPrice" and "grow" add up)
 ]]
 local Upgrades = {}
 
@@ -79,8 +85,36 @@ local LIST = {
 	{ key = "wrapper",    name = "Pallet Wrapper",  stage = 3, cost = 60000,  kind = "orderPrice", value = 0.15, level = 15 },
 	{ key = "van2",       name = "Second Van",      stage = 3, cost = 75000,  kind = "vans",      value = 2,    level = 16 },
 	{ key = "warehouseDeed", name = "Build the Warehouse!", stage = 3, cost = 100000, kind = "stage", value = 4, level = 17 },
+	-- Stage 4: the Warehouse (the building on the stand's pads, then a track per station)
+	{ key = "warehouse",  name = "The Warehouse",   stage = 4, cost = 120000, kind = "warehouse", value = 1, level = 17, replaces = "warehouseDeed" },
+	{ key = "packLine2",  name = "Packing Line 2",  stage = 4, cost = 150000, kind = "packLines", value = 2, level = 17, track = "pack" },
+	{ key = "forklift2",  name = "Second Forklift", stage = 4, cost = 140000, kind = "forklifts", value = 2, level = 17, track = "store" },
+	{ key = "irrigation", name = "Pivot Irrigation", stage = 4, cost = 160000, kind = "grow",     value = 0.25, level = 17, track = "grow" },
+	{ key = "rack2",      name = "Rack Row 2",      stage = 4, cost = 180000, kind = "racks",     value = 2, level = 18, track = "store" },
+	{ key = "boxTruck2",  name = "Box Truck 2",     stage = 4, cost = 200000, kind = "trucks",    value = 2, level = 18, track = "ship" },
+	{ key = "bay2",       name = "Warehouse Bay 2", stage = 4, cost = 300000, kind = "racks",     value = 3, level = 18, track = "store" },
+	{ key = "forklift3",  name = "Third Forklift",  stage = 4, cost = 350000, kind = "forklifts", value = 3, level = 19, track = "store" },
+	{ key = "packLine3",  name = "Packing Line 3",  stage = 4, cost = 400000, kind = "packLines", value = 3, level = 19, track = "pack" },
+	{ key = "rack4",      name = "Rack Row 4",      stage = 4, cost = 450000, kind = "racks",     value = 4, level = 20, track = "store" },
+	{ key = "fertilizer", name = "Fertilizer Tanks", stage = 4, cost = 450000, kind = "grow",     value = 0.25, level = 20, track = "grow" },
+	{ key = "biggerTrucks", name = "Bigger Trucks", stage = 4, cost = 500000, kind = "truckCap",  value = 6, level = 20, track = "ship" },
+	{ key = "fastForklifts", name = "Fast Forklifts", stage = 4, cost = 600000, kind = "forkSpeed", value = 0.5, level = 21, track = "store" },
+	{ key = "bay3",       name = "Warehouse Bay 3", stage = 4, cost = 750000, kind = "racks",     value = 5, level = 21, track = "store" },
+	{ key = "boxTruck3",  name = "Box Truck 3",     stage = 4, cost = 800000, kind = "trucks",    value = 3, level = 22, track = "ship" },
+	{ key = "autoPacker", name = "Robot Packer",    stage = 4, cost = 900000, kind = "packSpeed", value = 0.5, level = 22, track = "pack" },
+	{ key = "rack6",      name = "Rack Row 6",      stage = 4, cost = 900000, kind = "racks",     value = 6, level = 22, track = "store" },
+	{ key = "greenhouse", name = "Greenhouses",     stage = 4, cost = 1000000, kind = "grow",     value = 0.3, level = 23, track = "grow" },
+	{ key = "forklift4",  name = "Fourth Forklift", stage = 4, cost = 1100000, kind = "forklifts", value = 4, level = 23, track = "store" },
+	{ key = "bay4",       name = "Warehouse Bay 4", stage = 4, cost = 1300000, kind = "racks",    value = 7, level = 23, track = "store" },
+	{ key = "boxTruck4",  name = "Box Truck 4",     stage = 4, cost = 1400000, kind = "trucks",   value = 4, level = 24, track = "ship" },
+	{ key = "packLine4",  name = "Packing Line 4",  stage = 4, cost = 1500000, kind = "packLines", value = 4, level = 24, track = "pack" },
+	{ key = "rack8",      name = "Rack Row 8",      stage = 4, cost = 1600000, kind = "racks",    value = 8, level = 24, track = "store" },
+	{ key = "forklift5",  name = "Fifth Forklift",  stage = 4, cost = 1900000, kind = "forklifts", value = 5, level = 25, track = "store" },
+	{ key = "hubDeed",    name = "Build the Distribution Hub!", stage = 4, cost = 2500000, kind = "stage", value = 5, level = 26 },
 }
 -- stylua: ignore end
+
+Upgrades.TRACKS = { "grow", "pack", "store", "ship" }
 
 Upgrades.LIST = {}
 for i, u in LIST do
@@ -93,7 +127,7 @@ function Upgrades.next(owned, level, n)
 	local out = {}
 	for _, key in Upgrades.LIST do
 		local u = Upgrades[key]
-		if not owned[key] then
+		if not owned[key] and not u.track then
 			if u.level > level then
 				break -- (in order: nothing after a locked one shows yet)
 			end
@@ -106,10 +140,20 @@ function Upgrades.next(owned, level, n)
 	return out
 end
 
--- The next one not owned (shown even when its level isn't reached: the guide points at it)
+function Upgrades.trackNext(owned, track)
+	for _, key in Upgrades.LIST do
+		local u = Upgrades[key]
+		if u.track == track and not owned[key] then
+			return u
+		end
+	end
+	return nil
+end
+
+-- The next one not owned at the stand (shown even when its level isn't reached: the guide points at it)
 function Upgrades.upcoming(owned)
 	for _, key in Upgrades.LIST do
-		if not owned[key] then
+		if not owned[key] and not Upgrades[key].track then
 			return Upgrades[key]
 		end
 	end
@@ -121,7 +165,7 @@ function Upgrades.stat(owned, kind, default)
 	for _, key in Upgrades.LIST do
 		local u = Upgrades[key]
 		if owned[key] and u.kind == kind then
-			if kind == "price" or kind == "golden" or kind == "orderPrice" then
+			if kind == "price" or kind == "golden" or kind == "orderPrice" or kind == "grow" then
 				v = (v or 0) + u.value
 			elseif type(u.value) ~= "number" then
 				v = u.value

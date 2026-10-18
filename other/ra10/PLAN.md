@@ -101,10 +101,47 @@ a time then two, the box line, the pay boosts, the dock's shorter trip, a BIG or
 three, a new day, every stage-3 upgrade covered by the guide, a trip paying across a rejoin, and the profile
 saving). 220 checks in all (`tools/run_tests.sh`).
 
-## Next: Phase E
+## Phase E: stage 4 (the Warehouse), the four-station flow and bottlenecks
 
-Stage 4, built round the master plan's five pillars (§13): the warehouse rises bay by bay with racks that show
-every pallet the farm holds, forklifts on painted lanes (client-animated, an optional ride), and the four-station
-flow (Grow, Pack, Store, Ship) with the Operations board, so the slowest station glows red and the pads offer a fix
-for each. Then F (docks, semis, Special Orders), G (coming back, the street board, visiting, friends), H (prestige:
-Franchise and the second region), I (money, art, publish).
+Built round the master plan's pillars of scale (§13.1) and bottlenecks (§13.2).
+
+* **The warehouse** (`World/WarehouseBuilder`): a 64 x 60 steel building (ribbed walls, the farm's colour band,
+  clerestory windows, a roof with skylights and units) that rises slice by slice: the front slice (packing lines,
+  the staging floor, the office, a people door lined up with a new back door through the shed, a roll-up truck
+  door) and the first bay come with The Warehouse; three more bays (Warehouse Bay 2-4) replace a steel skeleton on
+  its slab. Out front: four station pads and a big **Operations screen**; an overhead conveyor from the shed.
+  Behind: a truck lane up the plot's east edge and a lot for the box trucks. The sorter, the wrapper and the
+  second van moved to keep the lane clear.
+* **Everything you can count:** rack rows (8, 24 pallets each) with a real pallet on a slot for every pallet the farm
+  holds, pallets on the staging floor, crates waiting at the lines, packing lines (4, then robot arms), forklifts
+  (5; a charging bay with the fast ones), box trucks (4, longer with bigger trucks), pivot irrigation over the
+  fields, fertilizer tanks, greenhouses. Every stage-4 buy builds something (a test checks it).
+* **The flow** (`Data/Flow`, `WarehouseService`): once it stands, the conveyor brings the basket in (leaving what
+  orders need) instead of selling it; the lines pack crates into pallets (packing stops while 6 wait on the floor);
+  each forklift racks a pallet every 30 s (faster with fast forklifts) while there's a free slot; each truck takes up
+  to 4 pallets (6 with bigger trucks) when it can fill up or after 15 s, makes its trip and pays 2x the stand a
+  pallet (more with the sorter and wrapper) when it's back. Every rate is Cash a minute, so the four compare.
+* **Bottlenecks:** the slowest station (or Store, when the racks are full) is red on the Operations screen, the
+  HUD's Operations strip (`OpsController`) and its own station pad. The four pads sell one fix each from their
+  track (grow 3, pack 3, store 11, ship 3), so buying the red one moves the jam to the next station; it counts as a
+  fix and says so. A bought-out red track tells you what to do instead (plant pricier crops).
+* **Vehicles and forklifts on the client** (`World/Trips` "truck", `WarehouseController`): trucks back out of the
+  lot, down the lane, back up to the truck door, load, drive off and come back to their spot; forklifts loop from
+  the staging floor down the cross aisle to a rack, lift the pallet to its level and come back, only while their
+  warehouse is busy. The roof lifts off while the camera's inside.
+* **The guide's chapter 4**: build it, the first pallet, racked, shipped, fix a bottleneck, fix three; then the guide
+  always points at the bottleneck's pad ("BOTTLENECK: PACK! Buy Packing Line 3 at the PACK pad"), or the next fix,
+  then the hub's deed (stage 5).
+* **Operation Size** (`Flow.size`) on the HUD strip: one number for how big the operation is.
+
+Tests: `WarehouseSmoke` (74 checks: the flow's rates and bottleneck rules, every track, every stage-4 buy building
+something, the truck's trip; the warehouse replacing its site with its skeleton, open slices, roof, pads, screen,
+racks, staging, forklift and truck; the conveyor's intake, packing, racking, every pallet shown, a truck's load,
+trip, door and pay; the guide through chapter 4 to the red pad; forklifts working on the client; the roof lifting;
+three fixes; full racks; every track bought out (8 rows, 5 forklifts, 4 long trucks); stock and a trip across a
+rejoin; the hub's deed; no failed saves or ticks). 295 checks in all.
+
+## Next: Phase F
+
+Stage 5, the distribution hub: dock doors along the warehouse's back with semis on the shared road backing in,
+receiving and shipping, the truck court, the roads adjusting as plots grow; and **Special Orders** (§13.3).

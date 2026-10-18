@@ -1,7 +1,8 @@
 --[[
 The vehicles on the street (master plan §7): the server marks a trip on a vehicle (TripStart, TripLength, Trip:
-its kind) and every client drives it along World/Trips' plan for that kind, smoothly, at 30 fps; a van with no trip
-waits in its parking spot. Any plot's vehicles, so neighbours watch each other's trucks come and go.
+its kind) and every client drives it along World/Trips' plan for that kind, smoothly, at 30 fps; a van or a box
+truck with no trip waits in its spot (ParkAt, or the van's Park). Any plot's vehicles, so neighbours watch each
+other's trucks come and go.
 
   VehicleController.moving()  how many vehicles are on a trip right now
 ]]
@@ -43,14 +44,14 @@ local function drive()
 		end
 		local kind = m:GetAttribute("Kind") or "pickup"
 		local park = m:GetAttribute("Park")
-		local spot = park and PlotLayout.SPOTS.parks[park] or nil
+		local spot = m:GetAttribute("ParkAt") or (park and PlotLayout.SPOTS.parks[park]) or nil
 		local start, length = m:GetAttribute("TripStart"), m:GetAttribute("TripLength")
 		if type(start) == "number" and type(length) == "number" and length > 0 then
 			local f = (now - start) / length
 			m:PivotTo((Trips.at(plot, kind, f, spot)))
 			moving += 1
-		elseif kind == "van" and not m:GetAttribute("Parked") then
-			m:PivotTo((Trips.at(plot, "van", 1, spot)))
+		elseif spot and kind ~= "pickup" and not m:GetAttribute("Parked") then
+			m:PivotTo((Trips.at(plot, kind, 1, spot)))
 			m:SetAttribute("Parked", true)
 		end
 		if type(start) == "number" then

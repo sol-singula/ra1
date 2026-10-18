@@ -347,7 +347,7 @@ check("the warehouse's deed", buy("warehouseDeed"))
 check("...stage 4", p.stage == 4)
 check("...its site staked out", plot.items:FindFirstChild("warehouseDeed") ~= nil)
 Engine.advance(1.2)
-check("the guide's last scripted step is done", p.guide.step > #GuideData.STEPS)
+check("the guide's chapter 3 is done", p.guide.step > GuideData.byKey.warehouse.index)
 do
 	local keys, missing = {}, {}
 	for _, s in GuideData.STEPS do

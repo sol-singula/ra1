@@ -65,10 +65,24 @@ PlotLayout.SPOTS = {
 	board = Vector3.new(6, 0, -80), -- the order board
 	door = Vector3.new(42, 0, -74), -- the loading door, in the shed's front wall
 	boxLine = Vector3.new(4, 0, -62), -- where the box line's belt starts, outside the west wall
-	sorter = Vector3.new(64, 0, -54),
-	wrapper = Vector3.new(64, 0, -66),
-	parks = { Vector3.new(64, 0, -80), Vector3.new(74, 0, -80) }, -- where the vans wait
-	warehouseSite = Vector3.new(42, 0, -2),
+	sorter = Vector3.new(64, 0, -58),
+	wrapper = Vector3.new(64, 0, -70),
+	parks = { Vector3.new(64, 0, -80), Vector3.new(54, 0, -80) }, -- where the vans wait
+	-- stage 4: the warehouse (WAREHOUSE in size, its front wall at z -36), the truck lane up the plot's east edge,
+	-- the box trucks' lot behind it
+	warehouse = Vector3.new(38, 0, -6),
+	warehouseSite = Vector3.new(38, 0, -6),
+	peopleDoor = Vector3.new(24, 0, -36), -- in the warehouse's front wall (the shed's back door lines up with it)
+	truckDoor = Vector3.new(64, 0, -36),
+	stations = { -- the four station pads, outside the front wall: grow, pack, store, ship
+		Vector3.new(30, 0, -41),
+		Vector3.new(38, 0, -41),
+		Vector3.new(46, 0, -41),
+		Vector3.new(54, 0, -41),
+	},
+	lane = 76, -- the truck lane's x
+	lot = { Vector3.new(64, 0, 40), Vector3.new(57, 0, 40), Vector3.new(50, 0, 40), Vector3.new(43, 0, 40) },
+	greenhouses = Vector3.new(24, 0, 46),
 	mailbox = Vector3.new(-50, 0, -106),
 	sign = Vector3.new(-74, 0, -106),
 }
@@ -78,6 +92,35 @@ PlotLayout.TILE_COLUMNS = 4
 
 PlotLayout.SHED = Vector3.new(36, 14, 28) -- the shed's size
 PlotLayout.LANES = { -125, -135 } -- the road's lanes in a plot's frame (near, far)
+PlotLayout.WAREHOUSE = Vector3.new(64, 18, 60)
+-- the warehouse in slices front to back: A (z -36..-20: the packing lines, the staging floor, the office), then a
+-- slice a bay: each holds a back-to-back pair of rack rows (rows 2k-1, 2k) along X with its aisle in front
+PlotLayout.SLICES = { -36, -20, -9, 2, 13, 24 }
+PlotLayout.RACK_X = { 8, 58 } -- a rack row runs from x 8 to 58; the cross aisle beyond it to the east wall
+PlotLayout.SLOT = 5.6 -- a rack slot's length
+PlotLayout.LEVELS = 3
+
+-- A rack row's slot (n from 1, along the row then up): its local centre (where a pallet sits)
+function PlotLayout.rackSlot(row, n)
+	local slice = (row + 1) // 2 -- (rows 1-2 in the first bay slice, 3-4 the next...)
+	local z0 = PlotLayout.SLICES[slice + 1]
+	local back = row % 2 == 0
+	local z = z0 + (back and 9.7 or 7.1)
+	local per = math.floor((PlotLayout.RACK_X[2] - PlotLayout.RACK_X[1]) / PlotLayout.SLOT)
+	local i = (n - 1) % per
+	local level = (n - 1) // per
+	return Vector3.new(PlotLayout.RACK_X[1] + PlotLayout.SLOT * (i + 0.5), 0.55 + level * 3.2, z)
+end
+
+-- The aisle a rack row faces (its z), where the forklifts drive: a front row's own slice's, a back row's the next
+-- slice's (the last back row is reached from the front)
+function PlotLayout.aisle(row)
+	local slice = (row + 1) // 2
+	if row % 2 == 0 and slice + 2 <= #PlotLayout.SLICES - 1 then
+		return PlotLayout.SLICES[slice + 2] + 2.9
+	end
+	return PlotLayout.SLICES[slice + 1] + 2.9
+end
 PlotLayout.FIELD_COLUMNS = 9
 PlotLayout.PEN = Vector3.new(34, 0, 38) -- a pen's size (x, z)
 -- the conveyor's route: from the barn's west side round to the stand (stage 2)

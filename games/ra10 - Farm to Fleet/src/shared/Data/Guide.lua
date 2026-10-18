@@ -7,7 +7,8 @@ on the ground to it.
   Guide.STEPS    { { key, text, target, done = { kind, ... }, reward = { cash?, xp? } } } in order
      target: "soil1" (the first soil tile) | "soil" (the nearest tile that needs something) | "stand" | "pad:<key>"
              (the buy-pad offering that upgrade) | "pen:<animal>" (that pen's pad) | "pack" (the shed's PACK ORDERS
-             pad) | "board" (the order board) | "door" (the shed's loading door)
+             pad) | "board" (the order board) | "door" (the shed's loading door) | "station" (the bottleneck's station
+             pad) | "station:<track>" | "flow:pack" | "flow:store" | "flow:ship" (the lines, the racks, the truck door)
      done:   { kind = "stat", stat, n }   profile.stats[stat] >= n
              { kind = "owned", key }      the upgrade is bought
              { kind = "level", n }        the farm level is at least n
@@ -75,6 +76,13 @@ Guide.STEPS = {
 	{ key = "wrapper",   text = "Buy the Pallet Wrapper: orders pay +15% more",  target = "pad:wrapper", done = { kind = "owned", key = "wrapper" },   reward = { xp = 60 } },
 	{ key = "van2",      text = "Buy a Second Van: two orders on the road at once", target = "pad:van2", done = { kind = "owned", key = "van2" },      reward = { xp = 80 } },
 	{ key = "warehouse", text = "Save up and BUILD THE WAREHOUSE!",              target = "pad:warehouseDeed", done = { kind = "owned", key = "warehouseDeed" }, reward = { cash = 5000, xp = 200 } },
+	-- Chapter 4: the Warehouse (then the guide follows the bottleneck: master plan §13.2)
+	{ key = "warehouseBuild", text = "Build The Warehouse: your crops become pallets that ship by the truckload", target = "pad:warehouse", done = { kind = "owned", key = "warehouse" }, reward = { xp = 100 } },
+	{ key = "pallet1",   text = "The conveyor feeds the warehouse now: watch the lines pack your first pallet", target = "flow:pack", done = { kind = "stat", stat = "pallets", n = 1 }, reward = { xp = 20 } },
+	{ key = "racked1",   text = "A forklift puts it on the racks",               target = "flow:store", done = { kind = "stat", stat = "racked", n = 1 }, reward = { xp = 20 } },
+	{ key = "shipped1",  text = "A box truck takes pallets to market: wait for it to come back and pay", target = "flow:ship", done = { kind = "stat", stat = "palletsShipped", n = 1 }, reward = { cash = 20000 } },
+	{ key = "fix1",      text = "The red bar is your BOTTLENECK: fix it at its red pad", target = "station", done = { kind = "stat", stat = "fixes", n = 1 }, reward = { xp = 60 } },
+	{ key = "fix3",      text = "Fix 3 bottlenecks: each fix moves the jam somewhere new", target = "station", done = { kind = "stat", stat = "fixes", n = 3 }, reward = { cash = 100000 } },
 }
 -- stylua: ignore end
 

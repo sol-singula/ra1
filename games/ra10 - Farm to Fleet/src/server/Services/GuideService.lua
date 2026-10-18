@@ -14,7 +14,9 @@ Net "Guide" to the owner: { key, text, target = Vector3 (world), step, of, gener
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Flow = require(ReplicatedStorage.Shared.Data.Flow)
 local Guide = require(ReplicatedStorage.Shared.Data.Guide)
+local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PlotLayout = require(ReplicatedStorage.Shared.World.PlotLayout)
 local Signal = require(ReplicatedStorage.Shared.Signal)
@@ -30,6 +32,7 @@ local GuideService = {
 		"UpgradeService",
 		"AnimalService",
 		"OrderService",
+		"WarehouseService",
 	},
 	Advanced = Signal.new("GuideService.Advanced"),
 	CHECK = 1,
@@ -80,6 +83,31 @@ function GuideService:Step(player)
 	if step then
 		return step
 	end
+	-- generated, in the warehouse: the bottleneck's fix (or the next fix there is)
+	if p.owned and p.owned.warehouse then
+		local rates = Flow.rates(p, workspace:GetServerTimeNow())
+		local u = Upgrades.trackNext(p.owned, rates.bottleneck)
+		local name = string.upper(rates.bottleneck)
+		if u and u.level <= (p.level or 1) then
+			return {
+				key = "fix:" .. u.key,
+				text = `BOTTLENECK: {name}! Buy {u.name} at the {name} pad ({Format.num(u.cost)})`,
+				target = "station:" .. rates.bottleneck,
+				generated = true,
+			}
+		end
+		for _, track in Upgrades.TRACKS do
+			local v = Upgrades.trackNext(p.owned, track)
+			if v and v.level <= (p.level or 1) then
+				return {
+					key = "fix:" .. v.key,
+					text = `Next: {v.name} at the {string.upper(track)} pad ({Format.num(v.cost)})`,
+					target = "station:" .. track,
+					generated = true,
+				}
+			end
+		end
+	end
 	-- generated: the next upgrade on offer, or the level the next one needs
 	local offer = upgrades:Offer(player)
 	local first = offer[1]
@@ -125,6 +153,22 @@ function GuideService:Target(player, target)
 			end
 		end
 		return best and best[2].Position
+	elseif target == "station" or string.sub(target, 1, 8) == "station:" then
+		local p = data:Get(player)
+		local track = string.sub(target, 9)
+		if track == "" then
+			track = p and Flow.rates(p, workspace:GetServerTimeNow()).bottleneck or "grow"
+		end
+		local pad = upgrades:Stations(player)[track]
+		return pad and pad.Position
+	elseif string.sub(target, 1, 5) == "flow:" then
+		local plot = plots:Plot(player)
+		local spot = ({
+			pack = Vector3.new(30, 0, -31),
+			store = PlotLayout.rackSlot(1, 1),
+			ship = PlotLayout.SPOTS.truckDoor - Vector3.new(0, 0, 4),
+		})[string.sub(target, 6)]
+		return plot and spot and PlotLayout.toWorld(plot.index, spot.X, spot.Z, 1)
 	elseif target == "pack" then
 		local pad = orders and orders:PackPad(player)
 		return pad and pad.Position
@@ -217,6 +261,9 @@ function GuideService:Init(registry)
 		self:Check(player)
 	end)
 	orders.Changed:Connect(function(player)
+		self:Check(player)
+	end)
+	registry.WarehouseService.Changed:Connect(function(player)
 		self:Check(player)
 	end)
 	economy.LevelUp:Connect(function(player)

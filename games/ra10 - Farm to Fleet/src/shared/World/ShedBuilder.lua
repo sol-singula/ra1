@@ -3,7 +3,8 @@ Stage 3's pieces (master plan §4): the packing shed with its packing table, the
 the paved yard, the delivery vans, the box line, the sorting machine, the loading dock, the pallet wrapper and the
 warehouse's site. FarmBuilder hands over its BUILD table; this adds to it, and adds FarmBuilder.vehicle.
 
-  FarmBuilder.vehicle(parent, kind ("van" | "pickup"), color, cf) -> Model   (its pivot on the ground, nose to -Z)
+  FarmBuilder.vehicle(parent, kind ("van" | "pickup" | "truck"), color, cf, big?) -> Model   (its pivot on the
+                     ground, nose to -Z; big: a bigger truck's longer box)
   the shed's parts the services look for: "PackPad" (the packing table's pad), "BoardSlot" x3 (attribute Slot)
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -107,7 +108,6 @@ return function(FarmBuilder, BUILD)
 		L:block(c.X, c.Z, W + 2, D + 2, y0, { color = P.concrete, name = "ShedSlab" }, 0)
 		L:block(c.X, c.Z, W - 1, D - 1, 0.05, deco({ color = P.concreteDark, name = "ShedFloor" }), y0)
 		-- the walls: the back and the sides whole; the front with the loading door and the side door cut out
-		wall(L, c.X, z1 - 0.4, W, 0.8, H, y0, 1)
 		wall(L, x0 + 0.4, c.Z, 0.8, D, H, y0, -1)
 		wall(L, x1 - 0.4, c.Z, 0.8, D, H, y0, 1)
 		local door = SPOTS.door
@@ -119,6 +119,11 @@ return function(FarmBuilder, BUILD)
 		wall(L, (side + SW / 2 + door.X - DW / 2) / 2, fz, door.X - DW / 2 - side - SW / 2, 0.8, H, y0, -1)
 		wall(L, (door.X + DW / 2 + x1) / 2, fz, x1 - door.X - DW / 2, 0.8, H, y0, -1)
 		L:block(side, fz, SW, 0.8, H - SH, { color = SIDING, name = "ShedWall" }, y0 + SH)
+		-- the back wall, with a door lined up with the side door (through the shed to the warehouse)
+		local bz = z1 - 0.4
+		wall(L, (x0 + side - SW / 2) / 2, bz, side - SW / 2 - x0, 0.8, H, y0, 1)
+		wall(L, (side + SW / 2 + x1) / 2, bz, x1 - side - SW / 2, 0.8, H, y0, 1)
+		L:block(side, bz, SW, 0.8, H - SH, { color = SIDING, name = "ShedWall" }, y0 + SH)
 		L:block(door.X, fz, DW, 0.8, H - DH, { color = SIDING, name = "ShedWall" }, y0 + DH)
 		-- white trim at the corners and the door frames
 		for _, tx in { x0, x1 } do
@@ -343,7 +348,7 @@ return function(FarmBuilder, BUILD)
 		for _, kx in { x0, x1 } do
 			L:block(kx, (z0 + z1) / 2, 0.8, z1 - z0, 0.5, { color = P.concrete, name = "Kerb" }, 0)
 		end
-		for _, lx in { 30, 76 } do
+		for _, lx in { 30, 68 } do
 			L:block(lx, -104, 0.5, 0.5, 12, { color = P.steel, name = "LampPost" }, 0)
 			L:box(lx - 1, 12, -104, 2.4, 0.4, 0.9, deco({ color = P.steel, name = "LampArm" }))
 			L:box(
@@ -365,7 +370,7 @@ return function(FarmBuilder, BUILD)
 	end
 
 	-- A vehicle: the farm's van (a box van in the farm's colour) or a buyer's pickup with crates in the bed
-	function FarmBuilder.vehicle(parent, kind, color, cf)
+	function FarmBuilder.vehicle(parent, kind, color, cf, big)
 		local model = Instance.new("Model")
 		model.Name = "Vehicle"
 		model:SetAttribute("Kind", kind)
@@ -420,6 +425,43 @@ return function(FarmBuilder, BUILD)
 			s:box(0, 0.8, 1, 4.4, 0.6, 9, deco({ color = INK, name = "Chassis" }))
 			wheels(-3.2, 3.2, 2.1)
 			model:SetAttribute("Body", body.Name)
+		elseif kind == "truck" then
+			-- a box truck (stage 4): a tall cab in the farm's colour, a long box (longer still with bigger trucks)
+			local len = big and 11 or 8
+			s:box(0, 2.8, -4.4, 5, 3.6, 3.2, deco({ color = color, name = "Cab" }))
+			s:box(0, 3.9, -6.03, 4.4, 1.5, 0.1, deco({ color = P.glass, name = "Windscreen", transparency = 0.1 }))
+			s:box(0, 5, -4.6, 4.6, 0.6, 2.6, deco({ color = color, name = "CabRoof" }))
+			for _, sx in { -1, 1 } do
+				s:box(
+					sx * 1.7,
+					1.7,
+					-6.1,
+					0.9,
+					0.6,
+					0.1,
+					deco({ color = rgb(255, 250, 220), material = Enum.Material.Neon, name = "Headlight" })
+				)
+				s:box(sx * 2.55, 3.6, -5.6, 0.3, 0.9, 0.2, deco({ color = INK, name = "Mirror" }))
+			end
+			s:box(0, 1, -6.2, 5.1, 0.7, 0.3, deco({ color = P.steelLight, name = "Bumper" }))
+			local zb = -2.6 + len / 2 + 0.2
+			s:box(0, 3.9, zb, 5.2, 5.6, len, deco({ color = WHITE, name = "TruckBox" }))
+			for _, sx in { -1, 1 } do
+				local stripe = s:box(sx * 2.62, 3.2, zb, 0.05, 1.4, len - 0.4, deco({ color = color, name = "Stripe" }))
+				FarmBuilder.sign(
+					stripe,
+					"FARM TO FLEET",
+					nil,
+					WHITE,
+					sx > 0 and Enum.NormalId.Right or Enum.NormalId.Left
+				)
+			end
+			s:box(0, 3.9, zb + len / 2 + 0.03, 4.8, 5.2, 0.05, deco({ color = P.steelLight, name = "BackDoor" }))
+			s:box(0, 0.9, zb - 1, 4.6, 0.6, len + 4, deco({ color = INK, name = "Chassis" }))
+			wheels(-4.4, zb + len / 2 - 1.6, 2.3)
+			if big then
+				wheels(zb + len / 2 - 3.6, zb + len / 2 - 3.6, 2.3)
+			end
 		else
 			-- the buyer's pickup: a rounded cab, a bed with crates of produce
 			s:box(0, 1.6, -2.6, 4.2, 1.3, 3.2, deco({ color = color, name = "Hood" }))
@@ -575,14 +617,14 @@ return function(FarmBuilder, BUILD)
 		L:block(c.X + 3.6, c.Z, 0.8, 0.8, 8, { color = P.rackOrange, name = "Mast" }, 0)
 		L:cyl(c.X + 3, 4, c.Z, 2, 0.8, deco({ color = rgb(220, 235, 245), name = "FilmRoll" }), "y")
 		pallet(L, c.X, c.Z, 2, true)
-		pallet(L, c.X + 9, c.Z + 2, 3, true)
-		pallet(L, c.X + 9, c.Z - 3, 2, true)
+		pallet(L, c.X - 8, c.Z + 2, 3, true)
+		pallet(L, c.X - 8, c.Z - 3, 2, true)
 	end
 
 	-- The warehouse's site: a long concrete footprint, stakes and string, a sign
 	BUILD.warehouseDeed = function(L, plot)
 		local c = SPOTS.warehouseSite
-		local w, d = 72, 60
+		local w, d = PlotLayout.WAREHOUSE.X, PlotLayout.WAREHOUSE.Z
 		L:block(c.X, c.Z, w, d, 0.15, deco({ color = P.concrete, name = "WarehouseSite" }), 0.24)
 		for _, sx in { -1, 1 } do
 			for _, sz in { -1, 1 } do

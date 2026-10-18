@@ -8,6 +8,7 @@ built on the plot (FarmBuilder.upgrade), pays Upgrades.XP_PER_BUY XP, and does i
   UpgradeService:Buy(player, key) -> ok, why ("owned" | "order" | "level" | "cash")
   UpgradeService:Offer(player)    -> { upgrade, locked? } x PADS, what the pads show
   UpgradeService:Paint(player)
+  UpgradeService:Stations(player) -> { [track] = the warehouse's station pad }   (stage 4: a track's next fix each)
   UpgradeService.Bought (player, upgrade)
 ]]
 local Players = game:GetService("Players")
@@ -15,6 +16,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local FarmBuilder = require(ReplicatedStorage.Shared.World.FarmBuilder)
+local Flow = require(ReplicatedStorage.Shared.Data.Flow)
+local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
@@ -54,7 +57,7 @@ function UpgradeService:Offer(player)
 		end
 		for _, key in Upgrades.LIST do
 			local u = Upgrades[key]
-			if not p.owned[key] and not seen[key] then
+			if not p.owned[key] and not seen[key] and not u.track then
 				table.insert(out, { upgrade = u, locked = u.level > (p.level or 1) })
 				break
 			end
@@ -94,6 +97,53 @@ function UpgradeService:Paint(player)
 			FarmBuilder.label(pad, "", "")
 		end
 	end
+	self:PaintStations(player)
+end
+
+-- The warehouse's station pads (stage 4, master plan §13.2): one per track, each offering that track's next fix
+function UpgradeService:Stations(player)
+	local plot = plots:Plot(player)
+	local folder = plot and plot.items:FindFirstChild("warehouse")
+	local out = {}
+	if folder then
+		for _, d in folder:GetChildren() do
+			if d.Name == "StationPad" then
+				out[d:GetAttribute("Track")] = d
+			end
+		end
+	end
+	return out
+end
+
+local STATION_NAME = { grow = "GROW", pack = "PACK", store = "STORE", ship = "SHIP" }
+local BOTTLENECK = Color3.fromRGB(240, 70, 60)
+
+function UpgradeService:PaintStations(player)
+	local p = data:Get(player)
+	local pads = self:Stations(player)
+	if not p or not next(pads) then
+		return
+	end
+	local rates = Flow.rates(p, workspace:GetServerTimeNow())
+	for track, pad in pads do
+		local u = Upgrades.trackNext(p.owned or {}, track)
+		local red = rates.bottleneck == track
+		pad.Color = red and BOTTLENECK or Color3.fromRGB(250, 250, 248)
+		pad:SetAttribute("Item", u and u.key or nil)
+		pad:SetAttribute("Bottleneck", red)
+		local head = STATION_NAME[track] .. (red and " · BOTTLENECK" or "")
+		if not u then
+			-- (a track bought out: if it's still the slowest, the farm itself has to grow: crops, animals, levels)
+			local hint = (
+				{ grow = "Plant pricier crops!", pack = "ALL BUILT", store = "ALL BUILT", ship = "ALL BUILT" }
+			)[track]
+			FarmBuilder.label(pad, head, red and hint or "ALL BUILT", red and P.sunflower or GREEN)
+		elseif u.level > (p.level or 1) then
+			FarmBuilder.label(pad, head, `{u.name} · LV {u.level}`, P.steelLight)
+		else
+			FarmBuilder.label(pad, head, `{u.name} · {Format.num(u.cost)}`, p.cash >= u.cost and GREEN or RED)
+		end
+	end
 end
 
 local function apply(player, u)
@@ -129,6 +179,10 @@ function UpgradeService:Buy(player, key)
 		if o.upgrade.key == key and not o.locked then
 			offered = true
 		end
+	end
+	if u.track then
+		-- (a station pad's: the next in its track, once the warehouse stands)
+		offered = p.owned.warehouse ~= nil and Upgrades.trackNext(p.owned, u.track) == u and u.level <= (p.level or 1)
 	end
 	if not offered then
 		return false, u.level > (p.level or 1) and "level" or "order"
@@ -198,7 +252,11 @@ function UpgradeService:_tick()
 			continue
 		end
 		local on = nil
-		for _, pad in refs.pads do
+		local pads = table.clone(refs.pads)
+		for _, pad in self:Stations(player) do
+			table.insert(pads, pad)
+		end
+		for _, pad in pads do
 			local key = pad:GetAttribute("Item")
 			if key and plots:Near(player, pad, self.REACH) then
 				on = key

@@ -22,7 +22,9 @@ crops, golden } whenever it changes.
   FarmService:Act(player) -> what ("harvest" | "plant" | "water" | nil), how many
   FarmService:Sell(player, quiet?) -> Cash paid   (quiet: the conveyor's, which keeps what FarmService.hold(player)
                                            returns, { [crop] = n }: what the orders need)
-  FarmService:Worth(player) -> Cash, goods, products   what the basket would sell for
+  FarmService:Worth(player, bag?) -> Cash, goods, products   what the basket (or a bag like it) would sell for
+  FarmService.intake(player) -> true   (set by WarehouseService) the conveyor brings the basket to the warehouse
+                                           instead of the stand
   FarmService:Stow(player, key, n) -> how many fit     goods into the basket (eggs, milk...)
   FarmService:Take(player, n) -> ok                   n crops out of the basket (feeding)
   FarmService:Machines(player, profile)              the tractor and the conveyor (each tick)
@@ -277,6 +279,7 @@ function FarmService:Plant(player, n, key)
 	local speed = 1
 		+ Animals.boost(p, "grow", now())
 		+ (c.type == "fruit" and Animals.boost(p, "fruitGrow", now()) or 0)
+		+ Upgrades.stat(p.owned or {}, "grow", 0)
 	local need = c.grow * (sprinkler and Crops.WATER_CUT or 1) / speed
 	-- (the golden roll happens now, so the field shows a golden crop while it grows)
 	local golden = math.random() < FarmService.goldenChance(p)
@@ -393,17 +396,18 @@ end
 
 -- What the basket is worth at the stand: the crops (golden ones 10x; the pigs lift the vegetables) and the animals'
 -- products, all times the stand's price
-function FarmService:Worth(player)
+function FarmService:Worth(player, bag)
 	local p = profileOf(player)
 	if not p then
 		return 0, 0, 0
 	end
+	bag = bag or p.storage
 	local price = 1 + Upgrades.stat(p.owned or {}, "price", 0)
 	local veg = 1 + Animals.boost(p, "vegPrice", now())
 	local total, n, products = 0, 0, 0
-	for bag, count in p.storage do
-		local golden = string.sub(bag, 1, 1) == "*"
-		local key = golden and string.sub(bag, 2) or bag
+	for item, count in bag do
+		local golden = string.sub(item, 1, 1) == "*"
+		local key = golden and string.sub(item, 2) or item
 		local c = Crops[key]
 		local product = not c and Animals.product(key)
 		if c then
@@ -539,7 +543,7 @@ function FarmService:Machines(player, p)
 	local conveyor = Upgrades.stat(p.owned or {}, "autosell", nil)
 	if conveyor and t - m.conveyor >= conveyor / quick then
 		m.conveyor = t
-		if self:Carried(player) > 0 then
+		if self:Carried(player) > 0 and not (self.intake and self.intake(player)) then
 			self:Sell(player, true)
 		end
 	end

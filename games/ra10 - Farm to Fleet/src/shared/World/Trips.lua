@@ -6,6 +6,8 @@ a straight line, facing where it's going (or away, backing up); standing still i
 
   van     from its parking spot (nose to the shed): backs out, round to the loading door, backs up to it, loads,
           drives off down the road, comes back up the far lane and parks again (the order pays when it's home)
+  truck   a box truck: from its spot in the lot behind the warehouse, down the truck lane, backs up to the
+          warehouse's truck door, loads, off down the road, back the same way and backs into its spot
   pickup  the buyer's: comes up the far lane, noses in to the door, loads, backs out and drives away
 
   Trips.at(plotIndex, kind, f, park?) -> CFrame (world, on the ground), visible
@@ -20,6 +22,9 @@ local DOOR = PlotLayout.SPOTS.door
 local AWAY = 330 -- how far down the road a vehicle drives before it's gone
 local AT_DOOR = DOOR.Z - 7.5 -- a van's middle when its back is at the door
 local NOSE_IN = DOOR.Z - 6
+local TD = PlotLayout.SPOTS.truckDoor
+local LANE = PlotLayout.SPOTS.lane
+local AT_TRUCK_DOOR = TD.Z - 7 -- a truck's middle with its back at the warehouse door
 
 -- stylua: ignore start
 Trips.PLAN = {
@@ -38,6 +43,28 @@ Trips.PLAN = {
 		{ f = 0.97, park = true },
 		{ f = 1,    park = true },
 	},
+	-- a box truck (stage 4): from its spot in the lot (nose to the road), down the lane, backs up to the warehouse's
+	-- truck door, loads, out to the road and away; back up the far lane and the truck lane, and backs into its spot
+	truck = {
+		{ f = 0,    park = true },
+		{ f = 0.05, parkX = true,  z = 30 },
+		{ f = 0.09, x = LANE,      z = 26 },
+		{ f = 0.21, x = LANE,      z = -48 },
+		{ f = 0.24, x = TD.X,      z = -50 },
+		{ f = 0.28, x = TD.X,      z = AT_TRUCK_DOOR, rev = true },
+		{ f = 0.42, x = TD.X,      z = AT_TRUCK_DOOR },
+		{ f = 0.45, x = TD.X,      z = -50 },
+		{ f = 0.48, x = LANE,      z = -54 },
+		{ f = 0.56, x = LANE,      z = -112 },
+		{ f = 0.60, x = LANE + 12, z = NEAR },
+		{ f = 0.68, x = LANE + AWAY, z = NEAR, hide = true },
+		{ f = 0.78, x = LANE + AWAY, z = FAR },
+		{ f = 0.86, x = LANE + 8,  z = FAR },
+		{ f = 0.89, x = LANE,      z = -112 },
+		{ f = 0.95, x = LANE,      z = 28 },
+		{ f = 0.97, parkX = true,  z = 28 },
+		{ f = 1,    park = true, rev = true },
+	},
 	pickup = {
 		{ f = 0,    x = DOOR.X + AWAY, z = FAR },
 		{ f = 0.30, x = DOOR.X + 4,  z = FAR },
@@ -54,6 +81,8 @@ Trips.PLAN = {
 local function spot(k, park)
 	if k.park then
 		return park or PlotLayout.SPOTS.parks[1]
+	elseif k.parkX then
+		return Vector3.new((park or PlotLayout.SPOTS.parks[1]).X, 0, k.z)
 	end
 	return Vector3.new(k.x, 0, k.z)
 end

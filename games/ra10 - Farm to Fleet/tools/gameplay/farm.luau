@@ -34,7 +34,7 @@ local PlotLayout = Engine.require(tree.shared.World.PlotLayout)
 local ben = Engine.addPlayer("Ben", 902)
 Engine.advance(1)
 local pb = Data:Get(ben)
-pb.cash = 10 ^ 6
+pb.cash = 10 ^ 9
 for _, key in Upgrades.LIST do
 	Economy:AddXP(ben, 400, "render")
 	Upg:Buy(ben, key)
@@ -118,6 +118,32 @@ shot("farm_shed_overview", at(theirs, -20, -150, 40), at(theirs, 40, -66, 0), tr
 shot("farm_shed_door", at(theirs, 18, -100, 9), at(theirs, 44, -74, 4), true)
 shot("farm_order_board", at(theirs, 10, -96, 7), at(theirs, 8, -80, 5), true)
 shot("farm_shed_machines", at(theirs, 90, -100, 22), at(theirs, 50, -60, 2), true)
+-- Ben's stage 4: the warehouse full of pallets, forklifts on their loops, a truck at the door, the rest in the lot
+do
+	local pb2 = Data:Get(ben)
+	pb2.flow = pb2.flow or {}
+	pb2.flow.racked = 150
+	pb2.flow.staged = 4
+	pb2.flow.inbound = 5000
+	local items = Plots:Plot(ben).items
+	local t = Engine.workspace:GetServerTimeNow()
+	for _, d in items:GetDescendants() do
+		if d.Name == "Vehicle" and d:GetAttribute("Kind") == "truck" and d:GetAttribute("Park") == 1 then
+			pb2.flow.trucks = { ["1"] = { at = t - 0.33 * 45, length = 45, pallets = 6 } }
+			d:SetAttribute("TripStart", t - 0.33 * 45)
+			d:SetAttribute("TripLength", 45)
+		end
+	end
+	Engine.advance(3)
+end
+shot("warehouse_exterior", at(theirs, 96, -96, 46), at(theirs, 36, -24, 4), true)
+shot("warehouse_ops", at(theirs, 42, -45, 5), at(theirs, 42, -36, 9), true)
+Engine.advance(0.2)
+shot("warehouse_inside", at(theirs, 40, -33, 17), at(theirs, 36, 8, 0), true)
+Engine.advance(0.2)
+shot("warehouse_racks", at(theirs, 64, -6, 6), at(theirs, 20, -6, 4), true)
+shot("warehouse_lot", at(theirs, 90, 70, 30), at(theirs, 50, 30, 2), true)
+shot("farm_operation_overview", at(theirs, -70, -170, 120), at(theirs, 10, -10, 0), true)
 -- the street from above
 shot("farm_street", V3.new(0, 160, 300), V3.new(0, 0, 0), true)
 -- Ava, later: her own shed, the orders panel and today's contracts on screen, standing at PACK ORDERS
