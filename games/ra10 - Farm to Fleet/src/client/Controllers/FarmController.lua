@@ -1,13 +1,11 @@
 --[[
 Farming with one thumb (master plan §3, phone first). A big round button at the bottom right says what it will do
 for the soil you're standing by (Net "Farm" "act"; the server does all of it that's in reach): HARVEST when
-something there is ripe, PLANT when there's empty soil, WATER (once you have the well) when something's growing
-dry, TEND for a growing crop not tended yet (once a crop: it grows 40% faster and pays half its price there and
-then). It hides when there's nothing to do. With it, along the bottom of the screen, the crop picker: one chip per
+something there is ripe, PLANT when there's empty soil. It hides when there's nothing to do. With it, along the bottom of the screen, the crop picker: one chip per
 crop you've unlocked, in rows of five (Net "Farm" "crop"). Walk up to the soil and every crop near you shows its
 timer above it (0:04, READY!). On a PC, E (or a click away from the buttons) does the same as the button.
 
-  FarmController.action()   -> "harvest" | "plant" | "water" | "tend" | nil, what the button shows now
+  FarmController.action()   -> "harvest" | "plant" | nil, what the button shows now
   FarmController.press()    what the button does
   FarmController.refs
 ]]
@@ -33,8 +31,6 @@ FarmController.refs = refs
 local LOOK = {
 	harvest = { "HARVEST", Color3.fromRGB(240, 70, 70) },
 	plant = { "PLANT", Color3.fromRGB(70, 190, 90) },
-	water = { "WATER", Color3.fromRGB(60, 150, 235) },
-	tend = { "TEND", Color3.fromRGB(245, 165, 40) },
 }
 
 local function root()
@@ -65,7 +61,7 @@ function FarmController.action()
 		return nil
 	end
 	local now = workspace:GetServerTimeNow()
-	local ripe, empty, dry, growing = false, false, false, false
+	local ripe, empty = false, false
 	for n, tile in tiles() do
 		local d = tile.Position - r.Position
 		if Vector3.new(d.X, 0, d.Z).Magnitude <= FarmController.REACH then
@@ -74,10 +70,6 @@ function FarmController.action()
 				empty = true
 			elseif now - t.at >= t.need then
 				ripe = true
-			elseif not t.tended then
-				growing = true
-			elseif f.well and not t.watered then
-				dry = true
 			end
 		end
 	end
@@ -85,10 +77,6 @@ function FarmController.action()
 		return "harvest"
 	elseif empty then
 		return "plant"
-	elseif growing then
-		return "tend"
-	elseif dry then
-		return "water"
 	end
 	return nil
 end
@@ -119,13 +107,15 @@ local function paintPicker()
 	for i, key in list do
 		local c = Crops[key]
 		local col, rowN = (i - 1) % ROW, (i - 1) // ROW
+		-- (AUTO: the farm plants what the orders need, else the newest crop)
+		local on = c and (not f.auto and f.crop == key) or (not c and f.auto)
 		local chip = Theme.button({
 			Name = "Chip_" .. key,
-			Text = c.name,
+			Text = c and c.name or "AUTO",
 			Position = UDim2.fromOffset(col * 110, rowN * 40),
 			Size = UDim2.fromOffset(104, 34),
-			BackgroundColor3 = f.crop == key and c.color or C.white,
-			dark = f.crop ~= key,
+			BackgroundColor3 = on and (c and c.color or C.mustard) or C.white,
+			dark = not on,
 			Parent = refs.picker,
 		})
 		chip.Modal = true

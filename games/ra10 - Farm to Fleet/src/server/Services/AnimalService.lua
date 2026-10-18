@@ -19,6 +19,7 @@ fed, fedLeft, ready, cost, maxed, boost } }, at = the pen they're standing at (o
   AnimalService:Pens(player)          { [key] = { pad, folder } } the pens on their plot
   AnimalService:Feed(player, key) -> ok, why ("full" | "crops" | "none")
   AnimalService:Collect(player, key) -> how many
+  AnimalService:Tend(player, key) -> how many made   (TEND at the pen: one product each, every TEND_GAP)
   AnimalService:Belt(player) -> collected, fed      the conveyor's call at the pens
   AnimalService:Upgrade(player, key) -> ok, why ("max" | "cash" | "none")
   AnimalService:Push(player, at?)
@@ -28,6 +29,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Animals = require(ReplicatedStorage.Shared.Data.Animals)
+local Format = require(ReplicatedStorage.Shared.Format)
 local FarmBuilder = require(ReplicatedStorage.Shared.World.FarmBuilder)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PlotLayout = require(ReplicatedStorage.Shared.World.PlotLayout)
@@ -40,6 +42,7 @@ local AnimalService = {
 	REACH = 4,
 	TICK = 0.5,
 	WALK = 24,
+	TEND_GAP = 30, -- seconds between tends at a pen
 }
 
 local data, economy, plots, farm, upgrades, analytics
@@ -93,6 +96,7 @@ function AnimalService:Push(player, at)
 				maxed = st.level >= Animals.MAX_LEVEL,
 				boost = boostText(key, st, t),
 				product = Animals[key].productName,
+				tendLeft = st.tendedAt and math.max(0, math.ceil(self.TEND_GAP - (t - st.tendedAt))) or 0,
 			}
 		end
 	end
@@ -176,6 +180,28 @@ function AnimalService:Feed(player, key)
 end
 
 -- Every animal fed, no crops needed (the shop's Feed Everyone): how many
+-- TEND at the pen: a pat and a treat, and they make their product right there (one each, every TEND_GAP)
+function AnimalService:Tend(player, key)
+	local p = data:Get(player)
+	local st = p and stateOf(p, key)
+	local a = Animals[key]
+	if not st or not a.product then
+		return 0, "none"
+	end
+	local t = now()
+	if st.tendedAt and t - st.tendedAt < self.TEND_GAP then
+		return 0, "soon"
+	end
+	st.tendedAt = t
+	local made = Animals.count(st.level)
+	st.ready = math.min((st.ready or 0) + made, Animals.READY_CAP + made)
+	p.stats.tended = (p.stats.tended or 0) + 1
+	economy:AddXP(player, made, "tend")
+	self:Collect(player, key)
+	self.Changed:Fire(player, key, "tend")
+	return made
+end
+
 -- The conveyor's call at the pens: everything waiting into the basket, the hungry fed
 function AnimalService:Belt(player)
 	local p = data:Get(player)
@@ -296,12 +322,20 @@ function AnimalService:Init(registry)
 				Net.fire(player, "Toast", "They're full! Come back later", "info")
 			end
 			self:Push(player)
+		elseif what == "tend" then
+			local made, why = self:Tend(player, key)
+			if made > 0 then
+				Net.fire(player, "Toast", `They loved that! +{made} {Animals[key].productName}`, "good")
+			elseif why == "soon" then
+				Net.fire(player, "Toast", "They're happy! Tend them again in a bit", "info")
+			end
+			self:Push(player)
 		elseif what == "upgrade" then
 			local ok, why = self:Upgrade(player, key)
 			if not ok and why == "cash" then
 				local p = data:Get(player)
 				local short = Animals.upgradeCost(key, stateOf(p, key).level) - math.floor(p.cash)
-				Net.fire(player, "Toast", `Need {short} more Cash`, "info")
+				Net.fire(player, "Toast", `Need {Format.cash(short)} more`, "info")
 			end
 		end
 	end)

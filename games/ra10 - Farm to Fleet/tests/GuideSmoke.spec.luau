@@ -166,11 +166,11 @@ do
 	Engine.moveTo(player, tiles[1].Position + Vector3.new(0, 3, -4))
 	Engine.advance(0.3)
 	check(
-		"growing, not ripe: the guide says TEND, not HARVEST",
-		GuideC.state().text:find("TEND") ~= nil,
+		"growing, not ripe: the guide doesn't say HARVEST",
+		GuideC.state().text:find("HARVEST") == nil and GuideC.state().text:find("ripe") ~= nil,
 		GuideC.state().text
 	)
-	check("...the button says TEND", FarmC.action() == "tend" and FarmC.refs.act.Visible)
+	check("...no TEND or WATER button on the soil", FarmC.action() == nil and not FarmC.refs.act.Visible)
 	FarmC.paintTimers()
 	local timer = FarmC.refs.timers[1]
 	check(
@@ -178,18 +178,10 @@ do
 		timer and timer.gui.Enabled and timer.label.Text:match("0:0%d$") ~= nil,
 		timer and timer.label.Text
 	)
-	local before, cash = p.soil["1"].need, p.cash
-	check("...a TEND takes time off", Farm:Act(player) == "tend" and p.soil["1"].need < before, p.soil["1"].need)
-	check("...and pays Cash there and then", p.cash > cash, p.cash - cash)
-	Engine.advance(0.1)
-	check("...once a crop: no spamming it", Farm:Act(player) ~= "tend" and FarmC.action() ~= "tend")
-	for _, t in p.soil do
-		t.tended = true -- (the ones out of reach too)
-	end
-	Guide:Check(player)
-	Engine.advance(0.1)
-	check("...the guide: nearly ripe", GuideC.state().text:find("Nearly ripe") ~= nil, GuideC.state().text)
-	Engine.advance(4)
+	local r1 = p.soil["1"].at + p.soil["1"].need
+	local r3 = p.soil["3"].at + p.soil["3"].need
+	check("...the field ripens together", math.abs(r1 - r3) < 0.01, r3 - r1)
+	Engine.advance(r1 - Engine.workspace:GetServerTimeNow() + 0.5)
 	check("...and soon it's ripe: HARVEST", Farm:Ripe(player, 1) and FarmC.action() == "harvest")
 	FarmC.paintTimers()
 	check("...READY! over it", FarmC.refs.timers[1].label.Text:find("READY!") ~= nil, FarmC.refs.timers[1].label.Text)

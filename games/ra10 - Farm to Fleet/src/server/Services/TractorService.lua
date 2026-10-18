@@ -1,5 +1,5 @@
 --[[
-The tractor (the "autoharvest" upgrade): it drives itself round the fields, to the nearest ripe (or empty) patch,
+The tractor (the "autoharvest" upgrade): it drives itself round the fields, to the nearest patch with work (ripe or empty),
 harvests and replants a swath there (SWATH studs round it), and on to the next; with nothing to do it parks by the
 barn. Its moves are model attributes (From, To, Depart, Arrive, in world space) for every client to animate
 (TractorController); the work happens on the server when it gets there. A faster tractor upgrade (a lower `value`)
@@ -123,17 +123,16 @@ local function work(player, at, r)
 	return done
 end
 
--- The patch it goes to next: the nearest ripe one, else the nearest empty one
+-- The patch it goes to next: the nearest one with work (ripe, or empty), so it sweeps the field instead of chasing
 local function nextPatch(player, from)
-	local best, bestD, bestRank
+	local best, bestD
 	for n in farm:Tiles(player) do
 		local ph = farm:Phase(player, n)
-		local rank = ph == 3 and 1 or (ph == nil and 2 or nil)
-		if rank then
+		if ph == 3 or ph == nil then
 			local t = PlotLayout.soilTile(n)
 			local d = Vector3.new(t.X - from.X, 0, t.Z - from.Z).Magnitude
-			if not best or rank < bestRank or (rank == bestRank and d < bestD) then
-				best, bestD, bestRank = t, d, rank
+			if not best or d < bestD then
+				best, bestD = t, d
 			end
 		end
 	end

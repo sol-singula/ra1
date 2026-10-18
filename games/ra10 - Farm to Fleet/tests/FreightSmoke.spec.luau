@@ -192,6 +192,12 @@ end
 p.flow.racked = 0
 
 -- Special Orders ------------------------------------------------------------------------------------------------------------
+-- (the farm runs itself now: park the tractor and empty the stock, so only what this test hands over is there)
+p.owned.tractor = nil
+p.owned.conveyor = nil
+p.soil = {}
+table.clear(p.stock)
+table.clear(p.storage)
 check("no special yet (the clock's far off)", Special:Current(player) == nil)
 p.orders.specialIn = 2
 Engine.advance(3.5)

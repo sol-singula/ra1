@@ -49,7 +49,7 @@ local LIST = {
 	-- Stage 1: the Shack
 	{ key = "soil4",      name = "More Soil",       stage = 1, cost = 10,  kind = "soil",      value = 4,  level = 1 },
 	{ key = "soil5",      name = "More Soil",       stage = 1, cost = 20,  kind = "soil",      value = 5,  level = 1 },
-	{ key = "well",       name = "Water Well",      stage = 1, cost = 30,  kind = "water",     value = 1,  level = 1 },
+	{ key = "well",       name = "Water Well",      stage = 1, cost = 30,  kind = "grow",      value = 0.25, level = 1 },
 	{ key = "soil6",      name = "More Soil",       stage = 1, cost = 45,  kind = "soil",      value = 6,  level = 2 },
 	{ key = "wheelbarrow", name = "Wheelbarrow",    stage = 1, cost = 70,  kind = "carry",     value = 60, level = 2 },
 	{ key = "fence",      name = "Picket Fence",    stage = 1, cost = 90,  kind = "decor",     value = 0,  level = 2 },
@@ -177,8 +177,8 @@ function Upgrades.blurb(u)
 		return `+{math.floor(u.value * 100 + 0.5)}% sale price`
 	elseif u.kind == "golden" then
 		return "more golden crops"
-	elseif u.kind == "water" then
-		return "water: 2x growth"
+	elseif u.kind == "grow" then
+		return `crops grow +{math.floor(u.value * 100 + 0.5)}% faster`
 	elseif u.kind == "sprinkler" then
 		return "auto-water"
 	elseif u.kind == "stage" then

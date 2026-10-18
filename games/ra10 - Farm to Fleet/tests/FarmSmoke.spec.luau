@@ -43,6 +43,7 @@ local Guide = service("GuideService")
 local Data = service("PlayerDataService")
 local Economy = service("EconomyService")
 local Upgrades = Engine.require(tree.shared.Data.Upgrades)
+local Crops = Engine.require(tree.shared.Data.Crops)
 local GuideData = Engine.require(tree.shared.Data.Guide)
 local PlotLayout = Engine.require(tree.shared.World.PlotLayout)
 
@@ -197,31 +198,25 @@ for _ = 1, 3 do
 	end
 end
 check("the well is bought", p.owned.well ~= nil, p.owned.well)
-stand(player, tiles[1].Position + Vector3.new(0, 0, -4))
--- (harvest anything ripe first, then plant, then water)
-for _ = 1, 3 do
-	local a = FarmC.action()
-	if a == "water" then
-		break
-	end
-	FarmC.press()
-	Engine.advance(0.3)
+check("...it makes crops grow faster", Upgrades.stat(p.owned, "grow", 0) >= 0.25)
+-- (a field planted together ripens together: one big harvest)
+for n = 1, 3 do
+	p.soil[tostring(n)] = nil
 end
-check("growing and dry: WATER", FarmC.action() == "water", FarmC.action())
-local t = p.soil["1"]
-local before = t and t.need
-FarmC.press()
-Engine.advance(0.3)
-check("watering cuts the wait", t and t.watered and t.need < before, t and t.need)
-check("...and darkens the soil", tiles[1].Color ~= Constants.PALETTE.soil)
-Economy:AddXP(player, 200, "test")
+Farm:Plant(player, 1)
+Engine.advance(0.7)
+Farm:Plant(player, 2)
+Engine.advance(0.6)
+Farm:Plant(player, 3)
+local r1 = p.soil["1"].at + p.soil["1"].need
+local r3 = p.soil["3"].at + p.soil["3"].need
+check("planted a moment apart, they ripen together", math.abs(r1 - r3) < 0.01, r3 - r1)
+check("no WATER or TEND on the soil", FarmC.action() ~= "water" and FarmC.action() ~= "tend")
+Economy:AddXP(player, 2000, "test")
 Engine.advance(0.5)
-check("a level unlocks carrots", (p.level or 1) >= 2 and table.find(lastFired("Farm", player).crops, "carrot") ~= nil)
-check("...the crop picker has it", FarmC.refs.chips.carrot ~= nil)
-check("...shown with the button (by the soil)", FarmC.refs.picker.Visible == FarmC.refs.act.Visible)
-FarmC.refs.chips.strawberry.Activated:Fire()
-Engine.advance(0.3)
-check("the picker picks", p.settings.crop == "strawberry")
+check("level 4 unlocks carrots", (p.level or 1) >= 4 and Crops.best(p.level) ~= "strawberry", p.level)
+check("...and the farm plants the newest crop", Farm:Chosen(player) == Crops.best(p.level))
+check("...no crop picker until the warehouse", #lastFired("Farm", player).crops == 0 and not FarmC.refs.picker.Visible)
 -- everything in the chapter can be bought, in order
 local bought = 0
 for _, key in Upgrades.LIST do

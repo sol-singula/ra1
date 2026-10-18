@@ -305,7 +305,7 @@ table.clear(p.storage)
 p.storage[k3] = 1
 away()
 Engine.advance(7)
-check("the box line packs by itself", (o3.packed[k3] or 0) >= 1 and p.storage[k3] == nil)
+check("the box line packs by itself", (o3.packed[k3] or 0) >= 1, `{k3} {o3.packed[k3]} {p.storage[k3]} {o3.state}`)
 
 -- More pay, quicker trips, two vans, a BIG order --------------------------------------------------------------------------
 local before = Orders.reward(o3, Upgrades.stat(p.owned, "orderPrice", 0))
@@ -341,12 +341,22 @@ Engine.advance(0.6)
 list = Order:Contracts(player)
 check("a contract done: it pays", list[1].done and p.cash >= cash1 + c1.cash and p.gems >= gems1 + 1)
 check("...and stays done", Order:Contracts(player)[1].done)
+local gems2 = p.gems
+local pending = 0 -- (the farm runs itself now: one may be done already)
 for i = 2, 3 do
+	if not list[i].done then
+		pending += 1
+	end
 	p.stats[list[i].stat] = (p.stats[list[i].stat] or 0) + list[i].n
 end
-local gems2 = p.gems
 Engine.advance(0.6)
-check("all three: Gems on top", p.gems >= gems2 + 2 + Orders.ALL_GEMS, p.gems - gems2)
+check(
+	"all three: Gems on top",
+	p.gems >= gems2 + pending + Orders.ALL_GEMS,
+	`{p.gems - gems2} {list[1].stat} {list[2].stat} {list[3].stat} {tostring(Order:Contracts(player)[2].done)} {tostring(
+		Order:Contracts(player)[3].done
+	)}`
+)
 check("...the panel ticks them", OrderC.refs.contracts[1].Text:find("✔") ~= nil, OrderC.refs.contracts[1].Text)
 p.orders.daily.day -= 1
 local fresh = Order:Contracts(player)

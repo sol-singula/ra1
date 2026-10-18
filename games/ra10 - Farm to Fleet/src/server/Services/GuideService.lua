@@ -105,8 +105,7 @@ local function earning(player, p, step)
 	return e
 end
 
--- A step at the soil when nothing there is ripe or empty: TEND what isn't tended yet (it pays, and grows faster),
--- else it's nearly ripe
+-- A step at the soil when nothing there is ripe or empty: plant the rest meanwhile, else it's nearly ripe
 local function tending(player, step)
 	if not step or (step.target ~= "soil" and step.target ~= "soil1") or step.done and step.done.kind == "planted" then
 		return step
@@ -115,16 +114,13 @@ local function tending(player, step)
 	if not refs then
 		return step
 	end
-	local empty, untended = false, false
-	local p = data:Get(player)
+	local empty = false
 	for n in refs.tiles do
 		local ph = farm:Phase(player, n)
 		if (step.target ~= "soil1" or n == 1) and ph == 3 then
 			return step
 		end
 		empty = empty or ph == nil
-		local t = p and p.soil and p.soil[tostring(n)]
-		untended = untended or (t ~= nil and not t.tended)
 	end
 	if step.key == "plant1" or step.key == "carrot" or (empty and step.target == "soil") then
 		return step
@@ -137,15 +133,10 @@ local function tending(player, step)
 		e.button = "act"
 		return e
 	end
-	if untended then
-		e.text = "Growing! Tap TEND: Cash now, and it grows faster"
-		e.button = "act"
-	else
-		e.text = e.goal and `Nearly ripe! {Format.cash(e.goal.need - e.goal.have)} more for {e.goal.name}`
-			or "Nearly ripe! Wait by your crops"
-		e.button = nil
-	end
-	e.tend = true
+	e.text = e.goal and `Nearly ripe! {Format.cash(e.goal.need - e.goal.have)} more for {e.goal.name}`
+		or "Nearly ripe! They all ripen together"
+	e.button = nil
+	e.waiting = true
 	return e
 end
 

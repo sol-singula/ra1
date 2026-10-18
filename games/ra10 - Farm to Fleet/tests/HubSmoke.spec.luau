@@ -169,8 +169,8 @@ check(
 Engine.advance(1)
 local lot1 = at(SPOTS.dockLot[1].X, SPOTS.dockLot[1].Z)
 check(
-	"...parked in the court",
-	(trucks[1]:GetPivot().Position - lot1).Magnitude < 1,
+	"...parked in the court (or out with the farm's excess: it runs itself)",
+	(trucks[1]:GetPivot().Position - lot1).Magnitude < 1 or p.flow.trucks["1"],
 	(trucks[1]:GetPivot().Position - lot1).Magnitude
 )
 p.flow.racked = 12

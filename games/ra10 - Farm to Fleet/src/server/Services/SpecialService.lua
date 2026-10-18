@@ -183,15 +183,11 @@ function SpecialService:Pack(player)
 	if not s or s.state ~= "open" then
 		return 0
 	end
-	local storage = p.storage or {}
 	local total = 0
 	for key in s.items do
-		local n = math.min(left(s, key), storage[key] or 0)
+		-- (from the basket and the stock)
+		local n = farm:Remove(player, key, math.min(left(s, key), farm:Have(player, key)))
 		if n > 0 then
-			storage[key] -= n
-			if storage[key] <= 0 then
-				storage[key] = nil
-			end
 			s.packed[key] = (s.packed[key] or 0) + n
 			total += n
 		end

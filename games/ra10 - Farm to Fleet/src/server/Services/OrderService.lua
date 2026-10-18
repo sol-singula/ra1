@@ -156,18 +156,13 @@ function OrderService:Pack(player, quiet)
 	if not p or not opened(p) then
 		return 0
 	end
-	local storage = p.storage or {}
-	-- (a Special Order first: SpecialService)
+	-- (a Special Order first: SpecialService; then from the basket and the stock)
 	local total, readied = self.packFirst and self.packFirst(player) or 0, {}
 	for _, order in ordersOf(p).live do
 		if order.state == "open" then
 			for key in order.items do
-				local n = math.min(left(order, key), storage[key] or 0)
+				local n = farm:Remove(player, key, math.min(left(order, key), farm:Have(player, key)))
 				if n > 0 then
-					storage[key] -= n
-					if storage[key] <= 0 then
-						storage[key] = nil
-					end
 					order.packed[key] = (order.packed[key] or 0) + n
 					total += n
 				end

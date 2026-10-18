@@ -38,7 +38,8 @@ local function defaults()
 		stage = 1, -- 1 shack, 2 farm, 3 packing shed, 4 warehouse, 5 distribution hub (master plan §4)
 		owned = {}, -- [upgradeKey] = level: every buy-pad and machine bought (UpgradeService)
 		soil = {}, -- [tileIndex] = { crop, plantedAt } what's growing (FarmService; timers run while away)
-		storage = {}, -- [cropKey] = n harvested and not sold yet
+		storage = {}, -- [cropKey] = n harvested and not sold yet (the basket)
+		stock = {}, -- [cropKey] = n the conveyor brought in (FarmService)
 		animals = {}, -- [penKey] = { level, fedAt, n } (AnimalService)
 		orders = { done = 0, daily = { day = 0, done = {} }, weekly = { week = 0, parts = {} } }, -- (OrderService)
 		guide = { chapter = 1, step = 1, done = false }, -- the guide's place (GuideService): 100% of the game

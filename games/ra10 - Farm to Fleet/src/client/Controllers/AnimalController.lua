@@ -76,9 +76,13 @@ local function paint()
 		refs.fed.TextColor3 = C.red
 	end
 	refs.ready.Text = pen.product and `{pen.product} waiting: {pen.ready or 0}` or ""
-	refs.upgrade.Text = pen.maxed and "MAX LEVEL" or `UPGRADE · {Format.num(pen.cost or 0)}`
+	refs.upgrade.Text = pen.maxed and "MAX LEVEL" or `UPGRADE {Format.cash(pen.cost or 0)}`
 	refs.upgrade.Active = not pen.maxed
 	refs.feed.Visible = not pen.fed
+	local wait = pen.tendLeft or 0
+	refs.tend.Visible = pen.product ~= nil
+	refs.tend.Text = wait > 0 and `TEND {wait}s` or "TEND"
+	refs.tend.BackgroundColor3 = wait > 0 and Color3.fromRGB(160, 160, 160) or Color3.fromRGB(245, 165, 40)
 end
 
 local function buildPanel(gui)
@@ -130,15 +134,30 @@ local function buildPanel(gui)
 		Name = "Feed",
 		Text = "FEED",
 		Position = UDim2.fromOffset(14, 128),
-		Size = UDim2.fromOffset(110, 52),
+		Size = UDim2.fromOffset(88, 52),
 		BackgroundColor3 = Color3.fromRGB(80, 190, 90),
 		Parent = panel,
 	})
+	local tend = Theme.button({
+		Name = "Tend",
+		Text = "TEND",
+		Position = UDim2.fromOffset(108, 128),
+		Size = UDim2.fromOffset(96, 52),
+		BackgroundColor3 = Color3.fromRGB(245, 165, 40),
+		Parent = panel,
+	})
+	tend.Modal = true
+	tend.Activated:Connect(function()
+		if state.at then
+			Net.send("Animal", "tend", state.at)
+		end
+	end)
+	refs.tend = tend
 	local up = Theme.button({
 		Name = "Upgrade",
 		Text = "UPGRADE",
-		Position = UDim2.fromOffset(132, 128),
-		Size = UDim2.new(1, -146, 0, 52),
+		Position = UDim2.fromOffset(210, 128),
+		Size = UDim2.new(1, -224, 0, 52),
 		BackgroundColor3 = C.mustard,
 		Parent = panel,
 	})

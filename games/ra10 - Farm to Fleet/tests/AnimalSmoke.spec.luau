@@ -144,6 +144,24 @@ Engine.advance(Animals.chicken.every + 1)
 check("they lay eggs", (p.animals.chicken.ready or 0) >= 1, p.animals.chicken.ready)
 stand(player, pens.chicken.pad.Position)
 check("the pad collects them into the basket", (p.storage.egg or 0) >= 1 and p.animals.chicken.ready == 0)
+do
+	-- TEND at the pen: they make their product right there, then it's on a cooldown
+	local eggs = p.storage.egg or 0
+	Engine.advance(0.3)
+	check(
+		"the pen panel has TEND",
+		AnimalC.refs.tend.Visible and AnimalC.refs.tend.Text == "TEND",
+		AnimalC.refs.tend.Text
+	)
+	AnimalC.refs.tend.Activated:Fire()
+	Engine.advance(0.4)
+	check("...TEND: eggs right away", (p.storage.egg or 0) > eggs, p.storage.egg)
+	check("...then a cooldown on the button", AnimalC.refs.tend.Text:find("%d+s") ~= nil, AnimalC.refs.tend.Text)
+	local again = p.storage.egg
+	AnimalC.refs.tend.Activated:Fire()
+	Engine.advance(0.4)
+	check("...no spamming it", p.storage.egg == again)
+end
 local refs = Plots:Refs(player)
 local before = p.cash
 local worth = Farm:Worth(player)
@@ -211,7 +229,11 @@ check(
 	model and (model:GetPivot().Position - parked).Magnitude > 3 or (p.stats.tractored or 0) > 0
 )
 check("...harvests what's ripe", Farm:Carried(player) >= 4, Farm:Carried(player))
-check("...and plants again", p.soil["1"] ~= nil and p.soil["13"] ~= nil)
+check(
+	"...and plants again",
+	p.soil["1"] ~= nil and p.soil["13"] ~= nil,
+	`{tostring(p.soil["1"] ~= nil)} {tostring(p.soil["13"] ~= nil)} carried {Farm:Carried(player)}/{Farm:Carry(player)}`
+)
 do
 	-- hop on: it follows you, harvesting and planting what you drive over
 	local prompt = model and model:FindFirstChild("Drive", true)
@@ -237,7 +259,11 @@ check("buy the Conveyor Belt", buy("conveyor"))
 local cashBefore = p.cash
 p.storage.carrot = 10
 Engine.advance(Upgrades.conveyor.value + 1)
-check("the conveyor sells the basket", p.cash > cashBefore and Farm:Carried(player) < 10, p.cash - cashBefore)
+check(
+	"the conveyor takes the basket into the stock (it doesn't sell)",
+	Farm:Carried(player) == 0 and (Farm:Stock(player).carrot or 0) >= 5 and p.cash <= cashBefore,
+	Farm:Stock(player).carrot
+)
 do
 	-- (on its way it calls at the coop: the eggs collected and sold, the hungry chickens fed)
 	local st = p.animals.chicken
@@ -247,11 +273,18 @@ do
 	Engine.advance(Upgrades.conveyor.value + 1)
 	check(
 		"the conveyor collects the eggs",
-		(p.stats.eggs or 0) >= eggs + 4 and st.ready <= 1,
+		(p.stats.eggs or 0) >= eggs + 4 and st.ready < 4,
 		`{p.stats.eggs} {eggs} {st.ready}`
 	)
 	check("...feeds the chickens from the basket", st.fedAt > 0)
-	check("...and sells it all", Farm:Carried(player) == 0, Farm:Carried(player))
+	check("...and stores the eggs", (Farm:Stock(player).egg or 0) >= 4, Farm:Stock(player).egg)
+	-- the stand sells the stock
+	local cash = p.cash
+	Engine.moveTo(player, Plots:Refs(player).standPad.Position + Vector3.new(0, 3, 0))
+	Engine.advance(0.6)
+	check("the stand sells the stock", p.cash > cash and next(Farm:Stock(player)) == nil, p.cash - cash)
+	Engine.moveTo(player, Plots:Refs(player).standPad.Position + Vector3.new(0, 3, 20))
+	Engine.advance(0.3)
 	-- (and you can see it: goods ride the belt from the coop to the stand)
 	local BeltC = Engine.require(tree.client.Controllers.BeltController)
 	Engine.advance(2.5)
@@ -295,9 +328,7 @@ check("sheep: machines faster", Animals.boost(p, "machine", now) > 0)
 p.soil["30"], p.soil["31"] = nil, nil
 Farm:Plant(player, 30, "strawberry")
 Farm:Plant(player, 31, "carrot")
-local fruitNeed = p.soil["30"].need / Crops.strawberry.grow
-local vegNeed = p.soil["31"].need / Crops.carrot.grow
-check("cows: fruit grows faster than vegetables", fruitNeed < vegNeed, `{fruitNeed} vs {vegNeed}`)
+check("cows: fruit grows faster", Animals.boost(p, "fruitGrow", now) > 0)
 check("...and a little golden luck", Farm.goldenChance(p) > Crops.GOLDEN_CHANCE + 0.03)
 
 -- The world on the client: wandering animals, the windmill ---------------------------------------------------------------

@@ -26,11 +26,11 @@ Animals.READY_CAP = 12 -- products a pen holds before it stops making more
 local rgb = Color3.fromRGB
 -- stylua: ignore start
 local LIST = {
-	{ key = "chicken", name = "Chicken", pen = "chickenCoop", product = "egg",     productName = "Eggs",     value = 20,  every = 20, boost = { kind = "grow",      per = 0.03 },  color = rgb(250, 250, 245) },
-	{ key = "pig",     name = "Pig",     pen = "pigPen",      product = "truffle", productName = "Truffles", value = 60,  every = 30, boost = { kind = "vegPrice",  per = 0.03 },  color = rgb(250, 170, 180) },
-	{ key = "sheep",   name = "Sheep",   pen = "sheepPen",    product = "wool",    productName = "Wool",     value = 120,  every = 40, boost = { kind = "machine",   per = 0.03 },  color = rgb(245, 245, 240) },
-	{ key = "cow",     name = "Cow",     pen = "cowBarn",     product = "milk",    productName = "Milk",     value = 220, every = 50, boost = { kind = "fruitGrow", per = 0.03 },  color = rgb(250, 250, 250) },
-	{ key = "goat",    name = "Goat",    pen = "goatPen",     product = "cheese",  productName = "Cheese",   value = 440, every = 60, boost = { kind = "orders",    per = 0.02 },  color = rgb(225, 215, 200) },
+	{ key = "chicken", name = "Chicken", pen = "chickenCoop", product = "egg",     productName = "Eggs",     value = 40,  every = 20, boost = { kind = "grow",      per = 0.03 },  color = rgb(250, 250, 245) },
+	{ key = "pig",     name = "Pig",     pen = "pigPen",      product = "truffle", productName = "Truffles", value = 120,  every = 30, boost = { kind = "vegPrice",  per = 0.03 },  color = rgb(250, 170, 180) },
+	{ key = "sheep",   name = "Sheep",   pen = "sheepPen",    product = "wool",    productName = "Wool",     value = 240,  every = 40, boost = { kind = "machine",   per = 0.03 },  color = rgb(245, 245, 240) },
+	{ key = "cow",     name = "Cow",     pen = "cowBarn",     product = "milk",    productName = "Milk",     value = 440, every = 50, boost = { kind = "fruitGrow", per = 0.03 },  color = rgb(250, 250, 250) },
+	{ key = "goat",    name = "Goat",    pen = "goatPen",     product = "cheese",  productName = "Cheese",   value = 880, every = 60, boost = { kind = "orders",    per = 0.02 },  color = rgb(225, 215, 200) },
 	{ key = "horse",   name = "Horse",   pen = "stable",      product = nil,       productName = nil,        value = 0,   every = 0,  boost = { kind = "speed",     per = 0.02 },  color = rgb(150, 100, 60) },
 }
 -- stylua: ignore end

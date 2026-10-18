@@ -2,8 +2,9 @@
 The warehouse at work (master plan §13.1, §13.2; Data/Flow): once it stands, the farm's produce runs through four
 stations and the slowest one sets the pace.
 
-  intake   the conveyor brings the basket to the warehouse instead of the stand (FarmService.intake), leaving what
-           the open orders need; it stops while Flow.INBOUND_MAX pallets' worth of crates are waiting
+  intake   each conveyor run brings the stock's excess in (FarmService.intake): what the open orders keep stays
+           in the stock, ready for them (the active orders), the rest is palletised and the forklifts and trucks
+           sell it; it stops while Flow.INBOUND_MAX pallets' worth of crates are waiting
   pack     the lines box the crates at Flow.rates().pack; every Flow.PALLET of boxes is a pallet on the staging
            floor (packing stops while Flow.STAGE_MAX wait there)
   store    each forklift racks a pallet every Flow.cycle seconds, while there's a free slot
@@ -57,7 +58,7 @@ local WarehouseService = {
 	MAX_STEP = 5, -- seconds one tick may catch up (the long gaps are Phase G's offline earnings)
 }
 
-local data, economy, plots, farm, upgrades, orders, analytics
+local data, economy, plots, farm, upgrades, analytics
 local shown = {} -- [player] = { racked, staged, inbound, busy, screen }: what the world shows now
 local refs = {} -- [player] = { rack = { pallet models in fill order }, staged = {}, inbound = {}, forklifts = {} }
 local lastAt = {} -- [player] = when the stations last ran
@@ -366,7 +367,7 @@ function WarehouseService:Step(player, p, dt)
 	return changed
 end
 
--- The conveyor's load: the basket (less what the orders need) into the warehouse's crates
+-- The conveyor's load: the stock's excess (what the orders don't keep) into the warehouse's crates
 function WarehouseService:Intake(player)
 	local p = data:Get(player)
 	if not p or not opened(p) then
@@ -376,23 +377,14 @@ function WarehouseService:Intake(player)
 	if f.inbound >= Flow.INBOUND_MAX * Flow.PALLET then
 		return true -- (full: the basket waits, and the bottleneck shows it)
 	end
-	local keep = orders and orders:Needs(player) or {}
-	local bag = {}
-	for key, n in p.storage or {} do
-		local move = n - math.min(n, keep[key] or 0)
-		if move > 0 then
-			bag[key] = move
-		end
-	end
+	-- (only the excess: what the open orders keep stays in the stock, ready for them)
+	local bag = farm:Excess(player)
 	local value = farm:Worth(player, bag)
 	if value <= 0 then
 		return true
 	end
 	for key, n in bag do
-		p.storage[key] -= n
-		if p.storage[key] <= 0 then
-			p.storage[key] = nil
-		end
+		farm:Remove(player, key, n)
 	end
 	f.inbound += value
 	p.stats.intake = (p.stats.intake or 0) + value
@@ -451,7 +443,6 @@ function WarehouseService:Init(registry)
 	plots = registry.PlotService
 	farm = registry.FarmService
 	upgrades = registry.UpgradeService
-	orders = registry.OrderService
 	analytics = registry.AnalyticsService
 	farm.intake = function(player)
 		return self:Intake(player)
