@@ -35,6 +35,7 @@ local deco = Shapes.deco
 local INK = Color3.fromRGB(30, 30, 34)
 local WHITE = Color3.fromRGB(250, 250, 248)
 local SPOTS = PlotLayout.SPOTS
+local SOIL_DARK = Color3.fromRGB(100, 68, 46)
 
 -- Words -----------------------------------------------------------------------------------------------------------
 function FarmBuilder.sign(part, title, line, color, face)
@@ -408,6 +409,119 @@ local function stand(L, color)
 	return pad
 end
 
+-- The little things that make it a farm: flower beds by the shack, a stepping-stone path from the spawn to the soil,
+-- hay bales, barrels and crates by the stand, bushes along the fence, a bench, a water trough, a lantern post
+local FLOWERS = {
+	Color3.fromRGB(240, 90, 140),
+	Color3.fromRGB(255, 205, 40),
+	Color3.fromRGB(250, 250, 250),
+	Color3.fromRGB(150, 110, 230),
+}
+local function bush(L, x, z, r)
+	local leaf = deco({ color = Color3.fromRGB(70, 150, 70), name = "Bush" })
+	local b = L:box(x, r * 0.55, z, r * 1.4, r * 1.1, r * 1.4, leaf)
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = b
+	local b2 = L:box(
+		x + r * 0.5,
+		r * 0.45,
+		z - r * 0.3,
+		r,
+		r * 0.9,
+		r,
+		deco({ color = Color3.fromRGB(95, 175, 85), name = "Bush" })
+	)
+	mesh:Clone().Parent = b2
+end
+
+function FarmBuilder.decor(L, plot)
+	local S = SPOTS
+	-- flower beds along the shack's front
+	local sx, sz = S.shack.X, S.shack.Z - 5 - 0.6
+	for i = 0, 5 do
+		local x = sx + 2 + i * 1.1
+		L:block(x, sz - 1.2, 1, 1, 0.35, deco({ color = SOIL_DARK, name = "Bed" }), 0)
+		L:box(x, 0.75, sz - 1.2, 0.35, 0.6, 0.35, deco({ color = Color3.fromRGB(70, 150, 60), name = "Stem" }))
+		L:box(x, 1.15, sz - 1.2, 0.6, 0.35, 0.6, deco({ color = FLOWERS[i % #FLOWERS + 1], name = "Flower" }))
+	end
+	-- stepping stones from the spawn to the soil
+	local a = Vector3.new(S.spawn.X, 0, S.spawn.Z + 2)
+	local b = Vector3.new(S.soil.X + 6, 0, S.soil.Z - 5)
+	for i = 0, 6 do
+		local p = a:Lerp(b, i / 6)
+		L:block(
+			p.X + (i % 2 == 0 and 0.4 or -0.4),
+			p.Z,
+			1.8,
+			1.4,
+			0.18,
+			deco({ color = i % 2 == 0 and P.concrete or P.concreteDark, name = "Stone" }),
+			0.22
+		)
+	end
+	-- by the stand: hay bales, barrels, a stack of crates
+	local st = S.stand
+	for i = 0, 1 do
+		L:block(
+			st.X - 8,
+			st.Z + 1 - i * 2.6,
+			3,
+			2.2,
+			1.8,
+			{ color = Color3.fromRGB(225, 190, 90), name = "HayBale" },
+			0
+		)
+		L:block(
+			st.X - 8,
+			st.Z + 1 - i * 2.6,
+			3.05,
+			0.2,
+			1.85,
+			deco({ color = Color3.fromRGB(170, 130, 60), name = "Twine" }),
+			0
+		)
+	end
+	L:block(st.X - 8, st.Z - 0.3, 2.8, 2, 1.6, { color = Color3.fromRGB(225, 190, 90), name = "HayBale" }, 1.8)
+	for i = 0, 1 do
+		local x, z = st.X + 1.5 + i * 2.3, st.Z + 4.2
+		L:cyl(x, 1.1, z, 2.2, 1.8, { color = Color3.fromRGB(140, 90, 50), name = "Barrel" }, "y")
+		for _, y in { 0.4, 1.8 } do
+			L:cyl(x, y, z, 0.18, 1.86, deco({ color = P.steel, name = "Hoop" }), "y")
+		end
+	end
+	for i = 0, 2 do
+		L:block(
+			st.X - 9 + (i % 2) * 1.6,
+			st.Z + 4,
+			1.5,
+			1.5,
+			1.3,
+			deco({ color = Color3.fromRGB(170, 120, 70), name = "Crate" }),
+			i == 2 and 1.3 or 0
+		)
+	end
+	-- a bench and a lantern post on the drive, a water trough by the well
+	local bx, bz = S.mailbox.X - 5, S.mailbox.Z + 4
+	L:block(bx, bz, 4, 1.2, 0.25, { color = P.wood, name = "Bench" }, 1.2)
+	L:box(bx, 2.1, bz + 0.55, 4, 1, 0.2, deco({ color = P.wood, name = "BenchBack" }))
+	for _, dx in { -1.7, 1.7 } do
+		L:block(bx + dx, bz, 0.3, 1, 1.2, deco({ color = INK, name = "BenchLeg" }), 0)
+	end
+	local lx, lz = S.mailbox.X + 3, S.mailbox.Z
+	L:block(lx, lz, 0.4, 0.4, 6, { color = INK, name = "LanternPost" }, 0)
+	L:box(lx, 6.4, lz, 1, 1.1, 1, deco({ color = P.sunflower, material = Enum.Material.Neon, name = "Lantern" }))
+	L:box(lx, 7.1, lz, 1.3, 0.3, 1.3, deco({ color = INK, name = "LanternCap" }))
+	local w = S.well
+	L:block(w.X + 6, w.Z + 1, 4, 1.6, 1.2, { color = P.wood, name = "Trough" }, 0)
+	L:block(w.X + 6, w.Z + 1, 3.5, 1.1, 0.2, deco({ color = P.water, name = "TroughWater" }), 1.05)
+	-- bushes along the back of the shack's yard and by the drive
+	for _, b2 in { { -76, -96 }, { -76, -84 }, { -66, -62 }, { -48, -60 }, { 8, -100 }, { -44, -110 } } do
+		bush(L, b2[1], b2[2], 1.6)
+	end
+	_ = plot
+end
+
 function FarmBuilder.base(plot)
 	local L = Shapes.new(plot.items, plot.cf)
 	shack(L, plot.color)
@@ -419,6 +533,7 @@ function FarmBuilder.base(plot)
 	L:block(m.X, m.Z, 0.4, 0.4, 3.4, { color = P.wood, name = "MailPost" }, 0)
 	L:box(m.X, 3.9, m.Z, 1.2, 1, 1.8, deco({ color = plot.color, name = "Mailbox" }))
 	L:block(-46, -95, 5, 30, 0.12, deco({ color = Color3.fromRGB(160, 120, 84), name = "Track" }), 0.24)
+	FarmBuilder.decor(L, plot)
 	-- the buy-pads
 	refs.pads, refs.rims = {}, {}
 	for slot, at in SPOTS.pads do
@@ -465,7 +580,267 @@ function FarmBuilder.water(tile, wet)
 	tile.Color = wet and P.soilWet or P.soil
 end
 
--- A crop on a tile: phase 0 (a seed mound) to 3 (ripe); golden ones glow
+-- A crop on a tile: phase 0 (a seed mound with a sprout) to 3 (ripe); golden ones glow. Each crop has its own plant,
+-- built from turned leaves, round fruit (sphere meshes) and stems, so a field reads at a glance: strawberry
+-- rosettes with white flowers then red berries, feathery carrot tops over orange shoulders, tall corn with arching
+-- leaves, tassels and cobs, staked tomato vines, round blueberry bushes, a fruit tree a tile (apples, oranges),
+-- sprawling vines with big leaves under pumpkins and melons.
+local function cropPart(model, cf, size, color, name, shape, material)
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.CastShadow = false
+	p.Size = size
+	p.CFrame = cf
+	p.Color = color
+	p.Material = material or Enum.Material.SmoothPlastic
+	p.Name = name
+	if shape == "ball" then
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Parent = p
+	elseif shape == "cyl" then
+		p.Shape = Enum.PartType.Cylinder
+	end
+	p.Parent = model
+	return p
+end
+
+local CROPS = {}
+
+-- (a leaf: a thin slab leaning out from the stem at `tilt` degrees, turned `yaw` round it)
+local function leafCF(base, yaw, tilt, len, y)
+	return base
+		* CFrame.Angles(0, math.rad(yaw), 0)
+		* CFrame.new(0, y or 0, -len * 0.45)
+		* CFrame.Angles(math.rad(-tilt), 0, 0)
+end
+
+CROPS.strawberry = function(m, base, k, phase, fruit, fm, leaf, light)
+	for i = 0, 4 do
+		local cf = leafCF(base, i * 72, 28, 1.1 * k, 0.25 * k)
+		cropPart(m, cf, Vector3.new(0.75 * k, 0.1, 1.1 * k), i % 2 == 0 and leaf or light, "Leaf")
+	end
+	if phase == 2 then
+		for i = 0, 1 do
+			local cf = base * CFrame.Angles(0, math.rad(40 + i * 180), 0) * CFrame.new(0.45, 0.55, 0)
+			cropPart(m, cf, Vector3.new(0.35, 0.1, 0.35), WHITE, "Flower")
+		end
+	elseif phase == 3 then
+		for i = 0, 2 do
+			local cf = base * CFrame.Angles(0, math.rad(20 + i * 120), 0) * CFrame.new(0.75, 0.3, 0)
+			cropPart(m, cf, Vector3.new(0.42, 0.55, 0.42), fruit, "Fruit", "ball", fm)
+		end
+	end
+end
+
+CROPS.carrot = function(m, base, k, phase, fruit, fm, leaf, light)
+	for i = 0, 4 do
+		local cf = base
+			* CFrame.Angles(0, math.rad(i * 72), 0)
+			* CFrame.Angles(math.rad(18), 0, 0)
+			* CFrame.new(0, 0.9 * k + 0.2, 0)
+		cropPart(m, cf, Vector3.new(0.12, 1.8 * k, 0.12), i % 2 == 0 and leaf or light, "Leaf")
+		cropPart(m, cf * CFrame.new(0, 0.7 * k, -0.18), Vector3.new(0.35 * k, 0.06, 0.45 * k), light, "Leaf")
+	end
+	if phase >= 2 then
+		local big = phase == 3 and 0.75 or 0.45
+		cropPart(m, base * CFrame.new(0, 0.12, 0), Vector3.new(big, big * 0.7, big), fruit, "Fruit", "ball", fm)
+	end
+end
+
+CROPS.corn = function(m, base, k, phase, fruit, fm, leaf, light)
+	local h = 6 * k
+	cropPart(
+		m,
+		base * CFrame.new(0, h / 2, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Vector3.new(h, 0.35, 0.35),
+		leaf,
+		"Stalk",
+		"cyl"
+	)
+	for i = 0, 3 do
+		local cf = leafCF(base, i * 90 + 30, 35, 2.2 * k, h * (0.3 + 0.17 * i))
+		cropPart(m, cf, Vector3.new(0.3, 0.06, 2.2 * k), i % 2 == 0 and leaf or light, "Leaf")
+	end
+	if phase >= 2 then
+		for i = 0, 2 do
+			local cf = base * CFrame.new(0, h + 0.3, 0) * CFrame.Angles(0, math.rad(i * 60), math.rad(25))
+			cropPart(m, cf, Vector3.new(0.08, 0.8, 0.08), Color3.fromRGB(200, 170, 90), "Tassel")
+		end
+	end
+	if phase == 3 then
+		for i = 0, 1 do
+			local cf = base
+				* CFrame.Angles(0, math.rad(i * 180 + 45), 0)
+				* CFrame.new(0.3, h * 0.55, 0)
+				* CFrame.Angles(0, 0, math.rad(-20))
+			cropPart(m, cf, Vector3.new(0.5, 1.4, 0.5), fruit, "Fruit", "ball", fm)
+			cropPart(m, cf * CFrame.new(0.12, -0.2, 0), Vector3.new(0.3, 1.2, 0.55), light, "Husk", "ball")
+		end
+	end
+end
+
+CROPS.tomato = function(m, base, k, phase, fruit, fm, leaf, light)
+	local h = 3.6 * k
+	cropPart(m, base * CFrame.new(0.15, 2, 0.15), Vector3.new(0.14, 4, 0.14), P.wood, "Stake")
+	cropPart(m, base * CFrame.new(0, h / 2, 0), Vector3.new(0.14, h, 0.14), leaf, "Vine")
+	for i = 0, 3 do
+		for j = 0, 1 do
+			local cf = leafCF(base, i * 95 + j * 180, 30, 0.9 * k, h * (0.25 + 0.22 * i))
+			cropPart(m, cf, Vector3.new(0.7 * k, 0.08, 0.9 * k), (i + j) % 2 == 0 and leaf or light, "Leaf")
+		end
+	end
+	if phase >= 2 then
+		local ripe = phase == 3
+		for i = 0, ripe and 3 or 1 do
+			local cf = base * CFrame.Angles(0, math.rad(60 + i * 95), 0) * CFrame.new(0.6, h * (0.3 + 0.18 * i), 0)
+			cropPart(
+				m,
+				cf,
+				Vector3.new(0.45, 0.4, 0.45),
+				ripe and fruit or light,
+				ripe and "Fruit" or "Green",
+				"ball",
+				ripe and fm or nil
+			)
+		end
+	end
+end
+
+CROPS.blueberry = function(m, base, k, phase, fruit, fm, leaf, light)
+	for i = 0, 2 do
+		local cf = base * CFrame.Angles(0, math.rad(i * 120), 0) * CFrame.new(0.35 * k, 0.75 * k, 0)
+		cropPart(m, cf, Vector3.new(1.3 * k, 1.2 * k, 1.3 * k), i == 1 and light or leaf, "Leaf", "ball")
+	end
+	if phase == 3 then
+		for i = 0, 6 do
+			local a = math.rad(i * 51)
+			local cf = base * CFrame.new(math.cos(a) * 0.8, 0.55 + (i % 3) * 0.35, math.sin(a) * 0.8)
+			cropPart(m, cf, Vector3.new(0.26, 0.26, 0.26), fruit, "Fruit", "ball", fm)
+		end
+	end
+end
+
+-- a fruit tree: one a tile, in its middle
+CROPS.tree = function(m, base, k, phase, fruit, fm, leaf, light)
+	local h = 3.2 * k
+	cropPart(
+		m,
+		base * CFrame.new(0, h / 2, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Vector3.new(h, 0.55, 0.55),
+		P.wood,
+		"Trunk",
+		"cyl"
+	)
+	local crowns = { { 0, 0, 0, 3 }, { 0.9, -0.3, 0.5, 2.2 }, { -0.8, -0.4, -0.6, 2.3 }, { 0.2, 0.7, -0.2, 2 } }
+	for i, c in crowns do
+		cropPart(
+			m,
+			base * CFrame.new(c[1] * k, h + 0.8 * k + c[2] * k, c[3] * k),
+			Vector3.new(c[4] * k, c[4] * 0.85 * k, c[4] * k),
+			i % 2 == 0 and light or leaf,
+			"Leaf",
+			"ball"
+		)
+	end
+	if phase >= 2 then
+		local n = phase == 3 and 7 or 0
+		for i = 1, n do
+			local a = math.rad(i * 51)
+			local cf = base * CFrame.new(math.cos(a) * 1.35 * k, h + 0.5 * k + (i % 3) * 0.45, math.sin(a) * 1.35 * k)
+			cropPart(m, cf, Vector3.new(0.48, 0.48, 0.48), fruit, "Fruit", "ball", fm)
+		end
+		if phase == 2 then
+			for i = 1, 4 do
+				local a = math.rad(i * 90 + 20)
+				cropPart(
+					m,
+					base * CFrame.new(math.cos(a) * 1.3, h + 0.9, math.sin(a) * 1.3),
+					Vector3.new(0.3, 0.3, 0.3),
+					Color3.fromRGB(255, 225, 235),
+					"Blossom",
+					"ball"
+				)
+			end
+		end
+	end
+end
+
+-- a vine sprawling over the tile under one big fruit (pumpkins, melons)
+CROPS.vine = function(m, base, k, phase, fruit, fm, leaf, light, key)
+	for i = 0, 3 do
+		local a = i * 90 + 20
+		local cf = base
+			* CFrame.Angles(0, math.rad(a), 0)
+			* CFrame.new(0, 0.35 * k, -1.5 * k)
+			* CFrame.Angles(math.rad(-12), 0, 0)
+		cropPart(m, cf, Vector3.new(1.5 * k, 0.1, 1.5 * k), i % 2 == 0 and leaf or light, "Leaf")
+		cropPart(
+			m,
+			base * CFrame.Angles(0, math.rad(a + 40), 0) * CFrame.new(0, 0.15, -0.9 * k),
+			Vector3.new(0.12, 0.12, 1.8 * k),
+			leaf,
+			"Vine"
+		)
+	end
+	if phase >= 2 then
+		local ripe = phase == 3
+		local s = ripe and 1 or 0.55
+		if key == "watermelon" then
+			cropPart(
+				m,
+				base * CFrame.new(0, 0.65 * s, 0),
+				Vector3.new(2.3 * s, 1.3 * s, 1.5 * s),
+				fruit,
+				"Fruit",
+				"ball",
+				fm
+			)
+			for i = -1, 1 do
+				cropPart(
+					m,
+					base * CFrame.new(i * 0.55 * s, 1.27 * s, 0),
+					Vector3.new(0.14, 0.06, 1.1 * s),
+					Color3.fromRGB(30, 100, 40),
+					"Stripe"
+				)
+			end
+		else
+			local color = ripe and fruit or Color3.fromRGB(150, 180, 70)
+			cropPart(
+				m,
+				base * CFrame.new(0, 0.7 * s, 0),
+				Vector3.new(1.6 * s, 1.3 * s, 1.9 * s),
+				color,
+				"Fruit",
+				"ball",
+				ripe and fm or nil
+			)
+			for _, sx in { -1, 1 } do
+				cropPart(
+					m,
+					base * CFrame.new(sx * 0.5 * s, 0.68 * s, 0),
+					Vector3.new(1.1 * s, 1.2 * s, 1.75 * s),
+					color,
+					"Fruit",
+					"ball",
+					ripe and fm or nil
+				)
+			end
+			cropPart(
+				m,
+				base * CFrame.new(0, 1.45 * s, 0) * CFrame.Angles(0, 0, math.rad(12)),
+				Vector3.new(0.2, 0.45, 0.2),
+				Color3.fromRGB(110, 80, 40),
+				"Stem"
+			)
+		end
+	end
+end
+
 function FarmBuilder.crop(_plot, tile, key, phase, golden)
 	local old = tile:FindFirstChild("Crop")
 	if old then
@@ -480,78 +855,60 @@ function FarmBuilder.crop(_plot, tile, key, phase, golden)
 	model:SetAttribute("Crop", key)
 	model:SetAttribute("Phase", phase)
 	model.Parent = tile
-	local s = Shapes.new(model, tile.CFrame * CFrame.new(0, tile.Size.Y / 2, 0))
+	local top = tile.CFrame * CFrame.new(0, tile.Size.Y / 2, 0)
 	local fruit = golden and P.sunflower or c.color
-	local fopts = deco({ color = fruit, name = "Fruit", material = golden and Enum.Material.Neon or nil })
-	local leaf = deco({ color = c.leaf, name = "Leaf" })
-	local spots = { { -1.8, -1.6 }, { 1.8, -1.6 }, { -1.8, 1.6 }, { 1.8, 1.6 } }
+	local fm = golden and Enum.Material.Neon or nil
+	local leaf = c.leaf
+	local light = c.leaf:Lerp(Color3.new(1, 1, 0.8), 0.25)
+	local spots = { { -1.6, -1.5 }, { 1.6, -1.5 }, { -1.6, 1.5 }, { 1.6, 1.5 } }
 	if phase == 0 then
-		for _, p in spots do
-			s:box(p[1], 0.15, p[2], 1, 0.3, 1, deco({ color = Color3.fromRGB(100, 68, 46), name = "Mound" }))
+		-- seed mounds, each with a tiny sprout
+		for i, p in spots do
+			local at = top * CFrame.new(p[1], 0, p[2])
+			cropPart(model, at * CFrame.new(0, 0.12, 0), Vector3.new(1, 0.3, 1), SOIL_DARK, "Mound", "ball")
+			cropPart(
+				model,
+				at * CFrame.Angles(0, math.rad(i * 50), math.rad(30)) * CFrame.new(0, 0.35, 0),
+				Vector3.new(0.08, 0.35, 0.22),
+				light,
+				"Sprout"
+			)
 		end
 		return model
 	end
-	local k = phase / 3
-	for _, p in spots do
-		local px, pz = p[1], p[2]
-		if key == "corn" then
-			s:box(px, 3 * k, pz, 0.35, 6 * k, 0.35, leaf)
-			s:box(px + 0.4, 3.4 * k, pz, 0.9 * k, 0.2, 1.4 * k, leaf)
-			if phase == 3 then
-				s:box(px + 0.3, 3.2, pz + 0.3, 0.55, 1.5, 0.55, fopts)
-			end
-		elseif key == "carrot" then
-			s:box(px, 0.9 * k + 0.2, pz, 0.25, 1.8 * k, 0.25, leaf)
-			s:box(px + 0.3, 0.7 * k + 0.2, pz, 0.2, 1.4 * k, 0.2, leaf)
-			if phase == 3 then
-				s:box(px, 0.15, pz, 0.7, 0.35, 0.7, fopts)
-			end
-		elseif c.regrow then
-			-- a small tree
-			s:box(px, 1 * k, pz, 0.4, 2 * k, 0.4, deco({ color = P.wood, name = "Trunk" }))
-			s:box(px, 2.4 * k, pz, 1.8 * k, 1.4 * k, 1.8 * k, leaf)
-			if phase == 3 then
-				s:box(px + 0.7, 2.2, pz - 0.7, 0.5, 0.5, 0.5, fopts)
-				s:box(px - 0.6, 2.6, pz + 0.6, 0.5, 0.5, 0.5, fopts)
-			end
-		else
-			-- a leafy clump (strawberries, tomatoes, berries, melons, pumpkins)
-			s:box(px, 0.45 * k + 0.1, pz, 1.5 * k, 0.9 * k, 1.5 * k, leaf)
-			s:box(
-				px,
-				0.95 * k + 0.1,
-				pz,
-				0.9 * k,
-				0.4 * k,
-				0.9 * k,
-				deco({ color = Color3.fromRGB(90, 190, 80), name = "Leaf" })
+	local k = 0.45 + 0.55 * phase / 3
+	local build = CROPS[key]
+	if c.regrow then
+		CROPS.tree(model, top, k, phase, fruit, fm, leaf, light)
+	elseif key == "pumpkin" or key == "watermelon" or key == "goldpumpkin" then
+		CROPS.vine(model, top, k, phase, fruit, fm, leaf, light, key)
+	else
+		build = build or CROPS.strawberry
+		for i, p in spots do
+			build(
+				model,
+				top * CFrame.new(p[1], 0, p[2]) * CFrame.Angles(0, math.rad(i * 37), 0),
+				k,
+				phase,
+				fruit,
+				fm,
+				leaf,
+				light
 			)
-			if phase == 3 then
-				local big = (key == "pumpkin" or key == "watermelon" or key == "goldpumpkin") and 1.2 or 0.45
-				s:box(px + 0.6, big / 2 + 0.1, pz - 0.6, big, big * 0.85, big, fopts)
-				if big < 1 then
-					s:box(px - 0.5, 0.3, pz + 0.6, 0.45, 0.4, 0.45, fopts)
-				end
-			end
 		end
 	end
 	if phase == 3 then
 		-- a soft sparkle over a ripe tile, so it reads "ready" from across the field
-		local p = s:box(
-			0,
-			4.2,
-			0,
-			0.6,
-			0.6,
-			0.6,
-			deco({
-				color = golden and P.sunflower or WHITE,
-				material = Enum.Material.Neon,
-				name = "Ripe",
-				transparency = 0.2,
-			})
+		local p = cropPart(
+			model,
+			top * CFrame.new(0, 4.6, 0) * CFrame.Angles(0, math.rad(45), math.rad(45)),
+			Vector3.new(0.6, 0.6, 0.6),
+			golden and P.sunflower or WHITE,
+			"Ripe",
+			nil,
+			Enum.Material.Neon
 		)
-		p.CFrame = p.CFrame * CFrame.Angles(0, math.rad(45), math.rad(45))
+		p.Transparency = 0.2
 	end
 	return model
 end

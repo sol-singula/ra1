@@ -97,6 +97,7 @@ check(
 local Hud = Engine.require(tree.client.Controllers.HudController)
 local FarmC = Engine.require(tree.client.Controllers.FarmController)
 local GuideC = Engine.require(tree.client.Controllers.GuideController)
+GuideC.skipTour() -- (a new farmer's tour first: GuideSmoke covers it)
 check("the guide's first step: plant", GuideC.state().key == "plant1" and GuideC.refs.card.Visible, GuideC.state().key)
 check(
 	"...pointing at the first tile",

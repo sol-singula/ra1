@@ -82,7 +82,7 @@ local function far()
 end
 
 local function paintCard()
-	refs.card.Visible = state.text ~= nil
+	refs.card.Visible = state.text ~= nil and tour == nil
 	refs.text.Text = state.text or ""
 	local special = type(state.key) == "string" and string.sub(state.key, 1, 8) == "special:"
 	if special then
@@ -144,6 +144,7 @@ local function endTour()
 	end)
 	refs.tour.Visible = false
 	tour = nil
+	paintCard()
 end
 GuideController.skipTour = endTour
 
@@ -188,6 +189,7 @@ local function startTour()
 		},
 	}
 	refs.tour.Visible = true
+	refs.card.Visible = false
 	pcall(function()
 		workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable
 	end)
@@ -242,7 +244,7 @@ local function step()
 	refs.arrow.Transparency = 0.1
 	refs.tip.Transparency = 0.1
 	-- the spot: a beam of light up from it and a ring on the ground, pulsing
-	local ground = Vector3.new(target.X, target.Y - 0.2, target.Z)
+	local ground = Vector3.new(target.X, target.Y + 0.25, target.Z) -- (just over a tile's or a pad's top)
 	refs.beam.CFrame = CFrame.new(ground + Vector3.new(0, 20, 0)) * CFrame.Angles(0, 0, math.rad(90))
 	refs.beam.Transparency = 0.72 + 0.08 * math.sin(t * 4)
 	local pulse = 1 + 0.12 * math.sin(t * 5)

@@ -92,15 +92,47 @@ local function at(i, x, z, y)
 	return PlotLayout.toWorld(i, x, z, y)
 end
 
--- the first minute: behind the player at the spawn, the guide's arrow over the soil
-shot("farm_first_minute", at(mine, -44, -122, 14), at(mine, -30, -78, 0), false)
+-- the first minute: the tour (1 PLANT CROPS HERE), then behind the player at the spawn, the STEP 1 card, the beam
+do
+	local GuideC = Engine.require(tree.client.Controllers.GuideController)
+	if GuideC.touring() then
+		local c = cam.CFrame
+		Engine.advance(1)
+		local snap = Capture.snapshot(Engine, {
+			pos = { cam.CFrame.Position.X, cam.CFrame.Position.Y, cam.CFrame.Position.Z },
+			target = {
+				(cam.CFrame.Position + cam.CFrame.LookVector * 20).X,
+				(cam.CFrame.Position + cam.CFrame.LookVector * 20).Y,
+				(cam.CFrame.Position + cam.CFrame.LookVector * 20).Z,
+			},
+			fov = cam.FieldOfView or 70,
+		})
+		snap.title = "farm_tour"
+		snap.cinematic = false
+		snap.viewport = { w = 1600, h = 900, dpr = 1 }
+		Capture.save(Engine, snap, outDir, "farm_tour")
+		table.insert(shots, "farm_tour")
+		_ = c
+		GuideC.skipTour()
+	end
+end
+shot("farm_first_minute", at(mine, -22, -128, 14), at(mine, -24, -80, 0), false)
 -- standing by the soil: the PLANT button
-Engine.moveTo(player, at(mine, -28, -86, 3), at(mine, -28, -78, 3))
+Engine.moveTo(player, at(mine, -28, -87, 3), at(mine, -28, -78, 3))
 Engine.advance(0.5)
-shot("farm_plant_button", at(mine, -30, -100, 12), at(mine, -26, -76, 0), false)
+shot("farm_plant_button", at(mine, -14, -100, 9), at(mine, -26, -80, 0), false)
+-- (Ben's fields ripe for the shots: a mix of crops)
+do
+	local mix = { "corn", "tomato", "strawberry", "blueberry", "carrot", "pumpkin", "apple", "watermelon" }
+	for n = 1, 39 do
+		pb.soil[tostring(n)] = nil
+		Farm:Plant(ben, n, mix[(n - 1) // 4 % #mix + 1])
+	end
+	Farm:RipenAll(ben)
+end
 -- Ben's finished stage-1 farm
 shot("farm_stage1_done", at(theirs, 30, -130, 40), at(theirs, -36, -70, 0), true)
-shot("farm_field_close", at(theirs, -8, -96, 10), at(theirs, -22, -74, 1), true)
+shot("farm_field_close", at(theirs, -84, -12, 10), at(theirs, -52, 10, 0), true)
 -- Ben's stage 2: the barn, the fields, the machines, the pens
 shot("farm_stage2_overview", at(theirs, 60, -120, 70), at(theirs, -40, 10, 0), true)
 shot("farm_barn", at(theirs, -10, -62, 14), at(theirs, -44, -18, 6), true)

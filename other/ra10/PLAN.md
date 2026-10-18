@@ -264,6 +264,47 @@ Tests: `FranchiseSmoke` (48 checks).
 
 Tests: `ShopSmoke` (37 checks). 591 checks in all, in 11 suites.
 
+## R2: guided like ra9, a tighter farm, detailed plants
+
+The owner's direction: "It needs to be very guided just like ra9 from the beginning. Make the layout of
+everything better. Add more detail. Plants need detail. Show them step one, step two, step three, and there
+shouldn't be much walking to get from step to step."
+
+* **The step card** (`GuideController`): one numbered step at a time, low in the middle, ra9's way.
+  * A gold STEP 3 badge, one short instruction in big letters, and CHAPTER 1 · THE SHACK · 3/20 with a progress
+    bar.
+  * After the scripted steps it shows ★ NEXT GOAL; during a Special Order it shows a gold !.
+* **The spot**: a light beam and a pulsing ring on the exact tile, pad or station, the arrow over it and the path
+  on the ground.
+* **The button**: the farm's PLANT/HARVEST/WATER button pulses with a gold ring when the step needs it, and menu
+  buttons pulse for the street and franchise steps.
+* **The payoff**: STEP 3 DONE! with its reward, big in the middle, then the next step pops in.
+* **The tour**: a brand-new farmer's first look. Letterboxed, the camera shows the farm, then 1 PLANT CROPS
+  HERE, 2 SELL THEM HERE and 3 BUY UPGRADES HERE, with SKIP.
+* **GO**: a step whose spot is 30+ studs away gets a GO button that puts you right there (`GuideService:Go`). No
+  long walks to the pens, the shed or the warehouse.
+* **A clear screen**: the menu buttons appear as the guide reaches them (DAILY and SHOP after the first sale,
+  STREET and FRIENDS after the barn deed). The daily calendar never pops up over the first steps.
+* **A tighter first farm** (`PlotLayout`): the buy-pads sit in a row beside SELL, and you spawn between them
+  facing the soil, so soil, SELL and every pad are a few steps apart. Walking is faster (24). Once the market
+  hall stands, you spawn beside it.
+* **Detailed plants** (`FarmBuilder.crop`, every crop its own plant):
+  * Strawberry rosettes, with white flowers and then red berries.
+  * Feathery carrot tops over orange shoulders.
+  * Tall corn with arching leaves, tassels and husked cobs.
+  * Staked tomato vines with green then red fruit.
+  * Round blueberry bushes dotted with berries.
+  * A fruit tree a tile for apples and oranges, with blossoms then fruit.
+  * Sprawling vines with big leaves under ribbed pumpkins and striped melons.
+  * Seed mounds with sprouts.
+* **Farm detail** (`FarmBuilder.decor`): flower beds by the shack, a stepping-stone path from the spawn to the
+  soil, hay bales and crates by the stand, barrels, bushes, a bench and a lantern by the mailbox, a water trough
+  by the well.
+* Renders: `farm_tour`, `farm_first_minute`, `farm_plant_button`, `farm_field_close` and `crops_*`
+  (`tools/gameplay/crops.luau`: every crop at every stage).
+
+Tests: `GuideSmoke` (33 checks).
+
 ## Before going live
 
 * Create the developer products and game passes (prices in `Data/Shop`) and put their ids in `Constants`.
