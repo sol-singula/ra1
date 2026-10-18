@@ -52,6 +52,36 @@ local function onPlayerRemoving(player)
 	PlayerDataService:Release(player)
 end
 
+-- A rebuild (FranchiseService: a new farm): the plot comes down and goes up again from the profile as it is now,
+-- like leaving and joining without the save, the session or the street seeing them go.
+local KEEP = { AnalyticsService = true, OfflineService = true, StreetService = true, LeaderboardService = true }
+function PlayerDataService.Rebuild(player)
+	local profile = PlayerDataService:Get(player)
+	if not profile or not player.Parent then
+		return false
+	end
+	for i = #order, 1, -1 do
+		local svc = order[i]
+		if svc.OnPlayerLeaving and not KEEP[svc.Name] then
+			local ok, err = xpcall(svc.OnPlayerLeaving, debug.traceback, svc, player, profile)
+			if not ok then
+				warn(`[{svc.Name}] OnPlayerLeaving (rebuild) failed: {err}`)
+			end
+		end
+	end
+	for _, phase in { "OnPlayerLoaded", "OnPlayerReady" } do
+		for _, svc in order do
+			if svc[phase] and not KEEP[svc.Name] then
+				local ok, err = xpcall(svc[phase], debug.traceback, svc, player, profile)
+				if not ok then
+					warn(`[{svc.Name}] {phase} (rebuild) failed: {err}`)
+				end
+			end
+		end
+	end
+	return true
+end
+
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)
 for _, player in Players:GetPlayers() do

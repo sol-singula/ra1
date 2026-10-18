@@ -326,7 +326,7 @@ function WarehouseService:Step(player, p, dt)
 		if not trip and f.racked > 0 and (f.racked >= cap or t - (f.back[key] or 0) >= self.WAIT) then
 			local take = math.min(cap, f.racked)
 			f.racked -= take
-			trip = { at = t, length = Flow.trip(owned), pallets = take }
+			trip = { at = t, length = Flow.trip(owned, p), pallets = take }
 			f.trucks[key] = trip
 			startTrip(player, n, trip)
 			changed = true
@@ -350,7 +350,7 @@ function WarehouseService:Step(player, p, dt)
 		if not trip and f.racked > 0 and (f.racked >= half or t - (f.back[key] or 0) >= self.SEMI_WAIT) then
 			local take = math.min(Flow.SEMI_CAP, f.racked)
 			f.racked -= take
-			trip = { at = t, length = Flow.semiTrip(owned), pallets = take }
+			trip = { at = t, length = Flow.semiTrip(owned, p), pallets = take }
 			f.trucks[key] = trip
 			showSemi(player, n, trip)
 			changed = true
@@ -484,10 +484,13 @@ function WarehouseService:Init(registry)
 			lastAt[player] = now()
 		end
 	end)
-	Players.PlayerRemoving:Connect(function(player)
+	-- (forget them when they leave, or when their plot comes down for a rebuild: a franchise)
+	local function forget(player)
 		shown[player], refs[player], lastAt[player], bottleneck[player], pushed[player] = nil, nil, nil, nil, nil
 		semis[player] = nil
-	end)
+	end
+	Players.PlayerRemoving:Connect(forget)
+	registry.PlotService.Released:Connect(forget)
 end
 
 function WarehouseService:OnPlayerReady(player)

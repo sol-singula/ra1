@@ -21,6 +21,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Flow = require(ReplicatedStorage.Shared.Data.Flow)
+local Franchise = require(ReplicatedStorage.Shared.Data.Franchise)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
 
@@ -36,8 +37,7 @@ function OfflineService:Hours(profile)
 	if profile.passes and profile.passes.longNap then
 		hours = Constants.OFFLINE_PASS_HOURS
 	end
-	local perk = profile.franchise and profile.franchise.perks and profile.franchise.perks.nap or 0
-	return hours + perk * 2
+	return hours + Franchise.bonus(profile, "nap") * 2
 end
 
 function OfflineService:Earned(profile, seconds)
@@ -54,7 +54,7 @@ function OfflineService:Earned(profile, seconds)
 	elseif owned.tractor and owned.conveyor then
 		perMinute = rates.grow * (1 + Upgrades.stat(owned, "price", 0))
 	end
-	local mult = registryRef.FranchiseService and registryRef.FranchiseService:IncomeMult(profile) or 1
+	local mult = Franchise.incomeMult(profile)
 	return math.floor(perMinute * minutes * Constants.OFFLINE_RATE * mult + 0.5), capped
 end
 

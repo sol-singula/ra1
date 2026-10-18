@@ -32,6 +32,7 @@ local function defaults()
 		gems = Constants.START_GEMS, -- skips, golden seeds, cosmetics
 		goldenSeeds = 0, -- each makes the next planting golden (the calendar, the shop)
 		passes = {}, -- [passKey] = true: the game passes owned (ShopService)
+		franchise = { level = 0, stars = 0, total = 0, perks = {}, runStart = 0 }, -- prestige (FranchiseService)
 		xp = 0, -- farm XP: the level gates unlocks (Data/Levels)
 		level = 1,
 		stage = 1, -- 1 shack, 2 farm, 3 packing shed, 4 warehouse, 5 distribution hub (master plan §4)

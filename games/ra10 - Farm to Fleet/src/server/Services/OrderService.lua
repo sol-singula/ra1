@@ -37,6 +37,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Animals = require(ReplicatedStorage.Shared.Data.Animals)
+local Franchise = require(ReplicatedStorage.Shared.Data.Franchise)
 local FarmBuilder = require(ReplicatedStorage.Shared.World.FarmBuilder)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Orders = require(ReplicatedStorage.Shared.Data.Orders)
@@ -79,7 +80,7 @@ local function opened(p)
 end
 
 local function slotCount(p)
-	return opened(p) and Upgrades.stat(p.owned, "orders", 0) or 0
+	return opened(p) and Upgrades.stat(p.owned, "orders", 0) + Franchise.bonus(p, "orderSlot") or 0
 end
 
 local function bonus(p)
@@ -606,13 +607,16 @@ function OrderService:Init(registry)
 			checkContracts(player, p)
 		end
 	end)
-	Players.PlayerRemoving:Connect(function(player)
+	-- (forget them when they leave, or when their plot comes down for a rebuild: a franchise)
+	local function forget(player)
 		onPad[player] = nil
 		packAt[player] = nil
 		board[player] = nil
 		boardParts[player] = nil
 		pickups[player] = nil
-	end)
+	end
+	Players.PlayerRemoving:Connect(forget)
+	registry.PlotService.Released:Connect(forget)
 end
 
 function OrderService:PackPad(player)

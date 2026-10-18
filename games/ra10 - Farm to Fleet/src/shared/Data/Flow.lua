@@ -23,6 +23,7 @@ gets back.
 ]]
 local Animals = require(script.Parent.Animals)
 local Crops = require(script.Parent.Crops)
+local Franchise = require(script.Parent.Franchise)
 local Upgrades = require(script.Parent.Upgrades)
 
 local Flow = {}
@@ -67,14 +68,17 @@ end
 function Flow.semis(owned)
 	return stat(owned, "semis", 0)
 end
-function Flow.semiTrip(owned)
-	return Flow.SEMI_TRIP * (1 - stat(owned, "docks", 0))
+function Flow.semiTrip(owned, p)
+	return Flow.SEMI_TRIP * (1 - stat(owned, "docks", 0)) * (1 - (p and Franchise.bonus(p, "fleet") or 0))
 end
 function Flow.cycle(owned)
 	return Flow.FORK_CYCLE / (1 + stat(owned, "forkSpeed", 0))
 end
-function Flow.trip(owned)
-	return Flow.TRUCK_TRIP * (1 - stat(owned, "tripCut", 0)) * (1 - stat(owned, "docks", 0))
+function Flow.trip(owned, p)
+	return Flow.TRUCK_TRIP
+		* (1 - stat(owned, "tripCut", 0))
+		* (1 - stat(owned, "docks", 0))
+		* (1 - (p and Franchise.bonus(p, "fleet") or 0))
 end
 
 -- What the fields bring in a minute: every tile growing the crop they plant, round and round with the tractor
@@ -89,6 +93,7 @@ local function growRate(p, now)
 		+ Animals.boost(p, "grow", now)
 		+ (c.type == "fruit" and Animals.boost(p, "fruitGrow", now) or 0)
 		+ stat(owned, "grow", 0)
+		+ Franchise.bonus(p, "growth")
 	local need = c.grow * (stat(owned, "sprinkler", 0) > 0 and Crops.WATER_CUT or 1) / speed
 	local tractor = stat(owned, "autoharvest", nil)
 	local wait = tractor and tractor / (1 + Animals.boost(p, "machine", now)) / 2 or 10
@@ -107,8 +112,8 @@ function Flow.rates(p, now)
 		store = math.floor(Flow.forklifts(owned) * Flow.PALLET * 60 / Flow.cycle(owned) + 0.5),
 		ship = math.floor(
 			(
-				Flow.trucks(owned) * Flow.truckCap(owned) / Flow.trip(owned)
-				+ Flow.semis(owned) * Flow.SEMI_CAP / Flow.semiTrip(owned)
+				Flow.trucks(owned) * Flow.truckCap(owned) / Flow.trip(owned, p)
+				+ Flow.semis(owned) * Flow.SEMI_CAP / Flow.semiTrip(owned, p)
 			)
 					* Flow.PALLET
 					* 60

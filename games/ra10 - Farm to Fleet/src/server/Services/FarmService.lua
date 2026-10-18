@@ -39,6 +39,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Animals = require(ReplicatedStorage.Shared.Data.Animals)
 local Crops = require(ReplicatedStorage.Shared.Data.Crops)
+local Franchise = require(ReplicatedStorage.Shared.Data.Franchise)
 local FarmBuilder = require(ReplicatedStorage.Shared.World.FarmBuilder)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
@@ -79,7 +80,7 @@ end
 
 function FarmService:Carry(player)
 	local p = profileOf(player)
-	return p and Upgrades.stat(p.owned or {}, "carry", Upgrades.START_CARRY) or 0
+	return p and Upgrades.stat(p.owned or {}, "carry", Upgrades.START_CARRY) + Franchise.bonus(p, "carry") or 0
 end
 
 function FarmService:Carried(player)
@@ -280,6 +281,7 @@ function FarmService:Plant(player, n, key)
 		+ Animals.boost(p, "grow", now())
 		+ (c.type == "fruit" and Animals.boost(p, "fruitGrow", now()) or 0)
 		+ Upgrades.stat(p.owned or {}, "grow", 0)
+		+ Franchise.bonus(p, "growth")
 	local need = c.grow * (sprinkler and Crops.WATER_CUT or 1) / speed
 	-- (the golden roll happens now, so the field shows a golden crop while it grows)
 	local golden = math.random() < FarmService.goldenChance(p)
@@ -504,11 +506,14 @@ function FarmService:Init(registry)
 	economy.LevelUp:Connect(function(player)
 		self:Push(player)
 	end)
-	Players.PlayerRemoving:Connect(function(player)
+	-- (forget them when they leave, or when their plot comes down for a rebuild: a franchise)
+	local function forget(player)
 		phases[player] = nil
 		selling[player] = nil
 		machineAt[player] = nil
-	end)
+	end
+	Players.PlayerRemoving:Connect(forget)
+	registry.PlotService.Released:Connect(forget)
 end
 
 function FarmService:OnPlayerReady(player)

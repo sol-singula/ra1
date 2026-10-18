@@ -276,9 +276,12 @@ function SpecialService:Init(registry)
 	orders.extraNeeds = function(player)
 		return self:Needs(player)
 	end
-	Players.PlayerRemoving:Connect(function(player)
+	-- (forget them when they leave, or when their plot comes down for a rebuild: a franchise)
+	local function forget(player)
 		trucks[player] = nil
-	end)
+	end
+	Players.PlayerRemoving:Connect(forget)
+	registry.PlotService.Released:Connect(forget)
 end
 
 function SpecialService:OnPlayerReady(player)

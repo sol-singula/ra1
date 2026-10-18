@@ -13,6 +13,7 @@ The farm's money and level (master plan §3): Cash (earned on the farm), Gems (r
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Franchise = require(ReplicatedStorage.Shared.Data.Franchise)
 local Levels = require(ReplicatedStorage.Shared.Data.Levels)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
@@ -58,10 +59,16 @@ function EconomyService:Push(player)
 	})
 end
 
+local SHIPPED = { sell = true, order = true, pallets = true, special = true }
+
 function EconomyService:Add(player, n, why)
 	local p = data:Get(player)
 	if not p or type(n) ~= "number" or n <= 0 then
 		return p and p.cash or 0
+	end
+	if SHIPPED[why] then
+		-- (the franchise's region and every Star ever earned: more for everything shipped)
+		n *= Franchise.incomeMult(p)
 	end
 	n = math.floor(n + 0.5)
 	p.cash += n

@@ -148,7 +148,16 @@ end
 
 -- (first of the plot's services: the plot and its base exist before the farm and the pads fill it)
 function PlotService:OnPlayerLoaded(player)
+	-- (a rebuild keeps their plot: the one they had, if it's still free)
+	local had = player:GetAttribute("Plot")
+	local order = {}
+	if type(had) == "number" and world.plots[had] then
+		table.insert(order, had)
+	end
 	for i = 1, #world.plots do
+		table.insert(order, i)
+	end
+	for _, i in order do
 		if not owners[i] then
 			owners[i] = player
 			local plot = world.plots[i]

@@ -228,10 +228,13 @@ function UpgradeService:Init(registry)
 	economy.LevelUp:Connect(function(player)
 		self:Paint(player)
 	end)
-	Players.PlayerRemoving:Connect(function(player)
+	-- (forget them when they leave, or when their plot comes down for a rebuild: a franchise)
+	local function forget(player)
 		onPad[player] = nil
 		lastCash[player] = nil
-	end)
+	end
+	Players.PlayerRemoving:Connect(forget)
+	registry.PlotService.Released:Connect(forget)
 end
 
 function UpgradeService:OnPlayerReady(player, profile)
