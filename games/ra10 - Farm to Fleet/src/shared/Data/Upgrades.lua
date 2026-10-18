@@ -161,7 +161,16 @@ end
 -- What a pad says it gives (one short line under the name)
 function Upgrades.blurb(u)
 	if u.kind == "soil" then
-		return `→ {u.value} patches`
+		-- (how many it adds: soil is bought in order, so on top of the one before it)
+		local before = Upgrades.START_SOIL
+		for _, key in Upgrades.LIST do
+			local o = Upgrades[key]
+			if o.kind == "soil" and o.value < u.value then
+				before = math.max(before, o.value)
+			end
+		end
+		local more = u.value - before
+		return `+{more} {more == 1 and "patch" or "patches"}`
 	elseif u.kind == "carry" then
 		return `carry {u.value}`
 	elseif u.kind == "price" then

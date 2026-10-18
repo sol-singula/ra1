@@ -5,9 +5,10 @@ planted (the server clock, so timers run while the player is away), `need` the s
 left by Crops.WATER_CUT). Ripe when the time's up; the model on the tile shows four phases.
 
   ACT   Net "Farm" ("act") from the big action button: everything within REACH of them that can be done, best first:
-        harvest every ripe tile, else plant every empty one (their chosen crop, or the best they have), else water
-        every growing one not watered yet (once they own the well), else TEND every growing one (TEND seconds off
-        each, every TEND_GAP): there's always something to do, never a wait
+        harvest every ripe tile, else plant every empty one (their chosen crop, or the best they have), else tend, else water
+        every growing one not watered yet (once they own the well)
+  TEND  between planting and harvesting, ACT tends every growing crop not tended yet (once each): it grows
+        TEND_CUT faster from there and pays TEND_PAY of its price on the spot
   tile  Net "Farm" ("plant" | "harvest" | "water", n) for one tile within TAP_REACH
   crop  Net "Farm" ("crop", key) picks what PLANT plants (unlocked crops only)
   sell  standing on the stand's pad sells everything carried (Upgrades.stat "price" on top)
@@ -20,7 +21,7 @@ crops, golden } whenever it changes.
   FarmService:Plant(player, n, key?) -> ok, why
   FarmService:Harvest(player, n) -> ok, why
   FarmService:Water(player, n) -> ok, why
-  FarmService:Tend(player, n) -> ok        TEND seconds off a growing crop
+  FarmService:Tend(player, n) -> ok, paid  once a crop: TEND_CUT off what's left, TEND_PAY of its price paid
   FarmService:Act(player) -> what ("harvest" | "plant" | "water" | "tend" | nil), how many
   FarmService:Sell(player, quiet?) -> Cash paid   (quiet: the conveyor's, which keeps what FarmService.hold(player)
                                            returns, { [crop] = n }: what the orders need)
@@ -46,6 +47,7 @@ local FarmBuilder = require(ReplicatedStorage.Shared.World.FarmBuilder)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
+local Format = require(ReplicatedStorage.Shared.Format)
 
 local FarmService = {
 	Name = "FarmService",
@@ -55,14 +57,13 @@ local FarmService = {
 	TAP_REACH = 16,
 	TICK = 0.25,
 	SELL_REACH = 4.5,
-	TEND = 1.5, -- seconds a TEND takes off a growing crop
-	TEND_GAP = 0.18,
+	TEND_CUT = 0.4, -- a tend takes this share off what's left to grow
+	TEND_PAY = 0.5, -- and pays this share of the crop's price, there and then
 }
 
 local data, economy, plots, analytics
 local phases = {} -- [player] = { [n] = the phase the model shows }
 local selling = {} -- [player] = true while they stand on the pad (one sale per visit)
-local tended = {} -- [player] = when they last tended
 local ripens = {} -- [player] = the soonest ripening a Changed is waiting for
 local machineAt = {} -- [player] = { tractor = t, conveyor = t }: when each machine last ran
 
@@ -198,7 +199,14 @@ function FarmService:Push(player)
 	for n = 1, soilCount(p) do
 		local t = tileState(p, n)
 		tiles[n] = t
-				and { crop = t.crop, at = t.at, need = t.need, watered = t.watered == true, golden = t.golden == true }
+				and {
+					crop = t.crop,
+					at = t.at,
+					need = t.need,
+					watered = t.watered == true,
+					golden = t.golden == true,
+					tended = t.tended == true,
+				}
 			or false
 	end
 	local golden = 0
@@ -365,14 +373,20 @@ end
 function FarmService:Tend(player, n)
 	local p = profileOf(player)
 	local t = p and tileState(p, n)
-	if not t or phaseOf(t) == 3 then
-		return false, "ripe"
+	if not t or t.tended or phaseOf(t) == 3 then
+		return false, "no"
 	end
 	local left = t.need - (now() - t.at)
-	t.need -= math.min(self.TEND, math.max(left, 0))
+	t.need -= math.max(left, 0) * self.TEND_CUT
+	t.tended = true
+	local c = Crops[t.crop]
+	local _, starter = Crops.starter(p.level)
+	local paid =
+		math.max(1, math.floor(c.value * starter * self.TEND_PAY * (t.golden and Crops.GOLDEN_VALUE or 1) + 0.5))
+	economy:Add(player, paid, "tend")
 	p.stats.tended = (p.stats.tended or 0) + 1
 	show(player, n)
-	return true
+	return true, paid
 end
 
 function FarmService:Harvest(player, n)
@@ -446,20 +460,6 @@ function FarmService:Act(player)
 		return "plant", done
 	end
 	for _, n in list do
-		if self:Water(player, n) then
-			done += 1
-		end
-	end
-	if done > 0 then
-		self:Push(player)
-		self.Changed:Fire(player, "water")
-		return "water", done
-	end
-	if now() - (tended[player] or 0) < self.TEND_GAP then
-		return nil, 0
-	end
-	tended[player] = now()
-	for _, n in list do
 		if self:Tend(player, n) then
 			done += 1
 		end
@@ -468,6 +468,16 @@ function FarmService:Act(player)
 		self:Push(player)
 		self.Changed:Fire(player, "tend")
 		return "tend", done
+	end
+	for _, n in list do
+		if self:Water(player, n) then
+			done += 1
+		end
+	end
+	if done > 0 then
+		self:Push(player)
+		self.Changed:Fire(player, "water")
+		return "water", done
 	end
 	return nil, 0
 end
@@ -537,7 +547,7 @@ function FarmService:Sell(player, quiet)
 	economy:Add(player, total, "sell")
 	economy:AddXP(player, math.max(1, math.floor(n / 2)), "sell")
 	if not quiet then
-		Net.fire(player, "Toast", `Sold {n} for {total} Cash!`, "good")
+		Net.fire(player, "Toast", `Sold {n} for {Format.cash(total)}!`, "good")
 	end
 	if analytics then
 		pcall(analytics.event, player, "sell", { n = n, cash = total })
@@ -587,7 +597,6 @@ function FarmService:Init(registry)
 		phases[player] = nil
 		selling[player] = nil
 		machineAt[player] = nil
-		tended[player] = nil
 		ripens[player] = nil
 	end
 	Players.PlayerRemoving:Connect(forget)
@@ -602,7 +611,7 @@ function FarmService:OnPlayerReady(player)
 end
 
 -- The tractor and the conveyor: every so often (the sheep make them quicker) the tractor harvests what's ripe and
--- plants again; the conveyor takes the basket to the stand and sells it
+-- plants again; the conveyor collects from the pens, feeds the animals, takes the basket to the stand and sells it
 function FarmService:Machines(player, p)
 	local t = now()
 	local m = machineAt[player]
@@ -631,6 +640,11 @@ function FarmService:Machines(player, p)
 	local conveyor = Upgrades.stat(p.owned or {}, "autosell", nil)
 	if conveyor and t - m.conveyor >= conveyor / quick then
 		m.conveyor = t
+		-- (on the way it calls at the pens: collects what's waiting, feeds the hungry: FarmService.belt, set by
+		-- AnimalService)
+		if self.belt then
+			self.belt(player)
+		end
 		if self:Carried(player) > 0 and not (self.intake and self.intake(player)) then
 			self:Sell(player, true)
 		end

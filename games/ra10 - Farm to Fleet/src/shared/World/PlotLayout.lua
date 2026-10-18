@@ -6,8 +6,10 @@ reserved from the start (meadow until it's built on) and has its own frame: loca
 
 The plot's zones (local coordinates), filled stage by stage:
   front strip   z -110..-86     the stand, the driveway, later the truck court's entrance
-  farm (left)   x -80..-4       the shack and soil (stage 1), fields and the barn (2)
-  animals       x -80..-4, z 20..110   the pens (2)
+  farm (left)   x -80..-4       front to back, all on one walk: the shack and soil (stage 1), the big fields right
+                                behind them, the barn (2), the coop and the pens right behind the barn
+  the farm path x -1            a dirt path from the stand past the soil, the fields and the barn to the pens
+  animals       x -80..-4, z 13..93   the pens (2)
   industry      x 4..80         the packing shed and its yard (3), the warehouse and its dock doors (4, 5)
   the road      z -110..-150    two lanes (centres z -125 and -135 in a plot's frame): vehicles come and go here
 
@@ -47,18 +49,19 @@ PlotLayout.SPOTS = {
 	well = Vector3.new(-72, 0, -54),
 	wheelbarrow = Vector3.new(-46, 0, -62),
 	scarecrow = Vector3.new(-6, 0, -60),
-	barnSite = Vector3.new(-42, 0, -20), -- the barn: 28 x 20 here (stage 2)
-	field = Vector3.new(-74, 0, -1), -- the stage-2 fields' first tile (tiles 13..39, 9 to a row)
-	tractor = Vector3.new(-14, 0, -24),
-	silo = Vector3.new(-72, 0, -34),
-	windmill = Vector3.new(-12, 0, -40),
-	path = Vector3.new(-41, 0, 22), -- the dirt path down the middle of the pens
-	-- the pens: a 2 x 2 block behind the fields, a path between; each PEN wide, its pad at its front
+	barnSite = Vector3.new(-42, 0, -8), -- the barn: 28 x 20 here (stage 2), its doors facing the fields
+	field = Vector3.new(-74, 0, -46), -- the stage-2 fields' first tile (tiles 13..39, 9 to a row), behind the soil
+	tractor = Vector3.new(-19, 0, -10),
+	silo = Vector3.new(-68, 0, -20),
+	windmill = Vector3.new(-70, 0, 5),
+	farmPath = { z0 = -97, z1 = 93, x = -1, pens = 9 }, -- the farm path, front to back, and its branch along the pens' pads
+	path = Vector3.new(-41, 0, 53), -- the dirt path down the middle of the pens
+	-- the pens: a 2 x 2 block right behind the barn, a path between; each PEN wide, its pad at its front
 	pens = {
-		chicken = Vector3.new(-60, 0, 44),
-		pig = Vector3.new(-22, 0, 44),
-		sheep = Vector3.new(-60, 0, 86),
-		cow = Vector3.new(-22, 0, 86),
+		chicken = Vector3.new(-60, 0, 32),
+		pig = Vector3.new(-22, 0, 32),
+		sheep = Vector3.new(-60, 0, 74),
+		cow = Vector3.new(-22, 0, 74),
 	},
 	-- stage 3: the packing shed (36 x 28, its front wall at z -74), its yard and the drive to the road
 	shed = Vector3.new(34, 0, -60),
@@ -138,11 +141,13 @@ PlotLayout.FIELD_COLUMNS = 9
 PlotLayout.PEN = Vector3.new(34, 0, 38) -- a pen's size (x, z)
 -- the conveyor's route: from the barn's west side round to the stand (stage 2)
 PlotLayout.CONVEYOR = {
-	Vector3.new(-56, 0, -22),
-	Vector3.new(-78, 0, -22),
-	Vector3.new(-78, 0, -92),
+	Vector3.new(-56, 0, -8),
+	Vector3.new(-79, 0, -8),
+	Vector3.new(-79, 0, -92),
 	Vector3.new(-36, 0, -92),
 }
+-- its leg to the pens: down the coop's west side, joining the main belt by the barn
+PlotLayout.CONVEYOR_PENS = { Vector3.new(-79, 0, 30), Vector3.new(-79, 0, -8) }
 
 function PlotLayout.soilTile(n)
 	local step = PlotLayout.TILE + PlotLayout.TILE_GAP

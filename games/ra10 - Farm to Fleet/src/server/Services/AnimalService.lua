@@ -9,6 +9,8 @@ which lives there (outside the warehouse, always), makes its product and gives t
             Animals.MAX_LEVEL: a bigger boost, faster products, more animals in the pen, a ribbon at 5, a bell at 10
   making    a product every Animals[key].every seconds (faster with level; half as fast while hungry), up to
             Animals.READY_CAP waiting
+  the belt  once the farm has the conveyor, each of its runs collects every pen and feeds the hungry (AnimalService:Belt),
+            then it sells the lot
   the horse speeds up walking (Animals.boost "speed") once there's a stable
 
 profile.animals[key] = { level, fedAt, ready, madeAt }. Net "Animal" to the owner: { pens = { [key] = { level,
@@ -17,6 +19,7 @@ fed, fedLeft, ready, cost, maxed, boost } }, at = the pen they're standing at (o
   AnimalService:Pens(player)          { [key] = { pad, folder } } the pens on their plot
   AnimalService:Feed(player, key) -> ok, why ("full" | "crops" | "none")
   AnimalService:Collect(player, key) -> how many
+  AnimalService:Belt(player) -> collected, fed      the conveyor's call at the pens
   AnimalService:Upgrade(player, key) -> ok, why ("max" | "cash" | "none")
   AnimalService:Push(player, at?)
   AnimalService.Changed (player, key, what)   "feed" | "collect" | "upgrade" | "new"
@@ -173,6 +176,25 @@ function AnimalService:Feed(player, key)
 end
 
 -- Every animal fed, no crops needed (the shop's Feed Everyone): how many
+-- The conveyor's call at the pens: everything waiting into the basket, the hungry fed
+function AnimalService:Belt(player)
+	local p = data:Get(player)
+	if not p then
+		return 0, 0
+	end
+	local got, fed = 0, 0
+	for _, key in Animals.LIST do
+		if stateOf(p, key) then
+			got += self:Collect(player, key)
+			local st = stateOf(p, key)
+			if not Animals.fed(st, now()) and self:Feed(player, key) then
+				fed += 1
+			end
+		end
+	end
+	return got, fed
+end
+
 function AnimalService:FeedAll(player)
 	local p = data:Get(player)
 	if not p then
@@ -249,6 +271,9 @@ function AnimalService:Init(registry)
 	farm = registry.FarmService
 	upgrades = registry.UpgradeService
 	analytics = registry.AnalyticsService
+	farm.belt = function(player)
+		self:Belt(player)
+	end
 	upgrades.Applied:Connect(function(player, u)
 		if u.kind == "animal" then
 			addPen(player, u.value)

@@ -533,6 +533,19 @@ function FarmBuilder.base(plot)
 	L:block(m.X, m.Z, 0.4, 0.4, 3.4, { color = P.wood, name = "MailPost" }, 0)
 	L:box(m.X, 3.9, m.Z, 1.2, 1, 1.8, deco({ color = plot.color, name = "Mailbox" }))
 	L:block(-46, -95, 5, 30, 0.12, deco({ color = Color3.fromRGB(160, 120, 84), name = "Track" }), 0.24)
+	-- the farm path: from the stand past the soil, the fields and the barn to the pens, so it's all one walk
+	local fp = SPOTS.farmPath
+	local dirt = deco({ color = Color3.fromRGB(176, 136, 96), name = "FarmPath" })
+	L:block(fp.x, (fp.z0 + fp.z1) / 2, 4, fp.z1 - fp.z0, 0.12, dirt, 0.24)
+	L:block(fp.x - 9, fp.z0, 18, 4, 0.12, dirt, 0.24)
+	L:block((fp.x - 62) / 2, fp.pens, fp.x + 62, 4, 0.12, dirt, 0.24)
+	L:block(-42, -21.5, 4, 7, 0.12, dirt, 0.24) -- (the fields to the barn's doors)
+	-- signposts where the paths meet
+	for _, sp in { { fp.x + 3, -60, "FIELDS" }, { fp.x + 3, -8, "BARN" }, { fp.x + 3, fp.pens + 3, "ANIMALS" } } do
+		L:block(sp[1], sp[2], 0.4, 0.4, 4, { color = P.wood, name = "SignPost" }, 0)
+		local board = L:box(sp[1], 4.2, sp[2], 0.3, 1.4, 4.4, deco({ color = P.cream, name = "PathSign" }))
+		FarmBuilder.sign(board, sp[3], "", plot.color, Enum.NormalId.Left)
+	end
 	FarmBuilder.decor(L, plot)
 	-- the buy-pads
 	refs.pads, refs.rims = {}, {}
@@ -952,7 +965,7 @@ end
 
 BUILD.fence = function(L)
 	-- a white picket fence round the shack and the field, open at the track
-	local x0, x1, z0, z1 = -68, -2, -88, -50
+	local x0, x1, z0, z1 = -68, -4, -88, -50
 	local function run(ax, az, bx, bz)
 		local len = math.max(math.abs(bx - ax), math.abs(bz - az))
 		local alongX = math.abs(bx - ax) > 0
@@ -979,7 +992,8 @@ BUILD.fence = function(L)
 			deco({ color = P.fenceWhite, name = "PicketRail" })
 		)
 	end
-	run(x0, z1, x1, z1)
+	run(x0, z1, -50, z1)
+	run(-32, z1, x1, z1) -- (open onto the big fields)
 	run(x0, z0, x0, z1)
 	run(x1, z0, x1, z1)
 	run(x0, z0, -50, z0)
@@ -1094,7 +1108,7 @@ end
 
 BUILD.field1 = function(L)
 	-- a rail fence round the stage-2 fields, open toward the barn
-	local x0, x1, z0, z1 = -79, -8, -7, 20
+	local x0, x1, z0, z1 = -78, -8, -51, -26
 	local function rail(ax, az, bx, bz)
 		local len = math.max(math.abs(bx - ax), math.abs(bz - az))
 		local alongX = math.abs(bx - ax) > 0
@@ -1122,11 +1136,14 @@ BUILD.field1 = function(L)
 			)
 		end
 	end
-	rail(x0, z1, x1, z1)
+	-- (open toward the soil, toward the barn's doors and onto the farm path)
 	rail(x0, z0, x0, z1)
-	rail(x1, z0, x1, z1)
+	rail(x1, z0, x1, -42)
+	rail(x1, -34, x1, z1)
 	rail(x0, z0, -50, z0)
 	rail(-32, z0, x1, z0)
+	rail(x0, z1, -50, z1)
+	rail(-34, z1, x1, z1)
 end
 
 BUILD.tractor = function(L, plot)
@@ -1152,8 +1169,7 @@ BUILD.tractor = function(L, plot)
 	model:SetAttribute("Plot", plot.index)
 end
 
-BUILD.conveyor = function(L)
-	local route = PlotLayout.CONVEYOR
+local function belt(L, route)
 	for i = 1, #route - 1 do
 		local a, b = route[i], route[i + 1]
 		local len = (b - a).Magnitude
@@ -1194,6 +1210,15 @@ BUILD.conveyor = function(L)
 			)
 		end
 	end
+end
+
+BUILD.conveyor = function(L)
+	local route = PlotLayout.CONVEYOR
+	belt(L, route)
+	-- (and a leg out to the coop and the pens: it collects and feeds as it goes)
+	belt(L, PlotLayout.CONVEYOR_PENS)
+	local coop = PlotLayout.CONVEYOR_PENS[1]
+	L:block(coop.X, coop.Z, 3, 3, 1.6, deco({ color = P.steel, name = "PenHopper" }), 1.8)
 	-- a hopper at the barn, a chute down to the stand
 	local first, last = route[1], route[#route]
 	L:block(first.X, first.Z, 3, 3, 1.6, deco({ color = P.steel, name = "Hopper" }), 1.8)

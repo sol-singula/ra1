@@ -2,7 +2,8 @@
 Farming with one thumb (master plan §3, phone first). A big round button at the bottom right says what it will do
 for the soil you're standing by (Net "Farm" "act"; the server does all of it that's in reach): HARVEST when
 something there is ripe, PLANT when there's empty soil, WATER (once you have the well) when something's growing
-dry, TEND when it's all growing (each tap takes a bit off the wait). It hides when there's nothing to do. With it, along the bottom of the screen, the crop picker: one chip per
+dry, TEND for a growing crop not tended yet (once a crop: it grows 40% faster and pays half its price there and
+then). It hides when there's nothing to do. With it, along the bottom of the screen, the crop picker: one chip per
 crop you've unlocked, in rows of five (Net "Farm" "crop"). Walk up to the soil and every crop near you shows its
 timer above it (0:04, READY!). On a PC, E (or a click away from the buttons) does the same as the button.
 
@@ -73,10 +74,10 @@ function FarmController.action()
 				empty = true
 			elseif now - t.at >= t.need then
 				ripe = true
+			elseif not t.tended then
+				growing = true
 			elseif f.well and not t.watered then
 				dry = true
-			else
-				growing = true
 			end
 		end
 	end
@@ -84,10 +85,10 @@ function FarmController.action()
 		return "harvest"
 	elseif empty then
 		return "plant"
-	elseif dry then
-		return "water"
 	elseif growing then
 		return "tend"
+	elseif dry then
+		return "water"
 	end
 	return nil
 end

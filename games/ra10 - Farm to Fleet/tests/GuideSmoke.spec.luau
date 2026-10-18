@@ -140,12 +140,12 @@ check(
 check("...no GO now", not refs.go.Visible)
 check("...and no GO for a step that's close already", not Guide:Go(player))
 
--- Never a wait: TEND what's growing; and a new farmer's crops grow fast and pay well ----------------------------------
+-- While it grows: TEND it once (Cash now, faster); a new farmer's crops grow fast and pay well -------------------------
 do
 	local Crops = Engine.require(tree.shared.Data.Crops)
 	local g1, v1 = Crops.starter(1)
 	local g7, v7 = Crops.starter(7)
-	check("level 1: crops grow 2x and pay 3x", g1 == 2 and v1 == 3, `{g1} {v1}`)
+	check("level 1: crops grow 2x and pay 2.5x", g1 == 2 and v1 == 2.5, `{g1} {v1}`)
 	check("...fading out by level 7", g7 == 1 and v7 == 1)
 	p.soil = {}
 	p.stats.harvested = 0
@@ -178,21 +178,20 @@ do
 		timer and timer.gui.Enabled and timer.label.Text:match("0:0%d$") ~= nil,
 		timer and timer.label.Text
 	)
-	local before = p.soil["1"].need
-	check("...and a TEND takes time off", Farm:Act(player) == "tend" and p.soil["1"].need < before, p.soil["1"].need)
-	for _ = 1, 6 do
-		Engine.advance(0.2)
-		if Farm:Ripe(player, 1) then
-			break
-		end
-		Farm:Act(player)
-	end
-	Engine.advance(0.3)
-	check("...a few taps and it's ripe: HARVEST", Farm:Ripe(player, 1) and FarmC.action() == "harvest")
+	local before, cash = p.soil["1"].need, p.cash
+	check("...a TEND takes time off", Farm:Act(player) == "tend" and p.soil["1"].need < before, p.soil["1"].need)
+	check("...and pays Cash there and then", p.cash > cash, p.cash - cash)
+	Engine.advance(0.1)
+	check("...once a crop: no spamming it", Farm:Act(player) ~= "tend" and FarmC.action() ~= "tend")
+	Guide:Check(player)
+	Engine.advance(0.1)
+	check("...the guide: nearly ripe", GuideC.state().text:find("Nearly ripe") ~= nil, GuideC.state().text)
+	Engine.advance(4)
+	check("...and soon it's ripe: HARVEST", Farm:Ripe(player, 1) and FarmC.action() == "harvest")
 	FarmC.paintTimers()
 	check("...READY! over it", FarmC.refs.timers[1].label.Text:find("READY!") ~= nil, FarmC.refs.timers[1].label.Text)
 	check("...and the guide says so", GuideC.state().text:find("TEND") == nil, GuideC.state().text)
-	check("a sale pays the starter price", Farm:Worth(player, { strawberry = 1 }) == Crops.strawberry.value * 3)
+	check("a sale pays the starter price", Farm:Worth(player, { strawberry = 1 }) == Crops.strawberry.value * 2.5)
 end
 
 -- Can't afford the step's buy: earn it (sell, or grow) --------------------------------------------------------------------
@@ -243,7 +242,12 @@ do
 	local after = Upg:Offer(player)
 	check("buying one: the others stay on their pads", after[2].upgrade.key == second, after[2].upgrade.key)
 	check("...the next soil takes the bought one's pad", after[1].upgrade.key == "soil5", after[1].upgrade.key)
-	check("the pad says what it gives and costs in $", Upgrades.blurb(Upgrades.soil5) == "→ 5 patches")
+	check("the pad says what it gives and costs in $", Upgrades.blurb(Upgrades.soil5) == "+1 patch")
+	check(
+		"...exactly what it adds: the Big Field +9, not +30",
+		Upgrades.blurb(Upgrades.field2) == "+9 patches",
+		Upgrades.blurb(Upgrades.field2)
+	)
 end
 
 -- The menu opens up with the guide --------------------------------------------------------------------------------------

@@ -97,7 +97,7 @@ do
 	local out = {}
 	for n = 13, 21 do
 		local t = PlotLayout.soilTile(n)
-		if t.X < -80 or t.X > -4 or t.Z < -8 or t.Z > 20 then
+		if t.X < -78 or t.X > -8 or t.Z < -51 or t.Z > -26 then
 			table.insert(out, n)
 		end
 	end
@@ -211,6 +211,17 @@ local cashBefore = p.cash
 p.storage.carrot = 10
 Engine.advance(Upgrades.conveyor.value + 1)
 check("the conveyor sells the basket", p.cash > cashBefore and Farm:Carried(player) < 10, p.cash - cashBefore)
+do
+	-- (on its way it calls at the coop: the eggs collected and sold, the hungry chickens fed)
+	local st = p.animals.chicken
+	st.ready, st.fedAt = 4, 0
+	local eggs = p.stats.eggs or 0
+	p.storage.carrot = 10
+	Engine.advance(Upgrades.conveyor.value + 1)
+	check("the conveyor collects the eggs", (p.stats.eggs or 0) >= eggs + 4 and st.ready <= 1, `{p.stats.eggs} {eggs} {st.ready}`)
+	check("...feeds the chickens from the basket", st.fedAt > 0)
+	check("...and sells it all", Farm:Carried(player) == 0, Farm:Carried(player))
+end
 
 -- Pigs, sheep, cows ---------------------------------------------------------------------------------------------------
 table.clear(p.storage)
