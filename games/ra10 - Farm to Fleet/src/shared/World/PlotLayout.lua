@@ -13,7 +13,7 @@ The plot's zones (local coordinates), filled stage by stage:
   PlotLayout.frame(i)          plot i's CFrame (1-3 north of the road, 4-6 south)
   PlotLayout.toWorld(i, x, z, y?)
   PlotLayout.SPOTS             the named local spots (spawn, shack, stand, pads, soil origin...)
-  PlotLayout.soilTile(n)       tile n's local centre (n = 1..12, filled row by row from the road side)
+  PlotLayout.soilTile(n)       tile n's local centre (1..12 the shack's field, 13..39 the stage-2 fields)
 ]]
 local PlotLayout = {}
 
@@ -45,7 +45,19 @@ PlotLayout.SPOTS = {
 	well = Vector3.new(-72, 0, -54),
 	wheelbarrow = Vector3.new(-46, 0, -62),
 	scarecrow = Vector3.new(-6, 0, -60),
-	barnSite = Vector3.new(-42, 0, -20),
+	barnSite = Vector3.new(-42, 0, -20), -- the barn: 28 x 20 here (stage 2)
+	field = Vector3.new(-74, 0, -1), -- the stage-2 fields' first tile (tiles 13..39, 9 to a row)
+	tractor = Vector3.new(-14, 0, -24),
+	silo = Vector3.new(-72, 0, -34),
+	windmill = Vector3.new(-12, 0, -40),
+	path = Vector3.new(-41, 0, 22), -- the dirt path down the middle of the pens
+	-- the pens: a 2 x 2 block behind the fields, a path between; each PEN wide, its pad at its front
+	pens = {
+		chicken = Vector3.new(-60, 0, 44),
+		pig = Vector3.new(-22, 0, 44),
+		sheep = Vector3.new(-60, 0, 86),
+		cow = Vector3.new(-22, 0, 86),
+	},
 	mailbox = Vector3.new(-50, 0, -106),
 	sign = Vector3.new(-74, 0, -106),
 }
@@ -53,10 +65,27 @@ PlotLayout.TILE = 6 -- a soil tile's size
 PlotLayout.TILE_GAP = 1.6
 PlotLayout.TILE_COLUMNS = 4
 
+PlotLayout.FIELD_COLUMNS = 9
+PlotLayout.PEN = Vector3.new(34, 0, 38) -- a pen's size (x, z)
+-- the conveyor's route: from the barn's west side round to the stand (stage 2)
+PlotLayout.CONVEYOR = {
+	Vector3.new(-56, 0, -22),
+	Vector3.new(-78, 0, -22),
+	Vector3.new(-78, 0, -92),
+	Vector3.new(-36, 0, -92),
+}
+
 function PlotLayout.soilTile(n)
+	local step = PlotLayout.TILE + PlotLayout.TILE_GAP
+	if n > 12 then
+		-- (the stage-2 fields)
+		local m = n - 13
+		local c = m % PlotLayout.FIELD_COLUMNS
+		local r = m // PlotLayout.FIELD_COLUMNS
+		return PlotLayout.SPOTS.field + Vector3.new(c * step, 0, r * step)
+	end
 	local c = (n - 1) % PlotLayout.TILE_COLUMNS
 	local r = (n - 1) // PlotLayout.TILE_COLUMNS
-	local step = PlotLayout.TILE + PlotLayout.TILE_GAP
 	return PlotLayout.SPOTS.soil + Vector3.new(c * step, 0, r * step)
 end
 

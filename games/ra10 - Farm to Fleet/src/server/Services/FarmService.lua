@@ -20,7 +20,11 @@ crops, golden } whenever it changes.
   FarmService:Harvest(player, n) -> ok, why
   FarmService:Water(player, n) -> ok, why
   FarmService:Act(player) -> what ("harvest" | "plant" | "water" | nil), how many
-  FarmService:Sell(player) -> Cash paid
+  FarmService:Sell(player, quiet?) -> Cash paid
+  FarmService:Worth(player) -> Cash, goods, products   what the basket would sell for
+  FarmService:Stow(player, key, n) -> how many fit     goods into the basket (eggs, milk...)
+  FarmService:Take(player, n) -> ok                   n crops out of the basket (feeding)
+  FarmService:Machines(player, profile)              the tractor and the conveyor (each tick)
   FarmService:Carried(player) / :Carry(player)
   FarmService:Ripe(player, n) / :Phase(player, n)
   FarmService:BuildTiles(player)           (after soil is bought) the tiles the plot has now
@@ -30,6 +34,7 @@ crops, golden } whenever it changes.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Animals = require(ReplicatedStorage.Shared.Data.Animals)
 local Crops = require(ReplicatedStorage.Shared.Data.Crops)
 local FarmBuilder = require(ReplicatedStorage.Shared.World.FarmBuilder)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -49,6 +54,7 @@ local FarmService = {
 local data, economy, plots, analytics
 local phases = {} -- [player] = { [n] = the phase the model shows }
 local selling = {} -- [player] = true while they stand on the pad (one sale per visit)
+local machineAt = {} -- [player] = { tractor = t, conveyor = t }: when each machine last ran
 
 local function now()
 	return workspace:GetServerTimeNow()
@@ -80,6 +86,58 @@ function FarmService:Carried(player)
 		n += v
 	end
 	return n
+end
+
+-- Put goods in the basket (an animal's products): as many as fit; returns how many went in
+function FarmService:Stow(player, key, n)
+	local p = profileOf(player)
+	if not p then
+		return 0
+	end
+	local room = math.max(0, self:Carry(player) - self:Carried(player))
+	local put = math.min(room, n)
+	if put > 0 then
+		p.storage[key] = (p.storage[key] or 0) + put
+	end
+	return put
+end
+
+-- Take n crops (not products, not golden) out of the basket, cheapest first (feeding the animals); false if short
+function FarmService:Take(player, n)
+	local p = profileOf(player)
+	if not p then
+		return false
+	end
+	local have = 0
+	for key, count in p.storage do
+		if Crops[key] then
+			have += count
+		end
+	end
+	if have < n then
+		return false
+	end
+	local keys = {}
+	for key in p.storage do
+		if Crops[key] then
+			table.insert(keys, key)
+		end
+	end
+	table.sort(keys, function(a, b)
+		return Crops[a].value < Crops[b].value
+	end)
+	for _, key in keys do
+		local take = math.min(n, p.storage[key])
+		p.storage[key] -= take
+		if p.storage[key] <= 0 then
+			p.storage[key] = nil
+		end
+		n -= take
+		if n <= 0 then
+			break
+		end
+	end
+	return true
 end
 
 function FarmService:Tiles(player)
@@ -214,9 +272,13 @@ function FarmService:Plant(player, n, key)
 		return false, "locked"
 	end
 	local sprinkler = Upgrades.stat(p.owned or {}, "sprinkler", 0) > 0
-	local need = c.grow * (sprinkler and Crops.WATER_CUT or 1)
+	-- (the chickens make everything grow faster, the cows the fruit)
+	local speed = 1
+		+ Animals.boost(p, "grow", now())
+		+ (c.type == "fruit" and Animals.boost(p, "fruitGrow", now()) or 0)
+	local need = c.grow * (sprinkler and Crops.WATER_CUT or 1) / speed
 	-- (the golden roll happens now, so the field shows a golden crop while it grows)
-	local golden = math.random() < Crops.GOLDEN_CHANCE + Upgrades.stat(p.owned or {}, "golden", 0)
+	local golden = math.random() < FarmService.goldenChance(p)
 	p.soil[tostring(n)] = { crop = key, at = now(), need = need, watered = sprinkler, golden = golden }
 	p.stats.planted = (p.stats.planted or 0) + 1
 	p.stats[key .. "s"] = (p.stats[key .. "s"] or 0) + 1
@@ -258,7 +320,7 @@ function FarmService:Harvest(player, n)
 	if c.regrow then
 		t.at, t.watered = now(), false
 		t.need = c.grow
-		t.golden = math.random() < Crops.GOLDEN_CHANCE + Upgrades.stat(p.owned or {}, "golden", 0)
+		t.golden = math.random() < FarmService.goldenChance(p)
 	else
 		p.soil[tostring(n)] = nil
 	end
@@ -324,27 +386,51 @@ function FarmService:Act(player)
 	return nil, 0
 end
 
-function FarmService:Sell(player)
+function FarmService.goldenChance(p)
+	return Crops.GOLDEN_CHANCE + Upgrades.stat(p.owned or {}, "golden", 0) + Animals.boost(p, "golden", now())
+end
+
+-- What the basket is worth at the stand: the crops (golden ones 10x; the pigs lift the vegetables) and the animals'
+-- products, all times the stand's price
+function FarmService:Worth(player)
+	local p = profileOf(player)
+	if not p then
+		return 0, 0, 0
+	end
+	local price = 1 + Upgrades.stat(p.owned or {}, "price", 0)
+	local veg = 1 + Animals.boost(p, "vegPrice", now())
+	local total, n, products = 0, 0, 0
+	for bag, count in p.storage do
+		local golden = string.sub(bag, 1, 1) == "*"
+		local key = golden and string.sub(bag, 2) or bag
+		local c = Crops[key]
+		local product = not c and Animals.product(key)
+		if c then
+			total += c.value * count * (golden and Crops.GOLDEN_VALUE or 1) * (c.type == "veg" and veg or 1)
+			n += count
+		elseif product then
+			total += product.value * count
+			n += count
+			products += count
+		end
+	end
+	return math.floor(total * price + 0.5), n, products
+end
+
+function FarmService:Sell(player, quiet)
 	local p = profileOf(player)
 	if not p or self:Carried(player) == 0 then
 		return 0
 	end
-	local price = 1 + Upgrades.stat(p.owned or {}, "price", 0)
-	local total, n = 0, 0
-	for bag, count in p.storage do
-		local golden = string.sub(bag, 1, 1) == "*"
-		local c = Crops[golden and string.sub(bag, 2) or bag]
-		if c then
-			total += c.value * count * (golden and Crops.GOLDEN_VALUE or 1)
-			n += count
-		end
-	end
+	local total, n, products = self:Worth(player)
 	table.clear(p.storage)
-	total = math.floor(total * price + 0.5)
 	p.stats.sold = (p.stats.sold or 0) + n
+	p.stats.soldProducts = (p.stats.soldProducts or 0) + products
 	economy:Add(player, total, "sell")
 	economy:AddXP(player, math.max(1, math.floor(n / 2)), "sell")
-	Net.fire(player, "Toast", `Sold {n} for {total} Cash!`, "good")
+	if not quiet then
+		Net.fire(player, "Toast", `Sold {n} for {total} Cash!`, "good")
+	end
 	if analytics then
 		pcall(analytics.event, player, "sell", { n = n, cash = total })
 	end
@@ -391,6 +477,7 @@ function FarmService:Init(registry)
 	Players.PlayerRemoving:Connect(function(player)
 		phases[player] = nil
 		selling[player] = nil
+		machineAt[player] = nil
 	end)
 end
 
@@ -401,6 +488,42 @@ function FarmService:OnPlayerReady(player)
 	end)
 end
 
+-- The tractor and the conveyor: every so often (the sheep make them quicker) the tractor harvests what's ripe and
+-- plants again; the conveyor takes the basket to the stand and sells it
+function FarmService:Machines(player, p)
+	local t = now()
+	local m = machineAt[player]
+	if not m then
+		m = { tractor = t, conveyor = t }
+		machineAt[player] = m
+	end
+	local quick = 1 + Animals.boost(p, "machine", t)
+	local tractor = Upgrades.stat(p.owned or {}, "autoharvest", nil)
+	if tractor and t - m.tractor >= tractor / quick then
+		m.tractor = t
+		local harvested, planted = 0, 0
+		for n in self:Tiles(player) do
+			if self:Ripe(player, n) and self:Harvest(player, n) then
+				harvested += 1
+			end
+			if not tileState(p, n) and self:Plant(player, n) then
+				planted += 1
+			end
+		end
+		if harvested + planted > 0 then
+			self:Push(player)
+			self.Changed:Fire(player, "tractor")
+		end
+	end
+	local conveyor = Upgrades.stat(p.owned or {}, "autosell", nil)
+	if conveyor and t - m.conveyor >= conveyor / quick then
+		m.conveyor = t
+		if self:Carried(player) > 0 then
+			self:Sell(player, true)
+		end
+	end
+end
+
 function FarmService:_tick()
 	for _, player in Players:GetPlayers() do
 		local p = data:Get(player)
@@ -408,6 +531,7 @@ function FarmService:_tick()
 		if not p or not refs then
 			continue
 		end
+		self:Machines(player, p)
 		-- the models follow the timers
 		local seen = phases[player] or {}
 		for n in refs.tiles do

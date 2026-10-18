@@ -23,6 +23,7 @@ local UpgradeService = {
 	Name = "UpgradeService",
 	Dependencies = { "PlayerDataService", "EconomyService", "PlotService", "FarmService" },
 	Bought = Signal.new("UpgradeService.Bought"),
+	Applied = Signal.new("UpgradeService.Applied"), -- (player, upgrade) built on the plot (on a buy, and on a rejoin)
 	REACH = 3.4,
 	TICK = 0.2,
 }
@@ -105,8 +106,12 @@ local function apply(player, u)
 	end
 	local plot = plots:Plot(player)
 	if plot then
+		if u.replaces and plot.items:FindFirstChild(u.replaces) then
+			plot.items[u.replaces]:Destroy() -- (the site sign goes when the building comes)
+		end
 		FarmBuilder.upgrade(plot, u.key)
 	end
+	UpgradeService.Applied:Fire(player, u)
 end
 
 function UpgradeService:Buy(player, key)
@@ -171,9 +176,16 @@ function UpgradeService:OnPlayerReady(player, profile)
 		return
 	end
 	profile.owned = profile.owned or {}
+	local replaced = {}
 	for _, key in Upgrades.LIST do
-		if profile.owned[key] then
+		if profile.owned[key] and Upgrades[key].replaces then
+			replaced[Upgrades[key].replaces] = true
+		end
+	end
+	for _, key in Upgrades.LIST do
+		if profile.owned[key] and not replaced[key] then
 			FarmBuilder.upgrade(plot, key)
+			self.Applied:Fire(player, Upgrades[key])
 		end
 	end
 	self:Paint(player)

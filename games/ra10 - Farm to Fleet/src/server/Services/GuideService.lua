@@ -21,12 +21,19 @@ local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
 
 local GuideService = {
 	Name = "GuideService",
-	Dependencies = { "PlayerDataService", "EconomyService", "PlotService", "FarmService", "UpgradeService" },
+	Dependencies = {
+		"PlayerDataService",
+		"EconomyService",
+		"PlotService",
+		"FarmService",
+		"UpgradeService",
+		"AnimalService",
+	},
 	Advanced = Signal.new("GuideService.Advanced"),
 	CHECK = 1,
 }
 
-local data, economy, plots, farm, upgrades, analytics
+local data, economy, plots, farm, upgrades, animals, analytics
 local sent = {} -- [player] = the last payload's key and target, so nothing is sent twice
 
 local function guideOf(p)
@@ -54,6 +61,9 @@ local function isDone(player, p, step)
 		return (p.level or 1) >= d.n
 	elseif d.kind == "planted" then
 		return planted(player) >= d.n
+	elseif d.kind == "animal" then
+		local st = p.animals and p.animals[d.key]
+		return st ~= nil and (st.level or 1) >= d.n
 	end
 	return false
 end
@@ -113,6 +123,9 @@ function GuideService:Target(player, target)
 			end
 		end
 		return best and best[2].Position
+	elseif string.sub(target, 1, 4) == "pen:" then
+		local pen = animals and animals:Pens(player)[string.sub(target, 5)]
+		return pen and pen.pad.Position
 	elseif string.sub(target, 1, 4) == "pad:" then
 		local key = string.sub(target, 5)
 		for _, pad in refs.pads do
@@ -182,11 +195,15 @@ function GuideService:Init(registry)
 	plots = registry.PlotService
 	farm = registry.FarmService
 	upgrades = registry.UpgradeService
+	animals = registry.AnimalService
 	analytics = registry.AnalyticsService
 	farm.Changed:Connect(function(player)
 		self:Check(player)
 	end)
 	upgrades.Bought:Connect(function(player)
+		self:Check(player)
+	end)
+	animals.Changed:Connect(function(player)
 		self:Check(player)
 	end)
 	economy.LevelUp:Connect(function(player)

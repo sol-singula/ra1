@@ -12,7 +12,8 @@ tiles (FarmBuilder.crop).
   FarmBuilder.tile(plot, refs, n) -> Part     soil tile n
   FarmBuilder.crop(plot, tile, cropKey, phase, golden?)   the crop on a tile (phase 0 seed .. 3 ripe; nil clears)
   FarmBuilder.water(tile, wet)                darker soil while watered
-  FarmBuilder.upgrade(plot, key)              the upgrade's piece on the plot
+  FarmBuilder.upgrade(plot, key)              the upgrade's piece on the plot (a pen's has its PenPad)
+  FarmBuilder.animal(parent, key, at, level, facing?) -> Model   a blocky animal (bigger with its level)
   FarmBuilder.clear(plot)
   FarmBuilder.label(part, title, line?, color?)   words over a pad or a sign (a billboard sized in studs)
   FarmBuilder.sign(part, title, line?, color?, face?)   words on a part's face
@@ -640,6 +641,406 @@ BUILD.barnDeed = function(L, plot)
 	L:block(b.X, b.Z, 28, 20, 0.15, deco({ color = Color3.fromRGB(160, 120, 84), name = "BarnSite" }), 0.24)
 	local board = L:box(b.X, 3, b.Z - 11, 8, 2.4, 0.3, deco({ color = P.cream, name = "SiteSign" }))
 	FarmBuilder.sign(board, "BARN", "coming soon", plot.color)
+end
+
+-- Stage 2: the farm ------------------------------------------------------------------------------------------------
+local BARN_RED = Color3.fromRGB(176, 44, 38)
+local ROOF = Color3.fromRGB(70, 74, 82)
+
+BUILD.barn = function(L, plot)
+	local b = SPOTS.barnSite
+	local x, z, w, d, h = b.X, b.Z, 28, 20, 12
+	L:block(x, z, w + 1.4, d + 1.4, 0.8, { color = P.concreteDark, name = "BarnFloor" }, 0)
+	L:block(x, z, w, d, h, { color = BARN_RED, name = "Barn" }, 0.8)
+	-- white trim at the corners and along the eaves
+	for _, sx in { -1, 1 } do
+		for _, sz in { -1, 1 } do
+			L:block(x + sx * w / 2, z + sz * d / 2, 0.8, 0.8, h, deco({ color = WHITE, name = "Trim" }), 0.8)
+		end
+		L:box(x, h + 0.8, z + sx * (d / 2 + 0.05), w + 0.8, 0.6, 0.5, deco({ color = WHITE, name = "Trim" }))
+	end
+	-- the gambrel roof: a steep lower pair of slopes, a shallow upper pair, a white ridge
+	L:wedge(x, h + 0.8 + 2.5, z - d / 2 + 2.6, w + 1.2, 5, 5.6, { color = ROOF, name = "Roof" }, 180)
+	L:wedge(x, h + 0.8 + 2.5, z + d / 2 - 2.6, w + 1.2, 5, 5.6, { color = ROOF, name = "Roof" }, 0)
+	L:box(x, h + 0.8 + 2.5, z, w + 1.2, 5, d - 10.4, { color = ROOF, name = "Roof" })
+	L:wedge(x, h + 0.8 + 6.5, z - (d - 10.4) / 4, w + 1.2, 3, (d - 10.4) / 2, { color = ROOF, name = "Roof" }, 180)
+	L:wedge(x, h + 0.8 + 6.5, z + (d - 10.4) / 4, w + 1.2, 3, (d - 10.4) / 2, { color = ROOF, name = "Roof" }, 0)
+	L:box(x, h + 0.8 + 8.1, z, w + 1.4, 0.4, 0.6, deco({ color = WHITE, name = "Ridge" }))
+	-- the big doors on the front: two leaves with white frames and X braces
+	local fz = z - d / 2 - 0.12
+	for _, sx in { -1, 1 } do
+		local dx = x + sx * 2.6
+		L:box(dx, 0.8 + 4.5, fz, 5, 9, 0.25, deco({ color = BARN_RED, name = "BarnDoor" }))
+		L:box(dx, 0.8 + 4.5, fz - 0.1, 5.2, 0.4, 0.2, deco({ color = WHITE, name = "Brace" }))
+		L:box(dx, 0.8 + 9, fz - 0.1, 5.2, 0.4, 0.2, deco({ color = WHITE, name = "Brace" }))
+		L:box(dx, 0.8, fz - 0.1, 5.2, 0.4, 0.2, deco({ color = WHITE, name = "Brace" }))
+		for _, sign in { -1, 1 } do
+			local brace = L:box(dx, 0.8 + 4.5, fz - 0.12, 0.4, 10, 0.2, deco({ color = WHITE, name = "Brace" }))
+			brace.CFrame = brace.CFrame * CFrame.Angles(0, 0, math.rad(27 * sign))
+		end
+	end
+	-- the hayloft door and a cupola with a weathervane
+	L:box(x, h - 1.6, fz, 4, 3.2, 0.25, deco({ color = WHITE, name = "Hayloft" }))
+	L:box(x, h - 1.6, fz - 0.1, 3.2, 2.4, 0.2, deco({ color = Color3.fromRGB(120, 72, 44), name = "Hay" }))
+	L:block(x, z, 3.2, 3.2, 3, { color = WHITE, name = "Cupola" }, h + 9)
+	L:block(x, z, 3.8, 3.8, 0.4, deco({ color = ROOF, name = "CupolaRoof" }), h + 12)
+	L:block(x, z, 0.2, 0.2, 2.6, deco({ color = INK, name = "Vane" }), h + 12.4)
+	L:box(x, h + 14.4, z, 2.2, 0.2, 0.2, deco({ color = INK, name = "Vane" }))
+	-- hay bales by the door
+	for k = 0, 2 do
+		L:block(
+			x + 9 + (k % 2) * 2.6,
+			z - d / 2 - 2.5,
+			2.4,
+			1.6,
+			1.6,
+			{ color = P.sunflower, name = "HayBale" },
+			0 + (k == 2 and 1.6 or 0)
+		)
+	end
+	_ = plot
+end
+
+BUILD.field1 = function(L)
+	-- a rail fence round the stage-2 fields, open toward the barn
+	local x0, x1, z0, z1 = -79, -8, -7, 20
+	local function rail(ax, az, bx, bz)
+		local len = math.max(math.abs(bx - ax), math.abs(bz - az))
+		local alongX = math.abs(bx - ax) > 0
+		for _, y in { 1, 2 } do
+			L:box(
+				(ax + bx) / 2,
+				y,
+				(az + bz) / 2,
+				alongX and len or 0.3,
+				0.3,
+				alongX and 0.3 or len,
+				deco({ color = P.wood, name = "FieldRail" })
+			)
+		end
+		for k = 0, math.floor(len / 6) do
+			local t = k * 6 / len
+			L:block(
+				ax + (bx - ax) * t,
+				az + (bz - az) * t,
+				0.5,
+				0.5,
+				2.4,
+				deco({ color = P.wood, name = "FieldPost" }),
+				0
+			)
+		end
+	end
+	rail(x0, z1, x1, z1)
+	rail(x0, z0, x0, z1)
+	rail(x1, z0, x1, z1)
+	rail(x0, z0, -50, z0)
+	rail(-32, z0, x1, z0)
+end
+
+BUILD.tractor = function(L, plot)
+	local t = SPOTS.tractor
+	local model = Instance.new("Model")
+	model.Name = "Tractor"
+	model.Parent = L.folder
+	local s = L:sub(model, CFrame.new(t.X, 0, t.Z))
+	local green = Color3.fromRGB(40, 150, 70)
+	s:box(0, 2.6, 0.6, 3, 1.8, 5, { color = green, name = "TractorBody" })
+	s:box(0, 3.2, -2, 2.6, 1.4, 1.6, { color = green, name = "Hood" })
+	s:box(0, 3.95, -2, 2.7, 0.15, 1.7, deco({ color = P.sunflower, name = "Stripe" }))
+	s:box(0, 4.4, 1.6, 2.6, 0.2, 2.4, deco({ color = INK, name = "Seat" }))
+	s:box(0, 5, 1.2, 0.2, 1.2, 0.2, deco({ color = INK, name = "Column" }))
+	s:cyl(0, 5.6, 1, 0.2, 1.2, deco({ color = INK, name = "Wheel" }), "y")
+	s:box(0.9, 5, -2.5, 0.35, 2.6, 0.35, deco({ color = P.steel, name = "Exhaust" }))
+	for _, sx in { -1, 1 } do
+		s:cyl(sx * 1.9, 1.8, 1.4, 1, 3.6, { color = INK, name = "BigWheel" }, "x")
+		s:cyl(sx * 2.42, 1.8, 1.4, 0.1, 1.8, deco({ color = P.sunflower, name = "Rim" }), "x")
+		s:cyl(sx * 1.6, 1, -2.6, 0.7, 2, { color = INK, name = "SmallWheel" }, "x")
+		s:cyl(sx * 1.97, 1, -2.6, 0.1, 1, deco({ color = P.sunflower, name = "Rim" }), "x")
+	end
+	model:SetAttribute("Plot", plot.index)
+end
+
+BUILD.conveyor = function(L)
+	local route = PlotLayout.CONVEYOR
+	for i = 1, #route - 1 do
+		local a, b = route[i], route[i + 1]
+		local len = (b - a).Magnitude
+		local alongX = math.abs(b.X - a.X) > 0.1
+		local cx, cz = (a.X + b.X) / 2, (a.Z + b.Z) / 2
+		local w, d = alongX and len + 2 or 2, alongX and 2 or len + 2
+		L:box(cx, 1.6, cz, w, 0.25, d, deco({ color = Color3.fromRGB(46, 48, 54), name = "Belt" }))
+		L:box(
+			cx,
+			1.35,
+			cz,
+			alongX and len + 2.2 or 2.4,
+			0.3,
+			alongX and 2.4 or len + 2.2,
+			deco({ color = P.steelLight, name = "BeltFrame" })
+		)
+		for _, side in { -1, 1 } do
+			L:box(
+				cx + (alongX and 0 or side * 1.15),
+				1.95,
+				cz + (alongX and side * 1.15 or 0),
+				alongX and len + 2 or 0.2,
+				0.5,
+				alongX and 0.2 or len + 2,
+				deco({ color = P.safetyYellow, name = "BeltRail" })
+			)
+		end
+		for k = 0, math.floor(len / 6) do
+			local t = k * 6 / len
+			L:block(
+				a.X + (b.X - a.X) * t,
+				a.Z + (b.Z - a.Z) * t,
+				0.4,
+				0.4,
+				1.2,
+				deco({ color = P.steel, name = "BeltLeg" }),
+				0
+			)
+		end
+	end
+	-- a hopper at the barn, a chute down to the stand
+	local first, last = route[1], route[#route]
+	L:block(first.X, first.Z, 3, 3, 1.6, deco({ color = P.steel, name = "Hopper" }), 1.8)
+	L:block(last.X + 1.5, last.Z, 3, 2.4, 0.6, deco({ color = P.steel, name = "Chute" }), 1.8)
+end
+
+BUILD.silo = function(L, plot)
+	local s = SPOTS.silo
+	L:cyl(s.X, 11, s.Z, 22, 8, { color = P.steelLight, name = "Silo" }, "y")
+	for y = 3, 21, 4.5 do
+		L:cyl(s.X, y, s.Z, 0.4, 8.3, deco({ color = P.steel, name = "SiloRing" }), "y")
+	end
+	L:cyl(s.X, 18, s.Z, 1.2, 8.35, deco({ color = plot.color, name = "SiloStripe" }), "y")
+	L:cyl(s.X, 22.4, s.Z, 1, 7, deco({ color = P.steel, name = "SiloDome" }), "y")
+	L:cyl(s.X, 23.2, s.Z, 0.8, 4.5, deco({ color = P.steel, name = "SiloDome" }), "y")
+	L:cyl(s.X, 23.8, s.Z, 0.6, 1.8, deco({ color = P.steelLight, name = "SiloCap" }), "y")
+	L:box(s.X + 4.15, 11, s.Z, 0.3, 22, 1.2, deco({ color = P.steel, name = "Ladder" }))
+end
+
+BUILD.windmill = function(L)
+	local w = SPOTS.windmill
+	for k = 0, 4 do
+		local size = 6 - k * 0.8
+		L:block(w.X, w.Z, size, size, 3.2, { color = k % 2 == 0 and P.cream or WHITE, name = "WindmillTower" }, k * 3.2)
+	end
+	L:block(w.X, w.Z, 3.6, 3.6, 2, { color = P.barnRed, name = "WindmillCap" }, 16)
+	local hub = L:box(w.X, 17, w.Z - 2.2, 1.2, 1.2, 1.2, deco({ color = INK, name = "WindmillHub" }))
+	hub:SetAttribute("Spin", 1.2)
+	for k = 0, 3 do
+		local blade = Instance.new("Part")
+		blade.Name = "WindmillBlade"
+		blade.Anchored = true
+		blade.CanCollide = false
+		blade.CanQuery = false
+		blade.Material = Enum.Material.SmoothPlastic
+		blade.Color = WHITE
+		blade.Size = Vector3.new(1.4, 7, 0.2)
+		blade.CFrame = hub.CFrame * CFrame.Angles(0, 0, math.rad(90 * k)) * CFrame.new(0, 4, -0.3)
+		blade.Parent = hub
+	end
+	L:box(w.X, 1.4, w.Z - 3.05, 1.4, 2.6, 0.2, deco({ color = Color3.fromRGB(120, 72, 44), name = "WindmillDoor" }))
+end
+
+-- A pen: a white rail fence, a shelter that fits the animal, a trough and a feeder, the pad at its gate
+local function pen(L, plot, key)
+	local c = SPOTS.pens[key]
+	local W, D = PlotLayout.PEN.X, PlotLayout.PEN.Z
+	local x0, x1, z0, z1 = c.X - W / 2, c.X + W / 2, c.Z - D / 2, c.Z + D / 2
+	L:block(
+		c.X,
+		c.Z,
+		W,
+		D,
+		0.12,
+		deco({ color = key == "pig" and Color3.fromRGB(150, 110, 80) or P.grass, name = "PenGround" }),
+		0.24
+	)
+	local function rail(ax, az, bx, bz)
+		local len = math.max(math.abs(bx - ax), math.abs(bz - az))
+		local alongX = math.abs(bx - ax) > 0
+		for _, y in { 1.1, 2.3 } do
+			L:box(
+				(ax + bx) / 2,
+				y,
+				(az + bz) / 2,
+				alongX and len or 0.3,
+				0.3,
+				alongX and 0.3 or len,
+				{ color = P.fenceWhite, name = "PenFence" }
+			)
+		end
+		for k = 0, math.floor(len / 5) do
+			local t = k * 5 / len
+			L:block(
+				ax + (bx - ax) * t,
+				az + (bz - az) * t,
+				0.5,
+				0.5,
+				2.8,
+				deco({ color = P.fenceWhite, name = "PenPost" }),
+				0
+			)
+		end
+	end
+	rail(x0, z1, x1, z1)
+	rail(x0, z0, x0, z1)
+	rail(x1, z0, x1, z1)
+	rail(x0, z0, c.X - 3, z0)
+	rail(c.X + 3, z0, x1, z0)
+	-- the shelter at the back
+	local sx, sz = c.X, z1 - 7
+	if key == "chicken" then
+		L:block(sx, sz, 10, 7, 1.6, deco({ color = P.wood, name = "CoopStilts" }), 0)
+		L:block(sx, sz, 10, 7, 6, { color = P.cream, name = "Coop" }, 1.6)
+		L:wedge(sx, 9.6, sz - 1.9, 11, 2, 3.8, { color = plot.color, name = "CoopRoof" }, 180)
+		L:wedge(sx, 9.6, sz + 1.9, 11, 2, 3.8, { color = plot.color, name = "CoopRoof" }, 0)
+		L:box(sx, 3.6, sz - 3.6, 2.2, 2.6, 0.2, deco({ color = INK, name = "CoopDoor" }))
+		L:box(sx, 1, sz - 5.3, 1.8, 0.2, 3.6, deco({ color = P.wood, name = "Ramp" }))
+	elseif key == "pig" then
+		L:block(sx, sz, 12, 7, 5, { color = P.barnRed, name = "Sty" }, 0)
+		L:box(sx, 5.6, sz, 13, 1.2, 8, { color = ROOF, name = "StyRoof" })
+		L:box(sx, 2, sz - 3.6, 3.4, 3.6, 0.2, deco({ color = INK, name = "StyDoor" }))
+		L:block(c.X - 8, c.Z - 4, 8, 6, 0.1, deco({ color = Color3.fromRGB(110, 80, 60), name = "Mud" }), 0.36)
+	elseif key == "sheep" then
+		for _, px in { -5.5, 5.5 } do
+			for _, pz in { -3, 3 } do
+				L:block(sx + px, sz + pz, 0.6, 0.6, 6, { color = P.wood, name = "ShelterPost" }, 0)
+			end
+		end
+		L:box(sx, 6.4, sz, 13, 0.8, 8, { color = plot.color, name = "ShelterRoof" })
+		for k = 0, 2 do
+			L:block(sx - 3 + k * 3, sz + 1, 2.4, 1.6, 1.6, { color = P.sunflower, name = "HayBale" }, 0)
+		end
+	else
+		L:block(sx, sz, 14, 8, 8, { color = BARN_RED, name = "CowShed" }, 0)
+		L:wedge(sx, 9.5, sz - 2, 15, 3, 4.4, { color = ROOF, name = "ShedRoof" }, 180)
+		L:wedge(sx, 9.5, sz + 2, 15, 3, 4.4, { color = ROOF, name = "ShedRoof" }, 0)
+		L:box(sx, 3.4, sz - 4.1, 5, 6.8, 0.2, deco({ color = WHITE, name = "ShedDoor" }))
+	end
+	-- a water trough and a feeder
+	L:block(c.X + W / 2 - 4, c.Z - 4, 2, 6, 1.4, { color = P.steel, name = "Trough" }, 0)
+	L:block(c.X + W / 2 - 4, c.Z - 4, 1.6, 5.6, 0.2, deco({ color = P.water, name = "TroughWater" }), 1.3)
+	L:block(c.X - W / 2 + 4, c.Z - 6, 2.4, 2.4, 2, { color = P.wood, name = "Feeder" }, 0)
+	-- the pad at the gate, and its sign
+	L:block(c.X, z0 - 3.5, 6, 4.6, 0.3, deco({ color = P.sunflower, name = "PenRim" }), 0.25)
+	local pad = L:block(c.X, z0 - 3.5, 5.2, 3.8, 0.4, { color = WHITE, name = "PenPad" }, 0.25)
+	pad:SetAttribute("Animal", key)
+	return pad
+end
+
+BUILD.chickenCoop = function(L, plot)
+	pen(L, plot, "chicken")
+end
+BUILD.pigPen = function(L, plot)
+	pen(L, plot, "pig")
+end
+BUILD.sheepPen = function(L, plot)
+	pen(L, plot, "sheep")
+end
+BUILD.cowBarn = function(L, plot)
+	pen(L, plot, "cow")
+end
+
+BUILD.shedDeed = function(L, plot)
+	local x, z = 34, -60
+	for _, sx in { -1, 1 } do
+		for _, sz in { -1, 1 } do
+			L:block(x + sx * 18, z + sz * 14, 0.4, 0.4, 2, deco({ color = P.wood, name = "Stake" }), 0)
+		end
+	end
+	L:block(x, z, 36, 28, 0.15, deco({ color = P.concrete, name = "ShedSite" }), 0.24)
+	local board = L:box(x, 3, z - 15, 10, 2.6, 0.3, deco({ color = P.cream, name = "SiteSign" }))
+	FarmBuilder.sign(board, "PACKING SHED", "coming soon", plot.color)
+end
+
+-- An animal, blocky, in the pen: bigger as it levels; a ribbon from level 5, a golden bell at 10
+function FarmBuilder.animal(parent, key, at, level, facing)
+	local model = Instance.new("Model")
+	model.Name = "Animal"
+	model:SetAttribute("Animal", key)
+	model.Parent = parent
+	local k = 1 + 0.04 * ((level or 1) - 1)
+	local cf = CFrame.new(at) * CFrame.Angles(0, facing or 0, 0)
+	local s = Shapes.new(model, cf)
+	local function box(x, y, z, w, h, d, color, name)
+		return s:box(x * k, y * k, z * k, w * k, h * k, d * k, deco({ color = color, name = name or "Body" }))
+	end
+	local body
+	if key == "chicken" then
+		body = box(0, 1.2, 0, 1.2, 1.1, 1.6, WHITE, "Body")
+		box(0, 2, -0.8, 0.8, 0.8, 0.8, WHITE, "Head")
+		box(0, 2.5, -0.8, 0.25, 0.35, 0.6, P.dockRed, "Comb")
+		box(0, 1.95, -1.3, 0.3, 0.25, 0.3, P.sunflower, "Beak")
+		box(0, 1.3, 0.85, 0.9, 0.7, 0.3, Color3.fromRGB(230, 230, 225), "Tail")
+		for _, sx in { -0.3, 0.3 } do
+			box(sx, 0.35, 0, 0.15, 0.7, 0.15, P.sunflower, "Leg")
+		end
+	elseif key == "pig" then
+		body = box(0, 1.5, 0, 2, 1.6, 3, Color3.fromRGB(250, 170, 180), "Body")
+		box(0, 1.7, -1.9, 1.5, 1.3, 1, Color3.fromRGB(250, 170, 180), "Head")
+		box(0, 1.5, -2.5, 0.8, 0.6, 0.3, Color3.fromRGB(230, 130, 150), "Snout")
+		for _, sx in { -0.5, 0.5 } do
+			box(sx, 2.45, -1.9, 0.4, 0.3, 0.3, Color3.fromRGB(230, 130, 150), "Ear")
+			for _, sz in { -1, 1 } do
+				box(sx, 0.35, sz, 0.45, 0.7, 0.45, Color3.fromRGB(240, 150, 165), "Leg")
+			end
+		end
+		box(0, 2, 1.6, 0.2, 0.4, 0.2, Color3.fromRGB(230, 130, 150), "Tail")
+	elseif key == "sheep" then
+		body = box(0, 1.7, 0, 2.2, 1.7, 3, WHITE, "Body")
+		box(0, 2.3, 0.4, 1.8, 0.8, 2.2, Color3.fromRGB(240, 240, 236), "Wool")
+		box(0, 1.9, -1.8, 1, 1, 1, INK, "Head")
+		for _, sx in { -0.6, 0.6 } do
+			for _, sz in { -1, 1 } do
+				box(sx, 0.45, sz, 0.35, 0.9, 0.35, INK, "Leg")
+			end
+		end
+	elseif key == "cow" then
+		body = box(0, 2.2, 0, 2.4, 2, 4, WHITE, "Body")
+		box(0.6, 2.6, 0.6, 1.3, 1.2, 1.6, INK, "Patch")
+		box(-0.7, 2.1, -0.9, 1.1, 1, 1.2, INK, "Patch")
+		box(0, 2.6, -2.5, 1.5, 1.5, 1.2, WHITE, "Head")
+		box(0, 2.2, -3.15, 1.2, 0.7, 0.2, Color3.fromRGB(240, 170, 170), "Muzzle")
+		for _, sx in { -0.65, 0.65 } do
+			box(sx, 3.5, -2.5, 0.25, 0.5, 0.25, P.cream, "Horn")
+			for _, sz in { -1.3, 1.3 } do
+				box(sx, 0.6, sz, 0.5, 1.2, 0.5, WHITE, "Leg")
+			end
+		end
+		box(0, 1, 0.6, 0.9, 0.4, 0.9, Color3.fromRGB(240, 170, 170), "Udder")
+	elseif key == "goat" then
+		body = box(0, 1.6, 0, 1.8, 1.5, 2.6, Color3.fromRGB(225, 215, 200), "Body")
+		box(0, 2.3, -1.6, 1, 1, 1, Color3.fromRGB(225, 215, 200), "Head")
+		box(0, 1.7, -1.9, 0.3, 0.6, 0.3, Color3.fromRGB(200, 190, 175), "Beard")
+		for _, sx in { -0.5, 0.5 } do
+			box(sx, 0.4, -0.9, 0.3, 0.8, 0.3, Color3.fromRGB(200, 190, 175), "Leg")
+			box(sx, 0.4, 0.9, 0.3, 0.8, 0.3, Color3.fromRGB(200, 190, 175), "Leg")
+		end
+	else -- horse
+		body = box(0, 2.8, 0, 2, 2, 4.4, Color3.fromRGB(150, 100, 60), "Body")
+		box(0, 4.2, -2.4, 1, 2.2, 1.2, Color3.fromRGB(150, 100, 60), "Neck")
+		box(0, 4.8, -3.2, 0.9, 0.9, 1.8, Color3.fromRGB(150, 100, 60), "Head")
+		box(0, 4.6, -1.9, 0.3, 2, 1, INK, "Mane")
+		for _, sx in { -0.6, 0.6 } do
+			for _, sz in { -1.5, 1.5 } do
+				box(sx, 0.9, sz, 0.45, 1.8, 0.45, Color3.fromRGB(130, 85, 50), "Leg")
+			end
+		end
+	end
+	if (level or 1) >= 5 then
+		box(0, body.Size.Y / k + 0.6, -0.4, body.Size.X / k + 0.1, 0.3, 0.4, P.dockRed, "Ribbon")
+	end
+	if (level or 1) >= 10 then
+		local bell = box(0, body.Size.Y / k, -1.2, 0.5, 0.5, 0.5, P.sunflower, "Bell")
+		bell.Material = Enum.Material.Neon
+	end
+	model.PrimaryPart = body
+	return model
 end
 
 function FarmBuilder.upgrade(plot, key)

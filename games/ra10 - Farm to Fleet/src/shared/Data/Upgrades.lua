@@ -10,9 +10,13 @@ owned yet whose level is reached. Each one is visible on the plot (World/FarmBui
   kind "golden"   + `value` to the golden-harvest chance
   kind "decor"    looks only (and XP: every buy pays XP)
   kind "stage"    the next stage opens (`value`)
+  kind "animal"   a pen for that animal (`value`: Data/Animals' key); AnimalService looks after it
+  kind "autoharvest" the tractor: every `value` seconds it harvests what's ripe and plants again
+  kind "autosell" the conveyor: every `value` seconds it carries the basket to the stand and sells it
 
   Upgrades.LIST              every upgrade, in order
-  Upgrades[key]              { key, name, stage, cost, kind, value, level }
+  Upgrades[key]              { key, name, stage, cost, kind, value, level, replaces? (the piece it takes down: a
+                             site sign) }
   Upgrades.next(owned, level, n)   the next n on offer (the buy-pads)
   Upgrades.stat(owned, kind, default)   the value the plot has for a kind (the highest owned; "price" and
                              "golden" add up)
@@ -43,6 +47,20 @@ local LIST = {
 	{ key = "soil12",     name = "More Soil",       stage = 1, cost = 500, kind = "soil",      value = 12, level = 5 },
 	{ key = "scarecrow",  name = "Scarecrow",       stage = 1, cost = 600, kind = "golden",    value = 0.03, level = 5 },
 	{ key = "barnDeed",   name = "Build the Barn!", stage = 1, cost = 900, kind = "stage",     value = 2,  level = 5 },
+	-- Stage 2: the Farm
+	{ key = "barn",       name = "The Big Barn",    stage = 2, cost = 1500,  kind = "carry",     value = 150, level = 5, replaces = "barnDeed" },
+	{ key = "field1",     name = "Corn Field",      stage = 2, cost = 2500,  kind = "soil",      value = 21,  level = 5 },
+	{ key = "chickenCoop", name = "Chicken Coop",   stage = 2, cost = 3000,  kind = "animal",    value = "chicken", level = 5 },
+	{ key = "tractor",    name = "Tractor",         stage = 2, cost = 4000,  kind = "autoharvest", value = 8, level = 6 },
+	{ key = "field2",     name = "Big Field",       stage = 2, cost = 5000,  kind = "soil",      value = 30,  level = 6 },
+	{ key = "conveyor",   name = "Conveyor Belt",   stage = 2, cost = 6000,  kind = "autosell",  value = 12,  level = 7 },
+	{ key = "pigPen",     name = "Pig Pen",         stage = 2, cost = 7000,  kind = "animal",    value = "pig", level = 7 },
+	{ key = "silo",       name = "Grain Silo",      stage = 2, cost = 8000,  kind = "carry",     value = 300, level = 8 },
+	{ key = "field3",     name = "Huge Field",      stage = 2, cost = 9000,  kind = "soil",      value = 39,  level = 8 },
+	{ key = "sheepPen",   name = "Sheep Pasture",   stage = 2, cost = 10000, kind = "animal",    value = "sheep", level = 9 },
+	{ key = "windmill",   name = "Windmill",        stage = 2, cost = 4000,  kind = "decor",     value = 0,   level = 9 },
+	{ key = "cowBarn",    name = "Cow Pasture",     stage = 2, cost = 12000, kind = "animal",    value = "cow", level = 10 },
+	{ key = "shedDeed",   name = "Build the Packing Shed!", stage = 2, cost = 15000, kind = "stage", value = 3, level = 11 },
 }
 -- stylua: ignore end
 
@@ -87,6 +105,8 @@ function Upgrades.stat(owned, kind, default)
 		if owned[key] and u.kind == kind then
 			if kind == "price" or kind == "golden" then
 				v = (v or 0) + u.value
+			elseif type(u.value) ~= "number" then
+				v = u.value
 			else
 				v = math.max(v or 0, u.value)
 			end

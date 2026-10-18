@@ -40,7 +40,29 @@ Tests: `FarmSmoke` (60 checks: the street, the first minute through the real but
 stage bought in order, sprinklers, the basket, leaving and coming back with crops still growing, a neighbour's
 plot). Renders: `other/ra10/screenshots/` (`tools/gameplay/farm.luau`).
 
-## Next: Phase C
+## Phase C: stage 2 (the Farm) and the animals
 
-Stage 2 (the barn, fenced fields, the tractor, conveyors, corn/tomato/blueberry) and the animals (pens, chicken to
-cow, feeding, boosts, upgrades).
+* **Stage 2** (`Data/Upgrades`, `World/FarmBuilder`): thirteen buys after the barn deed: the Big Barn (gambrel
+  roof, braced doors, hayloft, cupola and weathervane; it takes the place of its staked-out site), three fields (to
+  39 tiles, a rail fence round them), the tractor (every 8 s it harvests what's ripe and plants again), the conveyor
+  belt (round the plot's west edge to the stand; every 12 s it sells the basket), the grain silo, the windmill (it
+  turns), four pens, and the deed to the packing shed (stage 3).
+* **Animals** (`AnimalService`, `Data/Animals`, `AnimalController`): chicken, pig, sheep and cow in pens behind the
+  fields (coop on stilts, sty with mud, sheep shelter with hay, cow shed; fence, trough, feeder, a pad at the gate).
+  They arrive hungry; the pad feeds them (5 crops from the basket) and collects their products (eggs, truffles,
+  wool, milk) into the basket to sell. Boosts per level: chickens +3% growth, pigs +3% vegetable prices, sheep
+  +3% machine speed, cows +3% fruit growth and a little golden luck; hungry animals give half. Levels 1-10 for Cash
+  (1.8x a level): more animals in the pen, a ribbon at 5, a golden bell at 10. The pen's panel shows level, boost,
+  fed/hungry, what's waiting, FEED and UPGRADE. The animals wander their pens on each client (the server only
+  places them); goat and horse (orders, walking speed) are ready for later stages.
+* **The guide's chapter 2**: eighteen more steps (barn, field, corn, coop, feed, eggs, sell eggs, tractor, field,
+  conveyor, upgrade the chickens, pigs, silo, field, sheep, windmill, cows, the shed's deed), with "pen:" targets.
+
+Tests: `AnimalSmoke` (61 checks: the barn replacing its site, fields to 39 tiles, the coop and the guide to it,
+feeding from the basket, eggs collected and sold, every boost, levels and herd sizes, max level and its look, the
+tractor and the conveyor working alone, client-side wandering inside the pen, the windmill, stage 3, animals kept
+across a rejoin).
+
+## Next: Phase D
+
+Stage 3 (the packing shed, the box line, orders and the order board, the first delivery van, daily contracts).

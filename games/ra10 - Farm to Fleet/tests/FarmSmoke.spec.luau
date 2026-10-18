@@ -223,14 +223,14 @@ check("the picker picks", p.settings.crop == "strawberry")
 -- everything in the chapter can be bought, in order
 local bought = 0
 for _, key in Upgrades.LIST do
-	if not p.owned[key] then
+	if not p.owned[key] and Upgrades[key].stage == 1 then
 		Economy:AddXP(player, 500, "test")
 		if Upg:Buy(player, key) then
 			bought += 1
 		end
 	end
 end
-check("the whole first stage buys, in order", Upgrades.upcoming(p.owned) == nil, bought)
+check("the whole first stage buys, in order", Upgrades.upcoming(p.owned).stage == 2, bought)
 check("...the barn deed opens stage 2", p.stage == 2)
 check("...12 soil tiles", Farm:Tiles(player)[12] ~= nil)
 check(
@@ -252,12 +252,8 @@ end
 Farm:Plant(player, 5, "strawberry")
 check("sprinklers: planted crops start watered", p.soil["5"].watered == true)
 Engine.advance(1.5)
-check(
-	"after the scripted chapter the guide keeps going",
-	GuideC.state().text ~= nil and GuideC.state().text ~= "",
-	GuideC.state().text
-)
-check("...the chapter's steps all passed", p.guide.step > #GuideData.STEPS, p.guide.step)
+check("after chapter 1 the guide goes on into chapter 2", GuideC.state().key == "bigBarn", GuideC.state().key)
+check("...chapter 1's steps all passed", p.guide.step > GuideData.byKey.barn.index, p.guide.step)
 
 -- Leaving and coming back -------------------------------------------------------------------------------------------
 Farm:Plant(player, 6, "carrot")

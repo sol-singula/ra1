@@ -39,11 +39,22 @@ for _, key in Upgrades.LIST do
 	Economy:AddXP(ben, 400, "render")
 	Upg:Buy(ben, key)
 end
-for n = 1, 12 do
+local Animal = service("AnimalService")
+for _, key in { "chicken", "pig", "sheep", "cow" } do
+	for _ = 1, ({ chicken = 9, pig = 6, sheep = 4, cow = 2 })[key] do
+		Animal:Upgrade(ben, key)
+	end
+	pb.animals[key].fedAt = Engine.workspace:GetServerTimeNow()
+end
+for n = 1, 39 do
 	local key = n % 3 == 0 and "corn" or (n % 3 == 1 and "strawberry" or "carrot")
+	pb.soil[tostring(n)] = nil
 	Farm:Plant(ben, n, key)
 end
 Engine.advance(40)
+for _ = 1, 3 do
+	Engine.advance(2)
+end
 
 -- Ava: just arrived (the local player)
 local player = Engine.addPlayer("Ava", 501)
@@ -89,6 +100,11 @@ shot("farm_plant_button", at(mine, -30, -100, 12), at(mine, -26, -76, 0), false)
 -- Ben's finished stage-1 farm
 shot("farm_stage1_done", at(theirs, 30, -130, 40), at(theirs, -36, -70, 0), true)
 shot("farm_field_close", at(theirs, -8, -96, 10), at(theirs, -22, -74, 1), true)
+-- Ben's stage 2: the barn, the fields, the machines, the pens
+shot("farm_stage2_overview", at(theirs, 60, -120, 70), at(theirs, -40, 10, 0), true)
+shot("farm_barn", at(theirs, -10, -62, 14), at(theirs, -44, -18, 6), true)
+shot("farm_pens", at(theirs, -41, 12, 18), at(theirs, -41, 70, 0), true)
+shot("farm_cows_close", at(theirs, -41, 64, 9), at(theirs, -22, 84, 1), true)
 -- the street from above
 shot("farm_street", V3.new(0, 160, 300), V3.new(0, 0, 0), true)
 local http = Engine.game:GetService("HttpService")

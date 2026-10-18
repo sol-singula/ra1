@@ -6,11 +6,12 @@ on the ground to it.
 
   Guide.STEPS    { { key, text, target, done = { kind, ... }, reward = { cash?, xp? } } } in order
      target: "soil1" (the first soil tile) | "soil" (the nearest tile that needs something) | "stand" | "pad:<key>"
-             (the buy-pad offering that upgrade) | "shack"
+             (the buy-pad offering that upgrade) | "pen:<animal>" (that pen's pad)
      done:   { kind = "stat", stat, n }   profile.stats[stat] >= n
              { kind = "owned", key }      the upgrade is bought
              { kind = "level", n }        the farm level is at least n
              { kind = "planted", n }      at least n tiles are growing right now
+             { kind = "animal", key, n }  that animal is at level n or more
 ]]
 local Guide = {}
 
@@ -37,6 +38,25 @@ Guide.STEPS = {
 	{ key = "soil12",    text = "Fill your field: 12 patches",                   target = "pad:soil12", done = { kind = "owned", key = "soil12" },       reward = { cash = 50 } },
 	{ key = "scarecrow", text = "Buy the Scarecrow: golden crops show up more",  target = "pad:scarecrow", done = { kind = "owned", key = "scarecrow" }, reward = { xp = 10 } },
 	{ key = "barn",      text = "Save up and BUILD THE BARN!",                   target = "pad:barnDeed", done = { kind = "owned", key = "barnDeed" },   reward = { cash = 100, xp = 25 } },
+	-- Chapter 2: the Farm
+	{ key = "bigBarn",   text = "Build The Big Barn: carry 150 crops",           target = "pad:barn",   done = { kind = "owned", key = "barn" },       reward = { xp = 20 } },
+	{ key = "field1",    text = "Buy the Corn Field: 9 more patches",            target = "pad:field1", done = { kind = "owned", key = "field1" },     reward = { xp = 20 } },
+	{ key = "corn",      text = "Plant corn in your new field",                  target = "soil",       done = { kind = "stat", stat = "corns", n = 1 }, reward = { xp = 10 } },
+	{ key = "coop",      text = "Buy the Chicken Coop: chickens make crops grow faster", target = "pad:chickenCoop", done = { kind = "owned", key = "chickenCoop" }, reward = { xp = 25 } },
+	{ key = "feed",      text = "Bring 5 crops to the coop's pad to feed them",  target = "pen:chicken", done = { kind = "stat", stat = "fed", n = 1 },  reward = { xp = 10 } },
+	{ key = "eggs",      text = "Collect eggs at the coop's pad",                target = "pen:chicken", done = { kind = "stat", stat = "eggs", n = 1 }, reward = { xp = 10 } },
+	{ key = "sellEggs",  text = "Sell your eggs at the farm stand",              target = "stand",      done = { kind = "stat", stat = "soldProducts", n = 1 }, reward = { cash = 100 } },
+	{ key = "tractor",   text = "Buy the Tractor: it harvests and plants for you", target = "pad:tractor", done = { kind = "owned", key = "tractor" },   reward = { xp = 30 } },
+	{ key = "field2",    text = "Buy the Big Field",                             target = "pad:field2", done = { kind = "owned", key = "field2" },     reward = { xp = 20 } },
+	{ key = "conveyor",  text = "Buy the Conveyor Belt: it sells for you",       target = "pad:conveyor", done = { kind = "owned", key = "conveyor" }, reward = { xp = 30 } },
+	{ key = "chicken2",  text = "Upgrade your chickens at the coop's pad",       target = "pen:chicken", done = { kind = "animal", key = "chicken", n = 2 }, reward = { xp = 25 } },
+	{ key = "pigs",      text = "Buy the Pig Pen: vegetables sell for more",     target = "pad:pigPen", done = { kind = "owned", key = "pigPen" },     reward = { xp = 30 } },
+	{ key = "silo",      text = "Buy the Grain Silo: carry 300",                 target = "pad:silo",   done = { kind = "owned", key = "silo" },       reward = { xp = 20 } },
+	{ key = "field3",    text = "Buy the Huge Field",                            target = "pad:field3", done = { kind = "owned", key = "field3" },     reward = { cash = 500 } },
+	{ key = "sheep",     text = "Buy the Sheep Pasture: machines work faster",   target = "pad:sheepPen", done = { kind = "owned", key = "sheepPen" }, reward = { xp = 40 } },
+	{ key = "windmill",  text = "Buy the Windmill",                              target = "pad:windmill", done = { kind = "owned", key = "windmill" }, reward = { xp = 20 } },
+	{ key = "cows",      text = "Buy the Cow Pasture: fruit grows faster",       target = "pad:cowBarn", done = { kind = "owned", key = "cowBarn" },   reward = { xp = 50 } },
+	{ key = "shed",      text = "Save up and BUILD THE PACKING SHED!",           target = "pad:shedDeed", done = { kind = "owned", key = "shedDeed" }, reward = { cash = 1000, xp = 100 } },
 }
 -- stylua: ignore end
 
