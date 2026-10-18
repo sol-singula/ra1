@@ -660,8 +660,10 @@ function FarmBuilder.fieldFence(plot, n)
 	rail(x0, z0, x0, z1)
 	rail(x0, z1, x1, z1)
 	rail(x1, z0, x1, z1)
-	rail(x0, z0, x0 + 10, z0)
-	rail(x0 + 30, z0, x1, z0)
+	-- (the gate: open in front of where you stand)
+	local gx = SPOTS.spawn.X
+	rail(x0, z0, gx - 9, z0)
+	rail(gx + 9, z0, x1, z0)
 	return folder
 end
 
@@ -863,21 +865,13 @@ local function buildStall(L, plot, refs)
 	L:block(cx, z, x1 - x0 + 1, 10, 0.2, deco({ color = P.concrete, name = "StallFloor" }), 0.22)
 	for _, px in { x0, x1 } do
 		for _, pz in { z - 4.4, z + 4.4 } do
-			L:block(px, pz, 0.7, 0.7, 7.4, { color = P.woodDark, name = "StallPost" }, 0)
+			L:block(px, pz, 0.7, 0.7, 6.6, { color = P.woodDark, name = "StallPost" }, 0)
 		end
 	end
-	L:box(cx, 7.7, z, x1 - x0 + 2, 0.5, 10.6, { color = plot.color, name = "StallRoof" })
-	L:box(
-		cx,
-		8.05,
-		z,
-		x1 - x0 + 2.2,
-		0.2,
-		10.8,
-		deco({ color = Shapes.shade(plot.color, 0.25), name = "StallRoofCap" })
-	)
-	bunting(L, x0, x1, z + 5.2, 6.9, plot.color)
-	local board = L:box(cx, 9.2, z, 12, 2.4, 0.4, deco({ color = P.cream, name = "StallSign" }))
+	L:box(cx, 6.9, z, x1 - x0 + 2, 0.4, 10.4, { color = plot.color, name = "StallRoof" })
+	L:box(cx, 7.2, z, x1 - x0 + 2.2, 0.2, 10.8, deco({ color = Shapes.shade(plot.color, 0.25), name = "StallRoofCap" }))
+	bunting(L, x0, x1, z + 5.2, 6.2, plot.color)
+	local board = L:box(cx, 8.4, z, 12, 2.2, 0.4, deco({ color = P.cream, name = "StallSign" }))
 	FarmBuilder.sign(board, "BUILD", "step on a pad to buy", plot.color, Enum.NormalId.Back)
 	refs.pads, refs.rims = {}, {}
 	for slot, at in pads do

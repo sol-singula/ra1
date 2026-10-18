@@ -69,7 +69,9 @@ local function paint()
 		for _, e in f.plan or {} do
 			local c = Crops[e.key]
 			local name = c and c.name or e.key
-			table.insert(bits, `{e.n} {name}{e.n == 1 and "" or "s"}{e.who and (" for " .. e.who) or ""}`)
+			local plural = e.n == 1 and name
+				or (string.sub(name, -1) == "y" and string.sub(name, 1, -2) .. "ies" or name .. "s")
+			table.insert(bits, `{e.n} {plural}{e.who and (" for " .. e.who) or ""}`)
 		end
 		refs.growing.Visible = #bits > 0
 		refs.growing.Text = "🌱 GROWING  " .. table.concat(bits, " · ")

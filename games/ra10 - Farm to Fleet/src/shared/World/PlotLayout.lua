@@ -58,7 +58,7 @@ PlotLayout.SPOTS = {
 	tractor = Vector3.new(-4, 0, -14),
 	tractor2 = Vector3.new(-60, 0, -14),
 	silo = Vector3.new(-62, 0, -22),
-	windmill = Vector3.new(-70, 0, 2),
+	windmill = Vector3.new(-78, 0, 8),
 	farmPath = { z0 = -97, z1 = 100, x = 5, w = 8, pens = 14 }, -- the farm path up the field's right side to the pens
 	path = Vector3.new(-42, 0, 58), -- the dirt path down the middle of the pens
 	-- the pens: a 2 x 2 block right behind the barn, a wide path between; each PEN wide, its pad at its front

@@ -129,7 +129,7 @@ local p = Data:Get(player)
 stand(player, tiles[1].Position + Vector3.new(0, 0, -4))
 check(
 	"by the soil: PLANT",
-	FarmC.action() == "plant" and FarmC.refs.act.Visible and FarmC.refs.act.Text == "PLANT",
+	FarmC.action() == "plant" and FarmC.refs.act.Visible and FarmC.refs.act.Text:find("PLANT") ~= nil,
 	FarmC.action()
 )
 FarmC.press()

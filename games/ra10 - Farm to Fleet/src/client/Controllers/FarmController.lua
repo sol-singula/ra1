@@ -33,10 +33,10 @@ local refs = {}
 FarmController.refs = refs
 
 local LOOK = {
-	harvest = { "PICK", Color3.fromRGB(240, 70, 70) },
-	plant = { "PLANT", Color3.fromRGB(70, 190, 90) },
-	tend = { "TEND", Color3.fromRGB(245, 165, 40) },
-	pen = { "TEND", Color3.fromRGB(245, 165, 40) },
+	harvest = { "🧺 PICK", Color3.fromRGB(236, 72, 60) },
+	plant = { "🌱 PLANT", Color3.fromRGB(86, 192, 96) },
+	tend = { "💧 TEND", Color3.fromRGB(255, 170, 40) },
+	pen = { "✋ TEND", Color3.fromRGB(255, 170, 40) },
 }
 
 local function root()

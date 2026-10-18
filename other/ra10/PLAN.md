@@ -324,6 +324,26 @@ Seven rounds of the owner playing it on a phone. The big ones:
 
 The master plan was rewritten for it. 12 suites, 651 checks.
 
+## R8: a new look, a tight front yard, the field grows what's needed
+
+The owner's direction: "a full redesign of the graphics, layout, look, feel... upgrade pads close... guide them
+properly... essentially a whole new game."
+
+* **The look** (`FarmBuilder.light`, `Constants.PALETTE`, `Shapes.toon/sphere`): a warmer sun, bloom, sun rays, a
+  saturated colour grade, clouds; a brighter picture-book palette; toon blocks (a darker foot band, a lighter cap)
+  on every building; chunky three-ball trees with a highlight, rolling hills, meadow patches and flower clumps;
+  wooden fences with capped posts instead of white rails everywhere; the house with a round-topped door, framed
+  windows, a railed porch, a chimney with smoke; raised beds with lighter board tops.
+* **The front yard** (`PlotLayout.SPOTS`): you spawn facing the field (the gate right in front of you); the BUILD
+  stall, the three buy-pads under one roof with bunting and a sign, is a few steps behind; the stand and SELL to the
+  left; the house to the left with its own gravel drive; the mailbox and the sign by the road on the right.
+* **The UI** (`UI/Theme`): cream cards with thick warm-brown edges, dark-wood HUD slabs, rounder buttons; the farm
+  button carries an icon (🌱 PLANT, 🧺 PICK, 💧 TEND); GROWING under the money says what the field grows and for
+  whom.
+* **The field's plan** (`FarmService.Plan`): every crop an open order is short of fills patches first (counting the
+  barn), then the best crop for the rest; the next planting is always the first thing on the plan that isn't
+  growing in full. No more pumpkins for people who need carrots.
+
 ## Before going live
 
 * Create the developer products and game passes (prices in `Data/Shop`) and put their ids in `Constants`.

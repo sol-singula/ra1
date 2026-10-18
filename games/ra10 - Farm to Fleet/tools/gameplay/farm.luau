@@ -116,11 +116,11 @@ do
 		GuideC.skipTour()
 	end
 end
-shot("farm_first_minute", at(mine, -22, -128, 14), at(mine, -24, -80, 0), false)
+shot("farm_first_minute", at(mine, -30, -124, 16), at(mine, -40, -78, 0), false)
 -- standing by the soil: the PLANT button
 Engine.moveTo(player, at(mine, -28, -87, 3), at(mine, -28, -78, 3))
 Engine.advance(0.5)
-shot("farm_plant_button", at(mine, -14, -100, 9), at(mine, -26, -80, 0), false)
+shot("farm_plant_button", at(mine, -22, -96, 7), at(mine, -48, -76, 0), false)
 -- (Ben's fields ripe for the shots: a mix of crops)
 do
 	local mix = { "corn", "tomato", "strawberry", "blueberry", "carrot", "pumpkin", "apple", "watermelon" }

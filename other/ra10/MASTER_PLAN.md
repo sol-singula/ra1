@@ -183,15 +183,17 @@ Tractor"); a step by the soil while it all grows says it's nearly ripe. The card
 
 * **The street:** one road, six plots of 240 x 380 three a side, a fence apart, with the STREET gantry and the
   Hall of Fame over the road. Each plot has an accent colour (its sign, its trailers, its roof trim).
-* **A plot, front to back:** the stand and its three pads by the road, the spawn between them; the house and
-  its garden on the left, **one field** (8 to a row, up to 64 patches) in the middle inside its fence; a wide farm
+* **A plot, front to back:** you spawn facing the field's gate; the **BUILD stall** (the three buy-pads under
+  one little roof) a few steps behind you, the stand and SELL a few steps to the left; the house and its garden on
+  the left with its own drive; **one field** (8 to a row, up to 64 patches) in the middle inside its fence; a wide farm
   path up the middle with signposts (FIELD, BARN, ANIMALS); the barn with its doors to the field and two tractor
   spots; the four pens along a side path; the shed and its yard on the right (industry side), the warehouse
   behind it growing bay by bay, the truck lot and lane up the east edge, the docks and truck court at the back.
   The hub's front hall and market hall later take over the shed and the stand.
 * **Landscaping grows with the level**: the house's garden, hedges, trees, the fountain. Signs on every zone
   (RECEIVING, PACKING LINES, ROW 3, DOCK 2). Every machine and vehicle is animated on each client.
-* **Art:** ra9's matte, geometric detail; the farm palette (barn red, cream, three greens, sunflower) and the
+* **Art:** a picture book: toon blocks (a darker foot, a lighter cap), chunky round trees, rolling hills, flower
+  clumps, bunting; a warm sun with bloom and a saturated grade; ra9's matte, geometric detail underneath; the farm palette (barn red, cream, three greens, sunflower) and the
   industrial one (concrete, safety yellow, rack orange on blue, steel grey, white trailers with the plot's stripe).
 * Part budget: a stage-5 plot ≤ 3,000 parts; vehicles, animals and crops are client-animated.
 
