@@ -1298,6 +1298,13 @@ BUILD.tractor = function(L, plot)
 		s:cyl(sx * 1.97, 1, -2.6, 0.1, 1, deco({ color = P.sunflower, name = "Rim" }), "x")
 	end
 	model:SetAttribute("Plot", plot.index)
+	-- (it drives about: its pivot on the ground under it, nothing to bump into; TractorService)
+	model.WorldPivot = plot.cf * CFrame.new(t.X, 0, t.Z)
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.CanCollide = false
+		end
+	end
 end
 
 local function belt(L, route)

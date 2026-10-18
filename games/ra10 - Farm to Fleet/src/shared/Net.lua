@@ -21,6 +21,7 @@ Net.ClientEvents = {
 	Street = 4, -- ("visit", plotIndex) | ("home") | ("like", plotIndex) | ("friends") | ("join", userId) (StreetService)
 	Franchise = 2, -- ("open") | ("sell") | ("perk", key) (FranchiseService)
 	Shop = 4, -- ("open") | ("buy", key) | ("gems", key) a gem buy (ShopService)
+	Tractor = 4, -- ("on") | ("off") ride your tractor (TractorService)
 	Drive = 10, -- ("enter", vehicleId) | ("leave") | ("move", throttle, steer) a forklift you drive (VehicleService)
 }
 

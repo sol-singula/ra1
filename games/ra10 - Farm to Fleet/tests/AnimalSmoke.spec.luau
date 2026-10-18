@@ -202,9 +202,36 @@ table.clear(p.storage)
 for n = 1, 4 do
 	Farm:Plant(player, n, "strawberry")
 end
-Engine.advance(Crops.strawberry.grow + Upgrades.tractor.value + 1)
-check("the tractor harvests what's ripe", Farm:Carried(player) >= 4, Farm:Carried(player))
+local Tractor = service("TractorService")
+local model = Tractor:Model(player)
+local parked = model and model:GetPivot().Position
+Engine.advance(Crops.strawberry.grow + 40)
+check(
+	"the tractor drives round the fields",
+	model and (model:GetPivot().Position - parked).Magnitude > 3 or (p.stats.tractored or 0) > 0
+)
+check("...harvests what's ripe", Farm:Carried(player) >= 4, Farm:Carried(player))
 check("...and plants again", p.soil["1"] ~= nil and p.soil["13"] ~= nil)
+do
+	-- hop on: it follows you, harvesting and planting what you drive over
+	local prompt = model and model:FindFirstChild("Drive", true)
+	check("the tractor has a DRIVE prompt", prompt ~= nil and prompt.ActionText == "Drive")
+	prompt.Triggered:Fire(player)
+	local hum = player.Character:FindFirstChildOfClass("Humanoid")
+	check("...you're on it: faster, up in the seat", Tractor:Driving(player) and hum.WalkSpeed == Tractor.DRIVE_SPEED)
+	table.clear(p.storage)
+	p.soil["15"] = nil
+	Engine.moveTo(player, Farm:Tiles(player)[15].Position + Vector3.new(0, 3, 0))
+	Engine.advance(0.5)
+	check("...it plants what you drive over", p.soil["15"] ~= nil)
+	check("...and it goes where you go", (model:GetPivot().Position - Farm:Tiles(player)[15].Position).Magnitude < 4)
+	p.soil["15"].need = 0
+	Engine.advance(0.5)
+	check("...and harvests what's ripe", Farm:Carried(player) >= 1 and (p.stats.driven or 0) >= 1, Farm:Carried(player))
+	Engine.fireServer(player, "Tractor", "off")
+	Engine.advance(0.2)
+	check("jump off: back on your feet", not Tractor:Driving(player) and hum.WalkSpeed ~= Tractor.DRIVE_SPEED)
+end
 check("buy the Big Field", buy("field2"))
 check("buy the Conveyor Belt", buy("conveyor"))
 local cashBefore = p.cash

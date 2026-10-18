@@ -51,6 +51,7 @@ Guide.STEPS = {
 	{ key = "eggs",      text = "Collect eggs at the coop's pad",                target = "pen:chicken", done = { kind = "stat", stat = "eggs", n = 1 }, reward = { xp = 10 } },
 	{ key = "sellEggs",  text = "Sell your eggs at the farm stand",              target = "stand",      done = { kind = "stat", stat = "soldProducts", n = 1 }, reward = { cash = 100 } },
 	{ key = "tractor",   text = "Buy the Tractor: it harvests and plants for you", target = "pad:tractor", done = { kind = "owned", key = "tractor" },   reward = { xp = 30 } },
+	{ key = "drive",     text = "Hop on your tractor: DRIVE it over ripe crops", target = "tractor",    done = { kind = "stat", stat = "driven", n = 1 }, reward = { cash = 200 } },
 	{ key = "field2",    text = "Buy the Big Field",                             target = "pad:field2", done = { kind = "owned", key = "field2" },     reward = { xp = 20 } },
 	{ key = "conveyor",  text = "Buy the Conveyor Belt: it sells for you",       target = "pad:conveyor", done = { kind = "owned", key = "conveyor" }, reward = { xp = 30 } },
 	{ key = "chicken2",  text = "Upgrade your chickens at the coop's pad",       target = "pen:chicken", done = { kind = "animal", key = "chicken", n = 2 }, reward = { xp = 25 } },

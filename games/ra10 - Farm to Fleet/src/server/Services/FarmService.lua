@@ -18,7 +18,7 @@ Net "Farm" to the owner: { tiles = { [n] = { crop, at, need, watered, golden } }
 crops, golden } whenever it changes.
 
   FarmService:Tiles(player)                -> the live tile parts (n -> Part)
-  FarmService:Plant(player, n, key?) -> ok, why
+  FarmService:Plant(player, n, key?, machine?) -> ok, why   (machine: the tractor's, no golden seeds)
   FarmService:Harvest(player, n) -> ok, why
   FarmService:Water(player, n) -> ok, why
   FarmService:Tend(player, n) -> ok, paid  once a crop: TEND_CUT off what's left, TEND_PAY of its price paid
@@ -319,7 +319,7 @@ local function near(player, n, reach)
 	return tile ~= nil and plots:Near(player, tile, reach)
 end
 
-function FarmService:Plant(player, n, key)
+function FarmService:Plant(player, n, key, machine)
 	local p = profileOf(player)
 	if not p or type(n) ~= "number" or n < 1 or n > soilCount(p) or n % 1 ~= 0 then
 		return false, "tile"
@@ -342,8 +342,8 @@ function FarmService:Plant(player, n, key)
 	local need = c.grow * (sprinkler and Crops.WATER_CUT or 1) / speed / (Crops.starter(p.level))
 	-- (the golden roll happens now, so the field shows a golden crop while it grows)
 	local golden = false
-	if (p.goldenSeeds or 0) > 0 then
-		-- (a golden seed from the calendar or the shop goes first)
+	if (p.goldenSeeds or 0) > 0 and not machine then
+		-- (a golden seed from the calendar or the shop goes first: in their own planting, not the tractor's)
 		p.goldenSeeds -= 1
 		golden = true
 	else
@@ -646,14 +646,15 @@ function FarmService:Machines(player, p)
 	end
 	local quick = 1 + Animals.boost(p, "machine", t)
 	local tractor = Upgrades.stat(p.owned or {}, "autoharvest", nil)
-	if tractor and t - m.tractor >= tractor / quick then
+	-- (TractorService drives it round the fields when it's running: FarmService.tractorDriven)
+	if tractor and not self.tractorDriven and t - m.tractor >= tractor / quick then
 		m.tractor = t
 		local harvested, planted = 0, 0
 		for n in self:Tiles(player) do
 			if self:Ripe(player, n) and self:Harvest(player, n) then
 				harvested += 1
 			end
-			if not tileState(p, n) and self:Plant(player, n) then
+			if not tileState(p, n) and self:Plant(player, n, nil, true) then
 				planted += 1
 			end
 		end
