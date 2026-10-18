@@ -2,10 +2,10 @@
 Farming with one thumb (master plan §3, phone first). A big round button at the bottom right says what it will do
 for the soil you're standing by (Net "Farm" "act"; the server does all of it that's in reach): HARVEST when
 something there is ripe, PLANT when there's empty soil, WATER (once you have the well) when something's growing
-dry. It hides when there's nothing to do. With it, along the bottom of the screen, the crop picker: one chip per
+dry, TEND when it's all growing (each tap takes a bit off the wait). It hides when there's nothing to do. With it, along the bottom of the screen, the crop picker: one chip per
 crop you've unlocked, in rows of five (Net "Farm" "crop"). On a PC, E (or a click away from the buttons) does the same as the button.
 
-  FarmController.action()   -> "harvest" | "plant" | "water" | nil, what the button shows now
+  FarmController.action()   -> "harvest" | "plant" | "water" | "tend" | nil, what the button shows now
   FarmController.press()    what the button does
   FarmController.refs
 ]]
@@ -31,6 +31,7 @@ local LOOK = {
 	harvest = { "HARVEST", Color3.fromRGB(240, 70, 70) },
 	plant = { "PLANT", Color3.fromRGB(70, 190, 90) },
 	water = { "WATER", Color3.fromRGB(60, 150, 235) },
+	tend = { "TEND", Color3.fromRGB(245, 165, 40) },
 }
 
 local function root()
@@ -61,7 +62,7 @@ function FarmController.action()
 		return nil
 	end
 	local now = workspace:GetServerTimeNow()
-	local ripe, empty, dry = false, false, false
+	local ripe, empty, dry, growing = false, false, false, false
 	for n, tile in tiles() do
 		local d = tile.Position - r.Position
 		if Vector3.new(d.X, 0, d.Z).Magnitude <= FarmController.REACH then
@@ -72,6 +73,8 @@ function FarmController.action()
 				ripe = true
 			elseif f.well and not t.watered then
 				dry = true
+			else
+				growing = true
 			end
 		end
 	end
@@ -81,6 +84,8 @@ function FarmController.action()
 		return "plant"
 	elseif dry then
 		return "water"
+	elseif growing then
+		return "tend"
 	end
 	return nil
 end

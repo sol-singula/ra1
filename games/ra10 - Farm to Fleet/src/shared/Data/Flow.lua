@@ -94,10 +94,11 @@ local function growRate(p, now)
 		+ (c.type == "fruit" and Animals.boost(p, "fruitGrow", now) or 0)
 		+ stat(owned, "grow", 0)
 		+ Franchise.bonus(p, "growth")
-	local need = c.grow * (stat(owned, "sprinkler", 0) > 0 and Crops.WATER_CUT or 1) / speed
+	local grow, starter = Crops.starter(p.level)
+	local need = c.grow * (stat(owned, "sprinkler", 0) > 0 and Crops.WATER_CUT or 1) / speed / grow
 	local tractor = stat(owned, "autoharvest", nil)
 	local wait = tractor and tractor / (1 + Animals.boost(p, "machine", now)) / 2 or 10
-	local each = c.value * (c.type == "veg" and 1 + Animals.boost(p, "vegPrice", now) or 1)
+	local each = c.value * starter * (c.type == "veg" and 1 + Animals.boost(p, "vegPrice", now) or 1)
 	local tiles = stat(owned, "soil", Upgrades.START_SOIL)
 	return tiles * each * 60 / (need + wait)
 end

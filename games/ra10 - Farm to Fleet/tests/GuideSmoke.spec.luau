@@ -140,6 +140,52 @@ check(
 check("...no GO now", not refs.go.Visible)
 check("...and no GO for a step that's close already", not Guide:Go(player))
 
+-- Never a wait: TEND what's growing; and a new farmer's crops grow fast and pay well ----------------------------------
+do
+	local Crops = Engine.require(tree.shared.Data.Crops)
+	local g1, v1 = Crops.starter(1)
+	local g7, v7 = Crops.starter(7)
+	check("level 1: crops grow 2x and pay 3x", g1 == 2 and v1 == 3, `{g1} {v1}`)
+	check("...fading out by level 7", g7 == 1 and v7 == 1)
+	p.soil = {}
+	p.stats.harvested = 0
+	p.guide.step = GuideData.byKey.harvest1.index
+	Farm:Plant(player, 1, "strawberry")
+	Farm:Push(player)
+	Guide:Check(player)
+	Engine.advance(0.3)
+	check(
+		"tile 1 growing, empty soil next to it: PLANT that meanwhile",
+		GuideC.state().text:find("PLANT") ~= nil,
+		GuideC.state().text
+	)
+	Farm:Plant(player, 2, "strawberry")
+	Farm:Plant(player, 3, "strawberry")
+	Farm:Push(player)
+	Guide:Check(player)
+	Engine.moveTo(player, tiles[1].Position + Vector3.new(0, 3, -4))
+	Engine.advance(0.3)
+	check(
+		"growing, not ripe: the guide says TEND, not HARVEST",
+		GuideC.state().text:find("TEND") ~= nil,
+		GuideC.state().text
+	)
+	check("...the button says TEND", FarmC.action() == "tend" and FarmC.refs.act.Visible)
+	local before = p.soil["1"].need
+	check("...and a TEND takes time off", Farm:Act(player) == "tend" and p.soil["1"].need < before, p.soil["1"].need)
+	for _ = 1, 6 do
+		Engine.advance(0.2)
+		if Farm:Ripe(player, 1) then
+			break
+		end
+		Farm:Act(player)
+	end
+	Engine.advance(0.3)
+	check("...a few taps and it's ripe: HARVEST", Farm:Ripe(player, 1) and FarmC.action() == "harvest")
+	check("...and the guide says so", GuideC.state().text:find("TEND") == nil, GuideC.state().text)
+	check("a sale pays the starter price", Farm:Worth(player, { strawberry = 1 }) == Crops.strawberry.value * 3)
+end
+
 -- Can't afford the step's buy: earn it (sell, or grow) --------------------------------------------------------------------
 do
 	local Upg = service("UpgradeService")

@@ -242,20 +242,24 @@ local function step()
 		hideWorld()
 		return
 	end
-	-- the arrow: a gold block and a point under it, bobbing over the target
-	local bob = math.sin(t * 3) * 0.6
-	refs.arrow.CFrame = CFrame.new(target + Vector3.new(0, 7.5 + bob, 0)) * CFrame.Angles(0, t * 2, 0)
-	refs.tip.CFrame = CFrame.new(target + Vector3.new(0, 5.6 + bob, 0)) * CFrame.Angles(0, t * 2, math.rad(45))
-	refs.arrow.Transparency = 0.1
-	refs.tip.Transparency = 0.1
-	-- the spot: a beam of light up from it and a ring on the ground, pulsing
+	-- how far it is: up close only the ring stays (the beam and the arrow would just be in the way)
+	local flat = Vector3.new(r.Position.X - target.X, 0, r.Position.Z - target.Z).Magnitude
+	local near = math.clamp((flat - 10) / 20, 0, 1) -- 0 within 10 studs, 1 from 30
+	-- the arrow: a gold block and a point under it, bobbing over the target (gone once you're there)
+	local bob = math.sin(t * 3) * 0.5
+	refs.arrow.CFrame = CFrame.new(target + Vector3.new(0, 6.5 + bob, 0)) * CFrame.Angles(0, t * 2, 0)
+	refs.tip.CFrame = CFrame.new(target + Vector3.new(0, 4.9 + bob, 0)) * CFrame.Angles(0, t * 2, math.rad(45))
+	local arrowT = flat < GuideController.HERE and 1 or 0.15
+	refs.arrow.Transparency = arrowT
+	refs.tip.Transparency = arrowT
+	-- the spot: a thin, faint beam (far away only, to find it from across the farm) and a ring on the ground
 	local ground = Vector3.new(target.X, target.Y + 0.25, target.Z) -- (just over a tile's or a pad's top)
-	refs.beam.CFrame = CFrame.new(ground + Vector3.new(0, 20, 0)) * CFrame.Angles(0, 0, math.rad(90))
-	refs.beam.Transparency = 0.72 + 0.08 * math.sin(t * 4)
-	local pulse = 1 + 0.12 * math.sin(t * 5)
-	refs.ring.Size = Vector3.new(0.2, 7.5 * pulse, 7.5 * pulse)
-	refs.ring.CFrame = CFrame.new(ground + Vector3.new(0, 0.35, 0)) * CFrame.Angles(0, 0, math.rad(90))
-	refs.ring.Transparency = 0.35
+	refs.beam.CFrame = CFrame.new(ground + Vector3.new(0, 14, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	refs.beam.Transparency = 1 - near * (0.22 + 0.05 * math.sin(t * 4))
+	local pulse = 1 + 0.1 * math.sin(t * 5)
+	refs.ring.Size = Vector3.new(0.15, 6.5 * pulse, 6.5 * pulse)
+	refs.ring.CFrame = CFrame.new(ground + Vector3.new(0, 0.3, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	refs.ring.Transparency = 0.45
 	-- the path: dots on the ground from here to there, moving toward it
 	local from = Vector3.new(r.Position.X, target.Y, r.Position.Z)
 	local to = target - from
@@ -450,7 +454,7 @@ function GuideController:init()
 	refs.folder = folder
 	refs.arrow = worldPart("GuideArrow", Vector3.new(1.4, 2.4, 1.4))
 	refs.tip = worldPart("GuideTip", Vector3.new(1.5, 1.5, 0.5))
-	refs.beam = worldPart("GuideBeam", Vector3.new(40, 1.6, 1.6), Enum.PartType.Cylinder)
+	refs.beam = worldPart("GuideBeam", Vector3.new(28, 0.7, 0.7), Enum.PartType.Cylinder)
 	refs.ring = worldPart("GuideRing", Vector3.new(0.2, 7.5, 7.5), Enum.PartType.Cylinder)
 	for i = 1, GuideController.DOTS do
 		refs.dots[i] = worldPart("GuideDot", Vector3.new(0.9, 0.12, 0.9))

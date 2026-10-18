@@ -6,7 +6,8 @@ left by Crops.WATER_CUT). Ripe when the time's up; the model on the tile shows f
 
   ACT   Net "Farm" ("act") from the big action button: everything within REACH of them that can be done, best first:
         harvest every ripe tile, else plant every empty one (their chosen crop, or the best they have), else water
-        every growing one not watered yet (once they own the well)
+        every growing one not watered yet (once they own the well), else TEND every growing one (TEND seconds off
+        each, every TEND_GAP): there's always something to do, never a wait
   tile  Net "Farm" ("plant" | "harvest" | "water", n) for one tile within TAP_REACH
   crop  Net "Farm" ("crop", key) picks what PLANT plants (unlocked crops only)
   sell  standing on the stand's pad sells everything carried (Upgrades.stat "price" on top)
@@ -19,7 +20,8 @@ crops, golden } whenever it changes.
   FarmService:Plant(player, n, key?) -> ok, why
   FarmService:Harvest(player, n) -> ok, why
   FarmService:Water(player, n) -> ok, why
-  FarmService:Act(player) -> what ("harvest" | "plant" | "water" | nil), how many
+  FarmService:Tend(player, n) -> ok        TEND seconds off a growing crop
+  FarmService:Act(player) -> what ("harvest" | "plant" | "water" | "tend" | nil), how many
   FarmService:Sell(player, quiet?) -> Cash paid   (quiet: the conveyor's, which keeps what FarmService.hold(player)
                                            returns, { [crop] = n }: what the orders need)
   FarmService:Worth(player, bag?) -> Cash, goods, products   what the basket (or a bag like it) would sell for
@@ -53,11 +55,15 @@ local FarmService = {
 	TAP_REACH = 16,
 	TICK = 0.25,
 	SELL_REACH = 4.5,
+	TEND = 1.5, -- seconds a TEND takes off a growing crop
+	TEND_GAP = 0.18,
 }
 
 local data, economy, plots, analytics
 local phases = {} -- [player] = { [n] = the phase the model shows }
 local selling = {} -- [player] = true while they stand on the pad (one sale per visit)
+local tended = {} -- [player] = when they last tended
+local ripens = {} -- [player] = the soonest ripening a Changed is waiting for
 local machineAt = {} -- [player] = { tractor = t, conveyor = t }: when each machine last ran
 
 local function now()
@@ -212,6 +218,29 @@ function FarmService:Push(player)
 		golden = golden,
 		well = Upgrades.stat(p.owned or {}, "water", 0) > 0,
 	})
+	-- (the guide moves on the moment something ripens: HARVEST, not TEND)
+	local soonest
+	for _, t in tiles do
+		if t then
+			local left = t.need - (now() - t.at)
+			if left > 0 and (not soonest or left < soonest) then
+				soonest = left
+			end
+		end
+	end
+	if soonest then
+		local at = now() + soonest
+		if not ripens[player] or ripens[player] < now() or at < ripens[player] - 0.05 then
+			ripens[player] = at
+			task.delay(soonest + 0.05, function()
+				if ripens[player] == at and player.Parent then
+					ripens[player] = nil
+					self.Changed:Fire(player, "ripe")
+					self:Push(player)
+				end
+			end)
+		end
+	end
 end
 
 -- What PLANT plants: their pick, if they have it, else the best crop their level has
@@ -301,7 +330,7 @@ function FarmService:Plant(player, n, key)
 		+ (c.type == "fruit" and Animals.boost(p, "fruitGrow", now()) or 0)
 		+ Upgrades.stat(p.owned or {}, "grow", 0)
 		+ Franchise.bonus(p, "growth")
-	local need = c.grow * (sprinkler and Crops.WATER_CUT or 1) / speed
+	local need = c.grow * (sprinkler and Crops.WATER_CUT or 1) / speed / (Crops.starter(p.level))
 	-- (the golden roll happens now, so the field shows a golden crop while it grows)
 	local golden = math.random() < FarmService.goldenChance(p)
 	if not golden and (p.goldenSeeds or 0) > 0 then
@@ -329,6 +358,19 @@ function FarmService:Water(player, n)
 	t.need -= left * Crops.WATER_CUT
 	t.watered = true
 	p.stats.watered = (p.stats.watered or 0) + 1
+	show(player, n)
+	return true
+end
+
+function FarmService:Tend(player, n)
+	local p = profileOf(player)
+	local t = p and tileState(p, n)
+	if not t or phaseOf(t) == 3 then
+		return false, "ripe"
+	end
+	local left = t.need - (now() - t.at)
+	t.need -= math.min(self.TEND, math.max(left, 0))
+	p.stats.tended = (p.stats.tended or 0) + 1
 	show(player, n)
 	return true
 end
@@ -413,6 +455,20 @@ function FarmService:Act(player)
 		self.Changed:Fire(player, "water")
 		return "water", done
 	end
+	if now() - (tended[player] or 0) < self.TEND_GAP then
+		return nil, 0
+	end
+	tended[player] = now()
+	for _, n in list do
+		if self:Tend(player, n) then
+			done += 1
+		end
+	end
+	if done > 0 then
+		self:Push(player)
+		self.Changed:Fire(player, "tend")
+		return "tend", done
+	end
 	return nil, 0
 end
 
@@ -430,6 +486,7 @@ function FarmService:Worth(player, bag)
 	bag = bag or p.storage
 	local price = 1 + Upgrades.stat(p.owned or {}, "price", 0)
 	local veg = 1 + Animals.boost(p, "vegPrice", now())
+	local _, starter = Crops.starter(p.level)
 	local total, n, products = 0, 0, 0
 	for item, count in bag do
 		local golden = string.sub(item, 1, 1) == "*"
@@ -437,7 +494,7 @@ function FarmService:Worth(player, bag)
 		local c = Crops[key]
 		local product = not c and Animals.product(key)
 		if c then
-			total += c.value * count * (golden and Crops.GOLDEN_VALUE or 1) * (c.type == "veg" and veg or 1)
+			total += c.value * starter * count * (golden and Crops.GOLDEN_VALUE or 1) * (c.type == "veg" and veg or 1)
 			n += count
 		elseif product then
 			total += product.value * count
@@ -530,6 +587,8 @@ function FarmService:Init(registry)
 		phases[player] = nil
 		selling[player] = nil
 		machineAt[player] = nil
+		tended[player] = nil
+		ripens[player] = nil
 	end
 	Players.PlayerRemoving:Connect(forget)
 	registry.PlotService.Released:Connect(forget)

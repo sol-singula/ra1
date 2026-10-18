@@ -9,12 +9,17 @@ the cow), worth GOLDEN_VALUE times as much.
                        value (Cash each), xp, level, color, leaf, regrow? }
   Crops.unlocked(level) -> { keys }
   Crops.best(level)   the most valuable crop a level has
+  Crops.starter(level) -> grow, value: the new farmer's boost (crops grow STARTER_GROW times as fast and sell for
+                       STARTER_VALUE times as much at level 1, fading out by STARTER_END), so the first minutes pay
 ]]
 local Crops = {}
 
 Crops.GOLDEN_CHANCE = 0.02
 Crops.GOLDEN_VALUE = 10
 Crops.WATER_CUT = 0.5 -- watering takes this share off what's left to grow
+Crops.STARTER_GROW = 2
+Crops.STARTER_VALUE = 3
+Crops.STARTER_END = 7
 
 local rgb = Color3.fromRGB
 -- stylua: ignore start
@@ -58,6 +63,11 @@ function Crops.best(level)
 		end
 	end
 	return best and best.key or "strawberry"
+end
+
+function Crops.starter(level)
+	local f = math.clamp(((Crops.STARTER_END - (level or 1)) / (Crops.STARTER_END - 1)), 0, 1)
+	return 1 + (Crops.STARTER_GROW - 1) * f, 1 + (Crops.STARTER_VALUE - 1) * f
 end
 
 return Crops

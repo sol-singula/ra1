@@ -105,10 +105,46 @@ local function earning(player, p, step)
 	return e
 end
 
+-- A step at the soil when nothing there is ripe or empty: never a wait, TEND them (each tap takes time off)
+local function tending(player, step)
+	if not step or (step.target ~= "soil" and step.target ~= "soil1") or step.done and step.done.kind == "planted" then
+		return step
+	end
+	local refs = plots:Refs(player)
+	if not refs then
+		return step
+	end
+	local empty = false
+	for n in refs.tiles do
+		local ph = farm:Phase(player, n)
+		if (step.target ~= "soil1" or n == 1) and ph == 3 then
+			return step
+		end
+		empty = empty or ph == nil
+	end
+	if step.key == "plant1" or step.key == "carrot" or (empty and step.target == "soil") then
+		return step
+	end
+	local e = table.clone(step)
+	if empty then
+		-- (tile 1 is growing: plant the rest meanwhile)
+		e.text = "While it grows: tap PLANT on the empty soil"
+		e.target = "soil"
+		e.button = "act"
+		return e
+	end
+	e.text = e.goal
+			and `Growing! Tap TEND to grow faster: {Format.cash(e.goal.need - e.goal.have)} more for {e.goal.name}`
+		or "Growing! Tap TEND to make it grow faster"
+	e.button = "act"
+	e.tend = true
+	return e
+end
+
 function GuideService:Step(player)
 	local step = self:RawStep(player)
 	local p = data:Get(player)
-	return p and earning(player, p, step) or step
+	return tending(player, p and earning(player, p, step) or step)
 end
 
 function GuideService:RawStep(player)

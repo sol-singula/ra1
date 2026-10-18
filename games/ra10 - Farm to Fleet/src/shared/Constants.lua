@@ -17,7 +17,7 @@ Constants.ADMINS = { [11787294097] = true } -- xthirtysix
 Constants.ADMIN_NAMES = { xthirtysix = true }
 
 -- Money (§3): Cash for the farm, Gems for skips and golden seeds
-Constants.START_CASH = 0
+Constants.START_CASH = 15
 Constants.START_GEMS = 10
 
 -- The palette (§1): ra9's matte, detailed look, in colour families so six plots read as one world
