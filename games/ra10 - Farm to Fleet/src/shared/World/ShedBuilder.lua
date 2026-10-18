@@ -6,6 +6,8 @@ warehouse's site. FarmBuilder hands over its BUILD table; this adds to it, and a
   FarmBuilder.vehicle(parent, kind ("van" | "pickup" | "truck"), color, cf, big?) -> Model   (its pivot on the
                      ground, nose to -Z; big: a bigger truck's longer box)
   the shed's parts the services look for: "PackPad" (the packing table's pad), "BoardSlot" x3 (attribute Slot)
+  FarmBuilder.packPad(L, at) -> Part / FarmBuilder.orderBoard(L, plot, at, mounted?)   (the hub's front hall builds
+                     its own, on its façade, when the shed goes)
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -94,6 +96,57 @@ return function(FarmBuilder, BUILD)
 					h,
 					deco({ color = rgb(104, 160, 134), name = "Rib" }),
 					y0
+				)
+			end
+		end
+	end
+
+	-- The PACK ORDERS pad
+	function FarmBuilder.packPad(L, at)
+		L:block(at.X, at.Z, 6, 4.6, 0.3, deco({ color = P.sunflower, name = "PackRim" }), 0.25)
+		local pad = L:block(at.X, at.Z, 5.2, 3.8, 0.4, { color = WHITE, name = "PackPad" }, 0.25)
+		FarmBuilder.label(pad, "PACK ORDERS", "stand here", P.sunflower)
+		return pad
+	end
+
+	-- The order board: three slots under an ORDERS head; on posts, or mounted on a wall (lit, with a shelf of produce)
+	function FarmBuilder.orderBoard(L, plot, b, mounted)
+		if not mounted then
+			for _, sx in { -1, 1 } do
+				L:block(b.X + sx * 6.4, b.Z, 0.6, 0.6, 9, { color = P.wood, name = "BoardPost" }, 0)
+			end
+		end
+		L:box(b.X, 5.2, b.Z, 13.4, 7, 0.5, { color = P.wood, name = "Board" })
+		L:box(b.X, 9.3, b.Z, 14.6, 0.4, 2, deco({ color = plot.color, name = "BoardRoof" }))
+		local head = L:box(b.X, 8.2, b.Z - 0.3, 12.6, 1.4, 0.1, deco({ color = rgb(40, 70, 56), name = "BoardHead" }))
+		FarmBuilder.sign(head, "ORDERS", nil, WHITE)
+		for slot = 1, 3 do
+			local part = L:box(
+				b.X - 4.2 + (slot - 1) * 4.2,
+				4.6,
+				b.Z - 0.3,
+				3.9,
+				5.6,
+				0.1,
+				deco({ color = rgb(40, 70, 56), name = "BoardSlot" })
+			)
+			part:SetAttribute("Slot", slot)
+			FarmBuilder.board(part, "", {})
+		end
+		if mounted then
+			for k = 0, 9 do
+				L:box(
+					b.X - 6.3 + k * 1.4,
+					9.7,
+					b.Z - 0.9,
+					0.4,
+					0.4,
+					0.4,
+					deco({
+						color = k % 2 == 0 and P.sunflower or WHITE,
+						material = Enum.Material.Neon,
+						name = "Bulb",
+					})
 				)
 			end
 		end
@@ -257,10 +310,7 @@ return function(FarmBuilder, BUILD)
 			)
 		end
 		-- the packing table's pad, just outside the side door
-		local pp = SPOTS.packPad
-		L:block(pp.X, pp.Z, 6, 4.6, 0.3, deco({ color = P.sunflower, name = "PackRim" }), 0.25)
-		local pad = L:block(pp.X, pp.Z, 5.2, 3.8, 0.4, { color = WHITE, name = "PackPad" }, 0.25)
-		FarmBuilder.label(pad, "PACK ORDERS", "stand here", P.sunflower)
+		FarmBuilder.packPad(L, SPOTS.packPad)
 		-- a gravel drive from the road to the loading door, and the turn to the vans' spots
 		L:block(
 			door.X,
@@ -302,27 +352,7 @@ return function(FarmBuilder, BUILD)
 			)
 		end
 		-- the order board
-		local b = SPOTS.board
-		for _, sx in { -1, 1 } do
-			L:block(b.X + sx * 6.4, b.Z, 0.6, 0.6, 9, { color = P.wood, name = "BoardPost" }, 0)
-		end
-		L:box(b.X, 5.2, b.Z, 13.4, 7, 0.5, { color = P.wood, name = "Board" })
-		L:box(b.X, 9.3, b.Z, 14.6, 0.4, 2, deco({ color = plot.color, name = "BoardRoof" }))
-		local head = L:box(b.X, 8.2, b.Z - 0.3, 12.6, 1.4, 0.1, deco({ color = rgb(40, 70, 56), name = "BoardHead" }))
-		FarmBuilder.sign(head, "ORDERS", nil, WHITE)
-		for slot = 1, 3 do
-			local part = L:box(
-				b.X - 4.2 + (slot - 1) * 4.2,
-				4.6,
-				b.Z - 0.3,
-				3.9,
-				5.6,
-				0.1,
-				deco({ color = rgb(40, 70, 56), name = "BoardSlot" })
-			)
-			part:SetAttribute("Slot", slot)
-			FarmBuilder.board(part, "", {})
-		end
+		FarmBuilder.orderBoard(L, plot, SPOTS.board)
 	end
 
 	-- The paved yard: asphalt in front of the shed, painted bays, kerbs, two lamps, planters

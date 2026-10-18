@@ -82,7 +82,16 @@ PlotLayout.SPOTS = {
 	},
 	lane = 76, -- the truck lane's x
 	lot = { Vector3.new(64, 0, 40), Vector3.new(57, 0, 40), Vector3.new(50, 0, 40), Vector3.new(43, 0, 40) },
-	greenhouses = Vector3.new(24, 0, 46),
+	greenhouses = Vector3.new(20, 0, 97),
+	-- stage 5: the hub. Dock doors along the warehouse's back wall (z 24), the truck court behind it, each truck's
+	-- spot in line with its dock; the front hall (z -74..-36) where the shed stood; the market hall along the road
+	-- where the farm stand stood
+	docks = { 62, 48, 34, 20 }, -- the dock doors' x (truck n uses dock n)
+	dockLot = { Vector3.new(62, 0, 76), Vector3.new(48, 0, 76), Vector3.new(34, 0, 76), Vector3.new(20, 0, 76) },
+	frontHall = Vector3.new(38, 0, -55),
+	market = Vector3.new(-15, 0, -97.5), -- the market hall's middle: 42 x 21 (x -36..6, z -108..-87)
+	marketSell = Vector3.new(-28, 0, -100), -- the sell pad, by the market's door
+	marketPads = { Vector3.new(-16, 0, -94), Vector3.new(-7, 0, -94), Vector3.new(2, 0, -94) }, -- the buy-pads move in
 	mailbox = Vector3.new(-50, 0, -106),
 	sign = Vector3.new(-74, 0, -106),
 }
@@ -98,6 +107,8 @@ PlotLayout.WAREHOUSE = Vector3.new(64, 18, 60)
 PlotLayout.SLICES = { -36, -20, -9, 2, 13, 24 }
 PlotLayout.RACK_X = { 8, 58 } -- a rack row runs from x 8 to 58; the cross aisle beyond it to the east wall
 PlotLayout.SLOT = 5.6 -- a rack slot's length
+PlotLayout.FRONT = -74 -- the front hall's front wall (where the shed's front wall was)
+PlotLayout.MARKET = Vector3.new(42, 13, 21) -- the market hall's size
 PlotLayout.LEVELS = 3
 
 -- A rack row's slot (n from 1, along the row then up): its local centre (where a pallet sits)

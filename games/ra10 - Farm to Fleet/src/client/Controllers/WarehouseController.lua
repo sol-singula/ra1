@@ -2,8 +2,8 @@
 The warehouse on screen (master plan §7, §13.1): every forklift on the street works its loop while its warehouse is
 busy (the server only says Busy, Speed and how many rack rows there are): from its spot to the staging floor, picks
 up a pallet, down the cross aisle and along a rack row's aisle, turns to the rack, lifts the pallet to its level,
-lowers the forks and comes back; idle, it waits in its spot. A warehouse's roof (parts marked Roof, with their Plot)
-disappears while
+lowers the forks and comes back; idle, it waits in its spot. A warehouse's roof (parts marked Roof, with their Plot
+and the box they cover: RoofMin, RoofMax) disappears while
 the camera is inside it, so you see the racks and forklifts from above.
 
   WarehouseController.working()   how many forklifts are on their loop
@@ -176,8 +176,14 @@ local function roofsFor(cam)
 			local frame = plotIndex and PlotLayout.frame(plotIndex)
 			if frame then
 				local l = frame:PointToObjectSpace(camPos)
-				local s = PlotLayout.SLICES
-				inside = l.X > 6 and l.X < 70 and l.Z > s[1] and l.Z < s[#s] and l.Y < PlotLayout.WAREHOUSE.Y + 1
+				local mn, mx = part:GetAttribute("RoofMin"), part:GetAttribute("RoofMax")
+				if typeof(mn) == "Vector3" and typeof(mx) == "Vector3" then
+					-- (the box this roof covers: the hall or slice it sits on)
+					inside = l.X > mn.X and l.X < mx.X and l.Z > mn.Z and l.Z < mx.Z and l.Y < mx.Y
+				else
+					local s = PlotLayout.SLICES
+					inside = l.X > 6 and l.X < 70 and l.Z > s[1] and l.Z < s[#s] and l.Y < PlotLayout.WAREHOUSE.Y + 1
+				end
 			end
 			if inside then
 				seen[part] = true

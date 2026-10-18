@@ -83,8 +83,17 @@ function GuideService:Step(player)
 	if step then
 		return step
 	end
-	-- generated, in the warehouse: the bottleneck's fix (or the next fix there is)
+	-- generated, in the warehouse: a hub expansion they can afford, else the bottleneck's fix (or the next fix)
 	if p.owned and p.owned.warehouse then
+		local first = upgrades:Offer(player)[1]
+		if first and not first.locked and first.upgrade.stage >= 5 and (p.cash or 0) >= first.upgrade.cost then
+			return {
+				key = "buy:" .. first.upgrade.key,
+				text = `Grow the hub: buy {first.upgrade.name} ({Format.num(first.upgrade.cost)})`,
+				target = "pad:" .. first.upgrade.key,
+				generated = true,
+			}
+		end
 		local rates = Flow.rates(p, workspace:GetServerTimeNow())
 		local u = Upgrades.trackNext(p.owned, rates.bottleneck)
 		local name = string.upper(rates.bottleneck)
@@ -163,10 +172,15 @@ function GuideService:Target(player, target)
 		return pad and pad.Position
 	elseif string.sub(target, 1, 5) == "flow:" then
 		local plot = plots:Plot(player)
+		local p = data:Get(player)
 		local spot = ({
 			pack = Vector3.new(30, 0, -31),
 			store = PlotLayout.rackSlot(1, 1),
-			ship = PlotLayout.SPOTS.truckDoor - Vector3.new(0, 0, 4),
+			ship = p and p.owned and p.owned.backDocks and Vector3.new(
+				PlotLayout.SPOTS.docks[1],
+				0,
+				PlotLayout.SLICES[#PlotLayout.SLICES] + 4
+			) or PlotLayout.SPOTS.truckDoor - Vector3.new(0, 0, 4),
 		})[string.sub(target, 6)]
 		return plot and spot and PlotLayout.toWorld(plot.index, spot.X, spot.Z, 1)
 	elseif target == "pack" then

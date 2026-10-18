@@ -24,15 +24,17 @@ owned yet whose level is reached. Each one is visible on the plot (World/FarmBui
   warehouse (master plan §13.2): "grow" (kind "grow": crops grow + `value`, they add up), "pack" ("packLines": that
   many packing lines; "packSpeed": + `value`), "store" ("forklifts", "racks": rack rows (bays come with rows 3, 5,
   7), "forkSpeed": + `value`), "ship" ("trucks": box trucks, "truckCap": pallets a truck takes)
+  (stage 5: the hub) kind "docks" the back dock doors: truck trips take `value` less; kind "hall": the packing lines
+  + `value` (they add up). `needs`: another upgrade that must be owned first (shown locked till then)
 
   Upgrades.LIST              every upgrade, in order
   Upgrades[key]              { key, name, stage, cost, kind, value, level, replaces? (the piece it takes down: a
-                             site sign), track? ("grow" | "pack" | "store" | "ship": the warehouse's station pads) }
+                             site sign; or a list: what the hub swallows), track? ("grow" | "pack" | "store" | "ship": the warehouse's station pads) }
   Upgrades.next(owned, level, n)   the next n on offer at the stand's pads (no track's)
   Upgrades.trackNext(owned, track) the next in a track (or nil when the track is done)
   Upgrades.TRACKS            the four, in flow order
   Upgrades.stat(owned, kind, default)   the value the plot has for a kind (the highest owned; "price",
-                             "golden", "orderPrice" and "grow" add up)
+                             "golden", "orderPrice", "grow" and "hall" add up)
 ]]
 local Upgrades = {}
 
@@ -111,6 +113,12 @@ local LIST = {
 	{ key = "rack8",      name = "Rack Row 8",      stage = 4, cost = 1600000, kind = "racks",    value = 8, level = 24, track = "store" },
 	{ key = "forklift5",  name = "Fifth Forklift",  stage = 4, cost = 1900000, kind = "forklifts", value = 5, level = 25, track = "store" },
 	{ key = "hubDeed",    name = "Build the Distribution Hub!", stage = 4, cost = 2500000, kind = "stage", value = 5, level = 26 },
+	-- Stage 5: the Distribution Hub: the warehouse takes over the front of the plot (master plan §13.1)
+	{ key = "backDocks",  name = "Back Dock Doors", stage = 5, cost = 3000000,  kind = "docks",  value = 0.15, level = 26, needs = "bay4" },
+	{ key = "frontHall",  name = "The Front Hall",  stage = 5, cost = 4500000,  kind = "hall",   value = 0.25, level = 27, replaces = { "shed", "sorter", "wrapper", "boxLine", "orderBoard" } },
+	{ key = "controlTower", name = "Control Tower", stage = 5, cost = 6000000,  kind = "orderPrice", value = 0.1, level = 28 },
+	{ key = "solarRoof",  name = "Solar Roof",      stage = 5, cost = 8000000,  kind = "hall",   value = 0.25, level = 29 },
+	{ key = "marketHall", name = "The Market Hall", stage = 5, cost = 10000000, kind = "price",  value = 0.5,  level = 30 },
 }
 -- stylua: ignore end
 
@@ -128,7 +136,7 @@ function Upgrades.next(owned, level, n)
 	for _, key in Upgrades.LIST do
 		local u = Upgrades[key]
 		if not owned[key] and not u.track then
-			if u.level > level then
+			if u.level > level or (u.needs and not owned[u.needs]) then
 				break -- (in order: nothing after a locked one shows yet)
 			end
 			table.insert(out, u)
@@ -138,6 +146,14 @@ function Upgrades.next(owned, level, n)
 		end
 	end
 	return out
+end
+
+-- The pieces an upgrade takes down when it's built (`replaces`: a key, or a list of keys)
+function Upgrades.replaced(u)
+	if type(u.replaces) == "table" then
+		return u.replaces
+	end
+	return u.replaces and { u.replaces } or {}
 end
 
 function Upgrades.trackNext(owned, track)
@@ -165,7 +181,7 @@ function Upgrades.stat(owned, kind, default)
 	for _, key in Upgrades.LIST do
 		local u = Upgrades[key]
 		if owned[key] and u.kind == kind then
-			if kind == "price" or kind == "golden" or kind == "orderPrice" or kind == "grow" then
+			if kind == "price" or kind == "golden" or kind == "orderPrice" or kind == "grow" or kind == "hall" then
 				v = (v or 0) + u.value
 			elseif type(u.value) ~= "number" then
 				v = u.value

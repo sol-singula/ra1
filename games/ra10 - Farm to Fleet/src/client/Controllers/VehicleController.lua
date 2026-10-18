@@ -1,6 +1,6 @@
 --[[
 The vehicles on the street (master plan §7): the server marks a trip on a vehicle (TripStart, TripLength, Trip:
-its kind) and every client drives it along World/Trips' plan for that kind, smoothly, at 30 fps; a van or a box
+its kind) and every client drives it along World/Trips' plan for that kind (or its Plan), smoothly, at 30 fps; a van or a box
 truck with no trip waits in its spot (ParkAt, or the van's Park). Any plot's vehicles, so neighbours watch each
 other's trucks come and go.
 
@@ -43,15 +43,16 @@ local function drive()
 			continue
 		end
 		local kind = m:GetAttribute("Kind") or "pickup"
+		local plan = m:GetAttribute("Plan") or kind -- (a truck's route changes when the hub's back docks open)
 		local park = m:GetAttribute("Park")
 		local spot = m:GetAttribute("ParkAt") or (park and PlotLayout.SPOTS.parks[park]) or nil
 		local start, length = m:GetAttribute("TripStart"), m:GetAttribute("TripLength")
 		if type(start) == "number" and type(length) == "number" and length > 0 then
 			local f = (now - start) / length
-			m:PivotTo((Trips.at(plot, kind, f, spot)))
+			m:PivotTo((Trips.at(plot, plan, f, spot)))
 			moving += 1
 		elseif spot and kind ~= "pickup" and not m:GetAttribute("Parked") then
-			m:PivotTo((Trips.at(plot, kind, 1, spot)))
+			m:PivotTo((Trips.at(plot, plan, 1, spot)))
 			m:SetAttribute("Parked", true)
 		end
 		if type(start) == "number" then

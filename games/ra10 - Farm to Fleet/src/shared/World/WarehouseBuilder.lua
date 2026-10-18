@@ -129,6 +129,129 @@ return function(FarmBuilder, BUILD)
 		return parts
 	end
 
+	-- A part that's roof: hidden by the client while the camera is inside the box it covers (local min, max)
+	local function roofTag(part, plot, x0, z0, x1, z1)
+		part:SetAttribute("Roof", true)
+		part:SetAttribute("Plot", plot.index)
+		part:SetAttribute("RoofMin", Vector3.new(x0, 0, z0))
+		part:SetAttribute("RoofMax", Vector3.new(x1, H + 1.5, z1))
+		return part
+	end
+
+	-- Everything a real warehouse has overhead and on its walls (master plan §1: detail from geometry): sprinkler
+	-- mains with their heads, a ventilation duct with diffusers, a cable tray, high-bay lights, roof joists, columns
+	-- with guards, electrical panels, conduit and extinguishers on the walls; outside: downspouts, wall lights, a
+	-- pipe rack along the east wall, rooftop units with fans and an exhaust stack
+	local RED_PIPE = rgb(200, 40, 40)
+	local function detail(L, _plot, x0, x1, z0, z1, h, skipWest)
+		h = h or H
+		local cx, cz, d, w = (x0 + x1) / 2, (z0 + z1) / 2, z1 - z0, x1 - x0
+		-- overhead: two sprinkler mains along X, their heads
+		for _, k in { 0.3, 0.7 } do
+			local z = z0 + d * k
+			L:cyl(cx, h - 0.9, z, w - 2, 0.32, deco({ color = RED_PIPE, name = "Sprinkler" }), "x")
+			for x = x0 + 4, x1 - 4, 8 do
+				L:box(x, h - 1.25, z, 0.25, 0.4, 0.25, deco({ color = P.sunflower, name = "SprinklerHead" }))
+			end
+		end
+		-- a ventilation duct with diffusers, and a yellow cable tray
+		L:cyl(cx, h - 2.3, cz, w - 3, 1.6, deco({ color = P.steelLight, name = "Duct" }), "x")
+		for x = x0 + 8, x1 - 8, 16 do
+			L:box(x, h - 3.25, cz, 1.6, 0.3, 1.6, deco({ color = WHITE, name = "Diffuser" }))
+			L:box(x, h - 1.2, cz, 0.1, 0.9, 0.1, deco({ color = INK, name = "Hanger" }))
+		end
+		L:box(cx, h - 1.5, cz + 2.4, w - 2, 0.15, 0.9, deco({ color = P.safetyYellow, name = "CableTray" }))
+		-- high-bay lights: two rows
+		for _, k in { 0.25, 0.75 } do
+			for x = x0 + 6, x1 - 6, 12 do
+				L:cyl(x, h - 3, z0 + d * k, 0.7, 1.5, deco({ color = P.steel, name = "LampShade" }), "y")
+				L:cyl(
+					x,
+					h - 3.4,
+					z0 + d * k,
+					0.1,
+					1.2,
+					deco({
+						color = rgb(255, 246, 220),
+						material = Enum.Material.Neon,
+						name = "LampGlow",
+					}),
+					"y"
+				)
+			end
+		end
+		-- roof joists along Z, and columns with yellow guards on the slice's back line
+		for x = x0 + 16, x1 - 8, 16 do
+			L:box(x, h - 0.25, cz, 0.5, 0.5, d, deco({ color = P.steel, name = "Joist" }))
+			if d >= 10 then
+				L:block(x, z1 - 0.6, 0.7, 0.7, h - 0.5, deco({ color = P.steel, name = "Column" }), 0.5)
+				L:block(x, z1 - 0.6, 1.1, 1.1, 1.2, deco({ color = P.safetyYellow, name = "ColumnGuard" }), 0.5)
+			end
+		end
+		-- on the walls: an electrical panel with conduit, an extinguisher, a safety sign
+		for _, side in { { x0 + 0.9, 1 }, { x1 - 0.9, -1 } } do
+			local wx, f = side[1], side[2]
+			if skipWest and f == 1 then
+				continue
+			end
+			L:box(wx, 4, cz - 2, 0.4, 2.6, 1.8, deco({ color = rgb(150, 154, 160), name = "Panel" }))
+			L:box(wx + f * 0.21, 4.4, cz - 2, 0.02, 0.4, 0.6, deco({ color = P.safetyYellow, name = "PanelSign" }))
+			for _, dz in { -2.4, -1.6 } do
+				L:box(
+					wx,
+					(5.3 + h - 1) / 2,
+					cz + dz,
+					0.15,
+					h - 1 - 5.3,
+					0.15,
+					deco({ color = P.steel, name = "Conduit" })
+				)
+			end
+			L:cyl(wx + f * 0.3, 1.6, cz + 3, 1.3, 0.55, deco({ color = RED_PIPE, name = "Extinguisher" }), "y")
+			L:box(wx, 3.1, cz + 3, 0.1, 0.6, 0.9, deco({ color = RED_PIPE, name = "ExtinguisherSign" }))
+		end
+	end
+
+	-- The outside of a slice: downspouts, wall lights, the east wall's pipe rack, rooftop units
+	local function outside(L, plot, x0, x1, z0, z1, h)
+		h = h or H
+		local cz = (z0 + z1) / 2
+		for _, wx in { x0 - 0.35, x1 + 0.35 } do
+			L:cyl(wx, (h + 0.5) / 2, z1 - 0.8, h, 0.5, deco({ color = P.steel, name = "Downspout" }), "y")
+			L:box(wx, h - 6, cz, 0.6, 0.6, 1, deco({ color = INK, name = "WallLight" }))
+			L:box(
+				wx + (wx < x0 and -0.31 or 0.31),
+				h - 6.2,
+				cz,
+				0.05,
+				0.3,
+				0.8,
+				deco({
+					color = rgb(255, 246, 220),
+					material = Enum.Material.Neon,
+					name = "WallLightGlow",
+				})
+			)
+		end
+		-- the pipe rack down the east wall: water, gas, compressed air
+		for i, c in { rgb(60, 130, 220), P.safetyYellow, rgb(170, 175, 180) } do
+			L:cyl(x1 + 0.8, 5 + i * 0.7, cz, z1 - z0, 0.42, deco({ color = c, name = "WallPipe" }), "z")
+		end
+		L:box(x1 + 0.6, 6.4, z0 + 1, 0.8, 2.6, 0.3, deco({ color = INK, name = "PipeBracket" }))
+		-- on the roof: a unit with its fan, an exhaust stack
+		local rx = x0 + (x1 - x0) * 0.72
+		roofTag(L:block(rx, cz, 4, 3, 2, deco({ color = P.steelLight, name = "HVAC" }), h + 1.1), plot, x0, z0, x1, z1)
+		roofTag(L:cyl(rx, h + 3.25, cz, 0.3, 2.4, deco({ color = INK, name = "HVACFan" }), "y"), plot, x0, z0, x1, z1)
+		roofTag(
+			L:cyl(x0 + (x1 - x0) * 0.3, h + 2.6, cz, 3.2, 0.9, deco({ color = P.steel, name = "Stack" }), "y"),
+			plot,
+			x0,
+			z0,
+			x1,
+			z1
+		)
+	end
+
 	-- A slice of the building: floor, side walls, roof (with skylights and a vent), and a back wall for now
 	local function slice(L, plot, k)
 		local z0, z1 = SLICES[k], SLICES[k + 1]
@@ -143,25 +266,27 @@ return function(FarmBuilder, BUILD)
 			L:box(wx, H - 4.4, cz, 0.15, 2, d - 3, deco({ color = P.glass, name = "Clerestory", transparency = 0.1 }))
 		end
 		-- the roof: a low slab, skylights along it, a vent on top: all hidden from inside
-		local roof = L:box(cx, H + 0.8, cz, X1 - X0 + 2, 0.6, d, { color = ROOF, name = "Roof" })
-		roof:SetAttribute("Roof", true)
-		roof:SetAttribute("Plot", plot.index)
+		roofTag(L:box(cx, H + 0.8, cz, X1 - X0 + 2, 0.6, d, { color = ROOF, name = "Roof" }), plot, X0, z0, X1, z1)
 		for _, sx in { -18, 0, 18 } do
-			local sky = L:box(
-				cx + sx,
-				H + 1.15,
-				cz,
-				6,
-				0.2,
-				d - 4,
-				deco({ color = P.glass, name = "Skylight", transparency = 0.2 })
+			roofTag(
+				L:box(
+					cx + sx,
+					H + 1.15,
+					cz,
+					6,
+					0.2,
+					d - 4,
+					deco({ color = P.glass, name = "Skylight", transparency = 0.2 })
+				),
+				plot,
+				X0,
+				z0,
+				X1,
+				z1
 			)
-			sky:SetAttribute("Roof", true)
-			sky:SetAttribute("Plot", plot.index)
 		end
-		local vent = L:block(cx + 26, cz, 3, 3, 1.6, deco({ color = P.steelLight, name = "RoofUnit" }), H + 1.1)
-		vent:SetAttribute("Roof", true)
-		vent:SetAttribute("Plot", plot.index)
+		detail(L, plot, X0, X1, z0, z1)
+		outside(L, plot, X0, X1, z0, z1)
 		-- the back wall: until the next slice is built
 		for _, part in wall(L, cx, z1 - 0.4, X1 - X0, 0.8, H, 0.5, 1, "BackWall") do
 			part:SetAttribute("Slice", k)
@@ -334,13 +459,17 @@ return function(FarmBuilder, BUILD)
 	end
 
 	local function truck(L, plot, n)
-		local at = SPOTS.lot[n]
+		local docks = plot.items:FindFirstChild("backDocks") ~= nil
+		local at = docks and SPOTS.dockLot[n] or SPOTS.lot[n]
 		local cf = L.cf * CFrame.new(at.X, 0, at.Z)
 		local big = plot.items:FindFirstChild("biggerTrucks") ~= nil
 		local m = FarmBuilder.vehicle(L.folder, "truck", plot.color, cf, big)
 		m:SetAttribute("Plot", plot.index)
 		m:SetAttribute("Park", n)
 		m:SetAttribute("ParkAt", at)
+		if docks then
+			m:SetAttribute("Plan", "truckBack")
+		end
 		return m
 	end
 
@@ -352,7 +481,11 @@ return function(FarmBuilder, BUILD)
 		for k = 3, #SLICES - 1 do
 			skeleton(L, k)
 		end
-		-- the front wall, round the people door and the truck door
+		-- the front wall, round the people door and the truck door (all of it goes when the hub's front hall comes)
+		local before = {}
+		for _, c in L.folder:GetChildren() do
+			before[c] = true
+		end
 		local fz = SLICES[1] + 0.4
 		local pd, td = SPOTS.peopleDoor.X, SPOTS.truckDoor.X
 		local PW, PH, TW, TH = 4, 8, 9, 11
@@ -401,6 +534,12 @@ return function(FarmBuilder, BUILD)
 		end
 		for _, z in { -45, -37 } do
 			L:block(bx, z, 0.5, 0.5, 8.7, deco({ color = P.steel, name = "BridgePost" }), 0)
+		end
+		L:block(64, -46, 14, 9, 0.12, deco({ color = P.asphalt, name = "Apron" }), 0.22)
+		for _, c in L.folder:GetChildren() do
+			if not before[c] and c.Name ~= "StationPad" and c.Name ~= "StationRim" then
+				c:SetAttribute("Front", true)
+			end
 		end
 		-- inside: the office (glass, a desk, its sign)
 		L:block(13, -31.4, 14, 0.3, 7, { color = P.glass, name = "OfficeGlass", transparency = 0.35 }, 0.5)
@@ -468,7 +607,11 @@ return function(FarmBuilder, BUILD)
 				L:box(at.X + sx * 3.4, 0.36, at.Z, 0.25, 0.02, 12, deco({ color = WHITE, name = "LotLine" }))
 			end
 		end
-		L:block(64, -46, 14, 9, 0.12, deco({ color = P.asphalt, name = "Apron" }), 0.22)
+		for _, c in L.folder:GetChildren() do
+			if c.Name == "TruckLot" or c.Name == "LotLine" then
+				c:SetAttribute("OldLot", true) -- (the hub's back docks pave the court and move the lot)
+			end
+		end
 		truck(L, plot, 1)
 	end
 
@@ -617,4 +760,16 @@ return function(FarmBuilder, BUILD)
 			end
 		end
 	end
+	-- (stage 5's pieces: the hub)
+	require(script.Parent.HubBuilder)(FarmBuilder, BUILD, {
+		wall = wall,
+		roofTag = roofTag,
+		detail = detail,
+		outside = outside,
+		line = line,
+		STEEL_WALL = STEEL_WALL,
+		ROOF = ROOF,
+		CARDBOARD = CARDBOARD,
+		FRUIT = FRUIT,
+	})
 end

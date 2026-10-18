@@ -58,7 +58,8 @@ function UpgradeService:Offer(player)
 		for _, key in Upgrades.LIST do
 			local u = Upgrades[key]
 			if not p.owned[key] and not seen[key] and not u.track then
-				table.insert(out, { upgrade = u, locked = u.level > (p.level or 1) })
+				local needs = u.needs and not p.owned[u.needs] and Upgrades[u.needs] or nil
+				table.insert(out, { upgrade = u, locked = u.level > (p.level or 1) or needs ~= nil, needs = needs })
 				break
 			end
 		end
@@ -85,7 +86,9 @@ function UpgradeService:Paint(player)
 			pad:SetAttribute("Item", u.key)
 			pad:SetAttribute("Locked", o.locked == true)
 			pad.Transparency = 0
-			if o.locked then
+			if o.needs then
+				FarmBuilder.label(pad, u.name, `NEEDS {o.needs.name}`, P.steelLight)
+			elseif o.locked then
 				FarmBuilder.label(pad, u.name, `LV {u.level}`, P.steelLight)
 			else
 				FarmBuilder.label(pad, u.name, `{u.cost} Cash`, p.cash >= u.cost and GREEN or RED)
@@ -156,8 +159,11 @@ local function apply(player, u)
 	end
 	local plot = plots:Plot(player)
 	if plot then
-		if u.replaces and plot.items:FindFirstChild(u.replaces) then
-			plot.items[u.replaces]:Destroy() -- (the site sign goes when the building comes)
+		for _, key in Upgrades.replaced(u) do
+			local old = plot.items:FindFirstChild(key)
+			if old then
+				old:Destroy() -- (the site sign goes when the building comes; the shed when the hub swallows it)
+			end
 		end
 		FarmBuilder.upgrade(plot, u.key)
 	end
@@ -232,8 +238,10 @@ function UpgradeService:OnPlayerReady(player, profile)
 	profile.owned = profile.owned or {}
 	local replaced = {}
 	for _, key in Upgrades.LIST do
-		if profile.owned[key] and Upgrades[key].replaces then
-			replaced[Upgrades[key].replaces] = true
+		if profile.owned[key] then
+			for _, r in Upgrades.replaced(Upgrades[key]) do
+				replaced[r] = true
+			end
 		end
 	end
 	for _, key in Upgrades.LIST do
@@ -270,6 +278,8 @@ function UpgradeService:_tick()
 						Net.fire(player, "Toast", `Need {short} more Cash for {u.name}`, "info")
 					elseif why == "level" then
 						Net.fire(player, "Toast", `Reach Farm Level {Upgrades[key].level} first`, "info")
+					elseif why == "order" and Upgrades[key].needs then
+						Net.fire(player, "Toast", `Build {Upgrades[Upgrades[key].needs].name} first`, "info")
 					end
 				end
 				break

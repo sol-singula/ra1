@@ -8,6 +8,8 @@ a straight line, facing where it's going (or away, backing up); standing still i
           drives off down the road, comes back up the far lane and parks again (the order pays when it's home)
   truck   a box truck: from its spot in the lot behind the warehouse, down the truck lane, backs up to the
           warehouse's truck door, loads, off down the road, back the same way and backs into its spot
+  truckBack  a box truck once the hub has its back docks: backs straight from its spot to its dock, loads, out by
+          the lane and away, and back into its spot
   pickup  the buyer's: comes up the far lane, noses in to the door, loads, backs out and drives away
 
   Trips.at(plotIndex, kind, f, park?) -> CFrame (world, on the ground), visible
@@ -25,6 +27,7 @@ local NOSE_IN = DOOR.Z - 6
 local TD = PlotLayout.SPOTS.truckDoor
 local LANE = PlotLayout.SPOTS.lane
 local AT_TRUCK_DOOR = TD.Z - 7 -- a truck's middle with its back at the warehouse door
+local AT_BACK_DOCK = PlotLayout.SLICES[#PlotLayout.SLICES] + 7.5 -- ...with its back at a back dock door
 
 -- stylua: ignore start
 Trips.PLAN = {
@@ -64,6 +67,24 @@ Trips.PLAN = {
 		{ f = 0.95, x = LANE,      z = 28 },
 		{ f = 0.97, parkX = true,  z = 28 },
 		{ f = 1,    park = true, rev = true },
+	},
+	-- a box truck once the hub has back dock doors: parked nose out in the court, it backs straight up to its dock,
+	-- loads, pulls out to the lane and away down the road; back up the lane, along the court and into its spot
+	truckBack = {
+		{ f = 0,    park = true },
+		{ f = 0.14, parkX = true,  z = AT_BACK_DOCK, rev = true },
+		{ f = 0.32, parkX = true,  z = AT_BACK_DOCK },
+		{ f = 0.37, parkX = true,  z = 60 },
+		{ f = 0.41, x = LANE,      z = 64 },
+		{ f = 0.52, x = LANE,      z = -112 },
+		{ f = 0.56, x = LANE + 12, z = NEAR },
+		{ f = 0.64, x = LANE + AWAY, z = NEAR, hide = true },
+		{ f = 0.74, x = LANE + AWAY, z = FAR },
+		{ f = 0.82, x = LANE + 8,  z = FAR },
+		{ f = 0.85, x = LANE,      z = -112 },
+		{ f = 0.95, x = LANE,      z = 64 },
+		{ f = 0.98, parkX = true,  z = 64 },
+		{ f = 1,    park = true },
 	},
 	pickup = {
 		{ f = 0,    x = DOOR.X + AWAY, z = FAR },

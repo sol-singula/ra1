@@ -7,7 +7,7 @@ holds Upgrades.stat "orders" slots, and each slot cycles through these states:
   shipping  on the road: the buyer's pickup, or one of the plot's vans; pays when the trip ends (at + length)
   wait      empty until `at` (Orders.REFRESH after it shipped, ran out, or was skipped), then a new customer
 
-  pack      standing on the shed's PackPad packs the basket into the open orders (first slot first); the box line
+  pack      standing on the shed's PackPad (the hub's front hall's, later) packs the basket into the open orders (first slot first); the box line
             (Upgrades "autopack") does it every few seconds by itself
   the conveyor  once the shed stands, the conveyor leaves in the basket what the open orders still need
             (FarmService.hold)
@@ -56,6 +56,7 @@ local onPad = {} -- [player] = true while they stand on the pack pad (one pack p
 local packAt = {} -- [player] = when the box line last packed
 local board = {} -- [player] = { [slot] = the words on it }, so the board is only repainted when they change
 local pickups = {} -- [player] = { [slot] = the pickup's Model }
+local boardParts = {} -- [player] = the order board's slot parts
 
 local function now()
 	return workspace:GetServerTimeNow()
@@ -438,14 +439,22 @@ local GREY = Color3.fromRGB(190, 200, 196)
 
 local function paintBoard(player, p)
 	local plot = plots:Plot(player)
-	local folder = plot and plot.items:FindFirstChild("shed")
-	if not folder then
+	if not plot or not opened(p) then
 		return
 	end
 	board[player] = board[player] or {}
 	local slots = slotCount(p)
 	local b = bonus(p)
-	for _, part in folder:GetChildren() do
+	-- (the board stands by the shed, then hangs on the hub's front hall: looked for after every build)
+	if not boardParts[player] then
+		boardParts[player] = {}
+		for _, d in plot.items:GetDescendants() do
+			if d.Name == "BoardSlot" then
+				table.insert(boardParts[player], d)
+			end
+		end
+	end
+	for _, part in boardParts[player] do
 		local slot = part:GetAttribute("Slot")
 		if part.Name == "BoardSlot" and slot then
 			local order = ordersOf(p).live[slot]
@@ -574,10 +583,11 @@ function OrderService:Init(registry)
 		end
 	end)
 	upgrades.Applied:Connect(function(player, u)
-		if u.key == "shed" or u.kind == "orders" or u.kind == "van" or u.kind == "vans" then
+		if u.key == "shed" or u.kind == "orders" or u.kind == "van" or u.kind == "vans" or u.stage >= 5 then
 			local p = data:Get(player)
 			if p then
 				board[player] = nil
+				boardParts[player] = nil
 				-- (a trip under way when they left: the van shows it again)
 				for slot, order in ordersOf(p).live do
 					if order.state == "shipping" then
@@ -598,14 +608,14 @@ function OrderService:Init(registry)
 		onPad[player] = nil
 		packAt[player] = nil
 		board[player] = nil
+		boardParts[player] = nil
 		pickups[player] = nil
 	end)
 end
 
 function OrderService:PackPad(player)
 	local plot = plots:Plot(player)
-	local folder = plot and plot.items:FindFirstChild("shed")
-	return folder and folder:FindFirstChild("PackPad")
+	return plot and plot.items:FindFirstChild("PackPad", true)
 end
 
 function OrderService:OnPlayerReady(player)

@@ -144,6 +144,15 @@ Engine.advance(0.2)
 shot("warehouse_racks", at(theirs, 64, -6, 6), at(theirs, 20, -6, 4), true)
 shot("warehouse_lot", at(theirs, 90, 70, 30), at(theirs, 50, 30, 2), true)
 shot("farm_operation_overview", at(theirs, -70, -170, 120), at(theirs, 10, -10, 0), true)
+-- Ben's stage 5: the hub has taken over the front: the hall, the tower, the solar roof, the market, the docks
+shot("hub_overview", at(theirs, -95, -195, 150), at(theirs, 5, -25, 0), true)
+shot("hub_facade", at(theirs, 28, -104, 13), at(theirs, 36, -74, 9), true)
+Engine.advance(0.2)
+shot("hall_inside", at(theirs, 26, -71, 15), at(theirs, 50, -50, 2), true)
+shot("market_front", at(theirs, -15, -130, 12), at(theirs, -15, -100, 6), true)
+Engine.advance(0.2)
+shot("market_inside", at(theirs, -32, -105, 8), at(theirs, -4, -92, 2), true)
+shot("hub_docks", at(theirs, 92, 96, 32), at(theirs, 40, 30, 4), true)
 -- the street from above
 shot("farm_street", V3.new(0, 160, 300), V3.new(0, 0, 0), true)
 -- Ava, later: her own shed, the orders panel and today's contracts on screen, standing at PACK ORDERS

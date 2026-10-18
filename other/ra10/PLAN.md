@@ -141,7 +141,44 @@ trip, door and pay; the guide through chapter 4 to the red pad; forklifts workin
 three fixes; full racks; every track bought out (8 rows, 5 forklifts, 4 long trucks); stock and a trip across a
 rejoin; the hub's deed; no failed saves or ticks). 295 checks in all.
 
+## Phase E+: the hub takes over the front, and detail everywhere
+
+The owner's direction: "the warehouse should eventually take over the spot of the market... really massive... nice
+detail all over and in it so it looks to have all the pipes/things it needs."
+
+* **The detail layer** (`WarehouseBuilder` `detail`/`outside`): every slice of the warehouse (and the front hall, and
+  the market) gets red sprinkler mains with their heads, a ventilation duct with diffusers and hangers, a yellow
+  cable tray, two rows of high-bay lights, roof joists, columns with yellow guards, electrical panels with conduit,
+  extinguishers; outside, downspouts, wall lights, a pipe rack (water, gas, air) down the east wall, rooftop HVAC
+  units with fans and exhaust stacks.
+* **Stage 5, the Distribution Hub** (`World/HubBuilder`, `Data/Upgrades`), on the stand's pads after the hub's deed:
+  * *Back Dock Doors* (needs the last bay): four dock doors on the back wall (seals, levelers, bumpers, red/green
+    lights, canopies, numbers), the truck court paved behind, light poles, a guard booth; the box trucks move to the
+    court in line with their docks and back straight up to them (`World/Trips` "truckBack"); trips 15% quicker.
+  * *The Front Hall*: the warehouse grows forward to the shed's front line. The shed, the sorter, the wrapper, the
+    box line and the lit order board come down (`replaces` takes a list now); the old front wall too. The hall's
+    façade keeps the van's loading door, the PACK ORDERS pad and the order board (now on the wall) where they were,
+    under a "FARM TO FLEET DISTRIBUTION" band; inside, a sorting line into a big sorter, packing tables, the wrapper,
+    an overhead conveyor loop, a mezzanine office with stairs, compressors and air tanks, walkways, and the
+    Operations screen hanging over the station pads. Packing +25%.
+  * *Control Tower*: an HQ tower on the hall's corner (glass cab, sign, antenna, red beacon, dish). Orders and pallets
+    +10%.
+  * *Solar Roof*: panels on every roof there is. Packing +25%.
+  * *The Market Hall*: a red market hall along the road where the farm stand stood (glass storefront, striped
+    awning, gable roof and cupola, "FARM TO FLEET MARKET"); the stand comes down, the sell pad becomes its checkout
+    and the buy-pads move in to its upgrades desk; produce stalls, fridge cases, the barn's conveyor arriving through
+    a hatch. The stand pays +50%.
+* Roofs carry the box they cover, so the hall's and the market's lift off too when the camera's inside; the order
+  board and PACK ORDERS pad are found wherever they stand; the guide suggests a hub expansion when it's affordable.
+
+Tests: `HubSmoke` (45 checks: the dock gate, the flow effects, the truck's back route; the deed; the docks and the
+trucks moved; a load backing up to its dock on the client; the hall swallowing the shed and its machines and the
+old front wall, one pad and one board and one screen, packing from the hall's pad, everything inside the hall's
+footprint; the tower; the solar panels; the market replacing the stand with the pads moved and selling at its
+checkout; the size and the detail; roofs lifting in the hall and the market; all of it the same after a rejoin).
+340 checks in all.
+
 ## Next: Phase F
 
-Stage 5, the distribution hub: dock doors along the warehouse's back with semis on the shared road backing in,
-receiving and shipping, the truck court, the roads adjusting as plots grow; and **Special Orders** (§13.3).
+Semis on the shared road and the hub's shipping side (receiving, dock scheduling), roads adjusting as plots grow;
+and **Special Orders** (§13.3).

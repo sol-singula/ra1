@@ -3,10 +3,12 @@ The warehouse's flow (master plan §13.2): from stage 4 the farm is four station
 the pace. Every rate is Cash a minute of produce (what it'd fetch at the stand), so the four compare directly.
 
   Grow   the fields: what the tiles bring in a minute with the crop being planted, the boosts and the tractor
-  Pack   the packing lines: produce boxed a minute (PACK_PER_LINE each, faster with the robot packer)
+  Pack   the packing lines: produce boxed a minute (PACK_PER_LINE each, faster with the robot packer and the hub's
+         front hall and solar roof)
   Store  the forklifts: pallets put on the racks a minute (one each FORK_CYCLE seconds), times PALLET; and the racks
          hold SLOTS_PER_ROW pallets a row: full racks make Store the bottleneck whatever its rate
-  Ship   the box trucks: TRUCK_TRIP seconds a trip, truckCap pallets each
+  Ship   the box trucks: TRUCK_TRIP seconds a trip (less with the loading dock and the back dock doors), truckCap
+         pallets each
 
 The produce itself: the conveyor brings the basket in (inbound), the lines box it, every PALLET of boxes is a
 pallet waiting on the floor (staged, up to STAGE_MAX: then packing stops), the forklifts rack the pallets, the
@@ -64,7 +66,7 @@ function Flow.cycle(owned)
 	return Flow.FORK_CYCLE / (1 + stat(owned, "forkSpeed", 0))
 end
 function Flow.trip(owned)
-	return Flow.TRUCK_TRIP * (1 - stat(owned, "tripCut", 0))
+	return Flow.TRUCK_TRIP * (1 - stat(owned, "tripCut", 0)) * (1 - stat(owned, "docks", 0))
 end
 
 -- What the fields bring in a minute: every tile growing the crop they plant, round and round with the tractor
@@ -91,7 +93,9 @@ function Flow.rates(p, now)
 	local owned = p.owned or {}
 	local r = {
 		grow = math.floor(growRate(p, now) + 0.5),
-		pack = math.floor(Flow.lines(owned) * Flow.PACK_PER_LINE * (1 + stat(owned, "packSpeed", 0)) + 0.5),
+		pack = math.floor(
+			Flow.lines(owned) * Flow.PACK_PER_LINE * (1 + stat(owned, "packSpeed", 0) + stat(owned, "hall", 0)) + 0.5
+		),
 		store = math.floor(Flow.forklifts(owned) * Flow.PALLET * 60 / Flow.cycle(owned) + 0.5),
 		ship = math.floor(Flow.trucks(owned) * Flow.truckCap(owned) * Flow.PALLET * 60 / Flow.trip(owned) + 0.5),
 		slots = Flow.rows(owned) * Flow.SLOTS_PER_ROW,

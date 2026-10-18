@@ -84,7 +84,7 @@ and all week** · **guided from the first tap to the last upgrade**.
 | **2 · The Farm** | carry crates to the stand | fields, a barn, a tractor (auto-harvest a row), a conveyor to the stand, **animal pens** | red barn, fenced fields, silo, pens, a gravel driveway to the road |
 | **3 · The Packing Shed** | box produce at the packing table | sorting machine, box line, pallet wrapper, the first **delivery van** | a shed with belts and a loading door, a paved yard |
 | **4 · The Warehouse** | drive the first forklift yourself (optional; a worker can do it) | racks, forklift drivers, receiving and shipping doors | the steel warehouse rises bay by bay; racks fill with your crates |
-| **5 · The Distribution Hub** | wave the first semi into a dock | more dock doors, a truck fleet, trailer parking, an office, a fuel island | semis queue on the road, forklifts load them, trucks pull away with your colour on the trailer |
+| **5 · The Distribution Hub** | wave the first semi into a dock | back dock doors, the front hall over the old shed, a control tower, a solar roof, the market hall over the old stand; then semis, more docks, a fuel island | the warehouse takes over the front of the plot; semis queue on the road, forklifts load them, trucks pull away with your colour on the trailer |
 
 Each stage is about 8–15 buy-pads/upgrades (≈60 in all), each one **visible** (a building, a machine, a vehicle, a
 field), plus level-ups on machines (speed, capacity) that change how they look (a bigger hopper, a second belt).
