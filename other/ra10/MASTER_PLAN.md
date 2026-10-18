@@ -197,10 +197,71 @@ and each gives a **product** and a **farm-wide boost**:
 ## 12. Social
 
 * Visit and **like** neighbours' plots; a plot sign shows the owner, level and stage.
-* Leaderboards: Net Worth, Shipments, Biggest Order (all time and this server).
+* Leaderboards: Net Worth, Shipments, Biggest Order (all time and this server); the live street board (§13.4).
 * Friends join friends; a party lands on the same server.
 
-## 13. Build phases
+## 13. What makes it addictive: the five pillars (owner's direction)
+
+Not more features: a few mechanics that make the loop we have hard to put down. Everything from Phase E on is
+built to serve these five, and each later phase is checked against them.
+
+### 13.1 The operation visibly explodes in scale
+* **Stock is visible.** Every pallet the farm holds is a real pallet on a real rack slot (up to the rack's size),
+  and overflow piles up in the yard. A full warehouse looks full; an empty one looks hungry.
+* **Every upgrade adds things you can count:** another bay of the warehouse, another rack row, another forklift on
+  the lanes, another dock door with its own semi, another conveyor line. No upgrade is "+10%" with nothing to see.
+* **The end state** is dozens of moving things on one plot: 6-8 forklifts, 3-4 conveyor lines, 6 dock doors,
+  semis queuing on the road, a fuel island, trailer parking. It is the store thumbnail.
+* **Operation Size** (one number: buildings, machines, vehicles, docks) on the plot sign and the street board, so
+  "bigger" is something you can say out loud.
+
+### 13.2 Bottlenecks the player solves
+* From stage 4, the farm runs as a **flow of four stations**: **Grow** (crops a minute) → **Pack** (boxes a
+  minute) → **Store** (pallet space) → **Ship** (docks x truck size / trip time). Each station has a real rate the
+  server computes from what's owned.
+* The **Operations board** (a HUD strip and a big screen in the warehouse office) shows the four rates as bars.
+  The slowest glows red: "BOTTLENECK: SHIPPING". Pallets pile up visibly where the flow jams (packed boxes on the
+  floor, full racks, trucks waiting for a free door).
+* The buy-pads offer **one fix per station** instead of one straight list: another dock, a faster forklift, more
+  racks, a bigger truck, another packing line, automation. Fixing one station moves the bottleneck to the next, and
+  each fix opens the next expansion. The guide always points at the red station's fix, so younger players never get
+  lost, and older players can choose their own order.
+* Only one station is ever red, and its fix is always on a pad. The choice is real, but there's never a puzzle.
+
+### 13.3 Rare, high-value shipments
+* **Special Orders** break into normal play with a siren, a banner and a special truck on the shared road that
+  everyone sees: a short deadline (5-20 minutes) and 5-20x a normal order's pay, often with Gems.
+* Kinds: **Golden Harvest** (only golden crops: suddenly the scarecrow and the cows matter), **Emergency
+  Supermarket** (a big mixed order, 10 minutes: drop everything), **Holiday Mega Delivery** (a weekend/holiday
+  event: several semis, the whole street can chip in to a shared total), **Celebrity Chef** (one rare crop, top
+  quality), **Night Express** (only between set hours: a come-back reason).
+* One rolls every 20-40 minutes of play; one is waiting on the first login of each day (a reason to come back
+  tomorrow), and the weekly Big Contract becomes the week's headline Special Order.
+
+### 13.4 Reasons to watch each other
+* **The street board** at the road: each plot's Operation Size, deliveries a minute, Cash a minute, and biggest
+  shipment today, ranked live. A banner over the road celebrates the street's biggest shipment of the day.
+* **Plot billboards** over each gate show those numbers to anyone walking past, so a neighbour's jump is noticed.
+* **Visit**: a button teleports you to any plot on the street (the gate, facing in), and the street is laid out
+  to see the neighbours' operations from your own. **Friends**: a panel with friends' sizes and throughput across
+  servers (from their saved summary), and "Join" to land on their server. Likes and a "most liked operation" tag.
+* **Shared moments**: a Special Order's truck, a rival's semi fleet and a big shipment's fireworks are visible to
+  the whole street.
+
+### 13.5 Prestige: life after the warehouse
+* When the distribution hub is done, **Franchise** it: sell the company for **Franchise Stars** (from lifetime
+  earnings) and start a new farm in a **new region**. Cash, buildings and stages reset; Gems, cosmetics, the guide's
+  progress and animals' levels stay.
+* **Stars buy permanent bonuses:** faster growth, a bigger first basket, starting with the barn, quicker trucks, an
+  extra order slot, more offline time.
+* **Regions** change the look and the goods: Orchard Valley (the start), Tropical Coast (mangoes, coconuts,
+  pineapples), Northern Dairy (cheeses, berries), Mega Port (a container terminal finale). Each has higher-value
+  products and a bigger scale cap (more docks, a rail siding, then container cranes), so every run ends larger than
+  the last.
+* The second run reaches the old end-game in a fraction of the time, then goes past it. A Franchise level shows on
+  the plot sign and the street board.
+
+## 14. Build phases
 
 | Phase | What |
 |---|---|
@@ -208,7 +269,8 @@ and each gives a **product** and a **farm-wide boost**:
 | **B** | The map: six plots, the shared road, reserved land; stage 1 (shack, soil, strawberry→carrot); plant/grow/harvest/sell; the first minute and the guide's first chapter |
 | **C** | Stage 2: fields, barn, tractor, conveyors, crops to corn/tomato/blueberry; animals (pens, chicken→cow, feeding, boosts, upgrades) |
 | **D** | Stage 3: packing shed, box line, orders, the van, the order board; daily contracts |
-| **E** | Stage 4: the warehouse (bays, racks, put-away), forklifts (client-animated lanes, optional driving) |
-| **F** | Stage 5: dock doors, receiving/shipping, semis on the shared road, truck court, roads adjusting |
-| **G** | Coming back: offline earnings, 7-day calendar, weekly contract, golden pumpkin, end-of-session card; the guide to 100% |
-| **H** | Money (passes, gems, skips, starter pack), leaderboards, social, store art, tests, renders, publish |
+| **E** | Stage 4: the warehouse rises bay by bay (racks with visible pallets, put-away), forklifts on painted lanes (client-animated, an optional ride); **the four-station flow, the Operations board and bottlenecks** (§13.2); Operation Size |
+| **F** | Stage 5: dock doors, receiving/shipping, semis on the shared road, truck court, roads adjusting; **Special Orders** (§13.3) |
+| **G** | Coming back: offline earnings, 7-day calendar, weekly contract, golden pumpkin, end-of-session card, the guide to 100%; **the street board, plot billboards, visiting, friends** (§13.4) |
+| **H** | **Prestige: Franchise, Stars, the second region** (§13.5) |
+| **I** | Money (passes, gems, skips, starter pack), leaderboards, store art and thumbnails, tests, renders, publish |

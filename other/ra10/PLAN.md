@@ -103,5 +103,8 @@ saving). 220 checks in all (`tools/run_tests.sh`).
 
 ## Next: Phase E
 
-Stage 4: the warehouse rises bay by bay (racks, put-away), forklifts on painted lanes (client-animated, an optional
-ride), receiving and shipping doors.
+Stage 4, built round the master plan's five pillars (§13): the warehouse rises bay by bay with racks that show
+every pallet the farm holds, forklifts on painted lanes (client-animated, an optional ride), and the four-station
+flow (Grow, Pack, Store, Ship) with the Operations board, so the slowest station glows red and the pads offer a fix
+for each. Then F (docks, semis, Special Orders), G (coming back, the street board, visiting, friends), H (prestige:
+Franchise and the second region), I (money, art, publish).
