@@ -12,11 +12,12 @@ Plant one strawberry. Build a shipping empire! 🍓🚚
 A shack, three patches of dirt and a farm stand. Plant, harvest, sell, and buy more land.
 
 🐔 GROW A REAL FARM
-Big fields, a barn, a tractor that harvests for you, and chickens, pigs, sheep and cows that make everything better.
+A big field, a barn that keeps your crops, a tractor that picks for you, and chickens, pigs, sheep and cows that
+make everything grow faster and pay more. Your house grows too!
 
 📦 SHIP IT
-Build a packing shed and fill orders. Then build a giant warehouse with racks, forklifts and trucks. Find the
-slowest station (the red one!) and fix it to grow faster.
+Build a packing shed: orders pay 3x. Then build a giant warehouse with racks, forklifts and trucks that sell your
+crops by the truckload.
 
 🚛 GO BIG
 Dock doors, semis backing up to your warehouse, a control tower, a market hall. Your farm takes over the whole plot!

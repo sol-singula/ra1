@@ -1,276 +1,225 @@
-# ra10 · Farm to Fleet — master plan
+# ra10 · Farm to Fleet — master plan (October 2026, after round 7)
 
-The design brief (October 2026) and the decisions made where it stops: the reference every phase is checked
-against.
+The game as it stands and the rules every change is checked against. The old plan (orders as the heartbeat,
+bottlenecks to solve, animal products, conveyor belts) is gone: the owner's direction after playing it was
+**"focus on economy and progression"**, and this is the plan for that.
 
-> *From one seed to a shipping empire.* Plant a strawberry in a dirt patch next to a shack; days later you run a
-> full distribution hub: fields, barns and pens outside, a proper shipping warehouse inside, forklifts weaving
-> between pallet racks and semis backing into the dock doors. Six of you on a server, side by side, each watching
-> the others grow from a shack to a warehouse.
+> *From one seed to a shipping empire.* Plant a strawberry by a shack. Pick it, sell it, buy more soil. Every
+> few minutes something new stands on your farm: a barn, a tractor, chickens, a packing shed, a warehouse with
+> forklifts and trucks. Six of you on a street, each watching the others grow.
 
-## 0. The brief, in the owner's words (what can't change)
+## 0. What can't change (the brief)
 
-* **A tycoon: farms, fruits, vegetables**, upgrading until you have **a big warehouse with trucks, forklifts,
-  delivery and pick-up doors for semis, forklifts driving around**.
-* **6 plots a server**, as close together as possible, so everyone sees everyone go from a little shack to a huge
-  warehouse. As plots grow, **the roads and the land round them adjust**.
-* **Animals** (basic ones: cow, sheep, pig, chicken…), **upgradeable**, giving the farm **production boosts**
-  (things grow faster etc.), kept **outside the warehouse**.
-* **Timers and shipping**, and **timers that bring players back the next day and over 7 days**.
-* **Guided through 100% of the game.**
-* **Art: much more colourful than ra9, with ra9's texture and detail.** It must look like **a proper shipping
-  warehouse** by the end.
-* Monetisation, art and every recommendation from the pitch: agreed.
+* A tycoon: farms, fruit and vegetables, upgrading until you have a big warehouse with trucks, forklifts and
+  dock doors for semis.
+* Six plots a server, side by side along one road; everyone sees everyone grow from a shack to a warehouse.
+* Animals outside the warehouse, upgradeable, giving boosts.
+* Timers that bring players back tomorrow and over seven days.
+* Guided through 100% of the game, in words a third grader reads.
+* Colourful, with ra9's matte, geometric detail; the end must look like a real shipping warehouse.
+* Phone first: one big button, nothing fiddly, nothing covered by the jump button.
 
-## 1. Art direction
+## 1. The one loop
 
-* **Texture: ra9's.** Matte SmoothPlastic, no image textures, no noise. Detail comes from geometry: plinths, trims,
-  moldings, panel lines, window frames, railings, bolts, stripes. Everything square and clean, readable on a phone.
-* **Colour: generous, but in families.** A fixed palette (Constants.PALETTE) so six plots look like one world:
-  * Farm: barn red, cream trim, field greens (three steps), soil browns *only for soil and crates*, sky blue water,
-    sunflower yellow, fence white.
-  * Crops: each its own strong colour (strawberry red, carrot orange, corn yellow, pumpkin orange, watermelon green
-    and pink, blueberry indigo, golden crops in gold with a glow).
-  * Industrial: concrete light grey floors, **safety yellow** (forklifts, bollards, lane lines, dock bumpers in
-    black and yellow stripes), **rack orange beams on blue uprights**, steel grey walls with ribbed panels, green
-    and red dock lights, white trailers with each plot's colour stripe, chrome-grey truck cabs.
-  * Each plot has an **accent colour** (its trailers, banners, roof trim, uniforms).
-* **The warehouse at the end must read as real at a glance:** a long ribbed-steel building with a parapet and
-  skylights; a row of dock doors (roll-up doors, dock seals, levelers, bumpers, red/green dock lights, numbers
-  over each door); a truck court with painted stalls and trailer parking; inside, polished concrete with yellow lane
-  lines and walkways, rows of pallet racks four levels high stocked with crates of real produce, a picking line, a
-  mezzanine office with windows, hanging lights, fire extinguishers, signage ("RECEIVING", "SHIPPING", "DOCK 3").
-* **Cheap on phones:** a fully grown plot stays under a part budget (§10); vehicles, animals and crop sway are
-  animated on each client, never by the server.
+**Grow → barn → sell → upgrade.** That's the whole game, from the first minute to the last semi.
 
-## 2. Vision and targets
+* **Grow:** the field plants itself with the newest crop you've unlocked (you choose only once the warehouse
+  stands). Crops planted close together ripen together, so a field is one big pick.
+* **Barn:** picks go into the barn (400 crops, then 1,500; the warehouse's shelves after that). Before the barn,
+  a basket you carry (20, then 60).
+* **Sell:** the stand pays the crop's value. Each stage multiplies it (§3).
+* **Upgrade:** every buy-pad does one thing you can see and say in a sentence ("picks 2 patches at once",
+  "keeps 1,500 crops", "sell for 25% more").
 
-Player fantasy: *"I started with a shack and a dirt patch. Now look at my warehouse: my forklifts are loading my
-trucks with my apples, and the whole server can see it."*
+Everything else (orders, specials, contracts, the warehouse's stations) runs **by itself in the background**.
+The player is never told to manage it; it just makes the same crops pay more.
 
-Pillars: **always something to do in the next 30 seconds** · **visible growth every few minutes** · **automation
-you earned** (you do each job by hand first) · **no fail state, no skill gate** · **a reason to come back tomorrow
-and all week** · **guided from the first tap to the last upgrade**.
+Pillars: *something to do in the next 30 seconds* · *something new on the farm every few minutes* · *you do a
+job by hand once, then a machine does it* · *no fail state* · *a reason to come back tomorrow* · *one next step,
+always*.
 
 | Target | Value |
 |---|---:|
-| First harvest | < 10 s after spawning |
+| First pick | < 10 s |
 | First sale | < 30 s |
-| First upgrade | < 45 s |
-| First automation (sprinkler) | < 3 min |
-| First animal | ~5 min |
-| Packing shed | ~25 min |
-| First forklift | session 2 (day 1–2) |
-| First semi at a dock door | day 2–3 |
-| Full distribution hub | ~7 days of normal play |
-| Median session target | 12+ min (ra9's was 1:45: the first two minutes are everything) |
+| First upgrade (More Soil, $10) | < 45 s |
+| Tractor (the farm runs itself) | ~8 min |
+| Packing shed (orders start) | ~25 min |
+| Warehouse (trucks) | session 2 |
+| Hub, semis | ~7 days |
 
-## 3. The core loop
+## 2. What the player does
 
-**Plant → grow (timer) → harvest → carry/convey → sell or pack → fill orders → upgrade → automate → bigger orders.**
+Three buttons, one of them big:
 
-* **Selling:** the farm stand (any crop, a fair price) from minute one. **Orders** pay far more: a truck (a van at
-  first, a semi later) arrives at your plot with a list ("30 strawberries, 10 carrots"), you have its timer to fill
-  it, it drives off with a payout and XP. Orders are the heartbeat of the mid and late game.
-* **Money:** Cash (earned) for everything on the farm; Gems (rare: daily streak, big orders, Robux) for skips,
-  golden seeds, cosmetics.
-* **Farm XP and levels** gate unlocks (crops, animals, buildings), so the guide always has a clear next target.
+* **The big button** (bottom right, above the jump button on phones) says what it will do for the soil you're
+  standing by: **PICK** when something's ripe, **PLANT** when there's empty soil, **TEND** when it's all growing.
+  TEND halves what's left to grow for **every crop on the farm** (once every 4 s): the active player waits half
+  as long, the AFK player still gets there.
+* At a pen the same button says **TEND**: the animals are happy for a minute and their boost doubles (once every
+  2 min). Walking up to a hungry pen feeds them, free.
+* **SELL**: step on the stand's pad. Once the Shop Helper is bought, the barn sells its extra by itself.
 
-## 4. The five stages (each automates the last)
+Tap a patch to see what's growing and how long it has. On a PC, E or a click does what the button does.
 
-| Stage | You start by hand | Then buy | The world |
-|---|---|---|---|
-| **1 · The Shack** | tap to plant, tap to water, tap to pick | more plots, a well, a sprinkler, a wheelbarrow | a shack, a dirt patch, a hand-painted stand, a mailbox |
-| **2 · The Farm** | carry crates to the stand | fields, a barn, a tractor (auto-harvest a row), a conveyor to the stand, **animal pens** | red barn, fenced fields, silo, pens, a gravel driveway to the road |
-| **3 · The Packing Shed** | box produce at the packing table | sorting machine, box line, pallet wrapper, the first **delivery van** | a shed with belts and a loading door, a paved yard |
-| **4 · The Warehouse** | drive the first forklift yourself (optional; a worker can do it) | racks, forklift drivers, receiving and shipping doors | the steel warehouse rises bay by bay; racks fill with your crates |
-| **5 · The Distribution Hub** | wave the first semi into a dock | back dock doors, the front hall over the old shed, a control tower, a solar roof, the market hall over the old stand; then semis, more docks, a fuel island | the warehouse takes over the front of the plot; semis queue on the road, forklifts load them, trucks pull away with your colour on the trailer |
+## 3. The economy: each stage multiplies the same crops
 
-Each stage is about 8–15 buy-pads/upgrades (≈60 in all), each one **visible** (a building, a machine, a vehicle, a
-field), plus level-ups on machines (speed, capacity) that change how they look (a bigger hopper, a second belt).
+| Stage | Where the Cash comes from | Multiplier on a crop's value |
+|---|---|---:|
+| 1 · The Shack | the stand (Stand Roof +25%; the stand itself grows: Produce Stall +10% at Lv 6, Farm Shop +20% at Lv 12, Country Market +35% at Lv 18) | 1x |
+| 2 · The Farm | the Shop Helper sells the barn's extra every 12 s; pigs +4% a level on vegetables | 1x, more of it, by itself |
+| 3 · The Packing Shed | orders fill themselves from the barn and pay **3x** (Sorter and Wrapper +15% each; BIG orders 2.5x and Gems) | 3x |
+| 4 · The Warehouse | the barn's extra goes in the door, gets packed on pallets, and trucks sell pallets at **2x the stand per 1,000 crops' worth**, by the load; Grow Boosts +25/25/30% | up to 6x with the shed's bonuses |
+| 5 · The Hub | the Tower +10% on orders, the Market Hall +50% at the stand, Giant Trucks ship 24 pallets at a time | the same crops, three ways at once |
 
-## 5. Crops
+* **Crops** unlock on the level, one every 4-5 levels, each worth about 2.5x the last: Strawberry 8 (8 s), Carrot
+  24 (15 s, Lv 4), Corn 60 (25 s, Lv 8), Tomato 88 (40 s, Lv 12), Blueberry 200 (1 min, Lv 16), Apple 560
+  (1.5 min, Lv 20), Pumpkin 1,920 (2 min, Lv 25), Watermelon 4,000 (3 min, Lv 30), Orange 8,800 (4 min, Lv 35),
+  Golden Pumpkin 80,000 (8 min, Lv 40). A new farmer's crops grow 2x as fast and pay 2.5x until level 7.
+* **Golden crops** (2%, more with the Scarecrow and the cows, or a golden seed) are worth 10x.
+* **Levels** come from picks, sales, buys and the guide (XP need = 10·n^1.55). The level gates crops, pads and
+  the house.
+* **Money:** Cash for everything on the farm (start with $15); Gems (the calendar, BIG orders, specials, Robux) for
+  skips, golden seeds, boosts.
 
-| Crop | Unlock | Grow | Notes |
-|---|---|---|---|
-| Strawberry | start | 8 s | the first harvest, instant gratification |
-| Carrot | Lv 2 | 20 s | |
-| Corn | Lv 4 | 45 s | tall stalks, tractor-friendly |
-| Tomato | Lv 6 | 1 min | |
-| Blueberry | Lv 9 | 2 min | bushes |
-| Apple | Lv 12 | 5 min | orchard trees, regrow (no replant) |
-| Pumpkin | Lv 16 | 15 min | big, satisfying |
-| Watermelon | Lv 20 | 30 min | |
-| Orange | Lv 25 | 1 h | orchard |
-| **Golden Pumpkin** | Lv 30 | **8 h (overnight)** | a "plant before bed" crop; huge payout; golden glow |
+## 4. Progression: the five stages (≈75 buys, every one visible)
 
-Fruit trees regrow; vegetables replant (auto-replant is an upgrade). Rare **golden** versions of every crop drop
-sometimes (and from golden seeds) and are worth 10×.
+| Stage | Buys, in order (level) | What it looks like |
+|---|---|---|
+| **1 · The Shack** $10-$900 | More Soil x9 (3 → 12 patches), Water Well (+25% grow), Wheelbarrow (carry 60), White Fence, Sprinklers (2x grow, a water tower), Stand Roof (+25%), Scarecrow (golden), **Build the Barn!** | a shack with a garden path, one field inside a fence, a stand, a well |
+| **2 · The Farm** $1.5k-$15k (Lv 5-11) | The Barn (keeps 400), Bigger Field (20), Chickens, Tractor, Bigger Field (28), Shop Helper, Pigs, Bigger Tractor (2), Bigger Barn (1,500), Bigger Field (36), Sheep, Windmill, Big Tractor (3), Cows, Bigger Field (48), **Build the Packing Shed!** | the red barn full of crates, pens along a path, a tractor driving the one big field |
+| **3 · The Packing Shed** $18k-$100k (Lv 11-17) | Packing Shed (orders pay 3x), Van, Big Board (3 orders), Huge Tractor (4), Box Machine, Sorter, Big Door, Wrapper, Mega Tractor (5), Second Van, Second Tractor, **Build the Warehouse!** | the shed and its paved yard, vans backing up to the door, the order board |
+| **4 · The Warehouse** $120k-$2.5M (Lv 17-26) | Warehouse, Packing Lines 2-4, Forklifts 2-5, Grow Boost 1-3, More Shelves x4, Bigger Warehouse x3 (it grows in place, bay by bay), Trucks 2-4, Bigger Trucks, Fast Forklifts, Robot Packer, Giant Field (64), **Build the Hub!** | the steel warehouse rising behind the shed, racks with real pallets, forklifts on painted lanes, box trucks in the lot |
+| **5 · The Hub** $3M-$25M (Lv 26-32) | Back Doors (4 docks), Front Hall (over the old shed), Tower, Solar Roof, Market Hall (over the stand), Giant Truck, Giant Truck 2 | the warehouse takes the front of the plot; semis back into the docks from the shared road |
 
-## 6. Animals (outside the warehouse, in pens)
+Rules for every buy: a plain name, a one-line `desc` a third grader reads, a number that's true ("+8 patches"
+means 8), and something that stands on the plot when it's bought. Upgrades come in order on three pads by the
+stand (the next locked one shows its level).
 
-Animals live in pens on the farm side of the plot (never inside the warehouse), wander their pen (client-animated)
-and each gives a **product** and a **farm-wide boost**:
+**The house grows by itself** with the level: Shack → Cozy Cottage (6) → Farmhouse (12) → Villa (18) → Mansion
+(25) → Grand Estate (32), each with more garden: a path, hedges, flower beds, trees, a fountain and lanterns.
 
-| Animal | Unlock | Product | Boost (per level, up to Lv 10) |
-|---|---|---|---|
-| Chicken | Lv 3 | eggs | **crops grow faster** (+3% speed) |
-| Pig | Lv 7 | truffles | **sell price of vegetables** (+3%) |
-| Sheep | Lv 10 | wool | **packing and machine speed** (+3%) |
-| Cow | Lv 14 | milk | **fruit grows faster** (+3%) and golden-crop chance |
-| Goat | Lv 18 | cheese | **order payouts** (+2%) |
-| Horse | Lv 24 | — | **worker and vehicle speed** (+3%) |
-| (later) Llama, Duck, Bee hives | events | | seasonal boosts |
+## 5. Automation: how the farm runs itself
 
-* **Upgrade:** Cash + feed (grown on the farm: corn and carrots become feed at the feed mill) → bigger, shinier
-  animal, a bigger pen, a stronger boost; Lv 5 and Lv 10 change the look (a ribbon, a golden bell).
-* **Happiness, never punishment:** feeding every 4 h keeps the boost at 100% (and doubles product); unfed it falls
-  to 50%, never to 0. Feeding is a soft come-back timer.
-* More of each animal (pen slots) unlock with levels; every pen is a visible upgrade.
+* **The tractor** (Lv 6) drives round the field by itself: at each stop it picks and replants as many patches as
+  its level (1 to 5; a bigger model each time), 20% quicker a level, quicker again with sheep. It goes to a crop an
+  open order needs first, then the nearest ripe. A second tractor at Lv 16. Hop on (DRIVE prompt) and it follows
+  you, picking and planting what you drive over, for fun.
+* **The barn** keeps every pick; **the Shop Helper** (Lv 7) sells what the orders don't need every 12 s.
+* **Orders** (stage 3) fill themselves from the barn every 3 s (1 s with the Box Machine); the van drives them
+  off and the Cash lands when it's back. An order asks for about 80% of the field's patches in crops the farm can
+  grow four times over before it's due, so it's never impossible.
+* **The warehouse** (stage 4) pulls the barn's extra every tick; lines pack it, forklifts rack it, trucks sell
+  it. Full shelves stop the picking (the toast says so) until a truck leaves.
+* **Away:** the operation earns at half speed for up to 4 h (12 h with the pass); the welcome-back card counts it
+  up. Crops keep growing on the server clock.
 
-## 7. Orders, vehicles, the warehouse
+The guide never asks the player to run any of this. It asks for the next thing to buy.
 
-* **Order board** on the plot: 3 live orders (refresh on a timer), each with crops, a reward and a time limit;
-  **daily contracts** (3, reset at midnight UTC) and a **weekly Big Contract** (a 7-day multi-part order with a big
-  Gem reward).
-* **Vehicles** carry the story: a van (stage 3) → box trucks → **semis** (stage 5) arriving on the shared road,
-  backing into a free **dock door**, waiting while forklifts load pallets, pulling away. Inbound semis drop seed and
-  feed pallets at **receiving** doors (the "pick-up / delivery doors" of the brief: receiving on one side, shipping
-  on the other).
-* **Forklifts** move pallets: from the packing line to the racks (put-away), from the racks to the dock
-  (picking/loading). More forklifts, faster forklifts and better routes are upgrades; the floor shows painted lanes
-  they follow. The player can hop into one and drive (optional, never required; a big touch control set).
-* **How it's built:** the server decides *what moves where and when* ("pallet 41: rack B3 → dock 2, 7 s"); each
-  client animates the forklift or truck along the plot's lane graph (§10). Twenty-plus vehicles cost the server
-  nothing.
+## 6. Animals: boosts only
 
-## 8. Coming back: tomorrow and all week
+Pens along the farm path (chickens Lv 5, pigs Lv 7, sheep Lv 9, cows Lv 10; goats and horses are data for a
+later stage). No products: the crops are the money.
 
-* **Long timers on purpose:** pumpkins (15 min) → oranges (1 h) → **Golden Pumpkin (8 h)**: plant at night,
-  harvest in the morning. Late upgrades take real time (an hour, four hours, overnight) with a skip.
-* **Offline earnings:** machines and workers keep producing while away (up to 4 h; 12 h with the pass); the
-  "while you were gone" card is the first thing you see.
-* **7-day streak calendar:** a reward each day, bigger every day; **day 7 = a rare animal** (a golden chicken) or
-  golden seeds. Miss a day: the streak steps back one day, not to zero.
-* **Daily contracts** (3) and the **weekly Big Contract** (7 days).
-* **Animal feeding** every 4 h (a soft timer, §6).
-* **End-of-session hooks:** when they leave, the last screen shows what's ready tomorrow ("Golden Pumpkin ready in
-  7:42 · Day 3 reward waiting · Contract 2/3").
-* **Roblox experience notifications** (opt-in) for "your crops are ready" / "your day-3 reward is waiting", once
-  the owner enables them.
-
-## 9. The guide: 100% of the game
-
-* **Always a next step.** A goal card at the top of the screen at all times ("Plant 3 strawberries", "Buy the
-  sprinkler", "Fill your first order"), with a **3D arrow and a path line on the ground** to the exact thing to
-  tap, and the button itself pulsing. It is never empty: when the scripted steps end, it switches to generated goals
-  (the next upgrade, the next order, the next animal level).
-* **A scripted chapter per stage** (~120 steps in all), each new system introduced once, in the moment, by doing
-  it: the first sprinkler, the first animal, the first order, the first van, the first forklift ride, the first
-  semi at a dock. Every step pays a little (Cash or XP), so following the guide is the fastest path.
-* **No walls of text.** One line, one arrow, one pulse. A step that isn't done in 20 s gets a gentle replay (the
-  camera glances at the target).
-* **Returning players** pick up mid-chapter; the guide remembers.
-
-## 10. Map, plots and roads
-
-* **6 plots a server, as close as possible:** two rows of three either side of a **shared main road**, each plot
-  backing onto open land it grows into. Neighbours are a fence apart; the road between them is where everyone's
-  trucks drive.
-* **Each plot grows in footprint** with its stage: the shack's yard → fenced fields → shed and yard → the warehouse
-  and its truck court. The plot's land is reserved from the start (looks like meadow until built on), so plots never
-  collide.
-* **Roads adjust as plots grow:** a dirt track → a gravel driveway → a paved yard → a truck court with stalls and
-  a two-lane entrance joining the main road; the main road itself gains turn lanes and stop markings by each plot
-  that reaches stage 5.
-* **Part budget:** a stage-5 plot ≤ 3,000 parts; vehicles and animals are client-side models; StreamingEnabled
-  with the plots as persistent streaming regions where needed.
-
-## 11. Money (agreed)
-
-* **2× Cash** pass · **Auto-Collect + 12 h offline** pass · **VIP Truck** pass (a chrome semi with its own dock door
-  and +10% order pay) · **Skip timers** (Gems; Gems as dev products) · **Golden seeds** packs · forklift/truck/
-  trailer skins and plot themes · a **Starter Pack** offered after the first big order (cash, gems, a golden seed,
-  a chicken).
-* Nothing paid is required; the guide never points at the shop except as an option.
-
-## 12. Social
-
-* Visit and **like** neighbours' plots; a plot sign shows the owner, level and stage.
-* Leaderboards: Net Worth, Shipments, Biggest Order (all time and this server); the live street board (§13.4).
-* Friends join friends; a party lands on the same server.
-
-## 13. What makes it addictive: the five pillars (owner's direction)
-
-Not more features: a few mechanics that make the loop we have hard to put down. Everything from Phase E on is
-built to serve these five, and each later phase is checked against them.
-
-### 13.1 The operation visibly explodes in scale
-* **Stock is visible.** Every pallet the farm holds is a real pallet on a real rack slot (up to the rack's size),
-  and overflow piles up in the yard. A full warehouse looks full; an empty one looks hungry.
-* **Every upgrade adds things you can count:** another bay of the warehouse, another rack row, another forklift on
-  the lanes, another dock door with its own semi, another conveyor line. No upgrade is "+10%" with nothing to see.
-* **The end state** is dozens of moving things on one plot: 6-8 forklifts, 3-4 conveyor lines, 6 dock doors,
-  semis queuing on the road, a fuel island, trailer parking. It is the store thumbnail.
-* **Operation Size** (one number: buildings, machines, vehicles, docks) on the plot sign and the street board, so
-  "bigger" is something you can say out loud.
-
-### 13.2 Bottlenecks the player solves
-* From stage 4, the farm runs as a **flow of four stations**: **Grow** (crops a minute) → **Pack** (boxes a
-  minute) → **Store** (pallet space) → **Ship** (docks x truck size / trip time). Each station has a real rate the
-  server computes from what's owned.
-* The **Operations board** (a HUD strip and a big screen in the warehouse office) shows the four rates as bars.
-  The slowest glows red: "BOTTLENECK: SHIPPING". Pallets pile up visibly where the flow jams (packed boxes on the
-  floor, full racks, trucks waiting for a free door).
-* The buy-pads offer **one fix per station** instead of one straight list: another dock, a faster forklift, more
-  racks, a bigger truck, another packing line, automation. Fixing one station moves the bottleneck to the next, and
-  each fix opens the next expansion. The guide always points at the red station's fix, so younger players never get
-  lost, and older players can choose their own order.
-* Only one station is ever red, and its fix is always on a pad. The choice is real, but there's never a puzzle.
-
-### 13.3 Rare, high-value shipments
-* **Special Orders** break into normal play with a siren, a banner and a special truck on the shared road that
-  everyone sees: a short deadline (5-20 minutes) and 5-20x a normal order's pay, often with Gems.
-* Kinds: **Golden Harvest** (only golden crops: suddenly the scarecrow and the cows matter), **Emergency
-  Supermarket** (a big mixed order, 10 minutes: drop everything), **Holiday Mega Delivery** (a weekend/holiday
-  event: several semis, the whole street can chip in to a shared total), **Celebrity Chef** (one rare crop, top
-  quality), **Night Express** (only between set hours: a come-back reason).
-* One rolls every 20-40 minutes of play; one is waiting on the first login of each day (a reason to come back
-  tomorrow), and the weekly Big Contract becomes the week's headline Special Order.
-
-### 13.4 Reasons to watch each other
-* **The street board** at the road: each plot's Operation Size, deliveries a minute, Cash a minute, and biggest
-  shipment today, ranked live. A banner over the road celebrates the street's biggest shipment of the day.
-* **Plot billboards** over each gate show those numbers to anyone walking past, so a neighbour's jump is noticed.
-* **Visit**: a button teleports you to any plot on the street (the gate, facing in), and the street is laid out
-  to see the neighbours' operations from your own. **Friends**: a panel with friends' sizes and throughput across
-  servers (from their saved summary), and "Join" to land on their server. Likes and a "most liked operation" tag.
-* **Shared moments**: a Special Order's truck, a rival's semi fleet and a big shipment's fireworks are visible to
-  the whole street.
-
-### 13.5 Prestige: life after the warehouse
-* When the distribution hub is done, **Franchise** it: sell the company for **Franchise Stars** (from lifetime
-  earnings) and start a new farm in a **new region**. Cash, buildings and stages reset; Gems, cosmetics, the guide's
-  progress and animals' levels stay.
-* **Stars buy permanent bonuses:** faster growth, a bigger first basket, starting with the barn, quicker trucks, an
-  extra order slot, more offline time.
-* **Regions** change the look and the goods: Orchard Valley (the start), Tropical Coast (mangoes, coconuts,
-  pineapples), Northern Dairy (cheeses, berries), Mega Port (a container terminal finale). Each has higher-value
-  products and a bigger scale cap (more docks, a rail siding, then container cranes), so every run ends larger than
-  the last.
-* The second run reaches the old end-game in a fraction of the time, then goes past it. A Franchise level shows on
-  the plot sign and the street board.
-
-## 14. Build phases
-
-| Phase | What |
+| Animal | Boost (per level, no top level) |
 |---|---|
-| **A** | Scaffold from ra9's engine (loader, saves, Net, client boot, mock-engine tests, analytics hooks); this plan |
-| **B** | The map: six plots, the shared road, reserved land; stage 1 (shack, soil, strawberry→carrot); plant/grow/harvest/sell; the first minute and the guide's first chapter |
-| **C** | Stage 2: fields, barn, tractor, conveyors, crops to corn/tomato/blueberry; animals (pens, chicken→cow, feeding, boosts, upgrades) |
-| **D** | Stage 3: packing shed, box line, orders, the van, the order board; daily contracts |
-| **E** | Stage 4: the warehouse rises bay by bay (racks with visible pallets, put-away), forklifts on painted lanes (client-animated, an optional ride); **the four-station flow, the Operations board and bottlenecks** (§13.2); Operation Size |
-| **F** | Stage 5: dock doors, receiving/shipping, semis on the shared road, truck court, roads adjusting; **Special Orders** (§13.3) |
-| **G** | Coming back: offline earnings, 7-day calendar, weekly contract, golden pumpkin, end-of-session card, the guide to 100%; **the street board, plot billboards, visiting, friends** (§13.4) |
-| **H** | **Prestige: Franchise, Stars, the second region** (§13.5) |
-| **I** | Money (passes, gems, skips, starter pack), leaderboards, store art and thumbnails, tests, renders, publish |
+| Chicken | every crop grows 4% faster |
+| Pig | vegetables sell for 4% more |
+| Sheep | the tractor and the shop helper go 4% faster |
+| Cow | fruit grows 4% faster, and a little golden luck |
+
+* **FEED** is free, at the pen's pad (walking up to a hungry pen does it): the full boost for 4 h, half of it
+  after (never none). A soft come-back timer.
+* **TEND** (a pat): happy for a minute, the boost doubled; once every 2 minutes. On the big button at the pen.
+* **UPGRADE** for Cash (×1.8 a level): a bigger boost, more animals in the pen (up to 8), a ribbon at 5, a golden
+  bell at 10, and on without a cap.
+
+## 7. In the background (never a step)
+
+* **Orders:** 2 slots (3 with the Big Board), crop-only, sized to the field, 10 minutes each, 3x the stand; one in
+  six is BIG (2x the crops, 2.5x the pay, 2 Gems). The board by the shed and the panel on the right show them;
+  nothing asks you to pack.
+* **Special Orders:** every 20-40 min of play after the shed (one waiting each day): an express truck on the road,
+  a gold banner, 3-12x pay and Gems. They pack themselves from the barn like any order.
+* **Daily contracts** (3 a UTC day: ship, pick, sell, plant, feed, pack, tend, a BIG order) and the **weekly Big
+  Contract** (4 parts, 50 Gems).
+* **The warehouse's four stations** (Grow, Pack, Store, Ship) still have rates; the screen inside the warehouse
+  shows them for anyone curious. The HUD doesn't. The pads sell their upgrades in the one plain list.
+
+## 8. Coming back
+
+* Crops on the server clock; the 8-minute Golden Pumpkin at Lv 40.
+* Offline earnings (§5), the welcome-back card.
+* The 7-day calendar (a reward a day, Gems and golden seeds on day 7; a missed day steps back one).
+* Feeding every 4 h; a Special Order waiting on the first visit of the day; the daily contracts; the weekly
+  contract.
+
+## 9. The guide: 100%, in third-grade words
+
+One numbered step at a time, low in the middle: a gold STEP badge, one short line, a beam and ring on the exact
+tile, pad or pen, an arrow, a path on the ground, the button pulsing. A GO button when the spot is 30+ studs away.
+A reward when it's done.
+
+* **Chapter 1 · The Shack** (20): plant, pick, plant all 3, TEND, pick 6, SELL, More Soil, the well, Level 2,
+  carrots at 4, soil, the wheelbarrow, the fence, 9 patches, sprinklers, the stand roof, 12 patches, the scarecrow,
+  **build the barn**.
+* **Chapter 2 · The Farm** (18): the barn, a bigger field, chickens, FEED, TEND the chickens, the tractor, ride
+  it, a bigger field, the shop helper, upgrade the chickens, pigs, the bigger tractor, the big barn, a bigger field,
+  sheep, the big tractor, the windmill, cows, **build the shed**.
+* **Chapter 3 · The Shed** (15): orders fill themselves (watch the board), watch the buyer pick it up, the van,
+  deliver 3, the big board, the box machine, the huge tractor, the sorter, the big door, deliver 10, the wrapper,
+  the mega tractor, the second van, the second tractor, **build the warehouse**.
+* **Chapter 4 · The Warehouse** (9): watch the first pallet packed, racked, shipped; pick what to grow (the picker
+  opens here); DAILY, STREET, LIKE; **build the hub**.
+* **Chapter 5 · The Hub** (7): back doors, the front hall, the tower, the solar roof, the market hall, the giant
+  truck, its first trip.
+* **Chapter 6 · Franchise** (2).
+* **After the steps:** "Next: buy X ($cost). what it does", or "Pick and sell to reach Level N: Y unlocks".
+
+A step that costs more than the player has turns into earning it ("Sell your crops at SELL: $40 more for the
+Tractor"); a step by the soil while it all grows says it's nearly ripe. The card never goes empty.
+
+## 10. The world
+
+* **The street:** one road, six plots of 240 x 380 three a side, a fence apart, with the STREET gantry and the
+  Hall of Fame over the road. Each plot has an accent colour (its sign, its trailers, its roof trim).
+* **A plot, front to back:** the stand and its three pads by the road, the spawn between them; the house and
+  its garden on the left, **one field** (8 to a row, up to 64 patches) in the middle inside its fence; a wide farm
+  path up the middle with signposts (FIELD, BARN, ANIMALS); the barn with its doors to the field and two tractor
+  spots; the four pens along a side path; the shed and its yard on the right (industry side), the warehouse
+  behind it growing bay by bay, the truck lot and lane up the east edge, the docks and truck court at the back.
+  The hub's front hall and market hall later take over the shed and the stand.
+* **Landscaping grows with the level**: the house's garden, hedges, trees, the fountain. Signs on every zone
+  (RECEIVING, PACKING LINES, ROW 3, DOCK 2). Every machine and vehicle is animated on each client.
+* **Art:** ra9's matte, geometric detail; the farm palette (barn red, cream, three greens, sunflower) and the
+  industrial one (concrete, safety yellow, rack orange on blue, steel grey, white trailers with the plot's stripe).
+* Part budget: a stage-5 plot ≤ 3,000 parts; vehicles, animals and crops are client-animated.
+
+## 11. Social and prestige
+
+* Name your farm (NAME on the menu; the sign by the road). Visit, LIKE, the street board and gate billboards,
+  friends across servers, the Hall of Fame (most Cash, biggest shipment, biggest operation).
+* Buy from a neighbour when an order's short (a global offer they accept).
+* **Franchise** once the Market Hall stands: sell for Stars, start again in a richer region (Orchard Valley →
+  Tropical Coast 1.6x → Northern Dairy 2.4x → Mega Port 3.5x); Gems, levels, animal levels and golden seeds stay;
+  Stars buy perks (growth, baskets, a head start, quicker trucks, an extra order, longer naps).
+
+## 12. Money
+
+2x Cash, VIP, Extra Order and Long Nap passes; Gem packs; a once-only Starter Pack; Instant Harvest; Gems for
+Ripen Everything, Happy Farm (feed and tend every pen), Golden Seeds, Cash Rush, a Special Order now. Nothing paid
+is required and the guide never points at the shop.
+
+## 13. Admin
+
+xthirtysix sees a red ADMIN button: reset any farmer's progress by name (online: a fresh save and a rejoin;
+offline: the save is deleted) and give Cash for testing.
+
+## 14. What's next (in order)
+
+1. **Watch the numbers.** Analytics already logs the first minute, every buy and every guide step: check where the
+   first sessions stop and tune costs and crop values there first (the shed at ~25 min is the big one).
+2. **Renders and store art** for the new layout (the one field, the barn, the growing house).
+3. **Products and passes**: create them on Roblox and put the ids in `Constants`.
+4. Goats and horses as stage-4/5 pens; seasonal pens later.
+5. Experience notifications (crops ready, the day's reward) once the owner enables them.

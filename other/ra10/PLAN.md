@@ -305,6 +305,25 @@ shouldn't be much walking to get from step to step."
 
 Tests: `GuideSmoke` (33 checks).
 
+## R3-R7: played, and turned round economy and progression
+
+Seven rounds of the owner playing it on a phone. The big ones:
+
+* **R5-R6:** crops ripen together; crops unlock on the level and the farm plants the newest by itself; the stand
+  grows into a shop then a market; the tractor drives round picking (and you can ride it); orders size themselves
+  to the field and only ask for what grows in time; orders pack themselves; the warehouse's shelves cap the
+  picking; buy from a neighbour when an order's short; plain upgrade descriptions; sprinklers everywhere with a
+  water tower; bigger plots; the warehouse labelled and huge.
+* **R7 (economy and progression first):** one field inside one fence (the far fields, the conveyor belts and the
+  annex are gone; the warehouse grows in place); the barn keeps the crops and the Shop Helper sells the extra;
+  TEND halves what's left to grow for the whole field; animals are boosts only (FEED free, TEND for a happy double
+  boost, no top level); tractor levels 1-5 and a second tractor, picking what an order needs first; the house
+  grows with the level, with a garden; name your farm; an ADMIN panel; every upgrade and guide step in third-grade
+  words; orders, specials and the stations run in the background and the bottleneck panel is off the HUD; on
+  phones the farm button sits above the jump button.
+
+The master plan was rewritten for it. 12 suites, 651 checks.
+
 ## Before going live
 
 * Create the developer products and game passes (prices in `Data/Shop`) and put their ids in `Constants`.
