@@ -283,6 +283,11 @@ function FarmService:Plant(player, n, key)
 	local need = c.grow * (sprinkler and Crops.WATER_CUT or 1) / speed
 	-- (the golden roll happens now, so the field shows a golden crop while it grows)
 	local golden = math.random() < FarmService.goldenChance(p)
+	if not golden and (p.goldenSeeds or 0) > 0 then
+		-- (a golden seed from the calendar or the shop)
+		p.goldenSeeds -= 1
+		golden = true
+	end
 	p.soil[tostring(n)] = { crop = key, at = now(), need = need, watered = sprinkler, golden = golden }
 	p.stats.planted = (p.stats.planted or 0) + 1
 	p.stats[key .. "s"] = (p.stats[key .. "s"] or 0) + 1

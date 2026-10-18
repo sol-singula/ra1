@@ -17,7 +17,10 @@ Net.ClientEvents = {
 	Animal = 6, -- ("feed", penKey) | ("upgrade", penKey) | ("collect", penKey) (AnimalService)
 	Order = 6, -- ("fill", orderId) | ("refresh") (OrderService)
 	Guide = 6, -- ("step", key) | ("skip") the guide's own reports (GuideService)
-	Daily = 2, -- ("claim") the day's calendar reward (DailyService)
+	Daily = 2, -- ("claim") the day's calendar reward | ("open") (DailyService)
+	Street = 4, -- ("visit", plotIndex) | ("home") | ("like", plotIndex) | ("friends") | ("join", userId) (StreetService)
+	Franchise = 2, -- ("open") | ("sell") | ("perk", key) (FranchiseService)
+	Shop = 4, -- ("open") | ("buy", key) | ("gems", key) a gem buy (ShopService)
 	Drive = 10, -- ("enter", vehicleId) | ("leave") | ("move", throttle, steer) a forklift you drive (VehicleService)
 }
 
@@ -36,6 +39,9 @@ Net.ServerEvents = {
 	"Vehicles", -- { id, kind, route, t0, seconds } moves for every client to animate (VehicleService)
 	"Daily", -- the calendar, the streak, what's ready (DailyService)
 	"Away", -- { seconds, earned } the "while you were gone" card (OfflineService)
+	"Street", -- every plot's numbers, likes, the street's best today; friends (StreetService)
+	"Franchise", -- { open, ready, level, stars, earn, perks } (FranchiseService)
+	"Shop", -- the products, passes, prices, what's owned (ShopService)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).

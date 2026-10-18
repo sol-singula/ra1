@@ -60,4 +60,41 @@ Constants.PLOT_COLORS = {
 	rgb(30, 196, 190),
 }
 
+-- Analytics and the game log: the studio's shared pipeline (src/server/GameKey: the "discord_log" secret)
+Constants.ANALYTICS_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-analytics"
+Constants.GAME_LOG_URL = "https://kvedatksqkcsgivntskb.supabase.co/functions/v1/roblox-game-log"
+Constants.GAME_LOG_IN_STUDIO = false
+Constants.ANALYTICS_GAME = "ra10" -- (the game tag on every analytics row: the live dashboard's ?game=ra10)
+Constants.ANALYTICS_FLUSH_SECONDS = 10
+Constants.ANALYTICS_SNAPSHOT_SECONDS = 30
+
+-- Coming back (§8)
+Constants.OFFLINE_HOURS = 4 -- the most time away that earns (12 with the Long Nap pass or perks)
+Constants.OFFLINE_PASS_HOURS = 12
+Constants.OFFLINE_RATE = 0.5 -- the share of what the operation ships a minute that it earns while you're away
+Constants.OFFLINE_MIN_SECONDS = 120 -- shorter than this away and there's no card
+
+-- Watching each other (§13.4) and the all-time boards
+Constants.LEADERBOARD_STORE = "FF_Top_%s_v1" -- one OrderedDataStore a board
+Constants.LEADERBOARD_REFRESH_SECONDS = 120
+Constants.LEADERBOARD_WRITE_SECONDS = 60
+Constants.SUMMARY_STORE = "FF_Summary_v1" -- each farm's summary, for friends on other servers
+Constants.STREET_WINDOW = 300 -- the seconds the street board's "a minute" numbers average over
+
+-- Robux (§11, Data/Shop): ids are 0 until the products and passes are made on Roblox (an id of 0 is given for free in
+-- Studio, so the shop can be tried; on a live server it shows "coming soon")
+Constants.PRODUCTS = {
+	gems100 = 0,
+	gems550 = 0,
+	gems1200 = 0,
+	starter = 0,
+	skipGrow = 0,
+}
+Constants.PASSES = {
+	doubleCash = 0,
+	longNap = 0,
+	extraOrder = 0,
+	vip = 0,
+}
+
 return Constants

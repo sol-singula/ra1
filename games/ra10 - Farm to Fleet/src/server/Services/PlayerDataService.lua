@@ -30,6 +30,8 @@ local function defaults()
 		schemaVersion = SCHEMA_VERSION,
 		cash = Constants.START_CASH, -- the farm's money (EconomyService)
 		gems = Constants.START_GEMS, -- skips, golden seeds, cosmetics
+		goldenSeeds = 0, -- each makes the next planting golden (the calendar, the shop)
+		passes = {}, -- [passKey] = true: the game passes owned (ShopService)
 		xp = 0, -- farm XP: the level gates unlocks (Data/Levels)
 		level = 1,
 		stage = 1, -- 1 shack, 2 farm, 3 packing shed, 4 warehouse, 5 distribution hub (master plan §4)
