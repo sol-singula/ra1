@@ -21,6 +21,7 @@ Net.ClientEvents = {
 	Street = 4, -- ("visit", plotIndex) | ("home") | ("like", plotIndex) | ("friends") | ("join", userId) (StreetService)
 	Franchise = 2, -- ("open") | ("sell") | ("perk", key) (FranchiseService)
 	Shop = 4, -- ("open") | ("buy", key) | ("gems", key) a gem buy (ShopService)
+	Trade = 4, -- ("buy", id) | ("skip", id) | ("sell", id) | ("no", id) buying from the neighbours (TradeService)
 	Tractor = 4, -- ("on") | ("off") ride your tractor (TractorService)
 	Drive = 10, -- ("enter", vehicleId) | ("leave") | ("move", throttle, steer) a forklift you drive (VehicleService)
 }
@@ -35,6 +36,7 @@ Net.ServerEvents = {
 	"Guide", -- { step, text, target, done, of } the next thing to do (GuideService)
 	"Animal", -- pens, levels, boosts, hunger (AnimalService)
 	"Orders", -- the order board (OrderService)
+	"Trade", -- an offer from a neighbour, or their request to buy from you (TradeService)
 	"Special", -- a Special Order: what it wants, its clock, its pay (SpecialService)
 	"Flow", -- the warehouse's four stations, the bottleneck, the stock (WarehouseService)
 	"Vehicles", -- { id, kind, route, t0, seconds } moves for every client to animate (VehicleService)
