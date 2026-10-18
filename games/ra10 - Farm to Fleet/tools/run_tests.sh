@@ -7,3 +7,4 @@ cd "$(dirname "$0")/.."
 cargo build --release --quiet --manifest-path tools/luaurun/Cargo.toml
 R=tools/luaurun/target/release/luaurun
 $R tests/BootSmoke.spec.luau
+$R tests/FarmSmoke.spec.luau

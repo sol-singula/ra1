@@ -52,7 +52,7 @@ local EVENTS = { -- Net event -> the Store key it fills
 function Store.init()
 	for event, key in EVENTS do
 		Net.listen(event, function(v)
-			if key == "profile" and type(v) == "table" and type(state.profile) == "table" then
+			if (key == "profile" or key == "plot") and type(v) == "table" and type(state[key]) == "table" then
 				Store.merge(key, v)
 			else
 				Store.set(key, v)
