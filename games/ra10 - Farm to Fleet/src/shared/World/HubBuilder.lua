@@ -582,8 +582,8 @@ return function(FarmBuilder, BUILD, kit)
 				)
 			end
 		end
-		-- the barn's conveyor arrives here: a hatch in the west wall
-		L:block(x0 - 0.2, -92, 1.4, 3.4, 3.4, { color = P.steel, name = "ConveyorHatch" }, 0.5)
+		-- the crops come in here: an IN door in the west wall
+		L:block(x0 - 0.2, -92, 1.4, 5, 6, { color = P.steel, name = "InboundDoor" }, 0.5)
 		-- the detail layer, sized to the market
 		detail(L, plot, x0, x1, z0, z1, h, true)
 		-- benches and planters out front

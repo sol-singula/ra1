@@ -10,7 +10,7 @@ the pace. Every rate is Cash a minute of produce (what it'd fetch at the stand),
   Ship   the box trucks: TRUCK_TRIP seconds a trip (less with the loading dock and the back dock doors), truckCap
          pallets each; and the semis (stage 5): SEMI_CAP pallets in SEMI_TRIP seconds each
 
-The produce itself: the conveyor brings the basket in (inbound), the lines box it, every PALLET of boxes is a
+The produce itself: the barn's excess comes in (inbound), the lines box it, every PALLET of boxes is a
 pallet waiting on the floor (staged, up to STAGE_MAX: then packing stops), the forklifts rack the pallets, the
 trucks take them away, and each pallet pays PALLET x SHIP_MULT (more with the sorter and the wrapper) when its truck
 gets back.
@@ -34,7 +34,7 @@ Flow.FORK_CYCLE = 30
 Flow.TRUCK_TRIP = 60
 Flow.SLOTS_PER_ROW = 24 -- (8 along a row, 3 high: World/PlotLayout.rackSlot)
 Flow.STAGE_MAX = 6
-Flow.INBOUND_MAX = 8 -- pallets' worth of crates waiting at the lines before the conveyor stops bringing more
+Flow.INBOUND_MAX = 8 -- pallets' worth of crates waiting at the lines before the intake stops bringing more
 Flow.SHIP_MULT = 2
 Flow.SEMI_CAP = 24 -- pallets a semi takes
 Flow.SEMI_TRIP = 120 -- a semi's seconds: in from the road, at the dock, away
@@ -96,8 +96,8 @@ local function growRate(p, now)
 		+ Franchise.bonus(p, "growth")
 	local grow, starter = Crops.starter(p.level)
 	local need = c.grow * (stat(owned, "sprinkler", 0) > 0 and Crops.WATER_CUT or 1) / speed / grow
-	local tractor = stat(owned, "autoharvest", nil)
-	local wait = tractor and tractor / (1 + Animals.boost(p, "machine", now)) / 2 or 10
+	local tractor = stat(owned, "autoharvest", 0)
+	local wait = tractor > 0 and 10 / tractor / (1 + Animals.boost(p, "machine", now)) or 10
 	local each = c.value * starter * (c.type == "veg" and 1 + Animals.boost(p, "vegPrice", now) or 1)
 	local tiles = stat(owned, "soil", Upgrades.START_SOIL)
 	return tiles * each * 60 / (need + wait)

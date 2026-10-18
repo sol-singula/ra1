@@ -4,7 +4,7 @@ crops keep growing on the server's clock (FarmService), and the machines and the
 Constants.OFFLINE_RATE of what they'd make live, for up to Constants.OFFLINE_HOURS (OFFLINE_PASS_HOURS with the Long
 Nap pass; the franchise's perk adds more).
 
-  before the tractor and conveyor  nothing to earn away (the crops still ripen)
+  before the tractor and shop helper  nothing to earn away (the crops still ripen)
   with them                        the fields' rate (Flow's grow), sold at the stand's price
   with the warehouse               the operation's pace: the slowest station's rate, shipped (Flow.SHIP_MULT)
 
@@ -51,7 +51,7 @@ function OfflineService:Earned(profile, seconds)
 		perMinute = math.min(rates.grow, rates.pack, rates.store, rates.ship)
 			* Flow.SHIP_MULT
 			* (1 + Upgrades.stat(owned, "orderPrice", 0))
-	elseif owned.tractor and owned.conveyor then
+	elseif owned.tractor and owned.shopkeeper then
 		perMinute = rates.grow * (1 + Upgrades.stat(owned, "price", 0))
 	end
 	local mult = Franchise.incomeMult(profile)

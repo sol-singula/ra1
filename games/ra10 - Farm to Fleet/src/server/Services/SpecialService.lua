@@ -4,7 +4,7 @@ Specials.EVERY_MIN..EVERY_MAX minutes of play (the first Specials.FIRST after th
 first visit of each UTC day. Its express truck pulls up on the road in front of the plot (World/Trips "expressIn")
 where the whole street sees it; everyone on the server hears about it.
 
-  packing   the PACK ORDERS pad (and the box line) packs the special first (OrderService.packFirst); the conveyor
+  packing   the barn (and the box line) packs the special first (OrderService.packFirst); selling
             and the warehouse leave what it needs in the basket (OrderService.extraNeeds); golden crops ("*crop")
             only count for a Golden Harvest
   shipping  packed: the express truck drives off (Trips "expressOut") and it pays when it's gone: Cash (many times a
@@ -241,7 +241,7 @@ function SpecialService:Step(player, p, dt)
 	end
 	if s.state == "open" and t >= s.ends then
 		for key, n in s.packed do
-			farm:Stow(player, key, n)
+			farm:Add(player, key, n)
 		end
 		o.special = nil
 		o.specialIn = nextIn()

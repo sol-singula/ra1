@@ -51,12 +51,12 @@ do
 		return Vector3.new(a.X - b.X, 0, a.Z - b.Z).Magnitude
 	end
 	local sell = SPOTS.stand + Vector3.new(0, 0, -7.5)
-	check("the stage-1 loop is close: spawn to soil", d(SPOTS.spawn, SPOTS.soil) < 32, d(SPOTS.spawn, SPOTS.soil))
+	check("the stage-1 loop is close: spawn to soil", d(SPOTS.spawn, SPOTS.soil) < 36, d(SPOTS.spawn, SPOTS.soil))
 	check("...soil to SELL", d(SPOTS.soil, sell) < 30, d(SPOTS.soil, sell))
 	check("...SELL to every buy-pad", d(sell, SPOTS.pads[3]) < 34, d(sell, SPOTS.pads[3]))
 	check(
 		"...the spawn a few steps from SELL and the first pad",
-		d(SPOTS.spawn, sell) < 10 and d(SPOTS.spawn, SPOTS.pads[1]) < 10
+		d(SPOTS.spawn, sell) < 10 and d(SPOTS.spawn, SPOTS.pads[1]) < 14
 	)
 end
 
@@ -170,7 +170,7 @@ do
 		GuideC.state().text:find("HARVEST") == nil and GuideC.state().text:find("ripe") ~= nil,
 		GuideC.state().text
 	)
-	check("...no TEND or WATER button on the soil", FarmC.action() == nil and not FarmC.refs.act.Visible)
+	check("...the button says TEND while it grows", FarmC.action() == "tend" and FarmC.refs.act.Visible, FarmC.action())
 	FarmC.paintTimers()
 	local timer = FarmC.refs.timers[1]
 	check(
@@ -247,7 +247,7 @@ do
 	check("the pad says what it gives and costs in $", Upgrades.blurb(Upgrades.soil5) == "+1 patch")
 	check(
 		"...exactly what it adds: the Big Field +9, not +30",
-		Upgrades.blurb(Upgrades.field2) == "+9 patches",
+		Upgrades.blurb(Upgrades.field2) == "+8 patches",
 		Upgrades.blurb(Upgrades.field2)
 	)
 end

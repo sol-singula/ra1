@@ -67,7 +67,20 @@ function PlotService:Near(player, part, radius)
 end
 
 local function signFor(plot, player)
-	FarmBuilder.sign(plot.sign, player and `{string.upper(player.DisplayName)}'S FARM` or "FOR SALE", "", plot.color)
+	local text = "FOR SALE"
+	if player then
+		local named = PlotService.farmName and PlotService.farmName(player)
+		text = named and string.upper(named) or `{string.upper(player.DisplayName)}'S FARM`
+	end
+	FarmBuilder.sign(plot.sign, text, "", plot.color)
+end
+
+-- The sign again (the farm was named)
+function PlotService:Resign(player)
+	local m = mine[player]
+	if m then
+		signFor(m.plot, player)
+	end
 end
 
 local function streetView()

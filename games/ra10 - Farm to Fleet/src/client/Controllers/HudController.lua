@@ -2,7 +2,7 @@
 The always-on screen (phone first: big, high-contrast, in the farm's colours).
 
   top left     your Cash (a green coin) and Gems, the basket under them (carried / how much you can carry), the
-               STOCK under that (what the conveyor brought in, each with how many the orders keep) and the
+               the BARN under that (what it keeps, each with how many the orders keep) and the
                BOOSTS your animals give the farm right now
   top centre   FARM LEVEL n and its XP bar
   centre       the toasts (Net "Toast"), a "+N" when Cash comes in (Net "Earned")
@@ -60,6 +60,8 @@ local function paint()
 	end
 	local f = Store.get("farm")
 	if f then
+		-- (the basket: until the barn keeps the crops)
+		refs.basket.Visible = not f.stockCap
 		refs.basket.Text = `🧺 {f.carried or 0} / {f.carry or 0}`
 		refs.basket.TextColor3 = (f.carried or 0) >= (f.carry or 1) and C.mustard or C.white
 	end
@@ -79,8 +81,9 @@ local function paint()
 		total += r.n
 	end
 	local cap = f and f.stockCap
-	refs.stockTitle.Text = cap and `WAREHOUSE {Format.num(total)} / {Format.num(cap)}{total >= cap and "  FULL!" or ""}`
-		or "STOCK"
+	local where = f and f.stockCap and (f.barn and not (f.crops and #f.crops > 0) and "BARN" or "WAREHOUSE") or "CROPS"
+	refs.stockTitle.Text = cap and `{where} {Format.num(total)} / {Format.num(cap)}{total >= cap and "  FULL!" or ""}`
+		or where
 	refs.stockTitle.TextColor3 = cap and total >= cap and C.red or C.mustard
 	for i, row in refs.stockRows do
 		local r = rows[i]
@@ -89,9 +92,8 @@ local function paint()
 			local golden = string.sub(r.key, 1, 1) == "*"
 			local key = golden and string.sub(r.key, 2) or r.key
 			local c = Crops[key]
-			local a = Animals.product(key)
 			row.dot.BackgroundColor3 = golden and P.sunflower or (c and c.color or Color3.fromRGB(250, 245, 230))
-			row.name.Text = (golden and "Golden " or "") .. (c and c.name or (a and a.name) or key)
+			row.name.Text = (golden and "Golden " or "") .. (c and c.name or key)
 			row.count.Text = r.kept > 0 and `{Format.num(r.n)}  ({Format.num(r.kept)} for orders)` or Format.num(r.n)
 			row.count.TextColor3 = r.kept > 0 and C.mustard or C.white
 		end
@@ -103,7 +105,14 @@ local function paint()
 	for _, key in Animals.LIST do
 		local pen = pens and pens.pens and pens.pens[key]
 		if pen and pen.boost then
-			table.insert(lines, (pen.fed and "" or "(hungry) ") .. Animals[key].name .. "s: " .. pen.boost)
+			table.insert(
+				lines,
+				(pen.fed and "" or "(hungry) ")
+					.. Animals[key].name
+					.. "s: "
+					.. pen.boost
+					.. (pen.happy and " (happy x2)" or "")
+			)
 		end
 	end
 	refs.boosts.Visible = #lines > 0

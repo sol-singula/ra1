@@ -98,7 +98,12 @@ do
 	)
 	local missing = {}
 	for _, key in Upgrades.LIST do
-		if Upgrades[key].stage == 4 and Upgrades[key].kind ~= "stage" and not FarmBuilder.BUILD[key] then
+		if
+			Upgrades[key].stage == 4
+			and Upgrades[key].kind ~= "stage"
+			and Upgrades[key].kind ~= "soil"
+			and not FarmBuilder.BUILD[key]
+		then
 			table.insert(missing, key)
 		end
 	end
@@ -127,6 +132,7 @@ local p = Data:Get(player)
 local plot = Plots:Plot(player)
 local GuideC = Engine.require(tree.client.Controllers.GuideController)
 local OpsC = Engine.require(tree.client.Controllers.OpsController)
+OpsC.SHOW = true -- (the panel is off the HUD in the game: the screen in the warehouse has it; shown here to check it)
 local WareC = Engine.require(tree.client.Controllers.WarehouseController)
 local VehicleC = Engine.require(tree.client.Controllers.VehicleController)
 local function buy(key)
@@ -265,7 +271,7 @@ table.clear(p.storage)
 p.storage.pumpkin = 30 -- 14,400 at the stand: a pumpkin and more
 local took = Ware:Intake(player)
 check(
-	"the conveyor's load goes into the warehouse",
+	"the barn's extra goes into the warehouse",
 	took and p.flow.inbound > 0 and (p.storage.pumpkin or 0) < 30,
 	p.flow.inbound
 )
@@ -326,9 +332,11 @@ check(
 Engine.advance(trip2.length)
 Engine.advance(1.5)
 check("...parked again", truck1:GetAttribute("TripStart") == nil or p.flow.trucks["1"])
-check("the guide: fix the bottleneck", GuideC.state().key == "fix1", GuideC.state().key)
-b = Ware:Bottleneck(player)
-check("...pointing at the red pad", (GuideC.state().target - Upg:Stations(player)[b].Position).Magnitude < 0.1)
+check("the guide: pick what to grow", GuideC.state().key == "pickCrop", GuideC.state().key)
+check("...pointing at the soil", typeof(GuideC.state().target) == "Vector3")
+p.stats.picked = 1
+Engine.advance(1.2)
+check("the guide: then the street's steps (the calendar first)", GuideC.state().key == "calendar1", GuideC.state().key)
 
 -- The forklifts work, the roof lifts --------------------------------------------------------------------------------------------
 p.flow.staged = 3
@@ -369,19 +377,18 @@ end
 check("buying the bottleneck's fix makes that station faster", fixes == 3, fixes)
 check("...counted as fixes", (p.stats.fixes or 0) == 3, p.stats.fixes)
 Engine.advance(1.2)
-check(
-	"the guide: after three fixes, the street's steps (the calendar first)",
-	GuideC.state().key == "calendar1",
-	GuideC.state().key
-)
 -- (past the scripted steps: the generated goals)
 p.guide.step = 1e3
 service("GuideService"):Check(player)
 Engine.advance(1.2)
 check(
-	"the guide: past its steps, it follows the bottleneck",
-	GuideC.state().generated and string.sub(GuideC.state().key, 1, 4) == "fix:",
-	GuideC.state().key
+	"the guide: past its steps, the next buy in plain words",
+	GuideC.state().generated
+		and (
+			string.sub(GuideC.state().key, 1, 4) == "buy:" and GuideC.state().text:find("Next: buy") ~= nil
+			or string.sub(GuideC.state().key, 1, 6) == "level:" and GuideC.state().text:find("Level") ~= nil
+		),
+	GuideC.state().key .. " " .. tostring(GuideC.state().text) .. " " .. tostring(GuideC.state().generated)
 )
 
 -- Full racks ------------------------------------------------------------------------------------------------------------------

@@ -14,9 +14,7 @@ Net "Guide" to the owner: { key, text, target = Vector3 (world), step, of, gener
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Flow = require(ReplicatedStorage.Shared.Data.Flow)
 local Guide = require(ReplicatedStorage.Shared.Data.Guide)
-local Orders = require(ReplicatedStorage.Shared.Data.Orders)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PlotLayout = require(ReplicatedStorage.Shared.World.PlotLayout)
@@ -42,7 +40,6 @@ local GuideService = {
 }
 
 local data, economy, plots, farm, upgrades, animals, orders, analytics
-local registryRef = {}
 local sent = {} -- [player] = the last payload's key and target, so nothing is sent twice
 
 local function guideOf(p)
@@ -107,7 +104,12 @@ end
 
 -- A step at the soil when nothing there is ripe or empty: plant the rest meanwhile, else it's nearly ripe
 local function tending(player, step)
-	if not step or (step.target ~= "soil" and step.target ~= "soil1") or step.done and step.done.kind == "planted" then
+	if
+		not step
+		or step.generated
+		or (step.target ~= "soil" and step.target ~= "soil1")
+		or step.done and (step.done.kind == "planted" or step.done.stat == "tended")
+	then
 		return step
 	end
 	local refs = plots:Refs(player)
@@ -152,74 +154,18 @@ function GuideService:RawStep(player)
 		return nil
 	end
 	local g = guideOf(p)
-	-- a Special Order comes first, whatever else is going on
-	local special = registryRef.SpecialService and registryRef.SpecialService:Current(player)
-	if special and special.state == "open" then
-		local want = {}
-		for key, n in special.items do
-			local left = n - (special.packed[key] or 0)
-			if left > 0 then
-				table.insert(
-					want,
-					`{left} {string.sub(key, 1, 1) == "*" and "golden " or ""}{Orders.itemName(
-						string.gsub(key, "^%*", "")
-					)}`
-				)
-			end
-		end
-		return {
-			key = "special:" .. special.id .. ":" .. table.concat(want, ","),
-			text = `SPECIAL ORDER: pack {table.concat(want, ", ")} for {special.who}!`,
-			target = "pack",
-			generated = true,
-		}
-	end
 	local step = Guide.STEPS[g.step]
 	if step then
 		return step
 	end
-	-- generated, in the warehouse: a hub expansion they can afford, else the bottleneck's fix (or the next fix)
-	if p.owned and p.owned.warehouse then
-		local first = upgrades:Offer(player)[1]
-		if first and not first.locked and first.upgrade.stage >= 5 and (p.cash or 0) >= first.upgrade.cost then
-			return {
-				key = "buy:" .. first.upgrade.key,
-				text = `Grow the hub: buy {first.upgrade.name} ({Format.num(first.upgrade.cost)})`,
-				target = "pad:" .. first.upgrade.key,
-				generated = true,
-			}
-		end
-		local rates = Flow.rates(p, workspace:GetServerTimeNow())
-		local u = Upgrades.trackNext(p.owned, rates.bottleneck)
-		local name = string.upper(rates.bottleneck)
-		if u and Upgrades.ready(p.owned, p.level or 1, u) then
-			return {
-				key = "fix:" .. u.key,
-				text = `BOTTLENECK: {name}! Buy {u.name} at the {name} pad ({Format.num(u.cost)})`,
-				target = "station:" .. rates.bottleneck,
-				generated = true,
-			}
-		end
-		for _, track in Upgrades.TRACKS do
-			local v = Upgrades.trackNext(p.owned, track)
-			if v and Upgrades.ready(p.owned, p.level or 1, v) then
-				return {
-					key = "fix:" .. v.key,
-					text = `Next: {v.name} at the {string.upper(track)} pad ({Format.num(v.cost)})`,
-					target = "station:" .. track,
-					generated = true,
-				}
-			end
-		end
-	end
-	-- generated: the next upgrade on offer, or the level the next one needs
+	-- generated: the next upgrade on offer (what it does, in plain words), or the level the next one needs
 	local offer = upgrades:Offer(player)
 	local first = offer[1]
 	if first and not first.locked then
 		local u = first.upgrade
 		return {
 			key = "buy:" .. u.key,
-			text = `Next: buy {u.name} ({u.cost} Cash)`,
+			text = `Next: buy {u.name} ({Format.cash(u.cost)}). {Upgrades.blurb(u)}`,
 			target = "pad:" .. u.key,
 			generated = true,
 		}
@@ -228,12 +174,13 @@ function GuideService:RawStep(player)
 	if next then
 		return {
 			key = "level:" .. next.level,
-			text = `Harvest and sell to reach Farm Level {next.level}`,
+			text = `Pick and sell crops to reach Level {next.level}: {next.name} unlocks`,
 			target = "soil",
+			button = "act",
 			generated = true,
 		}
 	end
-	return { key = "more", text = "More of the farm is coming soon: keep growing!", target = "stand", generated = true }
+	return { key = "more", text = "You built it all! Keep growing and selling", target = "stand", generated = true }
 end
 
 -- The world spot a target names
@@ -264,10 +211,9 @@ function GuideService:Target(player, target)
 		end
 		return best and best[2].Position
 	elseif target == "station" or string.sub(target, 1, 8) == "station:" then
-		local p = data:Get(player)
 		local track = string.sub(target, 9)
 		if track == "" then
-			track = p and Flow.rates(p, workspace:GetServerTimeNow()).bottleneck or "grow"
+			track = "grow"
 		end
 		local pad = upgrades:Stations(player)[track]
 		return pad and pad.Position
@@ -409,7 +355,6 @@ function GuideService:Init(registry)
 	upgrades = registry.UpgradeService
 	animals = registry.AnimalService
 	orders = registry.OrderService
-	registryRef = registry
 	analytics = registry.AnalyticsService
 	farm.Changed:Connect(function(player)
 		self:Check(player)

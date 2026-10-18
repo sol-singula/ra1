@@ -25,6 +25,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Crops = require(ReplicatedStorage.Shared.Data.Crops)
+local Home = require(ReplicatedStorage.Shared.Data.Home)
+local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
 local PlotLayout = require(script.Parent.PlotLayout)
 local Shapes = require(script.Parent.Shapes)
 
@@ -36,6 +38,12 @@ local INK = Color3.fromRGB(30, 30, 34)
 local WHITE = Color3.fromRGB(250, 250, 248)
 local SPOTS = PlotLayout.SPOTS
 local SOIL_DARK = Color3.fromRGB(100, 68, 46)
+local FLOWERS = {
+	Color3.fromRGB(240, 90, 140),
+	Color3.fromRGB(255, 205, 40),
+	Color3.fromRGB(250, 250, 250),
+	Color3.fromRGB(150, 110, 230),
+}
 
 -- Words -----------------------------------------------------------------------------------------------------------
 function FarmBuilder.sign(part, title, line, color, face)
@@ -332,87 +340,228 @@ function FarmBuilder.world(parent)
 end
 
 -- A plot's own pieces ---------------------------------------------------------------------------------------------
-local function shack(L, color)
+-- The house: the shack a new farmer gets, and the bigger homes it grows into with the farm level (Data/Home), all
+-- from one plan: walls, siding, a roof in the plot's colour, a door, windows with shutters and flower boxes, a
+-- porch, a chimney; bigger tiers get a second floor of windows, a garden, hedges, trees, a fountain
+local function house(L, plot, tier)
+	local color = plot.color
+	local T = Home.TIERS[tier] or Home.TIERS[1]
 	local x, z = SPOTS.shack.X, SPOTS.shack.Z
-	local w, d, h = 14, 10, 8
-	L:block(x, z, w + 1, d + 1, 0.8, { color = P.concreteDark, name = "ShackFloor" }, 0)
-	L:block(x, z, w, d, h, { color = P.barnRed, name = "Shack" }, 0.8)
-	-- the siding: board lines round it
+	local w, d, h = T.w, T.d, T.h
+	local wall, trim, roof = T.wall, T.trim, T.roof
+	L:block(x, z, w + 1, d + 1, 0.8, { color = P.concreteDark, name = "HouseFloor" }, 0)
+	L:block(x, z, w, d, h, { color = wall, name = "House" }, 0.8)
 	for y = 2, h, 1.2 do
-		L:block(
-			x,
-			z - d / 2 - 0.05,
-			w + 0.1,
-			0.12,
-			0.12,
-			deco({ color = Color3.fromRGB(150, 40, 34), name = "Siding" }),
-			y
-		)
-		L:block(
-			x,
-			z + d / 2 + 0.05,
-			w + 0.1,
-			0.12,
-			0.12,
-			deco({ color = Color3.fromRGB(150, 40, 34), name = "Siding" }),
-			y
-		)
-	end
-	-- corner trims
-	for _, sx in { -1, 1 } do
 		for _, sz in { -1, 1 } do
-			L:block(x + sx * w / 2, z + sz * d / 2, 0.6, 0.6, h, deco({ color = P.cream, name = "Trim" }), 0.8)
+			L:block(
+				x,
+				z + sz * (d / 2 + 0.05),
+				w + 0.1,
+				0.12,
+				0.12,
+				deco({ color = T.siding or wall, name = "Siding" }),
+				y
+			)
 		end
 	end
-	-- the roof: two slopes, a ridge, eaves in the plot's colour
-	L:wedge(x, 0.8 + h + 2, z - d / 4 - 0.3, w + 1.6, 4, d / 2 + 0.8, { color = INK, name = "Roof" }, 180)
-	L:wedge(x, 0.8 + h + 2, z + d / 4 + 0.3, w + 1.6, 4, d / 2 + 0.8, { color = INK, name = "Roof" }, 0)
-	L:box(x, 0.8 + h + 4.1, z, w + 1.8, 0.4, 0.6, deco({ color = color, name = "Ridge" }))
-	-- the door and its frame, a window with shutters, a flower box
-	L:box(x - 2.5, 0.8 + 3, z - d / 2 - 0.1, 3, 6, 0.2, deco({ color = Color3.fromRGB(120, 72, 44), name = "Door" }))
-	L:box(x - 2.5, 0.8 + 6.2, z - d / 2 - 0.15, 3.6, 0.4, 0.3, deco({ color = P.cream, name = "Trim" }))
-	L:box(x - 1.2, 0.8 + 3, z - d / 2 - 0.2, 0.3, 0.3, 0.2, deco({ color = P.sunflower, name = "Knob" }))
-	L:box(x + 3, 0.8 + 4.5, z - d / 2 - 0.1, 3.4, 2.6, 0.2, deco({ color = P.glass, name = "Window" }))
-	L:box(x + 3, 0.8 + 4.5, z - d / 2 - 0.15, 3.8, 0.3, 0.3, deco({ color = P.cream, name = "Trim" }))
 	for _, sx in { -1, 1 } do
-		L:box(x + 3 + sx * 2.3, 0.8 + 4.5, z - d / 2 - 0.12, 1, 2.8, 0.2, deco({ color = color, name = "Shutter" }))
+		for _, sz in { -1, 1 } do
+			L:block(x + sx * w / 2, z + sz * d / 2, 0.6, 0.6, h, deco({ color = trim, name = "Trim" }), 0.8)
+		end
 	end
-	L:box(
-		x + 3,
-		0.8 + 2.9,
-		z - d / 2 - 0.5,
-		3.6,
-		0.6,
-		0.8,
-		deco({ color = Color3.fromRGB(120, 72, 44), name = "FlowerBox" })
+	-- the roof: two slopes, a ridge, eaves in the plot's colour; a tall house gets a taller roof
+	local rh = tier >= 4 and 6 or 4
+	L:wedge(x, 0.8 + h + rh / 2, z - d / 4 - 0.3, w + 1.6, rh, d / 2 + 0.8, { color = roof, name = "Roof" }, 180)
+	L:wedge(x, 0.8 + h + rh / 2, z + d / 4 + 0.3, w + 1.6, rh, d / 2 + 0.8, { color = roof, name = "Roof" }, 0)
+	L:box(x, 0.8 + h + rh + 0.1, z, w + 1.8, 0.4, 0.6, deco({ color = color, name = "Ridge" }))
+	-- the door and its frame, windows with shutters and flower boxes along the front
+	local fz = z - d / 2
+	local doorX = x - (tier >= 3 and 0 or 2.5)
+	L:box(doorX, 0.8 + 3, fz - 0.1, 3, 6, 0.2, deco({ color = Color3.fromRGB(120, 72, 44), name = "Door" }))
+	L:box(doorX, 0.8 + 6.2, fz - 0.15, 3.6, 0.4, 0.3, deco({ color = trim, name = "Trim" }))
+	L:box(doorX + 1.3, 0.8 + 3, fz - 0.2, 0.3, 0.3, 0.2, deco({ color = P.sunflower, name = "Knob" }))
+	local windows = {}
+	if tier <= 2 then
+		windows = { x + 3 }
+	else
+		for k = -math.floor(w / 10), math.floor(w / 10) do
+			if math.abs(x + k * 5 - doorX) > 3.2 then
+				table.insert(windows, x + k * 5)
+			end
+		end
+	end
+	local floors = tier >= 3 and 2 or 1
+	for floor = 1, floors do
+		local wy = 0.8 + 4.5 + (floor - 1) * (h / 2)
+		for _, wx in windows do
+			L:box(wx, wy, fz - 0.1, 3.4, 2.6, 0.2, deco({ color = P.glass, name = "Window" }))
+			L:box(wx, wy, fz - 0.15, 3.8, 0.3, 0.3, deco({ color = trim, name = "Trim" }))
+			for _, sx in { -1, 1 } do
+				L:box(wx + sx * 2.3, wy, fz - 0.12, 1, 2.8, 0.2, deco({ color = color, name = "Shutter" }))
+			end
+			if floor == 1 then
+				L:box(
+					wx,
+					wy - 1.6,
+					fz - 0.5,
+					3.6,
+					0.6,
+					0.8,
+					deco({ color = Color3.fromRGB(120, 72, 44), name = "FlowerBox" })
+				)
+				for k = -1, 1 do
+					L:box(
+						wx + k * 1.1,
+						wy - 1.1,
+						fz - 0.5,
+						0.6,
+						0.6,
+						0.6,
+						deco({ color = k == 0 and P.sunflower or Color3.fromRGB(240, 90, 140), name = "Flower" })
+					)
+				end
+			end
+		end
+	end
+	-- the porch: a deck, posts, a little roof (a wide porch on the big homes)
+	local pw = tier >= 3 and w * 0.7 or 7
+	L:block(doorX, fz - 2, pw, 4, 0.8, { color = P.wood, name = "Porch" }, 0)
+	for _, sx in { -1, 1 } do
+		L:block(doorX + sx * (pw / 2 - 0.4), fz - 3.7, 0.5, 0.5, 6, { color = trim, name = "PorchPost" }, 0.8)
+	end
+	L:box(doorX, 0.8 + 6.4, fz - 2, pw + 0.6, 0.4, 4.4, { color = color, name = "PorchRoof" })
+	L:block(x + w / 2 - 2.5, z + 1.5, 1.6, 1.6, 4.5, { color = P.concreteDark, name = "Chimney" }, 0.8 + h + 0.8)
+	-- the garden grows with the home: a lawn path, hedges, flower beds, trees, a fountain, lanterns
+	local gz = fz - 6
+	L:block(
+		doorX,
+		(gz + SPOTS.mailbox.Z) / 2,
+		4,
+		gz - SPOTS.mailbox.Z + 2,
+		0.12,
+		deco({ color = P.concrete, name = "GardenPath" }),
+		0.26
 	)
-	for k = -1, 1 do
-		L:box(
-			x + 3 + k * 1.1,
-			0.8 + 3.4,
-			z - d / 2 - 0.5,
-			0.6,
-			0.6,
-			0.6,
-			deco({ color = k == 0 and P.sunflower or Color3.fromRGB(240, 90, 140), name = "Flower" })
-		)
+	if tier >= 2 then
+		for _, sx in { -1, 1 } do
+			L:block(
+				x + sx * (w / 2 + 2),
+				fz - 4,
+				1.6,
+				6,
+				1.6,
+				deco({ color = Color3.fromRGB(60, 140, 60), name = "Hedge" }),
+				0
+			)
+		end
 	end
-	-- the porch: a deck, two posts, a little roof
-	L:block(x - 2.5, z - d / 2 - 2, 7, 4, 0.8, { color = P.wood, name = "Porch" }, 0)
-	for _, sx in { -1, 1 } do
-		L:block(x - 2.5 + sx * 3.2, z - d / 2 - 3.7, 0.5, 0.5, 6, { color = P.cream, name = "PorchPost" }, 0.8)
+	if tier >= 3 then
+		for k = 0, 4 do
+			for _, sx in { -1, 1 } do
+				local bx = doorX + sx * (4 + k * 1.1)
+				L:block(bx, gz, 1, 1, 0.35, deco({ color = SOIL_DARK, name = "Bed" }), 0)
+				L:box(bx, 0.75, gz, 0.35, 0.6, 0.35, deco({ color = Color3.fromRGB(70, 150, 60), name = "Stem" }))
+				L:box(bx, 1.15, gz, 0.6, 0.35, 0.6, deco({ color = FLOWERS[k % #FLOWERS + 1], name = "Flower" }))
+			end
+		end
 	end
-	L:box(x - 2.5, 0.8 + 6.4, z - d / 2 - 2, 7.6, 0.4, 4.4, { color = color, name = "PorchRoof" })
-	-- a chimney
-	L:block(x + 4.5, z + 1.5, 1.6, 1.6, 4.5, { color = P.concreteDark, name = "Chimney" }, 0.8 + h + 0.8)
+	if tier >= 4 then
+		for _, sx in { -1, 1 } do
+			local tx, tz = x + sx * (w / 2 + 6), z - 2
+			L:block(tx, tz, 1.2, 1.2, 5, { color = P.wood, name = "Trunk" }, 0)
+			L:box(tx, 7.5, tz, 6, 5, 6, deco({ color = Color3.fromRGB(70, 150, 70), name = "Leaves" }))
+		end
+	end
+	if tier >= 5 then
+		local fx, fzz = doorX, gz - 5
+		L:cyl(fx, 0.6, fzz, 1.2, 7, { color = P.concrete, name = "Fountain" }, "y")
+		L:cyl(fx, 1.3, fzz, 0.3, 6, deco({ color = P.water, name = "FountainWater" }), "y")
+		L:cyl(fx, 2.2, fzz, 2, 1.2, deco({ color = P.concrete, name = "FountainStem" }), "y")
+		L:cyl(fx, 3.3, fzz, 0.4, 3, deco({ color = P.water, name = "FountainWater" }), "y")
+		for _, sx in { -1, 1 } do
+			L:block(fx + sx * 5, fzz, 0.4, 0.4, 5, { color = INK, name = "LanternPost" }, 0)
+			L:box(
+				fx + sx * 5,
+				5.4,
+				fzz,
+				1,
+				1,
+				1,
+				deco({ color = P.sunflower, material = Enum.Material.Neon, name = "Lantern" })
+			)
+		end
+	end
+	local sign =
+		L:box(doorX, 0.8 + h - 0.6, fz - 0.2, math.min(w - 2, 12), 1.6, 0.2, deco({ color = trim, name = "HouseSign" }))
+	FarmBuilder.sign(sign, string.upper(T.name), "", color)
 end
 
-local FLOWERS = {
-	Color3.fromRGB(240, 90, 140),
-	Color3.fromRGB(255, 205, 40),
-	Color3.fromRGB(250, 250, 250),
-	Color3.fromRGB(150, 110, 230),
-}
+-- The field's rail fence, round every patch it has now (rebuilt as it grows), open at the front and the path side
+function FarmBuilder.fieldFence(plot, n)
+	local folder = plot.items:FindFirstChild("FieldFence")
+	if folder and folder:GetAttribute("Patches") == n then
+		return folder
+	end
+	if folder then
+		folder:Destroy()
+	end
+	folder = Instance.new("Folder")
+	folder.Name = "FieldFence"
+	folder:SetAttribute("Patches", n)
+	folder.Parent = plot.items
+	local L = Shapes.new(folder, plot.cf)
+	local x0, x1, z0, z1 = PlotLayout.fieldBox(n)
+	local function rail(ax, az, bx, bz)
+		local len = math.max(math.abs(bx - ax), math.abs(bz - az))
+		local alongX = math.abs(bx - ax) > 0
+		for _, y in { 1, 2 } do
+			L:box(
+				(ax + bx) / 2,
+				y,
+				(az + bz) / 2,
+				alongX and len or 0.3,
+				0.3,
+				alongX and 0.3 or len,
+				deco({ color = P.wood, name = "FieldRail" })
+			)
+		end
+		for k = 0, math.floor(len / 6) do
+			local t = k * 6 / len
+			L:block(
+				ax + (bx - ax) * t,
+				az + (bz - az) * t,
+				0.5,
+				0.5,
+				2.4,
+				deco({ color = P.wood, name = "FieldPost" }),
+				0
+			)
+		end
+	end
+	rail(x0, z0, x0, z1)
+	rail(x0, z1, x1, z1)
+	rail(x1, z0, x1, z1)
+	rail(x0, z0, x0 + 12, z0)
+	rail(x0 + 24, z0, x1, z0)
+	return folder
+end
+
+-- Build (or rebuild) the home at a tier
+function FarmBuilder.homeTier(plot, tier)
+	local folder = plot.items:FindFirstChild("Home")
+	if folder and folder:GetAttribute("Tier") == tier then
+		return folder
+	end
+	if folder then
+		folder:Destroy()
+	end
+	folder = Instance.new("Folder")
+	folder.Name = "Home"
+	folder:SetAttribute("Tier", tier)
+	folder.Parent = plot.items
+	house(Shapes.new(folder, plot.cf), plot, tier)
+	return folder
+end
 
 -- The stand's building, by tier (Data/Stand): it grows with the farm level, in the same spot, the sell pad in front
 local STAND = {}
@@ -673,7 +822,7 @@ end
 
 function FarmBuilder.base(plot)
 	local L = Shapes.new(plot.items, plot.cf)
-	shack(L, plot.color)
+	FarmBuilder.homeTier(plot, 1)
 	local refs = { tiles = {} }
 	refs.standPad = stand(L)
 	FarmBuilder.standTier(plot, 1)
@@ -682,16 +831,18 @@ function FarmBuilder.base(plot)
 	local m = SPOTS.mailbox
 	L:block(m.X, m.Z, 0.4, 0.4, 3.4, { color = P.wood, name = "MailPost" }, 0)
 	L:box(m.X, 3.9, m.Z, 1.2, 1, 1.8, deco({ color = plot.color, name = "Mailbox" }))
-	L:block(-46, -95, 5, 30, 0.12, deco({ color = Color3.fromRGB(160, 120, 84), name = "Track" }), 0.24)
+	L:block(-50, -95, 9, 30, 0.12, deco({ color = Color3.fromRGB(160, 120, 84), name = "Track" }), 0.24)
 	-- the farm path: from the stand past the soil, the fields and the barn to the pens, so it's all one walk
 	local fp = SPOTS.farmPath
 	local dirt = deco({ color = Color3.fromRGB(176, 136, 96), name = "FarmPath" })
-	L:block(fp.x, (fp.z0 + fp.z1) / 2, 4, fp.z1 - fp.z0, 0.12, dirt, 0.24)
-	L:block(fp.x - 9, fp.z0, 18, 4, 0.12, dirt, 0.24)
-	L:block((fp.x - 62) / 2, fp.pens, fp.x + 62, 4, 0.12, dirt, 0.24)
-	L:block(-42, -21.5, 4, 7, 0.12, dirt, 0.24) -- (the fields to the barn's doors)
+	L:block(fp.x, (fp.z0 + fp.z1) / 2, fp.w, fp.z1 - fp.z0, 0.12, dirt, 0.24)
+	L:block(fp.x - 9, fp.z0, 18, fp.w, 0.12, dirt, 0.24)
+	L:block((fp.x - 80) / 2, fp.pens, fp.x + 80, fp.w, 0.12, dirt, 0.24)
+	L:block(-42, -20, fp.w, 10, 0.12, dirt, 0.24) -- (the field to the barn's doors)
+	-- the pens' own path, down the middle
+	L:block(SPOTS.path.X, SPOTS.path.Z, fp.w, 86, 0.12, dirt, 0.24)
 	-- signposts where the paths meet
-	for _, sp in { { fp.x - 3.5, -38, "FIELDS" }, { fp.x - 3.5, -8, "BARN" }, { fp.x - 3.5, fp.pens + 3, "ANIMALS" } } do
+	for _, sp in { { fp.x - 5.5, -44, "FIELD" }, { fp.x - 5.5, -2, "BARN" }, { fp.x - 5.5, fp.pens + 5, "ANIMALS" } } do
 		L:block(sp[1], sp[2], 0.4, 0.4, 4, { color = P.wood, name = "SignPost" }, 0)
 		local board = L:box(sp[1], 4.2, sp[2], 0.3, 1.4, 4.4, deco({ color = P.cream, name = "PathSign" }))
 		FarmBuilder.sign(board, sp[3], "", plot.color, Enum.NormalId.Left)
@@ -1114,8 +1265,8 @@ BUILD.wheelbarrow = function(L)
 end
 
 BUILD.fence = function(L)
-	-- a white picket fence round the shack and the field, open at the track
-	local x0, x1, z0, z1 = -68, -4, -88, -50
+	-- a white picket fence round the house's garden, open at the track (the field has its own rails)
+	local x0, x1, z0, z1 = -76, -50, -88, -52
 	local function run(ax, az, bx, bz)
 		local len = math.max(math.abs(bx - ax), math.abs(bz - az))
 		local alongX = math.abs(bx - ax) > 0
@@ -1142,17 +1293,16 @@ BUILD.fence = function(L)
 			deco({ color = P.fenceWhite, name = "PicketRail" })
 		)
 	end
-	run(x0, z1, -50, z1)
-	run(-32, z1, x1, z1) -- (open onto the big fields)
+	run(x0, z1, x1, z1)
 	run(x0, z0, x0, z1)
 	run(x1, z0, x1, z1)
-	run(x0, z0, -50, z0)
-	run(-42, z0, x1, z0)
+	run(x0, z0, -66, z0)
+	run(-58, z0, x1, z0)
 end
 
 BUILD.sprinkler = function(L, plot)
-	-- a sprinkler by every patch, the big fields' too (all of them grow faster)
-	for n = 1, 39 do
+	-- a sprinkler by every patch the field can ever have (all of them grow faster)
+	for n = 1, PlotLayout.MAX_SOIL do
 		local at = PlotLayout.soilTile(n)
 		local x, z = at.X + PlotLayout.TILE / 2 + 0.8, at.Z + PlotLayout.TILE / 2 + 0.8
 		L:block(x, z, 0.3, 0.3, 2, deco({ color = P.steel, name = "SprinklerPipe" }), 0)
@@ -1263,6 +1413,25 @@ BUILD.barn = function(L, plot)
 	L:block(x, z, 3.8, 3.8, 0.4, deco({ color = ROOF, name = "CupolaRoof" }), h + 12)
 	L:block(x, z, 0.2, 0.2, 2.6, deco({ color = INK, name = "Vane" }), h + 12.4)
 	L:box(x, h + 14.4, z, 2.2, 0.2, 0.2, deco({ color = INK, name = "Vane" }))
+	-- inside: crates of crops that fill up as the barn does (FarmService shows them: BarnCrate, Slot) and a sign
+	for i = 1, 12 do
+		local cx = x - 10 + ((i - 1) % 6) * 4
+		local cz = z - 4 + ((i - 1) // 6) * 5
+		local crate = L:block(cx, cz, 3, 3, 2.6, { color = P.wood, name = "BarnCrate", transparency = 1 }, 0.8)
+		crate:SetAttribute("Slot", i)
+		local top = L:block(
+			cx,
+			cz,
+			2.6,
+			2.6,
+			0.5,
+			deco({ color = Crops[Crops.LIST[(i - 1) % 5 + 1]].color, name = "BarnCrateTop", transparency = 1 }),
+			3.4
+		)
+		top:SetAttribute("Slot", i)
+	end
+	local board = L:box(x, h - 3.6, fz - 0.2, 10, 2, 0.2, deco({ color = WHITE, name = "BarnSign" }))
+	FarmBuilder.sign(board, "BARN", "your crops", BARN_RED)
 	-- hay bales by the door
 	for k = 0, 2 do
 		L:block(
@@ -1278,129 +1447,100 @@ BUILD.barn = function(L, plot)
 	_ = plot
 end
 
-BUILD.field1 = function(L)
-	-- a rail fence round the stage-2 fields, open toward the barn
-	local x0, x1, z0, z1 = -78, -8, -51, -26
-	local function rail(ax, az, bx, bz)
-		local len = math.max(math.abs(bx - ax), math.abs(bz - az))
-		local alongX = math.abs(bx - ax) > 0
-		for _, y in { 1, 2 } do
-			L:box(
-				(ax + bx) / 2,
-				y,
-				(az + bz) / 2,
-				alongX and len or 0.3,
-				0.3,
-				alongX and 0.3 or len,
-				deco({ color = P.wood, name = "FieldRail" })
-			)
-		end
-		for k = 0, math.floor(len / 6) do
-			local t = k * 6 / len
-			L:block(
-				ax + (bx - ax) * t,
-				az + (bz - az) * t,
-				0.5,
-				0.5,
-				2.4,
-				deco({ color = P.wood, name = "FieldPost" }),
-				0
-			)
+-- A tractor at a level (bigger each level, a wider header in front) at a spot; the model the services drive
+local function tractorModel(L, plot, level, at, name)
+	local k = 1 + 0.18 * (level - 1)
+	local model = Instance.new("Model")
+	model.Name = name or "Tractor"
+	model:SetAttribute("Level", level)
+	model.Parent = L.folder
+	local s = L:sub(model, CFrame.new(at.X, 0, at.Z))
+	local green = Color3.fromRGB(40, 150, 70)
+	s:box(0, 2.6 * k, 0.6 * k, 3 * k, 1.8 * k, 5 * k, { color = green, name = "TractorBody" })
+	s:box(0, 3.2 * k, -2 * k, 2.6 * k, 1.4 * k, 1.6 * k, { color = green, name = "Hood" })
+	s:box(0, 3.95 * k, -2 * k, 2.7 * k, 0.15, 1.7 * k, deco({ color = P.sunflower, name = "Stripe" }))
+	s:box(0, 4.4 * k, 1.6 * k, 2.6 * k, 0.2, 2.4 * k, deco({ color = INK, name = "Seat" }))
+	s:box(0, 5 * k, 1.2 * k, 0.2, 1.2 * k, 0.2, deco({ color = INK, name = "Column" }))
+	s:cyl(0, 5.6 * k, 1 * k, 0.2, 1.2 * k, deco({ color = INK, name = "Wheel" }), "y")
+	s:box(0.9 * k, 5 * k, -2.5 * k, 0.35, 2.6 * k, 0.35, deco({ color = P.steel, name = "Exhaust" }))
+	for _, sx in { -1, 1 } do
+		s:cyl(sx * 1.9 * k, 1.8 * k, 1.4 * k, 1 * k, 3.6 * k, { color = INK, name = "BigWheel" }, "x")
+		s:cyl(sx * 2.42 * k, 1.8 * k, 1.4 * k, 0.1, 1.8 * k, deco({ color = P.sunflower, name = "Rim" }), "x")
+		s:cyl(sx * 1.6 * k, 1 * k, -2.6 * k, 0.7 * k, 2 * k, { color = INK, name = "SmallWheel" }, "x")
+		s:cyl(sx * 1.97 * k, 1 * k, -2.6 * k, 0.1, 1 * k, deco({ color = P.sunflower, name = "Rim" }), "x")
+	end
+	-- a header in front: wider with the level (it picks that many patches at once)
+	if level >= 2 then
+		local hw = 3 + level * 1.6
+		s:box(0, 1.2, -4 * k, hw, 1, 1.4, deco({ color = P.barnRed, name = "Header" }))
+		for i = 0, math.floor(hw / 1.2) do
+			s:box(-hw / 2 + 0.6 + i * 1.2, 0.7, -4.4 * k, 0.5, 0.5, 0.8, deco({ color = P.sunflower, name = "Tooth" }))
 		end
 	end
-	-- (open toward the soil, toward the barn's doors and onto the farm path)
-	rail(x0, z0, x0, z1)
-	rail(x1, z0, x1, -42)
-	rail(x1, -34, x1, z1)
-	rail(x0, z0, -50, z0)
-	rail(-32, z0, x1, z0)
-	rail(x0, z1, -50, z1)
-	rail(-34, z1, x1, z1)
-end
-
-BUILD.tractor = function(L, plot)
-	local t = SPOTS.tractor
-	local model = Instance.new("Model")
-	model.Name = "Tractor"
-	model.Parent = L.folder
-	local s = L:sub(model, CFrame.new(t.X, 0, t.Z))
-	local green = Color3.fromRGB(40, 150, 70)
-	s:box(0, 2.6, 0.6, 3, 1.8, 5, { color = green, name = "TractorBody" })
-	s:box(0, 3.2, -2, 2.6, 1.4, 1.6, { color = green, name = "Hood" })
-	s:box(0, 3.95, -2, 2.7, 0.15, 1.7, deco({ color = P.sunflower, name = "Stripe" }))
-	s:box(0, 4.4, 1.6, 2.6, 0.2, 2.4, deco({ color = INK, name = "Seat" }))
-	s:box(0, 5, 1.2, 0.2, 1.2, 0.2, deco({ color = INK, name = "Column" }))
-	s:cyl(0, 5.6, 1, 0.2, 1.2, deco({ color = INK, name = "Wheel" }), "y")
-	s:box(0.9, 5, -2.5, 0.35, 2.6, 0.35, deco({ color = P.steel, name = "Exhaust" }))
-	for _, sx in { -1, 1 } do
-		s:cyl(sx * 1.9, 1.8, 1.4, 1, 3.6, { color = INK, name = "BigWheel" }, "x")
-		s:cyl(sx * 2.42, 1.8, 1.4, 0.1, 1.8, deco({ color = P.sunflower, name = "Rim" }), "x")
-		s:cyl(sx * 1.6, 1, -2.6, 0.7, 2, { color = INK, name = "SmallWheel" }, "x")
-		s:cyl(sx * 1.97, 1, -2.6, 0.1, 1, deco({ color = P.sunflower, name = "Rim" }), "x")
+	if level >= 4 then
+		s:box(0, 5.4 * k, 0.9 * k, 2.8 * k, 2 * k, 2.6 * k, deco({ color = P.glass, name = "Cab" }))
 	end
 	model:SetAttribute("Plot", plot.index)
 	-- (it drives about: its pivot on the ground under it, nothing to bump into; TractorService)
-	model.WorldPivot = plot.cf * CFrame.new(t.X, 0, t.Z)
+	model.WorldPivot = plot.cf * CFrame.new(at.X, 0, at.Z)
 	for _, d in model:GetDescendants() do
 		if d:IsA("BasePart") then
 			d.CanCollide = false
 		end
 	end
+	return model
 end
 
-local function belt(L, route)
-	for i = 1, #route - 1 do
-		local a, b = route[i], route[i + 1]
-		local len = (b - a).Magnitude
-		local alongX = math.abs(b.X - a.X) > 0.1
-		local cx, cz = (a.X + b.X) / 2, (a.Z + b.Z) / 2
-		local w, d = alongX and len + 2 or 2, alongX and 2 or len + 2
-		L:box(cx, 1.6, cz, w, 0.25, d, deco({ color = Color3.fromRGB(46, 48, 54), name = "Belt" }))
-		L:box(
-			cx,
-			1.35,
-			cz,
-			alongX and len + 2.2 or 2.4,
-			0.3,
-			alongX and 2.4 or len + 2.2,
-			deco({ color = P.steelLight, name = "BeltFrame" })
-		)
-		for _, side in { -1, 1 } do
-			L:box(
-				cx + (alongX and 0 or side * 1.15),
-				1.95,
-				cz + (alongX and side * 1.15 or 0),
-				alongX and len + 2 or 0.2,
-				0.5,
-				alongX and 0.2 or len + 2,
-				deco({ color = P.safetyYellow, name = "BeltRail" })
-			)
+-- The tractor's level: the highest "autoharvest" owned (the upgrades' folders on the plot say)
+local function tractorLevel(plot)
+	local best = 1
+	for _, d in plot.items:GetChildren() do
+		local key = d:GetAttribute("Upgrade")
+		local u = key and Upgrades[key]
+		if u and u.kind == "autoharvest" then
+			best = math.max(best, u.value)
 		end
-		for k = 0, math.floor(len / 6) do
-			local t = k * 6 / len
-			L:block(
-				a.X + (b.X - a.X) * t,
-				a.Z + (b.Z - a.Z) * t,
-				0.4,
-				0.4,
-				1.2,
-				deco({ color = P.steel, name = "BeltLeg" }),
-				0
-			)
+	end
+	return best
+end
+
+-- Build (or rebuild) the tractors at the plot's level: the first in the "tractor" folder, the second in its own
+function FarmBuilder.tractors(plot)
+	local level = tractorLevel(plot)
+	for _, spec in { { "tractor", SPOTS.tractor, "Tractor" }, { "secondTractor", SPOTS.tractor2, "Tractor2" } } do
+		local folder = plot.items:FindFirstChild(spec[1])
+		if folder then
+			local old = folder:FindFirstChild(spec[3])
+			if not old or old:GetAttribute("Level") ~= level then
+				local pivot = old and old:GetPivot()
+				if old then
+					old:Destroy()
+				end
+				local m = tractorModel(Shapes.new(folder, plot.cf), plot, level, spec[2], spec[3])
+				if pivot then
+					m:PivotTo(pivot)
+				end
+			end
 		end
 	end
 end
 
-BUILD.conveyor = function(L)
-	local route = PlotLayout.CONVEYOR
-	belt(L, route)
-	-- a hopper at the coop where it starts, a chute down to the stand
-	local first, last = route[1], route[#route]
-	L:block(first.X, first.Z, 3, 3, 1.6, deco({ color = P.steel, name = "Hopper" }), 1.8)
-	L:block(last.X + 1.5, last.Z, 3, 2.4, 0.6, deco({ color = P.steel, name = "Chute" }), 1.8)
+BUILD.tractor = function(L, plot)
+	tractorModel(L, plot, 1, SPOTS.tractor, "Tractor")
+	task.defer(FarmBuilder.tractors, plot)
+end
+for level = 2, 5 do
+	BUILD["tractor" .. level] = function(_, plot)
+		task.defer(FarmBuilder.tractors, plot)
+	end
+end
+BUILD.secondTractor = function(L, plot)
+	tractorModel(L, plot, tractorLevel(plot), SPOTS.tractor2, "Tractor2")
+	task.defer(FarmBuilder.tractors, plot)
 end
 
-BUILD.silo = function(L, plot)
+BUILD.bigBarn = function(L, plot)
+	-- (a silo by the barn: the bigger barn keeps more)
 	local s = SPOTS.silo
 	L:cyl(s.X, 11, s.Z, 22, 8, { color = P.steelLight, name = "Silo" }, "y")
 	for y = 3, 21, 4.5 do

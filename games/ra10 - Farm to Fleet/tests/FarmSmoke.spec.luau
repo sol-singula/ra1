@@ -85,7 +85,7 @@ check("they get a plot", plot ~= nil and player:GetAttribute("Plot") == plot.ind
 check("...their name on the sign", plot and plot.sign.Words.Title.Text:find("AVA") ~= nil)
 check(
 	"...the shack, the stand, the pads",
-	plot.items:FindFirstChild("Shack") ~= nil and refs.standPad ~= nil and #refs.pads == 3
+	plot.items:FindFirstChild("Home") ~= nil and refs.standPad ~= nil and #refs.pads == 3
 )
 local tiles = Farm:Tiles(player)
 check("...three soil tiles", tiles[1] and tiles[2] and tiles[3] and not tiles[4])
@@ -158,6 +158,8 @@ check(
 stand(player, tiles[2].Position + Vector3.new(0, 0, -4))
 for _ = 1, 6 do
 	FarmC.press()
+	Engine.advance(0.3)
+	FarmC.press() -- (growing: TEND, the guide's fourth step)
 	Engine.advance(0.3)
 	if Farm:Carried(player) >= 6 then
 		break

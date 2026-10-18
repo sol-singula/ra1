@@ -181,7 +181,7 @@ for _, key in Upgrades.LIST do
 		buy(key)
 	end
 end
-check("the tractor and conveyor bought", p.owned.tractor ~= nil and p.owned.conveyor ~= nil)
+check("the tractor and shop helper bought", p.owned.tractor ~= nil and p.owned.shopkeeper ~= nil)
 local hour = Offline:Earned(p, 3600)
 check("an hour away earns", hour > 0, hour)
 local nap, capped = Offline:Earned(p, 100 * 3600)

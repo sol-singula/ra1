@@ -39,8 +39,9 @@ local function defaults()
 		owned = {}, -- [upgradeKey] = level: every buy-pad and machine bought (UpgradeService)
 		soil = {}, -- [tileIndex] = { crop, plantedAt } what's growing (FarmService; timers run while away)
 		storage = {}, -- [cropKey] = n harvested and not sold yet (the basket)
-		stock = {}, -- [cropKey] = n the conveyor brought in (FarmService)
-		animals = {}, -- [penKey] = { level, fedAt, n } (AnimalService)
+		stock = {}, -- [cropKey] = n in the barn (FarmService)
+		animals = {}, -- [penKey] = { level, fedAt, tendedAt } (AnimalService)
+		farmName = nil, -- the farm's name, or nil for "<NAME>'S FARM" (NameService)
 		orders = { done = 0, daily = { day = 0, done = {} }, weekly = { week = 0, parts = {} } }, -- (OrderService)
 		guide = { chapter = 1, step = 1, done = false }, -- the guide's place (GuideService): 100% of the game
 		calendar = { day = 0, streak = 0, claimedDay = 0 }, -- the 7-day calendar (DailyService)
@@ -248,6 +249,29 @@ function PlayerDataService:Save(player, releaseLock)
 		warn(`[PlayerDataService] save failed for {player.Name}: {err}`)
 	end
 	return ok and wrote
+end
+
+-- An admin reset: a brand-new profile in place of theirs, saved now (they rejoin on a fresh farm)
+function PlayerDataService:Reset(player)
+	if not profiles[player] then
+		return false
+	end
+	local fresh = defaults()
+	fresh._noSave = profiles[player]._noSave
+	profiles[player] = fresh
+	self:Save(player)
+	return true
+end
+
+-- An admin reset of someone not here: their save goes
+function PlayerDataService:Wipe(userId)
+	if not store then
+		return false
+	end
+	local ok = pcall(function()
+		store:RemoveAsync("u_" .. userId)
+	end)
+	return ok
 end
 
 function PlayerDataService:Release(player)

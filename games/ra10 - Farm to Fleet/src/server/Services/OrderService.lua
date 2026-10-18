@@ -9,7 +9,7 @@ holds Upgrades.stat "orders" slots, and each slot cycles through these states:
 
   pack      automatic: every AUTO_PACK seconds the basket and the stock fill the open orders (first slot first); the
             box line (Upgrades "autopack") makes it quicker; standing on the PackPad does it at once
-  the conveyor  once the shed stands, the conveyor leaves in the basket what the open orders still need
+  the barn      once the shed stands, selling leaves in the barn what the open orders still need
             (FarmService.hold)
   skip      Net "Order" ("skip", slot): an open order goes, its boxes back into the basket, the next one comes
   trips     a van (Upgrades "van": its seconds, "vans": how many) or else the pickup (Orders.PICKUP_TRIP, one at a
@@ -90,22 +90,11 @@ local function bonus(p)
 	return Upgrades.stat(p.owned or {}, "orderPrice", 0) + Animals.boost(p, "orders", now())
 end
 
-local function products(p)
-	local out = {}
-	for _, key in Animals.LIST do
-		local a = Animals[key]
-		if a.product and p.animals and p.animals[key] then
-			table.insert(out, a.product)
-		end
-	end
-	return out
-end
-
 local function newOrder(player, p)
 	local o = ordersOf(p)
 	o.id += 1
 	local rng = Random.new(o.id * 131 + player.UserId % 1000)
-	local made = Orders.make(p.level or 1, rng, products(p))
+	local made = Orders.make(p.level or 1, rng, farm:Patches(player))
 	return {
 		id = o.id,
 		who = made.who,
@@ -201,10 +190,10 @@ function OrderService:Pack(player, quiet)
 	return total
 end
 
--- Boxes back into the basket (an order skipped or run out), as many as fit
+-- Boxes back into the barn (an order skipped or run out)
 local function unbox(player, order)
 	for key, n in order.packed do
-		farm:Stow(player, key, n)
+		farm:Add(player, key, n)
 	end
 	order.packed = {}
 end
@@ -568,7 +557,7 @@ function OrderService:Init(registry)
 	farm = registry.FarmService
 	upgrades = registry.UpgradeService
 	analytics = registry.AnalyticsService
-	-- the conveyor leaves what the orders need
+	-- selling leaves what the orders need
 	farm.hold = function(player)
 		local p = data:Get(player)
 		return p and opened(p) and self:Needs(player) or nil

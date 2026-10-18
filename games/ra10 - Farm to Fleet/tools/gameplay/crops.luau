@@ -113,7 +113,7 @@ local function shot(name, eye, look)
 end
 local s = PlotLayout.SPOTS
 shot("crops_ripe", at(s.soil.X + 11, s.soil.Z - 14, 10), at(s.soil.X + 11, s.soil.Z + 7, 0))
-local f = s.field
+local f = PlotLayout.soilTile(13) -- (the field's second row: the stage-2 rows)
 shot("crops_rows", at(f.X + 30, f.Z - 18, 16), at(f.X + 30, f.Z + 10, 0))
 shot("crops_close", at(f.X + 6, f.Z - 7, 5), at(f.X + 10, f.Z + 2, 1))
 local http = Engine.game:GetService("HttpService")

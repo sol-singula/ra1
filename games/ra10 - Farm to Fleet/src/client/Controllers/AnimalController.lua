@@ -1,7 +1,7 @@
 --[[
 The animals on screen and in the world (master plan §6). Standing at a pen's pad opens its panel: the animal, its
-level, its boost to the farm, fed or hungry (and for how long), what's waiting, FEED and UPGRADE (with the price)
-(Net "Animal"). In the world, every animal on the street wanders its pen (this client moves them: the server only
+level, its boost to the farm, fed or hungry (and for how long), happy or not, FEED (free), TEND (makes them happy:
+the boost doubles for a minute) and UPGRADE (with the price; no top level) (Net "Animal"). In the world, every animal on the street wanders its pen (this client moves them: the server only
 places them), and the windmill turns.
 
   AnimalController.state()   the last Net "Animal"
@@ -72,15 +72,16 @@ local function paint()
 		refs.fed.Text = `Fed · {Format.time(pen.fedLeft or 0)} left`
 		refs.fed.TextColor3 = C.good
 	else
-		refs.fed.Text = `Hungry! Feed {Animals.FEED_CROPS} crops for the full boost`
+		refs.fed.Text = "Hungry! Tap FEED (it's free) for the full boost"
 		refs.fed.TextColor3 = C.red
 	end
-	refs.ready.Text = pen.product and `{pen.product} waiting: {pen.ready or 0}` or ""
-	refs.upgrade.Text = pen.maxed and "MAX LEVEL" or `UPGRADE {Format.cash(pen.cost or 0)}`
-	refs.upgrade.Active = not pen.maxed
-	refs.feed.Visible = not pen.fed
-	local wait = pen.tendLeft or 0
-	refs.tend.Visible = pen.product ~= nil
+	refs.ready.Text = pen.happy and `Happy! Boost x{Animals.HAPPY_MULT} for {Format.time(pen.happyLeft or 0)}`
+		or "Tap TEND: happy animals give double"
+	refs.ready.TextColor3 = pen.happy and Color3.fromRGB(40, 140, 70) or C.muted
+	refs.upgrade.Text = `UPGRADE {Format.cash(pen.cost or 0)}`
+	refs.feed.Text = pen.fed and "FED" or "FEED"
+	refs.feed.BackgroundColor3 = pen.fed and Color3.fromRGB(160, 160, 160) or Color3.fromRGB(80, 190, 90)
+	local wait = math.max(0, math.ceil((pen.tendAt or 0) - workspace:GetServerTimeNow()))
 	refs.tend.Text = wait > 0 and `TEND {wait}s` or "TEND"
 	refs.tend.BackgroundColor3 = wait > 0 and Color3.fromRGB(160, 160, 160) or Color3.fromRGB(245, 165, 40)
 end
@@ -243,7 +244,7 @@ function AnimalController:init()
 		state = m
 		paint()
 	end)
-	local acc = 0
+	local acc, tick = 0, 0
 	RunService.Heartbeat:Connect(function(dt)
 		acc += dt
 		if acc < 1 / 30 then
@@ -252,6 +253,13 @@ function AnimalController:init()
 		if os.clock() - lastScan >= AnimalController.SCAN then
 			lastScan = os.clock()
 			scan()
+		end
+		tick += acc
+		if tick >= 1 then
+			tick = 0
+			if refs.panel.Visible then
+				paint()
+			end
 		end
 		walk(acc)
 		spin(acc)

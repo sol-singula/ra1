@@ -2,7 +2,7 @@
 The warehouse at work (master plan §13.1, §13.2; Data/Flow): once it stands, the farm's produce runs through four
 stations and the slowest one sets the pace.
 
-  intake   each conveyor run brings the stock's excess in (FarmService.intake): what the open orders keep stays
+  intake   every tick brings the barn's excess in (Intake): what the open orders keep stays
            in the stock, ready for them (the active orders), the rest is palletised and the forklifts and trucks
            sell it; it stops while Flow.INBOUND_MAX pallets' worth of crates are waiting
   pack     the lines box the crates at Flow.rates().pack; every Flow.PALLET of boxes is a pallet on the staging
@@ -367,7 +367,7 @@ function WarehouseService:Step(player, p, dt)
 	return changed
 end
 
--- The conveyor's load: the stock's excess (what the orders don't keep) into the warehouse's crates
+-- Every tick: the barn's excess (what the orders don't keep) into the warehouse's crates
 function WarehouseService:Intake(player)
 	local p = data:Get(player)
 	if not p or not opened(p) then
@@ -444,9 +444,6 @@ function WarehouseService:Init(registry)
 	farm = registry.FarmService
 	upgrades = registry.UpgradeService
 	analytics = registry.AnalyticsService
-	farm.intake = function(player)
-		return self:Intake(player)
-	end
 	upgrades.Applied:Connect(function(player, u)
 		if u.stage >= 4 then
 			refs[player] = nil
@@ -499,6 +496,7 @@ function WarehouseService:_tick()
 		if p and opened(p) then
 			local dt = math.clamp(t - (lastAt[player] or t), 0, self.MAX_STEP)
 			lastAt[player] = t
+			self:Intake(player)
 			self:Step(player, p, dt)
 			self:Push(player)
 		end

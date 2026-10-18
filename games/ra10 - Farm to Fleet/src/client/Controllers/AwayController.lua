@@ -47,7 +47,7 @@ local function show(m)
 	refs.cap.Text = m.capped and `Your farm works {m.hours or 4} h while you're away: come back sooner for more!`
 		or (
 			m.earned > 0 and "Your machines kept working."
-			or "Build the tractor and conveyor to earn while you're away."
+			or "Build the tractor and shop helper to earn while you're away."
 		)
 	refs.card.Visible = true
 	Theme.pop(refs.card)

@@ -1,7 +1,7 @@
 --[[
-The Operations strip (master plan §13.2): once the warehouse stands, a panel under the money shows the four
-stations (GROW, PACK, STORE, SHIP) as bars of Cash-a-minute, the slowest one red with BOTTLENECK, how full the
-racks are and the operation's size. Net "Flow" fills it.
+The Operations panel (master plan §13.2): the four stations (GROW, PACK, STORE, SHIP) as bars of Cash-a-minute, the
+slowest one red, how full the racks are and the operation's size. Net "Flow" fills it. It stays off the HUD
+(OpsController.SHOW): the screen in the warehouse (WarehouseController) shows the same, where it matters.
 
   OpsController.state()   the last Net "Flow"
   OpsController.refs      the panel's pieces (tests)
@@ -13,7 +13,7 @@ local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
-local OpsController = { Name = "OpsController", Order = 46 }
+local OpsController = { Name = "OpsController", Order = 46, SHOW = false }
 
 local C = Theme.Color
 local player = Players.LocalPlayer
@@ -30,8 +30,8 @@ function OpsController.state()
 end
 
 local function paint()
-	refs.panel.Visible = state.open == true
-	if not state.open then
+	refs.panel.Visible = state.open == true and OpsController.SHOW
+	if not refs.panel.Visible then
 		return
 	end
 	local rates = state.rates or {}

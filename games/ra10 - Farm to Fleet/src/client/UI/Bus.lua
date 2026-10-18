@@ -6,6 +6,6 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 return {
 	Flash = Signal.new("Bus.Flash"), -- (color, seconds) a full-screen flash (HudController)
 	Tap = Signal.new("Bus.Tap"), -- (name) a button or a named action (analytics)
-	Highlight = Signal.new("Bus.Highlight"), -- (name | nil) the guide's button to pulse: "act" (PLANT/HARVEST/WATER)
+	Highlight = Signal.new("Bus.Highlight"), -- (name | nil) the guide's button to pulse: "act" (PLANT/PICK/TEND)
 	Panel = Signal.new("Bus.Panel"), -- (name | nil) open one menu panel (calendar, shop, street, franchise), close the rest
 }

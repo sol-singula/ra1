@@ -36,13 +36,14 @@ MenuController.ITEMS = {
 	{ key = "friends",   icon = "👥", label = "FRIENDS",   color = Color3.fromRGB(150, 100, 220) },
 	{ key = "franchise", icon = "⭐", label = "FRANCHISE", color = Color3.fromRGB(235, 175, 30) },
 	{ key = "shop",      icon = "🛒", label = "SHOP",      color = Color3.fromRGB(60, 185, 90) },
+	{ key = "name",      icon = "✏️", label = "NAME",      color = Color3.fromRGB(90, 120, 200) },
 }
 -- stylua: ignore end
 local SIZE, GAP = 58, 8
 local hidden = { franchise = true }
 -- (a new farmer sees only what the guide has reached: the guide step that unlocks each button)
-MenuController.UNLOCK = { calendar = 6, shop = 6, street = 21, friends = 21 }
-local locked = { calendar = true, shop = true, street = true, friends = true }
+MenuController.UNLOCK = { calendar = 6, shop = 6, street = 21, friends = 21, name = 6 }
+local locked = { calendar = true, shop = true, street = true, friends = true, name = true }
 
 local function layout()
 	local x = 0

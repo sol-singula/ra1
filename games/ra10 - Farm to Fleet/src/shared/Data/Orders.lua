@@ -9,7 +9,8 @@ Now and then a BIG order asks for BIG_SIZE times as much, pays BIG_PAY times as 
 Daily contracts: three a day (a UTC day), picked from DAILY by the day and the player, measured from the stats they
 had when the day began. Each pays Cash and a Gem, and all three add ALL_GEMS more.
 
-  Orders.make(level, rng, products?) -> { who, items = { [crop] = n }, value (at the stand), big? }
+  Orders.make(level, rng, patches?) -> { who, items = { [crop] = n }, value (at the stand), big? }   (patches: how
+                                        many soil patches the farm has: an order asks for about a field's worth)
   Orders.reward(order, bonus)        -> Cash, XP   (bonus: the extra share the sorter, the wrapper and the goats add)
   Orders.daily(day, userId, level)   -> { { key, stat, n, text, cash } x 3 }
   Orders.day(t?)                     the UTC day number for os.time() (or t)
@@ -28,7 +29,7 @@ Orders.BIG_PAY = 2.5
 Orders.BIG_GEMS = 2
 Orders.MAX_GROW = Orders.TIME / 4 -- orders only ask for crops that grow four times over before they're due
 Orders.ALL_GEMS = 3
-Orders.MAX_PRODUCTS = 24 -- an order asks for at most this many of an animal's product (a pen makes them slowly)
+Orders.FIELD_SHARE = 0.8 -- an order asks for about this share of the field's patches, all its crops together
 
 Orders.CUSTOMERS = {
 	"Corner Shop",
@@ -50,7 +51,7 @@ function Orders.target(level)
 	return math.floor(60 * level ^ 1.3 + 0.5)
 end
 
-function Orders.make(level, rng, products)
+function Orders.make(level, rng, patches)
 	rng = rng or Random.new()
 	rng:NextNumber() -- (a generator seeded with a small number draws a small number first: skip it)
 	local pool = {}
@@ -60,16 +61,10 @@ function Orders.make(level, rng, products)
 		end
 	end
 	local big = rng:NextNumber() < Orders.BIG_CHANCE
-	if not big then
-		-- (a BIG order is all crops: a pen can't make that many of anything)
-		for _, key in products or {} do
-			table.insert(pool, key)
-		end
-	end
 	-- (the newest few come up most: the order board shows off what they've just unlocked)
 	local count = math.min(#pool, rng:NextInteger(1, 3))
 	local items, picked = {}, {}
-	local target = Orders.target(level) * (big and Orders.BIG_SIZE or 1)
+	local total = math.max(6, math.floor((patches or 12) * Orders.FIELD_SHARE + 0.5)) * (big and Orders.BIG_SIZE or 1)
 	local value = 0
 	for _ = 1, count do
 		local i = math.max(1, #pool - rng:NextInteger(0, math.min(#pool - 1, 4)))
@@ -81,11 +76,9 @@ function Orders.make(level, rng, products)
 		local key = pool[i]
 		if not picked[key] then
 			picked[key] = true
-			local each = Crops[key] and Crops[key].value or Orders.productValue(key)
-			local most = Crops[key] and 120 or Orders.MAX_PRODUCTS
-			local n = math.clamp(math.floor(target / count / each + 0.5), 4, most)
+			local n = math.clamp(math.floor(total / count + 0.5), 3, 200)
 			items[key] = n
-			value += each * n
+			value += Crops[key].value * n
 		end
 	end
 	return {
@@ -96,16 +89,9 @@ function Orders.make(level, rng, products)
 	}
 end
 
--- (the animals' products, by key: kept here so Orders needs no Animals require cycle)
-local PRODUCTS = { egg = 10, truffle = 30, wool = 60, milk = 110, cheese = 220 }
-Orders.PRODUCT_NAMES = { egg = "Eggs", truffle = "Truffles", wool = "Wool", milk = "Milk", cheese = "Cheese" }
-function Orders.productValue(key)
-	return PRODUCTS[key] or 0
-end
-
--- What an order calls an item: a crop's name or a product's
+-- What an order calls an item: the crop's name
 function Orders.itemName(key)
-	return Crops[key] and Crops[key].name or Orders.PRODUCT_NAMES[key] or key
+	return Crops[key] and Crops[key].name or key
 end
 
 function Orders.reward(order, bonus)
@@ -123,7 +109,7 @@ Orders.DAILY = {
 	{ key = "plant",   stat = "planted",    n = 120, text = "Plant %d crops" },
 	{ key = "feed",    stat = "fed",        n = 3,   text = "Feed your animals %d times" },
 	{ key = "pack",    stat = "packed",     n = 80,  text = "Pack %d crops into boxes" },
-	{ key = "eggs",    stat = "eggs",       n = 20,  text = "Collect %d eggs" },
+	{ key = "tend",    stat = "tended",     n = 10,  text = "Tend your crops %d times" },
 	{ key = "big",     stat = "bigOrders",  n = 1,   text = "Ship %d BIG order" },
 }
 -- stylua: ignore end

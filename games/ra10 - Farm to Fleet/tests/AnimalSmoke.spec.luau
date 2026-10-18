@@ -1,11 +1,11 @@
 --[[
 Phase C on the mock engine, server and client together: stage 2 (the Farm) and the animals. The barn takes the
-place of its site; the fields add tiles up to 39; the chicken coop arrives with hungry chickens, the guide leads to
-feeding them at the pad (crops from the basket), they lay eggs that collect into the basket and sell at the stand;
-chickens make crops grow faster, pigs make vegetables pay more, sheep speed the machines, cows the fruit; levels cost
-Cash, grow the boost, the herd and the look; the tractor harvests and replants on its own, the conveyor sells on its
-own; the windmill turns and the animals wander (on the client); the packing shed's deed opens stage 3; leaving and
-coming back keeps every animal.
+place of its site and keeps the crops; the fields add tiles up to 36 in the one field; the chicken coop arrives with
+hungry chickens, the guide leads to feeding them at the pad (free) and tending them (happy: double boost); chickens
+make crops grow faster, pigs make vegetables pay more, sheep speed the tractor, cows the fruit; levels cost Cash and
+grow the boost, the herd and the look, with no top; the tractor harvests and replants on its own, the shop helper
+sells on its own; the windmill turns and the animals wander (on the client); the packing shed's deed opens stage 3;
+leaving and coming back keeps every animal.
 
   luaurun tests/AnimalSmoke.spec.luau
 ]]
@@ -90,18 +90,20 @@ check(
 	"...it stands where the site was",
 	plot.items:FindFirstChild("barn") ~= nil and plot.items:FindFirstChild("barnDeed") == nil
 )
-check("...a bigger basket", Farm:Carry(player) == 150, Farm:Carry(player))
-check("buy the Corn Field", buy("field1"))
-check("...nine more tiles", Farm:Tiles(player)[21] ~= nil and not Farm:Tiles(player)[22])
+check("...it keeps 400 crops", Farm:Keeps(player) == 400, Farm:Keeps(player))
+check("buy the Bigger Field", buy("field1"))
+check("...eight more tiles", Farm:Tiles(player)[20] ~= nil and not Farm:Tiles(player)[21])
 do
 	local out = {}
-	for n = 13, 21 do
+	local x0, x1, z0, z1 = PlotLayout.fieldBox(20)
+	for n = 1, 20 do
 		local t = PlotLayout.soilTile(n)
-		if t.X < -78 or t.X > -8 or t.Z < -51 or t.Z > -26 then
+		if t.X < x0 or t.X > x1 or t.Z < z0 or t.Z > z1 then
 			table.insert(out, n)
 		end
 	end
-	check("...in the field, inside its fence", #out == 0, table.concat(out, ","))
+	check("...in the one field, inside its fence", #out == 0, table.concat(out, ","))
+	check("...the fence round it", plot.items:FindFirstChild("FieldFence") ~= nil)
 end
 -- plant corn (level 4 by now) so the guide moves on
 stand(player, Farm:Tiles(player)[13].Position + Vector3.new(0, 0, -4))
@@ -124,57 +126,41 @@ check(
 	"...pointing at the pad",
 	typeof(GuideC.state().target) == "Vector3" and (GuideC.state().target - pens.chicken.pad.Position).Magnitude < 0.1
 )
-table.clear(p.storage)
 stand(player, pens.chicken.pad.Position)
-check("an empty basket can't feed them", not Animals.fed(p.animals.chicken, Engine.workspace:GetServerTimeNow()))
+check("walking up to the pad feeds them, free", Animals.fed(p.animals.chicken, Engine.workspace:GetServerTimeNow()))
 check("...the pen's panel opens", AnimalC.state().at == "chicken" and AnimalC.refs.panel.Visible)
-check("...it says they're hungry", AnimalC.refs.fed.Text:find("Hungry") ~= nil, AnimalC.refs.fed.Text)
-away(player)
-p.storage.strawberry = 8
-stand(player, pens.chicken.pad.Position)
-check(
-	"with crops in the basket the pad feeds them",
-	Animals.fed(p.animals.chicken, Engine.workspace:GetServerTimeNow())
-)
-check("...five crops eaten", p.storage.strawberry == 3, p.storage.strawberry)
-check("...the panel says fed", AnimalC.refs.fed.Text:find("Fed") ~= nil, AnimalC.refs.fed.Text)
-check("the guide: collect eggs", GuideC.state().key == "eggs", GuideC.state().key)
-away(player)
-Engine.advance(Animals.chicken.every + 1)
-check("they lay eggs", (p.animals.chicken.ready or 0) >= 1, p.animals.chicken.ready)
-stand(player, pens.chicken.pad.Position)
-check("the pad collects them into the basket", (p.storage.egg or 0) >= 1 and p.animals.chicken.ready == 0)
+check("...it says they're fed", AnimalC.refs.fed.Text:find("Fed") ~= nil, AnimalC.refs.fed.Text)
+check("...FEED is free: no crops eaten", next(p.storage) == nil)
+check("the guide: tend them", GuideC.state().key == "tendPen", GuideC.state().key)
 do
-	-- TEND at the pen: they make their product right there, then it's on a cooldown
-	local eggs = p.storage.egg or 0
-	Engine.advance(0.3)
-	check(
-		"the pen panel has TEND",
-		AnimalC.refs.tend.Visible and AnimalC.refs.tend.Text == "TEND",
-		AnimalC.refs.tend.Text
-	)
+	-- TEND at the pen: happy animals, double boost for a while, then a cooldown
 	local FarmCtl = Engine.require(tree.client.Controllers.FarmController)
-	check("...and on the big button too (phones)", FarmCtl.action() == "tend", FarmCtl.action())
+	check("the pen panel has TEND", AnimalC.refs.tend.Text == "TEND", AnimalC.refs.tend.Text)
+	check("...and on the big button too (phones)", FarmCtl.action() == "pen", FarmCtl.action())
+	local plain = Animals.boost(p, "grow", Engine.workspace:GetServerTimeNow())
 	FarmCtl.press()
 	Engine.advance(0.4)
-	check("...TEND: eggs right away", (p.storage.egg or 0) > eggs, p.storage.egg)
-	check("...the big button waits out the cooldown", FarmCtl.action() ~= "tend")
+	local t = Engine.workspace:GetServerTimeNow()
+	check("...TEND: they're happy", Animals.happy(p.animals.chicken, t))
+	check("...the boost doubles", Animals.boost(p, "grow", t) > plain * 1.9, Animals.boost(p, "grow", t))
+	check("...the panel says so", AnimalC.refs.ready.Text:find("Happy") ~= nil, AnimalC.refs.ready.Text)
+	check("...counted for the guide", (p.stats.tendedAnimals or 0) >= 1)
+	check("...the big button waits out the cooldown", FarmCtl.action() ~= "pen")
 	check("...then a cooldown on the button", AnimalC.refs.tend.Text:find("%d+s") ~= nil, AnimalC.refs.tend.Text)
-	local again = p.storage.egg
+	local tendedAt = p.animals.chicken.tendedAt
 	AnimalC.refs.tend.Activated:Fire()
 	Engine.advance(0.4)
-	check("...no spamming it", p.storage.egg == again)
+	check("...no spamming it", p.animals.chicken.tendedAt == tendedAt)
+	Engine.advance(Animals.HAPPY_SECONDS + 1)
+	check("...happy wears off", not Animals.happy(p.animals.chicken, Engine.workspace:GetServerTimeNow()))
 end
-local refs = Plots:Refs(player)
-local before = p.cash
-local worth = Farm:Worth(player)
-stand(player, refs.standPad.Position)
-check(
-	"eggs sell at the stand (plus the guide's reward for it)",
-	p.cash - before >= worth and (p.stats.soldProducts or 0) >= 1,
-	p.cash - before
-)
 away(player)
+Engine.advance(0.5)
+check(
+	"the guide moves on: the tractor",
+	GuideC.state().key == "tractor" or GuideC.state().key:find("^earn:tractor") ~= nil,
+	GuideC.state().key
+)
 
 -- Boosts ------------------------------------------------------------------------------------------------------------
 local now = Engine.workspace:GetServerTimeNow()
@@ -199,7 +185,8 @@ check("level 3: a second chicken", #pens.chicken.herd:GetChildren() == Animals.c
 for _ = 1, 10 do
 	Animal:Upgrade(player, "chicken")
 end
-check("they stop at level 10", p.animals.chicken.level == Animals.MAX_LEVEL)
+check("no top level: they keep going", p.animals.chicken.level == 13, p.animals.chicken.level)
+check("...the herd caps at 8", #pens.chicken.herd:GetChildren() == Animals.count(13) and Animals.count(13) == 7)
 check(
 	"...with a ribbon and a golden bell",
 	(function()
@@ -226,12 +213,12 @@ end
 local Tractor = service("TractorService")
 local model = Tractor:Model(player)
 local parked = model and model:GetPivot().Position
-Engine.advance(Crops.strawberry.grow + 40)
+Engine.advance(Crops.strawberry.grow + 70)
 check(
 	"the tractor drives round the fields",
 	model and (model:GetPivot().Position - parked).Magnitude > 3 or (p.stats.tractored or 0) > 0
 )
-check("...harvests what's ripe", Farm:Carried(player) >= 4, Farm:Carried(player))
+check("...harvests what's ripe into the barn", Farm:Have(player, "strawberry") >= 3, Farm:Have(player, "strawberry"))
 check(
 	"...and plants again",
 	p.soil["1"] ~= nil and p.soil["13"] ~= nil,
@@ -248,77 +235,65 @@ do
 	Engine.advance(0.2)
 	check("...sitting, not walking", TractorC.seated())
 	table.clear(p.storage)
+	table.clear(p.stock)
 	p.soil["15"] = nil
 	Engine.moveTo(player, Farm:Tiles(player)[15].Position + Vector3.new(0, 3, 0))
 	Engine.advance(0.5)
 	check("...it plants what you drive over", p.soil["15"] ~= nil)
 	check("...and it goes where you go", (model:GetPivot().Position - Farm:Tiles(player)[15].Position).Magnitude < 4)
 	p.soil["15"].need = 0
+	local picked = p.stats.harvested
 	Engine.advance(0.5)
-	check("...and harvests what's ripe", Farm:Carried(player) >= 1 and (p.stats.driven or 0) >= 1, Farm:Carried(player))
+	check(
+		"...and harvests what's ripe",
+		p.stats.harvested > picked and (p.stats.driven or 0) >= 1,
+		p.stats.harvested - picked
+	)
 	Engine.fireServer(player, "Tractor", "off")
 	Engine.advance(0.2)
 	check("jump off: back on your feet", not Tractor:Driving(player) and hum.WalkSpeed ~= Tractor.DRIVE_SPEED)
 	check("...the sit pose ends", not TractorC.seated())
 end
 check("buy the Big Field", buy("field2"))
-check("buy the Conveyor Belt", buy("conveyor"))
-local cashBefore = p.cash
-p.storage.carrot = 10
-Engine.advance(Upgrades.conveyor.value + 1)
-check(
-	"the conveyor takes the basket into the stock (it doesn't sell)",
-	Farm:Carried(player) == 0 and (Farm:Stock(player).carrot or 0) >= 5 and p.cash <= cashBefore,
-	Farm:Stock(player).carrot
-)
+check("buy the Shop Helper", buy("shopkeeper"))
 do
-	-- (on its way it calls at the coop: the eggs collected and sold, the hungry chickens fed)
-	local st = p.animals.chicken
-	st.ready, st.fedAt = 4, 0
-	local eggs = p.stats.eggs or 0
-	p.storage.carrot = 10
-	Engine.advance(Upgrades.conveyor.value + 1)
-	check(
-		"the conveyor collects the eggs",
-		(p.stats.eggs or 0) >= eggs + 4 and st.ready < 4,
-		`{p.stats.eggs} {eggs} {st.ready}`
-	)
-	check("...feeds the chickens from the basket", st.fedAt > 0)
-	check("...and stores the eggs", (Farm:Stock(player).egg or 0) >= 4, Farm:Stock(player).egg)
-	-- the stock and the boosts, on screen
+	-- the barn and the boosts, on screen
+	table.clear(p.storage)
+	table.clear(p.stock)
+	p.owned.shopkeeper = nil -- (a moment without the helper: the panel first)
+	p.stock.carrot = 10
+	Farm:Push(player)
 	local HudC = Engine.require(tree.client.Controllers.HudController)
 	Engine.advance(0.3)
-	check("the STOCK panel lists what's in", HudC.refs.stock.Visible and HudC.refs.stockRows[1].frame.Visible)
+	check("the BARN panel lists what's in", HudC.refs.stock.Visible and HudC.refs.stockRows[1].frame.Visible)
+	check(
+		"...named BARN, with its room",
+		HudC.refs.stockTitle.Text:find("BARN") ~= nil and HudC.refs.stockTitle.Text:find("400") ~= nil,
+		HudC.refs.stockTitle.Text
+	)
+	check("...no basket on screen now", not HudC.refs.basket.Visible)
 	local rowText = ""
 	for _, row in HudC.refs.stockRows do
 		if row.frame.Visible then
 			rowText ..= row.name.Text .. " "
 		end
 	end
-	check("...eggs among them", rowText:find("Eggs") ~= nil, rowText)
+	check("...carrots in it", rowText:find("Carrot") ~= nil, rowText)
 	check(
 		"the BOOSTS panel says what the animals give",
 		HudC.refs.boosts.Visible and HudC.refs.boosts.Text:find("Chickens") ~= nil,
 		HudC.refs.boosts.Text
 	)
 	check("Cash shows with $", HudC.refs.cash.Text:sub(1, 1) == "$", HudC.refs.cash.Text)
-	-- the stand sells the stock
-	local cash = p.cash
-	Engine.moveTo(player, Plots:Refs(player).standPad.Position + Vector3.new(0, 3, 0))
-	Engine.advance(0.6)
-	check("the stand sells the stock", p.cash > cash and next(Farm:Stock(player)) == nil, p.cash - cash)
-	Engine.moveTo(player, Plots:Refs(player).standPad.Position + Vector3.new(0, 3, 20))
-	Engine.advance(0.3)
-	-- (and you can see it: goods ride the belt from the coop to the stand)
-	local BeltC = Engine.require(tree.client.Controllers.BeltController)
-	Engine.advance(2.5)
-	check("goods ride the belt", BeltC.riding() > 10, BeltC.riding())
-	local g = Engine.workspace:FindFirstChild("BeltGoods" .. Plots:Plot(player).index)
-	local first = g and g:GetChildren()[1]
-	local part = first and first:GetChildren()[1]
-	local p0 = part and part.Position
-	Engine.advance(0.5)
-	check("...and move along it", part and (part.Position - p0).Magnitude > 1)
+	-- the helper sells the barn's crops by itself
+	p.owned.shopkeeper = 1
+	local cashBefore = p.cash
+	Engine.advance(Upgrades.shopkeeper.value + 1)
+	check(
+		"the shop helper sells the barn's crops on its own",
+		p.cash > cashBefore and (Farm:Stock(player).carrot or 0) == 0,
+		`{p.cash - cashBefore} left {Farm:Stock(player).carrot}`
+	)
 end
 
 -- Pigs, sheep, cows ---------------------------------------------------------------------------------------------------
@@ -334,11 +309,17 @@ local fruit = Farm:Worth(player)
 p.animals.pig.level = 10
 check("...but not fruit", Farm:Worth(player) == fruit)
 table.clear(p.storage)
-for _, key in { "silo", "field3", "sheepPen", "windmill", "cowBarn" } do
+for _, key in { "tractor2", "bigBarn", "field3", "sheepPen", "windmill", "cowBarn" } do
 	check(`buy {key}`, buy(key))
 end
-check("39 tiles", Farm:Tiles(player)[39] ~= nil)
-check("a basket of 300", Farm:Carry(player) == 300)
+check("36 tiles", Farm:Tiles(player)[36] ~= nil and not Farm:Tiles(player)[37])
+check("the Big Barn keeps 1500", Farm:Keeps(player) == 1500, Farm:Keeps(player))
+Engine.advance(0.3)
+check(
+	"the Bigger Tractor: level 2, a bigger model",
+	Tractor:Level(player) == 2 and Tractor:Model(player):GetAttribute("Level") == 2,
+	`{Tractor:Level(player)} {tostring(Tractor:Model(player) and Tractor:Model(player):GetAttribute("Level"))}`
+)
 check(
 	"four pens, four herds",
 	Animal:Pens(player).pig
@@ -381,10 +362,10 @@ Engine.advance(0.5)
 local again = Engine.addPlayer("Ava", 901)
 Engine.advance(1.5)
 local p2 = Data:Get(again)
-check("coming back: the animals' levels", p2.animals.chicken.level == 10 and p2.animals.pig.level == 10)
+check("coming back: the animals' levels", p2.animals.chicken.level == 13 and p2.animals.pig.level == 10)
 check(
 	"...the pens and herds rebuilt",
-	Animal:Pens(again).cow ~= nil and #Animal:Pens(again).chicken.herd:GetChildren() == Animals.count(10)
+	Animal:Pens(again).cow ~= nil and #Animal:Pens(again).chicken.herd:GetChildren() == Animals.count(13)
 )
 
 if #Engine.errors > 0 then

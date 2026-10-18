@@ -192,7 +192,7 @@ check(
 	GuideC.state().target ~= nil and (GuideC.state().target - pad.Position).Magnitude > 0.1
 )
 
--- The conveyor leaves what the orders need ---------------------------------------------------------------------------------
+-- Selling leaves what the orders need ---------------------------------------------------------------------------------
 local first = live[1]
 local key1 = next(first.items)
 table.clear(p.storage)
@@ -202,7 +202,7 @@ local other = key1 == "strawberry" and "carrot" or "strawberry"
 local needsOther = (Order:Needs(player)[other] or 0) > 0
 p.storage[other] = 5
 Farm:Sell(player, true)
-check("the conveyor keeps what the orders need", p.storage[key1] == 3, p.storage[key1])
+check("selling keeps what the orders need", p.storage[key1] == 3, p.storage[key1])
 check("...and sells the rest", needsOther or p.storage[other] == nil)
 
 -- Packing ------------------------------------------------------------------------------------------------------------------
@@ -212,7 +212,7 @@ stand(player, pad.Position)
 check("standing at PACK ORDERS packs the basket", (first.packed[key1] or 0) == 2 and p.storage[key1] == nil)
 check("...counted", p.stats.packed == 2)
 Engine.advance(1.2)
-check("the guide: a whole order", GuideC.state().key == "packFull", GuideC.state().key)
+check("the guide: watch it go", GuideC.state().key == "ship1", GuideC.state().key)
 check("...the panel shows it", OrderC.refs.rows[1].items.Text:find("2/") ~= nil, OrderC.refs.rows[1].items.Text)
 away()
 for key, n in first.items do
@@ -256,14 +256,18 @@ Engine.advance(Orders.REFRESH + 1)
 check("...and the next customer comes", Order:Slots(player)[1].state == "open")
 
 -- Running out, skipping -------------------------------------------------------------------------------------------------
+-- (the barn packs orders by itself: a fresh, open order in slot 2 with nothing in the barn to fill it)
+table.clear(p.storage)
+table.clear(p.stock)
+p.orders.live[2] = nil
+Engine.advance(0.6)
 local o2 = Order:Slots(player)[2]
 local k2 = next(o2.items)
-table.clear(p.storage)
 o2.packed[k2] = 3
 o2.ends = now() - 1
 Engine.advance(0.6)
-check("an order that runs out: the slot waits", Order:Slots(player)[2].state == "wait")
-check("...its boxes come back to the basket", p.storage[k2] == 3, p.storage[k2])
+check("an order that runs out: the slot waits", Order:Slots(player)[2].state == "wait", Order:Slots(player)[2].state)
+check("...its boxes come back to the barn", p.stock[k2] == 3, p.stock[k2])
 local o1 = Order:Slots(player)[1]
 check("skip an order", Order:Skip(player, 1) and Order:Slots(player)[1].state == "wait")
 check("...a packed one can't be skipped", not Order:Skip(player, 1))
@@ -278,6 +282,12 @@ Engine.advance(1)
 local park = PlotLayout.toWorld(plot.index, PlotLayout.SPOTS.parks[1].X, PlotLayout.SPOTS.parks[1].Z)
 check("...parked", (van:GetPivot().Position - park).Magnitude < 0.5)
 check("buy the Big Order Board", buy("orderBoard"))
+-- (the farm runs itself: park the tractor and empty the field and the barn, so only what this test packs ships)
+p.owned.tractor = nil
+p.soil = {}
+table.clear(p.stock)
+table.clear(p.storage)
+p.orders.live = {} -- (three fresh customers, nothing in the barn to fill them yet)
 Engine.advance(Orders.REFRESH + 2)
 live = Order:Slots(player)
 check("three orders at once", #live == 3 and live[3].state == "open", #live)
@@ -291,7 +301,7 @@ local function fill(slot)
 end
 local a = fill(1)
 Engine.advance(0.6)
-check("a packed order leaves in the van", a.state == "shipping" and a.vehicle == 1)
+check("a packed order leaves in the van", a.state == "shipping" and a.vehicle == 1, `{a.state} {tostring(a.vehicle)}`)
 check("...in the van's time", math.abs(a.length - 20) < 0.01, a.length)
 check("...the van's on its trip", van:GetAttribute("TripStart") == a.at)
 local b = fill(2)
@@ -300,6 +310,7 @@ check("one van: the next waits for it", b.state == "ready")
 Engine.advance(21)
 check("...the van's back: it goes", a.state ~= "shipping" and b.state == "shipping" and b.vehicle == 1)
 Engine.advance(21)
+p.owned.tractor = 1 -- (the tractor back: the upgrades come in order)
 check("buy the Box Line", buy("boxLine"))
 Engine.advance(Orders.REFRESH + 2)
 local o3
@@ -349,24 +360,34 @@ check("a BIG order pays Gems", p.gems >= gems0 + Orders.BIG_GEMS and p.stats.big
 -- Daily contracts --------------------------------------------------------------------------------------------------------
 local list = Order:Contracts(player)
 local gems1, cash1 = p.gems, p.cash
-local c1 = list[1]
+-- (the farm runs itself: the first contract may be done already; take the first that isn't)
+local i1 = 1
+for i = 1, 3 do
+	if not list[i].done then
+		i1 = i
+		break
+	end
+end
+local c1 = list[i1]
 p.stats[c1.stat] = (p.stats[c1.stat] or 0) + c1.n
 Engine.advance(0.6)
 list = Order:Contracts(player)
-check("a contract done: it pays", list[1].done and p.cash >= cash1 + c1.cash and p.gems >= gems1 + 1)
-check("...and stays done", Order:Contracts(player)[1].done)
+check("a contract done: it pays", list[i1].done and p.cash >= cash1 + c1.cash and p.gems >= gems1 + 1)
+check("...and stays done", Order:Contracts(player)[i1].done)
 local gems2 = p.gems
 local pending = 0 -- (the farm runs itself now: one may be done already)
-for i = 2, 3 do
-	if not list[i].done then
-		pending += 1
+for i = 1, 3 do
+	if i ~= i1 then
+		if not list[i].done then
+			pending += 1
+		end
+		p.stats[list[i].stat] = (p.stats[list[i].stat] or 0) + list[i].n
 	end
-	p.stats[list[i].stat] = (p.stats[list[i].stat] or 0) + list[i].n
 end
 Engine.advance(0.6)
 check(
 	"all three: Gems on top",
-	p.gems >= gems2 + pending + Orders.ALL_GEMS,
+	p.gems >= gems2 + pending + (pending > 0 and Orders.ALL_GEMS or 0), -- (all three done already: paid before)
 	`{p.gems - gems2} {list[1].stat} {list[2].stat} {list[3].stat} {tostring(Order:Contracts(player)[2].done)} {tostring(
 		Order:Contracts(player)[3].done
 	)}`
@@ -378,6 +399,9 @@ check("a new day: three new contracts, none done", #fresh == 3 and not fresh[1].
 
 -- The guide's chapter 3, to the warehouse ---------------------------------------------------------------------------------
 p.guide.step = GuideData.byKey.warehouse.index
+for _, key in { "tractor4", "tractor5", "secondTractor" } do
+	check(`buy {key}`, buy(key))
+end
 check("the warehouse's deed", buy("warehouseDeed"))
 check("...stage 4", p.stage == 4)
 check("...its site staked out", plot.items:FindFirstChild("warehouseDeed") ~= nil)

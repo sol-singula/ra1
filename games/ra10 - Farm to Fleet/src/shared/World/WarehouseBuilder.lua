@@ -629,60 +629,6 @@ return function(FarmBuilder, BUILD)
 			rack(L, row)
 		end
 	end
-	-- The annex: a second giant warehouse out the back, its own sign, doors and crew, rack rows 9-16
-	local function annexRows(L, rows)
-		for _, row in rows do
-			rack(L, row)
-		end
-	end
-	BUILD.annex1 = function(L, plot)
-		local c, size = PlotLayout.ANNEX, PlotLayout.ANNEX_SIZE
-		local x0, x1 = c.X - size.X / 2, c.X + size.X / 2
-		local z0, z1 = c.Z - size.Z / 2, c.Z + size.Z / 2
-		L:block(c.X, c.Z, size.X + 2, size.Z + 2, 0.5, { color = P.concrete, name = "AnnexFloor" }, 0)
-		for _, side in { { x0, z0, x0, z1 }, { x1, z0, x1, z1 } } do
-			L:block(
-				side[1],
-				(side[2] + side[4]) / 2,
-				0.6,
-				size.Z,
-				size.Y,
-				{ color = STEEL_WALL, name = "AnnexWall" },
-				0.5
-			)
-		end
-		L:block(c.X, z1, size.X, 0.6, size.Y, { color = STEEL_WALL, name = "AnnexWall" }, 0.5)
-		-- the front: wall either side of four big doors
-		for k = 0, 4 do
-			local x = x0 + 4 + k * 14
-			L:block(x, z0, 8, 0.6, size.Y, { color = STEEL_WALL, name = "AnnexWall" }, 0.5)
-		end
-		for k = 1, 4 do
-			local x = x0 + 4 + (k - 0.5) * 14
-			L:box(x, 14, z0, 6, 7, 0.6, { color = STEEL_WALL, name = "AnnexWall" })
-			local plate = L:box(x, 10.4, z0 - 0.4, 4, 1.4, 0.2, deco({ color = P.safetyYellow, name = "DockSign" }))
-			FarmBuilder.sign(plate, `DOOR {k}`, "", INK)
-		end
-		local roof = L:box(c.X, size.Y + 0.8, c.Z, size.X + 1.4, 0.6, size.Z + 1.4, { color = RIB, name = "Roof" })
-		roof:SetAttribute("Roof", true)
-		roof:SetAttribute("Plot", plot.index)
-		roof:SetAttribute("RoofMin", plot.cf * Vector3.new(x0, 0, z0))
-		roof:SetAttribute("RoofMax", plot.cf * Vector3.new(x1, size.Y + 2, z1))
-		local sign = L:box(c.X, size.Y - 2.5, z0 - 0.5, 30, 4, 0.4, deco({ color = plot.color, name = "AnnexSign" }))
-		FarmBuilder.sign(sign, "WAREHOUSE ANNEX", "", WHITE)
-		-- the drive back to it along the truck lane
-		L:block(SPOTS.lane, (30 + z0) / 2, 8, z0 - 30, 0.12, deco({ color = P.asphalt, name = "TruckLane" }), 0.22)
-		-- its own crew: parked forklifts by the doors
-		for k = 1, 3 do
-			local at = plot.cf * CFrame.new(x0 + 10 + k * 14, 0.5, z0 + 5) * CFrame.Angles(0, math.pi, 0)
-			local f = FarmBuilder.forklift(L.folder, at, plot.color)
-			f.Name = "AnnexForklift"
-		end
-		annexRows(L, { 9, 10, 11, 12 })
-	end
-	BUILD.annex2 = function(L)
-		annexRows(L, { 13, 14, 15, 16 })
-	end
 	BUILD.bay2 = bay(3, 3)
 	BUILD.bay3 = bay(4, 5)
 	BUILD.bay4 = bay(5, 7)

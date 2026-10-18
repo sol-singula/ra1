@@ -1,13 +1,14 @@
 --[[
 Farming with one thumb (master plan §3, phone first). A big round button at the bottom right says what it will do
-for the soil you're standing by (Net "Farm" "act"; the server does all of it that's in reach): HARVEST when
-something there is ripe, PLANT when there's empty soil, TEND when you're at a pen and the animals are ready for
-it (AnimalService). It hides when there's nothing to do. With it, along the bottom of the screen, the crop picker: one chip per
+for the soil you're standing by (Net "Farm" "act"; the server does all of it that's in reach): PICK when
+something there is ripe, PLANT when there's empty soil, TEND when it's all growing (half the wait left, every few
+seconds), and TEND at a pen when the animals can be (AnimalService: happy, double boost). It hides when there's
+nothing to do. On a phone it sits above the jump button. With it, along the bottom of the screen, the crop picker: one chip per
 crop you've unlocked, in rows of five (Net "Farm" "crop"). Walk up to the soil and every crop near you shows its
 timer above it (0:04, READY!). Tap (or click) a patch and a card says what's growing there and how long it has
 left (FarmController.inspect). On a PC, E (or a click away from the buttons) does the same as the button.
 
-  FarmController.action()   -> "harvest" | "plant" | "tend" (standing at a pen) | nil, what the button shows now
+  FarmController.action()   -> "harvest" | "plant" | "tend" | "pen" (standing at a pen) | nil, what the button shows now
   FarmController.press()    what the button does
   FarmController.refs
 ]]
@@ -17,6 +18,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local Crops = require(ReplicatedStorage.Shared.Data.Crops)
+local Device = require(script.Parent.Parent.UI.Device)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Store = require(script.Parent.Parent.Store)
@@ -31,9 +33,10 @@ local refs = {}
 FarmController.refs = refs
 
 local LOOK = {
-	harvest = { "HARVEST", Color3.fromRGB(240, 70, 70) },
+	harvest = { "PICK", Color3.fromRGB(240, 70, 70) },
 	plant = { "PLANT", Color3.fromRGB(70, 190, 90) },
 	tend = { "TEND", Color3.fromRGB(245, 165, 40) },
+	pen = { "TEND", Color3.fromRGB(245, 165, 40) },
 }
 
 local function root()
@@ -63,14 +66,14 @@ function FarmController.action()
 	if not f or not r then
 		return nil
 	end
-	-- at a pen: TEND them (when they're ready for it)
+	local now = workspace:GetServerTimeNow()
+	-- at a pen: TEND them (when they can be)
 	local pens = Store.get("animals")
 	local pen = pens and pens.at and pens.pens and pens.pens[pens.at]
-	if pen and pen.product and workspace:GetServerTimeNow() >= (pen.tendAt or 0) then
-		return "tend"
+	if pen and now >= (pen.tendAt or 0) then
+		return "pen"
 	end
-	local now = workspace:GetServerTimeNow()
-	local ripe, empty = false, false
+	local ripe, empty, growing = false, false, false
 	for n, tile in tiles() do
 		local d = tile.Position - r.Position
 		if Vector3.new(d.X, 0, d.Z).Magnitude <= FarmController.REACH then
@@ -79,6 +82,8 @@ function FarmController.action()
 				empty = true
 			elseif now - t.at >= t.need then
 				ripe = true
+			else
+				growing = true
 			end
 		end
 	end
@@ -86,13 +91,15 @@ function FarmController.action()
 		return "harvest"
 	elseif empty then
 		return "plant"
+	elseif growing and now >= (f.tendAt or 0) then
+		return "tend"
 	end
 	return nil
 end
 
 function FarmController.press()
 	local a = FarmController.action()
-	if a == "tend" then
+	if a == "pen" then
 		local pens = Store.get("animals")
 		Net.send("Animal", "tend", pens.at)
 	elseif a then
@@ -215,6 +222,18 @@ function FarmController:init()
 		FarmController.press()
 	end)
 	refs.act = b
+	-- (on a phone the jump button has the corner: the farm button sits above it, smaller)
+	local function place()
+		if Device.isTouch() then
+			b.Position = UDim2.new(1, -20, 1, -200)
+			b.Size = UDim2.fromOffset(118, 118)
+		else
+			b.Position = UDim2.new(1, -28, 1, -140)
+			b.Size = UDim2.fromOffset(150, 150)
+		end
+	end
+	place()
+	Device.Changed:Connect(place)
 	refs.picker = Theme.new("Frame", {
 		Name = "Picker",
 		AnchorPoint = Vector2.new(0.5, 1),

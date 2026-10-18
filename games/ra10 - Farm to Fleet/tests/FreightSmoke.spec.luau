@@ -194,7 +194,7 @@ p.flow.racked = 0
 -- Special Orders ------------------------------------------------------------------------------------------------------------
 -- (the farm runs itself now: park the tractor and empty the stock, so only what this test hands over is there)
 p.owned.tractor = nil
-p.owned.conveyor = nil
+p.owned.shopkeeper = nil
 p.soil = {}
 table.clear(p.stock)
 table.clear(p.storage)
@@ -223,24 +223,23 @@ check(
 	SpecialC.refs.clock.Text:find("left") ~= nil and SpecialC.refs.pay.Text:find("💎") ~= nil
 )
 check(
-	"the guide: pack the special",
-	GuideC.state().generated and string.sub(GuideC.state().key, 1, 8) == "special:",
+	"the guide stays on the farm's own steps (specials run themselves)",
+	string.sub(GuideC.state().key, 1, 8) ~= "special:",
 	GuideC.state().key
 )
-check("...at PACK ORDERS", (GuideC.state().target - Order:PackPad(player).Position).Magnitude < 0.1)
 local needs = Order:Needs(player)
 local held = true
 for key, n in s.items do
 	held = held and (needs[key] or 0) >= n
 end
-check("the conveyor holds back what the special needs", held)
--- pack it
+check("the barn holds back what the special needs", held)
+-- it packs itself from the barn
 table.clear(p.storage)
 for key, n in s.items do
-	p.storage[key] = n
+	p.stock[key] = n
 end
-stand(player, Order:PackPad(player).Position)
-check("packing it at the pad", s.state == "shipping")
+Engine.advance(Order.AUTO_PACK + 1)
+check("it packs itself from the barn", s.state == "shipping", s.state)
 check("...the express truck drives off", express:GetAttribute("Plan") == "expressOut")
 stand(player, at(-40, -104))
 local cash1, gems1 = p.cash, p.gems
@@ -262,10 +261,11 @@ local s2 = Special:Spawn(player)
 local k2 = next(s2.items)
 s2.packed[k2] = 2
 table.clear(p.storage)
+table.clear(p.stock)
 s2.ends = now() - 1
 Special:Step(player, p, 0)
 check("a special that runs out is gone", Special:Current(player) == nil)
-check("...its boxes back in the basket", (p.storage[k2] or 0) == 2, p.storage[k2])
+check("...its boxes back in the barn", (p.stock[k2] or 0) == 2, p.stock[k2])
 -- a golden one only takes golden crops
 local s3 = Special:Spawn(player)
 s3.kind, s3.items, s3.packed = "golden", { ["*strawberry"] = 3 }, {}

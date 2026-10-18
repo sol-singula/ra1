@@ -11,10 +11,10 @@ Net.ClientEvents = {
 	Ready = 1, -- () the client's UI is listening (PlayerDataService)
 	Settings = 2, -- (key, value)
 	Analytics = 4, -- (kind, data) device info, frame rate (AnalyticsService)
-	Farm = 12, -- ("plant", plotIndex, cropKey) | ("harvest", plotIndex) | ("water", plotIndex) (FarmService)
+	Farm = 12, -- ("plant", plotIndex, cropKey) | ("harvest", plotIndex) | ("tend") | ("act") (FarmService)
 	Buy = 6, -- ("pad", key) a buy-pad stepped on is server-side; this is the panel's buy (UpgradeService)
 	Sell = 4, -- () sell what you carry at the stand (FarmService)
-	Animal = 6, -- ("feed", penKey) | ("upgrade", penKey) | ("collect", penKey) (AnimalService)
+	Animal = 6, -- ("feed", penKey) | ("tend", penKey) | ("upgrade", penKey) (AnimalService)
 	Order = 6, -- ("fill", orderId) | ("refresh") (OrderService)
 	Guide = 6, -- ("step", key) | ("skip") the guide's own reports (GuideService)
 	Daily = 2, -- ("claim") the day's calendar reward | ("open") (DailyService)
@@ -24,6 +24,8 @@ Net.ClientEvents = {
 	Trade = 4, -- ("buy", id) | ("skip", id) | ("sell", id) | ("no", id) buying from the neighbours (TradeService)
 	Tractor = 4, -- ("on") | ("off") ride your tractor (TractorService)
 	Drive = 10, -- ("enter", vehicleId) | ("leave") | ("move", throttle, steer) a forklift you drive (VehicleService)
+	Name = 1, -- (text) name your farm (NameService)
+	Admin = 2, -- ("reset", name) | ("give", name, cash) the admin panel (AdminService)
 }
 
 -- Server → client.
@@ -45,6 +47,7 @@ Net.ServerEvents = {
 	"Street", -- every plot's numbers, likes, the street's best today; friends (StreetService)
 	"Franchise", -- { open, ready, level, stars, earn, perks } (FranchiseService)
 	"Shop", -- the products, passes, prices, what's owned (ShopService)
+	"AdminState", -- { admin = true } this client is an admin (AdminService)
 }
 
 -- Sent often and only the newest matters: unreliable (may drop, never queues up behind the others).

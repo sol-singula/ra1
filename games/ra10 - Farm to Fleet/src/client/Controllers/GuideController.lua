@@ -7,7 +7,7 @@ instruction, the exact spot lit up, the button it needs pulsing, a payoff when i
                   long walks); after the scripted steps a ★ NEXT GOAL, and a Special Order's ! in gold
   in the world    a light beam and a pulsing ring on the spot, a gold arrow bobbing over it, a dotted path on the
                   ground from you to it (gone once you're there)
-  the button      Bus.Highlight: the farm's PLANT/HARVEST/WATER button pulses with a gold ring ("act"); a menu
+  the button      Bus.Highlight: the farm's PLANT/PICK/TEND button pulses with a gold ring ("act"); a menu
                   button pulses through MenuController ("menu:<name>")
   the payoff      STEP 3 DONE! and its reward, big in the middle, then the next step pops in
   the tour        a brand-new farmer's first look (Net "Guide" fresh): letterbox, the camera over the farm, then
