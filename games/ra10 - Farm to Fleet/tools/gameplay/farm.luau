@@ -152,7 +152,21 @@ shot("hall_inside", at(theirs, 26, -71, 15), at(theirs, 50, -50, 2), true)
 shot("market_front", at(theirs, -15, -130, 12), at(theirs, -15, -100, 6), true)
 Engine.advance(0.2)
 shot("market_inside", at(theirs, -32, -105, 8), at(theirs, -4, -92, 2), true)
+-- two semis: one backed up to its dock, one coming up the lane
+do
+	local pb3 = Data:Get(ben)
+	local t = Engine.workspace:GetServerTimeNow()
+	pb3.flow.trucks.s1 = { at = t - 0.6 * 102, length = 102, pallets = 24 }
+	pb3.flow.trucks.s2 = { at = t - 0.33 * 102, length = 102, pallets = 24 }
+	local wh = service("WarehouseService")
+	for _, key in { "warehouse" } do
+		Upg.Applied:Fire(ben, Upgrades[key])
+	end
+	_ = wh
+	Engine.advance(2.2)
+end
 shot("hub_docks", at(theirs, 92, 96, 32), at(theirs, 40, 30, 4), true)
+shot("hub_semis", at(theirs, 2, 70, 22), at(theirs, 26, 36, 4), true)
 -- the street from above
 shot("farm_street", V3.new(0, 160, 300), V3.new(0, 0, 0), true)
 -- Ava, later: her own shed, the orders panel and today's contracts on screen, standing at PACK ORDERS
@@ -178,7 +192,10 @@ do
 	local pad = order:PackPad(player)
 	Engine.moveTo(player, pad.Position + V3.new(0, 3, -6), pad.Position + V3.new(0, 3, 0))
 	Engine.advance(1)
+	service("SpecialService"):Spawn(player)
+	Engine.advance(9)
 	shot("farm_orders_panel", at(mine, 16, -100, 12), at(mine, 22, -72, 2), false)
+	shot("special_express", at(mine, 10, -100, 9), at(mine, -10, -116, 3), true)
 end
 local http = Engine.game:GetService("HttpService")
 writeFile(outDir .. "/index.json", http:JSONEncode(shots))

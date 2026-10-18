@@ -7,6 +7,8 @@ stations and the slowest one sets the pace.
   pack     the lines box the crates at Flow.rates().pack; every Flow.PALLET of boxes is a pallet on the staging
            floor (packing stops while Flow.STAGE_MAX wait there)
   store    each forklift racks a pallet every Flow.cycle seconds, while there's a free slot
+  semis    (stage 5) each semi comes in from the shared road for up to Flow.SEMI_CAP pallets (when there are half
+           that, or after a while), backs up to its dock (5, 6), and pays when it's gone; every client drives it
   ship     each box truck takes up to Flow.truckCap pallets (when it can fill up, or when pallets have waited a
            while), makes its trip (World/Trips "truck", driven by every client) and pays when it's back:
            PALLET x SHIP_MULT a pallet, more with the sorter and the wrapper
@@ -33,7 +35,9 @@ local Flow = require(ReplicatedStorage.Shared.Data.Flow)
 local Format = require(ReplicatedStorage.Shared.Format)
 local FarmBuilder = require(ReplicatedStorage.Shared.World.FarmBuilder)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PlotLayout = require(ReplicatedStorage.Shared.World.PlotLayout)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local Trips = require(ReplicatedStorage.Shared.World.Trips)
 local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
 
 local WarehouseService = {
@@ -49,6 +53,7 @@ local WarehouseService = {
 	Changed = Signal.new("WarehouseService.Changed"),
 	TICK = 0.5,
 	WAIT = 15, -- seconds a truck waits for a full load before it goes with what there is
+	SEMI_WAIT = 30, -- ...and a semi, for half a load
 	MAX_STEP = 5, -- seconds one tick may catch up (the long gaps are Phase G's offline earnings)
 }
 
@@ -58,6 +63,8 @@ local refs = {} -- [player] = { rack = { pallet models in fill order }, staged =
 local lastAt = {} -- [player] = when the stations last ran
 local bottleneck = {} -- [player] = the last bottleneck (for counting fixes)
 local pushed = {} -- [player] = the last Net "Flow" key
+local semis = {} -- [player] = { [n] = the semi on its trip }
+local hideSemi
 
 local function now()
 	return workspace:GetServerTimeNow()
@@ -240,6 +247,35 @@ local function pay(player, p, trip)
 	return cash
 end
 
+-- A semi on its trip: made when it sets off (it comes from the road, it doesn't live on the plot), gone when it's done
+local function showSemi(player, n, trip)
+	local plot = plots:Plot(player)
+	if not plot then
+		return
+	end
+	semis[player] = semis[player] or {}
+	local m = semis[player][n]
+	if not m or not m.Parent then
+		local dock = Vector3.new(PlotLayout.SPOTS.docks[4 + n] or PlotLayout.SPOTS.docks[5], 0, 62)
+		m = FarmBuilder.vehicle(plot.items, "semi", plot.color, (Trips.at(plot.index, "semi", 0, dock)))
+		m:SetAttribute("Plot", plot.index)
+		m:SetAttribute("Plan", "semi")
+		m:SetAttribute("ParkAt", dock)
+		semis[player][n] = m
+	end
+	m:SetAttribute("Trip", "semi")
+	m:SetAttribute("TripStart", trip.at)
+	m:SetAttribute("TripLength", trip.length)
+end
+
+hideSemi = function(player, n)
+	local m = semis[player] and semis[player][n]
+	if m then
+		m:Destroy()
+		semis[player][n] = nil
+	end
+end
+
 -- The stations ---------------------------------------------------------------------------------------------------------
 function WarehouseService:Step(player, p, dt)
 	if not opened(p) then
@@ -295,6 +331,30 @@ function WarehouseService:Step(player, p, dt)
 			startTrip(player, n, trip)
 			changed = true
 			self.Changed:Fire(player, "shipped")
+		end
+	end
+	-- the semis (stage 5): in from the road for a big load, away again; they pay when they're gone
+	for n = 1, Flow.semis(owned) do
+		local key = "s" .. n
+		local trip = f.trucks[key]
+		if trip and t >= trip.at + trip.length then
+			pay(player, p, trip)
+			p.stats.semis = (p.stats.semis or 0) + 1
+			f.trucks[key] = false
+			f.back[key] = t
+			hideSemi(player, n)
+			trip = nil
+			changed = true
+		end
+		local half = Flow.SEMI_CAP / 2
+		if not trip and f.racked > 0 and (f.racked >= half or t - (f.back[key] or 0) >= self.SEMI_WAIT) then
+			local take = math.min(Flow.SEMI_CAP, f.racked)
+			f.racked -= take
+			trip = { at = t, length = Flow.semiTrip(owned), pallets = take }
+			f.trucks[key] = trip
+			showSemi(player, n, trip)
+			changed = true
+			self.Changed:Fire(player, "semi")
 		end
 	end
 	-- the bottleneck moved: the station pads repaint
@@ -402,9 +462,11 @@ function WarehouseService:Init(registry)
 			shown[player] = nil
 			local p = data:Get(player)
 			if p and opened(p) then
-				-- (a truck out when they left: it shows its trip again)
+				-- (a truck or a semi out when they left: it shows its trip again)
 				for key, trip in flowOf(p).trucks do
-					if trip then
+					if trip and string.sub(key, 1, 1) == "s" then
+						showSemi(player, tonumber(string.sub(key, 2)), trip)
+					elseif trip then
 						startTrip(player, tonumber(key), trip)
 					end
 				end
@@ -424,6 +486,7 @@ function WarehouseService:Init(registry)
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		shown[player], refs[player], lastAt[player], bottleneck[player], pushed[player] = nil, nil, nil, nil, nil
+		semis[player] = nil
 	end)
 end
 

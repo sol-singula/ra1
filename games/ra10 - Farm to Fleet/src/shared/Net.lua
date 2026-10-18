@@ -31,6 +31,7 @@ Net.ServerEvents = {
 	"Guide", -- { step, text, target, done, of } the next thing to do (GuideService)
 	"Animal", -- pens, levels, boosts, hunger (AnimalService)
 	"Orders", -- the order board (OrderService)
+	"Special", -- a Special Order: what it wants, its clock, its pay (SpecialService)
 	"Flow", -- the warehouse's four stations, the bottleneck, the stock (WarehouseService)
 	"Vehicles", -- { id, kind, route, t0, seconds } moves for every client to animate (VehicleService)
 	"Daily", -- the calendar, the streak, what's ready (DailyService)

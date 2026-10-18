@@ -3,7 +3,7 @@ Stage 3's pieces (master plan §4): the packing shed with its packing table, the
 the paved yard, the delivery vans, the box line, the sorting machine, the loading dock, the pallet wrapper and the
 warehouse's site. FarmBuilder hands over its BUILD table; this adds to it, and adds FarmBuilder.vehicle.
 
-  FarmBuilder.vehicle(parent, kind ("van" | "pickup" | "truck"), color, cf, big?) -> Model   (its pivot on the
+  FarmBuilder.vehicle(parent, kind ("van" | "pickup" | "truck" | "semi" | "express"), color, cf, big?) -> Model   (its pivot on the
                      ground, nose to -Z; big: a bigger truck's longer box)
   the shed's parts the services look for: "PackPad" (the packing table's pad), "BoardSlot" x3 (attribute Slot)
   FarmBuilder.packPad(L, at) -> Part / FarmBuilder.orderBoard(L, plot, at, mounted?)   (the hub's front hall builds
@@ -492,6 +492,82 @@ return function(FarmBuilder, BUILD)
 			if big then
 				wheels(zb + len / 2 - 3.6, zb + len / 2 - 3.6, 2.3)
 			end
+		elseif kind == "semi" then
+			-- a semi (stage 5): a tractor with a sleeper and chrome stacks, a long trailer in white with the farm's
+			-- colour and name down both sides. Its middle is the pivot: the tractor's nose at -16, the trailer's back +17
+			s:box(0, 3.1, -13.6, 5, 4.2, 4.6, deco({ color = color, name = "Cab" }))
+			s:box(0, 3.9, -11, 5, 3.4, 1.4, deco({ color = color, name = "Sleeper" }))
+			s:box(0, 4.3, -15.92, 4.4, 1.6, 0.1, deco({ color = P.glass, name = "Windscreen", transparency = 0.1 }))
+			s:box(0, 1.9, -15.6, 4.8, 1.8, 1.2, deco({ color = P.steelLight, name = "Grille" }))
+			for _, sx in { -1, 1 } do
+				s:box(
+					sx * 1.8,
+					1.5,
+					-16.25,
+					0.9,
+					0.5,
+					0.1,
+					deco({
+						color = rgb(255, 250, 220),
+						material = Enum.Material.Neon,
+						name = "Headlight",
+					})
+				)
+				s:cyl(sx * 2.7, 5.5, -11.6, 4.4, 0.45, deco({ color = P.steelLight, name = "Stack" }), "y")
+				s:box(sx * 2.7, 1.5, -12.5, 0.6, 1.1, 2.4, deco({ color = P.steelLight, name = "FuelTank" }))
+			end
+			s:box(0, 0.9, -11, 4.2, 0.6, 9, deco({ color = INK, name = "Chassis" }))
+			local trailer = s:box(0, 4.6, 4.5, 5.4, 6, 25, deco({ color = WHITE, name = "Trailer" }))
+			for _, sx in { -1, 1 } do
+				local stripe = s:box(sx * 2.72, 3.9, 4.5, 0.05, 1.8, 24, deco({ color = color, name = "Stripe" }))
+				FarmBuilder.sign(
+					stripe,
+					"FARM TO FLEET",
+					nil,
+					WHITE,
+					sx > 0 and Enum.NormalId.Right or Enum.NormalId.Left
+				)
+			end
+			s:box(0, 4.6, 17.03, 5, 5.6, 0.05, deco({ color = P.steelLight, name = "BackDoor" }))
+			s:box(0, 0.9, 12, 4.6, 0.5, 9, deco({ color = INK, name = "Bogie" }))
+			wheels(-14.6, -10, 2.3)
+			wheels(12, 14.8, 2.4)
+			_ = trailer
+		elseif kind == "express" then
+			-- a Special Order's express truck: gold with a red stripe, a light bar on the cab, EXPRESS on the box
+			local gold = Color3.fromRGB(255, 196, 40)
+			s:box(0, 2.8, -4.4, 5, 3.6, 3.2, deco({ color = Color3.fromRGB(210, 40, 40), name = "Cab" }))
+			s:box(0, 3.9, -6.03, 4.4, 1.5, 0.1, deco({ color = P.glass, name = "Windscreen", transparency = 0.1 }))
+			for k, c in { Color3.fromRGB(255, 60, 60), Color3.fromRGB(60, 140, 255), Color3.fromRGB(255, 60, 60) } do
+				s:box(
+					-1.6 + (k - 1) * 1.6,
+					4.85,
+					-4.6,
+					1.4,
+					0.4,
+					0.8,
+					deco({
+						color = c,
+						material = Enum.Material.Neon,
+						name = "LightBar",
+					})
+				)
+			end
+			s:box(0, 3.9, 3.6, 5.2, 5.6, 11, deco({ color = gold, name = "TruckBox" }))
+			for _, sx in { -1, 1 } do
+				local stripe = s:box(
+					sx * 2.62,
+					3.2,
+					3.6,
+					0.05,
+					1.6,
+					10.6,
+					deco({ color = Color3.fromRGB(210, 40, 40), name = "Stripe" })
+				)
+				FarmBuilder.sign(stripe, "EXPRESS", nil, WHITE, sx > 0 and Enum.NormalId.Right or Enum.NormalId.Left)
+			end
+			s:box(0, 0.9, 1, 4.6, 0.6, 15, deco({ color = INK, name = "Chassis" }))
+			wheels(-4.4, 7, 2.3)
 		else
 			-- the buyer's pickup: a rounded cab, a bed with crates of produce
 			s:box(0, 1.6, -2.6, 4.2, 1.3, 3.2, deco({ color = color, name = "Hood" }))

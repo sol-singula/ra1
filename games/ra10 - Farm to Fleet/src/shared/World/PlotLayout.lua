@@ -86,8 +86,9 @@ PlotLayout.SPOTS = {
 	-- stage 5: the hub. Dock doors along the warehouse's back wall (z 24), the truck court behind it, each truck's
 	-- spot in line with its dock; the front hall (z -74..-36) where the shed stood; the market hall along the road
 	-- where the farm stand stood
-	docks = { 62, 48, 34, 20 }, -- the dock doors' x (truck n uses dock n)
-	dockLot = { Vector3.new(62, 0, 76), Vector3.new(48, 0, 76), Vector3.new(34, 0, 76), Vector3.new(20, 0, 76) },
+	docks = { 64, 53.5, 43, 32.5, 22, 11.5 }, -- the dock doors' x: box truck n uses dock n, semi n dock 4 + n
+	dockLot = { Vector3.new(64, 0, 76), Vector3.new(53.5, 0, 76), Vector3.new(43, 0, 76), Vector3.new(32.5, 0, 76) },
+	expressStop = Vector3.new(-10, 0, -116), -- where a Special Order's express truck waits, on the road's verge
 	frontHall = Vector3.new(38, 0, -55),
 	market = Vector3.new(-15, 0, -97.5), -- the market hall's middle: 42 x 21 (x -36..6, z -108..-87)
 	marketSell = Vector3.new(-28, 0, -100), -- the sell pad, by the market's door

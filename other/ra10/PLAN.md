@@ -178,7 +178,32 @@ footprint; the tower; the solar panels; the market replacing the stand with the 
 checkout; the size and the detail; roofs lifting in the hall and the market; all of it the same after a rejoin).
 340 checks in all.
 
-## Next: Phase F
+## Phase F: semis on the shared road, and Special Orders
 
-Semis on the shared road and the hub's shipping side (receiving, dock scheduling), roads adjusting as plots grow;
-and **Special Orders** (§13.3).
+* **Semis** (`Data/Flow`, `WarehouseService`, `World/Trips` "semi", `HubBuilder`): the SHIP station's track carries
+  on into stage 5 with the First and Second Semi (they need the back docks; the pad says so). The back wall now has
+  six dock positions: box trucks use 1-4, each semi its own (5, 6), built with its SEMIS sign. A semi isn't parked on
+  the plot: it comes in from the shared road when there's half a load (or after 30 s), up the lane, along the court,
+  backs its trailer up to its dock, takes up to 24 pallets and leaves the same way, paying when it's gone. Every
+  client drives it, so the whole street sees the semis come and go.
+* **Special Orders** (`Data/Specials`, `SpecialService`, `SpecialController`): once the shed stands, one breaks in
+  every 20-40 minutes of play (the first after 4), and one is waiting on the first visit of each UTC day. Five kinds:
+  Emergency Supermarket (big, 10 min), Golden Harvest (golden crops only), Celebrity Chef (lots of one premium crop),
+  Night Express (evenings and nights only) and the Holiday Mega Delivery (weekends only: huge, lots of Gems). Each
+  pays 3-12x (more with the sorter, wrapper and tower) plus Gems. Its express truck pulls up on the road in front of
+  the plot; everyone on the server hears about it; a pulsing gold banner shows what's packed, the clock and the pay;
+  the guide drops everything to point at PACK ORDERS. The pad (and the box line) packs it first and the conveyor
+  holds back what it needs; packed, the truck drives off and it pays; too late, the boxes come back.
+
+Tests: `FreightSmoke` (69 checks: when each special can come, golden ones, the same seed giving the same special,
+specials paying far more, semis shipping more, a semi's route; no semi before the back docks, the fifth dock, a
+semi's load, trip to its dock on the client and pay; a special after enough play, its truck pulling up, the banner,
+the guide, the conveyor holding back, packing it, the truck driving off, Cash and Gems, one running out, golden
+crops only, the day's first visit; saving). The other suites switch specials off so their packing stays exact.
+409 checks in all.
+
+## Next: Phase G
+
+Coming back (offline earnings, the 7-day calendar, the weekly Big Contract as the week's headline special, the
+golden pumpkin, the end-of-session card, the guide to 100%) and watching each other (the street board, plot
+billboards, visiting, friends: master plan §13.4).

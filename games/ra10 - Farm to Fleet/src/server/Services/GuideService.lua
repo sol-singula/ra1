@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Flow = require(ReplicatedStorage.Shared.Data.Flow)
 local Guide = require(ReplicatedStorage.Shared.Data.Guide)
+local Orders = require(ReplicatedStorage.Shared.Data.Orders)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PlotLayout = require(ReplicatedStorage.Shared.World.PlotLayout)
@@ -33,12 +34,14 @@ local GuideService = {
 		"AnimalService",
 		"OrderService",
 		"WarehouseService",
+		"SpecialService",
 	},
 	Advanced = Signal.new("GuideService.Advanced"),
 	CHECK = 1,
 }
 
 local data, economy, plots, farm, upgrades, animals, orders, analytics
+local registryRef = {}
 local sent = {} -- [player] = the last payload's key and target, so nothing is sent twice
 
 local function guideOf(p)
@@ -79,6 +82,28 @@ function GuideService:Step(player)
 		return nil
 	end
 	local g = guideOf(p)
+	-- a Special Order comes first, whatever else is going on
+	local special = registryRef.SpecialService and registryRef.SpecialService:Current(player)
+	if special and special.state == "open" then
+		local want = {}
+		for key, n in special.items do
+			local left = n - (special.packed[key] or 0)
+			if left > 0 then
+				table.insert(
+					want,
+					`{left} {string.sub(key, 1, 1) == "*" and "golden " or ""}{Orders.itemName(
+						string.gsub(key, "^%*", "")
+					)}`
+				)
+			end
+		end
+		return {
+			key = "special:" .. special.id .. ":" .. table.concat(want, ","),
+			text = `SPECIAL ORDER: pack {table.concat(want, ", ")} for {special.who}!`,
+			target = "pack",
+			generated = true,
+		}
+	end
 	local step = Guide.STEPS[g.step]
 	if step then
 		return step
@@ -97,7 +122,7 @@ function GuideService:Step(player)
 		local rates = Flow.rates(p, workspace:GetServerTimeNow())
 		local u = Upgrades.trackNext(p.owned, rates.bottleneck)
 		local name = string.upper(rates.bottleneck)
-		if u and u.level <= (p.level or 1) then
+		if u and Upgrades.ready(p.owned, p.level or 1, u) then
 			return {
 				key = "fix:" .. u.key,
 				text = `BOTTLENECK: {name}! Buy {u.name} at the {name} pad ({Format.num(u.cost)})`,
@@ -107,7 +132,7 @@ function GuideService:Step(player)
 		end
 		for _, track in Upgrades.TRACKS do
 			local v = Upgrades.trackNext(p.owned, track)
-			if v and v.level <= (p.level or 1) then
+			if v and Upgrades.ready(p.owned, p.level or 1, v) then
 				return {
 					key = "fix:" .. v.key,
 					text = `Next: {v.name} at the {string.upper(track)} pad ({Format.num(v.cost)})`,
@@ -264,6 +289,7 @@ function GuideService:Init(registry)
 	upgrades = registry.UpgradeService
 	animals = registry.AnimalService
 	orders = registry.OrderService
+	registryRef = registry
 	analytics = registry.AnalyticsService
 	farm.Changed:Connect(function(player)
 		self:Check(player)
@@ -278,6 +304,9 @@ function GuideService:Init(registry)
 		self:Check(player)
 	end)
 	registry.WarehouseService.Changed:Connect(function(player)
+		self:Check(player)
+	end)
+	registry.SpecialService.Changed:Connect(function(player)
 		self:Check(player)
 	end)
 	economy.LevelUp:Connect(function(player)

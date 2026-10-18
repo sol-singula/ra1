@@ -12,3 +12,4 @@ $R tests/AnimalSmoke.spec.luau
 $R tests/OrderSmoke.spec.luau
 $R tests/WarehouseSmoke.spec.luau
 $R tests/HubSmoke.spec.luau
+$R tests/FreightSmoke.spec.luau

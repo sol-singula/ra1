@@ -38,6 +38,9 @@ Engine.advance(0.5)
 local function service(name)
 	return Engine.require(tree.server.Services[name])
 end
+-- (no Special Orders breaking in here: they have their own suite)
+service("SpecialService").FIRST = 1e9
+service("SpecialService").DAILY = false
 local Plots = service("PlotService")
 local Farm = service("FarmService")
 local Upg = service("UpgradeService")

@@ -141,6 +141,8 @@ function UpgradeService:PaintStations(player)
 				{ grow = "Plant pricier crops!", pack = "ALL BUILT", store = "ALL BUILT", ship = "ALL BUILT" }
 			)[track]
 			FarmBuilder.label(pad, head, red and hint or "ALL BUILT", red and P.sunflower or GREEN)
+		elseif u.needs and not p.owned[u.needs] then
+			FarmBuilder.label(pad, head, `{u.name} · NEEDS {Upgrades[u.needs].name}`, P.steelLight)
 		elseif u.level > (p.level or 1) then
 			FarmBuilder.label(pad, head, `{u.name} · LV {u.level}`, P.steelLight)
 		else
@@ -188,7 +190,9 @@ function UpgradeService:Buy(player, key)
 	end
 	if u.track then
 		-- (a station pad's: the next in its track, once the warehouse stands)
-		offered = p.owned.warehouse ~= nil and Upgrades.trackNext(p.owned, u.track) == u and u.level <= (p.level or 1)
+		offered = p.owned.warehouse ~= nil
+			and Upgrades.trackNext(p.owned, u.track) == u
+			and Upgrades.ready(p.owned, p.level or 1, u)
 	end
 	if not offered then
 		return false, u.level > (p.level or 1) and "level" or "order"

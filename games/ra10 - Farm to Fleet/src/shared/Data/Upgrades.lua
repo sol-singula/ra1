@@ -25,13 +25,14 @@ owned yet whose level is reached. Each one is visible on the plot (World/FarmBui
   many packing lines; "packSpeed": + `value`), "store" ("forklifts", "racks": rack rows (bays come with rows 3, 5,
   7), "forkSpeed": + `value`), "ship" ("trucks": box trucks, "truckCap": pallets a truck takes)
   (stage 5: the hub) kind "docks" the back dock doors: truck trips take `value` less; kind "hall": the packing lines
-  + `value` (they add up). `needs`: another upgrade that must be owned first (shown locked till then)
+  + `value` (they add up); kind "semis": that many semis on the SHIP track. `needs`: another upgrade that must be owned first (shown locked till then)
 
   Upgrades.LIST              every upgrade, in order
   Upgrades[key]              { key, name, stage, cost, kind, value, level, replaces? (the piece it takes down: a
                              site sign; or a list: what the hub swallows), track? ("grow" | "pack" | "store" | "ship": the warehouse's station pads) }
   Upgrades.next(owned, level, n)   the next n on offer at the stand's pads (no track's)
   Upgrades.trackNext(owned, track) the next in a track (or nil when the track is done)
+  Upgrades.ready(owned, level, u)   its level reached and what it `needs` owned
   Upgrades.TRACKS            the four, in flow order
   Upgrades.stat(owned, kind, default)   the value the plot has for a kind (the highest owned; "price",
                              "golden", "orderPrice", "grow" and "hall" add up)
@@ -119,6 +120,9 @@ local LIST = {
 	{ key = "controlTower", name = "Control Tower", stage = 5, cost = 6000000,  kind = "orderPrice", value = 0.1, level = 28 },
 	{ key = "solarRoof",  name = "Solar Roof",      stage = 5, cost = 8000000,  kind = "hall",   value = 0.25, level = 29 },
 	{ key = "marketHall", name = "The Market Hall", stage = 5, cost = 10000000, kind = "price",  value = 0.5,  level = 30 },
+	-- (the SHIP station's track carries on into stage 5: semis on the shared road, once there are back docks)
+	{ key = "semi1",      name = "First Semi",      stage = 5, cost = 15000000, kind = "semis",  value = 1,    level = 30, track = "ship", needs = "backDocks" },
+	{ key = "semi2",      name = "Second Semi",     stage = 5, cost = 25000000, kind = "semis",  value = 2,    level = 32, track = "ship", needs = "backDocks" },
 }
 -- stylua: ignore end
 
@@ -154,6 +158,11 @@ function Upgrades.replaced(u)
 		return u.replaces
 	end
 	return u.replaces and { u.replaces } or {}
+end
+
+-- Can it be bought now: its level reached and what it needs owned
+function Upgrades.ready(owned, level, u)
+	return u.level <= level and (not u.needs or owned[u.needs] ~= nil)
 end
 
 function Upgrades.trackNext(owned, track)

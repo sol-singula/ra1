@@ -8,7 +8,7 @@ the pace. Every rate is Cash a minute of produce (what it'd fetch at the stand),
   Store  the forklifts: pallets put on the racks a minute (one each FORK_CYCLE seconds), times PALLET; and the racks
          hold SLOTS_PER_ROW pallets a row: full racks make Store the bottleneck whatever its rate
   Ship   the box trucks: TRUCK_TRIP seconds a trip (less with the loading dock and the back dock doors), truckCap
-         pallets each
+         pallets each; and the semis (stage 5): SEMI_CAP pallets in SEMI_TRIP seconds each
 
 The produce itself: the conveyor brings the basket in (inbound), the lines box it, every PALLET of boxes is a
 pallet waiting on the floor (staged, up to STAGE_MAX: then packing stops), the forklifts rack the pallets, the
@@ -35,6 +35,8 @@ Flow.SLOTS_PER_ROW = 24 -- (8 along a row, 3 high: World/PlotLayout.rackSlot)
 Flow.STAGE_MAX = 6
 Flow.INBOUND_MAX = 8 -- pallets' worth of crates waiting at the lines before the conveyor stops bringing more
 Flow.SHIP_MULT = 2
+Flow.SEMI_CAP = 24 -- pallets a semi takes
+Flow.SEMI_TRIP = 120 -- a semi's seconds: in from the road, at the dock, away
 
 Flow.STATIONS = {
 	{ key = "grow", name = "GROW", track = "grow" },
@@ -61,6 +63,12 @@ function Flow.trucks(owned)
 end
 function Flow.truckCap(owned)
 	return stat(owned, "truckCap", 4)
+end
+function Flow.semis(owned)
+	return stat(owned, "semis", 0)
+end
+function Flow.semiTrip(owned)
+	return Flow.SEMI_TRIP * (1 - stat(owned, "docks", 0))
 end
 function Flow.cycle(owned)
 	return Flow.FORK_CYCLE / (1 + stat(owned, "forkSpeed", 0))
@@ -97,7 +105,15 @@ function Flow.rates(p, now)
 			Flow.lines(owned) * Flow.PACK_PER_LINE * (1 + stat(owned, "packSpeed", 0) + stat(owned, "hall", 0)) + 0.5
 		),
 		store = math.floor(Flow.forklifts(owned) * Flow.PALLET * 60 / Flow.cycle(owned) + 0.5),
-		ship = math.floor(Flow.trucks(owned) * Flow.truckCap(owned) * Flow.PALLET * 60 / Flow.trip(owned) + 0.5),
+		ship = math.floor(
+			(
+				Flow.trucks(owned) * Flow.truckCap(owned) / Flow.trip(owned)
+				+ Flow.semis(owned) * Flow.SEMI_CAP / Flow.semiTrip(owned)
+			)
+					* Flow.PALLET
+					* 60
+				+ 0.5
+		),
 		slots = Flow.rows(owned) * Flow.SLOTS_PER_ROW,
 	}
 	local racked = p.flow and p.flow.racked or 0

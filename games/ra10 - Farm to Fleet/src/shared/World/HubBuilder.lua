@@ -13,6 +13,7 @@ tags, the detail layer); this adds:
                 canopy; inside a sorting line, packing tables, the wrapper, an overhead conveyor loop, a mezzanine
                 office, compressors, pallets, the Operations screen hanging over the station pads, and the detail
                 layer (pipes, ducts, lights) like every slice
+  semi1, semi2  a dock door each (5, 6) for the semis that come in from the shared road
   controlTower  an HQ tower on the hall's corner: a glass cab, the farm's sign, an antenna with a beacon
   solarRoof     solar panels on every roof there is
   marketHall    a red market hall along the road where the farm stand stood: a glass storefront, a striped
@@ -103,6 +104,48 @@ return function(FarmBuilder, BUILD, kit)
 
 	-- The back docks: four dock doors on the back wall, the truck court, the trucks moved round ----------------------
 	local BACK = SLICES[#SLICES]
+
+	-- Dock door i on the back wall: its approach lines, lip and leveler, the door behind a black seal, bumpers, a light
+	-- each side, a canopy and its number; a box truck's dock (1-4) also gets its bay in the lot
+	local function dock(L, i)
+		local x = SPOTS.docks[i]
+		local lot = SPOTS.dockLot[i]
+		for _, sx in { -3.4, 3.4 } do
+			L:box(x + sx, 0.36, 34, 0.3, 0.02, 18, deco({ color = P.safetyYellow, name = "DockLine" }))
+			if lot then
+				L:box(lot.X + sx, 0.36, lot.Z, 0.25, 0.02, 16, deco({ color = WHITE, name = "LotLine" }))
+			end
+		end
+		L:block(x, BACK + 0.75, 10, 1.5, 1.3, { color = P.concrete, name = "DockLip" }, 0)
+		L:box(x, 1.32, BACK + 1.6, 8, 0.12, 1.4, deco({ color = P.steel, name = "Leveler" }))
+		L:box(x, 5.6, BACK + 0.06, 8.2, 10, 0.1, deco({ color = rgb(120, 126, 136), name = "DockDoor" }))
+		for k = 1, 6 do
+			L:box(x, 1 + k * 1.5, BACK + 0.12, 8.2, 0.12, 0.05, deco({ color = rgb(96, 102, 112), name = "Slat" }))
+		end
+		for _, sx in { -1, 1 } do
+			L:box(x + sx * 4.4, 5.8, BACK + 0.4, 0.6, 10.6, 0.7, deco({ color = INK, name = "DockSeal" }))
+			L:block(x + sx * 3.2, BACK + 1.6, 1, 0.5, 1.2, { color = INK, name = "DockBumper" }, 0.2)
+			L:box(
+				x + sx * 4.9,
+				12.2,
+				BACK + 0.3,
+				0.5,
+				0.8,
+				0.3,
+				deco({
+					color = sx < 0 and P.dockGreen or P.dockRed,
+					material = NEON,
+					name = "DockLight",
+				})
+			)
+		end
+		L:box(x, 11.4, BACK + 0.4, 9.4, 0.8, 0.7, deco({ color = INK, name = "DockSeal" }))
+		L:box(x, 13, BACK + 2.4, 10, 0.4, 4.6, deco({ color = P.safetyYellow, name = "Canopy" }))
+		sign(L, x, 14.8, BACK + 0.15, 2.2, 2.2, tostring(i), P.safetyYellow, INK)
+		if lot then
+			L:block(lot.X, lot.Z + 7.5, 3, 0.6, 0.4, deco({ color = P.safetyYellow, name = "WheelStop" }), 0.2)
+		end
+	end
 	BUILD.backDocks = function(L, plot)
 		for _, d in plot.items:GetDescendants() do
 			if d:GetAttribute("OldLot") then
@@ -111,44 +154,11 @@ return function(FarmBuilder, BUILD, kit)
 		end
 		-- the court: asphalt behind the warehouse out to the lot, painted bays, approach lines
 		L:block(44, 55, 72, 62, 0.12, deco({ color = P.asphalt, name = "TruckCourt" }), 0.22)
-		for i, x in SPOTS.docks do
-			local lot = SPOTS.dockLot[i]
-			for _, sx in { -3.6, 3.6 } do
-				L:box(x + sx, 0.36, 34, 0.3, 0.02, 18, deco({ color = P.safetyYellow, name = "DockLine" }))
-				L:box(lot.X + sx, 0.36, lot.Z, 0.25, 0.02, 16, deco({ color = WHITE, name = "LotLine" }))
-			end
-			L:block(x, BACK + 0.75, 11, 1.5, 1.3, { color = P.concrete, name = "DockLip" }, 0)
-			L:box(x, 1.32, BACK + 1.6, 8.6, 0.12, 1.4, deco({ color = P.steel, name = "Leveler" }))
-			-- the door: slats behind a black seal, bumpers, a light each side, a canopy, its number
-			L:box(x, 5.6, BACK + 0.06, 9, 10, 0.1, deco({ color = rgb(120, 126, 136), name = "DockDoor" }))
-			for k = 1, 6 do
-				L:box(x, 1 + k * 1.5, BACK + 0.12, 9, 0.12, 0.05, deco({ color = rgb(96, 102, 112), name = "Slat" }))
-			end
-			for _, sx in { -1, 1 } do
-				L:box(x + sx * 4.9, 5.8, BACK + 0.4, 0.8, 10.6, 0.7, deco({ color = INK, name = "DockSeal" }))
-				L:block(x + sx * 3.6, BACK + 1.6, 1, 0.5, 1.2, { color = INK, name = "DockBumper" }, 0.2)
-				L:box(
-					x + sx * 6.2,
-					8,
-					BACK + 0.3,
-					0.6,
-					1,
-					0.3,
-					deco({
-						color = sx < 0 and P.dockGreen or P.dockRed,
-						material = NEON,
-						name = "DockLight",
-					})
-				)
-			end
-			L:box(x, 11.4, BACK + 0.4, 10.6, 0.8, 0.7, deco({ color = INK, name = "DockSeal" }))
-			L:box(x, 12.6, BACK + 2.4, 12, 0.4, 4.6, deco({ color = P.safetyYellow, name = "Canopy" }))
-			sign(L, x, 14.6, BACK + 0.15, 2.2, 2.2, tostring(i), P.safetyYellow, INK)
-			-- wheel stops in the lot
-			L:block(lot.X, lot.Z + 7.5, 3, 0.6, 0.4, deco({ color = P.safetyYellow, name = "WheelStop" }), 0.2)
+		for i = 1, 4 do
+			dock(L, i)
 		end
 		-- light poles and a guard booth by the lane
-		for _, x in { 27, 55 } do
+		for _, x in { 27.25, 48.25 } do
 			L:block(x, 52, 0.6, 0.6, 14, { color = P.steel, name = "LightPole" }, 0)
 			L:box(x, 14, 52, 3, 0.5, 1.2, deco({ color = P.steel, name = "LightHead" }))
 			L:box(x, 13.7, 52, 2.6, 0.1, 1, deco({ color = rgb(255, 246, 220), material = NEON, name = "LightGlow" }))
@@ -165,6 +175,16 @@ return function(FarmBuilder, BUILD, kit)
 				d:SetAttribute("Plan", "truckBack")
 				d:SetAttribute("Parked", nil)
 			end
+		end
+	end
+
+	-- The semis' docks (5, 6): a dock door each, with a SEMIS sign over it
+	for n = 1, 2 do
+		BUILD["semi" .. n] = function(L)
+			dock(L, 4 + n)
+			local x = SPOTS.docks[4 + n]
+			sign(L, x, 17, BACK + 0.15, 6, 1.4, "SEMIS", P.rackOrange, WHITE)
+			L:box(x, 0.37, 50, 0.4, 0.02, 30, deco({ color = P.rackOrange, name = "SemiLine" }))
 		end
 	end
 

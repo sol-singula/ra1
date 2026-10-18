@@ -39,6 +39,9 @@ Engine.advance(0.5)
 local function service(name)
 	return Engine.require(tree.server.Services[name])
 end
+-- (no Special Orders breaking in here: they have their own suite)
+service("SpecialService").FIRST = 1e9
+service("SpecialService").DAILY = false
 local Plots = service("PlotService")
 local Farm = service("FarmService")
 local Upg = service("UpgradeService")
@@ -393,7 +396,7 @@ check(
 	(function()
 		for _, key in Upgrades.LIST do
 			local u = Upgrades[key]
-			if u.track and not p.owned[key] then
+			if u.track and u.stage == 4 and not p.owned[key] then
 				if not buy(key) then
 					return false
 				end
@@ -448,7 +451,12 @@ check(
 	"every station pad: all built",
 	(function()
 		for _, pad in Upg:Stations(player) do
-			if pad.Over.Line.Text ~= "ALL BUILT" and not pad:GetAttribute("Bottleneck") then
+			local track = pad:GetAttribute("Track")
+			local nxt = Upgrades.trackNext(p.owned, track)
+			if nxt and nxt.stage == 4 then
+				return false
+			end
+			if not nxt and pad.Over.Line.Text ~= "ALL BUILT" and not pad:GetAttribute("Bottleneck") then
 				return false
 			end
 		end

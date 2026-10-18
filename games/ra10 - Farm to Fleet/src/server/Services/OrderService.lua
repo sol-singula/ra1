@@ -27,7 +27,8 @@ Net "Orders" to the owner: { slots = { ... with reward, xp }, now, open (the she
   OrderService:Slots(player)           the live slots (the profile's)
   OrderService:Pack(player, quiet?) -> how many crops went into boxes
   OrderService:Skip(player, slot) -> ok
-  OrderService:Needs(player) -> { [crop] = n }   what the open orders still need
+  OrderService:Needs(player) -> { [crop] = n }   what the open orders (and a Special Order) still need
+  OrderService.packFirst(player) / .extraNeeds(player)   (set by SpecialService) the special packs first
   OrderService:Contracts(player) -> the day's three, with progress
   OrderService:Push(player)
   OrderService.Changed (player, what)   "pack" | "ready" | "ship" | "paid" | "new" | "contract"
@@ -132,7 +133,7 @@ local function full(order)
 end
 
 function OrderService:Needs(player)
-	local out = {}
+	local out = self.extraNeeds and table.clone(self.extraNeeds(player)) or {}
 	for _, order in self:Slots(player) do
 		if order.state == "open" then
 			for key in order.items do
@@ -153,7 +154,8 @@ function OrderService:Pack(player, quiet)
 		return 0
 	end
 	local storage = p.storage or {}
-	local total, readied = 0, {}
+	-- (a Special Order first: SpecialService)
+	local total, readied = self.packFirst and self.packFirst(player) or 0, {}
 	for _, order in ordersOf(p).live do
 		if order.state == "open" then
 			for key in order.items do

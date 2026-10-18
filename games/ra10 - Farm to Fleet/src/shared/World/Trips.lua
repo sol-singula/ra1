@@ -10,6 +10,8 @@ a straight line, facing where it's going (or away, backing up); standing still i
           warehouse's truck door, loads, off down the road, back the same way and backs into its spot
   truckBack  a box truck once the hub has its back docks: backs straight from its spot to its dock, loads, out by
           the lane and away, and back into its spot
+  semi    in from the shared road, backs its trailer up to its dock (park.X), loads and leaves the same way
+  expressIn / expressOut   a Special Order's express truck pulling onto the road's verge, and away with the order
   pickup  the buyer's: comes up the far lane, noses in to the door, loads, backs out and drives away
 
   Trips.at(plotIndex, kind, f, park?) -> CFrame (world, on the ground), visible
@@ -28,6 +30,8 @@ local TD = PlotLayout.SPOTS.truckDoor
 local LANE = PlotLayout.SPOTS.lane
 local AT_TRUCK_DOOR = TD.Z - 7 -- a truck's middle with its back at the warehouse door
 local AT_BACK_DOCK = PlotLayout.SLICES[#PlotLayout.SLICES] + 7.5 -- ...with its back at a back dock door
+local AT_SEMI_DOCK = PlotLayout.SLICES[#PlotLayout.SLICES] + 17 -- a semi's middle with its trailer at a dock
+local STOP = PlotLayout.SPOTS.expressStop
 
 -- stylua: ignore start
 Trips.PLAN = {
@@ -85,6 +89,34 @@ Trips.PLAN = {
 		{ f = 0.95, x = LANE,      z = 64 },
 		{ f = 0.98, parkX = true,  z = 64 },
 		{ f = 1,    park = true },
+	},
+	-- a semi (stage 5): in from the shared road, up the lane, along the court and backs its trailer up to its dock
+	-- (park.X), loads, out by the lane and away down the road: it doesn't stay
+	semi = {
+		{ f = 0,    x = LANE + AWAY, z = FAR },
+		{ f = 0.22, x = LANE + 8,  z = FAR },
+		{ f = 0.25, x = LANE,      z = -112 },
+		{ f = 0.38, x = LANE,      z = 62 },
+		{ f = 0.44, parkX = true,  z = 62 },
+		{ f = 0.52, parkX = true,  z = AT_SEMI_DOCK, rev = true },
+		{ f = 0.68, parkX = true,  z = AT_SEMI_DOCK },
+		{ f = 0.73, parkX = true,  z = 62 },
+		{ f = 0.78, x = LANE,      z = 64 },
+		{ f = 0.86, x = LANE,      z = -112 },
+		{ f = 0.89, x = LANE + 12, z = NEAR },
+		{ f = 1,    x = LANE + AWAY, z = NEAR },
+	},
+	-- a Special Order's express truck: along the near lane and onto the verge, waiting...
+	expressIn = {
+		{ f = 0,    x = 300,       z = NEAR },
+		{ f = 0.85, x = STOP.X + 14, z = NEAR },
+		{ f = 1,    x = STOP.X,    z = STOP.Z },
+	},
+	-- ...and off down the road with the order
+	expressOut = {
+		{ f = 0,    x = STOP.X,    z = STOP.Z },
+		{ f = 0.15, x = STOP.X - 14, z = NEAR },
+		{ f = 1,    x = -330,      z = NEAR },
 	},
 	pickup = {
 		{ f = 0,    x = DOOR.X + AWAY, z = FAR },
