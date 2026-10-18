@@ -1,6 +1,7 @@
--- The look of every screen (master plan §0): SUPERHOT. White cards with thin black edges, black type in a heavy
--- geometric font, dark glassy slabs for the HUD over the white world, and the only colours red and blue. Plus the
--- phone scaling: every ScreenGui is laid out for a landscape canvas at least 1240 x 560 and scaled with a UIScale.
+-- The look of every screen: a picture-book farm. Cream cards with thick warm-brown edges, dark-brown type in a
+-- heavy rounded font, dark-wood slabs for the HUD over the bright world, sun yellow, leaf green and barn red for
+-- the buttons. Plus the phone scaling: every ScreenGui is laid out for a landscape canvas at least 1240 x 560 and
+-- scaled with a UIScale.
 --
 -- Following Roblox's accessibility and adaptive-design guidance, it also:
 --   * respects the player's Reduced Motion setting (GuiService.ReducedMotionEnabled): tweens snap, nothing pulses
@@ -19,22 +20,22 @@ local function rgb(r, g, b)
 end
 
 Theme.Color = {
-	paper = rgb(250, 250, 250),
-	ink = rgb(18, 18, 22),
-	slate = rgb(22, 22, 28),
-	mustard = rgb(255, 200, 40),
-	ketchup = rgb(235, 40, 45),
-	teal = rgb(30, 200, 185),
-	good = rgb(70, 200, 110),
-	muted = rgb(120, 120, 128),
+	paper = rgb(253, 246, 228), -- cream cards
+	ink = rgb(58, 38, 28), -- warm dark brown: text and edges
+	slate = rgb(66, 44, 34), -- dark wood: the HUD's slabs
+	mustard = rgb(255, 198, 40), -- sun yellow
+	ketchup = rgb(228, 60, 50), -- barn red
+	teal = rgb(40, 190, 180),
+	good = rgb(86, 192, 96), -- leaf green
+	muted = rgb(140, 118, 100),
 	white = rgb(255, 255, 255),
-	purple = rgb(150, 90, 240),
-	sky = rgb(35, 110, 245),
-	red = rgb(235, 40, 45),
-	blue = rgb(35, 110, 245),
-	orange = rgb(255, 140, 30),
-	pink = rgb(255, 95, 170),
-	grey = rgb(196, 197, 200),
+	purple = rgb(160, 100, 235),
+	sky = rgb(60, 150, 240),
+	red = rgb(228, 60, 50),
+	blue = rgb(60, 150, 240),
+	orange = rgb(255, 146, 36),
+	pink = rgb(255, 110, 160),
+	grey = rgb(210, 200, 186),
 }
 Theme.Display = Enum.Font.GothamBlack
 Theme.Body = Enum.Font.GothamBold
@@ -238,7 +239,7 @@ function Theme.card(props)
 	if props.Active == nil then
 		props.Active = true
 	end
-	return new("Frame", props, { Theme.corner(6), Theme.stroke(2) })
+	return new("Frame", props, { Theme.corner(16), Theme.stroke(3) })
 end
 
 -- A dark translucent HUD slab.
@@ -252,7 +253,7 @@ function Theme.slab(props)
 	if props.Active == nil then
 		props.Active = true -- (as for cards)
 	end
-	local slab = new("Frame", props, { Theme.corner(round and "round" or 6), Theme.stroke(1, C.ink) })
+	local slab = new("Frame", props, { Theme.corner(round and "round" or 12), Theme.stroke(2, C.ink) })
 	return Theme.translucent(slab, transparency)
 end
 
@@ -383,9 +384,9 @@ function Theme.button(props)
 		props.TextScaled = true
 	end
 	local button = new("TextButton", props, {
-		Theme.corner(round and "round" or 14),
+		Theme.corner(round and "round" or 18),
 		Theme.stroke(3),
-		Theme.gloss(rgb(255, 255, 255), rgb(200, 200, 200)),
+		Theme.gloss(rgb(255, 255, 255), rgb(205, 200, 190)),
 		new("UIPadding", {
 			PaddingLeft = UDim.new(0, 8),
 			PaddingRight = UDim.new(0, 8),

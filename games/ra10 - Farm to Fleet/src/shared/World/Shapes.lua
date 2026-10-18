@@ -8,6 +8,9 @@ local -Z toward the road), so one building stands the same on both sides of the 
   s:block(x, z, w, d, h, opts, y0)     a box standing on y0 (default the ground)
   s:wedge(x, y, z, w, h, d, opts, yaw) a wedge (a roof slope), turned yaw degrees round Y
   s:cyl(x, y, z, length, diameter, opts, axis)   a cylinder along "x" | "y" | "z"
+  s:toon(x, z, w, d, h, opts, y0)      a block with a darker foot band and a lighter cap (the toon look)
+  s:sphere(x, y, z, w, h?, d?, opts)   a sphere (canopies, bushes, hills)
+  Shapes.shade(color, k)               darker (k < 0) or lighter (k > 0)
   s:world(x, z, y)                     the world spot of a frame spot
   s.parts                              how many parts it has built
   opts: { color, material, name, collide (default true), transparency, shadow, reflect, parent }
@@ -83,6 +86,50 @@ function Shapes:cyl(x, y, z, length, diameter, opts, axis)
 	end
 	local p = self:part("Part", self.cf * CFrame.new(x, y, z) * turn, Vector3.new(length, diameter, diameter), opts)
 	p.Shape = Enum.PartType.Cylinder
+	return p
+end
+
+-- Shades of a colour (the toon look: a darker foot, a lighter cap)
+function Shapes.shade(c, k)
+	if k < 0 then
+		return c:Lerp(Color3.new(0, 0, 0), -k)
+	end
+	return c:Lerp(Color3.new(1, 1, 1), k)
+end
+
+-- A toon block: the box, a darker band round its foot and a lighter cap on top, so it reads as drawn
+function Shapes:toon(x, z, w, d, h, opts, y0)
+	local box = self:block(x, z, w, d, h, opts, y0)
+	local c = opts.color or box.Color
+	local name = opts.name or "Shape"
+	local foot = math.min(0.7, h * 0.16)
+	self:block(
+		x,
+		z,
+		w + 0.3,
+		d + 0.3,
+		foot,
+		Shapes.deco({ color = Shapes.shade(c, -0.28), name = name .. "Foot" }),
+		y0 or 0
+	)
+	self:block(
+		x,
+		z,
+		w + 0.16,
+		d + 0.16,
+		0.28,
+		Shapes.deco({ color = Shapes.shade(c, 0.22), name = name .. "Cap" }),
+		(y0 or 0) + h - 0.14
+	)
+	return box
+end
+
+-- A sphere (a tree's canopy, a bush, a round hill)
+function Shapes:sphere(x, y, z, w, h, d, opts)
+	local p = self:box(x, y, z, w, h or w, d or w, opts)
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = p
 	return p
 end
 

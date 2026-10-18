@@ -166,53 +166,142 @@ function FarmBuilder.label(part, title, line, color)
 end
 
 function FarmBuilder.light()
-	Lighting.ClockTime = 13.5
-	Lighting.Brightness = 2.2
+	Lighting.ClockTime = 14.2
+	Lighting.Brightness = 3
 	Lighting.GlobalShadows = true
-	Lighting.Ambient = Color3.fromRGB(120, 124, 132)
-	Lighting.OutdoorAmbient = Color3.fromRGB(150, 156, 166)
-	Lighting.EnvironmentDiffuseScale = 0.4
-	Lighting.EnvironmentSpecularScale = 0.05
-	Lighting.FogColor = Color3.fromRGB(196, 222, 246)
-	Lighting.FogEnd = 1400
+	Lighting.Ambient = Color3.fromRGB(128, 136, 140)
+	Lighting.OutdoorAmbient = Color3.fromRGB(166, 178, 184)
+	Lighting.EnvironmentDiffuseScale = 0.5
+	Lighting.EnvironmentSpecularScale = 0.1
+	Lighting.FogColor = Color3.fromRGB(214, 232, 250)
+	Lighting.FogEnd = 2000
 	pcall(function()
-		Lighting.ShadowSoftness = 0.35
+		Lighting.ShadowSoftness = 0.5
+		Lighting.ExposureCompensation = 0.1
 	end)
 	local atmo = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
-	atmo.Density = 0.25
-	atmo.Offset = 0.15
-	atmo.Color = Color3.fromRGB(205, 228, 250)
-	atmo.Decay = Color3.fromRGB(150, 190, 235)
-	atmo.Glare = 0
-	atmo.Haze = 0.8
+	atmo.Density = 0.22
+	atmo.Offset = 0.3
+	atmo.Color = Color3.fromRGB(214, 232, 252)
+	atmo.Decay = Color3.fromRGB(110, 170, 240)
+	atmo.Glare = 0.2
+	atmo.Haze = 1.2
 	atmo.Parent = Lighting
 	local cc = Lighting:FindFirstChild("Grade") or Instance.new("ColorCorrectionEffect")
 	cc.Name = "Grade"
-	cc.Saturation = 0.18
-	cc.Contrast = 0.08
+	cc.Saturation = 0.35
+	cc.Contrast = 0.12
+	cc.Brightness = 0.02
+	cc.TintColor = Color3.fromRGB(255, 250, 240)
 	cc.Parent = Lighting
+	pcall(function()
+		local bloom = Lighting:FindFirstChild("Bloom") or Instance.new("BloomEffect")
+		bloom.Name = "Bloom"
+		bloom.Intensity = 0.35
+		bloom.Size = 28
+		bloom.Threshold = 0.92
+		bloom.Parent = Lighting
+		local rays = Lighting:FindFirstChild("Rays") or Instance.new("SunRaysEffect")
+		rays.Name = "Rays"
+		rays.Intensity = 0.06
+		rays.Spread = 0.6
+		rays.Parent = Lighting
+		local sky = Lighting:FindFirstChildOfClass("Sky") or Instance.new("Sky")
+		sky.SunAngularSize = 14
+		sky.Parent = Lighting
+		local clouds = workspace.Terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
+		clouds.Cover = 0.45
+		clouds.Density = 0.3
+		clouds.Color = Color3.fromRGB(255, 255, 255)
+		clouds.Parent = workspace.Terrain
+	end)
 end
 
 -- The street ------------------------------------------------------------------------------------------------------
-local function tree(s, x, z, k)
+-- A chunky picture-book tree: a trunk with a foot, three stacked round canopies in three greens, a highlight blob
+local function tree(s, x, z, k, parent)
 	k = k or 1
-	s:block(x, z, 1.4 * k, 1.4 * k, 6 * k, { color = P.wood, name = "Trunk" })
-	s:block(x, z, 7 * k, 7 * k, 5 * k, { color = P.grassDark, name = "Leaves" }, 5 * k)
-	s:block(x, z, 5 * k, 5 * k, 3 * k, deco({ color = P.grass, name = "Leaves" }), 9.6 * k)
+	local o = parent and { parent = parent } or {}
+	s:block(x, z, 1.6 * k, 1.6 * k, 5 * k, { color = P.woodDark, name = "Trunk", parent = o.parent })
+	s:sphere(
+		x,
+		7.2 * k,
+		z,
+		8.4 * k,
+		6.4 * k,
+		8.4 * k,
+		deco({ color = P.grassDark, name = "Leaves", parent = o.parent })
+	)
+	s:sphere(
+		x + 0.8 * k,
+		10 * k,
+		z - 0.6 * k,
+		6.6 * k,
+		5.2 * k,
+		6.6 * k,
+		deco({ color = P.leaf, name = "Leaves", parent = o.parent })
+	)
+	s:sphere(
+		x - 0.6 * k,
+		12.2 * k,
+		z + 0.4 * k,
+		4.4 * k,
+		3.6 * k,
+		4.4 * k,
+		deco({ color = P.leafLight, name = "Leaves", parent = o.parent })
+	)
+	s:sphere(
+		x + 1.6 * k,
+		11.4 * k,
+		z - 1.4 * k,
+		1.8 * k,
+		1.4 * k,
+		1.8 * k,
+		deco({ color = Shapes.shade(P.leafLight, 0.35), name = "Shine", parent = o.parent, shadow = false })
+	)
 end
+FarmBuilder.tree = tree
+
+-- A clump of flowers on a patch of lighter grass
+local function flowers(s, x, z, n, seed)
+	local r = Random.new(seed or math.floor(x * 7 + z * 13))
+	s:sphere(
+		x,
+		0.08,
+		z,
+		3.6 + n * 0.5,
+		0.3,
+		3.2 + n * 0.5,
+		deco({ color = P.grassLight, name = "Tuft", shadow = false })
+	)
+	for _ = 1, n do
+		local fx, fz = x + r:NextNumber(-1.4, 1.4), z + r:NextNumber(-1.2, 1.2)
+		s:block(fx, fz, 0.22, 0.22, 0.7, deco({ color = P.leaf, name = "Stem", shadow = false }), 0.1)
+		s:sphere(
+			fx,
+			0.95,
+			fz,
+			0.7,
+			0.5,
+			0.7,
+			deco({ color = FLOWERS[r:NextInteger(1, #FLOWERS)], name = "Flower", shadow = false })
+		)
+	end
+end
+FarmBuilder.flowers = flowers
 
 local function lamp(s, x, z)
-	s:block(x, z, 1.2, 1.2, 0.5, { color = P.concreteDark, name = "LampBase" })
-	s:block(x, z, 0.5, 0.5, 11, { color = P.steel, name = "LampPost" }, 0.5)
-	s:block(x, z, 1.4, 1.4, 0.6, deco({ color = P.steel }), 11.5)
-	s:block(
+	s:block(x, z, 1.4, 1.4, 0.6, { color = P.concreteDark, name = "LampBase" })
+	s:block(x, z, 0.5, 0.5, 11, { color = INK, name = "LampPost" }, 0.6)
+	s:box(x, 11.9, z, 1.6, 0.5, 1.6, deco({ color = INK, name = "LampCap" }))
+	s:box(
 		x,
+		11.3,
 		z,
-		1,
-		1,
-		0.4,
-		deco({ color = Color3.fromRGB(255, 244, 200), material = Enum.Material.Neon, name = "Lamp" }),
-		11.1
+		1.1,
+		0.7,
+		1.1,
+		deco({ color = Color3.fromRGB(255, 244, 200), material = Enum.Material.Neon, name = "Lamp" })
 	)
 end
 
@@ -224,49 +313,73 @@ function FarmBuilder.world(parent)
 	local length = 3 * PlotLayout.WIDTH + 2 * PlotLayout.GAP + 200
 	local road = PlotLayout.ROAD
 
-	-- the ground, the road and its lines, the verges
-	s:block(0, 0, 2400, 2400, 2, { color = P.grassDark, name = "Ground" }, -2)
-	s:block(0, 0, length + 1200, 26, 0.3, { color = P.asphalt, name = "Road" }, 0)
+	-- the ground, the road with its kerbs and lines, the verges
+	s:block(0, 0, 2600, 2600, 2, { color = P.grassDark, name = "Ground" }, -2)
+	s:block(0, 0, length + 1200, 26, 0.4, { color = P.asphalt, name = "Road" }, 0)
 	for _, side in { -1, 1 } do
-		s:block(0, side * 12.4, length + 1200, 0.5, 0.34, deco({ color = WHITE, name = "EdgeLine" }), 0)
-		s:block(0, side * 16.5, length + 1200, 7, 0.2, { color = P.grassLight, name = "Verge" }, 0)
+		s:block(0, side * 13.4, length + 1200, 0.9, 0.7, { color = P.concrete, name = "Kerb" }, 0)
+		s:block(0, side * 12.1, length + 1200, 0.5, 0.42, deco({ color = WHITE, name = "EdgeLine" }), 0)
+		s:block(0, side * 17, length + 1200, 6.4, 0.3, { color = P.grassLight, name = "Verge" }, 0)
 	end
 	for x = -length / 2 - 600, length / 2 + 600, 14 do
-		s:block(x, 0, 7, 0.5, 0.34, deco({ color = P.safetyYellow, name = "CentreLine" }), 0)
+		s:block(x, 0, 7, 0.5, 0.42, deco({ color = P.safetyYellow, name = "CentreLine" }), 0)
 	end
 	for x = -length / 2 + 20, length / 2 - 20, 48 do
 		for _, side in { -1, 1 } do
-			lamp(s, x, side * 17.5)
+			lamp(s, x, side * 18.5)
 		end
 	end
-	-- round it: trees and low hills past the plots
+	-- round it: lighter meadow patches, rolling hills in two greens, chunky trees, flowers along the verges
 	local r = Random.new(10)
-	for i = 1, 60 do
-		local x = r:NextNumber(-length / 2 - 300, length / 2 + 300)
-		local zEdge = road / 2 + PlotLayout.DEPTH + 20
-		local z = (i % 2 == 0 and 1 or -1) * r:NextNumber(zEdge, zEdge + 220)
-		tree(s, x, z, r:NextNumber(0.9, 1.6))
+	for i = 1, 40 do
+		local x = r:NextNumber(-length / 2 - 500, length / 2 + 500)
+		local z = (i % 2 == 0 and 1 or -1) * r:NextNumber(road / 2 + PlotLayout.DEPTH + 10, 900)
+		s:sphere(
+			x,
+			-1.6,
+			z,
+			r:NextNumber(60, 140),
+			3,
+			r:NextNumber(40, 100),
+			deco({ color = P.grass, name = "MeadowPatch", shadow = false })
+		)
 	end
-	for i = 1, 14 do
-		local x = -1000 + i * 140 + r:NextNumber(-30, 30)
+	for i = 1, 16 do
+		local x = -1100 + i * 150 + r:NextNumber(-40, 40)
 		for _, side in { -1, 1 } do
-			local h = r:NextNumber(18, 50)
-			s:block(
+			local w, h = r:NextNumber(160, 300), r:NextNumber(30, 70)
+			s:sphere(
 				x,
-				side * r:NextNumber(560, 720),
+				-h * 0.35,
+				side * r:NextNumber(540, 760),
+				w,
+				h * 2,
 				r:NextNumber(120, 220),
-				r:NextNumber(80, 160),
-				h,
-				deco({ color = i % 2 == 0 and P.grass or P.grassDark, shadow = false, name = "Hill" }),
-				-2
+				deco({
+					color = i % 3 == 0 and P.grassLight or (i % 2 == 0 and P.grass or P.grassDark),
+					shadow = false,
+					name = "Hill",
+				})
 			)
 		end
 	end
+	for i = 1, 70 do
+		local x = r:NextNumber(-length / 2 - 300, length / 2 + 300)
+		local zEdge = road / 2 + PlotLayout.DEPTH + 16
+		local z = (i % 2 == 0 and 1 or -1) * r:NextNumber(zEdge, zEdge + 260)
+		tree(s, x, z, r:NextNumber(0.9, 1.7))
+	end
+	for i = 1, 10 do
+		local x = -length / 2 + i * (length / 11) + r:NextNumber(-8, 8)
+		for _, side in { -1, 1 } do
+			flowers(s, x, side * 18.5 + r:NextNumber(-2, 2), 3, i * 3 + side)
+		end
+	end
 	for _, side in { -1, 1 } do
-		tree(s, side * (length / 2 - 40), side * 40, 1.4)
+		tree(s, side * (length / 2 - 40), side * 40, 1.5)
 	end
 
-	-- the plots: meadow, a fence round each, the owner's sign
+	-- the plots: meadow, a wooden fence round each, the owner's sign
 	for i = 1, Constants.PLOTS do
 		local plotFolder = Instance.new("Folder")
 		plotFolder.Name = "Plot" .. i
@@ -285,45 +398,49 @@ function FarmBuilder.world(parent)
 		local L = Shapes.new(plotFolder, plot.cf)
 		local W, D, F = PlotLayout.WIDTH, PlotLayout.DEPTH, PlotLayout.EDGE
 		L:block(0, D / 2 - F, W, D, 0.25, deco({ color = i % 2 == 0 and P.grass or P.grassLight, name = "Meadow" }), 0)
-		-- the fence: posts and two rails on the three land sides, open to the road
+		-- a few lighter patches and flower clumps on the meadow, so it isn't one flat green
+		local pr = Random.new(i * 77)
+		for _ = 1, 6 do
+			L:sphere(
+				pr:NextNumber(-W / 2 + 20, W / 2 - 20),
+				0.1,
+				pr:NextNumber(-60, D - F - 20),
+				pr:NextNumber(24, 50),
+				0.3,
+				pr:NextNumber(18, 40),
+				deco({ color = i % 2 == 0 and P.grassLight or P.grass, name = "MeadowPatch", shadow = false })
+			)
+		end
+		for k = 1, 4 do
+			flowers(L, pr:NextNumber(-W / 2 + 10, W / 2 - 10), pr:NextNumber(-100, D - F - 10), 3, i * 10 + k)
+		end
+		-- the fence: wooden posts with caps and two rails on the three land sides, open to the road
 		local function rail(x0, z0, x1, z1)
 			local len = math.max(math.abs(x1 - x0), math.abs(z1 - z0))
 			local alongX = math.abs(x1 - x0) > math.abs(z1 - z0)
 			local cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
-			for _, y in { 1.4, 2.6 } do
-				L:box(
-					cx,
-					y,
-					cz,
-					alongX and len or 0.3,
-					0.3,
-					alongX and 0.3 or len,
-					{ color = P.fenceWhite, name = "Fence" }
-				)
+			for _, y in { 1.3, 2.5 } do
+				L:box(cx, y, cz, alongX and len or 0.4, 0.4, alongX and 0.4 or len, { color = P.wood, name = "Fence" })
 			end
 			for k = 0, math.floor(len / 8) do
 				local t = k * 8 / len
-				L:block(
-					x0 + (x1 - x0) * t,
-					z0 + (z1 - z0) * t,
-					0.5,
-					0.5,
-					3.2,
-					deco({ color = P.fenceWhite, name = "FencePost" }),
-					0
-				)
+				local px, pz = x0 + (x1 - x0) * t, z0 + (z1 - z0) * t
+				L:block(px, pz, 0.7, 0.7, 3.2, deco({ color = P.woodDark, name = "FencePost" }), 0)
+				L:box(px, 3.35, pz, 0.9, 0.3, 0.9, deco({ color = P.wood, name = "PostCap" }))
 			end
 		end
 		rail(-W / 2, -F, -W / 2, D - F)
 		rail(W / 2, -F, W / 2, D - F)
 		rail(-W / 2, D - F, W / 2, D - F)
-		-- the owner's sign by the road
+		-- the owner's sign by the road: a wooden board on two posts, trimmed in the plot's colour
 		local spot = SPOTS.sign
-		L:block(spot.X - 3.5, spot.Z, 0.6, 0.6, 6, { color = P.wood, name = "SignPost" }, 0)
-		L:block(spot.X + 3.5, spot.Z, 0.6, 0.6, 6, { color = P.wood, name = "SignPost" }, 0)
-		local board = L:box(spot.X, 5.6, spot.Z - 0.1, 9, 3, 0.4, deco({ color = P.cream, name = "OwnerSign" }))
-		L:box(spot.X, 7.25, spot.Z - 0.1, 9.4, 0.3, 0.5, deco({ color = plot.color, name = "SignTrim" }))
-		L:box(spot.X, 3.95, spot.Z - 0.1, 9.4, 0.3, 0.5, deco({ color = plot.color, name = "SignTrim" }))
+		for _, sx in { -1, 1 } do
+			L:block(spot.X + sx * 3.8, spot.Z, 0.7, 0.7, 6.4, { color = P.woodDark, name = "SignPost" }, 0)
+			L:box(spot.X + sx * 3.8, 6.55, spot.Z, 0.9, 0.3, 0.9, deco({ color = P.wood, name = "PostCap" }))
+		end
+		local board = L:box(spot.X, 5.4, spot.Z - 0.1, 9.4, 3.2, 0.5, deco({ color = P.cream, name = "OwnerSign" }))
+		L:box(spot.X, 7.2, spot.Z - 0.1, 9.8, 0.4, 0.6, deco({ color = plot.color, name = "SignTrim" }))
+		L:box(spot.X, 3.6, spot.Z - 0.1, 9.8, 0.4, 0.6, deco({ color = plot.color, name = "SignTrim" }))
 		FarmBuilder.sign(board, "FOR SALE", "", INK)
 		plot.sign = board
 		world.plots[i] = plot
@@ -341,147 +458,148 @@ end
 
 -- A plot's own pieces ---------------------------------------------------------------------------------------------
 -- The house: the shack a new farmer gets, and the bigger homes it grows into with the farm level (Data/Home), all
--- from one plan: walls, siding, a roof in the plot's colour, a door, windows with shutters and flower boxes, a
--- porch, a chimney; bigger tiers get a second floor of windows, a garden, hedges, trees, a fountain
+-- from one plan in the toon look: walls with a foot and a cap, a roof with overhangs and a ridge in the plot's
+-- colour, a round-topped door, windows with white frames, shutters and flower boxes, a porch with a railing, a
+-- chimney with smoke; bigger tiers get a second floor of windows, a garden, hedges, trees, a fountain
 local function house(L, plot, tier)
 	local color = plot.color
 	local T = Home.TIERS[tier] or Home.TIERS[1]
 	local x, z = SPOTS.shack.X, SPOTS.shack.Z
 	local w, d, h = T.w, T.d, T.h
 	local wall, trim, roof = T.wall, T.trim, T.roof
-	L:block(x, z, w + 1, d + 1, 0.8, { color = P.concreteDark, name = "HouseFloor" }, 0)
-	L:block(x, z, w, d, h, { color = wall, name = "House" }, 0.8)
-	for y = 2, h, 1.2 do
-		for _, sz in { -1, 1 } do
-			L:block(
-				x,
-				z + sz * (d / 2 + 0.05),
-				w + 0.1,
-				0.12,
-				0.12,
-				deco({ color = T.siding or wall, name = "Siding" }),
-				y
-			)
-		end
-	end
+	L:block(x, z, w + 2, d + 2, 0.6, { color = P.concreteDark, name = "HouseFloor" }, 0)
+	L:toon(x, z, w, d, h, { color = wall, name = "House" }, 0.6)
 	for _, sx in { -1, 1 } do
 		for _, sz in { -1, 1 } do
-			L:block(x + sx * w / 2, z + sz * d / 2, 0.6, 0.6, h, deco({ color = trim, name = "Trim" }), 0.8)
+			L:block(x + sx * w / 2, z + sz * d / 2, 0.8, 0.8, h, deco({ color = trim, name = "Trim" }), 0.6)
 		end
 	end
-	-- the roof: two slopes, a ridge, eaves in the plot's colour; a tall house gets a taller roof
-	local rh = tier >= 4 and 6 or 4
-	L:wedge(x, 0.8 + h + rh / 2, z - d / 4 - 0.3, w + 1.6, rh, d / 2 + 0.8, { color = roof, name = "Roof" }, 180)
-	L:wedge(x, 0.8 + h + rh / 2, z + d / 4 + 0.3, w + 1.6, rh, d / 2 + 0.8, { color = roof, name = "Roof" }, 0)
-	L:box(x, 0.8 + h + rh + 0.1, z, w + 1.8, 0.4, 0.6, deco({ color = color, name = "Ridge" }))
-	-- the door and its frame, windows with shutters and flower boxes along the front
+	-- the roof: two slopes with an overhang, eaves trim, a ridge cap in the plot's colour
+	local rh = tier >= 4 and 6.5 or 4.5
+	local ry = 0.6 + h + rh / 2
+	L:wedge(x, ry, z - d / 4 - 0.6, w + 3, rh, d / 2 + 1.2, { color = roof, name = "Roof" }, 180)
+	L:wedge(x, ry, z + d / 4 + 0.6, w + 3, rh, d / 2 + 1.2, { color = roof, name = "Roof" }, 0)
+	for _, sz in { -1, 1 } do
+		L:box(x, 0.6 + h + 0.15, z + sz * (d / 2 + 1.1), w + 3.2, 0.5, 0.5, deco({ color = trim, name = "Eave" }))
+	end
+	L:box(x, 0.6 + h + rh + 0.2, z, w + 3.4, 0.6, 1, deco({ color = color, name = "Ridge" }))
+	-- the door (round-topped) and its frame, windows with frames, shutters and flower boxes along the front
 	local fz = z - d / 2
 	local doorX = x - (tier >= 3 and 0 or 2.5)
-	L:box(doorX, 0.8 + 3, fz - 0.1, 3, 6, 0.2, deco({ color = Color3.fromRGB(120, 72, 44), name = "Door" }))
-	L:box(doorX, 0.8 + 6.2, fz - 0.15, 3.6, 0.4, 0.3, deco({ color = trim, name = "Trim" }))
-	L:box(doorX + 1.3, 0.8 + 3, fz - 0.2, 0.3, 0.3, 0.2, deco({ color = P.sunflower, name = "Knob" }))
+	L:box(doorX, 0.6 + 3, fz - 0.12, 3.2, 6, 0.3, deco({ color = P.woodDark, name = "Door" }))
+	L:cyl(doorX, 0.6 + 6, fz - 0.12, 0.3, 3.2, deco({ color = P.woodDark, name = "DoorTop" }), "z")
+	L:box(doorX, 0.6 + 3.2, fz - 0.2, 3.9, 6.6, 0.2, deco({ color = trim, name = "DoorFrame", transparency = 0 }))
+	L:box(doorX, 0.6 + 3, fz - 0.3, 3.2, 6, 0.2, deco({ color = P.woodDark, name = "Door" }))
+	L:box(doorX + 1.2, 0.6 + 3, fz - 0.45, 0.4, 0.4, 0.2, deco({ color = P.sunflower, name = "Knob" }))
 	local windows = {}
 	if tier <= 2 then
-		windows = { x + 3 }
+		windows = { x + 3.2 }
 	else
 		for k = -math.floor(w / 10), math.floor(w / 10) do
-			if math.abs(x + k * 5 - doorX) > 3.2 then
+			if math.abs(x + k * 5 - doorX) > 3.4 then
 				table.insert(windows, x + k * 5)
 			end
 		end
 	end
 	local floors = tier >= 3 and 2 or 1
 	for floor = 1, floors do
-		local wy = 0.8 + 4.5 + (floor - 1) * (h / 2)
+		local wy = 0.6 + 4.6 + (floor - 1) * (h / 2)
 		for _, wx in windows do
-			L:box(wx, wy, fz - 0.1, 3.4, 2.6, 0.2, deco({ color = P.glass, name = "Window" }))
-			L:box(wx, wy, fz - 0.15, 3.8, 0.3, 0.3, deco({ color = trim, name = "Trim" }))
+			L:box(wx, wy, fz - 0.14, 3.8, 3, 0.2, deco({ color = trim, name = "WindowFrame" }))
+			L:box(wx, wy, fz - 0.24, 3.2, 2.4, 0.2, deco({ color = P.glass, name = "Window" }))
+			L:box(wx, wy, fz - 0.3, 0.3, 2.4, 0.1, deco({ color = trim, name = "Mullion" }))
 			for _, sx in { -1, 1 } do
-				L:box(wx + sx * 2.3, wy, fz - 0.12, 1, 2.8, 0.2, deco({ color = color, name = "Shutter" }))
+				L:box(wx + sx * 2.5, wy, fz - 0.2, 1.1, 3, 0.25, deco({ color = color, name = "Shutter" }))
 			end
 			if floor == 1 then
-				L:box(
-					wx,
-					wy - 1.6,
-					fz - 0.5,
-					3.6,
-					0.6,
-					0.8,
-					deco({ color = Color3.fromRGB(120, 72, 44), name = "FlowerBox" })
-				)
+				L:box(wx, wy - 1.9, fz - 0.6, 3.9, 0.7, 0.9, deco({ color = P.woodDark, name = "FlowerBox" }))
 				for k = -1, 1 do
-					L:box(
-						wx + k * 1.1,
-						wy - 1.1,
-						fz - 0.5,
-						0.6,
-						0.6,
-						0.6,
-						deco({ color = k == 0 and P.sunflower or Color3.fromRGB(240, 90, 140), name = "Flower" })
+					L:sphere(
+						wx + k * 1.15,
+						wy - 1.2,
+						fz - 0.6,
+						0.8,
+						0.7,
+						0.8,
+						deco({ color = FLOWERS[(k + 2) % #FLOWERS + 1], name = "Flower" })
 					)
 				end
 			end
 		end
 	end
-	-- the porch: a deck, posts, a little roof (a wide porch on the big homes)
-	local pw = tier >= 3 and w * 0.7 or 7
-	L:block(doorX, fz - 2, pw, 4, 0.8, { color = P.wood, name = "Porch" }, 0)
+	-- the porch: a deck with a railing, posts, a little roof (a wide porch on the big homes)
+	local pw = tier >= 3 and w * 0.7 or 8
+	L:toon(doorX, fz - 2.2, pw, 4.4, 0.9, { color = P.wood, name = "Porch" }, 0)
 	for _, sx in { -1, 1 } do
-		L:block(doorX + sx * (pw / 2 - 0.4), fz - 3.7, 0.5, 0.5, 6, { color = trim, name = "PorchPost" }, 0.8)
+		L:block(doorX + sx * (pw / 2 - 0.5), fz - 4, 0.6, 0.6, 6.2, { color = trim, name = "PorchPost" }, 0.9)
+		L:box(doorX + sx * (pw / 2 - 0.5), 2.4, fz - 2.2, 0.3, 0.3, 3.4, deco({ color = trim, name = "Railing" }))
 	end
-	L:box(doorX, 0.8 + 6.4, fz - 2, pw + 0.6, 0.4, 4.4, { color = color, name = "PorchRoof" })
-	L:block(x + w / 2 - 2.5, z + 1.5, 1.6, 1.6, 4.5, { color = P.concreteDark, name = "Chimney" }, 0.8 + h + 0.8)
-	-- the garden grows with the home: a lawn path, hedges, flower beds, trees, a fountain, lanterns
-	local gz = fz - 6
-	L:block(
+	L:box(doorX, 0.6 + 6.6, fz - 2.2, pw + 0.8, 0.5, 4.8, { color = color, name = "PorchRoof" })
+	L:box(
 		doorX,
-		(gz + SPOTS.mailbox.Z) / 2,
-		4,
-		gz - SPOTS.mailbox.Z + 2,
-		0.12,
-		deco({ color = P.concrete, name = "GardenPath" }),
-		0.26
+		0.6 + 6.95,
+		fz - 2.2,
+		pw + 1,
+		0.2,
+		5,
+		deco({ color = Shapes.shade(color, 0.25), name = "PorchRoofCap" })
 	)
+	-- the chimney and its smoke
+	local cx, cz = x + w / 2 - 2.8, z + 1.5
+	L:toon(cx, cz, 1.8, 1.8, 4.6, { color = P.concreteDark, name = "Chimney" }, 0.6 + h + 0.6)
+	for k = 0, 2 do
+		L:sphere(
+			cx + k * 0.5,
+			0.6 + h + 5.9 + k * 1.3,
+			cz - k * 0.3,
+			1.2 + k * 0.5,
+			1 + k * 0.4,
+			1.2 + k * 0.5,
+			deco({ color = WHITE, name = "Smoke", transparency = 0.35 + k * 0.2, shadow = false })
+		)
+	end
+	-- the garden grows with the home: a stone path to the drive, hedges, flower beds, trees, a fountain, lanterns
+	local gz = fz - 6.4
+	for k = 0, 5 do
+		L:block(
+			doorX + (k % 2 == 0 and 0.5 or -0.5),
+			gz - k * 2.2,
+			1.9,
+			1.5,
+			0.2,
+			deco({ color = k % 2 == 0 and P.concrete or P.concreteDark, name = "Stone" }),
+			0.24
+		)
+	end
 	if tier >= 2 then
 		for _, sx in { -1, 1 } do
-			L:block(
-				x + sx * (w / 2 + 2),
-				fz - 4,
-				1.6,
-				6,
-				1.6,
-				deco({ color = Color3.fromRGB(60, 140, 60), name = "Hedge" }),
-				0
-			)
+			L:toon(x + sx * (w / 2 + 2.4), fz - 4, 1.8, 7, 1.8, { color = P.leaf, name = "Hedge" }, 0)
 		end
 	end
 	if tier >= 3 then
 		for k = 0, 4 do
 			for _, sx in { -1, 1 } do
-				local bx = doorX + sx * (4 + k * 1.1)
-				L:block(bx, gz, 1, 1, 0.35, deco({ color = SOIL_DARK, name = "Bed" }), 0)
-				L:box(bx, 0.75, gz, 0.35, 0.6, 0.35, deco({ color = Color3.fromRGB(70, 150, 60), name = "Stem" }))
-				L:box(bx, 1.15, gz, 0.6, 0.35, 0.6, deco({ color = FLOWERS[k % #FLOWERS + 1], name = "Flower" }))
+				local bx = doorX + sx * (4.5 + k * 1.2)
+				L:block(bx, gz, 1.1, 1.1, 0.35, deco({ color = SOIL_DARK, name = "Bed" }), 0)
+				L:sphere(bx, 1, gz, 0.8, 0.7, 0.8, deco({ color = FLOWERS[k % #FLOWERS + 1], name = "Flower" }))
 			end
 		end
 	end
 	if tier >= 4 then
 		for _, sx in { -1, 1 } do
-			local tx, tz = x + sx * (w / 2 + 6), z - 2
-			L:block(tx, tz, 1.2, 1.2, 5, { color = P.wood, name = "Trunk" }, 0)
-			L:box(tx, 7.5, tz, 6, 5, 6, deco({ color = Color3.fromRGB(70, 150, 70), name = "Leaves" }))
+			tree(L, x + sx * (w / 2 + 7), z - 2, 0.8)
 		end
 	end
 	if tier >= 5 then
-		local fx, fzz = doorX, gz - 5
-		L:cyl(fx, 0.6, fzz, 1.2, 7, { color = P.concrete, name = "Fountain" }, "y")
-		L:cyl(fx, 1.3, fzz, 0.3, 6, deco({ color = P.water, name = "FountainWater" }), "y")
+		local fx, fzz = doorX, gz - 16
+		L:cyl(fx, 0.6, fzz, 1.2, 7.4, { color = P.concrete, name = "Fountain" }, "y")
+		L:cyl(fx, 1.3, fzz, 0.3, 6.4, deco({ color = P.water, name = "FountainWater" }), "y")
 		L:cyl(fx, 2.2, fzz, 2, 1.2, deco({ color = P.concrete, name = "FountainStem" }), "y")
-		L:cyl(fx, 3.3, fzz, 0.4, 3, deco({ color = P.water, name = "FountainWater" }), "y")
+		L:cyl(fx, 3.3, fzz, 0.4, 3.2, deco({ color = P.water, name = "FountainWater" }), "y")
 		for _, sx in { -1, 1 } do
-			L:block(fx + sx * 5, fzz, 0.4, 0.4, 5, { color = INK, name = "LanternPost" }, 0)
+			L:block(fx + sx * 5.5, fzz, 0.4, 0.4, 5, { color = INK, name = "LanternPost" }, 0)
 			L:box(
-				fx + sx * 5,
+				fx + sx * 5.5,
 				5.4,
 				fzz,
 				1,
@@ -491,12 +609,19 @@ local function house(L, plot, tier)
 			)
 		end
 	end
-	local sign =
-		L:box(doorX, 0.8 + h - 0.6, fz - 0.2, math.min(w - 2, 12), 1.6, 0.2, deco({ color = trim, name = "HouseSign" }))
+	local sign = L:box(
+		doorX,
+		0.6 + h - 0.7,
+		fz - 0.26,
+		math.min(w - 2, 12),
+		1.6,
+		0.2,
+		deco({ color = trim, name = "HouseSign" })
+	)
 	FarmBuilder.sign(sign, string.upper(T.name), "", color)
 end
 
--- The field's rail fence, round every patch it has now (rebuilt as it grows), open at the front and the path side
+-- The field's wooden fence, round every patch it has now (rebuilt as it grows), open at the front and the path side
 function FarmBuilder.fieldFence(plot, n)
 	local folder = plot.items:FindFirstChild("FieldFence")
 	if folder and folder:GetAttribute("Patches") == n then
@@ -514,35 +639,29 @@ function FarmBuilder.fieldFence(plot, n)
 	local function rail(ax, az, bx, bz)
 		local len = math.max(math.abs(bx - ax), math.abs(bz - az))
 		local alongX = math.abs(bx - ax) > 0
-		for _, y in { 1, 2 } do
+		for _, y in { 1.1, 2.1 } do
 			L:box(
 				(ax + bx) / 2,
 				y,
 				(az + bz) / 2,
-				alongX and len or 0.3,
-				0.3,
-				alongX and 0.3 or len,
+				alongX and len or 0.4,
+				0.4,
+				alongX and 0.4 or len,
 				deco({ color = P.wood, name = "FieldRail" })
 			)
 		end
 		for k = 0, math.floor(len / 6) do
 			local t = k * 6 / len
-			L:block(
-				ax + (bx - ax) * t,
-				az + (bz - az) * t,
-				0.5,
-				0.5,
-				2.4,
-				deco({ color = P.wood, name = "FieldPost" }),
-				0
-			)
+			local px, pz = ax + (bx - ax) * t, az + (bz - az) * t
+			L:block(px, pz, 0.7, 0.7, 2.6, deco({ color = P.woodDark, name = "FieldPost" }), 0)
+			L:box(px, 2.75, pz, 0.9, 0.3, 0.9, deco({ color = P.wood, name = "PostCap" }))
 		end
 	end
 	rail(x0, z0, x0, z1)
 	rail(x0, z1, x1, z1)
 	rail(x1, z0, x1, z1)
-	rail(x0, z0, x0 + 12, z0)
-	rail(x0 + 24, z0, x1, z0)
+	rail(x0, z0, x0 + 10, z0)
+	rail(x0 + 30, z0, x1, z0)
 	return folder
 end
 
@@ -569,24 +688,36 @@ local STAND = {}
 local function produceCrates(L, x, z, y, n)
 	for k = 0, n - 1 do
 		local cx = x + (k - (n - 1) / 2) * 3
-		L:block(cx, z, 2.4, 1.8, 0.9, deco({ color = Color3.fromRGB(150, 104, 64), name = "Crate" }), y)
+		L:toon(cx, z, 2.4, 1.8, 1, { color = P.wood, name = "Crate" }, y)
 		local key = Crops.LIST[k % 5 + 1]
 		for j = -1, 1 do
-			L:block(cx + j * 0.65, z, 0.55, 0.55, 0.5, deco({ color = Crops[key].color, name = "Produce" }), y + 0.9)
+			L:sphere(cx + j * 0.7, y + 1.25, z, 0.65, 0.55, 0.65, deco({ color = Crops[key].color, name = "Produce" }))
 		end
+	end
+end
+
+-- a row of little flags on a string
+local function bunting(L, x0, x1, z, y, color)
+	L:box((x0 + x1) / 2, y, z, math.abs(x1 - x0), 0.1, 0.1, deco({ color = INK, name = "String" }))
+	local n = math.floor(math.abs(x1 - x0) / 2)
+	for k = 0, n do
+		local fx = math.min(x0, x1) + k * 2 + 1
+		L:wedge(fx, y - 0.5, z, 1, 0.9, 0.08, deco({ color = k % 2 == 0 and color or WHITE, name = "Flag" }), 0)
 	end
 end
 
 STAND[1] = function(L, color)
 	local x, z = SPOTS.stand.X, SPOTS.stand.Z
-	L:block(x, z, 10, 4, 3, { color = P.wood, name = "Stand" }, 0)
-	L:block(x, z, 10.6, 4.6, 0.4, deco({ color = P.cream, name = "Counter" }), 3)
+	L:toon(x, z, 10, 4, 3, { color = P.wood, name = "Stand" }, 0)
+	L:block(x, z, 10.8, 4.8, 0.4, deco({ color = P.cream, name = "Counter" }), 3)
 	for _, sx in { -1, 1 } do
-		L:block(x + sx * 4.8, z + 1.8, 0.5, 0.5, 4.5, { color = P.cream, name = "StandPost" }, 3.4)
+		L:block(x + sx * 4.9, z + 1.8, 0.6, 0.6, 4.6, { color = P.woodDark, name = "StandPost" }, 3.4)
 	end
-	L:box(x, 3.4 + 4.7, z + 1, 11, 0.4, 3.2, { color = color, name = "StandRoof" })
+	L:box(x, 3.4 + 4.8, z + 1, 11.4, 0.5, 3.6, { color = color, name = "StandRoof" })
+	L:box(x, 3.4 + 5.15, z + 1, 11.6, 0.2, 3.8, deco({ color = Shapes.shade(color, 0.25), name = "StandRoofCap" }))
+	bunting(L, x - 5.5, x + 5.5, z - 0.9, 7.6, color)
 	produceCrates(L, x, z - 0.6, 3.4, 3)
-	local board = L:box(x, 1.6, z - 2.1, 7, 1.6, 0.2, deco({ color = P.cream, name = "StandSign" }))
+	local board = L:box(x, 1.7, z - 2.1, 7, 1.6, 0.2, deco({ color = P.cream, name = "StandSign" }))
 	FarmBuilder.sign(board, "FARM STAND", "", P.barnRed)
 end
 
@@ -610,20 +741,21 @@ end
 STAND[2] = function(L, color)
 	-- the produce stall: a long counter under a striped awning, barrels and baskets out front
 	local x, z = SPOTS.stand.X, SPOTS.stand.Z
-	L:block(x, z + 0.5, 14, 5, 3, { color = P.wood, name = "Stand" }, 0)
-	L:block(x, z + 0.5, 14.6, 5.6, 0.4, deco({ color = P.cream, name = "Counter" }), 3)
+	L:toon(x, z + 0.5, 14, 5, 3, { color = P.wood, name = "Stand" }, 0)
+	L:block(x, z + 0.5, 14.8, 5.8, 0.4, deco({ color = P.cream, name = "Counter" }), 3)
 	for _, sx in { -1, 1 } do
-		L:block(x + sx * 6.9, z - 1.8, 0.5, 0.5, 4.6, { color = P.cream, name = "StandPost" }, 3.4)
-		L:block(x + sx * 6.9, z + 2.8, 0.5, 0.5, 5.6, { color = P.cream, name = "StandPost" }, 3.4)
+		L:block(x + sx * 6.9, z - 1.8, 0.6, 0.6, 4.6, { color = P.woodDark, name = "StandPost" }, 3.4)
+		L:block(x + sx * 6.9, z + 2.8, 0.6, 0.6, 5.6, { color = P.woodDark, name = "StandPost" }, 3.4)
 	end
-	L:box(x, 9.2, z + 1.4, 15, 0.4, 3.4, { color = color, name = "StandRoof" })
+	L:box(x, 9.2, z + 1.4, 15.4, 0.5, 3.6, { color = color, name = "StandRoof" })
+	L:box(x, 9.55, z + 1.4, 15.6, 0.2, 3.8, deco({ color = Shapes.shade(color, 0.25), name = "StandRoofCap" }))
 	awning(L, x, z - 2.2, 15, 8.4, color)
 	produceCrates(L, x, z - 0.4, 3.4, 4)
 	for _, sx in { -1, 1 } do
-		L:cyl(x + sx * 9, 1.1, z - 1, 2.2, 1.8, { color = Color3.fromRGB(140, 90, 50), name = "Barrel" }, "y")
-		L:box(x + sx * 9, 2.4, z - 1, 1.5, 0.5, 1.5, deco({ color = Crops.tomato.color, name = "Produce" }))
+		L:cyl(x + sx * 9, 1.1, z - 1, 2.2, 1.8, { color = P.woodDark, name = "Barrel" }, "y")
+		L:sphere(x + sx * 9, 2.5, z - 1, 1.5, 0.8, 1.5, deco({ color = Crops.tomato.color, name = "Produce" }))
 	end
-	local board = L:box(x, 1.6, z - 2.1, 9, 1.8, 0.2, deco({ color = P.cream, name = "StandSign" }))
+	local board = L:box(x, 1.7, z - 2.1, 9, 1.8, 0.2, deco({ color = P.cream, name = "StandSign" }))
 	FarmBuilder.sign(board, "PRODUCE STALL", "", P.barnRed)
 end
 
@@ -631,28 +763,36 @@ STAND[3] = function(L, color)
 	-- the farm shop: a little shop with a gable roof, a wide open counter window, window boxes, a hanging sign
 	local x, z = SPOTS.stand.X, SPOTS.stand.Z + 1
 	local w, d, h = 16, 8, 8
-	L:block(x, z, w + 1, d + 1, 0.6, { color = P.concreteDark, name = "StandFloor" }, 0)
-	L:block(x, z + d / 2 - 0.3, w, 0.6, h, { color = P.cream, name = "Stand" }, 0.6) -- back wall
+	L:block(x, z, w + 1.5, d + 1.5, 0.6, { color = P.concreteDark, name = "StandFloor" }, 0)
+	L:toon(x, z + d / 2 - 0.3, w, 0.6, h, { color = P.cream, name = "Stand" }, 0.6) -- back wall
 	for _, sx in { -1, 1 } do
-		L:block(x + sx * (w / 2 - 0.3), z, 0.6, d, h, { color = P.cream, name = "Stand" }, 0.6)
-		-- the front wall either side of the window
-		L:block(x + sx * (w / 2 - 1.5), z - d / 2 + 0.3, 3, 0.6, h, { color = P.cream, name = "Stand" }, 0.6)
+		L:toon(x + sx * (w / 2 - 0.3), z, 0.6, d, h, { color = P.cream, name = "Stand" }, 0.6)
+		L:toon(x + sx * (w / 2 - 1.5), z - d / 2 + 0.3, 3, 0.6, h, { color = P.cream, name = "Stand" }, 0.6)
 	end
-	L:block(x, z - d / 2 + 0.3, w - 6, 0.6, 3, { color = P.wood, name = "Counter" }, 0.6)
+	L:toon(x, z - d / 2 + 0.3, w - 6, 0.6, 3, { color = P.wood, name = "Counter" }, 0.6)
 	L:block(x, z - d / 2 + 0.3, w, 0.6, 1.6, { color = P.cream, name = "Stand" }, h - 1)
-	L:wedge(x, h + 0.6 + 1.6, z - d / 4, w + 1, 3.2, d / 2 + 0.6, { color = color, name = "StandRoof" }, 180)
-	L:wedge(x, h + 0.6 + 1.6, z + d / 4, w + 1, 3.2, d / 2 + 0.6, { color = color, name = "StandRoof" }, 0)
+	L:wedge(x, h + 0.6 + 1.6, z - d / 4, w + 2, 3.2, d / 2 + 1, { color = color, name = "StandRoof" }, 180)
+	L:wedge(x, h + 0.6 + 1.6, z + d / 4, w + 2, 3.2, d / 2 + 1, { color = color, name = "StandRoof" }, 0)
+	L:box(x, h + 0.6 + 3.3, z, w + 2.2, 0.5, 0.9, deco({ color = Shapes.shade(color, 0.25), name = "Ridge" }))
 	produceCrates(L, x, z - d / 2 + 0.3, 3.6, 3)
 	for _, sx in { -1, 1 } do
-		L:block(x + sx * (w / 2 - 1.5), z - d / 2 - 0.4, 2.6, 0.8, 0.6, deco({ color = P.wood, name = "WindowBox" }), 3)
+		L:block(
+			x + sx * (w / 2 - 1.5),
+			z - d / 2 - 0.4,
+			2.6,
+			0.8,
+			0.6,
+			deco({ color = P.woodDark, name = "WindowBox" }),
+			3
+		)
 		for k = -1, 1 do
-			L:box(
+			L:sphere(
 				x + sx * (w / 2 - 1.5) + k * 0.8,
-				3.9,
+				3.95,
 				z - d / 2 - 0.4,
+				0.7,
 				0.6,
-				0.5,
-				0.6,
+				0.7,
 				deco({ color = FLOWERS[(k + 2) % #FLOWERS + 1], name = "Flower" })
 			)
 		end
@@ -665,15 +805,16 @@ STAND[4] = function(L, color)
 	-- the country market: a bigger two-tone hall, an awning the whole width, crates outside, a big sign on the roof
 	local x, z = SPOTS.stand.X, SPOTS.stand.Z + 1.5
 	local w, d, h = 20, 9, 10
-	L:block(x, z, w + 1, d + 1, 0.6, { color = P.concreteDark, name = "StandFloor" }, 0)
-	L:block(x, z + d / 2 - 0.3, w, 0.6, h, { color = P.barnRed, name = "Stand" }, 0.6)
+	L:block(x, z, w + 1.5, d + 1.5, 0.6, { color = P.concreteDark, name = "StandFloor" }, 0)
+	L:toon(x, z + d / 2 - 0.3, w, 0.6, h, { color = P.barnRed, name = "Stand" }, 0.6)
 	for _, sx in { -1, 1 } do
-		L:block(x + sx * (w / 2 - 0.3), z, 0.6, d, h, { color = P.barnRed, name = "Stand" }, 0.6)
-		L:block(x + sx * (w / 2 - 1.5), z - d / 2 + 0.3, 3, 0.6, h, { color = P.barnRed, name = "Stand" }, 0.6)
+		L:toon(x + sx * (w / 2 - 0.3), z, 0.6, d, h, { color = P.barnRed, name = "Stand" }, 0.6)
+		L:toon(x + sx * (w / 2 - 1.5), z - d / 2 + 0.3, 3, 0.6, h, { color = P.barnRed, name = "Stand" }, 0.6)
 	end
-	L:block(x, z - d / 2 + 0.3, w - 6, 0.6, 3, { color = P.wood, name = "Counter" }, 0.6)
+	L:toon(x, z - d / 2 + 0.3, w - 6, 0.6, 3, { color = P.wood, name = "Counter" }, 0.6)
 	L:block(x, z - d / 2 + 0.3, w, 0.6, 2, { color = WHITE, name = "Stand" }, h - 1.4)
-	L:box(x, h + 0.9, z, w + 1.2, 0.6, d + 1.2, { color = Color3.fromRGB(70, 74, 82), name = "StandRoof" })
+	L:box(x, h + 0.9, z, w + 1.6, 0.6, d + 1.6, { color = Color3.fromRGB(70, 74, 82), name = "StandRoof" })
+	L:box(x, h + 1.3, z, w + 1.8, 0.2, d + 1.8, deco({ color = Color3.fromRGB(110, 116, 128), name = "StandRoofCap" }))
 	awning(L, x, z - d / 2 - 1.6, w, 6.6, color)
 	produceCrates(L, x, z - d / 2 + 0.3, 3.6, 4)
 	produceCrates(L, x, z - d / 2 - 3.8, 0, 2)
@@ -708,114 +849,131 @@ end
 local function stand(L)
 	-- the pad in front: stand on it to sell
 	local x, z = SPOTS.stand.X, SPOTS.stand.Z
-	L:block(x, z - 7.5, 7, 4, 0.3, deco({ color = P.sunflower, name = "SellRim" }), 0.25)
+	L:block(x, z - 7.5, 7.4, 4.4, 0.3, deco({ color = P.sunflower, name = "SellRim" }), 0.25)
 	local pad = L:block(x, z - 7.5, 6.2, 3.2, 0.4, { color = WHITE, name = "SellPad" }, 0.25)
 	return pad
 end
 
--- The little things that make it a farm: flower beds by the shack, a stepping-stone path from the spawn to the soil,
--- hay bales, barrels and crates by the stand, bushes along the fence, a bench, a water trough, a lantern post
-local function bush(L, x, z, r)
-	local leaf = deco({ color = Color3.fromRGB(70, 150, 70), name = "Bush" })
-	local b = L:box(x, r * 0.55, z, r * 1.4, r * 1.1, r * 1.4, leaf)
-	local mesh = Instance.new("SpecialMesh")
-	mesh.MeshType = Enum.MeshType.Sphere
-	mesh.Parent = b
-	local b2 = L:box(
-		x + r * 0.5,
-		r * 0.45,
-		z - r * 0.3,
-		r,
-		r * 0.9,
-		r,
-		deco({ color = Color3.fromRGB(95, 175, 85), name = "Bush" })
+-- The BUILD stall: the three buy-pads under one little roof right behind where you stand, a BUILD sign facing you
+local function buildStall(L, plot, refs)
+	local pads = SPOTS.pads
+	local x0, x1 = pads[1].X - 4.4, pads[#pads].X + 4.4
+	local z = pads[1].Z
+	local cx = (x0 + x1) / 2
+	L:block(cx, z, x1 - x0 + 1, 10, 0.2, deco({ color = P.concrete, name = "StallFloor" }), 0.22)
+	for _, px in { x0, x1 } do
+		for _, pz in { z - 4.4, z + 4.4 } do
+			L:block(px, pz, 0.7, 0.7, 7.4, { color = P.woodDark, name = "StallPost" }, 0)
+		end
+	end
+	L:box(cx, 7.7, z, x1 - x0 + 2, 0.5, 10.6, { color = plot.color, name = "StallRoof" })
+	L:box(
+		cx,
+		8.05,
+		z,
+		x1 - x0 + 2.2,
+		0.2,
+		10.8,
+		deco({ color = Shapes.shade(plot.color, 0.25), name = "StallRoofCap" })
 	)
-	mesh:Clone().Parent = b2
+	bunting(L, x0, x1, z + 5.2, 6.9, plot.color)
+	local board = L:box(cx, 9.2, z, 12, 2.4, 0.4, deco({ color = P.cream, name = "StallSign" }))
+	FarmBuilder.sign(board, "BUILD", "step on a pad to buy", plot.color, Enum.NormalId.Back)
+	refs.pads, refs.rims = {}, {}
+	for slot, at in pads do
+		refs.rims[slot] = L:block(at.X, at.Z, 6.4, 6.4, 0.3, deco({ color = plot.color, name = "PadRim" }), 0.25)
+		local pad = L:block(at.X, at.Z, 5.4, 5.4, 0.4, { color = WHITE, name = "BuyPad" }, 0.25)
+		pad:SetAttribute("Slot", slot)
+		pad:SetAttribute("Plot", plot.index)
+		refs.pads[slot] = pad
+	end
+end
+
+-- The little things that make it a farm: stepping stones from where you stand to the soil, hay bales, barrels and
+-- crates by the stand, bushes and flowers by the road, a bench and a lantern, a water trough by the well
+local function bush(L, x, z, r)
+	L:sphere(x, r * 0.6, z, r * 1.5, r * 1.2, r * 1.5, deco({ color = P.leaf, name = "Bush" }))
+	L:sphere(x + r * 0.5, r * 0.5, z - r * 0.3, r * 1.1, r, r * 1.1, deco({ color = P.leafLight, name = "Bush" }))
+	L:sphere(
+		x - r * 0.3,
+		r * 1.1,
+		z + r * 0.1,
+		r * 0.6,
+		r * 0.5,
+		r * 0.6,
+		deco({ color = Shapes.shade(P.leafLight, 0.3), name = "Shine", shadow = false })
+	)
 end
 
 function FarmBuilder.decor(L, plot)
 	local S = SPOTS
-	-- flower beds along the shack's front
-	local sx, sz = S.shack.X, S.shack.Z - 5 - 0.6
-	for i = 0, 5 do
-		local x = sx + 2 + i * 1.1
-		L:block(x, sz - 1.2, 1, 1, 0.35, deco({ color = SOIL_DARK, name = "Bed" }), 0)
-		L:box(x, 0.75, sz - 1.2, 0.35, 0.6, 0.35, deco({ color = Color3.fromRGB(70, 150, 60), name = "Stem" }))
-		L:box(x, 1.15, sz - 1.2, 0.6, 0.35, 0.6, deco({ color = FLOWERS[i % #FLOWERS + 1], name = "Flower" }))
-	end
-	-- stepping stones from the spawn to the soil
+	-- stepping stones from where you stand to the soil
 	local a = Vector3.new(S.spawn.X, 0, S.spawn.Z + 2)
-	local b = Vector3.new(S.soil.X + 6, 0, S.soil.Z - 5)
-	for i = 0, 6 do
-		local p = a:Lerp(b, i / 6)
+	local b = Vector3.new(S.soil.X + 15, 0, S.soil.Z - 5)
+	for i = 0, 4 do
+		local p = a:Lerp(b, i / 4)
 		L:block(
 			p.X + (i % 2 == 0 and 0.4 or -0.4),
 			p.Z,
-			1.8,
-			1.4,
-			0.18,
+			1.9,
+			1.5,
+			0.2,
 			deco({ color = i % 2 == 0 and P.concrete or P.concreteDark, name = "Stone" }),
-			0.22
+			0.24
 		)
 	end
 	-- by the stand: hay bales, barrels, a stack of crates
 	local st = S.stand
 	for i = 0, 1 do
-		L:block(
-			st.X - 8,
+		L:toon(
+			st.X - 8.5,
 			st.Z + 1 - i * 2.6,
 			3,
 			2.2,
 			1.8,
-			{ color = Color3.fromRGB(225, 190, 90), name = "HayBale" },
-			0
-		)
-		L:block(
-			st.X - 8,
-			st.Z + 1 - i * 2.6,
-			3.05,
-			0.2,
-			1.85,
-			deco({ color = Color3.fromRGB(170, 130, 60), name = "Twine" }),
+			{ color = Color3.fromRGB(232, 196, 96), name = "HayBale" },
 			0
 		)
 	end
-	L:block(st.X - 8, st.Z - 0.3, 2.8, 2, 1.6, { color = Color3.fromRGB(225, 190, 90), name = "HayBale" }, 1.8)
+	L:toon(st.X - 8.5, st.Z - 0.3, 2.8, 2, 1.6, { color = Color3.fromRGB(232, 196, 96), name = "HayBale" }, 1.8)
 	for i = 0, 1 do
-		local x, z = st.X + 1.5 + i * 2.3, st.Z + 4.2
-		L:cyl(x, 1.1, z, 2.2, 1.8, { color = Color3.fromRGB(140, 90, 50), name = "Barrel" }, "y")
+		local x, z = st.X + 7.5 + i * 2.3, st.Z + 3.6
+		L:cyl(x, 1.1, z, 2.2, 1.8, { color = P.woodDark, name = "Barrel" }, "y")
 		for _, y in { 0.4, 1.8 } do
 			L:cyl(x, y, z, 0.18, 1.86, deco({ color = P.steel, name = "Hoop" }), "y")
 		end
 	end
 	for i = 0, 2 do
-		L:block(
+		L:toon(
 			st.X - 9 + (i % 2) * 1.6,
 			st.Z + 4,
 			1.5,
 			1.5,
 			1.3,
-			deco({ color = Color3.fromRGB(170, 120, 70), name = "Crate" }),
+			{ color = P.wood, name = "Crate" },
 			i == 2 and 1.3 or 0
 		)
 	end
-	-- a bench and a lantern post on the drive, a water trough by the well
-	local bx, bz = S.mailbox.X - 5, S.mailbox.Z + 4
-	L:block(bx, bz, 4, 1.2, 0.25, { color = P.wood, name = "Bench" }, 1.2)
-	L:box(bx, 2.1, bz + 0.55, 4, 1, 0.2, deco({ color = P.wood, name = "BenchBack" }))
+	-- a bench and a lantern post by the stand
+	local bx, bz = st.X - 14, st.Z - 4
+	L:block(bx, bz, 4, 1.2, 0.3, { color = P.wood, name = "Bench" }, 1.2)
+	L:box(bx, 2.1, bz + 0.55, 4, 1, 0.25, deco({ color = P.wood, name = "BenchBack" }))
 	for _, dx in { -1.7, 1.7 } do
 		L:block(bx + dx, bz, 0.3, 1, 1.2, deco({ color = INK, name = "BenchLeg" }), 0)
 	end
-	local lx, lz = S.mailbox.X + 3, S.mailbox.Z
+	local lx, lz = st.X + 11, st.Z - 6
 	L:block(lx, lz, 0.4, 0.4, 6, { color = INK, name = "LanternPost" }, 0)
 	L:box(lx, 6.4, lz, 1, 1.1, 1, deco({ color = P.sunflower, material = Enum.Material.Neon, name = "Lantern" }))
 	L:box(lx, 7.1, lz, 1.3, 0.3, 1.3, deco({ color = INK, name = "LanternCap" }))
 	local w = S.well
-	L:block(w.X + 6, w.Z + 1, 4, 1.6, 1.2, { color = P.wood, name = "Trough" }, 0)
+	L:toon(w.X + 6, w.Z + 1, 4, 1.6, 1.2, { color = P.wood, name = "Trough" }, 0)
 	L:block(w.X + 6, w.Z + 1, 3.5, 1.1, 0.2, deco({ color = P.water, name = "TroughWater" }), 1.05)
-	-- bushes along the back of the shack's yard and by the drive
-	for _, b2 in { { -66, -62 }, { -48, -60 }, { 8, -100 }, { -44, -110 } } do
+	-- bushes and flowers along the road edge and by the house's drive
+	for _, b2 in { { -100, -100 }, { -90, -104 }, { 20, -104 }, { 30, -100 }, { -50, -106 } } do
 		bush(L, b2[1], b2[2], 1.6)
+	end
+	for i, f in { { -84, -102 }, { -40, -108 }, { 12, -102 }, { -26, -72 }, { 10, -90 } } do
+		FarmBuilder.flowers(L, f[1], f[2], 4, i)
 	end
 	_ = plot
 end
@@ -827,39 +985,33 @@ function FarmBuilder.base(plot)
 	refs.standPad = stand(L)
 	FarmBuilder.standTier(plot, 1)
 	FarmBuilder.label(refs.standPad, "SELL", "stand here", P.sunflower)
-	-- the mailbox, the dirt track from the road to the shack
+	-- the mailbox by the road, the gravel drive from the road up to the house
 	local m = SPOTS.mailbox
-	L:block(m.X, m.Z, 0.4, 0.4, 3.4, { color = P.wood, name = "MailPost" }, 0)
-	L:box(m.X, 3.9, m.Z, 1.2, 1, 1.8, deco({ color = plot.color, name = "Mailbox" }))
-	L:block(-50, -95, 9, 30, 0.12, deco({ color = Color3.fromRGB(160, 120, 84), name = "Track" }), 0.24)
-	-- the farm path: from the stand past the soil, the fields and the barn to the pens, so it's all one walk
+	L:block(m.X, m.Z, 0.5, 0.5, 3.4, { color = P.woodDark, name = "MailPost" }, 0)
+	L:box(m.X, 3.9, m.Z, 1.3, 1.1, 1.9, deco({ color = plot.color, name = "Mailbox" }))
+	L:box(m.X + 0.8, 4.4, m.Z - 0.6, 0.15, 0.9, 0.3, deco({ color = P.sunflower, name = "MailFlag" }))
+	local gravel = deco({ color = Color3.fromRGB(196, 172, 140), name = "Track" })
+	L:block(SPOTS.shack.X, (-110 + SPOTS.shack.Z - 8) / 2, 9, SPOTS.shack.Z - 8 + 110, 0.14, gravel, 0.24)
+	-- the farm path: from the front yard up the field's side, past the barn to the pens, so it's all one walk
 	local fp = SPOTS.farmPath
-	local dirt = deco({ color = Color3.fromRGB(176, 136, 96), name = "FarmPath" })
-	L:block(fp.x, (fp.z0 + fp.z1) / 2, fp.w, fp.z1 - fp.z0, 0.12, dirt, 0.24)
-	L:block(fp.x - 9, fp.z0, 18, fp.w, 0.12, dirt, 0.24)
-	L:block((fp.x - 80) / 2, fp.pens, fp.x + 80, fp.w, 0.12, dirt, 0.24)
-	L:block(-42, -20, fp.w, 10, 0.12, dirt, 0.24) -- (the field to the barn's doors)
-	-- the pens' own path, down the middle
-	L:block(SPOTS.path.X, SPOTS.path.Z, fp.w, 86, 0.12, dirt, 0.24)
+	local dirt = deco({ color = Color3.fromRGB(188, 148, 104), name = "FarmPath" })
+	L:block(fp.x, (fp.z0 + fp.z1) / 2, fp.w, fp.z1 - fp.z0, 0.14, dirt, 0.24)
+	L:block((fp.x + SPOTS.spawn.X) / 2, fp.z0, fp.x - SPOTS.spawn.X + 6, fp.w, 0.14, dirt, 0.24)
+	L:block((fp.x - 80) / 2, fp.pens, fp.x + 80, fp.w, 0.14, dirt, 0.24)
+	L:block(SPOTS.barnSite.X, -18, fp.w, 12, 0.14, dirt, 0.24) -- (the field to the barn's doors)
+	L:block(SPOTS.path.X, SPOTS.path.Z, fp.w, 86, 0.14, dirt, 0.24) -- (down the middle of the pens)
 	-- signposts where the paths meet
-	for _, sp in { { fp.x - 5.5, -44, "FIELD" }, { fp.x - 5.5, -2, "BARN" }, { fp.x - 5.5, fp.pens + 5, "ANIMALS" } } do
-		L:block(sp[1], sp[2], 0.4, 0.4, 4, { color = P.wood, name = "SignPost" }, 0)
-		local board = L:box(sp[1], 4.2, sp[2], 0.3, 1.4, 4.4, deco({ color = P.cream, name = "PathSign" }))
-		FarmBuilder.sign(board, sp[3], "", plot.color, Enum.NormalId.Left)
+	for _, sp in { { fp.x + 5.5, -44, "FIELD" }, { fp.x + 5.5, -2, "BARN" }, { fp.x + 5.5, fp.pens + 5, "ANIMALS" } } do
+		L:block(sp[1], sp[2], 0.5, 0.5, 4.2, { color = P.woodDark, name = "SignPost" }, 0)
+		local board = L:box(sp[1], 4.3, sp[2], 0.3, 1.4, 4.4, deco({ color = P.cream, name = "PathSign" }))
+		FarmBuilder.sign(board, sp[3], "", plot.color, Enum.NormalId.Right)
 	end
 	FarmBuilder.decor(L, plot)
-	-- the buy-pads
-	refs.pads, refs.rims = {}, {}
-	for slot, at in SPOTS.pads do
-		refs.rims[slot] = L:block(at.X, at.Z, 6, 6, 0.3, deco({ color = plot.color, name = "PadRim" }), 0.25)
-		local pad = L:block(at.X, at.Z, 5.2, 5.2, 0.4, { color = WHITE, name = "BuyPad" }, 0.25)
-		pad:SetAttribute("Slot", slot)
-		pad:SetAttribute("Plot", plot.index)
-		refs.pads[slot] = pad
-	end
+	buildStall(L, plot, refs)
 	return refs
 end
 
+-- A patch: a raised bed with wooden boards (lighter on top), the soil, two furrows
 function FarmBuilder.tile(plot, refs, n)
 	if refs.tiles[n] then
 		return refs.tiles[n]
@@ -867,23 +1019,40 @@ function FarmBuilder.tile(plot, refs, n)
 	local L = Shapes.new(plot.items, plot.cf)
 	local at = PlotLayout.soilTile(n)
 	local T = PlotLayout.TILE
-	-- wooden edge boards, the soil, three furrows
 	for _, sx in { -1, 1 } do
-		L:block(at.X + sx * (T / 2 + 0.2), at.Z, 0.4, T + 0.8, 0.9, deco({ color = P.wood, name = "Board" }), 0.2)
-		L:block(at.X, at.Z + sx * (T / 2 + 0.2), T + 0.8, 0.4, 0.9, deco({ color = P.wood, name = "Board" }), 0.2)
+		L:block(at.X + sx * (T / 2 + 0.25), at.Z, 0.5, T + 1, 1, deco({ color = P.wood, name = "Board" }), 0.2)
+		L:block(
+			at.X + sx * (T / 2 + 0.25),
+			at.Z,
+			0.56,
+			T + 1.06,
+			0.18,
+			deco({ color = Shapes.shade(P.wood, 0.25), name = "BoardCap", shadow = false }),
+			1.1
+		)
+		L:block(at.X, at.Z + sx * (T / 2 + 0.25), T + 1, 0.5, 1, deco({ color = P.wood, name = "Board" }), 0.2)
+		L:block(
+			at.X,
+			at.Z + sx * (T / 2 + 0.25),
+			T + 1.06,
+			0.56,
+			0.18,
+			deco({ color = Shapes.shade(P.wood, 0.25), name = "BoardCap", shadow = false }),
+			1.1
+		)
 	end
-	local tile = L:block(at.X, at.Z, T, T, 0.7, { color = P.soil, name = "Soil", query = true }, 0.2)
+	local tile = L:block(at.X, at.Z, T, T, 0.8, { color = P.soil, name = "Soil", query = true }, 0.2)
 	tile:SetAttribute("Tile", n)
 	tile:SetAttribute("Plot", plot.index)
-	for k = -1, 1 do
+	for _, k in { -1, 1 } do
 		L:block(
-			at.X + k * 1.8,
+			at.X + k * 1.6,
 			at.Z,
-			0.7,
-			T - 0.6,
-			0.18,
-			deco({ color = Color3.fromRGB(100, 68, 46), name = "Furrow" }),
-			0.9
+			0.8,
+			T - 0.8,
+			0.16,
+			deco({ color = SOIL_DARK, name = "Furrow", shadow = false }),
+			1
 		)
 	end
 	refs.tiles[n] = tile
@@ -1265,39 +1434,48 @@ BUILD.wheelbarrow = function(L)
 end
 
 BUILD.fence = function(L)
-	-- a white picket fence round the house's garden, open at the track (the field has its own rails)
-	local x0, x1, z0, z1 = -76, -50, -88, -52
+	-- a white picket fence round the house's garden, open at the drive (the field has its own rails)
+	local hx, hz = SPOTS.shack.X, SPOTS.shack.Z
+	local x0, x1, z0, z1 = hx - 16, hx + 14, hz - 26, hz + 10
 	local function run(ax, az, bx, bz)
 		local len = math.max(math.abs(bx - ax), math.abs(bz - az))
 		local alongX = math.abs(bx - ax) > 0
-		for k = 0, math.floor(len / 1.5) do
-			local t = k * 1.5 / len
+		for k = 0, math.floor(len / 1.6) do
+			local t = k * 1.6 / len
 			L:block(
 				ax + (bx - ax) * t,
 				az + (bz - az) * t,
-				0.5,
-				0.5,
+				0.55,
+				0.55,
 				2.6,
 				deco({ color = P.fenceWhite, name = "Picket" }),
 				0
 			)
 		end
-		local cx, cz = (ax + bx) / 2, (az + bz) / 2
 		L:box(
-			cx,
+			(ax + bx) / 2,
 			1.8,
-			cz,
-			alongX and len or 0.25,
-			0.3,
-			alongX and 0.25 or len,
+			(az + bz) / 2,
+			alongX and len or 0.3,
+			0.35,
+			alongX and 0.3 or len,
+			deco({ color = P.fenceWhite, name = "PicketRail" })
+		)
+		L:box(
+			(ax + bx) / 2,
+			0.8,
+			(az + bz) / 2,
+			alongX and len or 0.3,
+			0.35,
+			alongX and 0.3 or len,
 			deco({ color = P.fenceWhite, name = "PicketRail" })
 		)
 	end
 	run(x0, z1, x1, z1)
 	run(x0, z0, x0, z1)
 	run(x1, z0, x1, z1)
-	run(x0, z0, -66, z0)
-	run(-58, z0, x1, z0)
+	run(x0, z0, hx - 5, z0)
+	run(hx + 5, z0, x1, z0)
 end
 
 BUILD.sprinkler = function(L, plot)
@@ -1378,7 +1556,7 @@ BUILD.barn = function(L, plot)
 	local b = SPOTS.barnSite
 	local x, z, w, d, h = b.X, b.Z, 28, 20, 12
 	L:block(x, z, w + 1.4, d + 1.4, 0.8, { color = P.concreteDark, name = "BarnFloor" }, 0)
-	L:block(x, z, w, d, h, { color = BARN_RED, name = "Barn" }, 0.8)
+	L:toon(x, z, w, d, h, { color = BARN_RED, name = "Barn" }, 0.8)
 	-- white trim at the corners and along the eaves
 	for _, sx in { -1, 1 } do
 		for _, sz in { -1, 1 } do
@@ -1602,7 +1780,7 @@ local function pen(L, plot, key)
 				alongX and len or 0.3,
 				0.3,
 				alongX and 0.3 or len,
-				{ color = P.fenceWhite, name = "PenFence" }
+				{ color = P.wood, name = "PenFence" }
 			)
 		end
 		for k = 0, math.floor(len / 5) do
@@ -1613,7 +1791,7 @@ local function pen(L, plot, key)
 				0.5,
 				0.5,
 				2.8,
-				deco({ color = P.fenceWhite, name = "PenPost" }),
+				deco({ color = P.woodDark, name = "PenPost" }),
 				0
 			)
 		end
@@ -1627,13 +1805,13 @@ local function pen(L, plot, key)
 	local sx, sz = c.X, z1 - 7
 	if key == "chicken" then
 		L:block(sx, sz, 10, 7, 1.6, deco({ color = P.wood, name = "CoopStilts" }), 0)
-		L:block(sx, sz, 10, 7, 6, { color = P.cream, name = "Coop" }, 1.6)
+		L:toon(sx, sz, 10, 7, 6, { color = P.cream, name = "Coop" }, 1.6)
 		L:wedge(sx, 9.6, sz - 1.9, 11, 2, 3.8, { color = plot.color, name = "CoopRoof" }, 180)
 		L:wedge(sx, 9.6, sz + 1.9, 11, 2, 3.8, { color = plot.color, name = "CoopRoof" }, 0)
 		L:box(sx, 3.6, sz - 3.6, 2.2, 2.6, 0.2, deco({ color = INK, name = "CoopDoor" }))
 		L:box(sx, 1, sz - 5.3, 1.8, 0.2, 3.6, deco({ color = P.wood, name = "Ramp" }))
 	elseif key == "pig" then
-		L:block(sx, sz, 12, 7, 5, { color = P.barnRed, name = "Sty" }, 0)
+		L:toon(sx, sz, 12, 7, 5, { color = P.barnRed, name = "Sty" }, 0)
 		L:box(sx, 5.6, sz, 13, 1.2, 8, { color = ROOF, name = "StyRoof" })
 		L:box(sx, 2, sz - 3.6, 3.4, 3.6, 0.2, deco({ color = INK, name = "StyDoor" }))
 		L:block(c.X - 8, c.Z - 4, 8, 6, 0.1, deco({ color = Color3.fromRGB(110, 80, 60), name = "Mud" }), 0.36)
@@ -1648,7 +1826,7 @@ local function pen(L, plot, key)
 			L:block(sx - 3 + k * 3, sz + 1, 2.4, 1.6, 1.6, { color = P.sunflower, name = "HayBale" }, 0)
 		end
 	else
-		L:block(sx, sz, 14, 8, 8, { color = BARN_RED, name = "CowShed" }, 0)
+		L:toon(sx, sz, 14, 8, 8, { color = BARN_RED, name = "CowShed" }, 0)
 		L:wedge(sx, 9.5, sz - 2, 15, 3, 4.4, { color = ROOF, name = "ShedRoof" }, 180)
 		L:wedge(sx, 9.5, sz + 2, 15, 3, 4.4, { color = ROOF, name = "ShedRoof" }, 0)
 		L:box(sx, 3.4, sz - 4.1, 5, 6.8, 0.2, deco({ color = WHITE, name = "ShedDoor" }))

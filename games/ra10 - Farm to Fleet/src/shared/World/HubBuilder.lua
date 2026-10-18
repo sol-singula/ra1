@@ -414,7 +414,8 @@ return function(FarmBuilder, BUILD, kit)
 					or name == "Crate"
 					or name == "Produce"
 					or name == "StandSign"
-				if standish and l.X > -37 and l.X < -23 and l.Z > -104 and l.Z < -95 then
+				local st = SPOTS.stand
+				if standish and math.abs(l.X - st.X) < 12 and l.Z > st.Z - 9 and l.Z < st.Z + 6 then
 					d:Destroy()
 				end
 			end

@@ -125,6 +125,21 @@ local function full(order)
 	return true
 end
 
+-- Who wants each crop (the first open order asking for it), for the field's plan on screen
+function OrderService:NeedsWho(player)
+	local out = {}
+	for _, order in self:Slots(player) do
+		if order.state == "open" then
+			for key in order.items do
+				if left(order, key) > 0 and not out[key] then
+					out[key] = order.who
+				end
+			end
+		end
+	end
+	return out
+end
+
 function OrderService:Needs(player)
 	local out = self.extraNeeds and table.clone(self.extraNeeds(player)) or {}
 	for _, order in self:Slots(player) do
@@ -561,6 +576,10 @@ function OrderService:Init(registry)
 	farm.hold = function(player)
 		local p = data:Get(player)
 		return p and opened(p) and self:Needs(player) or nil
+	end
+	farm.holdWho = function(player)
+		local p = data:Get(player)
+		return p and opened(p) and self:NeedsWho(player) or {}
 	end
 	Net.on("Order", function(player, what, a)
 		if what == "skip" and type(a) == "number" then

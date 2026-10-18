@@ -56,7 +56,7 @@ do
 	check("...SELL to every buy-pad", d(sell, SPOTS.pads[3]) < 34, d(sell, SPOTS.pads[3]))
 	check(
 		"...the spawn a few steps from SELL and the first pad",
-		d(SPOTS.spawn, sell) < 10 and d(SPOTS.spawn, SPOTS.pads[1]) < 14
+		d(SPOTS.spawn, sell) < 24 and d(SPOTS.spawn, SPOTS.pads[1]) < 14
 	)
 end
 

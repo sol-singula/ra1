@@ -232,6 +232,7 @@ function FarmService:Push(player)
 		carried = self:Carried(player),
 		carry = self:Carry(player),
 		crop = self:Chosen(player),
+		plan = self:Plan(player),
 		-- (the picker: only once the warehouse stands, AUTO first)
 		crops = p.owned and p.owned.warehouse and { "auto", table.unpack(Crops.unlocked(p.level or 1)) } or {},
 		auto = p.settings.crop == nil,
@@ -270,39 +271,69 @@ function FarmService:Push(player)
 end
 
 -- What PLANT plants: their pick, if they have it, else the best crop their level has
+-- What the field should grow, as a list in order: first every crop an open order is short of (as many patches as
+-- the shortage, counting what's in the barn), then the best crop they have for the rest. Each entry says who it's
+-- for, so the screen can say "12 carrots for Rosie's Diner".
+function FarmService:Plan(player)
+	local p = profileOf(player)
+	if not p then
+		return {}
+	end
+	local patches = soilCount(p)
+	local level = p.level or 1
+	local plan, used = {}, 0
+	-- (their own pick, once the warehouse stands: the whole field)
+	local pick = p.settings.crop
+	if p.owned and p.owned.warehouse and pick and Crops[pick] and Crops[pick].level <= level then
+		return { { key = pick, n = patches } }
+	end
+	local needs = self.hold and self.hold(player)
+	if needs then
+		local who = self.holdWho and self.holdWho(player) or {}
+		local list = {}
+		for key, want in needs do
+			local c = Crops[key]
+			if c and c.level <= level then
+				local short = want - self:Have(player, key)
+				if short > 0 then
+					table.insert(list, { key = key, n = short, who = who[key] })
+				end
+			end
+		end
+		table.sort(list, function(x, y)
+			return x.n > y.n
+		end)
+		for _, e in list do
+			local n = math.min(e.n, patches - used)
+			if n > 0 then
+				table.insert(plan, { key = e.key, n = n, who = e.who })
+				used += n
+			end
+		end
+	end
+	if used < patches then
+		table.insert(plan, { key = Crops.best(level), n = patches - used })
+	end
+	return plan
+end
+
+-- The crop to plant next: the first thing on the plan that isn't growing in full yet
 function FarmService:Chosen(player)
 	local p = profileOf(player)
 	if not p then
 		return "strawberry"
 	end
-	-- (their own pick, once the warehouse stands; AUTO, or before then, the farm decides)
-	local pick = p.settings.crop
-	if p.owned and p.owned.warehouse and pick and Crops[pick] and Crops[pick].level <= (p.level or 1) then
-		return pick
+	local growing = {}
+	for _, t in p.soil or {} do
+		growing[t.crop] = (growing[t.crop] or 0) + 1
 	end
-	-- what the open orders are shortest of (counting what's in hand and what's growing)
-	local needs = self.hold and self.hold(player)
-	if needs then
-		local growing = {}
-		for _, t in p.soil or {} do
-			growing[t.crop] = (growing[t.crop] or 0) + 1
-		end
-		local best, most = nil, 0
-		for key, want in needs do
-			local c = Crops[key]
-			if c and c.level <= (p.level or 1) then
-				local short = want - self:Have(player, key) - (growing[key] or 0)
-				if short > most then
-					best, most = key, short
-				end
-			end
-		end
-		if best then
-			return best
+	local plan = self:Plan(player)
+	for _, e in plan do
+		if (growing[e.key] or 0) < e.n then
+			return e.key
 		end
 	end
-	-- else the newest crop they have: it pays the most
-	return Crops.best(p.level or 1)
+	return plan[#plan] and plan[#plan].key or Crops.best(p.level or 1)
 end
 
 -- The barn's crates: as many show as the barn is full (12 crates for a full barn)

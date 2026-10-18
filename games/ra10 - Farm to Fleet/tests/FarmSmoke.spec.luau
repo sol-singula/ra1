@@ -71,7 +71,7 @@ do
 		math.abs(math.abs(n.Position.Z - s.Position.Z) - (PlotLayout.ROAD + 2 * PlotLayout.EDGE)) < 0.01
 	)
 end
-check("cheap street", world.count < 2500, world.count)
+check("cheap street", world.count < 3200, world.count)
 
 -- A player lands --------------------------------------------------------------------------------------------------
 local player = Engine.addPlayer("Ava", 801)
@@ -310,7 +310,11 @@ do
 	check("...it pays more on every sale", Farm:Worth(player) > before, `{Farm:Worth(player)} vs {before}`)
 	check(
 		"...the sell pad where it was",
-		(Plots:Refs(player).standPad.Position - plot.cf * Vector3.new(-30, 0.45, -107.5)).Magnitude < 1
+		(Plots:Refs(player).standPad.Position - plot.cf * Vector3.new(
+			PlotLayout.SPOTS.stand.X,
+			0.45,
+			PlotLayout.SPOTS.stand.Z - 7.5
+		)).Magnitude < 1
 	)
 	table.clear(p.storage)
 end

@@ -23,32 +23,35 @@ Constants.START_GEMS = 10
 -- The palette (§1): ra9's matte, detailed look, in colour families so six plots read as one world
 local rgb = Color3.fromRGB
 Constants.PALETTE = {
-	-- farm
-	barnRed = rgb(186, 52, 44),
-	cream = rgb(244, 236, 214),
-	fenceWhite = rgb(240, 240, 236),
-	grass = rgb(104, 176, 82),
-	grassLight = rgb(140, 200, 104),
-	grassDark = rgb(70, 138, 62),
-	soil = rgb(122, 84, 56), -- (soil and crates only)
-	soilWet = rgb(88, 60, 42),
-	water = rgb(80, 164, 230),
-	sunflower = rgb(255, 204, 40),
-	wood = rgb(176, 128, 82), -- (crates and pallets only)
+	-- farm (bright and warm: a picture-book farm)
+	barnRed = rgb(214, 58, 48),
+	cream = rgb(252, 243, 222),
+	fenceWhite = rgb(252, 250, 244),
+	grass = rgb(108, 198, 88),
+	grassLight = rgb(152, 222, 112),
+	grassDark = rgb(74, 164, 76),
+	soil = rgb(132, 88, 56), -- (soil and crates only)
+	soilWet = rgb(96, 64, 44),
+	water = rgb(72, 172, 244),
+	sunflower = rgb(255, 212, 48),
+	wood = rgb(188, 132, 80), -- (crates, pallets, fences and beams)
+	woodDark = rgb(120, 78, 46),
+	leaf = rgb(70, 170, 80),
+	leafLight = rgb(120, 210, 100),
 	-- industrial
-	concrete = rgb(206, 206, 202),
-	concreteDark = rgb(170, 170, 168),
-	asphalt = rgb(62, 64, 70),
+	concrete = rgb(214, 214, 210),
+	concreteDark = rgb(176, 176, 174),
+	asphalt = rgb(70, 72, 80),
 	steel = rgb(150, 156, 166),
-	steelLight = rgb(196, 200, 208),
-	safetyYellow = rgb(255, 200, 30),
+	steelLight = rgb(200, 204, 212),
+	safetyYellow = rgb(255, 204, 30),
 	safetyBlack = rgb(30, 30, 34),
-	rackOrange = rgb(240, 110, 30),
-	rackBlue = rgb(40, 90, 180),
-	dockGreen = rgb(60, 210, 90),
-	dockRed = rgb(230, 50, 50),
-	trailerWhite = rgb(238, 240, 244),
-	glass = rgb(150, 200, 230),
+	rackOrange = rgb(244, 116, 32),
+	rackBlue = rgb(44, 96, 190),
+	dockGreen = rgb(60, 214, 92),
+	dockRed = rgb(232, 52, 52),
+	trailerWhite = rgb(240, 242, 246),
+	glass = rgb(160, 212, 240),
 }
 -- each plot's accent (its trailers, banners, roof trim)
 Constants.PLOT_COLORS = {

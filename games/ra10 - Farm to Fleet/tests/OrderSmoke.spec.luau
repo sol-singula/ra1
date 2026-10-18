@@ -179,6 +179,19 @@ local live = Order:Slots(player)
 check("two customers on the board", #live == 2 and live[1].state == "open" and live[2].state == "open", #live)
 check("...the board shows them", slots[1].Board.Title.Text:find(live[1].who, 1, true) ~= nil, slots[1].Board.Title.Text)
 check("...the third slot is locked", slots[3].Board.Title.Text == "LOCKED")
+do
+	-- the field plans the orders' crops first, then the best crop for the rest
+	table.clear(p.stock)
+	table.clear(p.storage)
+	local plan = Farm:Plan(player)
+	local total = 0
+	for _, e in plan do
+		total += e.n
+	end
+	check("the field plans the orders' crops first", plan[1] ~= nil and plan[1].who ~= nil, plan[1] and plan[1].who)
+	check("...every patch has a job", total == Farm:Patches(player), total)
+	check("...and the next planting is for an order", Farm:Chosen(player) == plan[1].key, Farm:Chosen(player))
+end
 check(
 	"the orders panel shows them",
 	OrderC.refs.panel.Visible and OrderC.refs.rows[1].who.Text:find(live[1].who, 1, true) ~= nil

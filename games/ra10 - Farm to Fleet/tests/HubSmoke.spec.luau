@@ -266,7 +266,11 @@ check(
 		and (pads[3].Position - at(SPOTS.marketPads[3].X, SPOTS.marketPads[3].Z)).Magnitude < 1
 )
 check("...stalls, fridges, a checkout", count("Stall") == 2 and count("Fridge") == 3 and count("Checkout") == 1)
-check("...the spawn is outside it", SPOTS.spawnHub.X < SPOTS.market.X - PlotLayout.MARKET.X / 2)
+check(
+	"...the spawn is outside it",
+	SPOTS.spawnHub.X < SPOTS.market.X - PlotLayout.MARKET.X / 2
+		or SPOTS.spawnHub.X > SPOTS.market.X + PlotLayout.MARKET.X / 2
+)
 table.clear(p.storage)
 p.storage.strawberry = 5
 local cash = p.cash
@@ -288,7 +292,8 @@ Engine.advance(2.2) -- (the client looks the street over every couple of seconds
 Engine.workspace.CurrentCamera.CFrame = CFrame.lookAt(at(40, -60, 10), at(40, -40, 0))
 Engine.advance(0.2)
 local hallHidden = WareC.roofHidden()
-Engine.workspace.CurrentCamera.CFrame = CFrame.lookAt(at(-15, -97, 8), at(-15, -90, 0))
+Engine.workspace.CurrentCamera.CFrame =
+	CFrame.lookAt(at(SPOTS.market.X, SPOTS.market.Z, 8), at(SPOTS.market.X, SPOTS.market.Z + 7, 0))
 Engine.advance(0.2)
 local marketHidden = WareC.roofHidden()
 Engine.workspace.CurrentCamera.CFrame = CFrame.lookAt(at(30, -180, 80), at(30, 0, 0))

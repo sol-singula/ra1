@@ -5,10 +5,11 @@ reserved from the start (meadow until it's built on) and has its own frame: loca
 +X is the right hand of someone in the plot looking out at the road. One layout serves all six.
 
 The plot's zones (local coordinates), filled stage by stage:
-  front strip   z -110..-86     the stand, the driveway, later the truck court's entrance
-  farm (left)   x -80..-4       front to back, all on one walk: the house and ONE field (every patch in one grid,
+  front yard    z -108..-80     where you stand: the field right ahead, the BUILD stall (the three buy-pads) a
+                                few steps behind, the stand and SELL to the left, the mailbox and the sign by the road
+  farm (left)   x -80..0        front to back, all on one walk: the house and ONE field (every patch in one grid,
                                 8 to a row, growing back from the soil's first row), the barn (2), the pens behind
-  the farm path x -1            a wide dirt path from the stand past the field and the barn to the pens
+  the farm path x 5             a wide dirt path up the field's right side past the barn to the pens
   animals       x -80..-4, z 13..93   the pens (2)
   industry      x 4..80         the packing shed and its yard (3), the warehouse and its dock doors (4, 5)
   the road      z -110..-150    two lanes (centres z -125 and -135 in a plot's frame): vehicles come and go here
@@ -42,22 +43,23 @@ function PlotLayout.toWorld(i, x, z, y)
 end
 
 PlotLayout.SPOTS = {
-	spawn = Vector3.new(-26, 3, -104), -- between SELL and the buy-pads, facing the soil: everything a few steps away
-	spawnHub = Vector3.new(-42, 3, -104), -- the spawn once the market hall stands
-	shack = Vector3.new(-58, 0, -70),
-	stand = Vector3.new(-30, 0, -100),
-	pads = { Vector3.new(-14, 0, -105), Vector3.new(-6, 0, -105), Vector3.new(2, 0, -105) }, -- in line with SELL
-	soil = Vector3.new(-44, 0, -82), -- the first patch's centre: the field grows back from here, 8 to a row
-	well = Vector3.new(-72, 0, -54),
-	waterTower = Vector3.new(-75, 0, -90), -- (with the sprinklers)
-	wheelbarrow = Vector3.new(-46, 0, -62),
-	scarecrow = Vector3.new(-6, 0, -60),
-	barnSite = Vector3.new(-42, 0, -2), -- the barn: 28 x 20 here (stage 2), its doors facing the field
-	tractor = Vector3.new(-16, 0, -6),
-	tractor2 = Vector3.new(-72, 0, -6),
-	silo = Vector3.new(-68, 0, -20),
-	windmill = Vector3.new(-70, 0, 5),
-	farmPath = { z0 = -97, z1 = 100, x = -1, w = 8, pens = 14 }, -- the farm path, front to back, and its branch along the pens' pads
+	-- the front yard: everything a new farmer touches within a few steps of where they stand
+	spawn = Vector3.new(-30, 3, -92), -- facing the field; the BUILD stall right behind, the stand to the left
+	spawnHub = Vector3.new(-30, 3, -92),
+	shack = Vector3.new(-72, 0, -56), -- the house, on the left, its garden toward the road
+	stand = Vector3.new(-52, 0, -86), -- the stand faces the road; SELL is the pad in front of it
+	pads = { Vector3.new(-38, 0, -100), Vector3.new(-30, 0, -100), Vector3.new(-22, 0, -100) }, -- the BUILD stall
+	soil = Vector3.new(-56, 0, -78), -- the first patch's centre: the field grows back from here, 8 to a row
+	well = Vector3.new(-70, 0, -78),
+	waterTower = Vector3.new(-80, 0, -84), -- (with the sprinklers)
+	wheelbarrow = Vector3.new(-64, 0, -70),
+	scarecrow = Vector3.new(6, 0, -64),
+	barnSite = Vector3.new(-30, 0, -2), -- the barn: 28 x 20 here (stage 2), its doors facing the field
+	tractor = Vector3.new(-4, 0, -14),
+	tractor2 = Vector3.new(-60, 0, -14),
+	silo = Vector3.new(-62, 0, -22),
+	windmill = Vector3.new(-70, 0, 2),
+	farmPath = { z0 = -97, z1 = 100, x = 5, w = 8, pens = 14 }, -- the farm path up the field's right side to the pens
 	path = Vector3.new(-42, 0, 58), -- the dirt path down the middle of the pens
 	-- the pens: a 2 x 2 block right behind the barn, a wide path between; each PEN wide, its pad at its front
 	pens = {
@@ -69,9 +71,9 @@ PlotLayout.SPOTS = {
 	-- stage 3: the packing shed (36 x 28, its front wall at z -74), its yard and the drive to the road
 	shed = Vector3.new(34, 0, -60),
 	packPad = Vector3.new(24, 0, -79), -- the packing table's pad, outside the shed's side door
-	board = Vector3.new(11, 0, -80), -- the order board
+	board = Vector3.new(11, 0, -82), -- the order board
 	door = Vector3.new(42, 0, -74), -- the loading door, in the shed's front wall
-	boxLine = Vector3.new(4, 0, -62), -- where the box line's belt starts, outside the west wall
+	boxLine = Vector3.new(14, 0, -62), -- where the box line's belt starts, outside the west wall
 	sorter = Vector3.new(64, 0, -58),
 	wrapper = Vector3.new(64, 0, -70),
 	parks = { Vector3.new(64, 0, -80), Vector3.new(54, 0, -80) }, -- where the vans wait
@@ -91,17 +93,17 @@ PlotLayout.SPOTS = {
 	lot = { Vector3.new(64, 0, 40), Vector3.new(57, 0, 40), Vector3.new(50, 0, 40), Vector3.new(43, 0, 40) },
 	greenhouses = Vector3.new(20, 0, 97),
 	-- stage 5: the hub. Dock doors along the warehouse's back wall (z 24), the truck court behind it, each truck's
-	-- spot in line with its dock; the front hall (z -74..-36) where the shed stood; the market hall along the road
-	-- where the farm stand stood
+	-- spot in line with its dock; the front hall (z -74..-36) where the shed stood; the market hall where the
+	-- stand stood, along the road
 	docks = { 64, 53.5, 43, 32.5, 22, 11.5 }, -- the dock doors' x: box truck n uses dock n, semi n dock 4 + n
 	dockLot = { Vector3.new(64, 0, 76), Vector3.new(53.5, 0, 76), Vector3.new(43, 0, 76), Vector3.new(32.5, 0, 76) },
 	expressStop = Vector3.new(-10, 0, -116), -- where a Special Order's express truck waits, on the road's verge
 	frontHall = Vector3.new(38, 0, -55),
-	market = Vector3.new(-15, 0, -97.5), -- the market hall's middle: 42 x 21 (x -36..6, z -108..-87)
-	marketSell = Vector3.new(-28, 0, -100), -- the sell pad, by the market's door
-	marketPads = { Vector3.new(-16, 0, -94), Vector3.new(-7, 0, -94), Vector3.new(2, 0, -94) }, -- the buy-pads move in
-	mailbox = Vector3.new(-50, 0, -106),
-	sign = Vector3.new(-74, 0, -106),
+	market = Vector3.new(-54, 0, -97.5), -- the market hall's middle: 42 x 21 (x -75..-33, z -108..-87)
+	marketSell = Vector3.new(-52, 0, -83), -- the sell pad, by the market's field-side door
+	marketPads = { Vector3.new(-38, 0, -100), Vector3.new(-30, 0, -100), Vector3.new(-22, 0, -100) }, -- (they stay)
+	mailbox = Vector3.new(-12, 0, -106),
+	sign = Vector3.new(0, 0, -106),
 }
 PlotLayout.TILE = 6 -- a soil tile's size
 PlotLayout.TILE_GAP = 1.6

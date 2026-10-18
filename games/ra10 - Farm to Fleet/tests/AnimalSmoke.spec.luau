@@ -219,11 +219,13 @@ check(
 	model and (model:GetPivot().Position - parked).Magnitude > 3 or (p.stats.tractored or 0) > 0
 )
 check("...harvests what's ripe into the barn", Farm:Have(player, "strawberry") >= 3, Farm:Have(player, "strawberry"))
-check(
-	"...and plants again",
-	p.soil["1"] ~= nil and p.soil["13"] ~= nil,
-	`{tostring(p.soil["1"] ~= nil)} {tostring(p.soil["13"] ~= nil)} carried {Farm:Carried(player)}/{Farm:Carry(player)}`
-)
+do
+	local planted = 0
+	for _ in p.soil do
+		planted += 1
+	end
+	check("...and plants again", p.soil["1"] ~= nil and planted >= 8, `{planted} planted`)
+end
 do
 	-- hop on: it follows you, harvesting and planting what you drive over
 	local prompt = model and model:FindFirstChild("Drive", true)

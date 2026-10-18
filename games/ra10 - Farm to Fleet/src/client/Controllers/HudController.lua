@@ -64,6 +64,15 @@ local function paint()
 		refs.basket.Visible = not f.stockCap
 		refs.basket.Text = `🧺 {f.carried or 0} / {f.carry or 0}`
 		refs.basket.TextColor3 = (f.carried or 0) >= (f.carry or 1) and C.mustard or C.white
+		-- what the field grows, and for whom
+		local bits = {}
+		for _, e in f.plan or {} do
+			local c = Crops[e.key]
+			local name = c and c.name or e.key
+			table.insert(bits, `{e.n} {name}{e.n == 1 and "" or "s"}{e.who and (" for " .. e.who) or ""}`)
+		end
+		refs.growing.Visible = #bits > 0
+		refs.growing.Text = "🌱 GROWING  " .. table.concat(bits, " · ")
 	end
 	-- the stock: biggest first, each with what the orders keep
 	local rows = {}
@@ -118,7 +127,7 @@ local function paint()
 	refs.boosts.Visible = #lines > 0
 	refs.boosts.Text = "BOOSTS\n" .. table.concat(lines, "\n")
 	refs.boosts.Size = UDim2.fromOffset(250, 24 + #lines * 20)
-	refs.boosts.Position = UDim2.fromOffset(12, 92 + (refs.stock.Visible and refs.stock.Size.Y.Offset + 8 or 0))
+	refs.boosts.Position = UDim2.fromOffset(12, 118 + (refs.stock.Visible and refs.stock.Size.Y.Offset + 8 or 0))
 end
 
 function HudController:init()
@@ -165,6 +174,18 @@ function HudController:init()
 		fit = 24,
 		Parent = gems,
 	})
+	refs.growing = Theme.text({
+		Name = "Growing",
+		Text = "",
+		Position = UDim2.fromOffset(14, 90),
+		Size = UDim2.fromOffset(520, 24),
+		Font = Theme.Display,
+		TextColor3 = C.white,
+		outline = 2,
+		fit = 17,
+		Visible = false,
+		Parent = gui,
+	})
 	refs.basket = Theme.text({
 		Name = "Basket",
 		Text = "🧺 0 / 20",
@@ -180,7 +201,7 @@ function HudController:init()
 	-- the stock
 	local stock = Theme.slab({
 		Name = "Stock",
-		Position = UDim2.fromOffset(12, 92),
+		Position = UDim2.fromOffset(12, 118),
 		Size = UDim2.fromOffset(250, 30),
 		Visible = false,
 		Parent = gui,
@@ -238,7 +259,7 @@ function HudController:init()
 	refs.boosts = Theme.text({
 		Name = "Boosts",
 		Text = "",
-		Position = UDim2.fromOffset(12, 92),
+		Position = UDim2.fromOffset(12, 118),
 		Size = UDim2.fromOffset(250, 24),
 		TextColor3 = Color3.fromRGB(150, 240, 140),
 		outline = 2,
