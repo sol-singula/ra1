@@ -1,7 +1,9 @@
 --[[
 The always-on screen (phone first: big, high-contrast, in the farm's colours).
 
-  top left     your Cash (a green coin) and Gems, the basket under them (carried / how much you can carry)
+  top left     your Cash (a green coin) and Gems, the basket under them (carried / how much you can carry), the
+               STOCK under that (what the conveyor brought in, each with how many the orders keep) and the
+               BOOSTS your animals give the farm right now
   top centre   FARM LEVEL n and its XP bar
   centre       the toasts (Net "Toast"), a "+N" when Cash comes in (Net "Earned")
 
@@ -10,7 +12,9 @@ The always-on screen (phone first: big, high-contrast, in the farm's colours).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Animals = require(ReplicatedStorage.Shared.Data.Animals)
 local Constants = require(ReplicatedStorage.Shared.Constants)
+local Crops = require(ReplicatedStorage.Shared.Data.Crops)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Store = require(script.Parent.Parent.Store)
@@ -47,7 +51,7 @@ HudController.toast = toast
 local function paint()
 	local p = Store.get("profile")
 	if p then
-		refs.cash.Text = Theme.commas(p.cash or 0)
+		refs.cash.Text = "$" .. Theme.commas(p.cash or 0)
 		refs.gems.Text = Theme.commas(p.gems or 0)
 		refs.levelText.Text = `FARM LEVEL {p.level or 1}`
 		local k = (p.need or 0) > 0 and (p.into or 0) / p.need or 0
@@ -59,6 +63,45 @@ local function paint()
 		refs.basket.Text = `🧺 {f.carried or 0} / {f.carry or 0}`
 		refs.basket.TextColor3 = (f.carried or 0) >= (f.carry or 1) and C.mustard or C.white
 	end
+	-- the stock: biggest first, each with what the orders keep
+	local rows = {}
+	for key, n in f and f.stock or {} do
+		if n > 0 then
+			table.insert(rows, { key = key, n = n, kept = f.reserved and f.reserved[key] or 0 })
+		end
+	end
+	table.sort(rows, function(a, b)
+		return a.n > b.n
+	end)
+	refs.stock.Visible = #rows > 0
+	for i, row in refs.stockRows do
+		local r = rows[i]
+		row.frame.Visible = r ~= nil
+		if r then
+			local golden = string.sub(r.key, 1, 1) == "*"
+			local key = golden and string.sub(r.key, 2) or r.key
+			local c = Crops[key]
+			local a = Animals.product(key)
+			row.dot.BackgroundColor3 = golden and P.sunflower or (c and c.color or Color3.fromRGB(250, 245, 230))
+			row.name.Text = (golden and "Golden " or "") .. (c and c.name or (a and a.name) or key)
+			row.count.Text = r.kept > 0 and `{Format.num(r.n)}  ({Format.num(r.kept)} for orders)` or Format.num(r.n)
+			row.count.TextColor3 = r.kept > 0 and C.mustard or C.white
+		end
+	end
+	refs.stock.Size = UDim2.fromOffset(250, 30 + math.min(#rows, #refs.stockRows) * 22)
+	-- the boosts: one line an animal
+	local pens = Store.get("animals")
+	local lines = {}
+	for _, key in Animals.LIST do
+		local pen = pens and pens.pens and pens.pens[key]
+		if pen and pen.boost then
+			table.insert(lines, (pen.fed and "" or "(hungry) ") .. Animals[key].name .. "s: " .. pen.boost)
+		end
+	end
+	refs.boosts.Visible = #lines > 0
+	refs.boosts.Text = "BOOSTS\n" .. table.concat(lines, "\n")
+	refs.boosts.Size = UDim2.fromOffset(250, 24 + #lines * 20)
+	refs.boosts.Position = UDim2.fromOffset(12, 92 + (refs.stock.Visible and refs.stock.Size.Y.Offset + 8 or 0))
 end
 
 function HudController:init()
@@ -114,6 +157,76 @@ function HudController:init()
 		TextColor3 = C.white,
 		outline = 2,
 		fit = 20,
+		Parent = gui,
+	})
+
+	-- the stock
+	local stock = Theme.slab({
+		Name = "Stock",
+		Position = UDim2.fromOffset(12, 92),
+		Size = UDim2.fromOffset(250, 30),
+		Visible = false,
+		Parent = gui,
+	})
+	refs.stock = stock
+	Theme.text({
+		Name = "Title",
+		Text = "STOCK",
+		Position = UDim2.fromOffset(10, 4),
+		Size = UDim2.new(1, -20, 0, 22),
+		Font = Theme.Display,
+		TextColor3 = C.mustard,
+		fit = 16,
+		Parent = stock,
+	})
+	refs.stockRows = {}
+	for i = 1, 8 do
+		local frame = Theme.new("Frame", {
+			Name = "Row" .. i,
+			Position = UDim2.fromOffset(10, 26 + (i - 1) * 22),
+			Size = UDim2.new(1, -20, 0, 20),
+			BackgroundTransparency = 1,
+			Visible = false,
+			Parent = stock,
+		})
+		local dot = Theme.new("Frame", {
+			Name = "Dot",
+			Position = UDim2.fromOffset(0, 4),
+			Size = UDim2.fromOffset(12, 12),
+			BorderSizePixel = 0,
+			Parent = frame,
+		}, { Theme.corner("round") })
+		local name = Theme.text({
+			Name = "Name",
+			Text = "",
+			Position = UDim2.fromOffset(18, 0),
+			Size = UDim2.new(0.5, -18, 1, 0),
+			TextColor3 = C.white,
+			fit = 14,
+			Parent = frame,
+		})
+		local count = Theme.text({
+			Name = "Count",
+			Text = "",
+			Position = UDim2.new(0.5, 0, 0, 0),
+			Size = UDim2.new(0.5, 0, 1, 0),
+			TextXAlignment = Enum.TextXAlignment.Right,
+			TextColor3 = C.white,
+			fit = 14,
+			Parent = frame,
+		})
+		refs.stockRows[i] = { frame = frame, dot = dot, name = name, count = count }
+	end
+	-- the animals' boosts
+	refs.boosts = Theme.text({
+		Name = "Boosts",
+		Text = "",
+		Position = UDim2.fromOffset(12, 92),
+		Size = UDim2.fromOffset(250, 24),
+		TextColor3 = Color3.fromRGB(150, 240, 140),
+		outline = 2,
+		fit = 15,
+		Visible = false,
 		Parent = gui,
 	})
 
@@ -178,7 +291,7 @@ function HudController:init()
 
 	paint()
 	Store.Changed:Connect(function(partial)
-		if partial.profile or partial.farm then
+		if partial.profile or partial.farm or partial.animals then
 			paint()
 		end
 	end)
@@ -188,7 +301,7 @@ function HudController:init()
 		if type(e) ~= "table" or e.currency ~= "cash" then
 			return
 		end
-		refs.earned.Text = `+{Format.num(e.amount or 0)}`
+		refs.earned.Text = `+{Format.cash(e.amount or 0)}`
 		refs.earned.Visible = true
 		local token = {}
 		earnedToken = token

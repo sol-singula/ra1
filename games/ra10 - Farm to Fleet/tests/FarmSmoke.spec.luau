@@ -172,7 +172,7 @@ check("standing on the stand's pad sells", p.cash > cashBefore and Farm:Carried(
 check("the first sale inside thirty seconds", os.clock() - t0 < 30, os.clock() - t0)
 check(
 	"...the HUD shows the Cash",
-	(Hud.refs.cash.Text:gsub(",", "")) == tostring(math.floor(p.cash)),
+	(Hud.refs.cash.Text:gsub(",", "")) == "$" .. tostring(math.floor(p.cash)),
 	Hud.refs.cash.Text
 )
 Engine.advance(0.5)

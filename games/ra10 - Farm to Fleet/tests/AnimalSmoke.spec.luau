@@ -278,6 +278,23 @@ do
 	)
 	check("...feeds the chickens from the basket", st.fedAt > 0)
 	check("...and stores the eggs", (Farm:Stock(player).egg or 0) >= 4, Farm:Stock(player).egg)
+	-- the stock and the boosts, on screen
+	local HudC = Engine.require(tree.client.Controllers.HudController)
+	Engine.advance(0.3)
+	check("the STOCK panel lists what's in", HudC.refs.stock.Visible and HudC.refs.stockRows[1].frame.Visible)
+	local rowText = ""
+	for _, row in HudC.refs.stockRows do
+		if row.frame.Visible then
+			rowText ..= row.name.Text .. " "
+		end
+	end
+	check("...eggs among them", rowText:find("Eggs") ~= nil, rowText)
+	check(
+		"the BOOSTS panel says what the animals give",
+		HudC.refs.boosts.Visible and HudC.refs.boosts.Text:find("Chickens") ~= nil,
+		HudC.refs.boosts.Text
+	)
+	check("Cash shows with $", HudC.refs.cash.Text:sub(1, 1) == "$", HudC.refs.cash.Text)
 	-- the stand sells the stock
 	local cash = p.cash
 	Engine.moveTo(player, Plots:Refs(player).standPad.Position + Vector3.new(0, 3, 0))

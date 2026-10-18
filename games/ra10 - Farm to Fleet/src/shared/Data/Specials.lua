@@ -62,10 +62,11 @@ function Specials.available(t)
 	return out
 end
 
-local function quick(level)
+-- What can be grown in time: crops that ripen at least four times over before the clock runs out
+local function quick(level, time)
 	local out = {}
 	for _, key in Crops.unlocked(level) do
-		if Crops[key].grow <= Orders.MAX_GROW then
+		if Crops[key].grow <= math.min(Orders.MAX_GROW, (time or Orders.TIME) / 4) then
 			table.insert(out, key)
 		end
 	end
@@ -96,7 +97,10 @@ function Specials.make(level, rng, t)
 		items[key] = n
 		value += c.value * n * (golden and Crops.GOLDEN_VALUE or 1)
 	end
-	local pool = quick(level)
+	local pool = quick(level, kind.time)
+	if #pool == 0 then
+		pool = { "strawberry" }
+	end
 	if kind.key == "golden" then
 		-- a few golden crops of one or two cheap kinds
 		for i = 1, math.min(2, #pool) do
@@ -106,13 +110,8 @@ function Specials.make(level, rng, t)
 			end
 		end
 	elseif kind.key == "chef" then
-		-- the best crop they have that takes a while: plenty of it
+		-- the best crop they can grow in time: plenty of it
 		local best = pool[#pool]
-		for _, key in Crops.unlocked(level) do
-			if Crops[key].grow >= 60 and Crops[key].key ~= "goldpumpkin" then
-				best = key
-			end
-		end
 		add(best, math.clamp(math.floor(target * 1.5 / Crops[best].value + 0.5), 3, 60))
 	else
 		local size = ({ emergency = 3, night = 2, holiday = 6 })[kind.key] or 3

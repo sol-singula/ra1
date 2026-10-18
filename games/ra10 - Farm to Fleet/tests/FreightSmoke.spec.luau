@@ -297,6 +297,21 @@ do
 	check("no failed saves or ticks", #bad == 0, bad[1])
 end
 _ = Crops
+-- Every special asks only for what can be grown in time (no 15-minute oranges on a 5-minute clock)
+do
+	local late = {}
+	for seed = 1, 200 do
+		local sp = Specials.make(40, Random.new(seed), os.time())
+		for item in sp.items do
+			local key = string.sub(item, 1, 1) == "*" and string.sub(item, 2) or item
+			if Crops[key].grow * 4 > sp.time then
+				table.insert(late, `{key} in {sp.time}s`)
+			end
+		end
+	end
+	check("specials only want crops that grow in time", #late == 0, table.concat(late, ", "))
+end
+
 if #Engine.errors > 0 then
 	for _, e in Engine.errors do
 		print("ERROR " .. tostring(e))

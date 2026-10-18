@@ -26,7 +26,7 @@ Orders.BIG_CHANCE = 1 / 6
 Orders.BIG_SIZE = 2
 Orders.BIG_PAY = 2.5
 Orders.BIG_GEMS = 2
-Orders.MAX_GROW = 300 -- orders only ask for crops that grow in this many seconds or less
+Orders.MAX_GROW = Orders.TIME / 4 -- orders only ask for crops that grow four times over before they're due
 Orders.ALL_GEMS = 3
 Orders.MAX_PRODUCTS = 24 -- an order asks for at most this many of an animal's product (a pen makes them slowly)
 
