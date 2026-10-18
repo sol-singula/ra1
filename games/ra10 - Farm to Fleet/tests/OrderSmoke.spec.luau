@@ -140,7 +140,11 @@ end
 check("stage 2 done: stage 3", p.stage == 3)
 p.guide.step = GuideData.byKey.shedBuild.index
 Engine.advance(1.2)
-check("the guide: build the shed", GuideC.state().key == "shedBuild", GuideC.state().key)
+check(
+	"the guide: build the shed (or earn it first)",
+	GuideC.state().key == "shedBuild" or string.find(GuideC.state().key, "^earn:shed:") ~= nil,
+	GuideC.state().key
+)
 check("no orders before the shed", #Order:Slots(player) == 0 and not OrderC.refs.panel.Visible)
 
 -- The shed ---------------------------------------------------------------------------------------------------------------
@@ -240,7 +244,11 @@ check("back: the order pays", p.cash >= cash0 + reward * 0.9, p.cash - cash0)
 check("...one shipment", p.stats.shipments == 1)
 check("...the pickup's gone", pickup.Parent == nil)
 check("...the slot waits for the next customer", live[1].state == "wait")
-check("the guide moves on", GuideC.state().key == "yard", GuideC.state().key)
+check(
+	"the guide moves on",
+	GuideC.state().key == "yard" or string.find(GuideC.state().key, "^earn:yard:") ~= nil,
+	GuideC.state().key
+)
 Engine.advance(Orders.REFRESH + 1)
 check("...and the next customer comes", Order:Slots(player)[1].state == "open")
 

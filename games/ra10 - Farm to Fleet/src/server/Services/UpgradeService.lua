@@ -39,16 +39,58 @@ local P = Constants.PALETTE
 local GREEN = Color3.fromRGB(80, 220, 110)
 local RED = Color3.fromRGB(240, 80, 80)
 
+local slots = {} -- [player] = { [slot] = key }: a pad keeps its upgrade until it's bought (nothing slides along)
+
 function UpgradeService:Offer(player)
 	local p = data:Get(player)
 	if not p then
 		return {}
 	end
 	p.owned = p.owned or {}
-	local out = {}
+	local fresh = {}
 	for _, u in Upgrades.next(p.owned, p.level or 1, Upgrades.PADS) do
-		table.insert(out, { upgrade = u })
+		table.insert(fresh, u)
 	end
+	-- (what each pad had stays on it while it's still on offer; the new ones fill the empty pads)
+	local had = slots[player] or {}
+	local placed, used = {}, {}
+	for slot = 1, Upgrades.PADS do
+		for _, u in fresh do
+			if had[slot] == u.key and not used[u.key] then
+				placed[slot], used[u.key] = u, true
+			end
+		end
+	end
+	for slot = 1, Upgrades.PADS do
+		if not placed[slot] then
+			for _, u in fresh do
+				if not used[u.key] then
+					placed[slot], used[u.key] = u, true
+					break
+				end
+			end
+		end
+	end
+	local out = {}
+	local now = {}
+	for slot = 1, Upgrades.PADS do
+		if placed[slot] then
+			out[slot] = { upgrade = placed[slot] }
+			now[slot] = placed[slot].key
+		end
+	end
+	slots[player] = now
+	-- (packed to the front for the locked one below, keeping each pad's own)
+	local packed = {}
+	for slot = 1, Upgrades.PADS do
+		if out[slot] then
+			table.insert(packed, out[slot])
+		end
+	end
+	if #packed == #fresh and #fresh == Upgrades.PADS then
+		return out
+	end
+	out = packed
 	if #out < Upgrades.PADS then
 		-- (the next one locked behind a level: shown, so they know what's coming)
 		local seen = {}
@@ -86,12 +128,14 @@ function UpgradeService:Paint(player)
 			pad:SetAttribute("Item", u.key)
 			pad:SetAttribute("Locked", o.locked == true)
 			pad.Transparency = 0
+			local blurb = Upgrades.blurb(u)
+			local title = blurb and `{u.name} {blurb}` or u.name
 			if o.needs then
-				FarmBuilder.label(pad, u.name, `NEEDS {o.needs.name}`, P.steelLight)
+				FarmBuilder.label(pad, title, `🔒 NEEDS {o.needs.name}`, P.steelLight)
 			elseif o.locked then
-				FarmBuilder.label(pad, u.name, `LV {u.level}`, P.steelLight)
+				FarmBuilder.label(pad, title, `🔒 LEVEL {u.level}`, P.steelLight)
 			else
-				FarmBuilder.label(pad, u.name, `{u.cost} Cash`, p.cash >= u.cost and GREEN or RED)
+				FarmBuilder.label(pad, title, Format.cash(u.cost), p.cash >= u.cost and GREEN or RED)
 			end
 		else
 			pad:SetAttribute("Item", nil)
@@ -232,6 +276,7 @@ function UpgradeService:Init(registry)
 	local function forget(player)
 		onPad[player] = nil
 		lastCash[player] = nil
+		slots[player] = nil
 	end
 	Players.PlayerRemoving:Connect(forget)
 	registry.PlotService.Released:Connect(forget)

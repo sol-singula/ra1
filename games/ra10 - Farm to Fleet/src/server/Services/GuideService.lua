@@ -77,7 +77,41 @@ local function isDone(player, p, step)
 	return false
 end
 
+-- A step that buys something they can't afford yet turns into earning it: SELL what's in the basket, or grow more
+-- (the same step number; the card counts the Cash up to the price)
+local function earning(player, p, step)
+	if not step or type(step.target) ~= "string" then
+		return nil
+	end
+	local key = string.match(step.target, "^pad:(.+)$")
+	local u = key and Upgrades[key]
+	if not u or (p.cash or 0) >= u.cost or u.level > (p.level or 1) or (p.owned and p.owned[key]) then
+		return nil
+	end
+	local short = u.cost - math.floor(p.cash or 0)
+	local carried = farm:Carried(player)
+	local e = table.clone(step)
+	e.key = "earn:" .. key .. ":" .. (carried > 0 and "sell" or "grow")
+	e.goal = { have = math.floor(p.cash or 0), need = u.cost, name = u.name }
+	if carried > 0 then
+		e.text = `Sell your crops at SELL: {Format.cash(short)} more for {u.name}`
+		e.target = "stand"
+		e.button = nil
+	else
+		e.text = `Harvest crops to earn {Format.cash(short)} more for {u.name}`
+		e.target = "soil"
+		e.button = "act"
+	end
+	return e
+end
+
 function GuideService:Step(player)
+	local step = self:RawStep(player)
+	local p = data:Get(player)
+	return p and earning(player, p, step) or step
+end
+
+function GuideService:RawStep(player)
 	local p = data:Get(player)
 	if not p then
 		return nil
@@ -239,16 +273,17 @@ local function push(player, force)
 	end
 	local target = GuideService:Target(player, step.target)
 	local s = sent[player]
-	if not force and s and s.key == step.key and s.target == target then
+	if not force and s and s.key == step.key and s.target == target and s.text == step.text then
 		return
 	end
-	sent[player] = { key = step.key, target = target }
+	sent[player] = { key = step.key, target = target, text = step.text }
 	Net.fire(player, "Guide", {
 		key = step.key,
 		text = step.text,
 		target = target,
 		step = guideOf(p).step,
 		of = #Guide.STEPS,
+		goal = step.goal,
 		-- (100% of the game: the scripted steps done; a menu button to light up)
 		percent = math.floor((math.min(guideOf(p).step, #Guide.STEPS + 1) - 1) / #Guide.STEPS * 100),
 		menu = type(step.target) == "string" and string.match(step.target, "^menu:(.+)$") or nil,

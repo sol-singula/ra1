@@ -151,7 +151,11 @@ end
 check("stage 3 done: stage 4", p.stage == 4)
 p.guide.step = GuideData.byKey.warehouseBuild.index
 Engine.advance(1.2)
-check("the guide: build the warehouse", GuideC.state().key == "warehouseBuild", GuideC.state().key)
+check(
+	"the guide: build the warehouse (or earn it first)",
+	GuideC.state().key == "warehouseBuild" or string.find(GuideC.state().key, "^earn:warehouse:") ~= nil,
+	GuideC.state().key
+)
 check("no Operations strip before it", not OpsC.refs.panel.Visible)
 local size0 = Flow.size(p)
 

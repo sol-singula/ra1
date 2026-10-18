@@ -140,6 +140,57 @@ check(
 check("...no GO now", not refs.go.Visible)
 check("...and no GO for a step that's close already", not Guide:Go(player))
 
+-- Can't afford the step's buy: earn it (sell, or grow) --------------------------------------------------------------------
+do
+	local Upg = service("UpgradeService")
+	local Upgrades = Engine.require(tree.shared.Data.Upgrades)
+	p.guide.step = GuideData.byKey.well.index
+	p.owned.soil4, p.owned.soil5 = 1, 1
+	p.cash = 5
+	p.storage = { strawberry = 6 }
+	Guide:Check(player)
+	Engine.advance(2) -- (the jump here paid off the old step: let that go)
+	check(
+		"too poor for the well, crops in the basket: SELL",
+		GuideC.state().text:find("Sell") ~= nil and refs.badgeNum.Text == tostring(GuideData.byKey.well.n),
+		GuideC.state().text
+	)
+	check("...pointing at the stand", (GuideC.state().target - Plots:Refs(player).standPad.Position).Magnitude < 0.1)
+	check("...the bar counts the Cash to the price", refs.chapter.Text:find("%$5 / %$30") ~= nil, refs.chapter.Text)
+	p.storage = {}
+	Guide:Check(player)
+	Engine.advance(0.5)
+	check(
+		"...an empty basket: harvest more",
+		GuideC.state().text:find("Harvest") ~= nil and GuideC.state().button == "act",
+		GuideC.state().text
+	)
+	check("...no STEP DONE for that", not refs.pay.Visible)
+	p.cash = 100
+	Guide:Check(player)
+	Engine.advance(0.5)
+	check("enough Cash: back to buying it", GuideC.state().key == "well", GuideC.state().key)
+	-- the pads: one of a kind, and each keeps its own
+	p.owned = {}
+	p.level = 5
+	local offer = Upg:Offer(player)
+	local names = {}
+	local twice = false
+	for _, o in offer do
+		twice = twice or names[o.upgrade.name] == true
+		names[o.upgrade.name] = true
+	end
+	check("never two of the same on the pads", not twice)
+	check("...soil comes in order, cheapest first", offer[1].upgrade.key == "soil4")
+	local second = offer[2].upgrade.key
+	p.cash = 1000
+	Upg:Buy(player, offer[1].upgrade.key)
+	local after = Upg:Offer(player)
+	check("buying one: the others stay on their pads", after[2].upgrade.key == second, after[2].upgrade.key)
+	check("...the next soil takes the bought one's pad", after[1].upgrade.key == "soil5", after[1].upgrade.key)
+	check("the pad says what it gives and costs in $", Upgrades.blurb(Upgrades.soil5) == "→ 5 patches")
+end
+
 -- The menu opens up with the guide --------------------------------------------------------------------------------------
 p.guide.step = MenuC.UNLOCK.calendar
 Guide:Check(player)

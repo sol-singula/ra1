@@ -11,6 +11,11 @@ end
 
 local SUFFIXES = { "", "K", "M", "B", "T", "Qd", "Qn" }
 
+-- Cash with its dollar sign: $10, $1.2K, $3.4M (the farm's money everywhere on screen and on the pads)
+function Format.cash(n)
+	return "$" .. Format.num(n)
+end
+
 function Format.num(n)
 	n = math.floor(n or 0)
 	if math.abs(n) < 1000 then

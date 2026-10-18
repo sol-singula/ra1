@@ -105,6 +105,11 @@ local function paintCard()
 	-- (kept for the old tests and the HUD: how far through the whole game)
 	refs.count.Text = state.percent and `{state.percent}%` or ""
 	local k = state.n and state.chapterSize and (state.n - 1) / state.chapterSize or (state.percent or 0) / 100
+	if type(state.goal) == "table" and (state.goal.need or 0) > 0 then
+		-- (earning toward a buy: the bar is the Cash so far against the price)
+		k = (state.goal.have or 0) / state.goal.need
+		refs.chapter.Text = `${state.goal.have} / ${state.goal.need} for {state.goal.name}`
+	end
 	refs.fill.Size = UDim2.fromScale(math.clamp(k, 0.02, 1), 1)
 end
 
@@ -456,7 +461,7 @@ function GuideController:init()
 		end
 		local old = state
 		state = g
-		if old.key and old.key ~= g.key then
+		if old.key and old.key ~= g.key and old.step ~= g.step then
 			payoff(old)
 		end
 		paintCard()

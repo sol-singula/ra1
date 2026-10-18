@@ -137,12 +137,18 @@ end
 
 function Upgrades.next(owned, level, n)
 	local out = {}
+	local names = {}
 	for _, key in Upgrades.LIST do
 		local u = Upgrades[key]
 		if not owned[key] and not u.track then
 			if u.level > level or (u.needs and not owned[u.needs]) then
 				break -- (in order: nothing after a locked one shows yet)
 			end
+			-- (one of a kind at a time: never two MORE SOILs side by side; soil is bought in order, cheapest first)
+			if names[u.name] then
+				continue
+			end
+			names[u.name] = true
 			table.insert(out, u)
 			if #out >= (n or Upgrades.PADS) then
 				break
@@ -150,6 +156,34 @@ function Upgrades.next(owned, level, n)
 		end
 	end
 	return out
+end
+
+-- What a pad says it gives (one short line under the name)
+function Upgrades.blurb(u)
+	if u.kind == "soil" then
+		return `→ {u.value} patches`
+	elseif u.kind == "carry" then
+		return `carry {u.value}`
+	elseif u.kind == "price" then
+		return `+{math.floor(u.value * 100 + 0.5)}% sale price`
+	elseif u.kind == "golden" then
+		return "more golden crops"
+	elseif u.kind == "water" then
+		return "water: 2x growth"
+	elseif u.kind == "sprinkler" then
+		return "auto-water"
+	elseif u.kind == "stage" then
+		return `unlocks stage {u.value}!`
+	elseif u.kind == "animal" then
+		return `a {u.value}!`
+	elseif u.kind == "autoharvest" then
+		return "harvests for you"
+	elseif u.kind == "autosell" then
+		return "sells for you"
+	elseif u.kind == "home" then
+		return "a bigger home"
+	end
+	return nil
 end
 
 -- The pieces an upgrade takes down when it's built (`replaces`: a key, or a list of keys)
