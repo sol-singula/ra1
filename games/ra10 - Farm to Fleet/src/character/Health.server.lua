@@ -1,0 +1,2 @@
+-- Takes the place of Roblox's default character Health script (which heals 1% of max health a second): health is
+-- the server's (CombatService), and only respawning brings it back.

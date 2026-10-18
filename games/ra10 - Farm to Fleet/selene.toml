@@ -1,0 +1,2 @@
+std = "roblox-lite"
+exclude = ["tests/mock/*"]

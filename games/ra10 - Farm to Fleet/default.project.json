@@ -1,0 +1,69 @@
+{
+  "name": "FarmToFleet",
+  "tree": {
+    "$className": "DataModel",
+    "Lighting": {
+      "$properties": {
+        "Technology": "Future",
+        "GlobalShadows": true,
+        "ClockTime": 13.5
+      }
+    },
+    "HttpService": {
+      "$properties": {
+        "HttpEnabled": true
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false,
+        "Gravity": 196.2
+      },
+      "Terrain": {
+        "$properties": {
+          "Decoration": false
+        }
+      }
+    },
+    "Players": {
+      "$properties": {
+        "CharacterAutoLoads": false,
+        "RespawnTime": 3,
+        "MaxPlayers": 6
+      }
+    },
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "CameraMode": "Classic",
+        "CameraMaxZoomDistance": 60,
+        "CameraMinZoomDistance": 8,
+        "EnableMouseLockOption": true,
+        "GameSettingsAvatar": "R15",
+        "CharacterWalkSpeed": 20,
+        "CharacterUseJumpPower": false,
+        "CharacterJumpHeight": 7.2,
+        "DevCameraOcclusionMode": "Zoom"
+      },
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        }
+      },
+      "StarterCharacterScripts": {
+        "Health": {
+          "$path": "src/character/Health.server.lua"
+        }
+      }
+    }
+  }
+}
