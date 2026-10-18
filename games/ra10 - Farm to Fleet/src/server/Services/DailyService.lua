@@ -73,6 +73,7 @@ function DailyService:Claim(player)
 	c.claimedDay = today
 	c.streak = held and c.streak + 1 or 1
 	c.best = math.max(c.best or 0, c.streak)
+	p.stats.calendar = (p.stats.calendar or 0) + 1
 	if r.cash > 0 then
 		economy:Add(player, r.cash, "calendar")
 	end
@@ -81,6 +82,11 @@ function DailyService:Claim(player)
 	end
 	if r.seeds > 0 then
 		p.goldenSeeds = (p.goldenSeeds or 0) + r.seeds
+	end
+	if p.passes and p.passes.vip then
+		-- (VIP: ten more Gems a day)
+		r.gems += 10
+		economy:AddGems(player, 10, "vip")
 	end
 	local parts = {}
 	if r.cash > 0 then

@@ -100,6 +100,24 @@ function MenuController:init()
 			MenuController.dot("franchise", m.ready == true)
 		end
 	end)
+	-- (the guide pointing at a menu button: it pulses)
+	local pulse
+	Net.listen("Guide", function(m)
+		pulse = type(m) == "table" and m.menu or nil
+	end)
+	game:GetService("RunService").Heartbeat:Connect(function()
+		for key, b in refs.buttons do
+			local scale = b:FindFirstChild("Press")
+			if key == pulse and scale then
+				scale.Scale = 1 + 0.08 * math.abs(math.sin(os.clock() * 4))
+			elseif scale and scale:GetAttribute("Pulsed") then
+				scale.Scale = 1
+			end
+			if scale then
+				scale:SetAttribute("Pulsed", key == pulse or nil)
+			end
+		end
+	end)
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if not processed and input.KeyCode == Enum.KeyCode.Escape then
 			Bus.Panel:Fire(nil)

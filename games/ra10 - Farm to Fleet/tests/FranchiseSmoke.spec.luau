@@ -110,6 +110,7 @@ local gems, level, seeds = p.gems, p.level, 0
 p.goldenSeeds = 4
 p.animals.chicken = { level = 6, n = 2, fedAt = 0 }
 p.street = { day = 0, likes = 7, liked = {} }
+p.guide.step = 30
 FrC.refs.sell.Activated:Fire()
 Engine.advance(0.2)
 check("FRANCHISE asks first", p.franchise.level == 0 and FrC.refs.sell.Text:find("SURE") ~= nil)
@@ -123,7 +124,11 @@ check("...the Cash (back to the start)", p.cash < 1000, p.cash)
 check("...the warehouse and the orders", p.flow == nil or (p.flow.racked or 0) == 0)
 check("STAYS: Gems, the level, golden seeds", p.gems == gems and p.level == level and p.goldenSeeds == 4)
 check("...the animals' levels, the likes", p.animals.chicken.level == 6 and p.street.likes == 7)
-check("...the guide starts again (and remembers)", p.guide.chapter == 1 and (p.guide.best or 0) >= 1)
+check(
+	"...the guide starts again (and remembers what it paid)",
+	p.guide.step < 30 and (p.guide.paid or 0) >= 29,
+	p.guide.step
+)
 check("the same plot", Plots:Plot(player) and Plots:Plot(player).index == index)
 check(
 	"...no hub on it",

@@ -83,7 +83,24 @@ Guide.STEPS = {
 	{ key = "shipped1",  text = "A box truck takes pallets to market: wait for it to come back and pay", target = "flow:ship", done = { kind = "stat", stat = "palletsShipped", n = 1 }, reward = { cash = 20000 } },
 	{ key = "fix1",      text = "The red bar is your BOTTLENECK: fix it at its red pad", target = "station", done = { kind = "stat", stat = "fixes", n = 1 }, reward = { xp = 60 } },
 	{ key = "fix3",      text = "Fix 3 bottlenecks: each fix moves the jam somewhere new", target = "station", done = { kind = "stat", stat = "fixes", n = 3 }, reward = { cash = 100000 } },
+	{ key = "calendar1", text = "Tap DAILY (top right) and claim today's reward", target = "menu:calendar", done = { kind = "stat", stat = "calendar", n = 1 }, reward = { xp = 50 } },
+	{ key = "visit1",    text = "Tap STREET and VISIT a neighbour's farm",       target = "menu:street", done = { kind = "stat", stat = "visits", n = 1 }, reward = { xp = 50 } },
+	{ key = "like1",     text = "LIKE a farm you like on the STREET board",      target = "menu:street", done = { kind = "stat", stat = "likesGiven", n = 1 }, reward = { cash = 20000 } },
+	{ key = "hub",       text = "Save up and BUILD THE DISTRIBUTION HUB!",       target = "pad:hubDeed", done = { kind = "owned", key = "hubDeed" }, reward = { cash = 250000, xp = 500 } },
+	-- Chapter 5: the Distribution Hub
+	{ key = "backDocks", text = "Build the Back Dock Doors: trucks load at the back", target = "pad:backDocks", done = { kind = "owned", key = "backDocks" }, reward = { xp = 200 } },
+	{ key = "frontHall", text = "Build the Front Hall: it takes over the old shed", target = "pad:frontHall", done = { kind = "owned", key = "frontHall" }, reward = { xp = 200 } },
+	{ key = "special1",  text = "Fill a Special Order when one breaks in (the gold banner)", target = "pack", done = { kind = "stat", stat = "specials", n = 1 }, reward = { xp = 200 } },
+	{ key = "tower",     text = "Build the Control Tower: orders pay +10%",      target = "pad:controlTower", done = { kind = "owned", key = "controlTower" }, reward = { xp = 250 } },
+	{ key = "solar",     text = "Put the Solar Roof up: the lines pack faster",  target = "pad:solarRoof", done = { kind = "owned", key = "solarRoof" }, reward = { xp = 250 } },
+	{ key = "market",    text = "Build the Market Hall over the old stand",      target = "pad:marketHall", done = { kind = "owned", key = "marketHall" }, reward = { xp = 300 } },
+	{ key = "semi1",     text = "Buy the First Semi at the SHIP pad",             target = "station:ship", done = { kind = "owned", key = "semi1" }, reward = { xp = 300 } },
+	{ key = "semiTrip",  text = "Watch your semi back up to its dock and ship 24 pallets", target = "flow:ship", done = { kind = "stat", stat = "semis", n = 1 }, reward = { cash = 1000000 } },
+	-- Chapter 6: Franchise
+	{ key = "franchise1", text = "Tap FRANCHISE: sell the company for Stars and start bigger in a new region", target = "menu:franchise", done = { kind = "stat", stat = "franchises", n = 1 }, reward = { xp = 1000 } },
+	{ key = "perk1",     text = "Spend your Stars on a perk in the FRANCHISE panel", target = "menu:franchise", done = { kind = "stat", stat = "perks", n = 1 }, reward = { xp = 200 } },
 }
+Guide.CHAPTERS = { "THE SHACK", "THE FARM", "THE PACKING SHED", "THE WAREHOUSE", "THE HUB", "FRANCHISE" }
 -- stylua: ignore end
 
 Guide.byKey = {}

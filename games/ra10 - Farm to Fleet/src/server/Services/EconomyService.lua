@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Franchise = require(ReplicatedStorage.Shared.Data.Franchise)
 local Levels = require(ReplicatedStorage.Shared.Data.Levels)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Shop = require(ReplicatedStorage.Shared.Data.Shop)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local EconomyService = {
@@ -68,7 +69,8 @@ function EconomyService:Add(player, n, why)
 	end
 	if SHIPPED[why] then
 		-- (the franchise's region and every Star ever earned: more for everything shipped)
-		n *= Franchise.incomeMult(p)
+		-- (and the shop's passes and Cash Rush)
+		n *= Franchise.incomeMult(p) * Shop.cashMult(p)
 	end
 	n = math.floor(n + 0.5)
 	p.cash += n

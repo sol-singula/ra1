@@ -218,6 +218,12 @@ function StreetService:Visit(player, i)
 	if analytics then
 		pcall(analytics.event, player, "visit", { plot = i, own = plots:Owner(i) == player })
 	end
+	if plots:Owner(i) ~= player then
+		local p = data:Get(player)
+		if p then
+			p.stats.visits = (p.stats.visits or 0) + 1
+		end
+	end
 	-- (the gate, facing in: the drive between the stand and the pads)
 	return teleport(player, i, 0, -104)
 end
@@ -254,6 +260,7 @@ function StreetService:Like(player, i)
 		end
 	end
 	mine.liked[key] = today()
+	p.stats.likesGiven = (p.stats.likesGiven or 0) + 1
 	local theirs = streetOf(q)
 	theirs.likes += 1
 	Net.fire(player, "Toast", `❤ You liked {owner.DisplayName}'s farm!`, "good")

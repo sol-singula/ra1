@@ -257,6 +257,25 @@ function FarmService:BuildTiles(player)
 	end
 end
 
+-- Every crop growing ripe now (the shop's Instant Harvest and Ripen Everything): how many
+function FarmService:RipenAll(player)
+	local p = profileOf(player)
+	if not p then
+		return 0
+	end
+	local n = 0
+	for i = 1, soilCount(p) do
+		local t = tileState(p, i)
+		if t and phaseOf(t) < 3 then
+			t.at = now() - t.need
+			n += 1
+			show(player, i)
+		end
+	end
+	self:Push(player)
+	return n
+end
+
 local function near(player, n, reach)
 	local tile = FarmService:Tiles(player)[n]
 	return tile ~= nil and plots:Near(player, tile, reach)

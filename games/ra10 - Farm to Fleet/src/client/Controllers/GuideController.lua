@@ -51,7 +51,8 @@ end
 local function paintCard()
 	refs.card.Visible = state.text ~= nil
 	refs.text.Text = state.text or ""
-	refs.count.Text = (state.generated or not state.step) and "★" or `{math.min(state.step, state.of)}/{state.of}`
+	refs.count.Text = state.percent and `{state.percent}%`
+		or ((state.generated or not state.step) and "★" or `{math.min(state.step, state.of)}/{state.of}`)
 end
 
 local function step()

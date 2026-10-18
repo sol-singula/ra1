@@ -172,6 +172,24 @@ function AnimalService:Feed(player, key)
 	return true
 end
 
+-- Every animal fed, no crops needed (the shop's Feed Everyone): how many
+function AnimalService:FeedAll(player)
+	local p = data:Get(player)
+	if not p then
+		return 0
+	end
+	local n = 0
+	for key in p.animals or {} do
+		local st = stateOf(p, key)
+		if st then
+			st.fedAt = now()
+			n += 1
+			self.Changed:Fire(player, key, "feed")
+		end
+	end
+	return n
+end
+
 function AnimalService:Collect(player, key)
 	local p = data:Get(player)
 	local st = p and stateOf(p, key)

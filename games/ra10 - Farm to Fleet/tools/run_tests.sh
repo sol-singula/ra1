@@ -16,3 +16,4 @@ $R tests/FreightSmoke.spec.luau
 $R tests/ComebackSmoke.spec.luau
 $R tests/StreetSmoke.spec.luau
 $R tests/FranchiseSmoke.spec.luau
+$R tests/ShopSmoke.spec.luau

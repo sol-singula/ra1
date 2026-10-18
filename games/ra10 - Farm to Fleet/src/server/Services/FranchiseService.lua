@@ -189,8 +189,8 @@ function FranchiseService:Sell(player)
 		p.orders.special = nil
 		p.orders.specialIn = nil
 	end
-	local best = p.guide and math.max(p.guide.best or 0, p.guide.chapter or 1) or 1
-	p.guide = { chapter = 1, step = 1, done = false, best = best }
+	local paid = p.guide and math.max(p.guide.paid or 0, (p.guide.step or 1) - 1) or 0
+	p.guide = { chapter = 1, step = 1, done = false, paid = paid }
 	local region = Franchise.region(f.level)
 	if analytics then
 		pcall(analytics.event, player, "franchise", { level = f.level, stars = stars, region = region.key })
@@ -222,6 +222,7 @@ function FranchiseService:Perk(player, key)
 	end
 	f.stars -= cost
 	f.perks[key] = level + 1
+	p.stats.perks = (p.stats.perks or 0) + 1
 	Net.fire(player, "Toast", `{perk.name} level {level + 1}!`, "good")
 	if analytics then
 		pcall(analytics.event, player, "perk", { key = key, level = level + 1 })

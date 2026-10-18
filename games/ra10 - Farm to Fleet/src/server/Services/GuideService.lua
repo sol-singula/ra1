@@ -248,6 +248,9 @@ local function push(player, force)
 		target = target,
 		step = guideOf(p).step,
 		of = #Guide.STEPS,
+		-- (100% of the game: the scripted steps done; a menu button to light up)
+		percent = math.floor((math.min(guideOf(p).step, #Guide.STEPS + 1) - 1) / #Guide.STEPS * 100),
+		menu = type(step.target) == "string" and string.match(step.target, "^menu:(.+)$") or nil,
 		generated = step.generated == true,
 	})
 end
@@ -263,7 +266,9 @@ function GuideService:Check(player)
 		local step = Guide.STEPS[g.step]
 		g.step += 1
 		moved = true
-		local reward = step.reward or {}
+		-- (a step pays once: a franchise walks the guide again, and what's done already only counts)
+		local reward = g.step > (g.paid or 0) and step.reward or {}
+		g.paid = math.max(g.paid or 0, g.step)
 		if reward.cash then
 			economy:Add(player, reward.cash, "guide")
 		end

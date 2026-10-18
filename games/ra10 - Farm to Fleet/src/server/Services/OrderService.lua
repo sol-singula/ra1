@@ -80,7 +80,9 @@ local function opened(p)
 end
 
 local function slotCount(p)
-	return opened(p) and Upgrades.stat(p.owned, "orders", 0) + Franchise.bonus(p, "orderSlot") or 0
+	return opened(p)
+			and Upgrades.stat(p.owned, "orders", 0) + Franchise.bonus(p, "orderSlot") + (p.passes and p.passes.extraOrder and 1 or 0)
+		or 0
 end
 
 local function bonus(p)

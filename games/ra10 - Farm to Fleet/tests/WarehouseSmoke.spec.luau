@@ -366,7 +366,16 @@ check("buying the bottleneck's fix makes that station faster", fixes == 3, fixes
 check("...counted as fixes", (p.stats.fixes or 0) == 3, p.stats.fixes)
 Engine.advance(1.2)
 check(
-	"the guide: after three fixes, it follows the bottleneck",
+	"the guide: after three fixes, the street's steps (the calendar first)",
+	GuideC.state().key == "calendar1",
+	GuideC.state().key
+)
+-- (past the scripted steps: the generated goals)
+p.guide.step = 1e3
+service("GuideService"):Check(player)
+Engine.advance(1.2)
+check(
+	"the guide: past its steps, it follows the bottleneck",
 	GuideC.state().generated and string.sub(GuideC.state().key, 1, 4) == "fix:",
 	GuideC.state().key
 )
