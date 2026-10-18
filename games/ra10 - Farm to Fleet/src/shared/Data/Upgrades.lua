@@ -12,14 +12,21 @@ owned yet whose level is reached. Each one is visible on the plot (World/FarmBui
   kind "stage"    the next stage opens (`value`)
   kind "animal"   a pen for that animal (`value`: Data/Animals' key); AnimalService looks after it
   kind "autoharvest" the tractor: every `value` seconds it harvests what's ripe and plants again
-  kind "autosell" the conveyor: every `value` seconds it carries the basket to the stand and sells it
+  kind "autosell" the conveyor: every `value` seconds it carries the basket to the stand and sells it (once the
+                  shed stands, it leaves what open orders still need)
+  kind "orders"   the order board holds `value` orders at once (Data/Orders, OrderService)
+  kind "van"      a delivery van: an order's trip takes `value` seconds (the buyer's pickup takes longer)
+  kind "vans"     `value` vans: that many orders on the road at once
+  kind "autopack" the box line: every `value` seconds it packs what the basket has into the open orders
+  kind "orderPrice" orders pay + `value` (they add up)
+  kind "tripCut"  the loading dock: trips take `value` less time
 
   Upgrades.LIST              every upgrade, in order
   Upgrades[key]              { key, name, stage, cost, kind, value, level, replaces? (the piece it takes down: a
                              site sign) }
   Upgrades.next(owned, level, n)   the next n on offer (the buy-pads)
-  Upgrades.stat(owned, kind, default)   the value the plot has for a kind (the highest owned; "price" and
-                             "golden" add up)
+  Upgrades.stat(owned, kind, default)   the value the plot has for a kind (the highest owned; "price",
+                             "golden" and "orderPrice" add up)
 ]]
 local Upgrades = {}
 
@@ -61,6 +68,17 @@ local LIST = {
 	{ key = "windmill",   name = "Windmill",        stage = 2, cost = 4000,  kind = "decor",     value = 0,   level = 9 },
 	{ key = "cowBarn",    name = "Cow Pasture",     stage = 2, cost = 12000, kind = "animal",    value = "cow", level = 10 },
 	{ key = "shedDeed",   name = "Build the Packing Shed!", stage = 2, cost = 15000, kind = "stage", value = 3, level = 11 },
+	-- Stage 3: the Packing Shed
+	{ key = "shed",       name = "The Packing Shed", stage = 3, cost = 18000,  kind = "orders",   value = 2,    level = 11, replaces = "shedDeed" },
+	{ key = "yard",       name = "Paved Yard",      stage = 3, cost = 20000,  kind = "decor",     value = 0,    level = 11 },
+	{ key = "van",        name = "Delivery Van",    stage = 3, cost = 25000,  kind = "van",       value = 20,   level = 12 },
+	{ key = "orderBoard", name = "Big Order Board", stage = 3, cost = 30000,  kind = "orders",    value = 3,    level = 12 },
+	{ key = "boxLine",    name = "Box Line",        stage = 3, cost = 36000,  kind = "autopack",  value = 6,    level = 13 },
+	{ key = "sorter",     name = "Sorting Machine", stage = 3, cost = 45000,  kind = "orderPrice", value = 0.15, level = 14 },
+	{ key = "loadingDock", name = "Loading Dock",   stage = 3, cost = 52000,  kind = "tripCut",   value = 0.25, level = 14 },
+	{ key = "wrapper",    name = "Pallet Wrapper",  stage = 3, cost = 60000,  kind = "orderPrice", value = 0.15, level = 15 },
+	{ key = "van2",       name = "Second Van",      stage = 3, cost = 75000,  kind = "vans",      value = 2,    level = 16 },
+	{ key = "warehouseDeed", name = "Build the Warehouse!", stage = 3, cost = 100000, kind = "stage", value = 4, level = 17 },
 }
 -- stylua: ignore end
 
@@ -103,7 +121,7 @@ function Upgrades.stat(owned, kind, default)
 	for _, key in Upgrades.LIST do
 		local u = Upgrades[key]
 		if owned[key] and u.kind == kind then
-			if kind == "price" or kind == "golden" then
+			if kind == "price" or kind == "golden" or kind == "orderPrice" then
 				v = (v or 0) + u.value
 			elseif type(u.value) ~= "number" then
 				v = u.value

@@ -17,6 +17,7 @@ tiles (FarmBuilder.crop).
   FarmBuilder.clear(plot)
   FarmBuilder.label(part, title, line?, color?)   words over a pad or a sign (a billboard sized in studs)
   FarmBuilder.sign(part, title, line?, color?, face?)   words on a part's face
+  FarmBuilder.board(part, title, lines, status?, color?)   an order board's face: a title, three lines, a status
   FarmBuilder.light()
 ]]
 local Lighting = game:GetService("Lighting")
@@ -65,6 +66,39 @@ function FarmBuilder.sign(part, title, line, color, face)
 			old:Destroy()
 		end
 	end
+	gui.Parent = part
+	return gui
+end
+
+-- A board's face (an order on the order board): a title, up to three lines and a status line along the bottom
+function FarmBuilder.board(part, title, lines, status, color)
+	local gui = part:FindFirstChild("Board") or Instance.new("SurfaceGui")
+	gui.Name = "Board"
+	gui.Face = Enum.NormalId.Front
+	gui.LightInfluence = 0
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.FixedSize
+	gui.CanvasSize = Vector2.new(math.floor(part.Size.X * 100), math.floor(part.Size.Y * 100))
+	local function label(name, text, y, h, c, cap)
+		local l = gui:FindFirstChild(name) or Instance.new("TextLabel")
+		l.Name = name
+		l.BackgroundTransparency = 1
+		l.Position = UDim2.fromScale(0.06, y)
+		l.Size = UDim2.fromScale(0.88, h)
+		l.Font = Enum.Font.GothamBlack
+		l.TextScaled = true
+		l.TextWrapped = true
+		l.TextColor3 = c
+		l.Text = text
+		l.Parent = gui
+		local k = l:FindFirstChildOfClass("UITextSizeConstraint") or Instance.new("UITextSizeConstraint")
+		k.MaxTextSize = cap
+		k.Parent = l
+	end
+	label("Title", title, 0.04, 0.2, color or WHITE, 64)
+	for i = 1, 3 do
+		label("Line" .. i, lines[i] or "", 0.28 + (i - 1) * 0.15, 0.13, Color3.fromRGB(235, 240, 230), 48)
+	end
+	label("Status", status or "", 0.8, 0.14, color or WHITE, 44)
 	gui.Parent = part
 	return gui
 end
@@ -1061,6 +1095,9 @@ function FarmBuilder.clear(plot)
 		d:Destroy()
 	end
 end
+
+-- (stage 3's pieces, and the vehicles)
+require(script.Parent.ShedBuilder)(FarmBuilder, BUILD)
 
 FarmBuilder.BUILD = BUILD
 

@@ -6,7 +6,8 @@ on the ground to it.
 
   Guide.STEPS    { { key, text, target, done = { kind, ... }, reward = { cash?, xp? } } } in order
      target: "soil1" (the first soil tile) | "soil" (the nearest tile that needs something) | "stand" | "pad:<key>"
-             (the buy-pad offering that upgrade) | "pen:<animal>" (that pen's pad)
+             (the buy-pad offering that upgrade) | "pen:<animal>" (that pen's pad) | "pack" (the shed's PACK ORDERS
+             pad) | "board" (the order board) | "door" (the shed's loading door)
      done:   { kind = "stat", stat, n }   profile.stats[stat] >= n
              { kind = "owned", key }      the upgrade is bought
              { kind = "level", n }        the farm level is at least n
@@ -57,6 +58,23 @@ Guide.STEPS = {
 	{ key = "windmill",  text = "Buy the Windmill",                              target = "pad:windmill", done = { kind = "owned", key = "windmill" }, reward = { xp = 20 } },
 	{ key = "cows",      text = "Buy the Cow Pasture: fruit grows faster",       target = "pad:cowBarn", done = { kind = "owned", key = "cowBarn" },   reward = { xp = 50 } },
 	{ key = "shed",      text = "Save up and BUILD THE PACKING SHED!",           target = "pad:shedDeed", done = { kind = "owned", key = "shedDeed" }, reward = { cash = 1000, xp = 100 } },
+	-- Chapter 3: the Packing Shed
+	{ key = "shedBuild", text = "Build The Packing Shed: customers will order your crops", target = "pad:shed", done = { kind = "owned", key = "shed" }, reward = { xp = 40 } },
+	{ key = "pack1",     text = "Grow what the order board asks for, then stand on PACK ORDERS", target = "pack", done = { kind = "stat", stat = "packed", n = 1 }, reward = { xp = 10 } },
+	{ key = "packFull",  text = "Pack a whole order: every crop on its list",    target = "pack",       done = { kind = "stat", stat = "ordersPacked", n = 1 }, reward = { xp = 20 } },
+	{ key = "ship1",     text = "The buyer's pickup is coming for it: watch it go!", target = "door",  done = { kind = "stat", stat = "shipments", n = 1 }, reward = { cash = 500 } },
+	{ key = "yard",      text = "Buy the Paved Yard",                            target = "pad:yard",   done = { kind = "owned", key = "yard" },       reward = { xp = 20 } },
+	{ key = "van",       text = "Buy the Delivery Van: orders ship twice as fast", target = "pad:van",  done = { kind = "owned", key = "van" },        reward = { xp = 40 } },
+	{ key = "ship3",     text = "Fill and ship 3 orders",                        target = "pack",       done = { kind = "stat", stat = "shipments", n = 3 }, reward = { cash = 1000 } },
+	{ key = "orderBoard", text = "Buy the Big Order Board: 3 orders at once",    target = "pad:orderBoard", done = { kind = "owned", key = "orderBoard" }, reward = { xp = 40 } },
+	{ key = "contract1", text = "Finish a daily contract (the list under your orders)", target = "board", done = { kind = "stat", stat = "contracts", n = 1 }, reward = { xp = 30 } },
+	{ key = "boxLine",   text = "Buy the Box Line: it packs orders for you",     target = "pad:boxLine", done = { kind = "owned", key = "boxLine" },   reward = { xp = 50 } },
+	{ key = "sorter",    text = "Buy the Sorting Machine: orders pay +15%",      target = "pad:sorter", done = { kind = "owned", key = "sorter" },     reward = { xp = 50 } },
+	{ key = "loadingDock", text = "Buy the Loading Dock: trips are quicker",     target = "pad:loadingDock", done = { kind = "owned", key = "loadingDock" }, reward = { xp = 50 } },
+	{ key = "ship10",    text = "Ship 10 orders",                                target = "pack",       done = { kind = "stat", stat = "shipments", n = 10 }, reward = { cash = 3000 } },
+	{ key = "wrapper",   text = "Buy the Pallet Wrapper: orders pay +15% more",  target = "pad:wrapper", done = { kind = "owned", key = "wrapper" },   reward = { xp = 60 } },
+	{ key = "van2",      text = "Buy a Second Van: two orders on the road at once", target = "pad:van2", done = { kind = "owned", key = "van2" },      reward = { xp = 80 } },
+	{ key = "warehouse", text = "Save up and BUILD THE WAREHOUSE!",              target = "pad:warehouseDeed", done = { kind = "owned", key = "warehouseDeed" }, reward = { cash = 5000, xp = 200 } },
 }
 -- stylua: ignore end
 

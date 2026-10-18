@@ -30,7 +30,7 @@ local Plots = service("PlotService")
 local Upgrades = Engine.require(tree.shared.Data.Upgrades)
 local PlotLayout = Engine.require(tree.shared.World.PlotLayout)
 
--- Ben: everything in stage 1, a field of crops (ripe and growing)
+-- Ben: everything up to stage 3 (the shed, its vans and machines), a field of crops (ripe and growing)
 local ben = Engine.addPlayer("Ben", 902)
 Engine.advance(1)
 local pb = Data:Get(ben)
@@ -105,8 +105,46 @@ shot("farm_stage2_overview", at(theirs, 60, -120, 70), at(theirs, -40, 10, 0), t
 shot("farm_barn", at(theirs, -10, -62, 14), at(theirs, -44, -18, 6), true)
 shot("farm_pens", at(theirs, -41, 12, 18), at(theirs, -41, 70, 0), true)
 shot("farm_cows_close", at(theirs, -41, 64, 9), at(theirs, -22, 84, 1), true)
+-- Ben's stage 3: the packing shed, its yard and board, a van backed up to the loading door, the other parked
+do
+	local van = Plots:Plot(ben).items.van:FindFirstChild("Vehicle")
+	van:SetAttribute("TripStart", Engine.workspace:GetServerTimeNow() - 0.26 * 20)
+	van:SetAttribute("TripLength", 20)
+	Engine.advance(2.2)
+	van:SetAttribute("TripStart", Engine.workspace:GetServerTimeNow() - 0.26 * 20)
+	Engine.advance(0.1)
+end
+shot("farm_shed_overview", at(theirs, -20, -150, 40), at(theirs, 40, -66, 0), true)
+shot("farm_shed_door", at(theirs, 18, -100, 9), at(theirs, 44, -74, 4), true)
+shot("farm_order_board", at(theirs, 10, -96, 7), at(theirs, 8, -80, 5), true)
+shot("farm_shed_machines", at(theirs, 90, -100, 22), at(theirs, 50, -60, 2), true)
 -- the street from above
 shot("farm_street", V3.new(0, 160, 300), V3.new(0, 0, 0), true)
+-- Ava, later: her own shed, the orders panel and today's contracts on screen, standing at PACK ORDERS
+do
+	local pa = Data:Get(player)
+	pa.cash = 10 ^ 6
+	for _, key in Upgrades.LIST do
+		Economy:AddXP(player, 400, "render")
+		Upg:Buy(player, key)
+		if key == "orderBoard" then
+			break
+		end
+	end
+	pa.guide.step = 999
+	Engine.advance(2)
+	local order = service("OrderService")
+	local first = order:Slots(player)[1]
+	for key, n in first.items do
+		first.packed[key] = math.floor(n / 2)
+	end
+	pa.stats.harvested = (pa.stats.harvested or 0) + 40
+	order:Push(player)
+	local pad = order:PackPad(player)
+	Engine.moveTo(player, pad.Position + V3.new(0, 3, -6), pad.Position + V3.new(0, 3, 0))
+	Engine.advance(1)
+	shot("farm_orders_panel", at(mine, 16, -100, 12), at(mine, 22, -72, 2), false)
+end
 local http = Engine.game:GetService("HttpService")
 writeFile(outDir .. "/index.json", http:JSONEncode(shots))
 print("shots", #shots)

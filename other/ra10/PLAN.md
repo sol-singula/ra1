@@ -63,6 +63,45 @@ feeding from the basket, eggs collected and sold, every boost, levels and herd s
 tractor and the conveyor working alone, client-side wandering inside the pen, the windmill, stage 3, animals kept
 across a rejoin).
 
-## Next: Phase D
+## Phase D: stage 3 (the Packing Shed), orders, vans, daily contracts
 
-Stage 3 (the packing shed, the box line, orders and the order board, the first delivery van, daily contracts).
+* **Stage 3** (`Data/Upgrades`, `World/ShedBuilder`): ten buys after the shed's deed: The Packing Shed (sage-green
+  corrugated siding, white trim, a roll-up loading door with hazard stripes and bumpers, a side door over the PACK
+  ORDERS pad, the packing table under lights, pallets and crates inside; it takes the place of its site), the Paved
+  Yard (asphalt, van bays, lamps, planters), the Delivery Van, the Big Order Board (3 orders; bulbs round it), the
+  Box Line (a belt into the shed with boxes riding it and a box folder), the Sorting Machine (+15% on orders), the
+  Loading Dock (trips 25% quicker), the Pallet Wrapper (+15% more), a Second Van, and the warehouse's deed (stage 4).
+* **Orders** (`OrderService`, `Data/Orders`): the order board holds 2 orders (3 with the big board). Each customer
+  asks for 1 to 3 crops the farm has (quick growers, or an animal's product, at most 24), pays 3x the stand, and has
+  10 minutes. Standing on PACK ORDERS packs the basket into the open orders; the box line does it every 6 s. Once
+  the shed stands, the conveyor leaves what the orders still need in the basket. A packed order leaves on the
+  buyer's pickup (40 s, one at a time) or the vans (20 s; two at once with the second van; 15 s with the dock) and
+  pays when the vehicle gets back. One order in six is BIG: twice the crops, 2.5x the pay, 2 Gems. An order that
+  runs out, or is skipped, gives its boxes back. The board in the world shows each order: customer, one line per
+  crop, the pay or what it's doing.
+* **Vehicles** (`World/Trips`, `VehicleController`): the server marks a trip on the vehicle (start, length, kind);
+  every client drives it along the plan for that kind: the van backs out, goes round to the loading door, backs up
+  to it, loads, drives off down the road, comes back up the far lane and parks; the pickup comes up the far lane,
+  noses in, loads, backs out and drives away. Neighbours see each other's trucks. A trip under way while the player
+  is gone pays when they're back.
+* **Daily contracts**: three a UTC day, picked by the day and the player from eight kinds (ship orders, harvest,
+  sell, plant, feed, pack, eggs, a BIG order), measured from the day's start; each pays Cash and a Gem, all three
+  add 3 Gems.
+* **The orders panel** (`OrderController`): on the right once the shed stands: each order with who, what's packed
+  of what, the time left or what it's doing, the pay (and Gems), a skip; then today's contracts and when they renew.
+  The crop picker moved to a two-row strip at the bottom centre and shows only by the soil.
+* **The guide's chapter 3**: sixteen steps (the shed, pack, a whole order, watch it ship, yard, van, three orders,
+  the big board, a contract, box line, sorter, dock, ten orders, wrapper, second van, the warehouse's deed), with
+  "pack", "board" and "door" targets.
+
+Tests: `OrderSmoke` (89 checks: order making and pay, BIG odds, contracts by day, the van's and pickup's trips; the
+shed replacing its site on the industry side, the board and the panel, the conveyor holding back, packing at the
+pad, the pickup's trip on the client and the payout, running out and skipping, the van, three orders, one van at
+a time then two, the box line, the pay boosts, the dock's shorter trip, a BIG order's Gems, contracts paying, all
+three, a new day, every stage-3 upgrade covered by the guide, a trip paying across a rejoin, and the profile
+saving). 220 checks in all (`tools/run_tests.sh`).
+
+## Next: Phase E
+
+Stage 4: the warehouse rises bay by bay (racks, put-away), forklifts on painted lanes (client-animated, an optional
+ride), receiving and shipping doors.

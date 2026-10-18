@@ -8,7 +8,8 @@ The plot's zones (local coordinates), filled stage by stage:
   front strip   z -110..-86     the stand, the driveway, later the truck court's entrance
   farm (left)   x -80..-4       the shack and soil (stage 1), fields and the barn (2)
   animals       x -80..-4, z 20..110   the pens (2)
-  industry      x 4..80         the packing shed (3), the warehouse and its dock doors (4, 5)
+  industry      x 4..80         the packing shed and its yard (3), the warehouse and its dock doors (4, 5)
+  the road      z -110..-150    two lanes (centres z -125 and -135 in a plot's frame): vehicles come and go here
 
   PlotLayout.frame(i)          plot i's CFrame (1-3 north of the road, 4-6 south)
   PlotLayout.toWorld(i, x, z, y?)
@@ -58,6 +59,16 @@ PlotLayout.SPOTS = {
 		sheep = Vector3.new(-60, 0, 86),
 		cow = Vector3.new(-22, 0, 86),
 	},
+	-- stage 3: the packing shed (36 x 28, its front wall at z -74), its yard and the drive to the road
+	shed = Vector3.new(34, 0, -60),
+	packPad = Vector3.new(24, 0, -79), -- the packing table's pad, outside the shed's side door
+	board = Vector3.new(6, 0, -80), -- the order board
+	door = Vector3.new(42, 0, -74), -- the loading door, in the shed's front wall
+	boxLine = Vector3.new(4, 0, -62), -- where the box line's belt starts, outside the west wall
+	sorter = Vector3.new(64, 0, -54),
+	wrapper = Vector3.new(64, 0, -66),
+	parks = { Vector3.new(64, 0, -80), Vector3.new(74, 0, -80) }, -- where the vans wait
+	warehouseSite = Vector3.new(42, 0, -2),
 	mailbox = Vector3.new(-50, 0, -106),
 	sign = Vector3.new(-74, 0, -106),
 }
@@ -65,6 +76,8 @@ PlotLayout.TILE = 6 -- a soil tile's size
 PlotLayout.TILE_GAP = 1.6
 PlotLayout.TILE_COLUMNS = 4
 
+PlotLayout.SHED = Vector3.new(36, 14, 28) -- the shed's size
+PlotLayout.LANES = { -125, -135 } -- the road's lanes in a plot's frame (near, far)
 PlotLayout.FIELD_COLUMNS = 9
 PlotLayout.PEN = Vector3.new(34, 0, 38) -- a pen's size (x, z)
 -- the conveyor's route: from the barn's west side round to the stand (stage 2)

@@ -20,7 +20,8 @@ crops, golden } whenever it changes.
   FarmService:Harvest(player, n) -> ok, why
   FarmService:Water(player, n) -> ok, why
   FarmService:Act(player) -> what ("harvest" | "plant" | "water" | nil), how many
-  FarmService:Sell(player, quiet?) -> Cash paid
+  FarmService:Sell(player, quiet?) -> Cash paid   (quiet: the conveyor's, which keeps what FarmService.hold(player)
+                                           returns, { [crop] = n }: what the orders need)
   FarmService:Worth(player) -> Cash, goods, products   what the basket would sell for
   FarmService:Stow(player, key, n) -> how many fit     goods into the basket (eggs, milk...)
   FarmService:Take(player, n) -> ok                   n crops out of the basket (feeding)
@@ -422,8 +423,28 @@ function FarmService:Sell(player, quiet)
 	if not p or self:Carried(player) == 0 then
 		return 0
 	end
+	-- (the conveyor leaves what the open orders still need: FarmService.hold, set by OrderService)
+	local kept = {}
+	if quiet and self.hold then
+		for key, want in self.hold(player) or {} do
+			local k = math.min(want, p.storage[key] or 0)
+			if k > 0 then
+				kept[key] = k
+				p.storage[key] -= k
+				if p.storage[key] <= 0 then
+					p.storage[key] = nil
+				end
+			end
+		end
+	end
 	local total, n, products = self:Worth(player)
 	table.clear(p.storage)
+	for key, k in kept do
+		p.storage[key] = k
+	end
+	if n == 0 then
+		return 0
+	end
 	p.stats.sold = (p.stats.sold or 0) + n
 	p.stats.soldProducts = (p.stats.soldProducts or 0) + products
 	economy:Add(player, total, "sell")

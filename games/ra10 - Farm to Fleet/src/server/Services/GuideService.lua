@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Guide = require(ReplicatedStorage.Shared.Data.Guide)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PlotLayout = require(ReplicatedStorage.Shared.World.PlotLayout)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
 
@@ -28,12 +29,13 @@ local GuideService = {
 		"FarmService",
 		"UpgradeService",
 		"AnimalService",
+		"OrderService",
 	},
 	Advanced = Signal.new("GuideService.Advanced"),
 	CHECK = 1,
 }
 
-local data, economy, plots, farm, upgrades, animals, analytics
+local data, economy, plots, farm, upgrades, animals, orders, analytics
 local sent = {} -- [player] = the last payload's key and target, so nothing is sent twice
 
 local function guideOf(p)
@@ -123,6 +125,13 @@ function GuideService:Target(player, target)
 			end
 		end
 		return best and best[2].Position
+	elseif target == "pack" then
+		local pad = orders and orders:PackPad(player)
+		return pad and pad.Position
+	elseif target == "board" or target == "door" then
+		local plot = plots:Plot(player)
+		local spot = target == "board" and PlotLayout.SPOTS.board or PlotLayout.SPOTS.door - Vector3.new(0, 0, 6)
+		return plot and PlotLayout.toWorld(plot.index, spot.X, spot.Z, 0.5)
 	elseif string.sub(target, 1, 4) == "pen:" then
 		local pen = animals and animals:Pens(player)[string.sub(target, 5)]
 		return pen and pen.pad.Position
@@ -196,6 +205,7 @@ function GuideService:Init(registry)
 	farm = registry.FarmService
 	upgrades = registry.UpgradeService
 	animals = registry.AnimalService
+	orders = registry.OrderService
 	analytics = registry.AnalyticsService
 	farm.Changed:Connect(function(player)
 		self:Check(player)
@@ -204,6 +214,9 @@ function GuideService:Init(registry)
 		self:Check(player)
 	end)
 	animals.Changed:Connect(function(player)
+		self:Check(player)
+	end)
+	orders.Changed:Connect(function(player)
 		self:Check(player)
 	end)
 	economy.LevelUp:Connect(function(player)

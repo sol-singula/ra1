@@ -9,3 +9,4 @@ R=tools/luaurun/target/release/luaurun
 $R tests/BootSmoke.spec.luau
 $R tests/FarmSmoke.spec.luau
 $R tests/AnimalSmoke.spec.luau
+$R tests/OrderSmoke.spec.luau

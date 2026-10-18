@@ -2,8 +2,8 @@
 Farming with one thumb (master plan §3, phone first). A big round button at the bottom right says what it will do
 for the soil you're standing by (Net "Farm" "act"; the server does all of it that's in reach): HARVEST when
 something there is ripe, PLANT when there's empty soil, WATER (once you have the well) when something's growing
-dry. It hides when there's nothing to do. Over it, the crop picker: one chip per crop you've unlocked (Net "Farm"
-"crop"). On a PC, E (or a click away from the buttons) does the same as the button.
+dry. It hides when there's nothing to do. With it, along the bottom of the screen, the crop picker: one chip per
+crop you've unlocked, in rows of five (Net "Farm" "crop"). On a PC, E (or a click away from the buttons) does the same as the button.
 
   FarmController.action()   -> "harvest" | "plant" | "water" | nil, what the button shows now
   FarmController.press()    what the button does
@@ -101,18 +101,20 @@ local function paintPicker()
 		end
 	end
 	refs.chips = {}
-	if #list < 2 then
-		refs.picker.Visible = false
+	refs.many = #list >= 2
+	refs.picker.Visible = refs.many and refs.act ~= nil and refs.act.Visible
+	if not refs.many then
 		return
 	end
-	refs.picker.Visible = true
+	local ROW = 5 -- (chips in rows of five, along the bottom of the screen)
 	for i, key in list do
 		local c = Crops[key]
+		local col, rowN = (i - 1) % ROW, (i - 1) // ROW
 		local chip = Theme.button({
 			Name = "Chip_" .. key,
 			Text = c.name,
-			Position = UDim2.fromOffset(0, (i - 1) * 40),
-			Size = UDim2.fromOffset(130, 34),
+			Position = UDim2.fromOffset(col * 110, rowN * 40),
+			Size = UDim2.fromOffset(104, 34),
 			BackgroundColor3 = f.crop == key and c.color or C.white,
 			dark = f.crop ~= key,
 			Parent = refs.picker,
@@ -123,7 +125,7 @@ local function paintPicker()
 		end)
 		refs.chips[key] = chip
 	end
-	refs.picker.Size = UDim2.fromOffset(130, #list * 40)
+	refs.picker.Size = UDim2.fromOffset(math.min(#list, ROW) * 110 - 6, math.ceil(#list / ROW) * 40)
 end
 
 function FarmController:init()
@@ -147,8 +149,8 @@ function FarmController:init()
 	refs.act = b
 	refs.picker = Theme.new("Frame", {
 		Name = "Picker",
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -28, 1, -302),
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -14),
 		Size = UDim2.fromOffset(130, 40),
 		BackgroundTransparency = 1,
 		Visible = false,
@@ -174,6 +176,7 @@ function FarmController:init()
 		if a ~= shown then
 			shown = a
 			b.Visible = a ~= nil
+			refs.picker.Visible = refs.many == true and a ~= nil -- (the crops to plant, by the soil only)
 			if a then
 				b.Text = LOOK[a][1]
 				b.BackgroundColor3 = LOOK[a][2]
