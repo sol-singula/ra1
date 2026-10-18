@@ -249,7 +249,7 @@ check("...the pickup's gone", pickup.Parent == nil)
 check("...the slot waits for the next customer", live[1].state == "wait")
 check(
 	"the guide moves on",
-	GuideC.state().key == "yard" or string.find(GuideC.state().key, "^earn:yard:") ~= nil,
+	GuideC.state().key == "van" or string.find(GuideC.state().key, "^earn:van:") ~= nil,
 	GuideC.state().key
 )
 Engine.advance(Orders.REFRESH + 1)
@@ -270,7 +270,7 @@ check("...a packed one can't be skipped", not Order:Skip(player, 1))
 
 -- The van, the board, the box line ----------------------------------------------------------------------------------------
 _ = o1
-check("buy the Paved Yard", buy("yard"))
+check("the shed came with its paved yard", plot.items:FindFirstChild("Yard", true) ~= nil)
 check("buy the Delivery Van", buy("van"))
 local van = plot.items.van:FindFirstChild("Vehicle")
 check("...it waits in its spot", van ~= nil)

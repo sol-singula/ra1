@@ -252,8 +252,8 @@ function FarmBuilder.world(parent)
 			items = items,
 		}
 		local L = Shapes.new(plotFolder, plot.cf)
-		local W, D = PlotLayout.WIDTH, PlotLayout.DEPTH
-		L:block(0, 0, W, D, 0.25, deco({ color = i % 2 == 0 and P.grass or P.grassLight, name = "Meadow" }), 0)
+		local W, D, F = PlotLayout.WIDTH, PlotLayout.DEPTH, PlotLayout.EDGE
+		L:block(0, D / 2 - F, W, D, 0.25, deco({ color = i % 2 == 0 and P.grass or P.grassLight, name = "Meadow" }), 0)
 		-- the fence: posts and two rails on the three land sides, open to the road
 		local function rail(x0, z0, x1, z1)
 			local len = math.max(math.abs(x1 - x0), math.abs(z1 - z0))
@@ -283,9 +283,9 @@ function FarmBuilder.world(parent)
 				)
 			end
 		end
-		rail(-W / 2, -D / 2, -W / 2, D / 2)
-		rail(W / 2, -D / 2, W / 2, D / 2)
-		rail(-W / 2, D / 2, W / 2, D / 2)
+		rail(-W / 2, -F, -W / 2, D - F)
+		rail(W / 2, -F, W / 2, D - F)
+		rail(-W / 2, D - F, W / 2, D - F)
 		-- the owner's sign by the road
 		local spot = SPOTS.sign
 		L:block(spot.X - 3.5, spot.Z, 0.6, 0.6, 6, { color = P.wood, name = "SignPost" }, 0)
@@ -642,7 +642,7 @@ function FarmBuilder.decor(L, plot)
 	L:block(w.X + 6, w.Z + 1, 4, 1.6, 1.2, { color = P.wood, name = "Trough" }, 0)
 	L:block(w.X + 6, w.Z + 1, 3.5, 1.1, 0.2, deco({ color = P.water, name = "TroughWater" }), 1.05)
 	-- bushes along the back of the shack's yard and by the drive
-	for _, b2 in { { -76, -96 }, { -76, -84 }, { -66, -62 }, { -48, -60 }, { 8, -100 }, { -44, -110 } } do
+	for _, b2 in { { -66, -62 }, { -48, -60 }, { 8, -100 }, { -44, -110 } } do
 		bush(L, b2[1], b2[2], 1.6)
 	end
 	_ = plot
@@ -1127,13 +1127,31 @@ BUILD.fence = function(L)
 	run(-42, z0, x1, z0)
 end
 
-BUILD.sprinkler = function(L)
-	for n = 1, 12 do
+BUILD.sprinkler = function(L, plot)
+	-- a sprinkler by every patch, the big fields' too (all of them grow faster)
+	for n = 1, 39 do
 		local at = PlotLayout.soilTile(n)
 		local x, z = at.X + PlotLayout.TILE / 2 + 0.8, at.Z + PlotLayout.TILE / 2 + 0.8
 		L:block(x, z, 0.3, 0.3, 2, deco({ color = P.steel, name = "SprinklerPipe" }), 0)
 		L:box(x, 2.15, z, 0.7, 0.3, 0.7, deco({ color = P.water, name = "SprinklerHead" }))
 	end
+	-- the water tower that feeds them, by the shack: four legs, cross braces, a round tank, a ladder, the farm's colour
+	local w = SPOTS.waterTower
+	for _, sx in { -1, 1 } do
+		for _, sz in { -1, 1 } do
+			L:block(w.X + sx * 3, w.Z + sz * 3, 0.6, 0.6, 14, { color = P.steel, name = "TowerLeg" }, 0)
+		end
+		L:box(w.X + sx * 3, 7, w.Z, 0.3, 0.3, 6.2, deco({ color = P.steel, name = "TowerBrace" }))
+		L:box(w.X, 7, w.Z + sx * 3, 6.2, 0.3, 0.3, deco({ color = P.steel, name = "TowerBrace" }))
+	end
+	L:cyl(w.X, 17, w.Z, 6, 8.5, { color = P.steelLight, name = "WaterTank" }, "y")
+	L:cyl(w.X, 18.2, w.Z, 1.4, 8.6, deco({ color = plot.color, name = "TankStripe" }), "y")
+	L:cyl(w.X, 20.4, w.Z, 0.8, 7, deco({ color = P.steel, name = "TankRoof" }), "y")
+	L:cyl(w.X, 21.1, w.Z, 0.6, 4, deco({ color = P.steel, name = "TankRoof" }), "y")
+	L:box(w.X + 4.4, 9, w.Z, 0.2, 18, 1, deco({ color = P.steel, name = "Ladder" }))
+	L:block(w.X, w.Z, 0.8, 0.8, 14, deco({ color = P.water, name = "TowerPipe" }), 0)
+	local board = L:box(w.X, 17, w.Z - 4.3, 6, 2, 0.2, deco({ color = WHITE, name = "TankSign" }))
+	FarmBuilder.sign(board, "WATER", "", plot.color)
 end
 
 BUILD.awning = function(L, plot)

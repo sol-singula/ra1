@@ -66,7 +66,10 @@ do
 	check("neighbours a fence apart", math.abs(gap - PlotLayout.GAP) < 0.01, gap)
 	local n, s = PlotLayout.frame(1), PlotLayout.frame(4)
 	check("the rows face the road", n.LookVector.Z > 0.99 and s.LookVector.Z < -0.99)
-	check("...across it", math.abs(math.abs(n.Position.Z - s.Position.Z) - (PlotLayout.ROAD + PlotLayout.DEPTH)) < 0.01)
+	check(
+		"...across it",
+		math.abs(math.abs(n.Position.Z - s.Position.Z) - (PlotLayout.ROAD + 2 * PlotLayout.EDGE)) < 0.01
+	)
 end
 check("cheap street", world.count < 2500, world.count)
 

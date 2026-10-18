@@ -353,12 +353,19 @@ return function(FarmBuilder, BUILD)
 		end
 		-- the order board
 		FarmBuilder.orderBoard(L, plot, SPOTS.board)
+		-- and the paved yard comes with it, a drive from the road up to where the warehouse will stand
+		BUILD.yard(L)
 	end
 
-	-- The paved yard: asphalt in front of the shed, painted bays, kerbs, two lamps, planters
+	-- The paved yard (built with the shed): asphalt from the road to the shed, painted bays, kerbs, two lamps,
+	-- planters, and a paved drive past the shed up to the warehouse's front, so the road runs right up to it
 	BUILD.yard = function(L)
-		local x0, x1, z0, z1 = 20, 80, -108, -75
+		local x0, x1, z0, z1 = 20, 80, -111, -75
 		L:block((x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0, 0.1, deco({ color = P.asphalt, name = "Yard" }), 0.26)
+		L:block(SPOTS.lane, -56, 12, 40, 0.1, deco({ color = P.asphalt, name = "Yard" }), 0.26)
+		for k = 0, 6 do
+			L:box(SPOTS.lane, 0.38, -72 + k * 5.5, 0.4, 0.02, 2.4, deco({ color = WHITE, name = "LaneDash" }))
+		end
 		for _, park in SPOTS.parks do
 			for _, sx in { -1, 1 } do
 				L:box(park.X + sx * 4, 0.38, park.Z - 1, 0.3, 0.02, 12, deco({ color = WHITE, name = "BayLine" }))

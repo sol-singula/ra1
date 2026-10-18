@@ -54,7 +54,11 @@ local Bus = Engine.require(tree.client.UI.Bus)
 -- The board ---------------------------------------------------------------------------------------------------------
 local board = Street.board
 check("the STREET gantry stands over the road", board and #board.faces == 2 and board.faces[1].Position.Y > 25)
-check("...between the plots", math.abs(board.faces[1].Position.X + 82) < 2, board.faces[1].Position.X)
+check(
+	"...between the plots",
+	math.abs(board.faces[1].Position.X + (PlotLayout.WIDTH + PlotLayout.GAP) / 2) < 2,
+	board.faces[1].Position.X
+)
 Economy:Add(ben, 6000, "order")
 Economy:Add(ben, 4000, "pallets")
 Economy:Add(ava, 900, "sell")

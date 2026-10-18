@@ -20,16 +20,17 @@ The plot's zones (local coordinates), filled stage by stage:
 ]]
 local PlotLayout = {}
 
-PlotLayout.WIDTH = 160
-PlotLayout.DEPTH = 220
+PlotLayout.WIDTH = 240
+PlotLayout.DEPTH = 380 -- (big plots: the land runs far back from the road, room for the farm to grow huge)
+PlotLayout.EDGE = 110 -- how far the plot's frame sits back from its front edge (the road): local z -EDGE
 PlotLayout.GAP = 4 -- the fence between neighbours
 PlotLayout.ROAD = 40 -- the main road's width, kerb to kerb (two lanes and the verges)
-PlotLayout.COLUMNS = { -(160 + 4), 0, 160 + 4 } -- the plots' X along the road
+PlotLayout.COLUMNS = { -(240 + 4), 0, 240 + 4 } -- the plots' X along the road
 
 function PlotLayout.frame(i)
 	local north = i <= 3
 	local x = PlotLayout.COLUMNS[(i - 1) % 3 + 1]
-	local z = (PlotLayout.ROAD / 2 + PlotLayout.DEPTH / 2) * (north and -1 or 1)
+	local z = (PlotLayout.ROAD / 2 + PlotLayout.EDGE) * (north and -1 or 1)
 	local centre = Vector3.new(x, 0, z)
 	-- (the front faces the road: north plots look +Z, south plots look -Z)
 	return CFrame.lookAt(centre, centre + Vector3.new(0, 0, north and 1 or -1))
@@ -47,6 +48,7 @@ PlotLayout.SPOTS = {
 	pads = { Vector3.new(-14, 0, -105), Vector3.new(-6, 0, -105), Vector3.new(2, 0, -105) }, -- in line with SELL
 	soil = Vector3.new(-32, 0, -82), -- the first tile's centre
 	well = Vector3.new(-72, 0, -54),
+	waterTower = Vector3.new(-75, 0, -90), -- (with the sprinklers)
 	wheelbarrow = Vector3.new(-46, 0, -62),
 	scarecrow = Vector3.new(-6, 0, -60),
 	barnSite = Vector3.new(-42, 0, -8), -- the barn: 28 x 20 here (stage 2), its doors facing the fields
