@@ -132,7 +132,11 @@ check("...the panel counts them", DailyC.refs.seeds.Text:find("3") ~= nil, Daily
 Engine.moveTo(player, Farm:Tiles(player)[1].Position)
 Engine.advance(0.5)
 local ok = Farm:Plant(player, 1, "strawberry")
-check("a planting spends a golden seed: a golden crop", ok and p.soil["1"].golden == true and p.goldenSeeds == 2)
+check(
+	"a planting spends a golden seed: a golden crop",
+	ok and p.soil["1"].golden == true and p.goldenSeeds == 2,
+	`{tostring(ok)} {tostring(p.soil["1"] and p.soil["1"].golden)} {p.goldenSeeds}`
+)
 local Bus = Engine.require(tree.client.UI.Bus)
 Bus.Panel:Fire(nil)
 check("the close closes the panel", DailyC.refs.panel.card.Visible == false and Panel.current() == nil)

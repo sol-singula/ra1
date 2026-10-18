@@ -283,6 +283,35 @@ Engine.advance(1.5)
 check("a neighbour gets the next plot", Plots:Plot(ben) and Plots:Plot(ben).index ~= Plots:Plot(again).index)
 check("...with a farm of their own", Farm:Tiles(ben)[1] ~= nil and not Farm:Tiles(ben)[4])
 
+-- The stand grows with the farm level: a stall, a shop, a market, each paying more ----------------------------------
+do
+	local player = again
+	local p = Data:Get(again)
+	local plot = Plots:Plot(player)
+	p.level = 11
+	Farm:Stand(player)
+	local building = plot.items:FindFirstChild("StandBuilding")
+	check("level 11: the Produce Stall", building and building:GetAttribute("Tier") == 2)
+	table.clear(p.storage)
+	p.storage.strawberry = 10
+	local before = Farm:Worth(player)
+	p.level = 12
+	Economy.LevelUp:Fire(player, 12)
+	Engine.advance(0.3)
+	building = plot.items:FindFirstChild("StandBuilding")
+	check(
+		"level 12: the Farm Shop",
+		building and building:GetAttribute("Tier") == 3,
+		building and building:GetAttribute("Tier")
+	)
+	check("...it pays more on every sale", Farm:Worth(player) > before, `{Farm:Worth(player)} vs {before}`)
+	check(
+		"...the sell pad where it was",
+		(Plots:Refs(player).standPad.Position - plot.cf * Vector3.new(-30, 0.45, -107.5)).Magnitude < 1
+	)
+	table.clear(p.storage)
+end
+
 if #Engine.errors > 0 then
 	for _, e in Engine.errors do
 		print("ERROR " .. tostring(e))

@@ -48,6 +48,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
 local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
 local Format = require(ReplicatedStorage.Shared.Format)
+local Stand = require(ReplicatedStorage.Shared.Data.Stand)
 
 local FarmService = {
 	Name = "FarmService",
@@ -340,11 +341,13 @@ function FarmService:Plant(player, n, key)
 		+ Franchise.bonus(p, "growth")
 	local need = c.grow * (sprinkler and Crops.WATER_CUT or 1) / speed / (Crops.starter(p.level))
 	-- (the golden roll happens now, so the field shows a golden crop while it grows)
-	local golden = math.random() < FarmService.goldenChance(p)
-	if not golden and (p.goldenSeeds or 0) > 0 then
-		-- (a golden seed from the calendar or the shop)
+	local golden = false
+	if (p.goldenSeeds or 0) > 0 then
+		-- (a golden seed from the calendar or the shop goes first)
 		p.goldenSeeds -= 1
 		golden = true
+	else
+		golden = math.random() < FarmService.goldenChance(p)
 	end
 	p.soil[tostring(n)] = { crop = key, at = now(), need = need, watered = sprinkler, golden = golden }
 	p.stats.planted = (p.stats.planted or 0) + 1
@@ -494,7 +497,7 @@ function FarmService:Worth(player, bag)
 		return 0, 0, 0
 	end
 	bag = bag or p.storage
-	local price = 1 + Upgrades.stat(p.owned or {}, "price", 0)
+	local price = 1 + Upgrades.stat(p.owned or {}, "price", 0) + Stand.bonus(p.level)
 	local veg = 1 + Animals.boost(p, "vegPrice", now())
 	local _, starter = Crops.starter(p.level)
 	local total, n, products = 0, 0, 0
@@ -589,8 +592,18 @@ function FarmService:Init(registry)
 			end
 		end
 	end)
-	economy.LevelUp:Connect(function(player)
+	economy.LevelUp:Connect(function(player, level)
 		self:Push(player)
+		local before = Stand.tier(level - 1)
+		if self:Stand(player) > before then
+			local t = Stand.TIERS[Stand.tier(level)]
+			Net.fire(
+				player,
+				"Toast",
+				`Your stand grew: {t.name}! +{math.floor(t.bonus * 100 + 0.5)}% on every sale`,
+				"good"
+			)
+		end
 	end)
 	-- (forget them when they leave, or when their plot comes down for a rebuild: a franchise)
 	local function forget(player)
@@ -603,8 +616,20 @@ function FarmService:Init(registry)
 	registry.PlotService.Released:Connect(forget)
 end
 
+-- The stand's building for their level (Data/Stand): rebuilt when it goes up a tier
+function FarmService:Stand(player)
+	local p = profileOf(player)
+	local plot = plots:Plot(player)
+	local tier = Stand.tier(p and p.level or 1)
+	if plot then
+		FarmBuilder.standTier(plot, tier)
+	end
+	return tier
+end
+
 function FarmService:OnPlayerReady(player)
 	self:BuildTiles(player)
+	self:Stand(player)
 	data:WhenClientReady(player, function()
 		self:Push(player)
 	end)

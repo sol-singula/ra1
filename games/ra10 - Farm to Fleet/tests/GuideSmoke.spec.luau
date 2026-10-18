@@ -183,6 +183,9 @@ do
 	check("...and pays Cash there and then", p.cash > cash, p.cash - cash)
 	Engine.advance(0.1)
 	check("...once a crop: no spamming it", Farm:Act(player) ~= "tend" and FarmC.action() ~= "tend")
+	for _, t in p.soil do
+		t.tended = true -- (the ones out of reach too)
+	end
 	Guide:Check(player)
 	Engine.advance(0.1)
 	check("...the guide: nearly ripe", GuideC.state().text:find("Nearly ripe") ~= nil, GuideC.state().text)

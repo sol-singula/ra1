@@ -66,7 +66,7 @@ PlotLayout.SPOTS = {
 	-- stage 3: the packing shed (36 x 28, its front wall at z -74), its yard and the drive to the road
 	shed = Vector3.new(34, 0, -60),
 	packPad = Vector3.new(24, 0, -79), -- the packing table's pad, outside the shed's side door
-	board = Vector3.new(6, 0, -80), -- the order board
+	board = Vector3.new(11, 0, -80), -- the order board
 	door = Vector3.new(42, 0, -74), -- the loading door, in the shed's front wall
 	boxLine = Vector3.new(4, 0, -62), -- where the box line's belt starts, outside the west wall
 	sorter = Vector3.new(64, 0, -58),
@@ -139,15 +139,15 @@ function PlotLayout.aisle(row)
 end
 PlotLayout.FIELD_COLUMNS = 9
 PlotLayout.PEN = Vector3.new(34, 0, 38) -- a pen's size (x, z)
--- the conveyor's route: from the barn's west side round to the stand (stage 2)
+-- the conveyor's route (stage 2): it starts at the coop, runs along the pens' gates behind the barn (collecting and
+-- feeding as it goes), turns down the far side of the farm path, past the fields and the soil, and along the front to
+-- the stand, where it tips into the till
 PlotLayout.CONVEYOR = {
-	Vector3.new(-56, 0, -8),
-	Vector3.new(-79, 0, -8),
-	Vector3.new(-79, 0, -92),
+	Vector3.new(-64, 0, 4.8),
+	Vector3.new(3, 0, 4.8),
+	Vector3.new(3, 0, -92),
 	Vector3.new(-36, 0, -92),
 }
--- its leg to the pens: down the coop's west side, joining the main belt by the barn
-PlotLayout.CONVEYOR_PENS = { Vector3.new(-79, 0, 30), Vector3.new(-79, 0, -8) }
 
 function PlotLayout.soilTile(n)
 	local step = PlotLayout.TILE + PlotLayout.TILE_GAP

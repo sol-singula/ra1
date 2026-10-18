@@ -396,6 +396,10 @@ return function(FarmBuilder, BUILD, kit)
 		local h = size.Y
 		local RED = rgb(176, 44, 38)
 		-- the stand comes down; its sell pad and the buy-pads move in
+		local building = plot.items:FindFirstChild("StandBuilding")
+		if building then
+			building:Destroy()
+		end
 		for _, d in plot.items:GetChildren() do
 			if d:IsA("BasePart") then
 				local l = plot.cf:PointToObjectSpace(d.Position)

@@ -384,7 +384,28 @@ local function shack(L, color)
 	L:block(x + 4.5, z + 1.5, 1.6, 1.6, 4.5, { color = P.concreteDark, name = "Chimney" }, 0.8 + h + 0.8)
 end
 
-local function stand(L, color)
+local FLOWERS = {
+	Color3.fromRGB(240, 90, 140),
+	Color3.fromRGB(255, 205, 40),
+	Color3.fromRGB(250, 250, 250),
+	Color3.fromRGB(150, 110, 230),
+}
+
+-- The stand's building, by tier (Data/Stand): it grows with the farm level, in the same spot, the sell pad in front
+local STAND = {}
+
+local function produceCrates(L, x, z, y, n)
+	for k = 0, n - 1 do
+		local cx = x + (k - (n - 1) / 2) * 3
+		L:block(cx, z, 2.4, 1.8, 0.9, deco({ color = Color3.fromRGB(150, 104, 64), name = "Crate" }), y)
+		local key = Crops.LIST[k % 5 + 1]
+		for j = -1, 1 do
+			L:block(cx + j * 0.65, z, 0.55, 0.55, 0.5, deco({ color = Crops[key].color, name = "Produce" }), y + 0.9)
+		end
+	end
+end
+
+STAND[1] = function(L, color)
 	local x, z = SPOTS.stand.X, SPOTS.stand.Z
 	L:block(x, z, 10, 4, 3, { color = P.wood, name = "Stand" }, 0)
 	L:block(x, z, 10.6, 4.6, 0.4, deco({ color = P.cream, name = "Counter" }), 3)
@@ -392,18 +413,129 @@ local function stand(L, color)
 		L:block(x + sx * 4.8, z + 1.8, 0.5, 0.5, 4.5, { color = P.cream, name = "StandPost" }, 3.4)
 	end
 	L:box(x, 3.4 + 4.7, z + 1, 11, 0.4, 3.2, { color = color, name = "StandRoof" })
-	-- crates of produce on the counter
-	for k = -1, 1 do
-		local cx = x + k * 3
-		L:block(cx, z - 0.6, 2.4, 1.8, 0.9, deco({ color = Color3.fromRGB(150, 104, 64), name = "Crate" }), 3.4)
-		local c = k == -1 and Crops.strawberry.color or (k == 0 and Crops.carrot.color or Crops.corn.color)
-		for j = -1, 1 do
-			L:block(cx + j * 0.65, z - 0.6, 0.55, 0.55, 0.5, deco({ color = c, name = "Produce" }), 4.3)
-		end
-	end
+	produceCrates(L, x, z - 0.6, 3.4, 3)
 	local board = L:box(x, 1.6, z - 2.1, 7, 1.6, 0.2, deco({ color = P.cream, name = "StandSign" }))
 	FarmBuilder.sign(board, "FARM STAND", "", P.barnRed)
+end
+
+-- a striped awning across the front, on posts
+local function awning(L, x, z, w, y, color)
+	local n = math.floor(w / 1.5)
+	for k = 0, n - 1 do
+		L:wedge(
+			x - w / 2 + 0.75 + k * 1.5,
+			y,
+			z,
+			1.5,
+			1.4,
+			3,
+			deco({ color = k % 2 == 0 and color or WHITE, name = "Awning" }),
+			180
+		)
+	end
+end
+
+STAND[2] = function(L, color)
+	-- the produce stall: a long counter under a striped awning, barrels and baskets out front
+	local x, z = SPOTS.stand.X, SPOTS.stand.Z
+	L:block(x, z + 0.5, 14, 5, 3, { color = P.wood, name = "Stand" }, 0)
+	L:block(x, z + 0.5, 14.6, 5.6, 0.4, deco({ color = P.cream, name = "Counter" }), 3)
+	for _, sx in { -1, 1 } do
+		L:block(x + sx * 6.9, z - 1.8, 0.5, 0.5, 4.6, { color = P.cream, name = "StandPost" }, 3.4)
+		L:block(x + sx * 6.9, z + 2.8, 0.5, 0.5, 5.6, { color = P.cream, name = "StandPost" }, 3.4)
+	end
+	L:box(x, 9.2, z + 1.4, 15, 0.4, 3.4, { color = color, name = "StandRoof" })
+	awning(L, x, z - 2.2, 15, 8.4, color)
+	produceCrates(L, x, z - 0.4, 3.4, 4)
+	for _, sx in { -1, 1 } do
+		L:cyl(x + sx * 9, 1.1, z - 1, 2.2, 1.8, { color = Color3.fromRGB(140, 90, 50), name = "Barrel" }, "y")
+		L:box(x + sx * 9, 2.4, z - 1, 1.5, 0.5, 1.5, deco({ color = Crops.tomato.color, name = "Produce" }))
+	end
+	local board = L:box(x, 1.6, z - 2.1, 9, 1.8, 0.2, deco({ color = P.cream, name = "StandSign" }))
+	FarmBuilder.sign(board, "PRODUCE STALL", "", P.barnRed)
+end
+
+STAND[3] = function(L, color)
+	-- the farm shop: a little shop with a gable roof, a wide open counter window, window boxes, a hanging sign
+	local x, z = SPOTS.stand.X, SPOTS.stand.Z + 1
+	local w, d, h = 16, 8, 8
+	L:block(x, z, w + 1, d + 1, 0.6, { color = P.concreteDark, name = "StandFloor" }, 0)
+	L:block(x, z + d / 2 - 0.3, w, 0.6, h, { color = P.cream, name = "Stand" }, 0.6) -- back wall
+	for _, sx in { -1, 1 } do
+		L:block(x + sx * (w / 2 - 0.3), z, 0.6, d, h, { color = P.cream, name = "Stand" }, 0.6)
+		-- the front wall either side of the window
+		L:block(x + sx * (w / 2 - 1.5), z - d / 2 + 0.3, 3, 0.6, h, { color = P.cream, name = "Stand" }, 0.6)
+	end
+	L:block(x, z - d / 2 + 0.3, w - 6, 0.6, 3, { color = P.wood, name = "Counter" }, 0.6)
+	L:block(x, z - d / 2 + 0.3, w, 0.6, 1.6, { color = P.cream, name = "Stand" }, h - 1)
+	L:wedge(x, h + 0.6 + 1.6, z - d / 4, w + 1, 3.2, d / 2 + 0.6, { color = color, name = "StandRoof" }, 180)
+	L:wedge(x, h + 0.6 + 1.6, z + d / 4, w + 1, 3.2, d / 2 + 0.6, { color = color, name = "StandRoof" }, 0)
+	produceCrates(L, x, z - d / 2 + 0.3, 3.6, 3)
+	for _, sx in { -1, 1 } do
+		L:block(x + sx * (w / 2 - 1.5), z - d / 2 - 0.4, 2.6, 0.8, 0.6, deco({ color = P.wood, name = "WindowBox" }), 3)
+		for k = -1, 1 do
+			L:box(
+				x + sx * (w / 2 - 1.5) + k * 0.8,
+				3.9,
+				z - d / 2 - 0.4,
+				0.6,
+				0.5,
+				0.6,
+				deco({ color = FLOWERS[(k + 2) % #FLOWERS + 1], name = "Flower" })
+			)
+		end
+	end
+	local board = L:box(x, h + 0.6 + 0.2, z - d / 2 - 0.1, 10, 1.6, 0.25, deco({ color = color, name = "StandSign" }))
+	FarmBuilder.sign(board, "FARM SHOP", "", WHITE)
+end
+
+STAND[4] = function(L, color)
+	-- the country market: a bigger two-tone hall, an awning the whole width, crates outside, a big sign on the roof
+	local x, z = SPOTS.stand.X, SPOTS.stand.Z + 1.5
+	local w, d, h = 20, 9, 10
+	L:block(x, z, w + 1, d + 1, 0.6, { color = P.concreteDark, name = "StandFloor" }, 0)
+	L:block(x, z + d / 2 - 0.3, w, 0.6, h, { color = P.barnRed, name = "Stand" }, 0.6)
+	for _, sx in { -1, 1 } do
+		L:block(x + sx * (w / 2 - 0.3), z, 0.6, d, h, { color = P.barnRed, name = "Stand" }, 0.6)
+		L:block(x + sx * (w / 2 - 1.5), z - d / 2 + 0.3, 3, 0.6, h, { color = P.barnRed, name = "Stand" }, 0.6)
+	end
+	L:block(x, z - d / 2 + 0.3, w - 6, 0.6, 3, { color = P.wood, name = "Counter" }, 0.6)
+	L:block(x, z - d / 2 + 0.3, w, 0.6, 2, { color = WHITE, name = "Stand" }, h - 1.4)
+	L:box(x, h + 0.9, z, w + 1.2, 0.6, d + 1.2, { color = Color3.fromRGB(70, 74, 82), name = "StandRoof" })
+	awning(L, x, z - d / 2 - 1.6, w, 6.6, color)
+	produceCrates(L, x, z - d / 2 + 0.3, 3.6, 4)
+	produceCrates(L, x, z - d / 2 - 3.8, 0, 2)
+	local board = L:box(x, h + 2.8, z - d / 2 + 0.6, 14, 3, 0.4, deco({ color = WHITE, name = "StandSign" }))
+	FarmBuilder.sign(board, "COUNTRY MARKET", "", P.barnRed)
+end
+
+-- Build (or rebuild) the stand at a tier; the awning upgrade's own awning only shows on the cart stand
+function FarmBuilder.standTier(plot, tier)
+	local folder = plot.items:FindFirstChild("StandBuilding")
+	if folder and folder:GetAttribute("Tier") == tier then
+		return folder
+	end
+	if folder then
+		folder:Destroy()
+	end
+	if plot.items:FindFirstChild("marketHall") then
+		return nil
+	end
+	folder = Instance.new("Folder")
+	folder.Name = "StandBuilding"
+	folder:SetAttribute("Tier", tier)
+	folder.Parent = plot.items
+	STAND[tier](Shapes.new(folder, plot.cf), plot.color)
+	local cart = plot.items:FindFirstChild("awning")
+	if tier > 1 and cart then
+		cart:ClearAllChildren()
+	end
+	return folder
+end
+
+local function stand(L)
 	-- the pad in front: stand on it to sell
+	local x, z = SPOTS.stand.X, SPOTS.stand.Z
 	L:block(x, z - 7.5, 7, 4, 0.3, deco({ color = P.sunflower, name = "SellRim" }), 0.25)
 	local pad = L:block(x, z - 7.5, 6.2, 3.2, 0.4, { color = WHITE, name = "SellPad" }, 0.25)
 	return pad
@@ -411,12 +543,6 @@ end
 
 -- The little things that make it a farm: flower beds by the shack, a stepping-stone path from the spawn to the soil,
 -- hay bales, barrels and crates by the stand, bushes along the fence, a bench, a water trough, a lantern post
-local FLOWERS = {
-	Color3.fromRGB(240, 90, 140),
-	Color3.fromRGB(255, 205, 40),
-	Color3.fromRGB(250, 250, 250),
-	Color3.fromRGB(150, 110, 230),
-}
 local function bush(L, x, z, r)
 	local leaf = deco({ color = Color3.fromRGB(70, 150, 70), name = "Bush" })
 	local b = L:box(x, r * 0.55, z, r * 1.4, r * 1.1, r * 1.4, leaf)
@@ -526,7 +652,8 @@ function FarmBuilder.base(plot)
 	local L = Shapes.new(plot.items, plot.cf)
 	shack(L, plot.color)
 	local refs = { tiles = {} }
-	refs.standPad = stand(L, plot.color)
+	refs.standPad = stand(L)
+	FarmBuilder.standTier(plot, 1)
 	FarmBuilder.label(refs.standPad, "SELL", "stand here", P.sunflower)
 	-- the mailbox, the dirt track from the road to the shack
 	local m = SPOTS.mailbox
@@ -541,7 +668,7 @@ function FarmBuilder.base(plot)
 	L:block((fp.x - 62) / 2, fp.pens, fp.x + 62, 4, 0.12, dirt, 0.24)
 	L:block(-42, -21.5, 4, 7, 0.12, dirt, 0.24) -- (the fields to the barn's doors)
 	-- signposts where the paths meet
-	for _, sp in { { fp.x + 3, -60, "FIELDS" }, { fp.x + 3, -8, "BARN" }, { fp.x + 3, fp.pens + 3, "ANIMALS" } } do
+	for _, sp in { { fp.x - 3.5, -38, "FIELDS" }, { fp.x - 3.5, -8, "BARN" }, { fp.x - 3.5, fp.pens + 3, "ANIMALS" } } do
 		L:block(sp[1], sp[2], 0.4, 0.4, 4, { color = P.wood, name = "SignPost" }, 0)
 		local board = L:box(sp[1], 4.2, sp[2], 0.3, 1.4, 4.4, deco({ color = P.cream, name = "PathSign" }))
 		FarmBuilder.sign(board, sp[3], "", plot.color, Enum.NormalId.Left)
@@ -1009,7 +1136,11 @@ BUILD.sprinkler = function(L)
 	end
 end
 
-BUILD.awning = function(L)
+BUILD.awning = function(L, plot)
+	local building = plot.items:FindFirstChild("StandBuilding")
+	if building and (building:GetAttribute("Tier") or 1) > 1 then
+		return -- (the bigger stands have their own awnings)
+	end
 	local x, z = SPOTS.stand.X, SPOTS.stand.Z
 	for k = 0, 6 do
 		L:wedge(
@@ -1215,11 +1346,7 @@ end
 BUILD.conveyor = function(L)
 	local route = PlotLayout.CONVEYOR
 	belt(L, route)
-	-- (and a leg out to the coop and the pens: it collects and feeds as it goes)
-	belt(L, PlotLayout.CONVEYOR_PENS)
-	local coop = PlotLayout.CONVEYOR_PENS[1]
-	L:block(coop.X, coop.Z, 3, 3, 1.6, deco({ color = P.steel, name = "PenHopper" }), 1.8)
-	-- a hopper at the barn, a chute down to the stand
+	-- a hopper at the coop where it starts, a chute down to the stand
 	local first, last = route[1], route[#route]
 	L:block(first.X, first.Z, 3, 3, 1.6, deco({ color = P.steel, name = "Hopper" }), 1.8)
 	L:block(last.X + 1.5, last.Z, 3, 2.4, 0.6, deco({ color = P.steel, name = "Chute" }), 1.8)

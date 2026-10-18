@@ -218,9 +218,23 @@ do
 	local eggs = p.stats.eggs or 0
 	p.storage.carrot = 10
 	Engine.advance(Upgrades.conveyor.value + 1)
-	check("the conveyor collects the eggs", (p.stats.eggs or 0) >= eggs + 4 and st.ready <= 1, `{p.stats.eggs} {eggs} {st.ready}`)
+	check(
+		"the conveyor collects the eggs",
+		(p.stats.eggs or 0) >= eggs + 4 and st.ready <= 1,
+		`{p.stats.eggs} {eggs} {st.ready}`
+	)
 	check("...feeds the chickens from the basket", st.fedAt > 0)
 	check("...and sells it all", Farm:Carried(player) == 0, Farm:Carried(player))
+	-- (and you can see it: goods ride the belt from the coop to the stand)
+	local BeltC = Engine.require(tree.client.Controllers.BeltController)
+	Engine.advance(2.5)
+	check("goods ride the belt", BeltC.riding() > 10, BeltC.riding())
+	local g = Engine.workspace:FindFirstChild("BeltGoods" .. Plots:Plot(player).index)
+	local first = g and g:GetChildren()[1]
+	local part = first and first:GetChildren()[1]
+	local p0 = part and part.Position
+	Engine.advance(0.5)
+	check("...and move along it", part and (part.Position - p0).Magnitude > 1)
 end
 
 -- Pigs, sheep, cows ---------------------------------------------------------------------------------------------------
