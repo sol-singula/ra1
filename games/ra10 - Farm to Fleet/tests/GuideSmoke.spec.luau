@@ -171,6 +171,13 @@ do
 		GuideC.state().text
 	)
 	check("...the button says TEND", FarmC.action() == "tend" and FarmC.refs.act.Visible)
+	FarmC.paintTimers()
+	local timer = FarmC.refs.timers[1]
+	check(
+		"walk up: a timer over the crop",
+		timer and timer.gui.Enabled and timer.label.Text:match("0:0%d$") ~= nil,
+		timer and timer.label.Text
+	)
 	local before = p.soil["1"].need
 	check("...and a TEND takes time off", Farm:Act(player) == "tend" and p.soil["1"].need < before, p.soil["1"].need)
 	for _ = 1, 6 do
@@ -182,6 +189,8 @@ do
 	end
 	Engine.advance(0.3)
 	check("...a few taps and it's ripe: HARVEST", Farm:Ripe(player, 1) and FarmC.action() == "harvest")
+	FarmC.paintTimers()
+	check("...READY! over it", FarmC.refs.timers[1].label.Text:find("READY!") ~= nil, FarmC.refs.timers[1].label.Text)
 	check("...and the guide says so", GuideC.state().text:find("TEND") == nil, GuideC.state().text)
 	check("a sale pays the starter price", Farm:Worth(player, { strawberry = 1 }) == Crops.strawberry.value * 3)
 end

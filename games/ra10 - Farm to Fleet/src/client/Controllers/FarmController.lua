@@ -3,7 +3,8 @@ Farming with one thumb (master plan §3, phone first). A big round button at the
 for the soil you're standing by (Net "Farm" "act"; the server does all of it that's in reach): HARVEST when
 something there is ripe, PLANT when there's empty soil, WATER (once you have the well) when something's growing
 dry, TEND when it's all growing (each tap takes a bit off the wait). It hides when there's nothing to do. With it, along the bottom of the screen, the crop picker: one chip per
-crop you've unlocked, in rows of five (Net "Farm" "crop"). On a PC, E (or a click away from the buttons) does the same as the button.
+crop you've unlocked, in rows of five (Net "Farm" "crop"). Walk up to the soil and every crop near you shows its
+timer above it (0:04, READY!). On a PC, E (or a click away from the buttons) does the same as the button.
 
   FarmController.action()   -> "harvest" | "plant" | "water" | "tend" | nil, what the button shows now
   FarmController.press()    what the button does
@@ -15,12 +16,13 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local Crops = require(ReplicatedStorage.Shared.Data.Crops)
+local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Store = require(script.Parent.Parent.Store)
 local Bus = require(script.Parent.Parent.UI.Bus)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
-local FarmController = { Name = "FarmController", Order = 20, REACH = 11 }
+local FarmController = { Name = "FarmController", Order = 20, REACH = 11, TIMER_REACH = 18 }
 
 local C = Theme.Color
 local player = Players.LocalPlayer
@@ -191,8 +193,93 @@ function FarmController:init()
 	Bus.Highlight:Connect(function(name)
 		wanted = name == "act"
 	end)
+	-- the timers over the crops near you
+	local timers = {}
+	refs.timers = timers
+	local function timerFor(n, tile)
+		local t = timers[n]
+		if t and t.gui.Adornee == tile then
+			return t
+		end
+		if t then
+			t.gui:Destroy()
+		end
+		local bb = Instance.new("BillboardGui")
+		bb.Name = "CropTimer" .. n
+		bb.Size = UDim2.fromOffset(84, 40)
+		bb.StudsOffset = Vector3.new(0, 3.6, 0)
+		bb.AlwaysOnTop = true
+		bb.MaxDistance = FarmController.TIMER_REACH + 6
+		bb.Adornee = tile
+		bb.Enabled = false
+		local label = Theme.new("TextLabel", {
+			Name = "Time",
+			Size = UDim2.new(1, 0, 0, 24),
+			BackgroundColor3 = Color3.fromRGB(30, 34, 44),
+			BackgroundTransparency = 0.2,
+			Font = Theme.Display,
+			TextSize = 18,
+			TextColor3 = Color3.new(1, 1, 1),
+			Parent = bb,
+		}, { Theme.corner("round"), Theme.stroke(2, Color3.fromRGB(255, 255, 255)) })
+		local bar = Theme.new("Frame", {
+			Name = "Bar",
+			Position = UDim2.new(0.1, 0, 0, 28),
+			Size = UDim2.new(0.8, 0, 0, 7),
+			BackgroundColor3 = Color3.fromRGB(30, 34, 44),
+			BackgroundTransparency = 0.25,
+			Parent = bb,
+		}, { Theme.corner("round") })
+		local fill = Theme.new("Frame", {
+			Name = "Fill",
+			Size = UDim2.fromScale(0, 1),
+			BackgroundColor3 = Color3.fromRGB(110, 210, 90),
+			Parent = bar,
+		}, { Theme.corner("round") })
+		bb.Parent = gui.Parent
+		t = { gui = bb, label = label, bar = bar, fill = fill }
+		timers[n] = t
+		return t
+	end
+	local nextTimers = 0
+	local function paintTimers()
+		local f = Store.get("farm")
+		local r = root()
+		local now = workspace:GetServerTimeNow()
+		local seen = {}
+		for n, tile in tiles() do
+			local s = f and f.tiles and f.tiles[n]
+			local d = r and (tile.Position - r.Position)
+			if s and d and Vector3.new(d.X, 0, d.Z).Magnitude <= FarmController.TIMER_REACH then
+				seen[n] = true
+				local t = timerFor(n, tile)
+				local left = s.need - (now - s.at)
+				t.gui.Enabled = true
+				if left <= 0 then
+					t.label.Text = s.golden and "★ READY!" or "READY!"
+					t.label.BackgroundColor3 = Color3.fromRGB(70, 180, 70)
+					t.bar.Visible = false
+				else
+					t.label.Text = (s.golden and "★ " or "") .. Format.time(math.ceil(left))
+					t.label.BackgroundColor3 = Color3.fromRGB(30, 34, 44)
+					t.bar.Visible = true
+					t.fill.Size = UDim2.fromScale(math.clamp(1 - left / math.max(s.need, 0.1), 0, 1), 1)
+				end
+			end
+		end
+		for n, t in timers do
+			if not seen[n] then
+				t.gui.Enabled = false
+			end
+		end
+	end
+	FarmController.paintTimers = paintTimers
 	local shown
 	RunService.Heartbeat:Connect(function()
+		if os.clock() >= nextTimers then
+			nextTimers = os.clock() + 0.1
+			paintTimers()
+		end
 		local press = b:FindFirstChild("Press")
 		ring.Visible = wanted and b.Visible
 		if ring.Visible then
