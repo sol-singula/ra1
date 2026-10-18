@@ -215,11 +215,16 @@ function DailyController:init()
 				autoOpened = true
 				task.spawn(function()
 					task.wait(1.5)
-					for _ = 1, 120 do
-						if not Layout.modalOpen() then
+					-- (not over a new farmer's first steps: once the DAILY button is theirs, and nothing else is up)
+					local Menu = require(script.Parent.MenuController)
+					for _ = 1, 2400 do
+						if not Layout.modalOpen() and Menu.unlocked("calendar") then
 							break
 						end
 						task.wait(0.5)
+					end
+					if not Menu.unlocked("calendar") then
+						return
 					end
 					if Panel.current() == nil then
 						Bus.Panel:Fire("calendar")

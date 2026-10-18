@@ -266,7 +266,7 @@ check(
 		and (pads[3].Position - at(SPOTS.marketPads[3].X, SPOTS.marketPads[3].Z)).Magnitude < 1
 )
 check("...stalls, fridges, a checkout", count("Stall") == 2 and count("Fridge") == 3 and count("Checkout") == 1)
-check("...the spawn is outside it", SPOTS.spawn.X < SPOTS.market.X - PlotLayout.MARKET.X / 2)
+check("...the spawn is outside it", SPOTS.spawnHub.X < SPOTS.market.X - PlotLayout.MARKET.X / 2)
 table.clear(p.storage)
 p.storage.strawberry = 5
 local cash = p.cash

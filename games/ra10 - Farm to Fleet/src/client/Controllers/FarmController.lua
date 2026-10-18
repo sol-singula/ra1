@@ -17,6 +17,7 @@ local UserInputService = game:GetService("UserInputService")
 local Crops = require(ReplicatedStorage.Shared.Data.Crops)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Store = require(script.Parent.Parent.Store)
+local Bus = require(script.Parent.Parent.UI.Bus)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
 local FarmController = { Name = "FarmController", Order = 20, REACH = 11 }
@@ -170,8 +171,32 @@ function FarmController:init()
 			FarmController.press()
 		end
 	end)
+	-- (the guide's step needs this button: it pulses, a gold ring round it)
+	local ring = Theme.new("Frame", {
+		Name = "Ring",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.new(1, 24, 1, 24),
+		BackgroundTransparency = 1,
+		Visible = false,
+		Parent = b,
+	}, { Theme.corner("round"), Theme.stroke(6, Color3.fromRGB(255, 205, 40)) })
+	refs.ring = ring
+	local wanted = false
+	Bus.Highlight:Connect(function(name)
+		wanted = name == "act"
+	end)
 	local shown
 	RunService.Heartbeat:Connect(function()
+		local press = b:FindFirstChild("Press")
+		ring.Visible = wanted and b.Visible
+		if ring.Visible then
+			local k = math.abs(math.sin(os.clock() * 4))
+			ring.Size = UDim2.new(1, 18 + 14 * k, 1, 18 + 14 * k)
+			if press then
+				press.Scale = 1 + 0.06 * k
+			end
+		end
 		local a = FarmController.action()
 		if a ~= shown then
 			shown = a

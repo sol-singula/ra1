@@ -11,6 +11,8 @@ The menu bar: a row of big icon buttons along the top right, each opening its pa
   MenuController.dot(name, on)    the red dot on a button
   MenuController.show(name, on)   a button on or off the bar
   MenuController.refs             the buttons (tests)
+  MenuController.UNLOCK           the guide step each button waits for (a new farmer's screen stays clear)
+  MenuController.unlocked(name)
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -38,18 +40,25 @@ MenuController.ITEMS = {
 -- stylua: ignore end
 local SIZE, GAP = 58, 8
 local hidden = { franchise = true }
+-- (a new farmer sees only what the guide has reached: the guide step that unlocks each button)
+MenuController.UNLOCK = { calendar = 6, shop = 6, street = 21, friends = 21 }
+local locked = { calendar = true, shop = true, street = true, friends = true }
 
 local function layout()
 	local x = 0
 	for i = #MenuController.ITEMS, 1, -1 do
 		local item = MenuController.ITEMS[i]
 		local b = refs.buttons[item.key]
-		b.Visible = not hidden[item.key]
+		b.Visible = not hidden[item.key] and not locked[item.key]
 		if b.Visible then
 			b.Position = UDim2.new(1, -12 - x, 0, 8)
 			x += SIZE + GAP
 		end
 	end
+end
+
+function MenuController.unlocked(name)
+	return not locked[name]
 end
 
 function MenuController.dot(name, on)
@@ -104,6 +113,19 @@ function MenuController:init()
 	local pulse
 	Net.listen("Guide", function(m)
 		pulse = type(m) == "table" and m.menu or nil
+		if type(m) == "table" then
+			local changed = false
+			for key, at in MenuController.UNLOCK do
+				local open = m.generated == true or (m.step or 0) >= at
+				if open == (locked[key] == true) then
+					locked[key] = not open or nil
+					changed = true
+				end
+			end
+			if changed then
+				layout()
+			end
+		end
 	end)
 	game:GetService("RunService").Heartbeat:Connect(function()
 		for key, b in refs.buttons do

@@ -36,7 +36,7 @@ local AnimalService = {
 	Changed = Signal.new("AnimalService.Changed"),
 	REACH = 4,
 	TICK = 0.5,
-	WALK = 20,
+	WALK = 24,
 }
 
 local data, economy, plots, farm, upgrades, analytics

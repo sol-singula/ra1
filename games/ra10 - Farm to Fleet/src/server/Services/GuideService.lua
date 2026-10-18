@@ -38,6 +38,7 @@ local GuideService = {
 	},
 	Advanced = Signal.new("GuideService.Advanced"),
 	CHECK = 1,
+	GO_MIN = 30, -- studs: a target this far or more gets a GO button
 }
 
 local data, economy, plots, farm, upgrades, animals, orders, analytics
@@ -251,6 +252,15 @@ local function push(player, force)
 		-- (100% of the game: the scripted steps done; a menu button to light up)
 		percent = math.floor((math.min(guideOf(p).step, #Guide.STEPS + 1) - 1) / #Guide.STEPS * 100),
 		menu = type(step.target) == "string" and string.match(step.target, "^menu:(.+)$") or nil,
+		-- (the numbered card: CHAPTER 1 · THE SHACK, STEP 3 of 20; the button to pulse)
+		chapter = step.chapter,
+		chapterName = step.chapter and Guide.CHAPTERS[step.chapter] or nil,
+		n = step.n,
+		chapterSize = step.chapter and Guide.CHAPTER_SIZE[step.chapter] or nil,
+		button = step.button,
+		reward = step.reward,
+		-- (a brand-new farmer: the client's short tour of the farm first)
+		fresh = guideOf(p).step == 1 and (p.stats.planted or 0) == 0 or nil,
 		generated = step.generated == true,
 	})
 end
@@ -286,7 +296,36 @@ function GuideService:Check(player)
 	push(player, moved)
 end
 
+-- GO: a far step's target, right there (no long walks between steps): a few studs short of it, facing it
+function GuideService:Go(player)
+	local step = self:Step(player)
+	local target = step and self:Target(player, step.target)
+	local r = plots.root(player)
+	if not target or not r then
+		return false
+	end
+	local away = Vector3.new(r.Position.X - target.X, 0, r.Position.Z - target.Z)
+	if away.Magnitude < self.GO_MIN then
+		return false
+	end
+	local plot = plots:Plot(player)
+	-- (stand on the road side of it: toward the plot's front)
+	local front = plot and plot.cf.LookVector or away.Unit
+	local at = Vector3.new(target.X, 0, target.Z) + Vector3.new(front.X, 0, front.Z).Unit * 6 + Vector3.new(0, 4, 0)
+	player:SetAttribute("AcGrace", os.clock() + 2.5)
+	r.CFrame = CFrame.lookAt(at, Vector3.new(target.X, at.Y, target.Z))
+	if analytics then
+		pcall(analytics.event, player, "guide_go", { step = step.key })
+	end
+	return true
+end
+
 function GuideService:Init(registry)
+	Net.on("Guide", function(player, what)
+		if what == "go" then
+			self:Go(player)
+		end
+	end)
 	data = registry.PlayerDataService
 	economy = registry.EconomyService
 	plots = registry.PlotService

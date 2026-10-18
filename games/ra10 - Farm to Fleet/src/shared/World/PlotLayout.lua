@@ -38,10 +38,11 @@ function PlotLayout.toWorld(i, x, z, y)
 end
 
 PlotLayout.SPOTS = {
-	spawn = Vector3.new(-40, 3, -104),
+	spawn = Vector3.new(-22, 3, -109), -- between SELL and the buy-pads, facing the soil: everything a few steps away
+	spawnHub = Vector3.new(-42, 3, -104), -- the spawn once the market hall stands
 	shack = Vector3.new(-58, 0, -70),
 	stand = Vector3.new(-30, 0, -100),
-	pads = { Vector3.new(-6, 0, -98), Vector3.new(4, 0, -98), Vector3.new(14, 0, -98) },
+	pads = { Vector3.new(-14, 0, -105), Vector3.new(-6, 0, -105), Vector3.new(2, 0, -105) }, -- in line with SELL
 	soil = Vector3.new(-32, 0, -82), -- the first tile's centre
 	well = Vector3.new(-72, 0, -54),
 	wheelbarrow = Vector3.new(-46, 0, -62),

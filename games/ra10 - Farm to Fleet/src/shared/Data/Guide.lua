@@ -4,7 +4,9 @@ the whole game; when the scripted steps run out it keeps going with generated go
 GuideService checks each step against the profile; the client draws the card, an arrow over the target and a path
 on the ground to it.
 
-  Guide.STEPS    { { key, text, target, done = { kind, ... }, reward = { cash?, xp? } } } in order
+  Guide.STEPS    { { key, text, target, done = { kind, ... }, reward = { cash?, xp? } } } in order; each also gets
+                 index, chapter, n (its number in the chapter) and button ("act" | "menu:<name>" | nil)
+  Guide.CHAPTERS / Guide.CHAPTER_SIZE[chapter]
      target: "soil1" (the first soil tile) | "soil" (the nearest tile that needs something) | "stand" | "pad:<key>"
              (the buy-pad offering that upgrade) | "pen:<animal>" (that pen's pad) | "pack" (the shed's PACK ORDERS
              pad) | "board" (the order board) | "door" (the shed's loading door) | "station" (the bottleneck's station
@@ -20,17 +22,17 @@ local Guide = {}
 -- stylua: ignore start
 Guide.STEPS = {
 	-- Chapter 1: the Shack
-	{ key = "plant1",    text = "Walk to the soil and tap PLANT",               target = "soil1", done = { kind = "stat", stat = "planted", n = 1 },  reward = { xp = 2 } },
+	{ key = "plant1",    text = "Tap PLANT by the glowing soil",               target = "soil1", done = { kind = "stat", stat = "planted", n = 1 },  reward = { xp = 2 } },
 	{ key = "harvest1",  text = "It's ripe! Tap HARVEST",                        target = "soil1", done = { kind = "stat", stat = "harvested", n = 1 }, reward = { xp = 2 } },
 	{ key = "plant3",    text = "Plant all 3 patches",                           target = "soil",  done = { kind = "planted", n = 3 },                  reward = { xp = 2 } },
 	{ key = "harvest6",  text = "Harvest 6 strawberries",                        target = "soil",  done = { kind = "stat", stat = "harvested", n = 6 }, reward = { xp = 3 } },
-	{ key = "sell1",     text = "Take them to your farm stand to sell",          target = "stand", done = { kind = "stat", stat = "sold", n = 1 },      reward = { cash = 5 } },
-	{ key = "soil4",     text = "Stand on the pad to buy More Soil",             target = "pad:soil4", done = { kind = "owned", key = "soil4" },         reward = { xp = 3 } },
-	{ key = "soil5",     text = "More soil, more strawberries!",                 target = "pad:soil5", done = { kind = "owned", key = "soil5" },         reward = { xp = 3 } },
+	{ key = "sell1",     text = "Step on SELL at your farm stand",          target = "stand", done = { kind = "stat", stat = "sold", n = 1 },      reward = { cash = 5 } },
+	{ key = "soil4",     text = "Step on the glowing pad: More Soil",             target = "pad:soil4", done = { kind = "owned", key = "soil4" },         reward = { xp = 3 } },
+	{ key = "soil5",     text = "Buy more soil!",                 target = "pad:soil5", done = { kind = "owned", key = "soil5" },         reward = { xp = 3 } },
 	{ key = "well",      text = "Buy the Water Well",                            target = "pad:well",  done = { kind = "owned", key = "well" },          reward = { xp = 5 } },
-	{ key = "water1",    text = "Plant, then tap WATER: it grows twice as fast", target = "soil",  done = { kind = "stat", stat = "watered", n = 1 },   reward = { xp = 3 } },
-	{ key = "level2",    text = "Keep harvesting to reach Farm Level 2",         target = "soil",  done = { kind = "level", n = 2 },                    reward = { cash = 10 } },
-	{ key = "carrot",    text = "Carrots unlocked! Plant a carrot",              target = "soil",  done = { kind = "stat", stat = "carrots", n = 1 },  reward = { xp = 5 } },
+	{ key = "water1",    text = "Plant, then tap WATER: 2x faster", target = "soil",  done = { kind = "stat", stat = "watered", n = 1 },   reward = { xp = 3 } },
+	{ key = "level2",    text = "Grow and sell to reach Level 2",         target = "soil",  done = { kind = "level", n = 2 },                    reward = { cash = 10 } },
+	{ key = "carrot",    text = "Carrots unlocked! Plant one",              target = "soil",  done = { kind = "stat", stat = "carrots", n = 1 },  reward = { xp = 5 } },
 	{ key = "soil6",     text = "Buy More Soil",                                 target = "pad:soil6", done = { kind = "owned", key = "soil6" },         reward = { xp = 3 } },
 	{ key = "wheelbarrow", text = "Buy the Wheelbarrow: carry 3x as much",      target = "pad:wheelbarrow", done = { kind = "owned", key = "wheelbarrow" }, reward = { xp = 5 } },
 	{ key = "fence",     text = "Make it yours: buy the Picket Fence",           target = "pad:fence", done = { kind = "owned", key = "fence" },         reward = { xp = 5 } },
@@ -103,10 +105,27 @@ Guide.STEPS = {
 Guide.CHAPTERS = { "THE SHACK", "THE FARM", "THE PACKING SHED", "THE WAREHOUSE", "THE HUB", "FRANCHISE" }
 -- stylua: ignore end
 
+-- Chapters: each starts at its first step; a step knows its chapter and its number in it (STEP 3 of 20)
+Guide.CHAPTER_FIRST = { plant1 = 1, bigBarn = 2, shedBuild = 3, warehouseBuild = 4, backDocks = 5, franchise1 = 6 }
+Guide.CHAPTER_SIZE = {}
+
 Guide.byKey = {}
+local chapter, n = 1, 0
 for i, s in Guide.STEPS do
 	s.index = i
 	Guide.byKey[s.key] = s
+	if Guide.CHAPTER_FIRST[s.key] then
+		chapter, n = Guide.CHAPTER_FIRST[s.key], 0
+	end
+	n += 1
+	s.chapter, s.n = chapter, n
+	Guide.CHAPTER_SIZE[chapter] = n
+	-- the button the step needs (it pulses): the farm's PLANT/HARVEST/WATER button by the soil, a menu button
+	if string.sub(s.target, 1, 4) == "soil" then
+		s.button = "act"
+	elseif string.sub(s.target, 1, 5) == "menu:" then
+		s.button = s.target
+	end
 end
 
 return Guide

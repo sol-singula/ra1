@@ -95,12 +95,10 @@ function PlotService:Spawn(player)
 	local r = c and c:FindFirstChild("HumanoidRootPart")
 	local m = mine[player]
 	if r and m then
-		local at = PlotLayout.toWorld(
-			m.plot.index,
-			PlotLayout.SPOTS.spawn.X,
-			PlotLayout.SPOTS.spawn.Z,
-			PlotLayout.SPOTS.spawn.Y
-		)
+		-- (once the market hall stands where the stand was, beside it instead)
+		local p = data:Get(player)
+		local s = p and p.owned and p.owned.marketHall and PlotLayout.SPOTS.spawnHub or PlotLayout.SPOTS.spawn
+		local at = PlotLayout.toWorld(m.plot.index, s.X, s.Z, s.Y)
 		local look =
 			PlotLayout.toWorld(m.plot.index, PlotLayout.SPOTS.soil.X, PlotLayout.SPOTS.soil.Z, PlotLayout.SPOTS.spawn.Y)
 		r.CFrame = CFrame.lookAt(at, look)
