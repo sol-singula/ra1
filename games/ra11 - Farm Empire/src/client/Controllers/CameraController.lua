@@ -78,8 +78,8 @@ local function opening()
 	local f = Layout.FIELDS.field1
 	local tile = at(f.x, f.z, 1)
 	play({
-		{ t = 0, pos = at(0, -110, 45), look = at(0, -20, 0) },
-		{ t = 1.5, pos = at(s.x + 10, s.z - 18, 9), look = at(s.x, s.z, 3) },
+		{ t = 0, pos = at(0, -150, 60), look = at(0, -20, 0) },
+		{ t = 1.5, pos = at(s.x + 12, s.z - 22, 9), look = at(s.x, s.z, 3) },
 		{ t = 2.5, pos = at(f.x - 6, f.z - 14, 9), look = tile },
 		{ t = 3.5, pos = at(f.x - 6, f.z - 14, 9), look = tile },
 	}, 3.5)

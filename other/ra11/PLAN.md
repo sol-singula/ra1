@@ -47,3 +47,13 @@ Reveals, transformations, workers, bursts and sounds, the previews. A sound and 
 Prestige (a new region: the farm starts over with +25% a region, a star on the gate), the town's leaderboards from
 OrderedDataStores, the first hour tuned on the mock play-through (the shop at about 28 minutes, the harvester at
 about 17). Open: the store art, and tuning from live telemetry once it's published.
+
+## Round 2 · the world pass — built
+
+From the first live test (a fall into the void, overlaps, cramped plots, a thin hub): a base plate under the whole
+map with a ring of hills and an invisible edge, streaming paused outside the loaded area; territories 200 x 180
+with separate zones (front yard, three field blocks and the North field, the machine shed, the warehouse on the
+lane, the pond and windmill at the back) and a farmhouse that grows with the stage; the previews as footprints,
+not boxes; a town square with welcome arches, a three-tier fountain, the market hall, the leaderboard wall with
+its podium, the boost tower, a bandstand, benches, lamps, flower beds and planters; a detail pass on the stand,
+the shop, the warehouse, the shed and the gate.

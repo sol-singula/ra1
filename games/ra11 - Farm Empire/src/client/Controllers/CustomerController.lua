@@ -39,7 +39,7 @@ end
 local function counterSpot(slot)
 	local s = Layout.SPOTS.stand
 	local stage = Store.get("business") and Store.get("business").stage or "stand"
-	local front = stage == "stand" and s.z - 4.2 or s.z - 6
+	local front = stage == "stand" and s.z - 7 or s.z - 7
 	return at(s.x + 1.5, front - (slot or 0) * 2.4)
 end
 
@@ -50,7 +50,7 @@ local function spawnPerson()
 	nextId += 1
 	local m = Models.person(folder, nextId)
 	local s = Layout.SPOTS.stand
-	local from = at(s.x + 6 + (nextId % 3) * 3, -Layout.DEPTH / 2 - 8)
+	local from = at(s.x + 6 + (nextId % 3) * 3, -Layout.DEPTH / 2 - 10)
 	local queueLen = 0
 	for _, pr in people do
 		if pr.phase == "queue" or pr.phase == "buy" then
@@ -163,7 +163,7 @@ local function rebuild()
 	local s = Layout.SPOTS.stand
 	for k = 1, math.min(b.workers or 0, 4) do
 		local m = Models.person(folder, 100 + k, Constants.PALETTE.roofGreen)
-		table.insert(workers, { model = m, a = at(s.x - 6 + k * 3, s.z + 6), b = at(s.x - 6 + k * 3, s.z + 1) })
+		table.insert(workers, { model = m, a = at(s.x - 8 + k * 4, s.z + 10), b = at(s.x - 8 + k * 4, s.z + 2) })
 	end
 	-- crates: one for every 10% of the storage used, up to 9
 	for _, c in crates do
@@ -171,7 +171,7 @@ local function rebuild()
 	end
 	crates = {}
 	local n = b.storage > 0 and math.floor(b.stock / b.storage * 9 + 0.5) or 0
-	local base = b.stage == "stand" and CFrame.new(at(s.x - 4, s.z + 4.5)) or CFrame.new(at(s.x + 8, s.z + 8))
+	local base = b.stage == "stand" and CFrame.new(at(s.x - 9, s.z + 2)) or CFrame.new(at(s.x + 18, s.z + 2))
 	for k = 1, n do
 		local c = Shapes.part(
 			folder,

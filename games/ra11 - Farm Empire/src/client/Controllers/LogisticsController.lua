@@ -85,8 +85,8 @@ function LogisticsController:init()
 		local fork = b and b:FindFirstChild("Forklift")
 		if fork and fork.PrimaryPart and i then
 			local w = Layout.SPOTS.warehouse
-			local a = Layout.toWorld(i, w.x - 10, w.z - 8, 0.3)
-			local c = Layout.toWorld(i, w.x + 16, w.z + 2, 0.3)
+			local a = Layout.toWorld(i, w.x - 14, w.z - 8, 0.3)
+			local c = Layout.toWorld(i, w.x + 18, w.z + 4, 0.3)
 			local phase = (t * 0.25) % 2
 			local pos = phase < 1 and a:Lerp(c, phase) or c:Lerp(a, phase - 1)
 			local look = phase < 1 and c or a

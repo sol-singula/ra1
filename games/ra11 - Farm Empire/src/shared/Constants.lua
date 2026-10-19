@@ -65,6 +65,7 @@ Constants.PALETTE = {
 	steel = rgb(160, 166, 176),
 	steelDark = rgb(96, 100, 110),
 	concrete = rgb(204, 204, 198),
+	concreteDark = rgb(186, 186, 180),
 	safetyYellow = rgb(255, 200, 36),
 	machineRed = rgb(222, 56, 48),
 	machineGreen = rgb(56, 150, 70),

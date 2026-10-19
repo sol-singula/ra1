@@ -296,7 +296,7 @@ function TerritoryService:Init(registry)
 				hrp.CFrame = CFrame.new(Layout.toWorld(t.index, s.x, s.z, 3.5))
 			end
 		elseif what == "town" then
-			hrp.CFrame = CFrame.new(0, 3.5, -Layout.TOWN / 2 + 12)
+			hrp.CFrame = CFrame.new(Layout.TOWN_SPOTS.spawn.x, 3.5, Layout.TOWN_SPOTS.spawn.z)
 		elseif what == "go" and type(index) == "number" and byIndex[index] then
 			local g = Layout.SPOTS.gate
 			hrp.CFrame = CFrame.new(Layout.toWorld(index, g.x - 8, g.z + 5, 3.5))

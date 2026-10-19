@@ -17,8 +17,10 @@
     "Workspace": {
       "$properties": {
         "StreamingEnabled": true,
-        "StreamingMinRadius": 128,
-        "StreamingTargetRadius": 512,
+        "StreamingMinRadius": 256,
+        "StreamingTargetRadius": 768,
+        "StreamingIntegrityMode": "PauseOutsideLoadedArea",
+        "FallenPartsDestroyHeight": -200,
         "Gravity": 196.2
       },
       "Terrain": {
