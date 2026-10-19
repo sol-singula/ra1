@@ -115,6 +115,7 @@ function PadService:Refresh(player)
 				max = u.max,
 				affordable = cost ~= nil and p.cash >= cost,
 				recommended = key == first,
+				gain = cost ~= nil and upgrades:IncomeGain(player, key) or nil,
 				branch = u.branch,
 			})
 		end

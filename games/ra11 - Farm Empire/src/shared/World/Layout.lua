@@ -4,16 +4,17 @@ it; twelve farms line the avenue in two rows of six, three each side of the city
 avenue. Each farm is laid out in its own local frame (x across, z from the front edge on the avenue at
 z = -DEPTH/2 to the back at +DEPTH/2) and turned so its front faces the road, so one builder makes every farm.
 
-A farm, front to back (local studs, 200 across by 180 deep; every zone below has its own rectangle, see ZONES,
+A farm, front to back (local studs, 400 across by 360 deep; every zone below has its own rectangle, see ZONES,
 and tests/LayoutSmoke checks none of them overlap):
-  the frontage     the stand (later the shop) right on the avenue, open to the road so customers walk up; the
-                   farm gate at its left; the trucks' lane entrance at the right
-  the build yard   just inside the gate: the spawn and the eight upgrade pads (step on one to buy it)
-  the fields       the home field right behind the stand, the East and West fields either side, the North field
-                   behind them; paths between
-  machines         the shed at the right, by the lane
-  logistics        the warehouse at the back right, its docks on the lane
-  the back         the farmhouse, the orchard, the pond and the windmill at the back left; trees all round
+  the front        the business right on the avenue: one building that grows where it stands, a fruit stand, a
+                   shop, then a warehouse (and a distribution centre) with big doors at the back onto the farm; the
+                   pallet yard on its left (stock spills out onto pallets there when the building is full), the
+                   truck yard on its right (the docks); the build yard and the gate further left, the animal pens
+                   further right
+  the fields       right behind the business (seen through its back doors): the home field, the East and West
+                   fields either side, the long North field behind them; paths between
+  machines         the shed at the right, beside the West field
+  the back         the farmhouse, the orchard, the pond, the windmill, the silos; trees all round
 
   Layout.territory(i)        { index, cx, cz, rotation, row, col }
   Layout.toWorld(i, x, z, y) local -> world Vector3
@@ -28,15 +29,15 @@ and tests/LayoutSmoke checks none of them overlap):
 ]]
 local Layout = {}
 
-Layout.WIDTH = 200 -- x
-Layout.DEPTH = 180 -- z
+Layout.WIDTH = 400 -- x
+Layout.DEPTH = 360 -- z
 Layout.AVENUE = 40 -- the road between the rows, sidewalks included
 Layout.ROAD = 28 -- the asphalt in the middle of it
 Layout.GAP = 12 -- the tree strip between two farms
 Layout.PITCH = 5 -- tile pitch (4 x 4 tiles, a 1-stud path)
 Layout.TILE = 4
 Layout.GROUND_Y = 0
-Layout.FENCE = { x = 98.5, z = 88.5 } -- the fence's line, inside the farm's edge
+Layout.FENCE = { x = 198.5, z = 178.5 } -- the fence's line, inside the farm's edge
 Layout.PAD = 6.4 -- the part of a pad you step on
 
 -- The city: the middle of the map, as deep as the rows
@@ -110,10 +111,10 @@ end
 
 -- The fields: the tile grids (local x, z of the first tile's centre; cols across, rows deep)
 Layout.FIELDS = {
-	field1 = { x = -7.5, z = -46, cols = 4, rows = 6, tiles = 24 },
-	field2 = { x = -42.5, z = -46, cols = 5, rows = 6, tiles = 30 },
-	field3 = { x = 21, z = -46, cols = 5, rows = 6, tiles = 30 },
-	field4 = { x = -42.5, z = -8, cols = 10, rows = 3, tiles = 30 },
+	field1 = { x = -27.5, z = -57.5, cols = 12, rows = 8, tiles = 96 },
+	field2 = { x = -112.5, z = -57.5, cols = 14, rows = 10, tiles = 140 },
+	field3 = { x = 47.5, z = -57.5, cols = 14, rows = 10, tiles = 140 },
+	field4 = { x = -72.5, z = 7.5, cols = 30, rows = 6, tiles = 180 },
 }
 Layout.FIELD_LIST = { "field1", "field2", "field3", "field4" }
 Layout.FIELD_NAMES = { field1 = "HOME FIELD", field2 = "EAST FIELD", field3 = "WEST FIELD", field4 = "NORTH FIELD" }
@@ -142,50 +143,64 @@ function Layout.parseTile(id)
 	return key, tonumber(n)
 end
 
+-- The business building: one building at the front that grows where it stands, its front wall on FRONT_Z (facing
+-- the avenue), reaching back toward the fields. Each stage's footprint:
+Layout.FRONT_Z = -152
+Layout.BUILDING = {
+	stand = { w = 22, d = 18, h = 8 },
+	shop = { w = 40, d = 26, h = 10 },
+	warehouse = { w = 100, d = 70, h = 18 },
+	center = { w = 120, d = 80, h = 22 },
+}
+-- the building's middle (local x, z) at a stage
+function Layout.building(stage)
+	local b = Layout.BUILDING[stage] or Layout.BUILDING.stand
+	return 0, Layout.FRONT_Z + b.d / 2, b
+end
+
 -- Named points
 Layout.SPOTS = {
-	stand = { x = 0, z = -72 }, -- the stand's middle; the shop stands 4 further back (its front at z -77)
-	gate = { x = -40, z = -90 }, -- the farm gate, between its two pillars
-	spawn = { x = -22, z = -55 }, -- inside the gate, between the build yard and the home field
-	yard = { x = -38.5, z = -71.5 }, -- the build yard's middle
-	lane = { x = 86, z = -5 }, -- the trucks' lane, from the avenue to the warehouse
-	shed = { x = 62, z = -30 }, -- the machine shed
-	machine2 = { x = 62, z = -10 }, -- where the fleet's second machine parks
-	hay = { x = 60, z = -45 },
-	warehouse = { x = 40, z = 50 }, -- the warehouse; its docks on the +x side, on the lane
-	center = { x = 31, z = 50 }, -- the distribution centre (bigger, same dock wall)
-	silo = { x = 10, z = 20 },
-	house = { x = -72, z = 44 },
-	orchard = { x = -72, z = 70 },
-	pond = { x = -30, z = 62 },
-	windmill = { x = -50, z = 79 },
-	scarecrow = { x = -52, z = -20 },
-	stock = { x = 25, z = -70 }, -- the stock yard right of the stand: crates piled up as stock comes in
-	pens = { x = 53, z = -67 }, -- the animal pens' middle, right of the stock yard
-	region = { x = -40, z = 22 }, -- where the new-region preview stands
-	dock = { x = 76, z = 50 },
+	stand = { x = 0, z = -143 }, -- the stand's middle (its counter faces the avenue; customers queue in front)
+	gate = { x = -130, z = -178.5 }, -- the farm gate, between its two pillars
+	spawn = { x = -130, z = -110 }, -- inside the gate, behind the build yard
+	yard = { x = -130, z = -140 }, -- the build yard's middle
+	lane = { x = 81, z = -125 }, -- the truck yard (the trucks come in from the avenue to the docks)
+	dock = { x = 64, z = -110 }, -- the docks' middle (on the building's right wall, warehouse and up)
+	stock = { x = -79, z = -112 }, -- the pallet yard (outside the building's left wall)
+	warehouse = { x = 0, z = -117 }, -- the warehouse's middle
+	center = { x = 0, z = -112 }, -- the distribution centre's middle
+	shed = { x = 155, z = -35 }, -- the machine shed
+	machine2 = { x = 155, z = -6 }, -- where the fleet's second machine parks
+	hay = { x = 155, z = -60 },
+	silo = { x = 70, z = 80 },
+	house = { x = -150, z = 110 },
+	orchard = { x = -150, z = 150 },
+	pond = { x = -70, z = 120 },
+	windmill = { x = -100, z = 160 },
+	scarecrow = { x = -130, z = -30 },
+	pens = { x = 152, z = -118 }, -- the animal pens' middle
+	region = { x = 0, z = 110 }, -- where the new-region preview stands
 }
 
--- The pads: two rows of four in the build yard, the ones nearest the spawn first (a step apart)
+-- The pads: two rows of four in the build yard, the ones nearest the spawn first (a few steps apart)
 Layout.PADS = {}
 for k = 1, 8 do
 	local row = (k - 1) // 4 -- 0 the back row (nearer the spawn), 1 the front row
 	local col = (k - 1) % 4
-	Layout.PADS[k] = { x = -24 - col * 10, z = -66.5 - row * 10.5 }
+	Layout.PADS[k] = { x = -109 - col * 14, z = -128 - row * 18 }
 end
 
--- The animals: four pens along the front lawn, each with its upgrade pad and a feed plate at its gate (the road
--- side), so feeding them and buying more is a few steps from the stand
+-- The animals: four pens in a row right of the truck yard, each with its upgrade pad and a feed plate in front
 Layout.ANIMALS = { "chicken", "pig", "cow", "sheep" }
-Layout.PEN = { w = 11.5, d = 14, z = -67 } -- each pen's size and middle (z)
+Layout.PEN = { w = 22, d = 24, z = -118 } -- each pen's size and middle (z)
 Layout.PENS = {}
 for k, key in Layout.ANIMALS do
-	local x = 30 + Layout.PEN.w * (k - 0.5)
+	local x = 108 + Layout.PEN.w * (k - 0.5)
 	Layout.PENS[key] = {
 		x = x,
 		z = Layout.PEN.z,
-		pad = { x = x - 2.6, z = -79 }, -- the upgrade pad (6.4 across)
-		feed = { x = x + 3.4, z = -79 }, -- the feed plate (4 across)
+		pad = { x = x - 5, z = -145 }, -- the upgrade pad (6.4 across)
+		feed = { x = x + 6, z = -145 }, -- the feed plate (4 across)
 	}
 end
 Layout.FEED = 4 -- the feed plate's size
@@ -200,32 +215,96 @@ function Layout.padAt(k)
 	return key and Layout.PENS[key].pad or nil
 end
 
+-- The racks inside the warehouse and the centre: rows across the building behind the storefront (local z of each
+-- row, the x range, and the levels); StockController fills them, then the pallet yard
+Layout.PALLET = 3.4 -- a pallet stack's footprint
+function Layout.racks(stage)
+	local b = Layout.BUILDING[stage]
+	if stage ~= "warehouse" and stage ~= "center" then
+		return {}
+	end
+	local _, cz = Layout.building(stage)
+	local rows = stage == "center" and 5 or 4
+	local out = {}
+	local back = cz + b.d / 2 - 8
+	for r = 0, rows - 1 do
+		table.insert(out, { z = back - r * 9, x0 = -b.w / 2 + 8, x1 = b.w / 2 - 8, levels = 3 })
+	end
+	return out
+end
+
+-- Every slot stock is shown in at a stage, in fill order: { x, z, y, size }. The stand: crates behind the counter;
+-- the shop: crates on the back shelves; the warehouse and the centre: the racks inside, then the pallet yard.
+function Layout.stockSlots(stage)
+	local out = {}
+	local function add(x, z, y, size)
+		table.insert(out, { x = x, z = z, y = y, size = size })
+	end
+	if stage == "stand" or stage == nil then
+		for layer = 0, 1 do
+			for row = 0, 1 do
+				for col = 0, 5 do
+					add(-5.5 + col * 2.2, -137.5 + row * 2.2, 0.3 + layer * 1.8, 1.8)
+				end
+			end
+		end
+	elseif stage == "shop" then
+		-- (the shelves either side of the back doors)
+		local _, cz, b = Layout.building("shop")
+		for layer = 0, 1 do
+			for row = 0, 1 do
+				for _, side in { -1, 1 } do
+					for col = 0, 4 do
+						add(side * (7.9 + col * 2.2), cz + b.d / 2 - 2.2 - row * 2.4, 0.6 + layer * 2.2, 1.8)
+					end
+				end
+			end
+		end
+	else
+		for _, r in Layout.racks(stage) do
+			for level = 0, r.levels - 1 do
+				for x = r.x0, r.x1, 4.4 do
+					add(x, r.z, 0.6 + level * 4.2, Layout.PALLET)
+				end
+			end
+		end
+		local z = Layout.ZONES.palletYard
+		for layer = 0, 1 do
+			for row = 0, 12 do
+				for col = 0, 5 do
+					add(z.cx - 12.5 + col * 5, z.cz - 33 + row * 5.5, 0.2 + layer * 3.2, Layout.PALLET)
+				end
+			end
+		end
+	end
+	return out
+end
+
 -- The zones that must not overlap (tests/LayoutSmoke): centre x, z, width, depth, local
 local function rect(cx, cz, w, d)
 	return { cx = cx, cz = cz, w = w, d = d }
 end
 Layout.ZONES = {
-	business = rect(0, -68, 30, 18), -- the shop's footprint (the stand is smaller)
-	frontage = rect(0, -84, 36, 10), -- in front of the counter: the customers' line
-	yard = rect(-38.5, -71.5, 40, 21),
-	spawn = rect(-22, -55, 6, 6),
-	field1 = rect(0, -33.5, 21.7, 31.7),
-	field2 = rect(-32.5, -33.5, 26.7, 31.7),
-	field3 = rect(31, -33.5, 26.7, 31.7),
-	field4 = rect(-20, -3, 51.7, 16.7),
-	shed = rect(62, -30, 20, 18),
-	hay = rect(60, -45, 8, 4),
-	warehouse = rect(33, 50, 78, 54), -- the centre's yard (the warehouse's is smaller)
-	silo = rect(13.5, 20, 12, 5),
-	lane = rect(86, -5, 14, 170),
-	house = rect(-72, 43, 28, 22),
-	orchard = rect(-72, 70, 30, 18),
-	pond = rect(-30, 62, 26, 26),
-	windmill = rect(-50, 79, 6, 6),
-	scarecrow = rect(-52, -20, 4, 2),
-	stock = rect(25, -70, 10, 20),
-	pens = rect(53, -67, 46, 14),
-	penFront = rect(53, -79.5, 46, 9),
+	business = rect(0, -112, 120, 80), -- the biggest building's footprint (the centre); smaller stages fit inside
+	frontage = rect(0, -165, 40, 25), -- in front of the counter: the customers' line, open to the avenue
+	palletYard = rect(-79, -112, 34, 80), -- left of the building: pallets of stock when the building is full
+	truckYard = rect(81, -125, 38, 106), -- right of the building: the docks and the trucks' turning space
+	yard = rect(-130, -140, 56, 40), -- the build pads
+	spawn = rect(-130, -110, 8, 8),
+	field1 = rect(0, -40, 61.7, 41.7),
+	field2 = rect(-80, -35, 71.7, 51.7),
+	field3 = rect(80, -35, 71.7, 51.7),
+	field4 = rect(0, 20, 151.7, 31.7),
+	shed = rect(155, -35, 30, 24),
+	hay = rect(155, -60, 10, 4),
+	pens = rect(152, -118, 88, 24),
+	penFront = rect(152, -145, 88, 14),
+	silo = rect(73.5, 80, 14, 6),
+	house = rect(-150, 108, 34, 28),
+	orchard = rect(-150, 150, 40, 22),
+	pond = rect(-70, 120, 30, 30),
+	windmill = rect(-100, 160, 6, 6),
+	scarecrow = rect(-130, -30, 4, 2),
 }
 
 -- The city's courtyard

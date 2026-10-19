@@ -53,7 +53,7 @@ Tasks.ONBOARDING = {
 	},
 	{
 		key = "tiles1",
-		text = "Step on the glowing pad to buy 4 more tiles",
+		text = "Step on the glowing pad to buy 8 more tiles",
 		kind = "upgrade",
 		target = "tiles",
 		reward = 40,

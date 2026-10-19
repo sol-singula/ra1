@@ -5,7 +5,7 @@ plinth in its branch's colour with a glowing top: green when you can afford it, 
 upgrade's name and its price; a small icon on the top.
 
   PadBuilder.build(folder, i, k, key)   the pad in slot k of territory i, showing upgrade key
-  PadBuilder.paint(model, state)        state = { name, cost, level, max, affordable, recommended, branch }
+  PadBuilder.paint(model, state)        state = { name, cost, level, max, affordable, recommended, branch, gain }
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -61,7 +61,7 @@ function PadBuilder.build(folder, i, k, key, branch)
 	-- the sign over it: the name, the price
 	local bb = Instance.new("BillboardGui")
 	bb.Name = "Tag"
-	bb.Size = UDim2.new(6.6, 0, 2.8, 0)
+	bb.Size = UDim2.new(6.8, 0, 3.6, 0)
 	bb.StudsOffset = Vector3.new(0, 3.4, 0)
 	bb.MaxDistance = 60
 	bb.LightInfluence = 0
@@ -82,8 +82,8 @@ function PadBuilder.build(folder, i, k, key, branch)
 	local title = Instance.new("TextLabel")
 	title.Name = "Title"
 	title.BackgroundTransparency = 1
-	title.Position = UDim2.fromScale(0.05, 0.06)
-	title.Size = UDim2.fromScale(0.9, 0.48)
+	title.Position = UDim2.fromScale(0.05, 0.05)
+	title.Size = UDim2.fromScale(0.9, 0.34)
 	title.Font = Enum.Font.GothamBlack
 	title.TextScaled = true
 	title.TextColor3 = rgb(255, 255, 255)
@@ -92,13 +92,24 @@ function PadBuilder.build(folder, i, k, key, branch)
 	local price = Instance.new("TextLabel")
 	price.Name = "Price"
 	price.BackgroundTransparency = 1
-	price.Position = UDim2.fromScale(0.05, 0.54)
-	price.Size = UDim2.fromScale(0.9, 0.4)
+	price.Position = UDim2.fromScale(0.05, 0.64)
+	price.Size = UDim2.fromScale(0.9, 0.32)
 	price.Font = Enum.Font.GothamBlack
 	price.TextScaled = true
 	price.TextColor3 = GREEN
 	price.Text = ""
 	price.Parent = card
+	-- what it adds to the income a minute
+	local gain = Instance.new("TextLabel")
+	gain.Name = "Gain"
+	gain.BackgroundTransparency = 1
+	gain.Position = UDim2.fromScale(0.05, 0.38)
+	gain.Size = UDim2.fromScale(0.9, 0.26)
+	gain.Font = Enum.Font.GothamBold
+	gain.TextScaled = true
+	gain.TextColor3 = rgb(140, 220, 255)
+	gain.Text = ""
+	gain.Parent = card
 	bb.Parent = top
 	return m
 end
@@ -122,6 +133,11 @@ function PadBuilder.paint(m, s)
 		card.Price.Text = price
 	end
 	card.Price.TextColor3 = s.affordable and GREEN or rgb(255, 120, 100)
+	local gain = s.gain and s.gain >= 1 and `+{Format.cash(s.gain)}/min income`
+		or (s.cost and "more room for stock" or "")
+	if card.Gain.Text ~= gain then
+		card.Gain.Text = gain
+	end
 	card.Stroke.Color = s.recommended and GOLD or (PadBuilder.BRANCH[s.branch] or PadBuilder.BRANCH.production).color
 	m:SetAttribute("Affordable", s.affordable == true)
 	m:SetAttribute("Recommended", s.recommended == true)

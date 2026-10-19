@@ -119,3 +119,22 @@ broken-looking machines, unclear bottlenecks, a "+$" running total, adverts nobo
 * **Graphics.** The harvester, tractor, combine, truck and forklift were rebuilt so every part rests on another.
   The guide arrow is sized in studs (it shrinks with distance like the world) and points down.
 * **Removed.** The "+$" running total next to the cash.
+
+## Round 5 · a 4x farm, one building that grows, a fixed income — built
+
+* **Income.** The income a minute is a fixed figure from the farm's numbers (what's grown, harvested and sold, at
+  the price a unit fetches), so it only changes when something changes. Every upgrade shows what it adds to it:
+  on its pad ("+$1.2K/min income"), in the UPGRADES panel and in the guide's card.
+* **One building.** The business grows where it stands at the front: the fruit stand, then the fruit shop (shelves
+  either side of double doors at the back), then the warehouse (100 x 70, about four times the old one) and the
+  distribution centre (120 x 80). The warehouse keeps the storefront and the counter at the front, has three big
+  doors open at the back onto the farm, and its loading docks open onto a truck yard at its side.
+* **Stock you can see.** The stock fills the stand's crates, the shop's shelves, then the warehouse's racks
+  (pallet stacks on three levels, seen through the back doors and the skylights), and when the racks are full it
+  spills out onto pallets in the pallet yard beside the building. A tag over the front reads "STOCK 3.4K / 4K".
+* **A bigger farm.** Plots are 400 x 360 (four times the area): the home field holds 96 tiles (bought 8 at a time),
+  the East and West fields 140 each and the North field 180, about 4.5 times the tiles in all. The build yard, the
+  four animal pens (now 22 x 24) and the pallet and truck yards sit along the front; the shed, house, pond,
+  windmill and silos at the back. The city and the map grew to fit twelve of them.
+* On the mock play-through: about $740K by minute 5, the Warehouse near minute 8, the Distribution Centre around
+  minute 21.

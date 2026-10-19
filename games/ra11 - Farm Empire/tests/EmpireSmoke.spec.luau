@@ -71,12 +71,12 @@ check("buy the warehouse", buy("warehouse") and p.stage == "warehouse")
 Engine.advance(0.5)
 local t = Territory:Territory(player)
 check(
-	"...it stands at the back, with a dock and a truck",
-	t.model.Buildings:FindFirstChild("Warehouse") ~= nil and #t.model.Buildings.Trucks:GetChildren() == 1
+	"...the shop grew into it where it stood, with a dock and a truck",
+	t.model.Buildings.Business:GetAttribute("Warehouse") == true and #t.model.Buildings.Trucks:GetChildren() == 1
 )
 check(
-	"...the shop stays at the front",
-	t.model.Buildings.Business.Sign:FindFirstChildOfClass("SurfaceGui").TextLabel.Text == "FRUIT SHOP"
+	"...its sign says so",
+	t.model.Buildings.Business.Sign:FindFirstChildOfClass("SurfaceGui").TextLabel.Text == "WAREHOUSE"
 )
 check("the client's camera got the reveal", Engine.require(tree.client.Controllers.CameraController).playing())
 
@@ -99,7 +99,7 @@ check(
 buy("field3")
 Crops:PlantAll(player)
 local s = Crops:Summary(player)
-check("the fields are full", s.tiles == 68 and s.planted == 68, s.tiles)
+check("the fields are full", s.tiles >= 284 and s.planted == s.tiles, s.tiles)
 local harvested0 = p.stats.harvested
 Engine.advance(120)
 check("the tractor cleared a lot of corn", p.stats.harvested - harvested0 >= 100, p.stats.harvested - harvested0)
@@ -124,7 +124,7 @@ check("buy the centre", buy("center") and p.stage == "center")
 Engine.advance(0.3)
 check(
 	"...the warehouse grew",
-	t.model.Buildings.Warehouse.Sign:FindFirstChildOfClass("SurfaceGui").TextLabel.Text == "DISTRIBUTION CENTRE"
+	t.model.Buildings.Business.Sign:FindFirstChildOfClass("SurfaceGui").TextLabel.Text == "DISTRIBUTION CENTRE"
 )
 check(
 	"the fleet: two machines",
@@ -213,7 +213,7 @@ check(
 check("...and the card went out", Engine.lastClientEvent("Away", again) ~= nil)
 check(
 	"the world is built again",
-	Territory:Territory(again) and Territory:Territory(again).model.Buildings:FindFirstChild("Warehouse") ~= nil
+	Territory:Territory(again) and Territory:Territory(again).model.Buildings.Business:GetAttribute("Warehouse") == true
 )
 check("income a minute is a real number", Economy:Income(again) >= 0)
 

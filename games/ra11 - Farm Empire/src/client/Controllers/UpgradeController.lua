@@ -86,6 +86,18 @@ local function row(parent, k)
 		BackgroundColor3 = C.good,
 		Parent = r,
 	})
+	Theme.text({
+		Name = "Gain",
+		Text = "",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -168, 0, 34),
+		Size = UDim2.fromOffset(130, 22),
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Font = Theme.Display,
+		TextColor3 = Color3.fromRGB(40, 130, 200),
+		fit = 15,
+		Parent = r,
+	})
 	buy.Activated:Connect(function()
 		local key = r:GetAttribute("Key")
 		if key then
@@ -144,9 +156,11 @@ local function paint()
 		r.Stripe.BackgroundColor3 = BRANCH_COLOR[def.branch] or C.good
 		r.Title.Text = def.name .. (def.max > 1 and ` ({e.level}/{def.max})` or "")
 		r.Desc.Text = def.desc
+		r.Gain.Text = e.gain and e.gain >= 1 and `+{Format.cash(e.gain)}/min` or ""
 		local rec = e.key == u.recommended
 		r.Tag.Visible = rec
 		r.Title.Size = UDim2.new(1, rec and -300 or -180, 0, 24)
+		r.Desc.Size = UDim2.new(1, -310, 0, 28)
 		local stroke = r:FindFirstChildOfClass("UIStroke")
 		if stroke then
 			stroke.Color = rec and GOLD or C.grey

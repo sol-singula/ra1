@@ -20,3 +20,7 @@ renderer: lighting and materials only approximate Studio).
 | ![](panel_shop.png) | ![](panel_boost.png) | ![](away_card.png) |
 | **The animal pens** | **The stock yard** | |
 | ![](animal_pens.png) | ![](stock_yard.png) | |
+| **The warehouse's racks** | **The pallet yard** | **The warehouse at the road** |
+| ![](warehouse_inside.png) | ![](pallet_yard.png) | ![](warehouse_front.png) |
+| **Through the back doors** | | |
+| ![](warehouse_back_doors.png) | | |

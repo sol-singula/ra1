@@ -1,7 +1,5 @@
 --[[
-The front lawn right of the stand: the stock yard (a paved, fenced corner where crates pile up as stock comes in:
-StockController stacks them, so a full store is something you can see) and the four animal pens (World/Layout
-ANIMALS, Data/Animals). A pen you own is fenced, with its house at the back, a trough, its animals (more as it
+The four animal pens at the front right of the farm (World/Layout ANIMALS, Data/Animals). A pen you own is fenced, with its house at the back, a trough, its animals (more as it
 levels) and a sign; at its gate, the feed plate. A pen you can buy is an outline with a sign (its pad sells it);
 one for a later stage says which.
 
@@ -189,36 +187,12 @@ local function sign(m, i, x, z, title, line, color)
 	})
 end
 
--- The stock yard: a paved corner with a low fence and a sign; StockController piles the crates on it
-local function stockYard(f, i)
-	local z = Layout.ZONES.stock
-	local o = cf(i, z.cx, z.cz, 0)
-	local floor = Shapes.part(f, Vector3.new(z.w - 0.6, 0.2, z.d - 0.6), o * CFrame.new(0, 0.1, 0), P.concrete)
-	floor.Name = "StockFloor"
-	Shapes.part(f, Vector3.new(z.w - 1.6, 0.06, z.d - 1.6), o * CFrame.new(0, 0.23, 0), P.concreteDark)
-	for _, sx in { -1, 1 } do
-		local side = cf(i, z.cx + sx * (z.w / 2 - 0.4), z.cz, 0, math.pi / 2)
-		rail(f, side, z.d - 0.8)
-	end
-	rail(f, cf(i, z.cx, z.cz + z.d / 2 - 0.4, 0), z.w - 0.8)
-	local _, board = Shapes.sign(f, cf(i, z.cx, z.cz - z.d / 2 - 0.6, 0), 8, 2.2, "STOCK", "0 / 0", {
-		name = "StockSign",
-		bottom = 1.4,
-		board = rgb(60, 50, 44),
-		accent = P.safetyYellow,
-		ink = P.white,
-		ppi = 40,
-	})
-	board.Name = "StockBoard"
-end
-
 function PenBuilder.build(model, i, view)
 	local old = model:FindFirstChild("Pens")
 	if old then
 		old:Destroy()
 	end
 	local f = Shapes.folder(model, "Pens")
-	stockYard(f, i)
 	local stageIndex = Business[view.stage or "stand"].index
 	for k, key in Layout.ANIMALS do
 		local a = Animals[key]

@@ -1,7 +1,7 @@
 --[[
 The visual simulation of the store (master plan §12, layer B): a pool of little customers who walk up from the
 avenue, stand in the line, buy and leave with a bag; the line's length follows the server's queue; the workers
-behind the counter at the shop stage; the crates in the stock area follow the stock. Representative, not one a
+behind the counter at the shop stage (the stock itself is StockController's). Representative, not one a
 sale: thirty sales a minute look like six or eight people on the path.
 
   CustomerController.walking()   how many customers are on the path (tests)
@@ -15,7 +15,6 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Layout = require(ReplicatedStorage.Shared.World.Layout)
 local Models = require(ReplicatedStorage.Shared.World.Models)
 local Net = require(ReplicatedStorage.Shared.Net)
-local Shapes = require(ReplicatedStorage.Shared.World.Shapes)
 local Store = require(script.Parent.Parent.Store)
 
 local CustomerController = { Name = "CustomerController", Order = 40, MAX = 8, SPEED = 8, STAY = 1.4 }
@@ -23,7 +22,6 @@ local CustomerController = { Name = "CustomerController", Order = 40, MAX = 8, S
 local folder
 local people = {} -- { model, phase ("in" | "queue" | "buy" | "out"), from, to, t0, slot }
 local workers = {}
-local crates = {}
 local nextId = 0
 local pendingSales = 0
 
@@ -149,7 +147,7 @@ local function step()
 	end
 end
 
--- The workers and the crates follow the business
+-- The workers follow the business
 local function rebuild()
 	local b = Store.get("business")
 	local i = territoryIndex()
@@ -164,24 +162,6 @@ local function rebuild()
 	for k = 1, math.min(b.workers or 0, 4) do
 		local m = Models.person(folder, 100 + k, Constants.PALETTE.roofGreen)
 		table.insert(workers, { model = m, a = at(s.x - 8 + k * 4, s.z + 10), b = at(s.x - 8 + k * 4, s.z + 2) })
-	end
-	-- crates: one for every 10% of the storage used, up to 9
-	for _, c in crates do
-		c:Destroy()
-	end
-	crates = {}
-	local n = b.storage > 0 and math.floor(b.stock / b.storage * 9 + 0.5) or 0
-	local base = b.stage == "stand" and CFrame.new(at(s.x - 9, s.z + 2)) or CFrame.new(at(s.x + 18, s.z + 2))
-	for k = 1, n do
-		local c = Shapes.part(
-			folder,
-			Vector3.new(1.6, 1.4, 1.6),
-			base * CFrame.new(((k - 1) % 3) * 1.8, 0.7 + ((k - 1) // 3) * 1.4, 0),
-			Constants.PALETTE.wood,
-			{ CanQuery = false }
-		)
-		c.Name = "Crate"
-		table.insert(crates, c)
 	end
 end
 

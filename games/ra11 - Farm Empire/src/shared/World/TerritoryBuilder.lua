@@ -156,61 +156,108 @@ local function pond(parent, i)
 	end
 end
 
--- Ground, paths, the fence, the gate, the yard, trees, the back garden ---------------------------------------------
+-- Ground, paths, the fence, the gate, the yards, trees, the back garden ------------------------------------------
 local function ground(model, i, view)
 	local g = Shapes.folder(model, "Ground")
 	local W, D = Layout.WIDTH, Layout.DEPTH
 	local hw, hd = W / 2, D / 2
 	local fw, fd = Layout.FENCE.x, Layout.FENCE.z
+	local Z = Layout.ZONES
 	local plate = Shapes.part(g, Vector3.new(W, 2, D), cf(i, 0, 0, -1), P.grass, { CanCollide = true })
 	plate.Name = "Plate"
 	plate.Material = Enum.Material.Grass
-	-- the front lawn right of the stand (the stock yard and the pens stand on it), a lighter green
-	local lawn = Shapes.part(g, Vector3.new(56, 0.1, 28), cf(i, 48, -73, 0.03), P.grassLight)
-	lawn.Material = Enum.Material.Grass
-	-- the trucks' lane: from the avenue to the warehouse, kerbed, with dashes
-	local ln = Layout.SPOTS.lane
-	local lane = Shapes.part(g, Vector3.new(14, 0.3, 170), cf(i, ln.x, ln.z, 0.1), P.road)
-	lane.Name = "Lane"
-	lane.Material = Enum.Material.Asphalt
-	for z = ln.z - 80, ln.z + 80, 10 do
-		Shapes.part(g, Vector3.new(0.4, 0.05, 4), cf(i, ln.x, z, 0.28), P.roadLine)
+	local function slab(z, color, material, y, name)
+		local p = Shapes.part(g, Vector3.new(z.w, 0.2, z.d), cf(i, z.cx, z.cz, y or 0.08), color)
+		p.Material = material or Enum.Material.Concrete
+		p.Name = name or "Slab"
+		return p
 	end
-	Shapes.part(g, Vector3.new(0.8, 0.5, 170), cf(i, ln.x - 7.4, ln.z, 0.25), P.concrete)
+	-- the front: the customers' pavement, the truck yard (asphalt, dashes, kerbs), the pallet yard (painted bays)
+	slab(Z.frontage, P.concrete, Enum.Material.Concrete, 0.06, "Frontage")
+	local ty = slab(Z.truckYard, P.road, Enum.Material.Asphalt, 0.1, "TruckYard")
+	_ = ty
+	for z = Z.truckYard.cz - Z.truckYard.d / 2 + 6, Z.truckYard.cz + Z.truckYard.d / 2 - 6, 10 do
+		Shapes.part(g, Vector3.new(0.4, 0.05, 4), cf(i, Z.truckYard.cx + 6, z, 0.23), P.roadLine)
+	end
+	for _, dx in { -1, 1 } do
+		Shapes.part(
+			g,
+			Vector3.new(0.8, 0.5, Z.truckYard.d),
+			cf(i, Z.truckYard.cx + dx * (Z.truckYard.w / 2 + 0.4), Z.truckYard.cz, 0.25),
+			P.concrete
+		)
+	end
+	local py = slab(Z.palletYard, P.concreteDark, Enum.Material.Concrete, 0.1, "PalletYard")
+	_ = py
+	for row = 0, 12 do
+		Shapes.part(
+			g,
+			Vector3.new(Z.palletYard.w - 2, 0.05, 0.25),
+			cf(i, Z.palletYard.cx, Z.palletYard.cz - 35.75 + row * 5.5, 0.23),
+			P.safetyYellow
+		)
+	end
+	Shapes.sign(
+		g,
+		cf(i, Z.palletYard.cx, Z.palletYard.cz - Z.palletYard.d / 2 - 1.5, 0),
+		10,
+		2.4,
+		"PALLET YARD",
+		"stock spills out here",
+		{
+			name = "PalletSign",
+			bottom = 1.2,
+			accent = rgb(200, 120, 30),
+		}
+	)
 	-- the paths
 	local function path(x, z, w, d)
 		local p = Shapes.part(g, Vector3.new(w, 0.2, d), cf(i, x, z, 0.08), P.path)
 		p.Material = Enum.Material.Cobblestone
 		return p
 	end
-	path(Layout.SPOTS.gate.x, -85, 10, 7) -- the gate into the yard
-	path(8, -53.5, 136, 4.5) -- the cross path in front of the fields
-	path(-15, -33.5, 6, 31) -- between the East and home fields
-	path(14.25, -33.5, 6, 31) -- between the home and West fields
-	path(-1, -14.5, 90, 4) -- behind the fields
-	path(47.5, -14, 5, 76) -- out to the warehouse
-	-- the frontage: a pavement in front of the stand, open to the avenue
-	local front = Shapes.part(g, Vector3.new(36, 0.2, 10), cf(i, 0, -84, 0.06), P.concrete)
-	front.Material = Enum.Material.Concrete
+	local gx = Layout.SPOTS.gate.x
+	path(gx, -169, 12, 18) -- the gate into the build yard
+	path(gx, -115, 12, 10) -- the yard to the spawn
+	path(0, -66, 300, 6) -- the cross path behind the building, in front of the fields
+	path(-37.5, -35, 5, 50) -- between the East and home fields
+	path(37.5, -35, 5, 50) -- between the home and West fields
+	path(0, -2.5, 240, 5) -- behind the fields
+	path(130, -35, 20, 5) -- out to the shed
+	path(-130, -88, 8, 38) -- the spawn down to the cross path
 	-- the build yard: paved, kerbed, a sign
-	local y = Layout.SPOTS.yard
-	local yard = Shapes.part(g, Vector3.new(40, 0.25, 21), cf(i, y.x, y.z, 0.1), rgb(196, 176, 142))
+	local y = Z.yard
+	local yard = Shapes.part(g, Vector3.new(y.w, 0.25, y.d), cf(i, y.cx, y.cz, 0.1), rgb(196, 176, 142))
 	yard.Name = "Yard"
 	yard.Material = Enum.Material.Cobblestone
-	for _, side in { { y.x, y.z - 10.75, 40.6, 0.5 }, { y.x, y.z + 10.75, 40.6, 0.5 }, { y.x - 20.25, y.z, 0.5, 21 } } do
+	for _, side in
+		{
+			{ y.cx, y.cz - y.d / 2 - 0.25, y.w + 1, 0.5 },
+			{ y.cx - y.w / 2 - 0.25, y.cz, 0.5, y.d },
+			{ y.cx + y.w / 2 + 0.25, y.cz, 0.5, y.d },
+		}
+	do
 		Shapes.part(g, Vector3.new(side[3], 0.5, side[4]), cf(i, side[1], side[2], 0.25), P.woodDark)
 	end
-	Shapes.sign(g, cf(i, y.x - 21.5, y.z, 0, -math.pi / 2), 9, 2.6, "BUILD YARD", "step on a pad to buy it", {
-		name = "YardSign",
-		bottom = 1.2,
-		accent = rgb(60, 140, 230),
-	})
-	-- the spawn, between the yard and the home field
+	Shapes.sign(
+		g,
+		cf(i, y.cx - y.w / 2 - 1.5, y.cz, 0, -math.pi / 2),
+		10,
+		2.8,
+		"BUILD YARD",
+		"step on a pad to buy it",
+		{
+			name = "YardSign",
+			bottom = 1.2,
+			accent = rgb(60, 140, 230),
+		}
+	)
+	-- the spawn, behind the yard
 	local sp = Layout.SPOTS.spawn
-	local spawn = Shapes.part(g, Vector3.new(6, 0.3, 6), cf(i, sp.x, sp.z, 0.12), rgb(196, 176, 142))
+	local spawn = Shapes.part(g, Vector3.new(8, 0.3, 8), cf(i, sp.x, sp.z, 0.12), rgb(196, 176, 142))
 	spawn.Name = "Spawn"
 	spawn.Material = Enum.Material.Cobblestone
-	-- the fence: posts and two rails; open at the gate, the stand's frontage and the lane (no post twice)
+	-- the fence: posts and two rails; open at the gate, the frontage and the truck yard (no post twice)
 	local fence = Shapes.folder(g, "Fence")
 	local function rail(x1, z1, x2, z2, first, last)
 		local dx, dz = x2 - x1, z2 - z1
@@ -231,14 +278,15 @@ local function ground(model, i, view)
 			)
 		end
 	end
-	local gx = Layout.SPOTS.gate.x
+	local tyx0, tyx1 = Z.truckYard.cx - Z.truckYard.w / 2, Z.truckYard.cx + Z.truckYard.w / 2
+	local fx0, fx1 = Z.frontage.cx - Z.frontage.w / 2, Z.frontage.cx + Z.frontage.w / 2
 	rail(-fw, -fd, -fw, fd, true, false) -- left
 	rail(-fw, fd, fw, fd, true, false) -- back
 	rail(fw, fd, fw, -fd, true, true) -- right
 	rail(-fw, -fd, gx - 11.2, -fd, false, false) -- front, left of the gate
-	rail(gx + 11.2, -fd, -18, -fd, false, true) -- between the gate and the frontage
-	rail(18, -fd, ln.x - 7.5, -fd, true, true) -- between the frontage and the lane
-	rail(ln.x + 7.5, -fd, fw, -fd, true, false) -- right of the lane
+	rail(gx + 11.2, -fd, fx0, -fd, false, true) -- between the gate and the frontage
+	rail(fx1, -fd, tyx0, -fd, true, true) -- between the frontage and the truck yard
+	rail(tyx1, -fd, fw, -fd, true, false) -- right of the truck yard
 	-- the gate: two brick pillars with lamps and the farm's name over them
 	local stars = string.rep("★", math.min(view.prestige or 0, 6))
 	local text = string.upper(view.name or "YOUR") .. " FARM" .. (stars ~= "" and (" " .. stars) or "")
@@ -257,36 +305,36 @@ local function ground(model, i, view)
 		accent = P.cream,
 	})
 	arch.Name = "GateBoard"
-	-- lamps along the cross path and the lane
-	lamp(g, cf(i, -62, -57, 0))
-	lamp(g, cf(i, 30, -57, 0))
-	lamp(g, cf(i, ln.x - 9.5, -40, 0))
-	lamp(g, cf(i, ln.x - 9.5, 40, 0))
+	-- lamps along the cross path
+	for x = -140, 140, 40 do
+		lamp(g, cf(i, x, -70, 0))
+	end
 	-- trees round the edges (none where the orchard and the windmill stand)
 	local trees = Shapes.folder(g, "Trees")
 	local rng = Random.new(i * 7919)
-	for x = -40, 70, 14 do
+	for x = -60, 190, 16 do
 		Shapes.tree(
 			trees,
-			cf(i, x + rng:NextNumber(-2, 2), hd - 6),
-			1.05 + rng:NextNumber(-0.15, 0.2),
+			cf(i, x + rng:NextNumber(-2, 2), hd - 7),
+			1.1 + rng:NextNumber(-0.15, 0.25),
 			rng:NextNumber() < 0.5 and P.leaf or P.grassDark
 		)
 	end
-	for z = -76, 30, 14 do
-		Shapes.tree(trees, cf(i, -hw + 6, z + rng:NextNumber(-2, 2)), 1 + rng:NextNumber(0, 0.25), P.leaf)
+	for z = -95, 80, 16 do
+		Shapes.tree(trees, cf(i, -hw + 7, z + rng:NextNumber(-2, 2)), 1.05 + rng:NextNumber(0, 0.3), P.leaf)
+		Shapes.tree(trees, cf(i, hw - 7, z + 60 + rng:NextNumber(-2, 2)), 1.05 + rng:NextNumber(0, 0.3), P.grassDark)
 	end
-	-- bushes along the front fence left of the gate; flower beds by the gate and on the lawn
-	for x = -92, -60, 8 do
-		bush(g, cf(i, x, -85), 0.9 + rng:NextNumber(0, 0.3))
+	-- bushes along the front fence left of the gate; flower beds by the gate
+	for x = -190, -150, 8 do
+		bush(g, cf(i, x, -174), 0.9 + rng:NextNumber(0, 0.3))
 	end
-	flowerBed(g, cf(i, gx - 8, -85, 0), 4, 3)
-	flowerBed(g, cf(i, gx + 8, -85, 0), 4, 3)
+	flowerBed(g, cf(i, gx - 9, -174, 0), 4, 3)
+	flowerBed(g, cf(i, gx + 9, -174, 0), 4, 3)
 	-- the back garden: the pond, the windmill, hay bales by the North field, a scarecrow by the East field
 	pond(g, i)
 	windmill(g, cf(i, Layout.SPOTS.windmill.x, Layout.SPOTS.windmill.z, 0))
 	for k = 0, 2 do
-		hayBale(g, cf(i, 20 + k * 4, 2, 0, k * 0.3))
+		hayBale(g, cf(i, 90 + k * 4, 45, 0, k * 0.3))
 	end
 	scarecrow(g, cf(i, Layout.SPOTS.scarecrow.x, Layout.SPOTS.scarecrow.z, 0))
 	return g
@@ -426,18 +474,6 @@ local function stand(b, i)
 	end
 	awning(m, o * CFrame.new(0, 8.2, -1), 13, 9)
 	Shapes.part(m, Vector3.new(13.4, 0.4, 0.5), o * CFrame.new(0, 7.3, -5.4), P.woodDark)
-	-- the stock area behind the counter: crates, some empty, a barrow
-	local stock = Shapes.folder(m, "StockArea")
-	for k = 0, 3 do
-		crate(stock, o * CFrame.new(-4.5 + k * 3, 0.2, 3.5), FRUIT[(k + 2) % 6 + 1], k < 2)
-	end
-	Shapes.part(stock, Vector3.new(2.2, 1.2, 3), o * CFrame.new(7, 1.2, 4), rgb(90, 130, 200))
-	Shapes.cylinder(
-		stock,
-		Vector3.new(0.5, 1.4, 1.4),
-		o * CFrame.new(7, 0.7, 5.6) * CFrame.Angles(0, 0, math.pi / 2),
-		rgb(40, 40, 44)
-	)
 	local sign = Shapes.part(m, Vector3.new(10, 2, 0.4), o * CFrame.new(0, 9.6, -5.2), P.cream)
 	sign.Name = "Sign"
 	Shapes.face(sign, "FRUIT STAND", Enum.NormalId.Front, { TextColor3 = P.barnRed, TextStrokeTransparency = 1 })
@@ -455,95 +491,283 @@ local function stand(b, i)
 	return m
 end
 
+-- The walls of the business building at a stage: a front with the storefront, the sides, the back with big doors
+-- open onto the farm (doors = how many, each doorW wide), all solid where they're wall
+local function shell(m, o, W, D, H, wall, doors, doorW, doorH)
+	Shapes.part(m, Vector3.new(W, 0.6, D), o * CFrame.new(0, 0.3, 0), P.concrete, { CanCollide = true }).Name = "Floor"
+	Shapes.part(m, Vector3.new(0.8, H, D), o * CFrame.new(-W / 2, H / 2, 0), wall, { CanCollide = true })
+	Shapes.part(m, Vector3.new(0.8, H, D), o * CFrame.new(W / 2, H / 2, 0), wall, { CanCollide = true })
+	-- the back wall: piers between the open doors, a lintel over them, a striped frame round each
+	local pitch = W / doors
+	for k = 0, doors do
+		local x0 = -W / 2 + k * pitch
+		local pier = k == 0 and (pitch - doorW) / 2 or (k == doors and (pitch - doorW) / 2 or pitch - doorW)
+		local cx = k == 0 and -W / 2 + pier / 2 or (k == doors and W / 2 - pier / 2 or x0)
+		Shapes.part(m, Vector3.new(pier, H, 0.8), o * CFrame.new(cx, H / 2, D / 2), wall, { CanCollide = true })
+	end
+	Shapes.part(
+		m,
+		Vector3.new(W, H - doorH, 0.8),
+		o * CFrame.new(0, doorH + (H - doorH) / 2, D / 2),
+		wall,
+		{ CanCollide = true }
+	)
+	for k = 1, doors do
+		local x = -W / 2 + (k - 0.5) * pitch
+		Shapes.part(m, Vector3.new(doorW + 1, 0.8, 1), o * CFrame.new(x, doorH + 0.4, D / 2 + 0.2), P.safetyYellow)
+		for _, side in { -1, 1 } do
+			Shapes.part(
+				m,
+				Vector3.new(0.6, doorH, 1),
+				o * CFrame.new(x + side * (doorW / 2 + 0.2), doorH / 2, D / 2 + 0.2),
+				P.safetyYellow
+			)
+		end
+		-- the rolled-up door in its drum over the opening
+		Shapes.cylinder(m, Vector3.new(doorW, 1.6, 1.6), o * CFrame.new(x, doorH + 1.6, D / 2 - 0.6), P.steelDark)
+	end
+end
+
+-- The shop: the stand grown into a building where it stood, shelves inside, double doors at the back
 local function shop(b, i)
-	local s = Layout.SPOTS.stand
-	local o = cf(i, s.x, s.z + 4, 0)
+	local x0, z0, B = Layout.building("shop")
+	local o = cf(i, x0, z0, 0)
 	local m = Shapes.model(b, "Business")
-	local W, D, H = 30, 18, 9
+	local W, D, H = B.w, B.d, B.h
 	local frame = rgb(70, 50, 40)
-	Shapes.part(m, Vector3.new(W + 6, 0.2, 12), o * CFrame.new(0, 0.1, -D / 2 - 6), P.path).Material =
-		Enum.Material.Cobblestone
-	Shapes.part(m, Vector3.new(W, 0.6, D), o * CFrame.new(0, 0.3, 0), P.concrete, { CanCollide = true })
-	Shapes.part(m, Vector3.new(0.6, H, D), o * CFrame.new(-W / 2, H / 2, 0), P.cream, { CanCollide = true })
-	Shapes.part(m, Vector3.new(0.6, H, D), o * CFrame.new(W / 2, H / 2, 0), P.cream, { CanCollide = true })
-	Shapes.part(m, Vector3.new(W, H, 0.6), o * CFrame.new(0, H / 2, D / 2), P.cream, { CanCollide = true })
-	for _, x in { -10, 10 } do
-		Shapes.part(m, Vector3.new(10, H, 0.6), o * CFrame.new(x, H / 2, -D / 2), P.cream, { CanCollide = true })
-		Shapes.part(m, Vector3.new(7.6, 5.2, 0.5), o * CFrame.new(x, 4.6, -D / 2 - 0.15), frame)
-		Shapes.part(m, Vector3.new(7, 4.6, 0.3), o * CFrame.new(x, 4.6, -D / 2 - 0.3), P.glass)
+	shell(m, o, W, D, H, P.cream, 1, 12, 7.5)
+	-- the front: two big windows, the entrance between them
+	for _, x in { -12, 12 } do
+		Shapes.part(m, Vector3.new(16, H, 0.6), o * CFrame.new(x, H / 2, -D / 2), P.cream, { CanCollide = true })
+		Shapes.part(m, Vector3.new(11.6, 5.2, 0.5), o * CFrame.new(x, 4.6, -D / 2 - 0.15), frame)
+		Shapes.part(m, Vector3.new(11, 4.6, 0.3), o * CFrame.new(x, 4.6, -D / 2 - 0.3), P.glass)
 		Shapes.part(m, Vector3.new(0.3, 4.6, 0.35), o * CFrame.new(x, 4.6, -D / 2 - 0.32), frame)
-		Shapes.part(m, Vector3.new(7, 0.3, 0.35), o * CFrame.new(x, 4.6, -D / 2 - 0.32), frame)
-		Shapes.part(m, Vector3.new(8.4, 1, 1.6), o * CFrame.new(x, 1.5, -D / 2 - 0.9), P.woodDark)
-		for k = -2, 2 do
+		Shapes.part(m, Vector3.new(12.4, 1, 1.6), o * CFrame.new(x, 1.5, -D / 2 - 0.9), P.woodDark)
+		for k = -3, 3 do
 			Shapes.ball(
 				m,
 				Vector3.new(0.9, 0.9, 0.9),
-				o * CFrame.new(x + k * 1.5, 2.3, -D / 2 - 0.9),
-				({ rgb(255, 90, 90), rgb(255, 210, 60), rgb(250, 120, 200) })[(k + 2) % 3 + 1]
+				o * CFrame.new(x + k * 1.6, 2.3, -D / 2 - 0.9),
+				({ rgb(255, 90, 90), rgb(255, 210, 60), rgb(250, 120, 200) })[(k + 3) % 3 + 1]
 			)
 		end
 	end
-	Shapes.part(m, Vector3.new(10, 2.5, 0.6), o * CFrame.new(0, H - 1.25, -D / 2), P.cream, { CanCollide = true })
-	Shapes.part(m, Vector3.new(0.5, 7, 0.6), o * CFrame.new(-4.75, 3.5, -D / 2), frame)
-	Shapes.part(m, Vector3.new(0.5, 7, 0.6), o * CFrame.new(4.75, 3.5, -D / 2), frame)
+	Shapes.part(
+		m,
+		Vector3.new(8, H - 7, 0.6),
+		o * CFrame.new(0, 7 + (H - 7) / 2, -D / 2),
+		P.cream,
+		{ CanCollide = true }
+	)
+	for _, x in { -4, 4 } do
+		Shapes.part(m, Vector3.new(0.5, 7, 0.6), o * CFrame.new(x, 3.5, -D / 2), frame)
+	end
+	-- the roof: a green gable over a dark band
 	Shapes.wedge(
 		m,
-		Vector3.new(D + 2, 4.5, W / 2 + 1),
-		o * CFrame.new(-W / 4 - 0.2, H + 2.25, 0) * CFrame.Angles(0, math.pi / 2, 0),
+		Vector3.new(D + 2, 5, W / 2 + 1),
+		o * CFrame.new(-W / 4 - 0.2, H + 2.5, 0) * CFrame.Angles(0, math.pi / 2, 0),
 		P.roofGreen
 	)
 	Shapes.wedge(
 		m,
-		Vector3.new(D + 2, 4.5, W / 2 + 1),
-		o * CFrame.new(W / 4 + 0.2, H + 2.25, 0) * CFrame.Angles(0, -math.pi / 2, 0),
+		Vector3.new(D + 2, 5, W / 2 + 1),
+		o * CFrame.new(W / 4 + 0.2, H + 2.5, 0) * CFrame.Angles(0, -math.pi / 2, 0),
 		P.roofGreen
 	)
 	Shapes.part(m, Vector3.new(W + 2, 0.6, D + 2), o * CFrame.new(0, H + 0.3, 0), P.woodDark)
-	Shapes.part(m, Vector3.new(2, 4, 2), o * CFrame.new(W / 2 - 5, H + 4, 3), rgb(150, 100, 80)).Material =
-		Enum.Material.Brick
-	awning(m, o * CFrame.new(0, 7.2, -D / 2 - 2.2), 28, 5)
-	local counter = Shapes.part(m, Vector3.new(14, 2.8, 2), o * CFrame.new(0, 1.4, -3), P.wood)
+	awning(m, o * CFrame.new(0, 7.6, -D / 2 - 2.2), W - 2, 5)
+	local counter = Shapes.part(m, Vector3.new(14, 2.8, 2), o * CFrame.new(0, 1.4, -D / 2 + 4), P.wood)
 	counter.Name = "Counter"
-	Shapes.part(m, Vector3.new(2, 1.2, 1.2), o * CFrame.new(5, 3.4, -3), P.steelDark)
-	for k = 0, 3 do
-		for _, y in { 2, 4.6 } do
-			Shapes.part(m, Vector3.new(6, 0.3, 1.4), o * CFrame.new(-10.5 + k * 7, y, D / 2 - 1.2), P.woodDark)
-			for j = 0, 2 do
+	Shapes.part(m, Vector3.new(2, 1.2, 1.2), o * CFrame.new(5, 3.4, -D / 2 + 4), P.steelDark)
+	-- the shelves along the back, either side of the doors (StockController fills them)
+	for _, side in { -1, 1 } do
+		for _, y in { 0.5, 2.7 } do
+			for row = 0, 1 do
 				Shapes.part(
 					m,
-					Vector3.new(1.4, 1.2, 1.1),
-					o * CFrame.new(-12.5 + k * 7 + j * 2, y + 0.8, D / 2 - 1.2),
-					FRUIT[(k + j + (y > 3 and 1 or 0)) % 6 + 1]
+					Vector3.new(12.4, 0.2, 2),
+					o * CFrame.new(side * 12.3, y, D / 2 - 2.2 - row * 2.4),
+					P.woodDark
 				)
 			end
 		end
 	end
-	local stock = Shapes.folder(m, "StockArea")
-	for k = 0, 5 do
-		crate(
-			stock,
-			o * CFrame.new(W / 2 - 2.4, 0.3 + (k // 3) * 1.6, -6 + (k % 3) * 2.6),
-			FRUIT[k % 6 + 1],
-			k % 2 == 0
-		)
-	end
-	local sign = Shapes.part(m, Vector3.new(16, 2.4, 0.5), o * CFrame.new(0, H + 1.6, -D / 2 - 0.6), P.barnRed)
+	local sign = Shapes.part(m, Vector3.new(18, 2.4, 0.5), o * CFrame.new(0, H + 1.6, -D / 2 - 0.6), P.barnRed)
 	sign.Name = "Sign"
 	Shapes.face(sign, "FRUIT SHOP", Enum.NormalId.Front, { TextColor3 = P.white, TextStrokeTransparency = 1 })
 	for k = -3, 3 do
-		Shapes.ball(m, Vector3.new(0.5, 0.5, 0.5), o * CFrame.new(k * 2.5, H + 3, -D / 2 - 0.7), rgb(255, 240, 180)).Material =
+		Shapes.ball(m, Vector3.new(0.5, 0.5, 0.5), o * CFrame.new(k * 2.6, H + 3, -D / 2 - 0.7), rgb(255, 240, 180)).Material =
 			Enum.Material.Neon
 	end
 	Shapes.part(m, Vector3.new(5, 0.4, 1.4), o * CFrame.new(-W / 2 + 4, 1.4, -D / 2 - 4), P.wood)
 	Shapes.part(m, Vector3.new(5, 1.6, 0.3), o * CFrame.new(-W / 2 + 4, 2.4, -D / 2 - 3.4), P.wood)
-	Shapes.cylinder(
+	return m
+end
+
+-- The warehouse (and the distribution centre): the shop grown into a great shed where it stood. The storefront and
+-- counter at the front, racks inside (StockController fills them; the pallet yard outside takes the rest), three
+-- big doors open at the back onto the farm, the loading docks on the right wall over the truck yard.
+local function warehouse(b, i, view)
+	local big = view.stage == "center"
+	local x0, z0, B = Layout.building(view.stage)
+	local W, D, H = B.w, B.d, B.h
+	local o = cf(i, x0, z0, 0)
+	local m = Shapes.model(b, "Business")
+	m:SetAttribute("Warehouse", true)
+	local wall = big and P.steel or P.concrete
+	local frame = rgb(60, 64, 72)
+	-- the shell: the side walls, the back with its doors; the right wall is built with the docks below
+	Shapes.part(m, Vector3.new(W, 0.6, D), o * CFrame.new(0, 0.3, 0), P.concrete, { CanCollide = true }).Name = "Floor"
+	Shapes.part(m, Vector3.new(0.8, H, D), o * CFrame.new(-W / 2, H / 2, 0), wall, { CanCollide = true })
+	local doors, doorW, doorH = 3, big and 22 or 18, big and 15 or 13
+	local pitch = W / doors
+	for k = 0, doors do
+		local pier = (k == 0 or k == doors) and (pitch - doorW) / 2 or pitch - doorW
+		local cx = k == 0 and -W / 2 + pier / 2 or (k == doors and W / 2 - pier / 2 or -W / 2 + k * pitch)
+		Shapes.part(m, Vector3.new(pier, H, 0.8), o * CFrame.new(cx, H / 2, D / 2), wall, { CanCollide = true })
+	end
+	Shapes.part(
 		m,
-		Vector3.new(2.2, 1.6, 1.6),
-		o * CFrame.new(W / 2 - 3, 1.1, -D / 2 - 4) * CFrame.Angles(0, 0, math.pi / 2),
-		P.steelDark
+		Vector3.new(W, H - doorH, 0.8),
+		o * CFrame.new(0, doorH + (H - doorH) / 2, D / 2),
+		wall,
+		{ CanCollide = true }
 	)
-	for k = 1, 5 do
-		Shapes.part(m, Vector3.new(1.4, 0.08, 1.4), o * CFrame.new(0, 0.22, -D / 2 - 2 - k * 2.4), P.concrete)
+	for k = 1, doors do
+		local x = -W / 2 + (k - 0.5) * pitch
+		Shapes.part(m, Vector3.new(doorW + 1.2, 1, 1), o * CFrame.new(x, doorH + 0.5, D / 2 + 0.2), P.safetyYellow)
+		for _, side in { -1, 1 } do
+			Shapes.part(
+				m,
+				Vector3.new(0.8, doorH, 1),
+				o * CFrame.new(x + side * (doorW / 2 + 0.2), doorH / 2, D / 2 + 0.2),
+				P.safetyYellow
+			)
+		end
+		Shapes.cylinder(m, Vector3.new(doorW, 2, 2), o * CFrame.new(x, doorH + 2, D / 2 - 0.8), P.steelDark)
+	end
+	-- the front: the storefront (glass between steel posts), the entrance, the counter inside
+	for _, x in { -W / 4 - 4, W / 4 + 4 } do
+		local w = W / 2 - 14
+		Shapes.part(m, Vector3.new(w, 3, 0.8), o * CFrame.new(x, 1.5, -D / 2), wall, { CanCollide = true })
+		local glass =
+			Shapes.part(m, Vector3.new(w, 7, 0.4), o * CFrame.new(x, 6.5, -D / 2), P.glass, { CanCollide = true })
+		glass.Transparency = 0.35
+		for k = 0, math.floor(w / 6) do
+			Shapes.part(
+				m,
+				Vector3.new(0.5, 7, 0.6),
+				o * CFrame.new(x - w / 2 + k * w / math.floor(w / 6), 6.5, -D / 2),
+				frame
+			)
+		end
+	end
+	Shapes.part(
+		m,
+		Vector3.new(W, H - 10, 0.8),
+		o * CFrame.new(0, 10 + (H - 10) / 2, -D / 2),
+		wall,
+		{ CanCollide = true }
+	)
+	for _, x in { -6, 6 } do
+		Shapes.part(m, Vector3.new(0.8, 10, 0.9), o * CFrame.new(x, 5, -D / 2), frame)
+	end
+	Shapes.part(m, Vector3.new(W + 0.4, 1.4, 0.3), o * CFrame.new(0, 10.8, -D / 2 - 0.5), P.safetyYellow)
+	awning(m, o * CFrame.new(0, 9.4, -D / 2 - 2.4), 14, 5)
+	local counter = Shapes.part(m, Vector3.new(16, 2.8, 2), o * CFrame.new(0, 1.4, -D / 2 + 5), P.wood)
+	counter.Name = "Counter"
+	Shapes.part(m, Vector3.new(2, 1.2, 1.2), o * CFrame.new(6, 3.4, -D / 2 + 5), P.steelDark)
+	-- the right wall over the truck yard: the dock doors
+	local docks = math.clamp(view.docks or 1, 1, big and 6 or 4)
+	local dpitch = (D - 20) / docks
+	local ddoor = math.min(9, dpitch - 2)
+	local dz0 = -D / 2 + 16
+	Shapes.part(m, Vector3.new(0.8, H, 16), o * CFrame.new(W / 2, H / 2, -D / 2 + 8), wall, { CanCollide = true })
+	Shapes.part(m, Vector3.new(0.8, H, 4), o * CFrame.new(W / 2, H / 2, D / 2 - 2), wall, { CanCollide = true })
+	for k = 0, docks - 1 do
+		local zc = dz0 + (k + 0.5) * dpitch
+		for _, side in { -1, 1 } do
+			local pz = zc + side * (ddoor / 2 + (dpitch - ddoor) / 4)
+			Shapes.part(
+				m,
+				Vector3.new(0.8, H, (dpitch - ddoor) / 2),
+				o * CFrame.new(W / 2, H / 2, pz),
+				wall,
+				{ CanCollide = true }
+			)
+		end
+		Shapes.part(m, Vector3.new(0.8, H - 9, ddoor), o * CFrame.new(W / 2, 9 + (H - 9) / 2, zc), wall)
+		Shapes.part(m, Vector3.new(0.5, 1.4, ddoor + 0.4), o * CFrame.new(W / 2 + 0.3, 9.7, zc), P.safetyYellow)
+		local bay = Shapes.part(m, Vector3.new(6, 0.3, ddoor), o * CFrame.new(W / 2 + 3.4, 1.35, zc), P.safetyYellow)
+		bay.Name = "Dock"
+		bay:SetAttribute("Index", k + 1)
+		Shapes.part(m, Vector3.new(0.5, 2.2, ddoor), o * CFrame.new(W / 2 + 6.6, 1.1, zc), P.steelDark)
+	end
+	local platform = Shapes.part(
+		m,
+		Vector3.new(6.4, 1.2, D - 18),
+		o * CFrame.new(W / 2 + 3.6, 0.6, 2),
+		P.concrete,
+		{ CanCollide = true }
+	)
+	platform.Name = "Platform"
+	-- the racks: uprights and beams down each row (the pallets on them are StockController's)
+	for _, r in Layout.racks(view.stage) do
+		local len = r.x1 - r.x0 + Layout.PALLET + 1
+		local cx = (r.x0 + r.x1) / 2
+		for level = 1, r.levels do
+			for _, dz in { -1.9, 1.9 } do
+				Shapes.part(
+					m,
+					Vector3.new(len, 0.3, 0.3),
+					cf(i, cx, r.z + dz, 0.45 + level * 4.2 - 0.3),
+					rgb(244, 116, 32)
+				)
+			end
+		end
+		for x = r.x0 - 2.2, r.x1 + 2.3, 8.8 do
+			for _, dz in { -1.9, 1.9 } do
+				Shapes.part(
+					m,
+					Vector3.new(0.35, r.levels * 4.2 + 0.6, 0.35),
+					cf(i, x, r.z + dz, (r.levels * 4.2 + 0.6) / 2 + 0.6),
+					rgb(44, 96, 190)
+				)
+			end
+		end
+	end
+	-- the roof: a dark steel lid with skylights (light falls on the racks)
+	Shapes.part(m, Vector3.new(W + 2, 0.8, D + 2), o * CFrame.new(0, H + 0.4, 0), P.steelDark)
+	for k = 1, 4 do
+		local sky = Shapes.part(m, Vector3.new(W * 0.8, 0.6, 3), o * CFrame.new(0, H + 1, -D / 2 + k * D / 5), P.glass)
+		sky.Transparency = 0.3
+	end
+	local sign = Shapes.part(m, Vector3.new(W * 0.5, 4, 0.5), o * CFrame.new(0, H - 3, -D / 2 - 0.6), P.roofBlue)
+	sign.Name = "Sign"
+	Shapes.face(
+		sign,
+		big and "DISTRIBUTION CENTRE" or "WAREHOUSE",
+		Enum.NormalId.Front,
+		{ TextColor3 = P.white, TextStrokeTransparency = 1 }
+	)
+	if big then
+		Shapes.part(m, Vector3.new(4, 10, 4), o * CFrame.new(W / 2 - 4, H + 5, -D / 2 + 4), P.steelDark)
+		Shapes.ball(m, Vector3.new(1.2, 1.2, 1.2), o * CFrame.new(W / 2 - 4, H + 10.6, -D / 2 + 4), rgb(255, 60, 60)).Material =
+			Enum.Material.Neon
+	end
+	return m
+end
+
+-- The silos at the back (warehouse and up)
+local function silos(b, i)
+	local m = Shapes.model(b, "Silos")
+	local si = Layout.SPOTS.silo
+	for k = 0, 1 do
+		local so = cf(i, si.x + k * 7, si.z, 0)
+		Shapes.cylinder(m, Vector3.new(14, 5, 5), so * CFrame.new(0, 7, 0) * CFrame.Angles(0, 0, math.pi / 2), P.steel)
+		Shapes.ball(m, Vector3.new(5, 3, 5), so * CFrame.new(0, 14.2, 0), P.steelDark)
+		Shapes.part(m, Vector3.new(0.4, 14, 0.4), so * CFrame.new(2.6, 7, 0), P.steelDark)
 	end
 	return m
 end
@@ -597,116 +821,6 @@ local function house(b, i, view)
 		Shapes.part(m, Vector3.new(5, 8, 5), o * CFrame.new(-W / 2 + 3, H + 4, D / 2 - 3), wall)
 		Shapes.part(m, Vector3.new(0.3, 6, 0.3), o * CFrame.new(-W / 2 + 3, H + 11, D / 2 - 3), P.steelDark)
 		Shapes.part(m, Vector3.new(3, 2, 0.2), o * CFrame.new(-W / 2 + 4.6, H + 13, D / 2 - 3), P.safetyYellow)
-	end
-	return m
-end
-
-local function warehouse(b, i, view)
-	local s = Layout.SPOTS.warehouse
-	local big = view.stage == "center"
-	local W, D, H = big and 68 or 50, big and 44 or 34, big and 16 or 12
-	if big then
-		s = Layout.SPOTS.center
-	end
-	local o = cf(i, s.x, s.z, 0)
-	local m = Shapes.model(b, "Warehouse")
-	local wall = big and P.steel or P.concrete
-	local yard = Shapes.part(m, Vector3.new(W + 10, 0.2, D + 10), o * CFrame.new(2, 0.1, 0), P.concrete)
-	yard.Material = Enum.Material.Concrete
-	Shapes.part(m, Vector3.new(W, 0.6, D), o * CFrame.new(0, 0.3, 0), P.concrete, { CanCollide = true })
-	Shapes.part(m, Vector3.new(W, H, 0.8), o * CFrame.new(0, H / 2, D / 2), wall, { CanCollide = true })
-	Shapes.part(m, Vector3.new(W, H, 0.8), o * CFrame.new(0, H / 2, -D / 2), wall, { CanCollide = true })
-	Shapes.part(m, Vector3.new(0.8, H, D), o * CFrame.new(-W / 2, H / 2, 0), wall, { CanCollide = true })
-	for k = 1, math.floor(W / 6) - 1 do
-		Shapes.part(
-			m,
-			Vector3.new(0.3, H - 1, 0.3),
-			o * CFrame.new(-W / 2 + k * 6, H / 2, -D / 2 - 0.5),
-			wall:Lerp(Color3.new(0, 0, 0), 0.12)
-		)
-	end
-	Shapes.part(m, Vector3.new(W, 1.4, 0.3), o * CFrame.new(0, H - 2.2, -D / 2 - 0.5), P.safetyYellow)
-	local docks = math.clamp(view.docks or 1, 1, big and 5 or 3) -- (the doors drawn: the rest are round the side)
-	local pitch = D / (docks + 1)
-	local door = math.min(7, pitch - 1.5)
-	for k = 0, docks do
-		local z0 = -D / 2 + k * pitch
-		Shapes.part(
-			m,
-			Vector3.new(0.8, H, pitch - door),
-			o * CFrame.new(W / 2, H / 2, z0 + pitch / 2),
-			wall,
-			{ CanCollide = true }
-		)
-	end
-	Shapes.part(m, Vector3.new(0.8, H - 7, D), o * CFrame.new(W / 2, H - (H - 7) / 2, 0), wall)
-	for k = 1, docks do
-		local z = -D / 2 + k * pitch
-		Shapes.part(m, Vector3.new(0.5, 1.6, door + 0.4), o * CFrame.new(W / 2 + 0.2, 7.3, z), P.safetyYellow)
-		Shapes.part(m, Vector3.new(0.5, 0.5, door + 0.4), o * CFrame.new(W / 2 + 0.25, 6.4, z), rgb(30, 30, 34))
-	end
-	Shapes.part(m, Vector3.new(W + 2, 0.8, D + 2), o * CFrame.new(0, H + 0.4, 0), P.steelDark)
-	for k = 1, 3 do
-		Shapes.part(m, Vector3.new(W * 0.7, 0.6, 3), o * CFrame.new(0, H + 1, -D / 2 + k * D / 4), P.glass)
-	end
-	local platform =
-		Shapes.part(m, Vector3.new(7, 1.2, D), o * CFrame.new(W / 2 + 3.5, 0.6, 0), P.concrete, { CanCollide = true })
-	platform.Name = "Platform"
-	for k = 1, docks do
-		local z = -D / 2 + k * pitch
-		local bay = Shapes.part(m, Vector3.new(6, 0.3, 5), o * CFrame.new(W / 2 + 3.5, 1.25, z), P.safetyYellow)
-		bay.Name = "Dock"
-		bay:SetAttribute("Index", k)
-		Shapes.part(m, Vector3.new(0.5, 2.2, 5), o * CFrame.new(W / 2 + 7, 0.7, z), P.steelDark)
-		for _, dz in { -3.5, 3.5 } do
-			Shapes.cylinder(
-				m,
-				Vector3.new(2, 0.8, 0.8),
-				o * CFrame.new(W / 2 + 7.4, 1.2, z + dz) * CFrame.Angles(0, 0, math.pi / 2),
-				P.safetyYellow
-			)
-		end
-	end
-	local pallets = Shapes.folder(m, "Pallets")
-	for k = 0, (big and 11 or 5) do
-		Models.pallet(
-			pallets,
-			o * CFrame.new(-W / 2 + 5 + (k % 4) * 6, 0.6, -D / 2 + 5 + (k // 4) * 6),
-			({ P.wood, P.barnRed, P.roofGreen })[k % 3 + 1]
-		)
-	end
-	for k = 0, math.floor(W / 8) - 1 do
-		Shapes.part(m, Vector3.new(6, 0.3, 2), o * CFrame.new(-W / 2 + 4 + k * 8, 4, D / 2 - 2), rgb(244, 116, 32))
-		Shapes.part(m, Vector3.new(6, 0.3, 2), o * CFrame.new(-W / 2 + 4 + k * 8, 7.5, D / 2 - 2), rgb(244, 116, 32))
-		Shapes.part(m, Vector3.new(0.3, 9, 0.3), o * CFrame.new(-W / 2 + 1 + k * 8, 4.5, D / 2 - 2), rgb(44, 96, 190))
-	end
-	Shapes.part(m, Vector3.new(10, 5, 6), o * CFrame.new(-W / 2 + 6, 2.8, -D / 2 - 4), P.cream)
-	Shapes.part(m, Vector3.new(8, 2, 0.3), o * CFrame.new(-W / 2 + 6, 3.2, -D / 2 - 7.1), P.glass)
-	local sign = Shapes.part(m, Vector3.new(W * 0.55, 3, 0.4), o * CFrame.new(4, H - 5, -D / 2 - 0.6), P.roofBlue)
-	sign.Name = "Sign"
-	Shapes.face(
-		sign,
-		big and "DISTRIBUTION CENTRE" or "WAREHOUSE",
-		Enum.NormalId.Front,
-		{ TextColor3 = P.white, TextStrokeTransparency = 1 }
-	)
-	if big then
-		Shapes.cylinder(
-			m,
-			Vector3.new(D, 2, 2),
-			o * CFrame.new(-W / 2 + 6, H - 3, 0) * CFrame.Angles(math.pi / 2, 0, 0),
-			P.steel
-		)
-		Shapes.part(m, Vector3.new(4, 10, 4), o * CFrame.new(W / 2 - 4, H + 5, -D / 2 + 4), P.steelDark)
-		Shapes.ball(m, Vector3.new(1.2, 1.2, 1.2), o * CFrame.new(W / 2 - 4, H + 10.6, -D / 2 + 4), rgb(255, 60, 60)).Material =
-			Enum.Material.Neon
-	end
-	local si = Layout.SPOTS.silo
-	for k = 0, 1 do
-		local so = cf(i, si.x + k * 7, si.z, 0)
-		Shapes.cylinder(m, Vector3.new(14, 5, 5), so * CFrame.new(0, 7, 0) * CFrame.Angles(0, 0, math.pi / 2), P.steel)
-		Shapes.ball(m, Vector3.new(5, 3, 5), so * CFrame.new(0, 14.2, 0), P.steelDark)
-		Shapes.part(m, Vector3.new(0.4, 14, 0.4), so * CFrame.new(2.6, 7, 0), P.steelDark)
 	end
 	return m
 end
@@ -783,22 +897,29 @@ function TerritoryBuilder.buildings(model, i, view)
 		old:Destroy()
 	end
 	local b = Shapes.folder(model, "Buildings")
+	-- the business: one building at the front that grows where it stands
 	if view.stage == "stand" then
 		stand(b, i)
-	else
+	elseif view.stage == "shop" then
 		shop(b, i)
+	else
+		local m = warehouse(b, i, view)
+		local _, _, B = Layout.building(view.stage)
+		local trucks = Shapes.folder(b, "Trucks")
+		-- a truck backed up to every dock, nose to the avenue side of the yard
+		for _, d in m:GetChildren() do
+			if d.Name == "Dock" then
+				local t = Models.truck(trucks, view.paint or P.truckWhite)
+				t:SetAttribute("Index", d:GetAttribute("Index"))
+				local _, lz = Layout.toLocal(i, d.Position)
+				t:PivotTo(cf(i, B.w / 2 + 14, lz, 0, -math.pi / 2))
+			end
+		end
+		local fork = Models.forklift(b)
+		fork:PivotTo(cf(i, -10, Layout.FRONT_Z + 18, 0.6))
+		silos(b, i)
 	end
 	house(b, i, view)
-	if view.stage == "warehouse" or view.stage == "center" then
-		warehouse(b, i, view)
-		local trucks = Shapes.folder(b, "Trucks")
-		for k = 1, math.max(1, view.docks or 1) do
-			local t = Models.truck(trucks, view.paint or P.truckWhite)
-			t:SetAttribute("Index", k)
-			t:PivotTo(cf(i, Layout.SPOTS.lane.x, 80 - (k - 1) * 15, 0))
-		end
-		Models.forklift(b):PivotTo(cf(i, Layout.SPOTS.warehouse.x + 8, Layout.SPOTS.warehouse.z - 8, 0.6))
-	end
 	if view.machine and view.machine > 0 then
 		shed(b, i, view)
 	end
@@ -820,15 +941,14 @@ function TerritoryBuilder.preview(model, i, view)
 	local pv = Shapes.folder(model, "Preview")
 	local key = view.next.key
 	local spot, w, d, sign
-	if key == "shop" then
-		spot, w, d = { x = Layout.SPOTS.stand.x, z = Layout.SPOTS.stand.z + 4 }, 30, 18
-		sign = { x = spot.x, z = spot.z + 12 }
-	elseif key == "warehouse" then
-		spot, w, d = Layout.SPOTS.warehouse, 50, 34
-		sign = { x = spot.x, z = spot.z - d / 2 - 4 }
-	elseif key == "center" then
-		spot, w, d = Layout.SPOTS.center, 68, 44
-		sign = { x = spot.x, z = spot.z - d / 2 - 4 }
+	if Layout.BUILDING[key] then
+		-- the next stage of the business: its footprint where it will stand (the building grows in place)
+		local x, z, B = Layout.building(key)
+		spot, w, d = { x = x, z = z }, B.w, B.d
+		sign = { x = -B.w / 2 - 6, z = Layout.FRONT_Z - 4 }
+		if key == "shop" then
+			sign = { x = -B.w / 2 - 6, z = Layout.FRONT_Z + 4 }
+		end
 	else
 		spot, w, d = Layout.SPOTS.region, 8, 8
 		sign = { x = spot.x, z = spot.z - 6 }

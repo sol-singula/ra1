@@ -108,6 +108,10 @@ function TaskService:Primary(player)
 	if lead == "" then
 		text = string.upper(text:sub(1, 1)) .. text:sub(2)
 	end
+	local gain = upgrades:IncomeGain(player, key)
+	if gain >= 1 then
+		text ..= ` · +{Format.cash(gain)}/min`
+	end
 	return {
 		key = "buy:" .. key,
 		text = lead .. text,

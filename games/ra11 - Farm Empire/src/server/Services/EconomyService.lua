@@ -5,7 +5,8 @@ the last sixty seconds (rewards and gifts don't count).
 
   EconomyService:Add(player, amount, why, at)   pays; at = a Vector3 the coins fly from (the client's effect)
   EconomyService:Spend(player, amount, why)     false if they can't afford it
-  EconomyService:Income(player)                 $ a minute over the last minute
+  EconomyService:Income(player)                 $ a minute: the fixed figure from the farm's numbers
+  EconomyService:Earning(player)                what sales actually brought in over the last minute
   EconomyService:Multiplier(player)             prestige and the Golden Market boost
   EconomyService.Changed (player, "cash")
 ]]
@@ -23,7 +24,7 @@ local EconomyService = {
 	EARNING = { sale = true, truck = true, order = true }, -- what counts as income a minute (not rewards)
 }
 
-local data, boosts, analytics
+local data, boosts, analytics, upgrades
 local history = {} -- [player] = { { t, amount }, ... } the last minute's earnings
 local pushDue = {} -- [player] = true: a Profile push is owed (batched to a few a second)
 
@@ -41,6 +42,14 @@ function EconomyService:Multiplier(player)
 end
 
 function EconomyService:Income(player)
+	if upgrades then
+		return upgrades:Income(player) -- (the fixed figure from the farm's numbers)
+	end
+	return self:Earning(player)
+end
+
+-- What sales and trucks actually brought in over the last minute
+function EconomyService:Earning(player)
 	local list = history[player]
 	if not list then
 		return 0
@@ -110,6 +119,7 @@ function EconomyService:Init(registry)
 	data = registry.PlayerDataService
 	boosts = registry.BoostService
 	analytics = registry.AnalyticsService
+	upgrades = registry.UpgradeService -- (it depends on this service; the registry holds it before its Init)
 	Players.PlayerRemoving:Connect(function(player)
 		history[player] = nil
 		pushDue[player] = nil

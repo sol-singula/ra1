@@ -57,7 +57,8 @@ function CropService:Tiles(player)
 	if not p then
 		return out
 	end
-	local n1 = math.min(Layout.FIELDS.field1.tiles, self.STARTER_TILES + 4 * (p.owned.tiles or 0))
+	local n1 =
+		math.min(Layout.FIELDS.field1.tiles, self.STARTER_TILES + Upgrades.tiles.effect.tiles * (p.owned.tiles or 0))
 	for n = 1, n1 do
 		table.insert(out, Layout.tileId("field1", n))
 	end
@@ -81,7 +82,7 @@ function CropService:Owns(player, id)
 		return false
 	end
 	if key == "field1" then
-		return n <= self.STARTER_TILES + 4 * (p.owned.tiles or 0)
+		return n <= self.STARTER_TILES + Upgrades.tiles.effect.tiles * (p.owned.tiles or 0)
 	end
 	return (p.owned[key] or 0) > 0
 end

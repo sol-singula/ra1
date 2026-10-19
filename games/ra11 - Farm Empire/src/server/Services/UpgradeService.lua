@@ -7,6 +7,8 @@ to save for).
 
   UpgradeService:Buy(player, key)    ok, why
   UpgradeService:Recommend(player)   key, the bottleneck, affordable
+  UpgradeService:Income(player)      the income a minute (a fixed figure from the farm's numbers)
+  UpgradeService:IncomeGain(player, key)   what its next level adds to that
   UpgradeService:Push(player)
   UpgradeService.Applied (player, key, level)
 ]]
@@ -97,6 +99,35 @@ end
 -- (customers come as fast as it serves), the docks `dispatch`; what's really sold is the smallest link, at `avg`
 -- a unit. An upgrade's gain is how much `moved x avg` grows.
 UpgradeService.HAND_RATE = 36 -- tiles a minute a player clears by hand, about
+
+-- The farm's income a minute: a fixed figure worked out from the numbers (what's grown, cleared and sold, at the
+-- price a unit sells for), not a rolling sum of what came in, so it only moves when something changes
+function UpgradeService:Income(player)
+	local p = data:Get(player)
+	if not p then
+		return 0
+	end
+	local n = business:Numbers(player)
+	local f = crops:Summary(player)
+	local tier = Upgrades.machine(p.owned)
+	local clear = tier > 0 and automation:Rate(player) or self.HAND_RATE
+	local prod = math.min(f.perMinute, clear)
+	local mult = Upgrades.priceMult(p.owned) * (1 + Animals.boost(p, "price", os.time()))
+	local avg = (f.perMinute > 0 and f.valuePerMinute / f.perMinute or Crops[p.chosen or "strawberry"].value) * mult
+	local counter = math.min(n.service, prod)
+	local trucks = math.min(n.dispatch, math.max(0, prod - counter))
+	return math.floor((counter * avg + trucks * avg * (n.bulkPrice or 1)) * economy:Multiplier(player))
+end
+
+-- What the next level of an upgrade adds to the income a minute (shown under every upgrade)
+function UpgradeService:IncomeGain(player, key)
+	local e = Upgrades[key] and Upgrades[key].effect or {}
+	if e.storage and not e.business then
+		return 0 -- (room for stock: it doesn't change what sells a minute)
+	end
+	return math.floor(self:Gain(player, key) * economy:Multiplier(player))
+end
+
 function UpgradeService:Gain(player, key)
 	local p = data:Get(player)
 	local u = Upgrades[key]
@@ -234,6 +265,7 @@ function UpgradeService:Push(player)
 				cost = why ~= "maxed" and Upgrades.cost(key, p.owned[key] or 0) or nil,
 				can = ok,
 				why = why,
+				gain = why ~= "maxed" and self:IncomeGain(player, key) or nil,
 			})
 		end
 	end

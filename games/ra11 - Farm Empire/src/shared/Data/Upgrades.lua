@@ -33,12 +33,12 @@ end
 -- Stage A: the stand ----------------------------------------------------------------------------------------------
 add("tiles", {
 	name = "More Tiles",
-	desc = "4 more crop tiles in the starter field.",
+	desc = "8 more crop tiles in the home field.",
 	branch = "production",
 	cost = 25,
-	max = 5,
-	mult = 1.9,
-	effect = { tiles = 4 },
+	max = 12,
+	mult = 1.7,
+	effect = { tiles = 8 },
 	fixes = "production",
 })
 add("premium", {
@@ -118,7 +118,7 @@ add("wheat", {
 })
 add("field2", {
 	name = "East Field",
-	desc = "Open a new section of land: 30 tiles.",
+	desc = "Open the East Field: 140 tiles.",
 	branch = "production",
 	cost = 1500,
 	effect = { field = "field2" },
@@ -196,7 +196,7 @@ add("checkout", {
 })
 add("field3", {
 	name = "West Field",
-	desc = "Open a new section of land: 30 tiles.",
+	desc = "Open the West Field: 140 tiles.",
 	branch = "production",
 	cost = 120000,
 	stage = "shop",
@@ -312,7 +312,7 @@ add("melon", {
 })
 add("field4", {
 	name = "North Field",
-	desc = "Open the last section of land: 30 tiles.",
+	desc = "Open the North Field: 180 tiles.",
 	branch = "production",
 	cost = 15000000,
 	stage = "warehouse",
