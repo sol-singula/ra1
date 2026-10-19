@@ -158,7 +158,9 @@ function CropService:Harvest(player, id, by)
 	end
 	p.stats.harvested = (p.stats.harvested or 0) + 1
 	if (p.owned.seeder or 0) > 0 then
-		t.at = os.time() -- replanted at once
+		-- replanted at once, with the crop chosen now (switching crops is one tap on the bar)
+		local next_ = self:Unlocked(player, p.chosen) and p.chosen or t.crop
+		p.tiles[id] = { crop = next_, at = os.time() }
 	else
 		p.tiles[id] = nil
 	end
@@ -250,7 +252,12 @@ function CropService:Init(registry)
 			self:PlantAll(player)
 		end
 	end)
-	registry.UpgradeService.Applied:Connect(function(player)
+	registry.UpgradeService.Applied:Connect(function(player, key)
+		local p = data:Get(player)
+		local e = Upgrades[key] and Upgrades[key].effect or {}
+		if p and (e.tiles or e.field or e.seeder) and (p.owned.seeder or 0) > 0 then
+			self:PlantAll(player) -- (the seeder plants new land too)
+		end
 		pushDue[player] = true
 		self.Changed:Fire(player, "fields")
 	end)

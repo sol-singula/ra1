@@ -56,15 +56,12 @@ local function burst(pos, color, n, size)
 		if k % 2 == 0 then
 			p.Shape = Enum.PartType.Ball
 		end
-		table.insert(
-			bits,
-			{
-				part = p,
-				vel = Vector3.new(math.cos(a) * 6, 9 + (k % 3) * 2, math.sin(a) * 6),
-				t0 = os.clock(),
-				life = 0.9,
-			}
-		)
+		table.insert(bits, {
+			part = p,
+			vel = Vector3.new(math.cos(a) * 6, 9 + (k % 3) * 2, math.sin(a) * 6),
+			t0 = os.clock(),
+			life = 0.9,
+		})
 	end
 end
 

@@ -27,12 +27,12 @@ local data, economy, crops, business, upgrades, analytics
 local lastSent = {} -- [player] = the last primary key sent (so the push only goes on a change)
 
 local WHY = {
-	harvest = "ripe crops are waiting on the tiles",
-	storage = "the stock area is full",
-	service = "the line is longer than the counter can serve",
-	demand = "the counter is idle: more customers would buy",
-	production = "the shelves run empty: grow more",
-	dispatch = "goods arrive faster than the docks send them",
+	harvest = "clears the ripe crops faster",
+	storage = "room for more stock",
+	service = "serves the line faster",
+	demand = "brings more customers to the counter",
+	production = "grows more for the shelves",
+	dispatch = "sends more out by truck",
 	land = "the next step for a bigger business",
 }
 
@@ -67,9 +67,18 @@ function TaskService:Primary(player)
 	local u = Upgrades[key]
 	local cost = Upgrades.cost(key, p.owned[key] or 0)
 	local verb = affordable and "Buy" or "Save for"
+	local b = business:Bottleneck(player)
+	local SEEN = {
+		harvest = "Ripe crops are waiting. ",
+		storage = "Storage is full. ",
+		service = "The line is long. ",
+		demand = "The counter is idle. ",
+		production = "The shelves run empty. ",
+		dispatch = "Pallets are stacking up. ",
+	}
 	return {
 		key = "buy:" .. key,
-		text = `{verb} {u.name} ({Format.cash(cost)}): {WHY[bottleneck] or ""}`,
+		text = `{SEEN[b] or ""}{verb} {u.name} ({Format.cash(cost)}): {WHY[bottleneck] or ""}`,
 		kind = "upgrade",
 		target = key,
 		cost = cost,
@@ -86,17 +95,14 @@ function TaskService:Goals(player)
 	end
 	for _, g in Tasks.GOALS do
 		local have = p.stats[g.stat] or 0
-		table.insert(
-			out,
-			{
-				key = g.key,
-				text = g.text,
-				n = g.n,
-				have = math.min(have, g.n),
-				done = p.task.goals[g.key] == true,
-				reward = g.reward,
-			}
-		)
+		table.insert(out, {
+			key = g.key,
+			text = g.text,
+			n = g.n,
+			have = math.min(have, g.n),
+			done = p.task.goals[g.key] == true,
+			reward = g.reward,
+		})
 		if #out >= 3 and not out[#out].done then
 			break
 		end

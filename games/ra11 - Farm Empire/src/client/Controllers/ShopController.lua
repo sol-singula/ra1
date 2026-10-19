@@ -139,15 +139,12 @@ function ShopController:init()
 		CanvasSize = UDim2.fromOffset(0, 0),
 		Parent = panel.body,
 	})
-	Theme.new(
-		"UIListLayout",
-		{
-			Padding = UDim.new(0, 8),
-			SortOrder = Enum.SortOrder.LayoutOrder,
-			HorizontalAlignment = Enum.HorizontalAlignment.Center,
-			Parent = refs.list,
-		}
-	)
+	Theme.new("UIListLayout", {
+		Padding = UDim.new(0, 8),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		Parent = refs.list,
+	})
 	panel.onOpen = function()
 		Net.send("Shop", "open")
 		paint()

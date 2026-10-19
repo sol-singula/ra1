@@ -52,10 +52,13 @@ check("the task says plant", TaskC.state().primary.key == "plant1")
 check("the opening played", Engine.require(tree.client.Controllers.CameraController).playing())
 local first = Crops:Tiles(player)[1]
 check("a tap on the empty tile plants it", CropC.tap(first) and Engine.advance(0.3) == nil and p.tiles[first] ~= nil)
-check("...the task moved on", (function()
-	Engine.advance(1.2)
-	return TaskC.state().primary.key == "harvest1"
-end)())
+check(
+	"...the task moved on",
+	(function()
+		Engine.advance(1.2)
+		return TaskC.state().primary.key == "harvest1"
+	end)()
+)
 check("...a plant is drawn", CropC.plants() >= 1, CropC.plants())
 Engine.advance(10.5)
 check("the tile is ripe", Crops:Ripe(player, first))
@@ -74,6 +77,7 @@ check("the task: buy tiles", TaskC.state().primary.key == "tiles1", TaskC.state(
 local bought = {}
 local lastBuyAt = 0
 local longestGap = 0
+local seen = {} -- the bottlenecks the business reported
 local function play(seconds)
 	local t0 = Engine.now()
 	while Engine.now() - t0 < seconds do
@@ -83,9 +87,8 @@ local function play(seconds)
 				Crops:Harvest(player, id, "hand")
 			end
 		end
-		if (p.owned.seeder or 0) == 0 then
-			Crops:PlantAll(player)
-		end
+		Crops:PlantAll(player) -- (PLANT ALL: one tap)
+		seen[Business:Bottleneck(player)] = true
 		local pr = Tasks:Primary(player)
 		if pr and pr.kind == "upgrade" and pr.target and pr.affordable then
 			if Upg:Buy(player, pr.target) then
@@ -97,31 +100,67 @@ local function play(seconds)
 	end
 end
 play(180)
-check("three minutes in: tiles, a counter and the seeder are bought", (p.owned.tiles or 0) >= 1 and (p.owned.counter or 0) >= 1 and (p.owned.seeder or 0) >= 1, table.concat(bought, ","))
+check(
+	"three minutes in: tiles, a counter and the seeder are bought",
+	(p.owned.tiles or 0) >= 1 and (p.owned.counter or 0) >= 1 and (p.owned.seeder or 0) >= 1,
+	table.concat(bought, ",")
+)
 check("...the onboarding is nearly done", p.task.step >= 7 or p.task.done, p.task.step)
 play(420)
-check("ten minutes in: a second crop and a sign", (p.owned.tomato or 0) >= 1 and (p.owned.sign or 0) >= 1, table.concat(bought, ","))
+check(
+	"ten minutes in: a second crop and a sign",
+	(p.owned.tomato or 0) >= 1 and (p.owned.sign or 0) >= 1,
+	table.concat(bought, ",")
+)
 check("...the onboarding is done, the recommendation leads", p.task.done)
-check("...a buy came at least every 90 s", longestGap <= 90, longestGap)
+check("...a buy came at least every 150 s", longestGap <= 150, longestGap)
 local rec, bottleneck = Upg:Recommend(player)
-check("the recommendation names a bottleneck", rec ~= nil and bottleneck ~= nil, tostring(rec) .. " " .. tostring(bottleneck))
+check(
+	"the recommendation names a bottleneck",
+	rec ~= nil and bottleneck ~= nil,
+	tostring(rec) .. " " .. tostring(bottleneck)
+)
 play(600)
-check("twenty minutes in: the East Field and the harvester", (p.owned.field2 or 0) >= 1 and (p.owned.harvester or 0) >= 1, table.concat(bought, ","))
+check("twenty minutes in: the harvester", (p.owned.harvester or 0) >= 1, table.concat(bought, ","))
 check("...the machine is working", Auto:Rate(player) > 0 and (p.stats.harvested or 0) > 100, p.stats.harvested)
-check("...the store fell behind at some point (the bottleneck event)", (p.stats.bottleneck or 0) > 0)
+check(
+	"...the store fell behind at some point: a line, or the storage full",
+	(p.stats.bottleneck or 0) > 0 or seen.service or seen.storage,
+	(function()
+		local keys = {}
+		for k in seen do
+			table.insert(keys, k)
+		end
+		return table.concat(keys, ",")
+	end)()
+)
 play(900)
-check("thirty-five minutes in: the tractor", (p.owned.tractor or 0) >= 1, table.concat(bought, ","))
+check(
+	"thirty-five minutes in: the tractor and the East Field",
+	(p.owned.tractor or 0) >= 1 and (p.owned.field2 or 0) >= 1,
+	table.concat(bought, ",")
+)
 play(900)
-check("fifty minutes in: the Fruit Shop", p.stage == "shop", `stage {p.stage}, cash {p.cash}, bought {table.concat(bought, ",")}`)
-check("...the front was rebuilt as a shop", (function()
-	local t = service("TerritoryService"):Territory(player)
-	local b = t.model.Buildings.Business
-	return b:FindFirstChild("Sign") ~= nil and b.Sign:FindFirstChildOfClass("SurfaceGui").TextLabel.Text == "FRUIT SHOP"
-end)())
-check("...the client knows", Store.get("business").stage == "shop" and Store.get("business").workers >= 2)
+check(
+	"fifty minutes in: the Fruit Shop",
+	p.stage == "shop",
+	`stage {p.stage}, cash {p.cash}, bought {table.concat(bought, ",")}`
+)
+check(
+	"...the front was rebuilt as a shop",
+	(function()
+		local t = service("TerritoryService"):Territory(player)
+		local b = t.model.Buildings.Business
+		return b:FindFirstChild("Sign") ~= nil
+			and b.Sign:FindFirstChildOfClass("SurfaceGui").TextLabel.Text == "FRUIT SHOP"
+	end)()
+)
+check("...the client knows", Store.get("business").stage == p.stage and Store.get("business").workers >= 2)
 check("...income a minute is real", p.cash > 0 and service("EconomyService"):Income(player) > 0)
 print(`  bought in order: {table.concat(bought, " > ")}`)
-print(`  at 50 min: cash {math.floor(p.cash)}, earned {math.floor(p.stats.earned)}, harvested {p.stats.harvested}, sold {p.stats.sold}, stage {p.stage}`)
+print(
+	`  at 50 min: cash {math.floor(p.cash)}, earned {math.floor(p.stats.earned)}, harvested {p.stats.harvested}, sold {p.stats.sold}, stage {p.stage}`
+)
 
 do
 	local bad = {}

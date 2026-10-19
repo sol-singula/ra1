@@ -4,7 +4,7 @@ tier clears more tiles a minute. The machine works its way along the route (fiel
 the ripe tiles it reaches, and skips nothing: with 70 of 100 tiles ripe it eventually clears all 70. A full stock
 area makes it wait (the storage bottleneck), never lose crops.
 
-  tier 1 auto-harvester 20 a minute · 2 tractor 50 · 3 combine 120 · 4 fleet 300
+  tier 1 auto-harvester 40 a minute · 2 tractor 90 · 3 combine 200 · 4 fleet 400
   x2 while the Harvest Rush boost is on, x1.25 with the Turbo Machines pass
 
   AutomationService:Rate(player)   tiles a minute (0: no machine)
@@ -20,7 +20,7 @@ local AutomationService = {
 	Name = "AutomationService",
 	Dependencies = { "PlayerDataService", "CropService", "BusinessService" },
 	TICK = 0.5,
-	RATES = { 20, 50, 120, 300 },
+	RATES = { 40, 90, 200, 400 },
 }
 
 local data, crops, boosts

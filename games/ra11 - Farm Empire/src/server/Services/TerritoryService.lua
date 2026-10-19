@@ -276,7 +276,7 @@ function TerritoryService:Init(registry)
 			hrp.CFrame = CFrame.new(0, 3.5, -Layout.TOWN / 2 + 12)
 		elseif what == "go" and type(index) == "number" and byIndex[index] then
 			local g = Layout.SPOTS.gate
-			hrp.CFrame = CFrame.new(Layout.toWorld(index, g.x, g.z - 6, 3.5))
+			hrp.CFrame = CFrame.new(Layout.toWorld(index, g.x - 8, g.z + 5, 3.5))
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)

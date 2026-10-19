@@ -218,7 +218,7 @@ function BusinessService:Step(player, dt)
 		end
 	end
 	-- the line: grows when more come than can be served (and nothing to serve them with is a short line too)
-	local target = n.stock > 0 and math.clamp((n.demand - n.service) / 4, 0, self.QUEUE_MAX) or 0
+	local target = n.stock > 0 and math.clamp((n.demand - n.service) / 2, 0, self.QUEUE_MAX) or 0
 	if n.stock == 0 then
 		target = math.min(2, n.demand / 10)
 	end

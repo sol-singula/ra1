@@ -108,10 +108,10 @@ progression is saved separately from the server's temporary state.
 
 | Tier | Role | Tiles a minute |
 |---|---|---|
-| 1. Auto-Harvester | the earned milestone (~15–20 min) | 20 |
-| 2. Farm Tractor | early expansion | 50 |
-| 3. Combine Harvester | midgame | 120 |
-| 4. Automated Fleet | late game: two machines on the field | 300 |
+| 1. Auto-Harvester | the earned milestone (~15–20 min) | 40 |
+| 2. Farm Tractor | early expansion | 90 |
+| 3. Combine Harvester | midgame | 200 |
+| 4. Automated Fleet | late game: two machines on the field | 400 |
 
 Coverage, harvest rate and storage throughput stay separate variables. A full stock area makes the machine wait,
 never lose crops. Offline: crops grow on their saved timestamps; with a machine the farm also earns at half the
@@ -124,9 +124,9 @@ Each stage has its own look and its own capacity problem (Data/Business).
 | Stage | Look | Base demand / service / storage / dispatch | Bottleneck |
 |---|---|---|---|
 | A. Fruit Stand | a counter, an awning, a few crates | 12 / 10 / 30 / – | the line grows faster than the stand serves; crates fill |
-| B. Fruit Shop ($3,000) | a storefront, shelves, a stockroom, two workers | 60 / 50 / 400 / – | produce beats shelf movement or service |
-| C. Warehouse ($15,000) | pallets, a forklift, docks, trucks buying in bulk at 1.4x | 90 / 80 / 2,000 / 60 | goods arrive faster than the docks dispatch |
-| D. Distribution Centre ($150,000) | six docks, a conveyor, a fleet, bulk contracts at 1.6x | 140 / 120 / 8,000 / 400 | docks, storage and dispatch stay distinct choices |
+| B. Fruit Shop ($2,500) | a storefront, shelves, a stockroom, two workers | 60 / 50 / 400 / – | produce beats shelf movement or service |
+| C. Warehouse ($30,000) | pallets, a forklift, docks, trucks buying in bulk at 1.4x | 90 / 80 / 2,000 / 60 | goods arrive faster than the docks dispatch |
+| D. Distribution Centre ($300,000) | six docks, a conveyor, a fleet, bulk contracts at 1.6x | 140 / 120 / 8,000 / 400 | docks, storage and dispatch stay distinct choices |
 
 Workers and vehicles are scripted, lightweight animations: workers restock, customers walk, queue, buy and leave,
 the forklift shuttles between the pallets and the dock, trucks pull out, drive down the lane and return.
