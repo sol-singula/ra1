@@ -60,7 +60,12 @@ local function paint()
 		elseif (b.queue or 0) >= 4 then
 			text = `🛒 LINE OF {b.queue}: the counter serves {b.service}/min, {b.demand}/min come`
 			color = C.mustard
-		elseif b.stock == 0 and (b.soldPerMin or 0) == 0 and (b.demand or 0) > 0 then
+		elseif
+			b.stock == 0
+			and (b.soldPerMin or 0) == 0
+			and (b.demand or 0) > 0
+			and not (Store.get("task") and Store.get("task").onboarding)
+		then
 			text = "🛒 SHELVES EMPTY: customers are waiting for crops"
 			color = C.mustard
 		elseif (b.demand or 0) > 0 then
@@ -156,7 +161,7 @@ function HudController:init()
 
 	paint()
 	Store.Changed:Connect(function(partial)
-		if partial.profile or partial.business then
+		if partial.profile or partial.business or partial.task then
 			paint()
 		end
 	end)

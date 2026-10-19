@@ -4,6 +4,7 @@ The menu rail: big icon buttons down the right, each opening its panel (UI/Panel
   UPGRADES   the tree (UpgradeController); pulses when the task wants you in it
   SHOP       Robux: boosts, cash, passes (ShopController)
   BOOST      the town's shared boost meter (BoostController)
+  MARKET     the town board's orders (MarketController)
   TOWN/HOME  teleport to the square, or home from anywhere else
 
   MenuController.refs   the buttons (tests)
@@ -27,6 +28,7 @@ MenuController.ITEMS = {
 	{ key = "upgrades", icon = "⬆️", label = "UPGRADES", color = Color3.fromRGB(60, 150, 240) },
 	{ key = "shop",     icon = "🛒", label = "SHOP",     color = Color3.fromRGB(60, 185, 90) },
 	{ key = "boost",    icon = "⚡", label = "BOOST",    color = Color3.fromRGB(255, 170, 40) },
+	{ key = "market",   icon = "📋", label = "MARKET",   color = Color3.fromRGB(206, 58, 50) },
 	{ key = "town",     icon = "🏘️", label = "TOWN",     color = Color3.fromRGB(150, 100, 220) },
 }
 -- stylua: ignore end
@@ -40,7 +42,7 @@ function MenuController:init()
 		Name = "Rail",
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -14, 0, 14),
-		Size = UDim2.fromOffset(74, 320),
+		Size = UDim2.fromOffset(74, 400),
 		BackgroundTransparency = 1,
 		Parent = gui,
 	})

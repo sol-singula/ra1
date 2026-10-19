@@ -211,7 +211,7 @@ function TaskController:init()
 	local col = Theme.new("Frame", {
 		Name = "Goals",
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -16, 0, 100),
+		Position = UDim2.new(1, -100, 0, 14),
 		Size = UDim2.fromOffset(300, 160),
 		BackgroundTransparency = 1,
 		Parent = gui,

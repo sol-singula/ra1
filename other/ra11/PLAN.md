@@ -33,14 +33,17 @@ the harvester tiers, the revenue feedback.
 
 Twelve territories, expansion zones with prices, the town, the boost meter, TOWN/HOME teleports.
 
-## Phase 4 · Content — built with phase 1 (market orders pending)
+## Phase 4 · Content — built
 
-The warehouse, the centre, docks, forklifts, trucks in bulk. The market board's daily orders are next.
+The warehouse, the centre, docks, forklifts, trucks in bulk, and the market board's daily orders (three a day for
+a shop, a bulk contract for a centre, delivered out of stock for a bonus).
 
 ## Phase 5 · Polish — partly
 
 Reveals, transformations, workers, bursts and sounds, the previews. A sound and sky pass is next.
 
-## Phase 6 · Scale — pending
+## Phase 6 · Scale — built, tuning open
 
-Prestige (a new region), leaderboards from the DataStore, tuning from the mock play-through, the store art.
+Prestige (a new region: the farm starts over with +25% a region, a star on the gate), the town's leaderboards from
+OrderedDataStores, the first hour tuned on the mock play-through (the shop at about 28 minutes, the harvester at
+about 17). Open: the store art, and tuning from live telemetry once it's published.

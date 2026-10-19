@@ -46,6 +46,7 @@ local function view(player)
 		owned = p.owned,
 		tiles = crops:Tiles(player),
 		name = player.DisplayName or player.Name,
+		prestige = p.prestige and p.prestige.level or 0,
 		docks = 1 + Upgrades.stat(p.owned, "docks", 0),
 		machine = Upgrades.machine(p.owned),
 		paint = p.cosmetics
@@ -227,6 +228,28 @@ function TerritoryService:Init(registry)
 	folder.Name = "Territories"
 	folder.Parent = workspace
 	town = TownBuilder.build(workspace)
+	-- the light (master plan §9): a warm afternoon sun, soft shadows, a little haze, no heavy post-processing
+	pcall(function()
+		local Lighting = game:GetService("Lighting")
+		Lighting.ClockTime = 14
+		Lighting.Brightness = 2.4
+		Lighting.Ambient = Color3.fromRGB(120, 130, 120)
+		Lighting.OutdoorAmbient = Color3.fromRGB(150, 165, 150)
+		Lighting.ShadowSoftness = 0.4
+		Lighting.EnvironmentDiffuseScale = 0.6
+		Lighting.EnvironmentSpecularScale = 0.3
+		local atmosphere = Instance.new("Atmosphere")
+		atmosphere.Density = 0.28
+		atmosphere.Offset = 0.2
+		atmosphere.Color = Color3.fromRGB(205, 220, 240)
+		atmosphere.Decay = Color3.fromRGB(120, 160, 210)
+		atmosphere.Glare = 0.2
+		atmosphere.Haze = 1.2
+		atmosphere.Parent = Lighting
+		local sky = Instance.new("Sky")
+		sky.SunAngularSize = 16
+		sky.Parent = Lighting
+	end)
 	for i = 1, Constants.TERRITORIES do
 		TerritoryBuilder.empty(folder, i)
 	end

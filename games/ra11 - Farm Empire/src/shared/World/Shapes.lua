@@ -143,7 +143,7 @@ end
 -- The preview look: see-through blue, no collisions
 function Shapes.ghost(part, color)
 	part.Color = color or Color3.fromRGB(120, 200, 255)
-	part.Transparency = 0.6
+	part.Transparency = 0.78
 	part.CanCollide = false
 	part.CastShadow = false
 	part.Material = Enum.Material.ForceField

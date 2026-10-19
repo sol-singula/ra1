@@ -49,7 +49,9 @@ local theirs = Territory:Territory(ben).index
 local cal = Engine.addPlayer("Cal", 903)
 Engine.advance(1)
 local pc = Data:Get(cal)
-for _, key in { "tiles", "tiles", "counter", "seeder", "tomato", "sign", "wheat", "field2", "harvester", "corn", "shop" } do
+for _, key in
+	{ "tiles", "tiles", "counter", "seeder", "tomato", "sign", "wheat", "field2", "harvester", "corn", "shop" }
+do
 	pc.cash = 10 ^ 7
 	Upg:Buy(cal, key)
 end
@@ -136,7 +138,11 @@ do
 	Engine.advance(0.5)
 	shot("panel_boost", at(mine, -26, -78, 14), at(mine, -6, -40, 0), false)
 	Bus.Panel:Fire(nil)
-	Net.fire(player, "Away", { seconds = 5 * 3600, counted = 4 * 3600, earned = 18250, ripe = 24, capped = true, hours = 4 })
+	Net.fire(
+		player,
+		"Away",
+		{ seconds = 5 * 3600, counted = 4 * 3600, earned = 18250, ripe = 24, capped = true, hours = 4 }
+	)
 	Engine.advance(1)
 	shot("away_card", at(mine, -26, -78, 14), at(mine, -6, -40, 0), false)
 	Engine.require(tree.client.Controllers.AwayController).refs.card.Visible = false

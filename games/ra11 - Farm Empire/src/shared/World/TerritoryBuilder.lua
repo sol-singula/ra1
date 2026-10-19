@@ -89,8 +89,10 @@ local function ground(model, i, view)
 	post.Name = "GatePost"
 	local board = Shapes.part(g, Vector3.new(14, 3, 0.6), cf(i, Layout.SPOTS.sign.x, Layout.SPOTS.sign.z, 7.5), P.wood)
 	board.Name = "GateSign"
-	Shapes.face(board, string.upper(view.name or "YOUR") .. " FARM", Enum.NormalId.Front, { PixelsPerStud = 30 })
-	Shapes.face(board, string.upper(view.name or "YOUR") .. " FARM", Enum.NormalId.Back, { PixelsPerStud = 30 })
+	local stars = string.rep("★", math.min(view.prestige or 0, 6))
+	local text = string.upper(view.name or "YOUR") .. " FARM" .. (stars ~= "" and (" " .. stars) or "")
+	Shapes.face(board, text, Enum.NormalId.Front, { PixelsPerStud = 30 })
+	Shapes.face(board, text, Enum.NormalId.Back, { PixelsPerStud = 30 })
 	-- the spawn
 	local spawn = Shapes.part(g, Vector3.new(6, 0.4, 6), cf(i, Layout.SPOTS.spawn.x, Layout.SPOTS.spawn.z, 0.1), P.path)
 	spawn.Name = "Spawn"
