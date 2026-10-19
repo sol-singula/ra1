@@ -13,6 +13,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local Animals = require(ReplicatedStorage.Shared.Data.Animals)
 local Tasks = require(ReplicatedStorage.Shared.Data.Tasks)
 local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
 
@@ -23,19 +24,17 @@ local TaskService = {
 	TICK = 1,
 }
 
-local data, economy, crops, business, upgrades, analytics
+local data, economy, crops, business, upgrades, analytics, animals
 local lastSent = {} -- [player] = the last primary key sent (so the push only goes on a change)
+local lastAt = {} -- [player] = when the last push went
 
-local WHY = {
-	harvest = "clears the ripe crops faster",
-	storage = "room for more stock",
-	service = "serves the line faster",
-	demand = "brings more customers to the counter",
-	production = "grows more for the shelves",
-	dispatch = "sends more out by truck",
-	land = "the next step for a bigger business",
+-- What the bottleneck looks like, in a few words (the HUD's chain shows the same thing)
+local SEEN = {
+	harvest = "Ripe crops are piling up",
+	production = "The shelves keep running empty",
+	service = "Your stock is waiting for the counter",
+	dispatch = "Pallets are stacking up for the trucks",
 }
-
 function TaskService:Primary(player)
 	local p = data:Get(player)
 	if not p then
@@ -61,25 +60,57 @@ function TaskService:Primary(player)
 		end
 		t.done = true
 	end
+	-- between buys there's always something to do: tap a golden crop, feed hungry animals, pet them
+	local g = crops:Golden(player)
+	if g then
+		return {
+			key = "golden:" .. g,
+			text = `A golden crop! Tap it for {Format.cash(crops:GoldenValue(player, g))}`,
+			kind = "golden",
+			target = g,
+		}
+	end
 	local key, bottleneck, affordable = upgrades:Recommend(player)
+	if animals and not affordable then
+		local st = animals:State(player)
+		for _, a in Animals.LIST do
+			local e = st[a]
+			if e and not e.fed then
+				return {
+					key = "feed:" .. a,
+					text = `The {string.lower(Animals[a].name)} are hungry! Step on their FEED plate`,
+					kind = "feed",
+					target = a,
+				}
+			end
+		end
+		for _, a in Animals.LIST do
+			local e = st[a]
+			if e and e.fed and e.petIn == 0 then
+				return {
+					key = "pet:" .. a,
+					text = `Pet the {string.lower(Animals[a].name)} on their FEED plate: boost x2`,
+					kind = "feed",
+					target = a,
+				}
+			end
+		end
+	end
 	if not key then
 		return { key = "free", text = "Keep growing!", kind = "none" }
 	end
 	local u = Upgrades[key]
 	local cost = Upgrades.cost(key, p.owned[key] or 0)
-	local verb = affordable and "Step on the glowing pad:" or "Save up for"
-	local b = business:Bottleneck(player)
-	local SEEN = {
-		harvest = "Ripe crops are waiting. ",
-		storage = "Storage is full. ",
-		service = "The line is long. ",
-		demand = "The counter is idle. ",
-		production = "The shelves run empty. ",
-		dispatch = "Pallets are stacking up. ",
-	}
+	local fits = upgrades.FIXES[bottleneck] and upgrades.FIXES[bottleneck][u.fixes]
+	local lead = fits and SEEN[bottleneck] and (SEEN[bottleneck] .. ": ") or ""
+	local text = affordable and `step on the {u.name} pad ({Format.cash(cost)})`
+		or `save up for {u.name} ({Format.cash(cost)})`
+	if lead == "" then
+		text = string.upper(text:sub(1, 1)) .. text:sub(2)
+	end
 	return {
 		key = "buy:" .. key,
-		text = `{SEEN[b] or ""}{verb} {u.name} ({Format.cash(cost)}): {WHY[bottleneck] or ""}`,
+		text = lead .. text,
 		kind = "upgrade",
 		target = key,
 		cost = cost,
@@ -151,7 +182,7 @@ function TaskService:Step(player)
 					Net.fire(
 						player,
 						"Toast",
-						"You've got the loop! From now on, follow the recommended upgrade.",
+						"You've got the loop! Follow the gold arrow: it always shows the next best thing to do.",
 						"good"
 					)
 				end
@@ -171,7 +202,8 @@ function TaskService:Step(player)
 	end
 	local primary = self:Primary(player)
 	local sig = primary and (primary.key .. tostring(primary.affordable)) or ""
-	if changed or sig ~= lastSent[player] then
+	-- (and every few seconds, so the goals' bars move)
+	if changed or sig ~= lastSent[player] or os.clock() - (lastAt[player] or 0) >= 3 then
 		self:Push(player, primary)
 	end
 end
@@ -183,6 +215,7 @@ function TaskService:Push(player, primary)
 	end
 	primary = primary or self:Primary(player)
 	lastSent[player] = primary and (primary.key .. tostring(primary.affordable)) or ""
+	lastAt[player] = os.clock()
 	Net.fire(player, "Task", {
 		primary = primary,
 		goals = self:Goals(player),
@@ -198,6 +231,7 @@ function TaskService:Init(registry)
 	business = registry.BusinessService
 	upgrades = registry.UpgradeService
 	analytics = registry.AnalyticsService
+	animals = registry.AnimalService
 	Net.on("Task", function(player, what, key)
 		local p = data:Get(player)
 		if not p then

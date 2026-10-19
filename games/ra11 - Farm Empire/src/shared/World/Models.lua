@@ -52,74 +52,126 @@ end
 local INK = rgb(40, 34, 30)
 local YELLOW = rgb(255, 200, 36)
 
+local STEEL = rgb(150, 156, 166)
+local GLASS = rgb(150, 206, 236)
+
+-- A wheel: a dark tyre (its axis along x) with a coloured hub on its outer face
+local function wheel(k, x, y, z, width, dia, hub)
+	k.cyl(x, y, z, width, dia, INK, nil, "Wheel")
+	local side = x >= 0 and 1 or -1
+	k.cyl(x + side * (width / 2 + 0.03), y, z, 0.08, dia * 0.5, hub or YELLOW, nil, "Hub")
+end
+
 -- the machines: 1 the auto-harvester (a little robot harvester), 2 the farm tractor, 3 the combine (the fleet
--- parks two of them). Built facing -z; the body is the PrimaryPart.
+-- parks two of them). Built facing -z on the ground (y = 0); every part rests on or is bolted to another.
 function Models.machine(parent, tier, color)
 	color = color or rgb(222, 56, 48)
 	local m = Shapes.model(parent, "Machine")
 	m:SetAttribute("Tier", tier)
 	local k = kit(m)
-	local body
 	if tier == 1 then
-		body = k.box(0, 1.9, 0, 3.4, 1.8, 4.2, color, "Body")
-		k.box(0, 2.85, 0, 3.5, 0.2, 4.3, Shapes.shade(color, 0.2), "Cap")
-		k.box(0, 3.3, 0.6, 2.4, 0.9, 1.8, rgb(240, 240, 240), "Top")
-		k.box(0, 3.4, -0.4, 2, 0.5, 0.2, rgb(150, 206, 236), "Eyes", Enum.Material.Neon)
-		k.box(0, 1.1, -2.7, 4.4, 0.7, 1.2, YELLOW, "Header")
-		for i = -2, 2 do
-			k.box(i * 0.85, 0.75, -3.35, 0.35, 0.35, 0.6, rgb(150, 156, 166), "Tooth")
-		end
-		k.box(1.2, 4.2, 1.2, 0.3, 1.4, 0.3, INK, "Antenna")
-		k.ball(1.2, 5, 1.2, 0.6, 0.6, 0.6, rgb(255, 80, 60), "Beacon")
-		for _, x in { -1.75, 1.75 } do
-			for _, z in { -1.3, 1.3 } do
-				k.cyl(x, 0.85, z, 0.6, 1.7, INK, nil, "Wheel")
-				k.cyl(x * 1.04, 0.85, z, 0.62, 0.8, YELLOW, nil, "Rim")
+		-- wheels (r 0.8) either side of a chassis, the body on it, a crop bin on top, the cutter bar in front
+		for _, x in { -1.6, 1.6 } do
+			for _, z in { -1.2, 1.3 } do
+				wheel(k, x, 0.8, z, 0.5, 1.6)
 			end
 		end
-	elseif tier == 2 then
-		-- The tractor: a body, a hood with a stripe, a seat and wheel, big back wheels, a header in front
-		local green = color
-		body = k.box(0, 2.6, 0.6, 3, 1.8, 5, green, "Body")
-		k.box(0, 3.2, -2, 2.6, 1.4, 1.6, green, "Hood")
-		k.box(0, 3.95, -2, 2.7, 0.15, 1.7, YELLOW, "Stripe")
-		k.box(0, 4.4, 1.6, 2.6, 0.2, 2.4, INK, "Seat")
-		k.box(0, 5, 1.2, 0.2, 1.2, 0.2, INK, "Column")
-		k.cyl(0, 5.6, 1, 0.2, 1.2, INK, "y", "SteeringWheel")
-		k.box(0.9, 5, -2.5, 0.35, 2.6, 0.35, rgb(150, 156, 166), "Exhaust")
-		k.box(0, 5.6, 0.9, 2.8, 2, 2.6, rgb(150, 206, 236), "Cab")
-		k.box(0, 6.7, 0.9, 3, 0.25, 2.8, green, "Roof")
-		for _, sx in { -1, 1 } do
-			k.cyl(sx * 1.9, 1.8, 1.4, 1, 3.6, INK, nil, "BigWheel")
-			k.cyl(sx * 2.42, 1.8, 1.4, 0.1, 1.8, YELLOW, nil, "Rim")
-			k.cyl(sx * 1.6, 1, -2.6, 0.7, 2, INK, nil, "SmallWheel")
-			k.cyl(sx * 1.97, 1, -2.6, 0.1, 1, YELLOW, nil, "Rim")
+		k.box(0, 0.8, 0.05, 2.7, 0.5, 3.6, INK, "Chassis") -- 0.55 .. 1.05
+		k.box(0, 1.85, 0.2, 2.6, 1.6, 3.2, color, "Body") -- 1.05 .. 2.65, z -1.4 .. 1.8
+		k.box(0, 2.7, 0.2, 2.7, 0.1, 3.3, Shapes.shade(color, 0.25), "Trim")
+		k.box(0, 3.15, 0.7, 2.2, 0.8, 1.8, rgb(240, 236, 226), "Bin") -- 2.75 .. 3.55
+		for i, c in { rgb(228, 40, 56), rgb(250, 210, 60), rgb(232, 64, 40) } do
+			k.ball(-0.6 + (i - 1) * 0.6, 3.6, 0.7, 0.6, 0.5, 0.6, c, "Crop")
 		end
-		local hw = 6.2
-		k.box(0, 1.2, -4, hw, 1, 1.4, rgb(206, 58, 50), "Header")
-		for i = 0, math.floor(hw / 1.2) do
-			k.box(-hw / 2 + 0.6 + i * 1.2, 0.7, -4.4, 0.5, 0.5, 0.8, YELLOW, "Tooth")
+		k.box(0, 2.1, -1.45, 2, 0.6, 0.1, GLASS, "Eyes", Enum.Material.Neon)
+		k.box(0, 1.55, -1.45, 1.4, 0.2, 0.1, INK, "Mouth")
+		for _, x in { -0.8, 0.8 } do
+			k.box(x, 1.15, -1.9, 0.25, 0.25, 1.0, STEEL, "Arm") -- z -2.4 .. -1.4
+		end
+		k.box(0, 0.75, -2.9, 3.8, 0.6, 1.0, YELLOW, "Header") -- z -3.4 .. -2.4
+		for i = -3, 3 do
+			k.box(i * 0.55, 0.6, -3.65, 0.25, 0.25, 0.5, STEEL, "Tooth")
+		end
+		k.box(0.9, 3.25, 1.4, 0.15, 1.2, 0.15, INK, "Antenna") -- 2.65 .. 3.85
+		k.ball(0.9, 4, 1.4, 0.5, 0.5, 0.5, rgb(255, 80, 60), "Beacon").Material = Enum.Material.Neon
+	elseif tier == 2 then
+		-- the tractor: big back wheels and small front ones, the engine hood and the rear body flush on top,
+		-- a cab on posts over the seat, fenders, an exhaust, a cutter header on arms in front
+		for _, sx in { -1, 1 } do
+			wheel(k, sx * 1.75, 1.7, 1.2, 1, 3.4)
+			wheel(k, sx * 1.25, 0.9, -2.4, 0.6, 1.8)
+			k.box(sx * 1.75, 3.5, 1.2, 1.1, 0.2, 2.4, color, "Fender") -- over the wheel (top 3.4)
+		end
+		k.cyl(0, 1.7, 1.2, 2.5, 0.5, INK, nil, "RearAxle")
+		k.cyl(0, 0.9, -2.4, 1.9, 0.4, INK, nil, "FrontAxle")
+		k.box(0, 1.15, -2.4, 0.6, 0.5, 0.6, INK, "Bracket") -- the axle up to the hood (bottom 1.3)
+		k.box(0, 2.1, 1.2, 2.5, 1.2, 2.8, color, "Body") -- 1.5 .. 2.7, z -0.2 .. 2.6
+		k.box(0, 2.0, -1.7, 1.8, 1.4, 3.4, color, "Hood") -- 1.3 .. 2.7, z -3.4 .. 0
+		k.box(0, 2.74, -1.7, 0.5, 0.08, 3.4, YELLOW, "Stripe")
+		k.box(0, 1.95, -3.44, 1.5, 1.0, 0.08, INK, "Grille")
+		for _, x in { -0.6, 0.6 } do
+			k.box(x, 2.45, -3.45, 0.35, 0.25, 0.06, rgb(255, 245, 200), "Light", Enum.Material.Neon)
+		end
+		k.cyl(0.55, 3.4, -2.6, 1.4, 0.3, STEEL, "y", "Exhaust") -- 2.7 .. 4.1
+		-- the cab
+		k.box(0, 2.85, 1.7, 1.0, 0.3, 0.9, INK, "Seat") -- on the body (2.7)
+		k.box(0, 3.4, 2.1, 1.0, 0.9, 0.15, INK, "Backrest")
+		k.box(0, 3.2, 0.5, 0.15, 1.0, 0.15, INK, "Column") -- 2.7 .. 3.7
+		k.cyl(0, 3.75, 0.5, 0.12, 0.9, INK, "y", "SteeringWheel")
+		for _, x in { -1.15, 1.15 } do
+			for _, z in { -0.1, 2.5 } do
+				k.box(x, 4.0, z, 0.2, 2.6, 0.2, INK, "Post") -- 2.7 .. 5.3
+			end
+		end
+		k.box(0, 5.42, 1.2, 2.7, 0.25, 3.0, color, "Roof")
+		local front = k.box(0, 4.1, -0.1, 2.1, 2.2, 0.08, GLASS, "Glass")
+		front.Transparency = 0.45
+		-- the header
+		for _, x in { -0.7, 0.7 } do
+			k.box(x, 1.4, -3.8, 0.25, 0.25, 0.8, STEEL, "Arm") -- z -4.2 .. -3.4
+		end
+		k.box(0, 0.8, -4.8, 5, 0.9, 1.2, rgb(206, 58, 50), "Header") -- z -5.4 .. -4.2
+		for i = -4, 4 do
+			k.box(i * 0.55, 0.6, -5.65, 0.25, 0.25, 0.5, YELLOW, "Tooth")
 		end
 	else
-		-- the combine: a wide reel header, a tall body, a glass cab, the unloading auger
-		body = k.box(0, 3.2, 0.5, 4.6, 3.6, 7, color, "Body")
-		k.box(0, 5.1, 0.5, 4.7, 0.25, 7.1, Shapes.shade(color, 0.2), "Cap")
-		k.box(0, 6.2, -1.6, 3.4, 2.4, 2.6, rgb(150, 206, 236), "Cab")
-		k.box(0, 7.5, -1.6, 3.6, 0.3, 2.8, color, "CabRoof")
-		k.box(0, 1.4, -4.4, 9.4, 1.2, 2, YELLOW, "Header")
-		k.cyl(0, 2.3, -4.8, 9, 1.2, rgb(206, 58, 50), nil, "Reel")
-		for i = -4, 4 do
-			k.box(i * 1.05, 0.9, -5.5, 0.4, 0.4, 0.9, rgb(150, 156, 166), "Tooth")
-		end
-		k.cyl(3.6, 5.6, 1.8, 6, 0.8, rgb(150, 156, 166), nil, "Auger")
-		k.box(0, 4.2, 4.2, 3.6, 2.6, 0.6, Shapes.shade(color, -0.2), "Grille")
+		-- the combine: big front drive wheels, small rear steering wheels, a tall body, the grain tank and the
+		-- glass cab on top, the auger folded along the side, the feeder, the wide header with its reel
 		for _, sx in { -1, 1 } do
-			k.cyl(sx * 2.5, 1.9, -1.4, 1.2, 3.8, INK, nil, "BigWheel")
-			k.cyl(sx * 3.12, 1.9, -1.4, 0.1, 1.8, YELLOW, nil, "Rim")
-			k.cyl(sx * 2.1, 1.1, 2.8, 0.9, 2.2, INK, nil, "SmallWheel")
+			wheel(k, sx * 2.3, 1.8, -1.0, 1.2, 3.6)
+			wheel(k, sx * 2.1, 1.1, 3.4, 0.8, 2.2)
+		end
+		k.box(0, 3.2, 1.4, 3.4, 3.2, 6.4, color, "Body") -- 1.6 .. 4.8, z -1.8 .. 4.6
+		k.box(0, 3.2, 4.63, 2.8, 2.4, 0.08, Shapes.shade(color, -0.3), "Grille")
+		k.box(0, 4.82, 1.4, 3.5, 0.08, 6.5, Shapes.shade(color, 0.25), "Trim")
+		k.box(0, 5.5, 2.6, 3.0, 1.4, 2.8, Shapes.shade(color, 0.12), "Tank") -- 4.8 .. 6.2
+		local cab = k.box(0, 5.8, -0.8, 2.6, 2.0, 2.0, GLASS, "Cab") -- 4.8 .. 6.8, z -1.8 .. 0.2
+		cab.Transparency = 0.3
+		for _, x in { -1.25, 1.25 } do
+			for _, z in { -1.75, 0.15 } do
+				k.box(x, 5.8, z, 0.15, 2.0, 0.15, INK, "Post")
+			end
+		end
+		k.box(0, 6.92, -0.8, 2.9, 0.25, 2.3, color, "CabRoof")
+		for _, x in { -0.8, 0.8 } do
+			k.box(x, 6.9, -1.98, 0.4, 0.2, 0.1, rgb(255, 245, 200), "Light", Enum.Material.Neon)
+		end
+		k.cyl(-2.0, 5.0, 1.6, 5, 0.6, STEEL, "z", "Auger") -- along the left side
+		k.cyl(-2.0, 4.6, -0.9, 0.8, 0.6, STEEL, "y", "Spout")
+		k.cyl(1.2, 7.0, 3.6, 1.6, 0.35, INK, "y", "Exhaust") -- on the tank (6.2)
+		for i = 0, 3 do
+			k.box(-1.78, 1.0 + i * 0.95, -1.3, 0.12, 0.1, 0.7, INK, "Step") -- the ladder up the side
+		end
+		k.box(0, 1.6, -2.6, 2.0, 1.4, 1.6, Shapes.shade(color, -0.15), "Feeder") -- z -3.4 .. -1.8
+		k.box(0, 0.9, -4.4, 9, 1, 2, YELLOW, "Header") -- 0.4 .. 1.4, z -5.4 .. -3.4
+		k.cyl(0, 1.9, -4.6, 8.6, 1.1, rgb(206, 58, 50), nil, "Reel")
+		for _, x in { -4.3, 4.3 } do
+			k.box(x, 1.6, -4.6, 0.2, 0.9, 0.3, INK, "ReelArm")
+		end
+		for i = -7, 7 do
+			k.box(i * 0.58, 0.6, -5.65, 0.25, 0.25, 0.5, STEEL, "Tooth")
 		end
 	end
-	_ = body
 	return m
 end
 
@@ -127,53 +179,57 @@ function Models.truck(parent, color)
 	color = color or rgb(242, 244, 246)
 	local m = Shapes.model(parent, "Truck")
 	local k = kit(m)
-	local body = k.box(0, 3.8, 1.5, 4.2, 4.6, 10, color, "Body")
-	k.box(0, 6.15, 1.5, 4.3, 0.2, 10.1, Shapes.shade(color, -0.12), "BoxCap")
-	k.box(0, 3.2, 1.5, 4.25, 0.8, 9.6, rgb(60, 110, 200), "Stripe")
-	k.box(0, 2.8, -5.2, 4, 3.2, 3.4, rgb(60, 110, 200), "Cab")
-	k.box(0, 3.4, -6.95, 3.6, 1.4, 0.15, rgb(150, 206, 236), "Windscreen")
-	k.box(0, 1.6, -6.95, 3.4, 0.6, 0.2, rgb(200, 200, 205), "Bumper")
-	for _, x in { -1.5, 1.5 } do
-		k.box(x, 2.2, -6.98, 0.6, 0.4, 0.1, rgb(255, 245, 200), "Light", Enum.Material.Neon)
-	end
-	k.box(0, 1.3, 0, 4.2, 0.8, 14, rgb(96, 100, 110), "Chassis")
-	for _, z in { -5, 2, 5 } do
+	local blue = rgb(60, 110, 200)
+	for _, z in { -5, 2.2, 4.8 } do
 		for _, sx in { -1, 1 } do
-			k.cyl(sx * 2.1, 1.1, z, 0.8, 2.2, INK, nil, "Wheel")
-			k.cyl(sx * 2.22, 1.1, z, 0.82, 1, rgb(200, 200, 205), nil, "Hub")
+			wheel(k, sx * 1.9, 1.1, z, 0.8, 2.2, rgb(200, 200, 205))
 		end
 	end
-	_ = body
+	k.box(0, 1.3, 0, 3.0, 0.8, 14, rgb(96, 100, 110), "Chassis") -- 0.9 .. 1.7
+	k.box(0, 1.95, 1.5, 3.0, 0.5, 10, rgb(80, 84, 92), "Deck") -- 1.7 .. 2.2
+	k.box(0, 4.5, 1.5, 4.2, 4.6, 10, color, "Body") -- 2.2 .. 6.8, z -3.5 .. 6.5
+	k.box(0, 6.85, 1.5, 4.3, 0.1, 10.1, Shapes.shade(color, -0.12), "BoxCap")
+	k.box(0, 3.4, 1.5, 4.26, 0.8, 9.6, blue, "Stripe")
+	k.box(0, 4.5, 6.53, 4.0, 4.4, 0.08, Shapes.shade(color, -0.08), "Doors")
+	k.box(0, 3.8, -5.2, 4.0, 3.2, 3.4, blue, "Cab") -- 2.2 .. 5.4, z -6.9 .. -3.5
+	k.box(0, 1.95, -5.2, 3.0, 0.5, 3.4, blue, "CabBase") -- down to the chassis
+	k.box(0, 4.6, -6.93, 3.6, 1.4, 0.08, GLASS, "Windscreen")
+	k.box(0, 2.5, -6.95, 4.0, 0.5, 0.12, rgb(200, 200, 205), "Bumper")
+	for _, x in { -1.5, 1.5 } do
+		k.box(x, 3.0, -6.95, 0.6, 0.4, 0.08, rgb(255, 245, 200), "Light", Enum.Material.Neon)
+	end
 	return m
 end
 
--- The forklift: a yellow body, a counterweight, the overhead guard, the mast and the forks, a beacon
+-- The forklift: a yellow body, a counterweight, the overhead guard on four posts, the mast and the forks, a beacon
 function Models.forklift(parent)
 	local m = Shapes.model(parent, "Forklift")
 	local k = kit(m)
-	local body = k.box(0, 1.5, 0.4, 2.6, 1.4, 3.4, YELLOW, "Body")
+	k.box(0, 1.5, 0.4, 2.6, 1.4, 3.4, YELLOW, "Body") -- 0.8 .. 2.2, z -1.3 .. 2.1
 	k.box(0, 1.9, 2.1, 2.6, 1.8, 0.9, INK, "Counterweight")
-	k.box(0, 2.5, 0.8, 1.2, 0.3, 1.2, INK, "Seat")
+	k.box(0, 2.35, 0.8, 1.2, 0.3, 1.2, INK, "Seat") -- on the body
+	k.box(0, 2.95, 1.3, 1.2, 0.9, 0.2, INK, "Backrest")
 	for _, sx in { -1.15, 1.15 } do
 		for _, sz in { -0.7, 1.7 } do
-			k.box(sx, 3.6, sz, 0.15, 2.6, 0.15, INK, "Guard")
+			k.box(sx, 3.6, sz, 0.15, 2.8, 0.15, INK, "Guard") -- 2.2 .. 5.0
 		end
-		k.cyl(sx, 0.6, -0.9, 0.5, 1.2, INK, nil, "Wheel")
-		k.cyl(sx, 0.5, 1.8, 0.5, 1, INK, nil, "Wheel")
 	end
-	k.box(0, 4.95, 0.5, 2.6, 0.15, 2.8, INK, "GuardTop")
-	k.box(0, 5.2, 1.6, 0.4, 0.3, 0.4, rgb(244, 116, 32), "Beacon", Enum.Material.Neon)
-	k.box(0, 2.3, -1.3, 2.5, 0.3, 0.2, rgb(244, 116, 32), "Stripe")
+	wheel(k, -1.45, 0.6, -0.8, 0.5, 1.2)
+	wheel(k, 1.45, 0.6, -0.8, 0.5, 1.2)
+	wheel(k, -1.45, 0.5, 1.6, 0.5, 1.0)
+	wheel(k, 1.45, 0.5, 1.6, 0.5, 1.0)
+	k.box(0, 5.07, 0.5, 2.6, 0.15, 2.8, INK, "GuardTop")
+	k.box(0, 5.3, 1.6, 0.4, 0.3, 0.4, rgb(244, 116, 32), "Beacon", Enum.Material.Neon)
+	k.box(0, 2.0, -1.33, 2.5, 0.3, 0.06, rgb(244, 116, 32), "Stripe")
 	for _, sx in { -0.8, 0.8 } do
-		k.box(sx, 3, -1.55, 0.2, 5, 0.2, rgb(150, 156, 166), "Mast")
+		k.box(sx, 3, -1.4, 0.2, 5, 0.2, STEEL, "Mast") -- against the body's front
 	end
-	k.box(0, 1, -1.75, 2, 1.2, 0.15, INK, "Carriage")
-	k.box(-0.6, 0.5, -2.75, 0.3, 0.12, 2, INK, "Fork")
-	k.box(0.6, 0.5, -2.75, 0.3, 0.12, 2, INK, "Fork")
+	k.box(0, 1, -1.58, 2, 1.2, 0.15, INK, "Carriage")
+	k.box(-0.6, 0.5, -2.65, 0.3, 0.12, 2, INK, "Fork")
+	k.box(0.6, 0.5, -2.65, 0.3, 0.12, 2, INK, "Fork")
 	-- a pallet of boxes on the forks
-	k.box(0, 0.75, -2.75, 2.6, 0.35, 2.6, rgb(200, 160, 110), "Load")
-	k.box(0, 1.8, -2.75, 2.4, 1.7, 2.4, rgb(196, 160, 110), "Load")
-	_ = body
+	k.box(0, 0.74, -2.65, 2.4, 0.36, 2.2, rgb(200, 160, 110), "Load")
+	k.box(0, 1.77, -2.65, 2.2, 1.7, 2.0, rgb(196, 160, 110), "Load")
 	return m
 end
 

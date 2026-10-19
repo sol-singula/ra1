@@ -50,7 +50,7 @@ local cal = Engine.addPlayer("Cal", 903)
 Engine.advance(1)
 local pc = Data:Get(cal)
 for _, key in
-	{ "tiles", "tiles", "counter", "seeder", "tomato", "sign", "wheat", "field2", "harvester", "corn", "shop" }
+	{ "tiles", "tiles", "counter", "seeder", "tomato", "chicken", "wheat", "field2", "harvester", "corn", "shop" }
 do
 	pc.cash = 10 ^ 7
 	Upg:Buy(cal, key)
@@ -116,6 +116,11 @@ do
 	service("TaskService"):Push(player)
 	Engine.advance(3)
 	shot("build_pads", at(mine, -30, -104, 14), at(mine, -38, -70, 1), false)
+	-- the stock yard filling up (the crates are the local player's own)
+	pa.stock.strawberry = 26
+	pa.stock.tomato = 10
+	Engine.advance(2.5)
+	shot("stock_yard", at(mine, 12, -94, 12), at(mine, 25, -68, 2), false)
 end
 
 -- the player's own farm is only ever theirs: the others' farms are seen as a visitor would
@@ -131,6 +136,7 @@ shot("crops_close", at(cals, -32, -62, 8), at(cals, -32, -40, 0), true)
 -- Ben's empire: the centre and its docks, the fleet in the fields, an overview
 shot("warehouse_docks", at(theirs, 96, -4, 26), at(theirs, 45, 50, 4), true)
 shot("distribution_centre", at(theirs, -24, -14, 44), at(theirs, 31, 50, 4), true)
+shot("animal_pens", at(theirs, 50, -100, 16), at(theirs, 50, -68, 2), true)
 shot("machines_at_work", at(theirs, 52, -14, 16), at(theirs, 0, -36, 1), true)
 shot("empire_overview", at(theirs, 0, -250, 150), at(theirs, 0, 0, 0), true)
 

@@ -54,7 +54,7 @@ end
 -- Up to the warehouse ----------------------------------------------------------------------------------------------------
 check("the warehouse needs the shop first", select(2, Upg:Buy(player, "warehouse")) == "stage")
 for _, key in
-	{ "tiles", "counter", "seeder", "tomato", "sign", "wheat", "field2", "harvester", "corn", "tractor", "shop" }
+	{ "tiles", "counter", "seeder", "tomato", "chicken", "wheat", "field2", "harvester", "corn", "tractor", "shop" }
 do
 	check("buy " .. key, buy(key), key)
 end

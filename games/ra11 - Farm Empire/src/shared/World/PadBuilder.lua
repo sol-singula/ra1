@@ -22,13 +22,14 @@ PadBuilder.BRANCH = {
 	retail = { color = rgb(60, 140, 230), icon = "🏪" },
 	logistics = { color = rgb(244, 140, 40), icon = "📦" },
 	prestige = { color = rgb(160, 100, 235), icon = "⭐" },
+	animals = { color = rgb(214, 150, 90), icon = "🐾" },
 }
 local GREEN = rgb(80, 230, 110)
 local GOLD = rgb(255, 205, 50)
 local DARK = rgb(70, 64, 60)
 
 function PadBuilder.build(folder, i, k, key, branch)
-	local spot = Layout.PADS[k]
+	local spot = Layout.padAt(k)
 	local o = Layout.cframe(i, spot.x, spot.z, 0)
 	local b = PadBuilder.BRANCH[branch] or PadBuilder.BRANCH.production
 	local m = Shapes.model(folder, "Pad" .. k)

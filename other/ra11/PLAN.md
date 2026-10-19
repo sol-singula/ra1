@@ -87,3 +87,35 @@ a plain hub, square crops, a poor arrow and GUI, slow money):
 * **Economy.** Crops pay about three times more and grow faster. The stand serves more. On the mock play-through
   the Fruit Shop ($5,000) comes at about 4 minutes and the Warehouse ($120,000) at about 23. The Distribution
   Centre ($2,000,000) is still ahead at 50 minutes, and the longest wait between buys is under 150 seconds.
+
+## Round 4 · an exponential economy, animals, something always to do — built
+
+From the third live test (a huge upside-down arrow on phones, recommendations that didn't make sense, slow money,
+broken-looking machines, unclear bottlenecks, a "+$" running total, adverts nobody wanted):
+
+* **Money.** Each crop sells for 4x the last tier ($10 strawberries up to $40,000 golden apples); Premium Produce
+  multiplies every sale by 1.25 a level; customers buy baskets (2 to 12 units), so each sale is a real amount; the
+  income a minute counts sales and trucks only. On the mock play-through: about $1 million by minute 5 (it varies with
+  the golden crops), the Fruit Shop near minute 3, the Warehouse near minute 7, then a slower climb (the
+  Distribution Centre around minute 40).
+  Each region doubles every sale (x2, x4, x8).
+* **No adverts.** The road sign, adverts and billboard are gone: customers come as fast as the counter serves.
+* **Bottlenecks you can see.** A chain across the top, GROW > HARVEST > STOCK > SELL, shows each rate with the
+  bottleneck in red and a line saying what fixes it. The stock yard right of the stand piles up crates as stock
+  comes in, its sign reads "38 / 40", and FULL flashes when it's full. A full stock area stops the harvesters:
+  they drive back to the shed with a "STORAGE FULL" tag.
+* **Recommendations.** The guide names the bottleneck ("Your stock is waiting for the counter: step on the Bigger
+  Counter pad") and picks the best-paying upgrade that fixes it. A new crop or a price boost always counts, since
+  it raises every sale.
+* **Animals.** Four pens on the front lawn: chickens (crops grow faster), pigs (sales pay more), cows (the
+  counter sells faster), sheep (harvesters work faster). Each is bought and levelled on its pen's pad. Step on the
+  pen's FEED plate to feed them (fed animals give the whole boost, hungry ones 40%); step on again once fed to pet
+  them (happy: the boost doubled for 40 seconds). A tag over each pen shows how they are.
+* **Something always to do.** Between buys the guide sends you to tap the golden crop (one planted tile shines
+  every 35 to 55 seconds and pays 20 sales at once), feed hungry animals or pet them. More goals, with bigger
+  rewards, track feeding and golden crops.
+* **Pads.** The build yard's pads are a step further apart, and each pen has its own pad, so there's a little
+  walking but never into the shop.
+* **Graphics.** The harvester, tractor, combine, truck and forklift were rebuilt so every part rests on another.
+  The guide arrow is sized in studs (it shrinks with distance like the world) and points down.
+* **Removed.** The "+$" running total next to the cash.

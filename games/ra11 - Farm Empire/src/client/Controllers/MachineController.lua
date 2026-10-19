@@ -1,7 +1,8 @@
 --[[
 The machines at work (master plan §5): the server's harvester is a number (tiles a minute); on the client the
 machine in the shed drives to every tile the server says it cleared (Net "Harvested" by "machine"), so the player
-watches it work across the whole farm. The fleet's second machine takes every other tile. The trucks: on
+watches it work across the whole farm. When the stock area is full the server's machine waits, so this one drives
+home to the shed and shows "STORAGE FULL" until there's room again. The fleet's second machine takes every other tile. The trucks: on
 Net "Truck" one drives from its dock down the lane to the avenue and back (LogisticsController).
 
   MachineController.at()   where the machine is heading (a tile id), or nil
@@ -11,6 +12,7 @@ local RunService = game:GetService("RunService")
 
 local Layout = require(ReplicatedStorage.Shared.World.Layout)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Shapes = require(ReplicatedStorage.Shared.World.Shapes)
 local Store = require(script.Parent.Parent.Store)
 
 local MachineController = { Name = "MachineController", Order = 45, SPEED = 14 }
@@ -54,8 +56,30 @@ function MachineController:init()
 	end)
 	RunService.Heartbeat:Connect(function(dt)
 		local first, second = models()
+		local b = Store.get("business")
+		local full = b and b.full == true
+		local i = territoryIndex()
 		for n, model in { first, second } do
 			if model and model.PrimaryPart then
+				-- a full stock area: the machine drives home and waits, with a tag saying why
+				local tag = model:FindFirstChild("FullTag")
+				if full and not tag and model.PrimaryPart then
+					tag = Shapes.label(model.PrimaryPart, "⏸ STORAGE FULL", {
+						Name = "FullTag",
+						studs = Vector2.new(8, 2),
+						StudsOffset = Vector3.new(0, 8, 0),
+						BackgroundColor3 = Color3.fromRGB(200, 40, 40),
+						MaxDistance = 160,
+					})
+					tag.Parent = model
+					tag.Adornee = model.PrimaryPart
+				elseif tag then
+					tag.Enabled = full
+				end
+				if full and i then
+					local home = n == 1 and Layout.SPOTS.shed or Layout.SPOTS.machine2
+					targets[n] = { pos = Layout.toWorld(i, home.x, home.z, 0), id = nil }
+				end
 				local t = targets[n]
 				local pos = positions[n] or model.PrimaryPart.Position * Vector3.new(1, 0, 1)
 				if t then

@@ -5,10 +5,10 @@ separate paths; the recommendation picks the one the current bottleneck needs (T
 
   Upgrades.LIST                   every key, in rough buy order
   Upgrades[key] = {
-    name, desc, branch ("production" | "machinery" | "retail" | "logistics" | "prestige"),
+    name, desc, branch ("production" | "animals" | "machinery" | "retail" | "logistics" | "prestige"),
     cost, max (levels; 1 if absent), mult (cost multiplier a level), stage (business stage needed: "stand"...),
     needs (another upgrade key), effect = { demand, service, storage, tiles, field, crop, seeder, machine,
-    dispatch, docks, growth, bulkPrice, orchard }, fixes ("harvest" | "storage" | "service" | "demand" |
+    dispatch, docks, growth, bulkPrice, orchard, priceMult, animal }, fixes ("harvest" | "storage" | "service" | "value" |
     "production" | "dispatch" | "land")
   }
   Upgrades.cost(key, level)       the cost of the next level
@@ -41,6 +41,16 @@ add("tiles", {
 	effect = { tiles = 4 },
 	fixes = "production",
 })
+add("premium", {
+	name = "Premium Produce",
+	desc = "Every crop sells for 25% more. Stacks: each level multiplies again.",
+	branch = "production",
+	cost = 150,
+	max = 15,
+	mult = 4,
+	effect = { priceMult = 1.25 },
+	fixes = "value",
+})
 add("counter", {
 	name = "Bigger Counter",
 	desc = "The counter serves 8 more customers a minute.",
@@ -61,21 +71,31 @@ add("seeder", {
 })
 add("tomato", {
 	name = "Tomato Seeds",
-	desc = "Unlock tomatoes: 15 s, $6 each.",
+	desc = "Unlock tomatoes: $40 each (strawberries are $10).",
 	branch = "production",
-	cost = 80,
+	cost = 60,
 	effect = { crop = "tomato" },
 	fixes = "production",
 })
-add("sign", {
-	name = "Road Sign",
-	desc = "10 more customers a minute find the stand.",
-	branch = "retail",
-	cost = 90,
-	max = 3,
-	mult = 2.5,
-	effect = { demand = 10 },
-	fixes = "demand",
+add("chicken", {
+	name = "Chickens",
+	desc = "A chicken coop on the front lawn. Every level: crops grow 5% faster. Feed them!",
+	branch = "animals",
+	cost = 250,
+	max = 25,
+	mult = 1.9,
+	effect = { animal = "chicken" },
+	fixes = "production",
+})
+add("pig", {
+	name = "Pigs",
+	desc = "A pig pen. Every level: every sale pays 5% more. Feed them!",
+	branch = "animals",
+	cost = 2500,
+	max = 25,
+	mult = 1.9,
+	effect = { animal = "pig" },
+	fixes = "value",
 })
 add("crates", {
 	name = "Stock Crates",
@@ -89,9 +109,9 @@ add("crates", {
 })
 add("wheat", {
 	name = "Wheat Seeds",
-	desc = "Unlock wheat: 20 s, $10 each.",
+	desc = "Unlock wheat: $150 each.",
 	branch = "production",
-	cost = 200,
+	cost = 2500,
 	needs = "tomato",
 	effect = { crop = "wheat" },
 	fixes = "production",
@@ -100,7 +120,7 @@ add("field2", {
 	name = "East Field",
 	desc = "Open a new section of land: 30 tiles.",
 	branch = "production",
-	cost = 400,
+	cost = 1500,
 	effect = { field = "field2" },
 	fixes = "land",
 })
@@ -108,27 +128,16 @@ add("harvester", {
 	name = "Auto-Harvester",
 	desc = "A slow machine that clears every ripe tile on the farm, 40 a minute. No more tapping.",
 	branch = "machinery",
-	cost = 600,
+	cost = 800,
 	needs = "seeder",
 	effect = { machine = 1 },
 	fixes = "harvest",
 })
-add("adverts", {
-	name = "Adverts",
-	desc = "20 more customers a minute.",
-	branch = "retail",
-	cost = 450,
-	max = 4,
-	mult = 2.5,
-	needs = "sign",
-	effect = { demand = 20 },
-	fixes = "demand",
-})
 add("corn", {
 	name = "Corn Seeds",
-	desc = "Unlock corn: 30 s, $18 each.",
+	desc = "Unlock corn: $600 each.",
 	branch = "production",
-	cost = 700,
+	cost = 15000,
 	needs = "wheat",
 	effect = { crop = "corn" },
 	fixes = "production",
@@ -137,7 +146,7 @@ add("tractor", {
 	name = "Farm Tractor",
 	desc = "Clears 90 tiles a minute and carries more.",
 	branch = "machinery",
-	cost = 1500,
+	cost = 5000,
 	needs = "harvester",
 	effect = { machine = 2 },
 	fixes = "harvest",
@@ -152,11 +161,22 @@ add("shop", {
 })
 
 -- Stage B: the shop --------------------------------------------------------------------------------------------------
+add("cow", {
+	name = "Cows",
+	desc = "A cow barn. Every level: the counter sells 5% faster. Feed them!",
+	branch = "animals",
+	cost = 30000,
+	max = 25,
+	mult = 1.9,
+	stage = "shop",
+	effect = { animal = "cow" },
+	fixes = "service",
+})
 add("shelves", {
 	name = "More Shelves",
 	desc = "The stockroom holds 150 more.",
 	branch = "logistics",
-	cost = 3000,
+	cost = 20000,
 	max = 5,
 	mult = 2,
 	stage = "shop",
@@ -167,7 +187,7 @@ add("checkout", {
 	name = "Second Checkout",
 	desc = "A worker on a second till: 20 more sales a minute.",
 	branch = "retail",
-	cost = 4000,
+	cost = 25000,
 	max = 4,
 	mult = 2,
 	stage = "shop",
@@ -178,7 +198,7 @@ add("field3", {
 	name = "West Field",
 	desc = "Open a new section of land: 30 tiles.",
 	branch = "production",
-	cost = 8000,
+	cost = 120000,
 	stage = "shop",
 	needs = "field2",
 	effect = { field = "field3" },
@@ -186,9 +206,9 @@ add("field3", {
 })
 add("pumpkin", {
 	name = "Pumpkin Seeds",
-	desc = "Unlock pumpkins: 45 s, $32 each.",
+	desc = "Unlock pumpkins: $2,000 each.",
 	branch = "production",
-	cost = 6000,
+	cost = 150000,
 	stage = "shop",
 	needs = "corn",
 	effect = { crop = "pumpkin" },
@@ -196,31 +216,19 @@ add("pumpkin", {
 })
 add("blueberry", {
 	name = "Blueberry Bushes",
-	desc = "Unlock blueberries: 40 s, $36 each.",
+	desc = "Unlock blueberries: $5,000 each.",
 	branch = "production",
-	cost = 12000,
+	cost = 500000,
 	stage = "shop",
 	needs = "pumpkin",
 	effect = { crop = "blueberry" },
 	fixes = "production",
 })
-add("billboard", {
-	name = "Billboard",
-	desc = "40 more customers a minute.",
-	branch = "retail",
-	cost = 9000,
-	max = 3,
-	mult = 2.5,
-	stage = "shop",
-	needs = "adverts",
-	effect = { demand = 40 },
-	fixes = "demand",
-})
 add("combine", {
 	name = "Combine Harvester",
 	desc = "Clears 200 tiles a minute.",
 	branch = "machinery",
-	cost = 20000,
+	cost = 300000,
 	stage = "shop",
 	needs = "tractor",
 	effect = { machine = 3 },
@@ -230,7 +238,7 @@ add("sprinklers", {
 	name = "Sprinklers",
 	desc = "Every crop grows 20% faster.",
 	branch = "production",
-	cost = 10000,
+	cost = 200000,
 	max = 3,
 	mult = 2.5,
 	stage = "shop",
@@ -248,11 +256,22 @@ add("warehouse", {
 })
 
 -- Stage C: the warehouse ---------------------------------------------------------------------------------------------
+add("sheep", {
+	name = "Sheep",
+	desc = "A sheep pen. Every level: the harvesters clear 5% faster. Feed them!",
+	branch = "animals",
+	cost = 6000000,
+	max = 25,
+	mult = 1.9,
+	stage = "warehouse",
+	effect = { animal = "sheep" },
+	fixes = "harvest",
+})
 add("dock", {
 	name = "Loading Dock",
 	desc = "Another dock and truck: 60 more units a minute dispatched.",
 	branch = "logistics",
-	cost = 25000,
+	cost = 6000000,
 	max = 3,
 	mult = 2,
 	stage = "warehouse",
@@ -263,7 +282,7 @@ add("forklift", {
 	name = "Forklift",
 	desc = "Pallets move faster: 40 more units a minute dispatched.",
 	branch = "logistics",
-	cost = 15000,
+	cost = 4000000,
 	max = 4,
 	mult = 2,
 	stage = "warehouse",
@@ -274,7 +293,7 @@ add("racks", {
 	name = "Pallet Racks",
 	desc = "The warehouse holds 1,000 more.",
 	branch = "logistics",
-	cost = 20000,
+	cost = 5000000,
 	max = 4,
 	mult = 2,
 	stage = "warehouse",
@@ -283,9 +302,9 @@ add("racks", {
 })
 add("melon", {
 	name = "Melon Seeds",
-	desc = "Unlock melons: 60 s, $55 each.",
+	desc = "Unlock melons: $15,000 each.",
 	branch = "production",
-	cost = 50000,
+	cost = 60000000,
 	stage = "warehouse",
 	needs = "blueberry",
 	effect = { crop = "melon" },
@@ -295,7 +314,7 @@ add("field4", {
 	name = "North Field",
 	desc = "Open the last section of land: 30 tiles.",
 	branch = "production",
-	cost = 60000,
+	cost = 15000000,
 	stage = "warehouse",
 	needs = "field3",
 	effect = { field = "field4" },
@@ -305,7 +324,7 @@ add("fleet", {
 	name = "Automated Fleet",
 	desc = "Two machines on the field at once: 400 tiles a minute.",
 	branch = "machinery",
-	cost = 90000,
+	cost = 20000000,
 	stage = "warehouse",
 	needs = "combine",
 	effect = { machine = 4 },
@@ -315,7 +334,7 @@ add("sorter", {
 	name = "Sorting Line",
 	desc = "Sorted pallets sell for 20% more in bulk.",
 	branch = "logistics",
-	cost = 70000,
+	cost = 20000000,
 	max = 2,
 	mult = 2.5,
 	stage = "warehouse",
@@ -337,7 +356,7 @@ add("bigDock", {
 	name = "Double Dock",
 	desc = "Two more docks: 200 more units a minute dispatched.",
 	branch = "logistics",
-	cost = 200000,
+	cost = 1000000000,
 	max = 3,
 	mult = 2,
 	stage = "center",
@@ -348,7 +367,7 @@ add("conveyor", {
 	name = "Conveyor Line",
 	desc = "Goods ride straight to the docks: 150 more a minute dispatched.",
 	branch = "logistics",
-	cost = 250000,
+	cost = 1500000000,
 	max = 2,
 	mult = 2,
 	stage = "center",
@@ -357,9 +376,9 @@ add("conveyor", {
 })
 add("orchard", {
 	name = "Golden Orchard",
-	desc = "Unlock golden apples: 120 s, $150 each.",
+	desc = "Unlock golden apples: $40,000 each.",
 	branch = "production",
-	cost = 400000,
+	cost = 1000000000,
 	stage = "center",
 	needs = "melon",
 	effect = { crop = "goldenApple" },
@@ -369,7 +388,7 @@ add("silo", {
 	name = "Grain Silo",
 	desc = "The centre holds 5,000 more.",
 	branch = "logistics",
-	cost = 180000,
+	cost = 800000000,
 	max = 3,
 	mult = 2,
 	stage = "center",
@@ -378,9 +397,9 @@ add("silo", {
 })
 add("region", {
 	name = "Open a New Region",
-	desc = "Prestige: a fresh territory with a permanent +25% to every sale, and your trophies kept.",
+	desc = "Prestige: a fresh territory where every sale pays double (it stacks), and your trophies kept.",
 	branch = "prestige",
-	cost = 2000000,
+	cost = 50000000000,
 	stage = "center",
 	effect = { prestige = true },
 	fixes = "land",
@@ -405,6 +424,18 @@ function Upgrades.stat(owned, effect, default)
 		end
 	end
 	return total == 0 and (default or 0) or total
+end
+
+-- What every sale is multiplied by (the Premium Produce levels, multiplied together)
+function Upgrades.priceMult(owned)
+	local m = 1
+	for key, level in owned or {} do
+		local u = Upgrades[key]
+		if u and u.effect.priceMult and level > 0 then
+			m *= u.effect.priceMult ^ level
+		end
+	end
+	return m
 end
 
 -- The highest machine tier owned (0 none)

@@ -18,3 +18,5 @@ renderer: lighting and materials only approximate Studio).
 | ![](city_streets.png) | ![](map_overview.png) | ![](panel_upgrades.png) |
 | **The SHOP** | **The server boost** | **Welcome back** |
 | ![](panel_shop.png) | ![](panel_boost.png) | ![](away_card.png) |
+| **The animal pens** | **The stock yard** | |
+| ![](animal_pens.png) | ![](stock_yard.png) | |

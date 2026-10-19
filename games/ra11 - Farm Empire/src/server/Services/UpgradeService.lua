@@ -6,13 +6,14 @@ for the current bottleneck, or when nothing is affordable the cheapest one that 
 to save for).
 
   UpgradeService:Buy(player, key)    ok, why
-  UpgradeService:Recommend(player)   key, why (the bottleneck it fixes)
+  UpgradeService:Recommend(player)   key, the bottleneck, affordable
   UpgradeService:Push(player)
   UpgradeService.Applied (player, key, level)
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Animals = require(ReplicatedStorage.Shared.Data.Animals)
 local Business = require(ReplicatedStorage.Shared.Data.Business)
 local Crops = require(ReplicatedStorage.Shared.Data.Crops)
 local Layout = require(ReplicatedStorage.Shared.World.Layout)
@@ -91,12 +92,11 @@ function UpgradeService:Buy(player, key)
 	return true
 end
 
--- The value of an upgrade's next level: the $ a minute it adds, estimated from the business's numbers
--- (master plan §2: the highest-value affordable upgrade; never more production when selling is the limit).
--- Units a minute: the field grows `prod`, the hands or the machine clear at most `clear`, the counter moves `sell`,
--- the docks `dispatch`; what's really sold is the smallest link. An upgrade's gain is how much that grows.
+-- The value of an upgrade's next level: the $ a minute it adds, estimated from the business's numbers.
+-- Units a minute: the field grows `prod`, the hands or the machine clear at most `clear`, the counter sells `sell`
+-- (customers come as fast as it serves), the docks `dispatch`; what's really sold is the smallest link, at `avg`
+-- a unit. An upgrade's gain is how much `moved x avg` grows.
 UpgradeService.HAND_RATE = 36 -- tiles a minute a player clears by hand, about
-UpgradeService.MACHINE_BONUS = 40 -- the first machine is a phase change (§5): worth more than its numbers
 function UpgradeService:Gain(player, key)
 	local p = data:Get(player)
 	local u = Upgrades[key]
@@ -106,99 +106,117 @@ function UpgradeService:Gain(player, key)
 	local tier = Upgrades.machine(p.owned)
 	local clear = tier > 0 and automation:Rate(player) or self.HAND_RATE
 	local prod = math.min(f.perMinute, clear)
-	local avg = f.perMinute > 0 and f.valuePerMinute / f.perMinute or Crops[p.chosen or "strawberry"].value
-	local out = math.min(n.demand, n.service) + n.dispatch * (n.bulkPrice or 1)
-	local moved = math.min(out, prod)
-	local function flow(prod2, demand2, service2, dispatch2, avg2)
-		local out2 = math.min(demand2, service2) + dispatch2 * (n.bulkPrice or 1)
-		return math.min(out2, prod2) * avg2 - moved * avg
+	local mult = Upgrades.priceMult(p.owned) * (1 + Animals.boost(p, "price", os.time()))
+	local avg = (f.perMinute > 0 and f.valuePerMinute / f.perMinute or Crops[p.chosen or "strawberry"].value) * mult
+	local bulk = n.bulkPrice or 1
+	local function out(service, dispatch)
+		return service + dispatch * bulk
+	end
+	local moved = math.min(out(n.service, n.dispatch), prod)
+	local now = moved * avg
+	local function flow(prod2, service2, dispatch2, avg2)
+		return math.min(out(service2, dispatch2), prod2) * (avg2 or avg) - now
 	end
 	local gain = 0
-	if e.demand then
-		gain = flow(prod, n.demand + e.demand, n.service, n.dispatch, avg)
-	elseif e.service then
-		gain = flow(prod, n.demand, n.service + e.service, n.dispatch, avg)
+	if e.service then
+		gain = flow(prod, n.service + e.service, n.dispatch)
 	elseif e.tiles or e.field then
 		local add = e.tiles or Layout.FIELDS[e.field].tiles
 		local perTile = f.tiles > 0 and f.perMinute / f.tiles or 60 / Crops[p.chosen or "strawberry"].grow
-		gain = flow(math.min(f.perMinute + add * perTile, clear), n.demand, n.service, n.dispatch, avg)
+		gain = flow(math.min(f.perMinute + add * perTile, clear), n.service, n.dispatch)
 	elseif e.crop then
 		local c = Crops[e.crop]
-		local mult = crops:GrowthMult(player)
-		local prod2 = math.min(f.tiles * 60 / c.grow * mult, clear)
-		gain = flow(prod2, n.demand, n.service, n.dispatch, c.value)
+		local prod2 = math.min(f.tiles * 60 / c.grow * crops:GrowthMult(player), clear)
+		gain = flow(prod2, n.service, n.dispatch, c.value * mult)
+	elseif e.priceMult then
+		gain = now * (e.priceMult - 1)
 	elseif e.growth then
-		gain = flow(
-			math.min(f.perMinute * (1 + e.growth / crops:GrowthMult(player)), clear),
-			n.demand,
-			n.service,
-			n.dispatch,
-			avg
-		)
+		gain = flow(math.min(f.perMinute * (1 + e.growth / crops:GrowthMult(player)), clear), n.service, n.dispatch)
 	elseif e.machine then
-		local rate = automation.RATES[e.machine]
-		gain = flow(math.min(f.perMinute, rate), n.demand, n.service, n.dispatch, avg)
+		gain = flow(math.min(f.perMinute, automation.RATES[e.machine]), n.service, n.dispatch)
 		if tier == 0 then
-			gain += self.MACHINE_BONUS
+			gain += now * 0.5 + 20 -- (the first machine is a phase change: no more tapping)
 		end
 	elseif e.seeder then
-		gain = 12 -- (no more replanting: a convenience worth a little of everything)
+		gain = now * 0.2 + 10 -- (no more replanting)
+	elseif e.animal then
+		local a = Animals[e.animal]
+		local per = a.boost.per
+		if a.boost.kind == "price" then
+			gain = now * per
+		elseif a.boost.kind == "service" then
+			gain = flow(prod, n.service * (1 + per), n.dispatch)
+		elseif a.boost.kind == "grow" then
+			gain = flow(math.min(f.perMinute * (1 + per), clear), n.service, n.dispatch)
+		elseif a.boost.kind == "machine" then
+			gain = flow(math.min(f.perMinute, clear * (1 + per)), n.service, n.dispatch)
+		end
+		gain = math.max(gain, now * per * 0.5) -- (a boost to the farm is always worth something)
 	elseif e.business then
 		local b = Business[e.business]
 		gain = flow(
 			prod,
-			b.demand + Upgrades.stat(p.owned, "demand", 0),
 			b.service + Upgrades.stat(p.owned, "service", 0),
-			(b.dispatch or 0) + Upgrades.stat(p.owned, "dispatch", 0),
-			avg
-		) + 10
+			(b.dispatch or 0) + Upgrades.stat(p.owned, "dispatch", 0)
+		) + now * 0.3
 	elseif e.dispatch then
-		gain = flow(prod, n.demand, n.service, n.dispatch + e.dispatch, avg)
+		gain = flow(prod, n.service, n.dispatch + e.dispatch)
 	elseif e.bulkPrice then
-		gain = math.min(n.dispatch, math.max(0, prod - math.min(n.demand, n.service))) * avg * e.bulkPrice
+		gain = math.min(n.dispatch, math.max(0, prod - n.service)) * avg * e.bulkPrice
 	elseif e.storage then
 		gain = 1 -- (room to breathe while away; never the fix for a flow)
 	elseif e.prestige then
-		gain = moved * avg * self.PRESTIGE_GAIN
+		gain = now * economy.PRESTIGE_BONUS
 	end
 	return math.max(gain, 0.5)
 end
-UpgradeService.PRESTIGE_GAIN = 0.25
 
--- The recommendation: the best gain for the money among what's affordable; else what to save for (the best
--- gain for the money within reach: its cost under the cash plus a quarter hour of income), else the cheapest.
+-- What fixes each bottleneck (BusinessService:Bottleneck)
+UpgradeService.FIXES = {
+	harvest = { harvest = true },
+	production = { production = true, land = true, value = true },
+	service = { service = true },
+	dispatch = { dispatch = true },
+}
+
+-- The recommendation: an upgrade that fixes the bottleneck (BusinessService), the best $ a minute for the money
+-- among those you can buy now; if none, the one of them to save for (the soonest paid back). When nothing fixes
+-- it, the best value overall. Returns key, the bottleneck, affordable.
 function UpgradeService:Recommend(player)
 	local p = data:Get(player)
 	if not p then
 		return nil
 	end
-	local reach = p.cash + economy:Income(player) * 15
-	local best, bestScore, save, saveScore, cheapest, cheapCost = nil, -1, nil, -1, nil, math.huge
+	local b = business:Bottleneck(player)
+	local fixes = self.FIXES[b] or {}
+	local best, bestScore, save, saveScore, any, anyScore = nil, -1, nil, -1, nil, -1
 	for _, key in Upgrades.LIST do
+		local u = Upgrades[key]
 		local ok, why = Upgrades.can(p, key)
-		if ok or why == "cash" then
+		if (ok or why == "cash") and not u.effect.prestige then
 			local cost = Upgrades.cost(key, p.owned[key] or 0)
 			local score = self:Gain(player, key) / cost
-			if ok and score > bestScore then
+			-- (what raises the price of every unit always helps, whatever the bottleneck: a new crop, premium
+			-- produce, the pigs; and so does the next building, unless the crops are left in the field)
+			local value = u.effect.crop ~= nil or u.effect.priceMult ~= nil or u.fixes == "value"
+			local fits = fixes[u.fixes] or value or (u.effect.business ~= nil and b ~= "harvest")
+			if fits and ok and score > bestScore then
 				best, bestScore = key, score
 			end
-			if not ok and cost <= reach and score > saveScore then
+			if fits and not ok and score > saveScore then
 				save, saveScore = key, score
 			end
-			if cost < cheapCost then
-				cheapest, cheapCost = key, cost
+			if score > anyScore then
+				any, anyScore = key, score
 			end
 		end
 	end
-	-- (a cheap trifle now, or the one that really moves things, soon: the latter, when it's clearly better)
-	if best and save and saveScore > bestScore * 2 and self:Gain(player, save) > self:Gain(player, best) * 3 then
-		return save, Upgrades[save].fixes, false
-	end
-	local key = best or save or cheapest
+	local key = best or save or any
 	if not key then
 		return nil
 	end
-	return key, Upgrades[key].fixes, best ~= nil
+	local can = Upgrades.can(p, key)
+	return key, b, can == true
 end
 
 function UpgradeService:Push(player)

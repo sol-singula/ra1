@@ -24,7 +24,7 @@ local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
 local PadService = {
 	Name = "PadService",
 	Dependencies = { "PlayerDataService", "EconomyService", "UpgradeService", "TerritoryService", "TaskService" },
-	SLOTS = 8,
+	SLOTS = 8, -- the build yard's pads (then one at each animal pen)
 	TICK = 0.2,
 	HOLD = 1.2,
 	REFRESH = 2,
@@ -54,14 +54,14 @@ function PadService:List(player)
 	local list = {}
 	for _, key in Upgrades.LIST do
 		local ok, why = Upgrades.can(p, key)
-		if (ok or why == "cash") and key ~= first then
+		if (ok or why == "cash") and key ~= first and Upgrades[key].branch ~= "animals" then
 			table.insert(list, key)
 		end
 	end
 	table.sort(list, function(a, b)
 		return Upgrades.cost(a, p.owned[a] or 0) < Upgrades.cost(b, p.owned[b] or 0)
 	end)
-	if first and Upgrades[first] then
+	if first and Upgrades[first] and Upgrades[first].branch ~= "animals" then
 		local ok, why = Upgrades.can(p, first)
 		if ok or why == "cash" then
 			table.insert(list, 1, first)
@@ -69,6 +69,11 @@ function PadService:List(player)
 	end
 	while #list > self.SLOTS do
 		table.remove(list)
+	end
+	-- the pens' pads: each animal on its own pen (shown once its stage is reached, until maxed)
+	for n, key in Layout.ANIMALS do
+		local ok, why = Upgrades.can(p, key)
+		list[self.SLOTS + n] = (ok or why == "cash") and key or nil
 	end
 	return list, first
 end
@@ -90,7 +95,7 @@ function PadService:Refresh(player)
 	local list, first = self:List(player)
 	local prev = shown[player] or {}
 	local nowShown = {}
-	for k = 1, self.SLOTS do
+	for k = 1, Layout.PAD_SLOTS do
 		local key = list[k]
 		local m = folder:FindFirstChild("Pad" .. k)
 		if prev[k] ~= key or (key and not m) then
@@ -133,8 +138,8 @@ function PadService:Under(player)
 	local x, z = Layout.toLocal(t.index, pos)
 	local r = Layout.PAD / 2 + 0.4
 	for k, key in shown[player] or {} do
-		local pad = Layout.PADS[k]
-		if key and math.abs(x - pad.x) <= r and math.abs(z - pad.z) <= r then
+		local pad = Layout.padAt(k)
+		if key and pad and math.abs(x - pad.x) <= r and math.abs(z - pad.z) <= r then
 			return k
 		end
 	end

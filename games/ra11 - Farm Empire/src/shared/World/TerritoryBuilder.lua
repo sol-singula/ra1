@@ -18,6 +18,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Layout = require(script.Parent.Layout)
 local Models = require(script.Parent.Models)
+local PenBuilder = require(script.Parent.PenBuilder)
 local Shapes = require(script.Parent.Shapes)
 
 local P = Constants.PALETTE
@@ -164,9 +165,8 @@ local function ground(model, i, view)
 	local plate = Shapes.part(g, Vector3.new(W, 2, D), cf(i, 0, 0, -1), P.grass, { CanCollide = true })
 	plate.Name = "Plate"
 	plate.Material = Enum.Material.Grass
-	-- the front lawn right of the stand, a lighter green
-	local lw = Layout.SPOTS.lawn
-	local lawn = Shapes.part(g, Vector3.new(56, 0.1, 28), cf(i, lw.x, lw.z, 0.03), P.grassLight)
+	-- the front lawn right of the stand (the stock yard and the pens stand on it), a lighter green
+	local lawn = Shapes.part(g, Vector3.new(56, 0.1, 28), cf(i, 48, -73, 0.03), P.grassLight)
 	lawn.Material = Enum.Material.Grass
 	-- the trucks' lane: from the avenue to the warehouse, kerbed, with dashes
 	local ln = Layout.SPOTS.lane
@@ -276,17 +276,12 @@ local function ground(model, i, view)
 	for z = -76, 30, 14 do
 		Shapes.tree(trees, cf(i, -hw + 6, z + rng:NextNumber(-2, 2)), 1 + rng:NextNumber(0, 0.25), P.leaf)
 	end
-	for _, at in { { 26, -64 }, { 70, -64 } } do
-		Shapes.tree(trees, cf(i, at[1], at[2]), 0.9, P.grassDark)
-	end
 	-- bushes along the front fence left of the gate; flower beds by the gate and on the lawn
 	for x = -92, -60, 8 do
 		bush(g, cf(i, x, -85), 0.9 + rng:NextNumber(0, 0.3))
 	end
 	flowerBed(g, cf(i, gx - 8, -85, 0), 4, 3)
 	flowerBed(g, cf(i, gx + 8, -85, 0), 4, 3)
-	flowerBed(g, cf(i, 32, -84, 0), 8, 3)
-	flowerBed(g, cf(i, 62, -84, 0), 8, 3)
 	-- the back garden: the pond, the windmill, hay bales by the North field, a scarecrow by the East field
 	pond(g, i)
 	windmill(g, cf(i, Layout.SPOTS.windmill.x, Layout.SPOTS.windmill.z, 0))
@@ -827,7 +822,7 @@ function TerritoryBuilder.preview(model, i, view)
 	local spot, w, d, sign
 	if key == "shop" then
 		spot, w, d = { x = Layout.SPOTS.stand.x, z = Layout.SPOTS.stand.z + 4 }, 30, 18
-		sign = { x = spot.x + 22, z = spot.z - 4 }
+		sign = { x = spot.x, z = spot.z + 12 }
 	elseif key == "warehouse" then
 		spot, w, d = Layout.SPOTS.warehouse, 50, 34
 		sign = { x = spot.x, z = spot.z - d / 2 - 4 }
@@ -885,6 +880,7 @@ function TerritoryBuilder.build(parent, i, view)
 	TerritoryBuilder.fields(model, i, view)
 	TerritoryBuilder.buildings(model, i, view)
 	TerritoryBuilder.preview(model, i, view)
+	PenBuilder.build(model, i, view)
 	return model
 end
 

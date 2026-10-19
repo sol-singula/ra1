@@ -34,11 +34,12 @@ local function defaults()
 		chosen = "strawberry", -- the crop planted next
 		tiles = {}, -- [tileId] = { crop, at } what's growing (CropService; timers run while away)
 		stock = {}, -- [cropKey] = units in the stock area / stockroom / warehouse
+		animals = {}, -- [animalKey] = { fedAt, pettedAt } (AnimalService; the levels are in owned)
 		task = { step = 1, done = false, goals = {}, seen = {} }, -- the guidance (TaskService)
 		passes = {}, -- [passKey] = true (ShopService)
 		receipts = {}, -- the Robux receipts already granted (never twice)
 		cosmetics = { paint = nil, bundle = false },
-		prestige = { level = 0 }, -- regions opened (+25% a level)
+		prestige = { level = 0 }, -- regions opened (every sale x2 a level, multiplied)
 		away = { at = 0, rate = 0 }, -- when they last left and the income a minute then (OfflineService)
 		stats = {
 			planted = 0,
@@ -47,6 +48,9 @@ local function defaults()
 			earned = 0, -- cash earned, all time
 			trucks = 0,
 			orders = 0,
+			fed = 0, -- times an animal pen was fed
+			petted = 0,
+			golden = 0, -- golden crops tapped
 			sessions = 0,
 			minutes = 0,
 			bottleneck = 0, -- the first time the store fell behind (analytics)

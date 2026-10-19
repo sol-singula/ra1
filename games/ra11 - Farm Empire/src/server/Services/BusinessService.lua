@@ -12,7 +12,8 @@ and the bottleneck is worked out from the same numbers: the one thing most in th
   BusinessService:Stock(player)            units in stock, all crops
   BusinessService:Capacity(player)
   BusinessService:Numbers(player)          { demand, service, dispatch, storage, ... } a minute
-  BusinessService:Bottleneck(player)       "harvest" | "storage" | "service" | "demand" | "production" | "dispatch" | "land"
+  BusinessService:Bottleneck(player)       "harvest" | "service" | "demand" | "production" | "dispatch"
+  BusinessService:Full(player)             the stock area is full (the machines wait)
   BusinessService:SetStage(player, key)
   BusinessService:Push(player)
   BusinessService.Changed (player, what)   "sale" | "truck" | "stage"
@@ -20,6 +21,7 @@ and the bottleneck is worked out from the same numbers: the one thing most in th
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Animals = require(ReplicatedStorage.Shared.Data.Animals)
 local Business = require(ReplicatedStorage.Shared.Data.Business)
 local Crops = require(ReplicatedStorage.Shared.Data.Crops)
 local Layout = require(ReplicatedStorage.Shared.World.Layout)
@@ -36,7 +38,7 @@ local BusinessService = {
 	QUEUE_MAX = 12,
 }
 
-local data, economy, boosts, crops, analytics, territory
+local data, economy, boosts, crops, analytics, territory, automation
 local live = {} -- [player] = { sellAcc, dispAcc, queue, sold = {{t,n}}, lastPush, bottleneck, since }
 
 local function state(player)
@@ -81,6 +83,7 @@ end
 -- Take n units out, the crop with the most stock first: returns units taken and their value at the counter
 local function take(p, n)
 	local taken, value = 0, 0
+	local mult = Upgrades.priceMult(p.owned) * (1 + Animals.boost(p, "price", os.time()))
 	while taken < n do
 		local best, bestN
 		for key, k in p.stock do
@@ -97,7 +100,7 @@ local function take(p, n)
 			p.stock[best] = nil
 		end
 		taken += k
-		value += k * (Crops[best] and Crops[best].value or 1)
+		value += k * (Crops[best] and Crops[best].value or 1) * mult
 	end
 	return taken, value
 end
@@ -108,11 +111,14 @@ function BusinessService:Numbers(player)
 		return nil
 	end
 	local b = Business[p.stage]
-	local demand = b.demand + Upgrades.stat(p.owned, "demand", 0)
+	local t = os.time()
+	-- customers come as fast as the counter can serve them (no adverts to buy): demand is the service
+	local service = (b.service + Upgrades.stat(p.owned, "service", 0)) * (1 + Animals.boost(p, "service", t))
 	if boosts and boosts:Active("customerRush") then
-		demand *= 2
+		service *= 2
 	end
-	local service = b.service + Upgrades.stat(p.owned, "service", 0)
+	service = math.floor(service + 0.5)
+	local demand = service
 	local dispatch = (b.dispatch or 0) + Upgrades.stat(p.owned, "dispatch", 0)
 	if p.passes and p.passes.fastMachines then
 		dispatch *= 1.25
@@ -132,6 +138,11 @@ function BusinessService:Numbers(player)
 	}
 end
 
+-- Units a customer buys at once: 2 at the stand, up to 12 in a busy shop
+function BusinessService:Basket(sell)
+	return math.clamp(math.floor((sell or 0) / 8), 2, 12)
+end
+
 -- Units sold a minute over the last minute (counter and docks)
 function BusinessService:SoldPerMinute(player)
 	local s = state(player)
@@ -146,36 +157,44 @@ function BusinessService:SoldPerMinute(player)
 	return n
 end
 
--- The one thing most in the way (master plan §2): see the file's head
+-- The one thing most in the way (master plan §2), read along the chain field -> harvest -> stock -> sales:
+--   stock full      selling is the limit: "dispatch" (the trucks, once there are docks), else "demand" (not enough
+--                   customers come) or "service" (the counter can't serve them), whichever is lower
+--   ripe piling up  "harvest" (hands or the machine can't keep up)
+--   shelves empty   "production" (the field grows less than the store could sell)
+--   else            the lower of demand and service
 function BusinessService:Bottleneck(player)
 	local p = data:Get(player)
 	if not p then
 		return "none"
 	end
 	local n = self:Numbers(player)
-	local s = state(player)
 	local f = crops and crops:Summary(player) or { tiles = 0, ripe = 0, perMinute = 0, planted = 0 }
-	local full = n.stock >= n.storage * 0.9
-	local machine = Upgrades.machine(p.owned)
-	if full and n.dispatch > 0 and f.perMinute > n.sell + n.dispatch then
-		return "dispatch"
-	end
-	if full then
-		return "storage"
-	end
-	if s.queue >= 4 or (n.demand > n.service and n.stock > 0) then
+	local selling = n.sell + n.dispatch
+	local function sales()
 		return "service"
 	end
-	if f.ripe >= math.max(6, f.tiles * 0.4) and (machine == 0 or f.perMinute > machine * 10) then
+	if n.stock >= n.storage * 0.9 then
+		if n.dispatch > 0 and n.dispatch < f.perMinute then
+			return "dispatch"
+		end
+		return sales()
+	end
+	local machine = Upgrades.machine(p.owned)
+	local clear = machine > 0 and (automation and automation:Rate(player) or 40) or 36
+	if f.ripe >= math.max(6, f.tiles * 0.4) and f.perMinute > clear then
 		return "harvest"
 	end
-	if n.stock == 0 and f.perMinute < n.sell then
+	if n.stock < n.storage * 0.25 and f.perMinute < selling then
 		return "production"
 	end
-	if n.service >= n.demand and n.stock > 0 then
-		return "demand"
-	end
-	return "land"
+	return sales()
+end
+
+-- Is the stock area full (the machines wait)
+function BusinessService:Full(player)
+	local n = self:Numbers(player)
+	return n ~= nil and n.stock >= n.storage
 end
 
 function BusinessService:SetStage(player, key)
@@ -199,9 +218,10 @@ function BusinessService:Step(player, dt)
 	local n = self:Numbers(player)
 	local s = state(player)
 	local st = territory and territory:Spot(player, "stand") or nil
-	-- the counter
+	-- the counter: customers buy a basket each (bigger baskets as the business grows), one payment a basket
 	s.sellAcc += n.sell / 60 * dt
-	if s.sellAcc >= 1 then
+	local basket = self:Basket(n.sell)
+	if s.sellAcc >= basket then
 		local want = math.floor(s.sellAcc)
 		local taken, value = take(p, want)
 		s.sellAcc -= want
@@ -218,15 +238,13 @@ function BusinessService:Step(player, dt)
 		end
 	end
 	-- the line: grows when more come than can be served (and nothing to serve them with is a short line too)
-	local target = n.stock > 0 and math.clamp((n.demand - n.service) / 2, 0, self.QUEUE_MAX) or 0
-	if n.stock == 0 then
-		target = math.min(2, n.demand / 10)
-	end
+	-- (a few waiting while there's stock to sell: more as the counter gets busier)
+	local target = n.stock > 0 and math.clamp(n.sell / 12, 1, self.QUEUE_MAX) or 1
 	s.queue += (target - s.queue) * math.min(1, dt * 0.3)
-	if s.queue >= 4 and (p.stats.bottleneck or 0) == 0 then
+	if n.stock >= n.storage and (p.stats.bottleneck or 0) == 0 then
 		p.stats.bottleneck = os.time()
 		if analytics then
-			pcall(analytics.event, player, "store_bottleneck_reached", { queue = s.queue })
+			pcall(analytics.event, player, "store_bottleneck_reached", { stock = n.stock })
 		end
 	end
 	-- the docks: trucks take loads out in bulk
@@ -284,6 +302,11 @@ function BusinessService:Push(player)
 		soldPerMin = self:SoldPerMinute(player),
 		income = math.floor(economy:Income(player)),
 		bottleneck = s.bottleneck,
+		full = n.stock >= n.storage,
+		basket = self:Basket(n.sell),
+		perMinute = crops and crops:Summary(player).perMinute or 0,
+		harvest = automation and automation:Rate(player) or 0,
+		mix = table.clone(p.stock),
 		next = Business.next(p.stage) and Business.next(p.stage).key or nil,
 	})
 end
@@ -295,6 +318,7 @@ function BusinessService:Init(registry)
 	analytics = registry.AnalyticsService
 	crops = registry.CropService -- (they depend on this service; the registry holds them before their Init)
 	territory = registry.TerritoryService
+	automation = registry.AutomationService
 	registry.UpgradeService.Applied:Connect(function(player)
 		self:Push(player)
 	end)

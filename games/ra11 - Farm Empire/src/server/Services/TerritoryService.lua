@@ -18,6 +18,7 @@ local Constants = require(ReplicatedStorage.Shared.Constants)
 local Layout = require(ReplicatedStorage.Shared.World.Layout)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local PenBuilder = require(ReplicatedStorage.Shared.World.PenBuilder)
 local TerritoryBuilder = require(ReplicatedStorage.Shared.World.TerritoryBuilder)
 local TownBuilder = require(ReplicatedStorage.Shared.World.TownBuilder)
 local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
@@ -91,6 +92,9 @@ function TerritoryService:Refresh(player, what)
 	end
 	if what == "preview" or what == "all" then
 		TerritoryBuilder.preview(t.model, t.index, v)
+	end
+	if what == "pens" or what == "all" then
+		PenBuilder.build(t.model, t.index, v)
 	end
 	self.Changed:Fire(player, what)
 end
@@ -291,6 +295,9 @@ function TerritoryService:Init(registry)
 		if e.business or e.machine or e.docks then
 			self:Refresh(player, "buildings")
 			self:Refresh(player, "preview")
+		end
+		if e.animal or e.business then
+			self:Refresh(player, "pens")
 		end
 		if e.business then
 			self:Push(player)

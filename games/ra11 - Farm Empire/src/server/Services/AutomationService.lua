@@ -13,6 +13,7 @@ area makes it wait (the storage bottleneck), never lose crops.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Animals = require(ReplicatedStorage.Shared.Data.Animals)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
 
@@ -35,7 +36,7 @@ function AutomationService:Rate(player)
 	if tier == 0 then
 		return 0
 	end
-	local rate = self.RATES[tier]
+	local rate = self.RATES[tier] * (1 + Animals.boost(p, "machine", os.time()))
 	if boosts and boosts:Active("harvestRush") then
 		rate *= 2
 	end
@@ -70,7 +71,7 @@ function AutomationService:Step(player, dt)
 			w.cursor = 1
 		end
 		local id = route[w.cursor]
-		if crops:Ripe(player, id) then
+		if crops:Ripe(player, id) and not crops:IsGolden(player, id) then
 			local got = crops:Harvest(player, id, "machine")
 			if got > 0 then
 				w.credit -= 1

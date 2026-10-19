@@ -44,6 +44,8 @@ Net.ServerEvents = {
 	"Leaderboards", -- the town's boards (LeaderboardService)
 	"Town", -- every territory's numbers (TerritoryService)
 	"AdminState", -- { admin = true } this client is an admin (AdminService)
+	"Animals", -- [key] = { level, fed, happy, fedLeft, petIn, boost, word } the pens (AnimalService)
+	"Golden", -- { tile, cash, x, z } a golden crop was tapped (CropService)
 }
 
 local UNRELIABLE = {}

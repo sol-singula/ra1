@@ -30,6 +30,7 @@ local branch = "all"
 local BRANCHES = {
 	{ key = "all", label = "ALL" },
 	{ key = "production", label = "FARM" },
+	{ key = "animals", label = "ANIMALS" },
 	{ key = "machinery", label = "MACHINES" },
 	{ key = "retail", label = "STORE" },
 	{ key = "logistics", label = "LOGISTICS" },
@@ -40,6 +41,7 @@ local BRANCH_COLOR = {
 	retail = Color3.fromRGB(60, 150, 240),
 	logistics = Color3.fromRGB(255, 146, 36),
 	prestige = Color3.fromRGB(160, 100, 235),
+	animals = Color3.fromRGB(214, 150, 90),
 }
 
 local function row(parent, k)
@@ -198,7 +200,7 @@ function UpgradeController:init()
 		local t = Theme.button({
 			Name = b.key,
 			Text = b.label,
-			Size = UDim2.fromOffset(130, 36),
+			Size = UDim2.fromOffset(108, 36),
 			LayoutOrder = k,
 			BackgroundColor3 = C.paper,
 			dark = true,

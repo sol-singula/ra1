@@ -1,6 +1,6 @@
 --[[
 A new region (master plan §10, §15: prestige, never mandatory, after the centre). The "region" upgrade: the farm
-starts over on a fresh territory with every sale paying 25% more a region, the stats and passes kept, the
+starts over on a fresh territory with every sale paying double a region (x2, x4, x8...), the stats and passes kept, the
 onboarding not repeated, a trophy on the gate.
 
   PrestigeService:Open(player)   the reset (UpgradeService fires Applied "region")

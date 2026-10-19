@@ -62,43 +62,53 @@ Tasks.ONBOARDING = {
 		end,
 	},
 	{
-		key = "counter1",
-		text = "A line is forming! Step on the Bigger Counter pad",
+		key = "chicken1",
+		text = "Step on the Chickens pad by the pens: crops grow faster",
 		kind = "upgrade",
-		target = "counter",
+		target = "chicken",
 		reward = 60,
 		done = function(p)
-			return (p.owned.counter or 0) >= 1
+			return (p.owned.chicken or 0) >= 1
 		end,
 	},
 	{
-		key = "seeder1",
-		text = "Step on the Auto-Seeder pad: tiles replant themselves",
-		kind = "upgrade",
-		target = "seeder",
+		key = "feed1",
+		text = "Step on the chickens' FEED plate (they boost more when fed, and when you pet them)",
+		kind = "feed",
+		target = "chicken",
 		reward = 80,
 		done = function(p)
-			return (p.owned.seeder or 0) >= 1
+			return (p.stats.fed or 0) + (p.stats.petted or 0) >= 1
 		end,
 	},
 	{
 		key = "tomato1",
-		text = "Step on the Tomato Seeds pad: tomatoes sell for more",
+		text = "Step on the Tomato Seeds pad: tomatoes sell for $40",
 		kind = "upgrade",
 		target = "tomato",
-		reward = 120,
+		reward = 100,
 		done = function(p)
 			return (p.owned.tomato or 0) >= 1
 		end,
 	},
 	{
-		key = "sign1",
-		text = "Step on the Road Sign pad: more customers",
+		key = "counter1",
+		text = "Step on the Bigger Counter pad: sell faster",
 		kind = "upgrade",
-		target = "sign",
-		reward = 150,
+		target = "counter",
+		reward = 120,
 		done = function(p)
-			return (p.owned.sign or 0) >= 1
+			return (p.owned.counter or 0) >= 1
+		end,
+	},
+	{
+		key = "premium1",
+		text = "Step on the Premium Produce pad: every crop sells for 25% more",
+		kind = "upgrade",
+		target = "premium",
+		reward = 200,
+		done = function(p)
+			return (p.owned.premium or 0) >= 1
 		end,
 	},
 }
@@ -111,17 +121,25 @@ end
 
 -- Secondary goals: each pays a little Cash once (the stat it watches and the count)
 Tasks.GOALS = {
-	{ key = "harvest10", text = "Harvest 10 crops", stat = "harvested", n = 10, reward = 30 },
-	{ key = "sell40", text = "Sell 40 crops", stat = "sold", n = 40, reward = 80 },
-	{ key = "harvest50", text = "Harvest 50 crops", stat = "harvested", n = 50, reward = 150 },
-	{ key = "earn1k", text = "Earn $1,000", stat = "earned", n = 1000, reward = 250 },
-	{ key = "sell200", text = "Sell 200 crops", stat = "sold", n = 200, reward = 400 },
-	{ key = "earn5k", text = "Earn $5,000", stat = "earned", n = 5000, reward = 800 },
-	{ key = "harvest500", text = "Harvest 500 crops", stat = "harvested", n = 500, reward = 1500 },
-	{ key = "earn25k", text = "Earn $25,000", stat = "earned", n = 25000, reward = 4000 },
-	{ key = "bulk10", text = "Send 10 trucks out", stat = "trucks", n = 10, reward = 6000 },
-	{ key = "orders5", text = "Fill 5 market orders", stat = "orders", n = 5, reward = 10000 },
-	{ key = "earn1m", text = "Earn $1,000,000 all time", stat = "earned", n = 1000000, reward = 100000 },
+	{ key = "harvest10", text = "Harvest 10 crops", stat = "harvested", n = 10, reward = 50 },
+	{ key = "sell20", text = "Sell 20 crops", stat = "sold", n = 20, reward = 120 },
+	{ key = "earn1k", text = "Earn $1,000", stat = "earned", n = 1000, reward = 300 },
+	{ key = "feed3", text = "Feed or pet animals 3 times", stat = "fed", n = 3, reward = 600 },
+	{ key = "golden1", text = "Tap a golden crop", stat = "golden", n = 1, reward = 1000 },
+	{ key = "earn10k", text = "Earn $10,000", stat = "earned", n = 10000, reward = 2500 },
+	{ key = "harvest200", text = "Harvest 200 crops", stat = "harvested", n = 200, reward = 5000 },
+	{ key = "pet5", text = "Pet happy animals 5 times", stat = "petted", n = 5, reward = 10000 },
+	{ key = "earn100k", text = "Earn $100,000", stat = "earned", n = 100000, reward = 25000 },
+	{ key = "golden5", text = "Tap 5 golden crops", stat = "golden", n = 5, reward = 50000 },
+	{ key = "sell2000", text = "Sell 2,000 crops", stat = "sold", n = 2000, reward = 100000 },
+	{ key = "earn1m", text = "Earn $1,000,000", stat = "earned", n = 1000000, reward = 250000 },
+	{ key = "feed30", text = "Feed or pet animals 30 times", stat = "fed", n = 30, reward = 500000 },
+	{ key = "bulk10", text = "Send 10 trucks out", stat = "trucks", n = 10, reward = 1000000 },
+	{ key = "earn10m", text = "Earn $10,000,000", stat = "earned", n = 10000000, reward = 2500000 },
+	{ key = "golden25", text = "Tap 25 golden crops", stat = "golden", n = 25, reward = 5000000 },
+	{ key = "orders5", text = "Fill 5 market orders", stat = "orders", n = 5, reward = 8000000 },
+	{ key = "earn100m", text = "Earn $100,000,000", stat = "earned", n = 100000000, reward = 25000000 },
+	{ key = "earn1b", text = "Earn $1,000,000,000", stat = "earned", n = 1000000000, reward = 250000000 },
 }
 Tasks.goalByKey = {}
 for _, g in Tasks.GOALS do

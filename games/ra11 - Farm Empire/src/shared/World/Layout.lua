@@ -160,17 +160,44 @@ Layout.SPOTS = {
 	pond = { x = -30, z = 62 },
 	windmill = { x = -50, z = 79 },
 	scarecrow = { x = -52, z = -20 },
-	lawn = { x = 48, z = -73 }, -- the front lawn right of the stand
-	region = { x = 48, z = -74 }, -- where the new-region preview stands
+	stock = { x = 25, z = -70 }, -- the stock yard right of the stand: crates piled up as stock comes in
+	pens = { x = 53, z = -67 }, -- the animal pens' middle, right of the stock yard
+	region = { x = -40, z = 22 }, -- where the new-region preview stands
 	dock = { x = 76, z = 50 },
 }
 
--- The pads: two rows of four in the build yard, the ones nearest the spawn first
+-- The pads: two rows of four in the build yard, the ones nearest the spawn first (a step apart)
 Layout.PADS = {}
 for k = 1, 8 do
 	local row = (k - 1) // 4 -- 0 the back row (nearer the spawn), 1 the front row
 	local col = (k - 1) % 4
-	Layout.PADS[k] = { x = -25 - col * 9, z = -67 - row * 9 }
+	Layout.PADS[k] = { x = -24 - col * 10, z = -66.5 - row * 10.5 }
+end
+
+-- The animals: four pens along the front lawn, each with its upgrade pad and a feed plate at its gate (the road
+-- side), so feeding them and buying more is a few steps from the stand
+Layout.ANIMALS = { "chicken", "pig", "cow", "sheep" }
+Layout.PEN = { w = 11.5, d = 14, z = -67 } -- each pen's size and middle (z)
+Layout.PENS = {}
+for k, key in Layout.ANIMALS do
+	local x = 30 + Layout.PEN.w * (k - 0.5)
+	Layout.PENS[key] = {
+		x = x,
+		z = Layout.PEN.z,
+		pad = { x = x - 2.6, z = -79 }, -- the upgrade pad (6.4 across)
+		feed = { x = x + 3.4, z = -79 }, -- the feed plate (4 across)
+	}
+end
+Layout.FEED = 4 -- the feed plate's size
+
+-- Where pad slot k stands: 1..8 in the build yard, 8 + n at animal n's pen
+Layout.PAD_SLOTS = 8 + #Layout.ANIMALS
+function Layout.padAt(k)
+	if k <= 8 then
+		return Layout.PADS[k]
+	end
+	local key = Layout.ANIMALS[k - 8]
+	return key and Layout.PENS[key].pad or nil
 end
 
 -- The zones that must not overlap (tests/LayoutSmoke): centre x, z, width, depth, local
@@ -196,7 +223,9 @@ Layout.ZONES = {
 	pond = rect(-30, 62, 26, 26),
 	windmill = rect(-50, 79, 6, 6),
 	scarecrow = rect(-52, -20, 4, 2),
-	lawn = rect(48, -73, 56, 28),
+	stock = rect(25, -70, 10, 20),
+	pens = rect(53, -67, 46, 14),
+	penFront = rect(53, -79.5, 46, 9),
 }
 
 -- The city's courtyard

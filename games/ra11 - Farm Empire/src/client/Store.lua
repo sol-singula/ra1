@@ -44,6 +44,7 @@ local EVENTS = { -- Net event -> the Store key it fills
 	Market = "market",
 	Leaderboards = "leaderboards",
 	Town = "town",
+	Animals = "animals",
 }
 local MERGED = { profile = true, territory = true }
 

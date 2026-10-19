@@ -1,7 +1,7 @@
 --[[
 Cash (master plan §7): one currency. Every sale, every purchase goes through here, so the HUD's cash, the income
-a minute and the lifetime earnings are always right. Income a minute is the real one: what came in over the last
-sixty seconds.
+a minute and the lifetime earnings are always right. Income a minute is the real one: what sales and trucks brought in over
+the last sixty seconds (rewards and gifts don't count).
 
   EconomyService:Add(player, amount, why, at)   pays; at = a Vector3 the coins fly from (the client's effect)
   EconomyService:Spend(player, amount, why)     false if they can't afford it
@@ -19,7 +19,8 @@ local EconomyService = {
 	Name = "EconomyService",
 	Dependencies = { "PlayerDataService" },
 	Changed = Signal.new("EconomyService.Changed"),
-	PRESTIGE_BONUS = 0.25,
+	PRESTIGE_BONUS = 1, -- each region doubles every sale (multiplied: 2, 4, 8...)
+	EARNING = { sale = true, truck = true, order = true }, -- what counts as income a minute (not rewards)
 }
 
 local data, boosts, analytics
@@ -32,7 +33,7 @@ end
 
 function EconomyService:Multiplier(player)
 	local p = data:Get(player)
-	local m = 1 + (p and p.prestige and p.prestige.level or 0) * self.PRESTIGE_BONUS
+	local m = (1 + self.PRESTIGE_BONUS) ^ (p and p.prestige and p.prestige.level or 0)
 	if boosts and boosts:Active("goldenMarket") then
 		m *= 1.5
 	end
@@ -63,9 +64,11 @@ function EconomyService:Add(player, amount, why, at)
 	amount = math.floor(amount + 0.5)
 	p.cash += amount
 	p.stats.earned = (p.stats.earned or 0) + amount
-	local list = history[player] or {}
-	history[player] = list
-	table.insert(list, { now(), amount })
+	if self.EARNING[why] then
+		local list = history[player] or {}
+		history[player] = list
+		table.insert(list, { now(), amount })
+	end
 	pushDue[player] = true
 	if at or why == "goal" or why == "away" then
 		Net.fire(player, "Earned", { amount = amount, why = why, at = at and { at.X, at.Y, at.Z } or nil })

@@ -49,7 +49,7 @@ end
 -- The market ----------------------------------------------------------------------------------------------------------------
 check("no orders for a stand", #Market:Orders(player) == 0)
 for _, key in
-	{ "tiles", "counter", "seeder", "tomato", "sign", "wheat", "field2", "harvester", "corn", "tractor", "shop" }
+	{ "tiles", "counter", "seeder", "tomato", "chicken", "wheat", "field2", "harvester", "corn", "tractor", "shop" }
 do
 	buy(key)
 end
@@ -99,7 +99,7 @@ check("open a new region", buy("region"))
 Engine.advance(1)
 p = Data:Get(player)
 check("...the farm starts over", p.stage == "stand" and next(p.owned) == nil and p.cash == 0 and next(p.tiles) == nil)
-check("...with the bonus", p.prestige.level == 1 and Economy:Multiplier(player) == 1.25)
+check("...with the bonus", p.prestige.level == 1 and Economy:Multiplier(player) == 2)
 check("...the stats kept, the onboarding not repeated", p.stats.earned == earned and p.task.done)
 Engine.advance(1)
 local t = Territory:Territory(player)
@@ -116,12 +116,13 @@ check(
 		end)()
 )
 check(
-	"a sale pays 25% more",
+	"a sale pays double",
 	(function()
 		p.stock.strawberry = 10
 		local c = p.cash
-		Engine.advance(8)
-		return p.cash - c >= math.floor(3 * 1.25)
+		Engine.advance(12)
+		-- (a basket of 2 strawberries at $10, doubled)
+		return (p.cash - c) % 40 == 0 and p.cash - c >= 40
 	end)()
 )
 

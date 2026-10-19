@@ -1,9 +1,9 @@
 --[[
-The HUD (master plan §7): cash big at the top left with the income a minute beside it; the business line (demand
-against service, stock against storage) only when it says something (a line forming, storage nearly full); the
-toasts; a "+$n" when cash comes in. Uncluttered: the recommended upgrade is TaskController's card.
+The HUD (master plan §7): cash big at the top left with the income a minute (from sales) under it; across the
+top the chain GROW > HARVEST > STOCK > SELL with the bottleneck in red and a line saying what to do about it; the
+toasts. Uncluttered: the recommended upgrade is TaskController's card, and the "+$n" pops float up at the stand.
 
-  HudController.refs    cash, income, line, toast, earned (tests)
+  HudController.refs    cash, income, chips, line, toast (tests)
   HudController.toast(text, kind)
 ]]
 local Players = game:GetService("Players")
@@ -51,30 +51,40 @@ local function paint()
 		refs.stage.Text = Business[p.stage or "stand"].short
 	end
 	local b = Store.get("business")
-	if b then
-		local full = b.storage > 0 and b.stock / b.storage
-		local text, color
-		if full and full >= 0.9 then
-			text = `📦 STORAGE {b.stock}/{b.storage}: FULL`
-			color = C.red
-		elseif (b.queue or 0) >= 4 then
-			text = `🛒 LINE OF {b.queue}: the counter serves {b.service}/min, {b.demand}/min come`
-			color = C.mustard
-		elseif
-			b.stock == 0
-			and (b.soldPerMin or 0) == 0
-			and (b.demand or 0) > 0
-			and not (Store.get("task") and Store.get("task").onboarding)
-		then
-			text = "🛒 SHELVES EMPTY: customers are waiting for crops"
-			color = C.mustard
-		elseif (b.demand or 0) > 0 then
-			text = `🛒 {b.demand}/min come · counter {b.service}/min · stock {b.stock}/{b.storage}`
-			color = C.white
+	if b and refs.chips then
+		-- the chain: what the field grows, what's harvested, the stock, what's sold; the bottleneck in red
+		local hand = (b.harvest or 0) == 0
+		local selling = (b.sell or b.service or 0) + (b.dispatch or 0)
+		local vals = {
+			grow = `{Format.num(b.perMinute or 0)}/min`,
+			harvest = hand and "BY HAND" or `{Format.num(b.harvest)}/min`,
+			stock = `{Format.num(b.stock or 0)}/{Format.num(b.storage or 0)}`,
+			sell = `{Format.num(selling)}/min`,
+		}
+		local worst = ({ production = "grow", harvest = "harvest", service = "sell", dispatch = "sell" })[b.bottleneck or ""]
+		if b.full then
+			worst = "stock"
+		end
+		for key, chip in refs.chips do
+			chip.Value.Text = vals[key]
+			local bad = key == worst
+			chip.BackgroundColor3 = bad and C.red or C.slate
+			chip:SetAttribute("Bottleneck", bad)
+		end
+		local NOTE = {
+			grow = "🌱 BOTTLENECK: the field. Grow more: more tiles, new crops, chickens",
+			harvest = "🚜 BOTTLENECK: harvesting. Ripe crops are waiting: get a machine",
+			stock = "📦 STOCK FULL: the harvesters have stopped. Sell faster: a bigger counter, cows, a bigger shop",
+			sell = "🛒 BOTTLENECK: selling. Your stock waits for the counter: a bigger counter, cows, a bigger shop",
+		}
+		local onboarding = Store.get("task") and Store.get("task").onboarding
+		local text = not onboarding and worst and NOTE[worst] or nil
+		if b.full then
+			text = NOTE.stock
 		end
 		refs.line.Visible = text ~= nil
 		refs.line.Text = text or ""
-		refs.line.TextColor3 = color or C.white
+		refs.line.TextColor3 = b.full and Color3.fromRGB(255, 150, 140) or C.white
 	end
 end
 
@@ -146,20 +156,72 @@ function HudController:init()
 		Theme.compact(l, 0.8)
 		return l
 	end
-	refs.line = pill("Line", 14, 17)
-	refs.toast = pill("Toast", 56, 19)
-	refs.earned = Theme.text({
-		Name = "Earned",
-		Text = "",
-		Position = UDim2.fromOffset(324, 20),
-		Size = UDim2.fromOffset(160, 30),
-		Font = Theme.Display,
-		TextColor3 = CASH,
-		outline = 2,
-		fit = 24,
-		Visible = false,
+	-- the chain across the top: GROW > HARVEST > STOCK > SELL
+	local chain = Theme.new("Frame", {
+		Name = "Chain",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 10),
+		Size = UDim2.fromOffset(4 * 118 + 3 * 18, 46),
+		BackgroundTransparency = 1,
 		Parent = gui,
 	})
+	refs.chain = chain
+	refs.chips = {}
+	for k, spec in
+		{
+			{ "grow", "🌱 GROW" },
+			{ "harvest", "🚜 HARVEST" },
+			{ "stock", "📦 STOCK" },
+			{ "sell", "🛒 SELL" },
+		}
+	do
+		local chip = Theme.slab({
+			Name = spec[1],
+			Position = UDim2.fromOffset((k - 1) * 136, 0),
+			Size = UDim2.fromOffset(118, 46),
+			Parent = chain,
+		})
+		Theme.text({
+			Name = "Label",
+			Text = spec[2],
+			Position = UDim2.fromOffset(6, 3),
+			Size = UDim2.new(1, -12, 0, 17),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = C.mustard,
+			Font = Theme.Display,
+			fit = 14,
+			Parent = chip,
+		})
+		Theme.text({
+			Name = "Value",
+			Text = "",
+			Position = UDim2.fromOffset(6, 21),
+			Size = UDim2.new(1, -12, 0, 21),
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextColor3 = C.white,
+			Font = Theme.Display,
+			fit = 18,
+			Parent = chip,
+		})
+		if k < 4 then
+			Theme.text({
+				Name = "Arrow",
+				Text = "›",
+				Position = UDim2.fromOffset(k * 136 - 18, 6),
+				Size = UDim2.fromOffset(18, 34),
+				TextXAlignment = Enum.TextXAlignment.Center,
+				TextColor3 = C.white,
+				Font = Theme.Display,
+				outline = 2,
+				fit = 30,
+				Parent = chain,
+			})
+		end
+		refs.chips[spec[1]] = chip
+	end
+	Theme.compact(chain, 0.7)
+	refs.line = pill("Line", 64, 16)
+	refs.toast = pill("Toast", 100, 19)
 
 	paint()
 	Store.Changed:Connect(function(partial)
@@ -168,23 +230,6 @@ function HudController:init()
 		end
 	end)
 	Net.listen("Toast", toast)
-	local earnedToken, acc = nil, 0
-	Net.listen("Earned", function(e)
-		if type(e) ~= "table" then
-			return
-		end
-		acc += e.amount or 0
-		refs.earned.Text = `+{Format.cash(acc)}`
-		refs.earned.Visible = true
-		local token = {}
-		earnedToken = token
-		task.delay(1.4, function()
-			if earnedToken == token then
-				refs.earned.Visible = false
-				acc = 0
-			end
-		end)
-	end)
 	-- the device, once, for the analytics
 	task.delay(2, function()
 		pcall(function()

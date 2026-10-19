@@ -16,14 +16,14 @@ local Crops = {}
 Crops.LIST = { "strawberry", "tomato", "wheat", "corn", "pumpkin", "blueberry", "melon", "goldenApple" }
 
 -- stylua: ignore start
-Crops.strawberry  = { name = "Strawberry",   icon = "🍓", grow = 6,   value = 8,    color = rgb(228, 40, 56),  leaf = rgb(60, 160, 70),  model = "strawberry" }
-Crops.tomato      = { name = "Tomato",       icon = "🍅", grow = 10,  value = 18,   color = rgb(232, 64, 40),  leaf = rgb(56, 150, 64),  model = "tomato",  unlock = "tomato" }
-Crops.wheat       = { name = "Wheat",        icon = "🌾", grow = 14,  value = 30,   color = rgb(232, 196, 90), leaf = rgb(150, 180, 70), model = "wheat",   unlock = "wheat" }
-Crops.corn        = { name = "Corn",         icon = "🌽", grow = 20,  value = 50,   color = rgb(250, 210, 60), leaf = rgb(70, 160, 70),  model = "corn",    unlock = "corn" }
-Crops.pumpkin     = { name = "Pumpkin",      icon = "🎃", grow = 30,  value = 90,   color = rgb(244, 132, 36), leaf = rgb(70, 150, 60),  model = "pumpkin", unlock = "pumpkin" }
-Crops.blueberry   = { name = "Blueberry",    icon = "🫐", grow = 28,  value = 100,  color = rgb(70, 86, 200),  leaf = rgb(60, 140, 80),  model = "bush",    unlock = "blueberry" }
-Crops.melon       = { name = "Melon",        icon = "🍉", grow = 40,  value = 160,  color = rgb(60, 150, 70),  leaf = rgb(70, 160, 70),  model = "melon",   unlock = "melon" }
-Crops.goldenApple = { name = "Golden Apple", icon = "🍎", grow = 70,  value = 420,  color = rgb(255, 196, 40), leaf = rgb(60, 150, 70),  model = "tree",    unlock = "orchard" }
+Crops.strawberry  = { name = "Strawberry",   icon = "🍓", grow = 5,   value = 10,    color = rgb(228, 40, 56),  leaf = rgb(60, 160, 70),  model = "strawberry" }
+Crops.tomato      = { name = "Tomato",       icon = "🍅", grow = 7,  value = 40,   color = rgb(232, 64, 40),  leaf = rgb(56, 150, 64),  model = "tomato",  unlock = "tomato" }
+Crops.wheat       = { name = "Wheat",        icon = "🌾", grow = 9,  value = 150,   color = rgb(232, 196, 90), leaf = rgb(150, 180, 70), model = "wheat",   unlock = "wheat" }
+Crops.corn        = { name = "Corn",         icon = "🌽", grow = 12,  value = 600,   color = rgb(250, 210, 60), leaf = rgb(70, 160, 70),  model = "corn",    unlock = "corn" }
+Crops.pumpkin     = { name = "Pumpkin",      icon = "🎃", grow = 15,  value = 2000,   color = rgb(244, 132, 36), leaf = rgb(70, 150, 60),  model = "pumpkin", unlock = "pumpkin" }
+Crops.blueberry   = { name = "Blueberry",    icon = "🫐", grow = 18,  value = 5000,  color = rgb(70, 86, 200),  leaf = rgb(60, 140, 80),  model = "bush",    unlock = "blueberry" }
+Crops.melon       = { name = "Melon",        icon = "🍉", grow = 22,  value = 15000,  color = rgb(60, 150, 70),  leaf = rgb(70, 160, 70),  model = "melon",   unlock = "melon" }
+Crops.goldenApple = { name = "Golden Apple", icon = "🍎", grow = 30,  value = 40000,  color = rgb(255, 196, 40), leaf = rgb(60, 150, 70),  model = "tree",    unlock = "orchard" }
 -- stylua: ignore end
 
 for _, key in Crops.LIST do

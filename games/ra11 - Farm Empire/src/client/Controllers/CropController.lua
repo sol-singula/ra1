@@ -19,6 +19,7 @@ local UserInputService = game:GetService("UserInputService")
 local CropModels = require(ReplicatedStorage.Shared.World.CropModels)
 local Crops = require(ReplicatedStorage.Shared.Data.Crops)
 local Format = require(ReplicatedStorage.Shared.Format)
+local Shapes = require(ReplicatedStorage.Shared.World.Shapes)
 local Layout = require(ReplicatedStorage.Shared.World.Layout)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Bus = require(script.Parent.Parent.UI.Bus)
@@ -99,6 +100,54 @@ local function refresh()
 	end
 end
 
+-- The golden crop: a gold ring and a spinning star over its tile, a tag with what it pays
+local goldenRefs
+local function golden()
+	local crops = Store.get("crops")
+	local id = crops and crops.golden
+	if goldenRefs and goldenRefs.id ~= id then
+		goldenRefs.folder:Destroy()
+		goldenRefs = nil
+	end
+	if not id or goldenRefs then
+		return
+	end
+	local cf = tileCFrame(id)
+	if not cf then
+		return
+	end
+	local f = Shapes.folder(workspace, "GoldenCrop")
+	local ring = Shapes.cylinder(
+		f,
+		Vector3.new(0.2, 5.4, 5.4),
+		cf * CFrame.new(0, 0.5, 0) * CFrame.Angles(0, 0, math.pi / 2),
+		Color3.fromRGB(255, 205, 50),
+		{ CanQuery = false }
+	)
+	ring.Material = Enum.Material.Neon
+	ring.Transparency = 0.2
+	local star = Shapes.sphere(
+		f,
+		Vector3.new(1.2, 1.2, 1.2),
+		cf * CFrame.new(0, 4, 0),
+		Color3.fromRGB(255, 215, 60),
+		{ CanQuery = false }
+	)
+	star.Name = "Star"
+	star.Material = Enum.Material.Neon
+	Shapes.label(star, `⭐ TAP! +{Format.cash(crops.goldenValue or 0)}`, {
+		Name = "GoldenTag",
+		studs = Vector2.new(7, 2),
+		StudsOffset = Vector3.new(0, 2, 0),
+		BackgroundColor3 = Color3.fromRGB(200, 140, 20),
+		MaxDistance = 160,
+	})
+	goldenRefs = { id = id, folder = f, ring = ring, star = star, cf = cf }
+end
+CropController.golden = function()
+	return goldenRefs and goldenRefs.id or nil
+end
+
 function CropController.plants()
 	local n = 0
 	for _ in plants do
@@ -113,7 +162,8 @@ function CropController.tap(id)
 	if t == nil then
 		return false
 	end
-	if t == false then
+	-- (a golden crop pays at any stage: a tap on it is a harvest even before it's ripe)
+	if t == false and crops.golden ~= id then
 		Net.send("Crop", "plant", id)
 	else
 		Net.send("Crop", "harvest", id)
@@ -186,6 +236,14 @@ local function walk()
 				walked[id] = t
 				Net.send("Crop", "harvest", id)
 			end
+		end
+	end
+	-- (walking over the golden crop takes it too, at any stage)
+	if goldenRefs then
+		local d = goldenRefs.cf.Position - pos
+		if Vector3.new(d.X, 0, d.Z).Magnitude <= CropController.WALK_REACH and t - (walked.golden or 0) > 1 then
+			walked.golden = t
+			Net.send("Crop", "harvest", goldenRefs.id)
 		end
 	end
 end
@@ -348,6 +406,14 @@ function CropController:init()
 		if acc >= 1 then
 			acc = 0
 			refresh()
+		end
+		golden()
+		if goldenRefs then
+			local t = os.clock()
+			goldenRefs.star.CFrame = goldenRefs.cf
+				* CFrame.new(0, 4 + math.sin(t * 3) * 0.4, 0)
+				* CFrame.Angles(0, t * 2, 0)
+			goldenRefs.ring.Transparency = 0.2 + (math.sin(t * 6) + 1) * 0.25
 		end
 		walk()
 	end)

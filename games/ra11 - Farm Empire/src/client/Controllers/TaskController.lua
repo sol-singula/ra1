@@ -96,6 +96,15 @@ local function targetOf(primary)
 		return tileTarget(i, false), "PLANT ALL"
 	elseif primary.kind == "stand" then
 		return Layout.toWorld(i, Layout.SPOTS.stand.x, Layout.SPOTS.stand.z - 6, 0.2), "YOUR STAND"
+	elseif primary.kind == "feed" and Layout.PENS[primary.target or ""] then
+		local fp = Layout.PENS[primary.target].feed
+		return Layout.toWorld(i, fp.x, fp.z, 0.3), primary.key:find("^pet") and "PET THEM" or "FEED"
+	elseif primary.kind == "golden" and primary.target then
+		local key, n = Layout.parseTile(primary.target)
+		if key and n then
+			local x, z = Layout.tilePos(key, n)
+			return Layout.toWorld(i, x, z, 0.6), "TAP IT!"
+		end
 	elseif primary.kind == "upgrade" then
 		local key = primary.target
 		local model = territoryModel(i)
@@ -207,13 +216,14 @@ local function paint()
 	Bus.Highlight:Fire(hl)
 end
 
--- A chevron: two bars in a V, drawn with frames (glyphs don't draw the same everywhere)
+-- A chevron pointing down: two bars in a V, drawn with frames (glyphs don't draw the same everywhere). Sized by
+-- scale, so the whole arrow is sized in studs and shrinks with distance like the world does.
 local function chevron(parent, y, color)
 	local holder = Theme.new("Frame", {
 		Name = "Chevron",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0.5, 0, 0, y),
-		Size = UDim2.fromOffset(80, 50),
+		Position = UDim2.fromScale(0.5, y),
+		Size = UDim2.fromScale(0.7, 0.28),
 		BackgroundTransparency = 1,
 		Parent = parent,
 	})
@@ -221,13 +231,13 @@ local function chevron(parent, y, color)
 		Theme.new("Frame", {
 			Name = side < 0 and "L" or "R",
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(0.5, side * 17, 0.5, 0),
-			Size = UDim2.fromOffset(50, 18),
-			Rotation = side * 38,
+			Position = UDim2.fromScale(0.5 + side * 0.21, 0.5),
+			Size = UDim2.fromScale(0.62, 0.34),
+			Rotation = -side * 38, -- (the inner ends low: a V)
 			BackgroundColor3 = color,
 			BorderSizePixel = 0,
 			Parent = holder,
-		}, { Theme.corner(7), Theme.stroke(3, C.ink) })
+		}, { Theme.new("UICorner", { CornerRadius = UDim.new(0.3, 0) }), Theme.stroke(2, C.ink) })
 	end
 	return holder
 end
@@ -241,8 +251,8 @@ local function buildWorld()
 	refs.anchor = anchor
 	local bb = Instance.new("BillboardGui")
 	bb.Name = "TaskArrow"
-	bb.Size = UDim2.fromOffset(150, 170)
-	bb.StudsOffset = Vector3.new(0, 5, 0)
+	bb.Size = UDim2.new(4.2, 0, 4.8, 0) -- (in studs: never a huge arrow on a phone)
+	bb.StudsOffset = Vector3.new(0, 3.6, 0)
 	bb.AlwaysOnTop = true
 	bb.LightInfluence = 0
 	bb.MaxDistance = 300
@@ -257,16 +267,16 @@ local function buildWorld()
 		Name = "Word",
 		Text = "",
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 0),
-		Size = UDim2.fromOffset(150, 34),
+		Position = UDim2.fromScale(0.5, 0),
+		Size = UDim2.fromScale(1.6, 0.24),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextColor3 = GOLD,
-		outline = 3,
-		fit = 26,
+		outline = 2,
+		fit = 40,
 		Parent = refs.bob,
 	})
-	chevron(refs.bob, 72, GOLD)
-	chevron(refs.bob, 112, rgb(255, 160, 40))
+	chevron(refs.bob, 0.48, GOLD)
+	chevron(refs.bob, 0.78, rgb(255, 160, 40))
 	bb.Parent = anchor
 	refs.arrow = bb
 	-- the ring on the ground round the target
@@ -597,7 +607,7 @@ local function animate()
 	refs.anchor.CFrame = CFrame.new(target)
 	refs.arrow.Enabled = true
 	refs.word.Text = targetWord or ""
-	refs.bob.Position = UDim2.fromOffset(0, math.sin(t * 5) * 10)
+	refs.bob.Position = UDim2.fromScale(0, math.sin(t * 5) * 0.06)
 	local pulse = (t * 0.8) % 1
 	local size = 6 + pulse * 3
 	refs.ring.Size = Vector3.new(0.15, size, size)
