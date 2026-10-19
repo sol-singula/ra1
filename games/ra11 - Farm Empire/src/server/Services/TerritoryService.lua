@@ -33,6 +33,7 @@ local byPlayer = {} -- [player] = { index, model }
 local byIndex = {} -- [index] = player
 local folder, town
 local spawning = {}
+local hooked = {} -- [player] = true once CharacterAdded is watched
 
 local function view(player)
 	local p = data:Get(player)
@@ -118,13 +119,35 @@ function TerritoryService:Spawn(player)
 	if not ok then
 		return
 	end
+	self:Place(player)
+end
+
+-- Stand them at their farm's spawn, looking at the home field
+function TerritoryService:Place(player)
+	local t = byPlayer[player]
 	local character = player.Character
 	local hrp = character and character:FindFirstChild("HumanoidRootPart")
-	if hrp then
+	if t and hrp then
 		local s = Layout.SPOTS.spawn
-		local st = Layout.SPOTS.stand
-		hrp.CFrame = CFrame.lookAt(Layout.toWorld(t.index, s.x, s.z, 3.5), Layout.toWorld(t.index, st.x, st.z, 3.5))
+		local f = Layout.FIELDS.field1
+		hrp.CFrame =
+			CFrame.lookAt(Layout.toWorld(t.index, s.x, s.z, 3.5), Layout.toWorld(t.index, f.x + 7, f.z + 6, 3.5))
 	end
+end
+
+-- (CharacterAutoLoads is off: a death or a fall respawns them here, at their farm, after a moment)
+function TerritoryService:Watch(player, character)
+	local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid", 5)
+	if not humanoid then
+		return
+	end
+	humanoid.Died:Connect(function()
+		task.delay(2, function()
+			if player.Parent and byPlayer[player] and player.Character == character then
+				self:Spawn(player)
+			end
+		end)
+	end)
 end
 
 function TerritoryService:Push(player)
@@ -175,16 +198,21 @@ function TerritoryService:OnPlayerLoaded(player, profile)
 	t.model = TerritoryBuilder.build(folder, i, view(player))
 	_ = profile
 	self:Spawn(player)
-	player.CharacterAdded:Connect(function()
-		-- (a respawn after a fall: back at the gate)
-		task.defer(function()
-			local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-			if hrp and byPlayer[player] and not spawning[player] then
-				local s = Layout.SPOTS.spawn
-				hrp.CFrame = CFrame.new(Layout.toWorld(byPlayer[player].index, s.x, s.z, 3.5))
-			end
+	if not hooked[player] then
+		-- (once a player: a rebuild runs this again)
+		hooked[player] = true
+		player.CharacterAdded:Connect(function(character)
+			task.spawn(self.Watch, self, player, character)
+			task.defer(function()
+				if byPlayer[player] and not spawning[player] then
+					self:Place(player)
+				end
+			end)
 		end)
-	end)
+		if player.Character then
+			task.spawn(self.Watch, self, player, player.Character)
+		end
+	end
 	self:PushTown()
 end
 
@@ -290,20 +318,17 @@ function TerritoryService:Init(registry)
 			return
 		end
 		if what == "home" then
-			local t = byPlayer[player]
-			if t then
-				local s = Layout.SPOTS.spawn
-				hrp.CFrame = CFrame.new(Layout.toWorld(t.index, s.x, s.z, 3.5))
-			end
+			self:Place(player)
 		elseif what == "town" then
 			hrp.CFrame = CFrame.new(Layout.TOWN_SPOTS.spawn.x, 3.5, Layout.TOWN_SPOTS.spawn.z)
 		elseif what == "go" and type(index) == "number" and byIndex[index] then
 			local g = Layout.SPOTS.gate
-			hrp.CFrame = CFrame.new(Layout.toWorld(index, g.x - 8, g.z + 5, 3.5))
+			hrp.CFrame = CFrame.new(Layout.toWorld(index, g.x, g.z + 8, 3.5))
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		spawning[player] = nil
+		hooked[player] = nil
 	end)
 	_ = town
 end

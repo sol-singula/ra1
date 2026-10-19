@@ -16,18 +16,17 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
-local Constants = require(ReplicatedStorage.Shared.Constants)
+local CropModels = require(ReplicatedStorage.Shared.World.CropModels)
 local Crops = require(ReplicatedStorage.Shared.Data.Crops)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Layout = require(ReplicatedStorage.Shared.World.Layout)
 local Net = require(ReplicatedStorage.Shared.Net)
-local Shapes = require(ReplicatedStorage.Shared.World.Shapes)
+local Bus = require(script.Parent.Parent.UI.Bus)
 local Store = require(script.Parent.Parent.Store)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
 local CropController = { Name = "CropController", Order = 20, WALK_REACH = 2.6 }
 
-local P = Constants.PALETTE
 local player = Players.LocalPlayer
 local refs = { buttons = {} }
 CropController.refs = refs
@@ -42,105 +41,9 @@ local function territoryIndex()
 	return t and t.index
 end
 
--- The plant shapes: one small model a stage, in the crop's colour
+-- The plants: World/CropModels (one model per crop, four readable stages)
 local function build(crop, stage, tileCf)
-	local c = Crops[crop]
-	local m = Instance.new("Model")
-	m.Name = "Plant"
-	local k = ({ 0.3, 0.6, 0.85, 1 })[stage]
-	local leaf = P.leaf
-	local function part(size, offset, color, shape)
-		local p = Shapes.part(m, size, tileCf * offset, color, { CanQuery = false })
-		p.CastShadow = false
-		if shape then
-			p.Shape = shape
-		end
-		return p
-	end
-	if c.shape == "bush" then
-		part(Vector3.new(2.6 * k, 1.4 * k, 2.6 * k), CFrame.new(0, 0.9 * k + 0.25, 0), leaf)
-		if stage >= 3 then
-			for i = 1, stage == 4 and 5 or 2 do
-				local a = i * 1.3
-				part(
-					Vector3.new(0.5, 0.5, 0.5),
-					CFrame.new(math.cos(a) * 1.1, 1.2, math.sin(a) * 1.1),
-					stage == 4 and c.color or c.color:Lerp(leaf, 0.5),
-					Enum.PartType.Ball
-				)
-			end
-		end
-	elseif c.shape == "vine" then
-		part(Vector3.new(0.3, 3.2 * k, 0.3), CFrame.new(0, 1.6 * k + 0.25, 0), P.woodDark)
-		part(Vector3.new(1.8 * k, 2.4 * k, 1.2 * k), CFrame.new(0, 1.6 * k + 0.25, 0), leaf)
-		if stage >= 3 then
-			for i = 1, stage == 4 and 4 or 2 do
-				part(
-					Vector3.new(0.7, 0.7, 0.7),
-					CFrame.new((i % 2 == 0 and 0.7 or -0.7), 1 + i * 0.5, 0.5),
-					stage == 4 and c.color or c.color:Lerp(leaf, 0.5),
-					Enum.PartType.Ball
-				)
-			end
-		end
-	elseif c.shape == "stalk" then
-		for i = -1, 1 do
-			for j = -1, 1 do
-				part(
-					Vector3.new(0.3, 2.8 * k, 0.3),
-					CFrame.new(i * 1.1, 1.4 * k + 0.25, j * 1.1),
-					stage == 4 and c.color or leaf
-				)
-				if stage >= 3 then
-					part(Vector3.new(0.5, 0.9, 0.5), CFrame.new(i * 1.1, 2.8 * k + 0.5, j * 1.1), c.color)
-				end
-			end
-		end
-	elseif c.shape == "tall" then
-		for i = -1, 1, 2 do
-			part(Vector3.new(0.4, 4.5 * k, 0.4), CFrame.new(i * 0.9, 2.25 * k + 0.25, 0), leaf)
-			part(Vector3.new(1.6 * k, 0.3, 0.6), CFrame.new(i * 0.9, 2 * k + 0.6, 0.3) * CFrame.Angles(0, 0, 0.4), leaf)
-			if stage >= 3 then
-				part(Vector3.new(0.7, 1.4, 0.7), CFrame.new(i * 0.9 + 0.3, 2.6 * k + 0.5, 0.2), c.color)
-			end
-		end
-	elseif c.shape == "gourd" then
-		part(Vector3.new(3 * k, 0.5, 3 * k), CFrame.new(0, 0.5, 0), leaf)
-		if stage >= 2 then
-			local s = ({ 0, 0.8, 1.3, 2 })[stage]
-			part(
-				Vector3.new(s, s * 0.8, s),
-				CFrame.new(0.4, s * 0.4 + 0.3, -0.3),
-				stage == 4 and c.color or c.color:Lerp(leaf, 0.5),
-				Enum.PartType.Ball
-			)
-			if stage == 4 then
-				part(Vector3.new(0.3, 0.6, 0.3), CFrame.new(0.4, s * 0.8 + 0.5, -0.3), P.woodDark)
-			end
-		end
-	else -- tree
-		part(Vector3.new(0.6, 3 * k + 1, 0.6), CFrame.new(0, 1.5 * k + 0.7, 0), P.woodDark)
-		part(Vector3.new(3 * k + 0.5, 2.4 * k + 0.5, 3 * k + 0.5), CFrame.new(0, 3 * k + 1.2, 0), leaf)
-		if stage >= 3 then
-			for i = 1, stage == 4 and 6 or 3 do
-				local a = i * 1.05
-				part(
-					Vector3.new(0.6, 0.6, 0.6),
-					CFrame.new(math.cos(a) * 1.4, 3 * k + 1 + math.sin(a * 2) * 0.6, math.sin(a) * 1.4),
-					stage == 4 and c.color or c.color:Lerp(leaf, 0.5),
-					Enum.PartType.Ball
-				)
-			end
-		end
-	end
-	if stage == 4 then
-		-- a soft ring on the soil: ready
-		local ring = part(Vector3.new(4.6, 0.1, 4.6), CFrame.new(0, 0.42, 0), Color3.fromRGB(255, 240, 150))
-		ring.Transparency = 0.45
-		ring.Name = "Ready"
-	end
-	m.Parent = folder
-	return m
+	return CropModels.build(folder, tileCf * CFrame.new(0, 0.42, 0), crop, stage)
 end
 
 local function tileCFrame(id)
@@ -169,9 +72,6 @@ local function refresh()
 	local crops = Store.get("crops")
 	if not crops or not territoryIndex() then
 		return
-	end
-	if crops.serverTime then
-		serverOffset = os.time() - crops.serverTime
 	end
 	local seen = {}
 	for id, t in crops.tiles do
@@ -396,10 +296,33 @@ function CropController:init()
 	refs.plantAll.Activated:Connect(function()
 		Net.send("Crop", "plantAll")
 	end)
+	-- the guide's PLANT ALL step: the button pulses with a gold ring
+	local ring = Theme.new("Frame", {
+		Name = "Ring",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.new(1, 14, 1, 14),
+		BackgroundTransparency = 1,
+		Visible = false,
+		Parent = refs.plantAll,
+	}, { Theme.corner(22), Theme.stroke(5, Color3.fromRGB(255, 205, 40)) })
+	refs.plantRing = ring
+	local wanted = false
+	Bus.Highlight:Connect(function(name)
+		wanted = name == "plantAll"
+	end)
+	RunService.Heartbeat:Connect(function()
+		ring.Visible = wanted and math.sin(os.clock() * 7) > -0.4
+	end)
 	Theme.compact(bar, 0.85)
 
 	Store.Changed:Connect(function(partial)
 		if partial.crops then
+			-- the clock is synced when a message comes in (not on every refresh: the message gets older)
+			local crops = Store.get("crops")
+			if crops and crops.serverTime then
+				serverOffset = os.time() - crops.serverTime
+			end
 			refresh()
 			paintBar()
 		elseif partial.territory then

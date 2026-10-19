@@ -78,6 +78,8 @@ local bought = {}
 local lastBuyAt = 0
 local longestGap = 0
 local seen = {} -- the bottlenecks the business reported
+local stageAt = {} -- [stage] = the minute it was reached
+local start = Engine.now()
 local function play(seconds)
 	local t0 = Engine.now()
 	while Engine.now() - t0 < seconds do
@@ -89,6 +91,7 @@ local function play(seconds)
 		end
 		Crops:PlantAll(player) -- (PLANT ALL: one tap)
 		seen[Business:Bottleneck(player)] = true
+		stageAt[p.stage] = stageAt[p.stage] or math.floor((Engine.now() - start) / 6) / 10
 		local pr = Tasks:Primary(player)
 		if pr and pr.kind == "upgrade" and pr.target and pr.affordable then
 			if Upg:Buy(player, pr.target) then
@@ -141,22 +144,27 @@ check(
 	table.concat(bought, ",")
 )
 play(900)
+check("the Fruit Shop came early (a big reward in the first quarter hour)", (stageAt.shop or 99) <= 15, stageAt.shop)
 check(
-	"fifty minutes in: the Fruit Shop",
-	p.stage == "shop",
+	"fifty minutes in: the Warehouse, the centre still ahead",
+	p.stage == "warehouse",
 	`stage {p.stage}, cash {p.cash}, bought {table.concat(bought, ",")}`
 )
 check(
-	"...the front was rebuilt as a shop",
+	"...the front was rebuilt as a warehouse",
 	(function()
 		local t = service("TerritoryService"):Territory(player)
-		local b = t.model.Buildings.Business
-		return b:FindFirstChild("Sign") ~= nil
-			and b.Sign:FindFirstChildOfClass("SurfaceGui").TextLabel.Text == "FRUIT SHOP"
+		for _, d in t.model.Buildings:GetDescendants() do
+			if d:IsA("TextLabel") and d.Text == "WAREHOUSE" then
+				return true
+			end
+		end
+		return false
 	end)()
 )
 check("...the client knows", Store.get("business").stage == p.stage and Store.get("business").workers >= 2)
 check("...income a minute is real", p.cash > 0 and service("EconomyService"):Income(player) > 0)
+print(`  stages (minute): shop {stageAt.shop}, warehouse {stageAt.warehouse}, centre {stageAt.center}`)
 print(`  bought in order: {table.concat(bought, " > ")}`)
 print(
 	`  at 50 min: cash {math.floor(p.cash)}, earned {math.floor(p.stats.earned)}, harvested {p.stats.harvested}, sold {p.stats.sold}, stage {p.stage}`

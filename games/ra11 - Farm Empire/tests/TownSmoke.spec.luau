@@ -106,7 +106,14 @@ local t = Territory:Territory(player)
 check(
 	"...the world rebuilt as a stand with a star on the gate",
 	t.model.Buildings.Business:FindFirstChild("Counter") ~= nil
-		and t.model.Ground.GateSign:FindFirstChildOfClass("SurfaceGui").TextLabel.Text:find("★") ~= nil
+		and (function()
+			for _, d in t.model.Ground.GateSign:GetDescendants() do
+				if d:IsA("TextLabel") and d.Text:find("★") then
+					return true
+				end
+			end
+			return false
+		end)()
 )
 check(
 	"a sale pays 25% more",

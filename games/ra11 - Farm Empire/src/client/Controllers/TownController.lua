@@ -1,9 +1,10 @@
 --[[
 The town's boards: the three leaderboards in the square painted from Net "Leaderboards" (all-time earned,
-regions, units sold), and the gate signs' trophies (a star a region).
+regions, units sold), and the store's "coming soon" prompt (nothing is sold there yet).
 
   TownController.painted()   how many rows are on the boards (tests)
 ]]
+local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Format = require(ReplicatedStorage.Shared.Format)
@@ -23,7 +24,7 @@ end
 local function boardGui(plate, key)
 	local sg = Instance.new("SurfaceGui")
 	sg.Name = "Board"
-	sg.Face = Enum.NormalId.Left
+	sg.Face = Enum.NormalId.Front
 	sg.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
 	sg.PixelsPerStud = 40
 	sg.LightInfluence = 0
@@ -59,8 +60,8 @@ local function paint()
 		return
 	end
 	rows = 0
-	for _, plate in town:GetChildren() do
-		if plate.Name == "Leaderboard" then
+	for _, plate in town:GetDescendants() do
+		if plate.Name == "Leaderboard" and plate:IsA("BasePart") then
 			local key = plate:GetAttribute("Board")
 			local gui = guis[plate] or boardGui(plate, key)
 			guis[plate] = gui
@@ -92,6 +93,12 @@ function TownController:init()
 		end
 	end)
 	paint()
+	ProximityPromptService.PromptTriggered:Connect(function(prompt)
+		if prompt.Name == "Store" then
+			local Hud = require(script.Parent.HudController)
+			Hud.toast("The store opens soon! Keep growing your empire.", "good")
+		end
+	end)
 	_ = Theme
 end
 

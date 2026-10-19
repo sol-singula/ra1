@@ -155,126 +155,145 @@ local function pond(parent, i)
 	end
 end
 
--- Ground, paths, the fence, trees, the gate, the pond ---------------------------------------------------------------
+-- Ground, paths, the fence, the gate, the yard, trees, the back garden ---------------------------------------------
 local function ground(model, i, view)
 	local g = Shapes.folder(model, "Ground")
 	local W, D = Layout.WIDTH, Layout.DEPTH
 	local hw, hd = W / 2, D / 2
+	local fw, fd = Layout.FENCE.x, Layout.FENCE.z
 	local plate = Shapes.part(g, Vector3.new(W, 2, D), cf(i, 0, 0, -1), P.grass, { CanCollide = true })
 	plate.Name = "Plate"
 	plate.Material = Enum.Material.Grass
-	-- a lighter lawn round the house and along the front
-	local lawn = Shapes.part(g, Vector3.new(60, 0.1, 40), cf(i, -64, -66, 0.03), P.grassLight)
+	-- the front lawn right of the stand, a lighter green
+	local lw = Layout.SPOTS.lawn
+	local lawn = Shapes.part(g, Vector3.new(56, 0.1, 28), cf(i, lw.x, lw.z, 0.03), P.grassLight)
 	lawn.Material = Enum.Material.Grass
-	-- the trucks' lane down the right edge, kerbed, with dashes
-	local lane = Shapes.part(g, Vector3.new(16, 0.3, D), cf(i, Layout.SPOTS.lane.x, 0, 0.1), P.road)
+	-- the trucks' lane: from the avenue to the warehouse, kerbed, with dashes
+	local ln = Layout.SPOTS.lane
+	local lane = Shapes.part(g, Vector3.new(14, 0.3, 170), cf(i, ln.x, ln.z, 0.1), P.road)
 	lane.Name = "Lane"
 	lane.Material = Enum.Material.Asphalt
-	for z = -hd + 8, hd - 8, 10 do
-		Shapes.part(g, Vector3.new(0.4, 0.05, 4), cf(i, Layout.SPOTS.lane.x, z, 0.28), P.roadLine)
+	for z = ln.z - 80, ln.z + 80, 10 do
+		Shapes.part(g, Vector3.new(0.4, 0.05, 4), cf(i, ln.x, z, 0.28), P.roadLine)
 	end
-	Shapes.part(g, Vector3.new(1, 0.6, D), cf(i, Layout.SPOTS.lane.x - 8.5, 0, 0.3), P.concrete)
-	-- paths: the gate to the cross path, the cross path, between the fields, out to the shed and the warehouse
+	Shapes.part(g, Vector3.new(0.8, 0.5, 170), cf(i, ln.x - 7.4, ln.z, 0.25), P.concrete)
+	-- the paths
 	local function path(x, z, w, d)
 		local p = Shapes.part(g, Vector3.new(w, 0.2, d), cf(i, x, z, 0.08), P.path)
 		p.Material = Enum.Material.Cobblestone
 		return p
 	end
-	path(-16, -70, 6, 40) -- from the gate, left of the stand, up to the cross path
-	path(-10, -48, 150, 6) -- the cross path along the front of the fields
-	path(-48.5, -24, 5, 42) -- between the home and East fields
-	path(-11.5, -24, 5, 42) -- between the East and West fields
-	path(-28, -4, 90, 5) -- behind the three fields, in front of the North field
-	path(40, -10, 6, 80) -- out past the shed to the warehouse
-	path(36, 24, 60, 5) -- along the front of the warehouse
-	-- the fence: posts and two rails, all round but the gate and the lane
+	path(Layout.SPOTS.gate.x, -85, 10, 7) -- the gate into the yard
+	path(8, -53.5, 136, 4.5) -- the cross path in front of the fields
+	path(-15, -33.5, 6, 31) -- between the East and home fields
+	path(14.25, -33.5, 6, 31) -- between the home and West fields
+	path(-1, -14.5, 90, 4) -- behind the fields
+	path(47.5, -14, 5, 76) -- out to the warehouse
+	-- the frontage: a pavement in front of the stand, open to the avenue
+	local front = Shapes.part(g, Vector3.new(36, 0.2, 10), cf(i, 0, -84, 0.06), P.concrete)
+	front.Material = Enum.Material.Concrete
+	-- the build yard: paved, kerbed, a sign
+	local y = Layout.SPOTS.yard
+	local yard = Shapes.part(g, Vector3.new(40, 0.25, 21), cf(i, y.x, y.z, 0.1), rgb(196, 176, 142))
+	yard.Name = "Yard"
+	yard.Material = Enum.Material.Cobblestone
+	for _, side in { { y.x, y.z - 10.75, 40.6, 0.5 }, { y.x, y.z + 10.75, 40.6, 0.5 }, { y.x - 20.25, y.z, 0.5, 21 } } do
+		Shapes.part(g, Vector3.new(side[3], 0.5, side[4]), cf(i, side[1], side[2], 0.25), P.woodDark)
+	end
+	Shapes.sign(g, cf(i, y.x - 21.5, y.z, 0, -math.pi / 2), 9, 2.6, "BUILD YARD", "step on a pad to buy it", {
+		name = "YardSign",
+		bottom = 1.2,
+		accent = rgb(60, 140, 230),
+	})
+	-- the spawn, between the yard and the home field
+	local sp = Layout.SPOTS.spawn
+	local spawn = Shapes.part(g, Vector3.new(6, 0.3, 6), cf(i, sp.x, sp.z, 0.12), rgb(196, 176, 142))
+	spawn.Name = "Spawn"
+	spawn.Material = Enum.Material.Cobblestone
+	-- the fence: posts and two rails; open at the gate, the stand's frontage and the lane (no post twice)
 	local fence = Shapes.folder(g, "Fence")
-	local function rail(x1, z1, x2, z2)
+	local function rail(x1, z1, x2, z2, first, last)
 		local dx, dz = x2 - x1, z2 - z1
 		local len = math.sqrt(dx * dx + dz * dz)
 		local n = math.max(1, math.floor(len / 8))
-		for k = 0, n do
+		for k = first and 0 or 1, last and n or n - 1 do
 			local t = k / n
 			Shapes.part(fence, Vector3.new(0.6, 3.2, 0.6), cf(i, x1 + dx * t, z1 + dz * t, 1.6), P.white)
 		end
 		local mid = cf(i, (x1 + x2) / 2, (z1 + z2) / 2, 0)
 		local yaw = math.atan2(dx, dz)
-		for _, y in { 1.2, 2.5 } do
+		for _, h in { 1.2, 2.5 } do
 			Shapes.part(
 				fence,
 				Vector3.new(0.3, 0.45, len),
-				mid * CFrame.new(0, y, 0) * CFrame.Angles(0, yaw, 0),
+				mid * CFrame.new(0, h, 0) * CFrame.Angles(0, yaw, 0),
 				P.white
 			)
 		end
 	end
-	local fw, fd = hw - 1.5, hd - 1.5
-	rail(-fw, -fd, -fw, fd)
-	rail(-fw, fd, fw, fd)
-	rail(fw, -fd, fw, fd)
-	rail(-fw, -fd, -9, -fd)
-	rail(9, -fd, Layout.SPOTS.lane.x - 9, -fd)
-	-- the gate: two brick pillars and the arch with the farm's name
+	local gx = Layout.SPOTS.gate.x
+	rail(-fw, -fd, -fw, fd, true, false) -- left
+	rail(-fw, fd, fw, fd, true, false) -- back
+	rail(fw, fd, fw, -fd, true, true) -- right
+	rail(-fw, -fd, gx - 11.2, -fd, false, false) -- front, left of the gate
+	rail(gx + 11.2, -fd, -18, -fd, false, true) -- between the gate and the frontage
+	rail(18, -fd, ln.x - 7.5, -fd, true, true) -- between the frontage and the lane
+	rail(ln.x + 7.5, -fd, fw, -fd, true, false) -- right of the lane
+	-- the gate: two brick pillars with lamps and the farm's name over them
 	local stars = string.rep("★", math.min(view.prestige or 0, 6))
 	local text = string.upper(view.name or "YOUR") .. " FARM" .. (stars ~= "" and (" " .. stars) or "")
-	for _, x in { -10, 10 } do
-		local pillar = Shapes.part(g, Vector3.new(2.4, 9, 2.4), cf(i, x, -fd, 4.5), rgb(170, 110, 80))
+	for _, dx in { -11.2, 11.2 } do
+		local pillar = Shapes.part(g, Vector3.new(2.4, 9, 2.4), cf(i, gx + dx, -fd, 4.5), rgb(170, 110, 80))
 		pillar.Material = Enum.Material.Brick
-		Shapes.part(g, Vector3.new(3, 0.8, 3), cf(i, x, -fd, 9.3), P.concrete)
-		Shapes.ball(g, Vector3.new(1.6, 1.6, 1.6), cf(i, x, -fd, 10.3), rgb(255, 240, 180)).Material =
+		Shapes.part(g, Vector3.new(3, 0.8, 3), cf(i, gx + dx, -fd, 9.3), P.concrete)
+		Shapes.sphere(g, Vector3.new(1.6, 1.6, 1.6), cf(i, gx + dx, -fd, 10.3), rgb(255, 240, 180)).Material =
 			Enum.Material.Neon
 	end
-	local arch = Shapes.part(g, Vector3.new(22, 3, 1), cf(i, 0, -fd, 11.5), P.woodDark)
-	arch.Name = "GateSign"
-	Shapes.face(arch, text, Enum.NormalId.Front, { PixelsPerStud = 30 })
-	Shapes.face(arch, text, Enum.NormalId.Back, { PixelsPerStud = 30 })
-	-- the spawn, by the path at the left of the stand
-	local spawn =
-		Shapes.part(g, Vector3.new(6, 0.3, 6), cf(i, Layout.SPOTS.spawn.x, Layout.SPOTS.spawn.z, 0.12), P.path)
-	spawn.Name = "Spawn"
-	spawn.Material = Enum.Material.Cobblestone
+	local _, arch = Shapes.sign(g, cf(i, gx, -fd, 0), 20, 3, text, nil, {
+		name = "GateSign",
+		posts = false,
+		bottom = 9,
+		board = P.woodDark,
+		accent = P.cream,
+	})
+	arch.Name = "GateBoard"
 	-- lamps along the cross path and the lane
-	lamp(g, cf(i, -20, -52, 0))
-	lamp(g, cf(i, 30, -52, 0))
-	lamp(g, cf(i, Layout.SPOTS.lane.x - 10, -40, 0))
-	lamp(g, cf(i, Layout.SPOTS.lane.x - 10, 40, 0))
-	-- trees (scenic edges): the back, the left, a few by the front corners
+	lamp(g, cf(i, -62, -57, 0))
+	lamp(g, cf(i, 30, -57, 0))
+	lamp(g, cf(i, ln.x - 9.5, -40, 0))
+	lamp(g, cf(i, ln.x - 9.5, 40, 0))
+	-- trees round the edges (none where the orchard and the windmill stand)
 	local trees = Shapes.folder(g, "Trees")
 	local rng = Random.new(i * 7919)
-	for x = -hw + 8, hw - 24, 13 do
-		if x < Layout.SPOTS.lane.x - 14 then
-			Shapes.tree(
-				trees,
-				cf(i, x + rng:NextNumber(-2, 2), hd - 6 + rng:NextNumber(-2, 1)),
-				1.1 + rng:NextNumber(-0.2, 0.3),
-				rng:NextNumber() < 0.5 and P.leaf or P.grassDark
-			)
-		end
-	end
-	for z = -hd + 10, hd - 20, 14 do
+	for x = -40, 70, 14 do
 		Shapes.tree(
 			trees,
-			cf(i, -hw + 6 + rng:NextNumber(-1, 1), z + rng:NextNumber(-2, 2)),
-			1 + rng:NextNumber(0, 0.3),
-			P.leaf
+			cf(i, x + rng:NextNumber(-2, 2), hd - 6),
+			1.05 + rng:NextNumber(-0.15, 0.2),
+			rng:NextNumber() < 0.5 and P.leaf or P.grassDark
 		)
 	end
-	for _, x in { -hw + 20, -hw + 34 } do
-		Shapes.tree(trees, cf(i, x, -hd + 8), 0.9, P.grassDark)
+	for z = -76, 30, 14 do
+		Shapes.tree(trees, cf(i, -hw + 6, z + rng:NextNumber(-2, 2)), 1 + rng:NextNumber(0, 0.25), P.leaf)
 	end
-	-- bushes and flowers along the front fence and by the spawn
-	for x = -80, -20, 12 do
-		bush(g, cf(i, x, -hd + 5), 0.9 + rng:NextNumber(0, 0.3))
+	for _, at in { { 26, -64 }, { 70, -64 } } do
+		Shapes.tree(trees, cf(i, at[1], at[2]), 0.9, P.grassDark)
 	end
-	flowerBed(g, cf(i, -26, -80, 0), 6, 3)
-	flowerBed(g, cf(i, -42, -80, 0), 6, 3)
-	-- the pond and the windmill at the back left, hay bales by the North field, a scarecrow by the home field
+	-- bushes along the front fence left of the gate; flower beds by the gate and on the lawn
+	for x = -92, -60, 8 do
+		bush(g, cf(i, x, -85), 0.9 + rng:NextNumber(0, 0.3))
+	end
+	flowerBed(g, cf(i, gx - 8, -85, 0), 4, 3)
+	flowerBed(g, cf(i, gx + 8, -85, 0), 4, 3)
+	flowerBed(g, cf(i, 32, -84, 0), 8, 3)
+	flowerBed(g, cf(i, 62, -84, 0), 8, 3)
+	-- the back garden: the pond, the windmill, hay bales by the North field, a scarecrow by the East field
 	pond(g, i)
-	windmill(g, cf(i, -46, 66, 0))
+	windmill(g, cf(i, Layout.SPOTS.windmill.x, Layout.SPOTS.windmill.z, 0))
 	for k = 0, 2 do
-		hayBale(g, cf(i, -16 + k * 4, 16, 0, k * 0.3))
+		hayBale(g, cf(i, 20 + k * 4, 2, 0, k * 0.3))
 	end
-	scarecrow(g, cf(i, -78, -8, 0))
+	scarecrow(g, cf(i, Layout.SPOTS.scarecrow.x, Layout.SPOTS.scarecrow.z, 0))
 	return g
 end
 
@@ -298,13 +317,7 @@ function TerritoryBuilder.fields(model, i, view)
 			local x, z = Layout.tilePos(key, n)
 			if owned[id] then
 				any = true
-				local tile = Shapes.part(
-					f,
-					Vector3.new(Layout.TILE, 0.5, Layout.TILE),
-					cf(i, x, z, 0.15),
-					P.soil,
-					{ CanCollide = false }
-				)
+				local tile = Shapes.part(f, Vector3.new(Layout.TILE, 0.5, Layout.TILE), cf(i, x, z, 0.15), P.soil)
 				tile.Name = "Tile"
 				tile.Material = Enum.Material.Ground
 				tile:SetAttribute("Id", id)
@@ -321,8 +334,8 @@ function TerritoryBuilder.fields(model, i, view)
 				ghost.Transparency = 0.55
 			end
 		end
-		if any then
-			-- a low wooden border and a name board
+		if any or key == "field1" then
+			-- a low wooden border and the field's name on a little sign in front
 			local border = Shapes.folder(f, "Border")
 			for _, side in
 				{
@@ -334,17 +347,12 @@ function TerritoryBuilder.fields(model, i, view)
 			do
 				Shapes.part(border, Vector3.new(side[3], 0.5, side[4]), cf(i, side[1], side[2], 0.25), P.woodDark)
 			end
-			Shapes.part(f, Vector3.new(0.4, 2.6, 0.4), cf(i, cx - w / 2 + 1.5, cz - d / 2 - 2.2, 1.3), P.woodDark)
-			local board =
-				Shapes.part(f, Vector3.new(5, 1.4, 0.3), cf(i, cx - w / 2 + 1.5, cz - d / 2 - 2.2, 2.9), P.wood)
-			board.Name = "FieldSign"
-			Shapes.face(
-				board,
-				Layout.FIELD_NAMES[key],
-				Enum.NormalId.Front,
-				{ PixelsPerStud = 40, TextStrokeTransparency = 1, TextColor3 = P.cream }
-			)
-		elseif key ~= "field1" then
+			Shapes.sign(f, cf(i, cx, cz - d / 2 - 2.1, 0), 7, 1.5, Layout.FIELD_NAMES[key], nil, {
+				name = "FieldSign",
+				bottom = 0.5,
+				accent = P.roofGreen,
+			})
+		else
 			-- an expansion zone: its outline, corner posts and a sign (visible unused land, master plan §2)
 			local zone = Shapes.part(f, Vector3.new(w, 0.12, d), cf(i, cx, cz, 0.07), P.grassLight)
 			zone.Name = "Zone"
@@ -355,15 +363,21 @@ function TerritoryBuilder.fields(model, i, view)
 					Shapes.part(f, Vector3.new(0.5, 1.6, 0.5), cf(i, cx + dx * w / 2, cz + dz * d / 2, 0.8), P.white)
 				end
 			end
-			local post = Shapes.part(f, Vector3.new(0.5, 4, 0.5), cf(i, cx, cz, 2), P.woodDark)
-			post.Name = "ZoneSign"
-			post:SetAttribute("Field", key)
 			local cost = view.fieldCosts and view.fieldCosts[key]
-			Shapes.label(
-				post,
-				`{Layout.FIELD_NAMES[key]}: {field.tiles} TILES` .. (cost and ("\n" .. Format.cash(cost)) or ""),
-				{ Size = UDim2.fromOffset(220, 60), StudsOffset = Vector3.new(0, 3, 0), MaxDistance = 60 }
+			local s = Shapes.sign(
+				f,
+				cf(i, cx, cz, 0),
+				10,
+				3.2,
+				Layout.FIELD_NAMES[key],
+				`{field.tiles} tiles · {cost and Format.cash(cost) or ""} · buy it on a pad`,
+				{
+					name = "ZoneSign",
+					bottom = 1,
+					accent = rgb(60, 140, 230),
+				}
 			)
+			s:SetAttribute("Field", key)
 		end
 	end
 	return f
@@ -452,7 +466,7 @@ local function shop(b, i)
 	local m = Shapes.model(b, "Business")
 	local W, D, H = 30, 18, 9
 	local frame = rgb(70, 50, 40)
-	Shapes.part(m, Vector3.new(W + 10, 0.2, D + 14), o * CFrame.new(0, 0.1, -3), P.path).Material =
+	Shapes.part(m, Vector3.new(W + 6, 0.2, 12), o * CFrame.new(0, 0.1, -D / 2 - 6), P.path).Material =
 		Enum.Material.Cobblestone
 	Shapes.part(m, Vector3.new(W, 0.6, D), o * CFrame.new(0, 0.3, 0), P.concrete, { CanCollide = true })
 	Shapes.part(m, Vector3.new(0.6, H, D), o * CFrame.new(-W / 2, H / 2, 0), P.cream, { CanCollide = true })
@@ -596,7 +610,10 @@ local function warehouse(b, i, view)
 	local s = Layout.SPOTS.warehouse
 	local big = view.stage == "center"
 	local W, D, H = big and 68 or 50, big and 44 or 34, big and 16 or 12
-	local o = cf(i, s.x - (big and 9 or 0), s.z, 0)
+	if big then
+		s = Layout.SPOTS.center
+	end
+	local o = cf(i, s.x, s.z, 0)
 	local m = Shapes.model(b, "Warehouse")
 	local wall = big and P.steel or P.concrete
 	local yard = Shapes.part(m, Vector3.new(W + 10, 0.2, D + 10), o * CFrame.new(2, 0.1, 0), P.concrete)
@@ -614,13 +631,14 @@ local function warehouse(b, i, view)
 		)
 	end
 	Shapes.part(m, Vector3.new(W, 1.4, 0.3), o * CFrame.new(0, H - 2.2, -D / 2 - 0.5), P.safetyYellow)
-	local docks = math.max(1, view.docks or 1)
+	local docks = math.clamp(view.docks or 1, 1, big and 5 or 3) -- (the doors drawn: the rest are round the side)
 	local pitch = D / (docks + 1)
+	local door = math.min(7, pitch - 1.5)
 	for k = 0, docks do
 		local z0 = -D / 2 + k * pitch
 		Shapes.part(
 			m,
-			Vector3.new(0.8, H, pitch - 7),
+			Vector3.new(0.8, H, pitch - door),
 			o * CFrame.new(W / 2, H / 2, z0 + pitch / 2),
 			wall,
 			{ CanCollide = true }
@@ -629,8 +647,8 @@ local function warehouse(b, i, view)
 	Shapes.part(m, Vector3.new(0.8, H - 7, D), o * CFrame.new(W / 2, H - (H - 7) / 2, 0), wall)
 	for k = 1, docks do
 		local z = -D / 2 + k * pitch
-		Shapes.part(m, Vector3.new(0.5, 1.6, 7.4), o * CFrame.new(W / 2 + 0.2, 7.3, z), P.safetyYellow)
-		Shapes.part(m, Vector3.new(0.5, 0.5, 7.4), o * CFrame.new(W / 2 + 0.25, 6.4, z), rgb(30, 30, 34))
+		Shapes.part(m, Vector3.new(0.5, 1.6, door + 0.4), o * CFrame.new(W / 2 + 0.2, 7.3, z), P.safetyYellow)
+		Shapes.part(m, Vector3.new(0.5, 0.5, door + 0.4), o * CFrame.new(W / 2 + 0.25, 6.4, z), rgb(30, 30, 34))
 	end
 	Shapes.part(m, Vector3.new(W + 2, 0.8, D + 2), o * CFrame.new(0, H + 0.4, 0), P.steelDark)
 	for k = 1, 3 do
@@ -733,11 +751,12 @@ local function shed(b, i, view)
 		if view.machine >= 4 then
 			local second = Models.machine(m, 3, view.paint or P.machineGreen)
 			second.Name = "Machine2"
-			second:PivotTo(cf(i, s.x - 18, s.z + 2, 0))
+			second:PivotTo(cf(i, Layout.SPOTS.machine2.x, Layout.SPOTS.machine2.z, 0))
 		end
 	end
-	hayBale(m, cf(i, s.x - 16, s.z - 6, 0))
-	hayBale(m, cf(i, s.x - 16, s.z - 2.5, 0, 0.4))
+	local h = Layout.SPOTS.hay
+	hayBale(m, cf(i, h.x - 2, h.z, 0))
+	hayBale(m, cf(i, h.x + 2, h.z, 0, 0.4))
 	return m
 end
 
@@ -781,9 +800,9 @@ function TerritoryBuilder.buildings(model, i, view)
 		for k = 1, math.max(1, view.docks or 1) do
 			local t = Models.truck(trucks, view.paint or P.truckWhite)
 			t:SetAttribute("Index", k)
-			t:PivotTo(cf(i, Layout.SPOTS.lane.x, Layout.SPOTS.warehouse.z - 24 + k * 16, 0, math.pi))
+			t:PivotTo(cf(i, Layout.SPOTS.lane.x, 80 - (k - 1) * 15, 0))
 		end
-		Models.forklift(b):PivotTo(cf(i, Layout.SPOTS.warehouse.x + 8, Layout.SPOTS.warehouse.z - 8, 0.3))
+		Models.forklift(b):PivotTo(cf(i, Layout.SPOTS.warehouse.x + 8, Layout.SPOTS.warehouse.z - 8, 0.6))
 	end
 	if view.machine and view.machine > 0 then
 		shed(b, i, view)
@@ -805,21 +824,25 @@ function TerritoryBuilder.preview(model, i, view)
 	end
 	local pv = Shapes.folder(model, "Preview")
 	local key = view.next.key
-	local o, w, d, signZ
+	local spot, w, d, sign
 	if key == "shop" then
-		o, w, d, signZ = cf(i, Layout.SPOTS.stand.x, Layout.SPOTS.stand.z + 4, 0), 30, 18, 14
+		spot, w, d = { x = Layout.SPOTS.stand.x, z = Layout.SPOTS.stand.z + 4 }, 30, 18
+		sign = { x = spot.x + 22, z = spot.z - 4 }
 	elseif key == "warehouse" then
-		o, w, d, signZ = cf(i, Layout.SPOTS.warehouse.x, Layout.SPOTS.warehouse.z, 0), 50, 34, -22
+		spot, w, d = Layout.SPOTS.warehouse, 50, 34
+		sign = { x = spot.x, z = spot.z - d / 2 - 4 }
 	elseif key == "center" then
-		o, w, d, signZ = cf(i, Layout.SPOTS.warehouse.x - 9, Layout.SPOTS.warehouse.z, 0), 68, 44, -27
+		spot, w, d = Layout.SPOTS.center, 68, 44
+		sign = { x = spot.x, z = spot.z - d / 2 - 4 }
 	else
-		o, w, d, signZ = cf(i, Layout.SPOTS.gate.x + 18, Layout.SPOTS.gate.z + 8, 0), 6, 6, 0
+		spot, w, d = Layout.SPOTS.region, 8, 8
+		sign = { x = spot.x, z = spot.z - 6 }
 	end
+	local o = cf(i, spot.x, spot.z, 0)
 	local ghost = Shapes.part(pv, Vector3.new(w, 0.25, d), o * CFrame.new(0, 0.3, 0), P.preview)
 	ghost.Name = "Ghost"
 	ghost.Transparency = 0.5
 	ghost.Material = Enum.Material.ForceField
-	ghost.CanCollide = false
 	ghost:SetAttribute("Upgrade", key)
 	for _, dx in { -1, 1 } do
 		for _, dz in { -1, 1 } do
@@ -828,14 +851,20 @@ function TerritoryBuilder.preview(model, i, view)
 			post.Material = Enum.Material.Neon
 		end
 	end
-	local post = Shapes.part(pv, Vector3.new(0.6, 5, 0.6), o * CFrame.new(0, 2.5, signZ), P.woodDark)
-	post.Name = "PreviewSign"
-	Shapes.label(post, `NEXT: {string.upper(view.next.name)}\n{Format.cash(view.next.cost)}`, {
-		Size = UDim2.fromOffset(260, 70),
-		StudsOffset = Vector3.new(0, 4, 0),
-		MaxDistance = 110,
-		TextColor3 = P.preview,
-	})
+	local m, board = Shapes.sign(
+		pv,
+		cf(i, sign.x, sign.z, 0),
+		11,
+		3.4,
+		"NEXT: " .. string.upper(view.next.name),
+		Format.cash(view.next.cost) .. " · buy it on a pad",
+		{
+			name = "PreviewSign",
+			bottom = 1.4,
+			accent = rgb(40, 110, 200),
+		}
+	)
+	m.Name = "PreviewSign"
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "Build"
 	prompt.ActionText = "Build " .. view.next.name
@@ -845,7 +874,7 @@ function TerritoryBuilder.preview(model, i, view)
 	prompt.MaxActivationDistance = 16
 	prompt.RequiresLineOfSight = false
 	prompt:SetAttribute("Upgrade", key)
-	prompt.Parent = post
+	prompt.Parent = board
 	return pv
 end
 

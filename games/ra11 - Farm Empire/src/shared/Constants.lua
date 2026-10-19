@@ -17,7 +17,7 @@ Constants.ADMINS = { [11787294097] = true } -- xthirtysix
 Constants.ADMIN_NAMES = { xthirtysix = true }
 
 -- Money (§7): one currency, Cash. The first sale pays within the first minute.
-Constants.START_CASH = 0
+Constants.START_CASH = 0 -- (the first plant, harvest and sale pay rewards: Data/Tasks)
 
 -- Coming back (§13): crops grow and the store sells while you're away, up to a cap
 Constants.OFFLINE_HOURS = 4 -- the most time away that counts (8 with the Night Shift pass)

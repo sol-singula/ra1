@@ -10,7 +10,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Business = require(ReplicatedStorage.Shared.Data.Business)
-local Constants = require(ReplicatedStorage.Shared.Constants)
 local Format = require(ReplicatedStorage.Shared.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
@@ -22,6 +21,7 @@ local Theme = require(script.Parent.Parent.UI.Theme)
 local UpgradeController = { Name = "UpgradeController", Order = 35 }
 
 local C = Theme.Color
+local GOLD = Color3.fromRGB(255, 205, 50)
 local refs = { rows = {}, tabs = {} }
 UpgradeController.refs = refs
 local panel
@@ -94,12 +94,13 @@ local function row(parent, k)
 		Name = "Tag",
 		Text = "RECOMMENDED",
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -166, 0, -10),
-		Size = UDim2.fromOffset(140, 22),
-		BackgroundColor3 = Constants.PALETTE.accent,
+		Position = UDim2.new(1, -168, 0, 8),
+		Size = UDim2.fromOffset(122, 20),
+		BackgroundColor3 = GOLD,
+		TextColor3 = C.ink,
 		TextXAlignment = Enum.TextXAlignment.Center,
-		outline = 2,
-		fit = 14,
+		outline = false,
+		fit = 13,
 		Visible = false,
 		Parent = r,
 	})
@@ -141,13 +142,24 @@ local function paint()
 		r.Stripe.BackgroundColor3 = BRANCH_COLOR[def.branch] or C.good
 		r.Title.Text = def.name .. (def.max > 1 and ` ({e.level}/{def.max})` or "")
 		r.Desc.Text = def.desc
-		r.Tag.Visible = e.key == u.recommended
+		local rec = e.key == u.recommended
+		r.Tag.Visible = rec
+		r.Title.Size = UDim2.new(1, rec and -300 or -180, 0, 24)
+		local stroke = r:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Color = rec and GOLD or C.grey
+			stroke.Thickness = rec and 4 or 2
+		end
+		r.BackgroundColor3 = rec and Color3.fromRGB(255, 249, 226) or C.white
 		if e.why == "maxed" then
 			r.Buy.Text = "MAXED"
-			r.Buy.BackgroundColor3 = C.grey
+			r.Buy.BackgroundColor3 = Color3.fromRGB(150, 140, 130)
+		elseif (e.cost or 0) <= cash then
+			r.Buy.Text = `BUY {Format.cash(e.cost or 0)}`
+			r.Buy.BackgroundColor3 = C.good
 		else
-			r.Buy.Text = Format.cash(e.cost or 0)
-			r.Buy.BackgroundColor3 = (e.cost or 0) <= cash and C.good or C.grey
+			r.Buy.Text = `NEED {Format.cash(e.cost or 0)}`
+			r.Buy.BackgroundColor3 = Color3.fromRGB(84, 70, 60)
 		end
 	end
 	for k = #list + 1, #refs.rows do

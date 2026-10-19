@@ -57,3 +57,33 @@ lane, the pond and windmill at the back) and a farmhouse that grows with the sta
 not boxes; a town square with welcome arches, a three-tier fountain, the market hall, the leaderboard wall with
 its podium, the boost tower, a bandstand, benches, lamps, flower beds and planters; a detail pass on the stand,
 the shop, the warehouse, the shed and the gate.
+
+## Round 3 · facing the road, build pads, the city — built
+
+From the second live test (farms facing away, too much walking, fences over the road, weak signs, little guidance,
+a plain hub, square crops, a poor arrow and GUI, slow money):
+
+* **Layout.** Every farm's front (the gate, the stand, the build yard) faces the avenue; the south row is turned
+  half round. Each zone has its own rectangle, and `tests/LayoutSmoke` checks none overlap, all sit inside the
+  fence, every front faces the road and no city part stands inside a farm. The fence rails stop at the gate, the
+  frontage and the lane, so no post or rail doubles up or crosses the road.
+* **Build pads.** Eight pads in the build yard beside the spawn, each showing one upgrade (gold for the guide's,
+  green when affordable, dark when not) with a sign of its name and price. Step on a pad to buy it; stand on it
+  to buy the next level of the same upgrade. The UPGRADES panel is still there. `tests/PadSmoke` covers it.
+* **The city.** The centre is a city: streets and blocks of fake buildings (shopfronts, awnings, window strips,
+  roof tanks and antennas) round a big cobbled courtyard with arches, a fountain, benches and lamps; the
+  leaderboard wall with its podium, a store ("coming soon": nothing to buy yet), the market hall and the boost
+  tower.
+* **Graphics.** Crops are real plants, one model per crop in four stages (strawberry, tomato, wheat, corn,
+  blueberry bushes, pumpkin and melon vines, golden apple trees). The harvester, the tractor and the combine, the
+  trucks and the forklift were rebuilt with more detail. Signs are framed boards with a title and a line.
+* **Guidance.** A bouncing gold chevron with a word under it ("TAP TO PLANT", "HARVEST", "STEP HERE", "YOUR
+  STAND"), a pulsing ring and a trail of glowing dots to the target. A step card shows "STEP n OF 9", a reward
+  chip, a BUY button and a progress bar; every tutorial step pays a cash reward. A goals card at the left has
+  progress bars and the next building with how close you are. A welcome card follows the opening flight.
+* **GUI.** The RECOMMENDED tag sits inside its row with a gold outline. Price buttons read "BUY $80" in green or
+  "NEED $80" on dark. Toasts and the business line are dark pills. A "+$n" floats up at the stand on every sale,
+  and a burst plays round you when you buy.
+* **Economy.** Crops pay about three times more and grow faster. The stand serves more. On the mock play-through
+  the Fruit Shop ($5,000) comes at about 4 minutes and the Warehouse ($120,000) at about 23. The Distribution
+  Centre ($2,000,000) is still ahead at 50 minutes, and the longest wait between buys is under 150 seconds.

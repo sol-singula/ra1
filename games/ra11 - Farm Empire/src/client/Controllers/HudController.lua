@@ -118,34 +118,36 @@ function HudController:init()
 		fit = 16,
 		Parent = slab,
 	})
-	refs.line = Theme.text({
-		Name = "Line",
-		Text = "",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 14),
-		Size = UDim2.fromOffset(640, 30),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Font = Theme.Display,
-		outline = 2,
-		fit = 19,
-		Visible = false,
-		Parent = gui,
-	})
-	Theme.compact(refs.line, 0.8)
-	refs.toast = Theme.text({
-		Name = "Toast",
-		Text = "",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 50),
-		Size = UDim2.fromOffset(600, 32),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		Font = Theme.Display,
-		outline = 2,
-		fit = 20,
-		Visible = false,
-		Parent = gui,
-	})
-	Theme.compact(refs.toast, 0.75)
+	-- the business line and the toasts: dark pills sized to their words
+	local function pill(name, y, size)
+		local l = Theme.text({
+			Name = name,
+			Text = "",
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.new(0.5, 0, 0, y),
+			Size = UDim2.fromOffset(0, size + 14),
+			TextSize = size,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			Font = Theme.Display,
+			BackgroundColor3 = C.slate,
+			Visible = false,
+			Parent = gui,
+		})
+		l.BackgroundTransparency = 0.2
+		l.TextWrapped = false
+		l.AutomaticSize = Enum.AutomaticSize.X
+		Theme.corner("round").Parent = l
+		Theme.stroke(2, C.ink).Parent = l
+		Theme.new("UIPadding", {
+			PaddingLeft = UDim.new(0, 16),
+			PaddingRight = UDim.new(0, 16),
+			Parent = l,
+		})
+		Theme.compact(l, 0.8)
+		return l
+	end
+	refs.line = pill("Line", 14, 17)
+	refs.toast = pill("Toast", 56, 19)
 	refs.earned = Theme.text({
 		Name = "Earned",
 		Text = "",

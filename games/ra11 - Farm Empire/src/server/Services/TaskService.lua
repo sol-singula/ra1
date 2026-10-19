@@ -56,6 +56,7 @@ function TaskService:Primary(player)
 				affordable = cost == nil or p.cash >= cost,
 				step = t.step,
 				of = #Tasks.ONBOARDING,
+				reward = step.reward,
 			}
 		end
 		t.done = true
@@ -66,7 +67,7 @@ function TaskService:Primary(player)
 	end
 	local u = Upgrades[key]
 	local cost = Upgrades.cost(key, p.owned[key] or 0)
-	local verb = affordable and "Buy" or "Save for"
+	local verb = affordable and "Step on the glowing pad:" or "Save up for"
 	local b = business:Bottleneck(player)
 	local SEEN = {
 		harvest = "Ripe crops are waiting. ",
@@ -137,6 +138,10 @@ function TaskService:Step(player)
 			if step.done(p, s) then
 				t.step += 1
 				changed = true
+				if step.reward then
+					economy:Add(player, step.reward, "goal")
+				end
+				Net.fire(player, "Toast", `Step done! +{Format.cash(step.reward or 0)}`, "good")
 				if analytics then
 					pcall(analytics.event, player, "task", { key = step.key })
 				end
