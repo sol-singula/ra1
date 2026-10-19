@@ -7,16 +7,15 @@ time's up; the model on the patch shows four phases. A field planted together ri
   ACT   Net "Farm" ("act") from the big action button: everything within REACH of them that can be done, best first:
         pick every ripe patch, else plant every empty one (FarmService:Chosen), else TEND every growing one:
         a tend takes TEND_CUT off what's left to grow (once every TEND_GAP seconds)
-  crop  Net "Farm" ("crop", key) picks what PLANT plants (unlocked crops only; "auto" lets the farm decide)
 
 Where the crops go: before the barn, the basket (Upgrades.stat "carry" of them: sell at the stand); with the barn
 (Upgrades.stat "store"), straight into the barn's stock (p.stock), as many as it keeps; with the warehouse, as many as
-its racks hold (Flow.stockCap). Full, nothing more is picked. The stand sells the stock (all but what the open orders
-keep: FarmService.hold, set by OrderService); the Shop Helper ("autosell") does it every so often by itself; the
-warehouse takes the extra for its trucks (WarehouseService).
+its racks hold (Flow.stockCap). Full, nothing more is picked. The customers buy out of the barn (CustomerService),
+the vans take loads of it (DeliveryService), the warehouse takes it for its trucks (WarehouseService); SELL at the
+stand sells all of it at once. What grows is random: a crop they've unlocked, the newer ones more often.
 
 Net "Farm" to the owner: { tiles = { [n] = { crop, at, need, watered, golden } }, now, soil, carried, carry, crop,
-crops, golden, stock, stockCap, barn, reserved, tendAt } whenever it changes.
+golden, stock, stockCap, barn, plan, tendAt } whenever it changes.
 
   FarmService:Tiles(player)                -> the live tile parts (n -> Part)
   FarmService:Patches(player)              how many patches the field has
@@ -27,9 +26,8 @@ crops, golden, stock, stockCap, barn, reserved, tendAt } whenever it changes.
   FarmService:Full(player) -> "basket" | "barn" | "warehouse" | nil   nowhere for a pick to go
   FarmService:Sell(player, quiet?) -> Cash paid
   FarmService:Worth(player, bag?) -> Cash, goods   what the basket (or a bag like it) would sell for
-  FarmService:Stock(player) / :Have(player, key) / :Remove(player, key, n) / :Reserved(player) / :Excess(player)
+  FarmService:Stock(player) / :Have(player, key) / :Remove(player, key, n) / :Excess(player)
   FarmService:Take(player, n) -> ok                   n crops out (cheapest first)
-  FarmService:Machines(player, profile)              the shop helper (each tick)
   FarmService:RipenAll(player) -> how many            (the shop)
   FarmService:Stand(player) / :Home(player)           the stand's and the home's building for their level
   FarmService.Changed (player, what)       "plant" | "harvest" | "tend" | "sell" | "ripe" | "tractor"
@@ -108,7 +106,7 @@ function FarmService:Take(player, n)
 	if not p then
 		return false
 	end
-	-- (crops from the basket and the stock, the cheapest first, never what the orders keep)
+	-- (crops from the basket and the barn, the cheapest first)
 	local spare = self:Excess(player)
 	local keys, have = {}, 0
 	for key, count in spare do
@@ -233,14 +231,10 @@ function FarmService:Push(player)
 		carry = self:Carry(player),
 		crop = self:Chosen(player),
 		plan = self:Plan(player),
-		-- (the picker: only once the warehouse stands, AUTO first)
-		crops = p.owned and p.owned.warehouse and { "auto", table.unpack(Crops.unlocked(p.level or 1)) } or {},
-		auto = p.settings.crop == nil,
 		next = Crops.nextUnlock(p.level or 1) and Crops.nextUnlock(p.level or 1).key or nil,
 		stock = stockOf(p),
 		stockCap = self:Keeps(player) > 0 and self:Keeps(player) or nil,
 		barn = Upgrades.stat(p.owned or {}, "store", 0) > 0,
-		reserved = self:Reserved(player),
 		golden = golden,
 		tendAt = (tendAt[player] or 0) + self.TEND_GAP,
 	})
@@ -271,69 +265,49 @@ function FarmService:Push(player)
 end
 
 -- What PLANT plants: their pick, if they have it, else the best crop their level has
--- What the field should grow, as a list in order: first every crop an open order is short of (as many patches as
--- the shortage, counting what's in the barn), then the best crop they have for the rest. Each entry says who it's
--- for, so the screen can say "12 carrots for Rosie's Diner".
+-- What the field is growing right now, as a list { key, n } (the HUD's GROWING line)
 function FarmService:Plan(player)
 	local p = profileOf(player)
 	if not p then
 		return {}
 	end
-	local patches = soilCount(p)
-	local level = p.level or 1
-	local plan, used = {}, 0
-	-- (their own pick, once the warehouse stands: the whole field)
-	local pick = p.settings.crop
-	if p.owned and p.owned.warehouse and pick and Crops[pick] and Crops[pick].level <= level then
-		return { { key = pick, n = patches } }
-	end
-	local needs = self.hold and self.hold(player)
-	if needs then
-		local who = self.holdWho and self.holdWho(player) or {}
-		local list = {}
-		for key, want in needs do
-			local c = Crops[key]
-			if c and c.level <= level then
-				local short = want - self:Have(player, key)
-				if short > 0 then
-					table.insert(list, { key = key, n = short, who = who[key] })
-				end
-			end
+	local counts, order = {}, {}
+	for _, t in p.soil or {} do
+		if not counts[t.crop] then
+			counts[t.crop] = 0
+			table.insert(order, t.crop)
 		end
-		table.sort(list, function(x, y)
-			return x.n > y.n
-		end)
-		for _, e in list do
-			local n = math.min(e.n, patches - used)
-			if n > 0 then
-				table.insert(plan, { key = e.key, n = n, who = e.who })
-				used += n
-			end
-		end
+		counts[t.crop] += 1
 	end
-	if used < patches then
-		table.insert(plan, { key = Crops.best(level), n = patches - used })
+	table.sort(order, function(x, y)
+		return counts[x] > counts[y]
+	end)
+	local plan = {}
+	for _, key in order do
+		table.insert(plan, { key = key, n = counts[key] })
 	end
 	return plan
 end
 
--- The crop to plant next: the first thing on the plan that isn't growing in full yet
+-- The crop to plant next: a random one of those they've unlocked, the newer ones more often (they pay more)
 function FarmService:Chosen(player)
 	local p = profileOf(player)
 	if not p then
 		return "strawberry"
 	end
-	local growing = {}
-	for _, t in p.soil or {} do
-		growing[t.crop] = (growing[t.crop] or 0) + 1
+	local list = Crops.unlocked(p.level or 1)
+	local total = 0
+	for i in list do
+		total += i * i
 	end
-	local plan = self:Plan(player)
-	for _, e in plan do
-		if (growing[e.key] or 0) < e.n then
-			return e.key
+	local roll = math.random() * total
+	for i, key in list do
+		roll -= i * i
+		if roll <= 0 then
+			return key
 		end
 	end
-	return plan[#plan] and plan[#plan].key or Crops.best(p.level or 1)
+	return list[#list] or "strawberry"
 end
 
 -- The barn's crates: as many show as the barn is full (12 crates for a full barn)
@@ -613,7 +587,7 @@ function FarmService:Worth(player, bag)
 end
 
 -- The stock: what the barn keeps (p.stock, up to Keeps). The orders keep what they still need
--- (FarmService.hold, set by OrderService): that's reserved; the rest is excess, which the stand (or the warehouse)
+-- it's all for sale: the customers, the vans and the warehouse take from it
 -- sells
 function FarmService:Stock(player)
 	local p = profileOf(player)
@@ -624,6 +598,20 @@ end
 function FarmService:Have(player, key)
 	local p = profileOf(player)
 	return p and ((p.storage[key] or 0) + (stockOf(p)[key] or 0)) or 0
+end
+
+-- Take n of a thing out of the barn only (the customers shop there); how many came out
+function FarmService:RemoveStock(player, key, n)
+	local p = profileOf(player)
+	if not p then
+		return 0
+	end
+	local bag = stockOf(p)
+	local k = math.min(n, bag[key] or 0)
+	if k > 0 then
+		drop(bag, key, k)
+	end
+	return k
 end
 
 -- Take n of a thing out, the basket first; how many came out
@@ -693,34 +681,16 @@ function FarmService:Full(player)
 	return p.owned and p.owned.warehouse and "warehouse" or "barn"
 end
 
--- What the open orders keep ({ [key] = n }, no more than there is), and what's left over to sell
-function FarmService:Reserved(player)
-	local out = {}
-	for key, want in self.hold and self.hold(player) or {} do
-		local k = math.min(want, self:Have(player, key))
-		if k > 0 then
-			out[key] = k
-		end
-	end
-	return out
-end
-
+-- Everything in the basket and the barn, as one bag ({ [key] = n }): it's all for sale
 function FarmService:Excess(player)
 	local p = profileOf(player)
 	local out = {}
 	if not p then
 		return out
 	end
-	local keep = self:Reserved(player)
 	for _, bag in { p.storage, stockOf(p) } do
 		for key, k in bag do
 			out[key] = (out[key] or 0) + k
-		end
-	end
-	for key, k in keep do
-		out[key] -= k
-		if out[key] <= 0 then
-			out[key] = nil
 		end
 	end
 	return out
@@ -763,16 +733,6 @@ function FarmService:Init(registry)
 	Net.on("Farm", function(player, what, a, b)
 		if what == "act" then
 			self:Act(player)
-		elseif what == "crop" then
-			local p = profileOf(player)
-			if p and a == "auto" then
-				p.settings.crop = nil
-				self:Push(player)
-			elseif p and type(a) == "string" and Crops[a] and Crops[a].level <= (p.level or 1) then
-				p.settings.crop = a
-				p.stats.picked = (p.stats.picked or 0) + 1
-				self:Push(player)
-			end
 		elseif (what == "plant" or what == "harvest") and type(a) == "number" then
 			if not near(player, a, self.TAP_REACH) then
 				return
@@ -852,21 +812,9 @@ end
 -- The machines each tick: the shop helper sells the barn's extra crops every so often (quicker with the sheep);
 -- the tractors are TractorService's
 function FarmService:Machines(player, p)
-	local t = now()
-	local m = machineAt[player]
-	if not m then
-		m = { seller = t }
-		machineAt[player] = m
-	end
-	local quick = 1 + Animals.boost(p, "machine", t)
-	local seller = Upgrades.stat(p.owned or {}, "autosell", nil)
-	if seller and t - m.seller >= seller / quick then
-		m.seller = t
-		-- (with the warehouse the extra goes to the trucks instead: WarehouseService takes it)
-		if not (p.owned and p.owned.warehouse) then
-			self:Sell(player, true)
-		end
-	end
+	-- (the customers sell now: CustomerService; the tractor drives itself: TractorService)
+	_ = player
+	_ = p
 end
 
 function FarmService:_tick()
@@ -895,13 +843,7 @@ function FarmService:_tick()
 			if not selling[player] then
 				selling[player] = true
 				if self:Sell(player) == 0 then
-					Net.fire(
-						player,
-						"Toast",
-						next(self:Reserved(player)) and "Those crops are kept for your orders"
-							or "Nothing to sell yet: pick your crops first",
-						"info"
-					)
+					Net.fire(player, "Toast", "Nothing to sell yet: pick your crops first", "info")
 				end
 			end
 		else

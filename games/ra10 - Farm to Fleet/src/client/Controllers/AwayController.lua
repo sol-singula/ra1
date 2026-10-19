@@ -1,7 +1,7 @@
 --[[
 "While you were away" (Net "Away", OfflineService): the first thing a returning player sees. A card in the middle:
 how long they were gone, the Cash the farm made meanwhile (counting up), whether it hit the cap (and how long the
-cap is), and what's waiting: ripe tiles, a Special Order, the day's calendar reward. COLLECT closes it (the Cash is
+cap is), and what's waiting: ripe tiles, the day's calendar reward. COLLECT closes it (the Cash is
 already theirs); the calendar opens after it if the day's reward waits.
 
   AwayController.refs   the card's pieces (tests)
@@ -36,9 +36,6 @@ local function show(m)
 	local waiting = {}
 	if (m.ripe or 0) > 0 then
 		table.insert(waiting, `🌾 {m.ripe} crops ripe`)
-	end
-	if m.special then
-		table.insert(waiting, "⭐ a Special Order")
 	end
 	if type(m.calendar) == "table" then
 		table.insert(waiting, `📅 day {m.calendar.day} reward`)

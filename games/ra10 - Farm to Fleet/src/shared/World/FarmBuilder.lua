@@ -1858,7 +1858,7 @@ BUILD.shedDeed = function(L, plot)
 	end
 	L:block(x, z, 36, 28, 0.15, deco({ color = P.concrete, name = "ShedSite" }), 0.24)
 	local board = L:box(x, 3, z - 15, 10, 2.6, 0.3, deco({ color = P.cream, name = "SiteSign" }))
-	FarmBuilder.sign(board, "PACKING SHED", "coming soon", plot.color)
+	FarmBuilder.sign(board, "DELIVERY SHED", "coming soon", plot.color)
 end
 
 -- An animal, blocky, in the pen: bigger as it levels; a ribbon from level 5, a golden bell at 10

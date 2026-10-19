@@ -5,7 +5,7 @@ skips and boosts. Nothing is pay-to-win against other players: everything speeds
 Robux (ids in Constants.PRODUCTS / Constants.PASSES; an id still 0 is free in Studio and "coming soon" live):
   products   gems100 / gems550 / gems1200 (Gem packs), starter (once: Gems, golden seeds and Cash for your level),
              skipGrow (Instant Harvest: everything planted is ripe now)
-  passes     doubleCash (x2 everything shipped), longNap (12 h away instead of 4), extraOrder (one more order on the
+  passes     doubleCash (x2 everything shipped), longNap (12 h away instead of 4), moreCustomers (5 more customers a minute
              board), vip (+10% on everything shipped, +10 Gems with each day's calendar reward, a VIP tag)
 
 Gems (Net "Shop" "gems", key):
@@ -33,20 +33,20 @@ Shop.PRODUCTS = {
 	gems1200 = { key = "gems1200", name = "Vault of Gems",  robux = 399, text = "1200 Gems (20% extra)", gems = 1200 },
 	skipGrow = { key = "skipGrow", name = "Instant Harvest", robux = 25, text = "Every crop on your farm ripe, right now" },
 }
-Shop.PASS_ORDER = { "doubleCash", "vip", "extraOrder", "longNap" }
+Shop.PASS_ORDER = { "doubleCash", "vip", "moreCustomers", "longNap" }
 Shop.PASSES = {
 	doubleCash = { key = "doubleCash", name = "2x Cash",      robux = 299, text = "Double Cash for everything you ship. Forever." },
 	vip        = { key = "vip",        name = "VIP Farmer",   robux = 399, text = "+10% on everything, +10 Gems a day, a VIP tag" },
-	extraOrder = { key = "extraOrder", name = "Extra Order",  robux = 199, text = "One more order on your board" },
+	moreCustomers = { key = "moreCustomers", name = "More Customers", robux = 199, text = "5 more customers a minute, forever" },
 	longNap    = { key = "longNap",    name = "Long Nap",     robux = 149, text = "Your farm earns for 12 h while you're away (not 4)" },
 }
-Shop.GEM_ORDER = { "ripen", "feed", "seeds", "boost", "special" }
+Shop.GEM_ORDER = { "ripen", "feed", "seeds", "boost", "rush" }
 Shop.GEMS = {
 	ripen   = { key = "ripen",   name = "Ripen Everything", gems = 5,  text = "Every crop ripe now" },
 	feed    = { key = "feed",    name = "Feed Everyone",    gems = 5,  text = "Every animal fed: a full boost" },
 	seeds   = { key = "seeds",   name = "Golden Seeds x10", gems = 25, text = "The next 10 plantings come up golden" },
 	boost   = { key = "boost",   name = "Cash Rush",        gems = 40, text = "x2 everything shipped for 15 minutes" },
-	special = { key = "special", name = "Special Order",    gems = 30, text = "Call a Special Order now (needs the shed)" },
+	rush    = { key = "rush",    name = "Customer Rush",    gems = 30, text = "Double customers for 10 minutes" },
 }
 -- stylua: ignore end
 

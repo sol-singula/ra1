@@ -37,13 +37,10 @@ local Farm = service("FarmService")
 local Plots = service("PlotService")
 local Upg = service("UpgradeService")
 local Offline = service("OfflineService")
-local Special = service("SpecialService")
 local Upgrades = Engine.require(tree.shared.Data.Upgrades)
 local Franchise = Engine.require(tree.shared.Data.Franchise)
 local Flow = Engine.require(tree.shared.Data.Flow)
 local Constants = Engine.require(tree.shared.Constants)
-Special.FIRST = 1e9
-Special.DAILY = false
 
 -- On their own ----------------------------------------------------------------------------------------------------------
 check("a small run: one Star", Franchise.stars(0) == 1 and Franchise.stars(3e6) == 1)
@@ -165,8 +162,8 @@ check("buy Big Baskets", Fr:Perk(player, "carry") and f.perks.carry == 1 and f.s
 check("...a bigger basket", Farm:Carry(player) == carry0 + Franchise.PERKS.carry.step)
 check("buy the nap", Fr:Perk(player, "nap") and Offline:Hours(p) == Constants.OFFLINE_HOURS + 2)
 check("buy Head Start", Fr:Perk(player, "headStart") and f.perks.headStart == 1)
-check("buy the Extra Order", Fr:Perk(player, "orderSlot"))
-check("...once (max 1)", not Fr:Perk(player, "orderSlot"))
+check("buy Regulars", Fr:Perk(player, "regulars"))
+check("...more customers come", Engine.require(tree.shared.Data.Franchise).bonus(p, "regulars") > 0)
 local stars = f.stars
 check(
 	"not enough Stars: no perk",

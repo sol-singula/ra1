@@ -2,7 +2,7 @@
 The always-on screen (phone first: big, high-contrast, in the farm's colours).
 
   top left     your Cash (a green coin) and Gems, the basket under them (carried / how much you can carry), the
-               the BARN under that (what it keeps, each with how many the orders keep) and the
+               the BARN under that (what it keeps) and the
                BOOSTS your animals give the farm right now
   top centre   FARM LEVEL n and its XP bar
   centre       the toasts (Net "Toast"), a "+N" when Cash comes in (Net "Earned")
@@ -76,11 +76,27 @@ local function paint()
 		refs.growing.Visible = #bits > 0
 		refs.growing.Text = "🌱 GROWING  " .. table.concat(bits, " · ")
 	end
-	-- the stock: biggest first, each with what the orders keep
+	-- the shop: how fast it sells, and the one warning that matters
+	local cu = Store.get("customers")
+	if cu then
+		refs.shop.Visible = true
+		local full = cu.cap and cu.cap > 0 and cu.stock >= cu.cap * 0.9
+		if full then
+			refs.shop.Text = `🏪 BARN FULL! Customers can't keep up: upgrade your shop`
+			refs.shop.TextColor3 = C.red
+		else
+			refs.shop.Text =
+				`🏪 SHOP  {Format.num(cu.rate or 0)} customers/min · buy {cu.basket or 1} each · sold {Format.num(
+					cu.sold or 0
+				)} last minute`
+			refs.shop.TextColor3 = C.white
+		end
+	end
+	-- the barn: biggest first
 	local rows = {}
 	for key, n in f and f.stock or {} do
 		if n > 0 then
-			table.insert(rows, { key = key, n = n, kept = f.reserved and f.reserved[key] or 0 })
+			table.insert(rows, { key = key, n = n })
 		end
 	end
 	table.sort(rows, function(a, b)
@@ -105,8 +121,8 @@ local function paint()
 			local c = Crops[key]
 			row.dot.BackgroundColor3 = golden and P.sunflower or (c and c.color or Color3.fromRGB(250, 245, 230))
 			row.name.Text = (golden and "Golden " or "") .. (c and c.name or key)
-			row.count.Text = r.kept > 0 and `{Format.num(r.n)}  ({Format.num(r.kept)} for orders)` or Format.num(r.n)
-			row.count.TextColor3 = r.kept > 0 and C.mustard or C.white
+			row.count.Text = Format.num(r.n)
+			row.count.TextColor3 = C.white
 		end
 	end
 	refs.stock.Size = UDim2.fromOffset(250, 30 + math.min(#rows, #refs.stockRows) * 22)
@@ -129,7 +145,7 @@ local function paint()
 	refs.boosts.Visible = #lines > 0
 	refs.boosts.Text = "BOOSTS\n" .. table.concat(lines, "\n")
 	refs.boosts.Size = UDim2.fromOffset(250, 24 + #lines * 20)
-	refs.boosts.Position = UDim2.fromOffset(12, 118 + (refs.stock.Visible and refs.stock.Size.Y.Offset + 8 or 0))
+	refs.boosts.Position = UDim2.fromOffset(12, 142 + (refs.stock.Visible and refs.stock.Size.Y.Offset + 8 or 0))
 end
 
 function HudController:init()
@@ -188,6 +204,18 @@ function HudController:init()
 		Visible = false,
 		Parent = gui,
 	})
+	refs.shop = Theme.text({
+		Name = "Shop",
+		Text = "",
+		Position = UDim2.fromOffset(14, 112),
+		Size = UDim2.fromOffset(560, 24),
+		Font = Theme.Display,
+		TextColor3 = C.white,
+		outline = 2,
+		fit = 17,
+		Visible = false,
+		Parent = gui,
+	})
 	refs.basket = Theme.text({
 		Name = "Basket",
 		Text = "🧺 0 / 20",
@@ -203,7 +231,7 @@ function HudController:init()
 	-- the stock
 	local stock = Theme.slab({
 		Name = "Stock",
-		Position = UDim2.fromOffset(12, 118),
+		Position = UDim2.fromOffset(12, 142),
 		Size = UDim2.fromOffset(250, 30),
 		Visible = false,
 		Parent = gui,
@@ -261,7 +289,7 @@ function HudController:init()
 	refs.boosts = Theme.text({
 		Name = "Boosts",
 		Text = "",
-		Position = UDim2.fromOffset(12, 118),
+		Position = UDim2.fromOffset(12, 142),
 		Size = UDim2.fromOffset(250, 24),
 		TextColor3 = Color3.fromRGB(150, 240, 140),
 		outline = 2,
@@ -332,7 +360,7 @@ function HudController:init()
 
 	paint()
 	Store.Changed:Connect(function(partial)
-		if partial.profile or partial.farm or partial.animals then
+		if partial.profile or partial.farm or partial.animals or partial.customers then
 			paint()
 		end
 	end)

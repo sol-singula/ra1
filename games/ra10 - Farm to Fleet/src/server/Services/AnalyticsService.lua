@@ -212,9 +212,9 @@ function AnalyticsService:OnPlayerLeaving(player, profile)
 		summary = {
 			progress_end = progress(profile),
 			buys = s.counts.buy or 0,
-			orders = s.counts.order or 0,
+			deliveries = s.counts.delivery or 0,
 			trucks = s.counts.truck or 0,
-			specials = s.counts.specialPaid or 0,
+			customers = s.counts.first_customer or 0,
 			minutes = math.floor(duration / 6) / 10,
 		},
 	})

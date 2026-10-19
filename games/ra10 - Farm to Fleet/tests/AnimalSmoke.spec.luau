@@ -85,7 +85,7 @@ p.guide.step = GuideData.byKey.bigBarn.index
 
 -- The barn and the fields ---------------------------------------------------------------------------------------------
 check("the barn site's sign stands", plot.items:FindFirstChild("barnDeed") ~= nil)
-check("buy The Big Barn", buy("barn"))
+check("buy The Big Barn", buy("barn") and buy("sign"))
 check(
 	"...it stands where the site was",
 	plot.items:FindFirstChild("barn") ~= nil and plot.items:FindFirstChild("barnDeed") == nil
@@ -287,13 +287,13 @@ do
 		HudC.refs.boosts.Text
 	)
 	check("Cash shows with $", HudC.refs.cash.Text:sub(1, 1) == "$", HudC.refs.cash.Text)
-	-- the helper sells the barn's crops by itself
+	-- the customers buy the barn's crops by themselves (the helper: two at a time)
 	p.owned.shopkeeper = 1
 	local cashBefore = p.cash
-	Engine.advance(Upgrades.shopkeeper.value + 1)
+	Engine.advance(61)
 	check(
-		"the shop helper sells the barn's crops on its own",
-		p.cash > cashBefore and (Farm:Stock(player).carrot or 0) == 0,
+		"the customers buy the barn's crops on their own",
+		p.cash > cashBefore and (p.stats.customers or 0) > 0,
 		`{p.cash - cashBefore} left {Farm:Stock(player).carrot}`
 	)
 end
@@ -302,7 +302,7 @@ end
 table.clear(p.storage)
 p.storage.carrot = 10
 local plain = Farm:Worth(player)
-check("buy the Pig Pen", buy("pigPen"))
+check("buy the Pig Pen", buy("bell") and buy("pigPen"))
 p.animals.pig.fedAt = Engine.workspace:GetServerTimeNow()
 check("pigs: vegetables pay more", Farm:Worth(player) > plain, `{Farm:Worth(player)} vs {plain}`)
 table.clear(p.storage)
@@ -311,7 +311,7 @@ local fruit = Farm:Worth(player)
 p.animals.pig.level = 10
 check("...but not fruit", Farm:Worth(player) == fruit)
 table.clear(p.storage)
-for _, key in { "tractor2", "bigBarn", "field3", "sheepPen", "windmill", "cowBarn" } do
+for _, key in { "tractor2", "parking", "bigBarn", "field3", "sheepPen", "windmill", "cowBarn", "counter2" } do
 	check(`buy {key}`, buy(key))
 end
 check("36 tiles", Farm:Tiles(player)[36] ~= nil and not Farm:Tiles(player)[37])

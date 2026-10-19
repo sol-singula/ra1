@@ -1,11 +1,7 @@
 --[[
-Phase F on the mock engine, server and client together: semis on the shared road and Special Orders (master plan
-§13.2, §13.3). The semis wait for the back docks, then each comes in from the road for a big load, backs its trailer
-up to its own dock (on every client), and pays when it's gone. Special Orders: the kinds and when they come (nights,
-weekends), golden ones needing golden crops; one breaks in after enough play, its express truck pulling up on the
-road, a gold banner on screen and the guide pointing at PACK ORDERS; packing it first, the conveyor holding back what
-it needs, the truck driving off and paying Cash and Gems; one running out gives its boxes back; the day's first visit
-brings one; everything saves.
+Phase F on the mock engine, server and client together: semis on the shared road (master plan §13.1). The semis wait
+for the back docks, then each comes in from the road for a big load, backs its trailer up to its own dock (on every
+client), and pays when it's gone; everything saves.
 
   luaurun tests/FreightSmoke.spec.luau
 ]]
@@ -38,20 +34,13 @@ local function service(name)
 end
 local Plots = service("PlotService")
 local Upg = service("UpgradeService")
-local Order = service("OrderService")
-local Special = service("SpecialService")
 local Data = service("PlayerDataService")
 local Economy = service("EconomyService")
 local Upgrades = Engine.require(tree.shared.Data.Upgrades)
 local Flow = Engine.require(tree.shared.Data.Flow)
-local Specials = Engine.require(tree.shared.Data.Specials)
-local Crops = Engine.require(tree.shared.Data.Crops)
-local Orders = Engine.require(tree.shared.Data.Orders)
 local PlotLayout = Engine.require(tree.shared.World.PlotLayout)
 local Trips = Engine.require(tree.shared.World.Trips)
 local SPOTS = PlotLayout.SPOTS
-Special.FIRST = 1e9
-Special.DAILY = false
 
 local function now()
 	return Engine.workspace:GetServerTimeNow()
@@ -63,39 +52,6 @@ end
 
 -- On their own ----------------------------------------------------------------------------------------------------------
 do
-	local tueNight, thuNoon, satNoon = 1700000000, 1700136000, 1700308800
-	local function has(t, key)
-		for _, k in Specials.available(t) do
-			if k.key == key then
-				return true
-			end
-		end
-		return false
-	end
-	check("Night Express only at night", has(tueNight, "night") and not has(thuNoon, "night"))
-	check("the Holiday Mega Delivery only at the weekend", has(satNoon, "holiday") and not has(thuNoon, "holiday"))
-	check("the others any time", has(thuNoon, "emergency") and has(thuNoon, "golden") and has(thuNoon, "chef"))
-	local kinds = {}
-	for seed = 1, 200 do
-		local s = Specials.make(20, Random.new(seed), satNoon)
-		kinds[s.kind] = (kinds[s.kind] or 0) + 1
-		if s.kind == "golden" then
-			local ok = true
-			for key in s.items do
-				ok = ok and string.sub(key, 1, 1) == "*"
-			end
-			check("a Golden Harvest wants golden crops", ok)
-		end
-	end
-	check(
-		"every kind comes up",
-		kinds.emergency and kinds.golden and kinds.chef and kinds.night == nil and kinds.holiday
-	)
-	local a, b = Specials.make(20, Random.new(9), thuNoon), Specials.make(20, Random.new(9), thuNoon)
-	check("the same seed, the same special", a.kind == b.kind and a.value == b.value and a.who == b.who)
-	local cash = Specials.reward(a, 0)
-	local normal = Orders.reward({ value = Orders.target(20) }, 0)
-	check("a special pays far more than an order", cash > normal * 3, `{cash} vs {normal}`)
 	local owned = { warehouse = 1, loadingDock = 1, backDocks = 1, biggerTrucks = 1 }
 	local before = Flow.rates({ owned = owned, level = 30 }, 0).ship
 	owned.semi1 = 1
@@ -118,7 +74,6 @@ Engine.advance(1.5)
 local p = Data:Get(player)
 local plot = Plots:Plot(player)
 local GuideC = Engine.require(tree.client.Controllers.GuideController)
-local SpecialC = Engine.require(tree.client.Controllers.SpecialController)
 local VehicleC = Engine.require(tree.client.Controllers.VehicleController)
 local function buy(key)
 	p.cash = math.max(p.cash, Upgrades[key].cost + 10)
@@ -191,102 +146,6 @@ for n = 1, 4 do
 end
 p.flow.racked = 0
 
--- Special Orders ------------------------------------------------------------------------------------------------------------
--- (the farm runs itself now: park the tractor and empty the stock, so only what this test hands over is there)
-p.owned.tractor = nil
-p.owned.shopkeeper = nil
-p.soil = {}
-table.clear(p.stock)
-table.clear(p.storage)
-check("no special yet (the clock's far off)", Special:Current(player) == nil)
-p.orders.specialIn = 2
-Engine.advance(3.5)
-local s = Special:Current(player)
-check("after enough play, a Special Order breaks in", s ~= nil and s.state == "open")
-local express = nil
-for _, d in plot.items:GetDescendants() do
-	if d.Name == "Vehicle" and d:GetAttribute("Kind") == "express" then
-		express = d
-	end
-end
-check("...its express truck on the road", express ~= nil)
-Engine.advance(Special.ARRIVE + 1)
-local stop = at(SPOTS.expressStop.X, SPOTS.expressStop.Z)
-check(
-	"...pulled up on the verge",
-	express and (express:GetPivot().Position - stop).Magnitude < 1,
-	express and (express:GetPivot().Position - stop).Magnitude
-)
-check("...the banner on screen", SpecialC.refs.banner.Visible and SpecialC.refs.title.Text:find(s.name, 1, true) ~= nil)
-check(
-	"...with its clock and pay",
-	SpecialC.refs.clock.Text:find("left") ~= nil and SpecialC.refs.pay.Text:find("💎") ~= nil
-)
-check(
-	"the guide stays on the farm's own steps (specials run themselves)",
-	string.sub(GuideC.state().key, 1, 8) ~= "special:",
-	GuideC.state().key
-)
-local needs = Order:Needs(player)
-local held = true
-for key, n in s.items do
-	held = held and (needs[key] or 0) >= n
-end
-check("the barn holds back what the special needs", held)
--- it packs itself from the barn
-table.clear(p.storage)
-for key, n in s.items do
-	p.stock[key] = n
-end
-Engine.advance(Order.AUTO_PACK + 1)
-check("it packs itself from the barn", s.state == "shipping", s.state)
-check("...the express truck drives off", express:GetAttribute("Plan") == "expressOut")
-stand(player, at(-40, -104))
-local cash1, gems1 = p.cash, p.gems
-local reward = Specials.reward(s, Upgrades.stat(p.owned, "orderPrice", 0))
-Engine.advance(Specials.EXPRESS + 1.5)
-check(
-	"gone: it pays Cash and Gems",
-	p.cash - cash1 >= reward and p.gems - gems1 >= s.gems,
-	`{p.cash - cash1} / {reward}`
-)
-check("...counted, the biggest shipment", p.stats.specials == 1 and p.stats.biggestShipment >= reward)
-check(
-	"...the truck's gone, the next one's clock running",
-	express.Parent == nil and Special:Current(player) == nil and p.orders.specialIn >= Specials.EVERY_MIN
-)
-check("...the banner gone", not SpecialC.refs.banner.Visible)
--- one that runs out
-local s2 = Special:Spawn(player)
-local k2 = next(s2.items)
-s2.packed[k2] = 2
-table.clear(p.storage)
-table.clear(p.stock)
-s2.ends = now() - 1
-Special:Step(player, p, 0)
-check("a special that runs out is gone", Special:Current(player) == nil)
-check("...its boxes back in the barn", (p.stock[k2] or 0) == 2, p.stock[k2])
--- a golden one only takes golden crops
-local s3 = Special:Spawn(player)
-s3.kind, s3.items, s3.packed = "golden", { ["*strawberry"] = 3 }, {}
-table.clear(p.storage)
-p.storage.strawberry = 10
-p.storage["*strawberry"] = 2
-Special:Pack(player)
-check("a Golden Harvest takes golden crops only", s3.packed["*strawberry"] == 2 and p.storage.strawberry == 10)
-s3.ends = now() - 1
-Engine.advance(1.5)
-
--- The day's first visit brings one ---------------------------------------------------------------------------------------------
-Special.DAILY = true
-p.orders.specialDay = Orders.day() - 1
-p.orders.specialIn = 1e6
-Engine.removePlayer(player)
-Engine.advance(1)
-local again = Engine.addPlayer("Ava", 901)
-Engine.advance(2)
-check("the day's first visit: a special is waiting", Special:Current(again) ~= nil)
-
 do
 	local bad = {}
 	for _, w in Engine.warnings do
@@ -296,22 +155,6 @@ do
 	end
 	check("no failed saves or ticks", #bad == 0, bad[1])
 end
-_ = Crops
--- Every special asks only for what can be grown in time (no 15-minute oranges on a 5-minute clock)
-do
-	local late = {}
-	for seed = 1, 200 do
-		local sp = Specials.make(40, Random.new(seed), os.time())
-		for item in sp.items do
-			local key = string.sub(item, 1, 1) == "*" and string.sub(item, 2) or item
-			if Crops[key].grow * 4 > sp.time then
-				table.insert(late, `{key} in {sp.time}s`)
-			end
-		end
-	end
-	check("specials only want crops that grow in time", #late == 0, table.concat(late, ", "))
-end
-
 if #Engine.errors > 0 then
 	for _, e in Engine.errors do
 		print("ERROR " .. tostring(e))

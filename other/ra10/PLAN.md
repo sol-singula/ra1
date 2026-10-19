@@ -344,6 +344,27 @@ properly... essentially a whole new game."
   barn), then the best crop for the rest; the next planting is always the first thing on the plan that isn't
   growing in full. No more pumpkins for people who need carrots.
 
+## R9: the Chicken Farm loop
+
+The owner's direction: "Take Chicken Farm as the example... they can only sell so fast, so upgrade the shop so more
+customers come... that's the only bottleneck. We don't even need orders. It should just grow random crops."
+
+* **Customers** (`Data/Customers`, `CustomerService`, `CustomerController`): once the barn stands they come at a
+  rate (4 a minute to start) and each buys a basket (1 crop, then 2, then 3) out of the barn, dearest first; a
+  little shopper walks up to the stand on the client with a bubble saying what they bought. The shop upgrades
+  (Big Sign, Shop Bell, Parking Lot, Adverts: customers; Shop Helper, Second Counter: the basket; goats, the
+  Regulars perk, the More Customers pass, a Customer Rush) are the only way to sell faster; the HUD says the rate
+  and turns red with BARN FULL, and the guide's generated step points at the next shop upgrade.
+* **Random crops** (`FarmService.Chosen`): a random unlocked crop, the newer ones more often; no picker.
+* **Deliveries** (`DeliveryService`): a van takes a load of 40 (2x with the Box Machine) out of the barn, drives
+  off (the same trips) and pays 3x when it's back; it pays even if they were away.
+* **Gone:** orders, the order board, the PACK ORDERS pad, special orders, trades with neighbours, the crop picker,
+  the shop helper's auto-sell (`OrderService`, `SpecialService`, `TradeService`, their controllers, `Data/Orders`,
+  `Data/Specials`). The daily contracts moved into `DailyService` and the DAILY panel.
+
+Tests: `CustomerSmoke` (the rate, the barn, the shopper on screen, the HUD, the barn-full step, contracts, vans,
+rejoining); `OrderSmoke` gone; `FreightSmoke` keeps the semis.
+
 ## Before going live
 
 * Create the developer products and game passes (prices in `Data/Shop`) and put their ids in `Constants`.

@@ -36,12 +36,9 @@ local Offline = service("OfflineService")
 local Farm = service("FarmService")
 local Upg = service("UpgradeService")
 local Analytics = service("AnalyticsService")
-local Special = service("SpecialService")
 local Upgrades = Engine.require(tree.shared.Data.Upgrades)
 local DailyData = Engine.require(tree.shared.Data.Daily)
 local Constants = Engine.require(tree.shared.Constants)
-Special.FIRST = 1e9
-Special.DAILY = false
 
 local sent = {}
 Analytics.send = function(payload)
@@ -146,6 +143,15 @@ Bus.Panel:Fire("calendar")
 check("...and again closes it", DailyC.refs.panel.card.Visible == false)
 
 -- The weekly Big Contract -------------------------------------------------------------------------------------------------
+-- (today's contracts share the stats and pay Gems of their own: mark them done so the weekly's Gems count alone)
+p.orders = p.orders or {}
+p.orders.daily = {
+	day = DailyData.day(),
+	base = {},
+	done = { ["1"] = true, ["2"] = true, ["3"] = true },
+	all = true,
+	level = p.level,
+}
 local parts, w = Daily:Weekly(player)
 check("the week's contract is measured from now", #parts == 4 and w.week == DailyData.week() and parts[1].have == 0)
 for i = 1, 3 do

@@ -149,7 +149,6 @@ do
 end
 shot("farm_shed_overview", at(theirs, -20, -150, 40), at(theirs, 40, -66, 0), true)
 shot("farm_shed_door", at(theirs, 18, -100, 9), at(theirs, 44, -74, 4), true)
-shot("farm_order_board", at(theirs, 10, -96, 7), at(theirs, 8, -80, 5), true)
 shot("farm_shed_machines", at(theirs, 90, -100, 22), at(theirs, 50, -60, 2), true)
 -- Ben's stage 4: the warehouse full of pallets, forklifts on their loops, a truck at the door, the rest in the lot
 do
@@ -202,40 +201,28 @@ shot("hub_docks", at(theirs, 92, 96, 32), at(theirs, 40, 30, 4), true)
 shot("hub_semis", at(theirs, 2, 70, 22), at(theirs, 26, 36, 4), true)
 -- the street from above
 shot("farm_street", V3.new(0, 160, 300), V3.new(0, 0, 0), true)
--- Ava, later: her own shed, the orders panel and today's contracts on screen, standing at PACK ORDERS
+-- Ava, later: her own shed and the customers at the stand
 do
 	local pa = Data:Get(player)
 	pa.cash = 10 ^ 6
 	for _, key in Upgrades.LIST do
 		Economy:AddXP(player, 400, "render")
 		Upg:Buy(player, key)
-		if key == "orderBoard" then
+		if key == "adverts" then
 			break
 		end
 	end
 	pa.guide.step = 999
-	Engine.advance(2)
-	local order = service("OrderService")
-	local first = order:Slots(player)[1]
-	for key, n in first.items do
-		first.packed[key] = math.floor(n / 2)
-	end
-	pa.stats.harvested = (pa.stats.harvested or 0) + 40
-	order:Push(player)
-	local pad = order:PackPad(player)
-	Engine.moveTo(player, pad.Position + V3.new(0, 3, -6), pad.Position + V3.new(0, 3, 0))
-	Engine.advance(1)
-	service("SpecialService"):Spawn(player)
-	Engine.advance(9)
-	shot("farm_orders_panel", at(mine, 16, -100, 12), at(mine, 22, -72, 2), false)
-	shot("special_express", at(mine, 10, -100, 9), at(mine, -10, -116, 3), true)
+	pa.stock.carrot = 200
+	Engine.advance(4)
+	shot("farm_customers", at(mine, -30, -120, 10), at(mine, -50, -92, 2), false)
 end
 -- the street watching itself: the STREET gantry, a billboard over Ben's gate, the Hall of Fame
 do
 	local Street = service("StreetService")
 	Economy:Add(ben, 250000, "pallets")
-	Economy:Add(ben, 180000, "special")
-	Economy:Add(player, 42000, "order")
+	Economy:Add(ben, 180000, "delivery")
+	Economy:Add(player, 42000, "sell")
 	Street:Like(player, theirs)
 	service("LeaderboardService"):Refresh()
 	service("LeaderboardService").page = 1
@@ -273,7 +260,6 @@ do
 		capped = true,
 		hours = 4,
 		ripe = 12,
-		special = true,
 		calendar = { day = 4 },
 	})
 	Engine.advance(1.5)

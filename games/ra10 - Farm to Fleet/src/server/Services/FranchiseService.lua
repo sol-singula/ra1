@@ -5,8 +5,8 @@ down and builds it again from the reset profile, on the same plot, without leavi
 (Net "Franchise" "perk"); every Star ever earned and the region lift what everything ships for
 (EconomyService). The region shows on the plot: the meadow's colour, its trees along the back, and the sign.
 
-  resets   cash (to the Head Start), owned, stage, soil, storage, the warehouse's flow, the live orders and the
-           special; the guide starts again from chapter 1
+  resets   cash (to the Head Start), owned, stage, soil, storage, the warehouse's flow, the vans' trips; the guide
+           starts again from chapter 1
   keeps    Gems, golden seeds, XP and the farm level, animals' levels, the calendar, the daily and weekly
            contracts, likes, receipts, passes and every stat
 
@@ -184,11 +184,7 @@ function FranchiseService:Sell(player)
 	p.soil = {}
 	p.storage = {}
 	p.flow = nil
-	if p.orders then
-		p.orders.live = {}
-		p.orders.special = nil
-		p.orders.specialIn = nil
-	end
+	p.delivery = nil
 	local paid = p.guide and math.max(p.guide.paid or 0, (p.guide.step or 1) - 1) or 0
 	p.guide = { chapter = 1, step = 1, done = false, paid = paid }
 	local region = Franchise.region(f.level)

@@ -1,5 +1,5 @@
 --[[
-Coming back (master plan §8, Data/Daily): the 7-day calendar and the weekly Big Contract.
+Coming back (master plan §8, Data/Daily): the 7-day calendar, the daily contracts and the weekly Big Contract.
 
   the calendar   one claim a UTC day (Net "Daily" "claim"): Cash scaled to the level, Gems, golden seeds; day 7 is
                  the big one; a missed day steps it back one day, not to zero
@@ -9,12 +9,13 @@ Coming back (master plan §8, Data/Daily): the 7-day calendar and the weekly Big
 
 profile.calendar = { day (the last day claimed, 1..7), streak, claimedDay (Daily.day of that claim), best }
 profile.orders.weekly = { week, level, base = { [stat] = n }, done = { ["1".."4"] = true }, paid }
-Net "Daily" to the owner: { today = { day, reward, ready, streak, held }, days = { rewards 1..7 }, weekly = { parts,
-reward, paid, ends } }
+Net "Daily" to the owner: { today = { day, reward, ready, streak, held }, days = { rewards 1..7 }, contracts,
+weekly = { parts, reward, paid, ends } }
 
   DailyService:Claimable(player) -> the day's reward if it's not claimed yet, else nil
   DailyService:Claim(player) -> the reward given, or nil
   DailyService:Weekly(player) -> parts (with have, done), the record
+  DailyService:Contracts(player) -> today's three (with have, done)
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -139,9 +140,64 @@ function DailyService:Weekly(player)
 	return parts, w
 end
 
+-- The daily contracts: three a UTC day, measured from the day's start --------------------------------------------------
+local function contractsOf(player, p)
+	p.orders = p.orders or {}
+	local o = p.orders
+	local today = Daily.day()
+	if type(o.daily) ~= "table" or o.daily.day ~= today or type(o.daily.base) ~= "table" then
+		o.daily = { day = today, base = {}, done = {}, level = p.level or 1 }
+		for _, c in Daily.daily(today, player.UserId, p.level or 1) do
+			o.daily.base[c.stat] = p.stats[c.stat] or 0
+		end
+	end
+	local list = Daily.daily(today, player.UserId, o.daily.level or p.level or 1)
+	for i, c in list do
+		c.have = math.clamp((p.stats[c.stat] or 0) - (o.daily.base[c.stat] or 0), 0, c.n)
+		c.done = o.daily.done[tostring(i)] == true
+	end
+	return list, o.daily
+end
+
+function DailyService:Contracts(player)
+	local p = data:Get(player)
+	if not p then
+		return {}
+	end
+	return (contractsOf(player, p))
+end
+
+local function checkContracts(player, p)
+	local list, daily = contractsOf(player, p)
+	local changed = false
+	for i, c in list do
+		if not c.done and c.have >= c.n then
+			daily.done[tostring(i)] = true
+			c.done = true
+			changed = true
+			economy:Add(player, c.cash, "contract")
+			economy:AddGems(player, 1, "contract")
+			p.stats.contracts = (p.stats.contracts or 0) + 1
+			Net.fire(player, "Toast", `CONTRACT DONE: {c.text}! +{c.cash} Cash, +1 Gem`, "good")
+		end
+	end
+	if changed and not daily.all then
+		local all = true
+		for i in list do
+			all = all and daily.done[tostring(i)] == true
+		end
+		if all then
+			daily.all = true
+			economy:AddGems(player, Daily.ALL_GEMS, "contracts")
+			Net.fire(player, "Toast", `ALL 3 CONTRACTS DONE! +{Daily.ALL_GEMS} Gems. New ones tomorrow`, "good")
+		end
+	end
+	return changed
+end
+
 function DailyService:Check(player, p)
 	local parts, w, reward = weeklyOf(player, p)
-	local changed = false
+	local changed = checkContracts(player, p)
 	for i, part in parts do
 		if not part.done and part.have >= part.n then
 			w.done[tostring(i)] = true
@@ -167,7 +223,7 @@ function DailyService:Check(player, p)
 		end
 	end
 	if changed then
-		self.Changed:Fire(player, "weekly")
+		self.Changed:Fire(player, "contract")
 		self:Push(player)
 	end
 	return changed
@@ -194,6 +250,7 @@ function DailyService:Push(player)
 		today = { day = math.max(1, d), ready = ready, streak = c.streak, held = held, reward = days[math.max(1, d)] },
 		days = days,
 		seeds = p.goldenSeeds or 0,
+		contracts = (contractsOf(player, p)),
 		weekly = {
 			parts = parts,
 			reward = reward,

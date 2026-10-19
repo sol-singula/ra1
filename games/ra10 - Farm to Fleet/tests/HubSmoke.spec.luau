@@ -2,7 +2,7 @@
 Stage 5's takeover on the mock engine, server and client together (master plan §13.1): the warehouse grows until it
 owns the front of the plot. The hub's deed stakes it out; the back dock doors wait for the last bay, then pave the
 court and move the trucks round (they back up to their docks, on every client); the front hall swallows the packing
-shed, its machines and the old front wall, and rebuilds the order board, the PACK ORDERS pad, the van's door and the
+shed, its machines and the old front wall, and rebuilds the van's door and the
 Operations screen in the hall; the control tower and the solar roof go up; the market hall takes the farm stand's
 place, and the sell pad and the buy-pads move in and still work. Everything carries the detail layer (pipes, ducts,
 lights), the roofs lift when the camera's inside, and it all comes back the same after a rejoin.
@@ -37,12 +37,9 @@ local function service(name)
 	return Engine.require(tree.server.Services[name])
 end
 -- (no Special Orders breaking in here: they have their own suite)
-service("SpecialService").FIRST = 1e9
-service("SpecialService").DAILY = false
 local Plots = service("PlotService")
 local Farm = service("FarmService")
 local Upg = service("UpgradeService")
-local Order = service("OrderService")
 local Data = service("PlayerDataService")
 local Economy = service("EconomyService")
 local Upgrades = Engine.require(tree.shared.Data.Upgrades)
@@ -199,20 +196,12 @@ check(
 		and not plot.items:FindFirstChild("boxLine")
 )
 check("...and the old front wall", count("WarehouseSign") == 0 and count("Bridge") == 0)
+Engine.advance(1.5) -- (the warehouse paints its new screen on its next tick)
 check(
-	"...one PACK ORDERS pad, where it was",
-	count("PackPad") == 1 and (Order:PackPad(player).Position - at(SPOTS.packPad.X, SPOTS.packPad.Z)).Magnitude < 1
+	"...one Operations screen, inside, painted",
+	count("OpsScreen") == 1 and count("Ops") == 1,
+	`{count("OpsScreen")} {count("Ops")}`
 )
-check("...the order board on the façade", count("BoardSlot") == 3)
-Engine.advance(1)
-local slotText = nil
-for _, d in plot.items:GetDescendants() do
-	if d.Name == "BoardSlot" and d:GetAttribute("Slot") == 1 then
-		slotText = d.Board.Title.Text
-	end
-end
-check("...showing the orders", slotText ~= nil and slotText ~= "", slotText)
-check("...one Operations screen, inside, painted", count("OpsScreen") == 1 and count("Ops") == 1)
 check("...the station pads still there", count("StationPad") == 4 and Upg:Stations(player).pack ~= nil)
 check(
 	"...a hall full of machines",
@@ -230,20 +219,6 @@ do
 	end
 	check("...all of it where the shed and its yard's edge were", out == 0, out)
 end
--- the packing still works from the hall's pad
-local o = Order:Slots(player)[1]
-if o.state ~= "open" then
-	o.state, o.at = "wait", 0
-	Engine.advance(1)
-	o = Order:Slots(player)[1]
-end
-local k1 = next(o.items)
-table.clear(p.storage)
-p.storage[k1] = 1
-stand(player, Order:PackPad(player).Position)
-check("packing at the hall's pad", (o.packed[k1] or 0) >= 1)
-stand(player, at(-40, -104))
-
 -- The control tower and the solar roof -------------------------------------------------------------------------------------
 check("buy the Control Tower", buy("controlTower"))
 local beacon = plot.items.controlTower:FindFirstChild("Beacon")
@@ -310,13 +285,7 @@ Engine.advance(1)
 local again = Engine.addPlayer("Ava", 901)
 Engine.advance(2)
 plot = Plots:Plot(again)
-check(
-	"back: no shed, one pad, one board, one screen",
-	not plot.items:FindFirstChild("shed")
-		and count("PackPad") == 1
-		and count("BoardSlot") == 3
-		and count("OpsScreen") == 1
-)
+check("back: no shed, one screen", not plot.items:FindFirstChild("shed") and count("OpsScreen") == 1)
 check(
 	"...no farm stand; the sell pad at the market",
 	count("StandSign") == 0

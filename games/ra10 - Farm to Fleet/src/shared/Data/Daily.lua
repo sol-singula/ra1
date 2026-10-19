@@ -13,6 +13,7 @@ Golden seeds: each one makes the next planting golden (FarmService:Plant).
 The weekly Big Contract: four parts from the week's play (UTC weeks from Monday), measured from the stats at the
 week's start like the daily contracts, scaled to the level; Gems and Cash when all four are done.
 
+  Daily.daily(day, userId, level) -> { { key, stat, n, text, cash } x3 }   today's contracts
   Daily.week(t)                the week number
   Daily.weekly(week, userId, level) -> { { key, stat, n, text } x4 }, the reward { cash, gems }
 ]]
@@ -29,11 +30,21 @@ Daily.REWARDS = {
 	{ cash = 2500, gems = 30, seeds = 15 },
 }
 
+Daily.DAILY = {
+	{ key = "harvest",  stat = "harvested",  n = 150, text = "Pick %d crops" },
+	{ key = "sell",     stat = "sold",       n = 100, text = "Sell %d crops" },
+	{ key = "plant",    stat = "planted",    n = 120, text = "Plant %d crops" },
+	{ key = "feed",     stat = "fed",        n = 3,   text = "Feed your animals %d times" },
+	{ key = "tend",     stat = "tended",     n = 10,  text = "Tend your crops %d times" },
+	{ key = "serve",    stat = "customers",  n = 60,  text = "Serve %d customers" },
+	{ key = "deliver",  stat = "deliveries", n = 5,   text = "Send %d vans out" },
+}
+Daily.ALL_GEMS = 3
 Daily.WEEKLY = {
-	{ key = "ship",     stat = "shipments",  n = 40,   text = "Ship %d orders" },
-	{ key = "harvest",  stat = "harvested",  n = 2000, text = "Harvest %d crops" },
-	{ key = "pack",     stat = "packed",     n = 1000, text = "Pack %d crops" },
-	{ key = "special",  stat = "specials",   n = 3,    text = "Fill %d Special Orders" },
+	{ key = "deliver",  stat = "deliveries", n = 40,   text = "Send %d vans out" },
+	{ key = "harvest",  stat = "harvested",  n = 2000, text = "Pick %d crops" },
+	{ key = "serve",    stat = "customers",  n = 400,  text = "Serve %d customers" },
+	{ key = "tend",     stat = "tended",     n = 30,   text = "Tend your crops %d times" },
 	{ key = "contract", stat = "contracts",  n = 9,    text = "Finish %d daily contracts" },
 	{ key = "feed",     stat = "fed",        n = 20,   text = "Feed your animals %d times" },
 	{ key = "pallets",  stat = "palletsShipped", n = 150, text = "Ship %d pallets" },
@@ -61,6 +72,37 @@ function Daily.next(calendar, today)
 		return d % 7 + 1, true
 	end
 	return math.max(1, d), false
+end
+
+-- Three contracts a day, picked by the day and the player (everyone gets three, not the same three), scaled to the
+-- level; each pays Cash and a Gem
+function Daily.daily(day, userId, level)
+	local rng = Random.new(day * 7919 + (userId or 0) % 100003)
+	local keys = {}
+	for i = 1, #Daily.DAILY do
+		keys[i] = i
+	end
+	for i = #keys, 2, -1 do
+		local j = rng:NextInteger(1, i)
+		keys[i], keys[j] = keys[j], keys[i]
+	end
+	local out = {}
+	local scale = 1 + math.max(0, (level or 1) - 11) * 0.08
+	for i = 1, 3 do
+		local d = Daily.DAILY[keys[i]]
+		local n = d.n
+		if n >= 10 then
+			n = math.floor(n * scale / 5 + 0.5) * 5
+		end
+		table.insert(out, {
+			key = d.key,
+			stat = d.stat,
+			n = n,
+			text = string.format(d.text, n),
+			cash = math.floor(150 * (level or 1) / 10 + 0.5) * 10,
+		})
+	end
+	return out
 end
 
 function Daily.week(t)

@@ -224,7 +224,7 @@ check(
 	"...and the farm plants a crop it has unlocked (random until the warehouse)",
 	table.find(Crops.unlocked(p.level), Farm:Chosen(player)) ~= nil
 )
-check("...no crop picker until the warehouse", #lastFired("Farm", player).crops == 0 and not FarmC.refs.picker.Visible)
+check("...no crop picker: the field picks", lastFired("Farm", player).crops == nil and FarmC.refs.picker == nil)
 -- everything in the chapter can be bought, in order
 local bought = 0
 for _, key in Upgrades.LIST do

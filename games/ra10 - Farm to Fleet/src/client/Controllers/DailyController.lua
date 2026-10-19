@@ -75,13 +75,24 @@ local function paint(d)
 			row.fill.BackgroundColor3 = part.done and C.good or ORANGE
 		end
 	end
+	for i, label in refs.contracts or {} do
+		local c = d.contracts and d.contracts[i]
+		label.Visible = c ~= nil
+		if c then
+			label.Text =
+				`{c.done and "✅" or "▢"} {c.text}  ({Format.num(c.have or 0)}/{Format.num(c.n)})  💵 {Format.num(
+					c.cash
+				)} + 💎 1`
+			label.TextColor3 = c.done and Color3.fromRGB(30, 110, 50) or C.ink
+		end
+	end
 	local r = w.reward or {}
 	refs.weeklyPay.Text = w.paid and "PAID! A new one on Monday"
 		or `All four: 💵 {Format.num(r.cash or 0)} + 💎 {r.gems or 0} · {left(w.ends or 0)} left`
 end
 
 function DailyController:init()
-	local panel = Panel.new("calendar", "DAILY REWARDS", ORANGE, Vector2.new(660, 430))
+	local panel = Panel.new("calendar", "DAILY REWARDS", ORANGE, Vector2.new(660, 530))
 	refs.panel = panel
 	local body = panel.body
 	local W = 86
@@ -203,6 +214,26 @@ function DailyController:init()
 		fit = 17,
 		Parent = body,
 	})
+	Theme.text({
+		Name = "ContractsTitle",
+		Text = "TODAY'S CONTRACTS",
+		Font = Theme.Display,
+		Position = UDim2.fromOffset(0, 362),
+		Size = UDim2.new(1, 0, 0, 26),
+		fit = 20,
+		Parent = body,
+	})
+	refs.contracts = {}
+	for i = 1, 3 do
+		refs.contracts[i] = Theme.text({
+			Name = "Contract" .. i,
+			Text = "",
+			Position = UDim2.fromOffset(0, 390 + (i - 1) * 26),
+			Size = UDim2.new(1, 0, 0, 24),
+			fit = 16,
+			Parent = body,
+		})
+	end
 	panel.onOpen = function()
 		Net.send("Daily", "open")
 	end

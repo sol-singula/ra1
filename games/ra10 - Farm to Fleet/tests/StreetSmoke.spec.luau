@@ -34,11 +34,8 @@ local Economy = service("EconomyService")
 local Street = service("StreetService")
 local Boards = service("LeaderboardService")
 local Plots = service("PlotService")
-local Special = service("SpecialService")
 local Constants = Engine.require(tree.shared.Constants)
 local PlotLayout = Engine.require(tree.shared.World.PlotLayout)
-Special.FIRST = 1e9
-Special.DAILY = false
 
 local ava = Engine.addPlayer("Ava", 901)
 Engine.Players.LocalPlayer = ava
@@ -59,7 +56,7 @@ check(
 	math.abs(board.faces[1].Position.X + (PlotLayout.WIDTH + PlotLayout.GAP) / 2) < 2,
 	board.faces[1].Position.X
 )
-Economy:Add(ben, 6000, "order")
+Economy:Add(ben, 6000, "delivery")
 Economy:Add(ben, 4000, "pallets")
 Economy:Add(ava, 900, "sell")
 Economy:Add(ava, 50000, "calendar") -- (a gift: not shipped)
@@ -218,54 +215,6 @@ for _, w in Engine.warnings do
 	end
 end
 check("no failed saves or ticks", #bad == 0, bad[1])
--- Buying from a neighbour: Ava's order is short of strawberries, Ben has spare -----------------------------------------
-do
-	local Trade = service("TradeService")
-	local Order = service("OrderService")
-	local Farm = service("FarmService")
-	local TradeC = Engine.require(tree.client.Controllers.TradeController)
-	local ava, ben = Engine.addPlayer("Cara", 931), Engine.addPlayer("Dan", 932)
-	Engine.advance(1.5)
-	Engine.Players.LocalPlayer = ava
-	Engine.localPlayer = ava
-	local pa, pb = Data:Get(ava), Data:Get(ben)
-	if not (pa and pb) then
-		check("both farmers here for the deal", false)
-	else
-		pa.owned.shed = 1
-		pa.cash = 100000
-		local cashB = pb.cash
-		local extra = Order.extraNeeds
-		Order.extraNeeds = function(player)
-			return player == ava and { strawberry = 30 } or {}
-		end
-		pa.stock, pa.storage = {}, {}
-		pb.stock = { strawberry = 50 }
-		local offer = Trade:Scan(ava)
-		check(
-			"short for an order, a neighbour has spare: an offer",
-			offer and offer.seller == ben and offer.n == 30,
-			offer and offer.n
-		)
-		Engine.advance(0.3)
-		check(
-			"...on Ava's screen, with BUY",
-			TradeC.refs.card.Visible and TradeC.refs.yes.Text == "BUY" and TradeC.refs.text.Text:find("Strawberr"),
-			TradeC.refs.text.Text
-		)
-		check("...asking Ben", Trade:Ask(ava, offer.id))
-		check("Ben says SELL: the deal's done", Trade:Answer(ben, offer.id, true))
-		check(
-			"...the strawberries in Ava's stock",
-			(pa.stock.strawberry or 0) == 30 and (pb.stock.strawberry or 0) == 20
-		)
-		check("...and Ben's paid a premium", pb.cash - cashB == offer.price and offer.price > 0)
-		Engine.advance(0.3)
-		check("...and the card goes", not TradeC.refs.card.Visible or TradeC.state().id ~= offer.id)
-		Order.extraNeeds = extra
-	end
-end
-
 if #Engine.errors > 0 then
 	for _, e in Engine.errors do
 		print("ERROR " .. tostring(e))

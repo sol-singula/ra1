@@ -11,7 +11,7 @@ HAPPY_SECONDS, once every TEND_GAP. They make nothing to sell: the crops are the
   Animals.count(level)              animals in the pen at a level (more as it grows, up to 8)
   Animals.boost(profile, kind, now) the farm's total boost of a kind (a fraction: 0.15 = +15%)
      kinds: "grow" (every crop grows faster) · "fruitGrow" · "vegPrice" · "machine" (tractor and shop faster)
-            · "golden" (the golden-crop chance) · "orders" · "speed" (walking)
+            · "golden" (the golden-crop chance) · "customers" (more come) · "speed" (walking)
   Animals.fed(state, now) -> true while fed
   Animals.happy(state, now) -> true while tended
 ]]
@@ -30,7 +30,7 @@ local LIST = {
 	{ key = "pig",     name = "Pig",     pen = "pigPen",      boost = { kind = "vegPrice",  per = 0.04 },  color = rgb(250, 170, 180), word = "vegetables sell for more" },
 	{ key = "sheep",   name = "Sheep",   pen = "sheepPen",    boost = { kind = "machine",   per = 0.04 },  color = rgb(245, 245, 240), word = "machines go faster" },
 	{ key = "cow",     name = "Cow",     pen = "cowBarn",     boost = { kind = "fruitGrow", per = 0.04 },  color = rgb(250, 250, 250), word = "fruit grows faster" },
-	{ key = "goat",    name = "Goat",    pen = "goatPen",     boost = { kind = "orders",    per = 0.02 },  color = rgb(225, 215, 200), word = "orders pay more" },
+	{ key = "goat",    name = "Goat",    pen = "goatPen",     boost = { kind = "customers", per = 0.03 },  color = rgb(225, 215, 200), word = "more customers come" },
 	{ key = "horse",   name = "Horse",   pen = "stable",      boost = { kind = "speed",     per = 0.02 },  color = rgb(150, 100, 60), word = "you walk faster" },
 }
 -- stylua: ignore end

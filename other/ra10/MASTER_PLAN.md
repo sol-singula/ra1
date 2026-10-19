@@ -19,20 +19,24 @@ bottlenecks to solve, animal products, conveyor belts) is gone: the owner's dire
 * Colourful, with ra9's matte, geometric detail; the end must look like a real shipping warehouse.
 * Phone first: one big button, nothing fiddly, nothing covered by the jump button.
 
-## 1. The one loop
+## 1. The one loop (the Chicken Farm rule)
 
-**Grow → barn → sell → upgrade.** That's the whole game, from the first minute to the last semi.
+**Grow → barn → customers buy → upgrade the shop.** The field grows random crops as fast as it can; they pile up
+in the barn; customers come to the stand at a rate and buy them a few at a time. **How fast you can sell is the
+only bottleneck.** A full barn means the shop can't keep up, and the next shop upgrade (a sign, a bell, a helper, a
+parking lot, adverts...) brings more customers. Nothing else ever blocks you.
 
-* **Grow:** the field plants itself with the newest crop you've unlocked (you choose only once the warehouse
-  stands). Crops planted close together ripen together, so a field is one big pick.
-* **Barn:** picks go into the barn (400 crops, then 1,500; the warehouse's shelves after that). Before the barn,
-  a basket you carry (20, then 60).
-* **Sell:** the stand pays the crop's value. Each stage multiplies it (§3).
-* **Upgrade:** every buy-pad does one thing you can see and say in a sentence ("picks 2 patches at once",
-  "keeps 1,500 crops", "sell for 25% more").
+* **Grow:** the field plants itself with a random crop you've unlocked (the newer ones more often, they pay more).
+  Crops planted close together ripen together, so a field is one big pick. There is nothing to choose.
+* **Barn:** picks go into the barn (400 crops, then 1,500; the warehouse's shelves after that). Before the barn, a
+  basket you carry (20, then 60) that you sell by hand at SELL.
+* **Sell:** customers walk up and buy out of the barn (4 a minute to start, one crop each). Later the vans take
+  loads of 40 and pay 3x; the warehouse's trucks sell by the pallet; semis by the dozen pallets.
+* **Upgrade:** every buy-pad does one thing you can see and say in a sentence ("4 more customers a minute",
+  "customers buy 2 at a time", "picks 2 patches at once", "keeps 1,500 crops").
 
-Everything else (orders, specials, contracts, the warehouse's stations) runs **by itself in the background**.
-The player is never told to manage it; it just makes the same crops pay more.
+No orders, no specials, no trades, no picking what to grow: pump out food as fast as you can and sell it as fast
+as you can. The animals are boosts that make the pumping faster.
 
 Pillars: *something to do in the next 30 seconds* · *something new on the farm every few minutes* · *you do a
 job by hand once, then a machine does it* · *no fail state* · *a reason to come back tomorrow* · *one next step,
@@ -43,8 +47,9 @@ always*.
 | First pick | < 10 s |
 | First sale | < 30 s |
 | First upgrade (More Soil, $10) | < 45 s |
+| The barn, the first customers | ~6 min |
 | Tractor (the farm runs itself) | ~8 min |
-| Packing shed (orders start) | ~25 min |
+| Delivery shed (vans) | ~25 min |
 | Warehouse (trucks) | session 2 |
 | Hub, semis | ~7 days |
 
@@ -58,37 +63,39 @@ Three buttons, one of them big:
   as long, the AFK player still gets there.
 * At a pen the same button says **TEND**: the animals are happy for a minute and their boost doubles (once every
   2 min). Walking up to a hungry pen feeds them, free.
-* **SELL**: step on the stand's pad. Once the Shop Helper is bought, the barn sells its extra by itself.
+* **SELL**: step on the stand's pad to sell everything at once. Once the barn stands, customers buy from it by
+  themselves; the HUD says how fast (🏪 SHOP 10 customers/min · buy 2 each) and turns red when the barn is full.
 
 Tap a patch to see what's growing and how long it has. On a PC, E or a click does what the button does.
 
-## 3. The economy: each stage multiplies the same crops
+## 3. The economy: every stage sells the same crops faster, and for more
 
-| Stage | Where the Cash comes from | Multiplier on a crop's value |
+| Stage | Who buys | Multiplier |
 |---|---|---:|
-| 1 · The Shack | the stand (Stand Roof +25%; the stand itself grows: Produce Stall +10% at Lv 6, Farm Shop +20% at Lv 12, Country Market +35% at Lv 18) | 1x |
-| 2 · The Farm | the Shop Helper sells the barn's extra every 12 s; pigs +4% a level on vegetables | 1x, more of it, by itself |
-| 3 · The Packing Shed | orders fill themselves from the barn and pay **3x** (Sorter and Wrapper +15% each; BIG orders 2.5x and Gems) | 3x |
-| 4 · The Warehouse | the barn's extra goes in the door, gets packed on pallets, and trucks sell pallets at **2x the stand per 1,000 crops' worth**, by the load; Grow Boosts +25/25/30% | up to 6x with the shed's bonuses |
-| 5 · The Hub | the Tower +10% on orders, the Market Hall +50% at the stand, Giant Trucks ship 24 pallets at a time | the same crops, three ways at once |
+| 1 · The Shack | you, at SELL (Stand Roof +25%; the stand grows into a stall/shop/market, up to +35%) | 1x |
+| 2 · The Farm | customers out of the barn: Big Sign +4/min, Shop Helper (2 each), Shop Bell +6/min, Parking Lot +8/min, Second Counter (3 each); pigs +4% a level on vegetables | 1x, by itself |
+| 3 · The Delivery Shed | vans take 40 crops a trip and pay **3x** (Box Machine 2x the load, Sorter +15%, Wrapper +15%, Big Door quicker trips, a second van); Adverts +12 customers/min | 3x |
+| 4 · The Warehouse | the barn's crops go in the door → pallets → trucks sell by the load at **2x the stand per 1,000 crops' worth**; Grow Boosts | the biggest pipe |
+| 5 · The Hub | the Tower +10% on deliveries, the Market Hall +50% at the stand, Giant Trucks (24 pallets) | the same crops, three ways at once |
 
 * **Crops** unlock on the level, one every 4-5 levels, each worth about 2.5x the last: Strawberry 8 (8 s), Carrot
   24 (15 s, Lv 4), Corn 60 (25 s, Lv 8), Tomato 88 (40 s, Lv 12), Blueberry 200 (1 min, Lv 16), Apple 560
   (1.5 min, Lv 20), Pumpkin 1,920 (2 min, Lv 25), Watermelon 4,000 (3 min, Lv 30), Orange 8,800 (4 min, Lv 35),
-  Golden Pumpkin 80,000 (8 min, Lv 40). A new farmer's crops grow 2x as fast and pay 2.5x until level 7.
+  Golden Pumpkin 80,000 (8 min, Lv 40). The field grows a random mix of them, the newest most. A new farmer's crops
+  grow 2x as fast and pay 2.5x until level 7.
 * **Golden crops** (2%, more with the Scarecrow and the cows, or a golden seed) are worth 10x.
 * **Levels** come from picks, sales, buys and the guide (XP need = 10·n^1.55). The level gates crops, pads and
   the house.
-* **Money:** Cash for everything on the farm (start with $15); Gems (the calendar, BIG orders, specials, Robux) for
-  skips, golden seeds, boosts.
+* **Money:** Cash for everything on the farm (start with $15); Gems (the calendar, contracts, Robux) for skips,
+  golden seeds, a customer rush.
 
 ## 4. Progression: the five stages (≈75 buys, every one visible)
 
 | Stage | Buys, in order (level) | What it looks like |
 |---|---|---|
 | **1 · The Shack** $10-$900 | More Soil x9 (3 → 12 patches), Water Well (+25% grow), Wheelbarrow (carry 60), White Fence, Sprinklers (2x grow, a water tower), Stand Roof (+25%), Scarecrow (golden), **Build the Barn!** | a shack with a garden path, one field inside a fence, a stand, a well |
-| **2 · The Farm** $1.5k-$15k (Lv 5-11) | The Barn (keeps 400), Bigger Field (20), Chickens, Tractor, Bigger Field (28), Shop Helper, Pigs, Bigger Tractor (2), Bigger Barn (1,500), Bigger Field (36), Sheep, Windmill, Big Tractor (3), Cows, Bigger Field (48), **Build the Packing Shed!** | the red barn full of crates, pens along a path, a tractor driving the one big field |
-| **3 · The Packing Shed** $18k-$100k (Lv 11-17) | Packing Shed (orders pay 3x), Van, Big Board (3 orders), Huge Tractor (4), Box Machine, Sorter, Big Door, Wrapper, Mega Tractor (5), Second Van, Second Tractor, **Build the Warehouse!** | the shed and its paved yard, vans backing up to the door, the order board |
+| **2 · The Farm** $1.5k-$15k (Lv 5-11) | The Barn (keeps 400), Big Sign (+4 customers), Bigger Field (20), Chickens, Tractor, Bigger Field (28), Shop Helper (2 each), Shop Bell (+6), Pigs, Bigger Tractor (2), Parking Lot (+8), Bigger Barn (1,500), Bigger Field (36), Sheep, Windmill, Big Tractor (3), Cows, Second Counter (3 each), Bigger Field (48), **Build the Delivery Shed!** | the red barn full of crates, shoppers walking up to the stand, pens along a path, a tractor driving the one big field |
+| **3 · The Delivery Shed** $18k-$100k (Lv 11-17) | Delivery Shed, Van (40 a trip, 3x), Adverts (+12), Huge Tractor (4), Box Machine (2x the load), Sorter, Big Door, Wrapper, Mega Tractor (5), Second Van, Second Tractor, **Build the Warehouse!** | the shed and its paved yard, vans loading up and backing out of the big door |
 | **4 · The Warehouse** $120k-$2.5M (Lv 17-26) | Warehouse, Packing Lines 2-4, Forklifts 2-5, Grow Boost 1-3, More Shelves x4, Bigger Warehouse x3 (it grows in place, bay by bay), Trucks 2-4, Bigger Trucks, Fast Forklifts, Robot Packer, Giant Field (64), **Build the Hub!** | the steel warehouse rising behind the shed, racks with real pallets, forklifts on painted lanes, box trucks in the lot |
 | **5 · The Hub** $3M-$25M (Lv 26-32) | Back Doors (4 docks), Front Hall (over the old shed), Tower, Solar Roof, Market Hall (over the stand), Giant Truck, Giant Truck 2 | the warehouse takes the front of the plot; semis back into the docks from the shared road |
 
@@ -106,9 +113,8 @@ stand (the next locked one shows its level).
   open order needs first, then the nearest ripe. A second tractor at Lv 16. Hop on (DRIVE prompt) and it follows
   you, picking and planting what you drive over, for fun.
 * **The barn** keeps every pick; **the Shop Helper** (Lv 7) sells what the orders don't need every 12 s.
-* **Orders** (stage 3) fill themselves from the barn every 3 s (1 s with the Box Machine); the van drives them
-  off and the Cash lands when it's back. An order asks for about 80% of the field's patches in crops the farm can
-  grow four times over before it's due, so it's never impossible.
+* **The customers** buy out of the barn every few seconds, dearest crops first; **the vans** (stage 3) take a load
+  of 40 whenever there's one (or whatever's there after 30 s), drive off and pay 3x when they're back.
 * **The warehouse** (stage 4) pulls the barn's extra every tick; lines pack it, forklifts rack it, trucks sell
   it. Full shelves stop the picking (the toast says so) until a truck leaves.
 * **Away:** the operation earns at half speed for up to 4 h (12 h with the pass); the welcome-back card counts it
@@ -136,15 +142,12 @@ later stage). No products: the crops are the money.
 
 ## 7. In the background (never a step)
 
-* **Orders:** 2 slots (3 with the Big Board), crop-only, sized to the field, 10 minutes each, 3x the stand; one in
-  six is BIG (2x the crops, 2.5x the pay, 2 Gems). The board by the shed and the panel on the right show them;
-  nothing asks you to pack.
-* **Special Orders:** every 20-40 min of play after the shed (one waiting each day): an express truck on the road,
-  a gold banner, 3-12x pay and Gems. They pack themselves from the barn like any order.
-* **Daily contracts** (3 a UTC day: ship, pick, sell, plant, feed, pack, tend, a BIG order) and the **weekly Big
-  Contract** (4 parts, 50 Gems).
+* **Daily contracts** (3 a UTC day: pick, sell, plant, feed, tend, serve customers, send vans) and the **weekly
+  Big Contract** (4 parts, 50 Gems), both in the DAILY panel.
 * **The warehouse's four stations** (Grow, Pack, Store, Ship) still have rates; the screen inside the warehouse
   shows them for anyone curious. The HUD doesn't. The pads sell their upgrades in the one plain list.
+* There are no orders, no special orders and no trades any more: the owner found them too much. The one thing
+  the player is ever told is "your barn is full: buy the next shop upgrade".
 
 ## 8. Coming back
 
@@ -201,15 +204,14 @@ Tractor"); a step by the soil while it all grows says it's nearly ripe. The card
 
 * Name your farm (NAME on the menu; the sign by the road). Visit, LIKE, the street board and gate billboards,
   friends across servers, the Hall of Fame (most Cash, biggest shipment, biggest operation).
-* Buy from a neighbour when an order's short (a global offer they accept).
-* **Franchise** once the Market Hall stands: sell for Stars, start again in a richer region (Orchard Valley →
+* * **Franchise** once the Market Hall stands: sell for Stars, start again in a richer region (Orchard Valley →
   Tropical Coast 1.6x → Northern Dairy 2.4x → Mega Port 3.5x); Gems, levels, animal levels and golden seeds stay;
-  Stars buy perks (growth, baskets, a head start, quicker trucks, an extra order, longer naps).
+  Stars buy perks (growth, baskets, a head start, quicker trucks, Regulars, longer naps).
 
 ## 12. Money
 
-2x Cash, VIP, Extra Order and Long Nap passes; Gem packs; a once-only Starter Pack; Instant Harvest; Gems for
-Ripen Everything, Happy Farm (feed and tend every pen), Golden Seeds, Cash Rush, a Special Order now. Nothing paid
+2x Cash, VIP, More Customers and Long Nap passes; Gem packs; a once-only Starter Pack; Instant Harvest; Gems for
+Ripen Everything, Feed Everyone, Golden Seeds, Cash Rush, a Customer Rush. Nothing paid
 is required and the guide never points at the shop.
 
 ## 13. Admin

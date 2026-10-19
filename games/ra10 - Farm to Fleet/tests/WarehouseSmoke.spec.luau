@@ -40,8 +40,6 @@ local function service(name)
 	return Engine.require(tree.server.Services[name])
 end
 -- (no Special Orders breaking in here: they have their own suite)
-service("SpecialService").FIRST = 1e9
-service("SpecialService").DAILY = false
 local Plots = service("PlotService")
 local Farm = service("FarmService")
 local Upg = service("UpgradeService")
@@ -266,7 +264,6 @@ check("the guide: the first pallet", GuideC.state().key == "pallet1", GuideC.sta
 check("...pointing at the lines", typeof(GuideC.state().target) == "Vector3")
 
 -- The flow: intake, pack, store, ship ----------------------------------------------------------------------------------------
-p.orders.live = {}
 table.clear(p.storage)
 p.storage.pumpkin = 30 -- 14,400 at the stand: a pumpkin and more
 local took = Ware:Intake(player)
@@ -332,11 +329,7 @@ check(
 Engine.advance(trip2.length)
 Engine.advance(1.5)
 check("...parked again", truck1:GetAttribute("TripStart") == nil or p.flow.trucks["1"])
-check("the guide: pick what to grow", GuideC.state().key == "pickCrop", GuideC.state().key)
-check("...pointing at the soil", typeof(GuideC.state().target) == "Vector3")
-p.stats.picked = 1
-Engine.advance(1.2)
-check("the guide: then the street's steps (the calendar first)", GuideC.state().key == "calendar1", GuideC.state().key)
+check("the guide: the street's steps (the calendar first)", GuideC.state().key == "calendar1", GuideC.state().key)
 
 -- The forklifts work, the roof lifts --------------------------------------------------------------------------------------------
 p.flow.staged = 3

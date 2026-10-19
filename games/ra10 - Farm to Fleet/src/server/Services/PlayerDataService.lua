@@ -1,4 +1,4 @@
--- Loads and saves player profiles (the farm, its money, animals, orders, the guide, the calendar) with a session lock.
+-- Loads and saves player profiles (the farm, its money, animals, contracts, the guide, the calendar) with a session lock.
 -- In Studio without API access the DataStore calls fail; the player then gets an unsaved in-memory profile
 -- and a warning toast, so the game still runs.
 local DataStoreService = game:GetService("DataStoreService")
@@ -42,7 +42,8 @@ local function defaults()
 		stock = {}, -- [cropKey] = n in the barn (FarmService)
 		animals = {}, -- [penKey] = { level, fedAt, tendedAt } (AnimalService)
 		farmName = nil, -- the farm's name, or nil for "<NAME>'S FARM" (NameService)
-		orders = { done = 0, daily = { day = 0, done = {} }, weekly = { week = 0, parts = {} } }, -- (OrderService)
+		orders = { daily = { day = 0, done = {} }, weekly = { week = 0, parts = {} } }, -- the contracts (DailyService)
+		delivery = { trips = {} }, -- the vans on the road (DeliveryService)
 		guide = { chapter = 1, step = 1, done = false }, -- the guide's place (GuideService): 100% of the game
 		calendar = { day = 0, streak = 0, claimedDay = 0 }, -- the 7-day calendar (DailyService)
 		away = { at = 0 }, -- when they last left: offline earnings (OfflineService)
@@ -50,7 +51,7 @@ local function defaults()
 			harvested = 0,
 			sold = 0,
 			earned = 0, -- Cash earned, all time (the NET WORTH board reads more than this)
-			shipments = 0, -- orders filled
+			deliveries = 0, -- van loads delivered
 			minutes = 0,
 		},
 		settings = { music = true, sounds = true },

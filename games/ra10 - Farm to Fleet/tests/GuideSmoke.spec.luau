@@ -34,12 +34,9 @@ local Data = service("PlayerDataService")
 local Plots = service("PlotService")
 local Farm = service("FarmService")
 local Guide = service("GuideService")
-local Special = service("SpecialService")
 local PlotLayout = Engine.require(tree.shared.World.PlotLayout)
 local GuideData = Engine.require(tree.shared.Data.Guide)
 local SPOTS = PlotLayout.SPOTS
-Special.FIRST = 1e9
-Special.DAILY = false
 
 -- On their own ----------------------------------------------------------------------------------------------------------
 do

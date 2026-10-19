@@ -1,6 +1,6 @@
 --[[
 What the client knows, from the server's events: your profile (Cash, Gems, level, stage), your plot and the street,
-the farm's soil, the guide's step, the animals, the order board and the calendar. Controllers read it and listen to
+the farm's soil, the guide's step, the animals, the shop's numbers and the calendar. Controllers read it and listen to
 Store.Changed(partial).
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,7 +16,7 @@ local state = {
 	farm = nil,
 	guide = nil,
 	animals = nil,
-	orders = nil,
+	customers = nil,
 	daily = nil,
 }
 
@@ -45,7 +45,7 @@ local EVENTS = { -- Net event -> the Store key it fills
 	Farm = "farm",
 	Guide = "guide",
 	Animal = "animals",
-	Orders = "orders",
+	Customers = "customers",
 	Daily = "daily",
 }
 

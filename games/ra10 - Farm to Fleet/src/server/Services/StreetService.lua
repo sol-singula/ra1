@@ -2,8 +2,8 @@
 Watching each other (master plan §13.4). Every operation on the street, live:
 
   Size          Flow.size: how big the whole operation is
-  Cash/min      what its sales, orders, pallets and specials paid over the last Constants.STREET_WINDOW seconds
-  deliveries/min  how many of those payouts (a stand sale, an order, a truck, a special)
+  Cash/min      what its sales, deliveries and pallets paid over the last Constants.STREET_WINDOW seconds
+  deliveries/min  how many of those payouts (a sale, a van, a truck)
   best today    the biggest single shipment today (UTC)
 
 They show on the STREET board over the road (World/StreetBuilder.gantry, ranked by Cash/min, the street's biggest
@@ -43,7 +43,7 @@ local StreetService = {
 	TICK = 5,
 }
 
-local SHIPPED = { sell = true, order = true, pallets = true, special = true }
+local SHIPPED = { sell = true, delivery = true, pallets = true }
 local CARD_TTL = 120
 
 local data, economy, plots, analytics, registryRef

@@ -4,12 +4,12 @@ crops keep growing on the server's clock (FarmService), and the machines and the
 Constants.OFFLINE_RATE of what they'd make live, for up to Constants.OFFLINE_HOURS (OFFLINE_PASS_HOURS with the Long
 Nap pass; the franchise's perk adds more).
 
-  before the tractor and shop helper  nothing to earn away (the crops still ripen)
+  before the tractor  nothing to earn away (the crops still ripen)
   with them                        the fields' rate (Flow's grow), sold at the stand's price
   with the warehouse               the operation's pace: the slowest station's rate, shipped (Flow.SHIP_MULT)
 
 When they come back after at least OFFLINE_MIN_SECONDS, the Cash is added and Net "Away" shows the card: how long
-they were gone, what it earned (and whether it hit the cap), and what's ready: ripe tiles, a Special Order waiting,
+they were gone, what it earned (and whether it hit the cap), and what's ready: ripe tiles,
 the day's calendar reward.
 
 profile.away = { at (os.time when they left) }
@@ -24,6 +24,8 @@ local Flow = require(ReplicatedStorage.Shared.Data.Flow)
 local Franchise = require(ReplicatedStorage.Shared.Data.Franchise)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Upgrades = require(ReplicatedStorage.Shared.Data.Upgrades)
+local Customers = require(ReplicatedStorage.Shared.Data.Customers)
+local Crops = require(ReplicatedStorage.Shared.Data.Crops)
 
 local OfflineService = {
 	Name = "OfflineService",
@@ -50,9 +52,19 @@ function OfflineService:Earned(profile, seconds)
 	if owned.warehouse then
 		perMinute = math.min(rates.grow, rates.pack, rates.store, rates.ship)
 			* Flow.SHIP_MULT
-			* (1 + Upgrades.stat(owned, "orderPrice", 0))
-	elseif owned.tractor and owned.shopkeeper then
-		perMinute = rates.grow * (1 + Upgrades.stat(owned, "price", 0))
+			* (1 + Upgrades.stat(owned, "deliveryPrice", 0))
+	elseif owned.tractor then
+		-- (the field's Cash a minute, as much of it as the customers can buy; the vans on top)
+		local best = Crops[Crops.best(profile.level or 1)]
+		local sell = Customers.sellRate(profile, workspace:GetServerTimeNow())
+			* best.value
+			* (1 + Upgrades.stat(owned, "price", 0))
+		perMinute = math.min(rates.grow, sell)
+		if owned.shed and owned.van then
+			local load = 40 * Upgrades.stat(owned, "vanLoad", 1)
+			local trip = Upgrades.stat(owned, "van", 20) * (1 - Upgrades.stat(owned, "tripCut", 0))
+			perMinute += math.min(rates.grow, Upgrades.stat(owned, "vans", 1) * load * best.value * 3 * 60 / trip)
+		end
 	end
 	local mult = Franchise.incomeMult(profile)
 	return math.floor(perMinute * minutes * Constants.OFFLINE_RATE * mult + 0.5), capped
@@ -86,7 +98,6 @@ function OfflineService:OnPlayerReady(player, profile)
 		capped = capped,
 		hours = self:Hours(profile),
 		ripe = ripe,
-		special = profile.orders and profile.orders.special ~= nil or nil,
 	}
 	if analytics then
 		pcall(analytics.event, player, "away", { seconds = seconds, earned = earned, capped = capped })

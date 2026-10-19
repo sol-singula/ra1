@@ -5,8 +5,7 @@ on to the next; with nothing to do it parks by the barn. A bigger tractor is qui
 (the "machine" boost). Its moves are model attributes (From, To, Depart, Arrive, in world space) for every client
 to animate (TractorController); the work happens on the server when it gets there.
 
-What it picks first: a crop an open order still needs (OrderService, through FarmService.hold), then whatever's
-ripe nearest.
+What it picks first: whatever's ripe nearest, then an empty patch to plant.
 
 Hop on: the first tractor's prompt (DRIVE) puts the owner in the seat: it goes where they go (faster than walking),
 picks what's ripe and plants what's empty under it (REACH studs). The prompt again, or Net "Tractor" ("off") from
@@ -108,7 +107,7 @@ function TractorService:Drive(player, on)
 	return false
 end
 
--- Does this patch have work: ripe (2 if an order wants its crop), empty (1), or none
+-- Does this patch have work: ripe (2), empty (1), or none
 local function workOf(player, p, n, needs)
 	local ph = farm:Phase(player, n)
 	if ph == 3 then
@@ -158,9 +157,9 @@ local function work(player, at, r, count)
 	return done
 end
 
--- The patch it goes to next: what an order needs first, then the nearest with work, so it sweeps the field
+-- The patch it goes to next: the nearest with work, ripe first, so it sweeps the field
 local function nextPatch(player, p, from, taken)
-	local needs = farm.hold and farm.hold(player)
+	local needs = nil
 	local best, bestD, bestRank
 	for n in farm:Tiles(player) do
 		local rank = workOf(player, p, n, needs)

@@ -28,12 +28,12 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 
 local ShopService = {
 	Name = "ShopService",
-	Dependencies = { "PlayerDataService", "EconomyService", "FarmService", "AnimalService", "SpecialService" },
+	Dependencies = { "PlayerDataService", "EconomyService", "FarmService", "AnimalService" },
 	Bought = Signal.new("ShopService.Bought"), -- (player, key, currency "robux" | "gems")
 	RECEIPTS_KEPT = 50,
 }
 
-local data, economy, farm, animals, special, analytics
+local data, economy, farm, animals, analytics
 
 local function say(player, text, kind)
 	Net.fire(player, "Toast", text, kind or "info")
@@ -145,9 +145,6 @@ function ShopService:BuyGems(player, key)
 	if not p or not it then
 		return false, "bad"
 	end
-	if key == "special" and (not p.owned.shed or special:Current(player)) then
-		return false, p.owned.shed and "A Special Order is already on" or "Build the packing shed first"
-	end
 	if key == "boost" and (p.boostUntil or 0) - os.time() >= Shop.BOOST_MAX then
 		return false, "Your Cash Rush is full"
 	end
@@ -164,8 +161,9 @@ function ShopService:BuyGems(player, key)
 	elseif key == "boost" then
 		p.boostUntil = math.max(p.boostUntil or 0, os.time()) + Shop.BOOST_SECONDS
 		say(player, "CASH RUSH! x2 everything shipped", "good")
-	elseif key == "special" then
-		special:Spawn(player)
+	elseif key == "rush" then
+		p.rushUntil = math.max(p.rushUntil or 0, os.time()) + 600
+		say(player, "CUSTOMER RUSH! Double customers for 10 minutes", "good")
 	end
 	if analytics then
 		pcall(analytics.event, player, "gem_buy", { key = key, gems = it.gems })
@@ -242,7 +240,6 @@ function ShopService:Init(registry)
 	economy = registry.EconomyService
 	farm = registry.FarmService
 	animals = registry.AnimalService
-	special = registry.SpecialService
 	analytics = registry.AnalyticsService
 	Net.on("Shop", function(player, what, key)
 		local ok, why = nil, nil

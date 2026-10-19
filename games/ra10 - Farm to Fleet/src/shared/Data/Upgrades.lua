@@ -16,11 +16,10 @@ owned yet whose level is reached. Each one is visible on the plot (World/FarmBui
   kind "autoharvest" the tractor, at level `value`: it drives round the field picking `value` patches at a stop
   kind "autosell" the shop helper: every `value` seconds it sells the barn's extra crops at the stand (never what
                   the open orders still need)
-  kind "orders"   the order board holds `value` orders at once (Data/Orders, OrderService)
+  kind "customers" `value` more customers a minute (they add up); "basket" crops a customer buys (Data/Customers)
   kind "van"      a delivery van: an order's trip takes `value` seconds (the buyer's pickup takes longer)
   kind "vans"     `value` vans: that many orders on the road at once
-  kind "autopack" the box line: orders get packed every `value` seconds (OrderService.AUTO_PACK without it)
-  kind "orderPrice" orders pay + `value` (they add up)
+  kind "deliveryPrice" deliveries pay + `value` (they add up); "vanLoad" a van carries x `value`; "vans" how many
   kind "tripCut"  the loading dock: trips take `value` less time
   (stage 4: the warehouse, Data/Flow) kind "warehouse" the building; and by track, one buy-pad each by the
   warehouse (master plan §13.2): "grow" (kind "grow": crops grow + `value`, they add up), "pack" ("packLines": that
@@ -37,7 +36,7 @@ owned yet whose level is reached. Each one is visible on the plot (World/FarmBui
   Upgrades.ready(owned, level, u)   its level reached and what it `needs` owned
   Upgrades.TRACKS            the four, in flow order
   Upgrades.stat(owned, kind, default)   the value the plot has for a kind (the highest owned; "price",
-                             "golden", "orderPrice", "grow" and "hall" add up)
+                             "golden", "deliveryPrice", "customers", "grow" and "hall" add up)
 ]]
 local Upgrades = {}
 
@@ -67,32 +66,36 @@ local LIST = {
 	{ key = "barnDeed",   name = "Build the Barn!", stage = 1, cost = 900, kind = "stage",     value = 2,  level = 5, desc = "a barn keeps your crops" },
 	-- Stage 2: the Farm (the barn keeps the crops; the tractor picks them; the shop helper sells the extra)
 	{ key = "barn",       name = "The Barn",        stage = 2, cost = 1500,  kind = "store",     value = 400, level = 5, replaces = "barnDeed", desc = "keeps 400 crops: no more carrying" },
+	{ key = "sign",       name = "Big Sign",        stage = 2, cost = 2000,  kind = "customers", value = 4,   level = 5, desc = "4 more customers a minute" },
 	{ key = "field1",     name = "Bigger Field",    stage = 2, cost = 2500,  kind = "soil",      value = 20,  level = 5 },
 	{ key = "chickenCoop", name = "Chickens",       stage = 2, cost = 3000,  kind = "animal",    value = "chicken", level = 5, desc = "crops grow faster" },
 	{ key = "tractor",    name = "Tractor",         stage = 2, cost = 4000,  kind = "autoharvest", value = 1, level = 6, desc = "picks and plants for you" },
 	{ key = "field2",     name = "Bigger Field",    stage = 2, cost = 5000,  kind = "soil",      value = 28,  level = 6 },
-	{ key = "shopkeeper", name = "Shop Helper",     stage = 2, cost = 6000,  kind = "autosell",  value = 12,  level = 7, desc = "sells your extra crops for you" },
+	{ key = "shopkeeper", name = "Shop Helper",     stage = 2, cost = 6000,  kind = "basket",    value = 2,   level = 7, desc = "customers buy 2 crops at a time" },
+	{ key = "bell",       name = "Shop Bell",       stage = 2, cost = 6500,  kind = "customers", value = 6,   level = 7, desc = "6 more customers a minute" },
 	{ key = "pigPen",     name = "Pigs",            stage = 2, cost = 7000,  kind = "animal",    value = "pig", level = 7, desc = "crops sell for more" },
 	{ key = "tractor2",   name = "Bigger Tractor",  stage = 2, cost = 8000,  kind = "autoharvest", value = 2, level = 8, desc = "picks 2 patches at once" },
+	{ key = "parking",    name = "Parking Lot",     stage = 2, cost = 8500,  kind = "customers", value = 8,   level = 8, desc = "8 more customers a minute" },
 	{ key = "bigBarn",    name = "Bigger Barn",     stage = 2, cost = 8000,  kind = "store",     value = 1500, level = 8, desc = "keeps 1,500 crops" },
 	{ key = "field3",     name = "Bigger Field",    stage = 2, cost = 9000,  kind = "soil",      value = 36,  level = 8 },
 	{ key = "sheepPen",   name = "Sheep",           stage = 2, cost = 10000, kind = "animal",    value = "sheep", level = 9, desc = "machines go faster" },
 	{ key = "windmill",   name = "Windmill",        stage = 2, cost = 4000,  kind = "decor",     value = 0,   level = 9, desc = "a big windmill: looks great" },
 	{ key = "tractor3",   name = "Big Tractor",     stage = 2, cost = 12000, kind = "autoharvest", value = 3, level = 10, desc = "picks 3 patches at once" },
 	{ key = "cowBarn",    name = "Cows",            stage = 2, cost = 12000, kind = "animal",    value = "cow", level = 10, desc = "fruit grows faster" },
+	{ key = "counter2",   name = "Second Counter",  stage = 2, cost = 13000, kind = "basket",    value = 3,   level = 10, desc = "customers buy 3 crops at a time" },
 	{ key = "field4",     name = "Bigger Field",    stage = 2, cost = 14000, kind = "soil",      value = 48,  level = 10 },
-	{ key = "shedDeed",   name = "Build the Packing Shed!", stage = 2, cost = 15000, kind = "stage", value = 3, level = 11, desc = "people will order your crops" },
+	{ key = "shedDeed",   name = "Build the Delivery Shed!", stage = 2, cost = 15000, kind = "stage", value = 3, level = 11, desc = "vans sell your crops for 3x" },
 	-- Stage 3: the Packing Shed
-	{ key = "shed",       name = "Packing Shed",    stage = 3, cost = 18000,  kind = "orders",   value = 2,    level = 11, replaces = "shedDeed", desc = "people order your crops and pay 3x" },
-	{ key = "van",        name = "Van",             stage = 3, cost = 25000,  kind = "van",       value = 20,   level = 12, desc = "your own van: orders get there faster" },
-	{ key = "orderBoard", name = "Big Board",       stage = 3, cost = 30000,  kind = "orders",    value = 3,    level = 12, desc = "3 orders at once" },
+	{ key = "shed",       name = "Delivery Shed",   stage = 3, cost = 18000,  kind = "delivery",  value = 1,    level = 11, replaces = "shedDeed", desc = "vans sell your crops for 3x" },
+	{ key = "van",        name = "Van",             stage = 3, cost = 25000,  kind = "van",       value = 20,   level = 12, desc = "takes 40 crops a trip: pays 3x" },
+	{ key = "adverts",    name = "Adverts",         stage = 3, cost = 30000,  kind = "customers", value = 12,   level = 12, desc = "12 more customers a minute" },
 	{ key = "tractor4",   name = "Huge Tractor",    stage = 3, cost = 32000,  kind = "autoharvest", value = 4, level = 12, desc = "picks 4 patches at once" },
-	{ key = "boxLine",    name = "Box Machine",     stage = 3, cost = 36000,  kind = "autopack",  value = 1,    level = 13, desc = "packs orders 3x faster" },
-	{ key = "sorter",     name = "Sorter",          stage = 3, cost = 45000,  kind = "orderPrice", value = 0.15, level = 14, desc = "orders pay 15% more" },
-	{ key = "loadingDock", name = "Big Door",       stage = 3, cost = 52000,  kind = "tripCut",   value = 0.25, level = 14, desc = "trucks load faster: orders get there 25% quicker" },
-	{ key = "wrapper",    name = "Wrapper",         stage = 3, cost = 60000,  kind = "orderPrice", value = 0.15, level = 15, desc = "wraps boxes: orders pay 15% more" },
+	{ key = "boxLine",    name = "Box Machine",     stage = 3, cost = 36000,  kind = "vanLoad",   value = 2,    level = 13, desc = "vans carry 2x as much" },
+	{ key = "sorter",     name = "Sorter",          stage = 3, cost = 45000,  kind = "deliveryPrice", value = 0.15, level = 14, desc = "deliveries pay 15% more" },
+	{ key = "loadingDock", name = "Big Door",       stage = 3, cost = 52000,  kind = "tripCut",   value = 0.25, level = 14, desc = "vans load faster: trips 25% quicker" },
+	{ key = "wrapper",    name = "Wrapper",         stage = 3, cost = 60000,  kind = "deliveryPrice", value = 0.15, level = 15, desc = "wraps boxes: deliveries pay 15% more" },
 	{ key = "tractor5",   name = "Mega Tractor",    stage = 3, cost = 70000,  kind = "autoharvest", value = 5, level = 15, desc = "picks 5 patches at once" },
-	{ key = "van2",       name = "Second Van",      stage = 3, cost = 75000,  kind = "vans",      value = 2,    level = 16, desc = "2 orders on the road at once" },
+	{ key = "van2",       name = "Second Van",      stage = 3, cost = 75000,  kind = "vans",      value = 2,    level = 16, desc = "two vans delivering" },
 	{ key = "secondTractor", name = "Second Tractor", stage = 3, cost = 90000, kind = "tractors", value = 2,   level = 16, desc = "two tractors picking" },
 	{ key = "warehouseDeed", name = "Build the Warehouse!", stage = 3, cost = 100000, kind = "stage", value = 4, level = 17, desc = "holds tons of crops; trucks sell them" },
 	-- Stage 4: the Warehouse (the building on the stand's pads, then a track per station)
@@ -125,7 +128,7 @@ local LIST = {
 	-- Stage 5: the Distribution Hub: the warehouse takes over the front of the plot (master plan §13.1)
 	{ key = "backDocks",  name = "Back Doors",      stage = 5, cost = 3000000,  kind = "docks",  value = 0.15, level = 26, needs = "bay4", desc = "4 big doors for giant trucks" },
 	{ key = "frontHall",  name = "Front Hall",      stage = 5, cost = 4500000,  kind = "hall",   value = 0.25, level = 27, replaces = { "shed", "sorter", "wrapper", "boxLine", "orderBoard" }, desc = "a giant packing hall" },
-	{ key = "controlTower", name = "Tower",         stage = 5, cost = 6000000,  kind = "orderPrice", value = 0.1, level = 28, desc = "runs it all: orders pay 10% more" },
+	{ key = "controlTower", name = "Tower",         stage = 5, cost = 6000000,  kind = "deliveryPrice", value = 0.1, level = 28, desc = "runs it all: deliveries pay 10% more" },
 	{ key = "solarRoof",  name = "Solar Roof",      stage = 5, cost = 8000000,  kind = "hall",   value = 0.25, level = 29, desc = "free power: packs 25% more" },
 	{ key = "marketHall", name = "Market Hall",     stage = 5, cost = 10000000, kind = "price",  value = 0.5,  level = 30, desc = "your own market: sell for 50% more" },
 	-- (the SHIP station's track carries on into stage 5: semis on the shared road, once there are back docks)
@@ -243,7 +246,14 @@ function Upgrades.stat(owned, kind, default)
 	for _, key in Upgrades.LIST do
 		local u = Upgrades[key]
 		if owned[key] and u.kind == kind then
-			if kind == "price" or kind == "golden" or kind == "orderPrice" or kind == "grow" or kind == "hall" then
+			if
+				kind == "price"
+				or kind == "golden"
+				or kind == "deliveryPrice"
+				or kind == "grow"
+				or kind == "hall"
+				or kind == "customers"
+			then
 				v = (v or 0) + u.value
 			elseif type(u.value) ~= "number" then
 				v = u.value

@@ -27,13 +27,13 @@ Franchise.REGIONS = {
 	{ key = "port",     name = "Mega Port",      mult = 3.5, ground = Color3.fromRGB(150, 160, 150), trees = "crane" },
 }
 
-Franchise.ORDER = { "growth", "carry", "headStart", "fleet", "orderSlot", "nap" }
+Franchise.ORDER = { "growth", "carry", "headStart", "fleet", "regulars", "nap" }
 Franchise.PERKS = {
 	growth    = { key = "growth",    name = "Green Thumb",   text = "+10% growth speed a level",       step = 0.1,  max = 5, base = 1 },
 	carry     = { key = "carry",     name = "Big Baskets",   text = "+40 basket space a level",        step = 40,   max = 5, base = 1 },
 	headStart = { key = "headStart", name = "Head Start",    text = "start each farm with more Cash",  step = 1,    max = 4, base = 2 },
 	fleet     = { key = "fleet",     name = "Quick Fleet",   text = "trucks 8% quicker a level",       step = 0.08, max = 4, base = 2 },
-	orderSlot = { key = "orderSlot", name = "Extra Order",   text = "one more order on the board",     step = 1,    max = 1, base = 5 },
+	regulars  = { key = "regulars",  name = "Regulars",      text = "+2 customers a minute a level",    step = 2,    max = 5, base = 3 },
 	nap       = { key = "nap",       name = "Long Lunch",    text = "+2 h of earnings while away",     step = 1,    max = 4, base = 2 },
 }
 -- stylua: ignore end

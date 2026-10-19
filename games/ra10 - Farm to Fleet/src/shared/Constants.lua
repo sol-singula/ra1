@@ -96,7 +96,7 @@ Constants.PRODUCTS = {
 Constants.PASSES = {
 	doubleCash = 0,
 	longNap = 0,
-	extraOrder = 0,
+	moreCustomers = 0,
 	vip = 0,
 }
 

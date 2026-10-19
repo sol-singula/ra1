@@ -234,9 +234,6 @@ return function(FarmBuilder, BUILD, kit)
 		for _, x in { 30, 34, 50, 54, 58 } do
 			L:block(x, FZ - 1.6, 0.6, 0.6, 1.8, { color = P.safetyYellow, name = "Bollard" }, 0)
 		end
-		-- the order board and the PACK ORDERS pad, where they've always been
-		FarmBuilder.orderBoard(L, plot, Vector3.new(14, 0, FZ - 0.45), true)
-		FarmBuilder.packPad(L, SPOTS.packPad)
 		-- the roof and the detail layer
 		roofTag(L:box(cx, H + 0.8, cz, X1 - X0 + 2, 0.6, d, { color = kit.ROOF, name = "Roof" }), plot, X0, FZ, X1, HZ)
 		for _, sx in { -18, 0, 18 } do

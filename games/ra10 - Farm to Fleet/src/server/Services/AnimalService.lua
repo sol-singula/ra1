@@ -64,7 +64,7 @@ local BOOST_WORDS = {
 	fruitGrow = "fruit grows %d%% faster",
 	vegPrice = "vegetables sell for %d%% more",
 	machine = "machines go %d%% faster",
-	orders = "orders pay %d%% more",
+	customers = "%d%% more customers",
 	speed = "you walk %d%% faster",
 }
 

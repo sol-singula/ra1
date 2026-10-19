@@ -35,13 +35,9 @@ local ShopS = service("ShopService")
 local Farm = service("FarmService")
 local Offline = service("OfflineService")
 local Daily = service("DailyService")
-local Order = service("OrderService")
-local Special = service("SpecialService")
 local Shop = Engine.require(tree.shared.Data.Shop)
 local Constants = Engine.require(tree.shared.Constants)
 local Enum = Engine.Enum
-Special.FIRST = 1e9
-Special.DAILY = false
 
 local player = Engine.addPlayer("Ava", 901)
 Engine.Players.LocalPlayer = player
@@ -125,13 +121,10 @@ check("...everything shipped pays double", p.cash - cash0 == one * 2, p.cash - c
 cash0 = p.cash
 Economy:Add(player, 1000, "calendar")
 check("...not gifts", p.cash - cash0 == 1000)
-check("Extra Order (free in Studio)", ShopS:PromptRobux(player, "extraOrder") and p.passes.extraOrder)
-Order:Push(player)
-Engine.advance(0.5)
+check("More Customers (free in Studio)", ShopS:PromptRobux(player, "moreCustomers") and p.passes.moreCustomers)
 check(
-	"...one more order on the board",
-	#Order:Slots(player) == Engine.require(tree.shared.Data.Upgrades).shed.value + 1,
-	#Order:Slots(player)
+	"...more customers come",
+	Engine.require(tree.shared.Data.Customers).rate(p, 0) >= Engine.require(tree.shared.Data.Customers).BASE + 5
 )
 check("Long Nap: 12 h away", ShopS:PromptRobux(player, "longNap") and Offline:Hours(p) == Constants.OFFLINE_PASS_HOURS)
 check("VIP", ShopS:PromptRobux(player, "vip") and player:GetAttribute("VIP") == true)
@@ -181,8 +174,12 @@ check(
 	p.cash - cash0 == math.floor(one * 4 * 1.1 + 0.5),
 	p.cash - cash0
 )
-check("a Special Order now", ShopS:BuyGems(player, "special") and Special:Current(player) ~= nil)
-check("...not while one is on", not ShopS:BuyGems(player, "special"))
+local rushOk, rushWhy = ShopS:BuyGems(player, "rush")
+check(
+	"a Customer Rush",
+	rushOk == true and (Data:Get(player).rushUntil or 0) > 0,
+	`{tostring(rushOk)} {tostring(rushWhy)}`
+)
 p.gems = 3
 check("too few Gems: nothing", not ShopS:BuyGems(player, "seeds") and p.gems == 3)
 Engine.advance(0.5)

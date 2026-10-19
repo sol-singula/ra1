@@ -81,7 +81,7 @@ function FranchiseController:init()
 	Theme.text({
 		Name = "Rules",
 		Text = "Sell your company for Stars and start a new farm in a richer region.\n"
-			.. "GOES: Cash, buildings, stages, the warehouse, the orders.\n"
+			.. "GOES: Cash, buildings, stages, the warehouse, the vans.\n"
 			.. "STAYS: Gems, your farm level, animal levels, golden seeds, the calendar, every record.",
 		Position = UDim2.fromOffset(0, 142),
 		Size = UDim2.new(0.45, 0, 0, 120),

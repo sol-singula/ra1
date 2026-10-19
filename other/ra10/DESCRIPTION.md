@@ -15,15 +15,12 @@ A shack, three patches of dirt and a farm stand. Plant, harvest, sell, and buy m
 A big field, a barn that keeps your crops, a tractor that picks for you, and chickens, pigs, sheep and cows that
 make everything grow faster and pay more. Your house grows too!
 
-📦 SHIP IT
-Build a packing shed: orders pay 3x. Then build a giant warehouse with racks, forklifts and trucks that sell your
-crops by the truckload.
+🏪 SELL FASTER
+Customers line up at your stand. A bigger sign, a bell, a parking lot: more customers, more Cash! Then vans that
+pay 3x, and a giant warehouse with forklifts and trucks that sell by the truckload.
 
 🚛 GO BIG
 Dock doors, semis backing up to your warehouse, a control tower, a market hall. Your farm takes over the whole plot!
-
-⭐ SPECIAL ORDERS
-A gold truck pulls up with a rush order. Pack it fast for a huge payout and Gems!
 
 🏁 WATCH YOUR STREET
 Six farms side by side. The big board over the road shows who ships the most. Visit, like, and beat your neighbours!

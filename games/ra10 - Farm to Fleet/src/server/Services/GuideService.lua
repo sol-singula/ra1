@@ -30,16 +30,16 @@ local GuideService = {
 		"FarmService",
 		"UpgradeService",
 		"AnimalService",
-		"OrderService",
+		"CustomerService",
+		"DeliveryService",
 		"WarehouseService",
-		"SpecialService",
 	},
 	Advanced = Signal.new("GuideService.Advanced"),
 	CHECK = 1,
 	GO_MIN = 30, -- studs: a target this far or more gets a GO button
 }
 
-local data, economy, plots, farm, upgrades, animals, orders, analytics
+local data, economy, plots, farm, upgrades, animals, analytics
 local sent = {} -- [player] = the last payload's key and target, so nothing is sent twice
 
 local function guideOf(p)
@@ -158,8 +158,34 @@ function GuideService:RawStep(player)
 	if step then
 		return step
 	end
-	-- generated: the next upgrade on offer (what it does, in plain words), or the level the next one needs
+	-- the one bottleneck: a full barn means the shop can't keep up; the next shop upgrade on offer is the step
 	local offer = upgrades:Offer(player)
+	local keeps = farm:Keeps(player)
+	if keeps > 0 then
+		local stock = 0
+		for _, n in farm:Stock(player) do
+			stock += n
+		end
+		if stock >= keeps * 0.9 then
+			local first = offer[1]
+			for _, o in offer do
+				if not o.locked and (o.upgrade.kind == "customers" or o.upgrade.kind == "basket") then
+					first = o
+					break
+				end
+			end
+			if first and not first.locked then
+				local u = first.upgrade
+				return {
+					key = "shop:" .. u.key,
+					text = `Your barn is full! Buy {u.name}: {Upgrades.blurb(u)}`,
+					target = "pad:" .. u.key,
+					generated = true,
+				}
+			end
+		end
+	end
+	-- generated: the next upgrade on offer (what it does, in plain words), or the level the next one needs
 	local first = offer[1]
 	if first and not first.locked then
 		local u = first.upgrade
@@ -230,12 +256,9 @@ function GuideService:Target(player, target)
 			) or PlotLayout.SPOTS.truckDoor - Vector3.new(0, 0, 4),
 		})[string.sub(target, 6)]
 		return plot and spot and PlotLayout.toWorld(plot.index, spot.X, spot.Z, 1)
-	elseif target == "pack" then
-		local pad = orders and orders:PackPad(player)
-		return pad and pad.Position
-	elseif target == "board" or target == "door" then
+	elseif target == "door" then
 		local plot = plots:Plot(player)
-		local spot = target == "board" and PlotLayout.SPOTS.board or PlotLayout.SPOTS.door - Vector3.new(0, 0, 6)
+		local spot = PlotLayout.SPOTS.door - Vector3.new(0, 0, 6)
 		return plot and PlotLayout.toWorld(plot.index, spot.X, spot.Z, 0.5)
 	elseif string.sub(target, 1, 4) == "pen:" then
 		local pen = animals and animals:Pens(player)[string.sub(target, 5)]
@@ -354,7 +377,6 @@ function GuideService:Init(registry)
 	farm = registry.FarmService
 	upgrades = registry.UpgradeService
 	animals = registry.AnimalService
-	orders = registry.OrderService
 	analytics = registry.AnalyticsService
 	farm.Changed:Connect(function(player)
 		self:Check(player)
@@ -365,13 +387,13 @@ function GuideService:Init(registry)
 	animals.Changed:Connect(function(player)
 		self:Check(player)
 	end)
-	orders.Changed:Connect(function(player)
+	registry.CustomerService.Changed:Connect(function(player)
+		self:Check(player)
+	end)
+	registry.DeliveryService.Changed:Connect(function(player)
 		self:Check(player)
 	end)
 	registry.WarehouseService.Changed:Connect(function(player)
-		self:Check(player)
-	end)
-	registry.SpecialService.Changed:Connect(function(player)
 		self:Check(player)
 	end)
 	economy.LevelUp:Connect(function(player)

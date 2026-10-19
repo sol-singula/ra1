@@ -2,9 +2,8 @@
 The warehouse at work (master plan §13.1, §13.2; Data/Flow): once it stands, the farm's produce runs through four
 stations and the slowest one sets the pace.
 
-  intake   every tick brings the barn's excess in (Intake): what the open orders keep stays
-           in the stock, ready for them (the active orders), the rest is palletised and the forklifts and trucks
-           sell it; it stops while Flow.INBOUND_MAX pallets' worth of crates are waiting
+  intake   every tick brings the barn's crops in (Intake): they're palletised and the forklifts and trucks sell
+           them by the load; it stops while Flow.INBOUND_MAX pallets' worth of crates are waiting
   pack     the lines box the crates at Flow.rates().pack; every Flow.PALLET of boxes is a pallet on the staging
            floor (packing stops while Flow.STAGE_MAX wait there)
   store    each forklift racks a pallet every Flow.cycle seconds, while there's a free slot
@@ -49,7 +48,6 @@ local WarehouseService = {
 		"PlotService",
 		"FarmService",
 		"UpgradeService",
-		"OrderService",
 	},
 	Changed = Signal.new("WarehouseService.Changed"),
 	TICK = 0.5,
@@ -234,7 +232,7 @@ local function endTrip(player, n)
 end
 
 local function pay(player, p, trip)
-	local bonus = Upgrades.stat(p.owned or {}, "orderPrice", 0)
+	local bonus = Upgrades.stat(p.owned or {}, "deliveryPrice", 0)
 	local cash = math.floor(trip.pallets * Flow.PALLET * Flow.SHIP_MULT * (1 + bonus) + 0.5)
 	economy:Add(player, cash, "pallets")
 	economy:AddXP(player, math.max(2, trip.pallets * 4), "pallets")
@@ -367,7 +365,7 @@ function WarehouseService:Step(player, p, dt)
 	return changed
 end
 
--- Every tick: the barn's excess (what the orders don't keep) into the warehouse's crates
+-- Every tick: the barn's crops into the warehouse's crates
 function WarehouseService:Intake(player)
 	local p = data:Get(player)
 	if not p or not opened(p) then
@@ -377,7 +375,6 @@ function WarehouseService:Intake(player)
 	if f.inbound >= Flow.INBOUND_MAX * Flow.PALLET then
 		return true -- (full: the basket waits, and the bottleneck shows it)
 	end
-	-- (only the excess: what the open orders keep stays in the stock, ready for them)
 	local bag = farm:Excess(player)
 	local value = farm:Worth(player, bag)
 	if value <= 0 then
