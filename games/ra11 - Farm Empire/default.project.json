@@ -1,0 +1,71 @@
+{
+  "name": "FarmEmpire",
+  "tree": {
+    "$className": "DataModel",
+    "Lighting": {
+      "$properties": {
+        "Technology": "ShadowMap",
+        "GlobalShadows": true,
+        "ClockTime": 13.5
+      }
+    },
+    "HttpService": {
+      "$properties": {
+        "HttpEnabled": true
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": true,
+        "StreamingMinRadius": 128,
+        "StreamingTargetRadius": 512,
+        "Gravity": 196.2
+      },
+      "Terrain": {
+        "$properties": {
+          "Decoration": false
+        }
+      }
+    },
+    "Players": {
+      "$properties": {
+        "CharacterAutoLoads": false,
+        "RespawnTime": 2,
+        "MaxPlayers": 12
+      }
+    },
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "CameraMode": "Classic",
+        "CameraMaxZoomDistance": 80,
+        "CameraMinZoomDistance": 10,
+        "EnableMouseLockOption": true,
+        "GameSettingsAvatar": "R15",
+        "CharacterWalkSpeed": 22,
+        "CharacterUseJumpPower": false,
+        "CharacterJumpHeight": 7.2,
+        "DevCameraOcclusionMode": "Zoom"
+      },
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        }
+      },
+      "StarterCharacterScripts": {
+        "Health": {
+          "$path": "src/character/Health.server.lua"
+        }
+      }
+    }
+  }
+}
