@@ -14,6 +14,10 @@ A small fake Roblox engine for running src/ under lune.
   engine.output / engine.errors          everything printed / every error raised in a task
   engine.analytics / engine.prompts / engine.badgesAwarded    recorded service calls
   engine.kicks                           { userId, reason } for every player:Kick
+  engine:fireServer(player, name, ...)   a client FireServer arriving at the server (Remotes[name])
+  engine:invokeServer(player, name, ...) a client InvokeServer arriving at the server
+  engine:clientEvents(name, userId)      what that client received on a remote (argument packs)
+  engine.remoteLog                       every remote call, both directions
   engine.dataStores                      the DataStoreService fake, with test controls:
       _failNext(store, method, msg, n)   the next n matching calls error
       _hang(store)                       every call to that store yields forever
@@ -32,6 +36,7 @@ virtual clock behind workspace:GetServerTimeNow(), os.time, os.clock, tick, task
 ]]
 local fs = require("@lune/fs")
 local luau = require("@lune/luau")
+local roblox = require("@lune/roblox")
 local serde = require("@lune/serde")
 
 local Engine = {}
@@ -556,6 +561,75 @@ local function makeDataStoreService(engine, shared)
 end
 
 ---------------------------------------------------------------------------------------------------------------
+-- Instance.new and remotes. Every remote call is logged in engine.remoteLog as
+-- { remote, dir = "toClient" | "toServer" | "toAll", userId?, args }
+
+local function makeInstanceLib(engine)
+	local Instance = {}
+	function Instance.new(className, parent)
+		local extra
+		if className == "RemoteEvent" or className == "UnreliableRemoteEvent" then
+			extra = { OnServerEvent = newSignal(engine), OnClientEvent = newSignal(engine) }
+		elseif className == "RemoteFunction" then
+			extra = { OnServerInvoke = false, OnClientInvoke = false }
+		end
+		local inst = newInstance(engine, className, className, extra)
+		if className == "RemoteEvent" or className == "UnreliableRemoteEvent" then
+			function inst.FireClient(self, player, ...)
+				table.insert(
+					engine.remoteLog,
+					{ remote = self.Name, dir = "toClient", userId = player.UserId, args = table.pack(...) }
+				)
+			end
+			function inst.FireAllClients(self, ...)
+				table.insert(engine.remoteLog, { remote = self.Name, dir = "toAll", args = table.pack(...) })
+			end
+			function inst.FireServer(self, ...)
+				table.insert(engine.remoteLog, { remote = self.Name, dir = "toServer", args = table.pack(...) })
+			end
+		elseif className == "RemoteFunction" then
+			function inst.InvokeServer(self, ...)
+				table.insert(engine.remoteLog, { remote = self.Name, dir = "toServer", args = table.pack(...) })
+				return nil
+			end
+			function inst.InvokeClient()
+				error("mock: the server must never call InvokeClient", 2)
+			end
+		end
+		if parent then
+			inst.Parent = parent
+		end
+		return inst
+	end
+	return Instance
+end
+
+-- a client call arriving at the server: Remotes[name].OnServerEvent fires with (player, ...)
+function Engine:fireServer(player, name, ...)
+	local remote = self.game.ReplicatedStorage.Remotes:FindFirstChild(name)
+	assert(remote, `mock: no remote {name}`)
+	remote.OnServerEvent:Fire(player, ...)
+end
+
+-- a client InvokeServer arriving at the server
+function Engine:invokeServer(player, name, ...)
+	local remote = self.game.ReplicatedStorage.Remotes:FindFirstChild(name)
+	assert(remote and remote.OnServerInvoke, `mock: no RemoteFunction handler for {name}`)
+	return remote.OnServerInvoke(player, ...)
+end
+
+-- what a player's client received on a remote: a list of argument packs
+function Engine:clientEvents(name, userId)
+	local out = {}
+	for _, e in self.remoteLog do
+		if e.remote == name and (e.dir == "toAll" or (e.dir == "toClient" and e.userId == userId)) then
+			table.insert(out, e.args)
+		end
+	end
+	return out
+end
+
+---------------------------------------------------------------------------------------------------------------
 
 local function makeEnum()
 	local cache = {}
@@ -602,6 +676,7 @@ local function makeServices(engine)
 			UserId = userId,
 			DisplayName = name or ("Player" .. userId),
 			AccountAge = 30,
+			Character = false,
 			MembershipType = engine.Enum.MembershipType.None,
 		})
 		function p.Kick(_, reason)
@@ -916,6 +991,7 @@ function Engine.new(opts)
 		kicks = {},
 		dataLog = {},
 		dataCalls = {},
+		remoteLog = {},
 		dataStoresOff = opts.dataStoresOff == true,
 		sharedData = opts.shareDataWith and opts.shareDataWith.dataStores._states or nil,
 		closeHandlers = {},
@@ -923,6 +999,7 @@ function Engine.new(opts)
 	engine.Enum = makeEnum()
 	engine.task = makeTask(engine)
 	engine.Random = makeRandom(engine)
+	engine.Instance = makeInstanceLib(engine)
 	engine.game = newInstance(engine, "DataModel", "Game")
 	engine.game.JobId = opts.jobId or "job-1"
 	engine.game.PlaceId = opts.placeId or 0
@@ -956,6 +1033,10 @@ function Engine:env(scriptInstance)
 	env.task = self.task
 	env.Enum = self.Enum
 	env.Random = self.Random
+	env.Instance = self.Instance
+	env.Vector3 = roblox.Vector3
+	env.CFrame = roblox.CFrame
+	env.Color3 = roblox.Color3
 	env.os = self.os
 	env.tick = function()
 		return self.now
@@ -972,7 +1053,7 @@ function Engine:env(scriptInstance)
 				return "Instance"
 			end
 		end
-		return type(v)
+		return typeof(v)
 	end
 	env.print = function(...)
 		local parts = table.pack(...)

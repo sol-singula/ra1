@@ -13,4 +13,6 @@ return {
 	gardenNameMax = 20,
 	sunflowerRangeStuds = 15,
 	patchRangeStuds = 12,
+	warnEverySec = 60, -- a drop warning at most once per player and reason in this window
+	resultTimeoutSec = 10, -- the client gives up on a Result after this
 }

@@ -417,6 +417,8 @@ test("save, net, capture", function()
 		gardenNameMax = 20,
 		sunflowerRangeStuds = 15,
 		patchRangeStuds = 12,
+		warnEverySec = 60,
+		resultTimeoutSec = 10,
 	})
 	eq(Config.Capture, { thumb = { 1920, 1080 }, icon = { 1024, 1024 }, safeBottom = 0.15 })
 end)

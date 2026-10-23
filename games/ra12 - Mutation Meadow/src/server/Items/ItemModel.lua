@@ -17,10 +17,11 @@ local RunService = game:GetService("RunService")
 
 local Clock = require(ReplicatedStorage.Shared.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
+local NetSchema = require(ReplicatedStorage.Shared.NetSchema)
 
 local ItemModel = {}
 
-ItemModel.GUID_PATTERN = "^%x%x%x%x%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%-%x%x%x%x%x%x%x%x%x%x%x%x$"
+ItemModel.GUID_PATTERN = NetSchema.GUID_PATTERN
 ItemModel.registry = {}
 
 function ItemModel.mint(profile, userId, seed, muts)
