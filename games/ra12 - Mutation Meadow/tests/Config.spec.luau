@@ -232,6 +232,15 @@ test("social, weekly, leaderboard", function()
 	})
 end)
 
+test("badges: renamed copy", function()
+	local B = Config.Badges
+	eq({ B.first_golden.name, B.first_golden.desc }, { "Struck Gold!", "Keep your first Golden crop, worth 20x." })
+	eq({ B.first_wetgolden.name, B.first_wetgolden.desc }, { "40x Legend", "Keep a Wet + Golden crop, worth 40x." })
+	eq({ B.week_of_sprouts.name, B.week_of_sprouts.desc }, { "7-Day Gardener", "Claim 7 days on the daily calendar." })
+	eq(B.full_meadow.name, "Full Meadow")
+	eq(B.sunflower_friend.name, "Sunflower Friend")
+end)
+
 test("badges: the ten, ids not created yet", function()
 	local keys = {}
 	for key, b in Config.Badges do
@@ -310,6 +319,18 @@ test("catalog: prices, fields and gifts", function()
 		eq(g.friendsOnly, true)
 	end
 	eq(gifts, 13, "gift count")
+	for key, g in C.gifts do
+		local of = C.passes[g.of] or C.cosmetics[g.of]
+		eq(g.name, "🎁 Gift " .. of.name, key .. " name")
+		Assert.truthy(utf8.len(g.name) <= 50, `{key} name is {utf8.len(g.name)} chars`)
+		eq(
+			g.desc,
+			`Buy {of.name} for a friend. They get it right away if they're online, or the next time they join.`,
+			key .. " desc"
+		)
+	end
+	eq(string.format(C.giftToast, "Mason", "Leaf Swirl"), "🎁 Mason sent you Leaf Swirl!")
+	eq(C.giftBackButton, "Gift back")
 	Assert.truthy(C.gifts.gift_starterBundle == nil, "bundle is not giftable")
 	eq(C.earnedCosmetics, { "trail_petals", "tag_collector", "deco_lantern", "title_master", "tag_weekly_top100" })
 	eq(C.vipPerks, { "tag_vip", "border_vip", "trail_vip_sparkle" })

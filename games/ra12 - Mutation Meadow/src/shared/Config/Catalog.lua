@@ -46,16 +46,28 @@ Catalog.cosmetics = {
 }
 -- stylua: ignore end
 
--- A gift dev product for every pass but the bundle and for every cosmetic, same price, friends only
+-- A gift dev product for every pass but the bundle and for every cosmetic, same price, friends only.
+-- Product names stay within Roblox's 50 characters. Gifting an item the friend already owns is hidden (Gifting.lua).
 Catalog.gifts = {}
 for _, group in { Catalog.passes, Catalog.cosmetics } do
 	for key, item in group do
 		if item.giftable ~= false then
-			Catalog.gifts["gift_" .. key] =
-				{ name = "Gift: " .. item.name, robux = item.robux, id = 0, of = key, friendsOnly = true }
+			Catalog.gifts["gift_" .. key] = {
+				name = "🎁 Gift " .. item.name,
+				desc = `Buy {item.name} for a friend. They get it right away if they're online, or the next time they join.`,
+				robux = item.robux,
+				id = 0,
+				of = key,
+				friendsOnly = true,
+			}
 		end
 	end
 end
+
+-- The receiver's toast (wired in M9): string.format(giftToast, giverName, itemName), with a button that opens the
+-- Gift tab on the giver
+Catalog.giftToast = "🎁 %s sent you %s!"
+Catalog.giftBackButton = "Gift back"
 
 Catalog.earnedCosmetics = { "trail_petals", "tag_collector", "deco_lantern", "title_master", "tag_weekly_top100" }
 Catalog.vipPerks = { "tag_vip", "border_vip", "trail_vip_sparkle" }
