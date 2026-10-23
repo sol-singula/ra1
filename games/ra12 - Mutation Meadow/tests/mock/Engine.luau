@@ -13,6 +13,17 @@ A small fake Roblox engine for running src/ under lune.
   engine:addPlayer(userId, name)         a fake player (fires Players.PlayerAdded)
   engine.output / engine.errors          everything printed / every error raised in a task
   engine.analytics / engine.prompts / engine.badgesAwarded    recorded service calls
+  engine.kicks                           { userId, reason } for every player:Kick
+  engine.dataStores                      the DataStoreService fake, with test controls:
+      _failNext(store, method, msg, n)   the next n matching calls error
+      _hang(store)                       every call to that store yields forever
+      _put(store, key, value)            a fixture write (no cooldown, no log)
+      _raw(store, kind?)                 the stored data table (edit it to play another server)
+      _calls(store, key?, method?)       how many calls were made (failed ones included)
+      _writes(store, key?)               the writes that landed, in order ({ at, method, ... })
+
+Options: studio, client, seed, now, jobId, echo, dataBudget, dataStoresOff (GetDataStore errors, like an
+unpublished place), shareDataWith (another engine whose stored data this one sees: a second server).
 
 Faked services: Players, RunService, HttpService (GenerateGUID, JSONEncode/Decode), MarketplaceService,
 BadgeService, PolicyService, AnalyticsService, DataStoreService (6 s same-key write cooldown, injectable errors,
@@ -338,12 +349,20 @@ local function storable(value, path)
 	return value
 end
 
-local function makeDataStoreService(engine)
-	local stores = {} -- [kind .. name .. scope] = { data = {}, writes = {} }
+local function makeDataStoreService(engine, shared)
+	-- the stored data lives in `states`; an engine made with { shareDataWith = other } sees the same data (a second
+	-- server, or the same farm after a crash) but keeps its own clock, budget and injected failures
+	local states = shared or {} -- [kind .. "|" .. name .. "|" .. scope] = { data, writes, versions }
+	local apis = {}
 	local failures = {} -- { store, method, message, count }
+	local hangs = {} -- [storeName] = true: every call yields forever
 	local budget = {}
 
-	local function fail(storeName, method)
+	local function call(storeName, key, method)
+		table.insert(engine.dataCalls, { store = storeName, key = key, method = method, at = engine.now })
+		if hangs[storeName] then
+			coroutine.yield() -- never resumed: a hung request
+		end
 		for i, f in failures do
 			if (f.store == nil or f.store == storeName) and (f.method == nil or f.method == method) then
 				f.count -= 1
@@ -360,70 +379,84 @@ local function makeDataStoreService(engine)
 		budget[name] = (budget[name] or engine.dataBudget) - 1
 	end
 
-	local function guardWrite(state, storeName, key, method)
-		fail(storeName, method)
+	-- the same-key write limit: a write within WRITE_COOLDOWN of the last real write to that key is an error
+	local function checkCooldown(state, storeName, key)
 		local last = state.writes[key]
 		if last and engine.now - last < WRITE_COOLDOWN then
 			error(`DataStore: {storeName}/{key} write cooldown ({WRITE_COOLDOWN}s same-key limit)`, 0)
 		end
+	end
+
+	local function wrote(state, storeName, key, method)
 		state.writes[key] = engine.now
+		state.versions[key] = (state.versions[key] or 0) + 1
 		table.insert(engine.dataLog, { store = storeName, key = key, method = method, at = engine.now })
 	end
 
 	local function newStore(kind, name, scope)
-		local id = kind .. "|" .. name .. "|" .. (scope or "global")
-		if stores[id] then
-			return stores[id].api
+		if engine.dataStoresOff then
+			error("You must publish this place to the web to access DataStore.", 0)
 		end
-		local state = { data = {}, writes = {}, versions = {} }
+		local id = kind .. "|" .. name .. "|" .. (scope or "global")
+		if apis[id] then
+			return apis[id]
+		end
+		states[id] = states[id] or { data = {}, writes = {}, versions = {} }
+		local state = states[id]
 		local api = {}
-		stores[id] = { state = state, api = api }
+		apis[id] = api
 		local E = engine.Enum.DataStoreRequestType
 
 		function api.GetAsync(_, key)
-			fail(name, "GetAsync")
+			call(name, key, "GetAsync")
 			spend(E.GetAsync)
 			local v = state.data[key]
 			local info = v ~= nil and { Version = tostring(state.versions[key] or 0), UpdatedTime = engine.now } or nil
 			return v ~= nil and storable(v, key) or nil, info
 		end
 		function api.SetAsync(_, key, value)
-			guardWrite(state, name, key, "SetAsync")
+			call(name, key, "SetAsync")
+			checkCooldown(state, name, key)
 			spend(E.SetIncrementAsync)
 			state.data[key] = storable(value, key)
-			state.versions[key] = (state.versions[key] or 0) + 1
+			wrote(state, name, key, "SetAsync")
 			return tostring(state.versions[key])
 		end
 		function api.UpdateAsync(_, key, transform)
-			guardWrite(state, name, key, "UpdateAsync")
+			call(name, key, "UpdateAsync")
+			checkCooldown(state, name, key)
 			spend(E.UpdateAsync)
 			local old = state.data[key]
 			local info = old ~= nil and { Version = tostring(state.versions[key] or 0), UpdatedTime = engine.now }
 				or nil
 			local new = transform(old ~= nil and storable(old, key) or nil, info)
 			if new == nil then
-				return nil -- cancelled: nothing written
+				return nil -- cancelled: nothing written, and it does not count as a write
 			end
 			state.data[key] = storable(new, key)
-			state.versions[key] = (state.versions[key] or 0) + 1
+			wrote(state, name, key, "UpdateAsync")
 			return storable(new, key), { Version = tostring(state.versions[key]), UpdatedTime = engine.now }
 		end
 		function api.IncrementAsync(_, key, delta)
-			guardWrite(state, name, key, "IncrementAsync")
+			call(name, key, "IncrementAsync")
+			checkCooldown(state, name, key)
 			spend(E.SetIncrementAsync)
 			state.data[key] = (state.data[key] or 0) + (delta or 1)
+			wrote(state, name, key, "IncrementAsync")
 			return state.data[key]
 		end
 		function api.RemoveAsync(_, key)
-			guardWrite(state, name, key, "RemoveAsync")
+			call(name, key, "RemoveAsync")
+			checkCooldown(state, name, key)
 			spend(E.SetIncrementAsync)
 			local old = state.data[key]
 			state.data[key] = nil
+			wrote(state, name, key, "RemoveAsync")
 			return old
 		end
 		if kind == "ordered" then
 			function api.GetSortedAsync(_, ascending, pageSize, minValue, maxValue)
-				fail(name, "GetSortedAsync")
+				call(name, nil, "GetSortedAsync")
 				spend(E.GetSortedAsync)
 				local rows = {}
 				for k, v in state.data do
@@ -479,13 +512,46 @@ local function makeDataStoreService(engine)
 			{ store = storeName, method = method, message = message or "502: mock failure", count = count or 1 }
 		)
 	end
+	function service._clearFailures()
+		table.clear(failures)
+	end
+	function service._hang(storeName, on)
+		hangs[storeName] = on ~= false or nil
+	end
 	function service._setBudget(kindName, n)
 		budget[kindName] = n
 	end
 	function service._raw(storeName, kind)
-		local entry = stores[(kind or "plain") .. "|" .. storeName .. "|global"]
-		return entry and entry.state.data or nil
+		local entry = states[(kind or "plain") .. "|" .. storeName .. "|global"]
+		return entry and entry.data or nil
 	end
+	-- a fixture write that skips the cooldown, the logs and the budget
+	function service._put(storeName, key, value, kind)
+		local id = (kind or "plain") .. "|" .. storeName .. "|global"
+		states[id] = states[id] or { data = {}, writes = {}, versions = {} }
+		states[id].data[key] = storable(value, key)
+	end
+	-- count the calls made to a store (optionally one key and one method)
+	function service._calls(storeName, key, method)
+		local n = 0
+		for _, c in engine.dataCalls do
+			if c.store == storeName and (key == nil or c.key == key) and (method == nil or c.method == method) then
+				n += 1
+			end
+		end
+		return n
+	end
+	-- the writes that landed on one key, in order
+	function service._writes(storeName, key)
+		local out = {}
+		for _, w in engine.dataLog do
+			if w.store == storeName and (key == nil or w.key == key) then
+				table.insert(out, w)
+			end
+		end
+		return out
+	end
+	service._states = states
 	return service
 end
 
@@ -687,7 +753,7 @@ local function makeServices(engine)
 
 	-- DataStoreService
 	local ds = service("DataStoreService")
-	local api = makeDataStoreService(engine)
+	local api = makeDataStoreService(engine, engine.sharedData)
 	for k, v in api do
 		ds[k] = v
 	end
@@ -849,12 +915,17 @@ function Engine.new(opts)
 		friends = {},
 		kicks = {},
 		dataLog = {},
+		dataCalls = {},
+		dataStoresOff = opts.dataStoresOff == true,
+		sharedData = opts.shareDataWith and opts.shareDataWith.dataStores._states or nil,
 		closeHandlers = {},
 	}, Engine)
 	engine.Enum = makeEnum()
 	engine.task = makeTask(engine)
 	engine.Random = makeRandom(engine)
 	engine.game = newInstance(engine, "DataModel", "Game")
+	engine.game.JobId = opts.jobId or "job-1"
+	engine.game.PlaceId = opts.placeId or 0
 	makeServices(engine)
 
 	local project = serde.decode("json", fs.readFile(engine.root .. "/default.project.json"))

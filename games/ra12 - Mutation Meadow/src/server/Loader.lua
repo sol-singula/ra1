@@ -40,7 +40,9 @@ Loader.PLAN = {
 	"CaptureService",
 }
 
-Loader.ORDER = {}
+Loader.ORDER = {
+	"DataService",
+}
 
 local function forEachHook(services, order, hook, ...)
 	for _, name in order do
