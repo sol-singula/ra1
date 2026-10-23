@@ -15,7 +15,7 @@ local MutationMath = require(ReplicatedStorage.Shared.MutationMath)
 local Net = require(ReplicatedStorage.Shared.Net)
 local ClientState = require(script.Parent.Parent.ClientState)
 local UI = require(script.Parent.Parent.UI)
-local Visuals = require(script.Parent.Parent.Visuals)
+local Visuals = require(ReplicatedStorage.Shared.Visuals)
 
 local BackpackController = {}
 

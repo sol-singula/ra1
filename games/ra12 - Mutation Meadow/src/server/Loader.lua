@@ -50,6 +50,7 @@ Loader.ORDER = {
 	"MutationService",
 	"InventoryService",
 	"SocialService",
+	"CaptureService",
 }
 
 local function forEachHook(services, order, hook, ...)

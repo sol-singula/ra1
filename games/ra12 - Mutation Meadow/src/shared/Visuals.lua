@@ -1,4 +1,5 @@
--- How crops look on the client: a colour per seed (the crop's fruit) and the leaf colour while it grows
+-- How crops look (the client's world and the capture stage): a colour per seed (the fruit), the leaf colour while it
+-- grows, and the mutation sparkles
 local Visuals = {}
 
 Visuals.LEAF = Color3.fromRGB(90, 170, 70)

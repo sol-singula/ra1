@@ -622,6 +622,8 @@ local function makeInstanceLib(engine)
 			extra = { MouseClick = newSignal(engine) }
 		elseif className == "ProximityPrompt" then
 			extra = { Triggered = newSignal(engine) }
+		elseif className == "ScreenGui" then
+			extra = { Enabled = true }
 		end
 		local inst = newInstance(engine, className, className, extra)
 		if className == "RemoteEvent" or className == "UnreliableRemoteEvent" then
@@ -896,13 +898,23 @@ local function makeServices(engine)
 	service("ReplicatedStorage")
 	service("ServerScriptService")
 	service("ServerStorage")
-	service("StarterGui")
+	local starterGui = service("StarterGui")
+	engine.coreGui = {}
+	function starterGui.SetCoreGuiEnabled(_, kind, on)
+		engine.coreGui[kind.Name or tostring(kind)] = on
+	end
+	function starterGui.GetCoreGuiEnabled(_, kind)
+		local v = engine.coreGui[kind.Name or tostring(kind)]
+		return v ~= false
+	end
 	service("Lighting", {
 		ClockTime = 14,
 		Brightness = 2,
 		Ambient = roblox.Color3.fromRGB(70, 70, 70),
 		OutdoorAmbient = roblox.Color3.fromRGB(128, 128, 128),
 		ColorShift_Top = roblox.Color3.new(0, 0, 0),
+		FogEnd = 100000,
+		FogColor = roblox.Color3.fromRGB(192, 192, 192),
 	})
 	service("SoundService")
 	local starterPlayer = service("StarterPlayer")

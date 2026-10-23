@@ -22,6 +22,7 @@ ControllerLoader.ORDER = {
 	"WeatherController",
 	"BackpackController",
 	"PedestalController",
+	"CaptureController",
 }
 
 local function forEachHook(controllers, order, hook, ...)
