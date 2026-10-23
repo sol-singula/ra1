@@ -2,7 +2,8 @@
 Helpers for the farming specs: a booted server, players standing where they need to, and remote calls that return
 their Result.
 
-  local ctx = Farm.setup(opts?, setup?)    ctx.engine, ctx.Data, ctx.Plot, ctx.FarmS, ctx.Inv, ctx.Social, ctx.Net
+  local ctx = Farm.setup(opts?, setup?)    ctx.engine, ctx.Data, ctx.Plot, ctx.FarmS, ctx.Inv, ctx.Social, ctx.Net, ...
+                                           (M8: ctx.Collection, ctx.Reward, ctx.Weekly, ctx.Board, ctx.First)
   Farm.join(ctx, userId)                   a loaded player standing on their own plot
   Farm.standAt(ctx, player, position)
   Farm.standAtTile(ctx, player, owner, tileId)
@@ -36,6 +37,11 @@ function Farm.setup(opts, setup)
 		Mut = service("MutationService"),
 		Shop = service("ShopService"),
 		Patch = service("PatchService"),
+		Collection = service("CollectionLogService"),
+		Reward = service("RewardService"),
+		Weekly = service("WeeklyService"),
+		Board = service("LeaderboardService"),
+		First = service("FirstSessionService"),
 		reqId = 0,
 	}
 end

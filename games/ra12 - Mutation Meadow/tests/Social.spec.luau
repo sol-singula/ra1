@@ -30,7 +30,7 @@ test("a help on a carrot at t=0 gives grown = 3; both sides get 25 x their level
 	local tile = ctx.Data.get(owner).tiles["1"]
 	eq(tile.grown, 3)
 	eq(tile.canUsed, false, "the owner's can is untouched")
-	eq(ctx.Data.get(helper).coins, 50 + 25)
+	eq(ctx.Data.get(helper).coins, 50 + 25 + 75, "plus Starter 5 (1 help-water)")
 	eq(ctx.Data.get(owner).coins, 50 + 75)
 	eq(ctx.Data.get(helper).social.helps, 1)
 end)

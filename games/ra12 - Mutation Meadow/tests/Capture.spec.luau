@@ -98,7 +98,10 @@ test("capture never calls SaveQueue or touches a profile", function()
 	capture("hud", "off")
 	capture("free")
 	eq(calls, 0)
-	eq(ctx.Data.get(p), before)
+	local after = Server.deepCopy(ctx.Data.get(p))
+	-- the clock runs while scenes stage: only the played-time counters move
+	after.firstSession.playedSec, after.playtime = before.firstSession.playedSec, before.playtime
+	eq(after, before)
 	eq(#ctx.engine.dataLog, writes)
 	eq(ctx.Weather.current(), nil, "the real weather is untouched")
 end)

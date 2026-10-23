@@ -32,6 +32,7 @@ end)
 test("every crop rolls exactly once per event; one planted during it rolls once too", function()
 	local ctx = Farm.setup()
 	local p = Farm.join(ctx, 1)
+	ctx.Data.get(p).firstSession.done = true -- no Welcome Shower at 240s
 	for _, id in { "1", "2", "3", "9" } do
 		Farm.crop(ctx, p, id, "corn")
 	end

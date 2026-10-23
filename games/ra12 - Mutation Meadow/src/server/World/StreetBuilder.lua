@@ -10,9 +10,12 @@ services expect:
     Pedestals/P1..P7
     Mailbox           attribute GardenName
   Workspace.Street.Sunflower: Stem (ProximityPrompt "Water") and the looks Drooping, Perking, Standing, Bloom, Wilt
+  Workspace.Street.Boards: UpdateBoard (by Patch), ServerBoard, GlobalBoard, each a Part with a ProximityPrompt
+    "View" (the client draws the SurfaceGui)
   Every tile and pedestal has a ClickDetector "Click".
 
   StreetBuilder.build(parent) -> the Street model
+  StreetBuilder.boards(street)   adds whichever world boards a Studio-placed street lacks
 ]]
 local Tiles = require(game:GetService("ReplicatedStorage").Shared.Tiles)
 
@@ -184,6 +187,35 @@ local function sunflower(street)
 	return model
 end
 
+local BOARDS = {
+	{ "UpdateBoard", "Weekly update", Vector3.new(44, 5, ROAD_Z - 18) },
+	{ "ServerBoard", "This server", Vector3.new(-30, 5, ROAD_Z - 18) },
+	{ "GlobalBoard", "Top 100", Vector3.new(-44, 5, ROAD_Z - 18) },
+}
+
+function StreetBuilder.boards(street)
+	local folder = street:FindFirstChild("Boards")
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = "Boards"
+		folder.Parent = street
+	end
+	for _, b in BOARDS do
+		if not folder:FindFirstChild(b[1]) then
+			local board = part(
+				folder,
+				b[1],
+				Vector3.new(10, 8, 0.6),
+				b[3],
+				Color3.fromRGB(150, 105, 60),
+				Enum.Material.WoodPlanks
+			)
+			prompt(board, "View", "View", b[2])
+		end
+	end
+	return folder
+end
+
 function StreetBuilder.build(parent)
 	local street = Instance.new("Model")
 	street.Name = "Street"
@@ -202,6 +234,7 @@ function StreetBuilder.build(parent)
 		plot(plots, i)
 	end
 	sunflower(street)
+	StreetBuilder.boards(street)
 	street.Parent = parent
 	return street
 end

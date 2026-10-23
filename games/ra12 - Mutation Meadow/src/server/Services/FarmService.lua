@@ -29,6 +29,7 @@ Welcome-back card (a Toast of kind "welcomeBack" with data { awaySec, ripe }).
   FarmService.BadgeEarned(player, badgeKey)          "full_meadow" on reaching the top plot level
   FarmService.Harvested(player, seed, tileId)        for quests (M8)
   FarmService.Planted(player, tileId, tile)          a new crop: planted, or regrown after a harvest
+  FarmService.Upgraded(player, kind, level)          after a plot upgrade
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -49,6 +50,7 @@ local FarmService = {
 	BadgeEarned = Signal.new(),
 	Harvested = Signal.new(),
 	Planted = Signal.new(),
+	Upgraded = Signal.new(),
 }
 
 local active = setmetatable({}, { __mode = "k" }) -- [player] = true while loaded
@@ -291,6 +293,7 @@ local function buyPlot(player, profile)
 			NetService.toast(player, "unlock", `{Config.Seeds[seed].name} unlocked!`, { seed = seed })
 		end
 	end
+	FarmService.Upgraded:Fire(player, "plot", nextLevel)
 	if nextLevel == #Config.Upgrades.plotCost then
 		FarmService.BadgeEarned:Fire(player, "full_meadow")
 	end

@@ -1,4 +1,5 @@
 -- Runs every tests/*.spec.luau and exits non-zero on any failure. Run from the game folder: tools/run_tests.sh
+-- An argument runs only the spec files whose name contains it: tools/run_tests.sh Weekly
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 
@@ -7,7 +8,7 @@ local Assert = require("./mock/Assert")
 local started = os.clock()
 local files = {}
 for _, name in fs.readDir("tests") do
-	if name:match("%.spec%.luau$") then
+	if name:match("%.spec%.luau$") and (not process.args[1] or name:find(process.args[1], 1, true)) then
 		table.insert(files, name)
 	end
 end

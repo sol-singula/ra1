@@ -15,7 +15,7 @@ test("plot: costs 100, 4000, 50000, 500000; level 2 makes 20 tiles active; unloc
 	eq({ Farm.call(ctx, player, "Upgrade", "buy", { kind = "plot" }) }, { false, "coins" })
 	profile.coins = 100
 	eq(Farm.call(ctx, player, "Upgrade", "buy", { kind = "plot" }), true)
-	eq({ profile.plotLevel, profile.coins }, { 2, 0 })
+	eq({ profile.plotLevel, profile.coins }, { 2, 100 }, "Starter 2 refunds the 100")
 	local active = 0
 	for _, tile in ctx.Plot.plotOf(player).Tiles:GetChildren() do
 		if tile:GetAttribute("Active") then

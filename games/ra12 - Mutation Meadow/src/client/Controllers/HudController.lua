@@ -1,11 +1,14 @@
 --[[
 The HUD: coins, plot level, Basket x/200, the Auto-Sell toggle (plot level 2+), the next Block Party in local time,
 the restock countdown, Upgrades / Sell / Backpack / Settings buttons (Settings: Patch alerts, music, sound, reduced
-effects, and the Odds), and the toasts (mutations, and all others but the Welcome-back card).
+effects, and the Odds), the M8 column on the right (Daily, Quests, Collection, Update, the playtime Gift), and the
+toasts (mutations, and all others but the Welcome-back card). A mutation toast for a new Collection Log entry has a
+one-tap Claim (Collection:claim {entry}).
 
   HudController.refresh()
-  HudController.toast(text)
-  HudController.gui
+  HudController.toast(text, action?)   action = { text, fn }: a button on the toast
+  HudController.localTime(t) / localDayTime(t)   "3:00 PM" / "Sat 10:00 AM" in the player's own time zone
+  HudController.gui / HudController.rewards
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -52,6 +55,21 @@ function HudController.localTime(t)
 	local d = os.date("*t", t)
 	local hour = d.hour % 12
 	return string.format("%d:%02d %s", if hour == 0 then 12 else hour, d.min, if d.hour < 12 then "AM" else "PM")
+end
+
+function HudController.localDayTime(t)
+	return os.date("%a", t) .. " " .. HudController.localTime(t)
+end
+
+-- the Collection Log entry a Mutation makes: the crop's whole set, with the new mutation added
+function HudController.entryFor(data)
+	local tile = ClientState.get("tiles", data.tile)
+	if not tile then
+		return nil
+	end
+	local muts = table.clone(tile.muts or {})
+	muts[data.mut] = true
+	return tile.seed .. ":" .. MutationMath.key(muts)
 end
 
 -- the next Block Party: "Block Party now!" while it's open, else "Block Party 3:00 PM (in 12m 05s)"
@@ -112,7 +130,7 @@ function HudController.openSettings()
 	settings.open()
 end
 
-function HudController.toast(text)
+function HudController.toast(text, action)
 	if not toastFrame then
 		return
 	end
@@ -121,9 +139,29 @@ function HudController.toast(text)
 		BackgroundTransparency = 0.15,
 		BackgroundColor3 = UI.COLORS.card,
 	})
-	task.delay(TOAST_SEC, function()
+	if action then
+		l.Size = UDim2.new(1, -96, 0, 40)
+		l.TextXAlignment = Enum.TextXAlignment.Left
+		local button
+		button = UI.button(l, action[1], function()
+			action[2]()
+			button:Destroy()
+		end, {
+			Name = "Action",
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new(1, 8, 0.5, 0),
+			Size = UDim2.fromOffset(88, 44),
+			BackgroundColor3 = UI.COLORS.gold,
+		})
+	end
+	task.delay(if action then TOAST_SEC * 2 else TOAST_SEC, function()
 		l:Destroy()
 	end)
+	return l
+end
+
+local function claimEntry(entry)
+	Net.request("Collection", "claim", { entry = entry })
 end
 
 function HudController:Init(all)
@@ -167,6 +205,31 @@ function HudController:Start()
 	bar.Size = UDim2.fromOffset(250, 292)
 	UI.button(buttons, "Settings", HudController.openSettings, { Name = "Settings", BackgroundColor3 = UI.COLORS.grey })
 	buttons.Size = UDim2.fromOffset(250, 240)
+	local rewards = UI.frame(gui, {
+		Name = "Rewards",
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -12, 0.5, 0),
+		Size = UDim2.fromOffset(150, 5 * 60),
+		BackgroundTransparency = 1,
+	})
+	HudController.rewards = rewards
+	UI.list(rewards, 8)
+	for i, b in
+		{
+			{ "Daily", "📅 Daily", "DailyController" },
+			{ "Quests", "📜 Quests", "QuestController" },
+			{ "Collection", "📖 Log", "CollectionController" },
+			{ "Update", "📰 Update", "UpdateBoardController" },
+			{ "Gift", "🎁 Gifts", "PlaytimeController" },
+		}
+	do
+		UI.button(rewards, b[2], function()
+			local c = controllers[b[3]]
+			if c then
+				c.open()
+			end
+		end, { Name = b[1], LayoutOrder = i, BackgroundColor3 = if i == 5 then UI.COLORS.gold else UI.COLORS.green })
+	end
 	settings = UI.modal("Settings", "Settings")
 	settings.card.Size = UDim2.fromOffset(400, 420)
 	toastFrame = Instance.new("Frame")
@@ -185,9 +248,17 @@ function HudController:Start()
 		end
 	end)
 	Net.on("Mutation", function(data)
-		if type(data) == "table" then
-			HudController.toast(HudController.mutationText(data))
+		if type(data) ~= "table" then
+			return
 		end
+		local entry = data.newEntry and HudController.entryFor(data)
+		local action = entry and {
+			"Claim",
+			function()
+				claimEntry(entry)
+			end,
+		}
+		HudController.toast(HudController.mutationText(data), action)
 	end)
 	HudController.refresh()
 	Net.on("Restock", function(data)

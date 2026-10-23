@@ -172,6 +172,7 @@ end
 
 function PlotService:Init()
 	local street = workspace:FindFirstChild("Street") or StreetBuilder.build(workspace)
+	StreetBuilder.boards(street)
 	local list = {}
 	for _, plot in street.Plots:GetChildren() do
 		local n = tonumber(plot.Name:match("^Plot(%d+)$"))

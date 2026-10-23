@@ -29,7 +29,7 @@ test("a v0 profile reaches v1 with every template key, existing values untouched
 	Assert.truthy(p, "loaded")
 	eq(p.v, 1)
 	hasEveryKey(p, DataService.TEMPLATE, DataService.RECONCILE_SKIP, "profile")
-	eq(p.coins, 999)
+	eq(p.coins, 999 + 100, "plus Starter 2 (plot level 2), paid on the first load")
 	eq(p.seeds, { tomato = 2 }, "seeds are not merged with the starting carrots")
 	eq(p.plotLevel, 3)
 	eq(p.settings.music, false)
