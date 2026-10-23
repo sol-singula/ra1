@@ -13,7 +13,7 @@ Catalog.passes = {
 	extraRow      = { name = "Extra Plot Row",     robux = 199, id = 0, tiles = 8 },
 	vip           = { name = "VIP Gardener",       robux = 249, id = 0 },
 	gnome         = { name = "Auto-Harvest Gnome", robux = 299, id = 0, radius = 12, everySec = 2 },
-	doubleCash    = { name = "2x Sell Cash",       robux = 349, id = 0 },
+	doubleCash    = { name = "2x Sell Cash",       robux = 349, id = 0, mult = 2 },
 	starterBundle = {
 		name = "Starter Bundle",
 		robux = 249,

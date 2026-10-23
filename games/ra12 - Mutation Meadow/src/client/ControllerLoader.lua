@@ -11,7 +11,14 @@ ProfileController.Loaded / .Leaving once it exists.
 ]]
 local ControllerLoader = {}
 
-ControllerLoader.ORDER = {}
+ControllerLoader.ORDER = {
+	"StateController",
+	"HudController",
+	"TileController",
+	"UpgradeController",
+	"SellController",
+	"WelcomeBackController",
+}
 
 local function forEachHook(controllers, order, hook, ...)
 	for _, name in order do

@@ -6,6 +6,7 @@ Loads, locks, autosaves and releases every player's profile (§2 DataService).
   DataService.Leaving(player, profile)   fires as a loaded player leaves, before the final save
   DataService.get(player)            the live profile, or nil until loaded (and after a lost lock)
   DataService.check(player)          true, or false + "not_loaded" (NetService rejects requests with it)
+  DataService.lastSeenBefore(player) meta.lastSeen before this session (nil for a new farm)
   DataService.save(player, reason)   -> Promise<boolean> through the SaveQueue
   DataService.close()                the BindToClose body: final saves for everyone, at most closeBudgetSec
   DataService.KICK                   the kick messages
@@ -128,6 +129,12 @@ function DataService.get(player)
 	return nil
 end
 
+-- meta.lastSeen as it was before this session's load (nil for a new farm): offline growth starts here
+function DataService.lastSeenBefore(player)
+	local s = sessions[player]
+	return s and s.prevSeen
+end
+
 function DataService.check(player)
 	if DataService.get(player) then
 		return true
@@ -151,6 +158,7 @@ local function loadTransform(old, status)
 		return nil
 	end
 	local p = old or DataService.newProfile(now)
+	status.prevSeen = old and old.meta and old.meta.lastSeen or nil
 	if (p.v or 0) > Config.Save.schemaVersion then
 		status.why = "tooNew"
 		return nil
@@ -186,7 +194,7 @@ local function tryLoad(key)
 	if result == nil then
 		return nil, status.why or "error", status.err
 	end
-	return result
+	return result, nil, nil, status.prevSeen
 end
 
 local function saveTransform(s, old, copy)
@@ -237,7 +245,7 @@ local function load(player)
 	loading[player] = true
 	local key = Stores.key(player.UserId)
 	local delays = Config.Save.loadRetrySec
-	local profile, why, err
+	local profile, why, err, prevSeen
 	for attempt = 0, #delays do
 		if attempt > 0 then
 			task.wait(delays[attempt])
@@ -246,7 +254,7 @@ local function load(player)
 			loading[player] = nil
 			return
 		end
-		profile, why, err = tryLoad(key)
+		profile, why, err, prevSeen = tryLoad(key)
 		if profile or why == "tooNew" then
 			break
 		end
@@ -278,6 +286,7 @@ local function load(player)
 		nextSave = now + every + player.UserId % every,
 		lockLost = false,
 		releasing = false,
+		prevSeen = prevSeen,
 	}
 	sessions[player] = s
 	local store = Stores.profiles()

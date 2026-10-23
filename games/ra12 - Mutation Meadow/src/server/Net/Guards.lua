@@ -2,11 +2,9 @@
 Checks the remote handlers run before acting (§2 NetService). Each returns true / a value when the call may go on.
 
   Guards.loaded(player)                    the player's profile is loaded
-  Guards.tileActive(profile, tileId)       the tile exists at the profile's plot level ("extra1".."extra8" need the
-                                           Extra Plot Row)
-  Guards.ownsTile(player, tileId, ownerId?)   the tile is on the player's own plot (ownerId, when given, is
-                                           whose plot the payload names) and active for their level.
-                                           TODO M4: also check the plot PlotService assigned this player
+  Guards.tileActive(profile, tileId, hasExtra?)   the tile is active at the profile's plot level (Tiles.isActive)
+  Guards.ownsTile(player, tileId, ownerId?)   the player has a plot, the tile is on it (ownerId, when given, is
+                                           whose plot the payload names) and active for their level
   Guards.ownsItem(profile, guid, userId)   the item exists, belongs to userId and is not locked
   Guards.sameServer(userId)                that player if they are on this server, else nil
   Guards.near(player, pos, studs)          the player's character is within studs of pos
@@ -19,6 +17,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
 local DataService = require(script.Parent.Parent.Services.DataService)
 local DevConfig = require(script.Parent.Parent.DevConfig)
+local PlotService = require(script.Parent.Parent.Services.PlotService)
+local Tiles = require(ReplicatedStorage.Shared.Tiles)
 
 local Guards = {}
 
@@ -29,30 +29,12 @@ Guards.RANGE = {
 	patch = Config.Net.patchRangeStuds,
 }
 
-local GRID = 8 -- tile ids are row-major in an 8x8 grid
-
 function Guards.loaded(player)
 	return DataService.check(player) == true
 end
 
-function Guards.tileActive(profile, tileId)
-	if type(tileId) ~= "string" then
-		return false
-	end
-	local extra = tileId:match("^extra([1-8])$")
-	if extra then
-		return profile.passes.extraRow == true and tonumber(extra) <= Config.Catalog.passes.extraRow.tiles
-	end
-	local n = tonumber(tileId:match("^([1-9]%d?)$"))
-	if not n or n > GRID * GRID then
-		return false
-	end
-	local size = Config.Upgrades.plotSize[profile.plotLevel]
-	if not size then
-		return false
-	end
-	local col, row = (n - 1) % GRID + 1, (n - 1) // GRID + 1
-	return col <= size[1] and row <= size[2]
+function Guards.tileActive(profile, tileId, hasExtra)
+	return Tiles.isActive(tileId, profile.plotLevel, hasExtra == true)
 end
 
 function Guards.ownsTile(player, tileId, ownerId)
@@ -60,7 +42,9 @@ function Guards.ownsTile(player, tileId, ownerId)
 		return false
 	end
 	local profile = DataService.get(player)
-	return profile ~= nil and Guards.tileActive(profile, tileId)
+	return profile ~= nil
+		and PlotService.plotOf(player) ~= nil
+		and Guards.tileActive(profile, tileId, PlotService.hasExtraRow(player))
 end
 
 function Guards.ownsItem(profile, guid, userId)

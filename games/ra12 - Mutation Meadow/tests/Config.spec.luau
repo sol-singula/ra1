@@ -149,6 +149,7 @@ test("upgrades, inventory, collection", function()
 			copper = { cost = 1000, growSpeedBonus = 0.10 },
 			silver = { cost = 12000, growSpeedBonus = 0.15 },
 		},
+		canOrder = { "tin", "copper", "silver" },
 		sprinklers = {
 			basic = { cost = 1500, growthMult = 1.25 },
 			advanced = { cost = 15000, growthMult = 1.5 },
@@ -156,6 +157,8 @@ test("upgrades, inventory, collection", function()
 			maxEach = 4,
 		},
 		offlineCapSec = 28800,
+		welcomeBackSec = 1800,
+		growTickSec = 1,
 	})
 	eq(Config.Inventory, {
 		backpackByPlotLevel = { 60, 60, 90, 90, 120 },

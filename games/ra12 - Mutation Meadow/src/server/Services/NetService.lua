@@ -17,6 +17,7 @@ More than Config.Net.abuseDrops drops in abuseWindowSec kicks the player (net_ab
   NetService.on(remote, action, schema?, handler)   handler(player, payload, profile) -> ok, code?; schema
                                                     defaults to NetSchema.ACTIONS[remote][action]
   NetService.fire(player, name, data) / fireAll(name, data)   a server → client event
+  NetService.toast(player, kind, text, data?)   a Toast
   NetService.change(player, path, value)   queues a profile delta; sent as State { seq, changes } once per Heartbeat
   NetService.snapshotPart(name, fn)  adds fn(player) to what Snapshot returns
   NetService.onDrop(player, remote, action, reason)
@@ -68,6 +69,10 @@ end
 
 function NetService.fire(player, name, data)
 	remotes[name]:FireClient(player, data)
+end
+
+function NetService.toast(player, kind, text, data)
+	NetService.fire(player, "Toast", { kind = kind, text = text, data = data })
 end
 
 function NetService.fireAll(name, data)

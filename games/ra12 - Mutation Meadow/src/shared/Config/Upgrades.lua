@@ -1,6 +1,8 @@
 --[[
-Plot levels (cost and { cols, rows } per level), watering cans and sprinklers. growSpeedBonus is how much faster a
-can's watering makes a crop grow; sprinklers multiply growth for the tiles within area of them.
+Plot levels (cost and { width, depth } in tiles per level), watering cans and sprinklers. A can's growSpeedBonus is
+the share of a crop's remaining grow time one watering skips; sprinklers multiply growth on the area x area tiles
+around them (the best one wins). Offline, crops grow at rate 1 for at most offlineCapSec; away welcomeBackSec or more
+shows the Welcome-back card. Growth ticks every growTickSec on the server.
 ]]
 return {
 	plotCost = { 0, 100, 4000, 50000, 500000 },
@@ -10,6 +12,7 @@ return {
 		copper = { cost = 1000, growSpeedBonus = 0.10 },
 		silver = { cost = 12000, growSpeedBonus = 0.15 },
 	},
+	canOrder = { "tin", "copper", "silver" },
 	sprinklers = {
 		basic = { cost = 1500, growthMult = 1.25 },
 		advanced = { cost = 15000, growthMult = 1.5 },
@@ -17,4 +20,6 @@ return {
 		maxEach = 4,
 	},
 	offlineCapSec = 28800,
+	welcomeBackSec = 1800,
+	growTickSec = 1,
 }

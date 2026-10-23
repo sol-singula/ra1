@@ -14,7 +14,9 @@ end
 table.sort(files)
 
 local passed, failed = 0, 0
+local slow = {}
 for _, file in files do
+	local fileStart = os.clock()
 	local before = #Assert.tests
 	local path = "./" .. file:gsub("%.luau$", "")
 	local ok, err = pcall(function()
@@ -33,6 +35,15 @@ for _, file in files do
 			failed += 1
 			print(`FAIL {file} > {t.name}\n  {terr}`)
 		end
+	end
+	table.insert(slow, { file = file, sec = os.clock() - fileStart })
+end
+table.sort(slow, function(a, b)
+	return a.sec > b.sec
+end)
+if process.env.TEST_TIMES then
+	for i = 1, math.min(8, #slow) do
+		print(string.format("  %.2fs %s", slow[i].sec, slow[i].file))
 	end
 end
 

@@ -43,6 +43,10 @@ Loader.PLAN = {
 Loader.ORDER = {
 	"DataService",
 	"NetService",
+	"PlotService",
+	"FarmService",
+	"InventoryService",
+	"SocialService",
 }
 
 local function forEachHook(services, order, hook, ...)

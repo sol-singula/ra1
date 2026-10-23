@@ -27,7 +27,8 @@ A small fake Roblox engine for running src/ under lune.
       _writes(store, key?)               the writes that landed, in order ({ at, method, ... })
 
 Options: studio, client, seed, now, jobId, echo, dataBudget, dataStoresOff (GetDataStore errors, like an
-unpublished place), shareDataWith (another engine whose stored data this one sees: a second server).
+unpublished place), shareDataWith (another engine whose stored data this one sees: a second server), localPlayer
+(a userId: Players.LocalPlayer for a client engine). Workspace.CurrentCamera.ViewportSize starts at 1920 x 1080.
 
 Faked services: Players, RunService, HttpService (GenerateGUID, JSONEncode/Decode), MarketplaceService,
 BadgeService, PolicyService, AnalyticsService, DataStoreService (6 s same-key write cooldown, injectable errors,
@@ -107,6 +108,8 @@ local function newInstance(engine, className, name, extra)
 	local children = {}
 	local attributes = {}
 	local methods = {}
+	local propSignals = {}
+	local attrSignals = {}
 	local inst = setmetatable({}, {
 		__index = function(_, key)
 			if methods[key] ~= nil then
@@ -139,6 +142,9 @@ local function newInstance(engine, className, name, extra)
 				extra[key] = value
 			else
 				props[key] = value
+			end
+			if propSignals[key] then
+				propSignals[key]:Fire()
 			end
 		end,
 		__tostring = function()
@@ -202,7 +208,45 @@ local function newInstance(engine, className, name, extra)
 		return attributes[key]
 	end
 	function methods.SetAttribute(_, key, value)
+		local old = attributes[key]
 		attributes[key] = value
+		if old ~= value and attrSignals[key] then
+			attrSignals[key]:Fire()
+		end
+	end
+	function methods.GetPropertyChangedSignal(_, key)
+		propSignals[key] = propSignals[key] or newSignal(engine)
+		return propSignals[key]
+	end
+	function methods.GetAttributeChangedSignal(_, key)
+		attrSignals[key] = attrSignals[key] or newSignal(engine)
+		return attrSignals[key]
+	end
+	function methods.IsDescendantOf(self, ancestor)
+		local p = props.Parent
+		while p do
+			if p == ancestor then
+				return true
+			end
+			p = p.Parent
+		end
+		local _ = self
+		return false
+	end
+	function methods.FindFirstAncestorOfClass(_, cls)
+		local p = props.Parent
+		while p do
+			if p.ClassName == cls then
+				return p
+			end
+			p = p.Parent
+		end
+		return nil
+	end
+	function methods.ClearAllChildren()
+		for _, c in table.clone(children) do
+			c.Parent = nil
+		end
 	end
 	function methods.GetAttributes()
 		return table.clone(attributes)
@@ -572,6 +616,12 @@ local function makeInstanceLib(engine)
 			extra = { OnServerEvent = newSignal(engine), OnClientEvent = newSignal(engine) }
 		elseif className == "RemoteFunction" then
 			extra = { OnServerInvoke = false, OnClientInvoke = false }
+		elseif className == "TextButton" or className == "ImageButton" then
+			extra = { Activated = newSignal(engine), MouseButton1Click = newSignal(engine) }
+		elseif className == "ClickDetector" then
+			extra = { MouseClick = newSignal(engine) }
+		elseif className == "ProximityPrompt" then
+			extra = { Triggered = newSignal(engine) }
 		end
 		local inst = newInstance(engine, className, className, extra)
 		if className == "RemoteEvent" or className == "UnreliableRemoteEvent" then
@@ -679,6 +729,8 @@ local function makeServices(engine)
 			Character = false,
 			MembershipType = engine.Enum.MembershipType.None,
 		})
+		local gui = newInstance(engine, "PlayerGui", "PlayerGui")
+		gui.Parent = p
 		function p.Kick(_, reason)
 			table.insert(engine.kicks, { userId = userId, reason = reason })
 			engine:removePlayer(p)
@@ -845,7 +897,15 @@ local function makeServices(engine)
 	newInstance(engine, "StarterPlayerScripts", "StarterPlayerScripts").Parent = starterPlayer
 	newInstance(engine, "StarterCharacterScripts", "StarterCharacterScripts").Parent = starterPlayer
 
+	service("ProximityPromptService", { PromptTriggered = newSignal(engine) })
+	service("UserInputService", { TouchEnabled = false, KeyboardEnabled = true, GamepadEnabled = false })
+	service("TweenService")
+	service("GuiService")
+
 	local workspace = service("Workspace", { StreamingEnabled = true, Gravity = 196.2 })
+	local camera = newInstance(engine, "Camera", "Camera", { ViewportSize = roblox.Vector2.new(1920, 1080) })
+	camera.Parent = workspace
+	workspace.CurrentCamera = camera
 	function workspace.GetServerTimeNow()
 		return engine.now
 	end
@@ -1005,6 +1065,11 @@ function Engine.new(opts)
 	engine.game.PlaceId = opts.placeId or 0
 	makeServices(engine)
 
+	if opts.localPlayer then
+		local p = engine:addPlayer(opts.localPlayer)
+		engine.game.Players.LocalPlayer = p
+	end
+
 	local project = serde.decode("json", fs.readFile(engine.root .. "/default.project.json"))
 	applyNode(engine, engine.game, project.tree)
 
@@ -1037,6 +1102,9 @@ function Engine:env(scriptInstance)
 	env.Vector3 = roblox.Vector3
 	env.CFrame = roblox.CFrame
 	env.Color3 = roblox.Color3
+	env.Vector2 = roblox.Vector2
+	env.UDim = roblox.UDim
+	env.UDim2 = roblox.UDim2
 	env.os = self.os
 	env.tick = function()
 		return self.now
@@ -1144,7 +1212,7 @@ end
 
 function Engine:advance(dt, step)
 	local target = self.now + dt
-	step = step or 0.1
+	step = step or math.max(0.1, dt / 500) -- long jumps take bigger Heartbeat steps; timers still fire on time
 	local heartbeat = self.game.RunService.Heartbeat
 	while self.now < target do
 		local nextT = math.min(target, self.now + step)
