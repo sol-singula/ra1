@@ -1,6 +1,7 @@
 --[[
 The HUD: coins, plot level, Basket x/200, the Auto-Sell toggle (plot level 2+), the next Block Party in local time,
-Upgrades / Sell / Backpack buttons, and the toasts (mutations, and all others but the Welcome-back card).
+the restock countdown, Upgrades / Sell / Backpack / Settings buttons (Settings: Patch alerts, music, sound, reduced
+effects, and the Odds), and the toasts (mutations, and all others but the Welcome-back card).
 
   HudController.refresh()
   HudController.toast(text)
@@ -19,7 +20,9 @@ local UI = require(script.Parent.Parent.UI)
 local HudController = {}
 
 local controllers
-local coins, level, basket, autoSell, toastFrame, party
+local coins, level, basket, autoSell, toastFrame, party, restockLabel
+local settings
+local restockEndsAt
 
 local TOAST_SEC = 3
 
@@ -70,6 +73,43 @@ function HudController.mutationText(data)
 		text ..= " · NEW ENTRY"
 	end
 	return text
+end
+
+function HudController.restockText(now)
+	if not restockEndsAt then
+		return ""
+	end
+	return "🌱 New seeds in " .. UI.duration(restockEndsAt - now)
+end
+
+local SETTINGS = {
+	{ "patchAlerts", "Patch alerts" },
+	{ "music", "Music" },
+	{ "sfx", "Sound effects" },
+	{ "reducedFx", "Reduced effects" },
+}
+
+function HudController.fillSettings()
+	settings.clear()
+	local p = ClientState.profile
+	if not p then
+		return
+	end
+	for _, entry in SETTINGS do
+		local key, label = entry[1], entry[2]
+		local on = p.settings[key] == true
+		UI.button(settings.body, `{label}: {if on then "ON" else "OFF"}`, function()
+			Net.request("Settings", "set", { key = key, value = not on })
+		end, { Name = "Set_" .. key, BackgroundColor3 = if on then UI.COLORS.green else UI.COLORS.grey })
+	end
+	UI.button(settings.body, "Odds", function()
+		controllers.OddsController.open()
+	end, { Name = "Odds", BackgroundColor3 = UI.COLORS.ink })
+end
+
+function HudController.openSettings()
+	HudController.fillSettings()
+	settings.open()
 end
 
 function HudController.toast(text)
@@ -123,6 +163,12 @@ function HudController:Start()
 	end, { Name = "Backpack", BackgroundColor3 = UI.COLORS.ink })
 	buttons.Size = UDim2.fromOffset(250, 180)
 	party = UI.label(bar, "", { Name = "Party", Size = UDim2.new(1, -16, 0, 24) })
+	restockLabel = UI.label(bar, "", { Name = "Restock", Size = UDim2.new(1, -16, 0, 24) })
+	bar.Size = UDim2.fromOffset(250, 292)
+	UI.button(buttons, "Settings", HudController.openSettings, { Name = "Settings", BackgroundColor3 = UI.COLORS.grey })
+	buttons.Size = UDim2.fromOffset(250, 240)
+	settings = UI.modal("Settings", "Settings")
+	settings.card.Size = UDim2.fromOffset(400, 420)
 	toastFrame = Instance.new("Frame")
 	toastFrame.Name = "Toasts"
 	toastFrame.BackgroundTransparency = 1
@@ -144,9 +190,25 @@ function HudController:Start()
 		end
 	end)
 	HudController.refresh()
+	Net.on("Restock", function(data)
+		if type(data) == "table" and data.endsAt then
+			restockEndsAt = data.endsAt
+		end
+	end)
+	ClientState.Changed:Connect(function(roots)
+		local extra = ClientState.extra
+		if roots == nil and extra and extra.restock then
+			restockEndsAt = extra.restock.endsAt
+		end
+		if settings.isOpen() then
+			HudController.fillSettings()
+		end
+	end)
 	task.spawn(function()
 		while true do
-			party.Text = HudController.partyText(Clock.now())
+			local now = Clock.now()
+			party.Text = HudController.partyText(now)
+			restockLabel.Text = HudController.restockText(now)
 			task.wait(1)
 		end
 	end)

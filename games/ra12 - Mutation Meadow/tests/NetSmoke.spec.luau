@@ -65,13 +65,14 @@ test("stubs answer Result { ok = false, code = not_implemented }; Snapshot and S
 	local engine = Server.boot()
 	local NetService = engine:require(engine:module("Server/Services/NetService"))
 	local player = Server.join(engine, 3)
-	engine:fireServer(player, "Shop", "buySeed", { seed = "carrot", qty = 1, reqId = 5 })
+	engine:fireServer(player, "Daily", "claim", { reqId = 5 })
 	eq(engine:clientEvents("Result", 3), { table.pack({ reqId = 5, ok = false, code = "not_implemented" }) })
 	engine:fireServer(player, "Shop", "close", {}) -- no reqId, no Result
 	eq(#engine:clientEvents("Result", 3), 1)
 
 	local snap = engine:invokeServer(player, "Snapshot")
-	eq(snap.seq, 0)
+	local base = snap.seq -- the join already sent a few deltas (Patch's first tip)
+	eq(base, #engine:clientEvents("State", 3))
 	eq(snap.profile.coins, 50)
 	eq(
 		{ snap.profile.lock, snap.profile.receipts, snap.profile.giftsIn },
@@ -81,16 +82,19 @@ test("stubs answer Result { ok = false, code = not_implemented }; Snapshot and S
 	NetService.change(player, { "coins" }, 60)
 	NetService.change(player, { "seeds", "carrot" }, 2)
 	engine:advance(0.2)
-	eq(engine:clientEvents("State", 3), {
+	local states = engine:clientEvents("State", 3)
+	eq(
+		states[#states],
 		table.pack({
-			seq = 1,
+			seq = base + 1,
 			changes = { { path = { "coins" }, value = 60 }, { path = { "seeds", "carrot" }, value = 2 } },
-		}),
-	})
+		})
+	)
 	NetService.change(player, { "coins" }, 61)
 	engine:advance(0.2)
-	eq(engine:clientEvents("State", 3)[2][1].seq, 2)
-	eq(engine:invokeServer(player, "Snapshot").seq, 2)
+	states = engine:clientEvents("State", 3)
+	eq(states[#states][1].seq, base + 2)
+	eq(engine:invokeServer(player, "Snapshot").seq, base + 2)
 end)
 
 local BAD = { 0 / 0, math.huge, -math.huge, string.rep("x", 2048), "\255bad", print }

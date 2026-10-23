@@ -22,6 +22,9 @@ ControllerLoader.ORDER = {
 	"WeatherController",
 	"BackpackController",
 	"PedestalController",
+	"ShopController",
+	"PatchController",
+	"OddsController",
 	"CaptureController",
 }
 

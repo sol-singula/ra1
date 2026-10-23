@@ -34,6 +34,8 @@ function Farm.setup(opts, setup)
 		BP = service("BlockPartyService"),
 		Weather = service("WeatherService"),
 		Mut = service("MutationService"),
+		Shop = service("ShopService"),
+		Patch = service("PatchService"),
 		reqId = 0,
 	}
 end
@@ -101,6 +103,26 @@ end
 function Farm.standAtSunflower(ctx, player)
 	local stem = ctx.engine.workspace.Street.Sunflower.Stem
 	Farm.standAt(ctx, player, stem.Position + roblox.Vector3.new(0, -3, 4))
+end
+
+function Farm.standAtPatch(ctx, player)
+	local head = ctx.engine.workspace.Street.Patch.PumpkinHead
+	Farm.standAt(ctx, player, head.Position + roblox.Vector3.new(0, -2, -5))
+end
+
+-- open the shop the way a player does: Patch's prompt (standing next to him)
+function Farm.openShop(ctx, player)
+	Farm.standAtPatch(ctx, player)
+	ctx.engine.workspace.Street.Patch.Counter.ShopPrompt.Triggered:Fire(player)
+end
+
+-- the PatchLines a player got, in order
+function Farm.lines(ctx, player)
+	local out = {}
+	for _, args in ctx.engine:clientEvents("PatchLine", player.UserId) do
+		table.insert(out, args[1].id)
+	end
+	return out
 end
 
 -- advance the clock to an absolute time

@@ -10,14 +10,18 @@ The client side of the remotes (the server half is NetService). Client only.
   Net.snapshot()                                the full public state ({ seq, profile, ... }), via Snapshot
   Net.onState(fn)                               fn(changes) for each State in order; on a seq gap it fetches a
                                                 Snapshot and calls fn(nil, snapshot) instead
+  Net.Sent(remote, action, payload)             fires for every call the client sends (Patch hides lines on it)
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(script.Parent.Config)
 local NetSchema = require(script.Parent.NetSchema)
 local Promise = require(script.Parent.Promise)
+local Signal = require(script.Parent.Signal)
 
-local Net = {}
+local Net = {
+	Sent = Signal.new(),
+}
 
 local MAX_REQ = 2 ^ 31
 
@@ -47,6 +51,7 @@ end
 
 function Net.send(name, action, payload)
 	remote(name):FireServer(action, payload or {})
+	Net.Sent:Fire(name, action, payload)
 end
 
 function Net.request(name, action, payload)
@@ -69,6 +74,7 @@ function Net.request(name, action, payload)
 		end
 	end)
 	remote(name):FireServer(action, payload)
+	Net.Sent:Fire(name, action, payload)
 	return p
 end
 

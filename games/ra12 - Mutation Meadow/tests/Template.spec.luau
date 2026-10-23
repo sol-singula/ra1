@@ -13,7 +13,9 @@ test("a new profile is the template (plus its lock and times)", function()
 	eq(profile.meta.created, 1000)
 	eq(profile.meta.sessionStart, 1000)
 	eq(profile.lock, { jobId = "job-1", at = 1000 })
+	eq(profile.patchTips.plant, true, "Patch's first tip fired on the first spawn")
 	local copy = Server.deepCopy(profile)
+	copy.patchTips.plant = false
 	copy.lock = nil
 	copy.meta.created, copy.meta.lastSeen, copy.meta.sessionStart = 0, 0, 0
 	eq(copy, DataService.TEMPLATE)
