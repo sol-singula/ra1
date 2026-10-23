@@ -7,8 +7,7 @@ return {
 	first_wetgolden = { name = "40x Legend", desc = "Keep a Wet + Golden crop, worth 40x.", id = 0 },
 	master_gardener = { name = "Master Gardener", id = 0 },
 	week_of_sprouts = { name = "7-Day Gardener", desc = "Claim 7 days on the daily calendar.", id = 0 },
-	full_meadow = { name = "Full Meadow", id = 0 }, -- TODO: desc once the trigger is decided (not in the spec yet)
+	full_meadow = { name = "Full Meadow", desc = "Upgrade your meadow plot to level 5.", id = 0 }, -- the plot level 5 purchase
 	moonstruck = { name = "Moonstruck", id = 0 },
-	-- TODO: confirm the trigger. Config.BlockParty.sunflowerFriendAt = 10 suggests 10 blooms, not one
-	sunflower_friend = { name = "Sunflower Friend", desc = "Help the Block Party sunflower bloom.", id = 0 },
+	sunflower_friend = { name = "Sunflower Friend", desc = "Help the Block Party sunflower bloom 10 times.", id = 0 }, -- BlockParty.sunflowerFriendAt
 }

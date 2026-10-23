@@ -237,8 +237,13 @@ test("badges: renamed copy", function()
 	eq({ B.first_golden.name, B.first_golden.desc }, { "Struck Gold!", "Keep your first Golden crop, worth 20x." })
 	eq({ B.first_wetgolden.name, B.first_wetgolden.desc }, { "40x Legend", "Keep a Wet + Golden crop, worth 40x." })
 	eq({ B.week_of_sprouts.name, B.week_of_sprouts.desc }, { "7-Day Gardener", "Claim 7 days on the daily calendar." })
-	eq(B.full_meadow.name, "Full Meadow")
-	eq(B.sunflower_friend.name, "Sunflower Friend")
+	eq({ B.full_meadow.name, B.full_meadow.desc }, { "Full Meadow", "Upgrade your meadow plot to level 5." })
+	eq(
+		{ B.sunflower_friend.name, B.sunflower_friend.desc },
+		{ "Sunflower Friend", "Help the Block Party sunflower bloom 10 times." }
+	)
+	eq(Config.BlockParty.sunflowerFriendAt, 10)
+	eq(#Config.Upgrades.plotCost, 5, "level 5 is the top plot level")
 end)
 
 test("badges: the ten, ids not created yet", function()
