@@ -9,7 +9,7 @@ Each tile part carries what clients need to draw and animate it (the server stay
   Sprinkler. A client shows grown = Grown + (now - At) x Rate.
 
   PlotService.plotOf(player) / ownerOf(plot)
-  PlotService.tilePart(player, tileId) / standPart(player) / signPart(player)
+  PlotService.tilePart(player, tileId) / standPart(player) / signPart(player) / pedestalPart(player, index)
   PlotService.hasExtraRow(player)
   PlotService.refresh(player)              shows the tiles active at the player's level (and the Extra Plot Row)
   PlotService.renderTile(player, tileId, rate)
@@ -22,6 +22,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Clock = require(ReplicatedStorage.Shared.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local MutationMath = require(ReplicatedStorage.Shared.MutationMath)
 local Tiles = require(ReplicatedStorage.Shared.Tiles)
 
 local DataService = require(script.Parent.DataService)
@@ -37,7 +38,8 @@ local plotList = {}
 local owners = {} -- [plot] = player
 local byPlayer = {} -- [player] = plot
 
-local TILE_ATTRS = { "Seed", "Grown", "At", "Rate", "GrowSec", "Ripe", "CanUsed", "HarvestsLeft", "Mutated" }
+local TILE_ATTRS = { "Seed", "Grown", "At", "Rate", "GrowSec", "Ripe", "CanUsed", "HarvestsLeft", "Mutated", "Muts" }
+local PEDESTAL_ATTRS = { "Unlocked", "ItemId", "ItemSeed", "ItemMuts", "ItemLabel" }
 
 function PlotService.plots()
 	return plotList
@@ -126,6 +128,12 @@ function PlotService.renderTile(player, id, rate)
 	part:SetAttribute("CanUsed", tile.canUsed)
 	part:SetAttribute("HarvestsLeft", tile.harvestsLeft)
 	part:SetAttribute("Mutated", next(tile.muts) ~= nil)
+	part:SetAttribute("Muts", MutationMath.key(tile.muts))
+end
+
+function PlotService.pedestalPart(player, index)
+	local plot = byPlayer[player]
+	return plot and plot.Pedestals:FindFirstChild("P" .. index)
 end
 
 local function clear(plot)
@@ -140,6 +148,11 @@ local function clear(plot)
 			else
 				part.Transparency = 1
 			end
+		end
+	end
+	for _, pedestal in plot.Pedestals:GetChildren() do
+		for _, attr in PEDESTAL_ATTRS do
+			pedestal:SetAttribute(attr, nil)
 		end
 	end
 	plot:SetAttribute("OwnerId", nil)

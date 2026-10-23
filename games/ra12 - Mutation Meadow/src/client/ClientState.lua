@@ -2,6 +2,7 @@
 The client's copy of its own profile, kept in step by StateController (Snapshot, then State deltas).
 
   ClientState.profile            the public profile (nil until the first Snapshot)
+  ClientState.extra              the rest of the Snapshot (weather, blockParty, ...)
   ClientState.load(snapshot)     replaces it
   ClientState.apply(changes)     { { path = { "tiles", "3" }, value = ... } }; a missing value deletes the key
   ClientState.get(...)           ClientState.get("seeds", "carrot") -> the value or nil
@@ -18,6 +19,7 @@ local ClientState = {
 
 function ClientState.load(snapshot)
 	ClientState.profile = snapshot and snapshot.profile or nil
+	ClientState.extra = snapshot
 	ClientState.Changed:Fire(nil)
 end
 

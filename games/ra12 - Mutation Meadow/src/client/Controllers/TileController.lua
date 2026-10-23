@@ -18,6 +18,7 @@ local Clock = require(ReplicatedStorage.Shared.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Tiles = require(ReplicatedStorage.Shared.Tiles)
+local MutationMath = require(ReplicatedStorage.Shared.MutationMath)
 local ClientState = require(script.Parent.Parent.ClientState)
 local UI = require(script.Parent.Parent.UI)
 local Visuals = require(script.Parent.Parent.Visuals)
@@ -56,7 +57,8 @@ local function tilePart(plot, id)
 end
 
 local function toastResult(result)
-	if not result.ok and result.code and controllers.HudController then
+	local handled = result.code == "basket_full" or result.code == "backpack_full"
+	if not result.ok and result.code and not handled and controllers.HudController then
 		controllers.HudController.toast("Can't do that: " .. result.code)
 	end
 end
@@ -114,6 +116,10 @@ local function fill(plot, id)
 		return
 	end
 	local name = Config.Seeds[seed].name
+	local mut = MutationMath.label(part:GetAttribute("Muts"))
+	if mut ~= "" then
+		name = mut .. " " .. name
+	end
 	if part:GetAttribute("Ripe") then
 		UI.label(popup.body, name .. " is ripe!")
 		if mine then
@@ -121,6 +127,8 @@ local function fill(plot, id)
 				send("Plot", "harvest", { tile = id }, function(result)
 					if result.code == "basket_full" then
 						TileController.offerSell(plot, id)
+					elseif result.code == "backpack_full" then
+						controllers.BackpackController.fullPrompt(plot, id)
 					end
 				end)
 			end, { Name = "Harvest" })
@@ -248,6 +256,7 @@ local function draw()
 						then Visuals.SEED[seed] or Visuals.LEAF
 						else Visuals.LEAF:Lerp(Visuals.SEED[seed] or Visuals.LEAF, progress)
 					crop.Material = if ripe then Enum.Material.Neon else Enum.Material.SmoothPlastic
+					Visuals.mutationFx(crop, part:GetAttribute("Muts"))
 				end
 			end
 		end

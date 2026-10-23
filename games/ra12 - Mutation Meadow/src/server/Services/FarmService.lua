@@ -8,8 +8,10 @@ Remotes:
   Plot:plant {tile, seed}        an empty active tile of your own (no sprinkler), within Config.Net.tileRangeStuds,
                                  one seed spent
   Plot:harvest {tile, onFull?}   a ripe tile: a normal crop sells (Auto-Sell) or goes to the basket; a full basket
-                                 refuses with a toast unless onFull = "sell" sells that one crop now. Mutated crops
-                                 go to MutationService (M5) when it exists. Then harvestsLeft - 1: regrow or clear.
+                                 refuses with a toast unless onFull = "sell" sells that one crop now. A mutated crop
+                                 becomes a Backpack item (InventoryService.keepCrop; a full Backpack returns
+                                 backpack_full, onFull "sell" sells it at the item price, "leave" leaves it ripe).
+                                 Then harvestsLeft - 1: regrow (clean) or clear.
   Plot:harvestAll {}             every ripe normal crop (the Welcome-back card); mutated ones wait for a tap
   Plot:water {tile, ownerId?}    your own growing tile: the can (Growth.useCan); someone else's: a help
                                  (SocialService.helpWater)
@@ -22,10 +24,11 @@ On load, crops grow offline at rate 1 for min(away, offlineCapSec); away welcome
 Welcome-back card (a Toast of kind "welcomeBack" with data { awaySec, ripe }).
 
   FarmService.rateFor(player, profile, tileId)
-  FarmService.weather(player) -> { rain, shower }   WeatherService replaces this (M5)
+  FarmService.weather(player) -> { rain, shower }   set by WeatherService
   FarmService.render(player, tileId)
   FarmService.BadgeEarned(player, badgeKey)          "full_meadow" on reaching the top plot level
   FarmService.Harvested(player, seed, tileId)        for quests (M8)
+  FarmService.Planted(player, tileId, tile)          a new crop: planted, or regrown after a harvest
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -45,15 +48,16 @@ local SocialService = require(script.Parent.SocialService)
 local FarmService = {
 	BadgeEarned = Signal.new(),
 	Harvested = Signal.new(),
+	Planted = Signal.new(),
 }
 
-local services
 local active = setmetatable({}, { __mode = "k" }) -- [player] = true while loaded
 local shownRate = setmetatable({}, { __mode = "k" }) -- [player][tileId] = the rate on the tile's attributes
 
 local SPRINKLER_KINDS = { sprinklerBasic = "basic", sprinklerAdvanced = "advanced" }
 
-function FarmService.weather()
+-- WeatherService replaces this in its Init
+function FarmService.weather(_player)
 	return { rain = false, shower = false }
 end
 
@@ -105,10 +109,11 @@ local function plant(player, payload, profile)
 	end
 	profile.tiles[id] = Growth.newTile(seed, Clock.now())
 	tileChanged(player, profile, id)
+	FarmService.Planted:Fire(player, id, profile.tiles[id])
 	return true
 end
 
--- one ripe tile; mutated crops only when allowed (a tap, not harvestAll)
+-- one ripe tile; mutated crops only when allowed (a tap, not harvestAll or Auto-Sell)
 local function harvestOne(player, profile, id, onFull, allowMutated)
 	local tile = profile.tiles[id]
 	if not tile then
@@ -117,18 +122,24 @@ local function harvestOne(player, profile, id, onFull, allowMutated)
 	if not Growth.ripe(tile) then
 		return false, "not_ripe"
 	end
-	local mutated = next(tile.muts) ~= nil
-	if mutated and not allowMutated then
-		return false, "mutated"
-	end
-	if mutated and services.MutationService then
-		return services.MutationService.harvest(player, profile, id)
-	end
-	local full = InventoryService.basketCount(profile) >= Config.Inventory.basketCap
-	if profile.autoSell or (full and onFull == "sell") then
-		InventoryService.addCoins(player, InventoryService.sellValue(player, tile.seed), "harvest")
-	elseif not InventoryService.addToBasket(player, tile.seed) then
-		return false, "basket_full"
+	if next(tile.muts) ~= nil then
+		if not allowMutated then
+			return false, "mutated"
+		end
+		-- a kept crop: the mutation goes to a Backpack item and the crop regrows clean
+		local ok, code = InventoryService.keepCrop(player, profile, tile, onFull)
+		if not ok then
+			return false, code
+		elseif code == "left" then
+			return true, "left"
+		end
+	else
+		local full = InventoryService.basketCount(profile) >= Config.Inventory.basketCap
+		if profile.autoSell or (full and onFull == "sell") then
+			InventoryService.addCoins(player, InventoryService.sellValue(player, tile.seed), "harvest")
+		elseif not InventoryService.addToBasket(player, tile.seed) then
+			return false, "basket_full"
+		end
 	end
 	FarmService.Harvested:Fire(player, tile.seed, id)
 	tile.harvestsLeft -= 1
@@ -138,6 +149,9 @@ local function harvestOne(player, profile, id, onFull, allowMutated)
 		profile.tiles[id] = nil
 	end
 	tileChanged(player, profile, id)
+	if profile.tiles[id] then
+		FarmService.Planted:Fire(player, id, profile.tiles[id])
+	end
 	return true
 end
 
@@ -364,8 +378,7 @@ function FarmService.applyOffline(player, profile, now)
 	return away
 end
 
-function FarmService:Init(all)
-	services = all
+function FarmService:Init()
 	NetService.on("Plot", "plant", nil, plant)
 	NetService.on("Plot", "harvest", nil, harvest)
 	NetService.on("Plot", "harvestAll", nil, harvestAll)

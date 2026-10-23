@@ -18,6 +18,10 @@ ControllerLoader.ORDER = {
 	"UpgradeController",
 	"SellController",
 	"WelcomeBackController",
+	"BlockPartyController",
+	"WeatherController",
+	"BackpackController",
+	"PedestalController",
 }
 
 local function forEachHook(controllers, order, hook, ...)

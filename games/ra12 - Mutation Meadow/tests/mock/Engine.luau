@@ -751,6 +751,12 @@ local function makeServices(engine)
 	function players.GetPlayers(self)
 		return self:GetChildren()
 	end
+	function players.GetNameFromUserIdAsync(_, id)
+		if engine.nameLookupFails then
+			error("HTTP 429 (Too Many Requests)", 0)
+		end
+		return "Player" .. tostring(id)
+	end
 	function players.GetPlayerByUserId(self, id)
 		for _, p in self:GetChildren() do
 			if p.UserId == id then
@@ -891,7 +897,13 @@ local function makeServices(engine)
 	service("ServerScriptService")
 	service("ServerStorage")
 	service("StarterGui")
-	service("Lighting")
+	service("Lighting", {
+		ClockTime = 14,
+		Brightness = 2,
+		Ambient = roblox.Color3.fromRGB(70, 70, 70),
+		OutdoorAmbient = roblox.Color3.fromRGB(128, 128, 128),
+		ColorShift_Top = roblox.Color3.new(0, 0, 0),
+	})
 	service("SoundService")
 	local starterPlayer = service("StarterPlayer")
 	newInstance(engine, "StarterPlayerScripts", "StarterPlayerScripts").Parent = starterPlayer
@@ -1105,6 +1117,9 @@ function Engine:env(scriptInstance)
 	env.Vector2 = roblox.Vector2
 	env.UDim = roblox.UDim
 	env.UDim2 = roblox.UDim2
+	env.ColorSequence = roblox.ColorSequence
+	env.NumberSequence = roblox.NumberSequence
+	env.NumberRange = roblox.NumberRange
 	env.os = self.os
 	env.tick = function()
 		return self.now

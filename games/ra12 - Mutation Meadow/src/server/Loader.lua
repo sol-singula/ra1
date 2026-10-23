@@ -45,6 +45,9 @@ Loader.ORDER = {
 	"NetService",
 	"PlotService",
 	"FarmService",
+	"BlockPartyService",
+	"WeatherService",
+	"MutationService",
 	"InventoryService",
 	"SocialService",
 }

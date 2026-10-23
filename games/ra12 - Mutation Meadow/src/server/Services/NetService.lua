@@ -34,6 +34,7 @@ local NetSchema = require(ReplicatedStorage.Shared.NetSchema)
 local TableUtil = require(ReplicatedStorage.Shared.TableUtil)
 
 local DataService = require(script.Parent.DataService)
+local DevCommands = require(script.Parent.Parent.Net.DevCommands)
 local Guards = require(script.Parent.Parent.Net.Guards)
 
 local NetService = {}
@@ -236,6 +237,7 @@ function NetService:Init()
 			NetService.on(remote, action, schema, stub)
 		end
 	end
+	NetService.on("DevCommand", "run", nil, DevCommands.run)
 end
 
 function NetService:Start()

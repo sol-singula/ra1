@@ -10,6 +10,8 @@ their Result.
   Farm.call(ctx, player, remote, action, payload) -> ok, code   (through the remote, with a reqId)
   Farm.toasts(ctx, player)                 every Toast that player got
   Farm.ripen(ctx, player, tileId)          sets that tile's grown to its growSec
+  Farm.crop(ctx, player, tileId, seed, ripe?)   a fixture crop
+  Farm.standAtSunflower(ctx, player) / Farm.at(ctx, t) / Farm.fixedRng(x)
 ]]
 local Server = require("./Server")
 local roblox = require("@lune/roblox")
@@ -29,6 +31,9 @@ function Farm.setup(opts, setup)
 		Inv = service("InventoryService"),
 		Social = service("SocialService"),
 		Net = service("NetService"),
+		BP = service("BlockPartyService"),
+		Weather = service("WeatherService"),
+		Mut = service("MutationService"),
 		reqId = 0,
 	}
 end
@@ -91,6 +96,43 @@ function Farm.toastTexts(ctx, player)
 		table.insert(out, t.text)
 	end
 	return out
+end
+
+function Farm.standAtSunflower(ctx, player)
+	local stem = ctx.engine.workspace.Street.Sunflower.Stem
+	Farm.standAt(ctx, player, stem.Position + roblox.Vector3.new(0, -3, 4))
+end
+
+-- advance the clock to an absolute time
+function Farm.at(ctx, t)
+	if t > ctx.engine.now then
+		ctx.engine:advance(t - ctx.engine.now)
+	end
+end
+
+-- a fixture crop on a tile, bypassing the remotes
+function Farm.crop(ctx, player, tileId, seed, ripe)
+	local Growth = ctx.engine:require(ctx.engine:module("Shared/Growth"))
+	local profile = ctx.Data.get(player)
+	local tile = Growth.newTile(seed, ctx.engine.now)
+	if ripe then
+		tile.grown = Growth.growSec(tile)
+	end
+	profile.tiles[tileId] = tile
+	ctx.FarmS.render(player, tileId)
+	return tile
+end
+
+-- an rng whose NextNumber always returns x (and NextInteger the low end)
+function Farm.fixedRng(x)
+	return {
+		NextNumber = function()
+			return x
+		end,
+		NextInteger = function(_, a)
+			return a
+		end,
+	}
 end
 
 function Farm.ripen(ctx, player, tileId)
