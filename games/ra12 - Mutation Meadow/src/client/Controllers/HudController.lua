@@ -1,7 +1,7 @@
 --[[
 The HUD: coins, plot level, Basket x/200, the Auto-Sell toggle (plot level 2+), the next Block Party in local time,
-the restock countdown, Upgrades / Sell / Backpack / Settings buttons (Settings: Patch alerts, music, sound, reduced
-effects, and the Odds), the M8 column on the right (Daily, Quests, Collection, Update, the playtime Gift), and the
+the restock countdown, Upgrades / Sell / Backpack / Settings buttons (Settings: SettingsController), the column on
+the right (Daily, Quests, Collection, Update, the playtime Gift, Store, Visit), and the
 toasts (mutations, and all others but the Welcome-back card). A mutation toast for a new Collection Log entry has a
 one-tap Claim (Collection:claim {entry}).
 
@@ -24,7 +24,6 @@ local HudController = {}
 
 local controllers
 local coins, level, basket, autoSell, toastFrame, party, restockLabel
-local settings
 local restockEndsAt
 
 local TOAST_SEC = 3
@@ -100,34 +99,9 @@ function HudController.restockText(now)
 	return "🌱 New seeds in " .. UI.duration(restockEndsAt - now)
 end
 
-local SETTINGS = {
-	{ "patchAlerts", "Patch alerts" },
-	{ "music", "Music" },
-	{ "sfx", "Sound effects" },
-	{ "reducedFx", "Reduced effects" },
-}
-
-function HudController.fillSettings()
-	settings.clear()
-	local p = ClientState.profile
-	if not p then
-		return
-	end
-	for _, entry in SETTINGS do
-		local key, label = entry[1], entry[2]
-		local on = p.settings[key] == true
-		UI.button(settings.body, `{label}: {if on then "ON" else "OFF"}`, function()
-			Net.request("Settings", "set", { key = key, value = not on })
-		end, { Name = "Set_" .. key, BackgroundColor3 = if on then UI.COLORS.green else UI.COLORS.grey })
-	end
-	UI.button(settings.body, "Odds", function()
-		controllers.OddsController.open()
-	end, { Name = "Odds", BackgroundColor3 = UI.COLORS.ink })
-end
-
+-- Settings live in SettingsController (M9); the HUD button opens it
 function HudController.openSettings()
-	HudController.fillSettings()
-	settings.open()
+	controllers.SettingsController.open()
 end
 
 function HudController.toast(text, action)
@@ -209,7 +183,7 @@ function HudController:Start()
 		Name = "Rewards",
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -12, 0.5, 0),
-		Size = UDim2.fromOffset(150, 5 * 60),
+		Size = UDim2.fromOffset(150, 7 * 60),
 		BackgroundTransparency = 1,
 	})
 	HudController.rewards = rewards
@@ -221,6 +195,8 @@ function HudController:Start()
 			{ "Collection", "📖 Log", "CollectionController" },
 			{ "Update", "📰 Update", "UpdateBoardController" },
 			{ "Gift", "🎁 Gifts", "PlaytimeController" },
+			{ "Store", "🛒 Store", "StoreController" },
+			{ "Visit", "🏡 Visit", "VisitController" },
 		}
 	do
 		UI.button(rewards, b[2], function()
@@ -230,8 +206,6 @@ function HudController:Start()
 			end
 		end, { Name = b[1], LayoutOrder = i, BackgroundColor3 = if i == 5 then UI.COLORS.gold else UI.COLORS.green })
 	end
-	settings = UI.modal("Settings", "Settings")
-	settings.card.Size = UDim2.fromOffset(400, 420)
 	toastFrame = Instance.new("Frame")
 	toastFrame.Name = "Toasts"
 	toastFrame.BackgroundTransparency = 1
@@ -270,9 +244,6 @@ function HudController:Start()
 		local extra = ClientState.extra
 		if roots == nil and extra and extra.restock then
 			restockEndsAt = extra.restock.endsAt
-		end
-		if settings.isOpen() then
-			HudController.fillSettings()
 		end
 	end)
 	task.spawn(function()

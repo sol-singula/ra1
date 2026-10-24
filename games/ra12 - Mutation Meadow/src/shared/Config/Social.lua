@@ -7,4 +7,8 @@ return {
 	friendBoostEach = 0.10,
 	friendBoostMax = 0.30,
 	likesPerFarmPerDay = 1,
+	itemGiftsPerDay = 20,
+	giftOfferSec = 30,
+	visitOffsetStuds = 6,
+	gardenNameFallback = "%s's Garden",
 }

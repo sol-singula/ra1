@@ -12,11 +12,15 @@ services expect:
   Workspace.Street.Sunflower: Stem (ProximityPrompt "Water") and the looks Drooping, Perking, Standing, Bloom, Wilt
   Workspace.Street.Boards: UpdateBoard (by Patch), ServerBoard, GlobalBoard, each a Part with a ProximityPrompt
     "View" (the client draws the SurfaceGui)
+  Workspace.Street.Lounge: Deck (Config.Lounge.deck studs), a brushed-brass Gate (ProximityPrompt "Enter") on its road
+    side, and an invisible Volume over the deck
   Every tile and pedestal has a ClickDetector "Click".
 
   StreetBuilder.build(parent) -> the Street model
   StreetBuilder.boards(street)   adds whichever world boards a Studio-placed street lacks
+  StreetBuilder.lounge(street)   adds the VIP Lounge when the street has none
 ]]
+local Config = require(game:GetService("ReplicatedStorage").Shared.Config)
 local Tiles = require(game:GetService("ReplicatedStorage").Shared.Tiles)
 
 local StreetBuilder = {}
@@ -216,6 +220,49 @@ function StreetBuilder.boards(street)
 	return folder
 end
 
+local BRASS = Color3.fromRGB(168, 150, 112) -- brushed brass, never gold
+
+function StreetBuilder.lounge(street)
+	local existing = street:FindFirstChild("Lounge")
+	if existing then
+		return existing
+	end
+	local cfg = Config.Lounge
+	local model = Instance.new("Model")
+	model.Name = "Lounge"
+	local centre = Vector3.new(cfg.centre.x, 0, cfg.centre.z)
+	part(
+		model,
+		"Deck",
+		Vector3.new(cfg.deck.x, 1, cfg.deck.z),
+		centre + Vector3.new(0, 0.5, 0),
+		Color3.fromRGB(150, 110, 75),
+		Enum.Material.WoodPlanks
+	)
+	local volume = part(
+		model,
+		"Volume",
+		Vector3.new(cfg.deck.x, cfg.ceilingStuds, cfg.deck.z),
+		centre + Vector3.new(0, cfg.ceilingStuds / 2 + 1, 0),
+		BRASS
+	)
+	volume.Transparency = 1
+	volume.CanCollide = false
+	volume.CanQuery = false
+	local gate = part(
+		model,
+		"Gate",
+		Vector3.new(8, 8, 1),
+		centre + Vector3.new(0, 4.5, cfg.deck.z / 2 + 0.5),
+		BRASS,
+		Enum.Material.Metal
+	)
+	gate.CanCollide = false
+	prompt(gate, "Enter", "Enter", "VIP Lounge")
+	model.Parent = street
+	return model
+end
+
 function StreetBuilder.build(parent)
 	local street = Instance.new("Model")
 	street.Name = "Street"
@@ -235,6 +282,7 @@ function StreetBuilder.build(parent)
 	end
 	sunflower(street)
 	StreetBuilder.boards(street)
+	StreetBuilder.lounge(street)
 	street.Parent = parent
 	return street
 end

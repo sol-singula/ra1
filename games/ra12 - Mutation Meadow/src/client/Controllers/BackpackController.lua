@@ -1,6 +1,6 @@
 --[[
 The Backpack: your kept crops in a grid (icon in its mutation's frame, seed, mutation, value, finder, date), filters
-(All, Wet, Golden, Wet + Golden), slots used, and per item Display, Gift (M9) and Sell (with a confirm). Also the
+(All, Wet, Golden, Wet + Golden), slots used, and per item Display, Gift (GiftController: a free gift to someone here) and Sell (with a confirm). Also the
 Backpack-full prompt when a mutated harvest has no room: Sell now or Leave on plot.
 
   BackpackController.open() / close() / isOpen() / setFilter(key)
@@ -107,13 +107,13 @@ local function card(parent, profile, guid, item)
 	UI.button(row, "Display", function()
 		controllers.PedestalController.displayItem(guid)
 	end, { Name = "Display", Size = w })
-	UI.button(row, "Gift", function() end, {
+	UI.button(row, "Gift", function()
+		controllers.GiftController.pick({ item = guid })
+	end, {
 		Name = "Gift",
 		Position = UDim2.new(0.34, 0, 0, 0),
 		Size = w,
-		BackgroundColor3 = UI.COLORS.grey,
-		Active = false,
-		AutoButtonColor = false,
+		BackgroundColor3 = UI.COLORS.ink,
 	})
 	UI.button(row, "Sell", function()
 		BackpackController.confirmSell(guid)

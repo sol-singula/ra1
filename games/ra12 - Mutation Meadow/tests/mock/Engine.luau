@@ -31,7 +31,8 @@ unpublished place), shareDataWith (another engine whose stored data this one see
 (a userId: Players.LocalPlayer for a client engine). Workspace.CurrentCamera.ViewportSize starts at 1920 x 1080.
 
 Faked services: Players, RunService, HttpService (GenerateGUID, JSONEncode/Decode), MarketplaceService,
-BadgeService, PolicyService, AnalyticsService, DataStoreService (6 s same-key write cooldown, injectable errors,
+BadgeService, PolicyService, AnalyticsService, TeleportService (engine.teleports), TextService (engine.filterFails,
+engine.filterAs), player:GetFriendsOnline (engine.friendsOnline[userId]), DataStoreService (6 s same-key write cooldown, injectable errors,
 UpdateAsync semantics, OrderedDataStore, GetRequestBudgetForRequestType), plus a deterministic Random and a
 virtual clock behind workspace:GetServerTimeNow(), os.time, os.clock, tick, task.wait and task.delay.
 ]]
@@ -207,11 +208,15 @@ local function newInstance(engine, className, name, extra)
 	function methods.GetAttribute(_, key)
 		return attributes[key]
 	end
+	methods.AttributeChanged = newSignal(engine)
 	function methods.SetAttribute(_, key, value)
 		local old = attributes[key]
 		attributes[key] = value
 		if old ~= value and attrSignals[key] then
 			attrSignals[key]:Fire()
+		end
+		if old ~= value then
+			methods.AttributeChanged:Fire(key)
 		end
 	end
 	function methods.GetPropertyChangedSignal(_, key)
@@ -221,6 +226,29 @@ local function newInstance(engine, className, name, extra)
 	function methods.GetAttributeChangedSignal(_, key)
 		attrSignals[key] = attrSignals[key] or newSignal(engine)
 		return attrSignals[key]
+	end
+	-- a model moves by its HumanoidRootPart (or PrimaryPart, or first part); enough for characters
+	local function pivotPart(self)
+		local root = self:FindFirstChild("HumanoidRootPart")
+		if root then
+			return root
+		end
+		for _, child in children do
+			if child.ClassName == "Part" then
+				return child
+			end
+		end
+		return nil
+	end
+	function methods.PivotTo(self, cf)
+		local p = pivotPart(self)
+		if p then
+			p.Position = cf.Position
+		end
+	end
+	function methods.GetPivot(self)
+		local p = pivotPart(self)
+		return roblox.CFrame.new(if p then p.Position else roblox.Vector3.new())
 	end
 	function methods.IsDescendantOf(self, ancestor)
 		local p = props.Parent
@@ -624,6 +652,8 @@ local function makeInstanceLib(engine)
 			extra = { Triggered = newSignal(engine) }
 		elseif className == "ScreenGui" then
 			extra = { Enabled = true }
+		elseif className == "Part" or className == "MeshPart" then
+			extra = { Touched = newSignal(engine) }
 		end
 		local inst = newInstance(engine, className, className, extra)
 		if className == "RemoteEvent" or className == "UnreliableRemoteEvent" then
@@ -729,6 +759,7 @@ local function makeServices(engine)
 			DisplayName = name or ("Player" .. userId),
 			AccountAge = 30,
 			Character = false,
+			CharacterAdded = newSignal(engine),
 			MembershipType = engine.Enum.MembershipType.None,
 		})
 		local gui = newInstance(engine, "PlayerGui", "PlayerGui")
@@ -736,6 +767,12 @@ local function makeServices(engine)
 		function p.Kick(_, reason)
 			table.insert(engine.kicks, { userId = userId, reason = reason })
 			engine:removePlayer(p)
+		end
+		function p.GetFriendsOnline()
+			if engine.friendsOnlineFails then
+				error("HTTP 500 (mock)", 0)
+			end
+			return engine.friendsOnline[userId] or {}
 		end
 		function p.IsFriendsWith(_, otherId)
 			return engine.friends[userId .. ":" .. otherId] == true or engine.friends[otherId .. ":" .. userId] == true
@@ -758,6 +795,14 @@ local function makeServices(engine)
 			error("HTTP 429 (Too Many Requests)", 0)
 		end
 		return "Player" .. tostring(id)
+	end
+	function players.GetPlayerFromCharacter(self, character)
+		for _, p in self:GetChildren() do
+			if p.Character == character then
+				return p
+			end
+		end
+		return nil
 	end
 	function players.GetPlayerByUserId(self, id)
 		for _, p in self:GetChildren() do
@@ -813,6 +858,9 @@ local function makeServices(engine)
 		PromptPurchaseFinished = newSignal(engine),
 	})
 	function market.UserOwnsGamePassAsync(_, userId, passId)
+		if engine.passCheckFails then
+			error("MarketplaceService: HTTP 500 (mock)", 0)
+		end
 		return engine.passes[userId .. ":" .. passId] == true
 	end
 	function market.PromptGamePassPurchase(_, player, passId)
@@ -858,6 +906,9 @@ local function makeServices(engine)
 	-- PolicyService
 	local policy = service("PolicyService")
 	function policy.GetPolicyInfoForPlayerAsync(_, player)
+		if engine.policyFails then
+			error("PolicyService: HTTP 500 (mock)", 0)
+		end
 		return engine.policies[player.UserId]
 			or {
 				ArePaidRandomItemsRestricted = false,
@@ -922,6 +973,36 @@ local function makeServices(engine)
 	newInstance(engine, "StarterCharacterScripts", "StarterCharacterScripts").Parent = starterPlayer
 
 	service("ProximityPromptService", { PromptTriggered = newSignal(engine) })
+
+	-- TeleportService: every TeleportAsync is recorded in engine.teleports
+	local teleport = service("TeleportService")
+	function teleport.TeleportAsync(_, placeId, list, options)
+		if engine.teleportFails then
+			error("Teleport failed (mock)", 0)
+		end
+		local ids = {}
+		for _, p in list do
+			table.insert(ids, p.UserId)
+		end
+		table.insert(engine.teleports, {
+			placeId = placeId,
+			userIds = ids,
+			serverInstanceId = options and options.ServerInstanceId or nil,
+		})
+	end
+
+	-- TextService: FilterStringAsync passes text through (engine.filterFails makes it error)
+	local text = service("TextService")
+	function text.FilterStringAsync(_, s)
+		if engine.filterFails then
+			error("TextService: filter unavailable (mock)", 0)
+		end
+		return {
+			GetNonChatStringForBroadcastAsync = function()
+				return engine.filterAs or s
+			end,
+		}
+	end
 	service("UserInputService", { TouchEnabled = false, KeyboardEnabled = true, GamepadEnabled = false })
 	service("TweenService")
 	service("GuiService")
@@ -1072,6 +1153,8 @@ function Engine.new(opts)
 		passes = {},
 		policies = {},
 		friends = {},
+		friendsOnline = {},
+		teleports = {},
 		kicks = {},
 		dataLog = {},
 		dataCalls = {},

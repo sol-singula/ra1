@@ -20,9 +20,14 @@ Remotes:
   Upgrade:buy {kind}             "plot" (next level, plotCost), "can" (Config.Upgrades.canOrder), "sprinklerBasic",
                                  "sprinklerAdvanced" (at most sprinklers.maxEach owned of each)
 
+The Auto-Harvest Gnome (game pass, Config.Catalog.passes.gnome): while gnomeOn (Settings:set gnomeOn) and the owner
+stands on their own plot, every everySec it harvests the ripe normal crops within radius studs of the player, by
+the Basket rules (Auto-Sell, or the basket until it is full). It never touches a mutated crop.
+
 On load, crops grow offline at rate 1 for min(away, offlineCapSec); away welcomeBackSec or more sends the
 Welcome-back card (a Toast of kind "welcomeBack" with data { awaySec, ripe }).
 
+  FarmService.gnomeTick(player) -> harvested count
   FarmService.rateFor(player, profile, tileId)
   FarmService.weather(player) -> { rain, shower }   set by WeatherService
   FarmService.render(player, tileId)
@@ -41,6 +46,7 @@ local Tiles = require(ReplicatedStorage.Shared.Tiles)
 
 local DataService = require(script.Parent.DataService)
 local Guards = require(script.Parent.Parent.Net.Guards)
+local Purchase = require(script.Parent.Parent.Purchase)
 local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
@@ -155,6 +161,46 @@ local function harvestOne(player, profile, id, onFull, allowMutated)
 		FarmService.Planted:Fire(player, id, profile.tiles[id])
 	end
 	return true
+end
+
+-- the owner's character is over their own plot's ground
+local function onOwnPlot(player)
+	local plot = PlotService.plotOf(player)
+	local ground = plot and plot:FindFirstChild("Ground")
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not ground or not root then
+		return false
+	end
+	local d = root.Position - ground.Position
+	return math.abs(d.X) <= ground.Size.X / 2 and math.abs(d.Z) <= ground.Size.Z / 2
+end
+
+function FarmService.gnomeTick(player)
+	local profile = DataService.get(player)
+	if not profile or not profile.gnomeOn or not Purchase.owns(player, "gnome") or not onOwnPlot(player) then
+		return 0
+	end
+	local radius = Config.Catalog.passes.gnome.radius
+	local ids = {}
+	for id, tile in profile.tiles do
+		if next(tile.muts) == nil and Growth.ripe(tile) then
+			local part = PlotService.tilePart(player, id)
+			if part and Guards.near(player, part.Position, radius) then
+				table.insert(ids, id)
+			end
+		end
+	end
+	table.sort(ids)
+	local n = 0
+	for _, id in ids do
+		local ok, code = harvestOne(player, profile, id, nil, false)
+		if ok then
+			n += 1
+		elseif code == "basket_full" then
+			break
+		end
+	end
+	return n
 end
 
 local function harvest(player, payload, profile)
@@ -392,6 +438,14 @@ function FarmService:Init()
 end
 
 function FarmService:Start()
+	task.spawn(function()
+		while true do
+			task.wait(Config.Catalog.passes.gnome.everySec)
+			for player in active do
+				FarmService.gnomeTick(player)
+			end
+		end
+	end)
 	local last = Clock.now()
 	while true do
 		task.wait(Config.Upgrades.growTickSec)

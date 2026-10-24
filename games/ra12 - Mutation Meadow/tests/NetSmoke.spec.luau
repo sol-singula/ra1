@@ -61,12 +61,12 @@ test("every row: the valid cases run the handler with the payload; the invalid o
 	eq(engine.errors, {})
 end)
 
-test("stubs answer Result { ok = false, code = not_implemented }; Snapshot and State", function()
+test("a refused action answers Result { ok = false, code }; Snapshot and State", function()
 	local engine = Server.boot()
 	local NetService = engine:require(engine:module("Server/Services/NetService"))
 	local player = Server.join(engine, 3)
 	engine:fireServer(player, "Lounge", "enter", { reqId = 5 })
-	eq(engine:clientEvents("Result", 3), { table.pack({ reqId = 5, ok = false, code = "not_implemented" }) })
+	eq(engine:clientEvents("Result", 3), { table.pack({ reqId = 5, ok = false, code = "not_vip" }) })
 	engine:fireServer(player, "Shop", "close", {}) -- no reqId, no Result
 	eq(#engine:clientEvents("Result", 3), 1)
 

@@ -31,6 +31,12 @@ ControllerLoader.ORDER = {
 	"PlaytimeController",
 	"UpdateBoardController",
 	"LeaderboardController",
+	"StoreController",
+	"WardrobeController",
+	"GiftController",
+	"ExtraRowCardController",
+	"VisitController",
+	"SettingsController",
 	"CaptureController",
 }
 

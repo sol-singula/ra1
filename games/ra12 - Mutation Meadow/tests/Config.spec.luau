@@ -216,7 +216,15 @@ test("social, weekly, leaderboard", function()
 		friendBoostEach = 0.10,
 		friendBoostMax = 0.30,
 		likesPerFarmPerDay = 1,
+		itemGiftsPerDay = 20,
+		giftOfferSec = 30,
+		visitOffsetStuds = 6,
+		gardenNameFallback = "%s's Garden",
 	})
+	eq(
+		Config.Lounge,
+		{ deck = { x = 40, z = 30 }, centre = { x = 0, z = -60 }, pushStuds = 6, checkSec = 1, ceilingStuds = 20 }
+	)
 	eq(Config.Weekly, {
 		dayOfWeek = 7,
 		mountainHour = 10,

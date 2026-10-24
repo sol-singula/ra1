@@ -43,6 +43,7 @@ Loader.PLAN = {
 Loader.ORDER = {
 	"DataService",
 	"NetService",
+	"PolicyGate",
 	"WeeklyService",
 	"PlotService",
 	"FarmService",
@@ -55,7 +56,9 @@ Loader.ORDER = {
 	"RewardService",
 	"SocialService",
 	"LeaderboardService",
+	"PurchaseService",
 	"PatchService",
+	"LoungeService",
 	"FirstSessionService",
 	"CaptureService",
 }

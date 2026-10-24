@@ -8,7 +8,7 @@ their Result.
   Farm.standAt(ctx, player, position)
   Farm.standAtTile(ctx, player, owner, tileId)
   Farm.standAtStand(ctx, player)
-  Farm.call(ctx, player, remote, action, payload) -> ok, code   (through the remote, with a reqId)
+  Farm.call(ctx, player, remote, action, payload, wait?) -> ok, code   (through the remote, with a reqId)
   Farm.toasts(ctx, player)                 every Toast that player got
   Farm.ripen(ctx, player, tileId)          sets that tile's grown to its growSec
   Farm.crop(ctx, player, tileId, seed, ripe?)   a fixture crop
@@ -75,13 +75,14 @@ function Farm.join(ctx, userId)
 	return player
 end
 
-function Farm.call(ctx, player, remote, action, payload)
+-- wait: how long to let the handler run (a handler that saves needs a few seconds)
+function Farm.call(ctx, player, remote, action, payload, wait)
 	ctx.reqId += 1
 	local id = ctx.reqId
 	local body = table.clone(payload or {})
 	body.reqId = id
 	ctx.engine:fireServer(player, remote, action, body)
-	ctx.engine:advance(0.11, 0.11) -- under every rate limit
+	ctx.engine:advance(wait or 0.11, 0.11) -- under every rate limit
 	for _, args in ctx.engine:clientEvents("Result", player.UserId) do
 		if args[1].reqId == id then
 			return args[1].ok, args[1].code

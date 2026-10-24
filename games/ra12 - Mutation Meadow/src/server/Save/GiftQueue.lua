@@ -9,14 +9,18 @@ Robux gifts waiting for their recipient, in MM_Gifts_v1 under "u_<recipientId>" 
                                        queue. A crash in between leaves them queued, and giftsIn stops a second grant.
   GiftQueue.apply(profile, key)        grants one gift: a pass key sets passes[key], a cosmetic sets
                                        cosmetics.owned[key]
+  GiftQueue.Applied(player, key, fromId)   after drain applied one (PurchaseService toasts and redraws)
 ]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Signal = require(ReplicatedStorage.Shared.Signal)
 local SaveQueue = require(script.Parent.SaveQueue)
 local Stores = require(script.Parent.Stores)
 
-local GiftQueue = {}
+local GiftQueue = {
+	Applied = Signal.new(),
+}
 
 function GiftQueue.enqueue(recipientId, gift)
 	local store = Stores.gifts()
@@ -85,6 +89,7 @@ function GiftQueue.drain(player, profile)
 	end
 
 	local applied = 0
+	local fresh = {}
 	for _, gift in data.gifts do
 		if not table.find(profile.giftsIn, gift.purchaseId) then
 			GiftQueue.apply(profile, gift.key)
@@ -93,7 +98,11 @@ function GiftQueue.drain(player, profile)
 				table.remove(profile.giftsIn, 1)
 			end
 			applied += 1
+			table.insert(fresh, gift)
 		end
+	end
+	for _, gift in fresh do
+		GiftQueue.Applied:Fire(player, gift.key, gift.fromId)
 	end
 	if applied > 0 and not SaveQueue.request(key, "gifts"):await() then
 		return false -- the queue keeps them; giftsIn decides on the next join
