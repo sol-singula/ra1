@@ -309,7 +309,10 @@ test("block_party_rain: rain lighting and VFX, only Wet crops (with beads)", fun
 	local lighting = ctx.engine.game.Lighting
 	eq({ lighting.ClockTime, lighting.FogEnd }, { 15, 400 })
 	local flower = stage(ctx).Sunflower
-	eq({ flower:GetAttribute("Stage"), flower:GetAttribute("Look") }, { "bloom", "Bloom" })
+	eq({ flower:GetAttribute("Stage"), flower:GetAttribute("Pose") }, { "bloom", "bloom" })
+	local column = flower.HeadPivot.FxBloom.Column
+	eq(column.Color.Keypoints[1].Value, roblox.Color3.fromHex("#3FA7F5"), "the Rain column")
+	eq(flower.HeadPivot.BloomLight.Color, roblox.Color3.fromHex("#3FA7F5"))
 	for _, c in crops(ctx) do
 		Assert.truthy(c:FindFirstChild("MutBead1"), c.Name .. " beads")
 	end
@@ -323,6 +326,14 @@ test("block_party_golden: exactly 1 Golden crop, in the foreground third; every 
 	eq(rain, false)
 	eq(ctx.engine.workspace.Capture:GetAttribute("Lighting"), "golden")
 	eq(ctx.engine.game.Lighting.ClockTime, 17.6)
+	local flower = stage(ctx).Sunflower
+	eq(flower:GetAttribute("Pose"), "bloom")
+	eq(
+		flower.HeadPivot.FxBloom.Column.Color.Keypoints[1].Value,
+		roblox.Color3.fromHex("#FFC300"),
+		"the Golden Hour column"
+	)
+	eq(flower.HeadPivot.Petal1.Color, roblox.Color3.fromHex("#FFD23F"), "the flower stays Butter Sun")
 	local eye = camOf(ctx, "block_party_golden").CFrame.Position
 	local list = crops(ctx)
 	table.sort(list, function(a, b)
@@ -349,7 +360,7 @@ test(
 			capture(scene)
 			local cam = camOf(ctx, scene)
 			local flower = stage(ctx).Sunflower
-			local x, y = onScreen(cam, flower.Bloom.Centre.Position)
+			local x, y = onScreen(cam, flower.HeadPivot.Disc.Position)
 			Assert.truthy(x > 0.05 and x < 0.6, `{scene}: the bloom centre-right ({x})`)
 			Assert.truthy(y > -0.6 and y < 0.9, `{scene}: the bloom in frame ({y})`)
 			Assert.truthy(cam.CFrame.Position.Y < flower.Stem.Position.Y, scene .. ": a low camera")
@@ -646,9 +657,8 @@ test("the live street uses the same Patch and sunflower models", function()
 	eq(street.Patch.PumpkinHead.Color, P.ORANGE)
 	eq(street.Patch.Body.Color, P.SHIRT)
 	eq(street.Patch.Apron.Color, P.APRON)
-	for _, look in { "Drooping", "Perking", "Standing", "Bloom", "Wilt" } do
-		Assert.truthy(street.Sunflower[look].Petal1 and street.Sunflower[look].Centre, look)
-	end
+	eq(street.Sunflower:FindFirstChild("Bloom"), nil, "no look models (GA-03)")
+	Assert.truthy(street.Sunflower:GetAttribute("Origin"), "the art's origin for SunflowerController")
 	Assert.truthy(street.Sunflower.Stem:FindFirstChild("Water"), "the Water prompt")
 end)
 

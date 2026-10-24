@@ -22,7 +22,8 @@ Scenes only stage models, lighting and cameras, in Workspace.Capture (far from t
 write a profile, the plots, the weather or the saves. Loading a scene first tears down the last one (its models,
 its weather VFX, its lighting and atmosphere), so Rain and Golden Hour never share a frame, just as a bloom picks one.
 
-  block_party_rain / _golden   the same camera (low, the sunflower centre-right), 7 farmers in an arc facing the
+  block_party_rain / _golden   the same camera (low, the sunflower centre-right, in bloom with its column: Rain
+                               #3FA7F5 / Golden Hour #FFC300), 7 farmers in an arc facing the
                                sunflower; Golden: exactly 1 Golden crop, in the foreground third, the rest plain
   offline_before / _after      a freshly planted plot at night with a farmer walking away; the grown plot by day.
                                No mutation in either
@@ -225,11 +226,17 @@ local function patch(pos)
 	return model
 end
 
-local function sunflower(pos, face)
+-- the GA-03 sunflower in its bloom pose; with a weather ("rain" | "goldenHour") its bloom column stays up
+local function sunflower(pos, face, weather)
 	local at = ORIGIN + pos
 	local model = SunflowerModel.build(stage, CFrame.lookAt(at, ORIGIN + Vector3.new(face.X, pos.Y, face.Z)))
-	SunflowerModel.setLook(model, "Bloom")
+	SunflowerModel.buildArt(model)
 	model:SetAttribute("Stage", "bloom")
+	if weather then
+		model:SetAttribute("Phase", "weather")
+		model:SetAttribute("Weather", weather)
+		SunflowerModel.bloomFx(model, weather, { hold = true })
+	end
 	return model
 end
 
@@ -421,8 +428,8 @@ end
 local function blockParty(kind)
 	lighting(kind)
 	ground(120)
-	sunflower(BP_SUNFLOWER, BP_EYE)
 	local golden = kind == "golden"
+	sunflower(BP_SUNFLOWER, BP_EYE, if golden then "goldenHour" else "rain")
 	-- rain: every crop Wet; Golden Hour: one Golden crop, PlotA's front-right pumpkin (in the foreground third)
 	local function mutFor(prefix)
 		return function(i)

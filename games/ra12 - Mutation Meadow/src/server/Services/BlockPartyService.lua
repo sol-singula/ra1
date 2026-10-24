@@ -26,7 +26,6 @@ local Clock = require(ReplicatedStorage.Shared.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Schedule = require(ReplicatedStorage.Shared.Schedule)
 local Signal = require(ReplicatedStorage.Shared.Signal)
-local SunflowerModel = require(ReplicatedStorage.Shared.Models.Sunflower)
 
 local DataService = require(script.Parent.DataService)
 local DevCommands = require(script.Parent.Parent.Net.DevCommands)
@@ -44,7 +43,6 @@ local BlockPartyService = {
 }
 
 local HOUR = 3600
-local LOOKS = { drooping = "Drooping", perking = "Perking", standing = "Standing", bloom = "Bloom" }
 
 local window -- { hour, startAt, endsAt, closesAt, goal, waters, stage, phase, wiltEndsAt }
 local lastWater = setmetatable({}, { __mode = "k" }) -- [player] = time
@@ -110,28 +108,19 @@ local function centre(model)
 	return nil
 end
 
+-- the sunflower's attributes: SunflowerController poses its art from them (GA-03)
 local function show()
 	local model = sunflower()
 	if not model or not window then
 		return
 	end
-	local look = if window.phase == "wilt" then "Wilt" else LOOKS[window.stage]
-	if model:FindFirstChild(look) and model[look]:IsA("Model") then
-		SunflowerModel.setLook(model, look)
-	else
-		-- a Studio-placed sunflower with one part per look
-		for _, name in SunflowerModel.LOOKS do
-			local part = model:FindFirstChild(name)
-			if part and part:IsA("BasePart") then
-				part.Transparency = if name == look then 0 else 1
-			end
-		end
-		model:SetAttribute("Look", look)
-	end
+	local weather = WeatherService.current()
 	model:SetAttribute("Phase", window.phase)
 	model:SetAttribute("Stage", window.stage)
 	model:SetAttribute("Waters", window.waters)
 	model:SetAttribute("Goal", window.goal)
+	model:SetAttribute("Weather", weather and weather.kind)
+	model:SetAttribute("WiltEndsAt", if window.phase == "wilt" then window.wiltEndsAt else nil)
 end
 
 local function yourWaters(player)

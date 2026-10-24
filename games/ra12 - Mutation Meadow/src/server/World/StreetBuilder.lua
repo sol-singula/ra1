@@ -9,8 +9,8 @@ services expect:
     SellStand         ProximityPrompt "Sell"
     Pedestals/P1..P7
     Mailbox           attribute GardenName
-  Workspace.Street.Sunflower: the shared Models/Sunflower: Stem (ProximityPrompt "Water"), leaves, and one head
-    Model per look (Drooping, Perking, Standing, Bloom, Wilt), facing the road
+  Workspace.Street.Sunflower: the shared Models/Sunflower: Stem (ProximityPrompt "Water", the range centre) and
+    the Origin attribute, facing the road; SunflowerController builds the art on the client (GA-03)
   Workspace.Street.Boards: UpdateBoard (by Patch), ServerBoard, GlobalBoard, each a Part with a ProximityPrompt
     "View" (the client draws the SurfaceGui)
   Workspace.Street.Lounge: Deck (Config.Lounge.deck studs), a brushed-brass Gate (ProximityPrompt "Enter") on its road
