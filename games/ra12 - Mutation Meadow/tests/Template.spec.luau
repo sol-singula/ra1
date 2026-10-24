@@ -21,6 +21,8 @@ test("a new profile is the template (plus its lock and times)", function()
 	eq({ copy.meta.source, copy.meta.campaign }, { "organic", nil }, "the acquisition tag (M10)")
 	eq(copy.meta.funnel, { ["1"] = true }, "funnel step 1: join")
 	copy.meta.source, copy.meta.funnel = nil, nil
+	eq(copy.badges, { welcome = true }, "the welcome badge on the first join")
+	copy.badges = {}
 	eq(copy, DataService.TEMPLATE)
 end)
 

@@ -117,8 +117,13 @@ test("the flag is set before the call; a badge with id 0 warns and skips, leavin
 	eq(seen, true, "flag first")
 	BadgeService.AwardBadge = real
 
-	local plain = Farm.setup()
+	local plain = Farm.setup() -- the real ids: welcome is created, master_gardener still 0
 	local q = Farm.join(plain, 3)
-	eq(plain.Data.get(q).badges.welcome, nil, "id 0: no flag")
-	eq(#plain.engine.badgesAwarded, 0)
+	eq(plain.Data.get(q).badges.welcome, true, "welcome has its Creator Hub id")
+	eq(#plain.engine.badgesAwarded, 1)
+	plain.engine:run(function()
+		plain.Reward.award(q, "master_gardener")
+	end)
+	eq(plain.Data.get(q).badges.master_gardener, nil, "id 0: no flag")
+	eq(#plain.engine.badgesAwarded, 1, "id 0: no call")
 end)

@@ -1,7 +1,8 @@
 --[[
-The release switch (§11.5). Until release, every Catalog and badge id is 0 (TODO: create on Mason's account).
-AdminUserIds already holds Mason's UserId. At release, run with RELEASE=1: then no id may be 0 and AdminUserIds must
-hold a real UserId.
+The release switch (§11.5). Every Catalog id and five badge ids hold their Creator Hub ids; master_gardener,
+week_of_sprouts, full_meadow, moonstruck and sunflower_friend are still 0 (TODO: create on Mason's account).
+AdminUserIds holds Mason's UserId. At release, run with RELEASE=1: then no id may be 0 and AdminUserIds must hold a
+real UserId.
 
   RELEASE=1 tools/run_tests.sh Release
 ]]
@@ -42,12 +43,29 @@ if RELEASE then
 		end
 	end)
 else
-	test("before release: the 29 store items and 10 badges are all still 0 (docs/ids-todo.md)", function()
-		local list, Config = ids()
-		eq(#list, 29 + 10)
-		for _, entry in list do
-			eq(entry.id, 0, entry.where)
+	local PENDING = {
+		["Badges.master_gardener"] = true,
+		["Badges.week_of_sprouts"] = true,
+		["Badges.full_meadow"] = true,
+		["Badges.moonstruck"] = true,
+		["Badges.sunflower_friend"] = true,
+	}
+	test(
+		"before release: the 29 store items and 5 badges have real ids; 5 badges are still 0 (docs/ids-todo.md)",
+		function()
+			local list, Config = ids()
+			eq(#list, 29 + 10)
+			local seen = {}
+			for _, entry in list do
+				if PENDING[entry.where] then
+					eq(entry.id, 0, entry.where)
+				else
+					Assert.truthy(entry.id > 0, `{entry.where} has its Creator Hub id`)
+					Assert.truthy(not seen[entry.id], `{entry.where}: {entry.id} is used twice`)
+					seen[entry.id] = true
+				end
+			end
+			eq(Config.AdminUserIds, { 11787294097 })
 		end
-		eq(Config.AdminUserIds, { 11787294097 })
-	end)
+	)
 end

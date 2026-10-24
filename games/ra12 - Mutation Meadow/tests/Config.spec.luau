@@ -286,14 +286,14 @@ test("catalog: prices, fields and gifts", function()
 	local function row(t)
 		return { t.name, t.robux, t.id }
 	end
-	eq(row(C.passes.extraRow), { "Extra Plot Row", 199, 0 })
+	eq(row(C.passes.extraRow), { "Extra Plot Row", 199, 2052953294 })
 	eq(C.passes.extraRow.tiles, 8)
-	eq(row(C.passes.vip), { "VIP Gardener", 249, 0 })
-	eq(row(C.passes.gnome), { "Auto-Harvest Gnome", 299, 0 })
+	eq(row(C.passes.vip), { "VIP Gardener", 249, 2053169320 })
+	eq(row(C.passes.gnome), { "Auto-Harvest Gnome", 299, 2052035337 })
 	eq({ C.passes.gnome.radius, C.passes.gnome.everySec }, { 12, 2 })
-	eq(row(C.passes.doubleCash), { "2x Sell Cash", 349, 0 })
+	eq(row(C.passes.doubleCash), { "2x Sell Cash", 349, 2053025309 })
 	local b = C.passes.starterBundle
-	eq(row(b), { "Starter Bundle", 249, 0 })
+	eq(row(b), { "Starter Bundle", 249, 2052647253 })
 	eq(b.grants, { "extraRow", "can_pumpkin", "tag_sprout" })
 	eq({ b.valueRobux, b.hideIfOwns, b.giftable }, { 327, "extraRow", false })
 	eq(
@@ -301,25 +301,25 @@ test("catalog: prices, fields and gifts", function()
 		{ "tag_star", "trail_leaf", "can_crystal", "trail_firefly", "theme_cherry", "theme_candy", "theme_starry" }
 	)
 	eq(C.extraRowCard, { robux = 199, showWhenPlotFull = true, minSessionSec = 600, closeHidesForSession = true })
-	eq(row(C.products.instantGrow), { "Instant Grow", 19, 0 })
-	eq(row(C.products.growAll), { "Grow All", 99, 0 })
+	eq(row(C.products.instantGrow), { "Instant Grow", 19, 3721780958 })
+	eq(row(C.products.growAll), { "Grow All", 99, 3721780982 })
 	-- stylua: ignore start
 	local cosmetics = {
-		tag_sprout    = { "Sprout Buddy",         49,  "tag" },
-		trail_leaf    = { "Leaf Swirl",           79,  "trail" },
-		can_pumpkin   = { "Pumpkin Watering Can", 79,  "can" },
-		tag_star      = { "Star Farmer",          99,  "tag" },
-		can_crystal   = { "Crystal Watering Can", 99,  "can" },
-		trail_firefly = { "Firefly Trail",        129, "trail" },
-		theme_cherry  = { "Cherry Blossom Plot",  149, "theme" },
-		theme_candy   = { "Candy Land Plot",      149, "theme" },
-		theme_starry  = { "Starry Night Plot",    199, "theme" },
+		tag_sprout    = { "Sprout Buddy",         49,  "tag",   3721780987 },
+		trail_leaf    = { "Leaf Swirl",           79,  "trail", 3721781001 },
+		can_pumpkin   = { "Pumpkin Watering Can", 79,  "can",   3721780992 },
+		tag_star      = { "Star Farmer",          99,  "tag",   3721781032 },
+		can_crystal   = { "Crystal Watering Can", 99,  "can",   3721781023 },
+		trail_firefly = { "Firefly Trail",        129, "trail", 3721781036 },
+		theme_cherry  = { "Cherry Blossom Plot",  149, "theme", 3721781049 },
+		theme_candy   = { "Candy Land Plot",      149, "theme", 3721781043 },
+		theme_starry  = { "Starry Night Plot",    199, "theme", 3721781052 },
 	}
 	-- stylua: ignore end
 	local n = 0
 	for key, want in cosmetics do
 		local c = C.cosmetics[key]
-		eq({ c.name, c.robux, c.slot, c.id }, { want[1], want[2], want[3], 0 }, key)
+		eq({ c.name, c.robux, c.slot, c.id }, want, key)
 		n += 1
 	end
 	for _ in C.cosmetics do
@@ -337,6 +337,23 @@ test("catalog: prices, fields and gifts", function()
 		eq(g.friendsOnly, true)
 	end
 	eq(gifts, 13, "gift count")
+	-- stylua: ignore start
+	local giftIds = {}
+	for key, g in C.gifts do
+		giftIds[key] = g.id
+	end
+	eq(giftIds, {
+		gift_tag_sprout = 3721781069, gift_can_pumpkin = 3721781074, gift_trail_leaf = 3721781076,
+		gift_can_crystal = 3721781079, gift_tag_star = 3721781084, gift_trail_firefly = 3721781088,
+		gift_theme_candy = 3721781093, gift_theme_cherry = 3721781118, gift_extraRow = 3721781120,
+		gift_theme_starry = 3721781130, gift_vip = 3721781136, gift_gnome = 3721781138,
+		gift_doubleCash = 3721781145,
+	})
+	-- stylua: ignore end
+	for key, g in C.gifts do
+		eq(C.byProductId[g.id], { group = "gifts", key = key }, key .. " by product id")
+	end
+	eq(C.byProductId[3721780958], { group = "products", key = "instantGrow" })
 	for key, g in C.gifts do
 		local of = C.passes[g.of] or C.cosmetics[g.of]
 		eq(g.name, "🎁 Gift " .. of.name, key .. " name")

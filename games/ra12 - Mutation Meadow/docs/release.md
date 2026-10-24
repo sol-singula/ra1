@@ -8,7 +8,8 @@ Nothing here is done from the repo. Each item is a step on Mason's account or in
   Every DevCommand (capture included) is Studio only: on a live server even this id is dropped as `dev_gate`.
 - [ ] **Every Catalog and badge `id` is created and filled in.** That's the 29 store items and 10 badges listed in
       `docs/ids-todo.md`, all made on Mason's own account. Then run `RELEASE=1 tools/run_tests.sh Release`: it
-      fails while any id is still 0.
+      fails while any id is still 0. Done: all 29 store items and 5 badges. Left: the master_gardener,
+      week_of_sprouts, full_meadow, moonstruck and sunflower_friend badges.
 - [ ] **Private servers** are on, at 99 R$ a month (Creator Hub > Monetization > Private Servers).
 - [ ] **Store art is uploaded:** the 1024×1024 icon and the 1920×1080 thumbnails from the M6 capture scenes.
   In Studio (capture is Studio only), set the viewport to exactly 1920×1080 (1024×1024 for the icon), then use the

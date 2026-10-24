@@ -232,7 +232,11 @@ test("a cosmetic you own can't be prompted; one with no id yet can't either", fu
 	local p = Farm.join(ctx, 1)
 	ctx.Data.get(p).cosmetics.owned.trail_leaf = true
 	eq(prompt(ctx, p, { key = "trail_leaf" }), { false, "owned" })
-	local plain = Farm.setup()
+	local plain = Farm.setup(nil, function(engine)
+		Server.patchConfig(engine, function(Config)
+			Config.Catalog.passes.vip.id = 0
+		end)
+	end)
 	local q = Farm.join(plain, 1)
 	eq({ Farm.call(plain, q, "Purchase", "prompt", { key = "vip" }) }, { false, "not_created" })
 end)
