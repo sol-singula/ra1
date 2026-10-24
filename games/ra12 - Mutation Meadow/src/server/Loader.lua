@@ -59,6 +59,7 @@ Loader.ORDER = {
 	"PurchaseService",
 	"PatchService",
 	"LoungeService",
+	"TelemetryService",
 	"FirstSessionService",
 	"CaptureService",
 }

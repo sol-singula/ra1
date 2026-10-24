@@ -36,6 +36,7 @@ local DataService = require(script.Parent.DataService)
 local FarmService = require(script.Parent.FarmService)
 local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
+local Telemetry = require(script.Parent.Parent.Telemetry)
 local ShopService = require(script.Parent.ShopService)
 local SocialService = require(script.Parent.SocialService)
 
@@ -108,6 +109,7 @@ function RewardService.claimDaily(player, _, profile)
 	end
 	local days = Config.Daily.days
 	local entry = days[d.day]
+	Telemetry.log(player, "daily_claim", { day = d.day })
 	if entry.coins then
 		InventoryService.addCoins(player, entry.coins, "daily")
 	end
@@ -169,7 +171,7 @@ end
 local function payStarter(player, q)
 	local r = q.reward
 	if r.coins then
-		InventoryService.addCoins(player, r.coins, "quest")
+		InventoryService.addCoins(player, r.coins, "quest", { onboarding = true })
 	end
 	if r.seeds then
 		grantSeeds(player, r.seeds, "quest")
@@ -177,6 +179,7 @@ local function payStarter(player, q)
 	local i = STARTER[q.key].index
 	local what = if r.coins then `{r.coins} coins` else "seeds"
 	NetService.toast(player, "quest", `Starter {i} done: {what}`, { quest = q.key })
+	Telemetry.log(player, "quest_complete", { id = q.key, coins = r.coins })
 	RewardService.QuestDone:Fire(player, q.key)
 end
 
@@ -228,7 +231,9 @@ local function claimQuest(player, payload, profile)
 	end
 	dq.claimed[id] = true
 	NetService.change(player, { "quests" }, profile.quests)
-	InventoryService.addCoins(player, Config.Quests.dailyCoinsPerLevelSq * levelSq(profile), "quest")
+	local coins = Config.Quests.dailyCoinsPerLevelSq * levelSq(profile)
+	InventoryService.addCoins(player, coins, "quest")
+	Telemetry.log(player, "quest_complete", { id = id, coins = coins })
 	RewardService.QuestDone:Fire(player, id)
 	return true
 end
@@ -258,6 +263,7 @@ function RewardService.claimPlaytime(player, payload, profile)
 		return false, "not_yet"
 	end
 	pt.claimed[key] = true
+	Telemetry.log(player, "playtime_claim", { index = payload.index })
 	if gift.coinsPerLevelSq then
 		InventoryService.addCoins(player, gift.coinsPerLevelSq * levelSq(profile), "playtime")
 	end

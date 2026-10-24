@@ -31,6 +31,7 @@ local DevCommands = require(script.Parent.Parent.Net.DevCommands)
 local Guards = require(script.Parent.Parent.Net.Guards)
 local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
+local Telemetry = require(script.Parent.Parent.Telemetry)
 local WeatherService = require(script.Parent.WeatherService)
 
 local BlockPartyService = {
@@ -174,7 +175,9 @@ local function reward()
 			bp.rewarded = true
 			bp.rewardsTotal += 1
 			NetService.change(player, { "blockParty" }, bp)
-			InventoryService.addCoins(player, cfg.reward.coinsPerLevelSq * profile.plotLevel ^ 2, "blockParty")
+			local coins = cfg.reward.coinsPerLevelSq * profile.plotLevel ^ 2
+			InventoryService.addCoins(player, coins, "blockparty")
+			Telemetry.log(player, "blockparty_reward", { coins = coins })
 			if bp.rewardsTotal == cfg.sunflowerFriendAt then
 				BlockPartyService.BadgeEarned:Fire(player, "sunflower_friend")
 			end
@@ -186,9 +189,13 @@ function BlockPartyService.bloom(now)
 	if not window or window.phase ~= "open" then
 		return false
 	end
+	local early = now < window.endsAt
 	window.phase = "weather"
 	window.stage = "bloom"
 	window.bloomAt = now
+	for _, player in Players:GetPlayers() do
+		Telemetry.log(player, "blockparty_bloom", { early = early, waters = window.waters, goal = window.goal })
+	end
 	WeatherService.startEvent()
 	reward()
 	broadcast()
@@ -259,6 +266,7 @@ local function water(player, _, profile)
 	bp.waters += 1
 	window.waters += 1
 	NetService.change(player, { "blockParty" }, bp)
+	Telemetry.log(player, "blockparty_water", { waters = bp.waters })
 	BlockPartyService.Watered:Fire(player)
 	window.stage = BlockPartyService.stageFor(window.waters, window.goal)
 	if window.stage == "bloom" then

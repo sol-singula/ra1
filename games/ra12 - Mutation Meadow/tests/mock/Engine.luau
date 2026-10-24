@@ -32,7 +32,7 @@ unpublished place), shareDataWith (another engine whose stored data this one see
 
 Faked services: Players, RunService, HttpService (GenerateGUID, JSONEncode/Decode), MarketplaceService,
 BadgeService, PolicyService, AnalyticsService, TeleportService (engine.teleports), TextService (engine.filterFails,
-engine.filterAs), player:GetFriendsOnline (engine.friendsOnline[userId]), DataStoreService (6 s same-key write cooldown, injectable errors,
+engine.filterAs), player:GetFriendsOnline (engine.friendsOnline[userId]), player:GetJoinData (engine.launchData[userId]), DataStoreService (6 s same-key write cooldown, injectable errors,
 UpdateAsync semantics, OrderedDataStore, GetRequestBudgetForRequestType), plus a deterministic Random and a
 virtual clock behind workspace:GetServerTimeNow(), os.time, os.clock, tick, task.wait and task.delay.
 ]]
@@ -768,6 +768,9 @@ local function makeServices(engine)
 			table.insert(engine.kicks, { userId = userId, reason = reason })
 			engine:removePlayer(p)
 		end
+		function p.GetJoinData()
+			return { LaunchData = engine.launchData[userId] }
+		end
 		function p.GetFriendsOnline()
 			if engine.friendsOnlineFails then
 				error("HTTP 500 (mock)", 0)
@@ -1154,6 +1157,7 @@ function Engine.new(opts)
 		policies = {},
 		friends = {},
 		friendsOnline = {},
+		launchData = {},
 		teleports = {},
 		kicks = {},
 		dataLog = {},

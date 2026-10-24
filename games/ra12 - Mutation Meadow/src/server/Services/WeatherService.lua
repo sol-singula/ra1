@@ -34,6 +34,7 @@ local DevCommands = require(script.Parent.Parent.Net.DevCommands)
 local FarmService = require(script.Parent.FarmService)
 local MutationService = require(script.Parent.MutationService)
 local NetService = require(script.Parent.NetService)
+local Telemetry = require(script.Parent.Parent.Telemetry)
 
 local WeatherService = {
 	Started = Signal.new(),
@@ -166,6 +167,9 @@ function WeatherService.startEvent(kind)
 		end
 	end
 	broadcast()
+	for _, player in Players:GetPlayers() do
+		Telemetry.log(player, "weather_start", { kind = kind })
+	end
 	WeatherService.Started:Fire(event)
 	return event
 end
@@ -184,6 +188,7 @@ function WeatherService.startShower(player)
 		FarmService.render(player, id)
 	end
 	NetService.fire(player, "Weather", { kind = "rain", scope = "ownPlot", startsAt = now, endsAt = s.endsAt })
+	Telemetry.log(player, "weather_start", { kind = "welcomeShower" })
 	return true
 end
 

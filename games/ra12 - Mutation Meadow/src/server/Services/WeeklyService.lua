@@ -27,6 +27,7 @@ local DataService = require(script.Parent.DataService)
 local DevCommands = require(script.Parent.Parent.Net.DevCommands)
 local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
+local Telemetry = require(script.Parent.Parent.Telemetry)
 
 local WeeklyService = {
 	Rolled = Signal.new(),
@@ -115,6 +116,7 @@ local function claim(player, payload, profile)
 	for i = 1, #ids - KEEP do
 		claimed[ids[i]] = nil
 	end
+	Telemetry.log(player, "weekly_gift_claim", { updateId = payload.updateId })
 	local gift = Config.Weekly.gift
 	InventoryService.addCoins(player, gift.coinsPerLevelSq * profile.plotLevel ^ 2, "weekly")
 	local seed = services.RewardService and services.RewardService.topTierSeed(profile)

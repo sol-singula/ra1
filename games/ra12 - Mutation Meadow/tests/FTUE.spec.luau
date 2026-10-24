@@ -54,12 +54,12 @@ test("shower at 240, Wet at 250, calendar at 390, done at 600", function()
 	eq(board.nextUpdateAt, ctx.Weekly.current().nextAt)
 	Assert.truthy(board.nextPartyAt > ctx.engine.now - 70, "the next Block Party")
 	local funnel = {}
-	for _, e in ctx.engine:require(ctx.engine:module("Server/Telemetry")).events do
-		if e.name == "funnel" and e.userId == 1 then
-			table.insert(funnel, e.data.step)
+	for _, call in ctx.engine.analytics do
+		if call.method == "LogOnboardingFunnelStepEvent" and call.args[1] == p then
+			table.insert(funnel, call.args[2])
 		end
 	end
-	eq(funnel, { 0, 7, 10 })
+	eq(funnel, { 1, 7, 10 }, "join, the shower, ten minutes (this test plants nothing itself)")
 end)
 
 test("Block Party weather 230-530 defers it: shower 540, Wet 550, calendar 690", function()

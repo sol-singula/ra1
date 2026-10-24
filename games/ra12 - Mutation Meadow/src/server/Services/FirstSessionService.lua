@@ -152,11 +152,8 @@ function FirstSessionService:Start()
 	end
 end
 
-function FirstSessionService:OnPlayerLoaded(player, profile)
+function FirstSessionService:OnPlayerLoaded(player)
 	lastTick[player] = Clock.now()
-	if not profile.firstSession.done then
-		funnel(player, 0)
-	end
 end
 
 function FirstSessionService:OnPlayerLeaving(player)

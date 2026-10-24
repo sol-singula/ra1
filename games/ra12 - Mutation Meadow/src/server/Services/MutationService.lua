@@ -17,6 +17,7 @@ local Signal = require(ReplicatedStorage.Shared.Signal)
 local DataService = require(script.Parent.DataService)
 local FarmService = require(script.Parent.FarmService)
 local NetService = require(script.Parent.NetService)
+local Telemetry = require(script.Parent.Parent.Telemetry)
 
 local MutationService = {
 	Mutated = Signal.new(),
@@ -35,12 +36,14 @@ end
 
 local function announce(player, profile, tileId, tile, mut)
 	local key = MutationMath.key(tile.muts)
+	local newEntry = profile.collection.found[tile.seed .. ":" .. key] == nil
 	NetService.fire(player, "Mutation", {
 		tile = tileId,
 		mut = mut,
 		value = MutationMath.value(tile.seed, tile.muts),
-		newEntry = profile.collection.found[tile.seed .. ":" .. key] == nil,
+		newEntry = newEntry,
 	})
+	Telemetry.log(player, "mutation_found", { seed = tile.seed, mut = key, newEntry = newEntry })
 	NetService.change(player, { "tiles", tileId }, tile)
 	FarmService.render(player, tileId)
 	MutationService.Mutated:Fire(player, tile.seed, key)

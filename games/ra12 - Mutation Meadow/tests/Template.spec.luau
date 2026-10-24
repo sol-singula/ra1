@@ -18,6 +18,9 @@ test("a new profile is the template (plus its lock and times)", function()
 	copy.patchTips.plant = false
 	copy.lock = nil
 	copy.meta.created, copy.meta.lastSeen, copy.meta.sessionStart = 0, 0, 0
+	eq({ copy.meta.source, copy.meta.campaign }, { "organic", nil }, "the acquisition tag (M10)")
+	eq(copy.meta.funnel, { ["1"] = true }, "funnel step 1: join")
+	copy.meta.source, copy.meta.funnel = nil, nil
 	eq(copy, DataService.TEMPLATE)
 end)
 

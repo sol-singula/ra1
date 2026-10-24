@@ -44,6 +44,7 @@ local Guards = require(script.Parent.Parent.Net.Guards)
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
 local Purchase = require(script.Parent.Parent.Purchase)
+local Telemetry = require(script.Parent.Parent.Telemetry)
 
 local InventoryService = {
 	Economy = Signal.new(),
@@ -58,7 +59,8 @@ local function changed(player, field, value)
 	NetService.change(player, { field }, value)
 end
 
-function InventoryService.addCoins(player, n, source)
+-- opts.onboarding: an FTUE reward (logged as an Onboarding economy event)
+function InventoryService.addCoins(player, n, source, opts)
 	local profile = DataService.get(player)
 	if not profile or n <= 0 then
 		return
@@ -68,7 +70,7 @@ function InventoryService.addCoins(player, n, source)
 	profile.lifetimeCoins += n
 	changed(player, "coins", profile.coins)
 	changed(player, "lifetimeCoins", profile.lifetimeCoins)
-	InventoryService.Economy:Fire(player, "coins", n, source)
+	InventoryService.Economy:Fire(player, "coins", n, source, opts)
 	for _, seed in Config.Restock.order do
 		local gate = Config.Seeds[seed].gate.lifetimeCoins
 		if gate and before < gate and profile.lifetimeCoins >= gate then
@@ -125,6 +127,7 @@ function InventoryService.addToBasket(player, seed)
 	end
 	if InventoryService.basketCount(profile) >= Config.Inventory.basketCap then
 		NetService.toast(player, "warn", InventoryService.BASKET_FULL)
+		Telemetry.log(player, "basket_full", { seed = seed })
 		return false
 	end
 	profile.basket[seed] = (profile.basket[seed] or 0) + 1
@@ -151,7 +154,7 @@ local function sellAll(player, _, profile)
 	end
 	table.clear(profile.basket)
 	changed(player, "basket", profile.basket)
-	InventoryService.addCoins(player, total, "sell")
+	InventoryService.addCoins(player, total, "sell_normal")
 	return true
 end
 
@@ -203,15 +206,19 @@ end
 function InventoryService.keepCrop(player, profile, tile, onFull)
 	if InventoryService.itemCount(profile) >= InventoryService.backpackCap(profile) then
 		if onFull == "sell" then
-			InventoryService.addCoins(player, InventoryService.itemPrice(player, tile), "sellCrop")
+			local coins = InventoryService.itemPrice(player, tile)
+			InventoryService.addCoins(player, coins, "sell_item")
+			Telemetry.log(player, "item_sold", { seed = tile.seed, mut = MutationMath.key(tile.muts), coins = coins })
 			return true, "sold"
 		elseif onFull == "leave" then
 			return true, "left"
 		end
+		Telemetry.log(player, "backpack_full", { seed = tile.seed })
 		return false, "backpack_full"
 	end
 	local guid, item = ItemModel.mint(profile, player.UserId, tile.seed, tile.muts)
 	changed(player, "items", profile.items)
+	Telemetry.log(player, "item_kept", { seed = item.seed, mut = MutationMath.key(item.muts) })
 	InventoryService.ItemKept:Fire(player, guid, item)
 	return true
 end
@@ -273,7 +280,8 @@ local function sellItem(player, payload, profile)
 	profile.items[payload.id] = nil
 	ItemModel.registry[payload.id] = nil
 	changed(player, "items", profile.items)
-	InventoryService.addCoins(player, coins, "sellItem")
+	InventoryService.addCoins(player, coins, "sell_item")
+	Telemetry.log(player, "item_sold", { seed = item.seed, mut = MutationMath.key(item.muts), coins = coins })
 	InventoryService.ItemSold:Fire(player, item, coins)
 	return true
 end
@@ -295,6 +303,7 @@ local function display(player, payload, profile)
 	changed(player, "pedestals", profile.pedestals)
 	changed(player, "items", profile.items)
 	InventoryService.renderPedestals(player)
+	Telemetry.log(player, "item_displayed", { seed = item.seed, mut = MutationMath.key(item.muts), slot = slot })
 	InventoryService.Displayed:Fire(player, payload.id, slot)
 	return true
 end

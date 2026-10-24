@@ -1,5 +1,6 @@
 --[[
-The game's event log. Services log here; TelemetryService (M10) ships the buffer to AnalyticsService.
+The game's event log. Services log here; TelemetryService turns each entry into AnalyticsService events (it is the
+only module that calls AnalyticsService).
 
   Telemetry.log(player, name, data?)
   Telemetry.events              { { userId, name, data, at } } since the last take()

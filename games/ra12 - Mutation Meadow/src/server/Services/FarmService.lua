@@ -144,7 +144,7 @@ local function harvestOne(player, profile, id, onFull, allowMutated)
 	else
 		local full = InventoryService.basketCount(profile) >= Config.Inventory.basketCap
 		if profile.autoSell or (full and onFull == "sell") then
-			InventoryService.addCoins(player, InventoryService.sellValue(player, tile.seed), "harvest")
+			InventoryService.addCoins(player, InventoryService.sellValue(player, tile.seed), "sell_normal")
 		elseif not InventoryService.addToBasket(player, tile.seed) then
 			return false, "basket_full"
 		end
@@ -327,7 +327,7 @@ local function buyPlot(player, profile)
 	if not cost then
 		return false, "max"
 	end
-	if not InventoryService.spendCoins(player, cost, "plot") then
+	if not InventoryService.spendCoins(player, cost, "upgrade") then
 		return false, "coins"
 	end
 	profile.plotLevel = nextLevel

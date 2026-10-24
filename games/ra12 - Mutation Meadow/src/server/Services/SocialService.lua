@@ -154,7 +154,7 @@ function SocialService.helpWater(helper, ownerId, tileId)
 	NetService.change(helper, { "social" }, helperProfile.social)
 	NetService.change(owner, { "tiles", tileId }, tile)
 	InventoryService.addCoins(helper, Config.Social.helpCoinsPerLevel * helperProfile.plotLevel, "help")
-	InventoryService.addCoins(owner, Config.Social.helpCoinsPerLevel * ownerProfile.plotLevel, "helped")
+	InventoryService.addCoins(owner, Config.Social.helpCoinsPerLevel * ownerProfile.plotLevel, "help")
 	SocialService.Helped:Fire(helper, owner, tileId)
 	return true
 end

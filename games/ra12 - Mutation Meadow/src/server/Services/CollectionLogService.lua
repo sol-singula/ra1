@@ -22,6 +22,7 @@ local DataService = require(script.Parent.DataService)
 local InventoryService = require(script.Parent.InventoryService)
 local MutationService = require(script.Parent.MutationService)
 local NetService = require(script.Parent.NetService)
+local Telemetry = require(script.Parent.Parent.Telemetry)
 
 local CollectionLogService = {
 	Found = Signal.new(),
@@ -84,6 +85,7 @@ local function claim(player, payload, profile)
 		c.claimed[entry] = true
 		NetService.change(player, { "collection" }, c)
 		InventoryService.addCoins(player, Config.Collection.firstFind[entry:match(":(%a+)$")], "collection")
+		Telemetry.log(player, "collection_claim", { key = entry })
 		return true
 	end
 	local n = payload.milestone
@@ -96,6 +98,7 @@ local function claim(player, payload, profile)
 		return false, "claimed"
 	end
 	c.milestones[key] = true
+	Telemetry.log(player, "milestone_claim", { n = n })
 	if MILESTONE_COSMETIC[reward] then
 		profile.cosmetics.owned[reward] = true
 		NetService.change(player, { "cosmetics" }, profile.cosmetics)
