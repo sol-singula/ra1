@@ -1,7 +1,8 @@
 --[[
 How crops look (the client's world and the capture stage, through Models/Crop): a colour per seed (the fruit), the
-leaf colour while it grows, the Golden colours, the pooled mutation emitters and the Golden reveal. The mutation
-numbers are Config.MutationVisuals (Game Artist build-spec/02-mutations.md).
+leaf colour while it grows, the Golden colours and the pooled mutation emitters. The mutation numbers are
+Config.MutationVisuals (Game Artist build-spec/02-mutations.md); the mutation reveal is RevealController
+(build-spec/04-reveal.md).
 
   Visuals.mutationFx(host, key, opts?)   the pooled emitters for a mutation key (nil clears them):
       golden      MutFx glint on host (Rate 0.35)
@@ -9,9 +10,6 @@ numbers are Config.MutationVisuals (Game Artist build-spec/02-mutations.md).
       wetgolden   MutFx glint on host (Rate 0.25) + MutDrops drip on opts.drip (or host)
     opts = { drip = Instance, large = bool }; reducedFx cuts every rate to REDUCED_RATE
   Visuals.release(host) / setReduced(on) / poolSize() / rateOf(emitter)
-  Visuals.goldenReveal(model)      the reveal when a crop turns Golden: a star burst, a ring, the light flaring
-                                   and the fruit sweeping from its own colour to gold (client side: the live tiles
-                                   and the capture stage's `capture reveal`)
   Visuals.grownNow(part, now)
 ]]
 local Config = require(script.Parent.Config)
@@ -206,87 +204,6 @@ end
 
 function Visuals.poolSize()
 	return #pool
-end
-
--- the parts Models/Crop made gold carry Gold = true; the one with the light is the crop's Main part
-local function goldParts(model)
-	local out = {}
-	for _, d in model:GetDescendants() do
-		if d:IsA("BasePart") and d:GetAttribute("Gold") then
-			table.insert(out, d)
-		end
-	end
-	return out
-end
-
-function Visuals.goldenReveal(model)
-	local parts = goldParts(model)
-	local main = parts[1]
-	for _, p in parts do
-		if p:GetAttribute("Main") then
-			main = p
-		end
-	end
-	if not main then
-		return nil
-	end
-	local burst = Instance.new("ParticleEmitter")
-	burst.Name = "RevealBurst"
-	burst.Texture = Visuals.SPARKLE
-	burst.Color = ColorSequence.new(Visuals.GOLD_LIGHT)
-	burst.LightEmission = 1
-	burst.Lifetime = NumberRange.new(0.6, 1.2)
-	burst.Speed = NumberRange.new(6, 11)
-	burst.SpreadAngle = Vector2.new(180, 180)
-	burst.Size = NumberSequence.new(0.45)
-	burst.Rate = 0
-	burst.Parent = main
-	pcall(function()
-		burst:Emit(if Visuals.reducedFx then 10 else 40)
-	end)
-	local ring = Instance.new("Part")
-	ring.Name = "RevealRing"
-	ring.Anchored = true
-	ring.CanCollide = false
-	ring.CanQuery = false
-	ring.Material = Enum.Material.Neon
-	ring.Color = Visuals.GOLD_LIGHT
-	ring.Shape = Enum.PartType.Cylinder
-	ring.Size = Vector3.new(0.1, 1, 1)
-	ring.CFrame = CFrame.new(main.Position - Vector3.new(0, main.Size.Y / 2, 0)) * CFrame.Angles(0, 0, math.pi / 2)
-	ring.Transparency = 0.2
-	ring.Parent = model
-	local light = model:FindFirstChild("MutLight", true) -- the crop's MutLight (on its Fx host)
-	local brightness = light and light.Brightness
-	local targets = {}
-	for _, p in parts do
-		targets[p] = p.Color
-		p.Color = p:GetAttribute("BaseColor") or p.Color
-	end
-	task.spawn(function()
-		local steps = 10
-		for i = 1, steps do
-			local t = i / steps
-			for p, gold in targets do
-				p.Color = (p:GetAttribute("BaseColor") or gold):Lerp(gold, t)
-			end
-			local d = 1 + 9 * t
-			ring.Size = Vector3.new(0.1, d, d)
-			ring.Transparency = 0.2 + 0.8 * t
-			if light then
-				light.Brightness = brightness + 6 * math.sin(t * math.pi)
-			end
-			task.wait(0.05)
-		end
-		if light then
-			light.Brightness = brightness
-		end
-		ring:Destroy()
-		task.wait(1.5)
-		burst:Destroy()
-	end)
-	model:SetAttribute("Revealed", (model:GetAttribute("Revealed") or 0) + 1)
-	return burst, ring
 end
 
 -- grown boosted seconds now, from a tile part's attributes (the server stays authoritative)

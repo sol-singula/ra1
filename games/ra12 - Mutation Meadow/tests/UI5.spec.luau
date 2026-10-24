@@ -227,35 +227,41 @@ test("mutated crops sparkle in the world", function()
 	eq(crop:FindFirstChild("MutBead1"), nil)
 end)
 
-test("a crop turning Golden on a live tile plays the Golden reveal; one light, star glints", function()
-	local c = Client.boot()
-	local CropModel = c.engine:require(c.engine:module("Shared/Models/Crop"))
-	local Visuals = c.engine:require(c.engine:module("Shared/Visuals"))
-	local tile = c.plot.Tiles["2"]
-	local now = c.engine.workspace:GetServerTimeNow()
-	for k, v in { Active = true, Seed = "pumpkin", Grown = 720, At = now, Rate = 1, GrowSec = 720, Ripe = true } do
-		tile:SetAttribute(k, v)
-	end
-	c.engine:advance(0.5)
-	local crop = c.engine.workspace.ClientCrops:FindFirstChild("Plot1_2")
-	eq({ crop:GetAttribute("Stage"), crop:GetAttribute("Revealed") }, { "ripe", nil })
-	tile:SetAttribute("Muts", "golden")
-	c.engine:advance(0.3)
-	local main = CropModel.main(crop)
-	Assert.truthy(main:FindFirstChild("RevealBurst"), "the reveal")
-	eq(crop:GetAttribute("Revealed"), 1)
-	c.engine:advance(3)
-	eq(main.Color, Visuals.GOLD)
-	eq(CropModel.fxHost(crop).MutFx.Texture, Visuals.SPARKLE)
-	local lights = 0
-	for _, d in crop:GetDescendants() do
-		if d.ClassName == "PointLight" then
-			lights += 1
+test(
+	"a crop turning Golden on a live tile plays the reveal; one light, star glints; Wet joining reveals Wet+Golden",
+	function()
+		local c = Client.boot()
+		local CropModel = c.engine:require(c.engine:module("Shared/Models/Crop"))
+		local Visuals = c.engine:require(c.engine:module("Shared/Visuals"))
+		local tile = c.plot.Tiles["2"]
+		local now = c.engine.workspace:GetServerTimeNow()
+		for k, v in { Active = true, Seed = "pumpkin", Grown = 720, At = now, Rate = 1, GrowSec = 720, Ripe = true } do
+			tile:SetAttribute(k, v)
 		end
+		c.engine:advance(0.5)
+		local crop = c.engine.workspace.ClientCrops:FindFirstChild("Plot1_2")
+		eq({ crop:GetAttribute("Stage"), crop:GetAttribute("Revealed") }, { "ripe", nil })
+		tile:SetAttribute("Muts", "golden")
+		c.engine:advance(0.3)
+		local main = CropModel.main(crop)
+		eq({ crop:GetAttribute("Revealed"), crop:GetAttribute("RevealKey") }, { 1, "golden" }, "the reveal")
+		c.engine:advance(3)
+		eq(main.Color, Visuals.GOLD)
+		eq(CropModel.fxHost(crop).MutFx.Texture, Visuals.SPARKLE)
+		local lights = 0
+		for _, d in crop:GetDescendants() do
+			if d.ClassName == "PointLight" then
+				lights += 1
+			end
+		end
+		eq(lights, 1)
+		tile:SetAttribute("Muts", "wetgolden")
+		c.engine:advance(0.5)
+		eq(
+			{ crop:GetAttribute("Revealed"), crop:GetAttribute("RevealKey") },
+			{ 2, "wetgolden" },
+			"Wet joins: a Wet+Golden reveal"
+		)
+		eq(c.engine.errors, {})
 	end
-	eq(lights, 1)
-	tile:SetAttribute("Muts", "wetgolden")
-	c.engine:advance(0.5)
-	eq(crop:GetAttribute("Revealed"), 1, "already Golden: no second reveal")
-	eq(c.engine.errors, {})
-end)
+)

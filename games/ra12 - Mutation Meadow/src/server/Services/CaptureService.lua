@@ -6,7 +6,7 @@ and run itself also refuses outside Studio (studio_only).
   capture <scene>          street, offline_before, offline_after, golden_reveal, block_party_rain,
                            block_party_golden, pedestals, icon
   capture reveal           golden_reveal only: the hero pumpkin turns Golden with the in-game reveal VFX
-                           (Visuals.goldenReveal, played by the client) and the farmer looks surprised
+                           (RevealController's 04-reveal sequence, played by the client) and the farmer looks surprised
   capture size             the client prints workspace.CurrentCamera.ViewportSize (and whether it fits the scene)
   capture hud off|on       the client hides / restores every HUD, Patch's toasts and the player list
   capture guides on|off    the client overlays the frame, the safe line (Config.Capture.safeBottom) and a warning

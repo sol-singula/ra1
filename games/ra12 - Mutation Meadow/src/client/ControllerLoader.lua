@@ -14,6 +14,7 @@ local ControllerLoader = {}
 ControllerLoader.ORDER = {
 	"StateController",
 	"HudController",
+	"RevealController",
 	"TileController",
 	"UpgradeController",
 	"SellController",

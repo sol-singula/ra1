@@ -9,7 +9,7 @@ gated DevCommand "capture").
   Guides = true      an overlay: the scene's frame (16:9, or square for the icon), a line at the bottom
                      Config.Capture.safeBottom (keep key content above it), and a red warning when the viewport isn't
                      exactly the scene's size (1920x1080; the icon 1024x1024)
-  Reveal (counter)   plays the in-game Golden reveal (Visuals.goldenReveal) on the staged HeroCrop
+  Reveal (counter)   plays the in-game mutation reveal (RevealController, 04-reveal) on the staged HeroCrop
   SizeAsk (counter)  prints workspace.CurrentCamera.ViewportSize and whether it fits the scene ("capture size")
 
   CaptureController.apply()        re-reads the attributes (tests)
@@ -22,7 +22,7 @@ local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 
 local Config = require(ReplicatedStorage.Shared.Config)
-local Visuals = require(ReplicatedStorage.Shared.Visuals)
+local RevealController = require(script.Parent.RevealController)
 
 local CaptureController = {}
 
@@ -193,7 +193,7 @@ function CaptureController.apply()
 		local stage = folder:FindFirstChild("Stage")
 		local hero = stage and stage:FindFirstChild("HeroCrop")
 		if hero then
-			Visuals.goldenReveal(hero)
+			RevealController.play(hero, hero:GetAttribute("Muts") or "golden", { force = true })
 		end
 	end
 	local ask = folder:GetAttribute("SizeAsk") or 0

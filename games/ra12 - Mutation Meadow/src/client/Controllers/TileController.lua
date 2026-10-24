@@ -2,8 +2,8 @@
 Tiles on the client: draws every plot's crops from the tile attributes (growing between server updates) with the
 shared Models/Crop (the GA-01 builds the capture stage stages too): standing on the soil under each tile, rebuilt
 only when its stage (seed, sprout, growing, ripe) or its distance band changes (the far build beyond
-Config.CropVisuals.farStuds), the Golden and Wet looks, and the Golden reveal (Visuals.goldenReveal) when a crop you
-can see turns Golden. And the tile popup when you tap one.
+Config.CropVisuals.farStuds), the Golden and Wet looks, and the mutation reveal (RevealController) when a crop
+gains a mutation. And the tile popup when you tap one.
 
 Mutation caps (Config.MutationVisuals.caps, GA-02 section 5), re-checked every draw: at most emittingPerPlot (3)
 emitting crops per plot, nearest the camera first, Wet+Golden counting 2; at most `lights` (8) MutLights on screen,
@@ -29,6 +29,7 @@ local Tiles = require(ReplicatedStorage.Shared.Tiles)
 local MutationMath = require(ReplicatedStorage.Shared.MutationMath)
 local CropModel = require(ReplicatedStorage.Shared.Models.Crop)
 local ClientState = require(script.Parent.Parent.ClientState)
+local RevealController = require(script.Parent.RevealController)
 local UI = require(script.Parent.Parent.UI)
 local Visuals = require(ReplicatedStorage.Shared.Visuals)
 
@@ -354,10 +355,15 @@ local function draw()
 							CropModel.build(cropFolder, name, seed, stage, CropModel.tileCFrame(part), muts, nil, isFar)
 						crops[part] = crop
 					elseif crop:GetAttribute("Muts") ~= muts then
-						local wasGolden = string.find(crop:GetAttribute("Muts") or "", "golden") ~= nil
+						local had = crop:GetAttribute("Muts")
 						CropModel.setMuts(crop, muts)
-						if not wasGolden and string.find(muts or "", "golden") then
-							Visuals.goldenReveal(crop)
+						-- a gained mutation (wet, golden or both): the reveal (yours, or within its range)
+						if muts and (had == nil or (muts == "wetgolden" and had ~= "wetgolden")) then
+							RevealController.play(
+								crop,
+								muts,
+								{ own = plot:GetAttribute("OwnerId") == Players.LocalPlayer.UserId }
+							)
 						end
 					end
 				end

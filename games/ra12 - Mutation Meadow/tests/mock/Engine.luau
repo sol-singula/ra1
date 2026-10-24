@@ -750,6 +750,15 @@ local function makeInstanceLib(engine)
 			function inst.Emit(self, n)
 				self:SetAttribute("Emitted", (self:GetAttribute("Emitted") or 0) + n)
 			end
+		elseif className == "Sound" then
+			-- Sound:Play / Stop: IsPlaying, and a Plays count for tests
+			function inst.Play(self)
+				self.IsPlaying = true
+				self:SetAttribute("Plays", (self:GetAttribute("Plays") or 0) + 1)
+			end
+			function inst.Stop(self)
+				self.IsPlaying = false
+			end
 		end
 		if className == "Model" then
 			-- Model:AddPersistentPlayer / RemovePersistentPlayer (StreamingEnabled): who always gets this model
