@@ -6,8 +6,9 @@ with a leafy green apron, arms and legs, root-brown feet, and the #FF8C1A pumpki
 curl, cowlick and a Decal-free face (part swaps under PumpkinHead). No gold, Foil, Neon, Metal, lights or
 particles anywhere on him. He faces cf's LookVector (-Z), the Counter in front of him.
 
-Poses move whole groups of parts about their joints (section 4): the character lifts, the upper body leans about
-the hips, the head turns about its centre and the arms swing about the shoulders (the hands ride the arms).
+Poses move whole groups of parts about their joints (section 4): the character lifts, the upper body shifts and leans about
+its joint (RootBody), the head turns about its centre and the arms swing about the shoulders, at the world's
+angles (the hands ride the arms).
 
   Patch.build(model, cf) -> PumpkinHead   (the Origin attribute; PrimaryPart = Root)
   Patch.pose(anim) -> params / Patch.mix(a, b, t) / Patch.apply(model, params) / Patch.setPose(model, anim)
@@ -113,6 +114,7 @@ function Patch.pose(anim)
 	local s = PV.poses[anim] or PV.poses.idle
 	return {
 		lift = s.lift and v3(s.lift) or Vector3.zero,
+		shift = s.shift and v3(s.shift) or Vector3.zero,
 		lean = s.lean or 0,
 		yaw = s.yaw or 0,
 		nod = s.nod or 0,
@@ -129,6 +131,7 @@ function Patch.mix(a, b, t)
 	end
 	return {
 		lift = a.lift:Lerp(b.lift, t),
+		shift = a.shift:Lerp(b.shift, t),
 		lean = n(a.lean, b.lean),
 		yaw = n(a.yaw, b.yaw),
 		nod = n(a.nod, b.nod),
@@ -166,14 +169,21 @@ function Patch.apply(model, p)
 	local O = model:GetAttribute("Origin") or CFrame.new()
 	local face = PV.face.faces[model:GetAttribute("Face")] or PV.face.faces.happy
 	local lift = CFrame.new(p.lift)
-	local hip = CFrame.new(0, PV.hip, 0)
-	local body = lift * hip * CFrame.Angles(rad(p.lean), 0, 0) * hip:Inverse() * CFrame.new(0, p.breath, 0)
+	local joint = CFrame.new(0, PV.bodyJoint, 0)
+	local body = lift
+		* CFrame.new(p.shift)
+		* joint
+		* CFrame.Angles(rad(p.lean), 0, 0)
+		* joint:Inverse()
+		* CFrame.new(0, p.breath, 0)
 	local pivot = CFrame.new(HEAD_AT)
 	local head = body * pivot * CFrame.Angles(rad(p.nod), rad(p.yaw), rad(p.tilt + (face.tilt or 0))) * pivot:Inverse()
 	local T = { counter = CFrame.new(), legs = lift, body = body, head = head }
 	for key, angles in { armL = p.armL, armR = p.armR } do
-		local s = CFrame.new(SHOULDER[key])
-		T[key] = body * s * CFrame.Angles(rad(-angles[1]), 0, rad(-angles[2])) * s:Inverse()
+		-- the shoulder rides the leaned body; the arm's angle is the world's, so a lean's forearms still reach the
+		-- counter top (lean: -85 with the body at -28)
+		local at = (body * CFrame.new(SHOULDER[key])).Position
+		T[key] = CFrame.new(at) * CFrame.Angles(rad(-angles[1]), 0, rad(-angles[2])) * CFrame.new(-SHOULDER[key])
 	end
 	for _, spec in PV.parts do
 		local part = model:FindFirstChild(spec.name)

@@ -14,7 +14,7 @@ Refs: `refs/patch_turnaround.png`, `refs/patch_poses.png`. Concept: `mascot/patc
 
 | Item | Value |
 |---|---|
-| Height | **~0.6× R15 avatar** ≈ **3.0 studs** from floor to top of stem curl (head ~1.3× body width) |
+| Height | **~4.0 studs** to top of stem curl (part list; was written 3.0 / 0.6× — keep authored parts, don't shrink). Head ~1.3× body width. Must read clearly above the Counter. |
 | Origin O | floor under Patch, at the Counter's back edge centre. Front = −Z (faces the street / players) |
 | Head orange | **#FF8C1A** base / **#D9661A** shade / **#FFB066** light |
 | Eyes | **#1E1B2E** with 2 white highlight dots #FFF8E7 |
@@ -67,8 +67,10 @@ Offsets relative to O. Character stands behind the Counter (Counter is toward �
 | Name | Shape | Size | Offset | Rot | Hex / Mat |
 |---|---|---|---|---|---|
 | Root | Block | (0.2,0.2,0.2) | (0,0.1,0) | — | T1 |
-| Counter | Block | (8, 3, 3) | (0, 1.5, −3.0) | — | #BE8C5A WoodPlanks |
-| CounterTop | Block | (8.2, 0.15, 3.2) | (0, 3.075, −3.0) | — | #A0784B SmoothPlastic |
+| Counter | Block | (8, **1.7**, 3) | (0, **0.85**, −3.0) | — | #BE8C5A WoodPlanks |
+| CounterTop | Block | (8.2, 0.15, 3.2) | (0, **1.775**, −3.0) | — | #A0784B SmoothPlastic |
+
+Counter top ≈ **1.8** studs (was 3.15 — hid Patch from the street). Patch stands behind it; PumpkinHead centre at y≈2.95 must clear the top by ≥1 stud. No step platform needed if counter is this low.
 
 `ShopPrompt` parents to Counter (PatchService already does this).
 
@@ -148,7 +150,7 @@ Angles in degrees, relative to idle. Tween 0.25 s Quad Out (wave/point) or 0.35 
 | point | slight lean −Z 5° | look at target | — | straight out (rx −90), hand open | Face thinking or happy |
 | cheer | hop y +0.3 | — | both arms raise (rx −160) | same | Face wow; land after 0.4 s |
 | announce | lean −Z 8° | nod −10° | open gesture (rx −40, rz 25) | open (rx −40, rz −25) | Face wow; used with update / rare lines |
-| lean (counter-lean) | translate (0, 0, −0.6), tilt rx −15° | rest on CounterTop (y drops so chin ≈ top) | fold on counter (rx −70) | same | Face happy or sleepy; ShopHello / idle-near-counter |
+| lean (counter-lean) | translate (0, **−0.2**, **−0.9**), tilt rx **−28°** (fold over the 1.8 counter) | PumpkinHead so **chin ≈ CounterTop y 1.8** (head centre ≈ 2.55–2.65; tilt rx −20° toward street) | forearms on CounterTop (rx **−85**, hands flat near top) | same | Face happy or sleepy; ShopHello / idle-near-counter. With counter top at 1.8 this lean works; do **not** raise the counter to meet the chin. |
 
 `LINE_LOOK` in PatchService already maps line ids → {anim, face}; keep those mappings, just fill AnimationIds later
 or keep the procedural tweens forever for v1.
@@ -178,7 +180,7 @@ LOD: beyond 120 studs, hide SeedPacket, SeedDot, EyeShine, Cheeks, Cowlick (keep
 | arms / apron | #5BC236 / #2E7D32 pocket |
 | feet | #7A4E2D |
 | head:body | 1.3:1 (2.0 / 1.5) |
-| height | ~3.0 studs (0.6× avatar) |
+| height | ~4.0 studs stem tip; Counter top ≈ 1.8 |
 | faces | Decal-free part swaps (§2.4) |
 | poses | §4; AnimationIds stay "" until authored |
 | gold on Patch | none |

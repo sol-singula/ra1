@@ -8,7 +8,7 @@ Offsets are from the origin O (the floor under Patch, front = -Z, the Counter in
               group: which pose transform moves it ("counter" | "legs" | "body" | "armL" | "armR" | "head")
   face        section 2.4: the face parts (under PumpkinHead, offsets from the head centre) and each face's layout
   poses       section 4, in the spec's angles: lift (the whole character), lean (rx about the hips), head yaw /
-              nod / tilt, and each arm's rx / rz (the spec raises an arm with a negative rx and opens it with
+              nod / tilt, shift (the body and everything above it, not the legs), and each arm's rx / rz (the spec raises an arm with a negative rx and opens it with
               +rz on the left; Models/Patch turns those into Roblox's rotations)
   tween / idle / wave / cheer / lod
 ]]
@@ -18,8 +18,9 @@ local PatchVisuals = {}
 PatchVisuals.parts = {
 	-- 2.1 the counter
 	{ name = "Root", shape = "block", size = { 0.2, 0.2, 0.2 }, offset = { 0, 0.1, 0 }, hex = "#7A4E2D", transparency = 1, group = "counter" },
-	{ name = "Counter", shape = "block", size = { 8, 3, 3 }, offset = { 0, 1.5, -3.0 }, hex = "#BE8C5A", material = "WoodPlanks", group = "counter" },
-	{ name = "CounterTop", shape = "block", size = { 8.2, 0.15, 3.2 }, offset = { 0, 3.075, -3.0 }, hex = "#A0784B", group = "counter" },
+	-- the low counter (top ~1.8) so Patch reads above it from the street
+	{ name = "Counter", shape = "block", size = { 8, 1.7, 3 }, offset = { 0, 0.85, -3.0 }, hex = "#BE8C5A", material = "WoodPlanks", group = "counter" },
+	{ name = "CounterTop", shape = "block", size = { 8.2, 0.15, 3.2 }, offset = { 0, 1.775, -3.0 }, hex = "#A0784B", group = "counter" },
 	-- 2.2 the body and limbs
 	{ name = "Body", shape = "block", size = { 1.5, 1.6, 1.0 }, offset = { 0, 1.5, 0 }, hex = "#EADBB8", group = "body" },
 	{ name = "Apron", shape = "block", size = { 1.55, 1.3, 0.12 }, offset = { 0, 1.35, -0.56 }, hex = "#5BC236", group = "body" },
@@ -42,7 +43,7 @@ PatchVisuals.parts = {
 	{ name = "StemTip", shape = "block", size = { 0.12, 0.12, 0.40 }, offset = { 0.05, 4.05, 0.15 }, rot = { 35, 0, 0 }, hex = "#6B8E23", group = "head" },
 	{ name = "Cowlick", shape = "wedge", size = { 0.12, 0.35, 0.55 }, offset = { -0.55, 3.85, -0.2 }, rot = { 0, 40, -25 }, hex = "#2E7D32", group = "head" },
 }
-PatchVisuals.hip = 0.7 -- the bottom of Body: the lean pivots here
+PatchVisuals.bodyJoint = 1.5 -- section 3's RootBody C0 (0, 1.5, 0): the body leans about its centre
 PatchVisuals.handDrop = 0.7 -- ArmHand C0 (0, -0.7, 0)
 
 -- 2.4: all under PumpkinHead; the swap parts (MouthOpen, EyeLFlat, EyeRFlat, Brow) show only in their faces
@@ -88,7 +89,8 @@ PatchVisuals.poses = {
 	point = { lean = -5, armR = { -90, 0 } },
 	cheer = { lift = { 0, 0.3, 0 }, armL = { -160, 0 }, armR = { -160, 0 } },
 	announce = { lean = -8, nod = -10, armL = { -40, 25 }, armR = { -40, -25 } },
-	lean = { lift = { 0, 0, -0.6 }, lean = -15, armL = { -70, 0 }, armR = { -70, 0 } },
+	-- the counter-lean over the 1.8 counter: chin ~ the CounterTop, the head centre ~2.55-2.65
+	lean = { shift = { 0, -0.2, -0.9 }, lean = -28, nod = -20, armL = { -85, 0 }, armR = { -85, 0 } },
 }
 PatchVisuals.rest = { armL = { 0, 12 }, armR = { 0, -12 } } -- the arms' rest rz (section 2.2), in the spec's sense
 

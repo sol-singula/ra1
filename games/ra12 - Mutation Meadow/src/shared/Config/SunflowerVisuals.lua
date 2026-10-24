@@ -36,28 +36,31 @@ SunflowerVisuals.head = {
 	discAt = 0.8, -- above HeadPivot
 	disc = { size = { 0.70, 3.6, 3.6 }, hex = "#7A4E2D" },
 	seeds = { count = 8, size = 0.35, ring = 1.1, z = -0.40, hex = "#5C3A1F" }, -- 7 on the ring + 1 in the centre
+	-- in the disc plane: 0.18 thick along the disc's axis, 1.1 out from the rim (centre at rim + 0.55), 3.4 around it
 	petals = { count = 18, size = { 0.18, 1.1, 3.4 }, rim = 1.85, step = 20, cup = -8, hex = "#FFD23F" },
 	fxAt = { 0, 0.8, -0.35 },
 }
 
--- section 3: deltas from bloom; tilt = the four stem segments (each relative to the one below), head = the head's
--- nod (the face toward the ground), cup = the petals closing over the face, leaf = the leaf tips down
+-- section 3: deltas from bloom; tilt = the four stem segments (each relative to the one below; visual lean only),
+-- move = the HeadPivot translate from the leaned stem's top (it sets the disc height, the authoritative target),
+-- head = the head's nod (the face toward the ground), cup = the petals closing over the face, leaf = the tips down
 SunflowerVisuals.poses = {
 	bloom = {
-		tilt = { 0, 0, 0, 0 }, head = 0, cup = 0, leaf = 0,
+		tilt = { 0, 0, 0, 0 }, move = { 0, 0, 0 }, head = 0, cup = 0, leaf = 0,
 		petal = "#FFD23F", disc = "#7A4E2D", seed = "#5C3A1F", stem = "#5BC236", leafTop = "#2E7D32", leafUnder = "#4E9A2A",
 	},
 	standing = {
-		tilt = { 4, 4, 4, 4 }, head = 10, cup = -35, leaf = 12,
+		tilt = { 2, 2, 2, 2 }, move = { 0, -0.6, 0.4 }, head = 10, cup = -35, leaf = 12,
 		petal = "#FFD23F", disc = "#7A4E2D", seed = "#5C3A1F", stem = "#5BC236", leafTop = "#2E7D32", leafUnder = "#4E9A2A",
 	},
+	-- the spec's +5 nudged to +4 (section 3 allows +-2) so the disc sits inside 18.0-19.0, not on its edge
 	perking = {
-		tilt = { 10, 10, 10, 10 }, head = 28, cup = -55, leaf = 22,
+		tilt = { 4, 4, 4, 4 }, move = { 0, -2.5, 1.6 }, head = 28, cup = -55, leaf = 22,
 		petal = "#FFD23F", disc = "#7A4E2D", seed = "#5C3A1F", stem = "#5BC236", leafTop = "#2E7D32", leafUnder = "#4E9A2A",
 	},
 	-- the spec gives drooping no leaf angle; the leaves keep perking's +22 so they never lift as it droops
 	drooping = {
-		tilt = { 16, 14, 12, 10 }, head = 55, cup = -70, leaf = 22,
+		tilt = { 8, 7, 6, 5 }, move = { 0, -5.5, 3.2 }, head = 55, cup = -70, leaf = 22,
 		petal = "#E6C96D", disc = "#6B4528", seed = "#6B4528", stem = "#6EAF56", leafTop = "#3F7041", leafUnder = "#5B8B44",
 	},
 }
@@ -95,6 +98,10 @@ SunflowerVisuals.thirsty = {
 -- section 6
 SunflowerVisuals.lod = { studs = 160 }
 SunflowerVisuals.artParts = 38
+-- section 3: the authoritative disc-centre heights (and the bloom petal peak, ~23.5)
+SunflowerVisuals.discY = {
+	bloom = { 21.0, 21.5 }, standing = { 20.0, 20.8 }, perking = { 18.0, 19.0 }, drooping = { 13.5, 14.5 },
+}
 -- stylua: ignore end
 
 return SunflowerVisuals

@@ -162,6 +162,23 @@ test("poses: wave raises the right arm, cheer both arms and a hop, lean forward 
 	end
 end)
 
+test("the low counter (top ~1.8): Patch's head clears it by a stud; the lean puts his chin on it", function()
+	local m = patch()
+	local top = m.CounterTop.Position.Y + m.CounterTop.Size.Y / 2
+	Assert.near(top, 1.85, 1e-3, "CounterTop at 1.775 (top 1.85, the spec's ~1.8)")
+	eq(m.Counter.Size, V3.new(8, 1.7, 3))
+	Assert.near(m.Counter.Position.Y, 0.85, 1e-5)
+	Assert.truthy(m.PumpkinHead.Position.Y - top >= 1 - 1e-6, "the head clears the counter by >= 1")
+	Assert.truthy(m.StemTip.Position.Y > 4, "Patch keeps his authored ~4.0 height")
+	Patch.setPose(m, "lean")
+	local head = m.PumpkinHead.Position.Y
+	Assert.truthy(head >= 2.55 and head <= 2.65, `the head centre at {head}`)
+	Assert.near(head - m.PumpkinHead.Size.Y / 2, 1.8, 0.1, "the chin at the CounterTop")
+	Assert.truthy(math.abs(m.HandR.Position.Y - top) < 0.6, "the forearms on the counter")
+	Assert.truthy(O:PointToObjectSpace(m.HandR.Position).Z < -1.5, "the hands over the counter")
+	near(m.LegL.Position, (O * CF.new(-0.35, 0.55, 0)).Position, "the legs stay put")
+end)
+
 test("LOD: beyond 120 studs SeedPacket, SeedDot, the eye shines, cheeks and Cowlick hide", function()
 	local m = patch()
 	Patch.setFar(m, true)

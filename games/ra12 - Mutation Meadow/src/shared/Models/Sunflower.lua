@@ -6,9 +6,10 @@ The server builds the Model with only Stem (the Water prompt and the range centr
 attribute (the ground under the flower, front = -Z). The art is 38 SmoothPlastic parts built under that Model
 (on the client by SunflowerController, on the capture stage by CaptureService): Root, StemBase, Stem1-4, LeafL1/L2,
 LeafR1/R2, HeadPivot (Disc, SeedDot1-8, Petal1-18, the FxBloom attachment). One set of parts is posed between the
-four stages (drooping / perking / standing / bloom) from Config.SunflowerVisuals.poses: the stem segments hinge one
-on the next, the leaves ride their segment and tip down, the head sits on top of Stem4 and nods its face down, the
-petals cup closed over the face.
+four stages (drooping / perking / standing / bloom) from Config.SunflowerVisuals.poses: the stem segments lean (each
+hinged on the one below), the leaves ride their segment and tip down, the HeadPivot goes to the leaned stem's top plus
+the pose's translate (that sets the disc height, the authoritative target), Stem4 reaches from Stem3 to the head so
+the stem stays joined, the head nods its face down and the petals (in the disc plane) cup closed over the face.
 
   Sunflower.build(parent, cf) -> Model "Sunflower" (Stem, Origin)
   Sunflower.buildArt(model)          the 38 art parts (once), posed bloom; PrimaryPart = Root
@@ -31,8 +32,9 @@ local Sunflower = {}
 local SV = Config.SunflowerVisuals
 local rad = math.rad
 local UPRIGHT = CFrame.Angles(0, 0, math.pi / 2) -- Kit.cylinder's stand-up turn
--- a petal wedge's axes in the rim frame: thickness along the disc's axis, width around the rim, the tip (-Z) out
-local PETAL_AXES = CFrame.fromMatrix(Vector3.zero, Vector3.new(0, 0, 1), Vector3.new(-1, 0, 0))
+-- a petal wedge's axes in the rim frame (section 2.4, kept in the disc plane): its 0.18 along the disc's axis, its
+-- 1.1 out from the rim, its 3.4 around the rim
+local PETAL_AXES = CFrame.fromMatrix(Vector3.zero, Vector3.new(0, 0, 1), Vector3.new(0, 1, 0))
 
 local COLOURS = { "petal", "disc", "seed", "stem", "leafTop", "leafUnder" }
 
@@ -131,7 +133,13 @@ end
 -- poses ------------------------------------------------------------------------------------------------------------
 
 local function params(spec)
-	local out = { tilt = table.clone(spec.tilt), head = spec.head, cup = spec.cup, leaf = spec.leaf }
+	local out = {
+		tilt = table.clone(spec.tilt),
+		move = Vector3.new(spec.move[1], spec.move[2], spec.move[3]),
+		head = spec.head,
+		cup = spec.cup,
+		leaf = spec.leaf,
+	}
 	for _, key in COLOURS do
 		out[key] = Color3.fromHex(spec[key])
 	end
@@ -144,7 +152,7 @@ end
 
 function Sunflower.mix(a, b, t)
 	local c = math.clamp(t, 0, 1)
-	local out = { tilt = {} }
+	local out = { tilt = {}, move = a.move:Lerp(b.move, t) }
 	for i = 1, 4 do
 		out.tilt[i] = a.tilt[i] + (b.tilt[i] - a.tilt[i]) * t
 	end
@@ -170,16 +178,34 @@ function Sunflower.apply(model, p)
 		return
 	end
 	local O = model:GetAttribute("Origin") or CFrame.new()
-	-- the stem: each segment hinges at the top of the one below
+	-- the stem leans: each segment hinges at the top of the one below
 	local joint = O * CFrame.new(0, SV.stemBaseTop, 0)
-	local frames = {}
+	local frames, tops = {}, {}
 	for i, name in SV.stems do
 		local len = SPEC[name].size[1]
 		local hinge = joint * CFrame.Angles(rad(p.tilt[i]), 0, 0)
 		frames[name] = hinge * CFrame.new(0, len / 2, 0)
-		refs[name].CFrame = frames[name] * UPRIGHT
-		refs[name].Color = p.stem
 		joint = hinge * CFrame.new(0, len, 0)
+		tops[i] = joint
+	end
+	-- the HeadPivot: the leaned stem's top + the pose's translate (the disc heights come from this)
+	local pivotAt = (joint * CFrame.new(0, SV.headGap, 0)).Position + O:VectorToWorldSpace(p.move)
+	-- Stem1-3 as leaned; Stem4 reaches from Stem3's top to the head, so the stem stays joined
+	for i, name in SV.stems do
+		local part = refs[name]
+		if i < #SV.stems then
+			part.CFrame = frames[name] * UPRIGHT
+		else
+			local from = tops[i - 1].Position
+			local span = pivotAt - from
+			local dir = span.Unit
+			local len = math.max(span.Magnitude - SV.headGap, 0.1)
+			local right = (O.RightVector - dir * O.RightVector:Dot(dir)).Unit
+			frames[name] = CFrame.fromMatrix(from + dir * (len / 2), right, dir)
+			part.Size = Vector3.new(len, part.Size.Y, part.Size.Z)
+			part.CFrame = frames[name] * UPRIGHT
+		end
+		part.Color = p.stem
 	end
 	-- the leaves ride their segment, then tip down about their stem end
 	for leaf, stem in SV.stemOf do
@@ -191,10 +217,9 @@ function Sunflower.apply(model, p)
 		refs[leaf].CFrame = cf * CFrame.new(0, 0, half) * CFrame.Angles(-rad(p.leaf), 0, 0) * CFrame.new(0, 0, -half)
 		refs[leaf].Color = p[SV.leafTone[leaf]]
 	end
-	-- the head on Stem4's top, nodding its face (-Z) toward the ground
+	-- the head nods its face (-Z) toward the ground
 	local h = SV.head
-	local top = (joint * CFrame.new(0, SV.headGap, 0)).Position
-	local head = CFrame.new(top) * O.Rotation * CFrame.Angles(-rad(p.head), 0, 0)
+	local head = CFrame.new(pivotAt) * O.Rotation * CFrame.Angles(-rad(p.head), 0, 0)
 	refs.HeadPivot.CFrame = head
 	local disc = head * CFrame.new(0, h.discAt, 0)
 	refs.Disc.CFrame = disc * CFrame.Angles(rad(90), 0, 0) * UPRIGHT
@@ -209,13 +234,13 @@ function Sunflower.apply(model, p)
 		refs["SeedDot" .. i].CFrame = disc * CFrame.new(at)
 		refs["SeedDot" .. i].Color = p.seed
 	end
-	local len = h.petals.size[3]
+	local out = h.petals.size[2]
 	for i = 1, h.petals.count do
 		local base = disc
 			* CFrame.Angles(0, 0, rad((i - 1) * h.petals.step))
 			* CFrame.new(0, h.petals.rim, 0)
 			* CFrame.Angles(rad(h.petals.cup + p.cup), 0, 0)
-		refs["Petal" .. i].CFrame = base * CFrame.new(0, len / 2, 0) * PETAL_AXES
+		refs["Petal" .. i].CFrame = base * CFrame.new(0, out / 2, 0) * PETAL_AXES
 		refs["Petal" .. i].Color = p.petal
 	end
 end

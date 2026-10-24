@@ -91,10 +91,29 @@ test("the bloom rest pose: section 2 offsets, the colours, the disc centre at ~2
 	for i = 1, 18 do
 		local p = m.HeadPivot["Petal" .. i]
 		eq(p.Color, hex("#FFD23F"))
-		local inner = p.Position + p.CFrame.LookVector * -(p.Size.Z / 2)
+		local inner = p.Position - p.CFrame.UpVector * (p.Size.Y / 2)
 		Assert.near((inner - disc.Position).Magnitude, SV.head.petals.rim, 1e-2, `Petal{i}'s base on the rim`)
 	end
 	eq(m:GetAttribute("Pose"), "bloom")
+	-- section 2.4: the petals stay in the disc plane; the top petal peaks ~23.5, its outer corner a little above
+	Assert.near(m.HeadPivot.Petal1.Position.Y, 23.5, 0.05, "the top petal")
+	for i = 1, 18 do
+		local p = m.HeadPivot["Petal" .. i]
+		Assert.near(math.abs(p.CFrame.RightVector:Dot(O.LookVector)), 1, 0.05, `Petal{i} lies in the disc plane`)
+	end
+end)
+
+test("section 3: the disc-centre heights win (the stem leans only); Stem4 reaches the head", function()
+	local m = flower()
+	for stage, range in SV.discY do
+		Sunflower.setPose(m, stage)
+		local y = m.HeadPivot.Disc.Position.Y
+		Assert.truthy(y >= range[1] and y <= range[2], `{stage}: disc at {y}, wants {range[1]}-{range[2]}`)
+	end
+	Sunflower.setPose(m, "drooping")
+	local spec = SV.poses.drooping
+	eq({ spec.tilt, spec.move }, { { 8, 7, 6, 5 }, { 0, -5.5, 3.2 } }, "the delta's tilts, the kept translate")
+	eq({ SV.poses.standing.tilt[1], SV.poses.perking.tilt[1] }, { 2, 4 }, "standing +2; perking +5 nudged to +4")
 end)
 
 test(

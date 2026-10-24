@@ -118,12 +118,20 @@ as relative CFrames so a rebuilt model stays consistent.
 Notation: for stem segments, `tilt` is a rotation about local X (positive = tip toward +Z / away from road = droop
 back). Leaves and petals also get a droop.
 
+**Height targets are authoritative** (connected stem: tilt + HeadPivot translate cannot both be maxed). Drive disc
+height from the HeadPivot translate; stem tilts are visual lean only. Measure after build and nudge tilts ±2° so
+disc centres land in range — do not change the height numbers to match over-tilted stems.
+
+Target disc-centre Y (ground = 0): bloom **21.0–21.5**, standing **20.0–20.8**, perking **18.0–19.0**, drooping
+**13.5–14.5**. Bloom petal tip peak Y **~23.5** (if tips hit ~26, fix petal local offset so they stay in the disc
+plane — do not lengthen the stem).
+
 ### 3.1 `standing` (stage ≥ 0.66, < 1.0)
 Almost bloom height, head slightly smaller cup, petals half-closed.
 
 | Part | Delta from bloom |
 |---|---|
-| Stem1..4 | tilt +4° each (total ~16° lean away from road) |
+| Stem1..4 | tilt **+2°** each (total ~8° lean; was +4° — halved so offsets win) |
 | HeadPivot | translate (0, −0.6, 0.4); tilt +10° |
 | Petals | cup −35° (more closed); Color #FFD23F |
 | Leaves | tip down +12° |
@@ -131,7 +139,7 @@ Almost bloom height, head slightly smaller cup, petals half-closed.
 ### 3.2 `perking` (stage ≥ 0.33, < 0.66)
 | Part | Delta |
 |---|---|
-| Stem1..4 | tilt +10° each (total ~40°) |
+| Stem1..4 | tilt **+5°** each (total ~20°; was +10°) |
 | HeadPivot | (0, −2.5, 1.6); tilt +28° |
 | Petals | cup −55°; Color #FFD23F |
 | Leaves | tip down +22° |
@@ -139,12 +147,12 @@ Almost bloom height, head slightly smaller cup, petals half-closed.
 ### 3.3 `drooping` (stage < 0.33, and the resting state between hours)
 | Part | Delta |
 |---|---|
-| Stem1..4 | tilt +16° / +14° / +12° / +10° (cascade; total head lean ~52°) |
-| HeadPivot | (0, −5.5, 3.2); tilt +55° (head almost faces the ground) |
+| Stem1..4 | tilt **+8° / +7° / +6° / +5°** (cascade; total lean ~26°; was +16/+14/+12/+10) |
+| HeadPivot | (0, −5.5, 3.2); tilt +55° (head almost faces the ground) — **keep this translate** |
 | Petals | cup −70° (closed bud); Color **#E6C96D** (desat ~30%) |
 | Disc / SeedDots | Color #6B4528 (slightly duller) |
 | Stem* / Leaves | Stem #6EAF56, Leaves #3F7041 / #5B8B44 |
-| Height of disc centre | ≈ 14 studs |
+| Height of disc centre | **13.5–14.5** studs (authoritative) |
 
 ### 3.4 Wilt (phase `"wilt"`, 60 s after weather ends)
 Start at bloom; over **wiltSec = 60** linearly lerp every movable part toward the drooping targets, and lerp petal /
@@ -246,7 +254,7 @@ LOD: beyond 160 studs, freeze at the current pose, hide SeedDots and every other
 |---|---|
 | petal count | **18** |
 | segment lengths | StemBase 1.6 + Stem1..3 5.0 + Stem4 3.5 (§2.1) |
-| pose angles | §3 (droop cascade ~52°, standing ~16°, perking ~40°) |
+| pose angles | §3 (droop cascade ~26° lean + HeadPivot +55°; standing ~8°; perking ~20°). Heights win over tilts. |
 | desaturation hexes | petals #E6C96D (droop) / #C8B070 (deep wilt), stem #6EAF56, leaves #3F7041/#5B8B44 |
 | thirsty icon | §5 circle + "!" |
 | Bloom colour fix | petals #FFD23F, disc #7A4E2D (replace (255,200,0)/(255,205,0)) |
@@ -261,3 +269,4 @@ LOD: beyond 160 studs, freeze at the current pose, hide SeedDots and every other
 | S2 | BlockPartyService.show | toggles Transparency of Drooping/Perking/Standing/Bloom/Wilt parts | drive pose tweens from Stage/Phase attributes; MeshParts can be deleted once the procedural model ships |
 | S3 | RD draft "16–20 petals, ~22 studs" | open | locked: 18 petals, disc at ~21 studs |
 | S4 | Wilt MeshPart | separate Wilt look | wilt = 60 s lerp into drooping; no fifth pose mesh |
+| S5 | 505c875 connected stem | tilt + HeadPivot offset both maxed → droop disc ~17.2 | keep HeadPivot offsets + disc Y targets; halve stem tilts (§3) |
