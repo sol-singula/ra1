@@ -2,6 +2,7 @@ local Assert = require("./mock/Assert")
 local Client = require("./mock/Client")
 local Farm = require("./mock/Farm")
 local Server = require("./mock/Server")
+local roblox = require("@lune/roblox")
 
 local test, eq = Assert.test, Assert.eq
 
@@ -22,6 +23,14 @@ local function dev()
 	local function capture(...)
 		return Farm.call(ctx, p, "DevCommand", "run", { cmd = "capture", args = { ... } })
 	end
+	local function mod(path)
+		return ctx.engine:require(ctx.engine:module(path))
+	end
+	ctx.Capture = mod("Server/Services/CaptureService")
+	ctx.CropModel = mod("Shared/Models/Crop")
+	ctx.Farmer = mod("Shared/Models/Farmer")
+	ctx.Visuals = mod("Shared/Visuals")
+	ctx.PatchModel = mod("Shared/Models/Patch")
 	return ctx, p, capture
 end
 
@@ -29,18 +38,90 @@ local function stage(ctx)
 	return ctx.engine.workspace.Capture.Stage
 end
 
+local function camOf(ctx, scene)
+	return ctx.engine.workspace.Capture.Cams[scene]
+end
+
+-- the staged crop models
+local function crops(ctx)
+	local out = {}
+	for _, d in stage(ctx):GetChildren() do
+		if d:GetAttribute("Crop") then
+			table.insert(out, d)
+		end
+	end
+	return out
+end
+
 -- every staged crop's mutation key, and whether any rain VFX is staged
 local function look(ctx)
 	local muts, rain = {}, false
+	for _, c in crops(ctx) do
+		local key = c:GetAttribute("Muts") or "none"
+		muts[key] = (muts[key] or 0) + 1
+	end
 	for _, d in stage(ctx):GetDescendants() do
-		if d:GetAttribute("Crop") then
-			muts[d:GetAttribute("Muts") or "none"] = (muts[d:GetAttribute("Muts") or "none"] or 0) + 1
-		end
 		if d.Name == "RainFx" then
 			rain = true
 		end
 	end
 	return muts, rain
+end
+
+-- the staged farmers: real avatars (a Humanoid inside)
+local function farmers(ctx)
+	local out = {}
+	for _, d in stage(ctx):GetChildren() do
+		if d:FindFirstChildOfClass("Humanoid") then
+			table.insert(out, d)
+		end
+	end
+	table.sort(out, function(a, b)
+		return a.Name < b.Name
+	end)
+	return out
+end
+
+local function flat(v)
+	return roblox.Vector3.new(v.X, 0, v.Z)
+end
+
+-- where a point sits in a camera's frame: x and y in -1..1 (the frame's edges), and its depth
+local function onScreen(cam, point)
+	local fov = math.rad(cam:GetAttribute("FieldOfView"))
+	local aspect = cam:GetAttribute("Width") / cam:GetAttribute("Height")
+	local p = cam.CFrame:Inverse() * point
+	local depth = -p.Z
+	local half = math.tan(fov / 2) * depth
+	return p.X / (half * aspect), p.Y / half, depth
+end
+
+-- a part counts as gold when it's a saturated yellow-orange-gold
+local function goldish(c)
+	return c.R > 0.75 and c.G > 0.6 and c.B < 0.5 and c.R >= c.G
+end
+
+-- (both stop at the staging folder)
+local function inside(d, ancestorName)
+	local p = d.Parent
+	while p and p.Name ~= "Stage" do
+		if p.Name == ancestorName then
+			return true
+		end
+		p = p.Parent
+	end
+	return false
+end
+
+local function cropOf(d)
+	local p = d.Parent
+	while p and p.Name ~= "Stage" do
+		if p:GetAttribute("Crop") then
+			return p
+		end
+		p = p.Parent
+	end
+	return nil
 end
 
 test("every scene id resolves to a camera (1920x1080, the icon 1024x1024)", function()
@@ -61,16 +142,30 @@ test("every scene id resolves to a camera (1920x1080, the icon 1024x1024)", func
 	eq(ctx.engine.errors, {})
 end)
 
-test("only the listed args: block_party and junk are unknown_scene", function()
+test("only the listed args: block_party and junk are unknown_scene; reveal needs golden_reveal", function()
 	local _, _, capture = dev()
 	for _, args in
-		{ { "block_party" }, { "nope" }, { "hud", "maybe" }, { "guides" }, { "street", "extra" }, { "free", "now" } }
+		{
+			{ "block_party" },
+			{ "nope" },
+			{ "hud", "maybe" },
+			{ "guides" },
+			{ "street", "extra" },
+			{ "free", "now" },
+			{ "reveal", "now" },
+			{ "size", "big" },
+		}
 	do
 		eq({ capture(table.unpack(args)) }, { false, "unknown_scene" }, table.concat(args, " "))
 	end
-	for _, args in { { "hud", "off" }, { "hud", "on" }, { "guides", "on" }, { "guides", "off" }, { "free" } } do
+	for _, args in
+		{ { "hud", "off" }, { "hud", "on" }, { "guides", "on" }, { "guides", "off" }, { "free" }, { "size" } }
+	do
 		eq(capture(table.unpack(args)), true, table.concat(args, " "))
 	end
+	eq({ capture("reveal") }, { false, "no_reveal" }, "no scene yet")
+	capture("icon")
+	eq({ capture("reveal") }, { false, "no_reveal" }, "only in golden_reveal")
 end)
 
 test("a non-dev call outside Studio is a no-op (dev_gate)", function()
@@ -79,6 +174,18 @@ test("a non-dev call outside Studio is a no-op (dev_gate)", function()
 	eq({ Farm.call(ctx, p, "DevCommand", "run", { cmd = "capture", args = { "street" } }) }, { nil, "no_result" })
 	eq(ctx.engine.workspace:FindFirstChild("Capture"), nil)
 	eq(ctx.Net.dropStats().byReason.dev_gate, 1)
+end)
+
+test("the admin (Config.AdminUserIds) passes the dev gate outside Studio, but capture stays Studio only", function()
+	local ctx = Farm.setup()
+	local Config = ctx.engine:require(ctx.engine:module("Shared/Config"))
+	eq(Config.AdminUserIds, { 11787294097 })
+	local admin = Farm.join(ctx, 11787294097)
+	eq(
+		{ Farm.call(ctx, admin, "DevCommand", "run", { cmd = "capture", args = { "street" } }) },
+		{ false, "studio_only" }
+	)
+	eq(ctx.engine.workspace:FindFirstChild("Capture"), nil)
 end)
 
 test("capture never calls SaveQueue or touches a profile", function()
@@ -95,6 +202,8 @@ test("capture never calls SaveQueue or touches a profile", function()
 	for _, scene in SCENES do
 		capture(scene)
 	end
+	capture("golden_reveal")
+	capture("reveal")
 	capture("hud", "off")
 	capture("free")
 	eq(calls, 0)
@@ -106,7 +215,85 @@ test("capture never calls SaveQueue or touches a profile", function()
 	eq(ctx.Weather.current(), nil, "the real weather is untouched")
 end)
 
-test("block_party_rain: rain lighting and VFX, only Wet crops", function()
+test("the farmers are real R15 avatars: varied descriptions, the default face, skin-coloured mitten hands", function()
+	local ctx, _, capture = dev()
+	capture("street")
+	local list = farmers(ctx)
+	eq(#list, 6)
+	local outfits, skins = {}, {}
+	for _, f in list do
+		outfits[f:GetAttribute("Outfit")] = true
+		skins[f:GetAttribute("Skin")] = true
+		local humanoid = f:FindFirstChildOfClass("Humanoid")
+		eq(humanoid.RigType, ctx.engine.Enum.HumanoidRigType.R15)
+		eq(humanoid.DisplayDistanceType, ctx.engine.Enum.HumanoidDisplayDistanceType.None, "no name tag")
+		local desc = humanoid:FindFirstChildOfClass("HumanoidDescription")
+		eq({ desc.Face, desc.Shirt, desc.Pants }, { 0, 0, 0 }, "the default face, colours instead of clothing")
+		Assert.truthy(f.Head:FindFirstChild("face"), f.Name .. " has a face")
+		local skin = desc.HeadColor
+		eq(f.UpperTorso.Color, desc.TorsoColor, "the shirt")
+		eq(f.LeftUpperArm.Color, desc.TorsoColor, "sleeves in the shirt colour")
+		eq(f.LeftUpperLeg.Color, desc.LeftLegColor, "trousers")
+		if f:GetAttribute("Outfit") ~= "gloves" then
+			eq({ f.LeftHand.Color, f.RightHand.Color }, { skin, skin }, f.Name .. ": skin-coloured hands")
+		end
+		eq(f.HumanoidRootPart.Anchored, true, "staged, not falling")
+		Assert.near(f.LeftFoot.Position.Y - f.LeftFoot.Size.Y / 2, 0, 0.05, f.Name .. " stands on the ground")
+	end
+	eq(outfits, { overalls = true, sunhat = true, apron = true, rainboots = true, flannel = true, gloves = true })
+	eq(#ctx.engine.avatars, 6, "built from HumanoidDescriptions")
+	local n = 0
+	for _ in skins do
+		n += 1
+	end
+	eq(n, 6, "six skin tones")
+end)
+
+test(
+	"poses: stock animations frozen on a frame (idle, wave, cheer, walk); joint poses (watering, surprised)",
+	function()
+		local ctx, _, capture = dev()
+		capture("street")
+		ctx.engine:advance(1)
+		local byId = {}
+		for _, t in ctx.engine.animTracks do
+			byId[t.AnimationId] = t
+		end
+		for _, name in { "idle", "wave", "cheer", "walk" } do
+			local t = byId[ctx.Farmer.ANIMS[name]]
+			Assert.truthy(t, name .. " played")
+			eq({ t.IsPlaying, t.Speed }, { true, 0 }, name .. " frozen")
+			Assert.truthy(t.TimePosition > 0, name .. " on its frame")
+		end
+		local waterer = stage(ctx).Farmer3
+		eq(waterer:GetAttribute("Pose"), "watering")
+		Assert.truthy(waterer:FindFirstChild("WateringCan"), "holding the can")
+		local shoulder = waterer.RightUpperArm.RightShoulder
+		Assert.truthy(shoulder.C0 ~= (waterer.UpperTorso.CFrame:Inverse() * waterer.RightUpperArm.CFrame), "arm raised")
+		ctx.Farmer.pose(waterer, "surprised")
+		eq(waterer:FindFirstChild("WateringCan"), nil, "a new pose resets the last")
+		eq(waterer:GetAttribute("Pose"), "surprised")
+		eq(ctx.Farmer.pose(waterer, "dance"), false)
+	end
+)
+
+test("no gold on clothes: the sunhat is straw brown, the rainboots red", function()
+	local ctx = dev()
+	local O = ctx.Farmer.OUTFITS
+	Assert.truthy(O.sunhat.hat ~= roblox.Color3.fromRGB(230, 200, 120), "not the old gold hat")
+	Assert.truthy(O.rainboots.boots ~= roblox.Color3.fromRGB(240, 210, 40), "not the old yellow boots")
+	for key, o in O do
+		for part, c in o do
+			if typeof(c) == "Color3" then
+				Assert.truthy(not goldish(c), `{key}.{part} is gold`)
+			end
+		end
+	end
+	local boots = O.rainboots.boots
+	Assert.truthy(boots.R > 0.6 and boots.G < 0.3, "red boots")
+end)
+
+test("block_party_rain: rain lighting and VFX, only Wet crops (with beads)", function()
 	local ctx, _, capture = dev()
 	eq(capture("block_party_rain"), true)
 	local muts, rain = look(ctx)
@@ -115,83 +302,339 @@ test("block_party_rain: rain lighting and VFX, only Wet crops", function()
 	eq(ctx.engine.workspace.Capture:GetAttribute("Lighting"), "rain")
 	local lighting = ctx.engine.game.Lighting
 	eq({ lighting.ClockTime, lighting.FogEnd }, { 15, 400 })
-	Assert.truthy(stage(ctx).Sunflower:GetAttribute("Stage") == "bloom", "bloomed")
+	local flower = stage(ctx).Sunflower
+	eq({ flower:GetAttribute("Stage"), flower:GetAttribute("Look") }, { "bloom", "Bloom" })
+	for _, c in crops(ctx) do
+		Assert.truthy(c.MutLook:FindFirstChild("Bead1"), c.Name .. " beads")
+	end
 end)
 
-test("block_party_golden: Golden Hour lighting, only Golden crops, no rain", function()
+test("block_party_golden: exactly 1 Golden crop, in the foreground third; every other crop plain; no rain", function()
 	local ctx, _, capture = dev()
 	eq(capture("block_party_golden"), true)
 	local muts, rain = look(ctx)
-	eq(muts, { golden = 18 })
+	eq(muts, { golden = 1, none = 17 })
 	eq(rain, false)
 	eq(ctx.engine.workspace.Capture:GetAttribute("Lighting"), "golden")
 	eq(ctx.engine.game.Lighting.ClockTime, 17.6)
+	local eye = camOf(ctx, "block_party_golden").CFrame.Position
+	local list = crops(ctx)
+	table.sort(list, function(a, b)
+		return (ctx.CropModel.main(a).Position - eye).Magnitude < (ctx.CropModel.main(b).Position - eye).Magnitude
+	end)
+	local rank
+	for i, c in list do
+		if c:GetAttribute("Muts") == "golden" then
+			rank = i
+			eq(c:GetAttribute("Seed"), "pumpkin")
+		end
+	end
+	Assert.truthy(rank <= #list / 3, `the Golden crop is number {rank} of {#list} from the camera`)
+	local _, _, depth = onScreen(camOf(ctx, "block_party_golden"), ctx.CropModel.main(list[rank]).Position)
+	Assert.truthy(depth > 0, "in front of the camera")
 end)
+
+test(
+	"both Block Party scenes: the same low camera, the sunflower centre-right, 7 farmers in an arc facing it",
+	function()
+		local ctx, _, capture = dev()
+		local placed = {}
+		for _, scene in { "block_party_rain", "block_party_golden" } do
+			capture(scene)
+			local cam = camOf(ctx, scene)
+			local flower = stage(ctx).Sunflower
+			local x, y = onScreen(cam, flower.Bloom.Centre.Position)
+			Assert.truthy(x > 0.05 and x < 0.6, `{scene}: the bloom centre-right ({x})`)
+			Assert.truthy(y > -0.6 and y < 0.9, `{scene}: the bloom in frame ({y})`)
+			Assert.truthy(cam.CFrame.Position.Y < flower.Stem.Position.Y, scene .. ": a low camera")
+			Assert.truthy(cam.CFrame.LookVector.Y > 0, scene .. ": looking up a little")
+			local list = farmers(ctx)
+			eq(#list, 7, scene)
+			local centre = flower.Stem.Position
+			for _, f in list do
+				local root = f.HumanoidRootPart
+				local toFlower = flat(centre - root.Position).Unit
+				Assert.truthy(flat(root.CFrame.LookVector).Unit:Dot(toFlower) > 0.99, f.Name .. " faces the sunflower")
+				Assert.near(flat(centre - root.Position).Magnitude, ctx.Capture.BLOCK_PARTY.arc.radius, 0.01)
+				Assert.truthy(root.Position.Z < centre.Z, f.Name .. " behind it: the face to the camera")
+				local fx = onScreen(cam, f.Head.Position)
+				Assert.truthy(math.abs(fx) < 1, f.Name .. " in frame")
+				placed[scene] = placed[scene] or {}
+				table.insert(placed[scene], root.Position)
+			end
+		end
+		eq(camOf(ctx, "block_party_rain").CFrame, camOf(ctx, "block_party_golden").CFrame, "the exact same camera")
+		eq(placed.block_party_rain, placed.block_party_golden, "the same arc")
+	end
+)
 
 test("one after the other leaves nothing of the first", function()
 	local ctx, _, capture = dev()
 	capture("block_party_rain")
 	capture("block_party_golden")
 	local muts, rain = look(ctx)
-	eq({ muts.wet, rain, muts.golden }, { nil, false, 18 })
+	eq({ muts.wet, rain, muts.golden }, { nil, false, 1 })
 	eq(ctx.engine.game.Lighting.FogEnd, 100000, "the rain fog is gone")
+	eq(#farmers(ctx), 7, "no farmers left over")
 	capture("block_party_rain")
 	muts, rain = look(ctx)
 	eq({ muts.golden, rain, muts.wet }, { nil, true, 18 })
 	eq(ctx.engine.game.Lighting.ClockTime, 15)
 end)
 
-test("pedestals: Wet, Golden, Wet + Golden with x2, x20, x40 badges", function()
-	local ctx, _, capture = dev()
-	capture("pedestals")
-	local badges = {}
-	for i = 1, 3 do
-		local c = stage(ctx):FindFirstChild("PedestalCrop" .. i)
-		table.insert(badges, { c:GetAttribute("Muts"), c.Badge.Text.Text, c:GetAttribute("Mult") })
+test(
+	"offline_before: a freshly planted plot at night, a farmer walking away; offline_after: grown; no mutations",
+	function()
+		local ctx, _, capture = dev()
+		capture("offline_before")
+		eq(ctx.engine.workspace.Capture:GetAttribute("Lighting"), "night")
+		local muts = look(ctx)
+		eq(muts, { none = 9 })
+		for _, c in crops(ctx) do
+			eq(c:GetAttribute("Stage"), "seed", c.Name .. " just planted")
+		end
+		local list = farmers(ctx)
+		eq(#list, 1)
+		local walker = list[1]
+		eq(walker:GetAttribute("Pose"), "walk")
+		local root = walker.HumanoidRootPart
+		local plot = stage(ctx).PlotSoil.Position
+		Assert.truthy(flat(root.CFrame.LookVector).Unit:Dot(flat(root.Position - plot).Unit) > 0.5, "walking away")
+		capture("offline_after")
+		eq(ctx.engine.workspace.Capture:GetAttribute("Lighting"), "day")
+		eq(look(ctx), { none = 9 })
+		for _, c in crops(ctx) do
+			eq(c:GetAttribute("Stage"), "ripe")
+		end
+		eq(#farmers(ctx), 0)
 	end
-	eq(badges, { { "wet", "×2", 2 }, { "golden", "×20", 20 }, { "wetgolden", "×40", 40 } })
+)
+
+test("golden_reveal: a plain, normal-size hero pumpkin at ~35% of the frame; capture reveal turns it Golden", function()
+	local ctx, _, capture = dev()
+	capture("golden_reveal")
+	local hero = stage(ctx).HeroCrop
+	eq({ hero:GetAttribute("Seed"), hero:GetAttribute("Stage"), hero:GetAttribute("Muts") }, { "pumpkin", "ripe", nil })
+	local others = 0
+	for _, c in crops(ctx) do
+		if c ~= hero then
+			others += 1
+			eq({ c:GetAttribute("Seed"), c:GetAttribute("Muts") }, { "pumpkin", nil }, c.Name .. " plain")
+			eq(ctx.CropModel.main(c).Color, ctx.Visuals.SEED.pumpkin, c.Name .. " orange")
+		end
+	end
+	eq(others, 8)
+	-- the same size as a live tile's ripe pumpkin
+	local live = ctx.CropModel.forTile(nil, "Live", "pumpkin", 1, true, nil, roblox.CFrame.new())
+	eq(ctx.CropModel.main(hero).Size, ctx.CropModel.main(live).Size)
+	local bottom, top = math.huge, -math.huge
+	for _, p in ctx.CropModel.fruit(hero) do
+		bottom = math.min(bottom, p.Position.Y - p.Size.Y / 2)
+		top = math.max(top, p.Position.Y + p.Size.Y / 2)
+	end
+	local cam = camOf(ctx, "golden_reveal")
+	local _, yTop =
+		onScreen(cam, roblox.Vector3.new(ctx.CropModel.main(hero).Position.X, top, ctx.CropModel.main(hero).Position.Z))
+	local _, yBottom = onScreen(
+		cam,
+		roblox.Vector3.new(ctx.CropModel.main(hero).Position.X, bottom, ctx.CropModel.main(hero).Position.Z)
+	)
+	local fraction = (yTop - yBottom) / 2
+	Assert.truthy(math.abs(fraction - 0.35) < 0.05, `the pumpkin fills {fraction} of the frame height`)
+	local f = farmers(ctx)[1]
+	eq(f:GetAttribute("Pose"), "idle")
+	eq(math.abs(onScreen(cam, f.Head.Position)) < 1, true, "the farmer in frame")
+
+	eq(capture("reveal"), true)
+	eq(hero:GetAttribute("Muts"), "golden")
+	eq(ctx.CropModel.main(hero).Color, ctx.Visuals.GOLD)
+	Assert.truthy(ctx.CropModel.main(hero):FindFirstChild("GoldLight"), "the Golden light")
+	eq(f:GetAttribute("Pose"), "surprised")
+	eq(ctx.engine.workspace.Capture:GetAttribute("Reveal"), 1)
 end)
 
-test("Patch keeps his orange head; gold only on mutated crops; the street has 6 different farmers", function()
+test("the Golden look: #FFC300 / #FFF1A8, star glints, at most 1 PointLight per crop; Wet beads", function()
 	local ctx, _, capture = dev()
-	local Capture = ctx.engine:require(ctx.engine:module("Server/Services/CaptureService"))
-	local Visuals = ctx.engine:require(ctx.engine:module("Shared/Visuals"))
+	for _, scene in SCENES do
+		capture(scene)
+		for _, c in crops(ctx) do
+			local lights = 0
+			for _, d in c:GetDescendants() do
+				if d.ClassName == "PointLight" then
+					lights += 1
+				end
+			end
+			local key = c:GetAttribute("Muts")
+			local golden = key == "golden" or key == "wetgolden"
+			eq(lights, if golden then 1 else 0, `{scene}: {c.Name} lights`)
+			if golden then
+				local main = ctx.CropModel.main(c)
+				eq(main.Color, roblox.Color3.fromHex("#FFC300"))
+				eq(main.MutFx.Texture, ctx.Visuals.SPARKLE, "star glints")
+				eq(c.MutLook.Shine.Color, roblox.Color3.fromHex("#FFF1A8"))
+			end
+			local mutLook = c:FindFirstChild("MutLook")
+			eq(mutLook ~= nil and mutLook:FindFirstChild("Bead1") ~= nil, key == "wet" or key == "wetgolden")
+		end
+	end
+end)
+
+test("the stage builds crops with the live code: a staged crop equals Models/Crop's live tile crop", function()
+	local ctx, _, capture = dev()
+	capture("block_party_golden")
+	local function shape(model)
+		local out = {}
+		for _, d in model:GetDescendants() do
+			if d.ClassName == "Part" then
+				table.insert(out, { d.Name, d.Size, d.Color, d.Material })
+			end
+		end
+		table.sort(out, function(a, b)
+			return a[1] < b[1]
+		end)
+		return out
+	end
+	for _, c in crops(ctx) do
+		local ref = ctx.CropModel.forTile(
+			nil,
+			"Ref",
+			c:GetAttribute("Seed"),
+			1,
+			true,
+			c:GetAttribute("Muts"),
+			c:GetAttribute("Origin")
+		)
+		eq(shape(c), shape(ref), c.Name)
+		eq(ctx.CropModel.main(c).CFrame, ctx.CropModel.main(ref).CFrame, c.Name .. " in the same place")
+	end
+	-- no cube look left: every crop is a model of several parts
+	for _, c in crops(ctx) do
+		Assert.truthy(#shape(c) >= 3, c.Name .. " is a real model")
+	end
+end)
+
+test(
+	"pedestals: x2, x20, x40 (a letter x) rising left to right, x40 tallest and nearest; badge colours; a farmer",
+	function()
+		local ctx, _, capture = dev()
+		capture("pedestals")
+		local cam = camOf(ctx, "pedestals")
+		local rows = {}
+		for i = 1, 3 do
+			local item = stage(ctx):FindFirstChild("PedestalCrop" .. i)
+			local main = ctx.CropModel.main(item)
+			local board = main.Badge
+			local pedestal = stage(ctx)["Pedestal" .. i]
+			local x, _, depth = onScreen(cam, main.Position)
+			table.insert(rows, {
+				key = item:GetAttribute("Muts"),
+				text = board.Text.Text,
+				mult = item:GetAttribute("Mult"),
+				style = board:GetAttribute("Style"),
+				height = pedestal.Size.Y,
+				x = x,
+				depth = depth,
+			})
+			eq(item:GetAttribute("Stage"), "item")
+			Assert.truthy(not board.Text.Text:find("×"), "a letter x")
+		end
+		eq({
+			{ rows[1].key, rows[1].text, rows[1].mult },
+			{ rows[2].key, rows[2].text, rows[2].mult },
+			{ rows[3].key, rows[3].text, rows[3].mult },
+		}, { { "wet", "x2", 2 }, { "golden", "x20", 20 }, { "wetgolden", "x40", 40 } })
+		Assert.truthy(rows[1].x < rows[2].x and rows[2].x < rows[3].x, "left to right")
+		Assert.truthy(rows[1].height < rows[2].height and rows[2].height < rows[3].height, "rising")
+		Assert.truthy(rows[3].depth < rows[2].depth and rows[2].depth < rows[1].depth, "x40 nearest the camera")
+		local B = ctx.Capture.BADGES
+		local wet = B.wet.bg
+		Assert.truthy(wet.B > wet.R and wet.B > wet.G, "blue")
+		eq(B.golden.bg, ctx.Visuals.GOLD, "gold")
+		local purple = B.wetgolden.bg
+		Assert.truthy(purple.R > purple.G and purple.B > purple.G, "purple")
+		eq({ B.wetgolden.stroke, B.wetgolden.text }, { ctx.Visuals.GOLD, ctx.Visuals.GOLD }, "purple-gold")
+		local list = farmers(ctx)
+		eq(#list, 1)
+		local fx = onScreen(cam, list[1].Head.Position)
+		Assert.truthy(fx < rows[1].x and math.abs(fx) < 1, "at the side, in frame")
+	end
+)
+
+test("icon: a normal-size Golden pumpkin framed close, the farmer waving, a deep-blue clear sky", function()
+	local ctx, _, capture = dev()
+	capture("icon")
+	local hero = stage(ctx).HeroCrop
+	eq(
+		{ hero:GetAttribute("Seed"), hero:GetAttribute("Muts"), hero:GetAttribute("Stage") },
+		{ "pumpkin", "golden", "ripe" }
+	)
+	local live = ctx.CropModel.forTile(nil, "Live", "pumpkin", 1, true, "golden", roblox.CFrame.new())
+	eq(ctx.CropModel.main(hero).Size, ctx.CropModel.main(live).Size, "normal size")
+	local cam = camOf(ctx, "icon")
+	local main = ctx.CropModel.main(hero)
+	local _, yTop = onScreen(cam, main.Position + roblox.Vector3.new(0, main.Size.Y / 2, 0))
+	local _, yBottom = onScreen(cam, main.Position - roblox.Vector3.new(0, main.Size.Y / 2, 0))
+	Assert.truthy((yTop - yBottom) / 2 > 0.4, "framed close")
+	eq(farmers(ctx)[1]:GetAttribute("Pose"), "wave")
+	eq(ctx.engine.workspace.Capture:GetAttribute("Lighting"), "clear")
+	local lighting = ctx.engine.game.Lighting
+	eq(lighting.ColorShift_Top, roblox.Color3.new(0, 0, 0), "no golden light")
+	local atmo = lighting:FindFirstChildOfClass("Atmosphere")
+	Assert.truthy(atmo and atmo.Decay.B > atmo.Decay.R, "a deep-blue sky")
+	capture("street")
+	eq(lighting:FindFirstChildOfClass("Atmosphere"), nil, "the atmosphere goes with the scene")
+end)
+
+test("Patch: a cream shirt, green apron, #FF8C1A head, no gold; nothing gold outside the crops", function()
+	local ctx, _, capture = dev()
+	local P = ctx.PatchModel
+	eq(P.ORANGE, roblox.Color3.fromHex("#FF8C1A"))
+	eq(ctx.Capture.PATCH_ORANGE, P.ORANGE)
 	for _, scene in SCENES do
 		capture(scene)
 		for _, d in stage(ctx):GetDescendants() do
 			if d:GetAttribute("Patch") then
-				eq(d.Color, Capture.PATCH_ORANGE, scene .. ": Patch's head")
+				eq(d.Color, P.ORANGE, scene .. ": Patch's head")
 				eq(d:FindFirstChild("MutFx"), nil)
 			end
 			if d.Name == "MutFx" and d:GetAttribute("Key") ~= "wet" then
-				Assert.truthy(d.Parent:GetAttribute("Crop"), scene .. ": gold VFX only on crops")
+				Assert.truthy(cropOf(d), scene .. ": gold VFX only on crops")
 			end
-			if d:IsA("Part") and not d:GetAttribute("Crop") then
-				Assert.truthy(d.Color ~= Visuals.MUT.golden, scene .. ": " .. d.Name .. " is gold")
+			if d.ClassName == "Part" and not cropOf(d) and not inside(d, "Sunflower") and d.Transparency ~= 1 then
+				Assert.truthy(not goldish(d.Color), `{scene}: {d:GetFullName()} is gold`)
 			end
 		end
 	end
 	capture("street")
-	local outfits = {}
-	for _, d in stage(ctx):GetChildren() do
-		if d:GetAttribute("Outfit") then
-			outfits[d:GetAttribute("Outfit")] = true
+	local patch = stage(ctx).Patch
+	eq({ patch.Body.Color, patch.Apron.Color }, { P.SHIRT, P.APRON })
+	Assert.truthy(P.APRON.G > P.APRON.R and P.APRON.G > P.APRON.B, "a green apron")
+	Assert.truthy(P.SHIRT.R > 0.9 and P.SHIRT.G > 0.88 and P.SHIRT.B > 0.8, "a cream shirt")
+	for _, d in patch:GetDescendants() do
+		if d.ClassName == "Part" then
+			Assert.truthy(not goldish(d.Color) or d:GetAttribute("Patch"), "Patch: " .. d.Name .. " is gold")
 		end
 	end
-	eq(outfits, { overalls = true, sunhat = true, apron = true, rainboots = true, flannel = true, gloves = true })
-	capture("icon")
-	local hero = stage(ctx).HeroCrop
-	eq({ hero:GetAttribute("Seed"), hero:GetAttribute("Muts") }, { "pumpkin", "golden" })
-	capture("offline_before")
-	eq(ctx.engine.workspace.Capture:GetAttribute("Lighting"), "night")
-	capture("offline_after")
-	eq(ctx.engine.workspace.Capture:GetAttribute("Lighting"), "day")
+end)
+
+test("the live street uses the same Patch and sunflower models", function()
+	local ctx = Farm.setup()
+	local P = ctx.engine:require(ctx.engine:module("Shared/Models/Patch"))
+	local street = ctx.engine.workspace.Street
+	eq(street.Patch.PumpkinHead.Color, P.ORANGE)
+	eq(street.Patch.Body.Color, P.SHIRT)
+	eq(street.Patch.Apron.Color, P.APRON)
+	for _, look in { "Drooping", "Perking", "Standing", "Bloom", "Wilt" } do
+		Assert.truthy(street.Sunflower[look].Petal1 and street.Sunflower[look].Centre, look)
+	end
+	Assert.truthy(street.Sunflower.Stem:FindFirstChild("Water"), "the Water prompt")
 end)
 
 test(
-	"the client: the camera locks to the scene, hud off/on restores the state, the guides show the safe line",
+	"the client: the camera locks to the scene, hud off/on, guides with the size warning, capture size, the reveal",
 	function()
 		local c = Client.boot()
+		c.engine.studio = true
 		local Capture = c.engine:require(c.engine:module("Server/Services/CaptureService"))
 		local CaptureController = c.controllers.CaptureController
 		c.gui("WelcomeBack").Enabled = false -- was hidden before: must stay hidden after
@@ -225,10 +668,40 @@ test(
 		eq(guides.Enabled, true)
 		Assert.near(guides.Frame.SafeLine.Position.Y.Scale, 0.85, 1e-6)
 		eq(guides.Frame.UIAspectRatioConstraint.AspectRatio, 1, "the icon is square")
+		eq(guides.SizeWarning.Visible, true, "1920x1080 is the wrong size for the icon")
+		eq(guides.SizeWarning.Text, "Viewport 1920x1080: this scene needs exactly 1024x1024")
+		c.engine:run(function()
+			Capture.run({ "size" })
+		end)
+		Assert.truthy(table.find(c.engine.output, "capture size: 1920x1080 (WRONG: icon wants 1024x1024)"), "printed")
 		c.engine:run(function()
 			Capture.run({ "street" })
 		end)
 		Assert.near(guides.Frame.UIAspectRatioConstraint.AspectRatio, 16 / 9, 1e-6)
+		eq(guides.SizeWarning.Visible, false, "the street fits 1920x1080")
+		c.engine:run(function()
+			Capture.run({ "size" })
+		end)
+		Assert.truthy(table.find(c.engine.output, "capture size: 1920x1080 (fits street)"), "printed")
+		camera.ViewportSize = roblox.Vector2.new(1600, 900)
+		eq(guides.SizeWarning.Visible, true, "the warning follows the viewport")
+		camera.ViewportSize = roblox.Vector2.new(1920, 1080)
+		eq(guides.SizeWarning.Visible, false)
+		c.engine:run(function()
+			Capture.run({ "golden_reveal" })
+		end)
+		local hero = c.engine.workspace.Capture.Stage.HeroCrop
+		c.engine:run(function()
+			Capture.run({ "reveal" })
+		end)
+		local CropModel = c.engine:require(c.engine:module("Shared/Models/Crop"))
+		local main = CropModel.main(hero)
+		Assert.truthy(main:FindFirstChild("RevealBurst"), "the in-game reveal VFX played")
+		eq(main.RevealBurst:GetAttribute("Emitted"), 40)
+		eq(hero:GetAttribute("Revealed"), 1)
+		c.engine:advance(3)
+		eq(main.Color, c.engine:require(c.engine:module("Shared/Visuals")).GOLD, "ends gold")
+		eq(main:FindFirstChild("RevealBurst"), nil, "the burst cleans up")
 		c.engine:run(function()
 			Capture.run({ "free" })
 		end)

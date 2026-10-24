@@ -1,7 +1,7 @@
 --[[
 Pedestals: the picker (slots, which item each shows, Remove, or pick an item for a free slot) from tapping one of your
-pedestals, and the world look of every plot's pedestals: the item on top with its mutation sparkles and a floating
-label (crop, mutation, finder).
+pedestals, and the world look of every plot's pedestals: the kept crop on top (Models/Crop.item, its mutation look)
+and a floating label (crop, mutation, finder).
 
   PedestalController.open(slot?) / close() / isOpen()
   PedestalController.displayItem(guid)   puts an item on the first free unlocked pedestal (or opens the picker)
@@ -12,11 +12,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local CropModel = require(ReplicatedStorage.Shared.Models.Crop)
 local MutationMath = require(ReplicatedStorage.Shared.MutationMath)
 local Net = require(ReplicatedStorage.Shared.Net)
 local ClientState = require(script.Parent.Parent.ClientState)
 local UI = require(script.Parent.Parent.UI)
-local Visuals = require(ReplicatedStorage.Shared.Visuals)
 
 local PedestalController = {}
 
@@ -149,8 +149,7 @@ local function drawPedestal(part)
 	local entry = shown[part]
 	if not seed then
 		if entry then
-			Visuals.release(entry.model)
-			entry.model:Destroy()
+			CropModel.destroy(entry.model)
 			shown[part] = nil
 		end
 		return
@@ -159,24 +158,16 @@ local function drawPedestal(part)
 		return
 	end
 	if entry then
-		Visuals.release(entry.model)
-		entry.model:Destroy()
+		CropModel.destroy(entry.model)
 	end
-	local model = Instance.new("Part")
-	model.Name = "ShownItem"
-	model.Anchored = true
-	model.CanCollide = false
-	model.Size = Vector3.new(1.6, 1.6, 1.6)
-	model.Position = part.Position + Vector3.new(0, part.Size.Y / 2 + 1.2, 0)
-	model.Color = Visuals.SEED[seed] or Visuals.LEAF
-	model.Material = Enum.Material.Neon
-	Visuals.mutationFx(model, key)
+	local model = CropModel.onPedestal(nil, "ShownItem", seed, key, part, CropModel.PEDESTAL_SCALE)
 	local board = Instance.new("BillboardGui")
 	board.Name = "Label"
 	board.Size = UDim2.fromOffset(180, 50)
 	board.StudsOffset = Vector3.new(0, 2, 0)
 	board.AlwaysOnTop = true
 	board.MaxDistance = 60
+	board.Adornee = CropModel.main(model)
 	local text = Instance.new("TextLabel")
 	text.Name = "Text"
 	text.BackgroundTransparency = 1

@@ -1,6 +1,7 @@
 --[[
-The release switch (§11.5). Until release, every Catalog and badge id is 0 (TODO: create on Mason's account) and
-AdminUserIds is { 0 }. At release, run with RELEASE=1: then no id may be 0 and AdminUserIds must hold a real UserId.
+The release switch (§11.5). Until release, every Catalog and badge id is 0 (TODO: create on Mason's account).
+AdminUserIds already holds Mason's UserId. At release, run with RELEASE=1: then no id may be 0 and AdminUserIds must
+hold a real UserId.
 
   RELEASE=1 tools/run_tests.sh Release
 ]]
@@ -47,6 +48,6 @@ else
 		for _, entry in list do
 			eq(entry.id, 0, entry.where)
 		end
-		eq(Config.AdminUserIds, { 0 })
+		eq(Config.AdminUserIds, { 11787294097 })
 	end)
 end

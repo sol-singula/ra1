@@ -9,7 +9,8 @@ services expect:
     SellStand         ProximityPrompt "Sell"
     Pedestals/P1..P7
     Mailbox           attribute GardenName
-  Workspace.Street.Sunflower: Stem (ProximityPrompt "Water") and the looks Drooping, Perking, Standing, Bloom, Wilt
+  Workspace.Street.Sunflower: the shared Models/Sunflower: Stem (ProximityPrompt "Water"), leaves, and one head
+    Model per look (Drooping, Perking, Standing, Bloom, Wilt), facing the road
   Workspace.Street.Boards: UpdateBoard (by Patch), ServerBoard, GlobalBoard, each a Part with a ProximityPrompt
     "View" (the client draws the SurfaceGui)
   Workspace.Street.Lounge: Deck (Config.Lounge.deck studs), a brushed-brass Gate (ProximityPrompt "Enter") on its road
@@ -24,6 +25,7 @@ services expect:
                                     is also PersistentPerPlayer: PlotService adds them with AddPersistentPlayer)
 ]]
 local Config = require(game:GetService("ReplicatedStorage").Shared.Config)
+local SunflowerModel = require(game:GetService("ReplicatedStorage").Shared.Models.Sunflower)
 local Tiles = require(game:GetService("ReplicatedStorage").Shared.Tiles)
 
 local StreetBuilder = {}
@@ -158,38 +160,10 @@ local function plot(street, index)
 	return model
 end
 
--- the Block Party sunflower: a Stem (the prompt and the range centre) and one part per look; one shows at a time
+-- the Block Party sunflower (Models/Sunflower), its head facing the road
 local function sunflower(street)
-	local model = Instance.new("Model")
-	model.Name = "Sunflower"
-	local stem = part(
-		model,
-		"Stem",
-		Vector3.new(2, 14, 2),
-		Vector3.new(0, 7, ROAD_Z - 16),
-		Color3.fromRGB(70, 140, 50),
-		Enum.Material.Grass
-	)
-	prompt(stem, "Water", "Water", "Sunflower")
-	local looks = {
-		{ "Drooping", Color3.fromRGB(170, 150, 60), 11 },
-		{ "Perking", Color3.fromRGB(220, 190, 50), 14 },
-		{ "Standing", Color3.fromRGB(250, 210, 40), 16 },
-		{ "Bloom", Color3.fromRGB(255, 200, 0), 18 },
-		{ "Wilt", Color3.fromRGB(130, 110, 70), 10 },
-	}
-	for _, look in looks do
-		local head = part(
-			model,
-			look[1],
-			Vector3.new(8, 8, 1.5),
-			Vector3.new(0, look[3], ROAD_Z - 16),
-			look[2],
-			Enum.Material.SmoothPlastic
-		)
-		head.CanCollide = false
-		head.Transparency = if look[1] == "Drooping" then 0 else 1
-	end
+	local model = SunflowerModel.build(nil, CFrame.new(0, 0, ROAD_Z - 16) * CFrame.Angles(0, math.pi, 0))
+	prompt(model.Stem, "Water", "Water", "Sunflower")
 	model.Parent = street
 	return model
 end

@@ -99,7 +99,15 @@ end
 ---------------------------------------------------------------------------------------------------------------
 -- instances
 
+local BASEPART = { "BasePart", "PVInstance", "Instance" }
 local CLASS_IS = {
+	Part = BASEPART,
+	MeshPart = BASEPART,
+	WedgePart = BASEPART,
+	TrussPart = BASEPART,
+	Model = { "PVInstance", "Instance" },
+	Motor6D = { "JointInstance", "Instance" },
+	PointLight = { "Light", "Instance" },
 	ModuleScript = { "LuaSourceContainer", "Instance" },
 	Script = { "BaseScript", "LuaSourceContainer", "Instance" },
 	LocalScript = { "Script", "BaseScript", "LuaSourceContainer", "Instance" },
@@ -144,6 +152,14 @@ local function newInstance(engine, className, name, extra)
 				end
 			elseif extra and extra[key] ~= nil and props[key] == nil then
 				extra[key] = value
+			elseif CLASS_IS[props.ClassName] == BASEPART and key == "CFrame" then
+				-- a part's CFrame and Position move together
+				props.CFrame = value
+				props.Position = value.Position
+			elseif CLASS_IS[props.ClassName] == BASEPART and key == "Position" then
+				local old = props.CFrame
+				props.Position = value
+				props.CFrame = if old then roblox.CFrame.new(value) * (old - old.Position) else roblox.CFrame.new(value)
 			else
 				props[key] = value
 			end
@@ -243,15 +259,38 @@ local function newInstance(engine, className, name, extra)
 		end
 		return nil
 	end
+	-- every part in the model moves with the pivot part (rotation included), as in Roblox
 	function methods.PivotTo(self, cf)
 		local p = pivotPart(self)
-		if p then
-			p.Position = cf.Position
+		if not p then
+			return
 		end
+		local ok, old = pcall(function()
+			return p.CFrame
+		end)
+		if not ok then
+			p.Position = cf.Position
+			return
+		end
+		local delta = cf * old:Inverse()
+		for _, d in self:GetDescendants() do
+			if CLASS_IS[d.ClassName] == BASEPART and d ~= p then
+				local has, dcf = pcall(function()
+					return d.CFrame
+				end)
+				if has then
+					d.CFrame = delta * dcf
+				end
+			end
+		end
+		p.CFrame = cf
 	end
 	function methods.GetPivot(self)
 		local p = pivotPart(self)
-		return roblox.CFrame.new(if p then p.Position else roblox.Vector3.new())
+		local ok, cf = pcall(function()
+			return p.CFrame
+		end)
+		return if p and ok then cf else roblox.CFrame.new(if p then p.Position else roblox.Vector3.new())
 	end
 	function methods.IsDescendantOf(self, ancestor)
 		local p = props.Parent
@@ -676,6 +715,35 @@ local function makeInstanceLib(engine)
 			extra = { Touched = newSignal(engine) }
 		end
 		local inst = newInstance(engine, className, className, extra)
+		if className == "Animator" then
+			-- tracks are plain tables; engine.animTracks logs every one ({ id, playing, speed, timePosition })
+			function inst.LoadAnimation(_, anim)
+				local track = {
+					Animation = anim,
+					AnimationId = anim.AnimationId,
+					Length = 1,
+					Looped = false,
+					IsPlaying = false,
+					Speed = 1,
+					TimePosition = 0,
+				}
+				function track.Play(self)
+					self.IsPlaying = true
+				end
+				function track.Stop(self)
+					self.IsPlaying = false
+				end
+				function track.AdjustSpeed(self, speed)
+					self.Speed = speed
+				end
+				table.insert(engine.animTracks, track)
+				return track
+			end
+		elseif className == "ParticleEmitter" then
+			function inst.Emit(self, n)
+				self:SetAttribute("Emitted", (self:GetAttribute("Emitted") or 0) + n)
+			end
+		end
 		if className == "Model" then
 			-- Model:AddPersistentPlayer / RemovePersistentPlayer (StreamingEnabled): who always gets this model
 			local persistent = {}
@@ -847,6 +915,91 @@ local function makeServices(engine)
 			end
 		end
 		return nil
+	end
+	-- a plain R15 rig (the server only, like Roblox): the parts at their R15 places with the description's body
+	-- colours, the Motor6Ds in their Part1s, a Humanoid with an Animator, and the default face; engine.avatars logs
+	-- every description
+	local R15 = {
+		-- name, size, centre (the root at y 3), Motor6D name, Part0
+		{ "LowerTorso", { 2, 0.4, 1 }, { 0, 2.8, 0 }, "Root", "HumanoidRootPart" },
+		{ "UpperTorso", { 2, 1.6, 1 }, { 0, 3.8, 0 }, "Waist", "LowerTorso" },
+		{ "Head", { 1.2, 1.2, 1.2 }, { 0, 5.2, 0 }, "Neck", "UpperTorso" },
+		{ "LeftUpperArm", { 1, 1.2, 1 }, { -1.5, 4, 0 }, "LeftShoulder", "UpperTorso" },
+		{ "LeftLowerArm", { 1, 1.1, 1 }, { -1.5, 2.9, 0 }, "LeftElbow", "LeftUpperArm" },
+		{ "LeftHand", { 1, 0.3, 1 }, { -1.5, 2.2, 0 }, "LeftWrist", "LeftLowerArm" },
+		{ "RightUpperArm", { 1, 1.2, 1 }, { 1.5, 4, 0 }, "RightShoulder", "UpperTorso" },
+		{ "RightLowerArm", { 1, 1.1, 1 }, { 1.5, 2.9, 0 }, "RightElbow", "RightUpperArm" },
+		{ "RightHand", { 1, 0.3, 1 }, { 1.5, 2.2, 0 }, "RightWrist", "RightLowerArm" },
+		{ "LeftUpperLeg", { 1, 1.2, 1 }, { -0.5, 2, 0 }, "LeftHip", "LowerTorso" },
+		{ "LeftLowerLeg", { 1, 1.2, 1 }, { -0.5, 0.9, 0 }, "LeftKnee", "LeftUpperLeg" },
+		{ "LeftFoot", { 1, 0.3, 1 }, { -0.5, 0.15, 0 }, "LeftAnkle", "LeftLowerLeg" },
+		{ "RightUpperLeg", { 1, 1.2, 1 }, { 0.5, 2, 0 }, "RightHip", "LowerTorso" },
+		{ "RightLowerLeg", { 1, 1.2, 1 }, { 0.5, 0.9, 0 }, "RightKnee", "RightUpperLeg" },
+		{ "RightFoot", { 1, 0.3, 1 }, { 0.5, 0.15, 0 }, "RightAnkle", "RightLowerLeg" },
+	}
+	local COLOUR = {
+		Head = "HeadColor",
+		UpperTorso = "TorsoColor",
+		LowerTorso = "TorsoColor",
+		LeftUpperArm = "LeftArmColor",
+		LeftLowerArm = "LeftArmColor",
+		LeftHand = "LeftArmColor",
+		RightUpperArm = "RightArmColor",
+		RightLowerArm = "RightArmColor",
+		RightHand = "RightArmColor",
+		LeftUpperLeg = "LeftLegColor",
+		LeftLowerLeg = "LeftLegColor",
+		LeftFoot = "LeftLegColor",
+		RightUpperLeg = "RightLegColor",
+		RightLowerLeg = "RightLegColor",
+		RightFoot = "RightLegColor",
+	}
+	function players.CreateHumanoidModelFromDescription(_, desc, rigType)
+		-- server only in Roblox; a client engine allows it so a test can stage a capture scene in-process
+		local I = engine.Instance
+		local V3 = roblox.Vector3
+		table.insert(engine.avatars, desc)
+		local model = I.new("Model")
+		model.Name = "Avatar"
+		local root = I.new("Part")
+		root.Name = "HumanoidRootPart"
+		root.Size = V3.new(2, 2, 1)
+		root.CFrame = roblox.CFrame.new(0, 3, 0)
+		root.Transparency = 1
+		root.Parent = model
+		local parts = { HumanoidRootPart = root }
+		for _, r in R15 do
+			local p = I.new("Part")
+			p.Name = r[1]
+			p.Size = V3.new(table.unpack(r[2]))
+			p.CFrame = roblox.CFrame.new(table.unpack(r[3]))
+			p.Color = desc[COLOUR[r[1]]] or roblox.Color3.new(0.6, 0.6, 0.6)
+			p.Transparency = 0
+			p.Anchored = false
+			p.Parent = model
+			parts[r[1]] = p
+			local motor = I.new("Motor6D")
+			motor.Name = r[4]
+			motor.Part0 = parts[r[5]]
+			motor.Part1 = p
+			motor.C0 = parts[r[5]].CFrame:Inverse() * p.CFrame
+			motor.C1 = roblox.CFrame.new()
+			motor.Parent = p
+		end
+		local face = I.new("Decal")
+		face.Name = "face"
+		face.Texture = "rbxasset://textures/face.png"
+		face.Parent = parts.Head
+		local humanoid = I.new("Humanoid")
+		humanoid.Name = "Humanoid"
+		humanoid.RigType = rigType
+		humanoid.HipHeight = 2
+		humanoid.DisplayDistanceType = engine.Enum.HumanoidDisplayDistanceType.Viewer
+		I.new("Animator", humanoid)
+		desc.Parent = humanoid
+		humanoid.Parent = model
+		model.PrimaryPart = root
+		return model
 	end
 	function players.GetPlayerByUserId(self, id)
 		for _, p in self:GetChildren() do
@@ -1195,6 +1348,8 @@ function Engine.new(opts)
 		errors = {},
 		analytics = {},
 		prompts = {},
+		animTracks = {},
+		avatars = {},
 		badgesAwarded = {},
 		badgesOwned = {},
 		passes = {},

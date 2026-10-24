@@ -26,6 +26,7 @@ local Clock = require(ReplicatedStorage.Shared.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Schedule = require(ReplicatedStorage.Shared.Schedule)
 local Signal = require(ReplicatedStorage.Shared.Signal)
+local SunflowerModel = require(ReplicatedStorage.Shared.Models.Sunflower)
 
 local DataService = require(script.Parent.DataService)
 local DevCommands = require(script.Parent.Parent.Net.DevCommands)
@@ -115,11 +116,17 @@ local function show()
 		return
 	end
 	local look = if window.phase == "wilt" then "Wilt" else LOOKS[window.stage]
-	for _, name in { "Drooping", "Perking", "Standing", "Bloom", "Wilt" } do
-		local part = model:FindFirstChild(name)
-		if part then
-			part.Transparency = if name == look then 0 else 1
+	if model:FindFirstChild(look) and model[look]:IsA("Model") then
+		SunflowerModel.setLook(model, look)
+	else
+		-- a Studio-placed sunflower with one part per look
+		for _, name in SunflowerModel.LOOKS do
+			local part = model:FindFirstChild(name)
+			if part and part:IsA("BasePart") then
+				part.Transparency = if name == look then 0 else 1
+			end
 		end
+		model:SetAttribute("Look", look)
 	end
 	model:SetAttribute("Phase", window.phase)
 	model:SetAttribute("Stage", window.stage)

@@ -2,8 +2,8 @@
 Patch, the pumpkin-headed shopkeeper (§9): his rig at the shop, his prompt, and his lines.
 
 Rig: Workspace.Street.Patch, an anchored Model with an AnimationController + Animator (no Humanoid), an Animations
-folder (idle, wave, point, cheer, announce, lean) and a Face attribute (happy, wow, thinking, wink, sleepy). A
-placeholder is built when the place has none. After 60s with nobody within the restock range he dozes (sleepy).
+folder (idle, wave, point, cheer, announce, lean) and a Face attribute (happy, wow, thinking, wink, sleepy). When
+the place has none, he is built from the shared Models/Patch (cream shirt, green apron, #FF8C1A pumpkin head). After 60s with nobody within the restock range he dozes (sleepy).
 
 Prompt: Config.Patch.prompt (Shop / Patch's Seed Shop / 10 studs / no hold). Triggered is checked on the server
 (within Config.Patch.serverRange) and opens the shop.
@@ -29,6 +29,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Clock = require(ReplicatedStorage.Shared.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
+local PatchModel = require(ReplicatedStorage.Shared.Models.Patch)
 local Schedule = require(ReplicatedStorage.Shared.Schedule)
 
 local BlockPartyService = require(script.Parent.BlockPartyService)
@@ -56,46 +57,15 @@ PatchService.LINE_LOOK = {
 }
 
 local SLEEPY_SEC = 60
-local PUMPKIN = Color3.fromRGB(235, 120, 30)
 
 local rig
 local lastNear = 0
-
-local function part(parent, name, size, pos, color, material)
-	local p = Instance.new("Part")
-	p.Name = name
-	p.Anchored = true
-	p.CanCollide = name ~= "PumpkinHead"
-	p.Size = size
-	p.Position = pos
-	p.Color = color
-	p.Material = material or Enum.Material.SmoothPlastic
-	p.Parent = parent
-	return p
-end
 
 -- makes sure the rig has everything (a Studio-placed one may only bring its parts)
 local function setUp(model)
 	local base = model:FindFirstChild("Counter") or model:FindFirstChild("Body")
 	if not base then
-		local at = Vector3.new(36, 0, -26)
-		part(
-			model,
-			"Counter",
-			Vector3.new(8, 3, 3),
-			at + Vector3.new(0, 1.5, -3),
-			Color3.fromRGB(190, 140, 90),
-			Enum.Material.WoodPlanks
-		)
-		part(
-			model,
-			"Body",
-			Vector3.new(2, 4, 1.5),
-			at + Vector3.new(0, 2, 0),
-			Color3.fromRGB(90, 120, 60),
-			Enum.Material.Fabric
-		)
-		part(model, "PumpkinHead", Vector3.new(2.6, 2.2, 2.6), at + Vector3.new(0, 5.1, 0), PUMPKIN)
+		PatchModel.build(model, CFrame.new(36, 0, -26))
 		base = model.Counter
 	end
 	if not model:FindFirstChildOfClass("AnimationController") then

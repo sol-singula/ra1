@@ -4,12 +4,16 @@ Nothing here is done from the repo. Each item is a step on Mason's account or in
 
 ## Before publishing
 
-- [ ] **`Config.AdminUserIds`** (`src/shared/Config/init.lua`) holds Mason's Roblox UserId instead of `{ 0 }`.
+- [x] **`Config.AdminUserIds`** (`src/shared/Config/init.lua`) holds Mason's Roblox UserId (`{ 11787294097 }`).
 - [ ] **Every Catalog and badge `id` is created and filled in.** That's the 29 store items and 10 badges listed in
       `docs/ids-todo.md`, all made on Mason's own account. Then run `RELEASE=1 tools/run_tests.sh Release`: it
       fails while any id is still 0.
 - [ ] **Private servers** are on, at 99 R$ a month (Creator Hub > Monetization > Private Servers).
 - [ ] **Store art is uploaded:** the 1024×1024 icon and the 1920×1080 thumbnails from the M6 capture scenes.
+  In Studio (capture is Studio only), set the viewport to exactly 1920×1080 (1024×1024 for the icon), then use the
+  DevCommand `capture <scene>` (street, offline_before, offline_after, golden_reveal, block_party_rain,
+  block_party_golden, pedestals, icon), `capture hud off`, `capture guides on` (warns when the viewport size is
+  wrong) and `capture size`. In golden_reveal, `capture reveal` plays the Golden reveal and the farmer's surprise.
 - [ ] **Every analytics event is verified** (M10, `docs/analytics.md`). Run a Studio playtest with the Analytics
       debug view, and do one test join with ad LaunchData `{"src":"ad","c":"test"}` to check that `ad` shows in
       CustomField01 on every event.

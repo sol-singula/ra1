@@ -11,7 +11,7 @@ for _, child in script:GetChildren() do
 	end
 end
 
-Config.AdminUserIds = { 0 } -- TODO: fill in Mason's Roblox UserId
+Config.AdminUserIds = { 11787294097 } -- devs outside Studio (DevCommands; capture stays Studio only)
 
 local function deepFreeze(t)
 	for _, v in t do

@@ -1,33 +1,59 @@
 --[[
-Staged scenes for ad thumbnails and the game icon (the Game Artist brief). Dev only: everything runs through the
-gated DevCommand "capture" (NetService drops non-devs outside Studio as dev_gate before this runs).
+Staged scenes for ad thumbnails and the game icon (the Game Artist brief). Dev only and Studio only: everything runs
+through the gated DevCommand "capture" (NetService drops non-devs outside Studio as dev_gate before this runs), and
+outside Studio even an admin gets studio_only.
 
   capture <scene>          street, offline_before, offline_after, golden_reveal, block_party_rain,
                            block_party_golden, pedestals, icon
+  capture reveal           golden_reveal only: the hero pumpkin turns Golden with the in-game reveal VFX
+                           (Visuals.goldenReveal, played by the client) and the farmer looks surprised
+  capture size             the client prints workspace.CurrentCamera.ViewportSize (and whether it fits the scene)
   capture hud off|on       the client hides / restores every HUD, Patch's toasts and the player list
-  capture guides on|off    the client overlays the frame and the safe line (Config.Capture.safeBottom)
+  capture guides on|off    the client overlays the frame, the safe line (Config.Capture.safeBottom) and a warning
+                           when the viewport isn't the scene's exact size (1920x1080, the icon 1024x1024)
   capture free             back to a free camera
-  anything else            Result { ok = false, code = "unknown_scene" }
+  anything else            Result { ok = false, code = "unknown_scene" } (reveal outside golden_reveal: no_reveal)
+
+Everything staged is the live game's own models: crops through Models/Crop (the same calls TileController and
+PedestalController make, so the Golden and Wet looks match), the sunflower (Models/Sunflower), Patch (Models/Patch)
+and real R15 farmers (Models/Farmer: HumanoidDescriptions, the default face and hands, real poses).
 
 Scenes only stage models, lighting and cameras, in Workspace.Capture (far from the street). They never read or
 write a profile, the plots, the weather or the saves. Loading a scene first tears down the last one (its models,
-its weather VFX, its lighting), so Rain and Golden Hour never share a frame, just as a bloom picks one.
+its weather VFX, its lighting and atmosphere), so Rain and Golden Hour never share a frame, just as a bloom picks one.
+
+  block_party_rain / _golden   the same camera (low, the sunflower centre-right), 7 farmers in an arc facing the
+                               sunflower; Golden: exactly 1 Golden crop, in the foreground third, the rest plain
+  offline_before / _after      a freshly planted plot at night with a farmer walking away; the grown plot by day.
+                               No mutation in either
+  golden_reveal                a plain ripe hero pumpkin among plain pumpkins, framed to ~35% of the height
+  pedestals                    Wet x2, Golden x20, Wet + Golden x40 on a rising left-to-right diagonal, x40 tallest
+                               and nearest; blue, gold and purple-gold badges; a farmer at the side
+  icon                         a Golden pumpkin framed close, a farmer waving, a deep-blue clear sky
 
 Workspace.Capture
   Cams/<scene>   an anchored, invisible part: its CFrame is the camera; attributes Width, Height, FieldOfView
   Stage          the staged models of the current scene
-  attributes     Scene, Lighting ("day" | "night" | "rain" | "golden"), Hud, Guides, Free (the client follows them)
+  attributes     Scene, Lighting ("day" | "night" | "rain" | "golden" | "clear"), Hud, Guides, Free, Reveal and
+                 SizeAsk (counters the client acts on)
 
   CaptureService.SCENES / run(args) / scene() / camFor(scene)
+  CaptureService.ARC (7) / PATCH_ORANGE
 ]]
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local CropModel = require(ReplicatedStorage.Shared.Models.Crop)
+local Farmer = require(ReplicatedStorage.Shared.Models.Farmer)
+local Kit = require(ReplicatedStorage.Shared.Models.Kit)
 local MutationMath = require(ReplicatedStorage.Shared.MutationMath)
+local PatchModel = require(ReplicatedStorage.Shared.Models.Patch)
+local SunflowerModel = require(ReplicatedStorage.Shared.Models.Sunflower)
 local Visuals = require(ReplicatedStorage.Shared.Visuals)
 
 local DevCommands = require(script.Parent.Parent.Net.DevCommands)
+local DevConfig = require(script.Parent.Parent.DevConfig)
 
 local CaptureService = {}
 
@@ -41,9 +67,11 @@ CaptureService.SCENES = {
 	"pedestals",
 	"icon",
 }
+CaptureService.ARC = 7
+CaptureService.PATCH_ORANGE = PatchModel.ORANGE
 
 local ORIGIN = Vector3.new(0, 0, 600) -- the stage, well away from the street
-local PATCH_ORANGE = Color3.fromRGB(235, 120, 30)
+local SOIL_TOP = 0.5
 
 local LIGHTS = {
 	day = {
@@ -82,49 +110,44 @@ local LIGHTS = {
 		FogEnd = 100000,
 		FogColor = Color3.fromRGB(255, 210, 160),
 	},
+	-- the icon: a deep-blue clear midday sky, no golden light
+	clear = {
+		ClockTime = 14,
+		Brightness = 3,
+		Ambient = Color3.fromRGB(105, 120, 150),
+		OutdoorAmbient = Color3.fromRGB(125, 145, 185),
+		ColorShift_Top = Color3.new(0, 0, 0),
+		FogEnd = 100000,
+		FogColor = Color3.fromRGB(110, 165, 255),
+	},
+}
+-- the Atmosphere a preset sets (the clear sky's deep blue); the others leave the place's own alone
+local ATMOSPHERES = {
+	clear = {
+		Density = 0.24,
+		Offset = 0,
+		Color = Color3.fromRGB(150, 195, 255),
+		Decay = Color3.fromRGB(40, 90, 200),
+		Glare = 0,
+		Haze = 0,
+	},
 }
 
-local OUTFITS = {
-	overalls = { shirt = Color3.fromRGB(240, 240, 235), pants = Color3.fromRGB(60, 90, 160) },
-	sunhat = {
-		shirt = Color3.fromRGB(250, 200, 120),
-		pants = Color3.fromRGB(120, 90, 60),
-		hat = Color3.fromRGB(230, 200, 120),
-	},
-	apron = {
-		shirt = Color3.fromRGB(200, 80, 80),
-		pants = Color3.fromRGB(70, 60, 50),
-		apron = Color3.fromRGB(245, 240, 220),
-	},
-	rainboots = {
-		shirt = Color3.fromRGB(90, 160, 210),
-		pants = Color3.fromRGB(60, 60, 70),
-		boots = Color3.fromRGB(240, 210, 40),
-	},
-	flannel = { shirt = Color3.fromRGB(170, 40, 40), pants = Color3.fromRGB(50, 70, 110) },
-	gloves = {
-		shirt = Color3.fromRGB(110, 170, 90),
-		pants = Color3.fromRGB(90, 80, 60),
-		gloves = Color3.fromRGB(120, 200, 120),
-	},
+-- the badge on each pedestal: x2 / x20 / x40 (a letter x), blue, gold and purple-gold
+local BADGES = {
+	wet = { bg = Color3.fromRGB(40, 118, 230), text = Color3.new(1, 1, 1) },
+	golden = { bg = Visuals.GOLD, text = Color3.fromRGB(70, 44, 8) },
+	wetgolden = { bg = Color3.fromRGB(110, 48, 170), text = Visuals.GOLD, stroke = Visuals.GOLD },
 }
-local OUTFIT_ORDER = { "overalls", "sunhat", "apron", "rainboots", "flannel", "gloves" }
+CaptureService.BADGES = BADGES
 
 local folder, cams, stage
 local current
 local baseline -- the lighting before the first scene
+local atmosphere -- { made = Atmosphere } or { kept = Atmosphere, was = props }
 
 local function part(parent, name, size, pos, color, material)
-	local p = Instance.new("Part")
-	p.Name = name
-	p.Anchored = true
-	p.CanCollide = false
-	p.Size = size
-	p.Position = ORIGIN + pos
-	p.Color = color
-	p.Material = material or Enum.Material.SmoothPlastic
-	p.Parent = parent
-	return p
+	return Kit.part(parent, name, size, CFrame.new(ORIGIN + pos), color, material)
 end
 
 local function cam(name, eye, target, square)
@@ -164,119 +187,50 @@ local function ground(size)
 	)
 end
 
--- a crop: seed colour, growth 0..1, a mutation key for its sparkles
-local function crop(name, seed, pos, growth, mutKey)
-	local size = 0.6 + 2.2 * growth
-	local p = part(
+-- a crop on the soil at pos (the same call TileController makes for a live tile)
+local function crop(name, seed, pos, progress, muts)
+	return CropModel.forTile(
 		stage,
 		name,
-		Vector3.new(size, size, size),
-		pos + Vector3.new(0, size / 2 + 0.5, 0),
-		if growth >= 1 then Visuals.SEED[seed] else Visuals.LEAF:Lerp(Visuals.SEED[seed], growth),
-		if growth >= 1 then Enum.Material.Neon else Enum.Material.SmoothPlastic
+		seed,
+		progress,
+		progress >= 1,
+		muts,
+		CFrame.new(ORIGIN + pos + Vector3.new(0, SOIL_TOP, 0)) * CFrame.Angles(0, math.rad((#name * 47) % 360), 0)
 	)
-	p:SetAttribute("Seed", seed)
-	p:SetAttribute("Muts", mutKey)
-	p:SetAttribute("Crop", true)
-	Visuals.mutationFx(p, mutKey)
-	return p
 end
 
-local function bed(prefix, center, seeds, growth, mutKey)
-	part(
-		stage,
-		prefix .. "Soil",
-		Vector3.new(14, 1, 14),
-		center + Vector3.new(0, 0, 0),
-		Color3.fromRGB(120, 84, 52),
-		Enum.Material.Ground
-	)
+-- a 3 x 3 bed; mutFor(i) gives crop i its mutation key
+local function bed(prefix, center, seeds, progress, mutFor)
+	part(stage, prefix .. "Soil", Vector3.new(14, 1, 14), center, Color3.fromRGB(120, 84, 52), Enum.Material.Ground)
 	local i = 0
 	for r = -1, 1 do
 		for c = -1, 1 do
 			i += 1
 			local seed = seeds[(i - 1) % #seeds + 1]
-			crop(`{prefix}Crop{i}`, seed, center + Vector3.new(c * 4, 0, r * 4), growth, mutKey)
+			crop(`{prefix}Crop{i}`, seed, center + Vector3.new(c * 4, 0, r * 4), progress, mutFor and mutFor(i))
 		end
 	end
 end
 
--- a blocky farmer; pose "wave" | "cheer" | nil
-local function farmer(name, outfitKey, pos, pose)
-	local o = OUTFITS[outfitKey]
-	local model = Instance.new("Model")
-	model.Name = name
-	model:SetAttribute("Outfit", outfitKey)
-	model.Parent = stage
-	local skin = Color3.fromRGB(240, 200, 160)
-	part(model, "Legs", Vector3.new(2, 2, 1), pos + Vector3.new(0, 1, 0), o.pants)
-	part(model, "Torso", Vector3.new(2, 2, 1), pos + Vector3.new(0, 3, 0), o.shirt)
-	part(model, "Head", Vector3.new(1.2, 1.2, 1.2), pos + Vector3.new(0, 4.6, 0), skin)
-	local armY = if pose == "cheer" then 4.6 else 3
-	part(model, "LeftArm", Vector3.new(1, 2, 1), pos + Vector3.new(-1.5, armY, 0), o.shirt)
-	part(model, "RightArm", Vector3.new(1, 2, 1), pos + Vector3.new(1.5, if pose then 4.6 else 3, 0), o.shirt)
-	if o.hat then
-		part(model, "SunHat", Vector3.new(3, 0.3, 3), pos + Vector3.new(0, 5.3, 0), o.hat, Enum.Material.Fabric)
-	end
-	if o.apron then
-		part(model, "Apron", Vector3.new(1.8, 2.6, 0.2), pos + Vector3.new(0, 2.4, -0.6), o.apron, Enum.Material.Fabric)
-	end
-	if o.boots then
-		part(model, "Boots", Vector3.new(2.1, 0.8, 1.1), pos + Vector3.new(0, 0.4, 0), o.boots, Enum.Material.Plastic)
-	end
-	if o.gloves then
-		part(
-			model,
-			"Gloves",
-			Vector3.new(1.1, 0.5, 1.1),
-			pos + Vector3.new(1.5, armY - 1, 0),
-			o.gloves,
-			Enum.Material.Fabric
-		)
-	end
-	return model
+-- a real R15 farmer standing at pos, facing the point face
+local function farmer(name, outfitKey, skin, pos, face, pose)
+	local at = ORIGIN + pos
+	local look = ORIGIN + Vector3.new(face.X, pos.Y, face.Z)
+	return Farmer.build(stage, name, outfitKey, skin, CFrame.lookAt(at, look), pose)
 end
 
--- Patch the shopkeeper: always his orange pumpkin head, never gold
 local function patch(pos)
-	local model = Instance.new("Model")
-	model.Name = "Patch"
-	model.Parent = stage
-	part(
-		model,
-		"Body",
-		Vector3.new(2, 4, 1),
-		pos + Vector3.new(0, 2, 0),
-		Color3.fromRGB(90, 120, 60),
-		Enum.Material.Fabric
-	)
-	local head = part(
-		model,
-		"PumpkinHead",
-		Vector3.new(2.4, 2, 2.4),
-		pos + Vector3.new(0, 5, 0),
-		PATCH_ORANGE,
-		Enum.Material.SmoothPlastic
-	)
-	head:SetAttribute("Patch", true)
+	local model = Kit.model(stage, "Patch")
+	PatchModel.build(model, CFrame.new(ORIGIN + pos))
 	return model
 end
 
-local function sunflower(pos)
-	local model = Instance.new("Model")
-	model.Name = "Sunflower"
+local function sunflower(pos, face)
+	local at = ORIGIN + pos
+	local model = SunflowerModel.build(stage, CFrame.lookAt(at, ORIGIN + Vector3.new(face.X, pos.Y, face.Z)))
+	SunflowerModel.setLook(model, "Bloom")
 	model:SetAttribute("Stage", "bloom")
-	model.Parent = stage
-	part(
-		model,
-		"Stem",
-		Vector3.new(2, 14, 2),
-		pos + Vector3.new(0, 7, 0),
-		Color3.fromRGB(70, 140, 50),
-		Enum.Material.Grass
-	)
-	part(model, "Bloom", Vector3.new(9, 9, 1.5), pos + Vector3.new(0, 18, 0), Color3.fromRGB(255, 205, 0))
-	part(model, "Centre", Vector3.new(3.5, 3.5, 1.7), pos + Vector3.new(0, 18, -0.2), Color3.fromRGB(110, 70, 30))
 	return model
 end
 
@@ -293,36 +247,98 @@ local function rainFx()
 	rain.Parent = cloud
 end
 
-local function badge(target, text)
+local function badge(target, key, text)
+	local style = BADGES[key]
 	local board = Instance.new("BillboardGui")
 	board.Name = "Badge"
-	board.Size = UDim2.fromOffset(120, 60)
-	board.StudsOffset = Vector3.new(0, 3, 0)
+	board.Size = UDim2.fromOffset(130, 64)
+	board.StudsOffset = Vector3.new(0, 2.6, 0)
 	board.AlwaysOnTop = true
+	board:SetAttribute("Style", key)
 	local label = Instance.new("TextLabel")
 	label.Name = "Text"
-	label.BackgroundColor3 = Color3.fromRGB(40, 30, 20)
-	label.BackgroundTransparency = 0.2
+	label.BackgroundColor3 = style.bg
+	label.BackgroundTransparency = 0
 	label.Size = UDim2.fromScale(1, 1)
 	label.TextScaled = true
 	label.Font = Enum.Font.GothamBlack
-	label.TextColor3 = Color3.new(1, 1, 1)
+	label.TextColor3 = style.text
 	label.Text = text
 	label.Parent = board
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0.3, 0)
+	corner.Parent = label
+	if style.stroke then
+		local stroke = Instance.new("UIStroke")
+		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		stroke.Color = style.stroke
+		stroke.Thickness = 4
+		stroke.Parent = label
+	end
 	board.Parent = target
+	return board
+end
+
+---------------------------------------------------------------------------------------------------------------
+-- lighting
+
+local function setAtmosphere(cfg)
+	local a = Lighting:FindFirstChildOfClass("Atmosphere")
+	if not a then
+		a = Instance.new("Atmosphere")
+		a.Name = "CaptureAtmosphere"
+		a.Parent = Lighting
+		atmosphere = { made = a }
+	else
+		local was = {}
+		for k in cfg do
+			was[k] = a[k]
+		end
+		atmosphere = { kept = a, was = was }
+	end
+	for k, value in cfg do
+		a[k] = value
+	end
+end
+
+local function restoreAtmosphere()
+	if atmosphere and atmosphere.made then
+		atmosphere.made:Destroy()
+	elseif atmosphere and atmosphere.kept then
+		for k, value in atmosphere.was do
+			atmosphere.kept[k] = value
+		end
+	end
+	atmosphere = nil
+end
+
+local function lighting(kind)
+	for k, value in LIGHTS[kind] do
+		Lighting[k] = value
+	end
+	if ATMOSPHERES[kind] then
+		setAtmosphere(ATMOSPHERES[kind])
+	end
+	folder:SetAttribute("Lighting", kind)
 end
 
 ---------------------------------------------------------------------------------------------------------------
 -- scenes
 
-local function lighting(kind)
-	for k, v in LIGHTS[kind] do
-		Lighting[k] = v
-	end
-	folder:SetAttribute("Lighting", kind)
-end
-
 local BUILD = {}
+
+-- the Block Party set: the sunflower centre-right, 7 farmers in an arc behind it facing it (their faces to the
+-- camera), two beds on the left; both weathers use this exact camera
+local BP_SUNFLOWER = Vector3.new(6, 0, -6)
+local BP_EYE, BP_TARGET = Vector3.new(-4, 3, 28), Vector3.new(0, 7.5, -6)
+local ARC = {
+	radius = 9,
+	from = 200,
+	step = 25,
+	poses = { "cheer", "wave", "cheer", "watering", "cheer", "wave", "idle" },
+	outfits = { "overalls", "sunhat", "apron", "rainboots", "flannel", "gloves", "rainboots" },
+}
+CaptureService.BLOCK_PARTY = { sunflower = BP_SUNFLOWER, eye = BP_EYE, target = BP_TARGET, arc = ARC }
 
 function BUILD.street()
 	lighting("day")
@@ -335,19 +351,23 @@ function BUILD.street()
 		Color3.fromRGB(70, 70, 75),
 		Enum.Material.Asphalt
 	)
-	bed("PlotA", Vector3.new(-30, 0, 0), { "carrot", "tomato", "corn" }, 1, nil)
-	bed("PlotB", Vector3.new(0, 0, 0), { "strawberry", "blueberry" }, 0.7, nil)
-	bed("PlotC", Vector3.new(30, 0, 0), { "pumpkin", "watermelon" }, 1, nil)
-	sunflower(Vector3.new(0, 0, -36))
-	for i, key in OUTFIT_ORDER do
-		farmer("Farmer" .. i, key, Vector3.new(-40 + (i - 1) * 16, 0, -12), if i % 2 == 0 then "wave" else nil)
+	bed("PlotA", Vector3.new(-30, 0, 0), { "carrot", "tomato", "corn" }, 1)
+	bed("PlotB", Vector3.new(0, 0, 0), { "strawberry", "blueberry" }, 0.6)
+	bed("PlotC", Vector3.new(30, 0, 0), { "pumpkin", "watermelon" }, 1)
+	sunflower(Vector3.new(0, 0, -36), Vector3.new(0, 0, -70))
+	local poses = { "idle", "wave", "watering", "cheer", "walk", "wave" }
+	for i, key in Farmer.OUTFIT_ORDER do
+		local x = -40 + (i - 1) * 16
+		farmer("Farmer" .. i, key, i, Vector3.new(x, 0, -12), Vector3.new(x, 0, -70), poses[i])
 	end
 	patch(Vector3.new(48, 0, -12))
 end
 
-local function offline(growth)
+local OFFLINE_SEEDS = { "corn", "tomato", "watermelon" }
+
+local function offline(progress)
 	ground(60)
-	bed("Plot", Vector3.new(0, 0, 0), { "corn", "tomato", "watermelon" }, growth, nil)
+	bed("Plot", Vector3.new(0, 0, 0), OFFLINE_SEEDS, progress)
 	part(
 		stage,
 		"House",
@@ -360,7 +380,9 @@ end
 
 function BUILD.offline_before()
 	lighting("night")
-	offline(0.15)
+	offline(0.05)
+	-- done planting, heading home: walking away from the plot, towards the house
+	farmer("Farmer1", "overalls", 3, Vector3.new(-7, 0, 6), Vector3.new(-14, 0, 12), "walk")
 end
 
 function BUILD.offline_after()
@@ -368,23 +390,56 @@ function BUILD.offline_after()
 	offline(1)
 end
 
+-- the hero pumpkin's centre and the reveal camera (the pumpkin ~35% of the frame height)
+local HERO = Vector3.new(0, 0, 0)
+local REVEAL_EYE, REVEAL_TARGET = Vector3.new(-1.75, 3.8, -5), Vector3.new(-0.6, 2.15, 0)
+CaptureService.REVEAL_FRACTION = 0.35
+
 function BUILD.golden_reveal()
 	lighting("day")
 	ground(60)
-	local hero = crop("HeroCrop", "pumpkin", Vector3.new(0, 0, 0), 1, "golden")
-	hero.Size = Vector3.new(5, 5, 5)
-	hero.Position = ORIGIN + Vector3.new(0, 3, 0)
-	farmer("Farmer1", "sunhat", Vector3.new(6, 0, 3), "cheer")
+	part(
+		stage,
+		"PlotSoil",
+		Vector3.new(14, 1, 14),
+		Vector3.new(0, 0, 0),
+		Color3.fromRGB(120, 84, 52),
+		Enum.Material.Ground
+	)
+	local i = 0
+	for r = -1, 1 do
+		for c = -1, 1 do
+			if r ~= 0 or c ~= 0 then
+				i += 1
+				crop("PlotCrop" .. i, "pumpkin", Vector3.new(c * 4, 0, r * 4), 1, nil)
+			end
+		end
+	end
+	crop("HeroCrop", "pumpkin", HERO, 1, nil)
+	farmer("Farmer1", "sunhat", 2, Vector3.new(-3.2, 0, 0.8), HERO, "idle")
 end
 
 local function blockParty(kind)
 	lighting(kind)
 	ground(120)
-	sunflower(Vector3.new(0, 0, -20))
-	local mut = if kind == "rain" then "wet" else "golden"
-	bed("PlotA", Vector3.new(-18, 0, 4), { "corn", "tomato" }, 1, mut)
-	bed("PlotB", Vector3.new(18, 0, 4), { "pumpkin", "carrot" }, 1, mut)
-	farmer("Farmer1", if kind == "rain" then "rainboots" else "flannel", Vector3.new(0, 0, 0), "cheer")
+	sunflower(BP_SUNFLOWER, BP_EYE)
+	local golden = kind == "golden"
+	-- rain: every crop Wet; Golden Hour: one Golden crop, PlotA's front-right pumpkin (in the foreground third)
+	local function mutFor(prefix)
+		return function(i)
+			if not golden then
+				return "wet"
+			end
+			return if prefix == "PlotA" and i == 9 then "golden" else nil
+		end
+	end
+	bed("PlotA", Vector3.new(-10, 0, 12), { "corn", "tomato", "pumpkin" }, 1, mutFor("PlotA"))
+	bed("PlotB", Vector3.new(-14, 0, -2), { "watermelon", "strawberry" }, 1, mutFor("PlotB"))
+	for i = 1, CaptureService.ARC do
+		local a = math.rad(ARC.from + (i - 1) * ARC.step)
+		local pos = BP_SUNFLOWER + Vector3.new(math.cos(a), 0, math.sin(a)) * ARC.radius
+		farmer("Farmer" .. i, ARC.outfits[i], i, pos, BP_SUNFLOWER, ARC.poses[i])
+	end
 	if kind == "rain" then
 		rainFx()
 	end
@@ -398,37 +453,40 @@ function BUILD.block_party_golden()
 	blockParty("golden")
 end
 
+-- left to right: rising, and coming towards the camera; x40 is the tallest and nearest
+local PEDESTALS = {
+	{ "wet", { wet = true }, Vector3.new(-6, 0, -4), 2.5 },
+	{ "golden", { golden = true }, Vector3.new(0, 0, 0), 4 },
+	{ "wetgolden", { wet = true, golden = true }, Vector3.new(6, 0, 4), 5.5 },
+}
+CaptureService.PEDESTALS = PEDESTALS
+
 function BUILD.pedestals()
 	lighting("day")
 	ground(40)
-	local entries = {
-		{ "wet", { wet = true }, Config.Mutations.wet.mult },
-		{ "golden", { golden = true }, Config.Mutations.golden.mult },
-		{ "wetgolden", { wet = true, golden = true }, Config.Mutations.stackMult },
-	}
-	for i, e in entries do
-		local x = (i - 2) * 8
-		part(
+	for i, e in PEDESTALS do
+		local pedestal = part(
 			stage,
 			"Pedestal" .. i,
-			Vector3.new(3, 3, 3),
-			Vector3.new(x, 1.5, 0),
+			Vector3.new(3, e[4], 3),
+			e[3] + Vector3.new(0, e[4] / 2, 0),
 			Color3.fromRGB(220, 220, 225),
 			Enum.Material.Marble
 		)
-		local c = crop("PedestalCrop" .. i, "pumpkin", Vector3.new(x, 2.5, 0), 1, e[1])
-		badge(c, "×" .. e[3])
-		c:SetAttribute("Mult", MutationMath.mult(e[2]))
+		-- the same call PedestalController makes for a live pedestal
+		local item = CropModel.onPedestal(stage, "PedestalCrop" .. i, "pumpkin", e[1], pedestal, 0.8)
+		item:SetAttribute("Mult", MutationMath.mult(e[2]))
+		badge(CropModel.main(item), e[1], "x" .. MutationMath.mult(e[2]))
 	end
+	farmer("Farmer1", "gloves", 4, Vector3.new(-11, 0, 5), Vector3.new(0, 0, 0), "cheer")
 end
 
 function BUILD.icon()
-	lighting("golden")
+	lighting("clear")
 	ground(30)
-	local hero = crop("HeroCrop", "pumpkin", Vector3.new(0, 0, 0), 1, "golden")
-	hero.Size = Vector3.new(6, 6, 6)
-	hero.Position = ORIGIN + Vector3.new(0, 3.5, 0)
-	farmer("Farmer1", "overalls", Vector3.new(5, 0, 2), "cheer")
+	part(stage, "Soil", Vector3.new(6, 1, 6), Vector3.new(0, 0, 0), Color3.fromRGB(120, 84, 52), Enum.Material.Ground)
+	crop("HeroCrop", "pumpkin", Vector3.new(0, 0, 0), 1, "golden")
+	farmer("Farmer1", "overalls", 2, Vector3.new(2.6, 0, -3.5), Vector3.new(-1.3, 0, 6), "wave")
 end
 
 local function build()
@@ -447,11 +505,11 @@ local function build()
 	cam("street", Vector3.new(0, 30, -70), Vector3.new(0, 4, 0))
 	cam("offline_before", Vector3.new(10, 18, -30), Vector3.new(0, 1, 0))
 	cam("offline_after", Vector3.new(10, 18, -30), Vector3.new(0, 1, 0))
-	cam("golden_reveal", Vector3.new(-4, 7, -14), Vector3.new(1, 3, 0))
-	cam("block_party_rain", Vector3.new(0, 22, -55), Vector3.new(0, 8, -6))
-	cam("block_party_golden", Vector3.new(0, 22, -55), Vector3.new(0, 8, -6))
-	cam("pedestals", Vector3.new(0, 7, -20), Vector3.new(0, 3, 0))
-	cam("icon", Vector3.new(-3, 7, -13), Vector3.new(1.5, 3.5, 0), true)
+	cam("golden_reveal", REVEAL_EYE, REVEAL_TARGET)
+	cam("block_party_rain", BP_EYE, BP_TARGET)
+	cam("block_party_golden", BP_EYE, BP_TARGET)
+	cam("pedestals", Vector3.new(3, 5.5, 17), Vector3.new(0, 4, 0))
+	cam("icon", Vector3.new(-1.33, 3.4, 5.33), Vector3.new(0.6, 2.45, 0), true)
 	folder:SetAttribute("Hud", true)
 	folder:SetAttribute("Guides", false)
 	folder:SetAttribute("Free", true)
@@ -460,13 +518,18 @@ end
 
 local function teardown()
 	for _, child in stage:GetChildren() do
-		child:Destroy()
-	end
-	if baseline then
-		for k, v in baseline do
-			Lighting[k] = v
+		if child:GetAttribute("Crop") then
+			CropModel.destroy(child) -- its glints go back to the pool
+		else
+			child:Destroy()
 		end
 	end
+	if baseline then
+		for k, value in baseline do
+			Lighting[k] = value
+		end
+	end
+	restoreAtmosphere()
 	folder:SetAttribute("Lighting", nil)
 end
 
@@ -479,15 +542,32 @@ local function load(scene)
 		end
 	end
 	teardown()
-	BUILD[scene]()
 	current = scene
 	folder:SetAttribute("Scene", scene)
 	folder:SetAttribute("Free", false)
+	BUILD[scene]()
+end
+
+local function reveal()
+	local hero = stage and stage:FindFirstChild("HeroCrop")
+	if current ~= "golden_reveal" or not hero then
+		return false, "no_reveal"
+	end
+	CropModel.setMuts(hero, "golden")
+	local farmerModel = stage:FindFirstChild("Farmer1")
+	if farmerModel then
+		Farmer.pose(farmerModel, "surprised")
+	end
+	folder:SetAttribute("Reveal", (folder:GetAttribute("Reveal") or 0) + 1)
+	return true
 end
 
 local ONOFF = { on = true, off = false }
 
 function CaptureService.run(args)
+	if not DevConfig.isStudio() then
+		return false, "studio_only"
+	end
 	local which, arg = args[1], args[2]
 	if which == "hud" and ONOFF[arg] ~= nil then
 		build()
@@ -501,6 +581,12 @@ function CaptureService.run(args)
 		build()
 		folder:SetAttribute("Free", true)
 		return true
+	elseif which == "reveal" and arg == nil then
+		return reveal()
+	elseif which == "size" and arg == nil then
+		build()
+		folder:SetAttribute("SizeAsk", (folder:GetAttribute("SizeAsk") or 0) + 1)
+		return true
 	elseif type(which) == "string" and BUILD[which] and arg == nil then
 		load(which)
 		return true
@@ -513,7 +599,5 @@ function CaptureService:Init()
 		return CaptureService.run(args)
 	end)
 end
-
-CaptureService.PATCH_ORANGE = PATCH_ORANGE
 
 return CaptureService

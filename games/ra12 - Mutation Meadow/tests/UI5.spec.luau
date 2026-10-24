@@ -199,7 +199,9 @@ test("the pedestal picker: slots, item list, Remove; pedestals show the item wit
 	ped.draw()
 	local shownItem = Client.find(c.engine.workspace, "ShownItem")
 	Assert.truthy(shownItem, "the item on the pedestal")
-	eq(shownItem.MutFx:GetAttribute("Key"), "wetgolden")
+	local CropModel = c.engine:require(c.engine:module("Shared/Models/Crop"))
+	eq(CropModel.main(shownItem).MutFx:GetAttribute("Key"), "wetgolden")
+	eq(shownItem:GetAttribute("Stage"), "item", "the kept crop: the fruit on its own")
 	eq(shownItem.Label.Text.Text, "Wet + Golden Pumpkin\nfound by you")
 	eq(c.engine.errors, {})
 end)
@@ -214,9 +216,45 @@ test("mutated crops sparkle in the world", function()
 		tile:SetAttribute(k, v)
 	end
 	c.engine:advance(0.5)
+	local CropModel = c.engine:require(c.engine:module("Shared/Models/Crop"))
 	local crop = c.engine.workspace.ClientCrops:FindFirstChild("Plot1_2")
-	eq(crop.MutFx:GetAttribute("Key"), "wet")
+	eq(CropModel.main(crop).MutFx:GetAttribute("Key"), "wet")
+	Assert.truthy(crop.MutLook.Bead1, "Wet droplet beads")
 	tile:SetAttribute("Muts", nil)
 	c.engine:advance(0.5)
-	eq(crop:FindFirstChild("MutFx"), nil)
+	eq(CropModel.main(crop):FindFirstChild("MutFx"), nil)
+	eq(crop:FindFirstChild("MutLook"), nil)
+end)
+
+test("a crop turning Golden on a live tile plays the Golden reveal; one light, star glints", function()
+	local c = Client.boot()
+	local CropModel = c.engine:require(c.engine:module("Shared/Models/Crop"))
+	local Visuals = c.engine:require(c.engine:module("Shared/Visuals"))
+	local tile = c.plot.Tiles["2"]
+	local now = c.engine.workspace:GetServerTimeNow()
+	for k, v in { Active = true, Seed = "pumpkin", Grown = 720, At = now, Rate = 1, GrowSec = 720, Ripe = true } do
+		tile:SetAttribute(k, v)
+	end
+	c.engine:advance(0.5)
+	local crop = c.engine.workspace.ClientCrops:FindFirstChild("Plot1_2")
+	eq({ crop:GetAttribute("Stage"), crop:GetAttribute("Revealed") }, { "ripe", nil })
+	tile:SetAttribute("Muts", "golden")
+	c.engine:advance(0.3)
+	local main = CropModel.main(crop)
+	Assert.truthy(main:FindFirstChild("RevealBurst"), "the reveal")
+	eq(crop:GetAttribute("Revealed"), 1)
+	c.engine:advance(3)
+	eq(main.Color, Visuals.GOLD)
+	eq(main.MutFx.Texture, Visuals.SPARKLE)
+	local lights = 0
+	for _, d in crop:GetDescendants() do
+		if d.ClassName == "PointLight" then
+			lights += 1
+		end
+	end
+	eq(lights, 1)
+	tile:SetAttribute("Muts", "wetgolden")
+	c.engine:advance(0.5)
+	eq(crop:GetAttribute("Revealed"), 1, "already Golden: no second reveal")
+	eq(c.engine.errors, {})
 end)

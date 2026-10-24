@@ -1,6 +1,7 @@
 --[[
-Tiles on the client: draws every plot's crops from the tile attributes (growing smoothly between server updates),
-and the tile popup when you tap one.
+Tiles on the client: draws every plot's crops from the tile attributes (growing between server updates) with the
+shared Models/Crop (the same models the capture stage stages): each growth stage, the Golden and Wet looks, and the
+Golden reveal (Visuals.goldenReveal) when a crop you can see turns Golden. And the tile popup when you tap one.
 
 Popup: your empty tile -> pick a seed you own (or pick up its sprinkler); growing -> seed, time left, boosts and the
 can; ripe -> Harvest (a full basket offers selling that one); someone else's growing crop -> Help water.
@@ -19,6 +20,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Tiles = require(ReplicatedStorage.Shared.Tiles)
 local MutationMath = require(ReplicatedStorage.Shared.MutationMath)
+local CropModel = require(ReplicatedStorage.Shared.Models.Crop)
 local ClientState = require(script.Parent.Parent.ClientState)
 local UI = require(script.Parent.Parent.UI)
 local Visuals = require(ReplicatedStorage.Shared.Visuals)
@@ -29,7 +31,7 @@ local controllers
 local popup, banner
 local placingKind
 local cropFolder
-local crops = {} -- [tile part] = crop part
+local crops = {} -- [tile part] = crop Model
 local connected = {} -- [ClickDetector] = true
 local current -- { plot, id }
 
@@ -228,6 +230,12 @@ local function connectClicks()
 	end
 end
 
+-- the soil top of a tile, turned a little per tile so a bed of one seed doesn't look stamped
+local function soilTop(part)
+	local turn = (string.byte(part.Name, 1) + #part.Name * 7 + (tonumber(part.Name:match("%d+")) or 0) * 53) % 360
+	return CFrame.new(part.Position + Vector3.new(0, part.Size.Y / 2, 0)) * CFrame.Angles(0, math.rad(turn), 0)
+end
+
 local function draw()
 	local now = Clock.now()
 	local seen = {}
@@ -238,33 +246,32 @@ local function draw()
 				if seed then
 					seen[part] = true
 					local crop = crops[part]
-					if not crop then
-						crop = Instance.new("Part")
-						crop.Name = plot.Name .. "_" .. part.Name
-						crop.Anchored = true
-						crop.CanCollide = false
-						crop.Parent = cropFolder
-						crops[part] = crop
-					end
 					local growSec = part:GetAttribute("GrowSec") or 1
-					local progress = math.clamp((Visuals.grownNow(part, now) or 0) / growSec, 0.1, 1)
-					local ripe = part:GetAttribute("Ripe") == true
-					local size = 0.6 + 2.2 * progress
-					crop.Size = Vector3.new(size, size, size)
-					crop.Position = part.Position + Vector3.new(0, 0.5 + size / 2, 0)
-					crop.Color = if ripe
-						then Visuals.SEED[seed] or Visuals.LEAF
-						else Visuals.LEAF:Lerp(Visuals.SEED[seed] or Visuals.LEAF, progress)
-					crop.Material = if ripe then Enum.Material.Neon else Enum.Material.SmoothPlastic
-					Visuals.mutationFx(crop, part:GetAttribute("Muts"))
+					local progress = math.clamp((Visuals.grownNow(part, now) or 0) / growSec, 0, 1)
+					local stage = CropModel.stageFor(progress, part:GetAttribute("Ripe") == true)
+					local muts = part:GetAttribute("Muts")
+					if crop and (crop:GetAttribute("Seed") ~= seed or crop:GetAttribute("Stage") ~= stage) then
+						CropModel.destroy(crop)
+						crop = nil
+					end
+					if not crop then
+						crop =
+							CropModel.build(cropFolder, plot.Name .. "_" .. part.Name, seed, stage, soilTop(part), muts)
+						crops[part] = crop
+					elseif crop:GetAttribute("Muts") ~= muts then
+						local wasGolden = string.find(crop:GetAttribute("Muts") or "", "golden") ~= nil
+						CropModel.setMuts(crop, muts)
+						if not wasGolden and string.find(muts or "", "golden") then
+							Visuals.goldenReveal(crop)
+						end
+					end
 				end
 			end
 		end
 	end
 	for part, crop in crops do
 		if not seen[part] then
-			Visuals.release(crop) -- its sparkles go back to the pool
-			crop:Destroy()
+			CropModel.destroy(crop) -- its glints go back to the pool
 			crops[part] = nil
 		end
 	end
