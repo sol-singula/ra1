@@ -8,13 +8,17 @@ test("reduced effects cut mutation particles by 75% and turn the rain sheet off"
 	local c = Client.boot()
 	local Visuals = c.engine:require(c.engine:module("Shared/Visuals"))
 	local part = c.engine.Instance.new("Part")
+	-- GA-02 section 5: idle rates 3 / 0.35 / 3 + 0.25 (were 8 / 8 / 14)
 	Visuals.mutationFx(part, "wetgolden")
-	eq(part.MutFx.Rate, 14)
+	eq({ part.MutFx.Rate, part.MutDrops.Rate }, { 0.25, 3 })
 	c.state.apply({ { path = { "settings", "reducedFx" }, value = true } })
-	eq(part.MutFx.Rate, 14 * 0.25, "live emitters follow the setting")
+	eq({ part.MutFx.Rate, part.MutDrops.Rate }, { 0.25 * 0.25, 3 * 0.25 }, "live emitters follow the setting")
 	local other = c.engine.Instance.new("Part")
 	Visuals.mutationFx(other, "wet")
-	eq(other.MutFx.Rate, 2)
+	eq(other.MutFx.Rate, 3 * 0.25)
+	local gold = c.engine.Instance.new("Part")
+	Visuals.mutationFx(gold, "golden")
+	eq(gold.MutFx.Rate, 0.35 * 0.25)
 	c.remotes.Weather.OnClientEvent:Fire({
 		kind = "rain",
 		scope = "server",
@@ -26,7 +30,8 @@ test("reduced effects cut mutation particles by 75% and turn the rain sheet off"
 	c.state.apply({ { path = { "settings", "reducedFx" }, value = false } })
 	c.engine:advance(0.6)
 	eq(c.engine.workspace.RainCloud.Rain.Enabled, true)
-	eq(part.MutFx.Rate, 14)
+	eq({ part.MutFx.Rate, part.MutDrops.Rate }, { 0.25, 3 })
+	eq(gold.MutFx.Rate, 0.35)
 end)
 
 test("mutation sparkles reuse pooled emitters", function()

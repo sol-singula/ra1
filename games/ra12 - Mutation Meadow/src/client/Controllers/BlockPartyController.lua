@@ -72,8 +72,14 @@ function BlockPartyController:Start()
 	})
 	UI.list(meter, 6)
 	stageLabel = UI.label(meter, "", { Name = "Stage", Size = UDim2.new(1, -16, 0, 30) })
-	local bar = UI.frame(meter, { Name = "Bar", Size = UDim2.new(1, -16, 0, 22), BackgroundColor3 = UI.COLORS.grey })
-	fill = UI.frame(bar, { Name = "Fill", Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = UI.COLORS.gold })
+	-- GA-02: a flat sunflower-petal fill (no gradient, no shine) on a dark track
+	local bar = UI.frame(meter, {
+		Name = "Bar",
+		Size = UDim2.new(1, -16, 0, 22),
+		BackgroundColor3 = UI.COLORS.meterTrack,
+		BackgroundTransparency = 0.35,
+	})
+	fill = UI.frame(bar, { Name = "Fill", Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = UI.COLORS.meter })
 	countLabel = UI.label(meter, "", { Name = "Count", Size = UDim2.new(1, -16, 0, 24) })
 	timeLabel = UI.label(meter, "", { Name = "TimeLeft", Size = UDim2.new(1, -16, 0, 24) })
 	yoursLabel = UI.label(meter, "", { Name = "Yours", Size = UDim2.new(1, -16, 0, 24) })

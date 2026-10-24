@@ -107,7 +107,7 @@ function UpgradeController.fill()
 			Name = "Place",
 			Position = UDim2.new(0.66, 0, 0, 0),
 			Size = UDim2.new(0.34, 0, 1, 0),
-			BackgroundColor3 = if free > 0 then UI.COLORS.gold else UI.COLORS.grey,
+			BackgroundColor3 = if free > 0 then UI.COLORS.green else UI.COLORS.grey,
 		})
 	end
 end

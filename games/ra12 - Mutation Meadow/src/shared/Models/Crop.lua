@@ -14,19 +14,29 @@ particles. CastShadow on Root, Fruit# and any part at least 1 stud. Fruit# parts
 FruitDetail# Role = "fruit", Tone = "detail"; each its own BaseColor. Leaves, stems and soil are never mutation
 targets. The ripe Moon Melon has its MoonGlow PointLight in Fruit1.
 
-Looks (Crop.setMuts(model, muts)), until build-spec 02 replaces them:
-  Golden   the fruit parts turn Visuals.GOLD (base) / Visuals.GOLD_LIGHT (detail), a shine, star glints on the
-           FxAnchor and ONE PointLight on the Main part (Fruit1); the MoonGlow goes
-  Wet      droplet beads on the Main part, a wet sheen and blue glints on the FxAnchor (the MoonGlow stays)
-  both     gold with beads (still one light)
+Looks (Crop.applyMutation(model, key), alias setMuts), from Game Artist build-spec/02-mutations.md (the numbers
+live in Config.MutationVisuals). Only Role = "fruit" parts change colour; the template look is cached on first apply
+(BaseColor, BaseMaterial, BaseReflectance) and restored on nil, and every added instance is named Mut* / GoldLight /
+Fx, so cleanup is one loop.
+  Golden     base #FFC300 / detail #E0A100, Metal; one GoldLight painted highlight (Ell #FFF1A8) on the largest
+             fruit part (not the Moon Melon: its crescent is the highlight); a rare MutFx glint (Rate 0.35) and a
+             MutLight PointLight (#FFD27A) on the Fx host; the MoonGlow goes. Corn: the kernels only, husks stay green
+  Wet        the section 3.1 colours, Reflectance 0.30; MutBead# glass beads; a MutFx drip (Rate 3, large 4) on the
+             MutDripAt attachment; wet soil on Root; no light (the MoonGlow stays)
+  Wet+Golden gold first (#D9A600 / #BE8900, Metal), GoldLight kept, wet beads, MutDrops drip + MutFx glint (Rate
+             0.25), MutLight 0.5, wet soil; the MoonGlow goes. Counts as 2 emitting crops
+The Fx host is an invisible part sized to the fruit bounds x 0.9 (before the crop fruits, the emitters sit on the
+FxAnchor). Crop.setFxState(model, emit, light, beads) is the per-crop switch the TileController caps use.
 The model carries Crop = true, Seed, Stage, Muts, Far and Origin (the CFrame it was built on).
 
   Crop.stageFor(progress, ripe) -> "seed" | "sprout" | "growing" | "ripe"
   Crop.build(parent, name, seed, stage, cf, muts?, scale?, far?) -> Model     stage may also be "item"
   Crop.forTile(parent, name, seed, progress, ripe, muts, cf, far?)             a tile's crop (cf is O)
   Crop.item(parent, name, seed, muts, cf, scale) / onPedestal(parent, name, seed, muts, pedestal, scale)
-  Crop.setMuts(model, muts)      muts is a key ("wet" | "golden" | "wetgolden" | nil) or a { wet, golden } table
-  Crop.main(model) / fruit(model) / anchor(model) / destroy(model)
+  Crop.applyMutation(model, key) / setMuts(model, muts)   key "wet" | "golden" | "wetgolden" | nil; muts may also
+                                                          be a { wet, golden } table
+  Crop.setFxState(model, emit, light, beads) / weightOf(model)
+  Crop.main(model) / fruit(model) / anchor(model) / fxHost(model) / destroy(model)
   Crop.tileCFrame(tilePart) / at(position, tileId) / yawFor(tileId)      O and the per-tile turn
   Crop.rows(seed, stage) / bounds(rows) / audit()      the resolved GA-01 rows and their checks (tests, QA)
 ]]
@@ -385,50 +395,262 @@ function Crop.onPedestal(parent, name, seed, muts, pedestal, scale)
 end
 
 ---------------------------------------------------------------------------------------------------------------
--- mutation looks (interim, until build-spec 02)
+-- mutation looks (Game Artist build-spec/02-mutations.md; the numbers are Config.MutationVisuals)
 
-local function beads(look, main)
-	local size = main.Size
-	local r = math.min(size.X, size.Y, size.Z)
-	for i = 1, 7 do
-		local a = i * 2.4
-		local elev = 0.3 + 0.18 * (i % 4)
-		local dir = Vector3.new(math.cos(a) * math.cos(elev), math.sin(elev), math.sin(a) * math.cos(elev))
-		local bead = Kit.ball(
-			look,
-			"Bead" .. i,
-			Vector3.one * math.clamp(r * (0.09 + 0.03 * (i % 3)), 0.08, 0.32),
-			main.CFrame * CFrame.new(dir * size / 2),
-			Visuals.DROP,
-			Enum.Material.Glass
-		)
-		bead.Transparency = 0.25
-		bead.Reflectance = 0.3
+local MV = Config.MutationVisuals
+
+local function isGolden(key)
+	return key == "golden" or key == "wetgolden"
+end
+
+local function isWet(key)
+	return key == "wet" or key == "wetgolden"
+end
+
+-- the template look, cached on first apply
+local function remember(p)
+	if p:GetAttribute("BaseMaterial") == nil then
+		p:SetAttribute("BaseColor", p:GetAttribute("BaseColor") or p.Color)
+		p:SetAttribute("BaseReflectance", p:GetAttribute("BaseReflectance") or p.Reflectance)
+		p:SetAttribute("BaseMaterial", p.Material.Name)
 	end
 end
 
-function Crop.setMuts(model, muts)
+local function restore(p)
+	if p:GetAttribute("BaseMaterial") ~= nil then
+		p.Color = p:GetAttribute("BaseColor")
+		p.Reflectance = p:GetAttribute("BaseReflectance")
+		p.Material = Enum.Material[p:GetAttribute("BaseMaterial")]
+	end
+end
+
+local function look(spec)
+	return { color = Color3.fromHex(spec.hex), material = Enum.Material[spec.material], reflectance = spec.reflectance }
+end
+
+-- one fruit part's look under a key (GA-02 sections 2.1, 3.1, 4 and the section 1.1 exceptions)
+local function fruitLook(seed, key, p)
+	local name = p.Name
+	local overrides = MV.overrides[seed] and MV.overrides[seed][key]
+	local over = overrides and overrides[name]
+	if over == "keep" then
+		return nil
+	elseif type(over) == "table" then
+		return look(over)
+	end
+	if key == "wet" or over == "wet" then
+		local hex = MV.wet.colours[seed] and MV.wet.colours[seed][name]
+		return {
+			color = if hex then Color3.fromHex(hex) else p:GetAttribute("BaseColor"),
+			material = Enum.Material[p:GetAttribute("BaseMaterial")],
+			reflectance = MV.wet.reflectance,
+		}
+	end
+	local tone = if over == "base" then "base" else p:GetAttribute("Tone") or "base"
+	return look(MV[key][tone])
+end
+
+local function partShape(p)
+	if p.ClassName == "WedgePart" then
+		return "Wedge"
+	elseif p.Shape == Enum.PartType.Ball then
+		return "Ball"
+	elseif p.Shape == Enum.PartType.Cylinder then
+		return "CylV"
+	elseif p:FindFirstChildOfClass("SpecialMesh") then
+		return "Ell"
+	end
+	return "Block"
+end
+
+-- a fruit part's own upright frame and size (a CylV stood back up, so "up" is up)
+local function uprightFrame(p)
+	if p.ClassName ~= "WedgePart" and p.Shape == Enum.PartType.Cylinder then
+		return p.CFrame * CFrame.Angles(0, 0, -rad(90)), Vector3.new(p.Size.Y, p.Size.X, p.Size.Z)
+	end
+	return p.CFrame, p.Size
+end
+
+-- the point on a part's ellipsoid along a local direction, and the outward normal there (both local)
+local function surface(size, dir)
+	local d = dir.Unit
+	local k = math.sqrt((d.X / size.X) ^ 2 + (d.Y / size.Y) ^ 2 + (d.Z / size.Z) ^ 2)
+	local p = d * 0.5 / k
+	local n = Vector3.new(p.X / size.X ^ 2, p.Y / size.Y ^ 2, p.Z / size.Z ^ 2).Unit
+	return p, n
+end
+
+local function bigFruit(model, seed)
+	return model:FindFirstChild(MV.highlightOn[seed] or "Fruit1") or model:FindFirstChild("Fruit1")
+end
+
+-- GA-02 section 2.2: the painted highlight on the largest fruit part
+local function goldHighlight(model, fruit)
+	local h = MV.highlight
+	local frame, size = uprightFrame(fruit)
+	local p, n = surface(size, Vector3.new(h.direction[1], h.direction[2], h.direction[3]))
+	local at = frame * (p + n * h.push)
+	local normal = frame:VectorToWorldSpace(n)
+	local part = Kit.ball(
+		model,
+		"GoldLight",
+		Vector3.new(math.max(h.size[1] * size.X, h.min[1]), math.max(h.size[2] * size.Y, h.min[2]), h.thickness),
+		CFrame.lookAt(at, at + normal, frame.UpVector),
+		Color3.fromHex(h.hex)
+	)
+	part.Reflectance = 0
+	part.CastShadow = false
+	return part
+end
+
+local function tileNumber(model)
+	return tonumber(string.match(model.Name, "(%d+)$")) or 0
+end
+
+-- GA-02 section 3.2: glass beads on the fruit, deterministic per tile and crop
+local function addBeads(model, seed, key)
+	local b = MV.beads
+	local style = b[key]
+	local candidates = {}
+	for _, p in Crop.fruit(model) do
+		if p:GetAttribute("Tone") == "base" or b.onDetails[seed] then
+			table.insert(candidates, p)
+		end
+	end
+	if #candidates == 0 then
+		return
+	end
+	local tier = Config.Seeds[seed] and Config.Seeds[seed].tier or 0
+	local rng = Random.new(tileNumber(model) * b.seedA + tier)
+	local placed = {}
+	for i = 1, b.counts[seed] or 6 do
+		local diameter = b.sizes[(i - 1) % #b.sizes + 1]
+		local fruit = candidates[(i - 1) % #candidates + 1]
+		local frame, size = uprightFrame(fruit)
+		local best
+		for attempt = 1, 40 do
+			local dir = Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(-1, 1), rng:NextNumber(-1, 1))
+			if dir.Magnitude > 0.05 then
+				local p, n = surface(size, dir)
+				local upper = p.Y >= b.minY * size.Y
+				local front = attempt > 25 or p.Z <= b.frontZ * size.Z -- front-facing preferred
+				local world = frame * (p + n * (diameter / 2 - b.sink * diameter))
+				local clear = true
+				for _, other in placed do
+					clear = clear and (other - world).Magnitude >= b.spacing
+				end
+				best = best or world
+				if upper and front and clear then
+					best = world
+					break
+				end
+			end
+		end
+		table.insert(placed, best)
+		local bead = Kit.sphere(
+			model,
+			"MutBead" .. i,
+			diameter,
+			CFrame.new(best),
+			Color3.fromHex(style.hex),
+			Enum.Material.Glass
+		)
+		bead.Transparency = style.transparency
+		bead.Reflectance = style.reflectance
+		bead.CastShadow = false
+		bead:SetAttribute("BaseTransparency", style.transparency)
+	end
+end
+
+local function partRow(p, frame)
+	return { shape = partShape(p), size = p.Size, cf = frame:Inverse() * p.CFrame }
+end
+
+-- the invisible Fx host over the fruit (bounds x 0.9), with the MutDripAt attachment under the largest fruit
+local function fxHost(model, seed, fruitParts)
+	local origin = model:GetAttribute("Origin") or CFrame.new()
+	local rows = {}
+	for _, p in fruitParts do
+		table.insert(rows, partRow(p, origin))
+	end
+	local b = Crop.bounds(rows)
+	local centre = origin * Vector3.new((b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2, (b.minZ + b.maxZ) / 2)
+	local k = MV.glint.bounds
+	local size = Vector3.new(
+		math.max((b.maxX - b.minX) * k, 0.2),
+		math.max((b.maxY - b.minY) * k, 0.2),
+		math.max((b.maxZ - b.minZ) * k, 0.2)
+	)
+	local host = Kit.part(model, "Fx", size, CFrame.new(centre) * (origin - origin.Position), Color3.new(1, 1, 1))
+	host.Transparency = 1
+	host.CastShadow = false
+	local fruit = bigFruit(model, seed)
+	local frame, fsize = uprightFrame(fruit)
+	local d = MV.drip.at
+	local at = Instance.new("Attachment")
+	at.Name = "MutDripAt"
+	at.CFrame = host.CFrame:Inverse() * (frame * CFrame.new(d[1] * fsize.X, d[2] * fsize.Y, d[3] * fsize.Z))
+	at.Parent = host
+	return host, at
+end
+
+function Crop.fxHost(model)
+	return model:FindFirstChild("Fx")
+end
+
+-- every added instance goes (Mut*, GoldLight, Fx); the template look comes back
+local function clear(model)
+	local host = Crop.fxHost(model)
+	if host then
+		Visuals.release(host)
+		local at = host:FindFirstChild("MutDripAt")
+		if at then
+			Visuals.release(at)
+		end
+	end
+	local anchor = Crop.anchor(model)
+	if anchor then
+		Visuals.release(anchor)
+	end
+	for _, child in model:GetChildren() do
+		if child.Name == "Fx" or child.Name == "GoldLight" or string.sub(child.Name, 1, 3) == "Mut" then
+			child:Destroy()
+		end
+	end
+	for _, p in Crop.fruit(model) do
+		restore(p)
+		p:SetAttribute("Gold", nil)
+	end
+	local root = model:FindFirstChild("Root")
+	if root then
+		restore(root)
+	end
+end
+
+function Crop.applyMutation(model, muts)
 	local key = if type(muts) == "table" then MutationMath.key(muts) else muts
 	if model:GetAttribute("LookSet") and model:GetAttribute("Muts") == key then
 		return
 	end
 	model:SetAttribute("LookSet", true)
 	model:SetAttribute("Muts", key)
-	local golden = key == "golden" or key == "wetgolden"
-	local wet = key == "wet" or key == "wetgolden"
+	-- fresh emitters start on; the caps (TileController) look again
+	model:SetAttribute("Emitting", nil)
+	model:SetAttribute("Lit", nil)
+	model:SetAttribute("Beads", nil)
+	clear(model)
+	local seed = model:GetAttribute("Seed")
 	local targets = Crop.fruit(model)
+	local golden, wet = isGolden(key), isWet(key)
 	for _, p in targets do
-		local base = p:GetAttribute("BaseColor") or p.Color
-		local shine = p:GetAttribute("BaseReflectance") or 0
-		if golden then
-			p.Color = if p:GetAttribute("Tone") == "detail" then Visuals.GOLD_LIGHT else Visuals.GOLD
-			p.Reflectance = 0.3
-			p:SetAttribute("Gold", true)
-		else
-			p.Color = base
-			p.Reflectance = if wet then shine + 0.12 else shine
-			p:SetAttribute("Gold", nil)
+		remember(p)
+		local l = key and fruitLook(seed, key, p)
+		if l then
+			p.Color = l.color
+			p.Material = l.material
+			p.Reflectance = l.reflectance
 		end
+		p:SetAttribute("Gold", if golden and l and l.material == Enum.Material.Metal then true else nil)
 		-- the Moon Melon's MoonGlow: the Golden light replaces it; Wet keeps it
 		local lightName = p:GetAttribute("Light")
 		local own = lightName and p:FindFirstChild(lightName)
@@ -438,60 +660,70 @@ function Crop.setMuts(model, muts)
 			addLight(p, LIGHTS[lightName])
 		end
 	end
-	local old = model:FindFirstChild("MutLook")
-	if old then
-		old:Destroy()
+	local root = model:FindFirstChild("Root")
+	if root and wet then
+		remember(root)
+		root.Color = Color3.fromHex(MV.soil.hex)
+		root.Reflectance = MV.soil.reflectance
 	end
-	local main = Crop.main(model)
-	local anchor = Crop.anchor(model)
-	if main then
-		local light = main:FindFirstChild("GoldLight")
-		if light then
-			light:Destroy()
+	if not key then
+		return
+	end
+	local large = MV.large[seed] == true
+	if #targets == 0 then
+		-- before the crop fruits: the emitters alone, on the FxAnchor
+		local anchor = Crop.anchor(model)
+		if anchor then
+			Visuals.mutationFx(anchor, key, { large = large })
 		end
+		return
 	end
-	if anchor or main then
-		Visuals.mutationFx(anchor or main, key)
-	end
-	if not key or not main or #targets == 0 then
-		return -- before the crop fruits, a mutation shows as glints only
-	end
-	local look = Instance.new("Folder")
-	look.Name = "MutLook"
+	local host, dripAt = fxHost(model, seed, targets)
+	Visuals.mutationFx(host, key, { drip = dripAt, large = large })
 	if golden then
 		local light = Instance.new("PointLight")
-		light.Name = "GoldLight"
-		light.Color = Visuals.GOLD
-		light.Brightness = 1.2
-		light.Range = 9
+		light.Name = "MutLight"
+		light.Color = Color3.fromHex(MV.light.hex)
+		light.Brightness = MV.light[key]
+		light.Range = if large then MV.light.rangeLarge else MV.light.range
 		light.Shadows = false
-		light.Parent = main
-		local size = main.Size
-		Kit.ball(
-			look,
-			"Shine",
-			Vector3.one * math.min(size.X, size.Y, size.Z) * 0.2,
-			main.CFrame * CFrame.new(-size.X * 0.22, size.Y * 0.3, -size.Z * 0.3),
-			Visuals.GOLD_LIGHT,
-			Enum.Material.Neon
-		)
+		light.Parent = host
+		if MV.highlightOn[seed] then
+			goldHighlight(model, bigFruit(model, seed))
+		end
 	end
 	if wet then
-		beads(look, main)
+		addBeads(model, seed, key)
 	end
-	look.Parent = model
 end
 
--- hands the pooled glints back, then destroys the model
+Crop.setMuts = Crop.applyMutation
+
+-- the TileController caps: emitters on or off, the MutLight on or off, beads shown or hidden
+function Crop.setFxState(model, emit, light, beads)
+	for _, d in model:GetDescendants() do
+		if d.ClassName == "ParticleEmitter" and (d.Name == "MutFx" or d.Name == "MutDrops") then
+			d.Enabled = emit
+		elseif d.Name == "MutLight" then
+			d.Enabled = light
+		elseif string.sub(d.Name, 1, 7) == "MutBead" then
+			d.Transparency = if beads then d:GetAttribute("BaseTransparency") else 1
+		end
+	end
+	model:SetAttribute("Emitting", emit)
+	model:SetAttribute("Lit", light)
+	model:SetAttribute("Beads", beads)
+end
+
+-- how many emitting crops a crop counts as for the per-plot cap (Wet+Golden is 2)
+function Crop.weightOf(model)
+	local key = model:GetAttribute("Muts")
+	return if key then MV.caps.weights[key] else 0
+end
+
+-- hands the pooled emitters back, then destroys the model
 function Crop.destroy(model)
-	local anchor = Crop.anchor(model)
-	if anchor then
-		Visuals.release(anchor)
-	end
-	local main = Crop.main(model)
-	if main then
-		Visuals.release(main)
-	end
+	clear(model)
 	model:Destroy()
 end
 

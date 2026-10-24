@@ -311,7 +311,7 @@ test("block_party_rain: rain lighting and VFX, only Wet crops (with beads)", fun
 	local flower = stage(ctx).Sunflower
 	eq({ flower:GetAttribute("Stage"), flower:GetAttribute("Look") }, { "bloom", "Bloom" })
 	for _, c in crops(ctx) do
-		Assert.truthy(c.MutLook:FindFirstChild("Bead1"), c.Name .. " beads")
+		Assert.truthy(c:FindFirstChild("MutBead1"), c.Name .. " beads")
 	end
 end)
 
@@ -454,12 +454,12 @@ test("golden_reveal: a plain, normal-size hero pumpkin at ~35% of the frame; cap
 	eq(capture("reveal"), true)
 	eq(hero:GetAttribute("Muts"), "golden")
 	eq(ctx.CropModel.main(hero).Color, ctx.Visuals.GOLD)
-	Assert.truthy(ctx.CropModel.main(hero):FindFirstChild("GoldLight"), "the Golden light")
+	Assert.truthy(hero.Fx.MutLight and hero.GoldLight, "the MutLight and the painted GoldLight")
 	eq(f:GetAttribute("Pose"), "surprised")
 	eq(ctx.engine.workspace.Capture:GetAttribute("Reveal"), 1)
 end)
 
-test("the Golden look: #FFC300 / #FFF1A8, star glints, at most 1 PointLight per crop; Wet beads", function()
+test("the GA-02 looks: Golden #FFC300 Metal, GoldLight #FFF1A8, rare glints, 1 MutLight; Wet beads and drip", function()
 	local ctx, _, capture = dev()
 	for _, scene in SCENES do
 		capture(scene)
@@ -473,14 +473,26 @@ test("the Golden look: #FFC300 / #FFF1A8, star glints, at most 1 PointLight per 
 			local key = c:GetAttribute("Muts")
 			local golden = key == "golden" or key == "wetgolden"
 			eq(lights, if golden then 1 else 0, `{scene}: {c.Name} lights`)
-			if golden then
+			if key == "golden" then
 				local main = ctx.CropModel.main(c)
-				eq(main.Color, roblox.Color3.fromHex("#FFC300"))
-				eq(ctx.CropModel.anchor(c).MutFx.Texture, ctx.Visuals.SPARKLE, "star glints on the FxAnchor")
-				eq(c.MutLook.Shine.Color, roblox.Color3.fromHex("#FFF1A8"))
+				eq(
+					{ main.Color, main.Material, main.Reflectance },
+					{ roblox.Color3.fromHex("#FFC300"), ctx.engine.Enum.Material.Metal, 0.15 }
+				)
+				local glint = c.Fx.MutFx
+				eq(
+					{ glint.Texture, glint:GetAttribute("Mode"), ctx.Visuals.rateOf(glint) },
+					{ ctx.Visuals.SPARKLE, "glint", 0.35 }
+				)
+				eq(c.GoldLight.Color, roblox.Color3.fromHex("#FFF1A8"))
+				eq({ c.Fx.MutLight.Color, c.Fx.MutLight.Brightness }, { roblox.Color3.fromHex("#FFD27A"), 0.6 })
+			elseif key == "wet" then
+				eq(
+					ctx.Visuals.rateOf(c.Fx.MutDripAt.MutFx),
+					if c:GetAttribute("Seed") == "pumpkin" or c:GetAttribute("Seed") == "watermelon" then 4 else 3
+				)
 			end
-			local mutLook = c:FindFirstChild("MutLook")
-			eq(mutLook ~= nil and mutLook:FindFirstChild("Bead1") ~= nil, key == "wet" or key == "wetgolden")
+			eq(c:FindFirstChild("MutBead1") ~= nil, key == "wet" or key == "wetgolden", `{scene}: {c.Name} beads`)
 		end
 	end
 end)
@@ -552,13 +564,17 @@ test(
 		Assert.truthy(rows[1].x < rows[2].x and rows[2].x < rows[3].x, "left to right")
 		Assert.truthy(rows[1].height < rows[2].height and rows[2].height < rows[3].height, "rising")
 		Assert.truthy(rows[3].depth < rows[2].depth and rows[2].depth < rows[1].depth, "x40 nearest the camera")
+		-- GA-02 section 4 / M8: the game's chip colours, no purple
 		local B = ctx.Capture.BADGES
-		local wet = B.wet.bg
-		Assert.truthy(wet.B > wet.R and wet.B > wet.G, "blue")
-		eq(B.golden.bg, ctx.Visuals.GOLD, "gold")
-		local purple = B.wetgolden.bg
-		Assert.truthy(purple.R > purple.G and purple.B > purple.G, "purple")
-		eq({ B.wetgolden.stroke, B.wetgolden.text }, { ctx.Visuals.GOLD, ctx.Visuals.GOLD }, "purple-gold")
+		local hex = roblox.Color3.fromHex
+		eq({ B.wet.bg, B.wet.stroke }, { hex("#50AAFF"), hex("#1E1B2E") }, "Wet: blue")
+		eq({ B.golden.bg, B.golden.stroke }, { hex("#FFC300"), hex("#1E1B2E") }, "Golden: gold")
+		eq({ B.wetgolden.bg, B.wetgolden.stroke }, { hex("#FFC300"), hex("#50AAFF") }, "Wet+Golden: gold, blue stroke")
+		for _, style in B do
+			eq({ style.text, style.textStroke }, { hex("#FFFFFF"), hex("#1E1B2E") })
+		end
+		local x40 = ctx.CropModel.main(stage(ctx).PedestalCrop3).Badge.Text
+		eq({ x40.BackgroundColor3, x40.UIStroke.Color, x40.UIStroke.Thickness }, { hex("#FFC300"), hex("#50AAFF"), 2 })
 		local list = farmers(ctx)
 		eq(#list, 1)
 		local fx = onScreen(cam, list[1].Head.Position)

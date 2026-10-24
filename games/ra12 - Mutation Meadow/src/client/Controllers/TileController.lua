@@ -5,6 +5,11 @@ only when its stage (seed, sprout, growing, ripe) or its distance band changes (
 Config.CropVisuals.farStuds), the Golden and Wet looks, and the Golden reveal (Visuals.goldenReveal) when a crop you
 can see turns Golden. And the tile popup when you tap one.
 
+Mutation caps (Config.MutationVisuals.caps, GA-02 section 5), re-checked every draw: at most emittingPerPlot (3)
+emitting crops per plot, nearest the camera first, Wet+Golden counting 2; at most `lights` (8) MutLights on screen,
+nearest first; beyond lodStuds (160) no emitters or lights (colours and the GoldLight stay); beads only within
+beadStuds (80).
+
 Popup: your empty tile -> pick a seed you own (or pick up its sprinkler); growing -> seed, time left, boosts and the
 can; ripe -> Harvest (a full basket offers selling that one); someone else's growing crop -> Help water.
 Place mode (from Upgrades): the next tap on one of your empty tiles places that sprinkler.
@@ -161,7 +166,7 @@ function TileController.offerSell(plot, id)
 	TileController.open(plot, id)
 	popup.clear()
 	UI.label(popup.body, "Basket full! Sell at the stand.")
-	UI.button(popup.body, "Sell this one now", function()
+	UI.sellButton(popup.body, "Sell this one now", function()
 		send("Plot", "harvest", { tile = id, onFull = "sell" })
 	end, { Name = "SellOne" })
 end
@@ -258,6 +263,63 @@ local function updateLod(now)
 	end
 end
 
+-- GA-02 section 5: which mutated crops emit, glow and show beads
+local function applyCaps()
+	local caps = Config.MutationVisuals.caps
+	local eye = cameraPosition()
+	local byPlot, lit = {}, {}
+	for part, crop in crops do
+		if crop:GetAttribute("Muts") then
+			local entry = { crop = crop, d = if eye then (part.Position - eye).Magnitude else 0, name = crop.Name }
+			local plot = part.Parent and part.Parent.Parent
+			byPlot[plot] = byPlot[plot] or {}
+			table.insert(byPlot[plot], entry)
+			if crop:GetAttribute("Muts") ~= "wet" then
+				table.insert(lit, entry)
+			end
+		end
+	end
+	local function nearest(a, b)
+		if a.d ~= b.d then
+			return a.d < b.d
+		end
+		return a.name < b.name
+	end
+	local emit, light = {}, {}
+	for _, list in byPlot do
+		table.sort(list, nearest)
+		local budget = caps.emittingPerPlot
+		for _, e in list do
+			local weight = CropModel.weightOf(e.crop)
+			if e.d <= caps.lodStuds and weight <= budget then
+				emit[e.crop] = true
+				budget -= weight
+			end
+		end
+	end
+	table.sort(lit, nearest)
+	local lights = 0
+	for _, e in lit do
+		if e.d <= caps.lodStuds and lights < caps.lights then
+			light[e.crop] = true
+			lights += 1
+		end
+	end
+	for _, list in byPlot do
+		for _, e in list do
+			local on, glow, beads = emit[e.crop] == true, light[e.crop] == true, e.d <= caps.beadStuds
+			local crop = e.crop
+			if
+				crop:GetAttribute("Emitting") ~= on
+				or crop:GetAttribute("Lit") ~= glow
+				or crop:GetAttribute("Beads") ~= beads
+			then
+				CropModel.setFxState(crop, on, glow, beads)
+			end
+		end
+	end
+end
+
 local function draw()
 	local now = Clock.now()
 	local seen = {}
@@ -309,6 +371,7 @@ local function draw()
 			far[part] = nil
 		end
 	end
+	applyCaps()
 	if current and popup.isOpen() then
 		local part = tilePart(current.plot, current.id)
 		local label = popup.body:FindFirstChild("TimeLeft")

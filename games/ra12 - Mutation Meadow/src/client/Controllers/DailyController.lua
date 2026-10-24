@@ -79,7 +79,7 @@ function DailyController.fill()
 		local tile = UI.frame(row, {
 			Name = "Day_" .. i,
 			LayoutOrder = i,
-			BackgroundColor3 = if current then UI.COLORS.gold elseif done then UI.COLORS.grey else UI.COLORS.card,
+			BackgroundColor3 = if current then UI.COLORS.highlight elseif done then UI.COLORS.grey else UI.COLORS.card,
 		})
 		UI.label(
 			tile,

@@ -75,7 +75,7 @@ function SellController.fill()
 	if n == 0 then
 		UI.label(modal.body, "Your basket is empty", { Name = "Empty" })
 	end
-	UI.button(modal.body, "Sell All: 🪙 " .. UI.money(SellController.value(p)), function()
+	UI.sellButton(modal.body, "Sell All: 🪙 " .. UI.money(SellController.value(p)), function()
 		Net.request("Basket", "sellAll", {}):andThen(function(result)
 			if not result.ok and controllers.HudController then
 				controllers.HudController.toast(
@@ -83,7 +83,7 @@ function SellController.fill()
 				)
 			end
 		end)
-	end, { Name = "SellAll", BackgroundColor3 = UI.COLORS.gold })
+	end, { Name = "SellAll" })
 	if p.plotLevel >= Config.Inventory.autoSellPlotLevel then
 		UI.button(modal.body, if p.autoSell then "Auto-Sell: ON" else "Auto-Sell: OFF", function()
 			Net.request("Basket", "setAutoSell", { on = not p.autoSell })

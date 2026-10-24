@@ -28,7 +28,7 @@ its weather VFX, its lighting and atmosphere), so Rain and Golden Hour never sha
                                No mutation in either
   golden_reveal                a plain ripe hero pumpkin among plain pumpkins, framed to ~35% of the height
   pedestals                    Wet x2, Golden x20, Wet + Golden x40 on a rising left-to-right diagonal, x40 tallest
-                               and nearest; blue, gold and purple-gold badges; a farmer at the side
+                               and nearest; badges in the mutation chip colours (blue; gold; gold + blue); a farmer
   icon                         a Golden pumpkin framed close, a farmer waving, a deep-blue clear sky
 
 Workspace.Capture
@@ -50,7 +50,6 @@ local Kit = require(ReplicatedStorage.Shared.Models.Kit)
 local MutationMath = require(ReplicatedStorage.Shared.MutationMath)
 local PatchModel = require(ReplicatedStorage.Shared.Models.Patch)
 local SunflowerModel = require(ReplicatedStorage.Shared.Models.Sunflower)
-local Visuals = require(ReplicatedStorage.Shared.Visuals)
 
 local DevCommands = require(script.Parent.Parent.Net.DevCommands)
 local DevConfig = require(script.Parent.Parent.DevConfig)
@@ -133,12 +132,18 @@ local ATMOSPHERES = {
 	},
 }
 
--- the badge on each pedestal: x2 / x20 / x40 (a letter x), blue, gold and purple-gold
-local BADGES = {
-	wet = { bg = Color3.fromRGB(40, 118, 230), text = Color3.new(1, 1, 1) },
-	golden = { bg = Visuals.GOLD, text = Color3.fromRGB(70, 44, 8) },
-	wetgolden = { bg = Color3.fromRGB(110, 48, 170), text = Visuals.GOLD, stroke = Visuals.GOLD },
-}
+-- the badge on each pedestal: x2 / x20 / x40 (a letter x) in the game's mutation chip colours (GA-02 section 4 and
+-- M8): Wet blue, Golden gold, Wet+Golden gold with a blue stroke; white text with a dark outline
+local CHIPS = Config.MutationVisuals.chips
+local BADGES = {}
+for key in Config.MutationVisuals.labels do
+	BADGES[key] = {
+		bg = Color3.fromHex(CHIPS[key].fill),
+		stroke = Color3.fromHex(CHIPS[key].stroke),
+		text = Color3.fromHex(CHIPS.text),
+		textStroke = Color3.fromHex(CHIPS.textStroke),
+	}
+end
 CaptureService.BADGES = BADGES
 
 local folder, cams, stage
@@ -257,18 +262,18 @@ local function badge(target, key, text)
 	label.TextScaled = true
 	label.Font = Enum.Font.GothamBlack
 	label.TextColor3 = style.text
+	label.TextStrokeColor3 = style.textStroke
+	label.TextStrokeTransparency = 0
 	label.Text = text
 	label.Parent = board
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0.3, 0)
 	corner.Parent = label
-	if style.stroke then
-		local stroke = Instance.new("UIStroke")
-		stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-		stroke.Color = style.stroke
-		stroke.Thickness = 4
-		stroke.Parent = label
-	end
+	local stroke = Instance.new("UIStroke")
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Color = style.stroke
+	stroke.Thickness = CHIPS.strokeThickness
+	stroke.Parent = label
 	board.Parent = target
 	return board
 end

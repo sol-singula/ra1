@@ -1,13 +1,23 @@
 --[[
 How crops look (the client's world and the capture stage, through Models/Crop): a colour per seed (the fruit), the
-leaf colour while it grows, the Golden colours, the pooled mutation glints and the Golden reveal.
+leaf colour while it grows, the Golden colours, the pooled mutation emitters and the Golden reveal. The mutation
+numbers are Config.MutationVisuals (Game Artist build-spec/02-mutations.md).
 
-  Visuals.mutationFx(part, key) / release(part) / setReduced(on) / poolSize()
+  Visuals.mutationFx(host, key, opts?)   the pooled emitters for a mutation key (nil clears them):
+      golden      MutFx glint on host (Rate 0.35)
+      wet         MutFx drip on opts.drip (or host) (Rate 3, large fruit 4)
+      wetgolden   MutFx glint on host (Rate 0.25) + MutDrops drip on opts.drip (or host)
+    opts = { drip = Instance, large = bool }; reducedFx cuts every rate to REDUCED_RATE
+  Visuals.release(host) / setReduced(on) / poolSize() / rateOf(emitter)
   Visuals.goldenReveal(model)      the reveal when a crop turns Golden: a star burst, a ring, the light flaring
                                    and the fruit sweeping from its own colour to gold (client side: the live tiles
                                    and the capture stage's `capture reveal`)
   Visuals.grownNow(part, now)
 ]]
+local Config = require(script.Parent.Config)
+
+local MV = Config.MutationVisuals
+
 local Visuals = {}
 
 Visuals.LEAF = Color3.fromRGB(90, 170, 70)
@@ -23,49 +33,44 @@ Visuals.SEED = {
 	moonmelon = Color3.fromRGB(190, 200, 255),
 }
 
--- the Golden material: the body colour and its highlight (star glints, the shine)
+-- the Golden material (GA-02 section 0): the body colour, its shade and its highlight
 Visuals.GOLD = Color3.fromHex("#FFC300")
+Visuals.GOLD_SHADE = Color3.fromHex("#E0A100")
 Visuals.GOLD_LIGHT = Color3.fromHex("#FFF1A8")
--- Wet droplet beads
-Visuals.DROP = Color3.fromRGB(200, 232, 255)
 
--- mutation colours: the Backpack frame, the world sparkles
+-- mutation colours for UI (the chip fill; Wet+Golden is gold with a blue stroke, GA-02 section 4)
 Visuals.MUT = {
-	wet = Color3.fromRGB(80, 170, 255),
-	golden = Visuals.GOLD,
-	wetgolden = Color3.fromRGB(150, 255, 220),
+	wet = Color3.fromHex(MV.chips.wet.fill),
+	golden = Color3.fromHex(MV.chips.golden.fill),
+	wetgolden = Color3.fromHex(MV.chips.wetgolden.fill),
 }
--- the glints' own colour: star glints are the pale gold highlight
-local GLINT = {
-	wet = Color3.fromRGB(190, 230, 255),
-	golden = Visuals.GOLD_LIGHT,
-	wetgolden = Visuals.GOLD_LIGHT,
-}
+-- the engine's default particle texture (GA-02: no other texture)
 Visuals.SPARKLE = "rbxasset://textures/particles/sparkles_main.dds"
 
 -- Reduced effects (Settings): particle rates are cut by REDUCED_RATE (75% fewer) and the rain sheet is off
 Visuals.REDUCED_RATE = 0.25
 Visuals.reducedFx = false
 
-local RATES = { wet = 8, golden = 8, wetgolden = 14 }
-local active = setmetatable({}, { __mode = "k" }) -- [emitter] = key, the emitters in use
+local active = setmetatable({}, { __mode = "k" }) -- [emitter] = its base rate, the emitters in use
 local pool = {} -- free emitters, reused instead of made and destroyed (Visuals.poolSize())
 
-local function rateFor(key)
-	return RATES[key] * (if Visuals.reducedFx then Visuals.REDUCED_RATE else 1)
+local function seq(points)
+	local keys = {}
+	for i, p in points do
+		keys[i] = NumberSequenceKeypoint.new(p[1], p[2])
+	end
+	return NumberSequence.new(keys)
+end
+
+local function setRate(fx)
+	fx.Rate = active[fx] * (if Visuals.reducedFx then Visuals.REDUCED_RATE else 1)
 end
 
 local function take()
 	local fx = table.remove(pool)
 	if not fx then
 		fx = Instance.new("ParticleEmitter")
-		fx.Name = "MutFx"
-		fx.LightEmission = 0.8
-		fx.Lifetime = NumberRange.new(0.8, 1.4)
-		fx.Speed = NumberRange.new(1, 2)
-		fx.Size = NumberSequence.new(0.25)
 		fx.Texture = Visuals.SPARKLE
-		fx.SpreadAngle = Vector2.new(180, 180)
 	end
 	fx.Enabled = true
 	return fx
@@ -78,32 +83,114 @@ local function give(fx)
 	table.insert(pool, fx)
 end
 
--- sparkles on a part for a mutation key ("wet" | "golden" | "wetgolden" | nil clears them); emitters are pooled
-function Visuals.mutationFx(part, key)
-	local fx = part:FindFirstChild("MutFx")
-	if not key then
+-- GA-02 section 2.3: one small star now and then
+local function glint(fx, key, large)
+	local g = MV.glint
+	fx.Color = ColorSequence.new(Color3.fromHex(g.colours[1]), Color3.fromHex(g.colours[2]))
+	fx.LightEmission = g.lightEmission
+	fx.LightInfluence = g.lightInfluence
+	fx.Lifetime = NumberRange.new(g.lifetime[1], g.lifetime[2])
+	fx.Speed = NumberRange.new(0)
+	fx.SpreadAngle = Vector2.new(0, 0)
+	fx.Size = seq({ { 0, 0 }, { 0.5, if large then g.sizeLarge else g.size }, { 1, 0 } })
+	fx.Transparency = NumberSequence.new(g.transparency)
+	fx.Rotation = NumberRange.new(g.rotation[1], g.rotation[2])
+	fx.RotSpeed = NumberRange.new(0)
+	fx.Squash = NumberSequence.new(0)
+	fx.Acceleration = Vector3.zero
+	fx.Drag = 0
+	fx.EmissionDirection = Enum.NormalId.Top
+	fx.Orientation = Enum.ParticleOrientation.FacingCamera
+	fx.Shape = Enum.ParticleEmitterShape.Box
+	fx.ShapeStyle = Enum.ParticleEmitterShapeStyle.Surface
+	fx.ZOffset = g.zOffset
+	fx.LockedToPart = true
+	fx:SetAttribute("Mode", "glint")
+	return if key == "wetgolden" then g.rateWetGolden else g.rate
+end
+
+-- GA-02 section 3.3: a tall drop falling now and then
+local function drip(fx, large)
+	local d = MV.drip
+	fx.Color = ColorSequence.new(Color3.fromHex(d.hex))
+	fx.LightEmission = d.lightEmission
+	fx.LightInfluence = d.lightInfluence
+	fx.Lifetime = NumberRange.new(d.lifetime[1], d.lifetime[2])
+	fx.Speed = NumberRange.new(d.speed[1], d.speed[2])
+	fx.SpreadAngle = Vector2.new(0, 0)
+	fx.Size = seq(d.size)
+	fx.Transparency = seq(d.transparency)
+	fx.Rotation = NumberRange.new(0)
+	fx.RotSpeed = NumberRange.new(0)
+	fx.Squash = seq(d.squash)
+	fx.Acceleration = Vector3.new(d.acceleration[1], d.acceleration[2], d.acceleration[3])
+	fx.Drag = 0
+	fx.EmissionDirection = Enum.NormalId.Bottom
+	fx.Orientation = Enum.ParticleOrientation.VelocityParallel
+	fx.Shape = Enum.ParticleEmitterShape.Box
+	fx.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	fx.ZOffset = 0
+	fx.LockedToPart = false
+	fx:SetAttribute("Mode", "drip")
+	return if large then d.rateLarge else d.rate
+end
+
+local SLOTS = { "MutFx", "MutDrops" }
+
+local function releaseOn(host)
+	if not host then
+		return
+	end
+	for _, name in SLOTS do
+		local fx = host:FindFirstChild(name)
 		if fx then
 			give(fx)
 		end
-		return
 	end
-	if fx and fx:GetAttribute("Key") == key then
-		return
-	end
-	fx = fx or take()
-	fx:SetAttribute("Key", key)
-	fx.Color = ColorSequence.new(GLINT[key])
-	fx.Rate = rateFor(key)
-	active[fx] = key
-	fx.Parent = part
 end
 
--- a part about to be destroyed hands its emitter back first
-function Visuals.release(part)
-	local fx = part:FindFirstChild("MutFx")
-	if fx then
-		give(fx)
+function Visuals.mutationFx(host, key, opts)
+	opts = opts or {}
+	local dripHost = opts.drip or host
+	-- what this key wants: { host, slot name, mode }
+	local want = {}
+	if key == "golden" then
+		want = { { host, "MutFx", "glint" } }
+	elseif key == "wet" then
+		want = { { dripHost, "MutFx", "drip" } }
+	elseif key == "wetgolden" then
+		want = { { host, "MutFx", "glint" }, { dripHost, "MutDrops", "drip" } }
 	end
+	-- hand back whatever this key no longer uses
+	for _, h in { host, dripHost } do
+		for _, name in SLOTS do
+			local fx = h:FindFirstChild(name)
+			local kept = false
+			for _, w in want do
+				kept = kept or (w[1] == h and w[2] == name)
+			end
+			if fx and not kept then
+				give(fx)
+			end
+		end
+	end
+	for _, w in want do
+		local fx = w[1]:FindFirstChild(w[2]) or take()
+		fx.Name = w[2]
+		active[fx] = if w[3] == "glint" then glint(fx, key, opts.large) else drip(fx, opts.large)
+		fx:SetAttribute("Key", key)
+		setRate(fx)
+		fx.Parent = w[1]
+	end
+end
+
+-- a host about to be destroyed hands its emitters back first
+function Visuals.release(host)
+	releaseOn(host)
+end
+
+function Visuals.rateOf(fx)
+	return active[fx]
 end
 
 function Visuals.setReduced(on)
@@ -112,8 +199,8 @@ function Visuals.setReduced(on)
 		return
 	end
 	Visuals.reducedFx = on
-	for fx, key in active do
-		fx.Rate = rateFor(key)
+	for fx in active do
+		setRate(fx)
 	end
 end
 
@@ -169,7 +256,7 @@ function Visuals.goldenReveal(model)
 	ring.CFrame = CFrame.new(main.Position - Vector3.new(0, main.Size.Y / 2, 0)) * CFrame.Angles(0, 0, math.pi / 2)
 	ring.Transparency = 0.2
 	ring.Parent = model
-	local light = main:FindFirstChildOfClass("PointLight")
+	local light = model:FindFirstChild("MutLight", true) -- the crop's MutLight (on its Fx host)
 	local brightness = light and light.Brightness
 	local targets = {}
 	for _, p in parts do

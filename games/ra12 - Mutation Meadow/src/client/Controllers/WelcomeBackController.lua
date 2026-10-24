@@ -24,7 +24,7 @@ function WelcomeBackController.show(data)
 			modal.close()
 		end, { Name = "HarvestAll" })
 	end
-	UI.button(modal.body, "Let's farm!", modal.close, { Name = "Ok", BackgroundColor3 = UI.COLORS.gold })
+	UI.button(modal.body, "Let's farm!", modal.close, { Name = "Ok", BackgroundColor3 = UI.COLORS.green })
 	modal.open()
 end
 

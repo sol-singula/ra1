@@ -29,6 +29,7 @@ function Kit.part(parent, name, size, cf, color, material)
 	p.Color = color
 	p.Material = material or Enum.Material.SmoothPlastic
 	p.Transparency = 0
+	p.Shape = Enum.PartType.Block
 	p.Parent = parent
 	return p
 end

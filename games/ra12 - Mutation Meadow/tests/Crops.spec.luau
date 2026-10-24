@@ -385,26 +385,29 @@ test(
 		Crop.setMuts(m, "wet")
 		eq(lights(), { "MoonGlow" })
 		Crop.setMuts(m, "golden")
-		eq(lights(), { "GoldLight" })
+		eq(lights(), { "MutLight" })
+		eq(m:FindFirstChild("GoldLight"), nil, "no painted GoldLight: the crescent is the highlight")
+		eq(m.FruitDetail3.Color, roblox.Color3.fromHex("#FFF1A8"), "the crescent")
 		Crop.setMuts(m, "wetgolden")
-		eq(lights(), { "GoldLight" })
+		eq(lights(), { "MutLight" })
 		Crop.setMuts(m, nil)
 		eq(lights(), { "MoonGlow" })
 		eq(m.Fruit1.Reflectance, 0.05, "its own sheen back")
 	end
 )
 
-test("mutations touch only the fruit parts; glints sit on the FxAnchor", function()
+test("mutations touch only the fruit parts; emitters sit on the Fx host (on the FxAnchor before fruit)", function()
 	local m = build("strawberry", "ripe", "golden")
 	for name, p in parts(m) do
+		local added = name == "Fx" or name == "GoldLight" or string.sub(name, 1, 3) == "Mut"
 		if p:GetAttribute("Role") == "fruit" then
-			eq(p.Color, if p:GetAttribute("Tone") == "detail" then Visuals.GOLD_LIGHT else Visuals.GOLD, name)
-		elseif p.Parent.Name ~= "MutLook" then
-			Assert.truthy(p.Color ~= Visuals.GOLD and p.Color ~= Visuals.GOLD_LIGHT, name .. " stays its own colour")
+			eq(p.Color, if p:GetAttribute("Tone") == "detail" then Visuals.GOLD_SHADE else Visuals.GOLD, name)
+		elseif not added then
+			Assert.truthy(p.Color ~= Visuals.GOLD and p.Color ~= Visuals.GOLD_SHADE, name .. " stays its own colour")
 		end
 	end
-	eq(Crop.anchor(m).MutFx:GetAttribute("Key"), "golden")
+	eq(Crop.fxHost(m).MutFx:GetAttribute("Key"), "golden")
 	local sprout = build("strawberry", "sprout", "wet")
-	eq(sprout:FindFirstChild("MutLook"), nil, "no fruit yet: glints only")
+	eq(sprout:FindFirstChild("MutBead1"), nil, "no fruit yet: no beads")
 	eq(Crop.anchor(sprout).MutFx:GetAttribute("Key"), "wet")
 end)

@@ -194,10 +194,17 @@ local function newInstance(engine, className, name, extra)
 		walk(children)
 		return out
 	end
-	function methods.FindFirstChild(_, childName)
+	function methods.FindFirstChild(self, childName, recursive)
 		for _, child in children do
 			if child.Name == childName then
 				return child
+			end
+		end
+		if recursive then
+			for _, d in self:GetDescendants() do
+				if d.Name == childName then
+					return d
+				end
 			end
 		end
 		return nil
@@ -1420,6 +1427,7 @@ function Engine:env(scriptInstance)
 	env.ColorSequence = roblox.ColorSequence
 	env.NumberSequence = roblox.NumberSequence
 	env.NumberRange = roblox.NumberRange
+	env.NumberSequenceKeypoint = roblox.NumberSequenceKeypoint
 	env.os = self.os
 	env.tick = function()
 		return self.now

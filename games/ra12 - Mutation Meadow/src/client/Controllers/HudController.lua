@@ -125,7 +125,7 @@ function HudController.toast(text, action)
 			AnchorPoint = Vector2.new(0, 0.5),
 			Position = UDim2.new(1, 8, 0.5, 0),
 			Size = UDim2.fromOffset(88, UI.MIN_TAP),
-			BackgroundColor3 = UI.COLORS.gold,
+			BackgroundColor3 = UI.COLORS.green,
 		})
 	end
 	task.delay(if action then TOAST_SEC * 2 else TOAST_SEC, function()
@@ -167,9 +167,9 @@ function HudController:Start()
 	UI.button(buttons, "Upgrades", function()
 		controllers.UpgradeController.open()
 	end, { Name = "Upgrades" })
-	UI.button(buttons, "Sell", function()
+	UI.sellButton(buttons, "Sell", function()
 		controllers.SellController.open()
-	end, { Name = "Sell", BackgroundColor3 = UI.COLORS.gold })
+	end, { Name = "Sell" })
 	UI.button(buttons, "Backpack", function()
 		controllers.BackpackController.open()
 	end, { Name = "Backpack", BackgroundColor3 = UI.COLORS.ink })
@@ -204,7 +204,7 @@ function HudController:Start()
 			if c then
 				c.open()
 			end
-		end, { Name = b[1], LayoutOrder = i, BackgroundColor3 = if i == 5 then UI.COLORS.gold else UI.COLORS.green })
+		end, { Name = b[1], LayoutOrder = i, BackgroundColor3 = UI.COLORS.green })
 	end
 	toastFrame = Instance.new("Frame")
 	toastFrame.Name = "Toasts"

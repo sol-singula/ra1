@@ -82,6 +82,9 @@ local function card(parent, profile, guid, item)
 		BackgroundColor3 = Visuals.SEED[item.seed] or Visuals.LEAF,
 	})
 	icon:SetAttribute("Mut", key)
+	if key then
+		UI.mutChip(c, key, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -6, 0, 6) })
+	end
 	UI.label(c, itemName(item), { Name = "Name", Position = UDim2.fromOffset(62, 6), Size = UDim2.new(1, -68, 0, 24) })
 	UI.label(
 		c,
@@ -115,9 +118,9 @@ local function card(parent, profile, guid, item)
 		Size = w,
 		BackgroundColor3 = UI.COLORS.ink,
 	})
-	UI.button(row, "Sell", function()
+	UI.sellButton(row, "Sell", function()
 		BackpackController.confirmSell(guid)
-	end, { Name = "Sell", Position = UDim2.new(0.68, 0, 0, 0), Size = w, BackgroundColor3 = UI.COLORS.gold })
+	end, { Name = "Sell", Position = UDim2.new(0.68, 0, 0, 0), Size = w })
 	return c
 end
 
@@ -216,10 +219,10 @@ function BackpackController.fullPrompt(plot, id)
 	local coins = price(p, { seed = tile:GetAttribute("Seed"), muts = muts })
 	full.clear()
 	UI.label(full.body, "Your Backpack is full!", { Name = "Text" })
-	UI.button(full.body, "Sell now (🪙 " .. UI.money(coins) .. ")", function()
+	UI.sellButton(full.body, "Sell now (🪙 " .. UI.money(coins) .. ")", function()
 		Net.request("Plot", "harvest", { tile = id, onFull = "sell" })
 		full.close()
-	end, { Name = "SellNow", BackgroundColor3 = UI.COLORS.gold })
+	end, { Name = "SellNow" })
 	UI.button(full.body, "Leave on plot", function()
 		Net.request("Plot", "harvest", { tile = id, onFull = "leave" })
 		full.close()

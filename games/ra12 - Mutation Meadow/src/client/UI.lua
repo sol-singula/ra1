@@ -7,6 +7,10 @@ A tiny UI kit: mobile-first panels that scale with the screen (one UIScale per S
   UI.frame(parent, props)             a rounded panel
   UI.label(parent, text, props)
   UI.button(parent, text, onClick, props)   a big tap target (TextButton.Activated)
+  UI.sellButton(parent, text, onClick, props)   a Sell button: leaf green, darker while pressed, white text, dark
+                                      outline (GA-02: gold is for mutations only)
+  UI.mutChip(parent, key, props)      the mutation chip: "Wet x2" / "Golden x20" / "Wet+Golden x40" in the
+                                      Config.MutationVisuals.chips colours
   UI.list(parent, padding?)           vertical layout for the children
   UI.modal(name, title)               a centred card with a title and a close button -> { gui, card, body, close }
   UI.scaleFor(viewport)               the UIScale for a viewport size
@@ -14,6 +18,9 @@ A tiny UI kit: mobile-first panels that scale with the screen (one UIScale per S
   UI.COLORS
 ]]
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Config = require(ReplicatedStorage.Shared.Config)
 
 local UI = {}
 
@@ -23,8 +30,17 @@ UI.COLORS = {
 	card = Color3.fromRGB(255, 248, 230),
 	ink = Color3.fromRGB(60, 44, 30),
 	green = Color3.fromRGB(86, 170, 76),
-	gold = Color3.fromRGB(240, 190, 60),
 	red = Color3.fromRGB(210, 80, 70),
+	-- GA-02 section 0: gold appears only on mutation chips; Sell is leaf green; the Block Party meter is
+	-- sunflower-petal yellow on a dark track
+	mutGold = Color3.fromHex("#FFC300"),
+	sell = Color3.fromHex("#4CAF50"),
+	sellPressed = Color3.fromHex("#3D8C40"),
+	outline = Color3.fromHex("#1E1B2E"),
+	meter = Color3.fromHex("#FFE066"),
+	meterTrack = Color3.fromHex("#1E1B2E"),
+	-- a highlight that isn't gold (today's calendar day)
+	highlight = Color3.fromHex("#FFE066"),
 	grey = Color3.fromRGB(170, 160, 150),
 	shade = Color3.fromRGB(0, 0, 0),
 }
@@ -104,6 +120,59 @@ function UI.button(parent, text, onClick, props)
 	b.Activated:Connect(onClick)
 	b.Parent = parent
 	return b
+end
+
+function UI.sellButton(parent, text, onClick, props)
+	local b = UI.button(parent, text, onClick, { BackgroundColor3 = UI.COLORS.sell, AutoButtonColor = false })
+	b.TextColor3 = Color3.new(1, 1, 1)
+	local stroke = Instance.new("UIStroke")
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Color = UI.COLORS.outline
+	stroke.Thickness = 2
+	stroke.Parent = b
+	b:SetAttribute("PressedColor", UI.COLORS.sellPressed)
+	pcall(function()
+		b.MouseButton1Down:Connect(function()
+			b.BackgroundColor3 = UI.COLORS.sellPressed
+		end)
+		b.MouseButton1Up:Connect(function()
+			b.BackgroundColor3 = UI.COLORS.sell
+		end)
+		b.MouseLeave:Connect(function()
+			b.BackgroundColor3 = UI.COLORS.sell
+		end)
+	end)
+	apply(b, props)
+	return b
+end
+
+function UI.mutChip(parent, key, props)
+	local chips = Config.MutationVisuals.chips
+	local style = chips[key]
+	if not style then
+		return nil
+	end
+	local chip = Instance.new("TextLabel")
+	chip.Name = "MutChip"
+	chip.Text = Config.MutationVisuals.labels[key]
+	chip.BackgroundColor3 = Color3.fromHex(style.fill)
+	chip.BorderSizePixel = 0
+	chip.TextColor3 = Color3.fromHex(chips.text)
+	chip.TextStrokeColor3 = Color3.fromHex(chips.textStroke)
+	chip.TextStrokeTransparency = 0
+	chip.Font = Enum.Font.GothamBlack
+	chip.TextScaled = true
+	chip.Size = UDim2.fromOffset(110, 22)
+	corner(chip, 8)
+	local stroke = Instance.new("UIStroke")
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Color = Color3.fromHex(style.stroke)
+	stroke.Thickness = chips.strokeThickness
+	stroke.Parent = chip
+	chip:SetAttribute("Mut", key)
+	apply(chip, props)
+	chip.Parent = parent
+	return chip
 end
 
 function UI.list(parent, padding)
