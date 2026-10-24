@@ -203,7 +203,9 @@ table.insert(tomatoRipe, R("Fruit3", "Ball", 0.50, { -0.35, 1.90, -0.20 }, nil, 
 table.insert(tomatoRipe, R("Fruit4", "Ball", 0.45, { 0.30, 2.35, -0.15 }, nil, "#DC3228"))
 CropVisuals.crops.tomato = { fx = { 0, 1.6, -0.2 }, growing = tomatoGrowing, ripe = tomatoRipe }
 
--- §3.5 (kernels: each husk + 0.08 toward -Z and +0.12 y, the husk's rotation)
+-- §3.5 (kernels: each husk + 0.08 toward -Z and +0.12 y, the husk's rotation). The shortened corn: the tassel
+-- (Stem2-4) is dropped 0.28 from GA-01's table (Stem2 3.30 -> 3.02, Stem3/4 3.25 -> 2.97), so the ripe corn tops
+-- out at 3.245, inside maxHeight 3.25 (signed follow-up to 4c6a860)
 local cornLeafG = { 0.10, 1.10, 0.32 }
 local cornLeafR = { 0.10, 1.40, 0.35 }
 local tassel = { 0.06, 0.45, 0.06 }
@@ -221,9 +223,9 @@ CropVisuals.crops.corn = {
 	},
 	ripe = {
 		R("Stem1", "CylV", { 2.80, 0.28, 0.28 }, { 0, 1.70, 0 }, nil, STEM),
-		R("Stem2", "Block", tassel, { 0, 3.30, 0 }, { 0, 0, 0 }, TAN),
-		R("Stem3", "Block", tassel, { -0.12, 3.25, 0 }, { 0, 0, 25 }, TAN),
-		R("Stem4", "Block", tassel, { 0.12, 3.25, 0 }, { 0, 0, -25 }, TAN),
+		R("Stem2", "Block", tassel, { 0, 3.02, 0 }, { 0, 0, 0 }, TAN),
+		R("Stem3", "Block", tassel, { -0.12, 2.97, 0 }, { 0, 0, 25 }, TAN),
+		R("Stem4", "Block", tassel, { 0.12, 2.97, 0 }, { 0, 0, -25 }, TAN),
 		R("Leaf1", "Block", cornLeafR, { -0.45, 1.30, 0 }, { 0, 0, 40 }, LEAF),
 		R("Leaf2", "Block", cornLeafR, { 0.45, 1.60, 0 }, { 0, 0, -40 }, LEAF_DARK),
 		R("Leaf3", "Block", cornLeafR, { 0, 2.10, -0.45 }, { -40, 0, 0 }, LEAF),

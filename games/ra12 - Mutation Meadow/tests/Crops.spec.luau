@@ -149,6 +149,9 @@ test("GA-01 spot checks: the signed pumpkin nits, corn, the carrot shoulder, Moo
 	for _, name in { "Stem2", "Stem3", "Stem4" } do
 		eq(corn[name].Color, hex("#B89A6A"), "a tan tassel, not gold")
 	end
+	near(at(corn.Stem2), V3.new(0, 3.02, 0), "the shortened tassel: Stem2 dropped 0.28")
+	near(at(corn.Stem3), V3.new(-0.12, 2.97, 0), "Stem3 dropped 0.28")
+	near(at(corn.Stem4), V3.new(0.12, 2.97, 0), "Stem4 dropped 0.28")
 	for _, name in { "Fruit1", "Fruit2" } do
 		eq({ corn[name].Material, corn[name].Reflectance }, { engine.Enum.Material.SmoothPlastic, 0 }, "matte kernels")
 		eq(corn[name].Color, hex("#F5D23C"))
@@ -252,7 +255,7 @@ test("FxAnchor: an Attachment on Root at each crop's listed centroid (corn ripe 
 	end
 end)
 
-test("the limits: <= 14 parts, <= 3.4 footprint everywhere; height <= 3.25 but for GA-01's corn tassel", function()
+test("the limits: <= 14 parts, <= 3.4 footprint, <= 3.25 height, for every crop at every stage", function()
 	local audit = Crop.audit()
 	local found = {}
 	for _, seed in SEEDS do
@@ -264,9 +267,9 @@ test("the limits: <= 14 parts, <= 3.4 footprint everywhere; height <= 3.25 but f
 			end
 		end
 	end
-	-- GA-01 section 3.5 as written: the tassel (Stem2, 0.45 tall at y 3.30) tops out at 3.525, over the 3.25 limit.
-	-- Kept exact and reported (the spec gives no other "shortened" numbers); any new warning fails here.
-	eq(found, { "corn ripe: height 3.525 > 3.25" })
+	eq(found, {}, "no warnings")
+	-- the shortened corn: the tassel dropped 0.28, its top (Stem2 0.45 tall at y 3.02) at 3.245
+	Assert.near(audit.corn.ripe.height, 3.245, 1e-4)
 	Assert.truthy(audit.pumpkin.growing.footprint <= 3.4 and audit.pumpkin.ripe.footprint <= 3.4, "pumpkin vines fit")
 end)
 
