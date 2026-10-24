@@ -6,6 +6,8 @@ never hides the tile's ClickDetector.
   Kit.part(parent, name, size, cf, color, material?)        a block
   Kit.ball(parent, name, size, cf, color, material?)        an ellipsoid (a block with a Sphere SpecialMesh)
   Kit.cylinder(parent, name, length, diameter, cf, ...)     a cylinder standing along cf's up axis
+  Kit.sphere(parent, name, diameter, cf, color, material?)  a true Ball part
+  Kit.wedge(parent, name, size, cf, color, material?)       a WedgePart (its slope faces -Z)
   Kit.model(parent, name)
   Kit.weld(part, to)                                        unanchors part and welds it to to
 ]]
@@ -37,6 +39,28 @@ function Kit.ball(parent, name, size, cf, color, material)
 	mesh.Name = "Shape"
 	mesh.MeshType = Enum.MeshType.Sphere
 	mesh.Parent = p
+	return p
+end
+
+function Kit.sphere(parent, name, diameter, cf, color, material)
+	local p = Kit.part(parent, name, Vector3.new(diameter, diameter, diameter), cf, color, material)
+	p.Shape = Enum.PartType.Ball
+	return p
+end
+
+function Kit.wedge(parent, name, size, cf, color, material)
+	local p = Instance.new("WedgePart")
+	p.Name = name
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Size = size
+	p.CFrame = cf
+	p.Color = color
+	p.Material = material or Enum.Material.SmoothPlastic
+	p.Transparency = 0
+	p.Parent = parent
 	return p
 end
 

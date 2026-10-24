@@ -476,7 +476,7 @@ test("the Golden look: #FFC300 / #FFF1A8, star glints, at most 1 PointLight per 
 			if golden then
 				local main = ctx.CropModel.main(c)
 				eq(main.Color, roblox.Color3.fromHex("#FFC300"))
-				eq(main.MutFx.Texture, ctx.Visuals.SPARKLE, "star glints")
+				eq(ctx.CropModel.anchor(c).MutFx.Texture, ctx.Visuals.SPARKLE, "star glints on the FxAnchor")
 				eq(c.MutLook.Shine.Color, roblox.Color3.fromHex("#FFF1A8"))
 			end
 			local mutLook = c:FindFirstChild("MutLook")

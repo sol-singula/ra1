@@ -200,7 +200,7 @@ test("the pedestal picker: slots, item list, Remove; pedestals show the item wit
 	local shownItem = Client.find(c.engine.workspace, "ShownItem")
 	Assert.truthy(shownItem, "the item on the pedestal")
 	local CropModel = c.engine:require(c.engine:module("Shared/Models/Crop"))
-	eq(CropModel.main(shownItem).MutFx:GetAttribute("Key"), "wetgolden")
+	eq(CropModel.anchor(shownItem).MutFx:GetAttribute("Key"), "wetgolden")
 	eq(shownItem:GetAttribute("Stage"), "item", "the kept crop: the fruit on its own")
 	eq(shownItem.Label.Text.Text, "Wet + Golden Pumpkin\nfound by you")
 	eq(c.engine.errors, {})
@@ -218,11 +218,11 @@ test("mutated crops sparkle in the world", function()
 	c.engine:advance(0.5)
 	local CropModel = c.engine:require(c.engine:module("Shared/Models/Crop"))
 	local crop = c.engine.workspace.ClientCrops:FindFirstChild("Plot1_2")
-	eq(CropModel.main(crop).MutFx:GetAttribute("Key"), "wet")
+	eq(CropModel.anchor(crop).MutFx:GetAttribute("Key"), "wet")
 	Assert.truthy(crop.MutLook.Bead1, "Wet droplet beads")
 	tile:SetAttribute("Muts", nil)
 	c.engine:advance(0.5)
-	eq(CropModel.main(crop):FindFirstChild("MutFx"), nil)
+	eq(CropModel.anchor(crop):FindFirstChild("MutFx"), nil)
 	eq(crop:FindFirstChild("MutLook"), nil)
 end)
 
@@ -245,7 +245,7 @@ test("a crop turning Golden on a live tile plays the Golden reveal; one light, s
 	eq(crop:GetAttribute("Revealed"), 1)
 	c.engine:advance(3)
 	eq(main.Color, Visuals.GOLD)
-	eq(main.MutFx.Texture, Visuals.SPARKLE)
+	eq(CropModel.anchor(crop).MutFx.Texture, Visuals.SPARKLE)
 	local lights = 0
 	for _, d in crop:GetDescendants() do
 		if d.ClassName == "PointLight" then

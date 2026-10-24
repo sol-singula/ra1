@@ -32,6 +32,7 @@ test("has every table", function()
 			"Save",
 			"Net",
 			"Capture",
+			"CropVisuals",
 		}
 	do
 		Assert.truthy(type(Config[name]) == "table", `Config.{name}`)

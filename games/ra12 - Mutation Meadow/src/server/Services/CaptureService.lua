@@ -187,17 +187,11 @@ local function ground(size)
 	)
 end
 
--- a crop on the soil at pos (the same call TileController makes for a live tile)
+-- a crop standing on the soil at pos (the same build TileController makes for a live tile); its number is its
+-- tile id for the per-tile turn
 local function crop(name, seed, pos, progress, muts)
-	return CropModel.forTile(
-		stage,
-		name,
-		seed,
-		progress,
-		progress >= 1,
-		muts,
-		CFrame.new(ORIGIN + pos + Vector3.new(0, SOIL_TOP, 0)) * CFrame.Angles(0, math.rad((#name * 47) % 360), 0)
-	)
+	local at = CropModel.at(ORIGIN + pos + Vector3.new(0, SOIL_TOP, 0), string.match(name, "%d+$"))
+	return CropModel.forTile(stage, name, seed, progress, progress >= 1, muts, at)
 end
 
 -- a 3 x 3 bed; mutFor(i) gives crop i its mutation key
@@ -392,7 +386,7 @@ end
 
 -- the hero pumpkin's centre and the reveal camera (the pumpkin ~35% of the frame height)
 local HERO = Vector3.new(0, 0, 0)
-local REVEAL_EYE, REVEAL_TARGET = Vector3.new(-1.75, 3.8, -5), Vector3.new(-0.6, 2.15, 0)
+local REVEAL_EYE, REVEAL_TARGET = Vector3.new(-1.04, 2.85, -2.97), Vector3.new(-0.36, 1.81, 0)
 CaptureService.REVEAL_FRACTION = 0.35
 
 function BUILD.golden_reveal()
@@ -416,7 +410,7 @@ function BUILD.golden_reveal()
 		end
 	end
 	crop("HeroCrop", "pumpkin", HERO, 1, nil)
-	farmer("Farmer1", "sunhat", 2, Vector3.new(-3.2, 0, 0.8), HERO, "idle")
+	farmer("Farmer1", "sunhat", 2, Vector3.new(-1.6, 0, 2.2), HERO, "idle") -- in the gap behind the row
 end
 
 local function blockParty(kind)
@@ -509,7 +503,7 @@ local function build()
 	cam("block_party_rain", BP_EYE, BP_TARGET)
 	cam("block_party_golden", BP_EYE, BP_TARGET)
 	cam("pedestals", Vector3.new(3, 5.5, 17), Vector3.new(0, 4, 0))
-	cam("icon", Vector3.new(-1.33, 3.4, 5.33), Vector3.new(0.6, 2.45, 0), true)
+	cam("icon", Vector3.new(-0.85, 2.69, 3.39), Vector3.new(0.4, 1.95, 0), true)
 	folder:SetAttribute("Hud", true)
 	folder:SetAttribute("Guides", false)
 	folder:SetAttribute("Free", true)

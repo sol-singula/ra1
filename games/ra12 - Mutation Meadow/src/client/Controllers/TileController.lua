@@ -1,7 +1,9 @@
 --[[
 Tiles on the client: draws every plot's crops from the tile attributes (growing between server updates) with the
-shared Models/Crop (the same models the capture stage stages): each growth stage, the Golden and Wet looks, and the
-Golden reveal (Visuals.goldenReveal) when a crop you can see turns Golden. And the tile popup when you tap one.
+shared Models/Crop (the GA-01 builds the capture stage stages too): standing on the soil under each tile, rebuilt
+only when its stage (seed, sprout, growing, ripe) or its distance band changes (the far build beyond
+Config.CropVisuals.farStuds), the Golden and Wet looks, and the Golden reveal (Visuals.goldenReveal) when a crop you
+can see turns Golden. And the tile popup when you tap one.
 
 Popup: your empty tile -> pick a seed you own (or pick up its sprinkler); growing -> seed, time left, boosts and the
 can; ripe -> Harvest (a full basket offers selling that one); someone else's growing crop -> Help water.
@@ -230,15 +232,36 @@ local function connectClicks()
 	end
 end
 
--- the soil top of a tile, turned a little per tile so a bed of one seed doesn't look stamped
-local function soilTop(part)
-	local turn = (string.byte(part.Name, 1) + #part.Name * 7 + (tonumber(part.Name:match("%d+")) or 0) * 53) % 360
-	return CFrame.new(part.Position + Vector3.new(0, part.Size.Y / 2, 0)) * CFrame.Angles(0, math.rad(turn), 0)
+-- beyond Config.CropVisuals.farStuds from the camera a crop is its far build (Root and Fruit1), checked every
+-- LOD_EVERY seconds
+local LOD_EVERY = 1
+local far = {} -- [tile part] = true
+local lodAt = -math.huge
+
+local function cameraPosition()
+	local camera = workspace.CurrentCamera
+	local ok, cf = pcall(function()
+		return camera.CFrame
+	end)
+	return ok and cf and cf.Position or nil
+end
+
+local function updateLod(now)
+	if now - lodAt < LOD_EVERY then
+		return
+	end
+	lodAt = now
+	local eye = cameraPosition()
+	local limit = Config.CropVisuals.farStuds
+	for part in crops do
+		far[part] = eye ~= nil and (part.Position - eye).Magnitude > limit or nil
+	end
 end
 
 local function draw()
 	local now = Clock.now()
 	local seen = {}
+	updateLod(now)
 	for _, plot in plots() do
 		for _, folder in { plot.Tiles, plot.ExtraRow } do
 			for _, part in folder:GetChildren() do
@@ -250,13 +273,23 @@ local function draw()
 					local progress = math.clamp((Visuals.grownNow(part, now) or 0) / growSec, 0, 1)
 					local stage = CropModel.stageFor(progress, part:GetAttribute("Ripe") == true)
 					local muts = part:GetAttribute("Muts")
-					if crop and (crop:GetAttribute("Seed") ~= seed or crop:GetAttribute("Stage") ~= stage) then
+					local isFar = far[part] == true
+					-- rebuilt only when the seed, the stage or the distance band changes
+					if
+						crop
+						and (
+							crop:GetAttribute("Seed") ~= seed
+							or crop:GetAttribute("Stage") ~= stage
+							or crop:GetAttribute("Far") ~= isFar
+						)
+					then
 						CropModel.destroy(crop)
 						crop = nil
 					end
 					if not crop then
+						local name = plot.Name .. "_" .. part.Name
 						crop =
-							CropModel.build(cropFolder, plot.Name .. "_" .. part.Name, seed, stage, soilTop(part), muts)
+							CropModel.build(cropFolder, name, seed, stage, CropModel.tileCFrame(part), muts, nil, isFar)
 						crops[part] = crop
 					elseif crop:GetAttribute("Muts") ~= muts then
 						local wasGolden = string.find(crop:GetAttribute("Muts") or "", "golden") ~= nil
@@ -273,6 +306,7 @@ local function draw()
 		if not seen[part] then
 			CropModel.destroy(crop) -- its glints go back to the pool
 			crops[part] = nil
+			far[part] = nil
 		end
 	end
 	if current and popup.isOpen() then
