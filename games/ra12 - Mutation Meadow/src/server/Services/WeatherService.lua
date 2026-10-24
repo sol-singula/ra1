@@ -6,7 +6,9 @@ Weather { kind, scope = "server", startsAt, endsAt }. Rain grows every plot rain
 warms the lighting. Every crop on the plot of a player in the server rolls once, at a random whole second of the
 event (Rain: Wet, Golden Hour: Golden, at Config.Mutations chances). A crop planted or regrown during the event rolls
 at a random second of what is left; a crop harvested before its roll never rolls; a player who leaves takes their
-rolls with them.
+rolls with them. Each tile gets ONE event roll per Block Party window, regrows included: once a tile's roll has
+happened, a crop that regrows (or is replanted) there waits for the next window. A crop never rolls a mutation it
+already has, but can still add the other one (Wet + Golden). The Welcome Shower is unchanged.
 
 Welcome Shower (startShower, called by FirstSessionService in M8): rain on one player's plot only for
 welcomeShower.durationSec (Weather { scope = "ownPlot" } to that player; rainGrowthMult there). Each crop has a
@@ -45,6 +47,7 @@ WeatherService.rng = Random.new()
 
 local event -- { kind, startsAt, endsAt }
 local rolls = {} -- [key] = { player, tile, plantedAt, at, mut, chance, source = "event" | "shower" }
+local rolledIn = {} -- ["userId:tileId"] = event.startsAt: that tile's one roll this window has happened
 local showers = {} -- [player] = { startsAt, endsAt, nextTry, done }
 local laterWet = {} -- [player] = true: the shower found nothing; the next planted crop gets the Wet
 local delayedWet = {} -- [player] = { tile, plantedAt, at }
@@ -81,6 +84,9 @@ local function schedule(player, tileId, tile, from, to, mut, chance, source)
 	local key = `{player.UserId}:{tileId}:{tile.plantedAt}:{source}`
 	if rolls[key] then
 		return
+	end
+	if source == "event" and event and rolledIn[`{player.UserId}:{tileId}`] == event.startsAt then
+		return -- this tile already rolled this window (a regrown or replanted crop waits for the next one)
 	end
 	local span = math.max(1, math.floor(to - from))
 	rolls[key] = {
@@ -134,6 +140,7 @@ function WeatherService.stopEvent()
 	end
 	local ended = event
 	event = nil
+	table.clear(rolledIn)
 	setLighting(false)
 	dropRolls(function(r)
 		return r.source == "event"
@@ -240,6 +247,9 @@ function WeatherService.tick(now)
 			local tile = profile and profile.tiles[r.tile]
 			local live = (r.source == "event" and event ~= nil) or (r.source == "shower" and showers[r.player] ~= nil)
 			if tile and tile.plantedAt == r.plantedAt and live then
+				if r.source == "event" then
+					rolledIn[`{r.player.UserId}:{r.tile}`] = event.startsAt
+				end
 				MutationService.roll(r.player, r.tile, r.mut, r.chance, WeatherService.rng)
 			end
 		end

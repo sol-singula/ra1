@@ -57,9 +57,18 @@ the Robux as its value).
 
 The ad test passes when `ad` D1 reaches 15%. 22% is the stretch.
 
-**Starter Bundle review line: 39%** (from the Monetization revenue check). Sum the Robux values of
-`purchase:starterBundle` over all `purchase:*` Robux. When the bundle's share crosses 39%, review its price and
-contents.
+**Starter Bundle revenue check** (`src/shared/BundleReview.lua`, thresholds in `Config.Catalog.bundleReview`).
+The bundle's share is the Robux of `purchase:starterBundle` over all `purchase:*` Robux, across a rolling 7 days.
+It is checked from launch day 14 on:
+
+| Share (rolling 7 days) | Flag | What to do |
+|---|---|---|
+| over 50% | `review_repeat_offers` | Review the repeat offers (Instant Grow, Grow All, cosmetics, gifts), not the bundle. They aren't pulling their weight. |
+| under 10% | `check_bundle_visibility` | Check whether players are seeing the bundle (the store tab, the BundleOffer attribute, Bundle.resolve hiding it). |
+| 10% to 50% | none | |
+
+Before day 14, or with no Robux in the window, there is no flag. To retune, change `startDay`, `windowDays`,
+`highShare` or `lowShare`.
 
 ## The onboarding funnel (first session only, once per step)
 

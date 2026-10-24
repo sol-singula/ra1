@@ -1,6 +1,6 @@
 --[[
 The Block Party meter (from the top of the hour to the bloom): the sunflower's stage, waters / goal, time left, your
-waters (Config.BlockParty.reward.minWaters needed for the reward), and a Water button. The sunflower's Water prompt
+waters (state.minWaters needed for the reward: 1 in a private server, else Config.BlockParty.reward.minWaters), and a Water button. The sunflower's Water prompt
 waters too.
 
   BlockPartyController.state()   the last BlockPartyState
@@ -49,7 +49,7 @@ local function refresh()
 	fill.Size = UDim2.new(math.clamp(state.waters / math.max(1, state.goal), 0, 1), 0, 1, 0)
 	countLabel.Text = `{state.waters} / {state.goal} waters`
 	timeLabel.Text = UI.duration((state.endsAt or 0) - Clock.now()) .. " left"
-	local need = Config.BlockParty.reward.minWaters
+	local need = state.minWaters or Config.BlockParty.reward.minWaters
 	yoursLabel.Text = if state.yourWaters >= need
 		then `Your waters: {state.yourWaters} ✓ reward ready`
 		else `Your waters: {state.yourWaters} ({need} needed)`

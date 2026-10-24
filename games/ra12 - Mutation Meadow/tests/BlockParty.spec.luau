@@ -6,7 +6,8 @@ local test, eq = Assert.test, Assert.eq
 local H = (1_760_000_000 // 3600 + 1) * 3600 -- an hour boundary just after the default clock
 
 local function setup(n, opts)
-	local ctx = Farm.setup({ now = H - 20, studio = opts and opts.studio })
+	local ctx =
+		Farm.setup({ now = H - 20, studio = opts and opts.studio, privateServerId = opts and opts.privateServerId })
 	local players = {}
 	for id = 1, n do
 		players[id] = Farm.join(ctx, id)
@@ -28,6 +29,31 @@ test("goal: 3 players -> 30, 1 player -> 20; it opens Drooping at the top of the
 	eq(one.BP.state().goal, 20)
 	eq({ ctx.BP.goalFor(8), ctx.BP.goalFor(0) }, { 80, 20 })
 end)
+
+test(
+	"private servers: goal max(2, players), 1 water earns the reward; public stays max(20, 10 x players) and 5",
+	function()
+		eq({
+			setup(2, { privateServerId = "ps-1" }).BP.state().goal,
+			setup(3, { privateServerId = "ps-1" }).BP.state().goal,
+		}, { 2, 3 })
+		local ctx, players = setup(1, { privateServerId = "ps-1" })
+		eq({ ctx.BP.isPrivate(), ctx.BP.state().goal, ctx.BP.minWaters() }, { true, 2, 1 })
+		eq({ ctx.BP.goalFor(0, true), ctx.BP.goalFor(5, true), ctx.BP.goalFor(5, false) }, { 2, 5, 50 })
+		local pub = setup(3)
+		eq({ pub.BP.isPrivate(), pub.BP.state().goal, pub.BP.minWaters() }, { false, 30, 5 })
+
+		local two, pair = setup(2, { privateServerId = "ps-1" })
+		local a, b = pair[1], pair[2]
+		local coinsA, coinsB = two.Data.get(a).coins, two.Data.get(b).coins
+		eq(water(two, a), true)
+		eq(two.BP.state().stage, "perking")
+		eq(water(two, b), true)
+		eq(two.BP.state().stage, "bloom", "2 friends bloom it")
+		eq(two.Data.get(a).coins, coinsA + 100)
+		eq(two.Data.get(b).coins, coinsB + 100)
+	end
+)
 
 test("a second water within 2s is refused; you must be near the sunflower", function()
 	local ctx, players = setup(1)

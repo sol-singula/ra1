@@ -90,13 +90,13 @@ test("a gift to an offline friend lands through the queue exactly once", functio
 	local GRANTED = decisions(ctx)
 	eq(prompt(ctx, p, { key = "gift_tag_star", friendId = 3 }), { false, "not_friend" })
 	eq(prompt(ctx, p, { key = "gift_tag_star", friendId = 2 }), { true })
-	eq(Server.raw(ctx.engine, 1).meta.pendingGift.friendId, 2, "saved before the prompt")
+	eq(Server.raw(ctx.engine, 1).meta.pendingGifts[1].friendId, 2, "saved before the prompt")
 	eq(Store.buy(ctx, p, "gift_tag_star", "G1"), GRANTED)
 	eq(Store.buy(ctx, p, "gift_tag_star", "G1"), GRANTED, "a re-sent receipt")
 	local queue = ctx.engine.dataStores._raw("MM_Gifts_v1")["u_2"].gifts
 	eq(#queue, 1)
 	eq({ queue[1].key, queue[1].fromId, queue[1].purchaseId }, { "tag_star", 1, "G1" })
-	eq(ctx.Data.get(p).meta.pendingGift, nil)
+	eq(ctx.Data.get(p).meta.pendingGifts, {})
 	local friend = Farm.join(ctx, 2)
 	ctx.engine:advance(10)
 	local fp = ctx.Data.get(friend)
@@ -159,6 +159,72 @@ test("a throwing handler rolls back and asks again", function()
 	ctx.PurchaseService.HANDLERS.growAll = real
 	eq(Store.buy(ctx, p, "gift_tag_star"), NOT_YET, "a gift with no saved target never grants")
 	eq(#profile.receipts, 0)
+end)
+
+test("each pending gift has its own slot: two friends, two receipts, each lands with the right one", function()
+	local ctx = Store.setup()
+	ctx.engine.friends["1:2"] = true
+	ctx.engine.friends["1:3"] = true
+	local p = Farm.join(ctx, 1)
+	local GRANTED = decisions(ctx)
+	eq(prompt(ctx, p, { key = "gift_tag_star", friendId = 2 }), { true })
+	eq(prompt(ctx, p, { key = "gift_tag_star", friendId = 3 }), { true })
+	eq(prompt(ctx, p, { key = "gift_trail_leaf", friendId = 3 }), { true })
+	local slots = Server.raw(ctx.engine, 1).meta.pendingGifts
+	eq({ #slots, slots[1].friendId, slots[2].friendId, slots[3].key }, { 3, 2, 3, "gift_trail_leaf" })
+	eq(Store.buy(ctx, p, "gift_tag_star", "G1"), GRANTED)
+	eq(Store.buy(ctx, p, "gift_trail_leaf", "G2"), GRANTED)
+	eq(Store.buy(ctx, p, "gift_tag_star", "G3"), GRANTED)
+	local raw = ctx.engine.dataStores._raw("MM_Gifts_v1")
+	eq({ #raw["u_2"].gifts, raw["u_2"].gifts[1].key }, { 1, "tag_star" })
+	eq(#raw["u_3"].gifts, 2)
+	eq({ raw["u_3"].gifts[1].key, raw["u_3"].gifts[2].key }, { "trail_leaf", "tag_star" })
+	eq(ctx.Data.get(p).meta.pendingGifts, {})
+end)
+
+test("a gift prompt closed without buying frees its slot; an old meta.pendingGift moves into the list", function()
+	local ctx = Store.setup()
+	ctx.engine.friends["1:2"] = true
+	ctx.engine.friends["1:3"] = true
+	local p = Farm.join(ctx, 1)
+	local NOT_YET = select(2, decisions(ctx))
+	eq(prompt(ctx, p, { key = "gift_tag_star", friendId = 2 }), { true })
+	eq(prompt(ctx, p, { key = "gift_tag_star", friendId = 3 }), { true })
+	ctx.engine:run(function()
+		ctx.engine.game.MarketplaceService.PromptProductPurchaseFinished:Fire(
+			p.UserId,
+			Store.id(ctx, "gift_tag_star"),
+			false
+		)
+	end)
+	local slots = ctx.Data.get(p).meta.pendingGifts
+	eq({ #slots, slots[1].friendId }, { 1, 2 }, "the newest (cancelled) one is gone")
+	ctx.engine:run(function()
+		ctx.engine.game.MarketplaceService.PromptProductPurchaseFinished:Fire(
+			p.UserId,
+			Store.id(ctx, "gift_tag_star"),
+			true
+		)
+	end)
+	eq(#slots, 1, "a bought prompt keeps its slot for the receipt")
+
+	local meta = ctx.Data.get(p).meta
+	meta.pendingGifts, meta.pendingGift = nil, { key = "gift_trail_leaf", friendId = 3, at = 0 }
+	eq(Store.buy(ctx, p, "gift_trail_leaf", "G9"), (decisions(ctx)))
+	eq({ meta.pendingGift, meta.pendingGifts }, { nil, {} })
+	eq(ctx.engine.dataStores._raw("MM_Gifts_v1")["u_3"].gifts[1].key, "trail_leaf")
+	eq(Store.buy(ctx, p, "gift_trail_leaf", "G10"), NOT_YET, "no slot left: no grant")
+end)
+
+test("pending gift slots are capped; the oldest drops", function()
+	local ctx = Store.setup()
+	ctx.engine.friends["1:2"] = true
+	local p = Farm.join(ctx, 1)
+	for i = 1, ctx.PurchaseService.PENDING_GIFTS_MAX + 2 do
+		eq(prompt(ctx, p, { key = "gift_tag_star", friendId = 2 }), { true }, i)
+	end
+	local slots = ctx.Data.get(p).meta.pendingGifts
+	eq(#slots, ctx.PurchaseService.PENDING_GIFTS_MAX)
 end)
 
 test("a cosmetic you own can't be prompted; one with no id yet can't either", function()

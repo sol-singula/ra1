@@ -32,11 +32,13 @@ test("the rows come from Config", function()
 			"1 guaranteed Wet crop 10s into your first shower",
 			"Goal: max(20, 10 x players) waters, set when it opens",
 			"The sunflower always blooms by :10, goal or not",
+			"One roll per tile each Block Party, regrown crops included",
+			"Private servers: max(2, 1 x players), 1+ waters for the reward",
 		}
 	do
 		Assert.truthy(table.find(t, want), want)
 	end
-	eq(#t, 1 + 9 + 1 + 4 + 1 + 3)
+	eq(#t, 1 + 9 + 1 + 5 + 1 + 4)
 end)
 
 test("change a Config copy and the rows change to match", function()

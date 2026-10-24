@@ -71,8 +71,19 @@ Catalog.giftBackButton = "Gift back"
 
 Catalog.earnedCosmetics = { "trail_petals", "tag_collector", "deco_lantern", "title_master", "tag_weekly_top100" }
 Catalog.vipPerks = { "tag_vip", "border_vip", "trail_vip_sparkle" }
-Catalog.privateServerRobux = 150
+Catalog.privateServerRobux = 99
 Catalog.subscriberPerk = "can_brass"
+
+-- the Starter Bundle's share of Robux revenue (BundleReview, docs/analytics.md). From launch day startDay, over the
+-- last windowDays days: above highShare, review the repeat offers (not the bundle); below lowShare, check that
+-- players see the bundle at all.
+Catalog.bundleReview = {
+	startDay = 14,
+	windowDays = 7,
+	highShare = 0.50,
+	lowShare = 0.10,
+	repeatOffers = { "instantGrow", "growAll", "cosmetics", "gifts" },
+}
 
 Catalog.byProductId = {}
 for groupName, group in { products = Catalog.products, gifts = Catalog.gifts } do

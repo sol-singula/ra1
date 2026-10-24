@@ -1218,6 +1218,7 @@ function Engine.new(opts)
 	engine.Instance = makeInstanceLib(engine)
 	engine.game = newInstance(engine, "DataModel", "Game")
 	engine.game.JobId = opts.jobId or "job-1"
+	engine.game.PrivateServerId = opts.privateServerId or ""
 	engine.game.PlaceId = opts.placeId or 0
 	makeServices(engine)
 

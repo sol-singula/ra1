@@ -83,7 +83,7 @@ DataService.TEMPLATE = TableUtil.deepFreeze({
 	receipts = {},
 	giftsIn = {},
 	outbox = {},
-	meta = { created = 0, lastSeen = 0, sessionStart = 0, growCredits = 0 },
+	meta = { created = 0, lastSeen = 0, sessionStart = 0, growCredits = 0, pendingGifts = {} },
 })
 
 -- maps whose template holds starting entries: filled only when missing, never merged (spent seeds stay spent)

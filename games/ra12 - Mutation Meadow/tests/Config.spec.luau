@@ -117,6 +117,7 @@ test("block party, weather, mutations", function()
 		stages = { perking = 0.33, standing = 0.66, bloom = 1.0 },
 		wiltSec = 60,
 		reward = { minWaters = 5, coinsPerLevelSq = 100 },
+		privateServer = { goalMin = 2, goalPerPlayer = 1, minWaters = 1 },
 		sunflowerFriendAt = 10,
 	})
 	eq(Config.Weather, {
@@ -351,7 +352,7 @@ test("catalog: prices, fields and gifts", function()
 	Assert.truthy(C.gifts.gift_starterBundle == nil, "bundle is not giftable")
 	eq(C.earnedCosmetics, { "trail_petals", "tag_collector", "deco_lantern", "title_master", "tag_weekly_top100" })
 	eq(C.vipPerks, { "tag_vip", "border_vip", "trail_vip_sparkle" })
-	eq({ C.privateServerRobux, C.subscriberPerk }, { 150, "can_brass" })
+	eq({ C.privateServerRobux, C.subscriberPerk }, { 99, "can_brass" })
 end)
 
 test("catalog: names, banned words, byProductId", function()

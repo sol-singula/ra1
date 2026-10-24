@@ -9,14 +9,18 @@ Purchase:prompt {key, tile?, friendId?} validates, then calls PromptGamePassPurc
   growAll       refused with nothing growing
   a cosmetic    refused when owned
   gift_<key>    the friend must pass IsFriendsWith; refused when they are in this server and own it already. The
-                target goes in meta.pendingGift { key, friendId, at } and is saved before the prompt.
+                target gets its own slot in meta.pendingGifts (a list of { key, friendId, at }, oldest first, at
+                most PENDING_GIFTS_MAX: a full list drops its oldest) and is saved before the prompt. A prompt
+                closed without buying (PromptProductPurchaseFinished false) frees the newest slot for that key.
+                A save from before this still holding meta.pendingGift moves it into the list.
 
 Receipts (Receipts.process: saved with the PurchaseId, rolled back on any error):
   instantGrow   ripens the held tile if it is still growing, else the crop with the longest time left; with nothing
                 growing at receipt time, meta.growCredits += 1
   growAll       every growing crop on the plot and the extra bed ripens
   a cosmetic    cosmetics.owned[key] = true
-  gift_<key>    the friend in this server gets it now (and is saved); otherwise GiftQueue.enqueue
+  gift_<key>    takes the oldest slot for that key (none: an error, so it never grants without a target); the
+                friend in this server gets it now (and is saved); otherwise GiftQueue.enqueue
 Each grant logs purchase { key, robux }.
 
 Game passes grant live on PromptGamePassPurchaseFinished(true): Extra Plot Row shows its bed at once, the Starter
@@ -28,7 +32,8 @@ a friend's Gift tab can hide what they already have).
   PurchaseService.HANDLERS                             [productKey] = receipt handler
   PurchaseService.applyPass(player, key)
   PurchaseService.refresh(player)                      re-sends the store attributes
-  PurchaseService.PENDING_SEC
+  PurchaseService.PENDING_SEC / PENDING_GIFTS_MAX
+  PurchaseService.giftSlots(profile)                   meta.pendingGifts (moving an old meta.pendingGift in)
 ]]
 local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -54,6 +59,7 @@ local Telemetry = require(script.Parent.Parent.Telemetry)
 local PurchaseService = {}
 
 PurchaseService.PENDING_SEC = 60
+PurchaseService.PENDING_GIFTS_MAX = 10
 
 local pendingGrow = setmetatable({}, { __mode = "k" }) -- [player] = { tile, at }
 
@@ -194,6 +200,16 @@ local function promptGrow(player, key, item, payload, profile)
 	return promptProduct(player, item)
 end
 
+function PurchaseService.giftSlots(profile)
+	local meta = profile.meta
+	meta.pendingGifts = meta.pendingGifts or {}
+	if meta.pendingGift then
+		table.insert(meta.pendingGifts, 1, meta.pendingGift)
+		meta.pendingGift = nil
+	end
+	return meta.pendingGifts
+end
+
 local function promptGift(player, key, gift, payload, profile)
 	local friendId = payload.friendId
 	if not friendOf(player, friendId) then
@@ -206,7 +222,11 @@ local function promptGift(player, key, gift, payload, profile)
 	if gift.id == 0 then
 		return false, "not_created"
 	end
-	profile.meta.pendingGift = { key = key, friendId = friendId, at = Clock.now() }
+	local slots = PurchaseService.giftSlots(profile)
+	table.insert(slots, { key = key, friendId = friendId, at = Clock.now() })
+	while #slots > PurchaseService.PENDING_GIFTS_MAX do
+		table.remove(slots, 1)
+	end
 	if not DataService.save(player, "pendingGift"):await() then
 		return false, "save_failed"
 	end
@@ -299,10 +319,18 @@ end
 
 for giftKey, gift in Config.Catalog.gifts do
 	HANDLERS[giftKey] = function(player, profile, receipt)
-		local pending = profile.meta.pendingGift
-		if not pending or pending.key ~= giftKey then
+		local slots = PurchaseService.giftSlots(profile)
+		local slot
+		for i, s in slots do
+			if s.key == giftKey then
+				slot = i
+				break
+			end
+		end
+		if not slot then
 			error(`no pending target for {giftKey}`)
 		end
+		local pending = slots[slot]
 		local friend = Players:GetPlayerByUserId(pending.friendId)
 		local friendProfile = friend and DataService.get(friend)
 		if friendProfile then
@@ -326,7 +354,7 @@ for giftKey, gift in Config.Catalog.gifts do
 				error("the gift queue refused it")
 			end
 		end
-		profile.meta.pendingGift = nil
+		table.remove(slots, slot)
 		logPurchase(player, giftKey)
 	end
 end
@@ -343,6 +371,21 @@ function PurchaseService:Init()
 			Purchase.grantLive(player, key)
 			logPurchase(player, key)
 			PurchaseService.applyPass(player, key)
+		end
+	end)
+	MarketplaceService.PromptProductPurchaseFinished:Connect(function(userId, productId, purchased)
+		local player = if typeof(userId) == "Instance" then userId else Players:GetPlayerByUserId(userId)
+		local profile = player and not purchased and DataService.get(player)
+		if not profile then
+			return
+		end
+		local slots = PurchaseService.giftSlots(profile)
+		for i = #slots, 1, -1 do
+			local gift = Config.Catalog.gifts[slots[i].key]
+			if gift and gift.id == productId then
+				table.remove(slots, i) -- closed without buying: free the newest slot for it
+				return
+			end
 		end
 	end)
 	GiftQueue.Applied:Connect(function(player, key, fromId)

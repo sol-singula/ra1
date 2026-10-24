@@ -36,6 +36,7 @@ function Odds.rows(config)
 	add("Mutations", `Golden: {pct(m.golden.chance.goldenHour)} per crop in Golden Hour`)
 	add("Mutations", `Value: Wet x{m.wet.mult}, Golden x{m.golden.mult}, Wet + Golden x{m.stackMult}`)
 	add("Mutations", "Each mutation happens at most once per crop; a Wet crop can still turn Golden")
+	add("Mutations", "One roll per tile each Block Party, regrown crops included")
 	local shower = config.Weather.welcomeShower
 	add(
 		"Welcome Shower",
@@ -43,6 +44,10 @@ function Odds.rows(config)
 	)
 	local bp = config.BlockParty
 	add("Block Party", `Goal: max({bp.goalMin}, {bp.goalPerPlayer} x players) waters, set when it opens`)
+	add(
+		"Block Party",
+		`Private servers: max({bp.privateServer.goalMin}, {bp.privateServer.goalPerPlayer} x players), {bp.privateServer.minWaters}+ waters for the reward`
+	)
 	add("Block Party", `The sunflower always blooms by :{string.format("%02d", bp.windowSec // 60)}, goal or not`)
 	add(
 		"Block Party",

@@ -83,7 +83,8 @@ export type Profile = {
 		campaign: string?,
 		growCredits: number, -- eng (M9 Instant Grow with nothing growing)
 		bundleGrants: { string }?, -- eng (M9 resolved Starter Bundle contents, fixed once; meta.bundleGrants)
-		pendingGift: { key: string, friendId: number, at: number }?, -- eng (M9)
+		pendingGifts: { { key: string, friendId: number, at: number } }, -- eng: one slot per gift prompt, oldest first
+		pendingGift: { key: string, friendId: number, at: number }?, -- eng (M9, read once and moved into pendingGifts)
 	},
 }
 

@@ -7,12 +7,13 @@ most once per waterEverySec per player) adds a water. Stages: Perking from ceil(
 ceil(standing x goal), Bloom at the goal; at h + windowSec it blooms anyway. The bloom starts the weather
 (WeatherService) and pays coinsPerLevelSq x plotLevel^2 once to everyone with reward.minWaters waters this window;
 the sunflowerFriendAt-th reward earns sunflower_friend. When the weather ends the sunflower wilts for wiltSec,
-then stays drooped until the next hour.
+then stays drooped until the next hour. In a private server (game.PrivateServerId ~= "") goalMin, goalPerPlayer and
+reward.minWaters come from Config.BlockParty.privateServer instead: max(2, players), and 1 water earns the reward.
 
-BlockPartyState { phase, stage, waters, goal, yourWaters, endsAt } goes to every player on each change and every
-second while open.
+BlockPartyState { phase, stage, waters, goal, yourWaters, minWaters, endsAt } goes to every player on each change
+and every second while open.
 
-  BlockPartyService.goalFor(players) / stageFor(waters, goal)
+  BlockPartyService.isPrivate() / goalFor(players, private?) / minWaters(private?) / stageFor(waters, goal)
   BlockPartyService.state()          the window (or nil)
   BlockPartyService.open(now, forced?) / bloom(now) / finish()   (also the DevCommand "bp start|bloom|end")
   BlockPartyService.tick(now)
@@ -47,9 +48,31 @@ local LOOKS = { drooping = "Drooping", perking = "Perking", standing = "Standing
 local window -- { hour, startAt, endsAt, closesAt, goal, waters, stage, phase, wiltEndsAt }
 local lastWater = setmetatable({}, { __mode = "k" }) -- [player] = time
 
-function BlockPartyService.goalFor(players)
+function BlockPartyService.isPrivate()
+	local ok, id = pcall(function()
+		return game.PrivateServerId
+	end)
+	return ok and type(id) == "string" and id ~= ""
+end
+
+local function private(flag)
+	if flag == nil then
+		return BlockPartyService.isPrivate()
+	end
+	return flag
+end
+
+function BlockPartyService.goalFor(players, isPrivate)
 	local cfg = Config.BlockParty
+	if private(isPrivate) then
+		cfg = cfg.privateServer
+	end
 	return math.max(cfg.goalMin, cfg.goalPerPlayer * players)
+end
+
+function BlockPartyService.minWaters(isPrivate)
+	local cfg = Config.BlockParty
+	return if private(isPrivate) then cfg.privateServer.minWaters else cfg.reward.minWaters
 end
 
 function BlockPartyService.stageFor(waters, goal)
@@ -131,6 +154,7 @@ local function stateFor(player)
 		waters = window.waters,
 		goal = window.goal,
 		yourWaters = yourWaters(player),
+		minWaters = BlockPartyService.minWaters(),
 		endsAt = endsAt(),
 	}
 end
@@ -168,10 +192,11 @@ end
 
 local function reward()
 	local cfg = Config.BlockParty
+	local need = BlockPartyService.minWaters()
 	for _, player in Players:GetPlayers() do
 		local profile = DataService.get(player)
 		local bp = profile and profile.blockParty
-		if bp and bp.window == window.hour and bp.waters >= cfg.reward.minWaters and not bp.rewarded then
+		if bp and bp.window == window.hour and bp.waters >= need and not bp.rewarded then
 			bp.rewarded = true
 			bp.rewardsTotal += 1
 			NetService.change(player, { "blockParty" }, bp)

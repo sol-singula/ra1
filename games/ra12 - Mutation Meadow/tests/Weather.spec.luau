@@ -54,6 +54,55 @@ test("every crop rolls exactly once per event; one planted during it rolls once 
 	eq(ctx.Weather.current(), nil, "300s later it ended")
 end)
 
+test("one roll per tile per window: a crop regrown after its roll waits for the next Block Party", function()
+	local ctx = Farm.setup()
+	local p = Farm.join(ctx, 1)
+	ctx.Data.get(p).firstSession.done = true
+	Farm.crop(ctx, p, "1", "strawberry", true)
+	Farm.crop(ctx, p, "2", "strawberry", true)
+	ctx.Weather.rng = Farm.fixedRng(0) -- every roll at the event's first second
+	local counts = countRolls(ctx)
+	ctx.engine:run(function()
+		ctx.Weather.startEvent("rain")
+	end)
+	ctx.engine:advance(2)
+	eq(Farm.call(ctx, p, "Plot", "harvest", { tile = "1" }), true)
+	local regrown = ctx.Data.get(p).tiles["1"].plantedAt
+	ctx.engine:advance(310)
+	eq(ctx.Weather.current(), nil)
+	eq(counts[`1:1:{regrown}`], nil, "the regrown crop didn't roll this window")
+	local total = 0
+	for _, c in counts do
+		total += c
+	end
+	eq(total, 2, "tiles 1 and 2 rolled once each")
+
+	ctx.engine:run(function()
+		ctx.Weather.startEvent("goldenHour")
+	end)
+	ctx.engine:advance(2)
+	eq(counts[`1:1:{regrown}`], 1, "the next window rolls it")
+end)
+
+test("a Wet crop keeps Wet and never rolls Wet again, but Golden Hour can still add Golden", function()
+	local ctx = Farm.setup()
+	local p = Farm.join(ctx, 1)
+	ctx.Data.get(p).firstSession.done = true
+	local tile = Farm.crop(ctx, p, "1", "strawberry")
+	tile.muts = { wet = true }
+	ctx.Weather.rng = Farm.fixedRng(0) -- each roll on the first second, and every chance hits
+	ctx.engine:run(function()
+		ctx.Weather.startEvent("rain")
+	end)
+	ctx.engine:advance(310)
+	eq(ctx.Data.get(p).tiles["1"].muts, { wet = true })
+	ctx.engine:run(function()
+		ctx.Weather.startEvent("goldenHour")
+	end)
+	ctx.engine:advance(2)
+	eq(ctx.Data.get(p).tiles["1"].muts, { wet = true, golden = true })
+end)
+
 test("a crop harvested before its roll doesn't roll; a player who left never rolls", function()
 	local ctx = Farm.setup()
 	local a = Farm.join(ctx, 1)

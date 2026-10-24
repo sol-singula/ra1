@@ -8,7 +8,7 @@ Nothing here is done from the repo. Each item is a step on Mason's account or in
 - [ ] **Every Catalog and badge `id` is created and filled in.** That's the 29 store items and 10 badges listed in
       `docs/ids-todo.md`, all made on Mason's own account. Then run `RELEASE=1 tools/run_tests.sh Release`: it
       fails while any id is still 0.
-- [ ] **Private servers** are on, at 150 R$ a month (Creator Hub > Monetization > Private Servers).
+- [ ] **Private servers** are on, at 99 R$ a month (Creator Hub > Monetization > Private Servers).
 - [ ] **Store art is uploaded:** the 1024×1024 icon and the 1920×1080 thumbnails from the M6 capture scenes.
 - [ ] **Every analytics event is verified** (M10, `docs/analytics.md`). Run a Studio playtest with the Analytics
       debug view, and do one test join with ad LaunchData `{"src":"ad","c":"test"}` to check that `ad` shows in
