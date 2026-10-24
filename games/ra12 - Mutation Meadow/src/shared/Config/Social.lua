@@ -10,5 +10,6 @@ return {
 	itemGiftsPerDay = 20,
 	giftOfferSec = 30,
 	visitOffsetStuds = 6,
+	visitStreamSec = 2,
 	gardenNameFallback = "%s's Garden",
 }

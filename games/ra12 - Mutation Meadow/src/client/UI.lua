@@ -1,7 +1,9 @@
 --[[
 A tiny UI kit: mobile-first panels that scale with the screen (one UIScale per ScreenGui, designed at 1280 x 720).
 
-  UI.screen(name)                     a ScreenGui in PlayerGui (ResetOnSpawn off), scaled to the viewport
+  UI.screen(name)                     a ScreenGui in PlayerGui (ResetOnSpawn off, CoreUISafeInsets), scaled to the
+                                      viewport
+  UI.MIN_TAP                          48: the smallest tap target, in px at 1x
   UI.frame(parent, props)             a rounded panel
   UI.label(parent, text, props)
   UI.button(parent, text, onClick, props)   a big tap target (TextButton.Activated)
@@ -14,6 +16,8 @@ A tiny UI kit: mobile-first panels that scale with the screen (one UIScale per S
 local Players = game:GetService("Players")
 
 local UI = {}
+
+UI.MIN_TAP = 48
 
 UI.COLORS = {
 	card = Color3.fromRGB(255, 248, 230),
@@ -50,6 +54,7 @@ function UI.screen(name)
 	gui.Name = name
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = false
+	gui.ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets -- clear of the notch, the Roblox top bar and home bar
 	local scale = Instance.new("UIScale")
 	local camera = workspace.CurrentCamera
 	local function rescale()
@@ -58,7 +63,7 @@ function UI.screen(name)
 	rescale()
 	camera:GetPropertyChangedSignal("ViewportSize"):Connect(rescale)
 	scale.Parent = gui
-	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui", 10)
 	return gui
 end
 

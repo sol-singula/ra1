@@ -11,6 +11,7 @@ local RunService = game:GetService("RunService")
 local Clock = require(ReplicatedStorage.Shared.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Visuals = require(ReplicatedStorage.Shared.Visuals)
 local ClientState = require(script.Parent.Parent.ClientState)
 local UI = require(script.Parent.Parent.UI)
 
@@ -35,7 +36,8 @@ local function refresh()
 	local w = WeatherController.current()
 	banner.Visible = w ~= nil
 	if cloud then
-		cloud.Rain.Enabled = w ~= nil and w.kind == "rain"
+		-- reduced effects turn the rain sheet off (the banner still says it's raining)
+		cloud.Rain.Enabled = w ~= nil and w.kind == "rain" and not Visuals.reducedFx
 	end
 	if not w then
 		return
@@ -71,7 +73,7 @@ function WeatherController:Start()
 	banner = UI.frame(gui, {
 		Name = "Banner",
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 220),
+		Position = UDim2.new(0.5, 0, 0, 300), -- below the toast stack
 		Size = UDim2.fromOffset(440, 110),
 		Visible = false,
 	})
@@ -98,6 +100,7 @@ function WeatherController:Start()
 
 	Net.on("Weather", onWeather)
 	ClientState.Changed:Connect(function(roots)
+		Visuals.setReduced(ClientState.get("settings", "reducedFx") == true)
 		local extra = ClientState.extra
 		if roots == nil and extra and extra.weather then
 			local e, s = extra.weather.event, extra.weather.shower

@@ -97,9 +97,9 @@ local function card(parent, profile, guid, item)
 	row.Name = "Actions"
 	row.BackgroundTransparency = 1
 	row.Position = UDim2.fromOffset(8, 82)
-	row.Size = UDim2.new(1, -16, 0, 40)
+	row.Size = UDim2.new(1, -16, 0, UI.MIN_TAP)
 	row.Parent = c
-	local w = UDim2.new(0.32, 0, 1, 0)
+	local w = UDim2.new(0.32, 0, 1, 0) -- 58 px of a 184 px row; the row is UI.MIN_TAP tall
 	if item.locked then
 		UI.label(row, "On display", { Name = "OnDisplay", Size = UDim2.new(1, 0, 1, 0) })
 		return c
@@ -140,7 +140,7 @@ function BackpackController.fill()
 	local filters = Instance.new("Frame")
 	filters.Name = "Filters"
 	filters.BackgroundTransparency = 1
-	filters.Size = UDim2.new(1, 0, 0, 40)
+	filters.Size = UDim2.new(1, 0, 0, UI.MIN_TAP)
 	filters.Parent = modal.body
 	for i, f in FILTERS do
 		UI.button(filters, f[2], function()
@@ -155,13 +155,13 @@ function BackpackController.fill()
 	local grid = Instance.new("ScrollingFrame")
 	grid.Name = "Grid"
 	grid.BackgroundTransparency = 1
-	grid.Size = UDim2.new(1, 0, 1, -80)
+	grid.Size = UDim2.new(1, 0, 1, -88)
 	grid.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	grid.CanvasSize = UDim2.new()
 	grid.ScrollBarThickness = 6
 	grid.Parent = modal.body
 	local layout = Instance.new("UIGridLayout")
-	layout.CellSize = UDim2.fromOffset(200, 130)
+	layout.CellSize = UDim2.fromOffset(200, 138)
 	layout.CellPadding = UDim2.fromOffset(8, 8)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = grid

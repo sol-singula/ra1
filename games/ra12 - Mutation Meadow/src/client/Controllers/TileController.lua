@@ -263,6 +263,7 @@ local function draw()
 	end
 	for part, crop in crops do
 		if not seen[part] then
+			Visuals.release(crop) -- its sparkles go back to the pool
 			crop:Destroy()
 			crops[part] = nil
 		end

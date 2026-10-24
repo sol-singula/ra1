@@ -22,31 +22,80 @@ Visuals.MUT = {
 	wetgolden = Color3.fromRGB(150, 255, 220),
 }
 
--- sparkles on a part for a mutation key ("wet" | "golden" | "wetgolden" | nil clears them)
+-- Reduced effects (Settings): particle rates are cut by REDUCED_RATE (75% fewer) and the rain sheet is off
+Visuals.REDUCED_RATE = 0.25
+Visuals.reducedFx = false
+
+local RATES = { wet = 8, golden = 8, wetgolden = 14 }
+local active = setmetatable({}, { __mode = "k" }) -- [emitter] = key, the emitters in use
+local pool = {} -- free emitters, reused instead of made and destroyed (Visuals.poolSize())
+
+local function rateFor(key)
+	return RATES[key] * (if Visuals.reducedFx then Visuals.REDUCED_RATE else 1)
+end
+
+local function take()
+	local fx = table.remove(pool)
+	if not fx then
+		fx = Instance.new("ParticleEmitter")
+		fx.Name = "MutFx"
+		fx.LightEmission = 0.8
+		fx.Lifetime = NumberRange.new(0.8, 1.4)
+		fx.Speed = NumberRange.new(1, 2)
+		fx.Size = NumberSequence.new(0.25)
+	end
+	fx.Enabled = true
+	return fx
+end
+
+local function give(fx)
+	active[fx] = nil
+	fx.Enabled = false
+	fx.Parent = nil
+	table.insert(pool, fx)
+end
+
+-- sparkles on a part for a mutation key ("wet" | "golden" | "wetgolden" | nil clears them); emitters are pooled
 function Visuals.mutationFx(part, key)
 	local fx = part:FindFirstChild("MutFx")
 	if not key then
 		if fx then
-			fx:Destroy()
+			give(fx)
 		end
 		return
 	end
 	if fx and fx:GetAttribute("Key") == key then
 		return
 	end
-	if fx then
-		fx:Destroy()
-	end
-	fx = Instance.new("ParticleEmitter")
-	fx.Name = "MutFx"
+	fx = fx or take()
 	fx:SetAttribute("Key", key)
 	fx.Color = ColorSequence.new(Visuals.MUT[key])
-	fx.LightEmission = 0.8
-	fx.Rate = if key == "wetgolden" then 14 else 8
-	fx.Lifetime = NumberRange.new(0.8, 1.4)
-	fx.Speed = NumberRange.new(1, 2)
-	fx.Size = NumberSequence.new(0.25)
+	fx.Rate = rateFor(key)
+	active[fx] = key
 	fx.Parent = part
+end
+
+-- a part about to be destroyed hands its emitter back first
+function Visuals.release(part)
+	local fx = part:FindFirstChild("MutFx")
+	if fx then
+		give(fx)
+	end
+end
+
+function Visuals.setReduced(on)
+	on = on == true
+	if Visuals.reducedFx == on then
+		return
+	end
+	Visuals.reducedFx = on
+	for fx, key in active do
+		fx.Rate = rateFor(key)
+	end
+end
+
+function Visuals.poolSize()
+	return #pool
 end
 
 -- grown boosted seconds now, from a tile part's attributes (the server stays authoritative)

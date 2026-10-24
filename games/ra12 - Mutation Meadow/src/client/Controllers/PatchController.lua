@@ -140,7 +140,7 @@ end
 
 function PatchController:Start()
 	bubble = tapTarget("Bubble", Vector2.new(0.5, 1), UDim2.new(0.5, 0, 1, -140), UDim2.fromOffset(420, 70))
-	toast = tapTarget("Toast", Vector2.new(0.5, 0), UDim2.new(0.5, 0, 0, 90), UDim2.fromOffset(460, 70))
+	toast = tapTarget("Toast", Vector2.new(0.5, 0), UDim2.new(0.5, 0, 0, 12), UDim2.fromOffset(460, 70))
 	Net.on("PatchLine", PatchController.push)
 	Net.Sent:Connect(function(remote, action)
 		local on = current and current.hideOn and HIDE_ACTION[current.hideOn]

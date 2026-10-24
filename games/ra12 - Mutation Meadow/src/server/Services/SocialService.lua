@@ -441,6 +441,10 @@ function SocialService.visit(player, payload)
 		if not spot or not root then
 			return false, "no_plot"
 		end
+		-- with streaming on, get the friend's plot to this client before the character lands there
+		pcall(function()
+			player:RequestStreamAroundAsync(spot, Config.Social.visitStreamSec)
+		end)
 		player.Character:PivotTo(CFrame.new(spot))
 		Telemetry.log(player, "visit", { friendId = friendId, where = "server" })
 		return true

@@ -124,7 +124,7 @@ function HudController.toast(text, action)
 			Name = "Action",
 			AnchorPoint = Vector2.new(0, 0.5),
 			Position = UDim2.new(1, 8, 0.5, 0),
-			Size = UDim2.fromOffset(88, 44),
+			Size = UDim2.fromOffset(88, UI.MIN_TAP),
 			BackgroundColor3 = UI.COLORS.gold,
 		})
 	end
@@ -155,7 +155,7 @@ function HudController:Start()
 		if p then
 			Net.request("Basket", "setAutoSell", { on = not p.autoSell })
 		end
-	end, { Name = "AutoSell", Size = UDim2.new(1, -16, 0, 44) })
+	end, { Name = "AutoSell", Size = UDim2.new(1, -16, 0, UI.MIN_TAP) })
 	local buttons = UI.frame(gui, {
 		Name = "Buttons",
 		AnchorPoint = Vector2.new(0, 1),
@@ -181,8 +181,8 @@ function HudController:Start()
 	buttons.Size = UDim2.fromOffset(250, 240)
 	local rewards = UI.frame(gui, {
 		Name = "Rewards",
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -12, 0.5, 0),
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -12, 1, -12), -- bottom-right: clear of the Block Party meter at the top right
 		Size = UDim2.fromOffset(150, 7 * 60),
 		BackgroundTransparency = 1,
 	})
@@ -210,7 +210,7 @@ function HudController:Start()
 	toastFrame.Name = "Toasts"
 	toastFrame.BackgroundTransparency = 1
 	toastFrame.AnchorPoint = Vector2.new(0.5, 0)
-	toastFrame.Position = UDim2.new(0.5, 0, 0, 12)
+	toastFrame.Position = UDim2.new(0.5, 0, 0, 92) -- under Patch's toast, which owns the top
 	toastFrame.Size = UDim2.fromOffset(420, 200)
 	toastFrame.Parent = gui
 	UI.list(toastFrame, 4)

@@ -266,6 +266,7 @@ function PatchService:Init()
 		rig.Parent = street
 	end
 	if rig then
+		rig.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 		local prompt = setUp(rig)
 		prompt.Triggered:Connect(function(player)
 			if PatchService.isNear(player, Config.Patch.serverRange) then

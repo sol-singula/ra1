@@ -33,7 +33,7 @@ function CaptureController.hidden()
 end
 
 local function setHud(on)
-	local gui = Players.LocalPlayer:WaitForChild("PlayerGui")
+	local gui = Players.LocalPlayer:WaitForChild("PlayerGui", 10)
 	if not on and not hiddenGuis then
 		hiddenGuis = {}
 		for _, g in gui:GetChildren() do
@@ -105,7 +105,7 @@ local function makeGuides()
 	line.BorderSizePixel = 0
 	line.Parent = frame
 	frame.Parent = gui
-	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui", 10)
 	return gui
 end
 

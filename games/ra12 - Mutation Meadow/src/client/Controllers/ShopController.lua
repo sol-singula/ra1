@@ -100,8 +100,8 @@ local function card(parent, profile, seed, order, eventWeek)
 		end
 	end, {
 		Name = "Buy1",
-		Position = UDim2.new(0, 8, 1, -46),
-		Size = UDim2.new(0.5, -12, 0, 40),
+		Position = UDim2.new(0, 8, 1, -54),
+		Size = UDim2.new(0.5, -12, 0, UI.MIN_TAP),
 		Active = can1,
 		BackgroundColor3 = if can1 then UI.COLORS.green else UI.COLORS.grey,
 	})
@@ -111,8 +111,8 @@ local function card(parent, profile, seed, order, eventWeek)
 		end
 	end, {
 		Name = "Buy5",
-		Position = UDim2.new(0.5, 4, 1, -46),
-		Size = UDim2.new(0.5, -12, 0, 40),
+		Position = UDim2.new(0.5, 4, 1, -54),
+		Size = UDim2.new(0.5, -12, 0, UI.MIN_TAP),
 		Active = can5,
 		BackgroundColor3 = if can5 then UI.COLORS.green else UI.COLORS.grey,
 	})
@@ -144,7 +144,7 @@ function ShopController.fill()
 	countdown = UI.label(modal.body, "", { Name = "Countdown", Size = UDim2.new(1, 0, 0, 24) })
 	UI.button(modal.body, "Odds", function()
 		controllers.OddsController.open()
-	end, { Name = "Odds", Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = UI.COLORS.ink })
+	end, { Name = "Odds", Size = UDim2.new(1, 0, 0, UI.MIN_TAP), BackgroundColor3 = UI.COLORS.ink })
 	local grid = Instance.new("ScrollingFrame")
 	grid.Name = "Grid"
 	grid.BackgroundTransparency = 1

@@ -134,7 +134,7 @@ local function buildSurface(part)
 	gui.ResetOnSpawn = false
 	local body = UI.frame(gui, { Name = "Body", Size = UDim2.fromScale(1, 1) })
 	UI.list(body, 6)
-	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui", 10)
 	return gui
 end
 

@@ -102,8 +102,12 @@ local function refreshHud()
 		return
 	end
 	if not gnomeButton then
-		gnomeButton =
-			UI.button(bar, "", toggleGnome, { Name = "Gnome", Size = UDim2.new(1, -16, 0, 40), LayoutOrder = 50 })
+		gnomeButton = UI.button(
+			bar,
+			"",
+			toggleGnome,
+			{ Name = "Gnome", Size = UDim2.new(1, -16, 0, UI.MIN_TAP), LayoutOrder = 50 }
+		)
 	end
 	local p = ClientState.profile
 	gnomeButton.Visible = ownsGnome()

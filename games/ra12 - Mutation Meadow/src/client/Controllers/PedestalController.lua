@@ -149,6 +149,7 @@ local function drawPedestal(part)
 	local entry = shown[part]
 	if not seed then
 		if entry then
+			Visuals.release(entry.model)
 			entry.model:Destroy()
 			shown[part] = nil
 		end
@@ -158,6 +159,7 @@ local function drawPedestal(part)
 		return
 	end
 	if entry then
+		Visuals.release(entry.model)
 		entry.model:Destroy()
 	end
 	local model = Instance.new("Part")
@@ -195,8 +197,11 @@ local function draw()
 	if not street then
 		return
 	end
-	for _, plot in street.Plots:GetChildren() do
-		for _, part in plot.Pedestals:GetChildren() do
+	local plots = street:FindFirstChild("Plots")
+	for _, plot in if plots then plots:GetChildren() else {} do
+		-- a plot streams in whole (Atomic); one that is gone or still arriving is skipped
+		local pedestals = plot:FindFirstChild("Pedestals")
+		for _, part in if pedestals then pedestals:GetChildren() else {} do
 			drawPedestal(part)
 			local click = part:FindFirstChild("Click")
 			if click and not connected[click] then

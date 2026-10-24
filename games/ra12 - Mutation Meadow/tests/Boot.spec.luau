@@ -96,7 +96,8 @@ test("Main.server boots and prints ready; the client boots too", function()
 	local client = Client.boot().engine
 	Assert.truthy(table.find(client.output, "[ControllerLoader] ready"), "client ready")
 	eq(client.errors, {})
-	eq(engine.game.Workspace.StreamingEnabled, false)
+	local ws = engine.game.Workspace
+	eq({ ws.StreamingEnabled, ws.StreamingMinRadius, ws.StreamingTargetRadius }, { true, 64, 256 }, "§11.2")
 	eq(engine.game.Players.MaxPlayers, 8)
 end)
 

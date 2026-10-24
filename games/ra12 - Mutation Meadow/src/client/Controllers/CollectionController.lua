@@ -44,13 +44,13 @@ local function card(grid, i, seed, mut, c)
 		BackgroundColor3 = if found then UI.COLORS.card else UI.COLORS.grey,
 	})
 	local name = if found then `{mut[2]} {Config.Seeds[seed].name}` else "???"
-	UI.label(f, name, { Name = "Name", Size = UDim2.new(1, -8, 0.4, 0), Position = UDim2.fromOffset(4, 2) })
+	UI.label(f, name, { Name = "Name", Size = UDim2.new(1, -8, 0, 30), Position = UDim2.fromOffset(4, 2) })
 	local info = if found then `found x{found.n}` else `{UI.money(Config.Collection.firstFind[mut[1]])} coins`
-	UI.label(f, info, { Name = "Info", Size = UDim2.new(1, -8, 0.25, 0), Position = UDim2.new(0, 4, 0.4, 0) })
+	UI.label(f, info, { Name = "Info", Size = UDim2.new(1, -8, 0, 24), Position = UDim2.fromOffset(4, 34) })
 	if found and not c.claimed[entry] then
 		UI.button(f, "Claim", function()
 			Net.request("Collection", "claim", { entry = entry })
-		end, { Name = "Claim", Size = UDim2.new(1, -8, 0.32, 0), Position = UDim2.new(0, 4, 0.66, 0) })
+		end, { Name = "Claim", Size = UDim2.new(1, -8, 0, UI.MIN_TAP), Position = UDim2.fromOffset(4, 62) })
 	end
 end
 
@@ -66,7 +66,7 @@ function CollectionController.fill()
 	for _ in c.found do
 		found += 1
 	end
-	local bar = UI.frame(modal.body, { Name = "Milestones", Size = UDim2.new(1, 0, 0, 88), LayoutOrder = 1 })
+	local bar = UI.frame(modal.body, { Name = "Milestones", Size = UDim2.new(1, 0, 0, 102), LayoutOrder = 1 })
 	UI.label(
 		bar,
 		`{found}/{total} found`,
@@ -87,7 +87,7 @@ function CollectionController.fill()
 		local props = {
 			Name = "Milestone_" .. m.n,
 			Position = UDim2.new(x, 8, 0, 46),
-			Size = UDim2.new(0.25, -12, 0, 36),
+			Size = UDim2.new(0.25, -12, 0, UI.MIN_TAP),
 		}
 		if not done and found >= m.n then
 			UI.button(bar, "Claim " .. text, function()
@@ -102,12 +102,12 @@ function CollectionController.fill()
 	grid.Name = "Cards"
 	grid.BackgroundTransparency = 1
 	grid.LayoutOrder = 2
-	grid.Size = UDim2.new(1, 0, 1, -96)
+	grid.Size = UDim2.new(1, 0, 1, -110)
 	grid.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	grid.CanvasSize = UDim2.new()
 	grid.Parent = modal.body
 	local layout = Instance.new("UIGridLayout")
-	layout.CellSize = UDim2.fromOffset(140, 96)
+	layout.CellSize = UDim2.fromOffset(140, 114)
 	layout.CellPadding = UDim2.fromOffset(6, 6)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = grid

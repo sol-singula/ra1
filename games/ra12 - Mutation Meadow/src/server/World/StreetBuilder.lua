@@ -19,6 +19,9 @@ services expect:
   StreetBuilder.build(parent) -> the Street model
   StreetBuilder.boards(street)   adds whichever world boards a Studio-placed street lacks
   StreetBuilder.lounge(street)   adds the VIP Lounge when the street has none
+  StreetBuilder.streaming(street)   the streaming modes (§11.2): the Street, Sunflower, Boards (leaderboards and the
+                                    update board) and Lounge Persistent; every plot Atomic (each player's own plot
+                                    is also PersistentPerPlayer: PlotService adds them with AddPersistentPlayer)
 ]]
 local Config = require(game:GetService("ReplicatedStorage").Shared.Config)
 local Tiles = require(game:GetService("ReplicatedStorage").Shared.Tiles)
@@ -200,7 +203,7 @@ local BOARDS = {
 function StreetBuilder.boards(street)
 	local folder = street:FindFirstChild("Boards")
 	if not folder then
-		folder = Instance.new("Folder")
+		folder = Instance.new("Model") -- a Model, so it can be Persistent
 		folder.Name = "Boards"
 		folder.Parent = street
 	end
@@ -261,6 +264,22 @@ function StreetBuilder.lounge(street)
 	prompt(gate, "Enter", "Enter", "VIP Lounge")
 	model.Parent = street
 	return model
+end
+
+function StreetBuilder.streaming(street)
+	street.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	for _, name in { "Sunflower", "Boards", "Lounge", "Patch" } do
+		local model = street:FindFirstChild(name)
+		if model and model:IsA("Model") then
+			model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+		end
+	end
+	local plots = street:FindFirstChild("Plots")
+	for _, model in if plots then plots:GetChildren() else {} do
+		if model:IsA("Model") then
+			model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+		end
+	end
 end
 
 function StreetBuilder.build(parent)

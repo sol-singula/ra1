@@ -165,6 +165,9 @@ local function release(player)
 		return
 	end
 	clear(plot)
+	pcall(function()
+		plot:RemovePersistentPlayer(player)
+	end)
 	owners[plot] = nil
 	byPlayer[player] = nil
 	PlotService.Released:Fire(player, plot)
@@ -173,6 +176,8 @@ end
 function PlotService:Init()
 	local street = workspace:FindFirstChild("Street") or StreetBuilder.build(workspace)
 	StreetBuilder.boards(street)
+	StreetBuilder.lounge(street)
+	StreetBuilder.streaming(street)
 	local list = {}
 	for _, plot in street.Plots:GetChildren() do
 		local n = tonumber(plot.Name:match("^Plot(%d+)$"))
@@ -202,6 +207,10 @@ function PlotService:OnPlayerLoaded(player, profile)
 			owners[plot] = player
 			byPlayer[player] = plot
 			plot:SetAttribute("OwnerId", player.UserId)
+			-- the owner's plot never streams out for them (other plots stream in Atomic, as a whole)
+			pcall(function()
+				plot:AddPersistentPlayer(player)
+			end)
 			plot.Mailbox:SetAttribute("GardenName", profile.settings.gardenName or player.DisplayName)
 			PlotService.refresh(player) -- FarmService renders the saved crops and sprinklers next
 			PlotService.Assigned:Fire(player, plot)

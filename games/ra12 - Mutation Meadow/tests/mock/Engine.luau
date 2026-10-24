@@ -26,7 +26,8 @@ A small fake Roblox engine for running src/ under lune.
       _calls(store, key?, method?)       how many calls were made (failed ones included)
       _writes(store, key?)               the writes that landed, in order ({ at, method, ... })
 
-Options: studio, client, seed, now, jobId, echo, dataBudget, dataStoresOff (GetDataStore errors, like an
+Options: studio, client, seed, now, jobId, echo, dataBudget, budgetRefill (the budget refills per minute, as in
+Roblox; engine.dataBudgetMin is its low), dataStoresOff (GetDataStore errors, like an
 unpublished place), shareDataWith (another engine whose stored data this one sees: a second server), localPlayer
 (a userId: Players.LocalPlayer for a client engine). Workspace.CurrentCamera.ViewportSize starts at 1920 x 1080.
 
@@ -45,6 +46,8 @@ local Engine = {}
 Engine.__index = Engine
 
 local WRITE_COOLDOWN = 6
+
+local guid = 0 -- shared by every engine: see HttpService.GenerateGUID
 
 ---------------------------------------------------------------------------------------------------------------
 -- a tiny signal for the fake services (independent of the game's Signal)
@@ -451,9 +454,25 @@ local function makeDataStoreService(engine, shared)
 		end
 	end
 
+	-- budgetRefill: the budget refills like Roblox's, 60 + 10 x players a minute, up to that per-minute amount (or
+	-- the starting budget, whichever is more). engine.dataBudgetMin is the lowest it ever went.
+	local refilledAt = {}
+	local function refill(name)
+		if not engine.budgetRefill then
+			return
+		end
+		local perMin = 60 + 10 * #engine.game.Players:GetChildren()
+		local last = refilledAt[name] or engine.now
+		local have = budget[name] or engine.dataBudget
+		budget[name] = math.min(math.max(perMin, engine.dataBudget), have + (engine.now - last) * perMin / 60)
+		refilledAt[name] = engine.now
+	end
+
 	local function spend(kind)
 		local name = kind.Name or tostring(kind)
+		refill(name)
 		budget[name] = (budget[name] or engine.dataBudget) - 1
+		engine.dataBudgetMin = math.min(engine.dataBudgetMin, budget[name])
 	end
 
 	-- the same-key write limit: a write within WRITE_COOLDOWN of the last real write to that key is an error
@@ -580,6 +599,7 @@ local function makeDataStoreService(engine, shared)
 	end
 	function service.GetRequestBudgetForRequestType(_, kind)
 		local key = kind.Name or tostring(kind)
+		refill(key)
 		return math.max(0, budget[key] or engine.dataBudget)
 	end
 	-- test controls
@@ -656,6 +676,24 @@ local function makeInstanceLib(engine)
 			extra = { Touched = newSignal(engine) }
 		end
 		local inst = newInstance(engine, className, className, extra)
+		if className == "Model" then
+			-- Model:AddPersistentPlayer / RemovePersistentPlayer (StreamingEnabled): who always gets this model
+			local persistent = {}
+			function inst.AddPersistentPlayer(_, player)
+				persistent[player] = true
+			end
+			function inst.RemovePersistentPlayer(_, player)
+				persistent[player] = nil
+			end
+			function inst._persistentPlayers()
+				local out = {}
+				for p in persistent do
+					table.insert(out, p.UserId)
+				end
+				table.sort(out)
+				return out
+			end
+		end
 		if className == "RemoteEvent" or className == "UnreliableRemoteEvent" then
 			function inst.FireClient(self, player, ...)
 				table.insert(
@@ -768,6 +806,9 @@ local function makeServices(engine)
 			table.insert(engine.kicks, { userId = userId, reason = reason })
 			engine:removePlayer(p)
 		end
+		function p.RequestStreamAroundAsync(_, position, timeout)
+			table.insert(engine.streamRequests, { userId = userId, position = position, timeout = timeout })
+		end
 		function p.GetJoinData()
 			return { LaunchData = engine.launchData[userId] }
 		end
@@ -839,7 +880,8 @@ local function makeServices(engine)
 
 	-- HttpService
 	local http = service("HttpService")
-	local guid = 0
+	-- GUIDs count up across every engine in the run, so a second server never mints the first one's GUIDs
+	-- (Roblox's are random)
 	function http.GenerateGUID(_, wrap)
 		guid += 1
 		local hex = string.format("%032x", guid)
@@ -1144,6 +1186,8 @@ function Engine.new(opts)
 		now = opts.now or 1_760_000_000,
 		echo = opts.echo == true,
 		dataBudget = opts.dataBudget or 100,
+		dataBudgetMin = math.huge,
+		budgetRefill = opts.budgetRefill == true,
 		sources = setmetatable({}, { __mode = "k" }),
 		cache = {},
 		loading = {},
@@ -1158,6 +1202,7 @@ function Engine.new(opts)
 		friends = {},
 		friendsOnline = {},
 		launchData = {},
+		streamRequests = {},
 		teleports = {},
 		kicks = {},
 		dataLog = {},

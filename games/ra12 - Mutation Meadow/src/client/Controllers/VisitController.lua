@@ -22,13 +22,13 @@ local function likedToday(userId)
 end
 
 local function row(order, name, buttons)
-	local r = UI.frame(modal.body, { Name = name, LayoutOrder = order, Size = UDim2.new(1, 0, 0, 56) })
+	local r = UI.frame(modal.body, { Name = name, LayoutOrder = order, Size = UDim2.new(1, 0, 0, 60) })
 	for i, b in buttons do
 		local props = b[3] or {}
 		props.Name = b[1]
 		props.AnchorPoint = Vector2.new(1, 0.5)
 		props.Position = UDim2.new(1, -8 - (i - 1) * 118, 0.5, 0)
-		props.Size = UDim2.fromOffset(110, 44)
+		props.Size = UDim2.fromOffset(110, UI.MIN_TAP)
 		if props.label then
 			props.label = nil
 			UI.label(r, b[2], props)

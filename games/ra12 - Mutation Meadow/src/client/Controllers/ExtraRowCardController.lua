@@ -76,7 +76,7 @@ local function build(sign)
 	gui = Instance.new("BillboardGui")
 	gui.Name = "ExtraRowCard"
 	gui.Adornee = sign
-	gui.Size = UDim2.fromOffset(260, 170)
+	gui.Size = UDim2.fromOffset(260, 176)
 	gui.StudsOffset = Vector3.new(0, 5, 0)
 	gui.AlwaysOnTop = true
 	gui.ResetOnSpawn = false
@@ -102,10 +102,10 @@ local function build(sign)
 		Name = "Close",
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -6, 0, 6),
-		Size = UDim2.fromOffset(36, 36),
+		Size = UDim2.fromOffset(UI.MIN_TAP, UI.MIN_TAP),
 		BackgroundColor3 = UI.COLORS.grey,
 	})
-	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui", 10)
 end
 
 function ExtraRowCardController.refresh()

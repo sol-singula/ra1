@@ -36,7 +36,7 @@ test("has every table", function()
 	do
 		Assert.truthy(type(Config[name]) == "table", `Config.{name}`)
 	end
-	eq(Config.AdminUserIds, { 0 })
+	Assert.truthy(type(Config.AdminUserIds) == "table", "AdminUserIds (its values: tests/Release.spec.luau)")
 end)
 
 test("is deep-frozen", function()
@@ -219,6 +219,7 @@ test("social, weekly, leaderboard", function()
 		itemGiftsPerDay = 20,
 		giftOfferSec = 30,
 		visitOffsetStuds = 6,
+		visitStreamSec = 2,
 		gardenNameFallback = "%s's Garden",
 	})
 	eq(
@@ -257,12 +258,12 @@ test("badges: renamed copy", function()
 	eq(#Config.Upgrades.plotCost, 5, "level 5 is the top plot level")
 end)
 
-test("badges: the ten, ids not created yet", function()
+test("badges: the ten (their ids: tests/Release.spec.luau)", function()
 	local keys = {}
 	for key, b in Config.Badges do
 		table.insert(keys, key)
 		Assert.truthy(type(b.name) == "string" and #b.name > 0, key .. " name")
-		eq(b.id, 0, key .. " id")
+		Assert.truthy(type(b.id) == "number", key .. " id")
 	end
 	table.sort(keys)
 	eq(keys, {

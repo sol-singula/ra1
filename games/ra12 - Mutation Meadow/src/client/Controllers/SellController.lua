@@ -37,7 +37,7 @@ function SellController.fill()
 	local tabs = Instance.new("Frame")
 	tabs.Name = "Tabs"
 	tabs.BackgroundTransparency = 1
-	tabs.Size = UDim2.new(1, 0, 0, 44)
+	tabs.Size = UDim2.new(1, 0, 0, UI.MIN_TAP)
 	tabs.Parent = modal.body
 	UI.button(tabs, "Basket", function()
 		tab = "basket"
