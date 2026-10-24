@@ -1,74 +1,244 @@
 --[[
-Patch the shopkeeper's look, shared by the street (PatchService's rig, when the place brings none) and the capture
-stage: a cream shirt, a green apron, brown work trousers and gloves, and his #FF8C1A pumpkin head with a carved face
-and a stem. There is no gold anywhere on him. He faces cf's LookVector, his counter in front of him.
+Patch the shopkeeper (Game Artist build-spec/05-patch.md), shared by the street (PatchService builds him when the
+place brings no rig; PatchRigController poses him on the client) and the capture stage. Config.PatchVisuals holds
+every number: the Counter (Root, Counter, CounterTop) and 30 SmoothPlastic character parts - a cream #EADBB8 body
+with a leafy green apron, arms and legs, root-brown feet, and the #FF8C1A pumpkin head with its shade, light, stem
+curl, cowlick and a Decal-free face (part swaps under PumpkinHead). No gold, Foil, Neon, Metal, lights or
+particles anywhere on him. He faces cf's LookVector (-Z), the Counter in front of him.
 
-  Patch.build(model, cf)      adds Counter, Legs, Body, Apron, arms, PumpkinHead (and its ribs, face and stem)
-  Patch.ORANGE / SHIRT / APRON
+Poses move whole groups of parts about their joints (section 4): the character lifts, the upper body leans about
+the hips, the head turns about its centre and the arms swing about the shoulders (the hands ride the arms).
+
+  Patch.build(model, cf) -> PumpkinHead   (the Origin attribute; PrimaryPart = Root)
+  Patch.pose(anim) -> params / Patch.mix(a, b, t) / Patch.apply(model, params) / Patch.setPose(model, anim)
+  Patch.setFace(model, face)              the face's part swap (the Face attribute)
+  Patch.setFar(model, far)                the LOD: SeedPacket, SeedDot, the eye shines, cheeks and Cowlick hide
+  Patch.ORANGE / SHIRT / APRON / FACES / ANIMS
 ]]
+local Config = require(script.Parent.Parent.Config)
 local Kit = require(script.Parent.Kit)
 
 local Patch = {}
 
+local PV = Config.PatchVisuals
+local rad = math.rad
+local UPRIGHT = CFrame.Angles(0, 0, math.pi / 2) -- Kit.cylinder's stand-up turn
+
 Patch.ORANGE = Color3.fromHex("#FF8C1A")
-Patch.SHIRT = Color3.fromRGB(245, 236, 214)
-Patch.APRON = Color3.fromRGB(58, 140, 72)
-local TROUSERS = Color3.fromRGB(78, 66, 52)
-local GLOVES = Color3.fromRGB(122, 86, 56)
-local FACE = Color3.fromRGB(28, 20, 14)
-local STEM = Color3.fromRGB(112, 82, 46)
+Patch.SHIRT = Color3.fromHex("#EADBB8")
+Patch.APRON = Color3.fromHex("#5BC236")
+Patch.FACES = { "happy", "wow", "thinking", "wink", "sleepy" }
+Patch.ANIMS = { "idle", "wave", "point", "cheer", "announce", "lean" }
+
+local function v3(t)
+	return Vector3.new(t[1], t[2], t[3])
+end
+
+-- the arms' angles are mirrored in the spec (a raise is -rx, the left arm opens with +rz): turn them into Roblox's
+local function armRest(spec)
+	local rz = if spec.name == "ArmL" then PV.rest.armL[2] else PV.rest.armR[2]
+	return CFrame.new(v3(spec.offset)) * CFrame.Angles(0, 0, rad(-rz))
+end
+
+-- every part's rest CFrame in O's space
+local REST, SPEC = {}, {}
+for _, p in PV.parts do
+	SPEC[p.name] = p
+end
+for _, p in PV.parts do
+	if p.name == "ArmL" or p.name == "ArmR" then
+		REST[p.name] = armRest(p)
+	elseif p.hand then
+		REST[p.name] = armRest(SPEC[p.hand]) * CFrame.new(0, -PV.handDrop, 0)
+	else
+		local r = p.rot or { 0, 0, 0 }
+		REST[p.name] = CFrame.new(v3(p.offset)) * CFrame.Angles(rad(r[1]), rad(r[2]), rad(r[3]))
+	end
+end
+local HEAD_AT = REST.PumpkinHead.Position
+local SHOULDER = {
+	armL = (REST.ArmL * CFrame.new(0, SPEC.ArmL.size[2] / 2, 0)).Position,
+	armR = (REST.ArmR * CFrame.new(0, SPEC.ArmR.size[2] / 2, 0)).Position,
+}
+
+local last = setmetatable({}, { __mode = "k" }) -- [model] = the params on the parts
+local farOf = setmetatable({}, { __mode = "k" })
+
+local function make(parent, name, shape, size, colour, material)
+	if shape == "ball" then
+		return Kit.sphere(parent, name, size[1], CFrame.new(), colour, material)
+	elseif shape == "ell" then
+		return Kit.ball(parent, name, v3(size), CFrame.new(), colour, material)
+	elseif shape == "cylV" then
+		return Kit.cylinder(parent, name, size[1], size[2], CFrame.new(), colour, material)
+	elseif shape == "wedge" then
+		return Kit.wedge(parent, name, v3(size), CFrame.new(), colour, material)
+	end
+	return Kit.part(parent, name, v3(size), CFrame.new(), colour, material)
+end
 
 function Patch.build(model, cf)
-	local function at(x, y, z)
-		return cf * CFrame.new(x, y, z)
+	model:SetAttribute("Origin", cf)
+	local head
+	for _, p in PV.parts do
+		local material = if p.material then Enum.Material[p.material] else nil
+		local part = make(model, p.name, p.shape, p.size, Color3.fromHex(p.hex), material)
+		part.Transparency = p.transparency or 0
+		if p.name == "PumpkinHead" then
+			head = part
+			head:SetAttribute("Patch", true)
+		end
 	end
-	local counter = Kit.part(
-		model,
-		"Counter",
-		Vector3.new(8, 3, 3),
-		at(0, 1.5, -3),
-		Color3.fromRGB(190, 140, 90),
-		Enum.Material.WoodPlanks
-	)
-	counter.CanCollide = true
-	counter.CanQuery = true
-	for i, side in { -1, 1 } do
-		Kit.part(model, "Leg" .. i, Vector3.new(0.9, 2, 1), at(0.5 * side, 1, 0), TROUSERS, Enum.Material.Fabric)
+	model.Counter.CanCollide = true
+	model.Counter.CanQuery = true -- the ShopPrompt sits on it
+	model.CounterTop.CanCollide = true
+	for name, f in PV.face.parts do
+		make(head, name, f.shape, f.size, Color3.fromHex(f.hex))
 	end
-	local body = Kit.part(model, "Body", Vector3.new(2, 2, 1.2), at(0, 3, 0), Patch.SHIRT, Enum.Material.Fabric)
-	body.CanCollide = true
-	Kit.part(model, "Apron", Vector3.new(1.9, 2.6, 0.2), at(0, 2.6, -0.68), Patch.APRON, Enum.Material.Fabric)
-	Kit.part(model, "ApronStrap", Vector3.new(1.2, 0.25, 0.16), at(0, 3.85, -0.66), Patch.APRON, Enum.Material.Fabric)
-	for i, side in { -1, 1 } do
-		Kit.part(
-			model,
-			"Arm" .. i,
-			Vector3.new(0.8, 1.9, 0.8),
-			at(1.45 * side, 3.05, 0) * CFrame.Angles(0, 0, math.rad(8 * side)),
-			Patch.SHIRT,
-			Enum.Material.Fabric
-		)
-		Kit.part(
-			model,
-			"Glove" .. i,
-			Vector3.new(0.75, 0.55, 0.75),
-			at(1.58 * side, 1.9, 0),
-			GLOVES,
-			Enum.Material.Fabric
-		)
+	model.PrimaryPart = model.Root
+	if model:GetAttribute("Face") == nil then
+		model:SetAttribute("Face", "happy")
 	end
-	local head = Kit.ball(model, "PumpkinHead", Vector3.new(2.6, 2.2, 2.6), at(0, 5.1, 0), Patch.ORANGE)
-	head:SetAttribute("Patch", true)
-	for i, o in { { 0.38, 0, 2.0, 2.5 }, { -0.38, 0, 2.0, 2.5 } } do
-		local rib = Kit.ball(model, "HeadRib" .. i, Vector3.new(o[3], 2.12, o[4]), at(o[1], 5.08, o[2]), Patch.ORANGE)
-		rib:SetAttribute("Patch", true)
+	if model:GetAttribute("Anim") == nil then
+		model:SetAttribute("Anim", "idle")
 	end
-	for i, side in { -1, 1 } do
-		Kit.part(model, "Eye" .. i, Vector3.new(0.42, 0.46, 0.12), at(0.5 * side, 5.38, -1.24), FACE)
-	end
-	Kit.part(model, "Mouth", Vector3.new(1.1, 0.26, 0.12), at(0, 4.72, -1.22), FACE)
-	Kit.cylinder(model, "Stem", 0.7, 0.36, at(0, 6.4, 0) * CFrame.Angles(math.rad(10), 0, 0), STEM, Enum.Material.Wood)
+	Patch.setPose(model, "idle")
+	Patch.setFace(model, model:GetAttribute("Face"))
 	return head
+end
+
+-- poses -------------------------------------------------------------------------------------------------------------
+
+function Patch.pose(anim)
+	local s = PV.poses[anim] or PV.poses.idle
+	return {
+		lift = s.lift and v3(s.lift) or Vector3.zero,
+		lean = s.lean or 0,
+		yaw = s.yaw or 0,
+		nod = s.nod or 0,
+		tilt = s.tilt or 0,
+		breath = 0,
+		armL = { (s.armL or { 0, 0 })[1], (s.armL or { 0, 0 })[2] },
+		armR = { (s.armR or { 0, 0 })[1], (s.armR or { 0, 0 })[2] },
+	}
+end
+
+function Patch.mix(a, b, t)
+	local function n(x, y)
+		return x + (y - x) * t
+	end
+	return {
+		lift = a.lift:Lerp(b.lift, t),
+		lean = n(a.lean, b.lean),
+		yaw = n(a.yaw, b.yaw),
+		nod = n(a.nod, b.nod),
+		tilt = n(a.tilt, b.tilt),
+		breath = n(a.breath, b.breath),
+		armL = { n(a.armL[1], b.armL[1]), n(a.armL[2], b.armL[2]) },
+		armR = { n(a.armR[1], b.armR[1]), n(a.armR[2], b.armR[2]) },
+	}
+end
+
+-- the face layout: [part] = { offset, size, shown }
+local function layout(face)
+	local F = PV.face
+	local f = F.faces[face] or F.faces.happy
+	local eyeL, eyeR = v3(f.eyeL or F.eyeL), v3(f.eyeR or F.eyeR)
+	local eye = f.eyeSize or F.parts.EyeL.size[1]
+	local mouth = v3(f.mouth or F.mouth)
+	local shine = v3(F.shine)
+	return {
+		EyeL = { eyeL, Vector3.one * eye, not f.flatL },
+		EyeR = { eyeR, Vector3.one * eye, not f.flatR },
+		EyeLFlat = { eyeL, v3(F.parts.EyeLFlat.size), f.flatL == true },
+		EyeRFlat = { eyeR, v3(F.parts.EyeRFlat.size), f.flatR == true },
+		EyeShineL = { eyeL + shine, nil, not f.flatL },
+		EyeShineR = { eyeR + shine, nil, not f.flatR },
+		CheekL = { v3(F.cheekL), nil, true },
+		CheekR = { v3(F.cheekR), nil, true },
+		Mouth = { mouth, v3(f.mouthSize or F.parts.Mouth.size), not f.open },
+		MouthOpen = { mouth, nil, f.open == true },
+		Brow = { v3(f.brow or { 0, 0, 0 }), nil, f.brow ~= nil },
+	}
+end
+
+function Patch.apply(model, p)
+	local O = model:GetAttribute("Origin") or CFrame.new()
+	local face = PV.face.faces[model:GetAttribute("Face")] or PV.face.faces.happy
+	local lift = CFrame.new(p.lift)
+	local hip = CFrame.new(0, PV.hip, 0)
+	local body = lift * hip * CFrame.Angles(rad(p.lean), 0, 0) * hip:Inverse() * CFrame.new(0, p.breath, 0)
+	local pivot = CFrame.new(HEAD_AT)
+	local head = body * pivot * CFrame.Angles(rad(p.nod), rad(p.yaw), rad(p.tilt + (face.tilt or 0))) * pivot:Inverse()
+	local T = { counter = CFrame.new(), legs = lift, body = body, head = head }
+	for key, angles in { armL = p.armL, armR = p.armR } do
+		local s = CFrame.new(SHOULDER[key])
+		T[key] = body * s * CFrame.Angles(rad(-angles[1]), 0, rad(-angles[2])) * s:Inverse()
+	end
+	for _, spec in PV.parts do
+		local part = model:FindFirstChild(spec.name)
+		if part then
+			local cf = O * T[spec.group] * REST[spec.name]
+			part.CFrame = if spec.shape == "cylV" then cf * UPRIGHT else cf
+		end
+	end
+	local headPart = model:FindFirstChild("PumpkinHead")
+	if headPart then
+		local centre = O * head * pivot
+		for name, l in layout(model:GetAttribute("Face")) do
+			local part = headPart:FindFirstChild(name)
+			if part then
+				part.CFrame = centre * CFrame.new(l[1])
+			end
+		end
+	end
+	last[model] = p
+end
+
+function Patch.setPose(model, anim)
+	Patch.apply(model, Patch.pose(anim))
+	model:SetAttribute("Pose", anim)
+end
+
+local function visibility(model)
+	local head = model:FindFirstChild("PumpkinHead")
+	if not head then
+		return
+	end
+	local F = PV.face
+	local f = F.faces[model:GetAttribute("Face")] or F.faces.happy
+	local far = farOf[model] == true
+	for name, l in layout(model:GetAttribute("Face")) do
+		local part = head:FindFirstChild(name)
+		if part then
+			if l[2] then
+				part.Size = l[2]
+			end
+			local base = if name == "CheekL" or name == "CheekR"
+				then (f.cheekTransparency or F.cheekTransparency)
+				else 0
+			local hidden = not l[3] or (far and F.parts[name].lod)
+			part.Transparency = if hidden then 1 else base
+		end
+	end
+	for _, name in PV.lod.hide do
+		local part = model:FindFirstChild(name)
+		if part then
+			part.Transparency = if far then 1 else (SPEC[name].transparency or 0)
+		end
+	end
+end
+
+function Patch.setFace(model, face)
+	model:SetAttribute("Face", if PV.face.faces[face] then face else "happy")
+	visibility(model)
+	Patch.apply(model, last[model] or Patch.pose(model:GetAttribute("Anim") or "idle"))
+end
+
+function Patch.setFar(model, far)
+	farOf[model] = far == true
+	model:SetAttribute("Far", far == true)
+	visibility(model)
 end
 
 return Patch

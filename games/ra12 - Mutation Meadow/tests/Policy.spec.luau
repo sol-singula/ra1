@@ -3,6 +3,7 @@ local fs = require("@lune/fs")
 local Assert = require("./mock/Assert")
 local Farm = require("./mock/Farm")
 local Store = require("./mock/Store")
+local roblox = require("@lune/roblox")
 
 local test, eq = Assert.test, Assert.eq
 
@@ -122,15 +123,24 @@ test("every paid key and name passes the golden / rainbow / moon check", functio
 	end)
 end)
 
-test("the brushed brass VIP pieces are never gold-coloured", function()
-	local ctx = Store.setup()
-	local brass = ctx.Cosmetics.BRASS
-	local r, g, b = brass.R * 255, brass.G * 255, brass.B * 255
-	-- gold sits near (255, 200, 0): saturated and bright; brass here is muted
-	local max, min = math.max(r, g, b), math.min(r, g, b)
-	Assert.truthy((max - min) / max < 0.45, "low saturation")
-	Assert.truthy(max < 200, "not bright like gold")
-	for _, key in { "tag_vip", "trail_vip_sparkle" } do
-		eq(ctx.Cosmetics.LOOK[key][2], brass)
+test(
+	"the satin brass VIP pieces (#B08D57) are never gold-coloured; the gate is SmoothPlastic, no light or particles",
+	function()
+		local ctx = Store.setup()
+		local brass = ctx.Cosmetics.BRASS
+		eq(brass, roblox.Color3.fromHex("#B08D57"))
+		local r, g, b = brass.R * 255, brass.G * 255, brass.B * 255
+		-- gold sits near #FFC300 (255, 195, 0): fully saturated and bright; satin brass is muted
+		local max, min = math.max(r, g, b), math.min(r, g, b)
+		Assert.truthy((max - min) / max < 0.6, "muted, not saturated")
+		Assert.truthy(max < 200, "not bright like gold")
+		for _, key in { "tag_vip", "trail_vip_sparkle", "can_brass" } do
+			eq(ctx.Cosmetics.LOOK[key][2], brass)
+		end
+		local gate = ctx.engine.workspace.Street.Lounge.Gate
+		eq({ gate.Color, gate.Material, gate.Reflectance }, { brass, ctx.engine.Enum.Material.SmoothPlastic, 0.05 })
+		for _, d in ctx.engine.workspace.Street.Lounge:GetDescendants() do
+			Assert.truthy(not d:IsA("Light") and d.ClassName ~= "ParticleEmitter", d.Name .. ": no light or particles")
+		end
 	end
-end)
+)

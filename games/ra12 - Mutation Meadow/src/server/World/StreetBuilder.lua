@@ -13,7 +13,7 @@ services expect:
     the Origin attribute, facing the road; SunflowerController builds the art on the client (GA-03)
   Workspace.Street.Boards: UpdateBoard (by Patch), ServerBoard, GlobalBoard, each a Part with a ProximityPrompt
     "View" (the client draws the SurfaceGui)
-  Workspace.Street.Lounge: Deck (Config.Lounge.deck studs), a brushed-brass Gate (ProximityPrompt "Enter") on its road
+  Workspace.Street.Lounge: Deck (Config.Lounge.deck studs), a satin-brass Gate (Config.Brass) (ProximityPrompt "Enter") on its road
     side, and an invisible Volume over the deck
   Every tile and pedestal has a ClickDetector "Click".
 
@@ -197,7 +197,7 @@ function StreetBuilder.boards(street)
 	return folder
 end
 
-local BRASS = Color3.fromRGB(168, 150, 112) -- brushed brass, never gold
+local BRASS = Color3.fromHex(Config.Brass.hex) -- satin VIP brass, never Golden (no particles, no light)
 
 function StreetBuilder.lounge(street)
 	local existing = street:FindFirstChild("Lounge")
@@ -232,8 +232,9 @@ function StreetBuilder.lounge(street)
 		Vector3.new(8, 8, 1),
 		centre + Vector3.new(0, 4.5, cfg.deck.z / 2 + 0.5),
 		BRASS,
-		Enum.Material.Metal
+		Enum.Material[Config.Brass.material]
 	)
+	gate.Reflectance = Config.Brass.reflectance
 	gate.CanCollide = false
 	prompt(gate, "Enter", "Enter", "VIP Lounge")
 	model.Parent = street

@@ -3,7 +3,10 @@ Patch, the pumpkin-headed shopkeeper (§9): his rig at the shop, his prompt, and
 
 Rig: Workspace.Street.Patch, an anchored Model with an AnimationController + Animator (no Humanoid), an Animations
 folder (idle, wave, point, cheer, announce, lean) and a Face attribute (happy, wow, thinking, wink, sleepy). When
-the place has none, he is built from the shared Models/Patch (cream shirt, green apron, #FF8C1A pumpkin head). After 60s with nobody within the restock range he dozes (sleepy).
+the place has none, he is built from the shared Models/Patch (Game Artist build-spec/05-patch.md: a cream shirt, a
+leafy green apron and limbs, the #FF8C1A pumpkin head, a Decal-free face); PatchRigController poses him on the
+client from Anim / Face (procedural tweens while the AnimationIds are ""). A line's look holds for the line's
+seconds, then he goes back to idle / happy. After 60s with nobody within the restock range he dozes (sleepy).
 
 Prompt: Config.Patch.prompt (Shop / Patch's Seed Shop / 10 studs / no hold). Triggered is checked on the server
 (within Config.Patch.serverRange) and opens the shop.
@@ -118,10 +121,15 @@ function PatchService.isNear(player, studs)
 	return pos ~= nil and Guards.near(player, pos, studs)
 end
 
-local function look(anim, face)
+-- sets the rig's Anim / Face (PatchRigController poses him from them); with holdSec, back to idle / happy after
+-- that long unless a newer look came first
+local lookToken = 0
+local function look(anim, face, holdSec)
 	if not rig then
 		return
 	end
+	lookToken += 1
+	local mine = lookToken
 	rig:SetAttribute("Anim", anim)
 	rig:SetAttribute("Face", face)
 	local animator = rig:FindFirstChildOfClass("AnimationController")
@@ -131,6 +139,14 @@ local function look(anim, face)
 	if animator and animation and animation.AnimationId ~= "" then
 		pcall(function()
 			animator:LoadAnimation(animation):Play()
+		end)
+	end
+	if holdSec then
+		task.delay(holdSec, function()
+			if lookToken == mine and rig then
+				rig:SetAttribute("Anim", "idle")
+				rig:SetAttribute("Face", "happy")
+			end
 		end)
 	end
 end
@@ -182,7 +198,7 @@ function PatchService.say(player, id, fmt)
 	})
 	local lookFor = PatchService.LINE_LOOK[id]
 	if lookFor then
-		look(lookFor[1], lookFor[2])
+		look(lookFor[1], lookFor[2], line.seconds)
 	end
 	Telemetry.log(player, "patch_line_shown", { id = id })
 	return true

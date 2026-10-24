@@ -78,6 +78,8 @@ friends-only, and there is no gift for the Starter Bundle.
 ## Also in Creator Hub
 
 - Private servers: 99 R$ a month (`Config.Catalog.privateServerRobux`).
-- The VIP pieces (`tag_vip`, `border_vip`, `trail_vip_sparkle`) and the subscriber can (`can_brass`) are brushed brass
-  (`Cosmetics.BRASS`, RGB 168, 150, 112). Keep their icons and thumbnails brass too, never gold.
+- The VIP pieces (`tag_vip`, `border_vip`, `trail_vip_sparkle`) and the subscriber can (`can_brass`) are satin brass
+  (`Cosmetics.BRASS` = `Config.Brass`: #B08D57, light #D4BC8A, dark #7A5F36, SmoothPlastic, Reflectance 0.05, no
+  particles or light). Keep their icons and thumbnails brass too, never gold, and never put brass and a Golden crop
+  in one screenshot or ad frame.
 - No paid key or name may contain golden, rainbow or moon (`tests/Policy.spec.luau` checks this).

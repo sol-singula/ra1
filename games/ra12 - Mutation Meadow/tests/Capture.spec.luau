@@ -97,8 +97,15 @@ local function onScreen(cam, point)
 end
 
 -- a part counts as gold when it's a saturated yellow-orange-gold
+-- gold: a saturated, bright yellow-orange (#FFC300 is hue 46, saturation 1); the warm creams and straws of
+-- 05-patch / 06-avatars (#FFB066, #E8C56A, #F5C878) and the satin brass #B08D57 are muted, not gold
 local function goldish(c)
-	return c.R > 0.75 and c.G > 0.6 and c.B < 0.5 and c.R >= c.G
+	local max, min = math.max(c.R, c.G, c.B), math.min(c.R, c.G, c.B)
+	if max < 0.75 or max - min < 1e-6 or (max - min) / max < 0.7 or max ~= c.R then
+		return false
+	end
+	local hue = 60 * (c.G - c.B) / (max - min)
+	return hue >= 38 and hue <= 56
 end
 
 -- (both stop at the staging folder)
@@ -235,7 +242,12 @@ test("the farmers are real R15 avatars: varied descriptions, the default face, s
 		eq(humanoid.DisplayDistanceType, ctx.engine.Enum.HumanoidDisplayDistanceType.None, "no name tag")
 		local desc = humanoid:FindFirstChildOfClass("HumanoidDescription")
 		eq({ desc.Face, desc.Shirt, desc.Pants }, { 0, 0, 0 }, "the default face, colours instead of clothing")
-		Assert.truthy(f.Head:FindFirstChild("face"), f.Name .. " has a face")
+		eq(f.Head.face.Texture, "rbxasset://textures/face.png", f.Name .. ": the default face")
+		eq(
+			{ f.LeftHand.Size, f.RightHand.Size },
+			{ roblox.Vector3.new(1.05, 0.55, 1.05), roblox.Vector3.new(1.05, 0.55, 1.05) },
+			"mittens"
+		)
 		local skin = desc.HeadColor
 		eq(f.UpperTorso.Color, desc.TorsoColor, "the shirt")
 		eq(f.LeftUpperArm.Color, desc.TorsoColor, "sleeves in the shirt colour")
@@ -256,7 +268,7 @@ test("the farmers are real R15 avatars: varied descriptions, the default face, s
 end)
 
 test(
-	"poses: stock animations frozen on a frame (idle, wave, cheer, walk); joint poses (watering, surprised)",
+	"poses (06-avatars section 4): joint poses for idle / wave / cheer / watering / surprised; the stock walk",
 	function()
 		local ctx, _, capture = dev()
 		capture("street")
@@ -265,17 +277,35 @@ test(
 		for _, t in ctx.engine.animTracks do
 			byId[t.AnimationId] = t
 		end
-		for _, name in { "idle", "wave", "cheer", "walk" } do
-			local t = byId[ctx.Farmer.ANIMS[name]]
-			Assert.truthy(t, name .. " played")
-			eq({ t.IsPlaying, t.Speed }, { true, 0 }, name .. " frozen")
-			Assert.truthy(t.TimePosition > 0, name .. " on its frame")
+		local walk = byId[ctx.Farmer.ANIMS.walk]
+		Assert.truthy(walk, "walk played")
+		eq({ walk.IsPlaying, walk.Speed }, { true, 0 }, "walk frozen")
+		for _, name in { "idle", "wave", "cheer" } do
+			eq(ctx.Farmer.ANIMS[name], nil, name .. " needs no animation id")
 		end
+		local f = stage(ctx).Farmer1
+		local rest = f.RightUpperArm.RightShoulder.C0
+		ctx.Farmer.pose(f, "wave")
+		local up = (rest:Inverse() * f.RightUpperArm.RightShoulder.C0):ToEulerAnglesXYZ()
+		Assert.near(math.deg(up), 140, 1e-3, "wave: the right arm up 140")
+		ctx.Farmer.pose(f, "cheer")
+		Assert.near(
+			(f.LowerTorso.Root.C0.Position - f.HumanoidRootPart.CFrame:Inverse() * f.LowerTorso.CFrame.Position).Y,
+			0.4,
+			1e-3,
+			"cheer hops 0.4"
+		)
+		ctx.Farmer.pose(f, "idle")
+		eq(f.RightUpperArm.RightShoulder.C0, rest, "idle resets the arm")
 		local waterer = stage(ctx).Farmer3
 		eq(waterer:GetAttribute("Pose"), "watering")
-		Assert.truthy(waterer:FindFirstChild("WateringCan"), "holding the can")
-		local shoulder = waterer.RightUpperArm.RightShoulder
-		Assert.truthy(shoulder.C0 ~= (waterer.UpperTorso.CFrame:Inverse() * waterer.RightUpperArm.CFrame), "arm raised")
+		local can = waterer.WateringCan.Can
+		eq({ can.Size, can.Color, can.Material }, {
+			roblox.Vector3.new(0.5, 0.6, 0.35),
+			roblox.Color3.fromHex("#5AA0D2"),
+			ctx.engine.Enum.Material.SmoothPlastic,
+		})
+		eq(can:FindFirstChildOfClass("WeldConstraint").Part0, waterer.LeftHand, "the can in the left hand")
 		ctx.Farmer.pose(waterer, "surprised")
 		eq(waterer:FindFirstChild("WateringCan"), nil, "a new pose resets the last")
 		eq(waterer:GetAttribute("Pose"), "surprised")
@@ -283,20 +313,53 @@ test(
 	end
 )
 
-test("no gold on clothes: the sunhat is straw brown, the rainboots red", function()
-	local ctx = dev()
+test("no gold on farmers: the #E8C56A Fabric sunhat, #3A7CBC rubber rainboots, no Metal / Foil anywhere", function()
+	local ctx, _, capture = dev()
 	local O = ctx.Farmer.OUTFITS
-	Assert.truthy(O.sunhat.hat ~= roblox.Color3.fromRGB(230, 200, 120), "not the old gold hat")
-	Assert.truthy(O.rainboots.boots ~= roblox.Color3.fromRGB(240, 210, 40), "not the old yellow boots")
+	eq(O.sunhat.hat, roblox.Color3.fromHex("#E8C56A"))
+	eq(O.sunhat.shirt, roblox.Color3.fromHex("#F5C878"))
+	eq(O.rainboots.boots, roblox.Color3.fromHex("#3A7CBC"))
+	local banned = { "#FFC300", "#FFF1A8", "#B08D57" }
 	for key, o in O do
 		for part, c in o do
 			if typeof(c) == "Color3" then
 				Assert.truthy(not goldish(c), `{key}.{part} is gold`)
+				for _, h in banned do
+					Assert.truthy(c ~= roblox.Color3.fromHex(h), `{key}.{part} is {h}`)
+				end
 			end
 		end
 	end
-	local boots = O.rainboots.boots
-	Assert.truthy(boots.R > 0.6 and boots.G < 0.3, "red boots")
+	capture("street")
+	for _, f in farmers(ctx) do
+		for _, d in f:GetDescendants() do
+			local ok, material = pcall(function()
+				return d.Material -- the mock rig's parts leave it unset (Plastic)
+			end)
+			if d:IsA("BasePart") and ok then
+				Assert.truthy(
+					material ~= ctx.engine.Enum.Material.Metal and material ~= ctx.engine.Enum.Material.Foil,
+					d:GetFullName()
+				)
+			end
+			Assert.truthy(
+				not d:IsA("Light") and d.ClassName ~= "ParticleEmitter",
+				d:GetFullName() .. ": no lights / particles"
+			)
+		end
+		local outfit = f:GetAttribute("Outfit")
+		if outfit == "sunhat" then
+			eq({ f.SunHat.Color, f.SunHat.Material, f.SunHat.Reflectance, f.SunHat.Size }, {
+				O.sunhat.hat,
+				ctx.engine.Enum.Material.Fabric,
+				0,
+				roblox.Vector3.new(1.2, 0.7, 1.2),
+			})
+			eq(f.SunHatBrim.Size, roblox.Vector3.new(0.15, 2.2, 2.2))
+		elseif outfit == "rainboots" then
+			eq({ f.LeftFoot.Color, f.RightFoot.Color }, { O.rainboots.boots, O.rainboots.boots })
+		end
+	end
 end)
 
 test("block_party_rain: rain lighting and VFX, only Wet crops (with beads)", function()
@@ -618,37 +681,48 @@ test("icon: a normal-size Golden pumpkin framed close, the farmer waving, a deep
 	eq(lighting:FindFirstChildOfClass("Atmosphere"), nil, "the atmosphere goes with the scene")
 end)
 
-test("Patch: a cream shirt, green apron, #FF8C1A head, no gold; nothing gold outside the crops", function()
-	local ctx, _, capture = dev()
-	local P = ctx.PatchModel
-	eq(P.ORANGE, roblox.Color3.fromHex("#FF8C1A"))
-	eq(ctx.Capture.PATCH_ORANGE, P.ORANGE)
-	for _, scene in SCENES do
-		capture(scene)
-		for _, d in stage(ctx):GetDescendants() do
-			if d:GetAttribute("Patch") then
-				eq(d.Color, P.ORANGE, scene .. ": Patch's head")
-				eq(d:FindFirstChild("MutFx"), nil)
+test(
+	"Patch: a cream #EADBB8 shirt, green #5BC236 apron, #FF8C1A head, no gold; nothing gold outside the crops",
+	function()
+		local ctx, _, capture = dev()
+		local P = ctx.PatchModel
+		eq(P.ORANGE, roblox.Color3.fromHex("#FF8C1A"))
+		eq(ctx.Capture.PATCH_ORANGE, P.ORANGE)
+		for _, scene in SCENES do
+			capture(scene)
+			for _, d in stage(ctx):GetDescendants() do
+				if d:GetAttribute("Patch") then
+					eq(d.Color, P.ORANGE, scene .. ": Patch's head")
+					eq(d:FindFirstChild("MutFx"), nil)
+				end
+				if d.Name == "MutFx" and d:GetAttribute("Key") ~= "wet" then
+					Assert.truthy(cropOf(d), scene .. ": gold VFX only on crops")
+				end
+				if d.ClassName == "Part" and not cropOf(d) and not inside(d, "Sunflower") and d.Transparency ~= 1 then
+					Assert.truthy(not goldish(d.Color), `{scene}: {d:GetFullName()} is gold`)
+				end
 			end
-			if d.Name == "MutFx" and d:GetAttribute("Key") ~= "wet" then
-				Assert.truthy(cropOf(d), scene .. ": gold VFX only on crops")
-			end
-			if d.ClassName == "Part" and not cropOf(d) and not inside(d, "Sunflower") and d.Transparency ~= 1 then
-				Assert.truthy(not goldish(d.Color), `{scene}: {d:GetFullName()} is gold`)
+		end
+		capture("street")
+		local patch = stage(ctx).Patch
+		eq({ patch.Body.Color, patch.Apron.Color }, { P.SHIRT, P.APRON })
+		Assert.truthy(P.APRON.G > P.APRON.R and P.APRON.G > P.APRON.B, "a green apron")
+		eq(
+			{ P.SHIRT, P.APRON },
+			{ roblox.Color3.fromHex("#EADBB8"), roblox.Color3.fromHex("#5BC236") },
+			"05-patch section 0"
+		)
+		Assert.truthy(
+			goldish(roblox.Color3.fromHex("#FFC300")) and goldish(roblox.Color3.fromHex("#E0A100")),
+			"the check sees gold"
+		)
+		for _, d in patch:GetDescendants() do
+			if d.ClassName == "Part" then
+				Assert.truthy(not goldish(d.Color) or d:GetAttribute("Patch"), "Patch: " .. d.Name .. " is gold")
 			end
 		end
 	end
-	capture("street")
-	local patch = stage(ctx).Patch
-	eq({ patch.Body.Color, patch.Apron.Color }, { P.SHIRT, P.APRON })
-	Assert.truthy(P.APRON.G > P.APRON.R and P.APRON.G > P.APRON.B, "a green apron")
-	Assert.truthy(P.SHIRT.R > 0.9 and P.SHIRT.G > 0.88 and P.SHIRT.B > 0.8, "a cream shirt")
-	for _, d in patch:GetDescendants() do
-		if d.ClassName == "Part" then
-			Assert.truthy(not goldish(d.Color) or d:GetAttribute("Patch"), "Patch: " .. d.Name .. " is gold")
-		end
-	end
-end)
+)
 
 test("the live street uses the same Patch and sunflower models", function()
 	local ctx = Farm.setup()

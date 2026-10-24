@@ -1,5 +1,5 @@
 --[[
-The VIP Lounge (§9.6): a deck behind a brushed-brass gate (Workspace.Street.Lounge, StreetBuilder.lounge).
+The VIP Lounge (§9.6): a deck behind a satin-brass gate (Config.Brass) (Workspace.Street.Lounge, StreetBuilder.lounge).
 
 Lounge:enter (or the gate's "Enter" prompt) needs VIP Gardener: the character steps onto the deck and lounge_enter
 is logged. Every Config.Lounge.checkSec a non-owner inside the Volume is moved back out past the gate, pushStuds

@@ -342,8 +342,11 @@ local ARC = {
 	from = 200,
 	step = 25,
 	poses = { "cheer", "wave", "cheer", "watering", "cheer", "wave", "idle" },
-	outfits = { "overalls", "sunhat", "apron", "rainboots", "flannel", "gloves", "rainboots" },
+	outfits = {}, -- 06-avatars section 4: Farmer.OUTFIT_ORDER[(i - 1) % 6 + 1]
 }
+for i = 1, CaptureService.ARC do
+	ARC.outfits[i] = Farmer.OUTFIT_ORDER[(i - 1) % #Farmer.OUTFIT_ORDER + 1]
+end
 CaptureService.BLOCK_PARTY = { sunflower = BP_SUNFLOWER, eye = BP_EYE, target = BP_TARGET, arc = ARC }
 
 function BUILD.street()

@@ -12,7 +12,7 @@ Drawing (all replicated, server-made):
   tag     a BillboardGui "CosmeticTag" over the head
   can     character attribute CanSkin, and the Handle colour of a "WateringCan" tool when there is one
 
-VIP pieces are brushed brass (BRASS), never gold.
+VIP pieces are satin brass (BRASS, Config.Brass), never gold.
 
   Cosmetics.slotOf(key) -> slot?
   Cosmetics.canEquip(player, profile, key) -> true | false, code
@@ -31,7 +31,7 @@ local Purchase = require(script.Parent)
 
 local Cosmetics = {}
 
-Cosmetics.BRASS = Color3.fromRGB(168, 150, 112)
+Cosmetics.BRASS = Color3.fromHex(Config.Brass.hex) -- satin VIP brass (M6), never Golden
 
 -- [key] = { name, color } for drawing; names for the earned and perk keys the Catalog doesn't sell
 Cosmetics.LOOK = {
@@ -154,6 +154,10 @@ local function drawCan(player, character, key)
 		local handle = tool and tool:FindFirstChild("Handle")
 		if handle then
 			handle.Color = if look then look[2] else Color3.fromRGB(150, 160, 170)
+			if look and look[2] == Cosmetics.BRASS then
+				handle.Material = Enum.Material[Config.Brass.material]
+				handle.Reflectance = Config.Brass.reflectance
+			end
 		end
 	end
 end

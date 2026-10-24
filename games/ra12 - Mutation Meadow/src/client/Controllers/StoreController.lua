@@ -33,7 +33,7 @@ StoreController.TABS =
 
 StoreController.EFFECTS = {
 	extraRow = "+8 tiles in a bed in front of your plot",
-	vip = "VIP name tag, border and sparkle trail in brushed brass, and the VIP Lounge",
+	vip = "VIP name tag, border and sparkle trail in satin brass, and the VIP Lounge",
 	gnome = "Harvests ripe normal crops within 12 studs of you every 2s while you stand on your plot",
 	doubleCash = "Selling crops and kept items pays 2x (rewards and gifts stay the same)",
 	starterBundle = "Extra Plot Row and two cosmetics",
