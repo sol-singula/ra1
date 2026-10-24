@@ -9,7 +9,7 @@ A client call is (action, payload). It runs only if, in order:
   2. the action is registered                                                                        "unknown_action"
   3. the payload passes NetSchema's global rules and the action's schema                             "schema"
   4. the player's profile is loaded                                                                  "not_loaded"
-  5. for DevCommand, Guards.dev(player)                                                              "dev_gate"
+  5. for DevCommand, Guards.dev(player) (Studio only)                                                "dev_gate"
 A failed check drops the call silently (no Result). A handler returns ok, code?; when the payload carried a reqId,
 the client gets Result { reqId, ok, code }. A handler returning code "ownership" also counts as a drop.
 More than Config.Net.abuseDrops drops in abuseWindowSec kicks the player (net_abuse).

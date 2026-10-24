@@ -1,6 +1,6 @@
 --[[
-The DevCommand registry. NetService only lets DevCommand:run through for Guards.dev players (Studio, or a UserId in
-Config.AdminUserIds); everyone else is dropped as dev_gate before this runs.
+The DevCommand registry. NetService only lets DevCommand:run through in Studio (Guards.dev); on a live server every
+call, an admin's included, is dropped as dev_gate before this runs.
 
   DevCommands.register(cmd, fn)        fn(player, args) -> ok, code?
   DevCommands.run(player, payload)     the DevCommand:run handler: { cmd, args }

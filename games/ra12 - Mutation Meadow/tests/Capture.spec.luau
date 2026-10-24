@@ -176,17 +176,23 @@ test("a non-dev call outside Studio is a no-op (dev_gate)", function()
 	eq(ctx.Net.dropStats().byReason.dev_gate, 1)
 end)
 
-test("the admin (Config.AdminUserIds) passes the dev gate outside Studio, but capture stays Studio only", function()
-	local ctx = Farm.setup()
-	local Config = ctx.engine:require(ctx.engine:module("Shared/Config"))
-	eq(Config.AdminUserIds, { 11787294097 })
-	local admin = Farm.join(ctx, 11787294097)
-	eq(
-		{ Farm.call(ctx, admin, "DevCommand", "run", { cmd = "capture", args = { "street" } }) },
-		{ false, "studio_only" }
-	)
-	eq(ctx.engine.workspace:FindFirstChild("Capture"), nil)
-end)
+test(
+	"outside Studio even the admin (Config.AdminUserIds) is dropped at the dev gate; capture itself refuses too",
+	function()
+		local ctx = Farm.setup()
+		local Config = ctx.engine:require(ctx.engine:module("Shared/Config"))
+		eq(Config.AdminUserIds, { 11787294097 })
+		local admin = Farm.join(ctx, 11787294097)
+		eq(
+			{ Farm.call(ctx, admin, "DevCommand", "run", { cmd = "capture", args = { "street" } }) },
+			{ nil, "no_result" }
+		)
+		eq(ctx.Net.dropStats().byReason.dev_gate, 1)
+		local Capture = ctx.engine:require(ctx.engine:module("Server/Services/CaptureService"))
+		eq({ Capture.run({ "street" }) }, { false, "studio_only" }, "the second check, behind the gate")
+		eq(ctx.engine.workspace:FindFirstChild("Capture"), nil)
+	end
+)
 
 test("capture never calls SaveQueue or touches a profile", function()
 	local ctx, p, capture = dev()

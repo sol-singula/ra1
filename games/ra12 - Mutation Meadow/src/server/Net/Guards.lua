@@ -9,7 +9,7 @@ Checks the remote handlers run before acting (§2 NetService). Each returns true
   Guards.sameServer(userId)                that player if they are on this server, else nil
   Guards.near(player, pos, studs)          the player's character is within studs of pos
   Guards.RANGE                             { tile, stand, sunflower, patch } in studs, from Config.Net
-  Guards.dev(player)                       DevConfig.isAllowed(player)
+  Guards.dev(player)                       DevConfig.isAllowed(player): Studio only
 ]]
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

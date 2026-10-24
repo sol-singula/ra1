@@ -5,6 +5,7 @@ Nothing here is done from the repo. Each item is a step on Mason's account or in
 ## Before publishing
 
 - [x] **`Config.AdminUserIds`** (`src/shared/Config/init.lua`) holds Mason's Roblox UserId (`{ 11787294097 }`).
+  Every DevCommand (capture included) is Studio only: on a live server even this id is dropped as `dev_gate`.
 - [ ] **Every Catalog and badge `id` is created and filled in.** That's the 29 store items and 10 badges listed in
       `docs/ids-todo.md`, all made on Mason's own account. Then run `RELEASE=1 tools/run_tests.sh Release`: it
       fails while any id is still 0.

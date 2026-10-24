@@ -11,7 +11,7 @@ for _, child in script:GetChildren() do
 	end
 end
 
-Config.AdminUserIds = { 11787294097 } -- devs outside Studio (DevCommands; capture stays Studio only)
+Config.AdminUserIds = { 11787294097 } -- Mason; DevCommands are Studio only, so this grants nothing live
 
 local function deepFreeze(t)
 	for _, v in t do

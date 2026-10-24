@@ -1,7 +1,7 @@
 --[[
 Staged scenes for ad thumbnails and the game icon (the Game Artist brief). Dev only and Studio only: everything runs
-through the gated DevCommand "capture" (NetService drops non-devs outside Studio as dev_gate before this runs), and
-outside Studio even an admin gets studio_only.
+through the gated DevCommand "capture" (NetService drops every call outside Studio as dev_gate before this runs),
+and run itself also refuses outside Studio (studio_only).
 
   capture <scene>          street, offline_before, offline_after, golden_reveal, block_party_rain,
                            block_party_golden, pedestals, icon
